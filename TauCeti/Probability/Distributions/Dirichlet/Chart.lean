@@ -62,6 +62,18 @@ to one. -/
 def dirichletChartTarget : Set (ι → ℝ) :=
   {x | (∀ i, 0 < x i) ∧ ∑ i, x i = 1}
 
+/-- Membership in the open simplex chart region. -/
+@[simp]
+theorem mem_dirichletChartSource {i₀ : ι} {x : {i : ι // i ≠ i₀} → ℝ} :
+    x ∈ dirichletChartSource i₀ ↔ (∀ j, 0 < x j) ∧ ∑ j, x j < 1 :=
+  Iff.rfl
+
+/-- Membership in the strictly positive affine simplex. -/
+@[simp]
+theorem mem_dirichletChartTarget {x : ι → ℝ} :
+    x ∈ dirichletChartTarget ↔ (∀ i, 0 < x i) ∧ ∑ i, x i = 1 :=
+  Iff.rfl
+
 /-- Reconstruct a point whose coordinates sum to one by filling the coordinate `i₀` with one
 minus the sum of the other coordinates. -/
 def dirichletReconstruct (i₀ : ι) (x : {i : ι // i ≠ i₀} → ℝ) : ι → ℝ :=
@@ -127,9 +139,8 @@ theorem dirichletReconstruct_mem_target {i₀ : ι} {x : {i : ι // i ≠ i₀} 
 theorem restrict_mem_dirichletChartSource {i₀ : ι} {x : ι → ℝ}
     (hx : x ∈ dirichletChartTarget) :
     (fun j : {i : ι // i ≠ i₀} ↦ x j) ∈ dirichletChartSource i₀ := by
-  rw [dirichletChartTarget] at hx
-  rw [dirichletChartSource]
-  simp only [Set.mem_ofPred_eq] at hx ⊢
+  rw [mem_dirichletChartTarget] at hx
+  rw [mem_dirichletChartSource]
   refine ⟨fun j ↦ hx.1 j, ?_⟩
   rw [Fintype.sum_eq_add_sum_subtype_ne x i₀] at hx
   linarith [hx.1 i₀]
@@ -190,6 +201,18 @@ def dirichletScaleSource (i₀ : ι) : Set (({i : ι // i ≠ i₀} → ℝ) × 
 def dirichletScaleTarget : Set (ι → ℝ) :=
   {x | ∀ i, 0 < x i}
 
+/-- Membership in the scaled chart source: an open chart point and a positive total mass. -/
+@[simp]
+theorem mem_dirichletScaleSource {i₀ : ι} {z : ({i : ι // i ≠ i₀} → ℝ) × ℝ} :
+    z ∈ dirichletScaleSource i₀ ↔ z.1 ∈ dirichletChartSource i₀ ∧ 0 < z.2 :=
+  Iff.rfl
+
+omit [Fintype ι] in
+/-- Membership in the positive orthant. -/
+@[simp]
+theorem mem_dirichletScaleTarget {x : ι → ℝ} : x ∈ dirichletScaleTarget ↔ ∀ i, 0 < x i :=
+  Iff.rfl
+
 /-- Scale a reconstructed simplex point by a total mass. -/
 def dirichletScale (i₀ : ι) (z : ({i : ι // i ≠ i₀} → ℝ) × ℝ) : ι → ℝ :=
   z.2 • dirichletReconstruct i₀ z.1
@@ -217,7 +240,9 @@ theorem dirichletScale_apply (i₀ : ι) (z : ({i : ι // i ≠ i₀} → ℝ) �
     dirichletScale i₀ z i = z.2 * dirichletReconstruct i₀ z.1 i := by
   simp [dirichletScale]
 
-/-- The coordinate sum of a scaled simplex point is its total-mass coordinate. -/
+/-- The coordinate sum of a scaled simplex point is its total-mass coordinate.  This is a
+pre-simp lemma so that it fires before `dirichletScale_apply` rewrites the summand. -/
+@[simp↓]
 theorem sum_dirichletScale (i₀ : ι) (z : ({i : ι // i ≠ i₀} → ℝ) × ℝ) :
     ∑ i, dirichletScale i₀ z i = z.2 := by
   simp only [dirichletScale_apply, ← Finset.mul_sum, sum_dirichletReconstruct, mul_one]
@@ -228,6 +253,7 @@ theorem dirichletScale_mem_target {i₀ : ι}
     {z : ({i : ι // i ≠ i₀} → ℝ) × ℝ} (hz : z ∈ dirichletScaleSource i₀) :
     dirichletScale i₀ z ∈ dirichletScaleTarget := by
   have hr := dirichletReconstruct_mem_target hz.1
+  rw [mem_dirichletScaleTarget]
   intro i
   exact mul_pos hz.2 (hr.1 i)
 
@@ -242,11 +268,9 @@ theorem dirichletUnscale_mem_source {i₀ : ι} {y : ι → ℝ} (hy : y ∈ dir
   rw [Fintype.sum_eq_add_sum_subtype_ne y i₀]
   linarith [hy i₀]
 
-/-- Scaling is a left inverse to unscaling on the positive orthant. -/
+/-- Scaling is a left inverse to unscaling on vectors with nonzero coordinate sum. -/
 theorem dirichletScale_dirichletUnscale {i₀ : ι} {y : ι → ℝ}
-    (hy : y ∈ dirichletScaleTarget) : dirichletScale i₀ (dirichletUnscale i₀ y) = y := by
-  have hsum : ∑ i, y i ≠ 0 :=
-    (Finset.sum_pos (fun i _ ↦ hy i) ⟨i₀, Finset.mem_univ _⟩).ne'
+    (hsum : ∑ i, y i ≠ 0) : dirichletScale i₀ (dirichletUnscale i₀ y) = y := by
   have hnorm : ∑ i, y i / ∑ i, y i = 1 := by
     rw [← Finset.sum_div, div_self hsum]
   have hfst : (dirichletUnscale i₀ y).1 = fun j : {i : ι // i ≠ i₀} ↦ y j / ∑ i, y i :=
@@ -255,11 +279,10 @@ theorem dirichletScale_dirichletUnscale {i₀ : ι} {y : ι → ℝ}
   funext i
   exact mul_div_cancel₀ (y i) hsum
 
-/-- Unscaling is a left inverse to scaling on its source region. -/
+/-- Unscaling is a left inverse to scaling whenever the total mass is nonzero. -/
 theorem dirichletUnscale_dirichletScale {i₀ : ι}
-    {z : ({i : ι // i ≠ i₀} → ℝ) × ℝ} (hz : z ∈ dirichletScaleSource i₀) :
+    {z : ({i : ι // i ≠ i₀} → ℝ) × ℝ} (ht : z.2 ≠ 0) :
     dirichletUnscale i₀ (dirichletScale i₀ z) = z := by
-  have ht : z.2 ≠ 0 := ne_of_gt hz.2
   apply Prod.ext
   · funext j
     rw [dirichletUnscale_fst_apply, sum_dirichletScale, dirichletScale_apply,
@@ -276,13 +299,15 @@ theorem dirichletScale_image_source (i₀ : ι) :
     exact dirichletScale_mem_target hz
   · intro y hy
     exact ⟨dirichletUnscale i₀ y, dirichletUnscale_mem_source hy,
-      dirichletScale_dirichletUnscale hy⟩
+      dirichletScale_dirichletUnscale
+        (Finset.sum_pos (fun i _ ↦ hy i) ⟨i₀, Finset.mem_univ _⟩).ne'⟩
 
 /-- The scaled simplex chart is injective on its source region. -/
 theorem dirichletScale_injOn (i₀ : ι) :
     Set.InjOn (dirichletScale i₀) (dirichletScaleSource i₀) := by
   intro z hz w hw hzw
-  rw [← dirichletUnscale_dirichletScale hz, ← dirichletUnscale_dirichletScale hw, hzw]
+  rw [← dirichletUnscale_dirichletScale (ne_of_gt hz.2),
+    ← dirichletUnscale_dirichletScale (ne_of_gt hw.2), hzw]
 
 /-- The scaled simplex chart is measurable. -/
 @[fun_prop]
@@ -308,13 +333,12 @@ theorem measurableSet_dirichletScaleTarget [Countable ι] :
   rw [dirichletScaleTarget, Set.ofPred_forall]
   exact MeasurableSet.iInter fun i ↦ measurableSet_lt measurable_const (measurable_pi_apply i)
 
-/-- On the scaled chart source, Gamma-vector normalization forgets precisely the total-mass
+/-- For a nonzero total mass, Gamma-vector normalization forgets precisely the total-mass
 coordinate. -/
 theorem dirichletNormalize_dirichletScale {i₀ : ι}
-    {z : ({i : ι // i ≠ i₀} → ℝ) × ℝ} (hz : z ∈ dirichletScaleSource i₀) :
+    {z : ({i : ι // i ≠ i₀} → ℝ) × ℝ} (ht : z.2 ≠ 0) :
     dirichletNormalize (dirichletScale i₀ z) =
       (EuclideanSpace.equiv ι ℝ).symm (dirichletReconstruct i₀ z.1) := by
-  have ht : z.2 ≠ 0 := ne_of_gt hz.2
   ext i
   rw [dirichletNormalize_apply, sum_dirichletScale, dirichletScale_apply]
   exact mul_div_cancel_left₀ _ ht
