@@ -396,7 +396,6 @@ theorem gradedExtEulerSesquilinear_T_smul_left
   rw [LaurentPolynomial.invert_T, LinearMap.smul_apply, smul_eq_mul]
 
 /-- Shifting the second graded Grothendieck class by `n` multiplies the q-Euler form by `qⁿ`. -/
-@[simp]
 theorem gradedExtEulerSesquilinear_T_smul_right
     (hP : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed P)
     (hQ : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed Q)
