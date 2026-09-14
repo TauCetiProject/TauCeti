@@ -17,8 +17,7 @@ import TauCeti.Probability.Distributions.Bernoulli
 This file develops the moments, transforms, convolution law, and independent-sum
 characterization of Mathlib's binomial measure.  The native law remains
 `ProbabilityTheory.binomial n p` on `ℕ`; real-valued moments and transforms use its cast pushforward
-`Bin(ℝ, n, p)`. The variance follows by realizing this law as a sum of independent Bernoulli
-variables and adding their variances on the product probability space.
+`Bin(ℝ, n, p)`. Its variance is `n * p * (1 - p)`.
 
 ## Main results
 
