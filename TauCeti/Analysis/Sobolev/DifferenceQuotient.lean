@@ -70,7 +70,11 @@ open MeasureTheory Metric Set TopologicalSpace Filter Topology
 open scoped Distributions ENNReal InnerProductSpace
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [BorelSpace E] [FiniteDimensional ℝ E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
+  {μ : Measure E} {Ω : Opens E}
+
+section Representation
+
+variable [OpensMeasurableSpace E] [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure]
 
 /-- **An `L²`-bounded distributional derivative is an `L²` weak derivative.** Let `u` be locally
 integrable on `Ω`. If for some `C ≥ 0` every test function `φ` on `Ω` satisfies
@@ -123,6 +127,10 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le {u : 
       simp [T, hx]
     rw [← hinner, InnerProductSpace.toDual_symm_apply, neg_apply, hg'φ, hℓ, neg_neg]
     simp only [smul_eq_mul]
+
+end Representation
+
+variable [BorelSpace E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure]
 
 omit [μ.IsAddHaarMeasure] in
 /-- A locally integrable function on `Ω` agrees, on the support of a test function and on all its

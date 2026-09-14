@@ -79,9 +79,11 @@ theorem testFunctionLp_smul (q : ENNReal) (c : ℝ) (phi : 𝓓(Omega, ℝ)) :
 section Injectivity
 
 variable {F : Type*} [MeasurableSpace F] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [BorelSpace F] {nu : Measure F} [nu.IsAddHaarMeasure] {U : Opens F}
+  [OpensMeasurableSpace F] {nu : Measure F} [IsFiniteMeasureOnCompacts nu] [nu.IsOpenPosMeasure]
+  {U : Opens F}
 
-/-- Passing from a test function to its `Lᵠ` class is injective for an additive Haar measure. -/
+/-- Passing from a test function to its `Lᵠ` class is injective for a measure that is positive on
+nonempty open sets, such as an additive Haar measure. -/
 theorem testFunctionLp_injective (q : ENNReal) :
     Function.Injective (testFunctionLp (mu := nu) (Omega := U) q) := by
   intro phi psi hLp
