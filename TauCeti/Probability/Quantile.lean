@@ -19,9 +19,12 @@ The *quantile function*, or generalized inverse cumulative distribution function
 Because `cdf μ` is monotone and right continuous with limits `0` at `-∞` and `1` at `+∞`, that
 infimum is attained for every level `t` strictly between `0` and `1`, and the defining set is
 exactly the closed ray to the right of the quantile. The quantile is therefore characterized by
-the Galois property `μ.quantile t ≤ x ↔ t ≤ cdf μ x`. Outside `Ioo 0 1` the infimum ranges over
-all of `ℝ` or over the empty set, so the value there is the junk value `0`; every statement below
-restricts the level to `Ioo 0 1`, and that is also the interval the uniform law is taken on.
+the Galois property `μ.quantile t ≤ x ↔ t ≤ cdf μ x`. At levels `t ≤ 0` and `1 < t` the infimum
+ranges over all of `ℝ` or over the empty set, so the value there is the junk value `0`. The
+endpoint level `t = 1` is not junk: the quantile there is the least point of full cumulative mass
+when such a point exists (for instance `(dirac a).quantile 1 = a`), and `0` when the law has
+unbounded support to the right. Apart from `quantile_dirac`, the statements below restrict the
+level to `Ioo 0 1`, and that is also the interval the uniform law is taken on.
 
 The main result is **inverse transform sampling**: for a probability measure `μ` the quantile
 function pushes the uniform law on the open unit interval forward to `μ`. It presents every real
@@ -62,9 +65,11 @@ namespace MeasureTheory.Measure
 /-- The **quantile function** of a measure on `ℝ`: the least point at which its cumulative
 distribution function reaches the level `t`.
 
-This is the honest generalized inverse of `ProbabilityTheory.cdf μ` for `t` in `Set.Ioo 0 1`; at
-other levels the defining infimum ranges over all of `ℝ` or over the empty set, and the value is
-the junk value `0`. -/
+This is the honest generalized inverse of `ProbabilityTheory.cdf μ` for `t` in `Set.Ioo 0 1`. At
+levels `t ≤ 0` and `1 < t` the defining infimum ranges over all of `ℝ` or over the empty set, and
+the value is the junk value `0` (`quantile_of_nonpos`, `quantile_of_one_lt`). At the endpoint
+level `t = 1` the value is the least point where the cumulative distribution function reaches `1`
+if there is one, and `0` otherwise. -/
 def quantile (μ : Measure ℝ) (t : ℝ) : ℝ := sInf {x : ℝ | t ≤ cdf μ x}
 
 /-- The quantile function is the infimum of the points at which the cumulative distribution
@@ -91,12 +96,14 @@ theorem bddBelow_setOf_le_cdf (μ : Measure ℝ) (ht : 0 < t) : BddBelow {x : �
 
 /-- At a nonpositive level the quantile function takes the junk value `0`: every point has
 cumulative mass at least the level. -/
+@[simp]
 theorem quantile_of_nonpos (μ : Measure ℝ) (ht : t ≤ 0) : μ.quantile t = 0 := by
   have hset : {x : ℝ | t ≤ cdf μ x} = univ := eq_univ_of_forall fun x ↦ ht.trans (cdf_nonneg μ x)
   rw [quantile_def, hset, Real.sInf_univ]
 
 /-- Above the level `1` the quantile function takes the junk value `0`: no point has cumulative
 mass that large. -/
+@[simp]
 theorem quantile_of_one_lt (μ : Measure ℝ) (ht : 1 < t) : μ.quantile t = 0 := by
   have hset : {x : ℝ | t ≤ cdf μ x} = ∅ :=
     eq_empty_of_forall_notMem fun x hx ↦ absurd (hx.trans (cdf_le_one μ x)) (not_le.2 ht)
@@ -115,6 +122,7 @@ theorem le_cdf_quantile (μ : Measure ℝ) (h1 : t < 1) : t ≤ cdf μ (μ.quant
 /-- **The Galois characterization of the quantile.** For a level strictly between `0` and `1`,
 the quantile lies below a point exactly when the cumulative distribution function at that point
 reaches the level. -/
+@[simp]
 theorem quantile_le_iff (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
     μ.quantile t ≤ x ↔ t ≤ cdf μ x :=
   ⟨fun h ↦ (le_cdf_quantile μ h1).trans (monotone_cdf μ h),
@@ -129,6 +137,7 @@ theorem setOf_le_cdf_eq_Ici (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
 
 /-- A point lies strictly below the quantile at a level exactly when its cumulative mass has not
 yet reached that level. -/
+@[simp]
 theorem lt_quantile_iff (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
     x < μ.quantile t ↔ cdf μ x < t := by
   simpa only [not_le] using (quantile_le_iff (x := x) μ h0 h1).not
@@ -209,12 +218,13 @@ theorem measurePreserving_quantile (μ : Measure ℝ) [IsProbabilityMeasure μ] 
     MeasurePreserving μ.quantile (volume.restrict (Ioo (0 : ℝ) 1)) μ :=
   ⟨measurable_quantile μ, map_quantile_volume_Ioo μ⟩
 
-/-- At every level where it is the honest generalized inverse, the quantile function of a Dirac
-law is its atom. -/
+/-- At every level in `Ioc 0 1`, including the endpoint level `1`, the quantile function of a
+Dirac law is its atom. -/
 @[simp]
-theorem quantile_dirac (a : ℝ) (h0 : 0 < t) (h1 : t < 1) : (dirac a).quantile t = a := by
-  refine le_antisymm ((quantile_le_iff _ h0 h1).mpr ?_) (le_of_forall_lt fun x hx ↦ ?_)
-  · simpa using h1.le
-  · exact (lt_quantile_iff _ h0 h1).mpr (by simpa [not_le.mpr hx] using h0)
+theorem quantile_dirac (a : ℝ) (h0 : 0 < t) (h1 : t ≤ 1) : (dirac a).quantile t = a := by
+  refine le_antisymm (csInf_le (bddBelow_setOf_le_cdf _ h0) (by simpa using h1))
+    (le_csInf ⟨a, by simpa using h1⟩ fun x hx ↦ ?_)
+  by_contra hxa
+  exact absurd hx (by simpa [not_le.mpr (not_le.mp hxa)] using h0)
 
 end MeasureTheory.Measure

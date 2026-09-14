@@ -79,10 +79,13 @@ theorem isCoupling_quantileCoupling (μ ν : Measure ℝ) [IsProbabilityMeasure 
     rw [Measure.snd, quantileCoupling_def, Measure.map_map measurable_snd (by fun_prop)]
     exact ν.map_quantile_volume_Ioo
 
-/-- The monotone coupling of two probability laws is a probability measure. -/
-instance isProbabilityMeasure_quantileCoupling (μ ν : Measure ℝ) [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] : IsProbabilityMeasure (quantileCoupling μ ν) :=
-  (isCoupling_quantileCoupling μ ν).isProbabilityMeasure
+/-- The monotone coupling of any two laws on `ℝ` is a probability measure, being a pushforward of
+the uniform law on the open unit interval. -/
+instance isProbabilityMeasure_quantileCoupling (μ ν : Measure ℝ) :
+    IsProbabilityMeasure (quantileCoupling μ ν) := by
+  have : IsProbabilityMeasure (volume.restrict (Ioo (0 : ℝ) 1)) := ⟨by simp⟩
+  rw [quantileCoupling_def]
+  infer_instance
 
 /-- The transport objective of the monotone coupling is the `L^p (0,1)` distance of the two
 quantile functions. -/
