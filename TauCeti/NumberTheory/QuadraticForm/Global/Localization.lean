@@ -17,9 +17,9 @@ finite completions and to the real or complex field selected by an infinite plac
 definitions use `QuadraticForm.baseChange`; in particular, their underlying spaces are genuine
 tensor products over the global field rather than independently chosen local spaces.
 
-The evaluation, diagonalization, and algebraic-compatibility lemmas make the local forms usable
-without unfolding the localization definitions. They are the common input for local isotropy,
-representation, and invariant comparisons over number fields.
+The evaluation, localization of diagonal forms, and algebraic-compatibility lemmas make the local
+forms usable without unfolding the localization definitions. They are the common input for local
+isotropy, representation, and invariant comparisons over number fields.
 
 -/
 
@@ -200,8 +200,12 @@ theorem atFinitePlaceWeightedSumSquares_apply [NumberField K]
     atFinitePlaceWeightedSumSquares v a x =
       TensorProduct.piScalarRightHom K (v.adicCompletion K) (v.adicCompletion K) ι x := by
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  change baseChangeWeightedSumSquares (A := v.adicCompletion K) a x = _
-  exact baseChangeWeightedSumSquares_apply (A := v.adicCompletion K) a x
+  calc
+    atFinitePlaceWeightedSumSquares v a x =
+        baseChangeWeightedSumSquares (A := v.adicCompletion K) a x := by
+      -- The specialized wrapper changes only `map_app'`; it retains the generic linear map.
+      rfl
+    _ = _ := baseChangeWeightedSumSquares_apply (A := v.adicCompletion K) a x
 
 /-- The underlying linear map of the real-place diagonal isometry is the canonical distribution
 of tensor product over the finite coordinate space. -/
@@ -212,8 +216,11 @@ theorem atRealPlaceWeightedSumSquares_apply (w : {w : InfinitePlace K // w.IsRea
     atRealPlaceWeightedSumSquares w a x = TensorProduct.piScalarRightHom K ℝ ℝ ι x := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  change baseChangeWeightedSumSquares (A := ℝ) a x = _
-  exact baseChangeWeightedSumSquares_apply (A := ℝ) a x
+  calc
+    atRealPlaceWeightedSumSquares w a x = baseChangeWeightedSumSquares (A := ℝ) a x := by
+      -- The specialized wrapper changes only `map_app'`; it retains the generic linear map.
+      rfl
+    _ = _ := baseChangeWeightedSumSquares_apply (A := ℝ) a x
 
 /-- The underlying linear map of the complex-embedding diagonal isometry is the canonical
 distribution of tensor product over the finite coordinate space. -/
@@ -224,8 +231,12 @@ theorem atComplexEmbeddingWeightedSumSquares_apply (w : InfinitePlace K) (a : ι
     atComplexEmbeddingWeightedSumSquares w a x = TensorProduct.piScalarRightHom K ℂ ℂ ι x := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   let : Algebra K ℂ := w.embedding.toAlgebra
-  change baseChangeWeightedSumSquares (A := ℂ) a x = _
-  exact baseChangeWeightedSumSquares_apply (A := ℂ) a x
+  calc
+    atComplexEmbeddingWeightedSumSquares w a x =
+        baseChangeWeightedSumSquares (A := ℂ) a x := by
+      -- The specialized wrapper changes only `map_app'`; it retains the generic linear map.
+      rfl
+    _ = _ := baseChangeWeightedSumSquares_apply (A := ℂ) a x
 
 /-- On a pure tensor, the finite-place diagonal isometry maps each coordinate through the
 completion map and scales it by the tensor coefficient. -/
