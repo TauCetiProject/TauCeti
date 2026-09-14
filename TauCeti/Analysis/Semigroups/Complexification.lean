@@ -31,14 +31,15 @@ estimates to a complex resolvent and use complex-analytic resolvent theory.
   bounds with exactly the same constants.
 * `StronglyContinuousSemigroup.mem_complexify_domain_iff`: the generator domain is determined
   componentwise.
-* `StronglyContinuousSemigroup.complexGenerator_complexify_apply`: the complex generator acts by
+* `StronglyContinuousSemigroup.complexify_complexGenerator_apply`: the complex generator acts by
   applying the original real generator to both components.
 * `ContractionSemigroup.complexify`: complexification of a contraction semigroup.
 
 ## References
 
-* K.-J. Engel and R. Nagel, *One-Parameter Semigroups for Linear Evolution Equations*,
-  Section II.2.1.
+* G. A. Muñoz, Y. Sarantopoulos, A. Tonge, *Complexifications of real Banach spaces,
+  polynomials and multilinear maps*, Studia Math. 134 (1999), 1–33 (the Taylor norm, under which
+  complexification preserves operator norms).
 -/
 
 public section
@@ -103,18 +104,16 @@ theorem complexify_apply (S : StronglyContinuousSemigroup X) (t : ℝ≥0) :
 theorem complexify_apply_re (S : StronglyContinuousSemigroup X) (t : ℝ≥0)
     (z : TauCeti.Complexification X) : (S.complexify t z).re = S t z.re :=
   by
-    rw [complexify_apply]
-    change ((S t).complexify z).re = S t z.re
-    exact ContinuousLinearMap.complexify_apply_re (S t) z
+    rw [complexify_apply, ContinuousLinearMap.coe_restrictScalars',
+      ContinuousLinearMap.complexify_apply_re]
 
 /-- The imaginary part of the complexified semigroup action is the original action on the
 imaginary part. -/
 theorem complexify_apply_im (S : StronglyContinuousSemigroup X) (t : ℝ≥0)
     (z : TauCeti.Complexification X) : (S.complexify t z).im = S t z.im :=
   by
-    rw [complexify_apply]
-    change ((S t).complexify z).im = S t z.im
-    exact ContinuousLinearMap.complexify_apply_im (S t) z
+    rw [complexify_apply, ContinuousLinearMap.coe_restrictScalars',
+      ContinuousLinearMap.complexify_apply_im]
 
 /-- The complexified semigroup extends the original semigroup along the real embedding. -/
 theorem complexify_apply_ofReal (S : StronglyContinuousSemigroup X) (t : ℝ≥0) (x : X) :
@@ -137,18 +136,16 @@ theorem complexify_realOperator_apply_ofReal (S : StronglyContinuousSemigroup X)
 theorem complexify_realOperator_apply_re (S : StronglyContinuousSemigroup X) (t : ℝ)
     (z : TauCeti.Complexification X) :
     (S.complexify.realOperator t z).re = S.realOperator t z.re := by
-  rw [S.complexify_realOperator]
-  change ((S.realOperator t).complexify z).re = S.realOperator t z.re
-  exact ContinuousLinearMap.complexify_apply_re (S.realOperator t) z
+  rw [S.complexify_realOperator, ContinuousLinearMap.coe_restrictScalars',
+    ContinuousLinearMap.complexify_apply_re]
 
 /-- The imaginary part of the complexified real-time action is the original action on the
 imaginary part. -/
 theorem complexify_realOperator_apply_im (S : StronglyContinuousSemigroup X) (t : ℝ)
     (z : TauCeti.Complexification X) :
     (S.complexify.realOperator t z).im = S.realOperator t z.im := by
-  rw [S.complexify_realOperator]
-  change ((S.realOperator t).complexify z).im = S.realOperator t z.im
-  exact ContinuousLinearMap.complexify_apply_im (S.realOperator t) z
+  rw [S.complexify_realOperator, ContinuousLinearMap.coe_restrictScalars',
+    ContinuousLinearMap.complexify_apply_im]
 
 /-- Complexifying a semigroup preserves the operator norm at every nonnegative time. -/
 theorem norm_complexify_apply (S : StronglyContinuousSemigroup X) (t : ℝ≥0) :
@@ -198,17 +195,8 @@ private theorem tendsto_complexify_genQuot_iff (S : StronglyContinuousSemigroup 
           (nhdsWithin 0 (Set.Ioi 0)) (𝓝 y.im) := by
   rw [(equivProd X).toHomeomorph.isEmbedding.tendsto_nhds_iff, Prod.tendsto_iff]
   simp only [ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_apply, equivProd_apply,
-    real_smul_re, real_smul_im, sub_re, sub_im, complexify_realOperator]
-  change
-    Tendsto (fun t : ℝ => (1 / t) • (((S.realOperator t).complexify z).re - z.re))
-          (nhdsWithin 0 (Set.Ioi 0)) (nhds y.re) ∧
-        Tendsto (fun t : ℝ => (1 / t) • (((S.realOperator t).complexify z).im - z.im))
-          (nhdsWithin 0 (Set.Ioi 0)) (nhds y.im) ↔
-      Tendsto (fun t : ℝ => (1 / t) • (S.realOperator t z.re - z.re))
-          (nhdsWithin 0 (Set.Ioi 0)) (nhds y.re) ∧
-        Tendsto (fun t : ℝ => (1 / t) • (S.realOperator t z.im - z.im))
-          (nhdsWithin 0 (Set.Ioi 0)) (nhds y.im)
-  simp only [ContinuousLinearMap.complexify_apply_re, ContinuousLinearMap.complexify_apply_im]
+    real_smul_re, real_smul_im, sub_re, sub_im, complexify_realOperator_apply_re,
+    complexify_realOperator_apply_im]
 
 /-- A vector belongs to the generator domain of the complexified semigroup exactly when its real
 and imaginary parts belong to the generator domain of the original semigroup. -/
@@ -228,7 +216,7 @@ theorem mem_complexify_domain_iff (S : StronglyContinuousSemigroup X)
 /-- The real generator of the complexified semigroup acts componentwise by the original
 generator. -/
 @[simp]
-theorem generator_complexify_apply (S : StronglyContinuousSemigroup X)
+theorem complexify_generator_apply (S : StronglyContinuousSemigroup X)
     (z : S.complexify.domain) :
     S.complexify.generator
         ⟨z, by rw [S.complexify.generator_domain]; exact z.property⟩ =
@@ -248,7 +236,7 @@ theorem generator_complexify_apply (S : StronglyContinuousSemigroup X)
 
 /-- The complex generator of the complexified semigroup acts componentwise by the original real
 generator. -/
-theorem complexGenerator_complexify_apply (S : StronglyContinuousSemigroup X)
+theorem complexify_complexGenerator_apply (S : StronglyContinuousSemigroup X)
     (z : (S.complexify.complexGenerator S.isComplexLinear_complexify).domain) :
     S.complexify.complexGenerator S.isComplexLinear_complexify z =
       ⟨S.generator ⟨(z : TauCeti.Complexification X).re,
@@ -268,7 +256,7 @@ theorem complexGenerator_complexify_apply (S : StronglyContinuousSemigroup X)
     rw [← S.complexify.mem_complexDomain_iff S.isComplexLinear_complexify,
       ← S.complexify.complexGenerator_domain S.isComplexLinear_complexify]
     exact z.property⟩
-  simpa only [zdom, Subtype.coe_mk] using S.generator_complexify_apply zdom
+  simpa only [zdom, Subtype.coe_mk] using S.complexify_generator_apply zdom
 
 end StronglyContinuousSemigroup
 
