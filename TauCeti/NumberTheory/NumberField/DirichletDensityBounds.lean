@@ -17,8 +17,8 @@ For a set `S` of nonzero prime ideals of a number field, Mathlib's
 
 tends to `δ` as `s` approaches `1` from the right.  Squeeze arguments often produce the two
 sides of this limit separately.  This file records those one-sided conclusions as
-`NumberField.Set.IsLowerDirichletDensityBound S δ` and
-`NumberField.Set.IsUpperDirichletDensityBound S δ`.
+`TauCeti.NumberField.Set.IsLowerDirichletDensityBound S δ` and
+`TauCeti.NumberField.Set.IsUpperDirichletDensityBound S δ`.
 
 The predicates use eventual epsilon inequalities, rather than assigning junk-valued lower and
 upper densities.  They are monotone in the proposed bound, and a common lower and upper bound
@@ -27,15 +27,15 @@ comparison also gives the natural interval restrictions on one-sided bounds.
 
 ## Main results
 
-* `NumberField.Set.isLowerDirichletDensityBound_of_tendsto` and
-  `NumberField.Set.isUpperDirichletDensityBound_of_tendsto`: convergence of the defining ratio
-  supplies its one-sided bounds.
-* `NumberField.Set.IsLowerDirichletDensityBound.le_of_isUpperDirichletDensityBound`: every lower
-  bound is at most every upper bound.
-* `NumberField.Set.tendsto_primeIdealZetaSum_div_of_upperBound_of_lowerBound`: matching one-sided
-  bounds force convergence of the defining ratio.
-* `NumberField.Set.tendsto_primeIdealZetaSum_div_iff_bounds`: the resulting characterization of
-  that convergence.
+* `TauCeti.NumberField.Set.isLowerDirichletDensityBound_of_tendsto` and
+  `TauCeti.NumberField.Set.isUpperDirichletDensityBound_of_tendsto`: convergence of the defining
+  ratio supplies its one-sided bounds.
+* `TauCeti.NumberField.Set.IsLowerDirichletDensityBound.le_of_isUpperDirichletDensityBound`:
+  every lower bound is at most every upper bound.
+* `TauCeti.NumberField.Set.tendsto_primeIdealZetaSum_div_of_upperBound_of_lowerBound`: matching
+  one-sided bounds force convergence of the defining ratio.
+* `TauCeti.NumberField.Set.tendsto_primeIdealZetaSum_div_iff_bounds`: the resulting
+  characterization of that convergence.
 
 ## References
 
@@ -47,6 +47,8 @@ public section
 
 open Filter IsDedekindDomain NumberField
 open scoped Topology
+
+namespace TauCeti
 
 namespace NumberField.Set
 
@@ -99,7 +101,10 @@ theorem primeIdealZetaSum_div_univ_nonneg
   div_nonneg (S.primeIdealZetaSum_nonneg s)
     ((Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum_nonneg s)
 
-/-- The ratio used to define Dirichlet density is at most one at every real parameter. -/
+/-- The ratio used to define Dirichlet density is at most one at every real parameter.
+
+The proof follows `NumberField.Set.HasDirichletDensity.le_one` from
+`Mathlib.NumberTheory.NumberField.DirichletDensity`. -/
 theorem primeIdealZetaSum_div_univ_le_one
     (S : Set (HeightOneSpectrum (𝓞 K))) (s : ℝ) :
     S.primeIdealZetaSum s /
@@ -249,3 +254,5 @@ theorem tendsto_primeIdealZetaSum_div_iff_bounds
     fun h ↦ tendsto_primeIdealZetaSum_div_of_upperBound_of_lowerBound h.1 h.2⟩
 
 end NumberField.Set
+
+end TauCeti
