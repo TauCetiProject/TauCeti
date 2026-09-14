@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Finite.RootsOfUnity
+public import TauCeti.NumberTheory.LocalField.Henselian
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.RingTheory.RootsOfUnity.Henselian
 
@@ -67,14 +68,6 @@ namespace TauCeti
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-/-- The integer ring of a nonarchimedean local field is a Henselian local ring: it is local and
-complete for the topology of its maximal ideal. -/
-instance henselianLocalRing_integer : HenselianLocalRing 𝒪[K] where
-  is_henselian f hf a₀ h₁ h₂ := by
-    let := IsTopologicalAddGroup.rightUniformSpace K
-    have := isUniformAddGroup_of_addCommGroup (G := K)
-    exact (IsAdicComplete.henselianRing 𝒪[K] 𝓂[K]).is_henselian f hf a₀ h₁ (h₂.map _)
-
 /-- One less than the residue cardinality is invertible in `𝒪[K]`: it reduces to `-1`. -/
 theorem isUnit_natCard_residueField_sub_one :
     IsUnit ((Nat.card 𝓀[K] - 1 : ℕ) : 𝒪[K]) := by
@@ -121,6 +114,13 @@ theorem teichmuller_pow (α : 𝓀[K]ˣ) :
   rw [← @Nat.card_eq_fintype_card 𝓀[K] (Fintype.ofFinite 𝓀[K])]
   exact ((rootsOfUnityEquivResidueFieldUnits K).symm α).2
 
+/-- The Teichmüller lift, viewed in `𝒪[K]ˣ`, belongs to the group of `(q-1)`-st roots of unity
+indexed by the residue field's `Nat.card`. -/
+theorem teichmuller_mem_rootsOfUnity (α : 𝓀[K]ˣ) :
+    teichmuller K α ∈ rootsOfUnity (Nat.card 𝓀[K] - 1) 𝒪[K] := by
+  rw [teichmuller_apply]
+  exact ((rootsOfUnityEquivResidueFieldUnits K).symm α).2
+
 /-- **The Teichmüller lift is a section of reduction.** -/
 @[simp]
 theorem residue_teichmuller (α : 𝓀[K]ˣ) :
@@ -153,11 +153,7 @@ theorem eq_teichmuller {α : 𝓀[K]ˣ} {u : 𝒪[K]ˣ} (hpow : u ^ (Nat.card �
     (hres : residue 𝒪[K] (u : 𝒪[K]) = (α : 𝓀[K])) : u = teichmuller K α := by
   have hmem : u ∈ rootsOfUnity (Nat.card 𝓀[K] - 1) 𝒪[K] := hpow
   have h : (⟨u, hmem⟩ : rootsOfUnity (Nat.card 𝓀[K] - 1) 𝒪[K]) =
-      ⟨teichmuller K α, by
-        rw [mem_rootsOfUnity']
-        simpa only [Units.val_pow_eq_pow_val, Units.val_one,
-          @Nat.card_eq_fintype_card 𝓀[K] (Fintype.ofFinite 𝓀[K])] using
-          congrArg (fun x : 𝒪[K]ˣ ↦ (x : 𝒪[K])) (teichmuller_pow K α)⟩ := by
+      ⟨teichmuller K α, teichmuller_mem_rootsOfUnity K α⟩ := by
     refine rootsOfUnityResidue_injective (isUnit_natCard_residueField_sub_one K) ?_
     ext
     simp [hres]
@@ -175,10 +171,7 @@ theorem range_teichmuller :
   ext u
   refine ⟨?_, fun hu ↦ ⟨rootsOfUnityEquivResidueFieldUnits K ⟨u, hu⟩, ?_⟩⟩
   · rintro ⟨α, rfl⟩
-    rw [mem_rootsOfUnity']
-    simpa only [Units.val_pow_eq_pow_val, Units.val_one,
-      @Nat.card_eq_fintype_card 𝓀[K] (Fintype.ofFinite 𝓀[K])] using
-      congrArg (fun x : 𝒪[K]ˣ ↦ (x : 𝒪[K])) (teichmuller_pow K α)
+    exact teichmuller_mem_rootsOfUnity K α
   · rw [teichmuller_apply, MulEquiv.symm_apply_apply]
 
 /-! ### Roots of unity of the field itself
@@ -211,6 +204,13 @@ def rootsOfUnityIntegerEquiv {n : ℕ} (hn : n ≠ 0) :
       (Units.map_injective (f := (Subring.subtype 𝒪[K]).toMonoidHom) Subtype.val_injective)).trans
     (MulEquiv.subgroupCongr (map_rootsOfUnity_integer K hn))
 
+/-- The equivalence between roots of unity in `𝒪[K]` and `K` is induced by inclusion. -/
+@[simp]
+theorem coe_rootsOfUnityIntegerEquiv {n : ℕ} (hn : n ≠ 0) (ζ : rootsOfUnity n 𝒪[K]) :
+    (((rootsOfUnityIntegerEquiv K hn ζ : rootsOfUnity n K) : Kˣ) : K) =
+      (((ζ : 𝒪[K]ˣ) : 𝒪[K]) : K) := by
+  rfl
+
 /-- **Reduction identifies the `(q-1)`-st roots of unity of `K` with `𝓀[K]ˣ`**: the group
 `μ_{q-1}(K)` is isomorphic to the multiplicative group of the residue field. -/
 def rootsOfUnityFieldEquivResidueFieldUnits :
@@ -218,5 +218,17 @@ def rootsOfUnityFieldEquivResidueFieldUnits :
   (rootsOfUnityIntegerEquiv K
       (Nat.sub_ne_zero_of_lt Finite.one_lt_card)).symm.trans
     (rootsOfUnityEquivResidueFieldUnits K)
+
+/-- The field-level roots-of-unity equivalence applies the inverse integral equivalence and then
+reduces the resulting root of unity modulo the maximal ideal. -/
+@[simp]
+theorem coe_rootsOfUnityFieldEquivResidueFieldUnits
+    (ζ : rootsOfUnity (Nat.card 𝓀[K] - 1) K) :
+    ((rootsOfUnityFieldEquivResidueFieldUnits K ζ : 𝓀[K]ˣ) : 𝓀[K]) =
+      residue 𝒪[K]
+        ((((rootsOfUnityIntegerEquiv K
+          (Nat.sub_ne_zero_of_lt Finite.one_lt_card)).symm ζ :
+            rootsOfUnity (Nat.card 𝓀[K] - 1) 𝒪[K]) : 𝒪[K]ˣ) : 𝒪[K]) := by
+  exact coe_rootsOfUnityEquivResidueFieldUnits K _
 
 end TauCeti
