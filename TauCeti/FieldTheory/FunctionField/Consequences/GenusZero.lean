@@ -22,16 +22,11 @@ place.  At that place, the genus-zero prescribed-pole theorem produces a functio
 pole.  The product formula identifies the degree of the resulting rational subfield with one, so
 Mathlib's `RatFunc.algEquivOfTranscendental` extends to the required equivalence.
 
-The converse direction requires transporting the function-field place and divisor theory across
-an algebra equivalence.  The model calculation `TauCeti.genus_ratFunc` is already available, but
-that transport API is not yet part of the function-field development; this module therefore
-records the mathematically substantial forward implication without weakening the roadmap's
-degree-one-divisor hypothesis to the existence of a rational place.
+This module proves the forward implication without weakening the degree-one-divisor hypothesis to
+the existence of a rational place.
 
 ## Main results
 
-* `TauCeti.Divisor.exists_place_degree_eq_one_of_isEffective_of_degree_eq_one`: an effective
-  degree-one divisor contains a rational place.
 * `TauCeti.exists_place_degree_eq_one_of_genus_eq_zero_of_divisor_degree_eq_one`: genus zero and
   a degree-one divisor produce a rational place.
 * `TauCeti.nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one`: genus zero and a
@@ -54,28 +49,6 @@ namespace TauCeti
 open AlgebraicGeometry
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
-
-namespace Divisor
-
-/-- An effective divisor of degree one on an algebraic function field contains a rational place.
-
-Indeed, any place in its support contributes at least its positive residue degree to the total
-degree, so both that residue degree and its coefficient must equal one. -/
-theorem exists_place_degree_eq_one_of_isEffective_of_degree_eq_one
-    (hF : IsFunctionField k F) {D : Divisor k F} (hD : 0 ≤ D) (hdeg : degree D = 1) :
-    ∃ P : Place k F, P ∈ D.support ∧ P.degree = 1 := by
-  have hD0 : D ≠ 0 := by
-    rintro rfl
-    simp at hdeg
-  obtain ⟨P, hP⟩ := Finsupp.support_nonempty_iff.mpr hD0
-  refine ⟨P, hP, ?_⟩
-  have hle : (P.degree : ℤ) ≤ 1 := by
-    rw [← hdeg]
-    exact degree_le_degree_of_coeff_ne_zero hD (WeilDivisor.mem_support_iff.mp hP)
-  have hone : 1 ≤ P.degree := P.one_le_degree_of_isFunctionField hF
-  omega
-
-end Divisor
 
 /-- A genus-zero function field with a divisor of degree one has a rational place.
 
