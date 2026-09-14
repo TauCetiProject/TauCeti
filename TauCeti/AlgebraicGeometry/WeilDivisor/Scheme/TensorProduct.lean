@@ -169,7 +169,8 @@ def tensorPresheafHom :
 /-- The multiplication morphism acts on the sections over `U` as `sectionsMulLift`. -/
 @[simp]
 lemma tensorPresheafHom_app :
-    ModuleCat.Hom.hom ((tensorPresheafHom D E).app (op U)) = sectionsMulLift D E U :=
+    ModuleCat.Hom.hom (R := X.sheaf.obj.obj (op U)) ((tensorPresheafHom D E).app (op U)) =
+      sectionsMulLift D E U :=
   (rfl)
 
 end Multiplication
