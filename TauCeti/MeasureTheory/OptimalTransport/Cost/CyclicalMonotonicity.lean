@@ -10,11 +10,13 @@ public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
 /-!
 # Cyclical monotonicity for transport costs
 
-This file defines finite `c`-cyclical monotonicity for an extended-nonnegative transport cost.
-The definition is purely cost-theoretic: it does not require a measure, topology, or duality
-theory. A certified plan is almost-everywhere concentrated on a cyclically monotone set, and
-that set can be taken measurable as soon as the cost and both potentials are measurable; the
-converse and statements about topological support require additional hypotheses.
+This file defines finite `c`-cyclical monotonicity for a transport cost with values in an
+ordered additive monoid, which covers both the extended-nonnegative costs of the primal
+interface and the real costs of the `c`-transform interface. The definition is purely
+cost-theoretic: it does not require a measure, topology, or duality theory. A certified plan is
+almost-everywhere concentrated on a cyclically monotone set, and that set can be taken
+measurable as soon as the cost and both potentials are measurable; the converse and statements
+about topological support require additional hypotheses.
 
 This is Layer 2, item 7 of the optimal-transport roadmap.
 -/
@@ -25,13 +27,11 @@ noncomputable section
 
 open Set
 
-open scoped ENNReal
-
 namespace TauCeti
 
-universe u v
+universe u v w
 
-variable {X : Type u} {Y : Type v} {c : X × Y → ℝ≥0∞}
+variable {X : Type u} {Y : Type v} {M : Type w} [AddCommMonoid M] [Preorder M] {c : X × Y → M}
 
 /-- A set of pairs is `c`-*cyclically monotone* when no finite family of its points can be
 improved by permuting the targets: for every finite family `(x i, y i)` in the set and every
@@ -42,7 +42,7 @@ This is Villani's finite-family form of the condition. A certified plan is almos
 concentrated on a `c`-cyclically monotone set — measurably so when the cost and both potentials
 are measurable; the converse and any statement about topological support need additional
 hypotheses. Infinite costs allow forbidden rearrangements. -/
-def IsCyclicallyMonotone (c : X × Y → ℝ≥0∞) (S : Set (X × Y)) : Prop :=
+def IsCyclicallyMonotone (c : X × Y → M) (S : Set (X × Y)) : Prop :=
   ∀ (n : ℕ) (x : Fin n → X) (y : Fin n → Y), (∀ i, (x i, y i) ∈ S) →
     ∀ σ : Equiv.Perm (Fin n), ∑ i, c (x i, y i) ≤ ∑ i, c (x i, y (σ i))
 
@@ -84,7 +84,7 @@ end IsCyclicallyMonotone
 
 /-- The empty set is cyclically monotone for every cost. -/
 @[simp]
-theorem isCyclicallyMonotone_empty (c : X × Y → ℝ≥0∞) :
+theorem isCyclicallyMonotone_empty (c : X × Y → M) :
     IsCyclicallyMonotone c (∅ : Set (X × Y)) :=
   isCyclicallyMonotone_iff.2 fun n x y hmem σ ↦ by
     rcases Nat.eq_zero_or_pos n with rfl | hn
