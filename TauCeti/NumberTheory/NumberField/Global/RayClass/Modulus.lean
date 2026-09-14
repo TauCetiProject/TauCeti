@@ -63,6 +63,8 @@ away from a finite set of primes.
   modulus to a smaller one.
 * `TauCeti.GlobalNumberFields.isCongrOne_narrowModulus_iff`: congruence to one modulo the modulus
   with unit finite part and every real place is total positivity.
+* `TauCeti.GlobalNumberFields.unitsCongruenceSubgroup_narrowModulus`: the units congruent to one
+  modulo the narrow modulus are the totally positive integer units.
 * `TauCeti.GlobalNumberFields.Modulus.isCoprimeTo_iff_sup_eq_top`: being prime to the support is
   comaximality with the finite part.
 
@@ -409,6 +411,15 @@ every real place. -/
   refine ⟨fun hx ↦ isTotallyPositive_iff.mpr fun w hw ↦ hx.pos (w := ⟨w, hw⟩) (by simp),
     fun hx ↦ ⟨fun v hv ↦ ?_, fun w _ ↦ isTotallyPositive_iff.mp hx w w.2⟩⟩
   exact absurd ((Modulus.mem_support_iff _ v).mpr hv) (by simp)
+
+/-- **The integer units congruent to one modulo the narrow modulus are exactly the totally
+positive integer units.** -/
+@[simp] theorem unitsCongruenceSubgroup_narrowModulus :
+    unitsCongruenceSubgroup (narrowModulus K) = totallyPositiveIntegerUnits := by
+  ext u
+  rw [mem_unitsCongruenceSubgroup, isCongrOne_narrowModulus_iff,
+    mem_totallyPositiveIntegerUnits]
+  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe]
 
 /-! ### Ideals prime to a modulus -/
 
