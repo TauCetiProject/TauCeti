@@ -597,7 +597,6 @@ theorem mem_cIoo_rev_rev (a b x : Fin n) :
 
 /-- The cyclic permutation `finRotate n` preserves and reflects membership in open cyclic
 intervals. -/
-@[simp]
 theorem mem_cIoo_finRotate_finRotate (a b x : Fin n) :
     finRotate n x ∈ cIoo (finRotate n a) (finRotate n b) ↔ x ∈ cIoo a b := by
   cases n with
@@ -610,7 +609,6 @@ theorem mem_cIoo_finRotate_finRotate (a b x : Fin n) :
 
 /-- The cyclic permutation `finRotate n` preserves and reflects membership in half-open cyclic
 intervals. -/
-@[simp]
 theorem mem_cIco_finRotate_finRotate (a b x : Fin n) :
     finRotate n x ∈ cIco (finRotate n a) (finRotate n b) ↔ x ∈ cIco a b := by
   cases n with

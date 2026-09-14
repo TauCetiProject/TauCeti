@@ -74,7 +74,6 @@ theorem disjoint_XSet_relabelRows_finRotate {x y : GridState n} (r : GridRectang
 
 /-- A cyclic permutation of the rows identifies the rectangles counted by the unblocked
 differentials. -/
-@[simp]
 theorem mem_unblockedRectangles_relabelRows_finRotate {x y : GridState n}
     (r : GridRectangleBetween x y) :
     relabelRowsEquiv (finRotate n) x y r ∈
@@ -170,7 +169,6 @@ theorem disjoint_XSet_relabelColumns_finRotate {x y : GridState n}
 omit R in
 /-- A cyclic permutation of the columns identifies the rectangles counted by the unblocked
 differentials. -/
-@[simp]
 theorem mem_unblockedRectangles_relabelColumns_finRotate {x y : GridState n}
     (r : GridRectangleBetween x y) :
     relabelColumnsEquiv (finRotate n) x y r ∈
