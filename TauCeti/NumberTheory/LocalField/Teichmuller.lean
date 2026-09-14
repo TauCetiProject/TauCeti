@@ -115,8 +115,10 @@ theorem teichmuller_apply (α : 𝓀[K]ˣ) :
 
 /-- The Teichmüller lift takes values in the `(q-1)`-torsion. -/
 @[simp]
-theorem teichmuller_pow (α : 𝓀[K]ˣ) : teichmuller K α ^ (Nat.card 𝓀[K] - 1) = 1 := by
+theorem teichmuller_pow (α : 𝓀[K]ˣ) :
+    teichmuller K α ^ (@Fintype.card 𝓀[K] (Fintype.ofFinite 𝓀[K]) - 1) = 1 := by
   rw [teichmuller_apply]
+  rw [← @Nat.card_eq_fintype_card 𝓀[K] (Fintype.ofFinite 𝓀[K])]
   exact ((rootsOfUnityEquivResidueFieldUnits K).symm α).2
 
 /-- **The Teichmüller lift is a section of reduction.** -/
@@ -132,7 +134,7 @@ theorem residue_teichmuller (α : 𝓀[K]ˣ) :
 /-- The Teichmüller lift is a section of reduction, in unit-group form. -/
 @[simp]
 theorem unitsMap_residue_teichmuller (α : 𝓀[K]ˣ) :
-    Units.map (residue 𝒪[K]).toMonoidHom (teichmuller K α) = α :=
+    Units.map (residue 𝒪[K]) (teichmuller K α) = α :=
   Units.ext (residue_teichmuller K α)
 
 /-- The Teichmüller lift is a section of reduction, as an identity of homomorphisms. -/
@@ -151,7 +153,11 @@ theorem eq_teichmuller {α : 𝓀[K]ˣ} {u : 𝒪[K]ˣ} (hpow : u ^ (Nat.card �
     (hres : residue 𝒪[K] (u : 𝒪[K]) = (α : 𝓀[K])) : u = teichmuller K α := by
   have hmem : u ∈ rootsOfUnity (Nat.card 𝓀[K] - 1) 𝒪[K] := hpow
   have h : (⟨u, hmem⟩ : rootsOfUnity (Nat.card 𝓀[K] - 1) 𝒪[K]) =
-      ⟨teichmuller K α, teichmuller_pow K α⟩ := by
+      ⟨teichmuller K α, by
+        rw [mem_rootsOfUnity']
+        simpa only [Units.val_pow_eq_pow_val, Units.val_one,
+          @Nat.card_eq_fintype_card 𝓀[K] (Fintype.ofFinite 𝓀[K])] using
+          congrArg (fun x : 𝒪[K]ˣ ↦ (x : 𝒪[K])) (teichmuller_pow K α)⟩ := by
     refine rootsOfUnityResidue_injective (isUnit_natCard_residueField_sub_one K) ?_
     ext
     simp [hres]
@@ -169,7 +175,10 @@ theorem range_teichmuller :
   ext u
   refine ⟨?_, fun hu ↦ ⟨rootsOfUnityEquivResidueFieldUnits K ⟨u, hu⟩, ?_⟩⟩
   · rintro ⟨α, rfl⟩
-    exact teichmuller_pow K α
+    rw [mem_rootsOfUnity']
+    simpa only [Units.val_pow_eq_pow_val, Units.val_one,
+      @Nat.card_eq_fintype_card 𝓀[K] (Fintype.ofFinite 𝓀[K])] using
+      congrArg (fun x : 𝒪[K]ˣ ↦ (x : 𝒪[K])) (teichmuller_pow K α)
   · rw [teichmuller_apply, MulEquiv.symm_apply_apply]
 
 /-! ### Roots of unity of the field itself
