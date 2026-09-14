@@ -302,7 +302,6 @@ theorem pathELength_le_eVariationOn (hγ : CMDiff[Icc a b] 1 γ) :
           inter_self, ENNReal.ofReal_toReal htop]
 
 /-- **The total variation of a `C¹` curve is its Riemannian path length.** -/
-@[simp]
 theorem eVariationOn_eq_pathELength (hγ : CMDiff[Icc a b] 1 γ) :
     eVariationOn γ (Icc a b) = Manifold.pathELength I γ a b :=
   (eVariationOn_le_pathELength hγ).antisymm (pathELength_le_eVariationOn hγ)
