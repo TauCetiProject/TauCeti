@@ -206,6 +206,27 @@ def cohomologyClassLinearMap (𝒜 : AInfinityAlgebra R A) : 𝒜.cycles →ₗ[
 def cohomologyClass (𝒜 : AInfinityAlgebra R A) {x : A} (hx : x ∈ 𝒜.cycles) : 𝒜.Cohomology :=
   𝒜.cohomologyClassLinearMap ⟨x, hx⟩
 
+/-- Zero represents zero in cohomology. -/
+@[simp]
+theorem cohomologyClass_zero (𝒜 : AInfinityAlgebra R A) :
+    𝒜.cohomologyClass (𝒜.cycles.zero_mem) = 0 := by
+  exact 𝒜.cohomologyClassLinearMap.map_zero
+
+/-- The class of a sum of cycles is the sum of their classes. -/
+@[simp]
+theorem cohomologyClass_add (𝒜 : AInfinityAlgebra R A) {x y : A}
+    (hx : x ∈ 𝒜.cycles) (hy : y ∈ 𝒜.cycles) :
+    𝒜.cohomologyClass (𝒜.cycles.add_mem hx hy) =
+      𝒜.cohomologyClass hx + 𝒜.cohomologyClass hy := by
+  exact 𝒜.cohomologyClassLinearMap.map_add ⟨x, hx⟩ ⟨y, hy⟩
+
+/-- The class of a scalar multiple of a cycle is the scalar multiple of its class. -/
+@[simp]
+theorem cohomologyClass_smul (𝒜 : AInfinityAlgebra R A) (r : R) {x : A}
+    (hx : x ∈ 𝒜.cycles) :
+    𝒜.cohomologyClass (𝒜.cycles.smul_mem r hx) = r • 𝒜.cohomologyClass hx := by
+  exact 𝒜.cohomologyClassLinearMap.map_smul r ⟨x, hx⟩
+
 /-- Every cohomology class is represented by a cycle. -/
 theorem exists_cohomologyClass_eq (𝒜 : AInfinityAlgebra R A) (c : 𝒜.Cohomology) :
     ∃ (x : A) (hx : x ∈ 𝒜.cycles), 𝒜.cohomologyClass hx = c := by
@@ -252,6 +273,99 @@ theorem coe_cyclesMul (𝒜 : AInfinityAlgebra R A) (x y : 𝒜.cycles) :
     (𝒜.cyclesMul x y : A) = 𝒜.m 2 ![x, y] := by
   simp [cyclesMul]
 
+private theorem m_two_assoc_sub_mem_boundaries (𝒜 : AInfinityAlgebra R A) {x y z : A}
+    (hx : x ∈ 𝒜.cycles) (hy : y ∈ 𝒜.cycles) (hz : z ∈ 𝒜.cycles) :
+    𝒜.m 2 ![𝒜.m 2 ![x, y], z] - 𝒜.m 2 ![x, 𝒜.m 2 ![y, z]] ∈ 𝒜.boundaries := by
+  let L : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    (𝒜.mul.compMultilinearMap (𝒜.m 2)).uncurryRight
+  let Qc : A →ₗ[R] MultilinearMap R (fun _ : Fin 2 ↦ A) A :=
+    { toFun := fun a ↦ (𝒜.mul a).compMultilinearMap (𝒜.m 2)
+      map_add' := fun a b ↦ by ext v; simp
+      map_smul' := fun r a ↦ by ext v; simp }
+  let Q : MultilinearMap R (fun _ : Fin 3 ↦ A) A := Qc.uncurryLeft
+  have L_apply (a b c : A) : L ![a, b, c] = 𝒜.m 2 ![𝒜.m 2 ![a, b], c] := by
+    simp only [L, MultilinearMap.uncurryRight_apply, LinearMap.compMultilinearMap_apply,
+      mul_apply]
+    congr 1
+    funext i
+    fin_cases i
+    · apply congrArg (𝒜.m 2)
+      funext j
+      fin_cases j <;> rfl
+    · rfl
+  have Q_apply (a b c : A) : Q ![a, b, c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
+    dsimp [Q, Qc]
+    simp only [mul_apply]
+  let D : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    𝒜.differential.compMultilinearMap (𝒜.m 3)
+  let T₀ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    (𝒜.m 3).compLinearMap ![𝒜.differential, LinearMap.id, LinearMap.id]
+  let T₁ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    (𝒜.m 3).compLinearMap
+      ![𝒜.grading.koszulTwist 1, 𝒜.differential, LinearMap.id]
+  let T₂ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    (𝒜.m 3).compLinearMap
+      ![𝒜.grading.koszulTwist 1, 𝒜.grading.koszulTwist 1, 𝒜.differential]
+  have D_apply (a b c : A) : D ![a, b, c] = 𝒜.differential (𝒜.m 3 ![a, b, c]) := rfl
+  have T₀_apply (a b c : A) : T₀ ![a, b, c] = 𝒜.m 3 ![𝒜.differential a, b, c] := by
+    simp only [T₀, MultilinearMap.compLinearMap_apply]
+    congr 1
+    funext i
+    fin_cases i <;> rfl
+  have T₁_apply (a b c : A) : T₁ ![a, b, c] =
+      𝒜.m 3 ![𝒜.grading.koszulTwist 1 a, 𝒜.differential b, c] := by
+    simp only [T₁, MultilinearMap.compLinearMap_apply]
+    congr 1
+    funext i
+    fin_cases i <;> rfl
+  have T₂_apply (a b c : A) : T₂ ![a, b, c] =
+      𝒜.m 3 ![𝒜.grading.koszulTwist 1 a, 𝒜.grading.koszulTwist 1 b,
+        𝒜.differential c] := by
+    simp only [T₂, MultilinearMap.compLinearMap_apply]
+    congr 1
+    funext i
+    fin_cases i <;> rfl
+  have m_three_smul_first (r : R) (a b c : A) :
+      𝒜.m 3 ![r • a, b, c] = r • 𝒜.m 3 ![a, b, c] := by
+    convert (𝒜.m 3).map_update_smul ![a, b, c] 0 r a using 2 <;>
+      congr 1 <;> funext i <;> fin_cases i <;> rfl
+  have m_three_smul_second (r : R) (a b c : A) :
+      𝒜.m 3 ![a, r • b, c] = r • 𝒜.m 3 ![a, b, c] := by
+    convert (𝒜.m 3).map_update_smul ![a, b, c] 1 r b using 2 <;>
+      congr 1 <;> funext i <;> fin_cases i <;> rfl
+  let E : MultilinearMap R (fun _ : Fin 3 ↦ A) A := D + L - Q + T₀ + T₁ + T₂
+  have hE : E = 0 := by
+    apply 𝒜.grading.multilinearMap_ext
+    intro d a ha
+    have avec : a = ![a 0, a 1, a 2] := by
+      funext i
+      fin_cases i <;> rfl
+    rw [avec]
+    simp only [E, add_apply, sub_apply, D_apply, L_apply, Q_apply, T₀_apply, T₁_apply,
+      T₂_apply, zero_apply, differential_apply,
+      𝒜.grading.koszulTwist_apply_of_mem (ha 0),
+      𝒜.grading.koszulTwist_apply_of_mem (ha 1),
+      m_three_smul_first, m_three_smul_second, smul_smul, one_mul]
+    rw [← negOnePowCast_eq_intCast (R := R) (d 0),
+      ← negOnePowCast_eq_intCast (R := R) (d 1), ← negOnePowCast_add]
+    exact 𝒜.stasheff_arity_three (a 0) (a 1) (a 2) (d 0) (d 1) (ha 0) (ha 1)
+  rw [mem_boundaries]
+  refine ⟨-𝒜.m 3 ![x, y, z], ?_⟩
+  have h := MultilinearMap.congr_fun hE ![x, y, z]
+  rw [mem_cycles] at hx hy hz
+  simp only [E, add_apply, sub_apply, D_apply, L_apply, Q_apply, T₀_apply, T₁_apply,
+    T₂_apply, zero_apply, differential_apply, hx, hy, hz] at h
+  have h₀ : 𝒜.m 3 ![(0 : A), y, z] = 0 := (𝒜.m 3).map_coord_zero 0 rfl
+  have h₁ : 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 0, z] = 0 :=
+    (𝒜.m 3).map_coord_zero 1 rfl
+  have h₂ : 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 𝒜.grading.koszulTwist 1 y, 0] = 0 :=
+    (𝒜.m 3).map_coord_zero 2 rfl
+  rw [h₀, h₁, h₂, add_zero] at h
+  rw [← differential_apply, map_neg, differential_apply]
+  apply neg_eq_iff_add_eq_zero.mpr
+  abel_nf at h ⊢
+  exact h
+
 /-- The product on cohomology induced by the binary operation. -/
 def cohomologyMul (𝒜 : AInfinityAlgebra R A) :
     𝒜.Cohomology →ₗ[R] 𝒜.Cohomology →ₗ[R] 𝒜.Cohomology :=
@@ -271,6 +385,17 @@ theorem cohomologyMul_cohomologyClass (𝒜 : AInfinityAlgebra R A) {x y : A}
       𝒜.cohomologyClass (𝒜.m_two_mem_cycles hx hy) := by
   simp only [cohomologyMul, cohomologyClass]
   rfl
+
+/-- The product induced on cohomology is associative. -/
+theorem cohomologyMul_assoc (𝒜 : AInfinityAlgebra R A) (a b c : 𝒜.Cohomology) :
+    𝒜.cohomologyMul (𝒜.cohomologyMul a b) c =
+      𝒜.cohomologyMul a (𝒜.cohomologyMul b c) := by
+  obtain ⟨x, hx, rfl⟩ := 𝒜.exists_cohomologyClass_eq a
+  obtain ⟨y, hy, rfl⟩ := 𝒜.exists_cohomologyClass_eq b
+  obtain ⟨z, hz, rfl⟩ := 𝒜.exists_cohomologyClass_eq c
+  simp only [cohomologyMul_cohomologyClass]
+  rw [cohomologyClass_eq_iff]
+  exact 𝒜.m_two_assoc_sub_mem_boundaries hx hy hz
 
 end AInfinityAlgebra
 
