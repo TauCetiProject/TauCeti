@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Rat.Lemmas
+public import Mathlib.Data.PNat.Defs
 public import TauCeti.Combinatorics.PermutationTriple.CycleData
 
 /-!
@@ -95,6 +96,7 @@ theorem orderTriple_transport (e : Fin n ≃ Fin m) (t : PermutationTriple n) :
     e.permCongrHom.orderOf_eq t.σ1, e.permCongrHom.orderOf_eq t.σinf⟩
 
 /-- Inverting all three components does not change their ordered triple of orders. -/
+@[simp]
 theorem orderTriple_inv_components (t : PermutationTriple n) :
     (orderOf t.σ0⁻¹, orderOf t.σ1⁻¹, orderOf t.σinf⁻¹) = t.orderTriple := by
   simp [orderTriple, orderOf_inv]
@@ -116,15 +118,15 @@ inductive GeometryType : Type
 
 namespace GeometryType
 
-/-- Classify three orders as spherical, Euclidean, or hyperbolic according as their reciprocal
-sum is greater than, equal to, or less than one. -/
-def ofOrders (abc : ℕ × ℕ × ℕ) : GeometryType :=
+/-- Classify three positive orders as spherical, Euclidean, or hyperbolic according as their
+reciprocal sum is greater than, equal to, or less than one. -/
+def ofOrders (abc : ℕ+ × ℕ+ × ℕ+) : GeometryType :=
   let s : ℚ := (abc.1 : ℚ)⁻¹ + (abc.2.1 : ℚ)⁻¹ + (abc.2.2 : ℚ)⁻¹
   if 1 < s then .spherical else if s = 1 then .euclidean else .hyperbolic
 
 /-- Three orders have spherical type exactly when their reciprocal sum is greater than one. -/
 @[simp]
-theorem ofOrders_eq_spherical_iff (abc : ℕ × ℕ × ℕ) :
+theorem ofOrders_eq_spherical_iff (abc : ℕ+ × ℕ+ × ℕ+) :
     ofOrders abc = .spherical ↔
       1 < (abc.1 : ℚ)⁻¹ + (abc.2.1 : ℚ)⁻¹ + (abc.2.2 : ℚ)⁻¹ := by
   simp only [ofOrders]
@@ -135,7 +137,7 @@ theorem ofOrders_eq_spherical_iff (abc : ℕ × ℕ × ℕ) :
 
 /-- Three orders have Euclidean type exactly when their reciprocal sum is one. -/
 @[simp]
-theorem ofOrders_eq_euclidean_iff (abc : ℕ × ℕ × ℕ) :
+theorem ofOrders_eq_euclidean_iff (abc : ℕ+ × ℕ+ × ℕ+) :
     ofOrders abc = .euclidean ↔
       (abc.1 : ℚ)⁻¹ + (abc.2.1 : ℚ)⁻¹ + (abc.2.2 : ℚ)⁻¹ = 1 := by
   simp only [ofOrders]
@@ -145,7 +147,7 @@ theorem ofOrders_eq_euclidean_iff (abc : ℕ × ℕ × ℕ) :
 
 /-- Three orders have hyperbolic type exactly when their reciprocal sum is less than one. -/
 @[simp]
-theorem ofOrders_eq_hyperbolic_iff (abc : ℕ × ℕ × ℕ) :
+theorem ofOrders_eq_hyperbolic_iff (abc : ℕ+ × ℕ+ × ℕ+) :
     ofOrders abc = .hyperbolic ↔
       (abc.1 : ℚ)⁻¹ + (abc.2.1 : ℚ)⁻¹ + (abc.2.2 : ℚ)⁻¹ < 1 := by
   simp only [ofOrders]
@@ -166,7 +168,9 @@ variable {n : ℕ}
 /-- The spherical, Euclidean, or hyperbolic geometry type of a permutation triple, determined by
 the exact rational reciprocal sum of its three component orders. -/
 noncomputable def geometryType (t : PermutationTriple n) : GeometryType :=
-  GeometryType.ofOrders t.orderTriple
+  GeometryType.ofOrders
+    ((⟨orderOf t.σ0, orderOf_pos _⟩ : ℕ+), (⟨orderOf t.σ1, orderOf_pos _⟩ : ℕ+),
+      (⟨orderOf t.σinf, orderOf_pos _⟩ : ℕ+))
 
 /-- A permutation triple is spherical exactly when the reciprocal sum of its component orders is
 greater than one. -/
@@ -196,13 +200,25 @@ theorem geometryType_eq_hyperbolic_iff (t : PermutationTriple n) :
 @[simp]
 theorem geometryType_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
     geometryType (τ • t) = geometryType t := by
-  simp [geometryType]
+  apply congrArg GeometryType.ofOrders
+  apply Prod.ext
+  · apply PNat.eq
+    exact congrArg Prod.fst (orderTriple_smul τ t)
+  · apply Prod.ext <;> apply PNat.eq
+    · exact congrArg (fun abc => abc.2.1) (orderTriple_smul τ t)
+    · exact congrArg (fun abc => abc.2.2) (orderTriple_smul τ t)
 
 /-- Transporting the sheet labels along an equivalence does not change the geometry type. -/
 @[simp]
 theorem geometryType_transport {m : ℕ} (e : Fin n ≃ Fin m) (t : PermutationTriple n) :
     geometryType (transport e t) = geometryType t := by
-  simp [geometryType]
+  apply congrArg GeometryType.ofOrders
+  apply Prod.ext
+  · apply PNat.eq
+    exact congrArg Prod.fst (orderTriple_transport e t)
+  · apply Prod.ext <;> apply PNat.eq
+    · exact congrArg (fun abc => abc.2.1) (orderTriple_transport e t)
+    · exact congrArg (fun abc => abc.2.2) (orderTriple_transport e t)
 
 /-- The trivial permutation triple has spherical geometry type. -/
 @[simp]
@@ -211,16 +227,25 @@ theorem geometryType_one : (1 : PermutationTriple n).geometryType = .spherical :
 
 /-- Inverting all three components, as in the opposite composition convention, does not change
 the geometry type computed from their orders. -/
+@[simp]
 theorem geometryType_inv_components (t : PermutationTriple n) :
-    GeometryType.ofOrders (orderOf t.σ0⁻¹, orderOf t.σ1⁻¹, orderOf t.σinf⁻¹) =
+    GeometryType.ofOrders
+        ((⟨orderOf t.σ0⁻¹, orderOf_pos _⟩ : ℕ+),
+          (⟨orderOf t.σ1⁻¹, orderOf_pos _⟩ : ℕ+),
+          (⟨orderOf t.σinf⁻¹, orderOf_pos _⟩ : ℕ+)) =
       t.geometryType := by
-  rw [orderTriple_inv_components]
-  rfl
+  apply congrArg GeometryType.ofOrders
+  apply Prod.ext
+  · exact PNat.eq (orderOf_inv t.σ0)
+  · apply Prod.ext
+    · exact PNat.eq (orderOf_inv t.σ1)
+    · exact PNat.eq (orderOf_inv t.σinf)
 
 /-- Isomorphic permutation triples have the same geometry type. -/
 theorem geometryType_eq_of_equivalent {t t' : PermutationTriple n} (h : Equivalent t t') :
     geometryType t = geometryType t' := by
-  rw [geometryType, geometryType, orderTriple_eq_of_equivalent h]
+  obtain ⟨τ, rfl⟩ := equivalent_iff_exists_smul_eq.mp h
+  exact (geometryType_smul τ t).symm
 
 end PermutationTriple
 
