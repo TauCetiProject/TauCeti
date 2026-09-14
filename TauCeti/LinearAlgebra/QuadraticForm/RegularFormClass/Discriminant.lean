@@ -47,9 +47,10 @@ is killed by two.
 * `TauCeti.RegularFormClass.signedDiscr_add` and `TauCeti.RegularFormClass.signedDiscr_mul`: the
   signed discriminant of an orthogonal sum picks up the sign `(-1)^{mn}`, and that of a tensor
   product is `(-1)^{mn(mn-1)/2} d(q)^n d(r)^m`.
-* `TauCeti.RegularFormClass.signedDiscr_mk_rankOne` and
-  `TauCeti.RegularFormClass.signedDiscr_mk_rankOne_mul`: `d±⟨a⟩ = a`, and scaling by `a` multiplies
-  the signed discriminant of a class of rank `m` by `a^m`.
+* `TauCeti.RegularFormClass.discr_mk_rankOne_mul` and
+  `TauCeti.RegularFormClass.signedDiscr_mk_rankOne_mul`: scaling by `a` adds
+  `m • squareClass a` to the (signed) discriminant of a class of rank `m`.
+* `TauCeti.RegularFormClass.signedDiscr_mk_rankOne`: `d±⟨a⟩ = squareClass a`.
 * `TauCeti.RegularFormClass.discr_hyperbolicClass` and
   `TauCeti.RegularFormClass.signedDiscr_hyperbolicClass`: the discriminant of a hyperbolic plane
   is the class of `-1`, and its signed discriminant is trivial.
@@ -131,8 +132,8 @@ theorem discr_one : discr (1 : RegularFormClass K) = 0 := by
   rw [RegularFormClass.one_def, discr_mk]
   simp
 
-/-- **The discriminant of a tensor product**: `d(q ⊗ r) = d(q)^n d(r)^m` for `q` of rank `m` and
-`r` of rank `n`, written additively in the square-class group. -/
+/-- **The discriminant of a tensor product**: `d(q ⊗ r) = n • d(q) + m • d(r)` for `q` of
+rank `m` and `r` of rank `n`, in the additively written square-class group. -/
 @[simp]
 theorem discr_mul (x y : RegularFormClass K) :
     discr (x * y) = rank y • discr x + rank x • discr y := by
@@ -141,11 +142,18 @@ theorem discr_mul (x y : RegularFormClass K) :
     ← squareClass_pow, ← squareClass_pow, ← squareClass_mul,
     RegularFormPresentation.prod_tmul]
 
+/-- **Scaling by a unit**: `d(⟨a⟩ ⊗ q) = m • squareClass a + d(q)` for `q` of rank `m`,
+where scaling by `a` is multiplication by the rank-one class `⟨a⟩`. -/
+theorem discr_mk_rankOne_mul (a : Kˣ) (x : RegularFormClass K) :
+    discr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ * x) =
+      rank x • squareClass a + discr x := by
+  rw [discr_mul, rank_mk, one_nsmul, discr_mk, Fin.prod_univ_one]
+
 /-! ### The signed discriminant -/
 
-/-- **The signed discriminant** `d±(q) = (-1)^{m(m-1)/2} d(q)` of a class of rank `m`, written
-additively in the square-class group. The exponent is recorded as `m.choose 2`, which equals
-`m * (m - 1) / 2` by `Nat.choose_two_right`. -/
+/-- **The signed discriminant** `d±(q) = m.choose 2 • squareClass (-1) + d(q)` of a class of
+rank `m`, in the additively written square-class group. The exponent is recorded as `m.choose 2`,
+which equals `m * (m - 1) / 2` by `Nat.choose_two_right`. -/
 def signedDiscr (x : RegularFormClass K) : SquareClassGroup K :=
   (rank x).choose 2 • squareClass (-1 : Kˣ) + discr x
 
@@ -184,9 +192,10 @@ theorem signedDiscr_mk_rankOne (a : Kˣ) :
     signedDiscr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) = squareClass a := by
   rw [signedDiscr_eq_discr_of_rank_le_one (by rw [rank_mk]), discr_mk, Fin.prod_univ_one]
 
-/-- **The signed discriminant of an orthogonal sum**: `d±(q ⊥ r) = (-1)^{mn} d±(q) d±(r)` for `q`
-of rank `m` and `r` of rank `n`, written additively in the square-class group. The cross term is
-what the unsigned discriminant misses. -/
+/-- **The signed discriminant of an orthogonal sum**:
+`d±(q ⊥ r) = mn • squareClass (-1) + d±(q) + d±(r)` for `q` of rank `m` and `r` of rank
+`n`, in the additively written square-class group. The cross term is what the unsigned
+discriminant misses. -/
 theorem signedDiscr_add (x y : RegularFormClass K) :
     signedDiscr (x + y) =
       (rank x * rank y) • squareClass (-1 : Kˣ) + signedDiscr x + signedDiscr y := by
@@ -194,8 +203,9 @@ theorem signedDiscr_add (x y : RegularFormClass K) :
     signedDiscr_eq_sign_add_discr, discr_add, rank_add, Nat.add_choose_two, add_nsmul, add_nsmul]
   abel
 
-/-- **The signed discriminant of a tensor product**: `d±(q ⊗ r) = (-1)^{mn(mn-1)/2} d(q)^n d(r)^m`
-for `q` of rank `m` and `r` of rank `n`, written additively in the square-class group. -/
+/-- **The signed discriminant of a tensor product**:
+`d±(q ⊗ r) = (mn).choose 2 • squareClass (-1) + n • d(q) + m • d(r)` for `q` of rank `m`
+and `r` of rank `n`, in the additively written square-class group. -/
 @[simp]
 theorem signedDiscr_mul (x y : RegularFormClass K) :
     signedDiscr (x * y) =
@@ -203,8 +213,8 @@ theorem signedDiscr_mul (x y : RegularFormClass K) :
         (rank y • discr x + rank x • discr y) := by
   rw [signedDiscr_eq_sign_add_discr, discr_mul, rank_mul]
 
-/-- **Scaling by a unit**: `d±(a • q) = a^m d±(q)` for `q` of rank `m`, where scaling by `a` is
-multiplication by the rank-one class `⟨a⟩`, written additively in the square-class group. -/
+/-- **Scaling by a unit**: `d±(⟨a⟩ ⊗ q) = m • squareClass a + d±(q)` for `q` of rank
+`m`, where scaling by `a` is multiplication by the rank-one class `⟨a⟩`. -/
 theorem signedDiscr_mk_rankOne_mul (a : Kˣ) (x : RegularFormClass K) :
     signedDiscr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ * x) =
       rank x • squareClass a + signedDiscr x := by
