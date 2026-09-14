@@ -24,6 +24,8 @@ Mathlib's `GL(2, ℝ)`-invariance).
 
 ## Main results
 
+* `UpperHalfPlane.toGL_smul` — the `SL(2, ℝ)`-action is the `GL(2, ℝ)`-action of the
+  underlying matrix.
 * `UpperHalfPlane.smul_eq_self_of_mem_center` — the center of `SL(2, R)` acts trivially,
   for any coefficients mapping to `ℝ`.
 * `UpperHalfPlane.instMulActionPSL2` — the `PSL(2, R)`-action for any coefficients mapping
@@ -95,6 +97,15 @@ lemma smul_eq_smul_of_coe_eq_smul {g h : GL (Fin 2) ℝ} {c : ℝ} (hc : c ≠ 0
     ext i j
     simp [Matrix.scalar, Matrix.diagonal_mul]
   rw [h_mul, mul_smul, glScalar_smul]
+
+/-- The `SL(2, ℝ)`-action on `ℍ` is the `GL(2, ℝ)`-action of the underlying matrix. -/
+@[simp]
+theorem toGL_smul (g : SL(2, ℝ)) (τ : ℍ) : Matrix.SpecialLinearGroup.toGL g • τ = g • τ := by
+  -- the action is `MulAction.compHom` along `mapGL ℝ`, and `algebraMap ℝ ℝ` is the identity
+  have h : Matrix.SpecialLinearGroup.mapGL ℝ g = Matrix.SpecialLinearGroup.toGL g := by
+    ext i j
+    simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
+  rw [MulAction.compHom_smul_def, h]
 
 /-- Central elements of `SL(2, R)` fix every point of `ℍ`, for any coefficients mapping
 to `ℝ`: they are the scalar matrices `r • 1` with `r ^ 2 = 1`, and nonzero-scalar
