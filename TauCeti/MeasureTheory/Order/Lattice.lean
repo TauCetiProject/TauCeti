@@ -18,9 +18,9 @@ variables in their own right: their laws are pushforwards, and their distributio
 computed from those of the family.
 
 Mathlib proves the measurable supremum, `Finset.measurable_sup'`, and has no infimum counterpart;
-this file supplies the infimum, the almost-everywhere forms of both, and the coordinatewise
-version `x ↦ sup' (fun n => f n x)` of the almost-everywhere forms, which is the spelling their
-consumers use. The infimum lemmas are the supremum lemmas at the order dual.
+this file supplies the almost-everywhere supremum and the coordinatewise versions
+`x ↦ sup' (fun n => f n x)` and `x ↦ inf' (fun n => f n x)`, which is the spelling their
+consumers use.
 -/
 
 public section
@@ -31,13 +31,6 @@ open MeasureTheory
 
 variable {ι α δ : Type*} [MeasurableSpace α] [MeasurableSpace δ] {μ : Measure δ}
   {s : Finset ι} {f : ι → δ → α}
-
-/-- The infimum of a nonempty finite family of measurable functions is measurable. -/
-@[fun_prop]
-theorem measurable_inf' [SemilatticeInf α] [MeasurableInf₂ α] (hs : s.Nonempty)
-    (hf : ∀ n ∈ s, Measurable (f n)) : Measurable (s.inf' hs f) :=
-  -- the infimum is the supremum of the order dual: `Finset.toDual_sup'` is `rfl`
-  Finset.measurable_sup' (α := αᵒᵈ) hs hf
 
 /-- The supremum of a nonempty finite family of a.e.-measurable functions is a.e. measurable. -/
 @[fun_prop]
@@ -54,19 +47,13 @@ theorem aemeasurable_fun_sup' [SemilatticeSup α] [MeasurableSup₂ α] (hs : s.
     (hf : ∀ n ∈ s, AEMeasurable (f n) μ) : AEMeasurable (fun x => s.sup' hs fun n => f n x) μ :=
   (aemeasurable_sup' hs hf).congr (Filter.Eventually.of_forall fun x => Finset.sup'_apply hs f x)
 
-/-- The infimum of a nonempty finite family of a.e.-measurable functions is a.e. measurable. -/
-@[fun_prop]
-theorem aemeasurable_inf' [SemilatticeInf α] [MeasurableInf₂ α] (hs : s.Nonempty)
-    (hf : ∀ n ∈ s, AEMeasurable (f n) μ) : AEMeasurable (s.inf' hs f) μ :=
-  -- the infimum is the supremum of the order dual: `Finset.toDual_sup'` is `rfl`
-  aemeasurable_sup' (α := αᵒᵈ) hs hf
-
-/-- The coordinatewise form of `Finset.aemeasurable_inf'`: the pointwise infimum
-`x ↦ inf' (fun n => f n x)` of a nonempty finite family of a.e.-measurable functions is a.e.
-measurable. -/
+/-- The pointwise infimum `x ↦ inf' (fun n => f n x)` of a nonempty finite family of
+a.e.-measurable functions is a.e. measurable. -/
 @[fun_prop]
 theorem aemeasurable_fun_inf' [SemilatticeInf α] [MeasurableInf₂ α] (hs : s.Nonempty)
     (hf : ∀ n ∈ s, AEMeasurable (f n) μ) : AEMeasurable (fun x => s.inf' hs fun n => f n x) μ :=
-  (aemeasurable_inf' hs hf).congr (Filter.Eventually.of_forall fun x => Finset.inf'_apply hs f x)
+  -- the infimum in `α` is the supremum in the order dual `αᵒᵈ`, and `Finset.inf'` at `α` is
+  -- `Finset.sup'` at `αᵒᵈ` by definition, so the supremum lemma at the dual is this statement
+  aemeasurable_fun_sup' (α := αᵒᵈ) hs hf
 
 end Finset
