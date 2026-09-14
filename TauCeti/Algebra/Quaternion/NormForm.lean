@@ -49,12 +49,6 @@ are what turn it into a question about `⟨1, -a, -b, ab⟩`.
   is the diagonal form `⟨-a, -b, ab⟩`, with the explicit isometry
   `QuaternionAlgebra.pureNormFormIsometryEquivWeightedSumSquares`.
 
-## Implementation notes
-
-`QuaternionAlgebra.normForm_mul` is Mathlib's multiplicativity argument for `Quaternion.normSq`,
-which moves `star (x * y) = star y * star x` past the scalar `y * star y`, run for a general
-`ℍ[R,c₁,c₂,c₃]`; `Quaternion.normSq_eq_normForm` records that the two agree on `ℍ[R]`.
-
 ## References
 
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields* (2005), Chapter III, §2.
@@ -84,7 +78,7 @@ theorem normForm_apply (x : ℍ[R,c₁,c₂,c₃]) : normForm c₁ c₂ c₃ x =
 
 /-- The norm form in coordinates: the basis `1, i, j, k` is orthogonal for it as soon as
 `c₂ = 0`. -/
-theorem normForm_apply' (x : ℍ[R,c₁,c₂,c₃]) :
+theorem normForm_apply_coordinates (x : ℍ[R,c₁,c₂,c₃]) :
     normForm c₁ c₂ c₃ x = x.re ^ 2 + c₂ * x.re * x.imI - c₁ * x.imI ^ 2 - c₃ * x.imJ ^ 2
       - c₂ * c₃ * x.imJ * x.imK + c₁ * c₃ * x.imK ^ 2 := by
   simp [normForm_apply, re_mul]; ring
@@ -94,10 +88,12 @@ theorem polar_normForm (x y : ℍ[R,c₁,c₂,c₃]) :
     polar (normForm c₁ c₂ c₃) x y = (x * star y + y * star x).re := by
   simp [polar, normForm_apply, re_mul]; ring
 
+/-- A quaternion times its conjugate is the scalar given by its norm form. -/
 theorem self_mul_star (x : ℍ[R,c₁,c₂,c₃]) :
     x * star x = (normForm c₁ c₂ c₃ x : ℍ[R,c₁,c₂,c₃]) := by
   rw [normForm_apply]; exact mul_star_eq_coe x
 
+/-- The conjugate of a quaternion times the quaternion is the scalar given by its norm form. -/
 theorem star_mul_self (x : ℍ[R,c₁,c₂,c₃]) :
     star x * x = (normForm c₁ c₂ c₃ x : ℍ[R,c₁,c₂,c₃]) := by
   rw [star_comm_self', self_mul_star]
@@ -119,11 +115,17 @@ theorem normForm_star (x : ℍ[R,c₁,c₂,c₃]) :
 @[simp]
 theorem normForm_mul (x y : ℍ[R,c₁,c₂,c₃]) :
     normForm c₁ c₂ c₃ (x * y) = normForm c₁ c₂ c₃ x * normForm c₁ c₂ c₃ y := by
-  obtain ⟨X, hx⟩ : ∃ X : R, x * star x = (X : ℍ[R,c₁,c₂,c₃]) := ⟨_, mul_star_eq_coe x⟩
-  obtain ⟨Y, hy⟩ : ∃ Y : R, y * star y = (Y : ℍ[R,c₁,c₂,c₃]) := ⟨_, mul_star_eq_coe y⟩
-  have h : x * y * star (x * y) = ((X * Y : R) : ℍ[R,c₁,c₂,c₃]) := by
-    rw [star_mul, mul_assoc, ← mul_assoc y, hy, comm, ← mul_assoc, hx, ← coe_mul]
-  simp only [normForm_apply, h, hx, hy, re_coe]
+  -- This is Mathlib's multiplicativity argument for `Quaternion.normSq`, run for a general
+  -- `ℍ[R,c₁,c₂,c₃]`: the scalar `y * star y` commutes past `star x`.
+  have h : x * y * star (x * y) =
+      ((normForm c₁ c₂ c₃ x * normForm c₁ c₂ c₃ y : R) : ℍ[R,c₁,c₂,c₃]) :=
+    calc x * y * star (x * y)
+        _ = x * (y * star y) * star x := by rw [star_mul]; simp only [mul_assoc]
+        _ = x * star x * (normForm c₁ c₂ c₃ y : ℍ[R,c₁,c₂,c₃]) := by
+          rw [self_mul_star, mul_assoc, coe_commutes, mul_assoc]
+        _ = ((normForm c₁ c₂ c₃ x * normForm c₁ c₂ c₃ y : R) : ℍ[R,c₁,c₂,c₃]) := by
+          rw [self_mul_star, coe_mul]
+  rw [normForm_apply, h, re_coe]
 
 section Diagonal
 
@@ -146,11 +148,11 @@ theorem pureNormForm_apply (x : LinearMap.ker (reₗ a (0 : R) b)) :
     pureNormForm a b x = normForm a 0 b x := (rfl)
 
 /-- The pure norm form in coordinates: the basis `i, j, k` is orthogonal for it. -/
-theorem pureNormForm_apply' (x : LinearMap.ker (reₗ a (0 : R) b)) :
+theorem pureNormForm_apply_coordinates (x : LinearMap.ker (reₗ a (0 : R) b)) :
     pureNormForm a b x = -(a * (x : ℍ[R,a,b]).imI ^ 2) - b * (x : ℍ[R,a,b]).imJ ^ 2
       + a * b * (x : ℍ[R,a,b]).imK ^ 2 := by
   have hx : (x : ℍ[R,a,b]).re = 0 := x.2
-  rw [pureNormForm_apply, normForm_apply']
+  rw [pureNormForm_apply, normForm_apply_coordinates]
   simp [hx]
 
 /-- The coordinates `1, i, j, k` are an isometry from the norm form of `ℍ[R,a,b]` to the diagonal
@@ -158,7 +160,7 @@ form `⟨1, -a, -b, ab⟩`, the two-fold Pfister form `⟨⟨a,b⟩⟩`. -/
 def normFormIsometryEquivWeightedSumSquares :
     (normForm a 0 b).IsometryEquiv (weightedSumSquares R ![1, -a, -b, a * b]) where
   __ := linearEquivTuple a 0 b
-  map_app' x := by simp [normForm_apply', Fin.sum_univ_four]; ring
+  map_app' x := by simp [normForm_apply_coordinates, Fin.sum_univ_four]; ring
 
 @[simp]
 theorem normFormIsometryEquivWeightedSumSquares_apply (x : ℍ[R,a,b]) :
@@ -183,7 +185,7 @@ def pureNormFormIsometryEquivWeightedSumSquares :
   right_inv _ := by ext i; fin_cases i <;> simp
   map_app' x := by
     have hx : (x : ℍ[R,a,b]).re = 0 := x.2
-    simp [normForm_apply', hx, Fin.sum_univ_three]
+    simp [normForm_apply_coordinates, hx, Fin.sum_univ_three]
     ring
 
 @[simp]
