@@ -28,13 +28,16 @@ side condition absorbs this collision bias.
 
 * `TauCeti.DenseGraphLimits.sampleGraph_homDensityFin_concentration` — the probability of a
   deviation of at least `ε` is at most `2 * exp (-ε²n / (2|V(F)|²))`.
+* `TauCeti.DenseGraphLimits.tsum_sampleGraph_homDensityFin_tail_ne_top` — for fixed positive
+  `ε`, these deviation probabilities are summable over positive sample sizes.
 
 ## References
 
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §10.1.
 * C. Freer, `cameronfreer/graphon` at commit
   `6eccca5bbe5c9df46d7129bf59575b8b9b1d6699`, Apache-2.0, `Graphon/SampleExposure.lean`.
-  The centering, collision-bias transfer, and two-tail calculation are adapted from that file.
+  The centering, collision-bias transfer, two-tail calculation, and tail-summability argument are
+  adapted from that file.
 -/
 
 public section
@@ -215,6 +218,67 @@ theorem sampleGraph_homDensityFin_concentration {V : Type*} [Fintype V]
         exact (not_le.mpr (lt_of_not_ge hε1)) (hG.trans hdiff)
       rw [hset, measureReal_empty]
       positivity
+
+/-- **Summability of sampled homomorphism-density tails.** For a fixed finite graph `F` and
+`ε > 0`, the total mass of the events
+
+`|t(F, G(n + 1, W)) - t(F, W)| ≥ ε`
+
+is finite. Thus the finite-marginal concentration bound has the summable form needed by the first
+Borel--Cantelli lemma on the joint sampling space. -/
+theorem tsum_sampleGraph_homDensityFin_tail_ne_top {V : Type*} [Fintype V]
+    (F : SimpleGraph V) [DecidableRel F.Adj] (W : Graphon Ω μ) {ε : ℝ} (hε : 0 < ε) :
+    (∑' n : ℕ, (sampleGraph W (n + 1))
+      {G | ε ≤ |homDensityFin F G - homDensity F W|}) ≠ ⊤ := by
+  have hofReal : ∀ n : ℕ, (sampleGraph W (n + 1))
+      {G | ε ≤ |homDensityFin F G - homDensity F W|} =
+        ENNReal.ofReal ((sampleGraph W (n + 1)).real
+          {G | ε ≤ |homDensityFin F G - homDensity F W|}) :=
+    fun n => (ENNReal.ofReal_toReal (measure_ne_top _ _)).symm
+  have hsummable : Summable fun n : ℕ => (sampleGraph W (n + 1)).real
+      {G | ε ≤ |homDensityFin F G - homDensity F W|} := by
+    rcases Nat.eq_zero_or_pos (Fintype.card V) with hV | hV
+    · let _ : IsEmpty V := Fintype.card_eq_zero_iff.mp hV
+      have hhom : homDensity F W = 1 := by
+        have hedge : F.edgeFinset = ∅ := by
+          ext e
+          exact isEmptyElim e
+        rw [homDensity_def, hedge]
+        simp
+      have hzero : ∀ n : ℕ, (sampleGraph W (n + 1)).real
+          {G | ε ≤ |homDensityFin F G - homDensity F W|} = 0 := by
+        intro n
+        have hset : {G : SimpleGraph (Fin (n + 1)) |
+            ε ≤ |homDensityFin F G - homDensity F W|} = ∅ := by
+          simp [homDensityFin_def, hhom, not_le_of_gt hε]
+        rw [hset, measureReal_empty]
+      exact (summable_congr fun n => (hzero n).symm).mp summable_zero
+    · set N := ⌈2 * (Fintype.card V : ℝ) ^ 2 / ε⌉₊
+      rw [← summable_nat_add_iff N]
+      refine Summable.of_nonneg_of_le
+        (f := fun n : ℕ => 2 * Real.exp (-(ε ^ 2 * ((n + N + 1 : ℕ) : ℝ)) /
+          (2 * (Fintype.card V : ℝ) ^ 2)))
+        (fun _ => measureReal_nonneg) (fun n => ?_) ?_
+      · refine sampleGraph_homDensityFin_concentration F W hε ?_
+        have h1 : 2 * (Fintype.card V : ℝ) ^ 2 / ε ≤ (N : ℝ) := Nat.le_ceil _
+        have h2 : (N : ℝ) ≤ ((n + N + 1 : ℕ) : ℝ) := by
+          push_cast
+          linarith
+        have h3 := (div_le_iff₀ hε).mp (h1.trans h2)
+        linarith
+      · have hcard : (0 : ℝ) < Fintype.card V := by exact_mod_cast hV
+        have hcpos : (0 : ℝ) < ε ^ 2 / (2 * (Fintype.card V : ℝ) ^ 2) := by
+          positivity
+        have hsum := Real.summable_exp_nat_mul_of_ge
+          (c := -(ε ^ 2 / (2 * (Fintype.card V : ℝ) ^ 2))) (neg_lt_zero.mpr hcpos)
+          (f := fun i : ℕ => (i : ℝ) + N + 1)
+          (fun i => by linarith [Nat.cast_nonneg (α := ℝ) N])
+        refine ((hsum.mul_left 2).congr fun n => ?_)
+        congr 2
+        push_cast
+        field_simp
+  rw [tsum_congr hofReal]
+  exact hsummable.tsum_ofReal_ne_top
 
 end DenseGraphLimits
 
