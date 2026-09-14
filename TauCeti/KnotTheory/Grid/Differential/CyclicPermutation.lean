@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Chain.Relabeling
 public import TauCeti.KnotTheory.Grid.Rectangle.Relabeling
 public import TauCeti.KnotTheory.Grid.Unblocked
 
@@ -25,11 +24,6 @@ linear isomorphism intertwining the two unblocked differentials. For a cyclic pe
 columns the rectangle weights are renamed by the same permutation, so the intertwining map on
 `GC⁻` also renames the variables in the coefficients. The fully blocked complex has no variables,
 so there the chain relabelings intertwine the differentials for rows and columns alike.
-
-## Main definitions
-
-* `TauCeti.GridChain.relabelColumnsRename`: the map on `GC⁻` that relabels the columns of every
-  grid state and renames the variables of every coefficient by the same permutation.
 
 ## Main results
 
@@ -58,43 +52,6 @@ public section
 namespace TauCeti
 
 open MvPolynomial
-
-namespace GridChain
-
-variable {n : ℕ} (R : Type*) [CommSemiring R]
-
-/-- The map on the unblocked grid chains `GC⁻` induced by a permutation `κ` of the column labels:
-it relabels the columns of every grid state and renames the variables of every coefficient by `κ`.
-
-It is semilinear over the renaming automorphism `MvPolynomial.rename κ` of the coefficient ring,
-since the variables `V_c` of `GC⁻` are indexed by the columns and are renamed along. -/
-noncomputable def relabelColumnsRename (κ : Equiv.Perm (Fin n)) :
-    GridChainMinus R n →ₛₗ[((rename ⇑κ : MvPolynomial (Fin n) R →ₐ[R] MvPolynomial (Fin n) R) :
-        MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)]
-      GridChainMinus R n :=
-  (relabelColumnsEquiv κ).toLinearMap.comp
-    (Finsupp.mapRange.linearMap
-      ((rename ⇑κ : MvPolynomial (Fin n) R →ₐ[R] MvPolynomial (Fin n) R) :
-        MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R).toSemilinearMap)
-
-/-- The coefficient of a relabeled and renamed chain at a state is the renamed coefficient at the
-inverse-relabeled state. -/
-@[simp]
-theorem relabelColumnsRename_apply (κ : Equiv.Perm (Fin n)) (c : GridChainMinus R n)
-    (y : GridState n) :
-    relabelColumnsRename R κ c y = rename κ (c (y.relabelColumns κ.symm)) := by
-  simp [relabelColumnsRename]
-
-/-- Relabeling and renaming send a generator with coefficient `a` to the relabeled generator with
-the renamed coefficient. -/
-@[simp]
-theorem relabelColumnsRename_single (κ : Equiv.Perm (Fin n)) (x : GridState n)
-    (a : MvPolynomial (Fin n) R) :
-    relabelColumnsRename R κ (Finsupp.single x a) =
-      Finsupp.single (x.relabelColumns κ) (rename κ a) := by
-  simp [relabelColumnsRename]
-
-end GridChain
 
 namespace GridDiagram
 
@@ -269,13 +226,15 @@ of the coefficients by the same permutation, intertwines the unblocked different
 the column-permuted diagram. -/
 theorem unblockedDifferential_relabelColumns_finRotate :
     ((G.relabelColumns (finRotate n)).unblockedDifferential R).comp
-        (GridChain.relabelColumnsRename R (finRotate n)) =
-      (GridChain.relabelColumnsRename R (finRotate n)).comp (G.unblockedDifferential R) := by
+        (GridChain.relabelColumnsRenameEquiv R (finRotate n)).toLinearMap =
+      (GridChain.relabelColumnsRenameEquiv R (finRotate n)).toLinearMap.comp
+        (G.unblockedDifferential R) := by
   refine Finsupp.lhom_ext' fun x => LinearMap.ext_ring (Finsupp.ext fun y => ?_)
   obtain ⟨y, rfl⟩ : ∃ y', y'.relabelColumns (finRotate n) = y :=
     ⟨y.relabelColumns (finRotate n).symm, by simp⟩
-  simp only [LinearMap.comp_apply, Finsupp.lsingle_apply, GridChain.relabelColumnsRename_single,
-    map_one, unblockedDifferential_single_apply, GridChain.relabelColumnsRename_apply,
+  simp only [GridChain.relabelColumnsRenameEquiv_toLinearMap, LinearMap.comp_apply,
+    Finsupp.lsingle_apply, GridChain.relabelColumnsRename_single, map_one,
+    unblockedDifferential_single_apply, GridChain.relabelColumnsRename_apply,
     GridState.relabelColumns_relabelColumns, Equiv.self_trans_symm, GridState.relabelColumns_refl,
     unblockedCoefficient_relabelColumns_finRotate]
 

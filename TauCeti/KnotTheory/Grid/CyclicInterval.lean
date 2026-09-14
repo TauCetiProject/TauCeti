@@ -611,13 +611,12 @@ theorem mem_cIoo_finRotate_finRotate (a b x : Fin n) :
 intervals. -/
 theorem mem_cIco_finRotate_finRotate (a b x : Fin n) :
     finRotate n x ∈ cIco (finRotate n a) (finRotate n b) ↔ x ∈ cIco a b := by
-  cases n with
-  | zero => exact x.elim0
-  | succ n =>
-    rw [mem_cIco, mem_cIco, (finRotate _).injective.ne_iff]
-    simp only [coe_finRotate, Fin.ext_iff, Fin.val_last]
-    have := a.isLt; have := b.isLt; have := x.isLt
-    split_ifs <;> omega
+  by_cases hab : a = b
+  · subst b
+    simp
+  · rw [cIco_of_ne ((finRotate n).injective.ne hab), cIco_of_ne hab,
+      Finset.mem_insert, Finset.mem_insert, (finRotate n).injective.eq_iff,
+      mem_cIoo_finRotate_finRotate]
 
 /-- Non-interleaving is preserved by reversing every endpoint with `Fin.rev`, with the cyclic
 orientation reversal accounted for by exchanging the two endpoints within each pair. -/

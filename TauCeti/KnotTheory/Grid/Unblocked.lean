@@ -7,7 +7,7 @@ module
 
 import Mathlib.Tactic.Linarith
 public import Mathlib.Algebra.MvPolynomial.Degrees
-public import TauCeti.KnotTheory.Grid.Chain.Basic
+public import TauCeti.KnotTheory.Grid.Chain.Relabeling
 public import TauCeti.KnotTheory.Grid.Grading.MarkingCount
 import TauCeti.KnotTheory.Grid.Rectangle.Count
 import TauCeti.KnotTheory.Grid.Rectangle.Swap
@@ -58,6 +58,8 @@ assignment, a later stage of the roadmap.
 * `TauCeti.GridDiagram.OMonomial`: the monomial `V^{O(r)}` weighting a rectangle.
 * `TauCeti.GridDiagram.unblockedRectangles`: the empty rectangles carrying no `X`-marking.
 * `TauCeti.GridChainMinus`: the free `R[V₀, …, V_{n-1}]`-module on grid states.
+* `TauCeti.GridChain.relabelColumnsRenameEquiv`: the semilinear equivalence on `GC⁻` that
+  relabels columns and renames the coefficient variables.
 * `TauCeti.GridDiagram.unblockedDifferential`: the unblocked differential, as a linear map over
   the polynomial ring.
 
@@ -83,6 +85,8 @@ assignment, a later stage of the roadmap.
   fully blocked ones, so the fully blocked matrix coefficient is the constant term of `∂⁻`.
 * `TauCeti.GridDiagram.exists_mem_unblockedRectangles_of_mem_support_unblockedCoefficient`: every
   monomial of a matrix coefficient is the weight of a contributing rectangle.
+* `TauCeti.GridChain.relabelColumnsRenameEquiv_symm_apply`: the inverse column relabeling and
+  coefficient-renaming formula.
 
 ## References
 
@@ -103,6 +107,84 @@ open MvPolynomial
 states over the polynomial ring `R[V₀, …, V_{n-1}]`, with one variable for each `O`-marking. -/
 abbrev GridChainMinus (R : Type*) [CommSemiring R] (n : ℕ) : Type _ :=
   GridChain (MvPolynomial (Fin n) R) n
+
+namespace GridChain
+
+variable {n : ℕ} (R : Type*) [CommSemiring R]
+
+/-- Renaming multivariable-polynomial variables along inverse column permutations gives inverse
+ring homomorphisms. This supplies the inverse data used by the semilinear equivalence on `GC⁻`. -/
+noncomputable instance renameColumnsRingHomInvPair (κ : Equiv.Perm (Fin n)) :
+    RingHomInvPair
+      ((rename ⇑κ : MvPolynomial (Fin n) R →ₐ[R] MvPolynomial (Fin n) R) :
+        MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)
+      ((rename ⇑κ.symm : MvPolynomial (Fin n) R →ₐ[R] MvPolynomial (Fin n) R) :
+        MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R) :=
+  RingHomInvPair.of_ringEquiv (renameEquiv R κ).toRingEquiv
+
+/-- The semilinear map on the unblocked grid chains `GC⁻` induced by a permutation `κ` of the
+column labels: it relabels the columns of every grid state and renames the variables of every
+coefficient by `κ`.
+
+It is the forward map of `GridChain.relabelColumnsRenameEquiv`. -/
+noncomputable def relabelColumnsRename (κ : Equiv.Perm (Fin n)) :
+    GridChainMinus R n →ₛₗ[((rename ⇑κ :
+      MvPolynomial (Fin n) R →ₐ[R] MvPolynomial (Fin n) R) :
+        MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)] GridChainMinus R n :=
+  (relabelColumnsEquiv κ).toLinearMap.comp
+    (Finsupp.mapRange.linearMap
+      ((rename ⇑κ : MvPolynomial (Fin n) R →ₐ[R] MvPolynomial (Fin n) R) :
+        MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R).toSemilinearMap)
+
+/-- The coefficient of a relabeled and renamed chain at a state is the renamed coefficient at the
+inverse-relabeled state. -/
+@[simp]
+theorem relabelColumnsRename_apply (κ : Equiv.Perm (Fin n)) (c : GridChainMinus R n)
+    (y : GridState n) :
+    relabelColumnsRename R κ c y = rename κ (c (y.relabelColumns κ.symm)) := by
+  simp [relabelColumnsRename]
+
+/-- Relabeling and renaming send a generator with coefficient `a` to the relabeled generator with
+the renamed coefficient. -/
+@[simp]
+theorem relabelColumnsRename_single (κ : Equiv.Perm (Fin n)) (x : GridState n)
+    (a : MvPolynomial (Fin n) R) :
+    relabelColumnsRename R κ (Finsupp.single x a) =
+      Finsupp.single (x.relabelColumns κ) (rename κ a) := by
+  simp [relabelColumnsRename]
+
+/-- The semilinear equivalence on `GC⁻` induced by relabeling columns and renaming coefficient
+variables by the same permutation. Its inverse uses the inverse column permutation. -/
+noncomputable def relabelColumnsRenameEquiv (κ : Equiv.Perm (Fin n)) :
+    GridChainMinus R n ≃ₛₗ[((rename ⇑κ :
+      MvPolynomial (Fin n) R →ₐ[R] MvPolynomial (Fin n) R) :
+        MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)] GridChainMinus R n where
+  toLinearMap := relabelColumnsRename R κ
+  invFun := relabelColumnsRename R κ.symm
+  left_inv c := by
+    ext y
+    simp [GridState.relabelColumns_relabelColumns, rename_rename]
+  right_inv c := by
+    ext y
+    simp [GridState.relabelColumns_relabelColumns, rename_rename]
+
+/-- The forward semilinear map of column relabeling and coefficient renaming. -/
+@[simp]
+theorem relabelColumnsRenameEquiv_toLinearMap (κ : Equiv.Perm (Fin n)) :
+    (relabelColumnsRenameEquiv R κ).toLinearMap = relabelColumnsRename R κ := by
+  rw [relabelColumnsRenameEquiv]
+
+/-- The inverse equivalence relabels columns and coefficient variables by the inverse
+permutation. -/
+@[simp]
+theorem relabelColumnsRenameEquiv_symm_apply (κ : Equiv.Perm (Fin n))
+    (c : GridChainMinus R n) (y : GridState n) :
+    (relabelColumnsRenameEquiv R κ).symm c y =
+      rename κ.symm (c (y.relabelColumns κ)) := by
+  change relabelColumnsRename R κ.symm c y = _
+  simp
+
+end GridChain
 
 namespace GridDiagram
 
