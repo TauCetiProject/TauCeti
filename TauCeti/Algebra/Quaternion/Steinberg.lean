@@ -120,7 +120,6 @@ noncomputable def steinbergEquivMatrix [Invertible (2 : K)] (a : Kˣ)
   AlgEquiv.ofBijective (steinbergToMatrix (a : K)) (steinbergToMatrix_bijective a ha)
 
 /-- The entrywise formula for the forward direction of the Steinberg equivalence. -/
-@[simp]
 theorem steinbergEquivMatrix_apply [Invertible (2 : K)] (a : Kˣ)
     (ha : 1 - (a : K) ≠ 0)
     (q : ℍ[K,(a : K),0,1 - (a : K)]) :
@@ -151,7 +150,7 @@ theorem steinbergEquivMatrix_symm_apply [Invertible (2 : K)] (a : Kˣ)
 theorem steinbergEquivMatrix_i [Invertible (2 : K)] (a : Kˣ)
     (ha : 1 - (a : K) ≠ 0) :
     steinbergEquivMatrix a ha
-        (_root_.QuaternionAlgebra.Basis.self K).i = !![0, (a : K); 1, 0] := by
+        { re := 0, imI := 1, imJ := 0, imK := 0 } = !![0, (a : K); 1, 0] := by
   rw [steinbergEquivMatrix_apply]
   simp
 
@@ -160,7 +159,7 @@ theorem steinbergEquivMatrix_i [Invertible (2 : K)] (a : Kˣ)
 theorem steinbergEquivMatrix_j [Invertible (2 : K)] (a : Kˣ)
     (ha : 1 - (a : K) ≠ 0) :
     steinbergEquivMatrix a ha
-        (_root_.QuaternionAlgebra.Basis.self K).j = !![1, -(a : K); 1, -1] := by
+        { re := 0, imI := 0, imJ := 1, imK := 0 } = !![1, -(a : K); 1, -1] := by
   rw [steinbergEquivMatrix_apply]
   simp
 
