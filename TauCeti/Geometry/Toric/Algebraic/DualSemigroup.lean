@@ -131,7 +131,6 @@ theorem dualSemigroupMap_id (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) 
 
 /-- Contravariant dual-semigroup maps turn a composite of compatible cone maps into the
 composite of the induced maps. -/
-@[simp]
 theorem dualSemigroupMap_comp (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i')
     (hi'' : IsIntegralLattice i'') (f : N →+ N') (f' : N' →+ N'')
     (g : V →ₗ[ℝ] V') (g' : V' →ₗ[ℝ] V'')
