@@ -65,13 +65,12 @@ theorem IsometryEquiv.exists_extension (f : (Q.restrict W).IsometryEquiv (Q.rest
   obtain ⟨g⟩ : (Q.restrict P).Equivalent (Q.restrict P') :=
     TauCeti.equivalent_of_equivalent_prod hW' hprod
   refine ⟨d.symm.trans ((f.prod g).trans d'), fun x => ?_⟩
+  rw [IsometryEquiv.trans_apply, IsometryEquiv.trans_apply]
   have hd : d.symm (x : V) = (x, 0) := by
     rw [IsometryEquiv.prodRestrictOrthogonal_symm_apply]
     have hx := Submodule.prodEquivOfIsCompl_symm_apply_left (p := W) (q := P) hcomp x
     rw [Submodule.prodEquivOfIsCompl_symm_apply] at hx
     exact hx
-  -- Read the composite isometry through its three explicit factors.
-  change d' ((f.prod g) (d.symm (x : V))) = (f x : V)
   rw [hd]
   have hfg : (f.prod g) (x, 0) = (f x, 0) := by
     apply Prod.ext

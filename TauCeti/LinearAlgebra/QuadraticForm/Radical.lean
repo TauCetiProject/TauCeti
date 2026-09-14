@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
-public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 
@@ -28,8 +27,8 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 * `QuadraticMap.polarBilin_restrict`: polarization commutes with restriction to a submodule.
 * `QuadraticMap.Nondegenerate.isCompl_orthogonal`: a subspace on which the form restricts
   nondegenerately is complementary to its polar orthogonal complement.
-* `QuadraticMap.Nondegenerate.restrict_orthogonal`: in a regular finite-dimensional quadratic
-  space, the orthogonal complement of a regular subspace is regular.
+* `QuadraticMap.Nondegenerate.nondegenerate_restrict_orthogonal`: in a regular finite-dimensional
+  quadratic space, the orthogonal complement of a regular subspace is regular.
 * `QuadraticMap.Nondegenerate.prod`: nondegeneracy passes to an orthogonal product.
 * `QuadraticMap.Nondegenerate.ne_zero`: a nondegenerate quadratic form on a nontrivial module is
   nonzero.
@@ -130,7 +129,8 @@ theorem isCompl_orthogonal (hW : (Q.restrict W).Nondegenerate) :
 
 /-- In a regular finite-dimensional quadratic space, the orthogonal complement of a regular
 subspace is regular. -/
-theorem restrict_orthogonal (hQ : Q.Nondegenerate) (hW : (Q.restrict W).Nondegenerate) :
+theorem nondegenerate_restrict_orthogonal (hQ : Q.Nondegenerate)
+    (hW : (Q.restrict W).Nondegenerate) :
     (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W)).Nondegenerate := by
   have hB : Q.polarBilin.Nondegenerate := QuadraticMap.nondegenerate_polar_iff.mpr hQ
   have hBsymm : Q.polarBilin.IsRefl := Q.isSymm_polarBilin.isRefl

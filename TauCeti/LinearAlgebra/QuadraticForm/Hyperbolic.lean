@@ -229,7 +229,7 @@ theorem exists_hyperbolicPlane_prod_equivalent [FiniteDimensional K V] [Invertib
   have hcomp : IsCompl W (LinearMap.BilinForm.orthogonal Q.polarBilin W) :=
     hWQ.isCompl_orthogonal
   have horth : (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W)).Nondegenerate :=
-    hQ.restrict_orthogonal hWQ
+    hQ.nondegenerate_restrict_orthogonal hWQ
   obtain ⟨p, hp⟩ := exists_presentedForm_equivalent
     (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W)) horth
   have hdecomp : Q.Equivalent
