@@ -7,12 +7,14 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Metric
 public import Mathlib.Analysis.Complex.UpperHalfPlane.MoebiusAction
+public import Mathlib.Analysis.Complex.UnitDisc.Basic
 
 /-!
 # The disc coordinate centred at a point of the upper half-plane
 
-For `z ∈ ℍ`, the Cayley transform `τ ↦ (τ - z) / (τ - conj z)` is an injective map from the upper
-half-plane into the open unit disc sending `z` to `0`; its modulus is `tanh (d / 2)` for the
+For `z ∈ ℍ`, the Cayley transform `τ ↦ (τ - z) / (τ - conj z)` is a bijection from the upper
+half-plane onto the open unit disc sending `z` to `0`, with inverse
+`w ↦ (z - conj z * w) / (1 - w)`; its modulus is `tanh (d / 2)` for the
 hyperbolic distance `d` to `z`. In this coordinate every element of
 `SL(2, ℝ)` fixing `z` is a rotation of the disc about `0`: if `g • z = z`, then
 `discCoordinate z (g • τ) = conj (denom g z) / denom g z * discCoordinate z τ`.
@@ -27,6 +29,8 @@ derivative of `τ ↦ g • τ` at its fixed point `z`.
 * `UpperHalfPlane.discCoordinate_eq_zero_iff` and `UpperHalfPlane.discCoordinate_injective`.
 * `UpperHalfPlane.norm_discCoordinate`: the modulus of the disc coordinate is
   `tanh (dist τ z / 2)`, so the coordinate takes values in the unit disc.
+* `UpperHalfPlane.discCoordinateEquiv`: the disc coordinate as an equivalence `ℍ ≃ 𝔻`, with
+  explicit inverse, and `UpperHalfPlane.range_discCoordinate`: its range is the open unit disc.
 * `UpperHalfPlane.discCoordinate_smul_of_smul_eq_self`: an element of `SL(2, ℝ)` fixing `z`
   acts in the disc coordinate by multiplication by `conj (denom g z) / denom g z`.
 
@@ -40,7 +44,7 @@ public section
 
 noncomputable section
 
-open scoped MatrixGroups ComplexConjugate
+open scoped MatrixGroups ComplexConjugate Complex.UnitDisc
 
 namespace UpperHalfPlane
 
@@ -60,6 +64,7 @@ theorem coe_sub_conj_ne_zero (z τ : ℍ) : (τ : ℂ) - conj (z : ℂ) ≠ 0 :=
   simp only [Complex.sub_im, Complex.conj_im, sub_neg_eq_add, Complex.zero_im, coe_im] at h'
   linarith [τ.im_pos, z.im_pos]
 
+/-- The disc coordinate centred at `z` vanishes exactly at its centre `z`. -/
 @[simp]
 theorem discCoordinate_eq_zero_iff {z τ : ℍ} : discCoordinate z τ = 0 ↔ τ = z := by
   rw [discCoordinate_def, div_eq_zero_iff, or_iff_left (coe_sub_conj_ne_zero z τ), sub_eq_zero,
@@ -89,6 +94,67 @@ theorem norm_discCoordinate (z τ : ℍ) : ‖discCoordinate z τ‖ = Real.tanh
 theorem norm_discCoordinate_lt_one (z τ : ℍ) : ‖discCoordinate z τ‖ < 1 := by
   rw [norm_discCoordinate]
   exact Real.tanh_lt_one _
+
+/-- The imaginary part of the inverse disc coordinate `(z - conj z * w) / (1 - w)` is
+`im z * (1 - |w| ^ 2) / |1 - w| ^ 2`. -/
+private theorem im_discCoordinateInv (z : ℍ) (w : 𝔻) :
+    (((z : ℂ) - conj (z : ℂ) * w) / (1 - w)).im =
+      z.im * (1 - Complex.normSq (w : ℂ)) / Complex.normSq (1 - w) := by
+  rw [Complex.div_im]
+  simp only [Complex.sub_im, Complex.mul_im, Complex.conj_re, Complex.conj_im, Complex.one_im,
+    Complex.sub_re, Complex.mul_re, Complex.one_re, coe_im, coe_re, Complex.normSq_apply]
+  ring
+
+private theorem im_discCoordinateInv_pos (z : ℍ) (w : 𝔻) :
+    0 < (((z : ℂ) - conj (z : ℂ) * w) / (1 - w)).im := by
+  rw [im_discCoordinateInv]
+  exact div_pos (mul_pos z.im_pos (sub_pos.mpr w.normSq_lt_one))
+    (Complex.normSq_pos.mpr (sub_ne_zero.mpr w.coe_ne_one.symm))
+
+/-- The disc coordinate centred at `z` as an equivalence between the upper half-plane and the
+open unit disc `𝔻`, with inverse `w ↦ (z - conj z * w) / (1 - w)`. -/
+def discCoordinateEquiv (z : ℍ) : ℍ ≃ 𝔻 where
+  toFun τ := .mk (discCoordinate z τ) (norm_discCoordinate_lt_one z τ)
+  invFun w := ⟨((z : ℂ) - conj (z : ℂ) * w) / (1 - w), im_discCoordinateInv_pos z w⟩
+  left_inv τ := by
+    have hτ := coe_sub_conj_ne_zero z τ
+    have hz := coe_sub_conj_ne_zero z z
+    ext
+    simp only [Complex.UnitDisc.coe_mk, discCoordinate_def]
+    rw [div_eq_iff]
+    · field_simp
+      ring
+    · rw [one_sub_div hτ]
+      exact div_ne_zero (by simpa using hz) hτ
+  right_inv w := by
+    have h1 : (1 : ℂ) - w ≠ 0 := sub_ne_zero.mpr w.coe_ne_one.symm
+    have hz := coe_sub_conj_ne_zero z z
+    ext
+    simp only [Complex.UnitDisc.coe_mk, discCoordinate_def]
+    rw [div_sub' h1, div_sub' h1, div_div_div_cancel_right₀ h1, div_eq_iff]
+    · ring
+    · convert hz using 1
+      ring
+
+@[simp]
+theorem coe_discCoordinateEquiv_apply (z τ : ℍ) :
+    (discCoordinateEquiv z τ : ℂ) = discCoordinate z τ :=
+  (rfl)
+
+@[simp]
+theorem coe_discCoordinateEquiv_symm_apply (z : ℍ) (w : 𝔻) :
+    ((discCoordinateEquiv z).symm w : ℂ) = ((z : ℂ) - conj (z : ℂ) * w) / (1 - w) :=
+  (rfl)
+
+/-- The range of the disc coordinate centred at any point is the open unit disc. -/
+theorem range_discCoordinate (z : ℍ) : Set.range (discCoordinate z) = Metric.ball 0 1 := by
+  ext w
+  refine ⟨?_, fun hw ↦ ?_⟩
+  · rintro ⟨τ, rfl⟩
+    exact mem_ball_zero_iff.mpr (norm_discCoordinate_lt_one z τ)
+  · lift w to 𝔻 using mem_ball_zero_iff.mp hw
+    exact ⟨(discCoordinateEquiv z).symm w,
+      congrArg ((↑) : 𝔻 → ℂ) ((discCoordinateEquiv z).apply_symm_apply w)⟩
 
 /-- The Möbius difference formula at a fixed point: if `(a w + b) / (c w + d) = w` and
 `a d - b c = 1`, then `(a t + b) / (c t + d) - w = (t - w) / ((c t + d) (c w + d))`. -/
