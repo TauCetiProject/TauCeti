@@ -23,8 +23,8 @@ representations that the `A₂` classification of
 `TauCeti.RepresentationTheory.Quiver.Kronecker.Indecomposable` singles out.
 
 Reflecting reverses the single family of arrows, so the reflected quiver is again a generalized
-Kronecker quiver, read the other way round: `src` becomes a sink, `tgt` becomes a source, and the
-paths `tgt → src` of the reflected quiver are again the elements of `A`.
+Kronecker quiver, read the other way round; that is settled in
+`TauCeti.RepresentationTheory.Quiver.Kronecker.Basic`.
 
 On representations the reflection does three things:
 
@@ -38,17 +38,8 @@ vectors `(0,1)`, `(1,1)`, `(1,0)`, and the last statement sharpens to an isomorp
 projective `P_tgt` of the reflected quiver: reflection kills one indecomposable and exchanges the
 other two, realizing the simple reflection at `tgt` on the three positive roots of `A₂`.
 
-## Main definitions
-
-* `TauCeti.Quiver.Kronecker.reflectArrowPath`: the path `tgt → src` of the reflected quiver traced
-  by the reversed arrow attached to an element of `A`.
-* `TauCeti.Quiver.Kronecker.reflectPathEquivArrow`: the resulting identification of the paths
-  `tgt → src` of the reflected quiver with `A`.
-
 ## Main results
 
-* `TauCeti.Quiver.Kronecker.isSink_reflect_src`: in the reflected quiver the source vertex is a
-  sink, so the reflected quiver is the generalized Kronecker quiver with the opposite orientation.
 * `TauCeti.isZero_reflectRep_simpleRep_tgt`: **reflection annihilates the sink simple** `S_tgt`.
 * `TauCeti.nonempty_iso_reflectRep_indecProjRep_src`: **reflection carries the projective `P_src`
   to the vertex simple `S_src`** of the reflected quiver.
@@ -63,23 +54,10 @@ other two, realizing the simple reflection at `tgt` on the three positive roots 
 Nothing below needs the reflection functor on morphisms, only its value `TauCeti.reflectRep` on
 objects, so no naturality is checked here.
 
-Two of the three computations go through the general boundary lemmas of
-`TauCeti.RepresentationTheory.Quiver.Reflection.Representation`: the sink simple is a
-representation concentrated at the sink, which `TauCeti.isZero_reflectRep` annihilates, and the
-reflection of `P_src` is concentrated at `src`, so
-`TauCeti.nonempty_iso_of_dimVector_eq_of_forall_subsingleton` identifies it with the vertex simple
-there with no natural transformation written down. The third is the one that sees the quiver: the
-reflection of `S_src` has full support, so it is compared with `P_tgt` through the Gabriel
-injection `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic`, whose
-positive-definiteness hypothesis holds for the reflected quiver by `TauCeti.titsForm_reflect` and
-confines that last statement to the `A₂` case — as it must, since the Kronecker quiver `• ⇉ •`
-carries a whole family of pairwise non-isomorphic indecomposables at the single dimension vector
-`(1, 1)`, by `TauCeti.nonempty_kroneckerLineRep_iso_iff`.
-
-A vertex of the reflected quiver has to be written `@IsSink (Reflect (Kronecker A) tgt) _ src`
-rather than `IsSink (src : Reflect (Kronecker A) tgt)`: `TauCeti.Quiver.Reflect` is a type synonym
-for the vertex type, so the ascription is discharged definitionally and the quiver instance
-elaborated from it would be the unreflected one.
+The identification of the reflection of `S_src` is confined to the `A₂` case, and cannot be had
+beyond it: the Kronecker quiver `• ⇉ •` already carries a whole family of pairwise
+non-isomorphic indecomposables at the single dimension vector `(1, 1)`, by
+`TauCeti.nonempty_kroneckerLineRep_iso_iff`.
 
 The arrow type is taken in `Type`, as in
 `TauCeti.RepresentationTheory.Quiver.Kronecker.AlmostSplit`: the vertex spaces of the reflection
@@ -88,12 +66,8 @@ and the universe of the field, while those of the vertex simple are the field it
 
 ## References
 
-This supplies the reflection half of the “`A₂` quiver” worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, which asks that the
-reflection functor at the sink kill the sink simple and realize the simple reflection there on the
-dimension vectors of the remaining indecomposables. See Bernstein--Gelfand--Ponomarev, *Coxeter
-functors and Gabriel's theorem*, and Derksen--Weyman, *An Introduction to Quiver
-Representations*, Ch. 2.
+Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and Derksen--Weyman,
+*An Introduction to Quiver Representations*, Ch. 2.
 -/
 
 public section
@@ -105,129 +79,6 @@ open _root_.Quiver
 open _root_.TauCeti.Quiver
 
 universe u
-
-namespace Quiver.Kronecker
-
-variable {A : Type}
-
-/-! ### The reflected quiver -/
-
-/-- **In the reflected quiver the source vertex is a sink.** Reflecting at `tgt` reverses every
-arrow, so the generalized Kronecker quiver becomes the same quiver read the other way round. -/
-theorem isSink_reflect_src : @IsSink (Reflect (Kronecker A) tgt) _ src :=
-  (@IsSink_def (Reflect (Kronecker A) tgt) _ src).mpr fun b ↦ ⟨fun e ↦ by
-    cases b with
-    | src =>
-      exact (isEmpty_hom_to_src (A := A) src).elim
-        (cast ((hom_reflect tgt src src).trans
-          (reflectHom_of_ne_of_ne src_ne_tgt src_ne_tgt)) e)
-    | tgt =>
-      exact (isEmpty_hom_to_src (A := A) tgt).elim
-        (cast ((hom_reflect tgt src tgt).trans (reflectHom_right tgt src)) e)⟩
-
-/-- In the reflected quiver the target vertex is a source, since it was a sink. -/
-theorem isSource_reflect_tgt : @IsSource (Reflect (Kronecker A) tgt) _ tgt :=
-  (isSink_tgt (A := A)).isSource_reflect
-
-/-- The only closed path at the source of the reflected quiver is the trivial one. -/
-instance : Unique (@Path (Reflect (Kronecker A) tgt) _ src src) where
-  default := Path.nil
-  uniq := isSink_reflect_src.path_self_eq_nil
-
-/-- The only closed path at the target of the reflected quiver is the trivial one. -/
-instance : Unique (@Path (Reflect (Kronecker A) tgt) _ tgt tgt) where
-  default := Path.nil
-  uniq := isSource_reflect_tgt.path_self_eq_nil
-
-/-- The reflected quiver has no path from the source to the target: its arrows all run the other
-way. -/
-instance : IsEmpty (@Path (Reflect (Kronecker A) tgt) _ src tgt) :=
-  ⟨fun p ↦ src_ne_tgt (isSink_reflect_src.eq_of_path p)⟩
-
-/-- The length-one path of the reflected quiver traced by the reversed arrow attached to an
-element of the arrow type. -/
-noncomputable def reflectArrowPath (a : A) : @Path (Reflect (Kronecker A) tgt) _ tgt src :=
-  (reflectArrow tgt (arrow a)).toPath
-
-/-- The path attached to an element of the arrow type is the one its reversed arrow traces. -/
-theorem reflectArrowPath_eq (a : A) :
-    reflectArrowPath a = (reflectArrow tgt (arrow a)).toPath :=
-  -- The parentheses keep this an ordinary proof term rather than an exported `rfl` theorem, which
-  -- would force `reflectArrowPath` to be `@[expose]`.
-  (rfl)
-
-/-- Reading a reversed arrow `tgt ⟶ src` of the reflected quiver back as an arrow `src ⟶ tgt` of
-the generalized Kronecker quiver. -/
-private theorem hom_reflect_tgt_src :
-    (@Hom (Reflect (Kronecker A) tgt) _ tgt src) = ((src : Kronecker A) ⟶ tgt) :=
-  (hom_reflect tgt tgt src).trans (reflectHom_left tgt src)
-
-/-- Distinct arrows trace distinct paths in the reflected quiver. -/
-theorem reflectArrowPath_injective : Function.Injective (reflectArrowPath (A := A)) := by
-  intro a b h
-  rw [reflectArrowPath_eq, reflectArrowPath_eq] at h
-  have h₁ : reflectArrow tgt (arrow a) = reflectArrow tgt (arrow b) := by injection h
-  have h₂ := congrArg (cast (hom_reflect_tgt_src (A := A))) h₁
-  rw [cast_reflectArrow, cast_reflectArrow] at h₂
-  exact arrowPath_injective
-    (((toPath_arrow a).symm.trans (congrArg Hom.toPath h₂)).trans (toPath_arrow b))
-
-/-- **Every path from the target to the source of the reflected quiver is a single reversed
-arrow**: the target is a source there and the source is a sink, so no two arrows compose. -/
-theorem reflectArrowPath_surjective : Function.Surjective (reflectArrowPath (A := A)) := by
-  intro p
-  cases p with
-  | @cons b _ q e =>
-    cases b with
-    | src => exact (isSink_reflect_src.isEmpty_hom _).elim e
-    | tgt =>
-      obtain ⟨a, ha⟩ := arrowPath_surjective (cast (hom_reflect_tgt_src (A := A)) e).toPath
-      refine ⟨a, ?_⟩
-      have h₁ : (arrow a).toPath = (cast (hom_reflect_tgt_src (A := A)) e).toPath :=
-        (toPath_arrow a).trans ha
-      have h₂ : arrow a = cast (hom_reflect_tgt_src (A := A)) e := by injection h₁
-      rw [reflectArrowPath_eq, isSource_reflect_tgt.path_self_eq_nil q, h₂,
-        reflectArrow_cast]
-      rfl
-
-/-- **The paths `tgt → src` of the reflected quiver are the elements of the arrow type**, exactly
-as the paths `src → tgt` of the generalized Kronecker quiver are, by
-`TauCeti.Quiver.Kronecker.pathEquivArrow`. -/
-noncomputable def reflectPathEquivArrow : @Path (Reflect (Kronecker A) tgt) _ tgt src ≃ A :=
-  (Equiv.ofBijective reflectArrowPath
-    ⟨reflectArrowPath_injective, reflectArrowPath_surjective⟩).symm
-
-/-- The inverse of the classification sends an element of the arrow type to the path its reversed
-arrow traces; the two are the same construction, so this holds definitionally. -/
-@[simp]
-theorem reflectPathEquivArrow_symm_apply (a : A) :
-    reflectPathEquivArrow.symm a = reflectArrowPath a :=
-  -- The parentheses keep this an ordinary proof term rather than an exported `rfl` theorem, which
-  -- would force `reflectPathEquivArrow` to be `@[expose]`; the three lemmas here are the whole
-  -- interface.
-  (rfl)
-
-/-- The classification sends the path traced by a reversed arrow back to the element of the arrow
-type it came from. -/
-@[simp]
-theorem reflectPathEquivArrow_reflectArrowPath (a : A) :
-    reflectPathEquivArrow (reflectArrowPath a) = a := by
-  rw [← reflectPathEquivArrow_symm_apply, Equiv.apply_symm_apply]
-
-/-- Every path from the target to the source of the reflected quiver is traced by the reversed
-arrow it classifies. -/
-@[simp]
-theorem reflectArrowPath_reflectPathEquivArrow (p : @Path (Reflect (Kronecker A) tgt) _ tgt src) :
-    reflectArrowPath (reflectPathEquivArrow p) = p := by
-  rw [← reflectPathEquivArrow_symm_apply, Equiv.symm_apply_apply]
-
-/-- The reflected quiver has as many paths `tgt → src` as the generalized Kronecker quiver has
-arrows. -/
-theorem card_path_reflect_tgt_src :
-    Nat.card (@Path (Reflect (Kronecker A) tgt) _ tgt src) = Nat.card A :=
-  Nat.card_congr reflectPathEquivArrow
-
-end Quiver.Kronecker
 
 /-! ### Reflecting the indecomposables -/
 
@@ -293,13 +144,14 @@ theorem surjective_incomingSum_indecProjRep_src :
     Submodule.span_le]
   rintro _ ⟨p, rfl⟩
   obtain ⟨a, rfl⟩ := arrowPath_surjective p
+  have himage : ((indecProjRep k (Kronecker A) src).map (arrow a).toPath).hom
+      (indecProjRepBasis k src src Path.nil)
+      = indecProjRepBasis k src tgt (arrowPath a) :=
+    (indecProjRep_map_basis src (arrow a).toPath Path.nil).trans
+      (by rw [Path.nil_comp, toPath_arrow])
   have h := map_toPath_mem_range_incomingSum (indecProjRep k (Kronecker A) src) (arrow a)
     (indecProjRepBasis k src src Path.nil)
-  rwa [show ((indecProjRep k (Kronecker A) src).map (arrow a).toPath).hom
-      (indecProjRepBasis k src src Path.nil)
-      = indecProjRepBasis k src tgt (arrowPath a) from
-    (indecProjRep_map_basis src (arrow a).toPath Path.nil).trans
-      (by rw [Path.nil_comp, toPath_arrow])] at h
+  rwa [himage] at h
 
 /-- **The reflection of the projective `P_src` vanishes at the sink**: the sum of the arrows into
 the sink is onto there, and it has as many paths `src → tgt` in its target as it has arrows in its
@@ -364,19 +216,20 @@ theorem nonempty_iso_reflectRep_indecProjRep_src :
     | src => exact hsrc.trans hs1.symm
     | tgt => exact htgt.trans hs0.symm
 
+/-- With at most one arrow the reflected quiver has positive definite Tits form: reflecting
+changes the orientation of a quiver, not its underlying graph, and
+`TauCeti.Quiver.Kronecker.titsForm_posDef` covers the underlying graph. -/
+theorem titsForm_reflect_kronecker_posDef (h : Fintype.card A ≤ 1) :
+    (titsForm (Reflect (Kronecker A) tgt)).PosDef := by
+  intro d hd
+  exact lt_of_lt_of_eq (titsForm_posDef (A := A) h d hd)
+    (titsForm_reflect (V := Kronecker A) tgt d).symm
+
 /-! #### The `A₂` quiver -/
 
 section A2
 
 variable [Unique A]
-
-/-- Over the `A₂` quiver the reflected quiver has positive definite Tits form: reflecting changes
-the orientation of a quiver, not its underlying graph. -/
-theorem titsForm_reflect_kronecker_posDef :
-    (titsForm (Reflect (Kronecker A) tgt)).PosDef := by
-  intro d hd
-  exact lt_of_lt_of_eq (titsForm_posDef (A := A) (le_of_eq Fintype.card_unique) d hd)
-    (titsForm_reflect (V := Kronecker A) tgt d).symm
 
 /-- **Over the `A₂` quiver reflection carries the source simple to the projective at the target**
 of the reflected quiver. Both are indecomposable of dimension vector `(1, 1)`, and over a quiver
@@ -389,12 +242,6 @@ the sink on the three indecomposables of the `A₂` quiver: it annihilates `S_tg
 theorem nonempty_iso_reflectRep_simpleRep_src_indecProjRep :
     Nonempty (reflectRep (simpleRep k (Kronecker A) src) isSink_tgt
       ≅ indecProjRep k (Reflect (Kronecker A) tgt) tgt) := by
-  have hfinS : Finite (@Path (Reflect (Kronecker A) tgt) _ tgt src) :=
-    Finite.of_equiv _ reflectPathEquivArrow.symm
-  have hsubT : Subsingleton (@Path (Reflect (Kronecker A) tgt) _ tgt tgt) :=
-    ⟨fun p q ↦ (isSource_reflect_tgt.path_self_eq_nil p).trans
-      (isSource_reflect_tgt.path_self_eq_nil q).symm⟩
-  have hfinT : Finite (@Path (Reflect (Kronecker A) tgt) _ tgt tgt) := Finite.of_subsingleton
   have hfdM : IsFinDim k (Reflect (Kronecker A) tgt)
       (reflectRep (simpleRep k (Kronecker A) src) isSink_tgt) :=
     isFinDim_iff.mpr fun a ↦
@@ -408,19 +255,18 @@ theorem nonempty_iso_reflectRep_simpleRep_src_indecProjRep :
       | tgt =>
         exact finiteDimensional_indecProjRep_obj (k := k) (Q := Reflect (Kronecker A) tgt) tgt tgt
   refine nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic
-    (IsAcyclic.reflect_of_isSink isAcyclic isSink_tgt) titsForm_reflect_kronecker_posDef _ _
+    (IsAcyclic.reflect_of_isSink isAcyclic isSink_tgt)
+    (titsForm_reflect_kronecker_posDef (le_of_eq Fintype.card_unique)) _ _
     indecomposable_reflectRep_simpleRep_src
     (indecomposable_indecProjRep_of_isAcyclic (IsAcyclic.reflect_of_isSink isAcyclic isSink_tgt)
       tgt)
     hfdM hfdN ?_
-  have hcardS : Nat.card (@Path (Reflect (Kronecker A) tgt) _ tgt src) = 1 :=
-    card_path_reflect_tgt_src.trans Nat.card_unique
   rw [dimVector_reflectRep_simpleRep_src]
   funext j
   refine Eq.trans ?_
     (dimVector_indecProjRep (k := k) (Q := Reflect (Kronecker A) tgt) tgt j).symm
   cases j with
-  | src => simpa using hcardS.symm
+  | src => simp
   | tgt => simp [src_ne_tgt.symm, Fintype.card_unique]
 
 end A2
