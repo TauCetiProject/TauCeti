@@ -46,23 +46,11 @@ trivial, and consequently `𝓟E` is unramified over `p` with residue degree the
   `TauCeti.RamificationInertia.IsInertiaField.inertiaDeg_eq_inertiaDegIn` — under the inertia
   field the ramification index is `1` and the inertia degree is the full inertia degree of `p`.
 
-## Implementation
-
-The inertia group acts trivially on `B ⧸ P`, so the group it cuts out is its own inertia group;
-that is the one observation these proofs add to Mathlib's
-`Ideal.card_inertia_eq_ramificationIdxIn` and its fundamental identity. The bottom two rows then
-transfer to the top row by multiplicativity of `e` and of `f` in towers. `A` is asked to have
-finite quotients rather than `p.ResidueField` merely to be perfect, matching the hypotheses under
-which Mathlib states the decomposition-field row; the primes `P` and `𝓟E` are only asked to be
-prime, where Mathlib's row asks for maximality.
-
-The statements and their proofs follow the decomposition-field section of
-`Mathlib/NumberTheory/RamificationInertia/HilbertTheory.lean`, with the inertia subgroup of `P` in
-place of its stabilizer.
-
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Springer 1999, Ch. I (9.6).
+* X. Roblot, the decomposition-field section of
+  `Mathlib/NumberTheory/RamificationInertia/HilbertTheory.lean`.
 -/
 
 public section
