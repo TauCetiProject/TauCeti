@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-public import TauCeti.Probability.Cdf
+public import TauCeti.Probability.Distributions.Dirac
 
 /-!
 # The quantile function of a real law
