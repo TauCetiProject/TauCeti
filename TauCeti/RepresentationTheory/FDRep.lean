@@ -140,11 +140,10 @@ section Forget
 
 open MonoidalCategory
 
-/-- **Forgetting finite-dimensionality is additive**: it leaves the underlying map of an
-intertwiner untouched, and addition of intertwiners is addition of those maps on both sides.  This
-is what lets an additive construction on `Rep R G` -- the induction of
-`TauCeti.RepresentationTheory.Induction.FiniteDimensional`, say -- be recognized through the
-forgetful functor. -/
+/-- **Forgetting finite-dimensionality is an additive functor**: `forget₂ (FDRep R G) (Rep R G)`
+preserves sums of intertwiners.  This is what lets an additive construction on `Rep R G` -- the
+induction of `TauCeti.RepresentationTheory.Induction.FiniteDimensional`, say -- be recognized
+through the forgetful functor. -/
 instance additive_forget₂ {R : Type u} {G : Type v} [CommRing R] [Monoid G] :
     (forget₂ (FDRep R G) (Rep R G)).Additive where
   map_add := by
@@ -157,6 +156,7 @@ instance additive_forget₂ {R : Type u} {G : Type v} [CommRing R] [Monoid G] :
 structure of `FDRep R G` is that of `FGModuleCat R` with the diagonal action, and the monoidal
 structure of `FGModuleCat R` is that of `ModuleCat R` on a carrier that happens to be finite, so
 the two sides are the same object rather than isomorphic ones. -/
+@[simp]
 theorem forget₂_obj_tensor {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G) :
     (forget₂ (FDRep R G) (Rep R G)).obj (X ⊗ Y) =
       (forget₂ (FDRep R G) (Rep R G)).obj X ⊗ (forget₂ (FDRep R G) (Rep R G)).obj Y := (rfl)

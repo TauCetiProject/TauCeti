@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RepresentationTheory.FiniteIndex
 public import TauCeti.RepresentationTheory.FDRep
+public import TauCeti.RepresentationTheory.Induction.Basic
 
 /-!
 # Finite-dimensional induced representations
@@ -21,8 +22,9 @@ Induction on finite-dimensional representations is packaged both objectwise, as 
 functorially, as `indFDRepFunctor`, the latter naturally isomorphic to `Rep.indFunctor` under the
 forgetful functor to `Rep k G`.
 
-That functor is additive; the `Rep`-level fact it rests on, additivity of induced intertwiners
-along an arbitrary group homomorphism, is `Rep.indMap_add`.
+That functor is additive (`indFDRepMap_add`); the general fact it rests on, additivity of induced
+intertwiners along an arbitrary group homomorphism, is `Rep.indMap_add` of
+`TauCeti.RepresentationTheory.Induction.Basic`.
 
 The objectwise construction, dimension theorem, and functor on `FDRep` allow the scalar field and
 group to live in separate universes. It uses a small model of Mathlib's induced carrier, compared by
@@ -260,19 +262,6 @@ theorem finrank_ind [S.FiniteIndex] (A : Rep.{max w u} k S) [FiniteDimensional k
 
 end Dimension
 
-section Additive
-
-/-- **Induction of intertwiners is additive**, on `Rep k G` and for an arbitrary group
-homomorphism: `Rep.indMap` tensors an intertwiner with the identity of `k[H]` and passes to
-coinvariants, and both operations are additive.  Mathlib does not record this. -/
-theorem indMap_add {k : Type u} {G : Type v} {H : Type w} [CommRing k] [Group G] [Group H]
-    (φ : G →* H) {A B : Rep.{u} k G} (f g : A ⟶ B) :
-    Rep.indMap φ (f + g) = Rep.indMap φ f + Rep.indMap φ g := by
-  ext h a
-  simp [Rep.indMap, Rep.add_hom]
-
-end Additive
-
 end Rep
 
 /-- The small induced object together with its comparison to Mathlib's induced representation. -/
@@ -393,9 +382,9 @@ theorem forget₂_map_indFDRepMap {k G : Type u} [Field k] [Group G] {S : Subgro
     forget₂_map_indFDRepMap_apply, Rep.indFunctor_map]
   rw [indFDRepForgetIso_hom_hom_apply, indFDRepForgetIso_inv_hom_apply]
 
-/-- **Induction of intertwiners is additive.**  Both sides forget to the same map of induced
-carriers, because forgetting finite-dimensionality is additive (`FDRep.additive_forget₂`), Mathlib's
-induced intertwiner is additive, and the small-carrier comparison equivalences are linear. -/
+/-- **Induction of intertwiners from a finite-index subgroup is additive**,
+`indFDRepMap (f + g) = indFDRepMap f + indFDRepMap g`.  This is what makes `indFDRepFunctor` an
+additive functor. -/
 theorem indFDRepMap_add {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
     [S.FiniteIndex] {A B : FDRep k S} (f g : A ⟶ B) :
     indFDRepMap (f + g) = indFDRepMap f + indFDRepMap g := by

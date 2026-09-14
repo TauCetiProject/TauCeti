@@ -68,10 +68,6 @@ discussed there; it is not a limitation of the representation ring.
 ## References
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, Springer GTM 42 (1977), Part II, §§9-10.
-
-This implements the item "induction `Ind_H^G : R(H) → R(G)` is a homomorphism of `R(G)`-modules --
-Frobenius reciprocity as a module statement" of Layer 6 in
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`.
 -/
 
 public section
@@ -87,12 +83,11 @@ section Definition
 variable {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G} [S.FiniteIndex]
 
 /-- **Induction of representations, on the representation ring**: the additive homomorphism
-`R(S) →+ R(G)` induced by a finite-index subgroup `S ≤ G`, sending the class of a representation of
+`R(S) →+ R(G)` attached to a finite-index subgroup `S ≤ G`, sending the class of a representation of
 `S` to the class of the representation it induces.
 
-It is `TauCeti.indFDRepFunctor` fed to `TauCeti.SplitK0.map`, which is legitimate because that
-functor is additive (`TauCeti.additive_indFDRepFunctor`). It is *not* a ring homomorphism; see
-`TauCeti.repRingInd_mul_repRingRes` for the structure it does preserve. -/
+It is *not* a ring homomorphism; `TauCeti.repRingInd_mul_repRingRes` is the structure it does
+preserve. -/
 noncomputable def repRingInd (k : Type u) [Field k] {G : Type v} [Group G] (S : Subgroup G)
     [S.FiniteIndex] : repRing k S →+ repRing k G :=
   SplitK0.map (indFDRepFunctor (k := k) (S := S))
@@ -123,10 +118,9 @@ variable {k G : Type u} [Field k] [Group G] {S : Subgroup G} [S.FiniteIndex]
 
 /-- **The projection formula on the representation ring**, `Ind (x · Res y) = (Ind x) · y`:
 induction is a homomorphism of modules over `R(G)`, where `R(S)` is an `R(G)`-module through
-restriction. This is Frobenius reciprocity in its module form.
-
-On the classes of two representations it is the isomorphism `TauCeti.indFDRepProjection`; the
-general case follows because both sides are additive in each variable. -/
+restriction. This is Frobenius reciprocity in its module form, and its immediate consequence is
+that the image of induction is an ideal, `TauCeti.repRingIndIdeal`. -/
+@[simp]
 theorem repRingInd_mul_repRingRes (x : repRing k S) (y : repRing k G) :
     repRingInd k S (x * repRingRes k S.subtype y) = repRingInd k S x * y := by
   have key : ∀ (A : FDRep k S) (B : FDRep k G),

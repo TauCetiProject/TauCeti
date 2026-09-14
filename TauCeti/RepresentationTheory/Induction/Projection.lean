@@ -307,11 +307,10 @@ variable {k G : Type u} [Field k] [Group G] {S : Subgroup G} [S.FiniteIndex]
 /-- **The projection formula on finite-dimensional representations**,
 `Ind_S^G (A ⊗ Res_S^G B) ≅ (Ind_S^G A) ⊗ B` in `FDRep k G`.
 
-It is `TauCeti.indProjection` read through the forgetful functor to `Rep k G`, which is fully
-faithful, takes `TauCeti.indFDRep` to Mathlib's induced representation
-(`TauCeti.indFDRepForgetIso`) and preserves the tensor product on the nose
-(`FDRep.forget₂_obj_tensor`).  The subgroup has finite index because that is what keeps an induced
-representation finite-dimensional; the ambient group shares the universe of `k` because
+This is `TauCeti.indProjection` on finite-dimensional representations; on isomorphism classes it
+becomes the statement that induction is a homomorphism of modules over the representation ring,
+`TauCeti.repRingInd_mul_repRingRes`.  The subgroup has finite index because that is what keeps an
+induced representation finite-dimensional; the ambient group shares the universe of `k` because
 `TauCeti.indProjection` does. -/
 noncomputable def indFDRepProjection (A : FDRep k S) (B : FDRep k G) :
     indFDRep (A ⊗ (Action.res (FGModuleCat k) S.subtype).obj B) ≅ indFDRep A ⊗ B := by
