@@ -274,7 +274,10 @@ theorem injOn_choleskyReconstructionCoordinates :
 /-! ### The change of variables -/
 
 /-- The Jacobian weight of the Cholesky change of variables, in lower-triangular coordinates:
-the absolute determinant `2 ^ p * ∏ i, (L i i) ^ (p - i)` of the derivative of `L ↦ L * Lᵀ`. -/
+`ENNReal.ofReal (2 ^ p * ∏ i, (L i i) ^ (p - i))`. On `TauCeti.posDiagLowerRegion`, where the
+diagonal coordinates are positive, this is the absolute determinant of the derivative of
+`L ↦ L * Lᵀ`; elsewhere the product can be negative, and the weight then truncates to `0`. The
+change of variables below uses the weight only on that region. -/
 def choleskyJacobianDensity (x : lowerTriangle p → ℝ) : ℝ≥0∞ :=
   ENNReal.ofReal (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.1))
 
