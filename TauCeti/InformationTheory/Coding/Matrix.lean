@@ -118,13 +118,11 @@ theorem isParityCheckMatrix_iff [Fintype ι] {C : LinearCode F ι} {H : Matrix �
   rw [IsParityCheckMatrix]
 
 /-- Every matrix is a generator matrix for its generated code. -/
-@[simp]
 theorem isGeneratorMatrix_generatedBy [Fintype ρ] (G : Matrix ρ ι F) :
     (generatedBy G).IsGeneratorMatrix G := by
   rw [isGeneratorMatrix_iff]
 
 /-- Every matrix is a parity-check matrix for its checked code. -/
-@[simp]
 theorem isParityCheckMatrix_checkedBy [Fintype ι] (H : Matrix ρ ι F) :
     (checkedBy H).IsParityCheckMatrix H := by
   rw [isParityCheckMatrix_iff]
