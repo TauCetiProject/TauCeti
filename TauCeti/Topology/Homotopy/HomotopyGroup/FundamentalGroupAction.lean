@@ -197,7 +197,7 @@ The order in `MulAut.conj γ g = γ * g * γ⁻¹` agrees with transport: multip
 `FundamentalGroup` reverses path concatenation, so this product is represented by first following
 `γ⁻¹`, then a representative of `g`, and finally `γ`. -/
 @[simp]
-theorem pi1MulEquivFundamentalGroup_smul (γ : FundamentalGroup X x) (a : π_ 1 X x) :
+theorem pi1MulEquivFundamentalGroup_smul {γ : FundamentalGroup X x} {a : π_ 1 X x} :
     HomotopyGroup.pi1MulEquivFundamentalGroup (γ • a) =
       MulAut.conj γ (HomotopyGroup.pi1MulEquivFundamentalGroup a) := by
   rw [fundamentalGroup_smul_def]
