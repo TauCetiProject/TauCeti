@@ -81,6 +81,7 @@ noncomputable def starIndexEquivE6 : StarIndex ![2, 2, 2] ≃ Fin E6.nodes :=
 @[simp] theorem starIndexEquivE6_none :
     @DFunLike.coe (StarIndex ![2, 2, 2] ≃ Fin 7) (StarIndex ![2, 2, 2])
       (fun _ ↦ Fin 7) EquivLike.toFunLike starIndexEquivE6 none = 0 := by
+  -- The normalized `Fin 7` coercion prevents `Equiv.ofBijective_apply` from matching directly.
   change e6StarEmbedding none = 0
   rfl
 
@@ -91,6 +92,7 @@ noncomputable def starIndexEquivE6 : StarIndex ![2, 2, 2] ≃ Fin E6.nodes :=
         ⟨2 * (i : ℕ) + (s : ℕ) + 1, by
           fin_cases i <;> simp at s ⊢
           all_goals omega⟩ := by
+  -- The normalized `Fin 7` coercion prevents `Equiv.ofBijective_apply` from matching directly.
   change e6StarEmbedding (some ⟨i, s⟩) = _
   rfl
 
@@ -139,6 +141,7 @@ noncomputable def starIndexEquivE7 : StarIndex ![1, 3, 3] ≃ Fin E7.nodes :=
 @[simp] theorem starIndexEquivE7_none :
     @DFunLike.coe (StarIndex ![1, 3, 3] ≃ Fin 8) (StarIndex ![1, 3, 3])
       (fun _ ↦ Fin 8) EquivLike.toFunLike starIndexEquivE7 none = 0 := by
+  -- The normalized `Fin 8` coercion prevents `Equiv.ofBijective_apply` from matching directly.
   change e7StarEmbedding none = 0
   rfl
 
@@ -149,6 +152,7 @@ noncomputable def starIndexEquivE7 : StarIndex ![1, 3, 3] ≃ Fin E7.nodes :=
         ⟨if (i : ℕ) = 0 then 1 else if (i : ℕ) = 1 then 2 + (s : ℕ) else 5 + (s : ℕ), by
           fin_cases i <;> simp at s ⊢
           all_goals omega⟩ := by
+  -- The normalized `Fin 8` coercion prevents `Equiv.ofBijective_apply` from matching directly.
   change e7StarEmbedding (some ⟨i, s⟩) = _
   rfl
 
@@ -198,6 +202,7 @@ noncomputable def starIndexEquivE8 : StarIndex ![1, 2, 5] ≃ Fin E8.nodes :=
 @[simp] theorem starIndexEquivE8_none :
     @DFunLike.coe (StarIndex ![1, 2, 5] ≃ Fin 9) (StarIndex ![1, 2, 5])
       (fun _ ↦ Fin 9) EquivLike.toFunLike starIndexEquivE8 none = 0 := by
+  -- The normalized `Fin 9` coercion prevents `Equiv.ofBijective_apply` from matching directly.
   change e8StarEmbedding none = 0
   rfl
 
@@ -208,6 +213,7 @@ noncomputable def starIndexEquivE8 : StarIndex ![1, 2, 5] ≃ Fin E8.nodes :=
         ⟨if (i : ℕ) = 0 then 1 else if (i : ℕ) = 1 then 2 + (s : ℕ) else 4 + (s : ℕ), by
           fin_cases i <;> simp at s ⊢
           all_goals omega⟩ := by
+  -- The normalized `Fin 9` coercion prevents `Equiv.ofBijective_apply` from matching directly.
   change e8StarEmbedding (some ⟨i, s⟩) = _
   rfl
 
@@ -312,6 +318,7 @@ noncomputable def starGraphIsoE6 :
         (diagramGraph (starCartanMatrix ![2, 2, 2])) E6.graph)
       (StarIndex ![2, 2, 2]) (fun _ ↦ Fin 7) RelIso.instFunLike starGraphIsoE6 v =
         starIndexEquivE6 v := by
+  -- The normalized `Fin 7` coercion prevents `starGraphIso_apply` from matching directly.
   change starGraphIso E6 starIndexEquivE6 starCartanMatrix_two_two_two_eq_submatrix_E6 v = _
   exact starGraphIso_apply E6 starIndexEquivE6
     starCartanMatrix_two_two_two_eq_submatrix_E6 v
@@ -338,6 +345,7 @@ noncomputable def starGraphIsoE7 :
         (diagramGraph (starCartanMatrix ![1, 3, 3])) E7.graph)
       (StarIndex ![1, 3, 3]) (fun _ ↦ Fin 8) RelIso.instFunLike starGraphIsoE7 v =
         starIndexEquivE7 v := by
+  -- The normalized `Fin 8` coercion prevents `starGraphIso_apply` from matching directly.
   change starGraphIso E7 starIndexEquivE7 starCartanMatrix_one_three_three_eq_submatrix_E7 v = _
   exact starGraphIso_apply E7 starIndexEquivE7
     starCartanMatrix_one_three_three_eq_submatrix_E7 v
@@ -365,6 +373,7 @@ noncomputable def starGraphIsoE8 :
         (diagramGraph (starCartanMatrix ![1, 2, 5])) E8.graph)
       (StarIndex ![1, 2, 5]) (fun _ ↦ Fin 9) RelIso.instFunLike starGraphIsoE8 v =
         starIndexEquivE8 v := by
+  -- The normalized `Fin 9` coercion prevents `starGraphIso_apply` from matching directly.
   change starGraphIso E8 starIndexEquivE8 starCartanMatrix_one_two_five_eq_submatrix_E8 v = _
   exact starGraphIso_apply E8 starIndexEquivE8
     starCartanMatrix_one_two_five_eq_submatrix_E8 v
