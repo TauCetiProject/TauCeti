@@ -345,7 +345,7 @@ theorem finrank_puncture_le [Finite ι] (C : LinearCode R ι) (s : Set ι) :
 
 /-- Shortening preserves the dimension of the subcode of words supported on the retained
 coordinates. -/
-theorem finrank_shorten_eq [Finite ι] (C : LinearCode R ι) (s : Set ι) :
+theorem finrank_shorten_eq (C : LinearCode R ι) (s : Set ι) :
     Module.finrank R (shorten C s) =
       Module.finrank R
         (((C : Submodule R (ι → R)) ⊓
