@@ -161,58 +161,39 @@ def atFinitePlaceWeightedSumSquares [NumberField K] (v : HeightOneSpectrum (𝓞
     (atFinitePlace (QuadraticMap.weightedSumSquares K a) v).IsometryEquiv
       (QuadraticMap.weightedSumSquares (v.adicCompletion K) fun i =>
         algebraMap K (v.adicCompletion K) (a i)) := by
-  classical
-  refine
-    { toLinearEquiv :=
-        TensorProduct.piScalarRight K (v.adicCompletion K) (v.adicCompletion K) ι
-      map_app' := fun x => ?_ }
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  rw [atFinitePlace_def]
-  change (QuadraticMap.weightedSumSquares (v.adicCompletion K) fun i =>
-      algebraMap K (v.adicCompletion K) (a i))
-        (TensorProduct.piScalarRight K (v.adicCompletion K) (v.adicCompletion K) ι x) = _
-  simpa only [baseChangeWeightedSumSquares_apply, TensorProduct.piScalarRight_apply] using
-    (baseChangeWeightedSumSquares (A := v.adicCompletion K) a).map_app x
+  let e := baseChangeWeightedSumSquares (A := v.adicCompletion K) a
+  refine { toLinearEquiv := e, map_app' := ?_ }
+  intro x
+  simpa only [atFinitePlace] using e.map_app' x
 
 /-- A diagonal form localized at a real place is canonically isometric to the diagonal form
 whose coefficients are evaluated at the place's real embedding. -/
 def atRealPlaceWeightedSumSquares (w : {w : InfinitePlace K // w.IsReal}) (a : ι → K) :
     (atRealPlace (QuadraticMap.weightedSumSquares K a) w).IsometryEquiv
       (QuadraticMap.weightedSumSquares ℝ fun i => embedding_of_isReal w.2 (a i)) := by
-  classical
-  refine
-    { toLinearEquiv := by
-        let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-        exact TensorProduct.piScalarRight K ℝ ℝ ι
-      map_app' := fun x => ?_ }
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  rw [atRealPlace_def]
-  change (QuadraticMap.weightedSumSquares ℝ fun i => embedding_of_isReal w.2 (a i))
-      (TensorProduct.piScalarRight K ℝ ℝ ι x) = _
-  simpa only [RingHom.algebraMap_toAlgebra, baseChangeWeightedSumSquares_apply,
-    TensorProduct.piScalarRight_apply] using
-    (baseChangeWeightedSumSquares (A := ℝ) a).map_app x
+  let e := baseChangeWeightedSumSquares (A := ℝ) a
+  refine { toLinearEquiv := e, map_app' := ?_ }
+  intro x
+  simpa only [atRealPlace, RingHom.algebraMap_toAlgebra] using e.map_app' x
 
 /-- A diagonal form extended through a complex embedding is canonically isometric to the
 diagonal form whose coefficients are evaluated at that embedding. -/
 def atComplexEmbeddingWeightedSumSquares (w : InfinitePlace K) (a : ι → K) :
     (atComplexEmbedding (QuadraticMap.weightedSumSquares K a) w).IsometryEquiv
       (QuadraticMap.weightedSumSquares ℂ fun i => w.embedding (a i)) := by
-  classical
-  refine
-    { toLinearEquiv := by
-        let : Algebra K ℂ := w.embedding.toAlgebra
-        exact TensorProduct.piScalarRight K ℂ ℂ ι
-      map_app' := fun x => ?_ }
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   let : Algebra K ℂ := w.embedding.toAlgebra
-  rw [atComplexEmbedding_def]
-  change (QuadraticMap.weightedSumSquares ℂ fun i => w.embedding (a i))
-      (TensorProduct.piScalarRight K ℂ ℂ ι x) = _
-  simpa only [RingHom.algebraMap_toAlgebra, baseChangeWeightedSumSquares_apply,
-    TensorProduct.piScalarRight_apply] using
-    (baseChangeWeightedSumSquares (A := ℂ) a).map_app x
+  let e := baseChangeWeightedSumSquares (A := ℂ) a
+  refine { toLinearEquiv := e, map_app' := ?_ }
+  intro x
+  simpa only [atComplexEmbedding, RingHom.algebraMap_toAlgebra] using e.map_app' x
+
+-- Unfolding the three specializations exposes their `toLinearEquiv` structure field, whereas
+-- `baseChangeWeightedSumSquares_tmul` uses the enclosing isometry's function coercion. The
+-- following `change` steps bridge exactly that coercion; the tensor calculation remains generic.
 
 /-- On a pure tensor, the finite-place diagonal isometry maps each coordinate through the
 completion map and scales it by the tensor coefficient. -/
@@ -221,11 +202,9 @@ theorem atFinitePlaceWeightedSumSquares_tmul [NumberField K]
     (v : HeightOneSpectrum (𝓞 K)) (a : ι → K) (b : v.adicCompletion K) (x : ι → K) :
     atFinitePlaceWeightedSumSquares v a (b ⊗ₜ x) =
       fun i => b * algebraMap K (v.adicCompletion K) (x i) := by
-  classical
-  change TensorProduct.piScalarRight K (v.adicCompletion K) (v.adicCompletion K) ι
-      (b ⊗ₜ x) = _
-  rw [TensorProduct.piScalarRight_apply, TensorProduct.piScalarRightHom_tmul]
-  simp [Algebra.smul_def, mul_comm]
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  change baseChangeWeightedSumSquares (A := v.adicCompletion K) a (b ⊗ₜ x) = _
+  exact baseChangeWeightedSumSquares_tmul (A := v.adicCompletion K) a b x
 
 /-- On a pure tensor, the real-place diagonal isometry evaluates every coordinate at the
 place's real embedding and scales it by the tensor coefficient. -/
@@ -235,12 +214,11 @@ theorem atRealPlaceWeightedSumSquares_tmul (w : {w : InfinitePlace K // w.IsReal
     let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
     atRealPlaceWeightedSumSquares w a (b ⊗ₜ x) =
       fun i => b * embedding_of_isReal w.2 (x i) := by
-  classical
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  change TensorProduct.piScalarRight K ℝ ℝ ι (b ⊗ₜ x) = _
-  rw [TensorProduct.piScalarRight_apply, TensorProduct.piScalarRightHom_tmul]
-  simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra, mul_comm]
+  change baseChangeWeightedSumSquares (A := ℝ) a (b ⊗ₜ x) = _
+  simpa only [RingHom.algebraMap_toAlgebra] using
+    baseChangeWeightedSumSquares_tmul (A := ℝ) a b x
 
 /-- On a pure tensor, the complex-embedding diagonal isometry evaluates every coordinate at the
 chosen embedding and scales it by the tensor coefficient. -/
@@ -250,12 +228,11 @@ theorem atComplexEmbeddingWeightedSumSquares_tmul (w : InfinitePlace K)
     let _ : Algebra K ℂ := w.embedding.toAlgebra
     atComplexEmbeddingWeightedSumSquares w a (b ⊗ₜ x) =
       fun i => b * w.embedding (x i) := by
-  classical
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   let : Algebra K ℂ := w.embedding.toAlgebra
-  change TensorProduct.piScalarRight K ℂ ℂ ι (b ⊗ₜ x) = _
-  rw [TensorProduct.piScalarRight_apply, TensorProduct.piScalarRightHom_tmul]
-  simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra, mul_comm]
+  change baseChangeWeightedSumSquares (A := ℂ) a (b ⊗ₜ x) = _
+  simpa only [RingHom.algebraMap_toAlgebra] using
+    baseChangeWeightedSumSquares_tmul (A := ℂ) a b x
 
 end Diagonal
 
