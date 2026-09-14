@@ -36,6 +36,17 @@ equality because `(ZMod m)ˣ` is commutative.
   `(σ₂, υ)` are disjoint whenever `τ ≠ υ`.
 * `NumberField.Chebotarev.pairwise_disjoint_taggedFrobeniusPrimeSet`: the tagged fibres for a
   fixed `σ` are pairwise disjoint as `τ` varies.
+
+## References
+
+The tagged fibres and their disjointness for distinct `τ` belong to the cyclotomic-crossing step
+of the proof of the Chebotarev density theorem in Sharifi, *Algebraic Number Theory*,
+Theorem 7.2.2, Step 2. The Birkbeck--Brasca development
+[CBirkbeck/chebotarev-density](https://github.com/CBirkbeck/chebotarev-density) (Apache-2.0), at
+commit `55a89985d47a3befcf6069aca1da250ff088b5c7`, records the same disjointness inside the
+private `exists_cyclotomicCrossing_fibres` in `CebotarevDensity/Abelian.lean`, where it follows
+from a global tag recording the cyclotomic component of each prime's Frobenius; here it is proved
+instead by passing conjugacy through the cyclotomic character.
 -/
 
 public section
