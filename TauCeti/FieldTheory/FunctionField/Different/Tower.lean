@@ -121,7 +121,7 @@ theorem differentExponent_restrict_add (P₂ : Place k₂ F₂) :
   -- Localize at `p`: `𝒪_{P₁}` is the localization of `B`, and its integral closure `Cₘ` in `F₂`
   -- is the matching localization of `C`.  Mathlib's `IsLocalization.integralClosure` is stated
   -- for the literal `integralClosure B F₂`, whereas `C` is the integral closure of `𝒪_{P₀}`, so
-  -- the localization structure is verified by hand.
+  -- `IsIntegralClosure.isLocalization_of_isLocalization` supplies the abstract version needed.
   let Bₘ := P₁.integers
   let Cₘ := integralClosure Bₘ F₂
   let _ : Algebra B Bₘ := ((algebraMap B F₁).codRestrict Bₘ hB).toAlgebra
@@ -147,32 +147,8 @@ theorem differentExponent_restrict_add (P₂ : Place k₂ F₂) :
     apply Subtype.ext
     rfl
   let _ : IsLocalization (Algebra.algebraMapSubmonoid C p.asIdeal.primeCompl) Cₘ :=
-    ⟨⟨by
-      -- Elements of `p.primeCompl` are units in `𝒪_{P₁}`, hence in `Cₘ`.
-      rintro ⟨_, m, hm, rfl⟩
-      rw [← IsScalarTower.algebraMap_apply B C Cₘ]
-      exact (IsLocalization.map_units Bₘ ⟨m, hm⟩).map (algebraMap Bₘ Cₘ), by
-      -- Clear a denominator from `p.primeCompl` to make an element of `Cₘ` integral over `B`.
-      intro y
-      obtain ⟨m, hm⟩ := IsIntegral.exists_multiple_integral_of_isLocalization
-        (R := B) (Rₘ := Bₘ) p.asIdeal.primeCompl (y : F₂)
-          ((IsIntegralClosure.isIntegral_iff (A := Cₘ) (R := Bₘ)).mpr ⟨y, rfl⟩)
-      obtain ⟨c, hc⟩ := (IsIntegralClosure.isIntegral_iff (A := C) (R := B)).mp hm
-      refine ⟨⟨c, algebraMap B C m, m, m.2, rfl⟩, ?_⟩
-      apply IsIntegralClosure.algebraMap_injective Cₘ Bₘ F₂
-      rw [map_mul, ← IsScalarTower.algebraMap_apply C Cₘ F₂,
-        ← IsScalarTower.algebraMap_apply C Cₘ F₂,
-        ← IsScalarTower.algebraMap_apply B C F₂, hc,
-        Submonoid.smul_def, Algebra.smul_def, mul_comm]
-      -- `algebraMap Cₘ F₂` is the subalgebra inclusion.
-      rfl, by
-      -- `C → Cₘ` is injective, since both embed in `F₂`.
-      intro x y hxy
-      refine ⟨1, ?_⟩
-      simp only [Submonoid.coe_one, one_mul]
-      apply IsIntegralClosure.algebraMap_injective C B F₂
-      have h := congrArg (algebraMap Cₘ F₂) hxy
-      simpa only [IsScalarTower.algebraMap_apply C Cₘ F₂] using h⟩⟩
+    IsIntegralClosure.isLocalization_of_isLocalization (R := B) (Rₘ := Bₘ) (S := C)
+      (Sₘ := Cₘ) (L := F₂) (M := p.asIdeal.primeCompl)
   -- The centre of `P₂` on `Cₘ` contracts to `q`, so localization preserves the coefficient.
   have hq_under : (centerIntegralClosure k₁ F₁ P₂).asIdeal.under C = q.asIdeal := by
     ext c
