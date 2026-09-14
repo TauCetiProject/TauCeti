@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.GroupAction.Blocks
+public import TauCeti.GroupTheory.Perm.Blocks
 public import TauCeti.GroupTheory.Perm.WreathProduct
 
 /-!
@@ -22,7 +22,8 @@ through the imprimitive action of the wreath product `Sym(B) ≀ Sym(orbit G B)`
 homomorphism `G →* WreathProduct (Equiv.Perm B) (orbit G B)` whose top component is the action of
 `G` on the block system. It is injective exactly when `G` acts faithfully on `α`, and the elements
 it sends into the base group `orbit G B → Equiv.Perm B` are exactly those acting trivially on the
-block system. So the kernel of the action on the block system embeds in the base group.
+block system. So when the action on `α` is faithful, the kernel of the action on the block system
+embeds in the base group.
 
 The identification of `α` with the grid depends on the chosen elements of `G`. The lemmas below
 describe it only through properties that hold for every such choice.
@@ -38,7 +39,7 @@ describe it only through properties that hold for every such choice.
 * `MulAction.IsBlock.imprimitivityEquiv_smul`: the identification is equivariant, from the action
   on `α` to the imprimitive wreath-product action on `orbit G B × B`.
 * `MulAction.IsBlock.toWreathProduct_right`: the top component is the action on the block system.
-* `MulAction.IsBlock.injective_toWreathProduct_iff`: the homomorphism is injective exactly when
+* `MulAction.IsBlock.toWreathProduct_injective_iff`: the homomorphism is injective exactly when
   the action on `α` is faithful.
 * `MulAction.IsBlock.comap_toWreathProduct_range_inl`: the preimage of the base group is the
   kernel of the action on the block system.
@@ -65,12 +66,6 @@ private theorem blockTransversal_smul (C : orbit G B) : blockTransversal C • B
   (mem_orbit_iff.1 C.2).choose_spec
 
 variable [IsPretransitive G α]
-
-/-- For a transitive action, every point lies in exactly one translate of a nonempty block. -/
-theorem _root_.MulAction.IsBlock.existsUnique_mem_orbit (hB : IsBlock G B) (hBne : B.Nonempty)
-    (x : α) : ∃! C : orbit G B, x ∈ (C : Set α) := by
-  obtain ⟨C, ⟨hC, hxC⟩, huniq⟩ := (hB.isBlockSystem hBne).1.2 x
-  exact ⟨⟨C, hC⟩, hxC, fun D hxD ↦ Subtype.ext (huniq D ⟨D.2, hxD⟩)⟩
 
 /-- The translate of the block `B` containing `x`. -/
 private noncomputable def blockOf (hB : IsBlock G B) (hBne : B.Nonempty) (x : α) : orbit G B :=
@@ -155,6 +150,7 @@ theorem _root_.MulAction.IsBlock.imprimitiveToPerm_toWreathProduct (g : G) :
 
 /-- The identification `α ≃ orbit G B × B` is equivariant for the action of `G` on `α` and the
 imprimitive wreath-product action through `hB.toWreathProduct hBne`. -/
+@[simp]
 theorem _root_.MulAction.IsBlock.imprimitivityEquiv_smul (g : G) (x : α) :
     hB.imprimitivityEquiv hBne (g • x) =
       hB.toWreathProduct hBne g • hB.imprimitivityEquiv hBne x := by
@@ -187,7 +183,7 @@ theorem _root_.MulAction.IsBlock.toWreathProduct_left_apply (g : G) (C : orbit G
 
 /-- The homomorphism `hB.toWreathProduct hBne` is injective exactly when `G` acts faithfully on
 `α`. In that case it embeds `G` in `Sym(B) ≀ Sym(orbit G B)`. -/
-theorem _root_.MulAction.IsBlock.injective_toWreathProduct_iff :
+theorem _root_.MulAction.IsBlock.toWreathProduct_injective_iff :
     Function.Injective (hB.toWreathProduct hBne) ↔ FaithfulSMul G α := by
   refine ⟨fun h ↦ ⟨fun {g₁ g₂} hg ↦ h ?_⟩, fun _ g₁ g₂ hg ↦ ?_⟩
   · have : Nonempty B := hBne.to_subtype
