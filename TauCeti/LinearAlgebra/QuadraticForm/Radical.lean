@@ -11,6 +11,8 @@ public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 
+import TauCeti.LinearAlgebra.QuadraticForm.Isometry
+
 /-!
 # Radical API for quadratic forms
 
@@ -96,12 +98,40 @@ theorem polarBilin_restrict (Q : QuadraticForm R M) (W : Submodule R M) :
   ext x y
   rfl
 
-/-- Nondegeneracy transfers along an isometry, when `2` is invertible. -/
-theorem IsometryEquiv.nondegenerate [Invertible (2 : R)] {Q : QuadraticForm R M}
+/-- Nondegeneracy transfers along an isometry. -/
+theorem IsometryEquiv.nondegenerate {Q : QuadraticForm R M}
     {Q' : QuadraticForm R M'} (e : Q.IsometryEquiv Q') (hQ : Q.Nondegenerate) :
     Q'.Nondegenerate := by
-  rw [nondegenerate_iff_radical_eq_bot, ← e.map_radical,
-    nondegenerate_iff_radical_eq_bot.mp hQ, Submodule.map_bot]
+  constructor
+  · rw [← e.map_radical, hQ.radical_eq_bot, Submodule.map_bot]
+  · have hpolar (x y : M) : Q'.polarBilin (e.toLinearEquiv x) (e.toLinearEquiv y) =
+        Q.polarBilin x y := by
+      simp only [QuadraticMap.polarBilin_apply_apply]
+      change QuadraticMap.polar Q' (e.toIsometry x) (e.toIsometry y) = _
+      exact e.toIsometry.polar_apply x y
+    have hker : Q.polarBilin.ker.map e.toLinearMap = Q'.polarBilin.ker := by
+      ext y
+      obtain ⟨x, rfl⟩ := e.toLinearEquiv.surjective y
+      constructor
+      · rintro ⟨z, hz, hezx⟩
+        have hzx : z = x := e.toLinearEquiv.injective hezx
+        subst z
+        change Q.polarBilin x = 0 at hz
+        change Q'.polarBilin (e.toLinearEquiv x) = 0
+        ext z
+        obtain ⟨w, rfl⟩ := e.toLinearEquiv.surjective z
+        rw [hpolar]
+        simpa only [LinearMap.zero_apply] using congrArg (fun f : M →ₗ[R] R => f w) hz
+      · intro hx
+        refine ⟨x, ?_, rfl⟩
+        change Q'.polarBilin (e.toLinearEquiv x) = 0 at hx
+        change Q.polarBilin x = 0
+        ext w
+        have hw := congrArg (fun f : M' →ₗ[R] R => f (e.toLinearEquiv w)) hx
+        rw [← hpolar]
+        simpa only [LinearMap.zero_apply] using hw
+    rw [← hker, ← Cardinal.lift_le_one_iff, e.toLinearEquiv.lift_rank_map_eq]
+    exact Cardinal.lift_le_one_iff.mpr hQ.rank_rad_polar_le
 
 section Field
 
