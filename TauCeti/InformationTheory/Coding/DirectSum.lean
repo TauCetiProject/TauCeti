@@ -26,7 +26,7 @@ The construction follows the direct-sum convention in Huffman and Pless, *Fundam
 Error-Correcting Codes*, Section 1.6.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti
 
@@ -49,13 +49,8 @@ corresponding code. -/
 theorem mem_directSum_iff {C : Submodule R (ι → R)} {D : Submodule R (κ → R)}
     {x : ι ⊕ κ → R} :
     x ∈ directSum C D ↔ (fun i ↦ x (.inl i)) ∈ C ∧ (fun j ↦ x (.inr j)) ∈ D := by
-  let e := LinearEquiv.sumArrowLequivProdArrow ι κ R R
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    exact hy
-  · intro hx
-    refine ⟨e x, hx, ?_⟩
-    exact e.symm_apply_apply x
+  rw [directSum, Submodule.mem_map_equiv]
+  rfl
 
 /-- The direct sum is linearly equivalent to the product of its two constituent codes. -/
 def directSumEquivProd (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
@@ -72,25 +67,25 @@ def directSumEquivProd (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
 theorem directSumEquivProd_apply_fst (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
     (x : directSum C D) (i : ι) :
     (directSumEquivProd C D x).1.1 i = x.1 (.inl i) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem directSumEquivProd_apply_snd (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
     (x : directSum C D) (j : κ) :
     (directSumEquivProd C D x).2.1 j = x.1 (.inr j) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem directSumEquivProd_symm_apply_inl (C : Submodule R (ι → R))
     (D : Submodule R (κ → R)) (x : C) (y : D) (i : ι) :
     ((directSumEquivProd C D).symm (x, y)).1 (.inl i) = x.1 i :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem directSumEquivProd_symm_apply_inr (C : Submodule R (ι → R))
     (D : Submodule R (κ → R)) (x : C) (y : D) (j : κ) :
     ((directSumEquivProd C D).symm (x, y)).1 (.inr j) = y.1 j :=
-  rfl
+  (rfl)
 
 /-- Direct sum is monotone in both constituent codes. -/
 @[gcongr]
@@ -105,16 +100,9 @@ theorem map_directSum_sumComm (C : Submodule R (ι → R)) (D : Submodule R (κ 
     (directSum C D).map
         (LinearEquiv.funCongrLeft R R (Equiv.sumComm κ ι)).toLinearMap =
       directSum D C := by
-  let e := LinearEquiv.funCongrLeft R R (Equiv.sumComm κ ι)
   ext x
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    apply mem_directSum_iff.mpr
-    exact (mem_directSum_iff.mp hy).symm
-  · intro hx
-    refine ⟨e.symm x, ?_, e.apply_symm_apply x⟩
-    apply mem_directSum_iff.mpr
-    exact (mem_directSum_iff.mp hx).symm
+  rw [Submodule.mem_map_equiv, mem_directSum_iff, mem_directSum_iff]
+  exact and_comm
 
 /-- Reindexing an iterated direct sum by associating its coordinate summands associates the
 three codes in the same way. -/
@@ -123,20 +111,9 @@ theorem map_directSum_sumAssoc (C : Submodule R (ι → R)) (D : Submodule R (κ
     (directSum (directSum C D) E).map
         (LinearEquiv.funCongrLeft R R (Equiv.sumAssoc ι κ ν).symm).toLinearMap =
       directSum C (directSum D E) := by
-  let e := LinearEquiv.funCongrLeft R R (Equiv.sumAssoc ι κ ν).symm
   ext x
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    apply mem_directSum_iff.mpr
-    have hy' := mem_directSum_iff.mp hy
-    have hyLeft := mem_directSum_iff.mp hy'.1
-    exact ⟨hyLeft.1, mem_directSum_iff.mpr ⟨hyLeft.2, hy'.2⟩⟩
-  · intro hx
-    refine ⟨e.symm x, ?_, e.apply_symm_apply x⟩
-    apply mem_directSum_iff.mpr
-    have hx' := mem_directSum_iff.mp hx
-    have hxRight := mem_directSum_iff.mp hx'.2
-    exact ⟨mem_directSum_iff.mpr ⟨hx'.1, hxRight.1⟩, hxRight.2⟩
+  simp only [Submodule.mem_map_equiv, mem_directSum_iff]
+  exact and_assoc
 
 end Semiring
 
@@ -159,13 +136,9 @@ variable [Semiring R]
 
 /-- The cardinality of a direct sum is the product of the cardinalities of its constituent
 codes. -/
-@[simp]
 theorem natCard_directSum (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
-    Nat.card { x : ι ⊕ κ → R //
-      (fun i ↦ x (.inl i)) ∈ C ∧ (fun j ↦ x (.inr j)) ∈ D } =
-      Nat.card C * Nat.card D := by
-  rw [Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ mem_directSum_iff.symm),
-    Nat.card_congr (directSumEquivProd C D).toEquiv, Nat.card_prod]
+    Nat.card (directSum C D) = Nat.card C * Nat.card D := by
+  rw [Nat.card_congr (directSumEquivProd C D).toEquiv, Nat.card_prod]
 
 end Cardinality
 
