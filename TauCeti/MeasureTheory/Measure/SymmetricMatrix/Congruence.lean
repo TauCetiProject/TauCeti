@@ -388,7 +388,6 @@ section Cone
 variable (C : Matrix.GeneralLinearGroup (Fin p) ℝ)
 
 /-- Congruence by an invertible matrix preserves positive definiteness in both directions. -/
-@[simp]
 theorem posDef_coe_symmetricCongruence_iff
     (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
     ((symmetricCongruence C A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
@@ -397,7 +396,6 @@ theorem posDef_coe_symmetricCongruence_iff
     ← star_eq_conjTranspose, IsUnit.posDef_star_right_conjugate_iff (Units.isUnit C)]
 
 /-- Congruence by an invertible matrix maps the positive-definite cone onto itself. -/
-@[simp]
 theorem preimage_symmetricCongruence_posDef :
     symmetricCongruence C ⁻¹' {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).PosDef} =
