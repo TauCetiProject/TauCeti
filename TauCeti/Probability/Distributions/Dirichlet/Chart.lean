@@ -240,8 +240,8 @@ theorem dirichletScale_apply (i₀ : ι) (z : ({i : ι // i ≠ i₀} → ℝ) �
     dirichletScale i₀ z i = z.2 * dirichletReconstruct i₀ z.1 i := by
   simp [dirichletScale]
 
-/-- The coordinate sum of a scaled simplex point is its total-mass coordinate.  This is a
-pre-simp lemma so that it fires before `dirichletScale_apply` rewrites the summand. -/
+/-- The coordinate sum of a scaled simplex point is its total-mass coordinate. -/
+-- Pre-simp, so that it fires before `dirichletScale_apply` rewrites the summand.
 @[simp↓]
 theorem sum_dirichletScale (i₀ : ι) (z : ({i : ι // i ≠ i₀} → ℝ) × ℝ) :
     ∑ i, dirichletScale i₀ z i = z.2 := by
