@@ -11,35 +11,42 @@ public import Mathlib.Algebra.Ring.CompTypeclasses
 /-!
 # Renaming variables along an equivalence as a ring-homomorphism inverse pair
 
-Renaming the variables of a multivariable polynomial along an equivalence `e : σ ≃ τ` and along
-its inverse `e.symm` are mutually inverse ring homomorphisms. Mathlib's
-`RingHomInvPair.of_ringEquiv` is deliberately not an instance, so this file registers the
-`RingHomInvPair` instance for this pair. It lets semilinear equivalences over
-`MvPolynomial.rename e`, such as `M ≃ₛₗ[rename e] N`, be stated and inverted without local
-instances.
+Renaming the variables of a multivariable polynomial along an equivalence `e : σ ≃ τ` is a
+ring equivalence. Mathlib's `RingHomInvPair.of_ringEquiv` and
+`RingHomInvPair.of_ringEquiv_symm` are deliberately not instances, so this file registers them
+for `MvPolynomial.renameEquiv`. This lets semilinear equivalences over variable renaming be used
+and inverted without requiring downstream local instances.
 
 ## Main definitions
 
-* `TauCeti.renameRingHomInvPair`: renaming along `e` and along `e.symm` form a
-  `RingHomInvPair`.
+* `TauCeti.renameRingHomInvPair`: variable renaming and its inverse form a `RingHomInvPair`.
+* `TauCeti.renameRingHomInvPairSymm`: the same inverse pair in the reverse direction.
 -/
 
 public section
 
 namespace TauCeti
 
-open MvPolynomial
-
 variable {σ τ : Type*} (R : Type*) [CommSemiring R]
 
-/-- Renaming variables along an equivalence and along its inverse are inverse ring
-homomorphisms. -/
+/-- A polynomial variable-renaming ring equivalence and its inverse form a
+`RingHomInvPair`. -/
 noncomputable instance renameRingHomInvPair (e : σ ≃ τ) :
     RingHomInvPair
-      ((rename ⇑e : MvPolynomial σ R →ₐ[R] MvPolynomial τ R) :
+      ((MvPolynomial.renameEquiv R e).toRingEquiv :
         MvPolynomial σ R →+* MvPolynomial τ R)
-      ((rename ⇑e.symm : MvPolynomial τ R →ₐ[R] MvPolynomial σ R) :
+      ((MvPolynomial.renameEquiv R e).toRingEquiv.symm :
         MvPolynomial τ R →+* MvPolynomial σ R) :=
-  RingHomInvPair.of_ringEquiv (renameEquiv R e).toRingEquiv
+  RingHomInvPair.of_ringEquiv (MvPolynomial.renameEquiv R e).toRingEquiv
+
+/-- The inverse polynomial variable-renaming ring equivalence and the forward equivalence form a
+`RingHomInvPair`. -/
+noncomputable instance renameRingHomInvPairSymm (e : σ ≃ τ) :
+    RingHomInvPair
+      ((MvPolynomial.renameEquiv R e).toRingEquiv.symm :
+        MvPolynomial τ R →+* MvPolynomial σ R)
+      ((MvPolynomial.renameEquiv R e).toRingEquiv :
+        MvPolynomial σ R →+* MvPolynomial τ R) :=
+  RingHomInvPair.of_ringEquiv_symm (MvPolynomial.renameEquiv R e).toRingEquiv
 
 end TauCeti
