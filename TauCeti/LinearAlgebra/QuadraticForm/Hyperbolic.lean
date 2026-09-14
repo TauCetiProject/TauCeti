@@ -224,38 +224,9 @@ theorem exists_hyperbolicPlane_prod_equivalent [FiniteDimensional K V] [Invertib
   obtain ⟨x, y, hx, hxQ, hyQ, hxy⟩ := hQ.exists_isotropic_pair hiso
   let W := LinearMap.range (hyperbolicPairMap (K := K) x y)
   let eH := hyperbolicPairIsometryEquiv Q x y hxQ hyQ hxy
-  have hWQ : (Q.restrict W).Nondegenerate := by
-    rw [QuadraticMap.nondegenerate_iff_radical_eq_bot]
-    have hr := eH.map_radical
-    rw [nondegenerate_hyperbolicPlane.radical_eq_bot, Submodule.map_bot] at hr
-    exact hr.symm
-  let B := QuadraticMap.associated Q
-  have hBW : (LinearMap.BilinForm.restrict B W).Nondegenerate := by
-    have h : (QuadraticMap.associated (Q.comp W.subtype)).Nondegenerate :=
-      QuadraticMap.nondegenerate_associated_iff.mpr hWQ
-    rwa [QuadraticMap.associated_comp] at h
-  have hcomp : IsCompl W (LinearMap.BilinForm.orthogonal B W) :=
-    LinearMap.BilinForm.isCompl_orthogonal_of_restrict_nondegenerate
-      (LinearMap.BilinForm.isSymm_iff.mpr (QuadraticForm.associated_isSymm K Q)).isRefl hBW
-  have horth : (Q.restrict (LinearMap.BilinForm.orthogonal B W)).Nondegenerate := by
-    have hB : B.Nondegenerate := QuadraticMap.nondegenerate_associated_iff.mpr hQ
-    have hBsymm :=
-      (LinearMap.BilinForm.isSymm_iff.mpr (QuadraticForm.associated_isSymm K Q)).isRefl
-    have hBorth :
-        (LinearMap.BilinForm.restrict B (LinearMap.BilinForm.orthogonal B W)).Nondegenerate := by
-      rw [LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal hBsymm,
-        LinearMap.BilinForm.orthogonal_orthogonal hB hBsymm]
-      exact hcomp.symm
-    have h : (QuadraticMap.associated
-        (Q.comp (LinearMap.BilinForm.orthogonal B W).subtype)).Nondegenerate := by
-      rw [QuadraticMap.associated_comp]
-      exact hBorth
-    exact QuadraticMap.nondegenerate_associated_iff.mp h
-  have hBpolar : LinearMap.BilinForm.orthogonal B W =
-      LinearMap.BilinForm.orthogonal Q.polarBilin W := by
-    ext v
-    simp only [LinearMap.BilinForm.mem_orthogonal_iff, B, associated_isOrtho, isOrtho_polarBilin]
-  rw [hBpolar] at hcomp horth
+  have hWQ : (Q.restrict W).Nondegenerate := eH.nondegenerate nondegenerate_hyperbolicPlane
+  have hcomp := QuadraticMap.isCompl_orthogonal_of_restrict_nondegenerate Q hWQ
+  have horth := QuadraticMap.nondegenerate_restrict_orthogonal hQ hWQ
   obtain ⟨p, hp⟩ := exists_presentedForm_equivalent
     (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W)) horth
   have hdecomp : Q.Equivalent

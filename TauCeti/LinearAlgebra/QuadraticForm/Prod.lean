@@ -27,6 +27,7 @@ common codomain into a special orthogonal transformation of their product.
 
 ## Main definitions
 
+* `QuadraticMap.IsometryEquiv.prod_apply`: a product of isometries acts componentwise.
 * `QuadraticMap.IsometryEquiv.prodAssoc`: `LinearEquiv.prodAssoc` is isometric.
 * `QuadraticMap.IsometryEquiv.uniqueProd`: `LinearEquiv.uniqueProd` is isometric.
 * `QuadraticMap.IsometryEquiv.prodRestrictOrthogonal`: an orthogonal direct sum is isometric to
@@ -40,6 +41,14 @@ namespace QuadraticMap
 
 variable {R M₁ M₂ M₃ P : Type*} [CommSemiring R] [AddCommMonoid M₁] [AddCommMonoid M₂]
   [AddCommMonoid M₃] [AddCommMonoid P] [Module R M₁] [Module R M₂] [Module R M₃] [Module R P]
+
+/-- A product of isometric equivalences acts componentwise. -/
+@[simp]
+theorem IsometryEquiv.prod_apply {N₁ N₂ : Type*} [AddCommMonoid N₁] [AddCommMonoid N₂]
+    [Module R N₁] [Module R N₂] {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P}
+    {Q₁' : QuadraticMap R N₁ P} {Q₂' : QuadraticMap R N₂ P} (e₁ : Q₁.IsometryEquiv Q₁')
+    (e₂ : Q₂.IsometryEquiv Q₂') (x : M₁ × M₂) : (e₁.prod e₂) x = (e₁ x.1, e₂ x.2) :=
+  (rfl)
 
 /-- `LinearEquiv.prodAssoc` is isometric. -/
 def IsometryEquiv.prodAssoc (Q₁ : QuadraticMap R M₁ P) (Q₂ : QuadraticMap R M₂ P)

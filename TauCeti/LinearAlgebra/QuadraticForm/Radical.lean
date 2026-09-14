@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Invertible
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
@@ -19,10 +20,23 @@ facts about the
 quadratic form `x ↦ B x x` of a *symmetric* bilinear form `B` that a Clifford construction consumes:
 its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as `2` is invertible.
 
+Over a field in which `2` is invertible, a subspace on which the form is nondegenerate is
+complementary to its orthogonal complement for the polar form, and that complement carries a
+nondegenerate form again as soon as the ambient form is nondegenerate. These are the two criteria
+that produce the hypothesis of `QuadraticMap.IsometryEquiv.prodRestrictOrthogonal`, so that a
+regular subspace splits off as an orthogonal summand.
+
 ## Main results
 
 * `QuadraticMap.radical_neg`: negating a quadratic map does not change its radical.
 * `QuadraticMap.radical_prod`: the radical of an orthogonal product is the product of the radicals.
+* `QuadraticMap.isSymm_polarBilin`: the polar form is symmetric.
+* `QuadraticMap.polarBilin_restrict`: the polar form of a restriction is the restricted polar form.
+* `QuadraticMap.IsometryEquiv.nondegenerate`: nondegeneracy transfers along an isometry.
+* `QuadraticMap.isCompl_orthogonal_of_restrict_nondegenerate`: a subspace carrying a nondegenerate
+  restriction is complementary to its orthogonal complement.
+* `QuadraticMap.nondegenerate_restrict_orthogonal`: that complement carries a nondegenerate
+  restriction in turn.
 * `QuadraticMap.Nondegenerate.prod`: nondegeneracy passes to an orthogonal product.
 * `QuadraticMap.Nondegenerate.ne_zero`: a nondegenerate quadratic form on a nontrivial module is
   nonzero.
@@ -68,6 +82,54 @@ theorem radical_prod [Invertible (2 : R)] (Q : QuadraticMap R M P) (Q' : Quadrat
     exact ⟨fun x ↦ by simpa using hp (x, 0), fun x ↦ by simpa using hp (0, x)⟩
   · rintro ⟨hp, hp'⟩ x
     simpa using congrArg₂ (· + ·) (hp x.1) (hp' x.2)
+
+/-- The polar form of a quadratic form is symmetric. -/
+theorem isSymm_polarBilin (Q : QuadraticForm R M) :
+    LinearMap.BilinForm.IsSymm Q.polarBilin :=
+  ⟨fun x y => polar_comm Q x y⟩
+
+/-- The polar form of the restriction of a quadratic form to a submodule is the restriction of its
+polar form. -/
+theorem polarBilin_restrict (Q : QuadraticForm R M) (W : Submodule R M) :
+    (Q.restrict W).polarBilin = LinearMap.BilinForm.restrict Q.polarBilin W := by
+  ext x y
+  rfl
+
+/-- Nondegeneracy transfers along an isometry, when `2` is invertible. -/
+theorem IsometryEquiv.nondegenerate [Invertible (2 : R)] {Q : QuadraticForm R M}
+    {Q' : QuadraticForm R M'} (e : Q.IsometryEquiv Q') (hQ : Q.Nondegenerate) :
+    Q'.Nondegenerate := by
+  rw [nondegenerate_iff_radical_eq_bot, ← e.map_radical,
+    nondegenerate_iff_radical_eq_bot.mp hQ, Submodule.map_bot]
+
+section Field
+
+variable {K V : Type*} [Field K] [Invertible (2 : K)] [AddCommGroup V] [Module K V]
+  [FiniteDimensional K V]
+
+/-- A subspace on which a quadratic form restricts to a nondegenerate form is complementary to its
+orthogonal complement for the polar form. -/
+theorem isCompl_orthogonal_of_restrict_nondegenerate (Q : QuadraticForm K V)
+    {W : Submodule K V} (hW : (Q.restrict W).Nondegenerate) :
+    IsCompl W (LinearMap.BilinForm.orthogonal Q.polarBilin W) :=
+  LinearMap.BilinForm.isCompl_orthogonal_of_restrict_nondegenerate (isSymm_polarBilin Q).isRefl
+    (polarBilin_restrict Q W ▸ nondegenerate_polar_iff.mpr hW)
+
+/-- The orthogonal complement of a subspace carrying a nondegenerate restriction carries a
+nondegenerate restriction in turn, provided the ambient form is nondegenerate. -/
+theorem nondegenerate_restrict_orthogonal {Q : QuadraticForm K V} (hQ : Q.Nondegenerate)
+    {W : Submodule K V} (hW : (Q.restrict W).Nondegenerate) :
+    (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W)).Nondegenerate := by
+  have hrefl := (isSymm_polarBilin Q).isRefl
+  have key : LinearMap.BilinForm.Nondegenerate (LinearMap.BilinForm.restrict Q.polarBilin
+      (LinearMap.BilinForm.orthogonal Q.polarBilin W)) := by
+    rw [LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal hrefl,
+      LinearMap.BilinForm.orthogonal_orthogonal (nondegenerate_polar_iff.mpr hQ) hrefl]
+    exact (isCompl_orthogonal_of_restrict_nondegenerate Q hW).symm
+  rw [← polarBilin_restrict] at key
+  exact nondegenerate_polar_iff.mp key
+
+end Field
 
 end QuadraticMap
 

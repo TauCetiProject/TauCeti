@@ -15,6 +15,8 @@ This file records general properties of quadratic-map isometries.
 ## Main results
 
 * `QuadraticMap.Isometry.polar_apply`: an isometry preserves polarization.
+* `QuadraticMap.IsometryEquiv.trans_apply`: a composite isometric equivalence applies the two
+  equivalences in turn.
 -/
 
 public section
@@ -33,5 +35,14 @@ theorem _root_.QuadraticMap.Isometry.polar_apply {R : Type u} {M₁ : Type v} {M
     {Q₂ : QuadraticMap R M₂ N} (f : Q₁ →qᵢ Q₂) (x y : M₁) :
     polar Q₂ (f x) (f y) = polar Q₁ x y := by
   simp only [QuadraticMap.polar, ← map_add f, QuadraticMap.Isometry.map_app]
+
+/-- A composite isometric equivalence applies the two equivalences in turn. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.trans_apply {R : Type u} {M₁ : Type v} {M₂ M₃ : Type*}
+    {N : Type w} [CommSemiring R] [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂]
+    [Module R M₂] [AddCommMonoid M₃] [Module R M₃] [AddCommMonoid N] [Module R N]
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N} {Q₃ : QuadraticMap R M₃ N}
+    (f : Q₁.IsometryEquiv Q₂) (g : Q₂.IsometryEquiv Q₃) (x : M₁) : (f.trans g) x = g (f x) :=
+  (rfl)
 
 end TauCeti
