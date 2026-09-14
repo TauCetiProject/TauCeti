@@ -180,7 +180,14 @@ theorem IsConnected.eulerChar_le_two {t : PermutationTriple n} (ht : t.IsConnect
 
 /-- The genus of a permutation triple, defined by the Euler-characteristic formula. For a
 connected triple, `TauCeti.PermutationTriple.IsConnected.natCast_genus` identifies this natural
-number with the integer quotient `(2 - χ) / 2`. -/
+number with the integer quotient `(2 - χ) / 2`, and
+`TauCeti.PermutationTriple.IsConnected.two_sub_two_mul_genus` makes the `Int.toNat` junk-free.
+
+Connectedness is what gives the number its geometric meaning: the surface of a triple with `c`
+monodromy orbits has total genus `c - χ / 2`, which this formula computes only when `c = 1`, so
+on a disconnected triple the truncation returns a junk value and not a genus. Accordingly every
+statement below that reads the genus geometrically assumes
+`TauCeti.PermutationTriple.IsConnected`. -/
 noncomputable def genus (t : PermutationTriple n) : ℕ := ((2 - t.eulerChar) / 2).toNat
 
 /-- The defining formula for the genus. -/
