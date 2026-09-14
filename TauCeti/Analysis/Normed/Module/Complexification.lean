@@ -387,10 +387,12 @@ theorem norm_complexify (T : X →L[ℝ] Y) : ‖T.complexify‖ = ‖T‖ := by
   refine T.opNorm_le_bound (norm_nonneg _) fun x => ?_
   simpa using T.complexify.le_opNorm (ofReal x)
 
+/-- Complexification preserves identity maps. -/
 @[simp]
 theorem complexify_id : (ContinuousLinearMap.id ℝ X).complexify = ContinuousLinearMap.id ℂ _ := by
   ext <;> simp
 
+/-- Complexification preserves composition of bounded operators. -/
 @[simp]
 theorem complexify_comp (T : Y →L[ℝ] Z) (S : X →L[ℝ] Y) :
     (T.comp S).complexify = T.complexify.comp S.complexify := by
@@ -422,6 +424,7 @@ theorem complexifyₗᵢ_apply (T : X →L[ℝ] Y) : complexifyₗᵢ X Y T = T.
 @[simp]
 theorem complexifyAlgHom_apply (T : X →L[ℝ] X) : complexifyAlgHom X T = T.complexify := (rfl)
 
+/-- Complexification preserves natural powers of bounded endomorphisms. -/
 @[simp]
 theorem complexify_pow (T : X →L[ℝ] X) (n : ℕ) : (T ^ n).complexify = T.complexify ^ n :=
   map_pow (complexifyAlgHom X) T n
