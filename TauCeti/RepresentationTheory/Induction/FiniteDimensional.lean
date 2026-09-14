@@ -21,6 +21,9 @@ Induction on finite-dimensional representations is packaged both objectwise, as 
 functorially, as `indFDRepFunctor`, the latter naturally isomorphic to `Rep.indFunctor` under the
 forgetful functor to `Rep k G`.
 
+That functor is additive; the `Rep`-level fact it rests on, additivity of induced intertwiners
+along an arbitrary group homomorphism, is `Rep.indMap_add`.
+
 The objectwise construction, dimension theorem, and functor on `FDRep` allow the scalar field and
 group to live in separate universes. It uses a small model of Mathlib's induced carrier, compared by
 `indFDRepForgetEquiv`. The comparison isomorphism and natural isomorphism into Mathlib's `Rep`
@@ -257,16 +260,20 @@ theorem finrank_ind [S.FiniteIndex] (A : Rep.{max w u} k S) [FiniteDimensional k
 
 end Dimension
 
-end Rep
+section Additive
 
 /-- **Induction of intertwiners is additive**, on `Rep k G` and for an arbitrary group
 homomorphism: `Rep.indMap` tensors an intertwiner with the identity of `k[H]` and passes to
 coinvariants, and both operations are additive.  Mathlib does not record this. -/
-private theorem indMap_add {k : Type u} {G : Type v} {H : Type w} [CommRing k] [Group G] [Group H]
+theorem indMap_add {k : Type u} {G : Type v} {H : Type w} [CommRing k] [Group G] [Group H]
     (φ : G →* H) {A B : Rep.{u} k G} (f g : A ⟶ B) :
     Rep.indMap φ (f + g) = Rep.indMap φ f + Rep.indMap φ g := by
   ext h a
   simp [Rep.indMap, Rep.add_hom]
+
+end Additive
+
+end Rep
 
 /-- The small induced object together with its comparison to Mathlib's induced representation. -/
 private structure IndSmallModel {k : Type u} {G : Type v} [Field k] [Group G]
@@ -395,7 +402,7 @@ theorem indFDRepMap_add {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgr
   apply (forget₂ (FDRep k G) (Rep k G)).map_injective
   apply Rep.hom_ext
   ext x
-  simp only [Functor.map_add, Rep.add_hom, forget₂_map_indFDRepMap_apply, indMap_add,
+  simp only [Functor.map_add, Rep.add_hom, forget₂_map_indFDRepMap_apply, Rep.indMap_add,
     Representation.IntertwiningMap.toLinearMap_apply, Representation.IntertwiningMap.coe_add,
     Pi.add_apply, map_add]
 
