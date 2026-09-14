@@ -27,7 +27,7 @@ extension.  It is unchanged when the anisotropic part remains anisotropic after 
 * `TauCeti.RegularFormClass.wittIndex_le_wittIndex_baseChange`: the Witt index cannot decrease.
 * `TauCeti.RegularFormClass.wittIndex_baseChange_eq`: the index is unchanged when the extended
   anisotropic part is anisotropic.
-* `TauCeti.QuadraticForm.wittIndex_le_baseChange`: the corresponding statement for a regular
+* `QuadraticForm.wittIndex_le_baseChange`: the corresponding statement for a regular
   quadratic form.
 
 ## References
@@ -167,7 +167,6 @@ theorem RegularFormClass.baseChange_zero :
   rw [h]
 
 /-- Base change preserves finite orthogonal sums. -/
-@[simp]
 theorem RegularFormClass.baseChange_nsmul (n : ℕ) (c : RegularFormClass K) :
     (n • c).baseChange L = n • c.baseChange L := by
   induction n with
@@ -244,13 +243,20 @@ theorem RegularFormClass.wittIndex_baseChange_eq (c : RegularFormClass K)
   apply RegularFormClass.wittIndex_eq ha
   exact hdecomp
 
-/-- The Witt index of a regular quadratic form cannot decrease after extending scalars. -/
-theorem QuadraticForm.wittIndex_le_baseChange {V : Type w} [AddCommGroup V] [Module K V]
-    [FiniteDimensional K V] (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
-    RegularFormClass.wittIndex (formClass Q hQ) ≤
-      RegularFormClass.wittIndex
-        (formClass (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ)) := by
-  rw [← RegularFormClass.baseChange_formClass Q hQ]
-  exact RegularFormClass.wittIndex_le_wittIndex_baseChange _
-
 end TauCeti
+
+namespace QuadraticForm
+
+variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
+variable [Invertible (2 : K)] [Invertible (2 : L)]
+
+/-- The Witt index of a regular quadratic form cannot decrease after extending scalars. -/
+theorem wittIndex_le_baseChange {V : Type w} [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    TauCeti.RegularFormClass.wittIndex (TauCeti.formClass Q hQ) ≤
+      TauCeti.RegularFormClass.wittIndex
+        (TauCeti.formClass (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ)) := by
+  rw [← TauCeti.RegularFormClass.baseChange_formClass Q hQ]
+  exact TauCeti.RegularFormClass.wittIndex_le_wittIndex_baseChange _
+
+end QuadraticForm
