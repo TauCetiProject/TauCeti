@@ -31,6 +31,7 @@ defined for every real square matrix.
 
 ## References
 
+* `TauCetiRoadmap/StandardDistributions/README.md`, Layer 6, item 7 (parameter measurability).
 * R. J. Muirhead, *Aspects of Multivariate Statistical Theory*, Wiley, 1982, chapter 3.
 -/
 
