@@ -76,7 +76,7 @@ omit [I.Boundaryless] in
 
 omit [I.Boundaryless] in
 /-- The zero tangent vector belongs to the exponential domain. -/
-@[simp] theorem zero_mem_expDomain {p : M} :
+theorem zero_mem_expDomain {p : M} :
     (0 : TangentSpace I p) ∈ expDomain I M p := by
   simp
 
