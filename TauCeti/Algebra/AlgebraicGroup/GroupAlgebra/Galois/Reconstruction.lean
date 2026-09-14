@@ -168,12 +168,14 @@ private theorem characterInvariantsAlgHom_comul :
     (characterInvariantsAlgHom k L H hspan a : D)
   have hE : E (Coalgebra.comul (R := L) (characterInvariantsAlgHom k L H hspan a : D)) =
       Coalgebra.comul (R := L) (1 ⊗ₜ[k] a) := by
-    rw [Algebra.TensorProduct.congr_apply]
-    convert he using 1
-    · -- `congr_apply` and the coalgebra law use the two algebra-map coercions of `e`.
-      rfl
-    · exact congrArg (Coalgebra.comul (R := L))
-        (characterEvaluationEquiv_characterInvariantsAlgHom k L H hspan a).symm
+    have hemap : e.toAlgEquiv.toAlgHom = AlgHomClass.toAlgHom e := by
+      apply AlgHom.ext
+      intro x
+      simp only [AlgEquiv.coe_toAlgHom, BialgEquiv.coe_toAlgEquiv,
+        AlgHom.coe_coe]
+    rw [Algebra.TensorProduct.congr_apply, hemap]
+    simpa only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply,
+      AlgHom.coe_coe, e, characterEvaluationEquiv_characterInvariantsAlgHom] using he
   rw [hE, TensorProduct.comul_tmul, CommSemiring.comul_apply]
   induction Coalgebra.comul (R := k) a using TensorProduct.induction_on with
   | zero => simp
