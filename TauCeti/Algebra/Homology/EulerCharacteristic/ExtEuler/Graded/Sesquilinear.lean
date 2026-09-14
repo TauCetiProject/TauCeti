@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Additivity
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Descent
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Shift
 public import TauCeti.CategoryTheory.Exact.Graded.FullSubcategory
 public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent
@@ -15,7 +15,7 @@ public import Mathlib.LinearAlgebra.BilinearMap
 # The q-Euler form on graded Grothendieck groups
 
 Let `P` and `Q` be extension-closed, shift-stable full subcategories of a graded abelian category.
-The objectwise additivity used by the preliminary exact-`K₀` descent makes the graded Ext-Euler
+The preliminary exact-`K₀` descent `TauCeti.gradedExtEulerPairing` makes the graded Ext-Euler
 characteristic biadditive on their induced exact Grothendieck groups.  The shift identities say
 that the shift acts on this pairing by `q⁻¹` in the first variable and by `q` in the second.
 Consequently the pairing upgrades to a map on Laurent-module Grothendieck groups which is
@@ -87,51 +87,25 @@ local instance : P.IsClosedUnderIsomorphisms :=
 local instance : Q.IsClosedUnderIsomorphisms :=
   ObjectProperty.isClosedUnderIsomorphisms_of_containsZero Q
 
-private noncomputable def gradedExtEulerBiadditiveInvariantOnGradedSubcategories
-    (hP : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed P)
-    (hQ : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed Q)
-    (hPshift : P.inverseImage (GradedExactStructure.abelian C e).shift.functor = P)
-    (hQshift : Q.inverseImage (GradedExactStructure.abelian C e).shift.functor = Q)
-    (h : IsGradedEulerAdmissibleOn.{w} (k := k) (e := e) P Q) :
-    ExactK0.BiadditiveInvariant
-      (((GradedExactStructure.abelian C e).fullSubcategory P hP hPshift).toExactStructure)
-      (((GradedExactStructure.abelian C e).fullSubcategory Q hQ hQshift).toExactStructure)
-      (LaurentPolynomial ℤ) where
-  toRightAdditiveInvariant :=
-    { obj := fun X Y =>
-        gradedExtEuler k e (h.isGradedEulerAdmissible X.property Y.property)
-      map_iso₁ := fun {X X'} i Y =>
-        gradedExtEuler_of_iso k
-          (h.isGradedEulerAdmissible X.property Y.property)
-          (h.isGradedEulerAdmissible X'.property Y.property) (P.ι.mapIso i) (Iso.refl Y.obj)
-      map_iso₂ := fun X {Y Y'} i =>
-        gradedExtEuler_of_iso k
-          (h.isGradedEulerAdmissible X.property Y.property)
-          (h.isGradedEulerAdmissible X.property Y'.property) (Iso.refl X.obj) (Q.ι.mapIso i)
-      map_conflation₂ := fun X {S} hS => by
-        have hSfull :
-            ((GradedExactStructure.abelian C e).toExactStructure.fullSubcategory Q hQ).Conflation
-              S :=
-          by simpa only [GradedExactStructure.fullSubcategory_toExactStructure] using hS
-        have hc : (GradedExactStructure.abelian C e).toExactStructure.Conflation (S.map Q.ι) :=
-          (ExactStructure.fullSubcategory_conflation_iff hQ S).mp hSfull
-        have hc' : (ExactStructure.abelian C).Conflation (S.map Q.ι) := by
-          simpa only [GradedExactStructure.abelian_toExactStructure] using hc
-        exact gradedExtEuler_shortExact₂ ((ExactStructure.abelian_conflation _).mp hc') X.obj
-          (h.isGradedEulerAdmissible X.property S.X₁.property)
-          (h.isGradedEulerAdmissible X.property S.X₃.property) }
-  map_conflation₁ {S} hS Y := by
-    have hSfull :
-        ((GradedExactStructure.abelian C e).toExactStructure.fullSubcategory P hP).Conflation S :=
-      by simpa only [GradedExactStructure.fullSubcategory_toExactStructure] using hS
-    have hc : (GradedExactStructure.abelian C e).toExactStructure.Conflation (S.map P.ι) :=
-      (ExactStructure.fullSubcategory_conflation_iff hP S).mp hSfull
-    have hc' : (ExactStructure.abelian C).Conflation (S.map P.ι) := by
-      simpa only [GradedExactStructure.abelian_toExactStructure] using hc
-    exact gradedExtEuler_shortExact₁ ((ExactStructure.abelian_conflation _).mp hc') Y.obj
-      (h.isGradedEulerAdmissible S.X₁.property Y.property)
-      (h.isGradedEulerAdmissible S.X₃.property Y.property)
+omit [HasExt.{w} C] [LocallySmall.{w} C] in
+/-- The identity functor compares the exact structure induced from the graded abelian structure
+with the one induced from the underlying abelian structure. -/
+private theorem isConflationExact_id_fullSubcategory {R : ObjectProperty C} [R.ContainsZero]
+    [R.IsClosedUnderBinaryProducts]
+    (hR : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed R)
+    (hR' : (ExactStructure.abelian C).IsExtensionClosed R)
+    (hRshift : R.inverseImage (GradedExactStructure.abelian C e).shift.functor = R) :
+    ((GradedExactStructure.abelian C e).fullSubcategory R hR
+      hRshift).toExactStructure.IsConflationExact
+        ((ExactStructure.abelian C).fullSubcategory R hR') (𝟭 _) where
+  map_conflation {S} hS := by
+    rw [GradedExactStructure.fullSubcategory_toExactStructure,
+      ExactStructure.fullSubcategory_conflation_iff] at hS
+    rw [ExactStructure.fullSubcategory_conflation_iff, S.map_id]
+    simpa only [GradedExactStructure.abelian_toExactStructure] using hS
 
+/-- The preliminary exact-`K₀` pairing `gradedExtEulerPairing`, read on the Grothendieck groups of
+the graded full-subcategory exact structures. -/
 private noncomputable def gradedExtEulerPairingOnGradedSubcategories
     (hP : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed P)
     (hQ : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed Q)
@@ -142,7 +116,13 @@ private noncomputable def gradedExtEulerPairingOnGradedSubcategories
       ExactK0
           (((GradedExactStructure.abelian C e).fullSubcategory Q hQ hQshift).toExactStructure) →+
       LaurentPolynomial ℤ :=
-  (gradedExtEulerBiadditiveInvariantOnGradedSubcategories hP hQ hPshift hQshift h).bilift
+  have hP' : (ExactStructure.abelian C).IsExtensionClosed P := by
+    simpa only [GradedExactStructure.abelian_toExactStructure] using hP
+  have hQ' : (ExactStructure.abelian C).IsExtensionClosed Q := by
+    simpa only [GradedExactStructure.abelian_toExactStructure] using hQ
+  (((gradedExtEulerPairing hP' hQ' h).comp
+    (ExactK0.map (𝟭 _) (isConflationExact_id_fullSubcategory hP hP' hPshift))).flip.comp
+      (ExactK0.map (𝟭 _) (isConflationExact_id_fullSubcategory hQ hQ' hQshift))).flip
 
 omit [Functor.Linear k e.functor] in
 private theorem gradedExtEulerPairingOnGradedSubcategories_of_of
@@ -155,7 +135,7 @@ private theorem gradedExtEulerPairingOnGradedSubcategories_of_of
     gradedExtEulerPairingOnGradedSubcategories hP hQ hPshift hQshift h
         (ExactK0.of X) (ExactK0.of Y) =
       gradedExtEuler k e (h.isGradedEulerAdmissible X.property Y.property) := by
-  exact ExactK0.BiadditiveInvariant.bilift_of_of _ X Y
+  simp [gradedExtEulerPairingOnGradedSubcategories]
 
 omit [Functor.Linear k e.functor] in
 private theorem gradedExtEulerPairing_shiftTarget
