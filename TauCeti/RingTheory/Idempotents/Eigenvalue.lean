@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Ring.Finset
-public import Mathlib.Algebra.NoZeroSMulDivisors.Defs
+public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.NoZeroSMulDivisors.Basic
 public import Mathlib.Algebra.Ring.Idempotent
 
 /-!
@@ -21,6 +22,8 @@ requiring finite-dimensionality or a simultaneous eigenspace decomposition.
 
 * `Finset.exists_eq_natCast_of_sum_smul_eq_smul`: an eigenvalue of a finite sum of
   commuting idempotents is a bounded natural-number cast.
+* `Finset.smul_eq_self_of_sum_smul_eq_card_smul`: if that eigenvalue is the number of
+  idempotents, every idempotent in the family fixes the vector.
 -/
 
 public section
@@ -80,5 +83,54 @@ theorem exists_eq_natCast_of_sum_smul_eq_smul
         · simpa [Finset.card_insert_of_notMem ha] using Nat.add_le_add_right hm 1
         · rw [Nat.cast_add, Nat.cast_one]
           exact eq_add_of_sub_eq hμ
+
+/-- If a sum of commuting idempotents acts on a vector by the cardinality of the family, then
+every idempotent in the family fixes that vector, including when the vector is zero. -/
+theorem smul_eq_self_of_sum_smul_eq_card_smul
+    {K A M ι : Type*} [Ring K] [CharZero K] [Ring A]
+    [AddCommGroup M] [Module K M] [Module A M] [SMulCommClass A K M]
+    [NoZeroSMulDivisors K M]
+    (s : Finset ι) (p : ι → A)
+    (hp : ∀ i ∈ s, IsIdempotentElem (p i))
+    (hcomm : (s : Set ι).Pairwise fun i j => Commute (p i) (p j))
+    {x : M} (heigen : (∑ i ∈ s, p i) • x = (s.card : K) • x)
+    {a : ι} (ha : a ∈ s) : p a • x = x := by
+  classical
+  let y := (1 - p a) • x
+  have hpa := hp a ha
+  have hpa_y : p a • y = 0 := by
+    dsimp only [y]
+    rw [← mul_smul, mul_sub, mul_one, hpa.eq, sub_self, zero_smul]
+  have hsumcomm : Commute (∑ i ∈ s, p i) (1 - p a) := by
+    apply Commute.sum_left
+    intro i hi
+    rcases eq_or_ne i a with rfl | hia
+    · exact (Commute.one_right _).sub_right (Commute.refl _)
+    · exact (Commute.one_right _).sub_right (hcomm hi ha hia)
+  have hsum_y : (∑ i ∈ s, p i) • y = (s.card : K) • y := by
+    dsimp only [y]
+    calc
+      (∑ i ∈ s, p i) • ((1 - p a) • x) =
+          (1 - p a) • ((∑ i ∈ s, p i) • x) := by
+        rw [← mul_smul, ← mul_smul, hsumcomm.eq]
+      _ = (1 - p a) • ((s.card : K) • x) := by rw [heigen]
+      _ = (s.card : K) • ((1 - p a) • x) := smul_comm _ _ _
+  have hrest_y : (∑ i ∈ s.erase a, p i) • y = (s.card : K) • y := by
+    rw [← Finset.sum_erase_add _ _ ha, add_smul, hpa_y] at hsum_y
+    simpa using hsum_y
+  by_contra hfix
+  have hy : y ≠ 0 := by
+    intro hy
+    apply hfix
+    dsimp only [y] at hy
+    rw [sub_smul, one_smul, sub_eq_zero] at hy
+    exact hy.symm
+  obtain ⟨m, hm, hcast⟩ := (s.erase a).exists_eq_natCast_of_sum_smul_eq_smul p
+    (fun i hi => hp i (Finset.mem_of_mem_erase hi))
+    (hcomm.mono fun i hi => Finset.mem_of_mem_erase hi) hy hrest_y
+  have hcard : s.card = m := Nat.cast_injective (R := K) hcast
+  have hpos : 0 < s.card := Finset.card_pos.mpr ⟨a, ha⟩
+  rw [Finset.card_erase_of_mem ha] at hm
+  omega
 
 end Finset

@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
+public import TauCeti.LinearAlgebra.LinearMap.EqOn
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
+public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.Reflection
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 import TauCeti.Algebra.Group.Subgroup.Map
@@ -30,10 +31,10 @@ the hyperplanes of vectors of invertible norm. The orthogonal group is the targe
 twisted-conjugation homomorphism out of the Pin group, so it is the object the Pin/Spin double
 covers are stated against, and the reflections are the generators an eventual Cartan-Dieudonné
 theorem factors an orthogonal automorphism into. The structural and reflection declarations below
-hold over an arbitrary commutative ring. The equal-norm dichotomy and fixed-subspace correction
-assume a field in which `2` is nonzero. The characteristic restriction is not incidental: in
-characteristic two `polar Q v v = 2 • Q v` vanishes, so `reflection Q v` fixes `v` instead of
-negating it and is a transvection rather than a reflection in `v ^ ⊥`.
+hold over an arbitrary commutative ring. The equal-norm dichotomy, Witt transitivity and the
+fixed-subspace correction assume a field in which `2` is nonzero. The characteristic restriction
+is not incidental: in characteristic two `polar Q v v = 2 • Q v` vanishes, so `reflection Q v`
+fixes `v` instead of negating it and is a transvection rather than a reflection in `v ^ ⊥`.
 
 ## Main definitions
 
@@ -52,7 +53,7 @@ negating it and is a transvection rather than a reflection in `v ^ ⊥`.
 ## Main results
 
 * `TauCeti.QuadraticMap.polar_apply_of_mem_orthogonalGroup`: an orthogonal automorphism preserves
-  the polarization of `Q`; it preserves the orthogonality relation as well
+  polarization and the orthogonality relation
   (`isOrtho_iff_of_mem_orthogonalGroup`). As soon as `2` acts injectively on the target the
   converse holds, `TauCeti.QuadraticMap.mem_orthogonalGroup_iff_polar`, which is the usual
   identification of the isometries of a quadratic form with the isometries of its polar bilinear
@@ -78,9 +79,12 @@ negating it and is a transvection rather than a reflection in `v ^ ⊥`.
   under hypotheses (a field of characteristic not two, a nondegenerate form, finite dimension)
   that are not assumed here, and the image of the Pin group's generating vectors under twisted
   conjugation.
-* `TauCeti.QuadraticMap.exists_mem_subgroup_mul_eqOn_sup_span_singleton_of_reflection_mem`: a
-  subgroup containing the invertible-norm reflections supplies the one-step fixed-subspace
-  correction used by Cartan--Dieudonne induction.
+* `QuadraticMap.exists_isometryEquiv_apply_eq_of_map_eq`: **Witt transitivity**, the orthogonal
+  group acts transitively on the vectors of a fixed nonzero value, by reflecting in `x - y` or in
+  `x + y`.
+* `TauCeti.QuadraticMap.exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton`: at most
+  two anisotropic reflections supply the one-step fixed-subspace correction used by
+  Cartan--Dieudonne induction.
 * `TauCeti.QuadraticMap.specialOrthogonalGroup_normal`: `SO(Q)` is normal in `O(Q)`, being the
   kernel of the determinant restricted there.
 
@@ -183,7 +187,7 @@ variable {M₁ : Type*} {M₂ : Type*} [AddCommMonoid M₁] [Module R M₁] [Add
 
 /-- Conjugation by an isometric equivalence carries `O(Q₁)` onto `O(Q₂)`. -/
 private theorem map_orthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
-    (orthogonalGroup Q₁).map (LinearEquiv.congrAut e.toLinearEquiv : _ →* _)
+    (orthogonalGroup Q₁).map (LinearEquiv.autCongr e.toLinearEquiv : _ →* _)
       = orthogonalGroup Q₂ := by
   have key : ∀ x : M₁, Q₂ (e.toLinearEquiv x) = Q₁ x := e.map_app
   have key' : ∀ x : M₂, Q₁ (e.toLinearEquiv.symm x) = Q₂ x := fun x => by
@@ -192,10 +196,10 @@ private theorem map_orthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
   simp only [Subgroup.mem_map, MonoidHom.coe_coe, mem_orthogonalGroup_iff]
   constructor
   · rintro ⟨f, hf, rfl⟩ m
-    rw [LinearEquiv.congrAut_apply, key, hf, key']
-  · refine fun hg => ⟨(LinearEquiv.congrAut e.toLinearEquiv).symm g, fun m => ?_,
-      (LinearEquiv.congrAut e.toLinearEquiv).apply_symm_apply g⟩
-    rw [LinearEquiv.congrAut_symm_apply, key', hg, key]
+    rw [LinearEquiv.autCongr_apply_apply, key, hf, key']
+  · refine fun hg => ⟨(LinearEquiv.autCongr e.toLinearEquiv).symm g, fun m => ?_,
+      (LinearEquiv.autCongr e.toLinearEquiv).apply_symm_apply g⟩
+    rw [LinearEquiv.autCongr_symm_apply_apply, key', hg, key]
 
 /-- Isometric quadratic maps have isomorphic orthogonal groups: conjugation by an isometric
 equivalence `e : Q₁ ≃qᵢ Q₂` carries `O(Q₁)` onto `O(Q₂)`.
@@ -204,20 +208,20 @@ Over an algebraically closed field every nondegenerate quadratic form of a given
 to every other, so this is what makes `O(Q)` depend on the rank alone. -/
 def orthogonalGroupCongr (e : Q₁.IsometryEquiv Q₂) :
     orthogonalGroup Q₁ ≃* orthogonalGroup Q₂ :=
-  ((LinearEquiv.congrAut e.toLinearEquiv).subgroupMap _).trans
+  ((LinearEquiv.autCongr e.toLinearEquiv).subgroupMap _).trans
     (MulEquiv.subgroupCongr (map_orthogonalGroup e))
 
 @[simp]
 theorem coe_orthogonalGroupCongr_apply (e : Q₁.IsometryEquiv Q₂) (f : orthogonalGroup Q₁) (m : M₂) :
     (orthogonalGroupCongr e f : M₂ ≃ₗ[R] M₂) m
       = e.toLinearEquiv ((f : M₁ ≃ₗ[R] M₁) (e.toLinearEquiv.symm m)) := by
-  simp [orthogonalGroupCongr, LinearEquiv.congrAut_apply]
+  simp [orthogonalGroupCongr, LinearEquiv.autCongr_apply_apply]
 
 @[simp]
 theorem coe_orthogonalGroupCongr_symm_apply (e : Q₁.IsometryEquiv Q₂) (g : orthogonalGroup Q₂)
     (m : M₁) : ((orthogonalGroupCongr e).symm g : M₁ ≃ₗ[R] M₁) m
       = e.toLinearEquiv.symm ((g : M₂ ≃ₗ[R] M₂) (e.toLinearEquiv m)) := by
-  simp [orthogonalGroupCongr, LinearEquiv.congrAut_symm_apply]
+  simp [orthogonalGroupCongr, LinearEquiv.autCongr_symm_apply_apply]
 
 end Congr
 
@@ -310,7 +314,7 @@ variable {M₁ : Type*} {M₂ : Type*} [AddCommGroup M₁] [Module R M₁]
 
 /-- Conjugation by an isometric equivalence carries `SO(Q₁)` onto `SO(Q₂)`. -/
 private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
-    (specialOrthogonalGroup Q₁).map (LinearEquiv.congrAut e.toLinearEquiv : _ →* _) =
+    (specialOrthogonalGroup Q₁).map (LinearEquiv.autCongr e.toLinearEquiv : _ →* _) =
       specialOrthogonalGroup Q₂ := by
   ext g
   simp only [Subgroup.mem_map, MonoidHom.coe_coe, mem_specialOrthogonalGroup_iff]
@@ -318,22 +322,16 @@ private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
   · rintro ⟨f, hf, rfl⟩
     constructor
     · exact (orthogonalGroupCongr e ⟨f, hf.1⟩).2
-    · -- Restate `congrAut` through Mathlib's special-linear congruence.
-      rw [show (LinearEquiv.congrAut e.toLinearEquiv) f =
-          (e.toLinearEquiv.symm.trans f).trans e.toLinearEquiv by
-        ext m
-        exact LinearEquiv.congrAut_apply e.toLinearEquiv f m]
+    · -- Restate `autCongr` through Mathlib's special-linear congruence.
+      rw [LinearEquiv.autCongr_apply]
       exact (SpecialLinearGroup.congr_linearEquiv e.toLinearEquiv ⟨f, hf.2⟩).prop
   · intro hg
-    refine ⟨(LinearEquiv.congrAut e.toLinearEquiv).symm g, ?_,
-      (LinearEquiv.congrAut e.toLinearEquiv).apply_symm_apply g⟩
+    refine ⟨(LinearEquiv.autCongr e.toLinearEquiv).symm g, ?_,
+      (LinearEquiv.autCongr e.toLinearEquiv).apply_symm_apply g⟩
     constructor
     · exact ((orthogonalGroupCongr e).symm ⟨g, hg.1⟩).2
-    · -- Restate inverse `congrAut` through Mathlib's special-linear congruence.
-      rw [show (LinearEquiv.congrAut e.toLinearEquiv).symm g =
-          (e.toLinearEquiv.trans g).trans e.toLinearEquiv.symm by
-        ext m
-        exact LinearEquiv.congrAut_symm_apply e.toLinearEquiv g m]
+    · -- Restate inverse `autCongr` through Mathlib's special-linear congruence.
+      rw [LinearEquiv.autCongr_symm_apply]
       exact (SpecialLinearGroup.congr_linearEquiv e.toLinearEquiv.symm ⟨g, hg.2⟩).prop
 
 /-- Isometric quadratic maps have isomorphic special orthogonal groups: conjugation by an
@@ -341,7 +339,7 @@ isometric equivalence `e : Q₁ ≃qᵢ Q₂` carries `SO(Q₁)` onto `SO(Q₂)`
 noncomputable def _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr
     (e : Q₁.IsometryEquiv Q₂) :
     specialOrthogonalGroup Q₁ ≃* specialOrthogonalGroup Q₂ :=
-  Subgroup.congrOfMapEq (LinearEquiv.congrAut e.toLinearEquiv)
+  Subgroup.congrOfMapEq (LinearEquiv.autCongr e.toLinearEquiv)
     (map_specialOrthogonalGroup e)
 
 /-- Evaluating special-orthogonal transport is conjugation by the isometry `e`. -/
@@ -352,7 +350,7 @@ theorem _root_.QuadraticMap.IsometryEquiv.coe_specialOrthogonalGroupCongr_apply
       e ((f : M₁ ≃ₗ[R] M₁) (e.symm m)) := by
   simp only [QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr,
     Subgroup.coe_congrOfMapEq_apply,
-    LinearEquiv.congrAut_apply]
+    LinearEquiv.autCongr_apply_apply]
   rfl
 
 /-- Evaluating inverse special-orthogonal transport is conjugation by the inverse isometry
@@ -364,7 +362,7 @@ theorem _root_.QuadraticMap.IsometryEquiv.coe_specialOrthogonalGroupCongr_symm_a
       e.symm ((g : M₂ ≃ₗ[R] M₂) (e m)) := by
   simp only [QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr,
     Subgroup.coe_congrOfMapEq_symm_apply,
-    LinearEquiv.congrAut_symm_apply]
+    LinearEquiv.autCongr_symm_apply_apply]
   rfl
 
 end SpecialCongr
@@ -610,6 +608,21 @@ theorem isUnit_sub_or_add_of_map_eq (x y : V) (hxy : Q x = Q y) (hy : Q y ≠ 0)
     exact hy ((mul_eq_zero.mp hzero).resolve_left h4)
   · exact Or.inl hsub
 
+/-- **Witt transitivity** (Lam I.4.5): over a field of characteristic different from two, any two
+vectors with the same nonzero value are related by an isometry of the quadratic form. -/
+theorem _root_.QuadraticMap.exists_isometryEquiv_apply_eq_of_map_eq {x y : V} (hxy : Q x = Q y)
+    (hy : Q y ≠ 0) : ∃ f : Q.IsometryEquiv Q, f x = y := by
+  rcases isUnit_sub_or_add_of_map_eq Q x y hxy hy with h | h
+  · have := h.invertible
+    exact ⟨orthogonalGroupEquivIsometryEquiv Q (reflectionOrthogonal Q (x - y)),
+      by simpa using reflection_sub_apply_eq_of_map_eq Q x y hxy⟩
+  · have : Invertible (Q y) := (isUnit_iff_ne_zero.mpr hy).invertible
+    have : Invertible (Q (x - -y)) := by simpa only [sub_neg_eq_add] using h.invertible
+    have hneg : reflection Q (x - -y) x = -y :=
+      reflection_sub_apply_eq_of_map_eq Q x (-y) (hxy.trans (Q.map_neg y).symm)
+    exact ⟨orthogonalGroupEquivIsometryEquiv Q
+      (reflectionOrthogonal Q y * reflectionOrthogonal Q (x - -y)), by simp [hneg, map_neg]⟩
+
 end Field
 
 section FixedSubspace
@@ -617,37 +630,20 @@ section FixedSubspace
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
 variable (Q : QuadraticForm K V) [NeZero (2 : K)]
 
-omit [NeZero (2 : K)] in
-private theorem linearEquiv_eqOn_sup_span_singleton
-    (f : V ≃ₗ[K] V) (W : Submodule K V) (x : V)
-    (hW : ∀ w ∈ W, f w = w) (hx : f x = x) :
-    ∀ y ∈ W ⊔ Submodule.span K {x}, f y = y := by
-  apply LinearMap.eqOn_sup (f := f) (g := LinearEquiv.refl K V)
-  · intro w hw
-    simpa only [LinearEquiv.refl_apply] using hW w hw
-  · apply LinearMap.eqOn_span'
-    intro y hy
-    simp only [Set.mem_singleton_iff] at hy
-    subst y
-    -- Remove the identity-equivalence coercion introduced by `eqOn_span'`.
-    change f x = x
-    exact hx
-
-/-- Let `H` be a subgroup of the orthogonal group containing every reflection in a vector of
-invertible norm. If `g` fixes a subspace `W` pointwise and `x` is anisotropic and orthogonal to
-`W`, an element of `H` can be multiplied into `g` so that the product fixes
+/-- If `g` fixes a subspace `W` pointwise and `x` is anisotropic and orthogonal to `W`, a list of
+at most two anisotropic reflections can be multiplied into `g` so that the product fixes
 `W ⊔ K ∙ x` pointwise. -/
-theorem exists_mem_subgroup_mul_eqOn_sup_span_singleton_of_reflection_mem
-    (H : Subgroup (QuadraticMap.orthogonalGroup Q))
-    (hreflection : ∀ (v : V) [Invertible (Q v)],
-      QuadraticMap.reflectionOrthogonal Q v ∈ H)
+theorem exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton
     (g : QuadraticMap.orthogonalGroup Q) (W : Submodule K V)
     (hfix : ∀ w ∈ W, ((g : V ≃ₗ[K] V) w) = w)
     (x : V) [Invertible (Q x)]
     (hx : ∀ w ∈ W, Q.IsOrtho x w) :
-    ∃ r : QuadraticMap.orthogonalGroup Q, r ∈ H ∧
+    ∃ l : List (QuadraticMap.orthogonalGroup Q),
+      (∀ r ∈ l, ∃ (v : V) (_ : Invertible (Q v)),
+        QuadraticMap.reflectionOrthogonal Q v = r) ∧
+      l.length ≤ 2 ∧
       ∀ y ∈ W ⊔ Submodule.span K {x},
-        (((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y) = y := by
+        (((l.prod * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y) = y := by
   have hmap : Q ((g : V ≃ₗ[K] V) x) = Q x :=
     QuadraticMap.map_app_of_mem_orthogonalGroup g.2 x
   have hgx : ∀ w ∈ W, Q.IsOrtho ((g : V ≃ₗ[K] V) x) w := by
@@ -669,19 +665,27 @@ theorem exists_mem_subgroup_mul_eqOn_sup_span_singleton_of_reflection_mem
   · let : Invertible (Q ((g : V ≃ₗ[K] V) x - x)) := hsubUnit.invertible
     let r : QuadraticMap.orthogonalGroup Q :=
       QuadraticMap.reflectionOrthogonal Q ((g : V ≃ₗ[K] V) x - x)
-    refine ⟨r, hreflection _, ?_⟩
-    apply linearEquiv_eqOn_sup_span_singleton _ W x
-    · intro w hw
-      -- Expose the reflection underlying the subgroup product before applying its pointwise API.
-      change QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - x)
-        ((g : V ≃ₗ[K] V) w) = w
-      rw [hfix w hw]
-      apply QuadraticMap.reflection_apply_of_isOrtho
-      exact hsub w hw
-    · -- Expose the reflection underlying the subgroup product at the new generator.
-      change QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - x)
-        ((g : V ≃ₗ[K] V) x) = x
-      exact QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ x hmap
+    refine ⟨[r], ?_, by simp, ?_⟩
+    · intro s hs
+      simp only [List.mem_singleton] at hs
+      subst s
+      exact ⟨_, inferInstance, rfl⟩
+    · simpa only [List.prod_cons, List.prod_nil, mul_one] using
+        -- Normalize the singleton word product to the correcting group element.
+        (show ∀ y ∈ W ⊔ Submodule.span K {x},
+          ((((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V)) y) = y by
+            apply ((r * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap).eqOn_sup_span_singleton
+              (g := LinearMap.id)
+            · intro w hw
+              -- Expose the reflection underlying the orthogonal-group product.
+              change QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - x)
+                ((g : V ≃ₗ[K] V) w) = w
+              rw [hfix w hw]
+              exact QuadraticMap.reflection_apply_of_isOrtho Q _ (hsub w hw)
+            · -- Expose the reflection at the new fixed generator.
+              change QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - x)
+                ((g : V ≃ₗ[K] V) x) = x
+              exact QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ x hmap)
   · have : Invertible (Q ((g : V ≃ₗ[K] V) x - -x)) := by
       simpa only [sub_neg_eq_add] using haddUnit.invertible
     have hadd' : ∀ w ∈ W, Q.IsOrtho ((g : V ≃ₗ[K] V) x - -x) w := by
@@ -690,26 +694,34 @@ theorem exists_mem_subgroup_mul_eqOn_sup_span_singleton_of_reflection_mem
       QuadraticMap.reflectionOrthogonal Q x
     let r₂ : QuadraticMap.orthogonalGroup Q :=
       QuadraticMap.reflectionOrthogonal Q ((g : V ≃ₗ[K] V) x - -x)
-    refine ⟨r₁ * r₂, H.mul_mem (hreflection x) (hreflection _), ?_⟩
-    apply linearEquiv_eqOn_sup_span_singleton _ W x
-    · intro w hw
-      -- Expose the two reflections underlying the subgroup product.
-      change QuadraticMap.reflection Q x
-        (QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - -x)
-          ((g : V ≃ₗ[K] V) w)) = w
-      rw [hfix w hw]
-      have hfix₂ : QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - -x) w = w :=
-        QuadraticMap.reflection_apply_of_isOrtho Q _
-        (hadd' w hw)
-      rw [hfix₂]
-      exact QuadraticMap.reflection_apply_of_isOrtho Q _
-        (hx w hw)
-    · -- Expose the two reflections underlying the subgroup product at the new generator.
-      change QuadraticMap.reflection Q x
-        (QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - -x)
-          ((g : V ≃ₗ[K] V) x)) = x
-      rw [QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ (-x)
-        (hmap.trans (Q.map_neg x).symm), map_neg, QuadraticMap.reflection_apply_self, neg_neg]
+    refine ⟨[r₁, r₂], ?_, by simp, ?_⟩
+    · intro s hs
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hs
+      rcases hs with rfl | rfl
+      · exact ⟨x, inferInstance, rfl⟩
+      · exact ⟨_, inferInstance, rfl⟩
+    · simpa only [List.prod_cons, List.prod_nil, mul_one] using
+        -- Normalize the two-element word product to the correcting group elements.
+        (show ∀ y ∈ W ⊔ Submodule.span K {x},
+          (((((r₁ * r₂) * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V)) y) = y by
+            let f := ((r₁ * r₂) * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap
+            apply f.eqOn_sup_span_singleton
+              (g := LinearMap.id)
+            · intro w hw
+              -- Expose the two reflections underlying the orthogonal-group product.
+              change QuadraticMap.reflection Q x
+                (QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - -x)
+                  ((g : V ≃ₗ[K] V) w)) = w
+              rw [hfix w hw]
+              rw [QuadraticMap.reflection_apply_of_isOrtho Q _ (hadd' w hw)]
+              exact QuadraticMap.reflection_apply_of_isOrtho Q _ (hx w hw)
+            · -- Expose the two reflections at the new fixed generator.
+              change QuadraticMap.reflection Q x
+                (QuadraticMap.reflection Q ((g : V ≃ₗ[K] V) x - -x)
+                  ((g : V ≃ₗ[K] V) x)) = x
+              rw [QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ (-x)
+                (hmap.trans (Q.map_neg x).symm), map_neg,
+                QuadraticMap.reflection_apply_self, neg_neg])
 
 end FixedSubspace
 

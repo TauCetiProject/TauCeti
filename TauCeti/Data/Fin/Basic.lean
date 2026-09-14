@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Logic.Equiv.Fin.Rotate
 
+import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.Group.Fin.Basic
 import Mathlib.Tactic.FinCases
 
@@ -17,8 +18,8 @@ import Mathlib.Tactic.FinCases
 # Basic results about finite ordinal types
 
 This file collects elementary facts about finite ordinal types, including the classification of
-permutations of `Fin 2`, indicator sums indexed by `Fin n`, and the final value of a partial
-product.
+permutations of `Fin 2`, sums of reversed indices, indicator sums indexed by `Fin n`, and the final
+value of a partial product.
 
 `Fintype.sum_ite_eq` evaluates a sum whose indicator compares two elements of the index type.
 When the comparison is instead between a natural number and the `Fin.val` of the index — as it is
@@ -31,6 +32,8 @@ range, so the value is a `dite` rather than a plain application.
   transposition.
 * `Fin.rev_finRotate_rev` and `Fin.rev_finRotate_symm`: reversal carries forward rotation to
   backward rotation and conversely.
+* `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
+* `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
 * `TauCeti.add_one_add_one_ne_self`: adding one twice in `Fin n` is nontrivial when `3 ≤ n`.
@@ -42,7 +45,48 @@ range, so the value is a `dite` rather than a plain application.
 
 public section
 
+open scoped BigOperators
+
+namespace Finset
+
+/-- The sum of the first `k` entries of the reversed range `N - 1, ..., 0`. -/
+theorem sum_range_const_sub_succ (N k : ℕ) (hk : k ≤ N) :
+    Finset.sum (Finset.range k) (fun x => N - (x + 1)) =
+      k.choose 2 + k * (N - k) := by
+  calc
+    Finset.sum (Finset.range k) (fun x => N - (x + 1)) =
+        Finset.sum (Finset.range k) (fun x => (N - k) + (k - 1 - x)) := by
+      apply Finset.sum_congr rfl
+      intro x hx
+      have hxk := Finset.mem_range.mp hx
+      omega
+    _ = k * (N - k) + Finset.sum (Finset.range k) (fun x => k - 1 - x) := by
+      rw [Finset.sum_add_distrib]
+      simp
+    _ = k * (N - k) + Finset.sum (Finset.range k) (fun x => x) := by
+      rw [Finset.sum_range_reflect (fun x => x) k]
+    _ = k.choose 2 + k * (N - k) := by
+      rw [Finset.sum_range_id, Nat.choose_two_right]
+      omega
+
+end Finset
+
 namespace Fin
+
+/-- The sum of the values in the first `k` positions of the reversed finite ordinal `Fin N`. -/
+theorem sum_rev_castLE (N k : ℕ) (hk : k ≤ N) :
+    (∑ i : Fin k, (Fin.rev (Fin.castLE hk i) : ℕ)) =
+      k.choose 2 + k * (N - k) := by
+  rw [Finset.sum_fin_eq_sum_range]
+  simp only [Fin.rev, Fin.castLE]
+  calc
+    Finset.sum (Finset.range k)
+        (fun x => if h : x < k then N - (x + 1) else 0) =
+        Finset.sum (Finset.range k) (fun x => N - (x + 1)) := by
+      apply Finset.sum_congr rfl
+      intro x hx
+      simp [Finset.mem_range.mp hx]
+    _ = _ := Finset.sum_range_const_sub_succ N k hk
 
 /-- The final partial product is the product of all the entries. -/
 @[to_additive /-- The final partial sum is the sum of all the entries. -/]

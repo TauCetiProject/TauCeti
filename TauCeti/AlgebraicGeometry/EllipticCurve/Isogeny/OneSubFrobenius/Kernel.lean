@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Translation
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Kernel
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.Separable
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.TautologicalPoint
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 
@@ -31,6 +32,8 @@ the same rational point, so their difference does not move at all.
   as there are rational points.
 * `TauCeti.Isogeny.pointCount_le_degree_oneSubFrobeniusIsogeny`: consequently `deg (1 − π_q)`
   bounds `pointCount` above.
+* `TauCeti.Isogeny.pointCount_dvd_degree_oneSubFrobeniusIsogeny`: and, `1 − π_q` being
+  separable, `pointCount` divides `deg (1 − π_q)`.
 
 This is the lower half of `deg (1 − π_q) = #E(𝔽_q)`. The upper half asks in addition that the
 kernel cut out the pulled-back field exactly, and is not proved here.
@@ -90,6 +93,19 @@ theorem pointCount_le_degree_oneSubFrobeniusIsogeny :
   classical
   rw [WeierstrassCurve.pointCount_eq_card_point]
   exact (card_ker_oneSubFrobeniusIsogeny W).symm.trans_le (card_ker_le_degree _)
+
+omit [DecidableEq F] in
+/-- **The point count divides the degree of `1 − π_q`.** The kernel order always divides the
+separable degree, and `1 − π_q` is separable, so the bound above is a divisibility. Equality is
+the upper half, which is not proved here. -/
+theorem pointCount_dvd_degree_oneSubFrobeniusIsogeny :
+    W.pointCount ∣ (oneSubFrobeniusIsogeny W).degree := by
+  classical
+  have := isSeparable_oneSubFrobeniusIsogeny W
+  have h := card_ker_dvd_separableDegree (oneSubFrobeniusIsogeny W)
+  rw [separableDegree_eq_degree_of_isSeparable, card_ker_oneSubFrobeniusIsogeny] at h
+  rw [WeierstrassCurve.pointCount_eq_card_point]
+  exact h
 
 end TauCeti.Isogeny
 

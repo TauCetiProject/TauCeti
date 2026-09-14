@@ -182,8 +182,7 @@ private theorem map_vertexReflection_toLinearMap {l : List Q}
     (l.attach.map fun i : {i // i ∈ l} ↦ vertexReflection Q (hl i.1 i.2)).map
         (fun e ↦ e.toLinearMap)
       = l.map (vertexPreReflection Q) := by
-  rw [List.map_map]
-  rw [← List.attach_map_val (f := vertexPreReflection Q)]
+  rw [List.map_map, ← List.attach_map_val (f := vertexPreReflection Q)]
   apply List.map_congr_left
   intro i hi
   apply LinearMap.coe_injective

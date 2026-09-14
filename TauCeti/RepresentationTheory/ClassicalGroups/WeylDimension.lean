@@ -293,8 +293,7 @@ theorem weylDimension_fin_one (l : DominantWeight 1) : weylDimension l = 1 :=
 theorem weylDimension_fin_two (l : DominantWeight 2) :
     (weylDimension l : ℤ) = l.1 0 - l.1 1 + 1 := by
   have hnum : weylDimensionNumerator l = l.1 0 - l.1 1 + 1 := by
-    rw [weylDimensionNumerator_eq_prod_prod]
-    rw [Fin.prod_univ_two]
+    rw [weylDimensionNumerator_eq_prod_prod, Fin.prod_univ_two]
     have h0 : (Ioi (0 : Fin 2)) = {1} := by decide
     have h1 : (Ioi (1 : Fin 2)) = ∅ := by decide
     rw [h0, h1]

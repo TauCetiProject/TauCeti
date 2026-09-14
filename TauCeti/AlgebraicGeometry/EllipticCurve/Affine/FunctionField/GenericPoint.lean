@@ -62,6 +62,10 @@ consumer may rely on that.
   over the base field, so it takes no constant value.
 * `WeierstrassCurve.Affine.evalEval_polynomialY_genericX_genericY_ne_zero`: on an elliptic curve
   over a field the partial derivative `W_Y` is nonzero at the generic point.
+* `WeierstrassCurve.Affine.map_genericPoint_injective`: an `F`-algebra homomorphism from the
+  function field into a field extension is determined by the point it sends the generic point to.
+* `WeierstrassCurve.Affine.eq_of_baseChange_eq_sub_map_genericPoint`: an embedding is likewise
+  determined by the rational point it displaces the generic point by.
 
 ## Roadmap
 
@@ -82,6 +86,13 @@ The generic coordinates and their equation are adapted from the AINTLIB `HasseWe
 `513e83879e2f8cbc626eb9e04d660e92be16ccba`, declarations `x_gen`, `y_gen`, `W_KE`, and
 `generic_equation`. Its transcendence statement is reproved here as `transcendental_genericX`.
 The bundled `genericPoint` and its coordinate-accessor API are not ported from that source.
+
+`map_genericPoint_injective` adapts the statement of that project's
+`HasseWeil/GapSpines.lean` declaration `emb_le_card_kernel`, same commit and license, which
+assigns a point to each embedding and shows the assignment injective. The proof differs: the
+source works with points over `AlgebraicClosure K(E)` and with an isogeny carrying its own point
+map, while here the point is the image of the generic point and injectivity comes from
+`CoordinateRing.algHom_ext` and `IsFractionRing.ringHom_ext`.
 -/
 
 public section
@@ -271,6 +282,43 @@ theorem evalEval_polynomialY_genericX_genericY_ne_zero [W.IsElliptic] :
   exact fun hz => mk_polynomialY_ne_zero W
     ((IsFractionRing.injective W.CoordinateRing W.FunctionField).eq_iff.mp
       (hz.trans (map_zero _).symm))
+
+/-- **An `F`-embedding of the function field into a field extension is determined by the image of
+the generic point.** The generic point's two coordinates generate the function field over `F`, so
+an embedding is recoverable from the point it induces. -/
+theorem map_genericPoint_injective [W.IsElliptic] {Ω : Type*} [Field Ω] [Algebra F Ω]
+    [DecidableEq Ω] :
+    Function.Injective fun σ : W.FunctionField →ₐ[F] Ω ↦ Point.map σ (genericPoint W) := by
+  intro σ τ h
+  have hx : σ (genericX W) = τ (genericX W) := by
+    simpa only [Point.xCoord_map, xCoord_genericPoint] using congrArg Point.xCoord h
+  have hy : σ (genericY W) = τ (genericY W) := by
+    simpa only [Point.yCoord_map, yCoord_genericPoint] using congrArg Point.yCoord h
+  have key : σ.comp (IsScalarTower.toAlgHom F W.CoordinateRing W.FunctionField) =
+      τ.comp (IsScalarTower.toAlgHom F W.CoordinateRing W.FunctionField) := by
+    refine CoordinateRing.algHom_ext ?_ ?_
+    · simpa [genericX_def] using hx
+    · simpa [genericY_def] using hy
+  refine AlgHom.coe_ringHom_injective
+    (IsFractionRing.ringHom_ext (A := W.CoordinateRing) fun a ↦ ?_)
+  exact congrArg (fun f : W.CoordinateRing →ₐ[F] Ω ↦ f a) key
+
+/-- **An embedding is determined by the rational point it displaces the generic point by.** If
+each index `i` carries a rational point whose base change is `e i`'s displacement of the generic
+point from a fixed embedding `σ₀`, then that point determines `e i`.
+
+This is the injectivity step shared by the embedding counts of the isogenies whose kernels are
+counted this way: they differ in *why* the displacement is rational, not in this step. -/
+theorem eq_of_baseChange_eq_sub_map_genericPoint [W.IsElliptic] [DecidableEq F] {Ω : Type*}
+    [Field Ω] [Algebra F Ω] [DecidableEq Ω] {ι : Type*} (e : ι → (W.FunctionField →ₐ[F] Ω))
+    (σ₀ : W.FunctionField →ₐ[F] Ω) {f : ι → (W⁄F).toAffine.Point}
+    (hf : ∀ i, Point.baseChange (W' := W) F Ω (f i) =
+      Point.map (e i) (genericPoint W) - Point.map σ₀ (genericPoint W))
+    {i j : ι} (h : f i = f j) : e i = e j := by
+  have h2 : Point.map (e i) (genericPoint W) - Point.map σ₀ (genericPoint W) =
+      Point.map (e j) (genericPoint W) - Point.map σ₀ (genericPoint W) := by
+    rw [← hf i, ← hf j, h]
+  exact map_genericPoint_injective W (sub_left_inj.1 h2)
 
 end Field
 

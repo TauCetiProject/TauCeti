@@ -31,7 +31,7 @@ invariant under modification of finitely many coordinates. The qualification mat
 `B = ∅` or `B = Set.univ`, or a one-point coordinate space, the event collapses to `∅` or
 `Set.univ` and is a tail event after all.
 
-`tail_le_exchangeableSigma` records the inclusion of the two σ-algebras formally; its strictness
+`pathTail_le_exchangeableSigma` records the inclusion of the two σ-algebras formally; its strictness
 is not formalized here.
 
 Identical distribution enters only as the route to exchangeability of the path law: it is what

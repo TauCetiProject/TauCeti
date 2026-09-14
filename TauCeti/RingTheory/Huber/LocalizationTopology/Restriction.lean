@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
+public import TauCeti.Topology.Algebra.Nonarchimedean.Completion.RingHom
 
 /-!
 # Restriction maps for a refined presentation
@@ -53,6 +54,9 @@ because `locTopology` is deliberately not an instance; this is the same preamble
   `…restrictionRingHom_comp_toCompletionLoc` : the two properties that determine it.
 * `TauCeti.Huber.PairOfDefinition.eq_restrictionRingHom` : anything with those two properties is
   it.
+* `TauCeti.Huber.PairOfDefinition.restrictionRingHomOfSubset_heq` : changing the source and target
+  presentations without changing their candidate rings of definition leaves the restriction map
+  unchanged.
 * `TauCeti.Huber.PairOfDefinition.restrictionRingHom_self` and
   `…restrictionRingHom_comp_restrictionRingHom` : the identity and composition laws — a
   presentation refines itself with cofactor `1` and gives the identity map, and refinements compose
@@ -420,6 +424,48 @@ theorem eq_restrictionRingHomOfSubset :
       g = restrictionRingHomOfSubset P T s S hden T' S' hden' hTT' :=
   eq_restrictionRingHom P T s S hden T' s S' hden' 1 (mul_one s).symm
     fun u hu ↦ by simpa using hTT' u hu
+
+/-- **Restriction maps are independent of a simultaneous change of presentation.** Suppose two
+source presentations give the same candidate ring of definition inside `S`, and two target
+presentations do likewise inside `S'`. Then the corresponding numerator-enlargement restriction
+maps are heterogeneously equal.
+
+The conclusion is `HEq` because changing a presentation changes the uniformity used to form each
+completion. -/
+theorem restrictionRingHomOfSubset_heq
+    (P : PairOfDefinition A)
+    (T₁ T₁' : Finset A) (s₁ : A) (S : Type*) [CommRing S] [Algebra A S]
+    [IsLocalization.Away s₁ S] (hden₁ : HasDenominatorPower P T₁ s₁ S)
+    (S' : Type*) [CommRing S'] [Algebra A S'] [IsLocalization.Away s₁ S']
+    (hden₁' : HasDenominatorPower P T₁' s₁ S') (hT₁T₁' : ∀ t ∈ T₁, t ∈ T₁')
+    (T₂ T₂' : Finset A) (s₂ : A) [IsLocalization.Away s₂ S]
+    [IsLocalization.Away s₂ S'] (hden₂ : HasDenominatorPower P T₂ s₂ S)
+    (hden₂' : HasDenominatorPower P T₂' s₂ S') (hT₂T₂' : ∀ t ∈ T₂, t ∈ T₂')
+    (hS : locSubring P T₂ s₂ S = locSubring P T₁ s₁ S)
+    (hS' : locSubring P T₂' s₂ S' = locSubring P T₁' s₁ S') :
+    HEq (restrictionRingHomOfSubset P T₂ s₂ S hden₂ T₂' S' hden₂' hT₂T₂')
+      (restrictionRingHomOfSubset P T₁ s₁ S hden₁ T₁' S' hden₁' hT₁T₁') := by
+  exact completionRingHom_heq_of_uniformSpace_eq
+    (locUniformSpace_congr P T₁ T₂ s₁ s₂ S hden₁ hden₂ hS)
+    (locUniformSpace_congr P T₁' T₂' s₁ s₂ S' hden₁' hden₂' hS')
+    (isUniformAddGroup_locUniformSpace P T₁ s₁ S hden₁)
+    (isUniformAddGroup_locUniformSpace P T₂ s₂ S hden₂)
+    (isTopologicalRing_locUniformSpace P T₁ s₁ S hden₁)
+    (isTopologicalRing_locUniformSpace P T₂ s₂ S hden₂)
+    (isUniformAddGroup_locUniformSpace P T₁' s₁ S' hden₁')
+    (isUniformAddGroup_locUniformSpace P T₂' s₂ S' hden₂')
+    (isTopologicalRing_locUniformSpace P T₁' s₁ S' hden₁')
+    (isTopologicalRing_locUniformSpace P T₂' s₂ S' hden₂')
+    (restrictionRingHomOfSubset P T₂ s₂ S hden₂ T₂' S' hden₂' hT₂T₂')
+    (restrictionRingHomOfSubset P T₁ s₁ S hden₁ T₁' S' hden₁' hT₁T₁')
+    (toCompletionLoc P T₂ s₂ S hden₂) (toCompletionLoc P T₁ s₁ S hden₁)
+    (toCompletionLoc P T₂' s₂ S' hden₂') (toCompletionLoc P T₁' s₁ S' hden₁')
+    (continuous_restrictionRingHomOfSubset P T₂ s₂ S hden₂ T₂' S' hden₂' hT₂T₂')
+    (toCompletionLoc_heq P T₁ T₂ s₁ s₂ S hden₁ hden₂ hS)
+    (toCompletionLoc_heq P T₁' T₂' s₁ s₂ S' hden₁' hden₂' hS')
+    (restrictionRingHomOfSubset_comp_toCompletionLoc P T₂ s₂ S hden₂ T₂' S'
+      hden₂' hT₂T₂')
+    (eq_restrictionRingHomOfSubset P T₁ s₁ S hden₁ T₁' S' hden₁' hT₁T₁')
 
 /-- **The restriction map carries `t/s` to `t/s`**, for every `t`. This is the fact the Laurent
 presentation of a refinement rests on; the numerator condition `t ∈ T'` is not needed here, only

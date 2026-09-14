@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
-public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+public import TauCeti.AlgebraicGeometry.Fibers
 
 /-!
 # Models over discrete valuation rings
@@ -35,19 +35,6 @@ universe u
 
 -- The categorical packaging below adapts the target signature in
 -- `TauCetiRoadmap/StableReduction/Suggested.lean`.
-
-/-- The scalar extension of a scheme over `R` to a field `K`, regarded as a scheme over `K`.
-When `K` is a fraction field of `R`, this is the generic fibre. -/
-noncomputable abbrev genericFiber (R K : Type u) [CommRing R] [Field K] [Algebra R K]
-    {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) :
-    Over (Spec (.of K)) :=
-  (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).obj (Over.mk toBase)
-
-/-- The canonical morphism from the scalar-extended fibre to the original total space. -/
-noncomputable abbrev genericFiberι (R K : Type u) [CommRing R] [Field K] [Algebra R K]
-    {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) :
-    (genericFiber R K toBase).left ⟶ X :=
-  pullback.fst toBase (Spec.map (CommRingCat.ofHom (algebraMap R K)))
 
 /-- A flat finitely presented model over a discrete valuation ring, together with an explicit
 identification of its generic fibre with a fixed scheme over the fraction field.

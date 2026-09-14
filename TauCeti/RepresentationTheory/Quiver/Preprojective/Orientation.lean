@@ -422,8 +422,7 @@ theorem reorientPreprojectiveAlgebraEquiv_preprojectiveMk_ofArrow_keep {i j : Q}
       = preprojectiveMk k Q (ofArrow (Symmetrify.of.map a)) := by
   have h : reorientDoubledEquiv k σ (ofArrow (Symmetrify.of.map (reorientKeep σ a ha)))
       = ofArrow (Symmetrify.of.map a) := by
-    rw [reorientDoubledEquiv_ofArrow_normalized]
-    rw [reorientSymmetrify_map_of_keep]
+    rw [reorientDoubledEquiv_ofArrow_normalized, reorientSymmetrify_map_of_keep]
     exact ofArrow_homOfEq _ _ _
   rw [reorientPreprojectiveAlgebraEquiv_preprojectiveMk, h, rescale_ofArrow, doubledLabelling_of,
     reorientSign_of_false k ha, one_smul]
@@ -437,8 +436,7 @@ theorem reorientPreprojectiveAlgebraEquiv_preprojectiveMk_ofArrow_reverse_keep {
   have h : reorientDoubledEquiv k σ
         (ofArrow (Quiver.reverse (Symmetrify.of.map (reorientKeep σ a ha))))
       = ofArrow (Quiver.reverse (Symmetrify.of.map a)) := by
-    rw [reorientDoubledEquiv_ofArrow_normalized]
-    rw [reorientSymmetrify_map_reverse_of_keep]
+    rw [reorientDoubledEquiv_ofArrow_normalized, reorientSymmetrify_map_reverse_of_keep]
     exact ofArrow_homOfEq _ _ _
   rw [reorientPreprojectiveAlgebraEquiv_preprojectiveMk, h, rescale_ofArrow,
     doubledLabelling_reverse_of, one_smul]
@@ -453,8 +451,7 @@ theorem reorientPreprojectiveAlgebraEquiv_preprojectiveMk_ofArrow_flip {i j : Q}
       = preprojectiveMk k Q (ofArrow (Quiver.reverse (Symmetrify.of.map a))) := by
   have h : reorientDoubledEquiv k σ (ofArrow (Symmetrify.of.map (reorientFlip σ a ha)))
       = ofArrow (Quiver.reverse (Symmetrify.of.map a)) := by
-    rw [reorientDoubledEquiv_ofArrow_normalized]
-    rw [reorientSymmetrify_map_of_flip]
+    rw [reorientDoubledEquiv_ofArrow_normalized, reorientSymmetrify_map_of_flip]
     exact ofArrow_homOfEq _ _ _
   rw [reorientPreprojectiveAlgebraEquiv_preprojectiveMk, h, rescale_ofArrow,
     doubledLabelling_reverse_of, one_smul]
@@ -470,8 +467,7 @@ theorem reorientPreprojectiveAlgebraEquiv_preprojectiveMk_ofArrow_reverse_flip {
   have h : reorientDoubledEquiv k σ
         (ofArrow (Quiver.reverse (Symmetrify.of.map (reorientFlip σ a ha))))
       = ofArrow (Symmetrify.of.map a) := by
-    rw [reorientDoubledEquiv_ofArrow_normalized]
-    rw [reorientSymmetrify_map_reverse_of_flip]
+    rw [reorientDoubledEquiv_ofArrow_normalized, reorientSymmetrify_map_reverse_of_flip]
     exact ofArrow_homOfEq _ _ _
   rw [reorientPreprojectiveAlgebraEquiv_preprojectiveMk, h, rescale_ofArrow, doubledLabelling_of,
     reorientSign_of_true k ha, neg_one_smul, map_neg]

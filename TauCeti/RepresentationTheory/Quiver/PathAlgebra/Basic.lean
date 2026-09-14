@@ -52,7 +52,8 @@ idempotents `e`, so left multiplication by `α` carries the `i`-component of a l
 * `TauCeti.module_finite_pathAlgebra` and `TauCeti.finrank_pathAlgebra`: `kQ` is a free module of
   rank the number of paths of `Q`, with `TauCeti.pathAlgebraBasis_repr_single` reading off the
   coordinates of a basis path and `TauCeti.linearIndependent_ofPath` recording that any
-  subfamily of the path basis stays linearly independent. The specialization to a finite acyclic
+  subfamily of the path basis stays linearly independent. Over a nonzero `k` the finiteness is an
+  equivalence, `TauCeti.module_finite_pathAlgebra_iff`; the specialization to a finite acyclic
   quiver, whose paths are finite, is `TauCeti.finiteDimensional_pathAlgebra_of_isAcyclic` in
   `TauCeti.RepresentationTheory.Quiver.Acyclic.PathAlgebra`.
 * `TauCeti.vertexIdempotent_mul_mul_vertexIdempotent`: when the trivial path is the only path from
@@ -669,6 +670,16 @@ theorem module_finite_pathAlgebra [Finite (Quiver.TotalPath Q)] :
     Module.Finite k (pathAlgebra k Q) :=
   Module.Finite.of_basis (pathAlgebraBasis k Q)
 
+/-- **The path algebra is a finite module exactly when the quiver has finitely many paths**: the
+paths are a basis of it, and a free module is finite exactly when one — hence any — of its bases
+is. Over a nonzero base ring only; over the zero ring the path algebra is the zero module however
+many paths `Q` has. -/
+theorem module_finite_pathAlgebra_iff [Nontrivial k] :
+    Module.Finite k (pathAlgebra k Q) ↔ Finite (Quiver.TotalPath Q) := by
+  refine ⟨fun _ => Module.Finite.finite_basis (pathAlgebraBasis k Q), fun h => ?_⟩
+  have := h
+  exact module_finite_pathAlgebra k Q
+
 /-- **Any subfamily of the path basis is linearly independent**: the paths satisfying a predicate
 `p`, indexed by the subtype they cut out, are `k`-linearly independent in the path algebra. -/
 theorem linearIndependent_ofPath (p : Quiver.TotalPath Q → Prop) :
@@ -841,6 +852,31 @@ theorem algEquiv_ext ⦃f g : pathAlgebra k Q ≃ₐ[k] B⦄
         (g := (g : pathAlgebra k Q →ₐ[k] B)) h)
 
 end Lift
+
+section Ext
+
+variable {k : Type w} {Q : Type u} {A B : Type*}
+  [CommSemiring k] [Quiver.{v} Q] [Finite Q]
+  [Semiring A] [Algebra k A] [Semiring B]
+
+/-- Two ring homomorphisms out of an algebra admitting a surjective map from a path algebra are
+equal if they agree on coefficients and on the images of all paths. -/
+theorem ringHom_ext_of_surjective (q : pathAlgebra k Q →ₐ[k] A) (hq : Function.Surjective q)
+    {g h : A →+* B}
+    (hscalar : ∀ r : k, g (algebraMap k A r) = h (algebraMap k A r))
+    (hpath : ∀ x : Quiver.TotalPath Q, g (q (ofPath x)) = h (q (ofPath x))) :
+    g = h := by
+  apply RingHom.ext
+  intro y
+  obtain ⟨x, rfl⟩ := hq y
+  induction x using induction_linear with
+  | zero => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | single x a =>
+      rw [single_eq_smul_ofPath, map_smul]
+      simp only [Algebra.smul_def, map_mul, hscalar, hpath]
+
+end Ext
 
 end PathAlgebra
 

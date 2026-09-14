@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
+public import TauCeti.Algebra.CharP.Frobenius.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 
 /-!
@@ -126,10 +127,7 @@ the `p ^ k`-th power. -/
 theorem map_iterateFrobenius_kostantTorusMatrix (s : κ → Aˣ) :
     Matrix.GeneralLinearGroup.map (iterateFrobenius A p k) (kostantTorusMatrix M b wt s) =
       kostantTorusMatrix M b wt (s ^ p ^ k) := by
-  rw [map_kostantTorusMatrix]
-  refine congrArg (kostantTorusMatrix M b wt) (funext fun j => Units.ext ?_)
-  rw [Units.coe_map, MonoidHom.coe_coe, iterateFrobenius_def, Pi.pow_apply,
-    Units.val_pow_eq_pow_val]
+  rw [map_kostantTorusMatrix, map_iterateFrobenius_units_eq_pow]
 
 end Generators
 

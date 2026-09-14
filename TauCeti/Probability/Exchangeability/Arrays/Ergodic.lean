@@ -266,8 +266,8 @@ theorem ergodicSMul_of_jointlyDissociated {ρ : Measure (ℕ × ℕ → α)} [Is
     ErgodicSMul FinitaryPerm (ℕ × ℕ → α) ρ := by
   refine TauCeti.MeasureTheory.ergodicSMul_of_forall_smul_invariant fun s hs hinv => ?_
   rcases eq_zero_or_isProbabilityMeasure ρ with rfl | _
-  · exact eventuallyConst_set'.mpr (Or.inl (by rw [ae_zero]; exact Filter.eventually_bot))
-  refine eventuallyConst_set'.mpr ?_
+  · exact eventuallyEmptyOrUniv_iff'.mpr (Or.inl (by rw [ae_zero]; exact Filter.eventually_bot))
+  refine eventuallyEmptyOrUniv_iff'.mpr ?_
   rcases measure_eq_zero_or_one_of_jointlyDissociated hdiss hs hinv with h | h
   · exact Or.inl (ae_eq_empty.mpr h)
   · exact Or.inr (ae_eq_univ.mpr ((prob_compl_eq_zero_iff hs).mpr h))
@@ -283,13 +283,13 @@ theorem jointlyDissociated_of_ergodicSMul {ρ : Measure (ℕ × ℕ → α)} [Is
   intro s hs
   rcases eq_zero_or_isProbabilityMeasure ρ with rfl | _
   · exact Or.inl rfl
-  have hconst : EventuallyConst s (ae ρ) :=
+  have hconst : EventuallyEmptyOrUniv s (ae ρ) :=
     MeasureTheory.aeconst_of_forall_preimage_smul_ae_eq FinitaryPerm
       ((arrayTail_le_ambient (X := fun p (x : ℕ × ℕ → α) => x p) 0
         fun p _ _ => measurable_pi_apply p) s hs).nullMeasurableSet
       fun g => EventuallyEq.of_eq
         (preimage_finitaryPerm_smul_array_eq_self_of_measurableSet_arrayTail hs g)
-  rcases eventuallyConst_set'.mp hconst with h | h
+  rcases eventuallyEmptyOrUniv_iff'.mp hconst with h | h
   · exact Or.inl (by simpa using measure_congr h)
   · exact Or.inr (by simpa using measure_congr h)
 

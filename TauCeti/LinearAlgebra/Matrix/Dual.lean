@@ -22,7 +22,7 @@ the dot product may be used directly as the pairing of a `RootPairing` or a `Roo
 * `TauCeti.dotProductBilin_isPerfPair`: the dot product `dotProductBilin R R` on `ι → R` is a
   perfect pairing of that module with itself.
 * `TauCeti.linearIndependent_of_dotProduct_diagonal`: a family whose dot products against a second
-  family vanish off the diagonal and are nonzero on it is linearly independent.
+  family vanish off the diagonal and are right-regular on it is linearly independent.
 -/
 
 public section
@@ -44,13 +44,15 @@ instance dotProductBilin_isPerfPair (R ι : Type*) [CommRing R] [Fintype ι] :
   infer_instance
 
 /-- **A family paired diagonally by a second family is linearly independent.** If `v i ⬝ᵥ w j`
-vanishes whenever `i ≠ j` and is a nonzero scalar when `i = j`, the `v i` are linearly independent.
-The diagonal entries need only be nonzero, not units, so this applies over `ℤ` with diagonal `2`.
+vanishes whenever `i ≠ j` and right multiplication by `v i ⬝ᵥ w i` is injective, the `v i` are
+linearly independent. Over a ring without zero divisors, nonzero diagonal entries suffice; in
+particular, this applies over `ℤ` with diagonal `2`. The ring may have zero divisors away from
+the chosen diagonal entries.
 The family index `κ` is arbitrary — neither finite nor decidable — and unrelated to the coordinate
 index `ι`; the scalars need not commute. -/
 theorem linearIndependent_of_dotProduct_diagonal {κ ι R : Type*}
-    [Fintype ι] [Ring R] [NoZeroDivisors R] {v w : κ → ι → R} {c : κ → R}
-    (hc : ∀ i, c i ≠ 0) (hdiag : ∀ i, v i ⬝ᵥ w i = c i)
+    [Fintype ι] [Ring R] {v w : κ → ι → R} {c : κ → R}
+    (hc : ∀ i, IsRightRegular (c i)) (hdiag : ∀ i, v i ⬝ᵥ w i = c i)
     (hoff : ∀ i j, i ≠ j → v i ⬝ᵥ w j = 0) :
     LinearIndependent R v := by
   rw [linearIndependent_iff']
@@ -60,6 +62,6 @@ theorem linearIndependent_of_dotProduct_diagonal {κ ι R : Type*}
   simp only [sum_dotProduct, smul_dotProduct, smul_eq_mul, zero_dotProduct] at hpair
   rw [Finset.sum_eq_single j (fun i _ hij => by rw [hoff i j hij, mul_zero])
       (fun hns => absurd hj hns), hdiag] at hpair
-  exact (mul_eq_zero.1 hpair).resolve_right (hc j)
+  exact (hc j) (hpair.trans (zero_mul _).symm)
 
 end TauCeti

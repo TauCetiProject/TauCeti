@@ -1,12 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, Claude
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Maps
 public import Mathlib.MeasureTheory.Constructions.SimpleGraph
+public import TauCeti.Combinatorics.SimpleGraph.Maps
 
 /-!
 # Measurability of individual simple graphs and of relabelling
@@ -17,13 +17,15 @@ the countable product space. This supplies the discrete integration API for fini
 
 Each adjacency coordinate of a graph pulled back along a map of vertex types is a single
 adjacency coordinate of the source graph, so the pullback is measurable with no hypothesis on
-either vertex type. This is what lets a random graph be restricted to a window of labels.
+either vertex type. This is what lets a random graph be restricted to a window of labels: the
+window `SimpleGraph.restrictFin` is the special case along `Fin.val`.
 
 ## Main results
 
 * `SimpleGraph.instMeasurableSingletonClass` — singletons of graphs on a countable vertex type are
   measurable;
-* `SimpleGraph.measurable_comap` — pulling back along a map of vertex types is measurable.
+* `SimpleGraph.measurable_comap` — pulling back along a map of vertex types is measurable;
+* `SimpleGraph.measurable_restrictFin` — taking a window is measurable.
 
 ## Reference
 
@@ -55,5 +57,15 @@ coordinate of the pullback is an adjacency coordinate of the source. -/
 theorem measurable_comap (f : V → W) :
     Measurable (SimpleGraph.comap f : SimpleGraph W → SimpleGraph V) :=
   measurable_iff_adj.2 fun u v => measurable_iff_adj.1 measurable_id (f u) (f v)
+
+/-- Taking a window is measurable. -/
+@[fun_prop]
+theorem measurable_restrictFin (n : ℕ) :
+    Measurable fun G : SimpleGraph ℕ => G.restrictFin n :=
+  -- The adjacency equation `restrictFin_adj` is used rather than unfolding `restrictFin` to the
+  -- pullback it is defined as.
+  measurable_iff_adj.2 fun u v => by
+    simp only [restrictFin_adj]
+    exact measurable_iff_adj.1 measurable_id (u : ℕ) v
 
 end SimpleGraph

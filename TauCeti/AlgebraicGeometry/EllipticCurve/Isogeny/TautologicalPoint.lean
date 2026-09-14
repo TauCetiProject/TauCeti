@@ -128,6 +128,19 @@ theorem tautologicalPoint_comp {W₀ : WeierstrassCurve.Affine F} (p : Coordinat
     ← Point.some_coords (tautologicalPoint_ne_zero (σ.comp p))]
   simp only [xCoord_tautologicalPoint, yCoord_tautologicalPoint, AlgHom.comp_apply]
 
+/-- **Two homomorphisms agreeing on the pullback's two coordinate values move the tautological
+point to the same place.** The point's coordinates are those two values, so the induced map on
+points cannot see anything else about the homomorphism. -/
+theorem map_tautologicalPoint_eq_of_apply_eq {Ω : Type*} [Field Ω] [Algebra F Ω] [DecidableEq Ω]
+    (p : CoordinatePullback W₁ W₂) (σ τ : W₁.FunctionField →ₐ[F] Ω)
+    (hx : σ (p (AdjoinRoot.of W₂.polynomial X)) = τ (p (AdjoinRoot.of W₂.polynomial X)))
+    (hy : σ (p (AdjoinRoot.root W₂.polynomial)) = τ (p (AdjoinRoot.root W₂.polynomial))) :
+    Point.map σ p.tautologicalPoint = Point.map τ p.tautologicalPoint := by
+  rw [← Point.some_coords (tautologicalPoint_ne_zero p), Point.map_some, Point.map_some,
+    Point.some.injEq]
+  simp only [xCoord_tautologicalPoint, yCoord_tautologicalPoint]
+  exact ⟨hx, hy⟩
+
 end CoordinatePullback
 
 end TauCeti

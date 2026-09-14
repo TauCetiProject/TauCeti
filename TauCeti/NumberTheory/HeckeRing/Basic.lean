@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Finsupp.Basic
 public import Mathlib.Data.Finsupp.SMul
 public import Mathlib.NumberTheory.HeckeRing.Defs
 public import Mathlib.GroupTheory.Index
+public import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
 # Hecke rings: the double coset API
@@ -39,6 +40,11 @@ merges. The degree section is instead ported from the AINTLIB `LeanModularForms`
 * `DoubleCoset.DecompQuotient`: the quotient `Γ₁ ⧸ (Γ₁ ∩ gΓ₂g⁻¹)` indexing the left cosets
   in `Γ₁gΓ₂`; finite for a Hecke triple. Its mirror `DecompQuotient Γ₂ Γ₁ g⁻¹` indexes the
   right cosets `Γ₁a`, and is finite too.
+* `DoubleCoset.decompQuotientEquivMapOfInjective`: that quotient transported along an injective
+  homomorphism, with `DoubleCoset.map_subgroupOf_smul` for the subgroup underneath it. This is
+  what carries a decomposition out of `GL (Fin 2) ℚ`, which does not act on `ℍ`, into
+  `GL (Fin 2) ℝ`, which does; `DoubleCoset.decompQuotientEquivMap`
+  (`HeckeRing/Multiplicity/Equiv.lean`) is its special case at an isomorphism.
 * `HeckeCosetModule.single`: the basis element `b • [D]` of the Hecke coset module, with
   `single_apply`, `sum_single_index`, `smul_single_one`, `single_add`, `induction_linear`,
   and the `Module R` instance `HeckeCosetModule.instModule`.
@@ -222,6 +228,51 @@ lemma conj_mem_of_stabilizer {H₁ H₂ : Subgroup G} (g : G)
   rw [Subgroup.mem_subgroupOf, Subgroup.mem_pointwise_smul_iff_inv_smul_mem,
     ConjAct.smul_def] at hn
   simpa [ConjAct.ofConjAct_toConjAct] using hn
+
+open scoped Pointwise in
+/-- **The stabilizer indexing the decomposition transports along an injective homomorphism**:
+the image of `(gΓ₂g⁻¹) ∩ Γ₁` inside `φ(Γ₁)` is `(φ(g) φ(Γ₂) φ(g)⁻¹) ∩ φ(Γ₁)`. Injectivity is what
+gives the inclusion that is not formal: an element of `φ(Γ₁)` conjugating into `φ(Γ₂)` must come
+from one of `Γ₁` conjugating into `Γ₂`. -/
+lemma map_subgroupOf_smul {G' : Type*} [Group G'] (φ : G →* G') (hφ : Function.Injective φ)
+    (Γ₁ Γ₂ : Subgroup G) (g : G) :
+    ((ConjAct.toConjAct g • Γ₂).subgroupOf Γ₁).map
+        (Subgroup.equivMapOfInjective Γ₁ φ hφ : Γ₁ →* (Γ₁.map φ)) =
+      (ConjAct.toConjAct (φ g) • (Γ₂.map φ)).subgroupOf (Γ₁.map φ) := by
+  ext x
+  simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf,
+    Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def,
+    ConjAct.ofConjAct_toConjAct, ConjAct.ofConjAct_inv, inv_inv]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨g⁻¹ * (y : G) * g, hy, by
+      simp [Subgroup.coe_equivMapOfInjective_apply, mul_assoc]⟩
+  · rintro ⟨z, hz, hzx⟩
+    obtain ⟨y, hy, hyx⟩ := x.2
+    have hzy : z = g⁻¹ * y * g := hφ (by rw [hzx, ← hyx]; simp [mul_assoc])
+    exact ⟨⟨y, hy⟩, hzy ▸ hz, Subtype.ext (by simpa [Subgroup.coe_equivMapOfInjective_apply])⟩
+
+/-- **The decomposition quotient transports along an injective homomorphism.** For `φ` injective,
+`Γ₁ ⧸ (Γ₁ ∩ gΓ₂g⁻¹)` and `φ(Γ₁) ⧸ (φ(Γ₁) ∩ φ(g)φ(Γ₂)φ(g)⁻¹)` are in bijection, by `φ` on
+representatives.
+
+This is what carries a Hecke decomposition into a group that acts. `HeckeRing.GL2.heckeSlashSum`
+is indexed by `DecompQuotient Γ₂ Γ₁ δ⁻¹` over `GL (Fin 2) ℚ`, which does not act on `ℍ`; the slash
+goes through `Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ)`, and that map is injective, so the
+index transports to the real side where a fundamental-domain tiling can be stated. -/
+noncomputable def decompQuotientEquivMapOfInjective {G' : Type*} [Group G'] (φ : G →* G')
+    (hφ : Function.Injective φ) (Γ₁ Γ₂ : Subgroup G) (g : G) :
+    DecompQuotient Γ₁ Γ₂ g ≃ DecompQuotient (Γ₁.map φ) (Γ₂.map φ) (φ g) :=
+  TauCeti.QuotientGroup.congrOfMapEq (Subgroup.equivMapOfInjective Γ₁ φ hφ)
+    (map_subgroupOf_smul φ hφ Γ₁ Γ₂ g)
+
+@[simp]
+theorem decompQuotientEquivMapOfInjective_mk {G' : Type*} [Group G'] (φ : G →* G')
+    (hφ : Function.Injective φ) (Γ₁ Γ₂ : Subgroup G) (g : G) (y : Γ₁) :
+    decompQuotientEquivMapOfInjective φ hφ Γ₁ Γ₂ g (QuotientGroup.mk y) =
+      QuotientGroup.mk (Subgroup.equivMapOfInjective Γ₁ φ hφ y) := by
+  unfold decompQuotientEquivMapOfInjective
+  exact TauCeti.QuotientGroup.congrOfMapEq_mk _ _ _
 
 /-- Equality of classes in `DecompQuotient H₁ H₂ g` gives the conjugation relation between their
 representatives: `u₁⁻¹ u₂` lies in the stabilizer indexing the decomposition, so conjugating it

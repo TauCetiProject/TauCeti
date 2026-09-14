@@ -38,6 +38,8 @@ extra regularity on the graphon's carrier.
   trace on a fixed set of pairs;
 * `sum_sampleIntegrand_superset_eq_prod_edgeFactor` specializes it to the graphs containing a
   fixed set of edges;
+* `sampleIntegrand_eq_prod_edgeFinset_top` writes the conditional mass as a single product over
+  the pairs of the complete graph;
 * `sampleMass_nonneg` and `sum_sampleMass_eq_one` show that the masses form a probability law;
 * `sampleGraph_singleton` computes the probability of an individual graph;
 * `sampleGraph_const` identifies sampling a constant graphon with Mathlib's binomial random graph.
@@ -141,6 +143,18 @@ theorem integrable_sampleIntegrand :
     (Filter.Eventually.of_forall fun x => ?_)
   rw [Real.norm_eq_abs, abs_of_nonneg (sampleIntegrand_nonneg W G x)]
   exact sampleIntegrand_le_one W G x
+
+open Classical in
+/-- The conditional mass of `G` as a single product over the pairs of the complete graph: each
+pair contributes the graphon value if `G` joins it and the complementary value if it does not. -/
+theorem sampleIntegrand_eq_prod_edgeFinset_top (x : Fin n → Ω) :
+    sampleIntegrand W G x = ∏ e ∈ (⊤ : SimpleGraph (Fin n)).edgeFinset,
+      (if e ∈ G.edgeFinset then edgeFactor W x e else 1 - edgeFactor W x e) := by
+  rw [sampleIntegrand_def]
+  have hprod := Finset.prod_piecewise (⊤ : SimpleGraph (Fin n)).edgeFinset G.edgeFinset
+    (fun e => edgeFactor W x e) (fun e => 1 - edgeFactor W x e)
+  rw [Finset.inter_eq_right.mpr (SimpleGraph.edgeFinset_mono le_top)] at hprod
+  simpa only [Finset.piecewise] using hprod.symm
 
 /-- Sampled-graph masses are nonnegative. -/
 theorem sampleMass_nonneg : 0 ≤ sampleMass W G := by

@@ -96,7 +96,7 @@ theorem ergodic_shift_infinitePi_const (P : ProbabilityMeasure α) :
   have hs_inv : MeasurableSet[MeasurableSpace.invariants (shift α)] s := ⟨hs, hs_shift⟩
   have hzeroOne := exchangeableSigma_trivial_of_infinitePi P
     (invariants_shift_le_exchangeableSigma (α := α) s hs_inv)
-  refine eventuallyConst_set.2 ?_
+  refine eventuallyEmptyOrUniv_iff.2 ?_
   rcases hzeroOne with hzero | hone
   · exact Or.inr (ae_iff.mpr (by simpa using hzero))
   · exact Or.inl ((_root_.MeasureTheory.mem_ae_iff_prob_eq_one hs).2 hone)

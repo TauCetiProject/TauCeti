@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.CongruenceQuotient
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Exact
 public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.TotallyComplex
 
 /-!
@@ -41,11 +42,14 @@ modulus imposes nothing at all.
   ideals with a totally positive generator.
 * `TauCeti.GlobalNumberFields.toClassGroup_narrowEquiv`: the transition map to the trivial modulus
   is the forgetful map `Cl⁺(K) → Cl(K)`, read through the identifications at both ends.
-* `TauCeti.GlobalNumberFields.classMap_narrowModulus_surjective` and
+* `TauCeti.GlobalNumberFields.classMap_surjective` and
   `TauCeti.GlobalNumberFields.ker_classMap_narrowModulus`: exactness of
   `Kˣ → Cl⁺(K) → Cl(K) → 1` in ray-class form.
 * `TauCeti.GlobalNumberFields.narrowRayClassPrincipal_sq`: that kernel is an elementary abelian
   `2`-group.
+* `TauCeti.GlobalNumberFields.relIndex_congruenceSubgroup_narrowModulus`: the congruence subgroup
+  of the narrow modulus has relative index `2 ^ r₁`, the narrow specialization of
+  `TauCeti.GlobalNumberFields.relIndex_congruenceSubgroup`.
 
 ## References
 
@@ -69,6 +73,27 @@ survive, and they are imposed at every real place. -/
     congruenceSubgroup (narrowModulus K) = (totallyPositiveUnits : Subgroup Kˣ) := by
   ext x
   rw [mem_congruenceSubgroup, isCongrOne_narrowModulus_iff, mem_totallyPositiveUnits]
+
+variable (K) in
+/-- **The narrow modulus is counted by the real places alone.**  Its finite part is the unit ideal,
+so the residue-unit factor disappears and the congruence quotient is the sign group `{±1}^{r₁}`.
+
+This is the narrow-modulus specialization of `relIndex_congruenceSubgroup`.  Over a field with a
+real place it reads `2 ^ r₁ > 1`, so there the narrow conditions do not collapse to the wide ones;
+over a totally complex field the exponent is `0` and the index is `1`. -/
+theorem relIndex_congruenceSubgroup_narrowModulus :
+    (congruenceSubgroup (narrowModulus K)).relIndex (primeToSubgroup (narrowModulus K)) =
+      2 ^ InfinitePlace.nrRealPlaces K := by
+  classical
+  have hcard : (narrowModulus K).infinitePart.card = InfinitePlace.nrRealPlaces K := by
+    have huniv : (narrowModulus K).infinitePart = Finset.univ :=
+      Finset.eq_univ_iff_forall.mpr mem_narrowModulus_infinitePart
+    rw [huniv, Finset.card_univ]
+  have hunits : Nat.card (𝓞 K ⧸ (narrowModulus K).finitePart)ˣ = 1 := by
+    have : Subsingleton (𝓞 K ⧸ (narrowModulus K).finitePart) :=
+      Ideal.Quotient.subsingleton_iff.mpr narrowModulus_finitePart
+    exact Nat.card_eq_one_iff_unique.mpr ⟨inferInstance, inferInstance⟩
+  rw [relIndex_congruenceSubgroup, hunits, hcard, one_mul]
 
 /-- **The ray of the narrow modulus consists of the principal fractional ideals with a totally
 positive generator**, that is, of the ideals of `narrowPrincipalSubgroup K`. -/
@@ -152,15 +177,6 @@ ray class. -/
     classMap_rayClassMk, oneEquivClassGroup_rayClassMk,
     NumberFieldArithmetic.coe_idealsAwayInclusion]
 
-/-- **The transition map from the narrow ray class group onto the ordinary class group is
-surjective.** -/
-theorem classMap_narrowModulus_surjective :
-    Function.Surjective (classMap (Modulus.one_dvd (narrowModulus K))) := by
-  intro c
-  obtain ⟨C, hC⟩ := NarrowClassGroup.toClassGroup_surjective (oneEquivClassGroup c)
-  refine ⟨narrowEquivNarrowClassGroup.symm C, oneEquivClassGroup.injective ?_⟩
-  rw [← toClassGroup_narrowEquiv, MulEquiv.apply_symm_apply, hC]
-
 /-! ### Narrow ray classes of principal ideals -/
 
 /-- **The narrow ray class of a principal fractional ideal.**  The finite part of the narrow
@@ -227,7 +243,7 @@ is the ray class group of the trivial modulus, hence the ordinary class group. -
 noncomputable def classMapNarrowModulusEquiv [IsTotallyComplex K] :
     RayClassGroup (narrowModulus K) ≃* RayClassGroup (Modulus.one K) :=
   MulEquiv.ofBijective (classMap (Modulus.one_dvd (narrowModulus K)))
-    ⟨classMap_narrowModulus_injective, classMap_narrowModulus_surjective⟩
+    ⟨classMap_narrowModulus_injective, classMap_surjective (Modulus.one_dvd (narrowModulus K))⟩
 
 @[simp] theorem classMapNarrowModulusEquiv_apply [IsTotallyComplex K]
     (c : RayClassGroup (narrowModulus K)) :

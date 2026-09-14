@@ -71,7 +71,7 @@ This is Layer 0, item 1 of the optimal-transport roadmap.
 
 ## References
 
-* `TauCeti/MeasureTheory/Measure/Coupling.lean` is the formal source for the
+* `TauCeti/MeasureTheory/Measure/Coupling/Basic.lean` is the formal source for the
   measure-preserving projection and integral-transfer declarations and proofs adapted here to the
   plan-first `TauCeti.IsCoupling` interface.
 * C. Villani, *Optimal Transport: Old and New*, Grundlehren 338, 2009, Chapter 1

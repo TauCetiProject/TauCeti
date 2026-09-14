@@ -110,7 +110,7 @@ theorem pointsMap_comp {C : Type*} [CommRing C] (f : A →+* B) (g : B →+* C) 
 theorem pointsMap_injective {f : A →+* B} (hf : Function.Injective f) :
     Function.Injective (pointsMap n f) :=
   GeneralLinear.mapHopfIdealPointsSubgroupCongr_injective ((n + 1) + (n + 1)) (definingIdeal n)
-    (points_def n A) (points_def n B) (φ := f.toIntAlgHom) hf
+    (points_def n A) (points_def n B) (φ := f.toIntAlgHom) (by rwa [RingHom.toIntAlgHom_coe])
 
 /-- The induced map carries a numbered root-subgroup parameter along the homomorphism of value
 rings. -/

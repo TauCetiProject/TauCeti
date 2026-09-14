@@ -42,6 +42,8 @@ branch it is instead `τ ^ (2m+1)` for the special isogeny `τ` of the pinned `B
 characteristic two, which is not constructed here. That `τ` is identified by the relation
 `τ ^ 2 = Frob_p` in the prime characteristic, and `Frob_p` is not the map supplied here: validity
 forces `1 ≤ m`, so the field order `q = 2 ^ (2m+1)` the index records is larger than the prime.
+Carrier-level calculations that only need `Frob_p` should use
+`TauCeti.SpStd.frobenius 1 d.1.characteristic 1 d.1.Closure` directly.
 What this file supplies is `Frob_q`, the map the odd power `τ ^ (2m+1)` squares to. Either way the
 map below is the `q`-power Frobenius at the field order the index records, taken on this carrier.
 A Suzuki index reaches all of it through `TauCeti.SuzukiLieIndex.toRankTwoBLieIndex`.
@@ -80,7 +82,7 @@ The same carrier-and-Frobenius material on the branches already assembled is in
   that subgroup is the corresponding simple root of the `B₂` root datum.
 * `TauCeti.RankTwoBLieIndex.frobenius`, `TauCeti.RankTwoBLieIndex.coe_frobenius_apply` and
   `TauCeti.RankTwoBLieIndex.frobenius_simpleRootSubgroup`: the `q`-power Frobenius, its entrywise
-  description, and its pinned equation `Frob_q (x_i(u)) = x_i(u ^ q)`.
+  description, and its simple-root-subgroup action formula `Frob_q (x_i(u)) = x_i(u ^ q)`.
 * `TauCeti.RankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff`: its fixed points are the points whose
   matrix entries lie in the field of definition `𝔽_q`.
 
@@ -91,9 +93,6 @@ The same carrier-and-Frobenius material on the branches already assembled is in
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plates II and III, for the numbering
   of the two rank-two diagrams that the node correspondence below moves between.
-* The target signatures realized here follow the human-authored formal skeleton
-  `TauCetiRoadmap/CFSGStatement/Suggested.lean`: the ambient group, the numbered simple root
-  subgroup, and the Frobenius with its pinned equation, all taken on a validated-index subtype.
 -/
 
 public section
@@ -142,7 +141,7 @@ def simpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.Am
 /-- The simple-root subgroup is the carrier's numbered raising subgroup at the corresponding
 carrier node. This is the equation through which the upstream root-subgroup API reaches
 `simpleRootSubgroup`. It is not a `simp` lemma: `frobenius_simpleRootSubgroup` is the normal form
-the pinned equations of this file are stated against, and unfolding to
+the simple-root-subgroup action equations of this file are stated against, and unfolding to
 `TauCeti.SpStd.rootSubgroupPoints` would keep it from firing. -/
 theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
     d.simpleRootSubgroup i = SpStd.rootSubgroupPoints 1 (.inl (d.carrierNode i)) d.1.Closure :=
@@ -178,7 +177,8 @@ def frobenius : d.AmbientGroup →* d.AmbientGroup :=
 index records. This is its unfolding lemma; the definition itself stays sealed.
 
 It is deliberately not a `simp` lemma: `frobenius_simpleRootSubgroup` and `coe_frobenius_apply` are
-the normal forms the pinned equations of this file are stated against, and unfolding to
+the normal forms the simple-root-subgroup action equations of this file are stated against, and
+unfolding to
 `TauCeti.SpStd.frobenius` would keep them from firing. -/
 theorem frobenius_def :
     d.frobenius = SpStd.frobenius 1 d.1.characteristic d.1.fieldExponent d.1.Closure :=
@@ -201,8 +201,8 @@ theorem coe_frobenius_apply (g : d.AmbientGroup) (r c : Fin 4) :
   exact SpStd.coe_frobenius_apply 1 _ _ _ g r c
 
 /-- **The Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises its parameter
-to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. This is the equation that pins an
-ordinary Frobenius factor of a Steinberg map on the numbered simple-root subgroups. -/
+to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. This is the
+simple-root-subgroup action formula for the ordinary Frobenius on this carrier. -/
 @[simp]
 theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
     d.frobenius (d.simpleRootSubgroup i u) =

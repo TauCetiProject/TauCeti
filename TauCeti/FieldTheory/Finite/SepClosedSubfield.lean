@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Finite.GaloisField
 public import Mathlib.FieldTheory.IsSepClosed
-public import TauCeti.Algebra.CharP.FrobeniusFixed
+public import TauCeti.Algebra.CharP.Frobenius.Fixed
 public import TauCeti.FieldTheory.Finite.FrobeniusFixed
 
 /-!
