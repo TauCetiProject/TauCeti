@@ -50,7 +50,11 @@ exactness needed for the coideal condition is not automatic without an exactness
 
 The constructions are the standard inverse images of Hopf ideals, reduced here to the
 quotient-kernel constructions already in `TauCeti.Algebra.HopfAlgebra.Kernel`. Over a general
-base the morphism is assumed surjective; over a field it is arbitrary.
+base the morphism can be surjective or have the required flat quotient algebras; over a field
+it is arbitrary. These constructions follow
+[ReductiveGroups, Layer 3: subgroups, quotients, components][roadmap].
+
+[roadmap]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/ReductiveGroups/README.md#layer-3-subgroups-quotients-components
 -/
 
 public section
@@ -331,43 +335,55 @@ theorem comap_mono (f : H →ₐc[k] K) {I J : HopfIdeal k K} (hIJ : I ≤ J)
   intro h hh
   exact mem_comap.mpr (hIJ (mem_comap.mp hh))
 
-end Flat
-
-section Field
-
-variable {k : Type u} [Field k]
-variable [HopfAlgebra k H] [HopfAlgebra k K] [HopfAlgebra k L]
+variable [HopfAlgebra k L]
 
 /-- The kernel of a composite is the inverse image of the second morphism's kernel. -/
-theorem ker_comp (f : H →ₐc[k] K) (g : K →ₐc[k] L) :
+theorem ker_comp (f : H →ₐc[k] K) (g : K →ₐc[k] L)
+    [Module.Flat k L] [Module.Flat k (K ⧸ RingHom.ker g.toAlgHom)]
+    [Module.Flat k (H ⧸ RingHom.ker (g.comp f).toAlgHom)]
+    [Module.Flat k (K ⧸ (ker g).toIdeal)]
+    [Module.Flat k (H ⧸ Ideal.comap (f : H →+* K) (ker g).toIdeal)] :
     ker (g.comp f) = (ker g).comap f := by
   ext x
   rw [mem_ker, mem_comap, mem_ker, BialgHom.comp_apply]
 
-/-- The inverse image of the zero Hopf ideal over a field is the Hopf-ideal kernel. -/
+/-- The inverse image of the zero Hopf ideal is the Hopf-ideal kernel when the required
+quotients are flat. -/
 @[simp]
-theorem comap_bot (f : H →ₐc[k] K) :
+theorem comap_bot (f : H →ₐc[k] K)
+    [Module.Flat k K] [Module.Flat k (H ⧸ RingHom.ker f.toAlgHom)]
+    [Module.Flat k (K ⧸ (⊥ : HopfIdeal k K).toIdeal)]
+    [Module.Flat k (H ⧸ Ideal.comap (f : H →+* K) (⊥ : HopfIdeal k K).toIdeal)] :
     (⊥ : HopfIdeal k K).comap f = ker f := by
   ext h
   rw [mem_comap, mem_ker, mem_bot]
 
-/-- Pulling a Hopf ideal back along the identity over a field leaves it unchanged. -/
+/-- Pulling a Hopf ideal back along the identity leaves it unchanged when the quotient
+presentations are flat. -/
 @[simp]
-theorem comap_id (I : HopfIdeal k H) :
+theorem comap_id (I : HopfIdeal k H)
+    [Module.Flat k (H ⧸ I.toIdeal)]
+    [Module.Flat k (H ⧸ Ideal.comap (BialgHom.id k H : H →+* H) I.toIdeal)] :
     I.comap (BialgHom.id k H) = I := by
   ext h
   rw [mem_comap, BialgHom.coe_id]
   rfl
 
-/-- Inverse image of Hopf ideals over a field is compatible with composition. -/
+/-- Inverse image of Hopf ideals is compatible with composition when all quotient
+presentations are flat. -/
 @[simp]
 theorem comap_comap (I : HopfIdeal k L) (g : K →ₐc[k] L)
-    (f : H →ₐc[k] K) :
+    (f : H →ₐc[k] K)
+    [Module.Flat k (L ⧸ I.toIdeal)]
+    [Module.Flat k (K ⧸ Ideal.comap (g : K →+* L) I.toIdeal)]
+    [Module.Flat k (K ⧸ (I.comap g).toIdeal)]
+    [Module.Flat k (H ⧸ Ideal.comap (f : H →+* K) (I.comap g).toIdeal)]
+    [Module.Flat k (H ⧸ Ideal.comap (g.comp f : H →+* L) I.toIdeal)] :
     (I.comap g).comap f = I.comap (g.comp f) := by
   ext h
   rw [mem_comap, mem_comap, mem_comap, BialgHom.comp_apply]
 
-end Field
+end Flat
 
 end HopfIdeal
 
