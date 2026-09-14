@@ -109,6 +109,16 @@ theorem isHomogeneous (f : AInfinityStrictHom AA BB) :
   intro p a ha
   simpa only [add_zero] using f.map_mem' ha
 
+/-- The underlying linear map of a strict morphism is homogeneous of degree zero for the gradings
+shifted by `c`; the case `c = 1` is the suspended grading of the bar construction. -/
+theorem isHomogeneous_shift (f : AInfinityStrictHom AA BB) (c : ℤ) :
+    LinearMap.IsHomogeneous f.toLinearMap (AA.grading.shift c).piece
+      (BB.grading.shift c).piece 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro p a ha
+  rw [InternalGrading.shift_piece] at ha
+  simpa only [InternalGrading.shift_piece, add_zero] using f.map_mem' ha
+
 /-- A strict morphism commutes with the arity-`n` operation, as a multilinear-map equality. -/
 theorem map_m_map (f : AInfinityStrictHom AA BB) (n : ℕ) :
     f.toLinearMap.compMultilinearMap (AA.m n) =
@@ -226,27 +236,8 @@ theorem isHomogeneous_barMap (f : AInfinityStrictHom AA BB) :
     LinearMap.IsHomogeneous f.barMap
       (ReducedTensorWords.gradedPiece (AA.grading.shift 1))
       (ReducedTensorWords.gradedPiece (BB.grading.shift 1)) 0 := by
-  rw [LinearMap.isHomogeneous_def]
-  intro D z hz
-  refine ReducedTensorWords.gradedPiece_induction
-    (motive := fun w ↦ f.barMap w ∈
-      ReducedTensorWords.gradedPiece (BB.grading.shift 1) (D + 0)) hz ?_ ?_ ?_ ?_
-  · intro n hn degree x hx hD
-    rw [barMap_of_tprod]
-    simpa only [hD, add_zero] using
-      ReducedTensorWords.mem_gradedPiece_of_tprod (BB.grading.shift 1) hn
-        (fun i ↦ f (x i)) degree fun i ↦ by
-          have hxi : x i ∈ AA.grading.piece (degree i + 1) := by
-            simpa only [InternalGrading.shift_piece] using hx i
-          simpa only [InternalGrading.shift_piece] using f.map_mem hxi
-  · rw [map_zero]
-    exact Submodule.zero_mem _
-  · intro u v _ _ hu hv
-    rw [map_add]
-    exact Submodule.add_mem _ hu hv
-  · intro a u _ hu
-    rw [map_smul]
-    exact Submodule.smul_mem _ _ hu
+  rw [barMap_def]
+  exact ReducedTensorWords.isHomogeneous_map _ _ (f.isHomogeneous_shift 1)
 
 private theorem taylor_comp_barMap (f : AInfinityStrictHom AA BB) :
     BB.taylor ∘ₗ f.barMap = f.toLinearMap ∘ₗ AA.taylor := by
@@ -309,14 +300,7 @@ private theorem twistedTuple_map (f : AInfinityStrictHom AA BB) (q : ℤ) {n : �
     (x : Fin n → A) (a b : ℕ) :
     InternalGrading.twistedTuple (BB.grading.shift 1) q (fun i ↦ f (x i)) a b =
       fun i ↦ f (InternalGrading.twistedTuple (AA.grading.shift 1) q x a b i) := by
-  have hf : LinearMap.IsHomogeneous f.toLinearMap (AA.grading.shift 1).piece
-      (BB.grading.shift 1).piece 0 := by
-    rw [LinearMap.isHomogeneous_def]
-    intro degree y hy
-    have hy' : y ∈ AA.grading.piece (degree + 1) := by
-      simpa only [InternalGrading.shift_piece] using hy
-    simpa only [InternalGrading.shift_piece, add_zero] using f.map_mem' hy'
-  have hcomm := hf.koszulTwist_comp q
+  have hcomm := (f.isHomogeneous_shift 1).koszulTwist_comp q
   funext i
   simp only [InternalGrading.twistedTuple_apply]
   split_ifs with h
