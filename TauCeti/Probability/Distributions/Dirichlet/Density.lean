@@ -242,10 +242,34 @@ coordinate at `i₀` is `z.1 * (1 - ∑ j, z.2 j)` and the coordinate at `j` is 
 def dirichletUnchart (i₀ : ι) (z : ℝ × ({i // i ≠ i₀} → ℝ)) : ℝ × ({i // i ≠ i₀} → ℝ) :=
   (z.1 * (1 - ∑ j, z.2 j), fun j ↦ z.1 * z.2 j)
 
+/-- The reconstructed coordinate at the dropped index `i₀`. -/
+@[simp]
+theorem dirichletUnchart_fst (i₀ : ι) (z : ℝ × ({i // i ≠ i₀} → ℝ)) :
+    (dirichletUnchart i₀ z).1 = z.1 * (1 - ∑ j, z.2 j) := by
+  simp [dirichletUnchart]
+
+/-- The reconstructed coordinate at an index other than `i₀`. -/
+@[simp]
+theorem dirichletUnchart_snd_apply (i₀ : ι) (z : ℝ × ({i // i ≠ i₀} → ℝ))
+    (j : {i // i ≠ i₀}) : (dirichletUnchart i₀ z).2 j = z.1 * z.2 j := by
+  simp [dirichletUnchart]
+
 /-- Read off the total of the raw coordinates together with the chart coordinates they normalize
 to, the coordinate at `i₀` being carried separately as `z.1`. -/
 def dirichletChartCoords (i₀ : ι) (z : ℝ × ({i // i ≠ i₀} → ℝ)) : ℝ × ({i // i ≠ i₀} → ℝ) :=
   (z.1 + ∑ j, z.2 j, fun j ↦ z.2 j / (z.1 + ∑ j, z.2 j))
+
+/-- The total of the raw coordinates. -/
+@[simp]
+theorem dirichletChartCoords_fst (i₀ : ι) (z : ℝ × ({i // i ≠ i₀} → ℝ)) :
+    (dirichletChartCoords i₀ z).1 = z.1 + ∑ j, z.2 j := by
+  simp [dirichletChartCoords]
+
+/-- The chart coordinate at `j`: the raw coordinate there divided by the total. -/
+@[simp]
+theorem dirichletChartCoords_snd_apply (i₀ : ι) (z : ℝ × ({i // i ≠ i₀} → ℝ))
+    (j : {i // i ≠ i₀}) : (dirichletChartCoords i₀ z).2 j = z.2 j / (z.1 + ∑ j, z.2 j) := by
+  simp [dirichletChartCoords]
 
 /-- The source region of the scaling change of variables: a positive total together with a point
 of the chart region. -/
@@ -312,7 +336,7 @@ theorem dirichletChartCoords_mem_source {i₀ : ι} {z : ℝ × ({i // i ≠ i�
   have hsum : 0 < z.1 + ∑ j, z.2 j :=
     add_pos_of_pos_of_nonneg hu' (Finset.sum_nonneg fun j _ ↦ (hv j).le)
   refine ⟨hsum, fun j ↦ div_pos (hv j) hsum, ?_⟩
-  simp only [dirichletChartCoords, ← Finset.sum_div]
+  simp only [dirichletChartCoords_snd_apply, ← Finset.sum_div]
   rw [div_lt_one hsum]
   linarith
 
@@ -325,8 +349,9 @@ theorem dirichletChartCoords_dirichletUnchart {i₀ : ι} {z : ℝ × ({i // i �
   have hsum : z.1 * (1 - ∑ j, z.2 j) + ∑ j, z.1 * z.2 j = z.1 := by
     rw [← Finset.mul_sum]; ring
   refine Prod.ext ?_ (funext fun j ↦ ?_)
-  · simpa [dirichletChartCoords, dirichletUnchart] using hsum
-  · simp only [dirichletChartCoords, dirichletUnchart, hsum]
+  · simpa [dirichletChartCoords_fst] using hsum
+  · simp only [dirichletChartCoords_snd_apply, dirichletUnchart_fst,
+      dirichletUnchart_snd_apply, hsum]
     field_simp
 
 /-- The scaling map inverts the coordinate map on the target region. -/
@@ -338,10 +363,12 @@ theorem dirichletUnchart_dirichletChartCoords {i₀ : ι} {z : ℝ × ({i // i �
   have hsum : 0 < z.1 + ∑ j, z.2 j :=
     add_pos_of_pos_of_nonneg hu' (Finset.sum_nonneg fun j _ ↦ (hv j).le)
   refine Prod.ext ?_ (funext fun j ↦ ?_)
-  · simp only [dirichletUnchart, dirichletChartCoords, ← Finset.sum_div]
+  · simp only [dirichletUnchart_fst, dirichletChartCoords_fst, dirichletChartCoords_snd_apply,
+      ← Finset.sum_div]
     field_simp
     ring
-  · simp only [dirichletUnchart, dirichletChartCoords]
+  · simp only [dirichletUnchart_snd_apply, dirichletChartCoords_fst,
+      dirichletChartCoords_snd_apply]
     rw [mul_comm, div_mul_cancel₀ _ hsum.ne']
 
 /-- The scaling map is injective on the source region. -/
@@ -555,7 +582,8 @@ private theorem dirichletUnchart_density {a : ι → ℝ} (ha : ∀ i, 0 < a i) 
   obtain ⟨hs, hy⟩ := hz
   have hs' : 0 < z.1 := hs
   have hA : 0 < ∑ i, a i := Finset.sum_pos (fun i _ ↦ ha i) ⟨i₀, Finset.mem_univ i₀⟩
-  simp only [gammaSplitPDF, dirichletSourcePDF, dirichletChartPDF, gammaPDF, dirichletUnchart]
+  simp only [gammaSplitPDF, dirichletSourcePDF, dirichletChartPDF, gammaPDF, dirichletUnchart_fst,
+    dirichletUnchart_snd_apply]
   rw [← ENNReal.ofReal_prod_of_nonneg
       fun (j : {i // i ≠ i₀}) _ ↦ gammaPDFReal_nonneg (ha j) one_pos _,
     ← ENNReal.ofReal_mul (gammaPDFReal_nonneg (ha i₀) one_pos _),
@@ -688,12 +716,12 @@ private theorem dirichletNormalize_eq_dirichletChart (i₀ : ι) {x : ι → ℝ
   by_cases h : i = i₀
   · subst h
     rw [dirichletChart_apply_self]
-    simp only [dirichletChartCoords, hT]
+    simp only [dirichletChartCoords_snd_apply, hT]
     rw [← Finset.sum_div]
     field_simp
     linarith
   · rw [dirichletChart_apply_of_ne i₀ _ h]
-    simp only [dirichletChartCoords, hT]
+    simp only [dirichletChartCoords_snd_apply, hT]
 
 /-- **The Dirichlet law has a density in the chart that drops the coordinate `i₀`.**  It is the
 image, under the chart, of Lebesgue measure on the remaining coordinates weighted by
