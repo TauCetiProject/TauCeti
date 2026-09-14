@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Discrete
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Colimit
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation
 public import TauCeti.Topology.Algebra.Group.LocallyConstant
 
 /-!
@@ -31,19 +31,11 @@ value. Intersecting the three subgroups gives a finite level with invariant coef
 * `TauCeti.ContCohomology.exists_explicitInfl2_eq`: consequently every class in `H²(G, M)` is
   in the image of a finite-level inflation map.
 
-This is the strict-surjectivity half of the degree-two finite-quotient colimit milestone in Layer 4
-of the human-authored roadmap `TauCetiRoadmap/ProfiniteCohomology/README.md`. The injectivity half
-requires a separate deeper-level coboundary argument.
-
 ## References
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (1.2.5).
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Cor. 6.5.6(a).
 -/
-
--- Provenance: the statement follows the human-authored roadmap
--- `TauCetiRoadmap/ProfiniteCohomology`, whose Layer 4 specifies strict degree-two descent by
--- uniform local constancy and finite-image stabilization.
 
 public section
 
@@ -58,8 +50,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)]
 
 /-- Descend a continuous `2`-cocycle which is constant on right `N`-cosets in both variables and
-whose values are fixed by `N`. This implementation object stays private: the public API is the
-strict finite-level existence statement `TauCeti.ContCohomology.exists_explicitInfl2_eq`. -/
+whose values are fixed by `N` to a cocycle on `G ⧸ N` with values in `M ^ N`. -/
 private def descendZ2 (z : Z2 G M)
     (hright : ∀ (g h : G) (n n' : N),
       (z : G × G → M) (g * n, h * n') = (z : G × G → M) (g, h))
@@ -103,8 +94,7 @@ private theorem coe_descendZ2_apply_mk (z : Z2 G M)
     ((descendZ2 z hright hfixed :
       (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (g, h) : M) =
       (z : G × G → M) (g, h) := by
-  rw [descendZ2]
-  rfl
+  simp only [descendZ2, Quotient.liftOn₂'_mk'']
 
 /-- Inflating the private descent of a continuous `2`-cocycle returns the original class. -/
 private theorem explicitInfl2_descendZ2 (z : Z2 G M)
@@ -118,6 +108,8 @@ private theorem explicitInfl2_descendZ2 (z : Z2 G M)
   rw [explicitInfl2_mk]
   refine congrArg (fun w : Z2 G M => (w : H2 G M)) (Subtype.ext (funext fun p => ?_))
   rw [cocyclesMap2_apply, ContinuousMonoidHom.quotientMk_apply, AddSubgroup.coe_subtype]
+  -- The preceding rewrite leaves quotient representatives under the fixed-point subtype
+  -- coercion; expose that evaluation so the representative computation lemma applies.
   change ((descendZ2 z hright hfixed :
     (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (p.1, p.2) : M) = _
   exact coe_descendZ2_apply_mk z hright hfixed p.1 p.2
@@ -148,6 +140,8 @@ private theorem exists_openNormalSubgroup_descent_data (z : Z2 G M) :
   let U := (U₁ ⊓ U₂) ⊓ V
   refine ⟨U, ?_, ?_⟩
   · intro g h n n'
+    -- Coerce the two elements of `U` to `G` so that their pair can be tested for membership in
+    -- the right-translation stabilizer `W ≤ G × G`.
     apply mem_rightTranslationStabilizer.mp
       (show ((n : G), (n' : G)) ∈ W from ?_) (g, h)
     have hn₁ : (n : G) ∈ U₁ :=
