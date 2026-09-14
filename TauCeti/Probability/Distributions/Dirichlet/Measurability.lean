@@ -74,14 +74,6 @@ private theorem dirichletSource_of_pos {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
   funext i
   simp [gammaProbability, validGammaMeasure, ha i]
 
-private theorem measurableSet_forall_pos {κ : Type*} [Countable κ] :
-    MeasurableSet {a : κ → ℝ | ∀ i, 0 < a i} := by
-  have h : MeasurableSet (⋂ i : κ, {a : κ → ℝ | 0 < a i}) :=
-    MeasurableSet.iInter fun i ↦ measurableSet_lt measurable_const (measurable_pi_apply i)
-  convert h using 1
-  ext a
-  simp
-
 /-- **The Dirichlet family is measurable in its concentration vector.** -/
 @[fun_prop]
 theorem measurable_dirichletMeasure :
@@ -102,7 +94,10 @@ theorem measurable_dirichletMeasure :
       rw [dirichletSource_of_pos ha]
     · rw [dirichletMeasure_eq_zero_of_invalid (by simp [ha]), ite_eq_right ha]
   rw [hformula]
-  exact Measurable.ite measurableSet_forall_pos
+  have hpos : MeasurableSet {a : ι → ℝ | ∀ i, 0 < a i} :=
+    measurableSet_setOfPred.2 <| .forall fun i ↦
+      measurableSet_setOfPred.1 <| measurableSet_lt measurable_const (measurable_pi_apply i)
+  exact Measurable.ite hpos
     ((Measure.measurable_map dirichletNormalize measurable_dirichletNormalize).comp
       measurable_dirichletSource)
     measurable_const
