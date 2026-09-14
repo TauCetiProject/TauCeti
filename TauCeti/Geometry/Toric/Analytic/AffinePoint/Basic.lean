@@ -64,8 +64,8 @@ carrier; no topology is part of the data. -/
 abbrev AffineSemigroupComplexPoint (S : Type*) [AddCommMonoid S] :=
   MonoidAlgebra ℂ (Multiplicative S) →ₐ[ℂ] ℂ
 
-/-- Two complex points of `S` that agree on every monomial are equal: the monomials span the
-monoid algebra, and a `ℂ`-algebra map out of `ℂ` is unique. -/
+/-- Two complex points of `S` that agree on every monomial are equal. -/
+@[ext]
 theorem affinePoint_ext {x y : AffineSemigroupComplexPoint S}
     (h : ∀ s : S, x (MonoidAlgebra.single (ofAdd s) 1) = y (MonoidAlgebra.single (ofAdd s) 1)) :
     x = y :=

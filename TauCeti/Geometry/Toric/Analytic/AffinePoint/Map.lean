@@ -13,8 +13,8 @@ public import TauCeti.Geometry.Toric.Analytic.AffinePoint.Basic
 A homomorphism `f : S →+ T` of commutative additive monoids induces the algebra homomorphism
 `MonoidAlgebra.mapDomainAlgHom ℂ ℂ f.toMultiplicative` of monoid algebras, and restricting a
 complex point of `T` along it gives a complex point of `S`. This file constructs that
-contravariant map, `affinePointMap`, records the functor laws, and proves that it is continuous
-for the monomial-embedding topologies of `AffinePoint.Basic`.
+contravariant map, `AddMonoidHom.affinePointMap`, records the functor laws, and proves that it
+is continuous for the monomial-embedding topologies of `AffinePoint.Basic`.
 
 Continuity is stated for an arbitrary pair of finite generating families, one for the source and
 one for the target monoid. Since `affinePointTopology_eq` identifies the topologies induced by
@@ -23,12 +23,12 @@ two chosen families is required, and neither choice matters.
 
 ## Main declarations
 
-* `TauCeti.Toric.affinePointMap`: the complex points of an affine semigroup, contravariantly in
+* `AddMonoidHom.affinePointMap`: the complex points of an affine semigroup, contravariantly in
   the semigroup.
-* `TauCeti.Toric.affinePointMap_id`, `TauCeti.Toric.affinePointMap_comp`: the functor laws.
-* `TauCeti.Toric.induced_affinePointMap_eq_iInf`: the topology pulled back along the map is the
+* `AddMonoidHom.affinePointMap_id`, `AddMonoidHom.affinePointMap_comp`: the functor laws.
+* `AddMonoidHom.induced_affinePointMap_eq_iInf`: the topology pulled back along the map is the
   topology of the monomials in the image of `f`.
-* `TauCeti.Toric.continuous_affinePointMap`: continuity for the monomial-embedding topologies.
+* `AddMonoidHom.continuous_affinePointMap`: continuity for the monomial-embedding topologies.
 
 ## References
 
@@ -38,9 +38,9 @@ two chosen families is required, and neither choice matters.
 
 public section
 
-open Multiplicative Topology
+open Multiplicative Topology TauCeti.Toric
 
-namespace TauCeti.Toric
+namespace AddMonoidHom
 
 variable {S T U : Type*} [AddCommMonoid S] [AddCommMonoid T] [AddCommMonoid U] {r r' : ℕ}
 
@@ -64,7 +64,7 @@ theorem affinePointMap_apply_single (f : S →+ T) (x : AffineSemigroupComplexPo
 
 /-- The identity homomorphism induces the identity map of complex points. -/
 @[simp]
-theorem affinePointMap_id : affinePointMap (AddMonoidHom.id S) = id :=
+theorem affinePointMap_id : affinePointMap (.id S) = _root_.id :=
   funext fun _ ↦ affinePoint_ext fun _ ↦ by simp
 
 /-- A composite of homomorphisms induces the composite map of complex points, in the opposite
@@ -97,4 +97,4 @@ theorem continuous_affinePointMap (f : S →+ T) (g : AddGeneratingFamily S r)
   rw [continuous_iff_le_induced, induced_affinePointMap_eq_iInf f g]
   exact le_iInf fun s ↦ (continuous_apply_single h (f s)).le_induced
 
-end TauCeti.Toric
+end AddMonoidHom
