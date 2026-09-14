@@ -138,9 +138,9 @@ theorem cohomologyClass_eq_zero_iff (𝒜 : AInfinityAlgebra R A) {x : A}
 
 /-- The cohomology class of a boundary is zero. -/
 @[simp]
-theorem cohomologyClass_differential (𝒜 : AInfinityAlgebra R A) (x : A) :
-    𝒜.cohomologyClass (𝒜.differential_mem_cycles x) = 0 := by
-  exact (𝒜.cohomologyClass_eq_zero_iff _).mpr (𝒜.differential_mem_boundaries x)
+theorem cohomologyClass_m_one_eq_zero (𝒜 : AInfinityAlgebra R A) {x : A}
+    (hx : 𝒜.m 1 ![x] ∈ 𝒜.cycles) : 𝒜.cohomologyClass hx = 0 :=
+  (𝒜.cohomologyClass_eq_zero_iff _).mpr (𝒜.mem_boundaries.mpr ⟨x, rfl⟩)
 
 /-! ### Cohomological units -/
 
