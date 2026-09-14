@@ -14,7 +14,7 @@ public import Mathlib.FieldTheory.SeparableClosure
 
 Mathlib embeds the Galois group of a product into the product of the Galois groups,
 `Polynomial.Gal.restrictProd : (p * q).Gal →* p.Gal × q.Gal`
-(`Polynomial.Gal.restrictProd_injective`), and both components are surjective
+(`Polynomial.Gal.restrictProd_injective`), and when `p * q ≠ 0` both components are surjective
 (`Polynomial.Gal.restrictDvd_surjective`). This file describes the image when `p` and `q` are
 separable. Inside the splitting field `L` of `p * q`, the splitting fields `L_p` and `L_q` of the
 two factors embed, and a pair `(σ, τ)` lies in the image exactly when `σ` and `τ` agree on the
@@ -59,7 +59,7 @@ theorem _root_.Polynomial.Separable.isGalois_splittingField_mul (hp : p.Separabl
 variable (p q) in
 /-- For nonzero `p * q`, `Polynomial.Gal.restrictProd` is the joint restriction from the splitting
 field of `p * q` to the splitting fields of `p` and `q`. -/
-theorem _root_.Polynomial.Gal.restrictProd_eq_prod_restrict (hpq : p * q ≠ 0)
+theorem _root_.Polynomial.Gal.restrictProd_eq_restrict_prod_restrict (hpq : p * q ≠ 0)
     [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
     [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)] :
     Gal.restrictProd p q = (Gal.restrict p (p * q).SplittingField).prod
@@ -83,8 +83,8 @@ theorem _root_.Polynomial.Gal.mem_range_restrictProd_iff (hp : p.Separable) (hq 
           algebraMap p.SplittingField (p * q).SplittingField (σ x) =
             algebraMap q.SplittingField (p * q).SplittingField (τ y) := by
   have := hp.isGalois_splittingField_mul hq
-  rw [Gal.restrictProd_eq_prod_restrict p q (mul_ne_zero hp.ne_zero hq.ne_zero)]
-  exact AlgEquiv.mem_range_prod_restrictNormalHom_iff σ τ
+  rw [Gal.restrictProd_eq_restrict_prod_restrict p q (mul_ne_zero hp.ne_zero hq.ne_zero)]
+  exact AlgEquiv.mem_range_restrictNormalHom_prod_restrictNormalHom_iff σ τ
 
 /-- For separable `p` and `q`, `Polynomial.Gal.restrictProd` is surjective if and only if the
 splitting fields of `p` and `q` meet only in `F` inside the splitting field of `p * q`. -/
@@ -95,7 +95,7 @@ theorem _root_.Polynomial.Gal.restrictProd_surjective_iff (hp : p.Separable) (hq
       (IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).fieldRange ⊓
           (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).fieldRange = ⊥ := by
   have := hp.isGalois_splittingField_mul hq
-  rw [Gal.restrictProd_eq_prod_restrict p q (mul_ne_zero hp.ne_zero hq.ne_zero)]
-  exact AlgEquiv.prod_restrictNormalHom_surjective_iff
+  rw [Gal.restrictProd_eq_restrict_prod_restrict p q (mul_ne_zero hp.ne_zero hq.ne_zero)]
+  exact AlgEquiv.restrictNormalHom_prod_restrictNormalHom_surjective_iff
 
 end TauCeti

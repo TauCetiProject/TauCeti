@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.FixedField
+public import TauCeti.FieldTheory.Galois.Restriction
 
 /-!
 # Galois groups of composita as fibre products
@@ -21,18 +22,16 @@ For two finite Galois intermediate fields `K` and `L`, Mathlib's
 `K ⊔ L` into `Gal(K/F) × Gal(L/F)`. Its range consists of the pairs with equal restrictions to
 `K ⊓ L`, so `Gal(K ⊔ L / F)` is the fibre product `Gal(K/F) ×_{Gal(K ⊓ L / F)} Gal(L/F)`.
 
-To name those restriction maps, `AlgHom.restrictNormalHom` restricts automorphisms along an
-arbitrary embedding `f : M →ₐ[F] K` of a normal extension, generalizing Mathlib's
-`AlgEquiv.restrictNormalHom`, which restricts along the algebra map of a scalar tower.
+Those restriction maps to `K ⊓ L` are named with `AlgHom.restrictNormalHom` from
+`TauCeti.FieldTheory.Galois.Restriction`.
 
 ## Main definitions and results
 
-* `AlgHom.restrictNormalHom`: restriction `Gal(K/F) →* Gal(M/F)` along `f : M →ₐ[F] K`.
-* `AlgEquiv.mem_range_prod_restrictNormalHom_iff`: a pair of automorphisms of two normal
-  subextensions of a finite Galois extension extends to the whole extension iff it agrees on
-  common elements.
-* `AlgEquiv.prod_restrictNormalHom_surjective_iff`: the joint restriction map is surjective iff
-  the two subextensions meet in `F`.
+* `AlgEquiv.mem_range_restrictNormalHom_prod_restrictNormalHom_iff`: a pair of automorphisms of
+  two normal subextensions of a finite Galois extension extends to the whole extension iff it
+  agrees on common elements.
+* `AlgEquiv.restrictNormalHom_prod_restrictNormalHom_surjective_iff`: the joint restriction map is
+  surjective iff the two subextensions meet in `F`.
 * `IntermediateField.mem_range_restrictNormalHomSupProd_iff`: the Galois group of a compositum of
   two finite Galois intermediate fields is the fibre product over their intersection.
 
@@ -47,46 +46,6 @@ namespace TauCeti
 
 open IntermediateField
 
-section RestrictAlong
-
-variable {F K M : Type*} [Field F] [Field K] [Field M] [Algebra F K] [Algebra F M]
-
-/-- Restriction of automorphisms along an embedding `f : M →ₐ[F] K` of a normal extension `M/F`.
-Every `σ : Gal(K/F)` maps the image of `f` to itself, and `f.restrictNormalHom σ` is the
-automorphism of `M` it induces, so that `f (f.restrictNormalHom σ x) = σ (f x)`
-(`AlgHom.restrictNormalHom_commutes`). For the algebra map of a scalar tower this is
-`AlgEquiv.restrictNormalHom` (`AlgHom.restrictNormalHom_toAlgHom`). -/
-noncomputable def _root_.AlgHom.restrictNormalHom (f : M →ₐ[F] K) [Normal F M] :
-    Gal(K/F) →* Gal(M/F) :=
-  letI := f.toRingHom.toAlgebra
-  haveI : IsScalarTower F M K := IsScalarTower.of_algebraMap_eq fun x ↦ (f.commutes x).symm
-  AlgEquiv.restrictNormalHom M
-
-@[simp]
-theorem _root_.AlgHom.restrictNormalHom_commutes (f : M →ₐ[F] K) [Normal F M] (σ : Gal(K/F))
-    (x : M) : f (f.restrictNormalHom σ x) = σ (f x) :=
-  letI := f.toRingHom.toAlgebra
-  haveI : IsScalarTower F M K := IsScalarTower.of_algebraMap_eq fun x ↦ (f.commutes x).symm
-  AlgEquiv.restrictNormal_commutes σ M x
-
-/-- `f.restrictNormalHom σ` is the unique automorphism of `M` intertwined with `σ` by `f`. -/
-theorem _root_.AlgHom.restrictNormalHom_eq_iff (f : M →ₐ[F] K) [Normal F M] {σ : Gal(K/F)}
-    {τ : Gal(M/F)} : f.restrictNormalHom σ = τ ↔ ∀ x, σ (f x) = f (τ x) := by
-  refine ⟨fun h x ↦ by rw [← h, AlgHom.restrictNormalHom_commutes], fun h ↦ ?_⟩
-  ext x
-  exact f.injective ((f.restrictNormalHom_commutes σ x).trans (h x))
-
-/-- For the algebra map of a scalar tower, restriction along it is Mathlib's
-`AlgEquiv.restrictNormalHom`. -/
-@[simp]
-theorem _root_.AlgHom.restrictNormalHom_toAlgHom [Algebra M K] [IsScalarTower F M K]
-    [Normal F M] :
-    (IsScalarTower.toAlgHom F M K).restrictNormalHom = AlgEquiv.restrictNormalHom M :=
-  MonoidHom.ext fun σ ↦ (IsScalarTower.toAlgHom F M K).restrictNormalHom_eq_iff.2
-    fun y ↦ (AlgEquiv.restrictNormal_commutes σ M y).symm
-
-end RestrictAlong
-
 section FiberProduct
 
 variable {F E K₁ K₂ : Type*} [Field F] [Field E] [Field K₁] [Field K₂]
@@ -97,8 +56,8 @@ variable {F E K₁ K₂ : Type*} [Field F] [Field E] [Field K₁] [Field K₂]
 normal subextensions `K₁` and `K₂`, a pair `(σ₁, σ₂)` of automorphisms is the restriction of a
 single automorphism of `E` if and only if `σ₁` and `σ₂` agree on the elements common to `K₁` and
 `K₂` inside `E`. -/
-theorem _root_.AlgEquiv.mem_range_prod_restrictNormalHom_iff [FiniteDimensional F E]
-    [IsGalois F E] (σ₁ : Gal(K₁/F)) (σ₂ : Gal(K₂/F)) :
+theorem _root_.AlgEquiv.mem_range_restrictNormalHom_prod_restrictNormalHom_iff
+    [FiniteDimensional F E] [IsGalois F E] (σ₁ : Gal(K₁/F)) (σ₂ : Gal(K₂/F)) :
     (σ₁, σ₂) ∈ ((AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₁).prod
         (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₂)).range ↔
       ∀ x₁ x₂, algebraMap K₁ E x₁ = algebraMap K₂ E x₂ →
@@ -135,8 +94,8 @@ theorem _root_.AlgEquiv.mem_range_prod_restrictNormalHom_iff [FiniteDimensional 
 
 /-- The joint restriction map to two normal subextensions of a finite Galois extension is surjective
 if and only if the two subextensions meet only in the base field. -/
-theorem _root_.AlgEquiv.prod_restrictNormalHom_surjective_iff [FiniteDimensional F E]
-    [IsGalois F E] :
+theorem _root_.AlgEquiv.restrictNormalHom_prod_restrictNormalHom_surjective_iff
+    [FiniteDimensional F E] [IsGalois F E] :
     Function.Surjective ((AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₁).prod
         (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₂)) ↔
       (IsScalarTower.toAlgHom F K₁ E).fieldRange ⊓ (IsScalarTower.toAlgHom F K₂ E).fieldRange =
@@ -150,14 +109,15 @@ theorem _root_.AlgEquiv.prod_restrictNormalHom_surjective_iff [FiniteDimensional
     obtain ⟨⟨x₁, rfl⟩, ⟨x₂, hx⟩⟩ := hx
     -- The restriction of any `g` to `K₁` pairs with the identity of `K₂`, so `g` fixes the element.
     refine (IsGalois.mem_bot_iff_fixed _).2 fun g ↦ ?_
-    have hg := (AlgEquiv.mem_range_prod_restrictNormalHom_iff
+    have hg := (AlgEquiv.mem_range_restrictNormalHom_prod_restrictNormalHom_iff
       (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₁ g) 1).1
         (htop ▸ Subgroup.mem_top _) x₁ x₂ hx.symm
     simpa only [AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply,
       AlgEquiv.restrictNormal_commutes, AlgEquiv.one_apply, hx] using hg
   · intro hbot
     refine eq_top_iff.2 fun ⟨σ₁, σ₂⟩ _ ↦ ?_
-    refine (AlgEquiv.mem_range_prod_restrictNormalHom_iff σ₁ σ₂).2 fun x₁ x₂ hx ↦ ?_
+    refine (AlgEquiv.mem_range_restrictNormalHom_prod_restrictNormalHom_iff σ₁ σ₂).2
+      fun x₁ x₂ hx ↦ ?_
     have hmem : algebraMap K₁ E x₁ ∈ (⊥ : IntermediateField F E) :=
       hbot ▸ ⟨⟨x₁, rfl⟩, ⟨x₂, hx.symm⟩⟩
     obtain ⟨c, hc⟩ := mem_bot.1 hmem
@@ -189,7 +149,7 @@ theorem _root_.IntermediateField.mem_range_restrictNormalHomSupProd_iff (σ : Ga
   let : Algebra L ↑(K ⊔ L) := (inclusion le_sup_right).toAlgebra
   have : IsGalois F ↑(K ⊔ L) := ⟨⟩
   -- `restrictNormalHomSupProd K L` is the joint restriction map for the compositum `K ⊔ L`.
-  refine (AlgEquiv.mem_range_prod_restrictNormalHom_iff σ τ).trans ?_
+  refine (AlgEquiv.mem_range_restrictNormalHom_prod_restrictNormalHom_iff σ τ).trans ?_
   have key₁ (x : ↥(K ⊓ L)) :
       (((inclusion (inf_le_left : K ⊓ L ≤ K)).restrictNormalHom σ x : ↥(K ⊓ L)) : E) =
         (σ (inclusion inf_le_left x) : E) :=
