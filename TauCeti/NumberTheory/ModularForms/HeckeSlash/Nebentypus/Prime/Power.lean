@@ -199,9 +199,7 @@ theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_not_d
 
 /-- **At a prime dividing the level, `T_{p^r}` shifts every Fourier coefficient by `p^r`**:
 `a_m(T_{p^r} F) = a_{p^r m}(F)`, with no hypothesis on `m`. This is the bad-prime counterpart of
-`qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_not_dvd`: at `p ∣ N` the
-recurrence block degenerates to the `r`-th power of `Tₚ`, whose second term is killed by
-`χ(p) = 0`. -/
+`qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_not_dvd`. -/
 theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd_level (hp : p.Prime)
     (hpN : p ∣ N) (F : modFormCharSpace k χ) (m r : ℕ) :
     (qExpansion 1 (heckeRingHomCharSpace k χ (heckeTGeneratorRecGamma0 N p r) F :
@@ -209,6 +207,7 @@ theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd_l
       (qExpansion 1 (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff (p ^ r * m) := by
   let _ : NeZero p := ⟨hp.ne_zero⟩
   have hpc : ¬ Nat.Coprime p N := fun h ↦ (hp.coprime_iff_not_dvd.mp h) hpN
+  -- At `p ∣ N`, the recurrence block degenerates to a power of `Tₚ` because `χ(p) = 0`.
   rw [heckeTGeneratorRecGamma0_eq_generator_pow_of_not_coprime N hpc, map_pow]
   induction r generalizing m with
   | zero => simp
