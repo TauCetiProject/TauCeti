@@ -127,33 +127,13 @@ noncomputable def candidateGenusFieldConj (hd : Squarefree d) :
 
 /-- The sign pattern of complex conjugation is supported exactly on the negative prime
 discriminants. This is the coordinate form used by the relative Galois-group quotient. -/
-@[simp] theorem candidateGenusFieldSignPattern_conj_apply (hd : Squarefree d)
+theorem candidateGenusFieldSignPattern_conj_apply (hd : Squarefree d)
     (P : {P // P ∈ genusPrimeDiscriminants hd}) :
     candidateGenusFieldSignPattern hd (candidateGenusFieldConj hd) P =
       if P.val < 0 then 1 else 0 := by
-  rw [candidateGenusFieldSignPattern_apply, candidateGenusFieldConj_apply_gen]
   by_cases hneg : P.val < 0
-  · have hgen : candidateGenusFieldGen hd P ≠ 0 := by
-      intro hzero
-      have hrad := primeDiscriminantRadicand_ne_zero
-        ((genusPrimeDiscriminants_spec hd).1 P.val P.property)
-      apply hrad
-      have hsq := candidateGenusFieldGen_sq hd P
-      rw [hzero] at hsq
-      simp only [zero_pow (by decide : 2 ≠ 0)] at hsq
-      have hmap : (algebraMap ℚ (candidateGenusField hd)) 0 =
-          (algebraMap ℚ (candidateGenusField hd))
-            (((primeDiscriminantRadicand P.val : ℤ) : ℚ)) := by
-        simpa using hsq
-      have hq : (0 : ℚ) = ((primeDiscriminantRadicand P.val : ℤ) : ℚ) :=
-        (algebraMap ℚ (candidateGenusField hd)).injective hmap
-      have hz : primeDiscriminantRadicand P.val = 0 := by
-        exact_mod_cast hq.symm
-      exact hz
-    have hne : -candidateGenusFieldGen hd P ≠ candidateGenusFieldGen hd P := fun h =>
-      hgen (CharZero.neg_eq_self_iff.mp h)
-    simp [hneg, hne]
-  · simp [hneg]
+  · simp [candidateGenusFieldSignPattern_apply, hneg]
+  · simp [candidateGenusFieldSignPattern_apply, hneg]
 
 private theorem mem_fixedField_zpowers_candidateGenusFieldConj_iff (hd : Squarefree d)
     (x : candidateGenusField hd) :
