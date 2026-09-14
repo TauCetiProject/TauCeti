@@ -195,7 +195,7 @@ the canonical equivalence between the two copies of `ℚ(√d)` then identifies 
 theorem isUnramifiedIn_candidateGenusFieldReal (hd : Squarefree d)
     (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d)
     (q : Ideal (𝓞 (adjoin ℚ {candidateGenusFieldRealBaseRoot hd hpos} :
-      IntermediateField ℚ (candidateGenusFieldReal hd)))) [q.IsPrime] :
+      IntermediateField ℚ (candidateGenusFieldReal hd)))) :
     Algebra.IsUnramifiedIn (𝓞 (candidateGenusFieldReal hd)) q := by
   let B := (adjoin ℚ {candidateGenusFieldRealBaseRoot hd hpos} :
     IntermediateField ℚ (candidateGenusFieldReal hd))
