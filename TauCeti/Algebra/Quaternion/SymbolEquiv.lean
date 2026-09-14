@@ -82,43 +82,48 @@ def rescaleJEquiv (a b : R) (c : Rˣ) : ℍ[R,a,(c : R) ^ 2 * b] ≃ₐ[R] ℍ[R
 
 @[simp]
 theorem rescaleJEquiv_apply_i (a b : R) (c : Rˣ) :
-    rescaleJEquiv a b c (_root_.QuaternionAlgebra.Basis.self R).i =
+    rescaleJEquiv a b c ⟨0, 1, 0, 0⟩ =
       (_root_.QuaternionAlgebra.Basis.self R).i := by
   simp [rescaleJEquiv, rescaleJHom, rescaleJBasis, _root_.QuaternionAlgebra.Basis.lift]
 
 @[simp]
 theorem rescaleJEquiv_apply_j (a b : R) (c : Rˣ) :
-    rescaleJEquiv a b c (_root_.QuaternionAlgebra.Basis.self R).j =
+    rescaleJEquiv a b c ⟨0, 0, 1, 0⟩ =
       (c : R) • (_root_.QuaternionAlgebra.Basis.self R).j := by
   simp [rescaleJEquiv, rescaleJHom, rescaleJBasis, _root_.QuaternionAlgebra.Basis.lift]
 
 @[simp]
 theorem rescaleJEquiv_apply_k (a b : R) (c : Rˣ) :
-    rescaleJEquiv a b c (_root_.QuaternionAlgebra.Basis.self R).k =
+    rescaleJEquiv a b c ⟨0, 0, 0, 1⟩ =
       (c : R) • (_root_.QuaternionAlgebra.Basis.self R).k := by
-  rw [← _root_.QuaternionAlgebra.Basis.i_mul_j, map_mul, rescaleJEquiv_apply_i,
-    rescaleJEquiv_apply_j]
+  change rescaleJEquiv a b c (_root_.QuaternionAlgebra.Basis.self R).k = _
+  rw [← _root_.QuaternionAlgebra.Basis.i_mul_j, map_mul]
+  simp only [_root_.QuaternionAlgebra.Basis.i_self,
+    _root_.QuaternionAlgebra.Basis.j_self, rescaleJEquiv_apply_i, rescaleJEquiv_apply_j]
   simp
 
 @[simp]
 theorem rescaleJEquiv_symm_apply_i (a b : R) (c : Rˣ) :
-    (rescaleJEquiv a b c).symm (_root_.QuaternionAlgebra.Basis.self R).i =
+    (rescaleJEquiv a b c).symm ⟨0, 1, 0, 0⟩ =
       (_root_.QuaternionAlgebra.Basis.self R).i := by
   simp [rescaleJEquiv, rescaleJInvHom, rescaleJInvBasis,
     _root_.QuaternionAlgebra.Basis.lift]
 
 @[simp]
 theorem rescaleJEquiv_symm_apply_j (a b : R) (c : Rˣ) :
-    (rescaleJEquiv a b c).symm (_root_.QuaternionAlgebra.Basis.self R).j =
+    (rescaleJEquiv a b c).symm ⟨0, 0, 1, 0⟩ =
       ((c⁻¹ : Rˣ) : R) • (_root_.QuaternionAlgebra.Basis.self R).j := by
   simp [rescaleJEquiv, rescaleJInvHom, rescaleJInvBasis,
     _root_.QuaternionAlgebra.Basis.lift]
 
 @[simp]
 theorem rescaleJEquiv_symm_apply_k (a b : R) (c : Rˣ) :
-    (rescaleJEquiv a b c).symm (_root_.QuaternionAlgebra.Basis.self R).k =
+    (rescaleJEquiv a b c).symm ⟨0, 0, 0, 1⟩ =
       ((c⁻¹ : Rˣ) : R) • (_root_.QuaternionAlgebra.Basis.self R).k := by
-  rw [← _root_.QuaternionAlgebra.Basis.i_mul_j, map_mul, rescaleJEquiv_symm_apply_i,
+  change (rescaleJEquiv a b c).symm (_root_.QuaternionAlgebra.Basis.self R).k = _
+  rw [← _root_.QuaternionAlgebra.Basis.i_mul_j, map_mul]
+  simp only [_root_.QuaternionAlgebra.Basis.i_self,
+    _root_.QuaternionAlgebra.Basis.j_self, rescaleJEquiv_symm_apply_i,
     rescaleJEquiv_symm_apply_j]
   simp
 
@@ -132,45 +137,50 @@ def rescaleIEquiv (a b : R) (c : Rˣ) : ℍ[R,(c : R) ^ 2 * a,b] ≃ₐ[R] ℍ[R
 
 @[simp]
 theorem rescaleIEquiv_apply_i (a b : R) (c : Rˣ) :
-    rescaleIEquiv a b c (_root_.QuaternionAlgebra.Basis.self R).i =
+    rescaleIEquiv a b c ⟨0, 1, 0, 0⟩ =
       (c : R) • (_root_.QuaternionAlgebra.Basis.self R).i := by
   ext <;> simp [rescaleIEquiv, rescaleJEquiv, rescaleJHom, rescaleJBasis,
     _root_.QuaternionAlgebra.Basis.lift, _root_.QuaternionAlgebra.swapEquiv]
 
 @[simp]
 theorem rescaleIEquiv_apply_j (a b : R) (c : Rˣ) :
-    rescaleIEquiv a b c (_root_.QuaternionAlgebra.Basis.self R).j =
+    rescaleIEquiv a b c ⟨0, 0, 1, 0⟩ =
       (_root_.QuaternionAlgebra.Basis.self R).j := by
   ext <;> simp [rescaleIEquiv, rescaleJEquiv, rescaleJHom, rescaleJBasis,
     _root_.QuaternionAlgebra.Basis.lift, _root_.QuaternionAlgebra.swapEquiv]
 
 @[simp]
 theorem rescaleIEquiv_apply_k (a b : R) (c : Rˣ) :
-    rescaleIEquiv a b c (_root_.QuaternionAlgebra.Basis.self R).k =
+    rescaleIEquiv a b c ⟨0, 0, 0, 1⟩ =
       (c : R) • (_root_.QuaternionAlgebra.Basis.self R).k := by
-  rw [← _root_.QuaternionAlgebra.Basis.i_mul_j, map_mul, rescaleIEquiv_apply_i,
-    rescaleIEquiv_apply_j]
+  change rescaleIEquiv a b c (_root_.QuaternionAlgebra.Basis.self R).k = _
+  rw [← _root_.QuaternionAlgebra.Basis.i_mul_j, map_mul]
+  simp only [_root_.QuaternionAlgebra.Basis.i_self,
+    _root_.QuaternionAlgebra.Basis.j_self, rescaleIEquiv_apply_i, rescaleIEquiv_apply_j]
   simp
 
 @[simp]
 theorem rescaleIEquiv_symm_apply_i (a b : R) (c : Rˣ) :
-    (rescaleIEquiv a b c).symm (_root_.QuaternionAlgebra.Basis.self R).i =
+    (rescaleIEquiv a b c).symm ⟨0, 1, 0, 0⟩ =
       ((c⁻¹ : Rˣ) : R) • (_root_.QuaternionAlgebra.Basis.self R).i := by
   ext <;> simp [rescaleIEquiv, rescaleJEquiv, rescaleJInvHom, rescaleJInvBasis,
     _root_.QuaternionAlgebra.Basis.lift, _root_.QuaternionAlgebra.swapEquiv]
 
 @[simp]
 theorem rescaleIEquiv_symm_apply_j (a b : R) (c : Rˣ) :
-    (rescaleIEquiv a b c).symm (_root_.QuaternionAlgebra.Basis.self R).j =
+    (rescaleIEquiv a b c).symm ⟨0, 0, 1, 0⟩ =
       (_root_.QuaternionAlgebra.Basis.self R).j := by
   ext <;> simp [rescaleIEquiv, rescaleJEquiv, rescaleJInvHom, rescaleJInvBasis,
     _root_.QuaternionAlgebra.Basis.lift, _root_.QuaternionAlgebra.swapEquiv]
 
 @[simp]
 theorem rescaleIEquiv_symm_apply_k (a b : R) (c : Rˣ) :
-    (rescaleIEquiv a b c).symm (_root_.QuaternionAlgebra.Basis.self R).k =
+    (rescaleIEquiv a b c).symm ⟨0, 0, 0, 1⟩ =
       ((c⁻¹ : Rˣ) : R) • (_root_.QuaternionAlgebra.Basis.self R).k := by
-  rw [← _root_.QuaternionAlgebra.Basis.i_mul_j, map_mul, rescaleIEquiv_symm_apply_i,
+  change (rescaleIEquiv a b c).symm (_root_.QuaternionAlgebra.Basis.self R).k = _
+  rw [← _root_.QuaternionAlgebra.Basis.i_mul_j, map_mul]
+  simp only [_root_.QuaternionAlgebra.Basis.i_self,
+    _root_.QuaternionAlgebra.Basis.j_self, rescaleIEquiv_symm_apply_i,
     rescaleIEquiv_symm_apply_j]
   simp
 
