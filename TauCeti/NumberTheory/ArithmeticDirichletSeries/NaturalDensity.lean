@@ -36,7 +36,8 @@ whole spectrum have density one and ensures that a fixed finite error disappears
 * `TauCeti.tendsto_primeCount_univ_atTop`: the number of all prime ideals below the cutoff tends
   to infinity.
 * `NumberField.Set.HasNaturalDensity`: ratio-normalized natural density for a set of prime ideals.
-* `NumberField.Set.HasNaturalDensity.union` and
+* `NumberField.Set.HasNaturalDensity.union`,
+  `NumberField.Set.hasNaturalDensity_biUnion_finset` and
   `NumberField.Set.HasNaturalDensity.compl`: finite Boolean calculus for natural density.
 * `NumberField.Set.HasNaturalDensity.of_finite_symmDiff`: changing a prime set on finitely many
   primes preserves its natural density.
@@ -119,11 +120,13 @@ theorem HasNaturalDensity.unique (hδ : HasNaturalDensity S δ) (hε : HasNatura
   tendsto_nhds_unique hδ hε
 
 /-- The empty set of prime ideals has natural density zero. -/
+@[simp]
 theorem hasNaturalDensity_empty :
     HasNaturalDensity (∅ : Set (HeightOneSpectrum (𝓞 K))) 0 := by
   simp [HasNaturalDensity]
 
 /-- The set of all prime ideals has natural density one. -/
+@[simp]
 theorem hasNaturalDensity_univ :
     HasNaturalDensity (Set.univ : Set (HeightOneSpectrum (𝓞 K))) 1 := by
   rw [HasNaturalDensity]
@@ -156,6 +159,24 @@ theorem HasNaturalDensity.union (hS : HasNaturalDensity S δ) (hT : HasNaturalDe
     (hST : Disjoint S T) : HasNaturalDensity (S ∪ T) (δ + ε) := by
   rw [HasNaturalDensity] at hS hT ⊢
   simpa only [TauCeti.primeCount_union hST, add_div] using hS.add hT
+
+/-- Natural density is additive on a finite family of pairwise disjoint prime sets. -/
+theorem hasNaturalDensity_biUnion_finset {ι : Type*} {s : Finset ι}
+    {f : ι → Set (HeightOneSpectrum (𝓞 K))} {d : ι → ℝ}
+    (hf : ∀ i ∈ s, HasNaturalDensity (f i) (d i))
+    (hdisj : (s : Set ι).PairwiseDisjoint f) :
+    HasNaturalDensity (⋃ i ∈ s, f i) (∑ i ∈ s, d i) := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp
+  | insert a s ha ih =>
+    rw [Finset.set_biUnion_insert, Finset.sum_insert ha]
+    refine (hf a (Finset.mem_insert_self a s)).union
+      (ih (fun i hi => hf i (Finset.mem_insert_of_mem hi))
+        (hdisj.subset (by simp))) ?_
+    rw [_root_.Set.disjoint_iUnion₂_right]
+    intro i hi
+    exact hdisj (by simp) (by simp [hi]) fun h => ha (h ▸ hi)
 
 /-- The complement of a set of natural density `δ` has natural density `1 - δ`. -/
 theorem HasNaturalDensity.compl (hS : HasNaturalDensity S δ) :
