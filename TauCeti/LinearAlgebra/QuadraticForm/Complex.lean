@@ -103,8 +103,7 @@ their dimensions agree. -/
     exact e.toLinearEquiv.finrank_eq
   · exact _root_.QuadraticForm.equivalent_of_finrank_eq_of_isAlgClosed Q R hQ hR
 
-/-- A nonzero quadratic form over an algebraically closed field represents every scalar: a value
-`Q v ≠ 0` can be rescaled to any scalar by a square root of the ratio. -/
+/-- A nonzero quadratic form over an algebraically closed field represents every scalar. -/
 theorem _root_.QuadraticForm.represents_of_ne_zero_of_isAlgClosed
     {K W : Type*} [Field K] [IsAlgClosed K] [AddCommGroup W] [Module K W]
     {Q : QuadraticForm K W} (hQ : Q ≠ 0) (a : K) : QuadraticMap.Represents Q a := by

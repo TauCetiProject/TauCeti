@@ -15,7 +15,8 @@ The local predicates `QuadraticForm.IsLocallyIsotropic`, `QuadraticForm.LocallyR
 `QuadraticForm.LocallyRepresents`, and `QuadraticForm.LocallyEquivalent` only quantify over the
 finite and real places of a number field.  This file proves that each of them already implies the
 corresponding statement after scalar extension along the complex embedding of every infinite
-place.  Adjoining complex clauses to these predicates therefore changes none of the
+place; for `LocallyRepresents` and `LocallyEquivalent`, the forms are finite-dimensional and
+nondegenerate.  Adjoining complex clauses under these hypotheses therefore changes none of the
 local-to-global statements formulated with them.
 
 The complex clause is supplied by the classification of quadratic forms over an algebraically
