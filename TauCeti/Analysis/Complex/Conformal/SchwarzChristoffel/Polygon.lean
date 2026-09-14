@@ -10,23 +10,24 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity
 
 /-!
-# The polygon traced by Schwarz--Christoffel boundary values
+# The combinatorial polygon of Schwarz--Christoffel boundary values
 
-A finite family of Schwarz--Christoffel prevertices supplies a cyclic list of complex boundary
-values.  The two unbounded intervals of the real axis meet at the common boundary value at
-infinity, so this file inserts that value after the finite vertices and packages the resulting
-cyclic list as Mathlib's `Polygon`.
+A finite indexed family of Schwarz--Christoffel prevertices supplies a list of complex boundary
+values.  This file appends the common boundary value at infinity and packages the resulting cyclic
+list as Mathlib's `Polygon`.  The indexing here is purely combinatorial: no ordering or distinctness
+assumption is imposed on the prevertices.
 
-The extra vertex at infinity records the subdivision of the closing boundary side into the two
-unbounded real intervals.  For the classical exponent sum `-2` it need not be a geometric corner:
-the two adjacent polygon edges may be collinear.  Keeping it as a vertex nevertheless makes each
-edge correspond to exactly one interval in the extended real boundary.
+When the indices list distinct prevertices in increasing order and the relevant integrability and
+decay hypotheses hold, the extra vertex at infinity records the subdivision of the closing boundary
+side into the two unbounded real intervals.  For the classical exponent sum `-2` it need not be a
+geometric corner: the two adjacent polygon edges may be collinear.
 
-The edge formulas below separate the three kinds of boundary interval.  There is one bounded edge
-between each consecutive pair of finite prevertices, one edge from the last prevertex to infinity,
-and one from infinity to the first prevertex.  Their union is the polygon boundary.  These formulas
-are the finite combinatorial interface used to identify the range of the compactified
-Schwarz--Christoffel boundary with a polygonal boundary.
+The edge formulas below separate the three positions in the index list.  There is one edge between
+each pair of index-successive finite vertices, one edge from the last-indexed finite vertex to
+infinity, and one from infinity to the first-indexed finite vertex.  Their union is the polygon
+boundary.  Under the ordering and analytic hypotheses above, these are the three kinds of boundary
+interval.  The formulas are the finite combinatorial interface used to identify the range of the
+compactified Schwarz--Christoffel boundary with a polygonal boundary.
 
 ## Main definitions
 
@@ -113,8 +114,8 @@ theorem schwarzChristoffelPolygon_apply_castSucc_eq_boundary (a e : Fin (n + 1) 
 
 /-! ### The three kinds of edge -/
 
-/-- A bounded edge of the Schwarz--Christoffel polygon joins the vertices belonging to two
-consecutive finite prevertices. -/
+/-- A bounded edge of the Schwarz--Christoffel polygon joins the vertices at two consecutive
+indices. -/
 @[simp]
 theorem schwarzChristoffelPolygon_edgeSet_castSucc_castSucc (a e : Fin (n + 1) → ℝ)
     (z₀ : UpperHalfPlane) (i : Fin n) :
