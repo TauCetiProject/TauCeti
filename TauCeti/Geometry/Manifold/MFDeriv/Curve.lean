@@ -294,11 +294,14 @@ theorem ContMDiffOn.continuousOn_curveVelocityLiftWithin {u : Set 𝕜}
   have htangent := hγ.continuousOn_tangentMapWithin le_rfl hu
   have hcomp := htangent.comp hι.continuous.continuousOn
     (fun t ht ↦ by simpa [ι] using ht)
+  have htangent_apply (t : 𝕜) :
+      tangentMapWithin (modelWithCornersSelf 𝕜 𝕜) I γ u (ι t) =
+        curveVelocityLiftWithin I γ u t := by
+    apply TotalSpace.ext rfl
+    simp only [tangentMapWithin_snd, ι]
+    exact HEq.rfl
   refine hcomp.congr fun t ht ↦ ?_
-  rw [curveVelocityLiftWithin_apply]
-  change TotalSpace.mk' E (γ t) (curveVelocityWithin I γ u t) =
-    TotalSpace.mk' E (γ t) (mfderivWithin 𝓘(𝕜, 𝕜) I γ u t (1 : 𝕜))
-  rw [curveVelocityWithin_apply]
+  exact (htangent_apply t).symm
 
 /-- The velocity lift of a `C¹` curve is continuous on an open parameter set. The openness
 ensures that the unrestricted velocity in `curveVelocityLift` agrees with the derivative within

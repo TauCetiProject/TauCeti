@@ -63,7 +63,8 @@ containing `[a, b]`, with nonzero velocity along `[a, b]`. There is an increasin
 `ψ` from
 `[0, ∫_a^b ‖γ'(t)‖ dt]` to `[a, b]` which inverts accumulated length. The curve `γ ∘ ψ`
 has the same endpoints and path length as `γ`, and its velocity has norm one throughout its
-parameter interval.
+parameter interval. The accumulated-speed endpoint is identified with the real value of
+`Manifold.pathELength`.
 
 The case `a = b` is included: the new parameter interval is then the singleton `{0}`. -/
 theorem exists_unit_speed_reparametrization {γ : ℝ → M} {J : Set ℝ} (hJ : IsOpen J)
@@ -82,7 +83,8 @@ theorem exists_unit_speed_reparametrization {γ : ℝ → M} {J : Set ℝ} (hJ :
       (∀ s ∈ Icc (0 : ℝ) (∫ r in a..b, ‖curveVelocity I γ r‖),
         ‖curveVelocity I (γ ∘ ψ) s‖ = 1) ∧
       Manifold.pathELength I (γ ∘ ψ) 0 (∫ r in a..b, ‖curveVelocity I γ r‖) =
-        Manifold.pathELength I γ a b := by
+        Manifold.pathELength I γ a b ∧
+      (∫ r in a..b, ‖curveVelocity I γ r‖) = (Manifold.pathELength I γ a b).toReal := by
   let v : ℝ → ℝ := fun t ↦ ‖curveVelocity I γ t‖
   have hvelocity : ContinuousOn (curveVelocityLift I γ) J :=
     ContMDiffOn.continuousOn_curveVelocityLift hγ hJ
@@ -146,6 +148,19 @@ theorem exists_unit_speed_reparametrization {γ : ℝ → M} {J : Set ℝ} (hJ :
       exact hU_ord s hs t ht
     · rw [uIcc_of_ge hts]
       exact hU_ord t ht s hs
+  have hlength_toReal :
+      (∫ r in a..b, v r) = (Manifold.pathELength I γ a b).toReal := by
+    rw [intervalIntegral.integral_of_le hab, ← integral_Icc_eq_integral_Ioc]
+    rw [MeasureTheory.integral_eq_lintegral_of_nonneg_ae
+      (Eventually.of_forall fun _ ↦ norm_nonneg _)
+      ((intervalIntegrable_iff_integrableOn_Icc_of_le hab).mp
+        (hInt a haU b hbU)).aestronglyMeasurable]
+    rw [Manifold.pathELength_eq_lintegral_mfderiv_Icc]
+    congr 1
+    apply lintegral_congr
+    intro t
+    rw [curveVelocity_apply, ofReal_norm]
+    rfl
   -- The accumulated-speed function is `C¹` with positive derivative, hence strictly increasing.
   let φ : ℝ → ℝ := fun t ↦ ∫ r in a..t, v r
   have hφ_deriv : ∀ t ∈ U, HasDerivAt φ (v t) t := by
@@ -277,7 +292,7 @@ theorem exists_unit_speed_reparametrization {γ : ℝ → M} {J : Set ℝ} (hJ :
       hγdiff
     simpa only [hψ_zero, hψ_end] using h
   -- Rewrite the local names `v` and `φ` back to the intrinsic formula in the public statement.
-  refine ⟨ψ, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨ψ, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro t ht
     simpa only [φ, v] using hleft t (hIccU ht)
   · simpa only [φ, v] using hright
@@ -289,6 +304,7 @@ theorem exists_unit_speed_reparametrization {γ : ℝ → M} {J : Set ℝ} (hJ :
   · simpa only [φ, v, Function.comp_apply] using congrArg γ (hleft b hbU)
   · simpa only [φ, v] using hunit
   · simpa only [φ, v] using hlength
+  · simpa only [v] using hlength_toReal
 
 end TauCeti.Manifold
 
