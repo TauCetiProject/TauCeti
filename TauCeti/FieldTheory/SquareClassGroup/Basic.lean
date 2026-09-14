@@ -26,7 +26,10 @@ square. So linear independence of the classes is the **Finset form** of square-c
 * `TauCeti.SquareClassGroup`: the square-class group `Kˣ ⧸ (Kˣ)²`, an `𝔽₂`-vector space.
 * `TauCeti.squareClass`, `TauCeti.squareClassHom`: the class of a unit, as a function and a
   multiplicative homomorphism, with `squareClass_eq_zero_iff` characterising the trivial class as
-  the squares.
+  the squares and `squareClass_mul`, `squareClass_prod`, `squareClass_pow` computing it on
+  products and powers.
+* `TauCeti.squareClass_eq_iff_isSquare_mul`: equality of square classes read as a square product.
+* `TauCeti.SquareClassGroup.two_nsmul_eq_zero`: the square-class group is killed by two.
 * `TauCeti.linearIndependent_squareClass_iff`: the classes of `d : ι → Kˣ` are `ZMod 2`-linearly
   independent iff no nonempty subset product is a square.
 -/
@@ -85,6 +88,31 @@ theorem squareClass_prod {ι : Type*} (S : Finset ι) (d : ι → Kˣ) :
   simp only [squareClass, ofMul_prod]
   rw [← QuotientAddGroup.mk'_apply, map_sum]
   simp only [QuotientAddGroup.mk'_apply]
+
+/-- Every element of the square-class group has order dividing two. -/
+@[simp]
+theorem SquareClassGroup.two_nsmul_eq_zero (x : SquareClassGroup K) : 2 • x = 0 := by
+  rw [← Nat.cast_smul_eq_nsmul (ZMod 2) 2 x, show ((2 : ℕ) : ZMod 2) = 0 from rfl, zero_smul]
+
+/-- **Two units have the same square class exactly when their product is a square.** This is the
+quotient-free reading of equality in the square-class group. -/
+theorem squareClass_eq_iff_isSquare_mul (u v : Kˣ) :
+    squareClass u = squareClass v ↔ IsSquare (u * v) := by
+  have hvv : squareClass v + squareClass v = 0 := by
+    rw [← squareClass_mul, (squareClass_eq_zero_iff _).mpr ⟨v, rfl⟩]
+  rw [← squareClass_eq_zero_iff, squareClass_mul]
+  refine ⟨fun h => by rw [h]; exact hvv, fun h => ?_⟩
+  calc
+    squareClass u = squareClass u + (squareClass v + squareClass v) := by rw [hvv]; abel
+    _ = squareClass u + squareClass v + squareClass v := by abel
+    _ = squareClass v := by rw [h]; abel
+
+/-- The square class of a power is the corresponding multiple of the square class. -/
+@[simp]
+theorem squareClass_pow (u : Kˣ) (n : ℕ) : squareClass (u ^ n) = n • squareClass u := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, squareClass_mul, ih, succ_nsmul]
 
 private theorem zmod_two_eq_zero_or_one (t : ZMod 2) : t = 0 ∨ t = 1 := by revert t; decide
 

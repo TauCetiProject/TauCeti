@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
-import Mathlib.LinearAlgebra.Determinant
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -207,22 +207,16 @@ theorem isSquare_mul_mul_of_equivalent_binary [Invertible (2 : R)] {a b c d : R�
     (h : (weightedSumSquares R ![(a : R), (b : R)]).Equivalent
       (weightedSumSquares R ![(c : R), (d : R)])) :
     IsSquare (a * b * (c * d)) := by
-  obtain ⟨f⟩ := h
-  have heq : weightedSumSquares R ![(a : R), (b : R)] =
-      (weightedSumSquares R ![(c : R), (d : R)]).comp f.toLinearMap :=
-    QuadraticMap.ext fun x => (f.map_app x).symm
-  have hdisc := congrArg QuadraticForm.discr' heq
-  rw [QuadraticForm.discr'_comp, LinearMap.det_toMatrix'] at hdisc
-  have hdiag (x y : Rˣ) :
-      QuadraticForm.discr' (weightedSumSquares R ![(x : R), (y : R)]) = (x : R) * y := by
-    rw [QuadraticForm.discr', Matrix.det_fin_two]
-    simp [QuadraticForm.toMatrix', LinearMap.toMatrix₂'_apply,
-      QuadraticMap.associated_eq_self_apply, QuadraticMap.associated_apply,
-      weightedSumSquares_apply, Fin.sum_univ_two]
-  rw [hdiag, hdiag] at hdisc
-  refine ⟨LinearEquiv.det f.toLinearEquiv * c * d, Units.ext ?_⟩
-  simp only [Units.val_mul, LinearEquiv.coe_det]
-  linear_combination ((c : R) * d) * hdisc
+  have hw : (fun i => ((![a, b] i : Rˣ) : R)) = ![(a : R), (b : R)] := by
+    funext i
+    fin_cases i <;> rfl
+  have hv : (fun i => ((![c, d] i : Rˣ) : R)) = ![(c : R), (d : R)] := by
+    funext i
+    fin_cases i <;> rfl
+  have key := isSquare_prod_mul_prod_of_equivalent (w := ![a, b]) (v := ![c, d]) (by
+    rw [QuadraticMap.weightedSumSquares_units, QuadraticMap.weightedSumSquares_units, hw, hv]
+    exact h)
+  simpa [Fin.prod_univ_two, mul_assoc] using key
 
 /-- **The binary equivalence criterion**, Lam I.5.1. Two binary diagonal forms with unit
 coefficients are isometric exactly when their discriminants agree modulo squares and they

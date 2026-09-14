@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.TensorProduct
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!
 # Tensor products of regular-form classes
@@ -28,6 +29,7 @@ Witt--Grothendieck ring.
 
 ## Main results
 
+* `TauCeti.RegularFormPresentation.prod_tmul`: the weight product of a tensor presentation.
 * `TauCeti.RegularFormClass.mk_mul_mk`: multiplication computes by tensoring presentations.
 * `TauCeti.formClass_tmul`: the class of a tensor product is the product of the classes.
 * `TauCeti.RegularFormClass.rank_mul`: rank is multiplicative.
@@ -70,52 +72,33 @@ theorem RegularFormPresentation.tmul_apply (p q : RegularFormPresentation K)
         p.2 i * q.2 j := by
   simp [RegularFormPresentation.tmul]
 
+/-- The weight product of a tensor presentation: each factor's weight product raised to the rank
+of the other factor. -/
+theorem RegularFormPresentation.prod_tmul (p q : RegularFormPresentation K) :
+    (∏ k, (RegularFormPresentation.tmul p q).2 k)
+      = (∏ i, p.2 i) ^ q.1 * (∏ j, q.2 j) ^ p.1 := by
+  have h := Equiv.prod_comp (finProdFinEquiv (m := p.1) (n := q.1))
+    (fun k : Fin (p.1 * q.1) =>
+      (RegularFormPresentation.tmul p q).2
+        (Fin.cast (RegularFormPresentation.fst_tmul p q).symm k))
+  rw [Fintype.prod_prod_type] at h
+  simp only [RegularFormPresentation.tmul_apply] at h
+  refine Eq.trans h.symm ?_
+  simp [Finset.prod_mul_distrib, Finset.prod_const, Finset.prod_pow]
+
 variable [Invertible (2 : K)]
 
 private theorem associated_presentedForm_basisFun (p : RegularFormPresentation K)
     (i j : Fin p.1) :
     associated (R := K) (presentedForm p) (Pi.basisFun K (Fin p.1) i)
         (Pi.basisFun K (Fin p.1) j) = if i = j then (p.2 i : K) else 0 := by
-  classical
+  rw [presentedForm_eq_weightedSumSquares, QuadraticMap.weightedSumSquares_units,
+    QuadraticMap.associated_weightedSumSquares]
+  simp only [Pi.basisFun_apply, Pi.single_apply, mul_ite, mul_one, mul_zero,
+    Finset.sum_ite_eq', Finset.mem_univ, ite_true]
   by_cases h : i = j
-  · subst j
-    rw [QuadraticMap.associated_eq_self_apply]
-    rw [presentedForm_apply, Finset.sum_eq_single i]
-    · simp [Pi.basisFun_apply]
-    · intro j _ hji
-      simp [Pi.basisFun_apply, hji]
-    · simp
-  · have hsum :
-        (∑ x, (p.2 x : K) *
-          ((Pi.basisFun K (Fin p.1) i x + Pi.basisFun K (Fin p.1) j x) *
-            (Pi.basisFun K (Fin p.1) i x + Pi.basisFun K (Fin p.1) j x))) -
-            (∑ x, (p.2 x : K) *
-              (Pi.basisFun K (Fin p.1) i x * Pi.basisFun K (Fin p.1) i x)) -
-            (∑ x, (p.2 x : K) *
-              (Pi.basisFun K (Fin p.1) j x * Pi.basisFun K (Fin p.1) j x)) = 0 := by
-      rw [← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib]
-      apply Finset.sum_eq_zero
-      intro k _
-      by_cases hki : k = i
-      · subst k
-        simp [Pi.basisFun_apply, h]
-      · by_cases hkj : k = j
-        · subst k
-          simp [Pi.basisFun_apply, hki]
-        · simp [Pi.basisFun_apply, hki, hkj]
-    rw [QuadraticMap.associated_apply]
-    simp only [Module.End.smul_def, presentedForm_apply]
-    have hsum' :
-        (∑ x, (p.2 x : K) *
-          ((Pi.basisFun K (Fin p.1) i + Pi.basisFun K (Fin p.1) j) x *
-            (Pi.basisFun K (Fin p.1) i + Pi.basisFun K (Fin p.1) j) x)) -
-            (∑ x, (p.2 x : K) *
-              (Pi.basisFun K (Fin p.1) i x * Pi.basisFun K (Fin p.1) i x)) -
-            (∑ x, (p.2 x : K) *
-              (Pi.basisFun K (Fin p.1) j x * Pi.basisFun K (Fin p.1) j x)) = 0 := by
-      simpa only [Pi.add_apply] using hsum
-    rw [hsum']
-    simp [h]
+  · simp [h]
+  · simp [h, Ne.symm h]
 
 private theorem presentedForm_basisFun (p : RegularFormPresentation K) (i : Fin p.1) :
     presentedForm p (Pi.basisFun K (Fin p.1) i) = (p.2 i : K) := by
