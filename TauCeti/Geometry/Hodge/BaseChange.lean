@@ -49,6 +49,9 @@ imposed later as structure data.
 * `TauCeti.Hodge.range_rationalMapToComplex` and `TauCeti.Hodge.ker_rationalMapToComplex`: that
   scalar extension has the complexified range and the complexified kernel as its range and
   kernel.
+* `TauCeti.Hodge.disjoint_rationalToComplexSubmodule` and
+  `TauCeti.Hodge.rationalToComplexSubmodule_inf`: complexification of rational subspaces preserves
+  disjointness and meets.
 * `TauCeti.Hodge.rationalMapToComplex_commutes_conj`: that scalar extension commutes with lattice
   conjugation, for arbitrary complex models.
 * `TauCeti.Hodge.latticeConj_rationalToComplexLinearEquiv_one_tmul`: lattice conjugation fixes
@@ -573,11 +576,7 @@ theorem range_rationalMapToComplex (hℚ : IsBaseChange ℚ ιℚ)
     map_rationalToComplexSubmodule]
 
 /-- The scalar extension of a rational linear map has the complexification of its kernel as its
-kernel: extension of scalars along `ℚ → ℂ` is exact.
-
-The proof uses the pseudo-inverse `g` of `f` supplied by `LinearMap.exists_comp_comp_eq_self`: the
-rational map `1 - g ∘ f` has range inside `ker f` and fixes it, and scalar extension is functorial,
-so the complexified `1 - g ∘ f` fixes every complex vector killed by the complexified `f`. -/
+kernel: extension of scalars along `ℚ → ℂ` is exact. -/
 theorem ker_rationalMapToComplex (hℚ : IsBaseChange ℚ ιℚ)
     (hℂ : IsBaseChange ℂ ιℂ) (h'ℚ : IsBaseChange ℚ ι'ℚ)
     (h'ℂ : IsBaseChange ℂ ι'ℂ) (f : Vℚ →ₗ[ℚ] V'ℚ) :
@@ -602,6 +601,44 @@ theorem ker_rationalMapToComplex (hℚ : IsBaseChange ℚ ιℚ)
     refine Submodule.span_le.2 ?_
     rintro _ ⟨x, hx, rfl⟩
     simp [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.mem_ker.1 hx]
+
+/-- Complexification of rational subspaces preserves disjointness. -/
+theorem disjoint_rationalToComplexSubmodule (hℚ : IsBaseChange ℚ ιℚ)
+    (hℂ : IsBaseChange ℂ ιℂ) {W₁ W₂ : Submodule ℚ Vℚ} (h : Disjoint W₁ W₂) :
+    Disjoint (rationalToComplexSubmodule hℚ hℂ W₁) (rationalToComplexSubmodule hℚ hℂ W₂) := by
+  obtain ⟨W, hW, hc⟩ := h.symm.exists_isCompl
+  have hidem : W₁.projection W hc.symm ∘ₗ W₁.projection W hc.symm = W₁.projection W hc.symm :=
+    Submodule.isIdempotentElem_projection hc.symm
+  refine (Submodule.disjoint_def.2 fun x hx₁ hx₂ ↦ ?_).mono_right
+    (rationalToComplexSubmodule_mono hℚ hℂ hW)
+  rw [← Submodule.range_projection hc.symm, ← range_rationalMapToComplex hℚ hℂ hℚ hℂ] at hx₁
+  rw [← Submodule.ker_projection hc.symm, ← ker_rationalMapToComplex hℚ hℂ hℚ hℂ] at hx₂
+  obtain ⟨y, rfl⟩ := hx₁
+  rwa [LinearMap.mem_ker, ← LinearMap.comp_apply,
+    ← rationalMapToComplex_comp hℚ hℂ hℚ hℂ hℚ hℂ, hidem] at hx₂
+
+/-- Complexification of rational subspaces preserves meets. -/
+@[simp]
+theorem rationalToComplexSubmodule_inf (hℚ : IsBaseChange ℚ ιℚ)
+    (hℂ : IsBaseChange ℂ ιℂ) (W₁ W₂ : Submodule ℚ Vℚ) :
+    rationalToComplexSubmodule hℚ hℂ (W₁ ⊓ W₂) =
+      rationalToComplexSubmodule hℚ hℂ W₁ ⊓ rationalToComplexSubmodule hℚ hℂ W₂ := by
+  refine le_antisymm (le_inf (rationalToComplexSubmodule_mono hℚ hℂ inf_le_left)
+    (rationalToComplexSubmodule_mono hℚ hℂ inf_le_right)) ?_
+  obtain ⟨C, hC⟩ := (W₁ ⊓ W₂).exists_isCompl
+  have hW₁ : W₁ ⊓ W₂ ⊔ W₁ ⊓ C = W₁ := by
+    rw [inf_comm W₁ C, ← sup_inf_assoc_of_le C inf_le_left, hC.sup_eq_top, top_inf_eq]
+  have hdisj : Disjoint (W₁ ⊓ C) W₂ := disjoint_iff_inf_le.2 <| le_trans
+    (le_inf (le_inf (inf_le_left.trans inf_le_left) inf_le_right) (inf_le_left.trans inf_le_right))
+    hC.disjoint.le_bot
+  refine le_of_eq ?_
+  calc rationalToComplexSubmodule hℚ hℂ W₁ ⊓ rationalToComplexSubmodule hℚ hℂ W₂
+      = (rationalToComplexSubmodule hℚ hℂ (W₁ ⊓ W₂) ⊔
+          rationalToComplexSubmodule hℚ hℂ (W₁ ⊓ C)) ⊓ rationalToComplexSubmodule hℚ hℂ W₂ := by
+        rw [← rationalToComplexSubmodule_sup, hW₁]
+    _ = rationalToComplexSubmodule hℚ hℂ (W₁ ⊓ W₂) := by
+        rw [sup_inf_assoc_of_le _ (rationalToComplexSubmodule_mono hℚ hℂ inf_le_right),
+          (disjoint_rationalToComplexSubmodule hℚ hℂ hdisj).eq_bot, sup_bot_eq]
 
 end Map
 

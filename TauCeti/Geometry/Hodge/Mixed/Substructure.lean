@@ -24,7 +24,8 @@ of them with such a subspace gives the supremum of the corresponding pieces of t
 (`TauCeti.Hodge.MixedHodgeStructure.IsSubstructure.WC_inf_eq_iSup_inf_deligneSplitting` and
 `…F_inf_eq_iSup_inf_deligneSplitting`).
 
-Examples are recorded: the zero subspace and the whole space, the steps of the weight filtration,
+Sums and intersections of sub-mixed Hodge structures are again such. Examples are recorded: the
+zero subspace and the whole space, the steps of the weight filtration,
 and — this is the point — the kernel and the image of a morphism. For the kernel the
 argument is that the complexified kernel is the kernel of the complexified map
 (`TauCeti.Hodge.MixedHodgeStructure.Hom.ker_toLinearMap`), that the bigrading of the source spans
@@ -43,6 +44,8 @@ subspace, which have to be built first.
 * `TauCeti.Hodge.MixedHodgeStructure.IsSubstructure.WC_inf_eq_iSup_inf_deligneSplitting` and
   `…F_inf_eq_iSup_inf_deligneSplitting`: the weight and Hodge steps traced on a sub-mixed Hodge
   structure are bigraded.
+* `TauCeti.Hodge.MixedHodgeStructure.IsSubstructure.sup` and `…inf`: sub-mixed Hodge structures
+  are closed under sums and intersections.
 * `TauCeti.Hodge.MixedHodgeStructure.isSubstructure_WQ`: the steps of the weight filtration are
   sub-mixed Hodge structures.
 * `TauCeti.Hodge.MixedHodgeStructure.Hom.isSubstructure_ker` and `…isSubstructure_range`: the
@@ -139,6 +142,31 @@ theorem sup (h : mhs.IsSubstructure U) (h' : mhs.IsSubstructure U') :
     · exact h'.le_iSup_inf_deligneSplittingFamily.trans
         (iSup_mono fun _ ↦ inf_le_inf_right _ hU')
 
+/-- Sub-mixed Hodge structures are closed under intersections. -/
+theorem inf (h : mhs.IsSubstructure U) (h' : mhs.IsSubstructure U') :
+    mhs.IsSubstructure (U ⊓ U') where
+  le_iSup_inf_deligneSplittingFamily := by
+    classical
+    rw [rationalToComplexSubmodule_inf]
+    rintro x ⟨hx, hx'⟩
+    obtain ⟨b, hb, rfl⟩ := (Submodule.mem_iSup_iff_exists_finsupp _ _).1
+      (h.le_iSup_inf_deligneSplittingFamily hx)
+    obtain ⟨c, hc, hcb⟩ := (Submodule.mem_iSup_iff_exists_finsupp _ _).1
+      (h'.le_iSup_inf_deligneSplittingFamily hx')
+    have hbc : b = c := by
+      have hsum : ∑ pq ∈ (b - c).support, (b - c) pq = 0 := by
+        have := Finsupp.sum_sub_index (f := b) (g := c) (h := fun _ v ↦ v) fun _ _ _ ↦ rfl
+        simp only [Finsupp.sum] at this hcb
+        rw [this, hcb, sub_self]
+      have hzero := (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero _).1
+        mhs.iSupIndep_deligneSplittingFamily _ _
+        (fun pq _ ↦ Submodule.sub_mem _ (hb pq).2 (hc pq).2) hsum
+      rw [← sub_eq_zero, ← Finsupp.support_eq_empty, Finset.eq_empty_iff_forall_notMem]
+      exact fun pq hpq ↦ Finsupp.mem_support_iff.1 hpq (hzero pq hpq)
+    subst hbc
+    exact Submodule.sum_mem _ fun pq _ ↦
+      Submodule.mem_iSup_of_mem pq ⟨⟨(hb pq).1, (hc pq).1⟩, (hb pq).2⟩
+
 end IsSubstructure
 
 /-- The zero subspace is a sub-mixed Hodge structure. -/
@@ -173,11 +201,7 @@ variable {hℚ : IsBaseChange ℚ ιℚ} {hℂ : IsBaseChange ℂ ιℂ}
 variable {h'ℚ : IsBaseChange ℚ ι'ℚ} {h'ℂ : IsBaseChange ℂ ι'ℂ}
 variable {source : MixedHodgeStructure hℚ hℂ} {target : MixedHodgeStructure h'ℚ h'ℂ}
 
-/-- **The kernel of a morphism of mixed Hodge structures is a sub-mixed Hodge structure.**
-
-The complexified kernel is the kernel of the complexified map, the bigrading of the source spans
-and that of the target is independent, and the map carries `I^{p,q}` into `I^{p,q}`; so each
-bigraded part of a vector of the kernel is itself killed. -/
+/-- **The kernel of a morphism of mixed Hodge structures is a sub-mixed Hodge structure.** -/
 theorem isSubstructure_ker (f : Hom source target) :
     source.IsSubstructure (LinearMap.ker f.toRatLinearMap) where
   le_iSup_inf_deligneSplittingFamily := by
@@ -187,10 +211,7 @@ theorem isSubstructure_ker (f : Hom source target) :
         simpa only [deligneSplittingFamily_apply] using
           f.map_deligneSplitting_le pq.1 pq.2).le
 
-/-- **The image of a morphism of mixed Hodge structures is a sub-mixed Hodge structure.**
-
-The image is the sum of the images of the bigrading pieces of the source, and the image of
-`I^{p,q}` lies in the target's `I^{p,q}`. -/
+/-- **The image of a morphism of mixed Hodge structures is a sub-mixed Hodge structure.** -/
 theorem isSubstructure_range (f : Hom source target) :
     target.IsSubstructure (LinearMap.range f.toRatLinearMap) where
   le_iSup_inf_deligneSplittingFamily := by
