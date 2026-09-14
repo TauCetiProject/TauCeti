@@ -25,8 +25,6 @@ used by the tower law for different exponents of function-field places.
 ## Main results
 
 * `TauCeti.multiplicity_differentIdeal_tower`: the coefficientwise transitivity formula.
-* `TauCeti.multiplicity_map_eq_of_ramificationIdx'_eq_one`: extending an ideal across an
-  index-one prime preserves its coefficient.
 
 ## References
 
@@ -44,38 +42,15 @@ namespace TauCeti
 
 universe uA uB uC
 
-variable {R : Type uA} {S : Type uB} [CommRing R] [CommRing S]
-variable [IsDedekindDomain R] [IsDedekindDomain S] [Algebra R S]
-variable [Module.IsTorsionFree R S]
-
-/-- Extending a nonzero ideal across a prime of ramification index one preserves its
-multiplicity. This is the coefficient calculation used when a Dedekind domain is localized at
-the prime in question. -/
-theorem multiplicity_map_eq_of_ramificationIdx'_eq_one (P : HeightOneSpectrum R)
-    (Q : HeightOneSpectrum S) [Q.asIdeal.LiesOver P.asIdeal] (I : Ideal R) (hI : I ≠ ⊥)
-    (he : Ideal.ramificationIdx' P.asIdeal Q.asIdeal = 1) :
-    multiplicity Q.asIdeal (I.map (algebraMap R S)) = multiplicity P.asIdeal I := by
-  have hmap : I.map (algebraMap R S) ≠ ⊥ := Ideal.map_ne_bot_of_ne_bot hI
-  have hfiniteMap : FiniteMultiplicity Q.asIdeal (I.map (algebraMap R S)) :=
-    FiniteMultiplicity.of_prime_left (Ideal.prime_of_isPrime Q.ne_bot Q.isPrime) hmap
-  have hfiniteI : FiniteMultiplicity P.asIdeal I :=
-    FiniteMultiplicity.of_prime_left (Ideal.prime_of_isPrime P.ne_bot P.isPrime) hI
-  have h := Ideal.IsDedekindDomain.emultiplicity_map_eq_ramificationIdx'_mul hI
-    P.irreducible Q.irreducible Q.ne_bot
-  rw [hfiniteMap.emultiplicity_eq_multiplicity, hfiniteI.emultiplicity_eq_multiplicity,
-    he] at h
-  simp only [Nat.cast_one, one_mul] at h
-  exact_mod_cast h
-
 variable {A : Type uA} {B : Type uB} {C : Type uC}
 variable [CommRing A] [CommRing B] [CommRing C]
 variable [IsDedekindDomain A] [IsDedekindDomain B] [IsDedekindDomain C]
 variable [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
-variable [Module.Finite A B] [Module.Finite B C] [Module.Finite A C]
-variable [Module.IsTorsionFree A B] [Module.IsTorsionFree B C]
-variable [Module.IsTorsionFree A C]
+variable [Module.Finite A B] [Module.Finite B C]
+variable [Module.IsTorsionFree A B] [Module.IsTorsionFree B C] [Module.IsTorsionFree A C]
 variable [Algebra.IsSeparable (FractionRing A) (FractionRing C)]
 
+variable (A) in
 /-- **The coefficientwise tower law for different ideals**: at a height-one prime `Q` of `C`
 above `P` in `B`, the coefficient of the different of `C / A` is the coefficient of the
 different of `C / B` plus the ramification index times the coefficient of the different of
@@ -89,6 +64,7 @@ theorem multiplicity_differentIdeal_tower (P : HeightOneSpectrum B)
     multiplicity Q.asIdeal (differentIdeal A C) =
       multiplicity Q.asIdeal (differentIdeal B C) +
         Q.asIdeal.ramificationIdx B * multiplicity P.asIdeal (differentIdeal A B) := by
+  let _ : Module.Finite A C := .trans B C
   let _ : Algebra.IsSeparable (FractionRing A) (FractionRing B) :=
     Algebra.isSeparable_tower_bot_of_isSeparable (FractionRing A) (FractionRing B)
       (FractionRing C)
