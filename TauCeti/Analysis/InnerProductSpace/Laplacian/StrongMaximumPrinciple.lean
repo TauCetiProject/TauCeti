@@ -49,9 +49,11 @@ subharmonic functions in every dimension, on an open domain.
 * `TauCeti.eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn`,
   `TauCeti.eqOn_const_closure_of_laplacian_nonpos_of_isMinOn`: the same statements for a
   function continuous up to the boundary, extremal over `closure Ω` at an interior point.
-* `TauCeti.eqOn_of_laplacian_nonneg_of_laplacian_nonpos_of_le_of_eq`: **strong comparison
-  principle**. A subharmonic function dominated by a superharmonic one on an open preconnected
-  set, with equality at a single point, agrees with it everywhere on the set.
+* `TauCeti.eqOn_of_laplacian_le_of_le_of_eq`: **strong comparison principle**. If `Δ v ≤ Δ u`
+  on an open preconnected set and `u ≤ v` there with equality at a single point, then `u = v`
+  everywhere on the set.
+* `TauCeti.eqOn_closure_of_laplacian_le_of_le_of_eq`: the same statement for functions
+  continuous up to the boundary, dominated on `closure Ω` and equal at an interior point.
 
 ## References
 
@@ -260,12 +262,15 @@ theorem eqOn_const_closure_of_laplacian_nonpos_of_isMinOn (hΩ : IsOpen Ω)
 
 /-- **Strong comparison principle.**
 
-If `u` is subharmonic, `v` is superharmonic, both are `C²` on an open preconnected set `Ω`,
-and `u ≤ v` throughout `Ω` with equality at one point `a`, then `u = v` on all of `Ω`. -/
-theorem eqOn_of_laplacian_nonneg_of_laplacian_nonpos_of_le_of_eq (hΩ : IsOpen Ω)
+If `u` and `v` are `C²` on an open preconnected set `Ω` with `Δ v ≤ Δ u` there, and `u ≤ v`
+throughout `Ω` with equality at one point `a`, then `u = v` on all of `Ω`.
+
+The hypothesis on the Laplacians says exactly that `u - v` is subharmonic; the case of a
+subharmonic `u` dominated by a superharmonic `v` is the instance `0 ≤ Δ u` and `Δ v ≤ 0`. -/
+theorem eqOn_of_laplacian_le_of_le_of_eq (hΩ : IsOpen Ω)
     (hconn : IsPreconnected Ω) (ha : a ∈ Ω)
     (hcdu : ∀ x ∈ Ω, ContDiffAt ℝ 2 u x) (hcdv : ∀ x ∈ Ω, ContDiffAt ℝ 2 v x)
-    (hlapu : ∀ x ∈ Ω, 0 ≤ Δ u x) (hlapv : ∀ x ∈ Ω, Δ v x ≤ 0)
+    (hlap : ∀ x ∈ Ω, Δ v x ≤ Δ u x)
     (hle : ∀ x ∈ Ω, u x ≤ v x) (heq : u a = v a) :
     EqOn u v Ω := by
   have hmax : IsMaxOn (u - v) Ω a := by
@@ -276,7 +281,34 @@ theorem eqOn_of_laplacian_nonneg_of_laplacian_nonpos_of_le_of_eq (hΩ : IsOpen �
     (fun x hx => (hcdu x hx).sub (hcdv x hx))
     (fun x hx => by
       rw [(hcdu x hx).laplacian_sub (hcdv x hx)]
-      linarith [hlapu x hx, hlapv x hx])
+      linarith [hlap x hx])
+    hmax
+  intro x hx
+  have hx' := h hx
+  simp only [Pi.sub_apply, heq, sub_self] at hx'
+  linarith [hx']
+
+/-- **Strong comparison principle up to the boundary.**
+
+The counterpart of `TauCeti.eqOn_of_laplacian_le_of_le_of_eq` for functions continuous on
+`closure Ω`: if `u ≤ v` on `closure Ω` and the two agree at a point of `Ω`, then they agree on
+all of `closure Ω`. -/
+theorem eqOn_closure_of_laplacian_le_of_le_of_eq (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
+    (ha : a ∈ Ω) (hcontu : ContinuousOn u (closure Ω)) (hcontv : ContinuousOn v (closure Ω))
+    (hcdu : ∀ x ∈ Ω, ContDiffAt ℝ 2 u x) (hcdv : ∀ x ∈ Ω, ContDiffAt ℝ 2 v x)
+    (hlap : ∀ x ∈ Ω, Δ v x ≤ Δ u x)
+    (hle : ∀ x ∈ closure Ω, u x ≤ v x) (heq : u a = v a) :
+    EqOn u v (closure Ω) := by
+  have hmax : IsMaxOn (u - v) (closure Ω) a := by
+    refine isMaxOn_iff.2 fun x hx => ?_
+    simp only [Pi.sub_apply, heq, sub_self]
+    linarith [hle x hx]
+  have h := eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn (u := u - v) hΩ hconn ha
+    (hcontu.sub hcontv)
+    (fun x hx => (hcdu x hx).sub (hcdv x hx))
+    (fun x hx => by
+      rw [(hcdu x hx).laplacian_sub (hcdv x hx)]
+      linarith [hlap x hx])
     hmax
   intro x hx
   have hx' := h hx
