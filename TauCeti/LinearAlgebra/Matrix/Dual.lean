@@ -31,9 +31,9 @@ namespace TauCeti
 
 open _root_.Matrix
 
-/-- The dot product on `ι → R` is a perfect pairing of that module with itself: it is Mathlib's
-`dotProductEquiv` read as a bilinear map. -/
-instance dotProductBilin_isPerfPair (R ι : Type*) [CommRing R] [Fintype ι] :
+/-- Over a commutative semiring, the dot product on `ι → R` is a perfect pairing of that module
+with itself: it is Mathlib's `dotProductEquiv` read as a bilinear map. -/
+instance dotProductBilin_isPerfPair (R ι : Type*) [CommSemiring R] [Fintype ι] :
     (dotProductBilin R R : (ι → R) →ₗ[R] (ι → R) →ₗ[R] R).IsPerfPair := by
   classical
   have h : (dotProductBilin R R : (ι → R) →ₗ[R] (ι → R) →ₗ[R] R) =
