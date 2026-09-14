@@ -42,6 +42,11 @@ variable {V : Type v} [AddCommGroup V] [Module K V]
 abbrev FiniteScalarExtension [NumberField K] (v : HeightOneSpectrum (𝓞 K)) :=
   v.adicCompletion K ⊗[K] V
 
+/-- A number field has a finite place: its ring of integers is not a field. -/
+instance [NumberField K] : Nonempty (HeightOneSpectrum (𝓞 K)) :=
+  ⟨(equivMaximalSpectrum (RingOfIntegers.not_isField K)).symm
+    (Classical.choice (inferInstance : Nonempty (MaximalSpectrum (𝓞 K))))⟩
+
 /-- The map from global units to units in the completion at a finite place. -/
 def unitAtFinitePlace [NumberField K] (v : HeightOneSpectrum (𝓞 K)) :
     Kˣ →* (v.adicCompletion K)ˣ :=

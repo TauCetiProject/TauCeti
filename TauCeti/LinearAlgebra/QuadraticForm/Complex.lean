@@ -19,7 +19,8 @@ from the local predicates used by the global local-to-global theory.
 
 The same classification also determines representation: one regular form embeds isometrically
 in another exactly when its dimension is no larger, and a regular form represents every scalar
-as soon as its space has positive dimension.
+as soon as its space has positive dimension.  More generally, every nonzero quadratic form over
+an algebraically closed field represents every scalar.
 
 The proofs use Mathlib's algebraically closed classification.  No separate complex quadratic-form
 carrier is introduced.
@@ -101,6 +102,18 @@ their dimensions agree. -/
   · rintro ⟨e⟩
     exact e.toLinearEquiv.finrank_eq
   · exact _root_.QuadraticForm.equivalent_of_finrank_eq_of_isAlgClosed Q R hQ hR
+
+/-- A nonzero quadratic form over an algebraically closed field represents every scalar: a value
+`Q v ≠ 0` can be rescaled to any scalar by a square root of the ratio. -/
+theorem _root_.QuadraticForm.represents_of_ne_zero_of_isAlgClosed
+    {K W : Type*} [Field K] [IsAlgClosed K] [AddCommGroup W] [Module K W]
+    {Q : QuadraticForm K W} (hQ : Q ≠ 0) (a : K) : QuadraticMap.Represents Q a := by
+  obtain ⟨v, hv⟩ : ∃ v, Q v ≠ 0 := by
+    by_contra! h
+    exact hQ (QuadraticMap.ext h)
+  obtain ⟨t, ht⟩ := IsAlgClosed.exists_eq_mul_self (a / Q v)
+  exact (QuadraticMap.represents_iff Q a).2
+    ⟨t • v, by rw [QuadraticMap.map_smul, ← ht, smul_eq_mul, div_mul_cancel₀ _ hv]⟩
 
 /-- A regular quadratic form over an algebraically closed field is represented by another regular
 form exactly when the dimension of its space is no larger. -/

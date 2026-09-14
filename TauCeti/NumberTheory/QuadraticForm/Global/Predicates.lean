@@ -270,10 +270,7 @@ theorem QuadraticMap.Equivalent.locallyRepresents_congr
 theorem LocallyEquivalent.finrank_eq [FiniteDimensional K V] [FiniteDimensional K W]
     {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
     (h : Q.LocallyEquivalent R) : Module.finrank K V = Module.finrank K W := by
-  let place : HeightOneSpectrum (𝓞 K) :=
-    (HeightOneSpectrum.equivMaximalSpectrum (RingOfIntegers.not_isField K)).symm
-      (Classical.choice (inferInstance : Nonempty (MaximalSpectrum (𝓞 K))))
-  obtain ⟨e⟩ := h.1 place
+  obtain ⟨e⟩ := h.1 (Classical.arbitrary _)
   simpa only [Module.finrank_baseChange] using LinearEquiv.finrank_eq e.toLinearEquiv
 
 /-- Local representation of finite-dimensional forms forces the expected inequality between
