@@ -21,7 +21,7 @@ construction descends from Weil divisors to the divisor class group.
 
 * `SchemeWeilDivisor.toInvertibleSheaf` packages `𝓞_X(D)` as an invertible sheaf;
 * `SchemeWeilDivisor.toLineBundleClass` is its isomorphism class;
-* `SchemeWeilDivisor.toLineBundleClass_eq_mk` reads that class off `toInvertibleSheaf`;
+* `SchemeWeilDivisor.toLineBundleClass_def` reads that class off `toInvertibleSheaf`;
 * `SchemeWeilDivisor.classGroupToLineBundleClass` is the induced map from the divisor class
   group to line-bundle classes, and
   `SchemeWeilDivisor.classGroupToLineBundleClass_injective` says that it is injective: a divisor
@@ -69,7 +69,7 @@ def toLineBundleClass (D : SchemeWeilDivisor X) : LineBundleClass X :=
   LineBundleClass.mk (toInvertibleSheaf hX D)
 
 /-- The line-bundle class of `D` is the isomorphism class of `𝓞_X(D)`. -/
-lemma toLineBundleClass_eq_mk (D : SchemeWeilDivisor X) :
+lemma toLineBundleClass_def (D : SchemeWeilDivisor X) :
     toLineBundleClass hX D = LineBundleClass.mk (toInvertibleSheaf hX D) :=
   (rfl)
 

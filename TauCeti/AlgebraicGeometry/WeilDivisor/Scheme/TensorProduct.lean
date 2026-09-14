@@ -26,11 +26,13 @@ is cut out by a single rational function `g`, multiplying by `g` and by `g⁻¹`
   `𝒪_X(E)`, with `SchemeWeilDivisor.sectionsMulLift` its linear form on the tensor product of
   sections and `SchemeWeilDivisor.tensorPresheafHom` the resulting morphism of presheaves of
   modules;
-* `SchemeWeilDivisor.exists_sectionsMul_eq` and `SchemeWeilDivisor.injective_sectionsMulLift`,
+* `SchemeWeilDivisor.exists_sectionsMul_eq` and `SchemeWeilDivisor.sectionsMulLift_injective`,
   the surjectivity and injectivity of multiplication over an open subset on which `E` has a local
   equation, the latter through the explicit retraction
   `SchemeWeilDivisor.sectionsMulRetraction`;
-* `SchemeWeilDivisor.tensorProductSheafIso`, the isomorphism `𝒪_X(D) ⊗ 𝒪_X(E) ≅ 𝒪_X(D + E)`;
+* `SchemeWeilDivisor.tensorProductSheafIso`, the isomorphism `𝒪_X(D) ⊗ 𝒪_X(E) ≅ 𝒪_X(D + E)`,
+  whose forward map is the sheafified multiplication
+  (`SchemeWeilDivisor.tensorProductSheafIso_hom`);
 * `SchemeWeilDivisor.toLineBundleClass_add` and
   `SchemeWeilDivisor.classGroupToLineBundleClass_add`, saying that `D ↦ [𝒪_X(D)]` carries
   addition of divisors, and of divisor classes, to tensor product of line bundles;
@@ -171,7 +173,9 @@ def tensorPresheafHom :
 lemma tensorPresheafHom_app :
     ModuleCat.Hom.hom (R := X.sheaf.obj.obj (op U)) ((tensorPresheafHom D E).app (op U)) =
       sectionsMulLift D E U :=
-  (rfl)
+  TensorProduct.ext' fun s t ↦
+    (ModuleCat.MonoidalCategory.tensorLift_tmul _ _ _ _ _ _ _).trans
+      (sectionsMulLift_tmul D E U s t).symm
 
 end Multiplication
 
@@ -272,7 +276,7 @@ theorem sectionsMulRetraction_sectionsMul (hX : ∀ y : X, coheight y ≤ 1)
 /-- **Local injectivity of multiplication.** Where `E` has a local equation, multiplication is
 injective on the sectionwise tensor product over `V`, because dividing by that equation retracts
 it. -/
-theorem injective_sectionsMulLift (hX : ∀ y : X, coheight y ≤ 1) :
+theorem sectionsMulLift_injective (hX : ∀ y : X, coheight y ≤ 1) :
     Function.Injective (sectionsMulLift D E V) := by
   have key : Function.LeftInverse (sectionsMulRetraction hg D) (sectionsMulLift D E V) := by
     intro w
@@ -301,6 +305,9 @@ lemma exists_localEquation_le (U : X.Opens) {x : X} (hx : x ∈ U) :
     isLocallyPrincipal_iff.mp (isLocallyPrincipal_of_forall_coheight_le_one hX E) x
   exact ⟨U ⊓ W, inf_le_left, ⟨hx, hxW⟩, g, fun y hy ↦ hg y hy.2⟩
 
+/-- **Multiplication is locally surjective.** On a curve every point has a neighbourhood on which
+`E` has a local equation (`exists_localEquation_le`), and over such a neighbourhood every section of
+`𝒪_X(D + E)` is a product of sections of `𝒪_X(D)` and `𝒪_X(E)` (`exists_sectionsMul_eq`). -/
 theorem isLocallySurjective_tensorPresheafHom :
     Presheaf.IsLocallySurjective (Opens.grothendieckTopology X)
       ((PresheafOfModules.toPresheaf X.ringCatSheaf.obj).map (tensorPresheafHom D E)) where
@@ -314,6 +321,9 @@ theorem isLocallySurjective_tensorPresheafHom :
     refine ⟨V, homOfLE hVU, ⟨a ⊗ₜ b, ?_⟩, hxV⟩
     exact hab
 
+/-- **Multiplication is locally injective.** On a curve every point has a neighbourhood on which
+`E` has a local equation (`exists_localEquation_le`), and over such a neighbourhood multiplication
+is injective on the sectionwise tensor product (`sectionsMulLift_injective`). -/
 theorem isLocallyInjective_tensorPresheafHom :
     Presheaf.IsLocallyInjective (Opens.grothendieckTopology X)
       ((PresheafOfModules.toPresheaf X.ringCatSheaf.obj).map (tensorPresheafHom D E)) where
@@ -322,7 +332,7 @@ theorem isLocallyInjective_tensorPresheafHom :
     have : Nonempty V := ⟨⟨x, hxV⟩⟩
     -- Forgetting the module structures leaves the action on sections untouched, so the two
     -- restricted sections are compared by `sectionsMulLift` over `V`, where it is injective.
-    refine ⟨V, homOfLE hVU, injective_sectionsMulLift hg D hX ?_, hxV⟩
+    refine ⟨V, homOfLE hVU, sectionsMulLift_injective hg D hX ?_, hxV⟩
     exact (PresheafOfModules.naturality_apply (tensorPresheafHom D E) (homOfLE hVU).op z).trans
       ((congrArg ((sheaf (D + E)).val.map (homOfLE hVU).op) h).trans
         (PresheafOfModules.naturality_apply (tensorPresheafHom D E) (homOfLE hVU).op z').symm)
@@ -353,11 +363,23 @@ def tensorProductSheafIso :
     @asIso _ _ _ _ _ (isIso_sheafification_map_tensorPresheafHom hX D E) ≪≫
     TauCeti.SheafOfModules.sheafificationIso X.ringCatSheaf (sheaf (D + E))
 
+/-- The forward map of `tensorProductSheafIso` is the sheafification of the multiplication morphism
+`tensorPresheafHom`, read through the defining identification of the tensor product
+(`TauCeti.SheafOfModules.tensorProductIso`) and the identification of `𝒪_X(D + E)` with its own
+sheafification (`TauCeti.SheafOfModules.sheafificationIso`). -/
+theorem tensorProductSheafIso_hom :
+    (tensorProductSheafIso hX D E).hom =
+      (TauCeti.SheafOfModules.tensorProductIso X.sheaf (sheaf D) (sheaf E)).hom ≫
+        (PresheafOfModules.sheafification (R := X.ringCatSheaf) (𝟙 X.ringCatSheaf.obj)).map
+          (tensorPresheafHom D E) ≫
+        (TauCeti.SheafOfModules.sheafificationIso X.ringCatSheaf (sheaf (D + E))).hom :=
+  (rfl)
+
 /-- **The divisor-to-line-bundle map is multiplicative.** The class of `𝒪_X(D + E)` is the
 product of the classes of `𝒪_X(D)` and `𝒪_X(E)`. -/
 theorem toLineBundleClass_add :
     toLineBundleClass hX (D + E) = toLineBundleClass hX D * toLineBundleClass hX E := by
-  rw [toLineBundleClass_eq_mk, toLineBundleClass_eq_mk, toLineBundleClass_eq_mk,
+  rw [toLineBundleClass_def, toLineBundleClass_def, toLineBundleClass_def,
     ← LineBundleClass.mk_tensorProduct, LineBundleClass.mk_eq_mk_iff]
   refine ⟨?_⟩
   simpa only [toInvertibleSheaf_obj, InvertibleSheaf.tensorProduct_obj] using
