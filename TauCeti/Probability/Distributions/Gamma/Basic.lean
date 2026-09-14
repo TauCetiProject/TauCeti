@@ -105,15 +105,9 @@ theorem ae_mem_prod_Ioi_gammaMeasure {b s : ℝ} (ha : 0 < a) (hb : 0 < b) (hr :
   exact ⟨hx, hy⟩
 
 /-- On the positive half-line the gamma density is given by its closed formula. -/
-private lemma gammaPDFReal_of_pos {x : ℝ} (hx : 0 < x) :
+theorem gammaPDFReal_of_pos {x : ℝ} (hx : 0 < x) :
     gammaPDFReal a r x = r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x)) := by
   rw [gammaPDFReal, ite_eq_left hx.le]
-
-/-- On the positive half-line the unit-rate gamma density is `x ^ (a - 1) * exp (-x) / Γ a`. -/
-theorem gammaPDFReal_one_of_pos {x : ℝ} (hx : 0 < x) :
-    gammaPDFReal a 1 x = x ^ (a - 1) * exp (-x) / Real.Gamma a := by
-  rw [gammaPDFReal_of_pos hx, Real.one_rpow, one_mul]
-  ring
 
 /-- An integral against the gamma law is the set integral of the weighted integrand over
 `(0, ∞)`. -/

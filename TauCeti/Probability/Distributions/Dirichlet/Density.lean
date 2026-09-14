@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.Jacobian
-public import TauCeti.Algebra.BigOperators.Finset.SubtypeNe
 public import TauCeti.MeasureTheory.Constructions.Pi
 public import TauCeti.MeasureTheory.Measure.PiWithDensity
 public import TauCeti.Probability.Distributions.Dirichlet.Basic
@@ -42,8 +41,7 @@ Gamma product density factors as the chart density times a Gamma density of shap
 
 ## Main results
 
-* `TauCeti.Probability.det_fderivDirichletUnchart`, restated for Lean's `fderiv` in
-  `TauCeti.Probability.det_fderiv_dirichletUnchart`, and
+* `TauCeti.Probability.det_fderiv_dirichletUnchart` and
   `TauCeti.Probability.map_dirichletUnchart_withDensity` are the Jacobian of the scaling change of
   variables and the resulting identity of Lebesgue measures;
 * `TauCeti.Probability.dirichletMeasure_eq_map_withDensity_dirichletChartPDF` presents the
@@ -111,7 +109,7 @@ theorem measurable_dirichletChart : Measurable (dirichletChart i₀) :=
 @[simp]
 theorem sum_dirichletChart (i₀ : ι) (x : {i // i ≠ i₀} → ℝ) :
     ∑ i, dirichletChart i₀ x i = 1 := by
-  rw [sum_eq_add_sum_subtype_ne i₀ fun i ↦ dirichletChart i₀ x i]
+  rw [Fintype.sum_eq_add_sum_subtype_ne (fun i ↦ dirichletChart i₀ x i) i₀]
   simp
 
 /-- The chart is injective. -/
@@ -120,6 +118,23 @@ theorem dirichletChart_injective (i₀ : ι) :
   funext j
   have := congrFun (congrArg (EuclideanSpace.equiv ι ℝ) hxy) j.1
   simpa using this
+
+/-- The chart recovers a point of `EuclideanSpace ℝ ι` from its own coordinates away from `i₀`
+exactly when the coordinates of that point sum to one: the image of the chart is the whole
+hyperplane `∑ i, p i = 1`. -/
+theorem dirichletChart_eq_self_iff (i₀ : ι) (p : EuclideanSpace ℝ ι) :
+    dirichletChart i₀ (fun j : {i // i ≠ i₀} ↦ p j) = p ↔ ∑ i, p i = 1 := by
+  have hsplit : ∑ i, p i = p i₀ + ∑ j : {i // i ≠ i₀}, p j :=
+    Fintype.sum_eq_add_sum_subtype_ne (fun i ↦ p i) i₀
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [← h]
+    exact sum_dirichletChart i₀ _
+  · ext i
+    by_cases hi : i = i₀
+    · subst hi
+      rw [dirichletChart_apply_self]
+      linarith
+    · rw [dirichletChart_apply_of_ne i₀ _ hi]
 
 /-- The chart region: the coordinate vectors with positive coordinates of total less than one.
 These are exactly the ones the chart sends to points of the standard simplex all of whose
@@ -152,6 +167,23 @@ theorem dirichletChart_pos {x : {i // i ≠ i₀} → ℝ} (hx : x ∈ dirichlet
   by_cases h : i = i₀
   · simpa [h] using sub_pos.mpr hx.2
   · simpa [dirichletChart_apply_of_ne i₀ x h] using hx.1 ⟨i, h⟩
+
+/-- The chart carries the chart region onto the points of the standard simplex all of whose
+coordinates are strictly positive. -/
+theorem dirichletChart_image_region (i₀ : ι) :
+    dirichletChart i₀ '' dirichletChartRegion i₀
+      = {p : EuclideanSpace ℝ ι | (∀ i, 0 < p i) ∧ ∑ i, p i = 1} := by
+  refine Set.Subset.antisymm ?_ fun p hp ↦ ?_
+  · rintro _ ⟨x, hx, rfl⟩
+    exact ⟨dirichletChart_pos hx, sum_dirichletChart i₀ x⟩
+  · have hsplit : ∑ i, p i = p i₀ + ∑ j : {i // i ≠ i₀}, p j :=
+      Fintype.sum_eq_add_sum_subtype_ne (fun i ↦ p i) i₀
+    have hi₀ : 0 < p i₀ := hp.1 i₀
+    have hsum : ∑ j : {i // i ≠ i₀}, p j < 1 := by
+      have := hp.2
+      linarith
+    exact ⟨fun j : {i // i ≠ i₀} ↦ p j, ⟨fun j ↦ hp.1 j, hsum⟩,
+      (dirichletChart_eq_self_iff i₀ p).2 hp.2⟩
 
 /-! ### The chart density -/
 
@@ -435,11 +467,17 @@ theorem hasFDerivAt_dirichletUnchart (i₀ : ι) (z : ℝ × ({i // i ≠ i₀} 
       ContinuousLinearMap.coe_fst', smul_eq_mul]
     ring
 
+/-- `TauCeti.Probability.fderivDirichletUnchart` is the Fréchet derivative of the scaling map. -/
+theorem fderiv_dirichletUnchart (i₀ : ι) (z : ℝ × ({i // i ≠ i₀} → ℝ)) :
+    fderiv ℝ (dirichletUnchart i₀) z = fderivDirichletUnchart i₀ z :=
+  (hasFDerivAt_dirichletUnchart i₀ z).fderiv
+
 /-- The Jacobian determinant of the scaling change of variables is the total raised to the number
 of coordinates other than `i₀`. -/
-theorem det_fderivDirichletUnchart (i₀ : ι) (z : ℝ × ({i // i ≠ i₀} → ℝ)) :
-    (fderivDirichletUnchart i₀ z).det = z.1 ^ Fintype.card {i // i ≠ i₀} := by
+theorem det_fderiv_dirichletUnchart (i₀ : ι) (z : ℝ × ({i // i ≠ i₀} → ℝ)) :
+    (fderiv ℝ (dirichletUnchart i₀) z).det = z.1 ^ Fintype.card {i // i ≠ i₀} := by
   classical
+  rw [fderiv_dirichletUnchart]
   set M : Matrix (Unit ⊕ {i // i ≠ i₀}) (Unit ⊕ {i // i ≠ i₀}) ℝ :=
     Matrix.fromBlocks (Matrix.of fun _ _ ↦ 1 - ∑ j, z.2 j) (Matrix.of fun _ _ ↦ -z.1)
       (Matrix.of fun j _ ↦ z.2 j) (Matrix.diagonal fun _ ↦ z.1) with hM
@@ -466,17 +504,6 @@ theorem det_fderivDirichletUnchart (i₀ : ι) (z : ℝ × ({i // i ≠ i₀} �
   rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix
     ((Module.Basis.singleton Unit ℝ).prod (Pi.basisFun ℝ ({i // i ≠ i₀}))), htoMatrix, hdet]
 
-/-- `TauCeti.Probability.fderivDirichletUnchart` is the Fréchet derivative of the scaling map. -/
-theorem fderiv_dirichletUnchart (i₀ : ι) (z : ℝ × ({i // i ≠ i₀} → ℝ)) :
-    fderiv ℝ (dirichletUnchart i₀) z = fderivDirichletUnchart i₀ z :=
-  (hasFDerivAt_dirichletUnchart i₀ z).fderiv
-
-/-- The Jacobian determinant of the scaling change of variables, read off the Fréchet derivative
-itself. -/
-theorem det_fderiv_dirichletUnchart (i₀ : ι) (z : ℝ × ({i // i ≠ i₀} → ℝ)) :
-    (fderiv ℝ (dirichletUnchart i₀) z).det = z.1 ^ Fintype.card {i // i ≠ i₀} := by
-  rw [fderiv_dirichletUnchart, det_fderivDirichletUnchart]
-
 /-- The Jacobian formula for the scaling change of variables, as an equality of restricted
 Lebesgue measures. -/
 theorem map_dirichletUnchart_withDensity (i₀ : ι) :
@@ -492,7 +519,7 @@ theorem map_dirichletUnchart_withDensity (i₀ : ι) :
       fun z ↦ ENNReal.ofReal |(fderivDirichletUnchart i₀ z).det| := by
     filter_upwards [ae_restrict_mem (measurableSet_dirichletUnchartSource i₀)] with z hz
     have hz1 : 0 < z.1 := hz.1
-    rw [det_fderivDirichletUnchart, abs_of_pos (pow_pos hz1 _)]
+    rw [← fderiv_dirichletUnchart, det_fderiv_dirichletUnchart, abs_of_pos (pow_pos hz1 _)]
   rw [withDensity_congr_ae heq, ← dirichletUnchart_image_source]
   exact map_withDensity_abs_det_fderiv_eq_addHaar volume
     (measurableSet_dirichletUnchartSource i₀).nullMeasurableSet
@@ -510,6 +537,11 @@ private theorem dirichletUnchart_density_real {a : ι → ℝ} (ha : ∀ i, 0 < 
         (gammaPDFReal (a i₀) 1 (s * (1 - ∑ j, y j)) *
           ∏ j : {i // i ≠ i₀}, gammaPDFReal (a j) 1 (s * y j)) =
       gammaPDFReal (∑ i, a i) 1 s * dirichletChartPDFReal a i₀ y := by
+  -- The unit-rate case of the closed formula for the Gamma density.
+  have hone : ∀ {b x : ℝ}, 0 < x →
+      gammaPDFReal b 1 x = x ^ (b - 1) * Real.exp (-x) / Real.Gamma b := fun hx ↦ by
+    rw [gammaPDFReal_of_pos hx, Real.one_rpow, one_mul]
+    ring
   have hu : 0 < 1 - ∑ j, y j := sub_pos.mpr hy.2
   have hA : 0 < ∑ i, a i := Finset.sum_pos (fun i _ ↦ ha i) ⟨i₀, Finset.mem_univ i₀⟩
   have hΓA : Real.Gamma (∑ i, a i) ≠ 0 := (Real.Gamma_pos_of_pos hA).ne'
@@ -518,16 +550,16 @@ private theorem dirichletUnchart_density_real {a : ι → ℝ} (ha : ∀ i, 0 < 
     Finset.prod_ne_zero_iff.mpr fun j _ ↦ (Real.Gamma_pos_of_pos (ha j)).ne'
   have hsplitΓ : ∏ i, Real.Gamma (a i)
       = Real.Gamma (a i₀) * ∏ j : {i // i ≠ i₀}, Real.Gamma (a j) :=
-    prod_eq_mul_prod_subtype_ne i₀ _
-  have hsplitA : ∑ i, a i = a i₀ + ∑ j : {i // i ≠ i₀}, a j := sum_eq_add_sum_subtype_ne i₀ a
+    Fintype.prod_eq_mul_prod_subtype_ne _ i₀
+  have hsplitA : ∑ i, a i = a i₀ + ∑ j : {i // i ≠ i₀}, a j :=
+    Fintype.sum_eq_add_sum_subtype_ne a i₀
   -- The product of the coordinate densities away from `i₀`, with the total factored out.
   have hprod : (∏ j : {i // i ≠ i₀}, gammaPDFReal (a j) 1 (s * y j))
       = s ^ ((∑ j : {i // i ≠ i₀}, a j) - (Fintype.card {i // i ≠ i₀} : ℝ)) *
           (∏ j : {i // i ≠ i₀}, y j ^ (a j - 1)) * Real.exp (-(s * ∑ j, y j)) /
           ∏ j : {i // i ≠ i₀}, Real.Gamma (a j) := by
-    rw [Finset.prod_congr rfl fun j (_ : j ∈ Finset.univ) ↦
-      gammaPDFReal_one_of_pos (mul_pos hs (hy.1 j)), Finset.prod_div_distrib,
-      Finset.prod_mul_distrib]
+    rw [Finset.prod_congr rfl fun j (_ : j ∈ Finset.univ) ↦ hone (mul_pos hs (hy.1 j)),
+      Finset.prod_div_distrib, Finset.prod_mul_distrib]
     refine congrArg (· / _) (congrArg₂ (· * ·) ?_ ?_)
     · rw [Finset.prod_congr rfl fun j (_ : j ∈ Finset.univ) ↦
         Real.mul_rpow hs.le (hy.1 j).le, Finset.prod_mul_distrib, ← Real.rpow_sum_of_pos hs,
@@ -547,8 +579,8 @@ private theorem dirichletUnchart_density_real {a : ι → ℝ} (ha : ∀ i, 0 < 
     rw [← Real.exp_add]
     congr 1
     ring
-  rw [gammaPDFReal_one_of_pos (mul_pos hs hu), gammaPDFReal_one_of_pos hs,
-    dirichletChartPDFReal_of_mem a hy, hprod, Real.mul_rpow hs.le hu.le, hsplitΓ, ← hpow, ← hexp]
+  rw [hone (mul_pos hs hu), hone hs, dirichletChartPDFReal_of_mem a hy, hprod,
+    Real.mul_rpow hs.le hu.le, hsplitΓ, ← hpow, ← hexp]
   field_simp
 
 /-! ### The Dirichlet law in the chart -/
@@ -709,7 +741,8 @@ coordinates of the split vector. -/
 private theorem dirichletNormalize_eq_dirichletChart (i₀ : ι) {x : ι → ℝ} (hx : ∀ i, 0 < x i) :
     dirichletNormalize x
       = dirichletChart i₀ (dirichletChartCoords i₀ (x i₀, fun j : {i // i ≠ i₀} ↦ x j)).2 := by
-  have hT : x i₀ + ∑ j : {i // i ≠ i₀}, x j = ∑ i, x i := (sum_eq_add_sum_subtype_ne i₀ x).symm
+  have hT : x i₀ + ∑ j : {i // i ≠ i₀}, x j = ∑ i, x i :=
+    (Fintype.sum_eq_add_sum_subtype_ne x i₀).symm
   have hTpos : 0 < ∑ i, x i := Finset.sum_pos (fun i _ ↦ hx i) ⟨i₀, Finset.mem_univ i₀⟩
   ext i
   rw [dirichletNormalize_apply]
