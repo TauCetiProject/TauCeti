@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.Ergodic.Extreme
+public import TauCeti.MeasureTheory.Group.Action
 public import TauCeti.MeasureTheory.Group.CountableAction
 
 /-!
@@ -14,23 +15,22 @@ public import TauCeti.MeasureTheory.Group.CountableAction
 For a countable group `G` acting measurably on `X`, an invariant measure of finite total mass is
 ergodic if and only if it is an extreme point of the `G`-invariant measures of that total mass;
 in particular an invariant probability measure is ergodic if and only if it is an extreme point of
-the invariant probability measures. This is the group-action form of Mathlib's
+the invariant measures of total mass one. This is the group-action form of Mathlib's
 `Ergodic.iff_mem_extremePoints`, which concerns a single measure-preserving map.
 
 Two general facts about an ergodic action carry the characterisation and are useful on their
 own: an almost invariant function is almost everywhere constant
 (`ErgodicSMul.ae_eq_const_of_forall_ae_eq_comp_smul₀`), and an invariant measure absolutely
 continuous with respect to an ergodic one is a multiple of it
-(`ErgodicSMul.eq_smul_of_absolutelyContinuous`). These, the invariant-measure sets and the
+(`ErgodicSMul.eq_smul_of_absolutelyContinuous`). These, the invariant-measure set and the
 forward direction of the characterisation need only an action by a type with a scalar
 multiplication; the group and its countability enter only in the reverse direction, through the
 saturation of an almost invariant event in `CountableAction.lean`.
 
 ## Main results
 
-* `TauCeti.MeasureTheory.invariantMeasuresOfMeasureUnivEq`,
-  `TauCeti.MeasureTheory.invariantProbabilityMeasures`, with membership and convexity lemmas
-* `MeasureTheory.SMulInvariantMeasure.restrict` — restriction to an invariant set is invariant
+* `TauCeti.MeasureTheory.invariantMeasuresOfMeasureUnivEq`, with its membership and convexity
+  lemmas; the invariant probability measures are the case of total mass one
 * `ErgodicSMul.ae_eq_const_of_forall_ae_eq_comp_smul₀`
 * `ErgodicSMul.eq_smul_of_absolutelyContinuous`,
   `ErgodicSMul.eq_of_absolutelyContinuous_measure_univ_eq`, `ErgodicSMul.eq_of_absolutelyContinuous`
@@ -70,23 +70,6 @@ theorem mem_invariantMeasuresOfMeasureUnivEq_iff {c : ℝ≥0∞} :
     ν ∈ invariantMeasuresOfMeasureUnivEq G X c ↔ SMulInvariantMeasure G X ν ∧ ν univ = c :=
   Iff.rfl
 
-/-- The convex set of `G`-invariant probability measures on `X`, the set whose extreme points
-ergodicity characterises. -/
-def invariantProbabilityMeasures (G X : Type*) [SMul G X] [MeasurableSpace X] : Set (Measure X) :=
-  {ν | SMulInvariantMeasure G X ν ∧ IsProbabilityMeasure ν}
-
-/-- Membership in the invariant probability measures. -/
-@[simp]
-theorem mem_invariantProbabilityMeasures_iff :
-    ν ∈ invariantProbabilityMeasures G X ↔ SMulInvariantMeasure G X ν ∧ IsProbabilityMeasure ν :=
-  Iff.rfl
-
-/-- The invariant probability measures are the invariant measures of total mass one. -/
-theorem invariantProbabilityMeasures_eq :
-    invariantProbabilityMeasures G X = invariantMeasuresOfMeasureUnivEq G X 1 := by
-  ext ν; simp only [mem_invariantProbabilityMeasures_iff, mem_invariantMeasuresOfMeasureUnivEq_iff,
-    isProbabilityMeasure_iff]
-
 /-- The invariant measures of a fixed total mass form a convex set. -/
 theorem convex_invariantMeasuresOfMeasureUnivEq {c : ℝ≥0∞} :
     Convex ℝ≥0∞ (invariantMeasuresOfMeasureUnivEq G X c) := by
@@ -94,27 +77,7 @@ theorem convex_invariantMeasuresOfMeasureUnivEq {c : ℝ≥0∞} :
   refine ⟨inferInstance, ?_⟩
   simp [Measure.add_apply, Measure.smul_apply, hν₁u, hν₂u, ← add_mul, hab]
 
-/-- The invariant probability measures form a convex set. -/
-theorem convex_invariantProbabilityMeasures : Convex ℝ≥0∞ (invariantProbabilityMeasures G X) := by
-  rw [invariantProbabilityMeasures_eq]; exact convex_invariantMeasuresOfMeasureUnivEq
-
 end TauCeti.MeasureTheory
-
-namespace MeasureTheory
-
-variable {G X : Type*} [SMul G X] {m : MeasurableSpace X} {μ ν : Measure X}
-
-/-- The restriction of an invariant measure to an exactly invariant measurable set is
-invariant. -/
-theorem SMulInvariantMeasure.restrict [MeasurableConstSMul G X] [SMulInvariantMeasure G X μ]
-    {u : Set X} (hum : MeasurableSet u) (huinv : ∀ g : G, (g • ·) ⁻¹' u = u) :
-    SMulInvariantMeasure G X (μ.restrict u) :=
-  ⟨fun g v hv => by
-    have hmp := (measurePreserving_smul g μ).restrict_preimage hum
-    rw [huinv g] at hmp
-    exact hmp.measure_preimage hv.nullMeasurableSet⟩
-
-end MeasureTheory
 
 namespace ErgodicSMul
 
@@ -185,12 +148,12 @@ theorem mem_extremePoints_measure_univ_eq {G : Type*} [SMul G X] [MeasurableCons
   have hac : ν₁ ≪ μ := hμ ▸ (absolutelyContinuous_smul ha.ne').add_right _
   exact eq_of_absolutelyContinuous_measure_univ_eq G hac hν₁u
 
-/-- **An ergodic probability measure is an extreme point** of the invariant probability measures. -/
+/-- **An ergodic probability measure is an extreme point** of the invariant measures of total
+mass one, the invariant probability measures. -/
 theorem mem_extremePoints {G : Type*} [SMul G X] [MeasurableConstSMul G X]
     [IsProbabilityMeasure μ] [ErgodicSMul G X μ] :
-    μ ∈ extremePoints ℝ≥0∞ (invariantProbabilityMeasures G X) := by
-  rw [invariantProbabilityMeasures_eq, ← measure_univ (μ := μ)]
-  exact mem_extremePoints_measure_univ_eq
+    μ ∈ extremePoints ℝ≥0∞ (invariantMeasuresOfMeasureUnivEq G X 1) :=
+  measure_univ (μ := μ) ▸ mem_extremePoints_measure_univ_eq
 
 end SMul
 
@@ -234,11 +197,11 @@ theorem of_mem_extremePoints_measure_univ_eq {c : ℝ≥0∞} (hc : c ≠ ∞)
   rw [← hcond] at hs'
   simp [ProbabilityTheory.cond_apply, htm] at hs'
 
-/-- **An extreme invariant probability measure is ergodic.** -/
+/-- **An extreme invariant probability measure is ergodic**: an extreme point of the invariant
+measures of total mass one is ergodic. -/
 theorem of_mem_extremePoints
-    (h : μ ∈ extremePoints ℝ≥0∞ (invariantProbabilityMeasures G X)) : ErgodicSMul G X μ :=
-  of_mem_extremePoints_measure_univ_eq ENNReal.one_ne_top <| by
-    rwa [invariantProbabilityMeasures_eq] at h
+    (h : μ ∈ extremePoints ℝ≥0∞ (invariantMeasuresOfMeasureUnivEq G X 1)) : ErgodicSMul G X μ :=
+  of_mem_extremePoints_measure_univ_eq ENNReal.one_ne_top h
 
 /-- **Ergodicity is extremality** for a countable group action, among the invariant measures of
 the same finite total mass. -/
@@ -248,9 +211,10 @@ theorem iff_mem_extremePoints_measure_univ_eq [IsFiniteMeasure μ] :
     of_mem_extremePoints_measure_univ_eq (measure_ne_top μ _)⟩
 
 /-- **Ergodicity is extremality** for a countable group action: an invariant probability measure
-is ergodic if and only if it is an extreme point of the invariant probability measures. -/
+is ergodic if and only if it is an extreme point of the invariant measures of total mass one, the
+invariant probability measures. -/
 theorem iff_mem_extremePoints [IsProbabilityMeasure μ] :
-    ErgodicSMul G X μ ↔ μ ∈ extremePoints ℝ≥0∞ (invariantProbabilityMeasures G X) :=
+    ErgodicSMul G X μ ↔ μ ∈ extremePoints ℝ≥0∞ (invariantMeasuresOfMeasureUnivEq G X 1) :=
   ⟨fun _ => mem_extremePoints, of_mem_extremePoints⟩
 
 end Group
