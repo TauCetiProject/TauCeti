@@ -56,9 +56,9 @@ The reconstruction is total: entries after the last genuine visit use the junk v
   down by its initial value together with the successor-array entries at the cells that segment
   designates. This is the finite-horizon form of `TauCeti.eq_pathOfSuccessors`, and the form a
   finite-path event needs: the cells are read off a *reference* sequence, so they do not move with
-  the sequence being described. `TauCeti.eqOn_iff_visitCell_of_apply_eq_successorArray` is the same
-  criterion for any array agreeing with the successor array on the visited rows, such as
-  `TauCeti.visitedSuccessorArray`.
+  the sequence being described. `TauCeti.eqOn_iff_visitCell_of_visitCell_eq_apply_succ` is the same
+  criterion for any array agreeing with the successor array at the cells the sequence consumes,
+  such as `TauCeti.visitedSuccessorArray`.
 
 ## References
 
@@ -590,19 +590,28 @@ theorem eqOn_of_successorArray_visitCell_eq (h₀ : x 0 = w 0)
   exact key n (le_refl n) i hi
 
 /-- **The criterion of `TauCeti.eqOn_iff_successorArray_visitCell` for any array that records the
-successors on the visited rows.** The cells a reference sequence designates lie in rows it
-visits, so along a sequence agreeing with it those rows are visited, and an array agreeing with
-the successor array there pins the initial segment down just as well. -/
-theorem eqOn_iff_visitCell_of_apply_eq_successorArray {s : α → ℕ → α}
-    (hs : ∀ i k, s (x i) k = successorArray x (x i) k) (w : ℕ → α) (n : ℕ) :
+successors at the cells the sequence consumes.** Only the entries of `s` at the cells
+`visitCell x i` are constrained: the remaining entries, including the unconsumed cells of a visited
+row, are arbitrary. The cells a reference sequence designates are consumed by any sequence agreeing
+with it, so such an `s` pins the initial segment down just as well as the successor array. -/
+theorem eqOn_iff_visitCell_of_visitCell_eq_apply_succ {s : α → ℕ → α}
+    (hs : ∀ i, s (visitCell x i).1 (visitCell x i).2 = x (i + 1)) (w : ℕ → α) (n : ℕ) :
     (∀ i ≤ n, x i = w i) ↔
       x 0 = w 0 ∧ ∀ i < n, s (visitCell w i).1 (visitCell w i).2 = w (i + 1) := by
-  -- Along the agreement with `w`, the rows `w` designates are rows `x` visits.
-  have hcell : ∀ i, x i = w i → s (visitCell w i).1 (visitCell w i).2 =
-      successorArray x (visitCell w i).1 (visitCell w i).2 :=
-    fun i hi => by simp only [visitCell_def, ← hi, hs]
+  -- Along an agreement with `w` up to `i`, the cell `w` designates at `i` is the one `x` consumes.
+  have hcell : ∀ i, (∀ l ≤ i, x l = w l) → s (visitCell w i).1 (visitCell w i).2 =
+      successorArray x (visitCell w i).1 (visitCell w i).2 := by
+    intro i hi
+    have hxi : x i = w i := hi i le_rfl
+    have hcount : visitCount w (w i) i = visitCount x (x i) i := by
+      rw [hxi]
+      exact (visitCount_congr fun l hl => hi l hl.le).symm
+    have hw : visitCell w i = visitCell x i := by
+      simp only [visitCell_def, Prod.mk.injEq]
+      exact ⟨hxi.symm, hcount⟩
+    rw [hw, hs i, visitCell_def, successorArray_visitCount]
   refine ⟨fun h => ⟨h 0 (Nat.zero_le n), fun i hi => ?_⟩, fun h => ?_⟩
-  · rw [hcell i (h i hi.le)]
+  · rw [hcell i fun l hl => h l (hl.trans hi.le)]
     exact successorArray_visitCell_eq_of_eqOn h hi
   · have key : ∀ j ≤ n, ∀ i ≤ j, x i = w i := by
       intro j
@@ -611,7 +620,8 @@ theorem eqOn_iff_visitCell_of_apply_eq_successorArray {s : α → ℕ → α}
       | succ j ih =>
         intro hj
         refine eqOn_of_successorArray_visitCell_eq h.1 fun i hi => ?_
-        rw [← hcell i (ih (Nat.le_of_succ_le hj) i (Nat.lt_succ_iff.1 hi))]
+        rw [← hcell i fun l hl =>
+          ih (Nat.le_of_succ_le hj) l (hl.trans (Nat.lt_succ_iff.1 hi))]
         exact h.2 i (hi.trans_le hj)
     exact key n le_rfl
 
@@ -622,7 +632,8 @@ of its successor array at cells that do not depend on `x`. -/
 theorem eqOn_iff_successorArray_visitCell (w x : ℕ → α) (n : ℕ) :
     (∀ i ≤ n, x i = w i) ↔
       x 0 = w 0 ∧ ∀ i < n, successorArray x (visitCell w i).1 (visitCell w i).2 = w (i + 1) :=
-  eqOn_iff_visitCell_of_apply_eq_successorArray (fun _ _ => rfl) w n
+  eqOn_iff_visitCell_of_visitCell_eq_apply_succ
+    (fun i => by simpa only [visitCell_def] using successorArray_visitCount x i) w n
 
 end Cells
 

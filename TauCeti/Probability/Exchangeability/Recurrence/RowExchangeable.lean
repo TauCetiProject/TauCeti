@@ -501,9 +501,11 @@ theorem MarkovExchangeable.mixedMarkovChain [IsProbabilityMeasure μ] {a₀ : α
   have := h.measurableSingletonClass
   exact mixedMarkovChain_of_rowExchangeable h.aemeasurable h0
     (aemeasurable_visitedSuccessorProcess h.aemeasurable)
-    (ae_of_all _ fun _ n _ => by
-      rw [visitedSuccessorProcess_apply, successorProcess_apply]
-      exact visitedSuccessorArray_eq_successorArray_of_exists ⟨n, rfl⟩)
+    (ae_of_all _ fun ω n => by
+      have hvis : ∃ m, X m ω = X n ω := ⟨n, rfl⟩
+      simp only [visitCell_def, visitedSuccessorProcess_apply,
+        visitedSuccessorArray_eq_successorArray_of_exists hvis]
+      exact successorArray_visitCount (fun j => X j ω) n)
     (h.rowExchangeable_visitedSuccessorProcess hrec)
 
 end Representation

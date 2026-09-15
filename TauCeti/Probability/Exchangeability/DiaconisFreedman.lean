@@ -23,16 +23,16 @@ half is the change of variables that turns a description of the successor array'
 description of the path law. This file is the second half.
 
 The input is `TauCeti.Probability.RowExchangeable` for an array that almost surely records the
-successors of the process on the rows it visits — the successor array itself
+successors of the process at the cells it consumes — the successor array itself
 (`TauCeti.Probability.successorProcess`), or the visited successor array
 (`TauCeti.Probability.visitedSuccessorProcess`) whose unvisited rows are constant — and the output
 is `TauCeti.Probability.MixedMarkovChainWith`, with the row marginals of the array's directing
 measure as the random transition matrix. The mechanism is that the finite path event
 `{X i = w i, i ≤ n}` *is* an event of the array: by
-`TauCeti.eqOn_iff_visitCell_of_apply_eq_successorArray` it says exactly that the array takes the
-prescribed values at the `n` cells the reference path `w` designates, which lie in visited rows,
-and by `TauCeti.visitCell_injective` those cells are pairwise distinct. Distinct cells of a row
-exchangeable array are conditionally independent given the directing measure of its columns
+`TauCeti.eqOn_iff_visitCell_of_visitCell_eq_apply_succ` it says exactly that the array takes the
+prescribed values at the `n` cells the reference path `w` designates, which are cells the process
+consumes, and by `TauCeti.visitCell_injective` those cells are pairwise distinct. Distinct cells of
+a row exchangeable array are conditionally independent given the directing measure of its columns
 (`TauCeti.Probability.RowExchangeable.measure_setOf_forall_mem_eq_lintegral_prod`), each governed by
 its row's marginal, so the mass of that event is the mixture of a product of transition
 probabilities — which is the defining identity of a mixture of Markov chains.
@@ -51,7 +51,7 @@ Markov exchangeable process, is
 ## Main results
 
 * `TauCeti.Probability.mixedMarkovChainWith_of_rowExchangeable`: at a named mixing representative
-  for the columns of a row exchangeable array recording the successors on visited rows, a process
+  for the columns of a row exchangeable array recording the successors at consumed cells, a process
   starting almost surely at `a₀` is a mixture of Markov chains with the Dirac initial law at `a₀`
   and the array's row marginals as transition matrix.
 * `TauCeti.Probability.mixedMarkovChain_of_rowExchangeable`: the existential form, with de Finetti
@@ -85,19 +85,17 @@ variable {μ : Measure Ω} {X : ℕ → Ω → α} {Y : α × ℕ → Ω → α}
   {lam : Ω → ProbabilityMeasure (α → α)}
 
 /-- **The change of variables from a row exchangeable successor array back to the path law.** Let
-`Y` be an array that almost surely records the successors of the process on the rows it visits,
-such as `TauCeti.Probability.successorProcess X` or `TauCeti.Probability.visitedSuccessorProcess X`.
-A process that starts almost surely at `a₀` and for which such an array is row exchangeable is a
+`Y` be an array that almost surely records, at each cell the process consumes, the state the
+process moves to next — as `TauCeti.Probability.successorProcess X` and
+`TauCeti.Probability.visitedSuccessorProcess X` both do, whatever their entries elsewhere. A
+process that starts almost surely at `a₀` and for which such an array is row exchangeable is a
 mixture of Markov chains: the Dirac measure at `a₀` is its initial-law witness, and the row
-marginals of the mixing representative of the array's columns form its transition-matrix witness.
-
-The proof reads the finite path event as an event of the array at pairwise distinct cells, where
-the conditional independence of distinct cells turns its mass into the mixture of a product of
-one-step transition probabilities. -/
+marginals of the mixing representative of the array's columns form its transition-matrix
+witness. -/
 theorem mixedMarkovChainWith_of_rowExchangeable [Countable α]
     [MeasurableSingletonClass α] [IsProbabilityMeasure μ]
     (hX : ∀ i, AEMeasurable (X i) μ) (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀)
-    (hY : ∀ᵐ ω ∂μ, ∀ n k, Y (X n ω, k) ω = successorProcess X (X n ω, k) ω)
+    (hY : ∀ᵐ ω ∂μ, ∀ n, Y (visitCell (fun j => X j ω) n) ω = X (n + 1) ω)
     (hrow : RowExchangeable μ Y) (hlam : MixedIIDWith μ (arrayColumn Y) lam) :
     MixedMarkovChainWith μ X (fun _ => diracProba a₀) fun ω a =>
       (lam ω).map (fun x => x a) := by
@@ -144,8 +142,7 @@ theorem mixedMarkovChainWith_of_rowExchangeable [Countable α]
       rw [Filter.eventuallyEqSet_iff]
       filter_upwards [h0, hY] with ω hω hYω
       simp only [Set.mem_singleton_iff]
-      rw [eqOn_iff_visitCell_of_apply_eq_successorArray (s := fun a k => Y (a, k) ω)
-        (fun i k => by simpa only [successorProcess_apply] using hYω i k) w' n]
+      rw [eqOn_iff_visitCell_of_visitCell_eq_apply_succ (s := fun a k => Y (a, k) ω) hYω w' n]
       exact ⟨fun h t => h.2 t.val t.isLt,
         fun h => ⟨by rw [hω, hw0, hstart], fun j hj => h ⟨j, hj⟩⟩⟩
     rw [measure_congr hae,
@@ -173,13 +170,13 @@ theorem mixedMarkovChainWith_of_rowExchangeable [Countable α]
 
 /-- **The change of variables, with de Finetti supplying the mixing representative.** A process
 that starts almost surely at a fixed state, and for which some almost everywhere measurable array
-recording its successors on the visited rows is row exchangeable, is a mixture of Markov
+recording its successors at the cells it consumes is row exchangeable, is a mixture of Markov
 chains. -/
 theorem mixedMarkovChain_of_rowExchangeable [Countable α]
     [MeasurableSingletonClass α] [IsProbabilityMeasure μ]
     (hX : ∀ i, AEMeasurable (X i) μ) (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀)
     (hYm : ∀ p, AEMeasurable (Y p) μ)
-    (hY : ∀ᵐ ω ∂μ, ∀ n k, Y (X n ω, k) ω = successorProcess X (X n ω, k) ω)
+    (hY : ∀ᵐ ω ∂μ, ∀ n, Y (visitCell (fun j => X j ω) n) ω = X (n + 1) ω)
     (hrow : RowExchangeable μ Y) :
     MixedMarkovChain μ X := by
   have : Nonempty α := ⟨a₀⟩
