@@ -134,12 +134,16 @@ theorem openSubgroup_comap_surjective (hG : IsTopologicallyFinitelyGenerated G) 
       ((V.comap f hf : Subgroup G)).index = (V : Subgroup G).index := fun V ↦ by
     rw [OpenSubgroup.toSubgroup_comap, Subgroup.index_comap_of_surjective _ hsurj]
   have := hG.finite_openSubgroup_index_eq (U : Subgroup G).index
-  set Φ : {V : OpenSubgroup G // (V : Subgroup G).index = (U : Subgroup G).index} →
+  let Φ : {V : OpenSubgroup G // (V : Subgroup G).index = (U : Subgroup G).index} →
       {V : OpenSubgroup G // (V : Subgroup G).index = (U : Subgroup G).index} := fun V ↦
-    ⟨V.1.comap f hf, (hindex V.1).trans V.2⟩ with hΦ
-  have hinj : Function.Injective Φ := fun V W hVW ↦
-    Subtype.ext (OpenSubgroup.toSubgroup_injective (Subgroup.comap_injective hsurj
-      (congrArg (fun X : OpenSubgroup G ↦ (X : Subgroup G)) (Subtype.ext_iff.mp hVW))))
+    ⟨V.1.comap f hf, (hindex V.1).trans V.2⟩
+  have hinj : Function.Injective Φ := fun V W hVW ↦ by
+    have h : (V.1 : Subgroup G).comap f = (W.1 : Subgroup G).comap f := by
+      have h' := congrArg (fun X ↦ ((X.1 : OpenSubgroup G) : Subgroup G)) hVW
+      change ((V.1.comap f hf : OpenSubgroup G) : Subgroup G) =
+        ((W.1.comap f hf : OpenSubgroup G) : Subgroup G) at h'
+      rwa [OpenSubgroup.toSubgroup_comap, OpenSubgroup.toSubgroup_comap] at h'
+    exact Subtype.ext (OpenSubgroup.toSubgroup_injective (Subgroup.comap_injective hsurj h))
   obtain ⟨V, hV⟩ := Finite.injective_iff_surjective.mp hinj ⟨U, rfl⟩
   exact ⟨V.1, congrArg Subtype.val hV⟩
 

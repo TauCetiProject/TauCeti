@@ -25,19 +25,22 @@ subgroup, so `ker f` is trivial. A continuous bijection of compact Hausdorff gro
 topological isomorphism, which upgrades injectivity to
 `TauCeti.IsTopologicallyFinitelyGenerated.continuousMulEquivOfSurjective`.
 
-Both hypotheses are needed.
+## Sharpness
 
-* Without finite generation the statement fails: on `G = ∏_{i : ℕ} F` with `F` a nontrivial
-  finite group the shift `(x₀, x₁, …) ↦ (x₁, x₂, …)` is a continuous surjective endomorphism
-  with nontrivial kernel.
-* The converse implication — that a continuous *injective* endomorphism is surjective — is
-  false even for `G = ℤ_p`, where multiplication by `p` is injective and not surjective. So
-  there is no co-Hopfian counterpart here.
+Finite generation cannot be dropped: on `G = ∏_{i : ℕ} F` with `F` a nontrivial finite group
+the shift `(x₀, x₁, …) ↦ (x₁, x₂, …)` is a continuous surjective endomorphism with nontrivial
+kernel.
+
+There is no co-Hopfian counterpart: the converse implication, that a continuous *injective*
+endomorphism is surjective, is false even for `G = ℤ_p`, where multiplication by `p` is injective
+and not surjective.
 
 ## Main results
 
 * `TauCeti.IsTopologicallyFinitelyGenerated.ker_eq_bot_of_surjective`: a continuous surjective
   endomorphism of a topologically finitely generated profinite group has trivial kernel.
+* `TauCeti.IsTopologicallyFinitelyGenerated.injective_of_surjective`: such an endomorphism is
+  injective (the Hopf property).
 * `TauCeti.IsTopologicallyFinitelyGenerated.bijective_of_surjective`: such an endomorphism is
   bijective.
 * `TauCeti.IsTopologicallyFinitelyGenerated.continuousMulEquivOfSurjective`: it is a
@@ -88,10 +91,10 @@ theorem bijective_of_surjective (hG : IsTopologicallyFinitelyGenerated G) (hf : 
 packaged as a topological automorphism: it is bijective, and a continuous bijection from a
 compact space to a Hausdorff space is a homeomorphism. -/
 noncomputable def continuousMulEquivOfSurjective (hG : IsTopologicallyFinitelyGenerated G)
-    (hf : Continuous f) (hsurj : Function.Surjective f) : G ≃ₜ* G :=
-  ContinuousMulEquiv.mk (MulEquiv.ofBijective f (hG.bijective_of_surjective hf hsurj)) hf
-    (hf.continuous_symm_of_equiv_compact_to_t2
-      (f := Equiv.ofBijective f (hG.bijective_of_surjective hf hsurj)))
+    (hf : Continuous f) (hsurj : Function.Surjective f) : G ≃ₜ* G := by
+  have hb := hG.bijective_of_surjective hf hsurj
+  exact ContinuousMulEquiv.mk (MulEquiv.ofBijective f hb) hf
+    (hf.continuous_symm_of_equiv_compact_to_t2 (f := (MulEquiv.ofBijective f hb).toEquiv))
 
 /-- The topological automorphism attached to a continuous surjective endomorphism is that
 endomorphism. -/
