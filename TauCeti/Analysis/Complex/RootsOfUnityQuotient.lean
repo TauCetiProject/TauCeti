@@ -33,7 +33,10 @@ covering map of the punctured plane with nonvanishing derivative (Mathlib's
 The homeomorphism is built from Mathlib's theorem that `u ↦ u ^ m` is an open quotient map of
 `ℂ` (`Complex.isOpenQuotientMap_pow`, a consequence of the open mapping theorem), restricted to
 the saturated set `s`, together with the identification of its fibres with the orbits of the
-roots of unity (`TauCeti.orbitRel_rootsOfUnity_apply`).
+roots of unity (`TauCeti.orbitRel_rootsOfUnity_apply`). Both steps are Mathlib's generic
+quotient API: `Homeomorph.Quotient.congrRight` replaces the orbit relation by the fibre
+relation, and `Topology.IsQuotientMap.homeomorph` identifies the quotient by the fibres of the
+restricted power map with its image.
 
 ## Main declarations
 
@@ -56,47 +59,65 @@ public section
 
 open MulAction Set
 
+/-- `Homeomorph.Quotient.congrRight` sends the class of `x` to the class of `x`. This is the
+homeomorphism counterpart of Mathlib's `Quot.congr_mk`, and holds by definition for the same
+reason: `Homeomorph.Quotient.congrRight` is `Quot.congr` for the identity equivalence. -/
+private theorem Homeomorph.Quotient.congrRight_mk {X : Type*} [TopologicalSpace X]
+    {r r' : Setoid X} (h : ∀ x₁ x₂, r x₁ x₂ ↔ r' x₁ x₂) (x : X) :
+    Homeomorph.Quotient.congrRight h (Quotient.mk r x) = Quotient.mk r' x :=
+  rfl
+
+/-- `Homeomorph.setCongr` retypes a point without moving it. Mathlib's `Set.equivOfEq_apply` says
+the same for the underlying equivalence, but does not match through the homeomorphism
+constructor. -/
+private theorem Homeomorph.coe_setCongr {X : Type*} [TopologicalSpace X] {s t : Set X} (h : s = t)
+    (x : s) : (Homeomorph.setCongr h x : X) = x :=
+  rfl
+
 namespace SubMulAction
 
-variable {m : ℕ} [NeZero m]
+variable {m : ℕ}
 
-/-- The map from the orbit space of an invariant set to its image under `u ↦ u ^ m`. -/
-def rootsOfUnityQuotientMap (s : SubMulAction (rootsOfUnity m ℂ) ℂ) :
-    orbitRel.Quotient (rootsOfUnity m ℂ) s → (· ^ m) '' (s : Set ℂ) :=
-  Quotient.lift (fun u ↦ ⟨(u : ℂ) ^ m, mem_image_of_mem _ u.2⟩) fun _ _ h ↦
-    Subtype.ext <| (mem_orbit_subMul_iff.trans
-      (TauCeti.orbitRel_rootsOfUnity_apply (NeZero.ne m))).mp h
+/-- The `m`-th power map from an invariant set `s ⊆ ℂ` to its image, as a continuous map. -/
+private def powRestrict (s : SubMulAction (rootsOfUnity m ℂ) ℂ) : C(s, (· ^ m) '' (s : Set ℂ)) :=
+  ⟨fun u ↦ ⟨(u : ℂ) ^ m, mem_image_of_mem _ u.2⟩, by fun_prop⟩
 
 @[simp]
-theorem coe_rootsOfUnityQuotientMap_mk (s : SubMulAction (rootsOfUnity m ℂ) ℂ) (u : s) :
-    (rootsOfUnityQuotientMap s (Quotient.mk _ u) : ℂ) = (u : ℂ) ^ m := by
-  rw [rootsOfUnityQuotientMap, Quotient.lift_mk]
+private theorem coe_powRestrict (s : SubMulAction (rootsOfUnity m ℂ) ℂ) (u : s) :
+    (powRestrict s u : ℂ) = (u : ℂ) ^ m :=
+  rfl
+
+variable [NeZero m]
+
+/-- The `m`-th power map from an invariant set `s ⊆ ℂ` onto its image, as a quotient map: it is
+continuous, surjective by construction, and open because `u ↦ u ^ m` is an open map of `ℂ` and
+`s` is saturated (`TauCeti.preimage_image_pow_eq`). -/
+private theorem isQuotientMap_powRestrict (s : SubMulAction (rootsOfUnity m ℂ) ℂ) :
+    Topology.IsQuotientMap (powRestrict s) := by
+  refine IsOpenMap.isQuotientMap ?_ (powRestrict s).continuous ?_
+  · have hpre := (Complex.isOpenQuotientMap_pow m).isOpenMap.restrictPreimage
+      ((· ^ m) '' (s : Set ℂ))
+    exact hpre.comp (Homeomorph.setCongr
+      (TauCeti.preimage_image_pow_eq (NeZero.ne m) s).symm).isOpenMap
+  · rintro ⟨_, u, hu, rfl⟩
+    exact ⟨⟨u, hu⟩, rfl⟩
 
 /-- The orbit space of a set `s ⊆ ℂ` invariant under the `m`-th roots of unity is homeomorphic to
 the image of `s` under `u ↦ u ^ m`, by sending the orbit of `u` to `u ^ m`. -/
 noncomputable def rootsOfUnityQuotientHomeomorph (s : SubMulAction (rootsOfUnity m ℂ) ℂ) :
-    orbitRel.Quotient (rootsOfUnity m ℂ) s ≃ₜ (· ^ m) '' (s : Set ℂ) := by
-  let f : s → (· ^ m) '' (s : Set ℂ) := fun u ↦ ⟨(u : ℂ) ^ m, mem_image_of_mem _ u.2⟩
-  have hrel (u v : s) : orbitRel (rootsOfUnity m ℂ) s u v ↔ (u : ℂ) ^ m = (v : ℂ) ^ m :=
-    mem_orbit_subMul_iff.trans (TauCeti.orbitRel_rootsOfUnity_apply (NeZero.ne m))
-  have hf : IsOpenMap f := by
-    have hpre := (Complex.isOpenQuotientMap_pow m).isOpenMap.restrictPreimage
-      ((· ^ m) '' (s : Set ℂ))
-    exact hpre.comp (Homeomorph.setCongr
-      (TauCeti.preimage_image_pow_eq (NeZero.ne m) s).symm).isOpenMap
-  refine Equiv.toHomeomorphOfContinuousOpen
-    (Equiv.ofBijective (rootsOfUnityQuotientMap s) ⟨?_, ?_⟩)
-    (continuous_quot_lift _ (by fun_prop))
-    (IsOpenMap.of_comp continuous_quot_mk Quotient.mk_surjective hf)
-  · rintro ⟨a⟩ ⟨b⟩ hab
-    exact Quot.sound ((hrel a b).mpr (Subtype.ext_iff.mp hab))
-  · rintro ⟨_, u, hu, rfl⟩
-    exact ⟨Quotient.mk _ ⟨u, hu⟩, rfl⟩
+    orbitRel.Quotient (rootsOfUnity m ℂ) s ≃ₜ (· ^ m) '' (s : Set ℂ) :=
+  (Homeomorph.Quotient.congrRight (r' := Setoid.ker (powRestrict s)) fun u v ↦ by
+      rw [Setoid.ker_def, ← Subtype.coe_inj]
+      exact mem_orbit_subMul_iff.trans
+        (TauCeti.orbitRel_rootsOfUnity_apply (NeZero.ne m))).trans
+    (isQuotientMap_powRestrict s).homeomorph
 
 @[simp]
 theorem coe_rootsOfUnityQuotientHomeomorph_mk (s : SubMulAction (rootsOfUnity m ℂ) ℂ) (u : s) :
     (rootsOfUnityQuotientHomeomorph s (Quotient.mk _ u) : ℂ) = (u : ℂ) ^ m := by
-  exact coe_rootsOfUnityQuotientMap_mk s u
+  simp only [rootsOfUnityQuotientHomeomorph, Homeomorph.trans_apply,
+    Topology.IsQuotientMap.homeomorph_apply, Homeomorph.Quotient.congrRight_mk,
+    Setoid.kerLift_mk, coe_powRestrict]
 
 end SubMulAction
 
@@ -143,13 +164,14 @@ unity is homeomorphic to the disc of radius `r ^ m`, by sending the orbit of `u`
 noncomputable def rootsOfUnityBallQuotientHomeomorph {r : ℝ} (hr : 0 ≤ r) :
     orbitRel.Quotient (rootsOfUnity m ℂ) (rootsOfUnityBall m r) ≃ₜ Metric.ball (0 : ℂ) (r ^ m) :=
   (SubMulAction.rootsOfUnityQuotientHomeomorph (rootsOfUnityBall m r)).trans
-    (Homeomorph.setCongr (image_pow_ball hr))
+    (Homeomorph.setCongr (by rw [coe_rootsOfUnityBall]; exact image_pow_ball hr))
 
 @[simp]
 theorem coe_rootsOfUnityBallQuotientHomeomorph_mk {r : ℝ} (hr : 0 ≤ r)
     (u : rootsOfUnityBall m r) :
     (rootsOfUnityBallQuotientHomeomorph hr (Quotient.mk _ u) : ℂ) = (u : ℂ) ^ m := by
-  exact SubMulAction.coe_rootsOfUnityQuotientHomeomorph_mk (rootsOfUnityBall m r) u
+  simp only [rootsOfUnityBallQuotientHomeomorph, Homeomorph.trans_apply,
+    Homeomorph.coe_setCongr, SubMulAction.coe_rootsOfUnityQuotientHomeomorph_mk]
 
 omit [NeZero m] in
 /-- For `m ≥ 2`, the `m`-th roots of unity act freely exactly on the nonzero complex numbers:

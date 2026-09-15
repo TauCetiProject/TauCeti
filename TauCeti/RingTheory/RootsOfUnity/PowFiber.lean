@@ -23,6 +23,7 @@ group: the orbit map of the rotation action is the power map.
 
 ## Main declarations
 
+* `rootsOfUnity.smul_pow`: multiplication by an `m`-th root of unity preserves `m`-th powers.
 * `TauCeti.pow_eq_pow_iff_exists_rootsOfUnity_smul`: `u ^ m = v ^ m` iff `v = ζ • u` for some
   `ζ` in `rootsOfUnity m M`.
 * `TauCeti.orbitRel_rootsOfUnity_apply`: the orbit relation of the action is the kernel of
@@ -34,29 +35,29 @@ group: the orbit map of the rotation action is the power map.
 
 public section
 
-namespace TauCeti
-
 open MulAction
 
 variable {M : Type*} {m : ℕ}
 
-private theorem rootsOfUnity_smul_eq_mul [CommMonoid M]
+private theorem rootsOfUnity.smul_eq_mul [CommMonoid M]
     (ζ : rootsOfUnity m M) (u : M) : ζ • u = ((ζ : Mˣ) : M) * u := by
-  rw [Subgroup.smul_def, Units.smul_def, smul_eq_mul]
+  rw [Subgroup.smul_def, Units.smul_def, _root_.smul_eq_mul]
 
 /-- Multiplication by an `m`-th root of unity does not change the `m`-th power. -/
 @[simp]
-theorem rootsOfUnity_smul_pow [CommMonoid M]
+theorem rootsOfUnity.smul_pow [CommMonoid M]
     (ζ : rootsOfUnity m M) (u : M) : (ζ • u) ^ m = u ^ m := by
-  simp only [rootsOfUnity_smul_eq_mul, mul_pow, ← Units.val_pow_eq_pow_val,
+  simp only [rootsOfUnity.smul_eq_mul, mul_pow, ← Units.val_pow_eq_pow_val,
     (mem_rootsOfUnity m _).mp ζ.2, Units.val_one, one_mul]
+
+namespace TauCeti
 
 /-- For `m ≠ 0`, two elements have the same `m`-th power exactly when one is obtained from the
 other by multiplication with an `m`-th root of unity. -/
 theorem pow_eq_pow_iff_exists_rootsOfUnity_smul [CommGroupWithZero M]
     (hm : m ≠ 0) {u v : M} :
     u ^ m = v ^ m ↔ ∃ ζ : rootsOfUnity m M, ζ • u = v := by
-  refine ⟨fun h ↦ ?_, fun ⟨ζ, hζ⟩ ↦ hζ ▸ (rootsOfUnity_smul_pow ζ u).symm⟩
+  refine ⟨fun h ↦ ?_, fun ⟨ζ, hζ⟩ ↦ hζ ▸ (rootsOfUnity.smul_pow ζ u).symm⟩
   rcases eq_or_ne u 0 with rfl | hu
   · refine ⟨1, ?_⟩
     rw [zero_pow hm, eq_comm, pow_eq_zero_iff hm] at h
@@ -67,10 +68,11 @@ theorem pow_eq_pow_iff_exists_rootsOfUnity_smul [CommGroupWithZero M]
     refine ⟨⟨Units.mk0 (v / u) (div_ne_zero hv hu), ?_⟩, ?_⟩
     · simp only [mem_rootsOfUnity', Units.val_mk0, div_pow, h,
         div_self (pow_ne_zero m hv)]
-    · simp only [rootsOfUnity_smul_eq_mul, Units.val_mk0, div_mul_cancel₀ v hu]
+    · simp only [rootsOfUnity.smul_eq_mul, Units.val_mk0, div_mul_cancel₀ v hu]
 
 /-- For `m ≠ 0`, the orbit relation of the `m`-th roots of unity acting by multiplication is the
 relation of having the same `m`-th power. -/
+@[simp]
 theorem orbitRel_rootsOfUnity_apply [CommGroupWithZero M] (hm : m ≠ 0) {u v : M} :
     orbitRel (rootsOfUnity m M) M u v ↔ u ^ m = v ^ m := by
   rw [orbitRel_apply, mem_orbit_iff, eq_comm (a := u ^ m),
@@ -91,7 +93,7 @@ theorem stabilizer_rootsOfUnity_of_ne_zero [CommMonoidWithZero M] [IsCancelMulZe
     {u : M} (hu : u ≠ 0) :
     stabilizer (rootsOfUnity m M) u = ⊥ := by
   refine (Subgroup.eq_bot_iff_forall _).mpr fun ζ hζ ↦ ?_
-  rw [mem_stabilizer_iff, rootsOfUnity_smul_eq_mul] at hζ
+  rw [mem_stabilizer_iff, rootsOfUnity.smul_eq_mul] at hζ
   exact Subtype.ext <| Units.ext <| by
     simpa using mul_right_cancel₀ hu (hζ.trans (one_mul u).symm)
 
@@ -100,6 +102,6 @@ theorem stabilizer_rootsOfUnity_of_ne_zero [CommMonoidWithZero M] [IsCancelMulZe
 theorem stabilizer_rootsOfUnity_zero [CommMonoidWithZero M] :
     stabilizer (rootsOfUnity m M) (0 : M) = ⊤ :=
   Subgroup.eq_top_iff' _ |>.mpr fun ζ ↦ mem_stabilizer_iff.mpr (by
-    rw [rootsOfUnity_smul_eq_mul, mul_zero])
+    rw [rootsOfUnity.smul_eq_mul, mul_zero])
 
 end TauCeti
