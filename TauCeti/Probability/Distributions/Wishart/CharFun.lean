@@ -62,7 +62,7 @@ theorem charFun_eq_complexMGF_trace_mul {p : ℕ}
     charFun μ Θ =
       complexMGF (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) μ Complex.I := by
-  simp only [TauCeti.charFun_eq_complexMGF_inner, inner_eq_trace_mul]
+  simp only [MeasureTheory.charFun_eq_complexMGF_inner, inner_eq_trace_mul]
 
 end selfAdjoint
 

@@ -21,10 +21,10 @@ characteristic function of the law of `X`, so this is the standard route from a 
 function to a characteristic function.
 
 `TauCeti.eqOn_complexMGF_of_eqOn_mgf` packages that continuation step, and
-`TauCeti.charFun_eq_complexMGF_inner` supplies its vector-valued end point: on a type carrying a
-real-valued pairing `⟪·, ·⟫`, the characteristic function at `t` is the value at `Complex.I` of the
-complex moment-generating function of the statistic `x ↦ ⟪x, t⟫`.  The bulk of the file carries the
-continuation out for the closed form
+`MeasureTheory.charFun_eq_complexMGF_inner` supplies its vector-valued end point: on a type
+carrying a real-valued pairing `⟪·, ·⟫`, the characteristic function at `t` is the value at
+`Complex.I` of the complex moment-generating function of the statistic `x ↦ ⟪x, t⟫`.  The bulk of
+the file carries the continuation out for the closed form
 
 `mgf X μ t = ∏ j, (1 - 2 * t * lam j) ^ (-a j)`,
 
@@ -43,9 +43,9 @@ product: multiplying the factors before taking the logarithm can cross the branc
   the strip on which the pencil `1 - 2 * z.re * lam j` is positive.
 * `TauCeti.complexMGF_I_eq_exp_of_mgf_eq_prod_rpow`: its value at `Complex.I`, which for a
   measurable `X` is the characteristic function of the law of `X` at `1`.
-* `TauCeti.charFun_eq_complexMGF_inner`: for a real-valued pairing `⟪·, ·⟫`, the characteristic
-  function at `t` is the value at `Complex.I` of the complex moment-generating function of the
-  statistic `x ↦ ⟪x, t⟫`.
+* `MeasureTheory.charFun_eq_complexMGF_inner`: for a real-valued pairing `⟪·, ·⟫`, the
+  characteristic function at `t` is the value at `Complex.I` of the complex moment-generating
+  function of the statistic `x ↦ ⟪x, t⟫`.
 
 ## References
 
@@ -183,7 +183,11 @@ theorem complexMGF_I_eq_exp_of_mgf_eq_prod_rpow (lam a : ι → ℝ)
       cexp (-∑ j, (a j : ℂ) * Complex.log (1 - 2 * Complex.I * (lam j : ℂ))) :=
   complexMGF_eq_exp_of_mgf_eq_prod_rpow lam a hmgf fun j ↦ by simp
 
+end TauCeti
+
 /-! ### The characteristic function of a real-valued pairing -/
+
+namespace MeasureTheory
 
 open scoped RealInnerProductSpace in
 /-- For a type carrying a real-valued pairing `⟪·, ·⟫`, the characteristic function at `t` is the
@@ -195,4 +199,4 @@ theorem charFun_eq_complexMGF_inner {E : Type*} [Inner ℝ E] [MeasurableSpace E
     (t : E) : charFun μ t = complexMGF (fun x ↦ ⟪x, t⟫) μ Complex.I :=
   integral_congr_ae <| .of_forall fun x ↦ by simp only [mul_comm]
 
-end TauCeti
+end MeasureTheory
