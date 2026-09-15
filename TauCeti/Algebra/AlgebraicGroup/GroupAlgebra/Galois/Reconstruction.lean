@@ -144,7 +144,8 @@ private theorem characterInvariantsAlgHom_comul :
         (characterInvariantsAlgHom k L H hspan) := by
   let e := characterEvaluationEquiv k L H hspan
   let f := characterInvariantsAlgHom k L H hspan
-  let E := Algebra.TensorProduct.congr e.toAlgEquiv e.toAlgEquiv
+  let E := TensorProduct.congr (SemilinearEquivClass.semilinearEquiv e)
+    (SemilinearEquivClass.semilinearEquiv e)
   have ht (t : H ⊗[k] H) :
       E (groupAlgebraInvariantsTensorEquiv ρ (Algebra.TensorProduct.map f f t) : D ⊗[L] D) =
         TensorProduct.AlgebraTensorModule.distribBaseChange k L H H (1 ⊗ₜ[k] t) := by
@@ -153,8 +154,7 @@ private theorem characterInvariantsAlgHom_comul :
     | add x y hx hy => simp only [map_add, AddMemClass.coe_add, hx, hy, TensorProduct.tmul_add]
     | tmul a b =>
         simp only [Algebra.TensorProduct.map_tmul, groupAlgebraInvariantsTensorEquiv_tmul,
-          E, Algebra.TensorProduct.congr_apply,
-          AlgEquiv.coe_toAlgHom, BialgEquiv.coe_toAlgEquiv,
+          E, TensorProduct.congr_tmul, SemilinearEquivClass.semilinearEquiv_apply,
           e, f, characterEvaluationEquiv_characterInvariantsAlgHom,
           TensorProduct.AlgebraTensorModule.distribBaseChange_tmul]
   ext a
@@ -164,18 +164,11 @@ private theorem characterInvariantsAlgHom_comul :
   simp only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply,
     groupAlgebraInvariantsTensorEquiv_comul, groupAlgebraInvariantsComul_apply]
   rw [ht]
-  have he := DFunLike.congr_fun (BialgHomClass.map_comp_comulAlgHom e)
-    (characterInvariantsAlgHom k L H hspan a : D)
   have hE : E (Coalgebra.comul (R := L) (characterInvariantsAlgHom k L H hspan a : D)) =
-      Coalgebra.comul (R := L) (1 ⊗ₜ[k] a) := by
-    have hemap : e.toAlgEquiv.toAlgHom = AlgHomClass.toAlgHom e := by
-      apply AlgHom.ext
-      intro x
-      simp only [AlgEquiv.coe_toAlgHom, BialgEquiv.coe_toAlgEquiv,
-        AlgHom.coe_coe]
-    rw [Algebra.TensorProduct.congr_apply, hemap]
-    simpa only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply,
-      AlgHom.coe_coe, e, characterEvaluationEquiv_characterInvariantsAlgHom] using he
+      Coalgebra.comul (R := L) (1 ⊗ₜ[k] a) :=
+    (CoalgHomClass.map_comp_comul_apply e _).trans
+      (congrArg (Coalgebra.comul (R := L))
+        (characterEvaluationEquiv_characterInvariantsAlgHom k L H hspan a))
   rw [hE, TensorProduct.comul_tmul, CommSemiring.comul_apply]
   induction Coalgebra.comul (R := k) a using TensorProduct.induction_on with
   | zero => simp
