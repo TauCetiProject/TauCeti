@@ -5,19 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.SmoothLink
+public import TauCeti.KnotTheory.SmoothLink.Basic
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Basic
 
 /-! # Smooth ambient isotopy of smooth links
 
-References:
-
-* G. Burde and H. Zieschang, *Knots*, 2nd ed., Chapter 1.
-* M. Hirsch, *Differential Topology*, Chapter 8.
-
 This file specializes the smooth ambient-isotopy relation to labeled smooth links.  A single
 diffeotopy of the ambient manifold must carry every component to its counterpart; this is the
 relation used for equivalence of geometric link presentations.
+
+## References
+
+* G. Burde and H. Zieschang, *Knots*, 2nd ed., Chapter 1, for ambient isotopy as
+  knot and link equivalence.
+* M. Hirsch, *Differential Topology*, Chapter 8, for smooth isotopies.
 -/
 
 public section
@@ -39,24 +40,25 @@ def SmoothAmbientIsotopic (L K : SmoothLinkEmbedding I M n) : Prop :=
   ∃ Φ : Diffeotopy I ∞ M, ∀ i x, Φ.final (L i x) = K i x
 
 /-- Characterization of smooth ambient isotopy by a single componentwise diffeotopy witness. -/
-theorem smoothAmbientIsotopic_iff :
+theorem smoothAmbientIsotopic_def :
     SmoothAmbientIsotopic L K ↔ ∃ Φ : Diffeotopy I ∞ M, ∀ i x, Φ.final (L i x) = K i x :=
   Iff.rfl
 
 /-- A diffeotopy witnessing the componentwise ambient transport gives link isotopy. -/
 theorem SmoothAmbientIsotopic.of_diffeotopy (Φ : Diffeotopy I ∞ M)
     (hΦ : ∀ i x, Φ.final (L i x) = K i x) : SmoothAmbientIsotopic L K :=
-  ⟨Φ, hΦ⟩
+  smoothAmbientIsotopic_def.mpr ⟨Φ, hΦ⟩
 
 /-- Smooth ambient isotopy of links is reflexive. -/
 @[refl] theorem SmoothAmbientIsotopic.refl (L : SmoothLinkEmbedding I M n) :
     SmoothAmbientIsotopic L L :=
-  ⟨Diffeotopy.refl I ∞ M, fun _ _ ↦ by simp⟩
+  smoothAmbientIsotopic_def.mpr ⟨Diffeotopy.refl I ∞ M, fun _ _ ↦ by simp⟩
 
 /-- Smooth ambient isotopy of links is symmetric. -/
 @[symm] theorem SmoothAmbientIsotopic.symm
     (hLK : SmoothAmbientIsotopic L K) : SmoothAmbientIsotopic K L := by
-  obtain ⟨Φ, hΦ⟩ := hLK
+  obtain ⟨Φ, hΦ⟩ := smoothAmbientIsotopic_def.mp hLK
+  apply smoothAmbientIsotopic_def.mpr
   refine ⟨Φ.symm, fun i x => ?_⟩
   rw [← hΦ i x, Φ.final_symm]
   exact Φ.final.symm_apply_apply (L i x)
@@ -65,8 +67,9 @@ theorem SmoothAmbientIsotopic.of_diffeotopy (Φ : Diffeotopy I ∞ M)
 @[trans] theorem SmoothAmbientIsotopic.trans
     (hLK : SmoothAmbientIsotopic L K) (hKT : SmoothAmbientIsotopic K T) :
     SmoothAmbientIsotopic L T := by
-  obtain ⟨Φ, hΦ⟩ := hLK
-  obtain ⟨Ψ, hΨ⟩ := hKT
+  obtain ⟨Φ, hΦ⟩ := smoothAmbientIsotopic_def.mp hLK
+  obtain ⟨Ψ, hΨ⟩ := smoothAmbientIsotopic_def.mp hKT
+  apply smoothAmbientIsotopic_def.mpr
   refine ⟨Φ.trans Ψ, fun i x => ?_⟩
   rw [Diffeotopy.final_trans]
   calc
