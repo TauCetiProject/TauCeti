@@ -50,48 +50,43 @@ theorem mem_directSum_iff {C : Submodule R (ι → R)} {D : Submodule R (κ → 
   rw [directSum, mem_map_equiv, LinearEquiv.symm_symm, mem_prod]
   rfl
 
-private def directSumEquivProdSubmodule (C : Submodule R (ι → R))
-    (D : Submodule R (κ → R)) : directSum C D ≃ₗ[R] C.prod D where
-  toFun x := ⟨((fun i ↦ x.1 (.inl i)), (fun j ↦ x.1 (.inr j))),
-    mem_prod.2 (mem_directSum_iff.1 x.2)⟩
-  invFun x := ⟨Sum.elim x.1.1 x.1.2, mem_directSum_iff.2 (mem_prod.1 x.2)⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv x := Subtype.ext <| funext fun i ↦ by cases i <;> rfl
-  right_inv _ := rfl
-
 /-- The direct sum is linearly equivalent to the product of its two constituent codes. -/
 def directSumEquivProd (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
     directSum C D ≃ₗ[R] C × D :=
-  (directSumEquivProdSubmodule C D).trans (prodEquiv C D)
+  ((LinearEquiv.sumArrowLequivProdArrow ι κ R R).symm.ofSubmodules (C.prod D) (directSum C D)
+    (directSum.eq_1 C D).symm).symm.trans (prodEquiv C D)
 
 @[simp]
 theorem directSumEquivProd_apply_fst (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
     (x : directSum C D) (i : ι) :
     (directSumEquivProd C D x).1.1 i = x.1 (.inl i) := by
-  rw [directSumEquivProd, LinearEquiv.trans_apply, prodEquiv_apply]
-  rfl
+  simp only [directSumEquivProd, LinearEquiv.trans_apply, prodEquiv_apply,
+    LinearEquiv.ofSubmodules_symm_apply, LinearEquiv.symm_symm,
+    LinearEquiv.sumArrowLequivProdArrow_apply_fst]
 
 @[simp]
 theorem directSumEquivProd_apply_snd (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
     (x : directSum C D) (j : κ) :
     (directSumEquivProd C D x).2.1 j = x.1 (.inr j) := by
-  rw [directSumEquivProd, LinearEquiv.trans_apply, prodEquiv_apply]
-  rfl
+  simp only [directSumEquivProd, LinearEquiv.trans_apply, prodEquiv_apply,
+    LinearEquiv.ofSubmodules_symm_apply, LinearEquiv.symm_symm,
+    LinearEquiv.sumArrowLequivProdArrow_apply_snd]
 
 @[simp]
 theorem directSumEquivProd_symm_apply_inl (C : Submodule R (ι → R))
     (D : Submodule R (κ → R)) (x : C) (y : D) (i : ι) :
     ((directSumEquivProd C D).symm (x, y)).1 (.inl i) = x.1 i := by
-  rw [directSumEquivProd, LinearEquiv.symm_trans_apply, prodEquiv_symm_apply]
-  rfl
+  simp only [directSumEquivProd, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm,
+    prodEquiv_symm_apply, LinearEquiv.ofSubmodules_apply,
+    LinearEquiv.sumArrowLequivProdArrow_symm_apply_inl]
 
 @[simp]
 theorem directSumEquivProd_symm_apply_inr (C : Submodule R (ι → R))
     (D : Submodule R (κ → R)) (x : C) (y : D) (j : κ) :
     ((directSumEquivProd C D).symm (x, y)).1 (.inr j) = y.1 j := by
-  rw [directSumEquivProd, LinearEquiv.symm_trans_apply, prodEquiv_symm_apply]
-  rfl
+  simp only [directSumEquivProd, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm,
+    prodEquiv_symm_apply, LinearEquiv.ofSubmodules_apply,
+    LinearEquiv.sumArrowLequivProdArrow_symm_apply_inr]
 
 /-- Direct sum is monotone in both constituent codes. -/
 @[gcongr]
