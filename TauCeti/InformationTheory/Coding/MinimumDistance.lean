@@ -18,9 +18,10 @@ after transport to Mathlib's `Hamming` metric space. For an additive code it is 
 least weight of a nonzero word, so the same API applies to linear codes through their
 underlying additive subgroups.
 
-The coordinate type is finite; the alphabet and the code need not be finite. The attained
-minimum and its lower-bound characterization support parameter computations for explicit
-codes, while invariance under distance-preserving maps handles changes of coordinates.
+The coordinate type is finite; the alphabets may depend on the coordinate and need not be
+finite, nor does the code. The attained minimum and its lower-bound characterization support
+parameter computations for explicit codes, while invariance under distance-preserving maps
+handles changes of coordinates.
 
 The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*,
 §§1.2–1.6. The metric comparison uses Mathlib's `Set.Nontrivial.le_infsep_iff`.
@@ -30,13 +31,18 @@ public section
 
 namespace TauCeti
 
-variable {ι κ A B : Type*} [Fintype ι] [DecidableEq A]
+variable {ι κ : Type*} {β : ι → Type*} {γ : κ → Type*}
+  [Fintype ι] [∀ i, DecidableEq (β i)]
 
 /-- The least distance between distinct words of `C`, or zero if there are no such words. -/
-noncomputable def hammingMinDist (C : Set (ι → A)) : ℕ :=
+noncomputable def hammingMinDist (C : Set (∀ i, β i)) : ℕ :=
   sInf {d | ∃ x ∈ C, ∃ y ∈ C, x ≠ y ∧ hammingDist x y = d}
 
-variable {C D : Set (ι → A)}
+/-- Minimum distance is the infimum of the Hamming distances between distinct codewords. -/
+theorem hammingMinDist_def (C : Set (∀ i, β i)) :
+    hammingMinDist C = sInf {d | ∃ x ∈ C, ∃ y ∈ C, x ≠ y ∧ hammingDist x y = d} := (rfl)
+
+variable {C D : Set (∀ i, β i)}
 
 /-- A code with at most one word has minimum distance zero. -/
 theorem hammingMinDist_eq_zero_of_subsingleton (hC : C.Subsingleton) :
@@ -46,24 +52,26 @@ theorem hammingMinDist_eq_zero_of_subsingleton (hC : C.Subsingleton) :
     simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
     rintro ⟨x, hx, y, hy, hxy, _⟩
     exact hxy (hC hx hy)
-  simp [hammingMinDist, h]
+  simp [hammingMinDist_def, h]
 
 @[simp]
-theorem hammingMinDist_empty : hammingMinDist (∅ : Set (ι → A)) = 0 :=
+theorem hammingMinDist_empty : hammingMinDist (∅ : Set (∀ i, β i)) = 0 :=
   hammingMinDist_eq_zero_of_subsingleton Set.subsingleton_empty
 
 @[simp]
-theorem hammingMinDist_singleton (x : ι → A) : hammingMinDist {x} = 0 :=
+theorem hammingMinDist_singleton (x : ∀ i, β i) : hammingMinDist {x} = 0 :=
   hammingMinDist_eq_zero_of_subsingleton Set.subsingleton_singleton
 
 /-- The minimum distance is bounded by the distance between any two distinct codewords. -/
-theorem hammingMinDist_le {x y : ι → A} (hx : x ∈ C) (hy : y ∈ C) (hxy : x ≠ y) :
-    hammingMinDist C ≤ hammingDist x y :=
-  csInf_le' ⟨x, hx, y, hy, hxy, rfl⟩
+theorem hammingMinDist_le {x y : ∀ i, β i} (hx : x ∈ C) (hy : y ∈ C) (hxy : x ≠ y) :
+    hammingMinDist C ≤ hammingDist x y := by
+  rw [hammingMinDist_def]
+  exact csInf_le' ⟨x, hx, y, hy, hxy, rfl⟩
 
 /-- Every code with two distinct words attains its minimum distance. -/
 theorem exists_hammingDist_eq_hammingMinDist (hC : C.Nontrivial) :
     ∃ x ∈ C, ∃ y ∈ C, x ≠ y ∧ hammingDist x y = hammingMinDist C := by
+  rw [hammingMinDist_def]
   obtain ⟨x, hx, y, hy, hxy⟩ := hC
   exact csInf_mem (s := {d | ∃ x ∈ C, ∃ y ∈ C, x ≠ y ∧ hammingDist x y = d})
     ⟨_, x, hx, y, hy, hxy, rfl⟩
@@ -78,6 +86,7 @@ theorem le_hammingMinDist_iff (hC : C.Nontrivial) {d : ℕ} :
     obtain ⟨x, hx, y, hy, hxy, hdist⟩ := exists_hammingDist_eq_hammingMinDist hC
     exact hdist ▸ hd x hx y hy hxy
 
+/-- Minimum distance is positive exactly when the code contains two distinct words. -/
 @[simp]
 theorem hammingMinDist_pos_iff : 0 < hammingMinDist C ↔ C.Nontrivial := by
   constructor
@@ -87,6 +96,7 @@ theorem hammingMinDist_pos_iff : 0 < hammingMinDist C ↔ C.Nontrivial := by
   · intro hC
     exact (le_hammingMinDist_iff hC).2 fun x _ y _ hxy => (hammingDist_pos).2 hxy
 
+/-- Minimum distance is zero exactly when the code contains at most one word. -/
 @[simp]
 theorem hammingMinDist_eq_zero_iff : hammingMinDist C = 0 ↔ C.Subsingleton := by
   simpa only [Nat.pos_iff_ne_zero, not_not, Set.not_nontrivial_iff] using
@@ -124,10 +134,10 @@ theorem hammingMinDist_eq_infsep :
     rw [hammingMinDist_eq_zero_of_subsingleton hs, Nat.cast_zero, (hs.image _).infsep_zero]
 
 /-- A distance-preserving map on a code preserves its minimum distance. -/
-theorem hammingMinDist_image [Fintype κ] [DecidableEq B] (f : (ι → A) → (κ → B))
+theorem hammingMinDist_image [Fintype κ] [∀ i, DecidableEq (γ i)] (f : (∀ i, β i) → (∀ i, γ i))
     (hf : ∀ x ∈ C, ∀ y ∈ C, hammingDist (f x) (f y) = hammingDist x y) :
     hammingMinDist (f '' C) = hammingMinDist C := by
-  unfold hammingMinDist
+  simp only [hammingMinDist_def]
   congr 1
   ext d
   constructor
@@ -142,14 +152,14 @@ theorem hammingMinDist_image [Fintype κ] [DecidableEq B] (f : (ι → A) → (�
 
 section Additive
 
-variable [AddGroup A] {E : AddSubgroup (ι → A)}
+variable [∀ i, AddGroup (β i)] {E : AddSubgroup (∀ i, β i)}
 
 /-- For an additive code, minimum distance is the least nonzero weight.
 For the zero code the indexing set is empty and both sides are zero. -/
 theorem hammingMinDist_eq_sInf_hammingNorm :
-    hammingMinDist (E : Set (ι → A)) =
+    hammingMinDist (E : Set (∀ i, β i)) =
       sInf {d | ∃ x ∈ E, x ≠ 0 ∧ hammingNorm x = d} := by
-  unfold hammingMinDist
+  simp only [hammingMinDist_def]
   congr 1
   ext d
   constructor
@@ -162,7 +172,7 @@ theorem hammingMinDist_eq_sInf_hammingNorm :
 
 /-- A nonzero additive code attains its minimum distance at a nonzero codeword. -/
 theorem exists_hammingNorm_eq_hammingMinDist (hE : E ≠ ⊥) :
-    ∃ x ∈ E, x ≠ 0 ∧ hammingNorm x = hammingMinDist (E : Set (ι → A)) := by
+    ∃ x ∈ E, x ≠ 0 ∧ hammingNorm x = hammingMinDist (E : Set (∀ i, β i)) := by
   rw [hammingMinDist_eq_sInf_hammingNorm]
   have hex : ∃ x ∈ E, x ≠ 0 := by
     by_contra! h
@@ -172,13 +182,13 @@ theorem exists_hammingNorm_eq_hammingMinDist (hE : E ≠ ⊥) :
     ⟨_, x, hx, hzero, rfl⟩
 
 /-- A nonzero weight in an additive code bounds its minimum distance. -/
-theorem hammingMinDist_le_hammingNorm {x : ι → A} (hx : x ∈ E) (hzero : x ≠ 0) :
-    hammingMinDist (E : Set (ι → A)) ≤ hammingNorm x := by
+theorem hammingMinDist_le_hammingNorm {x : ∀ i, β i} (hx : x ∈ E) (hzero : x ≠ 0) :
+    hammingMinDist (E : Set (∀ i, β i)) ≤ hammingNorm x := by
   simpa only [hammingDist_zero_left] using hammingMinDist_le E.zero_mem hx hzero.symm
 
 /-- Weight lower bounds characterize the minimum distance of a nonzero additive code. -/
 theorem le_hammingMinDist_iff_hammingNorm (hE : E ≠ ⊥) {d : ℕ} :
-    d ≤ hammingMinDist (E : Set (ι → A)) ↔ ∀ x ∈ E, x ≠ 0 → d ≤ hammingNorm x := by
+    d ≤ hammingMinDist (E : Set (∀ i, β i)) ↔ ∀ x ∈ E, x ≠ 0 → d ≤ hammingNorm x := by
   constructor
   · intro hd x hx hzero
     exact hd.trans (hammingMinDist_le_hammingNorm hx hzero)
