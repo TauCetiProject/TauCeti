@@ -65,6 +65,46 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → F} {Ω S : Set E} {x : E} {D : ℝ}
 
+/-- The substitution `w = x + t • (y - x)`, of Jacobian `t ^ n`, in the integral over
+`y ∈ closedBall x D` of `g` at the point of parameter `t` on the segment from `x` to `y`,
+weighted by the length of the segment. -/
+theorem lintegral_comp_add_smul_sub_mul_ite (μ : Measure E) [μ.IsAddHaarMeasure]
+    (g : E → ℝ≥0∞) (x : E) (D : ℝ) {t : ℝ} (ht : 0 < t) :
+    ∫⁻ y, g (x + t • (y - x)) * (if ‖x - y‖ ≤ D then ENNReal.ofReal ‖x - y‖ else 0) ∂μ =
+      ∫⁻ w, ENNReal.ofReal (t ^ (-(finrank ℝ E : ℝ) - 1)) *
+        (g w * if ‖x - w‖ ≤ t * D then ENNReal.ofReal ‖x - w‖ else 0) ∂μ := by
+  set f : E → ℝ≥0∞ := fun w =>
+    g w * if ‖x - w‖ ≤ t * D then ENNReal.ofReal ‖x - w‖ else 0
+  have hKf : ∀ y, g (x + t • (y - x)) *
+      (if ‖x - y‖ ≤ D then ENNReal.ofReal ‖x - y‖ else 0) =
+      ENNReal.ofReal t⁻¹ * f (AffineMap.homothety x t y) := by
+    intro y
+    have hw : AffineMap.homothety x t y = x + t • (y - x) := by
+      rw [AffineMap.homothety_apply, vsub_eq_sub, vadd_eq_add, add_comm]
+    have hnorm : ‖x - (x + t • (y - x))‖ = t * ‖x - y‖ := by
+      rw [sub_add_cancel_left, norm_neg, norm_smul, Real.norm_of_nonneg ht.le, norm_sub_rev]
+    simp only [f, hw, hnorm, mul_le_mul_iff_right₀ ht]
+    split_ifs
+    · have h1 : ENNReal.ofReal t⁻¹ * ENNReal.ofReal t = 1 := by
+        rw [← ENNReal.ofReal_mul (inv_nonneg.2 ht.le), inv_mul_cancel₀ ht.ne',
+          ENNReal.ofReal_one]
+      rw [ENNReal.ofReal_mul ht.le]
+      calc
+        _ = ENNReal.ofReal t⁻¹ * ENNReal.ofReal t * (g (x + t • (y - x)) *
+            ENNReal.ofReal ‖x - y‖) := by rw [h1, one_mul]
+        _ = _ := by ring
+    · simp
+  calc
+    _ = ∫⁻ y, ENNReal.ofReal t⁻¹ * f (AffineMap.homothety x t y) ∂μ := lintegral_congr hKf
+    _ = ENNReal.ofReal t⁻¹ * (ENNReal.ofReal |(t ^ finrank ℝ E)⁻¹| * ∫⁻ w, f w ∂μ) := by
+      rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_comp_homothety μ f x ht.ne']
+    _ = _ := by
+      rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, ← mul_assoc,
+        ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le)]
+      congr 2
+      rw [abs_of_nonneg (by positivity), Real.rpow_sub ht, Real.rpow_neg ht.le,
+        Real.rpow_natCast, Real.rpow_one, div_eq_mul_inv, mul_comm]
+
 /-- **Averaging along segments produces the Riesz potential.** Integrating a function `g` along
 the segments from `x` to the points `y` of `closedBall x D`, weighted by their lengths, gives at
 most `D ^ n / n` times the Riesz potential `∫ w, g w * ‖x - w‖ ^ (1 - n)`, where `n` is the
