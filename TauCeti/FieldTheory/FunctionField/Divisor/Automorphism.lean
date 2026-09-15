@@ -129,18 +129,6 @@ theorem smul_divisorClass (hF : IsFunctionField k F') (D : Divisor k F') :
     AlgebraicGeometry.WeilDivisor.OrderSystem.divisorClass_eq_mk']
   rfl
 
-/-- **An automorphism acts on divisor classes** by applying it to a representative divisor. -/
-noncomputable def classGroupEquivSmul (hF : IsFunctionField k F') :
-    (Place.orderSystem hF).ClassGroup ≃+ (Place.orderSystem hF).ClassGroup :=
-  DistribMulAction.toAddEquiv (Place.orderSystem hF).ClassGroup σ
-
-/-- The action on divisor classes sends the class of `D` to the class of `σ • D`. -/
-@[simp]
-theorem classGroupEquivSmul_divisorClass (hF : IsFunctionField k F') (D : Divisor k F') :
-    classGroupEquivSmul σ hF ((Place.orderSystem hF).divisorClass D) =
-      (Place.orderSystem hF).divisorClass (σ • D) := by
-  exact smul_divisorClass σ hF D
-
 end Divisor
 
 end TauCeti
