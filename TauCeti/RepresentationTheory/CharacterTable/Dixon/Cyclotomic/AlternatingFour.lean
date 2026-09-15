@@ -76,11 +76,6 @@ open Matrix
 
 local instance fact_prime_seven : Fact (Nat.Prime 7) := ⟨by decide⟩
 
-private theorem natCard_alternatingGroup_four :
-    Nat.card (alternatingGroup (Fin 4)) = 12 := by
-  rw [nat_card_alternatingGroup]
-  norm_num
-
 private theorem sqrt_twelve : Nat.sqrt 12 = 3 := by
   exact ((Nat.eq_sqrt).2 (by norm_num)).symm
 

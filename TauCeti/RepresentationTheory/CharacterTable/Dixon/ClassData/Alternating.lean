@@ -35,6 +35,7 @@ cyclotomic character table.
 * `TauCeti.numClasses_alternatingGroupFourClassData`: `A₄` has four conjugacy classes.
 * `TauCeti.card_classFinset_alternatingGroupFourClassData`: their sizes, in the chosen order, are
   `1`, `3`, `4`, and `4`.
+* `TauCeti.natCard_alternatingGroup_four`: `A₄` has order twelve.
 * `TauCeti.exponent_alternatingGroup_four`: the exponent of `A₄` is six.
 
 ## References
@@ -110,6 +111,12 @@ private theorem alternatingGroupFourThreeCycle_pow_six :
 private theorem alternatingGroupFourThreeCycle_inv_pow_six :
     alternatingGroupFourThreeCycle⁻¹ ^ 6 = 1 := by
   decide
+
+/-- The alternating group of degree four has order twelve: half of `4! = 24`. -/
+@[simp]
+theorem natCard_alternatingGroup_four : Nat.card (alternatingGroup (Fin 4)) = 12 := by
+  rw [nat_card_alternatingGroup, Nat.card_eq_fintype_card, Fintype.card_fin]
+  rfl
 
 /-- The exponent of the alternating group of degree four is six. -/
 theorem exponent_alternatingGroup_four :
