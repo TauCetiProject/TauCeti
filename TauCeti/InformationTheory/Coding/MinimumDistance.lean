@@ -23,6 +23,9 @@ finite, nor does the code. The attained minimum and its lower-bound characteriza
 parameter computations for explicit codes, while invariance under distance-preserving maps
 handles changes of coordinates.
 
+Use `TauCeti.hammingMinDist C`, or `hammingMinDist C` after `open TauCeti`, for a
+set of words `C`. Its defining equation is `TauCeti.hammingMinDist_def C`.
+
 The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*,
 §§1.2–1.6. The metric comparison uses Mathlib's `Set.Nontrivial.le_infsep_iff`.
 -/
