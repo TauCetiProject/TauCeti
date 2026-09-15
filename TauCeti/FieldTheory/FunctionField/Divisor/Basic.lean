@@ -169,6 +169,24 @@ lemma degree_le_degree_of_coeff_ne_zero {D : Divisor k F} (hD : 0 ≤ D) {P : Pl
     _ ≤ D.coeff P * P.degree := mul_le_mul_of_nonneg_right hone (Int.natCast_nonneg _)
     _ ≤ degree D := coeff_mul_degree_le_degree hD P
 
+/-- An effective divisor of degree one on an algebraic function field contains a rational place.
+
+Indeed, any place in its support contributes at least its positive residue degree to the total
+degree, so both that residue degree and its coefficient must equal one. -/
+theorem exists_place_degree_eq_one_of_isEffective_of_degree_eq_one
+    (hF : IsFunctionField k F) {D : Divisor k F} (hD : 0 ≤ D) (hdeg : degree D = 1) :
+    ∃ P : Place k F, P ∈ D.support ∧ P.degree = 1 := by
+  have hD0 : D ≠ 0 := by
+    rintro rfl
+    simp at hdeg
+  obtain ⟨P, hP⟩ := Finsupp.support_nonempty_iff.mpr hD0
+  refine ⟨P, hP, ?_⟩
+  have hle : (P.degree : ℤ) ≤ 1 := by
+    rw [← hdeg]
+    exact degree_le_degree_of_coeff_ne_zero hD (WeilDivisor.mem_support_iff.mp hP)
+  have hone : 1 ≤ P.degree := P.one_le_degree_of_isFunctionField hF
+  omega
+
 /-- The coefficients of an effective divisor of a function field are bounded by its degree. -/
 lemma coeff_le_degree (hF : IsFunctionField k F) {D : Divisor k F} (hD : 0 ≤ D)
     (P : Place k F) : D.coeff P ≤ degree D := by
