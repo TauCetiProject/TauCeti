@@ -53,7 +53,7 @@ theorem hermitianForm_swap (σ : R ≃+* R) (hσ : Function.Involutive σ) (x y 
   rw [hσ (y i), mul_comm]
 
 /-- The standard Hermitian form is nondegenerate over any commutative semiring. -/
-theorem hermitianForm_nondegenerate (σ : R ≃+* R) :
+theorem nondegenerate_hermitianForm (σ : R ≃+* R) :
     (hermitianForm σ (ι := ι)).Nondegenerate := by
   classical
   constructor

@@ -13,9 +13,11 @@ public import Mathlib.LinearAlgebra.Dual.Lemmas
 # Hermitian duals of linear codes
 
 A code is a submodule of a finite coordinate space. Its Hermitian dual uses the form
-`h(x,y) = ∑ i, x i * σ (y i)`, with a specified field automorphism `σ`. For involutive
-`σ`, taking the dual twice recovers the code, and a generator matrix becomes a parity-check
-matrix for the dual after applying `σ` entrywise. The field need not be finite.
+`h(x,y) = ∑ i, x i * σ (y i)`, with a specified semiring automorphism `σ`. A generator
+matrix becomes a parity-check matrix for the dual after applying `σ.symm` entrywise;
+for involutive `σ`, this is `σ` itself. Over a field, the dimensions of a code and its dual
+add to the length, and taking the dual twice recovers the code when `σ` is involutive.
+The field need not be finite.
 
 The matrix convention is row generators (`range G.vecMulLinear`) and column syndromes
 (`ker H.mulVecLin`). In particular, omitting the conjugation computes a different dual.
@@ -61,7 +63,7 @@ theorem hermitianDual_top (σ : R ≃+* R) :
     hermitianDual σ (⊤ : Submodule R (ι → R)) = ⊥ := by
   apply le_antisymm _ bot_le
   intro y hy
-  exact (hermitianForm_nondegenerate σ).2 y (fun x ↦ hy x (Submodule.mem_top))
+  exact (nondegenerate_hermitianForm σ).2 y (fun x ↦ hy x (Submodule.mem_top))
 
 /-- Hermitian duality reverses inclusion. -/
 theorem hermitianDual_antitone (σ : R ≃+* R) :
@@ -80,19 +82,31 @@ theorem le_hermitianDual_hermitianDual (σ : R ≃+* R) (hσ : Function.Involuti
   intro x y h
   rw [hermitianForm_swap σ hσ, h, map_zero]
 
-/-- The Hermitian dual of a row space is the kernel of the entrywise-conjugate matrix. -/
-theorem hermitianDual_range_vecMulLinear (σ : R ≃+* R) (hσ : Function.Involutive σ)
+/-- The Hermitian dual of a row space is the kernel of the matrix obtained by applying
+the inverse automorphism entrywise. -/
+theorem hermitianDual_range_vecMulLinear (σ : R ≃+* R)
     {ρ : Type*} [Fintype ρ] (G : Matrix ρ ι R) :
     hermitianDual σ (LinearMap.range G.vecMulLinear) =
-      LinearMap.ker (G.map σ).mulVecLin := by
+      LinearMap.ker (G.map σ.symm).mulVecLin := by
   ext y
   rw [hermitianDual, range_vecMulLinear]
   simp only [Submodule.mem_orthogonalBilin_span, Set.forall_mem_range]
   simp only [LinearMap.mem_ker, Matrix.mulVecLin_apply, funext_iff, Pi.zero_apply]
   apply forall_congr'
   intro i
-  rw [hermitianForm_swap σ hσ y (G.row i), σ.map_eq_zero_iff]
-  simp [hermitianForm_apply, Matrix.mulVec, dotProduct, mul_comm]
+  rw [← σ.symm.map_eq_zero_iff]
+  simp [hermitianForm_apply, Matrix.mulVec, dotProduct]
+
+/-- For an involutive automorphism, the Hermitian dual of a row space is the kernel of
+the entrywise-conjugate matrix. -/
+theorem hermitianDual_range_vecMulLinear_of_involutive (σ : R ≃+* R)
+    (hσ : Function.Involutive σ) {ρ : Type*} [Fintype ρ] (G : Matrix ρ ι R) :
+    hermitianDual σ (LinearMap.range G.vecMulLinear) =
+      LinearMap.ker (G.map σ).mulVecLin := by
+  have hsymm : σ.symm = σ := by
+    ext x
+    exact σ.injective (by simp [hσ x])
+  simpa only [hsymm] using hermitianDual_range_vecMulLinear σ G
 
 section Field
 
@@ -142,7 +156,7 @@ theorem range_vecMulLinear_eq_iff_ker_map_eq_hermitianDual (σ : K ≃+* K)
     (G : Matrix ρ ι K) (C : Submodule K (ι → K)) :
     LinearMap.range G.vecMulLinear = C ↔
       LinearMap.ker (G.map σ).mulVecLin = hermitianDual σ C := by
-  rw [← hermitianDual_range_vecMulLinear σ hσ]
+  rw [← hermitianDual_range_vecMulLinear_of_involutive σ hσ]
   exact ⟨congrArg (hermitianDual σ), fun h ↦ by
     simpa only [hermitianDual_hermitianDual σ hσ] using congrArg (hermitianDual σ) h⟩
 
