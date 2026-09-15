@@ -54,7 +54,7 @@ open IsDedekindDomain (HeightOneSpectrum)
 namespace Ideal
 
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
-  [Algebra K L] [IsGalois K L]
+  [Algebra K L]
 
 -- Source. The count is specified by the Chebotarev roadmap:
 -- `TauCetiRoadmap/Chebotarev/README.md` §8.2, which displays the fibre size as
@@ -72,7 +72,8 @@ Frobenius elements at `τ • Q` are the conjugates `τ σ τ⁻¹`: an element 
 into the fiber exactly when conjugation by it fixes `σ`. Transitivity of the action on the primes
 above `𝔭` is what makes every member of the fiber such a translate. -/
 theorem frobenius_fiber_eq_orbit_centralizer (𝔭 : Ideal (𝓞 K)) {σ : L ≃ₐ[K] L}
-    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭] [Algebra.IsUnramifiedAt (𝓞 K) Q]
+    (Q : Ideal (𝓞 L)) [IsGalois K L] [Q.IsPrime] [Q.LiesOver 𝔭]
+    [Algebra.IsUnramifiedAt (𝓞 K) Q]
     (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     {P : Ideal (𝓞 L) | ∃ (_ : P.IsPrime) (_ : P.LiesOver 𝔭) (_ : P ≠ ⊥),
         IsArithFrobAt (𝓞 K) σ P}
@@ -102,7 +103,7 @@ stabilizer of `Q` in the centralizer is the decomposition group `⟨σ⟩`, of o
 Compare `Ideal.frobenius_fiber_card_eq_of_isConj`, which says fibers of conjugate elements have
 equal size without saying what that size is. -/
 theorem frobenius_fiber_card_mul_orderOf_eq_card_centralizer (𝔭 : Ideal (𝓞 K))
-    {σ : L ≃ₐ[K] L} (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭]
+    {σ : L ≃ₐ[K] L} (Q : Ideal (𝓞 L)) [IsGalois K L] [Q.IsPrime] [Q.LiesOver 𝔭]
     [Algebra.IsUnramifiedAt (𝓞 K) Q] (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     Nat.card {P : Ideal (𝓞 L) // ∃ (_ : P.IsPrime) (_ : P.LiesOver 𝔭) (_ : P ≠ ⊥),
         IsArithFrobAt (𝓞 K) σ P} * orderOf σ
@@ -132,19 +133,67 @@ noncomputable def heightOneFrobeniusFiberEquiv
     {Q : HeightOneSpectrum (𝓞 L) //
         Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal} ≃
       {Q : Ideal (𝓞 L) // ∃ (_ : Q.IsPrime) (_ : Q.LiesOver p.asIdeal) (_ : Q ≠ ⊥),
-        IsArithFrobAt (𝓞 K) sigma Q} :=
-  Set.BijOn.equiv HeightOneSpectrum.asIdeal ⟨
-    fun Q hQ ↦ ⟨Q.isPrime, ⟨(congrArg HeightOneSpectrum.asIdeal hQ.1).symm⟩,
-      Q.ne_bot, hQ.2⟩,
-    HeightOneSpectrum.asIdeal_injective.injOn,
-    fun Q hQ ↦ by
-      let hprime : Q.IsPrime := hQ.choose
-      let hover : Q.LiesOver p.asIdeal := hQ.choose_spec.choose
-      let hne : Q ≠ ⊥ := hQ.choose_spec.choose_spec.choose
-      let hfrob : IsArithFrobAt (𝓞 K) sigma Q := hQ.choose_spec.choose_spec.choose_spec
-      let P : HeightOneSpectrum (𝓞 L) := HeightOneSpectrum.ofPrime
-        (Ideal.prime_of_isPrime hne hprime)
-      exact ⟨P, ⟨HeightOneSpectrum.ext
-        ((HeightOneSpectrum.under_asIdeal _ P).trans hover.over.symm), hfrob⟩, rfl⟩⟩
+        IsArithFrobAt (𝓞 K) sigma Q} := by
+  let hdiv : ∀ Q : HeightOneSpectrum (𝓞 L),
+      Q.under (𝓞 K) = p ↔
+        Q.asIdeal ∣ Ideal.map (algebraMap (𝓞 K) (𝓞 L)) p.asIdeal := fun Q ↦ by
+    rw [← Ideal.liesOver_iff_dvd_map Q.isPrime.ne_top]
+    exact ⟨fun h ↦ ⟨(congrArg HeightOneSpectrum.asIdeal h).symm⟩,
+      fun h ↦ HeightOneSpectrum.ext h.over.symm⟩
+  let domainEquiv :
+      {Q : HeightOneSpectrum (𝓞 L) //
+          Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal} ≃
+        {Q : {Q : HeightOneSpectrum (𝓞 L) //
+            Q.asIdeal ∣ Ideal.map (algebraMap (𝓞 K) (𝓞 L)) p.asIdeal} //
+          IsArithFrobAt (𝓞 K) sigma Q.1.asIdeal} :=
+    { toFun Q := ⟨⟨Q.1, (hdiv Q).mp Q.2.1⟩, Q.2.2⟩
+      invFun Q := ⟨Q.1.1, ⟨(hdiv Q.1.1).mpr Q.1.2, Q.2⟩⟩
+      left_inv Q := Subtype.ext rfl
+      right_inv Q := Subtype.ext (Subtype.ext rfl) }
+  let coreEquiv :
+      {Q : {Q : HeightOneSpectrum (𝓞 L) //
+          Q.asIdeal ∣ Ideal.map (algebraMap (𝓞 K) (𝓞 L)) p.asIdeal} //
+        IsArithFrobAt (𝓞 K) sigma Q.1.asIdeal} ≃
+        {Q : p.asIdeal.primesOver (𝓞 L) // IsArithFrobAt (𝓞 K) sigma Q.1} :=
+    (HeightOneSpectrum.equivPrimesOver (𝓞 L) p.ne_bot).subtypeEquiv fun _ ↦ Iff.rfl
+  let codomainEquiv :
+      {Q : p.asIdeal.primesOver (𝓞 L) // IsArithFrobAt (𝓞 K) sigma Q.1} ≃
+        {Q : Ideal (𝓞 L) // ∃ (_ : Q.IsPrime) (_ : Q.LiesOver p.asIdeal) (_ : Q ≠ ⊥),
+          IsArithFrobAt (𝓞 K) sigma Q} :=
+    (Equiv.subtypeSubtypeEquivSubtypeInter
+      (fun Q : Ideal (𝓞 L) ↦ Q ∈ p.asIdeal.primesOver (𝓞 L))
+      (fun Q ↦ IsArithFrobAt (𝓞 K) sigma Q)).trans
+      (Equiv.subtypeEquivRight fun Q ↦ by
+        constructor
+        · rintro ⟨hQ, hfrob⟩
+          exact ⟨hQ.1, hQ.2, Ideal.ne_bot_of_mem_primesOver p.ne_bot hQ, hfrob⟩
+        · rintro ⟨hprime, hover, -, hfrob⟩
+          exact ⟨⟨hprime, hover⟩, hfrob⟩)
+  exact domainEquiv.trans (coreEquiv.trans codomainEquiv)
+
+@[simp]
+theorem heightOneFrobeniusFiberEquiv_apply
+    (sigma : L ≃ₐ[K] L) (p : HeightOneSpectrum (𝓞 K))
+    (Q : {Q : HeightOneSpectrum (𝓞 L) //
+      Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal}) :
+    (heightOneFrobeniusFiberEquiv sigma p Q : Ideal (𝓞 L)) = Q.1.asIdeal := by
+  change ((HeightOneSpectrum.equivPrimesOver (𝓞 L) p.ne_bot) _ : Ideal (𝓞 L)) =
+    Q.1.asIdeal
+  rw [HeightOneSpectrum.equivPrimesOver_apply]
+  rfl
+
+@[simp]
+theorem heightOneFrobeniusFiberEquiv_symm_apply_asIdeal
+    (sigma : L ≃ₐ[K] L) (p : HeightOneSpectrum (𝓞 K))
+    (Q : {Q : Ideal (𝓞 L) // ∃ (_ : Q.IsPrime) (_ : Q.LiesOver p.asIdeal) (_ : Q ≠ ⊥),
+      IsArithFrobAt (𝓞 K) sigma Q}) :
+    ((heightOneFrobeniusFiberEquiv sigma p).symm Q).1.asIdeal = Q.1 := by
+  calc
+    ((heightOneFrobeniusFiberEquiv sigma p).symm Q).1.asIdeal =
+        (heightOneFrobeniusFiberEquiv sigma p
+          ((heightOneFrobeniusFiberEquiv sigma p).symm Q) : Ideal (𝓞 L)) :=
+      (heightOneFrobeniusFiberEquiv_apply sigma p _).symm
+    _ = Q.1 := congrArg Subtype.val
+      ((heightOneFrobeniusFiberEquiv sigma p).apply_symm_apply Q)
 
 end Ideal
