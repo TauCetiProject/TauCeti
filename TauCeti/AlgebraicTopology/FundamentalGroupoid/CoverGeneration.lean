@@ -56,18 +56,18 @@ functor of `U i`. -/
 private theorem mk_mem_iSup_im {x y : X} (γ : Path x y) {i : ι} (hγ : range γ ⊆ U i) :
     (Path.Homotopic.Quotient.mk γ : mk x ⟶ mk y) ∈
       (⨆ j, Subgroupoid.im (map (ContinuousMap.subtypeVal (U j)))
-        (fundamentalGroupoid_map_obj_injective (ContinuousMap.subtypeVal (U j))
-          Subtype.val_injective)).arrows (mk x) (mk y) := by
+        (ContinuousMap.fundamentalGroupoid_map_obj_injective
+          (ContinuousMap.subtypeVal (U j)) Subtype.val_injective)).arrows (mk x) (mk y) := by
   refine (Subgroupoid.le_iff _ _).1 (le_iSup (fun j ↦ Subgroupoid.im
     (map (ContinuousMap.subtypeVal (U j)))
-      (fundamentalGroupoid_map_obj_injective (ContinuousMap.subtypeVal (U j))
-        Subtype.val_injective)) i) ?_
+      (ContinuousMap.fundamentalGroupoid_map_obj_injective
+        (ContinuousMap.subtypeVal (U j)) Subtype.val_injective)) i) ?_
   have hmem : ∀ t, γ t ∈ U i := fun t ↦ hγ ⟨t, rfl⟩
   have hx : x ∈ U i := γ.source ▸ hmem 0
   have hy : y ∈ U i := γ.target ▸ hmem 1
   have h := Subgroupoid.Map.Arrows.im (φ := map (ContinuousMap.subtypeVal (U i)))
-    (hφ := fundamentalGroupoid_map_obj_injective (ContinuousMap.subtypeVal (U i))
-      Subtype.val_injective) (S := ⊤)
+    (hφ := ContinuousMap.fundamentalGroupoid_map_obj_injective
+      (ContinuousMap.subtypeVal (U i)) Subtype.val_injective) (S := ⊤)
     (Path.Homotopic.Quotient.mk (γ.codRestrict (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) hmem)) trivial
   rw [map_map, ← Path.Homotopic.Quotient.mk_map] at h
   have hp : (γ.codRestrict (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) hmem).map
@@ -84,8 +84,9 @@ private theorem mk_concat_mem_iSup_im (hU : ∀ x, ∃ i, U i ∈ 𝓝 x) {n : �
     (F : (k : Fin n) → Path (p k.castSucc) (p k.succ)) (hF : ∀ k, ∃ i, range (F k) ⊆ U i) :
     (Path.Homotopic.Quotient.mk (Path.concat p F) : mk (p 0) ⟶ mk (p (Fin.last n))) ∈
       (⨆ j, Subgroupoid.im (map (ContinuousMap.subtypeVal (U j)))
-        (fundamentalGroupoid_map_obj_injective (ContinuousMap.subtypeVal (U j))
-          Subtype.val_injective)).arrows (mk (p 0)) (mk (p (Fin.last n))) := by
+        (ContinuousMap.fundamentalGroupoid_map_obj_injective
+          (ContinuousMap.subtypeVal (U j)) Subtype.val_injective)).arrows
+        (mk (p 0)) (mk (p (Fin.last n))) := by
   induction n with
   | zero =>
     obtain ⟨i, hi⟩ := hU (p 0)
@@ -103,8 +104,8 @@ as a neighbourhood, then the images of the inclusion functors
 every morphism is a composite of morphisms coming from the sets `U i`. -/
 theorem iSup_im_map_subtypeVal_eq_top (hU : ∀ x, ∃ i, U i ∈ 𝓝 x) :
     ⨆ i, Subgroupoid.im (map (ContinuousMap.subtypeVal (U i)))
-      (fundamentalGroupoid_map_obj_injective (ContinuousMap.subtypeVal (U i))
-        Subtype.val_injective) = ⊤ := by
+      (ContinuousMap.fundamentalGroupoid_map_obj_injective
+        (ContinuousMap.subtypeVal (U i)) Subtype.val_injective) = ⊤ := by
   rw [eq_top_iff]
   rintro ⟨⟨x⟩, ⟨y⟩, f⟩ -
   induction f using Path.Homotopic.Quotient.ind with | mk γ =>
