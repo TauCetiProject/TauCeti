@@ -294,8 +294,7 @@ theorem explicitCor1Le_mk [(V.subgroupOf U).FiniteIndex]
         (cocyclesMap1 V M (V.subgroupOf U) M
           (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
           (AddMonoidHom.id M) continuous_id
-          (fun x m => by
-            exact id_subgroupOfContinuousMulEquivOfLe_smul G M U V hVU x m) f) : H1 U M) := by
+          (by exact id_subgroupOfContinuousMulEquivOfLe_smul G M U V hVU) f) : H1 U M) := by
   rw [explicitCor1Le, AddMonoidHom.comp_apply, explicitMap1_mk, explicitCor1_mk]
 
 /-- **Relative degree-two corestriction** for an inclusion `V ≤ U` with `V` open *in `U`*; the
@@ -319,8 +318,7 @@ theorem explicitCor2Le_mk [(V.subgroupOf U).FiniteIndex]
         (cocyclesMap2 V M (V.subgroupOf U) M
           (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
           (AddMonoidHom.id M) continuous_id
-          (fun x m => by
-            exact id_subgroupOfContinuousMulEquivOfLe_smul G M U V hVU x m) f) : H2 U M) := by
+          (by exact id_subgroupOfContinuousMulEquivOfLe_smul G M U V hVU) f) : H2 U M) := by
   rw [explicitCor2Le, AddMonoidHom.comp_apply, explicitMap2_mk, explicitCor2_mk]
 
 end Topological
