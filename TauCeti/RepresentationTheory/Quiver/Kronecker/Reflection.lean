@@ -8,7 +8,6 @@ module
 public import TauCeti.RepresentationTheory.Quiver.Kronecker.EulerForm
 public import TauCeti.RepresentationTheory.Quiver.Kronecker.Indecomposable
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Acyclic
-public import TauCeti.RepresentationTheory.Quiver.Reflection.EulerForm
 public import TauCeti.RepresentationTheory.Quiver.Reflection.FullyFaithful
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Uniqueness
 public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Basic
@@ -35,8 +34,11 @@ On representations the reflection does three things:
 
 For the `A₂` quiver these are the three indecomposables `S_tgt`, `P_src`, `S_src`, of dimension
 vectors `(0,1)`, `(1,1)`, `(1,0)`, and the last statement sharpens to an isomorphism with the
-projective `P_tgt` of the reflected quiver: reflection kills one indecomposable and exchanges the
-other two, realizing the simple reflection at `tgt` on the three positive roots of `A₂`.
+projective `P_tgt` of the reflected quiver: reflection kills `S_tgt` and exchanges the other two.
+On those other two the dimension vector follows the simple reflection `s_tgt`, which swaps `(1,0)`
+and `(1,1)`. The sink simple is the exception and not merely a third case: `s_tgt` sends its
+dimension vector `(0,1)` to the negative root `(0,-1)`, which is the dimension vector of no
+representation, and reflection sends `S_tgt` to zero instead.
 
 ## Main results
 
@@ -216,15 +218,6 @@ theorem nonempty_iso_reflectRep_indecProjRep_src :
     | src => exact hsrc.trans hs1.symm
     | tgt => exact htgt.trans hs0.symm
 
-/-- With at most one arrow the reflected quiver has positive definite Tits form: reflecting
-changes the orientation of a quiver, not its underlying graph, and
-`TauCeti.Quiver.Kronecker.titsForm_posDef` covers the underlying graph. -/
-theorem titsForm_reflect_kronecker_posDef (h : Fintype.card A ≤ 1) :
-    (titsForm (Reflect (Kronecker A) tgt)).PosDef := by
-  intro d hd
-  exact lt_of_lt_of_eq (titsForm_posDef (A := A) h d hd)
-    (titsForm_reflect (V := Kronecker A) tgt d).symm
-
 /-! #### The `A₂` quiver -/
 
 section A2
@@ -238,7 +231,9 @@ with positive definite Tits form the dimension vector of an indecomposable deter
 Together with `TauCeti.isZero_reflectRep_simpleRep_tgt` and
 `TauCeti.nonempty_iso_reflectRep_indecProjRep_src` this is the whole action of the reflection at
 the sink on the three indecomposables of the `A₂` quiver: it annihilates `S_tgt` and exchanges
-`S_src` with `P_src`, realizing the simple reflection at `tgt` on the three positive roots. -/
+`S_src` with `P_src`. So it realizes the simple reflection at `tgt` on the dimension vectors
+`(1,0)` and `(1,1)` of the latter two only; on the sink simple the two disagree, reflection
+sending `S_tgt` to zero where `s_tgt` sends `(0,1)` to `(0,-1)`. -/
 theorem nonempty_iso_reflectRep_simpleRep_src_indecProjRep :
     Nonempty (reflectRep (simpleRep k (Kronecker A) src) isSink_tgt
       ≅ indecProjRep k (Reflect (Kronecker A) tgt) tgt) := by
@@ -256,7 +251,7 @@ theorem nonempty_iso_reflectRep_simpleRep_src_indecProjRep :
         exact finiteDimensional_indecProjRep_obj (k := k) (Q := Reflect (Kronecker A) tgt) tgt tgt
   refine nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic
     (IsAcyclic.reflect_of_isSink isAcyclic isSink_tgt)
-    (titsForm_reflect_kronecker_posDef (le_of_eq Fintype.card_unique)) _ _
+    (titsForm_reflect_posDef (le_of_eq Fintype.card_unique)) _ _
     indecomposable_reflectRep_simpleRep_src
     (indecomposable_indecProjRep_of_isAcyclic (IsAcyclic.reflect_of_isSink isAcyclic isSink_tgt)
       tgt)
