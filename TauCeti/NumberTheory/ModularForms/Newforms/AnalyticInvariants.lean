@@ -154,7 +154,6 @@ theorem analyticConductor_eq (f : Newform N k) :
   rw [analyticConductor_def, analyticConductorAt_eq]
 
 /-- The analytic conductor at every parameter is strictly positive. -/
-@[simp]
 theorem analyticConductorAt_pos (f : Newform N k) (s : ℂ) :
     0 < f.analyticConductorAt s := by
   rw [f.analyticConductorAt_eq s]
@@ -162,7 +161,6 @@ theorem analyticConductorAt_pos (f : Newform N k) (s : ℂ) :
   positivity
 
 /-- The central analytic conductor is strictly positive. -/
-@[simp]
 theorem analyticConductor_pos (f : Newform N k) : 0 < f.analyticConductor := by
   rw [analyticConductor_def]
   exact f.analyticConductorAt_pos _
