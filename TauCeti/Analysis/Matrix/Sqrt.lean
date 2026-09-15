@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.Order
-public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.ConjSqrt
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.ConjSqrt
 public import Mathlib.LinearAlgebra.Matrix.SchurComplement
 public import TauCeti.Analysis.Matrix.EuclideanLin
 
@@ -27,9 +27,10 @@ in the original parameters.
 
 When `S` is positive definite the same pencil has a scale form: `S⁻¹ - c • Θ` is the congruence
 of `1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)` by `(CFC.sqrt S)⁻¹`, so the two are positive definite
-together, and `det S * det (S⁻¹ - c • Θ) = det (1 - c • (Θ * S))`. The scale form is the one that
-appears in an exponential weight `exp (-trace ((S⁻¹ - c • Θ) * A) / 2)`, where `S` is a scale
-matrix and `c • Θ` the tilt of a trace statistic.
+together. Its determinant needs no positivity at all: over any commutative ring,
+`det S * det (S⁻¹ - c • Θ) = det (1 - c • (Θ * S))` as soon as `S` is invertible. The scale form is
+the one that appears in an exponential weight `exp (-trace ((S⁻¹ - c • Θ) * A) / 2)`, where `S` is
+a scale matrix and `c • Θ` the tilt of a trace statistic.
 
 ## Main results
 
@@ -44,9 +45,10 @@ matrix and `c • Θ` the tilt of a trace statistic.
 * `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt` and
   `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self` — for positive-semidefinite `S`, the traces
   of the sandwich and of its square are those of `Θ * S` and `Θ * S * Θ * S`;
-* `Matrix.PosDef.inv_sub_smul_eq_conjugate`, `Matrix.PosDef.posDef_inv_sub_smul_iff` and
-  `Matrix.PosDef.det_mul_det_inv_sub_smul` — the scale form `S⁻¹ - c • Θ` of the pencil, its
-  positive-definiteness and its determinant.
+* `Matrix.PosDef.inv_sub_smul_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_smul_iff` — the
+  scale form `S⁻¹ - c • Θ` of the pencil and its positive-definiteness;
+* `Matrix.det_mul_det_inv_sub_smul` and `Matrix.det_nonsing_inv_inv_sub_smul` — the determinants
+  of the scale pencil and of its inverse.
 -/
 
 public section
@@ -133,7 +135,7 @@ theorem PosDef.inv_sub_smul_eq_conjugate (hS : S.PosDef) (Θ : Matrix ι ι 𝕜
       (CFC.sqrt S)⁻¹ * (1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)) * (CFC.sqrt S)⁻¹ := by
   have hsp : IsStrictlyPositive S := hS.isStrictlyPositive
   have hroot : (CFC.sqrt S)⁻¹ = CFC.sqrt (Ring.inverse S) := by
-    rw [Matrix.nonsing_inv_eq_ringInverse, CFC.sqrt_ringInverse]
+    rw [hS.posSemidef.inv_sqrt, Matrix.nonsing_inv_eq_ringInverse]
   have hone : (CFC.sqrt S)⁻¹ * 1 * (CFC.sqrt S)⁻¹ = S⁻¹ := by
     rw [hroot, ← CFC.conjSqrt_apply, CFC.conjSqrt_one _ hsp.ringInverse.nonneg,
       Matrix.nonsing_inv_eq_ringInverse]
@@ -143,35 +145,42 @@ theorem PosDef.inv_sub_smul_eq_conjugate (hS : S.PosDef) (Θ : Matrix ι ι 𝕜
   rw [Matrix.mul_sub, Matrix.sub_mul, hone, Matrix.mul_smul, Matrix.smul_mul, hundo]
 
 /-- The scale pencil `S⁻¹ - c • Θ` is positive definite exactly when the sandwich pencil
-`1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)` is. Neither `Θ` nor `c` needs a hypothesis: conjugation
-by the square root of the invertible matrix `S⁻¹` transports strict positivity in both
+`1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)` is. Neither `Θ` nor `c` needs a hypothesis: congruence by
+the invertible Hermitian matrix `(CFC.sqrt S)⁻¹` transports positive definiteness in both
 directions. -/
 theorem PosDef.posDef_inv_sub_smul_iff (hS : S.PosDef) (Θ : Matrix ι ι 𝕜) (c : 𝕜) :
     (S⁻¹ - c • Θ).PosDef ↔ (1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)).PosDef := by
-  have hsp : IsStrictlyPositive S := hS.isStrictlyPositive
-  have hroot : (CFC.sqrt S)⁻¹ = CFC.sqrt (Ring.inverse S) := by
-    rw [Matrix.nonsing_inv_eq_ringInverse, CFC.sqrt_ringInverse]
-  rw [← Matrix.isStrictlyPositive_iff_posDef, ← Matrix.isStrictlyPositive_iff_posDef,
-    hS.inv_sub_smul_eq_conjugate Θ c, hroot, ← CFC.conjSqrt_apply,
-    CFC.isStrictlyPositive_conjSqrt_iff _ _ hsp.ringInverse]
+  have hunit : IsUnit ((CFC.sqrt S)⁻¹ : Matrix ι ι 𝕜) :=
+    Matrix.isUnit_nonsing_inv_iff.2 (hS.isStrictlyPositive.isUnit_cfcSqrt S)
+  have hstar : star ((CFC.sqrt S)⁻¹ : Matrix ι ι 𝕜) = (CFC.sqrt S)⁻¹ := by
+    rw [Matrix.star_eq_conjTranspose, Matrix.conjTranspose_nonsing_inv,
+      ← Matrix.star_eq_conjTranspose, (CFC.sqrt_nonneg S).star_eq]
+  rw [hS.inv_sub_smul_eq_conjugate Θ c]
+  nth_rewrite 1 [← hstar]
+  exact Matrix.IsUnit.posDef_star_left_conjugate_iff hunit
 
-/-- The determinant of the scale pencil, in the parameters `S` and `Θ` themselves. -/
-theorem PosDef.det_mul_det_inv_sub_smul (hS : S.PosDef) (Θ : Matrix ι ι 𝕜) (c : 𝕜) :
+end PosDef
+
+section Det
+
+/-- The determinant of the scale pencil `S⁻¹ - c • Θ`, in the parameters `S` and `Θ` themselves.
+Only the invertibility of `S` is used. -/
+theorem det_mul_det_inv_sub_smul [DecidableEq ι] {R : Type*} [CommRing R] {S : Matrix ι ι R}
+    (hS : IsUnit S.det) (Θ : Matrix ι ι R) (c : R) :
     S.det * (S⁻¹ - c • Θ).det = (1 - c • (Θ * S)).det := by
-  have hunit : IsUnit S.det := (Matrix.isUnit_iff_isUnit_det _).1 hS.isUnit
-  rw [← Matrix.det_mul, Matrix.mul_sub, Matrix.mul_nonsing_inv _ hunit, Matrix.mul_smul,
+  rw [← Matrix.det_mul, Matrix.mul_sub, Matrix.mul_nonsing_inv _ hS, Matrix.mul_smul,
     ← Matrix.smul_mul, Matrix.det_one_sub_mul_comm, Matrix.mul_smul]
 
 /-- The determinant of the inverse scale pencil. This is the determinant of the scale matrix
 carried by an exponential weight `exp (-trace ((S⁻¹ - c • Θ) * A) / 2)`. -/
-theorem PosDef.det_nonsing_inv_inv_sub_smul (hS : S.PosDef) {Θ : Matrix ι ι 𝕜} {c : 𝕜}
-    (hc : IsUnit (S⁻¹ - c • Θ).det) :
+theorem det_nonsing_inv_inv_sub_smul [DecidableEq ι] {K : Type*} [Field K] {S : Matrix ι ι K}
+    (hS : IsUnit S.det) {Θ : Matrix ι ι K} {c : K} (hc : IsUnit (S⁻¹ - c • Θ).det) :
     ((S⁻¹ - c • Θ)⁻¹).det = S.det / (1 - c • (Θ * S)).det := by
-  have hS0 : S.det ≠ 0 := isUnit_iff_ne_zero.1 ((Matrix.isUnit_iff_isUnit_det _).1 hS.isUnit)
+  have hS0 : S.det ≠ 0 := isUnit_iff_ne_zero.1 hS
   have hc0 : (S⁻¹ - c • Θ).det ≠ 0 := isUnit_iff_ne_zero.1 hc
-  rw [Matrix.det_nonsing_inv, Ring.inverse_eq_inv', ← hS.det_mul_det_inv_sub_smul Θ c]
+  rw [Matrix.det_nonsing_inv, Ring.inverse_eq_inv', ← det_mul_det_inv_sub_smul hS Θ c]
   field_simp
 
-end PosDef
+end Det
 
 end Matrix
