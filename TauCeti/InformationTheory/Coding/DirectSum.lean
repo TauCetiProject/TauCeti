@@ -87,12 +87,11 @@ theorem directSumEquivProd_symm_apply_inr (C : Submodule R (ι → R))
 /-- Direct sum is monotone in both constituent codes. -/
 @[gcongr]
 theorem directSum_mono {C C' : Submodule R (ι → R)} {D D' : Submodule R (κ → R)}
-    (hC : C ≤ C') (hD : D ≤ D') : directSum C D ≤ directSum C' D' := by
-  intro x hx
-  rw [mem_directSum_iff] at hx ⊢
-  exact ⟨hC hx.1, hD hx.2⟩
+    (hC : C ≤ C') (hD : D ≤ D') : directSum C D ≤ directSum C' D' :=
+  map_mono (prod_mono hC hD)
 
 /-- Reindexing a direct sum by swapping the coordinate summands swaps the two codes. -/
+@[simp]
 theorem map_directSum_sumComm (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
     (directSum C D).map
         (LinearEquiv.funCongrLeft R R (Equiv.sumComm κ ι)).toLinearMap =
@@ -103,6 +102,7 @@ theorem map_directSum_sumComm (C : Submodule R (ι → R)) (D : Submodule R (κ 
 
 /-- Reindexing an iterated direct sum by associating its coordinate summands associates the
 three codes in the same way. -/
+@[simp]
 theorem map_directSum_sumAssoc (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
     (E : Submodule R (ν → R)) :
     (directSum (directSum C D) E).map
@@ -114,9 +114,9 @@ theorem map_directSum_sumAssoc (C : Submodule R (ι → R)) (D : Submodule R (κ
 
 end Semiring
 
-section Ring
+section Finrank
 
-variable [Ring R] [StrongRankCondition R]
+variable [Semiring R] [StrongRankCondition R]
 
 /-- The dimension of a direct sum is the sum of the dimensions of its constituent codes. -/
 @[simp]
@@ -125,7 +125,7 @@ theorem finrank_directSum (C : Submodule R (ι → R)) (D : Submodule R (κ → 
     Module.finrank R (directSum C D) = Module.finrank R C + Module.finrank R D := by
   rw [(directSumEquivProd C D).finrank_eq, Module.finrank_prod]
 
-end Ring
+end Finrank
 
 section Cardinality
 
