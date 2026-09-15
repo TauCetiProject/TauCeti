@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Injective
 
+import Mathlib.Data.Fin.Tuple.Sort
+
 /-!
 # The realization homeomorphism for barycentric subdivision
 
@@ -19,11 +21,11 @@ Each original simplex is covered by the finitely many closed chambers obtained b
 barycentric coordinates. On one chamber the inverse has a fixed affine formula: cardinality-scaled
 consecutive coordinate differences are the coefficients of the nested initial faces in that order.
 These formulas are continuous and agree on chamber intersections because the forward map is
-injective.
+injective. Sorting the coordinates only establishes that the chambers cover the simplex; the
+chosen order need not vary continuously with the point.
 
-This completes the subdivision part of the geometric-realization milestone in Layer 11 of the
-GeometricTopology roadmap. The construction follows Rourke--Sanderson, *Introduction to
-Piecewise-Linear Topology*, Chapter 2, "Derived Subdivisions".
+The construction follows Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2,
+"Derived Subdivisions".
 
 ## Main definition
 
@@ -68,36 +70,17 @@ private theorem isClosed_orderChamber {K : AbstractSimplicialComplex ι} (σ : F
     ((continuous_apply (e j).1).comp continuous_induced_dom)
     ((continuous_apply (e i).1).comp continuous_induced_dom)
 
-@[instance_reducible]
-private noncomputable def vertexLinearOrder {K : AbstractSimplicialComplex ι} (σ : Face K)
-    (x : StandardSimplex σ.1) : LinearOrder {v // v ∈ σ.1} :=
-  LinearOrder.lift'
-    (fun v => toLex (OrderDual.toDual (x.1 v.1), Fintype.equivFin _ v))
-    (fun _ _ h => (Fintype.equivFin _).injective
-      (congrArg (fun z => (ofLex z).2) h))
-
 /-- Order the vertices of a simplex by decreasing coordinate, breaking ties arbitrarily. -/
 private noncomputable def decreasingVertexOrder {K : AbstractSimplicialComplex ι} (σ : Face K)
     (x : StandardSimplex σ.1) : VertexOrder σ :=
-  let _ := vertexLinearOrder σ x
-  (Fintype.orderIsoFinOfCardEq _ (by simp)).toEquiv
+  let e : VertexOrder σ := (Fintype.equivFinOfCardEq (by simp)).symm
+  (Tuple.sort (fun i => OrderDual.toDual (x.1 (e i).1))).trans e
 
 private theorem mem_orderChamber_decreasingVertexOrder {K : AbstractSimplicialComplex ι}
     (σ : Face K) (x : StandardSimplex σ.1) :
     x ∈ orderChamber σ (decreasingVertexOrder σ x) := by
-  let _ := vertexLinearOrder σ x
-  intro i j hij
-  have h := (Fintype.orderIsoFinOfCardEq
-    {v // v ∈ σ.1} (by simp)).monotone hij
-  -- Expose the lexicographic order installed by `vertexLinearOrder` to read its first coordinate.
-  change toLex (OrderDual.toDual (x.1 (decreasingVertexOrder σ x i).1),
-      Fintype.equivFin {v // v ∈ σ.1} (decreasingVertexOrder σ x i)) ≤
-    toLex (OrderDual.toDual (x.1 (decreasingVertexOrder σ x j).1),
-      Fintype.equivFin {v // v ∈ σ.1} (decreasingVertexOrder σ x j)) at h
-  rw [Prod.Lex.le_iff] at h
-  rcases h with h | h
-  · exact h.le
-  · exact h.1.le
+  let e : VertexOrder σ := (Fintype.equivFinOfCardEq (by simp)).symm
+  exact Tuple.monotone_sort (fun i => OrderDual.toDual (x.1 (e i).1))
 
 private theorem iUnion_orderChamber {K : AbstractSimplicialComplex ι} (σ : Face K) :
     ⋃ e : VertexOrder σ, orderChamber σ e = Set.univ := by
