@@ -26,9 +26,9 @@ Lane F0 of the analytic Heegaard Floer roadmap.
 
 ## Main declarations
 
-* `TauCeti.ContinuousLinearMap.index_comp`: the index of a composite is the sum of the indices.
+* `ContinuousLinearMap.index_comp`: the index of a composite is the sum of the indices.
 * `ContinuousLinearMap.IsFredholm.pow`: every power of a Fredholm endomorphism is Fredholm.
-* `TauCeti.ContinuousLinearMap.index_pow`: the index of the `n`th power is `n` times the index.
+* `ContinuousLinearMap.index_pow`: the index of the `n`th power is `n` times the index.
 
 The conventions and the composition theorem follow McDuff--Salamon,
 *J-holomorphic Curves and Symplectic Topology*, Appendix A.1.
@@ -46,22 +46,21 @@ variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 variable [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 variable [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
-namespace ContinuousLinearMap
 
 omit [CompleteSpace 𝕜] in
 /-- The Fredholm index is additive under composition. -/
 @[simp]
-theorem index_comp (S : F →L[𝕜] G) (T : E →L[𝕜] F)
+theorem _root_.ContinuousLinearMap.index_comp (S : F →L[𝕜] G) (T : E →L[𝕜] F)
     (hS : ContinuousLinearMap.IsFredholm S) (hT : ContinuousLinearMap.IsFredholm T) :
-    index (S.comp T) = index S + index T := by
+    ContinuousLinearMap.index (S.comp T) = ContinuousLinearMap.index S + ContinuousLinearMap.index T
+      := by
   let := hT.finite_ker
   let := hT.finite_coker
   let := hS.finite_ker
   let := hS.finite_coker
-  simpa only [index_def, ContinuousLinearMap.toLinearMap_comp] using
+  simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
     (LinearMap.index_comp (f := (T : E →ₗ[𝕜] F)) (S : F →ₗ[𝕜] G))
 
-end ContinuousLinearMap
 
 section Pow
 
@@ -79,22 +78,22 @@ theorem _root_.ContinuousLinearMap.IsFredholm.pow (hA : ContinuousLinearMap.IsFr
       rw [pow_succ, ContinuousLinearMap.mul_def]
       exact (hA.pow n).comp hA
 
-namespace ContinuousLinearMap
 
 /-- The index of the `n`th power of a Fredholm endomorphism is `n` times its index. -/
 @[simp]
-theorem index_pow (A : X →L[𝕜] X) (hA : ContinuousLinearMap.IsFredholm A) (n : ℕ) :
-    index (A ^ n) = (n : ℤ) * index A := by
+theorem _root_.ContinuousLinearMap.index_pow (A : X →L[𝕜] X) (hA : ContinuousLinearMap.IsFredholm A)
+    (n : ℕ) :
+    ContinuousLinearMap.index (A ^ n) = (n : ℤ) * ContinuousLinearMap.index A := by
   induction n with
   | zero =>
-      simp only [pow_zero, ContinuousLinearMap.one_def, index_id, Nat.cast_zero, zero_mul]
+      simp only [pow_zero, ContinuousLinearMap.one_def, ContinuousLinearMap.index_id, Nat.cast_zero,
+        zero_mul]
   | succ n ih =>
       rw [pow_succ, ContinuousLinearMap.mul_def,
-        index_comp (A ^ n) A (hA.pow n) hA, ih]
+        ContinuousLinearMap.index_comp (A ^ n) A (hA.pow n) hA, ih]
       push_cast
       ring
 
-end ContinuousLinearMap
 
 end Pow
 

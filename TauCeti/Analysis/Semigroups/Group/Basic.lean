@@ -356,7 +356,7 @@ theorem tendsto_apply {ι : Type*} {l : Filter ι} (U : StronglyContinuousGroup 
   -- The time moves: this is continuity of the orbit of the fixed vector `z`.
   have h2 : Tendsto (fun i => U (f i) z) l (𝓝 (U r z)) :=
     ((U.continuous_orbit z).tendsto r).comp hf
-  exact TauCeti.ContinuousLinearMap.tendsto_apply_of_eventually_norm_le hbound h2 hg
+  exact ContinuousLinearMap.tendsto_apply_of_eventually_norm_le hbound h2 hg
 
 end StronglyContinuousGroup
 

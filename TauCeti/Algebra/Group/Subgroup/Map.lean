@@ -17,7 +17,8 @@ Mathlib records that this map is surjective when `f` is
 (`MonoidHom.subgroupComap_surjective_of_surjective`); this file records the companion fact for
 injectivity. It also records how surjective homomorphisms act on centres and on derived subgroups.
 
-An isomorphism carrying a subgroup `A` onto a subgroup `B` restricts to an isomorphism `↥A ≃* ↥B`.
+An isomorphism carrying a subgroup `A` onto a subgroup `B` restricts to an isomorphism `↥A ≃* ↥B`,
+and carries the coset space `G ⧸ A` bijectively onto `H ⧸ B`.
 That restriction is `TauCeti.Subgroup.congrOfMapEq`, and every subgroup a construction transports
 along an isomorphism — here the derived subgroup, elsewhere the fixed subgroup of an endomorphism —
 uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
@@ -28,6 +29,12 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `TauCeti.Subgroup.congrOfMapEq`: the isomorphism of subgroups restricted from an isomorphism of
   groups carrying the one onto the other.
 * `TauCeti.commutatorCongr`: its instance for the derived subgroup.
+* `MonoidHom.subgroupCongr`: a homomorphism of subgroups transported along equalities of its
+  domain and codomain, for reading a construction through two presentations of the subgroups it
+  connects.
+* `TauCeti.QuotientGroup.congrOfMapEq`: its coset-space companion — an isomorphism carrying `A`
+  onto `B` gives a bijection `G ⧸ A ≃ H ⧸ B`. Neither subgroup need be normal, which is what
+  distinguishes it from Mathlib's `QuotientGroup.congr`.
 
 ## Main results
 
@@ -39,6 +46,11 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   centreless group.
 * `TauCeti.Subgroup.map_commutator_eq_commutator`: a surjective homomorphism carries the derived
   subgroup onto the derived subgroup.
+* `Subgroup.map_conj_map`: the image of a conjugate subgroup is the conjugate of the image.
+* `Subgroup.map_mk'_map_quotientGroupMap`: taking images in quotients commutes with the maps
+  induced on quotients.
+* `MonoidHom.subgroupCongr_injective`, `MonoidHom.subgroupCongr_surjective`: transport along
+  equalities of the domain and codomain preserves injectivity and surjectivity.
 -/
 
 public section
@@ -125,6 +137,57 @@ theorem Subgroup.congrOfMapEq_symm (e : G ≃* H) {A : Subgroup G} {B : Subgroup
       Subgroup.congrOfMapEq e.symm ((_root_.Subgroup.map_symm_eq_iff_map_eq A).mpr h) :=
   MulEquiv.ext fun _ => Subtype.ext (by simp)
 
+/-- The homomorphism of subgroups obtained from a homomorphism between two other subgroups by
+transporting along equalities of the domain and of the codomain. -/
+def _root_.MonoidHom.subgroupCongr {A A' : Subgroup G} {B B' : Subgroup H}
+    (hA : A' = A) (hB : B' = B) (f : A →* B) : A' →* B' :=
+  ((MulEquiv.subgroupCongr hB).symm.toMonoidHom).comp
+    (f.comp (MulEquiv.subgroupCongr hA).toMonoidHom)
+
+/-- The transported homomorphism takes the same value in the ambient group as the original does
+at the corresponding element. -/
+@[simp]
+theorem _root_.MonoidHom.coe_subgroupCongr_apply {A A' : Subgroup G} {B B' : Subgroup H}
+    (hA : A' = A) (hB : B' = B) (f : A →* B) (x : A') :
+    (f.subgroupCongr hA hB x : H) = f ⟨x, hA ▸ x.2⟩ := by
+  simp only [MonoidHom.subgroupCongr, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    MulEquiv.subgroupCongr_symm_apply]
+  exact congrArg (fun y => (f y : H)) (Subtype.ext (MulEquiv.subgroupCongr_apply hA x))
+
+/-- Transporting the identity homomorphism along one equality of subgroups, on both sides, gives
+the identity. -/
+@[simp]
+theorem _root_.MonoidHom.subgroupCongr_id {A A' : Subgroup G} (hA : A' = A) :
+    (MonoidHom.id A).subgroupCongr hA hA = MonoidHom.id A' :=
+  MonoidHom.ext fun x => (MulEquiv.subgroupCongr hA).symm_apply_apply x
+
+/-- Transport commutes with composition: transporting `g.comp f` along the outer two equalities
+agrees with transporting `f` and `g` separately through a common middle subgroup.
+
+Not a `simp` lemma: the middle subgroup `B'` and its presentation `hB` occur only on the
+right-hand side, so `simp` would have to invent them and would rewrite into an unrelated
+instantiation. -/
+theorem _root_.MonoidHom.subgroupCongr_comp {A A' : Subgroup G} {B B' : Subgroup H}
+    {C C' : Subgroup K} (hA : A' = A) (hB : B' = B) (hC : C' = C) (f : A →* B) (g : B →* C) :
+    (g.comp f).subgroupCongr hA hC = (g.subgroupCongr hB hC).comp (f.subgroupCongr hA hB) :=
+  MonoidHom.ext fun x => by
+    simp only [MonoidHom.subgroupCongr, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+      MulEquiv.apply_symm_apply]
+
+/-- Transport along equalities of the domain and codomain preserves injectivity. -/
+theorem _root_.MonoidHom.subgroupCongr_injective {A A' : Subgroup G} {B B' : Subgroup H}
+    (hA : A' = A) (hB : B' = B) {f : A →* B} (hf : Function.Injective f) :
+    Function.Injective (f.subgroupCongr hA hB) :=
+  (MulEquiv.subgroupCongr hB).symm.injective.comp
+    (hf.comp (MulEquiv.subgroupCongr hA).injective)
+
+/-- Transport along equalities of the domain and codomain preserves surjectivity. -/
+theorem _root_.MonoidHom.subgroupCongr_surjective {A A' : Subgroup G} {B B' : Subgroup H}
+    (hA : A' = A) (hB : B' = B) {f : A →* B} (hf : Function.Surjective f) :
+    Function.Surjective (f.subgroupCongr hA hB) :=
+  (MulEquiv.subgroupCongr hB).symm.surjective.comp
+    (hf.comp (MulEquiv.subgroupCongr hA).surjective)
+
 /-! ## Transporting the derived subgroup -/
 
 /-- A surjective homomorphism carries the derived subgroup onto the derived subgroup. -/
@@ -160,5 +223,48 @@ theorem commutatorCongr_trans (e : G ≃* H) (f : H ≃* K) :
 theorem commutatorCongr_symm (e : G ≃* H) :
     (commutatorCongr e).symm = commutatorCongr e.symm :=
   Subgroup.congrOfMapEq_symm e _
+
+/-- The image of a conjugate subgroup `gRg⁻¹` under a homomorphism `f` is the conjugate of `f(R)`
+by `f g`. -/
+theorem _root_.Subgroup.map_conj_map (R : Subgroup G) (f : G →* H) (g : G) :
+    (R.map (MulAut.conj g).toMonoidHom).map f = (R.map f).map (MulAut.conj (f g)).toMonoidHom := by
+  have hf : f.comp (MulAut.conj g).toMonoidHom = (MulAut.conj (f g)).toMonoidHom.comp f :=
+    MonoidHom.ext fun x ↦ by simp
+  rw [Subgroup.map_map, Subgroup.map_map, hf]
+
+/-- The image of a subgroup in `G ⧸ N`, pushed forward along the map `G ⧸ N →* H ⧸ M` induced by
+`f`, is the image in `H ⧸ M` of the image of the subgroup under `f`. -/
+@[simp]
+theorem _root_.Subgroup.map_mk'_map_quotientGroupMap (R : Subgroup G) {N : Subgroup G}
+    {M : Subgroup H} [N.Normal] [M.Normal] (f : G →* H) (h : N ≤ M.comap f) :
+    (R.map (QuotientGroup.mk' N)).map (QuotientGroup.map N M f h) =
+      (R.map f).map (QuotientGroup.mk' M) := by
+  have hf : (QuotientGroup.map N M f h).comp (QuotientGroup.mk' N) =
+      (QuotientGroup.mk' M).comp f :=
+    MonoidHom.ext fun x ↦ QuotientGroup.map_mk' N M f h x
+  rw [Subgroup.map_map, Subgroup.map_map, hf]
+
+/-! ## Transporting a coset space along an isomorphism -/
+
+/-- **Coset spaces transport along an isomorphism.** If `e : G ≃* H` carries `A` onto `B`, then
+`G ⧸ A ≃ H ⧸ B`, by `e` on representatives.
+
+Neither subgroup is assumed normal, so this is an equivalence of coset *spaces*.
+`QuotientGroup.congr` is the normal case, where the same data upgrades to a `MulEquiv`; it does
+not apply to a subgroup like `Γ₁ ∩ gΓ₂g⁻¹`, which is where this is needed. It is the coset-space
+companion of `Subgroup.congrOfMapEq` above. -/
+def QuotientGroup.congrOfMapEq (e : G ≃* H) {A : Subgroup G} {B : Subgroup H}
+    (h : A.map (e : G →* H) = B) : G ⧸ A ≃ H ⧸ B :=
+  Quotient.congr e.toEquiv fun a b ↦ by
+    subst h
+    rw [QuotientGroup.leftRel_apply, QuotientGroup.leftRel_apply]
+    simp [← map_inv, ← map_mul]
+
+@[simp]
+theorem QuotientGroup.congrOfMapEq_mk (e : G ≃* H) {A : Subgroup G} {B : Subgroup H}
+    (h : A.map (e : G →* H) = B) (a : G) :
+    QuotientGroup.congrOfMapEq e h (QuotientGroup.mk a) = QuotientGroup.mk (e a) := by
+  unfold QuotientGroup.congrOfMapEq
+  rfl
 
 end TauCeti

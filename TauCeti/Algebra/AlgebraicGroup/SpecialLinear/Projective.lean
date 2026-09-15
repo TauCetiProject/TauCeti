@@ -170,7 +170,7 @@ theorem pslPointsFunctor_map {R : Type u} [CommRing R]
     {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     (pslPointsFunctor n).map φ =
       eqToHom (pslPointsFunctor_obj n A) ≫
-        GrpCat.ofHom (projectiveMap n φ.hom.toRingHom) ≫
+        GrpCat.ofHom (projectiveMap n φ.hom) ≫
           eqToHom (pslPointsFunctor_obj n B).symm :=
   by unfold pslPointsFunctor; rfl
 

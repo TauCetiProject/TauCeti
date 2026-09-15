@@ -38,7 +38,9 @@ therefore takes `a < b` as a hypothesis rather than assuming it silently.
 
 ## Main results
 
-* `isProbabilityMeasure_uniformMeasure` — it is a probability measure when `a < b`;
+* `isProbabilityMeasure_uniformMeasure` — it is a probability measure when `a < b`, and
+  `isProbabilityMeasure_uniformMeasure_zero_one` is the instance for the standard interval;
+* `uniformMeasure_Iio` and `uniformMeasure_Ici` — the measures of a lower and an upper tail;
 * `uniformMeasure_eq_smul`, `uniformMeasure_apply` — its description as a rescaled restriction, and
   evaluation on a measurable set;
 * `isUniform_of_hasLaw_uniformMeasure` — a variable with this law is uniform in Mathlib's sense;
@@ -124,6 +126,45 @@ theorem isProbabilityMeasure_uniformMeasure {a b : ℝ} (hab : a < b) :
   cond_isProbabilityMeasure_of_finite
     (by rw [Real.volume_Ioc]; simpa using hab)
     (by rw [Real.volume_Ioc]; simp)
+
+/-- The standard uniform law on the unit interval is a probability measure.
+
+This is the `a = 0`, `b = 1` case of `isProbabilityMeasure_uniformMeasure`, stated as an instance
+because the standard coin is the factor of a product of independent uniform variables, where the
+probability instance has to be found by synthesis. -/
+instance isProbabilityMeasure_uniformMeasure_zero_one :
+    IsProbabilityMeasure (uniformMeasure 0 1) :=
+  isProbabilityMeasure_uniformMeasure zero_lt_one
+
+/-- The uniform measure of a lower tail `Set.Iio t` is the linear rise across the interval. Only
+`t ≤ b` is needed: for a threshold below `a` both sides vanish. -/
+theorem uniformMeasure_Iio {a b t : ℝ} (hab : a < b) (ht : t ≤ b) :
+    uniformMeasure a b (Set.Iio t) = ENNReal.ofReal ((t - a) / (b - a)) := by
+  have hinter : Set.Iio t ∩ Set.Ioc a b = Set.Ioo a t := by
+    ext s
+    simp only [Set.mem_inter_iff, Set.mem_Iio, Set.mem_Ioc, Set.mem_Ioo]
+    constructor
+    · rintro ⟨hs, ha, -⟩
+      exact ⟨ha, hs⟩
+    · rintro ⟨ha, hs⟩
+      exact ⟨hs, ha, hs.le.trans ht⟩
+  rw [uniformMeasure_apply measurableSet_Iio, hinter, Real.volume_Ioo,
+    ENNReal.ofReal_div_of_pos (by linarith), ENNReal.div_eq_inv_mul]
+
+/-- The uniform measure of an upper tail `Set.Ici t` is the complementary linear fall. Only
+`a ≤ t` is needed: for a threshold above `b` both sides vanish. -/
+theorem uniformMeasure_Ici {a b t : ℝ} (hab : a < b) (ht : a ≤ t) :
+    uniformMeasure a b (Set.Ici t) = ENNReal.ofReal ((b - t) / (b - a)) := by
+  have hinter : volume (Set.Ici t ∩ Set.Ioc a b) = ENNReal.ofReal (b - t) := by
+    refine le_antisymm ?_ ?_
+    · calc volume (Set.Ici t ∩ Set.Ioc a b)
+          ≤ volume (Set.Icc t b) := measure_mono fun s hs => ⟨hs.1, hs.2.2⟩
+        _ = ENNReal.ofReal (b - t) := Real.volume_Icc
+    · calc ENNReal.ofReal (b - t) = volume (Set.Ioc t b) := Real.volume_Ioc.symm
+        _ ≤ volume (Set.Ici t ∩ Set.Ioc a b) :=
+          measure_mono fun s hs => ⟨hs.1.le, ht.trans_lt hs.1, hs.2⟩
+  rw [uniformMeasure_apply measurableSet_Ici, hinter, ENNReal.ofReal_div_of_pos (by linarith),
+    ENNReal.div_eq_inv_mul]
 
 /-- A random variable with the uniform law is uniform in Mathlib's sense.
 

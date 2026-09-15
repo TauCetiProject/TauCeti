@@ -195,6 +195,16 @@ theorem reverse_rotate (f : SmoothCircleEmbedding I M) (a : Circle) :
 
 section Ambient
 
+variable {P : Type*} [TopologicalSpace P] [ChartedSpace H P] [IsManifold I ∞ P]
+
+/-- Ambient transport commutes with orientation reversal of a smooth circle presentation. -/
+@[simp]
+theorem reverse_transDiffeomorph (f : SmoothCircleEmbedding I M) (e : M ≃ₘ⟮I, I⟯ P) :
+    reverse (SmoothEmbedding.transDiffeomorph f e) =
+      SmoothEmbedding.transDiffeomorph f.reverse e := by
+  simpa only [reverse] using
+    (SmoothEmbedding.transDiffeomorph_compDiffeomorph f circleReflection e).symm
+
 variable [IsManifold I ∞ M]
 
 /-- Ambient diffeomorphisms commute with rotation of a smooth circle presentation. -/
@@ -204,13 +214,6 @@ instance instSMulCommClassDiff :
     apply SmoothEmbedding.ext
     intro x
     simp⟩
-
-/-- Ambient diffeomorphisms commute with orientation reversal of a smooth circle presentation. -/
-@[simp]
-theorem reverse_smul (e : Diff I M ∞) (f : SmoothCircleEmbedding I M) :
-    reverse (SmoothEmbedding.transDiffeomorph f e) = e • f.reverse := by
-  simpa only [SmoothEmbedding.smul_def, reverse] using
-    (SmoothEmbedding.transDiffeomorph_compDiffeomorph f circleReflection e).symm
 
 end Ambient
 

@@ -24,6 +24,12 @@ coordinate pullback; an isogeny `φ` uses `φ.pullback.tautologicalPoint`.
 For the identity pullback this is the generic point of `W`, of which the construction here is the
 pullback-indexed generalisation.
 
+The construction is functorial in `F(W₁)`: post-composing a pullback with an algebra homomorphism
+into the function field of any third curve is the same as moving its point by the induced map on
+points. Combined with `tautologicalPoint_injective` that reflects equality, which is how a
+fixed-field argument uses a pullback: the condition that a pullback is fixed by an endomorphism, a
+condition on a whole coordinate ring, becomes one on the two coordinates of a point.
+
 ## Main definitions
 
 * `TauCeti.CoordinatePullback.tautologicalPoint`: the point of `W₂⁄F(W₁)` cut out by a coordinate
@@ -38,6 +44,8 @@ pullback-indexed generalisation.
 * `TauCeti.CoordinatePullback.tautologicalPoint_injective`: a pullback is determined by it.
 * `TauCeti.CoordinatePullback.tautologicalPoint_id`: the identity pullback's tautological point is
   the generic point.
+* `TauCeti.CoordinatePullback.tautologicalPoint_comp`: post-composition moves the point by the
+  induced map on points.
 -/
 
 public section
@@ -106,6 +114,32 @@ theorem tautologicalPoint_id (W : WeierstrassCurve.Affine F) [W.IsElliptic] :
   congr 1
   · rw [CoordinatePullback.id_apply, genericX_def, AdjoinRoot.mk_C]
   · rw [CoordinatePullback.id_apply, genericY_def, AdjoinRoot.mk_X]
+
+/-- **Post-composing with an algebra homomorphism of function fields moves the tautological point
+by the induced map on points.** Both sides are the affine point whose coordinates are the images of
+the two coordinate functions, so a pullback's interaction with such a homomorphism is read off
+entirely from its point. -/
+@[simp]
+theorem tautologicalPoint_comp {W₀ : WeierstrassCurve.Affine F} (p : CoordinatePullback W₁ W₂)
+    (σ : W₁.FunctionField →ₐ[F] W₀.FunctionField) :
+    tautologicalPoint (σ.comp p) = Point.map σ p.tautologicalPoint :=
+  by
+  rw [← Point.some_coords (tautologicalPoint_ne_zero p), Point.map_some,
+    ← Point.some_coords (tautologicalPoint_ne_zero (σ.comp p))]
+  simp only [xCoord_tautologicalPoint, yCoord_tautologicalPoint, AlgHom.comp_apply]
+
+/-- **Two homomorphisms agreeing on the pullback's two coordinate values move the tautological
+point to the same place.** The point's coordinates are those two values, so the induced map on
+points cannot see anything else about the homomorphism. -/
+theorem map_tautologicalPoint_eq_of_apply_eq {Ω : Type*} [Field Ω] [Algebra F Ω] [DecidableEq Ω]
+    (p : CoordinatePullback W₁ W₂) (σ τ : W₁.FunctionField →ₐ[F] Ω)
+    (hx : σ (p (AdjoinRoot.of W₂.polynomial X)) = τ (p (AdjoinRoot.of W₂.polynomial X)))
+    (hy : σ (p (AdjoinRoot.root W₂.polynomial)) = τ (p (AdjoinRoot.root W₂.polynomial))) :
+    Point.map σ p.tautologicalPoint = Point.map τ p.tautologicalPoint := by
+  rw [← Point.some_coords (tautologicalPoint_ne_zero p), Point.map_some, Point.map_some,
+    Point.some.injEq]
+  simp only [xCoord_tautologicalPoint, yCoord_tautologicalPoint]
+  exact ⟨hx, hy⟩
 
 end CoordinatePullback
 

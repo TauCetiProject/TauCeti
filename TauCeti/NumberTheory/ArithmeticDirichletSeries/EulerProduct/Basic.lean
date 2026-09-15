@@ -105,6 +105,15 @@ theorem absNorm_primeIdealPow (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
     Ideal.absNorm (primeIdealPow P e : Ideal (𝓞 K)) = Ideal.absNorm P.asIdeal ^ e := by
   rw [coe_primeIdealPow, map_pow]
 
+omit [NumberField K] in
+/-- Distinct primes give distinct first powers, so a family indexed by the primes is a subfamily
+of one indexed by the nonzero ideals. -/
+theorem primeIdealPow_one_injective :
+    Function.Injective fun P : HeightOneSpectrum (𝓞 K) ↦ primeIdealPow P 1 := fun P Q h ↦
+  HeightOneSpectrum.asIdeal_injective
+    (by simpa only [coe_primeIdealPow, pow_one] using
+      congrArg (Subtype.val : (Ideal (𝓞 K))⁰ → Ideal (𝓞 K)) h)
+
 /-- Distinct exponents give distinct prime powers. -/
 theorem primeIdealPow_injective (P : HeightOneSpectrum (𝓞 K)) :
     Function.Injective (primeIdealPow P) := fun m n h ↦
@@ -352,6 +361,45 @@ theorem supportedPart_empty (hf : f 1 = 1) : supportedPart f ∅ = delta := by
   · rw [supportedPart_apply_of_isPrimeTo_compl (hiff.mpr rfl), delta_one, hf]
   · rw [supportedPart_apply_of_not_isPrimeTo_compl fun h ↦ hA (hiff.mp h), delta_of_ne_one hA]
 
+/-- **Only the `S`-part/`P`-part pair survives.**  Where `A` is `P ^ n` times an ideal `B` prime to
+`Sᶜ`, and `C` is that power of `P`, every pair of the antidiagonal of `A` other than `(B, C)`
+contributes zero to the convolution. -/
+private theorem supportedPart_mul_eq_zero_of_ne {P : HeightOneSpectrum (𝓞 K)} (hPS : P ∈ Sᶜ)
+    {A B C : (Ideal (𝓞 K))⁰} {n : ℕ} (hB : Ideal.IsPrimeTo (B : Ideal (𝓞 K)) Sᶜ)
+    (hC : (C : Ideal (𝓞 K)) = P.asIdeal ^ n)
+    (hA : (A : Ideal (𝓞 K)) = P.asIdeal ^ n * (B : Ideal (𝓞 K))) :
+    ∀ p ∈ Ideal.divisorsAntidiagonal A, p ≠ (B, C) →
+      supportedPart f S p.1 * supportedPart f {P} p.2 = 0 := by
+  intro p hp hne
+  by_contra hp0
+  have h1 := isPrimeTo_compl_of_supportedPart_apply_ne_zero (left_ne_zero_of_mul hp0)
+  obtain ⟨m, h2⟩ := Ideal.isPrimeTo_compl_singleton_iff.mp
+    (isPrimeTo_compl_of_supportedPart_apply_ne_zero (right_ne_zero_of_mul hp0))
+  have hmul : (p.1 : Ideal (𝓞 K)) * (p.2 : Ideal (𝓞 K)) = (A : Ideal (𝓞 K)) := by
+    rw [← Submonoid.coe_mul, Ideal.mem_divisorsAntidiagonal.mp hp]
+  have heq : P.asIdeal ^ m * (p.1 : Ideal (𝓞 K)) = P.asIdeal ^ n * (B : Ideal (𝓞 K)) := by
+    rw [← h2, mul_comm, hmul, hA]
+  obtain ⟨rfl, hval⟩ :=
+    Ideal.eq_and_eq_of_pow_mul_eq_pow_mul P.ne_bot (h1.not_dvd hPS) (hB.not_dvd hPS) heq
+  exact hne (Prod.ext (Subtype.ext hval) (Subtype.ext (h2.trans hC.symm)))
+
+/-- **A nonvanishing summand forces the support.**  If any pair in the antidiagonal of `A`
+contributes to the convolution, then `A` itself is prime to `(insert P S)ᶜ`: its left factor is
+prime to `Sᶜ` and its right factor is a power of `P`. -/
+private theorem isPrimeTo_compl_insert_of_supportedPart_mul_ne_zero
+    {P : HeightOneSpectrum (𝓞 K)} {A : (Ideal (𝓞 K))⁰} {p : (Ideal (𝓞 K))⁰ × (Ideal (𝓞 K))⁰}
+    (hp : p ∈ Ideal.divisorsAntidiagonal A)
+    (hp0 : supportedPart f S p.1 * supportedPart f {P} p.2 ≠ 0) :
+    Ideal.IsPrimeTo (A : Ideal (𝓞 K)) (insert P S)ᶜ := by
+  have h1 := isPrimeTo_compl_of_supportedPart_apply_ne_zero (left_ne_zero_of_mul hp0)
+  obtain ⟨m, h2⟩ := Ideal.isPrimeTo_compl_singleton_iff.mp
+    (isPrimeTo_compl_of_supportedPart_apply_ne_zero (right_ne_zero_of_mul hp0))
+  rw [← congrArg Subtype.val (Ideal.mem_divisorsAntidiagonal.mp hp), Submonoid.coe_mul]
+  refine Ideal.isPrimeTo_mul_iff.mpr
+    ⟨h1.mono (Set.compl_subset_compl.mpr (Set.subset_insert P S)), ?_⟩
+  rw [h2]
+  exact (Ideal.isPrimeTo_asIdeal_iff.mpr (by simp)).pow m
+
 /-- **Splitting off one prime.** For a multiplicative `f`, adjoining a prime `P ∉ S` to the support
 convolves the restriction to `S` with the restriction to the powers of `P`; the factorization of an
 ideal supported on `insert P S` into its `P`-part and its `S`-part is unique, so exactly one
@@ -360,55 +408,27 @@ theorem supportedPart_insert (hf : f.IsMultiplicative) {P : HeightOneSpectrum (�
     (hP : P ∉ S) :
     supportedPart f (insert P S) = convolution (supportedPart f S) (supportedPart f {P}) := by
   have hPS : P ∈ Sᶜ := Set.mem_compl hP
-  have hmono : (insert P S)ᶜ ⊆ Sᶜ := Set.compl_subset_compl.mpr (Set.subset_insert P S)
-  -- A nonvanishing summand pairs an ideal supported on `S` with a power of `P`.
-  have key : ∀ p : (Ideal (𝓞 K))⁰ × (Ideal (𝓞 K))⁰,
-      supportedPart f S p.1 * supportedPart f {P} p.2 ≠ 0 →
-      Ideal.IsPrimeTo (p.1 : Ideal (𝓞 K)) Sᶜ ∧ ∃ m : ℕ, (p.2 : Ideal (𝓞 K)) = P.asIdeal ^ m := by
-    intro p hp
-    exact ⟨isPrimeTo_compl_of_supportedPart_apply_ne_zero (left_ne_zero_of_mul hp),
-      Ideal.isPrimeTo_compl_singleton_iff.mp
-        (isPrimeTo_compl_of_supportedPart_apply_ne_zero (right_ne_zero_of_mul hp))⟩
   funext A
   rw [convolution_apply]
   by_cases hA : Ideal.IsPrimeTo (A : Ideal (𝓞 K)) (insert P S)ᶜ
   · obtain ⟨n, J, hJ, hAJ⟩ := hA.exists_eq_pow_mul (𝔭 := P)
-    obtain ⟨B, hBval⟩ : ∃ B : (Ideal (𝓞 K))⁰, (B : Ideal (𝓞 K)) = J :=
+    obtain ⟨B, rfl⟩ : ∃ B : (Ideal (𝓞 K))⁰, (B : Ideal (𝓞 K)) = J :=
       ⟨⟨J, mem_nonZeroDivisors_of_ne_zero (by simpa using hJ.ne_bot)⟩, rfl⟩
-    obtain ⟨C, hCval⟩ : ∃ C : (Ideal (𝓞 K))⁰, (C : Ideal (𝓞 K)) = P.asIdeal ^ n :=
-      ⟨⟨_, mem_nonZeroDivisors_of_ne_zero (pow_ne_zero n P.ne_bot)⟩, rfl⟩
-    have hJ' : Ideal.IsPrimeTo (B : Ideal (𝓞 K)) Sᶜ := by rw [hBval]; exact hJ
-    have hCP : Ideal.IsPrimeTo (C : Ideal (𝓞 K)) ({P} : Set (HeightOneSpectrum (𝓞 K)))ᶜ := by
-      rw [hCval]; exact Ideal.isPrimeTo_compl_singleton_iff.mpr ⟨n, rfl⟩
-    have hBC : B * C = A :=
-      Subtype.ext (by rw [Submonoid.coe_mul, hBval, hCval, mul_comm, ← hAJ])
-    have hzero : ∀ p ∈ Ideal.divisorsAntidiagonal A, p ≠ (B, C) →
-        supportedPart f S p.1 * supportedPart f {P} p.2 = 0 := by
-      intro p hp hne
-      by_contra hp0
-      obtain ⟨h1, m, h2⟩ := key p hp0
-      have hmul : (p.1 : Ideal (𝓞 K)) * (p.2 : Ideal (𝓞 K)) = (A : Ideal (𝓞 K)) := by
-        rw [← Submonoid.coe_mul, Ideal.mem_divisorsAntidiagonal.mp hp]
-      have heq : P.asIdeal ^ m * (p.1 : Ideal (𝓞 K)) = P.asIdeal ^ n * J := by
-        rw [← h2, mul_comm, hmul, hAJ]
-      obtain ⟨rfl, hval⟩ :=
-        Ideal.eq_and_eq_of_pow_mul_eq_pow_mul P.ne_bot (h1.not_dvd hPS) (hJ.not_dvd hPS) heq
-      exact hne (Prod.ext (Subtype.ext (hval.trans hBval.symm))
-        (Subtype.ext (h2.trans hCval.symm)))
-    rw [Finset.sum_eq_single_of_mem (B, C) (Ideal.mem_divisorsAntidiagonal.mpr hBC) hzero,
-      supportedPart_apply_of_isPrimeTo_compl hA, supportedPart_apply_of_isPrimeTo_compl hJ',
+    have hCP : Ideal.IsPrimeTo ((P.primeIdealPow n : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K))
+        ({P} : Set (HeightOneSpectrum (𝓞 K)))ᶜ :=
+      Ideal.isPrimeTo_compl_singleton_iff.mpr ⟨n, P.coe_primeIdealPow n⟩
+    have hBC : B * P.primeIdealPow n = A :=
+      Subtype.ext (by rw [Submonoid.coe_mul, P.coe_primeIdealPow, mul_comm, ← hAJ])
+    rw [Finset.sum_eq_single_of_mem (B, P.primeIdealPow n)
+        (Ideal.mem_divisorsAntidiagonal.mpr hBC)
+        (supportedPart_mul_eq_zero_of_ne hPS hJ (P.coe_primeIdealPow n) hAJ),
+      supportedPart_apply_of_isPrimeTo_compl hA, supportedPart_apply_of_isPrimeTo_compl hJ,
       supportedPart_apply_of_isPrimeTo_compl hCP,
       ← hf.map_mul_of_isRelPrime
-        ((hJ'.mono (Set.singleton_subset_iff.mpr hPS)).isRelPrime hCP), hBC]
+        ((hJ.mono (Set.singleton_subset_iff.mpr hPS)).isRelPrime hCP), hBC]
   · rw [supportedPart_apply_of_not_isPrimeTo_compl hA]
-    refine (Finset.sum_eq_zero fun p hp ↦ ?_).symm
-    by_contra hp0
-    obtain ⟨h1, m, h2⟩ := key p hp0
-    refine hA ?_
-    rw [← congrArg Subtype.val (Ideal.mem_divisorsAntidiagonal.mp hp), Submonoid.coe_mul]
-    refine Ideal.isPrimeTo_mul_iff.mpr ⟨h1.mono hmono, ?_⟩
-    rw [h2]
-    exact (Ideal.isPrimeTo_asIdeal_iff.mpr (by simp)).pow m
+    exact (Finset.sum_eq_zero fun p hp ↦ not_not.mp fun hp0 ↦
+      hA (isPrimeTo_compl_insert_of_supportedPart_mul_ne_zero hp hp0)).symm
 
 /-- The norm coefficients of the restriction to the powers of a single prime `P` are exactly its
 canonical local arithmetic factor. -/

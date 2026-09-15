@@ -85,12 +85,13 @@ theorem fderiv_fderiv_comp_apply_of_fderiv_eq_zero {f : E → G} {φ : F → E} 
   have hA : HasFDerivAt (fun y ↦ fderiv 𝕜 f (φ y))
       ((fderiv 𝕜 (fderiv 𝕜 f) (φ b)).comp (fderiv 𝕜 φ b)) b := hf1.comp b hφ0
   have hev : ∀ᶠ y in 𝓝 b, fderiv 𝕜 (f ∘ φ) y = (fderiv 𝕜 f (φ y)).comp (fderiv 𝕜 φ y) := by
-    have h1 : ∀ᶠ y in 𝓝 b, DifferentiableAt 𝕜 φ y := by
-      filter_upwards [hφ.eventually (by norm_num)] with y hy
-        using hy.differentiableAt (by norm_num)
-    have h2 : ∀ᶠ y in 𝓝 b, DifferentiableAt 𝕜 f (φ y) := by
-      filter_upwards [hφ.continuousAt.eventually (hf.eventually (by norm_num))] with y hy
-        using hy.differentiableAt (by norm_num)
+    have h1 : ∀ᶠ y in 𝓝 b, DifferentiableAt 𝕜 φ y :=
+      ((hφ.of_le (by norm_num)).eventually (by norm_num)).mono fun _ hy ↦
+        hy.differentiableAt one_ne_zero
+    have h2 : ∀ᶠ y in 𝓝 b, DifferentiableAt 𝕜 f (φ y) :=
+      hφ.continuousAt.eventually
+        (((hf.of_le (by norm_num)).eventually (by norm_num)).mono fun _ hy ↦
+          hy.differentiableAt one_ne_zero)
     filter_upwards [h1, h2] with y hy1 hy2 using fderiv_comp (x := y) hy2 hy1
   rw [((hA.clm_comp hφ1).congr_of_eventuallyEq hev).fderiv]
   simp [hc]

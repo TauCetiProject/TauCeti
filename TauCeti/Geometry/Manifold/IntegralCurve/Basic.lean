@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
-import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import TauCeti.Analysis.ODE.Regularity
 
 /-!
 # Regularity of integral curves
@@ -169,28 +169,45 @@ theorem IsMIntegralCurveAt.of_extChartAt_symm
   rw [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton]
   exact hasFDerivWithinAt_model_tangent_spaces hd'
 
-private theorem contDiffOn_succ_of_hasDerivAt_comp {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {n : ℕ} {f : ℝ → F} {v : F → F} {s : Set ℝ} {u : Set F}
-    (hs : IsOpen s) (hv : ContDiffOn ℝ n v u) (hfu : MapsTo f s u)
-    (hf : ∀ t ∈ s, HasDerivAt f (v (f t)) t) :
-    ContDiffOn ℝ (n + 1 : ℕ) f s := by
-  induction n generalizing f with
-  | zero =>
-      have h : ContDiffOn ℝ ((0 : ℕ∞ω) + 1) f s := by
-        rw [contDiffOn_succ_iff_deriv_of_isOpen hs]
-        refine ⟨fun t ht => (hf t ht).differentiableAt.differentiableWithinAt, by simp, ?_⟩
-        apply (hv.comp (contDiffOn_zero.mpr ?_) hfu).congr
-        · exact fun t ht => (hf t ht).deriv
-        · exact fun t ht => (hf t ht).continuousAt.continuousWithinAt
-      simpa using h
-  | succ n ih =>
-      have hfn : ContDiffOn ℝ (n + 1 : ℕ) f s :=
-        ih (hv.of_le (by exact_mod_cast Nat.le_succ n)) hfu hf
-      have h : ContDiffOn ℝ (((n + 1 : ℕ) : ℕ∞ω) + 1) f s := by
-        rw [contDiffOn_succ_iff_deriv_of_isOpen hs]
-        refine ⟨fun t ht => (hf t ht).differentiableAt.differentiableWithinAt, by simp, ?_⟩
-        exact (hv.comp hfn hfu).congr fun t ht => (hf t ht).deriv
-      simpa only [Nat.cast_add, Nat.cast_one, Nat.succ_eq_add_one] using h
+/-- A local integral curve of a `C^1` vector field on a boundaryless manifold is `C^2` at its
+initial parameter. -/
+theorem IsMIntegralCurveAt.contMDiffAt_two
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    [BoundarylessManifold I M] [IsManifold I 2 M]
+    {γ : ℝ → M} {v : (x : M) → TangentSpace I x} {t₀ : ℝ}
+    (hγ : IsMIntegralCurveAt γ v t₀)
+    (hv : ContMDiffAt I I.tangent 1 (fun x => (⟨x, v x⟩ : TangentBundle I M)) (γ t₀)) :
+    ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t₀ := by
+  rw [contMDiffAt_iff_target]
+  refine ⟨hγ.continuousAt, ?_⟩
+  let c : ℝ → E := (extChartAt I (γ t₀)) ∘ γ
+  let v' : E → E := fun x =>
+    tangentCoordChange I ((extChartAt I (γ t₀)).symm x) (γ t₀)
+      ((extChartAt I (γ t₀)).symm x) (v ((extChartAt I (γ t₀)).symm x))
+  have hv' : ContDiffAt ℝ 1 v' (extChartAt I (γ t₀) (γ t₀)) := by
+    have hv₀ := hv
+    rw [contMDiffAt_iff] at hv₀
+    exact (hv₀.2.contDiffAt
+      (range_mem_nhds_isInteriorPoint BoundarylessManifold.isInteriorPoint)).snd
+  obtain ⟨u, hxu, hvu⟩ := hv'.contDiffOn le_rfl (by simp)
+  have hcsrc : ∀ᶠ t in 𝓝 t₀, γ t ∈ (extChartAt I (γ t₀)).source :=
+    hγ.continuousAt.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I) _)
+  have hderiv : ∀ᶠ t in 𝓝 t₀, HasDerivAt c (v' (c t)) t :=
+    hγ.eventually_hasDerivAt.and hcsrc |>.mono fun t ht => by
+      apply ht.1.congr_deriv
+      simp only [v', c, Function.comp_apply]
+      rw [PartialEquiv.left_inv _ ht.2]
+  have hcu : ∀ᶠ t in 𝓝 t₀, c t ∈ u :=
+    ((continuousAt_extChartAt (γ t₀)).comp hγ.continuousAt).eventually hxu
+  have hall : {t | HasDerivAt c (v' (c t)) t ∧ c t ∈ u} ∈ 𝓝 t₀ :=
+    hderiv.and hcu
+  obtain ⟨s, hsP, hsopen, hst₀⟩ := mem_nhds_iff.mp hall
+  have hc : ContDiffAt ℝ 2 c t₀ :=
+    (TauCeti.contDiffOn_succ_of_hasDerivAt_comp hsopen hvu (fun t ht => (hsP ht).2)
+      (fun t ht => (hsP ht).1)).contDiffAt (hsopen.mem_nhds hst₀)
+  have hc' : ContDiffAt ℝ 2 ((extChartAt I (γ t₀)) ∘ γ) t₀ := by
+    simpa only [c] using hc
+  exact hc'.contMDiffAt
 
 namespace IsMIntegralCurve
 
@@ -235,7 +252,7 @@ theorem contMDiff_succ (n : ℕ) [IsManifold I (n + 1 : ℕ) M]
     hderiv.and hcu
   obtain ⟨s, hsP, hsopen, hst₀⟩ := mem_nhds_iff.mp hall
   have hc : ContDiffAt ℝ (n + 1 : ℕ) c t₀ :=
-    (contDiffOn_succ_of_hasDerivAt_comp hsopen hvu (fun t ht => (hsP ht).2)
+    (TauCeti.contDiffOn_succ_of_hasDerivAt_comp hsopen hvu (fun t ht => (hsP ht).2)
       (fun t ht => (hsP ht).1)).contDiffAt (hsopen.mem_nhds hst₀)
   have hc' : ContDiffAt ℝ (n + 1 : ℕ) ((extChartAt I (γ t₀)) ∘ γ) t₀ := by
     simpa only [c] using hc

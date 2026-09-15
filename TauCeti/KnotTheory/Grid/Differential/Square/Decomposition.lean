@@ -35,8 +35,9 @@ between two given states is determined by its side columns.
   injectivity of the ordered quadruple of side columns.
 * `TauCeti.GridRectangleDecomposition.target_apply_of_notMem_sideColumns`: away from the four
   side columns the target of a decomposition agrees with its source.
-* `TauCeti.GridRectangleDecomposition.transpose`: diagonal reflection of both constituent
-  rectangles gives a decomposition between the transposed endpoint states.
+* `TauCeti.GridRectangleDecomposition.transpose` and `transposeEquiv`: diagonal reflection of
+  both constituent rectangles gives an involutive equivalence between decompositions of the
+  original and transposed endpoint states.
 * `TauCeti.GridRectangleDecomposition.target_mem_twoStepColumnSwapNeighbors`: the target of a
   decomposition is reached from its source by two nontrivial column transpositions.
 
@@ -231,6 +232,29 @@ theorem isEmpty_transpose_second (D : GridRectangleDecomposition x z) :
 @[simp]
 theorem transpose_transpose (D : GridRectangleDecomposition x z) : D.transpose.transpose = D := by
   ext <;> simp
+
+/-- Diagonal reflection as an equivalence between decompositions of the original and reflected
+endpoint states. Its inverse is again diagonal reflection. -/
+def transposeEquiv (x z : GridState n) :
+    GridRectangleDecomposition x z ≃
+      GridRectangleDecomposition x.transpose z.transpose where
+  toFun := transpose
+  invFun := transpose
+  left_inv := transpose_transpose
+  right_inv := transpose_transpose
+
+/-- The decomposition reflection equivalence acts by diagonal reflection. -/
+@[simp]
+theorem transposeEquiv_apply (D : GridRectangleDecomposition x z) :
+    transposeEquiv x z D = D.transpose :=
+  (rfl)
+
+/-- The inverse of the decomposition reflection equivalence also acts by diagonal reflection. -/
+@[simp]
+theorem transposeEquiv_symm_apply
+    (D : GridRectangleDecomposition x.transpose z.transpose) :
+    (transposeEquiv x z).symm D = D.transpose :=
+  (rfl)
 
 /-- The target of a two-step rectangle decomposition is a two-step column-swap neighbour of its
 source: each of the two rectangles transposes its pair of distinct side columns. -/

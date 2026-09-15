@@ -28,7 +28,8 @@ The family-general induction map is also bundled here as
 `⨁_{S} R(S) → R(G)`.  Its range is exactly `V_G`.  After tensoring source and target with `ℚ`, a
 nonzero multiple of `1` in `V_G` makes the resulting map surjective.  These constructions belong
 with the ideal property because they work for an arbitrary family and use no cyclic or elementary
-input; `TauCeti.RepresentationTheory.Induction.Artin` supplies those arithmetic specializations.
+input; `TauCeti.RepresentationTheory.Induction.Artin.Basic` supplies those arithmetic
+specializations.
 
 Its consequence `TauCeti.ClassFunction.indVirtualCharacters_eq_virtualCharacters_iff` is the
 standard reduction of an induction theorem to a single membership: `V_G` is all of `R(G)` **iff**

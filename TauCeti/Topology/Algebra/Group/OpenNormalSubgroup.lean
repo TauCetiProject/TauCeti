@@ -10,9 +10,9 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 /-!
 # Constructions of open normal subgroups
 
-Two bundled constructions of `OpenNormalSubgroup` that Mathlib provides for `OpenSubgroup`
-but not for its normal variant: the preimage under a continuous group homomorphism, and the
-trivial subgroup of a group with the discrete topology. Both are stated for an arbitrary
+Bundled constructions of `OpenNormalSubgroup` that Mathlib provides for `OpenSubgroup` but not
+for its normal variant: the preimage under a continuous group homomorphism, the trivial subgroup
+of a group with the discrete topology, and the whole group. All are stated for an arbitrary
 topological space structure on a group; no continuity of the group operations is required.
 
 ## Main definitions
@@ -21,6 +21,7 @@ topological space structure on a group; no continuity of the group operations is
   group homomorphism.
 * `TauCeti.openNormalSubgroupBot`: the trivial subgroup of a group with the discrete
   topology, as an open normal subgroup.
+* `TauCeti.openNormalSubgroupTop`: the whole group, as an open normal subgroup.
 -/
 
 public section
@@ -73,6 +74,18 @@ def openNormalSubgroupBot (G : Type*) [Group G] [TopologicalSpace G] [DiscreteTo
 @[simp]
 theorem openNormalSubgroupBot_toSubgroup (G : Type*) [Group G] [TopologicalSpace G]
     [DiscreteTopology G] : (openNormalSubgroupBot G).toSubgroup = ⊥ :=
+  (rfl)
+
+/-- The whole group, as an open normal subgroup. It is the greatest element of
+`OpenNormalSubgroup G`, and in particular witnesses that this type is nonempty. -/
+def openNormalSubgroupTop (G : Type*) [Group G] [TopologicalSpace G] : OpenNormalSubgroup G where
+  toOpenSubgroup := ⊤
+  isNormal' := Subgroup.normal_top
+
+/-- The underlying subgroup of `openNormalSubgroupTop` is `⊤`. -/
+@[simp]
+theorem openNormalSubgroupTop_toSubgroup (G : Type*) [Group G] [TopologicalSpace G] :
+    (openNormalSubgroupTop G).toSubgroup = ⊤ :=
   (rfl)
 
 end TauCeti

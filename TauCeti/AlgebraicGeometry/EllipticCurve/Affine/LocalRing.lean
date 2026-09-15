@@ -16,11 +16,11 @@ An integrally closed coordinate ring is a Dedekind domain
 (`WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed`), and the ideal of
 a point is maximal and nonzero (`XYIdeal_isMaximal_of_equation`, `XYIdeal_ne_bot`). Localising at
 that ideal therefore gives a discrete valuation ring. Normality is what is assumed; for an elliptic
-curve `TauCeti.WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing` supplies it.
+curve `WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing` supplies it.
 
 ## Main results
 
-* `TauCeti.WeierstrassCurve.Affine.CoordinateRing.isDiscreteValuationRing_localizationAtPrime`: the
+* `WeierstrassCurve.Affine.CoordinateRing.isDiscreteValuationRing_localizationAtPrime`: the
   localisation of the coordinate ring at `⟨X - x, Y - y(X)⟩` is a discrete valuation ring, for any
   `y : F[X]` solving the Weierstrass equation at `x` — in particular at a point of the curve,
   through `XYIdeal_isMaximal_of_equation`. It asks integral closedness of the coordinate ring, not
@@ -61,7 +61,7 @@ open Polynomial WeierstrassCurve WeierstrassCurve.Affine
 
 namespace TauCeti
 
-namespace WeierstrassCurve.Affine.CoordinateRing
+section
 
 variable {F : Type*} [Field F] {W : _root_.WeierstrassCurve.Affine F} {x : F}
 
@@ -69,16 +69,19 @@ variable {F : Type*} [Field F] {W : _root_.WeierstrassCurve.Affine F} {x : F}
 ring**, whenever `y` solves the Weierstrass equation at `x`. The curve is not assumed elliptic,
 only its coordinate ring integrally closed. The primality of the ideal is a consequence of the
 equation, through `XYIdeal_isMaximal`, so it is installed in the statement rather than assumed. -/
-theorem isDiscreteValuationRing_localizationAtPrime [IsIntegrallyClosed W.CoordinateRing]
+theorem _root_.WeierstrassCurve.Affine.CoordinateRing.isDiscreteValuationRing_localizationAtPrime
+    [IsIntegrallyClosed W.CoordinateRing]
     {y : F[X]} (h : (W.polynomial.eval y).eval x = 0) :
-    haveI : (CoordinateRing.XYIdeal W x y).IsPrime := (XYIdeal_isMaximal h).isPrime
+    haveI : (CoordinateRing.XYIdeal W x y).IsPrime :=
+      (WeierstrassCurve.Affine.CoordinateRing.XYIdeal_isMaximal h).isPrime
     IsDiscreteValuationRing (Localization.AtPrime (CoordinateRing.XYIdeal W x y)) :=
-  haveI : (CoordinateRing.XYIdeal W x y).IsPrime := (XYIdeal_isMaximal h).isPrime
+  haveI : (CoordinateRing.XYIdeal W x y).IsPrime :=
+    (WeierstrassCurve.Affine.CoordinateRing.XYIdeal_isMaximal h).isPrime
   have := W.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
   IsLocalization.AtPrime.isDiscreteValuationRing_of_dedekind_domain W.CoordinateRing
-    (XYIdeal_ne_bot x y) _
+    (WeierstrassCurve.Affine.CoordinateRing.XYIdeal_ne_bot x y) _
 
-end WeierstrassCurve.Affine.CoordinateRing
+end
 
 end TauCeti
 

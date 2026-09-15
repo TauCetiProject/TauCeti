@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.Product
-public import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
+public import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.Product
 
 /-!
@@ -18,17 +18,10 @@ equivalent to smoothness, and smoothness is preserved by products. It follows th
 product of two geometrically reduced coordinate Hopf algebras of finite type is geometrically
 reduced.
 
-Over an algebraically closed field, a reduced affine group of finite type is smooth. Thus the
-ordinary tensor product of two reduced coordinate algebras is reduced. In particular, the tensor
-square of a reduced closed subgroup remains reduced, as required when its defining ideal is
-transported through comultiplication.
-
 ## Main declarations
 
 * `TauCeti.geometricallyReducedCommHopfAlgProperty.tensorProduct`: finite-type geometrically
   reduced affine groups are closed under direct products.
-* `TauCeti.CommHopfAlgCat.isReduced_tensorProduct_of_isAlgClosed`: over an algebraically closed
-  field, the tensor product of two reduced finite-type coordinate Hopf algebras is reduced.
 
 ## References
 
@@ -64,22 +57,6 @@ theorem tensorProduct (H K : CommHopfAlgCat.{v} k)
   exact smoothCommHopfAlgProperty.tensorProduct H K hH hK
 
 end geometricallyReducedCommHopfAlgProperty
-
-namespace CommHopfAlgCat
-
-/-- Over an algebraically closed field, the tensor product of two reduced finite-type coordinate
-Hopf algebras is reduced. -/
-theorem isReduced_tensorProduct_of_isAlgClosed
-    {k : Type u} [Field k] [IsAlgClosed k] (H K : CommHopfAlgCat.{v} k)
-    [Algebra.FiniteType k H] [Algebra.FiniteType k K] [IsReduced H] [IsReduced K] :
-    IsReduced (H ⊗[k] K) := by
-  have hH : geometricallyReducedCommHopfAlgProperty k H :=
-    (geometricallyReducedCommHopfAlgProperty_iff_isReduced_of_isAlgClosed k H).2 inferInstance
-  have hK : geometricallyReducedCommHopfAlgProperty k K :=
-    (geometricallyReducedCommHopfAlgProperty_iff_isReduced_of_isAlgClosed k K).2 inferInstance
-  exact (geometricallyReducedCommHopfAlgProperty.tensorProduct H K hH hK).isReduced
-
-end CommHopfAlgCat
 
 end
 

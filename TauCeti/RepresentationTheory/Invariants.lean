@@ -8,7 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Invariants
 
 /-!
-# The group sum of a finite-group representation has the invariants as its range
+# Invariants of group representations
 
 Mathlib names the group sum `∑ g, ρ g` of a finite-group representation `Representation.norm`,
 builds the averaging projection `Representation.averageMap` separately out of the group-algebra
@@ -22,12 +22,23 @@ This file supplies the bridge. Unfolding the group algebra once identifies `aver
 `norm` scaled by `⅟(#G)`, and since scaling by a unit changes no image, `norm` has the same range
 as the projection: the invariants.
 
+The file also records the companion description of the invariants available when `G` is cyclic.
+Invariance is a condition on every group element, but a vector fixed by a generator is fixed by all
+of its powers, so testing a single generator `g` suffices and the invariants are cut out by the one
+linear map `ρ(g) - 1`. Mathlib states this elementwise, in
+`Representation.mem_invariants_iff_of_forall_mem_zpowers`; the submodule-level equality with
+`ker (ρ(g) - 1)` is the form used to present the (co)homology of a finite cyclic group as a
+subquotient of `M`, where each group is the homology of `ρ(g) - 1` and the norm in one order or
+the other.
+
 ## Main results
 
 * `Representation.averageMap_eq_invOf_card_smul_norm`: the averaging projection is the group sum
   `Representation.norm` scaled by the inverse of the group order.
 * `Representation.range_norm_eq_invariants`: the group sum `Representation.norm ρ` has the
   invariants as its range.
+* `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
+  kernel of the action of a generator minus the identity.
 -/
 public section
 
@@ -55,3 +66,16 @@ theorem range_norm_eq_invariants : LinearMap.range ρ.norm = ρ.invariants := by
   rw [smul_smul, mul_invOf_self, one_smul]
 
 end Representation
+
+namespace Rep.FiniteCyclicGroup
+
+variable {R G : Type*} [CommRing R] [Group G] (M : Rep R G) (g : G)
+
+/-- If `g` generates `G`, the invariants of a representation are the kernel of `ρ(g) - 1`. -/
+theorem invariants_eq_ker_apply_sub (hg : ∀ x, x ∈ Subgroup.zpowers g) :
+    M.ρ.invariants = LinearMap.ker (M.ρ g - LinearMap.id) := by
+  ext x
+  simpa [sub_eq_zero] using
+    Representation.mem_invariants_iff_of_forall_mem_zpowers M.ρ g hg x
+
+end Rep.FiniteCyclicGroup

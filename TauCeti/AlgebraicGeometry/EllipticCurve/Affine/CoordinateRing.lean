@@ -40,15 +40,15 @@ characteristic two that polynomial is the square `(a₁X + a₃)²`.
 
 ## Main definitions
 
-* `TauCeti.WeierstrassCurve.Affine.CoordinateRing.conj`: the conjugation involution of `R[W]` over
+* `WeierstrassCurve.Affine.CoordinateRing.conj`: the conjugation involution of `R[W]` over
   `R[X]`, sending `y` to `-y - (a₁X + a₃)`.
 
 ## Main results
 
-* `TauCeti.WeierstrassCurve.Affine.CoordinateRing.mul_conj`: `x * conj x` is the norm of `x`.
-* `TauCeti.WeierstrassCurve.Affine.CoordinateRing.add_negPolynomial_smul_basis`: the expanded
+* `WeierstrassCurve.Affine.CoordinateRing.mul_conj`: `x * conj x` is the norm of `x`.
+* `WeierstrassCurve.Affine.CoordinateRing.add_negPolynomial_smul_basis`: the expanded
   conjugation formula computes the trace on the basis `{1, Y}`.
-* `TauCeti.WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing`: the coordinate ring of an
+* `WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing`: the coordinate ring of an
   elliptic curve over a field is integrally closed.
 * `WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed`: an integrally
   closed coordinate ring is a Dedekind domain — so an elliptic curve's is, by
@@ -78,11 +78,11 @@ open Polynomial Polynomial.Bivariate
 
 namespace TauCeti
 
-namespace WeierstrassCurve.Affine
+section
 
 open _root_.WeierstrassCurve.Affine _root_.WeierstrassCurve.Affine.CoordinateRing
 
-namespace CoordinateRing
+section
 
 /-! ## Conjugation on the coordinate ring -/
 
@@ -90,7 +90,7 @@ variable {R : Type*} [CommRing R] (W : _root_.WeierstrassCurve.Affine R)
 
 /-- Substituting `-Y - (a₁X + a₃)` for `Y` leaves the Weierstrass polynomial unchanged: the two
 roots of `W(X, ·)` are `y` and its conjugate `-y - (a₁X + a₃)`. -/
-lemma eval₂_negPolynomial_polynomial :
+lemma _root_.WeierstrassCurve.Affine.CoordinateRing.eval₂_negPolynomial_polynomial :
     W.polynomial.eval₂ (C : R[X] →+* R[X][Y]) W.negPolynomial = W.polynomial := by
   rw [polynomial, negPolynomial]
   simp only [eval₂_add, eval₂_sub, eval₂_mul, eval₂_pow, eval₂_C, eval₂_X]
@@ -102,79 +102,114 @@ the `algebraMap` spelling that rewriting wants.
 Public because it is the canonical form of an identity that consumers otherwise re-prove: it is
 the coordinate-ring half of every `mk W (C p)` computation, and composing it with
 `IsScalarTower.algebraMap_apply` carries the class all the way into the function field. -/
-lemma mk_C_eq_algebraMap (r : R[X]) :
+lemma _root_.WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap (r : R[X]) :
     mk W (C r) = algebraMap R[X] W.CoordinateRing r := by
   simp [AdjoinRoot.algebraMap_eq]
 
-private lemma smul_mk_eq_mk (p q : R[X]) (f : R[X][Y]) :
+private lemma _root_.WeierstrassCurve.Affine.CoordinateRing.smul_mk_eq_mk
+    (p q : R[X]) (f : R[X][Y]) :
     p • (1 : W.CoordinateRing) + q • mk W f = mk W (C p + C q * f) := by
   simp only [smul, mul_one, ← map_mul, ← map_add]
 
-private noncomputable def conjHom : W.CoordinateRing →ₐ[R[X]] W.CoordinateRing :=
+private noncomputable def _root_.WeierstrassCurve.Affine.CoordinateRing.conjHom
+    : W.CoordinateRing →ₐ[R[X]] W.CoordinateRing :=
   AdjoinRoot.liftAlgHom W.polynomial (Algebra.ofId R[X] W.CoordinateRing)
     (mk W W.negPolynomial) <| by
       have h := Polynomial.hom_eval₂ W.polynomial (C : R[X] →+* R[X][Y]) (mk W) W.negPolynomial
-      rw [eval₂_negPolynomial_polynomial, AdjoinRoot.mk_self] at h
+      rw [WeierstrassCurve.Affine.CoordinateRing.eval₂_negPolynomial_polynomial,
+          AdjoinRoot.mk_self] at h
       exact h.symm
 
 @[simp]
-private lemma conjHom_mk_Y : conjHom W (AdjoinRoot.root W.polynomial) = mk W W.negPolynomial :=
+private lemma _root_.WeierstrassCurve.Affine.CoordinateRing.conjHom_mk_Y
+    : WeierstrassCurve.Affine.CoordinateRing.conjHom W (AdjoinRoot.root W.polynomial) =
+      mk W W.negPolynomial :=
   AdjoinRoot.liftAlgHom_root ..
 
 @[simp]
-private lemma conjHom_mk_C (r : R[X]) :
-    conjHom W (AdjoinRoot.of W.polynomial r) = mk W (C r) := by
-  simpa only [AdjoinRoot.algebraMap_eq, AdjoinRoot.mk_C] using (conjHom W).commutes r
+private lemma _root_.WeierstrassCurve.Affine.CoordinateRing.conjHom_mk_C (r : R[X]) :
+    WeierstrassCurve.Affine.CoordinateRing.conjHom W (AdjoinRoot.of W.polynomial r) = mk W (C r) :=
+        by
+  simpa only [AdjoinRoot.algebraMap_eq, AdjoinRoot.mk_C] using
+      (WeierstrassCurve.Affine.CoordinateRing.conjHom W).commutes r
 
-private lemma conjHom_conjHom (x : W.CoordinateRing) : conjHom W (conjHom W x) = x := by
-  have h : (conjHom W).comp (conjHom W) = AlgHom.id R[X] W.CoordinateRing := by
+private lemma _root_.WeierstrassCurve.Affine.CoordinateRing.conjHom_conjHom
+    (x : W.CoordinateRing) :
+      WeierstrassCurve.Affine.CoordinateRing.conjHom W
+        (WeierstrassCurve.Affine.CoordinateRing.conjHom W x) = x := by
+  have h : (WeierstrassCurve.Affine.CoordinateRing.conjHom W).comp
+      (WeierstrassCurve.Affine.CoordinateRing.conjHom W) = AlgHom.id R[X] W.CoordinateRing := by
     refine AdjoinRoot.algHom_ext ?_
-    rw [AlgHom.comp_apply, AlgHom.id_apply, conjHom_mk_Y, negPolynomial]
-    simp only [map_sub, map_neg, AdjoinRoot.mk_X, AdjoinRoot.mk_C, conjHom_mk_Y,
-      conjHom_mk_C, negPolynomial]
+    rw [AlgHom.comp_apply, AlgHom.id_apply, WeierstrassCurve.Affine.CoordinateRing.conjHom_mk_Y,
+        negPolynomial]
+    simp only [map_sub, map_neg, AdjoinRoot.mk_X, AdjoinRoot.mk_C,
+        WeierstrassCurve.Affine.CoordinateRing.conjHom_mk_Y,
+      WeierstrassCurve.Affine.CoordinateRing.conjHom_mk_C, negPolynomial]
     ring
   exact congrArg (fun f : W.CoordinateRing →ₐ[R[X]] W.CoordinateRing => f x) h
 
 /-- The conjugation involution of the coordinate ring `R[W]` over `R[X]`, sending `y` to
 `-y - (a₁X + a₃)`. It is the coordinate-ring form of `WeierstrassCurve.Affine.negY`: the pullback
 of the involution `(x, y) ↦ (x, -y - a₁x - a₃)` of the curve. -/
-noncomputable def conj : W.CoordinateRing ≃ₐ[R[X]] W.CoordinateRing :=
-  AlgEquiv.ofAlgHom (conjHom W) (conjHom W) (by ext; exact conjHom_conjHom W _)
-    (by ext; exact conjHom_conjHom W _)
+noncomputable def _root_.WeierstrassCurve.Affine.CoordinateRing.conj
+    : W.CoordinateRing ≃ₐ[R[X]] W.CoordinateRing :=
+  AlgEquiv.ofAlgHom (WeierstrassCurve.Affine.CoordinateRing.conjHom W)
+      (WeierstrassCurve.Affine.CoordinateRing.conjHom W) (by ext; exact
+          WeierstrassCurve.Affine.CoordinateRing.conjHom_conjHom W _)
+    (by ext; exact WeierstrassCurve.Affine.CoordinateRing.conjHom_conjHom W _)
 
-private lemma conj_apply (x : W.CoordinateRing) : conj W x = conjHom W x := by
-  simp [conj]
+private lemma _root_.WeierstrassCurve.Affine.CoordinateRing.conj_apply
+    (x : W.CoordinateRing) :
+      WeierstrassCurve.Affine.CoordinateRing.conj W x =
+        WeierstrassCurve.Affine.CoordinateRing.conjHom W x := by
+  simp [WeierstrassCurve.Affine.CoordinateRing.conj]
 
 /-- Conjugation sends the coordinate `y` to `-y - (a₁X + a₃)`. -/
 @[simp]
-lemma conj_mk_Y : conj W (AdjoinRoot.root W.polynomial) = mk W W.negPolynomial := by
-  rw [conj_apply, conjHom_mk_Y]
+lemma _root_.WeierstrassCurve.Affine.CoordinateRing.conj_mk_Y
+    : WeierstrassCurve.Affine.CoordinateRing.conj W (AdjoinRoot.root W.polynomial) =
+      mk W W.negPolynomial := by
+  rw [WeierstrassCurve.Affine.CoordinateRing.conj_apply,
+      WeierstrassCurve.Affine.CoordinateRing.conjHom_mk_Y]
 
 /-- Conjugation fixes the coefficient ring `R[X]`. -/
 @[simp]
-lemma conj_mk_C (r : R[X]) : conj W (AdjoinRoot.of W.polynomial r) = mk W (C r) := by
-  rw [conj_apply, conjHom_mk_C]
+lemma _root_.WeierstrassCurve.Affine.CoordinateRing.conj_mk_C
+    (r : R[X]) :
+      WeierstrassCurve.Affine.CoordinateRing.conj W (AdjoinRoot.of W.polynomial r) =
+        mk W (C r) := by
+  rw [WeierstrassCurve.Affine.CoordinateRing.conj_apply,
+      WeierstrassCurve.Affine.CoordinateRing.conjHom_mk_C]
 
 /-- Conjugation is an involution. -/
 @[simp]
-lemma conj_conj (x : W.CoordinateRing) : conj W (conj W x) = x :=
-  by simpa only [conj_apply] using conjHom_conjHom W x
+lemma _root_.WeierstrassCurve.Affine.CoordinateRing.conj_conj
+    (x : W.CoordinateRing) :
+      WeierstrassCurve.Affine.CoordinateRing.conj W
+        (WeierstrassCurve.Affine.CoordinateRing.conj W x) = x :=
+  by simpa only [WeierstrassCurve.Affine.CoordinateRing.conj_apply] using
+      WeierstrassCurve.Affine.CoordinateRing.conjHom_conjHom W x
 
 /-- In the basis `{1, Y}`, conjugation sends the element with coordinates `(p, q)` to the
 polynomial representative `p + q * W.negPolynomial`. -/
-lemma conj_smul_basis (p q : R[X]) :
-    conj W (p • (1 : W.CoordinateRing) + q • mk W Y) = mk W (C p + C q * W.negPolynomial) := by
-  rw [smul_mk_eq_mk]
-  simp only [map_add, map_mul, AdjoinRoot.mk_C, AdjoinRoot.mk_X, conj_mk_C, conj_mk_Y]
+lemma _root_.WeierstrassCurve.Affine.CoordinateRing.conj_smul_basis (p q : R[X]) :
+    WeierstrassCurve.Affine.CoordinateRing.conj W (p • (1 : W.CoordinateRing) + q • mk W Y) = mk W
+        (C p + C q * W.negPolynomial) := by
+  rw [WeierstrassCurve.Affine.CoordinateRing.smul_mk_eq_mk]
+  simp only [map_add, map_mul, AdjoinRoot.mk_C, AdjoinRoot.mk_X,
+      WeierstrassCurve.Affine.CoordinateRing.conj_mk_C,
+          WeierstrassCurve.Affine.CoordinateRing.conj_mk_Y]
 
 /-- The sum of an element of the coordinate ring and its conjugate is its trace `2p - qs`. -/
 @[simp]
-lemma add_negPolynomial_smul_basis (p q : R[X]) :
+lemma _root_.WeierstrassCurve.Affine.CoordinateRing.add_negPolynomial_smul_basis (p q : R[X]) :
     p • (1 : W.CoordinateRing) + q • AdjoinRoot.root W.polynomial +
         (p • 1 + AdjoinRoot.mk W.polynomial (q • W.negPolynomial)) =
       algebraMap R[X] W.CoordinateRing (2 * p - q * (C W.a₁ * X + C W.a₃)) := by
-  rw [← AdjoinRoot.mk_X, ← AdjoinRoot.smul_mk, smul_mk_eq_mk, smul_mk_eq_mk,
-    ← map_add, ← mk_C_eq_algebraMap]
+  rw [← AdjoinRoot.mk_X, ← AdjoinRoot.smul_mk,
+      WeierstrassCurve.Affine.CoordinateRing.smul_mk_eq_mk,
+          WeierstrassCurve.Affine.CoordinateRing.smul_mk_eq_mk,
+    ← map_add, ← WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap]
   congr 1
   rw [negPolynomial]
   simp only [map_sub, map_mul, map_ofNat]
@@ -182,13 +217,16 @@ lemma add_negPolynomial_smul_basis (p q : R[X]) :
 
 /-- The product of an element of the coordinate ring and its conjugate is its norm. -/
 @[simp]
-lemma mul_conj (x : W.CoordinateRing) :
-    x * conj W x = algebraMap R[X] W.CoordinateRing (Algebra.norm R[X] x) := by
+lemma _root_.WeierstrassCurve.Affine.CoordinateRing.mul_conj (x : W.CoordinateRing) :
+    x * WeierstrassCurve.Affine.CoordinateRing.conj W x = algebraMap R[X] W.CoordinateRing
+        (Algebra.norm R[X] x) := by
   obtain ⟨p, q, rfl⟩ := exists_smul_basis_eq x
-  rw [conj_smul_basis, ← mk_C_eq_algebraMap, AdjoinRoot.mk_C, coe_norm_smul_basis,
-    smul_mk_eq_mk, ← map_mul, negPolynomial]
+  rw [WeierstrassCurve.Affine.CoordinateRing.conj_smul_basis, ←
+      WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap, AdjoinRoot.mk_C,
+          coe_norm_smul_basis,
+    WeierstrassCurve.Affine.CoordinateRing.smul_mk_eq_mk, ← map_mul, negPolynomial]
 
-end CoordinateRing
+end
 
 /-! ## The divisibility core -/
 
@@ -203,7 +241,8 @@ this says `W_X` vanishes at the point once `W_Y` does.
 
 Neither primality of `π` nor any field structure is used: this is the chain rule and
 `Polynomial.pow_sub_one_dvd_derivative_of_pow_dvd`. -/
-private theorem dvd_a₁_mul_add_of_dvd_two_mul_sub_of_sq_dvd {π g : R[X]}
+private theorem _root_.WeierstrassCurve.Affine.dvd_a₁_mul_add_of_dvd_two_mul_sub_of_sq_dvd
+    {π g : R[X]}
     (hs : π ∣ 2 * g - (C W.a₁ * X + C W.a₃))
     (hsq : π ^ 2 ∣ g ^ 2 - g * (C W.a₁ * X + C W.a₃) -
       (X ^ 3 + C W.a₂ * X ^ 2 + C W.a₄ * X + C W.a₆)) :
@@ -239,7 +278,8 @@ image of `X` and `β` that of `-g`, and that both partial derivatives vanish the
 
 That is a singular point of an elliptic curve. The argument is uniform in the characteristic,
 unlike the route through `Squarefree (4X³ + b₂X² + 2b₄X + b₆)`. -/
-private theorem not_sq_dvd_of_dvd_two_mul_sub [W.IsElliptic] {π g : F[X]} (hπ : Prime π)
+private theorem _root_.WeierstrassCurve.Affine.not_sq_dvd_of_dvd_two_mul_sub
+    [W.IsElliptic] {π g : F[X]} (hπ : Prime π)
     (hs : π ∣ 2 * g - (C W.a₁ * X + C W.a₃)) :
     ¬π ^ 2 ∣ g ^ 2 - g * (C W.a₁ * X + C W.a₃) -
       (X ^ 3 + C W.a₂ * X ^ 2 + C W.a₄ * X + C W.a₆) := by
@@ -249,7 +289,7 @@ private theorem not_sq_dvd_of_dvd_two_mul_sub [W.IsElliptic] {π g : F[X]} (hπ 
     rw [AdjoinRoot.aeval_eq]; exact AdjoinRoot.mk_eq_zero.mpr hr
   have h₁ := hev _ ((dvd_pow_self π two_ne_zero).trans hsq)
   have h₂ := hev _ hs
-  have h₃ := hev _ (dvd_a₁_mul_add_of_dvd_two_mul_sub_of_sq_dvd W hs hsq)
+  have h₃ := hev _ (WeierstrassCurve.Affine.dvd_a₁_mul_add_of_dvd_two_mul_sub_of_sq_dvd W hs hsq)
   simp only [map_sub, map_add, map_mul, map_pow, map_ofNat, aeval_C, aeval_X] at h₁ h₂ h₃
   have key : (W.map (algebraMap F (AdjoinRoot π))).Nonsingular (AdjoinRoot.root π)
       (-aeval (AdjoinRoot.root π) g) := equation_iff_nonsingular.mp <| by
@@ -273,7 +313,8 @@ and misses `q` — leaves the same two divisibilities for the pair `(g, 1)`.
 
 This step is pure divisibility bookkeeping: the curve is not used, and `W` need not be
 elliptic. -/
-private theorem exists_dvd_two_mul_sub_and_sq_dvd_of_not_dvd {π p q : F[X]} (hπ : Prime π)
+private theorem _root_.WeierstrassCurve.Affine.exists_dvd_two_mul_sub_and_sq_dvd_of_not_dvd
+    {π p q : F[X]} (hπ : Prime π)
     (hq : ¬π ∣ q) (ht : π ∣ 2 * p - q * (C W.a₁ * X + C W.a₃))
     (hn : π ^ 2 ∣ p ^ 2 - p * q * (C W.a₁ * X + C W.a₃) -
       q ^ 2 * (X ^ 3 + C W.a₂ * X ^ 2 + C W.a₄ * X + C W.a₆)) :
@@ -302,15 +343,17 @@ private theorem exists_dvd_two_mul_sub_and_sq_dvd_of_not_dvd {π p q : F[X]} (h�
 /-- Over a field, a prime dividing the trace `2p - qs` and whose square divides the norm
 `p² - pqs - q²c` divides both `p` and `q`. This is where the curve enters: the alternative is a
 singular point of `W` over the residue field of the prime. -/
-private theorem dvd_and_dvd_of_prime [W.IsElliptic] {π p q : F[X]} (hπ : Prime π)
+private theorem _root_.WeierstrassCurve.Affine.dvd_and_dvd_of_prime
+    [W.IsElliptic] {π p q : F[X]} (hπ : Prime π)
     (ht : π ∣ 2 * p - q * (C W.a₁ * X + C W.a₃))
     (hn : π ^ 2 ∣ p ^ 2 - p * q * (C W.a₁ * X + C W.a₃) -
       q ^ 2 * (X ^ 3 + C W.a₂ * X ^ 2 + C W.a₄ * X + C W.a₆)) :
     π ∣ p ∧ π ∣ q := by
   have hq : π ∣ q := by
     by_contra hq
-    obtain ⟨g, hs, hsq⟩ := exists_dvd_two_mul_sub_and_sq_dvd_of_not_dvd W hπ hq ht hn
-    exact not_sq_dvd_of_dvd_two_mul_sub W hπ hs hsq
+    obtain ⟨g, hs, hsq⟩ := WeierstrassCurve.Affine.exists_dvd_two_mul_sub_and_sq_dvd_of_not_dvd W
+        hπ hq ht hn
+    exact WeierstrassCurve.Affine.not_sq_dvd_of_dvd_two_mul_sub W hπ hs hsq
   refine ⟨?_, hq⟩
   obtain ⟨q₁, rfl⟩ := hq
   refine hπ.dvd_of_dvd_pow (n := 2) ?_
@@ -320,14 +363,16 @@ private theorem dvd_and_dvd_of_prime [W.IsElliptic] {π p q : F[X]} (hπ : Prime
 
 /-- The divisibility core: a denominator dividing the trace and whose square divides the norm
 divides both coordinates. -/
-private theorem dvd_and_dvd [W.IsElliptic] (d : F[X]) : ∀ p q : F[X], d ≠ 0 →
+private theorem _root_.WeierstrassCurve.Affine.dvd_and_dvd
+    [W.IsElliptic] (d : F[X]) : ∀ p q : F[X], d ≠ 0 →
     d ∣ 2 * p - q * (C W.a₁ * X + C W.a₃) →
     d ^ 2 ∣ p ^ 2 - p * q * (C W.a₁ * X + C W.a₃) -
       q ^ 2 * (X ^ 3 + C W.a₂ * X ^ 2 + C W.a₄ * X + C W.a₆) →
     d ∣ p ∧ d ∣ q := by
   refine UniqueFactorizationMonoid.induction_on_prime d (fun p q hd => absurd rfl hd)
     (fun u hu p q _ _ _ => ⟨hu.dvd, hu.dvd⟩) fun a π ha hπ ih p q _ ht hn => ?_
-  obtain ⟨hp, hq⟩ := dvd_and_dvd_of_prime W hπ ((dvd_mul_right π a).trans ht)
+  obtain ⟨hp, hq⟩ := WeierstrassCurve.Affine.dvd_and_dvd_of_prime W hπ ((dvd_mul_right π a).trans
+      ht)
     (dvd_trans (pow_dvd_pow_of_dvd (dvd_mul_right π a) 2) hn)
   obtain ⟨p', rfl⟩ := hp
   obtain ⟨q', rfl⟩ := hq
@@ -357,7 +402,8 @@ section IntegrallyClosed
 
 /-- An element of a field extension of `A` that is a quotient of elements of `A` and is integral
 over `A` has its numerator divisible by its denominator, when `A` is integrally closed. -/
-private theorem dvd_of_isIntegral_div {A L : Type*} [CommRing A] [IsDomain A]
+private theorem _root_.WeierstrassCurve.Affine.dvd_of_isIntegral_div
+    {A L : Type*} [CommRing A] [IsDomain A]
     [IsIntegrallyClosed A] [Field L] [Algebra A L] [FaithfulSMul A L] {a d : A} (hd : d ≠ 0)
     (h : IsIntegral A (algebraMap A L a / algebraMap A L d)) : d ∣ a := by
   have hinj : Function.Injective (algebraMap A L) := FaithfulSMul.algebraMap_injective A L
@@ -375,17 +421,20 @@ private theorem dvd_of_isIntegral_div {A L : Type*} [CommRing A] [IsDomain A]
 variable {F : Type*} [Field F] (W : _root_.WeierstrassCurve.Affine F)
 
 /-- The conjugation involution of the function field `F(W)` over `F(X)`. -/
-private noncomputable def conjFunctionField :
+private noncomputable def _root_.WeierstrassCurve.Affine.conjFunctionField :
     W.FunctionField ≃ₐ[F[X]] W.FunctionField :=
-  IsFractionRing.algEquivOfAlgEquiv (CoordinateRing.conj W)
+  IsFractionRing.algEquivOfAlgEquiv (WeierstrassCurve.Affine.CoordinateRing.conj W)
 
 /-- Conjugation moves only the numerator of `b / d`, because it fixes `F[X]`. -/
-private theorem conjFunctionField_apply_div (b : W.CoordinateRing) (d : F[X]) :
-    conjFunctionField W (algebraMap W.CoordinateRing W.FunctionField b /
+private theorem _root_.WeierstrassCurve.Affine.conjFunctionField_apply_div
+    (b : W.CoordinateRing) (d : F[X]) :
+    WeierstrassCurve.Affine.conjFunctionField W (algebraMap W.CoordinateRing W.FunctionField b /
         algebraMap F[X] W.FunctionField d) =
-      algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.conj W b) /
+      algebraMap W.CoordinateRing W.FunctionField
+          (WeierstrassCurve.Affine.CoordinateRing.conj W b) /
         algebraMap F[X] W.FunctionField d := by
-  rw [map_div₀, conjFunctionField, IsFractionRing.algEquivOfAlgEquiv_algebraMap, AlgEquiv.commutes]
+  rw [map_div₀, WeierstrassCurve.Affine.conjFunctionField,
+      IsFractionRing.algEquivOfAlgEquiv_algebraMap, AlgEquiv.commutes]
 
 /-- **The trace of an integral quotient is divisible by the denominator.** For `w = b / d` with `b`
 in the coordinate ring and `d` in `F[X]`, writing `b = p + q Y` in the basis, the trace of `w` is
@@ -393,26 +442,29 @@ in the coordinate ring and `d` in `F[X]`, writing `b = p + q Y` in the basis, th
 over `F[X]`, hence so is the quotient, and that forces `d ∣ 2p - q(a₁X + a₃)`.
 
 Ellipticity of `W` is not needed here, and is not assumed. -/
-private theorem dvd_trace_of_isIntegral_div {b : W.CoordinateRing} {d p q : F[X]}
+private theorem _root_.WeierstrassCurve.Affine.dvd_trace_of_isIntegral_div
+    {b : W.CoordinateRing} {d p q : F[X]}
     (hd0 : d ≠ 0) (hpq : p • (1 : W.CoordinateRing) + q • mk W Y = b)
     (hz : IsIntegral F[X] (algebraMap W.CoordinateRing W.FunctionField b /
       algebraMap F[X] W.FunctionField d)) :
     d ∣ 2 * p - q * (C W.a₁ * X + C W.a₃) := by
-  refine dvd_of_isIntegral_div (L := W.FunctionField) hd0 ?_
+  refine WeierstrassCurve.Affine.dvd_of_isIntegral_div (L := W.FunctionField) hd0 ?_
   have hadd : p • (1 : W.CoordinateRing) + q • mk W Y +
-      CoordinateRing.conj W (p • 1 + q • mk W Y) =
+      WeierstrassCurve.Affine.CoordinateRing.conj W (p • 1 + q • mk W Y) =
       algebraMap F[X] W.CoordinateRing (2 * p - q * (C W.a₁ * X + C W.a₃)) := by
-    simpa only [AdjoinRoot.mk_X, map_add, map_smul, map_one, CoordinateRing.conj_mk_Y,
-      AdjoinRoot.smul_mk] using CoordinateRing.add_negPolynomial_smul_basis W p q
+    simpa only [AdjoinRoot.mk_X, map_add, map_smul, map_one,
+      WeierstrassCurve.Affine.CoordinateRing.conj_mk_Y, AdjoinRoot.smul_mk] using
+      WeierstrassCurve.Affine.CoordinateRing.add_negPolynomial_smul_basis W p q
   have hsum : algebraMap F[X] W.FunctionField (2 * p - q * (C W.a₁ * X + C W.a₃)) /
       algebraMap F[X] W.FunctionField d =
       algebraMap W.CoordinateRing W.FunctionField b / algebraMap F[X] W.FunctionField d +
-        conjFunctionField W (algebraMap W.CoordinateRing W.FunctionField b /
+        WeierstrassCurve.Affine.conjFunctionField W (algebraMap W.CoordinateRing W.FunctionField b /
           algebraMap F[X] W.FunctionField d) := by
-    rw [conjFunctionField_apply_div, ← add_div, ← map_add,
+    rw [WeierstrassCurve.Affine.conjFunctionField_apply_div, ← add_div, ← map_add,
       IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField, ← hpq, hadd]
   rw [hsum]
-  exact hz.add (hz.map (conjFunctionField W : W.FunctionField →ₐ[F[X]] W.FunctionField))
+  exact hz.add (hz.map (WeierstrassCurve.Affine.conjFunctionField W : W.FunctionField →ₐ[F[X]]
+      W.FunctionField))
 
 /-- **The norm of an integral quotient is divisible by the square of the denominator.** The
 companion of `dvd_trace_of_isIntegral_div`: the norm of `w = b / d` is
@@ -420,13 +472,14 @@ companion of `dvd_trace_of_isIntegral_div`: the norm of `w = b / d` is
 basis. Integrality of that product forces `d² ∣ Norm(b)`.
 
 Ellipticity of `W` is not needed here either. -/
-private theorem sq_dvd_norm_of_isIntegral_div {b : W.CoordinateRing} {d p q : F[X]}
+private theorem _root_.WeierstrassCurve.Affine.sq_dvd_norm_of_isIntegral_div
+    {b : W.CoordinateRing} {d p q : F[X]}
     (hd0 : d ≠ 0) (hpq : p • (1 : W.CoordinateRing) + q • mk W Y = b)
     (hz : IsIntegral F[X] (algebraMap W.CoordinateRing W.FunctionField b /
       algebraMap F[X] W.FunctionField d)) :
     d ^ 2 ∣ p ^ 2 - p * q * (C W.a₁ * X + C W.a₃) -
       q ^ 2 * (X ^ 3 + C W.a₂ * X ^ 2 + C W.a₄ * X + C W.a₆) := by
-  refine dvd_of_isIntegral_div (L := W.FunctionField) (pow_ne_zero 2 hd0) ?_
+  refine WeierstrassCurve.Affine.dvd_of_isIntegral_div (L := W.FunctionField) (pow_ne_zero 2 hd0) ?_
   have hnorm : Algebra.norm F[X] b = p ^ 2 - p * q * (C W.a₁ * X + C W.a₃) -
       q ^ 2 * (X ^ 3 + C W.a₂ * X ^ 2 + C W.a₄ * X + C W.a₆) := by
     rw [← hpq, norm_smul_basis]
@@ -434,17 +487,19 @@ private theorem sq_dvd_norm_of_isIntegral_div {b : W.CoordinateRing} {d p q : F[
       q ^ 2 * (X ^ 3 + C W.a₂ * X ^ 2 + C W.a₄ * X + C W.a₆)) /
       algebraMap F[X] W.FunctionField (d ^ 2) =
       (algebraMap W.CoordinateRing W.FunctionField b / algebraMap F[X] W.FunctionField d) *
-        conjFunctionField W (algebraMap W.CoordinateRing W.FunctionField b /
+        WeierstrassCurve.Affine.conjFunctionField W (algebraMap W.CoordinateRing W.FunctionField b /
           algebraMap F[X] W.FunctionField d) := by
-    rw [conjFunctionField_apply_div, div_mul_div_comm, ← map_mul, ← hnorm,
-      CoordinateRing.mul_conj,
+    rw [WeierstrassCurve.Affine.conjFunctionField_apply_div, div_mul_div_comm, ← map_mul, ← hnorm,
+      WeierstrassCurve.Affine.CoordinateRing.mul_conj,
       ← IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField, map_pow, pow_two]
   rw [hprod]
-  exact hz.mul (hz.map (conjFunctionField W : W.FunctionField →ₐ[F[X]] W.FunctionField))
+  exact hz.mul (hz.map (WeierstrassCurve.Affine.conjFunctionField W : W.FunctionField →ₐ[F[X]]
+      W.FunctionField))
 
 /-- Every element of the function field of an elliptic curve that is integral over `F[X]` already
 lies in the coordinate ring. -/
-private theorem exists_algebraMap_eq [W.IsElliptic] {z : W.FunctionField}
+private theorem _root_.WeierstrassCurve.Affine.exists_algebraMap_eq
+    [W.IsElliptic] {z : W.FunctionField}
     (hz : IsIntegral F[X] z) :
     ∃ b : W.CoordinateRing, algebraMap W.CoordinateRing W.FunctionField b = z := by
   -- write `z = b / d` with `b` in the coordinate ring and `d` in `F[X]`; the function field is
@@ -461,27 +516,28 @@ private theorem exists_algebraMap_eq [W.IsElliptic] {z : W.FunctionField}
       IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField, hbm]
   -- the trace and the norm of `z`
   obtain ⟨p, q, hpq⟩ := exists_smul_basis_eq b
-  have htr := dvd_trace_of_isIntegral_div W hd0 hpq hz
-  have hnm := sq_dvd_norm_of_isIntegral_div W hd0 hpq hz
+  have htr := WeierstrassCurve.Affine.dvd_trace_of_isIntegral_div W hd0 hpq hz
+  have hnm := WeierstrassCurve.Affine.sq_dvd_norm_of_isIntegral_div W hd0 hpq hz
   -- conclude
-  obtain ⟨hdp, hdq⟩ := dvd_and_dvd W d p q hd0 htr hnm
+  obtain ⟨hdp, hdq⟩ := WeierstrassCurve.Affine.dvd_and_dvd W d p q hd0 htr hnm
   obtain ⟨p', rfl⟩ := hdp
   obtain ⟨q', rfl⟩ := hdq
   refine ⟨p' • 1 + q' • mk W Y, ?_⟩
   rw [eq_div_iff hdK, IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField,
     ← map_mul, ← hpq]
   congr 1
-  simp only [smul, ← CoordinateRing.mk_C_eq_algebraMap, map_mul]
+  simp only [smul, ← WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap, map_mul]
   ring1
 
 /-- **The coordinate ring of an elliptic curve is integrally closed.** This is the normality half
 of the statement that it is a Dedekind domain, and the input that the induced map on points of an
 isogeny consumes. -/
-theorem isIntegrallyClosed_coordinateRing [W.IsElliptic] : IsIntegrallyClosed W.CoordinateRing := by
+theorem _root_.WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing
+    [W.IsElliptic] : IsIntegrallyClosed W.CoordinateRing := by
   have : Algebra.IsIntegral F[X] W.CoordinateRing := Algebra.IsIntegral.of_finite _ _
   have : IsIntegrallyClosedIn W.CoordinateRing W.FunctionField :=
     isIntegrallyClosedIn_iff.mpr ⟨FaithfulSMul.algebraMap_injective _ _,
-      fun hx => exists_algebraMap_eq W (isIntegral_trans _ hx)⟩
+      fun hx => WeierstrassCurve.Affine.exists_algebraMap_eq W (isIntegral_trans _ hx)⟩
   exact IsIntegrallyClosed.of_isIntegrallyClosedIn W.CoordinateRing W.FunctionField
 
 /-- **An integrally closed coordinate ring is a Dedekind domain.** -/
@@ -494,6 +550,6 @@ theorem _root_.WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isInte
 
 end IntegrallyClosed
 
-end WeierstrassCurve.Affine
+end
 
 end TauCeti

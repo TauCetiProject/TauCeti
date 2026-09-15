@@ -56,6 +56,8 @@ So `IsContinuous` is defined here by testing the *canonical* valuation of the po
   set-level lemma is kept for it, since that would be this one after unfolding.
 * `TauCeti.ValuationSpectrum.IsContinuous.quotientLift` : continuity descends to the canonical
   lift through a quotient.
+* `TauCeti.ValuationSpectrum.closure_zero_subset_supp_of_isContinuous`,
+  `closure_zero_le_supp_of_isContinuous`: every continuous valuation kills the closure of zero.
 * `TauCeti.ValuationSpectrum.cont_eq_univ` : **Remark 7.8(2)**, `Cont A = Spv A` for discrete `A`.
 * `TauCeti.ValuationSpectrum.cont_eq_empty_of_one_mem_closure_zero` : if `1` belongs to the
   closure of zero, then `Cont A` is empty.
@@ -171,6 +173,21 @@ section SeparatelyContinuousAdd
 
 variable [SeparatelyContinuousAdd A]
 
+/-- The support of every continuous valuation contains the closure of zero. -/
+theorem closure_zero_subset_supp_of_isContinuous {v : Spv A} (hv : v.IsContinuous) :
+    closure ({0} : Set A) ⊆ v.supp := by
+  intro x hx
+  rw [v.supp_eq_valuation_supp]
+  apply (v.valuation.mem_supp_iff x).mpr
+  by_contra hx0
+  have hball := ((isContinuous_def v).mp hv).sub_lt_mem_nhds x hx0
+  obtain ⟨y, hyball, hy⟩ := mem_closure_iff_nhds.mp hx _ hball
+  rw [Set.mem_singleton_iff] at hy
+  subst y
+  simp only [Set.mem_ofPred_eq] at hyball
+  rw [zero_sub, v.valuation.map_neg] at hyball
+  exact (lt_irrefl _ hyball)
+
 /-- **The `1 ∈ closure {0} → Cont A = ∅` half of Wedhorn Proposition 7.49(1).** If `1 ∈ closure {0}`
 in a commutative ring `A` with separately continuous addition, then `Cont A = ∅`. -/
 theorem cont_eq_empty_of_one_mem_closure_zero (h : (1 : A) ∈ closure ({0} : Set A)) :
@@ -178,15 +195,24 @@ theorem cont_eq_empty_of_one_mem_closure_zero (h : (1 : A) ∈ closure ({0} : Se
   ext v
   simp only [Set.mem_empty_iff_false, iff_false, mem_cont_iff]
   intro hv
-  have hcont : v.valuation.IsContinuous := (isContinuous_def v).mp hv
-  have h_nhds : {y : A | v.valuation (y - 1) < 1} ∈ nhds (1 : A) := by
-    have h1_ne : v.valuation 1 ≠ 0 := by simp [v.valuation.map_one]
-    have := hcont.sub_lt_mem_nhds 1 h1_ne
-    simpa [v.valuation.map_one] using this
-  obtain ⟨x, hx, rfl⟩ := mem_closure_iff_nhds.mp h _ h_nhds
-  simp [v.valuation.map_one] at hx
+  exact (inferInstance : v.supp.IsPrime).ne_top ((Ideal.eq_top_iff_one _).mpr
+    (closure_zero_subset_supp_of_isContinuous hv h))
 
 end SeparatelyContinuousAdd
+
+section TopologicalRing
+
+variable [IsTopologicalRing A]
+
+/-- The support of every continuous valuation contains the closure of the zero ideal.
+Equivalently, every continuous valuation factors through the separation quotient. -/
+theorem closure_zero_le_supp_of_isContinuous {v : Spv A} (hv : v.IsContinuous) :
+    Ideal.closure (⊥ : Ideal A) ≤ v.supp := by
+  intro x hx
+  apply closure_zero_subset_supp_of_isContinuous hv
+  rwa [← SetLike.mem_coe, Ideal.coe_closure, Submodule.bot_coe] at hx
+
+end TopologicalRing
 
 /-- **Wedhorn Remark 7.9.** A continuous ring homomorphism pulls continuous points back to
 continuous points, so it restricts to a map `Cont B → Cont A`. -/

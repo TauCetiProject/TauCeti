@@ -27,6 +27,8 @@ in the original parameters.
 
 * `Matrix.isHermitian_sqrt_mul_mul_sqrt` — the sandwich of a Hermitian matrix by a square root
   is Hermitian;
+* `Matrix.PosSemidef.rank_sqrt` — the square root of a positive-semidefinite matrix has the same
+  rank;
 * `Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin` — the quadratic form of `Θ` at
   `CFC.sqrt S x` is the quadratic form of the sandwich at `x`;
 * `Matrix.PosSemidef.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul` — for
@@ -42,6 +44,18 @@ open scoped ComplexOrder InnerProductSpace MatrixOrder Matrix.Norms.L2Operator
 namespace Matrix
 
 variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι]
+
+open scoped Classical in
+/-- The square root of a positive-semidefinite matrix has the same rank as the matrix. -/
+@[simp]
+theorem PosSemidef.rank_sqrt {S : Matrix ι ι 𝕜} (hS : S.PosSemidef) :
+    (CFC.sqrt S).rank = S.rank := by
+  have hh : (CFC.sqrt S).IsHermitian :=
+    (Matrix.nonneg_iff_posSemidef.1 (CFC.sqrt_nonneg S)).isHermitian
+  have hfac : (CFC.sqrt S)ᴴ * CFC.sqrt S = S := by
+    rw [hh.eq, CFC.sqrt_mul_sqrt_self S hS.nonneg]
+  conv_rhs => rw [← hfac]
+  rw [Matrix.rank_conjTranspose_mul_self]
 
 open scoped Classical in
 /-- Sandwiching a Hermitian matrix between two copies of a square root gives a Hermitian

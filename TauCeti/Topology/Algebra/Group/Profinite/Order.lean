@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Topology.Algebra.Group.Profinite.Basic
 public import Mathlib.GroupTheory.Index
 public import TauCeti.NumberTheory.Supernatural
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
@@ -28,6 +29,9 @@ order exactly.
   normal subgroups.
 * `profiniteOrder_eq_iSup_ofNat`: its description as the supremum of the embedded quotient
   orders.
+* `Subgroup.profiniteOrder_eq_iSup_image`: a closed subgroup's order as the supremum of its
+  images in the ambient finite quotients.
+* `Subgroup.profiniteOrder_apply_eq_iSup_image`: the primewise form of this description.
 * `profiniteOrder_le_of_surjective`: continuous surjections do not increase supernatural
   order.
 * `profiniteOrder_congr`: topological group isomorphisms preserve supernatural order.
@@ -144,6 +148,62 @@ theorem ofNat_card_quotient_le_profiniteOrder (U : OpenNormalSubgroup G) :
       Supernatural.ofNat (⟨Nat.card (G ⧸ V.toSubgroup), Nat.card_pos⟩ : ℕ+)) U
 
 end Profinite
+
+section ClosedSubgroup
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- The supernatural order of a closed subgroup is the supremum of the orders of its images
+in the ambient finite continuous quotients. -/
+theorem _root_.Subgroup.profiniteOrder_eq_iSup_image (H : Subgroup G)
+    (hH : IsClosed (H : Set G)) :
+    profiniteOrder H = ⨆ N : OpenNormalSubgroup G,
+      Supernatural.ofNat
+        (⟨Nat.card (H.map (QuotientGroup.mk' N.toSubgroup)), Nat.card_pos⟩ : ℕ+) := by
+  let : CompactSpace H := isCompact_iff_compactSpace.mp hH.isCompact
+  rw [profiniteOrder_eq_iSup_ofNat]
+  apply le_antisymm
+  · refine iSup_le fun V ↦ ?_
+    obtain ⟨N, hNV⟩ := H.exists_openNormalSubgroup_comap_le V
+    refine le_trans ?_ (le_iSup (fun N : OpenNormalSubgroup G ↦
+      Supernatural.ofNat
+        (⟨Nat.card (H.map (QuotientGroup.mk' N.toSubgroup)), Nat.card_pos⟩ : ℕ+)) N)
+    apply Supernatural.ofNat_le_ofNat_iff.mpr
+    apply PNat.dvd_iff.mpr
+    have hdvd : Nat.card (H ⧸ V.toSubgroup) ∣
+        Nat.card (H.map (QuotientGroup.mk' N.toSubgroup)) := by
+      rw [← V.toSubgroup.index_eq_card,
+        ← Subgroup.relIndex_ker H (QuotientGroup.mk' N.toSubgroup), QuotientGroup.ker_mk',
+        Subgroup.relIndex, ← Subgroup.comap_subtype]
+      exact Subgroup.index_dvd_of_le hNV
+    exact hdvd
+  · refine iSup_le fun N ↦ ?_
+    let V := OpenNormalSubgroup.comap N H.subtype continuous_subtype_val
+    refine le_iSup_of_le V ?_
+    apply le_of_eq
+    apply congrArg Supernatural.ofNat
+    apply Subtype.ext
+    have hcard : Nat.card (H ⧸ V.toSubgroup) =
+        Nat.card (H.map (QuotientGroup.mk' N.toSubgroup)) := by
+      have hV : V.toSubgroup = N.toSubgroup.comap H.subtype :=
+        OpenNormalSubgroup.toSubgroup_comap N H.subtype continuous_subtype_val
+      rw [← V.toSubgroup.index_eq_card, hV,
+        ← Subgroup.relIndex_ker H (QuotientGroup.mk' N.toSubgroup), QuotientGroup.ker_mk',
+        Subgroup.relIndex, ← Subgroup.comap_subtype]
+    exact hcard.symm
+
+/-- Primewise form of `Subgroup.profiniteOrder_eq_iSup_image`. -/
+theorem _root_.Subgroup.profiniteOrder_apply_eq_iSup_image (H : Subgroup G)
+    (hH : IsClosed (H : Set G)) (ℓ : Nat.Primes) :
+    profiniteOrder H ℓ = ⨆ N : OpenNormalSubgroup G,
+      (padicValNat ℓ (Nat.card (H.map (QuotientGroup.mk' N.toSubgroup))) : ℕ∞) := by
+  rw [H.profiniteOrder_eq_iSup_image hH, Supernatural.iSup_apply]
+  congr 1
+  funext N
+  exact Supernatural.ofNat_apply _ _
+
+end ClosedSubgroup
 
 section Finite
 

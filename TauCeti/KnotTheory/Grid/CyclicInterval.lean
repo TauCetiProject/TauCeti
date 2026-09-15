@@ -34,6 +34,8 @@ directions before taking products.
 * `TauCeti.Grid.mem_cIoo_or_mem_cIoo_swap_iff`: a point lies in one opposite arc exactly when
   it is not an endpoint.
 * `TauCeti.Grid.cIoo_union_swap`: the two opposite arcs cover the endpoint complement.
+* `TauCeti.Grid.mem_cIoo_cyclic_left`, `TauCeti.Grid.mem_cIoo_cyclic_right`: the two rotations
+  of a cyclic order of three points.
 * `TauCeti.Grid.mem_cIoo_swap_of_notMem`: a point off both endpoints that misses one arc lies on
   the opposite arc.
 * `TauCeti.Grid.mem_cIoo_of_mem_cIoo_of_mem_cIoo_swap`: if `a` and `b` lie on opposite arcs from
@@ -461,6 +463,18 @@ theorem not_mem_cIoo_iff {a b x : Fin n} (h : a ≠ b) :
       exact right_notMem_cIoo a b
     · intro hxab
       exact not_mem_cIoo_and_cIoo_swap a b x ⟨hxab, hx⟩
+
+/-- Rotating a cyclic order: if `b` lies on the clockwise arc from `a` to `c`, then `c` lies on
+the clockwise arc from `b` to `a`. -/
+theorem mem_cIoo_cyclic_left {a b c : Fin n} (h : b ∈ cIoo a c) : c ∈ cIoo b a := by
+  simp only [cIoo, Set.Finite.mem_toFinset, Set.mem_cIoo] at h ⊢
+  exact sbtw_cyclic_left h
+
+/-- Rotating a cyclic order the other way: if `b` lies on the clockwise arc from `a` to `c`, then
+`a` lies on the clockwise arc from `c` to `b`. -/
+theorem mem_cIoo_cyclic_right {a b c : Fin n} (h : b ∈ cIoo a c) : a ∈ cIoo c b := by
+  simp only [cIoo, Set.Finite.mem_toFinset, Set.mem_cIoo] at h ⊢
+  exact sbtw_cyclic_right h
 
 /-- A point off both endpoints and outside one cyclic arc lies on the opposite arc. -/
 theorem mem_cIoo_swap_of_notMem {a b u : Fin n} (hab : a ≠ b)

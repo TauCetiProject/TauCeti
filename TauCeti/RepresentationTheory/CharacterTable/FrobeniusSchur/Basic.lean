@@ -39,7 +39,7 @@ agreement with this one are at the end of the file.
 ## Main definitions
 
 * `TauCeti.Representation.frobeniusSchurIndicator`: `ν₂(ρ) = |G|⁻¹ ∑_g χ(g²)`.
-* `TauCeti.FDRep.frobeniusSchurIndicator`: the same indicator, for a `V : FDRep k G`.
+* `FDRep.frobeniusSchurIndicator`: the same indicator, for a `V : FDRep k G`.
 
 ## Main results
 
@@ -51,7 +51,7 @@ agreement with this one are at the end of the file.
   in characteristic zero.
 * `TauCeti.Representation.frobeniusSchurIndicator_eq_intCast`: in characteristic zero the indicator
   is the integer `dim (Sym²V)ᴳ - dim (Λ²V)ᴳ`.
-* `TauCeti.FDRep.frobeniusSchurIndicator_def`: the `FDRep`-level indicator is the indicator of the
+* `FDRep.frobeniusSchurIndicator_def`: the `FDRep`-level indicator is the indicator of the
   underlying representation.
 
 ## Implementation notes
@@ -61,7 +61,7 @@ not of the object. The two statements that do not mention the indicator ask only
 and build the `Fintype` they average over inside their proofs.
 
 The `FDRep`-level indicator is the module-level one applied to `V.ρ` rather than a second copy of
-the average, so `TauCeti.FDRep.frobeniusSchurIndicator_def` unfolds that one definition and nothing
+the average, so `FDRep.frobeniusSchurIndicator_def` unfolds that one definition and nothing
 else, and every theorem about the average transfers through it. Neither definition is `@[expose]`d,
 so the two `_def` lemmas are the only route to the two averages from another module; that is what
 they are for. It is also why both are proved by a parenthesised `(rfl)`: a proof written
@@ -214,15 +214,15 @@ variable [Field k] [Group G] [Fintype G]
 
 /-- **The Frobenius-Schur indicator** of a finite-dimensional representation presented as an
 object of `FDRep k G`: the indicator `|G|⁻¹ ∑_g χ(g²)` of the underlying representation `V.ρ`. -/
-noncomputable def frobeniusSchurIndicator (V : FDRep k G) : k :=
+noncomputable def _root_.FDRep.frobeniusSchurIndicator (V : FDRep k G) : k :=
   Representation.frobeniusSchurIndicator V.ρ
 
 /-- The two forms of the indicator agree: the `FDRep`-level indicator of `V` is the indicator of
 the underlying representation `V.ρ`. It is a `simp` lemma, so results proved on the module spine
 apply to the `FDRep`-level indicator automatically. -/
 @[simp]
-theorem frobeniusSchurIndicator_def (V : FDRep k G) :
-    frobeniusSchurIndicator V = Representation.frobeniusSchurIndicator V.ρ :=
+theorem _root_.FDRep.frobeniusSchurIndicator_def (V : FDRep k G) :
+    FDRep.frobeniusSchurIndicator V = Representation.frobeniusSchurIndicator V.ρ :=
   (rfl)
 
 end FDRep

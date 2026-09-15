@@ -32,9 +32,8 @@ has a subsingleton fundamental group; the homeomorphism statements consume Mathl
 * `TauCeti.not_contractibleSpace_of_not_simplyConnectedSpace`: a non-simply-connected space is
   not contractible.
 * `TauCeti.isEmpty_homeomorph_of_not_simplyConnectedSpace`,
-  `TauCeti.isEmpty_homeomorph_realTopologicalVectorSpace_of_not_simplyConnectedSpace`,
   `TauCeti.isEmpty_homeomorph_real_of_not_simplyConnectedSpace`: a non-simply-connected space is
-  not homeomorphic to a simply connected space, to a real topological vector space, or to `ℝ`.
+  not homeomorphic to a simply connected space, or to `ℝ`.
 -/
 
 public section
@@ -66,19 +65,10 @@ theorem isEmpty_homeomorph_of_not_simplyConnectedSpace {X : Type*} [TopologicalS
   refine ⟨fun e => ?_⟩
   exact h e.toHomotopyEquiv.simplyConnectedSpace
 
-/-- A **not simply connected** space is not homeomorphic to any real topological vector space
-(in particular, to any real normed space), since such a space is contractible, hence simply
-connected. -/
-theorem isEmpty_homeomorph_realTopologicalVectorSpace_of_not_simplyConnectedSpace
-    {X : Type*} [TopologicalSpace X] (h : ¬ SimplyConnectedSpace X) (E : Type*)
-    [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [ContinuousAdd E] [ContinuousSMul ℝ E] :
-    IsEmpty (X ≃ₜ E) :=
-  isEmpty_homeomorph_of_not_simplyConnectedSpace h E
-
 /-- A **not simply connected** space is not homeomorphic to the real line: `ℝ` is contractible,
 hence simply connected. -/
 theorem isEmpty_homeomorph_real_of_not_simplyConnectedSpace {X : Type*} [TopologicalSpace X]
     (h : ¬ SimplyConnectedSpace X) : IsEmpty (X ≃ₜ ℝ) :=
-  isEmpty_homeomorph_realTopologicalVectorSpace_of_not_simplyConnectedSpace h ℝ
+  isEmpty_homeomorph_of_not_simplyConnectedSpace h ℝ
 
 end TauCeti

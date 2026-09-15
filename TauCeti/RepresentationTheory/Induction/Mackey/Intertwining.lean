@@ -192,7 +192,7 @@ theorem characterPairing_ind_ind_mackey_erase [Fintype G] (hG : IsUnit (Nat.card
   rw [characterPairing_ind_ind_mackey hG f f,
     ← Finset.add_sum_erase _ _ (Finset.mem_univ (DoubleCoset.mk H H 1)),
     characterPairing_mackeyClassFunction_of_mem
-      ((doubleCosetMk_eq_mk_one_iff_mem H _).mp (DoubleCoset.out_eq' H H _)) f]
+      ((doubleCosetMk_eq_mk_one_iff_mem H _).mp (DoubleCoset.out_eq' _)) f]
 
 end IdentityCoset
 

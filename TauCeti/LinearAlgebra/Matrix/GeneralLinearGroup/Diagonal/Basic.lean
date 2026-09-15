@@ -14,8 +14,8 @@ public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.Algebra.Group.Pi.Units
 -- `Matrix.IsDiag` occurs in the statements below.
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
--- `Subgroup.centralizer` and `Subgroup.center` occur in the statements below.
-public import Mathlib.GroupTheory.Subgroup.Centralizer
+-- `Subgroup.centralizer` and its maximal-commutative-subgroup API occur below.
+public import TauCeti.Algebra.Group.Subgroup.Centralizer
 -- `Nat.card` occurs in the statement of `TauCeti.natCard_diagonalTorus`.
 public import Mathlib.SetTheory.Cardinal.Finite
 -- Non-public: `Nat.card_units`, the number of units of a `GroupWithZero`, is used only inside the
@@ -153,6 +153,17 @@ theorem diagGL_injective {ι : Type*} [Fintype ι] [DecidableEq ι] :
   apply Units.ext
   have := congrArg (fun g : GL ι k ↦ (g : Matrix ι ι k) i i) h
   simpa using this
+
+/-- An invertible diagonal matrix with distinct diagonal entries is not scalar. Like `diagGL`
+itself, this needs only a semiring; it is what supplies the non-scalarity — the regularity — of a
+diagonal matrix in size two. -/
+theorem notMem_range_scalar_diagGL {t : Fin 2 → kˣ} (ht : t 0 ≠ t 1) :
+    (diagGL t : Matrix (Fin 2) (Fin 2) k) ∉ Set.range (Matrix.scalar (Fin 2)) := by
+  rintro ⟨c, hc⟩
+  refine ht (Units.ext ?_)
+  have h0 : c = (t 0 : k) := by simpa using congrFun (congrFun hc 0) 0
+  have h1 : c = (t 1 : k) := by simpa using congrFun (congrFun hc 1) 1
+  rw [← h0, ← h1]
 
 /-- A general-linear element whose underlying matrix is the permutation matrix of `π` moves
 past a diagonal matrix by relabelling its diagonal entries along `π`. -/
@@ -351,12 +362,8 @@ maximality of the torus among abelian subgroups. -/
 theorem eq_diagonalTorus_of_le_of_isMulCommutative (H : Subgroup (GL (Fin n) k))
     [IsMulCommutative H] (hle : diagonalTorus k n ≤ H) :
     H = diagonalTorus k n :=
-  le_antisymm
-    (by
-      rw [← centralizer_diagonalTorus (k := k) (n := n)]
-      exact (Subgroup.le_centralizer (H := H)).trans
-        (Subgroup.centralizer_le (SetLike.coe_subset_coe.mpr hle)))
-    hle
+  Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative
+    (centralizer_diagonalTorus (k := k) (n := n)) hle
 
 end IsCancelMulZero
 

@@ -1,0 +1,274 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Claude
+-/
+module
+
+public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Distance
+public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.OfMatrix
+import Mathlib.Probability.ProbabilityMassFunction.Constructions
+import TauCeti.Data.ENNReal.Weights
+import TauCeti.MeasureTheory.Measure.Coupling.Shift
+import TauCeti.MeasureTheory.Measure.FiniteMeasure
+
+/-!
+# Rounding the weights of a finite weighted graph
+
+A finite weighted graph is a symmetric `[0, 1]`-valued matrix together with vertex weights, read as
+a graphon by `Graphon.ofMatrix`.  This file rounds both weightings onto a grid at a controlled cost
+in cut distance, so that only finitely many candidates remain on a fixed vertex set.
+
+The two grids are handled quite differently.  **Edge weights** are rounded pointwise: the
+difference of the two kernels is bounded by the mesh, and so is the cut norm.  **Vertex weights**
+cannot be rounded pointwise -- they have to keep summing to one -- so all but one of them are
+rounded down and the remaining vertex absorbs the slack
+(`TauCeti.exists_nat_weights_of_sum_eq_one`).  Comparing the two weightings then needs a coupling
+of them, and the one used here (`TauCeti.MeasureTheory.shiftCoupling`) keeps the matched mass on the
+diagonal, where the overlaid difference vanishes, and sends the slack to the absorbing vertex; the
+cost is twice the transferred mass.
+
+## Main definitions
+
+* `TauCeti.DenseGraphLimits.gridValue` / `TauCeti.DenseGraphLimits.gridIndex` -- the grid of
+  multiples of `1 / (N + 1)` in `[0, 1]`, and rounding down onto it;
+* `TauCeti.DenseGraphLimits.gridWeightMeasure` -- the probability measure on `Fin n` whose weights
+  are multiples of `1 / N`.
+
+## Main results
+
+* `TauCeti.DenseGraphLimits.exists_gridValue_cutDist_le` -- the edge weights can be taken on the
+  grid of multiples of `1 / (N + 1)`, at a cost of `1 / (N + 1)`;
+* `TauCeti.DenseGraphLimits.cutDist_ofMatrix_le_two_mul_sum_tsub` -- transferring vertex weight
+  onto one designated vertex costs at most twice the transferred mass;
+* `TauCeti.DenseGraphLimits.exists_gridWeightMeasure_cutDist_le` -- the vertex weights can be taken
+  on the grid of multiples of `1 / N`, at a cost of `2 n / N`.
+
+## References
+
+* L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §9.2 --
+  weighted graphs are dense in the space of graphons.
+-/
+
+public section
+
+noncomputable section
+
+open MeasureTheory
+
+open scoped ENNReal
+
+namespace TauCeti
+
+namespace DenseGraphLimits
+
+section Grid
+
+variable {κ : Type*} [MeasurableSpace κ] [Countable κ] [MeasurableSingletonClass κ]
+
+/-- The point `k / (N + 1)` of `[0, 1]`.  As `k` runs over `Fin (N + 2)` these are the `N + 2`
+multiples of `1 / (N + 1)` in `[0, 1]`, a grid of mesh `1 / (N + 1)`. -/
+def gridValue (N : ℕ) (k : Fin (N + 2)) : Set.Icc (0 : ℝ) 1 :=
+  ⟨(k : ℕ) / ((N : ℝ) + 1), by
+    refine ⟨by positivity, ?_⟩
+    rw [div_le_one (by positivity)]
+    exact_mod_cast Nat.lt_succ_iff.mp k.isLt⟩
+
+@[simp]
+theorem coe_gridValue (N : ℕ) (k : Fin (N + 2)) :
+    (gridValue N k : ℝ) = (k : ℕ) / ((N : ℝ) + 1) := (rfl)
+
+/-- The grid point just below a `[0, 1]` value: the index of `⌊t (N + 1)⌋ / (N + 1)`. -/
+def gridIndex (N : ℕ) (t : Set.Icc (0 : ℝ) 1) : Fin (N + 2) :=
+  ⟨⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊, by
+    have h : (t : ℝ) * ((N : ℝ) + 1) ≤ ((N + 1 : ℕ) : ℝ) := by
+      push_cast
+      nlinarith [t.2.1, t.2.2, Nat.cast_nonneg (α := ℝ) N]
+    exact Nat.lt_succ_of_le ((Nat.floor_mono h).trans_eq (Nat.floor_natCast _))⟩
+
+@[simp]
+theorem coe_gridIndex (N : ℕ) (t : Set.Icc (0 : ℝ) 1) :
+    (gridIndex N t : ℕ) = ⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊ := (rfl)
+
+/-- Rounding to the grid moves a value by at most the mesh `1 / (N + 1)`. -/
+theorem abs_sub_gridValue_gridIndex_le (N : ℕ) (t : Set.Icc (0 : ℝ) 1) :
+    |(t : ℝ) - gridValue N (gridIndex N t)| ≤ 1 / ((N : ℝ) + 1) := by
+  have hN : (0 : ℝ) < (N : ℝ) + 1 := by positivity
+  have hx : (0 : ℝ) ≤ (t : ℝ) * ((N : ℝ) + 1) := mul_nonneg t.2.1 hN.le
+  have hfloor : ((⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊ : ℕ) : ℝ) ≤ (t : ℝ) * ((N : ℝ) + 1) := Nat.floor_le hx
+  have hfloor' : (t : ℝ) * ((N : ℝ) + 1) < ((⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊ : ℕ) : ℝ) + 1 :=
+    Nat.lt_floor_add_one _
+  rw [coe_gridValue, coe_gridIndex, abs_le]
+  have hlow : ((⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊ : ℕ) : ℝ) / ((N : ℝ) + 1) ≤ (t : ℝ) :=
+    (div_le_iff₀ hN).2 hfloor
+  have hhigh : (t : ℝ) - ((⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊ : ℕ) : ℝ) / ((N : ℝ) + 1)
+      ≤ 1 / ((N : ℝ) + 1) := by
+    rw [sub_le_iff_le_add, ← add_div, le_div_iff₀ hN]
+    linarith
+  exact ⟨by linarith [one_div_pos.2 hN], hhigh⟩
+
+/-- **Every finite weighted graph is within `1 / (N + 1)` in cut distance of one whose block values
+lie on the grid of multiples of `1 / (N + 1)`.**  Only the edge weights move; the vertex weights
+`ν` are untouched. -/
+theorem exists_gridValue_cutDist_le (ν : Measure κ) [IsProbabilityMeasure ν] (N : ℕ)
+    (b : κ → κ → Set.Icc (0 : ℝ) 1) (hb : ∀ i j, b i j = b j i) :
+    ∃ (c : κ → κ → Fin (N + 2)) (hc : ∀ i j, c i j = c j i),
+      cutDist (Graphon.ofMatrix ν b hb)
+          (Graphon.ofMatrix ν (fun i j => gridValue N (c i j))
+            (fun i j => congrArg (gridValue N) (hc i j))) ≤ 1 / ((N : ℝ) + 1) := by
+  refine ⟨fun i j => gridIndex N (b i j), fun i j => congrArg (gridIndex N) (hb i j), ?_⟩
+  refine (cutDist_le_cutNorm_sub _ _).trans (cutNorm_le_of_forall_abs_le _ _ fun i j => ?_)
+  simp only [SymmKernel.coe_sub, Pi.sub_apply, Graphon.coe_toSymmKernel, Graphon.ofMatrix_apply]
+  exact abs_sub_gridValue_gridIndex_le N (b i j)
+
+end Grid
+
+section WeightShift
+
+variable {κ : Type*} [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
+
+variable {ν ν' : Measure κ} {k₀ : κ}
+
+/-- **Moving vertex weights costs at most twice the moved mass.**  If `ν'` is dominated by `ν` away
+from one designated vertex `k₀` -- so that `ν'` arises from `ν` by transferring weight onto `k₀` --
+then the two finite weighted graphs with the same edge weights `b` are at cut distance at most twice
+the transferred mass.
+
+The witnessing coupling is `TauCeti.MeasureTheory.shiftCoupling`, which keeps the matched mass on
+the diagonal, where the overlaid difference vanishes, and sends the rest to `k₀`; the overlaid
+difference is bounded by one and supported on the pairs with a mismatched coordinate. -/
+theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbabilityMeasure ν']
+    (hdom : ∀ k, k ≠ k₀ → ν' {k} ≤ ν {k}) (b : κ → κ → Set.Icc (0 : ℝ) 1)
+    (hb : ∀ i j, b i j = b j i) :
+    cutDist (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb)
+      ≤ 2 * (∑ k, (ν {k} - ν' {k})).toReal := by
+  set π := MeasureTheory.shiftCoupling ν ν' k₀
+  have hfg : ∑ k, ν {k} = ∑ k, ν' {k} :=
+    ν.sum_singleton_eq_one.trans ν'.sum_singleton_eq_one.symm
+  have hne : ∑ k, ν {k} ≠ ⊤ := by rw [ν.sum_singleton_eq_one]; exact ENNReal.one_ne_top
+  have hπ : MeasureTheory.IsCoupling ν ν' π :=
+    MeasureTheory.isCoupling_shiftCoupling hfg hne hdom
+  have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
+  have hrne : ∑ k, (ν {k} - ν' {k}) ≠ ⊤ := by
+    refine ne_top_of_le_ne_top ENNReal.one_ne_top ?_
+    calc ∑ k, (ν {k} - ν' {k}) ≤ ∑ k, ν {k} := Finset.sum_le_sum fun k _ => tsub_le_self
+      _ = 1 := ν.sum_singleton_eq_one
+  -- The coupling puts at most the transferred mass off the diagonal.
+  have hoff : π (Set.diagonal κ)ᶜ ≤ ∑ k, (ν {k} - ν' {k}) :=
+    MeasureTheory.shiftCoupling_compl_diagonal_le_sum_tsub ν ν' k₀
+  -- The overlaid difference vanishes unless one of the two coordinates is mismatched.
+  set B : Set ((κ × κ) × (κ × κ)) :=
+    ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) ∪
+      ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ) with hB
+  have hBmeas : MeasurableSet B := MeasurableSet.of_discrete
+  have hle : ∀ z : (κ × κ) × (κ × κ),
+      |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb) π z.1 z.2|
+        ≤ B.indicator (1 : ((κ × κ) × (κ × κ)) → ℝ) z := by
+    intro z
+    by_cases hz : z ∈ B
+    · rw [Set.indicator_of_mem hz, Pi.one_apply]
+      exact abs_overlayDiff_apply_le_one _ _ _ _ _
+    · rw [Set.indicator_of_notMem hz]
+      simp only [hB, Set.mem_union, Set.mem_prod, Set.mem_univ, and_true, true_and, not_or,
+        Set.mem_compl_iff, not_not, Set.mem_diagonal_iff] at hz
+      rw [overlayDiff_apply, Graphon.ofMatrix_apply, Graphon.ofMatrix_apply, hz.1, hz.2, sub_self,
+        abs_zero]
+  refine (cutDist_le _ _ hπ).trans ?_
+  refine (cutNorm_le_integral_abs _ _).trans ?_
+  have hint : Integrable (fun z : (κ × κ) × (κ × κ) =>
+      |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb) π z.1 z.2|) (π.prod π) :=
+    (SymmKernel.integrable_uncurry _ _).abs
+  calc ∫ z, |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb) π z.1 z.2| ∂_
+      ≤ ∫ z, B.indicator (1 : ((κ × κ) × (κ × κ)) → ℝ) z ∂_ :=
+        integral_mono hint ((integrable_const (1 : ℝ)).indicator hBmeas) hle
+    _ = (π.prod π).real B := integral_indicator_one hBmeas
+    _ ≤ 2 * (∑ k, (ν {k} - ν' {k})).toReal := by
+        have htwo : (2 : ℝ) * (∑ k, (ν {k} - ν' {k})).toReal
+            = ((2 : ℝ≥0∞) * ∑ k, (ν {k} - ν' {k})).toReal := by
+          rw [ENNReal.toReal_mul]
+          norm_num
+        rw [measureReal_def, htwo]
+        refine ENNReal.toReal_mono (ENNReal.mul_ne_top (by simp) hrne) ?_
+        calc (π.prod π) B
+            ≤ (π.prod π) ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) +
+              (π.prod π) ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ) := measure_union_le _ _
+          _ = π (Set.diagonal κ)ᶜ + π (Set.diagonal κ)ᶜ := by
+              rw [Measure.prod_prod, Measure.prod_prod, measure_univ, mul_one, one_mul]
+          _ ≤ ∑ k, (ν {k} - ν' {k}) + ∑ k, (ν {k} - ν' {k}) := add_le_add hoff hoff
+          _ = 2 * ∑ k, (ν {k} - ν' {k}) := (two_mul _).symm
+
+end WeightShift
+
+section GridWeight
+
+/-- The probability measure on `Fin n` whose weights are the multiples `w i / N` of `1 / N`. -/
+def gridWeightMeasure {n N : ℕ} (hN : 0 < N) (w : Fin n → ℕ) (hw : ∑ i, w i = N) :
+    Measure (Fin n) :=
+  (PMF.ofFintype (fun i => (w i : ℝ≥0∞) / (N : ℝ≥0∞)) (by
+    simp only [div_eq_mul_inv, ← Finset.sum_mul, ← Nat.cast_sum, hw]
+    rw [← div_eq_mul_inv]
+    exact ENNReal.div_self (by exact_mod_cast hN.ne') (by simp))).toMeasure
+
+/-- Weights on the grid of multiples of `1 / N` that sum to `N` make `gridWeightMeasure` a
+probability measure, so that a matrix over them is a graphon by typeclass synthesis alone. -/
+instance {n N : ℕ} (hN : 0 < N) (w : Fin n → ℕ) (hw : ∑ i, w i = N) :
+    IsProbabilityMeasure (gridWeightMeasure hN w hw) :=
+  PMF.toMeasure.isProbabilityMeasure _
+
+@[simp]
+theorem gridWeightMeasure_apply_singleton {n N : ℕ} (hN : 0 < N) (w : Fin n → ℕ)
+    (hw : ∑ i, w i = N) (i : Fin n) :
+    gridWeightMeasure hN w hw {i} = (w i : ℝ≥0∞) / (N : ℝ≥0∞) :=
+  PMF.toMeasure_apply_singleton _ _ (MeasurableSet.singleton i)
+
+/-- **Every finite weighted graph is close in cut distance to one whose vertex weights are
+multiples of `1 / N`.**  Rounding every weight but one down to the grid and letting the remaining
+vertex absorb the slack moves at most `n / N` of the mass, and each unit of moved mass costs at most
+two in cut distance. -/
+theorem exists_gridWeightMeasure_cutDist_le {n N : ℕ} [NeZero n] (hN : 0 < N)
+    (ν : Measure (Fin n)) [IsProbabilityMeasure ν] (b : Fin n → Fin n → Set.Icc (0 : ℝ) 1)
+    (hb : ∀ i j, b i j = b j i) :
+    ∃ (w : Fin n → ℕ) (hw : ∑ i, w i = N),
+      cutDist (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix (gridWeightMeasure hN w hw) b hb)
+        ≤ 2 * (n : ℝ) / (N : ℝ) := by
+  have hN0 : (N : ℝ≥0∞) ≠ 0 := by exact_mod_cast hN.ne'
+  have hNtop : (N : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top N
+  obtain ⟨w, hwsum, hle, hge⟩ := exists_nat_weights_of_sum_eq_one (Finset.mem_univ (0 : Fin n))
+    ν.sum_singleton_eq_one hN
+  refine ⟨w, hwsum, ?_⟩
+  set ν' := gridWeightMeasure hN w hwsum with hν'
+  have hweight : ∀ i, ν' {i} = (w i : ℝ≥0∞) / (N : ℝ≥0∞) := fun i => by
+    rw [hν', gridWeightMeasure_apply_singleton]
+  -- the rounded weights are dominated away from the absorbing vertex
+  have hdom : ∀ i, i ≠ (0 : Fin n) → ν' {i} ≤ ν {i} := fun i hi => by
+    rw [hweight i]
+    exact ENNReal.div_le_of_le_mul' (hle i (Finset.mem_univ i) hi)
+  -- every vertex loses at most one grid step of weight
+  have hstep : ∀ i, ν {i} - ν' {i} ≤ (1 : ℝ≥0∞) / (N : ℝ≥0∞) := by
+    intro i
+    rcases eq_or_ne i (0 : Fin n) with rfl | hi
+    · rw [tsub_eq_zero_of_le (le_of_sum_eq_of_forall_ne_le (Finset.mem_univ (0 : Fin n))
+        (ν.sum_singleton_eq_one.trans ν'.sum_singleton_eq_one.symm)
+        (by rw [ν.sum_singleton_eq_one]; exact ENNReal.one_ne_top)
+        fun k _ hk => hdom k hk)]
+      simp
+    · rw [tsub_le_iff_left, hweight i, ENNReal.div_add_div_same,
+        ENNReal.le_div_iff_mul_le (.inl hN0) (.inl hNtop)]
+      simpa only [mul_comm] using hge i (Finset.mem_univ i) hi
+  have hsum : ∑ i, (ν {i} - ν' {i}) ≤ (n : ℝ≥0∞) / (N : ℝ≥0∞) := by
+    calc ∑ i, (ν {i} - ν' {i}) ≤ ∑ _i : Fin n, (1 : ℝ≥0∞) / (N : ℝ≥0∞) :=
+          Finset.sum_le_sum fun i _ => hstep i
+      _ = (n : ℝ≥0∞) / (N : ℝ≥0∞) := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one_div]
+  refine (cutDist_ofMatrix_le_two_mul_sum_tsub hdom b hb).trans ?_
+  have htor : (∑ i, (ν {i} - ν' {i})).toReal ≤ (n : ℝ) / (N : ℝ) := by
+    refine (ENNReal.toReal_mono (ENNReal.div_ne_top (by simp) hN0) hsum).trans ?_
+    rw [ENNReal.toReal_div, ENNReal.toReal_natCast, ENNReal.toReal_natCast]
+  rw [mul_div_assoc]
+  exact mul_le_mul_of_nonneg_left htor (by norm_num)
+
+end GridWeight
+
+end DenseGraphLimits
+
+end TauCeti

@@ -102,7 +102,7 @@ variable {R S : Type*} [CommRing R] [CommRing S] (A B : R)
 /-- `shortCurve A B` is in short normal form. This instance is the point of the definition: it
 hands the curve to Mathlib's whole `*_of_isShortNF` family, so every invariant — the `b`- and
 `c`-families, `Δ` and `j` — comes for free rather than being restated here. -/
-instance : (shortCurve A B).IsShortNF := ⟨(rfl), (rfl), (rfl)⟩
+instance instIsShortNFShortCurve : (shortCurve A B).IsShortNF := ⟨(rfl), (rfl), (rfl)⟩
 
 /-- A ring hom carries `shortCurve` to `shortCurve` on the images of the coefficients. Mathlib has
 no instance propagating `IsShortNF` along `map`, so this is what keeps a base change — `ℤ → ℚ` in

@@ -53,8 +53,9 @@ this file's, specialized; see the Provenance note there.
 
 ## Implementation notes
 
-The pair is the family `Sum.elim (fun _ ↦ q₁) fun _ ↦ q₂` on `Unit ⊕ Unit`, written inline
-throughout as `Add/Inverse.lean` writes its own family inline.
+The pair is the family `MvPowerSeries.pairSubstitution q₁ q₂` on `Unit ⊕ Unit`.
+`Add/Inverse.lean` keeps its own spelling of the pair `(z, ι(z))` and reaches these lemmas
+through its private `invPair_eq` bridge.
 
 Two of Stoll's helpers in this range are not ported, because this repository already has them in
 a more general form. His `subst_pair_rename`, which pushes the substitution through the
@@ -115,37 +116,32 @@ variable {σ : Type*} {q₁ q₂ : MvPowerSeries σ O}
 @[simp]
 theorem subst_pair_toMvPowerSeries_inl (h₁ : constantCoeff q₁ = 0)
     (h₂ : constantCoeff q₂ = 0) :
-    subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    subst (pairSubstitution q₁ q₂)
       ((formalW W).toMvPowerSeries (Sum.inl ())) = PowerSeries.subst q₁ (formalW W) := by
-  rw [PowerSeries.subst_toMvPowerSeries (hasSubst_pair h₁ h₂), Sum.elim_inl]
+  rw [PowerSeries.subst_toMvPowerSeries (hasSubst_pair h₁ h₂), pairSubstitution, Sum.elim_inl]
 
 /-- The `w`-expansion in the second parameter becomes `w(q₂)`. -/
 @[simp]
 theorem subst_pair_toMvPowerSeries_inr (h₁ : constantCoeff q₁ = 0)
     (h₂ : constantCoeff q₂ = 0) :
-    subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    subst (pairSubstitution q₁ q₂)
       ((formalW W).toMvPowerSeries (Sum.inr ())) = PowerSeries.subst q₂ (formalW W) := by
-  rw [PowerSeries.subst_toMvPowerSeries (hasSubst_pair h₁ h₂), Sum.elim_inr]
+  rw [PowerSeries.subst_toMvPowerSeries (hasSubst_pair h₁ h₂), pairSubstitution, Sum.elim_inr]
 
 /-! ### The chord through the two parametrized points -/
 
 /-- The defining property of the slope, read at the pair `(q₁, q₂)`:
 `λ(q₁, q₂) * (q₂ - q₁) = w(q₂) - w(q₁)`. -/
 theorem subst_pair_formalSlope_mul (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0) :
-    subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    subst (pairSubstitution q₁ q₂)
         (formalSlope W) * (q₂ - q₁) =
       PowerSeries.subst q₂ (formalW W) - PowerSeries.subst q₁ (formalW W) := by
-  have h := congrArg (subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-    Unit ⊕ Unit → MvPowerSeries σ O)) (formalSlope_mul_sub W)
+  have h := congrArg (subst (pairSubstitution q₁ q₂)) (formalSlope_mul_sub W)
   rw [← coe_substAlgHom (hasSubst_pair h₁ h₂)] at h
   simp only [map_mul, map_sub] at h
   simp only [coe_substAlgHom (hasSubst_pair h₁ h₂), subst_pair_toMvPowerSeries_inl W h₁ h₂,
     subst_pair_toMvPowerSeries_inr W h₁ h₂, subst_X (hasSubst_pair h₁ h₂)] at h
-  have h1 : (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-      Unit ⊕ Unit → MvPowerSeries σ O) (Sum.inr ()) = q₂ := rfl
-  have h2 : (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-      Unit ⊕ Unit → MvPowerSeries σ O) (Sum.inl ()) = q₁ := rfl
-  rw [h1, h2] at h
+  simp only [pairSubstitution, Sum.elim_inl, Sum.elim_inr] at h
   linear_combination h
 
 /-! ### The third point of the chord lies on the curve -/
@@ -153,13 +149,12 @@ theorem subst_pair_formalSlope_mul (h₁ : constantCoeff q₁ = 0) (h₂ : const
 /-- The on-line identity at the pair `(q₁, q₂)`: reading the `w`-expansion at the third root
 gives the chord line read there. -/
 theorem subst_pair_formalThirdRoot_formalW (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0) :
-    subst (fun _ : Unit ↦ subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-        Unit ⊕ Unit → MvPowerSeries σ O) (formalThirdRoot W)) (formalW W) =
-      subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    subst (fun _ : Unit ↦ subst (pairSubstitution q₁ q₂) (formalThirdRoot W)) (formalW W) =
+      subst (pairSubstitution q₁ q₂)
           (formalSlope W) *
-        subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+        subst (pairSubstitution q₁ q₂)
           (formalThirdRoot W) +
-        subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+        subst (pairSubstitution q₁ q₂)
           (formalIntercept W) := by
   have h := congrArg (substAlgHom (hasSubst_pair h₁ h₂)) (subst_formalThirdRoot_formalW W)
   simp only [map_add, map_mul] at h
@@ -172,15 +167,15 @@ theorem subst_pair_formalThirdRoot_formalW (h₁ : constantCoeff q₁ = 0) (h₂
 is `1`. -/
 theorem subst_pair_thirdRootDenom_mul (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0) :
     (1 + C W.a₂ *
-        subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+        subst (pairSubstitution q₁ q₂)
           (formalSlope W) +
         C W.a₄ *
-        subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+        subst (pairSubstitution q₁ q₂)
           (formalSlope W) ^ 2 +
         C W.a₆ *
-        subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+        subst (pairSubstitution q₁ q₂)
           (formalSlope W) ^ 3) *
-      subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+      subst (pairSubstitution q₁ q₂)
         (invOfUnit (1 + C W.a₂ * formalSlope W + C W.a₄ * formalSlope W ^ 2 +
       C W.a₆ * formalSlope W ^ 3) 1) = 1 := by
   have h := congrArg (substAlgHom (hasSubst_pair h₁ h₂))
@@ -196,13 +191,13 @@ computation is needed. -/
 theorem subst_pair_thirdRootDenom_ne_zero [Nontrivial O] (h₁ : constantCoeff q₁ = 0)
     (h₂ : constantCoeff q₂ = 0) :
     (1 + C W.a₂ *
-        subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+        subst (pairSubstitution q₁ q₂)
           (formalSlope W) +
         C W.a₄ *
-        subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+        subst (pairSubstitution q₁ q₂)
           (formalSlope W) ^ 2 +
         C W.a₆ *
-        subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+        subst (pairSubstitution q₁ q₂)
           (formalSlope W) ^ 3) ≠ 0 := by
   intro h
   have hmul := subst_pair_thirdRootDenom_mul W h₁ h₂
@@ -214,56 +209,52 @@ denominator eliminated. -/
 theorem subst_pair_formalThirdRoot_relation (h₁ : constantCoeff q₁ = 0)
     (h₂ : constantCoeff q₂ = 0) :
     (1 + C W.a₂ *
-        subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+        subst (pairSubstitution q₁ q₂)
           (formalSlope W) +
         C W.a₄ *
-        subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+        subst (pairSubstitution q₁ q₂)
           (formalSlope W) ^ 2 +
         C W.a₆ *
-        subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+        subst (pairSubstitution q₁ q₂)
           (formalSlope W) ^ 3) *
-      (subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+      (subst (pairSubstitution q₁ q₂)
           (formalThirdRoot W) + q₁ + q₂) =
       -(C W.a₁ *
-        subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+        subst (pairSubstitution q₁ q₂)
           (formalSlope W) +
         C W.a₂ *
-        subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+        subst (pairSubstitution q₁ q₂)
           (formalIntercept W) +
         C W.a₃ *
-        subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+        subst (pairSubstitution q₁ q₂)
           (formalSlope W) ^ 2 +
         2 * C W.a₄ *
-        subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+        subst (pairSubstitution q₁ q₂)
           (formalSlope W) *
-          subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+          subst (pairSubstitution q₁ q₂)
             (formalIntercept W) +
         3 * C W.a₆ *
-        subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+        subst (pairSubstitution q₁ q₂)
           (formalSlope W) ^ 2 *
-          subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+          subst (pairSubstitution q₁ q₂)
             (formalIntercept W)) := by
   have hexp := congrArg (substAlgHom (hasSubst_pair h₁ h₂)) (formalThirdRoot_def W)
   simp only [map_sub, map_neg, map_mul, map_add, map_pow, map_ofNat] at hexp
   simp only [coe_substAlgHom (hasSubst_pair h₁ h₂), subst_X (hasSubst_pair h₁ h₂),
     subst_C] at hexp
-  have hr : (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-      Unit ⊕ Unit → MvPowerSeries σ O) (Sum.inr ()) = q₂ := rfl
-  have hl : (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-      Unit ⊕ Unit → MvPowerSeries σ O) (Sum.inl ()) = q₁ := rfl
-  rw [hr, hl] at hexp
+  simp only [pairSubstitution, Sum.elim_inl, Sum.elim_inr] at hexp
   have hAd := subst_pair_thirdRootDenom_mul W h₁ h₂
   set Lp :=
-    subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    subst (pairSubstitution q₁ q₂)
       (formalSlope W)
   set Np :=
-    subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    subst (pairSubstitution q₁ q₂)
       (formalIntercept W)
   set Tp :=
-    subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    subst (pairSubstitution q₁ q₂)
       (formalThirdRoot W)
   set dp :=
-    subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    subst (pairSubstitution q₁ q₂)
       (invOfUnit (1 + C W.a₂ * formalSlope W + C W.a₄ * formalSlope W ^ 2 +
       C W.a₆ * formalSlope W ^ 3) 1)
   clear_value Lp Np Tp dp
@@ -278,7 +269,7 @@ is itself a legitimate parameter to substitute into a one-variable series. -/
 @[simp]
 theorem constantCoeff_subst_pair_formalThirdRoot (h₁ : constantCoeff q₁ = 0)
     (h₂ : constantCoeff q₂ = 0) :
-    constantCoeff (subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    constantCoeff (subst (pairSubstitution q₁ q₂)
       (formalThirdRoot W)) = 0 :=
   constantCoeff_subst_eq_zero (hasSubst_pair h₁ h₂) (by rintro (j | j) <;> simpa)
     (constantCoeff_formalThirdRoot W)
@@ -289,7 +280,7 @@ feed one bracketed sum into another. -/
 @[simp]
 theorem constantCoeff_subst_pair_formalAdd (h₁ : constantCoeff q₁ = 0)
     (h₂ : constantCoeff q₂ = 0) :
-    constantCoeff (subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    constantCoeff (subst (pairSubstitution q₁ q₂)
       (formalAdd W)) = 0 :=
   constantCoeff_subst_eq_zero (hasSubst_pair h₁ h₂) (by rintro (j | j) <;> simpa)
     (constantCoeff_formalAdd W)
@@ -300,9 +291,9 @@ theorem constantCoeff_subst_pair_formalAdd (h₁ : constantCoeff q₁ = 0)
 This is `formalAdd_def` pushed through the pair substitution, and it is the bridge that turns any
 one-variable identity about `formalInverse` into a statement about the group law at the pair. -/
 theorem subst_pair_formalAdd (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0) :
-    subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O) (formalAdd W) =
-      subst (fun _ : Unit ↦ subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-        Unit ⊕ Unit → MvPowerSeries σ O) (formalThirdRoot W)) (formalInverse W) := by
+    subst (pairSubstitution q₁ q₂) (formalAdd W) =
+      subst (fun _ : Unit ↦ subst (pairSubstitution q₁ q₂) (formalThirdRoot W))
+          (formalInverse W) := by
   rw [formalAdd_def, subst_comp_subst_apply (hasSubst_formalThirdRoot W) (hasSubst_pair h₁ h₂)]
 
 /-- The `w`-expansion at the addition series, read at the pair `(q₁, q₂)`:
@@ -314,20 +305,15 @@ so the group law's `w` at a pair is never recomputed. The third root is spelled 
 substitution, matching `subst_pair_formalThirdRoot_formalW`, so the two rewrite against each
 other. -/
 theorem subst_pair_formalW_formalAdd (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0) :
-    subst (fun _ : Unit ↦ subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-        Unit ⊕ Unit → MvPowerSeries σ O) (formalAdd W)) (formalW W) =
-      -(subst (fun _ : Unit ↦ subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-            Unit ⊕ Unit → MvPowerSeries σ O) (formalThirdRoot W)) (formalW W) *
-        subst (fun _ : Unit ↦ subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-            Unit ⊕ Unit → MvPowerSeries σ O) (formalThirdRoot W))
+    subst (fun _ : Unit ↦ subst (pairSubstitution q₁ q₂) (formalAdd W)) (formalW W) =
+      -(subst (fun _ : Unit ↦ subst (pairSubstitution q₁ q₂) (formalThirdRoot W)) (formalW W) *
+        subst (fun _ : Unit ↦ subst (pairSubstitution q₁ q₂) (formalThirdRoot W))
           (PowerSeries.invOfUnit (formalInverseDenom W) 1)) := by
-  have hT : HasSubst (fun _ : Unit ↦ subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-      Unit ⊕ Unit → MvPowerSeries σ O) (formalThirdRoot W)) :=
+  have hT : HasSubst (fun _ : Unit ↦ subst (pairSubstitution q₁ q₂) (formalThirdRoot W)) :=
     hasSubst_of_constantCoeff_zero fun _ ↦ constantCoeff_subst_pair_formalThirdRoot W h₁ h₂
-  have hfam : (fun _ : Unit ↦ subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-        Unit ⊕ Unit → MvPowerSeries σ O) (formalAdd W)) =
-      fun _ : Unit ↦ subst (fun _ : Unit ↦ subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-        Unit ⊕ Unit → MvPowerSeries σ O) (formalThirdRoot W)) (formalInverse W) :=
+  have hfam : (fun _ : Unit ↦ subst (pairSubstitution q₁ q₂) (formalAdd W)) =
+      fun _ : Unit ↦ subst (fun _ : Unit ↦ subst (pairSubstitution q₁ q₂) (formalThirdRoot W))
+          (formalInverse W) :=
     funext fun _ ↦ subst_pair_formalAdd W h₁ h₂
   -- `PowerSeries.subst` *is* the `Unit`-indexed `MvPowerSeries.subst` by definition, so the
   -- middle step is `rfl`; it is needed because `subst_formalInverse_formalW` is stated in the
@@ -343,13 +329,11 @@ theorem subst_pair_formalW_formalAdd (h₁ : constantCoeff q₁ = 0) (h₂ : con
 it times its `invOfUnit` is `1`. -/
 theorem subst_pair_formalInverseDenom_mul (h₁ : constantCoeff q₁ = 0)
     (h₂ : constantCoeff q₂ = 0) :
-    subst (fun _ : Unit ↦ subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-          Unit ⊕ Unit → MvPowerSeries σ O) (formalThirdRoot W)) (formalInverseDenom W) *
-        subst (fun _ : Unit ↦ subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-          Unit ⊕ Unit → MvPowerSeries σ O) (formalThirdRoot W))
+    subst (fun _ : Unit ↦ subst (pairSubstitution q₁ q₂) (formalThirdRoot W))
+        (formalInverseDenom W) *
+        subst (fun _ : Unit ↦ subst (pairSubstitution q₁ q₂) (formalThirdRoot W))
           (PowerSeries.invOfUnit (formalInverseDenom W) 1) = 1 := by
-  have hT : HasSubst (fun _ : Unit ↦ subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-      Unit ⊕ Unit → MvPowerSeries σ O) (formalThirdRoot W)) :=
+  have hT : HasSubst (fun _ : Unit ↦ subst (pairSubstitution q₁ q₂) (formalThirdRoot W)) :=
     hasSubst_of_constantCoeff_zero fun _ ↦ constantCoeff_subst_pair_formalThirdRoot W h₁ h₂
   have h := congrArg (substAlgHom hT) (mul_invOfUnit_formalInverseDenom W)
   simp only [map_mul, map_one] at h
@@ -359,14 +343,12 @@ theorem subst_pair_formalInverseDenom_mul (h₁ : constantCoeff q₁ = 0)
 `u(z₃) = 1 - a₁ z₃ - a₃ w(z₃)`. -/
 theorem subst_pair_formalInverseDenom_eq (h₁ : constantCoeff q₁ = 0)
     (h₂ : constantCoeff q₂ = 0) :
-    subst (fun _ : Unit ↦ subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-        Unit ⊕ Unit → MvPowerSeries σ O) (formalThirdRoot W)) (formalInverseDenom W) =
-      1 - C W.a₁ * subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-          Unit ⊕ Unit → MvPowerSeries σ O) (formalThirdRoot W) -
-        C W.a₃ * subst (fun _ : Unit ↦ subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-          Unit ⊕ Unit → MvPowerSeries σ O) (formalThirdRoot W)) (formalW W) := by
-  have hT : HasSubst (fun _ : Unit ↦ subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-      Unit ⊕ Unit → MvPowerSeries σ O) (formalThirdRoot W)) :=
+    subst (fun _ : Unit ↦ subst (pairSubstitution q₁ q₂) (formalThirdRoot W))
+        (formalInverseDenom W) =
+      1 - C W.a₁ * subst (pairSubstitution q₁ q₂) (formalThirdRoot W) -
+        C W.a₃ * subst (fun _ : Unit ↦ subst (pairSubstitution q₁ q₂) (formalThirdRoot W))
+            (formalW W) := by
+  have hT : HasSubst (fun _ : Unit ↦ subst (pairSubstitution q₁ q₂) (formalThirdRoot W)) :=
     hasSubst_of_constantCoeff_zero fun _ ↦ constantCoeff_subst_pair_formalThirdRoot W h₁ h₂
   rw [formalInverseDenom_def, ← coe_substAlgHom hT]
   simp only [map_sub, map_one, map_mul]
@@ -380,14 +362,12 @@ theorem subst_pair_formalInverseDenom_eq (h₁ : constantCoeff q₁ = 0)
 
 /-- The addition series at the pair, written out: `F(q₁, q₂) = -(z₃ * u(z₃)⁻¹)`. -/
 theorem subst_pair_formalAdd_eq (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0) :
-    subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O) (formalAdd W) =
-      -(subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    subst (pairSubstitution q₁ q₂) (formalAdd W) =
+      -(subst (pairSubstitution q₁ q₂)
           (formalThirdRoot W) *
-        subst (fun _ : Unit ↦ subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-          Unit ⊕ Unit → MvPowerSeries σ O) (formalThirdRoot W))
+        subst (fun _ : Unit ↦ subst (pairSubstitution q₁ q₂) (formalThirdRoot W))
           (PowerSeries.invOfUnit (formalInverseDenom W) 1)) := by
-  have hT : HasSubst (fun _ : Unit ↦ subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-      Unit ⊕ Unit → MvPowerSeries σ O) (formalThirdRoot W)) :=
+  have hT : HasSubst (fun _ : Unit ↦ subst (pairSubstitution q₁ q₂) (formalThirdRoot W)) :=
     hasSubst_of_constantCoeff_zero fun _ ↦ constantCoeff_subst_pair_formalThirdRoot W h₁ h₂
   rw [subst_pair_formalAdd W h₁ h₂, formalInverse_def, ← coe_substAlgHom hT]
   simp only [map_neg, map_mul]
@@ -407,9 +387,9 @@ clears the intercept but leaves the slope behind. Combining the two readings is 
 slope, and that combination is already packaged as `subst_pair_formalIntercept_mul_sub`, so a
 consumer that wants the slope gone should reach for it rather than for these two. -/
 theorem subst_pair_formalIntercept_eq_inl (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0) :
-    subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    subst (pairSubstitution q₁ q₂)
         (formalIntercept W) = PowerSeries.subst q₁ (formalW W) -
-      subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+      subst (pairSubstitution q₁ q₂)
         (formalSlope W) * q₁ := by
   simp [formalIntercept_def, subst_sub (hasSubst_pair h₁ h₂), subst_mul (hasSubst_pair h₁ h₂),
     subst_pair_toMvPowerSeries_inl W h₁ h₂, subst_X (hasSubst_pair h₁ h₂)]
@@ -422,9 +402,9 @@ The two readings differ only in which parameter appears on the right, and rewrit
 one clears the intercept but leaves the slope behind; a consumer that wants the slope gone should
 reach for `subst_pair_formalIntercept_mul_sub`, which packages the combination that cancels it. -/
 theorem subst_pair_formalIntercept_eq_inr (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0) :
-    subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    subst (pairSubstitution q₁ q₂)
         (formalIntercept W) = PowerSeries.subst q₂ (formalW W) -
-      subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+      subst (pairSubstitution q₁ q₂)
         (formalSlope W) * q₂ := by
   linear_combination subst_pair_formalIntercept_eq_inl W h₁ h₂ + subst_pair_formalSlope_mul W h₁ h₂
 
@@ -439,7 +419,7 @@ the chord's `x`-coordinates are distinct; reach for it there as a single rewrite
 recombining the two readings by hand. -/
 theorem subst_pair_formalIntercept_mul_sub (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0) :
     q₁ * PowerSeries.subst q₂ (formalW W) - q₂ * PowerSeries.subst q₁ (formalW W) =
-      subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+      subst (pairSubstitution q₁ q₂)
         (formalIntercept W) * (q₁ - q₂) := by
   -- weighting the two readings by `q₂` and `q₁` makes the `λ` terms coincide and cancel
   linear_combination q₂ * subst_pair_formalIntercept_eq_inl W h₁ h₂ -
@@ -448,9 +428,9 @@ theorem subst_pair_formalIntercept_mul_sub (h₁ : constantCoeff q₁ = 0) (h₂
 /-- A nonzero intercept forces a nonzero third root: at `z₃ = 0` the on-line identity
 `w(z₃) = λ z₃ + ν` collapses to `0 = ν`, since `w` has no constant term. -/
 theorem subst_pair_formalThirdRoot_ne_zero (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
-    (hN : subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    (hN : subst (pairSubstitution q₁ q₂)
       (formalIntercept W) ≠ 0) :
-    subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    subst (pairSubstitution q₁ q₂)
       (formalThirdRoot W) ≠ 0 := by
   intro h
   refine hN ?_

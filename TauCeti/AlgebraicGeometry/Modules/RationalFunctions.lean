@@ -26,6 +26,8 @@ condition and the `𝒪_X`-module structure automatic.
 
 ## Main declarations
 
+* `TauCeti.AlgebraicGeometry.Scheme.genericPoint_mem`, the elementary fact that every nonempty open
+  subset of an irreducible scheme contains the generic point;
 * `TauCeti.AlgebraicGeometry.Scheme.fromSpecFunctionField`, the canonical morphism
   `Spec K(X) ⟶ X` from the spectrum of the function field, and
   `TauCeti.AlgebraicGeometry.Scheme.fromSpecFunctionField_preimage`: it pulls a nonempty open
@@ -54,7 +56,8 @@ condition and the `𝒪_X`-module structure automatic.
   as an endomorphism of `𝒦_X`, obtained by pushing forward multiplication by the corresponding
   global function on `Spec K(X)`; `rationalFunctionsEquiv_rationalFunctionsMul_app` identifies it
   with multiplication on sections, and `rationalFunctionsMul_mul` and `rationalFunctionsMul_one`
-  make it multiplicative, so that multiplying by a unit is an automorphism of `𝒦_X`;
+  make it multiplicative, so that multiplying by a unit is an automorphism of `𝒦_X`
+  (`rationalFunctionsMul_comp_inv` and `rationalFunctionsMul_inv_comp`);
 * the module morphism `TauCeti.AlgebraicGeometry.Scheme.toRationalFunctions` is
   `X.germToFunctionField` on sections
   (`TauCeti.AlgebraicGeometry.Scheme.rationalFunctionsEquiv_toRationalFunctions_app`), is
@@ -349,6 +352,79 @@ theorem rationalFunctionsEquiv_toRationalFunctions_app (U : X.Opens) [Nonempty U
       X.germToFunctionField U r := by
   exact ConcreteCategory.congr_hom (app_comp_functionFieldSectionsIso U) r
 
+section SectionsMul
+
+/-- The action of a regular function on a section of `𝒦_X` is multiplication in the ring of
+sections of `𝒦_X` by the image of that function. -/
+theorem rationalFunctionsSectionsEquiv_smul (U : X.Opens) (r : Γ(X, U))
+    (s : Γ(rationalFunctions X, U)) :
+    rationalFunctionsSectionsEquiv X U (r • s) =
+      (toRationalFunctionsRing X).hom.app (.op U) r * rationalFunctionsSectionsEquiv X U s :=
+  (rfl)
+
+variable (X) in
+/-- Multiplication of two sections of `𝒦_X` over an open subset, as a bilinear map over the
+regular functions there.
+
+The product is computed in the ring of sections of the sheaf of rings underlying `𝒦_X`; over a
+nonempty open subset it is multiplication in the function field, by
+`rationalFunctionsEquiv_mulBilin`. -/
+def rationalFunctionsMulBilin (U : X.Opens) :
+    Γ(rationalFunctions X, U) →ₗ[Γ(X, U)] Γ(rationalFunctions X, U) →ₗ[Γ(X, U)]
+      Γ(rationalFunctions X, U) :=
+  LinearMap.mk₂ Γ(X, U)
+    (fun s t ↦ (rationalFunctionsSectionsEquiv X U).symm
+      (rationalFunctionsSectionsEquiv X U s * rationalFunctionsSectionsEquiv X U t))
+    (fun s s' t ↦ (rationalFunctionsSectionsEquiv X U).injective (by simp [add_mul]))
+    (fun r s t ↦ (rationalFunctionsSectionsEquiv X U).injective (by
+      simp [rationalFunctionsSectionsEquiv_smul, mul_assoc]))
+    (fun s t t' ↦ (rationalFunctionsSectionsEquiv X U).injective (by simp [mul_add]))
+    (fun r s t ↦ (rationalFunctionsSectionsEquiv X U).injective (by
+      simp [rationalFunctionsSectionsEquiv_smul, mul_left_comm]))
+
+/-- The product of two sections of `𝒦_X` is their product in the ring of sections. -/
+@[simp]
+theorem rationalFunctionsSectionsEquiv_mulBilin (U : X.Opens)
+    (s t : Γ(rationalFunctions X, U)) :
+    rationalFunctionsSectionsEquiv X U (rationalFunctionsMulBilin X U s t) =
+      rationalFunctionsSectionsEquiv X U s * rationalFunctionsSectionsEquiv X U t := by
+  simp [rationalFunctionsMulBilin]
+
+/-- Over a nonempty open subset, the product of two sections of `𝒦_X` is their product in the
+function field. -/
+@[simp]
+theorem rationalFunctionsEquiv_mulBilin (U : X.Opens) [Nonempty U]
+    (s t : Γ(rationalFunctions X, U)) :
+    rationalFunctionsEquiv U (rationalFunctionsMulBilin X U s t) =
+      rationalFunctionsEquiv U s * rationalFunctionsEquiv U t := by
+  rw [rationalFunctionsEquiv_apply, rationalFunctionsSectionsEquiv_mulBilin, map_mul,
+    rationalFunctionsEquiv_apply, rationalFunctionsEquiv_apply]
+
+/-- Multiplying a section of `𝒦_X` by the image of a regular function is the action of that
+function on the section. -/
+@[simp]
+theorem rationalFunctionsMulBilin_toRationalFunctions_app (U : X.Opens) (r : Γ(X, U))
+    (s : Γ(rationalFunctions X, U)) :
+    rationalFunctionsMulBilin X U
+        (Scheme.Modules.Hom.app (toRationalFunctions X) U r) s = r • s := by
+  apply (rationalFunctionsSectionsEquiv X U).injective
+  rw [rationalFunctionsSectionsEquiv_mulBilin, toRationalFunctionsRing_app,
+    rationalFunctionsSectionsEquiv_smul]
+
+/-- Multiplication of sections of `𝒦_X` commutes with the restriction maps. -/
+@[simp]
+theorem rationalFunctionsMulBilin_map {U V : X.Opens} (i : V ⟶ U)
+    (s t : Γ(rationalFunctions X, U)) :
+    (rationalFunctions X).presheaf.map i.op (rationalFunctionsMulBilin X U s t) =
+      rationalFunctionsMulBilin X V ((rationalFunctions X).presheaf.map i.op s)
+        ((rationalFunctions X).presheaf.map i.op t) := by
+  apply (rationalFunctionsSectionsEquiv X V).injective
+  rw [rationalFunctionsSectionsEquiv_map, rationalFunctionsSectionsEquiv_mulBilin,
+    rationalFunctionsSectionsEquiv_mulBilin, rationalFunctionsSectionsEquiv_map,
+    rationalFunctionsSectionsEquiv_map, map_mul]
+
+end SectionsMul
+
 section Mul
 
 variable (X)
@@ -420,6 +496,20 @@ theorem rationalFunctionsMul_one : rationalFunctionsMul X 1 = 𝟙 _ := by
   change F.map (Scheme.Modules.globalSectionsSmul M 1) = 𝟙 _
   rw [Scheme.Modules.globalSectionsSmul_one]
   exact F.map_id M
+
+/-- Multiplying by a unit `g` and then by `g⁻¹` is the identity on `𝒦_X`. -/
+@[simp]
+theorem rationalFunctionsMul_comp_inv (g : X.functionFieldˣ) :
+    rationalFunctionsMul X (g : X.functionField) ≫
+        rationalFunctionsMul X ((g⁻¹ : X.functionFieldˣ) : X.functionField) = 𝟙 _ := by
+  rw [← rationalFunctionsMul_mul, g.inv_mul, rationalFunctionsMul_one]
+
+/-- Multiplying by the inverse of a unit `g` and then by `g` is the identity on `𝒦_X`. -/
+@[simp]
+theorem rationalFunctionsMul_inv_comp (g : X.functionFieldˣ) :
+    rationalFunctionsMul X ((g⁻¹ : X.functionFieldˣ) : X.functionField) ≫
+        rationalFunctionsMul X (g : X.functionField) = 𝟙 _ := by
+  rw [← rationalFunctionsMul_mul, g.mul_inv, rationalFunctionsMul_one]
 
 end Mul
 

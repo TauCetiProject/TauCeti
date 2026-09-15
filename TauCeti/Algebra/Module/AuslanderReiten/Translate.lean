@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
 public import TauCeti.LinearAlgebra.Dual.RightAction
 
@@ -43,6 +44,10 @@ that statement, and it is what licenses the notation `τ M`.
   presentation.
 * `TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranslate_of_projective`: the
   translate of a projective module vanishes.
+* `TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranslate_iff_projective`:
+  for a finitely generated left-hand source and a transpose projective over the base, the converse
+  holds too — **the translate vanishes exactly on the projective modules** — so that `τ` assigns a
+  nonzero module to every non-projective one.
 
 ## Implementation notes
 
@@ -71,10 +76,9 @@ which names it as the composite of the transpose of sublayer 6C with the duality
 `D = Hom_k(-, k)`, "well-defined only up to projectives, through minimal presentations and duality
 on finite-dimensional modules".
 
-The other half of 6D — AR duality itself, and the bijection it yields from non-projective
-indecomposables to non-injective indecomposables with inverse `Tr D` — is **not proved here**: it
-needs the finite-dimensional hypotheses and the stable morphism spaces that the rest of sublayer 6C
-supplies, and comes in a later file.
+AR duality itself, and the bijection it yields from non-projective indecomposables to non-injective
+indecomposables with inverse `Tr D`, is **not proved here**: it needs the finite-dimensional
+hypotheses and the stable morphism spaces that sublayer 6C supplies.
 
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*, Cambridge
   University Press (1995), Section IV.1.
@@ -202,6 +206,29 @@ theorem subsingleton_auslanderReitenTranslate_of_projective [Module.Projective A
   inferInstance
 
 end Projective
+
+section Vanishing
+
+variable {P₁ : Type w} [AddCommGroup P₁] [Module A P₁]
+variable {p₁ : P₁ →ₗ[A] P₀} {p₀ : P₀ →ₗ[A] M}
+
+/-- **The Auslander--Reiten translate vanishes exactly on the projective modules**, for a
+minimal projective presentation with finitely generated left-hand source and a transpose that is
+projective over the base.  This is what makes `τ` a construction on the *non-projective* modules:
+it assigns a nonzero module to every module that is not projective.
+
+The projectivity of the transpose over `K` is what lets a vanishing translate imply projectivity
+of `M`, through `Module.subsingleton_dual_iff`; it is automatic when `K` is a field.  The
+implication the other way — a projective `M` has vanishing translate — is
+`TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranslate_of_projective`, and
+needs neither hypothesis. -/
+theorem subsingleton_auslanderReitenTranslate_iff_projective (K : Type*) [CommSemiring K]
+    [Algebra K A] [Module.Projective K (AuslanderReitenTranspose p₁)] [Module.Finite A P₁]
+    (h : IsMinimalProjectivePresentation p₁ p₀) :
+    Subsingleton (AuslanderReitenTranslate K p₁) ↔ Module.Projective A M :=
+  (Module.subsingleton_dual_iff K).trans h.subsingleton_auslanderReitenTranspose_iff_projective
+
+end Vanishing
 
 section Comparison
 

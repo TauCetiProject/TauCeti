@@ -55,7 +55,6 @@ endomorphism over an arbitrary commutative ring.
 
 ## Main definitions
 
-* `Matrix.pairMinor`: the `2 × 2` minor of a matrix on an ordered row pair and column pair.
 * `Matrix.symplecticSpecialIsogeny`: the matrix of `2 × 2` minors on the four form-free index
   pairs.
 * `TauCeti.specialIsogeny`: the resulting endomorphism of `TauCeti.GLSymplecticFin 2 R` in
@@ -63,7 +62,6 @@ endomorphism over an arbitrary commutative ring.
 
 ## Main results
 
-* `Matrix.pairMinor_mul_fin_four`: Cauchy--Binet for `2 × 2` minors of a `4 × 4` product.
 * `TauCeti.pairMinor_row_add_eq_neg_jFin` and
   `TauCeti.pairMinor_column_add_eq_neg_jFin`: the symplectic condition read on minors, along rows
   and along columns.

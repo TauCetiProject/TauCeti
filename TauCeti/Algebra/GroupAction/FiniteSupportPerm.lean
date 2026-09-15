@@ -14,6 +14,7 @@ public import Mathlib.Order.Interval.Finset.Nat
 public import Mathlib.Logic.Equiv.Fintype
 public import Mathlib.Logic.Embedding.Set
 import Mathlib.Algebra.Group.Pointwise.Set.Finite
+import Mathlib.Logic.Equiv.Fin.Basic
 -- Non-public: `Finset.countable`, the index of the covering used for countability of `finitary`.
 import Mathlib.Logic.Equiv.List
 
@@ -30,7 +31,11 @@ intersections (Mathlib's `CountableInterFilter`), such as the a.e. filter of a m
 
 The file also supplies `Equiv.Perm.exists_prodCongrRight_mem_finitary_apply_eq_on_finset`:
 finitely many values of an arbitrary family of permutations can be matched by a family whose
-induced permutation of the product moves only finitely many indexed points altogether.
+induced permutation of the product moves only finitely many indexed points altogether; the
+type synonym `FinitaryPerm` of the finitary symmetric group of `ℕ`, carrying the domain actions on
+path and array spaces that are installed beside those spaces; and the
+**block swap** `Nat.blockSwap N`, the finitely supported permutation of `ℕ` exchanging `[0, N)` with
+`[N, 2N)`, which carries any finite index set inside `[0, N)` onto a disjoint copy.
 -/
 
 public section
@@ -67,6 +72,72 @@ theorem finite_compl_fixedBy_iff_eventually_eq_self {π : Equiv.Perm ℕ} :
 theorem finite_compl_fixedBy_conj {G α : Type*} [Group G] [MulAction G α] {g h : G}
     (hh : (MulAction.fixedBy α h)ᶜ.Finite) : (MulAction.fixedBy α (g⁻¹ * h * g))ᶜ.Finite := by
   simpa [Set.smul_set_compl, MulAction.smul_fixedBy] using hh.smul_set (a := g⁻¹)
+
+/-! ## The block swap -/
+
+/-- The finitely supported permutation of `ℕ` that swaps the block `[0, N)` with `[N, 2N)`
+pointwise and fixes everything from `2 * N` on: Mathlib's half-swap `finAddFlip` on `Fin (N + N)`,
+transported to `ℕ` along the value embedding. -/
+def _root_.Nat.blockSwap (N : ℕ) : Equiv.Perm ℕ :=
+  Equiv.Perm.viaFintypeEmbedding (finAddFlip (m := N) (n := N)) ⟨Fin.val, Fin.val_injective⟩
+
+/-- On `[0, N)`, `N.blockSwap` shifts by `N`. -/
+@[simp]
+theorem _root_.Nat.blockSwap_apply_of_lt {N i : ℕ} (hi : i < N) : N.blockSwap i = N + i := by
+  have h : (⟨Fin.val, Fin.val_injective⟩ : Fin (N + N) ↪ ℕ)
+      (Fin.castAdd N ⟨i, hi⟩) = i := rfl
+  rw [Nat.blockSwap, ← h, Equiv.Perm.viaFintypeEmbedding_apply_image, finAddFlip_apply_castAdd]
+  rfl
+
+/-- On `[N, 2N)`, `N.blockSwap` shifts back by `N`. -/
+@[simp]
+theorem _root_.Nat.blockSwap_apply_add_of_lt {N i : ℕ} (hi : i < N) : N.blockSwap (N + i) = i := by
+  have h : (⟨Fin.val, Fin.val_injective⟩ : Fin (N + N) ↪ ℕ)
+      (Fin.natAdd N ⟨i, hi⟩) = N + i := rfl
+  rw [Nat.blockSwap, ← h, Equiv.Perm.viaFintypeEmbedding_apply_image, finAddFlip_apply_natAdd]
+  rfl
+
+/-- From `2 * N` on, `N.blockSwap` is the identity. -/
+@[simp]
+theorem _root_.Nat.blockSwap_apply_of_le {N n : ℕ} (hn : N + N ≤ n) : N.blockSwap n = n := by
+  refine Equiv.Perm.viaFintypeEmbedding_apply_notMem_range _ _ ?_
+  rintro ⟨j, rfl⟩
+  exact absurd j.isLt (not_lt.mpr hn)
+
+/-- `N.blockSwap` carries any index set inside `[0, N)` off itself: the moved copy lands in
+`[N, 2N)`. -/
+theorem _root_.Nat.disjoint_map_blockSwap {N : ℕ} {F : Finset ℕ} (hF : F ⊆ Finset.range N) :
+    Disjoint F (F.map (Equiv.toEmbedding (N.blockSwap))) := by
+  rw [Finset.disjoint_left]
+  intro a haF hamem
+  obtain ⟨b, hbF, hb⟩ := Finset.mem_map.mp hamem
+  have hbN : b < N := Finset.mem_range.mp (hF hbF)
+  have haN : a < N := Finset.mem_range.mp (hF haF)
+  rw [Equiv.coe_toEmbedding, Nat.blockSwap_apply_of_lt hbN] at hb
+  omega
+
+/-- `N.blockSwap` is finitely supported. -/
+theorem _root_.Nat.finite_compl_fixedBy_blockSwap (N : ℕ) :
+    (MulAction.fixedBy ℕ (N.blockSwap))ᶜ.Finite :=
+  finite_compl_fixedBy_of_eventually_eq_self ⟨N + N, fun _ hn => Nat.blockSwap_apply_of_le hn⟩
+
+/-- `blockSwap N` is an involution: two swaps restore every index. -/
+@[simp]
+theorem _root_.Nat.blockSwap_blockSwap (N i : ℕ) : N.blockSwap (N.blockSwap i) = i := by
+  rcases lt_or_ge i N with hi | hi
+  · rw [Nat.blockSwap_apply_of_lt hi, Nat.blockSwap_apply_add_of_lt hi]
+  rcases lt_or_ge i (N + N) with hi2 | hi2
+  · obtain ⟨j, hj, rfl⟩ : ∃ j, j < N ∧ i = N + j := ⟨i - N, by omega, by omega⟩
+    rw [Nat.blockSwap_apply_add_of_lt hj, Nat.blockSwap_apply_of_lt hj]
+  · rw [Nat.blockSwap_apply_of_le hi2, Nat.blockSwap_apply_of_le hi2]
+
+/-- `blockSwap N` is its own inverse. -/
+@[simp]
+theorem _root_.Nat.blockSwap_symm (N : ℕ) : N.blockSwap.symm = N.blockSwap :=
+  Equiv.ext fun i => by
+    rw [Equiv.symm_apply_eq]
+    exact (Nat.blockSwap_blockSwap N i).symm
+
 
 /-- The self-maps of a countable type that move only finitely many points form a countable set:
 such a map is determined by the finite set it moves together with its values there. -/
@@ -248,3 +319,76 @@ theorem exists_prodCongrRight_mem_finitary_apply_eq_on_finset {ι β : Type*}
     simpa [τ, hrow] using (hσ p.1).2 p.2 hmem
 
 end Equiv.Perm
+
+namespace TauCeti
+
+/-! ## The finitary symmetric group as a type synonym -/
+
+/-- The **finitary symmetric group of `ℕ`**, the group of finitely supported permutations of `ℕ`,
+as a type synonym for `↥(Equiv.Perm.finitary ℕ)` carrying the domain actions on path and array
+spaces: finitary reindexing of the time index of a path `x : ℕ → α`, and diagonal relabelling of
+both coordinates of an array `x : ℕ × ℕ → α`. Each action is installed beside the space it acts
+on. The synonym is deliberate: these are actions on the *domain* of a function, whereas
+`Pi.instSMul` would make a subgroup of `Equiv.Perm ℕ` act on the *values* whenever the state space
+`α` carries an action of it — which it does for `α = ℕ`. Wrapping the group keeps the domain
+actions from competing with that one.
+
+The interface is `equivFinitary`, `toPerm`, `ofPerm` and `FinitaryPerm.ext`; no proof outside this
+section unfolds the synonym. -/
+-- The group structure, and with it `toPerm_one`, `toPerm_mul` and `toPerm_inv`, is transported
+-- along the synonym, so those lemmas hold definitionally and by nothing else; the module system
+-- therefore requires this definition and `equivFinitary`, `toPerm`, `ofPerm` below to be
+-- `@[expose]`d.
+@[expose]
+def FinitaryPerm : Type := Equiv.Perm.finitary ℕ
+
+namespace FinitaryPerm
+
+instance instGroup : Group FinitaryPerm := inferInstanceAs (Group (Equiv.Perm.finitary ℕ))
+
+instance instCountable : Countable FinitaryPerm :=
+  inferInstanceAs (Countable (Equiv.Perm.finitary ℕ))
+
+/-- The identification of `FinitaryPerm` with the finitary symmetric group `Equiv.Perm.finitary ℕ`
+that it abbreviates. -/
+@[expose]
+def equivFinitary : FinitaryPerm ≃ Equiv.Perm.finitary ℕ := Equiv.refl _
+
+/-- The finitely supported permutation of `ℕ` underlying an element of `FinitaryPerm`. -/
+@[expose]
+def toPerm (g : FinitaryPerm) : Equiv.Perm ℕ := (equivFinitary g).val
+
+/-- The permutation underlying an element of `FinitaryPerm` is finitely supported. -/
+theorem finite_compl_fixedBy_toPerm (g : FinitaryPerm) :
+    (MulAction.fixedBy ℕ (toPerm g))ᶜ.Finite :=
+  Equiv.Perm.mem_finitary.mp (equivFinitary g).2
+
+/-- An element of `FinitaryPerm` is determined by the permutation underlying it. -/
+theorem toPerm_injective : Function.Injective toPerm := fun _ _ h =>
+  equivFinitary.injective (Subtype.ext h)
+
+@[ext]
+theorem ext {g h : FinitaryPerm} (hgh : toPerm g = toPerm h) : g = h := toPerm_injective hgh
+
+/-- Package a finitely supported permutation of `ℕ` as an element of `FinitaryPerm`. -/
+@[expose]
+def ofPerm (π : Equiv.Perm ℕ) (hπ : (MulAction.fixedBy ℕ π)ᶜ.Finite) : FinitaryPerm :=
+  equivFinitary.symm ⟨π, Equiv.Perm.mem_finitary.mpr hπ⟩
+
+@[simp]
+theorem toPerm_ofPerm (π : Equiv.Perm ℕ) (hπ : (MulAction.fixedBy ℕ π)ᶜ.Finite) :
+    toPerm (ofPerm π hπ) = π :=
+  rfl
+
+@[simp]
+theorem toPerm_one : toPerm 1 = 1 := rfl
+
+@[simp]
+theorem toPerm_mul (g h : FinitaryPerm) : toPerm (g * h) = toPerm g * toPerm h := rfl
+
+@[simp]
+theorem toPerm_inv (g : FinitaryPerm) : toPerm g⁻¹ = (toPerm g)⁻¹ := rfl
+
+end FinitaryPerm
+
+end TauCeti

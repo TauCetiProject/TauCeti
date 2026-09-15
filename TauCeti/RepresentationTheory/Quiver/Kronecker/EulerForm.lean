@@ -78,7 +78,7 @@ theorem titsForm_apply (d : Kronecker A → ℤ) :
 
 /-- The Tits form on the constant dimension vector `(1, 1)` is `2 - n`. This single value decides
 both thresholds below. -/
-private theorem titsForm_one : titsForm (Kronecker A) 1 = 2 - (Fintype.card A : ℤ) := by
+theorem titsForm_one : titsForm (Kronecker A) 1 = 2 - (Fintype.card A : ℤ) := by
   rw [titsForm_apply, Pi.one_apply, Pi.one_apply]
   ring
 

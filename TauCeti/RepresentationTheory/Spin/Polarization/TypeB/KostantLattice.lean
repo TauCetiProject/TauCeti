@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Form
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
-public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.RootGenerators
 import TauCeti.LinearAlgebra.Eigenspace.Binomial
 import TauCeti.RingTheory.DividedPowers.Associative
 
@@ -128,29 +127,6 @@ private theorem typeBSpinRep_longRootGenerator_apply (i j : Fin (n + 1)) (hij : 
     Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_contract,
     P.pairingEquiv_dualVector]
 
-private theorem typeBSpinRep_shortRootGenerator_apply (i : Fin (n + 1))
-    (x : ExteriorAlgebra K P.W) :
-    P.typeBSpinRep b z hz
-        (_root_.UniversalEnvelopingAlgebra.ι K (typeBShortRootGenerator i)) x =
-      ExteriorAlgebra.ι K (b i) *
-        (P.lineCoordinate z • CliffordAlgebra.involute x) := by
-  rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz,
-    P.typeBQuadraticEquiv_typeBShortRootGenerator b z hz,
-    bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_W_line _ z), map_mul,
-    Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_lineOperator]
-
-private theorem typeBSpinRep_shortNegativeRootGenerator_apply (i : Fin (n + 1))
-    (x : ExteriorAlgebra K P.W) :
-    P.typeBSpinRep b z hz
-        (_root_.UniversalEnvelopingAlgebra.ι K (typeBShortNegativeRootGenerator i)) x =
-      P.lineCoordinate z • CliffordAlgebra.involute
-        (CliffordAlgebra.contractLeft (b.coord i) x) := by
-  rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz,
-    P.typeBQuadraticEquiv_typeBShortNegativeRootGenerator b z hz,
-    bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_line_W' z _), map_mul,
-    Module.End.mul_apply, spinAction_ι_contract, P.pairingEquiv_dualVector,
-    spinAction_ι_lineOperator]
-
 /-- A nonterminal positive simple-root operator moves the next exterior singleton one coordinate
 to the left. -/
 theorem typeBSpinRep_simpleRootGenerator_castSucc_exteriorBasis_singleton (j : Fin n) :
@@ -176,39 +152,6 @@ theorem typeBSpinRep_simpleNegativeRootGenerator_castSucc_exteriorBasis_singleto
     P.typeBSpinRep_longRootGenerator_apply b z hz,
     TauCeti.ExteriorAlgebra.basis_singleton, CliffordAlgebra.contractLeft_ι]
   simp [TauCeti.ExteriorAlgebra.basis_singleton]
-
-/-- The terminal positive short-root operator creates the final exterior coordinate from the
-vacuum when the distinguished remainder vector has coordinate one. -/
-theorem typeBSpinRep_simpleRootGenerator_last_exteriorBasis_empty
-    (hcoord : P.lineCoordinate z = 1) :
-    P.typeBSpinRep b z hz
-        (_root_.UniversalEnvelopingAlgebra.ι K
-          (typeBSimpleRootGeneratorFamily (.inl (Fin.last n))))
-        (b.ExteriorAlgebra ∅) =
-      b.ExteriorAlgebra {Fin.last n} := by
-  rw [typeBSimpleRootGeneratorFamily_inl, typeBSimpleRootGenerator_last,
-    P.typeBSpinRep_shortRootGenerator_apply b z hz, hcoord,
-    TauCeti.ExteriorAlgebra.involute_basis]
-  have hEmpty : b.ExteriorAlgebra (∅ : Finset (Fin (n + 1))) = 1 := by
-    rw [ExteriorAlgebra.basis_apply]
-    simp
-  simp only [Finset.card_empty, pow_zero, one_smul]
-  rw [hEmpty, mul_one, TauCeti.ExteriorAlgebra.basis_singleton]
-
-/-- The terminal negative short-root operator annihilates the final exterior coordinate to the
-vacuum when the distinguished remainder vector has coordinate one. -/
-theorem typeBSpinRep_simpleNegativeRootGenerator_last_exteriorBasis_singleton
-    (hcoord : P.lineCoordinate z = 1) :
-    P.typeBSpinRep b z hz
-        (_root_.UniversalEnvelopingAlgebra.ι K
-          (typeBSimpleRootGeneratorFamily (.inr (Fin.last n))))
-        (b.ExteriorAlgebra {Fin.last n}) =
-      b.ExteriorAlgebra ∅ := by
-  rw [typeBSimpleRootGeneratorFamily_inr, typeBSimpleNegativeRootGenerator_last,
-    P.typeBSpinRep_shortNegativeRootGenerator_apply b z hz,
-    TauCeti.ExteriorAlgebra.basis_singleton, CliffordAlgebra.contractLeft_ι,
-    hcoord]
-  simp [ExteriorAlgebra.basis_apply]
 
 /-! ## The weights of the simple coroots -/
 

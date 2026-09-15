@@ -15,7 +15,7 @@ finitely presented. Locally free data gives presentations with the chosen bases 
 and no relations, so finiteness of the local bases is enough.
 
 The main result is
-`TauCeti.SheafOfModules.LocalGeneratorsData.IsLocallyFreeData.isFinitePresentation`.
+`SheafOfModules.LocalGeneratorsData.IsLocallyFreeData.isFinitePresentation`.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer B, item "Coherent sheaves and
 cohomology `Hⁱ(X, ℱ)`". No formalization is vendored. The proof reuses Mathlib's
@@ -44,7 +44,7 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
 
 Mathlib's presentation associated to locally free data uses the local bases as generators and
 has no relations. -/
-theorem LocalGeneratorsData.IsLocallyFreeData.isFinitePresentation
+theorem _root_.SheafOfModules.LocalGeneratorsData.IsLocallyFreeData.isFinitePresentation
     {q : _root_.SheafOfModules.LocalGeneratorsData.{u₁} M} (hfree : q.IsLocallyFreeData)
     (hfinite : q.IsFiniteType) :
     M.IsFinitePresentation := by

@@ -7,6 +7,12 @@ module
 
 public import Mathlib.NumberTheory.Modular
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Measure
+public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
+public import TauCeti.Analysis.Complex.UpperHalfPlane.PSLAction
+public import TauCeti.GroupTheory.Index.Basic
+import TauCeti.GroupTheory.QuotientGroup.ThirdIso
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+public import TauCeti.MeasureTheory.Group.FundamentalDomain
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
@@ -16,9 +22,18 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 The measure theory of the standard fundamental domain `𝒟 = ModularGroup.fd` for `SL₂(ℤ)`,
 complementing its topology from `Mathlib/NumberTheory/Modular.lean`: `𝒟` has finite
 invariant measure, its frontier is null, and therefore integrals over `𝒟` and its interior
-`𝒟ᵒ` agree. The last section records that the translates `γ • 𝒟ᵒ` are open and that two are
+`𝒟ᵒ` agree. The next section records that the translates `γ • 𝒟ᵒ` are open and that two are
 disjoint unless their translating elements differ by a sign; these facts turn suitable finite
 sums of integrals over translates into a single integral over their union.
+
+Those two halves are exactly what `MeasureTheory.IsFundamentalDomain` asks for, and the last
+section assembles them: `𝒟ᵒ` is a fundamental domain in the measure-theoretic sense. The group
+acting has to be `PSL(2, ℤ)`, not `SL(2, ℤ)` — `−I` fixes every point of `ℍ`, so the translates
+indexed by `SL(2, ℤ)` are never pairwise disjoint — and the domain has to be the open `𝒟ᵒ`, on
+which Mathlib's Second Fundamental Domain Lemma is an honest disjointness rather than a
+statement about a boundary. Covering is then only almost everywhere, the two domains differing
+by the null frontier. Tiled over the cosets of a subgroup this gives a fundamental domain at
+every level, which is what a Petersson product for a congruence subgroup is an integral over.
 
 ## Main results
 
@@ -27,19 +42,28 @@ sums of integrals over translates into a single integral over their union.
 * `ModularGroup.volume_frontier_fd`: the frontier of `𝒟` has zero invariant measure.
 * `ModularGroup.fd_ae_eq_fdo`: `𝒟` and `𝒟ᵒ` agree almost everywhere (so set integrals
   over them coincide, via `MeasureTheory.setIntegral_congr_set`).
-* `ModularGroup.sl_smul_set`: the `SL(2, ℤ)`-action on subsets of `ℍ` is the `GL(2, ℝ)`-action
-  along the coercion.
 * `ModularGroup.isOpen_smul_fdo` and `ModularGroup.disjoint_smul_fdo`: the translates of the
   open fundamental domain are open, and two of them are disjoint unless the translating
   elements differ by a sign.
+* `ModularGroup.isFundamentalDomain_fdo`: `𝒟ᵒ` is a fundamental domain for `PSL(2, ℤ)` acting
+  on `ℍ` with the invariant measure.
+* `ModularGroup.isFundamentalDomain_iUnion_out_inv_smul_fdo`: the coset tiling of `𝒟ᵒ` is a
+  fundamental domain for any subgroup of `PSL(2, ℤ)`.
+* `ModularGroup.isFundamentalDomain_iUnion_out_inv_smul_fdo_withCenter`: the same tiling indexed
+  by `SL(2, ℤ) ⧸ Γ.withCenter`, which is the indexing the Petersson product uses.
 
 Split out of the Petersson inner-product development ported from the AINTLIB
 `LeanModularForms` project
 (<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>,
 `Modularforms/PeterssonInnerProduct.lean`, Chris Birkbeck).
 
-The final section on translates of `𝒟ᵒ` was developed in Tau Ceti and has no counterpart in
-that AINTLIB source.
+Two of the results correspond to statements in that project:
+`ModularGroup.isFundamentalDomain_fdo` to `isFundamentalDomain_fdo_PSL`
+(`Modularforms/PSL2Action.lean`), and `ModularGroup.isFundamentalDomain_iUnion_out_inv_smul_fdo`
+to `isFundamentalDomain_Gamma1_PSL` (`Modularforms/PeterssonLevelN.lean`), of which it is the
+arbitrary-subgroup form — that one states the tiling for the image of `Γ₁(N)`. Both are stated
+here for Mathlib's `volume : Measure ℍ` rather than that project's own hyperbolic measure. The
+results on translates of `𝒟ᵒ` have no counterpart there.
 -/
 
 public section
@@ -171,12 +195,6 @@ theorem fd_ae_eq_fdo : (fd : Set ℍ) =ᶠ[ae (volume : Measure ℍ)] fdo :=
 
 /-! ### Disjointness of translates of the open fundamental domain -/
 
-/-- **The `SL(2, ℤ)`-action on subsets of `ℍ` is the `GL(2, ℝ)`-action along the coercion**, the
-pointwise-image counterpart of `ModularGroup.sl_moeb`. This is useful as a rewrite even though
-the two actions are definitionally equal. -/
-@[simp]
-theorem sl_smul_set (γ : SL(2, ℤ)) (S : Set ℍ) : γ • S = (γ : GL (Fin 2) ℝ) • S := (rfl)
-
 /-- Every translate of the open fundamental domain is open: translation is a homeomorphism
 of `ℍ`. -/
 theorem isOpen_smul_fdo (γ : SL(2, ℤ)) : IsOpen (γ • fdo) := by
@@ -197,5 +215,91 @@ theorem disjoint_smul_fdo {γ δ : SL(2, ℤ)} (h₁ : γ⁻¹ * δ ≠ 1) (h₂
   refine (eq_one_or_neg_one_of_mem_fdo_mem_fdo hz' (g := γ⁻¹ * δ) ?_).elim h₁ h₂
   rw [mul_smul, hw', inv_smul_smul]
   exact hz
+
+
+
+/-! ### `𝒟ᵒ` is a fundamental domain for `PSL(2, ℤ)` -/
+
+open Matrix.SpecialLinearGroup in
+/-- **The open standard domain `𝒟ᵒ` is a fundamental domain for `PSL(2, ℤ)` acting on `ℍ`**,
+with respect to the invariant measure: almost every point of `ℍ` is carried into `𝒟ᵒ` by some
+element, and distinct elements carry `𝒟ᵒ` to sets meeting in a null set.
+
+It is `PSL(2, ℤ)` and the *open* domain, not `SL(2, ℤ)` and `𝒟`, that make the statement true;
+the module docstring says why. -/
+theorem isFundamentalDomain_fdo :
+    MeasureTheory.IsFundamentalDomain PSL(2, ℤ) (fdo : Set ℍ) volume := by
+  refine MeasureTheory.IsFundamentalDomain.mk'' isOpen_fdo.measurableSet.nullMeasurableSet
+    ?_ ?_ fun g ↦ (measurePreserving_smul g volume).quasiMeasurePreserving
+  · -- the points never landing in `𝒟ᵒ` are covered by the translates of the null `𝒟 \ 𝒟ᵒ`
+    rw [MeasureTheory.ae_iff]
+    refine measure_mono_null (t := ⋃ γ : SL(2, ℤ), (γ • ·) ⁻¹' ((fd : Set ℍ) \ fdo))
+      (fun τ hτ ↦ ?_) (measure_iUnion_null fun γ ↦
+        (measurePreserving_smul γ (volume : Measure ℍ)).quasiMeasurePreserving.preimage_null
+          (MeasureTheory.ae_eq_set.mp fd_ae_eq_fdo).1)
+    obtain ⟨γ, hγ⟩ := exists_smul_mem_fd τ
+    exact Set.mem_iUnion.mpr ⟨γ, hγ, not_exists.mp hτ (γ : PSL(2, ℤ))⟩
+  · refine fun g hg ↦ QuotientGroup.induction_on g (fun γ hγ ↦ ?_) hg
+    have hne : ¬ (γ = 1 ∨ γ = -1) := fun h ↦ hγ (by
+      simp only [QuotientGroup.eq_one_iff,
+        Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
+      exact h)
+    rw [pslMk_smul_set]
+    refine Disjoint.aedisjoint (Disjoint.symm ?_)
+    simpa using disjoint_smul_fdo (γ := 1) (δ := γ) (by simpa using fun h ↦ hne (Or.inl h))
+      (by simpa using fun h ↦ hne (Or.inr h))
+
+/-- **A fundamental domain for a subgroup of `PSL(2, ℤ)`**: the union of the `[PSL(2, ℤ) : H]`
+translates `(q.out)⁻¹ • 𝒟ᵒ`, one for each coset `q ∈ PSL(2, ℤ) ⧸ H`, is a fundamental domain for
+`H` acting on `ℍ` with the invariant measure — for **every** subgroup, no finiteness needed, since
+`PSL(2, ℤ)` is countable and so is each of its coset spaces. At a congruence subgroup this is the
+domain a Petersson product at level `N` is an integral over. -/
+theorem isFundamentalDomain_iUnion_out_inv_smul_fdo (H : Subgroup PSL(2, ℤ)) :
+    MeasureTheory.IsFundamentalDomain H
+      (⋃ q : PSL(2, ℤ) ⧸ H, ((q.out : PSL(2, ℤ)))⁻¹ • (fdo : Set ℍ)) volume :=
+  isFundamentalDomain_fdo.subgroup_iUnion_out_inv_smul H
+
+/-- **The same tiling, indexed by the cosets of `Γ·{±I}` in `SL(2, ℤ)`.** For
+`Γ ≤ SL(2, ℤ)`, the translates `(q.out)⁻¹ • 𝒟ᵒ` taken over `q ∈ SL(2, ℤ) ⧸ Γ.withCenter` tile a
+fundamental domain for the image of `Γ` in `PSL(2, ℤ)`.
+
+This is the shape the Petersson product presents: `CuspForm.peterssonInnerCosets` sums over
+`SL(2, ℤ) ⧸ Γ.withCenter`, one coset at a time, because `±I` acts trivially on `ℍ`. The
+`PSL(2, ℤ)`-indexed statement above does not apply to it directly: the two index sets are
+different types, and `Quotient.out` picks unrelated representatives in each, so the two unions
+are different sets. -/
+theorem isFundamentalDomain_iUnion_out_inv_smul_fdo_withCenter (Γ : Subgroup SL(2, ℤ)) :
+    MeasureTheory.IsFundamentalDomain
+      (Γ.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))))
+      (⋃ q : SL(2, ℤ) ⧸ Γ.withCenter, ((q.out : SL(2, ℤ)))⁻¹ • (fdo : Set ℍ)) volume := by
+  -- The `PSL(2, ℤ)`-indexed tiling cannot be transported here, the representatives being
+  -- unrelated; what applies is the *transversal* form, which asks only that `q ↦ ⟦q.out⟧`
+  -- enumerate `PSL(2, ℤ) ⧸ Γ` bijectively — and that is the third isomorphism theorem for coset
+  -- spaces, `QuotientGroup.quotientQuotientEquivQuotientSup`, at `N = Z(SL(2, ℤ))`.
+  -- The transversal: the inverse in `PSL(2, ℤ)` of the class of the chosen representative.
+  set r : SL(2, ℤ) ⧸ Γ.withCenter → PSL(2, ℤ) :=
+    fun q ↦ (((q.out : SL(2, ℤ)) : PSL(2, ℤ)))⁻¹ with hr_def
+  have hset : (⋃ q : SL(2, ℤ) ⧸ Γ.withCenter, ((q.out : SL(2, ℤ)))⁻¹ • (fdo : Set ℍ)) =
+      ⋃ q : SL(2, ℤ) ⧸ Γ.withCenter, r q • (fdo : Set ℍ) :=
+    Set.iUnion_congr fun q ↦ (Matrix.SpecialLinearGroup.pslMk_smul_set _ _).symm
+  rw [hset]
+  refine isFundamentalDomain_fdo.iUnion_smul_of_transversal (r := r)
+    (fun q ↦ isFundamentalDomain_fdo.nullMeasurableSet_smul _) ?_
+  -- `q ↦ ⟦q.out⟧` enumerates `PSL(2, ℤ) ⧸ Γ` bijectively: that is the third isomorphism
+  -- theorem for coset spaces, at `N = Z(SL(2, ℤ))`
+  have hfun : (fun q : SL(2, ℤ) ⧸ Γ.withCenter ↦
+      (QuotientGroup.mk ((r q)⁻¹) :
+        PSL(2, ℤ) ⧸ Γ.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))))) =
+      ⇑((Subgroup.quotientEquivOfEq (Subgroup.withCenter_def Γ)).trans
+        (QuotientGroup.quotientQuotientEquivQuotientSup Γ (Subgroup.center SL(2, ℤ))).symm) := by
+    funext q
+    rw [hr_def, inv_inv]
+    conv_rhs => rw [← QuotientGroup.out_eq' q]
+    rw [Equiv.trans_apply, Subgroup.quotientEquivOfEq_mk,
+      QuotientGroup.quotientQuotientEquivQuotientSup_symm_mk]
+  rw [hfun]
+  exact ((Subgroup.quotientEquivOfEq (Subgroup.withCenter_def Γ)).trans
+    (QuotientGroup.quotientQuotientEquivQuotientSup Γ
+      (Subgroup.center SL(2, ℤ))).symm).bijective
 
 end ModularGroup

@@ -38,6 +38,11 @@ measures, and the probability case is packaged separately as a subtype of
 * `TauCeti.IsCoupling.measurePreserving_fst`, `TauCeti.IsCoupling.measurePreserving_snd`,
   `TauCeti.IsCoupling.integral_comp_fst`, and `TauCeti.IsCoupling.integral_comp_snd` — projection
   and integral-transfer forms of the marginal conditions;
+* `TauCeti.IsCoupling.smul`, `TauCeti.IsCoupling.add`, `TauCeti.IsCoupling.sum` and
+  `TauCeti.isCoupling_zero` — the relation is compatible with the additive and scalar structure
+  of measures, which is what mixtures of transport problems use;
+* `TauCeti.IsCoupling.prodProdProdComm` — exchanging the two middle coordinates of a product of
+  two couplings couples the two product measures;
 * `TauCeti.exists_isCoupling_iff` — a finite measure and any other measure admit a coupling
   exactly when they have the same total mass, the witness being their normalised product;
 * `TauCeti.isCoupling_map_swap_iff` and `TauCeti.isCoupling_map_prodMap_iff` —
@@ -69,7 +74,7 @@ This is Layer 0, item 1 of the optimal-transport roadmap.
 
 ## References
 
-* `TauCeti/MeasureTheory/Measure/Coupling.lean` is the formal source for the
+* `TauCeti/MeasureTheory/Measure/Coupling/Basic.lean` is the formal source for the
   measure-preserving projection and integral-transfer declarations and proofs adapted here to the
   plan-first `TauCeti.IsCoupling` interface.
 * C. Villani, *Optimal Transport: Old and New*, Grundlehren 338, 2009, Chapter 1
@@ -223,6 +228,20 @@ protected theorem smul (hπ : IsCoupling π μ ν) (c : ENNReal) :
     simpa only [Measure.snd, Measure.map_smul c measurable_snd.aemeasurable] using
       congrArg (c • ·) hπ.snd_eq
 
+/-- The sum of a coupling of `μ, ν` and a coupling of `μ', ν'` couples `μ + μ'` and `ν + ν'`. -/
+protected theorem add {σ : Measure (X × Y)} {μ' : Measure X} {ν' : Measure Y}
+    (hπ : IsCoupling π μ ν) (hσ : IsCoupling σ μ' ν') :
+    IsCoupling (π + σ) (μ + μ') (ν + ν') where
+  fst_eq := by rw [Measure.fst_add, hπ.fst_eq, hσ.fst_eq]
+  snd_eq := by rw [Measure.snd_add, hπ.snd_eq, hσ.snd_eq]
+
+/-- The sum of a family of couplings couples the sums of the two families of marginals. -/
+protected theorem sum {ι : Type*} {πs : ι → Measure (X × Y)} {μs : ι → Measure X}
+    {νs : ι → Measure Y} (h : ∀ i, IsCoupling (πs i) (μs i) (νs i)) :
+    IsCoupling (Measure.sum πs) (Measure.sum μs) (Measure.sum νs) where
+  fst_eq := (Measure.fst_sum πs).trans (congrArg Measure.sum (funext fun i ↦ (h i).fst_eq))
+  snd_eq := (Measure.snd_sum πs).trans (congrArg Measure.sum (funext fun i ↦ (h i).snd_eq))
+
 /-- Pushing a coupling forward along a measurable map of the source alone. -/
 protected theorem map_left (hπ : IsCoupling π μ ν) {f : X → X'} (hf : Measurable f) :
     IsCoupling (π.map (Prod.map f id)) (μ.map f) ν := by
@@ -232,6 +251,28 @@ protected theorem map_left (hπ : IsCoupling π μ ν) {f : X → X'} (hf : Meas
 protected theorem map_right (hπ : IsCoupling π μ ν) {g : Y → Y'} (hg : Measurable g) :
     IsCoupling (π.map (Prod.map id g)) μ (ν.map g) := by
   simpa only [Measure.map_id] using hπ.map measurable_id hg
+
+/-- **Rearranging a product of plans.** Exchanging the two middle coordinates of the product of a
+coupling of `μ, ν` and a coupling of `μ', ν'` gives a coupling of `μ ⊗ μ'` and `ν ⊗ ν'`. -/
+protected theorem prodProdProdComm {π' : Measure (X' × Y')} {μ' : Measure X'} {ν' : Measure Y'}
+    [SFinite π] [SFinite π'] (hπ : IsCoupling π μ ν) (hπ' : IsCoupling π' μ' ν') :
+    IsCoupling ((π.prod π').map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2)))
+      (μ.prod μ') (ν.prod ν') := by
+  have hX : Measurable (Prod.map Prod.fst Prod.fst : (X × Y) × X' × Y' → X × X') :=
+    measurable_fst.prodMap measurable_fst
+  have hY : Measurable (Prod.map Prod.snd Prod.snd : (X × Y) × X' × Y' → Y × Y') :=
+    measurable_snd.prodMap measurable_snd
+  constructor
+  · have h : ((π.prod π').map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2))).fst
+        = (π.prod π').map (Prod.map Prod.fst Prod.fst) :=
+      Measure.fst_map_prodMk hX hY
+    rw [h, ← Measure.map_prod_map π π' measurable_fst measurable_fst]
+    exact congrArg₂ Measure.prod hπ.fst_eq hπ'.fst_eq
+  · have h : ((π.prod π').map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2))).snd
+        = (π.prod π').map (Prod.map Prod.snd Prod.snd) :=
+      Measure.snd_map_prodMk hX hY
+    rw [h, ← Measure.map_prod_map π π' measurable_snd measurable_snd]
+    exact congrArg₂ Measure.prod hπ.snd_eq hπ'.snd_eq
 
 end IsCoupling
 
@@ -259,6 +300,11 @@ theorem isCoupling_map_prodMap_iff (e : X ≃ᵐ X') (f : Y ≃ᵐ Y') :
       (e.measurable.prodMap f.measurable), Prod.map_comp_map, e.symm_comp_self,
     f.symm_comp_self, Prod.map_id, Measure.map_id, e.map_symm_map, f.map_symm_map] using
     h.map e.symm.measurable f.symm.measurable
+
+/-- The zero measure couples the two zero measures. -/
+@[simp]
+theorem isCoupling_zero : IsCoupling (0 : Measure (X × Y)) (0 : Measure X) (0 : Measure Y) :=
+  ⟨Measure.fst_zero, Measure.snd_zero⟩
 
 /-- The product measure couples two probability measures, so probability measures always have
 a coupling. -/

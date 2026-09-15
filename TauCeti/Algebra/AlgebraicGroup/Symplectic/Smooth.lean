@@ -56,7 +56,7 @@ private theorem pointsMulEquivGLSymplectic_mapValue
     (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
     pointsMulEquivGLSymplectic R m (A := B)
         (AlgHom.mapValue (H := coordinateHopfAlgebra R m) phi f) =
-      GLSymplectic.map (Fin m) phi.toRingHom
+      GLSymplectic.map (Fin m) (phi : A →+* B)
         (pointsMulEquivGLSymplectic R m (A := A) f) := by
   apply Subtype.ext
   apply Matrix.GeneralLinearGroup.ext

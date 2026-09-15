@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 public import TauCeti.Analysis.Complex.SegmentDistIntegral
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
@@ -30,8 +29,8 @@ exponents add up, and `-1 < t` is then a genuine hypothesis on the sum.
 
 The quantitative heart is the segment estimate `Complex.integral_dist_rpow_segment_le`:
 integrating `dist ⬝ p ^ u` along a segment of length `L` gives at most `2 / (u + 1) * L ^ (u + 1)`
-for `-1 < u ≤ 0`.  Fed into Mathlib's displacement bound
-`norm_sub_le_integral_of_norm_deriv_le_of_le` it turns into a Hölder bound
+for `-1 < u ≤ 0`.  Fed into the segment displacement bound
+`TauCeti.norm_schwarzChristoffelPrimitive_sub_le_integral` it turns into a Hölder bound
 `‖F z - F w‖ ≤ C * (2 / (u + 1)) * ‖z - w‖ ^ (u + 1)` for `z, w` in a small half-disc, which is
 what forces the Cauchy criterion.
 
@@ -132,27 +131,11 @@ private theorem dist_schwarzChristoffelPrimitive_le (a e : ι → ℝ) (z₀ : U
     have him := (hmem s hs).2
     rw [hcon] at him
     exact absurd him (not_lt.mpr hp)
-  -- the primitive restricted to the segment, and its derivative
-  have hderiv : ∀ s ∈ Icc (0 : ℝ) 1,
-      HasDerivAt (fun s : ℝ => schwarzChristoffelPrimitive a e z₀ (w + (s : ℂ) * (z - w)))
-        ((z - w) * schwarzChristoffelIntegrand a e (w + (s : ℂ) * (z - w))) s := by
-    intro s hs
-    have h1 : HasDerivAt (fun s : ℝ => w + (s : ℂ) * (z - w)) (z - w) s := by
-      simpa using ((Complex.ofRealCLM.hasDerivAt (x := s)).mul_const (z - w)).const_add w
-    have h2 := hasDerivAt_schwarzChristoffelPrimitive a e z₀ (hmem s hs).2
-    simpa [Function.comp_def, smul_eq_mul] using h2.scomp s h1
-  have hfc : ContinuousOn
-      (fun s : ℝ => schwarzChristoffelPrimitive a e z₀ (w + (s : ℂ) * (z - w))) (Icc 0 1) :=
-    fun s hs => (hderiv s hs).continuousAt.continuousWithinAt
-  have hfd : DifferentiableOn ℝ
-      (fun s : ℝ => schwarzChristoffelPrimitive a e z₀ (w + (s : ℂ) * (z - w))) (Ioo 0 1) :=
-    fun s hs => (hderiv s (Ioo_subset_Icc_self hs)).differentiableAt.differentiableWithinAt
-  have hfB : ∀ᵐ t : ℝ, t ∈ Ioo (0 : ℝ) 1 →
-      ‖deriv (fun s : ℝ => schwarzChristoffelPrimitive a e z₀ (w + (s : ℂ) * (z - w))) t‖
-        ≤ ‖z - w‖ * (C * dist (w + (t : ℂ) * (z - w)) p ^ u) :=
-    .of_forall fun t ht => by
-      rw [(hderiv t (Ioo_subset_Icc_self ht)).deriv, norm_mul]
-      exact mul_le_mul_of_nonneg_left (hbd _ (hmem t (Ioo_subset_Icc_self ht))) (norm_nonneg _)
+  -- the speed along the segment, bounded by the integrable dominating function
+  have hB : ∀ s ∈ Icc (0 : ℝ) 1,
+      ‖z - w‖ * ‖schwarzChristoffelIntegrand a e (w + (s : ℂ) * (z - w))‖
+        ≤ ‖z - w‖ * (C * dist (w + (s : ℂ) * (z - w)) p ^ u) :=
+    fun s hs => mul_le_mul_of_nonneg_left (hbd _ (hmem s hs)) (norm_nonneg _)
   have hBi : IntervalIntegrable
       (fun s : ℝ => ‖z - w‖ * (C * dist (w + (s : ℂ) * (z - w)) p ^ u)) volume 0 1 := by
     refine ContinuousOn.intervalIntegrable ?_
@@ -160,7 +143,8 @@ private theorem dist_schwarzChristoffelPrimitive_le (a e : ι → ℝ) (z₀ : U
     exact continuousOn_const.mul (continuousOn_const.mul
       ((hγcont.dist continuous_const).continuousOn.rpow_const fun s hs =>
         Or.inl fun h => hne s hs (by rwa [dist_eq_zero] at h)))
-  have hkey := norm_sub_le_integral_of_norm_deriv_le_of_le zero_le_one hfc hfd hfB hBi
+  have hkey := norm_schwarzChristoffelPrimitive_sub_le_integral a e z₀ zero_le_one
+    (fun s hs => (hmem s hs).2) hB hBi
   have h1 : w + ((1 : ℝ) : ℂ) * (z - w) = z := by push_cast; ring
   have h0 : w + ((0 : ℝ) : ℂ) * (z - w) = w := by push_cast; ring
   simp only [h1, h0] at hkey

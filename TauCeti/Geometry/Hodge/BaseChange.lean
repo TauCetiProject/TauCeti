@@ -33,8 +33,12 @@ imposed later as structure data.
 
 ## Main declarations
 
-* `TauCeti.Hodge.rationalToComplexLinearEquiv`: the canonical tower equivalence from an abstract
+* `TauCeti.Hodge.rationalToComplexMap`: the canonical structure map from an abstract
   rationalification to an abstract complexification.
+* `TauCeti.Hodge.isBaseChange_rationalToComplexMap`: the complex space is the base change of the
+  rational space along this structure map.
+* `TauCeti.Hodge.rationalToComplexLinearEquiv`: the canonical tower equivalence between the
+  concrete rational base change and the abstract complexification.
 * `TauCeti.Hodge.rationalToComplexSubmodule`: the complexification of a rational subspace inside
   the chosen ambient complexification.
 * `TauCeti.Hodge.rationalToComplexSubmoduleEquiv`: the canonical identification of the concrete
@@ -54,10 +58,13 @@ imposed later as structure data.
 * `TauCeti.Hodge.rationalToComplexSubmodule_le_iff`: an inclusion of rational subspaces can be
   tested on their complexifications.
 
-The design follows the base-change interface specified in the Hodge structures roadmap. Its only
-nontrivial comparison map is Mathlib's
-`TensorProduct.AlgebraTensorModule.cancelBaseChange`, which cancels the middle `ℚ` in the concrete
-tower before the result is transported to the two abstract models.
+The tower is available in two presentations. The structure map `rationalToComplexMap` and the
+witness `isBaseChange_rationalToComplexMap` describe `Vℂ` as the complex scalar extension of `Vℚ`;
+that is what a construction needs when it extends a `ℚ`-linear datum to a `ℂ`-linear one and is
+therefore determined by its values on rational vectors. The equivalence
+`rationalToComplexLinearEquiv` is needed instead when a construction manipulates the concrete
+tensor product `ℂ ⊗[ℚ] Vℚ` as data, as the complexification of a rational subspace does. On purely
+rational vectors the two agree, by `rationalToComplexLinearEquiv_one_tmul`.
 
 ## References
 
@@ -120,6 +127,71 @@ theorem rationalToComplexLinearEquiv_one_tmul_ι (hℚ : IsBaseChange ℚ ιℚ)
     (hℂ : IsBaseChange ℂ ιℂ) (x : Vℤ) :
     rationalToComplexLinearEquiv hℚ hℂ (1 ⊗ₜ[ℚ] ιℚ x) = ιℂ x := by
   simp [rationalToComplexLinearEquiv]
+
+noncomputable section RationalComplexMap
+
+/-- The `ℚ`-module structure on an abstract complexification, obtained by restricting its
+`ℂ`-module structure along `ℚ → ℂ`. It is local to this section, where it is needed to state that
+the rational-to-complex structure map is `ℚ`-linear, and has low priority so that `ℂ` itself keeps
+its `Algebra`-derived `ℚ`-module structure. -/
+local instance (priority := low) moduleRatOfComplex : Module ℚ Vℂ :=
+  Module.restrictScalars ℚ ℂ Vℂ
+local instance : IsScalarTower ℚ ℂ Vℂ := IsScalarTower.restrictScalars ℚ ℂ Vℂ
+local instance : IsScalarTower ℤ ℚ ℂ where
+  smul_assoc z q w := by
+    norm_num [Algebra.smul_def, smul_eq_mul]
+    ring
+local instance : IsScalarTower ℤ ℚ Vℂ := IsScalarTower.to₁₂₄ ℤ ℚ ℂ Vℂ
+
+/-- The canonical `ℚ`-linear structure map from an abstract rationalification to an abstract
+complexification of the same integral module.
+
+It is the unique map whose composite with the integral structure map `ιℚ` is `ιℂ`. -/
+noncomputable def rationalToComplexMap (hℚ : IsBaseChange ℚ ιℚ) (ιℂ : Vℤ →ₗ[ℤ] Vℂ) :
+    Vℚ →ₗ[ℚ] Vℂ :=
+  hℚ.lift ιℂ
+
+/-- The rational-to-complex structure map carries an integral vector to the corresponding vector
+in the complexification. -/
+@[simp]
+theorem rationalToComplexMap_apply_ι (hℚ : IsBaseChange ℚ ιℚ) (ιℂ : Vℤ →ₗ[ℤ] Vℂ) (x : Vℤ) :
+    rationalToComplexMap hℚ ιℂ (ιℚ x) = ιℂ x :=
+  hℚ.lift_eq ιℂ x
+
+/-- Composing the rational-to-complex structure map with rationalification recovers the given
+integral-to-complex structure map. -/
+@[simp]
+theorem rationalToComplexMap_restrictScalars_comp (hℚ : IsBaseChange ℚ ιℚ)
+    (ιℂ : Vℤ →ₗ[ℤ] Vℂ) :
+    (rationalToComplexMap hℚ ιℂ).restrictScalars ℤ ∘ₗ ιℚ = ιℂ :=
+  hℚ.lift_comp ιℂ
+
+/-- The rational-to-complex structure map is the unique `ℚ`-linear map extending `ιℂ` along
+`ιℚ`. -/
+theorem eq_rationalToComplexMap_of_restrictScalars_comp_eq (hℚ : IsBaseChange ℚ ιℚ)
+    (ιℂ : Vℤ →ₗ[ℤ] Vℂ) (f : Vℚ →ₗ[ℚ] Vℂ)
+    (hf : f.restrictScalars ℤ ∘ₗ ιℚ = ιℂ) : f = rationalToComplexMap hℚ ιℂ := by
+  apply hℚ.algHom_ext'
+  rw [hf, rationalToComplexMap_restrictScalars_comp]
+
+/-- The abstract complexification is the base change of the abstract rationalification along the
+canonical rational-to-complex structure map. -/
+theorem isBaseChange_rationalToComplexMap (hℚ : IsBaseChange ℚ ιℚ)
+    (hℂ : IsBaseChange ℂ ιℂ) : IsBaseChange ℂ (rationalToComplexMap hℚ ιℂ) := by
+  apply IsBaseChange.of_comp hℚ
+  simpa only [rationalToComplexMap_restrictScalars_comp] using hℂ
+
+/-- On a purely rational vector the tower equivalence agrees with the rational-to-complex
+structure map. -/
+theorem rationalToComplexLinearEquiv_one_tmul (hℚ : IsBaseChange ℚ ιℚ)
+    (hℂ : IsBaseChange ℂ ιℂ) (x : Vℚ) :
+    rationalToComplexLinearEquiv hℚ hℂ (1 ⊗ₜ[ℚ] x) = rationalToComplexMap hℚ ιℂ x := by
+  have h := eq_rationalToComplexMap_of_restrictScalars_comp_eq hℚ ιℂ
+    ((rationalToComplexLinearEquiv hℚ hℂ).toLinearMap.restrictScalars ℚ ∘ₗ
+      TensorProduct.mk ℚ ℂ Vℚ 1) (by ext y; simp)
+  exact LinearMap.congr_fun h x
+
+end RationalComplexMap
 
 /-- The complexification of a rational subspace, realized inside the chosen ambient
 complexification. -/
@@ -300,6 +372,19 @@ theorem rationalMapToComplex_rationalToComplexLinearEquiv_tmul
         (rationalToComplexLinearEquiv hℚ hℂ (z ⊗ₜ[ℚ] x)) =
       rationalToComplexLinearEquiv h'ℚ h'ℂ (z ⊗ₜ[ℚ] f x) := by
   simp [rationalMapToComplex]
+
+/-- Complexification of a rational map is natural for the rational-to-complex structure maps:
+it carries the image of a rational vector to the image of its value under the map. -/
+@[simp]
+theorem rationalMapToComplex_rationalToComplexMap
+    (hℚ : IsBaseChange ℚ ιℚ) (hℂ : IsBaseChange ℂ ιℂ)
+    (h'ℚ : IsBaseChange ℚ ι'ℚ) (h'ℂ : IsBaseChange ℂ ι'ℂ)
+    (f : Vℚ →ₗ[ℚ] V'ℚ) (x : Vℚ) :
+    rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f (rationalToComplexMap hℚ ιℂ x) =
+      rationalToComplexMap h'ℚ ι'ℂ (f x) := by
+  rw [← rationalToComplexLinearEquiv_one_tmul hℚ hℂ,
+    ← rationalToComplexLinearEquiv_one_tmul h'ℚ h'ℂ,
+    rationalMapToComplex_rationalToComplexLinearEquiv_tmul]
 
 /-- Complexification sends the identity rational map to the identity complex map. -/
 @[simp]

@@ -35,11 +35,10 @@ and by the unblocked complex `GC⁻`. Applied to the `O`- or the `X`-markings of
 of which are grid states, the last lemma therefore says that a returning pair of rectangles can
 never consist of two rectangles disjoint from the markings' squares, so the annular terms vanish
 for any grid differential whose marking-free test is that disjointness — in particular for the
-`X`-test of the unblocked differential `∂⁻`. It does not apply as it stands to the fully blocked
-differential of `Complex.lean`, whose `GridRectangle.AvoidsMarkings` predicate still tests the open
-grid-line interior, treating markings as lattice points rather than as square centres; that is the
-acknowledged convention error whose correction is the open TauCeti#3135, and against the corrected
-square-centred predicate this lemma will serve the fully blocked case unchanged.
+`X`-test of the unblocked differential `∂⁻`. The marking-avoidance predicate
+`GridRectangle.AvoidsMarkings` tests that same region under its other name `GridRectangle.squares`,
+which `GridRectangle.squares_eq_coveredSquares` identifies with `coveredSquares`, so the lemma
+serves `TauCeti.GridDiagram.fullyBlockedDifferential` unchanged.
 
 ## Main results
 
@@ -198,9 +197,11 @@ theorem not_disjoint_union_coveredSquares_pointSet (M : GridState n) :
 Applied to the `O`- or `X`-markings of a grid diagram, this is the vanishing of the annular terms
 in the square of a grid differential that tests markings by disjointness from
 `GridRectangle.coveredSquares`, such as the unblocked differential `∂⁻`: two rectangles that return
-to their source can never both avoid the markings in that sense. The fully blocked differential of
-`Complex.lean` is not yet such a differential, since `GridRectangle.AvoidsMarkings` still tests the
-open grid-line interior; see the module docstring. -/
+to their source can never both avoid the markings in that sense.
+`TauCeti.GridDiagram.fullyBlockedDifferential` is such a differential too: its
+`GridRectangle.AvoidsMarkings` predicate tests
+`GridRectangle.squares`, which `GridRectangle.squares_eq_coveredSquares` identifies with
+`coveredSquares`. -/
 theorem not_disjoint_coveredSquares_or_not_disjoint_coveredSquares (M : GridState n) :
     ¬Disjoint R.toGridRectangle.coveredSquares M.pointSet ∨
       ¬Disjoint S.toGridRectangle.coveredSquares M.pointSet := by

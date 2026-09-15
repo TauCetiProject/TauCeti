@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Series
+public import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.PairSubst
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Unit
 import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
@@ -165,10 +166,9 @@ private theorem subst_formalW_subst_formalInverse {q : MvPowerSeries σ O}
 are fixed by `MvPowerSeries.map`, so only `map_formalAdd` is doing any work. -/
 private theorem map_subst_pair_X_formalAdd {σ' S : Type*} [CommRing S] (φ : O →+* S)
     (s₁ s₂ : σ') :
-    MvPowerSeries.map φ (subst (Sum.elim (fun _ ↦ (X s₁ : MvPowerSeries σ' O)) (fun _ ↦ X s₂) :
-        Unit ⊕ Unit → MvPowerSeries σ' O) (formalAdd W)) =
-      subst (Sum.elim (fun _ ↦ (X s₁ : MvPowerSeries σ' S)) (fun _ ↦ X s₂) :
-        Unit ⊕ Unit → MvPowerSeries σ' S) (formalAdd (W.map φ)) := by
+    MvPowerSeries.map φ (subst (pairSubstitution (X s₁ : MvPowerSeries σ' O) (X s₂))
+        (formalAdd W)) =
+      subst (pairSubstitution (X s₁ : MvPowerSeries σ' S) (X s₂)) (formalAdd (W.map φ)) := by
   rw [MvPowerSeries.map_subst (hasSubst_pair (constantCoeff_X _) (constantCoeff_X _)),
     map_formalAdd]
   congr 1
@@ -183,7 +183,7 @@ private theorem subst_subst_pair_formalAdd_eq_X {σ' : Type*}
     {g : σ' → MvPowerSeries Unit O} (hg : HasSubst g) {a b : MvPowerSeries σ' O}
     (ha : constantCoeff a = 0) (hb : constantCoeff b = 0)
     (hga : subst g a = PowerSeries.X) (hgb : subst g b = 0) :
-    subst g (subst (Sum.elim (fun _ ↦ a) (fun _ ↦ b) : Unit ⊕ Unit → MvPowerSeries σ' O)
+    subst g (subst (pairSubstitution a b)
       (formalAdd W)) = PowerSeries.X := by
   -- The composite family is pointwise `X` and `0`, but only pointwise: the reshape below is
   -- `funext`, not a definitional equality, and it is needed because `subst_unitR_formalAdd` is
@@ -200,7 +200,7 @@ private theorem subst_subst_pair_formalAdd_eq_zero {σ' : Type*}
     {g : σ' → MvPowerSeries Unit O} (hg : HasSubst g) {a b : MvPowerSeries σ' O}
     (ha : constantCoeff a = 0) (hb : constantCoeff b = 0)
     (hga : subst g a = 0) (hgb : subst g b = 0) :
-    subst g (subst (Sum.elim (fun _ ↦ a) (fun _ ↦ b) : Unit ⊕ Unit → MvPowerSeries σ' O)
+    subst g (subst (pairSubstitution a b)
       (formalAdd W)) = 0 := by
   -- As above, the reshape is `funext` rather than defeq: `g` kills both components pointwise,
   -- and the zero family is what `subst_zero_of_constantCoeff_zero` is stated against.
@@ -209,6 +209,16 @@ private theorem subst_subst_pair_formalAdd_eq_zero {σ' : Type*}
       (0 : Unit ⊕ Unit → MvPowerSeries Unit O) from
       funext fun s ↦ by rcases s with u | u; exacts [hga, hgb]]
   exact subst_zero_of_constantCoeff_zero (constantCoeff_formalAdd W)
+
+/-- The addition series at a pair of parameters is nonzero, as soon as some substitution
+separates the two: it sends the sum to `X` and the zero series to `0`. -/
+private theorem subst_pair_formalAdd_ne_zero [Nontrivial O] {σ' : Type*}
+    {g : σ' → MvPowerSeries Unit O} (hg : HasSubst g) {a b : MvPowerSeries σ' O}
+    (ha : constantCoeff a = 0) (hb : constantCoeff b = 0)
+    (hga : subst g a = PowerSeries.X) (hgb : subst g b = 0) :
+    subst (pairSubstitution a b) (formalAdd W) ≠ 0 :=
+  ne_of_subst_eq_X_of_subst_eq_zero (subst_subst_pair_formalAdd_eq_X W hg ha hb hga hgb)
+    (by rw [← coe_substAlgHom hg, map_zero])
 
 /-- The formal inverse at a parameter, read through a further substitution `g` that kills that
 parameter: the result vanishes, since the inverse has no constant term. -/
@@ -280,23 +290,19 @@ group law of an honest Weierstrass curve, applied to the two points, computes `F
 private theorem thetaPoint_add (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q₁ q₂ : MvPowerSeries σ O} (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
     (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0)
-    (hN : subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    (hN : subst (pairSubstitution q₁ q₂)
       (formalIntercept W) ≠ 0)
     (hx : q₁ * PowerSeries.subst q₂ (formalW W) - q₂ * PowerSeries.subst q₁ (formalW W) ≠ 0)
-    (hF : constantCoeff (subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-      Unit ⊕ Unit → MvPowerSeries σ O) (formalAdd W)) = 0)
-    (hF0 : subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    (hF : constantCoeff (subst (pairSubstitution q₁ q₂) (formalAdd W)) = 0)
+    (hF0 : subst (pairSubstitution q₁ q₂)
       (formalAdd W) ≠ 0) :
     W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 := by
   classical
   set ρ := algebraMap (MvPowerSeries σ O) KK with hρ
   have hinj : Function.Injective ρ := IsFractionRing.injective (MvPowerSeries σ O) KK
-  set Λp := subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-    Unit ⊕ Unit → MvPowerSeries σ O) (formalSlope W) with hΛp
-  set Np := subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-    Unit ⊕ Unit → MvPowerSeries σ O) (formalIntercept W) with hNp
-  set Tp := subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-    Unit ⊕ Unit → MvPowerSeries σ O) (formalThirdRoot W) with hTp
+  set Λp := subst (pairSubstitution q₁ q₂) (formalSlope W) with hΛp
+  set Np := subst (pairSubstitution q₁ q₂) (formalIntercept W) with hNp
+  set Tp := subst (pairSubstitution q₁ q₂) (formalThirdRoot W) with hTp
   set w₁ := PowerSeries.subst q₁ (formalW W) with hw₁'
   set w₂ := PowerSeries.subst q₂ (formalW W) with hw₂'
   set wT := PowerSeries.subst Tp (formalW W) with hwT'
@@ -357,22 +363,18 @@ private theorem thetaPoint_add (hΔ : (fracCurve W σ KK).Δ ≠ 0)
   have hu : ρ (PowerSeries.subst Tp (formalInverseDenom W)) * ρ sp = 1 := by
     rw [← map_mul, ← map_one ρ]
     exact congrArg ρ (subst_pair_formalInverseDenom_mul W h₁ h₂)
+  have hsp0 := right_ne_zero_of_mul_eq_one hu
   have hueq : ρ (PowerSeries.subst Tp (formalInverseDenom W)) =
       1 - (fracCurve W σ KK).a₁ * ρ Tp - (fracCurve W σ KK).a₃ * ρ wT := by
     have h := congrArg ρ (subst_pair_formalInverseDenom_eq W h₁ h₂)
     simp only [map_sub, map_mul, map_one, MvPowerSeries.c_eq_algebraMap] at h
     exact h
-  have hsp0 : ρ sp ≠ 0 := by
-    intro h
-    rw [h, mul_zero] at hu
-    exact one_ne_zero hu.symm
-  have hFeq : ρ (subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-      Unit ⊕ Unit → MvPowerSeries σ O) (formalAdd W)) = -(ρ Tp * ρ sp) := by
+  have hFeq : ρ (subst (pairSubstitution q₁ q₂) (formalAdd W)) = -(ρ Tp * ρ sp) := by
     have h := congrArg ρ (subst_pair_formalAdd_eq W h₁ h₂)
     simp only [map_neg, map_mul] at h
     exact h
-  have hwFeq : ρ (PowerSeries.subst (subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-      Unit ⊕ Unit → MvPowerSeries σ O) (formalAdd W)) (formalW W)) = -(ρ wT * ρ sp) := by
+  have hwFeq : ρ (PowerSeries.subst (subst (pairSubstitution q₁ q₂) (formalAdd W)) (formalW W))
+      = -(ρ wT * ρ sp) := by
     have h := congrArg ρ (subst_pair_formalW_formalAdd W h₁ h₂)
     simp only [map_neg, map_mul] at h
     exact h
@@ -397,23 +399,12 @@ private theorem thetaPoint_neg (hΔ : (fracCurve W σ KK).Δ ≠ 0)
   classical
   set ρ := algebraMap (MvPowerSeries σ O) KK with hρ
   have hs : PowerSeries.HasSubst q := PowerSeries.HasSubst.of_constantCoeff_zero hq
-  have hu : ρ (PowerSeries.subst q (formalInverseDenom W)) *
-      ρ (PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1)) = 1 := by
-    rw [← map_mul, ← map_one ρ]
-    exact congrArg ρ (W.subst_formalInverseDenom_mul hs)
-  have hsp0 : ρ (PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1)) ≠ 0 := by
-    intro h
-    rw [h, mul_zero] at hu
-    exact one_ne_zero hu.symm
-  have hIeq : ρ (PowerSeries.subst q (formalInverse W)) =
-      -(ρ q * ρ (PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1))) := by
-    have h := congrArg ρ (W.subst_formalInverse_eq hs)
-    simpa only [map_neg, map_mul] using h
-  have hwIeq : ρ (PowerSeries.subst (PowerSeries.subst q (formalInverse W)) (formalW W)) =
-      -(ρ (PowerSeries.subst q (formalW W)) *
-        ρ (PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1))) := by
-    have h := congrArg ρ (W.subst_formalW_subst_formalInverse hs)
-    simpa only [map_neg, map_mul] using h
+  -- the readings of the formal inverse at `q`, pushed into `KK`
+  have hu := congrArg ρ (W.subst_formalInverseDenom_mul hs)
+  have hIeq := congrArg ρ (W.subst_formalInverse_eq hs)
+  have hwIeq := congrArg ρ (W.subst_formalW_subst_formalInverse hs)
+  simp only [map_neg, map_mul, map_one] at hu hIeq hwIeq
+  have hsp0 := right_ne_zero_of_mul_eq_one hu
   have hueq : ρ (PowerSeries.subst q (formalInverseDenom W)) =
       1 - (fracCurve W σ KK).a₁ * ρ q -
         (fracCurve W σ KK).a₃ * ρ (PowerSeries.subst q (formalW W)) := by
@@ -468,7 +459,7 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
     {q₁ q₂ : MvPowerSeries σ O} (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
     (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0) (hne₁ : q₁ ≠ q₂)
     (hne₂ : q₁ ≠ PowerSeries.subst q₂ (formalInverse W)) :
-    subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    subst (pairSubstitution q₁ q₂)
       (formalIntercept W) ≠ 0 := by
   classical
   intro h0
@@ -487,21 +478,13 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
       ρ q₂ / ρ (PowerSeries.subst q₂ (formalW W)) := by
     rw [div_eq_div_iff hw₁0 hw₂0, ← map_mul, ← map_mul]
     exact congrArg ρ (by linear_combination hqw)
-  have hcase := (Affine.Point.X_eq_iff
-    (h₁ := chord_point_nonsingular (fracCurve W σ KK)
-      (by
-        simpa [wEquationRHS_def] using W.algebraMap_subst_formalW_wEquation (KK := KK)
-          (PowerSeries.HasSubst.of_constantCoeff_zero h₁))
-      hw₁0 hΔ)
-    (h₂ := chord_point_nonsingular (fracCurve W σ KK)
-      (by simpa [wEquationRHS_def] using W.algebraMap_subst_formalW_wEquation (KK := KK) hs₂)
-      hw₂0 hΔ)).mp hx
+  -- `xRep` is the projective `x`-coordinate, so the dichotomy comes out on the points themselves
+  have hxr : (W.thetaPoint hΔ h₁ hq₁0).xRep = (W.thetaPoint hΔ h₂ hq₂0).xRep := by
+    simp only [thetaPoint, Affine.Point.xRep_some, Matrix.vecCons_inj, and_true]
+    exact hx
+  have hcase := Affine.Point.eq_or_eq_neg_of_xRep_eq_xRep hxr
   -- the data carried by the inverted parameter
-  have hs0 : PowerSeries.subst q₂ (PowerSeries.invOfUnit (formalInverseDenom W) 1) ≠ 0 := by
-    intro hh
-    have hmul := W.subst_formalInverseDenom_mul hs₂
-    rw [hh, mul_zero] at hmul
-    exact one_ne_zero hmul.symm
+  have hs0 := right_ne_zero_of_mul_eq_one (W.subst_formalInverseDenom_mul hs₂)
   have hi : constantCoeff (PowerSeries.subst q₂ (formalInverse W)) = 0 :=
     PowerSeries.constantCoeff_subst_eq_zero h₂ (formalInverse W) (constantCoeff_formalInverse W)
   have hi0 : PowerSeries.subst q₂ (formalInverse W) ≠ 0 := by
@@ -509,10 +492,8 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
     exact neg_ne_zero.mpr (mul_ne_zero hq₂0 hs0)
   rcases hcase with hc | hc
   · exact hne₁ (W.thetaPoint_inj hΔ h₁ h₂ hq₁0 hq₂0 hc)
-  · -- `hc` comes out of `X_eq_iff` with `thetaPoint` unfolded, so fold it back before rewriting
-    have hc' : W.thetaPoint hΔ h₁ hq₁0 = -W.thetaPoint hΔ h₂ hq₂0 := hc
-    rw [← W.thetaPoint_neg hΔ h₂ hq₂0 hi hi0] at hc'
-    exact hne₂ (W.thetaPoint_inj hΔ h₁ hi hq₁0 hi0 hc')
+  · rw [← W.thetaPoint_neg hΔ h₂ hq₂0 hi hi0] at hc
+    exact hne₂ (W.thetaPoint_inj hΔ h₁ hi hq₁0 hi0 hc)
 
 variable [DecidableEq KK] in
 /-- **The chord addition of parametrized points, from distinctness alone**: `θ(q₁) + θ(q₂) =
@@ -526,9 +507,8 @@ private theorem thetaPoint_add_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q₁ q₂ : MvPowerSeries σ O} (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
     (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0) (hne₁ : q₁ ≠ q₂)
     (hne₂ : q₁ ≠ PowerSeries.subst q₂ (formalInverse W))
-    (hF : constantCoeff (subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-      Unit ⊕ Unit → MvPowerSeries σ O) (formalAdd W)) = 0)
-    (hF0 : subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    (hF : constantCoeff (subst (pairSubstitution q₁ q₂) (formalAdd W)) = 0)
+    (hF0 : subst (pairSubstitution q₁ q₂)
       (formalAdd W) ≠ 0) :
     W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 := by
   have hN := W.pair_intercept_ne_zero_of_ne hΔ h₁ h₂ hq₁0 hq₂0 hne₁ hne₂
@@ -549,9 +529,8 @@ private theorem thetaPoint_add_of_subst_separates (hΔ : (fracCurve W σ KK).Δ 
     {q₁ q₂ : MvPowerSeries σ O} (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
     (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0)
     (hg₁ : subst g q₁ = PowerSeries.X) (hg₂ : subst g q₂ = 0)
-    (hF : constantCoeff (subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) :
-      Unit ⊕ Unit → MvPowerSeries σ O) (formalAdd W)) = 0)
-    (hF0 : subst (Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂) : Unit ⊕ Unit → MvPowerSeries σ O)
+    (hF : constantCoeff (subst (pairSubstitution q₁ q₂) (formalAdd W)) = 0)
+    (hF0 : subst (pairSubstitution q₁ q₂)
       (formalAdd W) ≠ 0) :
     W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 :=
   W.thetaPoint_add_of_ne hΔ h₁ h₂ hq₁0 hq₂0 (ne_of_subst_eq_X_of_subst_eq_zero hg₁ hg₂)
@@ -584,26 +563,16 @@ honest elliptic curve `fracCurve Universal.curve` over that ring's fraction fiel
 bracketing into a sum of three points, `thetaPoint_add_of_ne` computes both, associativity of the
 curve's group law identifies them, and `thetaPoint_inj` brings the equality back to the series. -/
 private theorem assoc_formalAdd_universal :
-    subst (Sum.elim
-        (fun _ ↦ subst (Sum.elim
-            (fun _ ↦ (X (Sum.inl ()) :
-              MvPowerSeries (Unit ⊕ Unit ⊕ Unit) (MvPolynomial Coeff ℤ)))
-            (fun _ ↦ X (Sum.inr (Sum.inl ()))) :
-              Unit ⊕ Unit → MvPowerSeries (Unit ⊕ Unit ⊕ Unit) (MvPolynomial Coeff ℤ))
-          (formalAdd Universal.curve))
-        (fun _ ↦ X (Sum.inr (Sum.inr ()))) :
-          Unit ⊕ Unit → MvPowerSeries (Unit ⊕ Unit ⊕ Unit) (MvPolynomial Coeff ℤ))
+    subst (pairSubstitution
+        (subst (pairSubstitution (X (Sum.inl ()) :
+            MvPowerSeries (Unit ⊕ Unit ⊕ Unit) (MvPolynomial Coeff ℤ))
+          (X (Sum.inr (Sum.inl ())))) (formalAdd Universal.curve))
+        (X (Sum.inr (Sum.inr ()))))
       (formalAdd Universal.curve) =
-    subst (Sum.elim
-        (fun _ ↦ (X (Sum.inl ()) :
-          MvPowerSeries (Unit ⊕ Unit ⊕ Unit) (MvPolynomial Coeff ℤ)))
-        (fun _ ↦ subst (Sum.elim
-            (fun _ ↦ (X (Sum.inr (Sum.inl ())) :
-              MvPowerSeries (Unit ⊕ Unit ⊕ Unit) (MvPolynomial Coeff ℤ)))
-            (fun _ ↦ X (Sum.inr (Sum.inr ()))) :
-              Unit ⊕ Unit → MvPowerSeries (Unit ⊕ Unit ⊕ Unit) (MvPolynomial Coeff ℤ))
-          (formalAdd Universal.curve)) :
-          Unit ⊕ Unit → MvPowerSeries (Unit ⊕ Unit ⊕ Unit) (MvPolynomial Coeff ℤ))
+    subst (pairSubstitution (X (Sum.inl ()) :
+        MvPowerSeries (Unit ⊕ Unit ⊕ Unit) (MvPolynomial Coeff ℤ))
+        (subst (pairSubstitution (X (Sum.inr (Sum.inl ()))) (X (Sum.inr (Sum.inr ()))))
+          (formalAdd Universal.curve)))
       (formalAdd Universal.curve) := by
   classical
   set R := MvPolynomial Coeff ℤ with hR
@@ -629,9 +598,6 @@ private theorem assoc_formalAdd_universal :
     (i := (Sum.inl () : Unit ⊕ Unit ⊕ Unit)) (j := Sum.inr (Sum.inl ())) (by simp)
   have hχ3 := subst_coordSpecialize_X_of_ne (O := R)
     (i := (Sum.inl () : Unit ⊕ Unit ⊕ Unit)) (j := Sum.inr (Sum.inr ())) (by simp)
-  have hχ0 : subst χ (0 : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) = 0 := by
-    rw [← coe_substAlgHom hχ, map_zero]
-  -- the second specialization, which separates the middle parameter from the third
   -- the specialization separating the middle parameter from the other two
   set χ' := coordSpecialize (O := R) (Sum.inr (Sum.inl ()) : Unit ⊕ Unit ⊕ Unit) with hχ'def
   have hχ' : HasSubst χ' := hasSubst_coordSpecialize _
@@ -639,13 +605,11 @@ private theorem assoc_formalAdd_universal :
   have hχ'3 := subst_coordSpecialize_X_of_ne (O := R)
     (i := (Sum.inr (Sum.inl ()) : Unit ⊕ Unit ⊕ Unit)) (j := Sum.inr (Sum.inr ())) (by simp)
   -- the two inner sums
-  set F₁₂ := subst (Sum.elim (fun _ ↦ (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R))
-    (fun _ ↦ X (Sum.inr (Sum.inl ()))) : Unit ⊕ Unit → MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
-    (formalAdd Universal.curve) with hF₁₂def
-  set F₂₃ := subst (Sum.elim
-    (fun _ ↦ (X (Sum.inr (Sum.inl ())) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R))
-    (fun _ ↦ X (Sum.inr (Sum.inr ()))) : Unit ⊕ Unit → MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
-    (formalAdd Universal.curve) with hF₂₃def
+  set F₁₂ := subst (pairSubstitution (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
+    (X (Sum.inr (Sum.inl ())))) (formalAdd Universal.curve) with hF₁₂def
+  set F₂₃ := subst (pairSubstitution
+    (X (Sum.inr (Sum.inl ())) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
+    (X (Sum.inr (Sum.inr ())))) (formalAdd Universal.curve) with hF₂₃def
   have hF₁₂c : constantCoeff F₁₂ = 0 :=
     constantCoeff_subst_pair_formalAdd Universal.curve (constantCoeff_X _)
         (constantCoeff_X _)
@@ -656,22 +620,16 @@ private theorem assoc_formalAdd_universal :
     subst_subst_pair_formalAdd_eq_X Universal.curve hχ hc₁ hc₂ hχ1 hχ2
   have hχF₂₃ : subst χ F₂₃ = 0 :=
     subst_subst_pair_formalAdd_eq_zero Universal.curve hχ hc₂ hc₃ hχ2 hχ3
-  -- each inner sum is nonzero: the specialization that separates its own two parameters
-  -- sends it to `X`, and `X ≠ 0`
-  have hχ'0 : subst χ' (0 : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) = 0 := by
-    rw [← coe_substAlgHom hχ', map_zero]
-  have hF₁₂0 : F₁₂ ≠ 0 := ne_of_subst_eq_X_of_subst_eq_zero hχF₁₂ hχ0
-  have hF₂₃0 : F₂₃ ≠ 0 := ne_of_subst_eq_X_of_subst_eq_zero
-    (subst_subst_pair_formalAdd_eq_X Universal.curve hχ' hc₂ hc₃ hχ'2 hχ'3) hχ'0
+  -- each inner sum is nonzero, via the specialization separating its own two parameters
+  have hF₁₂0 : F₁₂ ≠ 0 := subst_pair_formalAdd_ne_zero Universal.curve hχ hc₁ hc₂ hχ1 hχ2
+  have hF₂₃0 : F₂₃ ≠ 0 := subst_pair_formalAdd_ne_zero Universal.curve hχ' hc₂ hc₃ hχ'2 hχ'3
   -- the two bracketed sums are again legitimate parameters
   have hLc := constantCoeff_subst_eq_zero (hasSubst_pair hF₁₂c hc₃)
     (by rintro (j | j) <;> simp [hF₁₂c]) (constantCoeff_formalAdd Universal.curve)
   have hRc := constantCoeff_subst_eq_zero (hasSubst_pair hc₁ hF₂₃c)
     (by rintro (j | j) <;> simp [hF₂₃c]) (constantCoeff_formalAdd Universal.curve)
-  have hL0 := ne_of_subst_eq_X_of_subst_eq_zero
-    (subst_subst_pair_formalAdd_eq_X Universal.curve hχ hF₁₂c hc₃ hχF₁₂ hχ3) hχ0
-  have hR0 := ne_of_subst_eq_X_of_subst_eq_zero
-    (subst_subst_pair_formalAdd_eq_X Universal.curve hχ hc₁ hF₂₃c hχ1 hχF₂₃) hχ0
+  have hL0 := subst_pair_formalAdd_ne_zero Universal.curve hχ hF₁₂c hc₃ hχF₁₂ hχ3
+  have hR0 := subst_pair_formalAdd_ne_zero Universal.curve hχ hc₁ hF₂₃c hχ1 hχF₂₃
   -- the θ-chain: both bracketings compute the same sum of three points, each addition licensed
   -- by the specialization that separates its two summands
   have e₁₂ := thetaPoint_add_of_subst_separates Universal.curve (KK := KK) hΔ hχ hc₁ hc₂ h10 h20
@@ -697,23 +655,14 @@ series ring therefore has a fraction field — and `map_specialize` carries it t
 The three variables are indexed by `Unit ⊕ Unit ⊕ Unit`, with the two bracketings written as
 nested substitutions of `formalAdd` into itself. -/
 theorem formalAdd_assoc :
-    subst (Sum.elim
-        (fun _ ↦ subst (Sum.elim
-            (fun _ ↦ (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) O))
-            (fun _ ↦ X (Sum.inr (Sum.inl ()))) :
-              Unit ⊕ Unit → MvPowerSeries (Unit ⊕ Unit ⊕ Unit) O)
-          (formalAdd W))
-        (fun _ ↦ X (Sum.inr (Sum.inr ()))) :
-          Unit ⊕ Unit → MvPowerSeries (Unit ⊕ Unit ⊕ Unit) O)
+    subst (pairSubstitution
+        (subst (pairSubstitution (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) O)
+          (X (Sum.inr (Sum.inl ())))) (formalAdd W))
+        (X (Sum.inr (Sum.inr ()))))
       (formalAdd W) =
-    subst (Sum.elim
-        (fun _ ↦ (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) O))
-        (fun _ ↦ subst (Sum.elim
-            (fun _ ↦ (X (Sum.inr (Sum.inl ())) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) O))
-            (fun _ ↦ X (Sum.inr (Sum.inr ()))) :
-              Unit ⊕ Unit → MvPowerSeries (Unit ⊕ Unit ⊕ Unit) O)
-          (formalAdd W)) :
-          Unit ⊕ Unit → MvPowerSeries (Unit ⊕ Unit ⊕ Unit) O)
+    subst (pairSubstitution (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) O)
+        (subst (pairSubstitution (X (Sum.inr (Sum.inl ()))) (X (Sum.inr (Sum.inr ()))))
+          (formalAdd W)))
       (formalAdd W) := by
   have h := congrArg (MvPowerSeries.map W.specialize) assoc_formalAdd_universal
   rw [MvPowerSeries.map_subst (hasSubst_pair

@@ -22,6 +22,8 @@ by the cyclic subgroup the tag generates has `M` as an `m`-th cyclotomic extensi
 
 * `TauCeti.fixedField_zpowers_isCyclotomicExtension`: for a tag `(σ, τ)` with
   `orderOf σ ∣ orderOf τ`, `M / fixedField ⟪(σ, τ)⟫` is an `m`-th cyclotomic extension.
+* `TauCeti.card_algEquiv_fixedField_zpowers_eq_orderOf`: `M` has `orderOf τ` automorphisms over
+  that fixed field.
 
 ## References
 
@@ -68,5 +70,25 @@ theorem fixedField_zpowers_isCyclotomicExtension
     Subgroup.map_comap_eq_self_of_surjective e.surjective, Subgroup.map_bot,
     MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply]
   exact Subgroup.zpowers_inf_top_prod_bot_eq_bot_of_orderOf_dvd σ τ hστ
+
+/-- **The automorphism group of `M` over the tagged fixed field has order `orderOf τ`.** Under the
+same divisibility, the cyclic group cut out by the tag has order `orderOf τ`.
+
+The count depends only on the tag's second component: the first contributes nothing once
+`orderOf σ ∣ orderOf τ`. -/
+-- Not a `simp` lemma, for the reason recorded on `AlgEquiv.card_algEquiv_fixedField_zpowers`:
+-- `simpNF` cannot normalise the left-hand side, because synthesising `Fintype` for the
+-- automorphism group times out.
+theorem card_algEquiv_fixedField_zpowers_eq_orderOf
+    (hcop : ((NumberField.discr L).natAbs).Coprime m) {ζ : M} (hζ : IsPrimitiveRoot ζ m)
+    (σ : Gal(L/K)) (τ : (ZMod m)ˣ) (hστ : orderOf σ ∣ orderOf τ) :
+    Nat.card (M ≃ₐ[fixedField
+        (Subgroup.zpowers ((galEquivProd K L M m hcop hζ).symm (σ, τ)))] M) = orderOf τ := by
+  have : FiniteDimensional L M := finiteDimensional {m} L M
+  have : FiniteDimensional K M := FiniteDimensional.trans K L M
+  set e := galEquivProd K L M m hcop hζ
+  rw [AlgEquiv.card_algEquiv_fixedField_zpowers,
+    ← orderOf_injective e.toMonoidHom e.injective, MulEquiv.coe_toMonoidHom,
+    MulEquiv.apply_symm_apply, Prod.orderOf, Nat.lcm_comm, Nat.lcm_eq_left hστ]
 
 end TauCeti

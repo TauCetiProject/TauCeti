@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 
 /-!
@@ -40,12 +41,16 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   related by `TauCeti.Manifold.curveVelocityWithin_univ`.
 * `TauCeti.Manifold.curveVelocityLiftWithin` and `TauCeti.Manifold.curveVelocityLift`: the
   corresponding curves in the tangent bundle, together with their projection and fibre formulas.
+* `ContMDiffOn.continuousOn_curveVelocityLiftWithin`: the within-domain velocity lift of a `C¹`
+  curve is continuous on a unique-differentiability domain, with open-domain and unrestricted
+  forms for `curveVelocityLift`.
 * `TauCeti.Manifold.hasMFDerivWithinAt_curveVelocityWithin` and
   `TauCeti.Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt`: the two directions relating the
   named velocity to a `HasMFDerivWithinAt` witness.
 * `TauCeti.Manifold.curveVelocityWithin_subset` and
   `TauCeti.Manifold.curveVelocityWithin_comp`: velocity is unchanged by restriction and obeys the
-  chain rule under reparametrization.
+  chain rule under reparametrization, with `TauCeti.Manifold.curveVelocity_comp` as the
+  unrestricted form.
 * `TauCeti.Manifold.hasDerivWithinAt_extChartAt_comp_curve`: reading the curve in the chart
   centred at the current point differentiates it to the velocity itself, with
   `TauCeti.Manifold.hasDerivAt_extChartAt_comp_curve` its unrestricted case and
@@ -54,7 +59,7 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
 
 public section
 
-open scoped Manifold Topology
+open scoped ContDiff Manifold Topology
 
 noncomputable section
 
@@ -190,6 +195,16 @@ theorem curveVelocityWithin_comp {φ : 𝕜 → 𝕜} {u : Set 𝕜} {c : 𝕜}
     (show 𝕜 from z) • (c • curveVelocityWithin I γ s (φ t))
   rw [mul_smul]
 
+/-- The velocity of a reparametrized curve is the velocity of the original curve multiplied by
+the derivative of the reparametrization. -/
+theorem curveVelocity_comp {φ : 𝕜 → 𝕜} {c : 𝕜} (hφ : HasDerivAt φ c t)
+    (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (φ t)) :
+    curveVelocity I (γ ∘ φ) t = c • curveVelocity I γ (φ t) := by
+  simpa only [← curveVelocityWithin_univ] using
+    curveVelocityWithin_comp (s := Set.univ) (u := Set.univ) hφ.hasDerivWithinAt
+      (Set.mapsTo_univ φ Set.univ) hγ.mdifferentiableWithinAt
+      (uniqueDiffOn_univ t (Set.mem_univ t))
+
 /-- On a parameter set which is a neighbourhood of `t`, the restricted velocity is the
 unrestricted one. -/
 theorem curveVelocityWithin_of_mem_nhds (hs : s ∈ 𝓝 t) :
@@ -259,6 +274,63 @@ theorem curveVelocityLift_snd (γ : 𝕜 → M) (t : 𝕜) :
     (curveVelocityLift I γ t).2 = curveVelocity I γ t := (rfl)
 
 variable [IsManifold I 1 M]
+
+omit [IsManifold I 1 M] in
+/-- Applying the tangent map of a curve to the canonical unit tangent vector of its parameter
+space gives its velocity lift. -/
+theorem tangentMapWithin_unit_eq_curveVelocityLiftWithin {u : Set 𝕜} (t : 𝕜) :
+    tangentMapWithin 𝓘(𝕜, 𝕜) I γ u
+        (TotalSpace.mk' 𝕜 t ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm 1)) =
+      curveVelocityLiftWithin I γ u t := by
+  have hunit : (NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm (1 : 𝕜) =
+      (1 : 𝕜) := by
+    apply (NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).injective
+    rw [ContinuousLinearEquiv.apply_symm_apply]
+    rfl
+  apply TotalSpace.ext
+  · exact tangentMapWithin_proj
+  · rw [tangentMapWithin_snd, curveVelocityLiftWithin_snd, hunit,
+      curveVelocityWithin_apply]
+    rfl
+
+/-- The within-domain velocity lift of a `C¹` curve is continuous on a domain with unique
+manifold derivatives. -/
+theorem ContMDiffOn.continuousOn_curveVelocityLiftWithin {u : Set 𝕜}
+    (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I 1 γ u)
+    (hu : UniqueMDiffOn 𝓘(𝕜, 𝕜) u) :
+    ContinuousOn (curveVelocityLiftWithin I γ u) u := by
+  let ι : 𝕜 → TangentBundle 𝓘(𝕜, 𝕜) 𝕜 := fun t ↦
+    TotalSpace.mk' 𝕜 t ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm 1)
+  have hι : ContMDiff 𝓘(𝕜, 𝕜) 𝓘(𝕜, 𝕜).tangent ∞ ι := by
+    intro t
+    rw [contMDiffAt_totalSpace]
+    refine ⟨contMDiffAt_id, ?_⟩
+    refine (contMDiffAt_const (c := (1 : 𝕜))).congr_of_eventuallyEq ?_
+    filter_upwards with r
+    rw [trivializationAt_model_space_apply]
+    rfl
+  have htangent := hγ.continuousOn_tangentMapWithin le_rfl hu
+  have hcomp := htangent.comp hι.continuous.continuousOn
+    (fun t ht ↦ by simpa [ι] using ht)
+  refine hcomp.congr fun t ht ↦ ?_
+  exact (tangentMapWithin_unit_eq_curveVelocityLiftWithin (I := I) (u := u) t).symm
+
+/-- The velocity lift of a `C¹` curve is continuous on an open parameter set. The openness
+ensures that the unrestricted velocity in `curveVelocityLift` agrees with the derivative within
+the parameter set. -/
+theorem ContMDiffOn.continuousOn_curveVelocityLift {u : Set 𝕜}
+    (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I 1 γ u) (hu : IsOpen u) :
+    ContinuousOn (curveVelocityLift I γ) u := by
+  refine (ContMDiffOn.continuousOn_curveVelocityLiftWithin hγ hu.uniqueMDiffOn).congr
+    fun t ht ↦ ?_
+  rw [curveVelocityLiftWithin_apply, curveVelocityLift_apply,
+    curveVelocityWithin_of_mem_nhds (hu.mem_nhds ht)]
+
+/-- The unrestricted case of `ContMDiffOn.continuousOn_curveVelocityLift`. -/
+theorem ContMDiff.continuous_curveVelocityLift
+    (hγ : ContMDiff 𝓘(𝕜, 𝕜) I 1 γ) : Continuous (curveVelocityLift I γ) := by
+  rw [← continuousOn_univ, ← curveVelocityLiftWithin_univ]
+  exact ContMDiffOn.continuousOn_curveVelocityLiftWithin hγ.contMDiffOn uniqueMDiffOn_univ
 
 /-- Reading the curve in the extended chart centred at the *current* point differentiates it to
 the velocity itself: the derivative of that chart at its own centre is the identity. -/

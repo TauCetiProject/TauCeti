@@ -40,6 +40,8 @@ away from a finite set of primes.
 * `TauCeti.GlobalNumberFields.congruenceSubgroup`, `TauCeti.GlobalNumberFields.primeToSubgroup`,
   `TauCeti.GlobalNumberFields.unitsCongruenceSubgroup`: the subgroups of `Kˣ` and `(𝓞 K)ˣ` these
   conditions define.
+* `TauCeti.GlobalNumberFields.unitsToPrimeToSubgroup`: the inclusion of `(𝓞 K)ˣ` into
+  `primeToSubgroup 𝔪`.
 * `TauCeti.GlobalNumberFields.idealsPrimeTo`,
   `TauCeti.GlobalNumberFields.integralIdealsPrimeTo`: ideals prime to the finite part, with the
   inclusion `TauCeti.GlobalNumberFields.integralIdealsPrimeToInclusion` along divisibility.
@@ -48,8 +50,10 @@ away from a finite set of primes.
 
 * `TauCeti.GlobalNumberFields.Modulus.mem_support_iff`: membership in the support is divisibility
   of the finite part.  `Modulus.support_one` and `Modulus.support_mono` are consequences.
-* `TauCeti.GlobalNumberFields.Modulus.pow_exponent_dvd_finitePart`: the prime power prescribed by
-  the exponent divides the finite part.
+* `TauCeti.GlobalNumberFields.Modulus.pow_exponent_dvd_finitePart` and
+  `TauCeti.GlobalNumberFields.Modulus.mem_finitePart_of_forall_mem_pow_exponent`: the prime power
+  prescribed by the exponent divides the finite part, and membership in the finite part is
+  detected by those prime powers.
 * `TauCeti.GlobalNumberFields.congruenceSubgroup_le_primeToSubgroup`: an element congruent to one
   is a unit at every prime dividing the finite part.  This is what makes the ray a subgroup of the
   prime-to ideals.
@@ -59,6 +63,8 @@ away from a finite set of primes.
   modulus to a smaller one.
 * `TauCeti.GlobalNumberFields.isCongrOne_narrowModulus_iff`: congruence to one modulo the modulus
   with unit finite part and every real place is total positivity.
+* `TauCeti.GlobalNumberFields.unitsCongruenceSubgroup_narrowModulus`: the units congruent to one
+  modulo the narrow modulus are the totally positive integer units.
 * `TauCeti.GlobalNumberFields.Modulus.isCoprimeTo_iff_sup_eq_top`: being prime to the support is
   comaximality with the finite part.
 
@@ -90,6 +96,14 @@ structure Modulus (K : Type*) [Field K] [NumberField K] where
 variable {K : Type*} [Field K] [NumberField K]
 
 namespace Modulus
+
+/-- Two moduli are equal when their finite and infinite parts are equal. -/
+@[ext]
+theorem ext {m n : Modulus K} (hfinite : m.finitePart = n.finitePart)
+    (hinfinite : m.infinitePart = n.infinitePart) : m = n := by
+  cases m
+  cases n
+  simp_all
 
 theorem finitePart_ne_zero (𝔪 : Modulus K) : 𝔪.finitePart ≠ 0 := fun h ↦
   𝔪.finitePart_ne_bot (by rwa [Ideal.zero_eq_bot] at h)
@@ -136,6 +150,11 @@ of the finite part. -/
 noncomputable def exponent (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) : ℕ :=
   (Associates.mk v.asIdeal).count (Associates.mk 𝔪.finitePart).factors
 
+/-- The exponent of a finite place is its multiplicity in the factorization of the finite part. -/
+theorem exponent_def (m : Modulus K) (v : HeightOneSpectrum (RingOfIntegers K)) :
+    m.exponent v = (Associates.mk v.asIdeal).count (Associates.mk m.finitePart).factors := by
+  rw [exponent]
+
 /-- A prime lies in the support of a modulus exactly when it occurs in the finite part with a
 positive exponent. -/
 theorem mem_support_iff_exponent_ne_zero (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) :
@@ -155,6 +174,26 @@ theorem pow_exponent_dvd_finitePart (𝔪 : Modulus K) (v : HeightOneSpectrum (�
     (Associates.prime_pow_dvd_iff_le (Associates.mk_ne_zero.mpr 𝔪.finitePart_ne_zero)
       (Associates.irreducible_mk.mpr v.irreducible)).mpr le_rfl
   rwa [← Associates.mk_pow, Associates.mk_le_mk_iff_dvd] at h
+
+/-- **Membership in the finite part is a local condition.**  An algebraic integer lying in the
+prime power prescribed by the exponent at every prime dividing the finite part lies in the finite
+part itself.  This is the converse direction to `Modulus.pow_exponent_dvd_finitePart`. -/
+theorem mem_finitePart_of_forall_mem_pow_exponent (𝔪 : Modulus K) {y : 𝓞 K}
+    (h : ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
+      y ∈ v.asIdeal ^ 𝔪.exponent v) :
+    y ∈ 𝔪.finitePart := by
+  rw [← Ideal.iInf_maxPowDividing_eq 𝔪.finitePart_ne_zero, Submodule.mem_iInf]
+  intro v
+  -- `maxPowDividing` is, by definition, the prime power recorded by `exponent`.
+  have hmax : v.maxPowDividing 𝔪.finitePart = v.asIdeal ^ 𝔪.exponent v := rfl
+  rw [hmax]
+  by_cases hv : v.asIdeal ∣ 𝔪.finitePart
+  · exact h v hv
+  · have hzero : 𝔪.exponent v = 0 := by
+      by_contra hne
+      exact hv ((mem_support_iff 𝔪 v).mp ((mem_support_iff_exponent_ne_zero 𝔪 v).mpr hne))
+    rw [hzero, pow_zero, Ideal.one_eq_top]
+    exact Submodule.mem_top
 
 /-- Exponents grow with the modulus. -/
 theorem exponent_mono {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (v : HeightOneSpectrum (𝓞 K)) :
@@ -320,6 +359,16 @@ def primeToSubgroup (𝔪 : Modulus K) : Subgroup Kˣ where
       ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart → v.valuation K (x : K) = 1 :=
   Iff.rfl
 
+/-- A larger finite part has a smaller prime-to subgroup.  This is the carrier map used when
+changing the finite part in a reduction statement. -/
+theorem primeToSubgroup_le_of_dvd {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart ∣ 𝔫.finitePart) :
+    primeToSubgroup 𝔫 ≤ primeToSubgroup 𝔪 := by
+  intro x hx
+  rw [mem_primeToSubgroup] at hx
+  rw [mem_primeToSubgroup]
+  intro v hv
+  exact hx v (hv.trans h)
+
 /-- **Congruence to one implies being a unit at the finite part.**  This inclusion is what makes
 the principal ideal of an element congruent to one prime to the modulus. -/
 theorem congruenceSubgroup_le_primeToSubgroup (𝔪 : Modulus K) :
@@ -334,6 +383,28 @@ def unitsCongruenceSubgroup (𝔪 : Modulus K) : Subgroup (𝓞 K)ˣ :=
 @[simp] theorem mem_unitsCongruenceSubgroup {𝔪 : Modulus K} {u : (𝓞 K)ˣ} :
     u ∈ unitsCongruenceSubgroup 𝔪 ↔
       IsCongrOne 𝔪 (Units.map (algebraMap (𝓞 K) K).toMonoidHom u) := Iff.rfl
+
+/-- The image of an integer unit is a unit at every finite place, hence lies in
+`primeToSubgroup 𝔪`. -/
+theorem unitsMap_mem_primeToSubgroup (𝔪 : Modulus K) (u : (𝓞 K)ˣ) :
+    Units.map (algebraMap (𝓞 K) K).toMonoidHom u ∈ primeToSubgroup 𝔪 := by
+  refine mem_primeToSubgroup.mpr fun v _ ↦ ?_
+  rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, valuation_of_algebraMap]
+  refine intValuation_eq_one_iff.mpr fun hu ↦ v.isPrime.ne_top ?_
+  exact Ideal.eq_top_of_isUnit_mem _ hu u.isUnit
+
+/-- The inclusion of the integer units into the elements that are units at the finite part.  Its
+composition with the residue-and-sign presentation is the unit obstruction in the ray class exact
+sequence. -/
+noncomputable def unitsToPrimeToSubgroup (𝔪 : Modulus K) :
+    (𝓞 K)ˣ →* primeToSubgroup 𝔪 :=
+  MonoidHom.codRestrict (Units.map (algebraMap (𝓞 K) K).toMonoidHom) _
+    (unitsMap_mem_primeToSubgroup 𝔪)
+
+@[simp] theorem coe_unitsToPrimeToSubgroup (𝔪 : Modulus K) (u : (𝓞 K)ˣ) :
+    ((unitsToPrimeToSubgroup 𝔪 u : primeToSubgroup 𝔪) : Kˣ) =
+      Units.map (algebraMap (𝓞 K) K).toMonoidHom u := by
+  rw [unitsToPrimeToSubgroup, MonoidHom.codRestrict_apply]
 
 /-- **The trivial modulus imposes no condition.**  Its finite part is the unit ideal, which no
 prime divides, and its infinite part is empty. -/
@@ -353,6 +424,15 @@ every real place. -/
   refine ⟨fun hx ↦ isTotallyPositive_iff.mpr fun w hw ↦ hx.pos (w := ⟨w, hw⟩) (by simp),
     fun hx ↦ ⟨fun v hv ↦ ?_, fun w _ ↦ isTotallyPositive_iff.mp hx w w.2⟩⟩
   exact absurd ((Modulus.mem_support_iff _ v).mpr hv) (by simp)
+
+/-- **The integer units congruent to one modulo the narrow modulus are exactly the totally
+positive integer units.** -/
+@[simp] theorem unitsCongruenceSubgroup_narrowModulus :
+    unitsCongruenceSubgroup (narrowModulus K) = totallyPositiveIntegerUnits := by
+  ext u
+  rw [mem_unitsCongruenceSubgroup, isCongrOne_narrowModulus_iff,
+    mem_totallyPositiveIntegerUnits]
+  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe]
 
 /-! ### Ideals prime to a modulus -/
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.DirectSum.Finsupp
 public import Mathlib.LinearAlgebra.Dimension.Constructions
-public import TauCeti.KnotTheory.Grid.Complex
+public import TauCeti.KnotTheory.Grid.Chain.Basic
 public import TauCeti.KnotTheory.Grid.Grading.Parity
 public import TauCeti.KnotTheory.Grid.StateCardinality
 

@@ -20,18 +20,21 @@ This is infrastructure for the base-change lane of
 
 public section
 
+open Polynomial
+
 open _root_.WeierstrassCurve
 
-namespace TauCeti.WeierstrassCurve.Affine
+section
 
 variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
   {W : _root_.WeierstrassCurve.Affine R} [W.IsElliptic]
 
 /-- **Base change preserves ellipticity**, in the `(W⁄A).toAffine` spelling used by the affine
 point API. -/
-instance instIsEllipticBaseChange : (W⁄A).toAffine.IsElliptic :=
+instance _root_.WeierstrassCurve.Affine.instIsEllipticBaseChange : (W⁄A).toAffine.IsElliptic :=
   inferInstanceAs (W.map (algebraMap R A)).IsElliptic
 
-end TauCeti.WeierstrassCurve.Affine
+end
+
 
 end

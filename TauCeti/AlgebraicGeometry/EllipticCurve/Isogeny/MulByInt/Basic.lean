@@ -17,7 +17,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Coprimality
 /-!
 # The coordinate pullback of multiplication by `n`, for every nonzero `n`
 
-`Isogeny/Basic.lean` gives the identity coordinate pullback and `Isogeny/Frobenius.lean` gives
+`Isogeny/Basic.lean` gives the identity coordinate pullback and `Isogeny/Frobenius/Basic.lean` gives
 the Frobenius one. This file gives `[n]`: multiplication by `n` pulls back to a map
 `W.CoordinateRing →ₐ[F] W.FunctionField` wherever `ψₙ` does not vanish at the generic point.
 
@@ -163,7 +163,7 @@ theorem phiFunctionField_def (n : ℤ) : phiFunctionField W n =
 theorem phiFunctionField_eq_algebraMap (n : ℤ) :
     phiFunctionField W n = algebraMap F[X] W.FunctionField (W.Φ n) := by
   rw [phiFunctionField_def, Affine.CoordinateRing.mk_φ,
-    TauCeti.WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap,
+    WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap,
     ← IsScalarTower.algebraMap_apply]
 
 /-- **The defining equation of `mulByIntX`**: the `x`-coordinate of `[n]` is `φₙ / ψₙ²`. -/
@@ -222,7 +222,7 @@ theorem mulByIntX_mul_aeval_ΨSq (n : ℤ) (hn : psiFunctionField W n ≠ 0) :
   have hphi : phiFunctionField W n = aeval W.genericX (W.Φ n) := by
     rw [phiFunctionField_eq_algebraMap, W.algebraMap_eq_aeval_genericX]
   have hpsi : psiFunctionField W n ^ 2 = aeval W.genericX (W.ΨSq n) := by
-    rw [psiFunctionField_sq, TauCeti.WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap,
+    rw [psiFunctionField_sq, WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap,
       ← IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField,
       W.algebraMap_eq_aeval_genericX]
   rw [← hphi, ← hpsi, mulByIntX_def]
@@ -239,9 +239,8 @@ theorem equation_mulByInt [W.IsElliptic] {n : ℤ} (hn : psiFunctionField W n �
     (W⁄W.FunctionField).toAffine.Equation (mulByIntX W n) (mulByIntY W n) := by
   have hns := W.nonsingular_genericX_genericY
   have hsmul : Jacobian.Nonsingular (W⁄W.FunctionField).toAffine.toJacobian
-      (smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n) := by
-    rw [← Jacobian.nonsingularLift_iff, ← zsmul_point_eq_smulEval _ hns n]
-    exact (n • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)).nonsingular
+      (smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n) :=
+    nonsingular_smulEval _ hns n
   have hZ : smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n 2 ≠ 0 := by
     rw [smulEval_genericPoint_Z]; exact hn
   have hJ := (Jacobian.equation_of_Z_ne_zero hZ).mp hsmul.1
@@ -349,11 +348,8 @@ theorem tautologicalPoint_mulByIntPullback [W.IsElliptic] {n : ℤ}
   have hns' : (W⁄W.FunctionField).toAffine.Nonsingular (mulByIntX W n) (mulByIntY W n) :=
     equation_iff_nonsingular.mp (equation_mulByInt W hn)
   have hnsEval : Jacobian.Nonsingular (W⁄W.FunctionField).toAffine.toJacobian
-      (smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n) := by
-    rw [← Jacobian.nonsingularLift_iff,
-      ← zsmul_point_eq_smulEval _ W.nonsingular_genericX_genericY n]
-    exact (n • Jacobian.Point.fromAffine
-      (Affine.Point.some _ _ W.nonsingular_genericX_genericY)).nonsingular
+      (smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n) :=
+    nonsingular_smulEval _ W.nonsingular_genericX_genericY n
   have hpoint : n • Jacobian.Point.fromAffine
         (Affine.Point.some _ _ W.nonsingular_genericX_genericY) =
       (⟨(Jacobian.nonsingularLift_iff _).2 hnsEval⟩ :

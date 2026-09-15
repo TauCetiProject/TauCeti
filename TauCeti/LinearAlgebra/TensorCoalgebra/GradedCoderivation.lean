@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.BigOperators.Finset.Range
 public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.Algebra.Ring.NegOnePow
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coderivation
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 
@@ -56,6 +57,12 @@ by `isHomogeneous_gradedCoderiv` and `IsGradedCoderivation.isHomogeneous`.
   coderivation with letter component `F`.
 * `TauCeti.ReducedTensorWords.IsGradedCoderivation.eq_of_letter_comp_eq`: a graded coderivation is
   determined by its letter component.
+* `TauCeti.ReducedTensorWords.iSup_gradedPiece_eq_top`: the total-degree pieces span the reduced
+  tensor coalgebra.
+* `TauCeti.ReducedTensorWords.map_koszulTwist_apply_of_mem`: the letterwise twist has the expected
+  scalar action on each total-degree piece.
+* `TauCeti.LinearMap.IsHomogeneous.map_koszulTwist_comp`: a homogeneous endomorphism of reduced
+  tensor words commutes with the letterwise twist up to the sign given by its degree.
 * `TauCeti.ReducedTensorWords.IsGradedCoderivation.isCoderivation_comp_self`: a graded coderivation
   anticommuting with its letterwise Koszul twist has an ordinary coderivation as its square.
 * `TauCeti.ReducedTensorWords.isHomogeneous_gradedCoderiv`: if `F` raises degrees by `r` then so
@@ -153,15 +160,6 @@ theorem ReducedTensorWords.gradedCoderiv_of_tprod (G : InternalGrading R M)
       LinearMap.zero_apply]
     exact (splice_eq_zero R (twistedTuple G q x 0 p) _ (by tauto)).symm
 
-private theorem negOnePow_sum_range {R : Type uR} [CommRing R] (q : ℤ) (deg : ℕ → ℤ) (p : ℕ) :
-    (((q * ∑ j ∈ Finset.range p, deg j).negOnePow : ℤ) : R) =
-      ∏ j ∈ Finset.range p, (((q * deg j).negOnePow : ℤ) : R) := by
-  induction p with
-  | zero => simp
-  | succ p ih =>
-      rw [Finset.sum_range_succ, Finset.prod_range_succ, mul_add, Int.negOnePow_add,
-        Units.val_mul, Int.cast_mul, ih]
-
 /-- Splicing a Koszul-twisted prefix of a homogeneous tuple produces the Koszul sign of that
 prefix times the untwisted splice. -/
 theorem ReducedTensorWords.splice_twistedTuple_smul (G : InternalGrading R M) (q : ℤ)
@@ -215,7 +213,8 @@ theorem ReducedTensorWords.splice_twistedTuple_smul (G : InternalGrading R M) (q
           (if p + (1 + x) < p then (((q * deg (p + (1 + x))).negOnePow : ℤ) : R) else 1) = 1 :=
         Finset.prod_eq_one fun j _ ↦ by simp
       have s3 : (if p + 0 < p then (((q * deg (p + 0)).negOnePow : ℤ) : R) else 1) = 1 := by simp
-      rw [s1, s2, s3, mul_one, mul_one, negOnePow_sum_range]
+      rw [s1, s2, s3, mul_one, mul_one]
+      simp only [← negOnePowCast_eq_intCast, Finset.mul_sum, negOnePowCast_sum]
     simpa [deg] using hprod
   · rw [splice_eq_zero R _ e (by tauto), splice_eq_zero R x e (by tauto), smul_zero]
 
@@ -383,6 +382,95 @@ theorem ReducedTensorWords.splice_mem_gradedPiece (G : InternalGrading R M) {n :
           simpa using h)
     rw [hidx] at step
     exact step
+
+/-- The total-degree pieces span the reduced tensor coalgebra. In particular, an equality of
+linear maps out of reduced tensor words may be checked separately on these pieces. -/
+theorem ReducedTensorWords.iSup_gradedPiece_eq_top (G : InternalGrading R M) :
+    ⨆ D : ℤ, gradedPiece G D = ⊤ := by
+  classical
+  apply le_antisymm le_top
+  rw [← iSup_range_of R M]
+  refine iSup_le fun n ↦ ?_
+  rintro z ⟨z, rfl⟩
+  induction z using PiTensorProduct.induction_on with
+  | smul_tprod r x =>
+      rw [map_smul]
+      apply Submodule.smul_mem
+      let support : Fin n.1 → Finset ℤ := fun i ↦ (DirectSum.decompose G.piece (x i)).support
+      let component : (i : Fin n.1) → ℤ → M :=
+        fun i p ↦ DirectSum.decompose G.piece (x i) p
+      have hx (i : Fin n.1) : ∑ p ∈ support i, component i p = x i := by
+        exact DirectSum.sum_support_decompose G.piece (x i)
+      have htuple :
+          PiTensorProduct.tprod R x =
+            ∑ degree ∈ Fintype.piFinset support,
+              PiTensorProduct.tprod R (fun i ↦ component i (degree i)) := by
+        rw [← (PiTensorProduct.tprod R).map_sum_finset]
+        congr 1
+        funext i
+        exact (hx i).symm
+      rw [htuple, map_sum]
+      refine Submodule.sum_mem _ fun degree _hdegree ↦ ?_
+      refine Submodule.mem_iSup_of_mem (∑ i, degree i) ?_
+      apply mem_gradedPiece_of_tprod G n.2
+      intro i
+      exact (DirectSum.decompose G.piece (x i) (degree i)).property
+  | add x y hx hy =>
+      rw [map_add]
+      exact Submodule.add_mem _ hx hy
+
+/-- On the total-degree-`D` piece of reduced tensor words, applying the Koszul twist to every
+letter is scalar multiplication by `(-1)^(q * D)`. -/
+theorem ReducedTensorWords.map_koszulTwist_apply_of_mem (G : InternalGrading R M) {D : ℤ}
+    {z : ReducedTensorWords R M} (hz : z ∈ gradedPiece G D) (q : ℤ) :
+    ReducedTensorWords.map (R := R) (G.koszulTwist q) z =
+      (((q * D).negOnePow : ℤ) : R) • z := by
+  refine gradedPiece_induction
+    (motive := fun z ↦ ReducedTensorWords.map (R := R) (G.koszulTwist q) z =
+      (((q * D).negOnePow : ℤ) : R) • z) hz ?_ (by simp) ?_ ?_
+  · intro n hn degree x hx hD
+    rw [map_of_tprod]
+    have htuple : (fun i ↦ G.koszulTwist q (x i)) =
+        fun i ↦ ((((q * degree i).negOnePow : ℤ) : R) • x i) := by
+      funext i
+      exact G.koszulTwist_apply_of_mem (hx i) q
+    have hsign :
+        (((q * ∑ i, degree i).negOnePow : ℤ) : R) =
+          ∏ i, (((q * degree i).negOnePow : ℤ) : R) := by
+      simp only [← negOnePowCast_eq_intCast, Finset.mul_sum, negOnePowCast_sum]
+    rw [htuple, (PiTensorProduct.tprod R).map_smul_univ, map_smul, ← hD, ← hsign]
+  · intro u v _ _ hu hv
+    simp only [map_add, hu, hv, smul_add]
+  · intro a u _ hu
+    rw [map_smul, hu, smul_smul, smul_smul, mul_comm a]
+
+/-- A homogeneous endomorphism of reduced tensor words commutes with the letterwise Koszul twist
+up to the sign contributed by its degree. -/
+theorem LinearMap.IsHomogeneous.map_koszulTwist_comp {G : InternalGrading R M}
+    {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M} {r : ℤ}
+    (hb : LinearMap.IsHomogeneous b (gradedPiece G) (gradedPiece G) r) (q : ℤ) :
+    ReducedTensorWords.map (R := R) (G.koszulTwist q) ∘ₗ b =
+      ((((q * r).negOnePow : ℤ) : R) •
+        (b ∘ₗ ReducedTensorWords.map (R := R) (G.koszulTwist q))) := by
+  apply LinearMap.ext
+  intro z
+  have hz : z ∈ (⊤ : Submodule R (ReducedTensorWords R M)) := Submodule.mem_top
+  rw [← ReducedTensorWords.iSup_gradedPiece_eq_top G] at hz
+  simp only [LinearMap.comp_apply, LinearMap.smul_apply]
+  refine Submodule.iSup_induction (fun D : ℤ ↦ gradedPiece G D)
+    (motive := fun z ↦
+      ReducedTensorWords.map (R := R) (G.koszulTwist q) (b z) =
+        (((q * r).negOnePow : ℤ) : R) •
+          b (ReducedTensorWords.map (R := R) (G.koszulTwist q) z)) hz ?_ (by simp) ?_
+  · intro D x hx
+    rw [ReducedTensorWords.map_koszulTwist_apply_of_mem G (hb.map_mem hx) q,
+      ReducedTensorWords.map_koszulTwist_apply_of_mem G hx q, map_smul, smul_smul]
+    congr 1
+    rw [← Int.cast_mul, ← Units.val_mul, ← Int.negOnePow_add]
+    congr 2
+    ring_nf
+  · intro x y hx hy
+    simp only [map_add, hx, hy, smul_add]
 
 /-- If `F` raises total degrees by `r`, so does its graded Taylor expansion, independently of
 the twist parameter `q`: for every `D`, the map `gradedCoderiv G F q` sends `gradedPiece G D`

@@ -17,11 +17,20 @@ are the single part `n` when `n ≠ 0`, and none when `n = 0`.  The third is
 `Nat.Partition.singletonSecondRow n = (n+1, 1)`, the partition of `n+2` with two parts whose
 second part is a single box; it is written at `n+2` so that both parts are positive with no
 hypothesis on `n`.
+
+It also records `TauCeti.parts_equivCast`, the transport of a partition along an equality of the
+number being partitioned: such a transport leaves the parts alone.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- **Transporting a partition along an equality of the number being partitioned does not change
+its parts.** -/
+theorem parts_equivCast {m l : ℕ} (h : m = l) (p : m.Partition) :
+    (Equiv.cast (congrArg Nat.Partition h) p).parts = p.parts := by
+  subst h; rfl
 
 namespace Nat.Partition
 

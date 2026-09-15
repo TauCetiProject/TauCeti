@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 
 /-!
-# Pushing a Dirac measure forward along an a.e. measurable map
+# Dirac measures and their pushforwards
 
 Mathlib's `MeasureTheory.Measure.map_dirac'` computes `(Measure.dirac x).map T = Measure.dirac
 (T x)` for a measurable `T`. A Dirac measure leaves a map no room to be modified on a null set:
@@ -21,6 +22,7 @@ under that weaker hypothesis, which is the one a.e.-measurable interfaces such a
 
 * `Measure.map_dirac_of_aemeasurable` — the Dirac pushforward formula for a map that is
   only a.e. measurable.
+* `Measure.dirac_eq_dirac_of_inseparable` — inseparable points have equal Borel Dirac measures.
 -/
 
 public section
@@ -42,5 +44,12 @@ theorem map_dirac_of_aemeasurable {x : X} (hT : AEMeasurable T (Measure.dirac x)
     rw [Measure.dirac_apply_of_mem hne] at h0
     exact one_ne_zero h0
   rw [Measure.map_congr hT.ae_eq_mk, Measure.map_dirac' hT.measurable_mk, ← hx]
+
+/-- Dirac measures at topologically inseparable points agree: Borel measurable sets cannot
+separate the points. -/
+theorem dirac_eq_dirac_of_inseparable [TopologicalSpace X] [BorelSpace X]
+    {x y : X} (hxy : Inseparable x y) : Measure.dirac x = Measure.dirac y := by
+  apply MeasureTheory.dirac_eq_dirac_iff_forall_mem_iff_mem.2
+  exact fun _ hs ↦ hxy.mem_measurableSet_iff hs
 
 end Measure

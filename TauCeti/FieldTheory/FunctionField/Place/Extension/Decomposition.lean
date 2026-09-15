@@ -54,6 +54,8 @@ proved here.
   ramification index and the relative degree are `1`, so by
   `TauCeti.Place.ramificationIdx_decompositionField` and
   `TauCeti.Place.relativeDegree_decompositionField` both are unchanged above it.
+* `TauCeti.Place.decompositionSubgroup_decompositionField_eq_top`: over its decomposition field a
+  place is fixed by the whole Galois group.
 * `TauCeti.Place.decompositionSubgroup_integers_smul` and
   `TauCeti.Place.decompositionField_smul`: conjugate places have conjugate decomposition groups
   and decomposition fields.
@@ -127,6 +129,19 @@ theorem restrictScalars_smul_eq_self (P : Place k F') (τ : F' ≃ₐ[decomposit
   refine MulAction.mem_stabilizer_iff.mp ?_
   rw [stabilizer_eq_decompositionSubgroup, ← fixingSubgroup_decompositionField F P]
   exact (IntermediateField.mem_fixingSubgroup_iff _ _).mpr fun x hx ↦ τ.commutes ⟨x, hx⟩
+
+omit [IsGalois F F'] in
+/-- **Over its decomposition field a place is fixed by the whole Galois group** (Stichtenoth,
+Theorem 3.8.2): the decomposition group of `P` in `F' / Z` is everything, because the
+decomposition group of `P` in `F' / F` is by construction the Galois group of `F'` over `Z`. -/
+@[simp]
+theorem decompositionSubgroup_decompositionField_eq_top (P : Place k F') :
+    P.integers.decompositionSubgroup (decompositionField F P) = ⊤ := by
+  rw [← stabilizer_eq_decompositionSubgroup]
+  ext τ
+  simp only [Subgroup.mem_top, iff_true, MulAction.mem_stabilizer_iff]
+  rw [← restrictScalars_smul (decompositionField F P) τ P]
+  exact restrictScalars_smul_eq_self F P τ
 
 /-- **A place is the only place of `F'` above its restriction to its decomposition field**
 (Stichtenoth, Theorem 3.8.2). -/

@@ -47,6 +47,8 @@ prime `τ • Q` gives the other.
   has order the inertia degree of `Q` over `𝓞 K`.
 * `Ideal.zpowers_eq_stabilizer_of_isArithFrobAt`: a Frobenius element at an unramified `Q`
   generates the decomposition group of `Q`.
+* `Ideal.card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt`: the decomposition group of an
+  unramified `Q` has order the inertia degree of `Q` over `𝓞 K`.
 * `Ideal.stabilizerEquivResidueAut`: the decomposition group of an unramified prime is
   isomorphic to the automorphism group of the residue extension.
 * `Ideal.isCyclic_stabilizer_of_isUnramifiedAt`: the decomposition group of an unramified
@@ -187,7 +189,7 @@ theorem orderOf_eq_inertiaDeg_of_isArithFrobAt (Q : Ideal (𝓞 L)) [Q.IsPrime]
     MulAction.stabilizer (L ≃ₐ[K] L) Q)).trans key
 
 /-- **The decomposition group of an unramified prime has order the inertia degree.** -/
-private theorem card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt (Q : Ideal (𝓞 L))
+theorem card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt (Q : Ideal (𝓞 L))
     [Q.IsPrime] (hQ : Q ≠ ⊥) [Algebra.IsUnramifiedAt (𝓞 K) Q] :
     Nat.card (MulAction.stabilizer (L ≃ₐ[K] L) Q) = Q.inertiaDeg (𝓞 K) := by
   let _ : Q.IsMaximal := (inferInstance : Q.IsPrime).isMaximal hQ
