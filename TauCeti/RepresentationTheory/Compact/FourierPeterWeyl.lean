@@ -23,7 +23,7 @@ vector by vector.
 There are two small but mathematically significant normalizations in the identification.
 
 * An `IrrepModel` has carrier `EuclideanSpace ℂ (Fin 1)`, whereas `fourierRep T n` has carrier
-  `ℂ`; `fourierModelEquiv` supplies a fixed isometric transport between them.
+  `ℂ`; `IrrepModel.oneDimensionalEquiv` supplies a fixed isometric transport between them.
 * Mathlib's inner product is conjugate-linear in its first argument.  Consequently the matrix
   coefficient `⟪fourierRep T n · v, v⟫` of a unit vector is `fourier (-n)`, not `fourier n`.
   The indexing equivalence `fourierPeterWeylIndexEquiv` includes this negation.
@@ -66,21 +66,15 @@ variable (T : ℝ) [hT : Fact (0 < T)]
 
 /-! ### The Fourier skeleton -/
 
-/-- The canonical isometry from `ℂ` to the one-dimensional Euclidean model used by
-`IrrepModel`.  It matches the standard orthonormal bases on the two spaces. -/
-noncomputable def fourierModelEquiv : ℂ ≃ₗᵢ[ℂ] EuclideanSpace ℂ (Fin 1) :=
-  let e : Fin (Module.finrank ℂ ℂ) ≃ Fin 1 := finCongr (by simp)
-  ((stdOrthonormalBasis ℂ ℂ).reindex e).equiv
-    (EuclideanSpace.basisFun (Fin 1) ℂ) (Equiv.refl (Fin 1))
-
 /-- The `n`-th Fourier representation, transported to the standard one-dimensional carrier used
 by `IrrepModel`. -/
 noncomputable def fourierIrrepModel (n : ℤ) :
-    IrrepModel ℂ (Multiplicative (AddCircle T)) where
+  IrrepModel ℂ (Multiplicative (AddCircle T)) where
   dim := 1
-  rep := ContRepresentation.congr (fourierModelEquiv.toContinuousLinearEquiv) (fourierRep T n)
+  rep := ContRepresentation.congr (IrrepModel.oneDimensionalEquiv.toContinuousLinearEquiv)
+    (fourierRep T n)
   continuous_rep := ContRepresentation.continuous_congr _ (continuous_fourierRep T n)
-  isUnitary := (isUnitary_fourierRep T n).congr fourierModelEquiv
+  isUnitary := (isUnitary_fourierRep T n).congr IrrepModel.oneDimensionalEquiv
   isIrreducible := ContRepresentation.isIrreducible_congr _ (isIrreducible_fourierRep T n)
 
 omit hT in
@@ -98,11 +92,11 @@ theorem fourierIrrepModel_rep_apply (n : ℤ) (x : Multiplicative (AddCircle T))
   -- (the motive is not type correct). Both steps below only unfold `fourierIrrepModel` by
   -- definition: first in the type of `v`, then in the representation applied to it.
   change EuclideanSpace ℂ (Fin 1) at v
-  change ContRepresentation.congr fourierModelEquiv.toContinuousLinearEquiv
+  change ContRepresentation.congr IrrepModel.oneDimensionalEquiv.toContinuousLinearEquiv
     (fourierRep T n) x v = fourier n (Multiplicative.toAdd x) • v
   rw [ContRepresentation.congr_apply, fourierRep_apply, ← smul_eq_mul, map_smul]
   exact congrArg (fourier n (Multiplicative.toAdd x) • ·)
-    (LinearIsometryEquiv.apply_symm_apply fourierModelEquiv v)
+    (LinearIsometryEquiv.apply_symm_apply IrrepModel.oneDimensionalEquiv v)
 
 /-- **The Fourier models form a skeleton of the unitary dual of the circle.** They are pairwise
 inequivalent, and every irreducible unitary representation of the circle is unitarily equivalent to
@@ -110,12 +104,13 @@ one of them, so they are a valid input to `peterWeylBasis`. -/
 theorem isIrrepSkeleton_fourierIrrepModel : IsIrrepSkeleton (fourierIrrepModel T) where
   pairwise_isEmpty_equiv m n hmn :=
     ⟨fun φ ↦ hmn <| (nonempty_equiv_fourierRep_iff T hT.out.ne').mp ⟨
-      ((fourierRep T m).congrEquiv fourierModelEquiv.toContinuousLinearEquiv).trans <|
+      ((fourierRep T m).congrEquiv IrrepModel.oneDimensionalEquiv.toContinuousLinearEquiv).trans <|
         φ.trans ((fourierRep T n).congrEquiv
-          fourierModelEquiv.toContinuousLinearEquiv).symm⟩⟩
+          IrrepModel.oneDimensionalEquiv.toContinuousLinearEquiv).symm⟩⟩
   exists_congr_eq n π hπ hu hirr := by
     obtain ⟨k, ⟨φ⟩⟩ := ContRepresentation.exists_nonempty_equiv_fourierRep π hπ hirr
-    let ψ := φ.trans ((fourierRep T k).congrEquiv fourierModelEquiv.toContinuousLinearEquiv)
+    let ψ := φ.trans
+      ((fourierRep T k).congrEquiv IrrepModel.oneDimensionalEquiv.toContinuousLinearEquiv)
     obtain ⟨e, he⟩ := ContRepresentation.exists_linearIsometryEquiv_congr_eq hu
       (fourierIrrepModel T k).isUnitary hirr ψ
     exact ⟨k, e, he⟩
