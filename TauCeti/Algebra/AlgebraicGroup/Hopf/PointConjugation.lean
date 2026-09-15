@@ -46,15 +46,6 @@ universe u v w
 variable {R : Type u} [CommSemiring R]
 variable {H : Type v} [CommSemiring H] [_root_.HopfAlgebra R H]
 
-private theorem mapValue_algebraOfId {A : Type w} [CommSemiring A] [Algebra R A]
-    (g : WithConv (H →ₐ[R] R)) (x : WithConv (H →ₐ[R] A)) :
-    AlgHom.mapValue (H := H) x.ofConv
-        (AlgHom.mapValue (H := H) (Algebra.ofId R H) g) =
-      AlgHom.mapValue (H := H) (Algebra.ofId R A) g := by
-  apply WithConv.ofConv_injective
-  ext h
-  exact x.ofConv.commutes (g.ofConv h)
-
 /-- Pullback on the coordinate algebra by conjugation by an `R`-valued point. -/
 noncomputable def pointConjugationAlgHom (g : WithConv (H →ₐ[R] R)) : H →ₐ[R] H :=
   (Algebra.TensorProduct.productMap
@@ -83,7 +74,7 @@ theorem comp_pointConjugationAlgHom {A : Type w} [CommSemiring A] [Algebra R A]
       WithConv.toConv (x.ofConv.comp (pointConjugationAlgHom g)) := by
     rw [AlgHom.mapValue_apply, WithConv.ofConv_toConv]
   rw [← hmapValue, toConv_pointConjugationAlgHom, map_mul, map_mul, map_inv]
-  rw [mapValue_algebraOfId]
+  rw [AlgHom.mapValue_algebraOfId]
   simp [AlgHom.mapValue_apply]
 
 /-- Conjugation by the identity point is the identity coordinate map. -/
