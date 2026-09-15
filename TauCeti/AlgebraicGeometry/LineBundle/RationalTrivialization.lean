@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTriviality
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 public import Mathlib.AlgebraicGeometry.FunctionField
 
@@ -19,12 +18,8 @@ points give the coefficients of the divisor.
 
 ## Main declaration
 
-* `SheafOfModules.IsInvertible.exists_dense_open_trivialization` produces a dense open subset
+* `SheafOfModules.exists_dense_open_trivialization` produces a dense open subset
   containing the generic point on which an invertible sheaf is free of rank one.
-
-No formalization is vendored.  The proof selects the member containing the generic point from the
-local trivialization cover supplied by
-`SheafOfModules.LocalTrivializations.ofIsInvertible`.
 -/
 
 public section
@@ -38,22 +33,6 @@ universe u
 noncomputable section
 
 namespace SheafOfModules
-
-namespace LocalTrivializations
-
-variable {X : Scheme.{u}} {M : X.Modules}
-
-/-- A member of a local trivialization atlas, expressed as an isomorphism of module sheaves on
-the corresponding open subscheme. -/
-def schemeIso (t : TauCeti.SheafOfModules.LocalTrivializations.{u, u, u} M) (i : t.I) :
-    _root_.SheafOfModules.unit (t.X i : Scheme).ringCatSheaf ≅
-      M.restrict (AlgebraicGeometry.Scheme.Opens.ι (t.X i)) :=
-  (AlgebraicGeometry.Scheme.Modules.overEquiv (t.X i)).functor.mapIso
-      ((TauCeti.SheafOfModules.freePUnitIsoUnit (X.ringCatSheaf.over (t.X i))).symm ≪≫
-        t.iso i) ≪≫
-    (AlgebraicGeometry.Scheme.Modules.overFunctorEquiv (t.X i)).app M
-
-end LocalTrivializations
 
 /-- An invertible sheaf on an irreducible scheme is free of rank one on a dense open subset
 containing the generic point.
@@ -82,15 +61,8 @@ theorem exists_dense_open_restrict_iso_unit {X : Scheme.{u}} [IrreducibleSpace X
     ∃ U : X.Opens, genericPoint X ∈ U ∧ Dense (U : Set X) ∧
       Nonempty (M.restrict (AlgebraicGeometry.Scheme.Opens.ι U) ≅
         _root_.SheafOfModules.unit (U : Scheme).ringCatSheaf) := by
-  let t := SheafOfModules.LocalTrivializations.ofIsInvertible M
-  have hcover : ⨆ i, t.X i = ⊤ := by
-    simpa only [IsOpenCover] using
-      (Opens.coversTop_iff (X : Type u) t.X).mp t.coversTop
-  have hgeneric : genericPoint X ∈ ⨆ i, t.X i := by
-    rw [hcover]
-    exact Opens.mem_top _
-  obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hgeneric
-  exact ⟨t.X i, hi, (t.X i).isOpen.dense ⟨genericPoint X, hi⟩, ⟨(t.schemeIso i).symm⟩⟩
+  obtain ⟨U, hU, hU_dense, ⟨e⟩⟩ := exists_dense_open_trivialization M
+  exact ⟨U, hU, hU_dense, ⟨(LocalTrivializations.unitIsoRestrict e).symm⟩⟩
 
 end SheafOfModules
 
