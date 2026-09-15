@@ -52,7 +52,10 @@ multiplication, and the last that they are closed under inversion.
 
 * `TauCeti.ConstantMultiplication.imageStructureMatrix` and
   `TauCeti.ConstantMultiplication.relationMatrix`: the matrix `∑ₐ Mₐₖ Cₐ` of left multiplication
-  by `M eₖ`, and the matrix of defining relations `M Cₖ − (∑ₐ Mₐₖ Cₐ) M`.
+  by `M eₖ`, and the matrix of defining relations `M Cₖ − (∑ₐ Mₐₖ Cₐ) M`, with
+  `TauCeti.ConstantMultiplication.imageStructureMatrix_map` and
+  `TauCeti.ConstantMultiplication.relationMatrix_map` transporting both along an algebra
+  morphism of value rings.
 * `TauCeti.ConstantMultiplication.Preserves`: multiplicativity of a matrix for the product, with
   `TauCeti.ConstantMultiplication.preserves_one`,
   `TauCeti.ConstantMultiplication.Preserves.mul`,
@@ -168,8 +171,10 @@ theorem sum_smul_imageStructureMatrix (M N : Matrix (Fin n) (Fin n) S) (k : Fin 
   rw [← Finset.sum_smul, Matrix.mul_apply]
   exact congrArg (· • (C bb).map (algebraMap R S)) (Finset.sum_congr rfl fun a _ => mul_comm _ _)
 
-/-- The image structure matrix of a product, framed on the left, is the left factor applied to
-the image structure matrix of the right factor. -/
+/-- **Left multiplication distributes across the image structure matrix**: framing
+`imageStructureMatrix N k` on the left by `M` frames each structure matrix separately,
+`M * imageStructureMatrix N k = ∑ₐ Nₐₖ • (M Cₐ)`, the structure matrices read in the value ring
+through its structure morphism. -/
 theorem mul_imageStructureMatrix (M N : Matrix (Fin n) (Fin n) S) (k : Fin n) :
     M * imageStructureMatrix R n C N k = ∑ a, N a k • (M * (C a).map (algebraMap R S)) := by
   rw [imageStructureMatrix_def, Finset.mul_sum]
@@ -206,30 +211,42 @@ theorem relationMatrix_of_mul_eq_one {M N : Matrix (Fin n) (Fin n) S} (h₁ : M 
     exact h.symm
   rw [Matrix.mul_assoc N, h₃, Matrix.mul_neg, ← Matrix.mul_assoc, h₂, Matrix.one_mul, neg_neg]
 
+/-- The structure matrices are constant, so an algebra morphism of value rings carries each entry
+of one to the corresponding entry of the same matrix read in the target. -/
+private theorem map_structureMatrix_apply {T : Type w} [CommRing T] [Algebra R T] (φ : S →ₐ[R] T)
+    (a i j : Fin n) :
+    φ (((C a).map (algebraMap R S)) i j) = ((C a).map (algebraMap R T)) i j := by
+  rw [Matrix.map_apply, Matrix.map_apply]
+  exact φ.commutes _
+
+/-- An algebra morphism of value rings maps each structure matrix to itself. -/
+private theorem map_structureMatrix {T : Type w} [CommRing T] [Algebra R T] (φ : S →ₐ[R] T)
+    (a : Fin n) : ((C a).map (algebraMap R S)).map φ = (C a).map (algebraMap R T) := by
+  ext i j
+  rw [Matrix.map_apply]
+  exact map_structureMatrix_apply R n C φ a i j
+
+/-- **Mapping an image structure matrix through an algebra morphism** gives the image structure
+matrix of the image matrix: the combination is taken with the entries of the matrix, which map
+along, and the structure matrices are constant. -/
+@[simp] theorem imageStructureMatrix_map {T : Type w} [CommRing T] [Algebra R T] (φ : S →ₐ[R] T)
+    (M : Matrix (Fin n) (Fin n) S) (l : Fin n) :
+    (imageStructureMatrix R n C M l).map φ = imageStructureMatrix R n C (M.map φ) l := by
+  ext i j
+  rw [Matrix.map_apply, imageStructureMatrix_def, imageStructureMatrix_def, Matrix.sum_apply,
+    Matrix.sum_apply, map_sum]
+  refine Finset.sum_congr rfl fun a _ => ?_
+  rw [Matrix.smul_apply, Matrix.smul_apply, smul_eq_mul, smul_eq_mul, map_mul,
+    map_structureMatrix_apply]
+  simp only [Matrix.map_apply]
+
 /-- Mapping a relation matrix through an algebra morphism gives the relation matrix of the image
 matrix: the structure matrices are constant, so they map to themselves. -/
 @[simp] theorem relationMatrix_map {T : Type w} [CommRing T] [Algebra R T] (φ : S →ₐ[R] T)
     (M : Matrix (Fin n) (Fin n) S) (k : Fin n) :
     (relationMatrix R n C M k).map φ = relationMatrix R n C (M.map φ) k := by
-  have hCe : ∀ a i j, φ (((C a).map (algebraMap R S)) i j) = ((C a).map (algebraMap R T)) i j :=
-    fun a i j => by
-      rw [Matrix.map_apply, Matrix.map_apply]
-      exact φ.commutes _
-  have hC : ∀ a, ((C a).map (algebraMap R S)).map φ = (C a).map (algebraMap R T) := fun a => by
-    ext i j
-    rw [Matrix.map_apply]
-    exact hCe a i j
-  have himg : ∀ l, (imageStructureMatrix R n C M l).map φ =
-      imageStructureMatrix R n C (M.map φ) l := by
-    intro l
-    ext i j
-    rw [Matrix.map_apply, imageStructureMatrix_def, imageStructureMatrix_def, Matrix.sum_apply,
-      Matrix.sum_apply, map_sum]
-    refine Finset.sum_congr rfl fun a _ => ?_
-    rw [Matrix.smul_apply, Matrix.smul_apply, smul_eq_mul, smul_eq_mul, map_mul, hCe]
-    simp only [Matrix.map_apply]
   rw [relationMatrix_def, relationMatrix_def, Matrix.map_sub, Matrix.map_mul, Matrix.map_mul,
-    hC, himg]
+    map_structureMatrix, imageStructureMatrix_map]
   exact fun a b => map_sub φ a b
 
 /-! ### The matrices preserving the multiplication -/
@@ -554,15 +571,13 @@ theorem mem_definingPointsSubgroup_iff
       (definingHopfIdeal_toIdeal R n C ▸
         Ideal.subset_span (relationMatrix_genericMatrix_mem_relationSet R n C k i j)))
   · intro h y hy
-    have hle : Ideal.span (relationSet R n C) ≤
-        RingHom.ker (g.ofConv :
-          GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] A) := by
-      rw [Ideal.span_le]
-      rintro _ ⟨p, rfl⟩
-      have hz := congrFun (congrFun (ofConv_relationMatrix R n C g p.1) p.2.1) p.2.2
-      rw [Matrix.map_apply, h p.1, Matrix.zero_apply] at hz
-      exact hz
-    exact hle (definingHopfIdeal_toIdeal R n C ▸ HopfIdeal.mem_toIdeal.mpr hy)
+    have hpres : Preserves R n C ((GeneralLinear.genericMatrix R n).map
+        (g.ofConv : GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] A)) := by
+      rw [GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear, WithConv.toConv_ofConv,
+        preserves_iff_relationMatrix_eq_zero]
+      exact h
+    exact definingHopfIdeal_toIdeal_le_ker_of_preserves_map_genericMatrix R n C _ hpres
+      (HopfIdeal.mem_toIdeal.mpr hy)
 
 end Points
 
