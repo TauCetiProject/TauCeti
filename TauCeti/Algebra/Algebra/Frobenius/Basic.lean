@@ -11,14 +11,15 @@ public import TauCeti.Algebra.Module.Injective.SelfInjective
 /-!
 # Frobenius functionals
 
-Let `A` be an algebra over a field `k`. A linear functional `φ : A →ₗ[k] k` is a **Frobenius
-functional** when the bilinear form `(a, b) ↦ φ (a * b)` is nondegenerate, and a **symmetric
-Frobenius functional** when moreover `φ (a * b) = φ (b * a)`. A finite-dimensional algebra
-carrying a Frobenius functional is a Frobenius algebra; carrying a symmetric one, a symmetric
-algebra. Frobenius algebras are the basic examples of self-injective algebras, whose stable module
-categories are the first examples of stable categories of Frobenius exact categories.
+Let `A` be an algebra over a commutative ring `k`. A linear functional `φ : A →ₗ[k] k` is a
+**Frobenius functional** when the bilinear form `(a, b) ↦ φ (a * b)` is nondegenerate, and a
+**symmetric Frobenius functional** when moreover `φ (a * b) = φ (b * a)`. A finite-dimensional
+algebra over a field carrying a Frobenius functional is a Frobenius algebra; carrying a symmetric
+one, a symmetric algebra. Frobenius algebras are the basic examples of self-injective algebras,
+whose stable module categories are the first examples of stable categories of Frobenius exact
+categories.
 
-For finite-dimensional `A` this file proves the standard characterizations.
+For `A` finite-dimensional over a field this file proves the standard characterizations.
 
 * Nondegeneracy on one side already implies nondegeneracy on the other, and a Frobenius functional
   makes `(a, b) ↦ φ (a * b)` a perfect pairing.
@@ -72,7 +73,9 @@ open Function
 
 universe u v
 
-variable {k : Type v} [Field k] {A : Type u} [Ring A] [Algebra k A] {φ : A →ₗ[k] k}
+section CommRing
+
+variable {k : Type v} [CommRing k] {A : Type u} [Ring A] [Algebra k A] {φ : A →ₗ[k] k}
 
 /-- A linear functional `φ` on a `k`-algebra `A` is a **Frobenius functional** when the bilinear
 form `(a, b) ↦ φ (a * b)` is nondegenerate: `φ (a * b) = 0` for all `b` forces `a = 0`, and
@@ -123,11 +126,14 @@ theorem _root_.LinearMap.IsFrobeniusFunctional.op (hφ : φ.IsFrobeniusFunctiona
 
 end Nondegenerate
 
+end CommRing
+
 /-! ### Finite-dimensional algebras -/
 
 section FiniteDimensional
 
-variable [FiniteDimensional k A]
+variable {k : Type v} [Field k] {A : Type u} [Ring A] [Algebra k A] [FiniteDimensional k A]
+  {φ : A →ₗ[k] k}
 
 /-- In finite dimension, nondegeneracy of `(a, b) ↦ φ (a * b)` in the first variable suffices. -/
 theorem _root_.LinearMap.IsFrobeniusFunctional.of_left
