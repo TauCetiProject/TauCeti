@@ -719,11 +719,10 @@ private theorem map_dirichletUnchart_source {a : ι → ℝ} (ha : ∀ i, 0 < a 
             ENNReal.ofReal (z.1 ^ Fintype.card {i // i ≠ i₀}) *
               q.indicator (gammaSplitPDF a i₀) (dirichletUnchart i₀ z) := by
       refine setLIntegral_congr_fun (measurableSet_dirichletUnchartSource i₀) fun z hz ↦ ?_
-      by_cases hzq : dirichletUnchart i₀ z ∈ q
-      · rw [indicator_of_mem hzq, indicator_of_mem (show z ∈ dirichletUnchart i₀ ⁻¹' q from hzq)]
+      by_cases hzq : z ∈ dirichletUnchart i₀ ⁻¹' q
+      · rw [indicator_of_mem (mem_preimage.mp hzq), indicator_of_mem hzq]
         exact (dirichletUnchart_density ha i₀ hz).symm
-      · rw [indicator_of_notMem hzq,
-          indicator_of_notMem (show z ∉ dirichletUnchart i₀ ⁻¹' q from hzq), mul_zero]
+      · rw [indicator_of_notMem (mem_preimage.not.mp hzq), indicator_of_notMem hzq, mul_zero]
     _ = ∫⁻ z, q.indicator (gammaSplitPDF a i₀) z ∂Measure.map (dirichletUnchart i₀)
           ((volume.restrict (dirichletUnchartSource i₀)).withDensity
             fun z ↦ ENNReal.ofReal (z.1 ^ Fintype.card {i // i ≠ i₀})) := by
