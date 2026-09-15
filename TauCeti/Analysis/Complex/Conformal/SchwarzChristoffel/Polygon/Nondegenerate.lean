@@ -58,8 +58,9 @@ theorem affineIndependent_schwarzChristoffelPolygon_first (a e : Fin (n + 2) →
     (hfirst : ∑ i with a i = a 0, e i ∈ Ioo (-1 : ℝ) 0)
     (hnext : -1 < ∑ i with a i = a 1, e i)
     (hS : ∑ i, e i < -1) :
-    AffineIndependent ℝ ![schwarzChristoffelVertexAtInfinity a e z₀,
-      schwarzChristoffelVertex a e z₀ 0, schwarzChristoffelVertex a e z₀ 1] := by
+    AffineIndependent ℝ ![schwarzChristoffelPolygon a e z₀ (Fin.last (n + 2)),
+      schwarzChristoffelPolygon a e z₀ (0 : Fin (n + 2)).castSucc,
+      schwarzChristoffelPolygon a e z₀ (1 : Fin (n + 2)).castSucc] := by
   have h01 : a 0 < a 1 := ha (by simp)
   have hleft : ∀ i, e i ≠ 0 → a 0 ≤ a i := by
     intro i _
@@ -69,7 +70,9 @@ theorem affineIndependent_schwarzChristoffelPolygon_first (a e : Fin (n + 2) →
     have h0i : (0 : Fin (n + 2)) < i := (ha.lt_iff_lt).mp hi.1
     have hi1 : i < (1 : Fin (n + 2)) := (ha.lt_iff_lt).mp hi.2
     exact (not_lt_of_ge (Fin.one_le_of_ne_zero h0i.ne')) hi1
-  simpa only [schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 hfirst.1,
+  simpa only [schwarzChristoffelPolygon_apply_last,
+    schwarzChristoffelPolygon_apply_castSucc,
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 hfirst.1,
     schwarzChristoffelBoundary_apply_prevertex a e z₀ 1 hnext] using
     affineIndependent_schwarzChristoffelBoundary_left_endpoint a e z₀ h01 hleft hfree hfirst
       hnext hS
@@ -84,9 +87,9 @@ theorem affineIndependent_schwarzChristoffelPolygon_last (a e : Fin (n + 2) → 
     (hlast : ∑ i with a i = a (Fin.last (n + 1)), e i ∈ Ioo (-1 : ℝ) 0)
     (hS : ∑ i, e i < -1) :
     AffineIndependent ℝ
-      ![schwarzChristoffelVertex a e z₀ (Fin.last n).castSucc,
-        schwarzChristoffelVertex a e z₀ (Fin.last (n + 1)),
-        schwarzChristoffelVertexAtInfinity a e z₀] := by
+      ![schwarzChristoffelPolygon a e z₀ (Fin.last n).castSucc.castSucc,
+        schwarzChristoffelPolygon a e z₀ (Fin.last (n + 1)).castSucc,
+        schwarzChristoffelPolygon a e z₀ (Fin.last (n + 2))] := by
   have horder : a (Fin.last n).castSucc < a (Fin.last (n + 1)) := by
     apply ha
     exact (Fin.last n).castSucc_lt_succ
@@ -102,8 +105,9 @@ theorem affineIndependent_schwarzChristoffelPolygon_last (a e : Fin (n + 2) → 
     have hilast' := Fin.lt_def.mp hilast
     simp only [Fin.val_castSucc, Fin.val_last] at hprevi' hilast'
     omega
-  simpa only [schwarzChristoffelBoundary_apply_prevertex a e z₀
-      (Fin.last n).castSucc hpreceding,
+  simpa only [schwarzChristoffelPolygon_apply_castSucc,
+    schwarzChristoffelPolygon_apply_last,
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ (Fin.last n).castSucc hpreceding,
     schwarzChristoffelBoundary_apply_prevertex a e z₀ (Fin.last (n + 1)) hlast.1] using
     affineIndependent_schwarzChristoffelBoundary_right_endpoint a e z₀ horder hright hfree
       hpreceding hlast hS
@@ -119,8 +123,10 @@ theorem schwarzChristoffelPolygon_hasNondegenerateEdges (a e : Fin (n + 1) → �
   refine Fin.lastCases (motive := fun i =>
     schwarzChristoffelPolygon a e z₀ i ≠
       schwarzChristoffelPolygon a e z₀ (finRotate (n + 2) i)) ?_ ?_ i
-  · rw [finRotate_last, schwarzChristoffelPolygon_apply_last]
-    simp only [show (0 : Fin (n + 2)) = (0 : Fin (n + 1)).castSucc by rfl,
+  · have hzero : (0 : Fin (n + 2)) = (0 : Fin (n + 1)).castSucc := by
+      apply Fin.ext
+      simp
+    rw [finRotate_last, schwarzChristoffelPolygon_apply_last, hzero,
       schwarzChristoffelPolygon_apply_castSucc]
     rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 (hfinite 0)]
     exact (schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_ge a e z₀ (hfinite 0)
