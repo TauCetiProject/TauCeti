@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Duality
+public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
+-- Non-public: `unitsEquivNeZero` reindexes a punctured field sum by its units.
+import Mathlib.Algebra.GroupWithZero.Units.Fintype
 
 /-!
-# Column orthogonality for characters of a finite commutative group
+# Character orthogonality for finite commutative groups
 
 For a finite commutative group `G` and a domain `M` with enough roots of unity, the characters
 of `G` are the monoid homomorphisms `G →* Mˣ`. This file records the *column* orthogonality
@@ -24,13 +27,15 @@ relation — the one summed over the character group — in both its punctured a
 * `CommGroup.sum_monoidHom_apply_eq_ite`'s tagged form,
   `CommGroup.sum_inv_mul_monoidHom_apply_eq_ite`: summing `(χ σ)⁻¹ * χ g` isolates the single
   element `σ`, giving `Nat.card G` when `g = σ` and `0` otherwise.
+* `TauCeti.AddChar.sum_units_mul_eq_neg_one`: a nontrivial additive character of a finite field
+  sums to `-1` over the nonzero elements, even after multiplication by a unit.
 
 The file also registers `Fintype (G →* Mˣ)`, which Mathlib leaves at `Finite`; without it a
 consumer's own character sum does not elaborate, and two ad-hoc `Fintype.ofFinite` introductions
 give syntactically distinct sums. That instance needs only `LeftCancelMonoid G`, so it also serves
 consumers indexing over the characters of a finite noncommutative group or monoid.
 
-## Row orthogonality is Mathlib's, and is deliberately not restated here
+## Row orthogonality and punctured additive-character sums
 
 The companion *row* relation — for a nontrivial `χ : G →* Mˣ`, the sum `∑ g : G, χ g` over the
 group vanishes — is already `sum_hom_units_eq_zero` in
@@ -41,6 +46,11 @@ unit coercion and nothing else, so no declaration for it is added. Callers wanti
 relation should use the Mathlib lemma directly. (`MulChar.sum_eq_zero_of_ne_one` in
 `Mathlib/NumberTheory/MulChar/Basic.lean` is the analogous statement in the `MulChar`
 vocabulary, for a multiplicative character of a finite commutative monoid valued in a domain.)
+
+The theorem `TauCeti.AddChar.sum_units_mul_eq_neg_one` below is not a restatement of that full row
+relation: it removes the zero term from a finite-field additive-character sum and reindexes the
+remaining nonzero elements by `Fˣ`. This punctured form is what character computations over a
+finite field consume directly.
 
 The column relation genuinely is not in Mathlib in this generality. It appears there only in
 specialisations: the `ZMod n` one, `DirichletCharacter.sum_characters_eq_zero` in
@@ -70,6 +80,40 @@ Birkbeck--Brasca).
 -/
 
 public section
+
+namespace TauCeti.AddChar
+
+variable {F : Type*} [Field F] [Fintype F]
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+open scoped Classical in
+/-- A nontrivial additive character of a finite field sums to `-1` over the units, even after
+multiplication by a fixed unit. This is the punctured form of
+`AddChar.sum_eq_zero_of_ne_one`. -/
+theorem sum_units_mul_eq_neg_one (ψ : _root_.AddChar F R) (hψ : ψ ≠ 1) (c : Fˣ) :
+    ∑ d : Fˣ, ψ ((c : F) * (d : F)) = -1 := by
+  have hsum : ∑ x : F, ψ ((c : F) * x) = 0 := by
+    simpa [AddChar.mulShift_apply] using
+      AddChar.sum_eq_zero_of_ne_one ((AddChar.IsPrimitive.of_ne_one hψ) c.ne_zero)
+  have hnonzero : ∑ x : {x : F // x ≠ 0}, ψ ((c : F) * (x : F)) = -1 := by
+    have hall := (Equiv.sumCompl (fun x : F => x = 0)).sum_comp
+      (fun x : F => ψ ((c : F) * x))
+    rw [Fintype.sum_sum_type] at hall
+    have hall' :
+        (∑ x : {x : F // x = 0}, ψ ((c : F) * (x : F))) +
+          ∑ x : {x : F // x ≠ 0}, ψ ((c : F) * (x : F)) =
+            ∑ x : F, ψ ((c : F) * x) := by
+      simpa only [Equiv.sumCompl_apply_inl, Equiv.sumCompl_apply_inr] using hall
+    have hval_zero (x : {x : F // x = 0}) : (x : F) = 0 := x.2
+    have heqzero : ∑ x : {x : F // x = 0}, ψ ((c : F) * (x : F)) = 1 := by
+      simp_rw [hval_zero]
+      simp
+    rw [hsum, heqzero] at hall'
+    exact eq_neg_of_add_eq_zero_right hall'
+  rw [← hnonzero]
+  exact Fintype.sum_equiv unitsEquivNeZero _ _ fun d => rfl
+
+end TauCeti.AddChar
 
 variable {G : Type*} [Finite G] {M : Type*} [CommRing M] [IsDomain M]
 
