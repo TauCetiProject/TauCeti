@@ -34,6 +34,9 @@ kernel.
   division polynomial does not vanish, and
   `TauCeti.Isogeny.mem_ker_mulByIntIsogenyOfNeZero_iff`, the same at the `n ≠ 0` the elliptic case
   discharges it from.
+* `TauCeti.Isogeny.ker_mulByIntIsogeny_eq_torsionBy`: the same fact as an equality of subgroups,
+  `ker [n] = A[n]` in Mathlib's intrinsic `AddSubgroup.torsionBy` form — the bridge a consumer of
+  the torsion API needs.
 
 ## References
 
@@ -80,6 +83,16 @@ theorem mem_ker_mulByIntIsogenyOfNeZero_iff {n : ℤ} (hn : n ≠ 0)
     {P : (W⁄F).toAffine.Point} :
     P ∈ (mulByIntIsogenyOfNeZero W hn).ker ↔ n • P = 0 := by
   simpa only [mulByIntIsogenyOfNeZero] using mem_ker_mulByIntIsogeny_iff W _
+
+/-- **The kernel of `[n]` is the `n`-torsion subgroup** in Mathlib's intrinsic form `A[n]`. This is
+the bridge a consumer of the torsion API needs in order to transport results about the isogeny
+kernel to `AddSubgroup.torsionBy`. No primality is involved: it is `mem_ker_mulByIntIsogeny_iff`
+read as an equality of subgroups. -/
+theorem ker_mulByIntIsogeny_eq_torsionBy {n : ℤ} (hn : psiFunctionField W n ≠ 0) :
+    (mulByIntIsogeny W hn).ker = AddSubgroup.torsionBy (W⁄F).toAffine.Point n := by
+  ext P
+  rw [mem_ker_mulByIntIsogeny_iff]
+  exact (Submodule.mem_torsionBy_iff _ _).symm
 
 end TauCeti.Isogeny
 
