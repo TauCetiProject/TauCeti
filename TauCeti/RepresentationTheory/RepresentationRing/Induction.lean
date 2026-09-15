@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Induction.Character
-public import TauCeti.RepresentationTheory.Induction.FiniteDimensionalProjection
+public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Projection
 public import TauCeti.RepresentationTheory.RepresentationRing.Restriction
 
 /-!
@@ -29,7 +29,7 @@ representation of `G` -- it sends it to the permutation representation on `G ⧸
 
 which is `TauCeti.repRingInd_mul_repRingRes`. This is Frobenius reciprocity in its module form, and
 it is the projection formula `TauCeti.indFDRepProjection` of
-`TauCeti/RepresentationTheory/Induction/FiniteDimensionalProjection.lean` read on isomorphism
+`TauCeti/RepresentationTheory/Induction/FiniteDimensional/Projection.lean` read on isomorphism
 classes: the representation-level isomorphism `Ind_S^G (A ⊗ Res_S^G B) ≅ (Ind_S^G A) ⊗ B` becomes
 an identity of classes, and both sides of the displayed equation are additive in each variable, so
 the two classes generate the general case. Its immediate consequence is that the image of induction

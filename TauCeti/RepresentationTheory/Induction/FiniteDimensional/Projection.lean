@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Induction.FiniteDimensional
+public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
 public import TauCeti.RepresentationTheory.Induction.Projection
 
 /-!

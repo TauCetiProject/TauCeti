@@ -14,9 +14,9 @@ public import Mathlib.RepresentationTheory.Character
 
 This file records how the forgetful functor `FDRep R G ⥤ Rep R G` preserves module-finiteness,
 finrank and characters. These facts let results proved for representation carriers transfer back to
-`FDRep`, in particular in `TauCeti.RepresentationTheory.Induction.FiniteDimensional`. In the same
-spirit it records that rebundling the representation an object carries returns that object, which
-is the identification a construction phrased as `FDRep.of ρ` needs in order to be read as a
+`FDRep`, in particular in `TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic`. In the
+same spirit it records that rebundling the representation an object carries returns that object,
+which is the identification a construction phrased as `FDRep.of ρ` needs in order to be read as a
 statement about the object it started from.
 
 It also records the character of a trivial representation, the constant `finrank`, in both the
@@ -138,7 +138,7 @@ theorem of_ρ_eq_self {R : Type u} {G : Type v} [CommRing R] [Monoid G] (A : FDR
 
 /-- **Forgetting finite-dimensionality is an additive functor**: `forget₂ (FDRep R G) (Rep R G)`
 preserves sums of intertwiners.  This is what lets an additive construction on `Rep R G` -- the
-induction of `TauCeti.RepresentationTheory.Induction.FiniteDimensional`, say -- be recognized
+induction of `TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic`, say -- be recognized
 through the forgetful functor. -/
 instance forget₂_additive {R : Type u} {G : Type v} [CommRing R] [Monoid G] :
     (forget₂ (FDRep R G) (Rep R G)).Additive where
