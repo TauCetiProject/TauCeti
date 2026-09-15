@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Contour.Residue.Cycle
-import Mathlib.Analysis.Complex.CauchyIntegral
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import TauCeti.Analysis.Contour.PiecewiseC1On
+public import TauCeti.Analysis.Contour.Winding.Number.Basic
+import TauCeti.Analysis.Contour.Cycle.Residue
 
 /-!
 # Cauchy's integral formula in homology form, for all derivatives
@@ -16,24 +18,21 @@ For `f` holomorphic on an open `U`, a closed piecewise-`C¹` curve `γ` in `U` t
 
 `∫ t in a..b, γ' t • (f (γ t) / (γ t − z) ^ (k + 1)) = 2πi · n_z(γ) · f⁽ᵏ⁾(z) / k !`
 
-for every `k : ℕ`, with `n_z(γ)` the generalized winding number. The case `k = 0` is the second
-bullet of the roadmap's Layer 3 — the identity `f(z) · n_z(C) = (2πi)⁻¹ ∮_C f(w)/(w − z) dw` that
-accompanies the homology Cauchy theorem — and the general `k` is its derivative form.
+for every `k : ℕ`, with `n_z(γ)` the generalized winding number. The case `k = 0` is the identity
+`f(z) · n_z(γ) = (2πi)⁻¹ ∮_γ f(w)/(w − z) dw` that accompanies the homology Cauchy theorem,
+and the general `k` is its derivative form.
 
-The proof is a single application of the residue theorem for a null-homologous cycle
-(`TauCeti.Contour.classicalResidueTheorem_nullHomologous`) to the Cauchy kernel
-`w ↦ f w / (w − z) ^ (k + 1)`, whose only possible singularity in `U` is at `z`, together with the
-residue computation `TauCeti.Contour.residue_div_sub_pow_of_analyticAt` reading the residue there as
-the Taylor coefficient `f⁽ᵏ⁾(z) / k !`. Holomorphy on the *open* `U` is what turns
-`DifferentiableOn` into analyticity at `z` (`DifferentiableOn.analyticOnNhd`), so the Taylor
-coefficient exists at all.
+The proof specializes `TauCeti.Contour.Cycle.cauchyIntegralFormula_iteratedDeriv_nullHomologous`
+to the cycle with the single generator `PiecewiseC1ClosedCurve.of γ hγ hclosed`. The comparison
+lemmas for this generator identify its integral, winding number, trace, and null-homology with
+those of the original parametrized curve, preserving the orientation of `a..b`.
 
 ## Main results
 
 * `TauCeti.Contour.cauchyIntegralFormula_iteratedDeriv_nullHomologous` — the formula above, for
   every order `k`.
-* `TauCeti.Contour.cauchyIntegralFormula_nullHomologous` — its `k = 0` case, the roadmap's Layer-3
-  Cauchy integral formula `∮_γ f(w)/(w − z) dw = 2πi · n_z(γ) · f z`.
+* `TauCeti.Contour.cauchyIntegralFormula_nullHomologous` — its `k = 0` case, Cauchy's integral
+  formula in homology form `∮_γ f(w)/(w − z) dw = 2πi · n_z(γ) · f z`.
 * `TauCeti.Contour.cauchyIntegralFormula_deriv_nullHomologous` — its `k = 1` case, stated with
   `deriv f z`.
 
@@ -55,9 +54,9 @@ statements here supply.
 
 ## Provenance
 
-No formal source is vendored: the statements are assembled here from the repository's residue
-theorem for a null-homologous cycle and its residue API, which are themselves migrated from the
-AINTLIB `LeanModularForms` development.
+No formal source is vendored: the statements specialize the repository's Cauchy integral formula
+for cycles, built on the residue and contour APIs migrated from the AINTLIB `LeanModularForms`
+development.
 -/
 
 public section
@@ -85,26 +84,13 @@ theorem cauchyIntegralFormula_iteratedDeriv_nullHomologous {f : ℂ → ℂ} {U 
     ∫ t in a..b, deriv γ t • (f (γ t) / (γ t - z) ^ (k + 1))
       = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b z *
           (iteratedDeriv k f z / (k.factorial : ℂ)) := by
-  have hfz : AnalyticAt ℂ f z := hf.analyticOnNhd hU z hz
-  have hker := classicalResidueTheorem_nullHomologous (f := fun w => f w / (w - z) ^ (k + 1))
-    (S := {z}) hU ?_ ?_ hγ hγU hclosed ?_ hnull
-  · rw [hker, Finset.sum_singleton, residue_div_sub_pow_of_analyticAt hfz k]
-    ring
-  · -- Off `z` the kernel is a quotient of holomorphic functions with non-vanishing denominator.
-    rw [Finset.coe_singleton]
-    intro w hw
-    exact ((hf w hw.1).mono Set.sdiff_subset).div (by fun_prop)
-      (pow_ne_zero _ (sub_ne_zero.mpr hw.2))
-  · -- At `z` it is meromorphic, `f` being analytic there.
-    intro s hs _
-    rw [Finset.mem_singleton] at hs
-    subst hs
-    exact hfz.meromorphicAt.div (by fun_prop)
-  · intro t ht
-    rw [Finset.coe_singleton]
-    exact hoff t ht
+  simpa only [Cycle.integral_of_raw, Cycle.windingNumber_of_raw] using
+    Cycle.cauchyIntegralFormula_iteratedDeriv_nullHomologous hU hf
+      ((Cycle.isIn_of_raw_iff γ hγ hclosed U).2 hγU)
+      ((Cycle.isNullHomologous_of_raw_iff γ hγ hclosed U).2 hnull) hz
+      (by simpa only [Cycle.trace_of_raw, Set.mem_image, not_exists, not_and] using hoff) k
 
-/-- **Cauchy's integral formula, homology form** (roadmap Layer 3). For `f` holomorphic on an open
+/-- **Cauchy's integral formula, homology form.** For `f` holomorphic on an open
 `U`, `γ` a closed piecewise-`C¹` curve in `U` that is null-homologous there, and `z ∈ U` off the
 curve,
 
