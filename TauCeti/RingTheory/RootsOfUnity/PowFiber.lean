@@ -23,6 +23,7 @@ group: the orbit map of the rotation action is the power map.
 
 ## Main declarations
 
+* `rootsOfUnity.smul_eq_mul`: an `m`-th root of unity acts by multiplication.
 * `rootsOfUnity.smul_pow`: multiplication by an `m`-th root of unity preserves `m`-th powers.
 * `TauCeti.pow_eq_pow_iff_exists_rootsOfUnity_smul`: `u ^ m = v ^ m` iff `v = ζ • u` for some
   `ζ` in `rootsOfUnity m M`.
@@ -39,7 +40,8 @@ open MulAction
 
 variable {M : Type*} {m : ℕ}
 
-private theorem rootsOfUnity.smul_eq_mul [CommMonoid M]
+/-- An `m`-th root of unity acts on `M` by multiplication with its underlying element. -/
+theorem rootsOfUnity.smul_eq_mul [CommMonoid M]
     (ζ : rootsOfUnity m M) (u : M) : ζ • u = ((ζ : Mˣ) : M) * u := by
   rw [Subgroup.smul_def, Units.smul_def, _root_.smul_eq_mul]
 

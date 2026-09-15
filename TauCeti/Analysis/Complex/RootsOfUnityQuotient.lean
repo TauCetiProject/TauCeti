@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import Mathlib.Topology.LocalAtTarget
 public import TauCeti.RingTheory.RootsOfUnity.PowFiber
 public import TauCeti.Topology.Algebra.GroupAction.FreeLocus
+public import TauCeti.Topology.Homeomorph.Quotient
+public import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # The quotient of a disc by a finite rotation group
@@ -58,21 +60,6 @@ restricted power map with its image.
 public section
 
 open MulAction Set
-
-/-- `Homeomorph.Quotient.congrRight` sends the class of `x` to the class of `x`. This is the
-homeomorphism counterpart of Mathlib's `Quot.congr_mk`, and holds by definition for the same
-reason: `Homeomorph.Quotient.congrRight` is `Quot.congr` for the identity equivalence. -/
-private theorem Homeomorph.Quotient.congrRight_mk {X : Type*} [TopologicalSpace X]
-    {r r' : Setoid X} (h : ∀ x₁ x₂, r x₁ x₂ ↔ r' x₁ x₂) (x : X) :
-    Homeomorph.Quotient.congrRight h (Quotient.mk r x) = Quotient.mk r' x :=
-  rfl
-
-/-- `Homeomorph.setCongr` retypes a point without moving it. Mathlib's `Set.equivOfEq_apply` says
-the same for the underlying equivalence, but does not match through the homeomorphism
-constructor. -/
-private theorem Homeomorph.coe_setCongr {X : Type*} [TopologicalSpace X] {s t : Set X} (h : s = t)
-    (x : s) : (Homeomorph.setCongr h x : X) = x :=
-  rfl
 
 namespace SubMulAction
 
@@ -171,7 +158,7 @@ theorem coe_rootsOfUnityBallQuotientHomeomorph_mk {r : ℝ} (hr : 0 ≤ r)
     (u : rootsOfUnityBall m r) :
     (rootsOfUnityBallQuotientHomeomorph hr (Quotient.mk _ u) : ℂ) = (u : ℂ) ^ m := by
   simp only [rootsOfUnityBallQuotientHomeomorph, Homeomorph.trans_apply,
-    Homeomorph.coe_setCongr, SubMulAction.coe_rootsOfUnityQuotientHomeomorph_mk]
+    Homeomorph.setCongr_apply, SubMulAction.coe_rootsOfUnityQuotientHomeomorph_mk]
 
 omit [NeZero m] in
 /-- For `m ≥ 2`, the `m`-th roots of unity act freely exactly on the nonzero complex numbers:
