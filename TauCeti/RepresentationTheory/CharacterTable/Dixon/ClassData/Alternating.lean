@@ -113,7 +113,6 @@ private theorem alternatingGroupFourThreeCycle_inv_pow_six :
   decide
 
 /-- The alternating group of degree four has order twelve: half of `4! = 24`. -/
-@[simp]
 theorem natCard_alternatingGroup_four : Nat.card (alternatingGroup (Fin 4)) = 12 := by
   rw [nat_card_alternatingGroup, Nat.card_eq_fintype_card, Fintype.card_fin]
   rfl
