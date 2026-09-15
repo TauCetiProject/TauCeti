@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Semigroups.GrowthBound
 /-!
 # Complexification of strongly continuous semigroups
 
-A strongly continuous semigroup on a real normed space extends componentwise to the normed
+A strongly continuous semigroup on a real Banach space extends componentwise to the normed
 complexification of that space.  The resulting semigroup is complex linear.  Because the Taylor
 norm makes complexification isometric on bounded operators, this extension preserves every
 operator norm and hence every exponential growth bound without changing its constants.
@@ -37,9 +37,8 @@ transported back to real Banach spaces without weakening Hille--Yosida estimates
 
 ## References
 
-* G. A. Muñoz, Y. Sarantopoulos, A. Tonge, *Complexifications of real Banach spaces,
-  polynomials and multilinear maps*, Studia Math. 134 (1999), 1–33 (the Taylor norm, under which
-  complexification preserves operator norms).
+* K.-J. Engel and R. Nagel, *One-Parameter Semigroups for Linear Evolution Equations*,
+  Section II.2.1.
 -/
 
 public section
@@ -53,42 +52,36 @@ namespace TauCeti.Semigroups
 
 open TauCeti.Complexification
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
 
 namespace StronglyContinuousSemigroup
 
-/-- The componentwise complexification of a strongly continuous semigroup on a real normed space.
-At time `t`, its complex-linear operator is the complexification of `S t`. -/
+/-- The componentwise complexification of a strongly continuous semigroup on a real Banach
+space.  At time `t`, its complex-linear operator is the complexification of `S t`. -/
 def complexify (S : StronglyContinuousSemigroup X) :
     StronglyContinuousSemigroup (TauCeti.Complexification X) where
   toFun t := (S t).complexify.restrictScalars ℝ
   map_zero' := by
-    ext z <;> simp
+    rw [S.map_zero, ContinuousLinearMap.complexify_id]
+    apply ContinuousLinearMap.ext
+    intro z
+    rfl
   map_add' s t := by
-    ext z <;> simp [S.map_add]
+    rw [S.map_add, ContinuousLinearMap.complexify_comp]
+    apply ContinuousLinearMap.ext
+    intro z
+    rfl
   continuousAt_zero' z := by
-    rw [ContinuousAt]
-    have happly : (fun t : ℝ≥0 => ((S t).complexify.restrictScalars ℝ) z) =
-        fun t => (⟨S t z.re, S t z.im⟩ : TauCeti.Complexification X) := by
+    have h := (S.continuousAt_zero z.re).prodMk (S.continuousAt_zero z.im)
+    have hc := (TauCeti.Complexification.equivProd X).symm.continuous.continuousAt.tendsto.comp h
+    have heq : (fun t => (S t).complexify.restrictScalars ℝ z) =
+        fun t => (TauCeti.Complexification.equivProd X).symm (S t z.re, S t z.im) := by
       funext t
-      ext <;> simp
-    have hzero : ((S 0).complexify.restrictScalars ℝ) z = z := by
-      ext <;> simp
-    have hprod := (S.continuousAt_zero_tendsto z.re).prodMk_nhds
-      (S.continuousAt_zero_tendsto z.im)
-    rw [happly, hzero]
-    rw [(equivProd X).toHomeomorph.isEmbedding.tendsto_nhds_iff]
-    have heq : (⇑(equivProd X).toHomeomorph ∘
-        fun t : ℝ≥0 => (⟨S t z.re, S t z.im⟩ : TauCeti.Complexification X)) =
-        fun t => (S t z.re, S t z.im) := by
-      funext t
-      rw [ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_apply, equivProd_apply]
+      apply TauCeti.Complexification.ext <;> simp
     rw [heq]
-    have htarget : (equivProd X).toHomeomorph z = (z.re, z.im) := by
-      rw [ContinuousLinearEquiv.coe_toHomeomorph, equivProd_apply]
-    rw [htarget]
-    exact hprod
+    exact hc
 
+omit [CompleteSpace X] in
 /-- The real part of the complexified orbit is the original orbit of the real part. -/
 @[simp]
 theorem complexify_apply_re (S : StronglyContinuousSemigroup X) (t : ℝ≥0)
@@ -96,6 +89,7 @@ theorem complexify_apply_re (S : StronglyContinuousSemigroup X) (t : ℝ≥0)
     (S.complexify t z).re = S t z.re := by
   exact ContinuousLinearMap.complexify_apply_re (S t) z
 
+omit [CompleteSpace X] in
 /-- The imaginary part of the complexified orbit is the original orbit of the imaginary part. -/
 @[simp]
 theorem complexify_apply_im (S : StronglyContinuousSemigroup X) (t : ℝ≥0)
@@ -103,12 +97,14 @@ theorem complexify_apply_im (S : StronglyContinuousSemigroup X) (t : ℝ≥0)
     (S.complexify t z).im = S t z.im := by
   exact ContinuousLinearMap.complexify_apply_im (S t) z
 
+omit [CompleteSpace X] in
 /-- The complexified semigroup extends the original semigroup along the real embedding. -/
 @[simp]
 theorem complexify_apply_ofReal (S : StronglyContinuousSemigroup X) (t : ℝ≥0) (x : X) :
     S.complexify t (ofReal x) = ofReal (S t x) :=
   ContinuousLinearMap.complexify_ofReal (S t) x
 
+omit [CompleteSpace X] in
 /-- The operator norm at each time is unchanged by complexification. -/
 @[simp]
 theorem norm_complexify_apply (S : StronglyContinuousSemigroup X) (t : ℝ≥0) :
@@ -116,6 +112,7 @@ theorem norm_complexify_apply (S : StronglyContinuousSemigroup X) (t : ℝ≥0) 
   (ContinuousLinearMap.norm_restrictScalars ((S t).complexify)).trans
     (ContinuousLinearMap.norm_complexify (S t))
 
+omit [CompleteSpace X] in
 /-- The complexification commutes with the real-time operator shim. -/
 @[simp]
 theorem complexify_realOperator (S : StronglyContinuousSemigroup X) (t : ℝ) :
@@ -129,12 +126,14 @@ theorem complexify_realOperator (S : StronglyContinuousSemigroup X) (t : ℝ) :
   · exact (S.complexify_apply_im t.toNNReal z).trans
       (ContinuousLinearMap.complexify_apply_im (S t.toNNReal) z).symm
 
+omit [CompleteSpace X] in
 /-- The real-time operator norm is unchanged by complexification. -/
 theorem norm_complexify_realOperator (S : StronglyContinuousSemigroup X) (t : ℝ) :
     ‖S.complexify.realOperator t‖ = ‖S.realOperator t‖ := by
   rw [S.complexify_realOperator, ContinuousLinearMap.norm_restrictScalars,
     ContinuousLinearMap.norm_complexify]
 
+omit [CompleteSpace X] in
 /-- The complexified semigroup is complex linear. -/
 theorem isComplexLinear_complexify (S : StronglyContinuousSemigroup X) :
     S.complexify.IsComplexLinear := by
@@ -142,6 +141,7 @@ theorem isComplexLinear_complexify (S : StronglyContinuousSemigroup X) :
   intro t z x
   exact (S t).complexify.map_smul z x
 
+omit [CompleteSpace X] in
 /-- Bundling an operator of the complexified semigroup as complex linear recovers the
 complexification of the corresponding original operator. -/
 @[simp]
@@ -152,9 +152,9 @@ theorem complexLinearOperator_complexify (S : StronglyContinuousSemigroup X) (t 
   rw [S.complexify.complexLinearOperator_apply S.isComplexLinear_complexify]
   rfl
 
+omit [CompleteSpace X] in
 /-- Complexification preserves exponential growth bounds, with exactly the same exponent and
 multiplicative constant. -/
-@[simp]
 theorem hasGrowthBound_complexify_iff (S : StronglyContinuousSemigroup X) (ω M : ℝ) :
     S.complexify.HasGrowthBound ω M ↔ S.HasGrowthBound ω M := by
   constructor
@@ -165,11 +165,13 @@ theorem hasGrowthBound_complexify_iff (S : StronglyContinuousSemigroup X) (ω M 
     refine hasGrowthBound_of_bound h.one_le fun t ht => ?_
     simpa using h.bound t ht
 
+omit [CompleteSpace X] in
 /-- Every growth bound of a real semigroup is a growth bound of its complexification. -/
 theorem HasGrowthBound.complexify {S : StronglyContinuousSemigroup X} {ω M : ℝ}
     (h : S.HasGrowthBound ω M) : S.complexify.HasGrowthBound ω M :=
   (S.hasGrowthBound_complexify_iff ω M).2 h
 
+omit [CompleteSpace X] in
 private theorem tendsto_complexify_genQuot_iff (S : StronglyContinuousSemigroup X)
     (z y : TauCeti.Complexification X) :
     Tendsto
@@ -185,6 +187,7 @@ private theorem tendsto_complexify_genQuot_iff (S : StronglyContinuousSemigroup 
     ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.complexify_apply_re,
     ContinuousLinearMap.complexify_apply_im]
 
+omit [CompleteSpace X] in
 /-- A vector belongs to the generator domain of the complexified semigroup exactly when its real
 and imaginary parts belong to the generator domain of the original semigroup. -/
 @[simp]
@@ -200,6 +203,7 @@ theorem mem_complexify_domain_iff (S : StronglyContinuousSemigroup X)
   · rintro ⟨⟨yre, hre⟩, ⟨yim, him⟩⟩
     exact ⟨⟨yre, yim⟩, (S.tendsto_complexify_genQuot_iff z ⟨yre, yim⟩).mpr ⟨hre, him⟩⟩
 
+omit [CompleteSpace X] in
 /-- The real generator of the complexified semigroup acts componentwise by the original
 generator. -/
 @[simp]
@@ -221,6 +225,7 @@ theorem complexify_generator_apply (S : StronglyContinuousSemigroup X)
   simpa only [zre, zim, Subtype.coe_mk] using
     And.intro (S.generator_tendsto zre) (S.generator_tendsto zim)
 
+omit [CompleteSpace X] in
 /-- The complex generator of the complexified semigroup acts componentwise by the original real
 generator. -/
 theorem complexify_complexGenerator_apply (S : StronglyContinuousSemigroup X)
@@ -257,6 +262,7 @@ def complexify (S : ContractionSemigroup X) :
     exact (StronglyContinuousSemigroup.norm_complexify_apply
       S.toStronglyContinuousSemigroup t).trans_le (S.contracting t)
 
+omit [CompleteSpace X] in
 /-- The underlying C₀-semigroup of a complexified contraction semigroup is the
 complexification of the underlying C₀-semigroup. -/
 @[simp]
@@ -264,6 +270,7 @@ theorem complexify_toStronglyContinuousSemigroup (S : ContractionSemigroup X) :
     S.complexify.toStronglyContinuousSemigroup = S.toStronglyContinuousSemigroup.complexify :=
   (rfl)
 
+omit [CompleteSpace X] in
 /-- The real part of a complexified contraction-semigroup orbit is the original orbit of the
 real part. -/
 @[simp]
@@ -272,6 +279,7 @@ theorem complexify_apply_re (S : ContractionSemigroup X) (t : ℝ≥0)
     (S.complexify t z).re = S t z.re := by
   exact StronglyContinuousSemigroup.complexify_apply_re S.toStronglyContinuousSemigroup t z
 
+omit [CompleteSpace X] in
 /-- The imaginary part of a complexified contraction-semigroup orbit is the original orbit of
 the imaginary part. -/
 @[simp]
@@ -280,17 +288,20 @@ theorem complexify_apply_im (S : ContractionSemigroup X) (t : ℝ≥0)
     (S.complexify t z).im = S t z.im := by
   exact StronglyContinuousSemigroup.complexify_apply_im S.toStronglyContinuousSemigroup t z
 
+omit [CompleteSpace X] in
 /-- The complexified contraction semigroup extends the original one along the real embedding. -/
 @[simp]
 theorem complexify_apply_ofReal (S : ContractionSemigroup X) (t : ℝ≥0) (x : X) :
     S.complexify t (ofReal x) = ofReal (S t x) :=
   StronglyContinuousSemigroup.complexify_apply_ofReal S.toStronglyContinuousSemigroup t x
 
+omit [CompleteSpace X] in
 /-- The underlying C₀-semigroup of a complexified contraction semigroup is complex linear. -/
 theorem isComplexLinear_complexify (S : ContractionSemigroup X) :
     S.complexify.toStronglyContinuousSemigroup.IsComplexLinear :=
   StronglyContinuousSemigroup.isComplexLinear_complexify S.toStronglyContinuousSemigroup
 
+omit [CompleteSpace X] in
 /-- Complexification preserves the operator norm of a contraction semigroup at every time. -/
 @[simp]
 theorem norm_complexify_apply (S : ContractionSemigroup X) (t : ℝ≥0) :
