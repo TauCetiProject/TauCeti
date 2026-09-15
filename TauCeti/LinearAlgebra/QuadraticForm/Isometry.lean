@@ -100,7 +100,6 @@ variable {ι ι' R S : Type*} [Fintype ι] [Fintype ι'] [CommSemiring R] [Monoi
 
 /-- Reindexing the weights of a weighted sum of squares along an equivalence of the index types
 gives an isometric quadratic form.  The isometry is precomposition with the equivalence. -/
-@[expose]
 def _root_.QuadraticForm.isometryEquivWeightedSumSquaresReindex (w : ι → S) (e : ι' ≃ ι) :
     IsometryEquiv (weightedSumSquares R w) (weightedSumSquares R (w ∘ e)) where
   __ := LinearEquiv.funCongrLeft R R e
@@ -113,7 +112,8 @@ def _root_.QuadraticForm.isometryEquivWeightedSumSquaresReindex (w : ι → S) (
 theorem _root_.QuadraticForm.isometryEquivWeightedSumSquaresReindex_apply (w : ι → S) (e : ι' ≃ ι)
     (x : ι → R) (i : ι') :
     QuadraticForm.isometryEquivWeightedSumSquaresReindex w e x i = x (e i) :=
-  rfl
+  -- The parentheses keep the proof opaque, so the definition need not be exposed.
+  (rfl)
 
 end Reindex
 

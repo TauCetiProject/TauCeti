@@ -52,12 +52,12 @@ open Finset QuadraticMap
 
 namespace QuadraticForm
 
-section Fibres
+section Fibers
 
 variable {ι ι' : Type*} [Fintype ι] [Fintype ι']
 
 /-- The positive index of inertia of a sign-weighted sum of squares counts the weights `1`. -/
-private theorem ncard_fibre_pos (u : ι → SignType) :
+private theorem ncard_fiber_pos (u : ι → SignType) :
     {i | u i = 1}.ncard = sigPos (weightedSumSquares ℝ fun i ↦ ((u i : ℝ))) := by
   rw [sigPos_weightedSumSquares]
   congr 1
@@ -65,7 +65,7 @@ private theorem ncard_fibre_pos (u : ι → SignType) :
   cases h : u i <;> simp [h]
 
 /-- The negative index of inertia of a sign-weighted sum of squares counts the weights `-1`. -/
-private theorem ncard_fibre_neg (u : ι → SignType) :
+private theorem ncard_fiber_neg (u : ι → SignType) :
     {i | u i = -1}.ncard = sigNeg (weightedSumSquares ℝ fun i ↦ ((u i : ℝ))) := by
   rw [sigNeg_weightedSumSquares]
   congr 1
@@ -74,23 +74,23 @@ private theorem ncard_fibre_neg (u : ι → SignType) :
 
 /-- Two sign-weighted sums of squares are isometric as soon as each of the three weights occurs
 the same number of times in both. -/
-private theorem equivalent_weightedSumSquares_of_ncard_fibre_eq (u : ι → SignType)
+private theorem equivalent_weightedSumSquares_of_ncard_fiber_eq (u : ι → SignType)
     (u' : ι' → SignType) (h : ∀ s : SignType, {i | u i = s}.ncard = {i' | u' i' = s}.ncard) :
     Equivalent (weightedSumSquares ℝ fun i ↦ ((u i : ℝ)))
       (weightedSumSquares ℝ fun i' ↦ ((u' i' : ℝ))) := by
-  have hfibre : ∀ s : SignType, {i // u i = s} ≃ {i' // u' i' = s} := fun s ↦ by
+  have hfiber : ∀ s : SignType, {i // u i = s} ≃ {i' // u' i' = s} := fun s ↦ by
     refine (Fintype.card_eq.mp ?_).some
     rw [← Nat.card_eq_fintype_card, ← Nat.card_eq_fintype_card]
     exact h s
-  let σ : ι ≃ ι' := Equiv.ofFiberEquiv hfibre
-  have hσ : ∀ i, u' (σ i) = u i := fun i ↦ Equiv.ofFiberEquiv_map hfibre i
+  let σ : ι ≃ ι' := Equiv.ofFiberEquiv hfiber
+  have hσ : ∀ i, u' (σ i) = u i := fun i ↦ Equiv.ofFiberEquiv_map hfiber i
   have hcomp : (fun i' ↦ ((u' i' : ℝ))) ∘ σ = fun i ↦ ((u i : ℝ)) := by
     funext i
     exact congrArg (fun s : SignType ↦ ((s : ℝ))) (hσ i)
   exact ⟨((isometryEquivWeightedSumSquaresReindex (R := ℝ) (fun i' ↦ ((u' i' : ℝ))) σ).trans
     (weightedSumSquaresCongr hcomp)).symm⟩
 
-end Fibres
+end Fibers
 
 variable {M M' : Type*} [AddCommGroup M] [Module ℝ M] [AddCommGroup M'] [Module ℝ M']
   [FiniteDimensional ℝ M] [FiniteDimensional ℝ M']
@@ -109,20 +109,20 @@ theorem equivalent_iff_finrank_eq_and_sigPos_eq_and_sigNeg_eq (Q : _root_.Quadra
   · rintro ⟨hrank, hpos, hneg⟩
     obtain ⟨u, hu⟩ := Q.equivalent_signType_weighted_sum_squared
     obtain ⟨u', hu'⟩ := Q'.equivalent_signType_weighted_sum_squared
-    refine hu.trans ((equivalent_weightedSumSquares_of_ncard_fibre_eq u u' ?_).trans hu'.symm)
-    have hposFibre : {i | u i = 1}.ncard = {i' | u' i' = 1}.ncard := by
-      rw [ncard_fibre_pos, ncard_fibre_pos, ← hu.sigPos_eq, ← hu'.sigPos_eq, hpos]
-    have hnegFibre : {i | u i = -1}.ncard = {i' | u' i' = -1}.ncard := by
-      rw [ncard_fibre_neg, ncard_fibre_neg, ← hu.sigNeg_eq, ← hu'.sigNeg_eq, hneg]
-    have hsum := SignType.ncard_fibre_zero_add_ncard_fibre_neg_add_ncard_fibre_pos u
-    have hsum' := SignType.ncard_fibre_zero_add_ncard_fibre_neg_add_ncard_fibre_pos u'
+    refine hu.trans ((equivalent_weightedSumSquares_of_ncard_fiber_eq u u' ?_).trans hu'.symm)
+    have hposFiber : {i | u i = 1}.ncard = {i' | u' i' = 1}.ncard := by
+      rw [ncard_fiber_pos, ncard_fiber_pos, ← hu.sigPos_eq, ← hu'.sigPos_eq, hpos]
+    have hnegFiber : {i | u i = -1}.ncard = {i' | u' i' = -1}.ncard := by
+      rw [ncard_fiber_neg, ncard_fiber_neg, ← hu.sigNeg_eq, ← hu'.sigNeg_eq, hneg]
+    have hsum := SignType.ncard_fiber_zero_add_ncard_fiber_neg_add_ncard_fiber_pos u
+    have hsum' := SignType.ncard_fiber_zero_add_ncard_fiber_neg_add_ncard_fiber_pos u'
     simp only [Nat.card_eq_fintype_card, Fintype.card_fin] at hsum hsum'
-    have hzeroFibre : {i | u i = 0}.ncard = {i' | u' i' = 0}.ncard := by omega
+    have hzeroFiber : {i | u i = 0}.ncard = {i' | u' i' = 0}.ncard := by omega
     intro s
     cases s
-    · exact hzeroFibre
-    · exact hnegFibre
-    · exact hposFibre
+    · exact hzeroFiber
+    · exact hnegFiber
+    · exact hposFiber
 
 /-- **Sylvester's law of inertia** for regular forms: two nondegenerate real quadratic forms are
 isometric exactly when their signatures agree. -/
