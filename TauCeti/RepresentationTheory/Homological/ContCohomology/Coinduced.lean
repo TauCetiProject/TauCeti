@@ -638,7 +638,9 @@ noncomputable abbrev coindDiscreteRep (A : DiscreteRep.{u, v, w} R U) :
 theorem coindDiscreteFunctor_map_apply {A B : DiscreteRep.{u, v, w} R U}
     (f : A ⟶ B) (a : DiscreteCoind G U A.V) (g : G) :
     (show DiscreteCoind G U B.V from
-      ((coindDiscreteFunctor R G U).map f).toLinearMap a) g = f.toLinearMap (a g) := rfl
+      (show Representation.IntertwiningMap
+          ((coindDiscreteFunctor R G U).obj A).ρ ((coindDiscreteFunctor R G U).obj B).ρ
+        from (coindDiscreteFunctor R G U).map f) a) g = f.toLinearMap (a g) := rfl
 
 /-- The locally constant coinduced module, bundled as a smooth discrete representation of `G`. -/
 noncomputable abbrev coindTopRep (A : SmoothDiscreteTopRep.{u, v, w} R U) :
