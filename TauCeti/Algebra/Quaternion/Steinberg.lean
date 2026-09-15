@@ -16,8 +16,8 @@ import Mathlib.Tactic.FinCases
 /-!
 # The Steinberg relation for quaternion algebras
 
-For a nonzero `a` in a field such that `1 - a` is also nonzero, this file constructs the explicit
-splitting
+For a nonzero `a` in a field where `2` is invertible, with `1 - a` also nonzero, this file
+constructs the explicit splitting
 
 `ℍ[K, a, 1 - a] ≃ₐ[K] Matrix (Fin 2) (Fin 2) K`.
 
@@ -126,7 +126,7 @@ theorem steinbergEquivMatrix_apply [Invertible (2 : K)] (a : Kˣ)
     steinbergEquivMatrix a ha q =
       !![q.re + q.imJ + (a : K) * q.imK, (a : K) * (q.imI - q.imJ - q.imK);
         q.imI + q.imJ + q.imK, q.re - q.imJ - (a : K) * q.imK] := by
-  change steinbergToMatrix (a : K) q = _
+  rw [steinbergEquivMatrix, AlgEquiv.ofBijective_apply]
   exact steinbergToMatrix_apply (a : K) q
 
 /-- The entrywise formula for the inverse of the Steinberg equivalence. -/
@@ -140,10 +140,9 @@ theorem steinbergEquivMatrix_symm_apply [Invertible (2 : K)] (a : Kˣ)
       let s := M 1 0 - x
       let z := (1 - (a : K))⁻¹ * (s - (M 0 0 - r))
       ⟨r, x, s - z, z⟩ := by
-  change (steinbergEquivMatrix a ha).symm M = steinbergPreimage a M
   apply (steinbergEquivMatrix a ha).injective
-  rw [AlgEquiv.apply_symm_apply]
-  exact (steinbergToMatrix_preimage a ha M).symm
+  rw [AlgEquiv.apply_symm_apply, steinbergEquivMatrix, AlgEquiv.ofBijective_apply]
+  simpa only [steinbergPreimage] using (steinbergToMatrix_preimage a ha M).symm
 
 /-- The first quaternion generator maps to the standard Steinberg matrix. -/
 @[simp]
