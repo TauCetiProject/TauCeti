@@ -76,6 +76,30 @@ def DiagonalStep (w w' : Fin n → Rˣ) : Prop :=
 def DiagonalChain (w w' : Fin n → Rˣ) : Prop :=
   Relation.ReflTransGen DiagonalStep w w'
 
+/-- The data defining a permutation step. -/
+theorem permutationStep_iff {w w' : Fin n → Rˣ} :
+    PermutationStep w w' ↔ ∃ σ : Equiv.Perm (Fin n), ∀ i, w' i = w (σ i) :=
+  Iff.rfl
+
+/-- The data defining a binary step. -/
+theorem binaryStep_iff {w w' : Fin n → Rˣ} :
+    BinaryStep w w' ↔
+      ∃ i j : Fin n, i ≠ j ∧
+        (∀ k, k ≠ i → k ≠ j → w k = w' k) ∧
+        (weightedSumSquares R ![(w i : R), (w j : R)]).Equivalent
+          (weightedSumSquares R ![(w' i : R), (w' j : R)]) :=
+  Iff.rfl
+
+/-- An elementary diagonal step is a permutation step or a binary step. -/
+theorem diagonalStep_iff {w w' : Fin n → Rˣ} :
+    DiagonalStep w w' ↔ PermutationStep w w' ∨ BinaryStep w w' :=
+  Iff.rfl
+
+/-- A diagonal chain is the reflexive-transitive closure of elementary diagonal steps. -/
+theorem diagonalChain_iff_reflTransGen {w w' : Fin n → Rˣ} :
+    DiagonalChain w w' ↔ Relation.ReflTransGen DiagonalStep w w' :=
+  Iff.rfl
+
 namespace BinaryStep
 
 /-- Swapping two distinct coefficients is a binary step. -/
