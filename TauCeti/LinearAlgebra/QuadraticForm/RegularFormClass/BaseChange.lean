@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Free
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Base change of regular-form classes
@@ -40,6 +41,10 @@ variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
 
 /-! ### Base change of presentations -/
 
+-- `@[reducible]` is load-bearing: the rank `p.1` of a presentation indexes the type
+-- `Fin p.1 → K` the presented form lives on, so `(p.baseChange L).1` has to reduce to `p.1` at
+-- instance transparency for `presentedForm (p.baseChange L)` to be comparable with the
+-- trivialization of `L ⊗[K] (Fin p.1 → K)` below.
 /-- Extend a diagonal presentation along a field extension by mapping each unit coefficient. -/
 @[reducible]
 def RegularFormPresentation.baseChange (L : Type v) [Field L] [Algebra K L]
@@ -103,13 +108,6 @@ theorem RegularFormPresentation.baseChange_append (p q : RegularFormPresentation
       (RegularFormPresentation.append_apply_natAdd (p.baseChange L) (q.baseChange L) k).symm).trans
         (congrArg _ (Fin.ext rfl))
 
-/-- The standard trivialization of `L ⊗[K] (Fin n → K)` sends `1 ⊗ₜ a` to the image of `a`. -/
-private theorem equivPiOfFiniteBasis_one_tmul {n : ℕ} (a : Fin n → K) :
-    Algebra.TensorProduct.equivPiOfFiniteBasis L (Pi.basisFun K (Fin n)) (1 ⊗ₜ a) =
-      fun i ↦ algebraMap K L (a i) := by
-  ext i
-  simp [Algebra.TensorProduct.equivPiOfFiniteBasis, Algebra.smul_def]
-
 /-- A base-changed presented form evaluates on a vector with coordinates in `K` as the image of
 the original form. -/
 private theorem presentedForm_baseChange_algebraMap (p : RegularFormPresentation K)
@@ -134,11 +132,14 @@ theorem equivalent_presentedForm_baseChange_of_equivalent {p q : RegularFormPres
     intro a
     have hF : F (Ep (1 ⊗ₜ a)) = fun i ↦ algebraMap K L (e a i) := by
       simp only [F, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply,
-        LinearEquiv.baseChange_tmul, equivPiOfFiniteBasis_one_tmul]
+        LinearEquiv.baseChange_tmul, Algebra.TensorProduct.equivPiOfFiniteBasis_one_tmul,
+        Pi.basisFun_repr]
       rfl
     rw [QuadraticMap.comp_apply, QuadraticMap.comp_apply, LinearMap.comp_apply,
-      LinearEquiv.coe_coe, LinearEquiv.coe_coe, hF, equivPiOfFiniteBasis_one_tmul,
-      presentedForm_baseChange_algebraMap, presentedForm_baseChange_algebraMap, e.map_app]
+      LinearEquiv.coe_coe, LinearEquiv.coe_coe, hF,
+      Algebra.TensorProduct.equivPiOfFiniteBasis_one_tmul]
+    simp only [Pi.basisFun_repr]
+    rw [presentedForm_baseChange_algebraMap, presentedForm_baseChange_algebraMap, e.map_app]
   refine ⟨{ toLinearEquiv := F, map_app' := fun x ↦ ?_ }⟩
   have hx := DFunLike.congr_fun hcomp (Ep.symm x)
   rwa [QuadraticMap.comp_apply, QuadraticMap.comp_apply, LinearMap.comp_apply,
@@ -249,8 +250,9 @@ def presentedFormBaseChangeIsometryEquiv (p : RegularFormPresentation K) :
           apply _root_.baseChange_ext
           intro a
           rw [QuadraticMap.comp_apply, QuadraticForm.baseChange_tmul, LinearEquiv.coe_coe,
-            equivPiOfFiniteBasis_one_tmul, presentedForm_baseChange_algebraMap, mul_one,
-            Algebra.algebraMap_eq_smul_one]
+            Algebra.TensorProduct.equivPiOfFiniteBasis_one_tmul]
+          simp only [Pi.basisFun_repr]
+          rw [presentedForm_baseChange_algebraMap, mul_one, Algebra.algebraMap_eq_smul_one]
         exact DFunLike.congr_fun h x }
 
 /-- Base change of presented forms, stated as `QuadraticMap.Equivalent`. -/

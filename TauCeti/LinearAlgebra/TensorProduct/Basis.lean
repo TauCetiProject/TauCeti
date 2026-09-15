@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
+public import Mathlib.LinearAlgebra.TensorProduct.Free
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
@@ -24,6 +25,8 @@ commute with a map of the scalar-extension algebras.
   basis agrees with first mapping the tensor and then taking its coordinate.
 * `Module.Basis.map_toMatrixAlgEquiv_baseChange`: matrices in base-changed bases commute with
   scalar maps when the represented endomorphisms are intertwined by tensor-product base change.
+* `Algebra.TensorProduct.equivPiOfFiniteBasis_one_tmul`: the trivialization attached to a finite
+  basis sends a tensor `1 ⊗ₜ v` to the images of the coordinates of `v`.
 -/
 
 public section
@@ -145,3 +148,19 @@ theorem map_toMatrixAlgEquiv_baseChange (b : Basis ι R M) (φ : S →ₐ[R] T)
 end Matrix
 
 end Module.Basis
+
+namespace Algebra.TensorProduct
+
+variable {R A M ι : Type*}
+variable [CommSemiring R] [CommSemiring A] [Algebra R A]
+variable [AddCommGroup M] [Module R M] [Finite ι]
+
+/-- The trivialization `A ⊗[R] M ≃ₗ[A] (ι → A)` attached to a finite basis of `M` sends `1 ⊗ₜ v`
+to the images in `A` of the coordinates of `v`. -/
+@[simp]
+theorem equivPiOfFiniteBasis_one_tmul (b : Module.Basis ι R M) (v : M) :
+    equivPiOfFiniteBasis A b (1 ⊗ₜ v) = fun i ↦ algebraMap R A (b.repr v i) := by
+  ext i
+  simp [equivPiOfFiniteBasis, Algebra.smul_def]
+
+end Algebra.TensorProduct
