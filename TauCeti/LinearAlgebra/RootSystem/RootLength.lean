@@ -276,6 +276,15 @@ def IsLongSimpleRoot : (t : DynkinType) → Fin t.rank → Prop
   | .F4, i => (i : ℕ) < 2
   | .G2, i => (i : ℕ) = 1
 
+/-- **Transporting a description of the long simple roots along an equality of Dynkin types.**
+The node index lives in a type that depends on the Dynkin type, so an equality of types is used
+to move a description of longness across rather than to rewrite the index itself. -/
+theorem isLongSimpleRoot_iff_of_eq {t u : DynkinType} (h : t = u) {p : ℕ → Prop}
+    (hu : ∀ j : Fin u.rank, u.IsLongSimpleRoot j ↔ p j) (i : Fin t.rank) :
+    t.IsLongSimpleRoot i ↔ p i := by
+  subst h
+  exact hu i
+
 instance : ∀ t : DynkinType, DecidablePred t.IsLongSimpleRoot
   | .A _ | .D _ | .E6 | .E7 | .E8 => fun _ ↦ inferInstanceAs (Decidable True)
   | .B n => fun i ↦ inferInstanceAs (Decidable ((i : ℕ) + 1 < n))

@@ -199,6 +199,11 @@ theorem graphPermD_ne_one (n : ℕ) (hn : 2 ≤ n) : graphPermD n hn ≠ 1 := by
 /-- The two rank-two nodes are distinct, so exchanging them is not the identity. -/
 theorem lengthPermRankTwo_ne_one : lengthPermRankTwo ≠ 1 := by decide
 
+/-- The rank-two length permutation is the swap of the two nodes. This is its unfolding lemma;
+the normal form of its values is reversal, `lengthPermRankTwo_apply`. -/
+theorem lengthPermRankTwo_eq_swap : lengthPermRankTwo = Equiv.swap 0 1 := by
+  rw [lengthPermRankTwo]
+
 /-- On two nodes, exchanging them is reversal. -/
 theorem lengthPermRankTwo_apply (i : Fin 2) : lengthPermRankTwo i = i.rev := by
   fin_cases i <;> decide
