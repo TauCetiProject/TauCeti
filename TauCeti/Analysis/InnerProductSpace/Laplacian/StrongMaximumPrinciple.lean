@@ -235,14 +235,10 @@ theorem eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn (hU : IsOpen U) (ha : 
     (hUconn : IsPreconnected U) (hcont : ContinuousOn u (closure U))
     (hcd : ∀ x ∈ U, ContDiffAt ℝ 2 u x) (hlap : ∀ x ∈ U, 0 ≤ Δ u x)
     (hmax : IsMaxOn u (closure U) a) :
-    EqOn u (const E (u a)) (closure U) := by
-  have hint := eqOn_const_of_laplacian_nonneg_of_isMaxOn hU ha hUconn hcd hlap
-    (hmax.on_subset subset_closure)
-  intro x hx
-  have : (𝓝[U] x).NeBot := mem_closure_iff_nhdsWithin_neBot.1 hx
-  refine tendsto_nhds_unique ((hcont x hx).mono subset_closure) ?_
-  refine Tendsto.congr' ?_ tendsto_const_nhds
-  filter_upwards [self_mem_nhdsWithin] with y hy using (hint hy).symm
+    EqOn u (const E (u a)) (closure U) :=
+  (eqOn_const_of_laplacian_nonneg_of_isMaxOn hU ha hUconn hcd hlap
+    (hmax.on_subset subset_closure)).of_subset_closure hcont continuousOn_const subset_closure
+    Subset.rfl
 
 /-- **Strong minimum principle up to the boundary.** If `u` is continuous on `closure U`, is `C²`
 and superharmonic on the preconnected open set `U`, and attains its minimum over `closure U` at a
@@ -251,15 +247,10 @@ theorem eqOn_const_closure_of_laplacian_nonpos_of_isMinOn (hU : IsOpen U) (ha : 
     (hUconn : IsPreconnected U) (hcont : ContinuousOn u (closure U))
     (hcd : ∀ x ∈ U, ContDiffAt ℝ 2 u x) (hlap : ∀ x ∈ U, Δ u x ≤ 0)
     (hmin : IsMinOn u (closure U) a) :
-    EqOn u (const E (u a)) (closure U) := by
-  have h := eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn (u := -u) hU ha hUconn hcont.neg
-    (fun x hx => (hcd x hx).neg)
-    (fun x hx => by
-      rw [congrFun laplacian_neg x, Pi.neg_apply]
-      exact neg_nonneg.mpr (hlap x hx))
-    hmin.neg
-  intro x hx
-  simpa only [Pi.neg_apply, const_apply, neg_inj] using h hx
+    EqOn u (const E (u a)) (closure U) :=
+  (eqOn_const_of_laplacian_nonpos_of_isMinOn hU ha hUconn hcd hlap
+    (hmin.on_subset subset_closure)).of_subset_closure hcont continuousOn_const subset_closure
+    Subset.rfl
 
 /-- **Strong comparison principle up to the boundary.** Let `u` and `v` be continuous on
 `closure U` and `C²` on the preconnected open set `U`, with `Δ v ≤ Δ u` on `U`. If `u ≤ v` on
@@ -269,19 +260,10 @@ theorem eqOn_closure_of_laplacian_le_of_le_of_eq (hU : IsOpen U) (ha : a ∈ U)
     (hvcont : ContinuousOn v (closure U)) (hucd : ∀ x ∈ U, ContDiffAt ℝ 2 u x)
     (hvcd : ∀ x ∈ U, ContDiffAt ℝ 2 v x) (hlap : ∀ x ∈ U, Δ v x ≤ Δ u x)
     (hle : ∀ x ∈ closure U, u x ≤ v x) (heq : u a = v a) :
-    EqOn u v (closure U) := by
-  have h := eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn (u := u - v) hU ha hUconn
-    (hucont.sub hvcont) (fun x hx => (hucd x hx).sub (hvcd x hx))
-    (fun x hx => by
-      rw [(hucd x hx).laplacian_sub (hvcd x hx), sub_nonneg]
-      exact hlap x hx)
-    (fun x hx => by
-      simp only [mem_ofPred_eq, Pi.sub_apply, heq, sub_self, sub_nonpos]
-      exact hle x hx)
-  intro x hx
-  have hx' := h hx
-  simp only [Pi.sub_apply, const_apply, heq, sub_self, sub_eq_zero] at hx'
-  exact hx'
+    EqOn u v (closure U) :=
+  (eqOn_of_laplacian_le_of_le_of_eq hU ha hUconn hucd hvcd hlap
+    (fun x hx => hle x (subset_closure hx)) heq).of_subset_closure hucont hvcont subset_closure
+    Subset.rfl
 
 end Laplacian
 
