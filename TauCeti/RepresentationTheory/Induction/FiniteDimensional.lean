@@ -453,7 +453,7 @@ theorem indFDRepFunctor_map {k : Type u} {G : Type v} [Field k] [Group G]
 /-- **Induction from a finite-index subgroup is an additive functor**, which is what lets it be
 passed to the split Grothendieck group in
 `TauCeti.RepresentationTheory.RepresentationRing.Induction`. -/
-instance additive_indFDRepFunctor {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+instance indFDRepFunctor_additive {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
     [S.FiniteIndex] : (indFDRepFunctor (k := k) (S := S)).Additive where
   map_add {_ _} f g := indFDRepMap_add f g
 

@@ -18,24 +18,31 @@ on the groups or on the representations.
 
 ## Main statements
 
-* `Rep.indMap_add`: inducing an intertwiner along `φ` is additive.
+* `Rep.indMap_add`: inducing an intertwiner along `φ` is additive, and `Rep.indFunctor_additive`:
+  the same fact as a `CategoryTheory.Functor.Additive` instance for `Rep.indFunctor`.
 -/
 
 public section
 
 open CategoryTheory
 
-universe u v w
+universe u v w w'
 
 namespace Rep
 
 /-- **Induction of intertwiners is additive**: for any homomorphism of groups `φ : G →* H`,
-`Rep.indMap φ (f + g) = Rep.indMap φ f + Rep.indMap φ g`. Equivalently, `Rep.indFunctor` is an
-additive functor. -/
+`Rep.indMap φ (f + g) = Rep.indMap φ f + Rep.indMap φ g`. -/
 theorem indMap_add {k : Type u} {G : Type v} {H : Type w} [CommRing k] [Group G] [Group H]
-    (φ : G →* H) {A B : Rep.{u} k G} (f g : A ⟶ B) :
+    (φ : G →* H) {A B : Rep.{w'} k G} (f g : A ⟶ B) :
     Rep.indMap φ (f + g) = Rep.indMap φ f + Rep.indMap φ g := by
   ext h a
   simp [Rep.indMap, Rep.add_hom]
+
+/-- **Induction along a homomorphism of groups is an additive functor**, the functorial form of
+`Rep.indMap_add`. -/
+instance indFunctor_additive {k : Type u} {G : Type v} {H : Type w} [CommRing k] [Group G]
+    [Group H] (φ : G →* H) :
+    ((Rep.indFunctor k φ : Rep.{w'} k G ⥤ Rep k H)).Additive where
+  map_add {_ _} f g := indMap_add φ f g
 
 end Rep

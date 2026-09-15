@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Induction.Character
-public import TauCeti.RepresentationTheory.Induction.Projection
+public import TauCeti.RepresentationTheory.Induction.FiniteDimensionalProjection
 public import TauCeti.RepresentationTheory.RepresentationRing.Restriction
 
 /-!
@@ -29,11 +29,11 @@ representation of `G` -- it sends it to the permutation representation on `G ⧸
 
 which is `TauCeti.repRingInd_mul_repRingRes`. This is Frobenius reciprocity in its module form, and
 it is the projection formula `TauCeti.indFDRepProjection` of
-`TauCeti/RepresentationTheory/Induction/Projection.lean` read on isomorphism classes: the
-representation-level isomorphism `Ind_S^G (A ⊗ Res_S^G B) ≅ (Ind_S^G A) ⊗ B` becomes an identity
-of classes, and both sides of the displayed equation are additive in each variable, so the two
-classes generate the general case. Its immediate consequence is that the image of induction is an
-**ideal** of `R(G)`, `TauCeti.repRingIndIdeal` -- the object the Artin and Brauer induction
+`TauCeti/RepresentationTheory/Induction/FiniteDimensionalProjection.lean` read on isomorphism
+classes: the representation-level isomorphism `Ind_S^G (A ⊗ Res_S^G B) ≅ (Ind_S^G A) ⊗ B` becomes
+an identity of classes, and both sides of the displayed equation are additive in each variable, so
+the two classes generate the general case. Its immediate consequence is that the image of induction
+is an **ideal** of `R(G)`, `TauCeti.repRingIndIdeal` -- the object the Artin and Brauer induction
 theorems are statements about.
 
 On characters everything is as expected: the character of an induced virtual representation is the
@@ -42,18 +42,19 @@ formed by the two character homomorphisms, induction on `R(S)` and `TauCeti.indC
 
 ## Implementation notes
 
-`TauCeti.repRingInd` leaves the field and the group in independent universes, exactly as
-`TauCeti.repRingRes` does. The projection formula does not: tensoring an induced representation
-with a representation of `G` forces `G` into the universe of `k`, because `Rep.{w} k G` is monoidal
-only for `w` the universe of `k`. That restriction is inherited from `TauCeti.indProjection` and is
-discussed there; it is not a limitation of the representation ring.
+`TauCeti.repRingInd` and `TauCeti.repRingCharacter_repRingInd` leave the field and the group in
+independent universes, exactly as `TauCeti.repRingRes` does. `TauCeti.repRingInd_mul_repRingRes`
+and `TauCeti.repRingIndIdeal` do not: both are stated with `G` in the universe of `k`. That is a
+restriction of the current proof route rather than of the statements — it is inherited from
+`TauCeti.indFDRepProjection`, which is built from the `Rep`-level `TauCeti.indProjection`, and the
+same caveat is recorded there.
 
 ## Main definitions
 
 * `TauCeti.repRingInd`: induction from a finite-index subgroup, as an additive homomorphism of
   representation rings.
 * `TauCeti.repRingIndIdeal`: its image, as an ideal of the representation ring of the ambient
-  group.
+  group, for `G` in the universe of `k`.
 
 ## Main statements
 
@@ -107,7 +108,7 @@ theorem repRingCharacter_repRingInd (x : repRing k S) :
   have h := DFunLike.congr_fun (SplitK0.hom_ext
     (f := (repRingCharacter k G).toAddMonoidHom.comp (repRingInd k S))
     (g := (indClassFunAddHom S).comp (repRingCharacter k S).toAddMonoidHom)
-    fun A => by simp) x
+    fun A => by simp [indClassFun_ofFDRep_character]) x
   simpa using h
 
 end Definition
