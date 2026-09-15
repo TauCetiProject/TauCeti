@@ -21,8 +21,10 @@ The matrix convention is row generators (`range G.vecMulLinear`) and column synd
 (`ker H.mulVecLin`). In particular, omitting the conjugation computes a different dual.
 
 The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*,
-§§1.3–1.4. The declaration plan and orientation follow the formal prototype in
-`TauCetiRoadmap/AlgebraicCodingTheory/Suggested.lean`.
+§§1.3–1.4. The Hermitian-duality statements and pairing orientation follow the
+[formal prototype in `AlgebraicCodingTheory/Suggested.lean`][hermitian-prototype].
+
+[hermitian-prototype]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/368157aaeaf6d07617b20f935b6c7b1367b1aee0/TauCetiRoadmap/AlgebraicCodingTheory/Suggested.lean#L65-L100
 -/
 
 public section
