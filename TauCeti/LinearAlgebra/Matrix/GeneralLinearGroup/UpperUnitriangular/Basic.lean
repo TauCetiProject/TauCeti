@@ -196,15 +196,17 @@ theorem map_apply {S : Type*} [CommRing S] (f : R →+* S)
 /-- Base change along the identity ring homomorphism is the identity. -/
 @[simp]
 theorem map_id :
-    map (m := m) (RingHom.id R) = MonoidHom.id (upperUnitriangularGroup m R) :=
-  by rfl
+    map (m := m) (RingHom.id R) = MonoidHom.id (upperUnitriangularGroup m R) := by
+  ext x i j
+  simp only [map_apply, RingHom.id_apply, MonoidHom.id_apply]
 
 /-- Successive base changes agree with base change along the composite ring homomorphism. -/
 @[simp]
 theorem map_comp {S T : Type*} [CommRing S] [CommRing T]
     (f : R →+* S) (g : S →+* T) :
-    map (m := m) (g.comp f) = (map (m := m) g).comp (map (m := m) f) :=
-  by rfl
+    map (m := m) (g.comp f) = (map (m := m) g).comp (map (m := m) f) := by
+  ext x i j
+  simp only [map_apply, RingHom.coe_comp, Function.comp_apply, MonoidHom.coe_comp]
 
 /-- The natural linear action of every upper-unitriangular matrix is unipotent. -/
 theorem isUnipotent_toLin (g : upperUnitriangularGroup m R) :

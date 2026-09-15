@@ -128,15 +128,17 @@ theorem map_mk {S : Type v} [CommRing S] (phi : R →+* S) (a : Rˣ) (b : R) :
 
 /-- Entrywise mapping along the identity ring homomorphism is the identity. -/
 @[simp]
-theorem map_id : map (RingHom.id R) = MonoidHom.id (SL2Borel R) :=
-  by rfl
+theorem map_id : map (RingHom.id R) = MonoidHom.id (SL2Borel R) := by
+  ext x i j
+  simp only [map_apply, RingHom.id_apply, MonoidHom.id_apply]
 
 /-- Successive entrywise maps agree with mapping along the composite ring homomorphism. -/
 @[simp]
 theorem map_comp {S T : Type*} [CommRing S] [CommRing T]
     (f : R →+* S) (g : S →+* T) :
-    map (g.comp f) = (map g).comp (map f) :=
-  by rfl
+    map (g.comp f) = (map g).comp (map f) := by
+  ext x i j
+  simp only [map_apply, RingHom.coe_comp, Function.comp_apply, MonoidHom.coe_comp]
 
 /-- Every upper-triangular determinant-one matrix modulo a nilpotent ideal lifts to an
 upper-triangular determinant-one matrix. This is the infinitesimal lifting property used to prove
