@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Multiquadratic.GenusField
+public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Basic
 public import TauCeti.NumberTheory.Multiquadratic.MinusTwentyOne.Examples
 
 /-!
@@ -41,7 +41,7 @@ namespace TauCeti.Multiquadratic
 
 /-- The canonical prime-discriminant factorization of the fundamental discriminant of
 `ℚ(√-21)` is `-84 = (-4) · (-3) · (-7)`. -/
-theorem genusPrimeDiscriminants_neg_twenty_one (hd : Squarefree (-21 : ℤ)) :
+@[simp] theorem genusPrimeDiscriminants_neg_twenty_one (hd : Squarefree (-21 : ℤ)) :
     genusPrimeDiscriminants hd = {-4, -3, -7} := by
   apply genusPrimeDiscriminants_eq hd
   · intro P hP
@@ -64,7 +64,7 @@ roots of the prime-discriminant radicands is exactly
 The canonical roots and the displayed roots need not be definitionally equal, because the former
 are chosen using algebraic closure. Their squares agree, so each differs from the corresponding
 displayed root by at most a sign; adjoining either family therefore gives the same field. -/
-theorem candidateGenusField_neg_twenty_one_eq (hd : Squarefree (-21 : ℤ)) :
+@[simp] theorem candidateGenusField_neg_twenty_one_eq (hd : Squarefree (-21 : ℤ)) :
     candidateGenusField hd =
       (adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ) : IntermediateField ℚ ℂ) := by
   let F : IntermediateField ℚ ℂ :=
