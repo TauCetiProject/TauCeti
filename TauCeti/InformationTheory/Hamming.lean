@@ -16,22 +16,20 @@ coordinate type along an equivalence.
 
 public section
 
-open Function
-
-namespace TauCeti
+namespace Equiv
 
 variable {α ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq α]
 
 /-- Relabelling coordinates along an equivalence preserves the Hamming distance. -/
-theorem hammingDist_comp_equiv (e : κ ≃ ι) (x y : ι → α) :
+theorem hammingDist_comp (e : κ ≃ ι) (x y : ι → α) :
     hammingDist (x ∘ e) (y ∘ e) = hammingDist x y := by
-  simp only [hammingDist, comp_apply]
+  simp only [hammingDist, Function.comp_apply]
   exact Finset.card_equiv e (by simp)
 
 /-- Relabelling coordinates along an equivalence preserves the Hamming weight. -/
-theorem hammingNorm_comp_equiv [Zero α] (e : κ ≃ ι) (x : ι → α) :
+theorem hammingNorm_comp [Zero α] (e : κ ≃ ι) (x : ι → α) :
     hammingNorm (x ∘ e) = hammingNorm x := by
-  simp only [hammingNorm, comp_apply]
+  simp only [hammingNorm, Function.comp_apply]
   exact Finset.card_equiv e (by simp)
 
-end TauCeti
+end Equiv
