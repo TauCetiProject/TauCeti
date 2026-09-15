@@ -6,25 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Henselian
-public import Mathlib.RingTheory.LocalRing.RingHom.Basic
-public import Mathlib.RingTheory.RootsOfUnity.Basic
+public import TauCeti.RingTheory.RootsOfUnity.LocalRing
 
 /-!
-# Roots of unity of order invertible in a Henselian local ring
+# Roots of unity of invertible order in a Henselian local ring
 
 Reduction modulo the maximal ideal of a Henselian local ring `R` identifies the `n`-th roots
 of unity of `R` with those of its residue field, whenever `n` is invertible in `R`.
 
-Injectivity over a local ring follows because the geometric sum attached to a root of unity
-congruent to `1` is itself congruent to the invertible element `n`, hence is a unit. Surjectivity
-is Hensel's lemma applied to `X ^ n - 1`, whose roots are simple exactly because `n` is
-invertible.
+Surjectivity is Hensel's lemma applied to `X ^ n - 1`, whose roots are simple exactly because
+`n` is invertible.
 
 ## Main results
 
-* `TauCeti.eq_one_of_pow_eq_one_of_sub_one_mem`: in a domain, a root of unity of invertible order
-  that is congruent to `1` modulo a proper ideal is `1`.
-* `TauCeti.rootsOfUnityResidue`: the reduction homomorphism on roots of unity.
 * `TauCeti.rootsOfUnityResidue_bijective` and `TauCeti.rootsOfUnityEquivResidueField`: reduction
   is a bijection, and the resulting isomorphism with the roots of unity of the residue field.
 
@@ -41,69 +35,7 @@ open IsLocalRing Polynomial
 
 namespace TauCeti
 
-variable {R : Type*} [CommRing R]
-
-/-- In a commutative domain, a root of unity whose order is invertible and which is congruent to
-`1` modulo a proper ideal is equal to `1`. -/
-theorem eq_one_of_pow_eq_one_of_sub_one_mem [IsDomain R] {I : Ideal R} (hI : I ≠ ⊤) {n : ℕ}
-    (hn : IsUnit (n : R)) {ζ : R} (hζ : ζ ^ n = 1) (hmem : ζ - 1 ∈ I) : ζ = 1 := by
-  by_contra hne
-  have hgeom : ∑ i ∈ Finset.range n, ζ ^ i = 0 := by
-    have h := geom_sum_mul ζ n
-    rw [hζ, sub_self] at h
-    exact (mul_eq_zero.mp h).resolve_right (sub_ne_zero.mpr hne)
-  have hres : Ideal.Quotient.mk I ζ = 1 := by
-    have h : Ideal.Quotient.mk I (ζ - 1) = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr hmem
-    rwa [map_sub, map_one, sub_eq_zero] at h
-  refine hI (I.eq_top_of_isUnit_mem ?_ hn)
-  rw [← Ideal.Quotient.eq_zero_iff_mem, map_natCast]
-  have h := congrArg (Ideal.Quotient.mk I) hgeom
-  rw [map_sum, map_zero] at h
-  simpa [map_pow, hres] using h
-
-section LocalRing
-
-variable [IsLocalRing R]
-
-/-- Reduction modulo the maximal ideal, as a homomorphism between the groups of `n`-th roots of
-unity of a local ring and of its residue field. -/
-def rootsOfUnityResidue (n : ℕ) :
-    rootsOfUnity n R →* rootsOfUnity n (ResidueField R) :=
-  restrictRootsOfUnity (residue R) n
-
-/-- The value of the reduction homomorphism on roots of unity. -/
-@[simp]
-theorem coe_rootsOfUnityResidue (n : ℕ) (ζ : rootsOfUnity n R) :
-    ((rootsOfUnityResidue n ζ : (ResidueField R)ˣ) : ResidueField R) =
-      residue R ((ζ : Rˣ) : R) := by
-  rw [rootsOfUnityResidue, restrictRootsOfUnity_coe_apply]
-
-/-- **Distinct roots of unity of invertible order have distinct reductions.** -/
-theorem rootsOfUnityResidue_injective {n : ℕ} (hn : IsUnit (n : R)) :
-    Function.Injective (rootsOfUnityResidue (R := R) n) := by
-  refine (injective_iff_map_eq_one _).mpr fun ζ hζ ↦ ?_
-  have hval : residue R ((ζ : Rˣ) : R) = 1 := by
-    have h := congrArg
-      (fun x : rootsOfUnity n (ResidueField R) ↦ ((x : (ResidueField R)ˣ) : ResidueField R)) hζ
-    simpa using h
-  have hpow : ((ζ : Rˣ) : R) ^ n = 1 := (mem_rootsOfUnity' n _).mp ζ.2
-  let s := ∑ i ∈ Finset.range n, ((ζ : Rˣ) : R) ^ i
-  have hs : IsUnit s := by
-    rw [← residue_ne_zero_iff_isUnit]
-    have hres : residue R s = residue R (n : R) := by
-      simp [s, map_pow, hval]
-    rw [hres, residue_ne_zero_iff_isUnit]
-    exact hn
-  have hgeom : s * (((ζ : Rˣ) : R) - 1) = 0 := by
-    simpa [s, hpow] using geom_sum_mul ((ζ : Rˣ) : R) n
-  ext
-  exact sub_eq_zero.mp (hs.mul_right_eq_zero.mp hgeom)
-
-end LocalRing
-
-section Henselian
-
-variable [HenselianLocalRing R]
+variable {R : Type*} [CommRing R] [HenselianLocalRing R]
 
 /-- **Every root of unity of invertible order in the residue field lifts**, by Hensel's lemma
 applied to `X ^ n - 1`. -/
@@ -155,8 +87,6 @@ theorem coe_rootsOfUnityEquivResidueField {n : ℕ}
     (hn : IsUnit (n : R)) (ζ : rootsOfUnity n R) :
     ((rootsOfUnityEquivResidueField hn ζ : (ResidueField R)ˣ) : ResidueField R) =
       residue R ((ζ : Rˣ) : R) :=
-  (rfl)
-
-end Henselian
+  coe_rootsOfUnityResidue n ζ
 
 end TauCeti

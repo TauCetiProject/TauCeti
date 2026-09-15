@@ -14,7 +14,7 @@ public import Mathlib.RingTheory.RootsOfUnity.Basic
 For a finite field `F` with `q` elements, every unit satisfies `x ^ (q - 1) = 1`, so the group
 `μ_{q-1}` of `(q-1)`-st roots of unity is all of `Fˣ`. This file records that identification and
 the accompanying cast computation `(q - 1 : F) = -1`, which is what makes `q - 1` invertible in
-any ring whose residue field is `F`.
+any commutative local ring whose residue field is `F`.
 
 Mathlib has the statement for the prime fields (`ZMod.rootsOfUnity_eq_top`); the version here is
 for an arbitrary finite field and is indexed by `Nat.card`.

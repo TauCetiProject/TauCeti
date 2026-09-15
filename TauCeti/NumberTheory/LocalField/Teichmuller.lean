@@ -7,8 +7,8 @@ module
 
 public import TauCeti.FieldTheory.Finite.RootsOfUnity
 public import TauCeti.NumberTheory.LocalField.Henselian
-public import TauCeti.NumberTheory.LocalField.RootsOfUnity
 public import TauCeti.RingTheory.RootsOfUnity.Henselian
+public import TauCeti.RingTheory.RootsOfUnity.ValuativeRel
 
 /-!
 # The Teichmüller lift of a nonarchimedean local field
