@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.PrimeIdealZetaSum
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.IdealZetaSum
 public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
 
 /-!
