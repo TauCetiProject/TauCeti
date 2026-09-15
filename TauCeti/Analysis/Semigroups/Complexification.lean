@@ -29,6 +29,8 @@ transported back to real Banach spaces without weakening Hille--Yosida estimates
   complex linear.
 * `StronglyContinuousSemigroup.hasGrowthBound_complexify_iff`: complexification preserves a
   growth bound with exactly the same constants.
+* `StronglyContinuousSemigroup.mem_complexify_domain_iff`: the generator domain is determined
+  componentwise.
 * `ContractionSemigroup.complexify`: complexification of a contraction semigroup.
 
 ## References
@@ -41,6 +43,7 @@ public section
 
 noncomputable section
 
+open Filter
 open scoped NNReal Topology
 
 namespace TauCeti.Semigroups
@@ -165,6 +168,60 @@ omit [CompleteSpace X] in
 theorem HasGrowthBound.complexify {S : StronglyContinuousSemigroup X} {ω M : ℝ}
     (h : S.HasGrowthBound ω M) : S.complexify.HasGrowthBound ω M :=
   (S.hasGrowthBound_complexify_iff ω M).2 h
+
+omit [CompleteSpace X] in
+private theorem tendsto_complexify_genQuot_iff (S : StronglyContinuousSemigroup X)
+    (z y : TauCeti.Complexification X) :
+    Tendsto
+        (fun t : ℝ => (1 / t) • (S.complexify.realOperator t z - z))
+        (nhdsWithin 0 (Set.Ioi 0)) (𝓝 y) ↔
+      Tendsto (fun t : ℝ => (1 / t) • (S.realOperator t z.re - z.re))
+          (nhdsWithin 0 (Set.Ioi 0)) (𝓝 y.re) ∧
+        Tendsto (fun t : ℝ => (1 / t) • (S.realOperator t z.im - z.im))
+          (nhdsWithin 0 (Set.Ioi 0)) (𝓝 y.im) := by
+  rw [(equivProd X).toHomeomorph.isEmbedding.tendsto_nhds_iff, Prod.tendsto_iff]
+  simp only [ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_apply, equivProd_apply,
+    real_smul_re, real_smul_im, sub_re, sub_im, complexify_realOperator,
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.complexify_apply_re,
+    ContinuousLinearMap.complexify_apply_im]
+
+omit [CompleteSpace X] in
+/-- A vector belongs to the generator domain of the complexified semigroup exactly when its real
+and imaginary parts belong to the generator domain of the original semigroup. -/
+@[simp]
+theorem mem_complexify_domain_iff (S : StronglyContinuousSemigroup X)
+    (z : TauCeti.Complexification X) :
+    z ∈ S.complexify.domain ↔ z.re ∈ S.domain ∧ z.im ∈ S.domain := by
+  rw [S.complexify.mem_domain_iff_tendsto, S.mem_domain_iff_tendsto,
+    S.mem_domain_iff_tendsto]
+  constructor
+  · rintro ⟨y, hy⟩
+    exact ⟨⟨y.re, (S.tendsto_complexify_genQuot_iff z y).mp hy |>.1⟩,
+      ⟨y.im, (S.tendsto_complexify_genQuot_iff z y).mp hy |>.2⟩⟩
+  · rintro ⟨⟨yre, hre⟩, ⟨yim, him⟩⟩
+    exact ⟨⟨yre, yim⟩, (S.tendsto_complexify_genQuot_iff z ⟨yre, yim⟩).mpr ⟨hre, him⟩⟩
+
+omit [CompleteSpace X] in
+/-- The real generator of the complexified semigroup acts componentwise by the original
+generator. -/
+@[simp]
+theorem complexify_generator_apply (S : StronglyContinuousSemigroup X)
+    (z : S.complexify.domain) :
+    S.complexify.generator
+        ⟨z, by rw [S.complexify.generator_domain]; exact z.property⟩ =
+      ⟨S.generator ⟨(z : TauCeti.Complexification X).re,
+          by rw [S.generator_domain]
+             exact (S.mem_complexify_domain_iff z).mp z.property |>.1⟩,
+        S.generator ⟨(z : TauCeti.Complexification X).im,
+          by rw [S.generator_domain]
+             exact (S.mem_complexify_domain_iff z).mp z.property |>.2⟩⟩ := by
+  have hz := (S.mem_complexify_domain_iff z).mp z.property
+  let zre : S.domain := ⟨(z : TauCeti.Complexification X).re, hz.1⟩
+  let zim : S.domain := ⟨(z : TauCeti.Complexification X).im, hz.2⟩
+  apply S.complexify.generator_eq_of_tendsto z.property
+  apply (S.tendsto_complexify_genQuot_iff z _).mpr
+  simpa only [zre, zim, Subtype.coe_mk] using
+    And.intro (S.generator_tendsto zre) (S.generator_tendsto zim)
 
 end StronglyContinuousSemigroup
 
