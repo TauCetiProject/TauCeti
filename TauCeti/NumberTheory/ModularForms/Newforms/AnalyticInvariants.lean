@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Analysis.Analytic.Order
-import Mathlib.NumberTheory.LSeries.Injectivity
 public import TauCeti.NumberTheory.ModularForms.LFunction
 public import TauCeti.NumberTheory.ModularForms.Newforms.Newform
 
@@ -35,9 +33,6 @@ The constant `3` and this normalization follow Iwaniec--Kowalski, §5.1 and (5.7
 
 ## Main results
 
-* `CuspForm.L_ne_zero_of_qExpansion_coeff_ne_zero`: a nonzero positive-index coefficient makes
-  the entire L-function nonzero.
-* `CuspForm.entireExtension_eq`: uniqueness of the width-normalized entire continuation.
 * `HeckeRing.GL2.Newform.L_ne_zero`: the entire continuation is not identically zero.
 * `HeckeRing.GL2.Newform.analyticOrderAt_L_ne_top`: its order is finite at every point.
 * `HeckeRing.GL2.Newform.analyticRank_eq_analyticOrderNatAt`: any entire continuation agreeing
@@ -59,62 +54,6 @@ open Filter LSeries UpperHalfPlane
 
 open Matrix.SpecialLinearGroup CongruenceSubgroup
 open scoped MatrixGroups
-
-namespace CuspForm
-
-variable {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.IsArithmetic] {k : ℤ}
-
-/-- The entire L-function of a positive-weight cusp form is nonzero if one of its
-positive-index coefficients is nonzero. This ensures that its analytic order is finite. -/
-theorem L_ne_zero_of_qExpansion_coeff_ne_zero (f : CuspForm Γ k) (hk : 0 < k) {n : ℕ}
-    (hn : n ≠ 0) (hcoeff : (qExpansion Γ.strictWidthInfty f).coeff n ≠ 0) :
-    ModularForm.L hk f ≠ 0 := by
-  intro hL
-  have hzero :
-      (fun x : ℝ ↦ LSeries (fun m ↦ (qExpansion Γ.strictWidthInfty f).coeff m) x)
-        =ᶠ[atTop] 0 := by
-    filter_upwards [eventually_ge_atTop ((k : ℝ) / 2 + 2)] with x hx
-    have hs : (k : ℝ) / 2 + 1 < x := by linarith
-    simpa [hL] using CuspForm.LSeries_qExpansion_coeff_eq hk f hs
-  rcases LSeries_eventually_eq_zero_iff'.mp hzero with hzero | habscissa
-  · exact hcoeff (hzero n hn)
-  · have hfinite := (CuspForm.hasEntireExtension_qExpansion_coeff hk f).abscissa_lt_top
-    rw [habscissa] at hfinite
-    exact (lt_irrefl ⊤ hfinite).elim
-
-/-- A positive-weight cusp form with a nonzero positive-index coefficient has finite analytic
-order at every point. -/
-theorem analyticOrderAt_L_ne_top_of_qExpansion_coeff_ne_zero (f : CuspForm Γ k) (hk : 0 < k)
-    (s : ℂ) {n : ℕ} (hn : n ≠ 0)
-    (hcoeff : (qExpansion Γ.strictWidthInfty f).coeff n ≠ 0) :
-    analyticOrderAt (ModularForm.L hk f) s ≠ ⊤ := by
-  intro htop
-  apply f.L_ne_zero_of_qExpansion_coeff_ne_zero hk hn hcoeff
-  exact (AnalyticOnNhd.analyticOrderAt_eq_top_iff_eq_zero s fun _ ↦
-    (CuspForm.differentiable_L hk f).analyticAt _).mp htop
-
-/-- Any entire function agreeing with the coefficient Dirichlet series of a positive-weight
-cusp form on its convergence half-plane is the width-normalized entire L-function. -/
-theorem entireExtension_eq (f : CuspForm Γ k) (hk : 0 < k) {F : ℂ → ℂ}
-    (hF : Differentiable ℂ F)
-    (hFL : ∀ {s : ℂ}, (k : ℝ) / 2 + 1 < s.re →
-      F s = LSeries (fun n ↦ (qExpansion Γ.strictWidthInfty f).coeff n) s) :
-    F = fun s ↦ (Γ.strictWidthInfty : ℂ) ^ (-s) * ModularForm.L hk f s := by
-  exact (Complex.analyticOnNhd_univ_iff_differentiable.mpr hF).eq_of_eventuallyEq
-    (Complex.analyticOnNhd_univ_iff_differentiable.mpr
-      ((Differentiable.const_cpow differentiable_neg
-        (Or.inl (Complex.ofReal_ne_zero.mpr Γ.strictWidthInfty_pos.ne'))).mul
-        (CuspForm.differentiable_L hk f))) (by
-      refine Filter.eventuallyEq_iff_exists_mem.mpr
-        ⟨{s : ℂ | (k : ℝ) / 2 + 1 < s.re}, ?_, ?_⟩
-      · exact (isOpen_lt continuous_const Complex.continuous_re).mem_nhds (by
-          simp only [Set.mem_ofPred_eq, Complex.ofReal_re]
-          linarith : (((k : ℝ) / 2 + 2 : ℝ) : ℂ) ∈
-            {s : ℂ | (k : ℝ) / 2 + 1 < s.re})
-      · intro s hs
-        exact (hFL hs).trans (CuspForm.LSeries_qExpansion_coeff_eq hk f hs))
-
-end CuspForm
 
 namespace HeckeRing.GL2.Newform
 
@@ -157,7 +96,7 @@ theorem analyticRank_eq_analyticOrderNatAt (f : Newform N k) (hk : 0 < k)
     f.analyticRank hk = analyticOrderNatAt F ((k : ℂ) / 2) := by
   have hEq : F = ModularForm.L hk f.toCuspForm := by
     simpa [strictWidthInfty_Gamma1] using
-      (CuspForm.entireExtension_eq f.toCuspForm hk hF (by
+      (CuspForm.eq_strictWidthInfty_cpow_mul_L f.toCuspForm hk hF (by
         intro s hs
         simpa only [strictWidthInfty_Gamma1] using hFL hs))
   rw [analyticRank_def, hEq]
@@ -190,6 +129,7 @@ def analyticConductorAt (_f : Newform N k) (s : ℂ) : ℝ :=
 
 /-- In the arithmetic `s`-coordinate, the two archimedean parameters simplify to `s` and
 `s + 1`. -/
+@[simp]
 theorem analyticConductorAt_eq (f : Newform N k) (s : ℂ) :
     f.analyticConductorAt s =
       (N : ℝ) * (‖s‖ + 3) * (‖s + 1‖ + 3) := by
@@ -207,6 +147,7 @@ lemma analyticConductor_def (f : Newform N k) :
   (rfl)
 
 /-- The central analytic conductor in the arithmetic coordinate. -/
+@[simp]
 theorem analyticConductor_eq (f : Newform N k) :
     f.analyticConductor =
       (N : ℝ) * (‖(k : ℂ) / 2‖ + 3) * (‖(k : ℂ) / 2 + 1‖ + 3) := by
