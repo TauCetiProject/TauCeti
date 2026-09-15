@@ -29,6 +29,12 @@ sequence is what lets an inverse-limit argument over the finite quotients be run
 Mathlib's `IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed` in place of the
 directed form.
 
+The same count has a rigidity consequence. A continuous surjective endomorphism `f` of `G` pulls
+open subgroups back to open subgroups of the same index, injectively; on each of the finite fibers
+of the index an injective self-map is a bijection, so *every* open subgroup of `G` is a preimage
+`f ⁻¹' V`. This is the combinatorial half of the Hopf property of a topologically finitely
+generated profinite group.
+
 Only compactness of `G` is used, never total disconnectedness: for a connected compact group the
 statements below are trivial, since `⊤` is then the one open subgroup. The intended case is of
 course a profinite group, where the open subgroups carry all the information.
@@ -37,6 +43,8 @@ course a profinite group, where the open subgroups carry all the information.
 
 * `TauCeti.IsTopologicallyFinitelyGenerated.finite_openSubgroup_index_eq`: finitely many open
   subgroups of each index.
+* `TauCeti.IsTopologicallyFinitelyGenerated.openSubgroup_comap_surjective`: every open subgroup
+  is the preimage of an open subgroup along a continuous surjective endomorphism.
 * `TauCeti.IsTopologicallyFinitelyGenerated.countable_openSubgroup`,
   `TauCeti.IsTopologicallyFinitelyGenerated.countable_openNormalSubgroup`: countably many open
   subgroups, and countably many open normal subgroups.
@@ -110,6 +118,30 @@ theorem finite_openSubgroup_index_eq (hG : IsTopologicallyFinitelyGenerated G) (
       ⟨fun U ↦ (U.1 : Subgroup G).index_ne_zero_of_finite U.2⟩
     infer_instance
   · exact hG.finite_openSubgroup_index_eq_of_ne_zero n hn
+
+/-- **Pulling back open subgroups along a continuous surjective endomorphism is surjective.** If
+`f : G →* G` is continuous and surjective, every open subgroup of a topologically finitely
+generated compact group `G` is of the form `f ⁻¹' V` for an open subgroup `V`.
+
+Pulling back preserves the index and is injective, so on the finite set of open subgroups of a
+given index it is a bijection. -/
+theorem openSubgroup_comap_surjective (hG : IsTopologicallyFinitelyGenerated G) {f : G →* G}
+    (hf : Continuous f) (hsurj : Function.Surjective f) :
+    Function.Surjective fun V : OpenSubgroup G ↦ V.comap f hf := by
+  intro U
+  -- Pulling back preserves the index, so it restricts to the open subgroups of index `U.index`.
+  have hindex : ∀ V : OpenSubgroup G,
+      ((V.comap f hf : Subgroup G)).index = (V : Subgroup G).index := fun V ↦ by
+    rw [OpenSubgroup.toSubgroup_comap, Subgroup.index_comap_of_surjective _ hsurj]
+  have := hG.finite_openSubgroup_index_eq (U : Subgroup G).index
+  set Φ : {V : OpenSubgroup G // (V : Subgroup G).index = (U : Subgroup G).index} →
+      {V : OpenSubgroup G // (V : Subgroup G).index = (U : Subgroup G).index} := fun V ↦
+    ⟨V.1.comap f hf, (hindex V.1).trans V.2⟩ with hΦ
+  have hinj : Function.Injective Φ := fun V W hVW ↦
+    Subtype.ext (OpenSubgroup.toSubgroup_injective (Subgroup.comap_injective hsurj
+      (congrArg (fun X : OpenSubgroup G ↦ (X : Subgroup G)) (Subtype.ext_iff.mp hVW))))
+  obtain ⟨V, hV⟩ := Finite.injective_iff_surjective.mp hinj ⟨U, rfl⟩
+  exact ⟨V.1, congrArg Subtype.val hV⟩
 
 /-- A topologically finitely generated compact group has only countably many open subgroups: they
 are sorted into finitely many of each index. -/
