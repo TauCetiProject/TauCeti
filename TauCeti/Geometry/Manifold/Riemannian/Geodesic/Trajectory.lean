@@ -176,20 +176,24 @@ theorem IsGeodesicCurveOnFrom.eqOn_maximalGeodesic
 /-- The maximal geodesic with zero initial velocity is the constant curve. -/
 @[simp] theorem maximalGeodesic_zero_velocity (p : M) :
     maximalGeodesic I M p (0 : TangentSpace I p) = fun _ ↦ p := by
-  funext t
-  let a : ℝ := -(|t| + 1)
-  let b : ℝ := |t| + 1
-  have h0 : (0 : ℝ) ∈ Ioo a b := by
-    exact ⟨by dsimp [a]; linarith [abs_nonneg t], by dsimp [b]; linarith [abs_nonneg t]⟩
-  have ht : t ∈ Ioo a b := by
-    exact ⟨by dsimp [a]; linarith [neg_abs_le t], by dsimp [b]; linarith [le_abs_self t]⟩
   have hconst : IsMIntegralCurve
       (fun _ : ℝ ↦ TotalSpace.mk' E p (0 : TangentSpace I p)) (geodesicSpray I M) :=
     isMIntegralCurve_const (geodesicSpray_zero (I := I) (M := M) p)
-  have heq := (hconst.isMIntegralCurveOn (Ioo a b)).eqOn_maximalIntegralCurve
-    (contMDiff_one_geodesicSpray (I := I) (M := M)) h0 rfl ht
-  rw [maximalGeodesic]
-  exact congrArg TotalSpace.proj heq
+  have hdomain : maximalIntegralCurveInterval (geodesicSpray I M)
+      (TotalSpace.mk' E p (0 : TangentSpace I p)) = univ :=
+    (maximalIntegralCurveInterval_eq_univ_iff
+      (contMDiff_one_geodesicSpray (I := I) (M := M))).2 ⟨_, rfl, hconst⟩
+  have hmax : IsMIntegralCurve
+      (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p (0 : TangentSpace I p)))
+      (geodesicSpray I M) := by
+    rw [isMIntegralCurve_iff_isMIntegralCurveOn, ← hdomain]
+    exact isMIntegralCurveOn_maximalIntegralCurve
+      (contMDiff_one_geodesicSpray (I := I) (M := M))
+  have heq := isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless
+    (contMDiff_one_geodesicSpray (I := I) (M := M)) hmax hconst
+    (maximalIntegralCurve_zero (hdomain ▸ mem_univ 0))
+  funext t
+  exact congrArg TotalSpace.proj (congrFun heq t)
 
 /-- Rescaling the initial velocity rescales time along the maximal geodesic, whenever the displayed
 time belongs to the corresponding maximal interval. -/
