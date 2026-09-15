@@ -173,13 +173,14 @@ theorem det_mul_det_inv_sub_smul [DecidableEq ι] {R : Type*} [CommRing R] {S : 
 
 /-- The determinant of the inverse scale pencil. This is the determinant of the scale matrix
 carried by an exponential weight `exp (-trace ((S⁻¹ - c • Θ) * A) / 2)`. -/
-theorem det_nonsing_inv_inv_sub_smul [DecidableEq ι] {K : Type*} [Field K] {S : Matrix ι ι K}
-    (hS : IsUnit S.det) {Θ : Matrix ι ι K} {c : K} (hc : IsUnit (S⁻¹ - c • Θ).det) :
-    ((S⁻¹ - c • Θ)⁻¹).det = S.det / (1 - c • (Θ * S)).det := by
-  have hS0 : S.det ≠ 0 := isUnit_iff_ne_zero.1 hS
-  have hc0 : (S⁻¹ - c • Θ).det ≠ 0 := isUnit_iff_ne_zero.1 hc
-  rw [Matrix.det_nonsing_inv, Ring.inverse_eq_inv', ← det_mul_det_inv_sub_smul hS Θ c]
-  field_simp
+theorem det_nonsing_inv_inv_sub_smul [DecidableEq ι] {R : Type*} [CommRing R] {S : Matrix ι ι R}
+    (hS : IsUnit S.det) {Θ : Matrix ι ι R} {c : R} (hc : IsUnit (S⁻¹ - c • Θ).det) :
+    ((S⁻¹ - c • Θ)⁻¹).det = S.det * Ring.inverse (1 - c • (Θ * S)).det := by
+  have hpencil : IsUnit (1 - c • (Θ * S)).det := by
+    rw [← det_mul_det_inv_sub_smul hS Θ c]
+    exact hS.mul hc
+  rw [Matrix.det_nonsing_inv, Ring.eq_mul_inverse_iff_mul_eq _ _ _ hpencil,
+    ← det_mul_det_inv_sub_smul hS Θ c, mul_left_comm, Ring.inverse_mul_cancel _ hc, mul_one]
 
 end Det
 
