@@ -248,4 +248,16 @@ class-group image. -/
     LinearEquiv.symm_symm, LinearEquiv.trans_apply,
     Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk]
 
+/-- The ordinary class-group image of a relative sign vector corresponds to its class in the
+sign-space quotient. -/
+@[simp] theorem ordinaryElementaryTwoQuotientEquivRelativeSignQuotient_apply_signMap
+    (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d)
+    (v : candidateGenusFieldRelativeSignSubmodule hd) :
+    ordinaryElementaryTwoQuotientEquivRelativeSignQuotient hd hnsq hpos
+        (candidateGenusFieldOrdinaryClassGroupSignMap hd hnsq v) =
+      Submodule.Quotient.mk v := by
+  apply (ordinaryElementaryTwoQuotientEquivRelativeSignQuotient hd hnsq hpos).symm.injective
+  rw [LinearEquiv.symm_apply_apply,
+    ordinaryElementaryTwoQuotientEquivRelativeSignQuotient_symm_mk]
+
 end TauCeti.Multiquadratic
