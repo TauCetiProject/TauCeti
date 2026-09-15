@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Bialgebra.Hom
 public import TauCeti.Algebra.HopfAlgebra.Kernel
 
 /-!
@@ -368,10 +369,7 @@ theorem comap_id (I : HopfIdeal k H)
     [Module.Flat k (H ⧸ I.toIdeal)] :
     haveI : Module.Flat k
         (H ⧸ Ideal.comap (BialgHom.id k H : H →+* H) I.toIdeal) := by
-      -- `BialgHom.id_toAlgHom` does not rewrite the direct coercion to a ring homomorphism.
-      -- Reduce that coercion to `RingHom.id` so that `Ideal.comap_id` applies.
-      change Module.Flat k (H ⧸ Ideal.comap (RingHom.id H) I.toIdeal)
-      rwa [Ideal.comap_id]
+      rwa [BialgHom.id_toRingHom, Ideal.comap_id]
     I.comap (BialgHom.id k H) = I := by
   ext h
   simp only [mem_comap, BialgHom.coe_id, id_eq]
