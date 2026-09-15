@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
 
 The graded Ext--Euler pairing is Laurent-sesquilinear: the involution
 `LaurentPolynomial.invert` acts on its first argument and the second argument is linear. This file
-records its matrix in independently chosen finite bases and proves the corresponding change-of-basis
+records its matrix in independently chosen bases and proves the corresponding change-of-basis
 formula. The first coordinate matrix is transposed after applying `q ↦ q⁻¹` entrywise, while the
 second coordinate matrix is unchanged.
 
@@ -31,7 +31,7 @@ forms.
   vectors.
 * `TauCeti.gradedExtEulerMatrix_of_of`: when two basis vectors are object classes, their entry is
   the object-level graded Ext--Euler characteristic.
-* `TauCeti.gradedExtEulerMatrix_changeBasis`: changing the two bases transforms the matrix by an
+* `TauCeti.gradedExtEulerMatrix_basis_change`: changing the two bases transforms the matrix by an
   involution-transpose on the left and an ordinary coordinate matrix on the right.
 
 The convention follows Zsuzsanna Dancso and Anthony Licata, "Koszul algebras and flow lattices",
@@ -120,7 +120,7 @@ theorem gradedExtEulerMatrix_of_of
 matrix is transformed entrywise by `LaurentPolynomial.invert` and transposed, while the second
 basis matrix acts without the involution. This is the matrix law forced by q-antilinearity in the
 first argument and q-linearity in the second. -/
-theorem gradedExtEulerMatrix_changeBasis
+theorem gradedExtEulerMatrix_basis_change
     (hP : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed P)
     (hQ : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed Q)
     (hPshift : P.inverseImage (GradedExactStructure.abelian C e).shift.functor = P)

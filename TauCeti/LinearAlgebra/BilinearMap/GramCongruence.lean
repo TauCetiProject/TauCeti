@@ -28,7 +28,7 @@ argument. This gives the involution-transpose formula for a sesquilinear form.
   which reindexing a basis is the special case. Stated at the full sesquilinear generality
   `LinearMap.toMatrix₂Aux` accepts, since the equality is definitional.
 * `LinearMap.toMatrix₂Aux_mul_map_basis_toMatrixₛₗ`: the change-of-basis law for a
-  sesquilinear map over a commutative semiring, with each coordinate matrix transformed by the
+  sesquilinear map into a commutative semiring, with each coordinate matrix transformed by the
   ring homomorphism governing the corresponding argument.
 * `LinearMap.toMatrix₂Aux_mul_map_basis_toMatrix`: the change-of-basis law, oriented as Mathlib's
   is, with the change-of-basis matrices pushed into the codomain. The codomain need only be a
@@ -39,12 +39,12 @@ argument. This gives the involution-transpose formula for a sesquilinear form.
   by its square, namely `1`. This needs `CommRing S` and **no order**; the absolute-value
   statement is `congrArg abs` away and is left to the caller.
 
-The scalar ring `R` is a commutative semiring throughout; the statements differ in what they ask
-of the codomain. `toMatrix₂Aux_comp_index` needs only an additive commutative monoid carrying an
-`R`-action. The sesquilinear change-of-basis law has values in `R` itself. The bilinear law allows
-values in an `R`-algebra, which may be a **noncommutative** semiring: the proof uses only that the
-images of `algebraMap` are central. The determinant result needs a commutative ring, and `ℤ` as
-the scalars.
+The statements differ in what they ask of the codomain. `toMatrix₂Aux_comp_index` needs only an
+additive commutative monoid carrying the required actions. The sesquilinear change-of-basis law
+allows distinct source scalar rings and has values in a commutative semiring. The bilinear law
+allows values in an `R`-algebra, which may be a **noncommutative** semiring: the proof uses only
+that the images of `algebraMap` are central. The determinant result needs a commutative ring, and
+`ℤ` as the scalars.
 
 ## Implementation notes
 
@@ -82,9 +82,9 @@ end CompIndex
 
 section SesquilinearBasisChange
 
-variable {R M₁ M₂ ι₁ ι₂ ι₁' ι₂' : Type*} [CommSemiring R]
-  [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
-  {σ₁ σ₂ : R →+* R}
+variable {R₁ R₂ S M₁ M₂ ι₁ ι₂ ι₁' ι₂' : Type*} [CommSemiring R₁] [CommSemiring R₂]
+  [CommSemiring S] [AddCommMonoid M₁] [Module R₁ M₁] [AddCommMonoid M₂] [Module R₂ M₂]
+  {σ₁ : R₁ →+* S} {σ₂ : R₂ →+* S}
 
 /-- **Change of basis for a sesquilinear map.** If the first and second arguments are
 semilinear for `σ₁` and `σ₂`, respectively, then their coordinate matrices enter the
@@ -94,12 +94,12 @@ For a Laurent-sesquilinear pairing, `σ₁` is the involution `q ↦ q⁻¹` and
 identity, so the first factor is the involution-transpose of the change-of-basis matrix. -/
 @[simp]
 theorem toMatrix₂Aux_mul_map_basis_toMatrixₛₗ [Fintype ι₁] [Fintype ι₂]
-    (B : M₁ →ₛₗ[σ₁] M₂ →ₛₗ[σ₂] R) (b₁ : Module.Basis ι₁ R M₁)
-    (b₂ : Module.Basis ι₂ R M₂) (c₁ : Module.Basis ι₁' R M₁)
-    (c₂ : Module.Basis ι₂' R M₂) :
-    ((b₁.toMatrix c₁).map σ₁)ᵀ * toMatrix₂Aux R (b₁ : ι₁ → M₁) (b₂ : ι₂ → M₂) B *
+    (B : M₁ →ₛₗ[σ₁] M₂ →ₛₗ[σ₂] S) (b₁ : Module.Basis ι₁ R₁ M₁)
+    (b₂ : Module.Basis ι₂ R₂ M₂) (c₁ : Module.Basis ι₁' R₁ M₁)
+    (c₂ : Module.Basis ι₂' R₂ M₂) :
+    ((b₁.toMatrix c₁).map σ₁)ᵀ * toMatrix₂Aux S (b₁ : ι₁ → M₁) (b₂ : ι₂ → M₂) B *
         ((b₂.toMatrix c₂).map σ₂) =
-      toMatrix₂Aux R (c₁ : ι₁' → M₁) (c₂ : ι₂' → M₂) B := by
+      toMatrix₂Aux S (c₁ : ι₁' → M₁) (c₂ : ι₂' → M₂) B := by
   ext i j
   simp only [toMatrix₂Aux_apply, Matrix.mul_apply, Matrix.transpose_apply, Matrix.map_apply,
     Module.Basis.toMatrix_apply, Finset.sum_mul]
