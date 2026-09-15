@@ -23,8 +23,9 @@ This file therefore identifies
 `Cl(K) / Cl(K)²`
 
 with the quotient of the relative sign space by the line spanned by the negative-coordinate
-vector. This is the class-group half of the real genus-field isomorphism: restriction from the
-full candidate genus field to its maximal totally real subfield kills the same sign vector.
+vector. This is the class-group half of the real genus-field isomorphism; it is meant to be
+compared with the kernel of restriction from the full candidate genus field to its maximal
+totally real subfield once that field-side identification is available.
 
 The description is the real-quadratic counterpart of
 `autCandidateGenusFieldEquivElementaryTwoQuotient`, which handles the imaginary case directly
@@ -56,14 +57,13 @@ variable {d : ℤ}
 The value is `1 : ZMod 2` at a negative prime discriminant and `0` at a positive one. For
 positive `d`, the number of negative factors is even, so this vector belongs to
 `candidateGenusFieldRelativeSignSubmodule`. -/
-@[expose] noncomputable def candidateGenusFieldNegativeSign (hd : Squarefree d) :
+noncomputable def candidateGenusFieldNegativeSign (hd : Squarefree d) :
     {P // P ∈ genusPrimeDiscriminants hd} → ZMod 2 :=
   fun P => if P.1 < 0 then 1 else 0
 
 @[simp] theorem candidateGenusFieldNegativeSign_apply (hd : Squarefree d)
     (P : {P // P ∈ genusPrimeDiscriminants hd}) :
-    candidateGenusFieldNegativeSign hd P = if P.1 < 0 then 1 else 0 :=
-  rfl
+    candidateGenusFieldNegativeSign hd P = if P.1 < 0 then 1 else 0 := (rfl)
 
 /-- The narrow class of the chosen square root, viewed modulo squares. It generates the possible
 defect between the narrow and ordinary elementary-`2` class-group quotients. -/
@@ -105,18 +105,26 @@ theorem candidateGenusFieldBaseGenusCharLinearMap_narrowDefect (hd : Squarefree 
     simp [hP]
 
 /-- For positive `d`, the negative-coordinate vector has even parity and hence belongs to the
-relative sign space. This follows intrinsically from its realization as the genus-character
-vector of the narrow defect. -/
-theorem candidateGenusFieldNegativeSign_mem (hd : Squarefree d)
-    (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d) :
+relative sign space. Away from the degenerate radicand `d = 1`, which has no prime discriminants
+at all, this follows intrinsically from its realization as the genus-character vector of the
+narrow defect. -/
+theorem candidateGenusFieldNegativeSign_mem (hd : Squarefree d) (hpos : 0 < d) :
     candidateGenusFieldNegativeSign hd ∈ candidateGenusFieldRelativeSignSubmodule hd := by
-  rw [← candidateGenusFieldBaseGenusCharLinearMap_narrowDefect hd hnsq hpos,
-    ← range_candidateGenusFieldBaseGenusCharLinearMap hd hnsq]
-  exact ⟨candidateGenusFieldBaseNarrowDefect hd hnsq, rfl⟩
+  rcases eq_or_ne d 1 with rfl | hne
+  · have hempty : genusPrimeDiscriminants hd = ∅ :=
+      genusPrimeDiscriminants_eq hd (by simp)
+        (by rw [Finset.prod_empty, fundamentalDiscriminant_of_mod_four_eq_one (by decide)])
+    rw [mem_candidateGenusFieldRelativeSignSubmodule_iff]
+    exact Finset.sum_eq_zero fun P _ => (Finset.notMem_empty P.1 (hempty ▸ P.2)).elim
+  · have hnsq : ¬ IsSquare ((d : ℤ) : ℚ) :=
+      not_isSquare_intCast_of_squarefree_of_ne_one hd hne
+    rw [← candidateGenusFieldBaseGenusCharLinearMap_narrowDefect hd hnsq hpos,
+      ← range_candidateGenusFieldBaseGenusCharLinearMap hd hnsq]
+    exact ⟨candidateGenusFieldBaseNarrowDefect hd hnsq, rfl⟩
 
 /-- Forgetting positivity, transported through genus-character sign coordinates. This is the
 canonical surjection from the relative sign space onto `Cl(K) / Cl(K)²`. -/
-@[expose] noncomputable def candidateGenusFieldOrdinaryClassGroupSignMap (hd : Squarefree d)
+noncomputable def candidateGenusFieldOrdinaryClassGroupSignMap (hd : Squarefree d)
     (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) :
     candidateGenusFieldRelativeSignSubmodule hd →ₗ[ZMod 2]
       TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd)) :=
@@ -131,8 +139,7 @@ theorem candidateGenusFieldOrdinaryClassGroupSignMap_apply (hd : Squarefree d)
     (v : candidateGenusFieldRelativeSignSubmodule hd) :
     candidateGenusFieldOrdinaryClassGroupSignMap hd hnsq v =
       NarrowClassGroup.toClassGroupElementaryTwoQuotient (candidateGenusFieldBase hd)
-        ((narrowElementaryTwoQuotientEquivRelativeSign hd hnsq).symm v) :=
-  rfl
+        ((narrowElementaryTwoQuotientEquivRelativeSign hd hnsq).symm v) := (rfl)
 
 /-- The ordinary class-group sign map is surjective. -/
 theorem candidateGenusFieldOrdinaryClassGroupSignMap_surjective (hd : Squarefree d)
@@ -171,12 +178,8 @@ private theorem ker_toClassGroupElementaryTwoQuotient_eq_span_narrowDefect
       exact Submodule.zero_mem _
     · rw [hu]
       exact Submodule.mem_span_singleton_self _
-  · rw [Submodule.span_le]
-    intro x hx
-    rw [Set.mem_singleton_iff.mp hx]
-    change NarrowClassGroup.toClassGroupElementaryTwoQuotient (candidateGenusFieldBase hd)
-      (candidateGenusFieldBaseNarrowDefect hd hnsq) = 0
-    rw [candidateGenusFieldBaseNarrowDefect,
+  · rw [Submodule.span_le, Set.singleton_subset_iff, SetLike.mem_coe, LinearMap.mem_ker,
+      candidateGenusFieldBaseNarrowDefect,
       NarrowClassGroup.toClassGroupElementaryTwoQuotient_mk,
       NarrowClassGroup.toClassGroup_mkPrincipal]
     exact TauCeti.elementaryTwoQuotientMk_one
@@ -189,35 +192,34 @@ theorem ker_candidateGenusFieldOrdinaryClassGroupSignMap (hd : Squarefree d)
     LinearMap.ker (candidateGenusFieldOrdinaryClassGroupSignMap hd hnsq) =
       ZMod 2 ∙
         (⟨candidateGenusFieldNegativeSign hd,
-          candidateGenusFieldNegativeSign_mem hd hnsq hpos⟩ :
+          candidateGenusFieldNegativeSign_mem hd hpos⟩ :
             candidateGenusFieldRelativeSignSubmodule hd) := by
-  let e := narrowElementaryTwoQuotientEquivRelativeSign hd
-    hnsq
-  let z : candidateGenusFieldRelativeSignSubmodule hd :=
-    ⟨candidateGenusFieldNegativeSign hd, candidateGenusFieldNegativeSign_mem hd hnsq hpos⟩
-  have hez : e (candidateGenusFieldBaseNarrowDefect hd hnsq) = z := by
+  set z : candidateGenusFieldRelativeSignSubmodule hd :=
+    ⟨candidateGenusFieldNegativeSign hd, candidateGenusFieldNegativeSign_mem hd hpos⟩ with hzdef
+  have hez : narrowElementaryTwoQuotientEquivRelativeSign hd hnsq
+      (candidateGenusFieldBaseNarrowDefect hd hnsq) = z := by
     apply Subtype.ext
-    rw [narrowElementaryTwoQuotientEquivRelativeSign_apply_coe]
+    rw [narrowElementaryTwoQuotientEquivRelativeSign_apply_coe, hzdef]
     exact candidateGenusFieldBaseGenusCharLinearMap_narrowDefect hd hnsq hpos
+  have hz : candidateGenusFieldOrdinaryClassGroupSignMap hd hnsq z = 0 := by
+    rw [candidateGenusFieldOrdinaryClassGroupSignMap_apply, ← hez,
+      LinearEquiv.symm_apply_apply, ← LinearMap.mem_ker,
+      ker_toClassGroupElementaryTwoQuotient_eq_span_narrowDefect hd hnsq]
+    exact Submodule.mem_span_singleton_self _
   ext v
   constructor
   · intro hv
-    have hv' : e.symm v ∈ ZMod 2 ∙ candidateGenusFieldBaseNarrowDefect hd hnsq := by
-      rw [← ker_toClassGroupElementaryTwoQuotient_eq_span_narrowDefect hd hnsq]
-      exact hv
+    have hv' : (narrowElementaryTwoQuotientEquivRelativeSign hd hnsq).symm v ∈
+        ZMod 2 ∙ candidateGenusFieldBaseNarrowDefect hd hnsq := by
+      rw [← ker_toClassGroupElementaryTwoQuotient_eq_span_narrowDefect hd hnsq,
+        LinearMap.mem_ker, ← candidateGenusFieldOrdinaryClassGroupSignMap_apply]
+      exact LinearMap.mem_ker.mp hv
     obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp hv'
-    apply Submodule.mem_span_singleton.mpr
-    refine ⟨a, ?_⟩
-    change a • z = v
-    rw [← hez, ← map_smul, ha, e.apply_symm_apply]
+    refine Submodule.mem_span_singleton.mpr ⟨a, ?_⟩
+    rw [← hez, ← map_smul, ha, LinearEquiv.apply_symm_apply]
   · intro hv
     obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hv
-    rw [LinearMap.mem_ker, map_smul, show
-      candidateGenusFieldOrdinaryClassGroupSignMap hd hnsq z = 0 by
-        rw [candidateGenusFieldOrdinaryClassGroupSignMap_apply, ← hez,
-          e.symm_apply_apply, ← LinearMap.mem_ker,
-          ker_toClassGroupElementaryTwoQuotient_eq_span_narrowDefect hd hnsq]
-        exact Submodule.mem_span_singleton_self _, smul_zero]
+    rw [LinearMap.mem_ker, map_smul, hz, smul_zero]
 
 /-- **The ordinary elementary-`2` class-group quotient in sign coordinates.** For positive
 squarefree `d`, `Cl(ℚ(√d)) / Cl(ℚ(√d))²` is the even-parity sign space modulo the line generated
@@ -228,7 +230,7 @@ noncomputable def ordinaryElementaryTwoQuotientEquivRelativeSignQuotient
       (candidateGenusFieldRelativeSignSubmodule hd ⧸
         ZMod 2 ∙
           (⟨candidateGenusFieldNegativeSign hd,
-            candidateGenusFieldNegativeSign_mem hd hnsq hpos⟩ :
+            candidateGenusFieldNegativeSign_mem hd hpos⟩ :
               candidateGenusFieldRelativeSignSubmodule hd)) :=
   ((Submodule.quotEquivOfEq _ _
       (ker_candidateGenusFieldOrdinaryClassGroupSignMap hd hnsq hpos).symm).trans
