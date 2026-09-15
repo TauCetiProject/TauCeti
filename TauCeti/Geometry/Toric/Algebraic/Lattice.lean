@@ -195,7 +195,7 @@ noncomputable def IsIntegralLattice.realCharacter (h : IsIntegralLattice i) :
 /-- Extending an integral character and evaluating it on a lattice point recovers the integer
 value of the character, viewed as a real number. -/
 @[simp]
-theorem IsIntegralLattice.realCharacter_apply_lattice (h : IsIntegralLattice i)
+theorem IsIntegralLattice.realCharacter_apply (h : IsIntegralLattice i)
     (m : N →+ ℤ) (n : N) : h.realCharacter m (i n) = (m n : ℝ) := by
   simpa [IsIntegralLattice.realCharacter] using
     h.isBaseChange.toDual_comp_apply m.toIntLinearMap n
@@ -205,7 +205,7 @@ extension of that character. -/
 theorem IsIntegralLattice.eq_realCharacter (h : IsIntegralLattice i) {m : N →+ ℤ}
     {φ : Module.Dual ℝ V} (hφ : ∀ n, φ (i n) = (m n : ℝ)) : φ = h.realCharacter m :=
   h.isBaseChange.algHom_ext φ (h.realCharacter m) fun n ↦ by
-    simp only [AddMonoidHom.coe_toIntLinearMap, hφ, IsIntegralLattice.realCharacter_apply_lattice]
+    simp only [AddMonoidHom.coe_toIntLinearMap, hφ, IsIntegralLattice.realCharacter_apply]
 
 /-- Real extension of integral characters is injective. -/
 theorem IsIntegralLattice.realCharacter_injective (h : IsIntegralLattice i) :
