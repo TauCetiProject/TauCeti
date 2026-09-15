@@ -295,10 +295,7 @@ theorem explicitCor1Le_mk [(V.subgroupOf U).FiniteIndex]
           (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
           (AddMonoidHom.id M) continuous_id
           (fun x m => by
-            simp only [AddMonoidHom.id_apply, Subgroup.smul_def, ContinuousMonoidHom.coe_coe]
-            rw [Subgroup.subgroupOfContinuousMulEquivOfLe_apply]
-            change ((x : U) : G) • m = ((x : U) : G) • m
-            rfl) f) : H1 U M) := by
+            exact id_subgroupOfContinuousMulEquivOfLe_smul G M U V hVU x m) f) : H1 U M) := by
   rw [explicitCor1Le, AddMonoidHom.comp_apply, explicitMap1_mk, explicitCor1_mk]
 
 /-- **Relative degree-two corestriction** for an inclusion `V ≤ U` with `V` open *in `U`*; the
@@ -323,10 +320,7 @@ theorem explicitCor2Le_mk [(V.subgroupOf U).FiniteIndex]
           (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
           (AddMonoidHom.id M) continuous_id
           (fun x m => by
-            simp only [AddMonoidHom.id_apply, Subgroup.smul_def, ContinuousMonoidHom.coe_coe]
-            rw [Subgroup.subgroupOfContinuousMulEquivOfLe_apply]
-            change ((x : U) : G) • m = ((x : U) : G) • m
-            rfl) f) : H2 U M) := by
+            exact id_subgroupOfContinuousMulEquivOfLe_smul G M U V hVU x m) f) : H2 U M) := by
   rw [explicitCor2Le, AddMonoidHom.comp_apply, explicitMap2_mk, explicitCor2_mk]
 
 end Topological
