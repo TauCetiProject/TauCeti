@@ -9,10 +9,10 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Calculus.Morse.Basic
--- Private: the norm comparison between the gradient and Fréchet derivative and the mean value
--- inequality are used only to prove the local estimates below.
+-- Private: strict differentiability, the gradient/Fréchet-derivative norm comparison, and the
+-- mean value inequality are used only to prove the local estimates below.
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Calculus.Gradient
-import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Linearization of the negative-gradient field at a Morse critical point
@@ -43,6 +43,10 @@ results that identify the operator as the derivative of the gradient and prove s
   self-adjointness of the Hessian operator.
 * `ContDiffAt.hasFDerivAt_neg_gradient`: the derivative of `-∇ f` is the negative Hessian
   operator.
+* `TauCeti.negativeGradientRemainder`: the nonlinear part of the negative-gradient field after
+  subtracting its linearization at a chosen point.
+* `ContDiffAt.exists_lipschitzOnWith_negativeGradientRemainder`: on a sufficiently small ball,
+  the nonlinear remainder has any prescribed positive Lipschitz constant.
 * `ContDiffAt.neg_gradient_sub_linearization_isLittleO`: at a `C²` critical point the nonlinear
   remainder after subtracting the linearization is little-o of the displacement.
 * `ContDiffAt.exists_norm_gradient_le_mul_norm_sub` and
@@ -63,7 +67,7 @@ results that identify the operator as the derivative of the gradient and prove s
 public section
 
 open Filter InnerProductSpace Metric Set Topology
-open scoped Gradient
+open scoped Gradient NNReal
 
 noncomputable section
 
@@ -149,14 +153,112 @@ theorem hasFDerivAt_neg_gradient (hf : ContDiffAt ℝ 2 f x) :
     HasFDerivAt (-∇ f) (-hessianOperator f x) x :=
   (hasFDerivAt_gradient hf).neg
 
+end ContDiffAt
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {f : E → ℝ} {x : E}
+
+/-- The nonlinear remainder of the negative-gradient field after removing its linear part at `x`:
+
+`R_x(y) = -∇ f(y) + Hess_x(f)(y - x)`.
+
+This convention does not subtract the constant value `-∇ f x`; at a critical point that value
+vanishes, so `R_x` is exactly the first-order Taylor remainder. At a twice continuously
+differentiable point its derivative at `x` is zero. The small local Lipschitz estimate for this
+remainder is the nonlinear input to the Lyapunov--Perron construction of stable and unstable
+manifolds. -/
+noncomputable def negativeGradientRemainder (f : E → ℝ) (x y : E) : E :=
+  (-∇ f) y + hessianOperator f x (y - x)
+
+/-- Evaluation of the negative-gradient remainder. -/
+@[simp]
+lemma negativeGradientRemainder_apply (f : E → ℝ) (x y : E) :
+    negativeGradientRemainder f x y = (-∇ f) y + hessianOperator f x (y - x) :=
+  (rfl)
+
+/-- The negative-gradient field is its linearization plus its nonlinear remainder. -/
+lemma neg_gradient_eq_neg_hessianOperator_add_negativeGradientRemainder (f : E → ℝ)
+    (x y : E) :
+    (-∇ f) y = -hessianOperator f x (y - x) + negativeGradientRemainder f x y := by
+  rw [negativeGradientRemainder_apply]
+  abel
+
+/-- At a critical point, the nonlinear negative-gradient remainder vanishes at its base point. -/
+@[simp]
+lemma negativeGradientRemainder_self (hgrad : ∇ f x = 0) :
+    negativeGradientRemainder f x x = 0 := by
+  simp [negativeGradientRemainder_apply, hgrad]
+
+end TauCeti
+
+namespace ContDiffAt
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {f : E → ℝ} {x : E}
+
+open TauCeti
+
+/-- The negative-gradient remainder is continuously differentiable at its base point when the
+function is twice continuously differentiable there. -/
+theorem contDiffAt_negativeGradientRemainder (hf : ContDiffAt ℝ 2 f x) :
+    ContDiffAt ℝ 1 (negativeGradientRemainder f x) x := by
+  have hgrad : ContDiffAt ℝ 1 (∇ f) x :=
+    (InnerProductSpace.toDual ℝ E).symm.contDiff.contDiffAt.comp x
+      (hf.fderiv_right (by norm_num))
+  exact hgrad.neg.add <|
+    (hessianOperator f x).contDiff.contDiffAt.comp x (contDiffAt_id.sub contDiffAt_const)
+
+/-- At a twice continuously differentiable point, the derivative of the nonlinear
+negative-gradient remainder at its base point is zero. -/
+theorem hasFDerivAt_negativeGradientRemainder (hf : ContDiffAt ℝ 2 f x) :
+    HasFDerivAt (negativeGradientRemainder f x) (0 : E →L[ℝ] E) x := by
+  have hlinear : HasFDerivAt (fun y ↦ hessianOperator f x (y - x)) (hessianOperator f x) x := by
+    simpa only [map_sub] using
+      (hessianOperator f x).hasFDerivAt.sub_const (hessianOperator f x x)
+  have hfun : negativeGradientRemainder f x =
+      fun y ↦ (-∇ f) y + hessianOperator f x (y - x) :=
+    funext fun y ↦ negativeGradientRemainder_apply f x y
+  rw [hfun]
+  convert hf.hasFDerivAt_neg_gradient.add hlinear using 1
+  · ext y
+    rfl
+  · simp
+
+/-- At a twice continuously differentiable point, the nonlinear negative-gradient remainder is
+strictly differentiable with zero derivative. This is the two-point estimate needed by the
+contraction argument for the local stable-manifold theorem. -/
+theorem hasStrictFDerivAt_negativeGradientRemainder (hf : ContDiffAt ℝ 2 f x) :
+    HasStrictFDerivAt (negativeGradientRemainder f x) (0 : E →L[ℝ] E) x :=
+  hf.contDiffAt_negativeGradientRemainder.hasStrictFDerivAt'
+    hf.hasFDerivAt_negativeGradientRemainder one_ne_zero
+
+/-- On a sufficiently small closed ball about a twice continuously differentiable point, the
+nonlinear negative-gradient remainder has any prescribed positive Lipschitz constant.
+
+Unlike the one-point little-o estimate, this controls the difference of the remainder at two
+nearby points. It is therefore the estimate that makes the Lyapunov--Perron operator a contraction
+after its linear stable and unstable parts have been split. -/
+theorem exists_lipschitzOnWith_negativeGradientRemainder (hf : ContDiffAt ℝ 2 f x)
+    (epsilon : ℝ≥0) (hepsilon : 0 < epsilon) :
+    ∃ (r : ℝ), r > 0 ∧
+      LipschitzOnWith epsilon (negativeGradientRemainder f x) (Metric.closedBall x r) := by
+  obtain ⟨s, hs, hlip⟩ := hf.hasStrictFDerivAt_negativeGradientRemainder
+    |>.exists_lipschitzOnWith_of_nnnorm_lt epsilon (by simpa using hepsilon)
+  obtain ⟨r, hr, hrs⟩ := Metric.mem_nhds_iff.1 hs
+  refine ⟨r / 2, half_pos hr, hlip.mono fun y hy ↦ hrs ?_⟩
+  exact (Metric.mem_closedBall.1 hy).trans_lt (half_lt_self hr)
+
 /-- At a critical point of a twice continuously differentiable function, the negative-gradient
 field differs from its linearization by a term of order `o(‖y - x‖)`. This is the nonlinear
 remainder controlled in the local stable-manifold argument. -/
 theorem neg_gradient_sub_linearization_isLittleO (hf : ContDiffAt ℝ 2 f x) (hgrad : ∇ f x = 0) :
     (fun y ↦ (-∇ f) y + hessianOperator f x (y - x)) =o[nhds x]
       (fun y ↦ y - x) := by
-  have hrem := (hasFDerivAt_neg_gradient hf).isLittleO
-  simpa only [Pi.neg_apply, hgrad, neg_zero, sub_zero, neg_apply, sub_neg_eq_add] using hrem
+  have hrem := hf.hasFDerivAt_negativeGradientRemainder.isLittleO
+  rw [negativeGradientRemainder_self hgrad] at hrem
+  simpa only [negativeGradientRemainder_apply, sub_zero, zero_apply] using hrem
 
 /-- Near a critical point of a twice continuously differentiable function the gradient is bounded
 above by a multiple of the distance to that point: it vanishes at the point and is differentiable
