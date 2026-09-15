@@ -25,10 +25,11 @@ The dot-product convention and the resulting Euclidean dual follow Huffman and P
 
 public section
 
-namespace TauCeti.Submodule
+namespace Submodule
 
 open Matrix Module
 open LinearMap (BilinForm)
+open TauCeti
 
 variable {R ι : Type*} [CommSemiring R] [Fintype ι]
 
@@ -50,7 +51,6 @@ theorem mem_euclideanDual' {C : _root_.Submodule R (ι → R)} {y : ι → R} :
   constructor <;> intro h x hx <;> simpa only [dotProduct_comm] using h x hx
 
 /-- A word is dual to a generated code exactly when it is orthogonal to every generator. -/
-@[simp]
 theorem mem_euclideanDual_span {s : Set (ι → R)} {y : ι → R} :
     y ∈ euclideanDual (Submodule.span R s) ↔ ∀ ⦃x⦄, x ∈ s → x ⬝ᵥ y = 0 := by
   change y ∈ Submodule.orthogonalBilin (dotProductBilin R R) (Submodule.span R s) ↔ _
@@ -185,7 +185,7 @@ theorem eq_euclideanDual_iff {C : Submodule K (ι → K)} :
 
 /-- Over a finite field, the cardinalities of a code and its Euclidean dual multiply to the
 cardinality of the whole word space. -/
-theorem natCard_mul_natCard_euclideanDual [Finite K] (C : Submodule K (ι → K)) :
+theorem natCard_mul_natCard_euclideanDual (C : Submodule K (ι → K)) :
     Nat.card C * Nat.card (euclideanDual C) = Nat.card K ^ Fintype.card ι := by
   calc
     Nat.card C * Nat.card (euclideanDual C) =
@@ -197,4 +197,4 @@ theorem natCard_mul_natCard_euclideanDual [Finite K] (C : Submodule K (ι → K)
 
 end Field
 
-end TauCeti.Submodule
+end Submodule
