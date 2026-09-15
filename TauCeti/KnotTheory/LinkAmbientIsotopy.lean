@@ -375,6 +375,39 @@ theorem setoid_r_iff : (setoid I M n).r L K ↔ SmoothAmbientIsotopic L K :=
 
 end SmoothAmbientIsotopic
 
+/-! ### Ambient coordinate changes -/
+
+section Ambient
+
+variable {P : Type*} [TopologicalSpace P] [ChartedSpace H P] [IsManifold I ∞ P]
+
+/- Smooth ambient isotopy is preserved by transporting both links through an ambient
+diffeomorphism. -/
+theorem SmoothAmbientIsotopic.transDiffeomorph
+    (hLK : SmoothAmbientIsotopic L K) (e : M ≃ₘ⟮I, I⟯ P) :
+    SmoothAmbientIsotopic (L.transDiffeomorph e) (K.transDiffeomorph e) := by
+  obtain ⟨Φ, hΦ⟩ := hLK
+  apply SmoothAmbientIsotopic.of_diffeotopy (Φ.transDiffeomorph e)
+  intro i x
+  rw [Diffeotopy.final_apply, Diffeotopy.transDiffeomorph_apply]
+  simp only [SmoothLinkEmbedding.transDiffeomorph_apply, SmoothEmbedding.transDiffeomorph_apply]
+  simp only [e.symm_apply_apply]
+  change e (Φ (1, (L i) x)) = _
+  rw [← Φ.final_apply, hΦ]
+
+/- Smooth ambient isotopy is reflected by transporting both links through an ambient
+diffeomorphism. -/
+@[simp]
+theorem SmoothAmbientIsotopic.transDiffeomorph_iff [IsManifold I ∞ M] (e : M ≃ₘ⟮I, I⟯ P) :
+    SmoothAmbientIsotopic (L.transDiffeomorph e) (K.transDiffeomorph e) ↔
+      SmoothAmbientIsotopic L K := by
+  constructor
+  · intro h
+    simpa using h.transDiffeomorph e.symm
+  · exact fun h ↦ h.transDiffeomorph e
+
+end Ambient
+
 /-- Transporting every component by the final diffeomorphism of a single diffeotopy
 preserves smooth link equivalence. -/
 theorem smoothAmbientIsotopic_transDiffeomorph_final [IsManifold I ∞ M]
@@ -382,7 +415,7 @@ theorem smoothAmbientIsotopic_transDiffeomorph_final [IsManifold I ∞ M]
     SmoothAmbientIsotopic L (L.transDiffeomorph Φ.final) := by
   apply SmoothAmbientIsotopic.of_diffeotopy Φ
   intro i x
-  simp
+  simp [SmoothLinkEmbedding.transDiffeomorph_apply, Diffeotopy.final_apply]
 
 end SmoothLinkEmbedding
 

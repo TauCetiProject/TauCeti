@@ -95,6 +95,32 @@ attribute [simp] Diffeotopy.fst_apply
 
 variable (Φ : Diffeotopy J n M)
 
+/-! ### Ambient coordinate changes -/
+
+variable {P : Type*} [TopologicalSpace P] [ChartedSpace H P]
+
+/-- Transport a diffeotopy across an ambient diffeomorphism by conjugation. -/
+def transDiffeomorph (f : M ≃ₘ^n⟮J, J⟯ P) (Φ : Diffeotopy J n M) : Diffeotopy J n P where
+  toDiffeomorph :=
+    (Diffeomorph.prodCongr (_root_.Diffeomorph.refl (𝓡∂ 1) I n) f.symm).trans
+      (Φ.toDiffeomorph.trans
+        (Diffeomorph.prodCongr (_root_.Diffeomorph.refl (𝓡∂ 1) I n) f))
+  fst_apply p := by
+    unfold Diffeomorph.trans
+    exact Φ.fst_apply _
+  snd_apply_zero' x := by
+    unfold Diffeomorph.trans
+    change f (Φ.toDiffeomorph (0, f.symm x)).2 = x
+    rw [Φ.snd_apply_zero']
+    exact f.apply_symm_apply x
+
+@[simp]
+theorem transDiffeomorph_apply (f : M ≃ₘ^n⟮J, J⟯ P) (Φ : Diffeotopy J n M) (p : I × P) :
+    Φ.transDiffeomorph f p = f (Φ (p.1, f.symm p.2)) := by
+  change f (Φ.toDiffeomorph (p.1, f.symm p.2)).2 = _
+  rfl
+
+
 /-- Applying a diffeotopy returns the spatial component of its total diffeomorphism. -/
 @[simp]
 theorem coe_apply (p : I × M) : Φ p = (Φ.toDiffeomorph p).2 :=
