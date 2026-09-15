@@ -105,14 +105,9 @@ Casimir scalar — which is why the separation statement is phrased for the whol
 
 ## References
 
-This is the "central characters" half of the first item of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, together with that layer's
-`center_smul_isotypicComponent` target, "the centre acts on the `lam`-isotypic component by
-`chi_lam`". The target signature `centralCharacter` is pinned in the accompanying `Suggested.lean`,
-whose text fixes the route used here: the character is defined through the action of the centre on
-the one-dimensional top weight line of the Verma module, and is then shown to be the character of
-every highest weight module of that weight, the Casimir eigenvalue of Layer 5 being its value at
-the Casimir element.
+The highest weight theory this file belongs to is developed in
+`TauCetiRoadmap/RepresentationTheory/LieHighestWeight`.
+
 The name `TauCeti.centralCharacter` is already taken by the central character of a simple module
 over an arbitrary algebra (`TauCeti/RingTheory/Semisimple/CentralCharacter.lean`), obtained from
 Schur's lemma. That construction is not available here: it assumes `[IsAlgClosed K]`,
@@ -297,11 +292,9 @@ section Isotypic
 
 variable {mu : Dual K H}
 
-/-- **A central element acts on a copy of `L(lam)` by `chi_lam`.** A Lie submodule equivalent to
-`L(lam)` carries a highest weight vector of weight `lam` generating it, namely the image of
-`TauCeti.irreducibleQuotientGenerator`, and a homomorphism of Lie modules intertwines the two
-actions of `U(L)`; the equivalence transports the scalar to the submodule, and its inclusion
-transports it to the ambient module. -/
+/-- **A central element acts on a copy of `L(lam)` by `chi_lam`**: on a Lie submodule `N` of `M`
+equivalent to the irreducible quotient `L(lam)`, every element of the centre of `U(L)` acts by its
+value under the central character of `lam`. -/
 theorem representation_eq_vermaCentralCharacter_smul_of_nonempty_lieModuleEquiv
     (h : vermaGenerator b lam ≠ 0) {N : LieSubmodule K L M}
     (hN : Nonempty (N ≃ₗ⁅K,L⁆ irreducibleQuotient b lam)) (u : Subalgebra.center K U) {m : M}
@@ -338,15 +331,11 @@ theorem isotypicComponent_le_centralEigenLieSubmodule (h : vermaGenerator b lam 
   rw [UniversalEnvelopingAlgebra.mem_centralEigenLieSubmodule]
   exact representation_eq_vermaCentralCharacter_smul_of_nonempty_lieModuleEquiv h hP u hx
 
-/-- **The centre of `U(L)` acts on the `lam`-isotypic component by `chi_lam`**: the
-eigenvalue-of-the-centre refinement of the isotypic decomposition of Layer 6.
-
-The roadmap states this for a finite-dimensional `M`, and its `Suggested.lean` signature
-`center_smul_isotypicComponent` carries `[FiniteDimensional K M]`; that hypothesis is dropped
-here, because the argument never uses it. The isotypic component is by definition a sum of copies
-of `L(lam)`, each of which is a highest weight module of weight `lam`, whatever the ambient
-module; finite-dimensionality is what makes the component *large* (Layer 6's decomposition), not
-what makes the centre act on it by a scalar. -/
+/-- **The centre of `U(L)` acts on the `lam`-isotypic component by `chi_lam`**: a central
+element `u` acts on every element of `LieModule.isotypicComponent K L M (irreducibleQuotient b lam)`
+by the single scalar `chi_lam u`. This refines the isotypic decomposition of a module into
+eigenspaces of the centre. Neither finite-dimensionality of `M` nor dominance of `lam` is
+required. -/
 theorem representation_eq_vermaCentralCharacter_smul_of_mem_isotypicComponent
     (h : vermaGenerator b lam ≠ 0) (u : Subalgebra.center K U) {m : M}
     (hm : m ∈ LieModule.isotypicComponent K L M (irreducibleQuotient b lam)) :
@@ -355,11 +344,9 @@ theorem representation_eq_vermaCentralCharacter_smul_of_mem_isotypicComponent
   (UniversalEnvelopingAlgebra.mem_centralEigenLieSubmodule K L M).mp
     (isotypicComponent_le_centralEigenLieSubmodule h u hm)
 
-/-- **The centre acts on an `L(lam)`-isotypic module by `chi_lam`.** This is the form the
-single-weight criterion of Layer 6 feeds: that criterion concludes
-`LieModule.isotypicComponent K L M (irreducibleQuotient b lam) = ⊤` from a hypothesis on the
-weights of the highest weight vectors of `M`, and this reads the action of the whole centre off
-it. -/
+/-- **The centre acts on an `L(lam)`-isotypic module by `chi_lam`**: the form of the statement
+above for a module whose `lam`-isotypic component is everything, as supplied by
+`TauCeti.isotypicComponent_eq_top_of_forall_isHighestWeightVector`. -/
 theorem representation_eq_vermaCentralCharacter_smul_of_isotypicComponent_eq_top
     (h : vermaGenerator b lam ≠ 0)
     (htop : LieModule.isotypicComponent K L M (irreducibleQuotient b lam) = ⊤)
@@ -369,9 +356,9 @@ theorem representation_eq_vermaCentralCharacter_smul_of_isotypicComponent_eq_top
   representation_eq_vermaCentralCharacter_smul_of_mem_isotypicComponent h u
     (htop ▸ LieSubmodule.mem_top m)
 
-/-- **The Casimir element acts on the `lam`-isotypic component by the Casimir scalar.** The
-Layer 5 eigenvalue `⟨lam + rho, lam + rho⟩ - ⟨rho, rho⟩`, computed there on a highest weight
-module, is thereby the eigenvalue on the whole isotypic component. -/
+/-- **The Casimir element acts on the `lam`-isotypic component by the Casimir scalar**
+`⟨lam + rho, lam + rho⟩ - ⟨rho, rho⟩`, the specialization of the statement above to
+`TauCeti.casimirElement`. -/
 theorem representation_casimirElement_eq_casimirScalar_smul_of_mem_isotypicComponent
     (h : vermaGenerator b lam ≠ 0) {m : M}
     (hm : m ∈ LieModule.isotypicComponent K L M (irreducibleQuotient b lam)) :
@@ -381,9 +368,8 @@ theorem representation_casimirElement_eq_casimirScalar_smul_of_mem_isotypicCompo
     ⟨casimirElement K L, casimirElement_mem_center K L⟩ hm
   rwa [vermaCentralCharacter_casimirElement] at this
 
-/-- **Isotypic components with different central characters are disjoint.** A central element on
-which the two characters disagree acts on the intersection by two different scalars, so the
-intersection is `0`. -/
+/-- **Isotypic components with different central characters are disjoint**: if `chi_lam` and
+`chi_mu` differ, the `lam`- and `mu`-isotypic components of `M` meet only in `0`. -/
 theorem disjoint_isotypicComponent_of_vermaCentralCharacter_ne (h : vermaGenerator b lam ≠ 0)
     (h' : vermaGenerator b mu ≠ 0)
     (hne : vermaCentralCharacter b lam h ≠ vermaCentralCharacter b mu h') :
@@ -402,12 +388,11 @@ theorem disjoint_isotypicComponent_of_vermaCentralCharacter_ne (h : vermaGenerat
   · exact absurd (sub_eq_zero.mp hc) hu
   · exact hm0
 
-/-- **The Casimir element alone separates isotypic components with different Casimir scalars.**
-This is `TauCeti.disjoint_isotypicComponent_of_vermaCentralCharacter_ne` at the single central
-element `Omega`, whose character value is the Casimir scalar of Layer 5
-(`TauCeti.vermaCentralCharacter_casimirElement`). The Casimir element does not separate *all*
-distinct dominant integral weights — weights in different Weyl orbits can share a Casimir scalar —
-which is why the statement above is phrased for the whole centre. -/
+/-- **The Casimir element alone separates isotypic components with different Casimir scalars**:
+if `casimirScalar b lam ≠ casimirScalar b mu`, the two isotypic components of `M` meet only in `0`.
+The Casimir element does not separate *all* distinct dominant integral weights — weights in
+different Weyl orbits can share a Casimir scalar — which is why the statement above is phrased for
+the whole centre. -/
 theorem disjoint_isotypicComponent_of_casimirScalar_ne (h : vermaGenerator b lam ≠ 0)
     (h' : vermaGenerator b mu ≠ 0) (hne : casimirScalar b lam ≠ casimirScalar b mu) :
     Disjoint (LieModule.isotypicComponent K L M (irreducibleQuotient b lam))
