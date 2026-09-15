@@ -126,7 +126,10 @@ noncomputable def candidateGenusFieldConj (hd : Squarefree d) :
       Complex.conj_eq_iff_im.mpr (Complex.sq_nonneg_iff.mp hsquare)
 
 /-- The sign pattern of complex conjugation is supported exactly on the negative prime
-discriminants. This is the coordinate form used by the relative Galois-group quotient. -/
+discriminants. This is the coordinate form used by the relative Galois-group quotient.
+
+This is not a simp lemma because its left-hand side already reduces through the coordinate and
+generator-action simp lemmas. -/
 theorem candidateGenusFieldSignPattern_conj_apply (hd : Squarefree d)
     (P : {P // P ∈ genusPrimeDiscriminants hd}) :
     candidateGenusFieldSignPattern hd (candidateGenusFieldConj hd) P =
