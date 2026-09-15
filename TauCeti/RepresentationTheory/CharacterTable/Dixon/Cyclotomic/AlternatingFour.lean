@@ -224,6 +224,16 @@ def alternatingGroupFourModularCentralRows :
     (Cyclotomic.reduce 7 alternatingGroupFourDixonPrimeData.root)
     alternatingGroupFourExactCentralCharacterTable
 
+/-- A modular row is displayed exactly when it is the reduction of a row of the exact
+central-character table. -/
+@[simp]
+theorem mem_alternatingGroupFourModularCentralRows_iff
+    {a : AlternatingGroupFourClassIndex → ZMod 7} :
+    a ∈ alternatingGroupFourModularCentralRows ↔
+      ∃ i, (fun j ↦ Cyclotomic.reduce 7 alternatingGroupFourDixonPrimeData.root
+        (alternatingGroupFourExactCentralCharacterTable i j)) = a :=
+  alternatingGroupFourClassData.mem_rowsOfMap_iff _ _
+
 /-- Reduction at the chosen root preserves every exact central-character eigenrow equation. -/
 theorem isModularEigenrow_alternatingGroupFourExactCentralCharacterTable_zmod
     (i : AlternatingGroupFourClassIndex) :
