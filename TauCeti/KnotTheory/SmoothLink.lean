@@ -97,7 +97,6 @@ theorem mem_range_iff (L : SmoothLinkEmbedding I M n) (x : M) :
 /-- A point belongs to a smooth link exactly when it belongs to the image of one of its
 components.  This formulation is convenient when a downstream argument already has a pointwise
 membership statement for a component image. -/
-@[simp]
 theorem mem_range_iff_exists_component (L : SmoothLinkEmbedding I M n) (x : M) :
     x ∈ L.range ↔ ∃ i, x ∈ Set.range (L i) := by
   constructor
