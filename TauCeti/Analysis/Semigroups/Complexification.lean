@@ -154,6 +154,7 @@ theorem complexLinearOperator_complexify (S : StronglyContinuousSemigroup X) (t 
 
 /-- Complexification preserves exponential growth bounds, with exactly the same exponent and
 multiplicative constant. -/
+@[simp]
 theorem hasGrowthBound_complexify_iff (S : StronglyContinuousSemigroup X) (ω M : ℝ) :
     S.complexify.HasGrowthBound ω M ↔ S.HasGrowthBound ω M := by
   constructor
