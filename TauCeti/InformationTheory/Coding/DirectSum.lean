@@ -150,7 +150,7 @@ theorem hammingNorm_directSumEquivProd_symm (C : Submodule R (ι → R))
     (D : Submodule R (κ → R)) (x : C) (y : D) :
     hammingNorm ((directSumEquivProd C D).symm (x, y) : ι ⊕ κ → R) =
       hammingNorm x.1 + hammingNorm y.1 := by
-  rw [← TauCeti.hammingNorm_sumElim (β := fun _ ↦ R) x.1 y.1]
+  rw [← TauCeti.hammingNorm_sumElim x.1 y.1]
   apply congrArg hammingNorm
   funext i
   cases i <;> simp
@@ -162,7 +162,7 @@ theorem hammingDist_directSumEquivProd_symm (C : Submodule R (ι → R))
     hammingDist ((directSumEquivProd C D).symm (x, y) : ι ⊕ κ → R)
         ((directSumEquivProd C D).symm (x', y') : ι ⊕ κ → R) =
       hammingDist x.1 x'.1 + hammingDist y.1 y'.1 := by
-  rw [← TauCeti.hammingDist_sumElim (β := fun _ ↦ R) x.1 x'.1 y.1 y'.1]
+  rw [← TauCeti.hammingDist_sumElim x.1 x'.1 y.1 y'.1]
   apply congrArg₂ hammingDist
   · funext i
     cases i <;> simp

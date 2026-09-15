@@ -24,7 +24,7 @@ variable {ι κ : Type*} {β : ι ⊕ κ → Type*}
 /-- The Hamming distance between two pairs of words combined on a disjoint union is the sum of
 the distances between the respective words. -/
 @[simp]
-theorem hammingDist_sumElim [Fintype ι] [Fintype κ] [∀ z, DecidableEq (β z)]
+theorem hammingDist_sumRec [Fintype ι] [Fintype κ] [∀ z, DecidableEq (β z)]
     (x x' : ∀ i, β (.inl i)) (y y' : ∀ j, β (.inr j)) :
     hammingDist (Sum.rec (motive := β) x y) (Sum.rec (motive := β) x' y') =
       hammingDist x x' + hammingDist y y' := by
@@ -33,13 +33,29 @@ theorem hammingDist_sumElim [Fintype ι] [Fintype κ] [∀ z, DecidableEq (β z)
 
 /-- The Hamming weight of two words combined on a disjoint union is the sum of their weights. -/
 @[simp]
-theorem hammingNorm_sumElim [Fintype ι] [Fintype κ] [∀ z, DecidableEq (β z)]
+theorem hammingNorm_sumRec [Fintype ι] [Fintype κ] [∀ z, DecidableEq (β z)]
     [∀ z, Zero (β z)] (x : ∀ i, β (.inl i)) (y : ∀ j, β (.inr j)) :
     hammingNorm (Sum.rec (motive := β) x y) = hammingNorm x + hammingNorm y := by
   simpa only [← hammingDist_zero_right,
     show Sum.rec (motive := β) (0 : ∀ i, β (.inl i)) (0 : ∀ j, β (.inr j)) = 0 by
       funext z
       cases z <;> rfl] using
-    hammingDist_sumElim x (0 : ∀ i, β (.inl i)) y (0 : ∀ j, β (.inr j))
+    hammingDist_sumRec x (0 : ∀ i, β (.inl i)) y (0 : ∀ j, β (.inr j))
+
+/-- The Hamming distance between two pairs of words over a common alphabet, combined on a disjoint
+union, is the sum of the distances between the respective words. -/
+@[simp]
+theorem hammingDist_sumElim {A : Type*} [Fintype ι] [Fintype κ] [DecidableEq A]
+    (x x' : ι → A) (y y' : κ → A) :
+    hammingDist (Sum.elim x y) (Sum.elim x' y') = hammingDist x x' + hammingDist y y' :=
+  hammingDist_sumRec (β := fun _ ↦ A) x x' y y'
+
+/-- The Hamming weight of two words over a common alphabet, combined on a disjoint union, is the
+sum of their weights. -/
+@[simp]
+theorem hammingNorm_sumElim {A : Type*} [Fintype ι] [Fintype κ] [DecidableEq A] [Zero A]
+    (x : ι → A) (y : κ → A) :
+    hammingNorm (Sum.elim x y) = hammingNorm x + hammingNorm y :=
+  hammingNorm_sumRec (β := fun _ ↦ A) x y
 
 end TauCeti
