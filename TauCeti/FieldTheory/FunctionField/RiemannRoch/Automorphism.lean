@@ -51,16 +51,13 @@ variable (σ : F' ≃ₐ[F] F') (D : Divisor k F')
 /-- **`σ f` lies in `L(σ • D)` exactly when `f` lies in `L(D)`**: `σ` moves the valuation at a
 place to the valuation at the moved place, where the bound imposed by `σ • D` is the one `D`
 imposed before. -/
-@[simp]
+@[simp high]
 theorem mem_riemannRochSpace_smul_iff {f : F'} :
-    (∀ P, P.valuation (σ f) ≤ WithZero.exp (D.coeff (σ⁻¹ • P))) ↔
-      f ∈ riemannRochSpace D := by
-  rw [mem_riemannRochSpace_iff]
+    σ f ∈ riemannRochSpace (σ • D) ↔ f ∈ riemannRochSpace D := by
+  simp only [mem_riemannRochSpace_iff, AlgebraicGeometry.WeilDivisor.coeff_smul]
   constructor
   · intro h P
-    have hP := h (σ • P)
-    simpa only [Place.valuation_smul_apply, AlgebraicGeometry.WeilDivisor.coeff_smul,
-      inv_smul_smul] using hP
+    simpa only [Place.valuation_smul_apply, inv_smul_smul] using h (σ • P)
   · intro h Q
     have hQ := h (σ⁻¹ • Q)
     rwa [Place.valuation_smul, AlgEquiv.aut_inv, AlgEquiv.symm_symm] at hQ
@@ -74,13 +71,10 @@ theorem riemannRochSpace_map_smul :
   simp only [Submodule.mem_map, AlgEquiv.toLinearMap_apply, AlgEquiv.coe_restrictScalars]
   constructor
   · rintro ⟨f, hf, rfl⟩
-    rw [mem_riemannRochSpace_iff]
-    simpa only [AlgebraicGeometry.WeilDivisor.coeff_smul] using
-      (mem_riemannRochSpace_smul_iff σ D).mpr hf
+    exact (mem_riemannRochSpace_smul_iff σ D).mpr hf
   · intro hg
-    exact ⟨σ.symm g, (mem_riemannRochSpace_smul_iff σ D).mp (by
-      simpa only [mem_riemannRochSpace_iff, AlgebraicGeometry.WeilDivisor.coeff_smul,
-        AlgEquiv.apply_symm_apply] using hg), by simp⟩
+    exact ⟨σ.symm g, (mem_riemannRochSpace_smul_iff σ D).mp (by rwa [AlgEquiv.apply_symm_apply]),
+      by simp⟩
 
 /-- **The isomorphism of Riemann–Roch spaces induced by an automorphism**: `σ` restricts to a
 `k`-linear isomorphism `L(D) ≃ L(σ • D)`. -/
