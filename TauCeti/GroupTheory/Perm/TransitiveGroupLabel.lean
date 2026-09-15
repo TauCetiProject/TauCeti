@@ -98,6 +98,13 @@ def TransitiveGroupLabel {n : ℕ} (j : TransitiveGroupIndex n)
     (G : Subgroup (Perm (Fin n))) : Prop :=
   ∃ τ : Perm (Fin n), Subgroup.map (MulAut.conj τ).toMonoidHom G = referenceSubgroup n j
 
+/-- A transitive-group label is equivalent to the existence of a conjugating permutation. -/
+theorem transitiveGroupLabel_iff {n : ℕ} (j : TransitiveGroupIndex n)
+    (G : Subgroup (Perm (Fin n))) :
+    TransitiveGroupLabel j G ↔
+      ∃ τ : Perm (Fin n), Subgroup.map (MulAut.conj τ).toMonoidHom G = referenceSubgroup n j :=
+  (Iff.rfl)
+
 /-- The reference subgroup for `1T1` is the full symmetric group on one letter. -/
 @[simp]
 theorem referenceSubgroup_one (j : TransitiveGroupIndex 1) :
