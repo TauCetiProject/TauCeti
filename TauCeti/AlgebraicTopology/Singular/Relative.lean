@@ -193,6 +193,29 @@ lemma singularHomologyFunctor_map (n : ℕ) :
   rw [singularHomologyFunctor.eq_def, Functor.comp_map, singularHomologyMap.eq_def,
     SSetPair.homologyFunctor_map]
 
+/-- Relative singular homology is obtained by applying homology to the relative singular chain
+complex functor. -/
+lemma singularHomologyFunctor_eq_chainComplexFunctor (n : ℕ) :
+    singularHomologyFunctor R n =
+      (singularChainComplexFunctor C).obj R ⋙
+        HomologicalComplex.homologyFunctor C (ComplexShape.down ℕ) n := by
+  apply CategoryTheory.Functor.ext
+  · intro Q Q' g
+    simp only [Functor.comp_map]
+    rw [singularChainComplexFunctor_obj_map]
+    rw [Functor.map_comp, Functor.map_comp, eqToHom_map, eqToHom_map]
+    simp only [HomologicalComplex.homologyFunctor_map]
+    rw [singularHomologyFunctor_map]
+    simp only [← Category.assoc, eqToHom_trans]
+    apply eq_of_heq
+    simp only [singularHomologyMap.eq_def, eqToHom_comp_heq_iff,
+      comp_eqToHom_heq_iff, heq_eqToHom_comp_iff, heq_comp_eqToHom_iff]
+    exact (comp_eqToHom_heq _ _).symm
+  · intro Q
+    exact (singularHomologyFunctor_obj Q R n).trans <|
+      (congrArg (fun K : ChainComplex C ℕ ↦ K.homology n)
+        (singularChainComplexFunctor_obj_obj (C := C) Q R)).symm
+
 /-- The map from ambient singular homology to relative singular homology. -/
 noncomputable abbrev singularHomologyπ (n : ℕ) :
     (toSSetPair.obj P).right.homology R n ⟶ P.singularHomology R n :=
