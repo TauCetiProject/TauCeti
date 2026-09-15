@@ -13,9 +13,11 @@ import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 This file supplies local analytic bridges between the Riemannian distance and coordinate charts.
 If the chart derivative is bounded along a `C¹` path, the coordinate displacement of the path is
-bounded by that derivative bound times its Riemannian length. Near a point `x`, every continuous
-linear functional on `T_x M`, read in the extended chart at `x`, is Lipschitz with respect to the
-Riemannian distance with any constant strictly greater than its norm.
+bounded by that derivative bound times its Riemannian length. Fix a point `x` and `r > 1`. Every
+continuous linear functional on `T_x M`, read in the extended chart at `x`, satisfies a Lipschitz
+bound at the base point `x` for the Riemannian distance: for all `y` in a neighbourhood of `x`
+(depending on `r`), its displacement from `x` to `y` is at most `r` times its norm times the
+distance from `x` to `y`.
 
 This is the chart-level estimate needed when transferring vector-valued variation estimates to
 `Manifold.pathELength` in the Hopf--Rinow lower-semicontinuity argument.  The proof uses the
