@@ -244,6 +244,15 @@ theorem galHom_self {L : NormalLayer G} (T : LayerRefinement L L) :
     induction γ using QuotientGroup.induction_on with
     | H w => exact congrArg QuotientGroup.mk (Subtype.ext rfl)
 
+/-- The coefficient map attached to the trivial refinement is the identity on underlying linear
+maps. -/
+theorem repHom_self_toLinearMap {L : NormalLayer G} (T : LayerRefinement L L)
+    (F : Formation G) :
+    (T.repHom F).hom.toLinearMap =
+      (𝟙 (L.rep F) : L.rep F ⟶ L.rep F).hom.toLinearMap := by
+  ext x
+  rfl
+
 variable {a b c : NormalLayer G}
 
 /-- **Refinements compose:** enlarging the top field twice is one refinement. In field notation
@@ -265,6 +274,14 @@ theorem galHom_trans (T : LayerRefinement a b) (T' : LayerRefinement b c) :
     induction γ using QuotientGroup.induction_on with
     | H w => exact congrArg QuotientGroup.mk (Subtype.ext rfl)
 
+/-- The coefficient inclusions compose along a tower of refinements, on underlying linear maps. -/
+theorem repHom_trans_toLinearMap (T : LayerRefinement a b) (T' : LayerRefinement b c)
+    (F : Formation G) :
+    ((T.trans T').repHom F).hom.toLinearMap =
+      (((Rep.resFunctor T'.galHom).map (T.repHom F) ≫ T'.repHom F).hom.toLinearMap) := by
+  ext x
+  rfl
+
 /-! ### Inflation of layer cohomology -/
 
 /-- **Inflation of cohomology along a refinement of layers**, the map
@@ -280,22 +297,27 @@ def cohomologyInfl (T : LayerRefinement old new) (F : Formation G) (n : ℕ) :
     old.H F n ⟶ new.H F n :=
   groupCohomology.map T.galHom (T.repHom F) n
 
+/-- Inflation is Mathlib's cohomology map for the quotient homomorphism and coefficient
+inclusion attached to the refinement. -/
+theorem cohomologyInfl_def (T : LayerRefinement old new) (F : Formation G) (n : ℕ) :
+    T.cohomologyInfl F n = groupCohomology.map T.galHom (T.repHom F) n :=
+  (rfl)
+
 /-- **Inflating along the trivial refinement does nothing.** -/
 @[simp]
 theorem cohomologyInfl_self {L : NormalLayer G} (T : LayerRefinement L L) (F : Formation G)
     (n : ℕ) : T.cohomologyInfl F n = 𝟙 (L.H F n) := by
-  rw [cohomologyInfl, groupCohomology.map_congr T.galHom_self
-    (show (T.repHom F).hom.toLinearMap = (𝟙 (L.rep F) : L.rep F ⟶ L.rep F).hom.toLinearMap from
-      (rfl)) n, groupCohomology.map_id]
+  rw [cohomologyInfl_def, groupCohomology.map_congr T.galHom_self
+    (T.repHom_self_toLinearMap F) n, groupCohomology.map_id]
 
 /-- **Inflation of cohomology is functorial along a tower of refinements.** Inflating from `K/F`
 to `L/F` and then to `M/F` is inflating from `K/F` to `M/F`. -/
 theorem cohomologyInfl_trans (T : LayerRefinement a b) (T' : LayerRefinement b c)
     (F : Formation G) (n : ℕ) :
     (T.trans T').cohomologyInfl F n = T.cohomologyInfl F n ≫ T'.cohomologyInfl F n := by
-  rw [cohomologyInfl, cohomologyInfl, cohomologyInfl,
+  rw [cohomologyInfl_def, cohomologyInfl_def, cohomologyInfl_def,
     ← groupCohomology.map_comp T.galHom T'.galHom (T.repHom F) (T'.repHom F) n]
-  exact groupCohomology.map_congr (galHom_trans T T') (rfl) n
+  exact groupCohomology.map_congr (galHom_trans T T') (repHom_trans_toLinearMap T T' F) n
 
 /-- **In degree zero, inflation of cohomology is the identity of the ground level.** Read through
 the identification of `H⁰(U/V, A^V)` with the ground level `A^U`, inflating a class from the layer
