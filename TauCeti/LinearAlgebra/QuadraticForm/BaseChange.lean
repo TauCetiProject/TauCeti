@@ -431,11 +431,24 @@ theorem Nondegenerate.baseChange [Invertible (2 : K)]
   exact (TauCeti.nondegenerate_baseChange_iff (QuadraticMap.associated Q) b).2
     (QuadraticMap.nondegenerate_associated_iff.mpr hQ)
 
+/-- Over a basis with at most one index, every element of the base change is the pure tensor of its
+unique coordinate with the corresponding basis vector.  This isolates the tensor bookkeeping used
+to reduce statements about rank-at-most-one base changes to scalar multiples of one vector. -/
+private theorem eq_repr_baseChange_tmul_of_subsingleton {R M ι : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] [Subsingleton ι] {A : Type*} [CommRing A]
+    [Algebra R A] (b : Module.Basis ι R M) (x : A ⊗[R] M) (i : ι) :
+    x = (b.baseChange A).repr x i ⊗ₜ b i := by
+  let _ : Fintype ι := Fintype.ofFinite ι
+  conv_lhs => rw [← (b.baseChange A).sum_repr x]
+  rw [Fintype.sum_subsingleton _ i, Module.Basis.baseChange_apply, TensorProduct.smul_tmul',
+    smul_eq_mul, mul_one]
+
 /-- On a space of dimension at most one, a quadratic form is anisotropic exactly when its
-extension to a domain is anisotropic.  Dimension one is sharp: `⟨1, 1⟩` over `ℚ` is anisotropic,
-while its extension to `ℂ` is not. -/
+extension to a nontrivial ring without zero divisors is anisotropic.  Dimension one is sharp:
+`⟨1, 1⟩` over `ℚ` is anisotropic, while its extension to `ℂ` is not. -/
 theorem anisotropic_baseChange_iff_of_finrank_le_one [Invertible (2 : K)]
-    {A : Type*} [CommRing A] [IsDomain A] [Algebra K A] [FiniteDimensional K V]
+    {A : Type*} [CommRing A] [Nontrivial A] [NoZeroDivisors A] [Algebra K A]
+    [FiniteDimensional K V]
     {Q : _root_.QuadraticForm K V} (hV : Module.finrank K V ≤ 1) :
     (Q.baseChange A).Anisotropic ↔ Q.Anisotropic := by
   refine ⟨fun hQA ↦ ?_, fun hQ x hx ↦ ?_⟩
@@ -444,12 +457,8 @@ theorem anisotropic_baseChange_iff_of_finrank_le_one [Invertible (2 : K)]
   let b := Module.finBasis K V
   have : Subsingleton (Fin (Module.finrank K V)) := Fin.subsingleton_iff_le_one.mpr hV
   refine (b.baseChange A).ext_elem fun i ↦ ?_
-  -- In dimension at most one, `x` is the pure tensor of its only coordinate with `b i`.
-  have hxi : x = (b.baseChange A).repr x i ⊗ₜ b i := by
-    conv_lhs => rw [← (b.baseChange A).sum_repr x]
-    rw [Fintype.sum_subsingleton _ i, Module.Basis.baseChange_apply, TensorProduct.smul_tmul',
-      smul_eq_mul, mul_one]
-  rw [hxi, baseChange_tmul, Algebra.smul_def, mul_eq_zero, mul_self_eq_zero] at hx
+  rw [eq_repr_baseChange_tmul_of_subsingleton b x i, baseChange_tmul, Algebra.smul_def,
+    mul_eq_zero, mul_self_eq_zero] at hx
   rw [map_zero, Finsupp.zero_apply]
   refine hx.resolve_left fun h ↦ b.ne_zero i (hQ _ ?_)
   exact (FaithfulSMul.algebraMap_injective K A).eq_iff.mp (h.trans (map_zero _).symm)
