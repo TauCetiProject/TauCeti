@@ -597,7 +597,7 @@ theorem coindCochain2_mem_B2_of_mem_B2 (hcB : c ∈ B2 U A) :
 
 omit [CompactSpace G] [ContinuousSMul U A] in
 /-- The `A`-valued function assembling the primitive that rebuilds a continuous `2`-cocycle of `G`
-from its Shapiro image: the comparison cochain
+from its Shapiro image: the comparison function
 `TauCeti.ContCohomology.homogeneousHomotopy2` of `f` along `w`, evaluated at `1`. -/
 private noncomputable def shapiroPrimitive2 (f : G × G → DiscreteCoind G U A) (p : G × G) : A :=
   (homogeneousHomotopy2 f (fun x : G => ((w x : U) : G)) p.1 p.2 : DiscreteCoind G U A) 1
@@ -648,7 +648,7 @@ private theorem shapiroPrimitive2_smul (f : G × G → DiscreteCoind G U A) (u :
 
 include hw hwmul hccont in
 /-- **Every continuous `2`-cocycle of `G` is rebuilt from its Shapiro image**, up to the explicit
-coboundary whose primitive is the comparison cochain of
+coboundary whose primitive is the comparison function of
 `TauCeti.ContCohomology.homogeneous2_sub_comp` along `w`, evaluated at `1`. With
 `TauCeti.ContCohomology.shapiroCocycles2_coindCocycle2` this is what makes the Shapiro map
 bijective. -/

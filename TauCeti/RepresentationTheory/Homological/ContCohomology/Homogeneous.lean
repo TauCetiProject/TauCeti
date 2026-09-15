@@ -30,9 +30,11 @@ sum `TauCeti.ContCohomology.homogeneous2_d1` of its own homogeneous form.
 
 The reason to have the symmetric form is `TauCeti.ContCohomology.homogeneous2_sub_comp`: for an
 **arbitrary** map `v : G → G`, the values of a homogeneous `2`-cocycle at three points and at
-their images under `v` differ by the alternating sum of the explicit homogeneous `1`-cochain
-`TauCeti.ContCohomology.homogeneousHomotopy2`. This pointwise prism identity, applied to a
-retraction of `G` onto a subgroup, is the comparison used in Shapiro's lemma.
+their images under `v` differ by the alternating sum of the explicit two-variable comparison
+function `TauCeti.ContCohomology.homogeneousHomotopy2`. This pointwise prism identity, applied to a
+retraction of `G` onto a subgroup, is the comparison used in Shapiro's lemma. The comparison
+function is itself a homogeneous (that is, equivariant) `1`-cochain only for those `g` with which
+`v` commutes (`TauCeti.ContCohomology.homogeneousHomotopy2_smul`).
 
 Mathlib's `Rep.diagonalHomEquiv` is the bundled `k`-linear version of the same correspondence, for
 `Rep k G` and the diagonal resolution, and `ContinuousCohomology.homogeneousCochains` is the
@@ -46,8 +48,8 @@ change of coordinates on the cochains of that file.
 
 * `TauCeti.ContCohomology.homogeneous1` and `TauCeti.ContCohomology.homogeneous2`: the homogeneous
   forms of a `1`- and a `2`-cochain.
-* `TauCeti.ContCohomology.homogeneousHomotopy2`: the homogeneous `1`-cochain comparing the values
-  of a homogeneous `2`-cocycle at points with its values at their images under a self-map of `G`.
+* `TauCeti.ContCohomology.homogeneousHomotopy2`: the two-variable comparison function between the
+  values of a homogeneous `2`-cocycle at points and at their images under a self-map of `G`.
 
 ## Main statements
 
@@ -121,19 +123,21 @@ section Subtraction
 
 variable [AddGroup M] [DistribMulAction G M]
 
-/-- The homogeneous `1`-cochain in the pointwise prism identity comparing a homogeneous
-`2`-cocycle at points with its values at their images under a self-map `v` of `G`; see
-`TauCeti.ContCohomology.homogeneous2_sub_comp`. -/
+/-- The two-variable comparison function in the pointwise prism identity relating a homogeneous
+`2`-cocycle at points to its values at their images under a self-map `v` of `G`; see
+`TauCeti.ContCohomology.homogeneous2_sub_comp`. For arbitrary `v` it is not equivariant, so not a
+homogeneous cochain; `TauCeti.ContCohomology.homogeneousHomotopy2_smul` gives equivariance under
+those `g` with which `v` commutes. -/
 def homogeneousHomotopy2 (f : G × G → M) (v : G → G) (h₀ h₁ : G) : M :=
   homogeneous2 f (v h₀) h₀ h₁ - homogeneous2 f (v h₀) (v h₁) h₁
 
-/-- The defining formula for the comparison cochain. It is not a `simp` lemma: its right-hand side
+/-- The defining formula for the comparison function. It is not a `simp` lemma: its right-hand side
 is rewritten further by `TauCeti.ContCohomology.homogeneous2_apply`. -/
 theorem homogeneousHomotopy2_apply (f : G × G → M) (v : G → G) (h₀ h₁ : G) :
     homogeneousHomotopy2 f v h₀ h₁ =
       homogeneous2 f (v h₀) h₀ h₁ - homogeneous2 f (v h₀) (v h₁) h₁ := (rfl)
 
-/-- The comparison cochain is equivariant for any `g` that `v` commutes with. -/
+/-- The comparison function is equivariant for any `g` that `v` commutes with. -/
 theorem homogeneousHomotopy2_smul (f : G × G → M) (v : G → G) {g : G}
     (hv : ∀ x : G, v (g * x) = g * v x) (h₀ h₁ : G) :
     homogeneousHomotopy2 f v (g * h₀) (g * h₁) = g • homogeneousHomotopy2 f v h₀ h₁ := by
