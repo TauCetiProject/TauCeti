@@ -51,6 +51,7 @@ theorem mem_euclideanDual' {C : _root_.Submodule R (ι → R)} {y : ι → R} :
   constructor <;> intro h x hx <;> simpa only [dotProduct_comm] using h x hx
 
 /-- A word is dual to a generated code exactly when it is orthogonal to every generator. -/
+@[simp high]
 theorem mem_euclideanDual_span {s : Set (ι → R)} {y : ι → R} :
     y ∈ euclideanDual (Submodule.span R s) ↔ ∀ ⦃x⦄, x ∈ s → x ⬝ᵥ y = 0 := by
   simp only [euclideanDual, LinearMap.BilinForm.orthogonal, Submodule.mem_orthogonalBilin_span,

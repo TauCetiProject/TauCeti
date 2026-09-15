@@ -16,13 +16,14 @@ public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 # The dot product on `ι → R` is a perfect pairing
 
 Mathlib's `dotProductEquiv` identifies `ι → R`, for `ι` finite, with its own dual under the dot
-product. This file records the same fact in the form asked for by `LinearMap.IsPerfPair`, so that
-the dot product may be used directly as the pairing of a `RootPairing` or a `RootDatum` on `ι → R`.
+product. This file records the symmetry and perfectness of this pairing, so that the dot product
+may be used directly as the pairing of a `RootPairing` or a `RootDatum` on `ι → R`.
 
 ## Main results
 
 * `TauCeti.dotProductBilin_isPerfPair`: the dot product `dotProductBilin R R` on `ι → R` is a
   perfect pairing of that module with itself.
+* `TauCeti.isSymm_dotProductBilin`: the standard dot-product bilinear form is symmetric.
 * `TauCeti.linearIndependent_of_dotProduct_diagonal`: a family whose dot products against a second
   family vanish off the diagonal and are right-regular on it is linearly independent.
 -/
