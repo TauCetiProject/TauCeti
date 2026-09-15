@@ -39,13 +39,13 @@ fraction field `E`, and the residue field of `p` is assumed perfect, as it is wh
 
 ## Main results
 
-* `IsInertiaField.primesOver_eq_singleton` — `P` is the only prime of `B` over the prime of the
-  inertia field below it.
-* `IsInertiaField.ramificationIdxIn_eq` and `IsInertiaField.inertiaDegIn_eq_one` — over the
-  inertia field the ramification index is unchanged and the inertia degree is `1`.
-* `IsInertiaField.ramificationIdx_eq_one` and `IsInertiaField.inertiaDeg_eq_inertiaDegIn` — under
-  the inertia field the ramification index is `1` and the inertia degree is the full inertia
-  degree of `p`.
+* `TauCeti.IsInertiaField.primesOver_eq_singleton` — `P` is the only prime of `B` over the prime
+  of the inertia field below it.
+* `TauCeti.IsInertiaField.ramificationIdxIn_eq` and `TauCeti.IsInertiaField.inertiaDegIn_eq_one` —
+  over the inertia field the ramification index is unchanged and the inertia degree is `1`.
+* `TauCeti.IsInertiaField.ramificationIdx_eq_one` and
+  `TauCeti.IsInertiaField.inertiaDeg_eq_inertiaDegIn` — under the inertia field the ramification
+  index is `1` and the inertia degree is the full inertia degree of `p`.
 
 ## References
 
@@ -57,6 +57,8 @@ fraction field `E`, and the residue field of `p` is assumed perfect, as it is wh
 public section
 
 open Ideal MulAction Pointwise
+
+namespace TauCeti
 
 namespace IsInertiaField
 
@@ -162,3 +164,5 @@ theorem inertiaDeg_eq_inertiaDegIn :
   exact this.symm
 
 end IsInertiaField
+
+end TauCeti
