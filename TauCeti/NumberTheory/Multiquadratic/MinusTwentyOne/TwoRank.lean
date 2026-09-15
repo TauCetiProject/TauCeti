@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.TwoRank
 public import TauCeti.NumberTheory.Multiquadratic.MinusTwentyOne.Basic
-import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Examples.Lists
 
 /-!
 # The `2`-rank of the class group of `ℚ(√-21)`

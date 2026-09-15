@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import TauCeti.NumberTheory.Multiquadratic.MinusTwentyOne.Basic
 import Mathlib.Analysis.Real.Pi.Bounds
-import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Examples.Lists
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.RamifiedPrime.Independence
 import TauCeti.NumberTheory.NumberField.ClassGroupElementaryTwoQuotient
 import TauCeti.NumberTheory.NumberField.PrimeIdeal

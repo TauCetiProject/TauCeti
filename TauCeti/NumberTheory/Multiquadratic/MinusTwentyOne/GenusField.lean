@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.GenusField
+public import TauCeti.NumberTheory.Multiquadratic.MinusTwentyOne.Basic
 public import TauCeti.NumberTheory.Multiquadratic.MinusTwentyOne.Examples
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Square
 
