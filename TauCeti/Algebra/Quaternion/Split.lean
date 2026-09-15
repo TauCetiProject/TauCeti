@@ -40,7 +40,7 @@ arguments can use the constructions without unfolding the quaternion-basis imple
 
 * `TauCeti.QuaternionAlgebra.oneEquivMatrix`: the equivalence
   `ℍ[R,1,b] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R` for a unit `b`.
-* `TauCeti.QuaternionAlgebra.splitANegAEquiv`: the equivalence
+* `TauCeti.QuaternionAlgebra.aNegAEquivMatrix`: the equivalence
   `ℍ[R,a,-a] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R` for a unit `a`.
 
 ## References
@@ -219,12 +219,9 @@ private def splitANegAPreimage (a : Rˣ) (M : Matrix (Fin 2) (Fin 2) R) :
 private theorem splitANegAPreimage_apply_splitANegAAlgHom (a : Rˣ)
     (x : ℍ[R,(a : R),-(a : R)]) :
     splitANegAPreimage a (splitANegAAlgHom (a : R) x) = x := by
-  have htwo (z : R) : ⅟ (2 : R) * z * 2 = z := by
-    calc
-      ⅟ (2 : R) * z * 2 = (⅟ (2 : R) * 2) * z := by ring
-      _ = z := by rw [invOf_mul_self, one_mul]
   ext <;> simp [splitANegAPreimage, splitANegAAlgHom_apply] <;>
-    ring_nf <;> simp [htwo]
+    ring_nf
+  all_goals simpa [mul_assoc] using (invOf_two_mul_mul_two (R := R) _)
 
 private theorem splitANegAAlgHom_apply_splitANegAPreimage (a : Rˣ)
     (M : Matrix (Fin 2) (Fin 2) R) :
@@ -233,10 +230,6 @@ private theorem splitANegAAlgHom_apply_splitANegAPreimage (a : Rˣ)
     calc
       (a : R) * z * (↑(a⁻¹) : R) = ((a : R) * (↑(a⁻¹) : R)) * z := by ring
       _ = z := by rw [a.mul_inv, one_mul]
-  have htwo (z : R) : ⅟ (2 : R) * z * 2 = z := by
-    calc
-      ⅟ (2 : R) * z * 2 = (⅟ (2 : R) * 2) * z := by ring
-      _ = z := by rw [invOf_mul_self, one_mul]
   have hhalf (z : R) : ⅟ (2 : R) * z + ⅟ (2 : R) * z = z := by
     calc
       ⅟ (2 : R) * z + ⅟ (2 : R) * z = (⅟ (2 : R) + ⅟ (2 : R)) * z := by ring
@@ -244,55 +237,59 @@ private theorem splitANegAAlgHom_apply_splitANegAPreimage (a : Rˣ)
   rw [splitANegAAlgHom_apply]
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [splitANegAPreimage] <;> ring_nf <;> simp [hunit, htwo, hhalf]
+    simp [splitANegAPreimage] <;> ring_nf
+  all_goals first
+    | simpa [mul_assoc] using (invOf_two_mul_mul_two (R := R) _)
+    | simp [hunit, hhalf]
+  simpa only [mul_assoc] using (invOf_two_mul_mul_two (R := R) (M 0 1))
 
 /-- The explicit splitting `ℍ[R,a,-a] ≃ₐ[R] M₂(R)` for a unit `a`, over a commutative
 ring in which `2` is invertible. -/
-noncomputable def splitANegAEquiv (a : Rˣ) :
+noncomputable def aNegAEquivMatrix (a : Rˣ) :
     ℍ[R,(a : R),-(a : R)] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R :=
   AlgEquiv.ofBijective (splitANegAAlgHom (a : R)) ⟨
     Function.LeftInverse.injective (splitANegAPreimage_apply_splitANegAAlgHom a),
     Function.RightInverse.surjective (splitANegAAlgHom_apply_splitANegAPreimage a)⟩
 
 /-- The splitting equivalence is the standard matrix representation. -/
-theorem splitANegAEquiv_apply (a : Rˣ) (x : ℍ[R,(a : R),-(a : R)]) :
-    splitANegAEquiv a x =
+theorem aNegAEquivMatrix_apply (a : Rˣ) (x : ℍ[R,(a : R),-(a : R)]) :
+    aNegAEquivMatrix a x =
       !![x.re + (a : R) * x.imK, (a : R) * (x.imI - x.imJ);
          x.imI + x.imJ, x.re - (a : R) * x.imK] := by
   exact (AlgEquiv.ofBijective_apply _ _ x).trans (splitANegAAlgHom_apply (a : R) x)
 
 /-- The inverse of the splitting equivalence, in matrix coordinates. -/
-theorem splitANegAEquiv_symm_apply (a : Rˣ) (M : Matrix (Fin 2) (Fin 2) R) :
-    (splitANegAEquiv a).symm M =
+theorem aNegAEquivMatrix_symm_apply (a : Rˣ) (M : Matrix (Fin 2) (Fin 2) R) :
+    (aNegAEquivMatrix a).symm M =
       ⟨⅟ (2 : R) * (M 0 0 + M 1 1),
         ⅟ (2 : R) * (M 1 0 + (↑(a⁻¹) : R) * M 0 1),
         ⅟ (2 : R) * (M 1 0 - (↑(a⁻¹) : R) * M 0 1),
         ⅟ (2 : R) * ((↑(a⁻¹) : R) * (M 0 0 - M 1 1))⟩ := by
-  apply (splitANegAEquiv a).symm_apply_eq.mpr
+  apply (aNegAEquivMatrix a).symm_apply_eq.mpr
   exact ((AlgEquiv.ofBijective_apply _ _ _).trans
     (splitANegAAlgHom_apply_splitANegAPreimage a M)).symm
 
 /-- The first quaternion generator maps to `!![0, a; 1, 0]`. -/
 @[simp]
-theorem splitANegAEquiv_apply_i (a : Rˣ) :
-    splitANegAEquiv a ⟨0, 1, 0, 0⟩ = !![0, (a : R); 1, 0] := by
-  rw [splitANegAEquiv_apply]
+theorem aNegAEquivMatrix_apply_i (a : Rˣ) :
+    aNegAEquivMatrix a ⟨0, 1, 0, 0⟩ = !![0, (a : R); 1, 0] := by
+  rw [aNegAEquivMatrix_apply]
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
 /-- The second quaternion generator maps to `!![0, -a; 1, 0]`. -/
 @[simp]
-theorem splitANegAEquiv_apply_j (a : Rˣ) :
-    splitANegAEquiv a ⟨0, 0, 1, 0⟩ = !![0, -(a : R); 1, 0] := by
-  rw [splitANegAEquiv_apply]
+theorem aNegAEquivMatrix_apply_j (a : Rˣ) :
+    aNegAEquivMatrix a ⟨0, 0, 1, 0⟩ = !![0, -(a : R); 1, 0] := by
+  rw [aNegAEquivMatrix_apply]
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
 /-- The product of the two quaternion generators maps to `!![a, 0; 0, -a]`. -/
 @[simp]
-theorem splitANegAEquiv_apply_k (a : Rˣ) :
-    splitANegAEquiv a ⟨0, 0, 0, 1⟩ = !![(a : R), 0; 0, -(a : R)] := by
-  rw [splitANegAEquiv_apply]
+theorem aNegAEquivMatrix_apply_k (a : Rˣ) :
+    aNegAEquivMatrix a ⟨0, 0, 0, 1⟩ = !![(a : R), 0; 0, -(a : R)] := by
+  rw [aNegAEquivMatrix_apply]
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
