@@ -31,8 +31,6 @@ transported back to real Banach spaces without weakening Hille--Yosida estimates
   growth bound with exactly the same constants.
 * `StronglyContinuousSemigroup.mem_complexify_domain_iff`: the generator domain is determined
   componentwise.
-* `StronglyContinuousSemigroup.complexify_complexGenerator_apply`: the complex generator acts
-  componentwise.
 * `ContractionSemigroup.complexify`: complexification of a contraction semigroup.
 
 ## References
@@ -224,31 +222,6 @@ theorem complexify_generator_apply (S : StronglyContinuousSemigroup X)
   apply (S.tendsto_complexify_genQuot_iff z _).mpr
   simpa only [zre, zim, Subtype.coe_mk] using
     And.intro (S.generator_tendsto zre) (S.generator_tendsto zim)
-
-omit [CompleteSpace X] in
-/-- The complex generator of the complexified semigroup acts componentwise by the original real
-generator. -/
-theorem complexify_complexGenerator_apply (S : StronglyContinuousSemigroup X)
-    (z : (S.complexify.complexGenerator S.isComplexLinear_complexify).domain) :
-    S.complexify.complexGenerator S.isComplexLinear_complexify z =
-      ⟨S.generator ⟨(z : TauCeti.Complexification X).re,
-          by rw [S.generator_domain]
-             exact (S.mem_complexify_domain_iff z).mp (by
-               rw [← S.complexify.mem_complexDomain_iff S.isComplexLinear_complexify,
-                 ← S.complexify.complexGenerator_domain S.isComplexLinear_complexify]
-               exact z.property) |>.1⟩,
-        S.generator ⟨(z : TauCeti.Complexification X).im,
-          by rw [S.generator_domain]
-             exact (S.mem_complexify_domain_iff z).mp (by
-               rw [← S.complexify.mem_complexDomain_iff S.isComplexLinear_complexify,
-                 ← S.complexify.complexGenerator_domain S.isComplexLinear_complexify]
-               exact z.property) |>.2⟩⟩ := by
-  rw [S.complexify.complexGenerator_apply S.isComplexLinear_complexify]
-  let zdom : S.complexify.domain := ⟨z, by
-    rw [← S.complexify.mem_complexDomain_iff S.isComplexLinear_complexify,
-      ← S.complexify.complexGenerator_domain S.isComplexLinear_complexify]
-    exact z.property⟩
-  simpa only [zdom, Subtype.coe_mk] using S.complexify_generator_apply zdom
 
 end StronglyContinuousSemigroup
 
