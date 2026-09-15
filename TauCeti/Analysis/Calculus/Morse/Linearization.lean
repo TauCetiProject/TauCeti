@@ -186,7 +186,6 @@ lemma neg_gradient_eq_neg_hessianOperator_add_negativeGradientRemainder (f : E â
   abel
 
 /-- At a critical point, the nonlinear negative-gradient remainder vanishes at its base point. -/
-@[simp]
 lemma negativeGradientRemainder_self (hgrad : âˆ‡ f x = 0) :
     negativeGradientRemainder f x x = 0 := by
   simp [negativeGradientRemainder_apply, hgrad]
