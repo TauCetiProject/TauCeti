@@ -56,16 +56,16 @@ noncomputable def innerConjugationPointNatIso
     MulEquiv.toGrpIso (X := (HopfAlgebra.pointsFunctor (R := R) (H := H)).obj A)
       (MulAut.conj (extendPoint H A g)))
     fun {A B} f ↦ by
-    apply GrpCat.hom_ext
-    apply MonoidHom.ext
-    intro x
-    let x' : HopfAlgebra.points (R := R) (H := H) A := x
-    -- `NatIso.ofComponents` stores this naturality square through the categorical wrappers for
-    -- `GrpCat`; expose its pointwise form so the named point-map laws apply.
-    change MulAut.conj (extendPoint H B g)
-        (HopfAlgebra.mapPoints (H := H) f x') =
+    apply GrpCat.ext
+    -- Rewriting `GrpCat.comp_apply` and `pointsFunctor_map`, then unfolding
+    -- `MulEquiv.toGrpIso`, leaves `MulAut.conj_apply` unable to match: at rewrite
+    -- transparency, `pointsFunctor.obj A` is not the concrete point type.
+    change ∀ x : HopfAlgebra.points (R := R) (H := H) A,
+      MulAut.conj (extendPoint H B g)
+        (HopfAlgebra.mapPoints (H := H) f x) =
       HopfAlgebra.mapPoints (H := H) f
-        (MulAut.conj (extendPoint H A g) x')
+        (MulAut.conj (extendPoint H A g) x)
+    intro x
     rw [MulAut.conj_apply, MulAut.conj_apply]
     rw [HopfAlgebra.mapPoints_mul, HopfAlgebra.mapPoints_mul, HopfAlgebra.mapPoints_inv,
       HopfAlgebra.mapPoints_extendPoint]
@@ -95,29 +95,20 @@ theorem innerConjugationPointNatIso_inv_app_apply
   dsimp only [MulEquiv.toGrpIso]
   exact MulAut.conj_symm_apply (extendPoint H A g) x
 
-private theorem pointNatIso_ext
-    {e₁ e₂ : HopfAlgebra.pointsFunctor.{u, w, v} (R := R) (H := H) ≅
-      HopfAlgebra.pointsFunctor.{u, w, v} (R := R) (H := H)}
-    (h : ∀ (A : CommAlgCat.{v} R) (x : HopfAlgebra.points (R := R) (H := H) A),
-      e₁.hom.app A x = e₂.hom.app A x) : e₁ = e₂ := by
-  apply Iso.ext
-  apply NatTrans.ext
-  funext A
-  apply GrpCat.hom_ext
-  apply MonoidHom.ext
-  exact h A
-
 /-- Conjugation by the identity point is the identity automorphism of the functor of points. -/
 @[simp]
 theorem innerConjugationPointNatIso_one :
     innerConjugationPointNatIso H
         (1 : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) =
       Iso.refl _ := by
-  apply pointNatIso_ext
+  apply Iso.ext
+  apply pointsFunctor_hom_ext
   intro A x
   rw [innerConjugationPointNatIso_hom_app_apply]
   simp only [map_one, inv_one, one_mul, mul_one]
-  -- The component of the identity natural isomorphism is the identity `GrpCat` morphism.
+  rw [Iso.refl_hom, NatTrans.id_app]
+  -- `GrpCat.id_apply` cannot match `pointsFunctor.obj A` with the concrete point
+  -- type at rewrite transparency; restore the concrete object first.
   change x = (𝟙 (HopfAlgebra.points (R := R) (H := H) A)) x
   exact (GrpCat.id_apply _ x).symm
 
@@ -128,11 +119,13 @@ theorem innerConjugationPointNatIso_mul
     (g h : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
     innerConjugationPointNatIso H (g * h) =
       (innerConjugationPointNatIso H h).trans (innerConjugationPointNatIso H g) := by
-  apply pointNatIso_ext
+  apply Iso.ext
+  apply pointsFunctor_hom_ext
   intro A x
   rw [innerConjugationPointNatIso_hom_app_apply]
-  -- After extensionality, this is the residual application rule for the composite `GrpCat`
-  -- morphism stored by `Iso.trans`; the following rewrites use the public component equations.
+  rw [Iso.trans_hom, NatTrans.comp_app]
+  -- `GrpCat.comp_apply` cannot match the functor-object and concrete-point types
+  -- at rewrite transparency; state its pointwise composition equation directly.
   change extendPoint H A (g * h) * x * (extendPoint H A (g * h))⁻¹ =
     (innerConjugationPointNatIso H g).hom.app A
       ((innerConjugationPointNatIso H h).hom.app A x)
@@ -142,10 +135,11 @@ theorem innerConjugationPointNatIso_mul
 
 /-- Conjugation by an inverse point is inverse to conjugation by the original point. -/
 @[simp]
-theorem innerConjugationPointNatIso_inv
+theorem innerConjugationPointNatIso_inv_point
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
     innerConjugationPointNatIso H g⁻¹ = (innerConjugationPointNatIso H g).symm := by
-  apply pointNatIso_ext
+  apply Iso.ext
+  apply pointsFunctor_hom_ext
   intro A x
   rw [innerConjugationPointNatIso_hom_app_apply, Iso.symm_hom,
     innerConjugationPointNatIso_inv_app_apply, map_inv, inv_inv]
