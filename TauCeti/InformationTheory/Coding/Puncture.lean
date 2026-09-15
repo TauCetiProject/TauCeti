@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.InformationTheory.Coding.Basic
 
 /-!
@@ -160,14 +159,6 @@ theorem shorten_reindex {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) (s :
     · intro j
       exact (hxu _).trans (huy j)
 
-/-- The canonical inverse equivalence sends a flattened retained coordinate to the nested
-coordinate with the same underlying index. -/
-private theorem subtypeSubtypeEquivSubtypeExists_symm_eq {s : Set ι} {t : Set s}
-    (j : {i | ∃ hi : i ∈ s, (⟨i, hi⟩ : s) ∈ t}) :
-    (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm j =
-      ⟨⟨j, j.2.choose⟩, j.2.choose_spec⟩ :=
-  Subtype.ext <| Subtype.ext <| Equiv.subtypeSubtypeEquivSubtypeExists_symm_apply_coe_coe _ _ j
-
 /-- Puncturing twice is puncturing once to the flattened set of retained coordinates, up to the
 canonical equivalence between a subtype of a subtype and the corresponding subtype. -/
 @[simp]
@@ -184,7 +175,8 @@ theorem puncture_puncture (C : LinearCode R ι) (s : Set ι) (t : Set s) :
     refine mem_puncture.mpr ⟨x, hxC, fun j ↦ ?_⟩
     let jt : t := ⟨⟨j, j.2.choose⟩, j.2.choose_spec⟩
     have hj : (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm j = jt :=
-      subtypeSubtypeEquivSubtypeExists_symm_eq j
+      Subtype.ext <| Subtype.ext <|
+        Equiv.subtypeSubtypeEquivSubtypeExists_symm_apply_coe_coe _ _ j
     exact (hxz jt).trans ((hzv jt).trans (hj ▸ hvy j))
   · intro hy
     obtain ⟨x, hxC, hxy⟩ := mem_puncture.mp hy
@@ -218,7 +210,8 @@ theorem shorten_shorten (C : LinearCode R ι) (s : Set ι) (t : Set s) :
       · exact hx0 i his
     · let jt : t := ⟨⟨j, j.2.choose⟩, j.2.choose_spec⟩
       have hj : (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm j = jt :=
-        subtypeSubtypeEquivSubtypeExists_symm_eq j
+        Subtype.ext <| Subtype.ext <|
+          Equiv.subtypeSubtypeEquivSubtypeExists_symm_apply_coe_coe _ _ j
       exact (hxz jt).trans ((hzv jt).trans (hj ▸ hvy j))
   · intro hy
     obtain ⟨x, hxC, hx0, hxy⟩ := mem_shorten.mp hy
