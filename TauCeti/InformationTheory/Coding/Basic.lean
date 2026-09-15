@@ -66,22 +66,15 @@ theorem mem_reindex {κ : Type w} {C : LinearCode R ι} {e : κ ≃ ι} {y : κ 
 /-- Reindexing along the identity equivalence leaves a code unchanged. -/
 @[simp]
 theorem reindex_refl (C : LinearCode R ι) : reindex C (Equiv.refl ι) = C := by
-  ext x
-  simp only [mem_reindex, Equiv.refl_apply]
-  exact ⟨fun ⟨y, hy, hxy⟩ ↦ (funext hxy).symm ▸ hy, fun hx ↦ ⟨x, hx, fun _ ↦ rfl⟩⟩
+  rw [reindex_def, LinearEquiv.funCongrLeft_id, LinearEquiv.refl_toLinearMap, Submodule.map_id]
 
 /-- Successive changes of coordinates compose in their contravariant order. -/
 @[simp]
 theorem reindex_trans {κ : Type w} {κ' : Type*} (C : LinearCode R ι)
     (e : κ ≃ ι) (f : κ' ≃ κ) :
     reindex (reindex C e) f = reindex C (f.trans e) := by
-  ext x
-  simp only [mem_reindex, Equiv.trans_apply]
-  constructor
-  · rintro ⟨y, ⟨z, hzC, hzy⟩, hyx⟩
-    exact ⟨z, hzC, fun j ↦ (hzy (f j)).trans (hyx j)⟩
-  · rintro ⟨z, hzC, hzx⟩
-    exact ⟨fun j ↦ z (e j), ⟨z, hzC, fun _ ↦ rfl⟩, hzx⟩
+  rw [reindex_def, reindex_def, reindex_def, ← Submodule.map_comp, ← LinearEquiv.coe_trans,
+    ← LinearEquiv.funCongrLeft_comp]
 
 /-- Reindexing is monotone in the code. -/
 theorem reindex_mono {κ : Type w} {C D : LinearCode R ι} (h : C ≤ D) (e : κ ≃ ι) :

@@ -115,21 +115,15 @@ coordinate equivalence. -/
 theorem puncture_reindex {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) (s : Set ι) :
     puncture (reindex C e) (e ⁻¹' s) =
       reindex (puncture C s) (e.subtypeEquiv fun _ ↦ Iff.rfl) := by
-  ext y
-  constructor
-  · intro hy
-    obtain ⟨z, hz, hzy⟩ := mem_puncture.mp hy
-    obtain ⟨x, hxC, hxz⟩ := mem_reindex.mp hz
-    refine mem_reindex.mpr ⟨fun j : s ↦ x j, mem_puncture.mpr ⟨x, hxC, fun _ ↦ rfl⟩, ?_⟩
-    intro j
-    exact (hxz j).trans (hzy j)
-  · intro hy
-    obtain ⟨u, hu, huy⟩ := mem_reindex.mp hy
-    obtain ⟨x, hxC, hxu⟩ := mem_puncture.mp hu
-    let z : κ → R := fun j ↦ x (e j)
-    refine mem_puncture.mpr ⟨z, mem_reindex.mpr ⟨x, hxC, fun _ ↦ rfl⟩, ?_⟩
-    intro j
-    exact (hxu _).trans (huy j)
+  have hmap :
+      (LinearMap.funLeft R R (Subtype.val : ↥(e ⁻¹' s) → κ)).comp
+          (LinearEquiv.funCongrLeft R R e).toLinearMap =
+        (LinearEquiv.funCongrLeft R R (e.subtypeEquiv fun _ ↦ Iff.rfl)).toLinearMap.comp
+          (LinearMap.funLeft R R (Subtype.val : s → ι)) := by
+    ext x j
+    simp
+  rw [puncture_def, reindex_def, reindex_def, puncture_def, ← Submodule.map_comp,
+    ← Submodule.map_comp, hmap]
 
 /-- Shortening commutes with a change of coordinates. -/
 @[simp]
@@ -166,26 +160,17 @@ theorem puncture_puncture (C : LinearCode R ι) (s : Set ι) (t : Set s) :
     reindex (puncture (puncture C s) t)
         (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm =
       puncture C {i | ∃ hi : i ∈ s, (⟨i, hi⟩ : s) ∈ t} := by
-  ext y
-  constructor
-  · intro hy
-    obtain ⟨v, hv, hvy⟩ := mem_reindex.mp hy
-    obtain ⟨z, hz, hzv⟩ := mem_puncture.mp hv
-    obtain ⟨x, hxC, hxz⟩ := mem_puncture.mp hz
-    refine mem_puncture.mpr ⟨x, hxC, fun j ↦ ?_⟩
-    let jt : t := ⟨⟨j, j.2.choose⟩, j.2.choose_spec⟩
-    have hj : (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm j = jt :=
-      Subtype.ext <| Subtype.ext <|
-        Equiv.subtypeSubtypeEquivSubtypeExists_symm_apply_coe_coe _ _ j
-    exact (hxz jt).trans ((hzv jt).trans (hj ▸ hvy j))
-  · intro hy
-    obtain ⟨x, hxC, hxy⟩ := mem_puncture.mp hy
-    let z : s → R := fun j ↦ x j
-    let v : t → R := fun j ↦ z j
-    refine mem_reindex.mpr ⟨v,
-      mem_puncture.mpr ⟨z, mem_puncture.mpr ⟨x, hxC, fun _ ↦ rfl⟩, fun _ ↦ rfl⟩, ?_⟩
-    intro j
-    exact hxy j
+  have hmap :
+      (LinearEquiv.funCongrLeft R R
+            (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm).toLinearMap.comp
+          ((LinearMap.funLeft R R (Subtype.val : t → s)).comp
+            (LinearMap.funLeft R R (Subtype.val : s → ι))) =
+        LinearMap.funLeft R R (Subtype.val : {i | ∃ hi : i ∈ s, (⟨i, hi⟩ : s) ∈ t} → ι) := by
+    ext x j
+    exact congrArg x
+      (Equiv.subtypeSubtypeEquivSubtypeExists_symm_apply_coe_coe (· ∈ s) (· ∈ t) j)
+  rw [reindex_def, puncture_def, puncture_def, puncture_def, ← Submodule.map_comp,
+    ← Submodule.map_comp, LinearMap.comp_assoc, hmap]
 
 /-- Shortening twice is shortening once to the flattened set of retained coordinates, up to the
 canonical subtype equivalence. -/
