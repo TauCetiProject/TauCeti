@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-public import TauCeti.Probability.Distributions.Dirac
+public import Mathlib.Probability.CDF
 
 /-!
 # The quantile function of a real law
@@ -24,8 +24,7 @@ ranges over all of `ℝ` or over the empty set, so the value there is the junk v
 endpoint level `t = 1` is not junk: the quantile there is the least point of full cumulative mass
 when such a point exists (for instance `(dirac a).quantile 1 = a`), and `0` when the law has
 unbounded support to the right. The inverse characterizations below use levels in `Ioo 0 1`,
-while `quantile_dirac` additionally covers `t = 1`; `Ioo 0 1` is also the interval the uniform law
-is taken on.
+which is also the interval the uniform law is taken on.
 
 The main result is **inverse transform sampling**: for a probability measure `μ` the quantile
 function pushes the uniform law on the open unit interval forward to `μ`. It presents every real
@@ -44,8 +43,7 @@ makes the monotone rearrangement of two real laws a transport plan between them.
   `MeasureTheory.Measure.lt_quantile_iff` its negation;
 * `MeasureTheory.Measure.map_quantile_volume_Ioo` — inverse transform sampling: the quantile
   function pushes the uniform law on `Ioo 0 1` forward to the original law, packaged as
-  `MeasureTheory.Measure.measurePreserving_quantile`;
-* `MeasureTheory.Measure.quantile_dirac` — the quantile function of a Dirac law.
+  `MeasureTheory.Measure.measurePreserving_quantile`.
 
 ## References
 
@@ -218,14 +216,5 @@ interval. -/
 theorem measurePreserving_quantile (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     MeasurePreserving μ.quantile (volume.restrict (Ioo (0 : ℝ) 1)) μ :=
   ⟨measurable_quantile μ, map_quantile_volume_Ioo μ⟩
-
-/-- At every level in `Ioc 0 1`, including the endpoint level `1`, the quantile function of a
-Dirac law is its atom. -/
-@[simp]
-theorem quantile_dirac (a : ℝ) (h0 : 0 < t) (h1 : t ≤ 1) : (dirac a).quantile t = a := by
-  refine le_antisymm (csInf_le (bddBelow_setOf_le_cdf _ h0) (by simpa using h1))
-    (le_csInf ⟨a, by simpa using h1⟩ fun x hx ↦ ?_)
-  by_contra hxa
-  exact absurd hx (by simpa [not_le.mpr (not_le.mp hxa)] using h0)
 
 end MeasureTheory.Measure
