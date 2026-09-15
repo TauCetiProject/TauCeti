@@ -58,9 +58,8 @@ weights are the weights of an admissible lattice: all of that is supplied by the
 
 * `pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso`: on algebra-valued points
   the coordinate automorphism is conjugation by the base-changed matrix.
-* `pointsMulEquiv_toConv_comp_kostantNumberedSymmetryCoordinateIso`: the same statement for a value
-  ring in an arbitrary universe, obtained by transporting the generic point of the coordinate Hopf
-  algebra along the naturality of the matrix.
+* `pointsMulEquiv_toConv_comp_kostantNumberedSymmetryCoordinateIso`: the explicit precomposition
+  form of the same statement.
 * `kostantNumberedSymmetryCoordinateIso_hom_comp_rootSubgroupCoordinateMap`: the pinning equation
   `γ ≫ xᵢ = x_{σ i}` on coordinate algebras.
 * `kostantNumberedSymmetryCoordinateIso_hom_comp_weightTorusCoordinateMap`: a monomial-basis
@@ -246,7 +245,7 @@ noncomputable def kostantNumberedSymmetryCoordinateIso :
 /-- On algebra-valued points, the recovered coordinate automorphism is conjugation by the
 base-changed numbered-symmetry matrix. -/
 theorem pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso
-    (A : CommAlgCat.{0} ℤ)
+    (A : CommAlgCat.{v} ℤ)
     (f : HopfAlgebra.points
       (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n) A) :
     GeneralLinear.pointsMulEquiv n
@@ -269,29 +268,8 @@ theorem pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso
       MulEquiv.apply_symm_apply, map_kostantNumberedSymmetryMatrix]
   rw [hext]
 
-/-- Explicit precomposition form of the action of the recovered coordinate automorphism. -/
-private theorem pointsMulEquiv_comp_kostantNumberedSymmetryCoordinateIso
-    (A : CommAlgCat.{0} ℤ)
-    (f : HopfAlgebra.points
-      (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n) A) :
-    GeneralLinear.pointsMulEquiv n
-        (toConv (f.ofConv.comp
-          ((kostantNumberedSymmetryCoordinateIso M b θ hθM).hom.hom :
-            GeneralLinear.coordinateHopfAlgebra ℤ n →ₐ[ℤ]
-              GeneralLinear.coordinateHopfAlgebra ℤ n))) =
-      kostantNumberedSymmetryMatrix M b θ hθM A *
-          GeneralLinear.pointsMulEquiv n f *
-        (kostantNumberedSymmetryMatrix M b θ hθM A)⁻¹ := by
-  rw [← CommHopfAlgCat.mapPointsFunctor_app_apply]
-  exact pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso
-    M b θ hθM A f
-
-/-- **On the algebra-valued points of `GLₙ` over a value ring in any universe, the recovered
-coordinate automorphism is conjugation by the base-changed numbered-symmetry matrix.** The
-comparison through the functor of points is available only for a value algebra of the category that
-functor is taken over. Both sides here are natural in the value ring, so reading that comparison at
-the generic point of the coordinate Hopf algebra and pushing it forward along an arbitrary point
-removes the restriction. -/
+/-- On points over a value ring in any universe, precomposition with the coordinate
+automorphism is conjugation by the base-changed numbered-symmetry matrix. -/
 theorem pointsMulEquiv_toConv_comp_kostantNumberedSymmetryCoordinateIso (A : Type v) [CommRing A]
     (f : WithConv (GeneralLinear.coordinateHopfAlgebra ℤ n →ₐ[ℤ] A)) :
     GeneralLinear.pointsMulEquiv n
@@ -302,30 +280,9 @@ theorem pointsMulEquiv_toConv_comp_kostantNumberedSymmetryCoordinateIso (A : Typ
       kostantNumberedSymmetryMatrix M b θ hθM A *
           GeneralLinear.pointsMulEquiv n f *
         (kostantNumberedSymmetryMatrix M b θ hθM A)⁻¹ := by
-  have hgeneric := pointsMulEquiv_comp_kostantNumberedSymmetryCoordinateIso M b θ hθM
-    (CommAlgCat.of ℤ (GeneralLinear.coordinateHopfAlgebra ℤ n))
-    (toConv (AlgHom.id ℤ (GeneralLinear.coordinateHopfAlgebra ℤ n)))
-  rw [ofConv_toConv, AlgHom.id_comp] at hgeneric
-  have hnat (g : WithConv (GeneralLinear.coordinateHopfAlgebra ℤ n →ₐ[ℤ]
-      GeneralLinear.coordinateHopfAlgebra ℤ n)) :
-      GeneralLinear.pointsMulEquiv n
-          (AlgHom.mapValue (H := GeneralLinear.coordinateHopfAlgebra ℤ n) f.ofConv g) =
-        Matrix.GeneralLinearGroup.map f.ofConv.toRingHom (GeneralLinear.pointsMulEquiv n g) :=
-    GeneralLinear.pointsMulEquiv_mapValue n f.ofConv g
-  have hgen : AlgHom.mapValue (H := GeneralLinear.coordinateHopfAlgebra ℤ n) f.ofConv
-      (toConv (AlgHom.id ℤ (GeneralLinear.coordinateHopfAlgebra ℤ n))) = f := by
-    rw [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_id, toConv_ofConv]
-  have hsym : AlgHom.mapValue (H := GeneralLinear.coordinateHopfAlgebra ℤ n) f.ofConv
-      (toConv ((kostantNumberedSymmetryCoordinateIso M b θ hθM).hom.hom :
-        GeneralLinear.coordinateHopfAlgebra ℤ n →ₐ[ℤ]
-          GeneralLinear.coordinateHopfAlgebra ℤ n)) =
-      toConv (f.ofConv.comp
-        ((kostantNumberedSymmetryCoordinateIso M b θ hθM).hom.hom :
-          GeneralLinear.coordinateHopfAlgebra ℤ n →ₐ[ℤ]
-            GeneralLinear.coordinateHopfAlgebra ℤ n)) := by
-    rw [AlgHom.mapValue_apply, ofConv_toConv]
-  rw [← hsym, hnat, hgeneric, map_mul, map_mul, map_inv,
-    map_kostantNumberedSymmetryMatrix M b θ hθM, ← hnat, hgen]
+  simpa only [CommHopfAlgCat.mapPointsFunctor_app_apply] using
+    pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso
+      M b θ hθM (CommAlgCat.of ℤ A) f
 
 include hθe in
 /-- Matrix-coordinate form of the pinning equation. -/
@@ -402,7 +359,9 @@ theorem kostantNumberedSymmetryCoordinateIso_hom_comp_rootSubgroupCoordinateMap
   have hp : toConv (f.ofConv.comp c.hom.toAlgHom) = g := by
     apply (GeneralLinear.pointsMulEquiv
       (R := ℤ) (A := CommAlgCat.of ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) n).injective
-    rw [pointsMulEquiv_comp_kostantNumberedSymmetryCoordinateIso,
+    rw [← CommHopfAlgCat.mapPointsFunctor_app_apply c
+      (CommAlgCat.of ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) f,
+      pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso,
       GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointsMulEquiv_apply]
     have hleft := congrArg
       (fun z => kostantNumberedSymmetryMatrix M b θ hθM
@@ -557,7 +516,8 @@ theorem kostantNumberedSymmetryCoordinateIso_hom_comp_weightTorusCoordinateMap
         (fun i => wt (basisPerm⁻¹ i)) (CommAlgCat.of ℤ T) q
   have hp : toConv (f.ofConv.comp c.hom.toAlgHom) = g := by
     apply (GeneralLinear.pointsMulEquiv (R := ℤ) (A := CommAlgCat.of ℤ T) n).injective
-    rw [pointsMulEquiv_comp_kostantNumberedSymmetryCoordinateIso, htorus_r, htorus_s,
+    rw [← CommHopfAlgCat.mapPointsFunctor_app_apply c (CommAlgCat.of ℤ T) f,
+      pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso, htorus_r, htorus_s,
       kostantNumberedSymmetryMatrix_conj_diagGL
         M b θ hθM basisPerm basisScale hbasis]
   have hx := congrArg (fun p => p.ofConv x) hp

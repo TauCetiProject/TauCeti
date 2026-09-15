@@ -60,25 +60,13 @@ variable (H : _root_.CommHopfAlgCat.{u} R)
 Contravariance means that its underlying coordinate map is the pullback of the pointwise inner
 automorphism. -/
 noncomputable def innerConjugationIso
-    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) : H ≅ H :=
-  ((pointsFunctor (R := R)).preimageIso (X := Opposite.op H) (Y := Opposite.op H)
-    (HopfAlgebra.innerConjugationPointNatIso H g)).unop
-
-private theorem innerConjugationIso_hom_def
-    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
-    (innerConjugationIso H g).hom =
-      homOfPointsMap (HopfAlgebra.innerConjugationPointNatIso H g).hom := by
-  rw [← homOfPointsMap_mapPointsFunctor (innerConjugationIso H g).hom]
-  congr 1
-  exact Functor.map_preimage (pointsFunctor (R := R)) _
-
-private theorem innerConjugationIso_inv_def
-    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
-    (innerConjugationIso H g).inv =
-      homOfPointsMap (HopfAlgebra.innerConjugationPointNatIso H g).inv := by
-  rw [← homOfPointsMap_mapPointsFunctor (innerConjugationIso H g).inv]
-  congr 1
-  exact Functor.map_preimage (pointsFunctor (R := R)) _
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) : H ≅ H where
+  hom := homOfPointsMap (HopfAlgebra.innerConjugationPointNatIso H g).hom
+  inv := homOfPointsMap (HopfAlgebra.innerConjugationPointNatIso H g).inv
+  hom_inv_id := by
+    rw [← homOfPointsMap_comp, Iso.inv_hom_id, homOfPointsMap_id]
+  inv_hom_id := by
+    rw [← homOfPointsMap_comp, Iso.hom_inv_id, homOfPointsMap_id]
 
 /-- Conjugation by the identity point is the identity coordinate Hopf-algebra automorphism. -/
 @[simp]
@@ -87,7 +75,7 @@ theorem innerConjugationIso_one :
         (1 : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) =
       Iso.refl H := by
   apply Iso.ext
-  rw [innerConjugationIso_hom_def]
+  dsimp only [innerConjugationIso]
   rw [HopfAlgebra.innerConjugationPointNatIso_one]
   exact homOfPointsMap_id H
 
@@ -99,8 +87,7 @@ theorem innerConjugationIso_mul
     innerConjugationIso H (g * h) =
       (innerConjugationIso H g).trans (innerConjugationIso H h) := by
   apply Iso.ext
-  rw [innerConjugationIso_hom_def, Iso.trans_hom, innerConjugationIso_hom_def,
-    innerConjugationIso_hom_def]
+  dsimp only [innerConjugationIso, Iso.trans_hom]
   have hmul := congrArg Iso.hom (HopfAlgebra.innerConjugationPointNatIso_mul H g h)
   simp only [Iso.trans_hom] at hmul
   rw [hmul, homOfPointsMap_comp]
@@ -108,12 +95,12 @@ theorem innerConjugationIso_mul
 /-- The coordinate automorphism for conjugation by an inverse point is the inverse coordinate
 automorphism. -/
 @[simp]
-theorem innerConjugationIso_inv
+theorem innerConjugationIso_inv_point
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
     innerConjugationIso H g⁻¹ = (innerConjugationIso H g).symm := by
   apply Iso.ext
-  rw [innerConjugationIso_hom_def, Iso.symm_hom, innerConjugationIso_inv_def,
-    HopfAlgebra.innerConjugationPointNatIso_inv, Iso.symm_hom]
+  dsimp only [innerConjugationIso, Iso.symm_hom]
+  rw [HopfAlgebra.innerConjugationPointNatIso_inv_point, Iso.symm_hom]
 
 /-- The coordinate algebra map of inner conjugation is obtained from the universal conjugation
 map by evaluating its conjugating variable at the given `R`-valued point. -/
@@ -130,7 +117,8 @@ theorem innerConjugationIso_hom_toAlgHom
           (toConv (AlgHom.id R H)) =
         extendPoint H (CommAlgCat.of R H) g * toConv (AlgHom.id R H) *
           (extendPoint H (CommAlgCat.of R H) g)⁻¹ := by
-    rw [innerConjugationIso_hom_def, mapPointsFunctor_homOfPointsMap]
+    dsimp only [innerConjugationIso]
+    rw [mapPointsFunctor_homOfPointsMap]
     exact HopfAlgebra.innerConjugationPointNatIso_hom_app_apply H g _ _
   have hx := congrArg (fun p : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R H) ↦
     p.ofConv x) hpoint
@@ -143,12 +131,7 @@ theorem innerConjugationIso_hom_toAlgHom
     _ = (Algebra.TensorProduct.productMap
           ((Algebra.ofId R H).comp g.ofConv) (AlgHom.id R H)).comp
             (HopfAlgebra.conjugationAlgHom (R := R) (H := H)) x := by
-      have hext : extendPoint H (CommAlgCat.of R H) g =
-          toConv ((Algebra.ofId R H).comp g.ofConv) := by
-        apply WithConv.ofConv_injective
-        ext y
-        exact HopfAlgebra.extendPoint_ofConv H (CommAlgCat.of R H) g y
-      rw [hext]
+      rw [HopfAlgebra.extendPoint_apply]
       exact
         DFunLike.congr_fun
           (HopfAlgebra.productMap_comp_conjugationAlgHom (R := R) (H := H)
@@ -162,7 +145,7 @@ theorem innerConjugationIso_inv_toAlgHom
       (Algebra.TensorProduct.productMap
         ((Algebra.ofId R H).comp (g⁻¹).ofConv) (AlgHom.id R H)).comp
           (HopfAlgebra.conjugationAlgHom (R := R) (H := H)) := by
-  rw [← Iso.symm_hom, ← innerConjugationIso_inv, innerConjugationIso_hom_toAlgHom]
+  rw [← Iso.symm_hom, ← innerConjugationIso_inv_point, innerConjugationIso_hom_toAlgHom]
 
 /-- The coordinate inner automorphism induces natural inner conjugation on points over
 commutative value algebras in any universe. -/
@@ -171,16 +154,10 @@ theorem mapPointsFunctor_innerConjugationIso_hom
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
     mapPointsFunctor.{u, u, v} (innerConjugationIso H g).hom =
       (HopfAlgebra.innerConjugationPointNatIso H g).hom := by
-  apply NatTrans.ext
-  funext A
-  apply GrpCat.hom_ext
-  apply MonoidHom.ext
-  -- Extensionality exposes the functor-object and `GrpCat.Hom.hom` wrappers; restore
-  -- the point type and categorical application for the public pointwise equations.
-  change ∀ x : HopfAlgebra.points (R := R) (H := H) A,
-    (mapPointsFunctor (innerConjugationIso H g).hom).app A x =
-      (HopfAlgebra.innerConjugationPointNatIso H g).hom.app A x
-  intro x
+  -- `mapPointsFunctor_homOfPointsMap` only covers value universe `u`; prove the
+  -- universe-`v` statement pointwise using the coordinate formula.
+  apply HopfAlgebra.pointsFunctor_hom_ext
+  intro A x
   rw [HopfAlgebra.innerConjugationPointNatIso_hom_app_apply]
   apply WithConv.ofConv_injective
   rw [mapPointsFunctor_app_apply]
@@ -190,12 +167,11 @@ theorem mapPointsFunctor_innerConjugationIso_hom
       x.ofConv.comp (Algebra.TensorProduct.productMap
           ((Algebra.ofId R H).comp g.ofConv) (AlgHom.id R H)) =
         Algebra.TensorProduct.productMap (extendPoint H A g).ofConv x.ofConv := by
+    rw [HopfAlgebra.extendPoint_apply]
     apply Algebra.TensorProduct.ext'
     intro a b
     simp only [Algebra.TensorProduct.productMap_apply_tmul, AlgHom.comp_apply,
-      AlgHom.id_apply,
-      Algebra.ofId_apply, map_mul]
-    rw [HopfAlgebra.extendPoint_ofConv]
+      AlgHom.id_apply, Algebra.ofId_apply, map_mul]
     exact congrArg (fun c : A ↦ c * x.ofConv b) (x.ofConv.commutes (g.ofConv a))
   rw [hprod]
   exact (HopfAlgebra.productMap_comp_conjugationAlgHom (R := R) (H := H)
@@ -208,9 +184,9 @@ theorem mapPointsFunctor_innerConjugationIso_inv
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
     mapPointsFunctor.{u, u, v} (innerConjugationIso H g).inv =
       (HopfAlgebra.innerConjugationPointNatIso H g).inv := by
-  rw [← Iso.symm_hom, ← innerConjugationIso_inv,
+  rw [← Iso.symm_hom, ← innerConjugationIso_inv_point,
     mapPointsFunctor_innerConjugationIso_hom,
-    HopfAlgebra.innerConjugationPointNatIso_inv, Iso.symm_hom]
+    HopfAlgebra.innerConjugationPointNatIso_inv_point, Iso.symm_hom]
 
 end CommHopfAlgCat
 

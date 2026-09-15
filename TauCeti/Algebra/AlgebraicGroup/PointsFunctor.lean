@@ -64,6 +64,12 @@ noncomputable def extendPoint (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
     points (H := H) (CommAlgCat.of R R) →* points (H := H) A :=
   AlgHom.mapValue (Algebra.ofId R A)
 
+/-- Extension of a point is post-composition with the value algebra's structure map. -/
+theorem extendPoint_apply (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
+    (A : CommAlgCat.{w} R) (g : points (H := H) (CommAlgCat.of R R)) :
+    extendPoint H A g = toConv ((Algebra.ofId R A).comp g.ofConv) := by
+  rw [extendPoint, AlgHom.mapValue_apply]
+
 /-- Evaluation of an extended point is obtained by applying the value algebra's structure map. -/
 @[simp]
 theorem extendPoint_ofConv (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
@@ -147,6 +153,16 @@ It maps a commutative `R`-algebra `A` to the convolution group on algebra homomo
   map φ := mapPoints (H := H) φ
   map_id A := mapPoints_id (H := H) A
   map_comp φ ψ := mapPoints_comp (H := H) φ ψ
+
+/-- Natural transformations between points functors agree if they agree on every point. -/
+@[ext]
+theorem pointsFunctor_hom_ext {K : Type v} [Semiring K] [_root_.HopfAlgebra R K]
+    {α β : pointsFunctor (H := H) ⟶ pointsFunctor (H := K)}
+    (h : ∀ (A : CommAlgCat.{w} R) (x : points (H := H) A), α.app A x = β.app A x) :
+    α = β := by
+  apply NatTrans.ext
+  funext A
+  exact GrpCat.ext (h A)
 
 /-- The object part of `pointsFunctor` is the convolution group of algebra homomorphisms. -/
 lemma pointsFunctor_obj (A : CommAlgCat.{w} R) :
