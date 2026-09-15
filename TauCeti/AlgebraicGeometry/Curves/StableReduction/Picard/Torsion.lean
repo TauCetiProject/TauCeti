@@ -64,12 +64,7 @@ theorem finite_torsion {ℓ : ℕ} (hℓ : ℓ ≠ 0) : Finite (T.torsion ℓ) :
 noncomputable instance torsionModuleFinite (ℓ : ℕ) [NeZero ℓ] :
     Module.Finite (ZMod ℓ) (T.torsion ℓ) := by
   let _ : Finite (T.torsion ℓ) := T.finite_torsion (NeZero.ne ℓ)
-  have h := Module.Finite.span_of_finite (ZMod ℓ)
-    (Set.toFinite (Set.univ : Set (T.torsion ℓ)))
-  apply Module.Finite.of_surjective (Submodule.subtype
-    (Submodule.span (ZMod ℓ) (Set.univ : Set (T.torsion ℓ))))
-  intro x
-  exact ⟨⟨x, by simp⟩, rfl⟩
+  infer_instance
 
 /-- The cardinality of prime torsion is the prime raised to its vector-space dimension. -/
 theorem natCard_torsion (ℓ : ℕ) [Fact ℓ.Prime] :
@@ -112,14 +107,14 @@ private def torsionAddEquiv (f : T.Equiv T') (ℓ : ℕ) : T.torsion ℓ ≃+ T'
 `ℓ`-torsion Picard subgroups. -/
 noncomputable def torsionCongr (f : T.Equiv T') (ℓ : ℕ) :
     T.torsion ℓ ≃ₗ[ZMod ℓ] T'.torsion ℓ :=
-  LinearEquiv.ofBijective ((f.torsionAddEquiv ℓ).toAddMonoidHom.toZModLinearMap ℓ)
-    (f.torsionAddEquiv ℓ).bijective
+  { f.torsionAddEquiv ℓ with
+    map_smul' := ZMod.map_smul (f.torsionAddEquiv ℓ) }
 
 /-- The underlying Picard class of a transported torsion class is transported by `picCongr`. -/
 @[simp]
 lemma coe_torsionCongr (f : T.Equiv T') (ℓ : ℕ) (x : T.torsion ℓ) :
-    (f.torsionCongr ℓ x : T'.Pic) = f.picCongr x :=
-  by simp [torsionCongr, torsionAddEquiv]
+    (f.torsionCongr ℓ x : T'.Pic) = f.picCongr x := by
+  rfl
 
 /-- The identity equivalence induces the identity on torsion Picard classes. -/
 @[simp]
