@@ -28,6 +28,8 @@ integrality from `x` to `y`.
 
 * `WeierstrassCurve.mul_eval_ΨSq_eq_eval_Φ_of_zsmul`: the coordinate identity
   `x' · ΨSqₙ(x) = Φₙ(x)` relating `P` and `n • P`, over a field.
+* `WeierstrassCurve.mul_evalEval_ψ_cube_eq_evalEval_ω_of_zsmul`: its `y`-coordinate companion
+  `y' · ψₙ(P)³ = ωₙ(P)`.
 * `WeierstrassCurve.isInteger_of_zsmul_isInteger`: **the descent step.** Over a base `R`
   integrally closed in `K`, if `n • P = P'` and `P'` has integral `x`-coordinate, both
   coordinates of `P` are integral.
@@ -115,6 +117,33 @@ theorem mul_eval_ΨSq_eq_eval_Φ_of_zsmul {x y : F} (hns : E.toAffine.Nonsingula
   rw [← evalEval_ψ_eq_evalEval_Ψ E hns.left n] at hΨSq
   rw [hΨSq] at hX
   exact hX.symm
+
+/-- **The `y`-coordinates of `P` and `n • P` satisfy `y' · ψₙ(P)³ = ωₙ(P)`.**
+
+The companion of `mul_eval_ΨSq_eq_eval_Φ_of_zsmul` for the second coordinate, cleared of its
+denominator in the same way. The pair determines `n • P` from `P`; the `x`-identity alone cannot,
+because a point and its negative share an `x`-coordinate. -/
+-- The same comparison of Jacobian representatives, reading off the `Y`-coordinate with
+-- `Jacobian.Y_eq_of_equiv` in place of `X_eq_of_equiv`. Nothing has to be converted to the
+-- univariate `Ψ`/`Φ`, so this is shorter than its `x`-counterpart.
+theorem mul_evalEval_ψ_cube_eq_evalEval_ω_of_zsmul {x y : F} (hns : E.toAffine.Nonsingular x y)
+    {x' y' : F} (hns' : E.toAffine.Nonsingular x' y') {n : ℤ}
+    (hnP : n • (Affine.Point.some _ _ hns) = Affine.Point.some _ _ hns') :
+    y' * ((E.ψ n).evalEval x y) ^ 3 = (E.ω n).evalEval x y := by
+  have hJac : n • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns) =
+      Jacobian.Point.fromAffine (Affine.Point.some _ _ hns') := by
+    have h := congrArg (Jacobian.Point.toAffineAddEquiv E).symm hnP
+    rw [map_zsmul] at h
+    simpa using h
+  have hsmul := zsmul_point_eq_smulEval E hns n
+  -- `≈` on `Fin 3 → F` is the Jacobian equivalence, so its `HasEquiv` instance must be in scope.
+  open Jacobian in
+  have hequiv : smulEval E x y n ≈ ![x', y', 1] := by
+    rw [Jacobian.Point.ext_iff, hsmul] at hJac; exact Quotient.exact hJac
+  have hY := Jacobian.Y_eq_of_equiv hequiv
+  simp only [smulEval, Function.comp, Matrix.cons_val_two] at hY
+  norm_num at hY
+  exact hY.symm
 
 variable {R : Type*} [CommRing R]
 variable {K : Type*} [Field K] [DecidableEq K] [Algebra R K] [IsIntegrallyClosedIn R K]
