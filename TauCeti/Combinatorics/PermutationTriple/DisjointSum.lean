@@ -170,7 +170,7 @@ def indexedDisjointSum (t : ∀ i, PermutationTriple (d i)) (e : (Σ i, Fin (d i
     rw [← permCongr_mul, ← permCongr_mul, sigmaCongrRight_mul, sigmaCongrRight_mul]
     have h : (fun i ↦ (t i).σinf) * (fun i ↦ (t i).σ1) * (fun i ↦ (t i).σ0) = 1 :=
       funext fun i ↦ (t i).product_eq_one
-    rw [h, sigmaCongrRight_one, ← permCongrHom_coe, map_one]
+    simpa only [h, sigmaCongrRight_one, ← permCongrHom_coe] using map_one e.permCongrHom
 
 variable (t : ∀ i, PermutationTriple (d i)) (e : (Σ i, Fin (d i)) ≃ Fin N)
 

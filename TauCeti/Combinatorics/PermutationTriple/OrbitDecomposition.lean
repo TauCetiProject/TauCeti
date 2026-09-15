@@ -66,9 +66,7 @@ original action on the orbit. -/
     (Finite.equivFinOfCardEq (Nat.card_coe_set_eq O.orbit)).symm
         (t.orbitActionHom O g i) =
       g • (Finite.equivFinOfCardEq (Nat.card_coe_set_eq O.orbit)).symm i := by
-  rw [orbitActionHom, MonoidHom.coe_comp, Function.comp_apply, MulEquiv.coe_toMonoidHom,
-    permCongrHom_coe, permCongr_apply, symm_apply_apply, MulAction.toPermHom_apply,
-    MulAction.toPerm_apply]
+  simp [orbitActionHom]
 
 /-- The restriction of a permutation triple to a monodromy orbit, numbered by
 `Fin O.orbit.ncard`. -/
@@ -99,13 +97,14 @@ theorem monodromyGroup_restrictToOrbit :
     (t.restrictToOrbit O).monodromyGroup = (t.orbitActionHom O).range := by
   have hgen : Subgroup.closure ({⟨t.σ0, t.σ0_mem_monodromyGroup⟩, ⟨t.σ1, t.σ1_mem_monodromyGroup⟩,
       ⟨t.σinf, t.σinf_mem_monodromyGroup⟩} : Set t.monodromyGroup) = ⊤ := by
-    rw [← Subgroup.map_subtype_inj, MonoidHom.map_closure, Set.image_insert_eq,
-      Set.image_insert_eq, Set.image_singleton, Subgroup.coe_subtype,
-      closure_triple_eq_monodromyGroup, ← MonoidHom.range_eq_map, Subgroup.range_subtype]
+    rw [← Subgroup.map_subtype_inj, MonoidHom.map_closure]
+    simp only [Set.image_insert_eq, Set.image_singleton, Subgroup.coe_subtype]
+    rw [closure_triple_eq_monodromyGroup, ← MonoidHom.range_eq_map]
+    simp
   refine (closure_triple_eq_monodromyGroup _).symm.trans ?_
-  rw [restrictToOrbit_σ0, restrictToOrbit_σ1, restrictToOrbit_σinf, ← Set.image_singleton,
-    ← Set.image_insert_eq, ← Set.image_insert_eq, ← MonoidHom.map_closure, hgen,
-    MonoidHom.range_eq_map]
+  rw [restrictToOrbit_σ0, restrictToOrbit_σ1, restrictToOrbit_σinf]
+  simp only [← Set.image_singleton, ← Set.image_insert_eq]
+  rw [← MonoidHom.map_closure, hgen, MonoidHom.range_eq_map]
 
 /-- Every monodromy-orbit restriction is connected. -/
 theorem isConnected_restrictToOrbit : (t.restrictToOrbit O).IsConnected := by
