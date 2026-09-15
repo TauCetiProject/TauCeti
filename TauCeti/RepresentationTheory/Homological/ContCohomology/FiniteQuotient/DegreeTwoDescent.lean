@@ -169,15 +169,15 @@ theorem exists_openNormalSubgroup_descendZ2 (z : Z2 G M) :
   obtain ⟨U, hright, hfixed⟩ := exists_openNormalSubgroup_descent_data z
   exact ⟨U, descendZ2 z hright hfixed, coe_descendZ2_apply_mk z hright hfixed⟩
 
-/-- **Strict surjectivity of the degree-two finite-quotient comparison maps.** Every class in
-`H²(G, M)` is inflated from `H²(G ⧸ U, M ^ U)` for some open normal subgroup `U`. The chosen
-representative itself descends, so the proof subtracts no coboundary. -/
+/-- **Surjectivity of the degree-two finite-quotient comparison maps.** Every class in
+`H²(G, M)` is inflated from `H²(G ⧸ U, M ^ U)` for some open normal subgroup `U`. -/
 theorem exists_explicitInfl2_eq (x : H2 G M) :
     ∃ (U : OpenNormalSubgroup G)
       (y : H2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)),
       explicitInfl2 G M U.toSubgroup y = x := by
   induction x using QuotientAddGroup.induction_on with
   | _ z =>
+    -- The chosen representative itself descends, so no coboundary is subtracted here.
     obtain ⟨U, hright, hfixed⟩ := exists_openNormalSubgroup_descent_data z
     exact ⟨U, descendZ2 z hright hfixed, explicitInfl2_descendZ2 z hright hfixed⟩
 
