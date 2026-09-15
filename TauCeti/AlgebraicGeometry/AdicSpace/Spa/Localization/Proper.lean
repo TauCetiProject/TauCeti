@@ -58,10 +58,9 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 
 /-- **The support of a point in `R(T/s)` remains proper in `A⟨T/s⟩`.**
 
-The point first extends to the algebraic localisation `Aₛ`. Its support is closed for the
-localisation topology because the extended valuation is continuous, and therefore the ideal it
-generates stays proper in the separated completion. The extension identity on `A` then puts the
-image of the original support inside that proper ideal. -/
+Here `S` is an algebraic localisation at `s`, equipped with the topology specified by `P`, `T`,
+and `hden`. The ring of definition must lie in `Aplus`; membership in `R(T/s)` supplies
+continuity, boundedness on `Aplus`, and the inequalities `v(t) ≤ v(s) ≠ 0` for `t ∈ T`. -/
 theorem map_supp_toCompletionLoc_ne_top (P : PairOfDefinition A) (Aplus : Subring A)
     (hP : P.ringOfDefinition ≤ Aplus) (T : Finset A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
@@ -81,6 +80,7 @@ theorem map_supp_toCompletionLoc_ne_top (P : PairOfDefinition A) (Aplus : Subrin
     exact ((mem_spa_iff Aplus v).mp hvSpa).2 a (hP ha)
   have hT : ∀ t ∈ T, v.valuation t ≤ v.valuation s := fun t ht ↦
     (valuation_le_iff v t s).mpr (((mem_rationalSubset_iff Aplus T s v).mp hv).2.1 t ht)
+  -- Extend the point continuously to the algebraic localisation and use its closed support.
   let w := v.valuation.extendToLocalization
     (Valuation.powers_le_supp_primeCompl hs) S
   have hwContinuousLoc :
@@ -91,6 +91,7 @@ theorem map_supp_toCompletionLoc_ne_top (P : PairOfDefinition A) (Aplus : Subrin
     refine Valuation.isContinuous_def.mpr fun b ↦ ?_
     have hb := (@Valuation.isContinuous_def S _ (locTopology P T s S hden) _ _ w).mp
       hwContinuousLoc b
+    -- Expose the inferred topology so its equality with `locTopology` can be rewritten.
     change @IsOpen S (locUniformSpace P T s S hden).toTopologicalSpace
       {a | w a < w b}
     rw [locUniformSpace_toTopologicalSpace P T s S hden]
@@ -98,13 +99,12 @@ theorem map_supp_toCompletionLoc_ne_top (P : PairOfDefinition A) (Aplus : Subrin
   have hwProper :
       Ideal.map (UniformSpace.Completion.coeRingHom : S →+* UniformSpace.Completion S)
         w.supp ≠ ⊤ :=
-    hwContinuous.map_supp_completion_ne_top
+    map_supp_completion_ne_top_of_isContinuous hwContinuous
   have hsuppMap : Ideal.map (algebraMap A S) v.supp ≤ w.supp := by
     rw [Ideal.map_le_iff_le_comap]
     intro a ha
     rw [Ideal.mem_comap, Valuation.mem_supp_iff]
-    change v.valuation.extendToLocalization (Valuation.powers_le_supp_primeCompl hs) S
-      (algebraMap A S a) = 0
+    dsimp only [w]
     rw [Valuation.extendToLocalization_apply_map_apply]
     exact (v.valuation.mem_supp_iff a).mp (v.supp_eq_valuation_supp ▸ ha)
   have hle : Ideal.map (toCompletionLoc P T s S hden) v.supp ≤
@@ -125,9 +125,10 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [T2Space A] [CompleteSpace A]
 
 /-- **Every proper ideal remains proper on some chart of a standard rational cover.**
 
-If `T` generates the unit ideal, the rational subsets `R(T/t)` cover `Spa(A,A⁺)`. A maximal
-ideal containing the given proper ideal is the support of a point of the adic spectrum; choose a
-chart containing that point and apply `map_supp_toCompletionLoc_ne_top`. This is the faithfulness
+The ring is a complete Hausdorff Huber ring, and `Aplus` is a ring of integral elements
+containing the chosen ring of definition. The condition that `T` generates the unit ideal makes
+the rational subsets `R(T/t)` a cover of `Spa(A,A⁺)`; `hden` supplies each localisation topology.
+The ideal `J` need only be proper, with no closedness assumption. This is the faithfulness
 half of Wedhorn's Corollary 8.32, before finite-product flatness is combined with it. -/
 theorem exists_map_toCompletionLoc_ne_top_of_span_eq_top (P : PairOfDefinition A)
     (Aplus : Subring A) (hplus : IsRingOfIntegralElements Aplus)
@@ -141,6 +142,7 @@ theorem exists_map_toCompletionLoc_ne_top_of_span_eq_top (P : PairOfDefinition A
       letI := isUniformAddGroup_locUniformSpace P T (t : A) (S t) (hden t)
       letI := isTopologicalRing_locUniformSpace P T (t : A) (S t) (hden t)
       Ideal.map (toCompletionLoc P T (t : A) (S t) (hden t)) J ≠ ⊤ := by
+  -- Realise a maximal ideal above `J` as a support, then choose a chart containing that point.
   obtain ⟨m, hm, hJm⟩ := Ideal.exists_le_maximal J hJ
   let _ : m.IsMaximal := hm
   obtain ⟨v, hvSpa, hvm⟩ := exists_mem_spa_supp_eq_of_isMaximal Aplus hplus m

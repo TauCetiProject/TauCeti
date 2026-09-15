@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Valuation.Basic
 public import Mathlib.Topology.Algebra.WithZeroTopology
+public import Mathlib.Topology.Algebra.Ring.Basic
 
 /-!
 # Continuous valuations
@@ -80,6 +81,7 @@ sets are *literally equal* for equivalent valuations, which is
   a discrete ring is continuous.
 * `Valuation.IsContinuous.comap` : **Remark 7.9**, continuity is inherited along a
   continuous ring homomorphism.
+* `TauCeti.isClosed_supp_of_isContinuous`: the support of a continuous valuation is closed.
 
 ## References
 
@@ -264,3 +266,36 @@ theorem isContinuous_iff_continuous [SeparatelyContinuousAdd A] [ContinuousConst
 end ValueGroup
 
 end Valuation
+
+namespace TauCeti
+
+open Set Topology
+open scoped WithZeroTopology
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+  {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation A Γ₀}
+
+/-- **The support of a continuous valuation is closed.**
+
+No coinitiality assumption on the ambient value group is needed. In particular, the quotient
+by the support is Hausdorff, even when the original ring is not. -/
+theorem isClosed_supp_of_isContinuous (hv : v.IsContinuous) : IsClosed (v.supp : Set A) := by
+  -- Restrict to the value group so attained ratios are coinitial; the support is its zero fiber.
+  have hv' : v.restrict.IsContinuous :=
+    v.isEquiv_restrict.isContinuous_iff.mp hv
+  have hcoinitial : ∀ gamma : MonoidWithZeroHom.ValueGroup₀ (.ofClass v), gamma ≠ 0 →
+      ∃ b c : A, v.restrict b ≠ 0 ∧ v.restrict c ≠ 0 ∧
+        v.restrict b / v.restrict c ≤ gamma := by
+    intro gamma hgamma
+    obtain ⟨b, c, hb, hc, hbc⟩ := v.exists_div_eq_of_unit (Units.mk0 gamma hgamma)
+    exact ⟨b, c, (zero_lt_iff.mp ((v.restrict_pos_iff b).mpr hb)),
+      (zero_lt_iff.mp ((v.restrict_pos_iff c).mpr hc)), hbc.le⟩
+  have hcontinuous : Continuous v.restrict :=
+    (Valuation.isContinuous_iff_continuous hcoinitial).mp hv'
+  have hsupp : (v.supp : Set A) = v.restrict ⁻¹' {0} := by
+    ext x
+    exact (v.mem_supp_iff x).trans v.restrict_eq_zero_iff.symm
+  rw [hsupp]
+  exact isClosed_singleton.preimage hcontinuous
+
+end TauCeti
