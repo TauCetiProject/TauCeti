@@ -109,14 +109,14 @@ variable [Fintype ι] [Fintype κ] [DecidableEq R]
 @[simp]
 theorem hammingNorm_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x : ι → R) :
     hammingNorm (monomialEquiv u e x) = hammingNorm x := by
-  rw [monomialEquiv_eq_comp, TauCeti.Equiv.hammingNorm_comp]
+  rw [monomialEquiv_eq_comp, hammingNorm_comp_equiv]
   exact hammingNorm_comp (fun i (c : R) ↦ (u i : R) * c)
     (fun i ↦ (u i).isUnit.mul_right_injective) fun _ ↦ mul_zero _
 
 @[simp]
 theorem hammingDist_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x y : ι → R) :
     hammingDist (monomialEquiv u e x) (monomialEquiv u e y) = hammingDist x y := by
-  rw [monomialEquiv_eq_comp, monomialEquiv_eq_comp, TauCeti.Equiv.hammingDist_comp]
+  rw [monomialEquiv_eq_comp, monomialEquiv_eq_comp, hammingDist_comp_equiv]
   exact hammingDist_comp (fun i (c : R) ↦ (u i : R) * c)
     fun i ↦ (u i).isUnit.mul_right_injective
 
@@ -307,16 +307,14 @@ instance instMulActionMonomialAut : MulAction (monomialAut C) C where
 /-- The action of a monomial automorphism on codewords preserves Hamming weight. -/
 @[simp]
 theorem hammingNorm_smul_monomialAut [Fintype ι] [DecidableEq R] (f : monomialAut C) (c : C) :
-    hammingNorm ((f • c : C) : ι → R) = hammingNorm (c : ι → R) := by
-  rw [coe_smul_monomialAut]
+    hammingNorm ((f : (ι → R) ≃ₗ[R] (ι → R)) c) = hammingNorm (c : ι → R) := by
   exact hammingNorm_apply_of_mem_monomialGroup (monomialAut_le_monomialGroup f.2) _
 
 /-- The action of a monomial automorphism on codewords preserves Hamming distance. -/
 @[simp]
 theorem hammingDist_smul_monomialAut [Fintype ι] [DecidableEq R] (f : monomialAut C) (c d : C) :
-    hammingDist ((f • c : C) : ι → R) ((f • d : C) : ι → R) =
+    hammingDist ((f : (ι → R) ≃ₗ[R] (ι → R)) c) ((f : (ι → R) ≃ₗ[R] (ι → R)) d) =
       hammingDist (c : ι → R) (d : ι → R) := by
-  rw [coe_smul_monomialAut, coe_smul_monomialAut]
   exact hammingDist_apply_of_mem_monomialGroup (monomialAut_le_monomialGroup f.2) _ _
 
 end Group
