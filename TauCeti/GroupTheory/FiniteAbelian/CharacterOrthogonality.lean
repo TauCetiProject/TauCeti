@@ -27,7 +27,7 @@ relation — the one summed over the character group — in both its punctured a
 * `CommGroup.sum_monoidHom_apply_eq_ite`'s tagged form,
   `CommGroup.sum_inv_mul_monoidHom_apply_eq_ite`: summing `(χ σ)⁻¹ * χ g` isolates the single
   element `σ`, giving `Nat.card G` when `g = σ` and `0` otherwise.
-* `TauCeti.AddChar.sum_units_mul_eq_neg_one`: a nontrivial additive character of a finite field
+* `AddChar.sum_units_mul_eq_neg_one`: a nontrivial additive character of a finite field
   sums to `-1` over the nonzero elements, even after multiplication by a unit.
 
 The file also registers `Fintype (G →* Mˣ)`, which Mathlib leaves at `Finite`; without it a
@@ -47,7 +47,7 @@ relation should use the Mathlib lemma directly. (`MulChar.sum_eq_zero_of_ne_one`
 `Mathlib/NumberTheory/MulChar/Basic.lean` is the analogous statement in the `MulChar`
 vocabulary, for a multiplicative character of a finite commutative monoid valued in a domain.)
 
-The theorem `TauCeti.AddChar.sum_units_mul_eq_neg_one` below is not a restatement of that full row
+The theorem `AddChar.sum_units_mul_eq_neg_one` below is not a restatement of that full row
 relation: it removes the zero term from a finite-field additive-character sum and reindexes the
 remaining nonzero elements by `Fˣ`. This punctured form is what character computations over a
 finite field consume directly.
@@ -81,7 +81,7 @@ Birkbeck--Brasca).
 
 public section
 
-namespace TauCeti.AddChar
+namespace AddChar
 
 variable {F : Type*} [Field F] [Fintype F]
 variable {R : Type*} [CommRing R] [IsDomain R]
@@ -90,7 +90,7 @@ open scoped Classical in
 /-- A nontrivial additive character of a finite field sums to `-1` over the units, even after
 multiplication by a fixed unit. This is the punctured form of
 `AddChar.sum_eq_zero_of_ne_one`. -/
-theorem sum_units_mul_eq_neg_one (ψ : _root_.AddChar F R) (hψ : ψ ≠ 1) (c : Fˣ) :
+theorem sum_units_mul_eq_neg_one (ψ : AddChar F R) (hψ : ψ ≠ 1) (c : Fˣ) :
     ∑ d : Fˣ, ψ ((c : F) * (d : F)) = -1 := by
   have hsum : ∑ x : F, ψ ((c : F) * x) = 0 := by
     simpa [AddChar.mulShift_apply] using
@@ -113,7 +113,7 @@ theorem sum_units_mul_eq_neg_one (ψ : _root_.AddChar F R) (hψ : ψ ≠ 1) (c :
   rw [← hnonzero]
   exact Fintype.sum_equiv unitsEquivNeZero _ _ fun d => rfl
 
-end TauCeti.AddChar
+end AddChar
 
 variable {G : Type*} [Finite G] {M : Type*} [CommRing M] [IsDomain M]
 
