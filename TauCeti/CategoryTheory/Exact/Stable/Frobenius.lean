@@ -12,9 +12,10 @@ public import TauCeti.CategoryTheory.Exact.Injective
 
 An exact structure has enough projectives when every object is the third term of a conflation
 whose middle term is relatively projective. Dually, it has enough injectives when every object is
-the first term of a conflation whose middle term is relatively injective. This file records these
-conditions using bundled presentations, and defines a Frobenius exact structure by requiring both
-conditions and equality of the two relative object classes.
+the first term of a conflation whose middle term is relatively injective. The projective and
+injective modules record these conditions using bundled presentations; this file defines a
+Frobenius exact structure by requiring both conditions and equality of the two relative object
+classes.
 
 The definition is deliberately a property of a specified `TauCeti.ExactStructure`: an additive
 category can carry more than one exact structure, with different projective and injective objects.
@@ -46,126 +47,6 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
 
 namespace ExactStructure
 
-/-- A projective presentation of `X` relative to `E` is a conflation `K → P → X` whose
-middle term is `E`-projective. -/
-structure ProjectivePresentation (E : ExactStructure C) (X : C) where
-  /-- The kernel term of the presentation. -/
-  K : C
-  /-- The relatively projective middle term. -/
-  P : C
-  /-- The inflation into the projective term. -/
-  i : K ⟶ P
-  /-- The deflation onto the presented object. -/
-  p : P ⟶ X
-  /-- The two presentation maps form a short complex. -/
-  zero : i ≫ p = 0
-  /-- The presentation is a conflation of `E`. -/
-  conflation : E.Conflation (ShortComplex.mk i p zero)
-  /-- The middle term is projective relative to `E`. -/
-  isProjective : E.isProjective P
-
-/-- An injective presentation of `X` relative to `E` is a conflation `X → I → K` whose
-middle term is `E`-injective. -/
-structure InjectivePresentation (E : ExactStructure C) (X : C) where
-  /-- The relatively injective middle term. -/
-  I : C
-  /-- The cokernel term of the presentation. -/
-  K : C
-  /-- The inflation from the presented object. -/
-  i : X ⟶ I
-  /-- The deflation from the injective term. -/
-  p : I ⟶ K
-  /-- The two presentation maps form a short complex. -/
-  zero : i ≫ p = 0
-  /-- The presentation is a conflation of `E`. -/
-  conflation : E.Conflation (ShortComplex.mk i p zero)
-  /-- The middle term is injective relative to `E`. -/
-  isInjective : E.isInjective I
-
-/-- An exact structure has enough projectives if every object admits a relative projective
-presentation. -/
-structure EnoughProjectives (E : ExactStructure C) : Prop where
-  presentation : ∀ X : C, Nonempty (E.ProjectivePresentation X)
-
-/-- An exact structure has enough injectives if every object admits a relative injective
-presentation. -/
-structure EnoughInjectives (E : ExactStructure C) : Prop where
-  presentation : ∀ X : C, Nonempty (E.InjectivePresentation X)
-
-namespace ProjectivePresentation
-
-/-- The tautological projective presentation in the split exact structure. -/
-noncomputable def split (X : C) : (ExactStructure.split C).ProjectivePresentation X where
-  K := 0
-  P := X
-  i := 0
-  p := 𝟙 X
-  zero := by simp
-  conflation := (ExactStructure.split C).conflation_zero_id X
-  isProjective := split_isProjective X
-
-/-- Mathlib's projective presentation gives a relative projective presentation for the canonical
-exact structure of an abelian category. -/
-noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
-    [CategoryTheory.EnoughProjectives A] (X : A) :
-    (ExactStructure.abelian A).ProjectivePresentation X where
-  K := kernel (Projective.π X)
-  P := Projective.over X
-  i := kernel.ι (Projective.π X)
-  p := Projective.π X
-  zero := kernel.condition _
-  conflation := abelian_conflation_of_epi _
-  isProjective := (abelian_isProjective_iff _).mpr inferInstance
-
-end ProjectivePresentation
-
-namespace InjectivePresentation
-
-/-- The tautological injective presentation in the split exact structure. -/
-noncomputable def split (X : C) : (ExactStructure.split C).InjectivePresentation X where
-  I := X
-  K := 0
-  i := 𝟙 X
-  p := 0
-  zero := by simp
-  conflation := (ExactStructure.split C).conflation_id_zero X
-  isInjective := split_isInjective X
-
-/-- Mathlib's injective presentation gives a relative injective presentation for the canonical
-exact structure of an abelian category. -/
-noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
-    [CategoryTheory.EnoughInjectives A] (X : A) :
-    (ExactStructure.abelian A).InjectivePresentation X where
-  I := Injective.under X
-  K := cokernel (Injective.ι X)
-  i := Injective.ι X
-  p := cokernel.π (Injective.ι X)
-  zero := cokernel.condition _
-  conflation := abelian_conflation_of_mono _
-  isInjective := (abelian_isInjective_iff _).mpr inferInstance
-
-end InjectivePresentation
-
-/-- The split exact structure has enough relative projectives. -/
-theorem split_enoughProjectives : (ExactStructure.split C).EnoughProjectives :=
-  ⟨fun X ↦ ⟨ProjectivePresentation.split X⟩⟩
-
-/-- The split exact structure has enough relative injectives. -/
-theorem split_enoughInjectives : (ExactStructure.split C).EnoughInjectives :=
-  ⟨fun X ↦ ⟨InjectivePresentation.split X⟩⟩
-
-/-- Enough ordinary projectives give enough relative projectives for the canonical exact
-structure on an abelian category. -/
-theorem abelian_enoughProjectives {A : Type u} [Category.{v} A] [Abelian A]
-    [CategoryTheory.EnoughProjectives A] : (ExactStructure.abelian A).EnoughProjectives :=
-  ⟨fun X ↦ ⟨ProjectivePresentation.abelian X⟩⟩
-
-/-- Enough ordinary injectives give enough relative injectives for the canonical exact structure
-on an abelian category. -/
-theorem abelian_enoughInjectives {A : Type u} [Category.{v} A] [Abelian A]
-    [CategoryTheory.EnoughInjectives A] : (ExactStructure.abelian A).EnoughInjectives :=
-  ⟨fun X ↦ ⟨InjectivePresentation.abelian X⟩⟩
-
 /-- A Frobenius exact structure has enough relative projectives and injectives, and these two
 classes of objects coincide. -/
 structure IsFrobenius (E : ExactStructure C) : Prop where
@@ -179,14 +60,6 @@ structure IsFrobenius (E : ExactStructure C) : Prop where
 namespace IsFrobenius
 
 variable {E : ExactStructure C} (hE : E.IsFrobenius)
-
-/-- Choose a relative projective presentation in a Frobenius exact structure. -/
-noncomputable def projectivePresentation (X : C) : E.ProjectivePresentation X :=
-  (hE.enoughProjectives.presentation X).some
-
-/-- Choose a relative injective presentation in a Frobenius exact structure. -/
-noncomputable def injectivePresentation (X : C) : E.InjectivePresentation X :=
-  (hE.enoughInjectives.presentation X).some
 
 /-- In a Frobenius exact structure, relative injectivity is equivalent to relative projectivity. -/
 theorem injective_iff_projective (hE : E.IsFrobenius) (X : C) :

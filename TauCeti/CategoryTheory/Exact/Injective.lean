@@ -23,6 +23,9 @@ transported through the opposite exact structure without maintaining parallel hy
 The splitting API is also dual. A conflation whose first term is injective splits because its
 inflation has a retraction.
 
+The bundled `TauCeti.ExactStructure.InjectivePresentation` records a conflation into a relatively
+injective object, and `TauCeti.ExactStructure.EnoughInjectives` says that every object admits one.
+
 ## References
 
 * Theo Bühler, *Exact categories*, Expositiones Mathematicae **28** (2010), 1–69,
@@ -147,6 +150,99 @@ theorem abelian_isInjective_iff {A : Type u} [Category.{v} A] [Abelian A] (X : A
   · intro h Y Z i hi f
     have : Mono i := (abelian_isInflation_iff i).mp hi
     exact h.factors f i
+
+/-- An injective presentation of `X` relative to `E` is a conflation `X → I → K` whose
+middle term is `E`-injective. -/
+structure InjectivePresentation (E : ExactStructure C) (X : C) where
+  /-- The relatively injective middle term. -/
+  I : C
+  /-- The cokernel term of the presentation. -/
+  K : C
+  /-- The inflation from the presented object. -/
+  i : X ⟶ I
+  /-- The deflation from the injective term. -/
+  p : I ⟶ K
+  /-- The two presentation maps form a short complex. -/
+  zero : i ≫ p = 0
+  /-- The presentation is a conflation of `E`. -/
+  conflation : E.Conflation (ShortComplex.mk i p zero)
+  /-- The middle term is injective relative to `E`. -/
+  isInjective : E.isInjective I
+
+/-- An exact structure has enough injectives if every object admits a relative injective
+presentation. -/
+structure EnoughInjectives (E : ExactStructure C) : Prop where
+  presentation : ∀ X : C, Nonempty (E.InjectivePresentation X)
+
+namespace InjectivePresentation
+
+/-- The tautological injective presentation in the split exact structure. -/
+noncomputable def split (X : C) : (ExactStructure.split C).InjectivePresentation X where
+  I := X
+  K := 0
+  i := 𝟙 X
+  p := 0
+  zero := by simp
+  conflation := (ExactStructure.split C).conflation_id_zero X
+  isInjective := split_isInjective X
+
+@[simp] theorem split_I (X : C) : (split X).I = X := (rfl)
+
+@[simp] theorem split_K (X : C) : (split X).K = 0 := (rfl)
+
+@[simp] theorem split_i (X : C) : HEq (split X).i (𝟙 X) := (HEq.rfl)
+
+@[simp] theorem split_p (X : C) : HEq (split X).p (0 : X ⟶ (0 : C)) := (HEq.rfl)
+
+/-- Mathlib's injective presentation gives a relative injective presentation for the canonical
+exact structure of an abelian category. -/
+noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
+    [CategoryTheory.EnoughInjectives A] (X : A) :
+    (ExactStructure.abelian A).InjectivePresentation X where
+  I := Injective.under X
+  K := cokernel (Injective.ι X)
+  i := Injective.ι X
+  p := cokernel.π (Injective.ι X)
+  zero := cokernel.condition _
+  conflation := abelian_conflation_of_mono _
+  isInjective := (abelian_isInjective_iff _).mpr inferInstance
+
+@[simp] theorem abelian_I {A : Type u} [Category.{v} A] [Abelian A]
+    [CategoryTheory.EnoughInjectives A] (X : A) :
+    (abelian X).I = Injective.under X := (rfl)
+
+@[simp] theorem abelian_K {A : Type u} [Category.{v} A] [Abelian A]
+    [CategoryTheory.EnoughInjectives A] (X : A) :
+    (abelian X).K = cokernel (Injective.ι X) := (rfl)
+
+@[simp] theorem abelian_i {A : Type u} [Category.{v} A] [Abelian A]
+    [CategoryTheory.EnoughInjectives A] (X : A) :
+    HEq (abelian X).i (Injective.ι X) := (HEq.rfl)
+
+@[simp] theorem abelian_p {A : Type u} [Category.{v} A] [Abelian A]
+    [CategoryTheory.EnoughInjectives A] (X : A) :
+    HEq (abelian X).p (cokernel.π (Injective.ι X)) := (HEq.rfl)
+
+end InjectivePresentation
+
+/-- The split exact structure has enough relative injectives. -/
+theorem split_enoughInjectives : (ExactStructure.split C).EnoughInjectives :=
+  ⟨fun X ↦ ⟨InjectivePresentation.split X⟩⟩
+
+/-- Enough ordinary injectives give enough relative injectives for the canonical exact structure
+on an abelian category. -/
+theorem abelian_enoughInjectives {A : Type u} [Category.{v} A] [Abelian A]
+    [CategoryTheory.EnoughInjectives A] : (ExactStructure.abelian A).EnoughInjectives :=
+  ⟨fun X ↦ ⟨InjectivePresentation.abelian X⟩⟩
+
+namespace EnoughInjectives
+
+/-- Choose a relative injective presentation from enough relative injectives. -/
+noncomputable def injectivePresentation (h : E.EnoughInjectives) (X : C) :
+    E.InjectivePresentation X :=
+  (h.presentation X).some
+
+end EnoughInjectives
 
 /-- Relative injectivity in `C` is relative projectivity in the opposite exact category. -/
 theorem isInjective_iff_isProjective_op (I : C) :
