@@ -37,7 +37,7 @@ homeomorphism gives `FundamentalGroup Circle x ≃* Multiplicative ℤ` at every
 The regularity input is elementary and holds for an arbitrary topological additive group:
 two points of `𝕜` with the same image under `(↑) : 𝕜 → AddCircle p` differ by an element of
 the period subgroup `zmultiples p`, and translation by that element is a deck
-transformation, so `Deck ((↑) : 𝕜 → AddCircle p)` acts transitively on every fibre.
+transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on every fibre.
 
 ## Main declarations
 
@@ -55,11 +55,9 @@ transformation, so `Deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
 
 ## References
 
-This advances the Tau Ceti universal-covers roadmap, Stage 4 target 12 (`π₁(S¹) ≅ ℤ`,
-"built from `AddCircle.isCoveringMap_coe` (`ℝ → S¹`) and deck transformations";
-`TauCetiRoadmap/UniversalCovers/README.md`). It consumes Mathlib's `AddCircle` covering map
-(`AddCircle.isCoveringMap_coe`, Junyan Xu) and the contractibility of a real topological
-vector space, together with the Tau Ceti deck-transformation theory of Stages 0.4 and 1.
+It consumes Mathlib's `AddCircle` covering map (`AddCircle.isCoveringMap_coe`, Junyan Xu) and
+the contractibility of a real topological vector space, together with Tau Ceti's
+deck-transformation theory.
 -/
 
 public section
@@ -92,7 +90,7 @@ lemma fundamentalGroupMulEquivZMultiples_apply_eq_iff (hcov : IsCoveringMap ((�
       (hcov.monodromy γ e : 𝕜) = (e : 𝕜) + (n.toAdd : 𝕜) := by
   rw [fundamentalGroupMulEquivZMultiples, MulEquiv.trans_apply, MulEquiv.symm_apply_eq,
     Deck.IsRegular.fundamentalGroupDeckEquiv_apply_eq_iff]
-  simp only [Deck.smul_eq_apply, Deck.addCircleMulEquiv_apply,
+  simp only [deck.smul_eq_apply, Deck.addCircleMulEquiv_apply,
     Deck.addRightZMultiples_apply, eq_comm]
 
 /-- The inverse of the period-subgroup equivalence sends `n` to the loop class whose monodromy

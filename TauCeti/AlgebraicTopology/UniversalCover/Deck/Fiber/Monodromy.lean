@@ -20,8 +20,7 @@ Deck transformations commute with transport between fibres by covering-space mon
 ## References
 
 The proof specializes `IsCoveringMap.fiberMap_monodromy` to the continuous map underlying
-a deck transformation. It supplies the fibre-transport step needed for the regular-cover criterion
-in `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2, item 8.
+a deck transformation. It supplies the fibre-transport step of the regular-cover criterion.
 -/
 
 public section
@@ -40,13 +39,13 @@ deck transformation and then lifts the path, while the other first lifts the pat
 applies the deck transformation. -/
 @[simp]
 theorem monodromy_smul (hp : IsCoveringMap p)
-    (γ : Path.Homotopic.Quotient x y) (φ : Deck p) (e : p ⁻¹' {x}) :
+    (γ : Path.Homotopic.Quotient x y) (φ : deck p) (e : p ⁻¹' {x}) :
     hp.monodromy γ (φ • e) = φ • hp.monodromy γ e := by
   let g : C(E, E) := ⟨φ.1, φ.1.continuous⟩
-  have hgp : p ∘ g = p := funext (map_proj φ)
+  have hgp : p ∘ g = p := funext (deck.map_proj φ)
   have hfiber (z : X) (u : p ⁻¹' {z}) : Function.fiberMap g hgp z u = φ • u := by
     apply Subtype.ext
-    simp only [Function.fiberMap_apply_coe, fiber_smul_coe]
+    simp only [Function.fiberMap_apply_coe, deck.fiber_smul_coe]
     rfl
   simpa only [hfiber] using (IsCoveringMap.fiberMap_monodromy hp hp g hgp γ e).symm
 

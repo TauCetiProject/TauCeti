@@ -16,13 +16,13 @@ pretransitively is a principal homogeneous space for the deck group. This packag
 form of the simply transitive fibre action; regular covers specialize it by supplying
 pretransitivity on every fibre.
 
-The torsor structure is bookkeeping needed by the universal-covers roadmap Stage 2, where
-pointed covers and unpointed covers differ by changing a chosen lift of the basepoint.
+Pointed covers and unpointed covers differ by changing a chosen lift of the basepoint, which
+the torsor structure keeps track of.
 
 ## Main declarations
 
 * `TauCeti.Deck.fiberTorsorOfPretransitive`: a nonempty pretransitive fibre of a
-  preconnected cover is a `Torsor (Deck p)`.
+  preconnected cover is a `Torsor (deck p)`.
 * `TauCeti.Deck.fiber_sdiv_eq_deckEquivFiberOfSurjective_symm`: fibre division is computed
   by the inverse of the local deck-to-fibre equivalence.
 * `TauCeti.Deck.deckEquivFiberOfSurjective_symm_eq_sdiv`: the same characterization in the
@@ -30,10 +30,9 @@ pointed covers and unpointed covers differ by changing a chosen lift of the base
 
 ## References
 
-This supplies a small prerequisite for the regular-cover and pointed/unpointed-cover
-bookkeeping in `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2. It builds on the connected
-deck-action API in `TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected.Basic` and Mathlib's
-generic torsor API (`Mathlib.Algebra.Torsor.Basic`).
+It builds on the connected deck-action API in
+`TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected.Basic` and Mathlib's generic torsor API
+(`Mathlib.Algebra.Torsor.Basic`).
 -/
 
 public section
@@ -50,14 +49,14 @@ The division `e₁ /ₛ e₂` is the unique deck transformation carrying `e₂` 
 using `deckEquivFiberOfSurjective` at the base point `e₂`. -/
 @[reducible]
 noncomputable def fiberTorsorOfPretransitive [PreconnectedSpace E] (hp : IsCoveringMap p)
-    (b : B) [Nonempty (p ⁻¹' {b})] [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] :
-    Torsor (Deck p) (p ⁻¹' {b}) where
+    (b : B) [Nonempty (p ⁻¹' {b})] [MulAction.IsPretransitive (deck p) (p ⁻¹' {b})] :
+    Torsor (deck p) (p ⁻¹' {b}) where
   toMulAction := instFiberMulAction
   nonempty := inferInstance
   sdiv e₁ e₂ :=
-    (deckEquivFiberOfSurjective hp e₂ (MulAction.surjective_smul (Deck p) e₂)).symm e₁
+    (deckEquivFiberOfSurjective hp e₂ (MulAction.surjective_smul (deck p) e₂)).symm e₁
   sdiv_smul' e₁ e₂ :=
-    deckEquivFiberOfSurjective_symm_smul hp e₂ (MulAction.surjective_smul (Deck p) e₂) e₁
+    deckEquivFiberOfSurjective_symm_smul hp e₂ (MulAction.surjective_smul (deck p) e₂) e₁
   smul_sdiv' φ e := by
     rw [Equiv.symm_apply_eq]
     rw [deckEquivFiberOfSurjective_apply]
@@ -65,10 +64,10 @@ noncomputable def fiberTorsorOfPretransitive [PreconnectedSpace E] (hp : IsCover
 /-- In the local fibre torsor, `e₁ /ₛ e₂` is the inverse local equivalence from `e₂` applied
 to `e₁`. -/
 lemma fiber_sdiv_eq_deckEquivFiberOfSurjective_symm [PreconnectedSpace E] (hp : IsCoveringMap p)
-    [Nonempty (p ⁻¹' {b})] [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] (e₁ e₂ : p ⁻¹' {b}) :
+    [Nonempty (p ⁻¹' {b})] [MulAction.IsPretransitive (deck p) (p ⁻¹' {b})] (e₁ e₂ : p ⁻¹' {b}) :
     letI := fiberTorsorOfPretransitive hp b
     e₁ /ₛ e₂ =
-      (deckEquivFiberOfSurjective hp e₂ (MulAction.surjective_smul (Deck p) e₂)).symm e₁ :=
+      (deckEquivFiberOfSurjective hp e₂ (MulAction.surjective_smul (deck p) e₂)).symm e₁ :=
 by
   rfl
 
@@ -76,9 +75,9 @@ by
 quotient of a point by the chosen base point. -/
 @[simp]
 lemma deckEquivFiberOfSurjective_symm_eq_sdiv [PreconnectedSpace E] (hp : IsCoveringMap p)
-    [Nonempty (p ⁻¹' {b})] [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] (e e' : p ⁻¹' {b}) :
+    [Nonempty (p ⁻¹' {b})] [MulAction.IsPretransitive (deck p) (p ⁻¹' {b})] (e e' : p ⁻¹' {b}) :
     letI := fiberTorsorOfPretransitive hp b
-    (deckEquivFiberOfSurjective hp e (MulAction.surjective_smul (Deck p) e)).symm e' =
+    (deckEquivFiberOfSurjective hp e (MulAction.surjective_smul (deck p) e)).symm e' =
       e' /ₛ e := by
   rw [fiber_sdiv_eq_deckEquivFiberOfSurjective_symm hp]
 

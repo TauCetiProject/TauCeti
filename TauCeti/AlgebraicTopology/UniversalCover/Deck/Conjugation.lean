@@ -11,25 +11,18 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Basic
 # Conjugating deck transformations
 
 An isomorphism of maps over the same base transports deck transformations by conjugation.
-This file packages that transport as a multiplicative equivalence of deck groups. It is
-basic bookkeeping for the universal-covers roadmap: once covers are organized up to
-isomorphism over the base, their deck groups must be identified by conjugating along the
-chosen total-space homeomorphism.
+This file packages that transport as a multiplicative equivalence of deck groups, so that
+covers identified up to isomorphism over the base have their deck groups identified by
+conjugating along the chosen total-space homeomorphism.
 
 ## Main definitions
 
 * `TauCeti.Deck.conjMulEquiv`: if `h : E ≃ₜ F` satisfies `q (h e) = p e`, then
-  conjugation by `h` gives `Deck p ≃* Deck q`.
+  conjugation by `h` gives `deck p ≃* deck q`.
 * `TauCeti.Deck.conjMulEquivRefl`: the identity over-base homeomorphism induces the
   identity deck-group equivalence.
 * `TauCeti.Deck.conjMulEquivTrans`: conjugating along a composite over-base
   homeomorphism is the composite of the conjugation equivalences.
-
-## References
-
-This file supplies a prerequisite for the Tau Ceti universal-covers roadmap, Stage 0.4
-(`Deck p` as the deck transformation group), and the later cover-isomorphism bookkeeping in
-Stage 2.
 -/
 
 public section
@@ -108,18 +101,19 @@ private def conjHomeomorphMulEquiv (h : E ≃ₜ F) : (E ≃ₜ E) ≃* (F ≃�
 
 /-- Conjugation by an over-base homeomorphism sends deck transformations to deck
 transformations. -/
-private lemma conjHomeomorph_mem_deck (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : Deck p) :
-    conjHomeomorph h φ.1 ∈ Deck q := by
+private lemma conjHomeomorph_mem_deck (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : deck p) :
+    conjHomeomorph h φ.1 ∈ deck q := by
+  rw [mem_iff]
   intro f
   calc
     q (conjHomeomorph h φ.1 f) = q (h (φ.1 (h.symm f))) := rfl
     _ = p (φ.1 (h.symm f)) := hpq _
-    _ = p (h.symm f) := map_proj φ _
+    _ = p (h.symm f) := deck.map_proj φ _
     _ = q f := map_symm_eq_of_map_eq h hpq f
 
 /-- The image of a deck group under over-base conjugation is the deck group over the target. -/
 private lemma map_conjHomeomorphMulEquiv_deck (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) :
-    (Deck p).map (conjHomeomorphMulEquiv h : (E ≃ₜ E) →* (F ≃ₜ F)) = Deck q := by
+    (deck p).map (conjHomeomorphMulEquiv h : (E ≃ₜ E) →* (F ≃ₜ F)) = deck q := by
   ext φ
   constructor
   · rintro ⟨ψ, hψ, rfl⟩
@@ -132,20 +126,20 @@ private lemma map_conjHomeomorphMulEquiv_deck (h : E ≃ₜ F) (hpq : ∀ e, q (
 
 /-- An isomorphism of maps over the same base identifies their deck transformation groups
 by conjugation on the total spaces. -/
-def conjMulEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) : Deck p ≃* Deck q :=
-  (conjHomeomorphMulEquiv h).subgroupMap (Deck p) |>.trans <|
+def conjMulEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) : deck p ≃* deck q :=
+  (conjHomeomorphMulEquiv h).subgroupMap (deck p) |>.trans <|
     MulEquiv.subgroupCongr (map_conjHomeomorphMulEquiv_deck h hpq)
 
 /-- The deck transformation produced by `conjMulEquiv` evaluates by conjugation. -/
 @[simp]
-lemma conjMulEquiv_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : Deck p) (f : F) :
+lemma conjMulEquiv_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : deck p) (f : F) :
     ((conjMulEquiv h hpq φ).1 f) = h (φ.1 (h.symm f)) := by
   rfl
 
 /-- The inverse equivalence of `conjMulEquiv` is conjugation by the inverse
 homeomorphism. -/
 @[simp]
-lemma conjMulEquiv_symm_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (ψ : Deck q) (e : E) :
+lemma conjMulEquiv_symm_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (ψ : deck q) (e : E) :
     (((conjMulEquiv h hpq).symm ψ).1 e) = h.symm (ψ.1 (h e)) := by
   rfl
 
@@ -154,7 +148,7 @@ identity deck-group equivalence. -/
 @[simp]
 lemma conjMulEquivRefl :
     conjMulEquiv (Homeomorph.refl E) (p := p) (q := p) (fun _ => rfl) =
-      MulEquiv.refl (Deck p) := by
+      MulEquiv.refl (deck p) := by
   ext φ e
   simp
   -- conjugation by `Homeomorph.refl E` inserts `refl` on both sides of `φ`, so the residual
@@ -172,21 +166,21 @@ lemma conjMulEquivTrans (h : E ≃ₜ F) (k : F ≃ₜ G)
   simp
 
 /-- Conjugation by the identity over-base homeomorphism maps a subgroup to itself. -/
-lemma subgroup_map_conj_refl (H : Subgroup (Deck p)) :
+lemma subgroup_map_conj_refl (H : Subgroup (deck p)) :
     H.map ((conjMulEquiv (Homeomorph.refl E) (p := p) (q := p)
-      (fun e => by rfl) : Deck p ≃* Deck p) : Deck p →* Deck p) = H := by
+      (fun e => by rfl) : deck p ≃* deck p) : deck p →* deck p) = H := by
   rw [conjMulEquivRefl]
   simp
 
 /-- Mapping a subgroup through two successive conjugations agrees with mapping it through the
 conjugation attached to the composite over-base homeomorphism. -/
 lemma subgroup_map_conj_trans (h : E ≃ₜ F) (k : F ≃ₜ G)
-    (hpq : ∀ e, q (h e) = p e) (hqr : ∀ f, r (k f) = q f) (H : Subgroup (Deck p)) :
-    (H.map ((conjMulEquiv h hpq : Deck p ≃* Deck q) : Deck p →* Deck q)).map
-        ((conjMulEquiv k hqr : Deck q ≃* Deck r) : Deck q →* Deck r) =
+    (hpq : ∀ e, q (h e) = p e) (hqr : ∀ f, r (k f) = q f) (H : Subgroup (deck p)) :
+    (H.map ((conjMulEquiv h hpq : deck p ≃* deck q) : deck p →* deck q)).map
+        ((conjMulEquiv k hqr : deck q ≃* deck r) : deck q →* deck r) =
       H.map ((conjMulEquiv (h.trans k)
-        (fun e => by rw [Homeomorph.trans_apply, hqr, hpq]) : Deck p ≃* Deck r) :
-          Deck p →* Deck r) := by
+        (fun e => by rw [Homeomorph.trans_apply, hqr, hpq]) : deck p ≃* deck r) :
+          deck p →* deck r) := by
   rw [Subgroup.map_map]
   congr 1
 
