@@ -123,8 +123,7 @@ theorem clifford_restrict_dvd_finrank [IsAlgClosed k] (W : FDRep k G) [Simple W]
     ⟨e * (inertia V).index, by rw [hdim]; ring⟩, Subgroup.index_dvd_of_le (le_inertia V), ?_⟩
   rcases Nat.eq_zero_or_pos (e * Module.finrank k V) with hzero | hpos
   · simp [hzero]
-  · rw [show Module.finrank k W = e * Module.finrank k V * (inertia V).index by rw [hdim]; ring,
-      Nat.mul_div_cancel_left _ hpos]
+  · rw [hdim, mul_right_comm, Nat.mul_div_cancel_left _ hpos]
 
 /-- **Clifford theory when the dimension is coprime to the index.**  If the dimension of an
 irreducible `W : FDRep k G` is coprime to `[G : N]`, then `Res_N W` is isomorphic to `e` copies of
