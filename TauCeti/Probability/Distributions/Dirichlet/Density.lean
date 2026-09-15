@@ -14,11 +14,11 @@ public import TauCeti.Probability.Distributions.PDFInstances
 /-!
 # The density of the Dirichlet distribution in a simplex chart
 
-The Dirichlet law is carried by the standard simplex, an affine hyperplane of
-`EuclideanSpace ℝ ι`, so it has no density against the ambient volume.  This file gives its
-density in the chart that drops one coordinate: after choosing `i₀ : ι`, a point of the simplex is
-determined by its coordinates away from `i₀`, the coordinate at `i₀` being the remaining mass
-`1 - ∑ j, x j`.
+The Dirichlet law is carried by the standard simplex, which lies inside the affine hyperplane
+`∑ i, x i = 1` of `EuclideanSpace ℝ ι`, so it has no density against the ambient volume.  This
+file gives its density in the chart that drops one coordinate: after choosing `i₀ : ι`, a point of
+the simplex is determined by its coordinates away from `i₀`, the coordinate at `i₀` being the
+remaining mass `1 - ∑ j, x j`.
 
 The Dirichlet law is defined by normalizing independent unit-rate Gamma coordinates by their
 total, so the density comes from a change of variables that separates that total from the point of
@@ -759,8 +759,9 @@ private theorem dirichletNormalize_eq_dirichletChart (i₀ : ι) {x : ι → ℝ
 image, under the chart, of Lebesgue measure on the remaining coordinates weighted by
 `TauCeti.Probability.dirichletChartPDF`.
 
-The law lives on the simplex, a hyperplane of `EuclideanSpace ℝ ι`, so it has no density against
-the ambient volume; this lower-dimensional presentation is the substitute. -/
+The law lives on the simplex, which lies inside the affine hyperplane `∑ i, x i = 1` of
+`EuclideanSpace ℝ ι`, so it has no density against the ambient volume; this lower-dimensional
+presentation is the substitute. -/
 theorem dirichletMeasure_eq_map_withDensity_dirichletChartPDF {a : ι → ℝ} (ha : ∀ i, 0 < a i)
     (i₀ : ι) :
     dirichletMeasure a
