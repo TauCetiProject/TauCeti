@@ -99,10 +99,9 @@ theorem primeIdealZetaSum_div_univ_nonneg
   div_nonneg (S.primeIdealZetaSum_nonneg s)
     ((Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum_nonneg s)
 
-/-- The ratio used to define Dirichlet density is at most one at every real parameter.
-
-The proof follows `NumberField.Set.HasDirichletDensity.le_one` from
-`Mathlib.NumberTheory.NumberField.DirichletDensity`. -/
+-- The proof below follows `NumberField.Set.HasDirichletDensity.le_one` from
+-- `Mathlib.NumberTheory.NumberField.DirichletDensity`.
+/-- The ratio used to define Dirichlet density is at most one at every real parameter. -/
 theorem primeIdealZetaSum_div_univ_le_one
     (S : Set (HeightOneSpectrum (𝓞 K))) (s : ℝ) :
     S.primeIdealZetaSum s /
