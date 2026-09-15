@@ -53,8 +53,8 @@ theorem mem_euclideanDual' {C : _root_.Submodule R (ι → R)} {y : ι → R} :
 /-- A word is dual to a generated code exactly when it is orthogonal to every generator. -/
 theorem mem_euclideanDual_span {s : Set (ι → R)} {y : ι → R} :
     y ∈ euclideanDual (Submodule.span R s) ↔ ∀ ⦃x⦄, x ∈ s → x ⬝ᵥ y = 0 := by
-  change y ∈ Submodule.orthogonalBilin (dotProductBilin R R) (Submodule.span R s) ↔ _
-  simp only [Submodule.mem_orthogonalBilin_span, dotProductBilin_apply_apply]
+  simp only [euclideanDual, LinearMap.BilinForm.orthogonal, Submodule.mem_orthogonalBilin_span,
+    dotProductBilin_apply_apply]
 
 /-- The dual of the zero code is the whole word space. -/
 @[simp]
@@ -98,12 +98,9 @@ theorem le_euclideanDual_self_iff {C : Submodule R (ι → R)} :
 /-- The Euclidean dual of a sum is the intersection of the Euclidean duals. -/
 @[simp]
 theorem euclideanDual_sup (C D : Submodule R (ι → R)) :
-    euclideanDual (C ⊔ D) = euclideanDual C ⊓ euclideanDual D :=
-  by
-    change Submodule.orthogonalBilin (dotProductBilin R R) (C ⊔ D) =
-      Submodule.orthogonalBilin (dotProductBilin R R) C ⊓
-        Submodule.orthogonalBilin (dotProductBilin R R) D
-    exact Submodule.orthogonalBilin_sup (B := dotProductBilin R R) C D
+    euclideanDual (C ⊔ D) = euclideanDual C ⊓ euclideanDual D := by
+  simp only [euclideanDual, LinearMap.BilinForm.orthogonal]
+  exact Submodule.orthogonalBilin_sup (B := dotProductBilin R R) C D
 
 section Field
 
@@ -148,8 +145,7 @@ theorem finrank_add_finrank_euclideanDual (C : Submodule K (ι → K)) :
     (dotProductBilin_isPerfPair K ι).nondegenerate
   rw [LinearMap.BilinForm.Nondegenerate.ker_eq_bot hnondeg,
     inf_bot_eq, finrank_bot, add_zero, Module.finrank_fintype_fun_eq_card] at hdual
-  change finrank K C +
-    finrank K (LinearMap.BilinForm.orthogonal (dotProductBilin K K) C) = Fintype.card ι
+  rw [euclideanDual]
   exact hdual
 
 /-- A self-dual code has twice its dimension equal to its length. -/
