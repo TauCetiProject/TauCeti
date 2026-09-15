@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Psi
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.PrimePsi
 public import TauCeti.Algebra.Group.Conj
 public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
 
