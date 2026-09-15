@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Real
+public import TauCeti.Data.SignType.Cardinality
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 
@@ -52,15 +53,6 @@ open Finset QuadraticMap
 namespace QuadraticForm
 
 section Fibres
-
-/-- The three fibres of a sign-valued family exhaust the index type. -/
-private theorem ncard_fibre_zero_add_ncard_fibre_neg_add_ncard_fibre_pos {ι : Type*} [Finite ι]
-    (u : ι → SignType) :
-    {i | u i = 0}.ncard + {i | u i = -1}.ncard + {i | u i = 1}.ncard = Nat.card ι := by
-  have hsigma : Nat.card ι = ∑ s : SignType, Nat.card ↥{i | u i = s} := by
-    rw [← Nat.card_sigma]
-    exact Nat.card_congr (Equiv.sigmaFiberEquiv u).symm
-  simpa [SignType.univ_eq, add_assoc] using hsigma.symm
 
 variable {ι ι' : Type*} [Fintype ι] [Fintype ι']
 
@@ -122,8 +114,8 @@ theorem equivalent_iff_finrank_eq_and_sigPos_eq_and_sigNeg_eq (Q : _root_.Quadra
       rw [ncard_fibre_pos, ncard_fibre_pos, ← hu.sigPos_eq, ← hu'.sigPos_eq, hpos]
     have hnegFibre : {i | u i = -1}.ncard = {i' | u' i' = -1}.ncard := by
       rw [ncard_fibre_neg, ncard_fibre_neg, ← hu.sigNeg_eq, ← hu'.sigNeg_eq, hneg]
-    have hsum := ncard_fibre_zero_add_ncard_fibre_neg_add_ncard_fibre_pos u
-    have hsum' := ncard_fibre_zero_add_ncard_fibre_neg_add_ncard_fibre_pos u'
+    have hsum := SignType.ncard_fibre_zero_add_ncard_fibre_neg_add_ncard_fibre_pos u
+    have hsum' := SignType.ncard_fibre_zero_add_ncard_fibre_neg_add_ncard_fibre_pos u'
     simp only [Nat.card_eq_fintype_card, Fintype.card_fin] at hsum hsum'
     have hzeroFibre : {i | u i = 0}.ncard = {i' | u' i' = 0}.ncard := by omega
     intro s
