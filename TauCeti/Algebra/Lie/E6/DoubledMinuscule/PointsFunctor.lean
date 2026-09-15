@@ -15,6 +15,13 @@ public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.GroupScheme
 integral Hopf ideal. The shared `GeneralLinear.IntegralPointsPresentation` API supplies maps
 of value rings, their functoriality, and the representing equivalence with quotient-algebra
 points. This file proves that those maps preserve the pinned root subgroups and weight torus.
+
+## References
+
+* R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*,
+  Sections 1.15 and 1.17.
+* R. W. Carter, *Simple Groups of Lie Type*, §12.2, for the doubled minuscule realization.
+* J. C. Jantzen, *Representations of Algebraic Groups*, II.1--2.
 -/
 
 public section

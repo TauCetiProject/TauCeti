@@ -23,6 +23,28 @@ Presentations over different universes can be used together in the induced maps 
 The constructions transport the API of
 `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Functor` along the presentation
 equalities. The specialization to `ℤ` allows arbitrary ring homomorphisms as value-ring maps.
+
+## Formal provenance
+
+This API is extracted from the functorial-points interfaces of the seven integral carriers:
+
+* `TauCeti.SlStd` ([#5212](https://github.com/TauCetiProject/TauCeti/pull/5212)) and
+  `TauCeti.SpStd` ([#5172](https://github.com/TauCetiProject/TauCeti/pull/5172));
+* `TauCeti.TypeBSpinCarrier`
+  ([#5552](https://github.com/TauCetiProject/TauCeti/pull/5552)) and
+  `TauCeti.TypeDSpinCarrier`
+  ([#5353](https://github.com/TauCetiProject/TauCeti/pull/5353));
+* `TauCeti.E6Minuscule` ([#5265](https://github.com/TauCetiProject/TauCeti/pull/5265)),
+  `TauCeti.E6DoubledMinuscule`
+  ([#5404](https://github.com/TauCetiProject/TauCeti/pull/5404)), and
+  `TauCeti.E7Minuscule` ([#5471](https://github.com/TauCetiProject/TauCeti/pull/5471)).
+
+Those interfaces supplied the declaration order and proof templates consolidated here. The
+doubled E₆ and E₇ interfaces followed the E₆ minuscule interface; the E₆ minuscule and type-D
+interfaces followed the type-A and type-C interfaces. The type-B interface followed the type-D
+spin interface. The earlier type-A and type-C interfaces also drew on
+`TauCeti.DynkinType`'s pinned Geck-carrier points API. Their Carter and Jantzen references
+remain in the carrier modules, where they describe the underlying group constructions.
 -/
 
 public section
@@ -73,7 +95,10 @@ theorem map_id (P : IntegralPointsPresentation n I A) :
     P.map P (RingHom.id A) = MonoidHom.id _ := by
   simp [map]
 
-/-- Maps of presented points compose through any presentation of the intermediate point group. -/
+/-- Maps of presented points compose through any presentation of the intermediate point group.
+
+The intermediate presentation `Q` occurs only on the right, so `simp` cannot infer it. Use
+this theorem explicitly, supplying `Q`, rather than as a simplification rule. -/
 theorem map_comp (P : IntegralPointsPresentation n I A)
     (Q : IntegralPointsPresentation n I B) (S : IntegralPointsPresentation n I C)
     (f : A →+* B) (g : B →+* C) :
