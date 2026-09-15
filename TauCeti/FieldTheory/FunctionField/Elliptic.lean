@@ -247,7 +247,8 @@ theorem degreeOneEquivDegreeZeroClassGroup_add_eq_iff (hF : IsFunctionField k F)
 Proposition 6.1.7): the addition of `Cl⁰(F)` transported along the bijection
 `P ↦ [P - P₀]`.  It depends on the base place `P₀`, so it is a definition and not an instance;
 `TauCeti.Place.degreeOneAddCommGroup_add_eq_iff` characterises it by linear equivalence. -/
-noncomputable abbrev degreeOneAddCommGroup (hF : IsFunctionField k F)
+@[instance_reducible]
+noncomputable def degreeOneAddCommGroup (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
     AddCommGroup {P : Place k F // P.degree = 1} :=
   (degreeOneEquivDegreeZeroClassGroup hF hex hg hP₀).addCommGroup
@@ -270,6 +271,17 @@ theorem degreeOneAddEquivDegreeZeroClassGroup_apply (hF : IsFunctionField k F)
   -- the isomorphism is `Equiv.addEquiv` applied to the bijection; unfold it to see that.
   rw [degreeOneAddEquivDegreeZeroClassGroup]
   exact Equiv.addEquiv_apply _ P
+
+/-- The base place is the zero of the transported group law. -/
+@[simp]
+theorem degreeOneAddCommGroup_base (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
+    letI := degreeOneAddCommGroup hF hex hg hP₀
+    (⟨P₀, hP₀⟩ : {P : Place k F // P.degree = 1}) = 0 := by
+  let := degreeOneAddCommGroup hF hex hg hP₀
+  apply (degreeOneAddEquivDegreeZeroClassGroup hF hex hg hP₀).injective
+  rw [degreeOneAddEquivDegreeZeroClassGroup_apply,
+    degreeOneEquivDegreeZeroClassGroup_base, map_zero]
 
 /-- **The group law of the degree-one places is linear equivalence of divisors** (Stichtenoth,
 Proposition 6.1.7): `P ⊕ Q = R` exactly when `P + Q ∼ R + P₀`. -/
