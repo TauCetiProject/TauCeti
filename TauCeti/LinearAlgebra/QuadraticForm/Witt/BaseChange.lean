@@ -87,6 +87,21 @@ theorem RegularFormClass.wittIndex_le_wittIndex_baseChange (c : RegularFormClass
   rw [hdecomp, h]
   exact Nat.le_add_right _ _
 
+/-- The anisotropic part commutes with base change when its base change remains anisotropic. -/
+theorem RegularFormClass.anisotropicPart_baseChange (c : RegularFormClass K) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+    RegularFormClass.Anisotropic (c.anisotropicPart.baseChange L) →
+      RegularFormClass.anisotropicPart (c.baseChange L) = c.anisotropicPart.baseChange L := by
+  let _ : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  intro ha
+  have hdecomp := congrArg (RegularFormClass.baseChange L)
+    (RegularFormClass.wittDecomposition c)
+  simp only [RegularFormClass.baseChange_add, RegularFormClass.baseChange_nsmul,
+    RegularFormClass.baseChange_hyperbolicClass] at hdecomp
+  exact RegularFormClass.anisotropicPart_eq ha hdecomp
+
 /-- The Witt index is unchanged after base change exactly when the extended anisotropic part
 remains anisotropic. -/
 theorem RegularFormClass.wittIndex_baseChange_eq_iff (c : RegularFormClass K) :

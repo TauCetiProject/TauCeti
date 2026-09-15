@@ -259,6 +259,16 @@ def presentedFormBaseChangeIsometryEquiv (p : RegularFormPresentation K) :
           simpa [Algebra.algebraMap_eq_smul_one] using hp
         exact DFunLike.congr_fun h x }
 
+/-- The base-change isometry is the standard tensor-product coordinate equivalence. -/
+@[simp]
+theorem presentedFormBaseChangeIsometryEquiv_apply (p : RegularFormPresentation K)
+    (x : L ⊗[K] (Fin p.1 → K)) :
+    presentedFormBaseChangeIsometryEquiv p x =
+      fun i ↦ Algebra.TensorProduct.equivPiOfFiniteBasis L (Pi.basisFun K (Fin p.1)) x
+        (Fin.cast (RegularFormPresentation.fst_baseChange p) i) := by
+  rcases p with ⟨n, w⟩
+  rfl
+
 /-- Base change of presented forms, stated as `QuadraticMap.Equivalent`. -/
 theorem equivalent_presentedForm_baseChange (p : RegularFormPresentation K) :
     ((presentedForm p).baseChange L).Equivalent (presentedForm (p.baseChange L)) :=
