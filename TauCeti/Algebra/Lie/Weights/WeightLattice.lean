@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Invertible
-public import TauCeti.Algebra.Lie.Weights.Root.CorootSpan
+public import Mathlib.Algebra.Lie.Weights.RootSystem
+public import TauCeti.Algebra.Lie.Weights.Integrality
 
 /-!
 # The integral weight lattice and the coroot pairings of a weight
@@ -46,9 +47,8 @@ vector `ρ` of a base does too is proved with the rest of the dominance theory, 
   down, `K` having characteristic zero.
 * `TauCeti.coweightPairing_add`, `TauCeti.coweightPairing_neg`, `TauCeti.coweightPairing_sub` and
   `TauCeti.coweightPairing_zsmul`: the pairing is additive in an integral weight.
-* `TauCeti.coweightPairing_root_eq_pairingIn` and
-  `TauCeti.coweightPairing_coe_eq_rootCartanWeight`: at a root the pairing is the Cartan integer,
-  in Mathlib's root-pairing spelling and in the Lie-theoretic one.
+* `TauCeti.coweightPairing_root_eq_pairingIn`: at a root the pairing is the Cartan integer, in
+  Mathlib's crystallographic root-pairing spelling.
 * `TauCeti.root_mem_integralWeightLattice`: the roots are integral weights.
 
 ## Implementation notes
@@ -58,11 +58,12 @@ vector `ρ` of a base does too is proved with the rest of the dominance theory, 
 the unique integer with the right image, and no further choice is made.
 
 `TauCeti.rootCartanWeight` of `TauCeti/Algebra/Lie/Weights/Root/CorootSpan.lean` is the same
-integer for a *root* in the first argument, where the root-chain coefficients compute it outright;
-`TauCeti.coweightPairing_coe_eq_rootCartanWeight` identifies the two. Neither subsumes the other:
-the Cartan integers of `TauCeti.rootCartanWeight` are available with no hypothesis, while the
-pairing here accepts the weight of a module, a sum `lam + ρ`, or any other integral weight, which
-is what the dominance and dimension statements pair against a coroot.
+integer for a *root* in the first argument, where the root-chain coefficients compute it outright.
+Neither subsumes the other: the Cartan integers of `TauCeti.rootCartanWeight` are available with no
+hypothesis, while the pairing here accepts the weight of a module, a sum `lam + ρ`, or any other
+integral weight, which is what the dominance and dimension statements pair against a coroot. The
+lemma identifying the two, `TauCeti.coweightPairing_coe_eq_rootCartanWeight`, is stated beside
+`TauCeti.rootCartanWeight`, so that nothing here depends on the root-chain theory.
 
 ## References
 
@@ -164,23 +165,13 @@ crystallographic root-pairing API: the root system of a splitting Cartan subalge
 `ℤ`, and `RootPairing.pairingIn` names the same integers this file names for a general weight.
 
 Not a `simp` lemma: `LieAlgebra.IsKilling.rootSystem_root_apply` is one, so the left-hand side
-rewrites to `TauCeti.coweightPairing (j : Dual K H) i` and from there to
-`TauCeti.coweightPairing_coe_eq_rootCartanWeight`; tagging it fails the `simpNF` linter. -/
+rewrites to `TauCeti.coweightPairing (j : Dual K H) i` and is not in simp-normal form; tagging it
+fails the `simpNF` linter. -/
 theorem coweightPairing_root_eq_pairingIn (j i : H.root) :
     coweightPairing ((IsKilling.rootSystem H).root j) i =
       (IsKilling.rootSystem H).pairingIn ℤ j i :=
   coweightPairing_eq_of_apply_coroot_eq_intCast <| by
     simpa using (RootPairing.algebraMap_pairingIn (IsKilling.rootSystem H) ℤ j i).symm
-
-/-- **At a root the coroot pairing is the Cartan integer**, in the Lie-theoretic spelling: for a
-weight `β` of `L` the root-chain description `TauCeti.rootCartanWeight` computes the same
-integer. -/
-@[simp]
-theorem coweightPairing_coe_eq_rootCartanWeight (β : Weight K H L) (i : H.root) :
-    coweightPairing (β : Dual K H) i = rootCartanWeight β (i : Weight K H L) :=
-  coweightPairing_eq_of_apply_coroot_eq_intCast <| by
-    rw [intCast_rootCartanWeight_apply, IsKilling.rootSystem_coroot_apply]
-    rfl
 
 /-! ### The integral weight lattice -/
 
