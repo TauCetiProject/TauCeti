@@ -36,6 +36,8 @@ Fields and Codes*, 2nd ed., Definition 1.4.4 through Definition 1.4.10.
 
 ## Main results
 
+* `TauCeti.one_mem_riemannRochSpace_iff`: `1 ∈ L(D)` exactly when `D` is effective.
+* `TauCeti.mul_mem_riemannRochSpace_add`: multiplication maps `L(A) × L(B)` into `L(A + B)`.
 * `TauCeti.riemannRochSpace_zero`: `L(0)` is the field of constants `algebraicClosure k F` — over
   an exact constant field, `L(0) = k` (`TauCeti.riemannRochSpace_zero_of_isIntegrallyClosedIn`,
   Lemma 1.4.7(a)).
@@ -126,6 +128,29 @@ theorem riemannRochSpace_mono {D E : Divisor k F} (h : D ≤ E) :
 theorem riemannRochSpace_monotone :
     Monotone (riemannRochSpace : Divisor k F → Submodule k F) :=
   fun _ _ ↦ riemannRochSpace_mono
+
+/-- The constant function `1` belongs to `L(D)` exactly when `D` is effective. -/
+@[simp]
+theorem one_mem_riemannRochSpace_iff {D : Divisor k F} :
+    (1 : F) ∈ riemannRochSpace D ↔ 0 ≤ D := by
+  rw [mem_riemannRochSpace_iff, WeilDivisor.le_iff]
+  simp only [map_one, WeilDivisor.coeff_zero, WithZero.one_le_exp_iff]
+
+/-- The product of a section of `L(A)` and a section of `L(B)` is a section of `L(A + B)`.
+The pole orders of a product add, as do the coefficients of its bounding divisors. -/
+theorem mul_mem_riemannRochSpace_add {A B : Divisor k F} {f g : F}
+    (hf : f ∈ riemannRochSpace A) (hg : g ∈ riemannRochSpace B) :
+    f * g ∈ riemannRochSpace (A + B) := by
+  rcases eq_or_ne f 0 with rfl | hf0
+  · simp
+  rcases eq_or_ne g 0 with rfl | hg0
+  · simp
+  rw [mem_riemannRochSpace_iff_neg_le_ord (mul_ne_zero hf0 hg0)]
+  intro P
+  rw [P.ord_mul hf0 hg0, WeilDivisor.coeff_add]
+  have hfP := (mem_riemannRochSpace_iff_neg_le_ord hf0).mp hf P
+  have hgP := (mem_riemannRochSpace_iff_neg_le_ord hg0).mp hg P
+  omega
 
 /-! ### The two ends of the divisor order -/
 
