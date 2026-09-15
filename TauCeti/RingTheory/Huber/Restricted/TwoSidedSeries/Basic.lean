@@ -72,12 +72,10 @@ a placement hazard:
 
 ## Implementation notes
 
-Only the additive and `A`-module structure is built here. The **ring** structure is deliberately
-absent: the coefficient convolution `(fg)ₙ = ∑_{i + j = n} aᵢ bⱼ` is a *finite* sum for one-sided
-series — which is what `TauCeti.Huber.IsRestricted.mul` exploits, through
-`MvPowerSeries.coeff_mul` over a finite antidiagonal — but over `ℤ` that antidiagonal is infinite,
-so multiplication needs a summability argument in a complete ring rather than a rearrangement of a
-finite sum. That is separate work and does not belong to this rung.
+Only the additive and `A`-module structure and the degree decomposition are built here. The
+coefficient multiplication, whose infinite antidiagonals require a summability argument in a
+complete ring, is constructed in
+`TauCeti.RingTheory.Huber.Restricted.TwoSidedSeries.Convolution`.
 
 ## References
 
