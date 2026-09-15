@@ -14,20 +14,22 @@ public import Mathlib.FieldTheory.PrimitiveElement
 For every positive degree, a finite field has a monic irreducible polynomial of that degree. We
 obtain one as the minimal polynomial of a primitive element of a finite extension of that degree.
 
+Such a polynomial `f` of degree `d` over `k` presents the degree-`d` extension of `k` as the
+quotient `k[X] ⧸ (f)`. Over a prime field `ZMod p` these polynomials are the irreducible factors
+from which one assembles polynomials with a prescribed factorization pattern modulo `p`, as used
+when reading off cycle types of Galois groups by reduction modulo primes.
+
 ## Main results
 
 * `TauCeti.exists_monic_irreducible_natDegree_eq`: a monic irreducible polynomial of any
   prescribed positive degree over a finite field.
 
-## Implementation notes
+## References
 
-The construction is assembled from Mathlib's finite-field and primitive-element API:
-`FiniteField.Extension` (in `Mathlib/FieldTheory/Finite/Extension.lean`) provides an extension
-of the prescribed degree, with `FiniteField.finrank_extension` computing that degree;
-`Field.exists_primitive_element_of_finite_top` and
-`Field.primitive_element_iff_minpoly_natDegree_eq` (in
-`Mathlib/FieldTheory/PrimitiveElement.lean`) provide a primitive element and the degree of its
-minimal polynomial; `minpoly.monic` and `minpoly.irreducible` provide the remaining properties.
+The construction follows Mathlib's finite-field extensions `FiniteField.Extension` and
+`FiniteField.finrank_extension` (`Mathlib/FieldTheory/Finite/Extension.lean`) and its
+primitive element theorem `Field.exists_primitive_element_of_finite_top`
+(`Mathlib/FieldTheory/PrimitiveElement.lean`).
 -/
 
 public section
