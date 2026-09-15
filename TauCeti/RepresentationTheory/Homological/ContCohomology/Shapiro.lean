@@ -25,7 +25,7 @@ and two the forward map is the compatible-pair pullback `TauCeti.ContCohomology.
 respectively `explicitMap2`, along the pair consisting of the inclusion `U ↪ G` and the counit
 `TauCeti.DiscreteCoind.eval`; nothing about it
 depends on a choice. The choice enters only in proving that this map is bijective, and what it uses
-is Layer 0's continuous section of `G → G ⧸ U`
+is a continuous section of `G → G ⧸ U`
 (`TauCeti.exists_continuous_rightCosetFactorization`, Ribes-Zalesskii Prop. 2.2.2): writing
 `g = w g * r g` with `w : G → U` continuous and `w (u * g) = u * w g`, a continuous `1`-cocycle
 `c` of `U` is spread over `G` as
@@ -54,8 +54,9 @@ manageable: `TauCeti.ContCohomology.coindCochain2` sends a continuous `2`-cocycl
 the homogeneous form of `c` read at the three points `y`, `y g`, `y g h` of `G` pushed into `U` by
 `w`. Its cocycle identity is the four-term homogeneous relation
 `TauCeti.ContCohomology.homogeneous2_add_eq_add`, and the comparison of a cocycle with the cochain
-rebuilt from its Shapiro image is `TauCeti.ContCohomology.homogeneous2_sub_comp`, the chain
-homotopy between the identity and the map induced by `w`. Here the factorization is required to be
+rebuilt from its Shapiro image is the pointwise prism identity
+`TauCeti.ContCohomology.homogeneous2_sub_comp` applied along `w`. Here the factorization is
+required to be
 **normalized**, `w 1 = 1`, which `TauCeti.exists_continuous_rightCosetFactorization` supplies: the
 Shapiro image of the rebuilt cochain is then `c` on the nose
 (`TauCeti.ContCohomology.shapiroCocycles2_coindCocycle2`), where a factorization with `w 1 = s`
@@ -423,54 +424,6 @@ end Equivalence
 
 end DegreeOne
 
-section Translate
-
-variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G] [CompactSpace G]
-  {A : Type v}
-
-/-! The two instantiations of `TauCeti.exists_isOpen_forall_mul_right_eq` used to prove that the
-degree-two cochains built below are locally constant in their group arguments: a cochain of the
-form `g ↦ (y ↦ N (y, y * g))`, respectively `(g, h) ↦ (y ↦ Q (y, y * g, y * g * h))`, is locally
-constant because the translations it applies are. -/
-
-private theorem exists_isOpen_translate₂ {N : G × G → A} (hN : IsLocallyConstant N) (g₀ : G) :
-    ∃ V : Set G, IsOpen V ∧ g₀ ∈ V ∧ ∀ g ∈ V, ∀ y : G, N (y, y * g) = N (y, y * g₀) := by
-  obtain ⟨V, hVopen, hg₀, hV⟩ := exists_isOpen_forall_mul_right_eq hN
-    (σ := fun g : G => ((1 : G), g₀⁻¹ * g))
-    (continuous_const.prodMk (continuous_const.mul continuous_id)) g₀
-  refine ⟨V, hVopen, hg₀, fun g hg y => ?_⟩
-  have hy := hV g hg (y, y * g₀)
-  have h1 : ((y, y * g₀) : G × G) * ((1 : G), g₀⁻¹ * g) = (y, y * g) := by
-    simp only [Prod.mk_mul_mk, Prod.mk.injEq]
-    exact ⟨by group, by group⟩
-  have h2 : ((y, y * g₀) : G × G) * ((1 : G), g₀⁻¹ * g₀) = (y, y * g₀) := by
-    simp only [Prod.mk_mul_mk, Prod.mk.injEq]
-    exact ⟨by group, by group⟩
-  rwa [h1, h2] at hy
-
-private theorem exists_isOpen_translate₃ {Q : G × G × G → A} (hQ : IsLocallyConstant Q)
-    (q₀ : G × G) :
-    ∃ V : Set (G × G), IsOpen V ∧ q₀ ∈ V ∧
-      ∀ q ∈ V, ∀ y : G, Q (y, y * q.1, y * q.1 * q.2) = Q (y, y * q₀.1, y * q₀.1 * q₀.2) := by
-  obtain ⟨V, hVopen, hq₀, hV⟩ := exists_isOpen_forall_mul_right_eq hQ
-    (σ := fun q : G × G => ((1 : G), q₀.1⁻¹ * q.1, (q₀.1 * q₀.2)⁻¹ * (q.1 * q.2)))
-    (continuous_const.prodMk ((continuous_const.mul continuous_fst).prodMk
-      (continuous_const.mul (continuous_fst.mul continuous_snd)))) q₀
-  refine ⟨V, hVopen, hq₀, fun q hq y => ?_⟩
-  have hy := hV q hq (y, y * q₀.1, y * q₀.1 * q₀.2)
-  have h1 : ((y, y * q₀.1, y * q₀.1 * q₀.2) : G × G × G) *
-      ((1 : G), q₀.1⁻¹ * q.1, (q₀.1 * q₀.2)⁻¹ * (q.1 * q.2)) = (y, y * q.1, y * q.1 * q.2) := by
-    simp only [Prod.mk_mul_mk, Prod.mk.injEq]
-    exact ⟨by group, by group, by group⟩
-  have h2 : ((y, y * q₀.1, y * q₀.1 * q₀.2) : G × G × G) *
-      ((1 : G), q₀.1⁻¹ * q₀.1, (q₀.1 * q₀.2)⁻¹ * (q₀.1 * q₀.2)) =
-        (y, y * q₀.1, y * q₀.1 * q₀.2) := by
-    simp only [Prod.mk_mul_mk, Prod.mk.injEq]
-    exact ⟨by group, by group, by group⟩
-  rwa [h1, h2] at hy
-
-end Translate
-
 section DegreeTwo
 
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
@@ -504,8 +457,9 @@ omit [CompactSpace G] [TopologicalSpace A] [DiscreteTopology A] [ContinuousSMul 
 the cochain along the three points `y`, `y g`, `y g h`. -/
 theorem homogeneous2_apply_one (f : G × G → DiscreteCoind G U A) (y g h : G) :
     (homogeneous2 f y (y * g) (y * g * h) : DiscreteCoind G U A) 1 = f (g, h) y := by
-  rw [homogeneous2_apply, show y⁻¹ * (y * g) = g by group,
-    show (y * g)⁻¹ * (y * g * h) = h by group, DiscreteCoind.coe_smul, one_mul]
+  have hy : y⁻¹ * (y * g) = g := by group
+  have hyg : (y * g)⁻¹ * (y * g * h) = h := by group
+  rw [homogeneous2_apply, hy, hyg, DiscreteCoind.coe_smul, one_mul]
 
 omit [CompactSpace G] [TopologicalSpace A] [DiscreteTopology A] [ContinuousSMul U A] in
 /-- At a point of `U` the homogeneous form of a `2`-cochain with coinduced coefficients is
@@ -559,7 +513,7 @@ omit [CompactSpace G] in
 /-- The inverse Shapiro cochain satisfies the `2`-cocycle identity: at each `y` it is the
 four-term homogeneous relation for `c` at the four points `w y`, `w (y g)`, `w (y g h)`,
 `w (y g h j)`. -/
-theorem coindCochain2_isCocycle₂ (hccoc : groupCohomology.IsCocycle₂ c) :
+theorem isCocycle₂_coindCochain2 (hccoc : groupCohomology.IsCocycle₂ c) :
     groupCohomology.IsCocycle₂ (coindCochain2 w c hw hwmul hccont) := by
   intro g h j
   refine DiscreteCoind.ext fun y => ?_
@@ -576,7 +530,7 @@ uniform local constancy of the homogeneous form of `c` read through `w`, on the 
 theorem coindCochain2_mem_Z2 (hccoc : groupCohomology.IsCocycle₂ c) :
     coindCochain2 w c hw hwmul hccont ∈ Z2 G (DiscreteCoind G U A) := by
   refine mem_Z2_iff.2 ⟨(IsLocallyConstant.iff_continuous _).1 ?_,
-    coindCochain2_isCocycle₂ w c hw hwmul hccont hccoc⟩
+    isCocycle₂_coindCochain2 w c hw hwmul hccont hccoc⟩
   have hQ : IsLocallyConstant fun p : G × G × G =>
       homogeneous2 c (w p.1) (w p.2.1) (w p.2.2) :=
     (IsLocallyConstant.iff_continuous _).2 (continuous_homogeneous2 hccont
@@ -638,7 +592,8 @@ theorem coindCochain2_mem_B2_of_mem_B2 (hcB : c ∈ B2 U A) :
     refine DiscreteCoind.ext fun y => ?_
     simp only [d1_apply, DiscreteCoind.coe_add, DiscreteCoind.coe_sub, Pi.add_apply,
       Pi.sub_apply, DiscreteCoind.coe_smul, DiscreteCoind.mk_apply, coindCochain2_apply, ← hα]
-    rw [show y * (g * h) = y * g * h by group, homogeneous2_d1]
+    have hy : y * (g * h) = y * g * h := by group
+    rw [hy, homogeneous2_d1]
 
 omit [CompactSpace G] [ContinuousSMul U A] in
 /-- The `A`-valued function assembling the primitive that rebuilds a continuous `2`-cocycle of `G`
@@ -712,7 +667,8 @@ theorem sub_coindCochain2_mem_B2 (f : Z2 G (DiscreteCoind G U A))
     ((IsLocallyConstant.iff_continuous _).2
       (hN.continuous.comp (continuous_id.prodMk (continuous_mul_const g))))
     (fun u y => by
-      rw [show (u : G) * y * g = (u : G) * (y * g) by group]
+      have hu : (u : G) * y * g = (u : G) * (y * g) := by group
+      rw [hu]
       exact shapiroPrimitive2_smul w hwmul (f : G × G → DiscreteCoind G U A) u y (y * g)),
     ?_, ?_⟩
   · rw [← IsLocallyConstant.iff_continuous]
@@ -729,7 +685,8 @@ theorem sub_coindCochain2_mem_B2 (f : Z2 G (DiscreteCoind G U A))
     simp only [d1_apply, DiscreteCoind.coe_sub, DiscreteCoind.coe_add, Pi.sub_apply,
       Pi.add_apply, DiscreteCoind.coe_smul, DiscreteCoind.mk_apply, coindCochain2_apply,
       shapiroPrimitive2_eq]
-    rw [show y * (g * h) = y * g * h by group, ← hfc, homogeneous2_shapiroCocycles2]
+    have hy : y * (g * h) = y * g * h := by group
+    rw [hy, ← hfc, homogeneous2_shapiroCocycles2]
     exact key.symm
 
 end Factorization

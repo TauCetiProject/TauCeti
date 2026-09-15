@@ -28,9 +28,8 @@ is a neighbourhood of `1`" into "there is a neighbourhood of `1` that works for 
 weaker is claimed here: for a non-compact `G` the argument produces a neighbourhood depending on
 `x` and no uniform one, and no statement below asserts anything in that case.
 
-This is the "uniform local constancy" milestone of Layer 7 of the human-authored roadmap at
-`TauCetiRoadmap/ProfiniteCohomology/README.md`: it is what makes the coinduced module of locally
-constant equivariant maps a *discrete* `G`-module, its right-translation stabilizers being open.
+Uniform local constancy is what makes the coinduced module of locally constant equivariant maps a
+*discrete* `G`-module, its right-translation stabilizers being open.
 
 `TauCeti.exists_isOpen_forall_mul_right_eq` is the form in which a cochain construction consumes
 the stabilizer: a continuous family `σ : P → G` of right translations moves `f` only locally in
@@ -92,5 +91,43 @@ theorem exists_isOpen_forall_mul_right_eq [TopologicalSpace G] [ContinuousMul G]
     fun p hp x => ?_⟩
   have hx := (mem_rightTranslationStabilizer.1 hp) (x * σ p₀)
   rwa [mul_assoc, mul_inv_cancel_left] at hx
+
+/-- A locally constant function `N : G × G → A`, evaluated along `(y, y * g)`, is locally
+constant in `g`, uniformly in `y`. -/
+theorem exists_isOpen_translate₂ [TopologicalSpace G] [ContinuousMul G] [CompactSpace G]
+    {N : G × G → A} (hN : IsLocallyConstant N) (g₀ : G) :
+    ∃ V : Set G, IsOpen V ∧ g₀ ∈ V ∧ ∀ g ∈ V, ∀ y : G, N (y, y * g) = N (y, y * g₀) := by
+  obtain ⟨V, hVopen, hg₀, hV⟩ := exists_isOpen_forall_mul_right_eq hN
+    (σ := fun g : G => ((1 : G), g₀⁻¹ * g))
+    (continuous_const.prodMk (continuous_const.mul continuous_id)) g₀
+  refine ⟨V, hVopen, hg₀, fun g hg y => ?_⟩
+  have hy := hV g hg (y, y * g₀)
+  have h1 : ((y, y * g₀) : G × G) * ((1 : G), g₀⁻¹ * g) = (y, y * g) := by
+    simp [mul_assoc]
+  have h2 : ((y, y * g₀) : G × G) * ((1 : G), g₀⁻¹ * g₀) = (y, y * g₀) := by
+    simp
+  rwa [h1, h2] at hy
+
+/-- A locally constant function `Q : G × G × G → A`, evaluated along
+`(y, y * g, y * g * h)`, is locally constant in `(g, h)`, uniformly in `y`. -/
+theorem exists_isOpen_translate₃ [TopologicalSpace G] [ContinuousMul G] [CompactSpace G]
+    {Q : G × G × G → A} (hQ : IsLocallyConstant Q) (q₀ : G × G) :
+    ∃ V : Set (G × G), IsOpen V ∧ q₀ ∈ V ∧
+      ∀ q ∈ V, ∀ y : G, Q (y, y * q.1, y * q.1 * q.2) = Q (y, y * q₀.1, y * q₀.1 * q₀.2) := by
+  obtain ⟨V, hVopen, hq₀, hV⟩ := exists_isOpen_forall_mul_right_eq hQ
+    (σ := fun q : G × G => ((1 : G), q₀.1⁻¹ * q.1, (q₀.1 * q₀.2)⁻¹ * (q.1 * q.2)))
+    (continuous_const.prodMk ((continuous_const.mul continuous_fst).prodMk
+      (continuous_const.mul (continuous_fst.mul continuous_snd)))) q₀
+  refine ⟨V, hVopen, hq₀, fun q hq y => ?_⟩
+  have hy := hV q hq (y, y * q₀.1, y * q₀.1 * q₀.2)
+  have h1 : ((y, y * q₀.1, y * q₀.1 * q₀.2) : G × G × G) *
+      ((1 : G), q₀.1⁻¹ * q.1, (q₀.1 * q₀.2)⁻¹ * (q.1 * q.2)) =
+        (y, y * q.1, y * q.1 * q.2) := by
+    simp [mul_assoc]
+  have h2 : ((y, y * q₀.1, y * q₀.1 * q₀.2) : G × G × G) *
+      ((1 : G), q₀.1⁻¹ * q₀.1, (q₀.1 * q₀.2)⁻¹ * (q₀.1 * q₀.2)) =
+        (y, y * q₀.1, y * q₀.1 * q₀.2) := by
+    simp
+  rwa [h1, h2] at hy
 
 end TauCeti

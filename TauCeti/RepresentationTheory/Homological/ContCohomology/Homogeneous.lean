@@ -29,10 +29,10 @@ dropping one of four points vanishes, and the coboundary of a `1`-cochain become
 sum `TauCeti.ContCohomology.homogeneous2_d1` of its own homogeneous form.
 
 The reason to have the symmetric form is `TauCeti.ContCohomology.homogeneous2_sub_comp`: for an
-**arbitrary** map `v : G → G`, a homogeneous `2`-cocycle and its pullback along `v` differ by the
-alternating sum of the explicit homogeneous `1`-cochain
-`TauCeti.ContCohomology.homogeneousHomotopy2`.  Applied to a retraction of `G` onto a subgroup it
-is the chain homotopy behind Shapiro's lemma; the statement itself asks nothing of `v`.
+**arbitrary** map `v : G → G`, the values of a homogeneous `2`-cocycle at three points and at
+their images under `v` differ by the alternating sum of the explicit homogeneous `1`-cochain
+`TauCeti.ContCohomology.homogeneousHomotopy2`. This pointwise prism identity, applied to a
+retraction of `G` onto a subgroup, is the comparison used in Shapiro's lemma.
 
 Mathlib's `Rep.diagonalHomEquiv` is the bundled `k`-linear version of the same correspondence, for
 `Rep k G` and the diagonal resolution, and `ContinuousCohomology.homogeneousCochains` is the
@@ -46,8 +46,8 @@ change of coordinates on the cochains of that file.
 
 * `TauCeti.ContCohomology.homogeneous1` and `TauCeti.ContCohomology.homogeneous2`: the homogeneous
   forms of a `1`- and a `2`-cochain.
-* `TauCeti.ContCohomology.homogeneousHomotopy2`: the homogeneous `1`-cochain comparing a
-  homogeneous `2`-cocycle with its pullback along a self-map of `G`.
+* `TauCeti.ContCohomology.homogeneousHomotopy2`: the homogeneous `1`-cochain comparing the values
+  of a homogeneous `2`-cocycle at points with its values at their images under a self-map of `G`.
 
 ## Main statements
 
@@ -55,8 +55,8 @@ change of coordinates on the cochains of that file.
   `2`-cocycle identity.
 * `TauCeti.ContCohomology.homogeneous2_d1`: the homogeneous form of a `2`-coboundary is the
   alternating sum of the homogeneous form of its primitive.
-* `TauCeti.ContCohomology.homogeneous2_sub_comp`: a homogeneous `2`-cocycle and its pullback along
-  an arbitrary self-map of `G` differ by an alternating sum.
+* `TauCeti.ContCohomology.homogeneous2_sub_comp`: the values of a homogeneous `2`-cocycle at
+  points and at their images under an arbitrary self-map of `G` differ by an alternating sum.
 * `TauCeti.ContCohomology.continuous_homogeneous1` and
   `TauCeti.ContCohomology.continuous_homogeneous2`: continuity of the homogeneous forms read along
   continuous families of group elements.
@@ -119,8 +119,9 @@ theorem homogeneous2_add_eq_add {f : G × G → M} (hf : groupCohomology.IsCocyc
     homogeneous2 f h₁ h₂ h₃ + homogeneous2 f h₀ h₁ h₃ =
       homogeneous2 f h₀ h₂ h₃ + homogeneous2 f h₀ h₁ h₂ := by
   have key := hf (h₀⁻¹ * h₁) (h₁⁻¹ * h₂) (h₂⁻¹ * h₃)
-  rw [show h₀⁻¹ * h₁ * (h₁⁻¹ * h₂) = h₀⁻¹ * h₂ by group,
-    show h₁⁻¹ * h₂ * (h₂⁻¹ * h₃) = h₁⁻¹ * h₃ by group] at key
+  have h₀₂ : h₀⁻¹ * h₁ * (h₁⁻¹ * h₂) = h₀⁻¹ * h₂ := by group
+  have h₁₃ : h₁⁻¹ * h₂ * (h₂⁻¹ * h₃) = h₁⁻¹ * h₃ := by group
+  rw [h₀₂, h₁₃] at key
   have hsmul := congrArg (fun x : M => h₀ • x) key
   simp only [smul_add, ← mul_smul, mul_inv_cancel_left] at hsmul
   simpa only [homogeneous2_apply] using hsmul.symm
@@ -130,11 +131,13 @@ primitive. -/
 theorem homogeneous2_d1 (f : G → M) (h₀ h₁ h₂ : G) :
     homogeneous2 (d1 G M f) h₀ h₁ h₂ =
       homogeneous1 f h₁ h₂ - homogeneous1 f h₀ h₂ + homogeneous1 f h₀ h₁ := by
+  have h₀₂ : h₀⁻¹ * h₁ * (h₁⁻¹ * h₂) = h₀⁻¹ * h₂ := by group
   simp only [homogeneous2_apply, homogeneous1_apply, d1_apply, smul_sub, smul_add, ← mul_smul,
-    mul_inv_cancel_left, show h₀⁻¹ * h₁ * (h₁⁻¹ * h₂) = h₀⁻¹ * h₂ by group]
+    mul_inv_cancel_left, h₀₂]
 
-/-- The homogeneous `1`-cochain comparing a homogeneous `2`-cocycle with its pullback along a
-self-map `v` of `G`; see `TauCeti.ContCohomology.homogeneous2_sub_comp`. -/
+/-- The homogeneous `1`-cochain in the pointwise prism identity comparing a homogeneous
+`2`-cocycle at points with its values at their images under a self-map `v` of `G`; see
+`TauCeti.ContCohomology.homogeneous2_sub_comp`. -/
 def homogeneousHomotopy2 (f : G × G → M) (v : G → G) (h₀ h₁ : G) : M :=
   homogeneous2 f (v h₀) h₀ h₁ - homogeneous2 f (v h₀) (v h₁) h₁
 
@@ -150,9 +153,9 @@ theorem homogeneousHomotopy2_smul (f : G × G → M) (v : G → G) {g : G}
     homogeneousHomotopy2 f v (g * h₀) (g * h₁) = g • homogeneousHomotopy2 f v h₀ h₁ := by
   simp only [homogeneousHomotopy2_apply, hv, homogeneous2_smul, smul_sub]
 
-/-- **A homogeneous `2`-cocycle agrees with its pullback along any self-map of `G` up to an
-alternating sum.** This is the chain homotopy between the identity of the standard resolution and
-the map induced by `v`, written on cochains; nothing is assumed of `v`. -/
+/-- **Pointwise prism identity for a homogeneous `2`-cocycle.** Its values at three points and at
+their images under any self-map `v` differ by the displayed alternating sum. No equivariance is
+assumed of `v`, so this is a pointwise identity rather than an induced map of resolutions. -/
 theorem homogeneous2_sub_comp {f : G × G → M} (hf : groupCohomology.IsCocycle₂ f) (v : G → G)
     (h₀ h₁ h₂ : G) :
     homogeneous2 f h₀ h₁ h₂ - homogeneous2 f (v h₀) (v h₁) (v h₂) =
