@@ -57,8 +57,10 @@ theorem IsBorel.conjugate {I : HopfIdeal k H}
   rw [conjugate_eq_comapOfSurjective]
   exact h
 
-/-- Borel status is invariant under conjugation by a rational point. -/
-@[simp]
+/-- Borel status is invariant under conjugation by a rational point.
+
+This is not a `simp` lemma: `isBorel_iff` unfolds `IsBorel` on the left-hand side, so the
+statement is never in `simp`-normal form. -/
 theorem isBorel_conjugate_iff (I : HopfIdeal k H) (g : WithConv (H →ₐ[k] k)) :
     IsBorel k (_root_.CommHopfAlgCat.of k H) (I.conjugate g) ↔
       IsBorel k (_root_.CommHopfAlgCat.of k H) I := by

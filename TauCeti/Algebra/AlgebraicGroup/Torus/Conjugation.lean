@@ -57,8 +57,10 @@ theorem IsMaximalTorus.conjugate {I : HopfIdeal k H}
   rw [conjugate_eq_comapOfSurjective]
   exact h
 
-/-- Maximal-torus status is invariant under conjugation by a rational point. -/
-@[simp]
+/-- Maximal-torus status is invariant under conjugation by a rational point.
+
+This is not a `simp` lemma: `isMaximalTorus_iff` unfolds `IsMaximalTorus` on the left-hand
+side, so the statement is never in `simp`-normal form. -/
 theorem isMaximalTorus_conjugate_iff
     (I : HopfIdeal k H) (g : WithConv (H →ₐ[k] k)) :
     IsMaximalTorus k (_root_.CommHopfAlgCat.of k H) (I.conjugate g) ↔

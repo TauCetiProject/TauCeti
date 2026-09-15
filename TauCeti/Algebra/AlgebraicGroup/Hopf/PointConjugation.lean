@@ -172,7 +172,9 @@ noncomputable def pointConjugationBialgEquiv (g : WithConv (H →ₐ[R] R)) :
 /-- The bialgebra equivalence underlying point conjugation has the expected algebra map. -/
 @[simp]
 theorem pointConjugationBialgEquiv_toAlgHom (g : WithConv (H →ₐ[R] R)) :
-    (pointConjugationBialgEquiv g).toBialgHom.toAlgHom = pointConjugationAlgHom g := by
+    ((pointConjugationBialgEquiv g : H →ₐc[R] H) : H →ₐ[R] H) =
+      pointConjugationAlgHom g := by
+  rw [← BialgEquiv.toBialgHom_eq_coe]
   rfl
 
 /-- Pulling back an algebra-valued point by the bialgebra automorphism of point conjugation
