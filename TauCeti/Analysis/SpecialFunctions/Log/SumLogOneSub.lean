@@ -12,9 +12,10 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 # Derivatives at zero of a finite sum of logarithms `log (1 - 2 t aⱼ)`
 
 For real weights `a : ι → ℝ` indexed by a finite type and a real constant `c`, consider
-`t ↦ -c / 2 * ∑ j, log (1 - 2 * t * a j)`. This is the cumulant-generating function of `c` times a
-weighted sum of independent chi-squared variables, and near `t = 0` it is smooth. This file
-computes its first two derivatives at `0`: `c * ∑ j, a j` and `2 * c * ∑ j, a j ^ 2`.
+`t ↦ -c / 2 * ∑ j, log (1 - 2 * t * a j)`. When `c` is a positive natural number coerced to
+`ℝ`, this is locally the cumulant-generating function of a weighted sum of independent chi-squared
+variables, each with `c` degrees of freedom. For arbitrary real `c`, this file computes its first
+two derivatives at `0`: `c * ∑ j, a j` and `2 * c * ∑ j, a j ^ 2`.
 
 ## Main results
 
