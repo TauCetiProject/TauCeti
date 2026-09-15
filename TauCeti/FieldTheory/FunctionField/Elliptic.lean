@@ -211,7 +211,6 @@ theorem val_degreeOneEquivDegreeZeroClassGroup_apply (hF : IsFunctionField k F)
   rfl
 
 /-- The base place is the zero of the group law. -/
-@[simp]
 theorem degreeOneEquivDegreeZeroClassGroup_base (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
     degreeOneEquivDegreeZeroClassGroup hF hex hg hP₀ ⟨P₀, hP₀⟩ = 0 :=
