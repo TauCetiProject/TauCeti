@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.DirichletDensity
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.PrimeIdealZetaSum
 public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
 
@@ -20,10 +19,11 @@ Mathlib's partial Dirichlet series `NumberField.Set.primeIdealZetaSum`, whose ra
 in `L`, so the Frobenius fibres account for the all-prime sum up to an error which is bounded
 uniformly in `s ≥ 0`.
 
-What bounds that error is generic: deleting a finite set of primes from the all-prime sum costs at
-most the number of primes deleted, which is
-`NumberField.Set.primeIdealZetaSum_univ_sub_compl_le_ncard_of_finite`. Only its specialization to
-`ramifiedPrimes K L` is Chebotarev-specific.
+Both ingredients are generic. Additivity along a finite pairwise disjoint union is
+`NumberField.Set.primeIdealZetaSum_biUnion_of_pairwiseDisjoint`, and the error bound is
+`NumberField.Set.primeIdealZetaSum_univ_sub_compl_le_ncard_of_finite`: deleting a finite set of
+primes from the all-prime sum costs at most the number of primes deleted. Only their
+specializations to the Artin fibres and to `ramifiedPrimes K L` are Chebotarev-specific.
 
 ## Main results
 
@@ -37,6 +37,16 @@ most the number of primes deleted, which is
 `primeIdealZetaSum S s` is a `tsum`, so it takes the value `0` on a family that is not summable,
 and `0` is not additive along a partition. The fibre identity therefore carries a summability
 hypothesis.
+
+## References
+
+The Artin-class partition of the unramified primes and the bound on the ramified contribution are
+adapted from `CebotarevDensity/Density.lean` of
+[CBirkbeck/chebotarev-density](https://github.com/CBirkbeck/chebotarev-density) (Apache-2.0,
+Birkbeck--Brasca) at commit `8575c9df1ae0a61120ab5c964c7911414254bec7`, where they are stated for a
+source-local `primeIdealZetaSum` over `Set (Ideal (𝓞 K))` and gated on `1 < s`. Here the carrier is
+Mathlib's `NumberField.Set.primeIdealZetaSum` over `HeightOneSpectrum (𝓞 K)`, and the hypothesis is
+summability, which `1 < s` implies.
 -/
 
 public section
@@ -65,9 +75,9 @@ theorem sum_primeIdealZetaSum_frobeniusPrimeSet
       (↑(ramifiedPrimes K L) : Set (HeightOneSpectrum (𝓞 K)))ᶜ.primeIdealZetaSum s := by
   have hcov : (↑(ramifiedPrimes K L) : Set (HeightOneSpectrum (𝓞 K)))ᶜ =
       ⋃ C ∈ (Finset.univ : Finset (ConjClasses (L ≃ₐ[K] L))), frobeniusPrimeSet K L C := by simp
-  simp only [hcov, Set.primeIdealZetaSum_def]
-  exact (hasSum_sum_disjoint Finset.univ ((pairwise_disjoint_frobeniusPrimeSet K L).set_pairwise _)
-    fun C _ ↦ (hsum.subtype _).hasSum).tsum_eq.symm
+  rw [hcov]
+  exact (Set.primeIdealZetaSum_biUnion_of_pairwiseDisjoint _ _
+    ((pairwise_disjoint_frobeniusPrimeSet K L).set_pairwise _) hsum).symm
 
 open scoped Classical in
 variable (K L) in
