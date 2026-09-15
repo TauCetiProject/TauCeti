@@ -114,6 +114,7 @@ theorem unblockedCoefficient_relabelRows_finRotate (x y : GridState n) :
     (fun r => (G.mem_unblockedRectangles_relabelRows_finRotate r).symm) fun r _ => ?_).symm
   rw [OMonomial_relabelRows_finRotate]
 
+omit R in
 /-- A cyclic permutation of the rows leaves the fully blocked rectangle counts unchanged. -/
 @[simp]
 theorem fullyBlockedRectangleCount_relabelRows_finRotate (x y : GridState n) :
