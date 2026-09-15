@@ -146,10 +146,8 @@ noncomputable def heightOneFrobeniusFiberEquiv
         {Q : {Q : HeightOneSpectrum (𝓞 L) //
             Q.asIdeal ∣ Ideal.map (algebraMap (𝓞 K) (𝓞 L)) p.asIdeal} //
           IsArithFrobAt (𝓞 K) sigma Q.1.asIdeal} :=
-    { toFun Q := ⟨⟨Q.1, (hdiv Q).mp Q.2.1⟩, Q.2.2⟩
-      invFun Q := ⟨Q.1.1, ⟨(hdiv Q.1.1).mpr Q.1.2, Q.2⟩⟩
-      left_inv Q := Subtype.ext rfl
-      right_inv Q := Subtype.ext (Subtype.ext rfl) }
+    (Equiv.subtypeEquivRight fun Q ↦ and_congr (hdiv Q) Iff.rfl).trans
+      (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm
   let coreEquiv :
       {Q : {Q : HeightOneSpectrum (𝓞 L) //
           Q.asIdeal ∣ Ideal.map (algebraMap (𝓞 K) (𝓞 L)) p.asIdeal} //
