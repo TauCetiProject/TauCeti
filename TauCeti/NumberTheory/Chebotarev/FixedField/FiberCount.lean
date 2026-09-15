@@ -57,7 +57,6 @@ private theorem isArithFrobAt_of_fixedField_isArithFrobAt
     (C : ConjClasses (L ≃ₐ[K] L)) (sigma : L ≃ₐ[K] L) (hsigma : sigma ∈ C.carrier)
     (p : HeightOneSpectrum (𝓞 K)) (hp : p ∈ frobeniusPrimeSet K L C)
     (Q : Ideal (𝓞 L)) [Q.IsPrime]
-    [Q.LiesOver (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma))))]
     (hQp : Q.under (𝓞 K) = p.asIdeal)
     (hrel : IsArithFrobAt (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))
       sigma.toFixedFieldAlgEquiv Q) :
