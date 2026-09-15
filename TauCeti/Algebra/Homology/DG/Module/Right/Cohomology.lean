@@ -149,13 +149,19 @@ theorem isTorsionBySet_boundaries (hM : IsDGRightModule h ℳ dM) :
   intro x a
   refine Submodule.Quotient.induction_on _ x fun z => ?_
   rw [← Submodule.Quotient.mk_smul, hM.quotientMk_eq_zero_iff, mem_boundaries]
-  have ha : a.1.unop ∈ h.boundaries :=
-    TwoSidedIdeal.mem_op_iff.mp (TwoSidedIdeal.mem_asIdeal.mp a.2)
+  have ha : a.1.unop ∈ h.boundaries := TwoSidedIdeal.mem_asIdealOpposite.mp a.2
   obtain ⟨b, hb⟩ := h.mem_boundaries.mp ha
   have hz : dM (z : M) = 0 := hM.mem_cycles.mp z.2
   have hrange := hM.op_map_smul_mem_range_of_map_eq_zero b hz
   rw [hb] at hrange
   exact hrange
+
+/-- Module cohomology is a module over the opposite algebra of cycles modulo the opposite boundary
+ideal, since by `isTorsionBySet_boundaries` that ideal annihilates it.  This is the intermediate
+scalar ring through which the action of the cohomology algebra is defined. -/
+noncomputable instance instModuleQuotientOpBoundaries (hM : IsDGRightModule h ℳ dM) :
+    Module ((h.cycles)ᵐᵒᵖ ⧸ h.boundaries.op.asIdeal) hM.Cohomology :=
+  hM.isTorsionBySet_boundaries.module
 
 /-- The cohomology of a differential graded right module is a right module over the cohomology
 algebra. -/
@@ -171,23 +177,27 @@ noncomputable instance instModuleCohomology (hM : IsDGRightModule h ℳ dM) :
       apply unop_injective
       rw [unop_zero]
       exact Ideal.Quotient.eq_zero_iff_mem.mpr <|
-        TwoSidedIdeal.mem_asIdeal.mpr <| TwoSidedIdeal.mem_op_iff.mpr <|
-          TwoSidedIdeal.mem_asIdeal.mp ha)
+        TwoSidedIdeal.mem_asIdealOpposite.mpr <| TwoSidedIdeal.mem_asIdeal.mp ha)
   let opToQuotientOp : (h.Cohomology)ᵐᵒᵖ →+*
       (h.cycles)ᵐᵒᵖ ⧸ h.boundaries.op.asIdeal :=
     (RingEquiv.opOp ((h.cycles)ᵐᵒᵖ ⧸ h.boundaries.op.asIdeal)).symm.toRingHom.comp lift.op
-  let : Module ((h.cycles)ᵐᵒᵖ ⧸ h.boundaries.op.asIdeal) hM.Cohomology :=
-    hM.isTorsionBySet_boundaries.module
   exact Module.compHom hM.Cohomology opToQuotientOp
+
+/-- The defining equation of `instModuleCohomology`: an opposite cohomology class acts as the
+corresponding class of the opposite algebra of cycles modulo the opposite boundary ideal.  Stating
+it separately keeps later computations from unfolding the instance. -/
+theorem op_quotientMk_smul_eq_quotientMk_op_smul (hM : IsDGRightModule h ℳ dM)
+    (z : h.cycles) (x : hM.Cohomology) :
+    op (Ideal.Quotient.mk h.boundaries.asIdeal z) • x =
+      Ideal.Quotient.mk h.boundaries.op.asIdeal (op z) • x :=
+  rfl
 
 /-- The action on module cohomology is computed by acting with a cycle representative. -/
 @[simp]
 theorem op_quotientMk_smul (hM : IsDGRightModule h ℳ dM)
     (z : h.cycles) (x : hM.Cohomology) :
     op (Ideal.Quotient.mk h.boundaries.asIdeal z) • x = op z • x := by
-  let : Module ((h.cycles)ᵐᵒᵖ ⧸ h.boundaries.op.asIdeal) hM.Cohomology :=
-    hM.isTorsionBySet_boundaries.module
-  change Ideal.Quotient.mk h.boundaries.op.asIdeal (op z) • x = op z • x
+  rw [hM.op_quotientMk_smul_eq_quotientMk_op_smul]
   exact hM.isTorsionBySet_boundaries.mk_smul (op z) x
 
 section Grading
