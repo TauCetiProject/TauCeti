@@ -33,8 +33,8 @@ construction.
   induces an equivalence of fully blocked homology quotients.
 * `TauCeti.GridDiagram.fullyBlockedCyclesEquiv`: the same map induces an equivalence of cycle
   submodules, with its action on representatives exposed by `fullyBlockedCyclesEquiv_apply`.
-* `TauCeti.GridDiagram.fullyBlockedHomologyEquiv_relabelRows_finRotate` and
-  `TauCeti.GridDiagram.fullyBlockedHomologyEquiv_relabelColumns_finRotate`: cyclic row and column
+* `TauCeti.GridDiagram.fullyBlockedHomologyEquivRelabelRowsFinRotate` and
+  `TauCeti.GridDiagram.fullyBlockedHomologyEquivRelabelColumnsFinRotate`: cyclic row and column
   relabellings induce homology equivalences, with representative formulas given by their
   `_apply_mk` lemmas.
 
@@ -150,7 +150,7 @@ theorem fullyBlockedDifferential_relabelColumns_finRotate_apply
   simpa [LinearMap.comp_apply] using h
 
 /-- Cyclic row relabelling induces an equivalence of fully blocked grid homology quotients. -/
-noncomputable def fullyBlockedHomologyEquiv_relabelRows_finRotate :
+noncomputable def fullyBlockedHomologyEquivRelabelRowsFinRotate :
     G.fullyBlockedHomology ≃ₗ[ZMod 2]
       (G.relabelRows (finRotate n)).fullyBlockedHomology :=
   G.fullyBlockedHomologyEquivOfIntertwining (G.relabelRows (finRotate n))
@@ -161,7 +161,7 @@ noncomputable def fullyBlockedHomologyEquiv_relabelRows_finRotate :
 @[simp]
 theorem fullyBlockedHomologyEquiv_relabelRows_finRotate_apply_mk
     (c : G.fullyBlockedCycles) :
-    G.fullyBlockedHomologyEquiv_relabelRows_finRotate
+    G.fullyBlockedHomologyEquivRelabelRowsFinRotate
         (Submodule.Quotient.mk c) =
       Submodule.Quotient.mk
         (G.fullyBlockedCyclesEquiv (G.relabelRows (finRotate n))
@@ -173,7 +173,7 @@ theorem fullyBlockedHomologyEquiv_relabelRows_finRotate_apply_mk
     (he := fullyBlockedDifferential_relabelRows_finRotate_apply (G := G)) c
 
 /-- Cyclic column relabelling induces an equivalence of fully blocked grid homology quotients. -/
-noncomputable def fullyBlockedHomologyEquiv_relabelColumns_finRotate :
+noncomputable def fullyBlockedHomologyEquivRelabelColumnsFinRotate :
     G.fullyBlockedHomology ≃ₗ[ZMod 2]
       (G.relabelColumns (finRotate n)).fullyBlockedHomology :=
   G.fullyBlockedHomologyEquivOfIntertwining (G.relabelColumns (finRotate n))
@@ -184,7 +184,7 @@ noncomputable def fullyBlockedHomologyEquiv_relabelColumns_finRotate :
 @[simp]
 theorem fullyBlockedHomologyEquiv_relabelColumns_finRotate_apply_mk
     (c : G.fullyBlockedCycles) :
-    G.fullyBlockedHomologyEquiv_relabelColumns_finRotate
+    G.fullyBlockedHomologyEquivRelabelColumnsFinRotate
         (Submodule.Quotient.mk c) =
       Submodule.Quotient.mk
         (G.fullyBlockedCyclesEquiv (G.relabelColumns (finRotate n))
