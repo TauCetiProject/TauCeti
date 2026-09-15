@@ -29,6 +29,8 @@ so that `ℓ` depends only on the linear equivalence class of a divisor.  It is 
   class of a divisor.
 * `TauCeti.Divisor.dim_principal`: the dimension of a principal divisor is the degree of the
   full constant field over `k`.
+* `TauCeti.Divisor.eq_of_linearlyEquivalent_of_dim_eq_one`: over an exact constant field, a
+  divisor class with `ℓ(D) = 1` contains at most one effective divisor (Remark 1.4.5).
 * `TauCeti.riemannRochSpace_ne_bot_iff`: `L(D) ≠ 0` exactly when `D` is linearly equivalent to
   an effective divisor (Remark 1.4.5(b)).
 
@@ -141,10 +143,10 @@ theorem Divisor.dim_principal_of_isIntegrallyClosedIn (hF : IsFunctionField k F)
     Divisor.dim (Divisor.principal hF z) = 1 := by
   rw [Divisor.dim_principal hF, isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one.mp hex]
 
-/-- **A divisor class with `ℓ(D) = 1` contains at most one effective divisor.**  Over an exact
-constant field the only functions in `L(D)` are then the constants, so the only effective
-divisor linearly equivalent to an effective `D` with `ℓ(D) = 1` is `D` itself; the complete
-linear system of `D` is a single point. -/
+/-- **A divisor class with `ℓ(D) = 1` contains at most one effective divisor** (Stichtenoth,
+Remark 1.4.5).  Over an exact constant field the only functions in `L(D)` are then the
+constants, so the only effective divisor linearly equivalent to an effective `D` with
+`ℓ(D) = 1` is `D` itself: the complete linear system of `D` is the singleton `{D}`. -/
 theorem Divisor.eq_of_linearlyEquivalent_of_dim_eq_one (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {D E : Divisor k F} (hD : 0 ≤ D) (hE : 0 ≤ E)
     (hdim : Divisor.dim D = 1)

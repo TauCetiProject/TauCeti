@@ -19,26 +19,31 @@ This file proves the basic dictionary of an elliptic function field over an exac
 field.  A divisor of degree one is linearly equivalent to exactly one place of degree one, so an
 elliptic function field has a place of degree one; and once a place `P₀` of degree one is
 chosen, `P ↦ [P - P₀]` is a bijection from the places of degree one onto the degree-zero divisor
-class group `Cl⁰(F)`.  Transporting the addition of `Cl⁰(F)` along that bijection is the
-intrinsic group law of the degree-one places: `P ⊕ Q = R` exactly when the divisors `P + Q` and
-`R + P₀` are linearly equivalent.
+class group `Cl⁰(F)`.  The addition of `Cl⁰(F)` transported along that bijection is the
+intrinsic group law of the degree-one places: it makes the bijection an isomorphism of groups,
+and `P ⊕ Q = R` exactly when the divisors `P + Q` and `R + P₀` are linearly equivalent.  The
+transported group depends on the choice of `P₀`, so it is a definition, not an instance.
 
 ## Main definitions
 
 * `TauCeti.IsEllipticFunctionField`: genus one together with a divisor of degree one.
 * `TauCeti.Place.degreeOneEquivDegreeZeroClassGroup`: the bijection `P ↦ [P - P₀]` from the
   degree-one places of a genus-one function field onto `Cl⁰(F)`.
+* `TauCeti.Place.degreeOneAddCommGroup` and
+  `TauCeti.Place.degreeOneAddEquivDegreeZeroClassGroup`: the addition of `Cl⁰(F)` transported
+  along that bijection, and the bijection read as an isomorphism of groups.
 
 ## Main results
 
-* `TauCeti.Divisor.exists_linearlyEquivalent_ofPoint_of_degree_eq_one` and
+* `TauCeti.Divisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one` and
   `TauCeti.Place.eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one`: in genus one a divisor of
   degree one is linearly equivalent to exactly one place of degree one.
 * `TauCeti.IsEllipticFunctionField.exists_place_degree_eq_one`: an elliptic function field has
-  a place of degree one; `TauCeti.isEllipticFunctionField_iff_exists_place_degree_eq_one` is the
+  a place of degree one;
+  `TauCeti.isEllipticFunctionField_iff_genus_eq_one_and_exists_place_degree_eq_one` is the
   converse.
-* `TauCeti.Place.degreeOneEquivDegreeZeroClassGroup_add_eq_iff`: the group law of the degree-one
-  places, `P ⊕ Q = R ↔ P + Q ∼ R + P₀`.
+* `TauCeti.Place.degreeOneAddCommGroup_add_eq_iff`: the group law of the degree-one places,
+  `P ⊕ Q = R ↔ P + Q ∼ R + P₀`.
 
 ## References
 
@@ -54,36 +59,45 @@ open AlgebraicGeometry
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
-/-- An **elliptic function field** (Stichtenoth, Definition 6.1.1): an algebraic function field
-of genus one carrying a divisor of degree one.
+/-- An **elliptic function field** (Stichtenoth, Definition 6.1.1): this predicate records the
+two conditions of the definition, genus one and the existence of a divisor of degree one.
 
-The function-field hypothesis `TauCeti.IsFunctionField` and the exactness of the constant field
-are kept as separate hypotheses on the statements that need them, as everywhere in this
-development. -/
+Being an algebraic function field is *not* part of the predicate: the hypothesis
+`TauCeti.IsFunctionField`, like the exactness of the constant field, is kept as a separate
+hypothesis on the statements that need it, as everywhere in this development. -/
 structure IsEllipticFunctionField (k F : Type*) [Field k] [Field F] [Algebra k F] : Prop where
   /-- An elliptic function field has genus one. -/
   genus_eq_one : genus k F = 1
   /-- An elliptic function field carries a divisor of degree one. -/
   exists_divisor_degree_eq_one : ∃ D : Divisor k F, Divisor.degree D = 1
 
-/-! ### Degree-one divisors of a genus-one function field -/
+/-! ### Degree-one divisors and degree-one places -/
+
+/-- **A divisor of degree one with a nonzero Riemann–Roch space is linearly equivalent to a place
+of degree one**: this is the genus-free half of Stichtenoth, Proposition 6.1.6(a).  A nonzero
+`L(D)` puts an effective divisor in the class of `D`, and an effective divisor of degree one is
+the prime divisor of a place of degree one. -/
+theorem Divisor.exists_linearlyEquivalent_ofPoint_of_degree_eq_one (hF : IsFunctionField k F)
+    {D : Divisor k F} (hD : Divisor.degree D = 1) (hne : riemannRochSpace D ≠ ⊥) :
+    ∃ P : Place k F, P.degree = 1 ∧
+      (Place.orderSystem hF).LinearlyEquivalent D (WeilDivisor.ofPoint P) := by
+  obtain ⟨E, hE, hlin⟩ := (riemannRochSpace_ne_bot_iff hF).mp hne
+  obtain ⟨P, hP, rfl⟩ := Divisor.exists_eq_ofPoint_of_degree_eq_one hF hE
+    (by rw [← Divisor.degree_eq_of_linearlyEquivalent hF hlin, hD])
+  exact ⟨P, hP, hlin⟩
 
 /-- **A divisor of degree one of a genus-one function field is linearly equivalent to a place of
-degree one** (Stichtenoth, Proposition 6.1.6(a)): Riemann–Roch gives `ℓ(D) = 1`, so the class of
-`D` contains an effective divisor, and an effective divisor of degree one is a place of degree
-one. -/
-theorem Divisor.exists_linearlyEquivalent_ofPoint_of_degree_eq_one (hF : IsFunctionField k F)
+degree one** (Stichtenoth, Proposition 6.1.6(a)): in genus one Riemann–Roch gives `ℓ(D) = 1`, so
+`L(D)` is nonzero. -/
+theorem Divisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) {D : Divisor k F}
     (hD : Divisor.degree D = 1) :
     ∃ P : Place k F, P.degree = 1 ∧
       (Place.orderSystem hF).LinearlyEquivalent D (WeilDivisor.ofPoint P) := by
   have hdim : (Divisor.dim D : ℤ) = 1 := by
     rw [Divisor.dim_eq_degree_of_genus_eq_one hF hex hg (by rw [hD]; norm_num), hD]
-  obtain ⟨E, hE, hlin⟩ := (riemannRochSpace_ne_bot_iff hF).mp
+  exact Divisor.exists_linearlyEquivalent_ofPoint_of_degree_eq_one hF hD
     ((Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF D).mp (by omega))
-  obtain ⟨P, hP, rfl⟩ := Divisor.exists_eq_ofPoint_of_degree_eq_one hF hE
-    (by rw [← Divisor.degree_eq_of_linearlyEquivalent hF hlin, hD])
-  exact ⟨P, hP, hlin⟩
 
 /-- **Linearly equivalent places of degree one of a genus-one function field are equal**
 (Stichtenoth, Proposition 6.1.6(b)): over an exact constant field `ℓ(P) = 1` forces the complete
@@ -110,14 +124,14 @@ theorem IsEllipticFunctionField.exists_place_degree_eq_one (hF : IsFunctionField
     (hex : IsIntegrallyClosedIn k F) (he : IsEllipticFunctionField k F) :
     ∃ P : Place k F, P.degree = 1 := by
   obtain ⟨D, hD⟩ := he.exists_divisor_degree_eq_one
-  obtain ⟨P, hP, -⟩ := Divisor.exists_linearlyEquivalent_ofPoint_of_degree_eq_one hF hex
+  obtain ⟨P, hP, -⟩ := Divisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one hF hex
     he.genus_eq_one hD
   exact ⟨P, hP⟩
 
 /-- Over an exact constant field, a function field is elliptic exactly when it has genus one and
 a place of degree one. -/
-theorem isEllipticFunctionField_iff_exists_place_degree_eq_one (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) :
+theorem isEllipticFunctionField_iff_genus_eq_one_and_exists_place_degree_eq_one
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) :
     IsEllipticFunctionField k F ↔ genus k F = 1 ∧ ∃ P : Place k F, P.degree = 1 := by
   refine ⟨fun he ↦ ⟨he.genus_eq_one, he.exists_place_degree_eq_one hF hex⟩, fun ⟨hg, P, hP⟩ ↦
     ⟨hg, WeilDivisor.ofPoint P, ?_⟩⟩
@@ -155,7 +169,7 @@ theorem exists_degree_eq_one_and_divisorClass_pointDifference_eq (hF : IsFunctio
       (Place.orderSystem hF).divisorClass (WeilDivisor.pointDifference P P₀) = c := by
   obtain ⟨D, rfl⟩ := (Place.orderSystem hF).divisorClass_surjective c
   rw [Divisor.degreeClass_divisorClass] at hc
-  obtain ⟨P, hP, hlin⟩ := Divisor.exists_linearlyEquivalent_ofPoint_of_degree_eq_one hF hex hg
+  obtain ⟨P, hP, hlin⟩ := Divisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one hF hex hg
     (D := D + WeilDivisor.ofPoint P₀) (by rw [Divisor.degree_add, Divisor.degree_ofPoint, hc,
       hP₀, Nat.cast_one, zero_add])
   refine ⟨P, hP, ?_⟩
@@ -204,9 +218,9 @@ theorem degreeOneEquivDegreeZeroClassGroup_base (hF : IsFunctionField k F)
   Subtype.ext (by rw [val_degreeOneEquivDegreeZeroClassGroup_apply,
     WeilDivisor.pointDifference_self, map_zero, ZeroMemClass.coe_zero])
 
-/-- **The group law of the degree-one places of an elliptic function field** (Stichtenoth,
-Proposition 6.1.7): transported along `P ↦ [P - P₀]`, the addition of `Cl⁰(F)` is
-`P ⊕ Q = R ↔ P + Q ∼ R + P₀`. -/
+/-- **Addition of the classes of two degree-one places** (Stichtenoth, Proposition 6.1.7): the
+images of `P` and `Q` in `Cl⁰(F)` add up to the image of `R` exactly when the divisors `P + Q`
+and `R + P₀` are linearly equivalent. -/
 theorem degreeOneEquivDegreeZeroClassGroup_add_eq_iff (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1)
     (P Q R : {P : Place k F // P.degree = 1}) :
@@ -228,6 +242,49 @@ theorem degreeOneEquivDegreeZeroClassGroup_add_eq_iff (hF : IsFunctionField k F)
     rw [WeilDivisor.pointDifference, WeilDivisor.pointDifference, WeilDivisor.pointDifference]
     abel
   rw [hdiff]
+
+/-- **The group law of the degree-one places of an elliptic function field** (Stichtenoth,
+Proposition 6.1.7): the addition of `Cl⁰(F)` transported along the bijection
+`P ↦ [P - P₀]`.  It depends on the base place `P₀`, so it is a definition and not an instance;
+`TauCeti.Place.degreeOneAddCommGroup_add_eq_iff` characterises it by linear equivalence. -/
+noncomputable abbrev degreeOneAddCommGroup (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
+    AddCommGroup {P : Place k F // P.degree = 1} :=
+  (degreeOneEquivDegreeZeroClassGroup hF hex hg hP₀).addCommGroup
+
+/-- **The degree-one places of an elliptic function field are the group `Cl⁰(F)`** (Stichtenoth,
+Proposition 6.1.7): for the transported addition, `P ↦ [P - P₀]` is an isomorphism of groups. -/
+noncomputable def degreeOneAddEquivDegreeZeroClassGroup (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
+    letI := degreeOneAddCommGroup hF hex hg hP₀
+    {P : Place k F // P.degree = 1} ≃+ (Divisor.degreeClass hF).ker :=
+  (degreeOneEquivDegreeZeroClassGroup hF hex hg hP₀).addEquiv
+
+/-- The isomorphism of groups is the underlying bijection. -/
+@[simp]
+theorem degreeOneAddEquivDegreeZeroClassGroup_apply (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1)
+    (P : {P : Place k F // P.degree = 1}) :
+    degreeOneAddEquivDegreeZeroClassGroup hF hex hg hP₀ P =
+      degreeOneEquivDegreeZeroClassGroup hF hex hg hP₀ P := by
+  -- the isomorphism is `Equiv.addEquiv` applied to the bijection; unfold it to see that.
+  rw [degreeOneAddEquivDegreeZeroClassGroup]
+  exact Equiv.addEquiv_apply _ P
+
+/-- **The group law of the degree-one places is linear equivalence of divisors** (Stichtenoth,
+Proposition 6.1.7): `P ⊕ Q = R` exactly when `P + Q ∼ R + P₀`. -/
+theorem degreeOneAddCommGroup_add_eq_iff (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1)
+    (P Q R : {P : Place k F // P.degree = 1}) :
+    letI := degreeOneAddCommGroup hF hex hg hP₀
+    P + Q = R ↔ (Place.orderSystem hF).LinearlyEquivalent
+      (WeilDivisor.ofPoint P.1 + WeilDivisor.ofPoint Q.1)
+      (WeilDivisor.ofPoint R.1 + WeilDivisor.ofPoint P₀) := by
+  let := degreeOneAddCommGroup hF hex hg hP₀
+  rw [← (degreeOneAddEquivDegreeZeroClassGroup hF hex hg hP₀).injective.eq_iff, map_add,
+    degreeOneAddEquivDegreeZeroClassGroup_apply, degreeOneAddEquivDegreeZeroClassGroup_apply,
+    degreeOneAddEquivDegreeZeroClassGroup_apply,
+    degreeOneEquivDegreeZeroClassGroup_add_eq_iff]
 
 end Place
 

@@ -192,8 +192,8 @@ lemma exists_eq_ofPoint_of_degree_eq_one (hF : IsFunctionField k F) {D : Divisor
     (hD : 0 ≤ D) (hdeg : degree D = 1) :
     ∃ P : Place k F, P.degree = 1 ∧ D = WeilDivisor.ofPoint P := by
   obtain ⟨P, hP, hDP⟩ := (WeilDivisor.isEffective_iff_zero_le.mpr
-    hD).exists_eq_ofPoint_of_weightedDegree_eq_one (degree_pos_of_isFunctionField hF)
-    (by simpa only [degree] using hdeg)
+    hD).exists_eq_ofPoint_of_weightedDegree_eq_one
+    (fun P _ ↦ degree_pos_of_isFunctionField hF P) (by simpa only [degree] using hdeg)
   exact ⟨P, by exact_mod_cast hP, hDP⟩
 
 /-- Degree is strictly monotone on divisors of an algebraic function field. -/

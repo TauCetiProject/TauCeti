@@ -112,15 +112,16 @@ lemma eq_of_le_of_weightedDegree_eq_of_pos {w : X → ℤ} (hw : ∀ x, 0 < w x)
     D = E :=
   eq_of_le_of_weightedDegree_eq_of_pos_on_support hDE hdeg fun x _ => hw x
 
-/-- **An effective divisor of weighted degree one is a point divisor**: for everywhere-positive
-weights, `weightedDegree w D = 1` forces `D = [x]` at a single point `x` of weight one. -/
-lemma IsEffective.exists_eq_ofPoint_of_weightedDegree_eq_one {w : X → ℤ} (hw : ∀ x, 0 < w x)
-    {D : WeilDivisor X} (hD : IsEffective D) (hdeg : weightedDegree w D = 1) :
+/-- **An effective divisor of weighted degree one is a point divisor**: with positive weights on
+its support, `weightedDegree w D = 1` forces `D = [x]` at a single point `x` of weight one. -/
+lemma IsEffective.exists_eq_ofPoint_of_weightedDegree_eq_one {w : X → ℤ} {D : WeilDivisor X}
+    (hD : IsEffective D) (hw : ∀ x ∈ D.support, 0 < w x) (hdeg : weightedDegree w D = 1) :
     ∃ x, w x = 1 ∧ D = ofPoint x := by
   have hD0 : D ≠ 0 := by
     rintro rfl
     simp at hdeg
   obtain ⟨x, hx⟩ := hD.exists_pos_coeff_of_ne_zero hD0
+  have hxmem : x ∈ D.support := mem_support_iff.mpr (by omega)
   have hle : ofPoint x ≤ D := by
     rw [le_iff]
     intro y
@@ -129,13 +130,21 @@ lemma IsEffective.exists_eq_ofPoint_of_weightedDegree_eq_one {w : X → ℤ} (hw
       omega
     · rw [coeff_ofPoint_of_ne hy]
       exact (isEffective_iff D).mp hD y
+  -- the support of the difference `D - [x]` is contained in the support of `D`
+  have hwsub : ∀ y ∈ (D - ofPoint x).support, 0 < w y := by
+    intro y hy
+    refine hw y (mem_support_iff.mpr fun hy0 ↦ ?_)
+    rcases eq_or_ne y x with rfl | hyx
+    · exact mem_support_iff.mp hxmem hy0
+    · rw [mem_support_iff, coeff_sub, hy0, coeff_ofPoint_of_ne hyx, sub_zero] at hy
+      exact hy rfl
   have hwx : w x = 1 := by
-    have hmono := weightedDegree_le_of_le (fun y ↦ (hw y).le) hle
+    have hmono := weightedDegree_le_of_le_of_nonneg_on_support hle fun y hy ↦ (hwsub y hy).le
     rw [weightedDegree_ofPoint, hdeg] at hmono
-    have := hw x
+    have := hw x hxmem
     omega
-  exact ⟨x, hwx, (eq_of_le_of_weightedDegree_eq_of_pos hw hle
-    (by rw [weightedDegree_ofPoint, hwx, hdeg])).symm⟩
+  exact ⟨x, hwx, (eq_of_le_of_weightedDegree_eq_of_pos_on_support hle
+    (by rw [weightedDegree_ofPoint, hwx, hdeg]) hwsub).symm⟩
 
 /-- For positive weights, weighted degree is strictly monotone for the coefficientwise divisor
 order. -/
