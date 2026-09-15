@@ -261,6 +261,15 @@ theorem visitedSuccessorProcess_apply (X : ℕ → Ω → α) (p : α × ℕ) (�
     visitedSuccessorProcess X p ω = visitedSuccessorArray (fun n => X n ω) p.1 p.2 :=
   (rfl)
 
+omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- At every cell consumed by a sample path, its visited successor process records the next
+value. -/
+@[simp]
+theorem visitedSuccessorProcess_visitCell (X : ℕ → Ω → α) (n : ℕ) (ω : Ω) :
+    visitedSuccessorProcess X (visitCell (fun j => X j ω) n) ω = X (n + 1) ω := by
+  rw [visitedSuccessorProcess_apply]
+  exact visitedSuccessorArray_visitCell _ _
+
 /-- Every entry of the visited successor array of an almost everywhere measurable process is
 almost everywhere measurable. -/
 theorem aemeasurable_visitedSuccessorProcess {μ : Measure Ω} {X : ℕ → Ω → α}

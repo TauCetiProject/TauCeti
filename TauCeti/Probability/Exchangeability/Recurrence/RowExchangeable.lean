@@ -182,9 +182,9 @@ private theorem visitedSuccessorArray_wordSeq_reindexWord {π : α → Equiv.Per
       visitedSuccessorArray (wordSeq u) a (π a k) := by
   have hpos : 0 < visitCount (wordSeq u) a (m + 1) :=
     (Nat.zero_lt_of_lt hk).trans_le (visitCount_monotone _ a (Nat.le_succ m))
-  rw [visitedSuccessorArray_eq_successorArray_of_exists ((exists_wordSeq_eq_iff _ a).2
+  rw [visitedSuccessorArray_eq_successorArray_of_mem_range ((exists_wordSeq_eq_iff _ a).2
       ((visitCount_succ_wordSeq_reindexWord h a).symm ▸ hpos)),
-    visitedSuccessorArray_eq_successorArray_of_exists ((exists_wordSeq_eq_iff u a).2 hpos)]
+    visitedSuccessorArray_eq_successorArray_of_mem_range ((exists_wordSeq_eq_iff u a).2 hpos)]
   exact successorArray_wordSeq_reindexWord h hk
 
 /-- The words over which a last-exit reindexing by `π` is legitimate and the entries of the visited
@@ -244,9 +244,11 @@ private theorem visitedSuccessorArray_reindexWord_cell (hu : u ∈ HorizonWords 
         ∀ n, wordSeq v n ≠ (p : α × ℕ).1 := fun v hv n hn => by
       have := (exists_wordSeq_eq_iff v _).1 ⟨n, hn⟩
       omega
-    rw [visitedSuccessorArray_eq_self_of_forall_ne (hne u hunv),
-      visitedSuccessorArray_eq_self_of_forall_ne
-        (hne _ ((visitCount_succ_wordSeq_reindexWord hadm _).trans hunv))]
+    rw [visitedSuccessorArray_eq_self_of_not_mem_range
+        (fun hmem => (Set.mem_range.1 hmem).elim (hne u hunv)),
+      visitedSuccessorArray_eq_self_of_not_mem_range
+        (fun hmem => (Set.mem_range.1 hmem).elim
+          (hne _ ((visitCount_succ_wordSeq_reindexWord hadm _).trans hunv)))]
   · exact visitedSuccessorArray_wordSeq_reindexWord hadm
       (by have := (lt_visitCount_of_mem_horizonWords hu (Or.inr p.2) hpos).1; omega)
 
@@ -316,8 +318,10 @@ private theorem eventually_prefix_mem_iff {x : ℕ → α} (hio : ∀ k, {n | x 
         visitedSuccessorArray x (p : α × ℕ).1 (ρ (p : α × ℕ).1 (p : α × ℕ).2) := by
     intro p
     rcases hm (p : α × ℕ) (Or.inr p.2) with ha | ha
-    · rw [visitedSuccessorArray_eq_self_of_forall_ne ha,
-        visitedSuccessorArray_eq_self_of_forall_ne (hunv _ ha)]
+    · rw [visitedSuccessorArray_eq_self_of_not_mem_range
+          (fun hmem => (Set.mem_range.1 hmem).elim ha),
+        visitedSuccessorArray_eq_self_of_not_mem_range
+          (fun hmem => (Set.mem_range.1 hmem).elim (hunv _ ha))]
     · refine (visitedSuccessorArray_congr hxu ?_).symm
       rcases hρ p with hr | hr <;> rw [hr] <;> omega
   simp only [Set.mem_inter_iff, CellWords, Set.mem_ofPred_eq, hcell]
@@ -482,7 +486,7 @@ theorem MarkovExchangeable.rowExchangeable_successorProcess [IsFiniteMeasure μ]
   have hae : ∀ᵐ ω ∂μ, ∀ p : α × ℕ, visitedSuccessorProcess X p ω = successorProcess X p ω := by
     filter_upwards [hvis] with ω hω p
     rw [visitedSuccessorProcess_apply, successorProcess_apply]
-    exact visitedSuccessorArray_eq_successorArray_of_exists (hω p.1)
+    exact visitedSuccessorArray_eq_successorArray_of_mem_range (hω p.1)
   refine rowExchangeable_def.2 fun π => ?_
   refine (Measure.map_congr ?_).trans
     ((rowExchangeable_def.1 (h.rowExchangeable_visitedSuccessorProcess hrec) π).trans
@@ -501,11 +505,7 @@ theorem MarkovExchangeable.mixedMarkovChain [IsProbabilityMeasure μ] {a₀ : α
   have := h.measurableSingletonClass
   exact mixedMarkovChain_of_rowExchangeable h.aemeasurable h0
     (aemeasurable_visitedSuccessorProcess h.aemeasurable)
-    (ae_of_all _ fun ω n => by
-      have hvis : ∃ m, X m ω = X n ω := ⟨n, rfl⟩
-      simp only [visitCell_def, visitedSuccessorProcess_apply,
-        visitedSuccessorArray_eq_successorArray_of_exists hvis]
-      exact successorArray_visitCount (fun j => X j ω) n)
+    (ae_of_all _ fun ω n => visitedSuccessorProcess_visitCell X n ω)
     (h.rowExchangeable_visitedSuccessorProcess hrec)
 
 end Representation

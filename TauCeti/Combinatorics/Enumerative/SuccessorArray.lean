@@ -141,15 +141,10 @@ theorem successorArray_def (x : ℕ → α) (a : α) (k : ℕ) :
   successorArray_def_private x a k
 
 open Classical in
-private theorem visitedSuccessorArray_def_private (x : ℕ → α) (a : α) (k : ℕ) :
-    visitedSuccessorArray x a k = if ∃ n, x n = a then successorArray x a k else a :=
-  rfl
-
-open Classical in
 /-- The defining equation for an entry of the visited successor array. -/
 theorem visitedSuccessorArray_def (x : ℕ → α) (a : α) (k : ℕ) :
     visitedSuccessorArray x a k = if ∃ n, x n = a then successorArray x a k else a :=
-  visitedSuccessorArray_def_private x a k
+  (rfl)
 
 end Defs
 
@@ -643,16 +638,31 @@ variable {α : Type*} {x y : ℕ → α} {a : α} {k m : ℕ}
 
 /-- On a row the sequence visits, the visited successor array is the successor array. -/
 @[simp]
-theorem visitedSuccessorArray_eq_successorArray_of_exists (h : ∃ n, x n = a) :
+theorem visitedSuccessorArray_eq_successorArray_of_mem_range (h : a ∈ Set.range x) :
     visitedSuccessorArray x a k = successorArray x a k := by
-  simp only [visitedSuccessorArray_def, h, ite_true]
+  rw [visitedSuccessorArray_def]
+  split
+  · rfl
+  · rename_i hnot
+    exact (hnot (Set.mem_range.1 h)).elim
 
 /-- On a row the sequence never visits, the visited successor array is constant, equal to the row's
 own value. -/
 @[simp]
-theorem visitedSuccessorArray_eq_self_of_forall_ne (h : ∀ n, x n ≠ a) :
+theorem visitedSuccessorArray_eq_self_of_not_mem_range (h : a ∉ Set.range x) :
     visitedSuccessorArray x a k = a := by
-  simp only [visitedSuccessorArray_def, not_exists.2 h, ite_false]
+  rw [visitedSuccessorArray_def]
+  split
+  · rename_i hmem
+    exact (h (Set.mem_range.2 hmem)).elim
+  · rfl
+
+/-- At every cell consumed by a sequence, its visited successor array records the next value. -/
+@[simp]
+theorem visitedSuccessorArray_visitCell (x : ℕ → α) (n : ℕ) :
+    visitedSuccessorArray x (visitCell x n).1 (visitCell x n).2 = x (n + 1) := by
+  simp only [visitCell_def, visitedSuccessorArray_eq_successorArray_of_mem_range ⟨n, rfl⟩]
+  exact successorArray_visitCount x n
 
 /-- **A consumed entry of the visited successor array is read off any sequence agreeing with the
 original over the horizon that consumes it.** A row with a visit before `m` is visited by both
@@ -662,8 +672,8 @@ theorem visitedSuccessorArray_congr (hxy : ∀ i ≤ m, x i = y i) (hk : k < vis
   have hx := apply_visitTime_of_lt_visitCount hk
   have hy : y (visitTime x a k) = a :=
     (hxy _ (visitTime_lt_of_lt_visitCount hk).le).symm.trans hx
-  rw [visitedSuccessorArray_eq_successorArray_of_exists ⟨_, hx⟩,
-    visitedSuccessorArray_eq_successorArray_of_exists ⟨_, hy⟩]
+  rw [visitedSuccessorArray_eq_successorArray_of_mem_range ⟨_, hx⟩,
+    visitedSuccessorArray_eq_successorArray_of_mem_range ⟨_, hy⟩]
   exact successorArray_congr hxy hk
 
 end VisitedRows
