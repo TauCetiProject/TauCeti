@@ -69,20 +69,18 @@ variable {K M : Type*} [Field K] [NumberField K] [Field M] [NumberField M] [Alge
 `Gal(M/K)` with fixed field `E = M ^ H`, two primes of `𝓞 M` contract to the same prime of `𝓞 E`
 exactly when one is an `H`-translate of the other.
 
-The forward direction is transitivity of `Gal(M/E)` on the primes above a fixed prime of `𝓞 E`,
-read through the Galois correspondence `H ≃* Gal(M/E)`; the reverse direction is that an
-automorphism fixing `E` pointwise does not move a contraction to `𝓞 E`.  Neither direction needs
-`M / K` to be Galois: `M / E` is Galois on its own, being the fixed field of a finite group acting
-on `M`. -/
+This does not require `M / K` to be Galois. -/
 theorem under_fixedField_eq_iff_mem_orbit (R R' : Ideal (𝓞 M)) [R.IsPrime] [R'.IsPrime]
     (H : Subgroup (M ≃ₐ[K] M)) :
     R.under (𝓞 ↥(fixedField H)) = R'.under (𝓞 ↥(fixedField H)) ↔ R ∈ MulAction.orbit H R' := by
+  -- The extension over the fixed field is Galois without assuming that `M / K` is Galois.
   have : IsGalois ↥(fixedField H) M := IsGalois.of_fixed_field M H
   have : IsGaloisGroup (M ≃ₐ[↥(fixedField H)] M) ↥(fixedField H) M :=
     IsGaloisGroup.of_isGalois _ M
   rw [MulAction.mem_orbit_iff]
   constructor
   · intro h
+    -- Use transitivity of `Gal(M/E)` on the primes above the common contraction.
     have : R.LiesOver (R'.under (𝓞 ↥(fixedField H))) := ⟨h.symm⟩
     have : R'.LiesOver (R'.under (𝓞 ↥(fixedField H))) := over_under _
     obtain ⟨ρ, hρ⟩ := exists_smul_eq_of_isGaloisGroup (R'.under (𝓞 ↥(fixedField H))) R' R
@@ -90,6 +88,7 @@ theorem under_fixedField_eq_iff_mem_orbit (R R' : Ideal (𝓞 M)) [R.IsPrime] [R
     exact ⟨(subgroupEquivAlgEquiv H).symm ρ, by
       rw [Subgroup.smul_def, ← H.subgroupEquivAlgEquiv_smul_ideal, MulEquiv.apply_symm_apply, hρ]⟩
   · rintro ⟨h, rfl⟩
+    -- An automorphism fixing `E` pointwise does not move contraction to `𝓞 E`.
     rw [Subgroup.smul_def, ← H.subgroupEquivAlgEquiv_smul_ideal h R']
     exact under_smul _ R' _
 
@@ -107,15 +106,12 @@ theorem under_fixedField_smul_eq_iff_doubleCosetMk_eq (Q : Ideal (𝓞 M)) [Q.Is
 
 /-- **Every prime of the fixed field above `p` is a contraction of a translate of `Q`.**  For
 `M / K` Galois and `Q` a prime of `𝓞 M` above `p`, a prime `𝔮` of `𝓞 (M ^ H)` above `p` is
-`σ Q ∩ 𝓞 (M ^ H)` for some `σ` in `Gal(M/K)`.
-
-This is transitivity of `Gal(M/K)` on the primes of `𝓞 M` above `p`, transported downwards: `𝔮`
-has some prime of `𝓞 M` above it, that prime lies above `p` as well, and so is a translate
-of `Q`. -/
+`σ Q ∩ 𝓞 (M ^ H)` for some `σ` in `Gal(M/K)`. -/
 theorem exists_smul_under_fixedField_eq [IsGalois K M] (p : Ideal (𝓞 K)) (Q : Ideal (𝓞 M))
     [Q.IsPrime] [Q.LiesOver p] (H : Subgroup (M ≃ₐ[K] M))
     (𝔮 : Ideal (𝓞 ↥(fixedField H))) [𝔮.IsPrime] [𝔮.LiesOver p] :
     ∃ σ : M ≃ₐ[K] M, (σ • Q).under (𝓞 ↥(fixedField H)) = 𝔮 := by
+  -- Lift `𝔮` to a prime `R` of `𝓞 M`; transitivity then makes `R` a translate of `Q`.
   obtain ⟨⟨R, hRp, hRo⟩⟩ := 𝔮.nonempty_primesOver (S := 𝓞 M)
   have : R.LiesOver p := LiesOver.trans R 𝔮 p
   have : IsGaloisGroup (M ≃ₐ[K] M) K M := IsGaloisGroup.of_isGalois _ M
