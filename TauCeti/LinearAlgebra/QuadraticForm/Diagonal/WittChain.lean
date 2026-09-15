@@ -20,17 +20,16 @@ coefficients by induction.
 
 The lower bound on the rank is necessary for the relation defined in
 `TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain`: a binary step requires two distinct
-coordinates. In rank one, a diagonal chain is therefore equality of coefficients, whereas
-isometry only determines their square classes. The theorem records this boundary explicitly.
+coordinates, so in rank one a diagonal chain is equality of coefficients, whereas isometry only
+determines their square classes. That boundary is recorded there by
+`TauCeti.diagonalChain_fin_one_iff`.
 
 ## Main results
 
 * `TauCeti.exists_diagonalChain_first_eq_of_mem_unitValueSet`: a represented unit can be moved
   into the first coefficient of a diagonal form of rank at least two.
 * `TauCeti.diagonalChain_iff_equivalent`: Witt's chain theorem in rank at least two.
-* `TauCeti.diagonalChain_iff_equivalent_fin_zero`: the chain theorem in rank zero.
-* `TauCeti.diagonalChain_fin_one_iff`: in rank one, a chain is exactly equality of coefficient
-  families.
+* `TauCeti.diagonalChain_iff_equivalent_of_two_le`: the same statement in inequality form.
 
 ## References
 
@@ -48,60 +47,10 @@ universe u
 
 variable {K : Type u} [Field K] [Invertible (2 : K)]
 
-namespace BinaryStep
-
-variable {R : Type u} [CommSemiring R]
-
-/-- A binary step remains a binary step after adjoining a fixed first coefficient. -/
-theorem cons {n : ℕ} {w w' : Fin n → Rˣ} (a : Rˣ) (h : BinaryStep w w') :
-    BinaryStep (Fin.cons a w) (Fin.cons a w') := by
-  unfold TauCeti.BinaryStep at h ⊢
-  obtain ⟨i, j, hij, hrest, hpair⟩ := h
-  refine ⟨i.succ, j.succ, fun hs ↦ hij (Fin.succ_inj.mp hs), ?_, ?_⟩
-  · intro k
-    refine Fin.cases ?_ (fun l ↦ ?_) k
-    · intro _ _
-      simp
-    · intro hki hkj
-      simp only [Fin.cons_succ]
-      exact hrest l (fun hli ↦ hki (Fin.succ_inj.mpr hli))
-        (fun hlj ↦ hkj (Fin.succ_inj.mpr hlj))
-  · simpa only [Fin.cons_succ] using hpair
-
-end BinaryStep
-
-namespace DiagonalChain
-
-variable {R : Type u} [CommSemiring R]
-
-/-- A diagonal chain remains a diagonal chain after adjoining a fixed first coefficient. -/
-theorem cons {n : ℕ} {w w' : Fin n → Rˣ} (a : Rˣ) (h : DiagonalChain w w') :
-    DiagonalChain (Fin.cons a w) (Fin.cons a w') := by
-  have toBinary {v v' : Fin n → Rˣ} (hstep : DiagonalStep v v') :
-      Relation.ReflTransGen BinaryStep v v' := by
-    unfold TauCeti.DiagonalStep at hstep
-    exact hstep.elim PermutationStep.to_reflTransGen_binaryStep Relation.ReflTransGen.single
-  have hbinary : Relation.ReflTransGen BinaryStep w w' := by
-    unfold TauCeti.DiagonalChain at h
-    exact Relation.ReflTransGen.trans_induction_on h
-      (fun _ ↦ Relation.ReflTransGen.refl)
-      (fun hstep ↦ toBinary hstep)
-      (fun _ _ ih ih' ↦ ih.trans ih')
-  have hlift : Relation.ReflTransGen BinaryStep (Fin.cons a w) (Fin.cons a w') :=
-    (Relation.ReflTransGen.lift
-      (r := fun v v' : Fin n → Rˣ ↦ BinaryStep v v')
-      (p := fun v v' : Fin (n + 1) → Rˣ ↦ BinaryStep v v')
-      (fun v ↦ Fin.cons a v) (fun _ _ hstep ↦ BinaryStep.cons a hstep)) w w' hbinary
-  unfold TauCeti.DiagonalChain
-  exact (Relation.ReflTransGen.mono
-    (r := fun v v' : Fin (n + 1) → Rˣ ↦ BinaryStep v v')
-    (p := fun v v' : Fin (n + 1) → Rˣ ↦ DiagonalStep v v')
-    (fun _ _ hstep ↦ show DiagonalStep _ _ from Or.inr hstep)) _ _ hlift
-
-end DiagonalChain
-
 omit [Invertible (2 : K)] in
-/-- A presented diagonal form is the scalar-coefficient weighted sum of squares. -/
+/-- A presented diagonal form is the scalar-coefficient weighted sum of squares. The body of
+`TauCeti.presentedForm` is not exposed, and `TauCeti.presentedForm_eq_weightedSumSquares` gives
+the `Kˣ`-weighted form instead, so this comparison has to be made once here. -/
 private theorem presentedForm_eq_weightedSumSquares_coe {n : ℕ} (w : Fin n → Kˣ) :
     presentedForm ⟨n, w⟩ = weightedSumSquares K (fun i ↦ (w i : K)) := by
   rw [presentedForm_eq_weightedSumSquares]
@@ -143,9 +92,8 @@ omit [Invertible (2 : K)] in
 /-- A represented unit can be made the first coefficient of a diagonal form of rank at least two
 by a diagonal chain.
 
-This is the constructive heart of Witt's chain theorem. It repeatedly combines the first
-coefficient with the nonzero value represented by the tail. If the tail value is zero, the
-represented unit already belongs to the leading binary subform. -/
+This alignment of the leading coefficient is what lets `TauCeti.diagonalChain_iff_equivalent`
+cancel a common line and induct on the remaining coefficients. -/
 theorem exists_diagonalChain_first_eq_of_mem_unitValueSet {n : ℕ}
     (w : Fin (n + 2) → Kˣ) (c : Kˣ)
     (hc : c ∈ unitValueSet (weightedSumSquares K fun i ↦ (w i : K))) :
@@ -159,8 +107,7 @@ theorem exists_diagonalChain_first_eq_of_mem_unitValueSet {n : ℕ}
         simpa only [hw] using hc
       refine ⟨replaceHeadPair w c, ?_, by simp⟩
       unfold TauCeti.DiagonalChain
-      exact Relation.ReflTransGen.single
-        (show DiagonalStep _ _ from Or.inr (binaryStep_replaceHeadPair w c hpair))
+      exact Relation.ReflTransGen.single (Or.inr (binaryStep_replaceHeadPair w c hpair))
   | succ n ih =>
       rw [mem_unitValueSet, represents_iff, Set.mem_range] at hc
       obtain ⟨x, hx⟩ := hc
@@ -176,11 +123,9 @@ theorem exists_diagonalChain_first_eq_of_mem_unitValueSet {n : ℕ}
           simp only [weightedSumSquares_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
             Matrix.cons_val_one, smul_eq_mul, mul_zero, add_zero]
           simpa only [hd, add_zero] using hsum
-        refine ⟨replaceHeadPair w c,
-          ?_, by simp⟩
+        refine ⟨replaceHeadPair w c, ?_, by simp⟩
         unfold TauCeti.DiagonalChain
-        exact Relation.ReflTransGen.single
-          (show DiagonalStep _ _ from Or.inr (binaryStep_replaceHeadPair w c hhead))
+        exact Relation.ReflTransGen.single (Or.inr (binaryStep_replaceHeadPair w c hhead))
       · let d' : Kˣ := Units.mk0 d hd
         have htail : d' ∈ unitValueSet
             (weightedSumSquares K fun i ↦ (Fin.tail w i : K)) := by
@@ -195,15 +140,11 @@ theorem exists_diagonalChain_first_eq_of_mem_unitValueSet {n : ℕ}
           rw [mem_unitValueSet, represents_iff, Set.mem_range]
           refine ⟨![x 0, 1], ?_⟩
           simp only [weightedSumSquares_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
-            Matrix.cons_val_one, smul_eq_mul, mul_one]
-          change (w 0 : K) * (x 0 * x 0) + (u 0 : K) = c
-          rw [hu0]
+            Matrix.cons_val_one, smul_eq_mul, mul_one, v, Fin.cons_zero, Fin.cons_one, hu0]
           exact hsum
-        refine ⟨replaceHeadPair v c,
-          ?_, by simp⟩
+        refine ⟨replaceHeadPair v c, ?_, by simp⟩
         unfold TauCeti.DiagonalChain at hwv ⊢
-        exact hwv.tail
-          (show DiagonalStep _ _ from Or.inr (binaryStep_replaceHeadPair v c hhead))
+        exact hwv.tail (Or.inr (binaryStep_replaceHeadPair v c hhead))
 
 /-- **Witt's chain theorem** in its nontrivial range: two diagonal forms of rank at least two are
 isometric if and only if their coefficient families are connected by a diagonal chain. -/
@@ -215,13 +156,13 @@ theorem diagonalChain_iff_equivalent {n : ℕ} {w w' : Fin (n + 2) → Kˣ} :
   induction n with
   | zero =>
       unfold TauCeti.DiagonalChain
-      exact Relation.ReflTransGen.single (show DiagonalStep _ _ from Or.inr (by
-        unfold TauCeti.BinaryStep
-        exact ⟨0, 1, Fin.zero_ne_one, by
-        intro k hk0 hk1
-        fin_cases k
-        · exact (hk0 rfl).elim
-        · exact (hk1 rfl).elim, h⟩))
+      refine Relation.ReflTransGen.single (Or.inr ?_)
+      unfold TauCeti.BinaryStep
+      refine ⟨0, 1, Fin.zero_ne_one, ?_, h⟩
+      intro k hk0 hk1
+      fin_cases k
+      · exact (hk0 rfl).elim
+      · exact (hk1 rfl).elim
   | succ n ih =>
       have hw0 : w 0 ∈ unitValueSet (weightedSumSquares K fun i ↦ (w i : K)) := by
         rw [mem_unitValueSet, represents_iff, Set.mem_range]
@@ -285,45 +226,5 @@ theorem diagonalChain_iff_equivalent_of_two_le {n : ℕ} (hn : 2 ≤ n)
         (weightedSumSquares K fun i ↦ (w' i : K)) := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
   exact diagonalChain_iff_equivalent
-
-/-- In rank zero, the unique coefficient families are connected by a diagonal chain and their
-weighted sums of squares are isometric. -/
-theorem diagonalChain_iff_equivalent_fin_zero {R : Type u} [CommSemiring R]
-    {w w' : Fin 0 → Rˣ} :
-    DiagonalChain w w' ↔
-      (weightedSumSquares R fun i ↦ (w i : R)).Equivalent
-        (weightedSumSquares R fun i ↦ (w' i : R)) := by
-  constructor
-  · exact DiagonalChain.equivalent
-  · intro _
-    have hww' : w = w' := Subsingleton.elim w w'
-    subst w'
-    unfold TauCeti.DiagonalChain
-    exact Relation.ReflTransGen.refl
-
-/-- In rank one a diagonal chain is equality of coefficient families. Thus the rank hypothesis in
-`TauCeti.diagonalChain_iff_equivalent_of_two_le` cannot be removed: isometric one-dimensional
-forms need only have coefficients in the same square class. -/
-theorem diagonalChain_fin_one_iff {R : Type u} [CommSemiring R] {w w' : Fin 1 → Rˣ} :
-    DiagonalChain w w' ↔ w = w' := by
-  constructor
-  · intro h
-    unfold TauCeti.DiagonalChain at h
-    induction h using Relation.ReflTransGen.trans_induction_on with
-    | refl => rfl
-    | single hstep =>
-        unfold TauCeti.DiagonalStep at hstep
-        rcases hstep with hperm | hbinary
-        · unfold TauCeti.PermutationStep at hperm
-          obtain ⟨σ, hσ⟩ := hperm
-          funext i
-          exact (congrArg _ (Subsingleton.elim i (σ i))).trans (hσ i).symm
-        · unfold TauCeti.BinaryStep at hbinary
-          obtain ⟨i, j, hij, _⟩ := hbinary
-          exact (hij (Subsingleton.elim i j)).elim
-    | trans _ _ ih ih' => exact ih.trans ih'
-  · rintro rfl
-    unfold TauCeti.DiagonalChain
-    exact Relation.ReflTransGen.refl
 
 end TauCeti
