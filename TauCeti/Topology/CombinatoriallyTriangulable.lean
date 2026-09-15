@@ -41,6 +41,16 @@ theorem IsCombinatoriallyTriangulable.isTriangulable
   exact (Homeomorph.isTriangulable_iff e).mp
     (AbstractSimplicialComplex.isTriangulable_realization K)
 
+end
+
+end TauCeti
+
+open TauCeti
+
+universe u v
+
+variable {X : Type u} [TopologicalSpace X]
+
 /-- Combinatorial triangulability is invariant under homeomorphism of the ambient space. -/
 theorem Homeomorph.isCombinatoriallyTriangulable_iff
     {Y : Type u} [TopologicalSpace Y] (e : X ≃ₜ Y) :
@@ -52,6 +62,3 @@ theorem Homeomorph.isCombinatoriallyTriangulable_iff
   · rintro ⟨ι, K, hK, ⟨h⟩⟩
     exact ⟨ι, K, hK, ⟨h.trans e.symm⟩⟩
 
-end
-
-end TauCeti
