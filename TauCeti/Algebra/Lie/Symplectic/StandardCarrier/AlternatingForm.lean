@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
+public import TauCeti.LinearAlgebra.Matrix.Diagonal
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Scheme
 
 /-!
@@ -199,14 +200,6 @@ private theorem rootIntMatrix_mul_self_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1))
 
 /-! ### The two generator matrices preserve the form -/
 
-private theorem diagonal_mul_mul_transpose_diagonal {N : ℕ} {A : Type*} [CommRing A]
-    (d : Fin N → A) (Jm : Matrix (Fin N) (Fin N) A)
-    (hd : ∀ r c, d r * Jm r c * d c = Jm r c) :
-    Matrix.diagonal d * Jm * (Matrix.diagonal d)ᵀ = Jm := by
-  ext r c
-  rw [Matrix.diagonal_transpose, Matrix.mul_diagonal, Matrix.diagonal_mul]
-  exact hd r c
-
 private theorem one_add_smul_mul_mul_transpose {N : ℕ} {A : Type*} [CommRing A]
     (Jm Y : Matrix (Fin N) (Fin N) A) (t : A)
     (hskew : Y * Jm + Jm * Yᵀ = 0) (hsq : Y * Y = 0) :
@@ -333,7 +326,8 @@ private theorem torusCoordinateMap_symplectic :
     TauCeti.JFin_map (n + 1)
       (algebraMap ℤ
         (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup (Fin (n + 1)))).obj)]
-  refine diagonal_mul_mul_transpose_diagonal _ _ ?_
+  rw [Matrix.diagonal_transpose]
+  refine Matrix.diagonal_mul_mul_diagonal _ ?_
   intro r c
   -- Name the two indices through the enumeration of the coordinate basis, so that the entry of
   -- the transported form is an entry of Mathlib's `Matrix.J`.
