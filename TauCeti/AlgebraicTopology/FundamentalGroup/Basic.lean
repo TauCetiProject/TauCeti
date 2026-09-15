@@ -28,7 +28,7 @@ Stage 0.1 of the `TauCetiRoadmap/UniversalCovers` roadmap.
 
 * `FundamentalGroupoid.nonempty_hom`: the fundamental groupoid of a path-connected
   space is connected.
-* `TauCeti.ContinuousMap.fundamentalGroupoid_map_obj_injective`: an injective continuous map
+* `ContinuousMap.fundamentalGroupoid_map_obj_injective`: an injective continuous map
   induces a functor of fundamental groupoids that is injective on objects.
 * `Path.Homotopic.Quotient.cast_mem_arrows_iff`: membership of a path class in a
   subgroupoid of the fundamental groupoid is unchanged by casting its endpoints along equalities.
@@ -75,21 +75,22 @@ theorem cast_mem_arrows_iff
 
 end Path.Homotopic.Quotient
 
-namespace TauCeti
-
-variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X]
-variable {A : Type*} [TopologicalSpace A]
-
 namespace ContinuousMap
 
 /-- The functor between fundamental groupoids induced by an injective continuous map is injective
 on objects. -/
-theorem fundamentalGroupoid_map_obj_injective (f : C(X, A)) (hf : Function.Injective f) :
+theorem fundamentalGroupoid_map_obj_injective {X A : Type*}
+    [TopologicalSpace X] [TopologicalSpace A] (f : C(X, A)) (hf : Function.Injective f) :
     Function.Injective (_root_.FundamentalGroupoid.map f).obj := by
   rintro ⟨a⟩ ⟨b⟩ h
   exact congrArg _root_.FundamentalGroupoid.mk (hf (congrArg _root_.FundamentalGroupoid.as h))
 
 end ContinuousMap
+
+namespace TauCeti
+
+variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X]
+variable {A : Type*} [TopologicalSpace A]
 
 /-- Mapping a loop class represented by a path is represented by mapping that path. -/
 theorem FundamentalGroup.map_fromPath {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) (base : X)
