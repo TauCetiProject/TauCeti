@@ -79,14 +79,12 @@ theorem realSignature_snd (Q : _root_.QuadraticForm K V)
   simp [realNegativeIndex]
 
 /-- The positive index at a real place is Mathlib's positive index of the localized form. -/
-@[simp]
 theorem realPositiveIndex_eq_sigPos (Q : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace K // w.IsReal}) :
     Q.realPositiveIndex w = sigPos (Q.atRealPlace w) := by
   simp [realPositiveIndex, realSignature]
 
 /-- The negative index at a real place is Mathlib's negative index of the localized form. -/
-@[simp]
 theorem realNegativeIndex_eq_sigNeg (Q : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace K // w.IsReal}) :
     Q.realNegativeIndex w = sigNeg (Q.atRealPlace w) := by
