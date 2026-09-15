@@ -211,6 +211,7 @@ theorem val_degreeOneEquivDegreeZeroClassGroup_apply (hF : IsFunctionField k F)
   rfl
 
 /-- The base place is the zero of the group law. -/
+@[simp]
 theorem degreeOneEquivDegreeZeroClassGroup_base (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
     degreeOneEquivDegreeZeroClassGroup hF hex hg hP₀ ⟨P₀, hP₀⟩ = 0 :=
@@ -271,16 +272,16 @@ theorem degreeOneAddEquivDegreeZeroClassGroup_apply (hF : IsFunctionField k F)
   rw [degreeOneAddEquivDegreeZeroClassGroup]
   exact Equiv.addEquiv_apply _ P
 
-/-- The base place is the zero of the transported group law. -/
+/-- The zero of the transported group law is the base place. -/
 @[simp]
-theorem degreeOneAddCommGroup_base (hF : IsFunctionField k F)
+theorem degreeOneAddCommGroup_zero (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
     letI := degreeOneAddCommGroup hF hex hg hP₀
-    (⟨P₀, hP₀⟩ : {P : Place k F // P.degree = 1}) = 0 := by
+    (0 : {P : Place k F // P.degree = 1}) = ⟨P₀, hP₀⟩ := by
   let := degreeOneAddCommGroup hF hex hg hP₀
   apply (degreeOneAddEquivDegreeZeroClassGroup hF hex hg hP₀).injective
-  rw [degreeOneAddEquivDegreeZeroClassGroup_apply,
-    degreeOneEquivDegreeZeroClassGroup_base, map_zero]
+  rw [map_zero, degreeOneAddEquivDegreeZeroClassGroup_apply,
+    degreeOneEquivDegreeZeroClassGroup_base]
 
 /-- **The group law of the degree-one places is linear equivalence of divisors** (Stichtenoth,
 Proposition 6.1.7): `P ⊕ Q = R` exactly when `P + Q ∼ R + P₀`. -/
