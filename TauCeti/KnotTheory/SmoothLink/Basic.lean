@@ -148,6 +148,15 @@ theorem restrict_refl (L : SmoothLinkEmbedding I M n) :
   intro i
   rfl
 
+/-- Selecting components twice is restriction along the composite labeling map. -/
+@[simp]
+theorem restrict_restrict {m k : ℕ} (L : SmoothLinkEmbedding I M n)
+    (ι : Fin m → Fin n) (hι : Function.Injective ι)
+    (κ : Fin k → Fin m) (hκ : Function.Injective κ) :
+    (L.restrict ι hι).restrict κ hκ = L.restrict (ι ∘ κ) (hι.comp hκ) := by
+  ext i
+  rfl
+
 
 /-! ### Empty and one-component links -/
 
