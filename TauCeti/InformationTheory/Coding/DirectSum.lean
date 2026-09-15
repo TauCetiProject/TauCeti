@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Pi
 public import TauCeti.InformationTheory.Hamming
+public import TauCeti.LinearAlgebra.Submodule.Prod
 
 /-!
 # Direct sums of linear codes
@@ -49,40 +50,48 @@ theorem mem_directSum_iff {C : Submodule R (ι → R)} {D : Submodule R (κ → 
   rw [directSum, mem_map_equiv, LinearEquiv.symm_symm, mem_prod]
   rfl
 
-/-- The direct sum is linearly equivalent to the product of its two constituent codes. -/
-def directSumEquivProd (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
-    directSum C D ≃ₗ[R] C × D where
-  toFun x := (⟨fun i ↦ x.1 (.inl i), (mem_directSum_iff.1 x.2).1⟩,
-    ⟨fun j ↦ x.1 (.inr j), (mem_directSum_iff.1 x.2).2⟩)
-  invFun y := ⟨Sum.elim y.1.1 y.2.1, mem_directSum_iff.2 ⟨y.1.2, y.2.2⟩⟩
+private def directSumEquivProdSubmodule (C : Submodule R (ι → R))
+    (D : Submodule R (κ → R)) : directSum C D ≃ₗ[R] C.prod D where
+  toFun x := ⟨((fun i ↦ x.1 (.inl i)), (fun j ↦ x.1 (.inr j))),
+    mem_prod.2 (mem_directSum_iff.1 x.2)⟩
+  invFun x := ⟨Sum.elim x.1.1 x.1.2, mem_directSum_iff.2 (mem_prod.1 x.2)⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv x := Subtype.ext <| funext fun i ↦ by cases i <;> rfl
   right_inv _ := rfl
 
+/-- The direct sum is linearly equivalent to the product of its two constituent codes. -/
+def directSumEquivProd (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
+    directSum C D ≃ₗ[R] C × D :=
+  (directSumEquivProdSubmodule C D).trans (prodEquiv C D)
+
 @[simp]
 theorem directSumEquivProd_apply_fst (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
     (x : directSum C D) (i : ι) :
-    (directSumEquivProd C D x).1.1 i = x.1 (.inl i) :=
-  (rfl)
+    (directSumEquivProd C D x).1.1 i = x.1 (.inl i) := by
+  rw [directSumEquivProd, LinearEquiv.trans_apply, prodEquiv_apply]
+  rfl
 
 @[simp]
 theorem directSumEquivProd_apply_snd (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
     (x : directSum C D) (j : κ) :
-    (directSumEquivProd C D x).2.1 j = x.1 (.inr j) :=
-  (rfl)
+    (directSumEquivProd C D x).2.1 j = x.1 (.inr j) := by
+  rw [directSumEquivProd, LinearEquiv.trans_apply, prodEquiv_apply]
+  rfl
 
 @[simp]
 theorem directSumEquivProd_symm_apply_inl (C : Submodule R (ι → R))
     (D : Submodule R (κ → R)) (x : C) (y : D) (i : ι) :
-    ((directSumEquivProd C D).symm (x, y)).1 (.inl i) = x.1 i :=
-  (rfl)
+    ((directSumEquivProd C D).symm (x, y)).1 (.inl i) = x.1 i := by
+  rw [directSumEquivProd, LinearEquiv.symm_trans_apply, prodEquiv_symm_apply]
+  rfl
 
 @[simp]
 theorem directSumEquivProd_symm_apply_inr (C : Submodule R (ι → R))
     (D : Submodule R (κ → R)) (x : C) (y : D) (j : κ) :
-    ((directSumEquivProd C D).symm (x, y)).1 (.inr j) = y.1 j :=
-  (rfl)
+    ((directSumEquivProd C D).symm (x, y)).1 (.inr j) = y.1 j := by
+  rw [directSumEquivProd, LinearEquiv.symm_trans_apply, prodEquiv_symm_apply]
+  rfl
 
 /-- Direct sum is monotone in both constituent codes. -/
 @[gcongr]
