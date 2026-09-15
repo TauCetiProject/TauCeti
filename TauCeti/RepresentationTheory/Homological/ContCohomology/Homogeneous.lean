@@ -73,7 +73,11 @@ namespace TauCeti.ContCohomology
 
 universe u v
 
-variable {G : Type u} [Group G] {M : Type v} [AddCommGroup M] [DistribMulAction G M]
+variable {G : Type u} [Group G] {M : Type v}
+
+section MulAction
+
+variable [MulAction G M]
 
 /-- The homogeneous form `h₀ • f (h₀⁻¹ h₁)` of a `1`-cochain `f`. -/
 def homogeneous1 (f : G → M) (h₀ h₁ : G) : M := h₀ • f (h₀⁻¹ * h₁)
@@ -111,6 +115,36 @@ theorem homogeneous2_smul (f : G × G → M) (g h₀ h₁ h₂ : G) :
     homogeneous2 f (g * h₀) (g * h₁) (g * h₂) = g • homogeneous2 f h₀ h₁ h₂ := by
   simp [mul_smul, mul_inv_rev, mul_assoc]
 
+end MulAction
+
+section Subtraction
+
+variable [AddGroup M] [DistribMulAction G M]
+
+/-- The homogeneous `1`-cochain in the pointwise prism identity comparing a homogeneous
+`2`-cocycle at points with its values at their images under a self-map `v` of `G`; see
+`TauCeti.ContCohomology.homogeneous2_sub_comp`. -/
+def homogeneousHomotopy2 (f : G × G → M) (v : G → G) (h₀ h₁ : G) : M :=
+  homogeneous2 f (v h₀) h₀ h₁ - homogeneous2 f (v h₀) (v h₁) h₁
+
+/-- The defining formula for the comparison cochain. It is not a `simp` lemma: its right-hand side
+is rewritten further by `TauCeti.ContCohomology.homogeneous2_apply`. -/
+theorem homogeneousHomotopy2_apply (f : G × G → M) (v : G → G) (h₀ h₁ : G) :
+    homogeneousHomotopy2 f v h₀ h₁ =
+      homogeneous2 f (v h₀) h₀ h₁ - homogeneous2 f (v h₀) (v h₁) h₁ := (rfl)
+
+/-- The comparison cochain is equivariant for any `g` that `v` commutes with. -/
+theorem homogeneousHomotopy2_smul (f : G × G → M) (v : G → G) {g : G}
+    (hv : ∀ x : G, v (g * x) = g * v x) (h₀ h₁ : G) :
+    homogeneousHomotopy2 f v (g * h₀) (g * h₁) = g • homogeneousHomotopy2 f v h₀ h₁ := by
+  simp only [homogeneousHomotopy2_apply, hv, homogeneous2_smul, smul_sub]
+
+end Subtraction
+
+section Cocycles
+
+variable [AddCommGroup M] [DistribMulAction G M]
+
 /-- **The homogeneous `2`-cocycle identity.** For a `2`-cocycle the alternating sum of the four
 values obtained by dropping one of four group elements vanishes, here written as the equality of
 the two positive halves. -/
@@ -134,24 +168,6 @@ theorem homogeneous2_d1 (f : G → M) (h₀ h₁ h₂ : G) :
   have h₀₂ : h₀⁻¹ * h₁ * (h₁⁻¹ * h₂) = h₀⁻¹ * h₂ := by group
   simp only [homogeneous2_apply, homogeneous1_apply, d1_apply, smul_sub, smul_add, ← mul_smul,
     mul_inv_cancel_left, h₀₂]
-
-/-- The homogeneous `1`-cochain in the pointwise prism identity comparing a homogeneous
-`2`-cocycle at points with its values at their images under a self-map `v` of `G`; see
-`TauCeti.ContCohomology.homogeneous2_sub_comp`. -/
-def homogeneousHomotopy2 (f : G × G → M) (v : G → G) (h₀ h₁ : G) : M :=
-  homogeneous2 f (v h₀) h₀ h₁ - homogeneous2 f (v h₀) (v h₁) h₁
-
-/-- The defining formula for the comparison cochain. It is not a `simp` lemma: its right-hand side
-is rewritten further by `TauCeti.ContCohomology.homogeneous2_apply`. -/
-theorem homogeneousHomotopy2_apply (f : G × G → M) (v : G → G) (h₀ h₁ : G) :
-    homogeneousHomotopy2 f v h₀ h₁ =
-      homogeneous2 f (v h₀) h₀ h₁ - homogeneous2 f (v h₀) (v h₁) h₁ := (rfl)
-
-/-- The comparison cochain is equivariant for any `g` that `v` commutes with. -/
-theorem homogeneousHomotopy2_smul (f : G × G → M) (v : G → G) {g : G}
-    (hv : ∀ x : G, v (g * x) = g * v x) (h₀ h₁ : G) :
-    homogeneousHomotopy2 f v (g * h₀) (g * h₁) = g • homogeneousHomotopy2 f v h₀ h₁ := by
-  simp only [homogeneousHomotopy2_apply, hv, homogeneous2_smul, smul_sub]
 
 /-- **Pointwise prism identity for a homogeneous `2`-cocycle.** Its values at three points and at
 their images under any self-map `v` differ by the displayed alternating sum. No equivariance is
@@ -182,10 +198,12 @@ theorem homogeneous2_sub_comp {f : G × G → M} (hf : groupCohomology.IsCocycle
   rw [g1, g2, g3]
   abel
 
+end Cocycles
+
 section Topology
 
-variable [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace M] [ContinuousSMul G M]
-  {X : Type*} [TopologicalSpace X]
+variable [MulAction G M] [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace M]
+  [ContinuousSMul G M] {X : Type*} [TopologicalSpace X]
 
 /-- The homogeneous form of a continuous `1`-cochain, read along continuous families of group
 elements, is continuous. -/
