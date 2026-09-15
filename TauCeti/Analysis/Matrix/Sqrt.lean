@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.Order
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.ConjSqrt
 public import Mathlib.LinearAlgebra.Matrix.SchurComplement
 public import TauCeti.Analysis.Matrix.EuclideanLin
 
@@ -24,6 +25,13 @@ The sandwich is the matrix whose eigenvalues govern the exponential moments of a
 quadratic form, and the determinant identity is what turns its spectral formula into a formula
 in the original parameters.
 
+When `S` is positive definite the same pencil has a scale form: `S⁻¹ - c • Θ` is the congruence
+of `1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)` by `(CFC.sqrt S)⁻¹`, so the two are positive definite
+together. The scale form is the one that appears in an exponential weight
+`exp (-trace ((S⁻¹ - c • Θ) * A) / 2)`, where `S` is a scale matrix and `c • Θ` the tilt of a trace
+statistic. Its determinant needs no positivity at all, and is computed over a commutative ring in
+`TauCeti/LinearAlgebra/Matrix/InvSubSmul.lean`.
+
 ## Main results
 
 * `Matrix.isHermitian_sqrt_mul_mul_sqrt` — the sandwich of a Hermitian matrix by a square root
@@ -36,7 +44,9 @@ in the original parameters.
   positive-semidefinite `S`, the pencil determinants of the sandwich and of `Θ * S` agree;
 * `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt` and
   `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self` — for positive-semidefinite `S`, the traces
-  of the sandwich and of its square are those of `Θ * S` and `Θ * S * Θ * S`.
+  of the sandwich and of its square are those of `Θ * S` and `Θ * S * Θ * S`;
+* `Matrix.PosDef.inv_sub_smul_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_smul_iff` — the
+  scale form `S⁻¹ - c • Θ` of the pencil and its positive-definiteness.
 -/
 
 public section
@@ -109,5 +119,44 @@ theorem PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self {S : Matrix ι ι 𝕜} (hS 
         CFC.sqrt S * (M * (CFC.sqrt S * CFC.sqrt S) * M) * CFC.sqrt S := by
     simp only [Matrix.mul_assoc]
   rw [hreassoc, trace_mul_cycle, CFC.sqrt_mul_sqrt_self S hS.nonneg, trace_mul_comm]
+
+/-! ### The scale form of the pencil -/
+
+section PosDef
+
+variable [DecidableEq ι] {S : Matrix ι ι 𝕜}
+
+/-- **The scale form of the pencil.** For positive-definite `S`, the matrix `S⁻¹ - c • Θ` is the
+congruence of the sandwich pencil `1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)` by `(CFC.sqrt S)⁻¹`. -/
+theorem PosDef.inv_sub_smul_eq_conjugate (hS : S.PosDef) (Θ : Matrix ι ι 𝕜) (c : 𝕜) :
+    S⁻¹ - c • Θ =
+      (CFC.sqrt S)⁻¹ * (1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)) * (CFC.sqrt S)⁻¹ := by
+  have hsp : IsStrictlyPositive S := hS.isStrictlyPositive
+  have hroot : (CFC.sqrt S)⁻¹ = CFC.sqrt (Ring.inverse S) := by
+    rw [hS.posSemidef.inv_sqrt, Matrix.nonsing_inv_eq_ringInverse]
+  have hone : (CFC.sqrt S)⁻¹ * 1 * (CFC.sqrt S)⁻¹ = S⁻¹ := by
+    rw [hroot, ← CFC.conjSqrt_apply, CFC.conjSqrt_one _ hsp.ringInverse.nonneg,
+      Matrix.nonsing_inv_eq_ringInverse]
+  have hundo : (CFC.sqrt S)⁻¹ * (CFC.sqrt S * Θ * CFC.sqrt S) * (CFC.sqrt S)⁻¹ = Θ := by
+    rw [hroot, ← CFC.conjSqrt_apply, ← CFC.conjSqrt_apply,
+      CFC.conjSqrt_ringInverse_conjSqrt S Θ hsp]
+  rw [Matrix.mul_sub, Matrix.sub_mul, hone, Matrix.mul_smul, Matrix.smul_mul, hundo]
+
+/-- The scale pencil `S⁻¹ - c • Θ` is positive definite exactly when the sandwich pencil
+`1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)` is. Neither `Θ` nor `c` needs a hypothesis: congruence by
+the invertible Hermitian matrix `(CFC.sqrt S)⁻¹` transports positive definiteness in both
+directions. -/
+theorem PosDef.posDef_inv_sub_smul_iff (hS : S.PosDef) (Θ : Matrix ι ι 𝕜) (c : 𝕜) :
+    (S⁻¹ - c • Θ).PosDef ↔ (1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)).PosDef := by
+  have hunit : IsUnit ((CFC.sqrt S)⁻¹ : Matrix ι ι 𝕜) :=
+    Matrix.isUnit_nonsing_inv_iff.2 (hS.isStrictlyPositive.isUnit_cfcSqrt S)
+  have hstar : star ((CFC.sqrt S)⁻¹ : Matrix ι ι 𝕜) = (CFC.sqrt S)⁻¹ := by
+    rw [Matrix.star_eq_conjTranspose, Matrix.conjTranspose_nonsing_inv,
+      ← Matrix.star_eq_conjTranspose, (CFC.sqrt_nonneg S).star_eq]
+  rw [hS.inv_sub_smul_eq_conjugate Θ c]
+  nth_rewrite 1 [← hstar]
+  exact Matrix.IsUnit.posDef_star_left_conjugate_iff hunit
+
+end PosDef
 
 end Matrix
