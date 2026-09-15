@@ -38,6 +38,8 @@ of a connection on the tangent bundle.
   functions in each argument.
 * `TauCeti.curvatureOperator_congr`: on finite-rank smooth bundles, curvature at a point depends
   only on the values of its three inputs there.
+* `TauCeti.curvatureOperator_congr_of_eventuallyEq`: curvature agrees at a point when its
+  smooth inputs agree in a neighborhood of that point.
 
 ## References
 
@@ -377,7 +379,9 @@ theorem curvatureOperator_smul_section
   abel
 
 omit [CompleteSpace E] in
-private theorem curvatureOperator_congr_of_eventuallyEq
+/-- Curvature at a point is unchanged when its smooth inputs agree in a neighborhood of that
+point. -/
+theorem curvatureOperator_congr_of_eventuallyEq
     {X X' Y Y' : Π x : M, TangentSpace I x} {σ σ' : Π x : M, V x} {x : M}
     (hX : CMDiff ∞ (T% X)) (hX' : CMDiff ∞ (T% X'))
     (hY : CMDiff ∞ (T% Y)) (hY' : CMDiff ∞ (T% Y'))

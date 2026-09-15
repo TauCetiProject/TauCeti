@@ -115,6 +115,8 @@ theorem eq_of_contMDiff_tensorial
       (hu : ∀ i, CMDiff ∞ (T% (u i))) :
       Φ (∑ i, u i) = ∑ i, Φ (u i) := by
     let q : Finset (Basis.ofVectorSpaceIndex ℝ G) := Finset.univ
+    -- A `Fintype` sum is definitionally a sum over `Finset.univ`; naming that finset `q`
+    -- exposes it in the goal so that `Finset.induction_on` can induct over the summation set.
     change Φ (∑ i ∈ q, u i) = ∑ i ∈ q, Φ (u i)
     induction q using Finset.induction_on with
     | empty => simpa using hzero
