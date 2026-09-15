@@ -190,8 +190,8 @@ theorem coe_map {S : Type*} [CommRing S] (f : R →+* S)
 /-- Base change acts entrywise on upper-unitriangular matrices. -/
 theorem map_apply {S : Type*} [CommRing S] (f : R →+* S)
     (g : upperUnitriangularGroup m R) (i j : m) :
-    (map f g : GL m S) i j = f ((g : GL m R) i j) :=
-  by rfl
+    (map f g : GL m S) i j = f ((g : GL m R) i j) := by
+  rw [coe_map, Matrix.GeneralLinearGroup.map_apply]
 
 /-- Base change along the identity ring homomorphism is the identity. -/
 @[simp]

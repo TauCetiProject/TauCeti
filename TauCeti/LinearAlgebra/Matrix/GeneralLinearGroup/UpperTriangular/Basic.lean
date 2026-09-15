@@ -94,8 +94,8 @@ theorem coe_map {S : Type v} [CommRing S] (phi : R →+* S)
 theorem map_apply {S : Type v} [CommRing S] (phi : R →+* S)
     (g : upperTriangularGroup m R) (i j : m) :
     ((map phi g : upperTriangularGroup m S) : GL m S) i j =
-      phi (((g : upperTriangularGroup m R) : GL m R) i j) :=
-  by rfl
+      phi (((g : upperTriangularGroup m R) : GL m R) i j) := by
+  rw [coe_map, Matrix.GeneralLinearGroup.map_apply]
 
 /-- Entrywise mapping along the identity ring homomorphism is the identity. -/
 @[simp]
