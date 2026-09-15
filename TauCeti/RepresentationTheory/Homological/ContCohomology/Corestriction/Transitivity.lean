@@ -14,17 +14,8 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 # Transitivity of low-degree corestriction
 
 For finite-index open subgroups `V ≤ U ≤ G`, corestriction is transitive in degrees zero, one,
-and two.  The proof composes a transversal for `U` in `G` with one for `V` in `U`.  Mathlib's
-equivalence
-
-```text
-G ⧸ V ≃ (G ⧸ U) × (U ⧸ V)
-```
-
-then turns the single corestriction sum into the iterated sum.  In positive degrees the
-transversal words for the composite representatives are exactly the inner transversal words
-applied to the outer ones.  Transversal independence from `Corestriction.Basic` promotes these
-cochain identities to the canonical maps on `H⁰`, `H¹`, and `H²`.
+and two: `cor_V^G = cor_U^G ∘ cor_V^U`.  The tower of coset spaces is organised by Mathlib's
+equivalence `Subgroup.quotientEquivProdOfLE'`, which splits `G ⧸ V` as `(G ⧸ U) × (U ⧸ V)`.
 
 Transitivity is what makes a corestriction computable one step at a time: it may be evaluated
 through any chain of intermediate finite-index open subgroups instead of in a single jump from `V`
@@ -51,16 +42,11 @@ variable (G : Type u) [Group G] (M : Type v) [AddCommGroup M] [DistribMulAction 
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
-private noncomputable def quotientTowerEquiv (t : G ⧸ U → G)
-    (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u) :
-    G ⧸ V ≃ (G ⧸ U) × (U ⧸ V.subgroupOf U) :=
-  Subgroup.quotientEquivProdOfLE' hVU t ht
-
-private noncomputable def compositeTransversal (t : G ⧸ U → G)
+private def compositeTransversal (t : G ⧸ U → G)
     (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
     (s : U ⧸ V.subgroupOf U → U) (q : G ⧸ V) : G :=
-  t ((quotientTowerEquiv G U V (hVU := hVU) t ht q).1) *
-    s ((quotientTowerEquiv G U V (hVU := hVU) t ht q).2)
+  t ((Subgroup.quotientEquivProdOfLE' hVU t ht q).1) *
+    s ((Subgroup.quotientEquivProdOfLE' hVU t ht q).2)
 
 private theorem compositeTransversal_spec (t : G ⧸ U → G)
     (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
@@ -69,7 +55,7 @@ private theorem compositeTransversal_spec (t : G ⧸ U → G)
       (QuotientGroup.mk (s v) : U ⧸ V.subgroupOf U) = v)
     (q : G ⧸ V) :
     (QuotientGroup.mk (compositeTransversal G U V (hVU := hVU) t ht s q) : G ⧸ V) = q := by
-  let e := quotientTowerEquiv G U V (hVU := hVU) t ht
+  let e := Subgroup.quotientEquivProdOfLE' hVU t ht
   let hmap : ∀ a b : U, QuotientGroup.leftRel (V.subgroupOf U) a b →
       QuotientGroup.leftRel V (t (e q).1 * (a : G)) (t (e q).1 * (b : G)) := by
     intro a b hab
@@ -91,14 +77,14 @@ private theorem compositeTransversal_spec (t : G ⧸ U → G)
           congrArg _ (hs (e q).2)
     _ = q := e.symm_apply_apply q
 
-private theorem quotientTowerEquiv_inv_smul (t : G ⧸ U → G)
+private theorem quotientEquivProdOfLE'_inv_smul (t : G ⧸ U → G)
     (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
     (a : G ⧸ U) (b : U ⧸ V.subgroupOf U) (γ : G) :
-    quotientTowerEquiv G U V (hVU := hVU) t ht
-        (γ⁻¹ • (quotientTowerEquiv G U V (hVU := hVU) t ht).symm (a, b)) =
+    Subgroup.quotientEquivProdOfLE' hVU t ht
+        (γ⁻¹ • (Subgroup.quotientEquivProdOfLE' hVU t ht).symm (a, b)) =
       (γ⁻¹ • a,
         (⟨lWord U t a γ, lWord_mem U t ht a γ⟩ : U)⁻¹ • b) := by
-  let e := quotientTowerEquiv G U V (hVU := hVU) t ht
+  let e := Subgroup.quotientEquivProdOfLE' hVU t ht
   apply e.symm.injective
   rw [e.symm_apply_apply]
   induction b using Quotient.inductionOn' with
@@ -116,17 +102,17 @@ private theorem lWord_composite (t : G ⧸ U → G)
     (s : U ⧸ V.subgroupOf U → U) (q : G ⧸ V) (γ : G) :
     lWord V (compositeTransversal G U V (hVU := hVU) t ht s) q γ =
       (lWord (V.subgroupOf U) s
-        (quotientTowerEquiv G U V (hVU := hVU) t ht q).2
-        ⟨lWord U t (quotientTowerEquiv G U V (hVU := hVU) t ht q).1 γ,
+        (Subgroup.quotientEquivProdOfLE' hVU t ht q).2
+        ⟨lWord U t (Subgroup.quotientEquivProdOfLE' hVU t ht q).1 γ,
           lWord_mem U t ht _ γ⟩ : U) := by
-  let e := quotientTowerEquiv G U V (hVU := hVU) t ht
+  let e := Subgroup.quotientEquivProdOfLE' hVU t ht
   let L : U := ⟨lWord U t (e q).1 γ, lWord_mem U t ht _ γ⟩
   have hcoords : e (γ⁻¹ • q) = (γ⁻¹ • (e q).1, L⁻¹ • (e q).2) := by
     calc
       e (γ⁻¹ • q) = e (γ⁻¹ • e.symm (e q)) :=
         congrArg (fun x => e (γ⁻¹ • x)) (e.symm_apply_apply q).symm
       _ = (γ⁻¹ • (e q).1, L⁻¹ • (e q).2) :=
-        quotientTowerEquiv_inv_smul G U V hVU t ht (e q).1 (e q).2 γ
+        quotientEquivProdOfLE'_inv_smul G U V hVU t ht (e q).1 (e q).2 γ
   have hfst := congrArg Prod.fst hcoords
   have hsnd := congrArg Prod.snd hcoords
   simp only at hfst hsnd
@@ -155,7 +141,7 @@ private theorem sum_compositeTransversal (t : G ⧸ U → G)
     (s : U ⧸ V.subgroupOf U → U) (m : M) :
     ∑ q : G ⧸ V, compositeTransversal G U V (hVU := hVU) t ht s q • m =
       ∑ a : G ⧸ U, t a • ∑ b : U ⧸ V.subgroupOf U, (s b : U) • m := by
-  let e := quotientTowerEquiv G U V (hVU := hVU) t ht
+  let e := Subgroup.quotientEquivProdOfLE' hVU t ht
   rw [← e.symm.sum_comp, Fintype.sum_prod_type]
   apply Finset.sum_congr rfl
   intro a _
@@ -176,7 +162,7 @@ private theorem cochainsCor1_composite (t : G ⧸ U → G)
         (cochainsCor1 U M (V.subgroupOf U) s hs
           (fun x => f (Subgroup.subgroupOfEquivOfLe hVU x))) := by
   ext γ
-  let e := quotientTowerEquiv G U V (hVU := hVU) t ht
+  let e := Subgroup.quotientEquivProdOfLE' hVU t ht
   simp only [cochainsCor1_apply]
   rw [← e.symm.sum_comp, Fintype.sum_prod_type]
   apply Finset.sum_congr rfl
@@ -208,7 +194,7 @@ private theorem cochainsCor2_composite (t : G ⧸ U → G)
             Subgroup.subgroupOfEquivOfLe hVU q.2))) := by
   ext q
   obtain ⟨γ, η⟩ := q
-  let e := quotientTowerEquiv G U V (hVU := hVU) t ht
+  let e := Subgroup.quotientEquivProdOfLE' hVU t ht
   simp only [cochainsCor2_apply]
   rw [← e.symm.sum_comp, Fintype.sum_prod_type]
   apply Finset.sum_congr rfl
@@ -229,7 +215,7 @@ private theorem cochainsCor2_composite (t : G ⧸ U → G)
       lWord_composite G U V hVU t ht s (e.symm (a, b)) γ
   · let L : U := ⟨lWord U t a γ, lWord_mem U t ht a γ⟩
     have hcoords : e (γ⁻¹ • e.symm (a, b)) = (γ⁻¹ • a, L⁻¹ • b) :=
-      quotientTowerEquiv_inv_smul G U V hVU t ht a b γ
+      quotientEquivProdOfLE'_inv_smul G U V hVU t ht a b γ
     apply Subtype.ext
     -- The translated tower coordinates identify the second inner transversal word.
     change lWord V (compositeTransversal G U V (hVU := hVU) t ht s)
@@ -274,45 +260,28 @@ section Topological
 variable [TopologicalSpace G] [IsTopologicalGroup G]
   [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousSMul G M]
 
-/-- Mathlib's topological identification of the copy `V.subgroupOf U` of `V` inside `U` with `V`
-itself, as a continuous monoid homomorphism.  It is the group half of the compatible pair
-transporting cohomology of `V` to cohomology of `V.subgroupOf U`.
-
-The body is `@[expose]`d because the two lemmas below -- the equivariance of the identity
-coefficient map and the ambient value of an application -- hold by `rfl`, and a `rfl` proof
-exported from this module may only unfold exposed definitions. -/
-@[expose]
-def subgroupOfContinuousHom : V.subgroupOf U →ₜ* V :=
-  ContinuousMonoidHom.toContinuousMonoidHom
-    (Subgroup.subgroupOfContinuousMulEquivOfLe hVU)
-
 omit [IsTopologicalGroup G] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [ContinuousSMul G M] in
-/-- The identity coefficient map is equivariant for the topological identification of `V` with
-`V.subgroupOf U`. Kept named so the two induced subgroup actions rewrite reliably. -/
-theorem id_subgroupOfContinuousEquiv_smul (x : V.subgroupOf U) (m : M) :
-    (AddMonoidHom.id M) (subgroupOfContinuousHom G U V hVU x • m) =
+/-- The identity map of `M` is equivariant along Mathlib's topological identification of
+`V.subgroupOf U` with `V`: that identification leaves ambient values in `G` unchanged, so the two
+subgroups act on `M` through the same elements. -/
+theorem id_subgroupOfContinuousMulEquivOfLe_smul (x : V.subgroupOf U) (m : M) :
+    (AddMonoidHom.id M)
+        ((Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V) x • m) =
       x • (AddMonoidHom.id M) m :=
   rfl
 
-omit [IsTopologicalGroup G] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [ContinuousSMul G M] in
-/-- `subgroupOfContinuousHom` does not move the ambient value of an element. -/
-@[simp]
-theorem coe_subgroupOfContinuousHom (x : V.subgroupOf U) :
-    ((subgroupOfContinuousHom G U V hVU x : V) : G) = ((x : U) : G) :=
-  rfl
-
 /-- **Relative degree-one corestriction** for an inclusion `V ≤ U` with `V` open *in `U`*; the
-ambient group `U` need not be open in `G`. The source is the cohomology of `V` itself, not of the
-definitionally different subgroup `V.subgroupOf U`. -/
+ambient group `U` need not be open in `G`. The source is the cohomology of `V` itself, transported
+to the definitionally different subgroup `V.subgroupOf U` along Mathlib's topological
+identification `Subgroup.subgroupOfContinuousMulEquivOfLe`, which leaves ambient values -- and
+hence the action on `M` -- unchanged. -/
 noncomputable def explicitCor1Le [(V.subgroupOf U).FiniteIndex]
     (hV : IsOpen ((V.subgroupOf U : Subgroup U) : Set U)) : H1 V M →+ H1 U M :=
   (explicitCor1 U M (V.subgroupOf U) hV).comp
     (explicitMap1 V M (V.subgroupOf U) M
-      (subgroupOfContinuousHom G U V hVU)
-      (AddMonoidHom.id M) continuous_id
-      (id_subgroupOfContinuousEquiv_smul G M U V hVU))
+      (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
+      (AddMonoidHom.id M) continuous_id (id_subgroupOfContinuousMulEquivOfLe_smul G M U V hVU))
 
 /-- Relative degree-one corestriction sends the class of a continuous `1`-cocycle on `V` to the
 class of the degree-one corestriction cochain of its transport to `V.subgroupOf U`, taken over the
@@ -322,21 +291,21 @@ theorem explicitCor1Le_mk [(V.subgroupOf U).FiniteIndex]
     (hV : IsOpen ((V.subgroupOf U : Subgroup U) : Set U)) (f : Z1 V M) :
     explicitCor1Le G M U V hVU hV (f : H1 V M) =
       (cocyclesCor1 U M (V.subgroupOf U) Quotient.out Quotient.out_eq hV
-        (cocyclesMap1 V M (V.subgroupOf U) M (subgroupOfContinuousHom G U V hVU)
+        (cocyclesMap1 V M (V.subgroupOf U) M
+          (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
           (AddMonoidHom.id M) continuous_id
-          (id_subgroupOfContinuousEquiv_smul G M U V hVU) f) : H1 U M) := by
+          (id_subgroupOfContinuousMulEquivOfLe_smul G M U V hVU) f) : H1 U M) := by
   rw [explicitCor1Le, AddMonoidHom.comp_apply, explicitMap1_mk, explicitCor1_mk]
 
 /-- **Relative degree-two corestriction** for an inclusion `V ≤ U` with `V` open *in `U`*; the
-ambient group `U` need not be open in `G`. The source is transported along the canonical
+ambient group `U` need not be open in `G`. The source is transported along Mathlib's canonical
 topological group isomorphism `V.subgroupOf U ≃ₜ* V`. -/
 noncomputable def explicitCor2Le [(V.subgroupOf U).FiniteIndex]
     (hV : IsOpen ((V.subgroupOf U : Subgroup U) : Set U)) : H2 V M →+ H2 U M :=
   (explicitCor2 U M (V.subgroupOf U) hV).comp
     (explicitMap2 V M (V.subgroupOf U) M
-      (subgroupOfContinuousHom G U V hVU)
-      (AddMonoidHom.id M) continuous_id
-      (id_subgroupOfContinuousEquiv_smul G M U V hVU))
+      (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
+      (AddMonoidHom.id M) continuous_id (id_subgroupOfContinuousMulEquivOfLe_smul G M U V hVU))
 
 /-- Relative degree-two corestriction sends the class of a continuous `2`-cocycle on `V` to the
 class of the degree-two corestriction cochain of its transport to `V.subgroupOf U`, taken over the
@@ -346,9 +315,10 @@ theorem explicitCor2Le_mk [(V.subgroupOf U).FiniteIndex]
     (hV : IsOpen ((V.subgroupOf U : Subgroup U) : Set U)) (f : Z2 V M) :
     explicitCor2Le G M U V hVU hV (f : H2 V M) =
       (cocyclesCor2 U M (V.subgroupOf U) Quotient.out Quotient.out_eq hV
-        (cocyclesMap2 V M (V.subgroupOf U) M (subgroupOfContinuousHom G U V hVU)
+        (cocyclesMap2 V M (V.subgroupOf U) M
+          (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
           (AddMonoidHom.id M) continuous_id
-          (id_subgroupOfContinuousEquiv_smul G M U V hVU) f) : H2 U M) := by
+          (id_subgroupOfContinuousMulEquivOfLe_smul G M U V hVU) f) : H2 U M) := by
   rw [explicitCor2Le, AddMonoidHom.comp_apply, explicitMap2_mk, explicitCor2_mk]
 
 end Topological
@@ -405,12 +375,12 @@ theorem explicitCor1_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
   apply Subtype.ext
   simp only [coe_cocyclesCor1, cocyclesMap1_coe]
   have hpull :
-      cochainsMap1 (subgroupOfContinuousHom G U V hVU : V.subgroupOf U →* V)
-          (AddMonoidHom.id M) f =
+      cochainsMap1 ((Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V) :
+            V.subgroupOf U →* V) (AddMonoidHom.id M) f =
         fun x => (f : V → M) (Subgroup.subgroupOfEquivOfLe hVU x) := by
     ext x
-    rw [cochainsMap1_apply]
-    rfl
+    simp only [cochainsMap1_apply, AddMonoidHom.id_apply, MonoidHom.coe_coe,
+      ContinuousMonoidHom.coe_coe, Subgroup.subgroupOfContinuousMulEquivOfLe_apply]
   rw [hpull]
   exact cochainsCor1_composite G M U V hVU t Quotient.out_eq s Quotient.out_eq f
 
@@ -438,13 +408,14 @@ theorem explicitCor2_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
   apply Subtype.ext
   simp only [coe_cocyclesCor2, cocyclesMap2_coe]
   have hpull :
-      cochainsMap2 (subgroupOfContinuousHom G U V hVU : V.subgroupOf U →* V)
-          (AddMonoidHom.id M) f =
+      cochainsMap2 ((Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V) :
+            V.subgroupOf U →* V) (AddMonoidHom.id M) f =
         fun q => (f : V × V → M) (Subgroup.subgroupOfEquivOfLe hVU q.1,
           Subgroup.subgroupOfEquivOfLe hVU q.2) := by
     ext q
-    rw [cochainsMap2_apply]
-    rfl
+    obtain ⟨x, y⟩ := q
+    simp only [cochainsMap2_apply, AddMonoidHom.id_apply, MonoidHom.coe_coe,
+      ContinuousMonoidHom.coe_coe, Subgroup.subgroupOfContinuousMulEquivOfLe_apply]
   rw [hpull]
   exact cochainsCor2_composite G M U V hVU t Quotient.out_eq s Quotient.out_eq f
 
