@@ -49,7 +49,7 @@ noncomputable section
 
 open MeasureTheory ProbabilityTheory
 
-open scoped RealInnerProductSpace Matrix MatrixOrder
+open scoped RealInnerProductSpace Matrix MatrixOrder Topology
 
 namespace TauCeti
 
@@ -84,15 +84,16 @@ theorem memLp_trace_mul_wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p
   simpa using memLp_of_mem_interior_integrableExpSet
     (zero_mem_interior_integrableExpSet_trace_mul_wishartGramMeasure ν S Θ) 2
 
-/-- The moment-generating function of a Wishart trace statistic, written as the pencil product
-whose factors are indexed by the eigenvalues of the sandwich `√S * Θ * √S`. -/
-private theorem mgf_trace_mul_wishartGramMeasure_eq_prod (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ)
-    (hB : (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S).IsHermitian) (t : ℝ)
-    (ht : ∀ j, 2 * t * hB.eigenvalues j < 1) :
+/-- Near the origin, the moment-generating function of a Wishart trace statistic is the pencil
+product whose factors are indexed by the eigenvalues of the sandwich `√S * Θ * √S`. -/
+private theorem mgf_trace_mul_wishartGramMeasure_eventuallyEq_prod (ν : ℕ)
+    (S : Matrix (Fin p) (Fin p) ℝ)
+    (hB : (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S).IsHermitian) :
     mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
-      (wishartGramMeasure ν S) t =
-      ∏ j, (1 - 2 * t * hB.eigenvalues j) ^ (-((ν : ℝ) / 2)) := by
+      (wishartGramMeasure ν S) =ᶠ[𝓝 0]
+      fun t => ∏ j, (1 - 2 * t * hB.eigenvalues j) ^ (-((ν : ℝ) / 2)) := by
+  filter_upwards [setOf_forall_mul_lt_one_mem_nhds_zero hB.eigenvalues] with t ht
   rw [mgf_trace_mul_wishartGramMeasure_sqrt ν S ((hB.posDef_one_sub_smul_iff (2 * t)).2 ht),
     hB.det_one_sub_smul (2 * t),
     Real.finsetProd_rpow _ _ (fun j _ => (sub_pos.2 (ht j)).le) (-((ν : ℝ) / 2))]
@@ -112,7 +113,7 @@ theorem integral_trace_mul_wishartGramMeasure (ν : ℕ) (hS : S.PosSemidef)
     simpa using (hB.trace_eq_sum_eigenvalues (𝕜 := ℝ)).symm
   rw [integral_eq_of_mgf_eq_prod_rpow (a := fun _ => (ν : ℝ) / 2)
       (zero_mem_interior_integrableExpSet_trace_mul_wishartGramMeasure ν S Θ)
-      (mgf_trace_mul_wishartGramMeasure_eq_prod ν S hB),
+      (mgf_trace_mul_wishartGramMeasure_eventuallyEq_prod ν S hB),
     ← Finset.mul_sum, htrace]
   ring
 
@@ -130,7 +131,7 @@ theorem variance_trace_mul_wishartGramMeasure (ν : ℕ) (hS : S.PosSemidef)
     simpa using (hB.trace_mul_self_eq_sum_eigenvalues_sq (𝕜 := ℝ)).symm
   rw [variance_eq_of_mgf_eq_prod_rpow (a := fun _ => (ν : ℝ) / 2)
       (zero_mem_interior_integrableExpSet_trace_mul_wishartGramMeasure ν S Θ)
-      (mgf_trace_mul_wishartGramMeasure_eq_prod ν S hB),
+      (mgf_trace_mul_wishartGramMeasure_eventuallyEq_prod ν S hB),
     ← Finset.mul_sum, htrace]
   ring
 

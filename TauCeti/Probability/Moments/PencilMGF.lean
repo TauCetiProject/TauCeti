@@ -12,16 +12,15 @@ public import Mathlib.Probability.Moments.Variance
 # The first two moments of a pencil transform
 
 This file reads the mean and the variance off the moment-generating function of a real random
-variable `X` whose transform is a product `∏ j, (1 - 2 * t * lam j) ^ (-a j)` wherever every
-factor is positive. The spectral decomposition of a quadratic form produces transforms of this
-shape, the factors being the eigenvalues of a matrix pencil `1 - 2 * t * B`; they occur for the
-Gaussian quadratic forms, the chi-squared laws and the Wishart trace statistics, and only the
-exponents differ between those.
+variable `X` whose transform is a product `∏ j, (1 - 2 * t * lam j) ^ (-a j)` near the origin.
+The spectral decomposition of a quadratic form produces transforms of this shape, the factors
+being the eigenvalues of a matrix pencil `1 - 2 * t * B`; they occur for the Gaussian quadratic
+forms, the chi-squared laws and the Wishart trace statistics, and only the exponents differ
+between those.
 
-The set where every factor is positive is open and contains the origin, so where the transform
-is finite there the cumulant-generating function is `∑ j, -a j * log (1 - 2 * t * lam j)` on a
-neighbourhood of the origin, and its first two derivatives there are the mean and the
-variance.
+The set where every factor is positive is open and contains the origin, so on a neighbourhood of
+the origin the cumulant-generating function is `∑ j, -a j * log (1 - 2 * t * lam j)`, and its
+first two derivatives there are the mean and the variance.
 
 ## Main results
 
@@ -81,15 +80,14 @@ theorem zero_mem_interior_integrableExpSet_of_forall_mul_lt_one [Finite ι] (lam
 
 variable [Fintype ι]
 
-/-- On the domain of the product, the cumulant-generating function of a pencil transform is
+/-- Near the origin, the cumulant-generating function of a pencil transform is
 `∑ j, -a j * log (1 - 2 * t * lam j)`. -/
 private theorem cgf_eventuallyEq_sum_log
-    (hmgf : ∀ t : ℝ, (∀ j, 2 * t * lam j < 1) →
-      mgf X μ t = ∏ j, (1 - 2 * t * lam j) ^ (-a j)) :
+    (hmgf : mgf X μ =ᶠ[𝓝 0] fun t => ∏ j, (1 - 2 * t * lam j) ^ (-a j)) :
     cgf X μ =ᶠ[𝓝 0] fun t => ∑ j, -a j * Real.log (1 - 2 * t * lam j) := by
-  filter_upwards [setOf_forall_mul_lt_one_mem_nhds_zero lam] with t ht
+  filter_upwards [hmgf, setOf_forall_mul_lt_one_mem_nhds_zero lam] with t hmgft ht
   have hpos : ∀ j, 0 < 1 - 2 * t * lam j := fun j => sub_pos.2 (ht j)
-  rw [cgf, hmgf t ht, Real.log_prod fun j _ => (Real.rpow_pos_of_pos (hpos j) _).ne']
+  rw [cgf, hmgft, Real.log_prod fun j _ => (Real.rpow_pos_of_pos (hpos j) _).ne']
   exact Finset.sum_congr rfl fun j _ => Real.log_rpow (hpos j) _
 
 /-- The derivative of `fun s => ∑ j, -a j * log (1 - 2 * s * lam j)`, the sum of logarithms that
@@ -120,11 +118,9 @@ theorem hasDerivAt_sum_div (lam a : ι → ℝ) :
 variable [IsProbabilityMeasure μ]
 
 /-- **The mean of a pencil transform.** A random variable whose moment-generating function is
-`∏ j, (1 - 2 * t * lam j) ^ (-a j)` wherever every factor is positive has mean
-`2 * ∑ j, a j * lam j`. -/
+`∏ j, (1 - 2 * t * lam j) ^ (-a j)` near the origin has mean `2 * ∑ j, a j * lam j`. -/
 theorem integral_eq_of_mgf_eq_prod_rpow (hX : 0 ∈ interior (integrableExpSet X μ))
-    (hmgf : ∀ t : ℝ, (∀ j, 2 * t * lam j < 1) →
-      mgf X μ t = ∏ j, (1 - 2 * t * lam j) ^ (-a j)) :
+    (hmgf : mgf X μ =ᶠ[𝓝 0] fun t => ∏ j, (1 - 2 * t * lam j) ^ (-a j)) :
     μ[X] = 2 * ∑ j, a j * lam j := by
   have hderiv : deriv (cgf X μ) 0 = μ[X] := by
     rw [deriv_cgf_zero hX]
@@ -136,11 +132,9 @@ theorem integral_eq_of_mgf_eq_prod_rpow (hX : 0 ∈ interior (integrableExpSet X
   ring
 
 /-- **The variance of a pencil transform.** A random variable whose moment-generating function is
-`∏ j, (1 - 2 * t * lam j) ^ (-a j)` wherever every factor is positive has variance
-`4 * ∑ j, a j * lam j ^ 2`. -/
+`∏ j, (1 - 2 * t * lam j) ^ (-a j)` near the origin has variance `4 * ∑ j, a j * lam j ^ 2`. -/
 theorem variance_eq_of_mgf_eq_prod_rpow (hX : 0 ∈ interior (integrableExpSet X μ))
-    (hmgf : ∀ t : ℝ, (∀ j, 2 * t * lam j < 1) →
-      mgf X μ t = ∏ j, (1 - 2 * t * lam j) ^ (-a j)) :
+    (hmgf : mgf X μ =ᶠ[𝓝 0] fun t => ∏ j, (1 - 2 * t * lam j) ^ (-a j)) :
     Var[X; μ] = 4 * ∑ j, a j * lam j ^ 2 := by
   have hvar : iteratedDeriv 2 (cgf X μ) 0 = Var[X; μ] := by
     rw [iteratedDeriv_two_cgf hX, deriv_cgf_zero hX, mgf_zero',

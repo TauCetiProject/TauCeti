@@ -100,9 +100,8 @@ Together with `Matrix.IsHermitian.trace_eq_sum_eigenvalues` this reads the first
 the spectrum off the matrix. -/
 theorem trace_mul_self_eq_sum_eigenvalues_sq :
     (B * B).trace = ∑ j, ((hB.eigenvalues j : 𝕜)) ^ 2 := by
-  conv_lhs => rw [hB.spectral_theorem]
-  rw [← map_mul, conjStarAlgAut_apply, diagonal_mul_diagonal, trace_mul_comm, ← mul_assoc,
-    star_mul_self_of_mem hB.eigenvectorUnitary.2, one_mul, trace_diagonal]
-  exact Finset.sum_congr rfl fun j _ => by simp [sq]
+  conv_lhs => rw [hB.spectral_theorem, ← map_mul, conjStarAlgAut_apply, diagonal_mul_diagonal,
+    trace_mul_cycle, coe_star_mul_self, one_mul, trace_diagonal]
+  simp [sq]
 
 end Matrix.IsHermitian

@@ -420,9 +420,8 @@ theorem trace_symmetricSingle_mul {p : ℕ} (i j : Fin p)
     (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
     ((symmetricSingle i j : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace =
       (A : Matrix (Fin p) (Fin p) ℝ) i j := by
-  rw [coe_symmetricSingle, Matrix.smul_mul, Matrix.trace_smul, Matrix.add_mul, Matrix.trace_add,
-    Matrix.trace_single_mul, Matrix.trace_single_mul, selfAdjoint.coe_apply_comm A j i]
-  simp only [smul_eq_mul]
+  simp only [coe_symmetricSingle, Matrix.smul_mul, Matrix.trace_smul, Matrix.add_mul,
+    Matrix.trace_add, Matrix.trace_single_mul, selfAdjoint.coe_apply_comm A j i, smul_eq_mul]
   ring
 
 /-- The trace of a product of two symmetrized matrix units sandwiched by a symmetric matrix. This
