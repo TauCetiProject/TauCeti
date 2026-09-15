@@ -16,10 +16,8 @@ An `F`-automorphism `σ` of `F'` permutes the places of `F' / k`, and hence the 
 carries the Riemann–Roch space `L(D)` onto `L(σ • D)`. The two spaces are therefore isomorphic
 over the constants, so the dimension `ℓ(D)` is constant on the orbit of `D`.
 
-Together with the invariance of the degree, this says that an automorphism preserves every
-numerical invariant a divisor contributes to Riemann–Roch: `deg` and `ℓ` are class functions for
-the automorphism action, so a divisor distinguished by them — a canonical divisor, say — has an
-orbit consisting of divisors with the same data.
+Together with the invariance of the degree, this says that `deg` and `ℓ` are constant on
+automorphism orbits of divisors.
 
 ## Main definitions
 
@@ -53,6 +51,7 @@ variable (σ : F' ≃ₐ[F] F') (D : Divisor k F')
 /-- **`σ f` lies in `L(σ • D)` exactly when `f` lies in `L(D)`**: `σ` moves the valuation at a
 place to the valuation at the moved place, where the bound imposed by `σ • D` is the one `D`
 imposed before. -/
+@[simp]
 theorem mem_riemannRochSpace_smul_iff {f : F'} :
     σ f ∈ riemannRochSpace (σ • D) ↔ f ∈ riemannRochSpace D := by
   simp only [mem_riemannRochSpace_iff]

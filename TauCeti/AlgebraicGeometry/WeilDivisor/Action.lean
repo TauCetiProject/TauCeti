@@ -9,12 +9,12 @@ public import Mathlib.Data.Finsupp.SMul
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Order
 
 /-!
-# The action of a group of symmetries on Weil divisors
+# Monoid and group actions on Weil divisors
 
-A group `G` acting on a type of points `X` acts on the formal divisors `WeilDivisor X` by
-permuting the points: `g • ∑ n_x [x] = ∑ n_x [g • x]`. This file registers that action and
-records how it interacts with the divisor vocabulary — coefficients, point divisors, the
-order, effectivity, and the (weighted) degree.
+A monoid `G` acting on a type of points `X` acts on the formal divisors `WeilDivisor X` by
+pushing point coefficients forward: `g • ∑ n_x [x] = ∑ n_x [g • x]`. This file registers
+that action and records how it interacts with the divisor vocabulary — coefficients, point
+divisors, the order, effectivity, and the (weighted) degree.
 
 The underlying scalar multiplication is Mathlib's `Finsupp.comapSMul`, the action on the domain
 of a finitely supported function; Mathlib keeps it out of the instance graph because on a
@@ -26,8 +26,8 @@ pushforward.
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.WeilDivisor.degree_smul` and
-  `TauCeti.AlgebraicGeometry.WeilDivisor.weightedDegree_smul`: a symmetry preserves the
-  unweighted degree, and transports a weighted degree to the weight composed with the symmetry;
+  `TauCeti.AlgebraicGeometry.WeilDivisor.weightedDegree_smul`: an action preserves the
+  unweighted degree, and transports a weighted degree to the weight composed with the action;
 * `TauCeti.AlgebraicGeometry.WeilDivisor.isEffective_smul` and
   `TauCeti.AlgebraicGeometry.WeilDivisor.smul_le_smul_iff`: the action preserves effectivity and
   the coefficientwise order.
@@ -47,13 +47,14 @@ section Monoid
 
 variable [Monoid G] [MulAction G X]
 
-/-- **A group of symmetries of the points acts on the divisors** by permuting the points. This
-is Mathlib's `Finsupp.comapSMul`, the action on the domain of a finitely supported function,
-which is the intended action here because the coefficient group `ℤ` carries no `G`-action. -/
+/-- **A monoid acting on the points acts on the divisors** by pushing point coefficients
+forward. This is Mathlib's `Finsupp.comapSMul`, the action on the domain of a finitely supported
+function, which is the intended action here because the coefficient group `ℤ` carries no
+`G`-action. -/
 noncomputable instance instDistribMulAction : DistribMulAction G (WeilDivisor X) :=
   Finsupp.comapDistribMulAction
 
-/-- The action is the formal pushforward along the symmetry. -/
+/-- The action is the formal pushforward along the action on points. -/
 theorem smul_def (g : G) (D : WeilDivisor X) : g • D = pushforward (g • ·) D := rfl
 
 /-- The action carries the point divisor at `x` to the point divisor at `g • x`. -/
@@ -61,13 +62,13 @@ theorem smul_def (g : G) (D : WeilDivisor X) : g • D = pushforward (g • ·) 
 theorem smul_ofPoint (g : G) (x : X) : g • ofPoint x = ofPoint (g • x) := by
   rw [smul_def, pushforward_ofPoint]
 
-/-- A symmetry of the points preserves the unweighted degree. -/
+/-- A monoid action on the points preserves the unweighted degree. -/
 @[simp]
 theorem degree_smul (g : G) (D : WeilDivisor X) : degree (g • D) = degree D := by
   rw [smul_def, degree_pushforward]
 
-/-- A symmetry of the points transports a weighted degree into the weighted degree against the
-weight composed with the symmetry. -/
+/-- A monoid action on the points transports a weighted degree into the weighted degree against
+the weight composed with the action. -/
 theorem weightedDegree_smul (g : G) (w : X → ℤ) (D : WeilDivisor X) :
     weightedDegree w (g • D) = weightedDegree (fun x ↦ w (g • x)) D := by
   rw [smul_def, weightedDegree_pushforward]
