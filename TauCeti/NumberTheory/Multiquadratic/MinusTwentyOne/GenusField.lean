@@ -44,11 +44,16 @@ namespace TauCeti.Multiquadratic
 
 universe v
 
+private theorem squarefree_neg_twenty_one : Squarefree (-21 : ℤ) := by
+  rw [← Int.squarefree_natAbs]
+  simpa using (Nat.squarefree_mul (by decide : Nat.Coprime 3 7)).mpr
+    ⟨(by decide : Nat.Prime 3).squarefree, (by decide : Nat.Prime 7).squarefree⟩
+
 /-- The canonical prime-discriminant factorization of the fundamental discriminant of
 `ℚ(√-21)` is `-84 = (-4) · (-3) · (-7)`. -/
-@[simp] theorem genusPrimeDiscriminants_neg_twenty_one (hd : Squarefree (-21 : ℤ)) :
-    genusPrimeDiscriminants hd = {-4, -3, -7} := by
-  apply genusPrimeDiscriminants_eq hd
+@[simp] theorem genusPrimeDiscriminants_neg_twenty_one :
+    genusPrimeDiscriminants (d := -21) (by exact squarefree_neg_twenty_one) = {-4, -3, -7} := by
+  apply genusPrimeDiscriminants_eq squarefree_neg_twenty_one
   · intro P hP
     fin_cases hP
     · exact isPrimeDiscriminant_neg_four
@@ -68,11 +73,12 @@ roots of the prime-discriminant radicands is exactly
 
 Together with `isGenusField_candidateGenusField`, this identifies the genus field of
 `ℚ(√-21)`. -/
-@[simp] theorem candidateGenusField_neg_twenty_one_eq (hd : Squarefree (-21 : ℤ)) :
-    candidateGenusField hd =
+@[simp] theorem candidateGenusField_neg_twenty_one_eq :
+    candidateGenusField (d := -21) (by exact squarefree_neg_twenty_one) =
       (adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ) : IntermediateField ℚ ℂ) := by
+  let hd := squarefree_neg_twenty_one
   have hfac : genusPrimeDiscriminants hd = {-4, -3, -7} :=
-    genusPrimeDiscriminants_neg_twenty_one hd
+    genusPrimeDiscriminants_neg_twenty_one
   -- The canonical roots and the displayed roots need not be definitionally equal, because the
   -- former are chosen using algebraic closure. Their squares agree, so each differs from the
   -- corresponding displayed root by at most a sign; adjoining either family therefore gives the
@@ -121,14 +127,14 @@ instance : NumberField (adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Se
 
 /-- The explicit compositum `ℚ(i, i√3, i√7)`, with a suitable square root of `-21`, is the
 all-places genus field of `ℚ(√-21)`. -/
-theorem exists_isGenusField_adjoin_I_sqrt_neg_three_sqrt_neg_seven
-    (hd : Squarefree (-21 : ℤ)) :
+theorem exists_isGenusField_adjoin_I_sqrt_neg_three_sqrt_neg_seven :
     ∃ y : adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ),
       IsGenusField.{0, v} (-21) _ y := by
+  let hd := squarefree_neg_twenty_one
   -- Generalize the field together with its dependent number-field instance before transporting.
   suffices h : ∀ (F : IntermediateField ℚ ℂ) [NumberField F],
       candidateGenusField hd = F → ∃ y : F, IsGenusField.{0, v} (-21) F y by
-    exact h _ (candidateGenusField_neg_twenty_one_eq hd)
+    exact h _ candidateGenusField_neg_twenty_one_eq
   intro F _ hF
   subst F
   exact ⟨candidateGenusFieldBaseRoot hd, isGenusField_candidateGenusField hd (by norm_num)⟩
