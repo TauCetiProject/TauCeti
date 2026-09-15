@@ -59,7 +59,7 @@ theorem isProPSylow_limitSubgroup (S : ∀ U : OpenNormalSubgroup G, Sylow p (G 
   generalize limitSubgroup (fun U ↦ (S U : Subgroup (G ⧸ U.toSubgroup))) = P at hPmap hPclosed ⊢
   -- Every finite quotient of `P` factors through one of its Sylow finite images.
   have hPpro : IsProP p P := by
-    rw [P.isProP_iff_isPGroup_map_quotient]
+    rw [P.isProP_iff_isPGroup_map_mk']
     intro U
     rw [hPmap U]
     exact (S U).isPGroup'
