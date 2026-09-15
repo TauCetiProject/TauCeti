@@ -64,6 +64,7 @@ theorem degree_smul (D : Divisor k F') : degree (σ • D) = degree D := by
 
 /-- **The principal divisor map is equivariant**: an automorphism carries `div z` to
 `div (σ z)`. -/
+@[simp]
 theorem principal_smul (hF : IsFunctionField k F') (z : F'ˣ) :
     principal hF (Units.map (σ : F' →* F') z) = σ • principal hF z := by
   refine AlgebraicGeometry.WeilDivisor.ext fun Q ↦ ?_
@@ -94,13 +95,21 @@ theorem linearlyEquivalent_smul_iff (hF : IsFunctionField k F') {A B : Divisor k
     AlgebraicGeometry.WeilDivisor.OrderSystem.linearlyEquivalent_iff, ← smul_sub,
     smul_mem_principalSubgroup_iff]
 
-/-- Scalar multiplication on divisor classes induced by scalar multiplication on divisors. -/
-noncomputable instance instSMulClassGroup (hF : IsFunctionField k F') :
-    SMul (F' ≃ₐ[F] F') (Place.orderSystem hF).ClassGroup where
-  smul σ := QuotientAddGroup.map _ _
-    (DistribMulAction.toAddEquiv (Divisor k F') σ).toAddMonoidHom (by
-      intro D hD
-      exact (smul_mem_principalSubgroup_iff σ hF).mpr hD)
+/-- **The automorphism group acts on divisor classes** by applying each automorphism to a
+representative divisor. -/
+noncomputable instance instDistribMulActionClassGroup (hF : IsFunctionField k F') :
+    DistribMulAction (F' ≃ₐ[F] F') (Place.orderSystem hF).ClassGroup := by
+  letI : SMul (F' ≃ₐ[F] F') (Place.orderSystem hF).ClassGroup := ⟨fun σ ↦
+    QuotientAddGroup.map _ _
+      (DistribMulAction.toAddEquiv (Divisor k F') σ).toAddMonoidHom (by
+        intro D hD
+        exact (smul_mem_principalSubgroup_iff σ hF).mpr hD)⟩
+  apply Function.Surjective.distribMulAction (Place.orderSystem hF).divisorClass
+    (Place.orderSystem hF).divisorClass_surjective
+  intro σ D
+  rw [AlgebraicGeometry.WeilDivisor.OrderSystem.divisorClass_eq_mk',
+    AlgebraicGeometry.WeilDivisor.OrderSystem.divisorClass_eq_mk']
+  rfl
 
 /-- The action on divisor classes sends the class of `D` to the class of `σ • D`. -/
 @[simp]
@@ -110,14 +119,6 @@ theorem smul_divisorClass (hF : IsFunctionField k F') (D : Divisor k F') :
   rw [AlgebraicGeometry.WeilDivisor.OrderSystem.divisorClass_eq_mk',
     AlgebraicGeometry.WeilDivisor.OrderSystem.divisorClass_eq_mk']
   rfl
-
-/-- **The automorphism group acts on divisor classes** by applying each automorphism to a
-representative divisor. -/
-noncomputable instance instDistribMulActionClassGroup (hF : IsFunctionField k F') :
-    DistribMulAction (F' ≃ₐ[F] F') (Place.orderSystem hF).ClassGroup :=
-  Function.Surjective.distribMulAction (Place.orderSystem hF).divisorClass
-    (Place.orderSystem hF).divisorClass_surjective fun σ D =>
-      (smul_divisorClass σ hF D).symm
 
 /-- **An automorphism acts on divisor classes** by applying it to a representative divisor. -/
 noncomputable def classGroupEquivSmul (hF : IsFunctionField k F') :
