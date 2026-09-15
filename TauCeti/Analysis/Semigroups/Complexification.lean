@@ -183,6 +183,7 @@ private theorem tendsto_complexify_genQuot_iff (S : StronglyContinuousSemigroup 
           (nhdsWithin 0 (Set.Ioi 0)) (nhds w.re) ∧
       Tendsto (fun t : ℝ => (1 / t) • (S.realOperator t z.im - z.im))
         (nhdsWithin 0 (Set.Ioi 0)) (nhds w.im) := by
+  -- Unfold `Tendsto` to transport convergence through the injective product equivalence.
   change Filter.map _ _ ≤ nhds w ↔ _
   rw [← Filter.map_le_map_iff (TauCeti.Complexification.equivProd X).injective,
     (TauCeti.Complexification.equivProd X).map_nhds_eq, Filter.map_map]
@@ -195,6 +196,7 @@ private theorem tendsto_complexify_genQuot_iff (S : StronglyContinuousSemigroup 
     apply Prod.ext <;> simp
   rw [hquot]
   rw [TauCeti.Complexification.equivProd_apply]
+  -- Refold the filter inequality as product convergence for `Prod.tendsto_iff`.
   change Tendsto (fun t : ℝ =>
       ((1 / t) • (S.realOperator t z.re - z.re),
         (1 / t) • (S.realOperator t z.im - z.im)))
