@@ -23,8 +23,8 @@ atom while vanishing on every singleton.
 
 ## Main definitions
 
-* `MeasureTheory.Measure.IsAtom` — the atom condition on a set: each of its measurable subsets
-  has either zero measure or the full measure of the set.
+* `MeasureTheory.Measure.IsAtom` — a measurable positive-mass set whose measurable subsets
+  have either zero measure or the full measure of the set.
 
 ## Main results
 
@@ -46,14 +46,15 @@ namespace MeasureTheory
 variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] [StandardBorelSpace Y]
 variable {T : X → Y} {μ : Measure X}
 
-/-- A set satisfies the atom condition for a measure if each of its measurable subsets has either
-zero measure or the full measure of the set. -/
+/-- A measure atom is a measurable positive-mass set whose measurable subsets have either zero
+measure or the full measure of the set. -/
 def _root_.MeasureTheory.Measure.IsAtom (μ : Measure X) (A : Set X) : Prop :=
-  ∀ ⦃B : Set X⦄, MeasurableSet B → B ⊆ A → μ B = 0 ∨ μ B = μ A
+  MeasurableSet A ∧ 0 < μ A ∧
+    ∀ ⦃B : Set X⦄, MeasurableSet B → B ⊆ A → μ B = 0 ∨ μ B = μ A
 
-/-- The defining characterization of the atom condition for a measure. -/
+/-- The defining characterization of a measure atom. -/
 theorem _root_.MeasureTheory.Measure.isAtom_iff {A : Set X} :
-    μ.IsAtom A ↔
+    μ.IsAtom A ↔ MeasurableSet A ∧ 0 < μ A ∧
       ∀ ⦃B : Set X⦄, MeasurableSet B → B ⊆ A → μ B = 0 ∨ μ B = μ A :=
   Iff.rfl
 
@@ -61,9 +62,10 @@ theorem _root_.MeasureTheory.Measure.isAtom_iff {A : Set X} :
 mass and every measurable subset of `A` has either zero or full mass, then a map from `A` into a
 standard Borel space agrees almost everywhere with a constant. -/
 theorem _root_.AEMeasurable.exists_ae_eq_const_restrict_of_atom
-    {A : Set X} (hT : AEMeasurable T (μ.restrict A)) (hA : MeasurableSet A)
-    (hApos : 0 < μ A) (hAfin : μ A ≠ ⊤) (hAatom : μ.IsAtom A) :
+    {A : Set X} (hT : AEMeasurable T (μ.restrict A)) (hAfin : μ A ≠ ⊤)
+    (hAatom : μ.IsAtom A) :
     ∃ y : Y, T =ᵐ[μ.restrict A] fun _ ↦ y := by
+  rcases hAatom with ⟨hA, hApos, hAatom⟩
   let ρ : Measure X := (μ A)⁻¹ • μ.restrict A
   have hAne : μ A ≠ 0 := hApos.ne'
   have hInvne : (μ A)⁻¹ ≠ 0 := ENNReal.inv_ne_zero.2 hAfin
@@ -92,10 +94,10 @@ theorem _root_.AEMeasurable.exists_ae_eq_const_restrict_of_atom
 finite mass and every measurable subset of `A` has either zero or full mass, then the image of
 `μ.restrict A` under a map to a standard Borel space is `μ A` times a Dirac measure. -/
 theorem _root_.AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom
-    {A : Set X} (hT : AEMeasurable T (μ.restrict A)) (hA : MeasurableSet A)
-    (hApos : 0 < μ A) (hAfin : μ A ≠ ⊤) (hAatom : μ.IsAtom A) :
+    {A : Set X} (hT : AEMeasurable T (μ.restrict A)) (hAfin : μ A ≠ ⊤)
+    (hAatom : μ.IsAtom A) :
     ∃ y : Y, Measure.map T (μ.restrict A) = μ A • Measure.dirac y := by
-  obtain ⟨y, hy⟩ := hT.exists_ae_eq_const_restrict_of_atom hA hApos hAfin hAatom
+  obtain ⟨y, hy⟩ := hT.exists_ae_eq_const_restrict_of_atom hAfin hAatom
   refine ⟨y, ?_⟩
   calc
     Measure.map T (μ.restrict A) = Measure.map (fun _ ↦ y) (μ.restrict A) :=

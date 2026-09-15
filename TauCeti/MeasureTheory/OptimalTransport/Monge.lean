@@ -360,13 +360,11 @@ standard Borel target.** An a.e.-measurable map sends the entire mass of the ato
 whereas a law that is null on singletons gives that point no mass. Consequently the Monge value
 is `∞` for every cost. -/
 theorem mongeCost_eq_top_of_measure_atom [StandardBorelSpace Y]
-    [NullSingletonClass ν] {A : Set X} (hA : MeasurableSet A) (hApos : 0 < μ A)
-    (hAfin : μ A ≠ ⊤)
-    (hAatom : μ.IsAtom A)
+    [NullSingletonClass ν] {A : Set X} (hAfin : μ A ≠ ⊤) (hAatom : μ.IsAtom A)
     (c : X × Y → ℝ≥0∞) : mongeCost c μ ν = ⊤ :=
   mongeCost_eq_top_of_not_exists_hasLaw
     (fun ⟨T, hT⟩ ↦
-      TauCeti.Probability.not_hasLaw_of_measure_atom hA hApos hAfin hAatom T hT) c
+      TauCeti.Probability.not_hasLaw_of_measure_atom hAfin hAatom T hT) c
 
 /-- **A nonzero source singleton makes the Monge problem infeasible over a target that is null on
 singletons.** No map can split the mass sitting at a single point, so such a source has no
