@@ -232,14 +232,34 @@ theorem homAddEquiv_mk {X Y : C} (f : X ⟶ Y) :
 
 /-! ### The universal property -/
 
-section lift
+end MorphismIdeal
 
-variable {D : Type u'} [Category.{v'} D] [Preadditive D] (F : C ⥤ D) [F.Additive]
+end TauCeti
+
+namespace CategoryTheory.Functor
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {D : Type u'} [Category.{v'} D]
+  [Preadditive D]
 
 /-- Congruence modulo the kernel of `F` is Mathlib's relation `F.homRel` of having the same image
 under `F`. -/
-theorem rel_kerIdeal_iff {X Y : C} {f g : X ⟶ Y} : F.kerIdeal.rel f g ↔ F.homRel f g := by
-  rw [rel_iff, Functor.mem_kerIdeal_hom, F.map_sub, sub_eq_zero, Functor.homRel_iff]
+theorem rel_kerIdeal_iff (F : C ⥤ D) [F.Additive] {X Y : C} {f g : X ⟶ Y} :
+    F.kerIdeal.rel f g ↔ F.homRel f g := by
+  rw [TauCeti.MorphismIdeal.rel_iff, mem_kerIdeal_hom, F.map_sub, sub_eq_zero, homRel_iff]
+
+end CategoryTheory.Functor
+
+namespace TauCeti
+
+namespace MorphismIdeal
+
+open CategoryTheory
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] (I : MorphismIdeal C)
+
+section lift
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] (F : C ⥤ D) [F.Additive]
 
 /-- A functor killing `I` sends morphisms congruent modulo `I` to the same morphism. -/
 theorem map_eq_of_rel (hF : I ≤ F.kerIdeal) {X Y : C} {f g : X ⟶ Y} (h : I.rel f g) :
