@@ -18,10 +18,12 @@ divisors, the order, effectivity, and the (weighted) degree.
 
 The underlying scalar multiplication is Mathlib's `Finsupp.comapSMul`, the action on the domain
 of a finitely supported function; Mathlib keeps it out of the instance graph because on a
-general `α →₀ M` it competes with the action on the values `M`. Here the values are the
-integers and are not acted on, so the domain action is the intended one and is registered as an
-instance, with `TauCeti.AlgebraicGeometry.WeilDivisor.smul_def` identifying it with the formal
-pushforward.
+general `α →₀ M` it competes with the action on the values `M`. The same overlap exists here
+whenever `G` also acts on `ℤ` (for instance `ℕ` acting on `WeilDivisor ℕ`), so the domain action
+is only a scoped instance, available after `open scoped TauCeti.AlgebraicGeometry.WeilDivisor`;
+`TauCeti.AlgebraicGeometry.WeilDivisor.smul_def` identifies it with the formal pushforward.
+Concrete settings where no competing action exists, such as automorphisms of a function field
+acting on its divisors, register it globally.
 
 ## Main results
 
@@ -49,9 +51,9 @@ variable [Monoid G] [MulAction G X]
 
 /-- **A monoid acting on the points acts on the divisors** by pushing point coefficients
 forward. This is Mathlib's `Finsupp.comapSMul`, the action on the domain of a finitely supported
-function, which is the intended action here because the coefficient group `ℤ` carries no
-`G`-action. -/
-noncomputable instance instDistribMulAction : DistribMulAction G (WeilDivisor X) :=
+function. It is scoped because it overlaps with the coefficientwise action whenever `G` also
+acts on `ℤ`. -/
+noncomputable scoped instance instDistribMulAction : DistribMulAction G (WeilDivisor X) :=
   Finsupp.comapDistribMulAction
 
 /-- The action is the formal pushforward along the action on points. -/
@@ -69,6 +71,7 @@ theorem degree_smul (g : G) (D : WeilDivisor X) : degree (g • D) = degree D :=
 
 /-- A monoid action on the points transports a weighted degree into the weighted degree against
 the weight composed with the action. -/
+@[simp]
 theorem weightedDegree_smul (g : G) (w : X → ℤ) (D : WeilDivisor X) :
     weightedDegree w (g • D) = weightedDegree (fun x ↦ w (g • x)) D := by
   rw [smul_def, weightedDegree_pushforward]

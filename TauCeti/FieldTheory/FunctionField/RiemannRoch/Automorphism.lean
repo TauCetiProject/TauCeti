@@ -66,6 +66,7 @@ theorem mem_riemannRochSpace_smul_iff {f : F'} :
     rwa [Place.valuation_smul, AlgEquiv.aut_inv, AlgEquiv.symm_symm] at hQ
 
 /-- **An automorphism carries `L(D)` onto `L(σ • D)`**, as a `k`-submodule of `F'`. -/
+@[simp]
 theorem riemannRochSpace_map_smul :
     (riemannRochSpace D).map (AlgEquiv.restrictScalars k σ).toLinearMap =
       riemannRochSpace (σ • D) := by

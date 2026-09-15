@@ -18,7 +18,9 @@ middle field to be `k` itself, this is the action of `Aut(F'/k)` on the divisor 
 `F' / k`.
 
 The formal action is the one a permutation of the points induces on formal divisors
-(`TauCeti.AlgebraicGeometry.WeilDivisor.instDistribMulAction`); what is new here is that it is
+(`TauCeti.AlgebraicGeometry.WeilDivisor.instDistribMulAction`, a scoped instance), registered
+here globally as `TauCeti.Divisor.instDistribMulActionAlgEquiv`: automorphisms do not act on the
+integer coefficients, so there is no competing action. What is new here is that it is
 compatible with the two pieces of structure that make a formal divisor a divisor of a function
 field. The degree is preserved, because an automorphism identifies the residue field of `σ • P`
 with that of `P` over the constants; and the divisor map `z ↦ div z` is equivariant, so the
@@ -53,6 +55,13 @@ variable {k : Type u} {F : Type v} {F' : Type v'}
 variable [Field k] [Field F] [Field F']
 variable [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
 variable (σ : F' ≃ₐ[F] F')
+
+open scoped AlgebraicGeometry.WeilDivisor in
+/-- **The automorphism group acts on the divisors** by moving the places: the specialization of
+the point-pushforward action on formal divisors to the action of `F' ≃ₐ[F] F'` on places. -/
+noncomputable instance instDistribMulActionAlgEquiv :
+    DistribMulAction (F' ≃ₐ[F] F') (Divisor k F') :=
+  AlgebraicGeometry.WeilDivisor.instDistribMulAction
 
 /-- **An automorphism preserves the degree of a divisor**: it permutes the places and leaves
 each residue degree unchanged, so the weighted sum defining the degree is only reindexed. -/
