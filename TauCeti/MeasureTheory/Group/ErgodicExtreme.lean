@@ -28,6 +28,7 @@ invariant measures of a fixed finite total mass and then for probability measure
 
 * `MeasureTheory.ErgodicSMul.ae_eq_const_of_forall_comp_smul_ae_eq`
 * `MeasureTheory.ErgodicSMul.eq_smul_of_absolutelyContinuous`,
+  `MeasureTheory.ErgodicSMul.eq_of_absolutelyContinuous_measure_univ_eq`,
   `MeasureTheory.ErgodicSMul.eq_of_absolutelyContinuous`
 * `TauCeti.MeasureTheory.invariantMeasuresOfMeasureUnivEq`,
   `TauCeti.MeasureTheory.invariantProbabilityMeasures`, with membership and convexity lemmas
@@ -79,16 +80,26 @@ theorem ErgodicSMul.eq_smul_of_absolutelyContinuous [MeasurableConstSMul G X]
     _ = ∫⁻ _ in s, c ∂μ := lintegral_congr_ae <| hc.filter_mono <| ae_mono restrict_le_self
     _ = (c • μ) s := by simp
 
+/-- **An invariant finite measure absolutely continuous with respect to an ergodic one, of the
+same total mass, equals it.** The action-level analogue of
+`Ergodic.eq_of_absolutelyContinuous_measure_univ_eq`. -/
+theorem ErgodicSMul.eq_of_absolutelyContinuous_measure_univ_eq [MeasurableConstSMul G X]
+    [IsFiniteMeasure μ] [IsFiniteMeasure ν] [ErgodicSMul G X μ] [SMulInvariantMeasure G X ν]
+    (hνμ : ν ≪ μ) (huniv : ν univ = μ univ) : ν = μ := by
+  obtain ⟨c, rfl⟩ := ErgodicSMul.eq_smul_of_absolutelyContinuous (G := G) hνμ
+  rcases eq_or_ne μ 0 with rfl | hμ0
+  · simp
+  · have hc : c = 1 := by
+      rw [Measure.smul_apply, smul_eq_mul] at huniv
+      exact (ENNReal.mul_eq_right (measure_univ_ne_zero.mpr hμ0) (measure_ne_top μ _)).mp huniv
+    rw [hc, one_smul]
+
 /-- **An invariant probability measure absolutely continuous with respect to an ergodic one equals
 it.** -/
 theorem ErgodicSMul.eq_of_absolutelyContinuous [MeasurableConstSMul G X]
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] [ErgodicSMul G X μ]
-    [SMulInvariantMeasure G X ν] (hνμ : ν ≪ μ) : ν = μ := by
-  obtain ⟨c, rfl⟩ := ErgodicSMul.eq_smul_of_absolutelyContinuous (G := G) hνμ
-  have h : c = 1 := by
-    have := (measure_univ : (c • μ) univ = 1)
-    rwa [Measure.smul_apply, measure_univ, smul_eq_mul, mul_one] at this
-  rw [h, one_smul]
+    [SMulInvariantMeasure G X ν] (hνμ : ν ≪ μ) : ν = μ :=
+  ErgodicSMul.eq_of_absolutelyContinuous_measure_univ_eq (G := G) hνμ (by simp)
 
 end MeasureTheory
 
@@ -156,14 +167,7 @@ theorem ErgodicSMul.mem_extremePoints_measure_univ_eq [MeasurableConstSMul G X]
   rintro ν₁ ⟨hν₁, hν₁u⟩ ν₂ ⟨hν₂, hν₂u⟩ ⟨a, b, ha, hb, hab, hμ⟩
   have : IsFiniteMeasure ν₁ := ⟨by rw [hν₁u]; exact measure_lt_top μ _⟩
   have hac : ν₁ ≪ μ := hμ ▸ (absolutelyContinuous_smul ha.ne').add_right _
-  obtain ⟨c, rfl⟩ := ErgodicSMul.eq_smul_of_absolutelyContinuous (G := G) hac
-  rcases eq_or_ne μ 0 with rfl | hμ0
-  · simp
-  · have hc : c = 1 := by
-      have h := hν₁u
-      rw [Measure.smul_apply, smul_eq_mul] at h
-      exact (ENNReal.mul_eq_right (measure_univ_ne_zero.mpr hμ0) (measure_ne_top μ _)).mp h
-    rw [hc, one_smul]
+  exact ErgodicSMul.eq_of_absolutelyContinuous_measure_univ_eq (G := G) hac hν₁u
 
 /-- **An ergodic probability measure is an extreme point** of the invariant probability measures. -/
 theorem ErgodicSMul.mem_extremePoints [MeasurableConstSMul G X] [IsProbabilityMeasure μ]
