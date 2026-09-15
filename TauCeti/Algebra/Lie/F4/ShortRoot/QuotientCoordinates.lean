@@ -203,6 +203,13 @@ theorem quotientCoordinate_map_intCast (p : Fin 26) (Y : Matrix (Fin 26) (Fin 26
   rw [quotientCoordinate, quotientCoordinate]
   simp only [Matrix.map_apply, Int.cast_add, Int.cast_mul, Int.cast_id]
 
+/-- Quotient coordinates commute with entrywise ring homomorphisms. -/
+theorem quotientCoordinate_map {S : Type*} [CommRing S] (f : R →+* S) (p : Fin 26)
+    (Y : Matrix (Fin 26) (Fin 26) R) :
+    quotientCoordinate p (Y.map f) = f (quotientCoordinate p Y) := by
+  rw [quotientCoordinate, quotientCoordinate, map_add, map_mul, map_mul, map_intCast,
+    map_intCast, Matrix.map_apply, Matrix.map_apply]
+
 /-- The `p`th quotient coordinate of the step matrix with target table `t` and coefficient table
 `c`. -/
 @[expose] def quotientCoordinateStep (p : Fin 26) (t : Fin 26 → Fin 26) (c : Fin 26 → ℤ) : ℤ :=

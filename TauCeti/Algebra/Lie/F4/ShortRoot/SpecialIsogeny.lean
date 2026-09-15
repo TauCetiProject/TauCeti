@@ -64,6 +64,9 @@ identification.
   `τ ∘ τ = Frob₂` on the numbered simple root elements, with
   `TauCeti.F4ShortRoot.rootElementMatrix_map_pow_two` identifying the squared parameter with the
   entrywise Frobenius.
+* `TauCeti.F4ShortRoot.specialIsogenyMatrix_map` and
+  `TauCeti.F4ShortRoot.specialIsogenyMatrix_one`: the formula is natural in the value ring and
+  fixes the identity matrix.
 
 ## References
 
@@ -132,6 +135,41 @@ theorem specialIsogenyMatrix_apply (g : GeneralLinearGroup (Fin 26) R) (p q : Fi
     specialIsogenyMatrix g p q = quotientCoordinate p ((g : Matrix (Fin 26) (Fin 26) R) *
       (quotientMatrix q).map (Int.cast : ℤ → R) * (↑g⁻¹ : Matrix (Fin 26) (Fin 26) R)) := by
   rw [specialIsogenyMatrix, Matrix.of_apply]
+
+/-- **The special isogeny matrix is natural in the value ring**: applying a ring homomorphism
+entrywise to an invertible matrix applies it entrywise to its isogeny matrix. -/
+theorem specialIsogenyMatrix_map {S : Type*} [CommRing S] (f : R →+* S)
+    (g : GeneralLinearGroup (Fin 26) R) :
+    specialIsogenyMatrix (Matrix.GeneralLinearGroup.map f g) =
+      (specialIsogenyMatrix g).map f := by
+  have hg : ((Matrix.GeneralLinearGroup.map f g : GeneralLinearGroup (Fin 26) S) :
+      Matrix (Fin 26) (Fin 26) S) = (g : Matrix (Fin 26) (Fin 26) R).map f := by
+    ext a b
+    rw [Matrix.map_apply, Matrix.GeneralLinearGroup.map_apply]
+  have hginv : (((Matrix.GeneralLinearGroup.map f g)⁻¹ : GeneralLinearGroup (Fin 26) S) :
+      Matrix (Fin 26) (Fin 26) S) =
+      ((g⁻¹ : GeneralLinearGroup (Fin 26) R) : Matrix (Fin 26) (Fin 26) R).map f := by
+    rw [← map_inv]
+    ext a b
+    rw [Matrix.map_apply, Matrix.GeneralLinearGroup.map_apply]
+  have hq : ∀ q : Fin 26, (quotientMatrix q).map (Int.cast : ℤ → S) =
+      ((quotientMatrix q).map (Int.cast : ℤ → R)).map f := fun q => by
+    rw [Matrix.map_map]
+    exact congrArg _ (funext fun z => (map_intCast f z).symm)
+  ext p q
+  rw [specialIsogenyMatrix_apply, Matrix.map_apply, specialIsogenyMatrix_apply,
+    ← quotientCoordinate_map, hg, hginv, hq, ← Matrix.map_mul, ← Matrix.map_mul]
+
+/-- **The special isogeny matrix of the identity is the identity**, in characteristic two: the
+twenty-six coordinate functionals are dual to the twenty-six representing matrices. -/
+@[simp]
+theorem specialIsogenyMatrix_one [CharP R 2] :
+    specialIsogenyMatrix (1 : GeneralLinearGroup (Fin 26) R) = 1 := by
+  ext p q
+  rw [specialIsogenyMatrix_apply, inv_one, Units.val_one, Matrix.one_mul, Matrix.mul_one,
+    quotientCoordinate_map_intCast,
+    (CharP.intCast_eq_intCast R 2).mpr (quotientCoordinate_quotientMatrix p q), Matrix.one_apply]
+  simp only [apply_ite (Int.cast : ℤ → R), Int.cast_one, Int.cast_zero]
 
 /-! ## The coefficients of the expansion -/
 
