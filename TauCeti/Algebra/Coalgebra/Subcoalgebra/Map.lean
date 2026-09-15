@@ -47,18 +47,6 @@ variable [AddCommMonoid E] [Module R E] [Coalgebra R E]
 
 namespace Subcoalgebra
 
-private theorem image_tensorSquare_apply (f : C →ₗc[R] D) (A : Subcoalgebra R C)
-    (t : A.carrier ⊗[R] A.carrier) :
-    TensorProduct.map (A.carrier.map f.toLinearMap).subtype
-        (A.carrier.map f.toLinearMap).subtype
-        (TensorProduct.map (f.toLinearMap.submoduleMap A.carrier)
-          (f.toLinearMap.submoduleMap A.carrier) t) =
-      TensorProduct.map f.toLinearMap f.toLinearMap
-        (TensorProduct.map A.carrier.subtype A.carrier.subtype t) := by
-  have h : (A.carrier.map f.toLinearMap).subtype ∘ₗ f.toLinearMap.submoduleMap A.carrier =
-      f.toLinearMap ∘ₗ A.carrier.subtype := by ext a; simp
-  rw [TensorProduct.map_map, TensorProduct.map_map, h]
-
 /-- The image of a subcoalgebra under a coalgebra morphism. -/
 @[expose] def map (f : C →ₗc[R] D) (A : Subcoalgebra R C) : Subcoalgebra R D where
   carrier := A.carrier.map f.toLinearMap
@@ -68,7 +56,10 @@ private theorem image_tensorSquare_apply (f : C →ₗc[R] D) (A : Subcoalgebra 
     rcases A.comul_mem hc with ⟨t, ht⟩
     refine ⟨TensorProduct.map (f.toLinearMap.submoduleMap A.carrier)
       (f.toLinearMap.submoduleMap A.carrier) t, ?_⟩
-    rw [image_tensorSquare_apply, ht]
+    rw [TensorProduct.map_map]
+    change TensorProduct.map (f.toLinearMap ∘ₗ A.carrier.subtype)
+      (f.toLinearMap ∘ₗ A.carrier.subtype) t = _
+    rw [← TensorProduct.map_map, ht]
     exact CoalgHomClass.map_comp_comul_apply f c
 
 /-- The underlying submodule of the image subcoalgebra is the image of the underlying
@@ -92,32 +83,19 @@ theorem mem_map_of_mem (f : C →ₗc[R] D) {A : Subcoalgebra R C} {c : C} (hc :
 /-- The image subcoalgebra is contained in `B` exactly when each image of an element of the
 source subcoalgebra belongs to `B`. -/
 theorem map_le_iff {f : C →ₗc[R] D} {A : Subcoalgebra R C} {B : Subcoalgebra R D} :
-    A.map f ≤ B ↔ ∀ ⦃c⦄, c ∈ A → f c ∈ B := by
-  constructor
-  · intro h c hc
-    exact h (mem_map_of_mem f hc)
-  · intro h d hd
-    rcases (mem_map (f := f) (A := A)).1 hd with ⟨c, hc, rfl⟩
-    exact h hc
+    A.map f ≤ B ↔ ∀ ⦃c⦄, c ∈ A → f c ∈ B :=
+  Submodule.map_le_iff_le_comap
 
 /-- The image construction is monotone in the source subcoalgebra. -/
 theorem map_mono (f : C →ₗc[R] D) {A B : Subcoalgebra R C} (hAB : A ≤ B) :
-    A.map f ≤ B.map f := by
-  intro d hd
-  rcases (mem_map (f := f) (A := A)).1 hd with ⟨c, hc, rfl⟩
-  exact mem_map_of_mem f (hAB hc)
+    A.map f ≤ B.map f :=
+  Submodule.map_mono hAB
 
 /-- The image of the bottom subcoalgebra is bottom. -/
 @[simp]
 theorem map_bot (f : C →ₗc[R] D) : (⊥ : Subcoalgebra R C).map f = ⊥ := by
-  ext d
-  rw [mem_map, mem_bot]
-  constructor
-  · rintro ⟨c, hc, rfl⟩
-    rw [mem_bot] at hc
-    rw [hc, map_zero]
-  · intro hd
-    exact ⟨0, by rw [mem_bot], by rw [hd, map_zero]⟩
+  apply SetLike.coe_injective
+  exact congrArg (SetLike.coe : Submodule R D → Set D) (Submodule.map_bot f.toLinearMap)
 
 /-- The image of the top subcoalgebra is the range of the coalgebra morphism as a submodule. -/
 @[simp]
@@ -128,30 +106,16 @@ theorem map_top_toSubmodule (f : C →ₗc[R] D) :
 /-- The identity coalgebra morphism leaves a subcoalgebra unchanged. -/
 @[simp]
 theorem map_id (A : Subcoalgebra R C) : A.map (CoalgHom.id R C) = A := by
-  ext c
-  rw [mem_map]
-  constructor
-  · rintro ⟨c', hc', h⟩
-    exact h ▸ hc'
-  · intro hc
-    exact ⟨c, hc, rfl⟩
+  apply SetLike.coe_injective
+  exact congrArg (SetLike.coe : Submodule R C → Set C) (Submodule.map_id (p := A.toSubmodule))
 
 /-- Images of subcoalgebras compose with coalgebra morphisms. -/
 @[simp]
 theorem map_map (A : Subcoalgebra R C) (f : C →ₗc[R] D) (g : D →ₗc[R] E) :
     (A.map f).map g = A.map (g.comp f) := by
-  ext e
-  constructor
-  · rw [mem_map, mem_map]
-    rintro ⟨d, ⟨c, hc, hcd⟩, hde⟩
-    refine ⟨c, hc, ?_⟩
-    calc
-      (g.comp f) c = g (f c) := by simp only [CoalgHom.coe_comp, Function.comp_apply]
-      _ = g d := congrArg g hcd
-      _ = e := hde
-  · rw [mem_map]
-    rintro ⟨c, hc, rfl⟩
-    exact mem_map_of_mem g (mem_map_of_mem f hc)
+  apply SetLike.coe_injective
+  exact congrArg (SetLike.coe : Submodule R E → Set E)
+    (Submodule.map_comp f.toLinearMap g.toLinearMap A.toSubmodule).symm
 
 /-- The image of a binary join is the binary join of the images. -/
 @[simp]
