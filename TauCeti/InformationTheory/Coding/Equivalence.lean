@@ -106,6 +106,7 @@ section Fintype
 
 variable [Fintype ι] [Fintype κ] [DecidableEq R]
 
+/-- A monomial equivalence of finite coordinate spaces preserves Hamming weight. -/
 @[simp]
 theorem hammingNorm_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x : ι → R) :
     hammingNorm (monomialEquiv u e x) = hammingNorm x := by
@@ -113,6 +114,7 @@ theorem hammingNorm_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x : ι → R
   exact hammingNorm_comp (fun i (c : R) ↦ (u i : R) * c)
     (fun i ↦ (u i).isUnit.mul_right_injective) fun _ ↦ mul_zero _
 
+/-- A monomial equivalence of finite coordinate spaces preserves Hamming distance. -/
 @[simp]
 theorem hammingDist_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x y : ι → R) :
     hammingDist (monomialEquiv u e x) (monomialEquiv u e y) = hammingDist x y := by
@@ -135,6 +137,13 @@ variable [Semiring R] {C : Submodule R (ι → R)} {D : Submodule R (κ → R)}
 one onto the other. -/
 def IsPermutationEquivalent (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) : Prop :=
   ∃ e : ι ≃ κ, C.map (LinearEquiv.funCongrLeft R R e.symm : (ι → R) →ₗ[R] (κ → R)) = D
+
+/-- Permutation equivalence is characterized by a coordinate relabelling that maps one code onto
+the other. -/
+theorem isPermutationEquivalent_iff :
+    IsPermutationEquivalent C D ↔
+      ∃ e : ι ≃ κ, C.map (LinearEquiv.funCongrLeft R R e.symm : (ι → R) →ₗ[R] (κ → R)) = D :=
+  (Iff.rfl)
 
 @[refl]
 theorem IsPermutationEquivalent.refl (C : Submodule R (ι → R)) : IsPermutationEquivalent C C :=
@@ -170,6 +179,13 @@ variable [CommSemiring R] {C : Submodule R (ι → R)} {D : Submodule R (κ → 
 coordinate spaces carries one onto the other. -/
 def IsMonomialEquivalent (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) : Prop :=
   ∃ (u : ι → Rˣ) (e : ι ≃ κ), C.map (monomialEquiv u e : (ι → R) →ₗ[R] (κ → R)) = D
+
+/-- Monomial equivalence is characterized by a coordinate relabelling and unit rescaling that map
+one code onto the other. -/
+theorem isMonomialEquivalent_iff :
+    IsMonomialEquivalent C D ↔
+      ∃ (u : ι → Rˣ) (e : ι ≃ κ), C.map (monomialEquiv u e : (ι → R) →ₗ[R] (κ → R)) = D :=
+  (Iff.rfl)
 
 theorem IsPermutationEquivalent.isMonomialEquivalent (h : IsPermutationEquivalent C D) :
     IsMonomialEquivalent C D := by
