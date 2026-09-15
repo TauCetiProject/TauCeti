@@ -15,7 +15,7 @@ split as sums over the two coordinate types. These identities let constructions 
 independent coordinate blocks reduce their Hamming data to the data of the blocks.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti
 
