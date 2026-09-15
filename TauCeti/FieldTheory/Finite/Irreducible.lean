@@ -16,8 +16,18 @@ obtain one as the minimal polynomial of a primitive element of a finite extensio
 
 ## Main results
 
-* `TauCeti.Polynomial.exists_monic_irreducible_natDegree_eq`: a monic irreducible polynomial of
-  any prescribed positive degree over a finite field.
+* `TauCeti.exists_monic_irreducible_natDegree_eq`: a monic irreducible polynomial of any
+  prescribed positive degree over a finite field.
+
+## Implementation notes
+
+The construction is assembled from Mathlib's finite-field and primitive-element API:
+`FiniteField.Extension` (in `Mathlib/FieldTheory/Finite/Extension.lean`) provides an extension
+of the prescribed degree, with `FiniteField.finrank_extension` computing that degree;
+`Field.exists_primitive_element_of_finite_top` and
+`Field.primitive_element_iff_minpoly_natDegree_eq` (in
+`Mathlib/FieldTheory/PrimitiveElement.lean`) provide a primitive element and the degree of its
+minimal polynomial; `minpoly.monic` and `minpoly.irreducible` provide the remaining properties.
 -/
 
 public section
@@ -30,7 +40,7 @@ namespace TauCeti
 
 /-- For every positive `d`, there is a monic irreducible polynomial of degree `d` over any
 finite field. -/
-theorem Polynomial.exists_monic_irreducible_natDegree_eq
+theorem exists_monic_irreducible_natDegree_eq
     {k : Type*} [Field k] [Finite k] (d : ℕ) (hd : 0 < d) :
     ∃ f : k[X], f.Monic ∧ Irreducible f ∧ f.natDegree = d := by
   let ⟨p, hp⟩ := CharP.exists k
