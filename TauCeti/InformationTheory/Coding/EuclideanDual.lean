@@ -178,7 +178,7 @@ theorem eq_euclideanDual_iff {C : Submodule K (ι → K)} :
 
 /-- Over a finite field, the cardinalities of a code and its Euclidean dual multiply to the
 cardinality of the whole word space. -/
-theorem natCard_mul_natCard_euclideanDual [Finite K] (C : Submodule K (ι → K)) :
+theorem natCard_mul_natCard_euclideanDual (C : Submodule K (ι → K)) :
     Nat.card C * Nat.card (euclideanDual C) = Nat.card K ^ Fintype.card ι := by
   calc
     Nat.card C * Nat.card (euclideanDual C) =
