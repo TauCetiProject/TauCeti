@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Basis.Fin
+public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.LinearAlgebra.FreeModule.Basic
+public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.RingTheory.Int.Basic
 
 /-!
@@ -29,6 +32,9 @@ rational ray is initially described by arbitrary nonzero lattice vectors.
 * `LinearEquiv.isPrimitive_iff`: primitivity is invariant under integer-linear equivalences.
 * `TauCeti.exists_eq_zsmul_isPrimitive`: a nonzero vector in a free integer module is a
   positive integer multiple of a primitive vector.
+* `Module.Basis.isPrimitive`: a vector of an integral basis is primitive.
+* `TauCeti.IsPrimitive.exists_basis`: conversely, a primitive vector of a finite free integer
+  module belongs to some integral basis of it.
 -/
 
 public section
@@ -75,6 +81,16 @@ theorem isPrimitive_neg {v : M} : IsPrimitive (-v) ↔ IsPrimitive v :=
   ⟨fun h ↦ by simpa using h.neg, IsPrimitive.neg⟩
 
 end TauCeti
+
+namespace Module.Basis
+
+variable {ι M : Type*} [AddCommGroup M] [Module ℤ M]
+
+/-- A vector of an integral basis is primitive. -/
+theorem isPrimitive (b : Module.Basis ι ℤ M) (j : ι) : TauCeti.IsPrimitive (b j) :=
+  TauCeti.isPrimitive_def.2 ⟨b.coord j, by simp⟩
+
+end Module.Basis
 
 namespace LinearEquiv
 
@@ -150,5 +166,20 @@ theorem exists_eq_zsmul_isPrimitive [Module.Free ℤ M] {v : M}
   simp only [f, LinearMap.sum_apply, LinearMap.smul_apply, w, b.coord_repr_symm, qf,
     Finsupp.ofSupportFinite_coe, smul_eq_mul]
   simpa only [mul_comm] using (hqgcd.symm.trans ha).symm
+
+/-- A primitive vector of a finite free integer module belongs to an integral basis of it. -/
+theorem IsPrimitive.exists_basis [Module.Free ℤ M] [Module.Finite ℤ M] {v : M}
+    (hv : IsPrimitive v) :
+    ∃ (n : ℕ) (b : Module.Basis (Fin n) ℤ M) (j : Fin n), b j = v := by
+  obtain ⟨f, hf⟩ := isPrimitive_def.1 hv
+  obtain ⟨m, ⟨c⟩⟩ := Submodule.nonempty_basis_of_pid (Module.finBasis ℤ M) (LinearMap.ker f)
+  refine ⟨m + 1, Module.Basis.mkFinCons v c ?_ ?_, 0, ?_⟩
+  · intro a x hx hax
+    have h := congrArg f hax
+    simp only [map_add, map_smul, hf, LinearMap.mem_ker.1 hx, map_zero, add_zero, smul_eq_mul,
+      mul_one] at h
+    exact h
+  · exact fun z ↦ ⟨-f z, by simp [LinearMap.mem_ker, hf]⟩
+  · simp
 
 end TauCeti

@@ -57,6 +57,8 @@ group of `Q` embeds into the automorphism group of the residue extension, so an 
   pointwise.
 * `NumberField.restrictScalars_eq_of_inertiaDeg_eq_one`: at residue degree one the restriction
   of the relative Frobenius is `σ` itself, with no power.
+* `NumberField.isArithFrobAt_restrictScalars_of_inertiaDeg_eq_one`: the same at residue degree
+  one, concluding that the restriction is an arithmetic Frobenius rather than assuming one.
 * `NumberField.isArithFrobAt_int_of_absNorm_eq`: a relative Frobenius above an ideal of absolute
   norm `p` is also a Frobenius over the ideal `(p)` of `ℤ`.
 * `NumberField.isArithFrobAt_one_of_pow_eq_one` and
@@ -237,6 +239,31 @@ theorem restrictScalars_eq_of_inertiaDeg_eq_one [Algebra.IsUnramifiedAt (𝓞 K)
     (hf : (Q.under (𝓞 M)).inertiaDeg (𝓞 K) = 1) :
     AlgEquiv.restrictScalars K τ = σ := by
   rw [restrictScalars_eq_pow_inertiaDeg hσ hτ, hf, pow_one]
+
+omit [IsGalois K L] in
+/-- **A relative Frobenius at residue degree one restricts to an absolute one.**  If `Q ∩ 𝓞 M`
+has residue degree one over `𝓞 K`, then the restriction to `Gal(L/K)` of an arithmetic Frobenius
+of `Gal(L/M)` at `Q` is itself an arithmetic Frobenius at `Q` over `𝓞 K`.
+
+Residue degree one says the two residue fields have the same size, and restricting scalars does
+not move the automorphism, so the two Frobenius conditions are the same condition. Neither
+`L / K` Galois nor `Q` unramified is needed: this is a statement about `Q` alone. -/
+theorem isArithFrobAt_restrictScalars_of_inertiaDeg_eq_one
+    {τ : L ≃ₐ[M] L} (hτ : IsArithFrobAt (𝓞 M) τ Q)
+    (hf : (Q.under (𝓞 M)).inertiaDeg (𝓞 K) = 1) :
+    IsArithFrobAt (𝓞 K) (AlgEquiv.restrictScalars K τ) Q := by
+  have _ : Q.IsMaximal := Ring.DimensionLEOne.maximalOfPrime hτ.ne_bot inferInstance
+  have _ : (Q.under (𝓞 M)).IsMaximal := isMaximal_comap_of_isIntegral_of_isMaximal Q
+  have _ : (Q.under (𝓞 K)).IsMaximal := isMaximal_comap_of_isIntegral_of_isMaximal Q
+  have _ : (Q.under (𝓞 M)).LiesOver (Q.under (𝓞 K)) := ⟨by rw [Ideal.under_under]⟩
+  -- At residue degree one the `𝓞 M`-residue field and the `𝓞 K`-residue field have equal size.
+  have hcard : Nat.card (𝓞 M ⧸ Q.under (𝓞 M)) = Nat.card (𝓞 K ⧸ Q.under (𝓞 K)) := by
+    have := Ideal.cardQuot_pow_inertiaDeg (R := 𝓞 K) (S := 𝓞 M)
+      (Q.under (𝓞 K)) (Q.under (𝓞 M))
+    simpa [Submodule.cardQuot_apply, hf] using this.symm
+  intro x
+  -- `AlgEquiv.restrictScalars` leaves the action on `𝓞 L` alone, so only the exponents differ.
+  exact hcard ▸ hτ x
 
 /-! ### Trivial relative Frobenius elements
 

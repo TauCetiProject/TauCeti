@@ -5,21 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.CDF
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
+public import TauCeti.Probability.Quantile
 
 /-!
 # Distributional formulas for Dirac measures
 
-This file records the cumulative distribution function of a real Dirac measure, and the
-exponential-integrability domain and cumulant-generating function of a real-valued statistic under
-a Dirac measure. The moment-generating function is already available in Mathlib as
+This file records the cumulative distribution and quantile functions of a real Dirac measure, and
+the exponential-integrability domain and cumulant-generating function of a real-valued statistic
+under a Dirac measure. The moment-generating function is already available in Mathlib as
 `ProbabilityTheory.mgf_dirac'`.
 
 ## Main results
 
 * `TauCeti.cdf_dirac` — the cdf of a real Dirac measure;
+* `MeasureTheory.Measure.quantile_dirac` — the quantile function of a Dirac measure;
 * `TauCeti.integrableExpSet_dirac` — every exponential moment exists under a Dirac measure;
 * `TauCeti.cgf_dirac'` — the cumulant-generating function under a Dirac measure.
 -/
@@ -53,3 +54,21 @@ theorem cgf_dirac' {Ω : Type*} [MeasurableSpace Ω] [MeasurableSingletonClass �
   rw [cgf, mgf_dirac', Real.log_exp]
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+open ProbabilityTheory Set TauCeti
+
+/-- At every level in `Ioc 0 1`, including the endpoint level `1`, the quantile function of a
+Dirac law is its atom. -/
+@[simp]
+theorem quantile_dirac (a : ℝ) {t : ℝ} (h0 : 0 < t) (h1 : t ≤ 1) : (dirac a).quantile t = a := by
+  rw [quantile_def]
+  refine le_antisymm (csInf_le (bddBelow_setOf_le_cdf (dirac a) h0) ?_)
+    (le_csInf ⟨a, ?_⟩ fun x hx ↦ ?_)
+  · simpa [TauCeti.cdf_dirac] using h1
+  · simpa [TauCeti.cdf_dirac] using h1
+  · by_contra hxa
+    exact absurd hx (by simpa [TauCeti.cdf_dirac, not_le.mpr (not_le.mp hxa)] using h0)
+
+end MeasureTheory.Measure

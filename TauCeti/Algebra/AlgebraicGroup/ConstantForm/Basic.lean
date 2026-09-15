@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
+public import TauCeti.LinearAlgebra.Matrix.IdealEntries
 
 /-!
 # The subgroup scheme of `GLₙ` preserving a constant matrix
@@ -156,18 +157,6 @@ the generic matrix maps entrywise, and the constant form maps to the constant fo
   rw [relationMatrix, Matrix.map_sub, Matrix.map_mul, Matrix.map_mul, hC, Matrix.transpose_map]
   exact fun a b => map_sub phi a b
 
-/-- An entry of a framed relation matrix `P (X C Xᵀ - C) Q` lies in any ideal containing the
-entries of the middle factor. This is the only membership computation the closure proofs
-need. -/
-private theorem entry_mul_mul_mem {S : Type*} [CommRing S] (K : Ideal S) {μ : ℕ}
-    {M : Matrix (Fin μ) (Fin μ) S} (hM : ∀ k l, M k l ∈ K)
-    (P Q : Matrix (Fin μ) (Fin μ) S) (i j : Fin μ) : (P * M * Q) i j ∈ K := by
-  rw [Matrix.mul_apply]
-  refine Ideal.sum_mem _ fun k _ => ?_
-  rw [Matrix.mul_apply, Finset.sum_mul]
-  refine Ideal.sum_mem _ fun t _ => ?_
-  exact Ideal.mul_mem_right _ _ (Ideal.mul_mem_left _ _ (hM t k))
-
 /-! ### The three Hopf-ideal closure conditions -/
 
 /-- The counit vanishes on every defining relation. -/
@@ -210,7 +199,7 @@ private theorem comul_relationMatrix_mem (i j : Fin n) :
   rw [Matrix.map_apply, Bialgebra.comulAlgHom_apply] at h
   rw [h, Matrix.add_apply]
   refine Ideal.add_mem _ (Ideal.mem_sup_right ?_) (Ideal.mem_sup_left ?_)
-  · refine entry_mul_mul_mem _ (fun k l => ?_) _ _ i j
+  · refine Matrix.mul_mul_apply_mem (fun k l => ?_) _ _ i j
     rw [Matrix.map_apply]
     exact HopfIdeal.includeRight_mem_rightTensorIdeal (R := R)
       (H := GeneralLinear.coordinateHopfAlgebra R n)
@@ -259,7 +248,7 @@ private theorem antipode_relationMatrix_mem (i j : Fin n) :
   have h := congrFun (congrFun (relationMatrix_map_antipode R n C) i) j
   rw [Matrix.map_apply, HopfAlgebra.antipodeAlgHom_apply] at h
   rw [h, Matrix.neg_apply]
-  exact neg_mem (entry_mul_mul_mem _
+  exact neg_mem (Matrix.mul_mul_apply_mem
     (fun k l => Ideal.subset_span (relationMatrix_mem_relationSet R n C k l)) _ _ i j)
 
 /-! ### The defining Hopf ideal and quotient -/

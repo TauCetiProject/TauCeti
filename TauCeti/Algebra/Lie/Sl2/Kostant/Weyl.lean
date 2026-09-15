@@ -86,12 +86,13 @@ noncomputable def rankOneWeylPoint (A : Type u) [CommRing A] : rankOneCarrierPoi
 
 /-- The Weyl representative is natural in the ring of points. -/
 @[simp]
-theorem rankOneCarrierPointsMap_weylPoint
+theorem map_rankOneWeylPoint
     {A : Type u} {B : Type v} [CommRing A] [CommRing B]
     (φ : A →+* B) :
-    rankOneCarrierPointsMap φ (rankOneWeylPoint A) = rankOneWeylPoint B := by
+    (rankOneCarrierPointsPresentation A).map (rankOneCarrierPointsPresentation B) φ
+      (rankOneWeylPoint A) = rankOneWeylPoint B := by
   apply Subtype.ext
-  rw [coe_rankOneCarrierPointsMap]
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map]
   simp only [rankOneWeylPoint, MulEquiv.subgroupCongr_symm_apply]
   have hmap := congrArg Subtype.val
     (map_kostantToralWeylPoint e h ρ M hM hnil b rankOneWeight φ 0 1)

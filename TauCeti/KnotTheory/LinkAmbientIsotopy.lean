@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.SmoothLink
+public import TauCeti.KnotTheory.SmoothLink.Isotopy
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Basic
 public import TauCeti.Topology.Homotopy.AmbientIsotopic.Complement
 public import TauCeti.Topology.Homotopy.AmbientIsotopic.Naturality
@@ -244,52 +244,7 @@ theorem setoid_r_iff : (setoid I M n).r L K ↔ ContinuousAmbientIsotopic L K :=
 
 end ContinuousAmbientIsotopic
 
-/-- Two smooth link presentations are smoothly ambient isotopic when a single diffeotopy of
-the ambient manifold carries every labelled component of the first to the corresponding
-component of the second at time one. -/
-def SmoothAmbientIsotopic (L K : SmoothLinkEmbedding I M n) : Prop :=
-  ∃ Φ : Diffeotopy I ∞ M, ∀ i x, Φ.final (L i x) = K i x
-
-/-- Smooth link ambient isotopy is witnessed by one diffeotopy carrying every corresponding
-component pointwise at time one. -/
-theorem smoothAmbientIsotopic_def :
-    SmoothAmbientIsotopic L K ↔
-      ∃ Φ : Diffeotopy I ∞ M, ∀ i x, Φ.final (L i x) = K i x :=
-  Iff.rfl
-
 namespace SmoothAmbientIsotopic
-
-/-- A diffeotopy simultaneously carrying the labelled components witnesses smooth link
-ambient isotopy. -/
-theorem of_diffeotopy (Φ : Diffeotopy I ∞ M) (hΦ : ∀ i x, Φ.final (L i x) = K i x) :
-    SmoothAmbientIsotopic L K :=
-  smoothAmbientIsotopic_def.mpr ⟨Φ, hΦ⟩
-
-/-- Smooth link ambient isotopy is reflexive. -/
-@[refl]
-theorem refl (L : SmoothLinkEmbedding I M n) : SmoothAmbientIsotopic L L := by
-  apply of_diffeotopy (Diffeotopy.refl I ∞ M)
-  intro i x
-  simp
-
-/-- Smooth link ambient isotopy is symmetric. -/
-@[symm]
-theorem symm (hLK : SmoothAmbientIsotopic L K) : SmoothAmbientIsotopic K L := by
-  obtain ⟨Φ, hΦ⟩ := smoothAmbientIsotopic_def.mp hLK
-  apply of_diffeotopy Φ.symm
-  intro i x
-  rw [Φ.final_symm, ← hΦ i x]
-  exact Φ.final.symm_apply_apply (L i x)
-
-/-- Smooth link ambient isotopy is transitive. -/
-@[trans]
-theorem trans (hLK : SmoothAmbientIsotopic L K) (hKP : SmoothAmbientIsotopic K P) :
-    SmoothAmbientIsotopic L P := by
-  obtain ⟨Φ, hΦ⟩ := smoothAmbientIsotopic_def.mp hLK
-  obtain ⟨Ψ, hΨ⟩ := smoothAmbientIsotopic_def.mp hKP
-  apply of_diffeotopy (Φ.trans Ψ)
-  intro i x
-  rw [Diffeotopy.final_trans, _root_.Diffeomorph.coe_trans, Function.comp_apply, hΦ, hΨ]
 
 /-- Forgetting the smoothness of the shared diffeotopy yields continuous ambient isotopy. -/
 theorem continuousAmbientIsotopic (hLK : SmoothAmbientIsotopic L K) :
@@ -358,21 +313,6 @@ theorem reverse_iff :
     simpa using h.reverse
   · exact fun h ↦ h.reverse
 
-/-- Smooth ambient isotopy is an equivalence relation on labelled smooth links. -/
-theorem equivalence : Equivalence (SmoothAmbientIsotopic (I := I) (M := M) (n := n)) :=
-  ⟨refl, fun h ↦ h.symm, fun h h' ↦ h.trans h'⟩
-
-/-- The smooth ambient-isotopy equivalence relation on geometric link presentations. -/
-def setoid (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
-    [ChartedSpace H M] (n : ℕ) : Setoid (SmoothLinkEmbedding I M n) where
-  r := SmoothAmbientIsotopic
-  iseqv := equivalence
-
-/-- The geometric-presentation setoid relation is smooth ambient isotopy. -/
-@[simp]
-theorem setoid_r_iff : (setoid I M n).r L K ↔ SmoothAmbientIsotopic L K :=
-  Iff.rfl
-
 end SmoothAmbientIsotopic
 
 /-! ### Ambient coordinate changes -/
@@ -386,7 +326,7 @@ diffeomorphism. -/
 theorem SmoothAmbientIsotopic.transDiffeomorph
     (hLK : SmoothAmbientIsotopic L K) (e : M ≃ₘ⟮I, I⟯ P) :
     SmoothAmbientIsotopic (L.transDiffeomorph e) (K.transDiffeomorph e) := by
-  obtain ⟨Φ, hΦ⟩ := hLK
+  obtain ⟨Φ, hΦ⟩ := smoothAmbientIsotopic_def.mp hLK
   apply SmoothAmbientIsotopic.of_diffeotopy (Φ.transDiffeomorph e)
   intro i x
   rw [Diffeotopy.final_apply, Diffeotopy.transDiffeomorph_apply]

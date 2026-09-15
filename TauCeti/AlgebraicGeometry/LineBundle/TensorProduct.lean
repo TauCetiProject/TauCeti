@@ -23,7 +23,8 @@ for the trivial line bundle.
 * `InvertibleSheaf.tensorProduct` packages the tensor product of two line bundles;
 * `InvertibleSheaf.tensorProduct_obj` identifies its underlying sheaf;
 * `InvertibleSheaf.tensorProductCongrLeft` and `InvertibleSheaf.tensorProductCongrRight` transport
-  isomorphisms through either tensor factor;
+  isomorphisms through either tensor factor, so `InvertibleSheaf.isIsomorphic_tensorProduct`
+  shows that tensor product respects isomorphism;
 * `InvertibleSheaf.tensorProductComm` exchanges the two tensor factors;
 * `InvertibleSheaf.tensorProductAssoc` is the associativity isomorphism;
 * `InvertibleSheaf.tensorTrivialLeftIso` and `InvertibleSheaf.tensorTrivialRightIso` are the
@@ -124,6 +125,14 @@ lemma tensorProductCongrRight_inv_val {L K K' : InvertibleSheaf X} (e : K ≅ K'
       (tensorProductCongrRightIso e).inv.val := by
   simp only [tensorProductCongrRight, ObjectProperty.isoMk, ObjectProperty.homMk,
     _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
+
+/-- Tensor product preserves isomorphism of line bundles in both variables. -/
+lemma isIsomorphic_tensorProduct {L L' K K' : InvertibleSheaf X}
+    (hL : IsIsomorphic L L') (hK : IsIsomorphic K K') :
+    IsIsomorphic (tensorProduct L K) (tensorProduct L' K') := by
+  obtain ⟨e⟩ := hL
+  obtain ⟨f⟩ := hK
+  exact ⟨tensorProductCongrLeft e ≪≫ tensorProductCongrRight f⟩
 
 /-- The sheaf isomorphism underlying symmetry of the tensor product of line bundles. -/
 def tensorProductCommIso (L K : InvertibleSheaf X) :

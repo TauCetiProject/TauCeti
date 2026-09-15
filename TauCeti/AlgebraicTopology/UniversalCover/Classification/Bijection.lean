@@ -16,7 +16,7 @@ import TauCeti.Topology.IsLocalHomeomorph
 
 Two halves of the correspondence between subgroups of `π₁(X, x₀)` and pointed connected covers
 of `(X, x₀)` are already available. The comparison theorem
-`TauCeti.IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq` says a pointed connected cover is
+`IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq` says a pointed connected cover is
 determined by the subgroup it recovers, and `TauCeti.UniversalCover.subgroupQuotientProj`
 together with `TauCeti.UniversalCover.range_mapOfEq_subgroupQuotientProj` builds, for every
 subgroup `H`, a pointed cover recovering `H`. What neither states is that *every* pointed
@@ -87,7 +87,7 @@ theorem exists_homeomorph_subgroupQuotient_of_range_eq {E : Type*} [TopologicalS
       subgroupQuotientProj x₀ H ∘ h = p := by
   have := hp.isLocalHomeomorph.locallyPathConnectedSpace
   have := locallyPathConnectedSpace_subgroupQuotient x₀ H
-  exact TauCeti.IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq hp
+  exact IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq hp
     (isCoveringMap_subgroupQuotientProj x₀ H) hpe (subgroupQuotientProj_basepoint x₀ H)
     (hH.trans (range_mapOfEq_subgroupQuotientProj x₀ H).symm)
 
@@ -104,7 +104,7 @@ theorem existsUnique_subgroup_homeomorph_subgroupQuotient {E : Type*} [Topologic
     exists_homeomorph_subgroupQuotient_of_range_eq x₀ hp hpe _ rfl, fun H hH => ?_⟩
   have := locallyPathConnectedSpace_subgroupQuotient x₀ H
   rw [← range_mapOfEq_subgroupQuotientProj x₀ H]
-  exact ((TauCeti.IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq hp
+  exact ((IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq hp
     (isCoveringMap_subgroupQuotientProj x₀ H) hpe (subgroupQuotientProj_basepoint x₀ H)).mp hH).symm
 
 /-- **The covers attached to two subgroups are isomorphic as pointed covers exactly when the
@@ -116,7 +116,7 @@ theorem exists_homeomorph_subgroupQuotient_comp_eq_iff_eq
           subgroupQuotientProj x₀ K ∘ h = subgroupQuotientProj x₀ H) ↔ H = K := by
   have := locallyPathConnectedSpace_subgroupQuotient x₀ H
   have := locallyPathConnectedSpace_subgroupQuotient x₀ K
-  rw [TauCeti.IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
+  rw [IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
     (isCoveringMap_subgroupQuotientProj x₀ H) (isCoveringMap_subgroupQuotientProj x₀ K)
     (subgroupQuotientProj_basepoint x₀ H) (subgroupQuotientProj_basepoint x₀ K),
     range_mapOfEq_subgroupQuotientProj, range_mapOfEq_subgroupQuotientProj]
@@ -132,7 +132,7 @@ theorem exists_homeomorph_subgroupQuotient_comp_eq_iff_exists_eq_map_conj
       ∃ γ : FundamentalGroup X x₀, K = H.map (MulAut.conj γ).toMonoidHom := by
   have := locallyPathConnectedSpace_subgroupQuotient x₀ H
   have := locallyPathConnectedSpace_subgroupQuotient x₀ K
-  rw [TauCeti.IsCoveringMap.exists_homeomorph_comp_eq_iff_exists_range_eq_map_conj
+  rw [IsCoveringMap.exists_homeomorph_comp_eq_iff_exists_range_eq_map_conj
     (isCoveringMap_subgroupQuotientProj x₀ H) (isCoveringMap_subgroupQuotientProj x₀ K)
     (subgroupQuotientProj_basepoint x₀ H) (subgroupQuotientProj_basepoint x₀ K)]
   simp only [range_mapOfEq_subgroupQuotientProj]
@@ -142,7 +142,7 @@ theorem exists_homeomorph_subgroupQuotient_comp_eq_iff_exists_eq_map_conj
 theorem isRegular_subgroupQuotientProj_iff_normal (H : Subgroup (FundamentalGroup X x₀)) :
     Deck.IsRegular (subgroupQuotientProj x₀ H) ↔ H.Normal := by
   have := locallyPathConnectedSpace_subgroupQuotient x₀ H
-  refine Iff.trans (TauCeti.IsCoveringMap.isRegular_iff_normal_range
+  refine Iff.trans (IsCoveringMap.isRegular_iff_normal_range
     (isCoveringMap_subgroupQuotientProj x₀ H)
     ⟨SubgroupQuotient.basepoint x₀ H,
       Set.mem_singleton_iff.mpr (subgroupQuotientProj_basepoint x₀ H)⟩) ?_

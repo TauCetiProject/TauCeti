@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Fin.Rev
 public import Mathlib.Data.Set.Finite.Basic
+public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Order.Circular.ZMod
 public import Mathlib.Order.Interval.Finset.Fin
 
@@ -45,6 +46,8 @@ directions before taking products.
 * `TauCeti.Grid.card_cIoo_add_card_cIoo_swap`: the two arc lengths add to `n - 2`.
 * `TauCeti.Grid.cIoo_image_rev`: reversing a clockwise open arc by `Fin.rev` gives the clockwise
   open arc with reversed, exchanged endpoints.
+* `TauCeti.Grid.mem_cIoo_finRotate_finRotate`, `TauCeti.Grid.mem_cIco_finRotate_finRotate`: the
+  cyclic permutation `finRotate n` preserves the open and half-open arcs.
 * `TauCeti.Grid.mem_cIco`: membership in the clockwise half-open arc.
 * `TauCeti.Grid.card_cIco`: the length of a half-open arc in standard representatives.
 * `TauCeti.Grid.cIco_union_swap`: opposite nondegenerate half-open arcs partition the grid.
@@ -591,6 +594,29 @@ theorem mem_cIoo_rev_rev (a b x : Fin n) :
     exact hy
   · intro hx
     exact ⟨x, hx, rfl⟩
+
+/-- The cyclic permutation `finRotate n` preserves and reflects membership in open cyclic
+intervals. -/
+theorem mem_cIoo_finRotate_finRotate (a b x : Fin n) :
+    finRotate n x ∈ cIoo (finRotate n a) (finRotate n b) ↔ x ∈ cIoo a b := by
+  cases n with
+  | zero => exact x.elim0
+  | succ n =>
+    rw [mem_cIoo, mem_cIoo, (finRotate _).injective.ne_iff]
+    simp only [coe_finRotate, Fin.ext_iff, Fin.val_last]
+    have := a.isLt; have := b.isLt; have := x.isLt
+    split_ifs <;> omega
+
+/-- The cyclic permutation `finRotate n` preserves and reflects membership in half-open cyclic
+intervals. -/
+theorem mem_cIco_finRotate_finRotate (a b x : Fin n) :
+    finRotate n x ∈ cIco (finRotate n a) (finRotate n b) ↔ x ∈ cIco a b := by
+  by_cases hab : a = b
+  · subst b
+    simp
+  · rw [cIco_of_ne ((finRotate n).injective.ne hab), cIco_of_ne hab,
+      Finset.mem_insert, Finset.mem_insert, (finRotate n).injective.eq_iff,
+      mem_cIoo_finRotate_finRotate]
 
 /-- Non-interleaving is preserved by reversing every endpoint with `Fin.rev`, with the cyclic
 orientation reversal accounted for by exchanging the two endpoints within each pair. -/

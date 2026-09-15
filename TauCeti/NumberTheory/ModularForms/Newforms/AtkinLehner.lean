@@ -37,9 +37,13 @@ instead assumes `QExpansionSupportedOnDvd l f` and obtains `φ` from it.
 
 * `TauCeti.mem_cuspFormsOld_of_slash_T_eq`: a cusp form of level `Γ₁(N)` with a nebentypus, whose
   level-`l` descent is invariant under the weight-`k` slash action of `T`, is old.
+* `TauCeti.exists_eq_levelRaise_of_mem_qSupportedOnDvdSubmodule`: a supported form in one
+  nebentypus space is an actual `V_l`-image from level `N / l`.
 * `TauCeti.mem_cuspFormsOld_of_qExpansionSupportedOnDvd`: **the Atkin–Lehner step at one
   divisor** — the same conclusion from the `q`-expansion support condition alone, the descent
   being supplied by `Newforms/Descent/Basic.lean`.
+* `TauCeti.qSupportedOnDvdSubmodule_inf_cuspFormCharSpace_eq_range_inf`: the exact subspace
+  characterization of supported forms at a fixed nebentypus.
 
 ## Provenance
 
@@ -95,6 +99,38 @@ theorem mem_cuspFormsOld_of_slash_T_eq {l : ℕ} (hl : l ≠ 1) (hlN : l ∣ N)
       rw [hf, hφ, SlashAction.zero_slash, smul_zero, FunLike.coe_zero]
     exact hf0 ▸ (cuspFormsOld N k).zero_mem
 
+/-- **A supported form is a degeneracy image from the quotient level.** If a cusp form in a
+nebentypus space has its period-one `q`-expansion supported on multiples of `l`, for `l ∣ N`,
+then it is `V_l F` for a cusp form `F` of level `N / l`. The character either descends to that
+level, in which case the level-lowering dichotomy supplies `F`, or forces the descended function
+to vanish, in which case `F = 0` works. -/
+theorem exists_eq_levelRaise_of_mem_qSupportedOnDvdSubmodule {l : ℕ} [NeZero l]
+    (hlN : l ∣ N) (χ : (ZMod N)ˣ →* ℂˣ)
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hfχ : f ∈ cuspFormCharSpace k χ)
+    (hf : f ∈ qSupportedOnDvdSubmodule N k l) :
+    ∃ F : CuspForm ((Gamma1 (N / l)).map (mapGL ℝ)) k,
+      f = CuspForm.levelRaise l
+        (Gamma1_map_le_conjAct_scaleGL_of_dvd (Nat.mul_div_cancel' hlN).dvd) F := by
+  obtain ⟨φ, hraise, hT⟩ :=
+    CuspForm.exists_eq_smul_slash_scaleGL_and_slash_T_eq_of_qExpansionSupportedOnDvd f
+      (mem_qSupportedOnDvdSubmodule.mp hf)
+  let χ' : DirichletCharacter ℂ N := MulChar.ofUnitHom χ
+  have hχ' : χ'.toUnitHom = χ := MulChar.equivToUnitHom.apply_symm_apply χ
+  rcases
+      exists_cuspForm_mem_cuspFormCharSpace_or_eq_zero hlN k χ' φ f (hχ' ▸ hfχ) hraise hT with
+    ⟨_, F, _, hF⟩ | hzero
+  · refine ⟨F, DFunLike.coe_injective ?_⟩
+    rw [CuspForm.coe_levelRaise, hF, hraise]
+  · have hf0 : f = 0 := by
+      apply CuspForm.ext
+      intro z
+      have hz := congrFun hraise z
+      simpa [hzero] using hz
+    subst f
+    refine ⟨0, ?_⟩
+    rw [← CuspForm.levelRaiseₗ_apply, map_zero]
+
 /-- **The Atkin–Lehner step at one divisor.** A cusp form of level `Γ₁(N)` with a nebentypus,
 whose period-one `q`-expansion is supported on the multiples of a divisor `l ≠ 1` of `N`, is old.
 
@@ -115,14 +151,32 @@ theorem mem_cuspFormsOld_of_qExpansionSupportedOnDvd {l : ℕ} (hl : l ≠ 1) (h
     (hf : haveI : NeZero l := NeZero.of_dvd hlN
       QExpansionSupportedOnDvd l f) :
     f ∈ cuspFormsOld N k := by
-  -- The support condition is spent entirely on manufacturing the descent:
-  -- `Newforms/Descent/Basic.lean` turns
-  -- it into a `T`-invariant `φ` with `f = l ^ (1 - k) • (φ ∣[k] diag(l, 1))`, and
-  -- `mem_cuspFormsOld_of_slash_T_eq` reads the level-lowering dichotomy off that.
   have : NeZero l := NeZero.of_dvd hlN
-  obtain ⟨φ, hφ, hT⟩ :=
-    CuspForm.exists_eq_smul_slash_scaleGL_and_slash_T_eq_of_qExpansionSupportedOnDvd f hf
-  exact mem_cuspFormsOld_of_slash_T_eq hl hlN χ φ hfχ hφ hT
+  obtain ⟨F, hF⟩ := exists_eq_levelRaise_of_mem_qSupportedOnDvdSubmodule hlN χ.toUnitHom hfχ
+    (mem_qSupportedOnDvdSubmodule.mpr hf)
+  rw [hF]
+  exact levelRaise_mem_cuspFormsOld (Nat.mul_div_cancel' hlN).dvd
+    (Nat.ne_of_lt (Nat.div_lt_self (NeZero.pos N)
+      (Nat.one_lt_iff_ne_zero_and_ne_one.mpr ⟨NeZero.ne l, hl⟩))) k F
+
+/-- **Supported forms of fixed nebentypus are exactly the degeneracy images with that
+nebentypus.** Intersecting the forms supported on multiples of `l` with `S_k(N, χ)` gives the
+intersection of `S_k(N, χ)` with the range of `V_l` from level `N / l`. No character is chosen
+on the source: the target intersection records exactly the transformation law needed at level
+`N`. -/
+theorem qSupportedOnDvdSubmodule_inf_cuspFormCharSpace_eq_range_inf {l : ℕ} [NeZero l]
+    (hlN : l ∣ N) (χ : (ZMod N)ˣ →* ℂˣ) :
+    qSupportedOnDvdSubmodule N k l ⊓ cuspFormCharSpace k χ =
+      LinearMap.range (CuspForm.levelRaiseₗ (k := k) l
+        (Gamma1_map_le_conjAct_scaleGL_of_dvd (Nat.mul_div_cancel' hlN).dvd)) ⊓
+        cuspFormCharSpace k χ := by
+  ext f
+  simp only [Submodule.mem_inf]
+  refine ⟨fun hf ↦ ⟨?_, hf.2⟩, fun hf ↦ ⟨?_, hf.2⟩⟩
+  · obtain ⟨F, hF⟩ := exists_eq_levelRaise_of_mem_qSupportedOnDvdSubmodule hlN χ hf.2 hf.1
+    exact ⟨F, by rw [CuspForm.levelRaiseₗ_apply, ← hF]⟩
+  · exact range_levelRaise_le_qSupportedOnDvdSubmodule (N / l)
+      (Nat.mul_div_cancel' hlN).dvd hf.1
 
 end TauCeti
 
