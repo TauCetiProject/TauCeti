@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.CentralCharacterCount
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Quaternion
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.IntegerChecker
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Quaternion
 
 /-!
@@ -38,6 +39,11 @@ classical example of nonisomorphic groups with equal character tables.
   every modular entry to the displayed integer.
 * `TauCeti.quaternionGroupTwo_degree_mul_centralCharacterTable`: the division-free conversion to
   the ordinary character table.
+* `TauCeti.isIntegerCharacterTableSpec_quaternionGroupTwo`: the exact integral certificate.
+* `TauCeti.integerCharacterTableChecker_quaternionGroupTwo`: the executable checker accepts the
+  displayed tables and degrees.
+* `TauCeti.isCharacterTableSpec_quaternionGroupTwo`: the displayed ordinary table, cast to `ℂ`,
+  satisfies the character-table specification.
 
 ## References
 
@@ -251,5 +257,41 @@ theorem quaternionGroupTwo_characterTable_orthogonal (i j : QuaternionGroupTwoCl
   rw [Nat.card_eq_fintype_card, QuaternionGroup.card]
   simp only [quaternionGroupTwoCharacterTable_apply]
   fin_cases i <;> fin_cases j <;> decide
+
+/-- **The rational Dixon output for the quaternion group of order eight has an exact
+character-table certificate.** The certificate assembles the integral class-algebra
+eigenvectors, character degrees, conversion identity, and weighted row orthogonality. -/
+theorem isIntegerCharacterTableSpec_quaternionGroupTwo :
+    (quaternionClassData 2).IsIntegerCharacterTableSpec
+      quaternionGroupTwoCentralCharacterTable quaternionGroupTwoCharacterTable
+      quaternionGroupTwoCharacterDegrees where
+  central_one i := by fin_cases i <;> decide
+  central_eigen := isModularEigenrow_quaternionGroupTwoCentralCharacterTable_int
+  degree_pos i := (quaternionGroupTwo_characterDegrees_pos_and_dvd i).1
+  degree_dvd i := by
+    simpa only [Nat.card_eq_fintype_card] using
+      (quaternionGroupTwo_characterDegrees_pos_and_dvd i).2
+  sum_degree_sq := by
+    simpa only [Nat.card_eq_fintype_card] using quaternionGroupTwo_sum_characterDegrees_sq
+  degree_mul_central := quaternionGroupTwo_degree_mul_centralCharacterTable
+  row_orthogonal i j := by
+    simpa only [Nat.card_eq_fintype_card, Nat.cast_ite, Nat.cast_zero] using
+      quaternionGroupTwo_characterTable_orthogonal i j
+
+/-- The executable exact checker accepts the rational Dixon output for `QuaternionGroup 2`. -/
+theorem integerCharacterTableChecker_quaternionGroupTwo :
+    (quaternionClassData 2).integerCharacterTableChecker
+      quaternionGroupTwoCentralCharacterTable quaternionGroupTwoCharacterTable
+      quaternionGroupTwoCharacterDegrees = true := by
+  rw [(quaternionClassData 2).integerCharacterTableChecker_eq_true_iff]
+  exact isIntegerCharacterTableSpec_quaternionGroupTwo
+
+/-- **The exact rational Dixon output for `QuaternionGroup 2`, cast to `ℂ`, satisfies the
+character-table specification.** Consequently it is the ordinary complex character table up to
+a row permutation. -/
+theorem isCharacterTableSpec_quaternionGroupTwo :
+    IsCharacterTableSpec (QuaternionGroup 2)
+      ((quaternionClassData 2).complexTableOfInteger quaternionGroupTwoCharacterTable) :=
+  isIntegerCharacterTableSpec_quaternionGroupTwo.isCharacterTableSpec
 
 end TauCeti
