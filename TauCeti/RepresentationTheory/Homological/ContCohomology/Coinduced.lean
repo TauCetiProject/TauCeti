@@ -639,12 +639,15 @@ noncomputable abbrev coindDiscreteRep (A : DiscreteRep.{u, v, w} R U) :
 theorem coindDiscreteFunctor_obj (A : DiscreteRep.{u, v, w} R U) :
     (coindDiscreteFunctor R G U).obj A = coindDiscreteRep R G U A := rfl
 
+/-- Discrete coinduction maps act pointwise on their locally constant functions. The explicit
+`IntertwiningMap` type identifies the functor's object abbreviations with `coindDiscreteRep`. -/
 @[simp]
 theorem coindDiscreteFunctor_map_apply {A B : DiscreteRep.{u, v, w} R U}
     (f : A ⟶ B) (a : DiscreteCoind G U A.V) (g : G) :
     ((show Representation.IntertwiningMap
         (coindDiscreteRep R G U A).ρ (coindDiscreteRep R G U B).ρ
       from (coindDiscreteFunctor R G U).map f) a) g = f.toLinearMap (a g) := by
+  -- Remove the categorical packaging before applying the public pointwise computation lemma.
   change DiscreteCoind.map f.toLinearMap (DiscreteRep.equivariant f) a g = _
   exact DiscreteCoind.map_apply f.toLinearMap _ a g
 
@@ -662,20 +665,24 @@ noncomputable abbrev coindTopRep (A : SmoothDiscreteTopRep.{u, v, w} R U) :
 @[simp]
 theorem coindFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R U) :
     (coindFunctor R G U).obj A = coindTopRep R G U A := by
-  change (toSmoothDiscrete R G).obj
-    ((coindDiscreteFunctor R G U).obj ((ofSmoothDiscrete R U).obj A)) = _
-  rw [coindDiscreteFunctor_obj]
+  exact congrArg (toSmoothDiscrete R G).obj
+    (coindDiscreteFunctor_obj R G U ((ofSmoothDiscrete R U).obj A))
 
+/-- Smooth discrete coinduction maps act pointwise on their locally constant functions. The
+outer carrier annotation identifies the composite functor's object with `DiscreteCoind`. -/
 @[simp]
 theorem coindFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w} R U}
     (f : A ⟶ B) (a : DiscreteCoind G U A.obj.V) (g : G) :
     (show DiscreteCoind G U B.obj.V from (coindFunctor R G U).map f a) g =
       f.hom.hom (a g) := by
+  -- Display the three constituent functor maps so their public computation lemmas apply.
   change (show DiscreteCoind G U B.obj.V from
     ((toSmoothDiscrete R G).map
       ((coindDiscreteFunctor R G U).map ((ofSmoothDiscrete R U).map f))).hom.hom a) g = _
   have htop := toSmoothDiscrete_map_hom_apply (R := R) (G := G)
     ((coindDiscreteFunctor R G U).map ((ofSmoothDiscrete R U).map f)) a
+  -- The dictionary lemma returns an equality in the underlying carrier; identifying that carrier
+  -- with `DiscreteCoind` makes point evaluation at `g` well typed.
   have htop' := congrArg (fun b => (show DiscreteCoind G U B.obj.V from b) g) htop
   have h := coindDiscreteFunctor_map_apply R G U ((ofSmoothDiscrete R U).map f) a g
   have h' := h.trans
