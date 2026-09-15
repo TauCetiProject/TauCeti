@@ -151,7 +151,7 @@ def mulEquivOfCenterEqBot [Group.IsPerfect G] (h : center G = ⊥) :
   let e : ↥(commutator G) ≃* G :=
     (MulEquiv.subgroupCongr Group.IsPerfect.commutator_eq_top).trans Subgroup.topEquiv
   have hc : center ↥(commutator G) = ⊥ := by
-    rw [← TauCeti.Subgroup.map_center_eq_center e.symm, h, Subgroup.map_bot]
+    rw [← Subgroup.map_center_eq e.symm, h, Subgroup.map_bot]
   (QuotientGroup.quotientMulEquivOfEq hc).trans (QuotientGroup.quotientBot.trans e)
 
 @[simp]
@@ -213,7 +213,7 @@ that restriction carries the centre of the one onto the centre of the other. So 
 only on the isomorphism class of `G`. -/
 def congr (ψ : G ≃* G') : DerivedCentralQuotient G ≃* DerivedCentralQuotient G' :=
   QuotientGroup.congr _ _ (commutatorCongr ψ)
-    (TauCeti.Subgroup.map_center_eq_center (commutatorCongr ψ))
+    (Subgroup.map_center_eq (commutatorCongr ψ))
 
 @[simp]
 theorem congr_mk (ψ : G ≃* G') (x : ↥(commutator G)) :
