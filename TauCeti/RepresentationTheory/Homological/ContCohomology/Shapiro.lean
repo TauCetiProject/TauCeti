@@ -432,7 +432,7 @@ variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Com
 
 /-- **The forward Shapiro map on continuous `2`-cocycles**: restrict a continuous `2`-cocycle of
 `G` with coefficients in `Coind_U^G A` to `U`, and evaluate its values at `1`. -/
-noncomputable abbrev shapiroCocycles2 : Z2 G (DiscreteCoind G U A) →+ Z2 U A :=
+noncomputable def shapiroCocycles2 : Z2 G (DiscreteCoind G U A) →+ Z2 U A :=
   cocyclesMap2 G (DiscreteCoind G U A) U A (ContinuousMonoidHom.subgroupSubtype U)
     (DiscreteCoind.eval G U A) DiscreteCoind.continuous_eval (eval_subgroupSubtype_smul G U A)
 
@@ -441,14 +441,24 @@ omit [CompactSpace G] [ContinuousSMul U A] in
 theorem shapiroCocycles2_apply (f : Z2 G (DiscreteCoind G U A)) (u v : U) :
     (shapiroCocycles2 G U A f : U × U → A) (u, v) =
       (f : G × G → DiscreteCoind G U A) ((u : G), (v : G)) 1 := by
-  simp [cocyclesMap2_apply]
+  simp [shapiroCocycles2, cocyclesMap2_apply]
 
 /-- **The forward Shapiro map on `H²`**, the compatible-pair pullback along the inclusion `U ↪ G`
 and evaluation at `1`. `TauCeti.ContCohomology.explicitShapiro2` upgrades it to an
 isomorphism. -/
-noncomputable abbrev explicitShapiroMap2 : H2 G (DiscreteCoind G U A) →+ H2 U A :=
+noncomputable def explicitShapiroMap2 : H2 G (DiscreteCoind G U A) →+ H2 U A :=
   explicitMap2 G (DiscreteCoind G U A) U A (ContinuousMonoidHom.subgroupSubtype U)
     (DiscreteCoind.eval G U A) DiscreteCoind.continuous_eval (eval_subgroupSubtype_smul G U A)
+
+/-- **The characteristic property of the forward Shapiro map on `H²`**: it sends the class of a
+continuous `2`-cocycle to the class of its Shapiro image. Together with
+`TauCeti.ContCohomology.shapiroCocycles2_apply` this determines the map, so consumers never need
+to unfold it. -/
+@[simp]
+theorem explicitShapiroMap2_mk (f : Z2 G (DiscreteCoind G U A)) :
+    explicitShapiroMap2 G U A (f : H2 G (DiscreteCoind G U A)) =
+      (shapiroCocycles2 G U A f : H2 U A) :=
+  explicitMap2_mk G (DiscreteCoind G U A) U A _ _ _ _ f
 
 variable {G U A}
 
@@ -487,7 +497,7 @@ section Factorization
 variable (w : G → U) (c : U × U → A) (hw : Continuous w)
   (hwmul : ∀ (u : U) (g : G), w ((u : G) * g) = u * w g) (hccont : Continuous c)
 
-/-- **The inverse Shapiro cochain in degree two.** From a continuous `2`-cocycle `c` of `U` and a
+/-- **The inverse Shapiro cochain in degree two.** From a continuous `2`-cochain `c` of `U` and a
 continuous factorization `w` of `G` over the right cosets of `U`, the `2`-cochain of `G` with
 coefficients in `Coind_U^G A` whose value at `(g, h)` is the function
 `y ↦ homogeneous2 c (w y) (w (y * g)) (w (y * g * h))`: the homogeneous form of `c` read at the
@@ -707,7 +717,7 @@ theorem bijective_explicitShapiroMap2 (hU : IsClosed (U : Set G)) :
   · refine (injective_iff_map_eq_zero _).2 fun x hx => ?_
     induction x using QuotientAddGroup.induction_on with
     | _ f =>
-      rw [explicitMap2_mk] at hx
+      rw [explicitShapiroMap2_mk] at hx
       have hcont : Continuous (shapiroCocycles2 G U A f : U × U → A) :=
         (mem_Z2_iff.1 (shapiroCocycles2 G U A f).2).1
       have h1 := coindCochain2_mem_B2_of_mem_B2 w (shapiroCocycles2 G U A f : U × U → A) hw hwmul
@@ -720,7 +730,7 @@ theorem bijective_explicitShapiroMap2 (hU : IsClosed (U : Set G)) :
     | _ c =>
       refine ⟨(coindCocycle2 w (c : U × U → A) hw hwmul (mem_Z2_iff.1 c.2).1
         (mem_Z2_iff.1 c.2).2 : H2 G (DiscreteCoind G U A)), ?_⟩
-      rw [explicitMap2_mk]
+      rw [explicitShapiroMap2_mk]
       congr 1
       exact Subtype.ext (shapiroCocycles2_coindCocycle2 w (c : U × U → A) hw hwmul
         (mem_Z2_iff.1 c.2).1 (mem_Z2_iff.1 c.2).2 hw1)
@@ -755,7 +765,7 @@ theorem explicitShapiro2_symm_apply (hU : IsClosed (U : Set G)) {w : G → U} (h
   calc
     (explicitShapiro2 G U A hU).symm (c : H2 U A) = (f₀ : H2 G (DiscreteCoind G U A)) := by
       refine (AddEquiv.symm_apply_eq _).2 ?_
-      rw [explicitShapiro2_apply, explicitMap2_mk]
+      rw [explicitShapiro2_apply, explicitShapiroMap2_mk]
       exact congrArg (H2pi U A) (Subtype.ext hf₀.symm)
     _ = (coindCocycle2 w (c : U × U → A) hw hwmul (mem_Z2_iff.1 c.2).1
         (mem_Z2_iff.1 c.2).2 : H2 G (DiscreteCoind G U A)) := by
