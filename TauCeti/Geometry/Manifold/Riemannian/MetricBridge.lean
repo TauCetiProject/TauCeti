@@ -32,7 +32,8 @@ corresponding constructions in Mathlib's `Geometry/Manifold/Riemannian/Basic.lea
 * `TauCeti.Manifold.enorm_sub_le_mul_pathELength`: a differential bound along a `C¹` path controls
   the displacement of a function by the path length.
 * `TauCeti.Manifold.enorm_extChartAt_sub_le_mul_pathELength`: the chart-valued specialization.
-* `TauCeti.Manifold.eventually_enorm_extChartAt_sub_le`: the sharp local chart--distance estimate.
+* `TauCeti.Manifold.eventually_enorm_apply_extChartAt_sub_le`: the sharp local chart--distance
+  estimate.
 
 ## References
 
@@ -183,7 +184,7 @@ private theorem enorm_apply_extChartAt_sub_le_mul_pathELength {x : M} {r : ℝ}
 /-- **Sharp local Lipschitz bound for the extended chart.** For `r > 1`, near `x` every continuous
 linear functional `ℓ` on `T_x M`, read in the extended chart at `x`, is `(r ‖ℓ‖)`-Lipschitz at `x`
 for the Riemannian distance. -/
-theorem eventually_enorm_extChartAt_sub_le (x : M) {r : ℝ} (hr : 1 < r) :
+theorem eventually_enorm_apply_extChartAt_sub_le (x : M) {r : ℝ} (hr : 1 < r) :
     ∀ᶠ y in 𝓝 x, ∀ ℓ : TangentSpace I x →L[ℝ] ℝ,
       ‖ℓ (extChartAt I x y - extChartAt I x x)‖ₑ ≤ ENNReal.ofReal r * ‖ℓ‖ₑ * edist x y := by
   have hu : {y | y ∈ (chartAt H x).source ∧

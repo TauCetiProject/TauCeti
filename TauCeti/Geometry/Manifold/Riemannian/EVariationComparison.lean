@@ -206,7 +206,7 @@ private theorem norm_curveVelocityWithin_le_mul_deriv_variationOnFromTo
       (ℓE.hasFDerivAt.comp_hasDerivAt t hcurve).tendsto_slope_zero_right
   rw [mul_right_comm]
   refine le_of_tendsto_of_tendsto hlim (hV.const_mul (r * ‖ℓ‖)) ?_
-  filter_upwards [hmem, hγt.eventually (eventually_enorm_extChartAt_sub_le (I := I) x hr)]
+  filter_upwards [hmem, hγt.eventually (eventually_enorm_apply_extChartAt_sub_le (I := I) x hr)]
     with h hh hy
   have hth : t ≤ t + h := by linarith [hh.1]
   -- The distance travelled on `[t, t + h]` is at most the variation there.
