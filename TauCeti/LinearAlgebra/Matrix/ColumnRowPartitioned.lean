@@ -12,7 +12,13 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 # Linear independence of rows in partitioned matrices
 
 This file proves that the rows of a column-partitioned matrix are linearly independent when one
-of its blocks is an identity matrix.
+of its blocks is an identity matrix. The identity block already separates the row indices: two
+distinct combinations of the rows differ on the identity columns, so no nontrivial combination
+of the rows vanishes.
+
+Consequently a matrix in systematic form has full row rank, which is what turns a row count into
+a dimension: over a field, `[I | A]` has as many rows as the dimension of the code it generates,
+and `[B | I]` has as many rows as the codimension of the code it checks.
 
 ## Main declarations
 
