@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Trace.Pi
 public import TauCeti.RepresentationTheory.Induction.ClassFunction
-public import TauCeti.RepresentationTheory.Induction.FiniteDimensional
+public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
 
 /-!
 # Characters of induced representations

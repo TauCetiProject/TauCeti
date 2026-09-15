@@ -74,7 +74,7 @@ variable {𝕜 α β : Type*} [RCLike 𝕜] {mα : MeasurableSpace α} {mβ : Me
 
 /-- The pointwise product `(x, y) ↦ f x * g y` of an `L²(μ)` and an `L²(ν)` function is `L²` for the
 product measure `μ ⊗ ν`. -/
-theorem memLp_mul_prod [SFinite μ] [SFinite ν] {f : α → 𝕜} {g : β → 𝕜}
+theorem memLp_mul_prod [SFinite ν] {f : α → 𝕜} {g : β → 𝕜}
     (hf : MemLp f 2 μ) (hg : MemLp g 2 ν) :
     MemLp (fun p : α × β => f p.1 * g p.2) 2 (μ.prod ν) := by
   have hfst : AEStronglyMeasurable (fun p : α × β => f p.1) (μ.prod ν) :=
@@ -90,18 +90,18 @@ theorem memLp_mul_prod [SFinite μ] [SFinite ν] {f : α → 𝕜} {g : β → �
 
 /-- The pointwise product `(x, y) ↦ F x * G y` of `F : L²(μ)` and `G : L²(ν)`, as a vector of
 `L²(μ ⊗ ν)`. -/
-noncomputable def L2prodMul [SFinite μ] [SFinite ν] (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
+noncomputable def L2prodMul [SFinite ν] (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
     Lp 𝕜 2 (μ.prod ν) :=
   (memLp_mul_prod (Lp.memLp F) (Lp.memLp G)).toLp _
 
 /-- The `Lp` representative of `L2prodMul F G` is the pointwise product of the representatives. -/
-theorem coeFn_L2prodMul [SFinite μ] [SFinite ν] (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
+theorem coeFn_L2prodMul [SFinite ν] (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
     ⇑(L2prodMul F G) =ᵐ[μ.prod ν] fun p : α × β => F p.1 * G p.2 :=
   MemLp.coeFn_toLp _
 
 /-- The tensor is additive in its first argument. -/
 @[simp]
-theorem L2prodMul_add_left [SFinite μ] [SFinite ν] (F₁ F₂ : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
+theorem L2prodMul_add_left [SFinite ν] (F₁ F₂ : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
     L2prodMul (F₁ + F₂) G = L2prodMul F₁ G + L2prodMul F₂ G := by
   rw [Lp.ext_iff]
   filter_upwards [coeFn_L2prodMul (F₁ + F₂) G, coeFn_L2prodMul F₁ G, coeFn_L2prodMul F₂ G,
@@ -111,7 +111,7 @@ theorem L2prodMul_add_left [SFinite μ] [SFinite ν] (F₁ F₂ : Lp 𝕜 2 μ) 
 
 /-- The tensor is additive in its second argument. -/
 @[simp]
-theorem L2prodMul_add_right [SFinite μ] [SFinite ν] (F : Lp 𝕜 2 μ) (G₁ G₂ : Lp 𝕜 2 ν) :
+theorem L2prodMul_add_right [SFinite ν] (F : Lp 𝕜 2 μ) (G₁ G₂ : Lp 𝕜 2 ν) :
     L2prodMul F (G₁ + G₂) = L2prodMul F G₁ + L2prodMul F G₂ := by
   rw [Lp.ext_iff]
   filter_upwards [coeFn_L2prodMul F (G₁ + G₂), coeFn_L2prodMul F G₁, coeFn_L2prodMul F G₂,
@@ -121,7 +121,7 @@ theorem L2prodMul_add_right [SFinite μ] [SFinite ν] (F : Lp 𝕜 2 μ) (G₁ G
 
 /-- The tensor is homogeneous in its first argument. -/
 @[simp]
-theorem L2prodMul_smul_left [SFinite μ] [SFinite ν] (c : 𝕜) (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
+theorem L2prodMul_smul_left [SFinite ν] (c : 𝕜) (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
     L2prodMul (c • F) G = c • L2prodMul F G := by
   rw [Lp.ext_iff]
   filter_upwards [coeFn_L2prodMul (c • F) G, coeFn_L2prodMul F G,
@@ -131,7 +131,7 @@ theorem L2prodMul_smul_left [SFinite μ] [SFinite ν] (c : 𝕜) (F : Lp 𝕜 2 
 
 /-- The tensor is homogeneous in its second argument. -/
 @[simp]
-theorem L2prodMul_smul_right [SFinite μ] [SFinite ν] (c : 𝕜) (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
+theorem L2prodMul_smul_right [SFinite ν] (c : 𝕜) (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
     L2prodMul F (c • G) = c • L2prodMul F G := by
   rw [Lp.ext_iff]
   filter_upwards [coeFn_L2prodMul F (c • G), coeFn_L2prodMul F G,
@@ -141,7 +141,7 @@ theorem L2prodMul_smul_right [SFinite μ] [SFinite ν] (c : 𝕜) (F : Lp 𝕜 2
 
 /-- The tensor vanishes when its first argument does. -/
 @[simp]
-theorem L2prodMul_zero_left [SFinite μ] [SFinite ν] (G : Lp 𝕜 2 ν) :
+theorem L2prodMul_zero_left [SFinite ν] (G : Lp 𝕜 2 ν) :
     L2prodMul (0 : Lp 𝕜 2 μ) G = 0 := by
   rw [Lp.ext_iff]
   filter_upwards [coeFn_L2prodMul (0 : Lp 𝕜 2 μ) G, Lp.coeFn_zero 𝕜 2 (μ.prod ν),
@@ -150,7 +150,7 @@ theorem L2prodMul_zero_left [SFinite μ] [SFinite ν] (G : Lp 𝕜 2 ν) :
 
 /-- The tensor vanishes when its second argument does. -/
 @[simp]
-theorem L2prodMul_zero_right [SFinite μ] [SFinite ν] (F : Lp 𝕜 2 μ) :
+theorem L2prodMul_zero_right [SFinite ν] (F : Lp 𝕜 2 μ) :
     L2prodMul F (0 : Lp 𝕜 2 ν) = 0 := by
   rw [Lp.ext_iff]
   filter_upwards [coeFn_L2prodMul F (0 : Lp 𝕜 2 ν), Lp.coeFn_zero 𝕜 2 (μ.prod ν),
@@ -250,7 +250,7 @@ theorem inner_L2prodMul_eq_zero_of_forall_basis [SFinite μ] [SFinite ν] {ι₁
 
 /-- The tensor of two indicators is the indicator of the rectangle, so orthogonality to every
 elementary tensor makes the integral over every finite-measure rectangle vanish. -/
-theorem setIntegral_prod_eq_zero_of_forall_inner [SFinite μ] [SFinite ν] {h : Lp 𝕜 2 (μ.prod ν)}
+theorem setIntegral_prod_eq_zero_of_forall_inner [SFinite ν] {h : Lp 𝕜 2 (μ.prod ν)}
     (hz : ∀ (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν), inner 𝕜 (L2prodMul F G) h = 0)
     {A : Set α} (hA : MeasurableSet A) (hμA : μ A ≠ ⊤)
     {B : Set β} (hB : MeasurableSet B) (hνB : ν B ≠ ⊤) :
@@ -273,7 +273,7 @@ theorem setIntegral_prod_eq_zero_of_forall_inner [SFinite μ] [SFinite ν] {h : 
     _ = 0 := hz F G
 
 /-- **Orthogonality kills the part of a measurable set inside a finite-measure box.** -/
-private theorem setIntegral_inter_prod_eq_zero [SFinite μ] [SFinite ν] {h : Lp 𝕜 2 (μ.prod ν)}
+private theorem setIntegral_inter_prod_eq_zero [SFinite ν] {h : Lp 𝕜 2 (μ.prod ν)}
     (hz : ∀ (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν), inner 𝕜 (L2prodMul F G) h = 0)
     {u : Set (α × β)} (hu : MeasurableSet u)
     {A : Set α} (hA : MeasurableSet A) (hμA : μ A ≠ ⊤)

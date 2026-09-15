@@ -27,6 +27,16 @@ union.
   canonical representatives, `⋃ q : G ⧸ H, (q.out)⁻¹ • s`.
 * `MeasureTheory.IsFundamentalDomain.smul_of_eq_conjAct_pointwise_smul`: an `H₁`-fundamental domain
   translates to a `g H₁ g⁻¹`-fundamental domain under `g`.
+* `MeasureTheory.IsFundamentalDomain.of_subgroupOf`: a fundamental domain for `H.subgroupOf K`
+  is one for `H ⊓ K`, the two subgroups being the same elements acting the same way.
+* `MeasureTheory.IsFundamentalDomain.iUnion_mul_smul_of_transversal`: the **double-coset
+  tiling**, at an arbitrary transversal — for any `r : ι → Γ₂` with `i ↦ ⟦(r i)⁻¹⟧` bijective
+  onto `Γ₂ ⧸ (δ⁻¹Γ₁δ ⊓ Γ₂)`, the translates `⋃ i, (δ · r i) • s` tile a fundamental domain for
+  `Γ₁ ⊓ δΓ₂δ⁻¹`.
+* `MeasureTheory.IsFundamentalDomain.iUnion_mul_out_inv_smul`: the same at the canonical
+  `Quotient.out` representatives, `⋃ᵥ (δ σᵥ⁻¹) • s` over `Γ₂ ⧸ (δ⁻¹Γ₁δ ⊓ Γ₂)`. A Hecke operator
+  supplies its own representatives rather than `Quotient.out`'s, so it is the transversal form
+  above that applies there.
 * `MeasureTheory.IsFundamentalDomain.aedisjoint_smul_of_inv_mul_mem`: translates `g₁ • D`,
   `g₂ • D` of an `H`-fundamental domain are a.e. disjoint whenever `g₁ ≠ g₂` and
   `g₁⁻¹ * g₂ ∈ H` (needing only quasi-measure-preservation of the one translation).
@@ -182,5 +192,101 @@ theorem IsFundamentalDomain.aedisjoint_smul_of_inv_mul_mem
   rw [one_smul, MulAction.subgroup_smul_def] at h_core
   -- Pull the disjointness back along `x ↦ g₁⁻¹ • x`; the two preimages are the stated translates.
   simpa [Set.preimage_smul_inv, smul_smul] using h_core.preimage hg₁
+
+/-- **A fundamental domain for a subgroup, read through a larger group it sits inside.** If `s`
+is a fundamental domain for `H.subgroupOf K` acting through `K`, it is one for `H ⊓ K` acting
+through the ambient group: the two subgroups are the same set of elements and act the same way,
+so only the packaging differs. -/
+theorem IsFundamentalDomain.of_subgroupOf {G α : Type*} [Group G] [MeasurableSpace α]
+    [MulAction G α] {μ : Measure α} {H K : Subgroup G} {s : Set α}
+    (hs : IsFundamentalDomain (H.subgroupOf K) s μ) :
+    IsFundamentalDomain (H ⊓ K : Subgroup G) s μ := by
+  have hbij : Function.Bijective
+      (fun k : H.subgroupOf K ↦ (⟨(k : K), ⟨Subgroup.mem_subgroupOf.mp k.2, (k : K).2⟩⟩ :
+        (H ⊓ K : Subgroup G))) := by
+    constructor
+    · intro a b hab
+      have h : ((a : K) : G) = ((b : K) : G) :=
+        congrArg (fun x : (H ⊓ K : Subgroup G) ↦ (x : G)) hab
+      exact Subtype.ext (Subtype.ext h)
+    · rintro ⟨g, hgH, hgK⟩
+      exact ⟨⟨⟨g, hgK⟩, Subgroup.mem_subgroupOf.mpr hgH⟩, rfl⟩
+  simpa using hs.preimage_of_equiv (f := id) (Measure.QuasiMeasurePreserving.id μ) hbij
+    fun _ _ ↦ rfl
+
+/-- **The double-coset tiling of a fundamental domain, at an arbitrary transversal.** Let `s` be
+a fundamental domain for `Γ₂` and let `δ` be any element acting quasi-measure-preservingly. If
+`r : ι → Γ₂` is a family with `i ↦ ⟦(r i)⁻¹⟧` a bijection onto `Γ₂ ⧸ (δ⁻¹Γ₁δ ⊓ Γ₂)`, then the
+translates `(δ · r i) • s` tile a fundamental domain for `Γ₁ ⊓ δΓ₂δ⁻¹`.
+
+`iUnion_mul_out_inv_smul` below is this at `r v = σᵥ⁻¹` for the canonical representatives, and is
+the statement to reach for when the family is not already fixed. **The transversal form is what a
+Hecke operator needs**, because the elements it sums over are supplied by the double-coset
+machinery rather than chosen by `Quotient.out`: two transversals of the same coset space give
+different translates, so a tiling stated only at `Quotient.out` does not transfer to them. That
+is the same reason `iUnion_smul_of_transversal` sits under `subgroup_iUnion_out_inv_smul` above.
+
+Note the hypotheses this does *not* take: no measurability of the ambient action and no
+invariance of `μ` under it, only the null-measurability of the individual translates and
+quasi-measure-preservation of the single translation by `δ⁻¹`. -/
+theorem IsFundamentalDomain.iUnion_mul_smul_of_transversal {G α ι : Type*} [Group G]
+    [MeasurableSpace α] [MulAction G α] [Countable ι] {μ : Measure α} {Γ₁ Γ₂ : Subgroup G}
+    (δ : G) {s : Set α} (hs : IsFundamentalDomain Γ₂ s μ)
+    (hδ : Measure.QuasiMeasurePreserving (fun x : α ↦ δ⁻¹ • x) μ μ)
+    {r : ι → Γ₂} (hnull : ∀ i, NullMeasurableSet (((r i : Γ₂) : G) • s) μ)
+    (hr : Function.Bijective fun i ↦
+      (QuotientGroup.mk (r i)⁻¹ : Γ₂ ⧸ (ConjAct.toConjAct δ⁻¹ • Γ₁).subgroupOf Γ₂)) :
+    IsFundamentalDomain (Γ₁ ⊓ ConjAct.toConjAct δ • Γ₂ : Subgroup G)
+      (⋃ i, (δ * ((r i : Γ₂) : G)) • s) μ := by
+  -- Tile `s` inside `Γ₂` along the transversal, then carry the tiling along `δ`. Only `hδ` is
+  -- needed for the second step, which is why no measurability of the ambient action appears.
+  have htile := (hs.iUnion_smul_of_transversal
+    (H := (ConjAct.toConjAct δ⁻¹ • Γ₁).subgroupOf Γ₂) hnull hr).of_subgroupOf
+  have hconj := htile.smul_of_eq_conjAct_pointwise_smul (g := δ) hδ (H₂ :=
+    ConjAct.toConjAct δ • ((ConjAct.toConjAct δ⁻¹ • Γ₁) ⊓ Γ₂ : Subgroup G)) rfl
+  have hgrp : ConjAct.toConjAct δ • ((ConjAct.toConjAct δ⁻¹ • Γ₁) ⊓ Γ₂ : Subgroup G) =
+      (Γ₁ ⊓ ConjAct.toConjAct δ • Γ₂ : Subgroup G) := by
+    rw [Subgroup.smul_inf, smul_smul, ← map_mul, mul_inv_cancel, map_one, one_smul]
+  -- the `Γ₂`-action on `α` is the ambient one by definition, so the two spellings of each
+  -- translate are the same set and the outer `δ` composes with them
+  have hset : ∀ i, δ • ((r i) • s) = (δ * ((r i : Γ₂) : G)) • s := fun i ↦ by
+    rw [show ((r i) • s : Set α) = (((r i : Γ₂) : G)) • s from rfl, smul_smul]
+  rw [hgrp, Set.smul_set_iUnion] at hconj
+  exact (Set.iUnion_congr hset) ▸ hconj
+
+/-- **The double-coset tiling of a fundamental domain.** Let `s` be a fundamental domain for
+`Γ₂`, and let `δ` be any element acting quasi-measure-preservingly. The translates
+`(δ · σᵥ⁻¹) • s`, taken over the canonical representatives `σᵥ` of `Γ₂ ⧸ (δ⁻¹Γ₁δ ⊓ Γ₂)`, tile a
+fundamental domain for `Γ₁ ⊓ δΓ₂δ⁻¹`.
+
+The index type is `TauCeti.DoubleCoset.DecompQuotient Γ₂ Γ₁ δ⁻¹`, the one a Hecke decomposition
+`Γ₁ δ Γ₂ = ⊔ᵥ Γ₁ (δ σᵥ⁻¹)` is indexed by — but `σᵥ` here is `Quotient.out`'s choice, and a Hecke
+operator's `σᵥ` comes from the double-coset machinery instead. **Two transversals of the same
+coset space give different translates**, so this statement does not transfer to them;
+`iUnion_mul_smul_of_transversal` is the form that does.
+
+Ported from AINTLIB (github.com/CBirkbeck/AINTLIB @ `6d87d596a5372d5b122c47b7082d4c3afa9b7c3b`,
+Apache-2.0), `projects/LeanModularForms/LeanModularForms/HeckeRIngs/GL2/AdjointTheory/
+FDTransport.lean`, which proves this for `Γ₁(N)` and a concrete `α`. -/
+theorem IsFundamentalDomain.iUnion_mul_out_inv_smul {G α : Type*} [Group G] [MeasurableSpace α]
+    [MulAction G α] {μ : Measure α} {Γ₁ Γ₂ : Subgroup G}
+    [MeasurableConstSMul Γ₂ α] [SMulInvariantMeasure Γ₂ α μ]
+    (δ : G) {s : Set α} (hs : IsFundamentalDomain Γ₂ s μ)
+    (hδ : Measure.QuasiMeasurePreserving (fun x : α ↦ δ⁻¹ • x) μ μ)
+    [Countable (Γ₂ ⧸ (ConjAct.toConjAct δ⁻¹ • Γ₁).subgroupOf Γ₂)] :
+    IsFundamentalDomain (Γ₁ ⊓ ConjAct.toConjAct δ • Γ₂ : Subgroup G)
+      (⋃ v : Γ₂ ⧸ (ConjAct.toConjAct δ⁻¹ • Γ₁).subgroupOf Γ₂,
+        (δ * ((v.out : Γ₂) : G)⁻¹) • s) μ :=
+  hs.iUnion_mul_smul_of_transversal δ hδ
+    (r := fun v : Γ₂ ⧸ (ConjAct.toConjAct δ⁻¹ • Γ₁).subgroupOf Γ₂ ↦ (v.out)⁻¹)
+    (fun v ↦ hs.nullMeasurableSet_smul _) (by
+      have h_id : (fun v : Γ₂ ⧸ (ConjAct.toConjAct δ⁻¹ • Γ₁).subgroupOf Γ₂ ↦
+          (QuotientGroup.mk ((v.out)⁻¹)⁻¹ :
+            Γ₂ ⧸ (ConjAct.toConjAct δ⁻¹ • Γ₁).subgroupOf Γ₂)) = id := by
+        funext v
+        simp only [inv_inv, id_eq]
+        exact QuotientGroup.out_eq' v
+      rw [h_id]
+      exact Function.bijective_id)
 
 end MeasureTheory

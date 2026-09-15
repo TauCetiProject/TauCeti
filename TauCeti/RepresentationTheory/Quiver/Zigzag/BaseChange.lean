@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.BaseChange
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.Basic
 
 /-!
 # Scalar extension of skew-zigzag relation quotients

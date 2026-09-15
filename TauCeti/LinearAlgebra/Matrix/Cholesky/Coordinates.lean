@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Cholesky.Basic
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Coordinates on positive-diagonal lower-triangular matrices
@@ -20,6 +21,7 @@ the Jacobian of Cholesky reconstruction is computed.
 ## Main declarations
 
 * `TauCeti.lowerTriangle` — the index type of on-or-below-diagonal positions.
+* `TauCeti.lowerTriangleMatrix` — the lower-triangular matrix with prescribed entries there.
 * `TauCeti.PosDiagLowerCoordinates` — the coordinate functions with positive diagonal values.
 * `TauCeti.lowerTriangleCoordinatesHomeomorph` — the coordinate homeomorphism.
 * `TauCeti.lowerTriangleCoordinates` — its measurable-equivalence form.
@@ -41,6 +43,45 @@ abbrev PosDiagLowerCoordinates (p : ℕ) :=
 
 variable (p : ℕ)
 
+/-- The lower-triangular matrix whose on-or-below-diagonal entries are prescribed by `x` and whose
+entries above the diagonal vanish. -/
+def lowerTriangleMatrix : (lowerTriangle p → ℝ) →ₗ[ℝ] Matrix (Fin p) (Fin p) ℝ where
+  toFun x := Matrix.of fun i j ↦ if h : j ≤ i then x ⟨(i, j), h⟩ else 0
+  map_add' x y := by ext i j; by_cases h : j ≤ i <;> simp [h]
+  map_smul' c x := by ext i j; by_cases h : j ≤ i <;> simp [h]
+
+variable {p}
+
+@[simp]
+theorem lowerTriangleMatrix_apply_of_le (x : lowerTriangle p → ℝ) {i j : Fin p} (h : j ≤ i) :
+    lowerTriangleMatrix p x i j = x ⟨(i, j), h⟩ :=
+  dite_eq_left h
+
+@[simp]
+theorem lowerTriangleMatrix_apply_of_lt (x : lowerTriangle p → ℝ) {i j : Fin p} (h : i < j) :
+    lowerTriangleMatrix p x i j = 0 :=
+  dite_eq_right (not_le.2 h)
+
+theorem isLowerTriangular_lowerTriangleMatrix (x : lowerTriangle p → ℝ) :
+    (lowerTriangleMatrix p x).IsLowerTriangular :=
+  fun _ _ h ↦ lowerTriangleMatrix_apply_of_lt x (by simpa using h)
+
+/-- A lower-triangular matrix is rebuilt from its on-or-below-diagonal entries. -/
+@[simp]
+theorem lowerTriangleMatrix_entries {A : Matrix (Fin p) (Fin p) ℝ} (hA : A.IsLowerTriangular) :
+    lowerTriangleMatrix p (fun ij ↦ A ij.1.1 ij.1.2) = A := by
+  refine Matrix.ext fun i j ↦ ?_
+  by_cases h : j ≤ i
+  · exact lowerTriangleMatrix_apply_of_le _ h
+  · rw [lowerTriangleMatrix_apply_of_lt _ (not_le.1 h)]
+    exact (hA (by simpa using not_le.1 h)).symm
+
+theorem continuous_lowerTriangleMatrix :
+    Continuous fun x : lowerTriangle p → ℝ ↦ lowerTriangleMatrix p x :=
+  (lowerTriangleMatrix p).continuous_of_finiteDimensional
+
+variable (p)
+
 /-- Reading off the on-or-below-diagonal entries is a homeomorphism from the positive-diagonal
 lower-triangular matrices to their coordinate space. Its inverse fills the positions above the
 diagonal with zeros. -/
@@ -48,23 +89,15 @@ def lowerTriangleCoordinatesHomeomorph :
     PosDiagLowerTriangular p ≃ₜ PosDiagLowerCoordinates p where
   toFun L := ⟨fun ij ↦ L.1 ij.1.1 ij.1.2, L.2.2⟩
   invFun x :=
-    ⟨Matrix.of fun i j ↦ if h : j ≤ i then x.1 ⟨(i, j), h⟩ else 0,
-      fun i j hij ↦ dite_eq_right (not_le.2 hij), fun i ↦ by simpa using x.2 i⟩
-  left_inv L := by
-    refine Subtype.ext (Matrix.ext fun i j ↦ ?_)
-    by_cases h : j ≤ i
-    · exact dite_eq_left h
-    · exact (dite_eq_right h).trans (L.2.1 (not_le.1 h)).symm
-  right_inv x := Subtype.ext (funext fun ij ↦ dite_eq_left ij.2)
+    ⟨lowerTriangleMatrix p x.1, isLowerTriangular_lowerTriangleMatrix x.1,
+      fun i ↦ by simpa using x.2 i⟩
+  left_inv L := Subtype.ext (lowerTriangleMatrix_entries L.2.1)
+  right_inv x := Subtype.ext (funext fun ij ↦ lowerTriangleMatrix_apply_of_le x.1 ij.2)
   continuous_toFun := by
     refine Continuous.subtype_mk (continuous_pi fun ij ↦ ?_) _
     exact continuous_subtype_val.matrix_elem ij.1.1 ij.1.2
-  continuous_invFun := by
-    refine Continuous.subtype_mk (continuous_pi fun i ↦ continuous_pi fun j ↦ ?_) _
-    by_cases h : j ≤ i
-    · simp only [Matrix.of_apply, dite_eq_left h]
-      exact (continuous_apply _).comp continuous_subtype_val
-    · simpa only [Matrix.of_apply, dite_eq_right h] using continuous_const
+  continuous_invFun :=
+    Continuous.subtype_mk (continuous_lowerTriangleMatrix.comp continuous_subtype_val) _
 
 @[simp]
 theorem lowerTriangleCoordinatesHomeomorph_apply_coe (L : PosDiagLowerTriangular p)
@@ -73,16 +106,14 @@ theorem lowerTriangleCoordinatesHomeomorph_apply_coe (L : PosDiagLowerTriangular
   (rfl)
 
 @[simp]
-theorem lowerTriangleCoordinatesHomeomorph_symm_apply_coe_of_le (x : PosDiagLowerCoordinates p)
-    {i j : Fin p} (h : j ≤ i) :
-    ((lowerTriangleCoordinatesHomeomorph p).symm x).1 i j = x.1 ⟨(i, j), h⟩ :=
-  dite_eq_left h
+theorem lowerTriangleCoordinatesHomeomorph_symm_apply_coe (x : PosDiagLowerCoordinates p) :
+    ((lowerTriangleCoordinatesHomeomorph p).symm x).1 = lowerTriangleMatrix p x.1 :=
+  (rfl)
 
 @[simp]
-theorem lowerTriangleCoordinatesHomeomorph_symm_apply_coe_of_lt (x : PosDiagLowerCoordinates p)
-    {i j : Fin p} (h : i < j) :
-    ((lowerTriangleCoordinatesHomeomorph p).symm x).1 i j = 0 :=
-  dite_eq_right (not_le.2 h)
+theorem lowerTriangleMatrix_lowerTriangleCoordinatesHomeomorph (L : PosDiagLowerTriangular p) :
+    lowerTriangleMatrix p (lowerTriangleCoordinatesHomeomorph p L).1 = L.1 :=
+  lowerTriangleMatrix_entries L.2.1
 
 /-- The measurable equivalence induced by `TauCeti.lowerTriangleCoordinatesHomeomorph`. -/
 def lowerTriangleCoordinates : PosDiagLowerTriangular p ≃ᵐ PosDiagLowerCoordinates p :=

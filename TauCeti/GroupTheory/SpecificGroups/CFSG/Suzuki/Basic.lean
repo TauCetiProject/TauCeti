@@ -6,20 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.SpecialIsogeny
+public import TauCeti.GroupTheory.FixedPointCandidate
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.HalfFrobenius
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two
 
 /-!
-# The Steinberg endomorphism of the Suzuki family
+# The Steinberg endomorphism and candidate group of the Suzuki family
 
 The Steinberg endomorphism of `²B₂(2^(2m+1))` is not a Frobenius but an odd power of a
 half-Frobenius: the exceptional isogeny `τ` of the ambient group, which squares to the prime-field
 Frobenius, raised to the odd exponent `2m+1`. This file forms that map on the ambient group of a
-Suzuki index and proves the required square relation,
+Suzuki index, proves the required square relation,
 
 ```text
-steinberg (m) ^ 2 = Frob_(2 ^ (2m+1)).
+steinberg (m) ^ 2 = Frob_(2 ^ (2m+1)),
 ```
+
+and names the family's candidate group: the derived subgroup of the Steinberg fixed points modulo
+its centre.
 
 The half-Frobenius is available because the ambient group of a Suzuki index is the rank-two
 type-`C` carrier over an algebraically closed field of characteristic two, and that carrier already
@@ -51,6 +55,8 @@ and that numbering correspondence.
 
 * `TauCeti.SuzukiLieIndex.halfFrobenius`: the special isogeny of the ambient group.
 * `TauCeti.SuzukiLieIndex.steinberg`: its odd power `τ ^ (2m+1)`.
+* `TauCeti.SuzukiLieIndex.FixedPoints`: the fixed subgroup of `steinberg`.
+* `TauCeti.SuzukiLieIndex.Group`: the candidate group, `FixedPointCandidate steinberg`.
 
 ## Main results
 
@@ -60,25 +66,24 @@ and that numbering correspondence.
 * `TauCeti.SuzukiLieIndex.halfFrobenius_simpleRootSubgroup`: the action formula at every numbered
   simple root, against the index's own length permutation and exponent.
 * `TauCeti.SuzukiLieIndex.halfFrobenius_halfFrobenius`: the square of the half-Frobenius is the
-  prime-field Frobenius, with `TauCeti.SuzukiLieIndex.halfFrobenius_comp_halfFrobenius` for the
-  composite itself.
+  prime-field Frobenius.
 * `TauCeti.SuzukiLieIndex.steinberg_steinberg`: the square of the Steinberg endomorphism is the
-  `q`-power Frobenius, with `TauCeti.SuzukiLieIndex.steinberg_comp_steinberg` for the composite
-  itself.
+  `q`-power Frobenius.
 
 ## What is not here
 
-No fixed-point subgroup is formed, so no finite group appears. Nothing is proved finite, perfect
-or simple, and Mathlib's separate `suzukiGroup` is not mentioned, so no comparison with it is
-claimed. The fixed points of an odd half-Frobenius power are not the `ℱ_q` points of the carrier,
-which is why this family is not an instance of the Frobenius machinery the untwisted ones use.
+Nothing is proved finite, perfect or simple of `Group`, and Mathlib's separate `suzukiGroup` is not
+mentioned, so no comparison with it is claimed. The fixed points of an odd half-Frobenius power are
+not the `𝔽_q` points of the carrier, which is why this family is not an instance of the Frobenius
+machinery the untwisted ones use.
 
-The carrier is not identified with the pinned simply connected group scheme of type `B₂` either:
-no pinning datum is constructed for it here or in the files it imports, so what is formed below is
-an endomorphism of that explicit carrier, and it is not claimed to be the endomorphism of the
-pinned group. The identification with the `B₂` diagram that is available is the one on numbered
-root characters, `TauCeti.RankTwoBLieIndex.rootGeneratorWeight_carrierNode_eq_root_simpleIndex`,
-and the simple-root-subgroup action equations below are stated against it.
+The ambient group is the explicit rank-two type-`C` carrier, and it is not identified with the
+pinned simply connected group scheme of type `B₂`: no pinning datum is constructed for the carrier
+here or in the files it imports, and the constructions below transfer to that pinned group only
+along such an identification, once one is proved. The identification with the `B₂` diagram that
+is available is the one on numbered root characters,
+`TauCeti.RankTwoBLieIndex.rootGeneratorWeight_carrierNode_eq_root_simpleIndex`, and the
+simple-root-subgroup action equations below are stated against it.
 
 ## References
 
@@ -88,6 +93,10 @@ and the simple-root-subgroup action equations below are stated against it.
   [arXiv:2108.06291](https://arxiv.org/abs/2108.06291), for the formulation `τ ^ 2 = Frob_p` and
   its odd powers.
 -/
+
+-- Reinstates, unchanged, the half-Frobenius, its odd power and the two square relations first
+-- formalized in https://github.com/TauCetiProject/TauCeti/pull/5921.
+
 public section
 
 namespace TauCeti.SuzukiLieIndex
@@ -127,13 +136,6 @@ theorem halfFrobenius_halfFrobenius (g : d.toRankTwoBLieIndex.AmbientGroup) :
   rw [SpStd.coe_frobenius_apply, SpStd.coe_frobenius_apply]
   congr 1
   rw [hchar]
-
-/-- **The square of the half-Frobenius is the prime-field Frobenius**, as an identity of monoid
-homomorphisms, so a consumer taking odd powers can rewrite the composite itself. -/
-@[simp]
-theorem halfFrobenius_comp_halfFrobenius :
-    d.halfFrobenius.comp d.halfFrobenius = d.toRankTwoBLieIndex.primeFrobenius :=
-  MonoidHom.ext d.halfFrobenius_halfFrobenius
 
 private theorem halfFrobenius_iterate_two_mul (k : ℕ) (g : d.toRankTwoBLieIndex.AmbientGroup) :
     (⇑d.halfFrobenius)^[2 * k] g =
@@ -272,13 +274,6 @@ theorem halfFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative 
   · simpa using d.halfFrobenius_simpleRootSubgroup_short u
   · simpa using d.halfFrobenius_simpleRootSubgroup_long u
 
-/-- **The square of the Steinberg endomorphism is the `q`-power Frobenius**, as an identity of
-monoid homomorphisms. -/
-@[simp]
-theorem steinberg_comp_steinberg :
-    d.steinberg.comp d.steinberg = d.toRankTwoBLieIndex.frobenius :=
-  MonoidHom.ext d.steinberg_steinberg
-
 /-- **The simple-root-subgroup action formula for the Steinberg endomorphism at every numbered
 simple root.** It exchanges the two simple roots exactly as the half-Frobenius does, its odd power
 acting on the parameter by the remaining even power of the characteristic:
@@ -310,5 +305,21 @@ theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
     SpStd.frobenius_rootSubgroupPoints, ← RankTwoBLieIndex.simpleRootSubgroup_def, hexp]
   congr 2
   exact (pow_mul _ _ _).symm
+
+/-! ## The finite-group candidate -/
+
+noncomputable section
+
+/-- The fixed subgroup of the Steinberg endomorphism attached to a Suzuki index. -/
+abbrev FixedPoints : Type := ↥(fixedSubgroup d.steinberg)
+
+/-- **The finite-simple-group candidate attached to a Suzuki index**: the derived subgroup of the
+Steinberg fixed points, modulo the centre of that derived subgroup. No finiteness or simplicity
+assertion is part of this definition, and no comparison with Mathlib's `suzukiGroup` is made. -/
+abbrev Group : Type := FixedPointCandidate d.steinberg
+
+example : _root_.Group d.Group := inferInstance
+
+end
 
 end TauCeti.SuzukiLieIndex

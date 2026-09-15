@@ -45,8 +45,11 @@ subspace: `TauCeti.symmetricCoordinates` reads off the entries above the diagona
 * `TauCeti.symmetricCoordinates` — the continuous linear equivalence with `upperTriangle p → ℝ`.
 * `TauCeti.symmetricCoordinatesMeasurableEquiv` — its measurable-equivalence form.
 * `TauCeti.symmetricBasis` — the basis dual to the upper-triangular coordinates.
+* `TauCeti.symmetricFinOneEquiv` — the identification of `1 × 1` symmetric matrices with `ℝ`.
 * `TauCeti.finrank_symmetricMatrix` — the dimension is `p * (p + 1) / 2`.
-* `selfAdjoint.inner_eq_trace_mul` — the Frobenius pairing is the trace pairing.
+* `selfAdjoint.inner_eq_trace_mul` — the Frobenius pairing is the trace pairing, and
+  `selfAdjoint.continuous_trace_mul_coe` — that pairing is continuous in its second argument, as
+  is its exponential `selfAdjoint.continuous_exp_trace_mul_coe`.
 -/
 
 public section
@@ -363,6 +366,37 @@ theorem coe_symmetricBasis_offDiag {i j : Fin p} (hij : i ≤ j) (hne : i ≠ j)
 
 end coordinates
 
+/-! ### The one-dimensional carrier -/
+
+/-- In dimension one there is a single on-or-above-diagonal position. -/
+instance uniqueUpperTriangleOne : Unique (upperTriangle 1) where
+  default := ⟨(0, 0), le_rfl⟩
+  uniq _ := Subtype.ext (Subsingleton.elim _ _)
+
+/-- **A `1 × 1` symmetric matrix is its single entry.** This is the upper-triangular coordinate
+system `TauCeti.symmetricCoordinates` in dimension one, with the single coordinate read as a real
+number rather than as a function on a one-element index type. It is the identification under which
+a one-dimensional symmetric-matrix law becomes a law on `ℝ`. -/
+def symmetricFinOneEquiv : selfAdjoint.submodule ℝ (Matrix (Fin 1) (Fin 1) ℝ) ≃L[ℝ] ℝ :=
+  (symmetricCoordinates 1).trans (ContinuousLinearEquiv.funUnique (upperTriangle 1) ℝ ℝ)
+
+@[simp]
+theorem symmetricFinOneEquiv_apply (A : selfAdjoint.submodule ℝ (Matrix (Fin 1) (Fin 1) ℝ)) :
+    symmetricFinOneEquiv A = (A : Matrix (Fin 1) (Fin 1) ℝ) 0 0 := by
+  have hdefault : (default : upperTriangle 1) = ⟨(0, 0), le_rfl⟩ := Subsingleton.elim _ _
+  rw [symmetricFinOneEquiv, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.coe_funUnique, Function.eval, hdefault, symmetricCoordinates_apply]
+
+@[simp]
+theorem coe_symmetricFinOneEquiv_symm_apply (x : ℝ) (i j : Fin 1) :
+    ((symmetricFinOneEquiv.symm x : selfAdjoint.submodule ℝ (Matrix (Fin 1) (Fin 1) ℝ)) :
+        Matrix (Fin 1) (Fin 1) ℝ) i j = x := by
+  obtain rfl : i = 0 := Subsingleton.elim _ _
+  obtain rfl : j = 0 := Subsingleton.elim _ _
+  rw [symmetricFinOneEquiv, ContinuousLinearEquiv.symm_trans_apply,
+    ContinuousLinearEquiv.coe_funUnique_symm, coe_symmetricCoordinates_symm_apply_of_le 1 _ le_rfl,
+    Function.const_apply]
+
 end TauCeti
 
 /-! ### The trace pairing -/
@@ -378,5 +412,23 @@ theorem inner_eq_trace_mul {p : ℕ}
   let _ : InnerProductSpace ℝ (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusInnerProductSpace
   rw [coe_inner, Matrix.frobenius_inner_eq_trace_transpose_mul,
     (Matrix.isHermitian_iff_isSymm.1 (isHermitian_coe A)).eq, Matrix.trace_mul_comm]
+
+/-- The trace pairing against a fixed symmetric matrix is continuous, being the Frobenius inner
+product with that matrix. -/
+theorem continuous_trace_mul_coe {p : ℕ}
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace := by
+  simp only [← inner_eq_trace_mul]
+  exact continuous_id.inner continuous_const
+
+/-- The exponential of a scalar multiple of the trace pairing is continuous. This is the
+measurability side condition of the exponential-moment computations on the symmetric
+subspace. -/
+theorem continuous_exp_trace_mul_coe {p : ℕ}
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (t : ℝ) :
+    Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      Real.exp (t * ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) :=
+  (continuous_const.mul (continuous_trace_mul_coe Θ)).rexp
 
 end selfAdjoint

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.ZMod.Units
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Prime.Recurrence
 public import TauCeti.NumberTheory.ModularForms.Newforms.Newform
 
@@ -32,6 +33,12 @@ at composite good indices be read off the eigenvalues at good primes and the cha
 * `HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_prime_pow_add_two`: the recurrence along the
   powers of a good prime, and its first instance
   `HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_prime_sq`.
+* `HeckeRing.GL2.EigenformAwayFromLevel.chi_eq_of_forall_prime_and_sq_eigenvalue_eq`: **the
+  nebentypus is determined by the eigenvalues at the good primes and their squares**, with
+  `HeckeRing.GL2.EigenformAwayFromLevel.chi_eq_of_forall_eigenvalue_eq` the convenience form
+  assuming agreement at every good index. The prime case is
+  `HeckeRing.GL2.EigenformAwayFromLevel.chi_eq_of_eigenvalue_eq_prime_and_sq`, read off
+  `eigenvalue_prime_sq`.
 
 The statements build the coprimality proofs guarding `eigenvalue` from their hypotheses
 (`Nat.coprime_mul_iff_left`, `Nat.Coprime.pow_left`, cast along the coercion lemmas of `ℕ+`); by
@@ -145,5 +152,78 @@ theorem eigenvalue_prime_sq {p : ℕ+} (hp : (p : ℕ).Prime) (hpN : Nat.Coprime
   have e₁ : f.eigenvalue (p ^ (0 + 1)) (hc (0 + 1)) = f.eigenvalue p hpN :=
     f.eigenvalue_congr (by rw [zero_add, pow_one])
   rw [f.eigenvalue_prime_pow_add_two hp hpN 0, e₀, e₁, mul_one, sq]
+
+/-! ### The nebentypus is determined by the good eigenvalues -/
+
+/-- **At a good prime, the character value is a function of the eigenvalues at `p` and `p²`**:
+`eigenvalue_prime_sq` reads `λ_{p²} = λ_p² − χ(p) p^{k−1}`, so two eigenforms agreeing at those
+two indices have the same `χ(p)`.
+
+The coprimality arguments of `eigenvalue` are the canonical proofs built from `hpN`; by proof
+irrelevance a consumer holding some other proof of the same statement can pass it unchanged. -/
+theorem chi_eq_of_eigenvalue_eq_prime_and_sq {f f' : EigenformAwayFromLevel N k} {p : ℕ}
+    (hp : p.Prime) (hpN : Nat.Coprime p N)
+    (h₁ : f.eigenvalue ⟨p, hp.pos⟩ hpN = f'.eigenvalue ⟨p, hp.pos⟩ hpN)
+    (h₂ : f.eigenvalue (⟨p, hp.pos⟩ ^ 2) (PNat.pow_coe ⟨p, hp.pos⟩ 2 ▸ hpN.pow_left 2) =
+      f'.eigenvalue (⟨p, hp.pos⟩ ^ 2) (PNat.pow_coe ⟨p, hp.pos⟩ 2 ▸ hpN.pow_left 2)) :
+    f.χ (ZMod.unitOfCoprime p hpN) = f'.χ (ZMod.unitOfCoprime p hpN) := by
+  have hsq := f.eigenvalue_prime_sq (p := ⟨p, hp.pos⟩) hp hpN
+  have hsq' := f'.eigenvalue_prime_sq (p := ⟨p, hp.pos⟩) hp hpN
+  have hpow : (p : ℂ) ^ (k - 1) ≠ 0 :=
+    zpow_ne_zero _ (Nat.cast_ne_zero.mpr hp.pos.ne')
+  have key := (hsq.symm.trans h₂).trans hsq'
+  rw [h₁] at key
+  exact Units.ext (mul_right_cancel₀ hpow (sub_right_injective key))
+
+/-- **The nebentypus character is determined by the eigenvalues at the good primes and their
+squares.**
+
+`chi_eq_of_eigenvalue_eq_prime_and_sq` gives the value at each good prime; it spreads to every unit
+because every unit of `ZMod N` is `ZMod.unitOfCoprime m` for some `m` coprime to `N`
+(`ZMod.exists_unitOfCoprime_eq`), and both sides are multiplicative in `m`
+(`ZMod.unitOfCoprime_mul`).
+
+This is the eigenvalue-side counterpart of `eq_of_mem_cuspFormCharSpace_of_ne_zero`, which recovers
+the character from the underlying *form*. -/
+theorem chi_eq_of_forall_prime_and_sq_eigenvalue_eq {f f' : EigenformAwayFromLevel N k}
+    (h : ∀ (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N),
+      f.eigenvalue ⟨p, hp.pos⟩ hpN = f'.eigenvalue ⟨p, hp.pos⟩ hpN ∧
+        f.eigenvalue (⟨p, hp.pos⟩ ^ 2) (PNat.pow_coe ⟨p, hp.pos⟩ 2 ▸ hpN.pow_left 2) =
+          f'.eigenvalue (⟨p, hp.pos⟩ ^ 2) (PNat.pow_coe ⟨p, hp.pos⟩ 2 ▸ hpN.pow_left 2)) :
+    f.χ = f'.χ := by
+  have hnat : ∀ (m : ℕ) (hm : Nat.Coprime m N),
+      f.χ (ZMod.unitOfCoprime m hm) = f'.χ (ZMod.unitOfCoprime m hm) := by
+    intro m
+    induction m using Nat.strong_induction_on with
+    | _ m ih =>
+      intro hm
+      rcases eq_or_ne m 1 with rfl | hm1
+      · have hone : ZMod.unitOfCoprime 1 hm = 1 := Units.ext (by simp)
+        rw [hone, map_one, map_one]
+      obtain ⟨p, hp, hpd⟩ := Nat.exists_prime_and_dvd hm1
+      obtain ⟨q, rfl⟩ := hpd
+      have hpN : Nat.Coprime p N := Nat.Coprime.coprime_dvd_left ⟨q, rfl⟩ hm
+      have hqN : Nat.Coprime q N := Nat.Coprime.coprime_dvd_left ⟨p, mul_comm p q⟩ hm
+      rcases Nat.eq_zero_or_pos q with rfl | hq0
+      · -- `q = 0` forces `N = 1`, where `(ZMod 1)ˣ` is a subsingleton and every unit is `1`
+        have hN : N = 1 := by simpa using hm
+        subst hN
+        have hone : ZMod.unitOfCoprime (p * 0) hm = 1 := Subsingleton.elim _ _
+        rw [hone, map_one, map_one]
+      have hqlt : q < p * q := by nlinarith [hp.two_le]
+      obtain ⟨h₁, h₂⟩ := h p hp hpN
+      rw [ZMod.unitOfCoprime_mul hpN hqN, map_mul, map_mul,
+        chi_eq_of_eigenvalue_eq_prime_and_sq hp hpN h₁ h₂, ih q hqlt hqN]
+  refine MonoidHom.ext fun u ↦ ?_
+  obtain ⟨m, hm, rfl⟩ := ZMod.exists_unitOfCoprime_eq (d := N) u
+  exact hnat m hm
+
+/-- **The nebentypus character is determined by the good eigenvalues**, the convenience form:
+agreement at *every* index coprime to `N` is more than
+`chi_eq_of_forall_prime_and_sq_eigenvalue_eq` needs, and gives the same conclusion. -/
+theorem chi_eq_of_forall_eigenvalue_eq {f f' : EigenformAwayFromLevel N k}
+    (h : ∀ (n : ℕ+) (hn : Nat.Coprime (n : ℕ) N), f.eigenvalue n hn = f'.eigenvalue n hn) :
+    f.χ = f'.χ :=
+  chi_eq_of_forall_prime_and_sq_eigenvalue_eq fun _ _ _ ↦ ⟨h _ _, h _ _⟩
 
 end HeckeRing.GL2.EigenformAwayFromLevel

@@ -38,26 +38,25 @@ branch that endomorphism is the `q`-power Frobenius outright, in keeping with th
 permutation that `TauCeti.TypeBLieIndex.diagramPerm_eq_one` computes after the canonical inclusion
 into the general type-`B` family: the `B₂` diagram has no symmetry to twist by, its two nodes
 carrying different root lengths. On the Suzuki
-branch it is instead `τ ^ (2m+1)` for the special isogeny `τ` of the pinned `B₂` group scheme in
-characteristic two, which is not constructed here. That `τ` satisfies `τ ^ 2 = Frob_p` in the
-prime characteristic. Both Frobenius maps are supplied below:
-`TauCeti.RankTwoBLieIndex.frobenius` is the `q`-power one, the map the odd power `τ ^ (2m+1)`
-squares to, and `TauCeti.RankTwoBLieIndex.primeFrobenius` is the `p`-power one that `τ` itself
-squares to. On a Suzuki index they differ, validity forcing `1 ≤ m` and so `q = 2 ^ (2m+1)` above
-the prime; on an untwisted index of prime field order they coincide.
+branch it is instead `τ ^ (2m+1)` for `τ` the special isogeny of this carrier in characteristic
+two, `TauCeti.SpStd.specialIsogeny`, an endomorphism of the explicit type-`C` carrier itself and not
+of the pinned `B₂` group scheme, which is not constructed here. That `τ` satisfies `τ ^ 2 = Frob_p`
+on the carrier, `TauCeti.SpStd.specialIsogeny_specialIsogeny`. Both Frobenius maps are supplied
+below: `TauCeti.RankTwoBLieIndex.frobenius` is the `q`-power one, the map the odd power
+`τ ^ (2m+1)` squares to, and `TauCeti.RankTwoBLieIndex.primeFrobenius` is the `p`-power one that `τ`
+itself squares to. On a Suzuki index they differ, validity forcing `1 ≤ m` and so `q = 2 ^ (2m+1)`
+above the prime; on an untwisted index of prime field order they coincide.
 A Suzuki index reaches all of it through `TauCeti.SuzukiLieIndex.toRankTwoBLieIndex`.
 
-Neither branch gets a Steinberg endomorphism here. What is named below is named after what it is:
-`TauCeti.RankTwoBLieIndex.frobenius` is the Frobenius of this carrier, and
+Neither branch gets a Steinberg endomorphism in this file. What is named below is named after
+what it is: `TauCeti.RankTwoBLieIndex.frobenius` is the Frobenius of this carrier, and
 `TauCeti.RankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff` describes the group it fixes as the
-points whose matrix entries lie in the field of definition `𝔽_q`. The Steinberg and fixed-group
-APIs require a pinned carrier, which this file does not supply.
+points whose matrix entries lie in the field of definition `𝔽_q`.
 
-The Suzuki branch's Steinberg endomorphism is stated on this carrier in
-`TauCeti/GroupTheory/SpecificGroups/CFSG/Suzuki/Basic.lean`. No identification of this carrier with
-the pinned simply connected group scheme of the diagram is available, so neither file offers it as
-a substitute for that pinned group: that construction carries over to the pinned group once such an
-identification is proved, and not before.
+The Suzuki branch's Steinberg endomorphism and candidate group are stated on this carrier in
+`TauCeti/GroupTheory/SpecificGroups/CFSG/Suzuki/Basic.lean`. The carrier is not identified with
+the pinned simply connected group scheme of the diagram, and constructions on it transfer to that
+pinned group only along such an identification, once one is proved.
 
 Nothing here asserts that the carrier is reductive, that its weight torus is maximal, that it is
 the symplectic group scheme, or that any group below is finite, perfect, or simple. In particular
@@ -100,6 +99,9 @@ The same carrier-and-Frobenius material on the branches already assembled is in
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plates II and III, for the numbering
   of the two rank-two diagrams that the node correspondence below moves between.
 -/
+
+-- Reinstates, unchanged, the prime-field Frobenius first formalized in
+-- https://github.com/TauCetiProject/TauCeti/pull/5921.
 
 public section
 

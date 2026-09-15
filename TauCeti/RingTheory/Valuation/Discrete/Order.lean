@@ -102,6 +102,15 @@ theorem ord_div_zpow (v : _root_.Valuation F ℤᵐ⁰) {f t : F} (hf : f ≠ 0)
     (n : ℤ) : ord v (f / t ^ n) = ord v f - n * ord v t := by
   rw [ord_div v hf (zpow_ne_zero _ ht), ord_zpow]
 
+/-- **A surjective valuation onto `ℤᵐ⁰` is nontrivial.** Surjectivity is the form the hypothesis
+usually arrives in — a `Place` carries it by definition — while the results about order and
+normalization are stated for a nontrivial valuation, and this converts one to the other. -/
+theorem isNontrivial_of_surjective {R : Type*} [Ring R] {v : _root_.Valuation R ℤᵐ⁰}
+    (hv : Function.Surjective v) : v.IsNontrivial where
+  exists_val_nontrivial := by
+    obtain ⟨x, hx⟩ := hv (WithZero.exp (-1))
+    exact ⟨x, by simp [hx], by simp [hx]⟩
+
 theorem ord_surjective (v : _root_.Valuation F ℤᵐ⁰) (hv : Function.Surjective v) :
     Function.Surjective (ord v) := fun n => by
   obtain ⟨f, hf⟩ := hv (WithZero.exp (-n))

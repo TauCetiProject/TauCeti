@@ -454,7 +454,7 @@ theorem rankOneCarrierPointsMap_injective
   GeneralLinear.mapHopfIdealPointsSubgroupCongr_injective 2
     (kostantToralDefiningIdeal e h ρ M hM hnil b rankOneWeight)
     (rankOneCarrierPoints_eq_hopfIdealPoints A) (rankOneCarrierPoints_eq_hopfIdealPoints B)
-    (φ := f.toIntAlgHom) hf
+    (φ := f.toIntAlgHom) (by rwa [RingHom.toIntAlgHom_coe])
 
 /-- The induced map carries rank-one root-subgroup parameters along the value-ring map. -/
 @[simp]
@@ -466,10 +466,8 @@ theorem rankOneCarrierPointsMap_rootSubgroupPoint
         (Multiplicative.ofAdd (f (Multiplicative.toAdd t))) := by
   apply Subtype.ext
   rw [coe_rankOneCarrierPointsMap]
-  simp only [rankOneCarrierRootSubgroupPoint, rankOneCarrierRootSubgroupHom,
-    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.subgroupCongr_symm_apply,
-    coe_kostantToralRootSubgroupPoints]
-  rw [map_kostantRootSubgroupMatrix, AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply,
+  rw [coe_rankOneCarrierRootSubgroupPoint, coe_rankOneCarrierRootSubgroupPoint,
+    map_kostantRootSubgroupMatrix, AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply,
     RingHom.toIntAlgHom_apply]
 
 /-- The induced map carries a torus point coordinatewise along the value-ring map. -/

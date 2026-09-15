@@ -8,7 +8,7 @@ module
 public import Mathlib.Basic.Complex.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
 public import TauCeti.RepresentationTheory.LinearCharacter
-public import TauCeti.RepresentationTheory.Induction.FiniteDimensional
+public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
 
 /-!
 # The principal series of `GL₂(𝔽_q)`
