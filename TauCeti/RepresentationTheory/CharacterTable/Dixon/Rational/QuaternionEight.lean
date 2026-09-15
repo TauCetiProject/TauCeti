@@ -171,12 +171,12 @@ order.** -/
 theorem quaternionGroupTwo_liftedCentralRows :
     (quaternionClassData 2).liftedCentralRows 5 =
       Finset.univ.image fun i => quaternionGroupTwoCentralCharacterTable i := by
-  rw [ClassData.liftedCentralRows, quaternionGroupTwo_centralCharacterSearch,
-    quaternionGroupTwoModularCentralRows, ClassData.rowsOfMap, Finset.image_image]
-  apply Finset.image_congr
-  intro i _
-  funext j
-  exact quaternionGroupTwo_valMinAbs_centralCharacterTable i j
+  apply (quaternionClassData 2).liftedCentralRows_eq_image_of_centralCharacterSearch_eq
+    quaternionGroupTwoCentralCharacterTable
+    (by rw [quaternionGroupTwo_centralCharacterSearch, quaternionGroupTwoModularCentralRows])
+  intro i j
+  rw [quaternionGroupTwoCentralCharacterTable_apply]
+  fin_cases i <;> fin_cases j <;> decide
 
 /-- The degrees attached to the five central-character rows. -/
 def quaternionGroupTwoCharacterDegrees : QuaternionGroupTwoClassIndex → ℕ :=

@@ -251,7 +251,7 @@ theorem integerCharacterTableChecker_dihedralGroupFour :
   exact isIntegerCharacterTableSpec_dihedralGroupFour
 
 /-- **The assembled rational Dixon--Schneider solver succeeds on the certified prime for
-`DihedralGroup 4`.** This is the executable acceptance case for the rational stage. -/
+`DihedralGroup 4`.** -/
 theorem isSome_dixonRationalCharacterTable_dihedralGroupFour :
     ((dihedralClassData 4).dixonRationalCharacterTable?
       dihedralGroupFourDixonPrimeData.p).isSome = true := by
