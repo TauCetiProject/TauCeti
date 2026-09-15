@@ -53,6 +53,7 @@ def _root_.MeasureTheory.Measure.IsAtom (μ : Measure X) (A : Set X) : Prop :=
     ∀ ⦃B : Set X⦄, MeasurableSet B → B ⊆ A → μ B = 0 ∨ μ B = μ A
 
 /-- The defining characterization of a measure atom. -/
+@[simp]
 theorem _root_.MeasureTheory.Measure.isAtom_iff {A : Set X} :
     μ.IsAtom A ↔ MeasurableSet A ∧ 0 < μ A ∧
       ∀ ⦃B : Set X⦄, MeasurableSet B → B ⊆ A → μ B = 0 ∨ μ B = μ A :=
