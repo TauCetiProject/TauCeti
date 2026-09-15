@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Analysis.ODE.InitialCondition
+import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
 
 /-!
@@ -56,7 +57,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [T2Space M] {v : (x : M) → TangentSpace I x} {x₀ : M}
 
 omit [BoundarylessManifold I M] [FiniteDimensional ℝ E] [T2Space M] in
-set_option backward.isDefEq.respectTransparency false in
 /-- An integral curve, read in any fixed extended chart containing its value, solves the
 corresponding coordinate ODE. -/
 private theorem IsMIntegralCurveOn.hasDerivAt_extChartAt (hγ : IsMIntegralCurveOn γ v s)
@@ -64,15 +64,12 @@ private theorem IsMIntegralCurveOn.hasDerivAt_extChartAt (hγ : IsMIntegralCurve
     HasDerivAt ((extChartAt I x) ∘ γ)
       (tangentCoordChange I (γ t) x (γ t) (v (γ t))) t := by
   replace hsrc := extChartAt_source I x ▸ hsrc
-  rw [hasDerivAt_iff_hasFDerivAt, ← hasMFDerivAt_iff_hasFDerivAt]
-  apply (HasMFDerivAt.comp t (hasMFDerivAt_extChartAt (I := I) hsrc)
-    ((hγ t ht).hasMFDerivAt hs)).congr_mfderiv
-  rw [ContinuousLinearMap.ext_iff]
-  intro a
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply, map_smul,
-    ← one_apply_eq_self
-      (F := TangentSpace 𝓘(ℝ, ℝ) t →L[ℝ] TangentSpace 𝓘(ℝ, ℝ) t) a,
-    ← ContinuousLinearMap.smulRight_apply, mfderiv_chartAt_eq_tangentCoordChange hsrc]
+  have hderiv := Manifold.hasDerivAt_comp_curve
+    (mdifferentiableAt_extChartAt (I := I) hsrc) ((hγ t ht).hasMFDerivAt hs)
+  convert hderiv using 1
+  simp only [mvfderiv]
+  rw [(hasMFDerivAt_extChartAt (I := I) hsrc).mfderiv,
+    mfderiv_chartAt_eq_tangentCoordChange hsrc]
   rfl
 
 omit [BoundarylessManifold I M] [FiniteDimensional ℝ E] in
