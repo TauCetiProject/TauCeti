@@ -14,11 +14,12 @@ public import Mathlib.NumberTheory.DirichletCharacter.Basic
 This file defines the generalized Bernoulli numbers attached to a Dirichlet character. For a
 character `χ` modulo `N`, the definition is
 
-`Bₙ,χ = Nⁿ⁻¹ ∑ a : ZMod N, χ a * Bₙ(a / N)`,
+`Bₙ,χ = Nⁿ⁻¹ ∑ a : ZMod N, χ a * Bₙ(ã / N)`,
 
-where `Bₙ(X)` is the `n`-th Bernoulli polynomial. The power of `N` is taken in `ℚ` before
-mapping to the coefficient ring. In particular, the definition has the intended factor `N⁻¹`
-also when `n = 0`.
+where `Bₙ(X)` is the `n`-th Bernoulli polynomial and `ã` is the representative of `a` in
+`{1, …, N}` (so the zero residue is represented by `N`). The power of `N` is taken in `ℚ`
+before mapping to the coefficient ring. In particular, the definition has the intended factor
+`N⁻¹` also when `n = 0`.
 
 The first two degrees are reduced to ordinary character sums. These forms supply the constant
 terms used in Eisenstein series with character.
@@ -30,8 +31,8 @@ terms used in Eisenstein series with character.
 ## Main results
 
 * `DirichletCharacter.map_generalizedBernoulli` shows compatibility with extension of scalars.
-* `DirichletCharacter.generalizedBernoulli_modOne` recovers the ordinary Bernoulli numbers at
-  modulus one.
+* `DirichletCharacter.generalizedBernoulli_modOne` recovers the positive-first-convention
+  Bernoulli numbers at modulus one.
 * `DirichletCharacter.generalizedBernoulli_zero` and
   `DirichletCharacter.generalizedBernoulli_one` reduce the first two degrees to character sums.
 * `DirichletCharacter.generalizedBernoulli_zero_of_ne_one` gives `B₀,χ = 0` for a nontrivial
@@ -68,14 +69,16 @@ variable {N : ℕ} {R : Type*} [CommRing R] [Algebra ℚ R]
 
 /-- The generalized Bernoulli number `Bₙ,χ` attached to a Dirichlet character `χ` modulo `N`:
 
-`Bₙ,χ = Nⁿ⁻¹ ∑ a : ZMod N, χ a * Bₙ(a / N)`.
+`Bₙ,χ = Nⁿ⁻¹ ∑ a : ZMod N, χ a * Bₙ(ã / N)`, where `ã` is the representative
+of `a` in `{1, …, N}`.
 
 The scalar `Nⁿ⁻¹` is formed in `ℚ`; this avoids imposing a field structure on the coefficient
 ring while retaining the inverse factor in degree zero. -/
 def generalizedBernoulli [NeZero N] (χ : DirichletCharacter R N) (n : ℕ) : R :=
   algebraMap ℚ R ((N : ℚ) ^ ((n : ℤ) - 1)) *
     ∑ a : ZMod N, χ a *
-      algebraMap ℚ R ((Polynomial.bernoulli n).eval ((a.val : ℚ) / N))
+      algebraMap ℚ R
+        ((Polynomial.bernoulli n).eval (((if a = 0 then N else a.val : ℕ) : ℚ) / N))
 
 /-- Generalized Bernoulli numbers commute with extension of the coefficient ring. -/
 theorem map_generalizedBernoulli [NeZero N] {S : Type*} [CommRing S] [Algebra ℚ S]
@@ -85,19 +88,19 @@ theorem map_generalizedBernoulli [NeZero N] {S : Type*} [CommRing S] [Algebra �
   simp only [generalizedBernoulli, map_mul, AlgHom.commutes, map_sum]
   rfl
 
-/-- At modulus one, generalized Bernoulli numbers are the images of the ordinary Bernoulli
-numbers. -/
+/-- At modulus one, generalized Bernoulli numbers are the images of the positive-first-convention
+Bernoulli numbers. Thus degree one is `1 / 2`; in every other degree this agrees with Mathlib's
+`bernoulli`. -/
 @[simp]
 theorem generalizedBernoulli_modOne (χ : DirichletCharacter R 1) (n : ℕ) :
-    χ.generalizedBernoulli n = algebraMap ℚ R (_root_.bernoulli n) := by
+    χ.generalizedBernoulli n = algebraMap ℚ R (_root_.bernoulli' n) := by
   rw [χ.level_one, generalizedBernoulli]
   rw [← Finset.singleton_eq_univ (0 : ZMod 1), Finset.sum_singleton]
   have hzero : (0 : ZMod 1) = 1 := Subsingleton.elim _ _
   have hchar : (1 : DirichletCharacter R 1) (0 : ZMod 1) = 1 := by
     rw [hzero, map_one]
-  rw [hchar, one_mul, ZMod.val_zero, Nat.cast_zero, zero_div,
-    Polynomial.bernoulli_eval_zero]
-  simp
+  rw [hchar, one_mul]
+  simp [Polynomial.bernoulli_eval_one]
 
 /-- The zeroth generalized Bernoulli number is `N⁻¹` times the sum of the character values. -/
 theorem generalizedBernoulli_zero [NeZero N] (χ : DirichletCharacter R N) :
@@ -125,7 +128,8 @@ theorem generalizedBernoulli_zero_one [NeZero N] :
 `B₁(X) = X - 1 / 2`. -/
 theorem generalizedBernoulli_one [NeZero N] (χ : DirichletCharacter R N) :
     χ.generalizedBernoulli 1 =
-      (∑ a : ZMod N, χ a * algebraMap ℚ R ((a.val : ℚ) / N)) -
+      (∑ a : ZMod N, χ a *
+        algebraMap ℚ R (((if a = 0 then N else a.val : ℕ) : ℚ) / N)) -
         algebraMap ℚ R (2⁻¹ : ℚ) * ∑ a : ZMod N, χ a := by
   rw [generalizedBernoulli]
   have hExp : ((1 : ℕ) : ℤ) - 1 = 0 := by norm_num
@@ -141,7 +145,12 @@ theorem generalizedBernoulli_one_of_ne_one [IsDomain R] [NeZero N]
     {χ : DirichletCharacter R N} (hχ : χ ≠ 1) :
     χ.generalizedBernoulli 1 =
       ∑ a : ZMod N, χ a * algebraMap ℚ R ((a.val : ℚ) / N) := by
+  have hN : N ≠ 1 := fun hN ↦ hχ (χ.level_one' hN)
   rw [generalizedBernoulli_one, MulChar.sum_eq_zero_of_ne_one hχ, mul_zero, sub_zero]
+  refine Finset.sum_congr rfl fun a _ ↦ ?_
+  by_cases ha : a = 0
+  · simp [ha, χ.map_zero' hN]
+  · simp [ha]
 
 /-- Clearing the denominator in the degree-one formula gives
 `N * B₁,χ = ∑ a, χ(a) * a`. -/
