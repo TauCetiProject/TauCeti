@@ -128,8 +128,10 @@ theorem trans (hΦΨ : Φ.IsSubdivision Ψ) (hΨΩ : Ψ.IsSubdivision Ω) :
 theorem toFanHom_refl (Φ : Fan i) : (IsSubdivision.refl Φ).toFanHom = FanHom.id Φ :=
   FanHom.ext (by simp)
 
-/-- The fan morphism of a composite subdivision is the composite of the induced morphisms. -/
-@[simp]
+/-- The fan morphism of a composite subdivision is the composite of the induced morphisms.
+
+This is not a `simp` lemma: the intermediate fan `Ψ` occurs only in the hypotheses, so the
+left-hand side never determines it. Use `toFanHom_latticeMap` to simplify the underlying maps. -/
 theorem toFanHom_trans (hΦΨ : Φ.IsSubdivision Ψ) (hΨΩ : Ψ.IsSubdivision Ω) :
     (hΦΨ.trans hΨΩ).toFanHom = hΨΩ.toFanHom.comp hΦΨ.toFanHom :=
   FanHom.ext (by simp)
