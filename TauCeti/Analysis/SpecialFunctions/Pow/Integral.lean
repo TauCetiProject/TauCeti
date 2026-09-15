@@ -56,6 +56,9 @@ used, and it is why the statement needs no finiteness hypothesis on `u`.
 * `TauCeti.lintegral_ofReal_rpow_Ioi`: `∫⁻ t in (0, ∞), t ^ s = ∞`, for every `s`.
 * `TauCeti.lintegral_indicator_ofReal_rpow_Ioi`: the same integral truncated at the height where
   `c * t` reaches `a : ℝ≥0∞`, evaluated to `c ^ (-(s + 1)) / (s + 1) * a ^ (s + 1)`.
+* `TauCeti.setLIntegral_Ioc_ite_rpow_le`: an upper-tail bound for a negative power restricted by
+  a linear threshold.
+* `TauCeti.setLIntegral_Ioc_rpow_mul_ite_le`: the same bound with constant and linear weights.
 * `TauCeti.lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul`: the layer cake formula for an
   `ℝ≥0∞`-valued function.
 
@@ -103,6 +106,68 @@ theorem lintegral_ofReal_rpow_Ioi (s : ℝ) :
     exact Real.rpow_nonneg (le_of_lt ht) s
   exact not_integrableOn_Ioi_rpow s
     ⟨hmeas.aestronglyMeasurable, (hasFiniteIntegral_iff_ofReal hnn).2 (lt_top_iff_ne_top.2 hne)⟩
+
+/-- The tail integral `∫_{r / D}^∞ t ^ (-n - 1) dt = D ^ n r ^ (-n) / n` bounds the integral of
+`t ^ (-n - 1)` over those `t ∈ (0, 1]` with `r ≤ t * D`. -/
+theorem setLIntegral_Ioc_ite_rpow_le {n : ℕ} (hn : 0 < n) {r D : ℝ} (hr : 0 < r) :
+    ∫⁻ t in Ioc (0 : ℝ) 1, (if r ≤ t * D then ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) else 0) ≤
+      ENNReal.ofReal (D ^ n / n) * ENNReal.ofReal (r ^ (-(n : ℝ))) := by
+  rcases le_or_gt D 0 with hD | hD
+  · have hzero : ∀ t ∈ Ioc (0 : ℝ) 1,
+        (if r ≤ t * D then ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) else 0) = 0 := fun t ht =>
+      ite_eq_right (by nlinarith [ht.1])
+    rw [setLIntegral_congr_fun measurableSet_Ioc hzero]
+    simp
+  have hc : 0 < r / D := div_pos hr hD
+  have hn' : -(n : ℝ) - 1 < -1 := by
+    have : (0 : ℝ) < n := by exact_mod_cast hn
+    linarith
+  calc
+    _ ≤ ∫⁻ t, (Ici (r / D)).indicator (fun t => ENNReal.ofReal (t ^ (-(n : ℝ) - 1))) t := by
+      refine (setLIntegral_le_lintegral _ _).trans (lintegral_mono fun t => ?_)
+      split_ifs with h
+      · rw [indicator_of_mem (show t ∈ Ici (r / D) from (div_le_iff₀ hD).2 h)]
+      · exact bot_le
+    _ = ∫⁻ t in Ioi (r / D), ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) := by
+      rw [lintegral_indicator measurableSet_Ici, setLIntegral_congr Ioi_ae_eq_Ici]
+    _ = ENNReal.ofReal (∫ t in Ioi (r / D), t ^ (-(n : ℝ) - 1)) := by
+      rw [ofReal_integral_eq_lintegral_ofReal (integrableOn_Ioi_rpow_of_lt hn' hc)]
+      filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+      exact Real.rpow_nonneg (hc.trans ht).le _
+    _ = ENNReal.ofReal (D ^ n / n) * ENNReal.ofReal (r ^ (-(n : ℝ))) := by
+      rw [integral_Ioi_rpow_of_lt hn' hc, ← ENNReal.ofReal_mul (by positivity)]
+      congr 1
+      have hn0 : (n : ℝ) ≠ 0 := by exact_mod_cast hn.ne'
+      rw [show -(n : ℝ) - 1 + 1 = -(n : ℝ) by ring, Real.div_rpow hr.le hD.le,
+        Real.rpow_neg hD.le, Real.rpow_natCast]
+      field_simp
+
+/-- The bound of `setLIntegral_Ioc_ite_rpow_le`, multiplied by the length `r` of a segment and by
+a weight `a`, gives the kernel `r ^ (1 - n)`. -/
+theorem setLIntegral_Ioc_rpow_mul_ite_le {n : ℕ} (hn : 0 < n) (a : ℝ≥0∞) {r : ℝ}
+    (hr : 0 ≤ r) (D : ℝ) :
+    ∫⁻ t in Ioc (0 : ℝ) 1, ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) *
+        (a * if r ≤ t * D then ENNReal.ofReal r else 0) ≤
+      ENNReal.ofReal (D ^ n / n) * (a * ENNReal.ofReal r ^ (1 - (n : ℝ))) := by
+  have hL : ∀ t : ℝ, ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) *
+      (a * if r ≤ t * D then ENNReal.ofReal r else 0) = a * ENNReal.ofReal r *
+        if r ≤ t * D then ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) else 0 := by
+    intro t
+    split_ifs <;> ring
+  simp_rw [hL]
+  rw [lintegral_const_mul _ (Measurable.ite (measurableSet_le measurable_const (by fun_prop))
+    (by fun_prop) measurable_const)]
+  rcases hr.eq_or_lt with rfl | hr
+  · simp
+  calc
+    _ ≤ a * ENNReal.ofReal r *
+        (ENNReal.ofReal (D ^ n / n) * ENNReal.ofReal (r ^ (-(n : ℝ)))) := by
+      gcongr
+      exact setLIntegral_Ioc_ite_rpow_le hn hr
+    _ = _ := by
+      rw [ENNReal.ofReal_rpow_of_pos hr, show (1 : ℝ) - n = 1 + -(n : ℝ) by ring,
+        Real.rpow_add hr, Real.rpow_one, ENNReal.ofReal_mul hr.le]
+      ring
 
 /-- **A finite threshold on `c * t` cuts `(0, ∞)` down to a bounded interval.** For `0 < c` and
 `a ≠ ∞`, the indicator of `{t | ENNReal.ofReal (c * t) < a}` agrees at every positive `t` with the

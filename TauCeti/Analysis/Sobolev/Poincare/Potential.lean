@@ -12,8 +12,8 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
 import TauCeti.Analysis.Calculus.SegmentIncrement
+import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.Dilation
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 
 /-!
 # The potential estimate behind the Poincaré–Wirtinger inequality
@@ -70,109 +70,9 @@ namespace TauCeti
 open MeasureTheory Metric Set Module
 open scoped ENNReal
 
-/-- The tail integral `∫_{r / D}^∞ t ^ (-n - 1) dt = D ^ n r ^ (-n) / n` bounds the integral of
-`t ^ (-n - 1)` over those `t ∈ (0, 1]` with `r ≤ t * D`. -/
-private lemma setLIntegral_Ioc_ite_rpow_le {n : ℕ} (hn : 0 < n) {r D : ℝ} (hr : 0 < r) :
-    ∫⁻ t in Ioc (0 : ℝ) 1, (if r ≤ t * D then ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) else 0) ≤
-      ENNReal.ofReal (D ^ n / n) * ENNReal.ofReal (r ^ (-(n : ℝ))) := by
-  rcases le_or_gt D 0 with hD | hD
-  · have hzero : ∀ t ∈ Ioc (0 : ℝ) 1,
-        (if r ≤ t * D then ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) else 0) = 0 := fun t ht =>
-      ite_eq_right (by nlinarith [ht.1])
-    rw [setLIntegral_congr_fun measurableSet_Ioc hzero]
-    simp
-  have hc : 0 < r / D := div_pos hr hD
-  have hn' : -(n : ℝ) - 1 < -1 := by
-    have : (0 : ℝ) < n := by exact_mod_cast hn
-    linarith
-  calc
-    _ ≤ ∫⁻ t, (Ici (r / D)).indicator (fun t => ENNReal.ofReal (t ^ (-(n : ℝ) - 1))) t := by
-      refine (setLIntegral_le_lintegral _ _).trans (lintegral_mono fun t => ?_)
-      split_ifs with h
-      · rw [indicator_of_mem (show t ∈ Ici (r / D) from (div_le_iff₀ hD).2 h)]
-      · exact bot_le
-    _ = ∫⁻ t in Ioi (r / D), ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) := by
-      rw [lintegral_indicator measurableSet_Ici, setLIntegral_congr Ioi_ae_eq_Ici]
-    _ = ENNReal.ofReal (∫ t in Ioi (r / D), t ^ (-(n : ℝ) - 1)) := by
-      rw [ofReal_integral_eq_lintegral_ofReal (integrableOn_Ioi_rpow_of_lt hn' hc)]
-      filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-      exact Real.rpow_nonneg (hc.trans ht).le _
-    _ = ENNReal.ofReal (D ^ n / n) * ENNReal.ofReal (r ^ (-(n : ℝ))) := by
-      rw [integral_Ioi_rpow_of_lt hn' hc, ← ENNReal.ofReal_mul (by positivity)]
-      congr 1
-      have hn0 : (n : ℝ) ≠ 0 := by exact_mod_cast hn.ne'
-      rw [show -(n : ℝ) - 1 + 1 = -(n : ℝ) by ring, Real.div_rpow hr.le hD.le,
-        Real.rpow_neg hD.le, Real.rpow_natCast]
-      field_simp
-
-/-- The bound of `setLIntegral_Ioc_ite_rpow_le`, multiplied by the length `r` of a segment and by
-a weight `a`, gives the kernel `r ^ (1 - n)`. -/
-private lemma setLIntegral_Ioc_rpow_mul_ite_le {n : ℕ} (hn : 0 < n) (a : ℝ≥0∞) {r : ℝ}
-    (hr : 0 ≤ r) (D : ℝ) :
-    ∫⁻ t in Ioc (0 : ℝ) 1, ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) *
-        (a * if r ≤ t * D then ENNReal.ofReal r else 0) ≤
-      ENNReal.ofReal (D ^ n / n) * (a * ENNReal.ofReal r ^ (1 - (n : ℝ))) := by
-  have hL : ∀ t : ℝ, ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) *
-      (a * if r ≤ t * D then ENNReal.ofReal r else 0) = a * ENNReal.ofReal r *
-        if r ≤ t * D then ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) else 0 := by
-    intro t
-    split_ifs <;> ring
-  simp_rw [hL]
-  rw [lintegral_const_mul _ (Measurable.ite (measurableSet_le measurable_const (by fun_prop))
-    (by fun_prop) measurable_const)]
-  rcases hr.eq_or_lt with rfl | hr
-  · simp
-  calc
-    _ ≤ a * ENNReal.ofReal r * (ENNReal.ofReal (D ^ n / n) * ENNReal.ofReal (r ^ (-(n : ℝ)))) := by
-      gcongr
-      exact setLIntegral_Ioc_ite_rpow_le hn hr
-    _ = _ := by
-      rw [ENNReal.ofReal_rpow_of_pos hr, show (1 : ℝ) - n = 1 + -(n : ℝ) by ring,
-        Real.rpow_add hr, Real.rpow_one, ENNReal.ofReal_mul hr.le]
-      ring
-
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → F} {Ω S : Set E} {x : E} {D : ℝ}
-
-/-- The substitution `w = x + t • (y - x)`, of Jacobian `t ^ n`, in the integral over
-`y ∈ closedBall x D` of `g` at the point of parameter `t` on the segment from `x` to `y`,
-weighted by the length of the segment. -/
-private lemma lintegral_comp_add_smul_sub_mul_ite (g : E → ℝ≥0∞) (x : E) (D : ℝ) {t : ℝ}
-    (ht : 0 < t) :
-    ∫⁻ y, g (x + t • (y - x)) * (if ‖x - y‖ ≤ D then ENNReal.ofReal ‖x - y‖ else 0) ∂μ =
-      ∫⁻ w, ENNReal.ofReal (t ^ (-(finrank ℝ E : ℝ) - 1)) *
-        (g w * if ‖x - w‖ ≤ t * D then ENNReal.ofReal ‖x - w‖ else 0) ∂μ := by
-  set f : E → ℝ≥0∞ := fun w =>
-    g w * if ‖x - w‖ ≤ t * D then ENNReal.ofReal ‖x - w‖ else 0
-  have hKf : ∀ y, g (x + t • (y - x)) * (if ‖x - y‖ ≤ D then ENNReal.ofReal ‖x - y‖ else 0) =
-      ENNReal.ofReal t⁻¹ * f (AffineMap.homothety x t y) := by
-    intro y
-    have hw : AffineMap.homothety x t y = x + t • (y - x) := by
-      rw [AffineMap.homothety_apply, vsub_eq_sub, vadd_eq_add, add_comm]
-    have hnorm : ‖x - (x + t • (y - x))‖ = t * ‖x - y‖ := by
-      rw [sub_add_cancel_left, norm_neg, norm_smul, Real.norm_of_nonneg ht.le, norm_sub_rev]
-    simp only [f, hw, hnorm, mul_le_mul_iff_right₀ ht]
-    split_ifs
-    · have h1 : ENNReal.ofReal t⁻¹ * ENNReal.ofReal t = 1 := by
-        rw [← ENNReal.ofReal_mul (inv_nonneg.2 ht.le), inv_mul_cancel₀ ht.ne',
-          ENNReal.ofReal_one]
-      rw [ENNReal.ofReal_mul ht.le]
-      calc
-        _ = ENNReal.ofReal t⁻¹ * ENNReal.ofReal t * (g (x + t • (y - x)) *
-            ENNReal.ofReal ‖x - y‖) := by rw [h1, one_mul]
-        _ = _ := by ring
-    · simp
-  calc
-    _ = ∫⁻ y, ENNReal.ofReal t⁻¹ * f (AffineMap.homothety x t y) ∂μ := lintegral_congr hKf
-    _ = ENNReal.ofReal t⁻¹ * (ENNReal.ofReal |(t ^ finrank ℝ E)⁻¹| * ∫⁻ w, f w ∂μ) := by
-      rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_comp_homothety μ f x ht.ne']
-    _ = _ := by
-      rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, ← mul_assoc,
-        ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le)]
-      congr 2
-      rw [abs_of_nonneg (by positivity), Real.rpow_sub ht, Real.rpow_neg ht.le,
-        Real.rpow_natCast, Real.rpow_one, div_eq_mul_inv, mul_comm]
 
 /-- **Averaging along segments produces the Riesz potential.** Integrating a function `g` along
 the segments from `x` to the points `y` of `closedBall x D`, weighted by their lengths, gives at
@@ -225,7 +125,7 @@ theorem setLIntegral_closedBall_lintegral_segment_le {g : E → ℝ≥0∞}
     _ = ∫⁻ t in Ioc (0 : ℝ) 1, ∫⁻ y, K t y ∂μ :=
       lintegral_lintegral_swap hKmeas.aemeasurable
     _ = ∫⁻ t in Ioc (0 : ℝ) 1, ∫⁻ w, L t w ∂μ := setLIntegral_congr_fun measurableSet_Ioc
-      fun t ht => lintegral_comp_add_smul_sub_mul_ite g x D ht.1
+      fun t ht => lintegral_comp_add_smul_sub_mul_ite μ g x D ht.1
     _ = ∫⁻ w, (∫⁻ t in Ioc (0 : ℝ) 1, L t w) ∂μ :=
       (lintegral_lintegral_swap hLmeas.aemeasurable).symm
     _ ≤ ∫⁻ w, ENNReal.ofReal (D ^ n / n) * (g w * ‖x - w‖ₑ ^ (1 - (n : ℝ))) ∂μ :=
