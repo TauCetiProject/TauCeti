@@ -232,11 +232,13 @@ private theorem norm_curveVelocityWithin_le_mul_deriv_variationOnFromTo
         exact inv_nonneg.2 hh.1.le
     _ = r * ‖ℓ‖ * (h⁻¹ * (V (t + h) - V t)) := by ring
 
-/-- Letting `r` decrease to `1` in `norm_curveVelocityWithin_le_mul_deriv_variationOnFromTo`. -/
+/-- At an interior parameter where the variation function of a `C¹` curve is differentiable, the
+speed of the curve is at most the derivative of the variation function. -/
 private theorem norm_curveVelocityWithin_le_deriv_variationOnFromTo
     (hγ : CMDiff[Icc a b] 1 γ) (hbv : LocallyBoundedVariationOn γ (Icc a b)) {t : ℝ}
     (ht : t ∈ Ioo a b) (hd : DifferentiableAt ℝ (variationOnFromTo γ (Icc a b) a) t) :
     ‖curveVelocityWithin I γ (Icc a b) t‖ ≤ deriv (variationOnFromTo γ (Icc a b) a) t := by
+  -- Let `r` decrease to `1` in `norm_curveVelocityWithin_le_mul_deriv_variationOnFromTo`.
   have hc : Continuous fun r : ℝ ↦ r * deriv (variationOnFromTo γ (Icc a b) a) t := by fun_prop
   exact ge_of_tendsto ((hc.tendsto' 1 _ (one_mul _)).mono_left (nhdsWithin_le_nhds (s := Ioi 1)))
     (eventually_mem_nhdsWithin.mono fun r hr ↦
