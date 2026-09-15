@@ -28,12 +28,22 @@ property. Since each entry of such a product is a single product of table lookup
 sum over an index type, identities between explicitly tabulated step matrices reduce to finitely
 many entrywise identities that need no summation.
 
+The same file records `Matrix.IsDoubleStep`, the property of having at most two nonzero entries
+in each column, witnessed by two target functions and two coefficient functions. It arises for a
+linear map carrying each vector of a basis into the span of at most two others, as happens in a
+weight basis of a module all of whose weight spaces have dimension at most two. A product with a
+double step matrix has each entry a sum of two products of table lookups, on either side once the
+step structure of the other factor is known, and a linear combination indexed by the columns of a
+double step matrix collapses to two terms.
+
 The target of a column with coefficient zero is unconstrained, so the pair `(t, c)` is not
 determined by the matrix; every statement below takes the witnessing pair as data.
 
 ## Main definitions
 
 * `Matrix.IsStep`: the property, witnessed by a target function and a coefficient function.
+* `Matrix.IsDoubleStep`: at most two nonzero entries in each column, witnessed by two target
+  functions and two coefficient functions.
 
 ## Main results
 
@@ -43,6 +53,14 @@ determined by the matrix; every statement below takes the witnessing pair as dat
 * `Matrix.IsStep.mul`: a product of step matrices is a step matrix.
 * `Matrix.isStep_one`, `Matrix.isStep_diagonal`: the identity and the diagonal matrices.
 * `Matrix.IsStep.map`: entrywise application of a zero-preserving map.
+* `Matrix.IsDoubleStep.mul_apply` and `Matrix.IsDoubleStep.transpose_mul_apply`, together with
+  `Matrix.IsStep.mul_apply` and `Matrix.IsStep.transpose_mul_apply`: an entry of a product with a
+  double step or a step matrix, on the right and on the left.
+* `Matrix.IsDoubleStep.sum_smul` and `Matrix.IsStep.sum_smul`: a linear combination indexed by a
+  column.
+* `Matrix.IsDoubleStep.map`: entrywise application of a ring morphism. A transposed form is not
+  needed: `Matrix.transpose_map` turns the transpose of a mapped matrix into the mapped
+  transpose, so `h.map f` already covers it.
 -/
 
 public section
@@ -126,5 +144,99 @@ theorem IsStep.map [DecidableEq m] [Zero R] [Zero S] {M : Matrix m n R} {t : n �
   split_ifs
   · rfl
   · exact hf
+
+/-! ## Matrices with at most two nonzero entries in each column -/
+
+/-- A matrix is a *double step matrix* for two target functions `t₁, t₂` and two coefficient
+functions `c₁, c₂` when its `b`th column is `c₁ b` times the `t₁ b`th coordinate vector plus
+`c₂ b` times the `t₂ b`th coordinate vector. The two targets of a column are allowed to
+coincide. -/
+@[expose] def IsDoubleStep [DecidableEq n] [AddZeroClass R] (M : Matrix n n R) (t₁ : n → n)
+    (c₁ : n → R) (t₂ : n → n) (c₂ : n → R) : Prop :=
+  ∀ a b, M a b = (if a = t₁ b then c₁ b else 0) + (if a = t₂ b then c₂ b else 0)
+
+/-- A step matrix is a double step matrix whose second coefficient vanishes. -/
+theorem IsStep.isDoubleStep [DecidableEq n] [AddZeroClass R] {M : Matrix n n R} {t : n → n}
+    {c : n → R} (h : M.IsStep t c) : M.IsDoubleStep t c t 0 := fun a b => by
+  rw [h.apply a b]
+  split_ifs <;> simp
+
+/-- Entrywise application of a ring morphism to a double step matrix gives the double step matrix
+of the same targets and the transformed coefficients. -/
+theorem IsDoubleStep.map [DecidableEq n] [NonAssocSemiring R] [NonAssocSemiring S]
+    {M : Matrix n n R}
+    {t₁ t₂ : n → n} {c₁ c₂ : n → R} (h : M.IsDoubleStep t₁ c₁ t₂ c₂) (f : R →+* S) :
+    (M.map f).IsDoubleStep t₁ (fun b => f (c₁ b)) t₂ fun b => f (c₂ b) := by
+  intro a b
+  rw [map_apply, h a b, map_add]
+  split_ifs <;> simp
+
+/-- **An entry of a product whose right factor is a double step matrix**: the sum of two products
+of table lookups. -/
+theorem IsDoubleStep.mul_apply [DecidableEq n] [Fintype n] [NonUnitalNonAssocSemiring R]
+    {N : Matrix n n R}
+    {t₁ t₂ : n → n} {c₁ c₂ : n → R} (hN : N.IsDoubleStep t₁ c₁ t₂ c₂) (M : Matrix n n R)
+    (a b : n) : (M * N) a b = M a (t₁ b) * c₁ b + M a (t₂ b) * c₂ b := by
+  rw [Matrix.mul_apply]
+  have hsplit : ∀ l, M a l * N l b =
+      (if l = t₁ b then M a l * c₁ b else 0) + (if l = t₂ b then M a l * c₂ b else 0) := fun l => by
+    rw [hN l b, mul_add]
+    split_ifs <;> simp
+  rw [Finset.sum_congr rfl fun l _ => hsplit l, Finset.sum_add_distrib, Finset.sum_ite_eq' ,
+    Finset.sum_ite_eq']
+  simp
+
+/-- **An entry of a product whose left factor has a double step transpose**: the sum of two
+products of table lookups. -/
+theorem IsDoubleStep.transpose_mul_apply [DecidableEq n] [Fintype n]
+    [NonUnitalNonAssocSemiring R] {M : Matrix n n R} {t₁ t₂ : n → n} {c₁ c₂ : n → R}
+    (hM : Mᵀ.IsDoubleStep t₁ c₁ t₂ c₂) (N : Matrix n n R) (a b : n) :
+    (M * N) a b = c₁ a * N (t₁ a) b + c₂ a * N (t₂ a) b := by
+  rw [Matrix.mul_apply]
+  have hsplit : ∀ l, M a l * N l b =
+      (if l = t₁ a then c₁ a * N l b else 0) + (if l = t₂ a then c₂ a * N l b else 0) := fun l => by
+    rw [show M a l = Mᵀ l a from rfl, hM l a, add_mul]
+    split_ifs <;> simp
+  rw [Finset.sum_congr rfl fun l _ => hsplit l, Finset.sum_add_distrib, Finset.sum_ite_eq',
+    Finset.sum_ite_eq']
+  simp
+
+/-- **A linear combination indexed by a column of a double step matrix collapses to two terms.** -/
+theorem IsDoubleStep.sum_smul [DecidableEq n] [Fintype n] [Semiring R] {M : Matrix n n R}
+    {t₁ t₂ : n → n}
+    {c₁ c₂ : n → R} (hM : M.IsDoubleStep t₁ c₁ t₂ c₂) {M₀ : Type*} [AddCommMonoid M₀]
+    [Module R M₀] (f : n → M₀) (b : n) :
+    ∑ a, M a b • f a = c₁ b • f (t₁ b) + c₂ b • f (t₂ b) := by
+  have hsplit : ∀ a, M a b • f a =
+      (if a = t₁ b then c₁ b • f a else 0) + (if a = t₂ b then c₂ b • f a else 0) := fun a => by
+    rw [hM a b, add_smul]
+    split_ifs <;> simp
+  rw [Finset.sum_congr rfl fun a _ => hsplit a, Finset.sum_add_distrib, Finset.sum_ite_eq',
+    Finset.sum_ite_eq']
+  simp
+
+/-- **An entry of a product whose right factor is a step matrix**: a single product of table
+lookups. -/
+theorem IsStep.mul_apply [DecidableEq n] [Fintype n] [NonUnitalNonAssocSemiring R]
+    {N : Matrix n n R} {t : n → n} {c : n → R} (hN : N.IsStep t c) (M : Matrix n n R)
+    (a b : n) :
+    (M * N) a b = M a (t b) * c b := by
+  rw [hN.isDoubleStep.mul_apply M a b, Pi.zero_apply, mul_zero, add_zero]
+
+/-- **An entry of a product whose left factor has a step transpose**: a single product of table
+lookups. -/
+theorem IsStep.transpose_mul_apply [DecidableEq n] [Fintype n]
+    [NonUnitalNonAssocSemiring R] {M : Matrix n n R} {t : n → n} {c : n → R} (hM : Mᵀ.IsStep t c)
+    (N : Matrix n n R) (a b : n) :
+    (M * N) a b = c a * N (t a) b := by
+  rw [hM.isDoubleStep.transpose_mul_apply N a b, Pi.zero_apply, zero_mul, add_zero]
+
+/-- **A linear combination indexed by a column of a step matrix is a single term.** -/
+theorem IsStep.sum_smul [DecidableEq n] [Fintype n] [Semiring R] {M : Matrix n n R}
+    {t : n → n} {c : n → R}
+    (hM : M.IsStep t c) {M₀ : Type*} [AddCommMonoid M₀] [Module R M₀] (f : n → M₀) (b : n) :
+    ∑ a, M a b • f a = c b • f (t b) := by
+  rw [hM.isDoubleStep.sum_smul f b]
+  simp
 
 end Matrix
