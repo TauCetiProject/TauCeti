@@ -31,6 +31,8 @@ marking-swapped counterpart. These chain-level symmetry equivalences need no squ
 * `TauCeti.GridDiagram.fullyBlockedCycles_swapMarkings`,
   `TauCeti.GridDiagram.fullyBlockedBoundaries_swapMarkings`: swapping the `O` and `X` markings
   leaves the cycle and boundary submodules unchanged.
+* `LinearEquiv.map_ker_eq_ker_of_intertwine`: the reusable kernel transport lemma used by the
+  cycle-symmetry equivalences.
 * `TauCeti.GridDiagram.fullyBlockedCyclesTransposeEquiv`,
   `TauCeti.GridDiagram.fullyBlockedBoundariesTransposeEquiv`: the same statements packaged as
   linear equivalences of submodules, each characterized on elements by an `_apply` lemma
@@ -55,7 +57,8 @@ variable {M : Type*} [AddCommGroup M] [Module (ZMod 2) M]
 /-- If a linear automorphism `e` intertwines two endomorphisms `f` and `g` pointwise
 (`g (e d) = e (f d)`), it carries the kernel of `f` onto the kernel of `g`. This is the general
 shape behind the cycle-symmetry statements for the fully blocked grid differential. -/
-private theorem map_ker_of_intertwine (e : M ≃ₗ[ZMod 2] M) (f g : M →ₗ[ZMod 2] M)
+theorem _root_.LinearEquiv.map_ker_eq_ker_of_intertwine
+    (e : M ≃ₗ[ZMod 2] M) (f g : M →ₗ[ZMod 2] M)
     (h : ∀ d, g (e d) = e (f d)) :
     Submodule.map (e : M →ₗ[ZMod 2] M) (LinearMap.ker f) = LinearMap.ker g := by
   ext c
@@ -102,7 +105,7 @@ theorem fullyBlockedCycles_transpose :
     Submodule.map (GridChain.transposeEquiv (ZMod 2) n : _ →ₗ[ZMod 2] _) G.fullyBlockedCycles =
       G.transpose.fullyBlockedCycles := by
   rw [G.fullyBlockedCycles_eq_ker, G.transpose.fullyBlockedCycles_eq_ker]
-  exact GridChain.map_ker_of_intertwine _ _ _ G.fullyBlockedDifferential_transpose_apply
+  exact LinearEquiv.map_ker_eq_ker_of_intertwine _ _ _ G.fullyBlockedDifferential_transpose_apply
 
 /-- The transpose chain relabeling carries the fully blocked boundaries of `G` onto those of
 `G.transpose`. -/
