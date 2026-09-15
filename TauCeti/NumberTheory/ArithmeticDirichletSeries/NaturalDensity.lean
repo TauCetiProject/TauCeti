@@ -6,9 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.Asymptotics.Lemmas
-import Mathlib.NumberTheory.Padics.HeightOneSpectrum
-import Mathlib.Order.Filter.AtTopBot.Finset
-import Mathlib.RingTheory.Ideal.GoingUp
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 
 /-!
@@ -33,8 +30,6 @@ whole spectrum have density one and ensures that a fixed finite error disappears
 
 ## Main results
 
-* `TauCeti.tendsto_primeCount_univ_atTop`: the number of all prime ideals below the cutoff tends
-  to infinity.
 * `NumberField.Set.HasNaturalDensity`: ratio-normalized natural density for a set of prime ideals.
 * `NumberField.Set.hasNaturalDensity_def`: the defining ratio-convergence characterization.
 * `NumberField.Set.HasNaturalDensity.union`,
@@ -50,54 +45,6 @@ VI, or J. Neukirch, *Algebraic Number Theory*, Chapter VII.
 -/
 
 public section
-
-namespace TauCeti
-
-open Filter
-open IsDedekindDomain
-open scoped NumberField
-
-/-- The number of all height-one primes of a number field below the inclusive real cutoff tends
-to infinity.
-
-The arithmetic input is lying over for the integral extension `ℤ → 𝓞 K`: contraction from the
-height-one spectrum of `𝓞 K` onto that of `ℤ` is surjective. The latter spectrum is equivalent to
-the infinite type of natural primes. The rest is the generic fact that cardinality tends to
-infinity along the directed set of finite subsets. -/
-theorem tendsto_primeCount_univ_atTop (K : Type*) [Field K] [NumberField K] :
-    Tendsto (primeCount K Set.univ) atTop atTop := by
-  let _ : Infinite (HeightOneSpectrum ℤ) :=
-    Infinite.of_surjective Rat.HeightOneSpectrum.primesEquiv
-      Rat.HeightOneSpectrum.primesEquiv.surjective
-  have hsurj : Function.Surjective (HeightOneSpectrum.under ℤ :
-      HeightOneSpectrum (𝓞 K) → HeightOneSpectrum ℤ) := by
-    intro p
-    let Q := Classical.choice (Ideal.nonempty_primesOver (S := 𝓞 K) p.asIdeal)
-    refine ⟨⟨Q.1, Q.2.1, Ideal.ne_bot_of_mem_primesOver p.ne_bot Q.2⟩,
-      HeightOneSpectrum.ext ?_⟩
-    exact Q.2.2.over.symm
-  let _ : Infinite (HeightOneSpectrum (𝓞 K)) :=
-    Infinite.of_surjective (HeightOneSpectrum.under ℤ) hsurj
-  have hcarrier : Tendsto (primesLE K) atTop atTop := by
-    rw [Filter.tendsto_atTop]
-    intro s
-    filter_upwards [Filter.eventually_ge_atTop
-        ((s.sup fun p => Ideal.absNorm p.asIdeal : ℕ) : ℝ)] with x hx
-    intro p hp
-    rw [mem_normLE]
-    have hle : (Ideal.absNorm p.asIdeal : ℝ) ≤
-        (s.sup fun p => Ideal.absNorm p.asIdeal : ℕ) := by
-      exact_mod_cast Finset.le_sup (f := fun p => Ideal.absNorm p.asIdeal) hp
-    exact hle.trans hx
-  have hcard : Tendsto (fun x => (primesLE K x).card) atTop atTop :=
-    Filter.tendsto_card_atTop_atTop.comp hcarrier
-  have hcast : Tendsto (fun x => ((primesLE K x).card : ℝ)) atTop atTop :=
-    tendsto_natCast_atTop_atTop.comp hcard
-  refine hcast.congr' (Filter.Eventually.of_forall fun x => ?_)
-  rw [primeCount_eq_card]
-  simp
-
-end TauCeti
 
 namespace NumberField.Set
 
