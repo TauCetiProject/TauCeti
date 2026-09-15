@@ -129,8 +129,10 @@ theorem riemannRochSpace_monotone :
     Monotone (riemannRochSpace : Divisor k F → Submodule k F) :=
   fun _ _ ↦ riemannRochSpace_mono
 
-/-- The constant function `1` belongs to `L(D)` exactly when `D` is effective. -/
-@[simp]
+/-- The constant function `1` belongs to `L(D)` exactly when `D` is effective.
+
+Not a `simp` lemma: `TauCeti.mem_riemannRochSpace_iff` already rewrites the left-hand side
+place by place, so this statement is not in `simp`-normal form. -/
 theorem one_mem_riemannRochSpace_iff {D : Divisor k F} :
     (1 : F) ∈ riemannRochSpace D ↔ 0 ≤ D := by
   rw [mem_riemannRochSpace_iff, WeilDivisor.le_iff]
