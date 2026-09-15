@@ -75,13 +75,11 @@ abbrev coordinatePower (ι : Type v) [Fintype ι] : FiniteBilinearModule where
     Finset.sum_congr rfl fun i _ ↦ A.pairing_comm (x i) (y i)
 
 /-- The pairing on a coordinate power is the sum of the coordinate pairings. -/
-@[simp]
 theorem coordinatePower_pairing (ι : Type v) [Fintype ι] (x y : ι → A) :
     (A.coordinatePower ι).pairing x y = ∑ i, A.pairing (x i) (y i) :=
   (rfl)
 
 /-- Pairing a word with a word supported at one coordinate extracts that coordinate pairing. -/
-@[simp]
 theorem coordinatePower_pairing_single_right (ι : Type v) [Fintype ι] [DecidableEq ι]
     (x : ι → A) (i : ι) (a : A) :
     (A.coordinatePower ι).pairing x (Pi.single i a) = A.pairing (x i) a := by
@@ -93,7 +91,6 @@ theorem coordinatePower_pairing_single_right (ι : Type v) [Fintype ι] [Decidab
 
 /-- Pairing a word supported at one coordinate with an arbitrary word extracts that coordinate
 pairing. -/
-@[simp]
 theorem coordinatePower_pairing_single_left (ι : Type v) [Fintype ι] [DecidableEq ι]
     (i : ι) (a : A) (y : ι → A) :
     (A.coordinatePower ι).pairing (Pi.single i a) y = A.pairing a (y i) := by
@@ -167,13 +164,11 @@ abbrev coordinatePower (ι : Type v) [Fintype ι] : FiniteQuadraticModule where
     exact Finset.sum_congr rfl fun i _ ↦ A.polar_eq_pairing (x i) (y i)
 
 /-- The quadratic value on a coordinate power is the sum of the coordinate quadratic values. -/
-@[simp]
 theorem coordinatePower_quadratic (ι : Type v) [Fintype ι] (x : ι → A) :
     (A.coordinatePower ι).quadratic x = ∑ i, A.quadratic (x i) := by
   exact QuadraticMap.pi_apply _ _
 
 /-- The pairing on a quadratic coordinate power is the sum of the coordinate polar pairings. -/
-@[simp]
 theorem coordinatePower_pairing (ι : Type v) [Fintype ι] (x y : ι → A) :
     (A.coordinatePower ι).toFiniteBilinearModule.pairing x y =
       ∑ i, A.toFiniteBilinearModule.pairing (x i) (y i) :=
