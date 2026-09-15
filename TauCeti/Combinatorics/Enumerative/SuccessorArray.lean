@@ -56,7 +56,7 @@ The reconstruction is total: entries after the last genuine visit use the junk v
   down by its initial value together with the successor-array entries at the cells that segment
   designates. This is the finite-horizon form of `TauCeti.eq_pathOfSuccessors`, and the form a
   finite-path event needs: the cells are read off a *reference* sequence, so they do not move with
-  the sequence being described. `TauCeti.eqOn_iff_visitCell_of_visitCell_eq_apply_succ` is the same
+  the sequence being described. `TauCeti.eqOn_iff_visitCell_of_apply_visitCell_eq_succ` is the same
   criterion for any array agreeing with the successor array at the cells the sequence consumes,
   such as `TauCeti.visitedSuccessorArray`.
 
@@ -589,7 +589,7 @@ successors at the cells the sequence consumes.** Only the entries of `s` at the 
 `visitCell x i` are constrained: the remaining entries, including the unconsumed cells of a visited
 row, are arbitrary. The cells a reference sequence designates are consumed by any sequence agreeing
 with it, so such an `s` pins the initial segment down just as well as the successor array. -/
-theorem eqOn_iff_visitCell_of_visitCell_eq_apply_succ {s : α → ℕ → α}
+theorem eqOn_iff_visitCell_of_apply_visitCell_eq_succ {s : α → ℕ → α}
     (hs : ∀ i, s (visitCell x i).1 (visitCell x i).2 = x (i + 1)) (w : ℕ → α) (n : ℕ) :
     (∀ i ≤ n, x i = w i) ↔
       x 0 = w 0 ∧ ∀ i < n, s (visitCell w i).1 (visitCell w i).2 = w (i + 1) := by
@@ -627,7 +627,7 @@ of its successor array at cells that do not depend on `x`. -/
 theorem eqOn_iff_successorArray_visitCell (w x : ℕ → α) (n : ℕ) :
     (∀ i ≤ n, x i = w i) ↔
       x 0 = w 0 ∧ ∀ i < n, successorArray x (visitCell w i).1 (visitCell w i).2 = w (i + 1) :=
-  eqOn_iff_visitCell_of_visitCell_eq_apply_succ
+  eqOn_iff_visitCell_of_apply_visitCell_eq_succ
     (fun i => by simpa only [visitCell_def] using successorArray_visitCount x i) w n
 
 end Cells
@@ -662,6 +662,14 @@ theorem visitedSuccessorArray_visitCell (x : ℕ → α) (n : ℕ) :
     visitedSuccessorArray x (visitCell x n).1 (visitCell x n).2 = x (n + 1) := by
   simp only [visitCell_def, visitedSuccessorArray_eq_successorArray_of_mem_range ⟨n, rfl⟩]
   exact successorArray_visitCount x n
+
+/-- Rebuilding from a sequence's initial value and visited successor array recovers the sequence. -/
+@[simp]
+theorem pathOfSuccessors_visitedSuccessorArray (x : ℕ → α) :
+    pathOfSuccessors (x 0) (visitedSuccessorArray x) = x := by
+  symm
+  exact eq_pathOfSuccessors rfl fun n => by
+    simpa only [visitCell_def] using (visitedSuccessorArray_visitCell x n).symm
 
 /-- **A consumed entry of the visited successor array is read off any sequence agreeing with the
 original over the horizon that consumes it.** A row with a visit before `m` is visited by both

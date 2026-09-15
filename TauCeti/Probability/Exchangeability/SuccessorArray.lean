@@ -221,6 +221,13 @@ theorem measurable_successorArray :
   Measurable.of_eval fun a =>
     Measurable.of_eval fun k => measurable_successorArray_apply a k (measurableSet_singleton a)
 
+/-- **The visited successor array of a path is a measurable function of the path.** -/
+theorem measurable_visitedSuccessorArray :
+    Measurable fun x : ℕ → α => visitedSuccessorArray x :=
+  Measurable.of_eval fun a =>
+    Measurable.of_eval fun k =>
+      measurable_visitedSuccessorArray_apply a k (measurableSet_singleton a)
+
 section SuccessorProcess
 
 variable {Ω : Type*} [MeasurableSpace Ω]

@@ -13,7 +13,7 @@ import Mathlib.Probability.Process.FiniteDimensionalLaws
 import Mathlib.MeasureTheory.Integral.Indicator
 
 /-!
-# The successor array of a Markov exchangeable process is row exchangeable
+# The visited successor array of a recurrent Markov exchangeable process is row exchangeable
 
 Diaconis and Freedman represent a recurrent Markov exchangeable process as a mixture of Markov
 chains by passing to its **successor array**, whose `(a, k)`-entry is the state reached right after

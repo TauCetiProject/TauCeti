@@ -29,7 +29,7 @@ successors of the process at the cells it consumes — the successor array itsel
 is `TauCeti.Probability.MixedMarkovChainWith`, with the row marginals of the array's directing
 measure as the random transition matrix. The mechanism is that the finite path event
 `{X i = w i, i ≤ n}` *is* an event of the array: by
-`TauCeti.eqOn_iff_visitCell_of_visitCell_eq_apply_succ` it says exactly that the array takes the
+`TauCeti.eqOn_iff_visitCell_of_apply_visitCell_eq_succ` it says exactly that the array takes the
 prescribed values at the `n` cells the reference path `w` designates, which are cells the process
 consumes, and by `TauCeti.visitCell_injective` those cells are pairwise distinct. Distinct cells of
 a row exchangeable array are conditionally independent given the directing measure of its columns
@@ -142,7 +142,7 @@ theorem mixedMarkovChainWith_of_rowExchangeable [Countable α]
       rw [Filter.eventuallyEqSet_iff]
       filter_upwards [h0, hY] with ω hω hYω
       simp only [Set.mem_singleton_iff]
-      rw [eqOn_iff_visitCell_of_visitCell_eq_apply_succ (s := fun a k => Y (a, k) ω) hYω w' n]
+      rw [eqOn_iff_visitCell_of_apply_visitCell_eq_succ (s := fun a k => Y (a, k) ω) hYω w' n]
       exact ⟨fun h t => h.2 t.val t.isLt,
         fun h => ⟨by rw [hω, hw0, hstart], fun j hj => h ⟨j, hj⟩⟩⟩
     rw [measure_congr hae,
