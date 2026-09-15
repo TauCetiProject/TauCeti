@@ -109,16 +109,14 @@ def transDiffeomorph (f : M ≃ₘ^n⟮J, J⟯ P) (Φ : Diffeotopy J n M) : Diff
     unfold Diffeomorph.trans
     exact Φ.fst_apply _
   snd_apply_zero' x := by
-    unfold Diffeomorph.trans
-    change f (Φ.toDiffeomorph (0, f.symm x)).2 = x
-    rw [Φ.snd_apply_zero']
-    exact f.apply_symm_apply x
+    simpa only [Diffeomorph.coe_trans, Function.comp_apply, Diffeomorph.coe_prodCongr,
+      Prod.map_apply, Prod.map_snd, Diffeomorph.coe_refl, id_eq] using
+      (congrArg f (Φ.snd_apply_zero' (f.symm x))).trans (f.apply_symm_apply x)
 
 @[simp]
 theorem transDiffeomorph_apply (f : M ≃ₘ^n⟮J, J⟯ P) (Φ : Diffeotopy J n M) (p : I × P) :
-    Φ.transDiffeomorph f p = f (Φ (p.1, f.symm p.2)) := by
-  change f (Φ.toDiffeomorph (p.1, f.symm p.2)).2 = _
-  rfl
+    Φ.transDiffeomorph f p = f (Φ (p.1, f.symm p.2)) :=
+  (rfl)
 
 
 /-- Applying a diffeotopy returns the spatial component of its total diffeomorphism. -/

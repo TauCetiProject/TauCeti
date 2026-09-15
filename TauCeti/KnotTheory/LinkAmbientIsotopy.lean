@@ -128,7 +128,7 @@ theorem nonempty_complementHomeomorph (hLK : ContinuousAmbientIsotopic L K) :
   rw [← range_toContinuousMap L, ← range_toContinuousMap K]
   exact TauCeti.AmbientIsotopic.nonempty_complementHomeomorph hLK
 
-/-- The identity ambient isotopy witnesses reflexivity. -/
+/-- Continuous link ambient isotopy is reflexive. -/
 @[refl]
 theorem refl (L : SmoothLinkEmbedding I M n) : ContinuousAmbientIsotopic L L :=
   AmbientIsotopic.refl L.toContinuousMap
@@ -265,14 +265,14 @@ theorem of_diffeotopy (Φ : Diffeotopy I ∞ M) (hΦ : ∀ i x, Φ.final (L i x)
     SmoothAmbientIsotopic L K :=
   smoothAmbientIsotopic_def.mpr ⟨Φ, hΦ⟩
 
-/-- The identity diffeotopy witnesses reflexivity. -/
+/-- Smooth link ambient isotopy is reflexive. -/
 @[refl]
 theorem refl (L : SmoothLinkEmbedding I M n) : SmoothAmbientIsotopic L L := by
   apply of_diffeotopy (Diffeotopy.refl I ∞ M)
   intro i x
   simp
 
-/-- Inverting the shared diffeotopy witnesses symmetry. -/
+/-- Smooth link ambient isotopy is symmetric. -/
 @[symm]
 theorem symm (hLK : SmoothAmbientIsotopic L K) : SmoothAmbientIsotopic K L := by
   obtain ⟨Φ, hΦ⟩ := smoothAmbientIsotopic_def.mp hLK
@@ -281,7 +281,7 @@ theorem symm (hLK : SmoothAmbientIsotopic L K) : SmoothAmbientIsotopic K L := by
   rw [Φ.final_symm, ← hΦ i x]
   exact Φ.final.symm_apply_apply (L i x)
 
-/-- Composing the shared diffeotopies witnesses transitivity. -/
+/-- Smooth link ambient isotopy is transitive. -/
 @[trans]
 theorem trans (hLK : SmoothAmbientIsotopic L K) (hKP : SmoothAmbientIsotopic K P) :
     SmoothAmbientIsotopic L P := by
@@ -392,8 +392,7 @@ theorem SmoothAmbientIsotopic.transDiffeomorph
   rw [Diffeotopy.final_apply, Diffeotopy.transDiffeomorph_apply]
   simp only [SmoothLinkEmbedding.transDiffeomorph_apply, SmoothEmbedding.transDiffeomorph_apply]
   simp only [e.symm_apply_apply]
-  change e (Φ (1, (L i) x)) = _
-  rw [← Φ.final_apply, hΦ]
+  simpa only [Diffeotopy.final_apply] using congrArg e (hΦ i x)
 
 /- Smooth ambient isotopy is reflected by transporting both links through an ambient
 diffeomorphism. -/
