@@ -8,9 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.TestFunctionLp
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.Rademacher
-import Mathlib.Analysis.InnerProductSpace.Dual
-import Mathlib.Analysis.Normed.Module.HahnBanach
-import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.Topology.Algebra.Group.Order
 import Mathlib.Topology.MetricSpace.Thickening
@@ -36,17 +33,15 @@ The criterion combines two results of independent use.
 * The difference quotients of `u` converge to its distributional derivative: paired with a test
   function `φ`, they tend to `-∫ ∂_v φ * u` as `t → 0`.
 * A distributional derivative that is bounded against the `L²` norm of test functions is an
-  `L²` function: the pairing `φ ↦ -∫ ∂_v φ * u` then extends to a bounded functional on `L²(Ω)`,
-  and its Riesz representative is the weak derivative.
+  `L²` function: this is
+  `TauCeti.exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le`, proved in
+  `TauCeti.Analysis.Sobolev.TestFunctionLp`.
 
 The criterion is stated for the exponent `2`, where every bounded functional on `L²(Ω)` is
 represented by an element of `L²(Ω)`.
 
 ## Main declarations
 
-* `TauCeti.exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le`: if
-  `|∫ ∂_v φ * u| ≤ C ‖φ‖₂` for every test function `φ`, then `u` has a weak derivative in the
-  direction `v` in `L²(Ω)` of norm at most `C`.
 * `TauCeti.integral_inv_mul_sub_mul_tendsto_neg_integral_lineDeriv_mul`: the difference
   quotients of a locally integrable function converge to its distributional derivative when
   paired with a test function.
@@ -74,65 +69,6 @@ open scoped Distributions ENNReal InnerProductSpace
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   {μ : Measure E} {Ω : Opens E}
 
-section Representation
-
-variable [OpensMeasurableSpace E] [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure]
-  [IsLocallyFiniteMeasure (μ.restrict Ω)]
-
-/-- **An `L²`-bounded distributional derivative is an `L²` weak derivative.** Let `u` be locally
-integrable on `Ω`. If for some `C ≥ 0` every test function `φ` on `Ω` satisfies
-
-`|∫ ∂_v φ * u| ≤ C ‖φ‖₂`,
-
-then `u` has a weak derivative in the direction `v` on `Ω` that lies in `L²(Ω)` and has norm at
-most `C`. -/
-theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le {u : E → ℝ}
-    (hu : LocallyIntegrableOn u Ω μ) (v : E) {C : ℝ} (hC : 0 ≤ C)
-    (hbound : ∀ φ : 𝓓(Ω, ℝ),
-      |∫ x, lineDeriv ℝ (φ : E → ℝ) x v * u x ∂μ| ≤ C * (eLpNorm (φ : E → ℝ) 2 μ).toReal) :
-    ∃ g : Lp ℝ 2 (μ.restrict Ω), ‖g‖ ≤ C ∧ HasWeakLineDerivOn μ Ω u g v := by
-  -- The test functions, as a subspace of `L²(Ω)`.
-  let T : 𝓓(Ω, ℝ) →ₗ[ℝ] Lp ℝ 2 (μ.restrict Ω) :=
-    { toFun := testFunctionLp 2
-      map_add' := testFunctionLp_add 2
-      map_smul' := testFunctionLp_smul 2 }
-  have hT : Function.Injective T := testFunctionLp_injective 2
-  -- The pairing `φ ↦ ∫ ∂_v φ * u`, which the hypothesis bounds by the `L²` norm of `φ`.
-  let ℓ : 𝓓(Ω, ℝ) →L[ℝ] ℝ :=
-    (TestFunction.integralAgainstBilinCLM (n := ⊤) (ContinuousLinearMap.mul ℝ ℝ) μ u).comp
-      (TestFunction.lineDerivCLM (n := ⊤) (k := ⊤) ℝ v)
-  have hℓ : ∀ φ, ℓ φ = ∫ x, lineDeriv ℝ (φ : E → ℝ) x v * u x ∂μ := fun φ => by
-    simp [ℓ, TestFunction.integralAgainstBilinCLM_eq_integral hu]
-  let e := LinearEquiv.ofInjective T hT
-  let f₀ : LinearMap.range T →ₗ[ℝ] ℝ := ℓ.toLinearMap ∘ₗ e.symm.toLinearMap
-  have hf₀ : ∀ s, ‖f₀ s‖ ≤ C * ‖s‖ := by
-    intro s
-    obtain ⟨φ, rfl⟩ := e.surjective s
-    have hnorm : ‖e φ‖ = (eLpNorm (φ : E → ℝ) 2 μ).toReal := by
-      rw [← Submodule.norm_coe, LinearEquiv.ofInjective_apply, ← toReal_enorm]
-      exact congrArg ENNReal.toReal (enorm_testFunctionLp_eq_eLpNorm 2 φ)
-    simpa [f₀, hℓ, hnorm] using hbound φ
-  obtain ⟨g', hg'f, hg'norm⟩ := exists_extension_norm_eq _ (f₀.mkContinuous C hf₀)
-  refine ⟨(InnerProductSpace.toDual ℝ _).symm (-g'), ?_, ?_⟩
-  · rw [LinearIsometryEquiv.norm_map, norm_neg, hg'norm]
-    exact LinearMap.mkContinuous_norm_le _ hC hf₀
-  · set g := (InnerProductSpace.toDual ℝ (Lp ℝ 2 (μ.restrict Ω))).symm (-g')
-    have hg : LocallyIntegrableOn g Ω μ :=
-      locallyIntegrableOn_of_locallyIntegrable_restrict
-        ((Lp.memLp g).locallyIntegrable (by norm_num))
-    refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hu, hg, fun φ => ?_⟩
-    have hg'φ : g' (T φ) = ℓ φ := by
-      simpa [f₀, e, LinearEquiv.ofInjective_apply] using hg'f (e φ)
-    have hinner : ⟪g, T φ⟫_ℝ = ∫ x, (φ : E → ℝ) x • g x ∂μ := by
-      rw [L2.inner_def, ← setIntegral_smul_eq_integral_smul φ]
-      refine integral_congr_ae ?_
-      filter_upwards [testFunctionLp_apply_ae (mu := μ) 2 φ] with x hx
-      simp [T, hx]
-    rw [← hinner, InnerProductSpace.toDual_symm_apply, neg_apply, hg'φ, hℓ, neg_neg]
-    simp only [smul_eq_mul]
-
-end Representation
-
 variable [BorelSpace E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure]
 
 omit [μ.IsAddHaarMeasure] in
@@ -143,9 +79,9 @@ to a compact neighbourhood of `tsupport φ` inside `Ω`.
 
 This replaces local integrability by genuine integrability in any argument that only sees `u`
 through `φ` and its small translates, so that the global integral theorems apply. -/
-theorem exists_integrable_eqOn_tsupport_add {u : E → ℝ}
+theorem exists_integrable_eqOn_tsupport_add {F : Type*} [NormedAddCommGroup F] {u : E → F}
     (hu : LocallyIntegrableOn u Ω μ) (φ : 𝓓(Ω, ℝ)) (v : E) :
-    ∃ w : E → ℝ, Integrable w μ ∧ EqOn w u (tsupport (φ : E → ℝ)) ∧
+    ∃ w : E → F, Integrable w μ ∧ EqOn w u (tsupport (φ : E → ℝ)) ∧
       ∀ᶠ t in 𝓝[≠] (0 : ℝ), ∀ x ∈ tsupport (φ : E → ℝ), w (x + t • v) = u (x + t • v) := by
   obtain ⟨δ, hδ, hδΩ⟩ :=
     φ.hasCompactSupport.isCompact.exists_cthickening_subset_open Ω.isOpen φ.tsupport_subset

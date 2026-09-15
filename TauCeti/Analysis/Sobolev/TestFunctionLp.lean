@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.Analysis.Sobolev.WeakDeriv
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+import Mathlib.Analysis.InnerProductSpace.Dual
+import Mathlib.Analysis.Normed.Module.HahnBanach
+import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
 # Test functions as elements of `Lp`
@@ -20,6 +23,11 @@ The bridge is linear: `TauCeti.testFunctionLp_add` and `TauCeti.testFunctionLp_s
 passing to the `Lᵖ` class commutes with the vector space structure of the test functions. For an
 inner product space, `TauCeti.gradientTestFunctionLp` provides the parallel construction for the
 gradient. These facts make the image of `C_c^∞(Ω)` in an `Lᵖ`-based function space a subspace.
+
+On that subspace of `L²(Ω)`, a distributional derivative bounded by the `L²` norm of test functions
+extends by Hahn–Banach to a bounded functional on `L²(Ω)`, and the negative of its Riesz
+representative is a weak derivative:
+`TauCeti.exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le`.
 -/
 
 public section
@@ -104,6 +112,64 @@ theorem testFunctionLp_injective (q : ENNReal) :
   exact TestFunction.ext fun x => not_not.1 fun hx => Set.eq_empty_iff_forall_notMem.1 hempty x hx
 
 end Injectivity
+
+section Representation
+
+variable [mu.IsOpenPosMeasure] [IsLocallyFiniteMeasure (mu.restrict Omega)]
+
+/-- **An `L²`-bounded distributional derivative is an `L²` weak derivative.** Let `u` be locally
+integrable on `Omega`. If for some `C ≥ 0` every test function `phi` on `Omega` satisfies
+
+`|∫ ∂_v phi * u| ≤ C ‖phi‖₂`,
+
+then `u` has a weak derivative in the direction `v` on `Omega` that lies in `L²(Omega)` and has
+norm at most `C`. -/
+theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le {u : E → ℝ}
+    (hu : LocallyIntegrableOn u Omega mu) (v : E) {C : ℝ} (hC : 0 ≤ C)
+    (hbound : ∀ phi : 𝓓(Omega, ℝ),
+      |∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu| ≤ C * (eLpNorm (phi : E → ℝ) 2 mu).toReal) :
+    ∃ g : Lp ℝ 2 (mu.restrict Omega), ‖g‖ ≤ C ∧ HasWeakLineDerivOn mu Omega u g v := by
+  -- The test functions, as a subspace of `L²(Omega)`.
+  let T : 𝓓(Omega, ℝ) →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega) :=
+    { toFun := testFunctionLp 2
+      map_add' := testFunctionLp_add 2
+      map_smul' := testFunctionLp_smul 2 }
+  have hT : Function.Injective T := testFunctionLp_injective 2
+  -- The pairing `phi ↦ ∫ ∂_v phi * u`, which the hypothesis bounds by the `L²` norm of `phi`.
+  let ℓ : 𝓓(Omega, ℝ) →L[ℝ] ℝ :=
+    (TestFunction.integralAgainstBilinCLM (n := ⊤) (ContinuousLinearMap.mul ℝ ℝ) mu u).comp
+      (TestFunction.lineDerivCLM (n := ⊤) (k := ⊤) ℝ v)
+  have hℓ : ∀ phi, ℓ phi = ∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu := fun phi => by
+    simp [ℓ, TestFunction.integralAgainstBilinCLM_eq_integral hu]
+  let e := LinearEquiv.ofInjective T hT
+  let f₀ : LinearMap.range T →ₗ[ℝ] ℝ := ℓ.toLinearMap ∘ₗ e.symm.toLinearMap
+  have hf₀ : ∀ s, ‖f₀ s‖ ≤ C * ‖s‖ := by
+    intro s
+    obtain ⟨phi, rfl⟩ := e.surjective s
+    have hnorm : ‖e phi‖ = (eLpNorm (phi : E → ℝ) 2 mu).toReal := by
+      rw [← Submodule.norm_coe, LinearEquiv.ofInjective_apply, ← toReal_enorm]
+      exact congrArg ENNReal.toReal (enorm_testFunctionLp_eq_eLpNorm 2 phi)
+    simpa [f₀, hℓ, hnorm] using hbound phi
+  obtain ⟨g', hg'f, hg'norm⟩ := exists_extension_norm_eq _ (f₀.mkContinuous C hf₀)
+  refine ⟨(InnerProductSpace.toDual ℝ _).symm (-g'), ?_, ?_⟩
+  · rw [LinearIsometryEquiv.norm_map, norm_neg, hg'norm]
+    exact LinearMap.mkContinuous_norm_le _ hC hf₀
+  · set g := (InnerProductSpace.toDual ℝ (Lp ℝ 2 (mu.restrict Omega))).symm (-g')
+    have hg : LocallyIntegrableOn g Omega mu :=
+      locallyIntegrableOn_of_locallyIntegrable_restrict
+        ((Lp.memLp g).locallyIntegrable (by norm_num))
+    refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hu, hg, fun phi => ?_⟩
+    have hg'phi : g' (T phi) = ℓ phi := by
+      simpa [f₀, e, LinearEquiv.ofInjective_apply] using hg'f (e phi)
+    have hinner : ⟪g, T phi⟫_ℝ = ∫ x, (phi : E → ℝ) x • g x ∂mu := by
+      rw [L2.inner_def, ← setIntegral_smul_eq_integral_smul phi]
+      refine integral_congr_ae ?_
+      filter_upwards [testFunctionLp_apply_ae (mu := mu) 2 phi] with x hx
+      simp [T, hx]
+    rw [← hinner, InnerProductSpace.toDual_symm_apply, neg_apply, hg'phi, hℓ, neg_neg]
+    simp only [smul_eq_mul]
+
+end Representation
 
 section Gradient
 
