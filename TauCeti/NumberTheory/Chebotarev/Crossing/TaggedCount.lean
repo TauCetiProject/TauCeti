@@ -12,8 +12,8 @@ public import TauCeti.GroupTheory.SpecificGroups.Cyclic.OrderCount
 
 In the cyclic auxiliary group used by the Chebotarev crossing, the useful tags are the elements
 whose order is divisible by the order of the chosen Frobenius element. This file gives that finite
-carrier and records the order-fibre decomposition of its cardinality. The latter is the exact
-finite sum from which the Euler-product form of the crossing constant is obtained.
+carrier and records the order-fibre decomposition of its cardinality. The latter is the finite sum
+of totients obtained by grouping the tagged elements by their exact order.
 
 ## Main definitions
 
@@ -24,6 +24,14 @@ finite sum from which the Euler-product form of the crossing constant is obtaine
 
 * `NumberField.Chebotarev.mem_taggedElements_iff`: the defining membership condition.
 * `NumberField.Chebotarev.taggedElements_mono`: divisibility makes the tag carrier shrink.
+* `NumberField.Chebotarev.card_taggedElements_eq_sum_totient`: the order-fibre decomposition of the
+  tagged carrier in a cyclic group.
+
+## References
+
+The tagged carrier and its count are the group-theoretic component of the cyclic crossing in
+`TauCetiRoadmap/Chebotarev/README.md`, Layer 9 ("abelian Chebotarev"). The crossing construction
+follows R. Sharifi, *Algebraic Number Theory*, Theorem 7.2.2.
 -/
 
 public section
@@ -36,8 +44,7 @@ open Finset Nat
 
 /-- The elements of a finite group whose order is divisible by `f`.
 
-The carrier is deliberately a `Finset`: Layer 9 sums the densities of these tags, and the
-disjointness argument indexes those summands by an actual finite set. -/
+The carrier is deliberately a `Finset`, so the tags can be indexed by their order. -/
 noncomputable def taggedElements {H : Type*} [Group H] [Fintype H] (f : ℕ) : Finset H :=
   Finset.univ.filter fun τ ↦ f ∣ orderOf τ
 
@@ -50,8 +57,8 @@ theorem mem_taggedElements_iff {H : Type*} [Group H] [Fintype H] {f : ℕ} {τ :
 /-- A stronger divisibility requirement gives a smaller tagged carrier. -/
 theorem taggedElements_mono {H : Type*} [Group H] [Fintype H] {f g : ℕ} (hfg : f ∣ g) :
     taggedElements (H := H) g ⊆ taggedElements (H := H) f := by
-  intro τ hτ
-  exact mem_taggedElements_iff.mpr (hfg.trans (mem_taggedElements_iff.mp hτ))
+  unfold taggedElements
+  exact Finset.monotone_filter_right Finset.univ fun _ _ h => hfg.trans h
 
 /-- Every element is tagged for the vacuous order condition `f = 1`. -/
 @[simp]
@@ -59,5 +66,16 @@ theorem taggedElements_one {H : Type*} [Group H] [Fintype H] :
     taggedElements (H := H) 1 = Finset.univ := by
   ext τ
   simp [taggedElements]
+
+/-- In a finite cyclic group, split the tagged elements according to their exact order.
+
+The arithmetic content is supplied by the generic cyclic order-counting API; this theorem keeps the
+Chebotarev carrier opaque to its consumers. -/
+theorem card_taggedElements_eq_sum_totient {H : Type*} [Group H] [Fintype H] [IsCyclic H]
+    (f : ℕ) :
+    (taggedElements (H := H) f).card =
+      ∑ d ∈ {d ∈ (Fintype.card H).divisors | f ∣ d}, Nat.totient d := by
+  change #{τ : H | f ∣ orderOf τ} = _
+  exact IsCyclic.card_filter_dvd_orderOf_eq_sum_totient f
 
 end NumberField.Chebotarev
