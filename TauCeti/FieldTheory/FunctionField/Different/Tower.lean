@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Different.Divisor
+public import TauCeti.FieldTheory.FunctionField.Different.Localization
 public import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
-public import TauCeti.RingTheory.DedekindDomain.Different.Localization
 public import TauCeti.RingTheory.DedekindDomain.Different.Tower
-public import TauCeti.RingTheory.Localization.Integral
 
 /-!
 # The different in a tower of function fields
@@ -33,8 +32,6 @@ This is Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., Corollary 3
 
 ## Main results
 
-* `TauCeti.Place.differentExponent_eq_multiplicity_center`: the different exponent is the
-  coefficient of the different ideal of an affine model at the centre of the place.
 * `TauCeti.Place.differentExponent_restrict_add`: transitivity of different exponents.
 * `TauCeti.Divisor.different_eq_conorm_add`: transitivity of different divisors.
 -/
@@ -67,72 +64,6 @@ variable [FiniteDimensional F₀ F₁] [FiniteDimensional F₁ F₂]
 variable [Algebra.IsSeparable F₀ F₁] [Algebra.IsSeparable F₁ F₂]
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
-
-section AffineModel
-
-variable {B : Type*} {C : Type*} [CommRing B] [IsDedekindDomain B] [Algebra B F₁]
-  [IsFractionRing B F₁] [CommRing C] [IsDedekindDomain C] [Algebra C F₂] [IsFractionRing C F₂]
-  [Algebra B C] [Algebra B F₂] [IsScalarTower B C F₂] [IsScalarTower B F₁ F₂]
-  [IsIntegralClosure C B F₂] [Module.IsTorsionFree B C]
-
-/-- **The different exponent can be read on an affine model**: if `P₂` is finite on the integral
-closure `C` in `F₂` of an affine model `B` of `F₁`, then `d(P₂ / P₁)` is the coefficient of the
-different ideal of `C` over `B` at the centre of `P₂`. -/
-theorem differentExponent_eq_multiplicity_center (P₂ : Place k₂ F₂)
-    (hC : ∀ c : C, algebraMap C F₂ c ∈ P₂.integers) :
-    differentExponent k₁ F₁ P₂ = multiplicity (P₂.center hC).asIdeal (differentIdeal B C) := by
-  -- After localizing at the centre of `P₁` (below),
-  -- `TauCeti.multiplicity_differentIdeal_eq_multiplicity_under` compares the two coefficients.
-  let P₁ : Place k₁ F₁ := P₂.restrict k₁ F₁
-  have hB : ∀ b : B, algebraMap B F₁ b ∈ P₁.integers :=
-    algebraMap_mem_integers_restrict k₁ F₁ P₂ hC
-  let _ : Module.Finite B C := IsIntegralClosure.finite B F₁ F₂ C
-  let p : HeightOneSpectrum B := P₁.center hB
-  -- Localize at `p`: `𝒪_{P₁}` is the localization of `B`, and its integral closure `Cₘ` in `F₂`
-  -- is the matching localization of `C`.  Mathlib's `IsLocalization.integralClosure` is stated
-  -- for the literal `integralClosure B F₂`, whereas `C` is an arbitrary integral closure, so
-  -- `IsIntegralClosure.isLocalization_of_isLocalization` supplies the abstract version needed.
-  let Bₘ := P₁.integers
-  let Cₘ := integralClosure Bₘ F₂
-  let _ : Algebra B Bₘ := ((algebraMap B F₁).codRestrict Bₘ hB).toAlgebra
-  let _ : IsScalarTower B Bₘ F₁ := .of_algebraMap_eq fun _ ↦ rfl
-  let eB : HeightOneSpectrum.valuationSubringAtPrime F₁ p ≃ₐ[B] Bₘ :=
-    AlgEquiv.ofRingEquiv
-      (f := RingEquiv.subringCongr
-        (congrArg ValuationSubring.toSubring
-          (P₁.valuationSubringAtPrime_eq_integers hB)))
-      fun _ ↦ rfl
-  let _ : IsLocalization p.asIdeal.primeCompl Bₘ :=
-    IsLocalization.isLocalization_of_algEquiv p.asIdeal.primeCompl eB
-  let _ : IsScalarTower B Bₘ F₂ := .of_algebraMap_eq fun x ↦
-    IsScalarTower.algebraMap_apply B F₁ F₂ x
-  let _ : Algebra C Cₘ :=
-    ((algebraMap C F₂).codRestrict Cₘ.toSubring fun c ↦
-      IsIntegral.tower_top (R := B) (A := Bₘ)
-        ((IsIntegralClosure.isIntegral_iff (A := C) (R := B)).mpr ⟨c, rfl⟩)).toAlgebra
-  let _ : IsScalarTower C Cₘ F₂ := .of_algebraMap_eq fun _ ↦ rfl
-  let _ : IsScalarTower B C Cₘ := .of_algebraMap_eq fun x ↦ by
-    apply Subtype.ext
-    exact IsScalarTower.algebraMap_apply B C F₂ x
-  let _ : IsScalarTower B Bₘ Cₘ := .of_algebraMap_eq fun x ↦ by
-    apply Subtype.ext
-    exact IsScalarTower.algebraMap_apply B F₁ F₂ x
-  let _ : IsLocalization (Algebra.algebraMapSubmonoid C p.asIdeal.primeCompl) Cₘ :=
-    IsIntegralClosure.isLocalization_of_isLocalization (R := B) (Rₘ := Bₘ) (S := C)
-      (Sₘ := Cₘ) (L := F₂) (M := p.asIdeal.primeCompl)
-  -- The centre of `P₂` on `Cₘ` contracts to the centre on `C`, so localization preserves the
-  -- coefficient.
-  have hunder : (centerIntegralClosure k₁ F₁ P₂).asIdeal.under C = (P₂.center hC).asIdeal := by
-    ext c
-    rw [Ideal.mem_under]
-    simp only [centerIntegralClosure_def, mem_center_asIdeal]
-    rw [← IsScalarTower.algebraMap_apply C Cₘ F₂]
-  rw [differentExponent_def, ← hunder]
-  exact multiplicity_differentIdeal_eq_multiplicity_under (R := B) (Rₘ := Bₘ) (S := C)
-    (Sₘ := Cₘ) (K := F₁) (L := F₂) (M := p.asIdeal.primeCompl)
-    (centerIntegralClosure k₁ F₁ P₂).ne_bot
-
-end AffineModel
 
 section AffineTower
 

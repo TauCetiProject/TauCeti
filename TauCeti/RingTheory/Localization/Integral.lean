@@ -19,7 +19,7 @@ Mathlib's `IsLocalization.integralClosure` states this for the literal subalgebr
 
 ## Main results
 
-* `TauCeti.IsIntegralClosure.isLocalization_of_isLocalization`: an integral closure of a
+* `TauCeti.isLocalization_algebraMapSubmonoid_of_isIntegralClosure`: an integral closure of a
   localization is the corresponding localization of an integral closure.
 -/
 
@@ -45,7 +45,7 @@ is the corresponding localization of an integral closure of `R` in `L`.
 
 Unlike `IsLocalization.integralClosure`, this applies when the original integral closure is an
 arbitrary type satisfying `IsIntegralClosure`, rather than the literal `integralClosure R L`. -/
-theorem IsIntegralClosure.isLocalization_of_isLocalization :
+theorem isLocalization_algebraMapSubmonoid_of_isIntegralClosure :
     IsLocalization (Algebra.algebraMapSubmonoid S M) Sₘ := by
   refine ⟨⟨?_, ?_, ?_⟩⟩
   · rintro ⟨_, m, hm, rfl⟩
