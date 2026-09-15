@@ -79,28 +79,6 @@ private def choleskyFactor (a : ℝ) (ij : lowerTriangle p) (t : ℝ) : ℝ :=
       (fun s ↦ 2 * s ^ (2 * a - ((ij.1.1 : ℕ) : ℝ) - 1) * exp (-s ^ 2)) t
   else exp (-t ^ 2)
 
-/-- A product over the lower-triangular positions of a quantity that depends only on the row
-index, and only through whether the position is diagonal, collapses to a product over the rows:
-row `i` has one diagonal position and `i` strictly lower ones. -/
-private theorem prod_lowerTriangle_ite (F G : Fin p → ℝ) :
-    ∏ ij : lowerTriangle p, (if ij.1.1 = ij.1.2 then F ij.1.1 else G ij.1.1) =
-      ∏ i : Fin p, F i * G i ^ (i : ℕ) := by
-  classical
-  rw [← Finset.prod_subtype (p := fun q : Fin p × Fin p ↦ q.2 ≤ q.1)
-      {q : Fin p × Fin p | q.2 ≤ q.1} (fun q ↦ by simp)
-      fun q ↦ if q.1 = q.2 then F q.1 else G q.1, Finset.prod_filter, Fintype.prod_prod_type]
-  refine Finset.prod_congr rfl fun i _ ↦ ?_
-  have hsplit : ∀ j : Fin p, (if j ≤ i then (if i = j then F i else G i) else 1) =
-      (if j = i then F i else 1) * (if j < i then G i else 1) := by
-    intro j
-    rcases lt_trichotomy j i with h | h | h
-    · simp [h.le, h.ne, h.ne', h]
-    · simp [h]
-    · simp [not_le.2 h, h.ne', asymm h]
-  rw [Finset.prod_congr rfl fun j _ ↦ hsplit j, Finset.prod_mul_distrib, ← Finset.prod_filter,
-    ← Finset.prod_filter, Finset.filter_gt_eq_Iio]
-  simp [Finset.filter_eq']
-
 /-- The powers of `√π` contributed by the strictly lower coordinates assemble into the power of
 `π` appearing in `TauCeti.multivariateGamma`. -/
 private theorem sqrt_pi_pow_sum (p : ℕ) :
@@ -134,7 +112,8 @@ private theorem integral_choleskyFactor (ha : ((p : ℝ) - 1) / 2 < a) (ij : low
         (fun s _ ↦ by simp only [Real.rpow_two, neg_one_mul]; ring),
       integral_const_mul,
       integral_rpow_mul_exp_neg_mul_rpow (by norm_num) (by linarith) one_pos, Real.one_rpow]
-    rw [show (2 * a - ((ij.1.1 : ℕ) : ℝ) - 1 + 1) / 2 = a - ((ij.1.1 : ℕ) : ℝ) / 2 by ring]
+    have hexp : (2 * a - ((ij.1.1 : ℕ) : ℝ) - 1 + 1) / 2 = a - ((ij.1.1 : ℕ) : ℝ) / 2 := by ring
+    rw [hexp]
     ring
   · simpa using integral_gaussian 1
 
@@ -236,9 +215,9 @@ theorem integral_lowerTriangle_det_rpow_mul_exp_neg_trace
           multivariateGamma_def]
         ring
 
-/-- The integrand of `TauCeti.integral_lowerTriangle_det_rpow_mul_exp_neg_trace` is
-integrable on its region: otherwise the integral would vanish, while `Γ_p(a)` is positive on the
-classical range of the shape parameter. -/
+/-- For `((p : ℝ) - 1) / 2 < a`, the Jacobian-weighted Wishart integrand `(det (L * Lᵀ)) ^
+(a - (p + 1) / 2) * exp (-trace (L * Lᵀ)) * (2 ^ p * ∏ i, (L i i) ^ (p - i))` is integrable over
+the region of lower-triangular coordinates with positive diagonal. -/
 theorem integrableOn_lowerTriangle_det_rpow_mul_exp_neg_trace
     (ha : ((p : ℝ) - 1) / 2 < a) :
     IntegrableOn (fun x : lowerTriangle p → ℝ ↦
@@ -246,6 +225,8 @@ theorem integrableOn_lowerTriangle_det_rpow_mul_exp_neg_trace
             exp (-(lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).trace)) *
           (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ))))
       {x : lowerTriangle p → ℝ | ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩} := by
+  -- Were the integrand not integrable the integral would vanish, but it equals the positive
+  -- value `Γ_p(a)`.
   by_contra h
   exact (multivariateGamma_pos ha).ne'
     ((integral_lowerTriangle_det_rpow_mul_exp_neg_trace ha).symm.trans (integral_undef h))

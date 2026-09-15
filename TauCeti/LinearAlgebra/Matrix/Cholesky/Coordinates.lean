@@ -17,7 +17,8 @@ lower-triangular positions whose diagonal values are positive. This file package
 identification as a homeomorphism for the subtype topologies on both sides, and as a measurable
 equivalence for the corresponding Borel structures. These are the product coordinates in which
 the Jacobian of Cholesky reconstruction is computed. The file also reads the determinant of a
-lower-triangular matrix and the trace of its Gram matrix `L * Lᵀ` off these coordinates.
+lower-triangular matrix and the trace of its Gram matrix `L * Lᵀ` off these coordinates, and
+records how a product over the lower-triangular positions splits into a product over the rows.
 
 ## Main declarations
 
@@ -38,6 +39,28 @@ namespace TauCeti
 
 /-- The on-or-below-diagonal positions `(i, j)`, `j ≤ i`, of a `p × p` matrix. -/
 abbrev lowerTriangle (p : ℕ) := {ij : Fin p × Fin p // ij.2 ≤ ij.1}
+
+/-- A product over the lower-triangular positions of a quantity that depends only on the row
+index, and only through whether the position is diagonal, collapses to a product over the rows:
+row `i` has one diagonal position and `i` strictly lower ones. -/
+theorem prod_lowerTriangle_ite {M : Type*} [CommMonoid M] {p : ℕ} (F G : Fin p → M) :
+    ∏ ij : lowerTriangle p, (if ij.1.1 = ij.1.2 then F ij.1.1 else G ij.1.1) =
+      ∏ i : Fin p, F i * G i ^ (i : ℕ) := by
+  classical
+  rw [← Finset.prod_subtype (p := fun q : Fin p × Fin p ↦ q.2 ≤ q.1)
+      {q : Fin p × Fin p | q.2 ≤ q.1} (fun q ↦ by simp)
+      fun q ↦ if q.1 = q.2 then F q.1 else G q.1, Finset.prod_filter, Fintype.prod_prod_type]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  have hsplit : ∀ j : Fin p, (if j ≤ i then (if i = j then F i else G i) else 1) =
+      (if j = i then F i else 1) * (if j < i then G i else 1) := by
+    intro j
+    rcases lt_trichotomy j i with h | h | h
+    · simp [h.le, h.ne, h.ne', h]
+    · simp [h]
+    · simp [not_le.2 h, h.ne', asymm h]
+  rw [Finset.prod_congr rfl fun j _ ↦ hsplit j, Finset.prod_mul_distrib, ← Finset.prod_filter,
+    ← Finset.prod_filter, Finset.filter_gt_eq_Iio]
+  simp [Finset.filter_eq']
 
 /-- Real functions on the lower-triangular positions whose diagonal values are positive: the
 coordinate space of `TauCeti.PosDiagLowerTriangular p`. -/
