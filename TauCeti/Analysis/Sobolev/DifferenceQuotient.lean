@@ -76,7 +76,8 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ
 
 section Representation
 
-variable [OpensMeasurableSpace E] [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure]
+variable [OpensMeasurableSpace E] [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure]
+  [IsLocallyFiniteMeasure (μ.restrict Ω)]
 
 /-- **An `L²`-bounded distributional derivative is an `L²` weak derivative.** Let `u` be locally
 integrable on `Ω`. If for some `C ≥ 0` every test function `φ` on `Ω` satisfies
