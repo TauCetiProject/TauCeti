@@ -134,6 +134,64 @@ theorem differentExponent_eq_multiplicity_center (P₂ : Place k₂ F₂)
 
 end AffineModel
 
+section AffineTower
+
+variable (A : Type*) (B : Type*) {C : Type*} [CommRing A] [IsDedekindDomain A] [Algebra A F₀]
+  [IsFractionRing A F₀] [CommRing B] [IsDedekindDomain B] [Algebra B F₁] [IsFractionRing B F₁]
+  [CommRing C] [IsDedekindDomain C] [Algebra C F₂] [IsFractionRing C F₂]
+  [Algebra A B] [Algebra A C] [Algebra B C] [IsScalarTower A B C]
+  [Algebra A F₁] [Algebra A F₂] [Algebra B F₂]
+  [IsScalarTower A B F₁] [IsScalarTower A F₀ F₁] [IsScalarTower A B F₂] [IsScalarTower A C F₂]
+  [IsScalarTower A F₀ F₂]
+  [IsScalarTower B C F₂] [IsScalarTower B F₁ F₂]
+  [IsIntegralClosure B A F₁] [IsIntegralClosure C A F₂]
+
+include A B in
+/-- The tower law for different exponents, read on any tower of affine models `A ⊆ B ⊆ C` of
+`F₀ ⊆ F₁ ⊆ F₂` on which `P₂` is finite: each exponent is the coefficient of a different ideal at
+a centre, so the formula is `TauCeti.multiplicity_differentIdeal_tower`. -/
+private theorem differentExponent_restrict_add_of_affineModel (P₂ : Place k₂ F₂)
+    (hC : ∀ c : C, algebraMap C F₂ c ∈ P₂.integers) :
+    haveI : FiniteDimensional F₀ F₂ := FiniteDimensional.trans F₀ F₁ F₂
+    haveI : Algebra.IsSeparable F₀ F₂ := Algebra.IsSeparable.trans F₀ F₁ F₂
+    differentExponent k₀ F₀ P₂ =
+      ramificationIdx F₁ P₂ * differentExponent k₀ F₀ (P₂.restrict k₁ F₁) +
+        differentExponent k₁ F₁ P₂ := by
+  let _ : FiniteDimensional F₀ F₂ := FiniteDimensional.trans F₀ F₁ F₂
+  let _ : Algebra.IsSeparable F₀ F₂ := Algebra.IsSeparable.trans F₀ F₁ F₂
+  let _ : Algebra.IsIntegral A B := IsIntegralClosure.isIntegral_algebra A F₁
+  let _ : IsIntegralClosure C B F₂ := IsIntegralClosure.tower_top (R := A)
+  let _ : Module.Finite B C := IsIntegralClosure.finite B F₁ F₂ C
+  let _ : Module.Finite A B := IsIntegralClosure.finite A F₀ F₁ B
+  let _ : Module.IsTorsionFree A F₁ := .trans_faithfulSMul A F₀ F₁
+  let _ : Module.IsTorsionFree A F₂ := .trans_faithfulSMul A F₀ F₂
+  let _ : Module.IsTorsionFree A B := IsIntegralClosure.isTorsionFree A F₁
+  let _ : Module.IsTorsionFree A C := IsIntegralClosure.isTorsionFree A F₂
+  -- Transport separability of `F₂ / F₀` to the canonical fraction fields of `A` and `C`.
+  let _ : Algebra.IsSeparable (FractionRing A) (FractionRing C) := by
+    refine Algebra.IsSeparable.of_equiv_equiv (FractionRing.algEquiv A F₀).symm.toRingEquiv
+      (FractionRing.algEquiv C F₂).symm.toRingEquiv ?_
+    apply IsLocalization.ringHom_ext A⁰
+    ext a
+    simp only [RingHom.coe_comp, Function.comp_apply, RingHom.coe_coe, AlgEquiv.coe_ringEquiv,
+      AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
+    rw [IsScalarTower.algebraMap_apply A C F₂, AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
+  let _ : Module.IsTorsionFree B F₂ := .trans_faithfulSMul B F₁ F₂
+  let _ : Module.IsTorsionFree B C := IsIntegralClosure.isTorsionFree B F₂
+  let P₁ : Place k₁ F₁ := P₂.restrict k₁ F₁
+  have hB : ∀ b : B, algebraMap B F₁ b ∈ P₁.integers :=
+    algebraMap_mem_integers_restrict k₁ F₁ P₂ hC
+  let p : HeightOneSpectrum B := P₁.center hB
+  let q : HeightOneSpectrum C := P₂.center hC
+  let _ : q.asIdeal.LiesOver p.asIdeal := center_liesOver (R := B) k₁ F₁ P₂ hC
+  rw [differentExponent_eq_multiplicity_center (B := A) P₂ hC,
+    differentExponent_eq_multiplicity_center (B := A) P₁ hB,
+    differentExponent_eq_multiplicity_center (B := B) P₂ hC,
+    multiplicity_differentIdeal_tower A p q,
+    ramificationIdx_eq_ramificationIdx_center (R := B) k₁ F₁ P₂ hC, add_comm]
+
+end AffineTower
+
 /-- **Different exponents are transitive in towers** (Stichtenoth, Corollary 3.4.12): the
 different exponent of `P₂` over `P₀` is the different exponent over `P₁`, plus the exponent of
 `P₁` over `P₀` multiplied by `e(P₂ / P₁)`. -/
@@ -145,15 +203,10 @@ theorem differentExponent_restrict_add (P₂ : Place k₂ F₂) :
         differentExponent k₁ F₁ P₂ := by
   let _ : FiniteDimensional F₀ F₂ := FiniteDimensional.trans F₀ F₁ F₂
   let _ : Algebra.IsSeparable F₀ F₂ := Algebra.IsSeparable.trans F₀ F₁ F₂
-  -- Work over the local model `𝒪_{P₀}`: `B` and `C` are its integral closures in `F₁` and `F₂`,
-  -- `p` and `q` are the centres of `P₁` and `P₂` on them, and `q` lies over `p`.
-  let P₁ : Place k₁ F₁ := P₂.restrict k₁ F₁
-  let P₀ : Place k₀ F₀ := P₁.restrict k₀ F₀
+  -- Apply the affine-tower law to the local models `B` and `C` over `𝒪_{P₀}`.
+  let P₀ : Place k₀ F₀ := (P₂.restrict k₁ F₁).restrict k₀ F₀
   let B := integralClosure P₀.integers F₁
   let C := integralClosure P₀.integers F₂
-  have hB : ∀ b : B, algebraMap B F₁ b ∈ P₁.integers := by
-    intro b
-    exact algebraMap_mem_integers_of_mem_integralClosure k₀ F₀ P₁ b
   have hC : ∀ c : C, algebraMap C F₂ c ∈ P₂.integers := by
     intro c
     exact P₂.mem_integers_of_isIntegral
@@ -166,42 +219,11 @@ theorem differentExponent_restrict_add (P₂ : Place k₂ F₂) :
   let _ : Algebra B C := (IsIntegralClosure.lift P₀.integers C F₂).toAlgebra
   let _ : IsScalarTower B C F₂ := .of_algebraMap_eq fun x ↦
     (IsIntegralClosure.algebraMap_lift P₀.integers C F₂ x).symm
-  let _ : IsScalarTower P₀.integers B C := .of_algebraMap_eq fun x ↦ by
-    apply Subtype.ext
-    calc
-      (↑(algebraMap P₀.integers C x) : F₂) = algebraMap P₀.integers F₂ x :=
-        (IsScalarTower.algebraMap_apply P₀.integers C F₂ x).symm
-      _ = algebraMap B F₂ (algebraMap P₀.integers B x) :=
-        IsScalarTower.algebraMap_apply P₀.integers B F₂ x
-      _ = ↑(algebraMap B C (algebraMap P₀.integers B x)) :=
-        IsScalarTower.algebraMap_apply B C F₂ (algebraMap P₀.integers B x)
-  let _ : IsIntegralClosure C B F₂ := IsIntegralClosure.tower_top (R := P₀.integers)
-  let _ : Module.Finite B C := IsIntegralClosure.finite B F₁ F₂ C
-  let _ : Module.IsTorsionFree P₀.integers B :=
-    IsIntegralClosure.isTorsionFree P₀.integers F₁
-  let _ : Module.IsTorsionFree P₀.integers C :=
-    IsIntegralClosure.isTorsionFree P₀.integers F₂
-  let _ : Module.IsTorsionFree B F₂ := .trans_faithfulSMul B F₁ F₂
-  let _ : Module.IsTorsionFree B C := IsIntegralClosure.isTorsionFree B F₂
-  let p : HeightOneSpectrum B := P₁.center hB
-  let q : HeightOneSpectrum C := P₂.center hC
-  let _ : q.asIdeal.LiesOver p.asIdeal := by
-    simpa only [p, q, P₁] using center_liesOver (R := B) k₁ F₁ P₂ hC
-  have hlocal : multiplicity q.asIdeal (differentIdeal B C) = differentExponent k₁ F₁ P₂ :=
-    (differentExponent_eq_multiplicity_center P₂ hC).symm
-  -- Read the tower law for different ideals at `q`, and identify each coefficient.
-  have hP₀ : P₂.restrict k₀ F₀ = P₀ :=
-    (restrict_restrict (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P₂).symm
-  have hexp₂ : differentExponent k₀ F₀ P₂ =
-      multiplicity q.asIdeal (differentIdeal P₀.integers C) := by
-    clear_value P₀
-    subst hP₀
-    rw [differentExponent_def, centerIntegralClosure_def]
-  have hexp₁ : differentExponent k₀ F₀ P₁ =
-      multiplicity p.asIdeal (differentIdeal P₀.integers B) := by
-    rw [differentExponent_def, centerIntegralClosure_def]
-  rw [hexp₂, multiplicity_differentIdeal_tower P₀.integers p q, hlocal, ← hexp₁,
-    ← ramificationIdx_eq_ramificationIdx_center (R := B) k₁ F₁ P₂ hC, add_comm]
+  let _ : IsScalarTower P₀.integers B C := .of_algebraMap_eq fun x ↦
+    IsIntegralClosure.algebraMap_injective C P₀.integers F₂ <| by
+      rw [← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply B C F₂,
+        ← IsScalarTower.algebraMap_apply]
+  exact differentExponent_restrict_add_of_affineModel P₀.integers B P₂ hC
 
 end Place
 
