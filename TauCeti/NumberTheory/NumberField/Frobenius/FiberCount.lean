@@ -37,7 +37,7 @@ divisibility for a whole conjugacy class.
   its members under the centralizer of `σ`.
 * `Ideal.frobenius_fiber_card_mul_orderOf_eq_card_centralizer`: its size, times `orderOf σ`, is
   the order of that centralizer.
-* `Ideal.heightOneFrobeniusFiberEquiv`: the height-one-prime and ideal representations of the
+* `HeightOneSpectrum.frobeniusFiberEquiv`: the height-one-prime and ideal representations of the
   fiber are equivalent.
 
 ## References
@@ -126,10 +126,17 @@ theorem frobenius_fiber_card_mul_orderOf_eq_card_centralizer (𝔭 : Ideal (𝓞
   rw [hcard]
   exact key
 
+end Ideal
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
+  [Algebra K L]
+
 /-- The equivalence between the height-one-prime and ideal representations of a Frobenius fiber
 above `p`, induced by `HeightOneSpectrum.asIdeal`. -/
-noncomputable def heightOneFrobeniusFiberEquiv
-    (sigma : L ≃ₐ[K] L) (p : HeightOneSpectrum (𝓞 K)) :
+noncomputable def frobeniusFiberEquiv
+    (p : HeightOneSpectrum (𝓞 K)) (sigma : L ≃ₐ[K] L) :
     {Q : HeightOneSpectrum (𝓞 L) //
         Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal} ≃
       {Q : Ideal (𝓞 L) // ∃ (_ : Q.IsPrime) (_ : Q.LiesOver p.asIdeal) (_ : Q ≠ ⊥),
@@ -170,28 +177,32 @@ noncomputable def heightOneFrobeniusFiberEquiv
   exact domainEquiv.trans (coreEquiv.trans codomainEquiv)
 
 @[simp]
-theorem heightOneFrobeniusFiberEquiv_apply
-    (sigma : L ≃ₐ[K] L) (p : HeightOneSpectrum (𝓞 K))
+theorem frobeniusFiberEquiv_apply
+    (p : HeightOneSpectrum (𝓞 K)) (sigma : L ≃ₐ[K] L)
     (Q : {Q : HeightOneSpectrum (𝓞 L) //
       Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal}) :
-    (heightOneFrobeniusFiberEquiv sigma p Q : Ideal (𝓞 L)) = Q.1.asIdeal := by
+    (p.frobeniusFiberEquiv sigma Q : Ideal (𝓞 L)) = Q.1.asIdeal := by
+  -- `subtypeEquivRight` and `subtypeSubtypeEquivSubtypeInter` only reassociate predicates and
+  -- proof fields, so they have no value-level application lemma. Reducing those identity-on-values
+  -- wrappers is stable; the sole data-changing component is `equivPrimesOver`, whose public
+  -- application lemma completes the proof below.
   change ((HeightOneSpectrum.equivPrimesOver (𝓞 L) p.ne_bot) _ : Ideal (𝓞 L)) =
     Q.1.asIdeal
   rw [HeightOneSpectrum.equivPrimesOver_apply]
   rfl
 
 @[simp]
-theorem heightOneFrobeniusFiberEquiv_symm_apply_asIdeal
-    (sigma : L ≃ₐ[K] L) (p : HeightOneSpectrum (𝓞 K))
+theorem frobeniusFiberEquiv_symm_apply_asIdeal
+    (p : HeightOneSpectrum (𝓞 K)) (sigma : L ≃ₐ[K] L)
     (Q : {Q : Ideal (𝓞 L) // ∃ (_ : Q.IsPrime) (_ : Q.LiesOver p.asIdeal) (_ : Q ≠ ⊥),
       IsArithFrobAt (𝓞 K) sigma Q}) :
-    ((heightOneFrobeniusFiberEquiv sigma p).symm Q).1.asIdeal = Q.1 := by
+    ((p.frobeniusFiberEquiv sigma).symm Q).1.asIdeal = Q.1 := by
   calc
-    ((heightOneFrobeniusFiberEquiv sigma p).symm Q).1.asIdeal =
-        (heightOneFrobeniusFiberEquiv sigma p
-          ((heightOneFrobeniusFiberEquiv sigma p).symm Q) : Ideal (𝓞 L)) :=
-      (heightOneFrobeniusFiberEquiv_apply sigma p _).symm
+    ((p.frobeniusFiberEquiv sigma).symm Q).1.asIdeal =
+        (p.frobeniusFiberEquiv sigma
+          ((p.frobeniusFiberEquiv sigma).symm Q) : Ideal (𝓞 L)) :=
+      (p.frobeniusFiberEquiv_apply sigma _).symm
     _ = Q.1 := congrArg Subtype.val
-      ((heightOneFrobeniusFiberEquiv sigma p).apply_symm_apply Q)
+      ((p.frobeniusFiberEquiv sigma).apply_symm_apply Q)
 
-end Ideal
+end IsDedekindDomain.HeightOneSpectrum

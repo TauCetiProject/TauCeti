@@ -216,7 +216,7 @@ theorem fixedField_frobenius_fiber_card
   have hupper : Nat.card upperFiber = Nat.card
       {R : Ideal (𝓞 L) // ∃ (_ : R.IsPrime) (_ : R.LiesOver p.asIdeal) (_ : R ≠ ⊥),
         IsArithFrobAt (𝓞 K) sigma R} :=
-    Nat.card_congr (Ideal.heightOneFrobeniusFiberEquiv sigma p)
+    Nat.card_congr (p.frobeniusFiberEquiv sigma)
   have hcount := Ideal.frobenius_fiber_card_mul_orderOf_eq_card_centralizer
     p.asIdeal Q.1 hQ
   have hupper_count : Nat.card upperFiber =
