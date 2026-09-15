@@ -334,8 +334,6 @@ private theorem isRecut_symm_of_left_eq_right {D E : GridRectangleDecomposition 
   have hDbot₂ : D.second.bottom = x D.second.left := by
     rw [GridRectangleBetween.bottom_def, D.first.target_apply,
       Equiv.swap_apply_of_ne_of_ne hvm hother.symm]
-  have hDtop₂ : D.second.top = x D.first.right := by
-    rw [GridRectangleBetween.top_def, ← hcommon, D.first.target_apply, Equiv.swap_apply_left]
   rcases hbranch with ⟨-, hEmid, hEt₁, hEt₂⟩ | ⟨-, hEmid, hEt₁, hEt₂⟩
   · -- the recut has both its rectangles on the same initial side column
     have hEmid' : E.middle = x.swapColumns D.second.left D.first.left := by
@@ -400,9 +398,6 @@ private theorem isRecut_symm_of_right_eq_left {D E : GridRectangleDecomposition 
     rw [hcommon]
     exact D.second.left_ne_right.symm
   have hcol := (D.cyclicOrder_of_isEmpty_of_right_eq_left hcommon hother hDempty₁ hDempty₂).1
-  have hDbot₂ : D.second.bottom = x D.first.left := by
-    rw [GridRectangleBetween.bottom_def, ← hcommon, D.first.target_apply,
-      Equiv.swap_apply_right]
   have hDtop₂ : D.second.top = x D.second.right := by
     rw [GridRectangleBetween.top_def, D.first.target_apply,
       Equiv.swap_apply_of_ne_of_ne hother.symm hvm]
