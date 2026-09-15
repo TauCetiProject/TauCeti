@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import TauCeti.InformationTheory.Coding.Basic
 public import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Puncturing and shortening linear codes
 
-A linear code on coordinates `ι` is a submodule of the word space `ι → R`. Given a set `s` of
-coordinates to retain, puncturing restricts every codeword to `s`. Shortening first restricts to
-the codewords which vanish outside `s`, and then forgets those zero coordinates.
+A linear code on coordinates `ι` is a submodule of the word space `ι → R`, as defined in
+`TauCeti/InformationTheory/Coding/Basic.lean`. Given a set `s` of coordinates to retain,
+puncturing restricts every codeword to `s`. Shortening first restricts to the codewords which
+vanish outside `s`, and then forgets those zero coordinates.
 
 The definitions in this file work over a semiring and do not require the alphabet or the
 coordinate type to be finite. A division ring and finiteness are needed only for the dimension
@@ -23,7 +25,6 @@ coordinates are discarded.
 
 ## Main declarations
 
-* `LinearCode`: the unbundled linear-code carrier `Submodule R (ι → R)`.
 * `puncture`: restriction of a code to a retained coordinate set.
 * `shorten`: restriction after imposing zero outside the retained coordinate set.
 * `mem_puncture` and `mem_shorten`: membership characterizations.
@@ -41,65 +42,9 @@ namespace TauCeti
 
 universe u v w
 
-/-- A linear code over `R` on coordinates `ι`, represented by its submodule of words. -/
-abbrev LinearCode (R : Type u) [Semiring R] (ι : Type v) := Submodule R (ι → R)
-
 section Operations
 
 variable {R : Type u} [Semiring R] {ι : Type v}
-
-/-- Reindex a linear code along a coordinate equivalence. The equivalence points from the new
-coordinate type to the old one, so the transported word has value `x (e j)` at `j`. -/
-noncomputable def reindex {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) : LinearCode R κ :=
-  C.map (LinearEquiv.funCongrLeft R R e).toLinearMap
-
-/-- Reindexing is the image under coordinate transport. -/
-theorem reindex_def {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) :
-    reindex C e = C.map (LinearEquiv.funCongrLeft R R e).toLinearMap := (rfl)
-
-/-- Membership in a reindexed code, with the direction of the coordinate equivalence explicit. -/
-@[simp]
-theorem mem_reindex {κ : Type w} {C : LinearCode R ι} {e : κ ≃ ι} {y : κ → R} :
-    y ∈ reindex C e ↔ ∃ x ∈ C, ∀ j, x (e j) = y j := by
-  rw [reindex, Submodule.mem_map]
-  constructor
-  · rintro ⟨x, hxC, rfl⟩
-    exact ⟨x, hxC, fun _ ↦ rfl⟩
-  · rintro ⟨x, hxC, hxy⟩
-    refine ⟨x, hxC, ?_⟩
-    ext j
-    exact hxy j
-
-@[simp]
-theorem reindex_refl (C : LinearCode R ι) : reindex C (Equiv.refl ι) = C := by
-  ext x
-  simp only [mem_reindex, Equiv.refl_apply]
-  exact ⟨fun ⟨y, hy, hxy⟩ ↦ (funext hxy).symm ▸ hy, fun hx ↦ ⟨x, hx, fun _ ↦ rfl⟩⟩
-
-/-- Successive changes of coordinates compose in their contravariant order. -/
-theorem reindex_trans {κ : Type w} {κ' : Type*} (C : LinearCode R ι)
-    (e : κ ≃ ι) (f : κ' ≃ κ) :
-    reindex (reindex C e) f = reindex C (f.trans e) := by
-  ext x
-  simp only [mem_reindex, Equiv.trans_apply]
-  constructor
-  · rintro ⟨y, ⟨z, hzC, hzy⟩, hyx⟩
-    exact ⟨z, hzC, fun j ↦ (hzy (f j)).trans (hyx j)⟩
-  · rintro ⟨z, hzC, hzx⟩
-    exact ⟨fun j ↦ z (e j), ⟨z, hzC, fun _ ↦ rfl⟩, hzx⟩
-
-/-- Reindexing is monotone in the code. -/
-theorem reindex_mono {κ : Type w} {C D : LinearCode R ι} (h : C ≤ D) (e : κ ≃ ι) :
-    reindex C e ≤ reindex D e :=
-  Submodule.map_mono h
-
-@[simp]
-theorem reindex_bot {κ : Type w} (e : κ ≃ ι) : reindex (⊥ : LinearCode R ι) e = ⊥ := by
-  simp [reindex]
-
-@[simp]
-theorem reindex_top {κ : Type w} (e : κ ≃ ι) : reindex (⊤ : LinearCode R ι) e = ⊤ := by
-  simp [reindex]
 
 /-- Puncturing a code at `s` retains precisely the coordinates in `s`. -/
 noncomputable def puncture (C : LinearCode R ι) (s : Set ι) : LinearCode R s :=
@@ -424,7 +369,7 @@ theorem finrank_le_finrank_puncture_add_ncard_compl [Finite ι]
 @[simp]
 theorem finrank_reindex {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) :
     Module.finrank R (reindex C e) = Module.finrank R C := by
-  rw [reindex, LinearEquiv.finrank_map_eq]
+  rw [reindex_def, LinearEquiv.finrank_map_eq]
 
 end Dimension
 
