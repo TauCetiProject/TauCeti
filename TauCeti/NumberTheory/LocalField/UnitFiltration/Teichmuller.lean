@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.Valuation.RootsOfUnity
 public import Mathlib.FieldTheory.Finite.Basic
-public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import Mathlib.RingTheory.Teichmuller
 
 /-!
@@ -115,7 +114,7 @@ noncomputable def teichmuller (K : Type*) [Field K] [ValuativeRel K]
 
 /-- The Teichmüller section on unit groups is the Teichmüller lift on underlying elements. -/
 @[simp]
-theorem val_teichmuller (a : 𝓀[K]ˣ) :
+theorem coe_teichmuller_apply (a : 𝓀[K]ˣ) :
     ((teichmuller K a : 𝒪[K]ˣ) : 𝒪[K]) = teichmullerLift K (a : 𝓀[K]) :=
   -- `teichmuller` is `Units.map` of the lift, so this is `Units.coe_map`. The parentheses are the
   -- module system's: the body of `teichmuller` is not `@[expose]`d, so a bare `rfl`, whose proof
@@ -289,6 +288,7 @@ theorem teichmullerLift_teichmullerEquivRootsOfUnity_symm_apply
     (z : rootsOfUnity (Nat.card 𝓀[K] - 1) K) :
     ((teichmullerLift K ((teichmullerEquivRootsOfUnity (K := K)).symm z : 𝓀[K]) : 𝒪[K]) : K) =
       ((z : Kˣ) : K) := by
-  rw [← val_teichmuller, ← teichmullerEquivRootsOfUnity_apply, MulEquiv.apply_symm_apply]
+  rw [← coe_teichmuller_apply, ← teichmullerEquivRootsOfUnity_apply,
+    MulEquiv.apply_symm_apply]
 
 end TauCeti
