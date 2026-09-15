@@ -29,10 +29,10 @@ nonnegative.
 
 This file develops that analysis and the resulting bounds on minimal numerical types: in a
 minimal type of genus `g` with more than one component, there are at most `2g - 2` components
-that are not `(-2)`-indices, every component genus is below `g`, and the multiplicities and
-intersection numbers at such a component are at most `6g - 6`. These are the first steps of the
-bound on the multiplicities of a minimal numerical type which, in the Artin–Winters argument,
-bounds the `ℓ`-torsion of its Picard group.
+that are not `(-2)`-indices, every component genus is below `g`, and the multiplicity-weighted
+self-intersection and pairwise intersection numbers at a component that is not a `(-2)`-index
+are at most `6g - 6`. These are the first steps of the bound on the multiplicities of a minimal
+numerical type which, in the Artin–Winters argument, bounds the `ℓ`-torsion of its Picard group.
 
 ## Main definitions
 
@@ -77,7 +77,7 @@ namespace NumericalType
 
 open Finset
 
-universe u
+universe u v
 
 variable (T : NumericalType.{u})
 
@@ -115,6 +115,27 @@ instance : DecidablePred T.IsMinusTwoIndex := fun _ ↦ decidable_of_iff _ T.isM
 /-- Unfolding of `TauCeti.NumericalType.IsMinimal`. -/
 lemma isMinimal_iff : T.IsMinimal ↔ ∀ i, ¬ T.IsMinusOneIndex i := Iff.rfl
 
+variable {C : Type v} (e : T.Component ≃ C)
+
+/-- Reindexing preserves and reflects `(-1)`-indices. -/
+@[simp]
+lemma isMinusOneIndex_reindex (i : C) :
+    (T.reindex e).IsMinusOneIndex i ↔ T.IsMinusOneIndex (e.symm i) := Iff.rfl
+
+/-- Reindexing preserves and reflects `(-2)`-indices. -/
+@[simp]
+lemma isMinusTwoIndex_reindex (i : C) :
+    (T.reindex e).IsMinusTwoIndex i ↔ T.IsMinusTwoIndex (e.symm i) := Iff.rfl
+
+/-- Minimality is invariant under reindexing. -/
+@[simp]
+lemma isMinimal_reindex : (T.reindex e).IsMinimal ↔ T.IsMinimal := by
+  constructor
+  · intro h i hi
+    exact h (e i) ((T.isMinusOneIndex_reindex e (e i)).mpr (by simpa using hi))
+  · intro h i hi
+    exact h (e.symm i) ((T.isMinusOneIndex_reindex e i).mp hi)
+
 /-- A `(-2)`-index is not a `(-1)`-index. -/
 lemma IsMinusTwoIndex.not_isMinusOneIndex {i : T.Component} (h : T.IsMinusTwoIndex i) :
     ¬ T.IsMinusOneIndex i := fun h' ↦ by
@@ -142,6 +163,13 @@ lemma genusContribution_def (i : T.Component) :
     T.genusContribution i = (T.multiplicity i : ℚ) *
       ((T.weight i : ℚ) * ((T.genus i : ℚ) - 1) - (T.intersection i i : ℚ) / 2) := by
   rw [genusContribution]
+
+/-- Genus contributions are invariant under reindexing. -/
+@[simp]
+lemma genusContribution_reindex (i : C) :
+    (T.reindex e).genusContribution i = T.genusContribution (e.symm i) := by
+  simp only [genusContribution, reindex_multiplicity, reindex_weight, reindex_genus,
+    reindex_intersection]
 
 /-- The signed genus is one plus the sum of the contributions of the components. -/
 lemma arithmeticGenus_eq_one_add_sum_genusContribution :
