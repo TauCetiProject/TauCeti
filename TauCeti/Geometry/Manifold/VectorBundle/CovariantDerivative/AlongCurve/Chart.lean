@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.CoordinateChange
+public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongCurve.Tangent
 
 /-!
 # The along-curve covariant derivative read in an arbitrary chart
@@ -19,17 +20,15 @@ file proves that the same formula computed in *any* chart around `γ t`, transpo
 where the value is identified with the ambient covariant derivative; the general statement needs
 the Christoffel transformation law instead.
 
-Two chart readings of `V` differ by the tangent coordinate change `A z`, so differentiating the
-reading in the chart at `x` produces the extra term `(d/dt) (A (γ t)) v`, while the Christoffel
-transformation law `TauCeti.Manifold.christoffelMap_coordChange` produces exactly its negative.
+Two chart readings of `V` differ by the tangent coordinate change `A z`
+(`TauCeti.Manifold.sectionCoord_coordChange`), so differentiating the reading in the chart at `x`
+produces the extra term `(d/dt) (A (γ t)) v`, while the Christoffel transformation law
+`TauCeti.Manifold.christoffelMap_coordChange` produces exactly its negative.
 The cancellation of these two inhomogeneous terms is the content of the main theorem, and is what
 allows a fixed chart to be used in place of the moving one.
 
 ## Main results
 
-* `TauCeti.Manifold.sectionCoord_coordChange`: two chart readings of a field along a curve differ
-  by the tangent coordinate change, with
-  `TauCeti.Manifold.sectionCoord_eventuallyEq_coordChange` its form near a parameter.
 * `CovariantDerivative.symmL_alongCurveInChartWithin`: **chart independence** -- the coordinate
   formula read in an arbitrary chart around `γ t` transports back to the moving-chart value.
 * `CovariantDerivative.tangentCoordChange_alongCurveInChartWithin`: the resulting transformation
@@ -47,48 +46,6 @@ open Bundle Filter Module Set
 open scoped ContDiff Manifold Topology
 
 noncomputable section
-
-namespace TauCeti.Manifold
-
-variable
-  {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
-
-variable (γ : 𝕜 → M) (V : Π t, TangentSpace I (γ t))
-
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I] in
-/-- The coordinate readings of a tangent field along a curve in the trivializations at two points
-whose base sets contain `γ r` differ by the tangent coordinate change between them. -/
-theorem sectionCoord_coordChange {x y : M} {r : 𝕜}
-    (hx : γ r ∈ (trivializationAt E (TangentSpace I) x).baseSet)
-    (hy : γ r ∈ (trivializationAt E (TangentSpace I) y).baseSet) :
-    sectionCoord (F := E) γ V y r =
-      tangentCoordChange I x y (γ r) (sectionCoord (F := E) γ V x r) := by
-  rw [sectionCoord_apply, sectionCoord_apply, ← continuousLinearMapAt_symmL_coordChange hx hy,
-    (trivializationAt E (TangentSpace I) x).symmL_continuousLinearMapAt (R := 𝕜) hx]
-
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I] in
-/-- Near a parameter whose image lies in two base sets, the coordinate readings of a tangent field
-along a curve are related by the tangent coordinate change. -/
-theorem sectionCoord_eventuallyEq_coordChange {x y : M} {s : Set 𝕜} {r : 𝕜}
-    (hγ : ContinuousWithinAt γ s r)
-    (hx : γ r ∈ (trivializationAt E (TangentSpace I) x).baseSet)
-    (hy : γ r ∈ (trivializationAt E (TangentSpace I) y).baseSet) :
-    sectionCoord (F := E) γ V y =ᶠ[𝓝[s] r]
-      fun q ↦ tangentCoordChange I x y (γ q) (sectionCoord (F := E) γ V x q) := by
-  filter_upwards
-    [hγ.preimage_mem_nhdsWithin
-      ((trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds hx),
-    hγ.preimage_mem_nhdsWithin
-      ((trivializationAt E (TangentSpace I) y).open_baseSet.mem_nhds hy)] with q hqx hqy
-  exact sectionCoord_coordChange γ V hqx hqy
-
-end TauCeti.Manifold
 
 namespace CovariantDerivative
 
