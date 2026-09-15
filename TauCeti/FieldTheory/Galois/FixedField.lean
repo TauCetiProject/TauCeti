@@ -50,7 +50,8 @@ its fixing subgroup is the stabilizer of `x`; this too needs no hypothesis on `M
 * `IntermediateField.card_fixingSubgroup_le`
 * `IntermediateField.fixingSubgroup_adjoin_simple`
 * `FixedPoints.isCyclic_algEquiv`
-* `AlgEquiv.toFixedFieldAlgEquiv`, with `AlgEquiv.zpowers_toFixedFieldAlgEquiv_eq_top`
+* `AlgEquiv.toFixedFieldAlgEquiv`, with `AlgEquiv.zpowers_toFixedFieldAlgEquiv_eq_top` and
+  `AlgEquiv.card_algEquiv_fixedField_zpowers`
 -/
 
 public section
@@ -262,5 +263,22 @@ theorem zpowers_toFixedFieldAlgEquiv_eq_top (σ : M ≃ₐ[K] M) [Finite (Subgro
     rw [← MulEquiv.coe_toMonoidHom, ← MonoidHom.map_zpowers, Subgroup.zpowers_mk_self_eq_top]
     simp
   exact h
+
+/-- **The automorphism group of `M` over `M ^ ⟨σ⟩` has order `orderOf σ`.** The automorphisms of
+`M` fixing the field cut out by `⟨σ⟩` number exactly the order of `σ`.
+
+Only the generated subgroup `⟨σ⟩` need be finite: `M / K` is asked to be neither finite nor
+Galois, so this applies to an automorphism of finite order of an arbitrary extension. -/
+-- Not a `simp` lemma: `simpNF` rejects it. Normalising the left-hand side sends `simp` after
+-- `Fintype Gal(M/M ^ ⟨σ⟩)`, and with only `Finite (Subgroup.zpowers σ)` in scope that instance
+-- search exhausts its heartbeat budget instead of failing, so the lemma could never fire.
+theorem card_algEquiv_fixedField_zpowers (σ : M ≃ₐ[K] M) [Finite (Subgroup.zpowers σ)] :
+    Nat.card (M ≃ₐ[IntermediateField.fixedField (Subgroup.zpowers σ)] M) = orderOf σ := by
+  have horder : orderOf (toFixedFieldAlgEquiv σ) = orderOf σ := by
+    rw [← orderOf_injective (AlgEquiv.restrictScalarsHom K)
+      (AlgEquiv.restrictScalarsHom_injective K) (toFixedFieldAlgEquiv σ),
+      AlgEquiv.restrictScalarsHom_apply, restrictScalars_toFixedFieldAlgEquiv]
+  rw [← Subgroup.card_top (G := M ≃ₐ[IntermediateField.fixedField (Subgroup.zpowers σ)] M),
+    ← zpowers_toFixedFieldAlgEquiv_eq_top σ, Nat.card_zpowers, horder]
 
 end AlgEquiv
