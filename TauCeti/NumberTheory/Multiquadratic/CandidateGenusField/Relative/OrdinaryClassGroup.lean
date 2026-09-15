@@ -23,9 +23,9 @@ This file therefore identifies
 `Cl(K) / Cl(K)²`
 
 with the quotient of the relative sign space by the line spanned by the negative-coordinate
-vector. This is the class-group half of the real genus-field isomorphism; it is meant to be
-compared with the kernel of restriction from the full candidate genus field to its maximal
-totally real subfield once that field-side identification is available.
+vector. This is the class-group half of the real genus-field isomorphism, formulated for comparison
+with the quotient induced by restriction from the full candidate genus field to its maximal totally
+real subfield.
 
 The description is the real-quadratic counterpart of
 `autCandidateGenusFieldEquivElementaryTwoQuotient`, which handles the imaginary case directly
@@ -105,11 +105,10 @@ theorem candidateGenusFieldBaseGenusCharLinearMap_narrowDefect (hd : Squarefree 
     simp [hP]
 
 /-- For positive `d`, the negative-coordinate vector has even parity and hence belongs to the
-relative sign space. Away from the degenerate radicand `d = 1`, which has no prime discriminants
-at all, this follows intrinsically from its realization as the genus-character vector of the
-narrow defect. -/
+relative sign space. -/
 theorem candidateGenusFieldNegativeSign_mem (hd : Squarefree d) (hpos : 0 < d) :
     candidateGenusFieldNegativeSign hd ∈ candidateGenusFieldRelativeSignSubmodule hd := by
+  -- The case `d = 1` has no prime discriminants; otherwise use the genus-character realization.
   rcases eq_or_ne d 1 with rfl | hne
   · have hempty : genusPrimeDiscriminants hd = ∅ :=
       genusPrimeDiscriminants_eq hd (by simp)
