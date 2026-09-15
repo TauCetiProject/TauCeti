@@ -33,8 +33,6 @@ homotopy between a path and the concatenation of its consecutive subpaths.
 
 * R. Brown, *Topology and Groupoids*, Section 6.7.
 * A. Hatcher, *Algebraic Topology*, Section 1.2, proof of Theorem 1.20.
-* T. Zhu, [mathlib4#41603](https://github.com/leanprover-community/mathlib4/pull/41603),
-  Seifert--van Kampen for the fundamental groupoid functor.
 -/
 
 public section
