@@ -23,8 +23,8 @@ finite, nor does the code. The attained minimum and its lower-bound characteriza
 parameter computations for explicit codes, while invariance under distance-preserving maps
 handles changes of coordinates.
 
-Use `TauCeti.hammingMinDist C`, or `hammingMinDist C` after `open TauCeti`, for a
-set of words `C`. Its defining equation is `TauCeti.hammingMinDist_def C`.
+Use `TauCeti.Set.hammingMinDist C`, or `C.hammingMinDist` after `open TauCeti`, for a
+set of words `C`. Its defining equation is `TauCeti.Set.hammingMinDist_def C`.
 
 The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*,
 §§1.2–1.6. The metric comparison uses Mathlib's `Set.Nontrivial.le_infsep_iff`.
@@ -37,6 +37,8 @@ types and dependent alphabets, with `hammingMinDist_eq_infsep` providing the exp
 public section
 
 namespace TauCeti
+
+namespace Set
 
 variable {ι κ : Type*} {β : ι → Type*} {γ : κ → Type*}
   [Fintype ι] [∀ i, DecidableEq (β i)]
@@ -117,7 +119,7 @@ theorem hammingMinDist_le_card : hammingMinDist C ≤ Fintype.card ι := by
   · simp [hammingMinDist_eq_zero_of_subsingleton (Set.not_nontrivial_iff.mp hC)]
 
 /-- Inclusion reverses minimum distance when the smaller code has two distinct words. -/
-theorem hammingMinDist_anti (hC : C.Nontrivial) (hCD : C ⊆ D) :
+theorem hammingMinDist_le_of_subset (hC : C.Nontrivial) (hCD : C ⊆ D) :
     hammingMinDist D ≤ hammingMinDist C := by
   obtain ⟨x, hx, y, hy, hxy, hdist⟩ := exists_hammingDist_eq_hammingMinDist hC
   exact hdist ▸ hammingMinDist_le (hCD hx) (hCD hy) hxy
@@ -213,5 +215,7 @@ theorem le_hammingMinDist_iff_hammingNorm (hE : E ≠ ⊥) {d : ℕ} :
     exact hdist ▸ hd x hx hzero
 
 end Additive
+
+end Set
 
 end TauCeti
