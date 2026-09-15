@@ -7,6 +7,8 @@ module
 
 -- `dotProductBilin` and `dotProductEquiv` occur in the statement and the body below.
 public import Mathlib.LinearAlgebra.Matrix.Dual
+-- `BilinForm.IsSymm` occurs in the statement below.
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 -- `LinearMap.IsPerfPair` occurs in the statement below.
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 
@@ -42,6 +44,14 @@ instance dotProductBilin_isPerfPair (R ι : Type*) [CommSemiring R] [Fintype ι]
     simp
   rw [h]
   infer_instance
+
+/-- The standard dot-product bilinear form is symmetric. -/
+theorem isSymm_dotProductBilin {R ι : Type*} [CommSemiring R] [Fintype ι] :
+    LinearMap.BilinForm.IsSymm
+      (dotProductBilin R R : LinearMap.BilinForm R (ι → R)) := by
+  constructor
+  intro x y
+  simpa only [RingHom.id_apply, dotProductBilin_apply_apply] using dotProduct_comm x y
 
 /-- **A family paired diagonally by a second family is linearly independent.** If `v i ⬝ᵥ w j`
 vanishes whenever `i ≠ j` and right multiplication by `v i ⬝ᵥ w i` is injective, the `v i` are

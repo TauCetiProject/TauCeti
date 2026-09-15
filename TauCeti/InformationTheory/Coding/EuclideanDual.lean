@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.DotProduct
+public import TauCeti.LinearAlgebra.Matrix.Dual
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.FieldTheory.Finiteness
 
 /-!
@@ -24,7 +25,7 @@ The dot-product convention and the resulting Euclidean dual follow Huffman and P
 
 public section
 
-namespace TauCeti
+namespace TauCeti.Submodule
 
 open Matrix Module
 open LinearMap (BilinForm)
@@ -32,52 +33,57 @@ open LinearMap (BilinForm)
 variable {R ι : Type*} [CommSemiring R] [Fintype ι]
 
 /-- The Euclidean dual of a linear code: its orthogonal complement for the standard dot product. -/
-def euclideanDual (C : Submodule R (ι → R)) : Submodule R (ι → R) :=
+def euclideanDual (C : _root_.Submodule R (ι → R)) : _root_.Submodule R (ι → R) :=
   LinearMap.BilinForm.orthogonal (dotProductBilin R R) C
-
-/-- The Euclidean dual is the orthogonal submodule for the standard dot-product bilinear form. -/
-theorem euclideanDual_def (C : Submodule R (ι → R)) :
-    euclideanDual C = LinearMap.BilinForm.orthogonal (dotProductBilin R R) C :=
-  (rfl)
 
 /-- Membership in the Euclidean dual means having zero dot product with every codeword. -/
 @[simp]
-theorem mem_euclideanDual {C : Submodule R (ι → R)} {y : ι → R} :
-    y ∈ euclideanDual C ↔ ∀ x ∈ C, x ⬝ᵥ y = 0 :=
-  Iff.rfl
+theorem mem_euclideanDual {C : _root_.Submodule R (ι → R)} {y : ι → R} :
+    y ∈ euclideanDual C ↔ ∀ x ∈ C, x ⬝ᵥ y = 0 := by
+  simp only [euclideanDual, LinearMap.BilinForm.mem_orthogonal_iff,
+    dotProductBilin_apply_apply]
+
+/-- Membership in the Euclidean dual can equivalently put the codeword on the right. -/
+theorem mem_euclideanDual' {C : _root_.Submodule R (ι → R)} {y : ι → R} :
+    y ∈ euclideanDual C ↔ ∀ x ∈ C, y ⬝ᵥ x = 0 := by
+  rw [mem_euclideanDual]
+  constructor <;> intro h x hx <;> simpa only [dotProduct_comm] using h x hx
+
+/-- A word is dual to a generated code exactly when it is orthogonal to every generator. -/
+@[simp]
+theorem mem_euclideanDual_span {s : Set (ι → R)} {y : ι → R} :
+    y ∈ euclideanDual (Submodule.span R s) ↔ ∀ ⦃x⦄, x ∈ s → x ⬝ᵥ y = 0 := by
+  change y ∈ Submodule.orthogonalBilin (dotProductBilin R R) (Submodule.span R s) ↔ _
+  simp only [Submodule.mem_orthogonalBilin_span, dotProductBilin_apply_apply]
 
 /-- The dual of the zero code is the whole word space. -/
 @[simp]
-theorem euclideanDual_bot :
+theorem euclideanDual_bot_eq_top :
     euclideanDual (⊥ : Submodule R (ι → R)) = ⊤ :=
   by simp [euclideanDual]
 
 /-- The dual of the whole word space is the zero code. -/
 @[simp]
-theorem euclideanDual_top :
+theorem euclideanDual_top_eq_bot :
     euclideanDual (⊤ : Submodule R (ι → R)) = ⊥ :=
   by simpa only [euclideanDual] using
     LinearMap.BilinForm.orthogonal_top_eq_bot
-      (B := dotProductBilin R R) nondegenerate_dotProductBilin
+      (B := dotProductBilin R R) (dotProductBilin_isPerfPair R ι).nondegenerate
 
 /-- Euclidean duality reverses inclusion. -/
 theorem euclideanDual_antitone : Antitone (euclideanDual (R := R) (ι := ι)) :=
   fun _ _ h ↦ LinearMap.BilinForm.orthogonal_le h
 
 /-- Orthogonality of two codes is symmetric. -/
-theorem le_euclideanDual_iff {C D : Submodule R (ι → R)} :
+theorem le_euclideanDual_comm {C D : Submodule R (ι → R)} :
     C ≤ euclideanDual D ↔ D ≤ euclideanDual C := by
-  constructor
-  · intro h y hy
-    rw [mem_euclideanDual]
-    intro x hx
-    rw [dotProduct_comm]
-    exact mem_euclideanDual.mp (h hx) y hy
-  · intro h y hy
-    rw [mem_euclideanDual]
-    intro x hx
-    rw [dotProduct_comm]
-    exact mem_euclideanDual.mp (h hx) y hy
+  have hflip :
+      (dotProductBilin R R : BilinForm R (ι → R)).flip = dotProductBilin R R :=
+    LinearMap.BilinForm.isSymm_iff_flip.mp
+      (isSymm_dotProductBilin (R := R) (ι := ι))
+  simpa only [euclideanDual, LinearMap.BilinForm.orthogonal, hflip] using
+    (Submodule.le_orthogonalBilin_flip_iff_le_orthogonalBilin
+      (B := dotProductBilin R R) (S := C) (T := D))
 
 /-- A code is self-orthogonal exactly when any two of its words have zero dot product. -/
 theorem le_euclideanDual_self_iff {C : Submodule R (ι → R)} :
@@ -94,7 +100,9 @@ theorem le_euclideanDual_self_iff {C : Submodule R (ι → R)} :
 theorem euclideanDual_sup (C D : Submodule R (ι → R)) :
     euclideanDual (C ⊔ D) = euclideanDual C ⊓ euclideanDual D :=
   by
-    unfold euclideanDual LinearMap.BilinForm.orthogonal
+    change Submodule.orthogonalBilin (dotProductBilin R R) (C ⊔ D) =
+      Submodule.orthogonalBilin (dotProductBilin R R) C ⊓
+        Submodule.orthogonalBilin (dotProductBilin R R) D
     exact Submodule.orthogonalBilin_sup (B := dotProductBilin R R) C D
 
 section Field
@@ -107,7 +115,7 @@ theorem euclideanDual_euclideanDual (C : Submodule K (ι → K)) :
     euclideanDual (euclideanDual C) = C := by
   simpa only [euclideanDual] using
     LinearMap.BilinForm.orthogonal_orthogonal
-      (B := dotProductBilin K K) nondegenerate_dotProductBilin
+      (B := dotProductBilin K K) (dotProductBilin_isPerfPair K ι).nondegenerate
         (isSymm_dotProductBilin (R := K) (ι := ι)).isRefl C
 
 /-- Dual inclusion is equivalent to inclusion in the opposite direction. -/
@@ -134,37 +142,36 @@ theorem euclideanDual_inf (C D : Submodule K (ι → K)) :
 /-- The dimensions of a code and its Euclidean dual add to the number of coordinates. -/
 theorem finrank_add_finrank_euclideanDual (C : Submodule K (ι → K)) :
     finrank K C + finrank K (euclideanDual C) = Fintype.card ι := by
-  have hdual := LinearMap.BilinForm.finrank_orthogonal
-    (B := dotProductBilin K K)
-      (nondegenerate_dotProductBilin (R := K) (ι := ι)) C
-  have hdual' : finrank K (euclideanDual C) = finrank K (ι → K) - finrank K C := by
-    unfold euclideanDual
-    exact hdual
-  rw [hdual', Module.finrank_fintype_fun_eq_card]
-  have hle : finrank K C ≤ Fintype.card ι := by
-    simpa only [Module.finrank_fintype_fun_eq_card] using Submodule.finrank_le C
-  exact Nat.add_sub_of_le hle
+  have hdual := LinearMap.BilinForm.finrank_add_finrank_orthogonal'
+    (B := dotProductBilin K K) C
+  have hnondeg : (dotProductBilin K K : BilinForm K (ι → K)).Nondegenerate :=
+    (dotProductBilin_isPerfPair K ι).nondegenerate
+  rw [LinearMap.BilinForm.Nondegenerate.ker_eq_bot hnondeg,
+    inf_bot_eq, finrank_bot, add_zero, Module.finrank_fintype_fun_eq_card] at hdual
+  change finrank K C +
+    finrank K (LinearMap.BilinForm.orthogonal (dotProductBilin K K) C) = Fintype.card ι
+  exact hdual
 
 /-- A self-dual code has twice its dimension equal to its length. -/
-theorem two_mul_finrank_of_eq_euclideanDual {C : Submodule K (ι → K)}
+theorem two_mul_finrank_eq_card_of_eq_euclideanDual {C : Submodule K (ι → K)}
     (hC : C = euclideanDual C) : 2 * finrank K C = Fintype.card ι := by
   have h := finrank_add_finrank_euclideanDual C
   rw [← hC] at h
   simpa only [two_mul] using h
 
 /-- A self-orthogonal code has dimension at most half the length. -/
-theorem two_mul_finrank_le_of_le_euclideanDual {C : Submodule K (ι → K)}
+theorem two_mul_finrank_le_card_of_le_euclideanDual {C : Submodule K (ι → K)}
     (hC : C ≤ euclideanDual C) : 2 * finrank K C ≤ Fintype.card ι := by
   rw [two_mul, ← finrank_add_finrank_euclideanDual C]
   exact Nat.add_le_add_left (Submodule.finrank_mono hC) _
 
 /-- A self-orthogonal code of half the ambient dimension is self-dual. -/
-theorem eq_euclideanDual_of_le_of_two_mul_finrank_eq {C : Submodule K (ι → K)}
-    (hC : C ≤ euclideanDual C) (hdim : 2 * finrank K C = Fintype.card ι) :
+theorem eq_euclideanDual_of_le_of_card_le_two_mul_finrank {C : Submodule K (ι → K)}
+    (hC : C ≤ euclideanDual C) (hdim : Fintype.card ι ≤ 2 * finrank K C) :
     C = euclideanDual C := by
   apply Submodule.eq_of_le_of_finrank_le hC
   rw [← Nat.add_le_add_iff_left (n := finrank K C), finrank_add_finrank_euclideanDual C]
-  simpa only [two_mul] using hdim.symm.le
+  simpa only [two_mul] using hdim
 
 /-- A code is self-dual exactly when it is self-orthogonal and has half the ambient dimension. -/
 theorem eq_euclideanDual_iff {C : Submodule K (ι → K)} :
@@ -172,13 +179,13 @@ theorem eq_euclideanDual_iff {C : Submodule K (ι → K)} :
       C ≤ euclideanDual C ∧ 2 * finrank K C = Fintype.card ι := by
   constructor
   · intro hC
-    exact ⟨hC.le, two_mul_finrank_of_eq_euclideanDual hC⟩
+    exact ⟨hC.le, two_mul_finrank_eq_card_of_eq_euclideanDual hC⟩
   · rintro ⟨hC, hdim⟩
-    exact eq_euclideanDual_of_le_of_two_mul_finrank_eq hC hdim
+    exact eq_euclideanDual_of_le_of_card_le_two_mul_finrank hC hdim.symm.le
 
 /-- Over a finite field, the cardinalities of a code and its Euclidean dual multiply to the
 cardinality of the whole word space. -/
-theorem natCard_mul_natCard_euclideanDual (C : Submodule K (ι → K)) :
+theorem natCard_mul_natCard_euclideanDual [Finite K] (C : Submodule K (ι → K)) :
     Nat.card C * Nat.card (euclideanDual C) = Nat.card K ^ Fintype.card ι := by
   calc
     Nat.card C * Nat.card (euclideanDual C) =
@@ -190,4 +197,4 @@ theorem natCard_mul_natCard_euclideanDual (C : Submodule K (ι → K)) :
 
 end Field
 
-end TauCeti
+end TauCeti.Submodule
