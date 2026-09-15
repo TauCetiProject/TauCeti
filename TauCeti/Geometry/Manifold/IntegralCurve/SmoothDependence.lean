@@ -19,17 +19,6 @@ finite-dimensional space. This file shows that if `v` is `C^(n+1)` at `x₀`, th
 the domain of the maximal flow, this is the local input to the smooth flow of a vector field, and
 in particular to the geodesic flow, which is the flow of the geodesic spray on the tangent bundle.
 
-For the smoothness statement, the model-space input is `ODE.exists_contDiffAt_localFlow`, applied
-to the vector field read in the extended chart at `x₀`. That theorem produces a local flow `Φ` in
-coordinates. Applying the inverse chart to the curves `t ↦ Φ (extChartAt I x₀ x) t` gives, for
-every `x` near `x₀`, an integral curve of `v` through `x` on one fixed interval around `0`.
-Fixed-chart uniqueness of integral curves, `IsMIntegralCurveOn.eqOn_of_contDiffOn_extChartAt`,
-identifies these curves with the witnesses defining the maximal integral curves, so the maximal
-flow agrees near `(x₀, 0)` with the chart expression
-`(x, t) ↦ (extChartAt I x₀).symm (Φ (extChartAt I x₀ x) t)`, which is visibly `C^(n+1)`.
-The maximal flow is defined without any choice of local flow, so the finite orders assemble into
-the smooth case.
-
 ## Main results
 
 * `contMDiffAt_maximalIntegralCurve`: the maximal flow is `C^(n+1)` in the initial point and the
@@ -55,6 +44,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] [BoundarylessManifold I M]
   [FiniteDimensional ℝ E] [T2Space M] {v : (x : M) → TangentSpace I x} {x₀ : M}
+
+/- The proof applies `ODE.exists_contDiffAt_localFlow` to the vector field in the extended chart
+at `x₀`, then pulls the resulting coordinate flow back through the inverse chart. Fixed-chart
+uniqueness identifies these local curves with the maximal integral curves. Thus the maximal flow
+agrees near `(x₀, 0)` with the visibly `C^(n+1)` chart expression. Finite orders then assemble
+into the smooth case because the maximal flow does not depend on a choice of local flow. -/
 
 /-- **The maximal flow in a chart.** If the vector field `v`, read in the extended chart at `x₀`,
 is `C^(n+1)` near the image of `x₀`, then there is a coordinate map `Φ` with `Φ z 0 = z`, jointly
