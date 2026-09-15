@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
-public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
+public import TauCeti.NumberTheory.NumberField.FinitePlace
 
 /-!
 # Localization of quadratic forms over number fields
