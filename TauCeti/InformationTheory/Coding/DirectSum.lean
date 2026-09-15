@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Pi
 public import TauCeti.InformationTheory.Hamming
@@ -28,9 +27,7 @@ Error-Correcting Codes*, Section 1.6.
 
 public section
 
-namespace TauCeti
-
-namespace LinearCode
+namespace Submodule
 
 variable {R ι κ ν : Type*}
 
@@ -49,19 +46,19 @@ corresponding code. -/
 theorem mem_directSum_iff {C : Submodule R (ι → R)} {D : Submodule R (κ → R)}
     {x : ι ⊕ κ → R} :
     x ∈ directSum C D ↔ (fun i ↦ x (.inl i)) ∈ C ∧ (fun j ↦ x (.inr j)) ∈ D := by
-  rw [directSum, Submodule.mem_map_equiv]
+  rw [directSum, mem_map_equiv, LinearEquiv.symm_symm, mem_prod]
   rfl
 
 /-- The direct sum is linearly equivalent to the product of its two constituent codes. -/
 def directSumEquivProd (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
-    directSum C D ≃ₗ[R] C × D :=
-  ((LinearEquiv.sumArrowLequivProdArrow ι κ R R).symm.submoduleMap (C.prod D)).symm.trans
-    { toFun := fun x ↦ (⟨x.1.1, x.2.1⟩, ⟨x.1.2, x.2.2⟩)
-      invFun := fun x ↦ ⟨(x.1.1, x.2.1), x.1.2, x.2.2⟩
-      map_add' := by simp
-      map_smul' := by simp
-      left_inv := by intro x; rfl
-      right_inv := by intro x; rfl }
+    directSum C D ≃ₗ[R] C × D where
+  toFun x := (⟨fun i ↦ x.1 (.inl i), (mem_directSum_iff.1 x.2).1⟩,
+    ⟨fun j ↦ x.1 (.inr j), (mem_directSum_iff.1 x.2).2⟩)
+  invFun y := ⟨Sum.elim y.1.1 y.2.1, mem_directSum_iff.2 ⟨y.1.2, y.2.2⟩⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv x := Subtype.ext <| funext fun i ↦ by cases i <;> rfl
+  right_inv _ := rfl
 
 @[simp]
 theorem directSumEquivProd_apply_fst (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
@@ -101,7 +98,7 @@ theorem map_directSum_sumComm (C : Submodule R (ι → R)) (D : Submodule R (κ 
         (LinearEquiv.funCongrLeft R R (Equiv.sumComm κ ι)).toLinearMap =
       directSum D C := by
   ext x
-  rw [Submodule.mem_map_equiv, mem_directSum_iff, mem_directSum_iff]
+  rw [mem_map_equiv, mem_directSum_iff, mem_directSum_iff]
   exact and_comm
 
 /-- Reindexing an iterated direct sum by associating its coordinate summands associates the
@@ -112,30 +109,32 @@ theorem map_directSum_sumAssoc (C : Submodule R (ι → R)) (D : Submodule R (κ
         (LinearEquiv.funCongrLeft R R (Equiv.sumAssoc ι κ ν).symm).toLinearMap =
       directSum C (directSum D E) := by
   ext x
-  simp only [Submodule.mem_map_equiv, mem_directSum_iff]
+  simp only [mem_map_equiv, mem_directSum_iff]
   exact and_assoc
 
 end Semiring
 
-section DivisionRing
+section Ring
 
-variable [DivisionRing R]
+variable [Ring R] [StrongRankCondition R]
 
 /-- The dimension of a direct sum is the sum of the dimensions of its constituent codes. -/
 @[simp]
 theorem finrank_directSum (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
-    [Module.Finite R C] [Module.Finite R D] :
+    [Module.Free R C] [Module.Free R D] [Module.Finite R C] [Module.Finite R D] :
     Module.finrank R (directSum C D) = Module.finrank R C + Module.finrank R D := by
   rw [(directSumEquivProd C D).finrank_eq, Module.finrank_prod]
 
-end DivisionRing
+end Ring
 
 section Cardinality
 
 variable [Semiring R]
 
 /-- The cardinality of a direct sum is the product of the cardinalities of its constituent
-codes. -/
+codes. This is a pre-simp lemma, so it fires before `mem_directSum_iff` rewrites the carrier
+type inside `Nat.card`. -/
+@[simp↓]
 theorem natCard_directSum (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
     Nat.card (directSum C D) = Nat.card C * Nat.card D := by
   rw [Nat.card_congr (directSumEquivProd C D).toEquiv, Nat.card_prod]
@@ -152,7 +151,7 @@ theorem hammingNorm_directSumEquivProd_symm (C : Submodule R (ι → R))
     (D : Submodule R (κ → R)) (x : C) (y : D) :
     hammingNorm ((directSumEquivProd C D).symm (x, y) : ι ⊕ κ → R) =
       hammingNorm x.1 + hammingNorm y.1 := by
-  rw [← hammingNorm_sumElim x.1 y.1]
+  rw [← TauCeti.hammingNorm_sumElim x.1 y.1]
   apply congrArg hammingNorm
   funext i
   cases i <;> simp
@@ -164,7 +163,7 @@ theorem hammingDist_directSumEquivProd_symm (C : Submodule R (ι → R))
     hammingDist ((directSumEquivProd C D).symm (x, y) : ι ⊕ κ → R)
         ((directSumEquivProd C D).symm (x', y') : ι ⊕ κ → R) =
       hammingDist x.1 x'.1 + hammingDist y.1 y'.1 := by
-  rw [← hammingDist_sumElim x.1 x'.1 y.1 y'.1]
+  rw [← TauCeti.hammingDist_sumElim x.1 x'.1 y.1 y'.1]
   apply congrArg₂ hammingDist
   · funext i
     cases i <;> simp
@@ -173,6 +172,4 @@ theorem hammingDist_directSumEquivProd_symm (C : Submodule R (ι → R))
 
 end Hamming
 
-end LinearCode
-
-end TauCeti
+end Submodule
