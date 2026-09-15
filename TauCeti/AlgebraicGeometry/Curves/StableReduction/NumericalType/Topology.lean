@@ -81,12 +81,18 @@ unordered pairs of distinct components that are adjacent in `intersectionGraph`.
 noncomputable def topologicalGenus : ℤ :=
   1 - (Nat.card T.Component : ℤ) + (T.intersectionGraph.edgeSet.ncard : ℤ)
 
+/-- The defining formula of the topological genus. -/
+lemma topologicalGenus_def :
+    T.topologicalGenus =
+      1 - (Nat.card T.Component : ℤ) + (T.intersectionGraph.edgeSet.ncard : ℤ) := by
+  rw [topologicalGenus]
+
 /-- The topological genus of a numerical type is nonnegative. -/
 theorem topologicalGenus_nonneg : 0 ≤ T.topologicalGenus := by
   have hcard := T.intersectionGraph_connected.card_vert_le_card_edgeSet_add_one
   have hcard' : Nat.card T.Component ≤ T.intersectionGraph.edgeSet.ncard + 1 := by
     simpa only [Nat.card_coe_set_eq] using hcard
-  dsimp [topologicalGenus]
+  rw [topologicalGenus_def]
   have hcard'' : (Nat.card T.Component : ℤ) ≤
       (T.intersectionGraph.edgeSet.ncard : ℤ) + 1 := by
     exact_mod_cast hcard'
@@ -102,7 +108,7 @@ theorem topologicalGenus_eq_zero_iff :
     refine ⟨hconn, ?_⟩
     have hz' : (T.intersectionGraph.edgeSet.ncard : ℤ) + 1 =
         (Nat.card T.Component : ℤ) := by
-      dsimp [topologicalGenus] at hz
+      rw [topologicalGenus_def] at hz
       linarith
     exact_mod_cast hz'
   · intro htree
@@ -112,7 +118,7 @@ theorem topologicalGenus_eq_zero_iff :
       have hcardNat : T.intersectionGraph.edgeSet.ncard + 1 = Nat.card T.Component := by
         simpa only [Nat.card_coe_set_eq] using hcard
       exact_mod_cast hcardNat
-    dsimp [topologicalGenus]
+    rw [topologicalGenus_def]
     omega
 
 end NumericalType
