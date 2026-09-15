@@ -25,8 +25,11 @@ the recorded copy of `𝔽_q` inside the algebraic closure.
 
 `mem_map_fixedSubgroup_steinberg_iff` reads this criterion in the general linear group,
 including the symplectic equation. It supplies a matrix description with which a
-generator-based construction can be compared. No generation theorem, derived-subgroup
-calculation, or identification with another construction of the Suzuki group is asserted.
+generator-based construction can be compared: after identifying the coefficient fields and
+coordinates, one must show that the generators satisfy these equations and exhaust their
+solutions. The fixed-field coefficient theorem supplies the field-membership step for that
+comparison. No generation theorem, derived-subgroup calculation, or identification with
+another construction of the Suzuki group is asserted.
 
 The explicit carrier is not identified with the pinned simply connected group scheme of
 its diagram. Constructions on it transfer to that pinned group only along such an
