@@ -69,17 +69,9 @@ section FiniteLinearOrder
 
 variable {ι : Type*} [Fintype ι] [LinearOrder ι]
 
-local instance : LocallyFiniteOrder ι := Fintype.toLocallyFiniteOrder
-
-local instance : LocallyFiniteOrderTop ι where
-  finsetIci i := Finset.univ.filter (i ≤ ·)
-  finsetIoi i := Finset.univ.filter (i < ·)
-  finset_mem_Ici := by simp
-  finset_mem_Ioi := by simp
-
 /-- For strictly ordered prevertices, the edge angle following the `i`-th prevertex is `π` times
 the sum of the exponents at the later prevertices. -/
-theorem schwarzChristoffelEdgeAngle_eq_pi_mul_sum_Ioi (a e : ι → ℝ)
+theorem schwarzChristoffelEdgeAngle_eq_pi_mul_sum_Ioi [LocallyFiniteOrderTop ι] (a e : ι → ℝ)
     (ha : StrictMono a) (i : ι) :
     schwarzChristoffelEdgeAngle a e (a i) =
       Real.pi * ∑ k ∈ Finset.Ioi i, e k := by
@@ -90,6 +82,8 @@ theorem schwarzChristoffelEdgeAngle_eq_pi_mul_sum_Ioi (a e : ι → ℝ)
     simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_Ioi]
     exact ha.lt_iff_lt
   · simp
+
+variable [LocallyFiniteOrder ι]
 
 /-- The increase in edge angle between two indexed prevertices is `-π` times the sum of the
 exponents in the corresponding right-closed index interval. -/
