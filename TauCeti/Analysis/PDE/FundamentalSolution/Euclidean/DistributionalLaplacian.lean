@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv
+import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
 import TauCeti.MeasureTheory.Constructions.HaarToSphere
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 
 /-!
@@ -73,12 +75,6 @@ private def regKernelDeriv (n : ℕ) (v : EuclideanSpace ℝ (Fin n)) (t : ℝ)
     (x : EuclideanSpace ℝ (Fin n)) : ℝ :=
   kernelConst n * (2 - (n : ℝ)) * (‖x‖ ^ 2 + t) ^ ((2 - (n : ℝ)) / 2 - 1) * ⟪x, v⟫
 
-private lemma sq_rpow_div_two {a : ℝ} (ha : 0 ≤ a) (s : ℝ) : (a ^ 2) ^ (s / 2) = a ^ s := by
-  rw [← Real.rpow_natCast, ← Real.rpow_mul ha]
-  congr 1
-  push_cast
-  ring
-
 private lemma regKernel_zero (n : ℕ) : regKernel n 0 = newtonianKernel n := by
   funext x
   rw [regKernel, newtonianKernel_def, add_zero, sq_rpow_div_two (norm_nonneg x)]
@@ -116,20 +112,6 @@ private lemma continuous_regKernelDeriv (v : EuclideanSpace ℝ (Fin n)) {t : �
     fun _ ↦ Or.inl (add_pos_of_nonneg_of_pos (sq_nonneg _) ht).ne')).mul
       (continuous_id.inner continuous_const)
 
-/-- Along `t → 0⁺`, the regularized power `(‖x‖² + t) ^ e` tends to `(‖x‖²) ^ e` away from the
-origin. -/
-private lemma tendsto_sq_add_rpow {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) (e : ℝ) :
-    Tendsto (fun t : ℝ ↦ (‖x‖ ^ 2 + t) ^ e) (𝓝[>] 0) (𝓝 ((‖x‖ ^ 2 + 0) ^ e)) :=
-  ((continuousAt_const.add continuousAt_id).rpow_const
-    (Or.inl (by simp [hx]))).tendsto.mono_left nhdsWithin_le_nhds
-
-/-- For a negative exponent, the regularized power `(‖x‖² + t) ^ e` is dominated by its value at
-`t = 0` away from the origin. -/
-private lemma sq_add_rpow_le {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) {t : ℝ} (ht : 0 ≤ t)
-    {e : ℝ} (he : e ≤ 0) : (‖x‖ ^ 2 + t) ^ e ≤ (‖x‖ ^ 2 + 0) ^ e :=
-  Real.rpow_le_rpow_of_nonpos (by rw [add_zero]; exact pow_pos (norm_pos_iff.mpr hx) 2)
-    (by linarith) he
-
 /-- The regularized kernels are dominated by the kernel away from the origin. -/
 private lemma abs_regKernel_le (hn : 3 ≤ n) {t : ℝ} (ht : 0 ≤ t) {x : EuclideanSpace ℝ (Fin n)}
     (hx : x ≠ 0) : |regKernel n t x| ≤ |regKernel n 0 x| := by
@@ -139,7 +121,8 @@ private lemma abs_regKernel_le (hn : 3 ≤ n) {t : ℝ} (ht : 0 ≤ t) {x : Eucl
   simp only [regKernel, abs_mul, abs_of_nonneg hconst,
     abs_of_nonneg (Real.rpow_nonneg (add_nonneg (sq_nonneg ‖x‖) ht) _),
     abs_of_nonneg (Real.rpow_nonneg (add_nonneg (sq_nonneg ‖x‖) le_rfl) _)]
-  exact mul_le_mul_of_nonneg_left (sq_add_rpow_le hx ht (by linarith)) hconst
+  exact mul_le_mul_of_nonneg_left (sq_add_rpow_le (norm_ne_zero_iff.mpr hx) ht (by linarith))
+    hconst
 
 /-- The derivatives of the regularized kernels are dominated by the regularization at `t = 0`,
 which is the derivative of the kernel, away from the origin. -/
@@ -151,27 +134,8 @@ private lemma abs_regKernelDeriv_le (hn : 3 ≤ n) (v : EuclideanSpace ℝ (Fin 
     abs_of_nonneg (Real.rpow_nonneg (add_nonneg (sq_nonneg ‖x‖) ht) _),
     abs_of_nonneg (Real.rpow_nonneg (add_nonneg (sq_nonneg ‖x‖) le_rfl) _)]
   gcongr ?_ * _
-  exact mul_le_mul_of_nonneg_left (sq_add_rpow_le hx ht (by linarith)) (by positivity)
-
-/-- Dominated convergence for the regularizations: if `K t` is continuous for `t > 0`, tends
-pointwise to `K 0` away from the origin, and is dominated by `|K 0|`, then the integrals of
-`K t * w` converge to that of `K 0 * w`. -/
-private lemma tendsto_integral_mul (hn : 3 ≤ n) {K : ℝ → EuclideanSpace ℝ (Fin n) → ℝ}
-    {w : EuclideanSpace ℝ (Fin n) → ℝ} (hw : Continuous w)
-    (hK : ∀ t > 0, Continuous (K t)) (hint : Integrable (fun x ↦ K 0 x * w x))
-    (hle : ∀ t > 0, ∀ x ≠ 0, |K t x| ≤ |K 0 x|)
-    (hlim : ∀ x ≠ 0, Tendsto (fun t ↦ K t x) (𝓝[>] 0) (𝓝 (K 0 x))) :
-    Tendsto (fun t ↦ ∫ x, K t x * w x) (𝓝[>] 0) (𝓝 (∫ x, K 0 x * w x)) := by
-  have : Nontrivial (EuclideanSpace ℝ (Fin n)) :=
-    Module.nontrivial_of_finrank_pos (R := ℝ) (by rw [finrank_euclideanSpace_fin]; omega)
-  refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ ‖K 0 x * w x‖)
-    (eventually_mem_nhdsWithin.mono fun t ht ↦ ((hK t ht).mul hw).aestronglyMeasurable)
-    (eventually_mem_nhdsWithin.mono fun t ht ↦ ?_) hint.norm ?_
-  · filter_upwards [volume.ae_ne 0] with x hx
-    simp only [norm_mul, Real.norm_eq_abs]
-    exact mul_le_mul_of_nonneg_right (hle t ht x hx) (abs_nonneg _)
-  · filter_upwards [volume.ae_ne 0] with x hx
-    exact (hlim x hx).mul_const _
+  exact mul_le_mul_of_nonneg_left (sq_add_rpow_le (norm_ne_zero_iff.mpr hx) ht (by linarith))
+    (by positivity)
 
 /-- A compactly supported continuous function is integrable against the Newtonian kernel. -/
 private lemma integrable_newtonianKernel_mul {w : EuclideanSpace ℝ (Fin n) → ℝ}
@@ -219,15 +183,19 @@ theorem integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul (hn : 3 ≤ n)
     filter_upwards [volume.ae_ne 0] with x hx
     rw [regKernelDeriv_zero hn v hx]
   -- Both sides converge as `t → 0⁺`.
-  have hL := tendsto_integral_mul hn (K := regKernel n) hg' (fun t ht ↦ continuous_regKernel ht)
+  have hL := tendsto_integral_mul_of_dominated_away (0 : EuclideanSpace ℝ (Fin n))
+    (l := 𝓝[>] (0 : ℝ)) (K := regKernel n) (K₀ := regKernel n 0) hg'
+    (eventually_mem_nhdsWithin.mono fun t ht ↦ continuous_regKernel ht)
     (by simpa [regKernel_zero] using integrable_newtonianKernel_mul hg' hcg')
-    (fun t ht x hx ↦ abs_regKernel_le hn ht.le hx)
-    (fun x hx ↦ (tendsto_sq_add_rpow hx _).const_mul _)
-  have hR := tendsto_integral_mul hn (K := regKernelDeriv n v) hg.continuous
-    (fun t ht ↦ continuous_regKernelDeriv v ht)
+    (eventually_mem_nhdsWithin.mono fun t ht x hx ↦ abs_regKernel_le hn (le_of_lt ht) hx)
+    (fun x hx ↦ (tendsto_sq_add_rpow (norm_ne_zero_iff.mpr hx) _).const_mul _)
+  have hR := tendsto_integral_mul_of_dominated_away (0 : EuclideanSpace ℝ (Fin n))
+    (l := 𝓝[>] (0 : ℝ)) (K := regKernelDeriv n v) (K₀ := regKernelDeriv n v 0) hg.continuous
+    (eventually_mem_nhdsWithin.mono fun t ht ↦ continuous_regKernelDeriv v ht)
     ((integrable_fderiv_newtonianKernel_mul v hg.continuous hc).congr hderiv)
-    (fun t ht x hx ↦ abs_regKernelDeriv_le hn v ht.le hx)
-    (fun x hx ↦ ((tendsto_sq_add_rpow hx _).const_mul _).mul_const _)
+    (eventually_mem_nhdsWithin.mono fun t ht x hx ↦
+      abs_regKernelDeriv_le hn v (le_of_lt ht) hx)
+    (fun x hx ↦ ((tendsto_sq_add_rpow (norm_ne_zero_iff.mpr hx) _).const_mul _).mul_const _)
   rw [regKernel_zero] at hL
   rw [integral_congr_ae hderiv]
   exact tendsto_nhds_unique (hL.congr' hibp) hR.neg
