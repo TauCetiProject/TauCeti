@@ -54,6 +54,8 @@ evaluates `∫ t in Ioi 0, t ^ n * exp (-(a * t))` as `n ! / a ^ (n + 1)`,
 
 ## References
 
+* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 1, exponential; and Layer 4,
+  item 6, **Finite minima and maxima**, for `hasLaw_min_iid_expMeasure`.
 * [mathlib4#35504](https://github.com/leanprover-community/mathlib4/pull/35504) by Joakim
   Björnander (Apache 2.0): the names, the theorem shapes, and the real-integral proof pattern of
   the mgf, moment and memorylessness results below are adapted from it.
