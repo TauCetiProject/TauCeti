@@ -27,10 +27,10 @@ in the original parameters.
 
 When `S` is positive definite the same pencil has a scale form: `S⁻¹ - c • Θ` is the congruence
 of `1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)` by `(CFC.sqrt S)⁻¹`, so the two are positive definite
-together. Its determinant needs no positivity at all: over any commutative ring,
-`det S * det (S⁻¹ - c • Θ) = det (1 - c • (Θ * S))` as soon as `S` is invertible. The scale form is
-the one that appears in an exponential weight `exp (-trace ((S⁻¹ - c • Θ) * A) / 2)`, where `S` is
-a scale matrix and `c • Θ` the tilt of a trace statistic.
+together. The scale form is the one that appears in an exponential weight
+`exp (-trace ((S⁻¹ - c • Θ) * A) / 2)`, where `S` is a scale matrix and `c • Θ` the tilt of a trace
+statistic. Its determinant needs no positivity at all, and is computed over a commutative ring in
+`TauCeti/LinearAlgebra/Matrix/InvSubSmul.lean`.
 
 ## Main results
 
@@ -46,9 +46,7 @@ a scale matrix and `c • Θ` the tilt of a trace statistic.
   `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self` — for positive-semidefinite `S`, the traces
   of the sandwich and of its square are those of `Θ * S` and `Θ * S * Θ * S`;
 * `Matrix.PosDef.inv_sub_smul_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_smul_iff` — the
-  scale form `S⁻¹ - c • Θ` of the pencil and its positive-definiteness;
-* `Matrix.det_mul_det_inv_sub_smul` and `Matrix.det_nonsing_inv_inv_sub_smul` — the determinants
-  of the scale pencil and of its inverse.
+  scale form `S⁻¹ - c • Θ` of the pencil and its positive-definiteness.
 -/
 
 public section
@@ -160,28 +158,5 @@ theorem PosDef.posDef_inv_sub_smul_iff (hS : S.PosDef) (Θ : Matrix ι ι 𝕜) 
   exact Matrix.IsUnit.posDef_star_left_conjugate_iff hunit
 
 end PosDef
-
-section Det
-
-/-- The determinant of the scale pencil `S⁻¹ - c • Θ`, in the parameters `S` and `Θ` themselves.
-Only the invertibility of `S` is used. -/
-theorem det_mul_det_inv_sub_smul [DecidableEq ι] {R : Type*} [CommRing R] {S : Matrix ι ι R}
-    (hS : IsUnit S.det) (Θ : Matrix ι ι R) (c : R) :
-    S.det * (S⁻¹ - c • Θ).det = (1 - c • (Θ * S)).det := by
-  rw [← Matrix.det_mul, Matrix.mul_sub, Matrix.mul_nonsing_inv _ hS, Matrix.mul_smul,
-    ← Matrix.smul_mul, Matrix.det_one_sub_mul_comm, Matrix.mul_smul]
-
-/-- The determinant of the inverse scale pencil. This is the determinant of the scale matrix
-carried by an exponential weight `exp (-trace ((S⁻¹ - c • Θ) * A) / 2)`. -/
-theorem det_nonsing_inv_inv_sub_smul [DecidableEq ι] {R : Type*} [CommRing R] {S : Matrix ι ι R}
-    (hS : IsUnit S.det) {Θ : Matrix ι ι R} {c : R} (hc : IsUnit (S⁻¹ - c • Θ).det) :
-    ((S⁻¹ - c • Θ)⁻¹).det = S.det * Ring.inverse (1 - c • (Θ * S)).det := by
-  have hpencil : IsUnit (1 - c • (Θ * S)).det := by
-    rw [← det_mul_det_inv_sub_smul hS Θ c]
-    exact hS.mul hc
-  rw [Matrix.det_nonsing_inv, Ring.eq_mul_inverse_iff_mul_eq _ _ _ hpencil,
-    ← det_mul_det_inv_sub_smul hS Θ c, mul_left_comm, Ring.inverse_mul_cancel _ hc, mul_one]
-
-end Det
 
 end Matrix
