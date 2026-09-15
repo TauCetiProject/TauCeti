@@ -27,6 +27,9 @@ to the normal form of its own signature.
 
 ## Main results
 
+* `QuadraticForm.sigPos_weightedSumSquares_signType` and
+  `QuadraticForm.sigNeg_weightedSumSquares_signType`: the two indices of inertia of a
+  sign-weighted sum of squares count the weights `1` and the weights `-1`.
 * `QuadraticForm.equivalent_iff_finrank_eq_and_sigPos_eq_and_sigNeg_eq`: two real quadratic forms
   on finite-dimensional spaces are isometric exactly when their dimensions and both indices of
   inertia agree.
@@ -57,16 +60,16 @@ section Fibers
 variable {ι ι' : Type*} [Fintype ι] [Fintype ι']
 
 /-- The positive index of inertia of a sign-weighted sum of squares counts the weights `1`. -/
-private theorem ncard_fiber_pos (u : ι → SignType) :
-    {i | u i = 1}.ncard = sigPos (weightedSumSquares ℝ fun i ↦ ((u i : ℝ))) := by
+theorem sigPos_weightedSumSquares_signType (u : ι → SignType) :
+    sigPos (weightedSumSquares ℝ fun i ↦ ((u i : ℝ))) = {i | u i = 1}.ncard := by
   rw [sigPos_weightedSumSquares]
   congr 1
   ext i
   cases h : u i <;> simp [h]
 
 /-- The negative index of inertia of a sign-weighted sum of squares counts the weights `-1`. -/
-private theorem ncard_fiber_neg (u : ι → SignType) :
-    {i | u i = -1}.ncard = sigNeg (weightedSumSquares ℝ fun i ↦ ((u i : ℝ))) := by
+theorem sigNeg_weightedSumSquares_signType (u : ι → SignType) :
+    sigNeg (weightedSumSquares ℝ fun i ↦ ((u i : ℝ))) = {i | u i = -1}.ncard := by
   rw [sigNeg_weightedSumSquares]
   congr 1
   ext i
@@ -111,9 +114,11 @@ theorem equivalent_iff_finrank_eq_and_sigPos_eq_and_sigNeg_eq (Q : _root_.Quadra
     obtain ⟨u', hu'⟩ := Q'.equivalent_signType_weighted_sum_squared
     refine hu.trans ((equivalent_weightedSumSquares_of_ncard_fiber_eq u u' ?_).trans hu'.symm)
     have hposFiber : {i | u i = 1}.ncard = {i' | u' i' = 1}.ncard := by
-      rw [ncard_fiber_pos, ncard_fiber_pos, ← hu.sigPos_eq, ← hu'.sigPos_eq, hpos]
+      rw [← sigPos_weightedSumSquares_signType, ← sigPos_weightedSumSquares_signType,
+        ← hu.sigPos_eq, ← hu'.sigPos_eq, hpos]
     have hnegFiber : {i | u i = -1}.ncard = {i' | u' i' = -1}.ncard := by
-      rw [ncard_fiber_neg, ncard_fiber_neg, ← hu.sigNeg_eq, ← hu'.sigNeg_eq, hneg]
+      rw [← sigNeg_weightedSumSquares_signType, ← sigNeg_weightedSumSquares_signType,
+        ← hu.sigNeg_eq, ← hu'.sigNeg_eq, hneg]
     have hsum := SignType.ncard_fiber_zero_add_ncard_fiber_neg_add_ncard_fiber_pos u
     have hsum' := SignType.ncard_fiber_zero_add_ncard_fiber_neg_add_ncard_fiber_pos u'
     simp only [Nat.card_eq_fintype_card, Fintype.card_fin] at hsum hsum'
