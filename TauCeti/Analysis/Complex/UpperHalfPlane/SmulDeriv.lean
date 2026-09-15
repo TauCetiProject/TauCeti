@@ -18,23 +18,24 @@ A Möbius transformation of the upper half-plane is holomorphic, with derivative
 (`UpperHalfPlane.hasStrictDerivAt_smul`). A representative in `SL(2, ℝ)` has determinant `1`, so
 the derivative is `(denom g z ^ 2)⁻¹`; squaring the automorphy factor cancels the sign ambiguity
 of the representative, so this depends only on the class in `PSL(2, ℝ)`. That well-defined
-derivative is `TauCeti.UpperHalfPlane.smulDeriv`, the quantity the effective projective action
-attaches to a point.
+derivative is `Matrix.ProjectiveSpecialLinearGroup.smulDeriv`, the quantity the effective
+projective action attaches to a point.
 
 By the chain rule the derivative is a cocycle for the action
-(`TauCeti.UpperHalfPlane.smulDeriv_mul`); restricted to the stabilizer of a point it therefore
-becomes a character, which is what governs the stabilizers of a discrete subgroup.
+(`Matrix.ProjectiveSpecialLinearGroup.smulDeriv_mul`); restricted to the stabilizer of a point
+it therefore becomes a character, which is what governs the stabilizers of a discrete subgroup.
 
 ## Main declarations
 
-* `TauCeti.UpperHalfPlane.smulDeriv`: the derivative at `z : ℍ` of the Möbius transformation
-  attached to `q : PSL(2, ℝ)`.
-* `TauCeti.UpperHalfPlane.hasStrictDerivAt_coe_smul` and
-  `TauCeti.UpperHalfPlane.deriv_coe_smul`: it is the complex derivative of that transformation,
-  read through Mathlib's partial inverse `UpperHalfPlane.ofComplex` of the inclusion `ℍ → ℂ`.
-* `TauCeti.UpperHalfPlane.smulDeriv_mul`: the chain rule
-  `(q₁ * q₂)' z = q₁' (q₂ • z) * q₂' z`, and `TauCeti.UpperHalfPlane.smulDeriv_inv` for the
-  inverse.
+* `Matrix.ProjectiveSpecialLinearGroup.smulDeriv`: the derivative at `z : ℍ` of the Möbius
+  transformation attached to `q : PSL(2, ℝ)`.
+* `Matrix.ProjectiveSpecialLinearGroup.hasStrictDerivAt_coe_smul` and
+  `Matrix.ProjectiveSpecialLinearGroup.deriv_coe_smul`: it is the complex derivative of that
+  transformation, read through Mathlib's partial inverse `UpperHalfPlane.ofComplex` of the
+  inclusion `ℍ → ℂ`.
+* `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_mul`: the chain rule
+  `(q₁ * q₂)' z = q₁' (q₂ • z) * q₂' z`, and
+  `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_inv` for the inverse.
 
 ## References
 
@@ -52,7 +53,7 @@ open Matrix Matrix.SpecialLinearGroup UpperHalfPlane
 
 open scoped MatrixGroups
 
-namespace TauCeti.UpperHalfPlane
+namespace Matrix.SpecialLinearGroup
 
 /-- The automorphy factor changes sign along with its matrix, so squaring it gives a function of
 the class in `PSL(2, ℝ)`. -/
@@ -61,10 +62,14 @@ theorem denom_mapGL_neg (g : SL(2, ℝ)) (z : ℂ) :
   simp [denom]
   ring
 
+end Matrix.SpecialLinearGroup
+
+namespace Matrix.ProjectiveSpecialLinearGroup
+
 /-- The derivative at `z : ℍ` of the Möbius transformation of the upper half-plane attached to
-`q : PSL(2, ℝ)`; see `TauCeti.UpperHalfPlane.deriv_coe_smul`. On a representative
+`q : PSL(2, ℝ)`; see `Matrix.ProjectiveSpecialLinearGroup.deriv_coe_smul`. On a representative
 `g : SL(2, ℝ)` it is `(denom g z ^ 2)⁻¹`, independent of the representative by
-`TauCeti.UpperHalfPlane.denom_mapGL_neg`. -/
+`Matrix.SpecialLinearGroup.denom_mapGL_neg`. -/
 def smulDeriv (q : PSL(2, ℝ)) (z : ℍ) : ℂ :=
   Quotient.liftOn' q (fun g : SL(2, ℝ) ↦ (denom (mapGL ℝ g) (z : ℂ) ^ 2)⁻¹) <| by
     rintro a b hab
@@ -74,7 +79,7 @@ def smulDeriv (q : PSL(2, ℝ)) (z : ℍ) : ℂ :=
       rw [h]
     · have hb : b = -a := by simpa using congrArg (a * ·) h
       subst hb
-      rw [denom_mapGL_neg, neg_sq]
+      rw [Matrix.SpecialLinearGroup.denom_mapGL_neg, neg_sq]
 
 /-- The derivative of the transformation of a representative, in terms of its automorphy
 factor. -/
@@ -138,4 +143,4 @@ theorem deriv_coe_smul (q : PSL(2, ℝ)) (z : ℍ) :
     deriv (fun w : ℂ ↦ ((q • ofComplex w : ℍ) : ℂ)) (z : ℂ) = smulDeriv q z :=
   (hasStrictDerivAt_coe_smul q z).hasDerivAt.deriv
 
-end TauCeti.UpperHalfPlane
+end Matrix.ProjectiveSpecialLinearGroup

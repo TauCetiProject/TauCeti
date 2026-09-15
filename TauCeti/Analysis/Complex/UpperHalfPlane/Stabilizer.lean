@@ -30,13 +30,13 @@ The specialization to discrete subgroups, whose point stabilizers are finite, is
 
 ## Main declarations
 
-* `TauCeti.UpperHalfPlane.stabilizerDeriv`: the derivative character of a point stabilizer, and
-  `TauCeti.UpperHalfPlane.stabilizerDeriv_injective`.
-* `TauCeti.UpperHalfPlane.isCyclic_stabilizer`: a finite point stabilizer is cyclic.
-* `TauCeti.UpperHalfPlane.exists_isPrimitiveRoot_stabilizerDeriv`: a generator of a finite point
+* `Subgroup.stabilizerDeriv`: the derivative character of a point stabilizer, and
+  `Subgroup.stabilizerDeriv_injective`.
+* `Subgroup.isCyclic_stabilizer`: a finite point stabilizer is cyclic.
+* `Subgroup.exists_isPrimitiveRoot_stabilizerDeriv`: a generator of a finite point
   stabilizer has a primitive root of unity of the stabilizer's order as its derivative.
-* `TauCeti.UpperHalfPlane.isElliptic_of_smul_eq_self_of_ne_one`: a matrix fixing a point of `ℍ`
-  and nontrivial in `PSL(2, ℝ)` is elliptic.
+* `Matrix.SpecialLinearGroup.isElliptic_of_smul_eq_self_of_ne_one`: a matrix fixing a point of
+  `ℍ` and nontrivial in `PSL(2, ℝ)` is elliptic.
 
 ## References
 
@@ -54,7 +54,7 @@ open Matrix Matrix.SpecialLinearGroup MulAction UpperHalfPlane
 
 open scoped MatrixGroups
 
-namespace TauCeti.UpperHalfPlane
+namespace Matrix.SpecialLinearGroup
 
 /-- An element of `SL(2, ℝ)` that fixes `z : ℍ` and whose automorphy factor at `z` is a real
 number `e` is the scalar matrix `e`. -/
@@ -103,6 +103,10 @@ theorem mem_center_of_smul_eq_self_of_denom_sq_eq_one {g : SL(2, ℝ)} {z : ℍ}
     ext i j
     by_cases hij : i = j <;> simp [Matrix.scalar_apply, hij]
 
+end Matrix.SpecialLinearGroup
+
+namespace Matrix.ProjectiveSpecialLinearGroup
+
 /-- **The derivative of the action detects the identity**: a Möbius transformation of `ℍ` fixing
 `z` whose derivative at `z` is `1` is the identity of `PSL(2, ℝ)`. -/
 theorem eq_one_of_smul_eq_self_of_smulDeriv_eq_one {q : PSL(2, ℝ)} {z : ℍ}
@@ -111,22 +115,28 @@ theorem eq_one_of_smul_eq_self_of_smulDeriv_eq_one {q : PSL(2, ℝ)} {z : ℍ}
   induction q using QuotientGroup.induction_on with | _ g =>
   rw [smulDeriv_coe, inv_eq_one] at h
   refine (QuotientGroup.eq_one_iff g).mpr
-    (mem_center_of_smul_eq_self_of_denom_sq_eq_one ?_ h)
+    (Matrix.SpecialLinearGroup.mem_center_of_smul_eq_self_of_denom_sq_eq_one ?_ h)
   rwa [pslMk_smul] at hz
 
+end Matrix.ProjectiveSpecialLinearGroup
+
+namespace Subgroup
+
 /-- The derivative character of the stabilizer of `z : ℍ` in a subgroup `Γ ≤ PSL(2, ℝ)`: it
-sends an element fixing `z` to its derivative `TauCeti.UpperHalfPlane.smulDeriv` at `z`. -/
+sends an element fixing `z` to its derivative
+`Matrix.ProjectiveSpecialLinearGroup.smulDeriv` at `z`. -/
 def stabilizerDeriv (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) : stabilizer Γ z →* ℂ where
-  toFun q := smulDeriv ((q : Γ) : PSL(2, ℝ)) z
+  toFun q := Matrix.ProjectiveSpecialLinearGroup.smulDeriv ((q : Γ) : PSL(2, ℝ)) z
   map_one' := by simp
   map_mul' q₁ q₂ := by
     have h₂ : (((q₂ : Γ) : PSL(2, ℝ)) • z) = z := q₂.2
-    simp only [Subgroup.coe_mul, smulDeriv_mul, h₂]
+    simp only [Subgroup.coe_mul, Matrix.ProjectiveSpecialLinearGroup.smulDeriv_mul, h₂]
 
 /-- The derivative character evaluated on an element of the stabilizer. -/
 @[simp]
 theorem stabilizerDeriv_apply (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (q : stabilizer Γ z) :
-    stabilizerDeriv Γ z q = smulDeriv ((q : Γ) : PSL(2, ℝ)) z := (rfl)
+    stabilizerDeriv Γ z q =
+      Matrix.ProjectiveSpecialLinearGroup.smulDeriv ((q : Γ) : PSL(2, ℝ)) z := (rfl)
 
 /-- **The derivative character of a point stabilizer is injective**: a transformation fixing `z`
 is determined by its derivative at `z`. -/
@@ -134,7 +144,8 @@ theorem stabilizerDeriv_injective (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
     Function.Injective (stabilizerDeriv Γ z) := by
   rw [injective_iff_map_eq_one]
   intro q hq
-  exact Subtype.ext (Subtype.ext (eq_one_of_smul_eq_self_of_smulDeriv_eq_one q.2 hq))
+  exact Subtype.ext (Subtype.ext
+    (Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smulDeriv_eq_one q.2 hq))
 
 /-- A point stabilizer in a subgroup of `PSL(2, ℝ)` is commutative. -/
 instance instIsMulCommutativeStabilizer (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
@@ -142,7 +153,7 @@ instance instIsMulCommutativeStabilizer (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
   is_comm := ⟨fun q₁ q₂ ↦ stabilizerDeriv_injective Γ z (by rw [map_mul, map_mul, mul_comm])⟩
 
 /-- **A finite point stabilizer is cyclic.** For a discrete subgroup of `PSL(2, ℝ)`, where the
-finiteness hypothesis is automatic, see `TauCeti.UpperHalfPlane.instIsCyclicStabilizer`. -/
+finiteness hypothesis is automatic, see `Subgroup.instIsCyclicStabilizer`. -/
 theorem isCyclic_stabilizer (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) [Finite (stabilizer Γ z)] :
     IsCyclic (stabilizer Γ z) :=
   isCyclic_of_injective_ringHom _ (stabilizerDeriv_injective Γ z)
@@ -167,6 +178,10 @@ theorem exists_isPrimitiveRoot_stabilizerDeriv (Γ : Subgroup PSL(2, ℝ)) (z : 
   rw [← hcard, ← orderOf_stabilizerDeriv]
   exact IsPrimitiveRoot.orderOf _
 
+end Subgroup
+
+namespace Matrix.SpecialLinearGroup
+
 /-- **A nonidentity element fixing a point of `ℍ` is elliptic.** -/
 theorem isElliptic_of_smul_eq_self_of_ne_one {g : SL(2, ℝ)} {z : ℍ} (hz : g • z = z)
     (hg : (g : PSL(2, ℝ)) ≠ 1) : Matrix.GeneralLinearGroup.IsElliptic (mapGL ℝ g) := by
@@ -174,4 +189,4 @@ theorem isElliptic_of_smul_eq_self_of_ne_one {g : SL(2, ℝ)} {z : ℍ} (hz : g 
   have h := forall_smul_eq_self_iff_mem_center.mpr hc
   exact eq_of_smul_eq_smul fun w : ℍ ↦ by rw [one_smul, pslMk_smul]; exact h w
 
-end TauCeti.UpperHalfPlane
+end Matrix.SpecialLinearGroup
