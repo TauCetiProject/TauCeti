@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
+import TauCeti.Algebra.Group.End
 public import TauCeti.Algebra.CharP.Frobenius.Basic
 public import TauCeti.GroupTheory.FixedSubgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.PointsFunctor
@@ -139,10 +140,9 @@ Frobenius of the pinned Geck carrier, in the endomorphism monoid of its points, 
 -- `Monoid.End` is definitionally a bundled `MonoidHom`; the `show` picks its composition monoid
 -- structure before the power is elaborated.
 theorem geckFrobenius_pow (m : ℕ) :
-    (show Monoid.End _ from t.geckFrobenius ht p k A) ^ m = t.geckFrobenius ht p (k * m) A := by
-  induction m with
-  | zero => rw [pow_zero, Nat.mul_zero, geckFrobenius_zero]; rfl
-  | succ m ih => rw [pow_succ, ih, Nat.mul_succ, t.geckFrobenius_add ht p (k * m) A k]; rfl
+    (show Monoid.End _ from t.geckFrobenius ht p k A) ^ m = t.geckFrobenius ht p (k * m) A :=
+  TauCeti.monoidEnd_pow_eq_of_zero_of_add (fun j => t.geckFrobenius ht p j A)
+    (t.geckFrobenius_zero ht p A) (fun a b => t.geckFrobenius_add ht p a A b) k m
 
 /-- A point of the pinned Geck carrier is fixed by its Frobenius endomorphism exactly when every
 one of its matrix entries lies in the Frobenius-fixed subring. -/
