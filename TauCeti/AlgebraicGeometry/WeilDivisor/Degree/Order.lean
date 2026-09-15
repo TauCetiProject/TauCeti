@@ -112,6 +112,31 @@ lemma eq_of_le_of_weightedDegree_eq_of_pos {w : X → ℤ} (hw : ∀ x, 0 < w x)
     D = E :=
   eq_of_le_of_weightedDegree_eq_of_pos_on_support hDE hdeg fun x _ => hw x
 
+/-- **An effective divisor of weighted degree one is a point divisor**: for everywhere-positive
+weights, `weightedDegree w D = 1` forces `D = [x]` at a single point `x` of weight one. -/
+lemma IsEffective.exists_eq_ofPoint_of_weightedDegree_eq_one {w : X → ℤ} (hw : ∀ x, 0 < w x)
+    {D : WeilDivisor X} (hD : IsEffective D) (hdeg : weightedDegree w D = 1) :
+    ∃ x, w x = 1 ∧ D = ofPoint x := by
+  have hD0 : D ≠ 0 := by
+    rintro rfl
+    simp at hdeg
+  obtain ⟨x, hx⟩ := hD.exists_pos_coeff_of_ne_zero hD0
+  have hle : ofPoint x ≤ D := by
+    rw [le_iff]
+    intro y
+    rcases eq_or_ne y x with rfl | hy
+    · rw [coeff_ofPoint_self]
+      omega
+    · rw [coeff_ofPoint_of_ne hy]
+      exact (isEffective_iff D).mp hD y
+  have hwx : w x = 1 := by
+    have hmono := weightedDegree_le_of_le (fun y ↦ (hw y).le) hle
+    rw [weightedDegree_ofPoint, hdeg] at hmono
+    have := hw x
+    omega
+  exact ⟨x, hwx, (eq_of_le_of_weightedDegree_eq_of_pos hw hle
+    (by rw [weightedDegree_ofPoint, hwx, hdeg])).symm⟩
+
 /-- For positive weights, weighted degree is strictly monotone for the coefficientwise divisor
 order. -/
 lemma strictMono_weightedDegree {w : X → ℤ} (hw : ∀ x, 0 < w x) :

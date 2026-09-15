@@ -185,6 +185,17 @@ lemma eq_of_le_of_degree_eq (hF : IsFunctionField k F) {D E : Divisor k F} (hDE 
     (degree_pos_of_isFunctionField hF) hDE
   simpa only [degree] using hdeg
 
+/-- **An effective divisor of degree one is a place of degree one**: since every place of an
+algebraic function field has degree at least one, an effective divisor of degree one is the
+prime divisor of a single place, and that place has degree one. -/
+lemma exists_eq_ofPoint_of_degree_eq_one (hF : IsFunctionField k F) {D : Divisor k F}
+    (hD : 0 ≤ D) (hdeg : degree D = 1) :
+    ∃ P : Place k F, P.degree = 1 ∧ D = WeilDivisor.ofPoint P := by
+  obtain ⟨P, hP, hDP⟩ := (WeilDivisor.isEffective_iff_zero_le.mpr
+    hD).exists_eq_ofPoint_of_weightedDegree_eq_one (degree_pos_of_isFunctionField hF)
+    (by simpa only [degree] using hdeg)
+  exact ⟨P, by exact_mod_cast hP, hDP⟩
+
 /-- Degree is strictly monotone on divisors of an algebraic function field. -/
 lemma strictMono_degree (hF : IsFunctionField k F) :
     StrictMono (degree : Divisor k F → ℤ) := by

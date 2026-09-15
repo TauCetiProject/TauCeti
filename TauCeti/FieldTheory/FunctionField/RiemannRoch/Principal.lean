@@ -141,6 +141,32 @@ theorem Divisor.dim_principal_of_isIntegrallyClosedIn (hF : IsFunctionField k F)
     Divisor.dim (Divisor.principal hF z) = 1 := by
   rw [Divisor.dim_principal hF, isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one.mp hex]
 
+/-- **A divisor class with `ℓ(D) = 1` contains at most one effective divisor.**  Over an exact
+constant field the only functions in `L(D)` are then the constants, so the only effective
+divisor linearly equivalent to an effective `D` with `ℓ(D) = 1` is `D` itself; the complete
+linear system of `D` is a single point. -/
+theorem Divisor.eq_of_linearlyEquivalent_of_dim_eq_one (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {D E : Divisor k F} (hD : 0 ≤ D) (hE : 0 ≤ E)
+    (hdim : Divisor.dim D = 1)
+    (h : (Place.orderSystem hF).LinearlyEquivalent D E) : D = E := by
+  obtain ⟨z, hz⟩ := (Divisor.linearlyEquivalent_iff hF).mp h
+  have hmem : (z : F) ∈ riemannRochSpace E := by
+    rw [mem_riemannRochSpace_units_iff hF, hz]
+    simpa using hD
+  have hdimE : Divisor.dim E = 1 := by
+    rw [← Divisor.dim_eq_of_linearlyEquivalent hF h]
+    exact hdim
+  have : FiniteDimensional k (riemannRochSpace E) := finiteDimensional_riemannRochSpace hF E
+  have heq : riemannRochSpace (0 : Divisor k F) = riemannRochSpace E := by
+    refine Submodule.eq_of_le_of_finrank_eq (riemannRochSpace_mono hE) ?_
+    rw [← Divisor.dim_def, ← Divisor.dim_def, hdimE,
+      Divisor.dim_zero_of_isIntegrallyClosedIn hF hex]
+  have hz0 : Divisor.principal hF z = 0 :=
+    (Divisor.principal_eq_zero_iff_mem_algebraicClosure hF z).mpr
+      ((mem_riemannRochSpace_zero_iff hF).mp (heq.ge hmem))
+  rw [hz0] at hz
+  exact sub_eq_zero.mp hz.symm
+
 /-- **A Riemann–Roch space is nonzero exactly when its divisor is linearly equivalent to an
 effective divisor** (Stichtenoth, Remark 1.4.5(b)).  A nonzero `f ∈ L(D)` makes `div f + D`
 effective and equivalent to `D`; conversely, if `D - D'` is the divisor of `z` with `D'`
