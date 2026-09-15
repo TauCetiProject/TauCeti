@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.ConstantMultiplication.Basic
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.GenericMatrix
 
 /-!
 # The toral Kostant carrier inside a constant-multiplication subgroup scheme
@@ -123,71 +123,7 @@ theorem preserves_of_mem_kostantToralPointsSubgroup
 
 /-! ### The criterion on the generator matrices -/
 
-omit [Finite κ] in
-/-- The generic matrix of a represented root-subgroup coordinate map is the divided-power
-exponential matrix at the universal point of `𝔾ₐ`. -/
-private theorem exists_map_genericMatrix_kostantRootSubgroupCoordinateMap (i : I) :
-    ∃ q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ]
-        AdditiveGroup.coordinateHopfAlgebra ℤ),
-      (GeneralLinear.genericMatrix ℤ n).map
-          (kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b).hom.toAlgHom =
-        ((kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b q :
-          Matrix.GeneralLinearGroup (Fin n) (AdditiveGroup.coordinateHopfAlgebra ℤ)) :
-          Matrix (Fin n) (Fin n) (AdditiveGroup.coordinateHopfAlgebra ℤ)) := by
-  let q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ]
-      AdditiveGroup.coordinateHopfAlgebra ℤ) :=
-    toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))
-  have hq : q.ofConv = AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ) :=
-    WithConv.ofConv_toConv _
-  have hpoint := pointsMulEquiv_kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b
-    (AdditiveGroup.coordinateHopfAlgebra ℤ) q
-  have hpoint' : GeneralLinear.pointToGeneralLinear n
-      (toConv (kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b).hom.toAlgHom) =
-      kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b q := by
-    refine Eq.trans ?_ hpoint
-    refine congrArg (GeneralLinear.pointToGeneralLinear n) (congrArg toConv ?_)
-    exact AlgHom.ext fun x => rfl
-  refine ⟨q, ?_⟩
-  rw [GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
-  exact congrArg _ hpoint'
-
 section Generators
-
-omit [Module ℚ V] in
-/-- The generic matrix of the represented weight-torus coordinate map is the weight-diagonal
-matrix at the universal point of the split torus. -/
-private theorem exists_map_genericMatrix_weightTorusCoordinateMap [Fintype κ] :
-    ∃ s : κ → ((DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)ˣ,
-      (GeneralLinear.genericMatrix ℤ n).map
-          (GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt).hom.toAlgHom =
-        ((kostantTorusMatrix M b wt s :
-          Matrix.GeneralLinearGroup (Fin n)
-            (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) :
-          Matrix (Fin n) (Fin n)
-            (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) := by
-  let p : HopfAlgebra.points (R := ℤ)
-      (H := (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)
-      (CommAlgCat.of ℤ
-        (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) :=
-    toConv (AlgHom.id ℤ
-      (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)
-  refine ⟨SplitTorus.pointsMulEquiv (R := ℤ) (σ := κ) p, ?_⟩
-  have hq : (CommHopfAlgCat.mapPointsFunctor
-        (GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt)).app
-        (CommAlgCat.of ℤ
-          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) p =
-      toConv (GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt).hom.toAlgHom := by
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
-    exact congrArg toConv (AlgHom.ext fun x => rfl)
-  rw [GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
-  refine congrArg _ ?_
-  rw [← GeneralLinear.pointsMulEquiv_apply, ← hq,
-    GeneralLinear.mapPointsFunctor_weightTorusCoordinateMap_app,
-    GeneralLinear.pointsMulEquiv_diagonalTorusPoints, kostantTorusMatrix_apply]
-  refine congrArg _ ?_
-  funext i
-  rw [GeneralLinear.diagonalTorusCoordinates_pointsMap_weightCharacterMap wt
-    (CommAlgCat.of ℤ (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) p i]
 
 /-- **The toral Kostant carrier preserves a multiplication preserved by its generators.** If
 every represented root-subgroup matrix and every represented weight-torus matrix preserves the
