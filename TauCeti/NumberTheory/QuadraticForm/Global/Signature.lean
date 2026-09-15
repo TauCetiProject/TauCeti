@@ -34,8 +34,6 @@ nondegenerate form, the two indices add to the global rank.
   products.
 -/
 
--- Provenance: TauCetiRoadmap/GlobalQuadraticForms/README.md, Layer 1.1.
-
 public section
 noncomputable section
 
@@ -104,7 +102,7 @@ theorem realPositiveIndex_add_realNegativeIndex_eq_finrank [FiniteDimensional K 
     exact QuadraticForm.Nondegenerate.baseChange hQ
   have hsum := sigPos_add_sigNeg_add_radical (Q := Q.atRealPlace w)
   rw [hlocal.radical_eq_bot, finrank_bot, add_zero, Module.finrank_baseChange] at hsum
-  exact hsum
+  simpa only [realPositiveIndex_eq_sigPos, realNegativeIndex_eq_sigNeg] using hsum
 
 variable {W : Type v'} [AddCommGroup W] [Module K W]
 variable {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
@@ -118,19 +116,21 @@ theorem _root_.QuadraticMap.Equivalent.realSignature_eq (h : Q.Equivalent R)
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   have hlocal : (Q.atRealPlace w).Equivalent (R.atRealPlace w) := by
     simpa only [atRealPlace_def] using h.baseChange ℝ
-  exact Prod.ext hlocal.sigPos_eq hlocal.sigNeg_eq
+  apply Prod.ext
+  · simpa only [realSignature_fst, realPositiveIndex_eq_sigPos] using hlocal.sigPos_eq
+  · simpa only [realSignature_snd, realNegativeIndex_eq_sigNeg] using hlocal.sigNeg_eq
 
 /-- Equivalent quadratic forms have the same positive index at every real place. -/
 theorem _root_.QuadraticMap.Equivalent.realPositiveIndex_eq (h : Q.Equivalent R)
     (w : {w : InfinitePlace K // w.IsReal}) :
-    Q.realPositiveIndex w = R.realPositiveIndex w :=
-  congrArg Prod.fst (h.realSignature_eq w)
+    Q.realPositiveIndex w = R.realPositiveIndex w := by
+  rw [← realSignature_fst Q w, ← realSignature_fst R w, h.realSignature_eq w]
 
 /-- Equivalent quadratic forms have the same negative index at every real place. -/
 theorem _root_.QuadraticMap.Equivalent.realNegativeIndex_eq (h : Q.Equivalent R)
     (w : {w : InfinitePlace K // w.IsReal}) :
-    Q.realNegativeIndex w = R.realNegativeIndex w :=
-  congrArg Prod.snd (h.realSignature_eq w)
+    Q.realNegativeIndex w = R.realNegativeIndex w := by
+  rw [← realSignature_snd Q w, ← realSignature_snd R w, h.realSignature_eq w]
 
 section Prod
 
