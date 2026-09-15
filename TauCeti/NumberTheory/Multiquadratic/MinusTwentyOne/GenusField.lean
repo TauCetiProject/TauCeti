@@ -61,9 +61,8 @@ namespace TauCeti.Multiquadratic
 roots of the prime-discriminant radicands is exactly
 `ℚ(i, i√3, i√7) = ℚ(√-1, √-3, √-7)`.
 
-The canonical roots and the displayed roots need not be definitionally equal, because the former
-are chosen using algebraic closure. Their squares agree, so each differs from the corresponding
-displayed root by at most a sign; adjoining either family therefore gives the same field. -/
+Together with `isGenusField_candidateGenusField`, this identifies the genus field of
+`ℚ(√-21)`. -/
 @[simp] theorem candidateGenusField_neg_twenty_one_eq (hd : Squarefree (-21 : ℤ)) :
     candidateGenusField hd =
       (adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ) : IntermediateField ℚ ℂ) := by
@@ -71,6 +70,10 @@ displayed root by at most a sign; adjoining either family therefore gives the sa
     adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ)
   have hfac : genusPrimeDiscriminants hd = {-4, -3, -7} :=
     genusPrimeDiscriminants_neg_twenty_one hd
+  -- The canonical roots and the displayed roots need not be definitionally equal, because the
+  -- former are chosen using algebraic closure. Their squares agree, so each differs from the
+  -- corresponding displayed root by at most a sign; adjoining either family therefore gives the
+  -- same field.
   have mem_of_sq_eq (E : IntermediateField ℚ ℂ) {x y : ℂ}
       (hxy : x ^ 2 = y ^ 2) (hy : y ∈ E) : x ∈ E := by
     rcases sq_eq_sq_iff_eq_or_eq_neg.mp hxy with h | h
