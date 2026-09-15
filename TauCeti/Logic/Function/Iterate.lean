@@ -18,8 +18,8 @@ simulation of the single steps is automatically a simulation of all the iterates
 of any length may be replayed as a run of `g`.
 
 This is the form in which a coarse system is compared with a finer one that refines each of its
-steps into a bounded stretch of its own: only the single steps have to be inspected, and the
-lengths of the stretches never have to be tracked.
+steps into a finite stretch of its own, of a length that may vary from state to state: only the
+single steps have to be inspected, and the lengths of the stretches never have to be tracked.
 
 ## Main results
 
