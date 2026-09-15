@@ -170,10 +170,12 @@ theorem inf (h : mhs.IsSubstructure U) (h' : mhs.IsSubstructure U') :
 end IsSubstructure
 
 /-- The zero subspace is a sub-mixed Hodge structure. -/
+@[simp]
 theorem isSubstructure_bot : mhs.IsSubstructure ⊥ where
   le_iSup_inf_deligneSplittingFamily := by simp
 
 /-- The whole space is a sub-mixed Hodge structure: Deligne's bigrading spans. -/
+@[simp]
 theorem isSubstructure_top : mhs.IsSubstructure ⊤ where
   le_iSup_inf_deligneSplittingFamily := by
     simp only [rationalToComplexSubmodule_top, top_inf_eq]
