@@ -251,8 +251,8 @@ theorem RegularFormClass.discr_hyperbolicClass :
       (by rw [presentedForm_one_neg_one]; exact QuadraticMap.Equivalent.refl _)]
   simp [Fin.prod_univ_two]
 
-/-- **The signed discriminant of the hyperbolic class is trivial.** The discriminant is not: it is
-the class of `-1`. -/
+/-- **The signed discriminant of the hyperbolic class is trivial.** The unsigned discriminant is
+the class of `-1`, which is nontrivial precisely when `-1` is not a square. -/
 @[simp]
 theorem RegularFormClass.signedDiscr_hyperbolicClass :
     RegularFormClass.signedDiscr (hyperbolicClass K) = 0 := by

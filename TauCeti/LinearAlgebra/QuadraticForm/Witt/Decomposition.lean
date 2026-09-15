@@ -92,7 +92,7 @@ theorem mk_hyperbolicPresentation (m : ℕ) :
   | zero => rw [hyperbolicPresentation, zero_nsmul, RegularFormClass.zero_def]
   | succ m ih =>
     rw [hyperbolicPresentation, ← RegularFormClass.mk_add_mk, ih, succ_nsmul',
-      hyperbolicClass]
+      hyperbolicClass_def]
 
 end Hyperbolic
 
@@ -138,7 +138,7 @@ theorem not_anisotropic_hyperbolicClass_add (c : RegularFormClass K) :
     ¬ RegularFormClass.Anisotropic (hyperbolicClass K + c) := by
   induction c using Quotient.inductionOn with
   | _ p =>
-    rw [hyperbolicClass, RegularFormClass.mk_add_mk, RegularFormClass.anisotropic_mk]
+    rw [hyperbolicClass_def, RegularFormClass.mk_add_mk, RegularFormClass.anisotropic_mk]
     intro hani
     refine QuadraticForm.not_anisotropic_hyperbolicPlane_prod (presentedForm p) ?_
     rw [← presentedForm_one_neg_one]
@@ -176,7 +176,7 @@ private theorem exists_nsmul_hyperbolicClass_add_aux (n : ℕ) :
           (nondegenerate_presentedForm p) hani
         have hsplit : (Quotient.mk (regularFormSetoid K) p : RegularFormClass K) =
             hyperbolicClass K + Quotient.mk (regularFormSetoid K) q := by
-          rw [hyperbolicClass, RegularFormClass.mk_add_mk, RegularFormClass.mk_eq_mk_iff]
+          rw [hyperbolicClass_def, RegularFormClass.mk_add_mk, RegularFormClass.mk_eq_mk_iff]
           refine hq.trans ?_
           rw [← presentedForm_one_neg_one]
           exact (equivalent_presentedForm_append_prod _ q).symm

@@ -189,20 +189,24 @@ theorem presentedForm_one_neg_one :
 
 As with `TauCeti.hyperbolicPlane`, the invertibility hypothesis is not used by the formula; it
 confines the definition to characteristic not two, where `⟨1, -1⟩` is the hyperbolic plane. -/
-@[expose] public def hyperbolicClass (K : Type u) [Field K] [_i2 : Invertible (2 : K)] :
+public def hyperbolicClass (K : Type u) [Field K] [_i2 : Invertible (2 : K)] :
     RegularFormClass K :=
   Quotient.mk (regularFormSetoid K) ⟨2, ![1, -1]⟩
+
+/-- The defining presentation of the hyperbolic class. -/
+theorem hyperbolicClass_def :
+    hyperbolicClass K = Quotient.mk (regularFormSetoid K) ⟨2, ![1, -1]⟩ := (rfl)
 
 /-- The hyperbolic class has rank two. -/
 @[simp]
 theorem rank_hyperbolicClass : RegularFormClass.rank (hyperbolicClass K) = 2 := by
-  rw [hyperbolicClass, RegularFormClass.rank_mk]
+  rw [hyperbolicClass_def, RegularFormClass.rank_mk]
 
 /-- The class of the hyperbolic plane, as a form, is the hyperbolic class. -/
 @[simp]
 theorem formClass_hyperbolicPlane :
     formClass (hyperbolicPlane K) nondegenerate_hyperbolicPlane = hyperbolicClass K := by
-  rw [hyperbolicClass]
+  rw [hyperbolicClass_def]
   refine formClass_mk _ _ _ ?_
   rw [presentedForm_one_neg_one]
   exact QuadraticMap.Equivalent.refl _
