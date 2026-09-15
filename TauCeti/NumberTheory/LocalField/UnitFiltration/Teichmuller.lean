@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
+public import TauCeti.RingTheory.Valuation.RootsOfUnity
 public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import Mathlib.RingTheory.Teichmuller
@@ -21,20 +22,16 @@ and its restriction
 
 `TauCeti.teichmuller K : 𝓀[K]ˣ →* 𝒪[K]ˣ`
 
-to the multiplicative groups. The latter is a section of reduction. Its values are precisely the
-units of `𝒪[K]` killed by the exponent `q - 1`, where `q = Nat.card 𝓀[K]`; this property uniquely
-characterizes the section. These representatives identify the multiplicative group of the residue
-field with the `(q - 1)`-st roots of unity in both `𝒪[K]` and `K`.
-
-For any valued field `K` and nonzero `n`, every `n`-th root of unity of `K` is integral, so the
-`n`-th roots of unity in `𝒪[K]` and in `K` are identified.
+to the multiplicative groups. The latter is the unique monoid-homomorphic section of reduction,
+and its values are precisely the units of `𝒪[K]` killed by the exponent `q - 1`, where
+`q = Nat.card 𝓀[K]`. These representatives identify the multiplicative group of the residue field
+with the `(q - 1)`-st roots of unity in both `𝒪[K]` and `K`, the latter through the comparison
+`TauCeti.integerRootsOfUnityEquivRootsOfUnity`.
 
 ## Main definitions
 
 * `TauCeti.teichmullerLift`: the zero-preserving multiplicative lift from the residue field.
 * `TauCeti.teichmuller`: the Teichmüller section on unit groups.
-* `TauCeti.integerRootsOfUnityEquivRootsOfUnity`: the `n`-th roots of unity in `𝒪[K]` are those
-  in `K`.
 * `TauCeti.teichmullerEquivIntegerRootsOfUnity`: the equivalence with the roots of unity in
   `𝒪[K]`.
 * `TauCeti.teichmullerEquivRootsOfUnity`: the equivalence with the roots of unity in `K`.
@@ -44,8 +41,8 @@ For any valued field `K` and nonzero `n`, every `n`-th root of unity of `K` is i
 * `TauCeti.residue_teichmuller`: the Teichmüller map is a section of reduction.
 * `TauCeti.eq_teichmuller_iff`: a unit is the representative of `a` exactly when it reduces to
   `a` and its `(q - 1)`-st power is one.
-* `TauCeti.teichmuller_unique`: the section and torsion properties uniquely characterize the
-  Teichmüller map among monoid homomorphisms.
+* `TauCeti.teichmuller_unique`: the Teichmüller map is the only monoid-homomorphic section of
+  reduction.
 * `TauCeti.range_teichmuller`: its range is the `(q - 1)`-st roots of unity in `𝒪[K]`.
 
 ## Implementation notes
@@ -64,69 +61,6 @@ noncomputable section
 open ValuativeRel IsNonarchimedeanLocalField
 
 namespace TauCeti
-
-section RootsOfUnity
-
-variable {K : Type*} [Field K] [ValuativeRel K]
-
-private theorem restrictRootsOfUnity_integer_bijective (n : ℕ) [NeZero n] :
-    Function.Bijective (restrictRootsOfUnity (Subring.subtype 𝒪[K]) n) := by
-  constructor
-  · intro u v huv
-    apply Subtype.ext
-    apply Units.ext
-    apply Subtype.ext
-    exact congrArg (fun z : rootsOfUnity n K ↦ ((z : Kˣ) : K)) huv
-  · intro z
-    have hzpow : ((z : Kˣ) : K) ^ n = 1 :=
-      (mem_rootsOfUnity' n (z : Kˣ)).mp z.prop
-    have hvpow : valuation K ((z : Kˣ) : K) ^ n = 1 := by
-      rw [← map_pow, hzpow, map_one]
-    have hv : valuation K ((z : Kˣ) : K) = 1 :=
-      (pow_eq_one_iff_of_nonneg zero_le (NeZero.ne n)).mp hvpow
-    have hzmem : ((z : Kˣ) : K) ∈ 𝒪[K] :=
-      (Valuation.mem_integer_iff (valuation K) _).mpr hv.le
-    let x : 𝒪[K] := ⟨((z : Kˣ) : K), hzmem⟩
-    have hxunit : IsUnit x :=
-      (Valuation.integer.integers (valuation K)).isUnit_of_one' hv
-    let u : 𝒪[K]ˣ := hxunit.unit
-    have huK : ((u : 𝒪[K]) : K) = ((z : Kˣ) : K) := by
-      rw [hxunit.unit_spec]
-    have hupow : u ^ n = 1 := by
-      apply Units.ext
-      apply Subtype.ext
-      simpa only [Units.val_pow_eq_pow_val, Units.val_one, Subring.coe_pow, Subring.coe_one,
-        huK] using hzpow
-    let w : rootsOfUnity n 𝒪[K] := ⟨u, hupow⟩
-    refine ⟨w, ?_⟩
-    apply Subtype.ext
-    apply Units.ext
-    exact huK
-
-/-- For nonzero `n`, the `n`-th roots of unity in the ring of integers `𝒪[K]` of a valued field
-are identified with the `n`-th roots of unity in `K`. -/
-noncomputable def integerRootsOfUnityEquivRootsOfUnity (K : Type*) [Field K] [ValuativeRel K]
-    (n : ℕ) [NeZero n] : rootsOfUnity n 𝒪[K] ≃* rootsOfUnity n K :=
-  MulEquiv.ofBijective (restrictRootsOfUnity (Subring.subtype 𝒪[K]) n)
-    (restrictRootsOfUnity_integer_bijective n)
-
-/-- The comparison of roots of unity is the inclusion `𝒪[K] → K`. -/
-@[simp]
-theorem integerRootsOfUnityEquivRootsOfUnity_apply (n : ℕ) [NeZero n]
-    (u : rootsOfUnity n 𝒪[K]) :
-    ((integerRootsOfUnityEquivRootsOfUnity K n u : Kˣ) : K) = ((u : 𝒪[K]ˣ) : 𝒪[K]) := by
-  rw [integerRootsOfUnityEquivRootsOfUnity, MulEquiv.ofBijective_apply,
-    restrictRootsOfUnity_coe_apply, Subring.coe_subtype]
-
-/-- The inverse comparison of roots of unity views a root of unity of `K` as an integer. -/
-@[simp]
-theorem integerRootsOfUnityEquivRootsOfUnity_symm_apply (n : ℕ) [NeZero n]
-    (z : rootsOfUnity n K) :
-    ((((integerRootsOfUnityEquivRootsOfUnity K n).symm z : 𝒪[K]ˣ) : 𝒪[K]) : K) =
-      ((z : Kˣ) : K) := by
-  rw [← integerRootsOfUnityEquivRootsOfUnity_apply, MulEquiv.apply_symm_apply]
-
-end RootsOfUnity
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
@@ -165,6 +99,15 @@ noncomputable def teichmuller (K : Type*) [Field K] [ValuativeRel K]
     [TopologicalSpace K] [IsNonarchimedeanLocalField K] : 𝓀[K]ˣ →* 𝒪[K]ˣ :=
   Units.map (teichmullerLift K).toMonoidHom
 
+/-- The Teichmüller section on unit groups is the Teichmüller lift on underlying elements. -/
+@[simp]
+theorem val_teichmuller (a : 𝓀[K]ˣ) :
+    ((teichmuller K a : 𝒪[K]ˣ) : 𝒪[K]) = teichmullerLift K (a : 𝓀[K]) :=
+  -- `teichmuller` is `Units.map` of the lift, so this is `Units.coe_map`. The parentheses are the
+  -- module system's: the body of `teichmuller` is not `@[expose]`d, so a bare `rfl`, whose proof
+  -- term is exported, does not elaborate outside this module.
+  (rfl)
+
 /-- The Teichmüller map is a section of reduction on unit groups. -/
 @[simp]
 theorem residue_teichmuller (a : 𝓀[K]ˣ) :
@@ -176,6 +119,14 @@ theorem residue_teichmuller (a : 𝓀[K]ˣ) :
 theorem teichmuller_injective : Function.Injective (teichmuller K) :=
   Function.LeftInverse.injective (residue_teichmuller (K := K))
 
+private theorem units_pow_card_sub_one_eq_one (a : 𝓀[K]ˣ) :
+    a ^ (Nat.card 𝓀[K] - 1) = 1 := by
+  classical
+  let _ := Fintype.ofFinite 𝓀[K]
+  rw [Nat.card_eq_fintype_card]
+  apply Units.ext
+  exact FiniteField.pow_card_sub_one_eq_one _ (Units.ne_zero a)
+
 /-- Every Teichmüller representative is a `(q - 1)`-st root of unity, where
 `q = Nat.card 𝓀[K]`.
 
@@ -183,13 +134,7 @@ This is not a `simp` lemma: `simp` normalizes `Nat.card 𝓀[K]` to `Fintype.car
 left-hand side is not in `simp`-normal form. -/
 theorem teichmuller_pow_card_sub_one (a : 𝓀[K]ˣ) :
     teichmuller K a ^ (Nat.card 𝓀[K] - 1) = 1 := by
-  classical
-  let _ := Fintype.ofFinite 𝓀[K]
-  rw [Nat.card_eq_fintype_card, ← map_pow]
-  have ha : a ^ (Fintype.card 𝓀[K] - 1) = 1 := by
-    apply Units.ext
-    exact FiniteField.pow_card_sub_one_eq_one _ (Units.ne_zero a)
-  rw [ha, map_one]
+  rw [← map_pow, units_pow_card_sub_one_eq_one, map_one]
 
 private theorem eq_one_of_residue_eq_one_of_pow_card_sub_one_eq_one
     (u : 𝒪[K]ˣ)
@@ -248,18 +193,17 @@ theorem eq_teichmuller_iff (u : 𝒪[K]ˣ) (a : 𝓀[K]ˣ) :
   · rintro ⟨hres, hpow⟩
     exact eq_teichmuller_of_residue_eq_of_pow_card_sub_one_eq_one u a hres hpow
 
-/-- The Teichmüller map is the unique monoid-homomorphic section of reduction whose values are
-`(q - 1)`-st roots of unity. -/
+/-- The Teichmüller map is the unique monoid-homomorphic section of reduction. The values of such
+a section are automatically `(q - 1)`-st roots of unity, because `𝓀[K]ˣ` is killed by `q - 1`. -/
 theorem teichmuller_unique
     (f : 𝓀[K]ˣ →* 𝒪[K]ˣ)
-    (hsection : (Units.map (IsLocalRing.residue 𝒪[K] : 𝒪[K] →* 𝓀[K])).comp f = .id 𝓀[K]ˣ)
-    (htorsion : ∀ a, f a ^ (Nat.card 𝓀[K] - 1) = 1) :
+    (hsection : (Units.map (IsLocalRing.residue 𝒪[K] : 𝒪[K] →* 𝓀[K])).comp f = .id 𝓀[K]ˣ) :
     f = teichmuller K := by
   apply MonoidHom.ext
   intro a
   apply eq_teichmuller_of_residue_eq_of_pow_card_sub_one_eq_one
   · exact DFunLike.congr_fun hsection a
-  · exact htorsion a
+  · rw [← map_pow, units_pow_card_sub_one_eq_one, map_one]
 
 /-- The image of the Teichmüller map is exactly the `(q - 1)`-st roots of unity in `𝒪[K]`. -/
 theorem range_teichmuller :
@@ -316,10 +260,10 @@ theorem teichmullerEquivRootsOfUnity_apply (a : 𝓀[K]ˣ) :
 /-- The inverse of the roots-of-unity equivalence sends a root of unity `z` of `K` to the residue
 class whose Teichmüller representative is `z`. -/
 @[simp]
-theorem teichmuller_teichmullerEquivRootsOfUnity_symm_apply
+theorem teichmullerLift_teichmullerEquivRootsOfUnity_symm_apply
     (z : rootsOfUnity (Nat.card 𝓀[K] - 1) K) :
-    (((teichmuller K ((teichmullerEquivRootsOfUnity (K := K)).symm z) : 𝒪[K]ˣ) : 𝒪[K]) : K) =
+    ((teichmullerLift K ((teichmullerEquivRootsOfUnity (K := K)).symm z : 𝓀[K]) : 𝒪[K]) : K) =
       ((z : Kˣ) : K) := by
-  rw [← teichmullerEquivRootsOfUnity_apply, MulEquiv.apply_symm_apply]
+  rw [← val_teichmuller, ← teichmullerEquivRootsOfUnity_apply, MulEquiv.apply_symm_apply]
 
 end TauCeti
