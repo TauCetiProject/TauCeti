@@ -56,9 +56,17 @@ representation, and reflection sends `S_tgt` to zero instead.
 Nothing below needs the reflection functor on morphisms, only its value `TauCeti.reflectRep` on
 objects, so no naturality is checked here.
 
-The identification of the reflection of `S_src` is confined to the `A₂` case, and cannot be had
-beyond it: the Kronecker quiver `• ⇉ •` already carries a whole family of pairwise
-non-isomorphic indecomposables at the single dimension vector `(1, 1)`, by
+The identification of the reflection of `S_src` with a projective is confined to the `A₂` case, and
+cannot be had beyond it, for the plainest of reasons: reflection sends `S_src` to a representation
+of dimension vector `(1, #A)`, while the projective `P_tgt` of the reflected quiver has dimension
+vector `(#A, 1)` — one trivial path `tgt → tgt`, and one path `tgt → src` for each reversed arrow,
+by `TauCeti.Quiver.Kronecker.card_path_reflect_tgt_src`. The two agree exactly when `#A = 1`, and
+for `#A > 1` the two representations are not isomorphic at all.
+
+The proof is confined to `A₂` for a second reason: it reads the isomorphism off that common
+dimension vector, which pins an indecomposable down only because the Tits form of the reflected
+quiver is positive definite there. That last step already fails for `• ⇉ •`, which carries a whole
+family of pairwise non-isomorphic indecomposables at the single dimension vector `(1, 1)`, by
 `TauCeti.nonempty_kroneckerLineRep_iso_iff`.
 
 The arrow type is taken in `Type`, as in
