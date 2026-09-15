@@ -65,6 +65,7 @@ lemmas downstream modules should use.
   to Mathlib's counting primitive, at the level of the count and of the density;
 * `card_hom_eq_card_adjPreservingMaps` — homomorphisms are counted by the
   adjacency-preserving vertex maps;
+* `homDensityFin_bot` — the density of an edgeless pattern in a nonempty host is one;
 * `homDensityFin_nonneg`, `homDensityFin_le_one`, `injHomDensity_nonneg`, `injHomDensity_le_one` —
   both densities lie in `[0, 1]`, unconditionally. The degenerate cases are included: when the host
   is empty and the pattern is not, numerator and denominator both vanish and `x / 0 = 0` gives `0`.
@@ -171,6 +172,17 @@ theorem card_hom_eq_card_adjPreservingMaps :
   Nat.card_congr (relHomEquivPreservingMaps F.Adj G.Adj)
 
 variable (F : SimpleGraph V) (G : SimpleGraph W)
+
+/-! ### Normalization -/
+
+/-- **Normalization.** The homomorphism density of an edgeless pattern in a nonempty host is one.
+
+The nonempty-host hypothesis is necessary: for a nonempty pattern and empty host, both the
+homomorphism count and the normalizing denominator are zero. -/
+@[simp]
+theorem homDensityFin_bot [Nonempty W] : homDensityFin (⊥ : SimpleGraph V) G = 1 := by
+  rw [homDensityFin_def, card_hom_eq_card_adjPreservingMaps]
+  simp [Nat.card_fun, Nat.card_eq_fintype_card, Fintype.card_ne_zero]
 
 /-! ### Both densities lie in `[0, 1]` -/
 

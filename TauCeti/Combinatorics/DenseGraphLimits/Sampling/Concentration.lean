@@ -224,38 +224,42 @@ of `G(n, W)` differs from `t(F, W)` by at least a fixed positive `ε` are summab
 This is the summability bridge from `sampleGraph_homDensityFin_concentration` to the first
 Borel--Cantelli lemma. Sampling at `n + 1` vertices avoids the degenerate zero-vertex host. -/
 theorem tsum_sampleGraph_homDensityFin_tail_ne_top {V : Type*} [Fintype V]
-    (F : SimpleGraph V) [DecidableRel F.Adj] (W : Graphon Ω μ) {ε : ℝ} (hε : 0 < ε) :
+    (F : SimpleGraph V) [hFdec : DecidableRel F.Adj] (W : Graphon Ω μ) {ε : ℝ} (hε : 0 < ε) :
     (∑' n : ℕ, (sampleGraph W (n + 1))
       {G | ε ≤ |homDensityFin F G - homDensity F W|}) ≠ ⊤ := by
   let q := Fintype.card V
   let p : ℕ → ℝ≥0∞ := fun n => (sampleGraph W (n + 1))
     {G | ε ≤ |homDensityFin F G - homDensity F W|}
-  change (∑' n, p n) ≠ ⊤
+  have hp_def : (fun n : ℕ => (sampleGraph W (n + 1))
+      {G | ε ≤ |homDensityFin F G - homDensity F W|}) = p := rfl
+  rw [hp_def]
   rcases Nat.eq_zero_or_pos q with hq | hq
   · let _ : IsEmpty V := Fintype.card_eq_zero_iff.mp hq
     have hF : F = ⊥ := Subsingleton.elim _ _
     subst F
-    have hgraphon : homDensity (⊥ : SimpleGraph V) W = 1 := by
-      rw [homDensity_def]
-      calc
-        _ = ∫ _ : V → Ω, (1 : ℝ) ∂Measure.pi fun _ : V => μ := by
-          refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-          exact Finset.prod_eq_one fun _ he => by simp at he
-        _ = 1 := by simp
-    have hfinite : ∀ (n : ℕ) (G : SimpleGraph (Fin (n + 1))),
-        homDensityFin (⊥ : SimpleGraph V) G = 1 := by
-      intro n G
-      rw [homDensityFin_def]
-      simp
+    have hgraphon : @homDensity Ω _ μ _ V _ ⊥ hFdec W = 1 := by
+      -- `subst F` retains its decidability witness, so transport the public normalization theorem
+      -- from the canonical witness for the bottom graph.
+      have hdec : hFdec =
+          SimpleGraph.Bot.adjDecidable V := Subsingleton.elim _ _
+      exact (congrArg (fun d : DecidableRel (⊥ : SimpleGraph V).Adj =>
+        @homDensity Ω _ μ _ V _ ⊥ d W) hdec).trans (homDensity_bot W)
     have hp : p = 0 := by
       funext n
       simp only [p, Pi.zero_apply]
       have hset : {G : SimpleGraph (Fin (n + 1)) |
-          ε ≤ |homDensityFin (⊥ : SimpleGraph V) G - homDensity (⊥ : SimpleGraph V) W|} = ∅ := by
+          ε ≤ |homDensityFin (⊥ : SimpleGraph V) G -
+            @homDensity Ω _ μ _ V _ ⊥ hFdec W|} = ∅ := by
         ext G
-        simp [hfinite n G, hgraphon, hε]
-      simp [hset]
-    simp [hp]
+        simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
+        rw [homDensityFin_bot G, hgraphon]
+        simpa using (not_le.mpr hε)
+      rw [hset]
+      simp
+    have hsum_zero : (∑' n, p n) = 0 := by
+      rw [hp]
+      exact tsum_zero
+    exact hsum_zero.symm ▸ ENNReal.zero_ne_top
   · have hqR : (0 : ℝ) < q := by exact_mod_cast hq
     let c : ℝ := -(ε ^ 2) / (2 * (q : ℝ) ^ 2)
     have hc : c < 0 := by
@@ -263,6 +267,11 @@ theorem tsum_sampleGraph_homDensityFin_tail_ne_top {V : Type*} [Fintype V]
       exact div_neg_of_neg_of_pos (neg_lt_zero.mpr (sq_pos_of_pos hε)) (by positivity)
     have hgeom : Summable (fun n : ℕ => 2 * Real.exp ((n : ℝ) * c)) :=
       (Real.summable_exp_nat_mul_iff.mpr hc).mul_left 2
+    have hexponent (n : ℕ) :
+        -(ε ^ 2 * (n + 1 : ℕ)) / (2 * (q : ℝ) ^ 2) = ((n : ℝ) + 1) * c := by
+      rw [Nat.cast_add, Nat.cast_one]
+      simp only [c]
+      field_simp
     have hside : ∀ᶠ n : ℕ in Filter.atTop,
         2 * (q : ℝ) ^ 2 ≤ ε * (n + 1) := by
       have htendsto : Filter.Tendsto (fun n : ℕ => ε * ((n : ℝ) + 1))
@@ -283,11 +292,7 @@ theorem tsum_sampleGraph_homDensityFin_tail_ne_top {V : Type*} [Fintype V]
               (by simpa only [q, Nat.cast_add, Nat.cast_one] using hn)
         _ ≤ 2 * Real.exp ((n : ℝ) * c) := by
           gcongr
-          rw [Nat.cast_add, Nat.cast_one]
-          rw [show -(ε ^ 2 * ((n : ℝ) + 1)) / (2 * (q : ℝ) ^ 2) =
-              ((n : ℝ) + 1) * c by
-            simp only [c]
-            field_simp]
+          rw [hexponent n]
           exact mul_le_mul_of_nonpos_right (by norm_num) hc.le
     have hsum : Summable fun n => (p n).toReal :=
       hgeom.of_norm_bounded_eventually_nat hbound
