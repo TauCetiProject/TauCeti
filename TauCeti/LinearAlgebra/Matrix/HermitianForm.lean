@@ -16,8 +16,8 @@ second: `h(x,y) = ∑ i, x i * σ (y i)`. It identifies the second coordinate sp
 semilinearly with the dual of the first. When `σ` is involutive, the form has Hermitian
 symmetry. This orientation is useful for Hermitian duals of codes over finite fields.
 
-The construction uses Mathlib's matrix-to-sesquilinear-map equivalence on the identity
-matrix and its `dotProductEquiv` to establish nondegeneracy.
+This identification with the dual gives a nondegenerate pairing for studying orthogonality
+in finite coordinate spaces.
 -/
 
 public section
@@ -35,6 +35,7 @@ noncomputable def hermitianForm (σ : R ≃+* R) :
   classical
   exact Matrix.toLinearMapₛₗ₂' R (RingHom.id R) (σ : R →+* R) 1
 
+/-- The standard Hermitian form evaluates as the coordinate sum `∑ i, x i * σ (y i)`. -/
 @[simp]
 theorem hermitianForm_apply (σ : R ≃+* R) (x y : ι → R) :
     hermitianForm σ x y = ∑ i, x i * σ (y i) := by
@@ -66,7 +67,7 @@ theorem hermitianForm_nondegenerate (σ : R ≃+* R) :
 
 /-- The second argument of the standard Hermitian form identifies the coordinate space
 with its dual. -/
-theorem bijective_hermitianForm_flip (σ : R ≃+* R) :
+theorem hermitianForm_flip_bijective (σ : R ≃+* R) :
     Function.Bijective (hermitianForm σ (ι := ι)).flip := by
   classical
   constructor

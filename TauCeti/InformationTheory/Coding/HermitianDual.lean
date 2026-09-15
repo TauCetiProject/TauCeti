@@ -21,7 +21,8 @@ The matrix convention is row generators (`range G.vecMulLinear`) and column synd
 (`ker H.mulVecLin`). In particular, omitting the conjugation computes a different dual.
 
 The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*,
-§§1.3–1.4. The proofs use Mathlib's orthogonal submodules and dual annihilators.
+§§1.3–1.4. The declaration plan and orientation follow the formal prototype in
+`TauCetiRoadmap/AlgebraicCodingTheory/Suggested.lean`.
 -/
 
 public section
@@ -37,6 +38,12 @@ Double duality requires the automorphism to be involutive. -/
 noncomputable def hermitianDual (σ : R ≃+* R) (C : Submodule R (ι → R)) :
     Submodule R (ι → R) := C.orthogonalBilin (hermitianForm σ)
 
+/-- The Hermitian dual is the orthogonal submodule for the standard Hermitian form. -/
+theorem hermitianDual_def (σ : R ≃+* R) (C : Submodule R (ι → R)) :
+    hermitianDual σ C = C.orthogonalBilin (hermitianForm σ) := by
+  rfl
+
+/-- Membership in the Hermitian dual means being Hermitian-orthogonal to every codeword. -/
 @[simp]
 theorem mem_hermitianDual (σ : R ≃+* R) (C : Submodule R (ι → R)) (y : ι → R) :
     y ∈ hermitianDual σ C ↔ ∀ x ∈ C, ∑ i, x i * σ (y i) = 0 := by
@@ -57,6 +64,12 @@ theorem hermitianDual_top (σ : R ≃+* R) :
 /-- Hermitian duality reverses inclusion. -/
 theorem hermitianDual_antitone (σ : R ≃+* R) :
     Antitone (hermitianDual σ (ι := ι)) := Submodule.orthogonalBilin_antitone
+
+/-- The Hermitian dual of a sum is the intersection of the Hermitian duals. -/
+@[simp]
+theorem hermitianDual_sup (σ : R ≃+* R) (C D : Submodule R (ι → R)) :
+    hermitianDual σ (C ⊔ D) = hermitianDual σ C ⊓ hermitianDual σ D :=
+  Submodule.orthogonalBilin_sup C D
 
 /-- Every code is contained in its double Hermitian dual for an involutive automorphism. -/
 theorem le_hermitianDual_hermitianDual (σ : R ≃+* R) (hσ : Function.Involutive σ)
@@ -89,7 +102,7 @@ theorem finrank_add_finrank_hermitianDual (σ : K ≃+* K) (C : Submodule K (ι 
   have hd : finrank K (hermitianDual σ C) = finrank K C.dualAnnihilator := by
     rw [hermitianDual, ← Submodule.comap_dualAnnihilator_eq_orthogonalBilin]
     let f := (hermitianForm σ (ι := ι)).flip
-    have hf := bijective_hermitianForm_flip σ (ι := ι)
+    have hf := hermitianForm_flip_bijective σ (ι := ι)
     let g := f.submoduleComap C.dualAnnihilator
     have hg : Function.Bijective g := by
       constructor
@@ -110,6 +123,16 @@ theorem hermitianDual_hermitianDual (σ : K ≃+* K) (hσ : Function.Involutive 
   have h₁ := finrank_add_finrank_hermitianDual σ C
   have h₂ := finrank_add_finrank_hermitianDual σ (hermitianDual σ C)
   omega
+
+/-- For an involutive automorphism, the Hermitian dual of an intersection is the sum
+of the Hermitian duals. -/
+@[simp]
+theorem hermitianDual_inf (σ : K ≃+* K) (hσ : Function.Involutive σ)
+    (C D : Submodule K (ι → K)) :
+    hermitianDual σ (C ⊓ D) = hermitianDual σ C ⊔ hermitianDual σ D := by
+  have h := hermitianDual_sup σ (hermitianDual σ C) (hermitianDual σ D)
+  simpa only [hermitianDual_hermitianDual σ hσ] using
+    (congrArg (hermitianDual σ) h).symm
 
 /-- A matrix generates a code exactly when its conjugate checks the Hermitian dual. -/
 theorem range_vecMulLinear_eq_iff_ker_map_eq_hermitianDual (σ : K ≃+* K)
