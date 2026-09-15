@@ -49,9 +49,7 @@ kernel is assumed.
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Lemma 7.16. The argument here rests on the segment increment estimate
-  `TauCeti.enorm_sub_le_lintegral_enorm_fderiv_apply` and the homothety change of variables
-  `TauCeti.lintegral_comp_homothety` in place of the integration in polar coordinates used there.
+  Lemma 7.16.
 -/
 
 public section
