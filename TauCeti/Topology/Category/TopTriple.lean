@@ -160,6 +160,7 @@ abbrev outerPair : TopTriple.{u} ⥤ TopPair.{u} where
     TopPair.Hom.snd (outerPair.map φ) = Hom.snd φ := rfl
 
 /-- The map of pairs `(A, B) ⟶ (X, B)` determined by a triple `(X, A, B)`. -/
+@[no_expose]
 def innerToTotal : innerPair.{u} ⟶ totalPair.{u} where
   app T := TopPair.ofHom T.outerMap (𝟙 _)
     ((Category.id_comp _).trans T.innerMap_comp_outerMap.symm)
@@ -167,19 +168,20 @@ def innerToTotal : innerPair.{u} ⟶ totalPair.{u} where
     ((Category.comp_id _).trans (Category.id_comp _).symm) (Hom.snd_comp_outerMap φ)
 
 /-- The map of pairs `(X, B) ⟶ (X, A)` determined by a triple `(X, A, B)`. -/
+@[no_expose]
 def totalToOuter : totalPair.{u} ⟶ outerPair.{u} where
   app T := TopPair.ofHom (𝟙 _) T.innerMap
     (T.innerMap_comp_outerMap.trans (Category.comp_id _).symm)
   naturality _ _ φ := MorphismProperty.Arrow.Hom.ext (Hom.thd_comp_innerMap φ)
     ((Category.comp_id _).trans (Category.id_comp _).symm)
 
-@[simp] lemma innerToTotal_app_fst : TopPair.Hom.fst (innerToTotal.app T) = T.outerMap := rfl
+@[simp] lemma innerToTotal_app_fst : TopPair.Hom.fst (innerToTotal.app T) = T.outerMap := (rfl)
 
-@[simp] lemma innerToTotal_app_snd : TopPair.Hom.snd (innerToTotal.app T) = 𝟙 T.thd := rfl
+@[simp] lemma innerToTotal_app_snd : TopPair.Hom.snd (innerToTotal.app T) = 𝟙 T.thd := (rfl)
 
-@[simp] lemma totalToOuter_app_fst : TopPair.Hom.fst (totalToOuter.app T) = 𝟙 T.fst := rfl
+@[simp] lemma totalToOuter_app_fst : TopPair.Hom.fst (totalToOuter.app T) = 𝟙 T.fst := (rfl)
 
-@[simp] lemma totalToOuter_app_snd : TopPair.Hom.snd (totalToOuter.app T) = T.innerMap := rfl
+@[simp] lemma totalToOuter_app_snd : TopPair.Hom.snd (totalToOuter.app T) = T.innerMap := (rfl)
 
 end TopTriple
 

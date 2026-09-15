@@ -51,8 +51,9 @@ lemma singularChainComplexπ_comp_innerToTotal :
     (innerPair.obj T).singularChainComplexπ R ≫
         TopPair.singularChainComplexMap (innerToTotal.app T) R =
       SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R ≫
-        (totalPair.obj T).singularChainComplexπ R :=
-  (((SSetPair.chainComplexFunctorπ C).app R).naturality
+        (totalPair.obj T).singularChainComplexπ R := by
+  rw [← innerToTotal_app_fst]
+  exact (((SSetPair.chainComplexFunctorπ C).app R).naturality
     (TopPair.toSSetPair.map (innerToTotal.app T))).symm
 
 @[reassoc]
@@ -63,8 +64,10 @@ lemma singularChainComplexπ_comp_totalToOuter :
   -- The map of pairs `(X, B) ⟶ (X, A)` is the identity on the ambient space `X`, so the map
   -- it induces on the chains of that ambient space is the identity.
   have key : ((SSetPair.chainComplexFunctorRight C).obj R).map
-      (TopPair.toSSetPair.map (totalToOuter.app T)) = 𝟙 _ :=
-    (congrArg (((SSet.chainComplexFunctor C).obj R).map) (TopCat.toSSet.map_id T.fst)).trans
+      (TopPair.toSSetPair.map (totalToOuter.app T)) = 𝟙 _ := by
+    have h : TopCat.toSSet.map (TopPair.Hom.fst (totalToOuter.app T)) = 𝟙 _ := by
+      rw [totalToOuter_app_fst, TopCat.toSSet.map_id]
+    exact (congrArg (((SSet.chainComplexFunctor C).obj R).map) h).trans
       (((SSet.chainComplexFunctor C).obj R).map_id _)
   refine (((SSetPair.chainComplexFunctorπ C).app R).naturality
     (TopPair.toSSetPair.map (totalToOuter.app T))).symm.trans ?_
