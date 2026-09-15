@@ -36,6 +36,8 @@ it therefore becomes a character, which is what governs the stabilizers of a dis
 * `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_mul`: the chain rule
   `(q₁ * q₂)' z = q₁' (q₂ • z) * q₂' z`, and
   `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_inv` for the inverse.
+* `Matrix.ProjectiveSpecialLinearGroup.norm_smulDeriv_of_smul_eq_self`: the derivative at a
+  fixed point is unimodular, so a transformation fixing a point rotates about it.
 
 ## References
 
@@ -61,6 +63,17 @@ theorem denom_mapGL_neg (g : SL(2, ℝ)) (z : ℂ) :
     denom (mapGL ℝ (-g)) z = -denom (mapGL ℝ g) z := by
   simp [denom]
   ring
+
+/-- **The automorphy factor at a fixed point is unimodular.** The imaginary part of `g • z` is
+`im z` divided by the squared modulus of the automorphy factor, so fixing `z` forces that
+modulus to be `1`. -/
+theorem normSq_denom_eq_one_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz : g • z = z) :
+    Complex.normSq (denom (mapGL ℝ g) (z : ℂ)) = 1 := by
+  have him := UpperHalfPlane.im_smul_eq_div_normSq (mapGL ℝ g) z
+  rw [show mapGL ℝ g • z = z from hz, det_mapGL] at him
+  have hne := UpperHalfPlane.normSq_denom_ne_zero (mapGL ℝ g) z.im_ne_zero
+  rw [Units.val_one, abs_one, one_mul, eq_div_iff hne] at him
+  exact mul_left_cancel₀ z.im_ne_zero (by rw [him, mul_one])
 
 end Matrix.SpecialLinearGroup
 
@@ -92,6 +105,16 @@ theorem smulDeriv_coe (g : SL(2, ℝ)) (z : ℍ) :
 theorem smulDeriv_ne_zero (q : PSL(2, ℝ)) (z : ℍ) : smulDeriv q z ≠ 0 := by
   induction q using QuotientGroup.induction_on with | _ g =>
   simp [denom_ne_zero]
+
+/-- **A Möbius transformation of `ℍ` fixing a point is a rotation there**: its derivative at a
+fixed point has modulus one. -/
+theorem norm_smulDeriv_of_smul_eq_self {q : PSL(2, ℝ)} {z : ℍ} (hz : q • z = z) :
+    ‖smulDeriv q z‖ = 1 := by
+  induction q using QuotientGroup.induction_on with | _ g =>
+  have h := Matrix.SpecialLinearGroup.normSq_denom_eq_one_of_smul_eq_self
+    (by rwa [pslMk_smul] at hz)
+  rw [Complex.normSq_eq_norm_sq] at h
+  rw [smulDeriv_coe, norm_inv, norm_pow, h, inv_one]
 
 /-- The identity transformation has derivative `1`. -/
 @[simp]
