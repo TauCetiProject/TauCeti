@@ -306,6 +306,8 @@ theorem ker_mkBialgHom (I : HopfIdeal k H)
     [Module.Flat k (H ⧸ I.toIdeal)] :
     haveI : Module.Flat k
         (H ⧸ RingHom.ker (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal).toAlgHom) := by
+      -- `mkBialgHom` is built from `Ideal.Quotient.mkₐ` via `BialgHom.ofAlgHom`.
+      -- There is no underlying-algebra-map lemma, so reduce this wrapper to apply `mkₐ_ker`.
       change Module.Flat k (H ⧸ RingHom.ker (Ideal.Quotient.mkₐ k I.toIdeal))
       rwa [AlgHom.ker_coe, Ideal.Quotient.mkₐ_ker]
     ker (Bialgebra.Quotient.mkBialgHom I.toIdeal) = I := by
