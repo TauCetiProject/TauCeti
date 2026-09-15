@@ -73,7 +73,7 @@ noncomputable def galResolvent (Φ : MvPolynomial (Fin n) ℤ) (x : Fin n → L)
 
 /-- The orbit resolvent is the product of the monic linear factors attached to the values at `x`
 of the elements of the rename-orbit. -/
-theorem galResolvent_eq (Φ : MvPolynomial (Fin n) ℤ) (x : Fin n → L) :
+theorem galResolvent_def (Φ : MvPolynomial (Fin n) ℤ) (x : Fin n → L) :
     galResolvent Φ x =
       ∏ Ψ ∈ renameOrbit Φ,
         (Polynomial.X - Polynomial.C (MvPolynomial.eval₂ (Int.castRingHom L) x Ψ)) := (rfl)
@@ -82,7 +82,7 @@ theorem galResolvent_eq (Φ : MvPolynomial (Fin n) ℤ) (x : Fin n → L) :
 theorem map_universalResolvent_eq_galResolvent (Φ : MvPolynomial (Fin n) ℤ) (x : Fin n → L) :
     (universalResolvent Φ).map (MvPolynomial.eval₂Hom (Int.castRingHom L) x) =
       galResolvent Φ x := by
-  rw [universalResolvent_eq, galResolvent, Polynomial.map_prod]
+  rw [universalResolvent_def, galResolvent_def, Polynomial.map_prod]
   simp
 
 /-- The orbit resolvent is monic: it is a product of monic linear factors. -/

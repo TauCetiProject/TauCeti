@@ -31,7 +31,7 @@ symmetric polynomials. This is the integral orbit product used by a resolvent sp
 
 ## Main results
 
-* `MvPolynomial.universalResolvent_eq`: the universal resolvent is the product of the linear
+* `MvPolynomial.universalResolvent_def`: the universal resolvent is the product of the linear
   factors attached to the orbit.
 * `MvPolynomial.universalResolvent_map_rename`: the universal resolvent is invariant under
   renaming.
@@ -74,20 +74,20 @@ noncomputable def universalResolvent {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
 
 /-- The universal resolvent is the product of the monic linear factors `X - Ψ` attached to the
 elements of the rename-orbit. -/
-theorem universalResolvent_eq {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
+theorem universalResolvent_def {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
     universalResolvent Φ = ∏ Ψ ∈ renameOrbit Φ, (Polynomial.X - Polynomial.C Ψ) := (rfl)
 
 /-- The universal resolvent is monic, being a product of monic linear factors. -/
 theorem monic_universalResolvent {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
     (universalResolvent Φ).Monic := by
-  rw [universalResolvent_eq]
+  rw [universalResolvent_def]
   exact Polynomial.monic_prod_of_monic _ _ fun _ _ => Polynomial.monic_X_sub_C _
 
 /-- The universal resolvent has degree the number of elements of the rename-orbit. -/
 @[simp]
 theorem natDegree_universalResolvent {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
     (universalResolvent Φ).natDegree = (renameOrbit Φ).card := by
-  rw [universalResolvent_eq,
+  rw [universalResolvent_def,
     Polynomial.natDegree_prod_of_monic _ _ fun _ _ => Polynomial.monic_X_sub_C _]
   simp
 
