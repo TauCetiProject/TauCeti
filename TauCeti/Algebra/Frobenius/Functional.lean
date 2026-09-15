@@ -129,25 +129,15 @@ theorem pairing_mul_assoc (lambda : FrobeniusFunctional k A) (a b c : A) :
 /-- Left nondegeneracy says exactly that the multiplication pairing is injective in its first
 argument. -/
 theorem pairing_injective (lambda : FrobeniusFunctional k A) :
-    Function.Injective lambda.pairing := by
-  intro a b hab
-  rw [← sub_eq_zero]
-  apply lambda.left_nondegenerate
-  intro c
-  have hc : lambda.functional (a * c) = lambda.functional (b * c) := by
-    simpa only [pairing_apply] using LinearMap.congr_fun hab c
-  rw [sub_mul, map_sub, hc, sub_self]
+    Function.Injective lambda.pairing :=
+  LinearMap.ker_eq_bot.mp <|
+    LinearMap.separatingLeft_iff_ker_eq_bot.mp lambda.left_nondegenerate
 
 /-- Right nondegeneracy says exactly that the flipped multiplication pairing is injective. -/
 theorem pairing_flip_injective (lambda : FrobeniusFunctional k A) :
-    Function.Injective lambda.pairing.flip := by
-  intro a b hab
-  rw [← sub_eq_zero]
-  apply lambda.right_nondegenerate
-  intro c
-  have hc : lambda.functional (c * a) = lambda.functional (c * b) := by
-    simpa only [LinearMap.flip_apply, pairing_apply] using LinearMap.congr_fun hab c
-  rw [mul_sub, map_sub, hc, sub_self]
+    Function.Injective lambda.pairing.flip :=
+  LinearMap.ker_eq_bot.mp <|
+    LinearMap.separatingLeft_iff_ker_eq_bot.mp lambda.right_nondegenerate
 
 /-- The multiplication pairing is nondegenerate on both sides. -/
 theorem pairing_nondegenerate (lambda : FrobeniusFunctional k A) :
@@ -182,9 +172,14 @@ noncomputable def toRightDualEquiv [FiniteDimensional k A] (lambda : FrobeniusFu
 @[simp]
 theorem toRightDualEquiv_apply_apply [FiniteDimensional k A]
     (lambda : FrobeniusFunctional k A) (a b : A) :
-    lambda.toRightDualEquiv a b = lambda.functional (a * b) := (rfl)
+    lambda.toRightDualEquiv a b = lambda.functional (a * b) := by
+  have h : lambda.toRightDualEquiv a = lambda.toRightDualLinearMap a := by
+    unfold toRightDualEquiv
+    apply LinearEquiv.ofBijective_apply
+  rw [h, toRightDualLinearMap_apply_apply]
 
-private theorem rightDualEquiv_apply (e : A ≃ₗ[Aᵐᵒᵖ] RightDual k A) (a b : A) :
+/-- A right-module equivalence is determined by its value at one. -/
+theorem rightDualEquiv_apply_apply (e : A ≃ₗ[Aᵐᵒᵖ] RightDual k A) (a b : A) :
     e a b = e 1 (a * b) := by
   rw [← RightDual.op_smul_apply k A, ← e.map_smul]
   simp
@@ -196,13 +191,13 @@ def ofRightDualEquiv (e : A ≃ₗ[Aᵐᵒᵖ] RightDual k A) : FrobeniusFunctio
     apply e.injective
     rw [map_zero]
     ext b
-    rw [rightDualEquiv_apply]
+    rw [rightDualEquiv_apply_apply]
     exact ha b
   right_nondegenerate b hb := by
     rw [← Module.forall_dual_apply_eq_zero_iff k b]
     intro phi
     obtain ⟨a, rfl⟩ := e.surjective phi
-    rw [rightDualEquiv_apply]
+    rw [rightDualEquiv_apply_apply]
     exact hb a
 
 @[simp]
@@ -222,7 +217,7 @@ theorem toRightDualEquiv_ofRightDualEquiv [FiniteDimensional k A]
     (ofRightDualEquiv e).toRightDualEquiv = e := by
   ext a b
   rw [toRightDualEquiv_apply_apply, ofRightDualEquiv_functional_apply]
-  exact (rightDualEquiv_apply e a b).symm
+  exact (rightDualEquiv_apply_apply e a b).symm
 
 /-- Frobenius functionals are equivalent to right-module identifications with the right dual. -/
 noncomputable def equivRightDualEquiv [FiniteDimensional k A] :
