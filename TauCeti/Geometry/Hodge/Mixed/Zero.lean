@@ -15,8 +15,10 @@ This file constructs a zero object in the category of mixed Hodge structures. It
 rational, and complex carriers are the zero modules, presented as functions from `Fin 0`; its
 filtrations are those of the pure zero Hodge structure, viewed as mixed in weight zero.
 
-The zero object is a necessary finite limit and colimit. In particular, it is part of the
-categorical structure needed to express kernels and cokernels of mixed-Hodge morphisms.
+The zero object is the nullary product and the nullary coproduct of the category, and it is the
+terminal object from which finite products are assembled out of binary ones. It is therefore one
+ingredient of the finite limits and colimits that the abelian structure on mixed Hodge structures
+needs.
 
 ## Main declarations
 
@@ -107,34 +109,6 @@ theorem isZero_zero : IsZero (zero : MixedHodgeStructureCat.{u}) := by
   let _ : Subsingleton (zero : MixedHodgeStructureCat.{u}).ratCarrier :=
     subsingleton_zero_ratCarrier
   exact isZero_of_subsingleton_ratCarrier zero
-
-/-- Any morphism from the named zero mixed Hodge structure is zero. -/
-theorem zero_hom_eq_zero (X : MixedHodgeStructureCat.{u}) (f : zero ⟶ X) : f = 0 :=
-  isZero_zero.eq_of_src f 0
-
-/-- Any morphism to the named zero mixed Hodge structure is zero. -/
-theorem hom_zero_eq_zero (X : MixedHodgeStructureCat.{u}) (f : X ⟶ zero) : f = 0 :=
-  isZero_zero.eq_of_tgt f 0
-
-/-- The canonical morphism out of the named zero mixed Hodge structure is the zero morphism. -/
-@[simp]
-theorem isZero_zero_to (X : MixedHodgeStructureCat.{u}) : isZero_zero.to_ X = 0 :=
-  zero_hom_eq_zero X _
-
-/-- The canonical morphism into the named zero mixed Hodge structure is the zero morphism. -/
-@[simp]
-theorem isZero_zero_from (X : MixedHodgeStructureCat.{u}) : isZero_zero.from_ X = 0 :=
-  hom_zero_eq_zero X _
-
-/-- Morphisms from the named zero mixed Hodge structure are unique. -/
-@[ext]
-theorem zero_hom_ext {X : MixedHodgeStructureCat.{u}} (f g : zero ⟶ X) : f = g :=
-  isZero_zero.eq_of_src f g
-
-/-- Morphisms to the named zero mixed Hodge structure are unique. -/
-@[ext]
-theorem hom_zero_ext {X : MixedHodgeStructureCat.{u}} (f g : X ⟶ zero) : f = g :=
-  isZero_zero.eq_of_tgt f g
 
 /-- The category of mixed Hodge structures has a zero object. -/
 noncomputable instance hasZeroObject : HasZeroObject MixedHodgeStructureCat.{u} :=
