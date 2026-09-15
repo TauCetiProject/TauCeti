@@ -25,6 +25,8 @@ combinatorial product operation used by products of toric realizations.
 * `TauCeti.Toric.Fan.isComplete_prod_iff`: a product fan is complete exactly when both factors
   are complete.
 * `TauCeti.Toric.Fan.IsRegular.prod`: products preserve regularity.
+* `TauCeti.Toric.FanHom.fst`, `TauCeti.Toric.FanHom.snd`, and `TauCeti.Toric.FanHom.prod`: the
+  projections and common-source pairing for product fans.
 * `TauCeti.Toric.FanHom.prodMap`: the componentwise product of two fan morphisms.
 
 ## References
@@ -155,6 +157,109 @@ variable {N₁ N₂ N₁' N₂' V₁ V₂ V₁' V₂' : Type*}
   [Module ℝ V₁] [Module ℝ V₂] [Module ℝ V₁'] [Module ℝ V₂']
   {i₁ : N₁ →+ V₁} {i₂ : N₂ →+ V₂} {i₁' : N₁' →+ V₁'} {i₂' : N₂' →+ V₂'}
   {Φ₁ : Fan i₁} {Φ₂ : Fan i₂} {Ψ₁ : Fan i₁'} {Ψ₂ : Fan i₂'}
+
+/-- The first projection from a product fan. -/
+def fst (Φ₁ : Fan i₁) (Φ₂ : Fan i₂) : FanHom (Φ₁.prod Φ₂) Φ₁ where
+  latticeMap := AddMonoidHom.fst N₁ N₂
+  realMap := LinearMap.fst ℝ V₁ V₂
+  map_lattice _ := rfl
+  map_cone ξ hξ := by
+    obtain ⟨σ, hσ, τ, _, rfl⟩ := (Φ₁.mem_prod_cones Φ₂).1 hξ
+    refine ⟨σ, hσ, ?_⟩
+    rintro y ⟨x, hx, rfl⟩
+    exact hx.1
+
+/-- The second projection from a product fan. -/
+def snd (Φ₁ : Fan i₁) (Φ₂ : Fan i₂) : FanHom (Φ₁.prod Φ₂) Φ₂ where
+  latticeMap := AddMonoidHom.snd N₁ N₂
+  realMap := LinearMap.snd ℝ V₁ V₂
+  map_lattice _ := rfl
+  map_cone ξ hξ := by
+    obtain ⟨σ, _, τ, hτ, rfl⟩ := (Φ₁.mem_prod_cones Φ₂).1 hξ
+    refine ⟨τ, hτ, ?_⟩
+    rintro y ⟨x, hx, rfl⟩
+    exact hx.2
+
+/-- The integral map of the first projection is the first projection. -/
+@[simp]
+theorem fst_latticeMap (Φ₁ : Fan i₁) (Φ₂ : Fan i₂) :
+    (fst Φ₁ Φ₂).latticeMap = AddMonoidHom.fst N₁ N₂ := by
+  rw [fst]
+
+/-- The real-linear map of the first projection is the first projection. -/
+@[simp]
+theorem fst_realMap (Φ₁ : Fan i₁) (Φ₂ : Fan i₂) :
+    (fst Φ₁ Φ₂).realMap = LinearMap.fst ℝ V₁ V₂ := by
+  rw [fst]
+
+/-- The integral map of the second projection is the second projection. -/
+@[simp]
+theorem snd_latticeMap (Φ₁ : Fan i₁) (Φ₂ : Fan i₂) :
+    (snd Φ₁ Φ₂).latticeMap = AddMonoidHom.snd N₁ N₂ := by
+  rw [snd]
+
+/-- The real-linear map of the second projection is the second projection. -/
+@[simp]
+theorem snd_realMap (Φ₁ : Fan i₁) (Φ₂ : Fan i₂) :
+    (snd Φ₁ Φ₂).realMap = LinearMap.snd ℝ V₁ V₂ := by
+  rw [snd]
+
+section Prod
+
+variable {N₀ V₀ : Type*} [AddCommGroup N₀] [AddCommGroup V₀] [Module ℝ V₀]
+  {i₀ : N₀ →+ V₀} {Ω : Fan i₀}
+
+/-- Pair two fan morphisms with a common source into a product fan. -/
+def prod (f : FanHom Ω Φ₁) (g : FanHom Ω Φ₂) : FanHom Ω (Φ₁.prod Φ₂) where
+  latticeMap := f.latticeMap.prod g.latticeMap
+  realMap := f.realMap.prod g.realMap
+  map_lattice n := by
+    simp only [LinearMap.prod_apply, Function.prod_apply, AddMonoidHom.prod_apply,
+      AddMonoidHom.coe_prodMap, Prod.map_apply', f.map_lattice, g.map_lattice]
+  map_cone ξ hξ := by
+    obtain ⟨σ, hσ, hξσ⟩ := f.map_cone hξ
+    obtain ⟨τ, hτ, hξτ⟩ := g.map_cone hξ
+    refine ⟨σ.prod τ, (Φ₁.mem_prod_cones Φ₂).2 ⟨σ, hσ, τ, hτ, rfl⟩, ?_⟩
+    rintro y ⟨x, hx, rfl⟩
+    exact ⟨hξσ ⟨x, hx, rfl⟩, hξτ ⟨x, hx, rfl⟩⟩
+
+/-- The integral map of a pairing is the pairing of the integral maps. -/
+@[simp]
+theorem prod_latticeMap (f : FanHom Ω Φ₁) (g : FanHom Ω Φ₂) :
+    (f.prod g).latticeMap = f.latticeMap.prod g.latticeMap := by
+  rw [prod]
+
+/-- The real-linear map of a pairing is the pairing of the real-linear maps. -/
+@[simp]
+theorem prod_realMap (f : FanHom Ω Φ₁) (g : FanHom Ω Φ₂) :
+    (f.prod g).realMap = f.realMap.prod g.realMap := by
+  rw [prod]
+
+/-- Composing a pairing with the first projection recovers its first component. -/
+@[simp]
+theorem fst_comp_prod (f : FanHom Ω Φ₁) (g : FanHom Ω Φ₂) :
+    (fst Φ₁ Φ₂).comp (f.prod g) = f := by
+  apply FanHom.ext
+  simp only [comp_latticeMap, fst_latticeMap, prod_latticeMap]
+  exact AddMonoidHom.fst_comp_prod f.latticeMap g.latticeMap
+
+/-- Composing a pairing with the second projection recovers its second component. -/
+@[simp]
+theorem snd_comp_prod (f : FanHom Ω Φ₁) (g : FanHom Ω Φ₂) :
+    (snd Φ₁ Φ₂).comp (f.prod g) = g := by
+  apply FanHom.ext
+  simp only [comp_latticeMap, snd_latticeMap, prod_latticeMap]
+  exact AddMonoidHom.snd_comp_prod f.latticeMap g.latticeMap
+
+/-- A morphism into a product fan is the pairing of its two projections. -/
+@[simp]
+theorem prod_unique (f : FanHom Ω (Φ₁.prod Φ₂)) :
+    ((fst Φ₁ Φ₂).comp f).prod ((snd Φ₁ Φ₂).comp f) = f := by
+  apply FanHom.ext
+  simp only [prod_latticeMap, comp_latticeMap, fst_latticeMap, snd_latticeMap]
+  exact AddMonoidHom.prod_unique f.latticeMap
+
+end Prod
 
 /-- The product of two fan morphisms is given by the componentwise maps. -/
 def prodMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) : FanHom (Φ₁.prod Φ₂) (Ψ₁.prod Ψ₂) where
