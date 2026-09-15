@@ -110,8 +110,8 @@ theorem quantile_of_one_lt (μ : Measure ℝ) (ht : 1 < t) : μ.quantile t = 0 :
     eq_empty_of_forall_notMem fun x hx ↦ absurd (hx.trans (cdf_le_one μ x)) (not_le.2 ht)
   rw [quantile_def, hset, Real.sInf_empty]
 
-/-- The infimum defining the quantile is attained: right continuity of the cumulative
-distribution function makes the level still dominated at the quantile itself. -/
+/-- The cumulative distribution function at the quantile reaches every level strictly below
+`1`. -/
 theorem le_cdf_quantile (μ : Measure ℝ) (h1 : t < 1) : t ≤ cdf μ (μ.quantile t) := by
   have key : ∀ r : Ioi (μ.quantile t), t ≤ cdf μ r := by
     rintro ⟨r, hr⟩
