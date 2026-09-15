@@ -67,6 +67,10 @@ lemma identifying the two, `TauCeti.coweightPairing_coe_eq_rootCartanWeight`, is
 
 ## References
 
+This file supplies the integral weight lattice milestone of Layer 4 of
+`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signature
+`coweightPairing` is pinned in the accompanying `Suggested.lean`.
+
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §13.2.
 -/
 

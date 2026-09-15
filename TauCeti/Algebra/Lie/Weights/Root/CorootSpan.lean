@@ -167,8 +167,8 @@ that `TauCeti.coweightPairing` extracts from the value of `β` on the coroot. -/
 theorem coweightPairing_coe_eq_rootCartanWeight (β : Weight K H L) (i : H.root) :
     coweightPairing (β : Module.Dual K H) i = rootCartanWeight β (i : Weight K H L) :=
   coweightPairing_eq_of_apply_coroot_eq_intCast <| by
-    rw [intCast_rootCartanWeight_apply, IsKilling.rootSystem_coroot_apply]
-    rfl
+    rw [intCast_rootCartanWeight_apply, IsKilling.rootSystem_coroot_apply,
+      Weight.toLinear_apply]
 
 omit [CharZero K] [LieModule.IsTriangularizable K H L] in
 /-- **Two coroots commute**, being elements of the abelian Cartan subalgebra. -/
