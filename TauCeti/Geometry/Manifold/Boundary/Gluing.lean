@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
 module
 
 public import Mathlib.Topology.Basic
@@ -28,6 +33,7 @@ def inl : M → TopologicalGluing r := Quotient.mk' (s := r) ∘ Sum.inl
 /-- The canonical map from the right summand into a gluing. -/
 def inr : N → TopologicalGluing r := Quotient.mk' (s := r) ∘ Sum.inr
 
+/-- Every point of a gluing is represented by one of the two summands. -/
 theorem surjective :
     Function.Surjective (Sum.elim (inl r) (inr r)) := by
   intro z
