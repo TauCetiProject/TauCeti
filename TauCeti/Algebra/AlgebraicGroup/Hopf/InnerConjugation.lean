@@ -114,10 +114,11 @@ theorem innerConjugationPointNatIso_mul
   apply Iso.ext
   apply pointsFunctor_hom_ext
   intro A x
-  rw [innerConjugationPointNatIso_hom_app_apply]
   rw [Iso.trans_hom, NatTrans.comp_app]
-  rw [pointsFunctor_comp_apply]
+  rw [CategoryTheory.comp_apply ((innerConjugationPointNatIso H h).hom.app A)
+    ((innerConjugationPointNatIso H g).hom.app A) x]
   rw [innerConjugationPointNatIso_hom_app_apply,
+    innerConjugationPointNatIso_hom_app_apply,
     innerConjugationPointNatIso_hom_app_apply]
   simp only [pointsFunctor_obj, map_mul, mul_inv_rev, mul_assoc]
 

@@ -174,14 +174,6 @@ lemma pointsFunctor_map {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     (pointsFunctor (H := H)).map φ = mapPoints (H := H) φ :=
   rfl
 
-/-- Composition of morphisms between objects of the points functor acts by successive application
-on points. -/
-lemma pointsFunctor_comp_apply {A B C : CommAlgCat.{w} R}
-    (f : (pointsFunctor (H := H)).obj A ⟶ (pointsFunctor (H := H)).obj B)
-    (g : (pointsFunctor (H := H)).obj B ⟶ (pointsFunctor (H := H)).obj C)
-    (x : points (H := H) A) : (f ≫ g) x = g (f x) :=
-  GrpCat.comp_apply f g x
-
 /-- The map of `pointsFunctor`, transported along its concrete object presentations, is the
 corresponding map on points. -/
 lemma pointsFunctor_map_eqToHom {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
