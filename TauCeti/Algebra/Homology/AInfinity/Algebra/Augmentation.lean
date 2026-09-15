@@ -30,7 +30,8 @@ the reduced bar construction, whose tensor words are formed from the second fact
 
 ## References
 
-* B. Keller, *Introduction to A-infinity algebras and modules*, Sections 3.1 and 3.6.
+* B. Keller, *Introduction to A-infinity algebras and modules*, Section 3.5 (augmentations)
+  and Section 3.6 (bar construction).
 -/
 
 public section
@@ -58,7 +59,7 @@ structure Augmentation (𝒜 : AInfinityAlgebra R A) (e : A) where
   /-- The augmentation sends the strict unit to one. -/
   map_unit : toLinearMap e = 1
   /-- The augmentation preserves the binary operation. -/
-  map_binary : ∀ x y, toLinearMap (𝒜.m 2 ![x, y]) = toLinearMap x * toLinearMap y
+  map_m_two : ∀ x y, toLinearMap (𝒜.m 2 ![x, y]) = toLinearMap x * toLinearMap y
   /-- The augmentation annihilates operations of arity other than two. -/
   map_m_of_ne_two : ∀ (n : ℕ), n ≠ 2 → ∀ x, toLinearMap (𝒜.m n x) = 0
 
@@ -69,7 +70,7 @@ variable {𝒜 : AInfinityAlgebra R A} {e : A}
 instance : CoeFun (𝒜.Augmentation e) fun _ ↦ A → R :=
   ⟨fun ε ↦ ε.toLinearMap⟩
 
-attribute [simp] Augmentation.map_unit Augmentation.map_binary Augmentation.map_m_of_ne_two
+attribute [simp] Augmentation.map_unit Augmentation.map_m_two Augmentation.map_m_of_ne_two
 
 /-- Augmentations are determined by their underlying linear maps. -/
 @[ext]
@@ -138,10 +139,10 @@ theorem m_mem_augmentationIdeal_of_ne_two (ε : 𝒜.Augmentation e) {n : ℕ} (
   rw [ε.mem_augmentationIdeal, ε.map_m_of_ne_two n hn]
 
 /-- The binary operation takes values in the augmentation ideal if either input belongs to it. -/
-theorem binary_mem_augmentationIdeal (ε : 𝒜.Augmentation e) {x y : A}
+theorem m_two_mem_augmentationIdeal (ε : 𝒜.Augmentation e) {x y : A}
     (hxy : x ∈ ε.augmentationIdeal ∨ y ∈ ε.augmentationIdeal) :
     𝒜.m 2 ![x, y] ∈ ε.augmentationIdeal := by
-  rw [ε.mem_augmentationIdeal, ε.map_binary]
+  rw [ε.mem_augmentationIdeal, ε.map_m_two]
   rcases hxy with hx | hy
   · rw [(ε.mem_augmentationIdeal).mp hx, zero_mul]
   · rw [(ε.mem_augmentationIdeal).mp hy, mul_zero]
@@ -181,7 +182,7 @@ def reducedPart (ε : 𝒜.Augmentation e) :
 @[simp]
 theorem reducedPart_apply (ε : 𝒜.Augmentation e) (x : A) :
     (ε.reducedPart x : A) = x - ε x • e := by
-  rfl
+  simp [reducedPart, unitLinearMap]
 
 /-- The reduced-part projection fixes the augmentation ideal pointwise. -/
 @[simp]
