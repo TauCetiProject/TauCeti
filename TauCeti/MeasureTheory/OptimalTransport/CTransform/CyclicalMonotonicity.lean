@@ -212,7 +212,7 @@ private theorem rockafellarPotential_le_add {p q : X × Y} (hq : q ∈ S) (x : X
   rw [← EReal.sub_le_iff_le_add (.inl (EReal.coe_ne_bot _)) (.inl (EReal.coe_ne_top _))]
   refine le_rockafellarPotential fun n w hw0 hw => ?_
   have hsnoc0 : (Fin.snoc w q : Fin (n + 2) → X × Y) 0 = p := by
-    rw [show (0 : Fin (n + 2)) = (0 : Fin (n + 1)).castSucc from rfl, Fin.snoc_castSucc]
+    rw [← Fin.castSucc_zero, Fin.snoc_castSucc]
     exact hw0
   have hsnocmem : ∀ i, (Fin.snoc w q : Fin (n + 2) → X × Y) i ∈ S := by
     refine Fin.lastCases ?_ ?_
