@@ -126,7 +126,8 @@ theorem setLIntegral_Ioc_ite_rpow_le {n : ℕ} (hn : 0 < n) {r D : ℝ} (hr : 0 
     _ ≤ ∫⁻ t, (Ici (r / D)).indicator (fun t => ENNReal.ofReal (t ^ (-(n : ℝ) - 1))) t := by
       refine (setLIntegral_le_lintegral _ _).trans (lintegral_mono fun t => ?_)
       split_ifs with h
-      · rw [indicator_of_mem (show t ∈ Ici (r / D) from (div_le_iff₀ hD).2 h)]
+      · have hmem : t ∈ Ici (r / D) := mem_Ici.2 ((div_le_iff₀ hD).2 h)
+        rw [indicator_of_mem hmem]
       · exact bot_le
     _ = ∫⁻ t in Ioi (r / D), ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) := by
       rw [lintegral_indicator measurableSet_Ici, setLIntegral_congr Ioi_ae_eq_Ici]
@@ -138,8 +139,8 @@ theorem setLIntegral_Ioc_ite_rpow_le {n : ℕ} (hn : 0 < n) {r D : ℝ} (hr : 0 
       rw [integral_Ioi_rpow_of_lt hn' hc, ← ENNReal.ofReal_mul (by positivity)]
       congr 1
       have hn0 : (n : ℝ) ≠ 0 := by exact_mod_cast hn.ne'
-      rw [show -(n : ℝ) - 1 + 1 = -(n : ℝ) by ring, Real.div_rpow hr.le hD.le,
-        Real.rpow_neg hD.le, Real.rpow_natCast]
+      have hexp : -(n : ℝ) - 1 + 1 = -(n : ℝ) := by ring
+      rw [hexp, Real.div_rpow hr.le hD.le, Real.rpow_neg hD.le, Real.rpow_natCast]
       field_simp
 
 /-- The bound of `setLIntegral_Ioc_ite_rpow_le`, multiplied by the length `r` of a segment and by
@@ -165,8 +166,9 @@ theorem setLIntegral_Ioc_rpow_mul_ite_le {n : ℕ} (hn : 0 < n) (a : ℝ≥0∞)
       gcongr
       exact setLIntegral_Ioc_ite_rpow_le hn hr
     _ = _ := by
-      rw [ENNReal.ofReal_rpow_of_pos hr, show (1 : ℝ) - n = 1 + -(n : ℝ) by ring,
-        Real.rpow_add hr, Real.rpow_one, ENNReal.ofReal_mul hr.le]
+      have hexp : (1 : ℝ) - n = 1 + -(n : ℝ) := by ring
+      rw [ENNReal.ofReal_rpow_of_pos hr, hexp, Real.rpow_add hr, Real.rpow_one,
+        ENNReal.ofReal_mul hr.le]
       ring
 
 /-- **A finite threshold on `c * t` cuts `(0, ∞)` down to a bounded interval.** For `0 < c` and

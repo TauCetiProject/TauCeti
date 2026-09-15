@@ -46,19 +46,12 @@ kernel is assumed.
   any subset of positive measure.
 * `TauCeti.enorm_sub_setAverage_le_of_convex`: the form for convex sets with `D = diam Ω`.
 
-## Implementation notes
-
-The proof writes `u x - u y` as an integral of the derivative along the segment from `x` to `y`
-(`TauCeti.enorm_sub_le_lintegral_enorm_fderiv_apply`), exchanges the integrals over `y` and over
-the segment parameter `t ∈ (0, 1]`, and substitutes `w = x + t • (y - x)`. This homothety has
-Jacobian `t ^ n` (`TauCeti.lintegral_comp_homothety`), and the constraint `‖x - y‖ ≤ D` becomes
-`‖x - w‖ / D ≤ t`, so the remaining integral `∫_{‖x - w‖ / D}^∞ t ^ (-n - 1) dt` produces the
-kernel `‖x - w‖ ^ (-n)`. No integration in polar coordinates is needed.
-
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Lemma 7.16.
+  Lemma 7.16. The argument here rests on the segment increment estimate
+  `TauCeti.enorm_sub_le_lintegral_enorm_fderiv_apply` and the homothety change of variables
+  `TauCeti.lintegral_comp_homothety` in place of the integration in polar coordinates used there.
 -/
 
 public section
