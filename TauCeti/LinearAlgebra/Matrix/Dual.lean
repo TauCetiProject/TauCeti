@@ -7,6 +7,8 @@ module
 
 -- `dotProductBilin` and `dotProductEquiv` occur in the statement and the body below.
 public import Mathlib.LinearAlgebra.Matrix.Dual
+-- `BilinForm.IsSymm` occurs in the statement below.
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 -- `LinearMap.IsPerfPair` occurs in the statement below.
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 
@@ -14,13 +16,14 @@ public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 # The dot product on `ι → R` is a perfect pairing
 
 Mathlib's `dotProductEquiv` identifies `ι → R`, for `ι` finite, with its own dual under the dot
-product. This file records the same fact in the form asked for by `LinearMap.IsPerfPair`, so that
-the dot product may be used directly as the pairing of a `RootPairing` or a `RootDatum` on `ι → R`.
+product. This file records the symmetry and perfectness of this pairing, so that the dot product
+may be used directly as the pairing of a `RootPairing` or a `RootDatum` on `ι → R`.
 
 ## Main results
 
 * `TauCeti.dotProductBilin_isPerfPair`: the dot product `dotProductBilin R R` on `ι → R` is a
   perfect pairing of that module with itself.
+* `TauCeti.isSymm_dotProductBilin`: the standard dot-product bilinear form is symmetric.
 * `TauCeti.linearIndependent_of_dotProduct_diagonal`: a family whose dot products against a second
   family vanish off the diagonal and are right-regular on it is linearly independent.
 -/
@@ -42,6 +45,14 @@ instance dotProductBilin_isPerfPair (R ι : Type*) [CommSemiring R] [Fintype ι]
     simp
   rw [h]
   infer_instance
+
+/-- The standard dot-product bilinear form is symmetric. -/
+theorem isSymm_dotProductBilin {R ι : Type*} [CommSemiring R] [Fintype ι] :
+    LinearMap.BilinForm.IsSymm
+      (dotProductBilin R R : LinearMap.BilinForm R (ι → R)) := by
+  constructor
+  intro x y
+  simpa only [RingHom.id_apply, dotProductBilin_apply_apply] using dotProduct_comm x y
 
 /-- **A family paired diagonally by a second family is linearly independent.** If `v i ⬝ᵥ w j`
 vanishes whenever `i ≠ j` and right multiplication by `v i ⬝ᵥ w i` is injective, the `v i` are
