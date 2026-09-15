@@ -65,10 +65,22 @@ theorem schwarzChristoffelEdgeAngle_eq_pi_mul_sum_of_forall_lt {ι : Type*} [Fin
   rw [schwarzChristoffelEdgeAngle_eq_sum_filter]
   simp only [hc, Finset.filter_true]
 
+section FiniteLinearOrder
+
+variable {ι : Type*} [Fintype ι] [LinearOrder ι]
+
+local instance : LocallyFiniteOrder ι := Fintype.toLocallyFiniteOrder
+
+local instance : LocallyFiniteOrderTop ι where
+  finsetIci i := Finset.univ.filter (i ≤ ·)
+  finsetIoi i := Finset.univ.filter (i < ·)
+  finset_mem_Ici := by simp
+  finset_mem_Ioi := by simp
+
 /-- For strictly ordered prevertices, the edge angle following the `i`-th prevertex is `π` times
 the sum of the exponents at the later prevertices. -/
-theorem schwarzChristoffelEdgeAngle_eq_pi_mul_sum_Ioi (a e : Fin (n + 1) → ℝ)
-    (ha : StrictMono a) (i : Fin (n + 1)) :
+theorem schwarzChristoffelEdgeAngle_eq_pi_mul_sum_Ioi (a e : ι → ℝ)
+    (ha : StrictMono a) (i : ι) :
     schwarzChristoffelEdgeAngle a e (a i) =
       Real.pi * ∑ k ∈ Finset.Ioi i, e k := by
   rw [schwarzChristoffelEdgeAngle_eq_sum_filter]
@@ -82,7 +94,7 @@ theorem schwarzChristoffelEdgeAngle_eq_pi_mul_sum_Ioi (a e : Fin (n + 1) → ℝ
 /-- The increase in edge angle between two indexed prevertices is `-π` times the sum of the
 exponents in the corresponding right-closed index interval. -/
 theorem schwarzChristoffelEdgeAngle_sub_eq_neg_pi_mul_sum_Ioc
-    (a e : Fin (n + 1) → ℝ) (ha : StrictMono a) {i j : Fin (n + 1)} (hij : i < j) :
+    (a e : ι → ℝ) (ha : StrictMono a) {i j : ι} (hij : i < j) :
     schwarzChristoffelEdgeAngle a e (a j) - schwarzChristoffelEdgeAngle a e (a i) =
       -Real.pi * ∑ k ∈ Finset.Ioc i j, e k := by
   calc
@@ -103,7 +115,7 @@ theorem schwarzChristoffelEdgeAngle_sub_eq_neg_pi_mul_sum_Ioc
 
 /-- Strictly ordered prevertices carrying negative exponents have strictly increasing
 Schwarz--Christoffel edge angles. -/
-theorem strictMono_schwarzChristoffelEdgeAngle_comp (a e : Fin (n + 1) → ℝ)
+theorem strictMono_schwarzChristoffelEdgeAngle_comp (a e : ι → ℝ)
     (ha : StrictMono a) (he : ∀ i, e i < 0) :
     StrictMono (fun i ↦ schwarzChristoffelEdgeAngle a e (a i)) := by
   intro i j hij
@@ -114,8 +126,8 @@ theorem strictMono_schwarzChristoffelEdgeAngle_comp (a e : Fin (n + 1) → ℝ)
     · exact ⟨j, Finset.mem_Ioc.mpr ⟨hij, le_rfl⟩⟩
   nlinarith [Real.pi_pos]
 
-private theorem sum_gt_neg_two_of_not_mem {ι : Type*} [Fintype ι] (e : ι → ℝ)
-    (he : ∀ i, e i < 0) (hsum : ∑ i, e i = -2) (s : Finset ι) {i : ι}
+private theorem sum_gt_neg_two_of_not_mem {κ : Type*} [Fintype κ] (e : κ → ℝ)
+    (he : ∀ i, e i < 0) (hsum : ∑ i, e i = -2) (s : Finset κ) {i : κ}
     (hi : i ∉ s) : -2 < ∑ k ∈ s, e k := by
   classical
   have hproper : ∑ k ∈ s, -e k < ∑ k, -e k := by
@@ -135,8 +147,8 @@ proper index interval lies strictly between zero and `2π`.
 The upper bound is strict because the interval omits its left endpoint, whose negative exponent
 accounts for a positive part of the complementary turn. -/
 theorem schwarzChristoffelEdgeAngle_sub_mem_Ioo_two_pi
-    (a e : Fin (n + 1) → ℝ) (ha : StrictMono a) (he : ∀ i, e i < 0)
-    (hsum : ∑ i, e i = -2) {i j : Fin (n + 1)} (hij : i < j) :
+    (a e : ι → ℝ) (ha : StrictMono a) (he : ∀ i, e i < 0)
+    (hsum : ∑ i, e i = -2) {i j : ι} (hij : i < j) :
     schwarzChristoffelEdgeAngle a e (a j) - schwarzChristoffelEdgeAngle a e (a i) ∈
       Ioo 0 (2 * Real.pi) := by
   have hpositive : 0 < schwarzChristoffelEdgeAngle a e (a j) -
@@ -166,7 +178,7 @@ distinct finite prevertices are distinct.  Thus no two of those directed sides h
 orientation; the repeated direction occurs only across the two ends of the compactified real
 line. -/
 theorem injective_exp_schwarzChristoffelEdgeAngle_prevertex
-    (a e : Fin (n + 1) → ℝ) (ha : StrictMono a) (he : ∀ i, e i < 0)
+    (a e : ι → ℝ) (ha : StrictMono a) (he : ∀ i, e i < 0)
     (hsum : ∑ i, e i = -2) :
     Function.Injective (fun i ↦
       Complex.exp (schwarzChristoffelEdgeAngle a e (a i) * Complex.I)) := by
@@ -180,6 +192,8 @@ theorem injective_exp_schwarzChristoffelEdgeAngle_prevertex
       (schwarzChristoffelEdgeAngle_mem_Ioc a e he hsum i)
       (schwarzChristoffelEdgeAngle_mem_Ioc a e he hsum j) hcircle
   exact (strictMono_schwarzChristoffelEdgeAngle_comp a e ha he).injective hangle
+
+end FiniteLinearOrder
 
 /-- With total exponent `-2`, the Schwarz--Christoffel edge angle before the first ordered
 prevertex is `-2π`. -/
