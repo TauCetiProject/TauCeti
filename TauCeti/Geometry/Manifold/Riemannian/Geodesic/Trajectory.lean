@@ -119,14 +119,6 @@ maximal interval. -/
 def maximalGeodesic (p : M) (v : TangentSpace I p) (t : ℝ) : M :=
   (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) t).proj
 
-omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
-/-- The maximal geodesic is the base projection of the maximal integral curve of the geodesic
-spray. -/
-theorem maximalGeodesic_apply (p : M) (v : TangentSpace I p) (t : ℝ) :
-    maximalGeodesic I M p v t =
-      (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) t).proj :=
-  (rfl)
-
 /-- The maximal geodesic has the prescribed initial data on its maximal interval. -/
 theorem isGeodesicCurveOnFrom_maximalGeodesic (p : M) (v : TangentSpace I p) :
     IsGeodesicCurveOnFrom I (maximalGeodesic I M p v) (geodesicInterval I M p v) p v := by
@@ -155,10 +147,7 @@ theorem isGeodesicCurveOnFrom_maximalGeodesic (p : M) (v : TangentSpace I p) :
     rw [hdomains]
     exact h0
   refine ⟨hgeo, h0, ?_⟩
-  have hcurve : maximalGeodesic I M p v =
-      fun t ↦ (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) t).proj :=
-    rfl
-  rw [hcurve]
+  unfold maximalGeodesic
   simpa only [curveVelocityLiftWithin_apply] using hlift.symm.trans hz0
 
 /-- The maximal geodesic starts at its prescribed base point. -/
@@ -181,7 +170,7 @@ theorem IsGeodesicCurveOnFrom.eqOn_maximalGeodesic
   have heq := hlift.eqOn_maximalIntegralCurve
     (contMDiff_one_geodesicSpray (I := I) (M := M)) hγ.zero_mem hinitial
   intro t ht
-  rw [maximalGeodesic_apply]
+  rw [maximalGeodesic]
   simpa only [curveVelocityLiftWithin_proj] using congrArg TotalSpace.proj (heq ht)
 
 /-- The maximal geodesic with zero initial velocity is the constant curve. -/
@@ -199,12 +188,12 @@ theorem IsGeodesicCurveOnFrom.eqOn_maximalGeodesic
     isMIntegralCurve_const (geodesicSpray_zero (I := I) (M := M) p)
   have heq := (hconst.isMIntegralCurveOn (Ioo a b)).eqOn_maximalIntegralCurve
     (contMDiff_one_geodesicSpray (I := I) (M := M)) h0 rfl ht
-  rw [maximalGeodesic_apply]
+  rw [maximalGeodesic]
   exact congrArg TotalSpace.proj heq
 
 /-- Rescaling the initial velocity rescales time along the maximal geodesic, whenever the displayed
 time belongs to the corresponding maximal interval. -/
-theorem maximalGeodesic_smul {p : M} {v : TangentSpace I p} {a t : ℝ}
+@[simp] theorem maximalGeodesic_smul {p : M} {v : TangentSpace I p} {a t : ℝ}
     (ht : t ∈ geodesicInterval I M p (a • v)) :
     maximalGeodesic I M p (a • v) t = maximalGeodesic I M p v (a * t) := by
   rcases eq_or_ne a 0 with rfl | ha
@@ -231,7 +220,7 @@ omit [T2Space (TangentBundle I M)] in
   have ht' : t ∉ maximalIntegralCurveInterval
       (geodesicSpray I M) (TotalSpace.mk' E p v) := by
     rwa [maximalIntegralCurveInterval_geodesicSpray]
-  rw [maximalGeodesic_apply, maximalIntegralCurve_eq_of_not_mem ht']
+  rw [maximalGeodesic, maximalIntegralCurve_eq_of_not_mem ht']
 
 end TauCeti.Manifold
 
