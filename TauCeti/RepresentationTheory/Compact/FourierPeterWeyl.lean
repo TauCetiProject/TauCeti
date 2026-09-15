@@ -84,6 +84,7 @@ noncomputable def fourierIrrepModel (n : ℤ) :
   isIrreducible := ContRepresentation.isIrreducible_congr _ (isIrreducible_fourierRep T n)
 
 omit hT in
+@[simp]
 theorem fourierIrrepModel_dim (n : ℤ) : (fourierIrrepModel T n).dim = 1 := by
   rfl
 
@@ -125,20 +126,11 @@ theorem isIrrepSkeleton_fourierIrrepModel : IsIrrepSkeleton (fourierIrrepModel T
 The negation compensates for Mathlib's convention that the inner product is conjugate-linear in
 its first argument. -/
 noncomputable def fourierPeterWeylIndexEquiv :
-    (Σ n : ℤ, Fin (fourierIrrepModel T n).dim × Fin (fourierIrrepModel T n).dim) ≃ ℤ := by
-  let collapse : (Σ _ : ℤ, Fin 1 × Fin 1) ≃ ℤ :=
-    { toFun := Sigma.fst
-      invFun := fun n ↦ ⟨n, 0, 0⟩
-      left_inv := fun ⟨n, i, j⟩ ↦ by
-        have hi : i = 0 := Fin.eq_zero i
-        have hj : j = 0 := Fin.eq_zero j
-        subst i
-        subst j
-        rfl
-      right_inv := fun _ ↦ rfl }
-  exact ((Equiv.sigmaCongrRight fun n ↦
-    Equiv.prodCongr (finCongr (fourierIrrepModel_dim T n))
-      (finCongr (fourierIrrepModel_dim T n))).trans collapse).trans (Equiv.neg ℤ)
+    (Σ n : ℤ, Fin (fourierIrrepModel T n).dim × Fin (fourierIrrepModel T n).dim) ≃ ℤ :=
+  ((Equiv.sigmaCongrRight fun n ↦
+      (Equiv.prodCongr (finCongr (fourierIrrepModel_dim T n))
+        (finCongr (fourierIrrepModel_dim T n))).trans (Equiv.prodUnique (Fin 1) (Fin 1))).trans
+    (Equiv.sigmaUnique ℤ fun _ ↦ Fin 1)).trans (Equiv.neg ℤ)
 
 omit hT in
 @[simp]
@@ -210,14 +202,6 @@ theorem coeFn_peterWeylBasis_fourier (n : ℤ) :
   convert DFunLike.congr_fun (character_fourierRep T n) x using 1
   · rw [ContRepresentation.character_apply]
   · rfl
-
-/-- `Multiplicative.ofAdd` carries Mathlib's Haar measure on `AddCircle T` to the normalized Haar
-measure of the circle group, so it transports `L²` of the circle group to `L²(AddCircle T)`. -/
-theorem measurePreserving_ofAdd_haarAddCircle :
-    MeasurePreserving (Multiplicative.ofAdd : AddCircle T → Multiplicative (AddCircle T))
-      haarAddCircle (haarProb (Multiplicative (AddCircle T))) := by
-  rw [haarProb_eq_haarAddCircle]
-  exact MeasurePreserving.id _
 
 /-- **The Peter--Weyl basis of the circle is Mathlib's Fourier basis.** Transported to
 `L²(AddCircle T)` along `Multiplicative.ofAdd`, the Peter--Weyl basis vector with index
