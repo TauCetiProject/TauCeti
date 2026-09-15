@@ -15,8 +15,8 @@ This file records a criterion for a root of unity congruent to `1` modulo an ide
 
 ## Main results
 
-* `TauCeti.eq_one_of_pow_eq_one_of_sub_one_mem`: in a domain, a root of unity of invertible order
-  that is congruent to `1` modulo a proper ideal is `1`.
+* `TauCeti.eq_one_of_pow_eq_one_of_sub_one_mem`: in a domain, a root of unity that is congruent
+  to `1` modulo an ideal not containing its order is `1`.
 -/
 
 public section
@@ -27,10 +27,10 @@ namespace TauCeti
 
 variable {R : Type*} [CommRing R]
 
-/-- In a commutative domain, a root of unity whose order is invertible and which is congruent to
-`1` modulo a proper ideal is equal to `1`. -/
-theorem eq_one_of_pow_eq_one_of_sub_one_mem [IsDomain R] {I : Ideal R} (hI : I ≠ ⊤) {n : ℕ}
-    (hn : IsUnit (n : R)) {ζ : R} (hζ : ζ ^ n = 1) (hmem : ζ - 1 ∈ I) : ζ = 1 := by
+/-- In a commutative domain, a root of unity that is congruent to `1` modulo an ideal not
+containing its order is equal to `1`. -/
+theorem eq_one_of_pow_eq_one_of_sub_one_mem [IsDomain R] {I : Ideal R} {n : ℕ}
+    (hn : (n : R) ∉ I) {ζ : R} (hζ : ζ ^ n = 1) (hmem : ζ - 1 ∈ I) : ζ = 1 := by
   by_contra hne
   have hgeom : ∑ i ∈ Finset.range n, ζ ^ i = 0 := by
     have h := geom_sum_mul ζ n
@@ -39,7 +39,7 @@ theorem eq_one_of_pow_eq_one_of_sub_one_mem [IsDomain R] {I : Ideal R} (hI : I �
   have hres : Ideal.Quotient.mk I ζ = 1 := by
     have h : Ideal.Quotient.mk I (ζ - 1) = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr hmem
     rwa [map_sub, map_one, sub_eq_zero] at h
-  refine hI (I.eq_top_of_isUnit_mem ?_ hn)
+  refine hn ?_
   rw [← Ideal.Quotient.eq_zero_iff_mem, map_natCast]
   have h := congrArg (Ideal.Quotient.mk I) hgeom
   rw [map_sum, map_zero] at h
