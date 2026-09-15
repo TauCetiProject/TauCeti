@@ -37,8 +37,6 @@ allows a fixed chart to be used in place of the moving one.
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf--Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Covariant derivative along a curve": the chart formula.
 * M. P. do Carmo, *Riemannian Geometry*, Birkhauser, 1992, Ch. 2, Proposition 2.2.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, GTM 176, 2018, Ch. 4.
 -/
