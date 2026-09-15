@@ -151,6 +151,21 @@ def permutationCodeEquiv (e : ι ≃ κ)
     C ≃ₗ[R] D :=
   (LinearEquiv.funCongrLeft R R e.symm).ofSubmodules C D h
 
+/-- `permutationCodeEquiv` acts on codewords by the ambient relabelling
+`LinearEquiv.funCongrLeft R R e.symm`, in its simp normal form `LinearMap.funLeft R R e.symm`. -/
+@[simp]
+theorem coe_permutationCodeEquiv_apply (e : ι ≃ κ)
+    (h : C.map (LinearEquiv.funCongrLeft R R e.symm : (ι → R) →ₗ[R] (κ → R)) = D) (x : C) :
+    (permutationCodeEquiv e h x : κ → R) = LinearMap.funLeft R R e.symm x :=
+  (rfl)
+
+/-- The inverse of `permutationCodeEquiv` acts on codewords by the inverse relabelling. -/
+@[simp]
+theorem coe_permutationCodeEquiv_symm_apply (e : ι ≃ κ)
+    (h : C.map (LinearEquiv.funCongrLeft R R e.symm : (ι → R) →ₗ[R] (κ → R)) = D) (y : D) :
+    ((permutationCodeEquiv e h).symm y : ι → R) = LinearMap.funLeft R R e y :=
+  (rfl)
+
 @[refl]
 theorem IsPermutationEquivalent.refl (C : Submodule R (ι → R)) : IsPermutationEquivalent C C :=
   ⟨Equiv.refl ι, by simp⟩
@@ -222,6 +237,21 @@ between their codewords. -/
 def monomialCodeEquiv (u : ι → Rˣ) (e : ι ≃ κ)
     (h : C.map (monomialEquiv u e : (ι → R) →ₗ[R] (κ → R)) = D) : C ≃ₗ[R] D :=
   (monomialEquiv u e).ofSubmodules C D h
+
+/-- `monomialCodeEquiv` acts on codewords by the ambient monomial transformation. -/
+@[simp]
+theorem coe_monomialCodeEquiv_apply (u : ι → Rˣ) (e : ι ≃ κ)
+    (h : C.map (monomialEquiv u e : (ι → R) →ₗ[R] (κ → R)) = D) (x : C) :
+    (monomialCodeEquiv u e h x : κ → R) = monomialEquiv u e x :=
+  (rfl)
+
+/-- The inverse of `monomialCodeEquiv` acts on codewords by the inverse monomial
+transformation. -/
+@[simp]
+theorem coe_monomialCodeEquiv_symm_apply (u : ι → Rˣ) (e : ι ≃ κ)
+    (h : C.map (monomialEquiv u e : (ι → R) →ₗ[R] (κ → R)) = D) (y : D) :
+    ((monomialCodeEquiv u e h).symm y : ι → R) = (monomialEquiv u e).symm y :=
+  (rfl)
 
 theorem IsPermutationEquivalent.isMonomialEquivalent (h : IsPermutationEquivalent C D) :
     IsMonomialEquivalent C D := by
@@ -362,6 +392,14 @@ instance instDistribMulActionMonomialAut : DistribMulAction (monomialAut C) C wh
   smul_zero _ := Subtype.ext (by simp)
   smul_add _ _ _ := Subtype.ext (by simp)
 
+/-- Monomial automorphisms act by `R`-linear maps, so their action on codewords commutes with
+the scalar action. -/
+instance instSMulCommClassMonomialAut : SMulCommClass R (monomialAut C) C where
+  smul_comm _ _ _ := Subtype.ext (by simp)
+
+instance instSMulCommClassMonomialAut' : SMulCommClass (monomialAut C) R C :=
+  SMulCommClass.symm _ _ _
+
 /-- A monomial automorphism of a code preserves Hamming weight. -/
 @[simp]
 theorem hammingNorm_monomialAut_apply [Fintype ι] [DecidableEq R]
@@ -470,6 +508,14 @@ instance instDistribMulActionPermutationAut : DistribMulAction (permutationAut C
   mul_smul _ _ _ := Subtype.ext (by simp)
   smul_zero _ := Subtype.ext (by simp)
   smul_add _ _ _ := Subtype.ext (by simp)
+
+/-- Permutation automorphisms act by `R`-linear maps, so their action on codewords commutes with
+the scalar action. -/
+instance instSMulCommClassPermutationAut : SMulCommClass R (permutationAut C) C where
+  smul_comm _ _ _ := Subtype.ext (by simp)
+
+instance instSMulCommClassPermutationAut' : SMulCommClass (permutationAut C) R C :=
+  SMulCommClass.symm _ _ _
 
 /-- A permutation automorphism of a code preserves Hamming weight. -/
 @[simp]
