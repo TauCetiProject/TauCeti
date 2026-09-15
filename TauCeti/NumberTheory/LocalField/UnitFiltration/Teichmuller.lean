@@ -37,7 +37,7 @@ with the `(q - 1)`-st roots of unity in both `𝒪[K]` and `K`, the latter throu
 
 ## Main results
 
-* `TauCeti.residue_teichmuller`: the Teichmüller map is a section of reduction.
+* `TauCeti.teichmuller_section`: the Teichmüller map is a section of reduction.
 * `TauCeti.teichmullerLift_pow_card`: each Teichmüller representative is fixed by the `q`-th power
   map.
 * `TauCeti.teichmullerLift_unique`: the Teichmüller lift is the only zero-preserving multiplicative
@@ -123,14 +123,14 @@ theorem coe_teichmuller_apply (a : 𝓀[K]ˣ) :
 
 /-- The Teichmüller map is a section of reduction on unit groups. -/
 @[simp]
-theorem residue_teichmuller (a : 𝓀[K]ˣ) :
+theorem teichmuller_section (a : 𝓀[K]ˣ) :
     Units.map (IsLocalRing.residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) (teichmuller K a) = a := by
   ext
   exact residue_teichmullerLift (K := K) a
 
 /-- The Teichmüller section is injective. -/
 theorem teichmuller_injective : Function.Injective (teichmuller K) :=
-  Function.LeftInverse.injective (residue_teichmuller (K := K))
+  Function.LeftInverse.injective (teichmuller_section (K := K))
 
 private theorem units_pow_card_sub_one_eq_one (a : 𝓀[K]ˣ) :
     a ^ (Nat.card 𝓀[K] - 1) = 1 := by
@@ -191,7 +191,7 @@ theorem eq_teichmuller_of_residue_eq_of_pow_card_sub_one_eq_one
   apply mul_right_cancel (b := (teichmuller K a)⁻¹)
   rw [mul_inv_cancel]
   apply eq_one_of_residue_eq_one_of_pow_card_sub_one_eq_one (K := K)
-  · rw [map_mul, map_inv, hres, residue_teichmuller, mul_inv_cancel]
+  · rw [map_mul, map_inv, hres, teichmuller_section, mul_inv_cancel]
   · rw [mul_pow, hpow, inv_pow, teichmuller_pow_card_sub_one, inv_one, mul_one]
 
 /-- The public uniqueness characterization of Teichmüller representatives: a unit represents
@@ -202,7 +202,7 @@ theorem eq_teichmuller_iff (u : 𝒪[K]ˣ) (a : 𝓀[K]ˣ) :
         u ^ (Nat.card 𝓀[K] - 1) = 1 := by
   constructor
   · rintro rfl
-    exact ⟨residue_teichmuller _, teichmuller_pow_card_sub_one _⟩
+    exact ⟨teichmuller_section _, teichmuller_pow_card_sub_one _⟩
   · rintro ⟨hres, hpow⟩
     exact eq_teichmuller_of_residue_eq_of_pow_card_sub_one_eq_one u a hres hpow
 
@@ -245,7 +245,7 @@ theorem range_teichmuller :
 roots of unity in `𝒪[K]`. -/
 noncomputable def teichmullerEquivIntegerRootsOfUnity :
     𝓀[K]ˣ ≃* rootsOfUnity (Nat.card 𝓀[K] - 1) 𝒪[K] :=
-  (MonoidHom.ofLeftInverse (residue_teichmuller (K := K))).trans
+  (MonoidHom.ofLeftInverse (teichmuller_section (K := K))).trans
     (MulEquiv.subgroupCongr range_teichmuller)
 
 /-- The integral-roots equivalence sends `a` to its Teichmüller representative. -/
