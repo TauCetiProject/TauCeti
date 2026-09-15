@@ -127,7 +127,7 @@ noncomputable def candidateGenusFieldConj (hd : Squarefree d) :
 
 /-- The sign pattern of complex conjugation is supported exactly on the negative prime
 discriminants. This is the coordinate form used by the relative Galois-group quotient. -/
-@[simp] theorem candidateGenusFieldSignPattern_conj_apply (hd : Squarefree d)
+theorem candidateGenusFieldSignPattern_conj_apply (hd : Squarefree d)
     (P : {P // P ∈ genusPrimeDiscriminants hd}) :
     candidateGenusFieldSignPattern hd (candidateGenusFieldConj hd) P =
       if P.val < 0 then 1 else 0 := by
