@@ -15,6 +15,7 @@ public import TauCeti.LinearAlgebra.Dimension.DirectSum
 public import TauCeti.LinearAlgebra.TensorProduct.Decomposition
 -- Non-public: this supplies the inputs of the direct-sum additivity proof, never the vocabulary of
 -- a statement.
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Lie.Submodule.DirectSum
 
 /-!
@@ -303,7 +304,7 @@ read on a Cartan subalgebra `H`.
 
 section InternalDirectSum
 
-open scoped DirectSum
+open scoped _root_.DirectSum
 
 variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
   {H : LieSubalgebra K L} [LieRing.IsNilpotent H]
@@ -337,33 +338,6 @@ private theorem finrank_inf_genWeightSpace (i : ι) (chi : H → K) :
     (genWeightSpace (N i : Type w) chi) (injective_incl_restrictLie i)).toLinearEquiv.finrank_eq
   rw [← toSubmodule_map_genWeightSpace_incl i chi, finrank_toSubmodule, ← hequiv]
 
-/-- **The weight spaces of the summands span the weight space of the ambient module.** The
-projections onto the summands are morphisms of Lie modules, so they carry the `chi`-weight space of
-`M` into the `chi`-weight spaces of the summands; a vector of the `chi`-weight space is therefore
-the sum of its components, each of which lies in the weight space of a summand. -/
-private theorem iSup_inf_genWeightSpace_eq [Finite ι] [DecidableEq ι]
-    (h : DirectSum.IsInternal fun i ↦ (N i).toSubmodule) (chi : H → K) :
-    ⨆ i, ((genWeightSpace M chi).toSubmodule ⊓ (N i).toSubmodule)
-      = (genWeightSpace M chi).toSubmodule := by
-  classical
-  have _ := Fintype.ofFinite ι
-  refine le_antisymm (iSup_le fun i ↦ inf_le_left) fun m hm ↦ ?_
-  set e := DirectSum.lieModuleEquivOfIsInternal N h with he
-  have hcomp : ∀ i, (e.symm m i : (N i : Type w)) ∈ genWeightSpace (N i : Type w) chi := fun i ↦
-    map_genWeightSpace_le (χ := chi)
-      ((((DirectSum.lieModuleComponent K ι L fun j ↦ (N j : Type w)) i).comp
-        (e.symm : M →ₗ⁅K,L⁆ ⨁ j, (N j : Type w))).restrictLie H) ⟨m, hm, rfl⟩
-  have hmem : ∀ i, ((e.symm m i : (N i : Type w)) : M)
-      ∈ (genWeightSpace M chi).toSubmodule ⊓ (N i).toSubmodule := fun i ↦
-    ⟨map_genWeightSpace_le (χ := chi) ((N i).incl.restrictLie H) ⟨_, hcomp i, rfl⟩,
-      (e.symm m i).2⟩
-  have hsum : m = ∑ i, ((e.symm m i : (N i : Type w)) : M) := by
-    conv_lhs => rw [← e.apply_symm_apply m, ← DirectSum.sum_univ_of (e.symm m)]
-    rw [map_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ by simp [he]
-  rw [hsum]
-  exact Submodule.sum_mem _ fun i _ ↦ Submodule.mem_iSup_of_mem i (hmem i)
-
 variable [FiniteDimensional K M] [LinearWeights K H M] [∀ i, LinearWeights K H (N i : Type w)]
   [Fintype ι] [DecidableEq ι]
 
@@ -381,7 +355,16 @@ theorem formalCharacter_eq_sum_of_isInternal
   have hindep : iSupIndep fun i ↦
       ((genWeightSpace M (chi : H → K)).toSubmodule ⊓ (N i).toSubmodule) :=
     h.submodule_iSupIndep.mono fun i ↦ inf_le_right
-  rw [← finrank_toSubmodule, ← iSup_inf_genWeightSpace_eq h (chi : H → K),
+  have hcomponent : ∀ (m : M), m ∈ (genWeightSpace M (chi : H → K)).toSubmodule → ∀ i,
+      (((LinearEquiv.ofBijective
+        (DirectSum.coeLinearMap fun j ↦ (N j).toSubmodule) h).symm m i : N i) : M)
+        ∈ (genWeightSpace M (chi : H → K)).toSubmodule := fun m hm i ↦
+    map_genWeightSpace_le (χ := (chi : H → K))
+      ((h.lieModuleProjection i).restrictLie H)
+      ⟨m, hm, h.lieModuleProjection_apply i m⟩
+  rw [← finrank_toSubmodule,
+    ← h.iSup_inf_eq_of_component_mem
+      (genWeightSpace M (chi : H → K)).toSubmodule hcomponent,
     finrank_iSup_eq_sum_finrank_of_iSupIndep hindep]
   exact Finset.sum_congr rfl fun i _ ↦ finrank_inf_genWeightSpace i (chi : H → K)
 
