@@ -53,6 +53,10 @@ coordinate type to the old one, so the transported word has value `x (e j)` at `
 noncomputable def reindex {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) : LinearCode R κ :=
   C.map (LinearEquiv.funCongrLeft R R e).toLinearMap
 
+/-- Reindexing is the image under coordinate transport. -/
+theorem reindex_def {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) :
+    reindex C e = C.map (LinearEquiv.funCongrLeft R R e).toLinearMap := (rfl)
+
 /-- Membership in a reindexed code, with the direction of the coordinate equivalence explicit. -/
 @[simp]
 theorem mem_reindex {κ : Type w} {C : LinearCode R ι} {e : κ ≃ ι} {y : κ → R} :
@@ -101,11 +105,20 @@ theorem reindex_top {κ : Type w} (e : κ ≃ ι) : reindex (⊤ : LinearCode R 
 noncomputable def puncture (C : LinearCode R ι) (s : Set ι) : LinearCode R s :=
   C.map (LinearMap.funLeft R R (Subtype.val : s → ι))
 
+/-- Puncturing is the image under restriction to the retained coordinates. -/
+theorem puncture_def (C : LinearCode R ι) (s : Set ι) :
+    puncture C s = C.map (LinearMap.funLeft R R (Subtype.val : s → ι)) := (rfl)
+
 /-- Shortening a code at `s` first imposes zero outside `s`, then retains the coordinates in
 `s`. -/
 noncomputable def shorten (C : LinearCode R ι) (s : Set ι) : LinearCode R s :=
   (C ⊓ Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule R R)).map
     (LinearMap.funLeft R R (Subtype.val : s → ι))
+
+/-- Shortening is the image under restriction of the words supported on the retained set. -/
+theorem shorten_def (C : LinearCode R ι) (s : Set ι) :
+    shorten C s = (C ⊓ Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule R R)).map
+      (LinearMap.funLeft R R (Subtype.val : s → ι)) := (rfl)
 
 /-- A word belongs to the punctured code exactly when it is the restriction of a codeword. -/
 @[simp]
@@ -317,6 +330,7 @@ theorem puncture_sup (C D : LinearCode R ι) (s : Set ι) :
   simp [puncture, Submodule.map_sup]
 
 /-- Shortening commutes with intersections. -/
+@[simp]
 theorem shorten_inf (C D : LinearCode R ι) (s : Set ι) :
     shorten (C ⊓ D) s = shorten C s ⊓ shorten D s := by
   ext y
@@ -338,7 +352,7 @@ section Dimension
 variable {R : Type u} [DivisionRing R] {ι : Type v}
 
 /-- Puncturing cannot increase dimension. -/
-theorem finrank_puncture_le [Finite ι] (C : LinearCode R ι) (s : Set ι) :
+theorem finrank_puncture_le (C : LinearCode R ι) [FiniteDimensional R C] (s : Set ι) :
     Module.finrank R (puncture C s) ≤ Module.finrank R C := by
   rw [puncture]
   exact Submodule.finrank_map_le _ _
@@ -363,7 +377,7 @@ theorem finrank_shorten_eq (C : LinearCode R ι) (s : Set ι) :
   · exact (Submodule.mem_pi.mp x.2.2 i hi).trans (Submodule.mem_pi.mp y.2.2 i hi).symm
 
 /-- Shortening cannot increase dimension. -/
-theorem finrank_shorten_le [Finite ι] (C : LinearCode R ι) (s : Set ι) :
+theorem finrank_shorten_le (C : LinearCode R ι) [FiniteDimensional R C] (s : Set ι) :
     Module.finrank R (shorten C s) ≤ Module.finrank R C := by
   rw [finrank_shorten_eq]
   apply Submodule.finrank_mono
@@ -407,6 +421,7 @@ theorem finrank_le_finrank_puncture_add_ncard_compl [Finite ι]
   exact Nat.add_le_add_right (Submodule.finrank_mono (shorten_le_puncture C s)) _
 
 /-- A coordinate equivalence preserves the dimension of a code. -/
+@[simp]
 theorem finrank_reindex {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) :
     Module.finrank R (reindex C e) = Module.finrank R C := by
   rw [reindex, LinearEquiv.finrank_map_eq]
