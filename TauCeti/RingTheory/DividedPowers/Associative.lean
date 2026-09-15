@@ -42,6 +42,9 @@ definition is made here.
 * `TauCeti.Associative.map_dividedPower`: divided powers are natural under algebra homomorphisms.
 * `TauCeti.Associative.dividedPower_apply_mem_of_pow_two_eq_zero`: a square-zero endomorphism
   preserving an integral submodule has all divided powers preserving it.
+* `TauCeti.Associative.dividedPower_apply_mem_of_pow_three_eq_zero`: a cube-zero endomorphism
+  preserving an additive subgroup, together with its divided square, has all divided powers
+  preserving it.
 * `TauCeti.Associative.dividedPower_units_conj`: divided powers are equivariant for conjugation by
   a unit.
 
@@ -99,6 +102,23 @@ theorem dividedPower_apply_mem_of_pow_two_eq_zero
   | 1 => rw [dividedPower_one]; exact hN hv
   | n + 2 =>
       rw [dividedPower_def, pow_eq_zero_of_le (m := 2) (by omega) hf, smul_zero,
+        LinearMap.zero_apply]
+      exact zero_mem _
+
+/-- Every divided power of a cube-zero endomorphism preserves an additive subgroup once the
+endomorphism and its divided square do. Only membership and the presence of zero are used, so no
+module structure on the subgroup is assumed. -/
+theorem dividedPower_apply_mem_of_pow_three_eq_zero
+    (f : Module.End ℚ V) (N : AddSubgroup V) (hf : f ^ 3 = 0)
+    (hN : ∀ {v : V}, v ∈ N → f v ∈ N) (hN₂ : ∀ {v : V}, v ∈ N → dividedPower 2 f v ∈ N)
+    (n : ℕ) {v : V} (hv : v ∈ N) :
+    dividedPower n f v ∈ N := by
+  match n with
+  | 0 => rwa [dividedPower_zero, Module.End.one_apply]
+  | 1 => rw [dividedPower_one]; exact hN hv
+  | 2 => exact hN₂ hv
+  | n + 3 =>
+      rw [dividedPower_def, pow_eq_zero_of_le (m := 3) (by omega) hf, smul_zero,
         LinearMap.zero_apply]
       exact zero_mem _
 
