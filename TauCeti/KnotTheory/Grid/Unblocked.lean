@@ -113,35 +113,13 @@ namespace GridChain
 
 variable {n : ℕ} (R : Type*) [CommSemiring R]
 
-private def relabelColumnsStateEquiv (κ : Equiv.Perm (Fin n)) : GridState n ≃ GridState n where
-  toFun := GridState.relabelColumns κ
-  invFun := GridState.relabelColumns κ.symm
-  left_inv := by
-    intro x
-    ext c
-    simp
-  right_inv := by
-    intro x
-    ext c
-    simp
-
-@[simp]
-private theorem relabelColumnsStateEquiv_apply (κ : Equiv.Perm (Fin n)) (x : GridState n) :
-    relabelColumnsStateEquiv κ x = x.relabelColumns κ :=
-  (rfl)
-
-@[simp]
-private theorem relabelColumnsStateEquiv_symm_apply (κ : Equiv.Perm (Fin n)) (x : GridState n) :
-    (relabelColumnsStateEquiv κ).symm x = x.relabelColumns κ.symm :=
-  (rfl)
-
 /-- The semilinear equivalence on `GC⁻` induced by relabeling columns and renaming coefficient
 variables by the same permutation. Its inverse uses the inverse column permutation. -/
 noncomputable def relabelColumnsRenameEquiv (κ : Equiv.Perm (Fin n)) :
     GridChainMinus R n ≃ₛₗ[((MvPolynomial.renameEquiv R κ).toRingEquiv :
       MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)] GridChainMinus R n :=
-  Finsupp.lcongr (relabelColumnsStateEquiv κ)
-    (MvPolynomial.renameEquiv R κ).toRingEquiv.toSemilinearEquiv
+  (Finsupp.mapRange.linearEquiv
+    (MvPolynomial.renameEquiv R κ).toRingEquiv.toSemilinearEquiv).trans (relabelColumnsEquiv κ)
 
 /-- The coefficient of a relabeled and renamed chain at a state is the renamed coefficient at the
 inverse-relabeled state. -/
@@ -150,15 +128,9 @@ theorem relabelColumnsRenameEquiv_apply (κ : Equiv.Perm (Fin n)) (c : GridChain
     (y : GridState n) :
     (relabelColumnsRenameEquiv R κ).toLinearMap c y =
       rename κ (c (y.relabelColumns κ.symm)) := by
-  calc
-    _ = (MvPolynomial.renameEquiv R κ).toRingEquiv
-        (c (y.relabelColumns κ.symm)) := by
-      simpa only [relabelColumnsRenameEquiv, LinearEquiv.coe_coe,
-        relabelColumnsStateEquiv_symm_apply,
-        RingEquiv.toSemilinearEquiv_apply] using
-        Finsupp.lcongr_apply_apply (relabelColumnsStateEquiv κ)
-          (MvPolynomial.renameEquiv R κ).toRingEquiv.toSemilinearEquiv c y
-    _ = _ := (rfl)
+  rw [LinearEquiv.coe_coe, relabelColumnsRenameEquiv, LinearEquiv.trans_apply,
+    relabelColumnsEquiv_apply, Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_apply,
+    RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_ringEquiv, renameEquiv_apply]
 
 /-- Relabeling and renaming send a generator with coefficient `a` to the relabeled generator with
 the renamed coefficient. -/
@@ -167,14 +139,9 @@ theorem relabelColumnsRenameEquiv_single (κ : Equiv.Perm (Fin n)) (x : GridStat
     (a : MvPolynomial (Fin n) R) :
     (relabelColumnsRenameEquiv R κ).toLinearMap (Finsupp.single x a) =
       Finsupp.single (x.relabelColumns κ) (rename κ a) := by
-  calc
-    _ = Finsupp.single (x.relabelColumns κ) ((MvPolynomial.renameEquiv R κ).toRingEquiv a) := by
-      simpa only [relabelColumnsRenameEquiv, LinearEquiv.coe_coe,
-        relabelColumnsStateEquiv_apply,
-        RingEquiv.toSemilinearEquiv_apply] using
-        Finsupp.lcongr_single (relabelColumnsStateEquiv κ)
-          (MvPolynomial.renameEquiv R κ).toRingEquiv.toSemilinearEquiv x a
-    _ = _ := (rfl)
+  rw [LinearEquiv.coe_coe, relabelColumnsRenameEquiv, LinearEquiv.trans_apply,
+    Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_single, relabelColumnsEquiv_single,
+    RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_ringEquiv, renameEquiv_apply]
 
 /-- The inverse equivalence relabels columns and coefficient variables by the inverse
 permutation. -/
@@ -183,9 +150,10 @@ theorem relabelColumnsRenameEquiv_symm_apply (κ : Equiv.Perm (Fin n))
     (c : GridChainMinus R n) (y : GridState n) :
     (relabelColumnsRenameEquiv R κ).symm c y =
       rename κ.symm (c (y.relabelColumns κ)) := by
-  rw [relabelColumnsRenameEquiv, Finsupp.lcongr_symm, Finsupp.lcongr_apply_apply]
-  simp only [Equiv.symm_symm, relabelColumnsStateEquiv_apply]
-  rfl
+  rw [relabelColumnsRenameEquiv, LinearEquiv.symm_trans_apply, Finsupp.mapRange.linearEquiv_symm,
+    Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_apply, relabelColumnsEquiv_symm_apply,
+    LinearEquiv.symm_apply_eq, RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_ringEquiv,
+    renameEquiv_apply, rename_rename, Equiv.self_comp_symm, rename_id_apply]
 
 end GridChain
 

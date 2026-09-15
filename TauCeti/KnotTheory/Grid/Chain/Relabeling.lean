@@ -73,16 +73,6 @@ private def relabelColumnsStateEquiv (κ : Equiv.Perm (Fin n)) : GridState n ≃
     ext c
     simp
 
-@[simp]
-private theorem relabelColumnsStateEquiv_apply (κ : Equiv.Perm (Fin n)) (x : GridState n) :
-    relabelColumnsStateEquiv κ x = x.relabelColumns κ :=
-  (rfl)
-
-@[simp]
-private theorem relabelColumnsStateEquiv_symm_apply (κ : Equiv.Perm (Fin n)) (x : GridState n) :
-    (relabelColumnsStateEquiv κ).symm x = x.relabelColumns κ.symm :=
-  (rfl)
-
 private theorem relabelRowsStateEquiv_symm (ρ : Equiv.Perm (Fin n)) :
     (relabelRowsStateEquiv ρ).symm = relabelRowsStateEquiv ρ.symm := by
   apply Equiv.ext
