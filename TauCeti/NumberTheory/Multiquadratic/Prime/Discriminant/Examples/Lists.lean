@@ -14,7 +14,8 @@ The multiquadratic roadmap's genus-field worked examples use the prime-discrimin
 `[-4, 5]` for `ℚ(√-5)` and `[-4, -3, -7]` for `ℚ(√-21)`. This file gives those shared lists
 a neutral home for the Legendre-character, degree, and Galois worked examples, together with
 the arithmetic witness bundle (prime-discriminant, injectivity, and parity facts) for the
-`[-4, -3, -7]` list reused by the `ℚ(√-21)` degree and Galois examples. The complex square
+`[-4, -3, -7]` list reused by the `ℚ(√-21)` degree and Galois examples, and squarefreeness of
+the radicand `-21` used by the class-number, `2`-rank, and genus-field examples. The complex square
 root witnesses those degree and Galois examples also need, together with the degree and
 Galois worked examples themselves, live in
 `TauCeti.NumberTheory.Multiquadratic.MinusTwentyOne.Examples`, so the purely
@@ -24,6 +25,12 @@ integer-valued Legendre-character examples do not depend on `Complex`/`Real.sqrt
 public section
 
 namespace TauCeti.Multiquadratic
+
+/-- The radicand `-21` is squarefree. -/
+theorem squarefree_neg_twenty_one : Squarefree (-21 : ℤ) := by
+  rw [← Int.squarefree_natAbs]
+  simpa using (Nat.squarefree_mul (by decide : Nat.Coprime 3 7)).mpr
+    ⟨(by decide : Nat.Prime 3).squarefree, (by decide : Nat.Prime 7).squarefree⟩
 
 /-- The prime-discriminant list `[-4, 5]` for the genus-field generators of `ℚ(√-5)`. -/
 abbrev negFourFivePrimeDiscriminants : Fin 2 → ℤ :=

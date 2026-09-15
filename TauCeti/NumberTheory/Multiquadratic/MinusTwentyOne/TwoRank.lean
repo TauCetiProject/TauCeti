@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.TwoRank
 public import TauCeti.NumberTheory.Multiquadratic.MinusTwentyOne.Basic
-import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminants
+import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Examples.Lists
 
 /-!
 # The `2`-rank of the class group of `ℚ(√-21)`
@@ -45,10 +45,6 @@ factors as `(-4) · (-3) · (-7)` into three prime discriminants, so three ratio
 theorem twoRank_eq_two_of_minpoly_eq_X_sq_add_twenty_one
     (hmin : minpoly ℤ θ = X ^ 2 - C (-21 : ℤ)) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
     TauCeti.ClassGroup.twoRank (𝓞 K) = 2 := by
-  have hsf : Squarefree (-21 : ℤ) := by
-    rw [← Int.squarefree_natAbs]
-    simpa using (Nat.squarefree_mul (by decide : Nat.Coprime 3 7)).mpr
-      ⟨(by decide : Nat.Prime 3).squarefree, (by decide : Nat.Prime 7).squarefree⟩
   have hs : ∀ P ∈ ({-4, -3, -7} : Finset ℤ), IsPrimeDiscriminant P := by
     intro P hP
     fin_cases hP
@@ -67,11 +63,12 @@ theorem twoRank_eq_two_of_minpoly_eq_X_sq_add_twenty_one
       fundamentalDiscriminant_of_mod_four_ne_one (by decide : (-21 : ℤ) % 4 ≠ 1)]
     ring
   have hncard : (ramifiedPrimes K).ncard = 3 := by
-    rw [ncard_ramifiedPrimes_eq_card hmin hgen hsf hs heven hprod,
+    rw [ncard_ramifiedPrimes_eq_card hmin hgen squarefree_neg_twenty_one hs heven hprod,
       Finset.card_insert_of_notMem (by decide : (-4 : ℤ) ∉ ({-3, -7} : Finset ℤ)),
       Finset.card_insert_of_notMem (by decide : (-3 : ℤ) ∉ ({-7} : Finset ℤ)),
       Finset.card_singleton]
-  rw [twoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen hsf (by norm_num), hncard]
+  rw [twoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen squarefree_neg_twenty_one (by norm_num),
+    hncard]
 
 /-- **Worked example.** The concrete number field `AdjoinRoot (X² + 21)`, modelling `ℚ(√-21)`, has
 class-group `2`-rank `2`. Not `@[simp]`: the `@[simp]` lemma `twoRank_def` unfolds the left-hand

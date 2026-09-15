@@ -44,15 +44,10 @@ namespace TauCeti.Multiquadratic
 
 universe v
 
-private theorem squarefree_neg_twenty_one : Squarefree (-21 : ℤ) := by
-  rw [← Int.squarefree_natAbs]
-  simpa using (Nat.squarefree_mul (by decide : Nat.Coprime 3 7)).mpr
-    ⟨(by decide : Nat.Prime 3).squarefree, (by decide : Nat.Prime 7).squarefree⟩
-
 /-- The canonical prime-discriminant factorization of the fundamental discriminant of
 `ℚ(√-21)` is `-84 = (-4) · (-3) · (-7)`. -/
 @[simp] theorem genusPrimeDiscriminants_neg_twenty_one :
-    genusPrimeDiscriminants (d := -21) (by exact squarefree_neg_twenty_one) = {-4, -3, -7} := by
+    genusPrimeDiscriminants (d := -21) squarefree_neg_twenty_one = {-4, -3, -7} := by
   apply genusPrimeDiscriminants_eq squarefree_neg_twenty_one
   · intro P hP
     fin_cases hP
@@ -74,7 +69,7 @@ roots of the prime-discriminant radicands is exactly
 Together with `isGenusField_candidateGenusField`, this identifies the genus field of
 `ℚ(√-21)`. -/
 @[simp] theorem candidateGenusField_neg_twenty_one_eq :
-    candidateGenusField (d := -21) (by exact squarefree_neg_twenty_one) =
+    candidateGenusField (d := -21) squarefree_neg_twenty_one =
       (adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ) : IntermediateField ℚ ℂ) := by
   let hd := squarefree_neg_twenty_one
   have hfac : genusPrimeDiscriminants hd = {-4, -3, -7} :=
