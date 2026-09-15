@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Basic
 
 /-!
 # Generic fibres of models over a discrete valuation ring

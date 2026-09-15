@@ -41,7 +41,7 @@ irreducible by.
 
 ## Main results
 
-* `TauCeti.Representation.IsIrreducible.nontrivial`: an irreducible representation has a nonzero
+* `Representation.IsIrreducible.nontrivial`: an irreducible representation has a nonzero
   carrier.
 * `Representation.IsIrreducible.finrank_pos`: a finite-dimensional irreducible
   representation has positive dimension.
@@ -83,8 +83,8 @@ open scoped MonoidAlgebra in
 /-- **An irreducible representation has a nonzero carrier.** This is `IsSimpleModule.nontrivial`
 for `ρ.asModule`, read back on `V` along `ρ.asModuleEquiv`; the Mathlib statement is not an
 instance, so nothing supplies `Nontrivial V` without naming it. -/
-theorem IsIrreducible.nontrivial {ρ : Representation k G V} (h : ρ.IsIrreducible) :
-    Nontrivial V :=
+theorem _root_.Representation.IsIrreducible.nontrivial {ρ : Representation k G V}
+    (h : ρ.IsIrreducible) : Nontrivial V :=
   have _ : ρ.IsIrreducible := h
   have _ := IsSimpleModule.nontrivial k[G] ρ.asModule
   ρ.asModuleEquiv.symm.toEquiv.nontrivial
@@ -95,7 +95,7 @@ the degree of an irreducible character positive, and, cast into the base field b
 the integrated operator divide by that degree. -/
 theorem _root_.Representation.IsIrreducible.finrank_pos [FiniteDimensional k V]
     {ρ : Representation k G V} (h : ρ.IsIrreducible) : 0 < Module.finrank k V :=
-  have := IsIrreducible.nontrivial h
+  have := Representation.IsIrreducible.nontrivial h
   Module.finrank_pos
 
 /-- **The dimension of an irreducible representation is nonzero in the base field.** In
@@ -148,7 +148,7 @@ theorem isIrreducible_of_linearEquiv {W : Type*} [AddCommGroup W] [Module k W]
     {ρ : Representation k G V} {σ : Representation k G W} (e : V ≃ₗ[k] W)
     (he : ∀ g v, e (ρ g v) = σ g (e v)) (h : ρ.IsIrreducible) : σ.IsIrreducible := by
   have _ : ρ.IsIrreducible := h
-  have hV : Nontrivial V := IsIrreducible.nontrivial h
+  have hV : Nontrivial V := Representation.IsIrreducible.nontrivial h
   have : Nontrivial W := e.symm.toEquiv.nontrivial
   have hne : (⊥ : Subrepresentation σ) ≠ ⊤ := fun hc =>
     bot_ne_top (α := Submodule k W) (by
@@ -243,7 +243,7 @@ theorem _root_.Representation.asAlgebraHom_surjective_of_isIrreducible
   have : ρ.IsIrreducible := hρ
   have : IsSimpleModule k[G] ρ.asModule := inferInstance
   have : Nontrivial ρ.asModule := IsSimpleModule.nontrivial k[G] ρ.asModule
-  have : Nontrivial V := IsIrreducible.nontrivial hρ
+  have : Nontrivial V := Representation.IsIrreducible.nontrivial hρ
   have : Module.Finite (Module.End k[G] ρ.asModule) ρ.asModule :=
     finite_end_of_smulCommClass (R := k[G]) (M := ρ.asModule) k
   intro T

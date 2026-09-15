@@ -15,7 +15,7 @@ import TauCeti.Topology.IsLocalHomeomorph
 # The Galois correspondence is a correspondence of towers of covers
 
 Pointed connected covers of `(X, x)` are classified by the subgroup of `π₁(X, x)` they recover,
-and `TauCeti.IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le` already says that a map of
+and `IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le` already says that a map of
 pointed covers exists exactly when the recovered subgroups are nested. What that statement leaves
 open is what kind of map it is. This file upgrades it: when the target cover is locally connected,
 the map is itself a covering map, so a nesting of subgroups is realized by an intermediate
@@ -62,7 +62,7 @@ variable {E F X : Type*} [TopologicalSpace E] [TopologicalSpace F] [TopologicalS
 /-- **A pointed cover covers another one, by a covering map over `X`, exactly when the subgroup it
 recovers is contained in the subgroup the other recovers.**
 
-This strengthens `TauCeti.IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le`, which produces
+This strengthens `IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le`, which produces
 only a continuous map: when the target is locally connected, a map of covers is automatically a
 covering map, by `IsCoveringMap.of_comp_eq`. -/
 theorem _root_.IsCoveringMap.exists_isCoveringMap_comp_eq_iff_range_le [LocallyConnectedSpace F]
@@ -72,10 +72,10 @@ theorem _root_.IsCoveringMap.exists_isCoveringMap_comp_eq_iff_range_le [LocallyC
       (mapOfEq ⟨p, hp.continuous⟩ hpe).range ≤ (mapOfEq ⟨q, hq.continuous⟩ hqf).range := by
   refine ⟨fun hg => ?_, fun hle => ?_⟩
   · obtain ⟨g, -, hg₀, hgc⟩ := hg
-    exact (TauCeti.IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le hp.continuous hq hpe
+    exact (IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le hq hp.continuous hpe
       hqf).mp ⟨g, hg₀, hgc⟩
   · obtain ⟨g, ⟨hg₀, hgc⟩, -⟩ :=
-      TauCeti.IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le hp.continuous hq hpe
+      IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le hq hp.continuous hpe
         hqf hle
     exact ⟨g, hp.of_comp_eq hq g.continuous hgc, hg₀, hgc⟩
 

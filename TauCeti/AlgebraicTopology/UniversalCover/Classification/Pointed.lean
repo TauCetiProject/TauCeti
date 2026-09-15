@@ -15,7 +15,7 @@ public import TauCeti.Topology.Homotopy.Covering
 
 A *pointed cover* of `(X, x)` is a covering map `p : E → X` together with a lift `e₀` of `x`.
 It recovers the subgroup `p_* π₁(E, e₀) ≤ π₁(X, x)`, and
-`TauCeti.IsCoveringMap.stabilizer_eq_range` identifies that subgroup with the stabiliser of `e₀`
+`IsCoveringMap.stabilizer_eq_range` identifies that subgroup with the stabiliser of `e₀`
 for the monodromy action. This file proves that, for path-connected and locally path-connected
 total spaces, the recovered subgroup determines the pointed cover:
 
@@ -45,20 +45,20 @@ locally path-connected space.)
 
 ## Main declarations
 
-* `TauCeti.IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le`: a unique map of pointed
+* `IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le`: a unique map of pointed
   covers over `X` exists as soon as the recovered subgroups are nested.
-* `TauCeti.IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le`: such a map exists *exactly*
+* `IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le`: such a map exists *exactly*
   when the recovered subgroups are nested.
-* `TauCeti.IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq` and
-  `TauCeti.IsCoveringMap.totalSpaceHomeomorphOfRangeEq`: pointed covers recovering the same
+* `IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq` and
+  `IsCoveringMap.totalSpaceHomeomorphOfRangeEq`: pointed covers recovering the same
   subgroup are isomorphic over `X` by a homeomorphism matching the chosen lifts.
-* `TauCeti.IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq`: the recovered subgroup is a
+* `IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq`: the recovered subgroup is a
   complete invariant of a pointed cover.
-* `TauCeti.IsCoveringMap.eq_totalSpaceHomeomorphOfRangeEq`: that homeomorphism is the only map of
+* `IsCoveringMap.eq_totalSpaceHomeomorphOfRangeEq`: that homeomorphism is the only map of
   pointed covers over `X`.
-* `TauCeti.IsCoveringMap.deckMulEquivOfRangeEq`: consequently their deck transformation groups
+* `IsCoveringMap.deckMulEquivOfRangeEq`: consequently their deck transformation groups
   are isomorphic.
-* `TauCeti.IsCoveringMap.exists_homeomorph_comp_eq_of_simplyConnectedSpace`: uniqueness of the
+* `IsCoveringMap.exists_homeomorph_comp_eq_of_simplyConnectedSpace`: uniqueness of the
   universal cover.
 
 ## References
@@ -88,9 +88,9 @@ in the subgroup recovered by the covering `(q, f₀)`, then there is a unique co
 `E → F` over `X` carrying `e₀` to `f₀`.
 
 Only continuity is required of `p`; the covering hypothesis is needed for the target `q`. -/
-theorem IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le
+theorem _root_.IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le
     [PathConnectedSpace E] [LocallyPathConnectedSpace E]
-    (hp : Continuous p) (hq : _root_.IsCoveringMap q) (hpe : p e₀ = x) (hqf : q f₀ = x)
+    (hq : _root_.IsCoveringMap q) (hp : Continuous p) (hpe : p e₀ = x) (hqf : q f₀ = x)
     (hle : (mapOfEq ⟨p, hp⟩ hpe).range ≤ (mapOfEq ⟨q, hq.continuous⟩ hqf).range) :
     ∃! g : C(E, F), g e₀ = f₀ ∧ q ∘ g = p := by
   subst hpe
@@ -102,9 +102,9 @@ contained in the subgroup recovered by the target.
 
 The forward implication is functoriality of `π₁` and needs no hypothesis on `p` or `q` beyond
 continuity; the reverse implication is the lifting criterion. -/
-theorem IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le
+theorem _root_.IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le
     [PathConnectedSpace E] [LocallyPathConnectedSpace E]
-    (hp : Continuous p) (hq : _root_.IsCoveringMap q) (hpe : p e₀ = x) (hqf : q f₀ = x) :
+    (hq : _root_.IsCoveringMap q) (hp : Continuous p) (hpe : p e₀ = x) (hqf : q f₀ = x) :
     (∃ g : C(E, F), g e₀ = f₀ ∧ q ∘ g = p) ↔
       (mapOfEq ⟨p, hp⟩ hpe).range ≤ (mapOfEq ⟨q, hq.continuous⟩ hqf).range := by
   constructor
@@ -117,21 +117,21 @@ theorem IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le
     rw [TauCeti.FundamentalGroup.mapOfEq_comp ⟨q, hq.continuous⟩ g hg hqf]
     exact TauCeti.FundamentalGroup.mapOfEq_congr hfg _ _ γ
   · intro hle
-    exact (IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le hp hq hpe hqf hle).exists
+    exact (IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le hq hp hpe hqf hle).exists
 
 /-- Two pointed covers of `(X, x)` with path-connected, locally path-connected total spaces which
 recover the *same* subgroup of `π₁(X, x)` are isomorphic over `X`, by a homeomorphism matching the
 chosen lifts. -/
-theorem IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq
+theorem _root_.IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq
     [PathConnectedSpace E] [LocallyPathConnectedSpace E]
     [PathConnectedSpace F] [LocallyPathConnectedSpace F]
     (hp : _root_.IsCoveringMap p) (hq : _root_.IsCoveringMap q) (hpe : p e₀ = x) (hqf : q f₀ = x)
     (hrange : (mapOfEq ⟨p, hp.continuous⟩ hpe).range = (mapOfEq ⟨q, hq.continuous⟩ hqf).range) :
     ∃ h : E ≃ₜ F, h e₀ = f₀ ∧ q ∘ h = p := by
   obtain ⟨g, ⟨hg₀, hgc⟩, -⟩ :=
-    IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le hp.continuous hq hpe hqf hrange.le
+    IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le hq hp.continuous hpe hqf hrange.le
   obtain ⟨k, ⟨hk₀, hkc⟩, -⟩ :=
-    IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le hq.continuous hp hqf hpe hrange.ge
+    IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le hp hq.continuous hqf hpe hrange.ge
   have hkg : ∀ e, k (g e) = e := by
     have hcomp : (p ∘ fun e => k (g e)) = p ∘ id := by
       funext e
@@ -154,7 +154,7 @@ theorem IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq
 with path-connected, locally path-connected total spaces are isomorphic over `X`, by a
 homeomorphism matching the chosen lifts, exactly when they recover the same subgroup of
 `π₁(X, x)`. -/
-theorem IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
+theorem _root_.IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
     [PathConnectedSpace E] [LocallyPathConnectedSpace E]
     [PathConnectedSpace F] [LocallyPathConnectedSpace F]
     (hp : _root_.IsCoveringMap p) (hq : _root_.IsCoveringMap q) (hpe : p e₀ = x) (hqf : q f₀ = x) :
@@ -162,9 +162,9 @@ theorem IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
       (mapOfEq ⟨p, hp.continuous⟩ hpe).range = (mapOfEq ⟨q, hq.continuous⟩ hqf).range := by
   refine ⟨fun ⟨h, hh₀, hhc⟩ => le_antisymm ?_ ?_, fun hrange =>
     IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq hp hq hpe hqf hrange⟩
-  · exact (IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le hp.continuous hq hpe hqf).mp
+  · exact (IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le hq hp.continuous hpe hqf).mp
       ⟨(h : C(E, F)), hh₀, hhc⟩
-  · refine (IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le hq.continuous hp hqf hpe).mp
+  · refine (IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le hp hq.continuous hqf hpe).mp
       ⟨(h.symm : C(F, E)), h.symm_apply_eq.mpr hh₀.symm, ?_⟩
     funext f
     simpa only [Function.comp_apply, ContinuousMap.coe_coe, Homeomorph.apply_symm_apply]
@@ -172,7 +172,7 @@ theorem IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
 
 /-- The homeomorphism over `X` between two pointed covers recovering the same subgroup of
 `π₁(X, x)`, matching the chosen lifts of `x`. -/
-noncomputable def IsCoveringMap.totalSpaceHomeomorphOfRangeEq
+noncomputable def _root_.IsCoveringMap.totalSpaceHomeomorphOfRangeEq
     [PathConnectedSpace E] [LocallyPathConnectedSpace E]
     [PathConnectedSpace F] [LocallyPathConnectedSpace F]
     (hp : _root_.IsCoveringMap p) (hq : _root_.IsCoveringMap q) (hpe : p e₀ = x) (hqf : q f₀ = x)
@@ -190,13 +190,13 @@ variable [PathConnectedSpace E] [LocallyPathConnectedSpace E]
 /-- The comparison homeomorphism carries the chosen lift of `x` in `E` to the chosen lift in
 `F`. -/
 @[simp]
-theorem IsCoveringMap.totalSpaceHomeomorphOfRangeEq_apply_basepoint :
+theorem _root_.IsCoveringMap.totalSpaceHomeomorphOfRangeEq_apply_basepoint :
     IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange e₀ = f₀ :=
   (IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq hp hq hpe hqf hrange).choose_spec.1
 
 /-- The comparison homeomorphism lies over the base. -/
 @[simp]
-theorem IsCoveringMap.comp_totalSpaceHomeomorphOfRangeEq :
+theorem _root_.IsCoveringMap.comp_totalSpaceHomeomorphOfRangeEq :
     q ∘ IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange = p :=
   (IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq hp hq hpe hqf hrange).choose_spec.2
 
@@ -204,18 +204,18 @@ theorem IsCoveringMap.comp_totalSpaceHomeomorphOfRangeEq :
 
 Not a `simp` lemma: its left-hand side `q (h e)` has the variable `q` as head symbol, so Lean
 rejects it as a global `simp` lemma. -/
-theorem IsCoveringMap.comp_totalSpaceHomeomorphOfRangeEq_apply (e : E) :
+theorem _root_.IsCoveringMap.comp_totalSpaceHomeomorphOfRangeEq_apply (e : E) :
     q (IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange e) = p e :=
   congrFun (IsCoveringMap.comp_totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange) e
 
 /-- The comparison homeomorphism is characterised by the two properties defining it: it is the
 *only* continuous map `E → F` over `X` carrying the chosen lift of `x` in `E` to the chosen lift
 in `F`. -/
-theorem IsCoveringMap.eq_totalSpaceHomeomorphOfRangeEq {g : C(E, F)} (hg₀ : g e₀ = f₀)
+theorem _root_.IsCoveringMap.eq_totalSpaceHomeomorphOfRangeEq {g : C(E, F)} (hg₀ : g e₀ = f₀)
     (hgc : q ∘ g = p) :
     g = (IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange : C(E, F)) := by
   obtain ⟨g₁, -, huniq⟩ := IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le
-    hp.continuous hq hpe hqf hrange.le
+    hq hp.continuous hpe hqf hrange.le
   refine (huniq g ⟨hg₀, hgc⟩).trans (huniq _ ⟨?_, ?_⟩).symm
   · exact IsCoveringMap.totalSpaceHomeomorphOfRangeEq_apply_basepoint hp hq hpe hqf hrange
   · exact IsCoveringMap.comp_totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange
@@ -223,28 +223,28 @@ theorem IsCoveringMap.eq_totalSpaceHomeomorphOfRangeEq {g : C(E, F)} (hg₀ : g 
 /-- The inverse of the comparison homeomorphism carries the chosen lift of `x` in `F` back to the
 chosen lift in `E`. -/
 @[simp]
-theorem IsCoveringMap.totalSpaceHomeomorphOfRangeEq_symm_apply_basepoint :
+theorem _root_.IsCoveringMap.totalSpaceHomeomorphOfRangeEq_symm_apply_basepoint :
     (IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange).symm f₀ = e₀ := by
   rw [Homeomorph.symm_apply_eq]
   exact (IsCoveringMap.totalSpaceHomeomorphOfRangeEq_apply_basepoint hp hq hpe hqf hrange).symm
 
 /-- The inverse of the comparison homeomorphism also lies over the base. Not a `simp` lemma, for
 the same variable-head reason as `comp_totalSpaceHomeomorphOfRangeEq_apply`. -/
-theorem IsCoveringMap.comp_totalSpaceHomeomorphOfRangeEq_symm_apply (f : F) :
+theorem _root_.IsCoveringMap.comp_totalSpaceHomeomorphOfRangeEq_symm_apply (f : F) :
     p ((IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange).symm f) = q f := by
   rw [← IsCoveringMap.comp_totalSpaceHomeomorphOfRangeEq_apply hp hq hpe hqf hrange,
     Homeomorph.apply_symm_apply]
 
 /-- Pointed covers recovering the same subgroup of `π₁(X, x)` have isomorphic deck transformation
 groups, by conjugation along the comparison homeomorphism. -/
-noncomputable def IsCoveringMap.deckMulEquivOfRangeEq : Deck p ≃* Deck q :=
+noncomputable def _root_.IsCoveringMap.deckMulEquivOfRangeEq : Deck p ≃* Deck q :=
   Deck.conjMulEquiv (IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange)
     (IsCoveringMap.comp_totalSpaceHomeomorphOfRangeEq_apply hp hq hpe hqf hrange)
 
 /-- The deck-group isomorphism attached to two pointed covers with the same recovered subgroup is
 conjugation by the comparison homeomorphism. -/
 @[simp]
-theorem IsCoveringMap.deckMulEquivOfRangeEq_apply_coe (φ : Deck p) (f : F) :
+theorem _root_.IsCoveringMap.deckMulEquivOfRangeEq_apply_coe (φ : Deck p) (f : F) :
     ((IsCoveringMap.deckMulEquivOfRangeEq hp hq hpe hqf hrange φ).1 f) =
       IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange
         (φ.1 ((IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange).symm f)) :=
@@ -253,7 +253,7 @@ theorem IsCoveringMap.deckMulEquivOfRangeEq_apply_coe (φ : Deck p) (f : F) :
 /-- The inverse of that deck-group isomorphism is conjugation by the inverse comparison
 homeomorphism. -/
 @[simp]
-theorem IsCoveringMap.deckMulEquivOfRangeEq_symm_apply_coe (ψ : Deck q) (e : E) :
+theorem _root_.IsCoveringMap.deckMulEquivOfRangeEq_symm_apply_coe (ψ : Deck q) (e : E) :
     (((IsCoveringMap.deckMulEquivOfRangeEq hp hq hpe hqf hrange).symm ψ).1 e) =
       (IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange).symm
         (ψ.1 (IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange e)) :=
@@ -265,7 +265,7 @@ end
 of `X` are isomorphic over `X`, by a homeomorphism matching chosen lifts of a basepoint.
 
 Both recovered subgroups are trivial, so the classification of pointed covers applies. -/
-theorem IsCoveringMap.exists_homeomorph_comp_eq_of_simplyConnectedSpace
+theorem _root_.IsCoveringMap.exists_homeomorph_comp_eq_of_simplyConnectedSpace
     [SimplyConnectedSpace E] [LocallyPathConnectedSpace E]
     [SimplyConnectedSpace F] [LocallyPathConnectedSpace F]
     (hp : _root_.IsCoveringMap p) (hq : _root_.IsCoveringMap q) (hpe : p e₀ = x) (hqf : q f₀ = x) :

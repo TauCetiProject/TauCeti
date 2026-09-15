@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.Quadratic
+public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.Ramification
 public import TauCeti.NumberTheory.NumberField.InfinitePlace
 public import TauCeti.NumberTheory.Multiquadratic.Unramified.Maximality
 import Mathlib.NumberTheory.NumberField.CMField
+import Mathlib.RingTheory.RingHom.Unramified
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.GaloisGroup
+import TauCeti.NumberTheory.RamificationInertia.Tower
 
 /-!
 # The genus-field candidate of a real quadratic field
@@ -18,7 +20,8 @@ import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.GaloisGroup
 For positive squarefree nonsquare `d`, the prime-discriminant compositum `candidateGenusField hd`
 is the narrow genus field of `ℚ(√d)`, but it can ramify at the real places. Its maximal totally
 real subfield is the candidate for the ordinary genus field. This file defines that field and
-relates it to the embedded quadratic base.
+relates it to the embedded quadratic base. Since the full compositum is unramified over the base
+at every finite prime, its real subfield is too.
 
 The key archimedean fact is intrinsic: an extension of a totally real field is unramified at all
 infinite places exactly when it is totally real. Consequently every abelian Galois extension of
@@ -40,6 +43,8 @@ Section 2.2, and D. A. Cox, *Primes of the Form x² + ny²*, Section 6.A.
   base lies in the real candidate.
 * `TauCeti.Multiquadratic.isAbelianGalois_candidateGenusFieldReal`: the real candidate is abelian
   and Galois over `ℚ`.
+* `TauCeti.Multiquadratic.isUnramifiedIn_candidateGenusFieldReal`: the real candidate is
+  unramified over its quadratic base at every finite prime.
 * `TauCeti.Multiquadratic.exists_algHom_candidateGenusFieldReal`: every abelian Galois extension
   of `ℚ` containing the chosen square root and unramified over the quadratic base at all places
   embeds into the real candidate.
@@ -156,6 +161,89 @@ theorem finrank_adjoin_candidateGenusFieldRealBaseRoot (hd : Squarefree d)
     (⊥ : IntermediateField ℚ (candidateGenusFieldReal hd)).finrank_sup_adjoin_simple_eq_mul_two
       hsq hnot
   rwa [bot_sup_eq, IntermediateField.finrank_bot, one_mul] at hfin
+
+private noncomputable def candidateGenusFieldRealBaseEquiv (hd : Squarefree d)
+    (hpos : 0 < d) :
+    (adjoin ℚ {candidateGenusFieldRealBaseRoot hd hpos} :
+      IntermediateField ℚ (candidateGenusFieldReal hd)) ≃ₐ[ℚ]
+      candidateGenusFieldBase hd := by
+  let B := (adjoin ℚ {candidateGenusFieldRealBaseRoot hd hpos} :
+    IntermediateField ℚ (candidateGenusFieldReal hd))
+  let i : candidateGenusFieldReal hd →ₐ[ℚ] candidateGenusField hd :=
+    (candidateGenusFieldReal hd).val
+  have hmap : B.map i = candidateGenusFieldBase hd := by
+    dsimp only [B, i]
+    rw [IntermediateField.adjoin_map, Set.image_singleton]
+    have hroot : (candidateGenusFieldReal hd).val
+        (candidateGenusFieldRealBaseRoot hd hpos) = candidateGenusFieldBaseRoot hd :=
+      coe_candidateGenusFieldRealBaseRoot hd hpos
+    rw [hroot, ← candidateGenusFieldBase_def]
+  exact (B.equivMap i).trans (IntermediateField.equivOfEq hmap)
+
+/-- The canonical equivalence between the two copies of the quadratic base commutes with their
+inclusions into the real candidate. -/
+private theorem candidateGenusFieldRealBaseEquiv_commutes (hd : Squarefree d)
+    (hpos : 0 < d)
+    (x : (adjoin ℚ {candidateGenusFieldRealBaseRoot hd hpos} :
+      IntermediateField ℚ (candidateGenusFieldReal hd))) :
+    (⟨((candidateGenusFieldRealBaseEquiv hd hpos) x : candidateGenusFieldBase hd),
+      candidateGenusFieldBase_le_candidateGenusFieldReal hd hpos
+        ((candidateGenusFieldRealBaseEquiv hd hpos) x).property⟩ : candidateGenusFieldReal hd) =
+      (x : candidateGenusFieldReal hd) := by
+  apply Subtype.ext
+  simp only [candidateGenusFieldRealBaseEquiv, AlgEquiv.trans_apply,
+    IntermediateField.equivOfEq_apply, IntermediateField.coe_equivMap_apply]
+  rw [IntermediateField.coe_val]
+
+/-- **The real genus-field candidate is unramified over its quadratic base at every finite
+place.** This descends from finite-place unramifiedness of the full prime-discriminant compositum;
+the canonical equivalence between the two copies of `ℚ(√d)` then identifies the base rings. -/
+theorem isUnramifiedIn_candidateGenusFieldReal (hd : Squarefree d)
+    (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d)
+    (q : Ideal (𝓞 (adjoin ℚ {candidateGenusFieldRealBaseRoot hd hpos} :
+      IntermediateField ℚ (candidateGenusFieldReal hd)))) :
+    Algebra.IsUnramifiedIn (𝓞 (candidateGenusFieldReal hd)) q := by
+  let B := (adjoin ℚ {candidateGenusFieldRealBaseRoot hd hpos} :
+    IntermediateField ℚ (candidateGenusFieldReal hd))
+  let A := candidateGenusFieldBase hd
+  let R := candidateGenusFieldReal hd
+  let F := candidateGenusField hd
+  let e : B ≃ₐ[ℚ] A := candidateGenusFieldRealBaseEquiv hd hpos
+  let hAR : A ≤ R := candidateGenusFieldBase_le_candidateGenusFieldReal hd hpos
+  let _ : Algebra A R := (IntermediateField.inclusion hAR).toAlgebra
+  let _ : Algebra R F := R.val.toAlgebra
+  let _ : IsScalarTower A R F := IsScalarTower.of_algebraMap_eq fun x => rfl
+  let _ : IsScalarTower (𝓞 A) (𝓞 R) (𝓞 F) :=
+    IsScalarTower.of_algebraMap_eq fun x => by apply RingOfIntegers.ext; rfl
+  intro Q hQ _
+  let qA : Ideal (𝓞 A) := Q.under (𝓞 A)
+  have : qA.IsPrime := inferInstance
+  have hurF : Algebra.IsUnramifiedIn (𝓞 F) qA :=
+    isUnramifiedIn_candidateGenusField hd hnsq qA
+  have : Q.LiesOver qA := inferInstance
+  have hA : Algebra.IsUnramifiedAt (𝓞 A) Q :=
+    TauCeti.RamificationInertia.isUnramifiedAt_of_isUnramifiedIn
+      (A := 𝓞 A) (R := 𝓞 R) (S := 𝓞 F) hurF Q
+  -- `IsUnramifiedAt` abbreviates precisely this localization statement.
+  change Algebra.FormallyUnramified (𝓞 B) (Localization.AtPrime Q)
+  rw [← RingHom.formallyUnramified_algebraMap]
+  let eO : 𝓞 B ≃+* 𝓞 A := RingOfIntegers.mapRingEquiv e.toRingEquiv
+  have heO : (eO : 𝓞 B →+* 𝓞 A).FormallyUnramified :=
+    RingHom.FormallyUnramified.of_surjective eO.surjective
+  have hA' : (algebraMap (𝓞 A) (Localization.AtPrime Q)).FormallyUnramified :=
+    RingHom.formallyUnramified_algebraMap.mpr hA
+  have hcomp := RingHom.FormallyUnramified.comp heO hA'
+  have hmaps : (algebraMap (𝓞 A) (Localization.AtPrime Q)).comp eO =
+      algebraMap (𝓞 B) (Localization.AtPrime Q) := by
+    ext x
+    -- Expose the two ring-of-integers inclusions so the compatibility lemma applies.
+    change algebraMap (𝓞 R) (Localization.AtPrime Q) (algebraMap (𝓞 A) (𝓞 R) (eO x)) =
+      algebraMap (𝓞 R) (Localization.AtPrime Q) (algebraMap (𝓞 B) (𝓞 R) x)
+    apply congrArg (algebraMap (𝓞 R) (Localization.AtPrime Q))
+    apply RingOfIntegers.ext
+    exact candidateGenusFieldRealBaseEquiv_commutes hd hpos (x : B)
+  rw [hmaps] at hcomp
+  exact hcomp
 
 /-- The real genus-field candidate is unramified at every infinite place over its embedded base.
 In fact its total reality makes it unramified at infinity over every subfield. -/

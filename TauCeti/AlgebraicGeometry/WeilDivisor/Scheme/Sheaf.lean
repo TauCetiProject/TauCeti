@@ -27,12 +27,14 @@ submodule.
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sections D U`, the displayed `Γ(X, U)`-submodule of
-  `Γ(𝒦_X, U)`, with `mem_sections_iff` its description over a nonempty open subset;
+  `Γ(𝒦_X, U)`, with `mem_sections_iff` its description over a nonempty open subset and
+  `rationalFunctionsEquiv_symm_mem_sections` its membership criterion for a rational function;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.submodule D`, the same data as a submodule of the
   *sheaf* `𝒦_X` — the membership condition is local — and
   `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sheaf D`, the resulting sheaf `𝒪_X(D)` of
   `𝒪_X`-modules, together with its monomorphism `sheafι D : 𝒪_X(D) ⟶ 𝒦_X`, which is described on
-  sections by `sheafι_app_injective`, `sheafι_app_mem` and `range_sheafι_app`;
+  sections by `sheafι_app_injective`, `sheafι_app_mem` and `range_sheafι_app`, and the construction
+  `sectionMk` of a section from a rational function satisfying the order bound;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sheafHomOfLE`, the inclusion
   `𝒪_X(D) ⟶ 𝒪_X(E)` for `D ≤ E`, and
   `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.unitToSheaf`, the factorization of `𝒪_X ⟶ 𝒦_X`
@@ -152,6 +154,15 @@ lemma mem_sections_iff {D : SchemeWeilDivisor X} {U : X.Opens} [Nonempty U]
     · exact Or.inl h0
     · exact Or.inr (h x hx)
 
+/-- A rational function whose order is at least `-D` at every codimension-one point of a nonempty
+open subset `U` is a section of `𝒪_X(D)` over `U`. -/
+lemma rationalFunctionsEquiv_symm_mem_sections {D : SchemeWeilDivisor X} {U : X.Opens}
+    [Nonempty U] {c : X.functionField}
+    (h : ∀ x : CodimensionOnePoint X, (x : X) ∈ U → -WeilDivisor.coeff D x ≤ X.ord c x) :
+    (Scheme.rationalFunctionsEquiv U).symm c ∈ sections D U := by
+  rw [mem_sections_iff]
+  exact Or.inr fun x hx ↦ by rw [LinearEquiv.apply_symm_apply]; exact h x hx
+
 /-- Over an empty open subset, `𝒪_X(D)` has all of the (zero) sections of `𝒦_X`. -/
 lemma sections_eq_top_of_eq_bot (D : SchemeWeilDivisor X) {U : X.Opens} (hU : U = ⊥) :
     sections D U = ⊤ :=
@@ -206,10 +217,27 @@ lemma sheaf_val_obj (D : SchemeWeilDivisor X) (U : X.Opens) :
 def sheafι (D : SchemeWeilDivisor X) : sheaf D ⟶ Scheme.rationalFunctions X :=
   (submodule D).ι
 
+/-- A rational function on `U` satisfying the order bound imposed by `D`, viewed as a section of
+`𝒪_X(D)` over `U`.
+
+Together with `sheafι_app_mem` and `sheafι_app_injective` this describes the sections of `𝒪_X(D)`
+completely: they are exactly the rational functions satisfying the bound. -/
+def sectionMk {D : SchemeWeilDivisor X} {U : X.Opens} (s : Γ(Scheme.rationalFunctions X, U))
+    (hs : s ∈ sections D U) : Γ(sheaf D, U) :=
+  ⟨s, hs⟩
+
 /-- The inclusion `𝒪_X(D) ⟶ 𝒦_X` is injective on sections over every open subset. -/
 lemma sheafι_app_injective (D : SchemeWeilDivisor X) (U : X.Opens) :
     Function.Injective (Scheme.Modules.Hom.app (sheafι D) U) :=
   Subtype.val_injective
+
+/-- The section of `𝒪_X(D)` built from a rational function includes back into `𝒦_X` as that
+rational function. -/
+@[simp]
+lemma sheafι_app_sectionMk {D : SchemeWeilDivisor X} {U : X.Opens}
+    (s : Γ(Scheme.rationalFunctions X, U)) (hs : s ∈ sections D U) :
+    Scheme.Modules.Hom.app (sheafι D) U (sectionMk s hs) = s :=
+  (rfl)
 
 /-- A section of `𝒪_X(D)` over `U`, viewed as a rational function, satisfies the order bound
 imposed by `D`. -/

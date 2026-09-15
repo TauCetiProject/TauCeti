@@ -58,7 +58,7 @@ the named split torus as maximal requires the reductivity and root-datum structu
 * `TauCeti.SlStd.upperTriangularPoints_eq`: the point group is the intersection of the carrier
   points with the upper-triangular matrices.
 * `TauCeti.SlStd.coe_upperTriangularPointsMulEquiv_apply` and
-  `TauCeti.SlStd.coe_pointsMulEquiv_mapPointsFunctor_quotientMapOfLe`: the point representation
+  `TauCeti.SlStd.coe_mulEquiv_mapPointsFunctor_quotientMapOfLe`: the point representation
   is compatible with the inclusions into `GL_(r+1)` and into the carrier.
 * `TauCeti.SlStd.isUpperTriangular_coe_rootSubgroupPoints_positive` and
   `TauCeti.SlStd.rootSubgroupPoints_positive_mem_upperTriangularPoints`: every positive numbered
@@ -268,17 +268,17 @@ theorem quotientPointsHom_upperTriangularPointsMulEquiv_symm (A : CommAlgCat.{v}
 /-- **The point representation is compatible with the closed immersion into the carrier.**
 Pushing a point of the upper-triangular subgroup scheme into the carrier along the coordinate
 morphism underlying `TauCeti.SlStd.upperTriangularInclusion` does not change its matrix. -/
-theorem coe_pointsMulEquiv_mapPointsFunctor_quotientMapOfLe (A : CommAlgCat.{v} ℤ)
+theorem coe_mulEquiv_mapPointsFunctor_quotientMapOfLe (A : CommAlgCat.{v} ℤ)
     (q : HopfAlgebra.points
       (R := ℤ) (H := CommHopfAlgCat.quotient
         (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) (upperTriangularDefiningIdeal r)) A) :
-    (pointsMulEquiv r A
+    ((pointsPresentation r A).mulEquiv
           ((CommHopfAlgCat.mapPointsFunctor (CommHopfAlgCat.quotientMapOfLe
             (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1))
             (definingIdeal_le_upperTriangularDefiningIdeal r))).app A q) :
         Matrix.GeneralLinearGroup (Fin (r + 1)) A) =
       (upperTriangularPointsMulEquiv r A q : Matrix.GeneralLinearGroup (Fin (r + 1)) A) := by
-  have hcarrier := coe_pointsMulEquiv_apply r A
+  have hcarrier := (pointsPresentation r A).coe_mulEquiv_apply
     ((CommHopfAlgCat.mapPointsFunctor (CommHopfAlgCat.quotientMapOfLe
       (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1))
       (definingIdeal_le_upperTriangularDefiningIdeal r))).app A q)
