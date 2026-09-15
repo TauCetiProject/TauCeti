@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
+public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
-public import TauCeti.Analysis.Complex.UpperHalfPlane.SmulDeriv
+public import TauCeti.Analysis.Complex.UpperHalfPlane.DiscCoordinate
+public import TauCeti.RingTheory.RootsOfUnity.PowFiber
 import Mathlib.RingTheory.IntegralDomain
 
 /-!
@@ -22,8 +24,10 @@ of a field is cyclic.
 
 The injectivity of the character turns the order of a generator into the order of its
 derivative, so the derivative of a generator of a finite point stabilizer is a primitive root of
-unity whose order is the order of the stabilizer. Finally, every nontrivial element of a point
-stabilizer is an elliptic matrix.
+unity whose order is the order of the stabilizer. Consequently the character identifies a finite
+point stabilizer of order `m` with the group of `m`-th roots of unity, and in the disc coordinate
+centred at the fixed point the stabilizer acts by exactly those rotations. Finally, every
+nontrivial element of a point stabilizer is an elliptic matrix.
 
 The specialization to discrete subgroups, whose point stabilizers are finite, is
 `TauCeti.Analysis.Complex.Fuchsian.Stabilizer`.
@@ -35,6 +39,12 @@ The specialization to discrete subgroups, whose point stabilizers are finite, is
 * `Subgroup.isCyclic_stabilizer`: a finite point stabilizer is cyclic.
 * `Subgroup.exists_isPrimitiveRoot_stabilizerDeriv`: a generator of a finite point
   stabilizer has a primitive root of unity of the stabilizer's order as its derivative.
+* `Subgroup.stabilizerRotation` and `Subgroup.stabilizerRotationEquiv`: the derivative character
+  of a point stabilizer, and, for a finite stabilizer of order `m`, the isomorphism it gives onto
+  the `m`-th roots of unity.
+* `Subgroup.discCoordinate_stabilizer_smul` and `Subgroup.discCoordinate_smul_eq_rotation_smul`:
+  in the disc coordinate centred at the fixed point, an element of the stabilizer acts by
+  multiplication by its derivative, that is, by its rotation.
 * `Matrix.SpecialLinearGroup.isElliptic_of_smul_eq_self_of_ne_one`: a matrix fixing a point of
   `ℍ` and nontrivial in `PSL(2, ℝ)` is elliptic.
 
@@ -158,6 +168,17 @@ theorem isCyclic_stabilizer (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) [Finite (stabi
     IsCyclic (stabilizer Γ z) :=
   isCyclic_of_injective_ringHom _ (stabilizerDeriv_injective Γ z)
 
+/-- **The disc coordinate linearizes a point stabilizer**: an element of the stabilizer of `z`
+acts, in the disc coordinate centred at `z`, by multiplication by its derivative at `z`. -/
+theorem discCoordinate_stabilizer_smul (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (q : stabilizer Γ z)
+    (τ : ℍ) :
+    discCoordinate z (q • τ) = stabilizerDeriv Γ z q * discCoordinate z τ := by
+  have hq : ((q : Γ) : PSL(2, ℝ)) • z = z := by
+    have h := q.2
+    rwa [MulAction.mem_stabilizer_iff, Subgroup.smul_def] at h
+  rw [Subgroup.smul_def, Subgroup.smul_def, stabilizerDeriv_apply]
+  exact discCoordinate_psl_smul_of_smul_eq_self hq τ
+
 /-- The order of an element of a point stabilizer is the order of its derivative at that
 point. -/
 theorem orderOf_stabilizerDeriv (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (q : stabilizer Γ z) :
@@ -177,6 +198,53 @@ theorem exists_isPrimitiveRoot_stabilizerDeriv (Γ : Subgroup PSL(2, ℝ)) (z : 
     rw [← Nat.card_zpowers, hq, Subgroup.card_top]
   rw [← hcard, ← orderOf_stabilizerDeriv]
   exact IsPrimitiveRoot.orderOf _
+
+/-- The rotation character of a point stabilizer: its derivative character at the fixed point,
+which lands in the group of `m`-th roots of unity for `m = Nat.card (stabilizer Γ z)`, by
+Lagrange. For a finite stabilizer — the case of interest, and the only one in which `m` is the
+order of the stabilizer — this character is an isomorphism, by
+`Subgroup.stabilizerRotationEquiv`. -/
+def stabilizerRotation (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
+    stabilizer Γ z →* rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ :=
+  (stabilizerDeriv Γ z).toHomUnits.codRestrict _ fun q ↦ by
+    rw [mem_rootsOfUnity, ← map_pow, pow_card_eq_one', map_one]
+
+@[simp]
+theorem coe_stabilizerRotation (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (q : stabilizer Γ z) :
+    ((stabilizerRotation Γ z q : ℂˣ) : ℂ) = stabilizerDeriv Γ z q :=
+  (rfl)
+
+theorem stabilizerRotation_injective (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
+    Function.Injective (stabilizerRotation Γ z) := fun q₁ q₂ h ↦
+  stabilizerDeriv_injective Γ z <| by
+    rw [← coe_stabilizerRotation, ← coe_stabilizerRotation, h]
+
+theorem stabilizerRotation_bijective (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) [Finite (stabilizer Γ z)] :
+    Function.Bijective (stabilizerRotation Γ z) := by
+  have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
+  exact (Nat.bijective_iff_injective_and_card _).mpr
+    ⟨stabilizerRotation_injective Γ z, (Complex.card_rootsOfUnity _).symm⟩
+
+/-- **A finite point stabilizer of order `m` is the group of `m`-th roots of unity**, identified
+by the derivative character at the fixed point. Together with
+`Subgroup.discCoordinate_stabilizer_smul` this conjugates the stabilizer action on the upper
+half-plane to the rotation action of the `m`-th roots of unity on the unit disc. -/
+noncomputable def stabilizerRotationEquiv (Γ : Subgroup PSL(2, ℝ)) (z : ℍ)
+    [Finite (stabilizer Γ z)] :
+    stabilizer Γ z ≃* rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ :=
+  MulEquiv.ofBijective _ (stabilizerRotation_bijective Γ z)
+
+@[simp]
+theorem coe_stabilizerRotationEquiv (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) [Finite (stabilizer Γ z)] :
+    ⇑(stabilizerRotationEquiv Γ z) = stabilizerRotation Γ z :=
+  (rfl)
+
+/-- **The disc coordinate conjugates a point stabilizer into the roots of unity**: an element of
+the stabilizer of `z` acts, in the disc coordinate centred at `z`, by its rotation. -/
+theorem discCoordinate_smul_eq_rotation_smul (Γ : Subgroup PSL(2, ℝ)) (z : ℍ)
+    (q : stabilizer Γ z) (τ : ℍ) :
+    discCoordinate z (q • τ) = stabilizerRotation Γ z q • discCoordinate z τ := by
+  rw [rootsOfUnity.smul_eq_mul, coe_stabilizerRotation, discCoordinate_stabilizer_smul]
 
 end Subgroup
 
