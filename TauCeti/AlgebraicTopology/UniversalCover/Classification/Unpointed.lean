@@ -30,11 +30,12 @@ subgroup, not to compare two covers which already exist.
 
 ## Main declarations
 
-* `TauCeti.IsCoveringMap.exists_range_eq_map_conj_of_homeomorph_comp_eq`: an isomorphism of
-  unpointed covers makes their recovered subgroups conjugate.
-* `TauCeti.IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq_map_conj`: conjugate recovered
+* `IsCoveringMap.exists_range_eq_map_conj_of_homeomorph_comp_eq`: an isomorphism of
+  unpointed covers makes their recovered subgroups conjugate, as soon as `h e₀` and `f₀`
+  are joined by a path.
+* `IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq_map_conj`: conjugate recovered
   subgroups give an isomorphism of unpointed covers.
-* `TauCeti.IsCoveringMap.exists_homeomorph_comp_eq_iff_exists_range_eq_map_conj`: the
+* `IsCoveringMap.exists_homeomorph_comp_eq_iff_exists_range_eq_map_conj`: the
   unpointed connected-cover comparison theorem.
 
 ## References
@@ -44,8 +45,8 @@ unpointed connected covers correspond to conjugacy classes of subgroups. It prov
 comparison-up-to-isomorphism half of that correspondence; constructing a cover from every
 subgroup is the separate existence milestone in item 7.
 
-The proof reuses `TauCeti.IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq` for pointed
-covers and `TauCeti.IsCoveringMap.exists_range_eq_map_conj` for change of the chosen lift.
+The proof reuses `IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq` for pointed
+covers and `IsCoveringMap.exists_range_eq_map_conj` for change of the chosen lift.
 The latter is built on Junyan Xu's monodromy API in
 `Mathlib.Topology.Homotopy.Lifting`; no external formalization is copied or adapted here.
 -/
@@ -59,19 +60,27 @@ open _root_.FundamentalGroup
 variable {E F X : Type*} [TopologicalSpace E] [TopologicalSpace F] [TopologicalSpace X]
   {p : E → X} {q : F → X} {x : X} {e₀ : E} {f₀ : F}
 
-namespace IsCoveringMap
+section
 
-/-- An isomorphism of unpointed connected covers carries the subgroup recovered from the
-source basepoint to a conjugate of the subgroup recovered from the target basepoint.
+/-- An isomorphism of unpointed covers carries the subgroup recovered from the source
+basepoint to a conjugate of the subgroup recovered from the target basepoint, provided
+`h e₀` and `f₀` are joined by a path.
 
 The homeomorphism need not carry `e₀` to `f₀`: its image of `e₀` is another point of the
-target fibre, and changing from that point to `f₀` accounts for the conjugation. -/
-theorem exists_range_eq_map_conj_of_homeomorph_comp_eq [PathConnectedSpace F]
-    (hp : Continuous p) (hq : _root_.IsCoveringMap q)
-    (hpe : p e₀ = x) (hqf : q f₀ = x) (h : E ≃ₜ F) (hcomp : q ∘ h = p) :
+target fibre, and a path from there to `f₀` is what accounts for the conjugation.
+
+Neither cover is assumed connected. Path-connectedness of `F` is one way to supply `hj`,
+and is how `IsCoveringMap.exists_homeomorph_comp_eq_iff_exists_range_eq_map_conj` below
+discharges it. -/
+theorem _root_.IsCoveringMap.exists_range_eq_map_conj_of_homeomorph_comp_eq
+    (hq : _root_.IsCoveringMap q)
+    (hpe : p e₀ = x) (hqf : q f₀ = x) (h : E ≃ₜ F) (hcomp : q ∘ h = p)
+    (hj : Joined (h e₀) f₀) :
     ∃ γ : FundamentalGroup X x,
       (mapOfEq ⟨q, hq.continuous⟩ hqf).range =
-        (mapOfEq ⟨p, hp⟩ hpe).range.map (MulAut.conj γ).toMonoidHom := by
+        (mapOfEq ⟨p, hcomp ▸ hq.continuous.comp h.continuous⟩ hpe).range.map
+          (MulAut.conj γ).toMonoidHom := by
+  have hp : Continuous p := hcomp ▸ hq.continuous.comp h.continuous
   have hqh : q (h e₀) = x := (congrFun hcomp e₀).trans hpe
   let f₁ : q ⁻¹' {x} := ⟨h e₀, Set.mem_singleton_iff.mpr hqh⟩
   have hrange :
@@ -94,7 +103,7 @@ theorem exists_range_eq_map_conj_of_homeomorph_comp_eq [PathConnectedSpace F]
         TauCeti.FundamentalGroup.mapOfEq_comp]
       exact (TauCeti.FundamentalGroup.mapOfEq_congr hpcomp _ _ γ).symm
   let f : q ⁻¹' {x} := ⟨f₀, Set.mem_singleton_iff.mpr hqf⟩
-  obtain ⟨γ, hγ⟩ := IsCoveringMap.exists_range_eq_map_conj hq f₁ f
+  obtain ⟨γ, hγ⟩ := IsCoveringMap.exists_range_eq_map_conj_of_joined hq (e := f₁) (e' := f) hj
   refine ⟨γ, ?_⟩
   simpa only [f₁, f] using hγ.trans (congrArg
     (fun H : Subgroup (FundamentalGroup X x) => H.map (MulAut.conj γ).toMonoidHom)
@@ -102,7 +111,7 @@ theorem exists_range_eq_map_conj_of_homeomorph_comp_eq [PathConnectedSpace F]
 
 /-- If two pointed connected covers recover conjugate subgroups, then forgetting the chosen
 fibre points makes the covers isomorphic over the base. -/
-theorem exists_homeomorph_comp_eq_of_range_eq_map_conj
+theorem _root_.IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq_map_conj
     [PathConnectedSpace E] [LocallyPathConnectedSpace E]
     [PathConnectedSpace F] [LocallyPathConnectedSpace F]
     (hp : _root_.IsCoveringMap p) (hq : _root_.IsCoveringMap q)
@@ -132,7 +141,7 @@ when the subgroups recovered from chosen lifts of `x` are conjugate in `π₁(X,
 
 The chosen lifts occur only in the subgroup invariant; the homeomorphism is not required to
 map one chosen lift to the other. -/
-theorem exists_homeomorph_comp_eq_iff_exists_range_eq_map_conj
+theorem _root_.IsCoveringMap.exists_homeomorph_comp_eq_iff_exists_range_eq_map_conj
     [PathConnectedSpace E] [LocallyPathConnectedSpace E]
     [PathConnectedSpace F] [LocallyPathConnectedSpace F]
     (hp : _root_.IsCoveringMap p) (hq : _root_.IsCoveringMap q) (hpe : p e₀ = x) (hqf : q f₀ = x) :
@@ -142,11 +151,11 @@ theorem exists_homeomorph_comp_eq_iff_exists_range_eq_map_conj
           (mapOfEq ⟨p, hp.continuous⟩ hpe).range.map (MulAut.conj γ).toMonoidHom := by
   constructor
   · rintro ⟨h, hcomp⟩
-    exact IsCoveringMap.exists_range_eq_map_conj_of_homeomorph_comp_eq
-      hp.continuous hq hpe hqf h hcomp
+    exact IsCoveringMap.exists_range_eq_map_conj_of_homeomorph_comp_eq hq hpe hqf h hcomp
+      (PathConnectedSpace.joined _ _)
   · rintro ⟨γ, hrange⟩
     exact IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq_map_conj hp hq hpe hqf γ hrange
 
-end IsCoveringMap
+end
 
 end TauCeti

@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.BilinearMap.NumericalQuotient.Basic
+public import TauCeti.LinearAlgebra.SesquilinearForm.NumericalQuotient.Basic
 
 /-!
 # Functoriality of numerical quotients
 
-A linear map between the left arguments of two bilinear maps descends to their left numerical
+A linear map between the left arguments of two sesquilinear maps descends to their left numerical
 quotients precisely after one proves that it sends the first left radical into the second.  The
 right-hand construction is independent and has the dual condition.  This file supplies those two
 maps, their identity and composition laws, and compatibility with the descended numerical
@@ -21,9 +21,8 @@ argument supplies the required radical inclusion.  In particular, a pair of line
 preserving a pairing induces linear equivalences of both numerical quotients, and those
 equivalences preserve the numerical pairing.
 
-This is the functoriality target in Layer 7 of the Grothendieck-groups, Cartan-maps, and Euler-forms
-roadmap.  The separate left and right hypotheses are essential for nonsymmetric pairings: neither
-radical condition follows from the other.
+The separate left and right hypotheses are essential for nonsymmetric pairings: neither radical
+condition follows from the other.
 
 ## Main definitions
 
@@ -52,10 +51,11 @@ variable [AddCommGroup L] [Module R L] [AddCommGroup M] [Module R M]
 variable [AddCommGroup L'] [Module R L'] [AddCommGroup M'] [Module R M']
 variable [AddCommGroup L''] [Module R L''] [AddCommGroup M''] [Module R M'']
 variable [AddCommGroup P] [Module R P]
+variable {σ : R →+* R}
 
 section Maps
 
-variable (b : L →ₗ[R] M →ₗ[R] P) (c : L' →ₗ[R] M' →ₗ[R] P)
+variable (b : L →ₛₗ[σ] M →ₗ[R] P) (c : L' →ₛₗ[σ] M' →ₗ[R] P)
 
 /-- A linear map of left arguments descends to the left numerical quotients when it sends the
 source left radical into the target left radical. -/
@@ -101,7 +101,7 @@ theorem rightNumericalMap_id :
     rightNumericalMap b b LinearMap.id (by rw [Submodule.comap_id]) = LinearMap.id :=
   Submodule.mapQ_id (rightRadical b)
 
-variable (d : L'' →ₗ[R] M'' →ₗ[R] P)
+variable (d : L'' →ₛₗ[σ] M'' →ₗ[R] P)
 
 /-- Composition of left-argument maps induces composition of the maps on left numerical
 quotients. -/
@@ -125,7 +125,7 @@ end Maps
 
 section PairingMaps
 
-variable (b : L →ₗ[R] M →ₗ[R] P) (c : L' →ₗ[R] M' →ₗ[R] P)
+variable (b : L →ₛₗ[σ] M →ₗ[R] P) (c : L' →ₛₗ[σ] M' →ₗ[R] P)
 variable (f : L →ₗ[R] L') (g : M →ₗ[R] M')
 
 /-- If a pair of maps preserves a pairing and the right map is surjective, then the left map sends
@@ -169,7 +169,7 @@ end PairingMaps
 
 section Equivalences
 
-variable (b : L →ₗ[R] M →ₗ[R] P) (c : L' →ₗ[R] M' →ₗ[R] P)
+variable (b : L →ₛₗ[σ] M →ₗ[R] P) (c : L' →ₛₗ[σ] M' →ₗ[R] P)
 variable (f : L ≃ₗ[R] L') (g : M ≃ₗ[R] M')
 
 /-- A pairing-preserving pair of linear equivalences identifies the two left radicals. -/

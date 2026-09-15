@@ -190,6 +190,13 @@ def geckSimpleReflectionTorusPoint (i : Fin t.rank) (A : Type v) [CommRing A] :
   TauCeti.weylReflectTorusPoint
     ((t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i)) i
 
+/-- The Geck simple reflection on torus points is the multiplicative reflection dual to the
+corresponding simple-root reflection on characters. -/
+theorem geckSimpleReflectionTorusPoint_def (i : Fin t.rank) (A : Type v) [CommRing A] :
+    t.geckSimpleReflectionTorusPoint ht i A =
+      TauCeti.weylReflectTorusPoint
+        ((t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i)) i := (rfl)
+
 /-- The simple reflection on split-torus points is natural in the value ring. -/
 @[simp]
 theorem map_geckSimpleReflectionTorusPoint {A : Type v} {B : Type v'}
