@@ -109,9 +109,10 @@ theorem RegularFormPresentation.baseChange_append (p q : RegularFormPresentation
 
 /-- A base-changed presented form evaluates on a vector with coordinates in `K` as the image of
 the original form. -/
-private theorem presentedForm_baseChange_algebraMap (p : RegularFormPresentation K)
+theorem presentedForm_baseChange_algebraMap (p : RegularFormPresentation K)
     (a : Fin p.1 → K) :
-    presentedForm (p.baseChange L) (fun i ↦ algebraMap K L (a i)) =
+    presentedForm (p.baseChange L) (fun i ↦
+      algebraMap K L (a (Fin.cast (RegularFormPresentation.fst_baseChange p) i))) =
       algebraMap K L (presentedForm p a) := by
   simp [map_sum, map_mul]
 
@@ -138,7 +139,9 @@ theorem equivalent_presentedForm_baseChange_of_equivalent {p q : RegularFormPres
       LinearEquiv.coe_coe, LinearEquiv.coe_coe, hF,
       Algebra.TensorProduct.equivPiOfFiniteBasis_one_tmul]
     simp only [Pi.basisFun_repr]
-    rw [presentedForm_baseChange_algebraMap, presentedForm_baseChange_algebraMap, e.map_app]
+    have hq := presentedForm_baseChange_algebraMap (L := L) q (e a)
+    have hp := presentedForm_baseChange_algebraMap (L := L) p a
+    simpa using hq.trans ((congrArg (algebraMap K L) (e.map_app a)).trans hp.symm)
   refine ⟨{ toLinearEquiv := F, map_app' := fun x ↦ ?_ }⟩
   have hx := DFunLike.congr_fun hcomp (Ep.symm x)
   rwa [QuadraticMap.comp_apply, QuadraticMap.comp_apply, LinearMap.comp_apply,
@@ -251,7 +254,9 @@ def presentedFormBaseChangeIsometryEquiv (p : RegularFormPresentation K) :
           rw [QuadraticMap.comp_apply, QuadraticForm.baseChange_tmul, LinearEquiv.coe_coe,
             Algebra.TensorProduct.equivPiOfFiniteBasis_one_tmul]
           simp only [Pi.basisFun_repr]
-          rw [presentedForm_baseChange_algebraMap, mul_one, Algebra.algebraMap_eq_smul_one]
+          have hp := presentedForm_baseChange_algebraMap (L := L)
+            (⟨n, w⟩ : RegularFormPresentation K) a
+          simpa [Algebra.algebraMap_eq_smul_one] using hp
         exact DFunLike.congr_fun h x }
 
 /-- Base change of presented forms, stated as `QuadraticMap.Equivalent`. -/
