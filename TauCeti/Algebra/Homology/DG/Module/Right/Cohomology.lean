@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.MinimalAxioms
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Homology.DG.Algebra.Cohomology
@@ -27,6 +26,9 @@ associativity law.
 
 The cycles inherit the grading of `M`. Their homogeneous pieces form an internal direct sum and
 make them a graded right module over the graded algebra of cycles.
+
+This development adapts the left-module construction in
+`TauCeti.Algebra.Homology.DG.Module.Cohomology` to right modules via opposite rings.
 
 ## Main definitions
 
@@ -155,51 +157,38 @@ theorem isTorsionBySet_boundaries (hM : IsDGRightModule h ℳ dM) :
   rw [hb] at hrange
   exact hrange
 
-/-- The action homomorphism from the opposite cohomology algebra to endomorphisms of module
-cohomology. It is obtained by descending the cycle action through the boundary ideal. -/
-noncomputable def cohomologyActionHom (hM : IsDGRightModule h ℳ dM) :
-    (h.Cohomology)ᵐᵒᵖ →+* AddMonoid.End hM.Cohomology := by
-  let rho := Module.toAddMonoidEnd (h.cycles)ᵐᵒᵖ hM.Cohomology
-  let rhoDouble : (h.cycles)ᵐᵒᵖ →+* (AddMonoid.End hM.Cohomology)ᵐᵒᵖᵐᵒᵖ :=
-    (RingEquiv.opOp (AddMonoid.End hM.Cohomology)).toRingHom.comp rho
-  let rhoUnop : h.cycles →+* (AddMonoid.End hM.Cohomology)ᵐᵒᵖ := rhoDouble.unop
-  let lift : h.Cohomology →+* (AddMonoid.End hM.Cohomology)ᵐᵒᵖ :=
-    Ideal.Quotient.lift h.boundaries.asIdeal rhoUnop (by
-      intro a ha
-      apply unop_injective
-      rw [unop_zero]
-      apply AddMonoidHom.ext
-      intro x
-      exact hM.isTorsionBySet_boundaries (x := x)
-        (a := ⟨op a, TwoSidedIdeal.mem_asIdeal.mpr <| TwoSidedIdeal.mem_op_iff.mpr <|
-          TwoSidedIdeal.mem_asIdeal.mp ha⟩))
-  exact (RingEquiv.opOp (AddMonoid.End hM.Cohomology)).symm.toRingHom.comp lift.op
-
-/-- Scalar multiplication on module cohomology induced by the cohomology action homomorphism. -/
-noncomputable instance instSMulCohomology (hM : IsDGRightModule h ℳ dM) :
-    SMul (h.Cohomology)ᵐᵒᵖ hM.Cohomology :=
-  ⟨fun a x => cohomologyActionHom hM a x⟩
-
 /-- The cohomology of a differential graded right module is a right module over the cohomology
 algebra. -/
 noncomputable instance instModuleCohomology (hM : IsDGRightModule h ℳ dM) :
-    Module (h.Cohomology)ᵐᵒᵖ hM.Cohomology :=
-  Module.ofMinimalAxioms
-    (fun r x y => (cohomologyActionHom hM r).map_add x y)
-    (fun r s x => DFunLike.congr_fun (map_add (cohomologyActionHom hM) r s) x)
-    (fun r s x => DFunLike.congr_fun (map_mul (cohomologyActionHom hM) r s) x)
-    (fun x => DFunLike.congr_fun (map_one (cohomologyActionHom hM)) x)
+    Module (h.Cohomology)ᵐᵒᵖ hM.Cohomology := by
+  let quotientMkDouble : (h.cycles)ᵐᵒᵖ →+*
+      ((h.cycles)ᵐᵒᵖ ⧸ h.boundaries.op.asIdeal)ᵐᵒᵖᵐᵒᵖ :=
+    (RingEquiv.opOp ((h.cycles)ᵐᵒᵖ ⧸ h.boundaries.op.asIdeal)).toRingHom.comp
+      (Ideal.Quotient.mk h.boundaries.op.asIdeal)
+  let lift : h.Cohomology →+* ((h.cycles)ᵐᵒᵖ ⧸ h.boundaries.op.asIdeal)ᵐᵒᵖ :=
+    Ideal.Quotient.lift h.boundaries.asIdeal quotientMkDouble.unop (by
+      intro a ha
+      apply unop_injective
+      rw [unop_zero]
+      exact Ideal.Quotient.eq_zero_iff_mem.mpr <|
+        TwoSidedIdeal.mem_asIdeal.mpr <| TwoSidedIdeal.mem_op_iff.mpr <|
+          TwoSidedIdeal.mem_asIdeal.mp ha)
+  let opToQuotientOp : (h.Cohomology)ᵐᵒᵖ →+*
+      (h.cycles)ᵐᵒᵖ ⧸ h.boundaries.op.asIdeal :=
+    (RingEquiv.opOp ((h.cycles)ᵐᵒᵖ ⧸ h.boundaries.op.asIdeal)).symm.toRingHom.comp lift.op
+  let : Module ((h.cycles)ᵐᵒᵖ ⧸ h.boundaries.op.asIdeal) hM.Cohomology :=
+    hM.isTorsionBySet_boundaries.module
+  exact Module.compHom hM.Cohomology opToQuotientOp
 
 /-- The action on module cohomology is computed by acting with a cycle representative. -/
 @[simp]
 theorem op_quotientMk_smul (hM : IsDGRightModule h ℳ dM)
     (z : h.cycles) (x : hM.Cohomology) :
     op (Ideal.Quotient.mk h.boundaries.asIdeal z) • x = op z • x := by
-  -- Expose the action hom so the quotient lift computes on the representative.
-  change cohomologyActionHom hM
-    (op (Ideal.Quotient.mk h.boundaries.asIdeal z)) x = op z • x
-  unfold cohomologyActionHom
-  rfl
+  let : Module ((h.cycles)ᵐᵒᵖ ⧸ h.boundaries.op.asIdeal) hM.Cohomology :=
+    hM.isTorsionBySet_boundaries.module
+  change Ideal.Quotient.mk h.boundaries.op.asIdeal (op z) • x = op z • x
+  exact hM.isTorsionBySet_boundaries.mk_smul (op z) x
 
 section Grading
 
