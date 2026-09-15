@@ -22,7 +22,9 @@ vanishing on the Hopf ideal and is functorial in the value algebra.
 * `TauCeti.GeneralLinear.hopfIdealPointsSubgroup`: the matrix subgroup cut out by a Hopf ideal
   in the general-linear coordinate ring.
 * `TauCeti.GeneralLinear.mem_hopfIdealPointsSubgroup_iff`: membership is characterized by
-  vanishing on the Hopf ideal.
+  vanishing on the Hopf ideal, with
+  `TauCeti.GeneralLinear.toIdeal_le_ker_of_pointToGeneralLinear_mem_hopfIdealPointsSubgroup`
+  reading it as a kernel containment for the coordinate morphism the point is.
 * `TauCeti.GeneralLinear.hopfIdealPointsSubgroup_le_of_le`: larger Hopf ideals cut out smaller
   point subgroups.
 * `TauCeti.GeneralLinear.hopfIdealPointsSubgroup_sup`: a join of Hopf ideals cuts out the
@@ -106,6 +108,21 @@ theorem pointsMulEquiv_mapPointsFunctor_mem_hopfIdealPointsSubgroup
   have hxmap : φ.hom x = 0 := by
     simpa only [BialgHom.coe_toAlgHom, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using hx'
   rw [hxmap, map_zero]
+
+/-- **A coordinate morphism whose generic matrix is a point of the subgroup cut out by a Hopf
+ideal is killed by that ideal.** This is the criterion a homomorphism into `GLₙ` meets when it is
+to be restricted to a closed subgroup scheme: the matrix it produces at the universal point has to
+be a point of that subgroup. -/
+theorem toIdeal_le_ker_of_pointToGeneralLinear_mem_hopfIdealPointsSubgroup
+    (I : HopfIdeal R (coordinateHopfAlgebra R n)) (A : Type w) [CommRing A] [Algebra R A]
+    (chi : coordinateHopfAlgebra R n →ₐ[R] A)
+    (h : pointToGeneralLinear n (toConv chi) ∈ hopfIdealPointsSubgroup n I A) :
+    I.toIdeal ≤ RingHom.ker chi.toRingHom := by
+  rw [mem_hopfIdealPointsSubgroup_iff] at h
+  intro x hx
+  have hx' := h x hx
+  rw [RingHom.mem_ker]
+  rwa [← pointsMulEquiv_apply, MulEquiv.symm_apply_apply, WithConv.ofConv_toConv] at hx'
 
 /-- Applying a value-algebra homomorphism entrywise preserves the general-linear point subgroup
 cut out by a Hopf ideal. -/
