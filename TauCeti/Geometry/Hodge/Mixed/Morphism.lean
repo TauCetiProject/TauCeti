@@ -176,13 +176,18 @@ theorem map_mem_conjF (f : Hom source target) (p : ℤ) {x : Vℂ}
 
 /-- The kernel of the complex action of a morphism of mixed Hodge structures is the
 complexification of the kernel of its rational map. -/
+@[simp]
 theorem ker_toLinearMap (f : Hom source target) :
     LinearMap.ker f.toLinearMap =
       rationalToComplexSubmodule hℚ hℂ (LinearMap.ker f.toRatLinearMap) := by
   rw [toLinearMap_def, ker_rationalMapToComplex]
 
 /-- The range of the complex action of a morphism of mixed Hodge structures is the
-complexification of the range of its rational map. -/
+complexification of the range of its rational map.
+
+Not `@[simp]`: it fires inside the left-hand sides of the strictness theorems
+`range_inf_F_eq_map_F` and `range_inf_WC_eq_map_WC`, leaving those statements out of simp normal
+form. -/
 theorem range_toLinearMap (f : Hom source target) :
     LinearMap.range f.toLinearMap =
       rationalToComplexSubmodule h'ℚ h'ℂ (LinearMap.range f.toRatLinearMap) := by

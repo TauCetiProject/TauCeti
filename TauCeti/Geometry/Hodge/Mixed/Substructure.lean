@@ -33,9 +33,9 @@ and that of the target is independent, so a vector killed by the map has each of
 parts killed as well. For the image it is that the image is the sum of the images of the
 bigrading pieces, each of which already sits in the piece of the same bidegree.
 
-Equipping such a subspace with the induced filtrations as a mixed Hodge structure in its own
-right is not done here: `TauCeti.Hodge.MixedHodgeStructure` bundles base-change models for the
-subspace, which have to be built first.
+Being a sub-mixed Hodge structure is a condition on the subspace alone. Promoting such a subspace
+to a `TauCeti.Hodge.MixedHodgeStructure` in its own right needs more than the condition: that
+structure carries base-change models for the subspace alongside the induced filtrations.
 
 ## Main declarations
 

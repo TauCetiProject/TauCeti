@@ -567,6 +567,7 @@ theorem map_rationalToComplexSubmodule_le (hℚ : IsBaseChange ℚ ιℚ)
 
 /-- The scalar extension of a rational linear map has the complexification of its range as its
 range. -/
+@[simp]
 theorem range_rationalMapToComplex (hℚ : IsBaseChange ℚ ιℚ)
     (hℂ : IsBaseChange ℂ ιℂ) (h'ℚ : IsBaseChange ℚ ι'ℚ)
     (h'ℂ : IsBaseChange ℂ ι'ℂ) (f : Vℚ →ₗ[ℚ] V'ℚ) :
@@ -577,6 +578,7 @@ theorem range_rationalMapToComplex (hℚ : IsBaseChange ℚ ιℚ)
 
 /-- The scalar extension of a rational linear map has the complexification of its kernel as its
 kernel: extension of scalars along `ℚ → ℂ` is exact. -/
+@[simp]
 theorem ker_rationalMapToComplex (hℚ : IsBaseChange ℚ ιℚ)
     (hℂ : IsBaseChange ℂ ιℂ) (h'ℚ : IsBaseChange ℚ ι'ℚ)
     (h'ℂ : IsBaseChange ℂ ι'ℂ) (f : Vℚ →ₗ[ℚ] V'ℚ) :
