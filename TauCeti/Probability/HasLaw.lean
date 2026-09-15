@@ -58,25 +58,22 @@ variable [StandardBorelSpace Y]
 theorem _root_.ProbabilityTheory.HasLaw.exists_measure_atom_le_measure_singleton
     (h : HasLaw T ν μ) {A : Set X} (hA : MeasurableSet A) (hApos : 0 < μ A)
     (hAfin : μ A ≠ ⊤)
-    (hAatom : ∀ ⦃B : Set X⦄, MeasurableSet B → B ⊆ A → μ B = 0 ∨ μ B = μ A) :
+    (hAatom : TauCeti.MeasureTheory.Measure.IsAtom μ A) :
     ∃ y : Y, μ A ≤ ν {y} := by
   obtain ⟨y, hy⟩ :=
-    h.aemeasurable.exists_map_restrict_eq_smul_dirac_of_atom hA hApos hAfin hAatom
+    h.aemeasurable.restrict.exists_map_restrict_eq_smul_dirac_of_atom hA hApos hAfin hAatom
   refine ⟨y, ?_⟩
   calc
     μ A = Measure.map T (μ.restrict A) {y} := by simp [hy]
-    _ = Measure.map (h.aemeasurable.mk T) (μ.restrict A) {y} := by
-      rw [Measure.map_congr (ae_restrict_of_ae h.aemeasurable.ae_eq_mk)]
-    _ ≤ Measure.map (h.aemeasurable.mk T) μ {y} :=
-      Measure.map_mono Measure.restrict_le_self h.aemeasurable.measurable_mk {y}
-    _ = Measure.map T μ {y} := by rw [Measure.map_congr h.aemeasurable.ae_eq_mk.symm]
+    _ ≤ Measure.map T μ {y} :=
+      Measure.map_mono_of_aemeasurable Measure.restrict_le_self h.aemeasurable {y}
     _ = ν {y} := by rw [h.map_eq]
 
 /-- A measure with a positive finite-mass measurable atom has no map onto a standard Borel law
 that is null on singletons. -/
 theorem not_hasLaw_of_measure_atom [NullSingletonClass ν] {A : Set X} (hA : MeasurableSet A)
     (hApos : 0 < μ A) (hAfin : μ A ≠ ⊤)
-    (hAatom : ∀ ⦃B : Set X⦄, MeasurableSet B → B ⊆ A → μ B = 0 ∨ μ B = μ A)
+    (hAatom : TauCeti.MeasureTheory.Measure.IsAtom μ A)
     (T : X → Y) : ¬HasLaw T ν μ := by
   intro hT
   obtain ⟨y, hy⟩ := hT.exists_measure_atom_le_measure_singleton hA hApos hAfin hAatom

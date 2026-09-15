@@ -362,7 +362,7 @@ is `∞` for every cost. -/
 theorem mongeCost_eq_top_of_measure_atom [StandardBorelSpace Y]
     [NullSingletonClass ν] {A : Set X} (hA : MeasurableSet A) (hApos : 0 < μ A)
     (hAfin : μ A ≠ ⊤)
-    (hAatom : ∀ ⦃B : Set X⦄, MeasurableSet B → B ⊆ A → μ B = 0 ∨ μ B = μ A)
+    (hAatom : TauCeti.MeasureTheory.Measure.IsAtom μ A)
     (c : X × Y → ℝ≥0∞) : mongeCost c μ ν = ⊤ :=
   mongeCost_eq_top_of_not_exists_hasLaw
     (fun ⟨T, hT⟩ ↦

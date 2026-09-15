@@ -18,10 +18,8 @@ zero or full mass. Every almost-everywhere measurable map sends such an atom to 
 standard Borel target: the image of the measure restricted to the atom is a scalar multiple of a
 Dirac measure.
 
-The proof normalizes the restriction to a zero-one probability measure and then uses
-`TauCeti.MeasureTheory.IsZeroOneMeasure.exists_ae_eq_const`. The finite-mass hypothesis is
-essential: a zero-infinity measure may make its whole carrier an atom while vanishing on every
-singleton.
+The finite-mass hypothesis is essential: a zero-infinity measure may make its whole carrier an
+atom while vanishing on every singleton.
 
 ## Main result
 
@@ -43,13 +41,23 @@ namespace MeasureTheory
 variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] [StandardBorelSpace Y]
 variable {T : X → Y} {μ : Measure X}
 
+/-- A set satisfies the atom condition for a measure if each of its measurable subsets has either
+zero measure or the full measure of the set. -/
+def Measure.IsAtom (μ : Measure X) (A : Set X) : Prop :=
+  ∀ ⦃B : Set X⦄, MeasurableSet B → B ⊆ A → μ B = 0 ∨ μ B = μ A
+
+/-- The defining characterization of the atom condition for a measure. -/
+theorem Measure.isAtom_iff {A : Set X} :
+    Measure.IsAtom μ A ↔
+      ∀ ⦃B : Set X⦄, MeasurableSet B → B ⊆ A → μ B = 0 ∨ μ B = μ A :=
+  Iff.rfl
+
 /-- **An a.e.-measurable map is a.e. constant on a measurable atom.** If `A` has positive finite
 mass and every measurable subset of `A` has either zero or full mass, then a map from `A` into a
 standard Borel space agrees almost everywhere with a constant. -/
 theorem _root_.AEMeasurable.exists_ae_eq_const_restrict_of_atom
-    (hT : AEMeasurable T μ) {A : Set X} (hA : MeasurableSet A) (hApos : 0 < μ A)
-    (hAfin : μ A ≠ ⊤)
-    (hAatom : ∀ ⦃B : Set X⦄, MeasurableSet B → B ⊆ A → μ B = 0 ∨ μ B = μ A) :
+    {A : Set X} (hT : AEMeasurable T (μ.restrict A)) (hA : MeasurableSet A)
+    (hApos : 0 < μ A) (hAfin : μ A ≠ ⊤) (hAatom : Measure.IsAtom μ A) :
     ∃ y : Y, T =ᵐ[μ.restrict A] fun _ ↦ y := by
   let ρ : Measure X := (μ A)⁻¹ • μ.restrict A
   have hAne : μ A ≠ 0 := hApos.ne'
@@ -69,7 +77,7 @@ theorem _root_.AEMeasurable.exists_ae_eq_const_restrict_of_atom
   let _ : NeZero ρ := ⟨hρne⟩
   have hTρ : AEMeasurable T ρ := by
     apply (aemeasurable_smul_measure_iff hInvne).2
-    exact hT.mono_measure Measure.restrict_le_self
+    exact hT
   obtain ⟨y, hy⟩ := IsZeroOneMeasure.exists_ae_eq_const hTρ
   refine ⟨y, ?_⟩
   apply (Measure.ae_ennreal_smul_measure_iff hInvne).1
@@ -79,9 +87,8 @@ theorem _root_.AEMeasurable.exists_ae_eq_const_restrict_of_atom
 finite mass and every measurable subset of `A` has either zero or full mass, then the image of
 `μ.restrict A` under a map to a standard Borel space is `μ A` times a Dirac measure. -/
 theorem _root_.AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom
-    (hT : AEMeasurable T μ) {A : Set X} (hA : MeasurableSet A) (hApos : 0 < μ A)
-    (hAfin : μ A ≠ ⊤)
-    (hAatom : ∀ ⦃B : Set X⦄, MeasurableSet B → B ⊆ A → μ B = 0 ∨ μ B = μ A) :
+    {A : Set X} (hT : AEMeasurable T (μ.restrict A)) (hA : MeasurableSet A)
+    (hApos : 0 < μ A) (hAfin : μ A ≠ ⊤) (hAatom : Measure.IsAtom μ A) :
     ∃ y : Y, Measure.map T (μ.restrict A) = μ A • Measure.dirac y := by
   obtain ⟨y, hy⟩ := hT.exists_ae_eq_const_restrict_of_atom hA hApos hAfin hAatom
   refine ⟨y, ?_⟩
