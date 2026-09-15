@@ -140,15 +140,21 @@ theorem hermitianDual_hermitianDual (σ : K ≃+* K) (hσ : Function.Involutive 
   have h₂ := finrank_add_finrank_hermitianDual σ (hermitianDual σ C)
   omega
 
-/-- For an involutive automorphism, the Hermitian dual of an intersection is the sum
-of the Hermitian duals. -/
+/-- The Hermitian dual of an intersection is the sum of the Hermitian duals. -/
 @[simp]
-theorem hermitianDual_inf (σ : K ≃+* K) (hσ : Function.Involutive σ)
-    (C D : Submodule K (ι → K)) :
+theorem hermitianDual_inf (σ : K ≃+* K) (C D : Submodule K (ι → K)) :
     hermitianDual σ (C ⊓ D) = hermitianDual σ C ⊔ hermitianDual σ D := by
-  have h := hermitianDual_sup σ (hermitianDual σ C) (hermitianDual σ D)
-  simpa only [hermitianDual_hermitianDual σ hσ] using
-    (congrArg (hermitianDual σ) h).symm
+  apply (Submodule.eq_of_le_of_finrank_le
+    (sup_le (hermitianDual_antitone σ inf_le_left)
+      (hermitianDual_antitone σ inf_le_right)) _).symm
+  have hC := finrank_add_finrank_hermitianDual σ C
+  have hD := finrank_add_finrank_hermitianDual σ D
+  have hsup := finrank_add_finrank_hermitianDual σ (C ⊔ D)
+  have hinf := finrank_add_finrank_hermitianDual σ (C ⊓ D)
+  have hCD := Submodule.finrank_sup_add_finrank_inf_eq C D
+  have hdual := Submodule.finrank_sup_add_finrank_inf_eq (hermitianDual σ C) (hermitianDual σ D)
+  rw [hermitianDual_sup] at hsup
+  omega
 
 /-- A matrix generates a code exactly when its conjugate checks the Hermitian dual. -/
 theorem range_vecMulLinear_eq_iff_ker_map_eq_hermitianDual (σ : K ≃+* K)
