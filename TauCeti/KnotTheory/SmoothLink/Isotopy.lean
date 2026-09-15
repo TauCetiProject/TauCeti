@@ -10,7 +10,10 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Bas
 
 /-! # Smooth ambient isotopy of smooth links
 
-References: G. Burde and H. Zieschang, *Knots*, 2nd ed., Chapter 1; M. Hirsch, *Differential Topology*, Chapter 8.
+References:
+
+* G. Burde and H. Zieschang, *Knots*, 2nd ed., Chapter 1.
+* M. Hirsch, *Differential Topology*, Chapter 8.
 
 This file specializes the smooth ambient-isotopy relation to labeled smooth links.  A single
 diffeotopy of the ambient manifold must carry every component to its counterpart; this is the
