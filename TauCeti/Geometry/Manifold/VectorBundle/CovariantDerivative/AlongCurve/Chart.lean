@@ -31,7 +31,7 @@ allows a fixed chart to be used in place of the moving one.
 
 * `CovariantDerivative.symmL_alongCurveInChartWithin`: **chart independence** -- the coordinate
   formula read in an arbitrary chart around `γ t` transports back to the moving-chart value.
-* `CovariantDerivative.tangentCoordChange_alongCurveInChartWithin`: the resulting transformation
+* `CovariantDerivative.alongCurveInChartWithin_coordChange`: the resulting transformation
   law for the coordinate formula between two charts around `γ t`.
 
 ## References
@@ -148,7 +148,7 @@ theorem symmL_alongCurveInChartWithin {x : M} {s : Set 𝕜} {t : 𝕜}
 /-- **The transformation law for the along-curve coordinate formula.**  Between the trivializations
 at two points whose base sets contain `γ t`, the coordinate formula transforms by the tangent
 coordinate change. -/
-theorem tangentCoordChange_alongCurveInChartWithin {x y : M} {s : Set 𝕜} {t : 𝕜}
+theorem alongCurveInChartWithin_coordChange {x y : M} {s : Set 𝕜} {t : 𝕜}
     (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet)
     (hy : γ t ∈ (trivializationAt E (TangentSpace I) y).baseSet)
     (hu : UniqueDiffWithinAt 𝕜 s t) (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t)
