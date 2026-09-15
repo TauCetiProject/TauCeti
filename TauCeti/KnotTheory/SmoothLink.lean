@@ -390,7 +390,7 @@ component orientations and the disjointness condition, while changing the number
 def restrict {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m → Fin n)
     (hι : Function.Injective ι) : SmoothLinkEmbedding I M m where
   component i := L (ι i)
-  pairwiseDisjoint_range _ _ hij := L.pairwiseDisjoint_range (hι.ne hij)
+  pairwiseDisjoint_range := L.pairwiseDisjoint_range.comp_of_injective hι
 
 /-- The selected component of a restricted link is the corresponding original component. -/
 @[simp]
@@ -398,18 +398,11 @@ theorem restrict_apply {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m →
     (hι : Function.Injective ι) (i : Fin m) : L.restrict ι hι i = L (ι i) :=
   by rfl
 
-/-- Membership in the range of a restricted link is membership in one of the selected components. -/
-theorem mem_range_restrict_iff {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m → Fin n)
-    (hι : Function.Injective ι) (x : M) : x ∈ (L.restrict ι hι).range ↔
-    ∃ i y, L (ι i) y = x := by
-  simp [SmoothLinkEmbedding.mem_range_iff]
-
 /-- Restricting a link can only shrink its occupied subset. -/
 theorem range_restrict_subset {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m → Fin n)
     (hι : Function.Injective ι) : (L.restrict ι hι).range ⊆ L.range := by
-  intro x hx
-  rcases (mem_range_restrict_iff L ι hι x).1 hx with ⟨i, y, rfl⟩
-  exact L.range_component_subset_range (ι i) ⟨y, rfl⟩
+  change (⨆ i, Set.range (L (ι i))) ≤ ⨆ i, Set.range (L i)
+  exact iSup_comp_le (fun i ↦ Set.range (L i)) ι
 
 /-- Restriction along the identity labeling leaves a link unchanged. -/
 @[simp]
