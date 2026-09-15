@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Discrete
+import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Descent
 import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.DegreeTwoDescent
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Explicit
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation
@@ -533,46 +534,6 @@ theorem subsingleton_H1_of_forall_openNormalSubgroup
 
 /-! ### Degree two -/
 
-omit [IsTopologicalAddGroup M] in
-/-- A continuous `1`-cochain descends to a sufficiently deep finite quotient below any prescribed
-open normal subgroup, with values in the fixed points at that level. -/
-private theorem exists_descendC1 (U : OpenNormalSubgroup G) (b : G → M) (hb : Continuous b) :
-    ∃ (V : OpenNormalSubgroup G) (_hVU : V ≤ U)
-      (bV : G ⧸ V.toSubgroup → FixedPoints.addSubgroup V.toSubgroup M),
-      Continuous bV ∧ ∀ g : G, (bV (g : G ⧸ V.toSubgroup) : M) = b g := by
-  have hloc : IsLocallyConstant b := (IsLocallyConstant.iff_continuous _).2 hb
-  have hopen : IsOpen (rightTranslationStabilizer b : Set G) :=
-    isOpen_rightTranslationStabilizer hloc
-  obtain ⟨W, hW⟩ :=
-    ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hopen
-      (rightTranslationStabilizer b).one_mem
-  obtain ⟨A, hA⟩ :=
-    hloc.range_finite.exists_openNormalSubgroup_smul_eq_self (G := G)
-  let V := (U ⊓ W) ⊓ A
-  have hVU : V ≤ U := (inf_le_left : V ≤ U ⊓ W).trans inf_le_left
-  have hright : ∀ (g : G) (n : V), b (g * n) = b g := by
-    intro g n
-    apply mem_rightTranslationStabilizer.mp
-      (hW ((inf_le_right : U ⊓ W ≤ W) ((inf_le_left : V ≤ U ⊓ W) n.2)))
-  have hfixed : ∀ (n : V) (g : G), n • b g = b g := by
-    intro n g
-    exact hA n
-      ((inf_le_right : V ≤ A) n.2) (b g) ⟨g, rfl⟩
-  let bV : G ⧸ V.toSubgroup → FixedPoints.addSubgroup V.toSubgroup M :=
-    fun q => Quotient.liftOn' q
-      (fun g => (⟨b g, (FixedPoints.mem_addSubgroup V.toSubgroup M _).2
-        fun n => hfixed n g⟩ : FixedPoints.addSubgroup V.toSubgroup M))
-      fun a b' hab => Subtype.ext <| by
-        simpa using
-          (hright a ⟨a⁻¹ * b', QuotientGroup.leftRel_apply.1 hab⟩).symm
-  have hbV : Continuous bV :=
-    (QuotientGroup.isQuotientMap_mk V.toSubgroup).continuous_iff.2 <| by
-      -- Unfold the composite with the quotient map so continuity reduces to that of `b`.
-      change Continuous fun g => (⟨b g, (FixedPoints.mem_addSubgroup V.toSubgroup M _).2
-        fun n => hfixed n g⟩ : FixedPoints.addSubgroup V.toSubgroup M)
-      exact hb.subtype_mk _
-  exact ⟨V, hVU, bV, hbV, fun _ => rfl⟩
-
 /-- A degree-two class at a finite quotient which inflates to zero becomes zero after transition
 to a sufficiently deep finite quotient. This is the injectivity half of the degree-two
 finite-quotient colimit theorem. -/
@@ -586,7 +547,8 @@ theorem exists_explicitFiniteQuotientTransition2_eq_zero (U : OpenNormalSubgroup
     rw [explicitInfl2_mk, H2pi_eq_zero_iff] at hx
     obtain ⟨b, hb, hd⟩ := mem_B2_iff.1 hx
     -- Uniform local constancy and finite-image stabilization descend the primitive `b`.
-    obtain ⟨V, hVU, bV, hbV, hbV_apply⟩ := exists_descendC1 U b hb
+    obtain ⟨V, hVU, bV, hbV, hbV_apply⟩ :=
+      exists_openNormalSubgroup_descendContinuous U b hb
     refine ⟨V, hVU, ?_⟩
     rw [explicitFiniteQuotientTransition2_mk]
     apply H2pi_eq_zero_iff.2
