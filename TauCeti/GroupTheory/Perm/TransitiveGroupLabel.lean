@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.GroupAction.Jordan
-public import Mathlib.GroupTheory.Perm.Fin
+public import TauCeti.GroupTheory.GroupAction.FinRotate
 public import Mathlib.GroupTheory.Perm.List
 public import Mathlib.GroupTheory.SpecificGroups.Alternating.KleinFour
 
@@ -194,14 +193,6 @@ theorem referenceSubgroup_five_four :
     referenceSubgroup 5 ⟨4, by simp [numTransitiveGroups]⟩ = ⊤ := by
   simp [referenceSubgroup, referenceSubgroup5]
 
-private theorem isPretransitive_of_finRotate_mem {n : ℕ} (hn : 2 ≤ n)
-    {G : Subgroup (Perm (Fin n))} (hg : finRotate n ∈ G) : IsPretransitive G (Fin n) := by
-  have h := Equiv.Perm.isPretransitive_of_isCycle_mem
-    (G := G) (isCycle_finRotate_of_le hn) hg
-  rw [support_finRotate_of_le hn, Finset.coe_univ, Set.compl_univ] at h
-  exact IsPretransitive.of_surjective_map
-    SubMulAction.ofFixingSubgroupEmpty_equivariantMap_bijective.surjective h
-
 private theorem isPretransitive_referenceSubgroup4_one :
     IsPretransitive (referenceSubgroup4 1) (Fin 4) := by
   let K := alternatingGroup.kleinFour (Fin 4)
@@ -249,37 +240,29 @@ theorem isPretransitive_referenceSubgroup :
   | 1, _ => inferInstance
   | 2, _ => by
       rw [referenceSubgroup_two]
-      exact isPretransitive_of_finRotate_mem (n := 2) (by decide) (G := ⊤) (by simp)
+      exact isPretransitive_of_finRotate_mem (n := 2) (G := ⊤) (by simp)
   | 3, j => by
       fin_cases j
-      · exact isPretransitive_of_finRotate_mem (by decide) (Subgroup.subset_closure (by simp))
+      · exact isPretransitive_of_finRotate_mem (Subgroup.subset_closure (by simp))
       · rw [referenceSubgroup_three_one]
-        exact isPretransitive_of_finRotate_mem (n := 3) (by decide) (G := ⊤) (by simp)
+        exact isPretransitive_of_finRotate_mem (n := 3) (G := ⊤) (by simp)
   | 4, j => by
       fin_cases j
-      · exact isPretransitive_of_finRotate_mem (by decide) (Subgroup.subset_closure (by simp))
+      · exact isPretransitive_of_finRotate_mem (Subgroup.subset_closure (by simp))
       · exact isPretransitive_referenceSubgroup4_one
-      · exact isPretransitive_of_finRotate_mem (by decide) (Subgroup.subset_closure (by simp))
+      · exact isPretransitive_of_finRotate_mem (Subgroup.subset_closure (by simp))
       · exact alternatingGroup.isPretransitive_of_three_le_card (Fin 4) (by simp)
       · rw [referenceSubgroup_four_four]
-        exact isPretransitive_of_finRotate_mem (n := 4) (by decide) (G := ⊤) (by simp)
+        exact isPretransitive_of_finRotate_mem (n := 4) (G := ⊤) (by simp)
   | 5, j => by
       fin_cases j
-      · exact isPretransitive_of_finRotate_mem (by decide) (Subgroup.subset_closure (by simp))
-      · exact isPretransitive_of_finRotate_mem (by decide) (Subgroup.subset_closure (by simp))
-      · exact isPretransitive_of_finRotate_mem (by decide) (Subgroup.subset_closure (by simp))
+      · exact isPretransitive_of_finRotate_mem (Subgroup.subset_closure (by simp))
+      · exact isPretransitive_of_finRotate_mem (Subgroup.subset_closure (by simp))
+      · exact isPretransitive_of_finRotate_mem (Subgroup.subset_closure (by simp))
       · exact alternatingGroup.isPretransitive_of_three_le_card (Fin 5) (by simp)
       · rw [referenceSubgroup_five_four]
-        exact isPretransitive_of_finRotate_mem (n := 5) (by decide) (G := ⊤) (by simp)
+        exact isPretransitive_of_finRotate_mem (n := 5) (G := ⊤) (by simp)
   | _ + 6, j => j.elim0
-
-private theorem map_conj_map_conj {n : ℕ} (G : Subgroup (Perm (Fin n)))
-    (σ τ : Perm (Fin n)) :
-    Subgroup.map (MulAut.conj σ).toMonoidHom
-        (Subgroup.map (MulAut.conj τ).toMonoidHom G) =
-      Subgroup.map (MulAut.conj (σ * τ)).toMonoidHom G := by
-  rw [Subgroup.map_map]
-  congr 1
 
 /-- A reference subgroup carries its defining transitive-group label. -/
 @[simp]
@@ -295,7 +278,8 @@ theorem TransitiveGroupLabel.map_conj {n : ℕ} {j : TransitiveGroupIndex n}
     TransitiveGroupLabel j (Subgroup.map (MulAut.conj σ).toMonoidHom G) := by
   obtain ⟨τ, hτ⟩ := h
   refine ⟨τ * σ⁻¹, ?_⟩
-  rw [map_conj_map_conj]
+  simp only [Subgroup.map_map, MulEquiv.toMonoidHom_eq_coe,
+    ← MulEquiv.coe_monoidHom_trans, ← MulAut.mul_def, ← map_mul]
   simpa [mul_assoc] using hτ
 
 /-- A subgroup and any conjugate subgroup have exactly the same transitive-group labels. -/
@@ -307,7 +291,8 @@ theorem transitiveGroupLabel_map_conj_iff {n : ℕ} {j : TransitiveGroupIndex n}
   constructor
   · rintro ⟨τ, hτ⟩
     refine ⟨τ * σ, ?_⟩
-    rw [← map_conj_map_conj]
+    simp only [Subgroup.map_map, MulEquiv.toMonoidHom_eq_coe,
+      ← MulEquiv.coe_monoidHom_trans, ← MulAut.mul_def, ← map_mul] at hτ
     exact hτ
   · exact fun h => h.map_conj σ
 
