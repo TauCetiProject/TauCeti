@@ -73,12 +73,6 @@ is what the dominance and dimension statements pair against a coroot.
 
 ## References
 
-This file supplies the integral weight lattice milestone of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, which asks for the lattice `X` as
-a `ℤ`-submodule of `Module.Dual K H`, for the roots and `ρ` as elements of it, and for the coroot
-pairings to land in `ℤ`; the target signature `coweightPairing` is pinned in the accompanying
-`Suggested.lean`.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §13.2.
 -/
 
