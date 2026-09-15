@@ -30,7 +30,7 @@ Stage 0.1 of the `TauCetiRoadmap/UniversalCovers` roadmap.
   space is connected.
 * `TauCeti.fundamentalGroupoid_map_obj_injective`: an injective continuous map induces a functor
   of fundamental groupoids that is injective on objects.
-* `TauCeti.Path.Homotopic.Quotient.cast_mem_arrows_iff`: membership of a path class in a
+* `Path.Homotopic.Quotient.cast_mem_arrows_iff`: membership of a path class in a
   subgroupoid of the fundamental groupoid is unchanged by casting its endpoints along equalities.
 * `TauCeti.FundamentalGroup.map_range_eq_bot_iff`: the induced map has trivial range exactly
   when every loop at the basepoint becomes nullhomotopic in the target.
@@ -58,6 +58,23 @@ theorem nonempty_hom {Y : Type*} [TopologicalSpace Y]
 
 end FundamentalGroupoid
 
+namespace Path.Homotopic.Quotient
+
+/-- Membership of a path class in a subgroupoid of the fundamental groupoid is unchanged by
+casting its endpoints along equalities. -/
+theorem cast_mem_arrows_iff
+    {X : Type*} [TopologicalSpace X]
+    {S : CategoryTheory.Subgroupoid (_root_.FundamentalGroupoid X)} {a b a' b' : X}
+    (q : Path.Homotopic.Quotient a b) (ha : a' = a) (hb : b' = b) :
+    (q.cast ha hb : _root_.FundamentalGroupoid.mk a' ⟶ _root_.FundamentalGroupoid.mk b') ∈
+        S.arrows (_root_.FundamentalGroupoid.mk a') (_root_.FundamentalGroupoid.mk b') ↔
+      (q : _root_.FundamentalGroupoid.mk a ⟶ _root_.FundamentalGroupoid.mk b) ∈
+        S.arrows (_root_.FundamentalGroupoid.mk a) (_root_.FundamentalGroupoid.mk b) := by
+  subst ha hb
+  rw [Path.Homotopic.Quotient.cast_rfl_rfl]
+
+end Path.Homotopic.Quotient
+
 namespace TauCeti
 
 variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X]
@@ -69,22 +86,6 @@ theorem fundamentalGroupoid_map_obj_injective (f : C(X, A)) (hf : Function.Injec
     Function.Injective (_root_.FundamentalGroupoid.map f).obj := by
   rintro ⟨a⟩ ⟨b⟩ h
   exact congrArg _root_.FundamentalGroupoid.mk (hf (congrArg _root_.FundamentalGroupoid.as h))
-
-namespace Path.Homotopic.Quotient
-
-/-- Membership of a path class in a subgroupoid of the fundamental groupoid is unchanged by
-casting its endpoints along equalities. -/
-theorem cast_mem_arrows_iff
-    {S : CategoryTheory.Subgroupoid (_root_.FundamentalGroupoid X)} {a b a' b' : X}
-    (q : Path.Homotopic.Quotient a b) (ha : a' = a) (hb : b' = b) :
-    (q.cast ha hb : _root_.FundamentalGroupoid.mk a' ⟶ _root_.FundamentalGroupoid.mk b') ∈
-        S.arrows (_root_.FundamentalGroupoid.mk a') (_root_.FundamentalGroupoid.mk b') ↔
-      (q : _root_.FundamentalGroupoid.mk a ⟶ _root_.FundamentalGroupoid.mk b) ∈
-        S.arrows (_root_.FundamentalGroupoid.mk a) (_root_.FundamentalGroupoid.mk b) := by
-  subst ha hb
-  rw [Path.Homotopic.Quotient.cast_rfl_rfl]
-
-end Path.Homotopic.Quotient
 
 /-- Mapping a loop class represented by a path is represented by mapping that path. -/
 theorem FundamentalGroup.map_fromPath {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) (base : X)
