@@ -51,11 +51,13 @@ hand-built matrix.
 * `TauCeti.normalClosure_relatorSet_coxeterRelators`: the finite list and Mathlib's ordered-pair
   set have the same normal closure.
 * `TauCeti.mulEquivCoxeterGroup` and `TauCeti.GroupPresentation.mulEquivCoxeterGroup`: a
-  transcription whose relators are the Coxeter relators of `M` presents `M.Group`.
+  transcription whose relators compile to the Coxeter relators of `M` presents `M.Group`.
 * `TauCeti.mulEquivPresentedGroupCoxeterAppend` and
   `TauCeti.GroupPresentation.mulEquivPresentedGroupCoxeterAppend`: a transcription that appends
   further relators to the Coxeter relators of `M` presents the group defined by Mathlib's Coxeter
-  relations together with those extra relations.
+  relations together with those extra relations. The two `GroupPresentation` forms compare a row
+  with the generated list by compiled words and up to order, so a row that writes its involution
+  relations as `sᵢ ^ 2`, or groups its relations by kind, still qualifies.
 
 ## References
 
@@ -311,20 +313,26 @@ theorem mulEquivPresentedGroupCoxeterAppend_apply_of {n : ℕ} (M : CoxeterMatri
     mulEquivPresentedGroupCoxeterAppend M extra (PresentedGroup.of i) = PresentedGroup.of i :=
   QuotientGroup.quotientMulEquivOfEq_mk _ _
 
-/-- **A transcription whose relators are exactly the Coxeter relators of `M` presents `M.Group`.**
+/-- **A transcription whose relators compile to the Coxeter relators of `M` presents `M.Group`.**
 A presentation row that adds relators to the diagram — every published Y-diagram row does, its
 spider relator being the addition — is served by
-`TauCeti.GroupPresentation.mulEquivPresentedGroupCoxeterAppend` instead. -/
+`TauCeti.GroupPresentation.mulEquivPresentedGroupCoxeterAppend` instead.
+
+The hypothesis compares compiled words rather than relator expressions, and up to order, because a
+source is free to write an involution relation as `sᵢ ^ 2` where the generated list writes
+`(sᵢ sᵢ) ^ 1` and to list its relations in any order; neither difference changes the relations. -/
 def GroupPresentation.mulEquivCoxeterGroup (P : GroupPresentation)
-    (M : CoxeterMatrix (Fin P.generatorCount)) (h : P.transcribed = coxeterRelators M) :
+    (M : CoxeterMatrix (Fin P.generatorCount))
+    (h : (P.transcribed.map Relator.toWord).Perm ((coxeterRelators M).map Relator.toWord)) :
     P.Group ≃* M.Group :=
   (QuotientGroup.quotientMulEquivOfEq (by
-    rw [P.relatorSet_eq_relatorSet_transcribed, h])).trans
+    rw [P.relatorSet_eq_relatorSet_transcribed, Relator.relatorSet_eq_of_perm_map_toWord h])).trans
       (_root_.TauCeti.mulEquivCoxeterGroup M)
 
 @[simp]
 theorem GroupPresentation.mulEquivCoxeterGroup_apply_of (P : GroupPresentation)
-    (M : CoxeterMatrix (Fin P.generatorCount)) (h : P.transcribed = coxeterRelators M)
+    (M : CoxeterMatrix (Fin P.generatorCount))
+    (h : (P.transcribed.map Relator.toWord).Perm ((coxeterRelators M).map Relator.toWord))
     (i : Fin P.generatorCount) :
     P.mulEquivCoxeterGroup M h (PresentedGroup.of i) = M.simple i :=
   by
@@ -345,16 +353,18 @@ the diagram supplies the Coxeter relators, and the row's own relators — the sp
 the Monster the relator `Z` as well — are the extras. -/
 def GroupPresentation.mulEquivPresentedGroupCoxeterAppend (P : GroupPresentation)
     (M : CoxeterMatrix (Fin P.generatorCount)) (extra : List (Relator (Fin P.generatorCount)))
-    (h : P.transcribed = coxeterRelators M ++ extra) :
+    (h : (P.transcribed.map Relator.toWord).Perm
+      ((coxeterRelators M ++ extra).map Relator.toWord)) :
     P.Group ≃* PresentedGroup (M.relationsSet ∪ Relator.relatorSet extra) :=
   (QuotientGroup.quotientMulEquivOfEq (by
-    rw [P.relatorSet_eq_relatorSet_transcribed, h])).trans
+    rw [P.relatorSet_eq_relatorSet_transcribed, Relator.relatorSet_eq_of_perm_map_toWord h])).trans
       (_root_.TauCeti.mulEquivPresentedGroupCoxeterAppend M extra)
 
 @[simp]
 theorem GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of (P : GroupPresentation)
     (M : CoxeterMatrix (Fin P.generatorCount)) (extra : List (Relator (Fin P.generatorCount)))
-    (h : P.transcribed = coxeterRelators M ++ extra) (i : Fin P.generatorCount) :
+    (h : (P.transcribed.map Relator.toWord).Perm
+      ((coxeterRelators M ++ extra).map Relator.toWord)) (i : Fin P.generatorCount) :
     P.mulEquivPresentedGroupCoxeterAppend M extra h (PresentedGroup.of i) = PresentedGroup.of i :=
   by
     rw [GroupPresentation.mulEquivPresentedGroupCoxeterAppend]
