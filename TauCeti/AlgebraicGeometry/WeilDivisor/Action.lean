@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.SMul
-public import TauCeti.AlgebraicGeometry.WeilDivisor.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Order
 
 /-!
@@ -57,9 +56,23 @@ noncomputable instance instDistribMulAction : DistribMulAction G (WeilDivisor X)
 /-- The action is the formal pushforward along the symmetry. -/
 theorem smul_def (g : G) (D : WeilDivisor X) : g • D = pushforward (g • ·) D := rfl
 
+/-- The action carries the point divisor at `x` to the point divisor at `g • x`. -/
 @[simp]
 theorem smul_ofPoint (g : G) (x : X) : g • ofPoint x = ofPoint (g • x) := by
   rw [smul_def, pushforward_ofPoint]
+
+/-- A symmetry of the points preserves the unweighted degree. -/
+@[simp]
+theorem degree_smul (g : G) (D : WeilDivisor X) : degree (g • D) = degree D := by
+  rw [smul_def, degree_pushforward]
+
+/-- A symmetry of the points transports a weighted degree into the weighted degree against the
+weight composed with the symmetry. -/
+theorem weightedDegree_smul (g : G) (w : X → ℤ) (D : WeilDivisor X) :
+    weightedDegree w (g • D) = weightedDegree (fun x ↦ w (g • x)) D := by
+  rw [smul_def, weightedDegree_pushforward]
+  -- `weightedDegree_pushforward` produces `w ∘ (g • ·)`, which is the stated weight unfolded.
+  rfl
 
 end Monoid
 
@@ -67,28 +80,22 @@ section Group
 
 variable [Group G] [MulAction G X] (g : G)
 
+/-- The coefficient of `x` in `g • D` is the coefficient of `g⁻¹ • x` in `D`. -/
+@[simp]
+theorem coeff_smul (D : WeilDivisor X) (x : X) : coeff (g • D) x = coeff D (g⁻¹ • x) := by
+  exact Finsupp.comapSMul_apply g D x
+
+/-- The action preserves the coefficientwise order on Weil divisors. -/
 @[simp]
 theorem smul_le_smul_iff {D E : WeilDivisor X} : g • D ≤ g • E ↔ D ≤ E := by
-  simp only [le_iff, coeff, Finsupp.comapSMul_apply]
+  simp only [le_iff, coeff_smul]
   exact ⟨fun h x ↦ by simpa using h (g • x), fun h x ↦ h _⟩
 
+/-- The action preserves effectivity of Weil divisors. -/
 @[simp]
 theorem isEffective_smul {D : WeilDivisor X} : IsEffective (g • D) ↔ IsEffective D := by
-  simp only [isEffective_iff, coeff, Finsupp.comapSMul_apply]
+  simp only [isEffective_iff, coeff_smul]
   exact ⟨fun h x ↦ by simpa using h (g • x), fun h x ↦ h _⟩
-
-/-- A symmetry of the points preserves the unweighted degree. -/
-@[simp]
-theorem degree_smul (D : WeilDivisor X) : degree (g • D) = degree D := by
-  rw [smul_def, degree_pushforward]
-
-/-- A symmetry of the points transports a weighted degree into the weighted degree against the
-weight composed with the symmetry. -/
-theorem weightedDegree_smul (w : X → ℤ) (D : WeilDivisor X) :
-    weightedDegree w (g • D) = weightedDegree (fun x ↦ w (g • x)) D := by
-  rw [smul_def, weightedDegree_pushforward]
-  -- `weightedDegree_pushforward` produces `w ∘ (g • ·)`, which is the stated weight unfolded.
-  rfl
 
 end Group
 

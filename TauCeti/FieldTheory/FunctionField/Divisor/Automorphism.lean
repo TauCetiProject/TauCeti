@@ -67,11 +67,8 @@ theorem degree_smul (D : Divisor k F') : degree (σ • D) = degree D := by
 theorem principal_smul (hF : IsFunctionField k F') (z : F'ˣ) :
     principal hF (Units.map (σ : F' →* F') z) = σ • principal hF z := by
   refine AlgebraicGeometry.WeilDivisor.ext fun Q ↦ ?_
-  rw [coeff_principal]
-  change _ = (σ • principal hF z) Q
-  rw [Finsupp.comapSMul_apply]
-  change _ = AlgebraicGeometry.WeilDivisor.coeff (principal hF z) (σ⁻¹ • Q)
-  rw [coeff_principal, Place.ord_smul, AlgEquiv.aut_inv, AlgEquiv.symm_symm]
+  rw [coeff_principal, AlgebraicGeometry.WeilDivisor.coeff_smul, coeff_principal,
+    Place.ord_smul, AlgEquiv.aut_inv, AlgEquiv.symm_symm]
   simp
 
 /-- **The action preserves the principal divisors**, so it descends to the divisor classes. -/
@@ -96,6 +93,26 @@ theorem linearlyEquivalent_smul_iff (hF : IsFunctionField k F') {A B : Divisor k
   rw [AlgebraicGeometry.WeilDivisor.OrderSystem.linearlyEquivalent_iff,
     AlgebraicGeometry.WeilDivisor.OrderSystem.linearlyEquivalent_iff, ← smul_sub,
     smul_mem_principalSubgroup_iff]
+
+/-- **An automorphism acts on divisor classes** by applying it to a representative divisor. -/
+noncomputable def classGroupEquivSmul (hF : IsFunctionField k F') :
+    (Place.orderSystem hF).ClassGroup ≃+ (Place.orderSystem hF).ClassGroup :=
+  QuotientAddGroup.congr _ _ (DistribMulAction.toAddEquiv (Divisor k F') σ) (by
+    ext D
+    constructor
+    · rintro ⟨E, hE, rfl⟩
+      exact (smul_mem_principalSubgroup_iff σ hF).mpr hE
+    · intro hD
+      exact ⟨σ⁻¹ • D, (smul_mem_principalSubgroup_iff σ⁻¹ hF).mpr hD, by simp⟩)
+
+/-- The action on divisor classes sends the class of `D` to the class of `σ • D`. -/
+@[simp]
+theorem classGroupEquivSmul_divisorClass (hF : IsFunctionField k F') (D : Divisor k F') :
+    classGroupEquivSmul σ hF ((Place.orderSystem hF).divisorClass D) =
+      (Place.orderSystem hF).divisorClass (σ • D) := by
+  rw [AlgebraicGeometry.WeilDivisor.OrderSystem.divisorClass_eq_mk',
+    AlgebraicGeometry.WeilDivisor.OrderSystem.divisorClass_eq_mk']
+  rfl
 
 end Divisor
 

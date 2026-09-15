@@ -59,10 +59,10 @@ theorem mem_riemannRochSpace_smul_iff {f : F'} :
   constructor
   · intro h P
     have hP := h (σ • P)
-    simpa only [Place.valuation_smul_apply, AlgebraicGeometry.WeilDivisor.coeff,
-      Finsupp.comapSMul_apply, inv_smul_smul] using hP
+    simpa only [Place.valuation_smul_apply, AlgebraicGeometry.WeilDivisor.coeff_smul,
+      inv_smul_smul] using hP
   · intro h Q
-    rw [AlgebraicGeometry.WeilDivisor.coeff, Finsupp.comapSMul_apply]
+    rw [AlgebraicGeometry.WeilDivisor.coeff_smul]
     have hQ := h (σ⁻¹ • Q)
     rwa [Place.valuation_smul, AlgEquiv.aut_inv, AlgEquiv.symm_symm] at hQ
 
@@ -86,13 +86,13 @@ noncomputable def riemannRochSpaceEquivSmul :
     (riemannRochSpace_map_smul σ D)
 
 @[simp]
-theorem coe_riemannRochSpaceEquivSmul (f : riemannRochSpace D) :
+theorem riemannRochSpaceEquivSmul_apply (f : riemannRochSpace D) :
     (riemannRochSpaceEquivSmul σ D f : F') = σ (f : F') := by
   rw [riemannRochSpaceEquivSmul, LinearEquiv.ofSubmodules_apply]
   rfl
 
 @[simp]
-theorem coe_riemannRochSpaceEquivSmul_symm (f : riemannRochSpace (σ • D)) :
+theorem riemannRochSpaceEquivSmul_symm_apply (f : riemannRochSpace (σ • D)) :
     ((riemannRochSpaceEquivSmul σ D).symm f : F') = σ.symm (f : F') := by
   rw [riemannRochSpaceEquivSmul, LinearEquiv.ofSubmodules_symm_apply]
   rfl
