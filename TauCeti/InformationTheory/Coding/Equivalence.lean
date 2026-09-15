@@ -38,6 +38,9 @@ distributions and pairwise Hamming distances are invariants of the resulting equ
 * `TauCeti.IsMonomialEquivalent.finrank_eq`, `TauCeti.IsMonomialEquivalent.card_eq`,
   `TauCeti.IsMonomialEquivalent.card_weight_eq`: monomially equivalent codes have the same
   dimension, the same number of codewords, and the same weight distribution.
+* `TauCeti.IsPermutationEquivalent.finrank_eq`, `TauCeti.IsPermutationEquivalent.card_eq`,
+  `TauCeti.IsPermutationEquivalent.card_weight_eq`: the corresponding invariants for
+  permutation-equivalent codes.
 
 ## References
 
@@ -161,6 +164,37 @@ theorem IsPermutationEquivalent.trans (h : IsPermutationEquivalent C D)
   exact ⟨e.trans f, by
     rw [Equiv.symm_trans, LinearEquiv.funCongrLeft_comp, LinearEquiv.coe_trans,
       Submodule.map_comp]⟩
+
+/-- Permutation-equivalent codes have the same dimension. -/
+theorem IsPermutationEquivalent.finrank_eq (h : IsPermutationEquivalent C D) :
+    Module.finrank R C = Module.finrank R D := by
+  obtain ⟨e, rfl⟩ := h
+  exact (LinearEquiv.finrank_map_eq _ _).symm
+
+/-- Permutation-equivalent codes have the same number of codewords. -/
+theorem IsPermutationEquivalent.card_eq (h : IsPermutationEquivalent C D) :
+    Nat.card C = Nat.card D := by
+  obtain ⟨e, rfl⟩ := h
+  exact Nat.card_congr
+    ((LinearEquiv.funCongrLeft R R e.symm).submoduleMap C).toEquiv
+
+/-- Permutation-equivalent codes have the same weight distribution. -/
+theorem IsPermutationEquivalent.card_weight_eq [Fintype ι] [Fintype κ] [DecidableEq R]
+    (h : IsPermutationEquivalent C D) (w : ℕ) :
+    Nat.card {x : ι → R // x ∈ C ∧ hammingNorm x = w} =
+      Nat.card {y : κ → R // y ∈ D ∧ hammingNorm y = w} := by
+  obtain ⟨e, rfl⟩ := h
+  exact Nat.card_congr
+    (Equiv.subtypeEquiv (LinearEquiv.funCongrLeft R R e.symm).toEquiv fun x ↦ by
+      simp only [LinearEquiv.coe_toEquiv, LinearEquiv.funCongrLeft_apply,
+        Submodule.mem_map_equiv, LinearEquiv.funCongrLeft_symm, Equiv.symm_symm]
+      have hinv :
+          LinearMap.funLeft R R e (LinearMap.funLeft R R e.symm x) = x := by
+        funext i
+        simp [LinearMap.funLeft_apply]
+      have hnorm : hammingNorm (LinearMap.funLeft R R e.symm x) = hammingNorm x := by
+        exact Equiv.hammingNorm_comp e.symm x
+      rw [hinv, hnorm])
 
 end PermutationEquivalence
 
