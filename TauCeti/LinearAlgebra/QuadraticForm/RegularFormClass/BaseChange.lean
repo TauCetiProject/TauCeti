@@ -44,16 +44,14 @@ def presentedFormBaseChange (p : RegularFormPresentation K) :
     fun i ↦ (p.2 i : K)
   have hK : presentedForm p =
       QuadraticMap.weightedSumSquares K fun i ↦ (p.2 i : K) := by
-    ext x
-    simp only [presentedForm_apply, QuadraticMap.weightedSumSquares_apply, smul_eq_mul]
+    simp only [presentedForm_eq_weightedSumSquares, QuadraticMap.weightedSumSquares,
+      Units.smul_def]
   have hL :
       presentedForm (⟨p.1, fun i ↦ Units.map (algebraMap K L).toMonoidHom (p.2 i)⟩ :
         RegularFormPresentation L) =
         QuadraticMap.weightedSumSquares L fun i ↦ algebraMap K L (p.2 i : K) := by
-    ext x
-    simp only [presentedForm_apply, QuadraticMap.weightedSumSquares_apply, smul_eq_mul,
-      Units.coe_map]
-    rfl
+    simp only [presentedForm_eq_weightedSumSquares, QuadraticMap.weightedSumSquares,
+      Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, Units.smul_def]
   refine { toLinearEquiv := e.toLinearEquiv, map_app' := ?_ }
   intro x
   rw [hL, hK]
@@ -70,6 +68,16 @@ theorem presentedFormBaseChange_apply (p : RegularFormPresentation K)
     (A := L) (fun i ↦ (p.2 i : K)) x
 
 variable [Invertible (2 : L)]
+
+end TauCeti
+
+namespace QuadraticForm
+
+open TauCeti
+
+variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
+variable {V : Type w} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+variable [Invertible (2 : K)] [Invertible (2 : L)]
 
 /-- The discriminant of a regular form commutes with extension of the base field. -/
 @[simp]
@@ -88,4 +96,4 @@ theorem discr_formClass_baseChange (Q : _root_.QuadraticForm K V) (hQ : Q.Nondeg
         RegularFormPresentation L) ((hp.baseChange L).trans hpL)]
   simp only [RingHom.squareClassMap_apply, map_prod]
 
-end TauCeti
+end QuadraticForm

@@ -61,7 +61,7 @@ theorem discr_atFinitePlace (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate
         atFinitePlace_def Q place
       rw [hforms]
       exact QuadraticMap.Equivalent.refl _
-    _ = _ := TauCeti.discr_formClass_baseChange Q hQ
+    _ = _ := QuadraticForm.discr_formClass_baseChange Q hQ
 
 /-- At a real place, the discriminant of the localized form is the image of its global
 discriminant under the place's real embedding. -/
@@ -92,7 +92,7 @@ theorem discr_atRealPlace (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
       exact QuadraticMap.Equivalent.refl _
     _ = _ := by
       simpa only [RingHom.algebraMap_toAlgebra] using
-        (TauCeti.discr_formClass_baseChange (L := ℝ) Q hQ)
+        (QuadraticForm.discr_formClass_baseChange (L := ℝ) Q hQ)
 
 /-- Along a complex embedding, the discriminant of the scalar extension is the image of its
 global discriminant. -/
@@ -124,6 +124,6 @@ theorem discr_atComplexEmbedding (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegen
       exact QuadraticMap.Equivalent.refl _
     _ = _ := by
       simpa only [RingHom.algebraMap_toAlgebra] using
-        (TauCeti.discr_formClass_baseChange (L := ℂ) Q hQ)
+        (QuadraticForm.discr_formClass_baseChange (L := ℂ) Q hQ)
 
 end QuadraticForm
