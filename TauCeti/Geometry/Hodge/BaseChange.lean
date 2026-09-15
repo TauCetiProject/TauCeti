@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Flat.Basic
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.Geometry.Hodge.Conjugation
+public import TauCeti.RingTheory.Flat.Submodule
 public import TauCeti.RingTheory.IsTensorProduct
 
 /-!
@@ -51,8 +52,9 @@ imposed later as structure data.
   every purely rational vector of the ambient complexification.
 * `TauCeti.Hodge.rationalToComplexSubmodule_conj`: the complexification of a rational subspace is
   stable under lattice-induced conjugation.
-* `TauCeti.Hodge.rationalToComplexSubmodule_sup`: complexification preserves joins of rational
-  subspaces.
+* `TauCeti.Hodge.rationalToComplexSubmodule_sup` and
+  `TauCeti.Hodge.rationalToComplexSubmodule_inf`: complexification preserves joins and
+  intersections of rational subspaces.
 * `TauCeti.Hodge.rationalToComplexSubmodule_eq_bot_iff`: only the zero subspace has trivial
   complexification.
 * `TauCeti.Hodge.rationalToComplexSubmodule_le_iff`: an inclusion of rational subspaces can be
@@ -279,6 +281,18 @@ theorem rationalToComplexSubmodule_sup (hℚ : IsBaseChange ℚ ιℚ)
   exact Submodule.add_mem _
     (Submodule.mem_sup_left (rationalToComplexLinearEquiv_one_tmul_mem hℚ hℂ hy))
     (Submodule.mem_sup_right (rationalToComplexLinearEquiv_one_tmul_mem hℚ hℂ hz))
+
+/-- Complexification of rational subspaces preserves intersections: `ℂ` is flat over `ℚ`, so the
+complexification of an intersection of rational subspaces is the intersection of their
+complexifications. -/
+@[simp]
+theorem rationalToComplexSubmodule_inf (hℚ : IsBaseChange ℚ ιℚ)
+    (hℂ : IsBaseChange ℂ ιℂ) (W₁ W₂ : Submodule ℚ Vℚ) :
+    rationalToComplexSubmodule hℚ hℂ (W₁ ⊓ W₂) =
+      rationalToComplexSubmodule hℚ hℂ W₁ ⊓ rationalToComplexSubmodule hℚ hℂ W₂ := by
+  unfold rationalToComplexSubmodule
+  rw [TauCeti.Submodule.baseChange_inf,
+    Submodule.map_inf _ (rationalToComplexLinearEquiv hℚ hℂ).injective]
 
 /-- The canonical equivalence from the concrete complexification `ℂ ⊗[ℚ] W` of a rational
 subspace onto the complexification of `W` inside the ambient complexification. -/
