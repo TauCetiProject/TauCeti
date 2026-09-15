@@ -265,7 +265,7 @@ omit [IsTopologicalGroup G] [TopologicalSpace M] [IsTopologicalAddGroup M]
 /-- The identity map of `M` is equivariant along Mathlib's topological identification of
 `V.subgroupOf U` with `V`: that identification leaves ambient values in `G` unchanged, so the two
 subgroups act on `M` through the same elements. -/
-theorem id_subgroupOfContinuousMulEquivOfLe_smul (x : V.subgroupOf U) (m : M) :
+private theorem id_subgroupOfContinuousMulEquivOfLe_smul (x : V.subgroupOf U) (m : M) :
     (AddMonoidHom.id M)
         ((Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V) x • m) =
       x • (AddMonoidHom.id M) m :=
@@ -294,7 +294,7 @@ theorem explicitCor1Le_mk [(V.subgroupOf U).FiniteIndex]
         (cocyclesMap1 V M (V.subgroupOf U) M
           (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
           (AddMonoidHom.id M) continuous_id
-          (id_subgroupOfContinuousMulEquivOfLe_smul G M U V hVU) f) : H1 U M) := by
+          (fun x _ => show _ = x • _ from rfl) f) : H1 U M) := by
   rw [explicitCor1Le, AddMonoidHom.comp_apply, explicitMap1_mk, explicitCor1_mk]
 
 /-- **Relative degree-two corestriction** for an inclusion `V ≤ U` with `V` open *in `U`*; the
@@ -318,7 +318,7 @@ theorem explicitCor2Le_mk [(V.subgroupOf U).FiniteIndex]
         (cocyclesMap2 V M (V.subgroupOf U) M
           (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
           (AddMonoidHom.id M) continuous_id
-          (id_subgroupOfContinuousMulEquivOfLe_smul G M U V hVU) f) : H2 U M) := by
+          (fun x _ => show _ = x • _ from rfl) f) : H2 U M) := by
   rw [explicitCor2Le, AddMonoidHom.comp_apply, explicitMap2_mk, explicitCor2_mk]
 
 end Topological
