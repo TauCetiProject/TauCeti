@@ -59,10 +59,11 @@ theorem image_val_orbit_gal_eq_orbit (x : g.rootSet E) :
 /-- **The size of a Frobenius orbit on the roots of `g` is the degree of the matching monic
 irreducible factor of `g`**, along the bijection `TauCeti.orbitQuotientEquivFactors` between
 orbits and factors. -/
-theorem natCard_orbit_eq_natDegree_factor (hg : g ≠ 0) (x : g.rootSet E) :
+theorem natCard_orbit_eq_natDegree_factor (x : g.rootSet E) :
     Nat.card (orbit (Subgroup.zpowers (_root_.FiniteField.frobeniusAlgEquivOfAlgebraic F E))
         (x : E))
-      = ((orbitQuotientEquivFactors g E hg (Quotient.mk _ x) : g.Factors) : F[X]).natDegree := by
+      = ((orbitQuotientEquivFactors g E (ne_zero_of_mem_rootSet x.2)
+        (Quotient.mk _ x) : g.Factors) : F[X]).natDegree := by
   rw [orbitQuotientEquivFactors_apply_mk, natCard_orbit_eq_natDegree_minpoly]
 
 /-- **Every monic irreducible factor of `g` has a root in `E`, whose Frobenius orbit is the root
