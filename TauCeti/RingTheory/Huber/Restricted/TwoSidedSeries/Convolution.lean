@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Restricted.TwoSidedSeries.Basic
-public import Mathlib.Topology.Algebra.InfiniteSum.DiscreteConvolution
-import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
+public import TauCeti.Topology.Algebra.Nonarchimedean.DiscreteConvolution
 
 /-!
 # Convolution of two-sided restricted series
@@ -19,9 +18,10 @@ convolution.  For restricted families `f g : ℤ → A`, the coefficient at `n` 
 ∑' (i,j), i + j = n, f i * g j.
 ```
 
-Each coefficient sum exists because the products `f i * g j` tend to zero off a finite subset of
-`ℤ × ℤ`.  The resulting coefficients again tend to zero: modulo an open additive subgroup,
-only finitely many pairs contribute, hence only their finitely many degrees can contribute.
+The products `f i * g j` tend to zero cofinitely on `ℤ × ℤ`; completeness of `A` upgrades this
+to summability on every addition fiber. The resulting coefficients again tend to zero: modulo an
+open additive subgroup, only finitely many pairs contribute, hence only their finitely many degrees
+can contribute.
 
 This supplies the analytic part of multiplication on Wedhorn's `A⟨X, X⁻¹⟩` (Example 6.39).
 The ring laws require rearranging iterated unconditional sums and are deliberately left to the
@@ -29,8 +29,8 @@ subsequent construction of that ring.
 
 ## Main results
 
-* `TauCeti.Huber.addConvolutionExists_twoSidedRestricted`: every coefficient convolution is
-  summable.
+* `TauCeti.Huber.addConvolutionExists_of_mem_twoSidedRestrictedSubmodule`: every coefficient
+  convolution is summable.
 * `TauCeti.Huber.addRingConvolution_mem_twoSidedRestrictedSubmodule`: convolution preserves the
   two-sided restricted condition.
 * `TauCeti.Huber.twoSidedRestrictedMul`: convolution as a bilinear map on the restricted
@@ -51,55 +51,36 @@ namespace TauCeti.Huber
 
 section Convergence
 
-variable {A : Type*} [Ring A] [UniformSpace A] [NonarchimedeanRing A]
+section Summability
 
-/-- **The additive convolution of two restricted coefficient families exists at every degree.**
+variable {A : Type*} [Ring A] [UniformSpace A] [IsUniformAddGroup A]
+  [NonarchimedeanRing A] [CompleteSpace A]
 
-The product family on `ℤ × ℤ` tends to zero along the cofinite filter.  Restricting it to an
-addition fiber preserves this convergence because the fiber inclusion is injective; completeness
-then turns cofinite convergence to zero into unconditional summability. -/
-theorem addConvolutionExists_twoSidedRestricted
-    [IsUniformAddGroup A] [CompleteSpace A]
+/-- In a complete nonarchimedean ring, the convolution coefficients of two two-sided restricted
+families are summable. -/
+theorem addConvolutionExists_of_mem_twoSidedRestrictedSubmodule
     {f g : ℤ → A} (hf : f ∈ twoSidedRestrictedSubmodule A A)
     (hg : g ∈ twoSidedRestrictedSubmodule A A) :
-    DiscreteConvolution.AddConvolutionExists (.mul ℕ A) f g := by
-  have hf' : ZeroAtFilter cofinite f := mem_twoSidedRestrictedSubmodule.mp hf
-  have hg' : ZeroAtFilter cofinite g := mem_twoSidedRestrictedSubmodule.mp hg
-  intro n
-  apply NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
-  exact (tendsto_mul_cofinite_nhds_zero hf' hg').comp
-    (Function.Injective.tendsto_cofinite Subtype.val_injective)
+    DiscreteConvolution.AddConvolutionExists (.mul ℕ A) f g :=
+  TauCeti.addConvolutionExists_of_zeroAtFilter_cofinite
+    (mem_twoSidedRestrictedSubmodule.mp hf) (mem_twoSidedRestrictedSubmodule.mp hg)
 
-/-- **Convolution preserves two-sided restrictedness.** If `f` and `g` tend to zero away from
-finite sets of degrees, then so does their additive multiplication convolution.
+end Summability
 
-For an open additive subgroup `W`, only finitely many pairs `(i,j)` have `f i * g j ∉ W`.
-Outside the finite image of those pairs under addition, every term in the coefficient sum belongs
-to `W`; closedness of `W` then puts the sum itself in `W`. -/
+section Preservation
+
+variable {A : Type*} [Ring A] [TopologicalSpace A] [NonarchimedeanRing A]
+
+/-- Additive ring convolution preserves two-sided restrictedness. -/
 theorem addRingConvolution_mem_twoSidedRestrictedSubmodule
     {f g : ℤ → A} (hf : f ∈ twoSidedRestrictedSubmodule A A)
     (hg : g ∈ twoSidedRestrictedSubmodule A A) :
-    f ⋆ᵣ₊ g ∈ twoSidedRestrictedSubmodule A A := by
-  have hf' : ZeroAtFilter cofinite f := mem_twoSidedRestrictedSubmodule.mp hf
-  have hg' : ZeroAtFilter cofinite g := mem_twoSidedRestrictedSubmodule.mp hg
-  rw [mem_twoSidedRestrictedSubmodule_iff_finite_notMem]
-  intro W
-  let bad : Set (ℤ × ℤ) := {p | f p.1 * g p.2 ∉ (W : Set A)}
-  have hbad : bad.Finite :=
-    NonarchimedeanAddGroup.zeroAtFilter_cofinite_iff_finite_notMem.mp
-      (tendsto_mul_cofinite_nhds_zero hf' hg') W
-  apply (hbad.image fun p : ℤ × ℤ ↦ p.1 + p.2).subset
-  intro n hn
-  by_contra hnim
-  apply hn
-  rw [DiscreteConvolution.addRingConvolution_apply]
-  have hW : IsClosed (W : Set A) :=
-    AddSubgroup.isClosed_of_isOpen W.toAddSubgroup W.isOpen
-  apply tsum_mem (S := OpenAddSubgroup A) (s := W)
-    hW
-  intro p
-  by_contra hp
-  exact hnim ⟨(p.1.1, p.1.2), hp, DiscreteConvolution.mem_addFiber.mp p.2⟩
+    f ⋆ᵣ₊ g ∈ twoSidedRestrictedSubmodule A A :=
+  mem_twoSidedRestrictedSubmodule.mpr <|
+    TauCeti.ZeroAtFilter.addRingConvolution
+      (mem_twoSidedRestrictedSubmodule.mp hf) (mem_twoSidedRestrictedSubmodule.mp hg)
+
+end Preservation
 
 end Convergence
 
@@ -120,16 +101,18 @@ noncomputable def twoSidedRestrictedMul :
       addRingConvolution_mem_twoSidedRestrictedSubmodule f.2 g.2⟩)
     (fun f₁ f₂ g ↦ Subtype.ext <| DiscreteConvolution.add_addRingConvolution
       (f₁ : ℤ → A) (f₂ : ℤ → A) (g : ℤ → A)
-      (addConvolutionExists_twoSidedRestricted f₁.2 g.2)
-      (addConvolutionExists_twoSidedRestricted f₂.2 g.2))
+      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f₁.2 g.2)
+      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f₂.2 g.2))
     (fun c f g ↦ Subtype.ext <| DiscreteConvolution.smul_addRingConvolution c
-      (f : ℤ → A) (g : ℤ → A) (addConvolutionExists_twoSidedRestricted f.2 g.2))
+      (f : ℤ → A) (g : ℤ → A)
+      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.2 g.2))
     (fun f g₁ g₂ ↦ Subtype.ext <| DiscreteConvolution.addRingConvolution_add
       (f : ℤ → A) (g₁ : ℤ → A) (g₂ : ℤ → A)
-      (addConvolutionExists_twoSidedRestricted f.2 g₁.2)
-      (addConvolutionExists_twoSidedRestricted f.2 g₂.2))
+      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.2 g₁.2)
+      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.2 g₂.2))
     (fun c f g ↦ Subtype.ext <| DiscreteConvolution.addRingConvolution_smul c
-      (f : ℤ → A) (g : ℤ → A) (addConvolutionExists_twoSidedRestricted f.2 g.2))
+      (f : ℤ → A) (g : ℤ → A)
+      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.2 g.2))
 
 include hA hComplete in
 /-- The coefficient family of `twoSidedRestrictedMul f g` is the additive ring convolution of
@@ -142,17 +125,19 @@ theorem coe_twoSidedRestrictedMul (f g : twoSidedRestrictedSubmodule A A) :
 include hA hComplete in
 /-- The `n`-th coefficient of `twoSidedRestrictedMul f g` is the sum over pairs of degrees adding
 to `n`. -/
-@[simp]
-theorem twoSidedRestrictedMul_apply (f g : twoSidedRestrictedSubmodule A A) (n : ℤ) :
+theorem coe_twoSidedRestrictedMul_apply (f g : twoSidedRestrictedSubmodule A A) (n : ℤ) :
     ((twoSidedRestrictedMul f g : twoSidedRestrictedSubmodule A A) : ℤ → A) n =
       ∑' p : DiscreteConvolution.addFiber n,
-        (f : ℤ → A) p.1.1 * (g : ℤ → A) p.1.2 := (rfl)
+        (f : ℤ → A) p.1.1 * (g : ℤ → A) p.1.2 := by
+  rw [coe_twoSidedRestrictedMul, DiscreteConvolution.addRingConvolution_apply]
 
 include hA hComplete in
 /-- Multiplication convolution of two-sided restricted coefficient families is commutative. -/
 theorem twoSidedRestrictedMul_comm (f g : twoSidedRestrictedSubmodule A A) :
     twoSidedRestrictedMul f g = twoSidedRestrictedMul g f :=
-  Subtype.ext <| DiscreteConvolution.addRingConvolution_comm (f : ℤ → A) (g : ℤ → A)
+  Subtype.ext <| by
+    rw [coe_twoSidedRestrictedMul, coe_twoSidedRestrictedMul,
+      DiscreteConvolution.addRingConvolution_comm]
 
 end Bilinear
 
