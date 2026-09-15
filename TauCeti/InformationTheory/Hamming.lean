@@ -36,10 +36,11 @@ theorem hammingDist_sumRec [Fintype ι] [Fintype κ] [∀ z, DecidableEq (β z)]
 theorem hammingNorm_sumRec [Fintype ι] [Fintype κ] [∀ z, DecidableEq (β z)]
     [∀ z, Zero (β z)] (x : ∀ i, β (.inl i)) (y : ∀ j, β (.inr j)) :
     hammingNorm (Sum.rec (motive := β) x y) = hammingNorm x + hammingNorm y := by
-  simpa only [← hammingDist_zero_right,
-    show Sum.rec (motive := β) (0 : ∀ i, β (.inl i)) (0 : ∀ j, β (.inr j)) = 0 by
-      funext z
-      cases z <;> rfl] using
+  have sumRec_zero :
+      Sum.rec (motive := β) (0 : ∀ i, β (.inl i)) (0 : ∀ j, β (.inr j)) = 0 := by
+    funext z
+    cases z <;> rfl
+  simpa only [← hammingDist_zero_right, sumRec_zero] using
     hammingDist_sumRec x (0 : ∀ i, β (.inl i)) y (0 : ∀ j, β (.inr j))
 
 /-- The Hamming distance between two pairs of words over a common alphabet, combined on a disjoint
