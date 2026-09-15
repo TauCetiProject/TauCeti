@@ -174,6 +174,23 @@ theorem steinberg_steinberg (g : d.toRankTwoBLieIndex.AmbientGroup) :
   rw [hpow, ← Function.iterate_add_apply, hdouble, halfFrobenius_iterate_two_mul,
     RankTwoBLieIndex.frobenius_def]
 
+/-- Applying the half-Frobenius after the Suzuki Steinberg map gives the
+`2^(m+1)`-power Frobenius. -/
+@[simp]
+theorem halfFrobenius_steinberg (g : d.toRankTwoBLieIndex.AmbientGroup) :
+    d.halfFrobenius (d.steinberg g) =
+      SpStd.frobenius 1 d.1.characteristic
+        (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex + 1) d.1.Closure g := by
+  have hpow : ⇑d.steinberg = (⇑d.halfFrobenius)^[d.1.fieldExponent] := by
+    rw [steinberg_def]
+    exact Monoid.End.coe_pow (M := d.toRankTwoBLieIndex.AmbientGroup) _ _
+  have hexp : d.1.fieldExponent + 1 =
+      2 * (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex + 1) := by
+    rw [SuzukiReeIndex.fieldExponent_eq_two_mul_halfExponent_add_one d.toSuzukiReeIndex]
+    omega
+  rw [hpow, ← Function.iterate_succ_apply' (⇑d.halfFrobenius),
+    Nat.succ_eq_add_one, hexp, halfFrobenius_iterate_two_mul]
+
 /-- The final node of the two-node carrier is the numeral one. -/
 private theorem one_eq_last : (1 : Fin 2) = Fin.last 1 := rfl
 
