@@ -56,16 +56,13 @@ noncomputable def innerConjugationPointNatIso
     MulEquiv.toGrpIso (X := (HopfAlgebra.pointsFunctor (R := R) (H := H)).obj A)
       (MulAut.conj (extendPoint H A g)))
     fun {A B} f ↦ by
+    -- Normalize the functor objects in the induced group instances as well as in the maps.
+    dsimp +instances only [pointsFunctor_obj, pointsFunctor_map]
     apply GrpCat.ext
-    -- Rewriting `GrpCat.comp_apply` and `pointsFunctor_map`, then unfolding
-    -- `MulEquiv.toGrpIso`, leaves `MulAut.conj_apply` unable to match: at rewrite
-    -- transparency, `pointsFunctor.obj A` is not the concrete point type.
-    change ∀ x : HopfAlgebra.points (R := R) (H := H) A,
-      MulAut.conj (extendPoint H B g)
-        (HopfAlgebra.mapPoints (H := H) f x) =
-      HopfAlgebra.mapPoints (H := H) f
-        (MulAut.conj (extendPoint H A g) x)
-    intro x
+    intro (x : HopfAlgebra.points (R := R) (H := H) A)
+    rw [GrpCat.comp_apply, GrpCat.comp_apply, MulEquiv.toGrpIso_hom,
+      MulEquiv.toGrpIso_hom]
+    simp only [GrpCat.hom_ofHom, MulEquiv.coe_toMonoidHom]
     rw [MulAut.conj_apply, MulAut.conj_apply]
     rw [HopfAlgebra.mapPoints_mul, HopfAlgebra.mapPoints_mul, HopfAlgebra.mapPoints_inv,
       HopfAlgebra.mapPoints_extendPoint]
@@ -78,8 +75,7 @@ theorem innerConjugationPointNatIso_hom_app_apply
     (innerConjugationPointNatIso H g).hom.app A x =
       extendPoint H A g * x * (extendPoint H A g)⁻¹ := by
   rw [innerConjugationPointNatIso, NatIso.ofComponents_hom_app _ _]
-  -- Expose the group isomorphism's forward map to use Mathlib's conjugation equation.
-  dsimp only [MulEquiv.toGrpIso]
+  rw [MulEquiv.toGrpIso_hom]
   exact MulAut.conj_apply (extendPoint H A g) x
 
 /-- The inverse component of the natural inner-conjugation isomorphism acts by conjugation by
@@ -91,8 +87,7 @@ theorem innerConjugationPointNatIso_inv_app_apply
     (innerConjugationPointNatIso H g).inv.app A x =
       (extendPoint H A g)⁻¹ * x * extendPoint H A g := by
   rw [innerConjugationPointNatIso, NatIso.ofComponents_inv_app _ _]
-  -- Expose the group isomorphism's inverse map to use Mathlib's conjugation equation.
-  dsimp only [MulEquiv.toGrpIso]
+  rw [MulEquiv.toGrpIso_inv]
   exact MulAut.conj_symm_apply (extendPoint H A g) x
 
 /-- Conjugation by the identity point is the identity automorphism of the functor of points. -/
@@ -107,9 +102,6 @@ theorem innerConjugationPointNatIso_one :
   rw [innerConjugationPointNatIso_hom_app_apply]
   simp only [map_one, inv_one, one_mul, mul_one]
   rw [Iso.refl_hom, NatTrans.id_app]
-  -- `GrpCat.id_apply` cannot match `pointsFunctor.obj A` with the concrete point
-  -- type at rewrite transparency; restore the concrete object first.
-  change x = (𝟙 (HopfAlgebra.points (R := R) (H := H) A)) x
   exact (GrpCat.id_apply _ x).symm
 
 /-- Conjugation by a product is successive conjugation, first by the second point and then by the
@@ -124,14 +116,10 @@ theorem innerConjugationPointNatIso_mul
   intro A x
   rw [innerConjugationPointNatIso_hom_app_apply]
   rw [Iso.trans_hom, NatTrans.comp_app]
-  -- `GrpCat.comp_apply` cannot match the functor-object and concrete-point types
-  -- at rewrite transparency; state its pointwise composition equation directly.
-  change extendPoint H A (g * h) * x * (extendPoint H A (g * h))⁻¹ =
-    (innerConjugationPointNatIso H g).hom.app A
-      ((innerConjugationPointNatIso H h).hom.app A x)
+  rw [pointsFunctor_comp_apply]
   rw [innerConjugationPointNatIso_hom_app_apply,
     innerConjugationPointNatIso_hom_app_apply]
-  simp only [map_mul, mul_inv_rev, mul_assoc]
+  simp only [pointsFunctor_obj, map_mul, mul_inv_rev, mul_assoc]
 
 /-- Conjugation by an inverse point is inverse to conjugation by the original point. -/
 @[simp]
