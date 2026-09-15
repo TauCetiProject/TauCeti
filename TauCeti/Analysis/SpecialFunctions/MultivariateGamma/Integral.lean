@@ -36,11 +36,11 @@ of the symmetric matrices.
 ## Main results
 
 * `TauCeti.integral_posDef_multivariateGamma_zero` — the cone integral in dimension zero;
-* `TauCeti.lintegral_posDef_det_rpow_mul_exp_neg_trace_inv_mul` and
-  `TauCeti.integral_posDef_det_rpow_mul_exp_neg_trace_inv_mul` — an inverse positive-definite
+* `Matrix.PosDef.lintegral_det_rpow_mul_exp_neg_trace_inv_mul` and
+  `Matrix.PosDef.integral_det_rpow_mul_exp_neg_trace_inv_mul` — an inverse positive-definite
   scale `T` in the exponential weight multiplies the cone integral by `(det T) ^ a`;
-* `TauCeti.lintegral_posDef_det_rpow_mul_exp_neg_trace_inv_mul_div_two` and
-  `TauCeti.integral_posDef_det_rpow_mul_exp_neg_trace_inv_mul_div_two` — the same statement in
+* `Matrix.PosDef.lintegral_det_rpow_mul_exp_neg_trace_inv_mul_div_two` and
+  `Matrix.PosDef.integral_det_rpow_mul_exp_neg_trace_inv_mul_div_two` — the same statement in
   the halved form `exp (-trace (S⁻¹ * A) / 2)` used by the Wishart densities, where the factor
   is `2 ^ (p * a) * (det S) ^ a`.
 
@@ -48,6 +48,10 @@ of the symmetric matrices.
 
 * M. L. Eaton, *Multivariate Statistics: A Vector Space Approach*, Chapter 5.
 * R. J. Muirhead, *Aspects of Multivariate Statistical Theory*, Section 2.1.
+* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 6, item 3 (the cone integral
+  characterizing `multivariateGamma`) and item 4, whose nonsingular real-degree Wishart density
+  is normalized by `2 ^ (n * p / 2) * (det S) ^ (n / 2) * multivariateGamma p (n / 2)`; the scale
+  identities below are exactly how that constant depends on `S`.
 -/
 
 public section
@@ -75,11 +79,15 @@ theorem integral_posDef_multivariateGamma_zero (a : ℝ) :
   rw [hset, Measure.restrict_univ, symmetricLebesgue_zero, integral_dirac]
   simp [Matrix.det_fin_zero]
 
+end TauCeti
+
 /-! ### The scale matrix in the cone integral -/
 
-section Scale
+namespace Matrix.PosDef
 
 variable {p : ℕ} {S T : Matrix (Fin p) (Fin p) ℝ}
+
+open TauCeti
 
 open scoped ENNReal Matrix
 
@@ -168,7 +176,7 @@ private theorem det_two_smul_rpow (hS : S.PosDef) (a : ℝ) :
 exponential in the cone integral by the inverse scale `T⁻¹` multiplies the integral by
 `(det T) ^ a`. Lower integration is defined for every real `a`, so the identity carries no
 convergence hypothesis. -/
-theorem lintegral_posDef_det_rpow_mul_exp_neg_trace_inv_mul (hT : T.PosDef) (a : ℝ) :
+theorem lintegral_det_rpow_mul_exp_neg_trace_inv_mul (hT : T.PosDef) (a : ℝ) :
     ∫⁻ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).PosDef},
       ENNReal.ofReal ((A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
@@ -178,7 +186,7 @@ theorem lintegral_posDef_det_rpow_mul_exp_neg_trace_inv_mul (hT : T.PosDef) (a :
             (A : Matrix (Fin p) (Fin p) ℝ).PosDef},
           ENNReal.ofReal ((A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
             exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace)) ∂symmetricLebesgue p := by
-  obtain ⟨C, hC⟩ := Matrix.GeneralLinearGroup.exists_mul_transpose_eq_of_posDef hT
+  obtain ⟨C, hC⟩ := hT.exists_generalLinearGroup_mul_transpose_eq
   have hJne : ENNReal.ofReal |(C : Matrix (Fin p) (Fin p) ℝ).det| ^ (p + 1) ≠ 0 :=
     pow_ne_zero _
       (ENNReal.ofReal_pos.2 (abs_pos.2 (Matrix.GeneralLinearGroup.det_ne_zero C))).ne'
@@ -198,10 +206,10 @@ theorem lintegral_posDef_det_rpow_mul_exp_neg_trace_inv_mul (hT : T.PosDef) (a :
   symm
   rw [← hJmul, mul_assoc, key, ← mul_assoc, ENNReal.mul_inv_cancel hJne hJtop, one_mul]
 
-/-- The Bochner form of `TauCeti.lintegral_posDef_det_rpow_mul_exp_neg_trace_inv_mul`: an inverse
+/-- The Bochner form of `Matrix.PosDef.lintegral_det_rpow_mul_exp_neg_trace_inv_mul`: an inverse
 positive-definite scale `T` in the exponential weight multiplies the cone integral by
 `(det T) ^ a`. -/
-theorem integral_posDef_det_rpow_mul_exp_neg_trace_inv_mul (hT : T.PosDef) (a : ℝ) :
+theorem integral_det_rpow_mul_exp_neg_trace_inv_mul (hT : T.PosDef) (a : ℝ) :
     ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).PosDef},
       (A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
@@ -211,7 +219,7 @@ theorem integral_posDef_det_rpow_mul_exp_neg_trace_inv_mul (hT : T.PosDef) (a : 
             (A : Matrix (Fin p) (Fin p) ℝ).PosDef},
           (A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
             exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace) ∂symmetricLebesgue p := by
-  obtain ⟨C, hC⟩ := Matrix.GeneralLinearGroup.exists_mul_transpose_eq_of_posDef hT
+  obtain ⟨C, hC⟩ := hT.exists_generalLinearGroup_mul_transpose_eq
   have hJpos : (0 : ℝ) < |(C : Matrix (Fin p) (Fin p) ℝ).det| ^ (p + 1) :=
     pow_pos (abs_pos.2 (Matrix.GeneralLinearGroup.det_ne_zero C)) _
   have key := Matrix.GeneralLinearGroup.integral_posDef_symmetricCongruence C
@@ -224,10 +232,10 @@ theorem integral_posDef_det_rpow_mul_exp_neg_trace_inv_mul (hT : T.PosDef) (a : 
   rw [← abs_det_pow_mul_det_rpow hC hT a, mul_assoc, key, ← mul_assoc,
     mul_inv_cancel₀ hJpos.ne', one_mul]
 
-/-- The halved form of `TauCeti.lintegral_posDef_det_rpow_mul_exp_neg_trace_inv_mul` used by the
+/-- The halved form of `Matrix.PosDef.lintegral_det_rpow_mul_exp_neg_trace_inv_mul` used by the
 Wishart densities, whose exponential weight is `exp (-trace (S⁻¹ * A) / 2)`: the scale is then
 `2 • S` and the factor is `2 ^ (p * a) * (det S) ^ a`. -/
-theorem lintegral_posDef_det_rpow_mul_exp_neg_trace_inv_mul_div_two (hS : S.PosDef) (a : ℝ) :
+theorem lintegral_det_rpow_mul_exp_neg_trace_inv_mul_div_two (hS : S.PosDef) (a : ℝ) :
     ∫⁻ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).PosDef},
       ENNReal.ofReal ((A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
@@ -238,15 +246,15 @@ theorem lintegral_posDef_det_rpow_mul_exp_neg_trace_inv_mul_div_two (hS : S.PosD
           ENNReal.ofReal ((A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
             exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace)) ∂symmetricLebesgue p := by
   have h2 : (0 : ℝ) < 2 := by norm_num
-  have h := lintegral_posDef_det_rpow_mul_exp_neg_trace_inv_mul (hS.smul h2) a
+  have h := lintegral_det_rpow_mul_exp_neg_trace_inv_mul (hS.smul h2) a
   rw [det_two_smul_rpow hS a] at h
   rw [← h]
   exact setLIntegral_congr_fun (measurableSet_posDefMatrix p)
     fun A _ => by rw [trace_two_smul_inv_mul hS, neg_div]
 
 /-- The Bochner form of
-`TauCeti.lintegral_posDef_det_rpow_mul_exp_neg_trace_inv_mul_div_two`. -/
-theorem integral_posDef_det_rpow_mul_exp_neg_trace_inv_mul_div_two (hS : S.PosDef) (a : ℝ) :
+`Matrix.PosDef.lintegral_det_rpow_mul_exp_neg_trace_inv_mul_div_two`. -/
+theorem integral_det_rpow_mul_exp_neg_trace_inv_mul_div_two (hS : S.PosDef) (a : ℝ) :
     ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).PosDef},
       (A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
@@ -257,13 +265,10 @@ theorem integral_posDef_det_rpow_mul_exp_neg_trace_inv_mul_div_two (hS : S.PosDe
           (A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
             exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace) ∂symmetricLebesgue p := by
   have h2 : (0 : ℝ) < 2 := by norm_num
-  have h := integral_posDef_det_rpow_mul_exp_neg_trace_inv_mul (hS.smul h2) a
+  have h := integral_det_rpow_mul_exp_neg_trace_inv_mul (hS.smul h2) a
   rw [det_two_smul_rpow hS a] at h
   rw [← h]
   exact setIntegral_congr_fun (measurableSet_posDefMatrix p)
     fun A _ => by rw [trace_two_smul_inv_mul hS, neg_div]
 
-end Scale
-
-
-end TauCeti
+end Matrix.PosDef

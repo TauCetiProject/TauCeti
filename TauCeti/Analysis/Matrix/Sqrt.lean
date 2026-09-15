@@ -40,7 +40,7 @@ in the original parameters.
 * `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt` and
   `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self` — for positive-semidefinite `S`, the traces
   of the sandwich and of its square are those of `Θ * S` and `Θ * S * Θ * S`;
-* `Matrix.GeneralLinearGroup.exists_mul_transpose_eq_of_posDef` — every positive-definite real
+* `Matrix.PosDef.exists_generalLinearGroup_mul_transpose_eq` — every positive-definite real
   matrix is `C * Cᵀ` for an invertible `C`.
 -/
 
@@ -118,7 +118,7 @@ theorem PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self {S : Matrix ι ι 𝕜} (hS 
 /-- Every positive-definite real matrix is `C * Cᵀ` for an invertible `C`, namely its square
 root, which is symmetric. Congruence by that `C` is what absorbs a positive-definite scale
 matrix into the positive-definite cone. -/
-theorem GeneralLinearGroup.exists_mul_transpose_eq_of_posDef [DecidableEq ι]
+theorem PosDef.exists_generalLinearGroup_mul_transpose_eq [DecidableEq ι]
     {T : Matrix ι ι ℝ} (hT : T.PosDef) :
     ∃ C : Matrix.GeneralLinearGroup ι ℝ, (C : Matrix ι ι ℝ) * (C : Matrix ι ι ℝ)ᵀ = T := by
   have hsq : CFC.sqrt T * CFC.sqrt T = T := CFC.sqrt_mul_sqrt_self T hT.posSemidef.nonneg
