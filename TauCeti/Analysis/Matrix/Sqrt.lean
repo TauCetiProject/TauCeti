@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.Order
+public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.ConjSqrt
 public import Mathlib.LinearAlgebra.Matrix.SchurComplement
 public import TauCeti.Analysis.Matrix.EuclideanLin
 
@@ -100,61 +101,34 @@ section PosDef
 
 variable [DecidableEq ι] {S : Matrix ι ι 𝕜}
 
-/-- The square root of a positive-definite matrix is invertible. -/
-theorem PosDef.isUnit_sqrt (hS : S.PosDef) : IsUnit (CFC.sqrt S) :=
-  (CFC.isUnit_sqrt_iff S hS.posSemidef.nonneg).2 hS.isUnit
-
-/-- The inverse of a positive-definite matrix is the square of the inverse of its square root. -/
-theorem PosDef.inv_sqrt_mul_inv_sqrt (hS : S.PosDef) :
-    (CFC.sqrt S)⁻¹ * (CFC.sqrt S)⁻¹ = S⁻¹ := by
-  rw [hS.posSemidef.inv_sqrt, CFC.sqrt_mul_sqrt_self _ hS.inv.posSemidef.nonneg]
-
-/-- Sandwiching the inverse of a positive-definite matrix between two copies of its square root
-gives the identity matrix. -/
-theorem PosDef.sqrt_mul_inv_mul_sqrt (hS : S.PosDef) :
-    CFC.sqrt S * S⁻¹ * CFC.sqrt S = 1 := by
-  have hunit : IsUnit (CFC.sqrt S).det := (Matrix.isUnit_iff_isUnit_det _).1 hS.isUnit_sqrt
-  have hassoc : CFC.sqrt S * ((CFC.sqrt S)⁻¹ * (CFC.sqrt S)⁻¹) * CFC.sqrt S =
-      (CFC.sqrt S * (CFC.sqrt S)⁻¹) * ((CFC.sqrt S)⁻¹ * CFC.sqrt S) := by
-    simp [Matrix.mul_assoc]
-  rw [← hS.inv_sqrt_mul_inv_sqrt, hassoc, Matrix.mul_nonsing_inv _ hunit,
-    Matrix.nonsing_inv_mul _ hunit, Matrix.mul_one]
-
-/-- Conjugating a sandwich by the inverse square root undoes it. -/
-theorem PosDef.inv_sqrt_mul_sqrt_mul_mul_sqrt_mul_inv_sqrt (hS : S.PosDef)
-    (M : Matrix ι ι 𝕜) :
-    (CFC.sqrt S)⁻¹ * (CFC.sqrt S * M * CFC.sqrt S) * (CFC.sqrt S)⁻¹ = M := by
-  have hunit : IsUnit (CFC.sqrt S).det := (Matrix.isUnit_iff_isUnit_det _).1 hS.isUnit_sqrt
-  have hassoc : (CFC.sqrt S)⁻¹ * (CFC.sqrt S * M * CFC.sqrt S) * (CFC.sqrt S)⁻¹ =
-      ((CFC.sqrt S)⁻¹ * CFC.sqrt S) * M * (CFC.sqrt S * (CFC.sqrt S)⁻¹) := by
-    simp [Matrix.mul_assoc]
-  rw [hassoc, Matrix.nonsing_inv_mul _ hunit, Matrix.mul_nonsing_inv _ hunit, Matrix.one_mul,
-    Matrix.mul_one]
-
 /-- **The scale form of the pencil.** For positive-definite `S`, the matrix `S⁻¹ - c • Θ` is the
 congruence of the sandwich pencil `1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)` by `(CFC.sqrt S)⁻¹`. -/
 theorem PosDef.inv_sub_smul_eq_conjugate (hS : S.PosDef) (Θ : Matrix ι ι 𝕜) (c : 𝕜) :
     S⁻¹ - c • Θ =
       (CFC.sqrt S)⁻¹ * (1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)) * (CFC.sqrt S)⁻¹ := by
-  rw [Matrix.mul_sub, Matrix.mul_one, Matrix.sub_mul, hS.inv_sqrt_mul_inv_sqrt,
-    Matrix.mul_smul, Matrix.smul_mul,
-    hS.inv_sqrt_mul_sqrt_mul_mul_sqrt_mul_inv_sqrt Θ]
+  have hsp : IsStrictlyPositive S := hS.isStrictlyPositive
+  have hroot : (CFC.sqrt S)⁻¹ = CFC.sqrt (Ring.inverse S) := by
+    rw [Matrix.nonsing_inv_eq_ringInverse, CFC.sqrt_ringInverse]
+  have hone : (CFC.sqrt S)⁻¹ * 1 * (CFC.sqrt S)⁻¹ = S⁻¹ := by
+    rw [hroot, ← CFC.conjSqrt_apply, CFC.conjSqrt_one _ hsp.ringInverse.nonneg,
+      Matrix.nonsing_inv_eq_ringInverse]
+  have hundo : (CFC.sqrt S)⁻¹ * (CFC.sqrt S * Θ * CFC.sqrt S) * (CFC.sqrt S)⁻¹ = Θ := by
+    rw [hroot, ← CFC.conjSqrt_apply, ← CFC.conjSqrt_apply,
+      CFC.conjSqrt_ringInverse_conjSqrt S Θ hsp]
+  rw [Matrix.mul_sub, Matrix.sub_mul, hone, Matrix.mul_smul, Matrix.smul_mul, hundo]
 
 /-- The scale pencil `S⁻¹ - c • Θ` is positive definite exactly when the sandwich pencil
-`1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)` is. Neither `Θ` nor `c` needs a hypothesis: positive
-definiteness includes being Hermitian, and congruence by the invertible Hermitian matrix
-`(CFC.sqrt S)⁻¹` transports it in both directions. -/
+`1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)` is. Neither `Θ` nor `c` needs a hypothesis: conjugation
+by the square root of the invertible matrix `S⁻¹` transports strict positivity in both
+directions. -/
 theorem PosDef.posDef_inv_sub_smul_iff (hS : S.PosDef) (Θ : Matrix ι ι 𝕜) (c : 𝕜) :
     (S⁻¹ - c • Θ).PosDef ↔ (1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)).PosDef := by
-  have hherm : star ((CFC.sqrt S)⁻¹) = ((CFC.sqrt S)⁻¹ : Matrix ι ι 𝕜) := by
-    rw [Matrix.star_eq_conjTranspose, Matrix.conjTranspose_nonsing_inv,
-      (Matrix.nonneg_iff_posSemidef.1 (CFC.sqrt_nonneg S)).isHermitian.eq]
-  have hstar : (CFC.sqrt S)⁻¹ * (1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)) * (CFC.sqrt S)⁻¹ =
-      star ((CFC.sqrt S)⁻¹) * (1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)) * (CFC.sqrt S)⁻¹ := by
-    rw [hherm]
-  rw [hS.inv_sub_smul_eq_conjugate Θ c, hstar]
-  exact Matrix.IsUnit.posDef_star_left_conjugate_iff
-    (Matrix.isUnit_nonsing_inv_iff.2 hS.isUnit_sqrt)
+  have hsp : IsStrictlyPositive S := hS.isStrictlyPositive
+  have hroot : (CFC.sqrt S)⁻¹ = CFC.sqrt (Ring.inverse S) := by
+    rw [Matrix.nonsing_inv_eq_ringInverse, CFC.sqrt_ringInverse]
+  rw [← Matrix.isStrictlyPositive_iff_posDef, ← Matrix.isStrictlyPositive_iff_posDef,
+    hS.inv_sub_smul_eq_conjugate Θ c, hroot, ← CFC.conjSqrt_apply,
+    CFC.isStrictlyPositive_conjSqrt_iff _ _ hsp.ringInverse]
 
 /-- The determinant of the scale pencil, in the parameters `S` and `Θ` themselves. -/
 theorem PosDef.det_mul_det_inv_sub_smul (hS : S.PosDef) (Θ : Matrix ι ι 𝕜) (c : 𝕜) :
