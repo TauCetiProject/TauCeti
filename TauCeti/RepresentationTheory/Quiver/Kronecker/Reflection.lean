@@ -8,9 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Quiver.Kronecker.EulerForm
 public import TauCeti.RepresentationTheory.Quiver.Kronecker.Indecomposable
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Acyclic
-public import TauCeti.RepresentationTheory.Quiver.Reflection.FullyFaithful
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Uniqueness
-public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Basic
 
 /-!
 # Reflecting the generalized Kronecker quiver at its sink
@@ -43,12 +41,12 @@ representation, and reflection sends `S_tgt` to zero instead.
 ## Main results
 
 * `TauCeti.isZero_reflectRep_simpleRep_tgt`: **reflection annihilates the sink simple** `S_tgt`.
-* `TauCeti.nonempty_iso_reflectRep_indecProjRep_src`: **reflection carries the projective `P_src`
-  to the vertex simple `S_src`** of the reflected quiver.
+* `TauCeti.nonempty_iso_reflectRep_indecProjRep_src_simpleRep_src`: **reflection carries the
+  projective `P_src` to the vertex simple `S_src`** of the reflected quiver.
 * `TauCeti.indecomposable_reflectRep_simpleRep_src` and
   `TauCeti.dimVector_reflectRep_simpleRep_src`: **reflection carries the source simple `S_src` to
   an indecomposable representation of dimension vector `(1, #A)`**.
-* `TauCeti.nonempty_iso_reflectRep_simpleRep_src_indecProjRep`: over the `A₂` quiver that
+* `TauCeti.nonempty_iso_reflectRep_simpleRep_src_indecProjRep_tgt`: over the `A₂` quiver that
   indecomposable is the projective `P_tgt` of the reflected quiver.
 
 ## Implementation notes
@@ -180,7 +178,7 @@ theorem subsingleton_reflectRep_indecProjRep_obj_tgt :
 /-- **Reflection carries the projective at the source to the vertex simple at the source** of the
 reflected quiver. Both are concentrated at `src`, which is a sink there, and both are a line at
 that vertex. -/
-theorem nonempty_iso_reflectRep_indecProjRep_src :
+theorem nonempty_iso_reflectRep_indecProjRep_src_simpleRep_src :
     Nonempty (reflectRep (indecProjRep k (Kronecker A) src) isSink_tgt
       ≅ simpleRep k (Reflect (Kronecker A) tgt) src) := by
   have hsrc : dimVector (reflectRep (indecProjRep k (Kronecker A) src) isSink_tgt) src = 1 := by
@@ -201,40 +199,26 @@ theorem nonempty_iso_reflectRep_indecProjRep_src :
     | tgt => exact subsingleton_reflectRep_indecProjRep_obj_tgt
   · exact finiteDimensional_reflectRep_obj _ isSink_tgt
       (fun a ↦ by cases a <;> infer_instance) src
-  · have hs1 : dimVector (simpleRep k (Reflect (Kronecker A) tgt) src) src = 1 := by
-      refine (dimVector_apply (simpleRep k (Reflect (Kronecker A) tgt) src) src).trans ?_
-      refine (congrArg (fun X : ModuleCat.{u} k ↦ Module.finrank k X)
-        (simpleRep_obj_self (k := k) (Q := Reflect (Kronecker A) tgt) src)).trans ?_
-      exact Module.finrank_self k
-    have hzero : Subsingleton ((simpleRep k (Reflect (Kronecker A) tgt) src).obj
-        ((Paths.of (Reflect (Kronecker A) tgt)).obj tgt)) :=
-      ModuleCat.subsingleton_of_isZero
-        (isZero_simpleRep_obj (k := k) (Q := Reflect (Kronecker A) tgt) src_ne_tgt.symm)
-    have hs0 : dimVector (simpleRep k (Reflect (Kronecker A) tgt) src) tgt = 0 := by
-      refine (dimVector_apply (simpleRep k (Reflect (Kronecker A) tgt) src) tgt).trans ?_
-      exact Module.finrank_zero_of_subsingleton
-    funext j
+  · funext j
+    refine Eq.trans ?_ (congrFun (dimVector_simpleRep
+      (k := k) (Q := Reflect (Kronecker A) tgt) src) j).symm
     cases j with
-    | src => exact hsrc.trans hs1.symm
-    | tgt => exact htgt.trans hs0.symm
+    | src => exact hsrc.trans (Pi.single_eq_same (M := fun _ ↦ ℕ) src 1).symm
+    | tgt => exact htgt.trans (Pi.single_eq_of_ne (M := fun _ ↦ ℕ) src_ne_tgt.symm 1).symm
 
 /-! #### The `A₂` quiver -/
-
-section A2
-
-variable [Unique A]
 
 /-- **Over the `A₂` quiver reflection carries the source simple to the projective at the target**
 of the reflected quiver. Both are indecomposable of dimension vector `(1, 1)`, and over a quiver
 with positive definite Tits form the dimension vector of an indecomposable determines it.
 
 Together with `TauCeti.isZero_reflectRep_simpleRep_tgt` and
-`TauCeti.nonempty_iso_reflectRep_indecProjRep_src` this is the whole action of the reflection at
-the sink on the three indecomposables of the `A₂` quiver: it annihilates `S_tgt` and exchanges
-`S_src` with `P_src`. So it realizes the simple reflection at `tgt` on the dimension vectors
-`(1,0)` and `(1,1)` of the latter two only; on the sink simple the two disagree, reflection
+`TauCeti.nonempty_iso_reflectRep_indecProjRep_src_simpleRep_src` this is the whole action of the
+reflection at the sink on the three indecomposables of the `A₂` quiver: it annihilates `S_tgt` and
+exchanges `S_src` with `P_src`. So it realizes the simple reflection at `tgt` on the dimension
+vectors `(1,0)` and `(1,1)` of the latter two only; on the sink simple the two disagree, reflection
 sending `S_tgt` to zero where `s_tgt` sends `(0,1)` to `(0,-1)`. -/
-theorem nonempty_iso_reflectRep_simpleRep_src_indecProjRep :
+theorem nonempty_iso_reflectRep_simpleRep_src_indecProjRep_tgt (hA : Fintype.card A = 1) :
     Nonempty (reflectRep (simpleRep k (Kronecker A) src) isSink_tgt
       ≅ indecProjRep k (Reflect (Kronecker A) tgt) tgt) := by
   have hfdM : IsFinDim k (Reflect (Kronecker A) tgt)
@@ -251,7 +235,7 @@ theorem nonempty_iso_reflectRep_simpleRep_src_indecProjRep :
         exact finiteDimensional_indecProjRep_obj (k := k) (Q := Reflect (Kronecker A) tgt) tgt tgt
   refine nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic
     (IsAcyclic.reflect_of_isSink isAcyclic isSink_tgt)
-    (titsForm_reflect_posDef (le_of_eq Fintype.card_unique)) _ _
+    (titsForm_reflect_posDef (le_of_eq hA)) _ _
     indecomposable_reflectRep_simpleRep_src
     (indecomposable_indecProjRep_of_isAcyclic (IsAcyclic.reflect_of_isSink isAcyclic isSink_tgt)
       tgt)
@@ -261,9 +245,7 @@ theorem nonempty_iso_reflectRep_simpleRep_src_indecProjRep :
   refine Eq.trans ?_
     (dimVector_indecProjRep (k := k) (Q := Reflect (Kronecker A) tgt) tgt j).symm
   cases j with
-  | src => simp
-  | tgt => simp [src_ne_tgt.symm, Fintype.card_unique]
-
-end A2
+  | src => simp [hA]
+  | tgt => simp [src_ne_tgt.symm, hA]
 
 end TauCeti
