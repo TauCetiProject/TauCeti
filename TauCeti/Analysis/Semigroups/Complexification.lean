@@ -85,8 +85,7 @@ def complexify (S : StronglyContinuousSemigroup X) :
       rw [ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_apply, equivProd_apply]
     rw [heq]
     have htarget : (equivProd X).toHomeomorph z = (z.re, z.im) := by
-      change equivProd X z = (z.re, z.im)
-      exact equivProd_apply z
+      rw [ContinuousLinearEquiv.coe_toHomeomorph, equivProd_apply]
     rw [htarget]
     exact hprod
 
