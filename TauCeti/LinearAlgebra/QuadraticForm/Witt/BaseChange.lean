@@ -109,16 +109,6 @@ theorem RegularFormClass.wittIndex_baseChange_eq_iff (c : RegularFormClass K) :
     have hzero := RegularFormClass.wittIndex_eq_zero_iff.mpr ha
     omega
 
-/-- If the anisotropic part remains anisotropic after base change, the Witt index is unchanged. -/
-theorem RegularFormClass.wittIndex_baseChange_eq (c : RegularFormClass K)
-    (ha : RegularFormClass.Anisotropic (c.anisotropicPart.baseChange L)) :
-    letI : Invertible (2 : L) :=
-      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-    RegularFormClass.wittIndex (c.baseChange L) = RegularFormClass.wittIndex c := by
-  let _ : Invertible (2 : L) :=
-    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  exact (RegularFormClass.wittIndex_baseChange_eq_iff c).mpr ha
-
 end TauCeti
 
 namespace QuadraticForm
@@ -154,20 +144,5 @@ theorem wittIndex_baseChange_eq_iff {V : Type w} [AddCommGroup V] [Module K V]
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   rw [← TauCeti.RegularFormClass.baseChange_formClass Q hQ]
   exact TauCeti.RegularFormClass.wittIndex_baseChange_eq_iff _
-
-/-- If the anisotropic part remains anisotropic after extending scalars, the Witt index of a
-regular quadratic form is unchanged. -/
-theorem wittIndex_baseChange_eq {V : Type w} [AddCommGroup V] [Module K V]
-    [FiniteDimensional K V] (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
-    (ha : TauCeti.RegularFormClass.Anisotropic
-      ((TauCeti.formClass Q hQ).anisotropicPart.baseChange L)) :
-    letI : Invertible (2 : L) :=
-      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-    TauCeti.RegularFormClass.wittIndex
-        (TauCeti.formClass (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ)) =
-      TauCeti.RegularFormClass.wittIndex (TauCeti.formClass Q hQ) := by
-  let _ : Invertible (2 : L) :=
-    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  exact (wittIndex_baseChange_eq_iff Q hQ).mpr ha
 
 end QuadraticForm
