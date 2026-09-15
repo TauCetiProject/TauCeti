@@ -28,6 +28,8 @@ whose value is a power of its determinant.
   `B` at `∑ j, c j • b j` is `∑ j, hB.eigenvalues j * ‖c j‖ ^ 2`;
 * `Matrix.IsHermitian.posDef_one_sub_smul_iff` — `1 - c • B` is positive definite exactly when
   `c * hB.eigenvalues j < 1` for every `j`;
+* `Matrix.IsHermitian.eventually_posDef_one_sub_smul` — `1 - c • B` is positive definite for all
+  real `c` near `0`;
 * `Matrix.IsHermitian.one_sub_smul_eq_conjStarAlgAut_diagonal` and
   `Matrix.IsHermitian.det_one_sub_smul` — `1 - c • B` is conjugate to a diagonal matrix, and its
   determinant is `∏ j, (1 - c * hB.eigenvalues j)`;
@@ -104,5 +106,21 @@ theorem trace_mul_self_eq_sum_eigenvalues_sq :
   rw [conjStarAlgAut_apply, trace_mul_cycle, star_mul_self_of_mem hB.eigenvectorUnitary.2,
     one_mul, diagonal_mul_diagonal, trace_diagonal]
   simp [sq]
+
+end Matrix.IsHermitian
+
+namespace Matrix.IsHermitian
+
+variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Finite ι] [DecidableEq ι] {B : Matrix ι ι 𝕜}
+
+open scoped ComplexOrder Topology in
+/-- For all real `c` close enough to `0`, the pencil `1 - c • B` is positive definite. -/
+theorem eventually_posDef_one_sub_smul (hB : B.IsHermitian) :
+    ∀ᶠ c in 𝓝 (0 : ℝ), (1 - c • B).PosDef := by
+  have := Fintype.ofFinite ι
+  simp only [hB.posDef_one_sub_smul_iff]
+  exact Filter.eventually_all.2 fun j =>
+    ((continuous_id.mul continuous_const).tendsto' 0 0 (zero_mul _)).eventually
+      (gt_mem_nhds zero_lt_one)
 
 end Matrix.IsHermitian

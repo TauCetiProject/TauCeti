@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Wishart.Transforms
 
+import TauCeti.Analysis.SpecialFunctions.Log.SumLogOneSub
 import TauCeti.LinearAlgebra.Matrix.Trace
 import Mathlib.MeasureTheory.SpecificCodomains.Pi
 
@@ -52,19 +53,6 @@ namespace TauCeti
 
 variable {p ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
 
-private lemma eventually_posDef_one_sub_two_mul_smul (B : Matrix (Fin p) (Fin p) ℝ)
-    (hB : B.IsHermitian) :
-    ∀ᶠ t in 𝓝 (0 : ℝ), (1 - (2 * t) • B).PosDef := by
-  rw [Filter.Eventually, mem_nhds_iff]
-  refine ⟨⋂ j, {t : ℝ | 2 * t * hB.eigenvalues j < 1}, ?_, ?_, ?_⟩
-  · intro t ht
-    simp only [Set.mem_ofPred_eq]
-    rw [hB.posDef_one_sub_smul_iff]
-    exact fun j => Set.mem_iInter.1 ht j
-  · exact isOpen_iInter_of_finite fun j =>
-      isOpen_lt ((continuous_const.mul continuous_id).mul continuous_const) continuous_const
-  · simp
-
 private lemma zero_mem_interior_integrableExpSet_trace_mul_wishartGramMeasure
     (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (S : Matrix (Fin p) (Fin p) ℝ)
     (ν : ℕ) :
@@ -79,7 +67,8 @@ private lemma zero_mem_interior_integrableExpSet_trace_mul_wishartGramMeasure
   · rw [mem_interior_iff_mem_nhds]
     have hB : (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S).IsHermitian :=
       Matrix.isHermitian_sqrt_mul_mul_sqrt S (selfAdjoint.isHermitian_coe Θ)
-    filter_upwards [eventually_posDef_one_sub_two_mul_smul _ hB] with t ht
+    filter_upwards [((continuous_const_mul (2 : ℝ)).tendsto' 0 0 (mul_zero 2)).eventually
+      hB.eventually_posDef_one_sub_smul] with t ht
     exact (mem_integrableExpSet_trace_mul_wishartGramMeasure_iff (Nat.pos_of_ne_zero hν) S t).2 ht
 
 private lemma cgf_trace_mul_wishartGramMeasure_eventuallyEq_sum_log
@@ -95,102 +84,14 @@ private lemma cgf_trace_mul_wishartGramMeasure_eventuallyEq_sum_log
   let B := CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S
   let hB : B.IsHermitian :=
     Matrix.isHermitian_sqrt_mul_mul_sqrt S (selfAdjoint.isHermitian_coe Θ)
-  filter_upwards [eventually_posDef_one_sub_two_mul_smul B hB] with t ht
+  filter_upwards [((continuous_const_mul (2 : ℝ)).tendsto' 0 0 (mul_zero 2)).eventually
+      hB.eventually_posDef_one_sub_smul] with t ht
   rw [cgf_trace_mul_wishartGramMeasure_sqrt ν S ht, hB.det_one_sub_smul]
   rw [Real.log_prod]
   · rfl
   · intro j _
     rw [hB.posDef_one_sub_smul_iff] at ht
     exact (sub_pos.2 (ht j)).ne'
-
-private lemma hasDerivAt_one_sub_two_mul (a t : ℝ) :
-    HasDerivAt (fun u : ℝ => 1 - 2 * u * a) (-2 * a) t := by
-  have hd : DifferentiableAt ℝ (fun u : ℝ => 1 - 2 * u * a) t := by fun_prop
-  refine hd.hasDerivAt.congr_deriv ?_
-  rw [deriv_fun_sub (by fun_prop) (by fun_prop), deriv_const',
-    deriv_fun_mul (by fun_prop) (by fun_prop), deriv_fun_mul (by fun_prop) (by fun_prop)]
-  simp
-
-private lemma hasDerivAt_neg_half_mul_sum_log (c : ℝ) (a : Fin p → ℝ) :
-    HasDerivAt (fun t => -c / 2 * ∑ j, Real.log (1 - 2 * t * a j))
-      (c * ∑ j, a j) 0 := by
-  have hj (j : Fin p) :
-      HasDerivAt (fun t : ℝ => Real.log (1 - 2 * t * a j)) (-2 * a j) 0 := by
-    simpa using (hasDerivAt_one_sub_two_mul (a j) 0).log (by norm_num)
-  have hsum : HasDerivAt (fun t => ∑ j, Real.log (1 - 2 * t * a j))
-      (∑ j, -2 * a j) 0 := HasDerivAt.fun_sum fun j _ => hj j
-  have hmul : HasDerivAt (fun t => -c / 2 * ∑ j, Real.log (1 - 2 * t * a j))
-      (-c / 2 * ∑ j, -2 * a j) 0 := hsum.const_mul (-c / 2)
-  refine hmul.congr_deriv ?_
-  rw [Finset.mul_sum, Finset.mul_sum]
-  apply Finset.sum_congr rfl
-  intro j _
-  ring
-
-private lemma hasDerivAt_deriv_neg_half_mul_sum_log (c : ℝ) (a : Fin p → ℝ) :
-    HasDerivAt (deriv (fun t => -c / 2 * ∑ j, Real.log (1 - 2 * t * a j)))
-      (2 * c * ∑ j, a j ^ 2) 0 := by
-  let f : ℝ → ℝ := fun t => -c / 2 * ∑ j, Real.log (1 - 2 * t * a j)
-  let g : ℝ → ℝ := fun t => c * ∑ j, a j / (1 - 2 * t * a j)
-  have hcont (j : Fin p) : ContinuousAt (fun t : ℝ => 1 - 2 * t * a j) 0 := by fun_prop
-  have hne : ∀ᶠ t in 𝓝 (0 : ℝ), ∀ j, 1 - 2 * t * a j ≠ 0 :=
-    Filter.eventually_all.2 fun j =>
-      (hcont j).eventually_ne (by norm_num : (1 - 2 * 0 * a j : ℝ) ≠ 0)
-  have hfg : deriv f =ᶠ[𝓝 (0 : ℝ)] g := by
-    filter_upwards [hne] with t ht
-    dsimp [f, g]
-    have hj (j : Fin p) :
-        HasDerivAt (fun u : ℝ => Real.log (1 - 2 * u * a j))
-          ((-2 * a j) / (1 - 2 * t * a j)) t := by
-      have hinner : HasDerivAt (fun u : ℝ => 1 - 2 * u * a j) (-2 * a j) t := by
-        exact hasDerivAt_one_sub_two_mul (a j) t
-      exact hinner.log (ht j)
-    rw [(HasDerivAt.const_mul (-c / 2) (HasDerivAt.fun_sum fun j _ => hj j)).deriv]
-    rw [Finset.mul_sum, Finset.mul_sum]
-    apply Finset.sum_congr rfl
-    intro j _
-    field_simp [ht j]
-  have hg : HasDerivAt g (2 * c * ∑ j, a j ^ 2) 0 := by
-    dsimp [g]
-    have hj (j : Fin p) :
-        HasDerivAt (fun t : ℝ => a j / (1 - 2 * t * a j)) (2 * a j ^ 2) 0 := by
-      have hquot : HasDerivAt (fun t : ℝ => a j / (1 - 2 * t * a j))
-          ((0 * (1 - 2 * 0 * a j) - a j * (-2 * a j)) /
-            (1 - 2 * 0 * a j) ^ 2) 0 :=
-        (hasDerivAt_const (0 : ℝ) (a j)).div (hasDerivAt_one_sub_two_mul (a j) 0)
-          (by norm_num)
-      refine hquot.congr_deriv ?_
-      norm_num
-      ring
-    have hsum : HasDerivAt (fun t => ∑ j, a j / (1 - 2 * t * a j))
-        (∑ j, 2 * a j ^ 2) 0 := HasDerivAt.fun_sum fun j _ => hj j
-    have hmul : HasDerivAt (fun t => c * ∑ j, a j / (1 - 2 * t * a j))
-        (c * ∑ j, 2 * a j ^ 2) 0 := hsum.const_mul c
-    refine hmul.congr_deriv ?_
-    rw [Finset.mul_sum, Finset.mul_sum]
-    ring_nf
-  exact hg.congr_of_eventuallyEq hfg
-
-private lemma trace_sqrt_mul_mul_sqrt (hS : S.PosSemidef) (M : Matrix (Fin p) (Fin p) ℝ) :
-    (CFC.sqrt S * M * CFC.sqrt S).trace = (M * S).trace := by
-  rw [Matrix.trace_mul_cycle, CFC.sqrt_mul_sqrt_self S hS.nonneg, Matrix.trace_mul_comm]
-
-private lemma trace_sqrt_mul_mul_sqrt_sq (hS : S.PosSemidef)
-    (M : Matrix (Fin p) (Fin p) ℝ) :
-    ((CFC.sqrt S * M * CFC.sqrt S) * (CFC.sqrt S * M * CFC.sqrt S)).trace =
-      (M * S * M * S).trace := by
-  have hreassoc :
-      (CFC.sqrt S * M * CFC.sqrt S) * (CFC.sqrt S * M * CFC.sqrt S) =
-        CFC.sqrt S * (M * (CFC.sqrt S * CFC.sqrt S) * M) * CFC.sqrt S := by
-    noncomm_ring
-  rw [hreassoc, Matrix.trace_mul_cycle, CFC.sqrt_mul_sqrt_self S hS.nonneg,
-    Matrix.trace_mul_comm]
-
-private lemma iteratedDeriv_two_neg_half_mul_sum_log (c : ℝ) (a : Fin p → ℝ) :
-    iteratedDeriv 2 (fun t => -c / 2 * ∑ j, Real.log (1 - 2 * t * a j)) 0 =
-      2 * c * ∑ j, a j ^ 2 := by
-  rw [iteratedDeriv_succ, iteratedDeriv_one]
-  exact (hasDerivAt_deriv_neg_half_mul_sum_log c a).deriv
 
 /-! ### Finite moments -/
 
@@ -265,7 +166,7 @@ theorem integral_trace_mul_wishartGramMeasure (hS : S.PosSemidef)
       rw [hB.trace_eq_sum_eigenvalues]
       simp
     _ = (ν : ℝ) * ((Θ : Matrix (Fin p) (Fin p) ℝ) * S).trace := by
-      rw [trace_sqrt_mul_mul_sqrt hS]
+      rw [hS.trace_sqrt_mul_mul_sqrt]
 
 /-- **The variance of a symmetric trace statistic under a Gaussian-Gram Wishart law.** The
 statistic `A ↦ trace (Θ * A)` has variance `2 * ν * trace (Θ * S * Θ * S)`, twice the degree
@@ -297,7 +198,7 @@ theorem variance_trace_mul_wishartGramMeasure (hS : S.PosSemidef)
   have hsq : ∑ j, hB.eigenvalues j ^ 2 = (B * B).trace := by
     simpa only [RCLike.ofReal_real_eq_id, id_eq]
       using hB.trace_mul_self_eq_sum_eigenvalues_sq.symm
-  rw [← hsecond, hcumulant, hsq, trace_sqrt_mul_mul_sqrt_sq hS]
+  rw [← hsecond, hcumulant, hsq, hS.trace_sqrt_mul_mul_sqrt_mul_self]
 
 /-- **The covariance of two symmetric trace statistics under a Gaussian-Gram Wishart law.** The
 statistics `A ↦ trace (Θ * A)` and `A ↦ trace (Φ * A)` have covariance
