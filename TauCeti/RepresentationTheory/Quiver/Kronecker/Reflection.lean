@@ -63,12 +63,6 @@ vector `(#A, 1)` — one trivial path `tgt → tgt`, and one path `tgt → src` 
 by `TauCeti.Quiver.Kronecker.card_path_reflect_tgt_src`. The two agree exactly when `#A = 1`, and
 for `#A > 1` the two representations are not isomorphic at all.
 
-The proof is confined to `A₂` for a second reason: it reads the isomorphism off that common
-dimension vector, which pins an indecomposable down only because the Tits form of the reflected
-quiver is positive definite there. That last step already fails for `• ⇉ •`, which carries a whole
-family of pairwise non-isomorphic indecomposables at the single dimension vector `(1, 1)`, by
-`TauCeti.nonempty_kroneckerLineRep_iso_iff`.
-
 The arrow type is taken in `Type`, as in
 `TauCeti.RepresentationTheory.Quiver.Kronecker.AlmostSplit`: the vertex spaces of the reflection
 are cut out of a product indexed by the arrows, so they live in the maximum of the arrow universe
