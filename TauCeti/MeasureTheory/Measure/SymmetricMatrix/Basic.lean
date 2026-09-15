@@ -51,8 +51,8 @@ subspace: `TauCeti.symmetricCoordinates` reads off the entries above the diagona
   `selfAdjoint.continuous_trace_mul_coe` — that pairing is continuous in its second argument, as
   is its exponential `selfAdjoint.continuous_exp_trace_mul_coe`.
 * `TauCeti.symmetricSingle` — the symmetrized matrix unit, the symmetric matrix dual to an entry
-  under the trace pairing, together with the trace identities
-  `TauCeti.trace_symmetricSingle_mul` and
+  under the trace pairing, together with its entries `TauCeti.coe_symmetricSingle_apply` and the
+  trace identities `TauCeti.trace_symmetricSingle_mul` and
   `TauCeti.trace_symmetricSingle_mul_mul_symmetricSingle_mul`.
 -/
 
@@ -408,6 +408,15 @@ def symmetricSingle {p : ℕ} (i j : Fin p) : selfAdjoint.submodule ℝ (Matrix 
 theorem coe_symmetricSingle {p : ℕ} (i j : Fin p) :
     (symmetricSingle i j : Matrix (Fin p) (Fin p) ℝ) =
       (2 : ℝ)⁻¹ • (Matrix.single i j 1 + Matrix.single j i 1) := (rfl)
+
+/-- The entries of a symmetrized matrix unit: `(2 : ℝ)⁻¹` at `(i, j)` and at `(j, i)`, and zero
+elsewhere. -/
+@[simp]
+theorem coe_symmetricSingle_apply {p : ℕ} (i j k l : Fin p) :
+    (symmetricSingle i j : Matrix (Fin p) (Fin p) ℝ) k l =
+      (if i = k ∧ j = l then (2 : ℝ)⁻¹ else 0) + if j = k ∧ i = l then (2 : ℝ)⁻¹ else 0 := by
+  rw [coe_symmetricSingle]
+  simp [Matrix.single_apply, mul_add, mul_ite]
 
 theorem symmetricSingle_comm {p : ℕ} (i j : Fin p) :
     symmetricSingle i j = symmetricSingle j i :=
