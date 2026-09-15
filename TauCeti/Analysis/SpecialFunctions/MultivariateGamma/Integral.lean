@@ -6,18 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Basic
+public import TauCeti.Analysis.Matrix.Sqrt
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence
-public import Mathlib.Analysis.Matrix.Order
 
 /-!
 # The multivariate Gamma function as a cone integral
 
-The multivariate Gamma function is the integral of `(det A) ^ (a - (p + 1) / 2) * exp (-trace A)`
-over the cone of positive-definite symmetric `p × p` matrices, taken against
-`TauCeti.symmetricLebesgue p`. This file proves that identity in dimension zero, and computes how
-the integral depends on a scale matrix: weighting the exponential by an inverse positive-definite
-scale `T`, so that the integrand becomes `(det A) ^ (a - (p + 1) / 2) * exp (-trace (T⁻¹ * A))`,
-multiplies the integral by `(det T) ^ a`.
+For `(p - 1) / 2 < a`, the range in which the integral converges, the multivariate Gamma function
+is the integral of `(det A) ^ (a - (p + 1) / 2) * exp (-trace A)` over the cone of
+positive-definite symmetric `p × p` matrices, taken against `TauCeti.symmetricLebesgue p`. This
+file proves that identity in dimension zero, where the cone is a single point and the condition
+on `a` is vacuous, and computes how the integral depends on a scale matrix: weighting the
+exponential by an inverse positive-definite scale `T`, so that the integrand becomes
+`(det A) ^ (a - (p + 1) / 2) * exp (-trace (T⁻¹ * A))`, multiplies the integral by `(det T) ^ a`.
 
 The scale identity is a congruence change of variables: writing `T = C * Cᵀ`, the map
 `A ↦ C * A * Cᵀ` preserves the cone, carries the plain exponential weight to the weighted one,
@@ -152,12 +153,8 @@ private theorem trace_two_smul_inv_mul (hS : S.PosDef)
     {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)} :
     ((((2 : ℝ) • S)⁻¹ * (A : Matrix (Fin p) (Fin p) ℝ)).trace) =
       (S⁻¹ * (A : Matrix (Fin p) (Fin p) ℝ)).trace / 2 := by
-  have hSdet : IsUnit S.det := isUnit_iff_ne_zero.2 hS.det_pos.ne'
-  have hinv : ((2 : ℝ) • S)⁻¹ = (2 : ℝ)⁻¹ • S⁻¹ :=
-    Matrix.inv_eq_right_inv (by
-      rw [Matrix.smul_mul, Matrix.mul_smul, smul_smul, Matrix.mul_nonsing_inv _ hSdet]
-      norm_num)
-  rw [hinv, Matrix.smul_mul, Matrix.trace_smul, smul_eq_mul]
+  rw [Matrix.inv_smul S 2 (isUnit_iff_ne_zero.2 hS.det_pos.ne'), invOf_eq_inv, Matrix.smul_mul,
+    Matrix.trace_smul, smul_eq_mul]
   ring
 
 /-- Doubling the scale multiplies the determinant power by `2 ^ (p * a)`. -/

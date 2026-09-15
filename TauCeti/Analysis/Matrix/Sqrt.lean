@@ -19,6 +19,9 @@ is the pullback of the quadratic form of `Θ` along `CFC.sqrt S`. For positive-s
 its pencils `1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)` have the same determinant as those of
 `Θ * S`, by Sylvester's determinant identity and `CFC.sqrt S * CFC.sqrt S = S`.
 
+Over the reals the square root is symmetric, so for a positive-definite `T` the identity
+`CFC.sqrt T * CFC.sqrt T = T` exhibits `T` as `C * Cᵀ` with `C` invertible.
+
 The sandwich is the matrix whose eigenvalues govern the exponential moments of a Gaussian
 quadratic form, and the determinant identity is what turns its spectral formula into a formula
 in the original parameters.
@@ -32,7 +35,9 @@ in the original parameters.
 * `Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin` — the quadratic form of `Θ` at
   `CFC.sqrt S x` is the quadratic form of the sandwich at `x`;
 * `Matrix.PosSemidef.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul` — for
-  positive-semidefinite `S`, the pencil determinants of the sandwich and of `Θ * S` agree.
+  positive-semidefinite `S`, the pencil determinants of the sandwich and of `Θ * S` agree;
+* `Matrix.GeneralLinearGroup.exists_mul_transpose_eq_of_posDef` — every positive-definite real
+  matrix is `C * Cᵀ` for an invertible `C`.
 -/
 
 public section
@@ -84,5 +89,21 @@ theorem PosSemidef.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul [D
     CFC.sqrt_mul_sqrt_self S hS.nonneg
   rw [← Matrix.smul_mul, det_one_sub_mul_comm, Matrix.mul_smul, ← Matrix.mul_assoc, hsq,
     ← Matrix.smul_mul, det_one_sub_mul_comm, Matrix.mul_smul]
+
+/-- Every positive-definite real matrix is `C * Cᵀ` for an invertible `C`, namely its square
+root, which is symmetric. Congruence by that `C` is what absorbs a positive-definite scale
+matrix into the positive-definite cone. -/
+theorem GeneralLinearGroup.exists_mul_transpose_eq_of_posDef [DecidableEq ι]
+    {T : Matrix ι ι ℝ} (hT : T.PosDef) :
+    ∃ C : Matrix.GeneralLinearGroup ι ℝ, (C : Matrix ι ι ℝ) * (C : Matrix ι ι ℝ)ᵀ = T := by
+  have hsq : CFC.sqrt T * CFC.sqrt T = T := CFC.sqrt_mul_sqrt_self T hT.posSemidef.nonneg
+  have htr : (CFC.sqrt T)ᵀ = CFC.sqrt T := by
+    rw [← Matrix.conjTranspose_eq_transpose_of_trivial,
+      (Matrix.nonneg_iff_posSemidef.1 (CFC.sqrt_nonneg T)).isHermitian.eq]
+  have hdet : (CFC.sqrt T).det ≠ 0 := fun h => by
+    have hpos := hT.det_pos
+    rw [← hsq, Matrix.det_mul, h, mul_zero] at hpos
+    exact lt_irrefl 0 hpos
+  exact ⟨Matrix.GeneralLinearGroup.mkOfDetNeZero _ hdet, by simpa [htr] using hsq⟩
 
 end Matrix

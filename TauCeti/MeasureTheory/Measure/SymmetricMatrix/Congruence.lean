@@ -11,7 +11,6 @@ public import Mathlib.LinearAlgebra.Matrix.Bilinear
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Transvection
-import Mathlib.Analysis.Matrix.Order
 import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
@@ -39,8 +38,6 @@ the invertible case as a corollary.
   variables for `symmetricLebesgue`.
 * `Matrix.GeneralLinearGroup.det_symmetricCongruence_apply` — the determinant of a congruence
   image is `(det C) ^ 2` times the determinant.
-* `Matrix.GeneralLinearGroup.exists_mul_transpose_eq_of_posDef` — every positive-definite matrix
-  is `C * Cᵀ` for an invertible `C`.
 * `Matrix.GeneralLinearGroup.map_symmetricCongruence_restrict_posDef` — the same change of
   variables on the positive-definite cone, which congruence by an invertible matrix preserves,
   together with its lower- and Bochner-integral forms.
@@ -400,22 +397,6 @@ theorem map_symmetricCongruence_symmetricLebesgue (C : Matrix.GeneralLinearGroup
 section Cone
 
 variable (C : Matrix.GeneralLinearGroup (Fin p) ℝ)
-
-open scoped MatrixOrder in
-/-- Every positive-definite matrix is `C * Cᵀ` for an invertible `C`, namely its square root.
-Congruence by that `C` is what absorbs a positive-definite scale matrix into the cone. -/
-theorem exists_mul_transpose_eq_of_posDef {T : Matrix (Fin p) (Fin p) ℝ} (hT : T.PosDef) :
-    ∃ C : Matrix.GeneralLinearGroup (Fin p) ℝ,
-      (C : Matrix (Fin p) (Fin p) ℝ) * (C : Matrix (Fin p) (Fin p) ℝ)ᵀ = T := by
-  have hsq : CFC.sqrt T * CFC.sqrt T = T := CFC.sqrt_mul_sqrt_self T hT.posSemidef.nonneg
-  have htr : (CFC.sqrt T)ᵀ = CFC.sqrt T := by
-    rw [← Matrix.conjTranspose_eq_transpose_of_trivial,
-      (Matrix.nonneg_iff_posSemidef.1 (CFC.sqrt_nonneg T)).isHermitian.eq]
-  have hdet : (CFC.sqrt T).det ≠ 0 := fun h => by
-    have hpos := hT.det_pos
-    rw [← hsq, Matrix.det_mul, h, mul_zero] at hpos
-    exact lt_irrefl 0 hpos
-  exact ⟨Matrix.GeneralLinearGroup.mkOfDetNeZero _ hdet, by simpa [htr] using hsq⟩
 
 /-- Congruence by an invertible matrix preserves positive definiteness in both directions. -/
 theorem posDef_symmetricCongruence_iff
