@@ -22,8 +22,8 @@ and `[B | I]` has as many rows as the codimension of the code it checks.
 
 ## Main declarations
 
-* `Matrix.linearIndependent_row_fromCols_one`: the rows of `[I | A]` are linearly independent.
-* `Matrix.linearIndependent_row_fromCols_one_right`: the rows of `[B | I]` are linearly
+* `Matrix.linearIndependent_row_one_fromCols`: the rows of `[I | A]` are linearly independent.
+* `Matrix.linearIndependent_row_fromCols_one`: the rows of `[B | I]` are linearly
   independent.
 -/
 
@@ -34,7 +34,7 @@ namespace Matrix
 variable {R ρ τ : Type*} [Semiring R]
 
 /-- The rows of a systematic matrix `[I | A]` are linearly independent. -/
-theorem linearIndependent_row_fromCols_one [Finite ρ] [DecidableEq ρ] (A : Matrix ρ τ R) :
+theorem linearIndependent_row_one_fromCols [Finite ρ] [DecidableEq ρ] (A : Matrix ρ τ R) :
     LinearIndependent R (fromCols (1 : Matrix ρ ρ R) A).row := by
   cases nonempty_fintype ρ
   rw [← vecMul_injective_iff]
@@ -42,7 +42,7 @@ theorem linearIndependent_row_fromCols_one [Finite ρ] [DecidableEq ρ] (A : Mat
   simpa using congrArg (· ∘ Sum.inl) h
 
 /-- The rows of a systematic matrix `[B | I]` are linearly independent. -/
-theorem linearIndependent_row_fromCols_one_right [Finite τ] [DecidableEq τ] (B : Matrix τ ρ R) :
+theorem linearIndependent_row_fromCols_one [Finite τ] [DecidableEq τ] (B : Matrix τ ρ R) :
     LinearIndependent R (fromCols B (1 : Matrix τ τ R)).row := by
   cases nonempty_fintype τ
   rw [← vecMul_injective_iff]
