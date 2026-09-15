@@ -38,6 +38,7 @@ positions relabels one coordinate system into the other, and the resulting chart
 * `TauCeti.choleskyJacobianDensity` — the Jacobian weight of the change of variables.
 * `TauCeti.map_cholesky_symmetricLebesgue` — the change of variables.
 * `TauCeti.setLIntegral_posDef_symmetricLebesgue` — its integral form.
+* `TauCeti.integral_posDef_symmetricLebesgue` — its Bochner-integral form.
 
 ## References
 
@@ -347,5 +348,27 @@ theorem setLIntegral_posDef_symmetricLebesgue
   rw [← map_cholesky_symmetricLebesgue, lintegral_map hf (measurable_lowerTriangleGram p),
     lintegral_withDensity_eq_lintegral_mul _ (measurable_choleskyJacobianDensity p) hg]
   rfl
+
+/-- The Bochner-integral form of the Cholesky change of variables: an integral over the
+positive-definite cone becomes a weighted integral over the positive-diagonal coordinate region. -/
+theorem integral_posDef_symmetricLebesgue {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → E}
+    (hf : AEStronglyMeasurable f ((symmetricLebesgue p).restrict
+      {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (A : Matrix (Fin p) (Fin p) ℝ).PosDef})) :
+    ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (A : Matrix (Fin p) (Fin p) ℝ).PosDef}, f A ∂symmetricLebesgue p =
+      ∫ x in posDiagLowerRegion p,
+        ((2 : ℝ) ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.1)) •
+          f (lowerTriangleGram p x) := by
+  rw [← map_cholesky_symmetricLebesgue] at hf ⊢
+  rw [integral_map (measurable_lowerTriangleGram p).aemeasurable hf,
+    integral_withDensity_eq_integral_toReal_smul (measurable_choleskyJacobianDensity p)
+      (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+  refine integral_congr_ae ?_
+  filter_upwards [ae_restrict_mem (measurableSet_posDiagLowerRegion p)] with x hx
+  rw [choleskyJacobianDensity_def, ENNReal.toReal_ofReal]
+  exact mul_nonneg (by positivity) <| Finset.prod_nonneg fun i _ =>
+    pow_nonneg (hx i).le _
 
 end TauCeti
