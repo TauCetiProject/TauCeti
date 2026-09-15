@@ -31,7 +31,8 @@ transported back to real Banach spaces without weakening Hille--Yosida estimates
   growth bound with exactly the same constants.
 * `StronglyContinuousSemigroup.mem_complexify_domain_iff`: the generator domain is described
   componentwise.
-* `StronglyContinuousSemigroup.mem_generator_complexify_graph_iff`: the generator graph is the
+* `StronglyContinuousSemigroup.complexify_generator_apply`: the generator acts componentwise.
+* `StronglyContinuousSemigroup.mem_complexify_generator_graph_iff`: the generator graph is the
   componentwise complexification of the original graph.
 * `ContractionSemigroup.complexify`: complexification of a contraction semigroup.
 
@@ -182,32 +183,23 @@ private theorem tendsto_complexify_genQuot_iff (S : StronglyContinuousSemigroup 
           (nhdsWithin 0 (Set.Ioi 0)) (nhds w.re) ∧
       Tendsto (fun t : ℝ => (1 / t) • (S.realOperator t z.im - z.im))
         (nhdsWithin 0 (Set.Ioi 0)) (nhds w.im) := by
-  constructor
-  · intro h
-    have hprod := (TauCeti.Complexification.equivProd X).continuous.continuousAt.tendsto.comp h
-    have heq :
-        (TauCeti.Complexification.equivProd X ∘
-            fun t : ℝ => (1 / t) • (S.complexify.realOperator t z - z)) =
-          fun t : ℝ => ((1 / t) • (S.realOperator t z.re - z.re),
-            (1 / t) • (S.realOperator t z.im - z.im)) := by
-      funext t
-      apply Prod.ext <;> simp
-    rw [heq] at hprod
-    exact ⟨by simpa only [TauCeti.Complexification.equivProd_apply] using hprod.fst_nhds,
-      by simpa only [TauCeti.Complexification.equivProd_apply] using hprod.snd_nhds⟩
-  · rintro ⟨hre, him⟩
-    have hprod := hre.prodMk_nhds him
-    have h :=
-      (TauCeti.Complexification.equivProd X).symm.continuous.continuousAt.tendsto.comp hprod
-    have heq :
-        ((TauCeti.Complexification.equivProd X).symm ∘ fun t : ℝ =>
-            ((1 / t) • (S.realOperator t z.re - z.re),
-              (1 / t) • (S.realOperator t z.im - z.im))) =
-          fun t : ℝ => (1 / t) • (S.complexify.realOperator t z - z) := by
-      funext t
-      apply TauCeti.Complexification.ext <;> simp
-    rw [heq] at h
-    simpa only [TauCeti.Complexification.equivProd_symm_apply] using h
+  change Filter.map _ _ ≤ nhds w ↔ _
+  rw [← Filter.map_le_map_iff (TauCeti.Complexification.equivProd X).injective,
+    (TauCeti.Complexification.equivProd X).map_nhds_eq, Filter.map_map]
+  have hquot :
+      (TauCeti.Complexification.equivProd X ∘ fun t : ℝ =>
+          (1 / t) • (S.complexify.realOperator t z - z)) =
+        fun t : ℝ => ((1 / t) • (S.realOperator t z.re - z.re),
+          (1 / t) • (S.realOperator t z.im - z.im)) := by
+    funext t
+    apply Prod.ext <;> simp
+  rw [hquot]
+  rw [TauCeti.Complexification.equivProd_apply]
+  change Tendsto (fun t : ℝ =>
+      ((1 / t) • (S.realOperator t z.re - z.re),
+        (1 / t) • (S.realOperator t z.im - z.im)))
+      (nhdsWithin 0 (Set.Ioi 0)) (nhds (w.re, w.im)) ↔ _
+  exact Prod.tendsto_iff _ _
 
 omit [CompleteSpace X] in
 /-- Membership in the generator domain of the complexified semigroup is componentwise membership
@@ -232,10 +224,58 @@ theorem mem_complexify_domain_iff (S : StronglyContinuousSemigroup X)
       ⟨S.generator_tendsto ⟨z.re, hre⟩, S.generator_tendsto ⟨z.im, him⟩⟩
 
 omit [CompleteSpace X] in
+/-- The generator of the complexified semigroup acts componentwise on its domain. -/
+theorem complexify_generator_apply (S : StronglyContinuousSemigroup X)
+    {z : TauCeti.Complexification X} (hz : z ∈ S.complexify.domain) :
+    S.complexify.generator ⟨z, by
+      rw [S.complexify.generator_domain]
+      exact hz⟩ =
+      ⟨S.generator ⟨z.re, by
+          rw [S.generator_domain]
+          exact ((S.mem_complexify_domain_iff z).mp hz).1⟩,
+        S.generator ⟨z.im, by
+          rw [S.generator_domain]
+          exact ((S.mem_complexify_domain_iff z).mp hz).2⟩⟩ := by
+  have hparts := (S.mem_complexify_domain_iff z).mp hz
+  have htendsto := (S.tendsto_complexify_genQuot_iff z _).mp
+    (S.complexify.generator_tendsto ⟨z, hz⟩)
+  apply TauCeti.Complexification.ext
+  · exact tendsto_nhds_unique htendsto.1 (S.generator_tendsto ⟨z.re, hparts.1⟩)
+  · exact tendsto_nhds_unique htendsto.2 (S.generator_tendsto ⟨z.im, hparts.2⟩)
+
+omit [CompleteSpace X] in
+/-- The real part of the complexified generator is the original generator on the real part. -/
+@[simp]
+theorem complexify_generator_apply_re (S : StronglyContinuousSemigroup X)
+    {z : TauCeti.Complexification X} (hz : z ∈ S.complexify.domain) :
+    (S.complexify.generator ⟨z, by
+      rw [S.complexify.generator_domain]
+      exact hz⟩).re =
+      S.generator ⟨z.re, by
+        rw [S.generator_domain]
+        exact ((S.mem_complexify_domain_iff z).mp hz).1⟩ := by
+  rw [S.complexify_generator_apply hz]
+
+omit [CompleteSpace X] in
+/-- The imaginary part of the complexified generator is the original generator on the imaginary
+part. -/
+@[simp]
+theorem complexify_generator_apply_im (S : StronglyContinuousSemigroup X)
+    {z : TauCeti.Complexification X} (hz : z ∈ S.complexify.domain) :
+    (S.complexify.generator ⟨z, by
+      rw [S.complexify.generator_domain]
+      exact hz⟩).im =
+      S.generator ⟨z.im, by
+        rw [S.generator_domain]
+        exact ((S.mem_complexify_domain_iff z).mp hz).2⟩ := by
+  rw [S.complexify_generator_apply hz]
+
+omit [CompleteSpace X] in
 /-- The graph of the generator of the complexified semigroup is obtained by complexifying the
 graph of the original generator componentwise. Thus `Aℂ (x + i y) = A x + i A y`, with the
 domain condition on both components included in the statement. -/
-theorem mem_generator_complexify_graph_iff (S : StronglyContinuousSemigroup X)
+@[simp]
+theorem mem_complexify_generator_graph_iff (S : StronglyContinuousSemigroup X)
     (z w : TauCeti.Complexification X) :
     (z, w) ∈ S.complexify.generator.graph ↔
       (z.re, w.re) ∈ S.generator.graph ∧ (z.im, w.im) ∈ S.generator.graph := by
@@ -245,17 +285,13 @@ theorem mem_generator_complexify_graph_iff (S : StronglyContinuousSemigroup X)
     have hu : (u : TauCeti.Complexification X) ∈ S.complexify.domain := by
       simpa only [S.complexify.generator_domain] using u.property
     have hparts := (S.mem_complexify_domain_iff u).mp hu
-    have htendsto := (S.tendsto_complexify_genQuot_iff u _).mp
-      (S.complexify.generator_tendsto ⟨u, hu⟩)
     constructor
     · rw [LinearPMap.mem_graph_iff]
       refine ⟨⟨u.val.re, by simpa only [S.generator_domain] using hparts.1⟩, rfl, ?_⟩
-      have horiginal := S.generator_tendsto ⟨u.val.re, hparts.1⟩
-      exact tendsto_nhds_unique horiginal htendsto.1
+      exact (S.complexify_generator_apply_re hu).symm
     · rw [LinearPMap.mem_graph_iff]
       refine ⟨⟨u.val.im, by simpa only [S.generator_domain] using hparts.2⟩, rfl, ?_⟩
-      have horiginal := S.generator_tendsto ⟨u.val.im, hparts.2⟩
-      exact tendsto_nhds_unique horiginal htendsto.2
+      exact (S.complexify_generator_apply_im hu).symm
   · rintro ⟨hre, him⟩
     rw [LinearPMap.mem_graph_iff] at hre him ⊢
     obtain ⟨x, hx, hAx⟩ := hre
@@ -273,22 +309,20 @@ theorem mem_generator_complexify_graph_iff (S : StronglyContinuousSemigroup X)
     have hz : z ∈ S.complexify.domain := (S.mem_complexify_domain_iff z).mpr
       ⟨by rw [← hx']; exact hxdom, by rw [← hy']; exact hydom⟩
     refine ⟨⟨z, by simpa only [S.complexify.generator_domain] using hz⟩, rfl, ?_⟩
-    apply S.complexify.generator_eq_of_tendsto hz
-    exact (S.tendsto_complexify_genQuot_iff z w).mpr
-      ⟨by
-        have h := S.generator_tendsto ⟨x, hxdom⟩
-        rw [hAx'] at h
-        simpa only [hx'] using h,
-       by
-        have h := S.generator_tendsto ⟨y, hydom⟩
-        rw [hAy'] at h
-        simpa only [hy'] using h⟩
+    apply TauCeti.Complexification.ext
+    · rw [S.complexify_generator_apply_re hz, ← hAx']
+      congr 1
+      exact Subtype.ext hx'.symm
+    · rw [S.complexify_generator_apply_im hz, ← hAy']
+      congr 1
+      exact Subtype.ext hy'.symm
 
 omit [CompleteSpace X] in
 /-- The graph of the complex-linear generator is the componentwise complexification of the
 original real generator graph. This is the complex-linear form of
-`mem_generator_complexify_graph_iff`. -/
-theorem mem_complexGenerator_complexify_graph_iff (S : StronglyContinuousSemigroup X)
+`mem_complexify_generator_graph_iff`. -/
+@[simp]
+theorem mem_complexify_complexGenerator_graph_iff (S : StronglyContinuousSemigroup X)
     (z w : TauCeti.Complexification X) :
     (z, w) ∈ (S.complexify.complexGenerator S.isComplexLinear_complexify).graph ↔
       (z.re, w.re) ∈ S.generator.graph ∧ (z.im, w.im) ∈ S.generator.graph := by
@@ -298,7 +332,7 @@ theorem mem_complexGenerator_complexify_graph_iff (S : StronglyContinuousSemigro
         Submodule ℂ _) : Set _) ↔ _
   rw [← LinearPMap.restrictScalars_coe_graph (S := ℝ)]
   rw [S.complexify.complexGenerator_restrictScalars]
-  exact S.mem_generator_complexify_graph_iff z w
+  exact S.mem_complexify_generator_graph_iff z w
 
 end StronglyContinuousSemigroup
 
