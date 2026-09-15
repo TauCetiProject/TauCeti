@@ -37,6 +37,8 @@ divisibility for a whole conjugacy class.
   its members under the centralizer of `σ`.
 * `Ideal.frobenius_fiber_card_mul_orderOf_eq_card_centralizer`: its size, times `orderOf σ`, is
   the order of that centralizer.
+* `Ideal.heightOneFrobeniusFiberEquiv`: the height-one-prime and ideal representations of the
+  fiber are equivalent.
 
 ## References
 
@@ -47,6 +49,7 @@ divisibility for a whole conjugacy class.
 public section
 
 open scoped NumberField Pointwise
+open IsDedekindDomain (HeightOneSpectrum)
 
 namespace Ideal
 
@@ -121,5 +124,27 @@ theorem frobenius_fiber_card_mul_orderOf_eq_card_centralizer (𝔭 : Ideal (𝓞
     Nat.card_congr (Set.equivOfEq (frobenius_fiber_eq_orbit_centralizer 𝔭 Q hσ))
   rw [hcard]
   exact key
+
+/-- The equivalence between the height-one-prime and ideal representations of a Frobenius fiber
+above `p`, induced by `HeightOneSpectrum.asIdeal`. -/
+noncomputable def heightOneFrobeniusFiberEquiv
+    (sigma : L ≃ₐ[K] L) (p : HeightOneSpectrum (𝓞 K)) :
+    {Q : HeightOneSpectrum (𝓞 L) //
+        Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal} ≃
+      {Q : Ideal (𝓞 L) // ∃ (_ : Q.IsPrime) (_ : Q.LiesOver p.asIdeal) (_ : Q ≠ ⊥),
+        IsArithFrobAt (𝓞 K) sigma Q} :=
+  Set.BijOn.equiv HeightOneSpectrum.asIdeal ⟨
+    fun Q hQ ↦ ⟨Q.isPrime, ⟨(congrArg HeightOneSpectrum.asIdeal hQ.1).symm⟩,
+      Q.ne_bot, hQ.2⟩,
+    HeightOneSpectrum.asIdeal_injective.injOn,
+    fun Q hQ ↦ by
+      let hprime : Q.IsPrime := hQ.choose
+      let hover : Q.LiesOver p.asIdeal := hQ.choose_spec.choose
+      let hne : Q ≠ ⊥ := hQ.choose_spec.choose_spec.choose
+      let hfrob : IsArithFrobAt (𝓞 K) sigma Q := hQ.choose_spec.choose_spec.choose_spec
+      let P : HeightOneSpectrum (𝓞 L) := HeightOneSpectrum.ofPrime
+        (Ideal.prime_of_isPrime hne hprime)
+      exact ⟨P, ⟨HeightOneSpectrum.ext
+        ((HeightOneSpectrum.under_asIdeal _ P).trans hover.over.symm), hfrob⟩, rfl⟩⟩
 
 end Ideal

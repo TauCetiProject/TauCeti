@@ -54,8 +54,8 @@ variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
   [Algebra K L] [IsGalois K L]
 
 private theorem isArithFrobAt_of_fixedField_isArithFrobAt
-    (C : ConjClasses (L ≃ₐ[K] L)) (sigma : L ≃ₐ[K] L) (hsigma : sigma ∈ C.carrier)
-    (p : HeightOneSpectrum (𝓞 K)) (hp : p ∈ frobeniusPrimeSet K L C)
+    (sigma : L ≃ₐ[K] L) (p : HeightOneSpectrum (𝓞 K))
+    (hp : p ∈ frobeniusPrimeSet K L (ConjClasses.mk sigma))
     (Q : Ideal (𝓞 L)) [Q.IsPrime]
     (hQp : Q.under (𝓞 K) = p.asIdeal)
     (hrel : IsArithFrobAt (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))
@@ -68,12 +68,11 @@ private theorem isArithFrobAt_of_fixedField_isArithFrobAt
   let _ : Algebra.IsUnramifiedAt (𝓞 K) Q := hur Q
   obtain ⟨phi, hphi⟩ := NumberField.exists_isArithFrobAt K Q
     (Ideal.ne_bot_of_liesOver_of_ne_bot p.ne_bot Q)
-  have hclass : ConjClasses.mk phi = C := by
+  have hclass : ConjClasses.mk phi = ConjClasses.mk sigma := by
     rw [← (mem_frobeniusPrimeSet_iff.mp hp).choose_spec]
     exact (artinSymbol_eq_mk_of_isArithFrobAt p.asIdeal hur Q phi hphi).symm
   have hconj : IsConj sigma phi :=
-    ConjClasses.mk_eq_mk_iff_isConj.mp
-      ((ConjClasses.mem_carrier_iff_mk_eq.mp hsigma).trans hclass.symm)
+    ConjClasses.mk_eq_mk_iff_isConj.mp hclass.symm
   have hsigma_mem : sigma ∈ Subgroup.zpowers phi := by
     rw [Ideal.zpowers_eq_stabilizer_of_isArithFrobAt Q hphi.ne_bot hphi]
     rw [MulAction.mem_stabilizer_iff, ← AlgEquiv.toFixedFieldAlgEquiv_smul_ideal]
@@ -91,12 +90,12 @@ private theorem isArithFrobAt_of_fixedField_isArithFrobAt
   exact habs
 
 /-- **Contraction identifies the fixed-field and absolute Frobenius fibers.** Over a prime `p`
-with Artin class `C`, contraction from `L` to `L ^ <sigma>` carries exactly the primes whose
-absolute Frobenius is `sigma` onto the primes whose relative Artin class is represented by
-`sigma.toFixedFieldAlgEquiv`, provided `sigma` represents `C`. -/
+with Artin class represented by `sigma`, contraction from `L` to `L ^ <sigma>` carries exactly the
+primes whose absolute Frobenius is `sigma` onto the primes whose relative Artin class is represented
+by `sigma.toFixedFieldAlgEquiv`. -/
 theorem fixedField_frobenius_fiber_eq_image
-    (C : ConjClasses (L ≃ₐ[K] L)) (sigma : L ≃ₐ[K] L) (hsigma : sigma ∈ C.carrier)
-    (p : HeightOneSpectrum (𝓞 K)) (hp : p ∈ frobeniusPrimeSet K L C) :
+    (sigma : L ≃ₐ[K] L) (p : HeightOneSpectrum (𝓞 K))
+    (hp : p ∈ frobeniusPrimeSet K L (ConjClasses.mk sigma)) :
     {P : HeightOneSpectrum (𝓞 ↥(fixedField (Subgroup.zpowers sigma))) |
         P.under (𝓞 K) = p ∧
           P ∈ frobeniusPrimeSet ↥(fixedField (Subgroup.zpowers sigma)) L
@@ -125,7 +124,7 @@ theorem fixedField_frobenius_fiber_eq_image
           (congrArg HeightOneSpectrum.asIdeal hPp)
     have hQK : Q'.under (𝓞 K) = p := HeightOneSpectrum.ext hQK'
     have habs : IsArithFrobAt (𝓞 K) sigma Q.1 :=
-      isArithFrobAt_of_fixedField_isArithFrobAt C sigma hsigma p hp Q.1 hQK' hQ
+      isArithFrobAt_of_fixedField_isArithFrobAt sigma p hp Q.1 hQK' hQ
     exact ⟨Q', ⟨hQK, habs⟩, hQE⟩
   · rintro ⟨Q, ⟨hQp, hQ⟩, rfl⟩
     have hur : ∀ (R : Ideal (𝓞 L)) [R.IsPrime] [R.LiesOver p.asIdeal],
@@ -179,30 +178,6 @@ private theorem under_fixedField_injOn_frobenius
   exact (Ideal.eq_of_smul_eq_of_liesOver_under_fixedField
     hQ.2.mem_stabilizer R.asIdeal).symm
 
-private def heightOneFrobeniusFiberEquiv
-    (sigma : L ≃ₐ[K] L) (p : HeightOneSpectrum (𝓞 K)) :
-    {Q : HeightOneSpectrum (𝓞 L) //
-        Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal} ≃
-      {Q : Ideal (𝓞 L) // ∃ (_ : Q.IsPrime) (_ : Q.LiesOver p.asIdeal) (_ : Q ≠ ⊥),
-        IsArithFrobAt (𝓞 K) sigma Q} where
-  toFun Q := ⟨Q.1.asIdeal, Q.1.isPrime,
-    ⟨(congrArg HeightOneSpectrum.asIdeal Q.2.1).symm⟩, Q.1.ne_bot, Q.2.2⟩
-  invFun Q := by
-    let hprime : Q.1.IsPrime := Q.2.choose
-    let hover : Q.1.LiesOver p.asIdeal := Q.2.choose_spec.choose
-    let hne : Q.1 ≠ ⊥ := Q.2.choose_spec.choose_spec.choose
-    let hfrob : IsArithFrobAt (𝓞 K) sigma Q.1 := Q.2.choose_spec.choose_spec.choose_spec
-    let P : HeightOneSpectrum (𝓞 L) := HeightOneSpectrum.ofPrime
-      (Ideal.prime_of_isPrime hne hprime)
-    exact ⟨P, ⟨HeightOneSpectrum.ext
-      ((HeightOneSpectrum.under_asIdeal _ P).trans hover.over.symm), hfrob⟩⟩
-  left_inv Q := by
-    apply Subtype.ext
-    exact HeightOneSpectrum.ext rfl
-  right_inv Q := by
-    apply Subtype.ext
-    rfl
-
 -- Source: `TauCetiRoadmap/Chebotarev/Suggested.lean`, lines 384--391, and the fixed-field
 -- counting argument in Birkbeck--Brasca, `CebotarevDensity/FixedFieldDensity.lean`.
 /-- **The fixed-field Frobenius fiber count.** Let `sigma` represent the conjugacy class `C`, and
@@ -236,12 +211,12 @@ theorem fixedField_frobenius_fiber_card
   have himage : lowerFiber =
       (fun R : HeightOneSpectrum (𝓞 L) ↦
         R.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))) '' upperFiber :=
-    fixedField_frobenius_fiber_eq_image C sigma hsigma p hp
+    fixedField_frobenius_fiber_eq_image sigma p hp'
   have hinj := under_fixedField_injOn_frobenius sigma p
   have hupper : Nat.card upperFiber = Nat.card
       {R : Ideal (𝓞 L) // ∃ (_ : R.IsPrime) (_ : R.LiesOver p.asIdeal) (_ : R ≠ ⊥),
         IsArithFrobAt (𝓞 K) sigma R} :=
-    Nat.card_congr (heightOneFrobeniusFiberEquiv sigma p)
+    Nat.card_congr (Ideal.heightOneFrobeniusFiberEquiv sigma p)
   have hcount := Ideal.frobenius_fiber_card_mul_orderOf_eq_card_centralizer
     p.asIdeal Q.1 hQ
   have hupper_count : Nat.card upperFiber =
