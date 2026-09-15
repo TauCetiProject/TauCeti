@@ -32,9 +32,11 @@ On representations the reflection does three things:
 
 For the `A₂` quiver these are the three indecomposables `S_tgt`, `P_src`, `S_src`, of dimension
 vectors `(0,1)`, `(1,1)`, `(1,0)`, and the last statement sharpens to an isomorphism with the
-projective `P_tgt` of the reflected quiver: reflection kills `S_tgt` and exchanges the other two.
-On those other two the dimension vector follows the simple reflection `s_tgt`, which swaps `(1,0)`
-and `(1,1)`. The sink simple is the exception and not merely a third case: `s_tgt` sends its
+projective `P_tgt` of the reflected quiver. So reflection kills `S_tgt`, carries `P_src` to the
+vertex simple `S_src` of the reflected quiver, and carries `S_src` to the projective `P_tgt`
+there; the two images sit at different vertices of the reversed orientation, and it is their
+dimension vectors `(1,1)` and `(1,0)` that are exchanged, following the simple reflection `s_tgt`.
+The sink simple is the exception and not merely a third case: `s_tgt` sends its
 dimension vector `(0,1)` to the negative root `(0,-1)`, which is the dimension vector of no
 representation, and reflection sends `S_tgt` to zero instead.
 
@@ -214,10 +216,12 @@ with positive definite Tits form the dimension vector of an indecomposable deter
 
 Together with `TauCeti.isZero_reflectRep_simpleRep_tgt` and
 `TauCeti.nonempty_iso_reflectRep_indecProjRep_src_simpleRep_src` this is the whole action of the
-reflection at the sink on the three indecomposables of the `A₂` quiver: it annihilates `S_tgt` and
-exchanges `S_src` with `P_src`. So it realizes the simple reflection at `tgt` on the dimension
-vectors `(1,0)` and `(1,1)` of the latter two only; on the sink simple the two disagree, reflection
-sending `S_tgt` to zero where `s_tgt` sends `(0,1)` to `(0,-1)`. -/
+reflection at the sink on the three indecomposables of the `A₂` quiver: it annihilates `S_tgt`,
+carries `P_src` to the vertex simple `S_src` of the reflected quiver, and carries `S_src` to the
+projective `P_tgt` there. The latter two images are exchanged only in their dimension vectors,
+`(1,1)` and `(1,0)`, so on those two the reflection realizes the simple reflection at `tgt`; on the
+sink simple the two disagree, reflection sending `S_tgt` to zero where `s_tgt` sends `(0,1)` to
+`(0,-1)`. -/
 theorem nonempty_iso_reflectRep_simpleRep_src_indecProjRep_tgt (hA : Fintype.card A = 1) :
     Nonempty (reflectRep (simpleRep k (Kronecker A) src) isSink_tgt
       ≅ indecProjRep k (Reflect (Kronecker A) tgt) tgt) := by
