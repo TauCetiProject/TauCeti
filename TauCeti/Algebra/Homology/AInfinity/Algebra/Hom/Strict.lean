@@ -114,10 +114,14 @@ shifted by `c`; the case `c = 1` is the suspended grading of the bar constructio
 theorem isHomogeneous_shift (f : AInfinityStrictHom AA BB) (c : ℤ) :
     LinearMap.IsHomogeneous f.toLinearMap (AA.grading.shift c).piece
       (BB.grading.shift c).piece 0 := by
-  rw [LinearMap.isHomogeneous_def]
-  intro p a ha
-  rw [InternalGrading.shift_piece] at ha
-  simpa only [InternalGrading.shift_piece, add_zero] using f.map_mem' ha
+  have hA : (AA.grading.shift c).piece = Graded.shift AA.grading.piece c := by
+    funext p
+    rw [InternalGrading.shift_piece, Graded.shift_apply]
+  have hB : (BB.grading.shift c).piece = Graded.shift BB.grading.piece c := by
+    funext p
+    rw [InternalGrading.shift_piece, Graded.shift_apply]
+  rw [hA, hB]
+  exact LinearMap.isHomogeneous_shift_iff.2 f.isHomogeneous
 
 /-- A strict morphism commutes with the arity-`n` operation, as a multilinear-map equality. -/
 theorem map_m_map (f : AInfinityStrictHom AA BB) (n : ℕ) :
