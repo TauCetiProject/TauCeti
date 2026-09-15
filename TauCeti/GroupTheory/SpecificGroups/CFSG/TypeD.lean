@@ -16,8 +16,8 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 # The three families on a type-`D` diagram, and the candidate groups of `Dₙ(q)` and `²Dₙ(q)`
 
 Three classification-list families are built on the diagram `Dₙ`: the untwisted `Dₙ(q)`, the
-graph-twisted `²Dₙ(q)`, and, at rank four, the triality-twisted `³D₄(q)`. They share a diagram, so
-they share a carrier, and `TauCeti.TypeDDiagramLieIndex` is the subtype that collects exactly them.
+graph-twisted `²Dₙ(q)`, and, at rank four, the triality-twisted `³D₄(q)`. They share a diagram, and
+`TauCeti.TypeDDiagramLieIndex` is the subtype that collects exactly them.
 This file attaches to such an index the group of algebraic-closure-valued points of Tau Ceti's
 explicit full-weight type-`D` spin Chevalley carrier at the index's own rank,
 `TauCeti.TypeDSpinCarrier.points`, together with that group's Bourbaki-numbered simple root
@@ -68,8 +68,10 @@ not characterized here.
 
 The triality-twisted branch takes `γ₃ ∘ Frob_q` for an order-three symmetry that the spin carrier
 does not carry: triality permutes the three eight-dimensional representations of `D₄`, and the spin
-module `8ₛ ⊕ 8_c` is not stable under it. No Steinberg map and no candidate group is formed on that
-branch here; the Frobenius supplied on the shared carrier is the factor it composes with.
+module `8ₛ ⊕ 8_c` is not stable under it. The `³D₄(q)` branch is therefore built on the tripled
+carrier `TauCeti.D4Tripled.groupScheme` in
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TrialityD4.lean`; the spin-carrier points and Frobenius
+attached below to a triality-twisted index are not the ambient group and Frobenius of that branch.
 
 The spin carrier is not identified with the pinned simply connected Chevalley--Demazure group
 scheme of type `Dₙ`, and nothing here identifies the two: the constructions below transfer to that
@@ -137,11 +139,12 @@ variable (d : TypeDDiagramLieIndex)
 of the explicit full-weight type-`Dₙ` spin Chevalley carrier, at the rank the index names, over the
 algebraic closure of its prime field.
 
-It is infinite, and it is the same group for the untwisted, graph-twisted and triality-twisted
-families of a given rank and field order, those three differing only in the Steinberg map taken of
-it. No finiteness, reductivity, pinning or maximality statement is attached to it, and it is not
-identified with the points of the pinned simply connected `Dₙ` group scheme, as the module
-docstring describes. -/
+It is infinite, and it is the same group for every index on the diagram of a given rank and field
+order. The untwisted and graph-twisted families run their recipes inside it; the triality-twisted
+family's own branch is instead built on the tripled carrier, in
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TrialityD4.lean`. No finiteness, reductivity, pinning or
+maximality statement is attached to it, and it is not claimed to be the points of the pinned
+simply connected `Dₙ` group scheme, no identification with that group being provided. -/
 abbrev AmbientGroup : Type :=
   TypeDSpinCarrier.points d.1.rank d.four_le_rank d.1.Closure
 
