@@ -67,12 +67,12 @@ theorem isCombinatoriallyTriangulable_iff :
 
 /-- The realization of a combinatorial manifold is combinatorially triangulable. -/
 theorem _root_.AbstractSimplicialComplex.isCombinatoriallyTriangulable_realization
-    {ι : Type v} [DecidableEq ι]
+    {ι : Type v}
     (K : AbstractSimplicialComplex ι)
     (hK : @PreAbstractSimplicialComplex.IsCombinatorialManifold ι (Classical.decEq ι)
       K.toPreAbstractSimplicialComplex n) :
     IsCombinatoriallyTriangulable.{v} (_root_.AbstractSimplicialComplex.Realization K) n := by
-  letI := Classical.decEq ι
+  let _ := Classical.decEq ι
   exact ⟨ι, K, (by
     exact hK),
     ⟨Homeomorph.refl _⟩⟩
