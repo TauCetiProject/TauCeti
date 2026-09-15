@@ -54,6 +54,8 @@ to honest.
 * `TauCeti.iSup_weightSpace_eq_top` and `TauCeti.isInternal_weightSpace`: the honest weight spaces
   span `M`, and `M` is their internal direct sum, so `χ ↦ finrank (weightSpace M χ)` counts honest
   multiplicities.
+* `TauCeti.eq_zero_of_genWeightSpace_ne_bot_of_isTrivial`: a trivial module has no weight but
+  zero.
 
 ## References
 
@@ -203,6 +205,23 @@ theorem mem_genWeightSpace_iff_forall_lie_eq_smul {χ : H → K} {m : M} :
     m ∈ genWeightSpace M χ ↔ ∀ x : H, ⁅(x : L), m⁆ = χ x • m := by
   rw [genWeightSpace_eq_weightSpace, mem_weightSpace]
   simp
+
+/-- **A trivial module has no weight but zero.** Membership of the `chi`-weight space is the
+eigenvector equation (`TauCeti.mem_genWeightSpace_iff_forall_lie_eq_smul`), so a nonzero vector of
+a trivial module on which every `x : H` acts both by zero and by the scalar `chi x` forces `chi` to
+vanish. -/
+theorem eq_zero_of_genWeightSpace_ne_bot_of_isTrivial [LieModule.IsTrivial L M] {chi : H → K}
+    (hchi : genWeightSpace M chi ≠ ⊥) : chi = 0 := by
+  rw [ne_eq, ← LieSubmodule.toSubmodule_eq_bot] at hchi
+  obtain ⟨m, hm, hmne⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hchi
+  rw [LieSubmodule.mem_toSubmodule, mem_genWeightSpace_iff_forall_lie_eq_smul] at hm
+  funext x
+  have hx : chi x • m = 0 := by
+    rw [← hm x]
+    exact LieModule.IsTrivial.trivial (L := L) (x : L) m
+  rcases smul_eq_zero.mp hx with h | h
+  · simpa using h
+  · exact absurd h hmne
 
 variable (K H M) in
 /-- **The honest weight spaces span.** A finite-dimensional module over a Killing-semisimple Lie

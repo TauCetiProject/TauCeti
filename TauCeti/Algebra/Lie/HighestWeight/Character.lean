@@ -53,6 +53,10 @@ domain is cut out by inequalities and so needs a linear order on the coefficient
 with its ring structure: the ring here is an algebraically closed field, which carries no such
 order.
 
+Weyl invariance has one further consequence for a highest weight module, needing no denominator:
+the coefficient `1` at the highest weight propagates along the whole Weyl orbit of that weight, so
+every weight in the orbit occurs, and occurs simply.
+
 ## Main results
 
 * `TauCeti.isWeylInvariant_formalCharacter`: **the formal character is Weyl-invariant.**
@@ -62,6 +66,11 @@ order.
   weight module of weight `lam`, that product is **supported in `lam - Q⁺`**;
 * `coeff_formalCharacter_mul_weylDenominator_eq_one_of_isHighestWeightVector_of_lieSpan_eq_top`:
   and its **coefficient at `lam` is `1`**.
+* `TauCeti.formalCharacter_coeff_weylGroup_smul_eq_one_of_isHighestWeightVector`: **the whole Weyl
+  orbit of the highest weight carries the coefficient `1`**, with
+  `TauCeti.finrank_genWeightSpace_weylGroup_smul_eq_one_of_isHighestWeightVector` and
+  `TauCeti.genWeightSpace_weylGroup_smul_ne_bot_of_isHighestWeightVector` the same statement read
+  as a dimension and as the nonvanishing of a weight space.
 * `TauCeti.formalCharacter_mul_weylDenominator_eq_of_forall_coeff_isDominantIntegral_eq`: **that
   product is determined by its coefficients at the dominant integral weights**, with
   `TauCeti.exists_intCast_eq_coroot'_of_sub_mem_posRootCone` the integrality of the weights below
@@ -139,6 +148,35 @@ theorem formalCharacter_coeff_eq_one_of_isHighestWeightVector_of_lieSpan_eq_top 
   rw [formalCharacter_coeff, ← finrank_toSubmodule,
     genWeightSpace_eq_span_singleton_of_isHighestWeightVector_of_lieSpan_eq_top hv hgen,
     finrank_span_singleton hv.ne_zero, Nat.cast_one]
+
+/-- **Every Weyl translate of the highest weight is again a weight, with multiplicity one.** The
+coefficient of the formal character at the highest weight of a highest weight module is `1`, and
+the character is Weyl-invariant, so the whole orbit of the highest weight carries the coefficient
+`1`. -/
+theorem formalCharacter_coeff_weylGroup_smul_eq_one_of_isHighestWeightVector
+    (w : (IsKilling.rootSystem H).weylGroup) :
+    (formalCharacter K H M).coeff (w • lam) = 1 := by
+  rw [formalCharacter_coeff_weylGroup_smul]
+  exact formalCharacter_coeff_eq_one_of_isHighestWeightVector_of_lieSpan_eq_top hv hgen
+
+/-- **The weight spaces along the orbit of the highest weight are lines.** This is
+`TauCeti.formalCharacter_coeff_weylGroup_smul_eq_one_of_isHighestWeightVector` read as a
+dimension, through `TauCeti.formalCharacter_coeff`. -/
+theorem finrank_genWeightSpace_weylGroup_smul_eq_one_of_isHighestWeightVector
+    (w : (IsKilling.rootSystem H).weylGroup) :
+    finrank K (genWeightSpace M ((w • lam : Dual K H) : H → K)) = 1 := by
+  have h := formalCharacter_coeff_weylGroup_smul_eq_one_of_isHighestWeightVector hv hgen w
+  rw [formalCharacter_coeff] at h
+  exact_mod_cast h
+
+/-- **A Weyl translate of the highest weight is a weight.** In particular the orbit of the highest
+weight is contained in the set of weights of any highest weight module. -/
+theorem genWeightSpace_weylGroup_smul_ne_bot_of_isHighestWeightVector
+    (w : (IsKilling.rootSystem H).weylGroup) :
+    genWeightSpace M ((w • lam : Dual K H) : H → K) ≠ ⊥ := fun hbot ↦ by
+  have h := formalCharacter_coeff_weylGroup_smul_eq_one_of_isHighestWeightVector hv hgen w
+  rw [formalCharacter_coeff_eq_zero_iff.mpr hbot] at h
+  exact zero_ne_one h
 
 /-- **The two factors of `ch M · Δ` are supported downwards from `lam` and from `0`**: if
 `chi = chi₁ + chi₂` with `chi₁` a weight of `M` and `chi₂` in the support of the denominator, then
