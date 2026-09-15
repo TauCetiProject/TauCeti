@@ -32,7 +32,7 @@ The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Code
 
 public section
 
-namespace TauCeti
+namespace TauCeti.RingEquiv
 
 open Module Matrix
 
@@ -198,4 +198,4 @@ theorem range_vecMulLinear_eq_iff_ker_map_eq_galoisDual_of_involutive (Ïƒ : K â‰
 
 end Field
 
-end TauCeti
+end TauCeti.RingEquiv
