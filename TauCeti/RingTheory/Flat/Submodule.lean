@@ -29,16 +29,14 @@ The intersection formula is deduced by writing `p ⊓ q` as the kernel of the ma
 
 ## Main results
 
-* `TauCeti.LinearMap.ker_baseChange_prod`: the kernel of the base change of a pair of maps.
-* `TauCeti.Submodule.baseChange_ker`: base change carries a kernel to a kernel.
-* `TauCeti.Submodule.baseChange_inf`: base change preserves intersections.
+* `LinearMap.ker_baseChange_prod`: the kernel of the base change of a pair of maps.
+* `Submodule.baseChange_ker`: base change carries a kernel to a kernel.
+* `Submodule.baseChange_inf`: base change preserves intersections.
 -/
 
 public section
 
 open scoped TensorProduct
-
-namespace TauCeti
 
 variable {R M N P : Type*} (A : Type*) [CommRing R] [CommRing A] [Algebra R A]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P]
@@ -87,5 +85,3 @@ theorem baseChange_inf (p q : Submodule R M) :
   rw [hp, hq, ← LinearMap.ker_baseChange_prod, hpq, baseChange_ker]
 
 end Submodule
-
-end TauCeti

@@ -291,7 +291,7 @@ theorem rationalToComplexSubmodule_inf (hℚ : IsBaseChange ℚ ιℚ)
     rationalToComplexSubmodule hℚ hℂ (W₁ ⊓ W₂) =
       rationalToComplexSubmodule hℚ hℂ W₁ ⊓ rationalToComplexSubmodule hℚ hℂ W₂ := by
   unfold rationalToComplexSubmodule
-  rw [TauCeti.Submodule.baseChange_inf,
+  rw [Submodule.baseChange_inf,
     Submodule.map_inf _ (rationalToComplexLinearEquiv hℚ hℂ).injective]
 
 /-- The canonical equivalence from the concrete complexification `ℂ ⊗[ℚ] W` of a rational
