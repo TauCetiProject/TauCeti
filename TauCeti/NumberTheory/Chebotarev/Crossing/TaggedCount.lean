@@ -24,8 +24,6 @@ finite sum from which the Euler-product form of the crossing constant is obtaine
 
 * `NumberField.Chebotarev.mem_taggedElements_iff`: the defining membership condition.
 * `NumberField.Chebotarev.taggedElements_mono`: divisibility makes the tag carrier shrink.
-* `NumberField.Chebotarev.card_taggedElements_eq_sum_totient`: the Chebotarev carrier is bridged to
-  the generic cyclic order-counting theorem.
 -/
 
 public section
@@ -61,17 +59,5 @@ theorem taggedElements_one {H : Type*} [Group H] [Fintype H] :
     taggedElements (H := H) 1 = Finset.univ := by
   ext τ
   simp [taggedElements]
-
-/-- In a finite cyclic group, split the tags according to the exact order of their elements.
-
-The arithmetic content is supplied by the generic cyclic order-counting API; this theorem keeps the
-Chebotarev carrier opaque to its consumers. -/
-theorem card_taggedElements_eq_sum_totient {H : Type*} [Group H] [Fintype H] [IsCyclic H]
-    (f : ℕ) :
-    (taggedElements (H := H) f).card =
-      ∑ d ∈ {d ∈ (Fintype.card H).divisors | f ∣ d}, Nat.totient d := by
-  -- The named carrier is this filtered subtype; expose that bridge before using the generic API.
-  change #{τ : H | f ∣ orderOf τ} = _
-  exact IsCyclic.card_filter_dvd_orderOf_eq_sum_totient f
 
 end NumberField.Chebotarev
