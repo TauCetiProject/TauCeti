@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.FixedPointCandidate
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.GeckCarrier
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Torus
 
@@ -49,7 +50,11 @@ group is finite, perfect, or simple.
 
 * `TauCeti.UnimodularExceptionalIndex`: the unimodular indices whose Steinberg map is not a
   half-Frobenius power, that is `E₈(q)`, `F₄(q)` and `G₂(q)`, with
-  `TauCeti.UnimodularExceptionalIndex.steinberg` their Steinberg map.
+  `TauCeti.UnimodularExceptionalIndex.AmbientGroup` their ambient group,
+  `TauCeti.UnimodularExceptionalIndex.simpleRootSubgroup` its numbered simple root subgroups,
+  `TauCeti.UnimodularExceptionalIndex.steinberg` their Steinberg map and
+  `TauCeti.UnimodularExceptionalIndex.Group` the candidate simple group, the derived subgroup of
+  the fixed points of that map modulo the centre of that derived subgroup.
 
 ## Main results
 
@@ -82,7 +87,10 @@ group is finite, perfect, or simple.
 
 For the three untwisted branches treated here, `steinberg` is the `q`-power Frobenius on the Geck
 carrier. Thus `mem_fixedSubgroup_steinberg_iff` identifies its fixed points with the carrier points
-whose matrix entries lie in `𝔽_q`. The other unimodular branches use half-Frobenius maps instead
+whose matrix entries lie in `𝔽_q`, and `Group` is the derived subgroup of those fixed points
+modulo the centre of that derived subgroup. Both are formed on the Geck carrier, and they transfer
+to the pinned simply connected group scheme of the diagram only along an identification of the two
+carriers, which is not proved here. The other unimodular branches use half-Frobenius maps instead
 and are therefore not included in `UnimodularExceptionalIndex`.
 -/
 
@@ -144,10 +152,24 @@ abbrev f4 (q : PrimePower) : UnimodularExceptionalIndex :=
 abbrev g2 (q : PrimePower) (hq : 3 ≤ q.card) : UnimodularExceptionalIndex :=
   ⟨UnimodularLieIndex.g2 q hq, by simp⟩
 
+/-- **The ambient group of an untwisted unimodular exceptional index**: the points of the Geck
+carrier of the underlying valid index over the algebraic closure of its prime field. In the types
+`E₈`, `F₄` and `G₂` the adjoint module spans the full character lattice, which is what lets the
+Geck carrier serve as the carrier of these branches. It is not identified with the pinned simply
+connected group scheme of the diagram. -/
+abbrev AmbientGroup : Type := ValidLieTypeIndex.GeckGroup d.1.1
+
+/-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of the diagram: the Geck
+carrier's numbered root subgroup at the positive copy of `i`, as a homomorphism from the additive
+group of the algebraic closure. -/
+abbrev simpleRootSubgroup (i : Fin d.1.1.dynkinType.rank) :
+    Multiplicative d.1.1.Closure →* d.AmbientGroup :=
+  d.1.1.geckRootSubgroup (.inl i)
+
 /-- **The Steinberg endomorphism of an untwisted unimodular exceptional index**: the `q`-power
 Frobenius of the Geck point group, where `q` is the field order recorded by the index. The three
 families this covers are untwisted, so no diagram automorphism and no half-Frobenius enters. -/
-def steinberg : ValidLieTypeIndex.GeckGroup d.1.1 →* ValidLieTypeIndex.GeckGroup d.1.1 :=
+def steinberg : d.AmbientGroup →* d.AmbientGroup :=
   d.1.1.geckFrobenius
 
 /-- The Steinberg map of an untwisted unimodular exceptional index is the Frobenius of its Geck
@@ -162,7 +184,7 @@ theorem steinberg_eq_geckFrobenius : d.steinberg = d.1.1.geckFrobenius := by
 /-- The Steinberg map acts on the Geck point group by raising every matrix entry to the `q`-th
 power. -/
 @[simp]
-theorem coe_steinberg_apply (g : ValidLieTypeIndex.GeckGroup d.1.1)
+theorem coe_steinberg_apply (g : d.AmbientGroup)
     (r c : Fin (d.1.1.dynkinType.geckDim d.1.1.dynkinType_valid)) :
     ((d.steinberg g : Matrix.GeneralLinearGroup
           (Fin (d.1.1.dynkinType.geckDim d.1.1.dynkinType_valid)) d.1.1.Closure) :
@@ -204,7 +226,7 @@ points of the Geck carrier whose entries lie in `𝔽_q`.
 As for `TauCeti.ValidLieTypeIndex.mem_fixedSubgroup_geckFrobenius_iff`, this is not a `simp` lemma:
 `simp` rewrites its left-hand side through `MonoidHom.mem_eqLocus`, and the `simpNF` linter rejects
 the annotation. -/
-theorem mem_fixedSubgroup_steinberg_iff (g : ValidLieTypeIndex.GeckGroup d.1.1) :
+theorem mem_fixedSubgroup_steinberg_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.steinberg ↔
       ∀ r c, ((g : Matrix.GeneralLinearGroup
           (Fin (d.1.1.dynkinType.geckDim d.1.1.dynkinType_valid)) d.1.1.Closure) :
@@ -213,6 +235,17 @@ theorem mem_fixedSubgroup_steinberg_iff (g : ValidLieTypeIndex.GeckGroup d.1.1) 
         d.1.1.fixedField := by
   rw [steinberg_eq_geckFrobenius]
   exact d.1.1.mem_fixedSubgroup_geckFrobenius_iff g
+
+/-! ## The finite-group candidate -/
+
+/-- **The finite-simple-group candidate attached to an untwisted unimodular exceptional index**:
+the derived subgroup of the Steinberg fixed points, modulo the centre of that derived subgroup.
+No finiteness or simplicity assertion is part of this definition, nor any identification of the
+Geck carrier with the pinned simply connected group scheme of the diagram. -/
+abbrev Group : Type := FixedPointCandidate d.steinberg
+
+/-- The candidate carries a group structure; the quotient construction supplies it. -/
+example : _root_.Group d.Group := inferInstance
 
 end
 

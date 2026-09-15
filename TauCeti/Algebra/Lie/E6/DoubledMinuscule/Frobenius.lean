@@ -51,7 +51,7 @@ carrier's root datum, or any finiteness or simplicity statement.
 * `TauCeti.E6DoubledMinuscule.frobenius`: the `p ^ k`-power Frobenius on the carrier's points.
 * `TauCeti.E6DoubledMinuscule.coe_frobenius` and `coe_frobenius_apply`: its matrix and entrywise
   actions.
-* `TauCeti.E6DoubledMinuscule.frobenius_eq_pointsMap`: it is the functorial map on points induced
+* `TauCeti.E6DoubledMinuscule.frobenius_eq_map`: it is the functorial map on points induced
   by the iterated Frobenius of the value ring.
 * `TauCeti.E6DoubledMinuscule.frobenius_rootSubgroupPoints`: its action on every numbered
   simple-root subgroup.
@@ -111,7 +111,7 @@ For `p` prime, `0 < k`, and `A` an algebraic closure of `ZMod p`, this is the Fr
 the Steinberg map that a future construction of the twisted family `²E₆(p ^ k)` composes with the
 `E₆` graph automorphism. -/
 def frobenius : points A →* points A :=
-  pointsMap (iterateFrobenius A p k)
+  (pointsPresentation A).map (pointsPresentation A) (iterateFrobenius A p k)
 
 /-- The Frobenius endomorphism of the doubled minuscule carrier acts by entrywise Frobenius.
 
@@ -120,11 +120,12 @@ normal form. -/
 theorem coe_frobenius (g : points A) :
     (frobenius p k A g : _root_.Matrix.GeneralLinearGroup (Fin 54) A) =
       _root_.Matrix.GeneralLinearGroup.map (iterateFrobenius A p k) g := by
-  rw [frobenius, coe_pointsMap]
+  rw [frobenius, GeneralLinear.IntegralPointsPresentation.coe_map]
 
 /-- **The carrier Frobenius is the functorial map on points** induced by the iterated Frobenius
 endomorphism of the value ring. -/
-theorem frobenius_eq_pointsMap : frobenius p k A = pointsMap (iterateFrobenius A p k) := by
+theorem frobenius_eq_map : frobenius p k A =
+      (pointsPresentation A).map (pointsPresentation A) (iterateFrobenius A p k) := by
   rw [frobenius]
 
 /-- Entrywise, the Frobenius endomorphism raises each matrix coefficient to its `p ^ k`-th
@@ -144,7 +145,7 @@ theorem frobenius_rootSubgroupPoints (i : Fin 6 ⊕ Fin 6) (u : Multiplicative A
     frobenius p k A (rootSubgroupPoints i A u) =
       rootSubgroupPoints i A
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ p ^ k)) := by
-  rw [frobenius, pointsMap_rootSubgroupPoints]
+  rw [frobenius, map_rootSubgroupPoints]
   exact Subtype.ext (by rw [iterateFrobenius_def])
 
 /-- **Frobenius raises every coordinate of the pinned split weight torus to its `p ^ k`-th
@@ -160,12 +161,13 @@ theorem frobenius_weightTorusPoints (s : Fin 6 → Aˣ) :
 group. -/
 @[simp]
 theorem frobenius_zero : frobenius p 0 A = MonoidHom.id _ := by
-  rw [frobenius, iterateFrobenius_zero, pointsMap_id]
+  rw [frobenius, iterateFrobenius_zero, GeneralLinear.IntegralPointsPresentation.map_id]
 
 /-- Frobenius iterates add under composition on the doubled minuscule carrier's point group. -/
 theorem frobenius_add (m : ℕ) :
     frobenius p (k + m) A = (frobenius p k A).comp (frobenius p m A) := by
-  rw [frobenius, frobenius, frobenius, iterateFrobenius_add, pointsMap_comp]
+  rw [frobenius, frobenius, frobenius, iterateFrobenius_add,
+    GeneralLinear.IntegralPointsPresentation.map_comp (Q := pointsPresentation A)]
 
 /-- **Frobenius exponents multiply under taking powers**: the `m`-th power of the `p ^ k`-power
 Frobenius of the doubled minuscule carrier, in the endomorphism monoid of its points, is its
