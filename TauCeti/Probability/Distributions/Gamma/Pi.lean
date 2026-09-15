@@ -8,8 +8,10 @@ module
 public import Mathlib.Probability.Independence.Basic
 public import Mathlib.Probability.ProductMeasure
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
+public import TauCeti.MeasureTheory.Measure.PiWithDensity
 public import TauCeti.Probability.Distributions.Gamma.Basic
 public import TauCeti.Probability.Distributions.Gamma.Sum
+import TauCeti.Probability.Distributions.PDFInstances
 
 /-!
 # Finite products of Gamma distributions
@@ -21,6 +23,10 @@ coordinates.
 The coordinatewise positivity holds for arbitrary shape and rate vectors because
 `ae_pos_gammaMeasure` is parameter-independent, and every Gamma measure is sigma-finite.  For a
 nonempty index type, coordinatewise positivity makes the coordinate sum positive.
+
+Each factor is Lebesgue measure weighted by its density, so the product is Lebesgue measure on
+`ι → ℝ` weighted by the product of the densities.  This is the form a change of variables on the
+product needs.
 
 At a common rate the Gamma family is closed under convolution, so the total of the coordinates
 of a Gamma product is again Gamma, with the total shape.  Summing instead over the fibres of a
@@ -35,6 +41,8 @@ statement.
 * `TauCeti.ae_pos_pi_gammaMeasure` gives coordinatewise positivity in a finite Gamma product.
 * `TauCeti.ae_pos_sum_pi_gammaMeasure` gives positivity of the coordinate sum for a nonempty
   finite Gamma product.
+* `TauCeti.pi_gammaMeasure_eq_withDensity` presents a finite Gamma product as Lebesgue measure
+  weighted by the product of the coordinate densities.
 * `TauCeti.map_sum_pi_gammaMeasure` identifies the law of the total of the coordinates.
 * `TauCeti.map_funOnFinite_map_pi_gammaMeasure` identifies the joint law of the fibre sums of
   the coordinates along a surjection of index types.
@@ -68,6 +76,19 @@ theorem ae_pos_sum_pi_gammaMeasure [Nonempty ι] (a r : ι → ℝ) :
     ∀ᵐ x ∂Measure.pi (fun i ↦ gammaMeasure (a i) (r i)), 0 < ∑ i, x i := by
   filter_upwards [ae_pos_pi_gammaMeasure a r] with x hx
   exact Finset.sum_pos (fun i _ ↦ hx i) Finset.univ_nonempty
+
+/-! ### The product density -/
+
+/-- **A finite product of Gamma measures has the product of the Gamma densities.** Each factor is
+Lebesgue measure weighted by its density, and coordinatewise weights multiply. -/
+theorem pi_gammaMeasure_eq_withDensity (a r : ι → ℝ) :
+    (Measure.pi fun i ↦ gammaMeasure (a i) (r i))
+      = (volume : Measure (ι → ℝ)).withDensity fun x ↦ ∏ i, gammaPDF (a i) (r i) (x i) := by
+  let _ (i : ι) : SigmaFinite ((volume : Measure ℝ).withDensity (gammaPDF (a i) (r i))) := by
+    rw [← gammaMeasure]; infer_instance
+  rw [volume_pi]
+  exact pi_withDensity (fun _ ↦ (volume : Measure ℝ))
+    fun i ↦ Probability.measurable_gammaPDF (a i) (r i)
 
 /-! ### The law of the coordinate sum -/
 
