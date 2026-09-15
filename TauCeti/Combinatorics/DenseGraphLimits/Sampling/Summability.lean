@@ -21,8 +21,8 @@ event is empty.
 
 ## Main result
 
-* `TauCeti.DenseGraphLimits.tsum_sampleGraph_homDensityFin_tail_ne_top` — the deviation
-  probabilities at sample sizes `n + 1` have finite sum.
+* `SimpleGraph.tsum_sampleGraph_homDensityFin_tail_ne_top` — the deviation probabilities at
+  sample sizes `n + 1` have finite sum.
 
 ## References
 
@@ -40,9 +40,9 @@ open MeasureTheory Filter
 
 open scoped ENNReal
 
-namespace TauCeti
+namespace SimpleGraph
 
-namespace DenseGraphLimits
+open TauCeti.DenseGraphLimits
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
 
@@ -120,6 +120,4 @@ theorem tsum_sampleGraph_homDensityFin_tail_ne_top {V : Type*} [Fintype V]
     convert hsum using 1
     simp only [ENNReal.coe_toNNReal (measure_ne_top _ _)]
 
-end DenseGraphLimits
-
-end TauCeti
+end SimpleGraph
