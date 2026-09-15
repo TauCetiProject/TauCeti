@@ -250,13 +250,15 @@ theorem IsRightAlmostSplit.iso_comp (hf : IsRightAlmostSplit f) {X' : C} (e : X'
 split.** -/
 theorem IsLeftAlmostSplit.iso_comp (hf : IsLeftAlmostSplit f) {X' : C} (e : X' ≅ X) :
     IsLeftAlmostSplit (e.hom ≫ f) := by
-  exact isRightAlmostSplit_op_iff.mp ((isRightAlmostSplit_op_iff.mpr hf).comp_iso e.op)
+  rw [← isRightAlmostSplit_op_iff, op_comp, ← Iso.op_hom]
+  exact (isRightAlmostSplit_op_iff.mpr hf).comp_iso e.op
 
 /-- **Postcomposing a left almost split morphism with an isomorphism keeps it left almost
 split.** -/
 theorem IsLeftAlmostSplit.comp_iso (hf : IsLeftAlmostSplit f) {Y' : C} (e : Y ≅ Y') :
     IsLeftAlmostSplit (f ≫ e.hom) := by
-  exact isRightAlmostSplit_op_iff.mp ((isRightAlmostSplit_op_iff.mpr hf).iso_comp e.op)
+  rw [← isRightAlmostSplit_op_iff, op_comp, ← Iso.op_hom]
+  exact (isRightAlmostSplit_op_iff.mpr hf).iso_comp e.op
 
 /-- Being right almost split is invariant under an isomorphism of the target. -/
 @[simp]
