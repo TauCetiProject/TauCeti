@@ -107,6 +107,48 @@ theorem disjoint_range_iff (L : SmoothLinkEmbedding I M n) (i j : Fin n) :
   intro i
   exact Set.nonempty_iff_ne_empty.mp (Set.range_nonempty (L i))
 
+/-! ### Selected subfamilies -/
+
+/-- Select a subfamily of components along an injective labeling map.  The map preserves the
+component orientations and the disjointness condition, while changing the number of labels. -/
+def restrict {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m → Fin n)
+    (hι : Function.Injective ι) : SmoothLinkEmbedding I M m where
+  component i := L (ι i)
+  pairwiseDisjoint_range := L.pairwiseDisjoint_range.comp_of_injective hι
+
+/-- The selected component of a restricted link is the corresponding original component. -/
+@[simp]
+theorem restrict_apply {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m → Fin n)
+    (hι : Function.Injective ι) (i : Fin m) : L.restrict ι hι i = L (ι i) :=
+  by rfl
+
+/-- The union of any relabeled subfamily is contained in the range of the link. -/
+theorem range_comp_subset_range {m : ℕ} (L : SmoothLinkEmbedding I M n)
+    (ι : Fin m → Fin n) : (⋃ i, Set.range (L (ι i))) ⊆ L.range := by
+  intro x hx
+  rcases Set.mem_iUnion.mp hx with ⟨i, hi⟩
+  exact Set.mem_iUnion.mpr ⟨ι i, hi⟩
+
+/-- Restricting a link can only shrink its occupied subset. -/
+theorem range_restrict_subset {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m → Fin n)
+    (hι : Function.Injective ι) : (L.restrict ι hι).range ⊆ L.range := by
+  simpa only [range, restrict_apply] using L.range_comp_subset_range ι
+
+/-- Membership in a restricted link range means membership in one selected component. -/
+theorem mem_range_restrict_iff {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m → Fin n)
+    (hι : Function.Injective ι) (x : M) :
+    x ∈ (L.restrict ι hι).range ↔ ∃ i, x ∈ Set.range (L (ι i)) := by
+  simp only [range, restrict_apply, Set.mem_iUnion]
+
+/-- Restriction along the identity labeling leaves a link unchanged. -/
+@[simp]
+theorem restrict_refl (L : SmoothLinkEmbedding I M n) :
+    L.restrict id Function.injective_id = L := by
+  apply SmoothLinkEmbedding.ext
+  intro i
+  rfl
+
+
 /-! ### Empty and one-component links -/
 
 /-- The smooth link with no components. -/
@@ -382,35 +424,6 @@ instance instSMulCommClassPerm :
     exact (L.transDiffeomorph_relabel e σ).symm
 
 end AmbientAction
-
-/-! ### Selected subfamilies -/
-
-/-- Select a subfamily of components along an injective labeling map.  The map preserves the
-component orientations and the disjointness condition, while changing the number of labels. -/
-def restrict {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m → Fin n)
-    (hι : Function.Injective ι) : SmoothLinkEmbedding I M m where
-  component i := L (ι i)
-  pairwiseDisjoint_range := L.pairwiseDisjoint_range.comp_of_injective hι
-
-/-- The selected component of a restricted link is the corresponding original component. -/
-@[simp]
-theorem restrict_apply {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m → Fin n)
-    (hι : Function.Injective ι) (i : Fin m) : L.restrict ι hι i = L (ι i) :=
-  by rfl
-
-/-- Restricting a link can only shrink its occupied subset. -/
-theorem range_restrict_subset {m : ℕ} (L : SmoothLinkEmbedding I M n) (ι : Fin m → Fin n)
-    (hι : Function.Injective ι) : (L.restrict ι hι).range ⊆ L.range := by
-  change (⨆ i, Set.range (L (ι i))) ≤ ⨆ i, Set.range (L i)
-  exact iSup_comp_le (fun i ↦ Set.range (L i)) ι
-
-/-- Restriction along the identity labeling leaves a link unchanged. -/
-@[simp]
-theorem restrict_refl (L : SmoothLinkEmbedding I M n) :
-    L.restrict id Function.injective_id = L := by
-  apply SmoothLinkEmbedding.ext
-  intro i
-  rfl
 
 end SmoothLinkEmbedding
 
