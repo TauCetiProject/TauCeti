@@ -642,10 +642,9 @@ theorem coindDiscreteFunctor_obj (A : DiscreteRep.{u, v, w} R U) :
 @[simp]
 theorem coindDiscreteFunctor_map_apply {A B : DiscreteRep.{u, v, w} R U}
     (f : A ⟶ B) (a : DiscreteCoind G U A.V) (g : G) :
-    (show DiscreteCoind G U B.V from
-      (show Representation.IntertwiningMap
-          ((coindDiscreteFunctor R G U).obj A).ρ ((coindDiscreteFunctor R G U).obj B).ρ
-        from (coindDiscreteFunctor R G U).map f) a) g = f.toLinearMap (a g) := by
+    ((show Representation.IntertwiningMap
+        (coindDiscreteRep R G U A).ρ (coindDiscreteRep R G U B).ρ
+      from (coindDiscreteFunctor R G U).map f) a) g = f.toLinearMap (a g) := by
   change DiscreteCoind.map f.toLinearMap (DiscreteRep.equivariant f) a g = _
   exact DiscreteCoind.map_apply f.toLinearMap _ a g
 
