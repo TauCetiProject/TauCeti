@@ -17,9 +17,9 @@ submodules to the intersection of their base changes.
 
 Mathlib records the order-theoretic half of this picture for a *faithfully* flat algebra
 (`Submodule.baseChange_le_iff`, `Submodule.baseChangeOrderEmbedding`) and the module-theoretic
-input for a flat one (`Module.Flat.ker_lTensor_eq`). What is added here is the submodule reading
-of that input and the intersection formula it yields, so that base change is a morphism of
-lattices and not only of orders. Intersections are where flatness is genuinely needed: a
+input for a flat one (`Module.Flat.ker_lTensor_eq`). What is added here is the intersection formula
+it yields, so that base change is a morphism of lattices and not only of orders. Intersections are
+where flatness is genuinely needed: a
 submodule and its base change are ranges, and only flatness makes the base change of an inclusion
 into an inclusion.
 
@@ -30,7 +30,6 @@ The intersection formula is deduced by writing `p ⊓ q` as the kernel of the ma
 ## Main results
 
 * `LinearMap.ker_baseChange_prod`: the kernel of the base change of a pair of maps.
-* `Submodule.baseChange_ker`: base change carries a kernel to a kernel.
 * `Submodule.baseChange_inf`: base change preserves intersections.
 -/
 
@@ -67,21 +66,24 @@ namespace Submodule
 
 variable [Module.Flat R A]
 
-/-- Extension of scalars along a flat algebra carries the kernel of a map to the kernel of its
-base change. -/
-theorem baseChange_ker (f : M →ₗ[R] N) :
-    (LinearMap.ker f).baseChange A = LinearMap.ker (f.baseChange A) :=
-  (Module.Flat.ker_lTensor_eq A A f).symm
-
 /-- Extension of scalars along a flat algebra preserves intersections of submodules. -/
 theorem baseChange_inf (p q : Submodule R M) :
     (p ⊓ q).baseChange A = p.baseChange A ⊓ q.baseChange A := by
   have hp : p.baseChange A = LinearMap.ker (p.mkQ.baseChange A) := by
-    rw [← baseChange_ker, Submodule.ker_mkQ]
+    calc
+      p.baseChange A = (LinearMap.ker p.mkQ).baseChange A :=
+        congrArg (fun r ↦ r.baseChange A) (Submodule.ker_mkQ p).symm
+      _ = LinearMap.ker (p.mkQ.baseChange A) :=
+        (Module.Flat.ker_lTensor_eq A A p.mkQ).symm
   have hq : q.baseChange A = LinearMap.ker (q.mkQ.baseChange A) := by
-    rw [← baseChange_ker, Submodule.ker_mkQ]
+    calc
+      q.baseChange A = (LinearMap.ker q.mkQ).baseChange A :=
+        congrArg (fun r ↦ r.baseChange A) (Submodule.ker_mkQ q).symm
+      _ = LinearMap.ker (q.mkQ.baseChange A) :=
+        (Module.Flat.ker_lTensor_eq A A q.mkQ).symm
   have hpq : p ⊓ q = LinearMap.ker (p.mkQ.prod q.mkQ) := by
     rw [LinearMap.ker_prod, Submodule.ker_mkQ, Submodule.ker_mkQ]
-  rw [hp, hq, ← LinearMap.ker_baseChange_prod, hpq, baseChange_ker]
+  rw [hp, hq, ← LinearMap.ker_baseChange_prod, hpq]
+  exact (Module.Flat.ker_lTensor_eq A A (p.mkQ.prod q.mkQ)).symm
 
 end Submodule

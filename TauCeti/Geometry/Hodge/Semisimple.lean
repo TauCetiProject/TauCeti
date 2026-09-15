@@ -129,13 +129,4 @@ theorem exists_finset_isAtom_sup_eq_top (hℚ : IsBaseChange ℚ ιℚ) (h : IsP
   obtain ⟨P⟩ := isPolarizable_iff_nonempty.1 h
   exact RationalHodgeSubstructure.exists_finset_isAtom_sup_eq P ⊤
 
-/-- **Semisimplicity, read on the rational space.** The rational subspaces of the simple
-substructures produced by `exists_finset_isAtom_sup_eq_top` are independent and span. -/
-theorem exists_finset_isAtom_sup_WQ_eq_top (hℚ : IsBaseChange ℚ ιℚ) (h : IsPolarizable hℂ hs) :
-    ∃ s : Finset (RationalHodgeSubstructure hℚ hs),
-      (∀ U ∈ s, IsAtom U) ∧ s.SupIndep id ∧ (s.sup fun U ↦ U.WQ) = ⊤ := by
-  obtain ⟨s, hatom, hindep, hsup⟩ := exists_finset_isAtom_sup_eq_top hℚ h
-  refine ⟨s, hatom, hindep, ?_⟩
-  rw [← RationalHodgeSubstructure.finsetSup_WQ s, hsup, RationalHodgeSubstructure.top_WQ]
-
 end TauCeti.Hodge
