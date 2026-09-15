@@ -87,14 +87,16 @@ theorem bijOn_symmetricInv (p : ℕ) :
         (A : Matrix (Fin p) (Fin p) ℝ).PosDef}
       {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).PosDef} := by
-  have hmaps : ∀ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
-      (A : Matrix (Fin p) (Fin p) ℝ).PosDef → (symmetricInv A : Matrix (Fin p) (Fin p) ℝ).PosDef :=
-    fun A hA => by simpa using hA
-  have hinv : ∀ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
-      (A : Matrix (Fin p) (Fin p) ℝ).PosDef → symmetricInv (symmetricInv A) = A :=
-    fun _ hA => symmetricInv_symmetricInv hA.det_pos.ne'
-  exact ⟨hmaps, fun A hA B hB h => by rw [← hinv A hA, h, hinv B hB],
-    fun A hA => ⟨symmetricInv A, hmaps A hA, hinv A hA⟩⟩
+  have hmaps : Set.MapsTo symmetricInv
+      {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (A : Matrix (Fin p) (Fin p) ℝ).PosDef}
+      {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (A : Matrix (Fin p) (Fin p) ℝ).PosDef} := fun _ hA => by simpa using hA
+  have hinv : Set.LeftInvOn symmetricInv symmetricInv
+      {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (A : Matrix (Fin p) (Fin p) ℝ).PosDef} :=
+    fun _ hA => symmetricInv_symmetricInv (Matrix.PosDef.det_pos hA).ne'
+  exact Set.InvOn.bijOn ⟨hinv, hinv⟩ hmaps hmaps
 
 /-! ### Measurability of inversion -/
 
@@ -169,9 +171,13 @@ theorem hasFDerivAt_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) 
   refine hcomp.congr_fderiv (ContinuousLinearMap.ext fun H => ?_)
   -- Both sides are the self-adjoint part of `-A⁻¹ H A⁻¹`: on the left the composite of continuous
   -- linear maps evaluates to it definitionally, and on the right the matrix is already symmetric.
-  -- The composite cannot be evaluated by rewriting: its coercion carries the Frobenius normed
-  -- instances of `mulLeftRight`, while `ι` carries the plain matrix module instances, so the two
-  -- agree only up to unfolding.
+  -- `ContinuousLinearMap.comp_apply` does not apply to that composite: `ι` is a continuous linear
+  -- map for the matrix instances `instTopologicalSpaceMatrix`, `Matrix.addCommMonoid` and
+  -- `Matrix.module`, while `ContinuousLinearMap.mulLeftRight` forces the Frobenius ones,
+  -- `PseudoMetricSpace.toUniformSpace.toTopologicalSpace`,
+  -- `NonUnitalNormedRing.toNonUnitalSeminormedRing.toNonUnitalNonAssocSemiring.toAddCommMonoid`
+  -- and `Matrix.frobeniusNormedSpace.toModule`. These agree definitionally but not syntactically,
+  -- so the composite is not type-correct at the reducibility a rewrite uses.
   have hvalue : π (-((A : Matrix (Fin p) (Fin p) ℝ)⁻¹ *
         (H : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)⁻¹)) =
       -(Matrix.symmetricCongruenceLinearMap
