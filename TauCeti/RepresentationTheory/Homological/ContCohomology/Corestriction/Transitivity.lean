@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
-
-import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
+public import TauCeti.GroupTheory.Index.Basic
+public import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
+public import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
 # Transitivity of low-degree corestriction
@@ -25,11 +26,14 @@ transversal words for the composite representatives are exactly the inner transv
 applied to the outer ones.  Transversal independence from `Corestriction.Basic` promotes these
 cochain identities to the canonical maps on `H⁰`, `H¹`, and `H²`.
 
-This completes the transitivity part of Layer 6 of the Profinite Cohomology roadmap.
+Transitivity is what makes a corestriction computable one step at a time: it may be evaluated
+through any chain of intermediate finite-index open subgroups instead of in a single jump from `V`
+to `G`, and conversely a corestriction from `V` may be recognised as one from an intermediate `U`.
 
 ## Main declarations
 
-* `explicitCor0Le`, `explicitCor1Le`, `explicitCor2Le`: corestriction along a subgroup inclusion.
+* `explicitCor0Le`, `explicitCor1Le`, `explicitCor2Le`: corestriction along a subgroup inclusion
+  `V ≤ U`, evaluated by `coe_explicitCor0Le`, `explicitCor1Le_mk`, and `explicitCor2Le_mk`.
 * `explicitCor0_trans`, `explicitCor1_trans`, `explicitCor2_trans`: transitivity in degrees zero,
   one, and two.
 -/
@@ -257,12 +261,28 @@ noncomputable def explicitCor0Le [(V.subgroupOf U).FiniteIndex] : H0 V M →+ H0
   (explicitCor0 U M (V.subgroupOf U)).comp
     (h0SubgroupOf G M U V hVU)
 
+/-- The underlying coefficient of relative degree-zero corestriction is the norm over the cosets
+of `V` in `U`, taken along the canonical transversal. -/
+@[simp]
+theorem coe_explicitCor0Le [(V.subgroupOf U).FiniteIndex] (m : H0 V M) :
+    (explicitCor0Le G M U V hVU m : M) =
+      ∑ b : U ⧸ V.subgroupOf U, (Quotient.out b : U) • (m : M) := by
+  rw [explicitCor0Le, AddMonoidHom.comp_apply, coe_explicitCor0, coe_h0SubgroupOf]
+
 section Topological
 
 variable [TopologicalSpace G] [IsTopologicalGroup G]
   [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousSMul G M]
 
-private def subgroupOfContinuousHom : V.subgroupOf U →ₜ* V :=
+/-- Mathlib's topological identification of the copy `V.subgroupOf U` of `V` inside `U` with `V`
+itself, as a continuous monoid homomorphism.  It is the group half of the compatible pair
+transporting cohomology of `V` to cohomology of `V.subgroupOf U`.
+
+The body is `@[expose]`d because the two lemmas below -- the equivariance of the identity
+coefficient map and the ambient value of an application -- hold by `rfl`, and a `rfl` proof
+exported from this module may only unfold exposed definitions. -/
+@[expose]
+def subgroupOfContinuousHom : V.subgroupOf U →ₜ* V :=
   ContinuousMonoidHom.toContinuousMonoidHom
     (Subgroup.subgroupOfContinuousMulEquivOfLe hVU)
 
@@ -270,56 +290,78 @@ omit [IsTopologicalGroup G] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [ContinuousSMul G M] in
 /-- The identity coefficient map is equivariant for the topological identification of `V` with
 `V.subgroupOf U`. Kept named so the two induced subgroup actions rewrite reliably. -/
-private theorem id_subgroupOfContinuousEquiv_smul (x : V.subgroupOf U) (m : M) :
+theorem id_subgroupOfContinuousEquiv_smul (x : V.subgroupOf U) (m : M) :
     (AddMonoidHom.id M) (subgroupOfContinuousHom G U V hVU x • m) =
       x • (AddMonoidHom.id M) m :=
   rfl
 
-omit [IsTopologicalGroup G] in
-private theorem isOpen_subgroupOf (hV : IsOpen (V : Set G)) :
-    IsOpen ((V.subgroupOf U : Subgroup U) : Set U) := by
-  exact hV.preimage continuous_subtype_val
+omit [IsTopologicalGroup G] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [ContinuousSMul G M] in
+/-- `subgroupOfContinuousHom` does not move the ambient value of an element. -/
+@[simp]
+theorem coe_subgroupOfContinuousHom (x : V.subgroupOf U) :
+    ((subgroupOfContinuousHom G U V hVU x : V) : G) = ((x : U) : G) :=
+  rfl
 
-/-- **Relative degree-one corestriction** for an inclusion `V ≤ U` of open subgroups. The source
-is the cohomology of `V` itself, not of the definitionally different subgroup `V.subgroupOf U`. -/
+/-- **Relative degree-one corestriction** for an inclusion `V ≤ U` with `V` open *in `U`*; the
+ambient group `U` need not be open in `G`. The source is the cohomology of `V` itself, not of the
+definitionally different subgroup `V.subgroupOf U`. -/
 noncomputable def explicitCor1Le [(V.subgroupOf U).FiniteIndex]
-    (hV : IsOpen (V : Set G)) : H1 V M →+ H1 U M :=
-  (explicitCor1 U M (V.subgroupOf U) (isOpen_subgroupOf G U V hV)).comp
+    (hV : IsOpen ((V.subgroupOf U : Subgroup U) : Set U)) : H1 V M →+ H1 U M :=
+  (explicitCor1 U M (V.subgroupOf U) hV).comp
     (explicitMap1 V M (V.subgroupOf U) M
       (subgroupOfContinuousHom G U V hVU)
       (AddMonoidHom.id M) continuous_id
       (id_subgroupOfContinuousEquiv_smul G M U V hVU))
 
-/-- **Relative degree-two corestriction** for an inclusion `V ≤ U` of open subgroups. The source
-is transported along the canonical topological group isomorphism `V.subgroupOf U ≃ₜ* V`. -/
+/-- Relative degree-one corestriction sends the class of a continuous `1`-cocycle on `V` to the
+class of the degree-one corestriction cochain of its transport to `V.subgroupOf U`, taken over the
+canonical transversal. -/
+@[simp]
+theorem explicitCor1Le_mk [(V.subgroupOf U).FiniteIndex]
+    (hV : IsOpen ((V.subgroupOf U : Subgroup U) : Set U)) (f : Z1 V M) :
+    explicitCor1Le G M U V hVU hV (f : H1 V M) =
+      (cocyclesCor1 U M (V.subgroupOf U) Quotient.out Quotient.out_eq hV
+        (cocyclesMap1 V M (V.subgroupOf U) M (subgroupOfContinuousHom G U V hVU)
+          (AddMonoidHom.id M) continuous_id
+          (id_subgroupOfContinuousEquiv_smul G M U V hVU) f) : H1 U M) := by
+  rw [explicitCor1Le, AddMonoidHom.comp_apply, explicitMap1_mk, explicitCor1_mk]
+
+/-- **Relative degree-two corestriction** for an inclusion `V ≤ U` with `V` open *in `U`*; the
+ambient group `U` need not be open in `G`. The source is transported along the canonical
+topological group isomorphism `V.subgroupOf U ≃ₜ* V`. -/
 noncomputable def explicitCor2Le [(V.subgroupOf U).FiniteIndex]
-    (hV : IsOpen (V : Set G)) : H2 V M →+ H2 U M :=
-  (explicitCor2 U M (V.subgroupOf U) (isOpen_subgroupOf G U V hV)).comp
+    (hV : IsOpen ((V.subgroupOf U : Subgroup U) : Set U)) : H2 V M →+ H2 U M :=
+  (explicitCor2 U M (V.subgroupOf U) hV).comp
     (explicitMap2 V M (V.subgroupOf U) M
       (subgroupOfContinuousHom G U V hVU)
       (AddMonoidHom.id M) continuous_id
       (id_subgroupOfContinuousEquiv_smul G M U V hVU))
 
+/-- Relative degree-two corestriction sends the class of a continuous `2`-cocycle on `V` to the
+class of the degree-two corestriction cochain of its transport to `V.subgroupOf U`, taken over the
+canonical transversal. -/
+@[simp]
+theorem explicitCor2Le_mk [(V.subgroupOf U).FiniteIndex]
+    (hV : IsOpen ((V.subgroupOf U : Subgroup U) : Set U)) (f : Z2 V M) :
+    explicitCor2Le G M U V hVU hV (f : H2 V M) =
+      (cocyclesCor2 U M (V.subgroupOf U) Quotient.out Quotient.out_eq hV
+        (cocyclesMap2 V M (V.subgroupOf U) M (subgroupOfContinuousHom G U V hVU)
+          (AddMonoidHom.id M) continuous_id
+          (id_subgroupOfContinuousEquiv_smul G M U V hVU) f) : H2 U M) := by
+  rw [explicitCor2Le, AddMonoidHom.comp_apply, explicitMap2_mk, explicitCor2_mk]
+
 end Topological
 
 /-! ### Transitivity -/
 
-/-- Finite index of `V` in `U` and of `U` in `G` give finite index of `V` in `G`. -/
-private theorem finiteIndex_of_subgroupOf [U.FiniteIndex] [(V.subgroupOf U).FiniteIndex] :
-    V.FiniteIndex :=
-  Subgroup.isFiniteRelIndex_top_iff.mp <|
-    ((Subgroup.isFiniteRelIndex_iff_finiteIndex (K := U)).mpr inferInstance).trans
-      (Subgroup.isFiniteRelIndex_top_iff.mpr inferInstance)
-
 /-- **Transitivity of degree-zero corestriction.** For subgroups `V ≤ U ≤ G` with `V` of finite
 index in `U` and `U` of finite index in `G`, `cor⁰_V^G = cor⁰_U^G ∘ cor⁰_V^U`. -/
 theorem explicitCor0_trans [U.FiniteIndex] [(V.subgroupOf U).FiniteIndex] :
-    haveI : V.FiniteIndex := Subgroup.isFiniteRelIndex_top_iff.mp <|
-      ((Subgroup.isFiniteRelIndex_iff_finiteIndex (K := U)).mpr inferInstance).trans
-        (Subgroup.isFiniteRelIndex_top_iff.mpr inferInstance)
+    haveI : V.FiniteIndex := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
     explicitCor0 G M V =
       (explicitCor0 G M U).comp (explicitCor0Le G M U V (hVU := hVU)) := by
-  have := finiteIndex_of_subgroupOf G U V
+  have := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
   let t : G ⧸ U → G := Quotient.out
   let s : U ⧸ V.subgroupOf U → U := Quotient.out
   let r := compositeTransversal G U V (hVU := hVU) t Quotient.out_eq s
@@ -342,12 +384,11 @@ variable [TopologicalSpace G] [IsTopologicalGroup G]
 /-- **Transitivity of degree-one corestriction.** For open subgroups `V ≤ U ≤ G` with `V` of
 finite index in `U` and `U` of finite index in `G`, `cor¹_V^G = cor¹_U^G ∘ cor¹_V^U`. -/
 theorem explicitCor1_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
-    haveI : V.FiniteIndex := Subgroup.isFiniteRelIndex_top_iff.mp <|
-      ((Subgroup.isFiniteRelIndex_iff_finiteIndex (K := U)).mpr inferInstance).trans
-        (Subgroup.isFiniteRelIndex_top_iff.mpr inferInstance)
+    haveI : V.FiniteIndex := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
     explicitCor1 G M V hV =
-      (explicitCor1 G M U hU).comp (explicitCor1Le G M U V hVU hV) := by
-  have := finiteIndex_of_subgroupOf G U V
+      (explicitCor1 G M U hU).comp
+        (explicitCor1Le G M U V hVU (Subgroup.subgroupOf_isOpen U V hV)) := by
+  have := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
   let t : G ⧸ U → G := Quotient.out
   let s : U ⧸ V.subgroupOf U → U := Quotient.out
   let r := compositeTransversal G U V (hVU := hVU) t Quotient.out_eq s
@@ -356,9 +397,10 @@ theorem explicitCor1_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
   ext f
   -- The quotient extensionality tactic leaves a cocycle representative; restore its class coercion.
   change explicitCor1Transversal G M V r hr hV (f : H1 V M) =
-    ((explicitCor1 G M U hU).comp (explicitCor1Le G M U V hVU hV)) (f : H1 V M)
-  rw [AddMonoidHom.comp_apply, explicitCor1Le, AddMonoidHom.comp_apply,
-    explicitCor1Transversal_mk, explicitMap1_mk, explicitCor1_mk, explicitCor1_mk]
+    ((explicitCor1 G M U hU).comp
+      (explicitCor1Le G M U V hVU (Subgroup.subgroupOf_isOpen U V hV))) (f : H1 V M)
+  rw [AddMonoidHom.comp_apply, explicitCor1Le_mk, explicitCor1Transversal_mk,
+    explicitCor1_mk]
   apply congrArg (fun z : Z1 G M => (z : H1 G M))
   apply Subtype.ext
   simp only [coe_cocyclesCor1, cocyclesMap1_coe]
@@ -375,12 +417,11 @@ theorem explicitCor1_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
 /-- **Transitivity of degree-two corestriction.** For open subgroups `V ≤ U ≤ G` with `V` of
 finite index in `U` and `U` of finite index in `G`, `cor²_V^G = cor²_U^G ∘ cor²_V^U`. -/
 theorem explicitCor2_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
-    haveI : V.FiniteIndex := Subgroup.isFiniteRelIndex_top_iff.mp <|
-      ((Subgroup.isFiniteRelIndex_iff_finiteIndex (K := U)).mpr inferInstance).trans
-        (Subgroup.isFiniteRelIndex_top_iff.mpr inferInstance)
+    haveI : V.FiniteIndex := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
     explicitCor2 G M V hV =
-      (explicitCor2 G M U hU).comp (explicitCor2Le G M U V hVU hV) := by
-  have := finiteIndex_of_subgroupOf G U V
+      (explicitCor2 G M U hU).comp
+        (explicitCor2Le G M U V hVU (Subgroup.subgroupOf_isOpen U V hV)) := by
+  have := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
   let t : G ⧸ U → G := Quotient.out
   let s : U ⧸ V.subgroupOf U → U := Quotient.out
   let r := compositeTransversal G U V (hVU := hVU) t Quotient.out_eq s
@@ -389,9 +430,10 @@ theorem explicitCor2_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
   ext f
   -- As in degree one, state the remaining equality on the class of the chosen cocycle.
   change explicitCor2Transversal G M V r hr hV (f : H2 V M) =
-    ((explicitCor2 G M U hU).comp (explicitCor2Le G M U V hVU hV)) (f : H2 V M)
-  rw [AddMonoidHom.comp_apply, explicitCor2Le, AddMonoidHom.comp_apply,
-    explicitCor2Transversal_mk, explicitMap2_mk, explicitCor2_mk, explicitCor2_mk]
+    ((explicitCor2 G M U hU).comp
+      (explicitCor2Le G M U V hVU (Subgroup.subgroupOf_isOpen U V hV))) (f : H2 V M)
+  rw [AddMonoidHom.comp_apply, explicitCor2Le_mk, explicitCor2Transversal_mk,
+    explicitCor2_mk]
   apply congrArg (fun z : Z2 G M => (z : H2 G M))
   apply Subtype.ext
   simp only [coe_cocyclesCor2, cocyclesMap2_coe]
