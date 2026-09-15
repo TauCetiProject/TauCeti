@@ -21,7 +21,7 @@ when reading off cycle types of Galois groups by reduction modulo primes.
 
 ## Main results
 
-* `TauCeti.exists_monic_irreducible_natDegree_eq`: a monic irreducible polynomial of any
+* `TauCeti.Nat.exists_monic_irreducible_natDegree_eq`: a monic irreducible polynomial of any
   prescribed positive degree over a finite field.
 
 ## References
@@ -40,6 +40,8 @@ open Polynomial
 
 namespace TauCeti
 
+namespace Nat
+
 /-- For every positive `d`, there is a monic irreducible polynomial of degree `d` over any
 finite field. -/
 theorem exists_monic_irreducible_natDegree_eq
@@ -56,5 +58,7 @@ theorem exists_monic_irreducible_natDegree_eq
     (minpoly k α).natDegree = Module.finrank k (FiniteField.Extension k p d) :=
       (Field.primitive_element_iff_minpoly_natDegree_eq k α).mp hα
     _ = d := FiniteField.finrank_extension k p d
+
+end Nat
 
 end TauCeti
