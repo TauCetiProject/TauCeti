@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Discrete
+import TauCeti.RepresentationTheory.Homological.ContCohomology.Discrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation
-public import TauCeti.Topology.Algebra.Group.LocallyConstant
+import TauCeti.Topology.Algebra.Group.LocallyConstant
 
 /-!
 # Descent of continuous two-cocycles to finite quotients
@@ -47,72 +47,6 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [DistribMulAction G M] [ContinuousSMul G M]
   {N : Subgroup G} [N.Normal]
   [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)]
-
-omit [ContinuousSMul G M] [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
-/-- Descend a continuous `2`-cocycle which is constant on right `N`-cosets in both variables and
-whose values are fixed by `N` to a cocycle on `G ⧸ N` with values in `M ^ N`. -/
-def descendZ2 (z : Z2 G M)
-    (hright : ∀ (g h : G) (n n' : N),
-      (z : G × G → M) (g * n, h * n') = (z : G × G → M) (g, h))
-    (hfixed : ∀ (n : N) (g h : G),
-      n • (z : G × G → M) (g, h) = (z : G × G → M) (g, h)) :
-    Z2 (G ⧸ N) (FixedPoints.addSubgroup N M) :=
-  ⟨fun q => Quotient.liftOn₂' q.1 q.2
-      (fun g h => (⟨(z : G × G → M) (g, h),
-        (FixedPoints.mem_addSubgroup N M _).2 fun n => hfixed n g h⟩ :
-          FixedPoints.addSubgroup N M))
-      fun a b a' b' ha hb => Subtype.ext <| by
-        simpa using (hright a b
-          ⟨a⁻¹ * a', QuotientGroup.leftRel_apply.1 ha⟩
-          ⟨b⁻¹ * b', QuotientGroup.leftRel_apply.1 hb⟩).symm,
-    mem_Z2_iff.2 ⟨
-      ((QuotientGroup.isOpenQuotientMap_mk.prodMap
-          QuotientGroup.isOpenQuotientMap_mk).isQuotientMap.continuous_iff.2 <| by
-        simpa [Function.comp_def] using ((mem_Z2_iff.1 z.2).1).subtype_mk
-          (fun p => (FixedPoints.mem_addSubgroup N M _).2 fun n => hfixed n p.1 p.2)),
-      fun q q' q'' => by
-        induction q using QuotientGroup.induction_on with
-        | H g =>
-          induction q' using QuotientGroup.induction_on with
-          | H h =>
-            induction q'' using QuotientGroup.induction_on with
-            | H j =>
-              refine Subtype.ext ?_
-              simp only [AddSubgroup.coe_add, coe_quotient_smul_fixedPoints_addSubgroup,
-                coe_smul_fixedPoints_addSubgroup, Quotient.liftOn₂'_mk'']
-              exact (mem_Z2_iff.1 z.2).2 g h j⟩⟩
-
-omit [ContinuousSMul G M] [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
-/-- The descended cocycle evaluates on quotient representatives as the original cocycle. -/
-@[simp]
-theorem coe_descendZ2_apply_mk (z : Z2 G M)
-    (hright : ∀ (g h : G) (n n' : N),
-      (z : G × G → M) (g * n, h * n') = (z : G × G → M) (g, h))
-    (hfixed : ∀ (n : N) (g h : G),
-      n • (z : G × G → M) (g, h) = (z : G × G → M) (g, h))
-    (g h : G) :
-    ((descendZ2 z hright hfixed :
-      (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (g, h) : M) =
-      (z : G × G → M) (g, h) := by
-  simp only [descendZ2, Quotient.liftOn₂'_mk'']
-
-/-- Inflating the descent of a continuous `2`-cocycle returns the original class. -/
-theorem explicitInfl2_descendZ2 (z : Z2 G M)
-    (hright : ∀ (g h : G) (n n' : N),
-      (z : G × G → M) (g * n, h * n') = (z : G × G → M) (g, h))
-    (hfixed : ∀ (n : N) (g h : G),
-      n • (z : G × G → M) (g, h) = (z : G × G → M) (g, h)) :
-    explicitInfl2 G M N
-        (descendZ2 z hright hfixed : H2 (G ⧸ N) (FixedPoints.addSubgroup N M)) =
-      (z : H2 G M) := by
-  rw [explicitInfl2_mk]
-  refine congrArg (fun w : Z2 G M => (w : H2 G M)) (Subtype.ext (funext fun p => ?_))
-  rw [cocyclesMap2_apply, ContinuousMonoidHom.quotientMk_apply, AddSubgroup.coe_subtype]
-  -- The preceding rewrite leaves quotient representatives under the fixed-point subtype
-  -- coercion; expose that evaluation so the representative computation lemma applies.
-  change ((descendZ2 z hright hfixed :
-    (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (p.1, p.2) : M) = _
-  exact coe_descendZ2_apply_mk z hright hfixed p.1 p.2
 
 variable [CompactSpace G] [TotallyDisconnectedSpace G] [DiscreteTopology M]
 
