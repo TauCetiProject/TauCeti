@@ -29,7 +29,8 @@ invariant measures of a fixed finite total mass and then for probability measure
 * `MeasureTheory.ErgodicSMul.ae_eq_const_of_forall_comp_smul_ae_eq`
 * `MeasureTheory.ErgodicSMul.eq_smul_of_absolutelyContinuous`,
   `MeasureTheory.ErgodicSMul.eq_of_absolutelyContinuous`
-* `MeasureTheory.invariantMeasuresOfMeasureUnivEq`, `MeasureTheory.invariantProbabilityMeasures`
+* `TauCeti.MeasureTheory.invariantMeasuresOfMeasureUnivEq`,
+  `TauCeti.MeasureTheory.invariantProbabilityMeasures`, with membership and convexity lemmas
 * `MeasureTheory.ErgodicSMul.iff_mem_extremePoints_measure_univ_eq`,
   `MeasureTheory.ErgodicSMul.iff_mem_extremePoints`
 
@@ -89,6 +90,12 @@ theorem ErgodicSMul.eq_of_absolutelyContinuous [MeasurableConstSMul G X]
     rwa [Measure.smul_apply, measure_univ, smul_eq_mul, mul_one] at this
   rw [h, one_smul]
 
+end MeasureTheory
+
+namespace TauCeti.MeasureTheory
+
+variable {G X : Type*} [Group G] [MulAction G X] {m : MeasurableSpace X} {μ ν : Measure X}
+
 /-- The `G`-invariant measures on `X` of total mass `c`, a convex set of measures. -/
 def invariantMeasuresOfMeasureUnivEq (G X : Type*) [SMul G X] [MeasurableSpace X] (c : ℝ≥0∞) :
     Set (Measure X) :=
@@ -116,6 +123,28 @@ theorem invariantProbabilityMeasures_eq :
     invariantProbabilityMeasures G X = invariantMeasuresOfMeasureUnivEq G X 1 := by
   ext ν; simp only [mem_invariantProbabilityMeasures_iff, mem_invariantMeasuresOfMeasureUnivEq_iff,
     isProbabilityMeasure_iff]
+
+/-- The invariant measures of a fixed total mass form a convex set. -/
+theorem convex_invariantMeasuresOfMeasureUnivEq {c : ℝ≥0∞} :
+    Convex ℝ≥0∞ (invariantMeasuresOfMeasureUnivEq G X c) := by
+  rintro ν₁ ⟨hν₁, hν₁u⟩ ν₂ ⟨hν₂, hν₂u⟩ a b _ _ hab
+  refine ⟨⟨fun g s hs => ?_⟩, ?_⟩
+  · simp only [Measure.coe_add, Measure.coe_smul, Pi.add_apply, Pi.smul_apply,
+      SMulInvariantMeasure.measure_preimage_smul g hs]
+  · rw [Measure.coe_add, Pi.add_apply, Measure.smul_apply, Measure.smul_apply, hν₁u, hν₂u,
+      smul_eq_mul, smul_eq_mul, ← add_mul, hab, one_mul]
+
+/-- The invariant probability measures form a convex set. -/
+theorem convex_invariantProbabilityMeasures : Convex ℝ≥0∞ (invariantProbabilityMeasures G X) := by
+  rw [invariantProbabilityMeasures_eq]; exact convex_invariantMeasuresOfMeasureUnivEq
+
+end TauCeti.MeasureTheory
+
+namespace MeasureTheory
+
+variable {G X : Type*} [Group G] [MulAction G X] {m : MeasurableSpace X} {μ ν : Measure X}
+
+open TauCeti.MeasureTheory
 
 /-- **An ergodic finite measure is an extreme point** of the invariant measures of its total
 mass. -/
