@@ -62,11 +62,13 @@ namespace Path.Homotopic.Quotient
 
 /-- Membership of a path class in a subgroupoid of the fundamental groupoid is unchanged by
 casting its endpoints along equalities. -/
+@[simp]
 theorem cast_mem_arrows_iff
     {X : Type*} [TopologicalSpace X]
     {S : CategoryTheory.Subgroupoid (_root_.FundamentalGroupoid X)} {a b a' b' : X}
     (q : Path.Homotopic.Quotient a b) (ha : a' = a) (hb : b' = b) :
-    (q.cast ha hb : _root_.FundamentalGroupoid.mk a' ⟶ _root_.FundamentalGroupoid.mk b') ∈
+    (q.cast (x' := a') (y' := b') ha hb :
+        _root_.FundamentalGroupoid.mk a' ⟶ _root_.FundamentalGroupoid.mk b') ∈
         S.arrows (_root_.FundamentalGroupoid.mk a') (_root_.FundamentalGroupoid.mk b') ↔
       (q : _root_.FundamentalGroupoid.mk a ⟶ _root_.FundamentalGroupoid.mk b) ∈
         S.arrows (_root_.FundamentalGroupoid.mk a) (_root_.FundamentalGroupoid.mk b) := by

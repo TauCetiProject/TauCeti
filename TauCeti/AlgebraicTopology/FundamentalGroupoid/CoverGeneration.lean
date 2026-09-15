@@ -131,7 +131,11 @@ theorem functor_ext (hU : ∀ x, ∃ i, U i ∈ 𝓝 x) {D : Type*} [Category D]
   have hobj : ∀ c, F.obj c = G.obj c := by
     rintro ⟨x⟩
     obtain ⟨i, hi⟩ := hU x
-    exact CategoryTheory.Functor.congr_obj (h i) (mk ⟨x, mem_of_mem_nhds hi⟩)
+    have hx := CategoryTheory.Functor.congr_obj (h i) (mk ⟨x, mem_of_mem_nhds hi⟩)
+    -- `(map f ⋙ F).obj (mk a)` is by definition `F.obj (mk (f a))`, since `map f` sends `mk a` to
+    -- `mk (f a)`; here `f` is `Subtype.val`, so `f ⟨x, _⟩` is `x`.
+    change F.obj (mk x) = G.obj (mk x) at hx
+    exact hx
   -- The morphisms on which `F` and `G` agree form a subgroupoid.
   let S : Subgroupoid (_root_.FundamentalGroupoid X) :=
     { arrows := fun c d ↦ {f | F.map f = eqToHom (hobj c) ≫ G.map f ≫ eqToHom (hobj d).symm}
