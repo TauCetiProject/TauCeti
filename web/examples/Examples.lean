@@ -42,5 +42,5 @@ commutes with the antipodes. -/
 theorem hopf_antipode {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B]
     [HopfAlgebra R A] [HopfAlgebra R B] (φ : A →ₐc[R] B) :
     φ.toLinearMap.comp (antipode R (A := A)) = (antipode R (A := B)).comp φ.toLinearMap :=
-  TauCeti.BialgHom.toLinearMap_comp_antipode φ
+  BialgHom.toLinearMap_comp_antipode φ
 %end
