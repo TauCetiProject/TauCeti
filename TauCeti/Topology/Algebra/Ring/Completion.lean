@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Nonarchimedean.Completion.Basic
+public import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # Closed proper ideals survive completion
@@ -56,27 +57,11 @@ theorem map_completion_ne_top_of_isClosed {J : Ideal A} (hclosed : IsClosed (J :
   let f : A →+* Completion (A ⧸ J) := Completion.coeRingHom.comp q
   let F : Completion A →+* Completion (A ⧸ J) :=
     Completion.extensionHom f (Completion.continuous_coeRingHom.comp continuous_quotient_mk')
-  have honeQuotient : (1 : A ⧸ J) ∉ closure ({0} : Set (A ⧸ J)) := by
-    intro hone
-    have hpre : q ⁻¹' ({0} : Set (A ⧸ J)) = (J : Set A) := by
-      ext a
-      simp [q, Ideal.Quotient.eq_zero_iff_mem]
-    have hopen := (QuotientRing.isOpenMap_coe J).preimage_closure_eq_closure_preimage
-      continuous_quotient_mk' ({0} : Set (A ⧸ J))
-    rw [hpre] at hopen
-    have honeIdeal : (1 : A) ∈ closure (J : Set A) := by
-      rw [← hopen]
-      simpa only [Set.mem_preimage, map_one] using hone
-    rw [hclosed.closure_eq] at honeIdeal
-    exact ((Ideal.ne_top_iff_one J).mp hJ) honeIdeal
+  have : T1Space (A ⧸ J) := (Ideal.Quotient.t1Space_iff J).mpr hclosed
+  have : Nontrivial (A ⧸ J) := Ideal.Quotient.nontrivial_iff.mpr hJ
   have honeCompletion : (1 : Completion (A ⧸ J)) ≠ 0 := by
-    intro hone
-    have honeKer : (1 : A ⧸ J) ∈
-        RingHom.ker (Completion.coeRingHom : (A ⧸ J) →+* Completion (A ⧸ J)) := by
-      rw [RingHom.mem_ker]
-      exact hone
-    rw [Completion.ker_coeRingHom, ← SetLike.mem_coe, Ideal.coe_closure] at honeKer
-    exact honeQuotient honeKer
+    simpa only [Completion.coe_one, Completion.coe_zero] using
+      (Completion.coe_inj (α := A ⧸ J)).not.mpr one_ne_zero
   have hle : Ideal.map (Completion.coeRingHom : A →+* Completion A) J ≤
       RingHom.ker F := by
     rw [Ideal.map_le_iff_le_comap]
