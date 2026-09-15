@@ -35,6 +35,9 @@ The constant `3` and this normalization follow Iwaniec--Kowalski, §5.1 and (5.7
 
 ## Main results
 
+* `CuspForm.L_ne_zero_of_qExpansion_coeff_ne_zero`: a nonzero positive-index coefficient makes
+  the entire L-function nonzero.
+* `CuspForm.entireExtension_eq`: uniqueness of the width-normalized entire continuation.
 * `HeckeRing.GL2.Newform.L_ne_zero`: the entire continuation is not identically zero.
 * `HeckeRing.GL2.Newform.analyticOrderAt_L_ne_top`: its order is finite at every point.
 * `HeckeRing.GL2.Newform.analyticRank_eq_analyticOrderNatAt`: any entire continuation agreeing
@@ -57,44 +60,81 @@ open Filter LSeries UpperHalfPlane
 open Matrix.SpecialLinearGroup CongruenceSubgroup
 open scoped MatrixGroups
 
+namespace CuspForm
+
+variable {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.IsArithmetic] {k : ℤ}
+
+/-- The entire L-function of a positive-weight cusp form is nonzero if one of its
+positive-index coefficients is nonzero. This ensures that its analytic order is finite. -/
+theorem L_ne_zero_of_qExpansion_coeff_ne_zero (f : CuspForm Γ k) (hk : 0 < k) {n : ℕ}
+    (hn : n ≠ 0) (hcoeff : (qExpansion Γ.strictWidthInfty f).coeff n ≠ 0) :
+    ModularForm.L hk f ≠ 0 := by
+  intro hL
+  have hzero :
+      (fun x : ℝ ↦ LSeries (fun m ↦ (qExpansion Γ.strictWidthInfty f).coeff m) x)
+        =ᶠ[atTop] 0 := by
+    filter_upwards [eventually_ge_atTop ((k : ℝ) / 2 + 2)] with x hx
+    have hs : (k : ℝ) / 2 + 1 < x := by linarith
+    simpa [hL] using CuspForm.LSeries_qExpansion_coeff_eq hk f hs
+  rcases LSeries_eventually_eq_zero_iff'.mp hzero with hzero | habscissa
+  · exact hcoeff (hzero n hn)
+  · have hfinite := (CuspForm.hasEntireExtension_qExpansion_coeff hk f).abscissa_lt_top
+    rw [habscissa] at hfinite
+    exact (lt_irrefl ⊤ hfinite).elim
+
+/-- A positive-weight cusp form with a nonzero positive-index coefficient has finite analytic
+order at every point. -/
+theorem analyticOrderAt_L_ne_top_of_qExpansion_coeff_ne_zero (f : CuspForm Γ k) (hk : 0 < k)
+    (s : ℂ) {n : ℕ} (hn : n ≠ 0)
+    (hcoeff : (qExpansion Γ.strictWidthInfty f).coeff n ≠ 0) :
+    analyticOrderAt (ModularForm.L hk f) s ≠ ⊤ := by
+  intro htop
+  apply f.L_ne_zero_of_qExpansion_coeff_ne_zero hk hn hcoeff
+  exact (AnalyticOnNhd.analyticOrderAt_eq_top_iff_eq_zero s fun _ ↦
+    (CuspForm.differentiable_L hk f).analyticAt _).mp htop
+
+/-- Any entire function agreeing with the coefficient Dirichlet series of a positive-weight
+cusp form on its convergence half-plane is the width-normalized entire L-function. -/
+theorem entireExtension_eq (f : CuspForm Γ k) (hk : 0 < k) {F : ℂ → ℂ}
+    (hF : Differentiable ℂ F)
+    (hFL : ∀ {s : ℂ}, (k : ℝ) / 2 + 1 < s.re →
+      F s = LSeries (fun n ↦ (qExpansion Γ.strictWidthInfty f).coeff n) s) :
+    F = fun s ↦ (Γ.strictWidthInfty : ℂ) ^ (-s) * ModularForm.L hk f s := by
+  exact (Complex.analyticOnNhd_univ_iff_differentiable.mpr hF).eq_of_eventuallyEq
+    (Complex.analyticOnNhd_univ_iff_differentiable.mpr
+      ((Differentiable.const_cpow differentiable_neg
+        (Or.inl (Complex.ofReal_ne_zero.mpr Γ.strictWidthInfty_pos.ne'))).mul
+        (CuspForm.differentiable_L hk f))) (by
+      refine Filter.eventuallyEq_iff_exists_mem.mpr
+        ⟨{s : ℂ | (k : ℝ) / 2 + 1 < s.re}, ?_, ?_⟩
+      · exact (isOpen_lt continuous_const Complex.continuous_re).mem_nhds (by
+          simp only [Set.mem_ofPred_eq, Complex.ofReal_re]
+          linarith : (((k : ℝ) / 2 + 2 : ℝ) : ℂ) ∈
+            {s : ℂ | (k : ℝ) / 2 + 1 < s.re})
+      · intro s hs
+        exact (hFL hs).trans (CuspForm.LSeries_qExpansion_coeff_eq hk f hs))
+
+end CuspForm
+
 namespace HeckeRing.GL2.Newform
 
 variable {N : ℕ} [NeZero N] {k : ℤ}
 
-/-- The entire continuation of the L-function of a newform is not identically zero.
-
-Indeed, were it zero, the coefficient L-series would vanish for all sufficiently large real
-arguments.  Injectivity of Dirichlet series would then force every positive-index coefficient
-to vanish, contradicting the normalization `a₁ = 1`. -/
+/-- The normalized first coefficient of a newform ensures that its entire L-function is
+nonzero, and hence that its analytic order is finite. -/
+@[simp]
 theorem L_ne_zero (f : Newform N k) (hk : 0 < k) :
     ModularForm.L hk f.toCuspForm ≠ 0 := by
-  intro hL
-  have hzero :
-      (fun x : ℝ ↦ LSeries (fun n ↦
-        (qExpansion ((Gamma1 N).map (mapGL ℝ)).strictWidthInfty f.toCuspForm).coeff n) x)
-          =ᶠ[atTop] 0 := by
-    filter_upwards [eventually_ge_atTop ((k : ℝ) / 2 + 2)] with x hx
-    have hs : (k : ℝ) / 2 + 1 < x := by linarith
-    simpa [hL] using CuspForm.LSeries_qExpansion_coeff_eq hk f.toCuspForm hs
-  rcases LSeries_eventually_eq_zero_iff'.mp hzero with hcoeff | habscissa
-  · have h := hcoeff 1 one_ne_zero
-    have hnorm :
-        (qExpansion ((Gamma1 N).map (mapGL ℝ)).strictWidthInfty f.toCuspForm).coeff 1 = 1 := by
-      simpa only [strictWidthInfty_Gamma1] using f.isNorm
-    rw [hnorm] at h
-    exact one_ne_zero h
-  · have hfinite :=
-      (CuspForm.hasEntireExtension_qExpansion_coeff hk f.toCuspForm).abscissa_lt_top
-    rw [habscissa] at hfinite
-    exact (lt_irrefl ⊤ hfinite).elim
+  apply CuspForm.L_ne_zero_of_qExpansion_coeff_ne_zero f.toCuspForm hk one_ne_zero
+  simpa only [strictWidthInfty_Gamma1, f.isNorm] using one_ne_zero
 
 /-- The analytic order of the entire L-function of a newform is finite at every point. -/
+@[simp]
 theorem analyticOrderAt_L_ne_top (f : Newform N k) (hk : 0 < k) (s : ℂ) :
     analyticOrderAt (ModularForm.L hk f.toCuspForm) s ≠ ⊤ := by
-  intro htop
-  apply f.L_ne_zero hk
-  exact (AnalyticOnNhd.analyticOrderAt_eq_top_iff_eq_zero s fun _ ↦
-    (CuspForm.differentiable_L hk f.toCuspForm).analyticAt _).mp htop
+  apply CuspForm.analyticOrderAt_L_ne_top_of_qExpansion_coeff_ne_zero
+    f.toCuspForm hk s one_ne_zero
+  simpa only [strictWidthInfty_Gamma1, f.isNorm] using one_ne_zero
 
 /-- The **analytic rank** of a positive-weight newform is the order of vanishing of its entire
 L-function at the central point `s = k / 2`. -/
@@ -116,22 +156,15 @@ theorem analyticRank_eq_analyticOrderNatAt (f : Newform N k) (hk : 0 < k)
       F s = LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s) :
     f.analyticRank hk = analyticOrderNatAt F ((k : ℂ) / 2) := by
   have hEq : F = ModularForm.L hk f.toCuspForm := by
-    exact (Complex.analyticOnNhd_univ_iff_differentiable.mpr hF).eq_of_eventuallyEq
-      (Complex.analyticOnNhd_univ_iff_differentiable.mpr
-        (CuspForm.differentiable_L hk f.toCuspForm)) (by
-          refine Filter.eventuallyEq_iff_exists_mem.mpr
-            ⟨{s : ℂ | (k : ℝ) / 2 + 1 < s.re}, ?_, ?_⟩
-          · exact (isOpen_lt continuous_const Complex.continuous_re).mem_nhds (by
-              simp only [Set.mem_ofPred_eq, Complex.ofReal_re]
-              linarith : (((k : ℝ) / 2 + 2 : ℝ) : ℂ) ∈
-                {s : ℂ | (k : ℝ) / 2 + 1 < s.re})
-          · intro s hs
-            exact hFL hs |>.trans (by
-                simpa using CuspForm.LSeries_qExpansion_coeff_eq hk f.toCuspForm hs))
+    simpa [strictWidthInfty_Gamma1] using
+      (CuspForm.entireExtension_eq f.toCuspForm hk hF (by
+        intro s hs
+        simpa only [strictWidthInfty_Gamma1] using hFL hs))
   rw [analyticRank_def, hEq]
 
 /-- A newform has analytic rank zero exactly when its entire L-function does not vanish at the
 central point. -/
+@[simp]
 theorem analyticRank_eq_zero_iff (f : Newform N k) (hk : 0 < k) :
     f.analyticRank hk = 0 ↔ ModularForm.L hk f.toCuspForm ((k : ℂ) / 2) ≠ 0 := by
   rw [analyticRank_def, ← Nat.cast_inj (R := ℕ∞), Nat.cast_analyticOrderNatAt
@@ -141,6 +174,7 @@ theorem analyticRank_eq_zero_iff (f : Newform N k) (hk : 0 < k) :
 
 /-- A newform has positive analytic rank exactly when its entire L-function vanishes at the
 central point. -/
+@[simp]
 theorem analyticRank_pos_iff (f : Newform N k) (hk : 0 < k) :
     0 < f.analyticRank hk ↔ ModularForm.L hk f.toCuspForm ((k : ℂ) / 2) = 0 := by
   rw [Nat.pos_iff_ne_zero, ne_eq, f.analyticRank_eq_zero_iff hk, not_not]
@@ -179,6 +213,7 @@ theorem analyticConductor_eq (f : Newform N k) :
   rw [analyticConductor_def, analyticConductorAt_eq]
 
 /-- The analytic conductor at every parameter is strictly positive. -/
+@[simp]
 theorem analyticConductorAt_pos (f : Newform N k) (s : ℂ) :
     0 < f.analyticConductorAt s := by
   rw [f.analyticConductorAt_eq s]
@@ -186,6 +221,7 @@ theorem analyticConductorAt_pos (f : Newform N k) (s : ℂ) :
   positivity
 
 /-- The central analytic conductor is strictly positive. -/
+@[simp]
 theorem analyticConductor_pos (f : Newform N k) : 0 < f.analyticConductor := by
   rw [analyticConductor_def]
   exact f.analyticConductorAt_pos _
