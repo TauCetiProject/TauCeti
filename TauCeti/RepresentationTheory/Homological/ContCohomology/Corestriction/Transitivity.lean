@@ -304,11 +304,22 @@ end Topological
 
 /-! ### Transitivity -/
 
-/-- **Transitivity of degree-zero corestriction.** For finite-index subgroups `V ≤ U ≤ G`,
-`cor⁰_V^G = cor⁰_U^G ∘ cor⁰_V^U`. -/
-theorem explicitCor0_trans [U.FiniteIndex] [V.FiniteIndex] :
+/-- Finite index of `V` in `U` and of `U` in `G` give finite index of `V` in `G`. -/
+private theorem finiteIndex_of_subgroupOf [U.FiniteIndex] [(V.subgroupOf U).FiniteIndex] :
+    V.FiniteIndex :=
+  Subgroup.isFiniteRelIndex_top_iff.mp <|
+    ((Subgroup.isFiniteRelIndex_iff_finiteIndex (K := U)).mpr inferInstance).trans
+      (Subgroup.isFiniteRelIndex_top_iff.mpr inferInstance)
+
+/-- **Transitivity of degree-zero corestriction.** For subgroups `V ≤ U ≤ G` with `V` of finite
+index in `U` and `U` of finite index in `G`, `cor⁰_V^G = cor⁰_U^G ∘ cor⁰_V^U`. -/
+theorem explicitCor0_trans [U.FiniteIndex] [(V.subgroupOf U).FiniteIndex] :
+    haveI : V.FiniteIndex := Subgroup.isFiniteRelIndex_top_iff.mp <|
+      ((Subgroup.isFiniteRelIndex_iff_finiteIndex (K := U)).mpr inferInstance).trans
+        (Subgroup.isFiniteRelIndex_top_iff.mpr inferInstance)
     explicitCor0 G M V =
       (explicitCor0 G M U).comp (explicitCor0Le G M U V (hVU := hVU)) := by
+  have := finiteIndex_of_subgroupOf G U V
   let t : G ⧸ U → G := Quotient.out
   let s : U ⧸ V.subgroupOf U → U := Quotient.out
   let r := compositeTransversal G U V (hVU := hVU) t Quotient.out_eq s
@@ -326,13 +337,17 @@ section TransitivityTopological
 
 variable [TopologicalSpace G] [IsTopologicalGroup G]
   [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousSMul G M]
-  [U.FiniteIndex] [V.FiniteIndex]
+  [U.FiniteIndex] [(V.subgroupOf U).FiniteIndex]
 
-/-- **Transitivity of degree-one corestriction.** For finite-index open subgroups `V ≤ U ≤ G`,
-`cor¹_V^G = cor¹_U^G ∘ cor¹_V^U`. -/
+/-- **Transitivity of degree-one corestriction.** For open subgroups `V ≤ U ≤ G` with `V` of
+finite index in `U` and `U` of finite index in `G`, `cor¹_V^G = cor¹_U^G ∘ cor¹_V^U`. -/
 theorem explicitCor1_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
+    haveI : V.FiniteIndex := Subgroup.isFiniteRelIndex_top_iff.mp <|
+      ((Subgroup.isFiniteRelIndex_iff_finiteIndex (K := U)).mpr inferInstance).trans
+        (Subgroup.isFiniteRelIndex_top_iff.mpr inferInstance)
     explicitCor1 G M V hV =
       (explicitCor1 G M U hU).comp (explicitCor1Le G M U V hVU hV) := by
+  have := finiteIndex_of_subgroupOf G U V
   let t : G ⧸ U → G := Quotient.out
   let s : U ⧸ V.subgroupOf U → U := Quotient.out
   let r := compositeTransversal G U V (hVU := hVU) t Quotient.out_eq s
@@ -357,11 +372,15 @@ theorem explicitCor1_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
   rw [hpull]
   exact cochainsCor1_composite G M U V hVU t Quotient.out_eq s Quotient.out_eq f
 
-/-- **Transitivity of degree-two corestriction.** For finite-index open subgroups `V ≤ U ≤ G`,
-`cor²_V^G = cor²_U^G ∘ cor²_V^U`. -/
+/-- **Transitivity of degree-two corestriction.** For open subgroups `V ≤ U ≤ G` with `V` of
+finite index in `U` and `U` of finite index in `G`, `cor²_V^G = cor²_U^G ∘ cor²_V^U`. -/
 theorem explicitCor2_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
+    haveI : V.FiniteIndex := Subgroup.isFiniteRelIndex_top_iff.mp <|
+      ((Subgroup.isFiniteRelIndex_iff_finiteIndex (K := U)).mpr inferInstance).trans
+        (Subgroup.isFiniteRelIndex_top_iff.mpr inferInstance)
     explicitCor2 G M V hV =
       (explicitCor2 G M U hU).comp (explicitCor2Le G M U V hVU hV) := by
+  have := finiteIndex_of_subgroupOf G U V
   let t : G ⧸ U → G := Quotient.out
   let s : U ⧸ V.subgroupOf U → U := Quotient.out
   let r := compositeTransversal G U V (hVU := hVU) t Quotient.out_eq s
