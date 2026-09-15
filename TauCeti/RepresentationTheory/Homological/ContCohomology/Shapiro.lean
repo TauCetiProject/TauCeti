@@ -736,20 +736,32 @@ noncomputable def explicitShapiro2 (hU : IsClosed (U : Set G)) :
 theorem explicitShapiro2_apply (hU : IsClosed (U : Set G)) (x : H2 G (DiscreteCoind G U A)) :
     explicitShapiro2 G U A hU x = explicitShapiroMap2 G U A x := (rfl)
 
-/-- The inverse of the degree-two Shapiro isomorphism is the section formula, for every
-**normalized** continuous right-coset factorization of `G` over `U`. Normalization is what makes
-the formula exact on cocycles rather than only on classes: for a factorization with `w 1 = s ≠ 1`
-the same cochain has Shapiro image the conjugate of `c` by `s`. -/
+/-- The inverse of the degree-two Shapiro isomorphism is the section formula, for every continuous
+right-coset factorization of `G` over `U`. For a normalized factorization the formula is exact on
+cocycles; an arbitrary factorization gives the same cohomology class by
+`TauCeti.ContCohomology.sub_coindCochain2_mem_B2`. -/
 theorem explicitShapiro2_symm_apply (hU : IsClosed (U : Set G)) {w : G → U} (hw : Continuous w)
-    (hwmul : ∀ (u : U) (g : G), w ((u : G) * g) = u * w g) (hw1 : w 1 = 1) (c : Z2 U A) :
+    (hwmul : ∀ (u : U) (g : G), w ((u : G) * g) = u * w g) (c : Z2 U A) :
     (explicitShapiro2 G U A hU).symm (c : H2 U A) =
       (coindCocycle2 w (c : U × U → A) hw hwmul (mem_Z2_iff.1 c.2).1 (mem_Z2_iff.1 c.2).2 :
         H2 G (DiscreteCoind G U A)) := by
-  refine (AddEquiv.symm_apply_eq _).2 ?_
-  rw [explicitShapiro2_apply, explicitMap2_mk]
-  congr 1
-  exact (Subtype.ext (shapiroCocycles2_coindCocycle2 w (c : U × U → A) hw hwmul
-    (mem_Z2_iff.1 c.2).1 (mem_Z2_iff.1 c.2).2 hw1)).symm
+  obtain ⟨w₀, -, hw₀, -, -, hwmul₀, -, hw₀1⟩ :=
+    exists_continuous_rightCosetFactorization U hU
+  let f₀ : Z2 G (DiscreteCoind G U A) := coindCocycle2 w₀ (c : U × U → A) hw₀ hwmul₀
+    (mem_Z2_iff.1 c.2).1 (mem_Z2_iff.1 c.2).2
+  have hf₀ : (shapiroCocycles2 G U A f₀ : U × U → A) = c :=
+    shapiroCocycles2_coindCocycle2 w₀ (c : U × U → A) hw₀ hwmul₀
+      (mem_Z2_iff.1 c.2).1 (mem_Z2_iff.1 c.2).2 hw₀1
+  calc
+    (explicitShapiro2 G U A hU).symm (c : H2 U A) = (f₀ : H2 G (DiscreteCoind G U A)) := by
+      refine (AddEquiv.symm_apply_eq _).2 ?_
+      rw [explicitShapiro2_apply, explicitMap2_mk]
+      exact congrArg (H2pi U A) (Subtype.ext hf₀.symm)
+    _ = (coindCocycle2 w (c : U × U → A) hw hwmul (mem_Z2_iff.1 c.2).1
+        (mem_Z2_iff.1 c.2).2 : H2 G (DiscreteCoind G U A)) := by
+      refine H2pi_eq_iff.2 ?_
+      exact sub_coindCochain2_mem_B2 w (c : U × U → A) hw hwmul
+        (mem_Z2_iff.1 c.2).1 f₀ hf₀
 
 end Equivalence
 
