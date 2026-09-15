@@ -25,10 +25,12 @@ distinguished primitive sixth root in `TauCeti.Cyclotomic 6` and `ω = ζ²`, th
 ```
 
 The exponent of `A₄` is six, so the Dixon computation uses the prime `7` and its primitive sixth
-root `3`.  Reduction at that root sends the four displayed central-character rows to precisely the
-output of the executable modular eigenrow search.  The exact checker then verifies, inside the
-computable coefficient-vector ring `Cyclotomic 6`, the central-character equations, the
-central-to-ordinary conversion, the degree-square identity, and Hermitian row orthogonality.
+root `3`.  The entries of `alternatingGroupFourExactCentralCharacterTable` are the class sizes times
+the corresponding ordinary character values divided by the character degrees.  Reduction at the
+chosen root sends its four rows to precisely the output of the executable modular eigenrow search.
+The exact checker then verifies, inside the computable coefficient-vector ring `Cyclotomic 6`, the
+central-character equations, the central-to-ordinary conversion, the degree-square identity, and
+Hermitian row orthogonality.
 
 The two nonreal linear rows form a nontrivial Galois-conjugate pair, so the exact certificate
 simultaneously sees a nonlinear row and genuinely cyclotomic values.
