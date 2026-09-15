@@ -39,6 +39,10 @@ with the `(q - 1)`-st roots of unity in both `𝒪[K]` and `K`, the latter throu
 ## Main results
 
 * `TauCeti.residue_teichmuller`: the Teichmüller map is a section of reduction.
+* `TauCeti.teichmullerLift_pow_card`: each Teichmüller representative is fixed by the `q`-th power
+  map.
+* `TauCeti.teichmullerLift_unique`: the Teichmüller lift is the only zero-preserving multiplicative
+  section of reduction.
 * `TauCeti.eq_teichmuller_iff`: a unit is the representative of `a` exactly when it reduces to
   `a` and its `(q - 1)`-st power is one.
 * `TauCeti.teichmuller_unique`: the Teichmüller map is the only monoid-homomorphic section of
@@ -92,6 +96,16 @@ theorem residue_teichmullerLift (a : 𝓀[K]) :
   let e := (PerfectionMap.id p 𝓀[K]).equiv
   exact (Perfection.mk_teichmuller₀ (e a)).trans
     (PerfectionMap.comp_equiv (PerfectionMap.id p 𝓀[K]) a)
+
+/-- Each Teichmüller representative is fixed by the `q`-th power map, where `q = Nat.card 𝓀[K]`.
+
+This is not a `simp` lemma: `simp` normalizes `Nat.card 𝓀[K]` to `Fintype.card 𝓀[K]`, so the
+left-hand side is not in `simp`-normal form. -/
+theorem teichmullerLift_pow_card (a : 𝓀[K]) :
+    teichmullerLift K a ^ Nat.card 𝓀[K] = teichmullerLift K a := by
+  classical
+  let _ := Fintype.ofFinite 𝓀[K]
+  rw [← map_pow, Nat.card_eq_fintype_card, FiniteField.pow_card]
 
 /-- The Teichmüller section on unit groups, from the units of the residue field to the units of the
 ring of integers. -/
@@ -204,6 +218,17 @@ theorem teichmuller_unique
   apply eq_teichmuller_of_residue_eq_of_pow_card_sub_one_eq_one
   · exact DFunLike.congr_fun hsection a
   · rw [← map_pow, units_pow_card_sub_one_eq_one, map_one]
+
+/-- The Teichmüller lift is the unique zero-preserving multiplicative section of reduction. -/
+theorem teichmullerLift_unique (f : 𝓀[K] →*₀ 𝒪[K])
+    (hsection : ∀ a, IsLocalRing.residue 𝒪[K] (f a) = a) : f = teichmullerLift K := by
+  have hunits : Units.map (f : 𝓀[K] →* 𝒪[K]) = teichmuller K :=
+    teichmuller_unique _ (MonoidHom.ext fun a ↦ Units.ext (by simpa using hsection (a : 𝓀[K])))
+  ext a
+  rcases eq_or_ne a 0 with rfl | ha
+  · rw [map_zero, map_zero]
+  · simpa using
+      congrArg (fun g : 𝓀[K]ˣ →* 𝒪[K]ˣ ↦ ((g (Units.mk0 a ha) : 𝒪[K]ˣ) : 𝒪[K])) hunits
 
 /-- The image of the Teichmüller map is exactly the `(q - 1)`-st roots of unity in `𝒪[K]`. -/
 theorem range_teichmuller :
