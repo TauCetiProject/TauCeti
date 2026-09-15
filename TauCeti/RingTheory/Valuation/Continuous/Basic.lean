@@ -272,13 +272,14 @@ namespace TauCeti
 open Set Topology
 open scoped WithZeroTopology
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+variable {A : Type*} [CommRing A] [TopologicalSpace A]
+  [SeparatelyContinuousAdd A] [ContinuousConstSMul Aᵐᵒᵖ A]
   {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation A Γ₀}
 
 /-- **The support of a continuous valuation is closed.**
 
-No coinitiality assumption on the ambient value group is needed. In particular, the quotient
-by the support is Hausdorff, even when the original ring is not. -/
+No coinitiality assumption on the ambient value group is needed. For a topological ring, the
+quotient by the support is Hausdorff, even when the original ring is not. -/
 theorem isClosed_supp_of_isContinuous (hv : v.IsContinuous) : IsClosed (v.supp : Set A) := by
   -- Restrict to the value group so attained ratios are coinitial; the support is its zero fiber.
   have hv' : v.restrict.IsContinuous :=

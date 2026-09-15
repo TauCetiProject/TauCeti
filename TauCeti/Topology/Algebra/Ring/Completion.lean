@@ -21,8 +21,8 @@ extended ideal, while closedness and properness of `J` ensure that the target is
 
 * `TauCeti.map_completion_ne_top_of_isClosed`: a closed proper ideal stays proper in the completion.
 
-This supplies the completion prerequisite for the proper-ideal criterion in AdicSpaces Layer 4.1,
-step 4 (Wedhorn's Corollary 8.32).
+This supplies the completion lemma for the proper-ideal criterion in rational covers
+(Wedhorn's Corollary 8.32).
 
 ## References
 
