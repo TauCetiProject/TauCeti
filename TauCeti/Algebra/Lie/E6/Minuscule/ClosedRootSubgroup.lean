@@ -95,7 +95,7 @@ private theorem rep_serreRootGenerator_latticeBasis (k : Fin 6 ⊕ Fin 6) :
       simp [rootSource, rootTarget, loweringMatrixQ_apply, Pi.single_apply,
         e6MinusculeWeight_negativeWeightIndex]
 
-private theorem rep_serreRootGenerator_sq_apply_latticeBasis (k : Fin 6 ⊕ Fin 6) :
+private theorem rep_serreRootGenerator_pow_two_apply_latticeBasis (k : Fin 6 ⊕ Fin 6) :
     rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ k))
       (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
@@ -104,7 +104,7 @@ private theorem rep_serreRootGenerator_sq_apply_latticeBasis (k : Fin 6 ⊕ Fin 
   have h := congrArg
     (fun f : Module.End ℚ (Fin 27 → ℚ) =>
       f ((latticeBasis (rootSource k) : lattice) : Fin 27 → ℚ))
-    (rep_serreRootGenerator_sq k)
+    (rep_serreRootGenerator_pow_two k)
   simpa only [pow_two, Module.End.mul_apply, LinearMap.zero_apply] using h
 
 /-! ## Closed root-subgroup morphisms -/
@@ -129,7 +129,7 @@ theorem rootSubgroupCoordinateMap_surjective (k : Fin 6 ⊕ Fin 6) :
       exact hu) hv)
     k isNilpotent_rep_serreRootGenerator latticeBasis DynkinType.e6MinusculeWeight
     isUnit_one (rep_serreRootGenerator_latticeBasis k)
-    (rep_serreRootGenerator_sq_apply_latticeBasis k)
+    (rep_serreRootGenerator_pow_two_apply_latticeBasis k)
 
 /-- **Every numbered root-subgroup map into the type-`E₆` minuscule carrier is a closed
 immersion.** Thus its scheme-theoretic image is a closed copy of `𝔾ₐ`, as required of the root
@@ -145,7 +145,7 @@ instance isClosedImmersion_rootSubgroup (k : Fin 6 ⊕ Fin 6) :
       exact hu) hv)
     k isNilpotent_rep_serreRootGenerator latticeBasis DynkinType.e6MinusculeWeight
     isUnit_one (rep_serreRootGenerator_latticeBasis k)
-    (rep_serreRootGenerator_sq_apply_latticeBasis k)
+    (rep_serreRootGenerator_pow_two_apply_latticeBasis k)
 
 /-- Every numbered root-subgroup map into the type-`E₆` minuscule carrier is a monomorphism. -/
 theorem mono_rootSubgroup (k : Fin 6 ⊕ Fin 6) : Mono (rootSubgroup k) :=

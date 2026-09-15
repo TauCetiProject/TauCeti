@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.SerreConstruction
 public import TauCeti.Algebra.Lie.Presentation.Basic
+import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Quotient
 
 /-!
@@ -61,6 +62,8 @@ one, which is not proved here (see the Roadmap section below).
   `TauCeti.serre_hom_ext`: `TauCeti.serreLift` sends the generators to the given Serre system, and
   is the unique homomorphism doing so; `TauCeti.serre_equiv_ext` is the same extensionality
   principle for equivalences out of the presented algebra.
+* `TauCeti.IsSerreSystem.changeScalars`: a Serre system over one base ring is one over any
+  other.
 * `TauCeti.IsSerreSystem.map`, `TauCeti.IsSerreSystem.submatrix`, `TauCeti.IsSerreSystem.perm` and
   `TauCeti.IsSerreSystem.neg_swap`: Serre systems are preserved by Lie homomorphisms, reindexing,
   and the signed exchange of the raising and lowering families.
@@ -300,6 +303,20 @@ theorem IsSerreSystem.map {L' : Type*} [LieRing L'] [LieAlgebra R L']
   ad_pow_lie_F_F i j := by
     simp only [Function.comp_apply, ← f.map_lie, ← LieHom.map_ad_pow,
       h.ad_pow_lie_F_F i j, map_zero]
+
+omit [DecidableEq B] in
+/-- **A Serre system over one base ring is a Serre system over any other.** -/
+-- The other five fields are ring-independent as stated: the two eigenvector relations scale by
+-- the integer entry `CM i j` through its `ℤ`-action, and the remaining three mention no scalars.
+theorem IsSerreSystem.changeScalars {S : Type*} [CommRing S] [LieAlgebra S L]
+    (h : IsSerreSystem R CM H E F) : IsSerreSystem S CM H E F :=
+  { h with
+    ad_pow_lie_E_E := fun i j => by
+      rw [← TauCeti.ad_pow_apply_eq_ad_pow_apply R S]
+      exact h.ad_pow_lie_E_E i j
+    ad_pow_lie_F_F := fun i j => by
+      rw [← TauCeti.ad_pow_apply_eq_ad_pow_apply R S]
+      exact h.ad_pow_lie_F_F i j }
 
 omit [DecidableEq B] in
 /-- Reindexing a Serre system along an injective map of index sets gives a Serre system for the
