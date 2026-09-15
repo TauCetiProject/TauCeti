@@ -16,9 +16,9 @@ A **pseudo-inverse** of a linear map `f` is a linear map `g` in the opposite dir
 module, so the corestriction of `f` to its range splits, and a section of it extends to the whole
 target.
 
-A pseudo-inverse is the concrete form of the splitting of `f` off its kernel: `1 - g ∘ f` takes
-values in `ker f` and fixes it, so any construction that is functorial in linear maps — extension
-of scalars, for instance — carries the splitting along and stays exact at `f`.
+A pseudo-inverse concretely splits the exact sequence from `ker f` through the range of `f`:
+`1 - g ∘ f` takes values in `ker f` and fixes it. Additive functors preserve split exact
+sequences; in particular, extension of scalars carries this splitting along.
 -/
 
 public section
