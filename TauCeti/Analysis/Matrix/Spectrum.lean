@@ -29,7 +29,9 @@ whose value is a power of its determinant.
   `c * hB.eigenvalues j < 1` for every `j`;
 * `Matrix.IsHermitian.one_sub_smul_eq_conjStarAlgAut_diagonal` and
   `Matrix.IsHermitian.det_one_sub_smul` — `1 - c • B` is conjugate to a diagonal matrix, and its
-  determinant is `∏ j, (1 - c * hB.eigenvalues j)`.
+  determinant is `∏ j, (1 - c * hB.eigenvalues j)`;
+* `Matrix.IsHermitian.trace_mul_self_eq_sum_eigenvalues_sq` — the trace of `B * B` is
+  `∑ j, hB.eigenvalues j ^ 2`, the second moment of the spectrum.
 -/
 
 public section
@@ -92,5 +94,15 @@ theorem det_one_sub_smul (c : 𝕜) :
   rw [hB.one_sub_smul_eq_conjStarAlgAut_diagonal c, conjStarAlgAut_apply, det_mul, det_mul,
     mul_right_comm, ← det_mul, mul_star_self_of_mem hB.eigenvectorUnitary.2, det_one,
     one_mul, det_diagonal]
+
+/-- The trace of the square of a Hermitian matrix is the sum of the squares of its eigenvalues.
+Together with `Matrix.IsHermitian.trace_eq_sum_eigenvalues` this reads the first two moments of
+the spectrum off the matrix. -/
+theorem trace_mul_self_eq_sum_eigenvalues_sq :
+    (B * B).trace = ∑ j, ((hB.eigenvalues j : 𝕜)) ^ 2 := by
+  conv_lhs => rw [hB.spectral_theorem]
+  rw [← map_mul, conjStarAlgAut_apply, diagonal_mul_diagonal, trace_mul_comm, ← mul_assoc,
+    star_mul_self_of_mem hB.eigenvectorUnitary.2, one_mul, trace_diagonal]
+  exact Finset.sum_congr rfl fun j _ => by simp [sq]
 
 end Matrix.IsHermitian
