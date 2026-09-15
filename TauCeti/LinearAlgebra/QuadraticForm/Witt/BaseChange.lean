@@ -50,7 +50,7 @@ theorem RegularFormClass.baseChange_hyperbolicClass :
     RegularFormClass.baseChange L (hyperbolicClass K) = hyperbolicClass L := by
   let _ : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  rw [← formClass_hyperbolicPlane, RegularFormClass.baseChange_formClass,
+  rw [← formClass_hyperbolicPlane, QuadraticForm.formClass_baseChange,
     ← formClass_hyperbolicPlane]
   apply (formClass_eq_iff _ _ _ _).mpr
   have hK : hyperbolicPlane K =
@@ -126,7 +126,7 @@ theorem wittIndex_le_wittIndex_baseChange {V : Type w} [AddCommGroup V] [Module 
         (TauCeti.formClass (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ)) := by
   let _ : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  rw [← TauCeti.RegularFormClass.baseChange_formClass Q hQ]
+  rw [← Q.formClass_baseChange hQ]
   exact TauCeti.RegularFormClass.wittIndex_le_wittIndex_baseChange _
 
 /-- The Witt index of a regular quadratic form is unchanged after extending scalars exactly when
@@ -142,7 +142,7 @@ theorem wittIndex_baseChange_eq_iff {V : Type w} [AddCommGroup V] [Module K V]
           ((TauCeti.formClass Q hQ).anisotropicPart.baseChange L) := by
   let _ : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  rw [← TauCeti.RegularFormClass.baseChange_formClass Q hQ]
+  rw [← Q.formClass_baseChange hQ]
   exact TauCeti.RegularFormClass.wittIndex_baseChange_eq_iff _
 
 end QuadraticForm

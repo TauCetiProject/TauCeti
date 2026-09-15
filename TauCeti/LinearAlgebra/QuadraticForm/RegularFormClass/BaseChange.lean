@@ -259,19 +259,26 @@ theorem equivalent_presentedForm_baseChange (p : RegularFormPresentation K) :
     ((presentedForm p).baseChange L).Equivalent (presentedForm (p.baseChange L)) :=
   ⟨presentedFormBaseChangeIsometryEquiv p⟩
 
+end TauCeti
+
+namespace QuadraticForm
+
+variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
+variable [Invertible (2 : K)]
+
 /-- The class-level construction agrees with base change of a regular quadratic form. -/
-theorem RegularFormClass.baseChange_formClass {V : Type w} [AddCommGroup V] [Module K V]
-    [FiniteDimensional K V] (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
+theorem formClass_baseChange {V : Type w} [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) :
     letI : Invertible (2 : L) :=
       (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-    RegularFormClass.baseChange L (formClass Q hQ) =
-      formClass (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ) := by
+    TauCeti.RegularFormClass.baseChange L (TauCeti.formClass Q hQ) =
+      TauCeti.formClass (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ) := by
   let _ : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  obtain ⟨p, hp⟩ := exists_presentedForm_equivalent Q hQ
-  rw [formClass_mk Q hQ p hp, RegularFormClass.baseChange_mk,
-    ← formClass_presentedForm (p.baseChange L)]
-  exact (formClass_eq_iff _ _ _ _).mpr
-    ((hp.baseChange L).trans (equivalent_presentedForm_baseChange p)).symm
+  obtain ⟨p, hp⟩ := TauCeti.exists_presentedForm_equivalent Q hQ
+  rw [TauCeti.formClass_mk Q hQ p hp, TauCeti.RegularFormClass.baseChange_mk,
+    ← TauCeti.formClass_presentedForm (p.baseChange L)]
+  exact (TauCeti.formClass_eq_iff _ _ _ _).mpr
+    ((hp.baseChange L).trans (TauCeti.equivalent_presentedForm_baseChange p)).symm
 
-end TauCeti
+end QuadraticForm

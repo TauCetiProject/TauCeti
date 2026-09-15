@@ -151,7 +151,7 @@ end Module.Basis
 
 namespace Algebra.TensorProduct
 
-variable {R A M ι : Type*}
+variable {R : Type*} (A : Type*) {M ι : Type*}
 variable [CommSemiring R] [CommSemiring A] [Algebra R A]
 variable [AddCommGroup M] [Module R M] [Finite ι]
 
