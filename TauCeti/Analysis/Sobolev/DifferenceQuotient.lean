@@ -52,6 +52,8 @@ represented by an element of `L²(Ω)`.
   paired with a test function.
 * `TauCeti.exists_norm_le_hasWeakLineDerivOn_of_frequently_eLpNorm_inv_mul_sub_le`: the
   difference-quotient criterion.
+* `TauCeti.exists_integrable_eqOn_tsupport_add`: a locally integrable function agrees with a
+  globally integrable one on the support of a test function and on its small translates.
 
 ## References
 
@@ -133,10 +135,14 @@ end Representation
 variable [BorelSpace E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure]
 
 omit [μ.IsAddHaarMeasure] in
-/-- A locally integrable function on `Ω` agrees, on the support of a test function and on all its
-small translates, with a globally integrable function: its truncation to a compact neighbourhood
-of the support inside `Ω`. -/
-private theorem exists_integrable_eqOn_tsupport_add {u : E → ℝ}
+/-- **Localization of a locally integrable function at a test function.** A function locally
+integrable on `Ω` agrees, on the support of a test function `φ` and on all small translates of
+that support in a direction `v`, with a function that is integrable on all of `E`: its truncation
+to a compact neighbourhood of `tsupport φ` inside `Ω`.
+
+This replaces local integrability by genuine integrability in any argument that only sees `u`
+through `φ` and its small translates, so that the global integral theorems apply. -/
+theorem exists_integrable_eqOn_tsupport_add {u : E → ℝ}
     (hu : LocallyIntegrableOn u Ω μ) (φ : 𝓓(Ω, ℝ)) (v : E) :
     ∃ w : E → ℝ, Integrable w μ ∧ EqOn w u (tsupport (φ : E → ℝ)) ∧
       ∀ᶠ t in 𝓝[≠] (0 : ℝ), ∀ x ∈ tsupport (φ : E → ℝ), w (x + t • v) = u (x + t • v) := by
