@@ -58,7 +58,7 @@ variable [StandardBorelSpace Y]
 theorem _root_.ProbabilityTheory.HasLaw.exists_measure_atom_le_measure_singleton
     (h : HasLaw T ν μ) {A : Set X} (hA : MeasurableSet A) (hApos : 0 < μ A)
     (hAfin : μ A ≠ ⊤)
-    (hAatom : TauCeti.MeasureTheory.Measure.IsAtom μ A) :
+    (hAatom : μ.IsAtom A) :
     ∃ y : Y, μ A ≤ ν {y} := by
   obtain ⟨y, hy⟩ :=
     h.aemeasurable.restrict.exists_map_restrict_eq_smul_dirac_of_atom hA hApos hAfin hAatom
@@ -73,7 +73,7 @@ theorem _root_.ProbabilityTheory.HasLaw.exists_measure_atom_le_measure_singleton
 that is null on singletons. -/
 theorem not_hasLaw_of_measure_atom [NullSingletonClass ν] {A : Set X} (hA : MeasurableSet A)
     (hApos : 0 < μ A) (hAfin : μ A ≠ ⊤)
-    (hAatom : TauCeti.MeasureTheory.Measure.IsAtom μ A)
+    (hAatom : μ.IsAtom A)
     (T : X → Y) : ¬HasLaw T ν μ := by
   intro hT
   obtain ⟨y, hy⟩ := hT.exists_measure_atom_le_measure_singleton hA hApos hAfin hAatom

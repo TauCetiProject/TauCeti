@@ -21,7 +21,12 @@ Dirac measure.
 The finite-mass hypothesis is essential: a zero-infinity measure may make its whole carrier an
 atom while vanishing on every singleton.
 
-## Main result
+## Main definitions
+
+* `MeasureTheory.Measure.IsAtom` — the atom condition on a set: each of its measurable subsets
+  has either zero measure or the full measure of the set.
+
+## Main results
 
 * `AEMeasurable.exists_ae_eq_const_restrict_of_atom` — an a.e.-measurable map into a standard
   Borel space is a.e. constant on every positive finite-mass measurable atom;
@@ -43,12 +48,12 @@ variable {T : X → Y} {μ : Measure X}
 
 /-- A set satisfies the atom condition for a measure if each of its measurable subsets has either
 zero measure or the full measure of the set. -/
-def Measure.IsAtom (μ : Measure X) (A : Set X) : Prop :=
+def _root_.MeasureTheory.Measure.IsAtom (μ : Measure X) (A : Set X) : Prop :=
   ∀ ⦃B : Set X⦄, MeasurableSet B → B ⊆ A → μ B = 0 ∨ μ B = μ A
 
 /-- The defining characterization of the atom condition for a measure. -/
-theorem Measure.isAtom_iff {A : Set X} :
-    Measure.IsAtom μ A ↔
+theorem _root_.MeasureTheory.Measure.isAtom_iff {A : Set X} :
+    μ.IsAtom A ↔
       ∀ ⦃B : Set X⦄, MeasurableSet B → B ⊆ A → μ B = 0 ∨ μ B = μ A :=
   Iff.rfl
 
@@ -57,7 +62,7 @@ mass and every measurable subset of `A` has either zero or full mass, then a map
 standard Borel space agrees almost everywhere with a constant. -/
 theorem _root_.AEMeasurable.exists_ae_eq_const_restrict_of_atom
     {A : Set X} (hT : AEMeasurable T (μ.restrict A)) (hA : MeasurableSet A)
-    (hApos : 0 < μ A) (hAfin : μ A ≠ ⊤) (hAatom : Measure.IsAtom μ A) :
+    (hApos : 0 < μ A) (hAfin : μ A ≠ ⊤) (hAatom : μ.IsAtom A) :
     ∃ y : Y, T =ᵐ[μ.restrict A] fun _ ↦ y := by
   let ρ : Measure X := (μ A)⁻¹ • μ.restrict A
   have hAne : μ A ≠ 0 := hApos.ne'
@@ -88,7 +93,7 @@ finite mass and every measurable subset of `A` has either zero or full mass, the
 `μ.restrict A` under a map to a standard Borel space is `μ A` times a Dirac measure. -/
 theorem _root_.AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom
     {A : Set X} (hT : AEMeasurable T (μ.restrict A)) (hA : MeasurableSet A)
-    (hApos : 0 < μ A) (hAfin : μ A ≠ ⊤) (hAatom : Measure.IsAtom μ A) :
+    (hApos : 0 < μ A) (hAfin : μ A ≠ ⊤) (hAatom : μ.IsAtom A) :
     ∃ y : Y, Measure.map T (μ.restrict A) = μ A • Measure.dirac y := by
   obtain ⟨y, hy⟩ := hT.exists_ae_eq_const_restrict_of_atom hA hApos hAfin hAatom
   refine ⟨y, ?_⟩
