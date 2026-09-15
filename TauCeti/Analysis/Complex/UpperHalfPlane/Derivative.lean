@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSLAction
 public import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
-public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 
 /-!
 # Derivatives of projective Möbius transformations
@@ -19,8 +18,6 @@ action, and at a fixed point it has norm one. A projective transformation fixing
 derivative there is one is the identity. Together these properties make the derivative at a point
 a faithful character of its stabilizer with values on the unit circle.
 
-Every representative of a nonidentity projective transformation fixing a point is elliptic.
-
 ## Main results
 
 * `Matrix.SpecialLinearGroup.derivative_mk`: the derivative formula for an `SL(2, ℝ)`
@@ -29,8 +26,6 @@ Every representative of a nonidentity projective transformation fixing a point i
   `PSL(2, ℝ)` action.
 * `Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_derivative_eq_one`:
   faithfulness at a fixed point.
-* `Matrix.SpecialLinearGroup.isElliptic_of_smul_eq_self_of_mk_ne_one`: every representative of
-  a nonidentity projective transformation fixing a point is elliptic.
 
 ## References
 
@@ -202,22 +197,3 @@ theorem eq_one_of_smul_eq_self_of_derivative_eq_one {g : PSL(2, ℝ)} {τ : ℍ}
   · exact hderiv
 
 end Matrix.ProjectiveSpecialLinearGroup
-
-namespace Matrix.SpecialLinearGroup
-
-/-- A representative of a nonidentity projective transformation fixing a point is elliptic. -/
-theorem isElliptic_of_smul_eq_self_of_mk_ne_one (a : SL(2, ℝ)) (τ : ℍ)
-    (hfix : (↑a : PSL(2, ℝ)) • τ = τ) (hne : (↑a : PSL(2, ℝ)) ≠ 1) :
-    (mapGL ℝ a : GL (Fin 2) ℝ).IsElliptic := by
-  apply UpperHalfPlane.isElliptic_of_exists_smul_eq_self
-  · rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mapGL]
-    exact zero_lt_one
-  · intro hcenter
-    apply hne
-    rw [QuotientGroup.eq_one_iff]
-    exact (toGL_mem_center_iff a).mp hcenter
-  · refine ⟨τ, ?_⟩
-    have ha : a • τ = τ := by simpa only [pslMk_smul] using hfix
-    exact ha
-
-end Matrix.SpecialLinearGroup
