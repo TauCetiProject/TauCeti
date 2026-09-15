@@ -5,14 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+public import Mathlib.RingTheory.RootsOfUnity.Basic
+public import Mathlib.Topology.Algebra.Valued.ValuativeRel
 
 /-!
-# Roots of unity in a nonarchimedean local field
+# Roots of unity in a valued field
 
-Every root of unity in a nonarchimedean local field has valuation one. Consequently, inclusion
-of the integer ring into the field identifies their groups of roots of unity of any nonzero
-order.
+Every root of unity of nonzero order in a valued field has valuation one. Consequently,
+inclusion of the integer ring into the field identifies their groups of roots of unity of any
+nonzero order.
 
 ## Main results
 
@@ -29,18 +30,18 @@ open ValuativeRel
 
 namespace TauCeti
 
-variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K]
+variable (K : Type*) [Field K] [ValuativeRel K]
 
-/-- **The roots of unity of a nonarchimedean local field are those of its integer ring**: a root
-of unity has valuation one, so it is a unit of `𝒪[K]`. -/
+/-- **The roots of unity of a valued field are those of its integer ring**: a root of nonzero
+order has valuation one, so it is a unit of `𝒪[K]`. -/
 theorem map_rootsOfUnity_integer {n : ℕ} (hn : n ≠ 0) :
     (rootsOfUnity n 𝒪[K]).map (Units.map (Subring.subtype 𝒪[K]).toMonoidHom) =
       rootsOfUnity n K := by
   refine le_antisymm (map_rootsOfUnity _ n) fun ζ hζ ↦ ?_
-  have hfin : IsOfFinOrder ζ := isOfFinOrder_iff_pow_eq_one.mpr ⟨n, Nat.pos_of_ne_zero hn, hζ⟩
+  have hvalpow : valuation K (ζ : K) ^ n = 1 := by
+    rw [← map_pow, (mem_rootsOfUnity' n ζ).mp hζ, map_one]
   have hval : valuation K (ζ : K) = 1 :=
-    (normalizedValuation_eq_one_iff ζ).mp (normalizedValuation_eq_one_of_isOfFinOrder hfin)
+    (pow_eq_one_iff_of_nonneg (bot_le : 0 ≤ valuation K (ζ : K)) hn).mp hvalpow
   have hu : IsUnit (⟨(ζ : K), (Valuation.mem_integer_iff (valuation K) (ζ : K)).mpr hval.le⟩
       : 𝒪[K]) := (Valuation.integer.integers (valuation K)).isUnit_of_one' hval
   have hcoe : ((hu.unit : 𝒪[K]) : K) = (ζ : K) := congrArg Subtype.val hu.unit_spec
