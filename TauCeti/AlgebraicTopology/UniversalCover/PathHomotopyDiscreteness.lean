@@ -132,7 +132,8 @@ private theorem Path.exists_partition_with_property {x y : X} (γ : Path x y) (P
   choose U hU_open hU_mem hU_P using h
   obtain ⟨N, t, ht0, htN, ht_mono, ht_cover⟩ :=
     γ.exists_monotone_range_subpath_subset (U := fun z : Set.range γ ↦ U z.val z.property)
-      fun s ↦ ⟨⟨γ s, s, rfl⟩, (hU_open _ _).mem_nhds (hU_mem _ _)⟩
+      fun s ↦ ⟨⟨γ s, s, rfl⟩, γ.continuous.continuousAt.preimage_mem_nhds
+        ((hU_open _ _).mem_nhds (hU_mem _ _))⟩
   refine ⟨N, ⟨t, ht_mono, ht0, htN⟩, fun i ↦ ?_⟩
   obtain ⟨⟨z, hz⟩, h_seg⟩ := ht_cover i
   rw [Path.range_subpath_of_le _ _ _ (ht_mono i.castSucc_le_succ)] at h_seg

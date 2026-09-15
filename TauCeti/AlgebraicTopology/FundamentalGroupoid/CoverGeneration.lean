@@ -33,6 +33,8 @@ homotopy between a path and the concatenation of its consecutive subpaths.
 
 * R. Brown, *Topology and Groupoids*, Section 6.7.
 * A. Hatcher, *Algebraic Topology*, Section 1.2, proof of Theorem 1.20.
+* T. Zhu, [mathlib4#41603](https://github.com/leanprover-community/mathlib4/pull/41603), whose
+  fundamental-groupoid cosheaf interface guides the colimit formulation.
 -/
 
 public section
@@ -106,7 +108,9 @@ theorem iSup_im_map_subtypeVal_eq_top (hU : ∀ x, ∃ i, U i ∈ 𝓝 x) :
   rw [eq_top_iff]
   rintro ⟨⟨x⟩, ⟨y⟩, f⟩ -
   induction f using Path.Homotopic.Quotient.ind with | mk γ =>
-  obtain ⟨n, t, ht0, htn, -, ht⟩ := γ.exists_monotone_range_subpath_subset fun s ↦ hU (γ s)
+  obtain ⟨n, t, ht0, htn, -, ht⟩ := γ.exists_monotone_range_subpath_subset fun s ↦ by
+    obtain ⟨i, hi⟩ := hU (γ s)
+    exact ⟨i, γ.continuous.continuousAt.preimage_mem_nhds hi⟩
   have hsub := mk_concat_mem_iSup_im hU (γ ∘ t) (fun k ↦ γ.subpath (t k.castSucc) (t k.succ)) ht
   rw [Path.Homotopic.Quotient.eq.2 (Path.Homotopic.concat_subpath γ t)] at hsub
   have hγ : ∀ (a b : I) (ha : a = 0) (hb : b = 1),

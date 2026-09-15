@@ -171,17 +171,17 @@ theorem homotopic_of_continuous_square {a b : X} {p q : Path a b} (K : I × I �
          subst hs
          exact (hK_right t).trans p.target.symm }⟩
 
-/-- If every point of `γ` has some `U i` as a neighbourhood, then `γ` can be subdivided at
-finitely many monotone times, starting at `0` and ending at `1`, so that the subpath between any
-two consecutive times has range in some `U i`. -/
+/-- If every parameter `s` has some `γ ⁻¹' U i` as a neighbourhood, then `γ` can be subdivided
+at finitely many monotone times, starting at `0` and ending at `1`, so that the subpath between
+any two consecutive times has range in some `U i`. -/
 theorem exists_monotone_range_subpath_subset {ι : Type*} {U : ι → Set X} {x y : X}
-    (γ : Path x y) (hU : ∀ s, ∃ i, U i ∈ 𝓝 (γ s)) :
+    (γ : Path x y) (hU : ∀ s, ∃ i, γ ⁻¹' U i ∈ 𝓝 s) :
     ∃ (n : ℕ) (t : Fin (n + 1) → I), t 0 = 0 ∧ t (Fin.last n) = 1 ∧ Monotone t ∧
       ∀ k : Fin n, ∃ i, range (γ.subpath (t k.castSucc) (t k.succ)) ⊆ U i := by
   obtain ⟨t, ht0, ht_mono, ⟨N, hN⟩, ht_cover⟩ :=
     exists_monotone_Icc_subset_open_cover_unitInterval
-      (c := fun i ↦ γ ⁻¹' interior (U i))
-      (fun i ↦ isOpen_interior.preimage γ.continuous)
+      (c := fun i ↦ interior (γ ⁻¹' U i))
+      (fun i ↦ isOpen_interior)
       (fun s _ ↦ by
         obtain ⟨i, hi⟩ := hU s
         exact mem_iUnion.2 ⟨i, mem_interior_iff_mem_nhds.2 hi⟩)
@@ -191,7 +191,8 @@ theorem exists_monotone_range_subpath_subset {ι : Type*} {U : ι → Set X} {x 
   refine ⟨i, ?_⟩
   rw [range_subpath_of_le _ _ _ (ht_mono (by simp))]
   rintro _ ⟨s, hs, rfl⟩
-  exact interior_subset (hi (by simpa using hs))
+  have hs' : s ∈ γ ⁻¹' U i := interior_subset (hi (by simpa using hs))
+  exact hs'
 
 end Path
 
