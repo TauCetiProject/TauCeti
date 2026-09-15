@@ -12,9 +12,9 @@ public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
 # Smooth dependence of the maximal integral curve near time zero
 
 Let `v` be a vector field on a separated boundaryless `C^1` manifold `M` modelled on a
-finite-dimensional space. This file shows that if `v` is `C^1` everywhere and `C^(n+1)` at `x₀`,
-then the maximal flow `(x, t) ↦ maximalIntegralCurve v x t` is jointly `C^(n+1)` in the initial
-point and the time at `(x₀, 0)`. Together with
+finite-dimensional space. This file shows that if `v` is `C^(n+1)` at `x₀`, then the maximal flow
+`(x, t) ↦ maximalIntegralCurve v x t` is jointly `C^(n+1)` in the initial point and the time at
+`(x₀, 0)`. Together with
 `TauCeti.eventually_mem_maximalIntegralCurveInterval`, which puts a neighbourhood of `(x₀, 0)` in
 the domain of the maximal flow, this is the local input to the smooth flow of a vector field, and
 in particular to the geodesic flow, which is the flow of the geodesic spray on the tangent bundle.
@@ -23,11 +23,11 @@ For the smoothness statement, the model-space input is `ODE.exists_contDiffAt_lo
 to the vector field read in the extended chart at `x₀`. That theorem produces a local flow `Φ` in
 coordinates. Applying the inverse chart to the curves `t ↦ Φ (extChartAt I x₀ x) t` gives, for
 every `x` near `x₀`, an integral curve of `v` through `x` on one fixed interval around `0`.
-Uniqueness of integral curves, through `IsMIntegralCurveOn.eqOn_maximalIntegralCurve`, identifies
-these curves with the maximal integral curves, so the maximal flow agrees near `(x₀, 0)` with the
-chart expression `(x, t) ↦ (extChartAt I x₀).symm (Φ (extChartAt I x₀ x) t)`, which is visibly
-`C^(n+1)`. The maximal flow is defined without any choice of local flow, so the finite orders
-assemble into the smooth case.
+Fixed-chart uniqueness of integral curves identifies these curves with the witnesses defining the
+maximal integral curves, so the maximal flow agrees near `(x₀, 0)` with the chart expression
+`(x, t) ↦ (extChartAt I x₀).symm (Φ (extChartAt I x₀ x) t)`, which is visibly `C^(n+1)`.
+The maximal flow is defined without any choice of local flow, so the finite orders assemble into
+the smooth case.
 
 ## Main results
 
@@ -55,19 +55,115 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] [BoundarylessManifold I M]
   [FiniteDimensional ℝ E] [T2Space M] {v : (x : M) → TangentSpace I x} {x₀ : M}
 
+omit [BoundarylessManifold I M] [FiniteDimensional ℝ E] [T2Space M] in
+set_option backward.isDefEq.respectTransparency false in
+/-- An integral curve, read in any fixed extended chart containing its value, solves the
+corresponding coordinate ODE. -/
+private theorem IsMIntegralCurveOn.hasDerivAt_extChartAt (hγ : IsMIntegralCurveOn γ v s)
+    {x : M} {t : ℝ} (ht : t ∈ s) (hs : s ∈ nhds t) (hsrc : γ t ∈ (extChartAt I x).source) :
+    HasDerivAt ((extChartAt I x) ∘ γ)
+      (tangentCoordChange I (γ t) x (γ t) (v (γ t))) t := by
+  replace hsrc := extChartAt_source I x ▸ hsrc
+  rw [hasDerivAt_iff_hasFDerivAt, ← hasMFDerivAt_iff_hasFDerivAt]
+  apply (HasMFDerivAt.comp t (hasMFDerivAt_extChartAt (I := I) hsrc)
+    ((hγ t ht).hasMFDerivAt hs)).congr_mfderiv
+  rw [ContinuousLinearMap.ext_iff]
+  intro a
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply, map_smul,
+    ← one_apply_eq_self
+      (F := TangentSpace 𝓘(ℝ, ℝ) t →L[ℝ] TangentSpace 𝓘(ℝ, ℝ) t) a,
+    ← ContinuousLinearMap.smulRight_apply, mfderiv_chartAt_eq_tangentCoordChange hsrc]
+  rfl
+
+omit [BoundarylessManifold I M] [FiniteDimensional ℝ E] in
+/-- Integral curves are unique on an interval on which one curve remains in a fixed chart where
+the coordinate field is continuously differentiable. -/
+private theorem IsMIntegralCurveOn.eqOn_of_contDiffOn_extChartAt {a b t₀ : ℝ} {γ δ : ℝ → M}
+    {u : Set E} (hu : IsOpen u)
+    (hv : ContDiffOn ℝ 1 (fun z ↦ tangentCoordChange I ((extChartAt I x₀).symm z) x₀
+      ((extChartAt I x₀).symm z) (v ((extChartAt I x₀).symm z))) u)
+    (hγ : IsMIntegralCurveOn γ v (Ioo a b)) (hδ : IsMIntegralCurveOn δ v (Ioo a b))
+    (hγsrc : ∀ t ∈ Ioo a b, γ t ∈ (extChartAt I x₀).source)
+    (hγu : ∀ t ∈ Ioo a b, extChartAt I x₀ (γ t) ∈ u)
+    (ht₀ : t₀ ∈ Ioo a b) (heq : γ t₀ = δ t₀) : EqOn γ δ (Ioo a b) := by
+  let φ := extChartAt I x₀
+  let w : E → E := fun z ↦
+    tangentCoordChange I (φ.symm z) x₀ (φ.symm z) (v (φ.symm z))
+  set q := {t | γ t = δ t} ∩ Ioo a b with hq
+  suffices hsub : Ioo a b ⊆ q from fun t ht ↦ mem_ofPred.mp ((subset_def ▸ hsub) t ht).1
+  apply isPreconnected_Ioo.subset_of_closure_inter_subset (s := Ioo a b) (u := q) _
+    ⟨t₀, ⟨ht₀, ⟨heq, ht₀⟩⟩⟩
+  · rw [hq, inter_comm, ← Subtype.image_preimage_val, inter_comm,
+      ← Subtype.image_preimage_val, image_subset_image_iff Subtype.val_injective,
+      preimage_ofPred_eq]
+    intro t ht
+    rw [mem_preimage, ← closure_subtype] at ht
+    revert ht t
+    apply IsClosed.closure_subset (isClosed_eq _ _)
+    · rw [continuous_iff_continuousAt]
+      rintro ⟨_, ht⟩
+      exact (hγ.continuousWithinAt ht).continuousAt (Ioo_mem_nhds ht.1 ht.2) |>.comp
+        continuousAt_subtype_val
+    · rw [continuous_iff_continuousAt]
+      rintro ⟨_, ht⟩
+      exact (hδ.continuousWithinAt ht).continuousAt (Ioo_mem_nhds ht.1 ht.2) |>.comp
+        continuousAt_subtype_val
+  · rw [isOpen_iff_mem_nhds]
+    intro t ht
+    have hJ : Ioo a b ∈ nhds t := Ioo_mem_nhds ht.2.1 ht.2.2
+    have hγat := hγ.isMIntegralCurveAt hJ
+    have hδat := hδ.isMIntegralCurveAt hJ
+    have hγst := hγsrc t ht.2
+    have hδst : δ t ∈ φ.source := ht.1 ▸ hγst
+    have hγut := hγu t ht.2
+    have hvat : ContDiffAt ℝ 1 w (φ (γ t)) :=
+      (hv (φ (γ t)) hγut).contDiffAt (hu.mem_nhds hγut)
+    obtain ⟨K, z, hz, hlip⟩ : ∃ K, ∃ z ∈ nhds (φ (γ t)), LipschitzOnWith K w z :=
+      hvat.exists_lipschitzOnWith
+    have hγz : ∀ᶠ r in nhds t, φ (γ r) ∈ z :=
+      ((continuousAt_extChartAt' hγst).comp hγat.continuousAt).eventually hz
+    have hδz : ∀ᶠ r in nhds t, φ (δ r) ∈ z :=
+      ((continuousAt_extChartAt' hδst).comp hδat.continuousAt).eventually (by
+        rw [Function.comp_apply]
+        rw [← ht.1]
+        exact hz)
+    have hδsrc : ∀ᶠ r in nhds t, δ r ∈ φ.source :=
+      hδat.continuousAt.eventually_mem ((isOpen_extChartAt_source x₀).mem_nhds hδst)
+    have hγderiv : ∀ᶠ r in nhds t, HasDerivAt (φ ∘ γ) (w ((φ ∘ γ) r)) r := by
+      filter_upwards [hJ] with r hr
+      have hd := IsMIntegralCurveOn.hasDerivAt_extChartAt hγ hr
+        (Ioo_mem_nhds hr.1 hr.2) (hγsrc r hr)
+      convert hd using 1
+      simp only [w, Function.comp_apply]
+      rw [φ.left_inv (hγsrc r hr)]
+    have hδderiv : ∀ᶠ r in nhds t, HasDerivAt (φ ∘ δ) (w ((φ ∘ δ) r)) r := by
+      filter_upwards [hJ, hδsrc] with r hr hrsrc
+      have hd := IsMIntegralCurveOn.hasDerivAt_extChartAt hδ hr
+        (Ioo_mem_nhds hr.1 hr.2) hrsrc
+      convert hd using 1
+      simp only [w, Function.comp_apply]
+      rw [φ.left_inv hrsrc]
+    have hcoord : (φ ∘ γ) =ᶠ[nhds t] (φ ∘ δ) :=
+      ODE_solution_unique_of_eventually (.of_forall fun _ ↦ hlip)
+        (hγderiv.and hγz) (hδderiv.and hδz) (congrArg φ ht.1)
+    have hlocal : γ =ᶠ[nhds t] δ := by
+      filter_upwards [hcoord, hJ, hδsrc] with r hr hrJ hrδsrc
+      exact φ.injOn (hγsrc r hrJ) hrδsrc hr
+    exact (hlocal.and hJ).mono fun _ hr ↦ ⟨hr.1, hr.2⟩
+
 /-- **The maximal flow in a chart.** If the vector field `v`, read in the extended chart at `x₀`,
 is `C^(n+1)` near the image of `x₀`, then there is a coordinate map `Φ` with `Φ z 0 = z`, jointly
 `C^(n+1)` at `(extChartAt I x₀ x₀, 0)`, such that near `(x₀, 0)` the maximal flow is `Φ` read back
 through the chart. -/
 private theorem exists_contDiffAt_maximalIntegralCurve_eq_extChartAt_symm {n : ℕ∞}
-    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {u : Set E}
-    (hu : u ∈ 𝓝 (extChartAt I x₀ x₀))
+    {u : Set E} (hu : u ∈ 𝓝 (extChartAt I x₀ x₀))
     (hvu : ContDiffOn ℝ (n + 1) (fun z ↦ tangentCoordChange I ((extChartAt I x₀).symm z) x₀
       ((extChartAt I x₀).symm z) (v ((extChartAt I x₀).symm z))) u) :
     ∃ Φ : E → ℝ → E, ContDiffAt ℝ (n + 1) (fun p : E × ℝ ↦ Φ p.1 p.2) (extChartAt I x₀ x₀, 0) ∧
       (∀ z, Φ z 0 = z) ∧ ∀ᶠ p in 𝓝 ((x₀, 0) : M × ℝ),
         maximalIntegralCurve v p.1 p.2 = (extChartAt I x₀).symm (Φ (extChartAt I x₀ p.1) p.2) := by
   set φ := extChartAt I x₀
+  obtain ⟨o, hou, ho, hxo⟩ := mem_nhds_iff.mp hu
   obtain ⟨Φ, hΦ, hΦ0, -, hΦderiv⟩ := ODE.exists_contDiffAt_localFlow _ hvu hu
   refine ⟨Φ, hΦ, hΦ0, ?_⟩
   -- Near `(φ x₀, 0)` the coordinate flow solves the equation and stays inside the chart target.
@@ -75,8 +171,10 @@ private theorem exists_contDiffAt_maximalIntegralCurve_eq_extChartAt_symm {n : �
     isOpen_interior.mem_nhds (I.isInteriorPoint_iff.mp BoundarylessManifold.isInteriorPoint)
   have hmem : ∀ᶠ p in 𝓝 ((φ x₀, 0) : E × ℝ), Φ p.1 p.2 ∈ interior φ.target :=
     hΦ.continuousAt.eventually_mem (by simpa [hΦ0] using htarget)
+  have hmemu : ∀ᶠ p in 𝓝 ((φ x₀, 0) : E × ℝ), Φ p.1 p.2 ∈ o :=
+    hΦ.continuousAt.eventually_mem (by simpa [hΦ0] using ho.mem_nhds hxo)
   -- Shrink to a product of a neighbourhood of `φ x₀` and a symmetric interval of times.
-  have hbox := hΦderiv.and hmem
+  have hbox := hΦderiv.and (hmem.and hmemu)
   rw [nhds_prod_eq] at hbox
   obtain ⟨pa, hpa, pb, hpb, hab⟩ := Filter.eventually_prod_iff.mp hbox
   obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff_ball.mp hpb
@@ -91,19 +189,41 @@ private theorem exists_contDiffAt_maximalIntegralCurve_eq_extChartAt_symm {n : �
     intro x hx hpax
     refine ⟨IsMIntegralCurveAt.isMIntegralCurveOn fun t ht ↦ ?_, by simp [hΦ0, φ.left_inv hx]⟩
     refine IsMIntegralCurveAt.of_extChartAt_symm ?_ ?_
-    · filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs using (hab hpax (hIoo s hs)).2
+    · filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs using (hab hpax (hIoo s hs)).2.1
     · filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs using (hab hpax (hIoo s hs)).1
   have hx : ∀ᶠ x in 𝓝 x₀, x ∈ φ.source ∧ pa (φ x) :=
     Filter.Eventually.and (extChartAt_source_mem_nhds (I := I) x₀)
       ((continuousAt_extChartAt x₀).eventually hpa)
   filter_upwards [hx.prod_nhds (Ioo_mem_nhds (neg_lt_zero.mpr hε) hε)] with p hp
   obtain ⟨hγ, hγ0⟩ := hcurve p.1 hp.1.1 hp.1.2
-  exact hγ.eqOn_maximalIntegralCurve hv h0 hγ0 hp.2
+  have hpt : p.2 ∈ maximalIntegralCurveInterval v p.1 :=
+    hγ.subset_maximalIntegralCurveInterval h0 hγ0 hp.2
+  obtain ⟨δ, c, d, hδ, hδ0, hc0, hpcd, hmax⟩ :=
+    exists_isMIntegralCurveOn_maximalIntegralCurve_eq hpt
+  let a := max (-ε) c
+  let b := min ε d
+  have hsubγ : Ioo a b ⊆ Ioo (-ε) ε :=
+    Ioo_subset_Ioo (le_max_left _ _) (min_le_left _ _)
+  have hsubδ : Ioo a b ⊆ Ioo c d :=
+    Ioo_subset_Ioo (le_max_right _ _) (min_le_right _ _)
+  have h0' : (0 : ℝ) ∈ Ioo a b := ⟨max_lt h0.1 hc0.1, lt_min h0.2 hc0.2⟩
+  have hp' : p.2 ∈ Ioo a b := ⟨max_lt hp.2.1 hpcd.1, lt_min hp.2.2 hpcd.2⟩
+  have hγsrc : ∀ t ∈ Ioo a b, (φ.symm ∘ Φ (φ p.1)) t ∈ φ.source := by
+    intro t ht
+    exact φ.map_target (interior_subset (hab hp.1.2 (hIoo t (hsubγ ht))).2.1)
+  have hγu : ∀ t ∈ Ioo a b, φ ((φ.symm ∘ Φ (φ p.1)) t) ∈ o := by
+    intro t ht
+    have htarget' := interior_subset (hab hp.1.2 (hIoo t (hsubγ ht))).2.1
+    rw [Function.comp_apply, φ.right_inv htarget']
+    exact (hab hp.1.2 (hIoo t (hsubγ ht))).2.2
+  have heq := IsMIntegralCurveOn.eqOn_of_contDiffOn_extChartAt ho
+    ((hvu.mono hou).of_le (by simp)) (hγ.mono hsubγ) (hδ.mono hsubδ) hγsrc hγu h0'
+    (hγ0.trans hδ0.symm)
+  exact hmax.trans (heq hp').symm
 
 /-- The finite-order case of `contMDiffAt_maximalIntegralCurve`, where a field which is `C^(n+1)` at
 `x₀` is `C^(n+1)` on a neighbourhood of `x₀`. -/
 private theorem contMDiffAt_maximalIntegralCurve_nat (n : ℕ)
-    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (hvx : CMDiffAt (n + 1) (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)) x₀) :
     ContMDiffAt (I.prod 𝓘(ℝ, ℝ)) I (n + 1) (fun p : M × ℝ ↦ maximalIntegralCurve v p.1 p.2)
       (x₀, 0) := by
@@ -115,7 +235,7 @@ private theorem contMDiffAt_maximalIntegralCurve_nat (n : ℕ)
       BoundarylessManifold.isInteriorPoint)).snd
   obtain ⟨u, hu, hvu⟩ := hvc.contDiffOn (m := ((n + 1 : ℕ) : ℕ∞ω)) (by norm_cast) (by simp)
   obtain ⟨Φ, hΦ, hΦ0, h⟩ :=
-    exists_contDiffAt_maximalIntegralCurve_eq_extChartAt_symm (n := n) hv hu (by exact_mod_cast hvu)
+    exists_contDiffAt_maximalIntegralCurve_eq_extChartAt_symm (n := n) hu (by exact_mod_cast hvu)
   have hchart : ContMDiffAt (I.prod 𝓘(ℝ, ℝ)) 𝓘(ℝ, E × ℝ) (n + 1)
       (fun p : M × ℝ ↦ (extChartAt I x₀ p.1, p.2)) (x₀, 0) :=
     ((contMDiffAt_extChartAt (I := I) (n := n + 1) (x := x₀)).comp (x₀, (0 : ℝ))
@@ -130,13 +250,12 @@ private theorem contMDiffAt_maximalIntegralCurve_nat (n : ℕ)
   have hflow := hsymm.comp_of_eq (hΦ'.comp (x₀, (0 : ℝ)) hchart) (by simp [hΦ0])
   exact hflow.congr_of_eventuallyEq h
 
-/-- **The maximal flow is `C^(n+1)` near time zero.** Let `v` be a `C^1` vector field on a
-separated boundaryless manifold modelled on a finite-dimensional space, and suppose `v` is
-`C^(n+1)` at `x₀`, for `n` finite or infinite. Then the maximal flow
+/-- **The maximal flow is `C^(n+1)` near time zero.** Suppose `v` is `C^(n+1)` at `x₀`, for `n`
+finite or infinite, on a separated boundaryless manifold modelled on a finite-dimensional space.
+Then the maximal flow
 `(x, t) ↦ maximalIntegralCurve v x t` is `C^(n+1)` jointly in the initial point and the time at
 `(x₀, 0)`. -/
 theorem contMDiffAt_maximalIntegralCurve {n : ℕ∞}
-    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (hvx : CMDiffAt (n + 1) (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)) x₀) :
     ContMDiffAt (I.prod 𝓘(ℝ, ℝ)) I (n + 1) (fun p : M × ℝ ↦ maximalIntegralCurve v p.1 p.2)
       (x₀, 0) := by
@@ -146,9 +265,9 @@ theorem contMDiffAt_maximalIntegralCurve {n : ℕ∞}
       norm_cast
     rw [htop] at hvx ⊢
     exact contMDiffAt_infty.2 fun m ↦
-      (contMDiffAt_maximalIntegralCurve_nat m hv (hvx.of_le (by exact_mod_cast le_top))).of_le
+      (contMDiffAt_maximalIntegralCurve_nat m (hvx.of_le (by exact_mod_cast le_top))).of_le
         (by exact_mod_cast Nat.le_succ m)
-  | coe m => exact contMDiffAt_maximalIntegralCurve_nat m hv (by exact_mod_cast hvx)
+  | coe m => exact contMDiffAt_maximalIntegralCurve_nat m (by exact_mod_cast hvx)
 
 end TauCeti
 
