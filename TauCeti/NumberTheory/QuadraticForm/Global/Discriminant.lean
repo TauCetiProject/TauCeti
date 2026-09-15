@@ -47,21 +47,8 @@ theorem discr_atFinitePlace (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate
   let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   let _ : Invertible (2 : place.adicCompletion K) :=
     (Invertible.map (algebraMap K (place.adicCompletion K)) 2).copy 2 (map_ofNat _ _).symm
-  let hQbase : (Q.baseChange (place.adicCompletion K)).Nondegenerate :=
-    QuadraticForm.Nondegenerate.baseChange hQ
-  let hQlocal : (atFinitePlace Q place).Nondegenerate := by
-    rw [atFinitePlace_def]
-    exact hQbase
-  calc
-    _ = TauCeti.RegularFormClass.discr
-        (TauCeti.formClass (Q.baseChange (place.adicCompletion K)) hQbase) := by
-      apply congrArg TauCeti.RegularFormClass.discr
-      rw [TauCeti.formClass_eq_iff]
-      have hforms : atFinitePlace Q place = Q.baseChange (place.adicCompletion K) :=
-        atFinitePlace_def Q place
-      rw [hforms]
-      exact QuadraticMap.Equivalent.refl _
-    _ = _ := QuadraticForm.discr_formClass_baseChange Q hQ
+  simp only [atFinitePlace_def]
+  exact QuadraticForm.discr_formClass_baseChange Q hQ
 
 /-- At a real place, the discriminant of the localized form is the image of its global
 discriminant under the place's real embedding. -/
@@ -78,21 +65,9 @@ theorem discr_atRealPlace (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
         (TauCeti.RegularFormClass.discr (TauCeti.formClass Q hQ)) := by
   let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   let _ : Algebra K ℝ := (embedding_of_isReal place.2).toAlgebra
-  let hQbase : (Q.baseChange ℝ).Nondegenerate :=
-    QuadraticForm.Nondegenerate.baseChange hQ
-  let hQlocal : (atRealPlace Q place).Nondegenerate := by
-    rw [atRealPlace_def]
-    exact hQbase
-  calc
-    _ = TauCeti.RegularFormClass.discr (TauCeti.formClass (Q.baseChange ℝ) hQbase) := by
-      apply congrArg TauCeti.RegularFormClass.discr
-      rw [TauCeti.formClass_eq_iff]
-      have hforms : atRealPlace Q place = Q.baseChange ℝ := atRealPlace_def Q place
-      rw [hforms]
-      exact QuadraticMap.Equivalent.refl _
-    _ = _ := by
-      simpa only [RingHom.algebraMap_toAlgebra] using
-        (QuadraticForm.discr_formClass_baseChange (L := ℝ) Q hQ)
+  simp only [atRealPlace_def]
+  simpa only [RingHom.algebraMap_toAlgebra] using
+    (QuadraticForm.discr_formClass_baseChange (L := ℝ) Q hQ)
 
 /-- Along a complex embedding, the discriminant of the scalar extension is the image of its
 global discriminant. -/
@@ -109,21 +84,8 @@ theorem discr_atComplexEmbedding (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegen
         (TauCeti.RegularFormClass.discr (TauCeti.formClass Q hQ)) := by
   let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   let _ : Algebra K ℂ := place.embedding.toAlgebra
-  let hQbase : (Q.baseChange ℂ).Nondegenerate :=
-    QuadraticForm.Nondegenerate.baseChange hQ
-  let hQlocal : (atComplexEmbedding Q place).Nondegenerate := by
-    rw [atComplexEmbedding_def]
-    exact hQbase
-  calc
-    _ = TauCeti.RegularFormClass.discr (TauCeti.formClass (Q.baseChange ℂ) hQbase) := by
-      apply congrArg TauCeti.RegularFormClass.discr
-      rw [TauCeti.formClass_eq_iff]
-      have hforms : atComplexEmbedding Q place = Q.baseChange ℂ :=
-        atComplexEmbedding_def Q place
-      rw [hforms]
-      exact QuadraticMap.Equivalent.refl _
-    _ = _ := by
-      simpa only [RingHom.algebraMap_toAlgebra] using
-        (QuadraticForm.discr_formClass_baseChange (L := ℂ) Q hQ)
+  simp only [atComplexEmbedding_def]
+  simpa only [RingHom.algebraMap_toAlgebra] using
+    (QuadraticForm.discr_formClass_baseChange (L := ℂ) Q hQ)
 
 end QuadraticForm
