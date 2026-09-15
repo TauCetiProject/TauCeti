@@ -105,9 +105,6 @@ Casimir scalar — which is why the separation statement is phrased for the whol
 
 ## References
 
-The highest weight theory this file belongs to is developed in
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight`.
-
 The name `TauCeti.centralCharacter` is already taken by the central character of a simple module
 over an arbitrary algebra (`TauCeti/RingTheory/Semisimple/CentralCharacter.lean`), obtained from
 Schur's lemma. That construction is not available here: it assumes `[IsAlgClosed K]`,
@@ -333,9 +330,8 @@ theorem isotypicComponent_le_centralEigenLieSubmodule (h : vermaGenerator b lam 
 
 /-- **The centre of `U(L)` acts on the `lam`-isotypic component by `chi_lam`**: a central
 element `u` acts on every element of `LieModule.isotypicComponent K L M (irreducibleQuotient b lam)`
-by the single scalar `chi_lam u`. This refines the isotypic decomposition of a module into
-eigenspaces of the centre. Neither finite-dimensionality of `M` nor dominance of `lam` is
-required. -/
+by the single scalar `chi_lam u`, so that component is contained in a single eigen-submodule of
+`u`. Neither finite-dimensionality of `M` nor dominance of `lam` is required. -/
 theorem representation_eq_vermaCentralCharacter_smul_of_mem_isotypicComponent
     (h : vermaGenerator b lam ≠ 0) (u : Subalgebra.center K U) {m : M}
     (hm : m ∈ LieModule.isotypicComponent K L M (irreducibleQuotient b lam)) :
