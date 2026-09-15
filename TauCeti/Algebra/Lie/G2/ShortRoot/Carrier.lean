@@ -149,7 +149,8 @@ private theorem rootIntMatrix_rootTarget_rootSource (k : Fin 2 ⊕ Fin 2) :
     rootIntMatrix k (rootTarget k) (rootSource k) = 1 := by
   rcases k with i | i <;> fin_cases i <;>
     simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, rootIntMatrix_inl, rootIntMatrix_inr,
-      raisingMatrix, loweringMatrix, rootSource,
+      raisingMatrix, loweringMatrix, raisingCoefficient_apply, loweringCoefficient_apply,
+      rootSource,
       rootTarget] <;> decide
 
 /-- The distinguished source coordinate is carried to the target and nowhere else. -/
@@ -158,7 +159,8 @@ private theorem rootIntMatrix_rootSource_eq_zero (k : Fin 2 ⊕ Fin 2) (r : Fin 
   revert r
   rcases k with i | i <;> fin_cases i <;>
     simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, rootIntMatrix_inl, rootIntMatrix_inr,
-      raisingMatrix, loweringMatrix, rootSource,
+      raisingMatrix, loweringMatrix, raisingCoefficient_apply, loweringCoefficient_apply,
+      rootSource,
       rootTarget] <;> decide
 
 /-- The distinguished target coordinate is annihilated by the generator. -/
@@ -167,7 +169,7 @@ private theorem rootIntMatrix_rootTarget_eq_zero (k : Fin 2 ⊕ Fin 2) (r : Fin 
   revert r
   rcases k with i | i <;> fin_cases i <;>
     simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, rootIntMatrix_inl, rootIntMatrix_inr,
-      raisingMatrix, loweringMatrix,
+      raisingMatrix, loweringMatrix, raisingCoefficient_apply, loweringCoefficient_apply,
       rootTarget] <;> decide
 
 /-- A numbered simple root generator acts on a lattice basis vector by the corresponding column
@@ -442,7 +444,8 @@ theorem coe_rootSubgroupPoints_inl_zero (A : Type v) [CommRing A] (t : A) :
          0, 0, 0, 0, 0, 0, 1] := by
   rw [coe_rootSubgroupPoints, toAdd_ofAdd, rootIntMatrix_inl, rootDividedSquare_inl]
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [raisingMatrix, Matrix.single, mul_comm]
+  fin_cases i <;> fin_cases j <;>
+    simp [raisingMatrix, raisingCoefficient_apply, Matrix.single, mul_comm]
 
 /-- The long positive simple-root point `x_{α₂}(t)`, written out. -/
 theorem coe_rootSubgroupPoints_inl_one (A : Type v) [CommRing A] (t : A) :
@@ -457,7 +460,7 @@ theorem coe_rootSubgroupPoints_inl_one (A : Type v) [CommRing A] (t : A) :
          0, 0, 0, 0, 0, 0, 1] := by
   rw [coe_rootSubgroupPoints, toAdd_ofAdd, rootIntMatrix_inl, rootDividedSquare_inl]
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [raisingMatrix]
+  fin_cases i <;> fin_cases j <;> simp [raisingMatrix, raisingCoefficient_apply]
 
 /-- The short negative simple-root point `x_{-α₁}(t)`, written out. -/
 theorem coe_rootSubgroupPoints_inr_zero (A : Type v) [CommRing A] (t : A) :
@@ -472,7 +475,8 @@ theorem coe_rootSubgroupPoints_inr_zero (A : Type v) [CommRing A] (t : A) :
          0, 0, 0, 0, 0, t, 1] := by
   rw [coe_rootSubgroupPoints, toAdd_ofAdd, rootIntMatrix_inr, rootDividedSquare_inr]
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [loweringMatrix, Matrix.single, mul_comm]
+  fin_cases i <;> fin_cases j <;>
+    simp [loweringMatrix, loweringCoefficient_apply, Matrix.single, mul_comm]
 
 /-- The long negative simple-root point `x_{-α₂}(t)`, written out. -/
 theorem coe_rootSubgroupPoints_inr_one (A : Type v) [CommRing A] (t : A) :
@@ -487,7 +491,7 @@ theorem coe_rootSubgroupPoints_inr_one (A : Type v) [CommRing A] (t : A) :
          0, 0, 0, 0, 0, 0, 1] := by
   rw [coe_rootSubgroupPoints, toAdd_ofAdd, rootIntMatrix_inr, rootDividedSquare_inr]
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [loweringMatrix]
+  fin_cases i <;> fin_cases j <;> simp [loweringMatrix, loweringCoefficient_apply]
 
 /-- The matrix of a point of the carrier's split weight torus is the diagonal matrix of the weight
 characters at that point. -/
