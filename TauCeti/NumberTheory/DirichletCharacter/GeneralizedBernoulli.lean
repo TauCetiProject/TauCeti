@@ -57,7 +57,7 @@ defining formula remains literal in degree zero, and adds scalar compatibility a
 modulus-one calculation.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -80,13 +80,23 @@ def generalizedBernoulli [NeZero N] (χ : DirichletCharacter R N) (n : ℕ) : R 
       algebraMap ℚ R
         ((Polynomial.bernoulli n).eval (((if a = 0 then N else a.val : ℕ) : ℚ) / N))
 
+/-- The defining formula of the generalized Bernoulli number `Bₙ,χ`. -/
+theorem generalizedBernoulli_def [NeZero N] (χ : DirichletCharacter R N) (n : ℕ) :
+    χ.generalizedBernoulli n =
+      algebraMap ℚ R ((N : ℚ) ^ ((n : ℤ) - 1)) *
+        ∑ a : ZMod N, χ a *
+          algebraMap ℚ R
+            ((Polynomial.bernoulli n).eval (((if a = 0 then N else a.val : ℕ) : ℚ) / N)) := by
+  rw [generalizedBernoulli]
+
 /-- Generalized Bernoulli numbers commute with extension of the coefficient ring. -/
+@[simp]
 theorem map_generalizedBernoulli [NeZero N] {S : Type*} [CommRing S] [Algebra ℚ S]
-    (f : R →ₐ[ℚ] S) (χ : DirichletCharacter R N) (n : ℕ) :
+    (χ : DirichletCharacter R N) (f : R →ₐ[ℚ] S) (n : ℕ) :
     f (χ.generalizedBernoulli n) =
-      generalizedBernoulli (χ.ringHomComp f.toRingHom : DirichletCharacter S N) n := by
-  simp only [generalizedBernoulli, map_mul, AlgHom.commutes, map_sum]
-  rfl
+      generalizedBernoulli (χ.ringHomComp (f : R →+* S) : DirichletCharacter S N) n := by
+  simp only [generalizedBernoulli, map_mul, AlgHom.commutes, map_sum, MulChar.ringHomComp_apply,
+    RingHom.coe_coe]
 
 /-- At modulus one, generalized Bernoulli numbers are the images of the positive-first-convention
 Bernoulli numbers. Thus degree one is `1 / 2`; in every other degree this agrees with Mathlib's
@@ -159,14 +169,7 @@ theorem natCast_mul_generalizedBernoulli_one_of_ne_one [IsDomain R] [NeZero N]
     (N : R) * χ.generalizedBernoulli 1 = ∑ a : ZMod N, χ a * (a.val : R) := by
   rw [generalizedBernoulli_one_of_ne_one hχ, Finset.mul_sum]
   refine Finset.sum_congr rfl fun a _ ↦ ?_
-  have hN : (N : R) = algebraMap ℚ R (N : ℚ) := by
-    push_cast
-    rfl
-  rw [hN, show algebraMap ℚ R (N : ℚ) *
-        (χ a * algebraMap ℚ R ((a.val : ℚ) / N)) =
-        χ a * (algebraMap ℚ R (N : ℚ) * algebraMap ℚ R ((a.val : ℚ) / N)) by ring,
-    ← map_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr (NeZero.ne N))]
-  push_cast
-  rfl
+  rw [← map_natCast (algebraMap ℚ R) N, mul_left_comm, ← map_mul,
+    mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr (NeZero.ne N)), map_natCast]
 
 end DirichletCharacter
