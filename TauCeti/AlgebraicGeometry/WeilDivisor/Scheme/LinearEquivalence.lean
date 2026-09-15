@@ -72,8 +72,12 @@ private lemma eq_bot_of_not_nonempty {U : X.Opens} (h : ¬ Nonempty U) : U = ⊥
 
 end General
 
-variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
+variable {X : Scheme.{u}} [IsIntegral X]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+
+section LocallyNoetherian
+
+variable [IsLocallyNoetherian X]
 
 /-- The inverse of a local equation for `D` on `U` is a section of `𝒪_X(D)` over `U`: its order
 at a codimension-one point of `U` is exactly `-D`. -/
@@ -84,6 +88,10 @@ lemma inv_localEquation_mem_sections {D : SchemeWeilDivisor X} {U : X.Opens} [No
         ((Additive.toMul f : X.functionFieldˣ) : X.functionField)⁻¹ ∈ sections D U := by
   refine mem_sections.mpr fun y hy ↦ Or.inr ?_
   rw [LinearEquiv.apply_symm_apply, Scheme.ord_inv, hf y hy, orderAt_apply]
+
+end LocallyNoetherian
+
+variable [IsNoetherian X]
 
 /-- **An `𝒪_X`-linear map from `𝒪_X(D)` to the rational functions is multiplication by a rational
 function.** A local equation for `D` near the generic point trivializes `𝒪_X(D)` there, and the

@@ -5,28 +5,34 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.CongruenceQuotient
 
 import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 -- Private in `RayClass.Basic`; needed below for `ClassGroup.mk_toPrincipalIdeal`.
 import TauCeti.RingTheory.ClassGroup.Basic
 
 /-!
-# The exact sequence from ray classes to ordinary ideal classes
+# The ray class exact sequence
 
 For a modulus `m` of a number field `K`, forgetting its congruence and sign conditions sends a ray
-class to an ordinary ideal class.  This file constructs that homomorphism and proves the exact tail
+class to an ordinary ideal class.  This file constructs the full exact sequence
 
-`primeToSubgroup m → RayClassGroup m → ClassGroup (RingOfIntegers K) → 1`.
+```text
+1 → unitsCongruenceSubgroup m → (𝓞 K)ˣ → A m → RayClassGroup m → ClassGroup (𝓞 K) → 1,
+```
 
-The first map sends an element of `Kˣ` that is a unit at the finite part to the ray class of its
-principal ideal.  The second map is surjective, and its kernel is exactly the range of the first.
-Surjectivity of the transition maps follows by weak approximation, and surjectivity onto the
-ordinary class group follows by transition to the trivial modulus.
+where `A m = (𝓞 K ⧸ m.finitePart)ˣ × (m.infinitePart → ℤˣ)` records residues and prescribed
+signs.  It also retains the useful coarser exact tail
+`primeToSubgroup m → RayClassGroup m → ClassGroup (𝓞 K) → 1`.
 
-This is the right-hand part of the ray-class exact sequence.  The left-hand part further presents
-the kernel as residue units and signs modulo the image of the integer units, and yields the ray
-class-number formula.
+In the coarser tail, the first map sends an element of `Kˣ` that is a unit at the finite part to
+the ray class of its principal ideal.  The second map is surjective, and its kernel is exactly the
+range of the first.  Surjectivity of the transition maps follows by weak approximation, and
+surjectivity onto the ordinary class group follows by transition to the trivial modulus.
+
+The kernel of `A m → RayClassGroup m` is the image of the integer units, while the kernel of the
+map from integer units to `A m` is `unitsCongruenceSubgroup m`.  The resulting exact sequence is
+the input to the ray class number formula.
 
 ## Main definitions
 
@@ -34,6 +40,9 @@ class-number formula.
   whose generator is a unit at the finite part.
 * `TauCeti.GlobalNumberFields.rayClassToClassGroup`: the ordinary ideal class underlying a ray
   class.
+* `TauCeti.GlobalNumberFields.unitsResidueSignHom`: the residues and signs of the integer units.
+* `TauCeti.GlobalNumberFields.residueSignRayClass`: the principal ray class of a residue unit and
+  sign pattern.
 
 ## Main results
 
@@ -45,6 +54,14 @@ class-number formula.
   multiplicative exactness statement.
 * `TauCeti.GlobalNumberFields.classMap_surjective`: every transition between ray class groups is
   surjective.
+* `TauCeti.GlobalNumberFields.ker_unitsResidueSignHom`,
+  `TauCeti.GlobalNumberFields.ker_residueSignRayClass` and
+  `TauCeti.GlobalNumberFields.range_residueSignRayClass`: the three nontrivial exactness statements
+  in the full sequence.
+* `TauCeti.GlobalNumberFields.mulExact_unitsCongruenceSubgroup_unitsResidueSignHom`,
+  `TauCeti.GlobalNumberFields.mulExact_unitsResidueSignHom_residueSignRayClass` and
+  `TauCeti.GlobalNumberFields.mulExact_residueSignRayClass_rayClassToClassGroup`: their
+  multiplicative exactness forms.
 
 ## References
 
@@ -182,5 +199,106 @@ theorem ker_rayClassToClassGroup (m : Modulus K) :
 theorem mulExact_principalRayClass_rayClassToClassGroup (m : Modulus K) :
     Function.MulExact (principalRayClass m) (rayClassToClassGroup m) :=
   MonoidHom.mulExact_iff.mpr (ker_rayClassToClassGroup m)
+
+/-! ### The residue-and-sign presentation of the exact sequence -/
+
+/-- **A principal ray class is trivial exactly when a unit multiple of the generator is congruent
+to one.**  Two generators of the same principal fractional ideal differ by a unit of `𝓞 K`, so the
+ray only sees an element of `primeToSubgroup 𝔪` up to the integer units. -/
+theorem principalRayClass_eq_one_iff {𝔪 : Modulus K} (x : primeToSubgroup 𝔪) :
+    principalRayClass 𝔪 x = 1 ↔
+      ∃ u : (𝓞 K)ˣ, IsCongrOne 𝔪 (Units.map (algebraMap (𝓞 K) K).toMonoidHom u * x) := by
+  rw [principalRayClass_apply, rayClassMk_eq_one_iff, mem_ray_iff, coe_principalIdealPrimeTo]
+  refine ⟨fun ⟨y, hy, hyx⟩ ↦ ?_, fun ⟨u, hu⟩ ↦ ⟨_, hu, ?_⟩⟩
+  · obtain ⟨u, hu⟩ := (FractionalIdeal.toPrincipalIdeal_eq_one_iff (y * (x : Kˣ)⁻¹)).mp
+      (by rw [map_mul, map_inv, hyx, mul_inv_cancel])
+    refine ⟨u, ?_⟩
+    have hu' : Units.map (algebraMap (𝓞 K) K).toMonoidHom u = y * (x : Kˣ)⁻¹ := hu
+    rwa [hu', inv_mul_cancel_right]
+  · have hu1 : toPrincipalIdeal (𝓞 K) K (Units.map (algebraMap (𝓞 K) K).toMonoidHom u) = 1 :=
+      (FractionalIdeal.toPrincipalIdeal_eq_one_iff _).mpr ⟨u, rfl⟩
+    rw [map_mul, hu1, one_mul]
+
+/-- **The residues and signs of the integer units.**  This is the left-hand map of the ray class
+exact sequence; its image is the obstruction that is divided out of the residue units and signs
+before they embed into the ray class group. -/
+noncomputable def unitsResidueSignHom (𝔪 : Modulus K) :
+    (𝓞 K)ˣ →* (𝓞 K ⧸ 𝔪.finitePart)ˣ × (𝔪.infinitePart → ℤˣ) :=
+  (residueSignHom 𝔪).comp (unitsToPrimeToSubgroup 𝔪)
+
+@[simp] theorem unitsResidueSignHom_apply (𝔪 : Modulus K) (u : (𝓞 K)ˣ) :
+    unitsResidueSignHom 𝔪 u = residueSignHom 𝔪 (unitsToPrimeToSubgroup 𝔪 u) := (rfl)
+
+/-- **Exactness at the integer units**: a unit has trivial residue and trivial signs exactly when
+it is congruent to one modulo `𝔪`. -/
+theorem ker_unitsResidueSignHom (𝔪 : Modulus K) :
+    (unitsResidueSignHom 𝔪).ker = unitsCongruenceSubgroup 𝔪 := by
+  ext u
+  rw [MonoidHom.mem_ker, unitsResidueSignHom_apply, residueSignHom_eq_one_iff,
+    coe_unitsToPrimeToSubgroup, mem_unitsCongruenceSubgroup, mem_congruenceSubgroup]
+
+/-- Exactness at the integer units, as a `Function.MulExact` statement. -/
+theorem mulExact_unitsCongruenceSubgroup_unitsResidueSignHom (𝔪 : Modulus K) :
+    Function.MulExact (unitsCongruenceSubgroup 𝔪).subtype (unitsResidueSignHom 𝔪) :=
+  MonoidHom.mulExact_iff.mpr <| by rw [Subgroup.range_subtype, ker_unitsResidueSignHom]
+
+/-- **The principal ray class of a residue unit and a sign pattern.**  The principal ray class of
+an element prime to `𝔪` depends only on its residue modulo the finite part and its signs at the
+real places of `𝔪`, and every residue unit and sign pattern arises (`residueSignEquiv`); this is
+the induced homomorphism. -/
+noncomputable def residueSignRayClass (𝔪 : Modulus K) :
+    (𝓞 K ⧸ 𝔪.finitePart)ˣ × (𝔪.infinitePart → ℤˣ) →* RayClassGroup 𝔪 :=
+  (QuotientGroup.lift _ (principalRayClass 𝔪) fun _ hx ↦ MonoidHom.mem_ker.mpr <|
+      principalRayClass_eq_one_of_isCongrOne
+        (mem_congruenceSubgroup.mp (Subgroup.mem_subgroupOf.mp hx))).comp
+    (residueSignEquiv 𝔪).symm.toMonoidHom
+
+/-- The class attached to the residue and signs of an element is its principal ray class. -/
+@[simp] theorem residueSignRayClass_residueSignHom (𝔪 : Modulus K) (x : primeToSubgroup 𝔪) :
+    residueSignRayClass 𝔪 (residueSignHom 𝔪 x) = principalRayClass 𝔪 x := by
+  rw [residueSignRayClass, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    (residueSignEquiv 𝔪).symm_apply_eq.mpr (residueSignEquiv_apply_mk 𝔪 x).symm,
+    QuotientGroup.lift_mk]
+
+/-- `residueSignRayClass 𝔪` is the factorization of `principalRayClass 𝔪` through the surjection
+`residueSignHom 𝔪`. -/
+theorem residueSignRayClass_comp_residueSignHom (𝔪 : Modulus K) :
+    (residueSignRayClass 𝔪).comp (residueSignHom 𝔪) = principalRayClass 𝔪 :=
+  MonoidHom.ext (residueSignRayClass_residueSignHom 𝔪)
+
+/-- **Exactness at the residue units and signs**: a residue unit and sign pattern has trivial ray
+class exactly when it is the residue and sign pattern of an integer unit. -/
+theorem ker_residueSignRayClass (𝔪 : Modulus K) :
+    (residueSignRayClass 𝔪).ker = (unitsResidueSignHom 𝔪).range := by
+  ext a
+  obtain ⟨x, rfl⟩ := residueSignHom_surjective 𝔪 a
+  rw [MonoidHom.mem_ker, residueSignRayClass_residueSignHom, principalRayClass_eq_one_iff,
+    MonoidHom.mem_range]
+  refine ⟨fun ⟨u, hu⟩ ↦ ⟨u⁻¹, ?_⟩, fun ⟨u, hu⟩ ↦ ⟨u⁻¹, ?_⟩⟩
+  · have h := (residueSignHom_eq_one_iff (unitsToPrimeToSubgroup 𝔪 u * x)).mpr
+      (by rwa [Subgroup.coe_mul, coe_unitsToPrimeToSubgroup, mem_congruenceSubgroup])
+    rw [map_mul] at h
+    rw [unitsResidueSignHom_apply, map_inv, map_inv, inv_eq_of_mul_eq_one_right h]
+  · have h : residueSignHom 𝔪 (unitsToPrimeToSubgroup 𝔪 u⁻¹ * x) = 1 := by
+      rw [map_mul, map_inv, map_inv, ← unitsResidueSignHom_apply, hu, inv_mul_cancel]
+    rwa [residueSignHom_eq_one_iff, Subgroup.coe_mul, coe_unitsToPrimeToSubgroup,
+      mem_congruenceSubgroup] at h
+
+/-- **Exactness at the ray class group**: the ray classes with trivial ordinary ideal class are
+exactly the classes of residue units and sign patterns. -/
+theorem range_residueSignRayClass (𝔪 : Modulus K) :
+    (residueSignRayClass 𝔪).range = (rayClassToClassGroup 𝔪).ker := by
+  rw [ker_rayClassToClassGroup, ← residueSignRayClass_comp_residueSignHom, MonoidHom.range_comp,
+    MonoidHom.range_eq_top.mpr (residueSignHom_surjective 𝔪), ← MonoidHom.range_eq_map]
+
+/-- Exactness at the residue units and signs, as a `Function.MulExact` statement. -/
+theorem mulExact_unitsResidueSignHom_residueSignRayClass (𝔪 : Modulus K) :
+    Function.MulExact (unitsResidueSignHom 𝔪) (residueSignRayClass 𝔪) :=
+  MonoidHom.mulExact_iff.mpr (ker_residueSignRayClass 𝔪)
+
+/-- Exactness at the ray class group, as a `Function.MulExact` statement. -/
+theorem mulExact_residueSignRayClass_rayClassToClassGroup (𝔪 : Modulus K) :
+    Function.MulExact (residueSignRayClass 𝔪) (rayClassToClassGroup 𝔪) :=
+  MonoidHom.mulExact_iff.mpr (range_residueSignRayClass 𝔪).symm
 
 end TauCeti.GlobalNumberFields

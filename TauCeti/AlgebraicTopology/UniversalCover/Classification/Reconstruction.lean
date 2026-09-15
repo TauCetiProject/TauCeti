@@ -89,7 +89,7 @@ bundled cover along `subgroupCoverFiberEquivSubgroupQuotient`. -/
 private def fiberEquivOrbitAux (a : A) :
     subgroupQuotientProj x0 (MulAction.stabilizer (FundamentalGroup X x0) a) ⁻¹' {x0} ≃
       MulAction.orbit (FundamentalGroup X x0) a :=
-  (TauCeti.IsCoveringMap.fiberEquivQuotientRange
+  (IsCoveringMap.fiberEquivQuotientRange
         (isCoveringMap_subgroupQuotientProj x0 (MulAction.stabilizer (FundamentalGroup X x0) a))
         (SubgroupQuotient.basepointFiber x0
           (MulAction.stabilizer (FundamentalGroup X x0) a))).trans <|
@@ -117,7 +117,7 @@ private theorem fiberEquivOrbitAux_apply_monodromy_basepoint (a : A)
       g • a := by
   -- the monodromy translate of the distinguished point is the fibre–coset identification of the
   -- coset of `g`,
-  rw [← TauCeti.IsCoveringMap.fiberEquivQuotientRange_symm_apply_mk
+  rw [← IsCoveringMap.fiberEquivQuotientRange_symm_apply_mk
     (isCoveringMap_subgroupQuotientProj x0 (MulAction.stabilizer (FundamentalGroup X x0) a))
     (SubgroupQuotient.basepointFiber x0 (MulAction.stabilizer (FundamentalGroup X x0) a)) g]
   -- transporting along the equality of subgroups leaves that coset alone,
@@ -135,7 +135,7 @@ private theorem fiberEquivOrbitAux_apply_monodromy (a : A) (g : FundamentalGroup
       g • fiberEquivOrbitAux x0 a e := by
   -- the quotient is path connected, so every point of the fibre is a monodromy translate of the
   -- distinguished point,
-  obtain ⟨d, rfl⟩ := TauCeti.IsCoveringMap.exists_monodromy_eq
+  obtain ⟨d, rfl⟩ := IsCoveringMap.exists_monodromy_eq
     (isCoveringMap_subgroupQuotientProj x0 (MulAction.stabilizer (FundamentalGroup X x0) a))
     (SubgroupQuotient.basepointFiber x0 (MulAction.stabilizer (FundamentalGroup X x0) a)) e
   -- so the iterated translate is the translate by a product, fundamental-group multiplication

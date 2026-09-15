@@ -5,265 +5,67 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Functor
-import TauCeti.Algebra.Algebra.Hom
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Presentation
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Basic
 
 /-!
-# Functorial points of the full-weight type-B spin carrier
+# Presented points of the full-weight type-B spin carrier
 
-`TauCeti.TypeBSpinCarrier.points n A` realizes the `A`-valued points of the full-weight
-type-`Bₙ₊₁` spin carrier as a subgroup of `GL_(2^(n+1))(A)`. This file supplies the group
-homomorphism induced by a homomorphism of value rings, together with its identity, composition,
-and injectivity laws. It also proves that these maps preserve the numbered root subgroups and
-the split weight torus.
-
-The quotient of the ambient general-linear coordinate Hopf algebra by the carrier's defining
-ideal represents the resulting group-valued functor. Thus field endomorphisms, in particular
-Frobenius maps in positive characteristic, act canonically on the named matrix-valued points.
-
-This is carrier-level infrastructure for later structural identifications: it neither assumes
-nor proves that the carrier is reductive, that its weight torus is maximal, or that its root datum
-and pinning are the simply connected type-`B` ones. Those subsequent proofs can consume the point
-maps and their compatibility with the distinguished root-subgroup and torus families established
-here.
-
-## Main declarations
-
-* `TauCeti.TypeBSpinCarrier.pointsMap`: the map on carrier points induced by a ring homomorphism.
-* `TauCeti.TypeBSpinCarrier.pointsFunctor`: the group-valued functor of points.
-* `TauCeti.TypeBSpinCarrier.pointsMulEquiv`: the pointwise representing isomorphism.
-* `TauCeti.TypeBSpinCarrier.pointsFunctorNatIso`: the natural representing isomorphism.
+`TauCeti.TypeBSpinCarrier.pointsPresentation` presents the carrier's matrix points by its defining
+integral Hopf ideal. The shared `GeneralLinear.IntegralPointsPresentation` API supplies maps
+of value rings, their functoriality, and the representing equivalence with quotient-algebra
+points. This file proves that those maps preserve the pinned root subgroups and weight torus.
 
 ## References
 
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*,
   Sections 1.15 and 1.17.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1--2.
-
-The interface specializes the carrier-independent functor in
-`TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Functor` and follows the formal
-template of `TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.PointsFunctor`.
 -/
 
 public section
 
-open CategoryTheory
-
 namespace TauCeti.TypeBSpinCarrier
 
-universe v w
+universe v v'
 
 noncomputable section
 
 variable (n : ℕ)
 
-section Map
+/-- The carrier's matrix points, presented by its defining integral Hopf ideal. -/
+abbrev pointsPresentation (A : Type v) [CommRing A] :
+    GeneralLinear.IntegralPointsPresentation (dimension n) (definingIdeal n) A where
+  val := points n A
+  property := points_def n A
 
-variable {A : Type v} {B : Type w} [CommRing A] [CommRing B]
-
-/-- The map on type-`Bₙ₊₁` spin-carrier points induced by a homomorphism of value rings. It is
-the entrywise map on the ambient general linear group, restricted to the carrier subgroup. -/
-def pointsMap (f : A →+* B) : points n A →* points n B :=
-  GeneralLinear.mapHopfIdealPointsSubgroupCongr (dimension n) (definingIdeal n)
-    (points_def n A) (points_def n B) f.toIntAlgHom
-
-/-- The induced map on type-`Bₙ₊₁` spin-carrier points is the entrywise matrix map. -/
-@[simp]
-theorem coe_pointsMap (f : A →+* B) (g : points n A) :
-    (pointsMap n f g : Matrix.GeneralLinearGroup (Fin (dimension n)) B) =
-      Matrix.GeneralLinearGroup.map f g := by
-  simp [pointsMap]
-
-/-- Entrywise, the induced map applies the homomorphism of value rings to each matrix entry. -/
-theorem coe_pointsMap_apply (f : A →+* B) (g : points n A)
-    (i j : Fin (dimension n)) :
-    ((pointsMap n f g : Matrix.GeneralLinearGroup (Fin (dimension n)) B) :
-        Matrix (Fin (dimension n)) (Fin (dimension n)) B) i j =
-      f (((g : Matrix.GeneralLinearGroup (Fin (dimension n)) A) :
-        Matrix (Fin (dimension n)) (Fin (dimension n)) A) i j) := by
-  rw [coe_pointsMap, Matrix.GeneralLinearGroup.map_apply]
-
-/-- The identity homomorphism induces the identity on type-`Bₙ₊₁` spin-carrier points. -/
-@[simp]
-theorem pointsMap_id : pointsMap n (RingHom.id A) = MonoidHom.id _ := by
-  simp [pointsMap]
-
-/-- The induced maps on type-`Bₙ₊₁` spin-carrier points compose. -/
-@[simp]
-theorem pointsMap_comp {C : Type*} [CommRing C] (f : A →+* B) (g : B →+* C) :
-    pointsMap n (g.comp f) = (pointsMap n g).comp (pointsMap n f) := by
-  simp only [pointsMap, RingHom.toIntAlgHom_comp]
-  exact GeneralLinear.mapHopfIdealPointsSubgroupCongr_comp (dimension n) (definingIdeal n)
-    (points_def n A) (points_def n B) (points_def n C) f.toIntAlgHom g.toIntAlgHom
-
-/-- An injective homomorphism of value rings induces an injective map on type-`Bₙ₊₁`
-spin-carrier points. -/
-theorem pointsMap_injective {f : A →+* B} (hf : Function.Injective f) :
-    Function.Injective (pointsMap n f) :=
-  GeneralLinear.mapHopfIdealPointsSubgroupCongr_injective (dimension n) (definingIdeal n)
-    (points_def n A) (points_def n B) (φ := f.toIntAlgHom) (by rwa [RingHom.toIntAlgHom_coe])
+variable {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
 
 /-- The induced map carries a numbered root-subgroup parameter along the homomorphism of value
 rings. -/
 @[simp]
-theorem pointsMap_rootSubgroupPoints (f : A →+* B)
+theorem map_rootSubgroupPoints (f : A →+* B)
     (k : Fin (n + 1) ⊕ Fin (n + 1)) (u : Multiplicative A) :
-    pointsMap n f (rootSubgroupPoints n k A u) =
+    (pointsPresentation n A).map (pointsPresentation n B) f (rootSubgroupPoints n k A u) =
       rootSubgroupPoints n k B
         (Multiplicative.ofAdd (f (Multiplicative.toAdd u))) := by
   apply Subtype.ext
-  rw [coe_pointsMap, coe_rootSubgroupPoints, coe_rootSubgroupPoints,
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map,
+    coe_rootSubgroupPoints, coe_rootSubgroupPoints,
     UniversalEnvelopingAlgebra.map_kostantRootSubgroupMatrix,
     AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply, RingHom.toIntAlgHom_apply]
 
 /-- The induced map carries a point of the split spin weight torus coordinatewise along the
 homomorphism of value rings. -/
 @[simp]
-theorem pointsMap_weightTorusPoints (f : A →+* B) (s : Fin (n + 1) → Aˣ) :
-    pointsMap n f (weightTorusPoints n A s) =
+theorem map_weightTorusPoints (f : A →+* B) (s : Fin (n + 1) → Aˣ) :
+    (pointsPresentation n A).map (pointsPresentation n B) f (weightTorusPoints n A s) =
       weightTorusPoints n B fun i ↦ Units.map (f : A →* B) (s i) := by
   apply Subtype.ext
-  rw [coe_pointsMap, coe_weightTorusPoints, coe_weightTorusPoints]
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map,
+    coe_weightTorusPoints, coe_weightTorusPoints]
   exact UniversalEnvelopingAlgebra.map_kostantTorusMatrix
     (M := (lattice n).toAddSubgroup) (b := latticeBasis n) (wt := basisWeight n) f s
-
-end Map
-
-/-! ## The functor of points -/
-
-section Functor
-
-/-- The group-valued functor of points of the full-weight type-`Bₙ₊₁` spin carrier. -/
-def pointsFunctor : CommAlgCat.{v} ℤ ⥤ GrpCat.{v} where
-  obj A := GrpCat.of (points n A)
-  map f := GrpCat.ofHom (pointsMap n f.hom.toRingHom)
-  map_id _A := congrArg GrpCat.ofHom (pointsMap_id n)
-  map_comp f g := congrArg GrpCat.ofHom
-    (pointsMap_comp n f.hom.toRingHom g.hom.toRingHom)
-
-/-- The object part of the type-`Bₙ₊₁` spin carrier's points functor is its named point
-group. -/
-@[simp]
-theorem pointsFunctor_obj (A : CommAlgCat.{v} ℤ) :
-    (pointsFunctor n).obj A = GrpCat.of (points n A) :=
-  (rfl)
-
-/-- The morphism part of the type-`Bₙ₊₁` spin carrier's points functor is the induced
-entrywise map. -/
-@[simp]
-theorem pointsFunctor_map {A B : CommAlgCat.{v} ℤ} (f : A ⟶ B) :
-    (pointsFunctor n).map f =
-      eqToHom (pointsFunctor_obj n A) ≫
-        GrpCat.ofHom (pointsMap n f.hom) ≫
-        eqToHom (pointsFunctor_obj n B).symm :=
-  (rfl)
-
-/-- At a bundled `ℤ`-algebra, the named carrier points are the ambient general-linear subgroup
-cut out by the defining ideal. -/
-private theorem points_eq_hopfIdealPointsSubgroup (A : CommAlgCat.{v} ℤ) :
-    points n A =
-      GeneralLinear.hopfIdealPointsSubgroup (dimension n) (definingIdeal n) A := by
-  rw [points_def n A]
-  congr 1
-  exact Subsingleton.elim _ _
-
-/-- The points of the quotient coordinate Hopf algebra are the named type-`Bₙ₊₁`
-spin-carrier points. -/
-def pointsMulEquiv (A : CommAlgCat.{v} ℤ) :
-    HopfAlgebra.points
-        (R := ℤ) (H := CommHopfAlgCat.quotient
-          (GeneralLinear.coordinateHopfAlgebra ℤ (dimension n)) (definingIdeal n)) A ≃*
-      points n A :=
-  (GeneralLinear.hopfIdealPointsSubgroupMulEquiv (dimension n)
-      (definingIdeal n) A).trans
-    (MulEquiv.subgroupCongr (points_eq_hopfIdealPointsSubgroup n A)).symm
-
-/-- A quotient point, read through `pointsMulEquiv`, is its ambient point viewed as an invertible
-matrix. -/
-@[simp]
-theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} ℤ)
-    (q : HopfAlgebra.points
-      (R := ℤ) (H := CommHopfAlgCat.quotient
-        (GeneralLinear.coordinateHopfAlgebra ℤ (dimension n)) (definingIdeal n)) A) :
-    (pointsMulEquiv n A q : Matrix.GeneralLinearGroup (Fin (dimension n)) A) =
-      GeneralLinear.pointsMulEquiv (dimension n)
-        (CommHopfAlgCat.quotientPointsHom
-          (GeneralLinear.coordinateHopfAlgebra ℤ (dimension n)) (definingIdeal n)
-          A q) := by
-  simp only [pointsMulEquiv, MulEquiv.trans_apply, MulEquiv.subgroupCongr_symm_apply]
-  exact GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply
-    (dimension n) (definingIdeal n) A q
-
-/-- Including the ambient Hopf-algebra point underlying the inverse of `pointsMulEquiv` recovers
-the point corresponding to the underlying matrix. -/
-@[simp]
-theorem quotientPointsHom_pointsMulEquiv_symm (A : CommAlgCat.{v} ℤ)
-    (g : points n A) :
-    CommHopfAlgCat.quotientPointsHom
-        (GeneralLinear.coordinateHopfAlgebra ℤ (dimension n)) (definingIdeal n) A
-        ((pointsMulEquiv n A).symm g) =
-      (GeneralLinear.pointsMulEquiv (R := ℤ) (dimension n)).symm
-        (g : Matrix.GeneralLinearGroup (Fin (dimension n)) A) := by
-  simp only [pointsMulEquiv, MulEquiv.symm_trans_apply, MulEquiv.symm_symm]
-  rw [GeneralLinear.quotientPointsHom_hopfIdealPointsSubgroupMulEquiv_symm,
-    MulEquiv.subgroupCongr_apply]
-
-/-- The pointwise identification with quotient Hopf-algebra points is natural in the value
-algebra. -/
-@[simp]
-theorem pointsMulEquiv_mapPoints {A B : CommAlgCat.{v} ℤ} (f : A ⟶ B)
-    (q : HopfAlgebra.points
-      (R := ℤ) (H := CommHopfAlgCat.quotient
-        (GeneralLinear.coordinateHopfAlgebra ℤ (dimension n)) (definingIdeal n)) A) :
-    pointsMulEquiv n B
-        (HopfAlgebra.mapPoints
-          (H := CommHopfAlgCat.quotient
-            (GeneralLinear.coordinateHopfAlgebra ℤ (dimension n)) (definingIdeal n))
-          f q) =
-      pointsMap n f.hom (pointsMulEquiv n A q) := by
-  apply Subtype.ext
-  rw [coe_pointsMap]
-  simp only [pointsMulEquiv, MulEquiv.trans_apply, MulEquiv.subgroupCongr_symm_apply]
-  exact (congrArg Subtype.val
-      (GeneralLinear.hopfIdealPointsSubgroupMulEquiv_mapPoints
-        (dimension n) (definingIdeal n) f q)).trans
-    (GeneralLinear.coe_mapHopfIdealPointsSubgroup
-      (dimension n) (definingIdeal n) f.hom _)
-
-/-- The quotient coordinate Hopf algebra represents the points functor of the full-weight
-type-`Bₙ₊₁` spin carrier. -/
-def pointsFunctorNatIso :
-    HopfAlgebra.pointsFunctor
-        (R := ℤ) (H := CommHopfAlgCat.quotient
-          (GeneralLinear.coordinateHopfAlgebra ℤ (dimension n)) (definingIdeal n)) ≅
-      pointsFunctor n :=
-  NatIso.ofComponents (fun A ↦ (pointsMulEquiv n A).toGrpIso)
-    (by
-      intro A B f
-      ext q
-      exact pointsMulEquiv_mapPoints n f q)
-
-/-- The forward component of the representing natural isomorphism is the pointwise
-identification. -/
-@[simp]
-theorem pointsFunctorNatIso_hom_app_apply (A : CommAlgCat.{v} ℤ)
-    (q : HopfAlgebra.points
-      (R := ℤ) (H := CommHopfAlgCat.quotient
-        (GeneralLinear.coordinateHopfAlgebra ℤ (dimension n)) (definingIdeal n)) A) :
-    eqToHom (pointsFunctor_obj n A) ((pointsFunctorNatIso n).hom.app A q) =
-      pointsMulEquiv n A q :=
-  (rfl)
-
-/-- The inverse component of the representing natural isomorphism is the inverse pointwise
-identification. -/
-@[simp]
-theorem pointsFunctorNatIso_inv_app_apply (A : CommAlgCat.{v} ℤ) (g : points n A) :
-    (pointsFunctorNatIso n).inv.app A (eqToHom (pointsFunctor_obj n A).symm g) =
-      (pointsMulEquiv n A).symm g :=
-  (rfl)
-
-end Functor
 
 end
 
