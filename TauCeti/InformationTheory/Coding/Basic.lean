@@ -62,6 +62,7 @@ theorem mem_reindex {κ : Type w} {C : LinearCode R ι} {e : κ ≃ ι} {y : κ 
     ext j
     exact hxy j
 
+/-- Reindexing along the identity equivalence leaves a code unchanged. -/
 @[simp]
 theorem reindex_refl (C : LinearCode R ι) : reindex C (Equiv.refl ι) = C := by
   ext x
@@ -86,12 +87,26 @@ theorem reindex_mono {κ : Type w} {C D : LinearCode R ι} (h : C ≤ D) (e : κ
     reindex C e ≤ reindex D e :=
   Submodule.map_mono h
 
+/-- Reindexing sends the zero code to the zero code. -/
 @[simp]
 theorem reindex_bot {κ : Type w} (e : κ ≃ ι) : reindex (⊥ : LinearCode R ι) e = ⊥ := by
   simp [reindex]
 
+/-- Reindexing sends the whole word space to the whole word space. -/
 @[simp]
 theorem reindex_top {κ : Type w} (e : κ ≃ ι) : reindex (⊤ : LinearCode R ι) e = ⊤ := by
   simp [reindex]
+
+/-- Reindexing commutes with sums of codes. -/
+@[simp]
+theorem reindex_sup {κ : Type w} (C D : LinearCode R ι) (e : κ ≃ ι) :
+    reindex (C ⊔ D) e = reindex C e ⊔ reindex D e :=
+  Submodule.map_sup _ _ _
+
+/-- Reindexing commutes with intersections of codes. -/
+@[simp]
+theorem reindex_inf {κ : Type w} (C D : LinearCode R ι) (e : κ ≃ ι) :
+    reindex (C ⊓ D) e = reindex C e ⊓ reindex D e :=
+  Submodule.map_inf _ (LinearEquiv.funCongrLeft R R e).injective
 
 end TauCeti

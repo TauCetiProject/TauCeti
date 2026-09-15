@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.InformationTheory.Coding.Basic
-public import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Puncturing and shortening linear codes
@@ -159,6 +158,14 @@ theorem shorten_reindex {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) (s :
     · intro j
       exact (hxu _).trans (huy j)
 
+/-- The canonical inverse equivalence sends a flattened retained coordinate to the nested
+coordinate with the same underlying index. -/
+private theorem subtypeSubtypeEquivSubtypeExists_symm_eq {s : Set ι} {t : Set s}
+    (j : {i | ∃ hi : i ∈ s, (⟨i, hi⟩ : s) ∈ t}) :
+    (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm j =
+      ⟨⟨j, j.2.choose⟩, j.2.choose_spec⟩ :=
+  Subtype.ext <| Subtype.ext <| Equiv.subtypeSubtypeEquivSubtypeExists_symm_apply_coe_coe _ _ j
+
 /-- Puncturing twice is puncturing once to the flattened set of retained coordinates, up to the
 canonical equivalence between a subtype of a subtype and the corresponding subtype. -/
 theorem puncture_puncture (C : LinearCode R ι) (s : Set ι) (t : Set s) :
@@ -173,9 +180,8 @@ theorem puncture_puncture (C : LinearCode R ι) (s : Set ι) (t : Set s) :
     obtain ⟨x, hxC, hxz⟩ := mem_puncture.mp hz
     refine mem_puncture.mpr ⟨x, hxC, fun j ↦ ?_⟩
     let jt : t := ⟨⟨j, j.2.choose⟩, j.2.choose_spec⟩
-    have hj : (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm j = jt := by
-      apply Subtype.ext
-      exact Subtype.ext rfl
+    have hj : (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm j = jt :=
+      subtypeSubtypeEquivSubtypeExists_symm_eq j
     exact (hxz jt).trans ((hzv jt).trans (hj ▸ hvy j))
   · intro hy
     obtain ⟨x, hxC, hxy⟩ := mem_puncture.mp hy
@@ -207,9 +213,8 @@ theorem shorten_shorten (C : LinearCode R ι) (s : Set ι) (t : Set s) :
         exact (hxz ⟨i, his⟩).trans (hz0 ⟨i, his⟩ hit)
       · exact hx0 i his
     · let jt : t := ⟨⟨j, j.2.choose⟩, j.2.choose_spec⟩
-      have hj : (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm j = jt := by
-        apply Subtype.ext
-        exact Subtype.ext rfl
+      have hj : (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm j = jt :=
+        subtypeSubtypeEquivSubtypeExists_symm_eq j
       exact (hxz jt).trans ((hzv jt).trans (hj ▸ hvy j))
   · intro hy
     obtain ⟨x, hxC, hx0, hxy⟩ := mem_shorten.mp hy
@@ -243,20 +248,24 @@ theorem shorten_mono {C D : LinearCode R ι} (h : C ≤ D) (s : Set ι) :
     shorten C s ≤ shorten D s :=
   Submodule.map_mono (inf_le_inf h le_rfl)
 
+/-- Puncturing sends the zero code to the zero code. -/
 @[simp]
 theorem puncture_bot (s : Set ι) : puncture (⊥ : LinearCode R ι) s = ⊥ := by
   simp [puncture]
 
+/-- Shortening sends the zero code to the zero code. -/
 @[simp]
 theorem shorten_bot (s : Set ι) : shorten (⊥ : LinearCode R ι) s = ⊥ := by
   simp [shorten]
 
+/-- Puncturing the whole word space gives the whole word space on the retained coordinates. -/
 @[simp]
 theorem puncture_top (s : Set ι) : puncture (⊤ : LinearCode R ι) s = ⊤ := by
   rw [puncture, Submodule.map_top]
   exact LinearMap.range_eq_top.mpr <|
     LinearMap.funLeft_surjective_of_injective R R _ Subtype.val_injective
 
+/-- Shortening the whole word space gives the whole word space on the retained coordinates. -/
 @[simp]
 theorem shorten_top (s : Set ι) : shorten (⊤ : LinearCode R ι) s = ⊤ := by
   ext y
@@ -269,6 +278,7 @@ theorem shorten_top (s : Set ι) : shorten (⊤ : LinearCode R ι) s = ⊤ := by
   · intro j
     simp [x, j.2]
 
+/-- Puncturing commutes with sums of codes. -/
 @[simp]
 theorem puncture_sup (C D : LinearCode R ι) (s : Set ι) :
     puncture (C ⊔ D) s = puncture C s ⊔ puncture D s := by
