@@ -141,11 +141,15 @@ theorem coe_comp (g : DGRightModuleHom hN hP) (f : DGRightModuleHom hM hN) :
 theorem comp_apply (g : DGRightModuleHom hN hP) (f : DGRightModuleHom hM hN) (x : M) :
     g.comp f x = g (f x) := (rfl)
 
+/-- Composing a DG right-module morphism on the right with the identity morphism of its
+source leaves it unchanged. -/
 @[simp]
 theorem comp_id (f : DGRightModuleHom hM hN) : f.comp (DGRightModuleHom.id hM) = f := by
   ext x
   rfl
 
+/-- Composing a DG right-module morphism on the left with the identity morphism of its
+target leaves it unchanged. -/
 @[simp]
 theorem id_comp (f : DGRightModuleHom hM hN) : (DGRightModuleHom.id hN).comp f = f := by
   ext x
