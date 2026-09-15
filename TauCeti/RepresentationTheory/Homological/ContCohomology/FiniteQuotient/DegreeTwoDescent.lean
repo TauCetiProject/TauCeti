@@ -48,6 +48,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {N : Subgroup G} [N.Normal]
   [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)]
 
+omit [ContinuousSMul G M] [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
 /-- Descend a continuous `2`-cocycle which is constant on right `N`-cosets in both variables and
 whose values are fixed by `N` to a cocycle on `G ⧸ N` with values in `M ^ N`. -/
 def descendZ2 (z : Z2 G M)
