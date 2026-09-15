@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Composite
+import TauCeti.NumberTheory.ModularForms.HeckeSlash.LevelSupported
 import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Scalar
 
 /-!
@@ -52,6 +53,94 @@ open scoped MatrixGroups
 namespace HeckeRing.GL2
 
 variable {N : ℕ} [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
+
+/-- At a prime dividing the level, the recurrence block `T_{p^r}` shifts every Fourier
+coefficient by `p^r`. This is private infrastructure for the first-coefficient normalization. -/
+private theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd
+    {p : ℕ} (hp : p.Prime) (hpN : p ∣ N) (F : modFormCharSpace k χ) (m r : ℕ) :
+    (qExpansion 1 (heckeRingHomCharSpace k χ (heckeTGeneratorRecGamma0 N p r) F :
+        ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff m =
+      (qExpansion 1 (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff (p ^ r * m) := by
+  let _ : NeZero p := ⟨hp.ne_zero⟩
+  have hpc : ¬ Nat.Coprime p N := fun h ↦ (hp.coprime_iff_not_dvd.mp h) hpN
+  rw [heckeTGeneratorRecGamma0_eq_generator_pow_of_not_coprime N hpc, map_pow,
+    heckeRingHomCharSpace_heckeTGeneratorGamma0 k χ hp]
+  have hpow :
+      ((((heckeTNat (N := N) k p).restrict
+          (fun _ hf ↦ heckeTNat_mem_modFormCharSpace k χ hp hf)) ^ r) F :
+            ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
+        ((heckeTNat (N := N) k p) ^ r)
+          (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) := by
+    induction r with
+    | zero => rfl
+    | succ r ih =>
+      rw [pow_succ', pow_succ', Module.End.mul_apply, Module.End.mul_apply]
+      change heckeTNat (N := N) k p
+          ((((heckeTNat (N := N) k p).restrict
+            (fun _ hf ↦ heckeTNat_mem_modFormCharSpace k χ hp hf)) ^ r) F :
+              ModularForm ((Gamma1 N).map (mapGL ℝ)) k) = _
+      rw [ih]
+  rw [hpow]
+  rw [← heckeTNat_pow_of_dvd (k := k) hpN r]
+  have hsubset : (p ^ r).primeFactors ⊆ N.primeFactors := by
+    rcases r with _ | r
+    · simp
+    · rw [Nat.primeFactors_pow p (Nat.succ_ne_zero r)]
+      exact Nat.primeFactors_mono hpN (NeZero.ne N)
+  exact qExpansion_coeff_heckeTNat_of_primeFactors_subset (N := N) k (p ^ r)
+    hsubset _ m
+
+/-- The first coefficient of the action of `T_n` is the `n`-th coefficient, including when
+`n` has prime factors dividing the level. This private normalization reads arbitrary
+coefficients from the multiplication table. -/
+private theorem qExpansion_coeff_one_heckeRingHomCharSpace_heckeTCompositeGamma0
+    {n : ℕ} (hn : n ≠ 0) (F : modFormCharSpace k χ) :
+    (qExpansion 1 (heckeRingHomCharSpace k χ (heckeTCompositeGamma0 N n) F :
+        ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff 1 =
+      (qExpansion 1 (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff n := by
+  suffices key : ∀ n : ℕ, n ≠ 0 → ∀ m : ℕ, Nat.Coprime m n →
+      (qExpansion 1 (heckeRingHomCharSpace k χ (heckeTCompositeGamma0 N n) F :
+          ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff m =
+        (qExpansion 1 (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff (m * n) by
+    simpa using key n hn 1 (Nat.coprime_one_left n)
+  clear hn n
+  intro n
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+  intro hn m hmn
+  by_cases h1 : n = 1
+  · subst h1
+    rw [heckeTCompositeGamma0_one, map_one, Module.End.one_apply, mul_one]
+  · have hlt : 1 < n := by omega
+    rw [heckeTCompositeGamma0_of_one_lt N hlt, map_mul, Module.End.mul_apply]
+    have hp : n.minFac.Prime := Nat.minFac_prime h1
+    have hpn : n.minFac ∣ n := Nat.minFac_dvd n
+    have hv : n.factorization n.minFac ≠ 0 :=
+      (hp.factorization_pos_of_dvd hn hpn).ne'
+    have hnn' : n.minFac ^ n.factorization n.minFac *
+        (n / n.minFac ^ n.factorization n.minFac) = n :=
+      Nat.ordProj_mul_ordCompl_eq_self n n.minFac
+    have hn'0 : n / n.minFac ^ n.factorization n.minFac ≠ 0 := by
+      intro h
+      rw [h, mul_zero] at hnn'
+      exact hn hnn'.symm
+    have hn'lt : n / n.minFac ^ n.factorization n.minFac < n :=
+      Nat.div_lt_self (Nat.pos_of_ne_zero hn) (Nat.one_lt_pow hv hp.one_lt)
+    have hpm : ¬ n.minFac ∣ m :=
+      (hp.coprime_iff_not_dvd).mp (Nat.Coprime.coprime_dvd_right hpn hmn).symm
+    have hcop : Nat.Coprime (n.minFac ^ n.factorization n.minFac * m)
+        (n / n.minFac ^ n.factorization n.minFac) :=
+      Nat.Coprime.mul_left ((Nat.coprime_ordCompl hp hn).pow_left _)
+        (Nat.Coprime.coprime_dvd_right (Nat.ordCompl_dvd n n.minFac) hmn)
+    by_cases hpN : n.minFac ∣ N
+    · rw [qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd hp hpN,
+        ih _ hn'lt hn'0 _ hcop, mul_comm (n.minFac ^ n.factorization n.minFac) m,
+        mul_assoc, hnn']
+    · have hpNc : Nat.Coprime n.minFac N := hp.coprime_iff_not_dvd.mpr hpN
+      rw [qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_not_dvd hp hpNc _
+          hpm,
+        ih _ hn'lt hn'0 _ hcop, mul_comm (n.minFac ^ n.factorization n.minFac) m,
+        mul_assoc, hnn']
 
 /-- The first Fourier coefficient of `S_c T_r F`: the scalar generator contributes
 `χ(c) c^{k−2}`, and the first coefficient of `T_r F` is `a_r(F)`. -/

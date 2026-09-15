@@ -8,7 +8,6 @@ public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Prime.Basi
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Prime.Recurrence
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Recurrence
 import TauCeti.Algebra.BigOperators.Finset.Range
-import TauCeti.NumberTheory.ModularForms.HeckeSlash.LevelSupported
 
 /-!
 # Fourier coefficients of the Hecke operators at a prime power on `M_k(N, χ)`
@@ -30,10 +29,10 @@ the two-step recurrence between such sums being `TauCeti.sum_range_min_add_two` 
 case `TauCeti.sum_range_min_zero` (`Algebra/BigOperators/Finset/Range.lean`),
 
 the prime-power case of Diamond–Shurman Proposition 5.3.1, and in particular
-`a_m(T_{p^r} F) = a_{p^r m}(F)`. At a prime `p ∣ N` dividing the level the block degenerates to
-the `r`-th power of `Tₚ`, and that same shift holds at every index `m`. The composite operators
-are ordered products of these blocks (`heckeTCompositeGamma0`), so the two statements together
-are the input for the coefficient formula of `T_n` read at a Fourier index `m` coprime to `n`.
+`a_m(T_{p^r} F) = a_{p^r m}(F)`. The composite operators are ordered products of these blocks
+(`heckeTCompositeGamma0`), so this is the input for the coefficient formula of `T_n` at an
+operator index `n` coprime to the level — which is what makes each of its primes good — read at
+a Fourier index `m` coprime to `n`.
 
 ## Main results
 
@@ -41,9 +40,6 @@ are the input for the coefficient formula of `T_n` read at a Fourier index `m` c
   the formula above.
 * `HeckeRing.GL2.qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_not_dvd`:
   `a_m(T_{p^r} F) = a_{p^r m}(F)` at an index `m` prime to `p`.
-* `HeckeRing.GL2.qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd_level`: the
-  same shift `a_m(T_{p^r} F) = a_{p^r m}(F)` at a prime `p ∣ N` dividing the level, now at every
-  index `m`.
 * `qExpansion_coeff_prime_pow_succ_mul_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0`: the
   divisible-index `Tₚ` recurrence on `S_k(N, χ)`, with no hypothesis on the index.
 * their cusp-form specialisations, named after the modular statements with
@@ -197,31 +193,6 @@ theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_not_d
   simpa using h
 
 
-/-- **At a prime dividing the level, `T_{p^r}` shifts every Fourier coefficient by `p^r`**:
-`a_m(T_{p^r} F) = a_{p^r m}(F)`, with no hypothesis on `m`. This is the bad-prime counterpart of
-`qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_not_dvd`. -/
-theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd_level (hp : p.Prime)
-    (hpN : p ∣ N) (F : modFormCharSpace k χ) (m r : ℕ) :
-    (qExpansion 1 (heckeRingHomCharSpace k χ (heckeTGeneratorRecGamma0 N p r) F :
-        ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff m =
-      (qExpansion 1 (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff (p ^ r * m) := by
-  let _ : NeZero p := ⟨hp.ne_zero⟩
-  have hpc : ¬ Nat.Coprime p N := fun h ↦ (hp.coprime_iff_not_dvd.mp h) hpN
-  -- At `p ∣ N`, the recurrence block degenerates to a power of `Tₚ` because `χ(p) = 0`.
-  rw [heckeTGeneratorRecGamma0_eq_generator_pow_of_not_coprime N hpc, map_pow]
-  induction r generalizing m with
-  | zero => simp
-  | succ r ih =>
-      rw [pow_succ', Module.End.mul_apply,
-        coe_heckeRingHomCharSpace_heckeTGeneratorGamma0 k χ hp]
-      have hs := qExpansion_coeff_heckeTNat_of_primeFactors_subset (N := N) k p
-        (Nat.primeFactors_mono hpN (NeZero.ne N))
-        (((heckeRingHomCharSpace k χ (heckeTGeneratorGamma0 N p)) ^ r) F :
-          ModularForm ((Gamma1 N).map (mapGL ℝ)) k) m
-      rw [hs, ih]
-      congr 1
-      simp [pow_succ', mul_assoc, mul_left_comm]
-
 /-! ### The cusp-form specialisations -/
 
 /-- **The prime-power coefficient formula on `S_k(N, χ)`**: the case of
@@ -274,19 +245,5 @@ theorem qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_of_n
   simpa only [heckeRingHomCuspCharSpace_apply, coe_twistedHeckeSlashCuspFormCharLinearMap,
     pow_zero, one_mul, zero_le, inf_of_le_left, zero_add, Finset.range_one, Finset.sum_singleton,
     mul_zero, tsub_zero] using h
-
-/-- **At a prime dividing the level, `T_{p^r}` shifts every Fourier coefficient by `p^r`**, on
-`S_k(N, χ)`. -/
-theorem qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_of_dvd_level
-    (hp : p.Prime) (hpN : p ∣ N) (F : cuspFormCharSpace k χ) (m r : ℕ) :
-    (qExpansion 1 (heckeRingHomCuspCharSpace k χ (heckeTGeneratorRecGamma0 N p r) F :
-        CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff m =
-      (qExpansion 1 (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff (p ^ r * m) := by
-  have h := qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd_level hp hpN
-    (cuspToModFormCharSpace k χ F) m r
-  rw [heckeRingHomCharSpace_apply, ← cuspToModFormCharSpace_twistedHeckeSlashCuspFormCharLinearMap,
-    ← heckeRingHomCuspCharSpace_apply] at h
-  simp only [coe_cuspToModFormCharSpace, ModularFormClass.coe_modularForm] at h
-  exact h
 
 end HeckeRing.GL2
