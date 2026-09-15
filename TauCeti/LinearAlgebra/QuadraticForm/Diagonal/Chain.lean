@@ -56,11 +56,13 @@ section Steps
 variable {R : Type u} [CommSemiring R] {n : ℕ}
 
 /-- A permutation step reorders the unit coefficients of a diagonal quadratic form. -/
+@[expose]
 def PermutationStep (w w' : Fin n → Rˣ) : Prop :=
   ∃ σ : Equiv.Perm (Fin n), ∀ i, w' i = w (σ i)
 
 /-- A binary step replaces two distinct unit coefficients by an equivalent binary form and fixes
 all other coefficients. -/
+@[expose]
 def BinaryStep (w w' : Fin n → Rˣ) : Prop :=
   ∃ i j : Fin n, i ≠ j ∧
     (∀ k, k ≠ i → k ≠ j → w k = w' k) ∧
@@ -69,36 +71,14 @@ def BinaryStep (w w' : Fin n → Rˣ) : Prop :=
 
 /-- An elementary step between diagonal coefficient families is either a permutation step or a
 binary step. -/
+@[expose]
 def DiagonalStep (w w' : Fin n → Rˣ) : Prop :=
   PermutationStep w w' ∨ BinaryStep w w'
 
 /-- A diagonal chain is a finite sequence of permutation or binary steps. -/
+@[expose]
 def DiagonalChain (w w' : Fin n → Rˣ) : Prop :=
   Relation.ReflTransGen DiagonalStep w w'
-
-/-- The data defining a permutation step. -/
-theorem permutationStep_iff {w w' : Fin n → Rˣ} :
-    PermutationStep w w' ↔ ∃ σ : Equiv.Perm (Fin n), ∀ i, w' i = w (σ i) :=
-  Iff.rfl
-
-/-- The data defining a binary step. -/
-theorem binaryStep_iff {w w' : Fin n → Rˣ} :
-    BinaryStep w w' ↔
-      ∃ i j : Fin n, i ≠ j ∧
-        (∀ k, k ≠ i → k ≠ j → w k = w' k) ∧
-        (weightedSumSquares R ![(w i : R), (w j : R)]).Equivalent
-          (weightedSumSquares R ![(w' i : R), (w' j : R)]) :=
-  Iff.rfl
-
-/-- An elementary diagonal step is a permutation step or a binary step. -/
-theorem diagonalStep_iff {w w' : Fin n → Rˣ} :
-    DiagonalStep w w' ↔ PermutationStep w w' ∨ BinaryStep w w' :=
-  Iff.rfl
-
-/-- A diagonal chain is the reflexive-transitive closure of elementary diagonal steps. -/
-theorem diagonalChain_iff_reflTransGen {w w' : Fin n → Rˣ} :
-    DiagonalChain w w' ↔ Relation.ReflTransGen DiagonalStep w w' :=
-  Iff.rfl
 
 namespace BinaryStep
 

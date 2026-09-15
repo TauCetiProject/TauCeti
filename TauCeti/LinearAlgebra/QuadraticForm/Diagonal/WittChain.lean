@@ -55,7 +55,7 @@ variable {R : Type u} [CommSemiring R]
 /-- A binary step remains a binary step after adjoining a fixed first coefficient. -/
 theorem cons {n : ℕ} {w w' : Fin n → Rˣ} (a : Rˣ) (h : BinaryStep w w') :
     BinaryStep (Fin.cons a w) (Fin.cons a w') := by
-  rw [binaryStep_iff] at h ⊢
+  unfold TauCeti.BinaryStep at h ⊢
   obtain ⟨i, j, hij, hrest, hpair⟩ := h
   refine ⟨i.succ, j.succ, fun hs ↦ hij (Fin.succ_inj.mp hs), ?_, ?_⟩
   · intro k
@@ -79,10 +79,10 @@ theorem cons {n : ℕ} {w w' : Fin n → Rˣ} (a : Rˣ) (h : DiagonalChain w w')
     DiagonalChain (Fin.cons a w) (Fin.cons a w') := by
   have toBinary {v v' : Fin n → Rˣ} (hstep : DiagonalStep v v') :
       Relation.ReflTransGen BinaryStep v v' := by
-    rw [diagonalStep_iff] at hstep
+    unfold TauCeti.DiagonalStep at hstep
     exact hstep.elim PermutationStep.to_reflTransGen_binaryStep Relation.ReflTransGen.single
   have hbinary : Relation.ReflTransGen BinaryStep w w' := by
-    rw [diagonalChain_iff_reflTransGen] at h
+    unfold TauCeti.DiagonalChain at h
     exact Relation.ReflTransGen.trans_induction_on h
       (fun _ ↦ Relation.ReflTransGen.refl)
       (fun hstep ↦ toBinary hstep)
@@ -92,11 +92,11 @@ theorem cons {n : ℕ} {w w' : Fin n → Rˣ} (a : Rˣ) (h : DiagonalChain w w')
       (r := fun v v' : Fin n → Rˣ ↦ BinaryStep v v')
       (p := fun v v' : Fin (n + 1) → Rˣ ↦ BinaryStep v v')
       (fun v ↦ Fin.cons a v) (fun _ _ hstep ↦ BinaryStep.cons a hstep)) w w' hbinary
-  rw [diagonalChain_iff_reflTransGen]
+  unfold TauCeti.DiagonalChain
   exact (Relation.ReflTransGen.mono
     (r := fun v v' : Fin (n + 1) → Rˣ ↦ BinaryStep v v')
     (p := fun v v' : Fin (n + 1) → Rˣ ↦ DiagonalStep v v')
-    (fun _ _ hstep ↦ diagonalStep_iff.mpr (Or.inr hstep))) _ _ hlift
+    (fun _ _ hstep ↦ show DiagonalStep _ _ from Or.inr hstep)) _ _ hlift
 
 end DiagonalChain
 
@@ -126,7 +126,7 @@ binary step. -/
 private theorem binaryStep_replaceHeadPair {n : ℕ} (w : Fin (n + 2) → Kˣ) (c : Kˣ)
     (hc : c ∈ unitValueSet (weightedSumSquares K ![(w 0 : K), (w 1 : K)])) :
     BinaryStep w (replaceHeadPair w c) := by
-  rw [binaryStep_iff]
+  unfold TauCeti.BinaryStep
   refine ⟨0, 1, Fin.zero_ne_one, ?_, ?_⟩
   · intro k
     refine Fin.cases ?_ (fun i ↦ ?_) k
@@ -158,9 +158,9 @@ theorem exists_diagonalChain_first_eq_of_mem_unitValueSet {n : ℕ}
           fin_cases i <;> rfl
         simpa only [hw] using hc
       refine ⟨replaceHeadPair w c, ?_, by simp⟩
-      rw [diagonalChain_iff_reflTransGen]
+      unfold TauCeti.DiagonalChain
       exact Relation.ReflTransGen.single
-        (diagonalStep_iff.mpr (Or.inr (binaryStep_replaceHeadPair w c hpair)))
+        (show DiagonalStep _ _ from Or.inr (binaryStep_replaceHeadPair w c hpair))
   | succ n ih =>
       rw [mem_unitValueSet, represents_iff, Set.mem_range] at hc
       obtain ⟨x, hx⟩ := hc
@@ -178,9 +178,9 @@ theorem exists_diagonalChain_first_eq_of_mem_unitValueSet {n : ℕ}
           simpa only [hd, add_zero] using hsum
         refine ⟨replaceHeadPair w c,
           ?_, by simp⟩
-        rw [diagonalChain_iff_reflTransGen]
+        unfold TauCeti.DiagonalChain
         exact Relation.ReflTransGen.single
-          (diagonalStep_iff.mpr (Or.inr (binaryStep_replaceHeadPair w c hhead)))
+          (show DiagonalStep _ _ from Or.inr (binaryStep_replaceHeadPair w c hhead))
       · let d' : Kˣ := Units.mk0 d hd
         have htail : d' ∈ unitValueSet
             (weightedSumSquares K fun i ↦ (Fin.tail w i : K)) := by
@@ -201,9 +201,9 @@ theorem exists_diagonalChain_first_eq_of_mem_unitValueSet {n : ℕ}
           exact hsum
         refine ⟨replaceHeadPair v c,
           ?_, by simp⟩
-        rw [diagonalChain_iff_reflTransGen] at hwv ⊢
+        unfold TauCeti.DiagonalChain at hwv ⊢
         exact hwv.tail
-          (diagonalStep_iff.mpr (Or.inr (binaryStep_replaceHeadPair v c hhead)))
+          (show DiagonalStep _ _ from Or.inr (binaryStep_replaceHeadPair v c hhead))
 
 /-- **Witt's chain theorem** in its nontrivial range: two diagonal forms of rank at least two are
 isometric if and only if their coefficient families are connected by a diagonal chain. -/
@@ -214,14 +214,14 @@ theorem diagonalChain_iff_equivalent {n : ℕ} {w w' : Fin (n + 2) → Kˣ} :
   refine ⟨DiagonalChain.equivalent, fun h ↦ ?_⟩
   induction n with
   | zero =>
-      rw [diagonalChain_iff_reflTransGen]
-      exact Relation.ReflTransGen.single (diagonalStep_iff.mpr (Or.inr (by
-        rw [binaryStep_iff]
+      unfold TauCeti.DiagonalChain
+      exact Relation.ReflTransGen.single (show DiagonalStep _ _ from Or.inr (by
+        unfold TauCeti.BinaryStep
         exact ⟨0, 1, Fin.zero_ne_one, by
         intro k hk0 hk1
         fin_cases k
         · exact (hk0 rfl).elim
-        · exact (hk1 rfl).elim, h⟩)))
+        · exact (hk1 rfl).elim, h⟩))
   | succ n ih =>
       have hw0 : w 0 ∈ unitValueSet (weightedSumSquares K fun i ↦ (w i : K)) := by
         rw [mem_unitValueSet, represents_iff, Set.mem_range]
@@ -274,7 +274,7 @@ theorem diagonalChain_iff_equivalent {n : ℕ} {w w' : Fin (n + 2) → Kˣ} :
         · rw [← hu0]
           exact (Fin.cons_self_tail u).symm
       have huw : DiagonalChain u w' := hwu.symm
-      rw [diagonalChain_iff_reflTransGen] at hconsChain huw ⊢
+      unfold TauCeti.DiagonalChain at hconsChain huw ⊢
       exact hconsChain.trans huw
 
 /-- For a fixed size at least two, Witt's chain theorem in inequality form. -/
@@ -298,7 +298,8 @@ theorem diagonalChain_iff_equivalent_fin_zero {R : Type u} [CommSemiring R]
   · intro _
     have hww' : w = w' := Subsingleton.elim w w'
     subst w'
-    exact diagonalChain_iff_reflTransGen.mpr Relation.ReflTransGen.refl
+    unfold TauCeti.DiagonalChain
+    exact Relation.ReflTransGen.refl
 
 /-- In rank one a diagonal chain is equality of coefficient families. Thus the rank hypothesis in
 `TauCeti.diagonalChain_iff_equivalent_of_two_le` cannot be removed: isometric one-dimensional
@@ -307,21 +308,22 @@ theorem diagonalChain_fin_one_iff {R : Type u} [CommSemiring R] {w w' : Fin 1 �
     DiagonalChain w w' ↔ w = w' := by
   constructor
   · intro h
-    rw [diagonalChain_iff_reflTransGen] at h
+    unfold TauCeti.DiagonalChain at h
     induction h using Relation.ReflTransGen.trans_induction_on with
     | refl => rfl
     | single hstep =>
-        rw [diagonalStep_iff] at hstep
+        unfold TauCeti.DiagonalStep at hstep
         rcases hstep with hperm | hbinary
-        · rw [permutationStep_iff] at hperm
+        · unfold TauCeti.PermutationStep at hperm
           obtain ⟨σ, hσ⟩ := hperm
           funext i
           exact (congrArg _ (Subsingleton.elim i (σ i))).trans (hσ i).symm
-        · rw [binaryStep_iff] at hbinary
+        · unfold TauCeti.BinaryStep at hbinary
           obtain ⟨i, j, hij, _⟩ := hbinary
           exact (hij (Subsingleton.elim i j)).elim
     | trans _ _ ih ih' => exact ih.trans ih'
   · rintro rfl
-    exact diagonalChain_iff_reflTransGen.mpr Relation.ReflTransGen.refl
+    unfold TauCeti.DiagonalChain
+    exact Relation.ReflTransGen.refl
 
 end TauCeti
