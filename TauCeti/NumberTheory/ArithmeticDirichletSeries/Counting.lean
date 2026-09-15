@@ -544,12 +544,15 @@ theorem primeCount_eq_card (S : Set (HeightOneSpectrum (𝓞 K))) [DecidablePred
 /-- The number of all height-one primes of a number field below the inclusive real cutoff tends
 to infinity.
 
-The arithmetic input is lying over for the integral extension `ℤ → 𝓞 K`: contraction from the
-height-one spectrum of `𝓞 K` onto that of `ℤ` is surjective. The latter spectrum is equivalent to
-the infinite type of natural primes. The rest is the generic fact that cardinality tends to
-infinity along the directed set of finite subsets. -/
+This count is the normalizing denominator of a density ratio, so its divergence is what makes such
+a ratio usable: the denominator is eventually positive, and a finite discrepancy between two
+numerators vanishes in the limit. -/
 theorem tendsto_primeCount_univ_atTop (K : Type*) [Field K] [NumberField K] :
     Tendsto (primeCount K Set.univ) atTop atTop := by
+  -- The arithmetic input is lying over for the integral extension `ℤ → 𝓞 K`: contraction from the
+  -- height-one spectrum of `𝓞 K` onto that of `ℤ` is surjective. The latter spectrum is equivalent
+  -- to the infinite type of natural primes. The rest is the generic fact that cardinality tends to
+  -- infinity along the directed set of finite subsets.
   let _ : Infinite (HeightOneSpectrum ℤ) :=
     Infinite.of_surjective Rat.HeightOneSpectrum.primesEquiv
       Rat.HeightOneSpectrum.primesEquiv.surjective
