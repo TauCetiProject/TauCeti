@@ -30,7 +30,7 @@ relations can use the splitting without unfolding the quaternion-basis implement
 
 ## Main definition
 
-* `QuaternionAlgebra.secondSquareEquivMatrix`: the equivalence from the quaternion symbol
+* `TauCeti.secondSquareEquivMatrix`: the equivalence from the quaternion symbol
   `(a,b²)` to `Matrix (Fin 2) (Fin 2) R` for units `a` and `b`.
 
 ## References
@@ -42,7 +42,7 @@ public section
 
 open scoped Matrix Quaternion
 
-namespace QuaternionAlgebra
+namespace TauCeti
 
 variable {R : Type*} [CommRing R] [Invertible (2 : R)]
 
@@ -84,11 +84,6 @@ private def secondSquareMatrixInverse (a b : Rˣ) (M : Matrix (Fin 2) (Fin 2) R)
     ⅟(2 : R) * (((b⁻¹ : Rˣ) : R) *
       (M 1 0 - ((a⁻¹ : Rˣ) : R) * M 0 1))⟩
 
-private theorem invOf_two_mul_mul_two (x : R) : ⅟(2 : R) * (x * 2) = x := by
-  calc
-    ⅟(2 : R) * (x * 2) = (⅟(2 : R) * 2) * x := by ring
-    _ = x := by rw [invOf_mul_self, one_mul]
-
 private theorem secondSquareMatrixInverse_leftInverse (a b : Rˣ) :
     Function.LeftInverse (secondSquareMatrixInverse a b)
       (secondSquareMatrixBasis (a : R) (b : R)).liftHom := by
@@ -100,7 +95,8 @@ private theorem secondSquareMatrixInverse_leftInverse (a b : Rˣ) :
   · calc
       ⅟(2 : R) * ((q.re + (b : R) * q.imJ) + (q.re - (b : R) * q.imJ)) =
           ⅟(2 : R) * (q.re * 2) := by ring
-      _ = q.re := invOf_two_mul_mul_two q.re
+      _ = q.re := by
+        simpa only [mul_comm q.re (2 : R)] using invOf_mul_cancel_left (2 : R) q.re
   · calc
       ⅟(2 : R) * (((a⁻¹ : Rˣ) : R) *
           ((a : R) * q.imI - (a : R) * (b : R) * q.imK) +
@@ -109,13 +105,15 @@ private theorem secondSquareMatrixInverse_leftInverse (a b : Rˣ) :
             ((a⁻¹ : Rˣ) : R) * (a : R) * (b : R) * q.imK +
               q.imI + (b : R) * q.imK) := by ring
       _ = ⅟(2 : R) * (q.imI * 2) := by rw [hai]; ring
-      _ = q.imI := invOf_two_mul_mul_two q.imI
+      _ = q.imI := by
+        simpa only [mul_comm q.imI (2 : R)] using invOf_mul_cancel_left (2 : R) q.imI
   · calc
       ⅟(2 : R) * (((b⁻¹ : Rˣ) : R) *
           ((q.re + (b : R) * q.imJ) - (q.re - (b : R) * q.imJ))) = ⅟(2 : R) *
           (((b⁻¹ : Rˣ) : R) * (b : R) * q.imJ * 2) := by ring
       _ = ⅟(2 : R) * (q.imJ * 2) := by rw [hbi, one_mul]
-      _ = q.imJ := invOf_two_mul_mul_two q.imJ
+      _ = q.imJ := by
+        simpa only [mul_comm q.imJ (2 : R)] using invOf_mul_cancel_left (2 : R) q.imJ
   · calc
       ⅟(2 : R) * (((b⁻¹ : Rˣ) : R) *
           ((q.imI + (b : R) * q.imK) - ((a⁻¹ : Rˣ) : R) *
@@ -129,7 +127,8 @@ private theorem secondSquareMatrixInverse_leftInverse (a b : Rˣ) :
         ring
       _ = ⅟(2 : R) * (((b⁻¹ : Rˣ) : R) * (b : R) * q.imK * 2) := by ring
       _ = ⅟(2 : R) * (q.imK * 2) := by rw [hbi, one_mul]
-      _ = q.imK := invOf_two_mul_mul_two q.imK
+      _ = q.imK := by
+        simpa only [mul_comm q.imK (2 : R)] using invOf_mul_cancel_left (2 : R) q.imK
 
 private theorem secondSquareMatrixInverse_rightInverse (a b : Rˣ) :
     Function.RightInverse (secondSquareMatrixInverse a b)
@@ -146,7 +145,8 @@ private theorem secondSquareMatrixInverse_rightInverse (a b : Rˣ) :
           ⅟(2 : R) * (M 0 0 + M 1 1) +
           ((b : R) * ((b⁻¹ : Rˣ) : R)) * ⅟(2 : R) * (M 0 0 - M 1 1) := by ring
       _ = ⅟(2 : R) * (M 0 0 * 2) := by rw [hb, one_mul]; ring
-      _ = M 0 0 := invOf_two_mul_mul_two (M 0 0)
+      _ = M 0 0 := by
+        simpa only [mul_comm (M 0 0) (2 : R)] using invOf_mul_cancel_left (2 : R) (M 0 0)
   · calc
       (a : R) * (⅟(2 : R) * (((a⁻¹ : Rˣ) : R) * M 0 1 + M 1 0)) -
           (a : R) * (b : R) * (⅟(2 : R) * (((b⁻¹ : Rˣ) : R) *
@@ -157,7 +157,8 @@ private theorem secondSquareMatrixInverse_rightInverse (a b : Rˣ) :
           ((a : R) * ((a⁻¹ : Rˣ) : R)) *
             ((b : R) * ((b⁻¹ : Rˣ) : R)) * ⅟(2 : R) * M 0 1 := by ring
       _ = ⅟(2 : R) * (M 0 1 * 2) := by rw [ha, hb]; ring
-      _ = M 0 1 := invOf_two_mul_mul_two (M 0 1)
+      _ = M 0 1 := by
+        simpa only [mul_comm (M 0 1) (2 : R)] using invOf_mul_cancel_left (2 : R) (M 0 1)
   · calc
       ⅟(2 : R) * (((a⁻¹ : Rˣ) : R) * M 0 1 + M 1 0) +
           (b : R) * (⅟(2 : R) * (((b⁻¹ : Rˣ) : R) *
@@ -166,14 +167,16 @@ private theorem secondSquareMatrixInverse_rightInverse (a b : Rˣ) :
           ((b : R) * ((b⁻¹ : Rˣ) : R)) * ⅟(2 : R) *
             (M 1 0 - ((a⁻¹ : Rˣ) : R) * M 0 1) := by ring
       _ = ⅟(2 : R) * (M 1 0 * 2) := by rw [hb, one_mul]; ring
-      _ = M 1 0 := invOf_two_mul_mul_two (M 1 0)
+      _ = M 1 0 := by
+        simpa only [mul_comm (M 1 0) (2 : R)] using invOf_mul_cancel_left (2 : R) (M 1 0)
   · calc
       ⅟(2 : R) * (M 0 0 + M 1 1) -
           (b : R) * (⅟(2 : R) * (((b⁻¹ : Rˣ) : R) * (M 0 0 - M 1 1))) =
           ⅟(2 : R) * (M 0 0 + M 1 1) -
           ((b : R) * ((b⁻¹ : Rˣ) : R)) * ⅟(2 : R) * (M 0 0 - M 1 1) := by ring
       _ = ⅟(2 : R) * (M 1 1 * 2) := by rw [hb, one_mul]; ring
-      _ = M 1 1 := invOf_two_mul_mul_two (M 1 1)
+      _ = M 1 1 := by
+        simpa only [mul_comm (M 1 1) (2 : R)] using invOf_mul_cancel_left (2 : R) (M 1 1)
 
 private theorem secondSquareMatrixBasis_liftHom_bijective (a b : Rˣ) :
     Function.Bijective (secondSquareMatrixBasis (a : R) (b : R)).liftHom := by
@@ -209,9 +212,9 @@ theorem secondSquareEquivMatrix_symm_apply (a b : Rˣ) (M : Matrix (Fin 2) (Fin 
         ⅟(2 : R) * (((b⁻¹ : Rˣ) : R) * (M 0 0 - M 1 1)),
         ⅟(2 : R) * (((b⁻¹ : Rˣ) : R) *
           (M 1 0 - ((a⁻¹ : Rˣ) : R) * M 0 1))⟩ := by
-  change (secondSquareEquivMatrix a b).symm M = secondSquareMatrixInverse a b M
   apply (secondSquareEquivMatrix a b).injective
   rw [AlgEquiv.apply_symm_apply]
-  exact (secondSquareMatrixInverse_rightInverse a b M).symm
+  simpa only [secondSquareEquivMatrix, AlgEquiv.ofBijective_apply,
+    secondSquareMatrixInverse] using (secondSquareMatrixInverse_rightInverse a b M).symm
 
-end QuaternionAlgebra
+end TauCeti
