@@ -12,22 +12,22 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 # Global turning of the Schwarz--Christoffel boundary
 
 For strictly ordered prevertices, the direction angle on the interval following the `i`-th
-prevertex is the sum of the exponents at all later prevertices.  Consequently negative exponents
-make these angles strictly increase as the boundary is traversed from left to right.
+prevertex is `π` times the sum of the exponents at all later prevertices.  Consequently negative
+exponents make these angles strictly increase as the boundary is traversed from left to right.
 
-Under the classical closing condition `∑ i, e i = -2`, every proper part of that traversal turns
-through an angle strictly between zero and `2π`.  All finite edge directions are therefore
-distinct, while the angles on the two unbounded intervals differ by exactly `2π`.  This is the
-global turning-order input for separating nonadjacent sides of the Schwarz--Christoffel polygon;
-the local fact that consecutive sides form genuine corners is proved in
-`SchwarzChristoffel.Turning`.
+Under the classical closing condition `∑ i, e i = -2`, the angle increase between distinct
+indexed finite prevertices `i < j` lies strictly between zero and `2π`.  All finite edge directions
+are therefore distinct, while the angles on the two unbounded intervals differ by exactly `2π`.
+This is the global turning-order input for separating nonadjacent sides of the
+Schwarz--Christoffel polygon; the local fact that consecutive sides form genuine corners is proved
+in `SchwarzChristoffel.Turning`.
 
 ## Main results
 
 * `TauCeti.strictMono_schwarzChristoffelEdgeAngle_comp` -- negative exponents make the edge angles
   at successive prevertices strictly increase.
-* `TauCeti.schwarzChristoffelEdgeAngle_sub_mem_Ioo_two_pi` -- a proper boundary arc turns by an
-  angle in `(0, 2π)` when the total exponent is `-2`.
+* `TauCeti.schwarzChristoffelEdgeAngle_sub_mem_Ioo_two_pi` -- the angle increase between distinct
+  indexed finite prevertices `i < j` lies in `(0, 2π)` when the total exponent is `-2`.
 * `TauCeti.injective_exp_schwarzChristoffelEdgeAngle_prevertex` -- the finite edge directions are
   pairwise distinct.
 * `TauCeti.schwarzChristoffelEdgeAngle_eq_neg_two_pi_of_lt_first` and
@@ -114,6 +114,21 @@ theorem strictMono_schwarzChristoffelEdgeAngle_comp (a e : Fin (n + 1) → ℝ)
     · exact ⟨j, Finset.mem_Ioc.mpr ⟨hij, le_rfl⟩⟩
   nlinarith [Real.pi_pos]
 
+private theorem sum_gt_neg_two_of_not_mem {ι : Type*} [Fintype ι] (e : ι → ℝ)
+    (he : ∀ i, e i < 0) (hsum : ∑ i, e i = -2) (s : Finset ι) {i : ι}
+    (hi : i ∉ s) : -2 < ∑ k ∈ s, e k := by
+  classical
+  have hproper : ∑ k ∈ s, -e k < ∑ k, -e k := by
+    apply Finset.sum_lt_sum_of_subset (Finset.subset_univ s) (Finset.mem_univ i) hi
+    · exact neg_pos.mpr (he i)
+    · exact fun k _ _ ↦ (neg_pos.mpr (he k)).le
+  have hfull : ∑ k, -e k = 2 := by
+    rw [Finset.sum_neg_distrib, hsum]
+    norm_num
+  have := hproper.trans_eq hfull
+  rw [Finset.sum_neg_distrib] at this
+  linarith
+
 /-- Under the closing condition `∑ i, e i = -2`, the edge-angle increase along any nonempty
 proper index interval lies strictly between zero and `2π`.
 
@@ -128,43 +143,22 @@ theorem schwarzChristoffelEdgeAngle_sub_mem_Ioo_two_pi
       schwarzChristoffelEdgeAngle a e (a i) :=
     sub_pos.mpr (strictMono_schwarzChristoffelEdgeAngle_comp a e ha he hij)
   rw [schwarzChristoffelEdgeAngle_sub_eq_neg_pi_mul_sum_Ioc a e ha hij] at hpositive ⊢
-  let s := Finset.Ioc i j
-  have hproper : ∑ k ∈ s, -e k < ∑ k, -e k := by
-    apply Finset.sum_lt_sum_of_subset (Finset.subset_univ s) (Finset.mem_univ i)
-    · simp [s]
-    · exact neg_pos.mpr (he i)
-    · exact fun k _ _ ↦ (neg_pos.mpr (he k)).le
-  have hfull : ∑ k, -e k = 2 := by
-    rw [Finset.sum_neg_distrib, hsum]
-    norm_num
-  have hpartial : -2 < ∑ k ∈ s, e k := by
-    have := hproper.trans_eq hfull
-    rw [Finset.sum_neg_distrib] at this
-    linarith
+  have hpartial :=
+    sum_gt_neg_two_of_not_mem e he hsum (Finset.Ioc i j) (i := i) (by simp)
   exact ⟨hpositive, by nlinarith [Real.pi_pos]⟩
 
-/-- Under negative exponents summing to `-2`, every finite-prevertex edge angle lies in the
-half-open fundamental interval `(-2π, 0]`.  The final angle can equal zero, while `-2π` is reserved
-for the unbounded interval before the first prevertex. -/
-theorem schwarzChristoffelEdgeAngle_mem_Ioc (a e : Fin (n + 1) → ℝ)
-    (ha : StrictMono a) (he : ∀ i, e i < 0) (hsum : ∑ i, e i = -2)
-    (i : Fin (n + 1)) :
+/-- Under negative exponents summing to `-2`, every indexed-prevertex edge angle lies in the
+half-open fundamental interval `(-2π, 0]`.  The angle can equal zero when no prevertex lies
+strictly to its right, while `-2π` occurs only before every prevertex. -/
+theorem schwarzChristoffelEdgeAngle_mem_Ioc {ι : Type*} [Fintype ι] (a e : ι → ℝ)
+    (he : ∀ i, e i < 0) (hsum : ∑ i, e i = -2) (i : ι) :
     schwarzChristoffelEdgeAngle a e (a i) ∈ Ioc (-2 * Real.pi) 0 := by
-  rw [schwarzChristoffelEdgeAngle_eq_pi_mul_sum_Ioi a e ha i]
-  have hnonpos : ∑ k ∈ Finset.Ioi i, e k ≤ 0 :=
+  classical
+  rw [schwarzChristoffelEdgeAngle_eq_sum_filter]
+  let s := Finset.univ.filter fun k ↦ a i < a k
+  have hnonpos : ∑ k ∈ s, e k ≤ 0 :=
     Finset.sum_nonpos fun k _ ↦ (he k).le
-  have hproper : ∑ k ∈ Finset.Ioi i, -e k < ∑ k, -e k := by
-    apply Finset.sum_lt_sum_of_subset (Finset.subset_univ _) (Finset.mem_univ i)
-    · simp
-    · exact neg_pos.mpr (he i)
-    · exact fun k _ _ ↦ (neg_pos.mpr (he k)).le
-  have hfull : ∑ k, -e k = 2 := by
-    rw [Finset.sum_neg_distrib, hsum]
-    norm_num
-  have hlower : -2 < ∑ k ∈ Finset.Ioi i, e k := by
-    have := hproper.trans_eq hfull
-    rw [Finset.sum_neg_distrib] at this
-    linarith
+  have hlower := sum_gt_neg_two_of_not_mem e he hsum s (i := i) (by simp [s])
   constructor <;> nlinarith [Real.pi_pos]
 
 /-- Under negative exponents summing to `-2`, the direction constants on the intervals following
@@ -183,8 +177,8 @@ theorem injective_exp_schwarzChristoffelEdgeAngle_prevertex
     simpa only [Circle.coe_exp] using hij
   have hangle :=
     (Circle.exp_injOn_Ioc (a := -2 * Real.pi) (b := 0) (by linarith [Real.pi_pos]))
-      (schwarzChristoffelEdgeAngle_mem_Ioc a e ha he hsum i)
-      (schwarzChristoffelEdgeAngle_mem_Ioc a e ha he hsum j) hcircle
+      (schwarzChristoffelEdgeAngle_mem_Ioc a e he hsum i)
+      (schwarzChristoffelEdgeAngle_mem_Ioc a e he hsum j) hcircle
   exact (strictMono_schwarzChristoffelEdgeAngle_comp a e ha he).injective hangle
 
 /-- With total exponent `-2`, the Schwarz--Christoffel edge angle before the first ordered
