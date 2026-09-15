@@ -144,6 +144,13 @@ one onto the other. -/
 def IsPermutationEquivalent (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) : Prop :=
   ∃ e : ι ≃ κ, C.map (LinearEquiv.funCongrLeft R R e.symm : (ι → R) →ₗ[R] (κ → R)) = D
 
+/-- A coordinate relabelling that maps one code onto another restricts to a linear equivalence
+between their codewords. -/
+def permutationCodeEquiv (e : ι ≃ κ)
+    (h : C.map (LinearEquiv.funCongrLeft R R e.symm : (ι → R) →ₗ[R] (κ → R)) = D) :
+    C ≃ₗ[R] D :=
+  (LinearEquiv.funCongrLeft R R e.symm).ofSubmodules C D h
+
 @[refl]
 theorem IsPermutationEquivalent.refl (C : Submodule R (ι → R)) : IsPermutationEquivalent C C :=
   ⟨Equiv.refl ι, by simp⟩
@@ -209,6 +216,12 @@ variable [CommSemiring R] {C : Submodule R (ι → R)} {D : Submodule R (κ → 
 coordinate spaces carries one onto the other. -/
 def IsMonomialEquivalent (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) : Prop :=
   ∃ (u : ι → Rˣ) (e : ι ≃ κ), C.map (monomialEquiv u e : (ι → R) →ₗ[R] (κ → R)) = D
+
+/-- A monomial transformation that maps one code onto another restricts to a linear equivalence
+between their codewords. -/
+def monomialCodeEquiv (u : ι → Rˣ) (e : ι ≃ κ)
+    (h : C.map (monomialEquiv u e : (ι → R) →ₗ[R] (κ → R)) = D) : C ≃ₗ[R] D :=
+  (monomialEquiv u e).ofSubmodules C D h
 
 theorem IsPermutationEquivalent.isMonomialEquivalent (h : IsPermutationEquivalent C D) :
     IsMonomialEquivalent C D := by
@@ -343,9 +356,11 @@ theorem coe_smul_monomialAut (f : monomialAut C) (c : C) :
     ((f • c : C) : ι → R) = (f : (ι → R) ≃ₗ[R] (ι → R)) c :=
   (rfl)
 
-instance instMulActionMonomialAut : MulAction (monomialAut C) C where
+instance instDistribMulActionMonomialAut : DistribMulAction (monomialAut C) C where
   one_smul _ := Subtype.ext (by simp)
   mul_smul _ _ _ := Subtype.ext (by simp)
+  smul_zero _ := Subtype.ext (by simp)
+  smul_add _ _ _ := Subtype.ext (by simp)
 
 /-- A monomial automorphism of a code preserves Hamming weight. -/
 @[simp]
@@ -450,9 +465,11 @@ theorem coe_smul_permutationAut (f : permutationAut C) (c : C) :
     ((f • c : C) : ι → R) = (f : (ι → R) ≃ₗ[R] (ι → R)) c :=
   (rfl)
 
-instance instMulActionPermutationAut : MulAction (permutationAut C) C where
+instance instDistribMulActionPermutationAut : DistribMulAction (permutationAut C) C where
   one_smul _ := Subtype.ext (by simp)
   mul_smul _ _ _ := Subtype.ext (by simp)
+  smul_zero _ := Subtype.ext (by simp)
+  smul_add _ _ _ := Subtype.ext (by simp)
 
 /-- A permutation automorphism of a code preserves Hamming weight. -/
 @[simp]
