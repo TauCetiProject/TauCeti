@@ -25,7 +25,7 @@ the maximal flow.
 
 ## Main result
 
-* `exists_contMDiffAt_localFlow`: a smooth vector field has a jointly smooth
+* `TauCeti.Manifold.exists_contMDiffAt_localFlow`: a smooth vector field has a jointly smooth
   family of local integral curves through all nearby initial points, satisfying the flow law.
 
 ## References
@@ -40,6 +40,8 @@ public section
 
 open Bundle Filter Function Manifold Set Topology
 open scoped ContDiff Manifold Topology
+
+namespace TauCeti.Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -75,6 +77,8 @@ theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E] [I.Boundaryless]
         W e.source := by
       intro z hz
       rw [TangentBundle.trivializationAt_source]
+      -- Membership in this preimage reduces definitionally by projecting the displayed
+      -- tangent-bundle point to its base point; there is no separate projection lemma to apply.
       change (extChartAt I a).symm z ∈ (chartAt H a).source
       simpa only [extChartAt_source] using
         (extChartAt I a).map_target (interior_subset hz.1)
@@ -151,5 +155,7 @@ theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E] [I.Boundaryless]
       interior_subset (hmem hxcoord.2 (hst ht).2)
     simp only [Φ]
     rw [(extChartAt I a).right_inv hφtarget, hφadd]
+
+end TauCeti.Manifold
 
 end
