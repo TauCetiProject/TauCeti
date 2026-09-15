@@ -14,9 +14,8 @@ public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
 Conjugation by a rational point is an automorphism of the ambient affine group, so it preserves
 maximal tori. This file records that invariance for the Hopf-ideal definition of a maximal torus.
 
-The result supplies the invariance half of the conjugacy statement in Layer 7, "Borel subgroups,
-maximal tori, and their conjugacy", of the ReductiveGroups roadmap. Existence of a rational point
-conjugating two maximal tori remains to be proved.
+This invariance is the half of a conjugacy statement for maximal tori that does not depend on
+the existence of a conjugating rational point.
 
 ## Main declarations
 
@@ -32,8 +31,6 @@ conjugating two maximal tori remains to be proved.
 
 public section
 
-open CategoryTheory
-
 namespace TauCeti.HopfIdeal
 
 universe u
@@ -41,19 +38,12 @@ universe u
 variable {k : Type u} [Field k]
 variable {H : Type u} [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
 
-private noncomputable def pointConjugationFiniteTypeIso
-    (g : WithConv (H →ₐ[k] k)) :
-    FiniteTypeCommHopfAlgCat.of k H ≅ FiniteTypeCommHopfAlgCat.of k H :=
-  ObjectProperty.isoMk _ <|
-    _root_.CommHopfAlgCat.isoMk (HopfAlgebra.pointConjugationBialgEquiv g)
-
 /-- The conjugate of a maximal torus by a rational point is a maximal torus. -/
 theorem IsMaximalTorus.conjugate {I : HopfIdeal k H}
     (hI : IsMaximalTorus k (_root_.CommHopfAlgCat.of k H) I)
     (g : WithConv (H →ₐ[k] k)) :
     IsMaximalTorus k (_root_.CommHopfAlgCat.of k H) (I.conjugate g) := by
-  let e := pointConjugationFiniteTypeIso g
-  have h := hI.comapOfIso e
+  have h := hI.comapOfIso (HopfAlgebra.pointConjugationFiniteTypeIso g)
   rw [conjugate_eq_comapOfSurjective]
   exact h
 

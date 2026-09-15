@@ -58,7 +58,10 @@ noncomputable def conjugate (I : HopfIdeal R H) (g : WithConv (H →ₐ[R] R)) :
       simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
         EquivLike.surjective (HopfAlgebra.pointConjugationBialgEquiv g))
 
-/-- Conjugation is the inverse image under the bialgebra automorphism of point conjugation. -/
+/-- Conjugation is the inverse image under the bialgebra automorphism of point conjugation.
+
+This is the public interface lemma for `conjugate`: the definition's body is not exposed
+outside this module, so downstream files cannot unfold it and rewrite with this instead. -/
 theorem conjugate_eq_comapOfSurjective (I : HopfIdeal R H)
     (g : WithConv (H →ₐ[R] R)) :
     I.conjugate g =
@@ -158,30 +161,28 @@ theorem mapDomain_pointConjugation_mem_conjugate_iff
     AlgHom.mapDomain (A := A) (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom x ∈
         quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) (I.conjugate g) A ↔
       x ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I A := by
-  let e := HopfAlgebra.pointConjugationBialgEquiv g
-  let f := e.toBialgHom
-  have hinj : Function.Injective f := by
-    simpa only [f, BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
-      EquivLike.injective e
-  have hsurj : Function.Surjective f := by
-    simpa only [f, BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
-      EquivLike.surjective e
-  have h := mapDomainMulEquiv_mem_quotientPointsSubgroup_comapOfSurjective_iff
-    f hinj hsurj I A x
-  have he : BialgEquiv.ofBijective f ⟨hinj, hsurj⟩ = e := by
+  have hinj : Function.Injective
+      (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom := by
+    simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
+      EquivLike.injective (HopfAlgebra.pointConjugationBialgEquiv g)
+  have hsurj : Function.Surjective
+      (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom := by
+    simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
+      EquivLike.surjective (HopfAlgebra.pointConjugationBialgEquiv g)
+  have he : BialgEquiv.ofBijective
+      (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom ⟨hinj, hsurj⟩ =
+      HopfAlgebra.pointConjugationBialgEquiv g := by
     ext z
-    rfl
-  rw [he] at h
-  change AlgHom.mapDomain e.toBialgHom x ∈
-      quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H)
-        (I.comapOfSurjective e.toBialgHom hsurj) A ↔
-    x ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I A at h
-  rw [HopfIdeal.conjugate]
+    simp only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.ofBijective_apply, BialgHom.coe_coe]
+  have h := mapDomainMulEquiv_mem_quotientPointsSubgroup_comapOfSurjective_iff
+    (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom hinj hsurj I A x
+  rw [he, AlgHom.mapDomainMulEquiv_apply, ← BialgEquiv.toBialgHom_eq_coe] at h
+  rw [HopfIdeal.conjugate_eq_comapOfSurjective]
   exact h
 
 /-- In explicit pointwise terms, conjugating a point by `g` carries the points of `I` exactly
 onto the points of the conjugated ideal. -/
-theorem point_conjugation_mem_conjugate_iff
+theorem pointConjugation_mem_conjugate_iff
     (I : HopfIdeal R H) (g : WithConv (H →ₐ[R] R))
     (A : CommAlgCat.{w} R) (x : HopfAlgebra.points (R := R) (H := H) A) :
     AlgHom.mapValue (H := H) (Algebra.ofId R A) g * x *
