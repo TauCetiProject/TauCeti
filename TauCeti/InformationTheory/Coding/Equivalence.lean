@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Basic
-public import Mathlib.InformationTheory.Hamming
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.Pi
+public import TauCeti.InformationTheory.Hamming
 
 /-!
 # Monomial and permutation equivalences of linear codes
@@ -51,26 +51,6 @@ namespace TauCeti
 
 variable {ι κ μ R : Type*}
 
-/-! ### Hamming data under a relabelling of coordinates -/
-
-section Reindex
-
-variable {α : Type*} [Fintype ι] [Fintype κ] [DecidableEq α]
-
-/-- Relabelling coordinates along an equivalence preserves the Hamming distance. -/
-theorem hammingDist_comp_equiv (e : κ ≃ ι) (x y : ι → α) :
-    hammingDist (x ∘ e) (y ∘ e) = hammingDist x y := by
-  simp only [hammingDist, comp_apply]
-  exact Finset.card_equiv e (by simp)
-
-/-- Relabelling coordinates along an equivalence preserves the Hamming weight. -/
-theorem hammingNorm_comp_equiv [Zero α] (e : κ ≃ ι) (x : ι → α) :
-    hammingNorm (x ∘ e) = hammingNorm x := by
-  simp only [hammingNorm, comp_apply]
-  exact Finset.card_equiv e (by simp)
-
-end Reindex
-
 /-! ### Monomial transformations of a coordinate space -/
 
 section Monomial
@@ -111,6 +91,7 @@ theorem monomialEquiv_symm (u : ι → Rˣ) (e : ι ≃ κ) :
     (monomialEquiv u e).symm = monomialEquiv (fun j ↦ (u (e.symm j))⁻¹) e.symm :=
   LinearEquiv.ext fun y ↦ funext fun i ↦ by simp
 
+/-- A monomial equivalence transports support along its coordinate equivalence. -/
 theorem support_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x : ι → R) :
     support (monomialEquiv u e x) = e '' support x := by
   rw [Equiv.image_eq_preimage_symm]
@@ -128,14 +109,14 @@ variable [Fintype ι] [Fintype κ] [DecidableEq R]
 @[simp]
 theorem hammingNorm_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x : ι → R) :
     hammingNorm (monomialEquiv u e x) = hammingNorm x := by
-  rw [monomialEquiv_eq_comp, hammingNorm_comp_equiv]
+  rw [monomialEquiv_eq_comp, TauCeti.Equiv.hammingNorm_comp]
   exact hammingNorm_comp (fun i (c : R) ↦ (u i : R) * c)
     (fun i ↦ (u i).isUnit.mul_right_injective) fun _ ↦ mul_zero _
 
 @[simp]
 theorem hammingDist_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x y : ι → R) :
     hammingDist (monomialEquiv u e x) (monomialEquiv u e y) = hammingDist x y := by
-  rw [monomialEquiv_eq_comp, monomialEquiv_eq_comp, hammingDist_comp_equiv]
+  rw [monomialEquiv_eq_comp, monomialEquiv_eq_comp, TauCeti.Equiv.hammingDist_comp]
   exact hammingDist_comp (fun i (c : R) ↦ (u i : R) * c)
     fun i ↦ (u i).isUnit.mul_right_injective
 
@@ -143,9 +124,44 @@ end Fintype
 
 end Monomial
 
-/-! ### Equivalence of linear codes -/
+/-! ### Permutation equivalence of linear codes -/
 
-section Equivalence
+section PermutationEquivalence
+
+variable [Semiring R] {C : Submodule R (ι → R)} {D : Submodule R (κ → R)}
+  {E : Submodule R (μ → R)}
+
+/-- Two linear codes are *permutation equivalent* when a relabelling of the coordinates carries
+one onto the other. -/
+def IsPermutationEquivalent (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) : Prop :=
+  ∃ e : ι ≃ κ, C.map (LinearEquiv.funCongrLeft R R e.symm : (ι → R) →ₗ[R] (κ → R)) = D
+
+@[refl]
+theorem IsPermutationEquivalent.refl (C : Submodule R (ι → R)) : IsPermutationEquivalent C C :=
+  ⟨Equiv.refl ι, by simp⟩
+
+@[symm]
+theorem IsPermutationEquivalent.symm (h : IsPermutationEquivalent C D) :
+    IsPermutationEquivalent D C := by
+  obtain ⟨e, he⟩ := h
+  refine ⟨e.symm, ?_⟩
+  have h' := (Submodule.map_symm_eq_iff (LinearEquiv.funCongrLeft R R e.symm)).2 he
+  rwa [LinearEquiv.funCongrLeft_symm] at h'
+
+@[trans]
+theorem IsPermutationEquivalent.trans (h : IsPermutationEquivalent C D)
+    (h' : IsPermutationEquivalent D E) : IsPermutationEquivalent C E := by
+  obtain ⟨e, rfl⟩ := h
+  obtain ⟨f, rfl⟩ := h'
+  exact ⟨e.trans f, by
+    rw [Equiv.symm_trans, LinearEquiv.funCongrLeft_comp, LinearEquiv.coe_trans,
+      Submodule.map_comp]⟩
+
+end PermutationEquivalence
+
+/-! ### Monomial equivalence of linear codes -/
+
+section MonomialEquivalence
 
 variable [CommSemiring R] {C : Submodule R (ι → R)} {D : Submodule R (κ → R)}
   {E : Submodule R (μ → R)}
@@ -155,45 +171,23 @@ coordinate spaces carries one onto the other. -/
 def IsMonomialEquivalent (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) : Prop :=
   ∃ (u : ι → Rˣ) (e : ι ≃ κ), C.map (monomialEquiv u e : (ι → R) →ₗ[R] (κ → R)) = D
 
-/-- Two linear codes are *permutation equivalent* when a relabelling of the coordinates carries
-one onto the other. -/
-def IsPermutationEquivalent (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) : Prop :=
-  ∃ e : ι ≃ κ, C.map (LinearEquiv.funCongrLeft R R e.symm : (ι → R) →ₗ[R] (κ → R)) = D
-
 theorem IsPermutationEquivalent.isMonomialEquivalent (h : IsPermutationEquivalent C D) :
     IsMonomialEquivalent C D := by
   obtain ⟨e, he⟩ := h
   exact ⟨1, e, by rw [monomialEquiv_one]; exact he⟩
 
 @[refl]
-theorem IsPermutationEquivalent.refl (C : Submodule R (ι → R)) : IsPermutationEquivalent C C :=
-  ⟨Equiv.refl ι, by simp⟩
-
-theorem IsPermutationEquivalent.symm (h : IsPermutationEquivalent C D) :
-    IsPermutationEquivalent D C := by
-  obtain ⟨e, he⟩ := h
-  refine ⟨e.symm, ?_⟩
-  have h' := (Submodule.map_symm_eq_iff (LinearEquiv.funCongrLeft R R e.symm)).2 he
-  rwa [LinearEquiv.funCongrLeft_symm] at h'
-
-theorem IsPermutationEquivalent.trans (h : IsPermutationEquivalent C D)
-    (h' : IsPermutationEquivalent D E) : IsPermutationEquivalent C E := by
-  obtain ⟨e, rfl⟩ := h
-  obtain ⟨f, rfl⟩ := h'
-  exact ⟨e.trans f, by
-    rw [Equiv.symm_trans, LinearEquiv.funCongrLeft_comp, LinearEquiv.coe_trans,
-      Submodule.map_comp]⟩
-
-@[refl]
 theorem IsMonomialEquivalent.refl (C : Submodule R (ι → R)) : IsMonomialEquivalent C C :=
   (IsPermutationEquivalent.refl C).isMonomialEquivalent
 
+@[symm]
 theorem IsMonomialEquivalent.symm (h : IsMonomialEquivalent C D) : IsMonomialEquivalent D C := by
   obtain ⟨u, e, he⟩ := h
   refine ⟨fun j ↦ (u (e.symm j))⁻¹, e.symm, ?_⟩
   rw [← monomialEquiv_symm]
   exact (Submodule.map_symm_eq_iff _).2 he
 
+@[trans]
 theorem IsMonomialEquivalent.trans (h : IsMonomialEquivalent C D)
     (h' : IsMonomialEquivalent D E) : IsMonomialEquivalent C E := by
   obtain ⟨u, e, rfl⟩ := h
@@ -221,7 +215,7 @@ theorem IsMonomialEquivalent.card_weight_eq [Fintype ι] [Fintype κ] [Decidable
   obtain ⟨u, e, rfl⟩ := h
   exact Nat.card_congr (Equiv.subtypeEquiv (monomialEquiv u e).toEquiv fun x ↦ by simp)
 
-end Equivalence
+end MonomialEquivalence
 
 /-! ### The monomial group and the automorphism group of a code -/
 
@@ -252,12 +246,14 @@ theorem monomialEquiv_mem_monomialGroup (u : ι → Rˣ) (e : Equiv.Perm ι) :
     monomialEquiv u e ∈ monomialGroup R ι :=
   mem_monomialGroup.2 ⟨u, e, rfl⟩
 
+/-- A monomial-group element preserves Hamming weight. -/
 theorem hammingNorm_apply_of_mem_monomialGroup [Fintype ι] [DecidableEq R]
     {f : (ι → R) ≃ₗ[R] (ι → R)} (hf : f ∈ monomialGroup R ι) (x : ι → R) :
     hammingNorm (f x) = hammingNorm x := by
   obtain ⟨u, e, rfl⟩ := mem_monomialGroup.1 hf
   exact hammingNorm_monomialEquiv u e x
 
+/-- A monomial-group element preserves Hamming distance. -/
 theorem hammingDist_apply_of_mem_monomialGroup [Fintype ι] [DecidableEq R]
     {f : (ι → R) ≃ₗ[R] (ι → R)} (hf : f ∈ monomialGroup R ι) (x y : ι → R) :
     hammingDist (f x) (f y) = hammingDist x y := by
@@ -308,11 +304,15 @@ instance instMulActionMonomialAut : MulAction (monomialAut C) C where
   one_smul _ := Subtype.ext (by simp)
   mul_smul _ _ _ := Subtype.ext (by simp)
 
+/-- The action of a monomial automorphism on codewords preserves Hamming weight. -/
+@[simp]
 theorem hammingNorm_smul_monomialAut [Fintype ι] [DecidableEq R] (f : monomialAut C) (c : C) :
     hammingNorm ((f • c : C) : ι → R) = hammingNorm (c : ι → R) := by
   rw [coe_smul_monomialAut]
   exact hammingNorm_apply_of_mem_monomialGroup (monomialAut_le_monomialGroup f.2) _
 
+/-- The action of a monomial automorphism on codewords preserves Hamming distance. -/
+@[simp]
 theorem hammingDist_smul_monomialAut [Fintype ι] [DecidableEq R] (f : monomialAut C) (c d : C) :
     hammingDist ((f • c : C) : ι → R) ((f • d : C) : ι → R) =
       hammingDist (c : ι → R) (d : ι → R) := by
