@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Center.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Reduction
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
+public import TauCeti.RingTheory.Ideal.Quotient.Nilpotent
 
 /-!
 # The reduced center of an affine group
@@ -21,6 +22,11 @@ Assuming the tensor square of the reduced center coordinate algebra is reduced, 
 forms a Hopf ideal; this sufficient commutative-algebra hypothesis is kept explicit by
 `TauCeti.HopfIdeal.reduction`. The construction records both the nested quotient and the single
 ambient defining ideal, together with their canonical identification.
+
+Open `TauCeti` to use this API with dot notation, such as `H.reducedCenterCoordinateMap`,
+alongside `H.reducedCenterDefiningIdeal` and `H.quotientReducedCenterIso`.
+The namespace opening is required because these declarations extend a Mathlib type from
+within `TauCeti`.
 
 This is the reduced-center input for proving that the center of a semisimple affine group is
 finite. Semisimplicity trivializes the smooth connected identity component of this reduction;
@@ -36,6 +42,8 @@ thickening controls the original center.
   radical of the center ideal.
 * `TauCeti.CommHopfAlgCat.quotientReducedCenterIso`: the ambient and iterated quotient models
   agree.
+* `TauCeti.CommHopfAlgCat.reducedCenterCoordinateMap`: the surjective coordinate morphism of
+  the reduced-center inclusion, whose vanishing ideal is the reduced-center defining ideal.
 * `TauCeti.CommHopfAlgCat.smooth_reducedCenterCoordinateHopfAlgebra`: over an algebraically closed
   field, a finite-type reduced center is smooth.
 
@@ -136,18 +144,48 @@ noncomputable def quotientReducedCenterIso :
     (mkQuotient_surjective H (centerDefiningIdeal H))
       (HopfIdeal.reduction k (centerCoordinateHopfAlgebra H))
 
+/-- The coordinate morphism of the inclusion of the reduced center into the ambient group. -/
+noncomputable def reducedCenterCoordinateMap : H ⟶ reducedCenterCoordinateHopfAlgebra H :=
+  mkQuotient H (centerDefiningIdeal H) ≫
+    mkQuotient (centerCoordinateHopfAlgebra H)
+      (HopfIdeal.reduction k (centerCoordinateHopfAlgebra H))
+
+/-- The reduced-center coordinate morphism first restricts to the center and then quotients
+by its nilradical. -/
+theorem reducedCenterCoordinateMap_def :
+    reducedCenterCoordinateMap H = mkQuotient H (centerDefiningIdeal H) ≫
+      mkQuotient (centerCoordinateHopfAlgebra H)
+        (HopfIdeal.reduction k (centerCoordinateHopfAlgebra H)) := (rfl)
+
 /-- The canonical reduced-center isomorphism commutes with the ambient and iterated quotient
 morphisms. -/
 @[simp]
 theorem mkQuotient_comp_quotientReducedCenterIso_hom :
     mkQuotient H (reducedCenterDefiningIdeal H) ≫ (quotientReducedCenterIso H).hom =
-      mkQuotient H (centerDefiningIdeal H) ≫
-        mkQuotient (centerCoordinateHopfAlgebra H)
-          (HopfIdeal.reduction k (centerCoordinateHopfAlgebra H)) := by
+      reducedCenterCoordinateMap H := by
+  rw [quotientReducedCenterIso, reducedCenterCoordinateMap_def]
   exact mkQuotient_comp_quotientIsoOfSurjective_hom
     (mkQuotient H (centerDefiningIdeal H))
       (mkQuotient_surjective H (centerDefiningIdeal H))
         (HopfIdeal.reduction k (centerCoordinateHopfAlgebra H))
+
+/-- The coordinate morphism of the reduced-center inclusion is surjective. -/
+theorem reducedCenterCoordinateMap_surjective :
+    Function.Surjective (reducedCenterCoordinateMap H).hom := by
+  rw [← mkQuotient_comp_quotientReducedCenterIso_hom,
+    _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
+  exact (ConcreteCategory.bijective_of_isIso (quotientReducedCenterIso H).hom).2.comp
+    (mkQuotient_surjective H (reducedCenterDefiningIdeal H))
+
+/-- Vanishing on the reduced center is membership in its ambient defining ideal. -/
+@[simp]
+theorem reducedCenterCoordinateMap_eq_zero_iff (x : H) :
+    (reducedCenterCoordinateMap H).hom x = 0 ↔ x ∈ reducedCenterDefiningIdeal H := by
+  rw [← mkQuotient_comp_quotientReducedCenterIso_hom,
+    _root_.CommHopfAlgCat.hom_comp,
+    BialgHom.comp_apply, map_eq_zero_iff _
+      (ConcreteCategory.bijective_of_isIso (quotientReducedCenterIso H).hom).1,
+    mkQuotient_eq_zero_iff, HopfIdeal.mem_toIdeal]
 
 /-- The ambient quotient model of the reduced center has reduced coordinate ring. -/
 theorem isReduced_quotient_reducedCenterDefiningIdeal :
