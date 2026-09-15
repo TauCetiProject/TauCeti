@@ -50,42 +50,6 @@ universe u
 
 variable {R : Type u} [CommRing R] {N P : Matrix (Fin 26) (Fin 26) ℤ}
 
-/-- Entrywise integer casts turn a matrix sum into the sum of the casts. -/
-private theorem map_intCast_add (M M' : Matrix (Fin 26) (Fin 26) ℤ) :
-    (M + M').map (Int.cast : ℤ → R) =
-      M.map (Int.cast : ℤ → R) + M'.map (Int.cast : ℤ → R) := by
-  ext a b
-  rw [Matrix.map_apply, Matrix.add_apply, Matrix.add_apply, Int.cast_add, Matrix.map_apply,
-    Matrix.map_apply]
-
-/-- Entrywise integer casts turn a matrix difference into the difference of the casts. -/
-private theorem map_intCast_sub (M M' : Matrix (Fin 26) (Fin 26) ℤ) :
-    (M - M').map (Int.cast : ℤ → R) =
-      M.map (Int.cast : ℤ → R) - M'.map (Int.cast : ℤ → R) := by
-  ext a b
-  rw [Matrix.map_apply, Matrix.sub_apply, Matrix.sub_apply, Int.cast_sub, Matrix.map_apply,
-    Matrix.map_apply]
-
-/-- Entrywise integer casts turn a matrix product into the product of the casts. -/
-private theorem map_intCast_mul' (M M' : Matrix (Fin 26) (Fin 26) ℤ) :
-    (M * M').map (Int.cast : ℤ → R) =
-      M.map (Int.cast : ℤ → R) * M'.map (Int.cast : ℤ → R) :=
-  Matrix.map_mul (f := (Int.castRingHom R))
-
-/-- Entrywise integer casts send the zero matrix to the zero matrix. -/
-private theorem map_intCast_zero :
-    (0 : Matrix (Fin 26) (Fin 26) ℤ).map (Int.cast : ℤ → R) = 0 := by
-  ext a b
-  rw [Matrix.map_apply, Matrix.zero_apply, Matrix.zero_apply, Int.cast_zero]
-
-/-- Integer matrices are torsion free. -/
-private theorem smul_cancel {c : ℤ} (hc : c ≠ 0) {A B : Matrix (Fin 26) (Fin 26) ℤ}
-    (h : c • A = c • B) : A = B := by
-  ext a b
-  have hab := congrFun (congrFun h a) b
-  rw [Matrix.smul_apply, Matrix.smul_apply, smul_eq_mul, smul_eq_mul] at hab
-  exact mul_left_cancel₀ hc hab
-
 variable (hN : IsDerivation N) (hNN : N * N = (2 : ℤ) • P)
 
 include hN hNN
@@ -114,7 +78,8 @@ theorem multiplicationBy_mulVec_dividedSquare (v : Fin 26 → ℤ) :
       noncomm_ring
     rw [hexpand, hNN, Matrix.smul_mul, Matrix.mul_smul]
     module
-  exact smul_cancel two_ne_zero (hleft.symm.trans (hone (N *ᵥ v) ▸ hright))
+  exact smul_right_injective (Matrix (Fin 26) (Fin 26) ℤ) two_ne_zero
+    (hleft.symm.trans (hone (N *ᵥ v) ▸ hright))
 
 /-- The second coefficient condition: the divided square of a derivation commutes with an operator
 of multiplication by a vector up to the operators of the transformed vectors. -/
@@ -170,7 +135,11 @@ theorem multiplicationBy_comm_dividedSquare (v : Fin 26 → ℤ) :
     norm_num
     noncomm_ring
   rw [hsimp] at hthird
-  have := smul_cancel (c := (6 : ℤ)) (by norm_num) (hthird.trans (by rw [smul_zero]))
+  have hsix : (6 : ℤ) • (N * multiplicationBy v * P - P * multiplicationBy v * N) =
+      (6 : ℤ) • (0 : Matrix (Fin 26) (Fin 26) ℤ) := by
+    rw [smul_zero]
+    exact hthird
+  have := smul_right_injective (Matrix (Fin 26) (Fin 26) ℤ) (by norm_num : (6 : ℤ) ≠ 0) hsix
   rw [sub_eq_zero] at this
   exact this
 
@@ -220,8 +189,12 @@ theorem multiplicationBy_mulVec_dividedSquare_mul_dividedSquare (v : Fin 26 → 
     have hr : N * (P * multiplicationBy v * N) = (N * P) * multiplicationBy v * N := by noncomm_ring
     rw [hl, hr, hNP, hNN, Matrix.smul_mul, Matrix.smul_mul] at h
     rw [h, Matrix.zero_mul, Matrix.zero_mul]
+  have htwo : (2 : ℤ) • (P * multiplicationBy v * P) =
+      (2 : ℤ) • (0 : Matrix (Fin 26) (Fin 26) ℤ) := by
+    rw [smul_zero]
+    exact hkey
   rw [hstep]
-  exact smul_cancel (c := (2 : ℤ)) two_ne_zero (by rw [hkey, smul_zero])
+  exact smul_right_injective (Matrix (Fin 26) (Fin 26) ℤ) (two_ne_zero (α := ℤ)) htwo
 
 /-! ## The coefficient conditions on the columns -/
 
@@ -273,7 +246,7 @@ theorem preservesMultiplication_one_add_smul_add_smul (t : R) :
       multiplicationBy (fun a => ((N a k : ℤ) : R)) +
         (multiplicationOperator k).map (Int.cast : ℤ → R) * N.map (Int.cast : ℤ → R) := by
     have h := hcast _ _ (multiplicationOperator_column_derivation hN k)
-    rw [map_intCast_sub, map_intCast_mul', map_intCast_mul', map_multiplicationBy,
+    rw [Matrix.map_sub _ Int.cast_sub, map_intCast_mul, map_intCast_mul, map_multiplicationBy,
       sub_eq_iff_eq_add'] at h
     rw [h]
     abel
@@ -282,18 +255,19 @@ theorem preservesMultiplication_one_add_smul_add_smul (t : R) :
         multiplicationBy (fun a => ((N a k : ℤ) : R)) * N.map (Int.cast : ℤ → R) +
         (multiplicationOperator k).map (Int.cast : ℤ → R) * P.map (Int.cast : ℤ → R) := by
     have h := hcast _ _ (multiplicationOperator_column_dividedSquare hN hNN k)
-    rw [map_intCast_sub, map_intCast_mul', map_intCast_mul', map_intCast_add, map_intCast_mul',
-      map_multiplicationBy, map_multiplicationBy, sub_eq_iff_eq_add'] at h
+    rw [Matrix.map_sub _ Int.cast_sub, map_intCast_mul, map_intCast_mul,
+      Matrix.map_add _ Int.cast_add, map_intCast_mul, map_multiplicationBy, map_multiplicationBy,
+      sub_eq_iff_eq_add'] at h
     rw [h]
     abel
   have f3 : multiplicationBy (fun a => ((P a k : ℤ) : R)) * N.map (Int.cast : ℤ → R) +
       multiplicationBy (fun a => ((N a k : ℤ) : R)) * P.map (Int.cast : ℤ → R) = 0 := by
     have h := hcast _ _ (multiplicationOperator_column_mul hN hNN hPN hNP k)
-    rwa [map_intCast_add, map_intCast_mul', map_intCast_mul', map_multiplicationBy,
-      map_multiplicationBy, map_intCast_zero] at h
+    rwa [Matrix.map_add _ Int.cast_add, map_intCast_mul, map_intCast_mul, map_multiplicationBy,
+      map_multiplicationBy, Matrix.map_zero _ Int.cast_zero] at h
   have f4 : multiplicationBy (fun a => ((P a k : ℤ) : R)) * P.map (Int.cast : ℤ → R) = 0 := by
     have h := hcast _ _ (multiplicationOperator_column_mul_dividedSquare hN hNN hPN hNP hPP k)
-    rwa [map_intCast_mul', map_multiplicationBy, map_intCast_zero] at h
+    rwa [map_intCast_mul, map_multiplicationBy, Matrix.map_zero _ Int.cast_zero] at h
   have hcol : (fun a => (1 + t • N.map (Int.cast : ℤ → R) +
         t ^ 2 • P.map (Int.cast : ℤ → R)) a k) =
       (fun a => if a = k then (1 : R) else 0) + t • (fun a => ((N a k : ℤ) : R)) +
