@@ -112,6 +112,7 @@ theorem mem_shorten_singleton {C : LinearCode R ι} {i : ι} {y : ({i} : Set ι)
 
 /-- Puncturing commutes with a change of coordinates. The retained set is pulled back along the
 coordinate equivalence. -/
+@[simp]
 theorem puncture_reindex {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) (s : Set ι) :
     puncture (reindex C e) (e ⁻¹' s) =
       reindex (puncture C s) (e.subtypeEquiv fun _ ↦ Iff.rfl) := by
@@ -132,6 +133,7 @@ theorem puncture_reindex {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) (s 
     exact (hxu _).trans (huy j)
 
 /-- Shortening commutes with a change of coordinates. -/
+@[simp]
 theorem shorten_reindex {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) (s : Set ι) :
     shorten (reindex C e) (e ⁻¹' s) =
       reindex (shorten C s) (e.subtypeEquiv fun _ ↦ Iff.rfl) := by
@@ -168,6 +170,7 @@ private theorem subtypeSubtypeEquivSubtypeExists_symm_eq {s : Set ι} {t : Set s
 
 /-- Puncturing twice is puncturing once to the flattened set of retained coordinates, up to the
 canonical equivalence between a subtype of a subtype and the corresponding subtype. -/
+@[simp]
 theorem puncture_puncture (C : LinearCode R ι) (s : Set ι) (t : Set s) :
     reindex (puncture (puncture C s) t)
         (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm =
@@ -194,6 +197,7 @@ theorem puncture_puncture (C : LinearCode R ι) (s : Set ι) (t : Set s) :
 
 /-- Shortening twice is shortening once to the flattened set of retained coordinates, up to the
 canonical subtype equivalence. -/
+@[simp]
 theorem shorten_shorten (C : LinearCode R ι) (s : Set ι) (t : Set s) :
     reindex (shorten (shorten C s) t)
         (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm =
@@ -374,12 +378,6 @@ theorem finrank_le_finrank_puncture_add_ncard_compl [Finite ι]
     Module.finrank R C ≤ Module.finrank R (puncture C s) + sᶜ.ncard := by
   refine (finrank_le_finrank_shorten_add_ncard_compl C s).trans ?_
   exact Nat.add_le_add_right (Submodule.finrank_mono (shorten_le_puncture C s)) _
-
-/-- A coordinate equivalence preserves the dimension of a code. -/
-@[simp]
-theorem finrank_reindex {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) :
-    Module.finrank R (reindex C e) = Module.finrank R C := by
-  rw [reindex_def, LinearEquiv.finrank_map_eq]
 
 end Dimension
 

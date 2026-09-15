@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.Algebra.Module.Submodule.Map
+public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
 # Linear codes
@@ -108,5 +109,17 @@ theorem reindex_sup {κ : Type w} (C D : LinearCode R ι) (e : κ ≃ ι) :
 theorem reindex_inf {κ : Type w} (C D : LinearCode R ι) (e : κ ≃ ι) :
     reindex (C ⊓ D) e = reindex C e ⊓ reindex D e :=
   Submodule.map_inf _ (LinearEquiv.funCongrLeft R R e).injective
+
+section Dimension
+
+variable {K : Type u} [DivisionRing K] {ι : Type v}
+
+/-- A coordinate equivalence preserves the dimension of a code. -/
+@[simp]
+theorem finrank_reindex {κ : Type w} (C : LinearCode K ι) (e : κ ≃ ι) :
+    Module.finrank K (reindex C e) = Module.finrank K C := by
+  rw [reindex_def, LinearEquiv.finrank_map_eq]
+
+end Dimension
 
 end TauCeti
