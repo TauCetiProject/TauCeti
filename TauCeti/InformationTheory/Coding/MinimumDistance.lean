@@ -28,6 +28,10 @@ set of words `C`. Its defining equation is `TauCeti.hammingMinDist_def C`.
 
 The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*,
 §§1.2–1.6. The metric comparison uses Mathlib's `Set.Nontrivial.le_infsep_iff`.
+The unbundled minimum-distance design follows Cristina Dueñas Navarro's
+[Mathlib PR #38014](https://github.com/leanprover-community/mathlib4/pull/38014).
+This module generalizes its `Fin n`/Hamming-space interface to arbitrary finite coordinate
+types and dependent alphabets, with `hammingMinDist_eq_infsep` providing the explicit bridge.
 -/
 
 public section
@@ -135,6 +139,15 @@ theorem hammingMinDist_eq_infsep :
       simpa only [Hamming.dist_eq_hammingDist, Hamming.ofHamming_toHamming, hdist] using h
   · have hs := Set.not_nontrivial_iff.mp hC
     rw [hammingMinDist_eq_zero_of_subsingleton hs, Nat.cast_zero, (hs.image _).infsep_zero]
+
+/-- The minimum distance of a two-word code is the distance between its words,
+including when the words coincide. -/
+@[simp]
+theorem hammingMinDist_pair (x y : ∀ i, β i) :
+    hammingMinDist ({x, y} : Set (∀ i, β i)) = hammingDist x y := by
+  have h := hammingMinDist_eq_infsep (C := {x, y})
+  simpa only [Set.image_pair, Set.infsep_pair, Hamming.dist_eq_hammingDist,
+    Hamming.ofHamming_toHamming, Nat.cast_inj] using h
 
 /-- A distance-preserving map on a code preserves its minimum distance. -/
 theorem hammingMinDist_image [Fintype κ] [∀ i, DecidableEq (γ i)] (f : (∀ i, β i) → (∀ i, γ i))
