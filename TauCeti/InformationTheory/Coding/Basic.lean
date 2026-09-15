@@ -16,7 +16,8 @@ A linear code over `R` on coordinates `ι` is a submodule of the word space `ι 
 introduces the carrier `LinearCode` and the basic operation of relabelling the coordinates along
 an equivalence, which every construction on codes is expected to commute with.
 
-Nothing here requires the alphabet or the coordinate type to be finite: a semiring suffices.
+The definitions and non-dimension results require neither the alphabet nor the coordinate type to
+be finite, and a semiring suffices. The dimension result requires a division ring.
 
 ## Main declarations
 
