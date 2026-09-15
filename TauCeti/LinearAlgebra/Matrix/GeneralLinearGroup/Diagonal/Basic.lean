@@ -84,7 +84,8 @@ The action of the torus on the coordinate lines of the standard representation i
 
 ## Main definitions
 
-* `TauCeti.diagGL` embeds a family of units as an invertible diagonal matrix.
+* `TauCeti.diagGL` embeds a family of units as an invertible diagonal matrix, with
+  `TauCeti.coe_inv_of_coe_eq_diagonal` reading the inverse of a matrix that is diagonal.
 * `TauCeti.diagonalTorus`: the subgroup of invertible diagonal matrices in `GL n k`.
 * `TauCeti.diagonalTorusEquiv`: the identification `(Fin n → kˣ) ≃* diagonalTorus k n`.
 
@@ -144,6 +145,16 @@ theorem diagGL_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (t : ι → kˣ)
     diagGL t i j = if i = j then (t i : k) else 0 := by
   rw [diagGL_coe]
   exact Matrix.diagonal_apply ..
+
+/-- **The inverse of an invertible matrix that is diagonal is the diagonal matrix of the inverse
+entries.** Such a matrix is the image of its diagonal under `TauCeti.diagGL`, which is a group
+homomorphism, so its inverse is read off the inverse family. -/
+theorem coe_inv_of_coe_eq_diagonal {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {g : GL ι k} (t : ι → kˣ) (hg : (g : Matrix ι ι k) = Matrix.diagonal fun i => (t i : k)) :
+    ((g⁻¹ : GL ι k) : Matrix ι ι k) = Matrix.diagonal fun i => (↑(t i)⁻¹ : k) := by
+  have hgl : g = diagGL t := Units.ext (by rw [hg, diagGL_coe])
+  rw [hgl, ← map_inv diagGL t, diagGL_coe]
+  exact congrArg Matrix.diagonal (funext fun i => congrArg Units.val (Pi.inv_apply t i))
 
 /-- The diagonal embedding is injective. -/
 theorem diagGL_injective {ι : Type*} [Fintype ι] [DecidableEq ι] :
