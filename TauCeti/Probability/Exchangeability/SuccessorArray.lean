@@ -264,7 +264,6 @@ theorem visitedSuccessorProcess_apply (X : ℕ → Ω → α) (p : α × ℕ) (�
 omit [MeasurableSpace Ω] [MeasurableSpace α] in
 /-- At every cell consumed by a sample path, its visited successor process records the next
 value. -/
-@[simp]
 theorem visitedSuccessorProcess_visitCell (X : ℕ → Ω → α) (n : ℕ) (ω : Ω) :
     visitedSuccessorProcess X (visitCell (fun j => X j ω) n) ω = X (n + 1) ω := by
   rw [visitedSuccessorProcess_apply]

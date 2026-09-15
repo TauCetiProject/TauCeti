@@ -658,7 +658,6 @@ theorem visitedSuccessorArray_eq_self_of_not_mem_range (h : a ∉ Set.range x) :
   · rfl
 
 /-- At every cell consumed by a sequence, its visited successor array records the next value. -/
-@[simp]
 theorem visitedSuccessorArray_visitCell (x : ℕ → α) (n : ℕ) :
     visitedSuccessorArray x (visitCell x n).1 (visitCell x n).2 = x (n + 1) := by
   simp only [visitCell_def, visitedSuccessorArray_eq_successorArray_of_mem_range ⟨n, rfl⟩]
