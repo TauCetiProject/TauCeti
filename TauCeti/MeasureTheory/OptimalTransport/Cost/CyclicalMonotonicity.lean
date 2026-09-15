@@ -11,8 +11,9 @@ public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
 # Cyclical monotonicity for transport costs
 
 This file defines finite `c`-cyclical monotonicity for a transport cost with values in an
-ordered additive monoid, which covers both the extended-nonnegative costs of the primal
-interface and the real costs of the `c`-transform interface. The definition is purely
+additive commutative monoid equipped with a comparison relation, which covers both the
+extended-nonnegative costs of the primal interface and the real costs of the `c`-transform
+interface. The definition is purely
 cost-theoretic: it does not require a measure, topology, or duality theory. A certified plan is
 almost-everywhere concentrated on a cyclically monotone set, and that set can be taken
 measurable as soon as the cost and both potentials are measurable; the converse and statements
@@ -31,7 +32,11 @@ namespace TauCeti
 
 universe u v w
 
-variable {X : Type u} {Y : Type v} {M : Type w} [AddCommMonoid M] [Preorder M] {c : X × Y → M}
+variable {X : Type u} {Y : Type v} {M : Type w} [AddCommMonoid M]
+
+section
+
+variable [LE M] {c : X × Y → M}
 
 /-- A set of pairs is `c`-*cyclically monotone* when no finite family of its points can be
 improved by permuting the targets: for every finite family `(x i, y i)` in the set and every
@@ -82,9 +87,11 @@ theorem add_le_add_swap {S : Set (X × Y)} (h : IsCyclicallyMonotone c S)
 
 end IsCyclicallyMonotone
 
+end
+
 /-- The empty set is cyclically monotone for every cost. -/
 @[simp]
-theorem isCyclicallyMonotone_empty (c : X × Y → M) :
+theorem isCyclicallyMonotone_empty [Preorder M] (c : X × Y → M) :
     IsCyclicallyMonotone c (∅ : Set (X × Y)) :=
   isCyclicallyMonotone_iff.2 fun n x y hmem σ ↦ by
     rcases Nat.eq_zero_or_pos n with rfl | hn

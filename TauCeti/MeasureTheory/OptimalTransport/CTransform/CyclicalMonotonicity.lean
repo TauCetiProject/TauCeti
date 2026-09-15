@@ -10,7 +10,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Cost.CyclicalMonotonicity
 import Mathlib.Logic.Equiv.Fin.Rotate
 
 /-!
-# Cyclically monotone sets are exactly the contact sets of `c`-concave potentials
+# Cyclically monotone sets admit `c`-concave contact potentials
 
 For a finite real cost `c`, a pair of potentials `φ` and `ψ` satisfying the Kantorovich dual
 constraint `φ x + ψ y ≤ c (x, y)` meets it with equality on its contact set, and no finite
