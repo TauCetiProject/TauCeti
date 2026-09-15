@@ -102,8 +102,11 @@ variable (k : Type u) (A : Type v) [Field k] [Ring A] [Algebra k A]
 /-- A linear functional whose multiplication pairing is nondegenerate on both sides. -/
 @[ext]
 structure FrobeniusFunctional where
+  /-- The underlying linear functional. -/
   functional : A →ₗ[k] k
+  /-- An element killed by the functional against every right multiplier is zero. -/
   left_nondegenerate : ∀ a : A, (∀ b : A, functional (a * b) = 0) → a = 0
+  /-- An element killed by the functional against every left multiplier is zero. -/
   right_nondegenerate : ∀ b : A, (∀ a : A, functional (a * b) = 0) → b = 0
 
 namespace FrobeniusFunctional
@@ -240,6 +243,7 @@ variable (k : Type u) (A : Type v) [Field k] [Ring A] [Algebra k A]
 /-- A Frobenius functional whose multiplication pairing is symmetric. -/
 @[ext]
 structure SymmetricFrobeniusFunctional extends FrobeniusFunctional k A where
+  /-- The functional is a trace: it is unchanged by swapping a product's factors. -/
   trace_mul_comm : ∀ a b : A, functional (a * b) = functional (b * a)
 
 namespace SymmetricFrobeniusFunctional
