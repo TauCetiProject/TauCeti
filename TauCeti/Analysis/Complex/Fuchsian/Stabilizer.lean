@@ -23,8 +23,6 @@ derivative at the fixed point is a primitive root of unity of the stabilizer's o
 
 * `Subgroup.instIsCyclicStabilizer`: the point stabilizers of a discrete subgroup
   of `PSL(2, ℝ)` are cyclic.
-* `Subgroup.exists_generator_stabilizer_of_discrete`: a point stabilizer has a generator whose
-  order and derivative order equal the stabilizer order, with elliptic nontrivial representatives.
 
 ## References
 
@@ -47,30 +45,5 @@ namespace Subgroup
 instance instIsCyclicStabilizer (Γ : Subgroup PSL(2, ℝ)) [DiscreteTopology Γ] (z : ℍ) :
     IsCyclic (stabilizer Γ z) :=
   isCyclic_stabilizer Γ z
-
-/-- Every point stabilizer in a discrete subgroup of `PSL(2, ℝ)` is finite cyclic. It has a
-generator `g` whose order is the order of the stabilizer and of the derivative of `g` at the fixed
-point, and if `g ≠ 1` then every `SL(2, ℝ)` representative of `g` is elliptic. -/
-theorem exists_generator_stabilizer_of_discrete (G : Subgroup PSL(2, ℝ)) [DiscreteTopology G]
-    (τ : ℍ) :
-    Finite (stabilizer G τ) ∧ ∃ g : stabilizer G τ, (∀ x, x ∈ zpowers g) ∧
-      orderOf g = Nat.card (stabilizer G τ) ∧
-      orderOf (Matrix.ProjectiveSpecialLinearGroup.smulDeriv (g.1.1 : PSL(2, ℝ)) τ) =
-        orderOf g ∧
-      ∀ a : SL(2, ℝ), (a : PSL(2, ℝ)) = g.1.1 → g ≠ 1 →
-        (Matrix.SpecialLinearGroup.mapGL ℝ a).IsElliptic := by
-  obtain ⟨g, hg⟩ := (isCyclic_stabilizer G τ).exists_generator
-  refine ⟨inferInstance, g, hg, orderOf_eq_card_of_forall_mem_zpowers hg,
-    stabilizerDeriv_apply G τ g ▸ orderOf_stabilizerDeriv G τ g, fun a ha hne ↦ ?_⟩
-  apply Matrix.SpecialLinearGroup.isElliptic_of_smul_eq_self_of_ne_one
-  · have hfix : (a : PSL(2, ℝ)) • τ = τ := by
-      rw [ha]
-      exact g.property
-    simpa only [UpperHalfPlane.pslMk_smul] using hfix
-  · intro haone
-    apply hne
-    apply Subtype.ext
-    apply Subtype.ext
-    exact ha.symm.trans haone
 
 end Subgroup
