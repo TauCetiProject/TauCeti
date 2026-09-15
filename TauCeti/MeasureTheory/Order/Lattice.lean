@@ -8,19 +8,18 @@ module
 public import Mathlib.MeasureTheory.Order.Lattice
 
 /-!
-# Measurability of finite lattice extrema
+# Almost-everywhere measurability of finite lattice extrema
 
-The supremum and infimum of a nonempty finite family of measurable functions into a semilattice
-with measurable join, resp. meet, are measurable, and likewise for almost-everywhere measurable
-functions. In a linear order these are the maximum and the minimum, which is what lets the two
-extremes of a finite family of random variables — and hence their range — be treated as random
-variables in their own right: their laws are pushforwards, and their distribution functions are
-computed from those of the family.
+The supremum of a nonempty finite family of almost-everywhere measurable functions into a
+semilattice with measurable join is almost everywhere measurable, and so are the coordinatewise
+supremum and infimum `x ↦ sup' (fun n => f n x)` and `x ↦ inf' (fun n => f n x)`. In a linear
+order these are the maximum and the minimum, which is what lets the two extremes of a finite
+family of random variables — and hence their range — be treated as random variables in their own
+right: their laws are pushforwards, and their distribution functions are computed from those of
+the family.
 
-Mathlib proves the measurable supremum, `Finset.measurable_sup'`, and has no infimum counterpart;
-this file supplies the almost-everywhere supremum and the coordinatewise versions
-`x ↦ sup' (fun n => f n x)` and `x ↦ inf' (fun n => f n x)`, which is the spelling their
-consumers use.
+Mathlib proves the measurable supremum, `Finset.measurable_sup'`; this file supplies the three
+almost-everywhere forms in the coordinatewise spelling their consumers use.
 -/
 
 public section
