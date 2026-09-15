@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.Data.Matrix.ColumnRowPartitioned
+public import TauCeti.LinearAlgebra.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Matrix.Rank
 
@@ -16,7 +16,8 @@ A linear code on a finite coordinate type `ι` over `R` is a submodule of `ι �
 develops the two matrix presentations of such a code.
 
 * A matrix `G : Matrix ρ ι R` *generates* its row space `G.generatorCode`, the range of
-  `G.vecMulLinear`; the rows of `G` are the images of the message vectors `a ↦ a ᵥ* G`.
+  `G.vecMulLinear`; its rows are the images of the standard basis message vectors, while an
+  arbitrary message `a` maps to the corresponding linear combination `a ᵥ* G` of those rows.
 * A matrix `H : Matrix σ ι R` *checks* the code `H.parityCheckCode`, the kernel of
   `H.mulVecLin`; a word `x` lies in it exactly when its syndrome `H *ᵥ x` vanishes.
 
@@ -153,24 +154,6 @@ theorem generatorCode_submatrix_equiv (G : Matrix ρ ι R) (e : ι' ≃ ι) :
 theorem IsGeneratorMatrix.mem_iff {G : Matrix ρ ι R} {C : Submodule R (ι → R)}
     (hG : G.IsGeneratorMatrix C) {x : ι → R} : x ∈ C ↔ ∃ a : ρ → R, a ᵥ* G = x := by
   rw [← hG, mem_generatorCode]
-
-omit [Fintype ρ] in
-/-- The rows of a systematic matrix `[I | A]` are linearly independent. -/
-theorem linearIndependent_row_fromCols_one [Finite ρ] [DecidableEq ρ] (A : Matrix ρ τ R) :
-    LinearIndependent R (fromCols (1 : Matrix ρ ρ R) A).row := by
-  cases nonempty_fintype ρ
-  rw [← vecMul_injective_iff]
-  intro a b h
-  simpa using congrArg (· ∘ Sum.inl) h
-
-omit [Fintype ρ] in
-/-- The rows of a systematic matrix `[B | I]` are linearly independent. -/
-theorem linearIndependent_row_fromCols_one_right [Finite τ] [DecidableEq τ] (B : Matrix τ ρ R) :
-    LinearIndependent R (fromCols B (1 : Matrix τ τ R)).row := by
-  cases nonempty_fintype τ
-  rw [← vecMul_injective_iff]
-  intro a b h
-  simpa using congrArg (· ∘ Sum.inr) h
 
 end Semiring
 
@@ -371,10 +354,10 @@ namespace Submodule
 
 open Matrix
 
-variable {K ι : Type*} [Field K]
+variable {K ι : Type*}
 
 /-- Every linear code has a generator matrix with `finrank K C` linearly independent rows. -/
-theorem exists_isGeneratorMatrix [Finite ι] (C : Submodule K (ι → K)) :
+theorem exists_isGeneratorMatrix [DivisionRing K] [Finite ι] (C : Submodule K (ι → K)) :
     ∃ G : Matrix (Fin (finrank K C)) ι K, LinearIndependent K G.row ∧ G.IsGeneratorMatrix C := by
   let b := Module.finBasis K C
   refine ⟨Matrix.of fun i ↦ (b i : ι → K), b.linearIndependent.map' C.subtype C.ker_subtype, ?_⟩
@@ -387,7 +370,7 @@ theorem exists_isGeneratorMatrix [Finite ι] (C : Submodule K (ι → K)) :
 
 /-- Every linear code has a parity-check matrix with `Fintype.card ι - finrank K C` linearly
 independent rows. -/
-theorem exists_isParityCheckMatrix [Fintype ι] (C : Submodule K (ι → K)) :
+theorem exists_isParityCheckMatrix [Field K] [Fintype ι] (C : Submodule K (ι → K)) :
     ∃ H : Matrix (Fin (Fintype.card ι - finrank K C)) ι K,
       LinearIndependent K H.row ∧ H.IsParityCheckMatrix C := by
   classical
