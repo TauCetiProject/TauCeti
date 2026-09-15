@@ -325,13 +325,12 @@ theorem comap_id : comap (AddMonoidHom.id S) = id := by
 @[simp]
 theorem comap_comap (f : S →+ T) (f' : T →+ U) (x : AffineSemigroupComplexPoint U) :
     comap f (comap f' x) = comap (f'.comp f) x := by
-  rw [comap, comap]
-  change
-    (x.comp (MonoidAlgebra.mapDomainAlgHom ℂ ℂ (AddMonoidHom.toMultiplicative f'))).comp
-        (MonoidAlgebra.mapDomainAlgHom ℂ ℂ (AddMonoidHom.toMultiplicative f)) =
-      x.comp (MonoidAlgebra.mapDomainAlgHom ℂ ℂ
-        ((AddMonoidHom.toMultiplicative f').comp (AddMonoidHom.toMultiplicative f)))
-  rw [MonoidAlgebra.mapDomainAlgHom_comp, AlgHom.comp_assoc]
+  -- Mathlib supplies `AddMonoidHom.toMultiplicative_id` but no composition counterpart.
+  have hcomp : AddMonoidHom.toMultiplicative (f'.comp f) =
+      (AddMonoidHom.toMultiplicative f').comp (AddMonoidHom.toMultiplicative f) := by
+    ext s
+    simp
+  simp only [comap, hcomp, MonoidAlgebra.mapDomainAlgHom_comp, AlgHom.comp_assoc]
 
 /-- The pullback of complex points is contravariant for composition. -/
 theorem comap_comp (f : S →+ T) (f' : T →+ U) : comap (f'.comp f) = comap f ∘ comap f' := by
