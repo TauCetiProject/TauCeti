@@ -22,7 +22,7 @@ in finite coordinate spaces.
 
 public section
 
-namespace TauCeti.RingEquiv
+namespace TauCeti
 
 open Matrix
 
@@ -89,4 +89,4 @@ theorem sesquilinearForm_flip_bijective (σ : R ≃+* R) :
     ext x
     simp [sesquilinearForm_apply, dotProduct, mul_comm]
 
-end TauCeti.RingEquiv
+end TauCeti
