@@ -274,7 +274,6 @@ omit [CompleteSpace X] in
 /-- The graph of the generator of the complexified semigroup is obtained by complexifying the
 graph of the original generator componentwise. Thus `Aℂ (x + i y) = A x + i A y`, with the
 domain condition on both components included in the statement. -/
-@[simp]
 theorem mem_complexify_generator_graph_iff (S : StronglyContinuousSemigroup X)
     (z w : TauCeti.Complexification X) :
     (z, w) ∈ S.complexify.generator.graph ↔
@@ -321,7 +320,6 @@ omit [CompleteSpace X] in
 /-- The graph of the complex-linear generator is the componentwise complexification of the
 original real generator graph. This is the complex-linear form of
 `mem_complexify_generator_graph_iff`. -/
-@[simp]
 theorem mem_complexify_complexGenerator_graph_iff (S : StronglyContinuousSemigroup X)
     (z w : TauCeti.Complexification X) :
     (z, w) ∈ (S.complexify.complexGenerator S.isComplexLinear_complexify).graph ↔
