@@ -45,7 +45,7 @@ theorem IsBorel.conjugate {I : HopfIdeal k H}
     IsBorel k (_root_.CommHopfAlgCat.of k H) (I.conjugate g) := by
   have h := hI.comapOfIso (HopfAlgebra.pointConjugationFiniteTypeIso g)
   rw [conjugate_eq_comapOfSurjective]
-  exact h
+  simpa only [HopfAlgebra.pointConjugationFiniteTypeIso_hom] using h
 
 /-- Borel status is invariant under conjugation by a rational point.
 

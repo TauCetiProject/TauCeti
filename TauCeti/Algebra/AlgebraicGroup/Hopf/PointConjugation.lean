@@ -187,10 +187,20 @@ category of finite-type commutative Hopf algebras.
 
 This is the categorical packaging of `pointConjugationBialgEquiv`, used to transport
 isomorphism-invariant properties of closed subgroup schemes along conjugation. -/
-@[expose] noncomputable def pointConjugationFiniteTypeIso (g : WithConv (H →ₐ[R] R)) :
+noncomputable def pointConjugationFiniteTypeIso (g : WithConv (H →ₐ[R] R)) :
     FiniteTypeCommHopfAlgCat.of R H ≅ FiniteTypeCommHopfAlgCat.of R H :=
   ObjectProperty.isoMk _ <|
     _root_.CommHopfAlgCat.isoMk (pointConjugationBialgEquiv g)
+
+/-- The underlying bialgebra map of the finite-type point-conjugation isomorphism is the
+point-conjugation bialgebra equivalence. -/
+@[simp]
+theorem pointConjugationFiniteTypeIso_hom (g : WithConv (H →ₐ[R] R)) :
+    FiniteTypeCommHopfAlgCat.toBialgHom (pointConjugationFiniteTypeIso g).hom =
+      (pointConjugationBialgEquiv g).toBialgHom := by
+  rw [BialgEquiv.toBialgHom_eq_coe]
+  simp only [pointConjugationFiniteTypeIso, ObjectProperty.isoMk_hom,
+    _root_.CommHopfAlgCat.isoMk_hom, FiniteTypeCommHopfAlgCat.toBialgHom_ofHom]
 
 end FiniteType
 
