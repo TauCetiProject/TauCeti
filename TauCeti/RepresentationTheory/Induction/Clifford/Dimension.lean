@@ -39,8 +39,9 @@ of `G` restricts to a linear character of `N` that the whole group fixes.
   constituent together with its decomposition of `Res_N W`, the multiplicity and the identity
   `dim W = e * [G : inertia V] * dim V` as natural numbers.
 * `FDRep.clifford_restrict_dvd_finrank`: the divisibilities that identity contains,
-  `[G : inertia V] ∣ dim W` and `dim V ∣ dim W`, together with `[G : inertia V] ∣ [G : N]`, stated
-  for a constituent `V` supplied with its decomposition of `Res_N W`.
+  `[G : inertia V] ∣ dim W` and `dim V ∣ dim W`, together with `[G : inertia V] ∣ [G : N]` and the
+  count `[G : inertia V] ∣ dim W / (e * dim V)` with the multiplicity divided out, stated for a
+  constituent `V` supplied with its decomposition of `Res_N W`.
 * `FDRep.clifford_restrict_inertia_eq_top_of_coprime`: when the dimension of `W` is **coprime**
   to `[G : N]`, the restriction of `W` to `N` is isomorphic to `e` copies of a single constituent
   `V` whose inertia group is all of `G`, the character of `W` on `N` being `e` times that of `V`
@@ -95,7 +96,8 @@ theorem clifford_restrict_finrank [IsAlgClosed k] (W : FDRep k G) [Simple W] :
 
 /-- **The divisibilities in Clifford's theorem.**  For an irreducible constituent `V` of the
 restriction of an irreducible `W` to a normal subgroup, both the index of the inertia group of `V`
-and the dimension of `V` divide the dimension of `W`; the index divides `[G : N]` as well.
+and the dimension of `V` divide the dimension of `W`; the index divides `[G : N]`, and it divides
+the quotient `dim W / (e * dim V)` that the dimension identity leaves.
 
 The decomposition `Res_N W ≅ V.cliffordSum e` is carried along from
 `FDRep.clifford_restrict_finrank`, so that `V` is exhibited as a constituent of the restriction and
@@ -105,18 +107,24 @@ irreducible representation of `N`.
 This is the form in which the dimension identity of `FDRep.clifford_restrict_finrank` is used.  The
 number of distinct conjugates occurring in the restriction is `[G : inertia V]`, and it is
 constrained from two sides at once: by the degree of `W`, through the dimension identity, and by
-the index of `N`, through `TauCeti.inertia_index_dvd_index`.  Neither constraint mentions the
-multiplicity `e`. -/
+the index of `N`, through `TauCeti.le_inertia`.  Neither constraint mentions the multiplicity `e`,
+which the last divisibility divides out instead: `dim W / (e * dim V)` is the roadmap's form of the
+count of distinct conjugates. -/
 theorem clifford_restrict_dvd_finrank [IsAlgClosed k] (W : FDRep k G) [Simple W] :
     ∃ (V : FDRep k N) (_ : Simple V) (hfinite : Finite (G ⧸ inertia V)),
       let _ := hfinite
       ∃ e : ℕ, e ≠ 0 ∧ Nonempty (resFDRep N W ≅ V.cliffordSum e) ∧
         (inertia V).index ∣ Module.finrank k W ∧ Module.finrank k V ∣ Module.finrank k W ∧
-          (inertia V).index ∣ N.index := by
+          (inertia V).index ∣ N.index ∧
+            (inertia V).index ∣ Module.finrank k W / (e * Module.finrank k V) := by
   obtain ⟨V, hV, hfinite, e, he, hiso, hdim⟩ := W.clifford_restrict_finrank (N := N)
   let _ : Finite (G ⧸ inertia V) := hfinite
-  exact ⟨V, hV, hfinite, e, he, hiso, ⟨e * Module.finrank k V, by rw [hdim]; ring⟩,
-    ⟨e * (inertia V).index, by rw [hdim]; ring⟩, inertia_index_dvd_index V⟩
+  refine ⟨V, hV, hfinite, e, he, hiso, ⟨e * Module.finrank k V, by rw [hdim]; ring⟩,
+    ⟨e * (inertia V).index, by rw [hdim]; ring⟩, Subgroup.index_dvd_of_le (le_inertia V), ?_⟩
+  rcases Nat.eq_zero_or_pos (e * Module.finrank k V) with hzero | hpos
+  · simp [hzero]
+  · rw [show Module.finrank k W = e * Module.finrank k V * (inertia V).index by rw [hdim]; ring,
+      Nat.mul_div_cancel_left _ hpos]
 
 /-- **Clifford theory when the dimension is coprime to the index.**  If the dimension of an
 irreducible `W : FDRep k G` is coprime to `[G : N]`, then `Res_N W` is isomorphic to `e` copies of
@@ -144,7 +152,7 @@ theorem clifford_restrict_inertia_eq_top_of_coprime [IsAlgClosed k] (W : FDRep k
   -- The index of the inertia group divides both the dimension and the index of `N`.
   have hdvdW : (inertia V).index ∣ Module.finrank k W :=
     ⟨e * Module.finrank k V, by rw [hdim]; ring⟩
-  have hdvdN : (inertia V).index ∣ N.index := inertia_index_dvd_index V
+  have hdvdN : (inertia V).index ∣ N.index := Subgroup.index_dvd_of_le (le_inertia V)
   have hone : (inertia V).index = 1 := Nat.eq_one_of_dvd_coprimes hcop hdvdW hdvdN
   have htop : inertia V = ⊤ := Subgroup.index_eq_one.1 hone
   -- A single inertia coset means a single summand, whose conjugate of `V` is `V` again.
