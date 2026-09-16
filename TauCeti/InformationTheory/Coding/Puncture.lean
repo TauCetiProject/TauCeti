@@ -25,6 +25,7 @@ coordinates are discarded.
 
 * `puncture`: restriction of a code to a retained coordinate set.
 * `shorten`: restriction after imposing zero outside the retained coordinate set.
+* `punctureAt` and `shortenAt`: the corresponding operations deleting one coordinate.
 * `mem_puncture` and `mem_shorten`: membership characterizations.
 * `finrank_puncture_le` and `finrank_shorten_eq`: dimension control.
 
@@ -104,6 +105,51 @@ theorem mem_shorten_singleton {C : LinearCode F ι} {i : ι} {y : ({i} : Set ι)
   · rintro ⟨x, hxC, hx0, hxy⟩
     refine ⟨x, hxC, fun j hj ↦ hx0 j (by simpa using hj), fun j ↦ ?_⟩
     simpa only [Subsingleton.elim j ⟨i, Set.mem_singleton i⟩] using hxy
+
+/-- Puncturing at `i` deletes that coordinate and retains all the others. -/
+noncomputable def punctureAt (C : LinearCode F ι) (i : ι) :
+    LinearCode F ({i}ᶜ : Set ι) :=
+  puncture C {i}ᶜ
+
+/-- Puncturing at one coordinate is puncturing with its singleton complement retained. -/
+theorem punctureAt_def (C : LinearCode F ι) (i : ι) :
+    punctureAt C i = puncture C {i}ᶜ := (rfl)
+
+/-- Shortening at `i` imposes zero there and retains all the other coordinates. -/
+noncomputable def shortenAt (C : LinearCode F ι) (i : ι) :
+    LinearCode F ({i}ᶜ : Set ι) :=
+  shorten C {i}ᶜ
+
+/-- Shortening at one coordinate is shortening with its singleton complement retained. -/
+theorem shortenAt_def (C : LinearCode F ι) (i : ι) :
+    shortenAt C i = shorten C {i}ᶜ := (rfl)
+
+/-- A word belongs to the code punctured at `i` exactly when it is the restriction of a
+codeword to the other coordinates. -/
+@[simp]
+theorem mem_punctureAt {C : LinearCode F ι} {i : ι} {y : ({i}ᶜ : Set ι) → F} :
+    y ∈ punctureAt C i ↔ ∃ x ∈ C, ∀ j : ({i}ᶜ : Set ι), x j = y j := by
+  rw [punctureAt, mem_puncture]
+
+/-- A word belongs to the code shortened at `i` exactly when it extends to a codeword which is
+zero at `i`. -/
+@[simp]
+theorem mem_shortenAt {C : LinearCode F ι} {i : ι} {y : ({i}ᶜ : Set ι) → F} :
+    y ∈ shortenAt C i ↔ ∃ x ∈ C, x i = 0 ∧ ∀ j : ({i}ᶜ : Set ι), x j = y j := by
+  rw [shortenAt, mem_shorten]
+  constructor
+  · rintro ⟨x, hxC, hx0, hxy⟩
+    exact ⟨x, hxC, hx0 i (by simp), hxy⟩
+  · rintro ⟨x, hxC, hxi, hxy⟩
+    refine ⟨x, hxC, ?_, hxy⟩
+    intro j hj
+    classical
+    have hji : j = i := by
+      by_contra hne
+      apply hj
+      simpa using hne
+    subst j
+    exact hxi
 
 /-- Puncturing commutes with a change of coordinates. The retained set is pulled back along the
 coordinate equivalence. -/

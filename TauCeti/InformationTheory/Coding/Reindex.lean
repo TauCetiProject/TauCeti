@@ -68,7 +68,7 @@ theorem reindex_refl (C : LinearCode F ι) : reindex C (Equiv.refl ι) = C := by
 
 /-- Successive changes of coordinates compose in their contravariant order. -/
 @[simp]
-theorem reindex_trans {κ' : Type*} (C : LinearCode F ι) (e : κ ≃ ι) (f : κ' ≃ κ) :
+theorem reindex_reindex {κ' : Type*} (C : LinearCode F ι) (e : κ ≃ ι) (f : κ' ≃ κ) :
     reindex (reindex C e) f = reindex C (f.trans e) := by
   rw [reindex_def, reindex_def, reindex_def, ← Submodule.map_comp, ← LinearEquiv.coe_trans,
     ← LinearEquiv.funCongrLeft_comp]
