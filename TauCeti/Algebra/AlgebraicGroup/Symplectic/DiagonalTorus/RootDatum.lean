@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Weight
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Classical
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Datum
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NonSimplyLaced
 
 /-!
 # The root datum of the symplectic group relative to its diagonal torus
@@ -215,6 +216,30 @@ noncomputable def diagonalRootDatum (m : ℕ) :
   (typeCSimplyConnectedRootDatum m).map
     ((RootSubgroupIndex.equivTypeCIndex m).trans (typeCIndexEquiv m)).symm
     (characterEquiv m) (cocharacterEquiv m)
+
+/-- The root datum of the symplectic diagonal torus is reduced. -/
+instance instIsReducedDiagonalRootDatum (m : ℕ) : (diagonalRootDatum.{u} m).IsReduced := by
+  let P := typeCSimplyConnectedRootDatum m
+  let e := ((RootSubgroupIndex.equivTypeCIndex m).trans (typeCIndexEquiv m)).symm
+  let f := characterEquiv.{u} m
+  constructor
+  intro i j h
+  have h' : ¬ LinearIndependent ℤ ![P.root (e.symm i), P.root (e.symm j)] := by
+    intro hli
+    apply h
+    change LinearIndependent ℤ ![f (P.root (e.symm i)), f (P.root (e.symm j))]
+    have hm := hli.map' f.toLinearMap f.ker
+    have hfun : f.toLinearMap ∘ ![P.root (e.symm i), P.root (e.symm j)] =
+        ![f (P.root (e.symm i)), f (P.root (e.symm j))] := by
+      funext k
+      fin_cases k <;> rfl
+    rw [hfun] at hm
+    exact hm
+  rcases RootPairing.IsReduced.eq_or_eq_neg (P := P) (e.symm i) (e.symm j) h' with hij | hij
+  · left
+    simpa [diagonalRootDatum, P, e, f, RootPairing.map] using congrArg f hij
+  · right
+    simpa [diagonalRootDatum, P, e, f, RootPairing.map] using congrArg f hij
 
 /-- The root of `diagonalRootDatum` indexed by a root subgroup is the classical form of the pinned
 type `Cₘ` root with the corresponding index. -/
