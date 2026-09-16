@@ -11,11 +11,12 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Decomposition
 /-!
 # Base change of the Witt decomposition
 
-Scalar extension preserves the hyperbolic plane, so the Witt index cannot decrease under a field
+Scalar extension preserves the hyperbolic class, so the Witt index cannot decrease under a field
 extension.  It is unchanged when the anisotropic part remains anisotropic after base change.
 
 ## Main results
 
+* `TauCeti.RegularFormClass.baseChange_wittDecomposition`: base change of the Witt decomposition.
 * `TauCeti.RegularFormClass.wittIndex_le_wittIndex_baseChange`: the Witt index cannot decrease.
 * `TauCeti.RegularFormClass.wittIndex_baseChange_eq_iff`: the index is unchanged exactly when the
   extended anisotropic part is anisotropic.
@@ -42,37 +43,18 @@ variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
 
 variable [Invertible (2 : K)]
 
-/-- Base change preserves the hyperbolic class. -/
-@[simp]
-theorem RegularFormClass.baseChange_hyperbolicClass :
+/-- Base change of the Witt decomposition: the extended class is the same number of hyperbolic
+planes plus the extended anisotropic part. -/
+theorem RegularFormClass.baseChange_wittDecomposition (c : RegularFormClass K) :
     letI : Invertible (2 : L) :=
       (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-    RegularFormClass.baseChange L (hyperbolicClass K) = hyperbolicClass L := by
+    c.baseChange L =
+      RegularFormClass.wittIndex c • hyperbolicClass L + c.anisotropicPart.baseChange L := by
   let _ : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  rw [← formClass_hyperbolicPlane, ← QuadraticForm.formClass_baseChange,
-    ← formClass_hyperbolicPlane]
-  apply (formClass_eq_iff _ _ _ _).mpr
-  have hK : hyperbolicPlane K =
-      presentedForm (⟨2, ![1, -1]⟩ : RegularFormPresentation K) :=
-    presentedForm_one_neg_one.symm
-  have hp : RegularFormPresentation.baseChange L
-      (⟨2, ![1, -1]⟩ : RegularFormPresentation K) =
-      (⟨2, ![1, -1]⟩ : RegularFormPresentation L) := by
-    refine RegularFormPresentation.ext
-      (RegularFormPresentation.fst_baseChange L _) fun i ↦ ?_
-    rw [RegularFormPresentation.baseChange_apply]
-    apply Units.ext
-    generalize Fin.cast (RegularFormPresentation.fst_baseChange L _) i = j
-    fin_cases j <;> simp
-  rw [hK]
-  have hbase : ((presentedForm (⟨2, ![1, -1]⟩ : RegularFormPresentation K)).baseChange L).Equivalent
-      (presentedForm (RegularFormPresentation.baseChange L
-        (⟨2, ![1, -1]⟩ : RegularFormPresentation K))) :=
-    ⟨presentedFormBaseChange (L := L) _⟩
-  exact hbase.trans (by
-    rw [hp, presentedForm_one_neg_one]
-    exact QuadraticMap.Equivalent.refl _)
+  conv_lhs => rw [RegularFormClass.wittDecomposition c]
+  rw [RegularFormClass.baseChange_add, RegularFormClass.baseChange_nsmul,
+    RegularFormClass.baseChange_hyperbolicClass]
 
 /-! ### Witt index -/
 
@@ -83,13 +65,8 @@ theorem RegularFormClass.wittIndex_le_wittIndex_baseChange (c : RegularFormClass
     RegularFormClass.wittIndex c ≤ RegularFormClass.wittIndex (c.baseChange L) := by
   let _ : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  have hdecomp := congrArg (RegularFormClass.baseChange L)
-    (RegularFormClass.wittDecomposition c)
-  simp only [RegularFormClass.baseChange_add, RegularFormClass.baseChange_nsmul,
-    RegularFormClass.baseChange_hyperbolicClass] at hdecomp
-  have h := RegularFormClass.wittIndex_nsmul_hyperbolicClass_add
-    (K := L) (RegularFormClass.wittIndex c) (c.anisotropicPart.baseChange L)
-  rw [hdecomp, h]
+  rw [RegularFormClass.baseChange_wittDecomposition,
+    RegularFormClass.wittIndex_nsmul_hyperbolicClass_add]
   exact Nat.le_add_right _ _
 
 /-- The anisotropic part commutes with base change when its base change remains anisotropic. -/
@@ -100,12 +77,7 @@ theorem RegularFormClass.anisotropicPart_baseChange (c : RegularFormClass K) :
       RegularFormClass.anisotropicPart (c.baseChange L) = c.anisotropicPart.baseChange L := by
   let _ : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  intro ha
-  have hdecomp := congrArg (RegularFormClass.baseChange L)
-    (RegularFormClass.wittDecomposition c)
-  simp only [RegularFormClass.baseChange_add, RegularFormClass.baseChange_nsmul,
-    RegularFormClass.baseChange_hyperbolicClass] at hdecomp
-  exact RegularFormClass.anisotropicPart_eq ha hdecomp
+  exact fun ha ↦ RegularFormClass.anisotropicPart_eq ha c.baseChange_wittDecomposition
 
 /-- The Witt index is unchanged after base change exactly when the extended anisotropic part
 remains anisotropic. -/
@@ -116,11 +88,8 @@ theorem RegularFormClass.wittIndex_baseChange_eq_iff (c : RegularFormClass K) :
       RegularFormClass.Anisotropic (c.anisotropicPart.baseChange L) := by
   let _ : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  have hdecomp := congrArg (RegularFormClass.baseChange L)
-    (RegularFormClass.wittDecomposition c)
-  simp only [RegularFormClass.baseChange_add, RegularFormClass.baseChange_nsmul,
-    RegularFormClass.baseChange_hyperbolicClass] at hdecomp
-  rw [hdecomp, RegularFormClass.wittIndex_nsmul_hyperbolicClass_add]
+  rw [RegularFormClass.baseChange_wittDecomposition,
+    RegularFormClass.wittIndex_nsmul_hyperbolicClass_add]
   constructor
   · intro h
     rw [← RegularFormClass.wittIndex_eq_zero_iff]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
+public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
 
 /-!
@@ -41,6 +42,8 @@ extension, in particular to the completions of a number field.
 * `TauCeti.RegularFormClass.baseChange_self` and
   `TauCeti.RegularFormClass.baseChange_baseChange`: scalar extension along the identity is the
   identity, and iterated scalar extension along a tower is scalar extension along the composite.
+* `TauCeti.RegularFormClass.baseChange_hyperbolicClass`: scalar extension preserves the hyperbolic
+  class.
 * `QuadraticForm.formClass_baseChange`: the class of an extended form is the extension of its
   class.
 * `TauCeti.RegularFormClass.discr_baseChange`: the discriminant commutes with scalar extension.
@@ -320,6 +323,22 @@ theorem RegularFormClass.baseChange_one :
     RegularFormClass.baseChange L (1 : RegularFormClass K) = 1 := by
   rw [RegularFormClass.one_def, RegularFormClass.baseChange_mk, RegularFormClass.one_def,
     RegularFormPresentation.baseChange_one]
+
+/-- Base change preserves the hyperbolic class. -/
+@[simp]
+theorem RegularFormClass.baseChange_hyperbolicClass :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+    RegularFormClass.baseChange L (hyperbolicClass K) = hyperbolicClass L := by
+  let _ : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  rw [hyperbolicClass_def, hyperbolicClass_def, RegularFormClass.baseChange_mk]
+  refine congrArg _ (RegularFormPresentation.ext
+    (RegularFormPresentation.fst_baseChange L _) fun i ↦ ?_)
+  rw [RegularFormPresentation.baseChange_apply]
+  apply Units.ext
+  generalize Fin.cast (RegularFormPresentation.fst_baseChange L _) i = j
+  fin_cases j <;> simp
 
 variable [Invertible (2 : L)]
 
