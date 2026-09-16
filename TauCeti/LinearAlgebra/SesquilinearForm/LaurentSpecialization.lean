@@ -94,7 +94,8 @@ variable [Module R N] [IsScalarTower R R[T;T⁻¹] N]
 /-- **A Laurent scalar acts on the specialization at `ε` by its value at `ε`.**  In particular
 `q` acts as `ε`. -/
 @[simp]
-theorem mk_smul (p : R[T;T⁻¹]) (x : N) : mk ε (p • x) = laurentEval ε p • mk ε x := by
+theorem mk_smul (p : R[T;T⁻¹]) (x : N) : p • mk ε x = laurentEval ε p • mk ε x := by
+  rw [← map_smul]
   have hp :
       p - algebraMap R R[T;T⁻¹] (laurentEval ε p) ∈ RingHom.ker (laurentEval (R := R) ε) := by
     rw [RingHom.mem_ker, map_sub, AlgHom.commutes, Algebra.algebraMap_self, RingHom.id_apply,

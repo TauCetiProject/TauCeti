@@ -388,14 +388,14 @@ variable {E} (ε : ℤˣ)
 theorem mk_ofExactK0_shiftZPow (n : ℤ) (x : ExactK0 E.toExactStructure) :
     LaurentSpecialization.mk ε (ofExactK0 E (E.shiftZPow n x)) =
       ((ε ^ n : ℤˣ) : ℤ) • LaurentSpecialization.mk ε (ofExactK0 E x) := by
-  rw [← T_smul, LaurentSpecialization.mk_smul, laurentEval_T]
+  rw [← T_smul, map_smul, LaurentSpecialization.mk_smul, laurentEval_T]
 
 /-- After specializing at `q = ε`, the class of `M{1}` is `ε` times the class of `M`. -/
 @[simp]
 theorem mk_of_shift_functor_obj (X : C) :
     LaurentSpecialization.mk ε (of E (E.shift.functor.obj X)) =
       (ε : ℤ) • LaurentSpecialization.mk ε (of E X) := by
-  rw [← T_one_smul_of, LaurentSpecialization.mk_smul, laurentEval_T_one]
+  rw [← T_one_smul_of, map_smul, LaurentSpecialization.mk_smul, laurentEval_T_one]
 
 /-- **A map out of specialized graded `K₀` is determined by its values on object classes.** -/
 theorem hom_ext_laurentSpecialization {A : Type*} [AddCommGroup A]
