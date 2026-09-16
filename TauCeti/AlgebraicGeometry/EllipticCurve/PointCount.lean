@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 
 /-!
 # The point count of a Weierstrass model
@@ -42,6 +44,8 @@ through.
   type.
 * `WeierstrassCurve.frobeniusTrace_eq_card_point`: over a finite field, on an elliptic model the
   trace is `q + 1` minus the cardinality of Mathlib's point type, which is the classical `a_q`.
+* `WeierstrassCurve.pointCount_variableChange` and `WeierstrassCurve.frobeniusTrace_variableChange`:
+  both are invariant under a change of variables, singular models included.
 
 ## Provenance
 
@@ -111,6 +115,31 @@ type**, which is the classical `a_q`. -/
 theorem _root_.WeierstrassCurve.frobeniusTrace_eq_card_point [Finite F] [W.IsElliptic] :
     W.frobeniusTrace = (Nat.card F : ℤ) + 1 - Nat.card W.toAffine.Point := by
   rw [WeierstrassCurve.frobeniusTrace_def, WeierstrassCurve.pointCount_eq_card_point]
+
+/-- **The point count is invariant under a change of variables**, singular models included: the
+affine substitution `(x, y) ↦ (u² x + r, u³ y + u² s x + t)` is a bijection of `F × F` carrying the
+solutions of the equation of `C • W` onto those of `W`. -/
+@[simp]
+theorem _root_.WeierstrassCurve.pointCount_variableChange (C : WeierstrassCurve.VariableChange F) :
+    (C • W).pointCount = W.pointCount := by
+  have hu : (C.u : F) ≠ 0 := C.u.ne_zero
+  let e : F × F ≃ F × F :=
+    { toFun p := ((C.u : F) ^ 2 * p.1 + C.r, (C.u : F) ^ 3 * p.2 + (C.u : F) ^ 2 * C.s * p.1 + C.t)
+      invFun q := (((C.u : F) ^ 2)⁻¹ * (q.1 - C.r),
+        ((C.u : F) ^ 3)⁻¹ * (q.2 - C.s * (q.1 - C.r) - C.t))
+      left_inv p := by ext <;> field_simp <;> ring
+      right_inv q := by ext <;> field_simp <;> ring }
+  rw [WeierstrassCurve.pointCount_def, WeierstrassCurve.pointCount_def,
+    Nat.card_congr (e.subtypeEquiv (q := fun p : F × F ↦ W.toAffine.Equation p.1 p.2) fun p ↦
+      (WeierstrassCurve.Affine.variableChange_equation W C p.1 p.2).symm)]
+
+/-- **The Frobenius trace is invariant under a change of variables.** -/
+-- Not `@[simp]`: `frobeniusTrace_def` and `pointCount_variableChange` already prove it by `simp`.
+theorem _root_.WeierstrassCurve.frobeniusTrace_variableChange [Finite F]
+    (C : WeierstrassCurve.VariableChange F) :
+    (C • W).frobeniusTrace = W.frobeniusTrace := by
+  rw [WeierstrassCurve.frobeniusTrace_def, WeierstrassCurve.frobeniusTrace_def,
+    WeierstrassCurve.pointCount_variableChange]
 
 end TauCeti
 
