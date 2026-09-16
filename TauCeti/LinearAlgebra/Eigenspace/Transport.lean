@@ -17,13 +17,13 @@ records the equality available for an equivalence.
 
 ## Main results
 
-* `TauCeti.eigenspace_eq_comap_of_intertwine`: an intertwining linear equivalence identifies the
+* `LinearEquiv.eigenspace_eq_comap_of_intertwine`: an intertwining linear equivalence identifies the
   eigenspaces of the two endomorphisms.
 -/
 
 public section
 
-namespace TauCeti
+namespace LinearEquiv
 
 variable {R U W : Type*} [CommRing R] [AddCommGroup U] [Module R U] [AddCommGroup W]
   [Module R W]
@@ -47,4 +47,4 @@ theorem eigenspace_eq_comap_of_intertwine (e : U ≃ₗ[R] W) (f : U →ₗ[R] U
       _ = μ • e x := hx
       _ = e (μ • x) := (map_smul e μ x).symm
 
-end TauCeti
+end LinearEquiv
