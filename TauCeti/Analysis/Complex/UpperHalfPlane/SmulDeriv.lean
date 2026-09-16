@@ -70,7 +70,9 @@ modulus to be `1`. -/
 theorem normSq_denom_eq_one_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz : g • z = z) :
     Complex.normSq (denom (mapGL ℝ g) (z : ℂ)) = 1 := by
   have him := UpperHalfPlane.im_smul_eq_div_normSq (mapGL ℝ g) z
-  rw [show mapGL ℝ g • z = z from hz, det_mapGL] at him
+  have hmapGL : mapGL ℝ g • z = z := by
+    rwa [MulAction.compHom_smul_def] at hz
+  rw [hmapGL, det_mapGL] at him
   have hne := UpperHalfPlane.normSq_denom_ne_zero (mapGL ℝ g) z.im_ne_zero
   rw [Units.val_one, abs_one, one_mul, eq_div_iff hne] at him
   exact mul_left_cancel₀ z.im_ne_zero (by rw [him, mul_one])

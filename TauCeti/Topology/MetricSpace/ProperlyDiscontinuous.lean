@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.MetricSpace.IsometricSMul
+public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
@@ -33,11 +33,11 @@ open scoped Pointwise
 
 namespace TauCeti
 
-variable (G : Type*) {X : Type*} [Group G] [MetricSpace X] [MulAction G X]
+variable (G : Type*) {X : Type*} [Group G] [PseudoMetricSpace X] [T2Space X] [MulAction G X]
 
 /-- **A small enough ball is precisely invariant.** For a properly discontinuous action on a
-locally compact Hausdorff metric space, some ball about `x` is moved to meet itself only by the
-elements fixing `x`. -/
+locally compact Hausdorff pseudo-metric space, some ball about `x` is moved to meet itself only by
+the elements fixing `x`. -/
 theorem exists_ball_disjoint_smul_of_notMem_stabilizer [LocallyCompactSpace X]
     [ContinuousConstSMul G X] [ProperlyDiscontinuousSMul G X] (x : X) :
     ∃ r > 0, ∀ g : G, g ∉ stabilizer G x → Disjoint (g • ball x r) (ball x r) := by

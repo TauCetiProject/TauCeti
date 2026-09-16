@@ -14,10 +14,10 @@ public import TauCeti.Topology.MetricSpace.ProperlyDiscontinuous
 
 Let `Γ ≤ PSL(2, ℝ)` be a subgroup and `z` a point of the upper half-plane. The stabilizer of `z`
 in `Γ` acts by hyperbolic isometries fixing `z`, so it preserves every hyperbolic disc
-`TauCeti.stabilizerBall Γ z ε` about `z`. If `Γ` is discrete, then for small `ε` no other element
-of `Γ` moves that disc to meet itself (`TauCeti.exists_ball_disjoint_smul_of_notMem_stabilizer`),
-so near `z` the orbit space of `Γ` is the orbit space of the disc under the single finite group
-`MulAction.stabilizer Γ z`.
+`Subgroup.stabilizerBall Γ z ε` about `z`. If `Γ` is discrete, then for small `ε` no other element
+of `Γ` moves that disc to meet itself (`TauCeti.exists_ball_disjoint_smul_of_notMem_stabilizer`).
+This separation result is the prerequisite for a later identification of a neighbourhood in the
+full orbit space with the quotient of the disc by the finite group `MulAction.stabilizer Γ z`.
 
 That orbit space is computed here. In the disc coordinate centred at `z` the stabilizer acts by
 the group of `m`-th roots of unity, `m` its order
@@ -25,16 +25,17 @@ the group of `m`-th roots of unity, `m` its order
 disc of hyperbolic radius `ε` becomes the Euclidean disc of radius `tanh (ε / 2)`
 (`UpperHalfPlane.image_discCoordinate_ball`). The orbit map of a rotation group of order `m` on a
 disc is `u ↦ u ^ m` (`TauCeti.rootsOfUnityBallQuotientHomeomorph`), so the orbit space is again a
-disc, with coordinate `(disc coordinate) ^ m`. This is the local model at an elliptic point: the
-quotient is smooth there, and the quotient map has multiplicity `m`.
+disc, with coordinate `(disc coordinate) ^ m`. This power-map model is intended for the later
+construction of a smooth chart on the full quotient and the proof that its quotient map has
+multiplicity `m`; those conclusions are not established in this file.
 
 ## Main declarations
 
-* `TauCeti.stabilizerBall`: the hyperbolic disc about `z`, as a set invariant under the
+* `Subgroup.stabilizerBall`: the hyperbolic disc about `z`, as a set invariant under the
   stabilizer of `z`.
-* `TauCeti.stabilizerBallHomeomorph`: the disc coordinate, as a homeomorphism from that disc onto
+* `Subgroup.stabilizerBallHomeomorph`: the disc coordinate, as a homeomorphism from that disc onto
   a Euclidean disc, equivariant for `Subgroup.stabilizerRotationEquiv`.
-* `TauCeti.stabilizerBallQuotientHomeomorph`: the orbit space of the invariant disc under the
+* `Subgroup.stabilizerBallQuotientHomeomorph`: the orbit space of the invariant disc under the
   stabilizer is the Euclidean disc of radius `tanh (ε / 2) ^ m`, with coordinate the `m`-th power
   of the disc coordinate.
 
@@ -56,7 +57,9 @@ open Metric MulAction UpperHalfPlane
 
 open scoped MatrixGroups Pointwise
 
-namespace TauCeti
+namespace Subgroup
+
+open TauCeti
 
 variable (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (ε : ℝ)
 
@@ -82,7 +85,7 @@ theorem mem_stabilizerBall {τ : ℍ} : τ ∈ stabilizerBall Γ z ε ↔ dist �
 /-- **The disc coordinate flattens the invariant hyperbolic disc**: it is a homeomorphism from
 the hyperbolic disc of radius `ε` about `z` onto the Euclidean disc of radius `tanh (ε / 2)`
 about `0`, carrying the stabilizer action to the rotation action of the `m`-th roots of unity by
-`TauCeti.stabilizerBallHomeomorph_smul`. -/
+`Subgroup.stabilizerBallHomeomorph_smul`. -/
 def stabilizerBallHomeomorph [Finite (stabilizer Γ z)] :
     stabilizerBall Γ z ε ≃ₜ
       rootsOfUnityBall (Nat.card (stabilizer Γ z)) (Real.tanh (ε / 2)) where
@@ -139,14 +142,14 @@ theorem orbitRel_stabilizerBall_iff [Finite (stabilizer Γ z)] (τ σ : stabiliz
     exact ⟨q, (stabilizerBallHomeomorph Γ z ε).injective
       (by rw [stabilizerBallHomeomorph_smul, hζ])⟩
 
-/-- **The elliptic disc chart.** The orbit space of the invariant hyperbolic disc of radius
-`ε > 0` about `z` under the stabilizer of `z`, a group of order `m`, is the Euclidean disc of
-radius `tanh (ε / 2) ^ m`; the identification sends the orbit of `τ` to the `m`-th power of its
-disc coordinate. The radius is positive so that the source really is a chart about `z`: it
-contains `z` itself (`TauCeti.mem_stabilizerBall`), and the target contains `0`. For a discrete
-`Γ` and a small enough `ε` this orbit space is a neighbourhood of the image of `z` in the orbit
-space of `Γ`, by `TauCeti.exists_ball_disjoint_smul_of_notMem_stabilizer`. -/
-def stabilizerBallQuotientHomeomorph [Finite (stabilizer Γ z)] (hε : 0 < ε) :
+/-- **The stabilizer quotient coordinate.** For `0 ≤ ε`, the orbit space of the invariant
+hyperbolic disc of radius `ε` about `z` under the stabilizer of `z`, a group of order `m`, is the
+Euclidean disc of radius `tanh (ε / 2) ^ m`; the identification sends the orbit of `τ` to the
+`m`-th power of its disc coordinate. A positive radius and a later quotient-neighbourhood
+construction are needed to turn this model into a chart on the full `Γ`-orbit space. The
+separation supplied by `TauCeti.exists_ball_disjoint_smul_of_notMem_stabilizer` is one input to
+that later construction. -/
+def stabilizerBallQuotientHomeomorph [Finite (stabilizer Γ z)] (hε : 0 ≤ ε) :
     orbitRel.Quotient (stabilizer Γ z) (stabilizerBall Γ z ε) ≃ₜ
       ball (0 : ℂ) (Real.tanh (ε / 2) ^ Nat.card (stabilizer Γ z)) :=
   (Homeomorph.Quotient.congr (stabilizerBallHomeomorph Γ z ε)
@@ -156,16 +159,12 @@ def stabilizerBallQuotientHomeomorph [Finite (stabilizer Γ z)] (hε : 0 < ε) :
       exact Real.tanh_strictMono.monotone (by linarith)))
 
 @[simp]
-theorem coe_stabilizerBallQuotientHomeomorph_mk [Finite (stabilizer Γ z)] (hε : 0 < ε)
+theorem coe_stabilizerBallQuotientHomeomorph_mk [Finite (stabilizer Γ z)] (hε : 0 ≤ ε)
     (τ : stabilizerBall Γ z ε) :
     (stabilizerBallQuotientHomeomorph Γ z ε hε (Quotient.mk _ τ) : ℂ) =
       discCoordinate z τ ^ Nat.card (stabilizer Γ z) := by
-  have hcongr :
-      Homeomorph.Quotient.congr (stabilizerBallHomeomorph Γ z ε)
-          (orbitRel_stabilizerBall_iff Γ z ε) (Quotient.mk _ τ) =
-        Quotient.mk _ (stabilizerBallHomeomorph Γ z ε τ) :=
-    rfl
-  rw [stabilizerBallQuotientHomeomorph, Homeomorph.trans_apply, hcongr,
+  rw [stabilizerBallQuotientHomeomorph, Homeomorph.trans_apply,
+    Homeomorph.Quotient.congr_mk,
     coe_rootsOfUnityBallQuotientHomeomorph_mk, coe_stabilizerBallHomeomorph]
 
-end TauCeti
+end Subgroup
