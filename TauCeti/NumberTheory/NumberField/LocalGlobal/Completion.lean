@@ -177,7 +177,7 @@ theorem completionAlgHom_comp {M L : Type*} [Field M] [NumberField M] [Algebra K
 
 /-- The canonical map between completions preserves and reflects the valuative relations induced
 by the adic valuations. -/
-theorem completionAlgHom_vle_iff_vle {L : Type*} [Field L] [NumberField L] [Algebra K L]
+@[simp] theorem completionAlgHom_vle_iff_vle {L : Type*} [Field L] [NumberField L] [Algebra K L]
     (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
     [w.asIdeal.LiesOver v.asIdeal] (a b : v.adicCompletion K) :
     completionAlgHom v w a ≤ᵥ completionAlgHom v w b ↔ a ≤ᵥ b :=

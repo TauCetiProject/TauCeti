@@ -52,7 +52,7 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 variable (K L) in
 /-- The canonical map `K_v → L_w` preserves and reflects the valuative relations induced by the
 adic valuations. -/
-theorem adicCompletionExtension_vle_iff_vle (a b : v.adicCompletion K) :
+@[simp] theorem adicCompletionExtension_vle_iff_vle (a b : v.adicCompletion K) :
     adicCompletionExtension K L v w a ≤ᵥ adicCompletionExtension K L v w b ↔ a ≤ᵥ b := by
   have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
   rw [Valuation.vle_iff_le (Valued.v : Valuation (w.adicCompletion L) ℤᵐ⁰),
