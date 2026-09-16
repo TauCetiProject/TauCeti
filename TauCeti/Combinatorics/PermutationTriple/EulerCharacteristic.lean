@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.DisjointSum
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
-import TauCeti.GroupTheory.GroupAction.Burnside
 import TauCeti.GroupTheory.Perm.SwapFactors
 import Mathlib.Logic.Equiv.Fin.Rotate
 
@@ -184,7 +183,7 @@ theorem IsConnected.eulerChar_le_two {t : PermutationTriple n} (ht : t.IsConnect
   let _ : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero ht.ne_zero)
   have := ht.isPretransitive
   have horbit : Nat.card (MulAction.orbitRel.Quotient t.monodromyGroup (Fin n)) = 1 :=
-    card_orbitQuotient_eq_one (Fin n)
+    MulAction.card_orbitRelQuotient_eq_one
   have hbound := eulerChar_le_two_mul_card_monodromyOrbits t
   rw [horbit] at hbound
   omega

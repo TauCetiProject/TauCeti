@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
-import TauCeti.GroupTheory.GroupAction.Burnside
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import Mathlib.Dynamics.PeriodicPts.Lemmas
 
 /-!
@@ -506,7 +506,7 @@ theorem card_add_orbitCount_le_length_add_two [Finite α]
     omega
   let H := Subgroup.closure {g : Perm α | g ∈ L}
   have horbit : Nat.card (MulAction.orbitRel.Quotient H α) = 1 :=
-    card_orbitQuotient_eq_one α
+    MulAction.card_orbitRelQuotient_eq_one
   have hbound := card_add_orbitCount_le_length_add_two_mul_card_orbits hL
   dsimp only [H] at horbit
   rw [horbit] at hbound

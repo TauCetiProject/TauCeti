@@ -20,6 +20,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 
 * `TauCeti.MulAction.orbitRelQuotientBotEquiv`: the quotient by the trivial subgroup is the
   original space.
+* `TauCeti.MulAction.card_orbitRelQuotient_eq_one`: a pretransitive action on a nonempty type
+  has exactly one orbit.
 * `TauCeti.MulAction.card_orbitRelQuotient_anti`: enlarging the acting subgroup can only
   decrease the number of orbits.
 * `TauCeti.MulAction.orbitRelQuotientMapOfLE_bot_eq_iff`: equality after the bottom-to-`H`
@@ -116,6 +118,14 @@ lemma orbitRel_le_of_subgroup_le {H K : Subgroup G} (hHK : H ≤ K) :
   rw [_root_.MulAction.orbitRel_apply] at h ⊢
   rcases h with ⟨g, hg⟩
   exact ⟨⟨g.1, hHK g.2⟩, hg⟩
+
+/-- **A pretransitive action on a nonempty type has one orbit.** This is Mathlib's
+`MulAction.pretransitive_iff_unique_quotient_of_nonempty` in counting form. -/
+@[simp]
+theorem card_orbitRelQuotient_eq_one [Nonempty X] [_root_.MulAction.IsPretransitive G X] :
+    Nat.card (_root_.MulAction.orbitRel.Quotient G X) = 1 :=
+  let _ := ((_root_.MulAction.pretransitive_iff_unique_quotient_of_nonempty G X).mp ‹_›).some
+  Nat.card_unique
 
 /-- Enlarging the acting subgroup can only decrease the number of orbits. -/
 theorem card_orbitRelQuotient_anti {H K : Subgroup G} (hHK : H ≤ K)
