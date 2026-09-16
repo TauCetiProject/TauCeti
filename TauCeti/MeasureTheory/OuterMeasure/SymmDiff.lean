@@ -47,14 +47,8 @@ theorem abs_toReal_sub_le_toReal_symmDiff {s t : Set Ω} (hs : μ s ≠ ∞) (ht
     have hab : μ (a ∆ b) ≠ ∞ := ne_top_of_le_ne_top
       (ENNReal.add_ne_top.mpr ⟨ha, hb⟩)
       ((measure_mono symmDiff_subset_union).trans (measure_union_le a b))
-    calc
-      (μ a).toReal ≤ (μ ((a ∆ b) ∪ b)).toReal :=
-        ENNReal.toReal_mono
-          (ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hab, hb⟩) (measure_union_le _ _))
-          (measure_mono (le_symmDiff_sup_right a b))
-      _ ≤ (μ (a ∆ b) + μ b).toReal :=
-        ENNReal.toReal_mono (ENNReal.add_ne_top.mpr ⟨hab, hb⟩) (measure_union_le _ _)
-      _ = _ := ENNReal.toReal_add hab hb
+    exact ENNReal.toReal_le_add
+      ((measure_mono (le_symmDiff_sup_right a b)).trans (measure_union_le _ _)) hab hb
   have hst := hle s t hs ht
   have hts := hle t s ht hs
   rw [symmDiff_comm t s] at hts
@@ -67,16 +61,12 @@ theorem abs_toReal_inter_sub_le_toReal_symmDiff_add {A B s : Set Ω}
     |(μ (A ∩ B)).toReal - (μ s).toReal| ≤ (μ (A ∆ s)).toReal + (μ (B ∆ s)).toReal := by
   have hAfin : μ A ≠ ∞ := ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hA, hs⟩)
     ((measure_mono (le_symmDiff_sup_right A s)).trans (measure_union_le _ _))
-  have hunion : μ ((A ∆ s) ∪ (B ∆ s)) ≠ ∞ :=
-    ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hA, hB⟩) (measure_union_le _ _)
   calc
     |(μ (A ∩ B)).toReal - (μ s).toReal| ≤ (μ ((A ∩ B) ∆ s)).toReal :=
       abs_toReal_sub_le_toReal_symmDiff
         (ne_top_of_le_ne_top hAfin (measure_mono inter_subset_left)) hs
-    _ ≤ (μ ((A ∆ s) ∪ (B ∆ s))).toReal :=
-      ENNReal.toReal_mono hunion (measure_mono Set.inter_symmDiff_subset)
-    _ ≤ (μ (A ∆ s) + μ (B ∆ s)).toReal :=
-      ENNReal.toReal_mono (ENNReal.add_ne_top.mpr ⟨hA, hB⟩) (measure_union_le _ _)
-    _ = _ := ENNReal.toReal_add hA hB
+    _ ≤ (μ (A ∆ s)).toReal + (μ (B ∆ s)).toReal :=
+      ENNReal.toReal_le_add
+        ((measure_mono Set.inter_symmDiff_subset).trans (measure_union_le _ _)) hA hB
 
 end TauCeti.MeasureTheory
