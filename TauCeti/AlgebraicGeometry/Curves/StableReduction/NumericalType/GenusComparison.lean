@@ -103,27 +103,21 @@ private lemma one_le_normalizedIntersection_of_adj {i j : T.Component}
 lemma valence_le_normalizedValence (i : T.Component) :
     ((T.intersectionGraph.neighborSet i).ncard : ℚ) ≤ T.normalizedValence i := by
   classical
-  have hcard : (T.intersectionGraph.neighborSet i).ncard =
-      #({j | T.intersectionGraph.Adj i j} : Finset T.Component) := by
-    rw [Set.ncard_eq_toFinset_card]
-    congr 1
-    ext j
-    simp
   calc
     ((T.intersectionGraph.neighborSet i).ncard : ℚ) =
-        ∑ _j ∈ ({j | T.intersectionGraph.Adj i j} : Finset T.Component), (1 : ℚ) := by
-      rw [Finset.sum_const, nsmul_eq_mul, mul_one]
-      exact_mod_cast hcard
-    _ ≤ ∑ j ∈ ({j | T.intersectionGraph.Adj i j} : Finset T.Component),
-        (T.intersection i j : ℚ) / (T.weight i : ℚ) := by
-      exact Finset.sum_le_sum fun j hj ↦
-        T.one_le_normalizedIntersection_of_adj (by simpa using hj)
+        ∑ _j ∈ T.intersectionGraph.neighborFinset i, (1 : ℚ) := by
+      rw [Finset.sum_const, nsmul_eq_mul, mul_one, ← Set.ncard_coe_finset,
+        SimpleGraph.coe_neighborFinset]
+    _ ≤ ∑ j ∈ T.intersectionGraph.neighborFinset i,
+        (T.intersection i j : ℚ) / (T.weight i : ℚ) :=
+      Finset.sum_le_sum fun j hj ↦ T.one_le_normalizedIntersection_of_adj
+        ((T.intersectionGraph.mem_neighborFinset i j).1 hj)
     _ ≤ ∑ j ∈ Finset.univ.erase i,
         (T.intersection i j : ℚ) / (T.weight i : ℚ) := by
       apply Finset.sum_le_sum_of_subset_of_nonneg
       · intro j hj
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj
-        exact Finset.mem_erase.mpr ⟨hj.ne.symm, Finset.mem_univ j⟩
+        exact Finset.mem_erase.mpr
+          ⟨((T.intersectionGraph.mem_neighborFinset i j).1 hj).ne.symm, Finset.mem_univ j⟩
       · intro j hj _
         have hij : i ≠ j := by exact (Finset.ne_of_mem_erase hj).symm
         exact div_nonneg (by exact_mod_cast T.offDiagonal_nonneg i j hij) (by positivity)
@@ -240,8 +234,8 @@ theorem sum_genusDefect :
     rw [SimpleGraph.edgeFinset_card, ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
   have hvalence (v : T.Component) :
       (T.intersectionGraph.neighborSet v).ncard = T.intersectionGraph.degree v := by
-    rw [← Nat.card_coe_set_eq, Nat.card_eq_fintype_card]
-    exact T.intersectionGraph.card_neighborSet_eq_degree v
+    rw [← SimpleGraph.card_neighborFinset_eq_degree, ← Set.ncard_coe_finset,
+      SimpleGraph.coe_neighborFinset]
   have hdegree' : ∑ v, (T.intersectionGraph.neighborSet v).ncard =
       2 * T.intersectionGraph.edgeSet.ncard := by
     calc
@@ -265,7 +259,7 @@ theorem sum_genusDefect :
 
 /-- A component has nonnegative genus defect if it has positive genus, at least two neighbours,
 or multiplicity times weight equal to one. -/
-theorem genusDefect_nonneg_of (i : T.Component)
+theorem genusDefect_nonneg_of_genus_pos_or_two_le_valence_or_mul_eq_one (i : T.Component)
     (h : 0 < T.genus i ∨ 2 ≤ (T.intersectionGraph.neighborSet i).ncard ∨
       T.multiplicity i * T.weight i = 1) :
     0 ≤ T.genusDefect i := by
@@ -302,12 +296,14 @@ theorem genusDefect_nonneg_of (i : T.Component)
 
 /-- If every component has positive genus, at least two neighbours, or unit weighted
 multiplicity, then the topological genus is at most the arithmetic genus. -/
-theorem topologicalGenus_le_arithmeticGenus_of_forall (h : ∀ i : T.Component,
-    0 < T.genus i ∨ 2 ≤ (T.intersectionGraph.neighborSet i).ncard ∨
-      T.multiplicity i * T.weight i = 1) :
+theorem topologicalGenus_le_arithmeticGenus_of_genus_pos_or_two_le_valence_or_mul_eq_one
+    (h : ∀ i : T.Component,
+      0 < T.genus i ∨ 2 ≤ (T.intersectionGraph.neighborSet i).ncard ∨
+        T.multiplicity i * T.weight i = 1) :
     T.topologicalGenus ≤ T.arithmeticGenus := by
   have hsum : (0 : ℚ) ≤ ∑ i, T.genusDefect i :=
-    Finset.sum_nonneg fun i _ ↦ T.genusDefect_nonneg_of i (h i)
+    Finset.sum_nonneg fun i _ ↦
+      T.genusDefect_nonneg_of_genus_pos_or_two_le_valence_or_mul_eq_one i (h i)
   rw [T.sum_genusDefect] at hsum
   have hq : (T.topologicalGenus : ℚ) ≤ T.arithmeticGenus := by linarith
   exact_mod_cast hq
@@ -317,7 +313,8 @@ most the arithmetic genus. -/
 theorem topologicalGenus_le_arithmeticGenus_of_two_le_valence
     (h : ∀ i : T.Component, 2 ≤ (T.intersectionGraph.neighborSet i).ncard) :
     T.topologicalGenus ≤ T.arithmeticGenus :=
-  T.topologicalGenus_le_arithmeticGenus_of_forall fun i ↦ Or.inr (Or.inl (h i))
+  T.topologicalGenus_le_arithmeticGenus_of_genus_pos_or_two_le_valence_or_mul_eq_one fun i ↦
+    Or.inr (Or.inl (h i))
 
 end NumericalType
 
