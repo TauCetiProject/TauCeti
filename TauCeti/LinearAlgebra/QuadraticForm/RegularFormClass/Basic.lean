@@ -80,6 +80,9 @@ abbrev RegularFormPresentation (K : Type u) [Field K] : Type u := Σ n : ℕ, Fi
 
 /-- Two presentations agree as soon as they have the same rank and, at every index read through
 that identification, the same weight. -/
+-- `iff := false`: the rank hypothesis occurs in the type of the weight hypothesis, so the
+-- attribute cannot generate the `ext_iff` companion.
+@[ext (iff := false)]
 theorem RegularFormPresentation.ext {p q : RegularFormPresentation K} (hrank : p.1 = q.1)
     (hweight : ∀ i : Fin p.1, p.2 i = q.2 (Fin.cast hrank i)) : p = q := by
   refine Sigma.ext hrank (Function.hfunext (congrArg Fin hrank) fun i j hij => ?_)
