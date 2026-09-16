@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.CosetCover
 public import TauCeti.FieldTheory.FunctionField.Differential.CanonicalDivisor
-public import TauCeti.FieldTheory.FunctionField.Divisor.ProductFormula
 
 /-!
 # Clifford's theorem for divisors of a function field
@@ -36,8 +35,8 @@ Fields and Codes*, 2nd ed., Lemma 1.6.14 and Theorem 1.6.13.
 
 * `TauCeti.Divisor.dim_add_dim_le_one_add_dim_add`: Stichtenoth's dimension inequality
   `ℓ(A) + ℓ(B) ≤ 1 + ℓ(A + B)`.
-* `TauCeti.Divisor.two_mul_dim_le_degree_add_two`: Clifford's theorem over an infinite exact
-  constant field.
+* `TauCeti.Divisor.two_mul_dim_le_degree_add_two_of_infinite`: Clifford's theorem over an
+  infinite exact constant field.
 
 ## References
 
@@ -243,12 +242,12 @@ private theorem dim_add_le_one_add_dim_add_of_effective (hF : IsFunctionField k 
       intro x hx
       simp only [Set.mem_singleton_iff] at hx
       subst x
-      apply LinearMap.mem_ker.mpr
-      apply (Submodule.Quotient.mk_eq_zero LA).mpr
-      -- Membership in `LA` unfolds to membership in `L(A)`; the displayed product reduces to
-      -- `z`, which lies there because `L(D) = L(A)`.
-      change (z : F) * 1 ∈ riemannRochSpace A
-      simpa only [mul_one] using hzA
+      have hmul : mulZ oneB ∈ LA := by
+        simp only [LA, Submodule.submoduleOf, Submodule.mem_comap, Submodule.subtype_apply, mulZ,
+          LinearMap.coe_mk, AddHom.coe_mk, oneB, mul_one]
+        exact hzA
+      simpa only [SetLike.mem_coe, LinearMap.mem_ker, T, LinearMap.comp_apply,
+        Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] using hmul
   have honeB0 : oneB ≠ 0 := by
     intro h
     exact one_ne_zero (congrArg Subtype.val h)
@@ -277,10 +276,7 @@ private theorem dim_add_le_one_add_dim_add_of_effective (hF : IsFunctionField k 
 /-- **Stichtenoth, Lemma 1.6.14**: over an infinite exact constant field, if `L(A)` and
 `L(B)` are nonzero, then
 
-`ℓ(A) + ℓ(B) ≤ 1 + ℓ(A + B)`.
-
-The exactness hypothesis identifies the kernel of the multiplication map used in the proof with
-the one-dimensional space of constants. -/
+`ℓ(A) + ℓ(B) ≤ 1 + ℓ(A + B)`. -/
 theorem dim_add_dim_le_one_add_dim_add (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) [Infinite k] {A B : Divisor k F}
     (hA : 0 < dim A) (hB : 0 < dim B) :
@@ -304,10 +300,10 @@ constants: a divisor of degree between `0` and `2g - 2` satisfies
 
 `2 * ℓ(D) ≤ deg D + 2`.
 
-The bounds include the nonspecial and empty-linear-system edge cases; when both `L(D)` and
-`L(W-D)` are nonzero, the result is exactly `dim_add_dim_le_one_add_dim_add` applied to a
-Riemann--Roch divisor `W`. -/
-theorem two_mul_dim_le_degree_add_two (hF : IsFunctionField k F)
+The bound includes the nonspecial and empty-linear-system edge cases.  The `[Infinite k]`
+restriction is not essential to the statement; the unrestricted theorem is a later
+constant-field-extension export. -/
+theorem two_mul_dim_le_degree_add_two_of_infinite (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) [Infinite k] {D : Divisor k F}
     (hDnonneg : 0 ≤ degree D) (hDle : degree D ≤ 2 * (genus k F : ℤ) - 2) :
     2 * (dim D : ℤ) ≤ degree D + 2 := by
