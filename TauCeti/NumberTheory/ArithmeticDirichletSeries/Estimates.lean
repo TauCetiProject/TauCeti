@@ -48,6 +48,8 @@ of a convergent series of nonnegative terms must become arbitrarily small.
 * `TauCeti.summable_idealTerm_of_bounded_of_one_lt_re`: a uniformly bounded weight has an
   absolutely convergent ideal-indexed Dirichlet series on `Re s > 1`, and
   `TauCeti.summable_idealTerm_of_unitary_of_one_lt_re` is its unitary specialization.
+* `TauCeti.idealAbscissaOfAbsConv_lt_re_of_bounded`: the same hypothesis places the ideal-indexed
+  abscissa of absolute convergence strictly below every `Re s > 1`.
 
 ## Implementation notes
 
@@ -479,6 +481,18 @@ theorem summable_idealTerm_of_unitary_of_one_lt_re {K : Type*} [Field K] [Number
   refine summable_idealTerm_of_bounded_of_one_lt_re (C := 1) (fun I ↦ ?_) hs
   rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply]
   exact χ.norm_le_one _
+
+/-- **A uniformly bounded weight has ideal-indexed abscissa below every `Re s > 1`.** This is the
+form in which `summable_idealTerm_of_bounded_of_one_lt_re` feeds results stated strictly to the
+right of `TauCeti.idealAbscissaOfAbsConv`, such as the termwise differentiation of the Euler
+logarithm: absolute convergence at a point between `1` and `Re s` bounds the abscissa. -/
+theorem idealAbscissaOfAbsConv_lt_re_of_bounded {K : Type*} [Field K] [NumberField K]
+    {f : IdealArithmeticFunction K} {C : ℝ} (hf : ∀ I : (Ideal (𝓞 K))⁰, ‖f I‖ ≤ C) {s : ℂ}
+    (hs : 1 < s.re) : idealAbscissaOfAbsConv K f < s.re := by
+  obtain ⟨y, hy1, hys⟩ := exists_between hs
+  refine lt_of_le_of_lt (idealAbscissaOfAbsConv_le K (s := (y : ℂ))
+    (summable_idealTerm_of_bounded_of_one_lt_re hf (by simpa using hy1))) ?_
+  simpa using hys
 
 /-- **The Dedekind zeta series has abscissa of absolute convergence `1`.** -/
 @[simp]
