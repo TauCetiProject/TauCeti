@@ -36,10 +36,7 @@ result is a dessin d'enfants; disconnected triples give disconnected graphs, and
 The construction is `@[expose]`d. Its edge, black-vertex and white-vertex types are structure
 fields of `TauCeti.BipartiteRibbonGraph`, so a consumer cannot so much as state that an edge of
 `t.ribbonGraph` is a sheet of `t` without reducing those fields; the lemmas below then read off
-the remaining fields. This is also why several proofs finish with `exact` or `rfl` where a
-rewrite would be expected: the two sides of the remaining goal differ only in that one mentions
-`t.ribbonGraph.E`, `.B` or `.W` where the other mentions `Fin n` or an orbit quotient, and those
-are exactly the reductions `@[expose]` supplies.
+the remaining fields.
 
 The black and white vertex types are quotients of `Fin n`, whose `Fintype` and `DecidableEq`
 instances are taken classically. The executable cycle decomposition that would make them
@@ -103,6 +100,9 @@ associated three-point cover. -/
 @[simp] theorem whiteEnd_ribbonGraph (i : Fin n) :
     t.ribbonGraph.whiteEnd i = Quotient.mk (SameCycle.setoid t.σ1) i := (rfl)
 
+-- After the rewrites, the remaining goal mentions `t.ribbonGraph.E` where the cited lemma
+-- mentions `Fin n`, so `exact` closes it on the reduction `@[expose]` supplies; the same holds
+-- for the `rfl` ending the next proof.
 /-- The faces of the graph are the cycles of the third component: the face permutation is `σinf`
 on the nose, the product-one convention of a triple being that of a ribbon graph. -/
 @[simp] theorem facePerm_ribbonGraph : t.ribbonGraph.facePerm = t.σinf := by
@@ -116,11 +116,11 @@ on the nose, the product-one convention of a triple being that of a ribbon graph
     rotB_ribbonGraph, rotW_ribbonGraph]
   rfl
 
-/-- The graph of a triple has one connected component exactly when the triple is connected. -/
-@[simp] theorem isConnected_ribbonGraph :
-    Fintype.card t.ribbonGraph.ConnectedComponent = 1 ↔ t.IsConnected := by
-  rw [← BipartiteRibbonGraph.isConnected_iff_card_connectedComponent_eq_one,
-    BipartiteRibbonGraph.isConnected_def, isConnected_iff, rotationGroup_ribbonGraph]
+-- Not `@[simp]`: `BipartiteRibbonGraph.isConnected_iff_card_connectedComponent_eq_one` already
+-- rewrites the left-hand side, so this statement is not in simp normal form.
+/-- The graph of a triple is connected exactly when the triple is. -/
+theorem isConnected_ribbonGraph : t.ribbonGraph.IsConnected ↔ t.IsConnected := by
+  rw [BipartiteRibbonGraph.isConnected_def, isConnected_iff, rotationGroup_ribbonGraph]
   exact and_congr (Fin.pos_iff_nonempty.symm.trans Nat.pos_iff_ne_zero) Iff.rfl
 
 /-! ### Relabeling -/
@@ -152,6 +152,8 @@ def ribbonGraphIsoSmul (τ : Perm (Fin n)) : t.ribbonGraph.Iso (τ • t).ribbon
 @[simp] theorem card_E_ribbonGraph : Fintype.card t.ribbonGraph.E = n :=
   Fintype.card_fin n
 
+-- The counting proofs here also end with `exact`: the vertex and face types of `t.ribbonGraph`
+-- reduce to the orbit quotients that `TauCeti.orbitCount_def` counts.
 /-- The black vertices of the graph are the cycles of `σ0`, fixed points included. -/
 @[simp] theorem card_B_ribbonGraph : Fintype.card t.ribbonGraph.B = orbitCount t.σ0 := by
   rw [← Nat.card_eq_fintype_card]
