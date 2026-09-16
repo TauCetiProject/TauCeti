@@ -10,6 +10,8 @@ name: Merge sweep
 # main or flags a conflict. It calls the lightweight TauCetiReview merge-sweep workflow, which mints no
 # provider keys and runs no reviewer; the merge decision is the same one auto-merge uses, so the sweep
 # can never merge something the normal gate would refuse.
+# queue-release.yml also dispatches this workflow when a Lake-pin reservation ends,
+# so waiting PRs need not wait for the scheduled backstop after a bump departs.
 
 on:
   schedule:

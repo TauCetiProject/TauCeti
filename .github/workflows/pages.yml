@@ -56,6 +56,7 @@ permissions:
   id-token: write
   issues: read      # issue participants in this repository
   pull-requests: read # roadmap labels and PR participants
+  statuses: read      # exact-head merge-readiness audit
 
 concurrency:
   group: pages
@@ -226,12 +227,29 @@ jobs:
       # requests and the dominant cost of this job. Publishing the result means
       # anything asking "where is the queue stuck" reads a file instead of
       # repeating the fetch.
+      - name: Checkout the pinned merge policy (read-only)
+        id: merge-policy
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          repository: TauCetiProject/TauCetiReview
+          ref: 603b28011f779bd341d0a08e788498b81542bd7d
+          path: .tauceti-review
+          sparse-checkout: runner
+          persist-credentials: false
+
       - name: Derive pipeline health from the same snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
         working-directory: ${{ github.workspace }}
         run: |
+          if [ "${{ steps.merge-policy.outcome }}" != "success" ]; then
+            echo "::warning::merge policy unavailable; publishing unverified readiness"
+            echo "merge readiness policy" >> "$RUNNER_TEMP/data-failures"
+          fi
           if [ -s "$RUNNER_TEMP/pr-snapshot.json" ]; then
             python3 scripts/pipeline_health.py \
-              --data "$RUNNER_TEMP/pr-snapshot.json" \
+              --data "$RUNNER_TEMP/pr-snapshot.json" --verify-readiness \
               --out web/static_files/pipeline-health.json \
               --json > /dev/null \
             || {

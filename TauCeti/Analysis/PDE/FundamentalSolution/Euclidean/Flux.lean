@@ -14,8 +14,8 @@ public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 For every dimension `n ≠ 0` and `n ≠ 2`, this file computes the outward normal derivative of
 the normalized Newtonian kernel on a sphere. Integrating against the canonical measure on the
 unit sphere, with the radial surface Jacobian, gives total flux `-1` through every sphere
-centered at the pole. This is the boundary normalization needed for the distributional identity
-`-Δ Gₙ = δ₀`. The case `n = 2` is excluded because the normalization of
+centered at the pole. This is the boundary form of the normalization in the distributional
+identity `-Δ Gₙ = δ₀`. The case `n = 2` is excluded because the normalization of
 `newtonianKernel` degenerates there. The logarithmic planar kernel is developed separately on
 `ℂ` as `planarNewtonianKernel` in `TauCeti.Analysis.PDE.FundamentalSolution.Flux`.
 

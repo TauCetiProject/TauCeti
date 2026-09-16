@@ -38,24 +38,32 @@ up, the fall is reported as unexplained rather than pinned on whichever stage
 happened to be deepest. A baseline with too few merges reports insufficient data
 rather than health.
 
-**`ci-failed` and `awaiting-author` are never blamed.** Those wait on the
+**Author-action and inactive stages are never blamed.** Those wait on the
 contributor rather than on the project, and treating a backlog there as
 something to fix would point effort at exactly the wrong place. They are
 reported, marked with `*`, and excluded from the bottleneck.
 
-Depths come from the labels a PR currently carries, not from the last event in
-its timeline, so a PR whose label was removed is not counted in a stage it has
-left. Open PRs carrying no single lifecycle label are counted separately and
-reported, rather than silently omitted.
+Live depths come from the same pinned merge gate as Auto-merge. The report shows
+label disagreements and unknown reads, with actual queue membership and any
+Mathlib reservation separately. A reservation does not remove `ready-to-merge`
+from an otherwise eligible PR, and its presence alone does not explain historical
+throughput. Recorded label depths remain available as `label_depth`.
+
+Historical flow rates still come from label transitions. An old label's waiting
+time is not assigned to a newly verified different stage, and a newly introduced
+stage needs a historical baseline before label migration can count as a filling
+anomaly. In schema version 2, ready-stage `depth` is null when some ready labels
+are unverified; that label count cannot establish a merge-capacity problem.
 
 ## Where the data comes from
 
-The same normalized snapshot the statistics charts use, so this adds no new API
-surface. Fetching it walks every pull request's label timeline, which is
+Historical metrics use the same normalized snapshot as the statistics charts.
+Current readiness adds GraphQL evidence reads for open PRs, diffs only for
+otherwise approved PRs, and one queue scan using Auto-merge’s reservation policy. Fetching it walks every pull request's label timeline, which is
 thousands of requests and takes tens of minutes, so:
 
 - **the Pages workflow** fetches once, writes the charts, and derives
-  `pipeline-health.json` from the same snapshot;
+  `pipeline-health.json` from that snapshot plus a fresh readiness audit;
 - **anything else** should read the published
   `https://taucetiproject.github.io/TauCeti/static/pipeline-health.json`
   rather than repeat the walk.
@@ -65,6 +73,8 @@ To work offline, dump a snapshot once and replay it:
 ```
 scripts/pr_stats_graphs.py --dump-data snap.json --out-dir /tmp/charts
 scripts/pipeline_health.py --data snap.json
+# With the pinned engine at .tauceti-review/runner or TAUCETI_REVIEW_RUNNER:
+scripts/pipeline_health.py --data snap.json --verify-readiness
 ```
 
 A replay is measured as at the snapshot's `fetched_at`, not as at now, so an old
@@ -76,3 +86,8 @@ date the lifecycle labels landed, so a wide baseline is not diluted by time in
 which no event could have been recorded.
 
 That is also how the tests run, so they need no network.
+
+Offline replay uses the readiness audit saved in the snapshot, if present. Use
+`--dump-data` to save a live audit. Missing policy or failed reads produce unknown
+readiness, never verified eligibility. Pages can still publish an unverified
+report when the policy checkout fails, and records that failure separately.

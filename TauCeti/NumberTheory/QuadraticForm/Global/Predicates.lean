@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
+public import TauCeti.LinearAlgebra.QuadraticForm.Complex
 
 /-!
 # Local properties of quadratic forms over number fields
@@ -18,6 +19,10 @@ independently chosen family of local quadratic spaces.
 Global witnesses base-change to local witnesses.  The resulting API also records invariance
 under global equivalence and the rank constraint imposed by local equivalence.  These are the
 common hypotheses used in local-to-global statements for quadratic forms.
+
+Complex places do not occur in the definitions: over `ℂ`, isotropy is automatic in dimension
+at least two, representation of regular forms is controlled only by dimension, and regular forms
+of equal dimension are equivalent.  The final characterizations make this omission explicit.
 
 -/
 
@@ -270,5 +275,97 @@ theorem LocallyEquivalent.finrank_eq [FiniteDimensional K V] [FiniteDimensional 
       (Classical.choice (inferInstance : Nonempty (MaximalSpectrum (𝓞 K))))
   obtain ⟨e⟩ := h.1 place
   simpa only [Module.finrank_baseChange] using LinearEquiv.finrank_eq e.toLinearEquiv
+
+/-- Local representation of finite-dimensional forms forces the expected inequality between
+their global dimensions. -/
+theorem LocallyRepresents.finrank_le [FiniteDimensional K V] [FiniteDimensional K W]
+    {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
+    (h : Q.LocallyRepresents R) : Module.finrank K V ≤ Module.finrank K W := by
+  let place : HeightOneSpectrum (𝓞 K) :=
+    (HeightOneSpectrum.equivMaximalSpectrum (RingOfIntegers.not_isField K)).symm
+      (Classical.choice (inferInstance : Nonempty (MaximalSpectrum (𝓞 K))))
+  have hp := h.1 place
+  rw [QuadraticMap.isRepresentedBy_iff] at hp
+  obtain ⟨f, hf, -⟩ := hp
+  simpa only [Module.finrank_baseChange] using
+    LinearMap.finrank_le_finrank_of_injective hf
+
+section ComplexPlaces
+
+variable [FiniteDimensional K V] [FiniteDimensional K W]
+
+/-- Adding isotropy at every complex embedding does not change local isotropy, provided the
+global space has dimension at least two. -/
+theorem isLocallyIsotropic_iff_and_complex (Q : _root_.QuadraticForm K V)
+    (hV : 2 ≤ Module.finrank K V) :
+    Q.IsLocallyIsotropic ↔ Q.IsLocallyIsotropic ∧
+      ∀ w : InfinitePlace K, ¬ (Q.atComplexEmbedding w).Anisotropic := by
+  refine ⟨fun h ↦ ⟨h, fun w ↦ ?_⟩, And.left⟩
+  apply QuadraticForm.not_anisotropic_of_isAlgClosed
+  simpa only [Module.finrank_baseChange] using hV
+
+/-- Adding representation at every complex embedding does not change local representation for
+regular forms. -/
+theorem locallyRepresents_iff_and_complex {Q : _root_.QuadraticForm K V}
+    {R : _root_.QuadraticForm K W} (hQ : Q.Nondegenerate) (hR : R.Nondegenerate) :
+    Q.LocallyRepresents R ↔ Q.LocallyRepresents R ∧
+      ∀ w : InfinitePlace K,
+        (Q.atComplexEmbedding w).IsRepresentedBy (R.atComplexEmbedding w) := by
+  constructor
+  · intro h
+    refine ⟨h, fun w ↦ ?_⟩
+    rw [QuadraticForm.isRepresentedBy_iff_finrank_le_of_isAlgClosed]
+    · simpa only [Module.finrank_baseChange] using h.finrank_le
+    · exact QuadraticForm.Nondegenerate.atComplexEmbedding hQ w
+    · exact QuadraticForm.Nondegenerate.atComplexEmbedding hR w
+  · exact And.left
+
+/-- Adding scalar representation at every complex embedding does not change local scalar
+representation for a regular form. -/
+theorem locallyRepresentsScalar_iff_and_complex {Q : _root_.QuadraticForm K V}
+    (hQ : Q.Nondegenerate) (a : K) :
+    Q.LocallyRepresentsScalar a ↔ Q.LocallyRepresentsScalar a ∧
+      ∀ w : InfinitePlace K,
+        (Q.atComplexEmbedding w).Represents (w.embedding a) := by
+  constructor
+  · intro h
+    refine ⟨h, fun w ↦ ?_⟩
+    rw [QuadraticForm.represents_iff_eq_zero_or_finrank_pos_of_isAlgClosed]
+    · by_cases ha : a = 0
+      · exact Or.inl (by simp [ha])
+      · right
+        let place : HeightOneSpectrum (𝓞 K) :=
+          (HeightOneSpectrum.equivMaximalSpectrum (RingOfIntegers.not_isField K)).symm
+            (Classical.choice (inferInstance : Nonempty (MaximalSpectrum (𝓞 K))))
+        have hp := h.1 place
+        rw [QuadraticMap.represents_iff, Set.mem_range] at hp
+        obtain ⟨x, hx⟩ := hp
+        have hlocal : 0 < Module.finrank (place.adicCompletion K)
+            place.FiniteScalarExtension :=
+          Module.finrank_pos_iff_exists_ne_zero.mpr ⟨x, fun hzero ↦ by
+            subst x
+            simp only [map_zero] at hx
+            exact ha <| (algebraMap K (place.adicCompletion K)).injective hx.symm⟩
+        simpa only [Module.finrank_baseChange] using hlocal
+    · exact QuadraticForm.Nondegenerate.atComplexEmbedding hQ w
+  · exact And.left
+
+/-- Adding equivalence at every complex embedding does not change local equivalence for regular
+forms. -/
+theorem locallyEquivalent_iff_and_complex {Q : _root_.QuadraticForm K V}
+    {R : _root_.QuadraticForm K W} (hQ : Q.Nondegenerate) (hR : R.Nondegenerate) :
+    Q.LocallyEquivalent R ↔ Q.LocallyEquivalent R ∧
+      ∀ w : InfinitePlace K,
+        (Q.atComplexEmbedding w).Equivalent (R.atComplexEmbedding w) := by
+  constructor
+  · intro h
+    refine ⟨h, fun w ↦ ?_⟩
+    rw [QuadraticForm.equivalent_iff_finrank_eq_of_isAlgClosed]
+    · simpa only [Module.finrank_baseChange] using h.finrank_eq
+    · exact QuadraticForm.Nondegenerate.atComplexEmbedding hQ w
+    · exact QuadraticForm.Nondegenerate.atComplexEmbedding hR w
+  · exact And.left
+
+end ComplexPlaces
 
 end QuadraticForm

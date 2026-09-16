@@ -1,88 +1,70 @@
-# PR status mirroring
+# PR status and merge readiness
 
-Surface where every TauCeti PR sits in the pipeline, in two places, from one
-source of truth:
+GitHub lifecycle labels and the pipeline-health report use
+[`readiness.py`](readiness.py), which calls the **same pinned TauCetiReview
+merge gate as Auto-merge**. The label is a presentation of that decision, not an
+independent approximation based on a green build and a scoreboard heading.
 
-- **GitHub labels**: exactly one status label on each open PR, visible in the PR
-  list and searchable.
-- **Zulip reactions**: one bot-owned message per PR in the **Tau Ceti** channel,
-  carrying emoji that track the same states at a glance.
+The adapter reads all comments and current commit statuses through GraphQL, fetches
+the diff for otherwise approved PRs, and checks
+that the PR's head, base, lifecycle and hold state have not changed before
+reporting readiness. The gate selects the newest completed current-head review,
+requires every configured rubric, handles legacy scoreboard tables and live
+review markers, and enforces build, scope, allowed paths and pin-validation rules.
+Drafts, held PRs and stacked bases are reported separately.
 
-[`core.py`](core.py) is that source of truth. It derives a PR's status from
-GitHub (PR state, the `build` commit status, the newest
-`<!--tauceti-scoreboard-->` comment's meta JSON, and the review engine's
-`<!--tauceti-review-in-progress-->` marker) and returns a neutral
-`{lifecycle, ci, review, review_inprogress}`. It writes nothing. The two *sinks*
-import it and only differ in how they render that one status, so labels and
-reactions can never disagree:
+| Label | Meaning |
+| --- | --- |
+| `awaiting-CI` | A required check is missing or pending |
+| `ci-failed` | The build failed |
+| `merge-check-failed` | A scope or pin-validation check failed |
+| `awaiting-review` | Current-head reviews are absent or incomplete |
+| `review-in-progress` | A live review delays enqueueing |
+| `awaiting-author` | A current review requests changes or the PR conflicts |
+| `needs-human-review` | Approved changes include human-owned files |
+| `awaiting-dependency` | The PR targets a stacked branch rather than main |
+| `on-hold` | The PR is a draft or has an explicit hold label |
+| `ready-to-merge` | All per-PR automated merge prerequisites pass |
 
-| `core.derive` | `labels.py` (one label) | `zulip.py` (two reaction groups) |
-| --- | --- | --- |
-| lifecycle `merged` / `closed` | *(no label)* | `:merge:` / `:closed-pr:` |
-| ci `running` | `awaiting-CI` | 🟡 `yellow` |
-| ci not reported | `awaiting-CI` | 🟡 `yellow` |
-| ci `failure` | `ci-failed` | 🔴 `red_circle` |
-| ci `success`, review `changes` | `awaiting-author` | 🟢 + ✍️ `writing` |
-| ci `success`, review `approved` | `ready-to-merge` | 🟢 + ✔️ `check` |
-| ci `success`, review pending, live marker | `review-in-progress` | 🟢 + 👀 |
-| ci `success`, review pending, no marker | `awaiting-review` | 🟢 |
+`on-hold` is a generated status. Use an explicit `hold` or `keep` label to hold a
+PR; setting `on-hold` manually does not hold it. Failed scope/pin checks do not
+receive `ci-failed`, preserving the existing failed-build housekeeping rules.
 
-Both review signals (the scoreboard meta and the in-progress marker) are read
-from all comments in one fetch. The newest marked scoreboard counts regardless
-of author association, matching the worker and auto-merge: a contributor-posted
-review therefore moves the PR out of `awaiting-review` everywhere at once. Status
-labels and reactions are presentation, not a security boundary; trusted commit
-statuses still enforce build, scope, axiom and bump guards. Destructive
-housekeeping separately calls `core.repo_associated_scoreboard_meta`, retaining
-its OWNER/MEMBER/COLLABORATOR-only close policy. Every reconcile reads GitHub
-afresh and drives the sink to the correct state, so the same command powers the
-event-driven workflows and a one-shot backfill, and a transient hiccup self-heals
-on the next event. The only dependencies are python3's standard library and an
-authenticated `gh` CLI, nothing from PyPI.
+Queue membership and a Mathlib reservation **do not change** `ready-to-merge`.
+The health report separately shows verified eligible PRs, which are queued,
+which are not, and any reservation holder. It rechecks PRs instead of trusting
+labels, reports label disagreements, and preserves failed reads as unknown.
+Historical stage rates still describe label transitions; current verified depths
+and recorded label depths are separate fields. A snapshot without a readiness
+audit cannot establish a merge bottleneck from its ready-label count.
 
-## Labels
+[`labels.py`](labels.py) is the sole label writer. It sets one lifecycle label
+for an open PR and removes them on close. `pr-labels.yml` handles PR changes,
+review-comment creation/edit/deletion, and completed builds. Its scheduled sweep
+reconciles all open PRs, including stale ready labels. Dispatch it with `pr=all`
+for a policy migration/backfill or with a PR number for a single reconciliation.
+The backfill updates label descriptions once, continues after individual errors,
+and reports failures. A rate limit stops the remaining pass visibly.
 
-The six labels are mutually exclusive; [`labels.py`](labels.py) sets one and
-removes any other, so exactly one is present on an open PR (none on a terminal
-PR). All six are provisioned on first use, and **`labels.py` is the sole writer
-of them**: the "exactly one" invariant is CI's alone to keep, and it assumes
-nothing about any worker or review harness. That is deliberate: anyone can point
-their own review harness at TauCeti, and CI must not depend on a particular one.
+The workflows check out the exact policy revision used by Auto-merge, without
+persisting credentials. The workflow-pin tests require labels, the health report,
+and their tests to use that same revision. For local commands, check out that
+revision of TauCetiReview and set:
 
-`review-in-progress` is derived, like the other five, from a signal CI reads
-rather than from anyone writing the label. The signal is the review engine's
-in-flight marker (`<!--tauceti-review-in-progress-->`, carrying a `head` and an
-`expires_at`), treated as an **optional, documented** contract that any review
-harness MAY post: an unexpired, head-exact marker while the PR is otherwise
-`awaiting-review` shows `review-in-progress`. A harness that posts no marker just
-leaves the PR at `awaiting-review` during review, which is never wrong; and the
-marker's TTL means a crashed review self-heals. The hourly `sweep` reconciles
-both review-waiting labels, clearing an expired marker even if no other event
-fires and repairing a missed or newly reinterpreted scoreboard event.
+```sh
+export TAUCETI_REVIEW_RUNNER=/path/to/TauCetiReview/runner
+python3 scripts/pr_status/labels.py reconcile 123
+python3 scripts/pipeline_health.py --data snapshot.json --verify-readiness
+```
 
-The review verdict itself comes from the scoreboard's durable per-rubric `states`
-map, not the latest round's `runs`: a reply/partial round re-runs only some
-rubrics, so `runs` alone can show a green latest round while another rubric still
-blocks. This mirrors the worker's `ledger_blocking` and the per-rubric state map
-auto-merge reads (see [`core.review_state`](core.py)), and falls back to `runs`
-only for a legacy scoreboard without a `states` map.
+Without `--verify-readiness`, `--data` remains an offline replay and uses the
+readiness audit stored in the snapshot, if present. A live health report always
+performs the audit. Use `--dump-data` to save the evidence for offline replay.
 
-[`pr-labels.yml`](../../.github/workflows/pr-labels.yml) drives it. A first
-`resolve` job resolves the PR number once; the `label` job then keys its
-`concurrency` on that number, so every trigger for one PR shares a group and two
-events can never interleave a label add/remove. It runs under a GitHub App token
-scoped to this repo, and, like the roadmap and Zulip workflows, never checks out
-or runs PR head code. Triggers:
-
-- `pull_request_target` (opened/reopened/synchronize/closed): new commit or the
-  terminal strip.
-- `workflow_run` of `pr-build` (completed): the build verdict. (Not `requested`:
-  a late `requested` for an old head could force `awaiting-CI` onto a moved PR,
-  and a new commit already paints `awaiting-CI` via `synchronize`.)
-- `issue_comment` carrying the scoreboard or in-progress marker.
-- `schedule` (hourly): the `sweep` backstop for `awaiting-review` and
-  `review-in-progress`, including policy migrations and expired markers.
-- `workflow_dispatch`: manual re-sync of one PR.
+[`core.py`](core.py) supplies GitHub-reading helpers and the separate build/review
+signals used for Zulip reactions. A green build/review reaction is not a claim
+that a PR passes all merge prerequisites. Destructive housekeeping continues to
+use its stricter OWNER/MEMBER/COLLABORATOR comment policy.
 
 ## Zulip reactions
 
@@ -247,7 +229,7 @@ a persistent Zulip config break, exactly like the healthcheck.
 
 The labels need no secret: `pr-labels.yml` uses the same GitHub App
 (`APP_ID` / `APP_PRIVATE_KEY`) already configured for the roadmap and merge
-workflows, scoped to this repo, and provisions the six labels on first use.
+workflows, scoped to this repo, and provisions lifecycle labels on first use.
 
 ## Failure modes (Zulip)
 
@@ -276,9 +258,7 @@ the reconcilers over the open PRs with `gh` authenticated:
 
 ```bash
 # Labels: needs only an authenticated gh with issues:write.
-for pr in $(gh pr list --repo TauCetiProject/TauCeti --state open --json number --jq '.[].number'); do
-  python3 scripts/pr_status/labels.py reconcile "$pr"
-done
+python3 scripts/pr_status/labels.py reconcile-all
 
 # Zulip: needs the status bot credentials exported. This paginates the complete
 # PR history in one low-request stream and edits existing posts in place,
@@ -305,18 +285,20 @@ update with the repository's status-bot secrets, so old posts can be migrated
 without copying credentials locally. It defaults to a dry run, continues past
 individual failures and reports them together, retries transient Zulip failures,
 and intentionally does not create missing messages. `pr-labels.yml` also has a
-`workflow_dispatch` that reconciles a single PR's label from the Actions tab.
+`workflow_dispatch` that reconciles one PR or all open PRs from the Actions tab.
 
 ## Unit tests
 
 ```bash
 cd scripts/pr_status
-python3 -m unittest test_pr_labels test_zulip test_stuck_alerts
+python3 -m unittest test_pr_labels test_readiness test_zulip test_stuck_alerts
 ```
 
 `test_pr_labels` covers the derivation (`core.review_state`, `core.inprogress_from`,
-`core.derive`), metadata plumbing, the label collapse (`labels.derived_label`),
-and reconcile convergence. `test_zulip` covers review reactions, PR post
+`core.derive`), metadata plumbing, and label reconciliation. `test_readiness`
+runs the pinned merge gate on current/stale/incomplete reviews, live markers,
+human paths, CI and pin guards, and head-move races. It needs the pinned engine
+checkout described above. `test_zulip` covers review reactions, PR post
 rendering, legacy-message rewriting, batch continuation, dry runs, and rate-limit
 retry. All GitHub and Zulip reads and writes are stubbed, so these need no
 network.

@@ -112,6 +112,16 @@ variable {R}
 @[simp] theorem finiteProjectiveModules_iff {M : ModuleCat.{u} R} :
     finiteProjectiveModules R M ↔ Module.Finite R M ∧ Module.Projective R M := Iff.rfl
 
+/-- The underlying module of an object of the subcategory of finitely generated projectives is
+finitely generated. -/
+instance (X : (finiteProjectiveModules R).FullSubcategory) : Module.Finite R X.obj :=
+  (finiteProjectiveModules_iff.mp X.property).1
+
+/-- The underlying module of an object of the subcategory of finitely generated projectives is
+projective. -/
+instance (X : (finiteProjectiveModules R).FullSubcategory) : Module.Projective R X.obj :=
+  (finiteProjectiveModules_iff.mp X.property).2
+
 variable (R)
 
 theorem finiteProjectiveModules_le_finiteModules :

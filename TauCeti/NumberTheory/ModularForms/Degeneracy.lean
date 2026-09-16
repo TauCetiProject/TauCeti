@@ -480,14 +480,14 @@ theorem Gamma1_map_le_conjAct_scaleGL (M d : ℕ) [NeZero d] :
       ConjAct.toConjAct (scaleGL d)⁻¹ • ((Gamma1 M).map (mapGL ℝ)) := by
   rintro _ ⟨γ, hγ, rfl⟩
   rw [mem_conjAct_inv_scaleGL_iff]
-  obtain ⟨h00, h11, h10⟩ := (Gamma1_mem _ _).mp hγ
+  obtain ⟨-, h11, h10⟩ := (Gamma1_mem _ _).mp hγ
   obtain ⟨t, ht⟩ : ((d * M : ℕ) : ℤ) ∣ γ 1 0 := (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp h10
   have hc : γ 1 0 = d * ((M : ℤ) * t) := by rw [ht]; push_cast; ring
   have hdM : M ∣ d * M := Dvd.intro_left d rfl
   -- the diagonal entries only need their congruence read modulo the divisor `M` of `dM`
-  exact ⟨conjScale d γ _ hc, (Gamma1_mem _ _).mpr
-    ⟨by simpa using congrArg (ZMod.castHom hdM (ZMod M)) h00,
-      by simpa using congrArg (ZMod.castHom hdM (ZMod M)) h11, by simp⟩,
+  exact ⟨conjScale d γ _ hc, mem_Gamma1_iff.mpr
+    ⟨Gamma0_mem.mpr (by simp),
+      by simpa using congrArg (ZMod.castHom hdM (ZMod M)) h11⟩,
     (mapGL_conjScale γ _ hc).symm⟩
 
 /-- **Level transport at a divisor.** Whenever `d * M ∣ N`, conjugation by `diag(d, 1)` carries
