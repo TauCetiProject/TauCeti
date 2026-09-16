@@ -48,11 +48,6 @@ abbrev Realification (V : Type u) [AddCommGroup V] :=
 def realificationMap : V →ₗ[ℤ] Realification V :=
   (TensorProduct.mk ℤ ℝ V) 1
 
-/-- The tensor-product realification satisfies the base-change interface. -/
-theorem isBaseChange_realificationMap :
-    IsBaseChange ℝ (realificationMap (V := V)) :=
-  TensorProduct.isBaseChange ℤ V ℝ
-
 /-- The canonical comparison from the complexification of the realification to an abstract
 complexification of the original integral module. -/
 noncomputable def realificationComplexEquiv (hℂ : IsBaseChange ℂ ιℂ) :
