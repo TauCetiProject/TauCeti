@@ -203,8 +203,10 @@ theorem range_galoisFieldEmbedding :
 variable {d}
 
 /-- An element of the closure belongs to the image of the chosen finite-field embedding exactly
-when it is fixed by the `q`-power Frobenius. -/
-@[simp]
+when it is fixed by the `q`-power Frobenius.
+
+This is not a `simp` lemma: `RingHom.mem_range` already unfolds the left-hand side into an
+existential, so it is not in `simp`-normal form. -/
 theorem mem_range_galoisFieldEmbedding_iff {x : d.Closure} :
     x ∈ RingHom.range d.galoisFieldEmbedding ↔ x ^ d.fieldOrder = x := by
   rw [d.range_galoisFieldEmbedding]

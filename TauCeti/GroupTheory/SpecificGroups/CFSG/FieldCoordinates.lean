@@ -99,8 +99,10 @@ theorem generalLinearGroup_map_galoisFieldEmbedding_injective
 variable {d}
 
 /-- An invertible matrix over the closure comes by scalar extension from Mathlib's finite field
-exactly when every matrix entry is fixed by the `q`-power Frobenius. -/
-@[simp]
+exactly when every matrix entry is fixed by the `q`-power Frobenius.
+
+This is not a `simp` lemma: `MonoidHom.mem_range` already unfolds the left-hand side into an
+existential, so it is not in `simp`-normal form. -/
 theorem mem_range_generalLinearGroup_map_galoisFieldEmbedding_iff
     {n : Type*} [Fintype n] [DecidableEq n]
     (g : Matrix.GeneralLinearGroup n d.Closure) :
