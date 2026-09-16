@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Matrix.DeleteRow
 public import TauCeti.InformationTheory.Coding.Matrix
 
 /-!
