@@ -9,7 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Basic
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Cholesky
 public import Mathlib.Probability.Distributions.Gaussian.Real
 
-import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Cholesky
+import TauCeti.LinearAlgebra.Matrix.Cholesky.Coordinates
 import TauCeti.MeasureTheory.Measure.PiWithDensity
 
 /-!
