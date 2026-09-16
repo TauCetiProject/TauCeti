@@ -29,7 +29,7 @@ coefficient fields and their matrix coordinates.
 
 ## Main result
 
-* `TauCeti.ValidLieTypeIndex.mem_range_generalLinearGroup_map_galoisFieldEmbedding_iff`: an
+* `Matrix.GeneralLinearGroup.mem_range_map_galoisFieldEmbedding_iff`: an
   invertible matrix over the closure comes from the finite field exactly when its entries are
   Frobenius-fixed.
 
@@ -41,19 +41,24 @@ coefficient fields and their matrix coordinates.
 
 public section
 
-namespace TauCeti.ValidLieTypeIndex
+open TauCeti
+open TauCeti.ValidLieTypeIndex
 
 noncomputable section
+
+namespace Matrix
 
 variable {d : ValidLieTypeIndex}
 
 /-- A matrix over the closure has finite-field coordinates exactly when every entry is fixed by
 the `q`-power Frobenius. -/
-theorem exists_matrix_map_galoisFieldEmbedding_iff_frobenius
+theorem exists_map_galoisFieldEmbedding_iff_frobenius
     {m n : Type*} (A : Matrix m n d.Closure) :
     (∃ B : Matrix m n (GaloisField d.characteristic d.fieldExponent),
         B.map d.galoisFieldEmbedding = A) ↔
       ∀ i j, (A i j) ^ d.fieldOrder = A i j := by
+  -- `Set.range_piMap` applies to pointwise maps of functions, while `Matrix.map` is definitionally
+  -- the corresponding pair of nested pointwise maps, so expose that representation first.
   change A ∈ Set.range (Pi.map fun _ ↦ Pi.map fun _ ↦
     d.galoisFieldEmbedding) ↔ _
   rw [Set.range_piMap]
@@ -67,12 +72,18 @@ theorem exists_matrix_map_galoisFieldEmbedding_iff_frobenius
     rw [Set.range_piMap]
     exact fun j _ ↦ ValidLieTypeIndex.mem_range_galoisFieldEmbedding_iff.mpr (hA i j)
 
+end Matrix
+
+namespace Matrix.GeneralLinearGroup
+
+variable {d : ValidLieTypeIndex}
+
 /-- An invertible matrix over the closure comes by scalar extension from Mathlib's finite field
 exactly when every matrix entry is fixed by the `q`-power Frobenius.
 
 This is not a `simp` lemma: `MonoidHom.mem_range` already unfolds the left-hand side into an
 existential, so it is not in `simp`-normal form. -/
-theorem mem_range_generalLinearGroup_map_galoisFieldEmbedding_iff
+theorem mem_range_map_galoisFieldEmbedding_iff
     {n : Type*} [Fintype n] [DecidableEq n]
     (g : Matrix.GeneralLinearGroup n d.Closure) :
     g ∈ MonoidHom.range (Matrix.GeneralLinearGroup.map (n := n) d.galoisFieldEmbedding) ↔
@@ -83,7 +94,8 @@ theorem mem_range_generalLinearGroup_map_galoisFieldEmbedding_iff
       ⟨g₀ i j, Matrix.GeneralLinearGroup.map_apply d.galoisFieldEmbedding i j g₀⟩
   · intro hg
     obtain ⟨A, hA⟩ :=
-      (d.exists_matrix_map_galoisFieldEmbedding_iff_frobenius (g : Matrix n n d.Closure)).mpr hg
+      (Matrix.exists_map_galoisFieldEmbedding_iff_frobenius
+        (d := d) (g : Matrix n n d.Closure)).mpr hg
     have hAmap : d.galoisFieldEmbedding.mapMatrix A = (g : Matrix n n d.Closure) :=
       (RingHom.mapMatrix_apply d.galoisFieldEmbedding A).trans hA
     have hdet : A.det ≠ 0 := by
@@ -112,6 +124,6 @@ theorem mem_range_generalLinearGroup_map_galoisFieldEmbedding_iff
         (congrFun (congrFun (RingHom.mapMatrix_apply d.galoisFieldEmbedding A) i) j).symm
       _ = g i j := congrFun (congrFun hAmap i) j
 
-end
+end Matrix.GeneralLinearGroup
 
-end TauCeti.ValidLieTypeIndex
+end
