@@ -54,8 +54,6 @@ the graded pieces of the unit filtration. This is the shape used to count power 
 ## Main results
 
 * `TauCeti.ker_normalizedValuation`: the kernel of the normalized valuation is `U(K,0)`.
-* `TauCeti.mem_unitFiltration_one_iff_residue_eq_one`: a unit of `𝒪[K]` lies in `U(K,1)` exactly
-  when it reduces to `1`, so `U(K,1)` is the kernel of reduction.
 * `TauCeti.fst_unitsEquivProd`: the `ℤ`-component of the first splitting is the normalized
   valuation; in particular it does not depend on the uniformizer.
 * `TauCeti.fst_integerUnitsEquivProd`: the `𝓀[K]ˣ`-component of the second splitting is
@@ -195,27 +193,6 @@ end Uniformizer
 /-! ### The Teichmüller splitting `𝒪[K]ˣ ≃ 𝓀[K]ˣ × U(K,1)` -/
 
 section Teichmuller
-
-/-- A unit of `𝒪[K]` lies in the depth-one step `U(K,1)` of the unit filtration exactly when it
-reduces to `1`: the principal units are the kernel of reduction. -/
-theorem mem_unitFiltration_one_iff_residue_eq_one (u : 𝒪[K]ˣ) :
-    Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u ∈ unitFiltration K 1 ↔
-      residue 𝒪[K] (u : 𝒪[K]) = 1 := by
-  -- `mem_unitFiltration_succ_congr` spells the inclusion `𝒪[K]ˣ →* Kˣ` through
-  -- `RingHom.toMonoidHom`, which is not the simp-normal form used in the statement above.
-  rw [show (1 : ℕ) = 0 + 1 from rfl, ← RingHom.toMonoidHom_eq_coe (Subring.subtype 𝒪[K]),
-    mem_unitFiltration_succ_congr, zero_add, pow_one,
-    ← Ideal.Quotient.eq_zero_iff_mem (I := 𝓂[K]), map_sub, map_one, sub_eq_zero]
-  rfl
-
-/-- A principal unit reduces to `1`. -/
-@[simp]
-theorem unitsMap_residue_unitFiltrationToIntegerUnits_one (y : unitFiltration K 1) :
-    Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) (unitFiltrationToIntegerUnits 1 y) = 1 := by
-  refine Units.ext ?_
-  rw [Units.coe_map]
-  exact (mem_unitFiltration_one_iff_residue_eq_one _).mp
-    (by rw [unitsMap_subtype_unitFiltrationToIntegerUnits]; exact y.2)
 
 /-- The homomorphism `(α, y) ↦ ω(α) * y` out of `𝓀[K]ˣ × U(K,1)`, where `ω` is the Teichmüller
 lift. It is the section-and-inclusion map of the reduction sequence

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.GroupTheory.Index
+public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 
 /-!
 # The unit filtration of a nonarchimedean local field
@@ -41,6 +42,8 @@ action on a finite extension, and its behaviour under a field embedding.
 
 * `TauCeti.mem_unitFiltration_iff_exists` and `TauCeti.mem_unitFiltration_succ_congr`: the
   congruence form of membership, `x ≡ 1 mod 𝓂[K] ^ i` inside `𝒪[K]`.
+* `TauCeti.mem_unitFiltration_one_iff_residue_eq_one`: a unit of `𝒪[K]` lies in `U(K,1)`
+  exactly when it reduces to `1`.
 * `TauCeti.mem_unitFiltration_iff_valuation_le` and
   `TauCeti.mem_unitFiltration_succ_valuation`: the valuation form of membership, an
   inequality on `x - 1` measured against a uniformizer. At positive depth the inequality alone
@@ -74,7 +77,7 @@ what lets `1` belong to every step.
 public section
 noncomputable section
 
-open Filter Topology ValuativeRel IsNonarchimedeanLocalField
+open Filter Topology ValuativeRel IsLocalRing IsNonarchimedeanLocalField
 
 namespace TauCeti
 
@@ -344,6 +347,28 @@ theorem unitsMap_subtype_unitFiltrationToIntegerUnits (i : ℕ) (x : unitFiltrat
 theorem unitFiltrationToIntegerUnits_injective (i : ℕ) :
     Function.Injective (unitFiltrationToIntegerUnits (K := K) i) :=
   unitFiltrationZeroEquivIntegerUnits.injective.comp (Subgroup.inclusion_injective _)
+
+/-- A unit of `𝒪[K]` lies in the depth-one step `U(K,1)` of the unit filtration exactly when it
+reduces to `1`: the principal units are the kernel of reduction. -/
+@[simp]
+theorem mem_unitFiltration_one_iff_residue_eq_one (u : 𝒪[K]ˣ) :
+    Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u ∈ unitFiltration K 1 ↔
+      residue 𝒪[K] (u : 𝒪[K]) = 1 := by
+  -- `mem_unitFiltration_succ_congr` spells the inclusion `𝒪[K]ˣ →* Kˣ` through
+  -- `RingHom.toMonoidHom`, which is not the simp-normal form used in the statement above.
+  rw [show (1 : ℕ) = 0 + 1 from rfl, ← RingHom.toMonoidHom_eq_coe (Subring.subtype 𝒪[K]),
+    mem_unitFiltration_succ_congr, zero_add, pow_one,
+    ← Ideal.Quotient.eq_zero_iff_mem (I := 𝓂[K]), map_sub, map_one, sub_eq_zero]
+  rfl
+
+/-- A principal unit reduces to `1`. -/
+@[simp]
+theorem unitsMap_residue_unitFiltrationToIntegerUnits_one (y : unitFiltration K 1) :
+    Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) (unitFiltrationToIntegerUnits 1 y) = 1 := by
+  refine Units.ext ?_
+  rw [Units.coe_map]
+  exact (mem_unitFiltration_one_iff_residue_eq_one _).mp
+    (by rw [unitsMap_subtype_unitFiltrationToIntegerUnits]; exact y.2)
 
 section Topology
 
