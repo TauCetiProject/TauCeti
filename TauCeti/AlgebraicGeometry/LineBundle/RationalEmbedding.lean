@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.LineBundle.RationalTrivialization
+public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
 
 /-!
 # Rational functions represented by line-bundle sections
 
-An invertible sheaf on an integral scheme becomes trivial on a dense open subset. A chosen
+An invertible sheaf on an irreducible scheme becomes trivial on a dense open subset. A chosen
 trivialization there identifies every local section with a rational function and hence gives a
 morphism from the line bundle to the sheaf of rational functions. This is the map underlying the
 rational embedding used to associate a Weil divisor to a line bundle.
@@ -42,21 +42,12 @@ noncomputable section
 
 namespace InvertibleSheaf
 
-variable {X : Scheme.{u}} [IsIntegral X]
+variable {X : Scheme.{u}} [IrreducibleSpace X]
 
 private def coordinateHom (L : InvertibleSheaf X) {U : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ L.obj.over U) :
     L.obj.over U ⟶ SheafOfModules.unit (X.ringCatSheaf.over U) :=
   e.inv ≫ (TauCeti.SheafOfModules.freePUnitIsoUnit (X.ringCatSheaf.over U)).hom
-
-omit [IsIntegral X] in
-private lemma nonempty_inf_of_dense {U V : X.Opens} (hU : Dense (U : Set X)) [Nonempty V] :
-    Nonempty (V ⊓ U : X.Opens) := by
-  have hV : (V : Set X).Nonempty :=
-    ⟨(Classical.choice (inferInstance : Nonempty V) : V).1,
-      (Classical.choice (inferInstance : Nonempty V) : V).2⟩
-  obtain ⟨x, hxV, hxU⟩ := hU.inter_open_nonempty V V.isOpen hV
-  exact ⟨⟨x, hxV, hxU⟩⟩
 
 /-- The rational function represented by a local section of a line bundle after choosing a
 trivialization on a dense open subset. -/
@@ -65,89 +56,75 @@ def rationalFunction (L : InvertibleSheaf X) {U : X.Opens}
     (hU : Dense (U : Set X)) (V : X.Opens) [Nonempty V] :
     Γ(L.obj, V) →+ X.functionField := by
   let W : X.Opens := V ⊓ U
-  let _ : Nonempty W := nonempty_inf_of_dense hU
+  let _ : Nonempty W := Opens.nonempty_coeSort.mpr
+    (hU.inter_open_nonempty V V.isOpen (Opens.nonempty_coeSort.mp ‹_›))
   let A : Over U := Over.mk (homOfLE (show W ≤ U from inf_le_right))
   exact (X.germToFunctionField W).hom.toAddMonoidHom.comp
     (((coordinateHom L e).val.app (op A)).hom.toAddMonoidHom.comp
       (L.obj.presheaf.map (homOfLE inf_le_left).op).hom)
 
+/-- Unfolding lemma for `rationalFunction`: restrict to `V ⊓ U`, read the section in the chosen
+basis, and take the germ at the generic point. -/
+private lemma rationalFunction_apply (L : InvertibleSheaf X) {U : X.Opens}
+    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ L.obj.over U)
+    (hU : Dense (U : Set X)) (V : X.Opens) [Nonempty V] [Nonempty (V ⊓ U : X.Opens)]
+    (s : Γ(L.obj, V)) :
+    rationalFunction L e hU V s = X.germToFunctionField (V ⊓ U)
+      ((coordinateHom L e).val.app (op (Over.mk (homOfLE (inf_le_right : V ⊓ U ≤ U))))
+        (L.obj.presheaf.map (homOfLE (inf_le_left : V ⊓ U ≤ V)).op s)) :=
+  rfl
+
 /-- Multiplying a line-bundle section by a regular function multiplies its rational function by
 the image of that regular function in the function field. -/
+@[simp]
 theorem rationalFunction_smul (L : InvertibleSheaf X) {U : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ L.obj.over U)
     (hU : Dense (U : Set X)) (V : X.Opens) [Nonempty V] (r : Γ(X, V)) (s : Γ(L.obj, V)) :
     rationalFunction L e hU V (r • s) =
       X.germToFunctionField V r * rationalFunction L e hU V s := by
-  let W : X.Opens := V ⊓ U
-  let _ : Nonempty W := nonempty_inf_of_dense hU
-  let i : W ⟶ V := homOfLE inf_le_left
-  let A : Over U := Over.mk (homOfLE (show W ≤ U from inf_le_right))
-  let c := (coordinateHom L e).val.app (op A)
-  change X.germToFunctionField W (c (L.obj.presheaf.map i.op (r • s))) =
-    X.germToFunctionField V r *
-      X.germToFunctionField W (c (L.obj.presheaf.map i.op s))
-  rw [L.obj.map_smul]
-  let a : (X.ringCatSheaf.over U).obj.obj (op A) := X.presheaf.map i.op r
-  let b : Γ(X, W) := c (L.obj.presheaf.map i.op s)
-  have hc := c.hom.map_smul a (L.obj.presheaf.map i.op s)
-  calc
-    _ = X.germToFunctionField W
-        (a • c (L.obj.presheaf.map i.op s)) :=
-      congrArg (X.germToFunctionField W) hc
-    _ = X.germToFunctionField W
-        (X.presheaf.map i.op r * b) := rfl
-    _ = _ := by
-      rw [map_mul, X.presheaf.germ_res_apply i (genericPoint X)]
+  have : Nonempty (V ⊓ U : X.Opens) := Opens.nonempty_coeSort.mpr
+    (hU.inter_open_nonempty V V.isOpen (Opens.nonempty_coeSort.mp ‹_›))
+  let i : V ⊓ U ⟶ V := homOfLE inf_le_left
+  let c := (coordinateHom L e).val.app (op (Over.mk (homOfLE (inf_le_right : V ⊓ U ≤ U))))
+  have hc := c.hom.map_smul (X.presheaf.map i.op r) (L.obj.presheaf.map i.op s)
+  rw [rationalFunction_apply, rationalFunction_apply, L.obj.map_smul]
+  refine (congrArg (X.germToFunctionField (V ⊓ U)) hc).trans ?_
+  -- Over each open, the unit sheaf of modules is the ring of sections as a module over itself,
+  -- so its scalar action is multiplication by definition; Mathlib has no rewrite lemma for this.
+  let b : Γ(X, V ⊓ U) := c (L.obj.presheaf.map i.op s)
+  change X.germToFunctionField (V ⊓ U) (X.presheaf.map i.op r * b) = _
+  rw [map_mul, X.presheaf.germ_res_apply i (genericPoint X)]
 
 /-- Rational functions represented by line-bundle sections are unchanged by restriction to a
 nonempty open subset. -/
+@[simp]
 theorem rationalFunction_map (L : InvertibleSheaf X) {U V T : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ L.obj.over U)
     (hU : Dense (U : Set X)) (i : V ⟶ T) [Nonempty V] [Nonempty T] (s : Γ(L.obj, T)) :
     rationalFunction L e hU V (L.obj.presheaf.map i.op s) = rationalFunction L e hU T s := by
-  let WT : X.Opens := T ⊓ U
-  let WV : X.Opens := V ⊓ U
-  let _ : Nonempty WT := nonempty_inf_of_dense hU
-  let _ : Nonempty WV := nonempty_inf_of_dense hU
-  let j : WV ⟶ WT := homOfLE (inf_le_inf i.le le_rfl)
-  let A : Over U := Over.mk (homOfLE (show WT ≤ U from inf_le_right))
-  let B : Over U := Over.mk (homOfLE (show WV ≤ U from inf_le_right))
-  let f : B ⟶ A := Over.homMk j
-  let c := coordinateHom L e
+  have : Nonempty (T ⊓ U : X.Opens) := Opens.nonempty_coeSort.mpr
+    (hU.inter_open_nonempty T T.isOpen (Opens.nonempty_coeSort.mp ‹_›))
+  have : Nonempty (V ⊓ U : X.Opens) := Opens.nonempty_coeSort.mpr
+    (hU.inter_open_nonempty V V.isOpen (Opens.nonempty_coeSort.mp ‹_›))
+  let j : V ⊓ U ⟶ T ⊓ U := homOfLE (inf_le_inf i.le le_rfl)
+  let f : Over.mk (homOfLE (inf_le_right : V ⊓ U ≤ U)) ⟶
+      Over.mk (homOfLE (inf_le_right : T ⊓ U ≤ U)) := Over.homMk j
   let c' : (L.obj.over U).val.presheaf ⟶
       (SheafOfModules.unit (X.ringCatSheaf.over U)).val.presheaf :=
-    (SheafOfModules.forget _ ⋙ PresheafOfModules.toPresheaf _).map c
-  have hc :
-      c.val.app (op B)
-          (L.obj.presheaf.map (homOfLE (inf_le_left : WV ≤ V)).op
-            (L.obj.presheaf.map i.op s)) =
-        X.presheaf.map j.op
-          (c.val.app (op A)
-            (L.obj.presheaf.map (homOfLE (inf_le_left : WT ≤ T)).op s)) := by
-    have h := c'.naturality_apply f.op
-      (L.obj.presheaf.map (homOfLE (inf_le_left : WT ≤ T)).op s)
-    have hL :
-        (L.obj.over U).val.presheaf.map f.op
-            (L.obj.presheaf.map (homOfLE (inf_le_left : WT ≤ T)).op s) =
-          L.obj.presheaf.map (homOfLE (inf_le_left : WV ≤ V)).op
-            (L.obj.presheaf.map i.op s) := by
-      change L.obj.presheaf.map j.op
-          (L.obj.presheaf.map (homOfLE (inf_le_left : WT ≤ T)).op s) =
-        L.obj.presheaf.map (homOfLE (inf_le_left : WV ≤ V)).op
-          (L.obj.presheaf.map i.op s)
-      simp only [← ConcreteCategory.comp_apply, ← Functor.map_comp]
-      congr 2
-    rw [hL] at h
-    exact h
-  change X.germToFunctionField WV
-      (c.val.app (op B)
-        (L.obj.presheaf.map (homOfLE (inf_le_left : WV ≤ V)).op
-          (L.obj.presheaf.map i.op s))) =
-    X.germToFunctionField WT
-      (c.val.app (op A)
-        (L.obj.presheaf.map (homOfLE (inf_le_left : WT ≤ T)).op s))
-  rw [hc]
-  exact X.presheaf.germ_res_apply j (genericPoint X) (Scheme.genericPoint_mem WV) _
+    (SheafOfModules.forget _ ⋙ PresheafOfModules.toPresheaf _).map (coordinateHom L e)
+  have hL : (L.obj.over U).val.presheaf.map f.op
+      (L.obj.presheaf.map (homOfLE (inf_le_left : T ⊓ U ≤ T)).op s) =
+        L.obj.presheaf.map (homOfLE (inf_le_left : V ⊓ U ≤ V)).op (L.obj.presheaf.map i.op s) := by
+    -- Restriction in `L.obj.over U` along a morphism of `Over U` is, by definition of the
+    -- pushforward along `Over.forget U`, restriction in `L.obj` along the underlying inclusion.
+    change L.obj.presheaf.map j.op _ = _
+    simp only [← ConcreteCategory.comp_apply, ← Functor.map_comp]
+    congr 2
+  have h := c'.naturality_apply f.op (L.obj.presheaf.map (homOfLE inf_le_left).op s)
+  rw [hL] at h
+  rw [rationalFunction_apply, rationalFunction_apply]
+  refine (congrArg (X.germToFunctionField (V ⊓ U)) h).trans ?_
+  exact X.presheaf.germ_res_apply j (genericPoint X) (Scheme.genericPoint_mem _) _
 
 private def rationalApp (L : InvertibleSheaf X) {U : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ L.obj.over U)
@@ -167,12 +144,10 @@ private def rationalApp (L : InvertibleSheaf X) {U : X.Opens}
           _ = (Scheme.rationalFunctionsEquiv V).symm
               (X.germToFunctionField V (id r : Γ(X, V)) * rationalFunction L e hU V s) :=
             congrArg _ hs
-          _ = _ := by
-            change (Scheme.rationalFunctionsEquiv V).symm
-                ((id r : Γ(X, V)) • rationalFunction L e hU V s) =
-              (id r : Γ(X, V)) •
-                (Scheme.rationalFunctionsEquiv V).symm (rationalFunction L e hU V s)
-            exact map_smul _ _ _ }
+          _ = (Scheme.rationalFunctionsEquiv V).symm
+              ((id r : Γ(X, V)) • rationalFunction L e hU V s) := by
+            rw [Algebra.smul_def, RingHom.algebraMap_toAlgebra]
+          _ = _ := map_smul _ _ _ }
 
 private lemma rationalApp_naturality (L : InvertibleSheaf X) {U V T : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ L.obj.over U)
@@ -221,6 +196,7 @@ def rationalTrivializationHom (L : InvertibleSheaf X) {U : X.Opens}
 
 /-- On a nonempty open subset, `rationalTrivializationHom` is the rational function obtained by
 restricting to the chosen dense open and reading the section in the chosen basis. -/
+@[simp]
 theorem rationalFunctionsEquiv_rationalTrivializationHom_app (L : InvertibleSheaf X)
     {U : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ L.obj.over U)
