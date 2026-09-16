@@ -149,21 +149,22 @@ theorem hammingMinDist_pair (x y : ∀ i, β i) :
   simpa only [Set.image_pair, Set.infsep_pair, Hamming.dist_eq_hammingDist,
     Hamming.ofHamming_toHamming, Nat.cast_inj] using h
 
-/-- A distance-preserving map on a code preserves its minimum distance. -/
+/-- A map preserving distances between distinct codewords preserves minimum distance. -/
 theorem hammingMinDist_image [Fintype κ] [∀ i, DecidableEq (γ i)] (f : (∀ i, β i) → (∀ i, γ i))
-    (hf : ∀ x ∈ C, ∀ y ∈ C, hammingDist (f x) (f y) = hammingDist x y) :
+    (hf : ∀ x ∈ C, ∀ y ∈ C, x ≠ y → hammingDist (f x) (f y) = hammingDist x y) :
     hammingMinDist (f '' C) = hammingMinDist C := by
   simp only [hammingMinDist_def]
   congr 1
   ext d
   constructor
   · rintro ⟨_, ⟨x, hx, rfl⟩, _, ⟨y, hy, rfl⟩, hxy, hd⟩
-    exact ⟨x, hx, y, hy, fun h => hxy (congrArg f h), (hf x hx y hy).symm.trans hd⟩
+    have hne : x ≠ y := fun h => hxy (congrArg f h)
+    exact ⟨x, hx, y, hy, hne, (hf x hx y hy hne).symm.trans hd⟩
   · rintro ⟨x, hx, y, hy, hxy, hd⟩
     refine ⟨f x, Set.mem_image_of_mem f hx, f y, Set.mem_image_of_mem f hy, ?_,
-      (hf x hx y hy).trans hd⟩
+      (hf x hx y hy hxy).trans hd⟩
     intro heq
-    have hz : hammingDist x y = 0 := by rw [← hf x hx y hy, heq, hammingDist_self]
+    have hz : hammingDist x y = 0 := by rw [← hf x hx y hy hxy, heq, hammingDist_self]
     exact hxy (hammingDist_eq_zero.mp hz)
 
 section Additive
