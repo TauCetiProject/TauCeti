@@ -32,6 +32,10 @@ action on a finite extension, and its behaviour under a field embedding.
 
 * `TauCeti.unitFiltration`: the unit filtration `U(K,i)` of a nonarchimedean local field, as a
   subgroup of `Kˣ`.
+* `TauCeti.unitFiltrationZeroEquivIntegerUnits`: the depth-zero step `U(K,0)` is the unit group
+  of `𝒪[K]`.
+* `TauCeti.unitFiltrationToIntegerUnits`: a unit of `K` lying in `U(K,i)`, read as a unit of
+  `𝒪[K]`.
 
 ## Main results
 
@@ -293,6 +297,53 @@ theorem iInf_unitFiltration : ⨅ i, unitFiltration K i = ⊥ := by
   obtain ⟨i, hi⟩ := exists_pow_lt₀ (Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ)
       (Units.mk0 (valuation K ((x : K) - 1)) (by simpa using h))
   exact absurd ((mem_unitFiltration_iff_valuation_le hπ).mp (hx i)).2 hi.not_ge
+
+/-! ### The filtration inside the units of `𝒪[K]`
+
+Every step of the filtration consists of units of `𝒪[K]`, and at depth zero the step is exactly
+the unit group of `𝒪[K]`. -/
+
+-- Provenance: the identification of the depth-zero step with `𝒪[K]ˣ` is Mathlib's
+-- `ValuationSubring.unitGroupMulEquiv`.
+/-- The depth-zero step `U(K,0)` of the unit filtration, as the unit group of `𝒪[K]`. -/
+def unitFiltrationZeroEquivIntegerUnits : unitFiltration K 0 ≃* 𝒪[K]ˣ :=
+  (MulEquiv.subgroupCongr unitFiltration_zero).trans
+    (valuation K).valuationSubring.unitGroupMulEquiv
+
+/-- The identification of `U(K,0)` with `𝒪[K]ˣ` does not move the underlying element of `K`. -/
+@[simp]
+theorem coe_unitFiltrationZeroEquivIntegerUnits (x : unitFiltration K 0) :
+    ((unitFiltrationZeroEquivIntegerUnits x : 𝒪[K]ˣ) : K) = ((x : Kˣ) : K) := (rfl)
+
+/-- The inverse identification of `𝒪[K]ˣ` with `U(K,0)` does not move the underlying element of
+`K`. -/
+@[simp]
+theorem coe_unitFiltrationZeroEquivIntegerUnits_symm (u : 𝒪[K]ˣ) :
+    (((unitFiltrationZeroEquivIntegerUnits.symm u : unitFiltration K 0) : Kˣ) : K) =
+      ((u : 𝒪[K]) : K) := (rfl)
+
+/-- Every step of the unit filtration consists of units of `𝒪[K]`; this is the resulting
+homomorphism `U(K,i) →* 𝒪[K]ˣ`. -/
+def unitFiltrationToIntegerUnits (i : ℕ) : unitFiltration K i →* 𝒪[K]ˣ :=
+  unitFiltrationZeroEquivIntegerUnits.toMonoidHom.comp
+    (Subgroup.inclusion (unitFiltration_antitone (Nat.zero_le i)))
+
+/-- Reading a step of the unit filtration in `𝒪[K]ˣ` does not move the underlying element of
+`K`. -/
+@[simp]
+theorem coe_unitFiltrationToIntegerUnits (i : ℕ) (x : unitFiltration K i) :
+    (((unitFiltrationToIntegerUnits i x : 𝒪[K]ˣ) : 𝒪[K]) : K) = ((x : Kˣ) : K) := (rfl)
+
+/-- Reading a step of the unit filtration in `𝒪[K]ˣ` and back into `Kˣ` is the identity. -/
+@[simp]
+theorem unitsMap_subtype_unitFiltrationToIntegerUnits (i : ℕ) (x : unitFiltration K i) :
+    Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) (unitFiltrationToIntegerUnits i x) =
+      (x : Kˣ) := Units.ext (rfl)
+
+/-- Reading a step of the unit filtration in `𝒪[K]ˣ` is injective. -/
+theorem unitFiltrationToIntegerUnits_injective (i : ℕ) :
+    Function.Injective (unitFiltrationToIntegerUnits (K := K) i) :=
+  unitFiltrationZeroEquivIntegerUnits.injective.comp (Subgroup.inclusion_injective _)
 
 section Topology
 

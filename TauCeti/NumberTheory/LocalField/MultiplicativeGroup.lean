@@ -46,10 +46,6 @@ the graded pieces of the unit filtration. This is the shape used to count power 
 
 ## Main definitions
 
-* `TauCeti.unitFiltrationZeroEquivIntegerUnits`: the depth-zero step `U(K,0)` of the unit
-  filtration is the unit group of `𝒪[K]`.
-* `TauCeti.unitFiltrationToIntegerUnits`: a unit of `K` lying in `U(K,i)` read as a unit of
-  `𝒪[K]`.
 * `TauCeti.unitsProdHom` and `TauCeti.unitsEquivProd`: the splitting
   `Kˣ ≃* Multiplicative ℤ × 𝒪[K]ˣ` attached to a uniformizer.
 * `TauCeti.integerUnitsProdHom` and `TauCeti.integerUnitsEquivProd`: the Teichmüller splitting
@@ -98,9 +94,8 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
 -- Provenance: the multiplicative decomposition below follows the human-authored specification
--- in `TauCetiRoadmap/LocalFieldsRamification/Suggested.lean`, and the identification of the
--- depth-zero step with `𝒪[K]ˣ` is Mathlib's `ValuationSubring.unitGroupMulEquiv`.
-/-! ### The depth-zero step and the integer units -/
+-- in `TauCetiRoadmap/LocalFieldsRamification/Suggested.lean`.
+/-! ### The kernel of the normalized valuation -/
 
 /-- The kernel of the normalized valuation is the depth-zero step `U(K,0)` of the unit
 filtration: a unit of `K` has valuation `0` exactly when it is a unit of `𝒪[K]`. -/
@@ -108,40 +103,6 @@ filtration: a unit of `K` has valuation `0` exactly when it is a unit of `𝒪[K
 theorem ker_normalizedValuation : (normalizedValuation K).ker = unitFiltration K 0 :=
   Subgroup.ext fun x ↦ by
     rw [MonoidHom.mem_ker, normalizedValuation_eq_one_iff, mem_unitFiltration_zero]
-
-/-- The depth-zero step `U(K,0)` of the unit filtration, as the unit group of `𝒪[K]`. -/
-def unitFiltrationZeroEquivIntegerUnits : unitFiltration K 0 ≃* 𝒪[K]ˣ :=
-  (MulEquiv.subgroupCongr unitFiltration_zero).trans
-    (valuation K).valuationSubring.unitGroupMulEquiv
-
-/-- The identification of `U(K,0)` with `𝒪[K]ˣ` does not move the underlying element of `K`. -/
-@[simp]
-theorem coe_unitFiltrationZeroEquivIntegerUnits (x : unitFiltration K 0) :
-    ((unitFiltrationZeroEquivIntegerUnits x : 𝒪[K]ˣ) : K) = ((x : Kˣ) : K) := (rfl)
-
-/-- The inverse identification of `𝒪[K]ˣ` with `U(K,0)` does not move the underlying element of
-`K`. -/
-@[simp]
-theorem coe_unitFiltrationZeroEquivIntegerUnits_symm (u : 𝒪[K]ˣ) :
-    (((unitFiltrationZeroEquivIntegerUnits.symm u : unitFiltration K 0) : Kˣ) : K) =
-      ((u : 𝒪[K]) : K) := (rfl)
-
-/-- Every step of the unit filtration consists of units of `𝒪[K]`; this is the resulting
-homomorphism `U(K,i) →* 𝒪[K]ˣ`. -/
-def unitFiltrationToIntegerUnits (i : ℕ) : unitFiltration K i →* 𝒪[K]ˣ :=
-  unitFiltrationZeroEquivIntegerUnits.toMonoidHom.comp
-    (Subgroup.inclusion (unitFiltration_antitone (Nat.zero_le i)))
-
-/-- Reading a step of the unit filtration in `𝒪[K]ˣ` and back into `Kˣ` is the identity. -/
-@[simp]
-theorem unitsMap_subtype_unitFiltrationToIntegerUnits (i : ℕ) (x : unitFiltration K i) :
-    Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) (unitFiltrationToIntegerUnits i x) =
-      (x : Kˣ) := Units.ext (rfl)
-
-/-- Reading a step of the unit filtration in `𝒪[K]ˣ` is injective. -/
-theorem unitFiltrationToIntegerUnits_injective (i : ℕ) :
-    Function.Injective (unitFiltrationToIntegerUnits (K := K) i) :=
-  unitFiltrationZeroEquivIntegerUnits.injective.comp (Subgroup.inclusion_injective _)
 
 /-- The normalized valuation is trivial on the units of `𝒪[K]`. -/
 @[simp]
