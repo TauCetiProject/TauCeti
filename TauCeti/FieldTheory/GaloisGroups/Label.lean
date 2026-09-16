@@ -82,6 +82,7 @@ local instance factSplitsSplittingField (f : F[X]) :
     Fact ((f.map (algebraMap F f.SplittingField)).Splits) :=
   ⟨SplittingField.splits f⟩
 
+-- Formalization source: `TauCetiRoadmap/PolynomialGaloisGroups/Suggested.lean`.
 /-- The Galois group of `f` carries the transitive-group label `j` of degree `n`: `f` is
 separable of degree `n`, and some numbering of its roots in the splitting field by `Fin n` carries
 the image of the Galois action on the roots to a conjugate of the reference subgroup
@@ -93,6 +94,14 @@ def HasGaloisLabel (f : F[X]) {n : ℕ} (j : TransitiveGroupIndex n) : Prop :=
         ((Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom)
 
 variable {f : F[X]} {n : ℕ} {j : TransitiveGroupIndex n}
+
+/-- Construct a Galois label from one numbering of the roots that exhibits it. -/
+theorem HasGaloisLabel.mk (hsep : f.Separable) (hdeg : f.natDegree = n)
+    (e : f.rootSet f.SplittingField ≃ Fin n)
+    (he : TransitiveGroupLabel j
+      ((Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom)) :
+    HasGaloisLabel f j :=
+  ⟨hsep, hdeg, e, he⟩
 
 /-- A polynomial with a label is separable. -/
 theorem HasGaloisLabel.separable (h : HasGaloisLabel f j) : f.Separable :=
