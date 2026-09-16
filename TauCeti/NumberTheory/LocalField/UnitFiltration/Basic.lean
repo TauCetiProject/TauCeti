@@ -350,7 +350,6 @@ theorem unitFiltrationToIntegerUnits_injective (i : ℕ) :
 
 /-- A unit of `𝒪[K]` lies in the depth-one step `U(K,1)` of the unit filtration exactly when it
 reduces to `1`: the principal units are the kernel of reduction. -/
-@[simp]
 theorem mem_unitFiltration_one_iff_residue_eq_one (u : 𝒪[K]ˣ) :
     Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u ∈ unitFiltration K 1 ↔
       residue 𝒪[K] (u : 𝒪[K]) = 1 := by
