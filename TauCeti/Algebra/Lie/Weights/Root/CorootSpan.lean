@@ -40,8 +40,8 @@ ReductiveGroups roadmap, which is in turn consumed by CFSGStatement milestone L0
 * `TauCeti.rootCartanWeight`: the Cartan integers `β α∨` as a `ℤ`-valued weight of `β`.
 * `TauCeti.coe_coroot_eq_zero_of_isZero` and `TauCeti.rootCartanWeight_eq_zero_of_isZero`: both
   vanish at the zero weight, the one index that indexing by all weights adds to the roots.
-* `TauCeti.coweightPairing_coe_eq_rootCartanWeight`: the Cartan integers are the coroot pairings
-  of `TauCeti.coweightPairing` at a weight of `L`.
+* `TauCeti.coweightPairing_toLinear_eq_rootCartanWeight`: the Cartan integers are the coroot
+  pairings of `TauCeti.coweightPairing` at a weight of `L`.
 * `TauCeti.lie_coroot_coroot_eq_zero` and `TauCeti.IsSl2System.lie_coroot_rootVector`: the two
   bracket computations against a coroot, in their integral form.
 * `TauCeti.IsSl2System.lie_mem_rootCorootSpan`: closure under the bracket when the root-vector
@@ -163,7 +163,7 @@ coroot family by all weights rather than by the roots costs nothing. -/
 weight `β` of `L` the root-chain description `TauCeti.rootCartanWeight` computes the same integer
 that `TauCeti.coweightPairing` extracts from the value of `β` on the coroot. -/
 @[simp]
-theorem coweightPairing_coe_eq_rootCartanWeight (β : Weight K H L) (i : H.root) :
+theorem coweightPairing_toLinear_eq_rootCartanWeight (β : Weight K H L) (i : H.root) :
     coweightPairing (β : Module.Dual K H) i = rootCartanWeight β (i : Weight K H L) :=
   coweightPairing_eq_of_apply_coroot_eq_intCast <| by
     rw [intCast_rootCartanWeight_apply, IsKilling.rootSystem_coroot_apply,

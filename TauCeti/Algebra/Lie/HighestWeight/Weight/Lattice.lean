@@ -33,8 +33,9 @@ with no order none of this can be said about the values in `K` at all.
 * `TauCeti.coweightPairing_weylVector`: `⟨ρ, αᵢ^∨⟩ = 1` for a simple root `αᵢ`, as an integer.
 * `TauCeti.coweightPairing_add_weylVector`: the `ρ`-shift raises every simple coroot pairing by
   one.
-* `TauCeti.isDominantIntegral_iff_forall_coweightPairing_nonneg`: a weight is dominant exactly
-  when it is integral and its simple coroot pairings are nonnegative integers.
+* `TauCeti.isDominantIntegral_iff_isIntegralWeight_and_forall_coweightPairing_nonneg`: a weight
+  is dominant exactly when it is integral and its simple coroot pairings are nonnegative
+  integers.
 * `TauCeti.IsDominantIntegral.coweightPairing_add_weylVector_pos`: the `ρ`-shift of a dominant
   integral weight has *strictly* positive simple coroot pairings.
 
@@ -110,7 +111,7 @@ theorem IsDominantIntegral.coweightPairing_nonneg {lam : Dual K H}
 /-- **Dominance is integrality together with nonnegativity of the simple coroot pairings.** The
 dominance condition of `TauCeti.IsDominantIntegral` is exactly an inequality between integers,
 dominance supplying the integrality that makes those integers meaningful. -/
-theorem isDominantIntegral_iff_forall_coweightPairing_nonneg {lam : Dual K H} :
+theorem isDominantIntegral_iff_isIntegralWeight_and_forall_coweightPairing_nonneg {lam : Dual K H} :
     IsDominantIntegral b lam ↔
       IsIntegralWeight lam ∧ ∀ i ∈ b.support, 0 ≤ coweightPairing lam i := by
   refine ⟨fun h ↦ ⟨h.isIntegralWeight, fun i hi ↦ h.coweightPairing_nonneg hi⟩, fun h ↦ ?_⟩

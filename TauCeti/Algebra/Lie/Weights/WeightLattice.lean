@@ -65,15 +65,12 @@ integer for a *root* in the first argument, where the root-chain coefficients co
 Neither subsumes the other: the Cartan integers of `TauCeti.rootCartanWeight` are available with no
 hypothesis, while the pairing here accepts the weight of a module, a sum `lam + ρ`, or any other
 integral weight, which is what the dominance and dimension statements pair against a coroot. The
-lemma identifying the two, `TauCeti.coweightPairing_coe_eq_rootCartanWeight`, is stated beside
+lemma identifying the two, `TauCeti.coweightPairing_toLinear_eq_rootCartanWeight`, is stated beside
 `TauCeti.rootCartanWeight`, so that nothing here depends on the root-chain theory.
 
 ## References
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §13.2.
-* The signature of `TauCeti.coweightPairing`, and its design as a total function that is junk off
-  the integral weights, follow the human-authored prototype in
-  `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/Suggested.lean`.
 -/
 
 public section
