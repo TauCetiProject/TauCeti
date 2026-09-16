@@ -7,7 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
-public import Mathlib.Analysis.Real.Sqrt
+public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+
+import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # Continuity of quadratic maps
