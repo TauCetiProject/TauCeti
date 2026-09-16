@@ -32,6 +32,9 @@ The description is classical; see F. Lemmermeyer, *Reciprocity Laws: From Euler 
 
 * `candidateGenusFieldRestrictionToReal`: restriction from the full relative Galois group to the
   real candidate, computed by `coe_candidateGenusFieldRestrictionToReal_apply`.
+* `candidateGenusFieldRealIsScalarTower` and
+  `isAbelianGalois_candidateGenusFieldReal_over_base`: the scalar-tower and Galois instances for
+  the real candidate over the embedded quadratic base.
 * `ker_candidateGenusFieldRestrictionToReal`: its kernel is the sign-space line supported at the
   negative prime discriminants.
 * `autCandidateGenusFieldRealEquivElementaryTwoQuotient`: the ordinary real genus-field
@@ -54,6 +57,26 @@ noncomputable def candidateGenusFieldRealAlgebra (hd : Squarefree d)
   (IntermediateField.inclusion
     (candidateGenusFieldBase_le_candidateGenusFieldReal hd hpos)).toAlgebra
 
+/-- The inclusions of the quadratic base into the real candidate and then into the full candidate
+form a scalar tower. -/
+noncomputable instance candidateGenusFieldRealIsScalarTower (hd : Squarefree d)
+    (hpos : 0 < d) :
+    letI := candidateGenusFieldRealAlgebra hd hpos
+    IsScalarTower (candidateGenusFieldBase hd) (candidateGenusFieldReal hd)
+      (candidateGenusField hd) := by
+  let _ := candidateGenusFieldRealAlgebra hd hpos
+  exact IsScalarTower.of_algebraMap_eq fun _ => rfl
+
+/-- The real candidate is abelian Galois over the embedded quadratic base. -/
+noncomputable instance isAbelianGalois_candidateGenusFieldReal_over_base (hd : Squarefree d)
+    (hpos : 0 < d) :
+    letI := candidateGenusFieldRealAlgebra hd hpos
+    IsAbelianGalois (candidateGenusFieldBase hd) (candidateGenusFieldReal hd) := by
+  let _ := candidateGenusFieldRealAlgebra hd hpos
+  let _ := candidateGenusFieldRealIsScalarTower hd hpos
+  exact IsAbelianGalois.tower_bot (candidateGenusFieldBase hd) (candidateGenusFieldReal hd)
+    (candidateGenusField hd)
+
 /-- Restriction from the full candidate genus field over its quadratic base to the maximal totally
 real subfield. The latter contains the base when `d > 0`, and normality makes restriction
 surjective. -/
@@ -63,11 +86,8 @@ noncomputable def candidateGenusFieldRestrictionToReal (hd : Squarefree d) (hpos
       (candidateGenusFieldReal hd ≃ₐ[candidateGenusFieldBase hd]
         candidateGenusFieldReal hd) := by
   letI := candidateGenusFieldRealAlgebra hd hpos
-  letI : IsScalarTower (candidateGenusFieldBase hd) (candidateGenusFieldReal hd)
-      (candidateGenusField hd) := IsScalarTower.of_algebraMap_eq fun _ => rfl
-  letI : IsAbelianGalois (candidateGenusFieldBase hd) (candidateGenusFieldReal hd) :=
-    IsAbelianGalois.tower_bot (candidateGenusFieldBase hd) (candidateGenusFieldReal hd)
-      (candidateGenusField hd)
+  letI := candidateGenusFieldRealIsScalarTower hd hpos
+  letI := isAbelianGalois_candidateGenusFieldReal_over_base hd hpos
   exact AlgEquiv.restrictNormalHom (F := candidateGenusFieldBase hd)
     (K₁ := candidateGenusField hd) (candidateGenusFieldReal hd)
 
@@ -80,11 +100,8 @@ candidate genus field, the restriction of `σ` sends `x` to `σ x`. -/
     ((candidateGenusFieldRestrictionToReal hd hpos σ x : candidateGenusFieldReal hd) :
         candidateGenusField hd) = σ (x : candidateGenusField hd) := by
   let _ := candidateGenusFieldRealAlgebra hd hpos
-  let _ : IsScalarTower (candidateGenusFieldBase hd) (candidateGenusFieldReal hd)
-      (candidateGenusField hd) := IsScalarTower.of_algebraMap_eq fun _ => rfl
-  let _ : IsAbelianGalois (candidateGenusFieldBase hd) (candidateGenusFieldReal hd) :=
-    IsAbelianGalois.tower_bot (candidateGenusFieldBase hd) (candidateGenusFieldReal hd)
-      (candidateGenusField hd)
+  let _ := candidateGenusFieldRealIsScalarTower hd hpos
+  let _ := isAbelianGalois_candidateGenusFieldReal_over_base hd hpos
   exact AlgEquiv.restrictNormal_commutes σ (candidateGenusFieldReal hd) x
 
 /-- Restriction to the real candidate is surjective. -/
@@ -92,11 +109,8 @@ theorem candidateGenusFieldRestrictionToReal_surjective (hd : Squarefree d) (hpo
     letI := candidateGenusFieldRealAlgebra hd hpos
     Function.Surjective (candidateGenusFieldRestrictionToReal hd hpos) := by
   let _ := candidateGenusFieldRealAlgebra hd hpos
-  let _ : IsScalarTower (candidateGenusFieldBase hd) (candidateGenusFieldReal hd)
-      (candidateGenusField hd) := IsScalarTower.of_algebraMap_eq fun _ => rfl
-  let _ : IsAbelianGalois (candidateGenusFieldBase hd) (candidateGenusFieldReal hd) :=
-    IsAbelianGalois.tower_bot (candidateGenusFieldBase hd) (candidateGenusFieldReal hd)
-      (candidateGenusField hd)
+  let _ := candidateGenusFieldRealIsScalarTower hd hpos
+  let _ := isAbelianGalois_candidateGenusFieldReal_over_base hd hpos
   exact AlgEquiv.restrictNormalHom_surjective (F := candidateGenusFieldBase hd)
     (K₁ := candidateGenusFieldReal hd) (candidateGenusField hd)
 
