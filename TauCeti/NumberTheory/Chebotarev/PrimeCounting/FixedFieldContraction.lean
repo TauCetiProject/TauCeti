@@ -31,8 +31,9 @@ of `C` (`NumberField.Chebotarev.inertiaDeg_eq_one_iff_under_mem_frobeniusPrimeSe
 The identity concerns `ϑ` at residue degree one only.  The other primes of the relative fibre have
 residue degree at least two over `ℚ` or lie above `ramifiedPrimes K L`, so they are majorized by
 the unrestricted sums appearing in `NumberField.Chebotarev.frobeniusDiscard_isLittleO` over
-`L ^ <sigma>`.  There is no such identity for `ψ`: a prime power `𝔓 ^ m` with `m ≥ 2` is selected
-by the `m`-th power of its Frobenius, and the prime of `K` below it need not have class `C`.
+`L ^ <sigma>`.  In general there is no such identity for `ψ`: a prime power `𝔓 ^ m` with `m ≥ 2`
+is selected by the `m`-th power of its Frobenius, and the prime of `K` below it need not have
+class `C`.
 
 ## Main result
 
