@@ -435,6 +435,7 @@ theorem Nondegenerate.baseChange [Invertible (2 : K)]
 /-- On a space of dimension at most one, a quadratic form is anisotropic exactly when its
 extension to a nontrivial ring without zero divisors is anisotropic.  Dimension one is sharp:
 `⟨1, 1⟩` over `ℚ` is anisotropic, while its extension to `ℂ` is not. -/
+@[simp]
 theorem anisotropic_baseChange_iff_of_finrank_le_one [Invertible (2 : K)]
     {A : Type*} [CommRing A] [Nontrivial A] [NoZeroDivisors A] [Algebra K A]
     [FiniteDimensional K V]
