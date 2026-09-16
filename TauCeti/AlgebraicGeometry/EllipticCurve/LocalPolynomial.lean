@@ -13,9 +13,9 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.SingularPointCount
 
 Over the fraction field of a discrete valuation ring with finite residue field, the reduction of a
 minimal Weierstrass equation is a Weierstrass model over a finite field, so it has a Frobenius
-trace `a = q + 1 − #W̃(k)`, counted with its singular point. This file evaluates that trace at bad
+trace `a = q + 1 − #W(k)`, counted with its singular point. This file evaluates that trace at bad
 reduction: it is `1` at split multiplicative, `-1` at nonsplit multiplicative, and `0` at additive
-reduction. At good reduction it is the classical trace `q + 1 − #Ẽ(k)`.
+reduction. At good reduction it is the classical trace `q + 1 − #E(k)` of the smooth reduction.
 
 These are exactly the coefficients of `T` in Mathlib's `WeierstrassCurve.localPolynomial`, which
 is defined by cases on the reduction type. Read through the trace, the case split collapses: the
