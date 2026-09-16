@@ -167,7 +167,8 @@ private theorem exists_section_exact_on_support (hF : IsFunctionField k F) [Infi
   refine ⟨D, z, hDA, hspace, z.2, hz0, fun P hP ↦ ?_⟩
   apply ord_eq_neg_coeff_of_not_mem_sub_ofPoint z.2
   intro hmem
-  exact hzU (some ⟨P, hP⟩) hmem
+  apply hzU (some ⟨P, hP⟩)
+  simpa only [U, Submodule.submoduleOf, Submodule.mem_comap, Submodule.subtype_apply] using hmem
 
 /-- Stichtenoth's dimension inequality for effective divisors.  The general form follows by
 replacing both divisors by effective representatives. -/
@@ -213,7 +214,8 @@ private theorem dim_add_le_one_add_dim_add_of_effective (hF : IsFunctionField k 
         have hxLA : mulZ x ∈ LA := by
           apply (Submodule.Quotient.mk_eq_zero LA).mp
           simpa only [T, LinearMap.comp_apply, Submodule.mkQ_apply] using hxzero
-        exact hxLA
+        simpa only [LA, Submodule.submoduleOf, Submodule.mem_comap, Submodule.subtype_apply, mulZ,
+          LinearMap.coe_mk, AddHom.coe_mk] using hxLA
       have hxalg : (x : F) ∈ algebraicClosure k F := by
         apply (Place.mem_algebraicClosure_iff_forall_mem_integers hF).mpr
         intro P
@@ -300,9 +302,7 @@ constants: a divisor of degree between `0` and `2g - 2` satisfies
 
 `2 * ℓ(D) ≤ deg D + 2`.
 
-The bound includes the nonspecial and empty-linear-system edge cases.  The `[Infinite k]`
-restriction is not essential to the statement; the unrestricted theorem is a later
-constant-field-extension export. -/
+The bound includes the nonspecial and empty-linear-system edge cases. -/
 theorem two_mul_dim_le_degree_add_two_of_infinite (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) [Infinite k] {D : Divisor k F}
     (hDnonneg : 0 ≤ degree D) (hDle : degree D ≤ 2 * (genus k F : ℤ) - 2) :
