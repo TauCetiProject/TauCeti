@@ -55,6 +55,13 @@ Gamma product density factors as the chart density times a Gamma density of shap
 
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Multivariate Distributions*, vol. 1,
   2nd ed., Wiley, 2000, Chapter 49.
+* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 6, the density
+  paragraph of the Dirichlet target, which prescribes the chart at a chosen `i₀`, the real chart
+  density in the displayed form, its `ENNReal.ofReal` counterpart, and the pushforward statement,
+  and warns against claiming a density against ambient volume.  The change-of-variables paragraph
+  of the same file's "Mathlib foundations to reuse" section asks the Dirichlet normalization chart
+  to name its source and target regions, its injectivity statement, its derivative determinant,
+  and the resulting measure equality.
 -/
 public section
 
