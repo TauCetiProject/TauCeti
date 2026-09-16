@@ -47,10 +47,8 @@ of that namespace nested in `TauCeti` would break it.
   Studies in Advanced Mathematics 36, CUP (1995), Chapter IV, Section 1.
 * D. Happel, *Triangulated Categories in the Representation Theory of Finite Dimensional
   Algebras*, LMS Lecture Note Series 119, CUP (1988), Chapter I, Section 2.
-* The Lean prototype of `FactorsThrough` and `factorIdeal` in
-  `TauCetiRoadmap/StablePeriodicCurved/Suggested.lean` (TauCetiProject/TauCetiRoadmap). The
-  definitions here, including the `AddSubgroup.closure_induction` proofs of the two ideal
-  closure conditions, are adapted from it.
+* The definitions of `FactorsThrough` and `factorIdeal` are adapted from the Lean sketch in
+  `StablePeriodicCurved/Suggested.lean` of TauCetiProject/TauCetiRoadmap.
 -/
 
 public section
@@ -67,6 +65,12 @@ variable {C : Type u} [Category.{v} C]
 object satisfies `P`. -/
 def FactorsThrough (P : ObjectProperty C) {X Y : C} (f : X ⟶ Y) : Prop :=
   ∃ Q : C, P Q ∧ ∃ i : X ⟶ Q, ∃ p : Q ⟶ Y, f = i ≫ p
+
+/-- A morphism factors through a `P`-object if and only if it is a composite whose intermediate
+object satisfies `P`. -/
+theorem factorsThrough_iff (P : ObjectProperty C) {X Y : C} (f : X ⟶ Y) :
+    FactorsThrough P f ↔ ∃ Q : C, P Q ∧ ∃ i : X ⟶ Q, ∃ p : Q ⟶ Y, f = i ≫ p :=
+  Iff.rfl
 
 /-- A composite through a `P`-object factors through a `P`-object. -/
 theorem factorsThrough_comp (P : ObjectProperty C) {X Q Y : C} (hQ : P Q)
@@ -164,7 +168,7 @@ theorem factorIdeal_le_iff {I : TauCeti.MorphismIdeal C} :
   · intro h X Y f hf
     induction hf using AddSubgroup.closure_induction with
     | mem f hf =>
-        obtain ⟨Z, hZ, i, p, rfl⟩ := hf
+        obtain ⟨Z, hZ, i, p, rfl⟩ := (factorsThrough_iff P f).1 hf
         exact h hZ i p
     | zero => exact AddSubgroup.zero_mem _
     | add f g _ _ hf hg => exact AddSubgroup.add_mem _ hf hg
