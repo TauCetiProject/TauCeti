@@ -47,14 +47,19 @@ is exactly the character through which the diagonal torus rescales that subgroup
 * `TauCeti.Symplectic.diagonalRootDatum_pairing_apply`: the Cartan pairing in coordinates.
 * `TauCeti.Symplectic.diagonalRootDatum_reflection_apply` and
   `TauCeti.Symplectic.diagonalRootDatum_coreflection_apply`: the reflection formulas in coordinates.
-* `TauCeti.Symplectic.diagonalRootDatum_reflectionPerm`: the induced action on root-subgroup
-  indices.
+* `TauCeti.Symplectic.diagonalRootDatum_reflectionPerm` and
+  `TauCeti.Symplectic.diagonalReflectionIndex_eq_iff`: the induced action on root-subgroup indices
+  and its characterization through the roots.
 * `TauCeti.Symplectic.diagonalRootDatum_root_positiveLong` and its companions: the roots in
   coordinates.
 * `TauCeti.Symplectic.diagonalRootDatum_coroot_positiveLong` and its companions: the coroots in
   coordinates.
+* `TauCeti.Symplectic.diagonalRootDatum_reflection_positiveLong_apply` and its companions: each
+  reflection is a signed permutation of the coordinates.
 * `TauCeti.Symplectic.charOfPoint_ofAdd_diagonalRootDatum_root`: the roots are the characters of
   the diagonal torus on the root subgroups.
+* `TauCeti.Symplectic.diagonalTorusPoints_mul_rootSubgroupPoints_mul_inv_eq_root`: the pinning
+  equation, with the scaling character given by `diagonalRootDatum`.
 
 ## References
 
@@ -303,6 +308,16 @@ theorem diagonalRootDatum_reflectionPerm (p q : RootSubgroupIndex m) :
     (diagonalRootDatum.{u} m).reflectionPerm p q = diagonalReflectionIndex p q := by
   rfl
 
+/-- `diagonalReflectionIndex p q` is the root subgroup whose root is the reflection of the root of
+`q` in the root of `p`. Together with the signed-coordinate formulas for the reflections below, this
+determines its constructor. -/
+theorem diagonalReflectionIndex_eq_iff {p q r : RootSubgroupIndex m} :
+    diagonalReflectionIndex p q = r ↔
+      (diagonalRootDatum.{u} m).root r =
+        (diagonalRootDatum.{u} m).reflection p ((diagonalRootDatum.{u} m).root q) := by
+  rw [← (diagonalRootDatum.{u} m).root.injective.eq_iff, ← diagonalRootDatum_reflectionPerm,
+    RootPairing.root_reflectionPerm, eq_comm]
+
 /-! ### The roots in coordinates -/
 
 /-- The root of the positive long root subgroup is `2eᵢ`. -/
@@ -413,6 +428,89 @@ theorem diagonalRootDatum_coroot_negativeSum {i j : Fin m} (hij : i < j) :
     cocharacterEquiv_signedCoweight]
   simp only [↓reduceIte, neg_smul, one_smul, neg_add_rev]
 
+/-! ### The reflections in coordinates -/
+
+/-- Reflection in the long root `2eᵢ` negates the `i`-th coordinate. -/
+@[simp high]
+theorem diagonalRootDatum_reflection_positiveLong_apply (i : Fin m)
+    (x : ULift.{u} (Fin m) →₀ ℤ) (a : ULift.{u} (Fin m)) :
+    (diagonalRootDatum.{u} m).reflection (.positiveLong i) x a =
+      if a = ULift.up i then -x a else x a := by
+  classical
+  rw [diagonalRootDatum_reflection_apply]
+  rcases eq_or_ne a (ULift.up i) with rfl | h
+  · simp [Pi.single_apply, Finsupp.sum_ite_eq']
+    split_ifs <;> linarith
+  · simp [h]
+
+/-- Reflection in the long root `-2eᵢ` negates the `i`-th coordinate. -/
+@[simp high]
+theorem diagonalRootDatum_reflection_negativeLong_apply (i : Fin m)
+    (x : ULift.{u} (Fin m) →₀ ℤ) (a : ULift.{u} (Fin m)) :
+    (diagonalRootDatum.{u} m).reflection (.negativeLong i) x a =
+      if a = ULift.up i then -x a else x a := by
+  classical
+  rw [diagonalRootDatum_reflection_apply]
+  rcases eq_or_ne a (ULift.up i) with rfl | h
+  · simp [Pi.single_apply, Finsupp.sum_ite_eq']
+    split_ifs <;> linarith
+  · simp [h]
+
+/-- Reflection in the short root `eᵢ - eⱼ` transposes the `i`-th and `j`-th coordinates. -/
+@[simp high]
+theorem diagonalRootDatum_reflection_difference_apply {i j : Fin m} (hij : i ≠ j)
+    (x : ULift.{u} (Fin m) →₀ ℤ) (a : ULift.{u} (Fin m)) :
+    (diagonalRootDatum.{u} m).reflection (.difference i j hij) x a =
+      x (Equiv.swap (ULift.up i) (ULift.up j) a) := by
+  classical
+  have hij' : ULift.up.{u} i ≠ ULift.up j := fun h => hij (congrArg ULift.down h)
+  rw [diagonalRootDatum_reflection_apply, diagonalRootDatum_coroot_difference,
+    diagonalRootDatum_root_difference]
+  simp only [Pi.sub_apply, mul_sub, Finsupp.sum_sub, Pi.single_apply, mul_ite, mul_one, mul_zero,
+    Finsupp.sum_ite_eq', Finsupp.mem_support_iff, Finsupp.sub_apply, Finsupp.single_apply]
+  rcases eq_or_ne a (ULift.up i) with rfl | hi
+  · simp [hij'.symm]
+    split_ifs <;> simp_all
+  rcases eq_or_ne a (ULift.up j) with rfl | hj
+  · simp [hij']
+    split_ifs <;> simp_all
+  · simp [Equiv.swap_apply_of_ne_of_ne hi hj, Ne.symm hi, Ne.symm hj]
+
+/-- Reflection in the short root `eᵢ + eⱼ` transposes the `i`-th and `j`-th coordinates and negates
+both. -/
+@[simp high]
+theorem diagonalRootDatum_reflection_positiveSum_apply {i j : Fin m} (hij : i < j)
+    (x : ULift.{u} (Fin m) →₀ ℤ) (a : ULift.{u} (Fin m)) :
+    (diagonalRootDatum.{u} m).reflection (.positiveSum i j hij) x a =
+      if a = ULift.up i ∨ a = ULift.up j then -x (Equiv.swap (ULift.up i) (ULift.up j) a)
+      else x a := by
+  classical
+  have hij' : ULift.up.{u} i ≠ ULift.up j := fun h => hij.ne (congrArg ULift.down h)
+  rw [diagonalRootDatum_reflection_apply, diagonalRootDatum_coroot_positiveSum,
+    diagonalRootDatum_root_positiveSum]
+  simp only [Pi.add_apply, mul_add, Finsupp.sum_add, Pi.single_apply, mul_ite, mul_one, mul_zero,
+    Finsupp.sum_ite_eq', Finsupp.mem_support_iff, Finsupp.add_apply, Finsupp.single_apply]
+  rcases eq_or_ne a (ULift.up i) with rfl | hi
+  · simp [hij'.symm]
+    split_ifs <;> simp_all
+  rcases eq_or_ne a (ULift.up j) with rfl | hj
+  · simp [hij']
+    split_ifs <;> simp_all
+  · simp [Ne.symm hi, Ne.symm hj, hi, hj]
+
+/-- Reflection in the short root `-(eᵢ + eⱼ)` agrees with reflection in `eᵢ + eⱼ`. -/
+@[simp high]
+theorem diagonalRootDatum_reflection_negativeSum_apply {i j : Fin m} (hij : i < j)
+    (x : ULift.{u} (Fin m) →₀ ℤ) (a : ULift.{u} (Fin m)) :
+    (diagonalRootDatum.{u} m).reflection (.negativeSum i j hij) x a =
+      if a = ULift.up i ∨ a = ULift.up j then -x (Equiv.swap (ULift.up i) (ULift.up j) a)
+      else x a := by
+  rw [← diagonalRootDatum_reflection_positiveSum_apply hij, diagonalRootDatum_reflection_apply,
+    diagonalRootDatum_reflection_apply, diagonalRootDatum_coroot_negativeSum,
+    diagonalRootDatum_root_negativeSum, diagonalRootDatum_coroot_positiveSum,
+    diagonalRootDatum_root_positiveSum]
+  simp only [Pi.neg_apply, Finsupp.neg_apply, mul_neg, Finsupp.sum_neg, neg_mul, neg_neg]
+
 /-! ### The roots as characters of the diagonal torus -/
 
 section Points
@@ -443,6 +541,20 @@ theorem charOfPoint_ofAdd_diagonalRootDatum_root (r : RootSubgroupIndex m)
   | positiveSum i j hij => simp [Finsupp.single_eq_pi_single, torusCharacter_add]
   | negativeSum i j hij =>
       simp [Finsupp.single_eq_pi_single, torusCharacter_neg, torusCharacter_add]
+
+/-- **The symplectic pinning equation, with the roots of `diagonalRootDatum`.** Conjugation by a
+point of the diagonal torus scales the parameter of each root subgroup by the value of its root. -/
+theorem diagonalTorusPoints_mul_rootSubgroupPoints_mul_inv_eq_root (r : RootSubgroupIndex m)
+    (t : WithConv (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ)) →ₐ[R] A))
+    (c : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
+    diagonalTorusPoints t * rootSubgroupPoints r c * (diagonalTorusPoints t)⁻¹ =
+      rootSubgroupPoints r
+        ((AdditiveGroup.gaPointsMulEquiv (R := R) (A := A)).symm <|
+          Multiplicative.ofAdd
+            (((DiagonalizableGroup.charOfPoint t.ofConv
+                (Multiplicative.ofAdd ((diagonalRootDatum.{u} m).root r)) : Aˣ) : A) *
+              Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv c))) := by
+  rw [charOfPoint_ofAdd_diagonalRootDatum_root, diagonalTorusPoints_mul_rootSubgroupPoints_mul_inv]
 
 end Points
 
