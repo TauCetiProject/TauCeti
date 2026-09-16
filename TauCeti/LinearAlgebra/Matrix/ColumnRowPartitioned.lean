@@ -39,7 +39,7 @@ theorem linearIndependent_row_one_fromCols [Finite ρ] [DecidableEq ρ] (A : Mat
   cases nonempty_fintype ρ
   rw [← vecMul_injective_iff]
   intro a b h
-  simpa using congrArg (· ∘ Sum.inl) h
+  simpa only [vecMul_fromCols, vecMul_one, Sum.elim_comp_inl] using congrArg (· ∘ Sum.inl) h
 
 /-- The rows of a systematic matrix `[B | I]` are linearly independent. -/
 theorem linearIndependent_row_fromCols_one [Finite τ] [DecidableEq τ] (B : Matrix τ ρ R) :
@@ -47,6 +47,6 @@ theorem linearIndependent_row_fromCols_one [Finite τ] [DecidableEq τ] (B : Mat
   cases nonempty_fintype τ
   rw [← vecMul_injective_iff]
   intro a b h
-  simpa using congrArg (· ∘ Sum.inr) h
+  simpa only [vecMul_fromCols, vecMul_one, Sum.elim_comp_inr] using congrArg (· ∘ Sum.inr) h
 
 end Matrix
