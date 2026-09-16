@@ -270,8 +270,8 @@ theorem conjugateGalEquiv_mk (u : L.ground) :
       QuotientGroup.mk (L.conjugateGroundEquiv g u) :=
   (rfl)
 
-/-- **A conjugate layer has the same degree.** -/
-@[simp]
+/-- **A conjugate layer has the same degree.** Not `@[simp]`: `simp` already rewrites
+`degree` to the cardinality of the Galois group via `degree_eq_natCard_gal`. -/
 theorem degree_conjugate : (L.conjugate g).degree = L.degree := by
   rw [degree_eq_natCard_gal, degree_eq_natCard_gal]
   exact Nat.card_congr (L.conjugateGalEquiv g).symm.toEquiv
