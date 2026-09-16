@@ -19,9 +19,8 @@ lightweight predicate-style API: over a general commutative semiring, the map
 `N ⊗ C → M ⊗ C` need not be known injective, so the induced comodule structure on `N` is
 not registered here.
 
-This is a Layer 1 prerequisite for the reductive-groups roadmap target on finite-dimensional
-subcomodules and the fundamental theorem of comodules. Later work can use
-`Module.Finite R N.toSubmodule` to state finitely generated subcomodules.
+Finite generation of a subcomodule is expressed by `Module.Finite R N.toSubmodule`;
+images under comodule morphisms preserve this property.
 
 ## Main definitions
 
@@ -320,19 +319,21 @@ theorem mem_map_of_mem (f : Comodule.Hom R C M N) {A : Subcomodule R C M} {m : M
 /-- The image subcomodule is contained in `B` exactly when each image of an element of the
 source subcomodule belongs to `B`. -/
 theorem map_le_iff {A : Subcomodule R C M} {f : Comodule.Hom R C M N} {B : Subcomodule R C N} :
-    A.map f ≤ B ↔ ∀ ⦃m⦄, m ∈ A → f m ∈ B :=
-  Submodule.map_le_iff_le_comap
+    A.map f ≤ B ↔ ∀ ⦃m⦄, m ∈ A → f m ∈ B := by
+  rw [← toSubmodule_le_toSubmodule, map_toSubmodule, Submodule.map_le_iff_le_comap]
+  simp only [SetLike.le_def, Submodule.mem_comap, mem_toSubmodule, Comodule.Hom.coe_toLinearMap]
 
 /-- The image construction is monotone in the source subcomodule. -/
 theorem map_mono (f : Comodule.Hom R C M N) {A B : Subcomodule R C M} (hAB : A ≤ B) :
-    A.map f ≤ B.map f :=
-  Submodule.map_mono hAB
+    A.map f ≤ B.map f := by
+  rw [← toSubmodule_le_toSubmodule, map_toSubmodule, map_toSubmodule]
+  exact Submodule.map_mono (toSubmodule_le_toSubmodule.mpr hAB)
 
 /-- The image of the bottom subcomodule is bottom. -/
 @[simp]
 theorem map_bot (f : Comodule.Hom R C M N) : (⊥ : Subcomodule R C M).map f = ⊥ := by
-  apply SetLike.coe_injective
-  exact congrArg (SetLike.coe : Submodule R N → Set N) (Submodule.map_bot f.toLinearMap)
+  ext n
+  simp only [← mem_toSubmodule, map_toSubmodule, bot_toSubmodule, Submodule.map_bot]
 
 /-- The image of the top subcomodule is the range of the comodule morphism as a submodule. -/
 @[simp]
@@ -343,8 +344,9 @@ theorem map_top_toSubmodule (f : Comodule.Hom R C M N) :
 /-- The identity comodule morphism leaves a subcomodule unchanged. -/
 @[simp]
 theorem map_id (A : Subcomodule R C M) : A.map (Comodule.Hom.id R C M) = A := by
-  apply SetLike.coe_injective
-  exact congrArg (SetLike.coe : Submodule R M → Set M) (Submodule.map_id (p := A.toSubmodule))
+  ext n
+  simp only [← mem_toSubmodule, map_toSubmodule, Comodule.Hom.id_toLinearMap,
+    Submodule.map_id]
 
 variable {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
 
@@ -352,9 +354,9 @@ variable {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
 @[simp]
 theorem map_map (A : Subcomodule R C M) (f : Comodule.Hom R C M N)
     (g : Comodule.Hom R C N P) : (A.map f).map g = A.map (g.comp f) := by
-  apply SetLike.coe_injective
-  exact congrArg (SetLike.coe : Submodule R P → Set P)
-    (Submodule.map_comp f.toLinearMap g.toLinearMap A.toSubmodule).symm
+  ext n
+  simp only [← mem_toSubmodule, map_toSubmodule, Comodule.Hom.comp_toLinearMap,
+    Submodule.map_comp]
 
 end Subcomodule
 

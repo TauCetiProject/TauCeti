@@ -15,9 +15,8 @@ public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Lattice
 This file proves that coalgebra morphisms send subcoalgebras to subcoalgebras. The underlying
 submodule of the image is the ordinary image of the underlying submodule.
 
-This is a small Layer 1 prerequisite for the reductive-groups roadmap target on
-finite-dimensional subcoalgebras and the fundamental theorem of comodules: finite
-subcoalgebras need to be movable along maps of coordinate coalgebras.
+Images preserve finite generation, allowing finite subcoalgebras to be transported along
+coalgebra morphisms.
 
 ## Main declarations
 
@@ -85,19 +84,22 @@ theorem mem_map_of_mem (f : C →ₗc[R] D) {A : Subcoalgebra R C} {c : C} (hc :
 /-- The image subcoalgebra is contained in `B` exactly when each image of an element of the
 source subcoalgebra belongs to `B`. -/
 theorem map_le_iff {f : C →ₗc[R] D} {A : Subcoalgebra R C} {B : Subcoalgebra R D} :
-    A.map f ≤ B ↔ ∀ ⦃c⦄, c ∈ A → f c ∈ B :=
-  Submodule.map_le_iff_le_comap
+    A.map f ≤ B ↔ ∀ ⦃c⦄, c ∈ A → f c ∈ B := by
+  rw [← toSubmodule_le_toSubmodule, map_toSubmodule, Submodule.map_le_iff_le_comap]
+  simp only [SetLike.le_def, Submodule.mem_comap, mem_toSubmodule,
+    CoalgHom.toLinearMap_eq_coe, CoalgHom.coe_toLinearMap]
 
 /-- The image construction is monotone in the source subcoalgebra. -/
 theorem map_mono (f : C →ₗc[R] D) {A B : Subcoalgebra R C} (hAB : A ≤ B) :
-    A.map f ≤ B.map f :=
-  Submodule.map_mono hAB
+    A.map f ≤ B.map f := by
+  rw [← toSubmodule_le_toSubmodule, map_toSubmodule, map_toSubmodule]
+  exact Submodule.map_mono (toSubmodule_le_toSubmodule.mpr hAB)
 
 /-- The image of the bottom subcoalgebra is bottom. -/
 @[simp]
 theorem map_bot (f : C →ₗc[R] D) : (⊥ : Subcoalgebra R C).map f = ⊥ := by
-  apply SetLike.coe_injective
-  exact congrArg (SetLike.coe : Submodule R D → Set D) (Submodule.map_bot f.toLinearMap)
+  ext d
+  simp only [← mem_toSubmodule, map_toSubmodule, bot_toSubmodule, Submodule.map_bot]
 
 /-- The image of the top subcoalgebra is the range of the coalgebra morphism as a submodule. -/
 @[simp]
@@ -108,16 +110,17 @@ theorem map_top_toSubmodule (f : C →ₗc[R] D) :
 /-- The identity coalgebra morphism leaves a subcoalgebra unchanged. -/
 @[simp]
 theorem map_id (A : Subcoalgebra R C) : A.map (CoalgHom.id R C) = A := by
-  apply SetLike.coe_injective
-  exact congrArg (SetLike.coe : Submodule R C → Set C) (Submodule.map_id (p := A.toSubmodule))
+  ext d
+  simp only [← mem_toSubmodule, map_toSubmodule, CoalgHom.toLinearMap_eq_coe,
+    CoalgHom.id_toLinearMap, Submodule.map_id]
 
 /-- Images of subcoalgebras compose with coalgebra morphisms. -/
 @[simp]
 theorem map_map (A : Subcoalgebra R C) (f : C →ₗc[R] D) (g : D →ₗc[R] E) :
     (A.map f).map g = A.map (g.comp f) := by
-  apply SetLike.coe_injective
-  exact congrArg (SetLike.coe : Submodule R E → Set E)
-    (Submodule.map_comp f.toLinearMap g.toLinearMap A.toSubmodule).symm
+  ext d
+  simp only [← mem_toSubmodule, map_toSubmodule, CoalgHom.toLinearMap_eq_coe,
+    CoalgHom.comp_toLinearMap, Submodule.map_comp]
 
 /-- The image of a binary join is the binary join of the images. -/
 @[simp]
