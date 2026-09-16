@@ -34,6 +34,7 @@ as the S-equivalence class of a Seifert matrix — offers.
 ## Main results
 
 * `Matrix.signature_congr`: invariance under congruence by a matrix with unit determinant.
+* `Matrix.signature_reindex`: invariance under an equivalence of the coordinate type.
 * `Matrix.signature_fromBlocks_zero`: additivity along a block diagonal.
 * `Matrix.signature_diagonal`: the signature of a diagonal matrix as a sum of signs.
 * `Matrix.signature_hyperbolicGram`: the hyperbolic plane has signature zero.
@@ -138,6 +139,26 @@ def isometryEquivFromBlocks (A : Matrix ι ι R) (B : Matrix κ κ R) :
       toQuadraticForm'_apply, ← hx, fromBlocks_mulVec]
     simp [sumElim_dotProduct_sumElim]
 
+/-- Reindexing the rows and columns of a matrix along the same equivalence only transports the
+coordinates of its quadratic form. -/
+def isometryEquivReindex (e : ι ≃ κ) (A : Matrix ι ι R) :
+    (reindex e e A).toQuadraticForm'.IsometryEquiv A.toQuadraticForm' where
+  toLinearEquiv :=
+    { toFun := fun x i ↦ x (e i)
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl
+      invFun := fun x j ↦ x (e.symm j)
+      left_inv := fun x ↦ funext fun j ↦ by simp
+      right_inv := fun x ↦ funext fun i ↦ by simp }
+  map_app' x := by
+    rw [toQuadraticForm'_apply, toQuadraticForm'_apply, dotProduct, dotProduct,
+      ← e.sum_comp (fun i ↦ x i * (reindex e e A *ᵥ x) i)]
+    apply Finset.sum_congr rfl
+    intro i _
+    simp only [mulVec, dotProduct, reindex_apply, submatrix_apply, Equiv.symm_apply_apply]
+    rw [← e.sum_comp (fun j ↦ A i (e.symm j) * x j)]
+    simp only [Equiv.symm_apply_apply]
+
 end CommRing
 
 variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
@@ -174,6 +195,13 @@ with unit determinant does not change the signature. -/
 theorem signature_congr [DecidableEq ι] {P : Matrix ι ι 𝕜} (hP : IsUnit P.det)
     (A : Matrix ι ι 𝕜) : signature (P * A * Pᵀ) = signature A :=
   signature_eq_of_equivalent ⟨isometryEquivCongr hP A⟩
+
+/-- Reindexing both coordinates of a matrix along an equivalence does not change its signature. -/
+@[simp]
+theorem signature_reindex (e : ι ≃ κ) (A : Matrix ι ι 𝕜) :
+    signature (reindex e e A) = signature A := by
+  classical
+  exact signature_eq_of_equivalent ⟨isometryEquivReindex e A⟩
 
 /-- Transposing a matrix does not change its signature. -/
 @[simp]
