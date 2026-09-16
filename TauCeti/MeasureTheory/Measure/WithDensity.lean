@@ -27,6 +27,8 @@ family into a density for every other member.
 
 * `MeasurableEquiv.map_withDensity`: the image of a weighted measure along a measurable
   equivalence is the image measure weighted by the transported weight.
+* `MeasureTheory.Measure.map_withDensity_eq_withDensity`: a pointwise factorization of one weight
+  through a map whose Jacobian identity is already known transports that weight to the image.
 * `MeasureTheory.Measure.map_affine_withDensity`: the image of a weighted Haar measure under an
   invertible affine map is that Haar measure weighted by the substituted density, rescaled by the
   constant Jacobian factor.
@@ -57,6 +59,34 @@ theorem map_withDensity (e : α ≃ᵐ β) (μ : Measure α) (f : α → ℝ≥0
 end MeasurableEquiv
 
 namespace MeasureTheory.Measure
+
+variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+
+/-- **A Jacobian identity transports a weight.** Suppose `f` carries `μ` weighted by `jac` to `ν`,
+which is the Jacobian formula for `f` when `μ` and `ν` are the restrictions of a Haar measure to
+the two regions `f` maps onto each other. If a weight `h` upstairs factors almost everywhere as
+`jac` times a weight `g` downstairs, then `f` carries `μ.withDensity h` to `ν.withDensity g`: the
+change of variables for measures upgrades to one for densities.
+
+This is the step that turns a pointwise density computation into an identity of measures, so the
+work in an application is the factorization hypothesis alone. -/
+theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : α → β}
+    {jac h : α → ℝ≥0∞} {g : β → ℝ≥0∞} (hf : Measurable f) (hjac : Measurable jac)
+    (hg : Measurable g) (hmap : (μ.withDensity jac).map f = ν)
+    (hh : ∀ᵐ z ∂μ, jac z * g (f z) = h z) :
+    (μ.withDensity h).map f = ν.withDensity g := by
+  ext q hq
+  have hcomp : Measurable fun z => q.indicator g (f z) := (hg.indicator hq).comp hf
+  rw [Measure.map_apply hf hq, withDensity_apply _ (hf hq), withDensity_apply _ hq,
+    ← lintegral_indicator (hf hq), ← lintegral_indicator hq, ← hmap,
+    lintegral_map (hg.indicator hq) hf, lintegral_withDensity_eq_lintegral_mul _ hjac hcomp]
+  refine lintegral_congr_ae ?_
+  filter_upwards [hh] with z hz
+  by_cases hzq : f z ∈ q
+  · rw [Set.indicator_of_mem (Set.mem_preimage.mpr hzq), Pi.mul_apply,
+      Set.indicator_of_mem hzq, hz]
+  · rw [Set.indicator_of_notMem (Set.mem_preimage.not.mpr hzq), Pi.mul_apply,
+      Set.indicator_of_notMem hzq, mul_zero]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [FiniteDimensional ℝ E]

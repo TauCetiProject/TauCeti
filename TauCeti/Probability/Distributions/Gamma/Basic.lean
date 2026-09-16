@@ -104,10 +104,11 @@ theorem ae_mem_prod_Ioi_gammaMeasure {b s : ℝ} (ha : 0 < a) (hb : 0 < b) (hr :
   filter_upwards [ae_pos_gammaMeasure b s] with y hy
   exact ⟨hx, hy⟩
 
-/-- On the positive half-line the gamma density is given by its closed formula. -/
-private lemma gammaPDFReal_of_pos {x : ℝ} (hx : 0 < x) :
+/-- Off the negative half-line the gamma density is given by its closed formula. -/
+@[simp]
+theorem gammaPDFReal_of_nonneg {x : ℝ} (hx : 0 ≤ x) :
     gammaPDFReal a r x = r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x)) := by
-  rw [gammaPDFReal, ite_eq_left hx.le]
+  rw [gammaPDFReal, ite_eq_left hx]
 
 /-- An integral against the gamma law is the set integral of the weighted integrand over
 `(0, ∞)`. -/
@@ -122,7 +123,7 @@ theorem integral_gammaMeasure_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace
     (Probability.measurable_gammaPDF a r) (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top) f]
   simp_rw [gammaPDF, ENNReal.toReal_ofReal (gammaPDFReal_nonneg ha hr _)]
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hcompl, integral_Ici_eq_integral_Ioi]
-  exact setIntegral_congr_fun measurableSet_Ioi fun x hx ↦ by rw [gammaPDFReal_of_pos hx]
+  exact setIntegral_congr_fun measurableSet_Ioi fun x hx ↦ by rw [gammaPDFReal_of_nonneg hx.le]
 
 /-- Integrability against the gamma law is integrability of the weighted integrand over
 `(0, ∞)`. -/
@@ -132,7 +133,7 @@ private lemma integrable_gammaMeasure_iff (ha : 0 < a) (hr : 0 < r) (f : ℝ →
         (fun x ↦ r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x)) * f x) (Ioi 0) := by
   have hpos : ∀ x ∈ Ioi (0 : ℝ), f x * gammaPDFReal a r x =
       r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x)) * f x := fun x hx ↦ by
-    rw [gammaPDFReal_of_pos hx, mul_comm]
+    rw [gammaPDFReal_of_nonneg hx.le, mul_comm]
   have hneg : IntegrableOn (fun x ↦ f x * gammaPDFReal a r x) (Iio 0) := by
     refine integrableOn_zero.congr_fun (fun x hx ↦ ?_) measurableSet_Iio
     rw [gammaPDFReal, ite_eq_right (not_le.mpr hx), mul_zero]
