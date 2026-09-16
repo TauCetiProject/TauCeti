@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
+public import TauCeti.FieldTheory.FunctionField.Differential.CanonicalDivisor
 
 /-!
 # Nonspecial divisors of degree `g` on prescribed rational places

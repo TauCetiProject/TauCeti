@@ -36,9 +36,9 @@ strictly stronger than nonconstancy.
 * `TauCeti.riemannRochSpace_eq_bot_of_degree_neg` and
   `TauCeti.Divisor.dim_eq_zero_of_degree_neg` are the negative-degree consequence, and
   `TauCeti.Divisor.dim_le_degree_add_finrank_of_riemannRochSpace_ne_bot` bounds `ℓ(D)` by
-  `deg D + [algebraicClosure k F : k]` whenever `L(D)` is nonzero (by `deg D + 1` over an exact
-  constant field), and `TauCeti.Divisor.exists_mem_dim_sub_ofPoint_lt` shows that such an `L(D)`
-  drops when some place of a set of sufficiently large total degree is removed.
+  `deg D + [algebraicClosure k F : k]` whenever `L(D)` is nonzero, and
+  `TauCeti.Divisor.exists_mem_dim_sub_ofPoint_lt` shows that such an `L(D)` drops when some place
+  of a set of sufficiently large total degree is removed.
 
 ## References
 
@@ -324,14 +324,6 @@ theorem Divisor.dim_le_degree_add_finrank_of_riemannRochSpace_ne_bot (hF : IsFun
   rw [Divisor.dim_eq_of_linearlyEquivalent hF hlin,
     Divisor.degree_eq_of_linearlyEquivalent hF hlin]
   simpa only [posPart_eq_self.mpr hD'] using Divisor.dim_le_degree_posPart_add_finrank hF D'
-
-/-- Over an exact constant field, a divisor with a nonzero Riemann–Roch space satisfies
-`ℓ(D) ≤ deg D + 1` (Stichtenoth, Proposition 1.4.9 with Corollary 1.4.12(a)). -/
-theorem Divisor.dim_le_degree_add_one_of_riemannRochSpace_ne_bot (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) {D : Divisor k F} (hD : riemannRochSpace D ≠ ⊥) :
-    (Divisor.dim D : ℤ) ≤ Divisor.degree D + 1 := by
-  have h := Divisor.dim_le_degree_add_finrank_of_riemannRochSpace_ne_bot hF hD
-  rwa [isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one.mp hex] at h
 
 /-- **A nonzero Riemann–Roch space drops along a set of large degree.**  If `ℓ(D) > 0` and the
 places of a finite set `T` have total degree exceeding `deg D + [algebraicClosure k F : k] - ℓ(D)`,
