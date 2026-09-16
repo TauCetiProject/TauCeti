@@ -34,7 +34,9 @@ strictly stronger than nonconstancy.
   `Pic⁰`, and `TauCeti.Divisor.degree_eq_of_linearlyEquivalent` records invariance under linear
   equivalence.
 * `TauCeti.riemannRochSpace_eq_bot_of_degree_neg` and
-  `TauCeti.Divisor.dim_eq_zero_of_degree_neg` are the negative-degree consequence.
+  `TauCeti.Divisor.dim_eq_zero_of_degree_neg` are the negative-degree consequence, and
+  `TauCeti.Divisor.dim_le_degree_add_one_of_riemannRochSpace_ne_bot` bounds `ℓ(D)` by
+  `deg D + 1` whenever `L(D)` is nonzero.
 
 ## References
 
@@ -309,5 +311,16 @@ theorem Divisor.dim_eq_zero_of_degree_neg (hF : IsFunctionField k F) {D : Diviso
     (hD : Divisor.degree D < 0) : Divisor.dim D = 0 := by
   exact (Divisor.dim_eq_zero_iff_riemannRochSpace_eq_bot hF D).mpr
     (riemannRochSpace_eq_bot_of_degree_neg hF hD)
+
+/-- Over an exact constant field, a divisor with a nonzero Riemann–Roch space satisfies
+`ℓ(D) ≤ deg D + 1` (Stichtenoth, Proposition 1.4.9 with Corollary 1.4.12(a)): such a `D` is
+linearly equivalent to an effective divisor, which has the same degree and dimension. -/
+theorem Divisor.dim_le_degree_add_one_of_riemannRochSpace_ne_bot (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {D : Divisor k F} (hD : riemannRochSpace D ≠ ⊥) :
+    (Divisor.dim D : ℤ) ≤ Divisor.degree D + 1 := by
+  obtain ⟨D', hD', hlin⟩ := (riemannRochSpace_ne_bot_iff hF).mp hD
+  rw [Divisor.dim_eq_of_linearlyEquivalent hF hlin,
+    Divisor.degree_eq_of_linearlyEquivalent hF hlin]
+  simpa only [posPart_eq_self.mpr hD'] using Divisor.dim_le_degree_posPart_add_one hF hex D'
 
 end TauCeti
