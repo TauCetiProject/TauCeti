@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.RamificationInertia.HilbertTheory
+public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 
 /-!
 # Splitting of a prime in the inertia field
@@ -34,7 +35,9 @@ between the two upper rows: `P` is again the only prime of `B` over `𝓟E`, all
 of `P` over `p` is already ramification over `𝓟E` and its residue extension over `𝓟E` is
 trivial, and consequently `𝓟E` is unramified over `p` with residue degree the full `f`.
 The prime `𝓟E` is stated as `P.under 𝓞E`, for `𝓞E` a Dedekind domain between `A` and `B` with
-fraction field `E`, and the residue field of `p` is assumed perfect, as it is when it is finite.
+fraction field `E`, and the residue extension at `P` is assumed separable. This is the exact
+hypothesis needed for the clean table; over an imperfect residue field the inseparable residue
+degree remains in the two upper rows.
 
 
 ## Main results
@@ -61,6 +64,8 @@ open Ideal MulAction Pointwise
 namespace TauCeti
 
 namespace IsInertiaField
+
+attribute [local instance] Ideal.Quotient.field
 
 variable (A K L : Type*) {B : Type*} [Field K] [Field L] [Algebra K L] [CommRing A] [CommRing B]
   [Algebra A B] {p : Ideal A} (P : Ideal B) [P.LiesOver p]
@@ -102,7 +107,8 @@ private lemma instances :
   have inst₅ : IsGaloisGroup (inertia Gal(L/K) P) 𝓞E B := .of_isFractionRing _ _ _ E L
   exact ⟨inst₁, inst₂, inst₃, inst₄, inst₅⟩
 
-variable [FiniteDimensional K L] [P.IsPrime] [PerfectField (P.under A).ResidueField]
+variable [FiniteDimensional K L] [P.IsMaximal]
+  [Algebra.IsSeparable (A ⧸ P.under A) (B ⧸ P)]
 
 include K L E P in
 /-- Let `E` be the inertia field of `P` in `L/K`. Then the ramification index of `P.under 𝓞E` in
@@ -112,17 +118,30 @@ theorem ramificationIdxIn_eq :
     ramificationIdxIn (P.under 𝓞E) B = p.ramificationIdxIn B := by
   obtain rfl := over_def P p
   obtain ⟨_, _, _, _, _⟩ := instances A K L P E 𝓞E
+  let _ : (P.under A).IsMaximal := Ideal.IsMaximal.under A P
+  let _ : (P.under 𝓞E).IsMaximal := Ideal.IsMaximal.under 𝓞E P
   let := Localization.AtPrime.algebraOfLiesOver (P.under A) (P.under 𝓞E)
-  have : PerfectField (P.under 𝓞E).ResidueField :=
-    Algebra.IsAlgebraic.perfectField (P.under A).ResidueField
+  let _ := Ideal.Quotient.algebraOfLiesOver (P.under 𝓞E) (P.under A)
+  let _ := Ideal.Quotient.algebraOfLiesOver P (P.under 𝓞E)
+  let _ := Ideal.Quotient.algebraOfLiesOver P (P.under A)
+  let _ : IsScalarTower (A ⧸ P.under A) (𝓞E ⧸ P.under 𝓞E) (B ⧸ P) :=
+    IsScalarTower.of_algebraMap_eq' (by
+      ext x
+      simp only [RingHom.comp_apply, Ideal.Quotient.algebraMap_mk_of_liesOver]
+      rw [IsScalarTower.algebraMap_apply A 𝓞E B])
+  let _ : Algebra.IsSeparable (𝓞E ⧸ P.under 𝓞E) (B ⧸ P) :=
+    Algebra.isSeparable_tower_top_of_isSeparable
+      (A ⧸ P.under A) (𝓞E ⧸ P.under 𝓞E) (B ⧸ P)
   -- the inertia group acts trivially on `B ⧸ P`, so its own inertia group at `P` is everything
   have htop : inertia (inertia Gal(L/K) P) P = ⊤ :=
     (AddSubgroup.subgroupOf_inertia _ _).symm.trans (Subgroup.subgroupOf_self _)
   calc ramificationIdxIn (P.under 𝓞E) B
       = Nat.card (inertia (inertia Gal(L/K) P) P) :=
-        (card_inertia_eq_ramificationIdxIn (P.under 𝓞E) P).symm
+        (card_inertia_eq_ramificationIdxIn_of_isSeparable
+          (G := inertia Gal(L/K) P) (P.under 𝓞E) P).symm
     _ = Nat.card (inertia Gal(L/K) P) := by rw [htop, Subgroup.card_top]
-    _ = (P.under A).ramificationIdxIn B := card_inertia_eq_ramificationIdxIn (P.under A) P
+    _ = (P.under A).ramificationIdxIn B :=
+      card_inertia_eq_ramificationIdxIn_of_isSeparable (G := Gal(L/K)) (P.under A) P
 
 include A K L E P in
 /-- Let `E` be the inertia field of `P` in `L/K`. Then the inertia degree of `P.under 𝓞E` in `L`
@@ -134,7 +153,8 @@ theorem inertiaDegIn_eq_one :
     (inertia Gal(L/K) P)
   rw [primesOver_eq_singleton K L P E 𝓞E, Set.ncard_singleton, one_mul,
     ramificationIdxIn_eq A K L P E 𝓞E (p := P.under A),
-    card_inertia_eq_ramificationIdxIn (P.under A) P] at H
+    card_inertia_eq_ramificationIdxIn_of_isSeparable
+      (G := Gal(L/K)) (P.under A) P] at H
   exact (mul_right_eq_self₀.mp H).resolve_right (ramificationIdxIn_ne_zero Gal(L/K))
 
 include K L E P in
