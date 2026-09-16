@@ -22,16 +22,19 @@ The point of naming the integer is that `K` carries no order. Statements such as
 dominant" or "`⟨lam + ρ, α^∨⟩` is positive" are not about `K` at all: they are about the integers
 that integrality produces, and over an arbitrary characteristic-zero field they can only be made
 by naming those integers. `TauCeti.coweightPairing lam i` is that name. Being `ℤ`-valued it is
-total in `lam`, and off the integral weights it is junk; every lemma about it therefore carries
-the integrality hypothesis that makes it meaningful, in the shape of the cast equation
-`TauCeti.intCast_coweightPairing`.
+total in `lam`, and off the integral weights it is junk: the cast equation
+`TauCeti.intCast_coweightPairing` saying what the integer *is*, and the algebraic laws that follow
+from it, therefore carry the integrality hypothesis that makes them meaningful. What needs no
+hypothesis is a weight whose value at one coroot is already displayed as an integer -- exhibiting
+that integer *is* integrality at that root -- and that is how the pairing is computed here
+(`TauCeti.coweightPairing_eq_of_apply_coroot_eq_intCast`).
 
 The integral weights are closed under the operations of `TauCeti.IsIntegralWeight.add`,
 `TauCeti.IsIntegralWeight.neg` and `TauCeti.IsIntegralWeight.zsmul`, so they form a `ℤ`-submodule
 `TauCeti.integralWeightLattice` of `Module.Dual K H` -- a lattice and not a `K`-subspace, the
 integrality condition being arithmetic rather than linear. The roots lie in it; that the Weyl
 vector `ρ` of a base does too is proved with the rest of the dominance theory, in
-`TauCeti/Algebra/Lie/HighestWeight/WeightLattice.lean`.
+`TauCeti/Algebra/Lie/HighestWeight/Weight/Lattice.lean`.
 
 ## Main definitions
 
@@ -67,11 +70,10 @@ lemma identifying the two, `TauCeti.coweightPairing_coe_eq_rootCartanWeight`, is
 
 ## References
 
-This file supplies the integral weight lattice milestone of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signature
-`coweightPairing` is pinned in the accompanying `Suggested.lean`.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §13.2.
+* The signature of `TauCeti.coweightPairing`, and its design as a total function that is junk off
+  the integral weights, follow the human-authored prototype in
+  `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/Suggested.lean`.
 -/
 
 public section

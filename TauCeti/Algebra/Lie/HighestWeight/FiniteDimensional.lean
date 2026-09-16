@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.HighestWeight.Multiplicity
 public import TauCeti.Algebra.Lie.HighestWeight.Verma
-public import TauCeti.Algebra.Lie.HighestWeight.WeightSupport
+public import TauCeti.Algebra.Lie.HighestWeight.Weight.Support
 -- Non-public: these supply the inputs of the proofs, never the vocabulary of a statement.
 import TauCeti.Algebra.Lie.HighestWeight.Existence
 import TauCeti.Algebra.Lie.HighestWeight.Irreducible
