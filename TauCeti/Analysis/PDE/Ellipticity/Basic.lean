@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+public import TauCeti.LinearAlgebra.Matrix.Signature
 
 /-!
 # Uniform ellipticity for divergence-form PDE coefficients
@@ -119,18 +120,10 @@ lemma matrixBilinearForm_one_apply (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm (1 : Matrix n n ℝ) η ξ = η ⬝ᵥ ξ := by
   rw [matrixBilinearForm_apply, one_mulVec]
 
-/-- Matrix quadratic forms are linear in scalar multiplication of the coefficient matrix. -/
-@[simp]
-lemma toQuadraticForm'_smul (c : ℝ) (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
-    (c • A).toQuadraticForm' ξ = c * A.toQuadraticForm' ξ := by
-  rw [toQuadraticForm'_eq_dotProduct, toQuadraticForm'_eq_dotProduct, smul_mulVec,
-    dotProduct_smul]
-  simp [smul_eq_mul]
-
 /-- The scalar identity matrix has quadratic form `c ‖ξ‖²`. -/
 lemma toQuadraticForm'_smul_one (c : ℝ) (ξ : EuclideanSpace ℝ n) :
     (c • (1 : Matrix n n ℝ)).toQuadraticForm' ξ = c * ‖ξ‖ ^ 2 := by
-  rw [toQuadraticForm'_smul, toQuadraticForm'_one]
+  rw [toQuadraticForm'_smul, _root_.smul_apply, smul_eq_mul, toQuadraticForm'_one]
 
 /-- Matrix quadratic forms are additive in the coefficient matrix. -/
 @[simp]
@@ -271,8 +264,8 @@ lemma coefficientSymmetricPart_eq_self_of_isSymm {A : Matrix n n ℝ} (hA : A.Is
 @[simp]
 lemma toQuadraticForm'_coefficientSymmetricPart (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     (coefficientSymmetricPart A).toQuadraticForm' ξ = A.toQuadraticForm' ξ := by
-  rw [coefficientSymmetricPart, toQuadraticForm'_smul, toQuadraticForm'_add,
-    toQuadraticForm'_transpose]
+  rw [coefficientSymmetricPart, toQuadraticForm'_smul, _root_.smul_apply, smul_eq_mul,
+    toQuadraticForm'_add, toQuadraticForm'_transpose]
   ring
 
 omit [DecidableEq n] in

@@ -35,6 +35,7 @@ as the S-equivalence class of a Seifert matrix — offers.
 
 * `Matrix.signature_congr`: invariance under congruence by a matrix with unit determinant.
 * `Matrix.signature_fromBlocks_zero`: additivity along a block diagonal.
+* `Matrix.signature_submatrix_equiv`: invariance under reindexing the coordinates.
 * `Matrix.signature_diagonal`: the signature of a diagonal matrix as a sum of signs.
 * `Matrix.signature_hyperbolicGram`: the hyperbolic plane has signature zero.
 * `Matrix.signature_eq_of_congr_diagonal`: the signature read off an explicit diagonalising
@@ -81,10 +82,8 @@ theorem toQuadraticForm'_add_transpose (A : Matrix ι ι R) :
     toQuadraticForm'_transpose]
   ring
 
--- Not a `simp` lemma, for the same reason as `toQuadraticForm'_transpose` above:
--- `TauCeti.PDE.toQuadraticForm'_smul` is already `simp` and normalises the same left-hand side
--- pointwise on `EuclideanSpace ℝ n`, so tagging this one makes that one non-simp-normal.
 /-- Scaling a matrix scales its quadratic form. -/
+@[simp]
 theorem toQuadraticForm'_smul (c : R) (A : Matrix ι ι R) :
     (c • A).toQuadraticForm' = c • A.toQuadraticForm' := by
   ext x
@@ -149,6 +148,22 @@ def isometryEquivFromBlocks (A : Matrix ι ι R) (B : Matrix κ κ R) :
       toQuadraticForm'_apply, ← hx, fromBlocks_mulVec]
     simp [sumElim_dotProduct_sumElim]
 
+/-- Reindexing the coordinates by an equivalence is an isometry of the attached quadratic
+forms. -/
+def isometryEquivSubmatrix (A : Matrix ι ι R) (e : κ ≃ ι) :
+    (A.submatrix e e).toQuadraticForm'.IsometryEquiv A.toQuadraticForm' where
+  toLinearEquiv :=
+    { toFun := fun x => x ∘ e.symm
+      map_add' := fun _ _ => rfl
+      map_smul' := fun _ _ => rfl
+      invFun := fun y => y ∘ e
+      left_inv := fun x => funext fun i => by simp
+      right_inv := fun y => funext fun i => by simp }
+  map_app' x := by
+    dsimp only
+    rw [toQuadraticForm'_apply, toQuadraticForm'_apply, submatrix_mulVec_equiv,
+      comp_equiv_symm_dotProduct]
+
 end CommRing
 
 variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
@@ -185,6 +200,14 @@ with unit determinant does not change the signature. -/
 theorem signature_congr [DecidableEq ι] {P : Matrix ι ι 𝕜} (hP : IsUnit P.det)
     (A : Matrix ι ι 𝕜) : signature (P * A * Pᵀ) = signature A :=
   signature_eq_of_equivalent ⟨isometryEquivCongr hP A⟩
+
+/-- **Reindexing invariance of the signature.** Relabelling the coordinates by an equivalence
+does not change the signature. -/
+@[simp]
+theorem signature_submatrix_equiv (A : Matrix ι ι 𝕜) (e : κ ≃ ι) :
+    signature (A.submatrix e e) = signature A := by
+  classical
+  exact signature_eq_of_equivalent ⟨isometryEquivSubmatrix A e⟩
 
 /-- Transposing a matrix does not change its signature. -/
 @[simp]

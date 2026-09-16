@@ -10,14 +10,17 @@ public import TauCeti.LinearAlgebra.Matrix.Realify
 public import TauCeti.LinearAlgebra.Matrix.Signature
 
 /-!
-# The signature of a Hermitian complex matrix
+# The signature of a Hermitian matrix
 
-The *signature* of a Hermitian matrix over `ℂ` is the number of its positive eigenvalues minus
-the number of its negative ones, the difference of the two indices of inertia of the Hermitian
-form `x ↦ xᴴ A x`. Unlike the real case there is no ambient linearly ordered field, so this is
-not an instance of `Matrix.signature`; the two are related instead through the realification
-`Matrix.realify`, which turns the Hermitian form into a real quadratic form of twice the rank
-(`Matrix.IsHermitian.signature_realify`).
+The *signature* of a Hermitian matrix is the number of its positive eigenvalues minus the number
+of its negative ones, the difference of the two indices of inertia of the Hermitian form
+`x ↦ xᴴ A x`. Mathlib's eigenvalues of a Hermitian matrix are real over any `RCLike` field, so
+`Matrix.IsHermitian.signature` is defined at that generality.
+
+The theory is then developed over `ℂ`, where the Hermitian form is not a real quadratic form and
+the signature is therefore not an instance of `Matrix.signature`. The two are related instead
+through the realification `Matrix.realify`, which turns the Hermitian form into a real quadratic
+form of twice the rank (`Matrix.IsHermitian.signature_realify`).
 
 That identity is what makes the real theory available here. In particular **Sylvester's law of
 inertia** over `ℂ` (`Matrix.IsHermitian.signature_congr`: the signature is unchanged by
@@ -33,6 +36,7 @@ complex matrix is its real signature (`Matrix.IsHermitian.signature_map_ofReal`)
 
 * `Matrix.IsHermitian.signature_realify`: the realification has twice the signature.
 * `Matrix.IsHermitian.signature_congr`: Sylvester's law of inertia for Hermitian matrices.
+* `Matrix.IsHermitian.signature_fromBlocks_zero`: additivity along a block diagonal.
 * `Matrix.IsHermitian.signature_eq_of_congr_diagonal`: the signature read off an explicit
   diagonalising `*`-congruence.
 * `Matrix.IsHermitian.signature_map_ofReal`: a real matrix keeps its real signature.
@@ -48,12 +52,32 @@ public section
 
 namespace Matrix.IsHermitian
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {A : Matrix ι ι ℂ}
+variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
 
-/-- The signature of a Hermitian complex matrix: its positive eigenvalues counted against its
-negative ones. -/
+section RCLike
+
+variable {𝕜 : Type*} [RCLike 𝕜] {A : Matrix ι ι 𝕜}
+
+/-- The signature of a Hermitian matrix: its positive eigenvalues counted against its negative
+ones. -/
 noncomputable def signature (hA : A.IsHermitian) : ℤ :=
   ∑ i, if 0 < hA.eigenvalues i then (1 : ℤ) else if hA.eigenvalues i < 0 then -1 else 0
+
+/-- The zero matrix has signature zero: all its eigenvalues vanish. -/
+@[simp]
+theorem signature_zero :
+    (Matrix.isHermitian_zero : (0 : Matrix ι ι 𝕜).IsHermitian).signature = 0 := by
+  have h : (Matrix.isHermitian_zero : (0 : Matrix ι ι 𝕜).IsHermitian).eigenvalues = 0 := by
+    funext i
+    rw [Matrix.IsHermitian.eigenvalues_eq]
+    simp
+  simp [signature, h]
+
+end RCLike
+
+section Complex
+
+variable {A : Matrix ι ι ℂ}
 
 /-- **The realification of a Hermitian matrix has twice its signature.** Each eigenvalue of a
 Hermitian matrix contributes a complex line, hence a real plane, to the realified form. -/
@@ -116,12 +140,22 @@ theorem signature_eq_of_congr_diagonal {P : Matrix ι ι ℂ} (hP : IsUnit P.det
   rw [← hA.signature_congr hP]
   exact key _ h
 
-/-- The zero matrix has signature zero. -/
-@[simp]
-theorem signature_zero :
-    (Matrix.isHermitian_zero : (0 : Matrix ι ι ℂ).IsHermitian).signature = 0 := by
-  have h' := (Matrix.isHermitian_zero : (0 : Matrix ι ι ℂ).IsHermitian).signature_realify
-  rw [realify_zero, Matrix.signature_zero] at h'
+/-- **Additivity of the signature along a block diagonal.** The realification of a
+block-diagonal matrix is, after reindexing, the block diagonal of the two realifications. -/
+theorem signature_fromBlocks_zero {B : Matrix κ κ ℂ} (hA : A.IsHermitian) (hB : B.IsHermitian) :
+    (hA.fromBlocks Matrix.conjTranspose_zero hB).signature = hA.signature + hB.signature := by
+  have hshuffle : (Matrix.fromBlocks A 0 0 B).realify.submatrix
+      (Equiv.sumSumSumComm ι ι κ κ) (Equiv.sumSumSumComm ι ι κ κ) =
+      Matrix.fromBlocks A.realify 0 0 B.realify := by
+    ext p q
+    rcases p with (i | i) | (k | k) <;> rcases q with (j | j) | (l | l) <;>
+      simp [Equiv.sumSumSumComm]
+  have key : Matrix.signature (Matrix.fromBlocks A 0 0 B).realify =
+      Matrix.signature A.realify + Matrix.signature B.realify := by
+    rw [← Matrix.signature_submatrix_equiv _ (Equiv.sumSumSumComm ι ι κ κ), hshuffle,
+      Matrix.signature_fromBlocks_zero]
+  rw [(hA.fromBlocks Matrix.conjTranspose_zero hB).signature_realify, hA.signature_realify,
+    hB.signature_realify] at key
   omega
 
 /-- Negating a Hermitian matrix negates its signature. -/
@@ -141,5 +175,7 @@ theorem signature_map_starRingEnd (hA : A.IsHermitian) :
   rw [(hA.map (starRingEnd ℂ) (by simp [Function.Semiconj])).signature_realify,
     hA.signature_realify] at h
   omega
+
+end Complex
 
 end Matrix.IsHermitian
