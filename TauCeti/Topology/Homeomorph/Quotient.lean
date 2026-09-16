@@ -27,7 +27,11 @@ namespace Homeomorph.Quotient
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- `Homeomorph.Quotient.congr` sends the class of `x` to the class of its image. This is the
-homeomorphism counterpart of Mathlib's `Equiv.Quotient.congr_mk`. -/
+homeomorphism counterpart of Mathlib's `Quotient.congr_mk`, and holds by definition for the same
+reason. The counterpart is needed because a homeomorphism and its underlying equivalence are
+applied through different coercions, so `Quotient.congr_mk` does not rewrite a goal stated for
+`Homeomorph.Quotient.congr`, just as `Quot.congr_mk` does not rewrite one stated for
+`Quotient.congr`. -/
 @[simp]
 theorem congr_mk {rX : Setoid X} {rY : Setoid Y} (e : X ≃ₜ Y)
     (h : ∀ x₁ x₂, rX x₁ x₂ ↔ rY (e x₁) (e x₂)) (x : X) :
