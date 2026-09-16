@@ -160,7 +160,12 @@ theorem coe_stabilizerBallQuotientHomeomorph_mk [Finite (stabilizer Γ z)] (hε 
     (τ : stabilizerBall Γ z ε) :
     (stabilizerBallQuotientHomeomorph Γ z ε hε (Quotient.mk _ τ) : ℂ) =
       discCoordinate z τ ^ Nat.card (stabilizer Γ z) := by
-  rw [stabilizerBallQuotientHomeomorph, Homeomorph.trans_apply, Homeomorph.Quotient.congr_mk,
+  have hcongr :
+      Homeomorph.Quotient.congr (stabilizerBallHomeomorph Γ z ε)
+          (orbitRel_stabilizerBall_iff Γ z ε) (Quotient.mk _ τ) =
+        Quotient.mk _ (stabilizerBallHomeomorph Γ z ε τ) :=
+    rfl
+  rw [stabilizerBallQuotientHomeomorph, Homeomorph.trans_apply, hcongr,
     coe_rootsOfUnityBallQuotientHomeomorph_mk, coe_stabilizerBallHomeomorph]
 
 end TauCeti
