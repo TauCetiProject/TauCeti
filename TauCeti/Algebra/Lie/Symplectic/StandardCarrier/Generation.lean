@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.IntegralMatrix
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Diagonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.TorusGeneration
 
 /-!
@@ -44,6 +45,9 @@ asserts that the carrier is reductive, that its weight torus is maximal, or that
   short-root element of the symplectic group.
 * `TauCeti.SpStd.points_eq_GLSymplecticFin`: the carrier points are exactly the symplectic
   matrices, over every field.
+* `TauCeti.SpStd.pointsMulEquivGLSymplecticFin`: the resulting multiplicative equivalence, with
+  equations describing both directions on matrices and its action on every numbered simple-root
+  subgroup and the weight torus.
 
 ## References
 
@@ -190,6 +194,112 @@ theorem points_eq_GLSymplecticFin : points n K = GLSymplecticFin (n + 1) K := by
   have hmem : (⟨g, hg⟩ : GLSymplecticFin (n + 1) K) ∈
       (points n K).comap (GLSymplecticFin (n + 1) K).subtype := hH ▸ Subgroup.mem_top _
   exact Subgroup.mem_subgroupOf.mp hmem
+
+/-! ## The point-group equivalence -/
+
+/-- **The full-weight type-`C_(n+1)` carrier's points are the symplectic group**, as a
+multiplicative equivalence. This packages `TauCeti.SpStd.points_eq_GLSymplecticFin` in the form
+needed to transport endomorphisms and subgroups while leaving the underlying matrices unchanged. -/
+noncomputable def pointsMulEquivGLSymplecticFin (K : Type v) [Field K] :
+    points n K ≃* GLSymplecticFin (n + 1) K :=
+  MulEquiv.subgroupCongr (points_eq_GLSymplecticFin n)
+
+/-- The symplectic element underlying a point of the carrier is that point. -/
+@[simp]
+theorem coe_pointsMulEquivGLSymplecticFin_apply (g : points n K) :
+    ((pointsMulEquivGLSymplecticFin n K g : GLSymplecticFin (n + 1) K) :
+        GL (Fin ((n + 1) + (n + 1))) K) =
+      (g : GL (Fin ((n + 1) + (n + 1))) K) := by
+  rw [pointsMulEquivGLSymplecticFin]
+  rfl
+
+/-- The point of the carrier underlying a symplectic element is that element. -/
+@[simp]
+theorem coe_pointsMulEquivGLSymplecticFin_symm_apply (g : GLSymplecticFin (n + 1) K) :
+    (((pointsMulEquivGLSymplecticFin n K).symm g : points n K) :
+        GL (Fin ((n + 1) + (n + 1))) K) =
+      (g : GL (Fin ((n + 1) + (n + 1))) K) := by
+  rw [pointsMulEquivGLSymplecticFin]
+  rfl
+
+/-- Under the point-group equivalence, the final positive simple-root subgroup is the positive
+long-root transvection subgroup of the symplectic group. -/
+theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_last
+    (u : Multiplicative K) :
+    pointsMulEquivGLSymplecticFin n K
+        (rootSubgroupPoints n (.inl (Fin.last n)) K u) =
+      GLSymplecticFin.positiveLongRootTransvectionUnit (Fin.last n)
+        (Multiplicative.toAdd u) := by
+  apply Subtype.ext
+  rw [coe_pointsMulEquivGLSymplecticFin_apply,
+    rootSubgroupPoints_inl_last_eq_positiveLongRootTransvectionUnit]
+
+/-- Under the point-group equivalence, the final negative simple-root subgroup is the negative
+long-root transvection subgroup of the symplectic group. -/
+theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inr_last
+    (u : Multiplicative K) :
+    pointsMulEquivGLSymplecticFin n K
+        (rootSubgroupPoints n (.inr (Fin.last n)) K u) =
+      GLSymplecticFin.negativeLongRootTransvectionUnit (Fin.last n)
+        (Multiplicative.toAdd u) := by
+  apply Subtype.ext
+  rw [coe_pointsMulEquivGLSymplecticFin_apply,
+    rootSubgroupPoints_inr_last_eq_negativeLongRootTransvectionUnit]
+
+/-- Under the point-group equivalence, a nonfinal positive simple-root subgroup is the adjacent
+difference-root subgroup of the symplectic group. -/
+theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_of_ne_last
+    (i : Fin (n + 1)) (hi : i ≠ Fin.last n) (u : Multiplicative K) :
+    pointsMulEquivGLSymplecticFin n K (rootSubgroupPoints n (.inl i) K u) =
+      GLSymplecticFin.differenceShortRootUnit (lt_next n i hi).ne
+        (Multiplicative.toAdd u) := by
+  apply Subtype.ext
+  rw [coe_pointsMulEquivGLSymplecticFin_apply,
+    rootSubgroupPoints_inl_eq_differenceShortRootUnit_of_ne_last n i hi]
+
+/-- Under the point-group equivalence, a nonfinal negative simple-root subgroup is the opposite
+adjacent difference-root subgroup of the symplectic group. -/
+theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inr_of_ne_last
+    (i : Fin (n + 1)) (hi : i ≠ Fin.last n) (u : Multiplicative K) :
+    pointsMulEquivGLSymplecticFin n K (rootSubgroupPoints n (.inr i) K u) =
+      GLSymplecticFin.differenceShortRootUnit (lt_next n i hi).ne'
+        (Multiplicative.toAdd u) := by
+  apply Subtype.ext
+  rw [coe_pointsMulEquivGLSymplecticFin_apply,
+    rootSubgroupPoints_inr_eq_differenceShortRootUnit_of_ne_last n i hi]
+
+/-- Under the point-group equivalence, the carrier's weight torus is the standard paired diagonal
+torus. Its first-block coordinate at `i` is the character of the classical type-`C` weight
+`ε_i`; the second block is its inverse. -/
+theorem pointsMulEquivGLSymplecticFin_weightTorusPoints
+    (s : Fin (n + 1) → Kˣ) :
+    pointsMulEquivGLSymplecticFin n K (weightTorusPoints n K s) =
+      GLSymplecticFin.diagonal fun i ↦
+        TauCeti.torusCharacter s (DynkinType.TypeC.weight (n + 1) i) := by
+  apply Subtype.ext
+  rw [coe_pointsMulEquivGLSymplecticFin_apply, coe_weightTorusPoints,
+    UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, GLSymplecticFin.coe_diagonal]
+  apply Matrix.GeneralLinearGroup.ext
+  intro i j
+  simp only [diagGL_coe, Matrix.diagonal_apply]
+  congr 1
+  obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective i
+  · rw [finSumFinEquiv_apply_left, GLSymplecticFin.diagonalCoordinates_castAdd,
+      basisWeight_apply, finSumFinEquiv_symm_apply_castAdd]
+    have hweight :
+        weight n (.inl i) = DynkinType.TypeC.weight (n + 1) i := by
+      funext j
+      exact weight_inl n i j
+    rw [hweight]
+  · rw [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat,
+      GLSymplecticFin.diagonalCoordinates_addNat, basisWeight_apply,
+      ← Fin.natAdd_eq_addNat,
+      finSumFinEquiv_symm_apply_natAdd]
+    have hweight :
+        weight n (.inr i) = -DynkinType.TypeC.weight (n + 1) i := by
+      funext j
+      exact weight_inr n i j
+    rw [hweight, torusCharacter_neg]
 
 end Field
 
