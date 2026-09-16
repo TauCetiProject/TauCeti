@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Distributions.Beta.Basic
 public import TauCeti.Probability.Distributions.Gamma.Basic
 import Mathlib.MeasureTheory.Function.Jacobian
-import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Distributions.PDFInstances
 
 /-!
@@ -269,17 +268,39 @@ private theorem map_betaGammaMap_prod_beta_gamma {a b r : ℝ} (ha : 0 < a) (hb 
   let _ := isProbabilityMeasure_gammaMeasure (add_pos ha hb) hr
   let _ := isProbabilityMeasure_gammaMeasure ha hr
   let _ := isProbabilityMeasure_gammaMeasure hb hr
-  have hT : MeasurableSet gammaBetaTarget := measurableSet_Ioo.prod measurableSet_Ioi
-  have hS : MeasurableSet (Ioi (0 : ℝ) ×ˢ Ioi (0 : ℝ)) :=
-    measurableSet_Ioi.prod measurableSet_Ioi
   rw [← Measure.restrict_eq_self_of_ae_mem (ae_mem_gammaBetaTarget ha hb hr),
     ← Measure.restrict_eq_self_of_ae_mem (ae_mem_prod_Ioi_gammaMeasure ha hb hr hr),
-    prod_beta_gammaMeasure_eq_withDensity, prod_gammaMeasure_eq_withDensity,
-    restrict_withDensity hT, restrict_withDensity hS]
-  refine Measure.map_withDensity_eq_withDensity measurable_betaGammaMap (by fun_prop)
-    (measurable_gammaGammaPDF a b r) map_betaGammaMap_withDensity ?_
-  filter_upwards [ae_restrict_mem hT] with z hz
-  exact gammaBeta_density ha hb hr hz
+    prod_beta_gammaMeasure_eq_withDensity, prod_gammaMeasure_eq_withDensity]
+  unfold gammaBetaTarget
+  rw [restrict_withDensity (measurableSet_Ioo.prod measurableSet_Ioi),
+    restrict_withDensity (measurableSet_Ioi.prod measurableSet_Ioi)]
+  ext q hq
+  rw [Measure.map_apply measurable_betaGammaMap hq,
+    withDensity_apply _ (measurable_betaGammaMap hq), withDensity_apply _ hq]
+  rw [← lintegral_indicator (measurable_betaGammaMap hq), ← lintegral_indicator hq]
+  calc
+    ∫⁻ z in gammaBetaTarget, (betaGammaMap ⁻¹' q).indicator (betaGammaPDF a b r) z =
+        ∫⁻ z in gammaBetaTarget, ENNReal.ofReal z.2 *
+          (q.indicator (gammaGammaPDF a b r)) (betaGammaMap z) := by
+      refine setLIntegral_congr_fun (measurableSet_Ioo.prod measurableSet_Ioi) fun z hz ↦ ?_
+      by_cases hzq : betaGammaMap z ∈ q
+      · have hzq' : z ∈ betaGammaMap ⁻¹' q := hzq
+        rw [indicator_of_mem hzq', indicator_of_mem hzq]
+        unfold betaGammaPDF gammaGammaPDF
+        exact (gammaBeta_density ha hb hr hz).symm
+      · have hzq' : z ∉ betaGammaMap ⁻¹' q := hzq
+        rw [indicator_of_notMem hzq', indicator_of_notMem hzq, mul_zero]
+    _ = ∫⁻ z, q.indicator (gammaGammaPDF a b r) z ∂Measure.map betaGammaMap
+          ((volume.restrict gammaBetaTarget).withDensity fun z ↦ ENNReal.ofReal z.2) := by
+      have hf := (measurable_gammaGammaPDF a b r).indicator hq
+      have hcomp : Measurable (fun z ↦
+          q.indicator (gammaGammaPDF a b r) (betaGammaMap z)) :=
+        hf.comp measurable_betaGammaMap
+      rw [lintegral_map hf measurable_betaGammaMap,
+        lintegral_withDensity_eq_lintegral_mul _ (by fun_prop) hcomp]
+      rfl
+    _ = ∫⁻ z in gammaBetaSource, q.indicator (gammaGammaPDF a b r) z := by
+      rw [map_betaGammaMap_withDensity]
 
 /-! ### Independent Gamma variables -/
 
