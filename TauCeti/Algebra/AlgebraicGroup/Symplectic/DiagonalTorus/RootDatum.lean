@@ -163,6 +163,42 @@ theorem equivTypeCIndex_negativeSum {i j : Fin m} (h : i < j) :
     equivTypeCIndex m (.negativeSum i j h) = (j, i, true) :=
   (rfl)
 
+/-- A diagonal type `C` index with positive sign corresponds to the long root `2eᵢ`. -/
+@[simp]
+theorem equivTypeCIndex_symm_diagonal_false (i : Fin m) :
+    (equivTypeCIndex m).symm (i, i, false) = .positiveLong i := by
+  simp [equivTypeCIndex, ofTypeCIndex]
+
+/-- A diagonal type `C` index with negative sign corresponds to the long root `-2eᵢ`. -/
+@[simp]
+theorem equivTypeCIndex_symm_diagonal_true (i : Fin m) :
+    (equivTypeCIndex m).symm (i, i, true) = .negativeLong i := by
+  simp [equivTypeCIndex, ofTypeCIndex]
+
+/-- For `a < b`, the unsigned type `C` index `(a, b, false)` corresponds to `e_a - e_b`. -/
+@[simp]
+theorem equivTypeCIndex_symm_of_lt_false {a b : Fin m} (h : a < b) :
+    (equivTypeCIndex m).symm (a, b, false) = .difference a b h.ne := by
+  simp [equivTypeCIndex, ofTypeCIndex, h]
+
+/-- For `a < b`, the signed type `C` index `(a, b, true)` corresponds to `e_b - e_a`. -/
+@[simp]
+theorem equivTypeCIndex_symm_of_lt_true {a b : Fin m} (h : a < b) :
+    (equivTypeCIndex m).symm (a, b, true) = .difference b a h.ne' := by
+  simp [equivTypeCIndex, ofTypeCIndex, h]
+
+/-- For `b < a`, the unsigned type `C` index `(a, b, false)` corresponds to `e_b + e_a`. -/
+@[simp]
+theorem equivTypeCIndex_symm_of_gt_false {a b : Fin m} (h : b < a) :
+    (equivTypeCIndex m).symm (a, b, false) = .positiveSum b a h := by
+  simp [equivTypeCIndex, ofTypeCIndex, h, not_lt_of_gt h]
+
+/-- For `b < a`, the signed type `C` index `(a, b, true)` corresponds to `-e_b - e_a`. -/
+@[simp]
+theorem equivTypeCIndex_symm_of_gt_true {a b : Fin m} (h : b < a) :
+    (equivTypeCIndex m).symm (a, b, true) = .negativeSum b a h := by
+  simp [equivTypeCIndex, ofTypeCIndex, h, not_lt_of_gt h]
+
 end GLSymplecticFin.RootSubgroupIndex
 
 namespace Symplectic
