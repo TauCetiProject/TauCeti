@@ -24,8 +24,8 @@ open additive subgroup, only finitely many pairs contribute, hence only their fi
 can contribute.
 
 This supplies the analytic part of multiplication on Wedhorn's `A⟨X, X⁻¹⟩` (Example 6.39).
-The ring laws require rearranging iterated unconditional sums and are deliberately left to the
-subsequent construction of that ring.
+This module constructs the bilinear convolution but does not establish a multiplicative unit or
+associativity.
 
 ## Main results
 
