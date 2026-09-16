@@ -397,6 +397,8 @@ the scalar action. -/
 instance instSMulCommClassMonomialAut : SMulCommClass R (monomialAut C) C where
   smul_comm _ _ _ := Subtype.ext (by simp)
 
+/-- The converse orientation of `TauCeti.instSMulCommClassMonomialAut`: the monomial
+automorphism action on codewords commutes with the scalar action of `R`. -/
 instance instSMulCommClassMonomialAut' : SMulCommClass (monomialAut C) R C :=
   SMulCommClass.symm _ _ _
 
@@ -514,6 +516,8 @@ the scalar action. -/
 instance instSMulCommClassPermutationAut : SMulCommClass R (permutationAut C) C where
   smul_comm _ _ _ := Subtype.ext (by simp)
 
+/-- The converse orientation of `TauCeti.instSMulCommClassPermutationAut`: the permutation
+automorphism action on codewords commutes with the scalar action of `R`. -/
 instance instSMulCommClassPermutationAut' : SMulCommClass (permutationAut C) R C :=
   SMulCommClass.symm _ _ _
 
