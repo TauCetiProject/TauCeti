@@ -83,7 +83,6 @@ theorem freeCommMonoidCharEquiv_symm_apply_ofAdd (c : σ → M) (m : σ →₀ �
 
 /-- Reading off generator values is natural in the target monoid: post-composing with a
 homomorphism `ψ : M →* N` commutes with `freeCommMonoidCharEquiv`. -/
-@[simp]
 theorem freeCommMonoidCharEquiv_comp {N : Type*} [CommMonoid N] (ψ : M →* N)
     (χ : Multiplicative (σ →₀ ℕ) →* M) (i : σ) :
     freeCommMonoidCharEquiv (ψ.comp χ) i = ψ (freeCommMonoidCharEquiv χ i) := by
