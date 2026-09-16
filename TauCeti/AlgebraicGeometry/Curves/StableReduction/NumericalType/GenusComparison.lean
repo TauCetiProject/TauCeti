@@ -105,9 +105,13 @@ lemma valence_le_normalizedValence (i : T.Component) :
   classical
   calc
     ((T.intersectionGraph.neighborSet i).ncard : ℚ) =
+        T.intersectionGraph.degree i := by
+      norm_cast
+      rw [← SimpleGraph.card_neighborSet_eq_degree, Set.fintypeCard_eq_ncard]
+    _ =
         ∑ _j ∈ T.intersectionGraph.neighborFinset i, (1 : ℚ) := by
-      rw [Finset.sum_const, nsmul_eq_mul, mul_one, ← Set.ncard_coe_finset,
-        SimpleGraph.coe_neighborFinset]
+      rw [Finset.sum_const, nsmul_eq_mul, mul_one,
+        SimpleGraph.card_neighborFinset_eq_degree]
     _ ≤ ∑ j ∈ T.intersectionGraph.neighborFinset i,
         (T.intersection i j : ℚ) / (T.weight i : ℚ) :=
       Finset.sum_le_sum fun j hj ↦ T.one_le_normalizedIntersection_of_adj
@@ -232,15 +236,14 @@ theorem sum_genusDefect :
   have hdegree := T.intersectionGraph.sum_degrees_eq_twice_card_edges
   have hedge : #T.intersectionGraph.edgeFinset = T.intersectionGraph.edgeSet.ncard := by
     rw [SimpleGraph.edgeFinset_card, ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
-  have hvalence (v : T.Component) :
-      (T.intersectionGraph.neighborSet v).ncard = T.intersectionGraph.degree v := by
-    rw [← SimpleGraph.card_neighborFinset_eq_degree, ← Set.ncard_coe_finset,
-      SimpleGraph.coe_neighborFinset]
   have hdegree' : ∑ v, (T.intersectionGraph.neighborSet v).ncard =
       2 * T.intersectionGraph.edgeSet.ncard := by
     calc
       ∑ v, (T.intersectionGraph.neighborSet v).ncard =
-          ∑ v, T.intersectionGraph.degree v := Finset.sum_congr rfl fun v _ ↦ hvalence v
+          ∑ v, T.intersectionGraph.degree v := by
+        apply Finset.sum_congr rfl
+        intro v _
+        rw [← SimpleGraph.card_neighborSet_eq_degree, Set.fintypeCard_eq_ncard]
       _ = 2 * #T.intersectionGraph.edgeFinset := hdegree
       _ = 2 * T.intersectionGraph.edgeSet.ncard := by rw [hedge]
   have hdegreeQ : (∑ v, (T.intersectionGraph.neighborSet v).ncard : ℚ) =
