@@ -11,14 +11,14 @@ import TauCeti.Data.Set.SymmDiff
 /-!
 # Estimates in symmetric-difference outer measure
 
-For a finite outer measure, the mass of a set changes by at most the mass of its symmetric
+For sets of finite outer measure, the mass of a set changes by at most the mass of its symmetric
 difference with another set. The intersection estimate follows by containing its symmetric
 difference in the union of the two input symmetric differences.
 
 These statements use only monotonicity and subadditivity, so they are stated for
 `OuterMeasureClass`, which covers both outer measures and measures without requiring a measurable
 space. They supply the approximation estimates for the Hewitt–Savage zero-one criterion in
-`TauCeti/MeasureTheory/OuterMeasure/ZeroOne.lean`.
+`TauCeti/MeasureTheory/Measure/ZeroOne.lean`.
 
 ## Main results
 
@@ -35,35 +35,45 @@ namespace TauCeti.MeasureTheory
 
 variable {Ω F : Type*} [FunLike F (Set Ω) ℝ≥0∞] [OuterMeasureClass F Ω] {μ : F}
 
-/-- For a finite outer measure, the difference of two set masses is bounded by the mass of their
-symmetric difference. No measurability or additivity is needed. -/
-theorem abs_toReal_sub_le_toReal_symmDiff (hμ : μ univ ≠ ∞) {s t : Set Ω} :
+/-- For sets of finite outer measure, the difference of their masses is bounded by the mass
+of their symmetric difference. No measurability or additivity is needed. -/
+theorem abs_toReal_sub_le_toReal_symmDiff {s t : Set Ω} (hs : μ s ≠ ∞) (ht : μ t ≠ ∞) :
     |(μ s).toReal - (μ t).toReal| ≤ (μ (s ∆ t)).toReal := by
-  have hfin (a : Set Ω) : μ a ≠ ∞ := ne_top_of_le_ne_top hμ (measure_mono (subset_univ a))
-  have hle (a b : Set Ω) : (μ a).toReal ≤ (μ (a ∆ b)).toReal + (μ b).toReal := by
+  have hle (a b : Set Ω) (ha : μ a ≠ ∞) (hb : μ b ≠ ∞) :
+      (μ a).toReal ≤ (μ (a ∆ b)).toReal + (μ b).toReal := by
+    have hab : μ (a ∆ b) ≠ ∞ := ne_top_of_le_ne_top
+      (ENNReal.add_ne_top.mpr ⟨ha, hb⟩)
+      ((measure_mono symmDiff_subset_union).trans (measure_union_le a b))
     calc
       (μ a).toReal ≤ (μ ((a ∆ b) ∪ b)).toReal :=
-        ENNReal.toReal_mono (hfin _) (measure_mono (le_symmDiff_sup_right a b))
+        ENNReal.toReal_mono
+          (ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hab, hb⟩) (measure_union_le _ _))
+          (measure_mono (le_symmDiff_sup_right a b))
       _ ≤ (μ (a ∆ b) + μ b).toReal :=
-        ENNReal.toReal_mono (ENNReal.add_ne_top.mpr ⟨hfin _, hfin _⟩) (measure_union_le _ _)
-      _ = _ := ENNReal.toReal_add (hfin _) (hfin _)
-  have hst := hle s t
-  have hts := hle t s
+        ENNReal.toReal_mono (ENNReal.add_ne_top.mpr ⟨hab, hb⟩) (measure_union_le _ _)
+      _ = _ := ENNReal.toReal_add hab hb
+  have hst := hle s t hs ht
+  have hts := hle t s ht hs
   rw [symmDiff_comm t s] at hts
   exact abs_le.mpr ⟨by linarith, by linarith⟩
 
-/-- Under a finite outer measure, the mass of `A ∩ B` is within the sum of the
-symmetric-difference masses of `A` and `B` against `s` of the mass of `s`. -/
-theorem abs_toReal_inter_sub_le_toReal_symmDiff_add (hμ : μ univ ≠ ∞) {A B s : Set Ω} :
+/-- If `s` and the two symmetric differences have finite outer measure, the mass of `A ∩ B`
+is within their summed symmetric-difference masses of the mass of `s`. -/
+theorem abs_toReal_inter_sub_le_toReal_symmDiff_add {A B s : Set Ω}
+    (hs : μ s ≠ ∞) (hA : μ (A ∆ s) ≠ ∞) (hB : μ (B ∆ s) ≠ ∞) :
     |(μ (A ∩ B)).toReal - (μ s).toReal| ≤ (μ (A ∆ s)).toReal + (μ (B ∆ s)).toReal := by
-  have hfin (a : Set Ω) : μ a ≠ ∞ := ne_top_of_le_ne_top hμ (measure_mono (subset_univ a))
+  have hAfin : μ A ≠ ∞ := ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hA, hs⟩)
+    ((measure_mono (le_symmDiff_sup_right A s)).trans (measure_union_le _ _))
+  have hunion : μ ((A ∆ s) ∪ (B ∆ s)) ≠ ∞ :=
+    ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hA, hB⟩) (measure_union_le _ _)
   calc
     |(μ (A ∩ B)).toReal - (μ s).toReal| ≤ (μ ((A ∩ B) ∆ s)).toReal :=
-      abs_toReal_sub_le_toReal_symmDiff hμ
+      abs_toReal_sub_le_toReal_symmDiff
+        (ne_top_of_le_ne_top hAfin (measure_mono inter_subset_left)) hs
     _ ≤ (μ ((A ∆ s) ∪ (B ∆ s))).toReal :=
-      ENNReal.toReal_mono (hfin _) (measure_mono Set.inter_symmDiff_subset)
+      ENNReal.toReal_mono hunion (measure_mono Set.inter_symmDiff_subset)
     _ ≤ (μ (A ∆ s) + μ (B ∆ s)).toReal :=
-      ENNReal.toReal_mono (ENNReal.add_ne_top.mpr ⟨hfin _, hfin _⟩) (measure_union_le _ _)
-    _ = _ := ENNReal.toReal_add (hfin _) (hfin _)
+      ENNReal.toReal_mono (ENNReal.add_ne_top.mpr ⟨hA, hB⟩) (measure_union_le _ _)
+    _ = _ := ENNReal.toReal_add hA hB
 
 end TauCeti.MeasureTheory

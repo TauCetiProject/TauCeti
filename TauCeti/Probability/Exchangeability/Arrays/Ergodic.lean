@@ -10,7 +10,7 @@ public import TauCeti.MeasureTheory.Group.CountableAction
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 -- Non-public: cylinder approximation and its real-valued measure estimates are proof tools.
 import TauCeti.MeasureTheory.Constructions.CylinderApproximation
-import TauCeti.MeasureTheory.OuterMeasure.ZeroOne
+import TauCeti.MeasureTheory.Measure.ZeroOne
 
 /-!
 # Ergodicity and dissociation for jointly exchangeable arrays
@@ -174,7 +174,7 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
   -- `t'`, also within `ε` of `s` by invariance, whose intersection factors by dissociation; the
   -- shared zero-one criterion then forces `ρ s ∈ {0, 1}`.
   refine TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_exists_symmDiff_lt_inter_eq_mul
-    (measure_ne_top ρ univ) ?_
+    ?_
   intro ε hε
   -- Step 1: the approximating cylinder `t` on a finite square `I × I` inside `[0, N)²`.
   obtain ⟨F, S, hS, hFS⟩ := TauCeti.MeasureTheory.exists_cylinder_measure_symmDiff_lt (ρ := ρ) hs

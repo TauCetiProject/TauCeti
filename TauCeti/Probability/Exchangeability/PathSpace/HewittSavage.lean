@@ -14,7 +14,7 @@ public import Mathlib.MeasureTheory.Constructions.Cylinders
 import TauCeti.MeasureTheory.Constructions.CylinderApproximation
 import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 import Mathlib.Probability.Independence.InfinitePi
-import TauCeti.MeasureTheory.OuterMeasure.ZeroOne
+import TauCeti.MeasureTheory.Measure.ZeroOne
 
 /-!
 # The Hewitt–Savage zero-one law
@@ -185,7 +185,7 @@ theorem measure_eq_zero_or_one_of_exchangeableSigma {ρ : Measure (ℕ → α)} 
     ρ s = 0 ∨ ρ s = 1 := by
   have hs_meas : MeasurableSet s := exchangeableSigma_le s hs
   refine TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_exists_symmDiff_lt_inter_eq_mul
-    (measure_ne_top ρ univ) ?_
+    ?_
   intro ε hε
   obtain ⟨F, S, hS, hFS⟩ :=
     TauCeti.MeasureTheory.exists_cylinder_measure_symmDiff_lt (ρ := ρ) hs_meas
