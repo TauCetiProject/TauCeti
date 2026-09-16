@@ -36,8 +36,8 @@ irreducible.
 
 Separability and the degree are part of the predicate, so an inseparable polynomial, or one of
 degree other than `n`, has no label in degree `n`; nor does a polynomial of degree zero or of
-degree above five, where there are no reference subgroups. In degrees one and two the label is
-determined by separability and irreducibility alone.
+degree above five, where there are no reference subgroups. In degree one the label is determined
+by the degree alone, and in degree two by separability and irreducibility.
 
 ## Main definitions
 
@@ -50,7 +50,8 @@ determined by separability and irreducibility alone.
 * `TauCeti.HasGaloisLabel.natCard_gal`: the order of the Galois group is that of the reference.
 * `TauCeti.HasGaloisLabel.range_le_alternatingGroup_iff` and
   `TauCeti.HasGaloisLabel.isSquare_discr_iff`: the parity of the Galois image.
-* `TauCeti.HasGaloisLabel.isPreprimitive_iff`: primitivity of the action on the roots.
+* `TauCeti.HasGaloisLabel.isPreprimitive_iff`, `TauCeti.HasGaloisLabel.isPreprimitive_gal_iff`:
+  primitivity of the Galois image, respectively of the Galois group, on the roots.
 * `TauCeti.HasGaloisLabel.isSolvable_iff`: solvability of the Galois group.
 * `TauCeti.HasGaloisLabel.irreducible`: a polynomial with a label is irreducible.
 * `TauCeti.hasGaloisLabel_one_iff`, `TauCeti.hasGaloisLabel_two_iff`: the labels in degrees one
@@ -59,6 +60,8 @@ determined by separability and irreducibility alone.
 ## References
 
 * LMFDB, *Galois group labels*, <https://www.lmfdb.org/GaloisGroup/>.
+* The shape of `TauCeti.HasGaloisLabel` follows the prototype in the Tau Ceti roadmap,
+  `TauCetiRoadmap/PolynomialGaloisGroups/Suggested.lean`.
 -/
 
 public section
@@ -70,6 +73,8 @@ namespace TauCeti
 universe u
 
 variable {F : Type u} [Field F]
+
+section GalActionHom
 
 /-- A polynomial splits in its splitting field, recorded as the `Fact` that
 `Polynomial.Gal.galActionHom` asks for. It stays local: as a global instance it would give
@@ -90,14 +95,6 @@ def HasGaloisLabel (f : F[X]) {n : ℕ} (j : TransitiveGroupIndex n) : Prop :=
         ((Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom)
 
 variable {f : F[X]} {n : ℕ} {j : TransitiveGroupIndex n}
-
-/-- Unfolds `HasGaloisLabel`. -/
-theorem hasGaloisLabel_def :
-    HasGaloisLabel f j ↔ f.Separable ∧ f.natDegree = n ∧
-      ∃ e : f.rootSet f.SplittingField ≃ Fin n,
-        TransitiveGroupLabel j
-          ((Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom) :=
-  Iff.rfl
 
 /-- A polynomial with a label is separable. -/
 theorem HasGaloisLabel.separable (h : HasGaloisLabel f j) : f.Separable :=
@@ -191,16 +188,26 @@ theorem HasGaloisLabel.isSquare_discr_iff (h : HasGaloisLabel f j) (hf : f.Monic
   rw [← h.range_le_alternatingGroup_iff,
     hf.isSquare_discr_iff_range_le_alternatingGroup (E := f.SplittingField) h.separable hchar]
 
-/-- In degree one, a polynomial carries the label `1T1` exactly when it is separable of degree
-one. -/
+/-- In degree one, a polynomial carries the label `1T1` exactly when it has degree one; such a
+polynomial is automatically separable. -/
+@[simp]
 theorem hasGaloisLabel_one_iff (j : TransitiveGroupIndex 1) :
-    HasGaloisLabel f j ↔ f.Separable ∧ f.natDegree = 1 := by
-  refine ⟨fun h => ⟨h.separable, h.natDegree_eq⟩, fun ⟨hsep, hdeg⟩ => ?_⟩
+    HasGaloisLabel f j ↔ f.natDegree = 1 := by
+  refine ⟨HasGaloisLabel.natDegree_eq, fun hdeg => ?_⟩
+  have hsep : f.Separable := by
+    rw [separable_iff_derivative_ne_zero (irreducible_of_degree_eq_one
+      ((degree_eq_iff_natDegree_eq_of_pos one_pos).mpr hdeg))]
+    intro h0
+    have h := congrArg (coeff · 0) h0
+    simp only [coeff_derivative, coeff_zero, zero_add, Nat.cast_zero, mul_one] at h
+    have hf : f ≠ 0 := by rintro rfl; simp at hdeg
+    exact hf (leadingCoeff_eq_zero.mp (by rwa [leadingCoeff, hdeg]))
   obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hsep
   exact ⟨hsep, hdeg, e.trans (finCongr hdeg), transitiveGroupLabel_one j _⟩
 
 /-- In degree two, a polynomial carries the label `2T1` exactly when it is separable, irreducible,
 and of degree two. -/
+@[simp]
 theorem hasGaloisLabel_two_iff (j : TransitiveGroupIndex 2) :
     HasGaloisLabel f j ↔ f.Separable ∧ Irreducible f ∧ f.natDegree = 2 := by
   refine ⟨fun h => ⟨h.separable, h.irreducible, h.natDegree_eq⟩, fun ⟨hsep, hirr, hdeg⟩ => ?_⟩
@@ -209,5 +216,27 @@ theorem hasGaloisLabel_two_iff (j : TransitiveGroupIndex 2) :
   rw [transitiveGroupLabel_two_iff, Equiv.isPretransitive_map_permCongrHom_iff, Gal.galActionHom,
     isPretransitive_range_toPermHom_iff]
   exact (isPretransitive_iff_irreducible f.SplittingField hsep (by omega)).mpr hirr
+
+end GalActionHom
+
+/- Outside the section above, the roots in the splitting field carry only Mathlib's intrinsic
+action `Polynomial.Gal.galActionAux`. -/
+
+variable {f : F[X]} {n : ℕ} {j : TransitiveGroupIndex n}
+
+/-- The Galois group of a polynomial with a label acts primitively on its roots in the splitting
+field exactly when the reference subgroup acts primitively. -/
+theorem HasGaloisLabel.isPreprimitive_gal_iff (h : HasGaloisLabel f j) :
+    IsPreprimitive f.Gal (f.rootSet f.SplittingField) ↔
+      IsPreprimitive (referenceSubgroup n j) (Fin n) := by
+  have : Fact ((f.map (algebraMap F f.SplittingField)).Splits) := ⟨SplittingField.splits f⟩
+  rw [← h.isPreprimitive_iff, Gal.galActionHom, isPreprimitive_range_toPermHom_iff]
+  -- `Gal.rootsEquivRootsAux` intertwines the intrinsic action with `Gal.galAction`; both actions
+  -- are now in scope, so they are named explicitly.
+  exact @isPreprimitive_congr f.Gal _ _ (Gal.galActionAux f) f.Gal _ _ (Gal.galAction f _) id
+    (@MulActionHom.mk _ _ id _ (Gal.galActionAux f).toSMul _ (Gal.smul f _)
+      (Gal.rootsEquivRootsAux f f.SplittingField) fun g x => by
+        rw [id, Gal.smul_def, Equiv.symm_apply_apply])
+    Function.surjective_id (Gal.rootsEquivRootsAux f f.SplittingField).bijective
 
 end TauCeti

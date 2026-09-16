@@ -18,16 +18,12 @@ group written in two numberings of the points. This file records that the invari
 permutation group which do not depend on the numbering are unchanged: containment in the
 alternating group, transitivity, and primitivity. (The order is `Subgroup.card_map_of_injective`.)
 
-When `β = α`, transport along a permutation `τ` is conjugation by `τ`, which is
-`Equiv.Perm.permCongrHom_eq_conj`; this is how conjugate subgroups are compared.
-
 The same invariants may also be read off the image of a permutation representation instead of
 the acting group: an action of `G` on `α` and the action of the subgroup
 `(MulAction.toPermHom G α).range` of `Equiv.Perm α` have the same orbits and the same blocks.
 
 ## Main results
 
-* `Equiv.Perm.permCongrHom_eq_conj`: transport along a permutation is conjugation.
 * `Equiv.map_permCongrHom_le_alternatingGroup_iff`: transport preserves evenness.
 * `Equiv.isPretransitive_map_permCongrHom_iff`: transport preserves transitivity.
 * `Equiv.isPreprimitive_map_permCongrHom_iff`: transport preserves primitivity.
@@ -43,12 +39,6 @@ open Equiv MulAction
 namespace Equiv
 
 variable {α β : Type*}
-
-/-- Transport along a permutation of the points is conjugation by that permutation. -/
-theorem Perm.permCongrHom_eq_conj (τ : Perm α) :
-    τ.permCongrHom.toMonoidHom = (MulAut.conj τ).toMonoidHom := by
-  ext σ x
-  simp [Equiv.permCongr_eq_mul]
 
 /-- The equivalence `e`, read as an equivariant map from the permutation representation of `G`
 to that of its transport. -/

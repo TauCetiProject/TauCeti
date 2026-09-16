@@ -340,7 +340,9 @@ theorem TransitiveGroupLabel.exists_map_permCongrHom_eq {n : ℕ} {j : Transitiv
     {G : Subgroup (Perm (Fin n))} (h : TransitiveGroupLabel j G) :
     ∃ τ : Perm (Fin n), G.map τ.permCongrHom.toMonoidHom = referenceSubgroup n j := by
   obtain ⟨τ, hτ⟩ := h
-  exact ⟨τ, by rw [Perm.permCongrHom_eq_conj, hτ]⟩
+  refine ⟨τ, hτ ▸ congrArg (Subgroup.map · G) ?_⟩
+  ext σ x
+  simp [Equiv.permCongr_eq_mul]
 
 /-- Reading a permutation group on `n` points through two numberings by `Fin n` gives the same
 transitive-group labels. -/
@@ -350,7 +352,7 @@ theorem transitiveGroupLabel_map_permCongrHom_iff {α : Type*} {n : ℕ}
       TransitiveGroupLabel j (G.map e'.permCongrHom.toMonoidHom) := by
   have h : G.map e'.permCongrHom.toMonoidHom =
       Subgroup.map (MulAut.conj (e.symm.trans e')) (G.map e.permCongrHom.toMonoidHom) := by
-    rw [← MulEquiv.toMonoidHom_eq_coe, ← Perm.permCongrHom_eq_conj, Subgroup.map_map]
+    rw [Subgroup.map_map]
     congr 1
     ext σ x
     simp [Equiv.permCongrHom_coe]
@@ -389,12 +391,14 @@ theorem TransitiveGroupLabel.isSolvable_iff {n : ℕ} {j : TransitiveGroupIndex 
   exact isSolvable_congr (τ.permCongrHom.subgroupMap G)
 
 /-- In degree one every subgroup carries the label `1T1`. -/
+@[simp]
 theorem transitiveGroupLabel_one (j : TransitiveGroupIndex 1) (G : Subgroup (Perm (Fin 1))) :
     TransitiveGroupLabel j G :=
   ⟨1, Subsingleton.elim _ _⟩
 
 /-- In degree two a subgroup carries the label `2T1` exactly when it is transitive: the only
 transitive subgroup of the symmetric group on two letters is the whole group. -/
+@[simp]
 theorem transitiveGroupLabel_two_iff (j : TransitiveGroupIndex 2) (G : Subgroup (Perm (Fin 2))) :
     TransitiveGroupLabel j G ↔ IsPretransitive G (Fin 2) := by
   refine ⟨TransitiveGroupLabel.isPretransitive, fun hG => ⟨1, ?_⟩⟩
