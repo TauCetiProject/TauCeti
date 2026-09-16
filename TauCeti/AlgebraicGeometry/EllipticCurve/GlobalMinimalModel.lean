@@ -53,8 +53,8 @@ in `O`.
   semistability — need `Δ ≠ 0`, and for a singular cubic the products defining them lose their
   finite support. `IsGlobalMinimal` does not itself consume the instance, which its binder name
   records.
-* **The definitions are not exposed.** `isGlobalMinimal_iff` and `isSemiGlobalMinimal_iff` are the
-  interface outside this module.
+* **The definitions are not exposed.** The `simp` lemmas `isGlobalMinimal_iff` and
+  `isSemiGlobalMinimal_iff` are the interface outside this module.
 
 The localisation instances that make `IsMinimal Oᵥ W` and `IsIntegral Oᵥ W` typecheck for an
 abstract fraction field `K` are in `TauCeti/RingTheory/Localization/AtPrime.lean` and
@@ -91,6 +91,7 @@ def IsGlobalMinimal (W : WeierstrassCurve K) [_hE : W.IsElliptic] : Prop :=
 variable {O} in
 /-- Global minimality is minimality at every height-one prime. This is the interface to
 `WeierstrassCurve.IsGlobalMinimal` outside its defining module. -/
+@[simp]
 theorem isGlobalMinimal_iff {W : WeierstrassCurve K} [W.IsElliptic] :
     IsGlobalMinimal O W ↔
       ∀ v : HeightOneSpectrum O, IsMinimal (Localization.AtPrime v.asIdeal) W :=
@@ -111,6 +112,7 @@ variable {O}
 
 /-- Semi-global minimality, unfolded. This is the interface to
 `WeierstrassCurve.IsSemiGlobalMinimal` outside its defining module. -/
+@[simp]
 theorem isSemiGlobalMinimal_iff {W : WeierstrassCurve K} [W.IsElliptic] :
     IsSemiGlobalMinimal O W ↔ IsGlobalMinimal O W ∨
       ∃ v₀ : HeightOneSpectrum O, IsIntegral (Localization.AtPrime v₀.asIdeal) W ∧
