@@ -27,7 +27,8 @@ For `A` finite-dimensional over a field this file proves the standard characteri
   `A ≅ A⁺` between the regular module and the `k`-dual `A⁺ = Module.Dual k A`, on which `A` acts on
   the right by `(ψ · c) b = ψ (c * b)`. That right action is written with Mathlib's domain action
   `DomMulAct.mk c • ψ`. The isomorphism attached to `φ` is `a ↦ φ (a * ·)`, and conversely an
-  isomorphism `e` recovers the functional `e 1`.
+  isomorphism `e` recovers the functional `e 1`. These two constructions are inverse to each other,
+  so Frobenius functionals and such isomorphisms correspond one to one.
 * A Frobenius functional determines its **Nakayama automorphism** `ν`, the unique map with
   `φ (a * b) = φ (b * ν a)`; it is a `k`-algebra automorphism, and it is the identity exactly when
   `φ` is symmetric.
@@ -40,6 +41,10 @@ The trace of square matrices is the basic example; see `TauCeti.Algebra.Algebra.
 
 * `LinearMap.IsFrobeniusFunctional`: the form `(a, b) ↦ φ (a * b)` is nondegenerate.
 * `LinearMap.IsSymmetricFrobeniusFunctional`: a Frobenius functional with `φ (a * b) = φ (b * a)`.
+* `LinearMap.IsFrobeniusFunctional.toDualEquiv`: the isomorphism `A ≅ A⁺` of right `A`-modules
+  attached to a Frobenius functional on a finite-dimensional algebra.
+* `TauCeti.frobeniusFunctionalEquivDualEquiv`: the resulting bijection between Frobenius
+  functionals and isomorphisms `A ≅ A⁺` of right `A`-modules.
 * `LinearMap.IsFrobeniusFunctional.nakayamaAut`: the Nakayama automorphism of a Frobenius
   functional on a finite-dimensional algebra.
 
@@ -126,6 +131,11 @@ theorem _root_.LinearMap.IsFrobeniusFunctional.op (hφ : φ.IsFrobeniusFunctiona
 
 end Nondegenerate
 
+/-- An isomorphism of right `A`-modules from `A` to its dual is determined by its value at `1`. -/
+theorem dualEquiv_apply_apply {e : A ≃ₗ[k] Module.Dual k A}
+    (he : ∀ a c : A, e (a * c) = DomMulAct.mk c • e a) (a b : A) : e a b = e 1 (a * b) := by
+  simpa [DomMulAct.smul_linearMap_apply] using LinearMap.congr_fun (he 1 a) b
+
 end CommRing
 
 /-! ### Finite-dimensional algebras -/
@@ -159,25 +169,86 @@ theorem _root_.LinearMap.isFrobeniusFunctional_iff_bijective :
   ⟨fun hφ => hφ.isPerfPair.bijective_left,
     fun h => .of_left fun a ha => h.injective (LinearMap.ext fun b => by simpa using ha b)⟩
 
+/-! ### Frobenius functionals and the dual module -/
+
+/-- The isomorphism of right `A`-modules `A ≃ₗ[k] Module.Dual k A` attached to a Frobenius
+functional `φ` on a finite-dimensional algebra: it sends `a` to `b ↦ φ (a * b)`. Its
+right-linearity is `LinearMap.IsFrobeniusFunctional.toDualEquiv_mul`. -/
+noncomputable def _root_.LinearMap.IsFrobeniusFunctional.toDualEquiv
+    (hφ : φ.IsFrobeniusFunctional) : A ≃ₗ[k] Module.Dual k A :=
+  have := hφ.isPerfPair
+  ((LinearMap.mul k A).compr₂ φ).toPerfPair
+
+@[simp]
+theorem _root_.LinearMap.IsFrobeniusFunctional.toDualEquiv_apply_apply
+    (hφ : φ.IsFrobeniusFunctional) (a b : A) : hφ.toDualEquiv a b = φ (a * b) := by
+  simp [LinearMap.IsFrobeniusFunctional.toDualEquiv]
+
+/-- The isomorphism attached to a Frobenius functional is an isomorphism of right `A`-modules,
+where `c : A` acts on the right of a functional `ψ` by `b ↦ ψ (c * b)`, that is by
+`DomMulAct.mk c • ψ`. -/
+theorem _root_.LinearMap.IsFrobeniusFunctional.toDualEquiv_mul (hφ : φ.IsFrobeniusFunctional)
+    (a c : A) : hφ.toDualEquiv (a * c) = DomMulAct.mk c • hφ.toDualEquiv a := by
+  ext b
+  simp [DomMulAct.smul_linearMap_apply, mul_assoc]
+
+/-- The isomorphism attached to a Frobenius functional gives it back at `1`. -/
+@[simp]
+theorem _root_.LinearMap.IsFrobeniusFunctional.toDualEquiv_one (hφ : φ.IsFrobeniusFunctional) :
+    hφ.toDualEquiv 1 = φ := by
+  ext b
+  simp
+
+/-- The value at `1` of an isomorphism of right `A`-modules from `A` to its dual is a Frobenius
+functional. -/
+theorem _root_.LinearMap.isFrobeniusFunctional_apply_one {e : A ≃ₗ[k] Module.Dual k A}
+    (he : ∀ a c : A, e (a * c) = DomMulAct.mk c • e a) : (e 1).IsFrobeniusFunctional :=
+  .of_left fun a ha => e.injective <| LinearMap.ext fun b => by
+    rw [dualEquiv_apply_apply he a b, ha b, map_zero, LinearMap.zero_apply]
+
 /-- **Frobenius functionals and the dual module.** A finite-dimensional algebra carries a Frobenius
 functional if and only if its regular right module is isomorphic to the dual `Module.Dual k A`,
 where `c : A` acts on the right of a functional `ψ` by `b ↦ ψ (c * b)`, that is by
-`DomMulAct.mk c • ψ`. -/
+`DomMulAct.mk c • ψ`. The two constructions are inverse to each other, see
+`TauCeti.frobeniusFunctionalEquivDualEquiv`. -/
 theorem _root_.LinearMap.exists_isFrobeniusFunctional_iff :
     (∃ φ : A →ₗ[k] k, φ.IsFrobeniusFunctional) ↔
-      ∃ e : A ≃ₗ[k] Module.Dual k A, ∀ a c : A, e (a * c) = DomMulAct.mk c • e a := by
-  constructor
-  · rintro ⟨φ, hφ⟩
-    refine ⟨.ofBijective _ (LinearMap.isFrobeniusFunctional_iff_bijective.mp hφ), fun a c => ?_⟩
-    ext b
-    simp [DomMulAct.smul_linearMap_apply, mul_assoc]
-  · rintro ⟨e, he⟩
-    -- An isomorphism of right modules is determined by the image of `1`.
-    have hea : ∀ a b : A, e a b = e 1 (a * b) := fun a b => by
-      simpa [DomMulAct.smul_linearMap_apply] using LinearMap.congr_fun (he 1 a) b
-    refine ⟨e 1, .of_left fun a ha => e.injective ?_⟩
-    ext b
-    rw [hea a b, ha b, map_zero, LinearMap.zero_apply]
+      ∃ e : A ≃ₗ[k] Module.Dual k A, ∀ a c : A, e (a * c) = DomMulAct.mk c • e a :=
+  ⟨fun ⟨_, hφ⟩ => ⟨hφ.toDualEquiv, hφ.toDualEquiv_mul⟩,
+    fun ⟨_, he⟩ => ⟨_, LinearMap.isFrobeniusFunctional_apply_one he⟩⟩
+
+/-- The isomorphism attached to the Frobenius functional recovered from an isomorphism of right
+`A`-modules is that isomorphism again. -/
+theorem toDualEquiv_isFrobeniusFunctional_apply_one {e : A ≃ₗ[k] Module.Dual k A}
+    (he : ∀ a c : A, e (a * c) = DomMulAct.mk c • e a) :
+    (LinearMap.isFrobeniusFunctional_apply_one he).toDualEquiv = e :=
+  LinearEquiv.ext fun a => LinearMap.ext fun b => by
+    rw [LinearMap.IsFrobeniusFunctional.toDualEquiv_apply_apply]
+    exact (dualEquiv_apply_apply he a b).symm
+
+variable (k A) in
+/-- **Frobenius functionals are the isomorphisms `A ≅ A⁺` of right modules.** The pointwise form of
+`LinearMap.exists_isFrobeniusFunctional_iff`: a Frobenius functional `φ` on a finite-dimensional
+algebra goes to the isomorphism `a ↦ φ (a * ·)` of the regular right module with the dual, an
+isomorphism `e` goes back to the functional `e 1`, and these are inverse to each other. -/
+@[expose]
+noncomputable def frobeniusFunctionalEquivDualEquiv :
+    {φ : A →ₗ[k] k // φ.IsFrobeniusFunctional} ≃
+      {e : A ≃ₗ[k] Module.Dual k A // ∀ a c : A, e (a * c) = DomMulAct.mk c • e a} where
+  toFun φ := ⟨φ.2.toDualEquiv, φ.2.toDualEquiv_mul⟩
+  invFun e := ⟨e.1 1, LinearMap.isFrobeniusFunctional_apply_one e.2⟩
+  left_inv φ := Subtype.ext φ.2.toDualEquiv_one
+  right_inv e := Subtype.ext (toDualEquiv_isFrobeniusFunctional_apply_one e.2)
+
+@[simp]
+theorem frobeniusFunctionalEquivDualEquiv_apply_coe
+    (φ : {φ : A →ₗ[k] k // φ.IsFrobeniusFunctional}) :
+    (frobeniusFunctionalEquivDualEquiv k A φ : A ≃ₗ[k] Module.Dual k A) = φ.2.toDualEquiv := rfl
+
+@[simp]
+theorem frobeniusFunctionalEquivDualEquiv_symm_apply_coe
+    (e : {e : A ≃ₗ[k] Module.Dual k A // ∀ a c : A, e (a * c) = DomMulAct.mk c • e a}) :
+    ((frobeniusFunctionalEquivDualEquiv k A).symm e : A →ₗ[k] k) = e.1 1 := rfl
 
 /-! ### The Nakayama automorphism -/
 
