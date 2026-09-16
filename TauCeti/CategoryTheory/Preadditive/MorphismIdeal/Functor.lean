@@ -109,7 +109,6 @@ theorem le_comap_comp (I : MorphismIdeal C) (J : MorphismIdeal D) (K : MorphismI
 /-! ### Functors between quotients -/
 
 /-- An additive functor carrying `I` into `J` induces a functor from `C/I` to `D/J`. -/
-@[expose]
 noncomputable def map (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D) [F.Additive]
     (hF : I ≤ J.comap F) : I.Quotient ⥤ J.Quotient :=
   I.lift (F ⋙ J.quotientFunctor) <| by
@@ -149,10 +148,14 @@ then passes to the target quotient. -/
 @[simp]
 theorem map_map_quotientFunctor_map (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D)
     [F.Additive] (hF : I ≤ J.comap F) {X Y : C} (f : X ⟶ Y) :
-    (I.map J F hF).map (I.quotientFunctor.map f) =
-      J.quotientFunctor.map (F.map f) := by
-  unfold map
-  rfl
+    (I.map J F hF).map (I.quotientFunctor.map f) ≫
+        eqToHom (I.map_obj_quotientFunctor_obj J F hF Y) =
+      eqToHom (I.map_obj_quotientFunctor_obj J F hF X) ≫
+        J.quotientFunctor.map (F.map f) := by
+  have h := Functor.congr_hom (I.quotientFunctor_comp_map J F hF) f
+  simp only [Functor.comp_map] at h
+  rw [h]
+  simp
 
 /-- The identity functor on a category induces the identity functor on every ideal quotient. -/
 @[simp]
@@ -187,12 +190,12 @@ theorem map_comp (I : MorphismIdeal C) (J : MorphismIdeal D) (K : MorphismIdeal 
 
 /-- A natural transformation between ideal-preserving functors descends to their induced
 functors on the quotients. -/
-@[expose]
 noncomputable def mapNatTrans (I : MorphismIdeal C) (J : MorphismIdeal D) {F G : C ⥤ D}
     [F.Additive] [G.Additive] (hF : I ≤ J.comap F) (hG : I ≤ J.comap G) (α : F ⟶ G) :
     I.map J F hF ⟶ I.map J G hG :=
   CategoryTheory.Quotient.natTransLift I.rel
-    (Functor.whiskerRight α J.quotientFunctor)
+    (eqToHom (I.quotientFunctor_comp_map J F hF) ≫ Functor.whiskerRight α J.quotientFunctor ≫
+      eqToHom (I.quotientFunctor_comp_map J G hG).symm)
 
 /-- On objects from the original category, a descended natural transformation is represented by
 the corresponding component of the original transformation. -/
@@ -200,10 +203,12 @@ the corresponding component of the original transformation. -/
 theorem mapNatTrans_app_quotientFunctor_obj (I : MorphismIdeal C) (J : MorphismIdeal D)
     {F G : C ⥤ D} [F.Additive] [G.Additive] (hF : I ≤ J.comap F) (hG : I ≤ J.comap G)
     (α : F ⟶ G) (X : C) :
-    (I.mapNatTrans J hF hG α).app (I.quotientFunctor.obj X) =
+    eqToHom (I.map_obj_quotientFunctor_obj J F hF X).symm ≫
+        (I.mapNatTrans J hF hG α).app (I.quotientFunctor.obj X) ≫
+          eqToHom (I.map_obj_quotientFunctor_obj J G hG X) =
       J.quotientFunctor.map (α.app X) := by
   unfold mapNatTrans
-  rfl
+  simp
 
 /-- Descent sends an identity natural transformation to an identity. -/
 @[simp]
@@ -212,8 +217,8 @@ theorem mapNatTrans_id (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D)
     I.mapNatTrans J hF hF (𝟙 F) = 𝟙 (I.map J F hF) := by
   apply CategoryTheory.Quotient.natTrans_ext
   ext X
+  unfold mapNatTrans
   simp
-  rfl
 
 /-- Descent preserves vertical composition of natural transformations. -/
 @[simp]
@@ -225,8 +230,8 @@ theorem comp_mapNatTrans (I : MorphismIdeal C) (J : MorphismIdeal D) {F G H : C 
       I.mapNatTrans J hF hH (α ≫ β) := by
   apply CategoryTheory.Quotient.natTrans_ext
   ext X
+  unfold mapNatTrans
   simp
-  rfl
 
 end MorphismIdeal
 
