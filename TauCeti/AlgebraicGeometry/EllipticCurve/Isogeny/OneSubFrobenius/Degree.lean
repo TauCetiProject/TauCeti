@@ -7,7 +7,7 @@ module
 
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.Basic
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.Kernel
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.Kernel
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.Separable
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.TautologicalPoint
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
@@ -36,6 +36,8 @@ separable, so the degree is at most the point count.
   the point count.
 * `TauCeti.Isogeny.degree_oneSubFrobeniusIsogeny_eq_pointCount`: with the reverse bound,
   `deg (1 − π_q) = #E(𝔽_q)`.
+* `TauCeti.Isogeny.card_ker_oneSubFrobeniusIsogeny_eq_degree`: equivalently, the kernel of
+  `1 − π_q` has `deg (1 − π_q)` points.
 
 ## References
 
@@ -97,6 +99,14 @@ theorem degree_oneSubFrobeniusIsogeny_eq_pointCount :
     (oneSubFrobeniusIsogeny W).degree = W.pointCount :=
   le_antisymm (degree_oneSubFrobeniusIsogeny_le_pointCount W)
     (pointCount_le_degree_oneSubFrobeniusIsogeny W)
+
+/-- **The kernel of `1 − π_q` has `deg (1 − π_q)` points**, both numbers being `#E(𝔽_q)`. -/
+theorem card_ker_oneSubFrobeniusIsogeny_eq_degree [DecidableEq F] :
+    Nat.card (oneSubFrobeniusIsogeny W).ker = (oneSubFrobeniusIsogeny W).degree := by
+  rw [degree_oneSubFrobeniusIsogeny_eq_pointCount, WeierstrassCurve.pointCount_eq_card_point]
+  -- The kernel lives in the points of `W⁄F`, the base change of `W` along `F → F`, which is `W`
+  -- by definition; `pointCount_le_degree_oneSubFrobeniusIsogeny` crosses the same way.
+  exact card_ker_oneSubFrobeniusIsogeny W
 
 end TauCeti.Isogeny
 
