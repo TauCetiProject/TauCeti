@@ -84,10 +84,7 @@ noncomputable def regularAffinePointEquiv (e : S ≃+ ((ι →₀ ℕ) × (κ �
 
 /-- The complex point attached to a family of mixed coordinates takes, on the monomial of `s : S`,
 the mixed monomial value prescribed by the exponents of `s`: a product of natural powers of the
-unconstrained coordinates times a product of integral powers of the invertible ones.
-
-This is the only place where the assembled equivalence is unfolded; the coordinate formulas below
-are instances of it, read on the coordinates of a point. -/
+unconstrained coordinates times a product of integral powers of the invertible ones. -/
 @[simp]
 theorem regularAffinePointEquiv_symm_apply_single (e : S ≃+ ((ι →₀ ℕ) × (κ →₀ ℤ)))
     (z : (ι → ℂ) × (κ → ℂˣ)) (s : S) :
