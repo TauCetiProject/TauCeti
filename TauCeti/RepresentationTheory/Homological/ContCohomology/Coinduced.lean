@@ -696,6 +696,18 @@ noncomputable def smoothDiscreteResFunctor :
   map_id _ := rfl
   map_comp _ _ := rfl
 
+omit [IsTopologicalGroup G] [CompactSpace G] in
+private theorem smoothDiscreteResFunctor_obj_impl (A : SmoothDiscreteTopRep.{u, v, w} R G) :
+    (smoothDiscreteResFunctor R G U).obj A =
+      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ := rfl
+
+omit [IsTopologicalGroup G] [CompactSpace G] in
+/-- Restriction along `U → G` restricts the underlying topological representation. -/
+theorem smoothDiscreteResFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R G) :
+    (smoothDiscreteResFunctor R G U).obj A =
+      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ :=
+  smoothDiscreteResFunctor_obj_impl R G U A
+
 /-- Evaluation at `1` as the coinduction counit, from the restriction of the coinduced
 representation to its coefficient representation. -/
 noncomputable def coindCounit (A : SmoothDiscreteTopRep.{u, v, w} R U) :
@@ -782,6 +794,27 @@ noncomputable def coindCounitNatTrans :
         (congrArg _ (TopRep.distribMulAction_smul A.obj u a)).trans
           ((f.hom.hom.isIntertwining u a).trans
             (TopRep.distribMulAction_smul B.obj u (f.hom.hom a)).symm)) a
+
+private theorem coindCounitNatTrans_app_hom_impl (A : SmoothDiscreteTopRep.{u, v, max v w} R U) :
+    ((coindCounitNatTrans R G U).app A).hom =
+      eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, max v w} R U ↦ X.obj)
+        ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
+          (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A)))) ≫
+        TopRep.ofHom (coindCounit R G U A) := rfl
+
+/-- The components of the coinduction counit evaluate at `1`. The object transport identifies the
+restricted opaque coinduced object with the restriction of `coindTopRep`. -/
+@[simp]
+theorem coindCounitNatTrans_app_apply (A : SmoothDiscreteTopRep.{u, v, max v w} R U)
+    (f : DiscreteCoind G U A.obj.V) :
+    (show ContIntertwiningMap ((coindTopRep R G U A).obj.ρ.restrict U.subtype) A.obj.ρ from
+      ((coindCounitNatTrans R G U).app A).hom.hom.comp
+        (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, max v w} R U ↦ X.obj)
+          ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
+            (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A))).symm)).hom) f =
+      f 1 := by
+  rw [← TopRep.hom_comp, coindCounitNatTrans_app_hom_impl, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp, TopRep.hom_ofHom, coindCounit_apply]
 
 end Bundled
 
