@@ -90,12 +90,6 @@ form `(a, b) ↦ φ (a * b)` is nondegenerate: `φ (a * b) = 0` for all `b` forc
 def _root_.LinearMap.IsFrobeniusFunctional (φ : A →ₗ[k] k) : Prop :=
   ((LinearMap.mul k A).compr₂ φ).Nondegenerate
 
-end CommSemiring
-
-section CommRing
-
-variable {k : Type v} [CommRing k] {A : Type u} [Ring A] [Algebra k A] {φ : A →ₗ[k] k}
-
 /-- A **symmetric Frobenius functional** is a Frobenius functional `φ` with
 `φ (a * b) = φ (b * a)` for all `a` and `b`. -/
 structure _root_.LinearMap.IsSymmetricFrobeniusFunctional (φ : A →ₗ[k] k) : Prop where
@@ -103,6 +97,12 @@ structure _root_.LinearMap.IsSymmetricFrobeniusFunctional (φ : A →ₗ[k] k) :
   isFrobeniusFunctional : φ.IsFrobeniusFunctional
   /-- The functional is symmetric in the factors of a product. -/
   apply_mul_comm : ∀ a b : A, φ (a * b) = φ (b * a)
+
+end CommSemiring
+
+section CommRing
+
+variable {k : Type v} [CommRing k] {A : Type u} [Ring A] [Algebra k A] {φ : A →ₗ[k] k}
 
 /-- Unfolding the nondegeneracy of `(a, b) ↦ φ (a * b)` into its two separating conditions. -/
 theorem _root_.LinearMap.isFrobeniusFunctional_iff :
