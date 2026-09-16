@@ -41,7 +41,8 @@ Jacobian `2 ^ p * ∏ i, (L i i) ^ (p - i)` of the Cholesky change of variables
 
 ## Main declarations
 
-* `TauCeti.bartlettCoordinateMeasure` — the law of one Cholesky coordinate.
+* `TauCeti.bartlettCoordinateMeasure` — the coordinate measure of one Cholesky coordinate; for
+  `(p : ℝ) - 1 < n` it is the chi or standard Gaussian law of that coordinate.
 * `TauCeti.map_lowerTriangleGram_pi_bartlettCoordinateMeasure` — the Gram matrix of independent
   coordinates with these laws has the standard Wishart density.
 
@@ -64,10 +65,13 @@ namespace TauCeti
 
 variable {p : ℕ} {n : ℝ}
 
-/-- The law of the Cholesky coordinate at the on-or-below-diagonal position `ij` of a standard
-Wishart matrix of real degree `n`: the diagonal coordinate `(i, i)` has the chi density with
-`n - i` degrees of freedom on the positive half-line, and a strictly lower coordinate is a
-standard Gaussian. -/
+/-- The coordinate measure at the on-or-below-diagonal position `ij` of the Cholesky factor of a
+standard Wishart matrix of real degree `n`. At a diagonal position `(i, i)` it is Lebesgue measure
+on the positive half-line with the chi density formula for `n - i` degrees of freedom, and at a
+strictly lower position it is the standard Gaussian law. The definition places no condition on
+`n`: the diagonal measure is the chi probability law only when `0 < n - i`, which holds for every
+`i < p` under the hypothesis `(p : ℝ) - 1 < n` of
+`TauCeti.map_lowerTriangleGram_pi_bartlettCoordinateMeasure`. -/
 def bartlettCoordinateMeasure (n : ℝ) (ij : lowerTriangle p) : Measure ℝ :=
   if ij.1.1 = ij.1.2 then
     (volume.restrict (Ioi (0 : ℝ))).withDensity fun t ↦ ENNReal.ofReal
@@ -75,7 +79,10 @@ def bartlettCoordinateMeasure (n : ℝ) (ij : lowerTriangle p) : Measure ℝ :=
         t ^ (n - ij.1.1 - 1) * exp (-t ^ 2 / 2))
   else gaussianReal 0 1
 
-/-- A diagonal Cholesky coordinate has the chi density with `n - i` degrees of freedom. -/
+/-- At a diagonal position `(i, i)` the coordinate measure is Lebesgue measure on the positive
+half-line with the chi density formula for `n - i` degrees of freedom; it is the chi law when
+`0 < n - i`. -/
+@[simp]
 theorem bartlettCoordinateMeasure_of_eq (n : ℝ) {ij : lowerTriangle p} (h : ij.1.1 = ij.1.2) :
     bartlettCoordinateMeasure n ij =
       (volume.restrict (Ioi (0 : ℝ))).withDensity fun t ↦ ENNReal.ofReal
@@ -84,6 +91,7 @@ theorem bartlettCoordinateMeasure_of_eq (n : ℝ) {ij : lowerTriangle p} (h : ij
   ite_eq_left_iff.2 fun h' ↦ absurd h h'
 
 /-- A strictly lower Cholesky coordinate is standard Gaussian. -/
+@[simp]
 theorem bartlettCoordinateMeasure_of_ne (n : ℝ) {ij : lowerTriangle p} (h : ij.1.1 ≠ ij.1.2) :
     bartlettCoordinateMeasure n ij = gaussianReal 0 1 :=
   ite_eq_right_iff.2 fun h' ↦ absurd h' h
@@ -127,10 +135,10 @@ private theorem bartlett_row_const (n : ℝ) (i : ℕ) :
     rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul (by positivity),
       Real.mul_rpow h2.le pi_pos.le]
     ring_nf
+  have hexp : (1 : ℝ) - (n - i) / 2 = 1 + (i : ℝ) / 2 - n / 2 := by ring
   have hpow : (2 : ℝ) ^ (1 - (n - i) / 2) = 2 * 2 ^ ((i : ℝ) / 2) / 2 ^ (n / 2) := by
-    rw [show (1 : ℝ) - (n - i) / 2 = 1 + (i : ℝ) / 2 - n / 2 by ring, Real.rpow_sub h2,
-      Real.rpow_add h2, Real.rpow_one]
-  rw [inv_pow, hsqrt, hpow, show (n - i) / 2 = n / 2 - (i : ℝ) / 2 by ring]
+    rw [hexp, Real.rpow_sub h2, Real.rpow_add h2, Real.rpow_one]
+  rw [inv_pow, hsqrt, hpow, sub_div n (i : ℝ) 2]
   have : (0 : ℝ) < 2 ^ ((i : ℝ) / 2) := by positivity
   have : (0 : ℝ) < π ^ ((i : ℝ) / 2) := by positivity
   have : (0 : ℝ) < 2 ^ (n / 2) := by positivity
@@ -178,7 +186,7 @@ private theorem prod_bartlettCoordinatePDFReal {x : lowerTriangle p → ℝ}
       ← Real.rpow_mul (Finset.prod_nonneg hnn), ← Real.finsetProd_rpow _ _ hnn]
     congr 1
     funext i
-    rw [show ((2 : ℕ) : ℝ) * ((n - p - 1) / 2) = n - p - 1 by push_cast; ring]
+    rw [Nat.cast_ofNat, mul_div_cancel₀ (n - p - 1) two_ne_zero]
   have htwo : (2 : ℝ) ^ (n * p / 2) = ∏ _i : Fin p, (2 : ℝ) ^ (n / 2) := by
     rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, ← Real.rpow_natCast,
       ← Real.rpow_mul two_pos.le]
@@ -215,7 +223,8 @@ private theorem bartlettCoordinatePDFReal_nonneg (hn : (p : ℝ) - 1 < n) (ij : 
   split_ifs
   · refine Set.indicator_nonneg (fun t (ht : 0 < t) ↦ ?_) t
     have hi : ((ij.1.1 : ℕ) : ℝ) + 1 ≤ p := by exact_mod_cast ij.1.1.2
-    have := Real.Gamma_pos_of_pos (show 0 < (n - ij.1.1) / 2 by linarith)
+    have hk : 0 < (n - ij.1.1) / 2 := by linarith
+    have := Real.Gamma_pos_of_pos hk
     positivity
   · exact (gaussianPDFReal_pos 0 1 t one_ne_zero).le
 
