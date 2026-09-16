@@ -17,17 +17,18 @@ import Mathlib.Topology.Instances.Matrix
 /-!
 # Divergence of the Wishart cone integral off the positive-definite cone
 
-For a positive-definite weight matrix `B` and `(p - 1) / 2 < a`, the integral of
-`(det A) ^ (a - (p + 1) / 2) * exp (-trace (B * A))` over the cone of positive-definite symmetric
-`p × p` matrices is finite; for `B = 1` its value is the multivariate Gamma function
-(`TauCeti.integral_posDef_multivariateGamma`). This file proves the converse: when the symmetric
-weight `B` is not positive definite, the integral is infinite, and the integrand is not
+Consider the integral of `(det A) ^ (a - (p + 1) / 2) * exp (-trace (B * A))` over the cone of
+positive-definite symmetric `p × p` matrices. For the identity weight `B = 1` and
+`(p - 1) / 2 < a`, its value is the multivariate Gamma function
+(`TauCeti.integral_posDef_multivariateGamma`). This file treats the opposite situation: when the
+symmetric weight `B` is not positive definite, the integral is infinite, and the integrand is not
 integrable on the cone.
 
-Together the two statements give the exact domain on which a trace statistic of a Wishart density
+This is the necessary direction for the domain on which a trace statistic of a Wishart density
 has finite exponential moments: tilting the density `exp (-trace (S⁻¹ * A) / 2)` by
-`exp (t * trace (Θ * A))` produces the weight `B = S⁻¹ / 2 - t • Θ`, and the moment is finite
-exactly when that weight is positive definite.
+`exp (t * trace (Θ * A))` produces the weight `B = S⁻¹ / 2 - t • Θ`, and the moment is infinite
+whenever that weight is not positive definite. The sufficient direction, finiteness for an
+arbitrary positive-definite weight, is not proved here.
 
 The proof uses a direction `v` with `v ⬝ᵥ B *ᵥ v ≤ 0`, along which the weight does not decay.
 Translating a small closed ball `K` inside the cone by the multiples `k • v vᵀ`, `k : ℕ`, gives
@@ -160,6 +161,7 @@ private theorem mul_exp_neg_mul_inv_le_det_rpow_mul_exp_neg_trace
       (A + (k : ℝ) • Matrix.vecMulVec v v).det ^ e *
         exp (-(B * (A + (k : ℝ) • Matrix.vecMulVec v v)).trace) := by
   have hw0 : 0 ≤ v ⬝ᵥ A⁻¹ *ᵥ v := by simpa using hA.inv.posSemidef.dotProduct_mulVec_nonneg v
+  -- The matrix determinant lemma, with `vecMulVec` written as a column times a row.
   have hdet : (A + (k : ℝ) • Matrix.vecMulVec v v).det = A.det * (1 + k * (v ⬝ᵥ A⁻¹ *ᵥ v)) := by
     rw [← Matrix.smul_vecMulVec, Matrix.vecMulVec_eq Unit,
       Matrix.det_add_replicateCol_mul_replicateRow hA.det_pos.ne'.isUnit, Matrix.mul_assoc,
