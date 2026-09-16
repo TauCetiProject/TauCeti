@@ -29,19 +29,22 @@ specialize to the familiar identities `|I| = e` and `|D| = e * f`.
   `|I| * fₛ`.
 * `Ideal.card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn`: the decomposition group has
   order `e * f` without a residue-separability hypothesis.
+* `Ideal.card_stabilizer_eq_ramificationIdx_mul_inertiaDeg`: the same formula in terms of the
+  ramification index and inertia degree of the upstairs ideal.
 * `Ideal.card_inertia_eq_ramificationIdxIn_mul_finInsepDegree`: the inertia group has order
   `e * fᵢ`.
+* `Ideal.card_inertia_eq_ramificationIdx_mul_finInsepDegree`: the same formula in terms of the
+  ramification index of the upstairs ideal.
 * `Ideal.card_inertia_eq_ramificationIdxIn_of_isSeparable`: for a separable residue extension,
   the familiar identity `|I| = e` holds without assuming the base residue field is perfect.
+* `Ideal.card_inertia_eq_ramificationIdx_of_isSeparable`: the corresponding upstairs-ideal form.
 
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter I, §9.
 
-The proof follows the same cardinality argument as the function-field place API in
-`TauCeti.FieldTheory.FunctionField.Place.Extension.Inertia`: normality identifies residue-field
-embeddings with automorphisms, and the fundamental identity then separates the inseparable
-degree from the inertia degree.
+These results are the ideal-theoretic analogues of the function-field place cardinality formulas
+in `TauCeti.FieldTheory.FunctionField.Place.Extension.Inertia`.
 -/
 
 public section
@@ -107,6 +110,14 @@ theorem card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn (p : Ideal R) [p.I
   exact mul_right_injective₀ (IsDedekindDomain.primesOver_ncard_ne_zero p S)
     (by simpa only [mul_comm] using horbit.trans hfund.symm)
 
+/-- The order of the decomposition group is the product of the ramification index and inertia
+degree of the upstairs ideal. -/
+theorem card_stabilizer_eq_ramificationIdx_mul_inertiaDeg (P : Ideal S) [P.IsMaximal] :
+    Nat.card (stabilizer G P) = P.ramificationIdx R * P.inertiaDeg R := by
+  rw [← ramificationIdxIn_eq_ramificationIdx (P.under R) P G,
+    ← inertiaDegIn_eq_inertiaDeg (P.under R) P G]
+  exact card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn (G := G) (P.under R) P
+
 /-- Over an imperfect residue field, the inertia group has order `e * fᵢ`, where `fᵢ` is the
 inseparable residue degree. -/
 theorem card_inertia_eq_ramificationIdxIn_mul_finInsepDegree (p : Ideal R) [p.IsMaximal]
@@ -128,6 +139,14 @@ theorem card_inertia_eq_ramificationIdxIn_mul_finInsepDegree (p : Ideal R) [p.Is
           Field.finSepDegree (R ⧸ p) (S ⧸ P) := by
       simp only [mul_assoc, mul_left_comm, mul_comm]
 
+/-- Over an imperfect residue field, the inertia group has order `e * fᵢ`, stated using the
+ramification index of the upstairs ideal. -/
+theorem card_inertia_eq_ramificationIdx_mul_finInsepDegree (P : Ideal S) [P.IsMaximal] :
+    Nat.card (P.inertia G) =
+      P.ramificationIdx R * Field.finInsepDegree (R ⧸ P.under R) (S ⧸ P) := by
+  rw [← ramificationIdxIn_eq_ramificationIdx (P.under R) P G]
+  exact card_inertia_eq_ramificationIdxIn_mul_finInsepDegree (G := G) (P.under R) P
+
 /-- If the residue extension is separable, the inertia group has order equal to the ramification
 index.  Unlike the standard perfect-residue-field form, this assumes separability only for the
 one residue extension in the statement. -/
@@ -140,5 +159,13 @@ theorem card_inertia_eq_ramificationIdxIn_of_isSeparable (p : Ideal R) [p.IsMaxi
       inferInstance
   rw [card_inertia_eq_ramificationIdxIn_mul_finInsepDegree (G := G) p P,
     hfi, mul_one]
+
+/-- If the residue extension is separable, the inertia group has order equal to the ramification
+index of the upstairs ideal. -/
+theorem card_inertia_eq_ramificationIdx_of_isSeparable (P : Ideal S) [P.IsMaximal]
+    [Algebra.IsSeparable (R ⧸ P.under R) (S ⧸ P)] :
+    Nat.card (P.inertia G) = P.ramificationIdx R := by
+  rw [← ramificationIdxIn_eq_ramificationIdx (P.under R) P G]
+  exact card_inertia_eq_ramificationIdxIn_of_isSeparable (G := G) (P.under R) P
 
 end Ideal
