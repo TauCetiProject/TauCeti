@@ -27,14 +27,15 @@ recorded as a left action of `Aᵐᵒᵖ`.
 The multiplication pairing `TauCeti.mulPairing` and the canonical map
 `TauCeti.toRightDualLinearMap` to the right dual are attached to an arbitrary functional: being
 Frobenius is not needed to form them, only to make them nondegenerate, respectively bijective. The
-right dual, the pairing and both functional structures need only a commutative semiring base and a
-semiring algebra; a field, a ring and finite-dimensionality enter exactly at the perfect-pairing
-argument. For a Frobenius functional `lambda` the canonical map sends `a` to the functional
-`b ↦ lambda (a * b)`, and it is right-linear for precisely the action above. Conversely a
-right-module equivalence `e : A ≃ RightDual k A` recovers its functional by evaluating `e 1`;
-right-linearity shows these constructions are inverse. The equivalence requires
-finite-dimensionality only in the forward direction, where two-sided nondegeneracy upgrades to a
-perfect pairing.
+right dual, the pairing, both functional structures and the reverse construction
+`TauCeti.FrobeniusFunctional.ofRightDualEquiv` need only a commutative semiring base and a semiring
+algebra, the last one additionally a projective module so that the dual separates points; a field,
+a ring and finite-dimensionality enter exactly at the perfect-pairing argument. For a Frobenius
+functional `lambda` the canonical map sends `a` to the functional `b ↦ lambda (a * b)`, and it is
+right-linear for precisely the action above. Conversely a right-module equivalence
+`e : A ≃ RightDual k A` recovers its functional by evaluating `e 1`; right-linearity shows these
+constructions are inverse. The equivalence requires finite-dimensionality only in the forward
+direction, where two-sided nondegeneracy upgrades to a perfect pairing.
 
 `TauCeti.SymmetricFrobeniusFunctional` records the additional trace identity
 `lambda (a * b) = lambda (b * a)` and identifies it with symmetry of the multiplication pairing.
@@ -223,6 +224,30 @@ theorem nondegenerate_mulPairing (lambda : FrobeniusFunctional k A) :
     (mulPairing lambda.functional).Nondegenerate :=
   ⟨lambda.left_nondegenerate, lambda.right_nondegenerate⟩
 
+/-- A right-module equivalence with the right dual determines a Frobenius functional. Nothing
+beyond separation of points by the dual, that is projectivity, is needed: this direction uses
+neither a field nor finite-dimensionality. -/
+def ofRightDualEquiv [Module.Projective k A] (e : A ≃ₗ[Aᵐᵒᵖ] RightDual k A) :
+    FrobeniusFunctional k A where
+  functional := RightDual.toDual (e 1)
+  left_nondegenerate a ha := by
+    apply e.injective
+    rw [map_zero]
+    ext b
+    rw [rightDualMap_apply_apply]
+    exact ha b
+  right_nondegenerate b hb := by
+    rw [← RightDual.forall_apply_eq_zero_iff (k := k) b]
+    intro phi
+    obtain ⟨a, rfl⟩ := e.surjective phi
+    rw [rightDualMap_apply_apply]
+    exact hb a
+
+@[simp]
+theorem ofRightDualEquiv_functional_apply [Module.Projective k A]
+    (e : A ≃ₗ[Aᵐᵒᵖ] RightDual k A) (a : A) :
+    (ofRightDualEquiv e).functional a = e 1 a := (rfl)
+
 end FrobeniusFunctional
 
 /-- A Frobenius functional whose multiplication pairing is symmetric. -/
@@ -290,26 +315,6 @@ theorem toRightDualEquiv_apply_apply [FiniteDimensional k A]
     apply LinearEquiv.ofBijective_apply
   rw [h, toRightDualLinearMap_apply_apply]
 
-/-- A right-module equivalence with the right dual determines a Frobenius functional. -/
-def ofRightDualEquiv (e : A ≃ₗ[Aᵐᵒᵖ] RightDual k A) : FrobeniusFunctional k A where
-  functional := RightDual.toDual (e 1)
-  left_nondegenerate a ha := by
-    apply e.injective
-    rw [map_zero]
-    ext b
-    rw [rightDualMap_apply_apply]
-    exact ha b
-  right_nondegenerate b hb := by
-    rw [← RightDual.forall_apply_eq_zero_iff (k := k) b]
-    intro phi
-    obtain ⟨a, rfl⟩ := e.surjective phi
-    rw [rightDualMap_apply_apply]
-    exact hb a
-
-@[simp]
-theorem ofRightDualEquiv_functional_apply (e : A ≃ₗ[Aᵐᵒᵖ] RightDual k A) (a : A) :
-    (ofRightDualEquiv e).functional a = e 1 a := (rfl)
-
 @[simp]
 theorem ofRightDualEquiv_toRightDualEquiv [FiniteDimensional k A]
     (lambda : FrobeniusFunctional k A) :
@@ -332,6 +337,15 @@ noncomputable def equivRightDualEquiv [FiniteDimensional k A] :
   invFun := ofRightDualEquiv
   left_inv := ofRightDualEquiv_toRightDualEquiv
   right_inv := toRightDualEquiv_ofRightDualEquiv
+
+@[simp]
+theorem equivRightDualEquiv_apply [FiniteDimensional k A] (lambda : FrobeniusFunctional k A) :
+    equivRightDualEquiv lambda = lambda.toRightDualEquiv := (rfl)
+
+@[simp]
+theorem equivRightDualEquiv_symm_apply [FiniteDimensional k A]
+    (e : A ≃ₗ[Aᵐᵒᵖ] RightDual k A) :
+    (equivRightDualEquiv (k := k) (A := A)).symm e = ofRightDualEquiv e := (rfl)
 
 end FrobeniusFunctional
 
