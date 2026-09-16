@@ -48,6 +48,9 @@ directions before taking products.
   open arc with reversed, exchanged endpoints.
 * `TauCeti.Grid.mem_cIoo_finRotate_finRotate`, `TauCeti.Grid.mem_cIco_finRotate_finRotate`: the
   cyclic permutation `finRotate n` preserves the open and half-open arcs.
+* `TauCeti.Grid.cIoo_finRotate_eq_empty`, `TauCeti.Grid.cIco_eq_singleton_iff`: the arcs from a
+  point to its cyclic successor are empty and a single point, and these are the only one-point
+  half-open arcs.
 * `TauCeti.Grid.mem_cIco`: membership in the clockwise half-open arc.
 * `TauCeti.Grid.card_cIco`: the length of a half-open arc in standard representatives.
 * `TauCeti.Grid.cIco_union_swap`: opposite nondegenerate half-open arcs partition the grid.
@@ -617,6 +620,50 @@ theorem mem_cIco_finRotate_finRotate (a b x : Fin n) :
   · rw [cIco_of_ne ((finRotate n).injective.ne hab), cIco_of_ne hab,
       Finset.mem_insert, Finset.mem_insert, (finRotate n).injective.eq_iff,
       mem_cIoo_finRotate_finRotate]
+
+/-- The open cyclic interval from a point to its cyclic successor is empty. -/
+@[simp]
+theorem cIoo_finRotate_eq_empty (a : Fin n) : cIoo a (finRotate n a) = ∅ := by
+  cases n with
+  | zero => exact a.elim0
+  | succ n =>
+    ext x
+    simp only [mem_cIoo, ne_eq, Finset.notMem_empty, iff_false, not_and]
+    intro _
+    have := a.isLt; have := x.isLt
+    rw [coe_finRotate]
+    split_ifs with h₁ h₂ <;> simp only [Fin.ext_iff, Fin.val_last] at h₁ <;> omega
+
+/-- A half-open cyclic interval is a single point exactly when that point is its initial endpoint
+and its terminal endpoint is the distinct cyclic successor of that point. -/
+theorem cIco_eq_singleton_iff {a b c : Fin n} :
+    cIco a b = {c} ↔ a = c ∧ b = finRotate n c ∧ a ≠ b := by
+  constructor
+  · intro h
+    have hab : a ≠ b := by
+      rintro rfl
+      simp at h
+    have hac : a = c := Finset.mem_singleton.mp (h ▸ left_mem_cIco hab)
+    subst c
+    refine ⟨rfl, ?_, hab⟩
+    have hcard := congrArg Finset.card h
+    simp only [card_cIco, Finset.card_singleton, hab, ↓reduceIte] at hcard
+    cases n with
+    | zero => exact a.elim0
+    | succ n =>
+      have := a.isLt; have := b.isLt
+      rw [Fin.ext_iff, coe_finRotate]
+      have hab' : a.val ≠ b.val := fun e => hab (Fin.ext e)
+      by_cases hlast : a = Fin.last n
+      · simp only [hlast, ↓reduceIte] at hcard ⊢
+        simp only [Fin.val_last] at hcard ⊢
+        split_ifs at hcard <;> omega
+      · simp only [hlast, ↓reduceIte]
+        rw [Fin.ext_iff, Fin.val_last] at hlast
+        split_ifs at hcard <;> omega
+  · rintro ⟨rfl, rfl, hab⟩
+    rw [cIco_of_ne hab, cIoo_finRotate_eq_empty]
+    rfl
 
 /-- Non-interleaving is preserved by reversing every endpoint with `Fin.rev`, with the cyclic
 orientation reversal accounted for by exchanging the two endpoints within each pair. -/

@@ -44,8 +44,14 @@ serves `TauCeti.GridDiagram.fullyBlockedDifferential` unchanged.
 
 * `TauCeti.GridRectangleBetween.sideColumns_eq_sideColumns`: a returning pair of rectangles uses
   the same two side columns.
+* `TauCeti.GridRectangleBetween.left_eq_left_or_left_eq_right`,
+  `TauCeti.GridRectangleBetween.right_eq_right_of_left_eq_left`,
+  `TauCeti.GridRectangleBetween.right_eq_left_of_left_eq_right`: the returning rectangle either
+  has the same oriented side columns or the reversed ones.
 * `TauCeti.GridRectangleBetween.coveredSquares_union_coveredSquares`: the squares covered by a
   returning pair are a full vertical band or a full horizontal band.
+* `TauCeti.GridRectangleBetween.disjoint_coveredSquares`: the two rectangles of a returning pair
+  cover disjoint squares.
 * `TauCeti.GridRectangleBetween.not_disjoint_coveredSquares_or_not_disjoint_coveredSquares`: at
   least one rectangle of a returning pair covers a square occupied by any given grid state.
 
@@ -69,7 +75,7 @@ variable {n : ℕ} {x y : GridState n} (R : GridRectangleBetween x y) (S : GridR
 /-- The initial side column of a returning rectangle is a side column of the outgoing one: away
 from the two side columns of `R` the states `x` and `y` agree, and there `S` could not exchange
 two distinct rows. -/
-private theorem left_eq_left_or_left_eq_right : S.left = R.left ∨ S.left = R.right := by
+theorem left_eq_left_or_left_eq_right : S.left = R.left ∨ S.left = R.right := by
   by_cases hl : S.left = R.left
   · exact Or.inl hl
   by_cases hr : S.left = R.right
@@ -92,14 +98,14 @@ private theorem right_eq_left_or_right_eq_right : S.right = R.left ∨ S.right =
 
 /-- If a returning rectangle starts on the same side column as the outgoing one, then it also
 ends on the same side column. -/
-private theorem right_eq_right_of_left_eq_left (h : S.left = R.left) : S.right = R.right := by
+theorem right_eq_right_of_left_eq_left (h : S.left = R.left) : S.right = R.right := by
   rcases R.right_eq_left_or_right_eq_right S with h' | h'
   · exact absurd (h.trans h'.symm) S.left_ne_right
   · exact h'
 
 /-- If a returning rectangle starts on the terminal side column of the outgoing one, then it ends
 on the initial one. -/
-private theorem right_eq_left_of_left_eq_right (h : S.left = R.right) : S.right = R.left := by
+theorem right_eq_left_of_left_eq_right (h : S.left = R.right) : S.right = R.left := by
   rcases R.right_eq_left_or_right_eq_right S with h' | h'
   · exact h'
   · exact absurd (h.trans h'.symm) S.left_ne_right
@@ -177,6 +183,21 @@ theorem coveredSquares_union_coveredSquares :
   rcases R.left_eq_left_or_left_eq_right S with h | h
   · exact Or.inl (R.coveredSquares_union_coveredSquares_of_left_eq_left S h)
   · exact Or.inr (R.coveredSquares_union_coveredSquares_of_left_eq_right S h)
+
+/-- The two rectangles of a returning pair cover disjoint sets of squares: they have the same
+columns and complementary rows, or the same rows and complementary columns. -/
+theorem disjoint_coveredSquares :
+    Disjoint R.toGridRectangle.coveredSquares S.toGridRectangle.coveredSquares := by
+  rw [GridRectangle.disjoint_coveredSquares_iff]
+  rcases R.left_eq_left_or_left_eq_right S with h | h
+  · right
+    simp only [GridRectangle.coveredRows_def, toGridRectangle_bottom, toGridRectangle_top,
+      R.bottom_eq_top_of_left_eq_left S h, R.top_eq_bottom_of_left_eq_left S h]
+    exact Grid.disjoint_cIco_swap _ _
+  · left
+    simp only [GridRectangle.coveredColumns_def, toGridRectangle_left, toGridRectangle_right, h,
+      R.right_eq_left_of_left_eq_right S h]
+    exact Grid.disjoint_cIco_swap _ _
 
 /-- A grid state meets the squares covered by a returning pair of rectangles. -/
 theorem not_disjoint_union_coveredSquares_pointSet (M : GridState n) :
