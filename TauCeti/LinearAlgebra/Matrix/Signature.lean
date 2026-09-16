@@ -143,21 +143,12 @@ def isometryEquivFromBlocks (A : Matrix ι ι R) (B : Matrix κ κ R) :
 coordinates of its quadratic form. -/
 def isometryEquivReindex (e : ι ≃ κ) (A : Matrix ι ι R) :
     (reindex e e A).toQuadraticForm'.IsometryEquiv A.toQuadraticForm' where
-  toLinearEquiv :=
-    { toFun := fun x i ↦ x (e i)
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl
-      invFun := fun x j ↦ x (e.symm j)
-      left_inv := fun x ↦ funext fun j ↦ by simp
-      right_inv := fun x ↦ funext fun i ↦ by simp }
+  toLinearEquiv := LinearEquiv.funCongrLeft R R e
   map_app' x := by
-    rw [toQuadraticForm'_apply, toQuadraticForm'_apply, dotProduct, dotProduct,
-      ← e.sum_comp (fun i ↦ x i * (reindex e e A *ᵥ x) i)]
-    apply Finset.sum_congr rfl
-    intro i _
-    simp only [mulVec, dotProduct, reindex_apply, submatrix_apply, Equiv.symm_apply_apply]
-    rw [← e.sum_comp (fun j ↦ A i (e.symm j) * x j)]
-    simp only [Equiv.symm_apply_apply]
+    rw [toQuadraticForm'_apply, toQuadraticForm'_apply, reindex_apply, submatrix_mulVec_equiv,
+      ← comp_equiv_dotProduct_comp_equiv (e := e)]
+    simp only [Equiv.symm_symm, Function.comp_assoc, Equiv.symm_comp_self, Function.comp_id]
+    rfl
 
 end CommRing
 
