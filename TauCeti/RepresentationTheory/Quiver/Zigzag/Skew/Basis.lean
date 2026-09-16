@@ -38,6 +38,7 @@ quotient.
   `TauCeti.span_range_skewZigzagBasisFun_eq_top`: the family is independent and spans.
 * `TauCeti.skewZigzagMk_backtrackElem_ne_zero` and `TauCeti.skewZigzagVolume_ne_zero`: no backtrack
   class vanishes.
+* `TauCeti.skewZigzagMk_ofArrow_ne_zero`: no arrow class vanishes.
 * `TauCeti.finrank_skewZigzagQuotient`: when there are no isolated vertices, the dimension is
   `2|V| + 2|E|`, as in the ordinary case.
 
@@ -526,6 +527,18 @@ theorem skewZigzagMk_backtrackElem_ne_zero [Nontrivial k] {i j : V} (hij : G.Adj
 theorem skewZigzagVolume_ne_zero [Nontrivial k] {i : V} (e : {j : V // G.Adj i j}) :
     skewZigzagVolume k G c e ≠ 0 := by
   simpa only [skewZigzagVolume] using skewZigzagMk_backtrackElem_ne_zero k G c e.2
+
+/-- **No arrow dies in a skew-zigzag relation quotient**: followed by its reverse it gives a
+backtrack class, which is nonzero. -/
+theorem skewZigzagMk_ofArrow_ne_zero [Nontrivial k] {x y : DoubledQuiver G} (e : x ⟶ y) :
+    skewZigzagMk k G c (ofArrow e) ≠ 0 := by
+  obtain ⟨i, rfl⟩ : ∃ i, x = vertex G i := ⟨_, (vertexEquiv_symm_apply G x).symm⟩
+  obtain ⟨j, rfl⟩ : ∃ j, y = vertex G j := ⟨_, (vertexEquiv_symm_apply G y).symm⟩
+  have h : G.Adj i j := by simpa using e.down
+  obtain rfl : e = arrow G h := Subsingleton.elim _ _
+  intro hzero
+  apply skewZigzagMk_backtrackElem_ne_zero k G c h
+  rw [← ofArrow_symm_mul_ofArrow, map_mul, hzero, mul_zero]
 
 /-! ### The dimension and the comparison with the ordinary quotient -/
 
