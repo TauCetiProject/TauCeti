@@ -83,9 +83,9 @@ theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : 
   refine lintegral_congr_ae ?_
   filter_upwards [hh] with z hz
   by_cases hzq : f z ∈ q
-  · rw [Set.indicator_of_mem (show z ∈ f ⁻¹' q from hzq), Pi.mul_apply,
+  · rw [Set.indicator_of_mem (Set.mem_preimage.mpr hzq), Pi.mul_apply,
       Set.indicator_of_mem hzq, hz]
-  · rw [Set.indicator_of_notMem (show z ∉ f ⁻¹' q from hzq), Pi.mul_apply,
+  · rw [Set.indicator_of_notMem (Set.mem_preimage.not.mpr hzq), Pi.mul_apply,
       Set.indicator_of_notMem hzq, mul_zero]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]

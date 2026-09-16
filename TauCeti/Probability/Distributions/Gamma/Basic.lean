@@ -105,6 +105,7 @@ theorem ae_mem_prod_Ioi_gammaMeasure {b s : ℝ} (ha : 0 < a) (hb : 0 < b) (hr :
   exact ⟨hx, hy⟩
 
 /-- Off the negative half-line the gamma density is given by its closed formula. -/
+@[simp]
 theorem gammaPDFReal_of_nonneg {x : ℝ} (hx : 0 ≤ x) :
     gammaPDFReal a r x = r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x)) := by
   rw [gammaPDFReal, ite_eq_left hx]

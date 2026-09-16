@@ -90,6 +90,7 @@ theorem dirichletChart_apply_coe (i₀ : ι) (x : {i // i ≠ i₀} → ℝ) (j 
 
 /-- The value of the chart at an index other than `i₀`, indexed by `ι` rather than by the
 subtype. -/
+@[simp]
 theorem dirichletChart_apply_of_ne {i : ι} (i₀ : ι) (x : {i // i ≠ i₀} → ℝ) (h : i ≠ i₀) :
     dirichletChart i₀ x i = x ⟨i, h⟩ :=
   dirichletChart_apply_coe i₀ x ⟨i, h⟩
@@ -210,7 +211,7 @@ def dirichletChartPDF (a : ι → ℝ) (i₀ : ι) (x : {i // i ≠ i₀} → �
   ENNReal.ofReal (dirichletChartPDFReal a i₀ x)
 
 /-- The `ℝ≥0∞`-valued chart density is `ENNReal.ofReal` of the real-valued one. -/
-theorem dirichletChartPDF_eq (a : ι → ℝ) (i₀ : ι) (x : {i // i ≠ i₀} → ℝ) :
+theorem dirichletChartPDF_eq_ofReal (a : ι → ℝ) (i₀ : ι) (x : {i // i ≠ i₀} → ℝ) :
     dirichletChartPDF a i₀ x = ENNReal.ofReal (dirichletChartPDFReal a i₀ x) := by
   rw [dirichletChartPDF]
 
@@ -235,7 +236,7 @@ theorem dirichletChartPDFReal_of_notMem (a : ι → ℝ) {x : ({i // i ≠ i₀}
 theorem dirichletChartPDF_of_notMem (a : ι → ℝ) {x : ({i // i ≠ i₀}) → ℝ}
     (hx : x ∉ dirichletChartRegion i₀) :
     dirichletChartPDF a i₀ x = 0 := by
-  rw [dirichletChartPDF, dirichletChartPDFReal_of_notMem a hx, ENNReal.ofReal_zero]
+  rw [dirichletChartPDF_eq_ofReal, dirichletChartPDFReal_of_notMem a hx, ENNReal.ofReal_zero]
 
 /-- The value of the `ℝ≥0∞`-valued chart density on the chart region. -/
 @[simp]
@@ -244,7 +245,7 @@ theorem dirichletChartPDF_of_mem (a : ι → ℝ) {x : ({i // i ≠ i₀}) → �
     dirichletChartPDF a i₀ x = ENNReal.ofReal
       ((Real.Gamma (∑ i, a i) / ∏ i, Real.Gamma (a i)) * (∏ j, x j ^ (a j - 1)) *
         (1 - ∑ j, x j) ^ (a i₀ - 1)) := by
-  rw [dirichletChartPDF, dirichletChartPDFReal_of_mem a hx]
+  rw [dirichletChartPDF_eq_ofReal, dirichletChartPDFReal_of_mem a hx]
 
 /-- The chart density is nonnegative at a positive concentration vector. -/
 theorem dirichletChartPDFReal_nonneg {a : ι → ℝ} (ha : ∀ i, 0 < a i) (i₀ : ι)
@@ -737,9 +738,8 @@ theorem dirichletMeasure_eq_map_withDensity_dirichletChartPDF {a : ι → ℝ} (
     isProbabilityMeasure_gammaMeasure hA one_pos
   have hchart : Measurable (dirichletChart i₀ ∘ Prod.snd ∘ dirichletChartCoords i₀) :=
     measurable_dirichletChart.comp (measurable_snd.comp (measurable_dirichletChartCoords i₀))
-  have hsplit : Measurable ⇑(Equiv.piSplitAt i₀ fun _ : ι ↦ ℝ) := by
-    change Measurable fun w : ι → ℝ ↦ (w i₀, fun j : {i // i ≠ i₀} ↦ w j)
-    exact (measurable_pi_apply i₀).prodMk (Measurable.of_eval fun j ↦ measurable_pi_apply j.1)
+  have hsplit : Measurable ⇑(Equiv.piSplitAt i₀ fun _ : ι ↦ ℝ) :=
+    (measurePreserving_piSplitAt (fun i ↦ gammaMeasure (a i) 1) i₀).measurable
   have hM : ∀ᵐ z ∂((volume.restrict (dirichletUnchartSource i₀)).withDensity
       (dirichletSourcePDF a i₀)), z ∈ dirichletUnchartSource i₀ :=
     (withDensity_absolutelyContinuous _ _).ae_le
