@@ -53,10 +53,9 @@ variable (R : Type*) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 ideal of `R` in `W.localMinimalDiscriminant R`, equivalently the additive valuation of the
 discriminant of a minimal integral equation in the variable-change orbit of `W`.
 
-The ellipticity hypothesis ensures that the discriminant is nonzero, so the extended-natural
-additive valuation is finite and has an honest natural-number value. -/
-noncomputable def localMinimalDiscriminantValuation (W : WeierstrassCurve K) [W.IsElliptic] :
-    ℕ :=
+For an elliptic curve, the discriminant is nonzero, so the theorems below show that the
+extended-natural additive valuation is finite and this natural-number value recovers it. -/
+noncomputable def localMinimalDiscriminantValuation (W : WeierstrassCurve K) : ℕ :=
   ENat.toNat (addVal R ((W.minimal R).integralModel R).Δ)
 
 /-- **The integral discriminant of the chosen minimal equation is nonzero.** This is the
