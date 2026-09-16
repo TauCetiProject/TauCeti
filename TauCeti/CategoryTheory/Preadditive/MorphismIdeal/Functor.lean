@@ -141,7 +141,6 @@ theorem map_id (I : MorphismIdeal C) :
   rfl
 
 /-- Compatible functors induce the composite of their functors on ideal quotients. -/
-@[simp]
 theorem map_comp (I : MorphismIdeal C) (J : MorphismIdeal D) (K : MorphismIdeal E)
     (F : C ⥤ D) (G : D ⥤ E) [F.Additive] [G.Additive]
     (hF : I ≤ J.comap F) (hG : J ≤ K.comap G) :
