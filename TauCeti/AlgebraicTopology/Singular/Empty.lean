@@ -16,8 +16,8 @@ This file identifies the relative singular chains of `(X, ∅)` with the ordinar
 chains of `X`.  The quotient map supplies the comparison, naturally in `X`, and applying homology
 gives the corresponding natural isomorphism between ordinary and relative singular homology.
 
-The construction follows the normalization axiom for relative homology in Eilenberg--Steenrod,
-*Foundations of Algebraic Topology*, Chapters I--III.
+This is the quotient-chain comparison for the empty subspace, following the relative singular
+chain construction in Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
 
 @[expose] public section
