@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.BaseChange
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Real
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
+public import TauCeti.NumberTheory.QuadraticForm.Global.Signature
 
 /-!
 # Discriminants of localized quadratic forms
@@ -16,6 +18,10 @@ global discriminant at every finite place and along every real or complex embedd
 
 Thus the discriminant attached to an actual localized form agrees with the square class obtained
 by applying the corresponding place map to the global invariant.
+
+At a real place the real square class of the global discriminant is a sign, and it is determined by
+the signature there: it is `(-1)^q` for the negative index `q = n - p` of the localized form of
+rank `n` and positive index `p`.
 -/
 
 public section
@@ -82,5 +88,40 @@ theorem discr_atComplexEmbedding (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegen
   simp only [atComplexEmbedding_def]
   rw [QuadraticForm.formClass_baseChange Q hQ, TauCeti.RegularFormClass.discr_baseChange,
     RingHom.algebraMap_toAlgebra]
+
+/-- At a real place, the image of the global discriminant is the class of `(-1)^q`, where `q` is
+the negative index of the form at that place. -/
+theorem squareClassMap_discr_formClass_eq_realNegativeIndex_nsmul
+    (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (place : {w : InfinitePlace K // w.IsReal}) :
+    letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+    (embedding_of_isReal place.2).squareClassMap
+        (TauCeti.RegularFormClass.discr (TauCeti.formClass Q hQ)) =
+      Q.realNegativeIndex place • TauCeti.squareClass (-1 : ℝˣ) := by
+  rw [← discr_atRealPlace, TauCeti.discr_formClass_eq_sigNeg_nsmul, realNegativeIndex_eq_sigNeg]
+
+/-- At a real place, the image of the global discriminant of a form of rank `n` and positive index
+`p` is the class of `(-1)^(n - p)`. -/
+theorem squareClassMap_discr_formClass_eq_finrank_sub_realPositiveIndex_nsmul
+    (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (place : {w : InfinitePlace K // w.IsReal}) :
+    letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+    (embedding_of_isReal place.2).squareClassMap
+        (TauCeti.RegularFormClass.discr (TauCeti.formClass Q hQ)) =
+      (Module.finrank K V - Q.realPositiveIndex place) • TauCeti.squareClass (-1 : ℝˣ) := by
+  have hsum := realPositiveIndex_add_realNegativeIndex_eq_finrank hQ place
+  rw [squareClassMap_discr_formClass_eq_realNegativeIndex_nsmul, ← hsum, Nat.add_sub_cancel_left]
+
+/-- At a real place, the image of the global discriminant is trivial exactly when the negative
+index of the form at that place is even. -/
+theorem squareClassMap_discr_formClass_eq_zero_iff_even_realNegativeIndex
+    (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (place : {w : InfinitePlace K // w.IsReal}) :
+    letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+    (embedding_of_isReal place.2).squareClassMap
+        (TauCeti.RegularFormClass.discr (TauCeti.formClass Q hQ)) = 0 ↔
+      Even (Q.realNegativeIndex place) := by
+  rw [squareClassMap_discr_formClass_eq_realNegativeIndex_nsmul,
+    TauCeti.nsmul_squareClass_neg_one_eq_zero_iff_even]
 
 end QuadraticForm
