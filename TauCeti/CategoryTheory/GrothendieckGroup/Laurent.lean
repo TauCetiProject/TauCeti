@@ -34,6 +34,13 @@ Specializing at `q = ε` for a unit `ε : ℤˣ`, that is at `q = 1` or `q = -1`
 `TauCeti.LaurentSpecialization ε (LaurentK0 E)` along evaluation at `ε`.  There the grading shift
 acts by the scalar `ε`, so at `q = -1` it changes the sign of a class and at `q = 1` it fixes it.
 
+Forgetting the grading along a conflation-exact functor `F` into an ungraded exact category with
+`{1} ⋙ F ≅ F` identifies the classes of `M` and `M{1}`, so it factors through the specialization
+at `q = 1`: this is `TauCeti.LaurentK0.forgetGrading`.  The factored map need not be an
+isomorphism; `TauCeti.LaurentK0.forgetGradingEquiv` gives sufficient hypotheses under which it is,
+namely lifting of ungraded conflations up to isomorphism and equality at `q = 1` of the classes of
+graded objects with isomorphic images.
+
 ## Main definitions
 
 * `TauCeti.LaurentK0`: the graded exact Grothendieck group as a `ℤ[q,q⁻¹]`-module.
@@ -42,6 +49,10 @@ acts by the scalar `ε`, so at `q = -1` it changes the sign of a class and at `q
 * `TauCeti.LaurentK0.lift`: the `ℤ[q,q⁻¹]`-linear map induced by a shift-compatible invariant.
 * `TauCeti.LaurentK0.map`: the `ℤ[q,q⁻¹]`-linear map induced by a graded conflation-exact functor.
 * `TauCeti.LaurentK0.mapEquiv`: the isomorphism induced by a graded exact equivalence.
+* `TauCeti.LaurentK0.forgetGrading`: forgetting the grading, as a map out of graded `K₀` specialized
+  at `q = 1`.
+* `TauCeti.LaurentK0.forgetGradingEquiv`: the same map as an isomorphism, under sufficient
+  hypotheses.
 
 ## Main results
 
@@ -56,6 +67,8 @@ acts by the scalar `ε`, so at `q = -1` it changes the sign of a class and at `q
   change the class.
 * `TauCeti.LaurentK0.hom_ext_laurentSpecialization`: a map out of specialized graded `K₀` is
   determined by its values on object classes.
+* `TauCeti.LaurentK0.forgetGrading_mk_ofExactK0`: the map induced on exact `K₀` by forgetting the
+  grading factors through the specialization at `q = 1`.
 
 ## References
 
@@ -419,6 +432,137 @@ theorem hom_ext_laurentSpecialization {A : Type*} [AddCommGroup A]
   rwa [AddEquiv.apply_symm_apply] at hx
 
 end Specialization
+
+section ForgetGrading
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+  [HasBinaryBiproducts D] [EssentiallySmall.{w'} D]
+variable {E} {E' : ExactStructure D} {F : C ⥤ D} [F.Additive]
+
+/-- **Forgetting the grading, through the specialization at `q = 1`.**  A conflation-exact functor
+`F` into an ungraded exact category with `{1} ⋙ F ≅ F` induces a map from graded `K₀`, specialized
+at `q = 1`, to the ungraded `K₀`, sending the specialized class of `M` to the class of `F M`.
+
+By `TauCeti.LaurentK0.forgetGrading_mk_ofExactK0` this factors the map `ExactK0.map F` induced on
+the underlying exact `K₀` through the specialization; it is not an isomorphism in general, see
+`TauCeti.LaurentK0.forgetGradingEquiv` for sufficient hypotheses. -/
+noncomputable def forgetGrading (hF : E.toExactStructure.IsConflationExact E' F)
+    (comm : E.shift.functor ⋙ F ≅ F) :
+    LaurentSpecialization (1 : ℤˣ) (LaurentK0 E) →ₗ[ℤ] ExactK0 E' :=
+  LaurentSpecialization.lift 1
+    ((ExactK0.map F hF).comp (ofExactK0 E).symm.toAddMonoidHom).toIntLinearMap fun x => by
+      obtain ⟨z, rfl⟩ := (ofExactK0 E).surjective x
+      rw [T_smul]
+      simp [GradedExactStructure.map_shiftEquiv_of_commShift hF comm]
+
+/-- **The forgetful map on graded `K₀` factors through the specialization at `q = 1`**: forgetting
+the grading of a specialized class is the map induced by `F` on the underlying exact `K₀`. -/
+@[simp]
+theorem forgetGrading_mk_ofExactK0 (hF : E.toExactStructure.IsConflationExact E' F)
+    (comm : E.shift.functor ⋙ F ≅ F) (x : ExactK0 E.toExactStructure) :
+    forgetGrading hF comm (LaurentSpecialization.mk 1 (ofExactK0 E x)) = ExactK0.map F hF x := by
+  simp [forgetGrading]
+
+/-- Forgetting the grading sends the specialized class of `M` to the class of `F M`. -/
+@[simp]
+theorem forgetGrading_mk_of (hF : E.toExactStructure.IsConflationExact E' F)
+    (comm : E.shift.functor ⋙ F ≅ F) (X : C) :
+    forgetGrading hF comm (LaurentSpecialization.mk 1 (of E X)) = ExactK0.of (F.obj X) := by
+  rw [← ofExactK0_exactK0_of, forgetGrading_mk_ofExactK0, ExactK0.map_of]
+
+omit [EssentiallySmall.{w} C] [EssentiallySmall.{w'} D] [F.Additive] in
+/-- The conflation-lifting hypothesis of `TauCeti.LaurentK0.forgetGradingEquiv` makes `F`
+essentially surjective: lift the trivial conflation `0 ↪ Y ↠ Y`. -/
+private theorem exists_nonempty_iso_of_lift_conflation
+    (hlift : ∀ S : ShortComplex D, E'.Conflation S → ∃ S' : ShortComplex C,
+      E.Conflation S' ∧ Nonempty (F.obj S'.X₁ ≅ S.X₁) ∧ Nonempty (F.obj S'.X₂ ≅ S.X₂) ∧
+        Nonempty (F.obj S'.X₃ ≅ S.X₃))
+    (Y : D) : ∃ X : C, Nonempty (F.obj X ≅ Y) :=
+  let ⟨S', _, _, h₂, _⟩ := hlift _ (E'.conflation_zero_id Y)
+  ⟨S'.X₂, h₂⟩
+
+/-- The inverse of `TauCeti.LaurentK0.forgetGrading`, as an additive invariant of the ungraded
+category: an object `Y ≅ F M` is sent to the specialized class of `M`. -/
+private noncomputable def forgetGradingInvInvariant
+    (hlift : ∀ S : ShortComplex D, E'.Conflation S → ∃ S' : ShortComplex C,
+      E.Conflation S' ∧ Nonempty (F.obj S'.X₁ ≅ S.X₁) ∧ Nonempty (F.obj S'.X₂ ≅ S.X₂) ∧
+        Nonempty (F.obj S'.X₃ ≅ S.X₃))
+    (hclass : ∀ X X' : C, Nonempty (F.obj X ≅ F.obj X') →
+      LaurentSpecialization.mk (1 : ℤˣ) (of E X) = LaurentSpecialization.mk 1 (of E X')) :
+    ExactK0.AdditiveInvariant E' (LaurentSpecialization (1 : ℤˣ) (LaurentK0 E)) where
+  obj Y := LaurentSpecialization.mk 1
+    (of E (exists_nonempty_iso_of_lift_conflation hlift Y).choose)
+  map_iso Y Y' e := hclass _ _
+    ⟨(exists_nonempty_iso_of_lift_conflation hlift Y).choose_spec.some ≪≫ e ≪≫
+      (exists_nonempty_iso_of_lift_conflation hlift Y').choose_spec.some.symm⟩
+  map_conflation S hS := by
+    obtain ⟨S', hS', ⟨e₁⟩, ⟨e₂⟩, ⟨e₃⟩⟩ := hlift S hS
+    have key : ∀ (Y : D) (X : C), (F.obj X ≅ Y) →
+        LaurentSpecialization.mk (1 : ℤˣ)
+          (of E (exists_nonempty_iso_of_lift_conflation hlift Y).choose) =
+          LaurentSpecialization.mk 1 (of E X) := fun Y X e =>
+      hclass _ _ ⟨(exists_nonempty_iso_of_lift_conflation hlift Y).choose_spec.some ≪≫ e.symm⟩
+    rw [key _ _ e₁, key _ _ e₂, key _ _ e₃, of_conflation E hS', map_add]
+
+/-- **Sufficient hypotheses for forgetting the grading to be an isomorphism at `q = 1`.**  Let `F`
+be a conflation-exact functor into an ungraded exact category with `{1} ⋙ F ≅ F`.  Suppose that
+
+* every conflation `Y₁ ↪ Y₂ ↠ Y₃` of the ungraded category lifts, up to isomorphism of each term,
+  to a graded conflation `M₁ ↪ M₂ ↠ M₃` with `F Mᵢ ≅ Yᵢ` (applied to `0 ↪ Y ↠ Y`, this makes `F`
+  essentially surjective), and
+* two graded objects with isomorphic images under `F` have the same class at `q = 1`.
+
+Then `TauCeti.LaurentK0.forgetGrading` is an isomorphism, whose inverse sends the class of `F M` to
+the specialized class of `M`.  The second hypothesis is also necessary for injectivity. -/
+noncomputable def forgetGradingEquiv (hF : E.toExactStructure.IsConflationExact E' F)
+    (comm : E.shift.functor ⋙ F ≅ F)
+    (hlift : ∀ S : ShortComplex D, E'.Conflation S → ∃ S' : ShortComplex C,
+      E.Conflation S' ∧ Nonempty (F.obj S'.X₁ ≅ S.X₁) ∧ Nonempty (F.obj S'.X₂ ≅ S.X₂) ∧
+        Nonempty (F.obj S'.X₃ ≅ S.X₃))
+    (hclass : ∀ X X' : C, Nonempty (F.obj X ≅ F.obj X') →
+      LaurentSpecialization.mk (1 : ℤˣ) (of E X) = LaurentSpecialization.mk 1 (of E X')) :
+    LaurentSpecialization (1 : ℤˣ) (LaurentK0 E) ≃ₗ[ℤ] ExactK0 E' :=
+  LinearEquiv.ofLinearMap (forgetGrading hF comm)
+    (ExactK0.lift (forgetGradingInvInvariant hlift hclass)).toIntLinearMap
+    (LinearMap.toAddMonoidHom_injective <| ExactK0.hom_ext fun Y => by
+      obtain ⟨e⟩ := (exists_nonempty_iso_of_lift_conflation hlift Y).choose_spec
+      simp only [LinearMap.toAddMonoidHom_coe, LinearMap.coe_comp, Function.comp_apply,
+        AddMonoidHom.coe_toIntLinearMap, ExactK0.lift_of, LinearMap.id_coe, id_eq]
+      exact (forgetGrading_mk_of hF comm _).trans (ExactK0.of_congr e))
+    (hom_ext_laurentSpecialization 1 fun X => by
+      obtain ⟨e⟩ := (exists_nonempty_iso_of_lift_conflation hlift (F.obj X)).choose_spec
+      simp only [LinearMap.coe_comp, Function.comp_apply, forgetGrading_mk_of,
+        AddMonoidHom.coe_toIntLinearMap, ExactK0.lift_of, LinearMap.id_coe, id_eq]
+      exact hclass _ _ ⟨e⟩)
+
+@[simp]
+lemma forgetGradingEquiv_apply (hF : E.toExactStructure.IsConflationExact E' F)
+    (comm : E.shift.functor ⋙ F ≅ F)
+    (hlift : ∀ S : ShortComplex D, E'.Conflation S → ∃ S' : ShortComplex C,
+      E.Conflation S' ∧ Nonempty (F.obj S'.X₁ ≅ S.X₁) ∧ Nonempty (F.obj S'.X₂ ≅ S.X₂) ∧
+        Nonempty (F.obj S'.X₃ ≅ S.X₃))
+    (hclass : ∀ X X' : C, Nonempty (F.obj X ≅ F.obj X') →
+      LaurentSpecialization.mk (1 : ℤˣ) (of E X) = LaurentSpecialization.mk 1 (of E X'))
+    (x : LaurentSpecialization (1 : ℤˣ) (LaurentK0 E)) :
+    forgetGradingEquiv hF comm hlift hclass x = forgetGrading hF comm x :=
+  (rfl)
+
+/-- The inverse of `TauCeti.LaurentK0.forgetGradingEquiv` sends the class of `F M` to the
+specialized class of `M`. -/
+@[simp]
+lemma forgetGradingEquiv_symm_of (hF : E.toExactStructure.IsConflationExact E' F)
+    (comm : E.shift.functor ⋙ F ≅ F)
+    (hlift : ∀ S : ShortComplex D, E'.Conflation S → ∃ S' : ShortComplex C,
+      E.Conflation S' ∧ Nonempty (F.obj S'.X₁ ≅ S.X₁) ∧ Nonempty (F.obj S'.X₂ ≅ S.X₂) ∧
+        Nonempty (F.obj S'.X₃ ≅ S.X₃))
+    (hclass : ∀ X X' : C, Nonempty (F.obj X ≅ F.obj X') →
+      LaurentSpecialization.mk (1 : ℤˣ) (of E X) = LaurentSpecialization.mk 1 (of E X'))
+    (X : C) :
+    (forgetGradingEquiv hF comm hlift hclass).symm (ExactK0.of (F.obj X)) =
+      LaurentSpecialization.mk 1 (of E X) := by
+  rw [LinearEquiv.symm_apply_eq, forgetGradingEquiv_apply, forgetGrading_mk_of]
+
+end ForgetGrading
 
 end LaurentK0
 
