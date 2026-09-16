@@ -215,10 +215,9 @@ theorem mapNatTrans_app_quotientFunctor_obj (I : MorphismIdeal C) (J : MorphismI
 theorem mapNatTrans_id (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D)
     [F.Additive] (hF : I ≤ J.comap F) :
     I.mapNatTrans J hF hF (𝟙 F) = 𝟙 (I.map J F hF) := by
-  apply CategoryTheory.Quotient.natTrans_ext
-  ext X
   unfold mapNatTrans
-  simp
+  simp only [Functor.whiskerRight_id', Category.id_comp, eqToHom_trans, eqToHom_refl]
+  exact CategoryTheory.Quotient.natTransLift_id I.rel _
 
 /-- Descent preserves vertical composition of natural transformations. -/
 @[simp]
@@ -228,9 +227,8 @@ theorem comp_mapNatTrans (I : MorphismIdeal C) (J : MorphismIdeal D) {F G H : C 
     (α : F ⟶ G) (β : G ⟶ H) :
     I.mapNatTrans J hF hG α ≫ I.mapNatTrans J hG hH β =
       I.mapNatTrans J hF hH (α ≫ β) := by
-  apply CategoryTheory.Quotient.natTrans_ext
-  ext X
   unfold mapNatTrans
+  rw [CategoryTheory.Quotient.comp_natTransLift]
   simp
 
 end MorphismIdeal
