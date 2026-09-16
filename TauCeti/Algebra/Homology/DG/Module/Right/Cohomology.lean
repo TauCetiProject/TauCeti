@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Homology.DG.Algebra.Cohomology
 public import TauCeti.Algebra.Homology.DG.Module.Right.Defs
 
@@ -186,7 +185,7 @@ noncomputable instance instModuleCohomology (hM : IsDGRightModule h ℳ dM) :
 /-- The defining equation of `instModuleCohomology`: an opposite cohomology class acts as the
 corresponding class of the opposite algebra of cycles modulo the opposite boundary ideal.  Stating
 it separately keeps later computations from unfolding the instance. -/
-theorem op_quotientMk_smul_eq_quotientMk_op_smul (hM : IsDGRightModule h ℳ dM)
+private theorem op_quotientMk_smul_eq_quotientMk_op_smul (hM : IsDGRightModule h ℳ dM)
     (z : h.cycles) (x : hM.Cohomology) :
     op (Ideal.Quotient.mk h.boundaries.asIdeal z) • x =
       Ideal.Quotient.mk h.boundaries.op.asIdeal (op z) • x :=
