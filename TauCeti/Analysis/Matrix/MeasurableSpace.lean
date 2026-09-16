@@ -18,12 +18,13 @@ of scalars is measurable even at zero.
 
 ## Main results
 
-* `Matrix.measurable_inv` — matrix inversion is measurable.
+* `TauCeti.measurable_matrix_inv` — matrix inversion is measurable, and the `MeasurableInv`
+  instance it supplies.
 -/
 
 public section
 
-namespace Matrix
+namespace TauCeti
 
 variable {m : Type*} [Fintype m] [DecidableEq m] {𝕜 : Type*} [Field 𝕜] [TopologicalSpace 𝕜]
   [IsTopologicalRing 𝕜] [MeasurableSpace 𝕜] [BorelSpace 𝕜] [SecondCountableTopology 𝕜]
@@ -31,11 +32,15 @@ variable {m : Type*} [Fintype m] [DecidableEq m] {𝕜 : Type*} [Field 𝕜] [To
 
 /-- Matrix inversion is measurable. -/
 @[fun_prop]
-theorem measurable_inv : Measurable fun A : Matrix m m 𝕜 => A⁻¹ := by
+theorem measurable_matrix_inv : Measurable fun A : Matrix m m 𝕜 => A⁻¹ := by
   rw [Matrix.measurable_iff]
   intro i j
   simp only [Matrix.inv_def, Matrix.smul_apply, smul_eq_mul, Ring.inverse_eq_inv]
   exact ((Continuous.matrix_det continuous_id).measurable.inv).mul
     ((Continuous.matrix_adjugate continuous_id).matrix_elem i j).measurable
 
-end Matrix
+/-- Square matrices inherit `MeasurableInv` from the measurability of Cramer's rule, which makes
+the generic `measurable_inv` API and `Measurable.inv` dot notation available for matrices. -/
+instance : MeasurableInv (Matrix m m 𝕜) := ⟨measurable_matrix_inv⟩
+
+end TauCeti

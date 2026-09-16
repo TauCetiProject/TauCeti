@@ -26,7 +26,8 @@ with that open one.
 
 * `TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos` — positivity of the quadratic form on nonzero
   vectors is an open condition on real square matrices;
-* `Matrix.measurableSet_setOf_posDef` — the positive-definite matrices form a measurable set.
+* `TauCeti.measurableSet_setOfPred_posDef` — the positive-definite matrices form a measurable
+  set.
 -/
 
 public section
@@ -38,6 +39,8 @@ open Topology
 open scoped Matrix
 
 namespace TauCeti
+
+section
 
 variable {ι : Type*} [Fintype ι]
 
@@ -71,12 +74,10 @@ theorem isOpen_setOfPred_dotProduct_mulVec_pos :
   rw [hscale]
   exact mul_pos (pow_pos (norm_pos_iff.2 hx) 2) (hN _ hmem)
 
-end TauCeti
-
-namespace Matrix
+end
 
 /-- The positive-definite real matrices form a measurable set. -/
-theorem measurableSet_setOf_posDef {ι : Type*} [Finite ι] :
+theorem measurableSet_setOfPred_posDef {ι : Type*} [Finite ι] :
     MeasurableSet {A : Matrix ι ι ℝ | A.PosDef} := by
   have : Fintype ι := Fintype.ofFinite ι
   have hsplit : {A : Matrix ι ι ℝ | A.PosDef} =
@@ -86,6 +87,6 @@ theorem measurableSet_setOf_posDef {ι : Type*} [Finite ι] :
     exact Matrix.posDef_iff_dotProduct_mulVec
   rw [hsplit]
   exact (isClosed_eq continuous_id.matrix_conjTranspose continuous_id).measurableSet.inter
-    TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos.measurableSet
+    isOpen_setOfPred_dotProduct_mulVec_pos.measurableSet
 
-end Matrix
+end TauCeti

@@ -87,6 +87,18 @@ def nonsingularWishartPDFReal (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ)
       ((2 : ℝ) ^ (n * (p : ℝ) / 2) * S.det ^ (n / 2) * multivariateGamma p (n / 2))
   else 0
 
+open Classical in
+/-- The defining branch expression of the real-valued Wishart density. -/
+theorem nonsingularWishartPDFReal_def (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    nonsingularWishartPDFReal n S A =
+      if (A : Matrix (Fin p) (Fin p) ℝ).PosDef then
+        (A : Matrix (Fin p) (Fin p) ℝ).det ^ ((n - (p : ℝ) - 1) / 2) *
+            Real.exp (-Matrix.trace (S⁻¹ * (A : Matrix (Fin p) (Fin p) ℝ)) / 2) /
+          ((2 : ℝ) ^ (n * (p : ℝ) / 2) * S.det ^ (n / 2) * multivariateGamma p (n / 2))
+      else 0 :=
+  (rfl)
+
 /-- On the positive-definite cone the Wishart density is its defining formula. -/
 @[simp]
 theorem nonsingularWishartPDFReal_of_posDef (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ)
@@ -141,6 +153,7 @@ def nonsingularWishartPDF (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ)
     (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) : ℝ≥0∞ :=
   ENNReal.ofReal (nonsingularWishartPDFReal n S A)
 
+/-- The `ℝ≥0∞`-valued Wishart density is `ENNReal.ofReal` of the real-valued one. -/
 theorem nonsingularWishartPDF_def (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ)
     (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
     nonsingularWishartPDF n S A = ENNReal.ofReal (nonsingularWishartPDFReal n S A) :=
@@ -165,6 +178,14 @@ theorem nonsingularWishartPDF_of_not_posDef (n : ℝ) (S : Matrix (Fin p) (Fin p
     nonsingularWishartPDF n S A = 0 := by
   simp [nonsingularWishartPDF_def, hA]
 
+/-- At a valid degree and scale the `ℝ≥0∞`-valued Wishart density is positive exactly on the
+positive-definite cone. -/
+theorem nonsingularWishartPDF_pos_iff (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
+    {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)} :
+    0 < nonsingularWishartPDF n S A ↔ (A : Matrix (Fin p) (Fin p) ℝ).PosDef := by
+  rw [nonsingularWishartPDF_def, ENNReal.ofReal_pos]
+  exact nonsingularWishartPDFReal_pos_iff hS hn
+
 /-- The Wishart density is finite. -/
 @[simp]
 theorem nonsingularWishartPDF_ne_top (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ)
@@ -180,11 +201,11 @@ theorem toReal_nonsingularWishartPDF (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
 
 /-- The Wishart density is measurable along any measurable family of degrees, scale matrices and
 points. -/
-private theorem measurable_nonsingularWishartPDF_comp {γ : Type*} [MeasurableSpace γ] {f : γ → ℝ}
-    {T : γ → Matrix (Fin p) (Fin p) ℝ}
+private theorem measurable_nonsingularWishartPDFReal_comp {γ : Type*} [MeasurableSpace γ]
+    {f : γ → ℝ} {T : γ → Matrix (Fin p) (Fin p) ℝ}
     {g : γ → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)} (hf : Measurable f)
     (hT : Measurable T) (hg : Measurable g) :
-    Measurable fun c => nonsingularWishartPDF (f c) (T c) (g c) := by
+    Measurable fun c => nonsingularWishartPDFReal (f c) (T c) (g c) := by
   classical
   have hrpow : Measurable fun z : ℝ × ℝ => z.1 ^ z.2 := by fun_prop
   have hg' : Measurable fun c => (g c : Matrix (Fin p) (Fin p) ℝ) :=
@@ -193,7 +214,7 @@ private theorem measurable_nonsingularWishartPDF_comp {γ : Type*} [MeasurableSp
     (Continuous.matrix_det continuous_id).measurable.comp hg'
   have hdetT : Measurable fun c => (T c).det :=
     (Continuous.matrix_det continuous_id).measurable.comp hT
-  have hinv : Measurable fun c => (T c)⁻¹ := Matrix.measurable_inv.comp hT
+  have hinv : Measurable fun c => (T c)⁻¹ := measurable_matrix_inv.comp hT
   -- Matrix multiplication has neither a `MeasurableMul₂` instance nor a usable continuous
   -- combinator here: `(continuous_fst.matrix_mul continuous_snd).measurable` needs
   -- `OpensMeasurableSpace (Matrix ι ι ℝ × Matrix ι ι ℝ)`, which fails to synthesize because
@@ -203,14 +224,38 @@ private theorem measurable_nonsingularWishartPDF_comp {γ : Type*} [MeasurableSp
     simp only [Matrix.trace, Matrix.diag_apply, Matrix.mul_apply]
     exact Finset.measurable_sum _ fun i _ => Finset.measurable_sum _ fun k _ =>
       (hinv.eval_matrix (i := i) (j := k)).mul (hg'.eval_matrix (i := k) (j := i))
-  simp only [nonsingularWishartPDF_def, nonsingularWishartPDFReal]
-  refine (Measurable.ite (hg (measurableSet_posDefMatrix p)) ?_ measurable_const).ennreal_ofReal
+  simp only [nonsingularWishartPDFReal]
+  refine Measurable.ite (hg (measurableSet_posDefMatrix p)) ?_ measurable_const
   refine Measurable.div (Measurable.mul ?_ ?_) (Measurable.mul (Measurable.mul ?_ ?_) ?_)
   · exact hrpow.comp (hdetg.prodMk (by fun_prop))
   · exact Real.measurable_exp.comp (by fun_prop)
   · exact hrpow.comp (measurable_const.prodMk (by fun_prop))
   · exact hrpow.comp (hdetT.prodMk (by fun_prop))
   · exact (measurable_multivariateGamma p).comp (by fun_prop)
+
+private theorem measurable_nonsingularWishartPDF_comp {γ : Type*} [MeasurableSpace γ] {f : γ → ℝ}
+    {T : γ → Matrix (Fin p) (Fin p) ℝ}
+    {g : γ → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)} (hf : Measurable f)
+    (hT : Measurable T) (hg : Measurable g) :
+    Measurable fun c => nonsingularWishartPDF (f c) (T c) (g c) := by
+  simp only [nonsingularWishartPDF_def]
+  exact (measurable_nonsingularWishartPDFReal_comp hf hT hg).ennreal_ofReal
+
+/-- The real-valued Wishart density is measurable in the point. -/
+@[fun_prop]
+theorem measurable_nonsingularWishartPDFReal (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ) :
+    Measurable (nonsingularWishartPDFReal n S) :=
+  measurable_nonsingularWishartPDFReal_comp measurable_const measurable_const measurable_id
+
+/-- The real-valued Wishart density is measurable jointly in its degree, its scale matrix and the
+point. -/
+@[fun_prop]
+theorem measurable_uncurry_nonsingularWishartPDFReal (p : ℕ) :
+    Measurable fun q : (ℝ × Matrix (Fin p) (Fin p) ℝ) ×
+        selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      nonsingularWishartPDFReal q.1.1 q.1.2 q.2 :=
+  measurable_nonsingularWishartPDFReal_comp (measurable_fst.comp measurable_fst)
+    (measurable_snd.comp measurable_fst) measurable_snd
 
 /-- The Wishart density is measurable in the point. -/
 @[fun_prop]
@@ -240,6 +285,15 @@ def nonsingularWishartMeasure (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ) :
   if S.PosDef ∧ (p : ℝ) - 1 < n then
     (symmetricLebesgue p).withDensity (nonsingularWishartPDF n S)
   else 0
+
+open Classical in
+/-- The defining branch expression of the Wishart law. -/
+theorem nonsingularWishartMeasure_def (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ) :
+    nonsingularWishartMeasure n S =
+      if S.PosDef ∧ (p : ℝ) - 1 < n then
+        (symmetricLebesgue p).withDensity (nonsingularWishartPDF n S)
+      else 0 :=
+  (rfl)
 
 /-- In the classical parameter range the Wishart law is its density against
 `TauCeti.symmetricLebesgue`. -/
@@ -291,16 +345,24 @@ theorem ae_posDef_nonsingularWishartMeasure (n : ℝ) (S : Matrix (Fin p) (Fin p
 
 /-! ### Dimension zero -/
 
+/-- In dimension zero the symmetric space is a single point and the real-valued Wishart density
+is `1` there. -/
+@[simp]
+theorem nonsingularWishartPDFReal_zero (n : ℝ) (S : Matrix (Fin 0) (Fin 0) ℝ)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin 0) (Fin 0) ℝ)) :
+    nonsingularWishartPDFReal n S A = 1 := by
+  have hA : (A : Matrix (Fin 0) (Fin 0) ℝ).PosDef :=
+    ⟨Subsingleton.elim _ _, fun x hx => absurd (Subsingleton.elim x 0) hx⟩
+  rw [nonsingularWishartPDFReal_of_posDef n S hA]
+  simp [Matrix.det_isEmpty, Matrix.trace]
+
 /-- In dimension zero the symmetric space is a single point and the Wishart density is `1`
 there. -/
 @[simp]
 theorem nonsingularWishartPDF_zero (n : ℝ) (S : Matrix (Fin 0) (Fin 0) ℝ)
     (A : selfAdjoint.submodule ℝ (Matrix (Fin 0) (Fin 0) ℝ)) :
     nonsingularWishartPDF n S A = 1 := by
-  have hA : (A : Matrix (Fin 0) (Fin 0) ℝ).PosDef :=
-    ⟨Subsingleton.elim _ _, fun x hx => absurd (Subsingleton.elim x 0) hx⟩
-  rw [nonsingularWishartPDF_def, nonsingularWishartPDFReal_of_posDef n S hA]
-  simp [Matrix.det_isEmpty, Matrix.trace]
+  rw [nonsingularWishartPDF_def, nonsingularWishartPDFReal_zero, ENNReal.ofReal_one]
 
 /-- In dimension zero every valid Wishart law is the Dirac mass at the unique symmetric matrix.
 The general definition already gives this: `TauCeti.symmetricLebesgue 0` is that Dirac mass and
@@ -332,7 +394,7 @@ theorem measurable_nonsingularWishartMeasure :
   classical
   have hcone : MeasurableSet {q : ℝ × (Fin p → Fin p → ℝ) | (Matrix.of q.2).PosDef} :=
     ((Matrix.measurable_of (Fin p) (Fin p) ℝ).comp measurable_snd)
-      Matrix.measurableSet_setOf_posDef
+      measurableSet_setOfPred_posDef
   have hvalid : MeasurableSet
       {q : ℝ × (Fin p → Fin p → ℝ) | (Matrix.of q.2).PosDef ∧ (p : ℝ) - 1 < q.1} :=
     hcone.inter (measurableSet_lt measurable_const measurable_fst)
