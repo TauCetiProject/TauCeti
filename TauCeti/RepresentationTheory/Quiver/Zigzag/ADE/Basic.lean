@@ -13,12 +13,13 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Center
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Dimension
 
 /-!
-# Zigzag algebras of `D₄`, `E₈`, and affine `E₈`
+# Named ADE graphs and their zigzag algebras
 
-This file constructs the three ADE graphs used as named zigzag examples from Tau Ceti's standard
-Cartan-matrix and affine-diagram APIs. The finite graphs are the diagrams of the Bourbaki-numbered
-Cartan matrices, while affine `E₈` is the already constructed tree `T_{2,3,6}`. Their tree
-structures determine their edge counts, and the general dimension and centre theorems then give
+This file constructs the `A₂`, `D₄`, `E₈`, and affine `E₈` graphs used as named zigzag examples
+from Tau Ceti's standard Cartan-matrix and affine-diagram APIs. The finite graphs are the diagrams
+of the Bourbaki-numbered Cartan matrices, while affine `E₈` is the already constructed tree
+`T_{2,3,6}`. Their tree structures determine their edge counts, and the general dimension and
+centre theorems then give
 
 ```text
                      D₄    E₈    affine E₈
@@ -32,13 +33,13 @@ node `0` is trivalent, and the three arms are `1`, `2, 3`, and `4, 5, 6, 7, 8`, 
 
 ## Main definitions
 
-* `TauCeti.zigzagD4Graph`, `TauCeti.zigzagE8Graph`, and `TauCeti.zigzagAffineE8Graph`: the three
-  named graphs.
+* `TauCeti.zigzagA2Graph`, `TauCeti.zigzagD4Graph`, `TauCeti.zigzagE8Graph`, and
+  `TauCeti.zigzagAffineE8Graph`: the four named graphs.
 
 ## Main results
 
-* `TauCeti.isTree_zigzagD4Graph`, `TauCeti.isTree_zigzagE8Graph`, and
-  `TauCeti.isTree_zigzagAffineE8Graph`: the graphs are trees.
+* `TauCeti.isTree_zigzagA2Graph`, `TauCeti.isTree_zigzagD4Graph`,
+  `TauCeti.isTree_zigzagE8Graph`, and `TauCeti.isTree_zigzagAffineE8Graph`: the graphs are trees.
 * `TauCeti.finrank_zigzagAlgebra_D4`, `TauCeti.finrank_zigzagAlgebra_E8`, and
   `TauCeti.finrank_zigzagAlgebra_affineE8`: the three zigzag dimensions.
 * `TauCeti.finrank_center_zigzagAlgebra_D4`, `TauCeti.finrank_center_zigzagAlgebra_E8`, and
@@ -50,11 +51,16 @@ The zigzag conventions and invariant formulas follow Huerfano--Khovanov, *A cate
 adjoint representation*, Section 3, and Ehrig--Tubbenhauer, *Algebraic properties of zigzag
 algebras*, Section 2. The affine `E₈ = T_{2,3,6}` graph shape follows Kac, *Infinite dimensional
 Lie algebras*, Chapter 4; its node numbering here is the arm-coordinate convention described above.
+The named-example selection follows `TauCetiRoadmap/ZigzagPreprojective/README.md`.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- The `A₂` graph, read from its Bourbaki-numbered standard Cartan matrix. -/
+def zigzagA2Graph : SimpleGraph (Fin 2) :=
+  diagramGraph (DynkinType.A 2).cartanMatrix
 
 /-- The `D₄` graph, read from its Bourbaki-numbered standard Cartan matrix. -/
 def zigzagD4Graph : SimpleGraph (Fin 4) :=
@@ -67,6 +73,12 @@ def zigzagE8Graph : SimpleGraph (Fin 8) :=
 /-- The affine `E₈` graph `T_{2,3,6}`, with node `0` trivalent and each arm numbered outwards. -/
 def zigzagAffineE8Graph : SimpleGraph (Fin 9) :=
   AffineDynkinType.E8.graph
+
+/-- **Adjacency in the `A₂` graph**: its two nodes are joined. -/
+@[simp]
+theorem zigzagA2Graph_adj (i j : Fin 2) : zigzagA2Graph.Adj i j ↔ i ≠ j := by
+  rw [zigzagA2Graph, DynkinType.cartanMatrix_A, diagramGraph_adj]
+  fin_cases i <;> fin_cases j <;> decide
 
 /-- **Adjacency in the Bourbaki-labelled `D₄` graph**: node `1` is joined to each of the other
 three nodes. -/
@@ -96,8 +108,12 @@ theorem zigzagAffineE8Graph_adj (i j : Fin 9) : zigzagAffineE8Graph.Adj i j ↔
   exact AffineDynkinType.graph_E8_adj i j
 
 -- `SimpleGraph.Adj` is not an instance-reducible head, so instance synthesis does not see through
--- the graph definitions on its own: without these three declarations every `edgeFinset` and
+-- the graph definitions on its own: without these declarations every `edgeFinset` and
 -- `finrank` statement below fails to elaborate.
+/-- Decidable adjacency for `zigzagA2Graph`. -/
+instance : DecidableRel zigzagA2Graph.Adj := fun i j ↦
+  decidable_of_iff _ (zigzagA2Graph_adj i j).symm
+
 /-- Decidable adjacency for `zigzagD4Graph`. -/
 instance : DecidableRel zigzagD4Graph.Adj := fun i j ↦
   decidable_of_iff _ (zigzagD4Graph_adj i j).symm
@@ -112,6 +128,14 @@ instance : DecidableRel zigzagAffineE8Graph.Adj := fun i j ↦
 
 /-! ### Graph structure -/
 
+/-- The `A₂` graph is connected. -/
+theorem connected_zigzagA2Graph : zigzagA2Graph.Connected :=
+  DynkinType.connected_diagramGraph_cartanMatrix (by simp)
+
+/-- Every node of the `A₂` graph has a neighbour. -/
+theorem exists_adj_zigzagA2Graph (i : Fin 2) : ∃ j, zigzagA2Graph.Adj i j :=
+  connected_zigzagA2Graph.preconnected.exists_adj_of_nontrivial i
+
 /-- The `D₄` graph is connected. -/
 theorem connected_zigzagD4Graph : zigzagD4Graph.Connected :=
   DynkinType.connected_diagramGraph_cartanMatrix (by simp)
@@ -123,6 +147,14 @@ theorem connected_zigzagE8Graph : zigzagE8Graph.Connected :=
 /-- The affine `E₈` graph is connected. -/
 theorem connected_zigzagAffineE8Graph : zigzagAffineE8Graph.Connected :=
   AffineDynkinType.graph_connected (by simp)
+
+/-- The `A₂` graph is a tree. -/
+theorem isTree_zigzagA2Graph : zigzagA2Graph.IsTree := by
+  rw [zigzagA2Graph, DynkinType.cartanMatrix_A]
+  have hconn : (diagramGraph (CartanMatrix.A 2)).Connected := by
+    rw [← DynkinType.cartanMatrix_A]
+    exact connected_zigzagA2Graph
+  exact (isFiniteType_cartanMatrix_A 2).isTree_diagramGraph hconn
 
 /-- The `D₄` graph is a tree. -/
 theorem isTree_zigzagD4Graph : zigzagD4Graph.IsTree := by
@@ -167,6 +199,13 @@ theorem isTree_zigzagAffineE8Graph : zigzagAffineE8Graph.IsTree := by
   exact ⟨connected_zigzagAffineE8Graph, by
     rw [Nat.card_eq_fintype_card, ← SimpleGraph.edgeFinset_card,
       card_edgeFinset_zigzagAffineE8Graph, Nat.card_fin]⟩
+
+/-- The `A₂` graph has one edge. -/
+@[simp]
+theorem card_edgeFinset_zigzagA2Graph : zigzagA2Graph.edgeFinset.card = 1 := by
+  have h := isTree_zigzagA2Graph.card_edgeFinset
+  norm_num at h ⊢
+  omega
 
 /-- The `D₄` graph has three edges. -/
 @[simp]

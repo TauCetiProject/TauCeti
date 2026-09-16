@@ -17,9 +17,9 @@ is a combination of paths of length at least two, and every path of length at le
 itself a relator. So the zigzag ideal is an admissible ideal, and the zigzag relation quotient is a
 bound quiver algebra in the sense of `TauCeti.IsAdmissibleIdeal`, for every finite simple graph.
 
-The lower bound is what makes the uniform quotient radical-cube-zero on the nose: whenever the
-quadratic relators already lie in `R ^ 3` (as happens for the one-edge graph `A₂`, where they
-all vanish), the zigzag ideal is exactly `R ^ 3`.
+The lower bound is what makes the image of the arrow ideal cube-zero: whenever the quadratic
+relators already lie in `R ^ 3` (as happens for the one-edge graph `A₂`, where they all vanish),
+the zigzag ideal is exactly `R ^ 3`.
 
 ## Main results
 
@@ -34,6 +34,7 @@ all vanish), the zigzag ideal is exactly `R ^ 3`.
 See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, for the zigzag
 relations, and Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative
 Algebras I*, Ch. II.2, for admissible ideals.
+The formalization blueprint is `TauCetiRoadmap/ZigzagPreprojective/README.md`.
 -/
 
 public section
@@ -61,7 +62,7 @@ theorem arrowIdeal_pow_three_le_zigzagIdeal :
   exact mem_zigzagIdeal_of_isZigzagRelator k G (.long_path x (hf x hx))
 
 /-- A uniform zigzag relator lies in the square of the arrow ideal. -/
-private theorem IsZigzagRelator.mem_arrowIdeal_sq {x : pathAlgebra k (DoubledQuiver G)}
+theorem IsZigzagRelator.mem_arrowIdeal_sq {x : pathAlgebra k (DoubledQuiver G)}
     (hx : IsZigzagRelator k G x) : x ∈ arrowIdeal k (DoubledQuiver G) ^ 2 := by
   have hpath : ∀ y : Quiver.TotalPath (DoubledQuiver G), 2 ≤ y.2.2.length →
       (ofPath y : pathAlgebra k (DoubledQuiver G)) ∈ arrowIdeal k (DoubledQuiver G) ^ 2 :=
@@ -90,8 +91,9 @@ theorem isAdmissibleIdeal_zigzagIdeal : IsAdmissibleIdeal (zigzagIdeal k G).asId
   exists_arrowIdeal_pow_le := ⟨3, arrowIdeal_pow_three_le_zigzagIdeal k G⟩
   le_arrowIdeal_sq := zigzagIdeal_le_arrowIdeal_sq k G
 
-/-- **The radical-cube-zero presentation.** When every quadratic zigzag relator is a combination of
-paths of length at least three, the uniform zigzag ideal is exactly the cube of the arrow ideal. -/
+/-- **The arrow-ideal-cube-zero presentation.** When every quadratic zigzag relator is a
+combination of paths of length at least three, the uniform zigzag ideal is exactly the cube of the
+arrow ideal. -/
 theorem zigzagIdeal_eq_arrowIdeal_pow_three
     (h : ∀ x, IsQuadraticZigzagRelator k G x → x ∈ arrowIdeal k (DoubledQuiver G) ^ 3) :
     (zigzagIdeal k G).asIdeal = arrowIdeal k (DoubledQuiver G) ^ 3 := by

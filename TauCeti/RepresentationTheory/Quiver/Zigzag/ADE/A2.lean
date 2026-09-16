@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
-public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 public import TauCeti.RepresentationTheory.Quiver.Acyclic.PathAlgebra
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Admissible
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.ADE.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.CartanMatrix
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Center
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Dimension
 
 /-!
 # The zigzag algebra of `A₂`
@@ -20,7 +17,7 @@ The one-edge graph `A₂` is one of the two low-rank exceptions of zigzag theory
 has two vertices and one arrow in each direction, so it has no length-two path with distinct
 endpoints and only one backtrack at each vertex: every quadratic zigzag relator vanishes. The
 zigzag algebra of `A₂` is therefore not a quadratic algebra. It is instead the
-**radical-cube-zero** quotient
+**arrow-ideal-cube-zero** quotient
 
 ```text
 Z(A₂) = k DQ / R³,
@@ -42,9 +39,8 @@ C_A₂(q) = [1 + q²    q   ]
 
 ## Main definitions
 
-* `TauCeti.zigzagA2Graph`: the `A₂` graph.
 * `TauCeti.nonisolatedZigzagQuotientEquivA2` and `TauCeti.zigzagAlgebraEquivA2`: the relation
-  quotient and the public zigzag algebra of `A₂` are the radical-cube-zero quotient `k DQ / R³`.
+  quotient and the public zigzag algebra of `A₂` are the quotient `k DQ / R³`.
 
 ## Main results
 
@@ -63,6 +59,7 @@ C_A₂(q) = [1 + q²    q   ]
 The low-rank convention for `A₂` follows Huerfano--Khovanov, *A category for the adjoint
 representation*, Section 3, and Liu--Wang, *A-infinity deformations of zigzag algebras via
 Ginzburg dg algebras*, Section 2.
+The formalization blueprint is `TauCetiRoadmap/ZigzagPreprojective/README.md`.
 -/
 
 public section
@@ -73,46 +70,7 @@ open PathAlgebra DoubledQuiver Polynomial
 
 universe w
 
-/-- The `A₂` graph, read from its Bourbaki-numbered standard Cartan matrix. -/
-def zigzagA2Graph : SimpleGraph (Fin 2) :=
-  diagramGraph (DynkinType.A 2).cartanMatrix
-
-/-- **Adjacency in the `A₂` graph**: its two nodes are joined. -/
-@[simp]
-theorem zigzagA2Graph_adj (i j : Fin 2) : zigzagA2Graph.Adj i j ↔ i ≠ j := by
-  rw [zigzagA2Graph, DynkinType.cartanMatrix_A, diagramGraph_adj]
-  fin_cases i <;> fin_cases j <;> decide
-
--- As for the named graphs of `TauCeti.RepresentationTheory.Quiver.Zigzag.ADE.Basic`, instance
--- synthesis does not see through `zigzagA2Graph`, so decidable adjacency is supplied by hand.
-/-- Decidable adjacency for `zigzagA2Graph`. -/
-instance : DecidableRel zigzagA2Graph.Adj := fun i j ↦
-  decidable_of_iff _ (zigzagA2Graph_adj i j).symm
-
-/-- The `A₂` graph is connected. -/
-theorem connected_zigzagA2Graph : zigzagA2Graph.Connected :=
-  DynkinType.connected_diagramGraph_cartanMatrix (by simp)
-
-/-- Every node of the `A₂` graph has a neighbour. -/
-theorem exists_adj_zigzagA2Graph (i : Fin 2) : ∃ j, zigzagA2Graph.Adj i j :=
-  connected_zigzagA2Graph.preconnected.exists_adj_of_nontrivial i
-
-/-- The `A₂` graph is a tree. -/
-theorem isTree_zigzagA2Graph : zigzagA2Graph.IsTree := by
-  rw [zigzagA2Graph, DynkinType.cartanMatrix_A]
-  have hconn : (diagramGraph (CartanMatrix.A 2)).Connected := by
-    rw [← DynkinType.cartanMatrix_A]
-    exact connected_zigzagA2Graph
-  exact (isFiniteType_cartanMatrix_A 2).isTree_diagramGraph hconn
-
-/-- The `A₂` graph has one edge. -/
-@[simp]
-theorem card_edgeFinset_zigzagA2Graph : zigzagA2Graph.edgeFinset.card = 1 := by
-  have h := isTree_zigzagA2Graph.card_edgeFinset
-  norm_num at h ⊢
-  omega
-
-/-! ### The radical-cube-zero presentation -/
+/-! ### The arrow-ideal-cube-zero presentation -/
 
 variable (k : Type w) [CommRing k]
 
@@ -142,7 +100,7 @@ theorem quadraticZigzagIdeal_A2_eq_bot : quadraticZigzagIdeal k zigzagA2Graph = 
     exact sub_self _
 
 /-- **The zigzag ideal of `A₂` is the cube of the arrow ideal**: the zigzag algebra of `A₂` is
-the radical-cube-zero quotient of its doubled path algebra. -/
+the quotient of its doubled path algebra by the cube of the arrow ideal. -/
 theorem zigzagIdeal_A2_eq_arrowIdeal_pow_three :
     (zigzagIdeal k zigzagA2Graph).asIdeal = arrowIdeal k (DoubledQuiver zigzagA2Graph) ^ 3 := by
   refine zigzagIdeal_eq_arrowIdeal_pow_three k zigzagA2Graph fun x hx => ?_
@@ -151,23 +109,23 @@ theorem zigzagIdeal_A2_eq_arrowIdeal_pow_three :
   rw [quadraticZigzagIdeal_A2_eq_bot, TwoSidedIdeal.mem_bot] at hx
   exact hx ▸ zero_mem _
 
-/-- The zigzag relation quotient of `A₂` is the radical-cube-zero quotient of its doubled path
-algebra. -/
+/-- The zigzag relation quotient of `A₂` is the quotient of its doubled path algebra by the cube
+of the arrow ideal. -/
 noncomputable def nonisolatedZigzagQuotientEquivA2 :
     nonisolatedZigzagQuotient k zigzagA2Graph ≃ₐ[k]
       pathAlgebra k (DoubledQuiver zigzagA2Graph) ⧸
         arrowIdeal k (DoubledQuiver zigzagA2Graph) ^ 3 :=
   Ideal.quotientEquivAlgOfEq k (zigzagIdeal_A2_eq_arrowIdeal_pow_three k)
 
-/-- The radical-cube-zero comparison fixes the class of every element of the path algebra. -/
+/-- The cubic-quotient comparison fixes the class of every element of the path algebra. -/
 @[simp]
 theorem nonisolatedZigzagQuotientEquivA2_zigzagMk
     (x : pathAlgebra k (DoubledQuiver zigzagA2Graph)) :
     nonisolatedZigzagQuotientEquivA2 k (zigzagMk k zigzagA2Graph x) = Ideal.Quotient.mk _ x := by
   rw [nonisolatedZigzagQuotientEquivA2, zigzagMk_apply, Ideal.quotientEquivAlgOfEq_mk]
 
-/-- **The public zigzag algebra of `A₂`** is the radical-cube-zero quotient `k DQ / R³` of the
-path algebra of its doubled quiver. -/
+/-- **The public zigzag algebra of `A₂`** is the quotient `k DQ / R³` of the path algebra of its
+doubled quiver. -/
 noncomputable def zigzagAlgebraEquivA2 :
     zigzagAlgebra k zigzagA2Graph ≃ₐ[k]
       pathAlgebra k (DoubledQuiver zigzagA2Graph) ⧸
@@ -175,29 +133,64 @@ noncomputable def zigzagAlgebraEquivA2 :
   (zigzagAlgebraEquivNonisolated k zigzagA2Graph connected_zigzagA2Graph).trans
     (nonisolatedZigzagQuotientEquivA2 k)
 
+/-- The `A₂` comparison evaluates through the unique connected-component factor. -/
+@[simp]
+theorem zigzagAlgebraEquivA2_apply (x : zigzagAlgebra k zigzagA2Graph) :
+    zigzagAlgebraEquivA2 k x =
+      nonisolatedZigzagQuotientEquivA2 k
+        (let _ := nontrivial_connectedComponent zigzagA2Graph connected_zigzagA2Graph default
+        nonisolatedZigzagQuotientEquiv k
+          (connectedComponentGraphIso zigzagA2Graph connected_zigzagA2Graph default)
+          (zigzagComponentAlgebraEquivNonisolated k zigzagA2Graph default
+            (zigzagComponentProjection k zigzagA2Graph default x))) := by
+  rw [zigzagAlgebraEquivA2, AlgEquiv.trans_apply,
+    zigzagAlgebraEquivNonisolated_apply k zigzagA2Graph connected_zigzagA2Graph x default]
+
+/-- The inverse `A₂` comparison is computed componentwise by the inverse quotient and component
+equivalences. -/
+@[simp]
+theorem zigzagAlgebraEquivA2_symm_apply_component
+    (x : pathAlgebra k (DoubledQuiver zigzagA2Graph) ⧸
+      arrowIdeal k (DoubledQuiver zigzagA2Graph) ^ 3)
+    (C : zigzagA2Graph.ConnectedComponent) :
+    zigzagComponentProjection k zigzagA2Graph C ((zigzagAlgebraEquivA2 k).symm x) =
+      let _ := nontrivial_connectedComponent zigzagA2Graph connected_zigzagA2Graph C
+      (zigzagComponentAlgebraEquivNonisolated k zigzagA2Graph C).symm
+        ((nonisolatedZigzagQuotientEquiv k
+          (connectedComponentGraphIso zigzagA2Graph connected_zigzagA2Graph C)).symm
+            ((nonisolatedZigzagQuotientEquivA2 k).symm x)) := by
+  change zigzagComponentProjection k zigzagA2Graph C
+      ((zigzagAlgebraEquivNonisolated k zigzagA2Graph connected_zigzagA2Graph).symm
+        ((nonisolatedZigzagQuotientEquivA2 k).symm x)) = _
+  exact zigzagAlgebraEquivNonisolated_symm_apply_component k zigzagA2Graph
+    connected_zigzagA2Graph ((nonisolatedZigzagQuotientEquivA2 k).symm x) C
+
 /-- **The Jacobson radical of the zigzag algebra of `A₂` has cube zero.** -/
 theorem jacobson_pow_three_zigzagAlgebra_A2_eq_bot (k : Type w) [Field k] :
     Ring.jacobson (zigzagAlgebra k zigzagA2Graph) ^ 3 = ⊥ := by
-  let e := (zigzagAlgebraEquivNonisolated k zigzagA2Graph connected_zigzagA2Graph).toRingHom
-  have : RingHomSurjective e := ⟨AlgEquiv.surjective _⟩
-  have hpow (n : ℕ) {a} (ha : a ∈ Ring.jacobson (zigzagAlgebra k zigzagA2Graph) ^ (n + 1)) :
-      e a ∈ Ring.jacobson (nonisolatedZigzagQuotient k zigzagA2Graph) ^ (n + 1) := by
-    induction n generalizing a with
-    | zero =>
-      rw [Submodule.pow_one] at ha ⊢
-      exact Ring.le_comap_jacobson (f := e) ha
-    | succ n ih =>
-      rw [Submodule.pow_succ] at ha ⊢
-      refine Submodule.mul_induction_on ha (fun y hy z hz => ?_) (fun y z hy hz => ?_)
-      · rw [map_mul]
-        exact Submodule.mul_mem_mul (ih hy) (Ring.le_comap_jacobson (f := e) hz)
-      · rw [map_add]
-        exact add_mem hy hz
-  rw [eq_bot_iff]
-  intro x hx
-  have hx' := hpow 2 hx
-  rwa [jacobson_pow_three_nonisolatedZigzagQuotient_eq_bot exists_adj_zigzagA2Graph,
-    Ideal.mem_bot, map_eq_zero_iff e (AlgEquiv.injective _), ← Ideal.mem_bot] at hx'
+  let e := zigzagAlgebraEquivNonisolated k zigzagA2Graph connected_zigzagA2Graph
+  let _ : RingHomSurjective e.toRingEquiv.toRingHom := ⟨e.surjective⟩
+  let _ : RingHomSurjective e.symm.toRingEquiv.toRingHom := ⟨e.symm.surjective⟩
+  have he : Submodule.map e.toAlgHom.toLinearMap
+      (Submodule.restrictScalars k (Ring.jacobson (zigzagAlgebra k zigzagA2Graph))) =
+      Submodule.restrictScalars k
+        (Ring.jacobson (nonisolatedZigzagQuotient k zigzagA2Graph)) := by
+    ext y
+    simp only [Submodule.mem_map, Submodule.restrictScalars_mem]
+    constructor
+    · rintro ⟨x, hx, rfl⟩
+      exact Ring.le_comap_jacobson (f := e.toRingEquiv.toRingHom) hx
+    · intro hy
+      exact ⟨e.symm y, Ring.le_comap_jacobson (f := e.symm.toRingEquiv.toRingHom) hy,
+        e.apply_symm_apply y⟩
+  apply (Submodule.restrictScalars_eq_bot_iff k _ _).mp
+  rw [Submodule.restrictScalars_pow (by omega)]
+  apply (Submodule.map_eq_bot_iff (e := e.toLinearEquiv)).mp
+  change Submodule.map e.toAlgHom.toLinearMap
+      (Submodule.restrictScalars k (Ring.jacobson (zigzagAlgebra k zigzagA2Graph)) ^ 3) = ⊥
+  rw [Submodule.map_pow, he, ← Submodule.restrictScalars_pow (by omega),
+    jacobson_pow_three_nonisolatedZigzagQuotient_eq_bot exists_adj_zigzagA2Graph,
+    Submodule.restrictScalars_bot]
 
 /-- The doubled quiver of `A₂` has an oriented cycle: the backtrack at a node. -/
 private theorem not_isAcyclic_doubledQuiver_A2 :
