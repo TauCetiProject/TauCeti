@@ -11,6 +11,10 @@ import Mathlib.Algebra.EuclideanDomain.Int
 -- `dvd_mul_mul_apply` and `dvd_diag_of_dvd_entries`, used only inside proofs below.
 import TauCeti.LinearAlgebra.Matrix.Divisibility
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
+-- `prod_eq_det_of_mul_mul_eq_diagonal`, `exists_SL_mul_mul_eq_of_mul_mul_eq` and
+-- `Int.eq_of_dvd_of_dvd_of_mul_eq_mul`, used only inside the `2 × 2` classification below.
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Equivalence
+import TauCeti.Data.Int.Fin2Tuple
 import Mathlib.Data.Int.GCD
 import Mathlib.Basic.Sign.Basic
 import Mathlib.LinearAlgebra.Determinant
@@ -42,6 +46,9 @@ operations of determinant one:
 * `Matrix.associated_invariant_factor_zero_gcd` and `Matrix.invariant_factor_zero_eq_gcd`: hence
   the first entry is an associate of the gcd of the entries of `A`, and equals it once its sign
   is known — so it is readable off the matrix without choosing a factorisation.
+* `Matrix.exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff`: consequently a `2 × 2` integer matrix of
+  positive determinant is determined up to `SL₂(ℤ)`-equivalence by its determinant and the
+  common divisors of its entries.
 
 Mathlib's `Submodule.smithNormalForm` provides basis-level diagonalization over a PID; this
 file supplies the matrix-level statement over `ℤ`, refined in three ways that the basis-level
@@ -937,5 +944,35 @@ theorem invariant_factor_zero_eq_gcd [NeZero n] (A : Matrix (Fin n) (Fin n) ℤ)
     d 0 = Finset.univ.gcd fun p : Fin n × Fin n ↦ A p.1 p.2 :=
   Int.eq_of_associated_of_nonneg (associated_invariant_factor_zero_gcd A d hd0 L R h) hnonneg
     (Int.nonneg_of_normalize_eq_self Finset.normalize_gcd)
+
+/-- **The `2 × 2` elementary divisor classification.** Two integer matrices with the same
+positive determinant, whose entries have the same common divisors, are equivalent under
+`SL₂(ℤ)` on both sides: `P * A * Q = B`.
+
+At size two the invariant factors are the content `d₀` and `det / d₀`, and the hypothesis says
+exactly that the contents agree. -/
+theorem exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff {A B : Matrix (Fin 2) (Fin 2) ℤ}
+    (hA : 0 < A.det) (hdet : B.det = A.det)
+    (hdvd : ∀ e : ℤ, (∀ i j, e ∣ A i j) ↔ ∀ i j, e ∣ B i j) :
+    ∃ P Q : SpecialLinearGroup (Fin 2) ℤ,
+      (P : Matrix (Fin 2) (Fin 2) ℤ) * A * (Q : Matrix (Fin 2) (Fin 2) ℤ) = B := by
+  obtain ⟨LA, RA, dA, hdA_pos, hdA_div, hA_snf⟩ := A.exists_smith_normal_form_of_det_pos hA
+  obtain ⟨LB, RB, dB, hdB_pos, hdB_div, hB_snf⟩ :=
+    B.exists_smith_normal_form_of_det_pos (hdet ▸ hA)
+  have hdA_A : ∀ i j, dA 0 ∣ A i j :=
+    invariant_factor_zero_dvd_entries A dA (fun k ↦ hdA_div (Fin.zero_le k)) LA.toGL RA.toGL
+      hA_snf
+  have hdB_B : ∀ i j, dB 0 ∣ B i j :=
+    invariant_factor_zero_dvd_entries B dB (fun k ↦ hdB_div (Fin.zero_le k)) LB.toGL RB.toGL
+      hB_snf
+  have hprodA : dA 0 * dA 1 = A.det := by
+    simpa [Fin.prod_univ_two] using prod_eq_det_of_mul_mul_eq_diagonal hA_snf
+  have hprodB : dB 0 * dB 1 = B.det := by
+    simpa [Fin.prod_univ_two] using prod_eq_det_of_mul_mul_eq_diagonal hB_snf
+  have hd : dA = dB := Int.eq_of_dvd_of_dvd_of_mul_eq_mul (hdA_pos 0) (hdB_pos 0)
+    (dvd_diag_of_dvd_entries B (dA 0) dB LB RB hB_snf ((hdvd _).mp hdA_A) 0)
+    (dvd_diag_of_dvd_entries A (dB 0) dA LA RA hA_snf ((hdvd _).mpr hdB_B) 0)
+    (by rw [hprodA, hprodB, hdet])
+  exact exists_SL_mul_mul_eq_of_mul_mul_eq (hA_snf.trans (by rw [hd]; exact hB_snf.symm))
 
 end Matrix

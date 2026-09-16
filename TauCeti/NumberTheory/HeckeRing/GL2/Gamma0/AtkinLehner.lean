@@ -15,10 +15,7 @@ import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.BadPrimeCoset
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.CoprimeRepresentative
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.CosetMap
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Diagonal.Coset
-import TauCeti.LinearAlgebra.Matrix.Divisibility
 import TauCeti.LinearAlgebra.Matrix.SmithNormalForm
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Equivalence
-import TauCeti.Data.Int.Fin2Tuple
 import TauCeti.Data.ZMod.Units
 import Mathlib.Data.ZMod.Units
 
@@ -420,45 +417,20 @@ private lemma exists_sl2_mul_mul_eq_atkinLehnerEntries
       (P : Matrix (Fin 2) (Fin 2) ℤ) * A * (Q : Matrix (Fin 2) (Fin 2) ℤ) =
         atkinLehnerEntries N A c := by
   set B := atkinLehnerEntries N A c with hB
-  have hB_det : B.det = A.det := by rw [hB, atkinLehnerEntries_det N A c hc]
-  obtain ⟨LA, RA, dA, hdA_pos, hdA_div, hA_snf⟩ :=
-    A.exists_smith_normal_form_of_det_pos hA_det_pos
-  obtain ⟨LB, RB, dB, hdB_pos, hdB_div, hB_snf⟩ :=
-    B.exists_smith_normal_form_of_det_pos (hB_det ▸ hA_det_pos)
-  have hdA_A : ∀ i j, dA 0 ∣ A i j := fun i j ↦
-    Matrix.invariant_factor_zero_dvd_entries A dA (fun k ↦ hdA_div (Fin.zero_le k))
-      LA.toGL RA.toGL hA_snf i j
-  have hdB_B : ∀ i j, dB 0 ∣ B i j := fun i j ↦
-    Matrix.invariant_factor_zero_dvd_entries B dB (fun k ↦ hdB_div (Fin.zero_le k))
-      LB.toGL RB.toGL hB_snf i j
   have hAco' : IsCoprime (A 0 0) (N : ℤ) := Int.isCoprime_iff_gcd_eq_one.mpr hAco
-  have hdA_B : ∀ i j, dA 0 ∣ B i j := by
-    rw [hB]
-    exact dvd_atkinLehnerEntries N A (dA 0) c hc hdA_A
-      (hAco'.of_isCoprime_of_dvd_left (hdA_A 0 0))
   have hB00 : B 0 0 = A 0 0 := by simp [hB, atkinLehnerEntries]
   have hBc : B 1 0 = (N : ℤ) * A 0 1 := by simp [hB, atkinLehnerEntries]
   have hswap : atkinLehnerEntries N B (A 0 1) = A := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp [hB, atkinLehnerEntries, hc]
-  have hdB_A : ∀ i j, dB 0 ∣ A i j := fun i j ↦ by
-    have h := dvd_atkinLehnerEntries N B (dB 0) (A 0 1) hBc hdB_B
-      (hAco'.of_isCoprime_of_dvd_left (hB00 ▸ hdB_B 0 0)) i j
-    rwa [hswap] at h
-  have hdA0_dvd_dB0 : dA 0 ∣ dB 0 :=
-    Matrix.dvd_diag_of_dvd_entries B (dA 0) dB LB RB hB_snf hdA_B 0
-  have hdB0_dvd_dA0 : dB 0 ∣ dA 0 :=
-    Matrix.dvd_diag_of_dvd_entries A (dB 0) dA LA RA hA_snf hdB_A 0
-  -- the determinants agree, so the two diagonals have equal products
-  have hprodA : dA 0 * dA 1 = A.det := by
-    simpa [Fin.prod_univ_two] using Matrix.prod_eq_det_of_mul_mul_eq_diagonal hA_snf
-  have hprodB : dB 0 * dB 1 = B.det := by
-    simpa [Fin.prod_univ_two] using Matrix.prod_eq_det_of_mul_mul_eq_diagonal hB_snf
-  have hd : dA = dB := Int.eq_of_dvd_of_dvd_of_mul_eq_mul (hdA_pos 0) (hdB_pos 0)
-    hdA0_dvd_dB0 hdB0_dvd_dA0 (by rw [hprodA, hprodB, hB_det])
-  -- the two diagonal forms coincide, so `A` and `B` share an `SL₂(ℤ)`-transform
-  exact Matrix.exists_SL_mul_mul_eq_of_mul_mul_eq
-    (hA_snf.trans (by rw [hd]; exact hB_snf.symm))
+  -- a common divisor of either matrix divides the upper-left entry, so is coprime to `N`, and
+  -- then survives the entry swap in either direction
+  refine Matrix.exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff hA_det_pos
+    (atkinLehnerEntries_det N A c hc) fun e ↦ ⟨fun he ↦ dvd_atkinLehnerEntries N A e c hc he
+      (hAco'.of_isCoprime_of_dvd_left (he 0 0)), fun he i j ↦ ?_⟩
+  have h := dvd_atkinLehnerEntries N B e (A 0 1) hBc he
+    (hAco'.of_isCoprime_of_dvd_left (hB00 ▸ he 0 0)) i j
+  rwa [hswap] at h
 
 /-- **The Atkin–Lehner involution fixes a coprime-determinant double coset.** If `x ∈ Δ₀(N)`
 has determinant coprime to `N`, then its bar lies in the `Γ₀(N)`-double coset of `x`. -/
