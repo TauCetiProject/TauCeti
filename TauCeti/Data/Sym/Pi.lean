@@ -81,6 +81,7 @@ theorem pi_eq_range (A : Fin n → Set α) :
 
 /-- An unordered tuple has one point in each member of the family exactly when it is presented by
 an ordered tuple whose `i`-th entry lies in `A i`. -/
+@[simp]
 theorem mem_pi_iff {s : Sym α n} :
     s ∈ pi A ↔ ∃ x : Fin n → α, (∀ i, x i ∈ A i) ∧ ofFn x = s := by
   rw [pi_eq_range]
@@ -94,6 +95,19 @@ theorem mem_pi_iff {s : Sym α n} :
 each member of the family. -/
 theorem ofFn_mem_pi {x : Fin n → α} (hx : ∀ i, x i ∈ A i) : ofFn x ∈ pi A :=
   mem_pi_iff.2 ⟨x, hx, rfl⟩
+
+/-- `TauCeti.Sym.pi A` only depends on the family up to reindexing: permuting the index set
+permutes the entries of an ordered presentation, which leaves the unordered tuple it presents
+unchanged. -/
+@[simp]
+theorem pi_comp_perm (σ : Equiv.Perm (Fin n)) : pi (A ∘ σ) = pi A := by
+  ext s
+  simp only [mem_pi_iff]
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    exact ⟨x ∘ σ.symm, fun j => by simpa using hx (σ.symm j), ofFn_comp_perm σ.symm x⟩
+  · rintro ⟨x, hx, rfl⟩
+    exact ⟨x ∘ σ, fun i => hx (σ i), ofFn_comp_perm σ x⟩
 
 /-- There is an unordered tuple with one point in each member of the family exactly when every
 member is nonempty. -/
@@ -166,7 +180,7 @@ noncomputable def piEquiv (h : Pairwise (Function.onFun Disjoint A)) :
 
 /-- The parametrization underlying `TauCeti.Sym.piEquiv` is the one by ordered tuples. -/
 @[simp]
-theorem coe_piEquiv (h : Pairwise (Function.onFun Disjoint A)) (x : ∀ i, ↥(A i)) :
+theorem coe_piEquiv_apply (h : Pairwise (Function.onFun Disjoint A)) (x : ∀ i, ↥(A i)) :
     (piEquiv h x : Sym α n) = ofFn fun i => (x i : α) := by
   simp [piEquiv, Equiv.ofBijective]
 
@@ -200,7 +214,7 @@ def matchingTuple (p : (σ : Equiv.Perm (Fin n)) × ∀ i, ↥(A i ∩ B (σ i))
 
 /-- The unordered tuple of a matching is the tuple of its chosen points. -/
 @[simp]
-theorem coe_matchingTuple (p : (σ : Equiv.Perm (Fin n)) × ∀ i, ↥(A i ∩ B (σ i))) :
+theorem coe_matchingTuple_apply (p : (σ : Equiv.Perm (Fin n)) × ∀ i, ↥(A i ∩ B (σ i))) :
     (matchingTuple p : Sym α n) = ofFn fun i => ((p.2 i : α)) := (rfl)
 
 /-- Every unordered tuple lying in both `TauCeti.Sym.pi A` and `TauCeti.Sym.pi B` comes from a

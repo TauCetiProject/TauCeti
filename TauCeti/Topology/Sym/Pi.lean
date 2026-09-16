@@ -91,8 +91,9 @@ noncomputable def piHomeomorph (hA : ∀ i, IsCompact (A i))
 /-- The homeomorphism underlying `TauCeti.Sym.piHomeomorph` is the parametrization by ordered
 tuples. -/
 @[simp]
-theorem coe_piHomeomorph (hA : ∀ i, IsCompact (A i)) (h : Pairwise (Function.onFun Disjoint A))
-    (x : ∀ i, ↥(A i)) : (piHomeomorph hA h x : Sym α n) = ofFn fun i => (x i : α) := by
+theorem coe_piHomeomorph_apply (hA : ∀ i, IsCompact (A i))
+    (h : Pairwise (Function.onFun Disjoint A)) (x : ∀ i, ↥(A i)) :
+    (piHomeomorph hA h x : Sym α n) = ofFn fun i => (x i : α) := by
   -- unfold the chain of Mathlib equivalences out of which the homeomorphism is assembled
   simp [piHomeomorph, Topology.IsEmbedding.toHomeomorph, Homeomorph.setCongr, Set.equivOfEq,
     Equiv.subtypeEquivProp]
