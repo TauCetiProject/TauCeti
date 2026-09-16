@@ -34,7 +34,6 @@ the zigzag ideal is exactly `R ^ 3`.
 See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, for the zigzag
 relations, and Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative
 Algebras I*, Ch. II.2, for admissible ideals.
-The formalization blueprint is `TauCetiRoadmap/ZigzagPreprojective/README.md`.
 -/
 
 public section

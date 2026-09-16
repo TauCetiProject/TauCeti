@@ -51,7 +51,6 @@ The zigzag conventions and invariant formulas follow Huerfano--Khovanov, *A cate
 adjoint representation*, Section 3, and Ehrig--Tubbenhauer, *Algebraic properties of zigzag
 algebras*, Section 2. The affine `E₈ = T_{2,3,6}` graph shape follows Kac, *Infinite dimensional
 Lie algebras*, Chapter 4; its node numbering here is the arm-coordinate convention described above.
-The named-example selection follows `TauCetiRoadmap/ZigzagPreprojective/README.md`.
 -/
 
 public section

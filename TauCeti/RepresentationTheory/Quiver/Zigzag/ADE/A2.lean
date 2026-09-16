@@ -59,7 +59,6 @@ C_A₂(q) = [1 + q²    q   ]
 The low-rank convention for `A₂` follows Huerfano--Khovanov, *A category for the adjoint
 representation*, Section 3, and Liu--Wang, *A-infinity deformations of zigzag algebras via
 Ginzburg dg algebras*, Section 2.
-The formalization blueprint is `TauCetiRoadmap/ZigzagPreprojective/README.md`.
 -/
 
 public section
@@ -159,9 +158,7 @@ theorem zigzagAlgebraEquivA2_symm_apply_component
         ((nonisolatedZigzagQuotientEquiv k
           (connectedComponentGraphIso zigzagA2Graph connected_zigzagA2Graph C)).symm
             ((nonisolatedZigzagQuotientEquivA2 k).symm x)) := by
-  change zigzagComponentProjection k zigzagA2Graph C
-      ((zigzagAlgebraEquivNonisolated k zigzagA2Graph connected_zigzagA2Graph).symm
-        ((nonisolatedZigzagQuotientEquivA2 k).symm x)) = _
+  rw [zigzagAlgebraEquivA2, AlgEquiv.symm_trans_apply]
   exact zigzagAlgebraEquivNonisolated_symm_apply_component k zigzagA2Graph
     connected_zigzagA2Graph ((nonisolatedZigzagQuotientEquivA2 k).symm x) C
 
@@ -178,11 +175,9 @@ theorem jacobson_pow_three_zigzagAlgebra_A2_eq_bot (k : Type w) [Field k] :
     exact SetLike.ext_iff.mp
       (Ring.map_jacobson_of_ker_le (f := e.toRingEquiv.toRingHom) (by simp)) y
   apply (Submodule.restrictScalars_eq_bot_iff k _ _).mp
-  rw [Submodule.restrictScalars_pow (by omega)]
-  apply (Submodule.map_eq_bot_iff (e := e.toLinearEquiv)).mp
-  change Submodule.map e.toAlgHom.toLinearMap
-      (Submodule.restrictScalars k (Ring.jacobson (zigzagAlgebra k zigzagA2Graph)) ^ 3) = ⊥
-  rw [Submodule.map_pow, he, ← Submodule.restrictScalars_pow (by omega),
+  rw [Submodule.restrictScalars_pow (by omega),
+    ← Submodule.map_eq_bot_iff (e := e.toLinearEquiv), ← AlgEquiv.toAlgHom_toLinearMap,
+    Submodule.map_pow, he, ← Submodule.restrictScalars_pow (by omega),
     jacobson_pow_three_nonisolatedZigzagQuotient_eq_bot exists_adj_zigzagA2Graph,
     Submodule.restrictScalars_bot]
 
