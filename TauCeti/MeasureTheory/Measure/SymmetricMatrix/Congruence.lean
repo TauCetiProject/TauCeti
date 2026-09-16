@@ -38,6 +38,8 @@ the invertible case as a corollary.
   variables for `symmetricLebesgue`.
 * `Matrix.GeneralLinearGroup.det_symmetricCongruence_apply` — the determinant of a congruence
   image is `(det C) ^ 2` times the determinant.
+* `Matrix.GeneralLinearGroup.trace_inv_mul_symmetricCongruence_apply` — congruence by `C` turns
+  the trace against the inverse scale `(C * Cᵀ)⁻¹` into the plain trace.
 * `Matrix.GeneralLinearGroup.map_symmetricCongruence_restrict_posDef` — the same change of
   variables on the positive-definite cone, which congruence by an invertible matrix preserves,
   together with its lower- and Bochner-integral forms.
@@ -367,6 +369,25 @@ theorem det_symmetricCongruence_apply (C : Matrix.GeneralLinearGroup (Fin p) ℝ
       Matrix.det (C : Matrix (Fin p) (Fin p) ℝ) ^ 2 * (A : Matrix (Fin p) (Fin p) ℝ).det := by
   rw [coe_symmetricCongruence_apply, Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose]
   ring
+
+/-- Congruence by `C` turns the trace against the inverse of the scale `C * Cᵀ` into the plain
+trace: the two copies of `C` cancel against the inverse. -/
+theorem trace_inv_mul_symmetricCongruence_apply (C : Matrix.GeneralLinearGroup (Fin p) ℝ)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (((C : Matrix (Fin p) (Fin p) ℝ) * (C : Matrix (Fin p) (Fin p) ℝ)ᵀ)⁻¹ *
+        ((symmetricCongruence C A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+          Matrix (Fin p) (Fin p) ℝ)).trace = (A : Matrix (Fin p) (Fin p) ℝ).trace := by
+  have hdetC : IsUnit (C : Matrix (Fin p) (Fin p) ℝ).det :=
+    isUnit_iff_ne_zero.2 (Matrix.GeneralLinearGroup.det_ne_zero C)
+  have hdetCt : IsUnit ((C : Matrix (Fin p) (Fin p) ℝ)ᵀ).det := by
+    rwa [Matrix.det_transpose]
+  have hsandwich : (C : Matrix (Fin p) (Fin p) ℝ)ᵀ *
+      ((C : Matrix (Fin p) (Fin p) ℝ) * (C : Matrix (Fin p) (Fin p) ℝ)ᵀ)⁻¹ *
+        (C : Matrix (Fin p) (Fin p) ℝ) = 1 := by
+    rw [Matrix.mul_inv_rev, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hdetCt, Matrix.one_mul,
+      Matrix.nonsing_inv_mul _ hdetC]
+  rw [coe_symmetricCongruence_apply, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
+    Matrix.trace_mul_comm, ← Matrix.mul_assoc, ← Matrix.mul_assoc, hsandwich, Matrix.one_mul]
 
 /-- The pushforward of `symmetricLebesgue` under congruence by `C` is
 `(|det C| ^ (p + 1))⁻¹ • symmetricLebesgue`; equivalently, the congruence image of a set has

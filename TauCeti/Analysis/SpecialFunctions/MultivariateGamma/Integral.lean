@@ -97,8 +97,8 @@ private theorem det_coe_symmetricCongruence {C : Matrix.GeneralLinearGroup (Fin 
   rw [Matrix.GeneralLinearGroup.det_symmetricCongruence_apply, ← hC, Matrix.det_mul,
     Matrix.det_transpose, sq]
 
-/-- Congruence by `C` turns the trace against the inverse scale `(C * Cᵀ)⁻¹` into the plain
-trace: the two copies of `C` cancel against the inverse. -/
+/-- The specialization of `Matrix.GeneralLinearGroup.trace_inv_mul_symmetricCongruence_apply` to
+a scale `T` presented as `C * Cᵀ`. -/
 private theorem trace_inv_mul_coe_symmetricCongruence
     {C : Matrix.GeneralLinearGroup (Fin p) ℝ}
     (hC : (C : Matrix (Fin p) (Fin p) ℝ) * (C : Matrix (Fin p) (Fin p) ℝ)ᵀ = T)
@@ -106,17 +106,7 @@ private theorem trace_inv_mul_coe_symmetricCongruence
     (T⁻¹ * ((Matrix.GeneralLinearGroup.symmetricCongruence C A :
         selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
       Matrix (Fin p) (Fin p) ℝ)).trace = (A : Matrix (Fin p) (Fin p) ℝ).trace := by
-  have hdetC : IsUnit (C : Matrix (Fin p) (Fin p) ℝ).det :=
-    isUnit_iff_ne_zero.2 (Matrix.GeneralLinearGroup.det_ne_zero C)
-  have hdetCt : IsUnit ((C : Matrix (Fin p) (Fin p) ℝ)ᵀ).det := by
-    rwa [Matrix.det_transpose]
-  have hsandwich :
-      (C : Matrix (Fin p) (Fin p) ℝ)ᵀ * T⁻¹ * (C : Matrix (Fin p) (Fin p) ℝ) = 1 := by
-    rw [← hC, Matrix.mul_inv_rev, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hdetCt,
-      Matrix.one_mul, Matrix.nonsing_inv_mul _ hdetC]
-  rw [Matrix.GeneralLinearGroup.coe_symmetricCongruence_apply, ← Matrix.mul_assoc,
-    ← Matrix.mul_assoc, Matrix.trace_mul_comm, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
-    hsandwich, Matrix.one_mul]
+  rw [← hC, Matrix.GeneralLinearGroup.trace_inv_mul_symmetricCongruence_apply]
 
 /-- The Jacobian `|det C| ^ (p + 1)` of the congruence combines with the determinant factor
 `(det T) ^ (a - (p + 1) / 2)` picked up by the integrand to give `(det T) ^ a`. -/
