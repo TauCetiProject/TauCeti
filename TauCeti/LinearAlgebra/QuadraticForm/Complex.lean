@@ -155,11 +155,10 @@ theorem _root_.QuadraticForm.isRepresentedBy_iff_finrank_le_of_isAlgClosed
     exact ⟨(e.toIsometry.comp (QuadraticMap.Isometry.inl Q S)).toLinearMap,
       e.injective.comp LinearMap.inl_injective, fun x ↦ by simp⟩
 
-/-- A regular quadratic form on a nonzero finite-dimensional space over an algebraically closed
-field represents every scalar. -/
+/-- A regular quadratic form on a space of positive rank over an algebraically closed field
+represents every scalar. -/
 theorem _root_.QuadraticForm.represents_of_finrank_pos_of_isAlgClosed
-    {K W : Type*} [Field K] [IsAlgClosed K] [Invertible (2 : K)]
-    [AddCommGroup W] [Module K W] [FiniteDimensional K W]
+    {K W : Type*} [Field K] [IsAlgClosed K] [AddCommGroup W] [Module K W]
     (Q : QuadraticForm K W) (hQ : Q.Nondegenerate) (hW : 0 < Module.finrank K W) (a : K) :
     Q.Represents a := by
   let _ : Nontrivial W := Module.nontrivial_of_finrank_pos hW
@@ -169,8 +168,8 @@ theorem _root_.QuadraticForm.represents_of_finrank_pos_of_isAlgClosed
 the scalar is zero or the underlying space has positive dimension. -/
 @[simp]
 theorem _root_.QuadraticForm.represents_iff_eq_zero_or_finrank_pos_of_isAlgClosed
-    {K W : Type*} [Field K] [IsAlgClosed K] [Invertible (2 : K)]
-    [AddCommGroup W] [Module K W] [FiniteDimensional K W]
+    {K W : Type*} [Field K] [IsAlgClosed K] [AddCommGroup W] [Module K W]
+    [FiniteDimensional K W]
     (Q : QuadraticForm K W) (hQ : Q.Nondegenerate) (a : K) :
     Q.Represents a ↔ a = 0 ∨ 0 < Module.finrank K W := by
   constructor
