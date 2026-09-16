@@ -576,7 +576,6 @@ private theorem evalLinear_apply_impl (f : DiscreteCoind G U A) :
 theorem evalLinear_apply (f : DiscreteCoind G U A) : evalLinear (R := R) G U A f = f 1 :=
   evalLinear_apply_impl f
 
-@[simp]
 theorem evalLinear_map (f : A →ₗ[R] B) (hf) (a : DiscreteCoind G U A) :
     evalLinear (R := R) G U B (map f hf a) = f (evalLinear (R := R) G U A a) := by
   simp only [evalLinear_apply, map_apply]
