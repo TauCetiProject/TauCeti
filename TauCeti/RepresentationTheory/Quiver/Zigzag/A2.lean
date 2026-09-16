@@ -20,7 +20,11 @@ opposite arrows. Every length-two path of that quiver is a backtrack, and each v
 one of them. The quadratic zigzag relators therefore all vanish: the quadratic presentation is the
 path algebra itself, which is infinite-dimensional because the two arrows compose to a nontrivial
 closed path. The zigzag algebra of `A₂` is instead the path algebra modulo *every path of length at
-least three*, that is, modulo the cube of the arrow ideal.
+least three*, that is, modulo the cube of the arrow ideal. The literature calls this the
+radical-cube-zero presentation. That name refers to coefficients in a field, where the arrow ideal
+becomes the radical of the finite-dimensional quotient. This file does not prove that
+identification, and over a general commutative ring it states only the arrow-ideal-cube
+presentation.
 
 The first part of this file proves that description for every simple graph in which each vertex
 has at most one neighbour, the only hypothesis the argument uses. The second part specializes it
@@ -150,7 +154,7 @@ theorem asIdeal_zigzagIdeal_eq_arrowIdeal_pow [Finite V]
     rwa [← TwoSidedIdeal.mem_asIdeal, Ideal.asIdeal_toTwoSided] at this
   · exact arrowIdeal_pow_three_le_asIdeal_zigzagIdeal k G hx
 
-/-- **The radical-cube-zero presentation.** When every vertex has at most one neighbour, the
+/-- **The arrow-ideal-cube presentation.** When every vertex has at most one neighbour, the
 zigzag relation quotient is the path algebra of the doubled quiver modulo the cube of its arrow
 ideal. -/
 noncomputable def nonisolatedZigzagQuotientEquivArrowIdealPow [Finite V]
@@ -159,7 +163,7 @@ noncomputable def nonisolatedZigzagQuotientEquivArrowIdealPow [Finite V]
       pathAlgebra k (DoubledQuiver G) ⧸ arrowIdeal k (DoubledQuiver G) ^ 3 :=
   Ideal.quotientEquivAlgOfEq k (asIdeal_zigzagIdeal_eq_arrowIdeal_pow k hG)
 
-/-- The radical-cube-zero presentation sends the class of a path-algebra element to its class. -/
+/-- The arrow-ideal-cube presentation sends the class of a path-algebra element to its class. -/
 @[simp]
 theorem nonisolatedZigzagQuotientEquivArrowIdealPow_zigzagMk [Finite V]
     (hG : ∀ i, (G.neighborSet i).Subsingleton) (x : pathAlgebra k (DoubledQuiver G)) :
@@ -167,7 +171,7 @@ theorem nonisolatedZigzagQuotientEquivArrowIdealPow_zigzagMk [Finite V]
       Ideal.Quotient.mk (arrowIdeal k (DoubledQuiver G) ^ 3) x := by
   rw [nonisolatedZigzagQuotientEquivArrowIdealPow, zigzagMk_apply, Ideal.quotientEquivAlgOfEq_mk]
 
-/-- The inverse of the radical-cube-zero presentation sends the class of a path-algebra element
+/-- The inverse of the arrow-ideal-cube presentation sends the class of a path-algebra element
 to its class. -/
 @[simp]
 theorem nonisolatedZigzagQuotientEquivArrowIdealPow_symm_mk [Finite V]
@@ -207,7 +211,7 @@ theorem neighborSet_subsingleton_A2 (i : Fin 2) :
   simp only [SimpleGraph.mem_neighborSet, SimpleGraph.top_adj] at hj hj'
   omega
 
-/-- **The radical-cube-zero presentation of the zigzag algebra of `A₂`**: the public zigzag algebra
+/-- **The arrow-ideal-cube presentation of the zigzag algebra of `A₂`**: the public zigzag algebra
 of `A₂` is the path algebra of its doubled quiver modulo the paths of length at least three. -/
 noncomputable def zigzagAlgebraEquivA2 :
     zigzagAlgebra k (⊤ : SimpleGraph (Fin 2)) ≃ₐ[k]
@@ -217,7 +221,7 @@ noncomputable def zigzagAlgebraEquivA2 :
     (nonisolatedZigzagQuotientEquivArrowIdealPow k neighborSet_subsingleton_A2)
 
 /-- The `A₂` presentation is the comparison with the relation quotient followed by the
-radical-cube-zero presentation. -/
+arrow-ideal-cube presentation. -/
 @[simp]
 theorem zigzagAlgebraEquivA2_apply (x : zigzagAlgebra k (⊤ : SimpleGraph (Fin 2))) :
     zigzagAlgebraEquivA2 k x =
