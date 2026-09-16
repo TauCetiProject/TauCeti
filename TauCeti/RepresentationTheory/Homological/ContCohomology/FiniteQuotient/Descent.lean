@@ -58,18 +58,13 @@ theorem exists_openNormalSubgroup_descendContinuous (U : OpenNormalSubgroup G)
     intro n g
     exact hA n
       ((inf_le_right : V ≤ A) n.2) (b g) ⟨g, rfl⟩
-  let bV : G ⧸ V.toSubgroup → FixedPoints.addSubgroup V.toSubgroup M :=
-    fun q => Quotient.liftOn' q
-      (fun g => (⟨b g, (FixedPoints.mem_addSubgroup V.toSubgroup M _).2
-        fun n => hfixed n g⟩ : FixedPoints.addSubgroup V.toSubgroup M))
-      fun a b' hab => Subtype.ext <| by
-        simpa using
-          (hright a ⟨a⁻¹ * b', QuotientGroup.leftRel_apply.1 hab⟩).symm
-  have hbV : Continuous bV :=
-    (QuotientGroup.isQuotientMap_mk V.toSubgroup).continuous_iff.2 <| by
-      dsimp only [bV, Function.comp_apply, QuotientGroup.mk, Quotient.liftOn'_mk'']
-      exact hb.subtype_mk fun g =>
-        (FixedPoints.mem_addSubgroup V.toSubgroup M _).2 fun n => hfixed n g
-  exact ⟨V, hVU, bV, hbV, fun _ => rfl⟩
+  let b' : G → FixedPoints.addSubgroup V.toSubgroup M := fun g =>
+    ⟨b g, (FixedPoints.mem_addSubgroup V.toSubgroup M _).2 fun n => hfixed n g⟩
+  have hb' : Continuous b' :=
+    hb.subtype_mk fun g => (FixedPoints.mem_addSubgroup V.toSubgroup M _).2 fun n => hfixed n g
+  have hrel : ∀ a c : G, QuotientGroup.leftRel V.toSubgroup a c → b' a = b' c :=
+    fun a c hac => Subtype.ext <| by
+      simpa [b'] using (hright a ⟨a⁻¹ * c, QuotientGroup.leftRel_apply.1 hac⟩).symm
+  exact ⟨V, hVU, fun q => Quotient.liftOn' q b' hrel, hb'.quotient_liftOn' hrel, fun _ => rfl⟩
 
 end TauCeti.ContCohomology
