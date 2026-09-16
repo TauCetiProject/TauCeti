@@ -219,13 +219,6 @@ theorem coe_rootsOfUnityFieldEquivResidueFieldUnits_symm_apply (α : 𝓀[K]ˣ) 
     teichmuller_apply]
   exact coe_rootsOfUnityIntegerEquiv K (Nat.sub_ne_zero_of_lt Finite.one_lt_card) _
 
-private theorem units_pow_natCard_sub_one_eq_one (α : 𝓀[K]ˣ) :
-    α ^ (Nat.card 𝓀[K] - 1) = 1 := by
-  classical
-  let _ := Fintype.ofFinite 𝓀[K]
-  rw [Nat.card_eq_fintype_card]
-  exact Units.ext (FiniteField.pow_card_sub_one_eq_one _ (Units.ne_zero α))
-
 /-- **The Teichmüller lift is characterized by its residue and torsion.** A unit of `𝒪[K]` is
 `teichmuller K α` exactly when it reduces to `α` and is killed by `q - 1`. -/
 theorem eq_teichmuller_iff {α : 𝓀[K]ˣ} {u : 𝒪[K]ˣ} :
@@ -242,7 +235,7 @@ theorem teichmuller_unique (f : 𝓀[K]ˣ →* 𝒪[K]ˣ)
     (hsection : ∀ α, residue 𝒪[K] ((f α : 𝒪[K]ˣ) : 𝒪[K]) = (α : 𝓀[K])) :
     f = teichmuller K :=
   MonoidHom.ext fun α ↦ eq_teichmuller K
-    (by rw [← map_pow, units_pow_natCard_sub_one_eq_one, map_one]) (hsection α)
+    (by rw [← map_pow, ← Nat.card_units, pow_card_eq_one', map_one]) (hsection α)
 
 -- Provenance: this is the finite-residue-field specialization of Mathlib's
 -- `Perfection.teichmuller₀`, using `PerfectionMap.id` to identify a perfect field with its
@@ -279,12 +272,26 @@ theorem teichmullerLift_pow_natCard (a : 𝓀[K]) :
   let _ := Fintype.ofFinite 𝓀[K]
   rw [← map_pow, Nat.card_eq_fintype_card, FiniteField.pow_card]
 
+/-- The simplifier-normalized form of the characteristic Frobenius equation for the
+zero-preserving Teichmüller lift. -/
+@[simp]
+theorem teichmullerLift_pow_fintype_card (a : 𝓀[K]) :
+    teichmullerLift K a ^ @Fintype.card 𝓀[K] (Fintype.ofFinite 𝓀[K]) = teichmullerLift K a := by
+  rw [← @Nat.card_eq_fintype_card 𝓀[K] (Fintype.ofFinite 𝓀[K])]
+  exact teichmullerLift_pow_natCard K a
+
 /-- On units, the zero-preserving Teichmüller lift is `teichmuller K`. -/
 theorem coe_teichmuller_apply (α : 𝓀[K]ˣ) :
     ((teichmuller K α : 𝒪[K]ˣ) : 𝒪[K]) = teichmullerLift K (α : 𝓀[K]) := by
+  have hsection (β : 𝓀[K]ˣ) :
+      residue 𝒪[K]
+          ((Units.map (teichmullerLift K : 𝓀[K] →* 𝒪[K]) β : 𝒪[K]ˣ) : 𝒪[K]) =
+        (β : 𝓀[K]) := by
+    rw [Units.coe_map, MonoidHom.coe_coe]
+    exact residue_teichmullerLift K β
   have h : Units.map (teichmullerLift K : 𝓀[K] →* 𝒪[K]) α = teichmuller K α :=
-    teichmuller_unique K (Units.map (teichmullerLift K : 𝓀[K] →* 𝒪[K]))
-      (fun β ↦ residue_teichmullerLift K β) ▸ rfl
+    congrArg (fun f : 𝓀[K]ˣ →* 𝒪[K]ˣ ↦ f α)
+      (teichmuller_unique K (Units.map (teichmullerLift K : 𝓀[K] →* 𝒪[K])) hsection)
   rw [← h, Units.coe_map, MonoidHom.coe_coe]
 
 /-- **The zero-preserving Teichmüller lift is the unique multiplicative section of reduction.** -/
