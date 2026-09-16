@@ -27,7 +27,7 @@ Use `TauCeti.hammingMinDist C`, or `hammingMinDist C` after `open TauCeti`, for 
 set of words `C`. Its defining equation is `TauCeti.hammingMinDist_def C`.
 
 The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*,
-§§1.2–1.6. The metric comparison uses Mathlib's `Set.Nontrivial.le_infsep_iff`.
+§§1.2–1.6.
 The unbundled minimum-distance design follows Cristina Dueñas Navarro's
 [Mathlib PR #38014](https://github.com/leanprover-community/mathlib4/pull/38014).
 This module generalizes its `Fin n`/Hamming-space interface to arbitrary finite coordinate
