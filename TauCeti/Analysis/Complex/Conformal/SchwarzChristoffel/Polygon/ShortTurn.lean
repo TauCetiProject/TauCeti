@@ -18,10 +18,10 @@ through `j` are strictly increasing by less than `π`, then the intermediate cho
 the first and last sides cannot meet when at least one complete side lies between them.
 
 This file records that geometric part of the global boundary-simplicity argument.  It is stated in
-terms of strict monotonicity and a short-turn bound on the edge angles, so that the analytic angle
-calculation and the planar separation argument remain independent.  The complementary case, where
-the direct boundary arc turns by at least `π`, can use the same idea on the other arc
-through the closing side.
+terms of strict monotonicity of the edge angles along the chain and a short-turn bound, so that
+the analytic angle calculation and the planar separation argument remain independent.  The
+complementary case, where the direct boundary arc turns by at least `π`, can use the same idea on
+the other arc through the closing side.
 
 ## Main results
 
@@ -95,11 +95,11 @@ private lemma norm_schwarzChristoffelVertex_succ_sub_pos (a e : Fin (n + 1) → 
   omega
 
 private lemma im_exp_neg_mul_schwarzChristoffelVertex_succ_sub_pos
-    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
-    (hangle : StrictMono (fun j ↦ schwarzChristoffelEdgeAngle a e (a j)))
-    (i k : Fin n)
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a) (i k : Fin n)
     (hfinite_left : -1 < ∑ j with a j = a k.castSucc, e j)
-    (hfinite_right : -1 < ∑ j with a j = a k.succ, e j) (hik : i < k)
+    (hfinite_right : -1 < ∑ j with a j = a k.succ, e j)
+    (hturn : schwarzChristoffelEdgeAngle a e (a i.castSucc) <
+      schwarzChristoffelEdgeAngle a e (a k.castSucc))
     (hshort : schwarzChristoffelEdgeAngle a e (a k.castSucc) <
       schwarzChristoffelEdgeAngle a e (a i.castSucc) + Real.pi) :
     0 < (Complex.exp (-schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I) *
@@ -109,7 +109,7 @@ private lemma im_exp_neg_mul_schwarzChristoffelVertex_succ_sub_pos
   let θk := schwarzChristoffelEdgeAngle a e (a k.castSucc)
   let d := ‖schwarzChristoffelVertex a e z₀ k.succ -
     schwarzChristoffelVertex a e z₀ k.castSucc‖
-  have hθ : θi < θk := hangle (Fin.castSucc_lt_castSucc_iff.mpr hik)
+  have hθ : θi < θk := hturn
   have hθdiff : θk - θi ∈ Ioo (0 : ℝ) Real.pi := by
     constructor
     · exact sub_pos.mpr hθ
@@ -143,12 +143,12 @@ to the left of the first side.
 
 Here `i + 1 < j`, so the chord from vertex `i + 1` to vertex `j` contains at least one complete
 side.  After rotating the direction of side `i` to the positive real axis, every side in that
-chord has positive imaginary part: strict angle monotonicity gives the lower bound and `hshort`
-keeps the final angle below the opposite direction. -/
+chord has positive imaginary part: strict angle monotonicity along the chain gives the lower
+bound and `hshort` keeps the final angle below the opposite direction. -/
 theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_short_turn
-    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
-    (hangle : StrictMono (fun j ↦ schwarzChristoffelEdgeAngle a e (a j)))
-    (i j : Fin n)
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a) (i j : Fin n)
+    (hangle : StrictMonoOn (fun k ↦ schwarzChristoffelEdgeAngle a e (a k))
+      (Icc i.castSucc j.castSucc))
     (hfinite : ∀ k ∈ Icc i.succ j.castSucc, -1 < ∑ l with a l = a k, e l)
     (hij : i.val + 1 < j.val)
     (hshort : schwarzChristoffelEdgeAngle a e (a j.castSucc) <
@@ -187,15 +187,28 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_short_turn
       apply Fin.mk_lt_mk.mpr
       omega
     have hkj : k' ≤ j := Fin.mk_le_mk.mpr hk.2.le
+    have hmemi : i.castSucc ∈ Icc i.castSucc j.castSucc := by
+      simp only [mem_Icc, Fin.le_def, Fin.val_castSucc]
+      omega
+    have hmemk : k'.castSucc ∈ Icc i.castSucc j.castSucc := by
+      simp only [mem_Icc, Fin.le_def, Fin.val_castSucc]
+      omega
+    have hmemj : j.castSucc ∈ Icc i.castSucc j.castSucc := by
+      simp only [mem_Icc, Fin.le_def, Fin.val_castSucc]
+      omega
+    have hturn' : schwarzChristoffelEdgeAngle a e (a i.castSucc) <
+        schwarzChristoffelEdgeAngle a e (a k'.castSucc) :=
+      hangle hmemi hmemk (Fin.castSucc_lt_castSucc_iff.mpr hik')
     have hshort' : schwarzChristoffelEdgeAngle a e (a k'.castSucc) <
         schwarzChristoffelEdgeAngle a e (a i.castSucc) + Real.pi :=
-      (hangle.monotone (Fin.castSucc_le_castSucc_iff.mpr hkj)).trans_lt hshort
+      (hangle.monotoneOn hmemk hmemj
+        (Fin.castSucc_le_castSucc_iff.mpr hkj)).trans_lt hshort
     have hkleft : k'.castSucc ∈ Icc i.succ j.castSucc := by
       constructor <;> apply Fin.mk_le_mk.mpr <;> omega
     have hkright : k'.succ ∈ Icc i.succ j.castSucc := by
       constructor <;> apply Fin.mk_le_mk.mpr <;> omega
     have hkpos := im_exp_neg_mul_schwarzChristoffelVertex_succ_sub_pos
-      a e z₀ ha hangle i k' (hfinite _ hkleft) (hfinite _ hkright) hik' hshort'
+      a e z₀ ha i k' (hfinite _ hkleft) (hfinite _ hkright) hturn' hshort'
     have hVk : V k = schwarzChristoffelVertex a e z₀ k'.castSucc := by
       dsimp only [V]
       split
@@ -210,12 +223,13 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_short_turn
   · exact Finset.nonempty_Ico.mpr hij
 
 /-- Two nonadjacent bounded sides of a Schwarz--Christoffel polygon are disjoint when their edge
-angles are strictly ordered and the directions from the first through the last side turn through
-less than `π`.  The index condition excludes adjacent sides and the closing side. -/
+angles are strictly ordered along the intervening chain and the directions from the first through
+the last side turn through less than `π`.  The index condition excludes adjacent sides and the
+closing side. -/
 theorem disjoint_schwarzChristoffelPolygon_edgeSet_of_short_turn
-    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
-    (hangle : StrictMono (fun j ↦ schwarzChristoffelEdgeAngle a e (a j)))
-    (i j : Fin n)
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a) (i j : Fin n)
+    (hangle : StrictMonoOn (fun k ↦ schwarzChristoffelEdgeAngle a e (a k))
+      (Icc i.castSucc j.castSucc))
     (hfinite : ∀ k ∈ Icc i.castSucc j.succ, -1 < ∑ l with a l = a k, e l)
     (hij : i.val + 1 < j.val)
     (hshort : schwarzChristoffelEdgeAngle a e (a j.castSucc) <
@@ -243,7 +257,7 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_of_short_turn
       hk.2.trans (Fin.mk_le_mk.mpr (by simp))⟩
   have hmiddle : 0 < (u * (Vj - Vi')).im := by
     exact im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_short_turn
-      a e z₀ ha hangle i j hfinite_middle hij hshort
+      a e z₀ ha i j hangle hfinite_middle hij hshort
   have hfirst : (u * (Vi' - Vi)).im = 0 := by
     rw [schwarzChristoffelVertex_succ_sub_eq_norm_mul a e z₀ ha i
       (hfinite _ ⟨le_rfl, Fin.mk_le_mk.mpr (by omega)⟩)
@@ -266,10 +280,19 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_of_short_turn
     rw [hz, Complex.exp_zero, mul_one, Complex.ofReal_im]
   have hlast : 0 ≤ (u * (t • (Vj' - Vj))).im := by
     have hij' : i < j := Fin.mk_lt_mk.mpr (by omega)
+    have hmemi : i.castSucc ∈ Icc i.castSucc j.castSucc := by
+      simp only [mem_Icc, Fin.le_def, Fin.val_castSucc]
+      omega
+    have hmemj : j.castSucc ∈ Icc i.castSucc j.castSucc := by
+      simp only [mem_Icc, Fin.le_def, Fin.val_castSucc]
+      omega
+    have hturn : schwarzChristoffelEdgeAngle a e (a i.castSucc) <
+        schwarzChristoffelEdgeAngle a e (a j.castSucc) :=
+      hangle hmemi hmemj (Fin.castSucc_lt_castSucc_iff.mpr hij')
     have hjpos := im_exp_neg_mul_schwarzChristoffelVertex_succ_sub_pos
-      a e z₀ ha hangle i j
+      a e z₀ ha i j
         (hfinite _ ⟨Fin.mk_le_mk.mpr (by omega), Fin.mk_le_mk.mpr (by omega)⟩)
-        (hfinite _ ⟨Fin.mk_le_mk.mpr (by omega), le_rfl⟩) hij' hshort
+        (hfinite _ ⟨Fin.mk_le_mk.mpr (by omega), le_rfl⟩) hturn hshort
     have hmul : u * (t • (Vj' - Vj)) = (t : ℂ) * (u * (Vj' - Vj)) := by
       rw [Complex.real_smul]
       ring
