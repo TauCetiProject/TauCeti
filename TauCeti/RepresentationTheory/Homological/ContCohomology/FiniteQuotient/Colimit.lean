@@ -566,32 +566,48 @@ private theorem d1_descend_eq_cocyclesMap2 {U V : OpenNormalSubgroup G} (hVU : V
     funext g
     rw [cochainsMap1_apply]
     exact hbV_apply g
-  have hquot : (continuousFiniteQuotientMap G hVU).comp
-      (ContinuousMonoidHom.quotientMk V.toSubgroup) =
-      ContinuousMonoidHom.quotientMk U.toSubgroup := by
-    ext g
-    simp
-  have hincl : ((FixedPoints.addSubgroup V.toSubgroup M).subtype).comp
-      (fixedPointsInclusion hVU) = (FixedPoints.addSubgroup U.toSubgroup M).subtype :=
-    AddMonoidHom.ext fun m ↦ coe_fixedPointsInclusion hVU m
+  -- The transition followed by pullback to `G` is the inflation from `G ⧸ U`.
+  have htransition :
+      cochainsMap2 (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+        (FixedPoints.addSubgroup V.toSubgroup M).subtype
+        (cocyclesMap2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
+          (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
+          (continuousFiniteQuotientMap G hVU) (fixedPointsInclusion hVU)
+          continuous_of_discreteTopology
+          (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) c) =
+      (cocyclesMap2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) G M
+        (ContinuousMonoidHom.quotientMk U.toSubgroup)
+        (FixedPoints.addSubgroup U.toSubgroup M).subtype
+        (continuous_fixedPoints_addSubgroup_subtype G M U.toSubgroup)
+        (subtype_quotientMk_smul G M U.toSubgroup) c : G × G → M) := by
+    have hquot : (continuousFiniteQuotientMap G hVU).comp
+        (ContinuousMonoidHom.quotientMk V.toSubgroup) =
+        ContinuousMonoidHom.quotientMk U.toSubgroup := by
+      ext g
+      simp
+    have hincl : ((FixedPoints.addSubgroup V.toSubgroup M).subtype).comp
+        (fixedPointsInclusion hVU) = (FixedPoints.addSubgroup U.toSubgroup M).subtype :=
+      AddMonoidHom.ext fun m ↦ coe_fixedPointsInclusion hVU m
+    -- By `cocyclesMap2_comp`, the left side is the pullback along the composite pair. That pair
+    -- is the one defining inflation from `G ⧸ U`: `congr` matches its group and coefficient
+    -- components against `hquot` and `hincl`.
+    have hcomp := congrArg Subtype.val (DFunLike.congr_fun (cocyclesMap2_comp
+      (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
+      (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
+      (continuousFiniteQuotientMap G hVU) (fixedPointsInclusion hVU) continuous_of_discreteTopology
+      (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) G M
+      (ContinuousMonoidHom.quotientMk V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M).subtype
+      (continuous_fixedPoints_addSubgroup_subtype G M V.toSubgroup)
+      (subtype_quotientMk_smul G M V.toSubgroup)) c)
+    refine ((cocyclesMap2_coe _ _ _ _ _ _ _ _ _).symm.trans hcomp.symm).trans ?_
+    congr 3
   -- Pulling back to `G`, `d1` commutes with the pullback and `bV` becomes `b`.
   refine (cochainsMap2_d1
     (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
     (FixedPoints.addSubgroup V.toSubgroup M).subtype
     (subtype_quotientMk_smul G M V.toSubgroup) bV).trans ?_
-  rw [hbV_eq]
-  -- The transition followed by pullback to `G` is the inflation from `G ⧸ U`, by
-  -- `cocyclesMap2_comp` and the two factorizations `hquot` and `hincl`.
-  refine hd.trans (Eq.trans ?_ ((congrArg Subtype.val (DFunLike.congr_fun (cocyclesMap2_comp
-    (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
-    (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
-    (continuousFiniteQuotientMap G hVU) (fixedPointsInclusion hVU) continuous_of_discreteTopology
-    (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) G M
-    (ContinuousMonoidHom.quotientMk V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M).subtype
-    (continuous_fixedPoints_addSubgroup_subtype G M V.toSubgroup)
-    (subtype_quotientMk_smul G M V.toSubgroup)) c)).trans (cocyclesMap2_coe _ _ _ _ _ _ _ _ _)))
-  congr 3
-  exacts [hquot.symm, hincl.symm]
+  rw [hbV_eq, htransition]
+  exact hd
 
 /-- A degree-two class at a finite quotient which inflates to zero becomes zero after transition
 to a sufficiently deep finite quotient. This is the injectivity half of the degree-two
