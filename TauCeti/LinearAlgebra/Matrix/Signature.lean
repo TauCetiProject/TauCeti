@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Matrix.Notation
+public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 
 /-!
@@ -59,11 +60,6 @@ section CommRing
 variable {R : Type*} [CommRing R] {ι κ : Type*} [Fintype ι] [DecidableEq ι]
   [Fintype κ] [DecidableEq κ]
 
-/-- The quadratic form attached to a matrix, evaluated at a vector. -/
-theorem toQuadraticForm'_apply (A : Matrix ι ι R) (x : ι → R) :
-    A.toQuadraticForm' x = x ⬝ᵥ A *ᵥ x := by
-  simp [Matrix.toQuadraticForm', Matrix.toLinearMap₂'_apply']
-
 -- Not a `simp` lemma: `TauCeti.PDE.toQuadraticForm'_transpose` already normalises the same
 -- left-hand side pointwise on `EuclideanSpace ℝ n`, and the two cannot both be simp-normal.
 /-- A matrix and its transpose carry the same quadratic form. -/
@@ -81,14 +77,6 @@ theorem toQuadraticForm'_add_transpose (A : Matrix ι ι R) :
     add_mulVec, dotProduct_add, ← toQuadraticForm'_apply, ← toQuadraticForm'_apply,
     toQuadraticForm'_transpose]
   ring
-
-/-- Scaling a matrix scales its quadratic form. -/
-@[simp]
-theorem toQuadraticForm'_smul (c : R) (A : Matrix ι ι R) :
-    (c • A).toQuadraticForm' = c • A.toQuadraticForm' := by
-  ext x
-  rw [toQuadraticForm'_apply, _root_.smul_apply, smul_eq_mul, toQuadraticForm'_apply,
-    Matrix.smul_mulVec, dotProduct_smul, smul_eq_mul]
 
 /-- The quadratic form of `-A` is the negative of the quadratic form of `A`. -/
 @[simp]

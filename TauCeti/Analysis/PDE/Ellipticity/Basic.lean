@@ -12,7 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
-public import TauCeti.LinearAlgebra.Matrix.Signature
+public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 
 /-!
 # Uniform ellipticity for divergence-form PDE coefficients

@@ -34,6 +34,8 @@ complex matrix is its real signature (`Matrix.IsHermitian.signature_map_ofReal`)
 
 ## Main results
 
+* `Matrix.IsHermitian.signature_diagonal`: over any `RCLike` field, a real diagonal matrix counts
+  its positive entries against its negative ones.
 * `Matrix.IsHermitian.signature_realify`: the realification has twice the signature.
 * `Matrix.IsHermitian.signature_congr`: Sylvester's law of inertia for Hermitian matrices.
 * `Matrix.IsHermitian.signature_fromBlocks_zero`: additivity along a block diagonal.
@@ -72,6 +74,24 @@ theorem signature_zero :
     rw [Matrix.IsHermitian.eigenvalues_eq]
     simp
   simp [signature, h]
+
+/-- **The signature of a real diagonal matrix** counts its positive entries against its negative
+ones: the diagonal entries are the eigenvalues, up to the order in which they are listed. -/
+@[simp]
+theorem signature_diagonal {d : ι → ℝ} (hd : (diagonal fun i => (d i : 𝕜)).IsHermitian) :
+    hd.signature = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
+  -- Both lists of reals are the real parts of the roots of the characteristic polynomial.
+  have h : Multiset.map hd.eigenvalues Finset.univ.val = Multiset.map d Finset.univ.val := by
+    have hr := congrArg (Multiset.map RCLike.re) hd.roots_charpoly_eq_eigenvalues
+    rw [charpoly_diagonal, Polynomial.roots_prod _ _
+      (by simp [Finset.prod_ne_zero_iff, Polynomial.X_sub_C_ne_zero])] at hr
+    simpa [Multiset.map_map, Function.comp_def, Multiset.bind_singleton] using hr.symm
+  have hsum (e : ι → ℝ) : (∑ i, if 0 < e i then (1 : ℤ) else if e i < 0 then -1 else 0) =
+      (Multiset.map (fun x : ℝ => if 0 < x then (1 : ℤ) else if x < 0 then -1 else 0)
+        (Multiset.map e Finset.univ.val)).sum := by
+    rw [Multiset.map_map, Finset.sum_eq_multiset_sum]
+    rfl
+  rw [signature, hsum, h, ← hsum]
 
 end RCLike
 
