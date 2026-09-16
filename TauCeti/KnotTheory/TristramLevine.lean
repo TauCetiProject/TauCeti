@@ -12,7 +12,7 @@ public import TauCeti.KnotTheory.Signature
 # The Tristram--Levine signature of a Seifert matrix
 
 For a Seifert matrix `V` and a parameter `ω` on the unit circle, the *Tristram--Levine form* is
-the Hermitian matrix `(1 - ω) V + (1 - ω̄) Vᵀ` over `ℂ`, and the *Tristram--Levine signature*
+the Hermitian matrix `(1 - ω) V + (1 - conj ω) Vᵀ` over `ℂ`, and the *Tristram--Levine signature*
 `σ_ω(V)` is its signature. It is a one-parameter family refining the classical (Murasugi)
 signature, which is the value at `ω = -1`
 (`TauCeti.KnotTheory.tristramLevineSignature_neg_one`), and the family is not constant: for the
@@ -31,7 +31,7 @@ invariance under S-equivalence, is not proved here.
 
 ## Main definitions
 
-* `TauCeti.KnotTheory.tristramLevineForm`: the Hermitian form `(1 - ω) V + (1 - ω̄) Vᵀ`.
+* `TauCeti.KnotTheory.tristramLevineForm`: the Hermitian form `(1 - ω) V + (1 - conj ω) Vᵀ`.
 * `TauCeti.KnotTheory.tristramLevineSignature`: its signature.
 
 ## Main results
@@ -40,7 +40,7 @@ invariance under S-equivalence, is not proved here.
 * `TauCeti.KnotTheory.tristramLevineSignature_neg_one`: at `ω = -1` the classical signature.
 * `TauCeti.KnotTheory.tristramLevineSignature_one`: at `ω = 1` the signature vanishes.
 * `TauCeti.KnotTheory.tristramLevineSignature_congr`: invariance under congruence.
-* `TauCeti.KnotTheory.tristramLevineSignature_conj`: `ω` and `ω̄` give the same signature.
+* `TauCeti.KnotTheory.tristramLevineSignature_conj`: `ω` and `conj ω` give the same signature.
 * `TauCeti.KnotTheory.tristramLevineSignature_neg_transpose`: the mirror image, whose Seifert
   matrix is `-Vᵀ`, has the negated signature.
 * `TauCeti.KnotTheory.exists_tristramLevineSignature_trefoilSeifertMatrix_ne`: the trefoil's
@@ -67,7 +67,7 @@ namespace TauCeti.KnotTheory
 variable {ι : Type*}
 
 /-- The Tristram--Levine form of a Seifert matrix `V` at `ω`, the Hermitian matrix
-`(1 - ω) V + (1 - ω̄) Vᵀ` over `ℂ`. -/
+`(1 - ω) V + (1 - conj ω) Vᵀ` over `ℂ`. -/
 def tristramLevineForm (V : Matrix ι ι ℝ) (ω : ℂ) : Matrix ι ι ℂ :=
   (1 - ω) • V.map ((↑) : ℝ → ℂ) + (1 - conj ω) • (Vᵀ).map ((↑) : ℝ → ℂ)
 
@@ -77,7 +77,7 @@ theorem tristramLevineForm_apply (V : Matrix ι ι ℝ) (ω : ℂ) (i j : ι) :
   simp [tristramLevineForm]
 
 /-- **The Tristram--Levine form is Hermitian**, for every `ω`: conjugating an entry exchanges
-the roles of `ω` and `ω̄`, which is what transposing `V` does. -/
+the roles of `ω` and `conj ω`, which is what transposing `V` does. -/
 theorem tristramLevineForm_isHermitian (V : Matrix ι ι ℝ) (ω : ℂ) :
     (tristramLevineForm V ω).IsHermitian := by
   ext i j
@@ -96,7 +96,7 @@ theorem tristramLevineForm_neg_one (V : Matrix ι ι ℝ) :
   simp [Matrix.transpose_apply]
   ring
 
-/-- Replacing `ω` by `ω̄` conjugates the Tristram--Levine form entrywise. -/
+/-- Replacing `ω` by `conj ω` conjugates the Tristram--Levine form entrywise. -/
 theorem tristramLevineForm_conj (V : Matrix ι ι ℝ) (ω : ℂ) :
     tristramLevineForm V (conj ω) = (tristramLevineForm V ω).map (starRingEnd ℂ) := by
   ext i j
@@ -128,7 +128,7 @@ section Signature
 variable [Fintype ι] [DecidableEq ι]
 
 /-- The Tristram--Levine signature of a Seifert matrix `V` at `ω`: the signature of the
-Hermitian form `(1 - ω) V + (1 - ω̄) Vᵀ`. -/
+Hermitian form `(1 - ω) V + (1 - conj ω) Vᵀ`. -/
 noncomputable def tristramLevineSignature (V : Matrix ι ι ℝ) (ω : ℂ) : ℤ :=
   (tristramLevineForm_isHermitian V ω).signature
 
