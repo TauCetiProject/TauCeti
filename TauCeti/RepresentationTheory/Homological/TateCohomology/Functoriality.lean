@@ -252,7 +252,6 @@ def mapNormQuotient {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
     simpa only [LinearMap.comp_apply] using
       (LinearMap.congr_fun (Representation.IsIntertwiningMap.comp_norm hφ) y).symm)
 
-set_option backward.isDefEq.respectTransparency false in
 /-- The degree-zero Tate map sends the class of an invariant to the class of its image under the
 compatible coefficient map. -/
 @[reassoc (attr := simp), elementwise (attr := simp)]
@@ -264,27 +263,56 @@ theorem H0π_comp_map {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
         ModuleCat.ofHom M.ρ.invariants.subtype ≫ ModuleCat.ofHom φ := by
     ext
     rfl
+  have hcomplexMapZero :
+      (complexMap hφ).f 0 =
+        (groupCohomology.cochainsMap (e.symm : H →* G)
+          (IsIntertwiningMap.ofRes hφ)).f 0 :=
+    rfl
+  have hcochainsZero :
+      (groupCohomology.cochainsMap (e.symm : H →* G)
+          (IsIntertwiningMap.ofRes hφ)).f 0 ≫ (groupCohomology.cochainsIso₀ N).hom =
+        (groupCohomology.cochainsIso₀ M).hom ≫ ModuleCat.ofHom φ := by
+    rw [groupCohomology.cochainsMap_f_0_comp_cochainsIso₀]
+    simp only [Rep.Hom.toModuleCatHom, IsIntertwiningMap.ofRes_hom_toLinearMap]
+  have hcomponentZero :
+      (complexMap hφ).f 0 ≫ (groupCohomology.cochainsIso₀ N).hom =
+        (groupCohomology.cochainsIso₀ M).hom ≫ ModuleCat.ofHom φ :=
+    (congrArg (fun k ↦ k ≫ (groupCohomology.cochainsIso₀ N).hom)
+      hcomplexMapZero).trans hcochainsZero
   have hcycles :
       HomologicalComplex.cyclesMap (complexMap hφ) 0 ≫ (H0CyclesIso N).hom =
         (H0CyclesIso M).hom ≫ ModuleCat.ofHom (mapInvariants hφ) := by
     let _ : Mono (ModuleCat.ofHom N.ρ.invariants.subtype) :=
       (ModuleCat.mono_iff_injective _).2 Subtype.val_injective
     rw [← cancel_mono (ModuleCat.ofHom N.ρ.invariants.subtype)]
-    rw [Category.assoc, H0CyclesIso_hom_comp_subtype,
-      HomologicalComplex.cyclesMap_i_assoc]
+    rw [Category.assoc, H0CyclesIso_hom_comp_subtype]
     rw [Category.assoc, hmap, H0CyclesIso_hom_comp_subtype_assoc]
-    rw [complexMap, CochainComplex.ConnectData.map_f,
-      groupCohomology.cochainsMap_f_0_comp_cochainsIso₀]
-    simp only [Rep.Hom.toModuleCatHom, IsIntertwiningMap.ofRes_hom_toLinearMap]
+    calc
+      HomologicalComplex.cyclesMap (complexMap hφ) 0 ≫
+          (tateComplex N).iCycles 0 ≫ (groupCohomology.cochainsIso₀ N).hom =
+        (tateComplex M).iCycles 0 ≫ (complexMap hφ).f 0 ≫
+          (groupCohomology.cochainsIso₀ N).hom :=
+        HomologicalComplex.cyclesMap_i_assoc (complexMap hφ) 0 _
+      _ = (tateComplex M).iCycles 0 ≫ (groupCohomology.cochainsIso₀ M).hom ≫
+          ModuleCat.ofHom φ :=
+        congrArg (fun k ↦ (tateComplex M).iCycles 0 ≫ k) hcomponentZero
   have hcyclesInv :
       (H0CyclesIso M).inv ≫ HomologicalComplex.cyclesMap (complexMap hφ) 0 =
         ModuleCat.ofHom (mapInvariants hφ) ≫ (H0CyclesIso N).inv := by
     rw [← cancel_mono (H0CyclesIso N).hom]
     rw [Category.assoc, Category.assoc, hcycles]
     simp
+  have hπ :
+      H0homologyπ M ≫ map hφ 0 =
+        HomologicalComplex.cyclesMap (complexMap hφ) 0 ≫ H0homologyπ N := by
+    have hmapZero : map hφ 0 = H0homologyMap M N (complexMap hφ) :=
+      (map_def hφ 0).trans
+        (H0homologyMap_eq_homologyMap M N (complexMap hφ)).symm
+    rw [hmapZero]
+    exact H0homologyπ_naturality M N (complexMap hφ)
   rw [H0π_eq_cyclesIso_inv_comp_homologyπ,
-    H0π_eq_cyclesIso_inv_comp_homologyπ, map_def]
-  rw [Category.assoc, HomologicalComplex.homologyπ_naturality]
+    H0π_eq_cyclesIso_inv_comp_homologyπ]
+  rw [Category.assoc, hπ]
   rw [← Category.assoc, hcyclesInv]
   rw [Category.assoc]
 

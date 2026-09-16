@@ -73,28 +73,46 @@ private def shortComplex : ShortComplex (ModuleCat R) :=
   .mk M.norm.toModuleCatHom (d₀₁ M) (norm_comp_d_eq_zero M)
 
 /-- The degree-zero part of the Tate complex is the norm-to-coboundary short complex. -/
-private def isoShortComplex : (tateComplex M).sc 0 ≅ shortComplex M := by
+private def isoShortComplex' : (tateComplex M).sc' (-1) 0 1 ≅ shortComplex M := by
   have hnorm :
       (chainsIso₀ M).hom ≫ M.norm.toModuleCatHom = M.tateNorm ≫ (cochainsIso₀ M).hom := by
     simp only [Rep.tateNorm, Category.assoc, Iso.inv_hom_id, Category.comp_id]
-  exact (tateComplex M).isoSc' (-1) 0 1 (by simp) (by simp) ≪≫
-    ShortComplex.isoMk (by exact chainsIso₀ M) (cochainsIso₀ M) (cochainsIso₁ M)
-      hnorm (comp_d₀₁_eq M)
+  exact ShortComplex.isoMk (by exact chainsIso₀ M) (cochainsIso₀ M) (cochainsIso₁ M)
+    hnorm (comp_d₀₁_eq M)
 
-end Zero
+private def cyclesIso : (tateComplex M).cycles 0 ≅ (shortComplex M).cycles :=
+  (tateComplex M).cyclesIsoSc' (-1) 0 1 (by simp) (by simp) ≪≫
+    ShortComplex.cyclesMapIso (isoShortComplex' M)
 
-/-- Degree-zero Tate cohomology is the quotient of the invariant submodule by the image of the
-norm. -/
-def H0IsoNormQuotient (M : Rep R G) :
-    tateCohomology M 0 ≅
-      ModuleCat.of R (M.ρ.invariants ⧸ (range M.ρ.norm).submoduleOf M.ρ.invariants) := calc
-  tateCohomology M 0
-      ≅ (Zero.shortComplex M).homology :=
-    ShortComplex.homologyMapIso (Zero.isoShortComplex M)
-  _ ≅ ModuleCat.of R (LinearMap.ker (d₀₁ M).hom ⧸ _) :=
-    ShortComplex.moduleCatHomologyIso _
-  _ ≅ ModuleCat.of R
-      (M.ρ.invariants ⧸ (range M.ρ.norm).submoduleOf M.ρ.invariants) := by
+@[reassoc]
+private theorem cyclesIso_hom_comp_iCycles :
+    (cyclesIso M).hom ≫ (shortComplex M).iCycles =
+      (tateComplex M).iCycles 0 ≫ (cochainsIso₀ M).hom := by
+  simp only [cyclesIso, Iso.trans_hom, Category.assoc, ShortComplex.cyclesMapIso_hom,
+    ShortComplex.cyclesMap_i, HomologicalComplex.cyclesIsoSc'_hom_iCycles_assoc]
+  rfl
+
+private def cyclesIsoInvariants :
+    (shortComplex M).cycles ≅ ModuleCat.of R M.ρ.invariants :=
+  (shortComplex M).moduleCatCyclesIso ≪≫ eqToIso (by rfl) ≪≫
+      (LinearEquiv.ofEq _ _ (d₀₁_ker_eq_invariants M)).toModuleIso
+
+@[reassoc]
+private theorem cyclesIsoInvariants_hom_comp_subtype :
+    (cyclesIsoInvariants M).hom ≫ ModuleCat.ofHom M.ρ.invariants.subtype =
+      (shortComplex M).iCycles := by
+  ext
+  rfl
+
+private def homologyIso :
+    (tateComplex M).homology 0 ≅ (shortComplex M).homology :=
+  (tateComplex M).homologyIsoSc' (-1) 0 1 (by simp) (by simp) ≪≫
+    ShortComplex.homologyMapIso (isoShortComplex' M)
+
+private def homologyIsoNormQuotient :
+    (shortComplex M).homology ≅
+      ModuleCat.of R (M.ρ.invariants ⧸ (range M.ρ.norm).submoduleOf M.ρ.invariants) :=
+  (shortComplex M).moduleCatHomologyIso ≪≫ eqToIso (by rfl) ≪≫ by
     refine (Submodule.Quotient.equiv _ _
       (LinearEquiv.ofEq _ _ (d₀₁_ker_eq_invariants M)) ?_).toModuleIso
     refine Submodule.ext fun ⟨x, hx⟩ ↦ ⟨?_, ?_⟩
@@ -103,63 +121,99 @@ def H0IsoNormQuotient (M : Rep R G) :
     · rintro ⟨y, rfl⟩
       exact ⟨⟨M.norm.hom y, norm_comp_d_eq_zero_apply _ y⟩, ⟨_, rfl⟩, rfl⟩
 
+@[reassoc]
+private theorem cyclesIso_inv_comp_homologyπ_comp_homologyIso_hom :
+    (cyclesIso M).inv ≫ (tateComplex M).homologyπ 0 ≫ (homologyIso M).hom =
+      (shortComplex M).homologyπ := by
+  simp only [cyclesIso, homologyIso, Iso.trans_inv, Iso.trans_hom, Category.assoc,
+    HomologicalComplex.π_homologyIsoSc'_hom_assoc, Iso.inv_hom_id_assoc,
+    ShortComplex.homologyMapIso_hom]
+  rw [ShortComplex.homologyπ_naturality]
+  exact Iso.inv_hom_id_assoc (ShortComplex.cyclesMapIso (isoShortComplex' M)) _
+
+private theorem cyclesIsoInvariants_inv_comp_homologyπ_comp_homologyIsoNormQuotient_hom :
+    (cyclesIsoInvariants M).inv ≫ (shortComplex M).homologyπ ≫
+        (homologyIsoNormQuotient M).hom =
+      ModuleCat.ofHom (Submodule.mkQ
+        ((range M.ρ.norm).submoduleOf M.ρ.invariants)) := by
+  simp only [cyclesIsoInvariants, homologyIsoNormQuotient, Iso.trans_inv, Iso.trans_hom,
+    Category.assoc, Iso.inv_hom_id_assoc, ShortComplex.moduleCatCyclesIso_inv_π_assoc]
+  ext x
+  simp only [ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, LinearMap.coe_comp,
+    Function.comp_apply, Submodule.mkQ_apply]
+  simp only [shortComplex, Submodule.Quotient.equiv]
+  rfl
+
+end Zero
+
+private def H0IsoHomology (M : Rep R G) :
+    tateCohomology M 0 ≅ (tateComplex M).homology 0 :=
+  Iso.refl _
+
+/-- Degree-zero Tate cohomology is the quotient of the invariant submodule by the image of the
+norm. -/
+def H0IsoNormQuotient (M : Rep R G) :
+    tateCohomology M 0 ≅
+      ModuleCat.of R (M.ρ.invariants ⧸ (range M.ρ.norm).submoduleOf M.ρ.invariants) :=
+  H0IsoHomology M ≪≫ Zero.homologyIso M ≪≫ Zero.homologyIsoNormQuotient M
+
 /-- The cycles in degree zero of the Tate complex are the invariant submodule. -/
 def H0CyclesIso (M : Rep R G) :
     (tateComplex M).cycles 0 ≅ ModuleCat.of R M.ρ.invariants :=
-  ShortComplex.cyclesMapIso (Zero.isoShortComplex M) ≪≫
-    (Zero.shortComplex M).moduleCatCyclesIso ≪≫
-      (LinearEquiv.ofEq _ _ (d₀₁_ker_eq_invariants M)).toModuleIso
+  Zero.cyclesIso M ≪≫
+    Zero.cyclesIsoInvariants M
 
-set_option backward.isDefEq.respectTransparency false in
 /-- Under the degree-zero identification, including a cycle into the Tate complex is the same as
 including the corresponding invariant into the coefficient module. -/
 @[reassoc]
 theorem H0CyclesIso_hom_comp_subtype (M : Rep R G) :
     (H0CyclesIso M).hom ≫ ModuleCat.ofHom M.ρ.invariants.subtype =
       (tateComplex M).iCycles 0 ≫ (cochainsIso₀ M).hom := by
-  dsimp [H0CyclesIso]
-  have heq :
-      (LinearEquiv.ofEq (LinearMap.ker (d₀₁ M).hom) M.ρ.invariants
-          (d₀₁_ker_eq_invariants M)).toModuleIso.hom ≫
-          ModuleCat.ofHom M.ρ.invariants.subtype =
-        (Zero.shortComplex M).moduleCatLeftHomologyData.i := by
-    ext
-    rfl
-  simp only [Category.assoc, heq]
-  rw [ShortComplex.moduleCatCyclesIso_hom_i, ShortComplex.cyclesMapIso_hom,
-    ShortComplex.cyclesMap_i]
-  rfl
+  simp only [H0CyclesIso, Iso.trans_hom, Category.assoc,
+    Zero.cyclesIsoInvariants_hom_comp_subtype]
+  exact Zero.cyclesIso_hom_comp_iCycles M
 
 /-- The map from invariant representatives to degree-zero Tate cohomology. -/
 def H0π (M : Rep R G) : ModuleCat.of R M.ρ.invariants ⟶ tateCohomology M 0 :=
   ModuleCat.ofHom (Submodule.mkQ ((range M.ρ.norm).submoduleOf M.ρ.invariants)) ≫
     (H0IsoNormQuotient M).inv
 
-set_option backward.isDefEq.respectTransparency false in
+/-- The canonical projection from degree-zero cycles to degree-zero Tate cohomology. -/
+def H0homologyπ (M : Rep R G) :
+    (tateComplex M).cycles 0 ⟶ tateCohomology M 0 :=
+  (tateComplex M).homologyπ 0 ≫ (H0IsoHomology M).inv
+
+/-- The map on degree-zero Tate cohomology induced by a map of Tate complexes. -/
+def H0homologyMap {H : Type u} [Group H] [Fintype H] (M : Rep R G) (N : Rep R H)
+    (f : tateComplex M ⟶ tateComplex N) : tateCohomology M 0 ⟶ tateCohomology N 0 :=
+  (H0IsoHomology M).hom ≫ HomologicalComplex.homologyMap f 0 ≫ (H0IsoHomology N).inv
+
+/-- The degree-zero wrapper for a homology map is the underlying homology map. -/
+theorem H0homologyMap_eq_homologyMap {H : Type u} [Group H] [Fintype H]
+    (M : Rep R G) (N : Rep R H) (f : tateComplex M ⟶ tateComplex N) :
+    H0homologyMap M N f = HomologicalComplex.homologyMap f 0 := by
+  unfold H0homologyMap H0IsoHomology
+  cat_disch
+
+@[reassoc]
+theorem H0homologyπ_naturality {H : Type u} [Group H] [Fintype H] (M : Rep R G) (N : Rep R H)
+    (f : tateComplex M ⟶ tateComplex N) :
+    H0homologyπ M ≫ H0homologyMap M N f =
+      HomologicalComplex.cyclesMap f 0 ≫ H0homologyπ N := by
+  simp only [H0homologyπ, H0homologyMap, Category.assoc, Iso.inv_hom_id_assoc]
+  exact HomologicalComplex.homologyπ_naturality f 0
+
 /-- The representative map to degree-zero Tate cohomology is the canonical projection from
 degree-zero cycles to homology, after identifying those cycles with the invariants. -/
 theorem H0π_eq_cyclesIso_inv_comp_homologyπ (M : Rep R G) :
-    H0π M = (H0CyclesIso M).inv ≫ (tateComplex M).homologyπ 0 := by
+    H0π M = (H0CyclesIso M).inv ≫ H0homologyπ M := by
   rw [← cancel_mono (H0IsoNormQuotient M).hom]
-  simp only [H0π, H0IsoNormQuotient, Iso.trans_def, Iso.trans_assoc, Iso.trans_inv,
-    LinearEquiv.toModuleIso_inv, Submodule.Quotient.equiv_symm, LinearEquiv.ofEq_symm,
-    ShortComplex.homologyMapIso_inv, Category.assoc, Iso.trans_hom,
-    ShortComplex.homologyMapIso_hom, LinearEquiv.toModuleIso_hom, H0CyclesIso,
-    ShortComplex.cyclesMapIso_inv]
-  dsimp only [HomologicalComplex.homologyπ]
-  rw [← ShortComplex.homologyπ_naturality_assoc]
-  rw [← ShortComplex.homologyMapIso_inv, ← ShortComplex.homologyMapIso_hom]
-  rw [Iso.inv_hom_id_assoc (ShortComplex.homologyMapIso (Zero.isoShortComplex M))]
-  rw [ShortComplex.moduleCatCyclesIso_inv_π_assoc]
-  rw [Iso.inv_hom_id_assoc (Zero.shortComplex M).moduleCatHomologyIso]
-  ext x
-  simp only [ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, LinearEquiv.comp_coe,
-    LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, Submodule.mkQ_apply,
-    LinearEquiv.trans_apply, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply,
-    ShortComplex.moduleCatLeftHomologyData_π_hom]
-  simp only [Zero.shortComplex]
-  simp only [Submodule.Quotient.equiv]
-  rfl
+  simp only [H0π, H0IsoNormQuotient, H0CyclesIso, H0homologyπ, Iso.trans_inv,
+    Iso.trans_hom, Category.assoc, Iso.inv_hom_id_assoc]
+  simp only [Iso.inv_hom_id, Category.comp_id]
+  rw [Zero.cyclesIso_inv_comp_homologyπ_comp_homologyIso_hom_assoc]
+  exact
+    (Zero.cyclesIsoInvariants_inv_comp_homologyπ_comp_homologyIsoNormQuotient_hom M).symm
 
 instance (M : Rep R G) : Epi (H0π M) :=
   have : Epi (ModuleCat.ofHom (Submodule.mkQ ((range M.ρ.norm).submoduleOf M.ρ.invariants))) :=
