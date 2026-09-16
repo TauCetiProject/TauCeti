@@ -148,8 +148,8 @@ noncomputable def specializedPointsMulEquiv :
       points R :=
   (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (baseChangeCoordinateIso R)
       (CommAlgCat.of R R)).trans
-    (pointsMulEquiv
-      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ R) (CommAlgCat.of R R)))
+    (pointsPresentation
+      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ R) (CommAlgCat.of R R))).mulEquiv
 
 /-- Under the specialized point equivalence, the quotient point is represented by the carrier
 point's ambient general-linear matrix. -/
@@ -166,7 +166,8 @@ theorem quotientPointsHom_specializedPointsMulEquiv_symm (g : points R) :
           (CommHopfAlgCat.quotientPointsHom
             (GeneralLinear.coordinateHopfAlgebra R 56) (baseChangeDefiningIdeal R)
             (CommAlgCat.of R R) ((specializedPointsMulEquiv R).symm g)) := by
-    rw [specializedPointsMulEquiv, MulEquiv.trans_apply, coe_pointsMulEquiv_apply]
+    rw [specializedPointsMulEquiv, MulEquiv.trans_apply,
+    GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply]
     exact GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
       56 definingIdeal (baseChangeDefiningIdeal R) (baseChangeCoordinateIso R)
       (mkQuotient_comp_baseChangeCoordinateIso_hom R) (CommAlgCat.of R R) _

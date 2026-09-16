@@ -45,6 +45,7 @@ rank is additive.
 * `TauCeti.exists_presentedForm_equivalent`: every regular form has a diagonal presentation.
 * `TauCeti.formClass_mk`: the class of a form is computed by any of its diagonalizations.
 * `TauCeti.formClass_eq_iff`: two regular forms are isometric exactly when their classes agree.
+* `TauCeti.RegularFormPresentation.prod_append`: concatenation multiplies the weight products.
 * `TauCeti.presentedFormAppendIsometryEquiv`: concatenating weights presents the orthogonal sum.
 * `TauCeti.presentedFormConsIsometryEquiv`: peeling the first weight off presents the form as a
   line orthogonal to the presentation of the remaining weights.
@@ -179,6 +180,17 @@ theorem RegularFormPresentation.append_apply_natAdd (p q : RegularFormPresentati
     (RegularFormPresentation.append p q).2
       (Fin.cast (RegularFormPresentation.fst_append p q).symm (Fin.natAdd p.1 j)) = q.2 j := by
   simp [RegularFormPresentation.append]
+
+/-- The weight product of a concatenation is the product of the two weight products. -/
+theorem RegularFormPresentation.prod_append (p q : RegularFormPresentation K) :
+    (∏ i, (RegularFormPresentation.append p q).2 i) = (∏ i, p.2 i) * ∏ j, q.2 j := by
+  have h := Fin.prod_univ_add (M := Kˣ)
+    (f := fun i : Fin (p.1 + q.1) =>
+      (RegularFormPresentation.append p q).2
+        (Fin.cast (RegularFormPresentation.fst_append p q).symm i))
+  simp only [RegularFormPresentation.append_apply_castAdd,
+    RegularFormPresentation.append_apply_natAdd] at h
+  exact h
 
 /-- The value of an orthogonal product on the two halves of a concatenated coordinate vector. -/
 private theorem prod_apply_split {m n : ℕ} (w : Fin m → Kˣ) (v : Fin n → Kˣ)

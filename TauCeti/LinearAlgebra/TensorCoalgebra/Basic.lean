@@ -37,6 +37,7 @@ the `DGAInfinity` roadmap.
   even when the two sides present its length by different arithmetic expressions.
 * `TauCeti.ReducedTensorWords.subword_congr`: equal-length blocks in different ambient tuples or
   at different offsets agree when their letters agree.
+* `TauCeti.ReducedTensorWords.map_subword`: mapping a block applies the map to each of its letters.
 * `TauCeti.ReducedTensorWords.deconcatenation_subword`: deconcatenation of a block.
 
 ## References
@@ -300,6 +301,19 @@ theorem map_of_tprod (f : M →ₗ[R] N) (n : {n : ℕ // 0 < n}) (x : Fin n.1 �
     ReducedTensorWords.map (R := R) f (of R M n (PiTensorProduct.tprod R x)) =
       of R N n (PiTensorProduct.tprod R fun i ↦ f (x i)) := by
   simp
+
+/-- Mapping a block of a tensor word applies the map to each letter in the block. -/
+theorem map_subword (f : M →ₗ[R] N) {n : ℕ} (x : Fin n → M) (a b : ℕ) :
+    ReducedTensorWords.map (R := R) f (subword R x a b) =
+      subword R (fun i ↦ f (x i)) a b := by
+  rcases Nat.eq_zero_or_pos b with rfl | hb
+  · simp only [subword_length_zero, map_zero]
+  · by_cases hab : a + b ≤ n
+    · rw [subword_eq_of_tprod R x hb hab,
+        subword_eq_of_tprod R (fun i ↦ f (x i)) hb hab, map_of_tprod]
+    · have hlt : n < a + b := by omega
+      rw [subword_eq_zero_of_lt_add R x hlt,
+        subword_eq_zero_of_lt_add R (fun i ↦ f (x i)) hlt, map_zero]
 
 /-- Mapping the identity map over the letters is the identity. -/
 @[simp]

@@ -41,10 +41,16 @@ merges. The degree section is instead ported from the AINTLIB `LeanModularForms`
   in `Γ₁gΓ₂`; finite for a Hecke triple. Its mirror `DecompQuotient Γ₂ Γ₁ g⁻¹` indexes the
   right cosets `Γ₁a`, and is finite too.
 * `DoubleCoset.decompQuotientEquivMapOfInjective`: that quotient transported along an injective
-  homomorphism, with `DoubleCoset.map_subgroupOf_smul` for the subgroup underneath it. This is
-  what carries a decomposition out of `GL (Fin 2) ℚ`, which does not act on `ℍ`, into
-  `GL (Fin 2) ℝ`, which does; `DoubleCoset.decompQuotientEquivMap`
-  (`HeckeRing/Multiplicity/Equiv.lean`) is its special case at an isomorphism.
+  homomorphism, with `DoubleCoset.map_subgroupOf_smul` for the subgroup underneath it;
+  `DoubleCoset.decompQuotientEquivMap` (`HeckeRing/Multiplicity/Equiv.lean`) is its special case
+  at an isomorphism.
+* `DoubleCoset.decompQuotientEquivMapOfKerInfLe`: the same transport **without** injectivity,
+  under an ambient subgroup `H` containing `Γ₂` and receiving `g⁻¹ Γ₁ g`, and
+  `φ.ker ⊓ H ≤ Γ₂`. The target element is supplied by an equation `hd : φ g = d`, so a consumer
+  holding `(φ g)⁻¹` rather than `φ g⁻¹` needs no type transport of its own. This is the version a
+  fundamental-domain statement needs: the group that acts
+  faithfully on `ℍ` is a *quotient*, so the homomorphism reaching it is deliberately non-injective,
+  and the kernel is absorbed by the denominator instead.
 * `HeckeCosetModule.single`: the basis element `b • [D]` of the Hecke coset module, with
   `single_apply`, `sum_single_index`, `smul_single_one`, `single_add`, `induction_linear`,
   and the `Module R` instance `HeckeCosetModule.instModule`.
@@ -256,10 +262,17 @@ lemma map_subgroupOf_smul {G' : Type*} [Group G'] (φ : G →* G') (hφ : Functi
 `Γ₁ ⧸ (Γ₁ ∩ gΓ₂g⁻¹)` and `φ(Γ₁) ⧸ (φ(Γ₁) ∩ φ(g)φ(Γ₂)φ(g)⁻¹)` are in bijection, by `φ` on
 representatives.
 
-This is what carries a Hecke decomposition into a group that acts. `HeckeRing.GL2.heckeSlashSum`
-is indexed by `DecompQuotient Γ₂ Γ₁ δ⁻¹` over `GL (Fin 2) ℚ`, which does not act on `ℍ`; the slash
-goes through `Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ)`, and that map is injective, so the
-index transports to the real side where a fundamental-domain tiling can be stated. -/
+This is index transport along an injective map, and nothing more: it identifies the two
+decomposition quotients, leaving the acting group unchanged. `G` and `G'` are arbitrary groups
+here, with no action in sight.
+
+It does **not** supply a fundamental-domain tiling, and the reason is specific to the modular
+setting rather than general: there the target acts on `ℍ` through a matrix group modulo scalars, so
+an injective `φ` retains `-I ∈ Γ₂`, whose image is a non-identity element acting trivially — and
+`MeasureTheory.IsFundamentalDomain` then holds for no set of positive measure, its disjointness
+being `Pairwise` over distinct group elements. `decompQuotientEquivMapOfKerInfLe` is the version for
+that application: it drops injectivity for a kernel condition, which is what leaves room for a
+faithful action downstream. -/
 noncomputable def decompQuotientEquivMapOfInjective {G' : Type*} [Group G'] (φ : G →* G')
     (hφ : Function.Injective φ) (Γ₁ Γ₂ : Subgroup G) (g : G) :
     DecompQuotient Γ₁ Γ₂ g ≃ DecompQuotient (Γ₁.map φ) (Γ₂.map φ) (φ g) :=
@@ -273,6 +286,68 @@ theorem decompQuotientEquivMapOfInjective_mk {G' : Type*} [Group G'] (φ : G →
       QuotientGroup.mk (Subgroup.equivMapOfInjective Γ₁ φ hφ y) := by
   unfold decompQuotientEquivMapOfInjective
   exact TauCeti.QuotientGroup.congrOfMapEq_mk _ _ _
+
+open scoped Pointwise in
+/-- **The stabilizer of the decomposition transports along `φ`.** The image under `φ` of
+`(gΓ₂g⁻¹ ∩ Γ₁)`, viewed inside `Γ₁`, is `(φ(g)φ(Γ₂)φ(g)⁻¹ ∩ φ(Γ₁))` viewed inside `φ(Γ₁)`.
+
+Injectivity of `φ` is not required. In its place: an ambient subgroup `H` containing `Γ₂` and
+receiving `g⁻¹ Γ₁ g`, together with `φ.ker ⊓ H ≤ Γ₂`. The kernel may therefore be
+nontrivial, which is what lets the decomposition reach a group acting faithfully on `ℍ`; the
+injective version is `map_subgroupOf_smul`. -/
+lemma map_subgroupOf_smul_of_ker_inf_le {G' : Type*} [Group G'] (φ : G →* G')
+    (Γ₁ Γ₂ H : Subgroup G) (g : G) (h₂ : Γ₂ ≤ H)
+    (hconj : ∀ y ∈ Γ₁, g⁻¹ * y * g ∈ H) (hker : φ.ker ⊓ H ≤ Γ₂) :
+    ((ConjAct.toConjAct g • Γ₂).subgroupOf Γ₁).map (φ.subgroupMap Γ₁) =
+      (ConjAct.toConjAct (φ g) • (Γ₂.map φ)).subgroupOf (Γ₁.map φ) := by
+  ext x
+  simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf,
+    Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def,
+    ConjAct.ofConjAct_toConjAct, ConjAct.ofConjAct_inv, inv_inv]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    refine ⟨g⁻¹ * (y : G) * g, hy, ?_⟩
+    simp [map_mul, map_inv, mul_assoc]
+  · rintro ⟨z, hz, hzx⟩
+    obtain ⟨y, hy, hyx⟩ := x.2
+    refine ⟨⟨y, hy⟩, ?_, Subtype.ext hyx⟩
+    have hφ : φ (g⁻¹ * y * g) = φ z := by rw [hzx, ← hyx]; simp [mul_assoc]
+    have hmemker : z⁻¹ * (g⁻¹ * y * g) ∈ φ.ker := by simp [MonoidHom.mem_ker, hφ]
+    have hmemH : z⁻¹ * (g⁻¹ * y * g) ∈ H :=
+      H.mul_mem (H.inv_mem (h₂ hz)) (hconj y hy)
+    rw [← mul_inv_cancel_left z (g⁻¹ * y * g)]
+    exact Γ₂.mul_mem hz (hker ⟨hmemker, hmemH⟩)
+
+open scoped Pointwise in
+/-- **The decomposition quotient transports without injectivity**, under an ambient subgroup.
+The kernel is absorbed by the denominator, so the index is unchanged. -/
+noncomputable def decompQuotientEquivMapOfKerInfLe {G' : Type*} [Group G'] (φ : G →* G')
+    (Γ₁ Γ₂ H : Subgroup G) (g : G) {d : G'} (hd : φ g = d) (h₂ : Γ₂ ≤ H)
+    (hconj : ∀ y ∈ Γ₁, g⁻¹ * y * g ∈ H) (hker : φ.ker ⊓ H ≤ Γ₂) :
+    DecompQuotient Γ₁ Γ₂ g ≃ DecompQuotient (Γ₁.map φ) (Γ₂.map φ) d :=
+  hd ▸ TauCeti.QuotientGroup.congrOfSurjectiveOfKerLe (φ.subgroupMap Γ₁)
+    (MonoidHom.subgroupMap_surjective φ Γ₁)
+    (by
+      rw [Subgroup.ker_subgroupMap]
+      intro y hy
+      have hyker : (y : G) ∈ φ.ker := (Subgroup.mem_subgroupOf).mp hy
+      refine (Subgroup.mem_subgroupOf).mpr ?_
+      rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def,
+        ConjAct.ofConjAct_inv, ConjAct.ofConjAct_toConjAct, inv_inv]
+      refine hker ⟨?_, hconj (y : G) y.2⟩
+      simpa [mul_assoc] using (MonoidHom.normal_ker φ).conj_mem (y : G) hyker g⁻¹)
+    (map_subgroupOf_smul_of_ker_inf_le φ Γ₁ Γ₂ H g h₂ hconj hker)
+
+open scoped Pointwise in
+@[simp]
+theorem decompQuotientEquivMapOfKerInfLe_mk {G' : Type*} [Group G'] (φ : G →* G')
+    (Γ₁ Γ₂ H : Subgroup G) (g : G) {d : G'} (hd : φ g = d) (h₂ : Γ₂ ≤ H)
+    (hconj : ∀ y ∈ Γ₁, g⁻¹ * y * g ∈ H) (hker : φ.ker ⊓ H ≤ Γ₂) (y : Γ₁) :
+    decompQuotientEquivMapOfKerInfLe φ Γ₁ Γ₂ H g hd h₂ hconj hker (QuotientGroup.mk y) =
+      QuotientGroup.mk (φ.subgroupMap Γ₁ y) := by
+  subst hd
+  unfold decompQuotientEquivMapOfKerInfLe
+  exact TauCeti.QuotientGroup.congrOfSurjectiveOfKerLe_mk _ _ _ _ _
 
 /-- Equality of classes in `DecompQuotient H₁ H₂ g` gives the conjugation relation between their
 representatives: `u₁⁻¹ u₂` lies in the stabilizer indexing the decomposition, so conjugating it

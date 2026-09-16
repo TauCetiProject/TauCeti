@@ -17,7 +17,8 @@ semidefinite (`CFC.sqrt_nonneg`), hence Hermitian. Sandwiching a Hermitian matri
 two copies of it gives the Hermitian matrix `CFC.sqrt S * Θ * CFC.sqrt S`, whose quadratic form
 is the pullback of the quadratic form of `Θ` along `CFC.sqrt S`. For positive-semidefinite `S`,
 its pencils `1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)` have the same determinant as those of
-`Θ * S`, by Sylvester's determinant identity and `CFC.sqrt S * CFC.sqrt S = S`.
+`Θ * S`, by Sylvester's determinant identity and `CFC.sqrt S * CFC.sqrt S = S`; by cyclicity, the
+sandwich and its square also have the same traces as `Θ * S` and `Θ * S * Θ * S`.
 
 The sandwich is the matrix whose eigenvalues govern the exponential moments of a Gaussian
 quadratic form, and the determinant identity is what turns its spectral formula into a formula
@@ -32,7 +33,10 @@ in the original parameters.
 * `Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin` — the quadratic form of `Θ` at
   `CFC.sqrt S x` is the quadratic form of the sandwich at `x`;
 * `Matrix.PosSemidef.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul` — for
-  positive-semidefinite `S`, the pencil determinants of the sandwich and of `Θ * S` agree.
+  positive-semidefinite `S`, the pencil determinants of the sandwich and of `Θ * S` agree;
+* `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt` and
+  `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self` — for positive-semidefinite `S`, the traces
+  of the sandwich and of its square are those of `Θ * S` and `Θ * S * Θ * S`.
 -/
 
 public section
@@ -84,5 +88,26 @@ theorem PosSemidef.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul [D
     CFC.sqrt_mul_sqrt_self S hS.nonneg
   rw [← Matrix.smul_mul, det_one_sub_mul_comm, Matrix.mul_smul, ← Matrix.mul_assoc, hsq,
     ← Matrix.smul_mul, det_one_sub_mul_comm, Matrix.mul_smul]
+
+open scoped Classical in
+/-- For positive-semidefinite `S`, the trace of the sandwich `CFC.sqrt S * M * CFC.sqrt S` is the
+trace of `M * S`. -/
+theorem PosSemidef.trace_sqrt_mul_mul_sqrt {S : Matrix ι ι 𝕜} (hS : S.PosSemidef)
+    (M : Matrix ι ι 𝕜) :
+    (CFC.sqrt S * M * CFC.sqrt S).trace = (M * S).trace := by
+  rw [trace_mul_cycle, CFC.sqrt_mul_sqrt_self S hS.nonneg, trace_mul_comm]
+
+open scoped Classical in
+/-- For positive-semidefinite `S`, the trace of the square of the sandwich
+`CFC.sqrt S * M * CFC.sqrt S` is the trace of `M * S * M * S`. -/
+theorem PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self {S : Matrix ι ι 𝕜} (hS : S.PosSemidef)
+    (M : Matrix ι ι 𝕜) :
+    ((CFC.sqrt S * M * CFC.sqrt S) * (CFC.sqrt S * M * CFC.sqrt S)).trace =
+      (M * S * M * S).trace := by
+  have hreassoc :
+      (CFC.sqrt S * M * CFC.sqrt S) * (CFC.sqrt S * M * CFC.sqrt S) =
+        CFC.sqrt S * (M * (CFC.sqrt S * CFC.sqrt S) * M) * CFC.sqrt S := by
+    simp only [Matrix.mul_assoc]
+  rw [hreassoc, trace_mul_cycle, CFC.sqrt_mul_sqrt_self S hS.nonneg, trace_mul_comm]
 
 end Matrix

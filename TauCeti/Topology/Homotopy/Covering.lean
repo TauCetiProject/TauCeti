@@ -30,15 +30,15 @@ separately identifies `H` as a subgroup of the image of `p_*`.
 
 ## Main declarations
 
-* `TauCeti.IsCoveringMap.map_injective` and `TauCeti.IsCoveringMap.mapOfEq_injective`: a
+* `IsCoveringMap.map_injective` and `IsCoveringMap.mapOfEq_injective`: a
   covering map is injective on fundamental groups.
-* `TauCeti.IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le_subgroup`: lift when
+* `IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le_subgroup`: lift when
   `f_* π₁(A, a₀) ≤ H ≤ p_* π₁(E, e₀)`.
-* `existsUnique_continuousMap_lifts_of_subsingleton_fundamentalGroup`: lift when the source
-  fundamental group is subsingleton.
-* `TauCeti.IsCoveringMap.fundamentalGroupEquivFiber`: the monodromy bijection
+* `IsCoveringMap.existsUnique_continuousMap_lifts_of_subsingleton_fundamentalGroup`: lift when
+  the source fundamental group is subsingleton.
+* `IsCoveringMap.fundamentalGroupEquivFiber`: the monodromy bijection
   `FundamentalGroup X x ≃ p ⁻¹' {x}`, `γ ↦ monodromy γ e`.
-* `TauCeti.IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply`: the inverse sends a
+* `IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply`: the inverse sends a
   fibre point to the loop class whose monodromy translate of the chosen lift is that point.
 
 ## References
@@ -61,7 +61,7 @@ open _root_.FundamentalGroup
 /-- A covering map induces an injective map on fundamental groups. This is the fundamental-group
 form of Mathlib's `IsCoveringMap.injective_path_homotopic_map`, which states the same injectivity
 for every Hom-set of the fundamental groupoid. -/
-theorem IsCoveringMap.map_injective (hp : _root_.IsCoveringMap p) (e : E) :
+theorem _root_.IsCoveringMap.map_injective (hp : _root_.IsCoveringMap p) (e : E) :
     Function.Injective (_root_.FundamentalGroup.map ⟨p, hp.continuous⟩ e) := by
   intro δ δ' h
   rw [FundamentalGroup.map_apply, FundamentalGroup.map_apply] at h
@@ -72,7 +72,8 @@ an equality `p e = x` of basepoints.
 
 Combined with `MonoidHom.ofInjective`, this exhibits the image subgroup `p_* π₁(E, e)` as a copy
 of `π₁(E, e)`. -/
-theorem IsCoveringMap.mapOfEq_injective (hp : _root_.IsCoveringMap p) {e : E} (he : p e = x) :
+theorem _root_.IsCoveringMap.mapOfEq_injective
+    (hp : _root_.IsCoveringMap p) {e : E} (he : p e = x) :
     Function.Injective (_root_.FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ he) :=
   (CategoryTheory.eqToIso (congrArg FundamentalGroupoid.mk he)).conj.injective.comp
     (IsCoveringMap.map_injective hp e)
@@ -83,7 +84,7 @@ intermediate subgroup `H ≤ π₁(X, f a₀)`.
 This is the form used when a cover is known to have recovered subgroup `H`: to lift `f`, it
 suffices to show that `f_* π₁(A, a₀)` lies in `H`, and that `H` is contained in the image of
 `p_* π₁(E, e₀)`. -/
-theorem IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le_subgroup
+theorem _root_.IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le_subgroup
     (hp : _root_.IsCoveringMap p) [PathConnectedSpace A] [LocallyPathConnectedSpace A]
     {f : C(A, X)} {a₀ : A} {e₀ : E} (he : p e₀ = f a₀)
     (H : Subgroup (_root_.FundamentalGroup X (f a₀)))
@@ -94,7 +95,7 @@ theorem IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le_subgroup
 
 /-- The lifting criterion when the source fundamental group at `a₀` is subsingleton. In this
 case the induced subgroup `f_* π₁(A, a₀)` is trivial. -/
-theorem IsCoveringMap.existsUnique_continuousMap_lifts_of_subsingleton_fundamentalGroup
+theorem _root_.IsCoveringMap.existsUnique_continuousMap_lifts_of_subsingleton_fundamentalGroup
     (hp : _root_.IsCoveringMap p) [PathConnectedSpace A] [LocallyPathConnectedSpace A]
     {f : C(A, X)} {a₀ : A} {e₀ : E}
     [Subsingleton (_root_.FundamentalGroup A a₀)] (he : p e₀ = f a₀) :
@@ -105,7 +106,7 @@ theorem IsCoveringMap.existsUnique_continuousMap_lifts_of_subsingleton_fundament
 
 /-- Choosing a basepoint lift `e` in the fibre over `x` identifies the fundamental group of
 the base with that fibre, via `γ ↦ monodromy γ e`. -/
-@[expose] noncomputable def IsCoveringMap.fundamentalGroupEquivFiber [SimplyConnectedSpace E]
+noncomputable def _root_.IsCoveringMap.fundamentalGroupEquivFiber [SimplyConnectedSpace E]
     (hp : IsCoveringMap p) (e : p ⁻¹' {x}) :
     FundamentalGroup X x ≃ p ⁻¹' {x} :=
   { toFun γ := hp.monodromy γ e
@@ -140,24 +141,23 @@ the base with that fibre, via `γ ↦ monodromy γ e`. -/
 
 /-- The general fibre equivalence sends a loop class to the monodromy translate of the chosen
 lift, as an equality in the total space `E`. -/
-@[simp]
-lemma IsCoveringMap.fundamentalGroupEquivFiber_apply_coe [SimplyConnectedSpace E]
+lemma _root_.IsCoveringMap.fundamentalGroupEquivFiber_apply_coe [SimplyConnectedSpace E]
     (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
     (IsCoveringMap.fundamentalGroupEquivFiber hp e γ : E) = (hp.monodromy γ e : E) :=
-  rfl
+  (rfl)
 
 /-- The general fibre equivalence sends a loop class to the monodromy translate of the chosen
 lift, as an equality in the fibre subtype. -/
 @[simp]
-lemma IsCoveringMap.fundamentalGroupEquivFiber_apply [SimplyConnectedSpace E]
+lemma _root_.IsCoveringMap.fundamentalGroupEquivFiber_apply [SimplyConnectedSpace E]
     (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
     IsCoveringMap.fundamentalGroupEquivFiber hp e γ = hp.monodromy γ e :=
-  rfl
+  (rfl)
 
 /-- The inverse of the general fibre equivalence is characterized by the loop class whose
 monodromy sends the chosen lift to the requested fibre point. -/
 @[simp]
-lemma IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply [SimplyConnectedSpace E]
+lemma _root_.IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply [SimplyConnectedSpace E]
     (hp : IsCoveringMap p) (e e' : p ⁻¹' {x}) :
     hp.monodromy ((IsCoveringMap.fundamentalGroupEquivFiber hp e).symm e') e = e' := by
   have h := (IsCoveringMap.fundamentalGroupEquivFiber hp e).apply_symm_apply e'
@@ -166,7 +166,7 @@ lemma IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply [SimplyConnected
 
 /-- On underlying points, the inverse of the general fibre equivalence is characterized by
 the loop class whose monodromy sends the chosen lift to the requested fibre point. -/
-lemma IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply_coe [SimplyConnectedSpace E]
+lemma _root_.IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply_coe [SimplyConnectedSpace E]
     (hp : IsCoveringMap p) (e e' : p ⁻¹' {x}) :
     (hp.monodromy ((IsCoveringMap.fundamentalGroupEquivFiber hp e).symm e') e : E) = e' := by
   exact congrArg Subtype.val (IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply hp e e')

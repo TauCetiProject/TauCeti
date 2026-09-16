@@ -17,9 +17,9 @@ finite completions and to the real or complex field selected by an infinite plac
 definitions use `QuadraticForm.baseChange`; in particular, their underlying spaces are genuine
 tensor products over the global field rather than independently chosen local spaces.
 
-The evaluation and algebraic-compatibility lemmas make the local forms usable without unfolding
-the localization definitions.  They are the common input for local isotropy, representation,
-and invariant comparisons over number fields.
+The evaluation, localization of diagonal forms, and algebraic-compatibility lemmas make the local
+forms usable without unfolding the localization definitions. They are the common input for local
+isotropy, representation, and invariant comparisons over number fields.
 
 -/
 
@@ -149,6 +149,107 @@ theorem atComplexEmbedding_def (Q : _root_.QuadraticForm K V) (w : InfinitePlace
     let _ : Algebra K ℂ := w.embedding.toAlgebra
     atComplexEmbedding Q w = Q.baseChange ℂ := by
   rfl
+
+/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate after scalar extension
+through a complex embedding. -/
+theorem Nondegenerate.atComplexEmbedding [FiniteDimensional K V]
+    {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (w : InfinitePlace K) :
+    (Q.atComplexEmbedding w).Nondegenerate := by
+  let : CharZero K := RingHom.charZero w.embedding
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  let : Algebra K ℂ := w.embedding.toAlgebra
+  rw [atComplexEmbedding_def]
+  exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
+
+section Diagonal
+
+variable {ι : Type*} [Fintype ι]
+
+/-- A diagonal form localized at a finite place is canonically isometric to the diagonal form
+whose coefficients are mapped into the completion. -/
+def atFinitePlaceWeightedSumSquares [NumberField K] (v : HeightOneSpectrum (𝓞 K))
+    (a : ι → K) :
+    (atFinitePlace (QuadraticMap.weightedSumSquares K a) v).IsometryEquiv
+      (QuadraticMap.weightedSumSquares (v.adicCompletion K) fun i =>
+        algebraMap K (v.adicCompletion K) (a i)) := by
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  let e := baseChangeWeightedSumSquares (A := v.adicCompletion K) a
+  refine { toLinearEquiv := e, map_app' := ?_ }
+  intro x
+  simpa only [atFinitePlace] using e.map_app' x
+
+/-- A diagonal form localized at a real place is canonically isometric to the diagonal form
+whose coefficients are evaluated at the place's real embedding. -/
+def atRealPlaceWeightedSumSquares (w : {w : InfinitePlace K // w.IsReal}) (a : ι → K) :
+    (atRealPlace (QuadraticMap.weightedSumSquares K a) w).IsometryEquiv
+      (QuadraticMap.weightedSumSquares ℝ fun i => embedding_of_isReal w.2 (a i)) := by
+  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
+  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let e := baseChangeWeightedSumSquares (A := ℝ) a
+  refine { toLinearEquiv := e, map_app' := ?_ }
+  intro x
+  simpa only [atRealPlace, RingHom.algebraMap_toAlgebra] using e.map_app' x
+
+/-- A diagonal form extended through a complex embedding is canonically isometric to the
+diagonal form whose coefficients are evaluated at that embedding. -/
+def atComplexEmbeddingWeightedSumSquares (w : InfinitePlace K) (a : ι → K) :
+    (atComplexEmbedding (QuadraticMap.weightedSumSquares K a) w).IsometryEquiv
+      (QuadraticMap.weightedSumSquares ℂ fun i => w.embedding (a i)) := by
+  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
+  let : Algebra K ℂ := w.embedding.toAlgebra
+  let e := baseChangeWeightedSumSquares (A := ℂ) a
+  refine { toLinearEquiv := e, map_app' := ?_ }
+  intro x
+  simpa only [atComplexEmbedding, RingHom.algebraMap_toAlgebra] using e.map_app' x
+
+/-- The underlying linear map of the finite-place diagonal isometry is the canonical distribution
+of tensor product over the finite coordinate space. -/
+@[simp]
+theorem atFinitePlaceWeightedSumSquares_apply [NumberField K]
+    (v : HeightOneSpectrum (𝓞 K)) (a : ι → K)
+    (x : v.FiniteScalarExtension (V := ι → K)) :
+    atFinitePlaceWeightedSumSquares v a x =
+      TensorProduct.piScalarRightHom K (v.adicCompletion K) (v.adicCompletion K) ι x := by
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  calc
+    atFinitePlaceWeightedSumSquares v a x =
+        baseChangeWeightedSumSquares (A := v.adicCompletion K) a x := by
+      -- The specialized wrapper changes only `map_app'`; it retains the generic linear map.
+      rfl
+    _ = _ := baseChangeWeightedSumSquares_apply (A := v.adicCompletion K) a x
+
+/-- The underlying linear map of the real-place diagonal isometry is the canonical distribution
+of tensor product over the finite coordinate space. -/
+@[simp]
+theorem atRealPlaceWeightedSumSquares_apply (w : {w : InfinitePlace K // w.IsReal})
+    (a : ι → K) (x : TauCeti.RealScalarExtension (V := ι → K) w) :
+    let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    atRealPlaceWeightedSumSquares w a x = TensorProduct.piScalarRightHom K ℝ ℝ ι x := by
+  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
+  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  calc
+    atRealPlaceWeightedSumSquares w a x = baseChangeWeightedSumSquares (A := ℝ) a x := by
+      -- The specialized wrapper changes only `map_app'`; it retains the generic linear map.
+      rfl
+    _ = _ := baseChangeWeightedSumSquares_apply (A := ℝ) a x
+
+/-- The underlying linear map of the complex-embedding diagonal isometry is the canonical
+distribution of tensor product over the finite coordinate space. -/
+@[simp]
+theorem atComplexEmbeddingWeightedSumSquares_apply (w : InfinitePlace K) (a : ι → K)
+    (x : w.ComplexScalarExtension (V := ι → K)) :
+    let _ : Algebra K ℂ := w.embedding.toAlgebra
+    atComplexEmbeddingWeightedSumSquares w a x = TensorProduct.piScalarRightHom K ℂ ℂ ι x := by
+  let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
+  let : Algebra K ℂ := w.embedding.toAlgebra
+  calc
+    atComplexEmbeddingWeightedSumSquares w a x =
+        baseChangeWeightedSumSquares (A := ℂ) a x := by
+      -- The specialized wrapper changes only `map_app'`; it retains the generic linear map.
+      rfl
+    _ = _ := baseChangeWeightedSumSquares_apply (A := ℂ) a x
+
+end Diagonal
 
 section Evaluation
 

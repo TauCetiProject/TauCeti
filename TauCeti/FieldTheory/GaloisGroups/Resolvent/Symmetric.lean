@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
+public import Mathlib.Algebra.Polynomial.BigOperators
+public import Mathlib.Algebra.Polynomial.Degree.Lemmas
 public import Mathlib.Algebra.Polynomial.Eval.Defs
+public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 
 import Mathlib.Algebra.Polynomial.Eval.Coeff
 import Mathlib.RingTheory.Polynomial.Subring
@@ -29,6 +31,8 @@ symmetric polynomials. This is the integral orbit product used by a resolvent sp
 
 ## Main results
 
+* `MvPolynomial.universalResolvent_def`: the universal resolvent is the product of the linear
+  factors attached to the orbit.
 * `MvPolynomial.universalResolvent_map_rename`: the universal resolvent is invariant under
   renaming.
 * `MvPolynomial.isSymmetric_universalResolvent_coeff`: all of its coefficients are
@@ -36,6 +40,10 @@ symmetric polynomials. This is the integral orbit product used by a resolvent sp
 * `TauCeti.esymmSubst_injective`: elementary-symmetric substitution is injective.
 * `MvPolynomial.existsUnique_orbitProduct`: the universal resolvent descends uniquely
   through elementary-symmetric substitution.
+* `MvPolynomial.monic_universalResolvent` and `MvPolynomial.natDegree_universalResolvent`: the
+  universal resolvent is monic of degree the size of the orbit, and
+  `MvPolynomial.monic_of_map_esymmSubst_eq`, `MvPolynomial.natDegree_of_map_esymmSubst_eq`
+  transfer this to its integral expression.
 -/
 
 public section
@@ -63,6 +71,25 @@ theorem mem_renameOrbit {n : ℕ} (Φ Ψ : MvPolynomial (Fin n) ℤ) :
 noncomputable def universalResolvent {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
     (MvPolynomial (Fin n) ℤ)[X] :=
   ∏ Ψ ∈ renameOrbit Φ, (Polynomial.X - Polynomial.C Ψ)
+
+/-- The universal resolvent is the product of the monic linear factors `X - Ψ` attached to the
+elements of the rename-orbit. -/
+theorem universalResolvent_def {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
+    universalResolvent Φ = ∏ Ψ ∈ renameOrbit Φ, (Polynomial.X - Polynomial.C Ψ) := (rfl)
+
+/-- The universal resolvent is monic, being a product of monic linear factors. -/
+theorem monic_universalResolvent {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
+    (universalResolvent Φ).Monic := by
+  rw [universalResolvent_def]
+  exact Polynomial.monic_prod_of_monic _ _ fun _ _ => Polynomial.monic_X_sub_C _
+
+/-- The universal resolvent has degree the number of elements of the rename-orbit. -/
+@[simp]
+theorem natDegree_universalResolvent {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
+    (universalResolvent Φ).natDegree = (renameOrbit Φ).card := by
+  rw [universalResolvent_def,
+    Polynomial.natDegree_prod_of_monic _ _ fun _ _ => Polynomial.monic_X_sub_C _]
+  simp
 
 end MvPolynomial
 
@@ -186,5 +213,22 @@ theorem existsUnique_orbitProduct {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
   intro E hE
   apply Polynomial.map_injective (TauCeti.esymmSubst n) (TauCeti.esymmSubst_injective n)
   exact hE.trans hD'.symm
+
+/-- An integral expression for the universal resolvent in the elementary symmetric polynomials is
+itself monic, since elementary-symmetric substitution is injective. -/
+theorem monic_of_map_esymmSubst_eq {n : ℕ} {Φ : MvPolynomial (Fin n) ℤ}
+    {D : (MvPolynomial (Fin n) ℤ)[X]}
+    (hD : D.map (TauCeti.esymmSubst n) = universalResolvent Φ) : D.Monic :=
+  Polynomial.monic_of_injective (TauCeti.esymmSubst_injective n)
+    (hD ▸ monic_universalResolvent Φ)
+
+/-- An integral expression for the universal resolvent has the degree of the universal resolvent,
+the number of elements of the rename-orbit. -/
+theorem natDegree_of_map_esymmSubst_eq {n : ℕ} {Φ : MvPolynomial (Fin n) ℤ}
+    {D : (MvPolynomial (Fin n) ℤ)[X]}
+    (hD : D.map (TauCeti.esymmSubst n) = universalResolvent Φ) :
+    D.natDegree = (renameOrbit Φ).card := by
+  rw [← Polynomial.natDegree_map_eq_of_injective (TauCeti.esymmSubst_injective n) D, hD,
+    natDegree_universalResolvent]
 
 end MvPolynomial

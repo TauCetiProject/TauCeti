@@ -76,10 +76,10 @@ jobs:
     if: ${{ needs.resolve.outputs.pr != '' }}
     # Pinned to a TauCetiReview commit; bump deliberately. The reusable workflow receives the App
     # secrets, so a floating @main would be a supply-chain risk.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-only.yml@afb424eda89e8ac96d9eb69f6a88972055a4cd1b
+    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-only.yml@603b28011f779bd341d0a08e788498b81542bd7d
     with:
       pr: ${{ needs.resolve.outputs.pr }}
-      review_ref: afb424eda89e8ac96d9eb69f6a88972055a4cd1b
+      review_ref: 603b28011f779bd341d0a08e788498b81542bd7d
     # Pass only the App credentials merge-only needs, not all of TauCeti's secrets.
     secrets:
       APP_ID: ${{ secrets.APP_ID }}
