@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Polynomial.Laurent
 public import TauCeti.CategoryTheory.GrothendieckGroup.Graded
-public import TauCeti.LinearAlgebra.SesquilinearForm.LaurentSpecialization
+public import TauCeti.Algebra.Polynomial.LaurentSpecialization
 
 /-!
 # The Laurent coefficient ring acting on the graded Grothendieck group
