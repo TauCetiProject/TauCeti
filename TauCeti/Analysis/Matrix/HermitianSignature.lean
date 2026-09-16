@@ -142,6 +142,7 @@ theorem signature_eq_of_congr_diagonal {P : Matrix ι ι ℂ} (hP : IsUnit P.det
 
 /-- **Additivity of the signature along a block diagonal.** The realification of a
 block-diagonal matrix is, after reindexing, the block diagonal of the two realifications. -/
+@[simp]
 theorem signature_fromBlocks_zero {B : Matrix κ κ ℂ} (hA : A.IsHermitian) (hB : B.IsHermitian) :
     (hA.fromBlocks Matrix.conjTranspose_zero hB).signature = hA.signature + hB.signature := by
   have hshuffle : (Matrix.fromBlocks A 0 0 B).realify.submatrix
