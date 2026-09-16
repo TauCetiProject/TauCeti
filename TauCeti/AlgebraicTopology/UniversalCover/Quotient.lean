@@ -11,8 +11,8 @@ import TauCeti.Topology.Homeomorph.Quotient
 /-!
 # The fundamental-group quotient of the universal cover
 
-The fundamental group of a path-connected, locally path-connected, semilocally simply connected
-space acts on its based-path universal cover. Two points of the universal cover have the same
+The fundamental group of a path-connected, locally path-connected space acts on its based-path
+universal cover. Two points of the universal cover have the same
 endpoint exactly when they belong to the same orbit. The endpoint projection therefore descends to
 a homeomorphism
 
@@ -39,22 +39,19 @@ noncomputable section
 
 namespace TauCeti.UniversalCover
 
-variable {X : Type*} [TopologicalSpace X] [PathConnectedSpace X]
-  [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+variable {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] [LocallyPathConnectedSpace X]
 
 /-- **The quotient of the universal cover by its fundamental-group action is homeomorphic to the
 base space.** The homeomorphism sends the orbit of a based path to its endpoint. -/
 noncomputable def orbitQuotientHomeomorph (x₀ : X) :
     MulAction.orbitRel.Quotient (FundamentalGroup X x₀) (UniversalCover x₀) ≃ₜ X :=
-  let hp := isQuotientCoveringMap (x₀ := x₀)
-  let p : C(UniversalCover x₀, X) := ⟨proj, hp.continuous⟩
-  (Homeomorph.Quotient.congrRight (r' := Setoid.ker p) fun e e' ↦ by
-      rw [MulAction.orbitRel_apply, Setoid.ker_def]
-      -- Display the coercion of the bundled endpoint projection so its fibre relation can be
-      -- rewritten by the orbit characterization.
-      change e ∈ MulAction.orbit (FundamentalGroup X x₀) e' ↔ proj e = proj e'
+  (Homeomorph.Quotient.congrRight
+      (r' := Setoid.ker (⟨proj, continuous_proj x₀⟩ : C(UniversalCover x₀, X))) fun e e' ↦ by
+      rw [MulAction.orbitRel_apply, Setoid.ker_def, ContinuousMap.coe_mk]
       exact proj_eq_iff_mem_orbit.symm).trans
-    (show Topology.IsQuotientMap p from hp.toIsQuotientMap).homeomorph
+    (Topology.IsQuotientMap.homeomorph (f := ⟨proj, continuous_proj x₀⟩) <| by
+      rw [ContinuousMap.coe_mk]
+      exact (isOpenMap_proj x₀).isQuotientMap (continuous_proj x₀) proj_surjective)
 
 /-- On an orbit representative, the quotient homeomorphism is the endpoint projection. -/
 @[simp]
@@ -65,8 +62,7 @@ lemma orbitQuotientHomeomorph_mk (x₀ : X) (p : UniversalCover x₀) :
       proj p := by
   rw [orbitQuotientHomeomorph, Homeomorph.trans_apply,
     Homeomorph.Quotient.congrRight_mk, Topology.IsQuotientMap.homeomorph_apply,
-    Setoid.kerLift_mk]
-  rfl
+    Setoid.kerLift_mk, ContinuousMap.coe_mk]
 
 /-- The inverse quotient homeomorphism sends an endpoint to the orbit of any lift with that
 endpoint. -/
