@@ -205,10 +205,7 @@ theorem integral_kernel_mem_Icc_of_antitoneOn {μ : Measure ℝ} {ψ F : ℝ →
     (∫ s, ψ s * F (t - s) ∂μ) ∈ Set.Icc (F (t + ε)) (F t) := by
   have hψi : Integrable ψ μ := integrable_of_integral_eq_one hψint
   have hε : 0 ≤ ε := by
-    have hne : ψ ≠ 0 := by
-      intro h
-      simp [h] at hψint
-    obtain ⟨s, hs⟩ := Function.ne_iff.mp hne
+    obtain ⟨s, hs⟩ := exists_ne_zero_of_integral_ne_zero (hψint ▸ one_ne_zero)
     have := hsupp s hs
     linarith [this.1, this.2]
   have hmass : ∀ c : ℝ, ∫ s, ψ s * c ∂μ = c := by
