@@ -115,7 +115,6 @@ theorem projectiveSimplePairing_of_left (i : I)
     simpleClassBasis_repr_apply S hSnoniso hSexhaustive x i
 
 /-- On object classes, the projective-simple pairing is Jordan--Hölder multiplicity. -/
-@[simp]
 theorem projectiveSimplePairing_of_of (i : I) (M : FGModuleCat.{u} R) :
     projectiveSimplePairing (P := P) (S := S) (hind := hind) (hPnoniso := hPnoniso)
         (hPexhaustive := hPexhaustive) (hSnoniso := hSnoniso) (hSexhaustive := hSexhaustive) π hπ
@@ -124,7 +123,6 @@ theorem projectiveSimplePairing_of_of (i : I) (M : FGModuleCat.{u} R) :
   rw [projectiveSimplePairing_of_left, jordanHolderCoordinate_of]
 
 /-- The selected projective and simple basis classes pair as a Kronecker delta. -/
-@[simp]
 theorem projectiveSimplePairing_basis [DecidableEq I] (i j : I) :
     projectiveSimplePairing (P := P) (S := S) (hind := hind) (hPnoniso := hPnoniso)
         (hPexhaustive := hPexhaustive) (hSnoniso := hSnoniso) (hSexhaustive := hSexhaustive) π hπ
