@@ -19,9 +19,9 @@ on an additive monoid whose extended distance is invariant under right addition,
 `W_p (μ ∗ η, ν ∗ η) ≤ W_p (μ, ν)`,
 
 and symmetrically for left convolution under left-invariance. Both are instances of the estimate
-`TauCeti.wassersteinEDist_map_prod_le` for a common *random isometry*: if `f (·, z)` is an
-isometry for every `z`, then pushing `μ ⊗ η` and `ν ⊗ η` forward along `f` does not increase the
-Wasserstein distance.
+`TauCeti.wassersteinEDist_map_prod_le` for a common random nonexpansive map: if `f (·, z)` is
+`1`-Lipschitz for every `z`, then pushing `μ ⊗ η` and `ν ⊗ η` forward along `f` does not increase
+the Wasserstein distance.
 
 Translation is the Dirac case of convolution, and in a group whose ground distance is invariant
 under the corresponding left or right translations it is an isometry of every Wasserstein
@@ -70,7 +70,8 @@ theorem wassersteinEDist_conv_right_le [IsIsometricVAdd Gᵃᵒᵖ G]
     (hd : Measurable fun z : G × G ↦ edist z.1 z.2) (μ ν : Measure G) [SigmaFinite μ]
     (η : Measure G) [IsProbabilityMeasure η] :
     wassersteinEDist p (μ ∗ η) (ν ∗ η) ≤ wassersteinEDist p μ ν :=
-  wassersteinEDist_map_prod_le hd measurable_add (fun z ↦ isometry_add_right z) μ ν η
+  wassersteinEDist_map_prod_le hd hd measurable_add (fun z ↦ (isometry_add_right z).lipschitzWith)
+    μ ν η
 
 /-- **Convolution does not increase the Wasserstein distance.** Convolving on the left with a
 common probability law does not increase the `p`-Wasserstein distance, when the ground distance is
@@ -90,8 +91,8 @@ theorem wassersteinEDist_conv_left_le [IsIsometricVAdd G G]
     (by rw [← Measure.fst, hπ.fst_eq]; infer_instance)
   have : SFinite ν := hπ.snd_eq ▸ inferInstance
   rw [hswap μ inferInstance, hswap ν inferInstance]
-  exact (wassersteinEDist_map_prod_le hd (measurable_snd.add measurable_fst)
-    (fun z ↦ isometry_add_left z) μ ν η).trans (wassersteinEDist_le hπ p)
+  exact (wassersteinEDist_map_prod_le hd hd (measurable_snd.add measurable_fst)
+    (fun z ↦ (isometry_add_left z).lipschitzWith) μ ν η).trans (wassersteinEDist_le hπ p)
 
 end Convolution
 

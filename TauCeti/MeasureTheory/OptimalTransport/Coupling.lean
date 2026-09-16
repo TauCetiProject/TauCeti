@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.FiniteMeasureProd
+import TauCeti.MeasureTheory.Measure.Coupling.Basic
 
 /-!
 # Couplings of two measures
@@ -285,13 +286,16 @@ protected theorem map_prod {H : Type*} [MeasurableSpace H] (hπ : IsCoupling π 
     IsCoupling ((π.prod η).map fun w ↦ (f (w.1.1, w.2), g (w.1.2, w.2)))
       ((μ.prod η).map f) ((ν.prod η).map g) := by
   -- Pair `π` with the diagonal plan of `η`, rearrange, and push forward coordinatewise.
-  have hdiag : Measurable fun z : H ↦ (z, z) := measurable_id.prodMk measurable_id
-  have hη : IsCoupling (η.map fun z ↦ (z, z)) η η :=
-    ⟨by rw [Measure.fst, Measure.map_map measurable_fst hdiag]; exact Measure.map_id,
-      by rw [Measure.snd, Measure.map_map measurable_snd hdiag]; exact Measure.map_id⟩
+  have hη' := MeasureTheory.isCoupling_diagonalCoupling η
+  have hη : IsCoupling (MeasureTheory.diagonalCoupling η) η η :=
+    ⟨hη'.fst_eq, hη'.snd_eq⟩
+  let _ : SFinite (MeasureTheory.diagonalCoupling η) := by
+    rw [← (MeasureTheory.measurePreserving_diagonal η).map_eq]
+    infer_instance
   have h := (hπ.prodProdProdComm hη).map hf hg
-  have hprod : π.prod (η.map fun z ↦ (z, z)) = (π.prod η).map (Prod.map id fun z ↦ (z, z)) := by
-    simpa only [Measure.map_id] using Measure.map_prod_map π η measurable_id hdiag
+  have hprod : π.prod (MeasureTheory.diagonalCoupling η) =
+      (π.prod η).map (Prod.map id fun z ↦ (z, z)) :=
+    ((MeasurePreserving.id π).prod (MeasureTheory.measurePreserving_diagonal η)).map_eq.symm
   rwa [hprod, Measure.map_map (by fun_prop) (by fun_prop),
     Measure.map_map (by fun_prop) (by fun_prop)] at h
 
