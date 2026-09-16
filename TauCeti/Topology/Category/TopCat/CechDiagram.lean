@@ -128,7 +128,7 @@ lemma cechInclusion_apply (s : CechIndex ι) (x : TopCat.of (cechIntersection U 
   unfold cechInclusion cechTopDiagram cechOpenDiagram cechIntersection
   rfl
 
-@[reassoc]
+@[simp, reassoc]
 lemma cechTopDiagram_map_comp_inclusion {s t : CechIndex ι} (f : s ⟶ t) :
     (cechTopDiagram U).map f ≫ cechInclusion U t = cechInclusion U s := by
   ext x
