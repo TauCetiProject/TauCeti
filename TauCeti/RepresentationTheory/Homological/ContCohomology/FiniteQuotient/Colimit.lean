@@ -537,6 +537,33 @@ theorem subsingleton_H1_of_forall_openNormalSubgroup
 
 /-! ### Degree two -/
 
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M]
+  [CompactSpace G] [TotallyDisconnectedSpace G] in
+/-- Pulling a degree-two cochain back along a finite-level transition and then to `G` is pulling
+it back to `G` directly: the composite pair is the pair defining inflation from `G ⧸ U`. -/
+private theorem cochainsMap2_quotientMk_comp_transition {U V : OpenNormalSubgroup G}
+    (hVU : V ≤ U)
+    (c : (G ⧸ U.toSubgroup) × (G ⧸ U.toSubgroup) → FixedPoints.addSubgroup U.toSubgroup M) :
+    cochainsMap2 (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+        (FixedPoints.addSubgroup V.toSubgroup M).subtype
+        (cochainsMap2 (continuousFiniteQuotientMap G hVU : G ⧸ V.toSubgroup →* G ⧸ U.toSubgroup)
+          (fixedPointsInclusion hVU : FixedPoints.addSubgroup U.toSubgroup M →+
+            FixedPoints.addSubgroup V.toSubgroup M) c) =
+      cochainsMap2 (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
+        (FixedPoints.addSubgroup U.toSubgroup M).subtype c := by
+  have hquot : (continuousFiniteQuotientMap G hVU : G ⧸ V.toSubgroup →* G ⧸ U.toSubgroup).comp
+      (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup) =
+      (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup) := by
+    ext g
+    simp
+  have hincl : ((FixedPoints.addSubgroup V.toSubgroup M).subtype).comp
+      (fixedPointsInclusion hVU : FixedPoints.addSubgroup U.toSubgroup M →+
+        FixedPoints.addSubgroup V.toSubgroup M) =
+      (FixedPoints.addSubgroup U.toSubgroup M).subtype :=
+    AddMonoidHom.ext fun m ↦ coe_fixedPointsInclusion hVU m
+  exact (DFunLike.congr_fun (cochainsMap2_comp _ _ _ _) c).symm.trans
+    (congrArg₂ (fun φ f ↦ cochainsMap2 φ f c) hquot hincl)
+
 omit [ContinuousSMul G M] [CompactSpace G] [TotallyDisconnectedSpace G] in
 /-- Naturality of `d1` identifies the descended primitive with the transition of the original
 cocycle. -/
@@ -580,27 +607,9 @@ private theorem d1_descend_eq_cocyclesMap2 {U V : OpenNormalSubgroup G} (hVU : V
         (FixedPoints.addSubgroup U.toSubgroup M).subtype
         (continuous_fixedPoints_addSubgroup_subtype G M U.toSubgroup)
         (subtype_quotientMk_smul G M U.toSubgroup) c : G × G → M) := by
-    have hquot : (continuousFiniteQuotientMap G hVU).comp
-        (ContinuousMonoidHom.quotientMk V.toSubgroup) =
-        ContinuousMonoidHom.quotientMk U.toSubgroup := by
-      ext g
-      simp
-    have hincl : ((FixedPoints.addSubgroup V.toSubgroup M).subtype).comp
-        (fixedPointsInclusion hVU) = (FixedPoints.addSubgroup U.toSubgroup M).subtype :=
-      AddMonoidHom.ext fun m ↦ coe_fixedPointsInclusion hVU m
-    -- By `cocyclesMap2_comp`, the left side is the pullback along the composite pair. That pair
-    -- is the one defining inflation from `G ⧸ U`: `congr` matches its group and coefficient
-    -- components against `hquot` and `hincl`.
-    have hcomp := congrArg Subtype.val (DFunLike.congr_fun (cocyclesMap2_comp
-      (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
-      (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
-      (continuousFiniteQuotientMap G hVU) (fixedPointsInclusion hVU) continuous_of_discreteTopology
-      (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) G M
-      (ContinuousMonoidHom.quotientMk V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M).subtype
-      (continuous_fixedPoints_addSubgroup_subtype G M V.toSubgroup)
-      (subtype_quotientMk_smul G M V.toSubgroup)) c)
-    refine ((cocyclesMap2_coe _ _ _ _ _ _ _ _ _).symm.trans hcomp.symm).trans ?_
-    congr 3
+    refine (congrArg _ (cocyclesMap2_coe _ _ _ _ _ _ _ _ c)).trans ?_
+    exact (cochainsMap2_quotientMk_comp_transition (M := M) hVU c).trans
+      (cocyclesMap2_coe _ _ _ _ _ _ _ _ c).symm
   -- Pulling back to `G`, `d1` commutes with the pullback and `bV` becomes `b`.
   refine (cochainsMap2_d1
     (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
