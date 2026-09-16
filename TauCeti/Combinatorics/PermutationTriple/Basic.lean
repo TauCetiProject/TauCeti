@@ -368,6 +368,22 @@ theorem IsConnected.isPretransitive (ht : t.IsConnected) :
   refine ⟨fun h => ?_, key τ t⟩
   simpa using key τ⁻¹ _ h
 
+/-- The trivial triple has trivial monodromy. -/
+@[simp] theorem monodromyGroup_one : (1 : PermutationTriple n).monodromyGroup = ⊥ := by
+  simp [monodromyGroup]
+
+/-- The trivial triple is the disjoint union of `n` unbranched sheets, so it is connected exactly
+in degree one. -/
+@[simp] theorem isConnected_one_iff : (1 : PermutationTriple n).IsConnected ↔ n = 1 := by
+  rw [isConnected_iff, monodromyGroup_one]
+  refine ⟨fun ⟨hn, h⟩ => ?_, fun hn => ⟨by omega, ⟨fun i j => ⟨1, ?_⟩⟩⟩⟩
+  · by_contra hn'
+    obtain ⟨g, hg⟩ := h.exists_smul_eq (⟨0, by omega⟩ : Fin n) ⟨1, by omega⟩
+    rw [Subsingleton.elim g 1, one_smul] at hg
+    simp [Fin.ext_iff] at hg
+  · subst hn
+    exact Subsingleton.elim _ _
+
 /-- Translating to the opposite convention preserves connectedness. -/
 theorem isConnected_equivOppositeConvention_iff (t : PermutationTriple n) :
     (n ≠ 0 ∧ MulAction.IsPretransitive
