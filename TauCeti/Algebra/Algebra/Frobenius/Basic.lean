@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Algebra.Module.Injective.SelfInjective
+public import TauCeti.LinearAlgebra.Dual.RightAction
 
 /-!
 # Frobenius functionals
@@ -88,11 +89,6 @@ form `(a, b) ↦ φ (a * b)` is nondegenerate: `φ (a * b) = 0` for all `b` forc
 `φ (a * b) = 0` for all `a` forces `b = 0`. -/
 def _root_.LinearMap.IsFrobeniusFunctional (φ : A →ₗ[k] k) : Prop :=
   ((LinearMap.mul k A).compr₂ φ).Nondegenerate
-
-/-- A right `A`-linear map from `A` to its dual is determined by its value at `1`. -/
-theorem dualLinearMap_apply_apply {e : A →ₗ[k] Module.Dual k A}
-    (he : ∀ a c : A, e (a * c) = DomMulAct.mk c • e a) (a b : A) : e a b = e 1 (a * b) := by
-  simpa [DomMulAct.smul_linearMap_apply] using LinearMap.congr_fun (he 1 a) b
 
 end CommSemiring
 
