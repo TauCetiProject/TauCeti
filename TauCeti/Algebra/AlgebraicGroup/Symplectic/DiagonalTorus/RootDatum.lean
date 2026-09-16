@@ -32,9 +32,7 @@ The datum is obtained by transporting the pinned simply connected datum
 coordinates `TauCeti.DynkinType.TypeC.classicalWeightEquiv` and
 `TauCeti.DynkinType.TypeC.classicalCoweightEquiv`. What ties it to the group is
 `TauCeti.Symplectic.charOfPoint_ofAdd_diagonalRootDatum_root`: the root indexed by a root subgroup
-is exactly the character through which the diagonal torus rescales that subgroup. Consequently
-the conjugation formula for the diagonal torus on root subgroups takes the form of the pinning
-equation, with the roots of the datum as exponents.
+is exactly the character through which the diagonal torus rescales that subgroup.
 
 ## Main definitions
 
@@ -46,14 +44,17 @@ equation, with the roots of the datum as exponents.
 ## Main results
 
 * `TauCeti.Symplectic.diagonalRootDatum_toLinearMap`: its pairing is the split-torus dot pairing.
+* `TauCeti.Symplectic.diagonalRootDatum_pairing_apply`: the Cartan pairing in coordinates.
+* `TauCeti.Symplectic.diagonalRootDatum_reflection_apply` and
+  `TauCeti.Symplectic.diagonalRootDatum_coreflection_apply`: the reflection formulas in coordinates.
+* `TauCeti.Symplectic.diagonalRootDatum_reflectionPerm`: the induced action on root-subgroup
+  indices.
 * `TauCeti.Symplectic.diagonalRootDatum_root_positiveLong` and its companions: the roots in
   coordinates.
 * `TauCeti.Symplectic.diagonalRootDatum_coroot_positiveLong` and its companions: the coroots in
   coordinates.
 * `TauCeti.Symplectic.charOfPoint_ofAdd_diagonalRootDatum_root`: the roots are the characters of
   the diagonal torus on the root subgroups.
-* `TauCeti.Symplectic.diagonalTorusPoints_mul_rootSubgroupPoints_mul_inv_eq_root`: the pinning
-  equation with the roots of the datum as exponents.
 
 ## References
 
@@ -233,6 +234,12 @@ private lemma diagonalRootDatum_coroot (r : RootSubgroupIndex m) :
         (typeCIndexEquiv m (RootSubgroupIndex.equivTypeCIndex m r))) := by
   simp [diagonalRootDatum, RootPairing.map]
 
+private lemma characterEquiv_comp_pair (x y : Fin m → ℤ) :
+    (characterEquiv.{u} m).toLinearMap ∘ ![x, y] =
+      ![characterEquiv.{u} m x, characterEquiv.{u} m y] := by
+  funext k
+  fin_cases k <;> rfl
+
 /-- The root datum of the symplectic diagonal torus is reduced. -/
 instance instIsReducedDiagonalRootDatum (m : ℕ) : (diagonalRootDatum.{u} m).IsReduced := by
   refine ⟨fun i j h => ?_⟩
@@ -240,9 +247,7 @@ instance instIsReducedDiagonalRootDatum (m : ℕ) : (diagonalRootDatum.{u} m).Is
   rw [← map_neg, (characterEquiv.{u} m).injective.eq_iff, (characterEquiv.{u} m).injective.eq_iff]
   refine RootPairing.IsReduced.eq_or_eq_neg _ _ fun hli => h ?_
   have hm := hli.map' (characterEquiv.{u} m).toLinearMap (characterEquiv.{u} m).ker
-  rwa [show ∀ x y, (characterEquiv.{u} m).toLinearMap ∘ ![x, y] =
-      ![characterEquiv.{u} m x, characterEquiv.{u} m y] from
-    fun x y => funext fun k => by fin_cases k <;> rfl] at hm
+  rwa [characterEquiv_comp_pair] at hm
 
 /-- The pairing of `diagonalRootDatum` is the split-torus dot pairing. -/
 @[simp]
@@ -253,6 +258,52 @@ theorem diagonalRootDatum_toLinearMap (m : ℕ) :
   obtain ⟨y, rfl⟩ := (cocharacterEquiv.{u} m).surjective y
   rw [dotPairing_characterEquiv_cocharacterEquiv]
   simp [diagonalRootDatum, RootPairing.map]
+
+/-- Closed coordinate formula for the Cartan pairing of the symplectic diagonal root datum. -/
+@[simp]
+theorem diagonalRootDatum_pairing_apply (p q : RootSubgroupIndex m) :
+    (diagonalRootDatum.{u} m).pairing p q =
+      ((diagonalRootDatum.{u} m).root p).sum fun i c ↦
+        c * (diagonalRootDatum.{u} m).coroot q i := by
+  rw [← RootPairing.root_coroot_eq_pairing, diagonalRootDatum_toLinearMap,
+    SplitTorus.dotPairing_apply]
+
+/-- Reflection in a root acts on characters by subtracting their pairing with its coroot. -/
+@[simp]
+theorem diagonalRootDatum_reflection_apply (p : RootSubgroupIndex m)
+    (x : ULift.{u} (Fin m) →₀ ℤ) (a : ULift.{u} (Fin m)) :
+    (diagonalRootDatum.{u} m).reflection p x a =
+      x a - (x.sum fun i c ↦ c * (diagonalRootDatum.{u} m).coroot p i) *
+        (diagonalRootDatum.{u} m).root p a := by
+  rw [RootPairing.reflection_apply]
+  change x a - (diagonalRootDatum.{u} m).coroot' p x *
+      (diagonalRootDatum.{u} m).root p a = _
+  rw [RootPairing.coroot', diagonalRootDatum_toLinearMap, LinearMap.flip_apply,
+    SplitTorus.dotPairing_apply]
+
+/-- Coreflection in a root acts on cocharacters by subtracting their pairing with its root. -/
+@[simp]
+theorem diagonalRootDatum_coreflection_apply (p : RootSubgroupIndex m)
+    (x : ULift.{u} (Fin m) → ℤ) (a : ULift.{u} (Fin m)) :
+    (diagonalRootDatum.{u} m).coreflection p x a =
+      x a - ((diagonalRootDatum.{u} m).root p).sum (fun i c ↦ c * x i) *
+        (diagonalRootDatum.{u} m).coroot p a := by
+  rw [RootPairing.coreflection_apply]
+  change x a - (diagonalRootDatum.{u} m).root' p x *
+      (diagonalRootDatum.{u} m).coroot p a = _
+  rw [RootPairing.root', diagonalRootDatum_toLinearMap, SplitTorus.dotPairing_apply]
+
+/-- The index obtained by reflecting one symplectic root subgroup in another, transported from
+the pinned type `C` root datum. -/
+noncomputable def diagonalReflectionIndex (p q : RootSubgroupIndex m) : RootSubgroupIndex m :=
+  let e := (RootSubgroupIndex.equivTypeCIndex m).trans (typeCIndexEquiv m)
+  e.symm ((typeCSimplyConnectedRootDatum m).reflectionPerm (e p) (e q))
+
+/-- Reflection in a root induces `diagonalReflectionIndex` on root-subgroup indices. -/
+@[simp]
+theorem diagonalRootDatum_reflectionPerm (p q : RootSubgroupIndex m) :
+    (diagonalRootDatum.{u} m).reflectionPerm p q = diagonalReflectionIndex p q := by
+  rfl
 
 /-! ### The roots in coordinates -/
 
@@ -394,22 +445,6 @@ theorem charOfPoint_ofAdd_diagonalRootDatum_root (r : RootSubgroupIndex m)
   | positiveSum i j hij => simp [Finsupp.single_eq_pi_single, torusCharacter_add]
   | negativeSum i j hij =>
       simp [Finsupp.single_eq_pi_single, torusCharacter_neg, torusCharacter_add]
-
-/-- **The pinning equation for `Sp₂ₘ` in root-datum form.** Conjugation by a point of the diagonal
-torus scales the parameter of each root subgroup by the value of the corresponding root of
-`diagonalRootDatum`. -/
-theorem diagonalTorusPoints_mul_rootSubgroupPoints_mul_inv_eq_root (r : RootSubgroupIndex m)
-    (t : WithConv (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ)) →ₐ[R] A))
-    (c : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
-    diagonalTorusPoints t * rootSubgroupPoints r c * (diagonalTorusPoints t)⁻¹ =
-      rootSubgroupPoints r
-        ((AdditiveGroup.gaPointsMulEquiv (R := R) (A := A)).symm <|
-          Multiplicative.ofAdd
-            ((DiagonalizableGroup.charOfPoint t.ofConv
-                (Multiplicative.ofAdd ((diagonalRootDatum.{u} m).root r)) : A) *
-              Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv c))) := by
-  rw [charOfPoint_ofAdd_diagonalRootDatum_root]
-  exact diagonalTorusPoints_mul_rootSubgroupPoints_mul_inv r t c
 
 end Points
 
