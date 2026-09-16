@@ -244,19 +244,10 @@ theorem piInterEquiv_apply (hA : Pairwise (Function.onFun Disjoint A))
 
 /-! ### Counting the common points -/
 
-/-- The matchings between two families form a finite type as soon as the members of the two
-families meet pairwise in finite sets. -/
-private theorem finite_matchings (hfin : ∀ i j, (A i ∩ B j).Finite) :
-    Finite ((σ : Equiv.Perm (Fin n)) × ∀ i, ↥(A i ∩ B (σ i))) := by
-  have hpi (σ : Equiv.Perm (Fin n)) : Finite (∀ i, ↥(A i ∩ B (σ i))) := by
-    have hfib (i : Fin n) : Finite ↥(A i ∩ B (σ i)) := (hfin i (σ i)).to_subtype
-    infer_instance
-  infer_instance
-
 /-- Two tori meet in a finite set as soon as the members of the two families meet pairwise in
 finite sets: every common point is a matching, and there are finitely many of those. -/
 theorem finite_pi_inter_pi (hfin : ∀ i j, (A i ∩ B j).Finite) : (pi A ∩ pi B).Finite := by
-  have : Finite ((σ : Equiv.Perm (Fin n)) × ∀ i, ↥(A i ∩ B (σ i))) := finite_matchings hfin
+  have hfib (i j : Fin n) : Finite ↥(A i ∩ B j) := (hfin i j).to_subtype
   exact Set.finite_coe_iff.1 (Finite.of_surjective _ matchingTuple_surjective)
 
 /-- **The number of common points of two tori is the permanent of the matrix of intersection
@@ -269,20 +260,18 @@ theorem natCard_pi_inter_pi (hA : Pairwise (Function.onFun Disjoint A))
     (hB : Pairwise (Function.onFun Disjoint B)) (hfin : ∀ i j, (A i ∩ B j).Finite) :
     Nat.card ↥(pi A ∩ pi B) =
       (Matrix.of fun i j => Nat.card ↥(A i ∩ B j)).permanent := by
-  have : Finite ((σ : Equiv.Perm (Fin n)) × ∀ i, ↥(A i ∩ B (σ i))) := finite_matchings hfin
-  have hfib (σ : Equiv.Perm (Fin n)) (i : Fin n) : Finite ↥(A i ∩ B (σ i)) :=
-    (hfin i (σ i)).to_subtype
+  have hfib (i j : Fin n) : Finite ↥(A i ∩ B j) := (hfin i j).to_subtype
   rw [← Nat.card_congr (piInterEquiv hA hB), Nat.card_sigma,
     ← Matrix.permanent_transpose, Matrix.permanent]
   exact Finset.sum_congr rfl fun σ _ => Nat.card_pi
 
 /-- For a single pair of sets the permanent count degenerates to the number of common points: the
-generator count of a genus-one Heegaard diagram, carrying one attaching curve on each side. -/
-theorem natCard_pi_inter_pi_fin_one {A B : Fin 1 → Set α} (hfin : (A 0 ∩ B 0).Finite) :
-    Nat.card ↥(pi A ∩ pi B) = Nat.card ↥(A 0 ∩ B 0) := by
-  rw [natCard_pi_inter_pi Subsingleton.pairwise Subsingleton.pairwise
-    (fun i j => by simpa [Subsingleton.elim i 0, Subsingleton.elim j 0] using hfin),
-    Matrix.permanent_eq_elem_of_subsingleton _ 0, Matrix.of_apply]
+generator count of a genus-one Heegaard diagram, carrying one attaching curve on each side. No
+finiteness is needed, the two sides being `0` together when the two curves meet infinitely often. -/
+theorem natCard_pi_inter_pi_fin_one {A B : Fin 1 → Set α} :
+    Nat.card ↥(pi A ∩ pi B) = Nat.card ↥(A 0 ∩ B 0) :=
+  Nat.card_congr <| (piInterEquiv (A := A) (B := B) Subsingleton.pairwise
+    Subsingleton.pairwise).symm.trans <| (Equiv.uniqueSigma _).trans (Equiv.piUnique _)
 
 end Sym
 
