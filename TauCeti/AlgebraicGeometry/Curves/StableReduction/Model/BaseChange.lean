@@ -19,11 +19,6 @@ between the two ways of pulling the total space to that field.
 This file constructs base change on both models and their morphisms and packages it as a functor.
 The construction retains the chosen generic-fibre identification, so it can be iterated when
 comparing models after a common finite extension.
-
-## Roadmap
-
-This implements the model base-change functor target in Layer 0 of the
-[StableReduction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/StableReduction/README.md).
 -/
 
 public section
