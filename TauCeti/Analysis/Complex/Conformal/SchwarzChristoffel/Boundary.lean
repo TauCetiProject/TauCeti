@@ -122,6 +122,17 @@ theorem tendsto_schwarzChristoffelPrimitive_boundary (a e : ι → ℝ)
   rw [schwarzChristoffelBoundary]
   exact tendsto_extendFrom (exists_tendsto_schwarzChristoffelPrimitive_boundary a e z₀ x he)
 
+/-- If the total exponent at every prevertex is greater than `-1`, then so is the total exponent
+at every real point: away from the prevertices that total is the empty sum `0`. -/
+theorem neg_one_lt_sum_filter_eq_of_forall_prevertex (a e : ι → ℝ)
+    (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (x : ℝ) :
+    -1 < ∑ i with a i = x, e i := by
+  by_cases hx : x ∈ Set.range a
+  · obtain ⟨j, rfl⟩ := hx
+    exact hfinite j
+  · rw [Finset.sum_eq_zero fun i hi => (hx ⟨i, (Finset.mem_filter.mp hi).2⟩).elim]
+    norm_num
+
 /-- Changing the base point of the normalized primitive subtracts, from the canonical
 Schwarz--Christoffel boundary map, the value of the primitive at the old base point.  This is the
 boundary counterpart of `schwarzChristoffelPrimitive_change_base`, and holds wherever the total

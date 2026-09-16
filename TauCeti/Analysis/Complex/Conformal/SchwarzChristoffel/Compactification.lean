@@ -88,18 +88,7 @@ theorem continuous_schwarzChristoffelCompactifiedBoundary (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i)
     (hinfty : ∑ i, e i < -1) :
     Continuous (schwarzChristoffelCompactifiedBoundary a e z₀) := by
-  classical
-  have hfinite' : ∀ x, -1 < ∑ i with a i = x, e i := by
-    intro x
-    by_cases hx : x ∈ Set.range a
-    · obtain ⟨j, rfl⟩ := hx
-      exact hfinite j
-    · have hzero : ∑ i with a i = x, e i = 0 := by
-        apply Finset.sum_eq_zero
-        intro i hi
-        exact (hx ⟨i, (Finset.mem_filter.mp hi).2⟩).elim
-      rw [hzero]
-      norm_num
+  have hfinite' := neg_one_lt_sum_filter_eq_of_forall_prevertex a e hfinite
   rw [OnePoint.continuous_iff]
   constructor
   · apply tendsto_schwarzChristoffelBoundaryValue_atInfinity a e z₀ hinfty
