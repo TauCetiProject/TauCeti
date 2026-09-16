@@ -278,6 +278,8 @@ theorem coe_repartitionSpaceModule_smul (hF : IsFunctionField k F) (f : F)
     ((f • a : ↥(repartitionSpace k F)) : Place k F → F) =
       f • (a : Place k F → F) :=
   by
+    -- `Module.compHom` hides the scalar action behind the locally installed module instance.
+    -- Expose it as `repartitionMul` so its coercion lemma can identify the underlying function.
     change ((repartitionMul hF f a : ↥(repartitionSpace k F)) : Place k F → F) = _
     exact coe_repartitionMul_apply hF f a
 
@@ -304,6 +306,8 @@ noncomputable def repartitionTrace (hF : IsFunctionField k F) :
         trace_comp_mem_repartitionSpace β.2⟩
       map_add' β γ := Subtype.ext <| funext fun _ ↦ by simp
       map_smul' f β := Subtype.ext <| funext fun P ↦ by
+        -- Both scalar actions come from `Module.compHom`; expose their defining multiplication
+        -- maps so the entrywise lemma below and linearity of the field trace apply.
         change Algebra.trace F F' (f • (β : Place k F → F') P) =
           (((repartitionMul hF f)
             ⟨fun Q ↦ Algebra.trace F F' ((β : Place k F → F') Q),
