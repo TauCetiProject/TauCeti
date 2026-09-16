@@ -420,6 +420,7 @@ theorem curvatureOperator_congr_of_eventuallyEq
       (hσd x) (hσ'd x) Filter.univ_mem hσσ', hXX'.mlieBracket_vectorField_eq hYY']
   rw [curvatureOperator_apply, curvatureOperator_apply, hfirst, hsecond, hthird]
 
+omit [CompleteSpace E] in
 /-- On a finite-dimensional Hausdorff manifold and a finite-rank smooth vector bundle, the value
 of curvature on smooth inputs depends only on their values at the given point. -/
 theorem curvatureOperator_congr
