@@ -119,7 +119,7 @@ theorem _root_.WeierstrassCurve.frobeniusTrace_eq_card_point [Finite F] [W.IsEll
 /-- **The point count is invariant under a change of variables**, singular models included: the
 affine substitution `(x, y) ↦ (u² x + r, u³ y + u² s x + t)` is a bijection of `F × F` carrying the
 solutions of the equation of `C • W` onto those of `W`. -/
-@[simp]
+-- Not `@[simp]`: the simp lemma `pointCount_def` unfolds the left-hand side first.
 theorem _root_.WeierstrassCurve.pointCount_variableChange (C : WeierstrassCurve.VariableChange F) :
     (C • W).pointCount = W.pointCount := by
   have hu : (C.u : F) ≠ 0 := C.u.ne_zero
@@ -134,7 +134,7 @@ theorem _root_.WeierstrassCurve.pointCount_variableChange (C : WeierstrassCurve.
       (WeierstrassCurve.Affine.variableChange_equation W C p.1 p.2).symm)]
 
 /-- **The Frobenius trace is invariant under a change of variables.** -/
--- Not `@[simp]`: `frobeniusTrace_def` and `pointCount_variableChange` already prove it by `simp`.
+-- Not `@[simp]`: the simp lemma `frobeniusTrace_def` unfolds the left-hand side first.
 theorem _root_.WeierstrassCurve.frobeniusTrace_variableChange [Finite F]
     (C : WeierstrassCurve.VariableChange F) :
     (C • W).frobeniusTrace = W.frobeniusTrace := by
