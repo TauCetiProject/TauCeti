@@ -173,7 +173,8 @@ theorem signature_fromBlocks_zero {B : Matrix κ κ ℂ} (hA : A.IsHermitian) (h
       simp [Equiv.sumSumSumComm]
   have key : Matrix.signature (Matrix.fromBlocks A 0 0 B).realify =
       Matrix.signature A.realify + Matrix.signature B.realify := by
-    rw [← Matrix.signature_submatrix_equiv _ (Equiv.sumSumSumComm ι ι κ κ), hshuffle,
+    rw [← Matrix.signature_submatrix_equiv_self (Equiv.sumSumSumComm ι ι κ κ).symm,
+      Equiv.symm_symm, hshuffle,
       Matrix.signature_fromBlocks_zero]
   rw [(hA.fromBlocks Matrix.conjTranspose_zero hB).signature_realify, hA.signature_realify,
     hB.signature_realify] at key
