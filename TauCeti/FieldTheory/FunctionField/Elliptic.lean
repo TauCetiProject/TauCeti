@@ -112,7 +112,7 @@ theorem Place.eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one (hF : IsFunctionF
       (D := (WeilDivisor.ofPoint P : Divisor k F)) (by rw [Divisor.degree_ofPoint, hP]; norm_num)
     rw [Divisor.degree_ofPoint, hP] at this
     exact_mod_cast this
-  exact WeilDivisor.ofPoint_injective (Divisor.eq_of_linearlyEquivalent_of_dim_eq_one hF hex
+  exact WeilDivisor.ofPoint_injective (Divisor.eq_of_linearlyEquivalent_of_dim_eq_one hF
     (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P))
     (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint Q)) hdim h)
 
