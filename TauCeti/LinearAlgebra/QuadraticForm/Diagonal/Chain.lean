@@ -23,8 +23,8 @@ endpoint diagonal forms. The converse is the substantive Witt chain theorem.
 The bodies of the four relations below are not exposed, so the `Exists`, `Or` and
 `Relation.ReflTransGen` constructors are unavailable outside this file. Downstream modules build
 chains through `TauCeti.BinaryStep.of_pair`, `TauCeti.DiagonalStep.binary` and
-`TauCeti.DiagonalChain.binary`/`tail`/`trans` instead; those five lemmas exist for exactly that
-reason and have no in-file uses.
+`TauCeti.DiagonalChain.refl`/`binary`/`tail`/`trans` instead; those six lemmas exist for
+exactly that reason and have no in-file uses.
 
 The declarations in this file assume only a commutative semiring and establish the elementary
 forward implication. The classical converse cited below is a theorem over fields with `2`
@@ -209,6 +209,10 @@ theorem equivalent {w w' : Fin n → Rˣ} (h : DiagonalStep w w') :
 end DiagonalStep
 
 namespace DiagonalChain
+
+/-- Every coefficient family is connected to itself by a diagonal chain. -/
+theorem refl (w : Fin n → Rˣ) : DiagonalChain w w :=
+  Relation.ReflTransGen.refl
 
 /-- A single binary step is a diagonal chain. -/
 theorem binary {w w' : Fin n → Rˣ} (h : BinaryStep w w') : DiagonalChain w w' :=

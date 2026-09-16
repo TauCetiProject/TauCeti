@@ -117,7 +117,8 @@ theorem exists_diagonalChain_first_eq_of_mem_unitValueSet {n : ℕ}
         have htail : d' ∈ unitValueSet
             (weightedSumSquares K fun i ↦ (Fin.tail w i : K)) := by
           rw [mem_unitValueSet, represents_iff, Set.mem_range]
-          exact ⟨fun i ↦ x (Fin.succ i), rfl⟩
+          exact ⟨fun i ↦ x (Fin.succ i), by
+            simp only [d, d', Units.val_mk0, Fin.tail]⟩
         obtain ⟨u, hu, hu0⟩ := ih (Fin.tail w) d' htail
         let v : Fin (n + 3) → Kˣ := Fin.cons (w 0) u
         have hwv : DiagonalChain w v := by
