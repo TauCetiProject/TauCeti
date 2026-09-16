@@ -15,8 +15,7 @@ This file develops the matrix calculus for the rank-one perturbations `1 - vecMu
 identity: their products, the commutation and braid relations, the quadratic relation, the
 inverse, the determinant, and the resulting element of the general linear group. Everything is
 stated for plain pairs of vectors, and every hypothesis is a value of one of the pairings
-`v ⬝ᵥ u` of the vectors involved. It also records the matrix determinant lemma for a rank-one
-perturbation `A + vecMulVec u v` of an invertible matrix.
+`v ⬝ᵥ u` of the vectors involved.
 
 ## Main definitions
 
@@ -30,8 +29,6 @@ perturbation `A + vecMulVec u v` of an invertible matrix.
 * `TauCeti.one_sub_vecMulVec_mul_self`: the quadratic relation.
 * `TauCeti.det_one_sub_vecMulVec` and `TauCeti.inv_one_sub_vecMulVec`: the determinant and the
   inverse.
-* `TauCeti.det_add_vecMulVec`: the matrix determinant lemma
-  `det (A + vecMulVec u v) = det A * (1 + v ⬝ᵥ A⁻¹ *ᵥ u)`.
 -/
 
 public section
@@ -98,14 +95,6 @@ theorem det_one_sub_vecMulVec (u v : α → R) : (1 - vecMulVec u v).det = 1 - v
   rw [sub_eq_add_neg, ← neg_vecMulVec, vecMulVec_eq Unit,
     det_one_add_replicateCol_mul_replicateRow, dotProduct_neg]
   ring
-
-/-- The **matrix determinant lemma** for a rank-one perturbation of an invertible matrix, stated
-with `vecMulVec`: `det (A + vecMulVec u v) = det A * (1 + v ⬝ᵥ A⁻¹ *ᵥ u)`. -/
-theorem det_add_vecMulVec {A : Matrix α α R} (hA : IsUnit A.det) (u v : α → R) :
-    (A + vecMulVec u v).det = A.det * (1 + v ⬝ᵥ A⁻¹ *ᵥ u) := by
-  rw [vecMulVec_eq Unit, det_add_replicateCol_mul_replicateRow hA, Matrix.mul_assoc,
-    ← replicateCol_mulVec, det_unique (1 + _)]
-  simp
 
 /-- A rank-one perturbation of the identity as an element of the general linear group, when its
 self-pairing is `t + 1`. -/

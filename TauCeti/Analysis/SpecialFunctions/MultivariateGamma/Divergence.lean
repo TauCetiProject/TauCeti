@@ -161,8 +161,10 @@ private theorem mul_exp_neg_mul_inv_le_det_rpow_mul_exp_neg_trace
         exp (-(B * (A + (k : ℝ) • Matrix.vecMulVec v v)).trace) := by
   have hw0 : 0 ≤ v ⬝ᵥ A⁻¹ *ᵥ v := by simpa using hA.inv.posSemidef.dotProduct_mulVec_nonneg v
   have hdet : (A + (k : ℝ) • Matrix.vecMulVec v v).det = A.det * (1 + k * (v ⬝ᵥ A⁻¹ *ᵥ v)) := by
-    rw [← Matrix.smul_vecMulVec, det_add_vecMulVec hA.det_pos.ne'.isUnit, Matrix.mulVec_smul,
-      dotProduct_smul, smul_eq_mul]
+    rw [← Matrix.smul_vecMulVec, Matrix.vecMulVec_eq Unit,
+      Matrix.det_add_replicateCol_mul_replicateRow hA.det_pos.ne'.isUnit, Matrix.mul_assoc,
+      ← Matrix.replicateCol_mulVec, Matrix.det_unique (1 + _)]
+    simp [Matrix.mulVec_smul, smul_eq_mul]
   have htr : (B * (A + (k : ℝ) • Matrix.vecMulVec v v)).trace =
       (B * A).trace + k * (v ⬝ᵥ B *ᵥ v) := by
     rw [Matrix.mul_add, Matrix.trace_add, Matrix.mul_smul, Matrix.trace_smul, smul_eq_mul,
