@@ -9,9 +9,9 @@ public import TauCeti.Geometry.Hodge.Realification
 public import TauCeti.Geometry.Hodge.WeightOne.Basic
 
 /-!
-# Weight-one Hodge structures from complex structures on lattices
+# Weight-one Hodge structures from complex structures on integral modules
 
-Let `V` be an integral lattice and let `J` be an almost complex structure on its realification
+Let `V` be an integral module and let `J` be an almost complex structure on its realification
 `Vℝ = ℝ ⊗[ℤ] V`.  Extending `J` to `ℂ` and transporting it to any chosen abstract
 complexification `Vℂ` of `V` gives complementary `i`- and `-i`-eigenspaces.  They define an
 effective Hodge structure of weight one on `V`.
@@ -49,8 +49,8 @@ variable {V : Type u} {Vℂ : Type v}
 variable [AddCommGroup V] [AddCommGroup Vℂ] [Module ℂ Vℂ]
 variable {ιℂ : V →ₗ[ℤ] Vℂ}
 
-/-- The complex-linear extension of an almost complex structure on the realification of a lattice,
-transported to a chosen abstract complexification of that lattice. -/
+/-- The complex-linear extension of an almost complex structure on the realification of an integral
+module, transported to a chosen abstract complexification of that module. -/
 noncomputable def latticeComplexification
     (J : AlmostComplexStructure (Hodge.Realification V)) (hℂ : IsBaseChange ℂ ιℂ) :
     Vℂ →ₗ[ℂ] Vℂ :=
@@ -87,7 +87,7 @@ theorem eigenspace_latticeComplexification
     Submodule.map_comap_eq_of_surjective (Hodge.realificationComplexEquiv hℂ).surjective]
 
 /-- The effective weight-one Hodge structure determined by a complex structure on the realification
-of an integral lattice. -/
+of an integral module. -/
 noncomputable def latticeHodgeStructure
     (J : AlmostComplexStructure (Hodge.Realification V)) (hℂ : IsBaseChange ℂ ιℂ) :
     Hodge.HodgeStructure hℂ 1 :=
@@ -97,7 +97,7 @@ noncomputable def latticeHodgeStructure
         Hodge.complexificationConjugation_toEquiv_apply] using
         Hodge.realificationComplexEquiv_symm_conj hℂ x) J.hodgeStructure
 
-/-- The filtration associated with a lattice complex structure is top in nonpositive degrees, its
+/-- The filtration associated with the complex structure is top in nonpositive degrees, its
 `i`-eigenspace in degree one, and bottom above degree one. -/
 @[simp]
 theorem latticeHodgeStructure_F
@@ -113,13 +113,13 @@ theorem latticeHodgeStructure_F
       exact (J.eigenspace_latticeComplexification hℂ Complex.I).symm
     · simp [hp, hpone]
 
-/-- The weight-one Hodge structure associated with a lattice complex structure is effective. -/
+/-- The weight-one Hodge structure associated with the complex structure is effective. -/
 theorem isEffective_latticeHodgeStructure
     (J : AlmostComplexStructure (Hodge.Realification V)) (hℂ : IsBaseChange ℂ ιℂ) :
     (J.latticeHodgeStructure hℂ).IsEffective := by
   simp [Hodge.HodgeStructureOn.isEffective_iff]
 
-/-- The `H^{1,0}` component associated with a lattice complex structure is its `i`-eigenspace. -/
+/-- The `H^{1,0}` component associated with the complex structure is its `i`-eigenspace. -/
 @[simp]
 theorem latticeHodgeStructure_piece_one
     (J : AlmostComplexStructure (Hodge.Realification V)) (hℂ : IsBaseChange ℂ ιℂ) :
@@ -129,7 +129,7 @@ theorem latticeHodgeStructure_piece_one
     Submodule.comap_equiv_eq_map_symm]
   exact (J.eigenspace_latticeComplexification hℂ Complex.I).symm
 
-/-- The `H^{0,1}` component associated with a lattice complex structure is its `-i`-eigenspace. -/
+/-- The `H^{0,1}` component associated with the complex structure is its `-i`-eigenspace. -/
 @[simp]
 theorem latticeHodgeStructure_piece_zero
     (J : AlmostComplexStructure (Hodge.Realification V)) (hℂ : IsBaseChange ℂ ιℂ) :
@@ -139,7 +139,7 @@ theorem latticeHodgeStructure_piece_zero
     Submodule.comap_equiv_eq_map_symm]
   exact (J.eigenspace_latticeComplexification hℂ (-Complex.I)).symm
 
-/-- Every Hodge component of the structure associated with a lattice complex structure other than
+/-- Every Hodge component of the structure associated with the complex structure other than
 `H^{1,0}` and `H^{0,1}` vanishes. -/
 theorem latticeHodgeStructure_piece_eq_bot
     (J : AlmostComplexStructure (Hodge.Realification V)) (hℂ : IsBaseChange ℂ ιℂ) {p : ℤ}
@@ -148,7 +148,7 @@ theorem latticeHodgeStructure_piece_eq_bot
   · exact (J.isEffective_latticeHodgeStructure hℂ).piece_eq_bot_of_neg hp
   · exact (J.isEffective_latticeHodgeStructure hℂ).piece_eq_bot_of_weight_lt (by omega)
 
-/-- The Weil operator of the Hodge structure associated with a lattice complex structure is the
+/-- The Weil operator of the Hodge structure associated with the complex structure is the
 transported complex-linear extension of that structure. -/
 @[simp]
 theorem latticeHodgeStructure_weilOperator

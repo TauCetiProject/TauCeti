@@ -9,15 +9,15 @@ public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import TauCeti.Geometry.Hodge.Conjugation
 
 /-!
-# Realification of an integral lattice
+# Realification of an integral module
 
 The realification of an integral module `V` is the scalar extension `ℝ ⊗[ℤ] V`.  If an
 abstract complexification `Vℂ` of the same module is given through `IsBaseChange`, associativity
 of scalar extension identifies `ℂ ⊗[ℝ] (ℝ ⊗[ℤ] V)` with `Vℂ`.  This equivalence
 intertwines ordinary conjugation on the left with the lattice-induced conjugation on the right.
 
-The comparison is the base-change bridge needed to transfer real linear data on a lattice, such as
-an almost complex structure, to its chosen abstract complexification.
+The comparison is the base-change bridge needed to transfer real linear data on an integral module,
+such as an almost complex structure, to its chosen abstract complexification.
 
 ## Main declarations
 
@@ -48,6 +48,12 @@ abbrev Realification (V : Type u) [AddCommGroup V] :=
 def realificationMap : V →ₗ[ℤ] Realification V :=
   (TensorProduct.mk ℤ ℝ V) 1
 
+/-- The canonical map to the realification sends an integral vector to the corresponding pure
+tensor. -/
+@[simp]
+theorem realificationMap_apply (x : V) : realificationMap x = 1 ⊗ₜ[ℤ] x :=
+  TensorProduct.mk_apply 1 x
+
 /-- The canonical comparison from the complexification of the realification to an abstract
 complexification of the original integral module. -/
 noncomputable def realificationComplexEquiv (hℂ : IsBaseChange ℂ ιℂ) :
@@ -68,8 +74,7 @@ the chosen abstract complexification. -/
 theorem realificationComplexEquiv_one_tmul_realificationMap
     (hℂ : IsBaseChange ℂ ιℂ) (x : V) :
     realificationComplexEquiv hℂ (1 ⊗ₜ[ℝ] realificationMap x) = ιℂ x := by
-  have hmap : realificationMap x = 1 ⊗ₜ[ℤ] x := rfl
-  rw [hmap, realificationComplexEquiv_tmul_tmul]
+  rw [realificationMap_apply, realificationComplexEquiv_tmul_tmul]
   norm_num
 
 /-- The comparison between the iterated and abstract complexifications intertwines their
