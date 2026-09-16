@@ -78,7 +78,7 @@ of classes of `Equiv.Perm.SameCycle σ`. Every fixed point of `σ` is an orbit, 
 this counts the cycles of `σ` *together with* its fixed points, whereas
 `Equiv.Perm.cycleType` records only the former. Being a `Nat.card`, it is `0` when there are
 infinitely many orbits. -/
-@[expose] noncomputable def orbitCount (σ : Equiv.Perm α) : ℕ :=
+noncomputable def orbitCount (σ : Equiv.Perm α) : ℕ :=
   Nat.card (Quotient (Equiv.Perm.SameCycle.setoid σ))
 
 /-- The orbit count is the cardinality of the type of orbits. -/

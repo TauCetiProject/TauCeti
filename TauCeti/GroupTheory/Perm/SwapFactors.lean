@@ -487,8 +487,9 @@ theorem card_add_orbitCount_le_length_add_two_mul_card_orbits [Finite α]
     intro q
     induction q using Quotient.inductionOn'
     exact ⟨Quotient.mk'' _, rfl⟩
-  have hcard : orbitCount π ≤ Nat.card (MulAction.orbitRel.Quotient H α) :=
-    Nat.card_le_card_of_surjective f hf
+  have hcard : orbitCount π ≤ Nat.card (MulAction.orbitRel.Quotient H α) := by
+    rw [orbitCount_def]
+    exact Nat.card_le_card_of_surjective f hf
   exact hbound.trans (by dsimp only [H] at hcard ⊢; omega)
 
 /-- **Hurwitz's transposition bound.** If a list of transpositions generates a group acting
