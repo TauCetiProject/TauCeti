@@ -60,8 +60,6 @@ by the degree alone, and in degree two by separability and irreducibility.
 ## References
 
 * LMFDB, *Galois group labels*, <https://www.lmfdb.org/GaloisGroup/>.
-* The shape of `TauCeti.HasGaloisLabel` follows the prototype in the Tau Ceti roadmap,
-  `TauCetiRoadmap/PolynomialGaloisGroups/Suggested.lean`.
 -/
 
 public section
@@ -110,7 +108,7 @@ theorem HasGaloisLabel.transitiveGroupLabel (h : HasGaloisLabel f j)
     TransitiveGroupLabel j
       ((Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom) := by
   obtain ⟨-, -, e', he'⟩ := h
-  exact (transitiveGroupLabel_map_permCongrHom_iff _ e' e).mp he'
+  exact (Subgroup.transitiveGroupLabel_map_permCongrHom_iff _ e' e).mp he'
 
 /-- **The label does not depend on the numbering of the roots.** A separable polynomial of degree
 `n` has the label `j` exactly when every numbering of its roots by `Fin n` carries its Galois image
@@ -164,7 +162,7 @@ theorem HasGaloisLabel.isSolvable_iff (h : HasGaloisLabel f j) :
     Group.IsSolvable f.Gal ↔ Group.IsSolvable (referenceSubgroup n j) := by
   obtain ⟨-, -, e, he⟩ := h
   rw [← he.isSolvable_iff]
-  exact isSolvable_congr <|
+  exact MulEquiv.isSolvable_congr <|
     (MonoidHom.ofInjective (Gal.galActionHom_injective f f.SplittingField)).trans
       (e.permCongrHom.subgroupMap _)
 

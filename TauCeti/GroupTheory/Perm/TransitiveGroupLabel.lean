@@ -31,7 +31,7 @@ transitive-groups table. The reference family is empty outside degrees one throu
 ## Main results
 
 * `TauCeti.isPretransitive_referenceSubgroup`: every reference subgroup is transitive.
-* `TauCeti.transitiveGroupLabel_map_permCongrHom_iff`: the label of a permutation group on an
+* `Subgroup.transitiveGroupLabel_map_permCongrHom_iff`: the label of a permutation group on an
   arbitrary set of `n` points does not depend on the numbering by `Fin n` used to read it.
 * `TauCeti.TransitiveGroupLabel.natCard_eq`, `TauCeti.TransitiveGroupLabel.le_alternatingGroup_iff`,
   `TauCeti.TransitiveGroupLabel.isPreprimitive_iff`, `TauCeti.TransitiveGroupLabel.isSolvable_iff`:
@@ -346,7 +346,7 @@ theorem TransitiveGroupLabel.exists_map_permCongrHom_eq {n : ℕ} {j : Transitiv
 
 /-- Reading a permutation group on `n` points through two numberings by `Fin n` gives the same
 transitive-group labels. -/
-theorem transitiveGroupLabel_map_permCongrHom_iff {α : Type*} {n : ℕ}
+theorem _root_.Subgroup.transitiveGroupLabel_map_permCongrHom_iff {α : Type*} {n : ℕ}
     {j : TransitiveGroupIndex n} (G : Subgroup (Perm α)) (e e' : α ≃ Fin n) :
     TransitiveGroupLabel j (G.map e.permCongrHom.toMonoidHom) ↔
       TransitiveGroupLabel j (G.map e'.permCongrHom.toMonoidHom) := by
@@ -388,7 +388,7 @@ theorem TransitiveGroupLabel.isSolvable_iff {n : ℕ} {j : TransitiveGroupIndex 
     Group.IsSolvable G ↔ Group.IsSolvable (referenceSubgroup n j) := by
   obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
   rw [← hτ, MulEquiv.toMonoidHom_eq_coe]
-  exact isSolvable_congr (τ.permCongrHom.subgroupMap G)
+  exact (τ.permCongrHom.subgroupMap G).isSolvable_congr
 
 /-- In degree one every subgroup carries the label `1T1`. -/
 @[simp]

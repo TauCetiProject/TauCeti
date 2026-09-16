@@ -24,7 +24,7 @@ subgroup-valued definition of the derived series cannot be compared pointwise in
 
 ## Main declarations
 
-* `TauCeti.isSolvable_congr`: isomorphic groups are solvable together.
+* `MulEquiv.isSolvable_congr`: isomorphic groups are solvable together.
 * `TauCeti.isSolvable_prod_iff`: `G × H` is solvable if and only if both `G` and `H` are.
 * `TauCeti.DerivedWordArgs`: the recursively paired arguments of a derived word.
 * `TauCeti.derivedWord`: the balanced iterated commutator word.
@@ -50,7 +50,7 @@ open scoped commutatorElement
 namespace TauCeti
 
 /-- Isomorphic groups are solvable together. -/
-theorem isSolvable_congr {G H : Type*} [Group G] [Group H] (e : G ≃* H) :
+theorem _root_.MulEquiv.isSolvable_congr {G H : Type*} [Group G] [Group H] (e : G ≃* H) :
     Group.IsSolvable G ↔ Group.IsSolvable H :=
   ⟨fun _ ↦ Group.isSolvable_of_surjective (f := e.toMonoidHom) e.surjective,
     fun _ ↦ Group.isSolvable_of_surjective (f := e.symm.toMonoidHom) e.symm.surjective⟩

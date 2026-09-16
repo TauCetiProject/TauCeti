@@ -79,15 +79,17 @@ image in the permutations of `α`. -/
 private def rangeToPermHomMulActionHom :
     α →ₑ[(toPermHom G α).rangeRestrict] α where
   toFun := id
-  map_smul' _ _ := rfl
+  map_smul' g x := by simp [Subgroup.smul_def]
 
 /-- A group action is transitive exactly when its image in the permutations is. -/
+@[simp]
 theorem isPretransitive_range_toPermHom_iff :
     IsPretransitive (toPermHom G α).range α ↔ IsPretransitive G α :=
   (isPretransitive_congr (toPermHom G α).rangeRestrict_surjective
     (f := rangeToPermHomMulActionHom G α) Function.bijective_id).symm
 
 /-- A group action is primitive exactly when its image in the permutations is. -/
+@[simp]
 theorem isPreprimitive_range_toPermHom_iff :
     IsPreprimitive (toPermHom G α).range α ↔ IsPreprimitive G α :=
   (isPreprimitive_congr (toPermHom G α).rangeRestrict_surjective
