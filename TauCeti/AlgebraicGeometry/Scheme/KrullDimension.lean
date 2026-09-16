@@ -35,8 +35,8 @@ the fibre of a base change is the base change of a fibre along an extension of r
 
 ## References
 
-* [Stacks Project, Tag 00P4](https://stacks.math.columbia.edu/tag/00P4)
-* [Stacks Project, Tag 04MU](https://stacks.math.columbia.edu/tag/04MU)
+* [Stacks Project, Tag 00P4](https://stacks.math.columbia.edu/tag/00P4), the pointwise form of the
+  invariance of dimension under extension of the base field
 -/
 
 public section
