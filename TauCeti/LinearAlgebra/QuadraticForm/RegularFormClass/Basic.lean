@@ -41,6 +41,7 @@ rank is additive.
 
 ## Main results
 
+* `TauCeti.RegularFormPresentation.ext`: presentations with the same rank and weights agree.
 * `TauCeti.nondegenerate_presentedForm`: a presented form is nondegenerate.
 * `TauCeti.exists_presentedForm_equivalent`: every regular form has a diagonal presentation.
 * `TauCeti.formClass_mk`: the class of a form is computed by any of its diagonalizations.
@@ -76,6 +77,14 @@ form `⟨w 0, …, w (n - 1)⟩`. The presented form is regular when `2` is inve
 (`TauCeti.nondegenerate_presentedForm`); in characteristic two its polar form vanishes, so it need
 not be nondegenerate. -/
 abbrev RegularFormPresentation (K : Type u) [Field K] : Type u := Σ n : ℕ, Fin n → Kˣ
+
+/-- Two presentations agree as soon as they have the same rank and, at every index read through
+that identification, the same weight. -/
+theorem RegularFormPresentation.ext {p q : RegularFormPresentation K} (hrank : p.1 = q.1)
+    (hweight : ∀ i : Fin p.1, p.2 i = q.2 (Fin.cast hrank i)) : p = q := by
+  refine Sigma.ext hrank (Function.hfunext (congrArg Fin hrank) fun i j hij => ?_)
+  have hj : j = Fin.cast hrank i := Fin.ext ((Fin.heq_ext_iff hrank).mp hij).symm
+  exact heq_of_eq (hj ▸ hweight i)
 
 /-- The form presented by `(n, w)`, namely the weighted sum of squares with weights `w`. -/
 def presentedForm (p : RegularFormPresentation K) : QuadraticForm K (Fin p.1 → K) :=

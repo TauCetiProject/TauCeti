@@ -35,6 +35,9 @@ extension, in particular to the completions of a number field.
 ## Main results
 
 * `TauCeti.presentedFormBaseChange`: extending a presented form presents the extended weights.
+* `TauCeti.RegularFormClass.rank_baseChange`, `TauCeti.RegularFormClass.baseChange_add` and
+  `TauCeti.RegularFormClass.baseChange_mul`: scalar extension preserves the rank and commutes with
+  the orthogonal sum and the tensor product of classes.
 * `TauCeti.formClass_baseChange`: the class of an extended form is the extension of its class.
 * `TauCeti.RegularFormClass.discr_baseChange` and `QuadraticForm.discr_formClass_baseChange`: the
   discriminant commutes with scalar extension, stated on classes and on forms.
@@ -52,15 +55,118 @@ universe u v w
 
 variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
 
+/-! ### Scalar extension of presentations -/
+
 variable (L) in
 /-- The presentation obtained by mapping every weight into the extension field `L`. The rank is
-unchanged, so the definition is `@[expose]`d: statements about the mapped presentation are indexed
-by `Fin (RegularFormPresentation.baseChange L p).1`, and unfolding identifies that with
-`Fin p.1`. -/
-@[expose]
+unchanged. -/
 def RegularFormPresentation.baseChange (p : RegularFormPresentation K) :
     RegularFormPresentation L :=
   ⟨p.1, fun i ↦ Units.map (algebraMap K L).toMonoidHom (p.2 i)⟩
+
+variable (L) in
+/-- Mapping the weights into `L` leaves the rank unchanged. -/
+@[simp]
+theorem RegularFormPresentation.fst_baseChange (p : RegularFormPresentation K) :
+    (RegularFormPresentation.baseChange L p).1 = p.1 := (rfl)
+
+variable (L) in
+/-- Every weight of the mapped presentation is the image of the weight of `p` at the same index,
+read through `TauCeti.RegularFormPresentation.fst_baseChange`. -/
+@[simp]
+theorem RegularFormPresentation.baseChange_apply (p : RegularFormPresentation K)
+    (i : Fin (RegularFormPresentation.baseChange L p).1) :
+    (RegularFormPresentation.baseChange L p).2 i =
+      Units.map (algebraMap K L).toMonoidHom
+        (p.2 (Fin.cast (RegularFormPresentation.fst_baseChange L p) i)) := (rfl)
+
+variable (L) in
+/-- The weight product of a mapped presentation is the image of the original weight product. -/
+theorem RegularFormPresentation.prod_baseChange (p : RegularFormPresentation K) :
+    (∏ i, (RegularFormPresentation.baseChange L p).2 i) =
+      Units.map (algebraMap K L).toMonoidHom (∏ i, p.2 i) := by
+  rw [map_prod]
+  exact Fintype.prod_equiv (finCongr (RegularFormPresentation.fst_baseChange L p)) _ _ (by simp)
+
+variable (L) in
+/-- Mapping the weights into `L` fixes the rank-one presentation with weight one. -/
+@[simp]
+theorem RegularFormPresentation.baseChange_one :
+    RegularFormPresentation.baseChange L (RegularFormPresentation.one (K := K)) =
+      RegularFormPresentation.one := by
+  refine RegularFormPresentation.ext (by simp) fun i ↦ ?_
+  simp
+
+variable (L) in
+/-- Mapping the weights into `L` commutes with concatenation of presentations. -/
+@[simp]
+theorem RegularFormPresentation.baseChange_append (p q : RegularFormPresentation K) :
+    RegularFormPresentation.baseChange L (p.append q) =
+      (RegularFormPresentation.baseChange L p).append
+        (RegularFormPresentation.baseChange L q) := by
+  have h₁ : (RegularFormPresentation.baseChange L (p.append q)).1 = p.1 + q.1 := by simp
+  have hrank : (RegularFormPresentation.baseChange L (p.append q)).1 =
+      ((RegularFormPresentation.baseChange L p).append
+        (RegularFormPresentation.baseChange L q)).1 := by simp
+  refine RegularFormPresentation.ext hrank fun i ↦ ?_
+  -- Read the index as one of the two concatenated halves of `Fin (p.1 + q.1)`.
+  have hi : i = Fin.cast h₁.symm (Fin.cast h₁ i) := by simp
+  rw [hi]
+  generalize Fin.cast h₁ i = j
+  refine Fin.addCases (fun a ↦ ?_) (fun b ↦ ?_) j
+  · have hindex : Fin.cast hrank (Fin.cast h₁.symm (Fin.castAdd q.1 a)) =
+        Fin.cast (RegularFormPresentation.fst_append (RegularFormPresentation.baseChange L p)
+            (RegularFormPresentation.baseChange L q)).symm
+          (Fin.castAdd (RegularFormPresentation.baseChange L q).1
+            (Fin.cast (RegularFormPresentation.fst_baseChange L p).symm a)) := by
+      apply Fin.ext
+      simp
+    rw [hindex, RegularFormPresentation.append_apply_castAdd,
+      RegularFormPresentation.baseChange_apply, RegularFormPresentation.baseChange_apply]
+    simp [RegularFormPresentation.append_apply_castAdd]
+  · have hindex : Fin.cast hrank (Fin.cast h₁.symm (Fin.natAdd p.1 b)) =
+        Fin.cast (RegularFormPresentation.fst_append (RegularFormPresentation.baseChange L p)
+            (RegularFormPresentation.baseChange L q)).symm
+          (Fin.natAdd (RegularFormPresentation.baseChange L p).1
+            (Fin.cast (RegularFormPresentation.fst_baseChange L q).symm b)) := by
+      apply Fin.ext
+      simp
+    rw [hindex, RegularFormPresentation.append_apply_natAdd,
+      RegularFormPresentation.baseChange_apply, RegularFormPresentation.baseChange_apply]
+    simp [RegularFormPresentation.append_apply_natAdd]
+
+variable (L) in
+/-- Mapping the weights into `L` commutes with the tensor product of presentations. -/
+@[simp]
+theorem RegularFormPresentation.baseChange_tmul (p q : RegularFormPresentation K) :
+    RegularFormPresentation.baseChange L (p.tmul q) =
+      (RegularFormPresentation.baseChange L p).tmul
+        (RegularFormPresentation.baseChange L q) := by
+  have h₁ : (RegularFormPresentation.baseChange L (p.tmul q)).1 = p.1 * q.1 := by simp
+  have hrank : (RegularFormPresentation.baseChange L (p.tmul q)).1 =
+      ((RegularFormPresentation.baseChange L p).tmul
+        (RegularFormPresentation.baseChange L q)).1 := by simp
+  refine RegularFormPresentation.ext hrank fun i ↦ ?_
+  -- Read the index as a pair of indices of the two factors.
+  have hi : i = Fin.cast h₁.symm
+      (finProdFinEquiv (finProdFinEquiv.symm (Fin.cast h₁ i))) := by
+    rw [Equiv.apply_symm_apply]; simp
+  rw [hi]
+  generalize finProdFinEquiv.symm (Fin.cast h₁ i) = ab
+  obtain ⟨a, b⟩ := ab
+  have hindex : Fin.cast hrank (Fin.cast h₁.symm (finProdFinEquiv (a, b))) =
+      Fin.cast (RegularFormPresentation.fst_tmul (RegularFormPresentation.baseChange L p)
+          (RegularFormPresentation.baseChange L q)).symm
+        (finProdFinEquiv
+          (Fin.cast (RegularFormPresentation.fst_baseChange L p).symm a,
+            Fin.cast (RegularFormPresentation.fst_baseChange L q).symm b)) := by
+    apply Fin.ext
+    simp
+  rw [hindex, RegularFormPresentation.tmul_apply, RegularFormPresentation.baseChange_apply,
+    RegularFormPresentation.baseChange_apply]
+  simp [RegularFormPresentation.tmul_apply]
+
+/-! ### Scalar extension of presented forms -/
 
 variable [Invertible (2 : K)]
 
@@ -92,11 +198,15 @@ def presentedFormBaseChange (p : RegularFormPresentation K) :
 the tensor product over the finite coordinate space. -/
 @[simp]
 theorem presentedFormBaseChange_apply (p : RegularFormPresentation K)
-    (x : L ⊗[K] (Fin p.1 → K)) :
-    presentedFormBaseChange (L := L) p x = TensorProduct.piScalarRightHom K L L (Fin p.1) x := by
+    (x : L ⊗[K] (Fin p.1 → K)) (i : Fin (RegularFormPresentation.baseChange L p).1) :
+    presentedFormBaseChange (L := L) p x i =
+      TensorProduct.piScalarRightHom K L L (Fin p.1) x
+        (Fin.cast (RegularFormPresentation.fst_baseChange L p) i) := by
   rw [presentedFormBaseChange]
-  exact _root_.QuadraticForm.baseChangeWeightedSumSquares_apply
-    (A := L) (fun i ↦ (p.2 i : K)) x
+  exact congrFun (_root_.QuadraticForm.baseChangeWeightedSumSquares_apply
+    (A := L) (fun i ↦ (p.2 i : K)) x) _
+
+/-! ### Scalar extension of isometry classes -/
 
 variable (L) in
 /-- **Scalar extension of isometry classes**: the class over `L` presented by the images of the
@@ -110,6 +220,7 @@ def RegularFormClass.baseChange : RegularFormClass K → RegularFormClass L :=
       ⟨presentedFormBaseChange (L := L) q⟩
     exact hp.trans ((QuadraticMap.Equivalent.baseChange h L).trans hq)
 
+variable (L) in
 /-- Scalar extension of classes is computed on presentations by mapping the weights. -/
 @[simp]
 theorem RegularFormClass.baseChange_mk (p : RegularFormPresentation K) :
@@ -117,8 +228,59 @@ theorem RegularFormClass.baseChange_mk (p : RegularFormPresentation K) :
       Quotient.mk (regularFormSetoid L) (RegularFormPresentation.baseChange L p) :=
   (rfl)
 
-variable {V : Type w} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+variable (L) in
+/-- Scalar extension preserves the rank of a class. -/
+@[simp]
+theorem RegularFormClass.rank_baseChange (x : RegularFormClass K) :
+    RegularFormClass.rank (RegularFormClass.baseChange L x) = RegularFormClass.rank x := by
+  refine Quotient.inductionOn x fun p ↦ ?_
+  rw [RegularFormClass.baseChange_mk, RegularFormClass.rank_mk, RegularFormClass.rank_mk,
+    RegularFormPresentation.fst_baseChange]
+
+variable (L) in
+/-- Scalar extension commutes with the orthogonal sum of classes. -/
+@[simp]
+theorem RegularFormClass.baseChange_add (x y : RegularFormClass K) :
+    RegularFormClass.baseChange L (x + y) =
+      RegularFormClass.baseChange L x + RegularFormClass.baseChange L y := by
+  refine Quotient.inductionOn₂ x y fun p q ↦ ?_
+  rw [RegularFormClass.mk_add_mk, RegularFormClass.baseChange_mk, RegularFormClass.baseChange_mk,
+    RegularFormClass.baseChange_mk, RegularFormClass.mk_add_mk,
+    RegularFormPresentation.baseChange_append]
+
+variable (L) in
+/-- Scalar extension takes the rank-zero class to the rank-zero class. -/
+@[simp]
+theorem RegularFormClass.baseChange_zero :
+    RegularFormClass.baseChange L (0 : RegularFormClass K) = 0 := by
+  rw [RegularFormClass.zero_def, RegularFormClass.baseChange_mk, RegularFormClass.zero_def]
+  refine congrArg _ (RegularFormPresentation.ext (by simp) fun i ↦ ?_)
+  exact (Fin.cast (by simp) i : Fin 0).elim0
+
+variable (L) in
+/-- Scalar extension takes the multiplicative unit to the multiplicative unit. -/
+@[simp]
+theorem RegularFormClass.baseChange_one :
+    RegularFormClass.baseChange L (1 : RegularFormClass K) = 1 := by
+  rw [RegularFormClass.one_def, RegularFormClass.baseChange_mk, RegularFormClass.one_def,
+    RegularFormPresentation.baseChange_one]
+
 variable [Invertible (2 : L)]
+
+variable (L) in
+/-- Scalar extension commutes with the tensor product of classes. -/
+@[simp]
+theorem RegularFormClass.baseChange_mul (x y : RegularFormClass K) :
+    RegularFormClass.baseChange L (x * y) =
+      RegularFormClass.baseChange L x * RegularFormClass.baseChange L y := by
+  refine Quotient.inductionOn₂ x y fun p q ↦ ?_
+  rw [RegularFormClass.mk_mul_mk, RegularFormClass.baseChange_mk, RegularFormClass.baseChange_mk,
+    RegularFormClass.baseChange_mk, RegularFormClass.mk_mul_mk,
+    RegularFormPresentation.baseChange_tmul]
+
+/-! ### Scalar extension of the discriminant -/
+
+variable {V : Type w} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
 /-- The class of a form extended to `L` is the scalar extension of its class. -/
 @[simp]
@@ -137,9 +299,7 @@ theorem RegularFormClass.discr_baseChange (x : RegularFormClass K) :
       (algebraMap K L).squareClassMap (RegularFormClass.discr x) := by
   refine Quotient.inductionOn x fun p ↦ ?_
   rw [RegularFormClass.baseChange_mk, RegularFormClass.discr_mk, RegularFormClass.discr_mk,
-    RingHom.squareClassMap_apply, map_prod]
-  -- Both weight products are now indexed by `Fin p.1` and have the same mapped terms.
-  rfl
+    RingHom.squareClassMap_apply, RegularFormPresentation.prod_baseChange]
 
 end TauCeti
 
