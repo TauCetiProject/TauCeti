@@ -9,20 +9,24 @@ public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
-# Precisely invariant balls for a properly discontinuous action
+# Balls separated from their translates outside the stabilizer
 
 For a properly discontinuous action on a locally compact metric space, every point `x` lies in a
-ball which is *precisely invariant* under the stabilizer of `x`: a group element moving that ball
-to meet itself already fixes `x`.
+ball which meets none of its translates by group elements outside the stabilizer of `x`: a group
+element moving that ball to meet itself already fixes `x`.
 
-This fact helps localize an orbit space near a point with nontrivial stabilizer: on a
-precisely invariant ball the orbit space of the whole group agrees with the orbit space of the
-single stabilizer, which for a properly discontinuous action is a finite group.
+This separation is one half of the localization of an orbit space near a point with nontrivial
+stabilizer. The other half, that the ball is itself invariant under the stabilizer, does not
+follow from the hypotheses here: under `ContinuousConstSMul` alone an element fixing `x` need not
+preserve a ball about `x`. Once that invariance is supplied — for an isometric action, say, whose
+elements fixing `x` preserve every ball about `x` — the orbit space of the whole group near `x`
+agrees with the orbit space of the single stabilizer, which for a properly discontinuous action
+is a finite group.
 
 ## Main results
 
 * `TauCeti.exists_ball_disjoint_smul_of_notMem_stabilizer`: a small enough ball about a point is
-  precisely invariant under the stabilizer of that point.
+  disjoint from each of its translates by a group element not fixing that point.
 -/
 
 public section
@@ -35,9 +39,9 @@ namespace TauCeti
 
 variable (G : Type*) {X : Type*} [Group G] [PseudoMetricSpace X] [T2Space X] [MulAction G X]
 
-/-- **A small enough ball is precisely invariant.** For a properly discontinuous action on a
-locally compact Hausdorff pseudo-metric space, some ball about `x` is moved to meet itself only by
-the elements fixing `x`. -/
+/-- **A small enough ball meets no translate of itself by an element outside the stabilizer.**
+For a properly discontinuous action on a locally compact Hausdorff pseudo-metric space, some ball
+about `x` is moved to meet itself only by the elements fixing `x`. -/
 theorem exists_ball_disjoint_smul_of_notMem_stabilizer [LocallyCompactSpace X]
     [ContinuousConstSMul G X] [ProperlyDiscontinuousSMul G X] (x : X) :
     ∃ r > 0, ∀ g : G, g ∉ stabilizer G x → Disjoint (g • ball x r) (ball x r) := by

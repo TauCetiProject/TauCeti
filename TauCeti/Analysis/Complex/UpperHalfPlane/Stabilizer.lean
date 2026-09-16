@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
 public import Mathlib.RingTheory.RootsOfUnity.Complex
-public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.Analysis.Complex.UpperHalfPlane.DiscCoordinate
 public import TauCeti.RingTheory.RootsOfUnity.PowFiber
 import Mathlib.RingTheory.IntegralDomain
