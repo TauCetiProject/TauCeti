@@ -58,16 +58,10 @@ lemma cechDiagram_map {s t : CechIndex ι} (f : s ⟶ t) :
   unfold cechDiagram
   simp only [Functor.comp_map, Functor.map_comp, eqToHom_map]
 
-private def cechDiagramIso :
-    cechDiagram U ≅
-      cechTopDiagram U ⋙ _root_.FundamentalGroupoid.fundamentalGroupoidFunctor :=
-  eqToIso (by unfold cechDiagram; rfl)
-
 /-- The canonical cocone from the Čech diagram to the fundamental groupoid of the ambient space. -/
 def cechCocone : Cocone (cechDiagram U) :=
-  (Cocone.precompose (cechDiagramIso U).hom).obj
-    (_root_.FundamentalGroupoid.fundamentalGroupoidFunctor.mapCocone
-      (Cocone.mk X (cechInclusionNatTrans U)))
+  _root_.FundamentalGroupoid.fundamentalGroupoidFunctor.mapCocone
+    (Cocone.mk X (cechInclusionNatTrans U))
 
 @[simp]
 lemma cechCocone_pt : (cechCocone U).pt =
@@ -80,8 +74,8 @@ lemma cechCocone_ι_app (s : CechIndex ι) :
         eqToHom (cechCocone_pt U) =
       _root_.FundamentalGroupoid.fundamentalGroupoidFunctor.map
         (eqToHom (cechTopDiagram_obj U s).symm ≫ cechInclusion U s) := by
-  simp only [cechCocone, Cocone.precompose_obj_ι, NatTrans.comp_app,
-    Functor.mapCocone_ι_app, cechInclusionNatTrans_app, Functor.map_comp, eqToHom_map]
+  simp only [cechCocone, Functor.mapCocone_ι_app, cechInclusionNatTrans_app, Functor.map_comp,
+    eqToHom_map]
   rfl
 
 end TauCeti.FundamentalGroupoid

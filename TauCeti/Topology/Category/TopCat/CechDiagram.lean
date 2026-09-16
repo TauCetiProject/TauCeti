@@ -115,8 +115,7 @@ lemma cechTopDiagram_map_apply {s t : CechIndex ι} (f : s ⟶ t)
     eqToHom (cechTopDiagram_obj U t)
         ((cechTopDiagram U).map f (eqToHom (cechTopDiagram_obj U s).symm x)) =
       ⟨x.1, cechIntersection_mono U f.le x.2⟩ := by
-  unfold cechTopDiagram cechOpenDiagram cechIntersection
-  rfl
+  exact Opens.toTopCat_map X (f := (cechOpenDiagram U).map f)
 
 /-- The inclusion of a finite-family intersection into the ambient space. -/
 def cechInclusion (s : CechIndex ι) : (cechTopDiagram U).obj s ⟶ X :=
@@ -125,14 +124,13 @@ def cechInclusion (s : CechIndex ι) : (cechTopDiagram U).obj s ⟶ X :=
 @[simp]
 lemma cechInclusion_apply (s : CechIndex ι) (x : TopCat.of (cechIntersection U s)) :
     cechInclusion U s (eqToHom (cechTopDiagram_obj U s).symm x) = x.1 := by
-  unfold cechInclusion cechTopDiagram cechOpenDiagram cechIntersection
-  rfl
+  exact congrFun Opens.coe_inclusion' x
 
 @[simp, reassoc]
 lemma cechTopDiagram_map_comp_inclusion {s t : CechIndex ι} (f : s ⟶ t) :
     (cechTopDiagram U).map f ≫ cechInclusion U t = cechInclusion U s := by
   ext x
-  rfl
+  exact (cechInclusion_apply U t _).trans (congrArg Subtype.val (cechTopDiagram_map_apply U f x))
 
 /-- The inclusions of finite-family intersections into the ambient space form a natural
 transformation. -/
