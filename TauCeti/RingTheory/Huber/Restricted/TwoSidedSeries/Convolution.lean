@@ -125,6 +125,8 @@ theorem coe_twoSidedRestrictedMul (f g : twoSidedRestrictedSubmodule A A) :
 include hA hComplete in
 /-- The `n`-th coefficient of `twoSidedRestrictedMul f g` is the sum over pairs of degrees adding
 to `n`. -/
+-- Not `@[simp]`: the preceding coercion lemma and Mathlib's `addRingConvolution_apply` already
+-- simplify this left-hand side to the same sum.
 theorem coe_twoSidedRestrictedMul_apply (f g : twoSidedRestrictedSubmodule A A) (n : ℤ) :
     ((twoSidedRestrictedMul f g : twoSidedRestrictedSubmodule A A) : ℤ → A) n =
       ∑' p : DiscreteConvolution.addFiber n,
