@@ -41,7 +41,8 @@ definite, or a degree at most `p - 1` — so is the inverse-Wishart law, and pos
 * `TauCeti.ae_posDef_inverseWishartMeasure` — the sampled matrix is positive definite almost
   everywhere.
 * `TauCeti.inverseWishartMeasure_zero` — in dimension zero the law is the Dirac mass at the unique
-  symmetric matrix.
+  symmetric matrix, hence a probability measure whose mean is zero
+  (`TauCeti.integral_id_inverseWishartMeasure_zero`).
 * `TauCeti.measurable_inverseWishartMeasure` — the law is measurable jointly in its real degree and
   every coordinate of its scale matrix, and
   `TauCeti.measurable_inverseWishartMeasure_selfAdjoint` is the form with the scale ranging over
@@ -171,6 +172,14 @@ theorem inverseWishartPDF_of_not_posDef (n : ℝ) (S : Matrix (Fin p) (Fin p) �
     inverseWishartPDF n S B = 0 := by
   simp [inverseWishartPDF_def, hB]
 
+/-- At a valid degree and scale the `ℝ≥0∞`-valued inverse-Wishart density is positive exactly on
+the positive-definite cone. -/
+theorem inverseWishartPDF_pos_iff (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
+    {B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)} :
+    0 < inverseWishartPDF n S B ↔ (B : Matrix (Fin p) (Fin p) ℝ).PosDef := by
+  rw [inverseWishartPDF_def, ENNReal.ofReal_pos]
+  exact inverseWishartPDFReal_pos_iff hS hn
+
 /-- The inverse-Wishart density is finite. -/
 @[simp]
 theorem inverseWishartPDF_ne_top (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ)
@@ -178,37 +187,84 @@ theorem inverseWishartPDF_ne_top (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ)
     inverseWishartPDF n S B ≠ ⊤ :=
   ENNReal.ofReal_ne_top
 
+/-- At a valid degree and scale the `ℝ≥0∞`-valued density carries the real one. -/
+theorem toReal_inverseWishartPDF (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
+    (B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (inverseWishartPDF n S B).toReal = inverseWishartPDFReal n S B :=
+  ENNReal.toReal_ofReal (inverseWishartPDFReal_nonneg hS hn B)
+
+/-- The real-valued inverse-Wishart density is measurable along any measurable family of degrees,
+scale matrices and points. -/
+private theorem measurable_inverseWishartPDFReal_comp {γ : Type*} [MeasurableSpace γ]
+    {f : γ → ℝ} {T : γ → Matrix (Fin p) (Fin p) ℝ}
+    {g : γ → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)} (hf : Measurable f)
+    (hT : Measurable T) (hg : Measurable g) :
+    Measurable fun c => inverseWishartPDFReal (f c) (T c) (g c) := by
+  classical
+  have hrpow : Measurable fun z : ℝ × ℝ => z.1 ^ z.2 := by fun_prop
+  have hg' : Measurable fun c => (g c : Matrix (Fin p) (Fin p) ℝ) :=
+    measurable_subtype_coe.comp hg
+  have hdetg : Measurable fun c => (g c : Matrix (Fin p) (Fin p) ℝ).det :=
+    (Continuous.matrix_det continuous_id).measurable.comp hg'
+  have hdetT : Measurable fun c => (T c).det :=
+    (Continuous.matrix_det continuous_id).measurable.comp hT
+  have hinv : Measurable fun c => (g c : Matrix (Fin p) (Fin p) ℝ)⁻¹ :=
+    measurable_matrix_inv.comp hg'
+  -- Matrix multiplication has no `MeasurableMul₂` instance here, so read the trace entrywise, as
+  -- `TauCeti.measurable_nonsingularWishartPDFReal` does.
+  have htrace : Measurable fun c =>
+      Matrix.trace (T c * (g c : Matrix (Fin p) (Fin p) ℝ)⁻¹) := by
+    simp only [Matrix.trace, Matrix.diag_apply, Matrix.mul_apply]
+    exact Finset.measurable_sum _ fun i _ => Finset.measurable_sum _ fun k _ =>
+      (hT.eval_matrix (i := i) (j := k)).mul (hinv.eval_matrix (i := k) (j := i))
+  simp only [inverseWishartPDFReal]
+  refine Measurable.ite (hg (measurableSet_posDefMatrix p)) ?_ measurable_const
+  refine Measurable.div (Measurable.mul (Measurable.mul ?_ ?_) ?_) (Measurable.mul ?_ ?_)
+  · exact hrpow.comp (hdetT.prodMk (by fun_prop))
+  · exact hrpow.comp (hdetg.prodMk (by fun_prop))
+  · exact Real.measurable_exp.comp (by fun_prop)
+  · exact hrpow.comp (measurable_const.prodMk (by fun_prop))
+  · exact (measurable_multivariateGamma p).comp (by fun_prop)
+
+private theorem measurable_inverseWishartPDF_comp {γ : Type*} [MeasurableSpace γ] {f : γ → ℝ}
+    {T : γ → Matrix (Fin p) (Fin p) ℝ}
+    {g : γ → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)} (hf : Measurable f)
+    (hT : Measurable T) (hg : Measurable g) :
+    Measurable fun c => inverseWishartPDF (f c) (T c) (g c) := by
+  simp only [inverseWishartPDF_def]
+  exact (measurable_inverseWishartPDFReal_comp hf hT hg).ennreal_ofReal
+
 /-- The real-valued inverse-Wishart density is measurable in the point. -/
 @[fun_prop]
 theorem measurable_inverseWishartPDFReal (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ) :
-    Measurable (inverseWishartPDFReal n S) := by
-  have hrpow : Measurable fun z : ℝ × ℝ => z.1 ^ z.2 := by fun_prop
-  have hcoe : Measurable fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
-      (B : Matrix (Fin p) (Fin p) ℝ) := measurable_subtype_coe
-  have hdet : Measurable fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
-      (B : Matrix (Fin p) (Fin p) ℝ).det :=
-    (Continuous.matrix_det continuous_id).measurable.comp hcoe
-  have hinv : Measurable fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
-      (B : Matrix (Fin p) (Fin p) ℝ)⁻¹ := measurable_matrix_inv.comp hcoe
-  -- Matrix multiplication has no `MeasurableMul₂` instance here, so read the trace entrywise, as
-  -- `TauCeti.measurable_nonsingularWishartPDFReal` does.
-  have htrace : Measurable fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
-      Matrix.trace (S * (B : Matrix (Fin p) (Fin p) ℝ)⁻¹) := by
-    simp only [Matrix.trace, Matrix.diag_apply, Matrix.mul_apply]
-    exact Finset.measurable_sum _ fun i _ => Finset.measurable_sum _ fun k _ =>
-      (measurable_const.mul (hinv.eval_matrix (i := k) (j := i)))
-  -- The equation lemma characterizes the fully applied density, so eta-expand before branching.
-  rw [funext (inverseWishartPDFReal_def n S)]
-  refine Measurable.ite (measurableSet_posDefMatrix p) ?_ measurable_const
-  refine Measurable.div (Measurable.mul (Measurable.mul measurable_const ?_) ?_) measurable_const
-  · exact hrpow.comp (hdet.prodMk measurable_const)
-  · exact Real.measurable_exp.comp (htrace.neg.div_const 2)
+    Measurable (inverseWishartPDFReal n S) :=
+  measurable_inverseWishartPDFReal_comp measurable_const measurable_const measurable_id
+
+/-- The real-valued inverse-Wishart density is measurable jointly in its degree, its scale matrix
+and the point. -/
+@[fun_prop]
+theorem measurable_uncurry_inverseWishartPDFReal (p : ℕ) :
+    Measurable fun q : (ℝ × Matrix (Fin p) (Fin p) ℝ) ×
+        selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      inverseWishartPDFReal q.1.1 q.1.2 q.2 :=
+  measurable_inverseWishartPDFReal_comp (measurable_fst.comp measurable_fst)
+    (measurable_snd.comp measurable_fst) measurable_snd
 
 /-- The `ℝ≥0∞`-valued inverse-Wishart density is measurable in the point. -/
 @[fun_prop]
 theorem measurable_inverseWishartPDF (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ) :
     Measurable (inverseWishartPDF n S) :=
-  (measurable_inverseWishartPDFReal n S).ennreal_ofReal
+  measurable_inverseWishartPDF_comp measurable_const measurable_const measurable_id
+
+/-- The `ℝ≥0∞`-valued inverse-Wishart density is measurable jointly in its degree, its scale
+matrix and the point. -/
+@[fun_prop]
+theorem measurable_uncurry_inverseWishartPDF (p : ℕ) :
+    Measurable fun q : (ℝ × Matrix (Fin p) (Fin p) ℝ) ×
+        selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      inverseWishartPDF q.1.1 q.1.2 q.2 :=
+  measurable_inverseWishartPDF_comp (measurable_fst.comp measurable_fst)
+    (measurable_snd.comp measurable_fst) measurable_snd
 
 /-! ### The measure -/
 
@@ -360,6 +416,47 @@ theorem inverseWishartMeasure_zero {n : ℝ} (hn : -1 < n) (S : Matrix (Fin 0) (
   rw [inverseWishartMeasure_def, nonsingularWishartMeasure_zero hn,
     Measure.map_dirac' measurable_symmetricInv, Subsingleton.elim (symmetricInv (0 :
       selfAdjoint.submodule ℝ (Matrix (Fin 0) (Fin 0) ℝ))) 0]
+
+/-- In dimension zero the symmetric space is a single point and the real-valued inverse-Wishart
+density is `1` there. -/
+@[simp]
+theorem inverseWishartPDFReal_zero (n : ℝ) (S : Matrix (Fin 0) (Fin 0) ℝ)
+    (B : selfAdjoint.submodule ℝ (Matrix (Fin 0) (Fin 0) ℝ)) :
+    inverseWishartPDFReal n S B = 1 := by
+  have hB : (B : Matrix (Fin 0) (Fin 0) ℝ).PosDef :=
+    ⟨Subsingleton.elim _ _, fun x hx => absurd (Subsingleton.elim x 0) hx⟩
+  rw [inverseWishartPDFReal_of_posDef n S hB]
+  simp [Matrix.det_isEmpty, Matrix.trace]
+
+/-- In dimension zero the symmetric space is a single point and the inverse-Wishart density is `1`
+there. -/
+@[simp]
+theorem inverseWishartPDF_zero (n : ℝ) (S : Matrix (Fin 0) (Fin 0) ℝ)
+    (B : selfAdjoint.submodule ℝ (Matrix (Fin 0) (Fin 0) ℝ)) :
+    inverseWishartPDF n S B = 1 := by
+  rw [inverseWishartPDF_def, inverseWishartPDFReal_zero, ENNReal.ofReal_one]
+
+/-- In dimension zero every valid inverse-Wishart law is a probability measure. -/
+theorem isProbabilityMeasure_inverseWishartMeasure_zero {n : ℝ} (hn : -1 < n)
+    (S : Matrix (Fin 0) (Fin 0) ℝ) :
+    IsProbabilityMeasure (inverseWishartMeasure n S) := by
+  rw [inverseWishartMeasure_zero hn]
+  infer_instance
+
+/-- In dimension zero the identity is integrable against every valid inverse-Wishart law, the
+whole mass sitting at a single point. -/
+theorem integrable_id_inverseWishartMeasure_zero {n : ℝ} (hn : -1 < n)
+    (S : Matrix (Fin 0) (Fin 0) ℝ) :
+    Integrable id (inverseWishartMeasure n S) := by
+  rw [inverseWishartMeasure_zero hn]
+  exact integrable_dirac (by simp)
+
+/-- In dimension zero every valid inverse-Wishart law has mean zero, the unique symmetric
+matrix. -/
+theorem integral_id_inverseWishartMeasure_zero {n : ℝ} (hn : -1 < n)
+    (S : Matrix (Fin 0) (Fin 0) ℝ) :
+    ∫ B, B ∂inverseWishartMeasure n S = 0 := by
+  rw [inverseWishartMeasure_zero hn, integral_dirac]
 
 /-! ### Parameter measurability -/
 
