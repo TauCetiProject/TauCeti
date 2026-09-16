@@ -31,7 +31,7 @@ congruence. This is what lets real quadratic-form theory be applied to Hermitian
 * `Matrix.realify_mul`, `Matrix.realify_one`, `Matrix.realify_add`: realification is additive
   and multiplicative.
 * `Matrix.realify_conjTranspose`: the conjugate transpose becomes the transpose.
-* `Matrix.IsHermitian.realify_isSymm`: a Hermitian matrix realifies to a symmetric one.
+* `Matrix.IsHermitian.isSymm_realify`: a Hermitian matrix realifies to a symmetric one.
 * `Matrix.realify_map_ofReal`: a real matrix realifies to two diagonal copies of itself.
 * `Matrix.isUnit_det_realify`: realification preserves invertibility.
 * `Matrix.realify_map_starRingEnd`: entrywise conjugation becomes congruence by the reflection
@@ -71,6 +71,7 @@ theorem realify_zero : (0 : Matrix m n ℂ).realify = 0 := by
   ext p q
   rcases p with i | i <;> rcases q with j | j <;> simp
 
+/-- Realification preserves addition. -/
 @[simp]
 theorem realify_add (A B : Matrix m n ℂ) : (A + B).realify = A.realify + B.realify := by
   ext p q
@@ -88,11 +89,12 @@ theorem realify_map_ofReal (M : Matrix m n ℝ) :
   ext p q
   rcases p with i | i <;> rcases q with j | j <;> simp
 
+/-- Realification preserves the identity matrix. -/
 @[simp]
 theorem realify_one [DecidableEq ι] : (1 : Matrix ι ι ℂ).realify = 1 := by
-  rw [show (1 : Matrix ι ι ℂ) = (1 : Matrix ι ι ℝ).map ((↑) : ℝ → ℂ) by
-    simp [Matrix.map_one], realify_map_ofReal, fromBlocks_one]
+  rw [← Matrix.map_one ((↑) : ℝ → ℂ) (by simp) (by simp), realify_map_ofReal, fromBlocks_one]
 
+/-- Realification preserves matrix multiplication. -/
 @[simp]
 theorem realify_mul [Fintype n] (A : Matrix m n ℂ) (B : Matrix n l ℂ) :
     (A * B).realify = A.realify * B.realify := by
@@ -108,7 +110,7 @@ theorem realify_conjTranspose (A : Matrix m n ℂ) : (Aᴴ).realify = (A.realify
   rcases p with i | i <;> rcases q with j | j <;> simp [conjTranspose_apply]
 
 /-- Realification carries Hermitian matrices to symmetric ones. -/
-theorem IsHermitian.realify_isSymm {A : Matrix ι ι ℂ} (hA : Matrix.IsHermitian A) :
+theorem IsHermitian.isSymm_realify {A : Matrix ι ι ℂ} (hA : Matrix.IsHermitian A) :
     A.realify.IsSymm := by
   rw [Matrix.IsSymm, ← realify_conjTranspose, hA.eq]
 

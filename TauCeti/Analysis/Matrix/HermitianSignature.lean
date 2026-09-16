@@ -86,11 +86,12 @@ theorem signature_realify (hA : A.IsHermitian) :
 /-- **Sylvester's law of inertia for Hermitian matrices.** The signature is unchanged by
 `*`-congruence `A ↦ P * A * Pᴴ` with `P` invertible. -/
 theorem signature_congr {P : Matrix ι ι ℂ} (hP : IsUnit P.det) (hA : A.IsHermitian)
-    (hPA : (P * A * Pᴴ).IsHermitian) : hPA.signature = hA.signature := by
+    : (Matrix.isHermitian_mul_mul_conjTranspose P hA).signature = hA.signature := by
   have h : Matrix.signature (P * A * Pᴴ).realify = Matrix.signature A.realify := by
     rw [realify_mul, realify_mul, realify_conjTranspose,
       Matrix.signature_congr (Matrix.isUnit_det_realify hP)]
-  rw [hPA.signature_realify, hA.signature_realify] at h
+  rw [(Matrix.isHermitian_mul_mul_conjTranspose P hA).signature_realify,
+    hA.signature_realify] at h
   omega
 
 /-- **The signature from an explicit diagonalising `*`-congruence.** -/
@@ -105,6 +106,7 @@ theorem signature_eq_of_congr_diagonal {P : Matrix ι ι ℂ} (hP : IsUnit P.det
   omega
 
 /-- A real matrix, read as a Hermitian complex matrix, keeps its real signature. -/
+@[simp]
 theorem signature_map_ofReal {M : Matrix ι ι ℝ} (hM : (M.map ((↑) : ℝ → ℂ)).IsHermitian) :
     hM.signature = Matrix.signature M := by
   have h := hM.signature_realify
@@ -113,25 +115,28 @@ theorem signature_map_ofReal {M : Matrix ι ι ℝ} (hM : (M.map ((↑) : ℝ �
 
 /-- The zero matrix has signature zero. -/
 @[simp]
-theorem signature_zero (h : (0 : Matrix ι ι ℂ).IsHermitian) : h.signature = 0 := by
-  have h' := h.signature_realify
+theorem signature_zero :
+    (Matrix.isHermitian_zero : (0 : Matrix ι ι ℂ).IsHermitian).signature = 0 := by
+  have h' := (Matrix.isHermitian_zero : (0 : Matrix ι ι ℂ).IsHermitian).signature_realify
   rw [realify_zero, Matrix.signature_zero] at h'
   omega
 
 /-- Negating a Hermitian matrix negates its signature. -/
-theorem signature_neg (hA : A.IsHermitian) (hnA : (-A).IsHermitian) :
-    hnA.signature = -hA.signature := by
-  have h := hnA.signature_realify
+@[simp]
+theorem signature_neg (hA : A.IsHermitian) : hA.neg.signature = -hA.signature := by
+  have h := hA.neg.signature_realify
   rw [realify_neg, Matrix.signature_neg, hA.signature_realify] at h
   omega
 
 /-- Conjugating every entry of a Hermitian matrix preserves its signature: it is the congruence
 by the reflection negating the imaginary coordinates. -/
-theorem signature_map_starRingEnd (hA : A.IsHermitian)
-    (hcA : (A.map (starRingEnd ℂ)).IsHermitian) : hcA.signature = hA.signature := by
+@[simp]
+theorem signature_map_starRingEnd (hA : A.IsHermitian) :
+    (hA.map (starRingEnd ℂ) (by simp [Function.Semiconj])).signature = hA.signature := by
   have h : Matrix.signature (A.map (starRingEnd ℂ)).realify = Matrix.signature A.realify := by
     rw [realify_map_starRingEnd, Matrix.signature_congr isUnit_det_realifyReflection]
-  rw [hcA.signature_realify, hA.signature_realify] at h
+  rw [(hA.map (starRingEnd ℂ) (by simp [Function.Semiconj])).signature_realify,
+    hA.signature_realify] at h
   omega
 
 end Matrix.IsHermitian

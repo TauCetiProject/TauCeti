@@ -13,15 +13,18 @@ public import TauCeti.KnotTheory.Signature
 
 For a Seifert matrix `V` and a parameter `ω` on the unit circle, the *Tristram--Levine form* is
 the Hermitian matrix `(1 - ω) V + (1 - conj ω) Vᵀ` over `ℂ`, and the *Tristram--Levine signature*
-`σ_ω(V)` is its signature. It is a one-parameter family refining the classical (Murasugi)
-signature, which is the value at `ω = -1`
+`σ_ω(V)` is its signature. It is a one-parameter extension of the classical (Murasugi)
+signature, recovered at `ω = -1`
 (`TauCeti.KnotTheory.tristramLevineSignature_neg_one`), and the family is not constant: for the
 trefoil the value drops from `-2` at `ω = -1` to `0` at the unit-circle point `(3 + 4i)/5`, both
 computed below.
 
-The form is Hermitian for every `ω : ℂ`, so no hypothesis on `ω` is imposed here; the classical
-theory reads it at `‖ω‖ = 1`, which is where it is a concordance invariant of the knot. The
-value at `ω = 1` is `0` for every `V`, which is why the classical statements exclude `ω = 1`.
+The form is Hermitian for every `ω : ℂ`, so no hypothesis on `ω` is imposed here. This file
+constructs an invariant of a chosen Seifert matrix and proves congruence invariance, but not
+invariance under S-equivalence or knot concordance. Classically, the ordinary signature at
+unit-circle parameters away from the relevant Alexander-polynomial roots is a knot-concordance
+invariant; values at roots require an additional convention such as the averaged signature. The
+value at `ω = 1` is `0` for every `V`.
 
 Congruence `V ↦ P * V * Pᵀ` by a matrix with unit determinant — over `ℤ` a change of basis of
 the first homology of the Seifert surface — leaves `σ_ω` unchanged
@@ -36,7 +39,7 @@ invariance under S-equivalence, is not proved here.
 
 ## Main results
 
-* `TauCeti.KnotTheory.tristramLevineForm_isHermitian`: the form is Hermitian.
+* `TauCeti.KnotTheory.isHermitian_tristramLevineForm`: the form is Hermitian.
 * `TauCeti.KnotTheory.tristramLevineSignature_neg_one`: at `ω = -1` the classical signature.
 * `TauCeti.KnotTheory.tristramLevineSignature_one`: at `ω = 1` the signature vanishes.
 * `TauCeti.KnotTheory.tristramLevineSignature_congr`: invariance under congruence.
@@ -44,8 +47,7 @@ invariance under S-equivalence, is not proved here.
 * `TauCeti.KnotTheory.tristramLevineSignature_neg_transpose`: the mirror image, whose Seifert
   matrix is `-Vᵀ`, has the negated signature.
 * `TauCeti.KnotTheory.exists_tristramLevineSignature_trefoilSeifertMatrix_ne`: the trefoil's
-  signature is not constant on the unit circle, so the family is strictly finer than the
-  classical signature.
+  signature is not constant on the unit circle.
 
 ## References
 
@@ -78,7 +80,7 @@ theorem tristramLevineForm_apply (V : Matrix ι ι ℝ) (ω : ℂ) (i j : ι) :
 
 /-- **The Tristram--Levine form is Hermitian**, for every `ω`: conjugating an entry exchanges
 the roles of `ω` and `conj ω`, which is what transposing `V` does. -/
-theorem tristramLevineForm_isHermitian (V : Matrix ι ι ℝ) (ω : ℂ) :
+theorem isHermitian_tristramLevineForm (V : Matrix ι ι ℝ) (ω : ℂ) :
     (tristramLevineForm V ω).IsHermitian := by
   ext i j
   simp [Matrix.conjTranspose_apply]
@@ -130,30 +132,31 @@ variable [Fintype ι] [DecidableEq ι]
 /-- The Tristram--Levine signature of a Seifert matrix `V` at `ω`: the signature of the
 Hermitian form `(1 - ω) V + (1 - conj ω) Vᵀ`. -/
 noncomputable def tristramLevineSignature (V : Matrix ι ι ℝ) (ω : ℂ) : ℤ :=
-  (tristramLevineForm_isHermitian V ω).signature
+  (isHermitian_tristramLevineForm V ω).signature
 
 /-- Twice the Tristram--Levine signature is the real signature of the realified form. This is
 the bridge to the real signature API, and is how the computations below proceed. -/
 theorem two_mul_tristramLevineSignature (V : Matrix ι ι ℝ) (ω : ℂ) :
     2 * tristramLevineSignature V ω = Matrix.signature (tristramLevineForm V ω).realify :=
-  ((tristramLevineForm_isHermitian V ω).signature_realify).symm
+  ((isHermitian_tristramLevineForm V ω).signature_realify).symm
 
 /-- **The Tristram--Levine signature read off an explicit diagonalising `*`-congruence.** -/
 theorem tristramLevineSignature_eq_of_congr_diagonal (V : Matrix ι ι ℝ) (ω : ℂ)
     {P : Matrix ι ι ℂ} (hP : IsUnit P.det) {d : ι → ℝ}
     (h : P * tristramLevineForm V ω * Pᴴ = (Matrix.diagonal d).map ((↑) : ℝ → ℂ)) :
     tristramLevineSignature V ω = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 :=
-  (tristramLevineForm_isHermitian V ω).signature_eq_of_congr_diagonal hP h
+  (isHermitian_tristramLevineForm V ω).signature_eq_of_congr_diagonal hP h
 
 /-- **The Tristram--Levine signature vanishes at `ω = 1`**, where the form itself vanishes. -/
 @[simp]
 theorem tristramLevineSignature_one (V : Matrix ι ι ℝ) : tristramLevineSignature V 1 = 0 := by
-  have h := two_mul_tristramLevineSignature V 1
-  rw [tristramLevineForm_one, realify_zero, Matrix.signature_zero] at h
-  omega
+  unfold tristramLevineSignature
+  simpa only [tristramLevineForm_one] using
+    (Matrix.IsHermitian.signature_zero (ι := ι))
 
 /-- **At `ω = -1` the Tristram--Levine signature is the classical signature** of the Seifert
 matrix. -/
+@[simp]
 theorem tristramLevineSignature_neg_one (V : Matrix ι ι ℝ) :
     tristramLevineSignature V (-1) = Matrix.signature V := by
   have h := two_mul_tristramLevineSignature V (-1)
@@ -175,31 +178,30 @@ theorem tristramLevineSignature_congr {P : Matrix ι ι ℝ} (hP : IsUnit P.det)
       exact (RingHom.map_det Complex.ofRealHom P).symm
     rw [hdet, isUnit_iff_ne_zero]
     simpa using isUnit_iff_ne_zero.mp hP
-  have h := two_mul_tristramLevineSignature (P * V * Pᵀ) ω
-  rw [tristramLevineForm_congr, realify_mul, realify_mul, realify_conjTranspose,
-    Matrix.signature_congr (Matrix.isUnit_det_realify hP'),
-    ← two_mul_tristramLevineSignature] at h
-  omega
+  unfold tristramLevineSignature
+  simpa only [tristramLevineForm_congr] using
+    (isHermitian_tristramLevineForm V ω).signature_congr hP'
 
 /-- **Conjugate parameters give the same Tristram--Levine signature**, so the family is
 determined by the upper half of the unit circle. -/
 @[simp]
 theorem tristramLevineSignature_conj (V : Matrix ι ι ℝ) (ω : ℂ) :
     tristramLevineSignature V (conj ω) = tristramLevineSignature V ω := by
-  have h := two_mul_tristramLevineSignature V (conj ω)
-  rw [tristramLevineForm_conj, realify_map_starRingEnd,
-    Matrix.signature_congr Matrix.isUnit_det_realifyReflection,
-    ← two_mul_tristramLevineSignature] at h
-  omega
+  unfold tristramLevineSignature
+  simpa only [tristramLevineForm_conj] using
+    (isHermitian_tristramLevineForm V ω).signature_map_starRingEnd
 
 /-- **The mirror image negates the Tristram--Levine signature.** The mirror of a knot has
 Seifert matrix `-Vᵀ`. -/
+@[simp]
 theorem tristramLevineSignature_neg_transpose (V : Matrix ι ι ℝ) (ω : ℂ) :
     tristramLevineSignature (-Vᵀ) ω = -tristramLevineSignature V ω := by
-  have h := two_mul_tristramLevineSignature (-Vᵀ) ω
-  rw [tristramLevineForm_neg_transpose, realify_neg, Matrix.signature_neg,
-    ← two_mul_tristramLevineSignature, tristramLevineSignature_conj] at h
-  omega
+  calc
+    tristramLevineSignature (-Vᵀ) ω = -tristramLevineSignature V (conj ω) := by
+      unfold tristramLevineSignature
+      simpa only [tristramLevineForm_neg_transpose] using
+        (isHermitian_tristramLevineForm V (conj ω)).signature_neg
+    _ = -tristramLevineSignature V ω := by rw [tristramLevineSignature_conj]
 
 end Signature
 
@@ -215,10 +217,9 @@ theorem tristramLevineSignature_figureEightSeifertMatrix_neg_one :
     tristramLevineSignature (figureEightSeifertMatrix.map ((↑) : ℤ → ℝ)) (-1) = 0 := by
   rw [tristramLevineSignature_neg_one, signature_figureEightSeifertMatrix]
 
-/-- **The Tristram--Levine signature of the trefoil is not constant on the unit circle**, so the
-family is a strictly finer invariant than the classical signature it specialises to at `ω = -1`.
-The witness is the rational point `(3 + 4i)/5`, where the symmetrised form becomes indefinite and
-the signature drops from `-2` to `0`. -/
+/-- **The Tristram--Levine signature of the trefoil is not constant on the unit circle.** The
+witness is the rational point `(3 + 4i)/5`, where the symmetrised form becomes indefinite and the
+signature drops from `-2` to `0`. -/
 theorem exists_tristramLevineSignature_trefoilSeifertMatrix_ne :
     ∃ ω : ℂ, ‖ω‖ = 1 ∧
       tristramLevineSignature (trefoilSeifertMatrix.map ((↑) : ℤ → ℝ)) ω ≠
@@ -226,7 +227,10 @@ theorem exists_tristramLevineSignature_trefoilSeifertMatrix_ne :
   refine ⟨(3 + 4 * Complex.I) / 5, ?_, ?_⟩
   · rw [norm_div, Complex.norm_def, Complex.normSq_apply]
     norm_num
-    rw [show (25 : ℝ) = 5 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
+    have hsqrt : Real.sqrt (25 : ℝ) = 5 := by
+      have hsqrt_sq : (Real.sqrt (25 : ℝ)) ^ 2 = 25 := Real.sq_sqrt (by norm_num)
+      nlinarith [Real.sqrt_nonneg (25 : ℝ)]
+    rw [hsqrt]
     norm_num
   · have hform : tristramLevineForm (trefoilSeifertMatrix.map ((↑) : ℤ → ℝ))
         ((3 + 4 * Complex.I) / 5) =
