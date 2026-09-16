@@ -72,7 +72,7 @@ standard Wishart matrix of real degree `n`. At a diagonal position `(i, i)` it i
 on the positive half-line with the chi density formula for `n - i` degrees of freedom, and at a
 strictly lower position it is the standard Gaussian law. The definition places no condition on
 `n`: the diagonal measure is the chi probability law only when `0 < n - i`, which holds for every
-`i < p` under the hypothesis `(p : ℝ) - 1 < n` of
+`i < p` under the nonzero-dimensional hypothesis `(p : ℝ) - 1 < n` of
 `TauCeti.map_lowerTriangleGram_pi_bartlettCoordinateMeasure`. -/
 def bartlettCoordinateMeasure (n : ℝ) (ij : lowerTriangle p) : Measure ℝ :=
   if ij.1.1 = ij.1.2 then
@@ -229,11 +229,13 @@ private theorem prod_bartlettCoordinatePDFReal_of_notMem {x : lowerTriangle p �
 
 /-- **The standard Wishart law in Cholesky coordinates.** Let the on-or-below-diagonal entries of
 a lower-triangular `p × p` matrix `L` be independent, the diagonal entry `L i i` with the chi
-density with `n - i` degrees of freedom and each strictly lower entry standard Gaussian. For
-`(p : ℝ) - 1 < n`, the symmetric matrix `L * Lᵀ` then has the standard Wishart density of degree
-`n`, `(det A) ^ ((n - p - 1) / 2) * exp (-trace A / 2) / (2 ^ (n * p / 2) * Γ_p (n / 2))` on the
+density with `n - i` degrees of freedom and each strictly lower entry standard Gaussian. If `p = 0`,
+the equality below holds for every `n`; otherwise assume `(p : ℝ) - 1 < n`. Then the symmetric
+matrix `L * Lᵀ` has the standard Wishart density of degree `n`,
+`(det A) ^ ((n - p - 1) / 2) * exp (-trace A / 2) / (2 ^ (n * p / 2) * Γ_p (n / 2))` on the
 positive-definite cone, against `TauCeti.symmetricLebesgue p`. -/
-theorem map_lowerTriangleGram_pi_bartlettCoordinateMeasure (hn : (p : ℝ) - 1 < n) :
+theorem map_lowerTriangleGram_pi_bartlettCoordinateMeasure
+    (hn : p = 0 ∨ (p : ℝ) - 1 < n) :
     (Measure.pi (bartlettCoordinateMeasure (p := p) n)).map (lowerTriangleGram p) =
       ((symmetricLebesgue p).restrict
           {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
@@ -241,6 +243,17 @@ theorem map_lowerTriangleGram_pi_bartlettCoordinateMeasure (hn : (p : ℝ) - 1 <
         ENNReal.ofReal ((A : Matrix (Fin p) (Fin p) ℝ).det ^ ((n - p - 1) / 2) *
           exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace / 2) /
             (2 ^ (n * p / 2) * multivariateGamma p (n / 2))) := by
+  rcases hn with rfl | hn
+  · rw [Measure.pi_of_empty _ 0, Measure.map_dirac, symmetricLebesgue_zero]
+    have hgram : lowerTriangleGram 0 (0 : lowerTriangle 0 → ℝ) = 0 := Subsingleton.elim _ _
+    have hcone : {A : selfAdjoint.submodule ℝ (Matrix (Fin 0) (Fin 0) ℝ) |
+        (A : Matrix (Fin 0) (Fin 0) ℝ).PosDef} = Set.univ := by
+      ext A
+      simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]
+      exact ⟨selfAdjoint.isHermitian_coe A,
+        fun x hx ↦ (hx (Subsingleton.elim x 0)).elim⟩
+    rw [hgram, hcone, Measure.restrict_univ]
+    simp [multivariateGamma_zero]
   set w : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → ℝ≥0∞ := fun A ↦
     ENNReal.ofReal ((A : Matrix (Fin p) (Fin p) ℝ).det ^ ((n - p - 1) / 2) *
       exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace / 2) /
