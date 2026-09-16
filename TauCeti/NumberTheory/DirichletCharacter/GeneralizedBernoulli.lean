@@ -80,15 +80,6 @@ def generalizedBernoulli [NeZero N] (χ : DirichletCharacter R N) (n : ℕ) : R 
       algebraMap ℚ R
         ((Polynomial.bernoulli n).eval (((if a = 0 then N else a.val : ℕ) : ℚ) / N))
 
-/-- The defining formula of the generalized Bernoulli number `Bₙ,χ`. -/
-theorem generalizedBernoulli_def [NeZero N] (χ : DirichletCharacter R N) (n : ℕ) :
-    χ.generalizedBernoulli n =
-      algebraMap ℚ R ((N : ℚ) ^ ((n : ℤ) - 1)) *
-        ∑ a : ZMod N, χ a *
-          algebraMap ℚ R
-            ((Polynomial.bernoulli n).eval (((if a = 0 then N else a.val : ℕ) : ℚ) / N)) := by
-  rw [generalizedBernoulli]
-
 /-- Generalized Bernoulli numbers commute with extension of the coefficient ring. -/
 @[simp]
 theorem map_generalizedBernoulli [NeZero N] {S : Type*} [CommRing S] [Algebra ℚ S]
