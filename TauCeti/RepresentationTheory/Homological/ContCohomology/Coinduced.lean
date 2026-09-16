@@ -756,23 +756,64 @@ theorem coindFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w} R U}
     CategoryTheory.ObjectProperty.eqToHom_hom, TopRep.hom_comp] using
       coindFunctor_map_apply_impl R G U f a g
 
+/-- A transport between equal topological representations acts by casting the carrier. -/
+private theorem topRep_eqToHom_apply {k H : Type*} [Ring k] [TopologicalSpace k] [Monoid H]
+    {X Y : TopRep k H} (h : X = Y) (x : X) :
+    (eqToHom h).hom x = cast (congrArg TopRep.V h) x := by
+  subst h
+  rfl
+
 /-- Evaluation at `1`, natural in the smooth discrete coefficient representation. -/
 noncomputable def coindCounitNatTrans :
     coindFunctor.{u, v, max v w} R G U ⋙ smoothDiscreteResFunctor R G U ⟶
       𝟭 (SmoothDiscreteTopRep.{u, v, max v w} R U) where
   app A := ObjectProperty.homMk
-    (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, max v w} R G ↦
-        TopRep.res (U.subtype : U →* G) X.obj) (coindFunctor_obj R G U A)) ≫
+    (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, max v w} R U ↦ X.obj)
+        ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
+          (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A)))) ≫
       TopRep.ofHom (coindCounit R G U A))
   naturality {A B} f := by
     apply ObjectProperty.hom_ext
     apply TopRep.hom_ext
     ext a
-    exact DiscreteCoind.evalLinear_map f.hom.hom.toContinuousLinearMap.toLinearMap
-      (fun u a ↦
-        (congrArg _ (TopRep.distribMulAction_smul A.obj u a)).trans
-          ((f.hom.hom.isIntertwining u a).trans
-            (TopRep.distribMulAction_smul B.obj u (f.hom.hom a)).symm)) a
+    -- Both functors are opaque here, so their objects are identified with `coindTopRep` and
+    -- `TopRep.res` only through the public object lemmas. Every transport along those equations
+    -- is a cast of carriers, and the two public map computations close the square pointwise.
+    revert a
+    intro (a : ((smoothDiscreteResFunctor R G U).obj ((coindFunctor R G U).obj A)).obj)
+    have eX : ((smoothDiscreteResFunctor R G U).obj ((coindFunctor R G U).obj A)).obj =
+        TopRep.res (U.subtype : U →* G) ((coindFunctor R G U).obj A).obj :=
+      congrArg (fun X : SmoothDiscreteTopRep R U => X.obj)
+        (smoothDiscreteResFunctor_obj R G U ((coindFunctor R G U).obj A))
+    have eY : ((smoothDiscreteResFunctor R G U).obj ((coindFunctor R G U).obj B)).obj =
+        TopRep.res (U.subtype : U →* G) ((coindFunctor R G U).obj B).obj :=
+      congrArg (fun X : SmoothDiscreteTopRep R U => X.obj)
+        (smoothDiscreteResFunctor_obj R G U ((coindFunctor R G U).obj B))
+    have sA : ((coindFunctor R G U).obj A).obj = (coindTopRep R G U A).obj :=
+      congrArg (fun X : SmoothDiscreteTopRep R G => X.obj) (coindFunctor_obj R G U A)
+    have sB : ((coindFunctor R G U).obj B).obj = (coindTopRep R G U B).obj :=
+      congrArg (fun X : SmoothDiscreteTopRep R G => X.obj) (coindFunctor_obj R G U B)
+    have cX := congrArg TopRep.V eX
+    have cA := congrArg TopRep.V (eX.trans (congrArg (TopRep.res (U.subtype : U →* G)) sA))
+    have h1 : (eqToHom eY).hom
+        (((smoothDiscreteResFunctor R G U).map ((coindFunctor R G U).map f)).hom.hom
+          ((eqToHom eX.symm).hom (cast cX a))) =
+        ((coindFunctor R G U).map f).hom.hom (cast cX a) :=
+      smoothDiscreteResFunctor_map_apply R G U ((coindFunctor R G U).map f)
+        (cast cX a)
+    have h2 : (show DiscreteCoind G U B.obj.V from (eqToHom sB).hom
+        (((coindFunctor R G U).map f).hom.hom ((eqToHom sA.symm).hom (cast cA a)))) 1 =
+        f.hom.hom ((show DiscreteCoind G U A.obj.V from cast cA a) 1) :=
+      coindFunctor_map_apply R G U f (cast cA a) 1
+    rw [topRep_eqToHom_apply, topRep_eqToHom_apply, cast_cast, cast_eq] at h1
+    rw [topRep_eqToHom_apply, topRep_eqToHom_apply, cast_cast] at h2
+    have h1' := congrArg (cast (congrArg TopRep.V eY).symm) h1
+    rw [cast_cast, cast_eq] at h1'
+    change coindCounit R G U B (TopRep.Hom.hom (eqToHom (C := TopRep R U) _)
+        (((smoothDiscreteResFunctor R G U).map ((coindFunctor R G U).map f)).hom.hom a)) =
+      f.hom.hom (coindCounit R G U A (TopRep.Hom.hom (eqToHom (C := TopRep R U) _) a))
+    rw [topRep_eqToHom_apply, topRep_eqToHom_apply, h1', cast_cast]
+    exact h2
 
 private theorem coindCounitNatTrans_app_hom_impl (A : SmoothDiscreteTopRep.{u, v, max v w} R U) :
     ((coindCounitNatTrans R G U).app A).hom =
