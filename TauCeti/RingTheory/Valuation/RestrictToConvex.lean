@@ -145,10 +145,10 @@ private theorem mul_notMem_of_notMem {v : Valuation R Γ₀} {H : ConvexSubgroup
     have hy1 : Units.mk0 (v y) hy ≤ 1 := by
       have := lt_one_of_unit_notMem hy (fun h => hH y hy h) hy'
       simpa [← Units.val_le_val] using this.le
-    have hx1 : Units.mk0 (v x) hx < 1 := by
+    have hx1 : Units.mk0 (v x) hx ≤ 1 := by
       have := lt_one_of_unit_notMem hx (fun h => hH x hx h) hm
-      simpa [← Units.val_lt_val] using this
-    exact H.not_mem_of_not_mem_of_le_lt_one hm hx1
+      simpa [← Units.val_le_val] using this.le
+    exact H.notMem_of_notMem_of_le_le_one hm hx1
       (mul_le_of_le_one_right' (a := Units.mk0 (v x) hx) hy1)
 
 /-- `H` is closed upwards along attained values: a member below an attained unit forces that

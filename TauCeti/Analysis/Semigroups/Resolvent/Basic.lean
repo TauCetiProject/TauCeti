@@ -41,8 +41,6 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X
 
 /-! ## The Resolvent (general growth bound) -/
 
-open MeasureTheory
-
 omit [CompleteSpace X] in
 /-- The growth-bound estimate for a polynomially weighted Laplace-transform integrand:
 `‖t^n e^{-λt} S(t) x‖ ≤ M ‖x‖ t^n e^{-(λ-ω)t}` for `t ≥ 0`. -/
@@ -79,10 +77,10 @@ lemma StronglyContinuousSemigroup.norm_resolvent_integrand_le
 private lemma StronglyContinuousSemigroup.aestronglyMeasurable_pow_mul_resolvent_integrand
     (S : StronglyContinuousSemigroup X) (n : ℕ) (lambda : ℝ) (x : X) :
     AEStronglyMeasurable
-      (fun t : ℝ => (t ^ n * Real.exp (-(lambda * t))) • S.realOperator t x)
+      (fun t : ℝ ↦ (t ^ n * Real.exp (-(lambda * t))) • S.realOperator t x)
       (volume.restrict (Set.Ioi 0)) := by
   apply ContinuousOn.aestronglyMeasurable _ measurableSet_Ioi
-  exact (by fun_prop : Continuous (fun t : ℝ => t ^ n * Real.exp (-(lambda * t)))).continuousOn.smul
+  exact (by fun_prop : Continuous (fun t : ℝ ↦ t ^ n * Real.exp (-(lambda * t)))).continuousOn.smul
     ((S.realOperator_continuousOn_Ici x).mono Set.Ioi_subset_Ici_self)
 
 /-- The polynomially weighted Laplace-transform integrand `t^n e^{-λt} S(t) x` is integrable
@@ -91,7 +89,7 @@ lemma StronglyContinuousSemigroup.integrableOn_pow_mul_resolvent_integrand
     (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
     (n : ℕ) (lambda : ℝ) (hlam : ω < lambda) (x : X) :
     IntegrableOn
-      (fun t => (t ^ n * Real.exp (-(lambda * t))) • S.realOperator t x) (Set.Ioi 0) := by
+      (fun t ↦ (t ^ n * Real.exp (-(lambda * t))) • S.realOperator t x) (Set.Ioi 0) := by
   have hpos : 0 < lambda - ω := by linarith
   unfold MeasureTheory.IntegrableOn
   apply MeasureTheory.Integrable.mono'
@@ -105,7 +103,7 @@ lemma StronglyContinuousSemigroup.integrableOn_pow_mul_resolvent_integrand
 lemma StronglyContinuousSemigroup.integrableOn_resolvent_integrand
     (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
     (lambda : ℝ) (hlam : ω < lambda) (x : X) :
-    IntegrableOn (fun t => Real.exp (-(lambda * t)) • S.realOperator t x) (Set.Ioi 0) := by
+    IntegrableOn (fun t ↦ Real.exp (-(lambda * t)) • S.realOperator t x) (Set.Ioi 0) := by
   simpa only [pow_zero, one_mul] using
     S.integrableOn_pow_mul_resolvent_integrand hb 0 lambda hlam x
 
@@ -116,25 +114,26 @@ noncomputable def StronglyContinuousSemigroup.resolvent
     (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
     (lambda : ℝ) (hlam : ω < lambda) : X →L[ℝ] X :=
   LinearMap.mkContinuous
-    { toFun := fun x =>
+    { toFun := fun x ↦
         ∫ t in Set.Ioi (0 : ℝ), Real.exp (-(lambda * t)) • S.realOperator t x
-      map_add' := fun x y => by
+      map_add' := fun x y ↦ by
         simp only [ContinuousLinearMap.map_add, smul_add]
         exact integral_add
           (S.integrableOn_resolvent_integrand hb lambda hlam x).integrable
           (S.integrableOn_resolvent_integrand hb lambda hlam y).integrable
-      map_smul' := fun c x => by
+      map_smul' := fun c x ↦ by
         simp only [RingHom.id_apply, map_smul]
         have h : ∀ t : ℝ, Real.exp (-(lambda * t)) • c • (S.realOperator t) x =
             c • (Real.exp (-(lambda * t)) • (S.realOperator t) x) :=
-          fun t => smul_comm _ c _
+          fun t ↦ smul_comm _ c _
         simp_rw [h]
         exact integral_smul (μ := volume.restrict (Set.Ioi (0 : ℝ))) c
-          (fun t => Real.exp (-(lambda * t)) • (S.realOperator t) x) }
+          (fun t ↦ Real.exp (-(lambda * t)) • (S.realOperator t) x) }
     (M / (lambda - ω))
     (by
       have hpos : 0 < lambda - ω := by linarith
-      intro x; simp only [LinearMap.coe_mk, AddHom.coe_mk]
+      intro x
+      simp only [LinearMap.coe_mk, AddHom.coe_mk]
       calc ‖∫ t in Set.Ioi 0, Real.exp (-(lambda * t)) • (S.realOperator t) x‖
           ≤ ∫ t in Set.Ioi 0, M * ‖x‖ * Real.exp (-(lambda - ω) * t) := by
             apply MeasureTheory.norm_integral_le_of_norm_le
@@ -148,7 +147,8 @@ noncomputable def StronglyContinuousSemigroup.resolvent
                 ∫ t in Set.Ioi 0, Real.exp (-(lambda - ω) * t) = (lambda - ω)⁻¹ := by
               simpa only [pow_zero, one_mul, Nat.factorial_zero, Nat.cast_one, pow_one,
                 one_div, neg_mul, zero_add] using integral_pow_mul_exp_neg_mul_Ioi 0 hpos
-            rw [h_eval, div_eq_mul_inv]; ring)
+            rw [h_eval, div_eq_mul_inv]
+            ring)
 
 /-- The resolvent in integral form (characteristic lemma). -/
 theorem StronglyContinuousSemigroup.resolvent_apply
@@ -170,9 +170,10 @@ private lemma integral_comp_add_right_Ioi (f : ℝ → X) (h : ℝ) :
   -- Express set integrals as full integrals with indicators
   simp_rw [← MeasureTheory.integral_indicator measurableSet_Ioi]
   -- Key: indicator_{Ioi 0}(fun t => f(t+h))(t) = indicator_{Ioi h}(f)(t+h)
-  have key : ∀ t, Set.indicator (Set.Ioi 0) (fun t => f (t + h)) t =
+  have key : ∀ t, Set.indicator (Set.Ioi 0) (fun t ↦ f (t + h)) t =
       Set.indicator (Set.Ioi h) f (t + h) := by
-    intro t; simp only [Set.indicator, Set.mem_Ioi]
+    intro t
+    simp only [Set.indicator, Set.mem_Ioi]
     split_ifs with h1 h2 h2 <;> [rfl; linarith; linarith; rfl]
   simp_rw [key]
   -- Apply translation invariance of Lebesgue measure
@@ -183,12 +184,12 @@ omit [CompleteSpace X] in
 private lemma integral_Ioi_eq_Ioc_add_Ioi (f : ℝ → X) {h : ℝ} (hh : 0 < h)
     (hf : IntegrableOn f (Set.Ioi 0) volume) :
     ∫ t in Set.Ioi 0, f t = (∫ t in Set.Ioc 0 h, f t) + ∫ t in Set.Ioi h, f t := by
-  rw [← Set.Ioc_union_Ioi_eq_Ioi (le_of_lt hh)]
+  rw [← Set.Ioc_union_Ioi_eq_Ioi hh.le]
   have hd : Disjoint (Set.Ioc 0 h) (Set.Ioi h) :=
-    Set.disjoint_left.mpr (fun _ ht1 ht2 => not_le.mpr ht2 ht1.2)
+    Set.disjoint_left.mpr (fun _ ht1 ht2 ↦ not_le.mpr ht2 ht1.2)
   exact MeasureTheory.setIntegral_union hd measurableSet_Ioi
     (hf.mono_set Set.Ioc_subset_Ioi_self)
-    (hf.mono_set (Set.Ioi_subset_Ioi (le_of_lt hh)))
+    (hf.mono_set (Set.Ioi_subset_Ioi hh.le))
 
 /-- The resolvent shift identity for a positive time increment. -/
 private theorem StronglyContinuousSemigroup.resolvent_shift_identity
@@ -199,17 +200,20 @@ private theorem StronglyContinuousSemigroup.resolvent_shift_identity
       Real.exp (lambda * h) •
         ∫ u in Set.Ioc 0 h, Real.exp (-(lambda * u)) • S.realOperator u x := by
   set Rlx := S.resolvent hb lambda hlam x
-  set f := fun t => Real.exp (-(lambda * t)) • S.realOperator t x
+  set f := fun t ↦ Real.exp (-(lambda * t)) • S.realOperator t x
+  have hRlx : Rlx = ∫ t in Set.Ioi 0, f t := S.resolvent_apply hb lambda hlam x
   have h_push : S.realOperator h Rlx = Real.exp (lambda * h) • ∫ u in Set.Ioi h, f u := by
-    have hRlx : Rlx = ∫ t in Set.Ioi 0, f t := S.resolvent_apply hb lambda hlam x
     rw [hRlx, ← ContinuousLinearMap.integral_comp_comm _
       (S.integrableOn_resolvent_integrand hb lambda hlam x).integrable]
     have h_eq : ∀ t ∈ Set.Ioi (0 : ℝ),
         (S.realOperator h) (f t) = Real.exp (lambda * h) • f (t + h) := by
       intro t ht
       simp only [f, ContinuousLinearMap.map_smul]
-      rw [← S.realOperator_add_apply h t (le_of_lt hh) (le_of_lt (Set.mem_Ioi.mp ht)), add_comm]
-      symm; rw [← mul_smul, ← Real.exp_add]; congr 1; ring_nf
+      rw [← S.realOperator_add_apply h t hh.le (Set.mem_Ioi.mp ht).le, add_comm]
+      symm
+      rw [← mul_smul, ← Real.exp_add]
+      congr 1
+      ring_nf
     rw [MeasureTheory.setIntegral_congr_fun measurableSet_Ioi h_eq]
     rw [integral_smul (μ := volume.restrict (Set.Ioi (0 : ℝ)))]
     congr 1
@@ -218,8 +222,8 @@ private theorem StronglyContinuousSemigroup.resolvent_shift_identity
   have h_split : ∫ u in Set.Ioi h, f u = Rlx - ∫ u in Set.Ioc 0 h, f u := by
     have hsplit := integral_Ioi_eq_Ioc_add_Ioi f hh
       (S.integrableOn_resolvent_integrand hb lambda hlam x)
-    have hRlx : Rlx = ∫ t in Set.Ioi 0, f t := S.resolvent_apply hb lambda hlam x
-    rw [hRlx, hsplit]; abel
+    rw [hRlx, hsplit]
+    abel
   -- Step 3: combine into the key identity
   rw [h_push, h_split]
   simp only [smul_sub, sub_smul, one_smul]
@@ -230,7 +234,7 @@ tends to `x` as `t → 0⁺`. -/
 private theorem StronglyContinuousSemigroup.tendsto_average_resolvent_integrand
     (S : StronglyContinuousSemigroup X) (lambda : ℝ) (x : X) :
     Filter.Tendsto
-      (fun t => (1 / t) • ∫ u in Set.Ioc 0 t, Real.exp (-(lambda * u)) • S.realOperator u x)
+      (fun t ↦ (1 / t) • ∫ u in Set.Ioc 0 t, Real.exp (-(lambda * u)) • S.realOperator u x)
       (nhdsWithin 0 (Set.Ioi 0)) (nhds x) := by
   let T := S.expShift lambda
   have h := T.tendsto_average_orbit_zero x
@@ -247,7 +251,7 @@ private theorem StronglyContinuousSemigroup.tendsto_average_resolvent_integrand
 private theorem StronglyContinuousSemigroup.resolvent_generator_tendsto
     (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
     (lambda : ℝ) (hlam : ω < lambda) (x : X) :
-    Filter.Tendsto (fun t => (1 / t) • (S.realOperator t (S.resolvent hb lambda hlam x) -
+    Filter.Tendsto (fun t ↦ (1 / t) • (S.realOperator t (S.resolvent hb lambda hlam x) -
       S.resolvent hb lambda hlam x))
       (nhdsWithin 0 (Set.Ioi 0))
       (nhds (lambda • S.resolvent hb lambda hlam x - x)) := by
@@ -256,12 +260,12 @@ private theorem StronglyContinuousSemigroup.resolvent_generator_tendsto
   · filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
     rw [S.resolvent_shift_identity hb lambda hlam x ht, smul_sub, smul_smul, smul_smul]
   · set Rlx := S.resolvent hb lambda hlam x
-    set f := fun t => Real.exp (-(lambda * t)) • S.realOperator t x
+    set f := fun t ↦ Real.exp (-(lambda * t)) • S.realOperator t x
     apply Filter.Tendsto.sub
     · -- `(1/t * (e^{λt}-1)) • Rlx → λ • Rlx`
       apply Filter.Tendsto.smul _ tendsto_const_nhds
       exact (tendsto_exp_mul_sub_one_div lambda).congr
-        (fun t => by ring)
+        (fun t ↦ by ring)
     · -- `(1/t * e^{λt}) • ∫_{Ioc 0 t} f → 1 • x = x`
       have h_one_smul_x : x = (1 : ℝ) • x := (one_smul ℝ x).symm
       rw [h_one_smul_x]
@@ -274,9 +278,9 @@ private theorem StronglyContinuousSemigroup.resolvent_generator_tendsto
         rw [h_scale_comm, mul_smul]
       simp_rw [h_average_scale]
       apply Filter.Tendsto.smul
-      · have hexp_cont : Filter.Tendsto (fun t => Real.exp (lambda * t))
+      · have hexp_cont : Filter.Tendsto (fun t ↦ Real.exp (lambda * t))
             (nhds 0) (nhds 1) := by
-          have hcont : ContinuousAt (fun t : ℝ => Real.exp (lambda * t)) 0 := by fun_prop
+          have hcont : ContinuousAt (fun t : ℝ ↦ Real.exp (lambda * t)) 0 := by fun_prop
           simpa using hcont.tendsto
         exact hexp_cont.mono_left nhdsWithin_le_nhds
       · exact S.tendsto_average_resolvent_integrand lambda x

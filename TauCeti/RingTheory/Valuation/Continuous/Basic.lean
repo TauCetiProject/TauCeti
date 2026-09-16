@@ -98,6 +98,8 @@ ambient-codomain form. By the witness above that is strictly stronger than Defin
 not preserved by `Valuation.IsEquiv`, so it cannot descend to `Spv A`; AINTLIB's own transfer
 lemma `isContinuous_ofValuation_of` is correspondingly one-directional. Quantifying over the
 attained values instead makes `Valuation.IsEquiv.isContinuous_iff` immediate.
+`Valuation.IsContinuous.eventually_eq` is the filter form of AINTLIB's
+`Valuation.IsContinuous.setOf_value_eq_mem_nhds`.
 -/
 
 public section
@@ -162,6 +164,13 @@ theorem IsContinuous.sub_lt_mem_nhds [SeparatelyContinuousAdd A] {v : Valuation 
     simpa only [sub_eq_add_neg] using continuous_add_const (-a)
   refine ((hv b).preimage hcont).mem_nhds ?_
   simpa using zero_lt_iff.mpr hb
+
+/-- **A continuous valuation is locally constant off its support.** Every point near `x` has
+value `v x`, as soon as `v x ≠ 0`. Mathlib's `Valued.locally_const` is the special case in which
+`A` carries the topology defined by `v`. -/
+theorem IsContinuous.eventually_eq [SeparatelyContinuousAdd A] {v : Valuation A Γ₀}
+    (hv : v.IsContinuous) {x : A} (hx : v x ≠ 0) : ∀ᶠ y in 𝓝 x, v y = v x :=
+  Filter.mem_of_superset (hv.sub_lt_mem_nhds x hx) fun _ ↦ v.map_eq_of_sub_lt
 
 /-- **Wedhorn Remark 7.8(3), at an attained value.** The non-strict set `{a | v a ≤ v b}` is
 open: it is a union of translates of the open `{a | v a < v b}`, since adding an element of
@@ -260,7 +269,7 @@ theorem isContinuous_iff_continuous [SeparatelyContinuousAdd A] [ContinuousConst
     exact hx.trans_le hle
   · -- off the support `v` is locally constant, by the strict triangle equality
     rw [ContinuousAt, WithZeroTopology.tendsto_of_ne_zero ha]
-    filter_upwards [hv.sub_lt_mem_nhds a ha] with y hy using v.map_eq_of_sub_lt hy
+    exact hv.eventually_eq ha
 
 end ValueGroup
 
@@ -279,7 +288,6 @@ theorem isClosed_supp_of_isContinuous (hv : v.IsContinuous) : IsClosed (v.supp :
   rw [← isOpen_compl_iff]
   refine isOpen_iff_mem_nhds.mpr fun a ha ↦ ?_
   have ha' : v a ≠ 0 := ha
-  filter_upwards [hv.sub_lt_mem_nhds a ha'] with y hy
-  exact fun hyzero ↦ ha' ((v.map_eq_of_sub_lt hy).symm.trans hyzero)
+  filter_upwards [hv.eventually_eq ha'] with y hy using fun hyzero ↦ ha' (hy.symm.trans hyzero)
 
 end TauCeti

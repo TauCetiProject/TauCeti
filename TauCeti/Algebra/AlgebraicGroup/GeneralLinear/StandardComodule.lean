@@ -43,12 +43,11 @@ invertible matrix, and `GL(n, k)` is transitive on nonzero vectors.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 
 Faithfulness and simplicity of the standard representation are the two representation-theoretic
-inputs to the statement that `GLₙ` is reductive, which the ReductiveGroups roadmap asks for among
-the worked examples accompanying Layer 6, "Reductive and semisimple groups". The remaining input
-is that the invariants of a normal closed subgroup form a subrepresentation.
+inputs to the statement that `GLₙ` is reductive. The remaining input is that the invariants of a
+normal closed subgroup form a subrepresentation.
 
-The construction of the comodule follows the template of
-`TauCeti.Algebra.AlgebraicGroup.UpperUnitriangular.Unipotent`.
+Corestriction along the coordinate morphism `O(GLₙ) → O(Uₙ)` gives the standard
+upper-unitriangular comodule in `TauCeti.Algebra.AlgebraicGroup.UpperUnitriangular.Unipotent`.
 -/
 
 public section

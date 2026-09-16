@@ -35,7 +35,8 @@ For grids of size at most two the differential vanishes (`SmallGridDifferential.
 chain is a cycle and the only boundary is zero. The homology is therefore the whole chain module:
 it is `ZMod 2`-linearly isomorphic to `GridChain (ZMod 2) n`, has `2 ^ n!` elements, and has
 `ZMod 2`-dimension `n!`. On the standard `2 × 2` unknot grid this is dimension two, the rank of
-the stabilization factor `W = 𝔽 ⊕ 𝔽` predicted by `GH̃(G) ≅ GĤ(L) ⊗ W^{⊗(n-1)}` for the unknot.
+the stabilization factor `W = 𝔽 ⊕ 𝔽` predicted by the standard grid-homology formula for the
+unknot.
 
 ## Main definitions
 

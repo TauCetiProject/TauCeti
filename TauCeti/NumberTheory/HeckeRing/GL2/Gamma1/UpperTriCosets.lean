@@ -173,7 +173,7 @@ lemma exists_mem_Gamma1_natDiagGL_mul_of_dvd (hp : 0 < p) {γ : SL(2, ℤ)} (hγ
     {j : ℕ} (hjlt : j < p) (hj : (p : ℤ) ∣ γ 0 1 - γ 0 0 * j) :
     ∃ δ : SL(2, ℤ), δ ∈ Gamma1 N ∧
       natDiagGL 2 ![1, p] * mapGL ℚ γ = mapGL ℚ δ * upperTriRep p ⟨j, hjlt⟩ := by
-  obtain ⟨ha, hd, hc⟩ := (Gamma1_mem N γ).mp hγ
+  obtain ⟨-, hd, hc⟩ := (Gamma1_mem N γ).mp hγ
   obtain ⟨m, hm⟩ := hj
   -- the new left factor
   have hdet : (!![γ 0 0, m; (p : ℤ) * γ 1 0, γ 1 1 - γ 1 0 * j] :
@@ -185,11 +185,10 @@ lemma exists_mem_Gamma1_natDiagGL_mul_of_dvd (hp : 0 < p) {γ : SL(2, ℤ)} (hγ
   obtain ⟨δ, hδmat⟩ : ∃ δ : SL(2, ℤ), (δ : Matrix (Fin 2) (Fin 2) ℤ) =
       !![γ 0 0, m; (p : ℤ) * γ 1 0, γ 1 1 - γ 1 0 * j] := ⟨⟨_, hdet⟩, rfl⟩
   refine ⟨δ, ?_, ?_⟩
-  · refine (Gamma1_mem N δ).mpr ⟨?_, ?_, ?_⟩
-    · simpa [hδmat] using ha
-    · have h : ((γ 1 1 - γ 1 0 * j : ℤ) : ZMod N) = 1 := by push_cast; rw [hd, hc]; ring
-      simpa [hδmat] using h
+  · refine mem_Gamma1_iff.mpr ⟨Gamma0_mem.mpr ?_, ?_⟩
     · have h : (((p : ℤ) * γ 1 0 : ℤ) : ZMod N) = 0 := by push_cast; rw [hc]; ring
+      simpa [hδmat] using h
+    · have h : ((γ 1 1 - γ 1 0 * j : ℤ) : ZMod N) = 1 := by push_cast; rw [hd, hc]; ring
       simpa [hδmat] using h
   · refine Units.ext ?_
     have hmZ : (γ 0 1 : ℤ) = γ 0 0 * j + m * p := by linarith

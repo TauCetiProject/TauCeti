@@ -27,6 +27,9 @@ public section
 
 namespace TauCeti.E6Minuscule
 
+local notation "Λ" => TauCeti.coordinateLattice (Fin 27)
+local notation "𝓑" => TauCeti.coordinateLatticeBasis (Fin 27)
+
 universe v v'
 
 noncomputable section
@@ -62,8 +65,8 @@ theorem map_weightTorusPoints (f : A →+* B) (s : Fin 6 → Aˣ) :
   rw [GeneralLinear.IntegralPointsPresentation.coe_map,
     coe_weightTorusPoints, coe_weightTorusPoints]
   exact UniversalEnvelopingAlgebra.map_kostantTorusMatrix
-    (M := lattice.toAddSubgroup) (b := latticeBasis)
-      (wt := DynkinType.e6MinusculeWeight) f s
+    (M := (Λ).toAddSubgroup) (b := 𝓑)
+      (wt := weightTable.weight) f s
 
 end
 
