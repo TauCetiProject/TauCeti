@@ -74,7 +74,6 @@ theorem jonesDelta_eq_neg_inv_sq_add_sq (a : Rˣ) :
   ring
 
 /-- The Jones loop value is unchanged by inverting the unit. -/
-@[simp]
 theorem jonesDelta_inv (a : Rˣ) : jonesDelta a⁻¹ = jonesDelta a := by
   rw [jonesDelta_def, inv_inv, ← jonesDelta_eq_neg_inv_sq_add_sq]
 
