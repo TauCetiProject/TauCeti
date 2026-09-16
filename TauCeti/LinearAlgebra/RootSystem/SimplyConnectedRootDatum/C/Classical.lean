@@ -35,7 +35,9 @@ integral inverse, since the matrices of the two families are inverse transposes 
 
 * `TauCeti.DynkinType.TypeC.classicalWeightEquiv_weight` and
   `TauCeti.DynkinType.TypeC.classicalCoweightEquiv_coweight`: `e_a` has classical coordinates the
-  `a`-th standard basis vector in both lattices.
+  `a`-th standard basis vector in both lattices, with inverses
+  `TauCeti.DynkinType.TypeC.classicalWeightEquiv_symm_single` and
+  `TauCeti.DynkinType.TypeC.classicalCoweightEquiv_symm_single`.
 * `TauCeti.DynkinType.TypeC.classicalWeightEquiv_dotProduct_classicalCoweightEquiv`: the change of
   coordinates preserves the pairing.
 
@@ -123,6 +125,18 @@ theorem classicalCoweightEquiv_coweight (a : Fin n) :
   ext c
   rw [classicalCoweightEquiv_apply, weight_dotProduct_coweight c.isLt, Pi.single_apply]
   simp [Fin.ext_iff]
+
+/-- The `a`-th standard basis vector of classical coordinates is the character `e_a`. -/
+@[simp]
+theorem classicalWeightEquiv_symm_single (a : Fin n) :
+    (classicalWeightEquiv n).symm (Pi.single a 1) = weight n a := by
+  rw [LinearEquiv.symm_apply_eq, classicalWeightEquiv_weight]
+
+/-- The `a`-th standard basis vector of classical coordinates is the cocharacter `e_a`. -/
+@[simp]
+theorem classicalCoweightEquiv_symm_single (a : Fin n) :
+    (classicalCoweightEquiv n).symm (Pi.single a 1) = coweight n a := by
+  rw [LinearEquiv.symm_apply_eq, classicalCoweightEquiv_coweight]
 
 /-- **The classical coordinates preserve the pairing.** The pinned dot product of a character and
 a cocharacter is the dot product of their classical coordinates. -/
