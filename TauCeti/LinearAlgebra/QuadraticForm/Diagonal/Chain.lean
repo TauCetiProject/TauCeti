@@ -20,6 +20,12 @@ steps, since a transposition of coefficients is itself a binary equivalence. The
 is the forward implication of the chain theorem: a diagonal chain induces an isometry between its
 endpoint diagonal forms. The converse is the substantive Witt chain theorem.
 
+The bodies of the four relations below are not exposed, so the `Exists`, `Or` and
+`Relation.ReflTransGen` constructors are unavailable outside this file. Downstream modules build
+chains through `TauCeti.BinaryStep.of_pair`, `TauCeti.DiagonalStep.binary` and
+`TauCeti.DiagonalChain.binary`/`tail`/`trans` instead; those five lemmas exist for exactly that
+reason and have no in-file uses.
+
 The declarations in this file assume only a commutative semiring and establish the elementary
 forward implication. The classical converse cited below is a theorem over fields with `2`
 invertible.
@@ -106,11 +112,6 @@ end BinaryStep
 
 namespace PermutationStep
 
-/-- Construct a permutation step from a permutation of the indices. -/
-theorem of_perm {w w' : Fin n → Rˣ} (σ : Equiv.Perm (Fin n))
-    (hσ : ∀ i, w' i = w (σ i)) : PermutationStep w w' := by
-  exact ⟨σ, hσ⟩
-
 /-- Permutation steps may be reversed. -/
 theorem symm {w w' : Fin n → Rˣ} (h : PermutationStep w w') : PermutationStep w' w := by
   rw [PermutationStep] at h ⊢
@@ -191,44 +192,27 @@ end BinaryStep
 
 namespace DiagonalStep
 
-/-- A permutation step is an elementary diagonal step. -/
-theorem permutation {w w' : Fin n → Rˣ} (h : PermutationStep w w') : DiagonalStep w w' :=
-  Or.inl h
-
 /-- A binary step is an elementary diagonal step. -/
 theorem binary {w w' : Fin n → Rˣ} (h : BinaryStep w w') : DiagonalStep w w' :=
   Or.inr h
 
-/-- Eliminate an elementary diagonal step by treating its permutation and binary cases. -/
-theorem elim {w w' : Fin n → Rˣ} {P : Prop} (h : DiagonalStep w w')
-    (hperm : PermutationStep w w' → P) (hbinary : BinaryStep w w' → P) : P :=
-  Or.elim h hperm hbinary
-
 /-- Elementary diagonal steps may be reversed. -/
 theorem symm {w w' : Fin n → Rˣ} (h : DiagonalStep w w') : DiagonalStep w' w :=
-  h.elim (Or.inl ∘ PermutationStep.symm) (Or.inr ∘ BinaryStep.symm)
+  Or.elim h (Or.inl ∘ PermutationStep.symm) (Or.inr ∘ BinaryStep.symm)
 
 /-- The diagonal forms at the endpoints of an elementary diagonal step are equivalent. -/
 theorem equivalent {w w' : Fin n → Rˣ} (h : DiagonalStep w w') :
     (weightedSumSquares R fun i => (w i : R)).Equivalent
       (weightedSumSquares R fun i => (w' i : R)) :=
-  h.elim PermutationStep.equivalent BinaryStep.equivalent
+  Or.elim h PermutationStep.equivalent BinaryStep.equivalent
 
 end DiagonalStep
 
 namespace DiagonalChain
 
-/-- The empty sequence is a diagonal chain. -/
-theorem refl (w : Fin n → Rˣ) : DiagonalChain w w :=
-  Relation.ReflTransGen.refl
-
-/-- A single elementary diagonal step is a diagonal chain. -/
-theorem single {w w' : Fin n → Rˣ} (h : DiagonalStep w w') : DiagonalChain w w' :=
-  Relation.ReflTransGen.single h
-
 /-- A single binary step is a diagonal chain. -/
 theorem binary {w w' : Fin n → Rˣ} (h : BinaryStep w w') : DiagonalChain w w' :=
-  single (DiagonalStep.binary h)
+  Relation.ReflTransGen.single (Or.inr h)
 
 /-- Append an elementary step to a diagonal chain. -/
 theorem tail {w w' w'' : Fin n → Rˣ} (h : DiagonalChain w w')
@@ -239,15 +223,6 @@ theorem tail {w w' w'' : Fin n → Rˣ} (h : DiagonalChain w w')
 theorem trans {w w' w'' : Fin n → Rˣ} (h : DiagonalChain w w')
     (h' : DiagonalChain w' w'') : DiagonalChain w w'' :=
   Relation.ReflTransGen.trans h h'
-
-/-- Prove a property of diagonal chains from the reflexive, single-step, and transitive cases. -/
-theorem trans_induction_on {P : (Fin n → Rˣ) → (Fin n → Rˣ) → Prop}
-    {w w' : Fin n → Rˣ} (h : DiagonalChain w w')
-    (hrefl : ∀ v, P v v)
-    (hsingle : ∀ {v v'}, DiagonalStep v v' → P v v')
-    (htrans : ∀ {v v' v''}, DiagonalChain v v' → DiagonalChain v' v'' →
-      P v v' → P v' v'' → P v v'') : P w w' := by
-  exact Relation.ReflTransGen.trans_induction_on h hrefl hsingle htrans
 
 /-- Diagonal chains may be reversed. -/
 theorem symm {w w' : Fin n → Rˣ} (h : DiagonalChain w w') : DiagonalChain w' w := by
@@ -273,7 +248,7 @@ theorem cons {w w' : Fin n → Rˣ} (a : Rˣ) (h : DiagonalChain w w') :
   have toBinary {v v' : Fin n → Rˣ} (hstep : DiagonalStep v v') :
       Relation.ReflTransGen BinaryStep v v' := by
     unfold TauCeti.DiagonalStep at hstep
-    exact hstep.elim PermutationStep.to_reflTransGen_binaryStep Relation.ReflTransGen.single
+    exact Or.elim hstep PermutationStep.to_reflTransGen_binaryStep Relation.ReflTransGen.single
   have hbinary : Relation.ReflTransGen BinaryStep w w' := by
     unfold TauCeti.DiagonalChain at h
     exact Relation.ReflTransGen.trans_induction_on h
