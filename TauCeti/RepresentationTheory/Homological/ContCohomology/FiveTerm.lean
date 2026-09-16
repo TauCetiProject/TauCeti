@@ -78,9 +78,7 @@ theorem smul_inverseConjugation_apply_sub_eq_d0 (c : Z1 G M) (g : G) (n : N) :
   have hc₂ := (mem_Z1_iff.1 c.2).2 (n : G) g
   have hcinv := map_inv_of_mem_Z1 c.2 g
   rw [hc₁, hc₂, smul_add, smul_smul, hcinv]
-  simp only [mul_inv_cancel, one_smul, d0_apply]
-  have hnsmul : n • (c : G → M) g = (n : G) • (c : G → M) g := rfl
-  rw [hnsmul]
+  simp only [mul_inv_cancel, one_smul, d0_apply, Subgroup.smul_def]
   abel
 
 /-- Restriction of a first cohomology class to a normal subgroup is invariant under conjugation.
