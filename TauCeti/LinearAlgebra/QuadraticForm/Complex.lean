@@ -156,7 +156,8 @@ theorem _root_.QuadraticForm.isRepresentedBy_iff_finrank_le_of_isAlgClosed
       e.injective.comp LinearMap.inl_injective, fun x ↦ by simp⟩
 
 /-- A regular quadratic form on a space of positive rank over an algebraically closed field
-represents every scalar. -/
+represents every scalar. The positive-rank hypothesis supplies nontriviality directly, so no
+finite-dimensionality typeclass assumption is needed. -/
 theorem _root_.QuadraticForm.represents_of_finrank_pos_of_isAlgClosed
     {K W : Type*} [Field K] [IsAlgClosed K] [AddCommGroup W] [Module K W]
     (Q : QuadraticForm K W) (hQ : Q.Nondegenerate) (hW : 0 < Module.finrank K W) (a : K) :
