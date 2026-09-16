@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Shapiro
-public import TauCeti.CategoryTheory.Abelian.Ext
+public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
 public import TauCeti.RepresentationTheory.Homological.Resolution
 
 /-!
@@ -99,7 +99,7 @@ theorem coindIso_hom (n : ℕ) :
   have hext := ProjectiveResolution.isoExt_hom_comp_homologyMap (R := k) (barResolution k S)
     ((resFunctor S.subtype).mapProjectiveResolution (barResolution k G))
     (TauCeti.Rep.barComplex.resChainMap S.subtype)
-    (TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π S) n A
+    (TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π S.subtype) n A
   have hinhom : (isoOfQuasiIsoAt (HomotopyEquiv.ofIso (inhomogeneousCochainsIso A)).hom n).inv =
       HomologicalComplex.homologyMap (inhomogeneousCochainsIso A).inv n :=
     Iso.inv_ext ((HomologicalComplex.homologyMap_comp _ _ n).symm.trans

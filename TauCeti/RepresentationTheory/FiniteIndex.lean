@@ -46,11 +46,12 @@ variable {k G : Type u} [CommRing k] [Group G] (S : Subgroup G) [S.FiniteIndex]
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
+open Classical in
 /-- **Unit followed by trace is the index.** For a finite-index subgroup `S ≤ G`, the unit
 `A ⟶ Coind_S^G(Res_S A)` of restriction–coinduction followed by the counit
 `Coind_S^G(Res_S A) ⟶ A` of coinduction–restriction is multiplication by `[G : S]`. -/
 theorem resCoindAdjunction_unit_app_comp_coindResAdjunction_counit_app
-    [DecidableRel (QuotientGroup.rightRel S)] (A : Rep.{u} k G) :
+    (A : Rep.{u} k G) :
     (resCoindAdjunction k S.subtype).unit.app A ≫ (coindResAdjunction.{u, u, u} k S).counit.app A =
       S.index • 𝟙 A := by
   rw [← Nat.cast_smul_eq_nsmul k]

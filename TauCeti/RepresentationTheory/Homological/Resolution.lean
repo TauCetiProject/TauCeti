@@ -16,8 +16,8 @@ Let `f : H →* G` be a homomorphism of groups. The bar resolution `Rep.barCompl
 trivial representation `k` of `H` maps to the restriction along `f` of the bar resolution of `G`:
 in degree `n` a basis element `(h₁, …, hₙ)` is sent to `(f h₁, …, f hₙ)`. This file constructs
 that chain map, `TauCeti.Rep.barComplex.resChainMap`, and checks that it lies over the identity of
-`k` when `f` is the inclusion of a subgroup, so that it is a morphism of projective resolutions of
-`k` over the subgroup.
+`k`. When restriction along `f` preserves projectives, it is therefore a morphism of projective
+resolutions of the trivial representation.
 
 To make the last statement checkable, the file also computes the augmentations of Mathlib's
 standard and bar resolutions on basis elements: both send a basis element with coefficient `r` to
@@ -39,13 +39,14 @@ defined through `Ext`, with an explicit map on inhomogeneous cochains.
   resolutions on basis elements.
 * `TauCeti.Rep.standardResolution_π_f_zero_single` and
   `TauCeti.Rep.barResolution_π_f_zero_single`: the augmentations on basis elements.
-* `TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π`: for a subgroup, the chain map lies over the
-  identity of `k`.
+* `TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π`: the chain map lies over the identity of `k`.
 
 ## References
 
 * K. S. Brown, *Cohomology of Groups*, Graduate Texts in Mathematics 87, Springer (1982),
   Chapter I, §5 (the bar resolution) and Chapter III, §8 (change of groups).
+* The proof of `diagonalSuccIsoFree_inv_hom_single` adapts Amelia Livingston's computation in
+  Mathlib's `Rep.barComplex.d_comp_diagonalSuccIsoFree_inv_eq`.
 -/
 
 public section
@@ -137,21 +138,25 @@ noncomputable def resChainMap (f : H →* G) :
 @[simp]
 theorem resChainMap_f (f : H →* G) (n : ℕ) : (resChainMap (k := k) f).f n = resHom f n := (rfl)
 
-/-- **For a subgroup, the bar resolution along the inclusion lies over the identity of `k`**: it is
-a morphism from the bar resolution of `S` to the restriction of the bar resolution of `G`, both
-viewed as projective resolutions of the trivial representation of `S`. -/
-theorem resChainMap_f_zero_comp_π (S : Subgroup G) : (resChainMap (k := k) S.subtype).f 0 ≫
-    ((resFunctor S.subtype).mapProjectiveResolution (barResolution k G)).π.f 0 =
-      (barResolution k S).π.f 0 := by
+/-- **The bar resolution along a group homomorphism lies over the identity of `k`**: when
+restriction along `f : H →* G` preserves projectives, this is a morphism from the bar resolution
+of `H` to the restriction of the bar resolution of `G`, both viewed as projective resolutions of
+the trivial representation of `H`. -/
+theorem resChainMap_f_zero_comp_π (f : H →* G)
+    [(resFunctor (k := k) f).PreservesProjectiveObjects] : (resChainMap (k := k) f).f 0 ≫
+    ((resFunctor f).mapProjectiveResolution (barResolution k G)).π.f 0 =
+      (barResolution k H).π.f 0 := by
   refine free_ext _ _ _ _ _ fun x => ?_
-  have h₁ : ((resChainMap (k := k) S.subtype).f 0).hom (single x (MonoidAlgebra.single 1 1)) =
-      single (S.subtype ∘ x) (MonoidAlgebra.single 1 1) := resHom_single _ _ _ _ _
+  have h₁ : ((resChainMap (k := k) f).f 0).hom (single x (MonoidAlgebra.single 1 1)) =
+      single (f ∘ x) (MonoidAlgebra.single 1 1) := by
+    simpa only [resChainMap_f, map_one] using (resHom_single (k := k) f 0 x 1 1)
   -- The augmentation of the restricted resolution is that of `G` followed by the canonical
   -- identifications of the single complex, which are the identity on underlying modules.
-  have h₂ : (((resFunctor S.subtype).mapProjectiveResolution (barResolution k G)).π.f 0).hom
-      (single (S.subtype ∘ x) (MonoidAlgebra.single 1 1)) = (1 : k) :=
-    barResolution_π_f_zero_single (k := k) (S.subtype ∘ x) (1 : G) 1
-  exact (congrArg _ h₁).trans (h₂.trans (barResolution_π_f_zero_single (k := k) x (1 : S) 1).symm)
+  have h₂ : (((resFunctor f).mapProjectiveResolution (barResolution k G)).π.f 0).hom
+      (single (f ∘ x) (MonoidAlgebra.single 1 1)) = (1 : k) :=
+    barResolution_π_f_zero_single (k := k) (f ∘ x) (1 : G) 1
+  exact (congrArg _ h₁).trans (h₂.trans
+    (barResolution_π_f_zero_single (k := k) x (1 : H) 1).symm)
 
 end barComplex
 
