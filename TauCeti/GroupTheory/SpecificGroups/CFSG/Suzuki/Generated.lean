@@ -64,6 +64,26 @@ def weylMatrix (n : ℕ) : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * n + 1)) :=
     ![0, 1, 0, 0],
     ![1, 0, 0, 0]]
 
+/-- An entry of the standard unipotent generator matrix. -/
+@[simp]
+theorem unipotentMatrix_apply (a b : GaloisField 2 (2 * n + 1)) (i j : Fin 4) :
+    unipotentMatrix n a b i j =
+      ![![1, 0, 0, 0],
+        ![a, 1, 0, 0],
+        ![a * a ^ 2 ^ (n + 1) + b, a ^ 2 ^ (n + 1), 1, 0],
+        ![a ^ 2 * a ^ 2 ^ (n + 1) + a * b + b ^ 2 ^ (n + 1), b, a, 1]] i j := by
+  rfl
+
+/-- An entry of the standard Weyl generator matrix. -/
+@[simp]
+theorem weylMatrix_apply (i j : Fin 4) :
+    weylMatrix n i j =
+      ![![0, 0, 0, 1],
+        ![0, 0, 1, 0],
+        ![0, 1, 0, 0],
+        ![1, 0, 0, 0]] i j := by
+  rfl
+
 /-- Every standard unipotent generator matrix has determinant one. -/
 @[simp]
 theorem det_unipotentMatrix (a b : GaloisField 2 (2 * n + 1)) :
