@@ -28,16 +28,18 @@ smoothed diagram: cross an arc, then follow the smoothing at the crossing reache
 for each direction of travel, so `TauCeti.PDCode.stateLoopCount` halves the orbit count and adds
 the crossing-free circles that the code records separately.
 
-The **Kauffman bracket** is the resulting state sum `∑ s, a ^ (A(s) - B(s)) * δ ^ loops s`, formed
+The **Kauffman bracket** is the resulting state sum `∑ s, a ^ (A(s) - B(s)) * δ ^ (loops s - 1)`,
+formed
 over a commutative ring with a distinguished unit `a` at the loop value
 `δ = -(a ^ 2 + a⁻¹ ^ 2)` (`TauCeti.TemperleyLieb.jonesDelta`), which is the value at which the
-Kauffman-bracket expansion of a crossing is invertible. The normalisation used here is that the
-empty diagram has bracket `1`, so a code with no crossings and `c` circles has bracket `δ ^ c`;
-Kauffman's `⟨·⟩`, normalised by `⟨unknot⟩ = 1`, is this divided by `δ`.
+Kauffman-bracket expansion of a crossing is invertible. This is Kauffman's `⟨·⟩` with Lickorish's
+normalisation `⟨unknot⟩ = 1`: a code with no crossings and `c ≥ 1` circles has bracket
+`δ ^ (c - 1)`. The exponent is truncated subtraction, so the empty code has bracket `1`; every
+code with a crossing has at least one circle in each state, so this affects only the empty code.
 
 The bracket depends on a PD-code only through its relabelling class, and mirroring a code inverts
 the unit `a`. On the one-crossing kink diagram `TauCeti.PDCode.kink` it takes the value
-`-a ^ 3 * δ`, the framing factor of the first Reidemeister move. Whether the bracket descends from
+`-a ^ 3`, the framing factor of the first Reidemeister move. Whether the bracket descends from
 diagrams to knots is the question of its behaviour under the Reidemeister moves, which are a
 separate construction on PD-codes and are not treated here.
 
@@ -57,10 +59,10 @@ separate construction on PD-codes and are not treated here.
 * `TauCeti.PDCode.kauffmanBracket_relabel`: the bracket is invariant under relabelling.
 * `TauCeti.PDCode.kauffmanBracket_mirror`: mirroring the code inverts the unit.
 * `TauCeti.PDCode.kauffmanBracket_eq_jonesDelta_pow`: a code with no crossings and `c` circles has
-  bracket `δ ^ c`.
+  bracket `δ ^ (c - 1)`.
 * `TauCeti.PDCode.stateLoopCount_kink_true`, `TauCeti.PDCode.stateLoopCount_kink_false`: the two
   smoothings of a kink leave two circles and one circle.
-* `TauCeti.PDCode.kauffmanBracket_kink`: the kink diagram has bracket `-a ^ 3 * δ`.
+* `TauCeti.PDCode.kauffmanBracket_kink`: the kink diagram has bracket `-a ^ 3`.
 * `TauCeti.PDCode.crossingComponentCount_kink`: the kink has one component, so it is a diagram of
   a knot.
 
@@ -291,17 +293,17 @@ theorem stateWeight_def (s : Fin n → Bool) (a : Rˣ) :
   Equiv.prod_comp cross fun i => bif s i then a else a⁻¹
 
 /-- **The Kauffman bracket** of a PD-code at a unit `a`: the sum, over all `2 ^ n` states, of the
-weight of the state times the loop value `TauCeti.TemperleyLieb.jonesDelta a` raised to the number
-of circles of the smoothed diagram. The normalisation is that the empty diagram has bracket `1`,
-so a code with no crossings and `c` circles has bracket `δ ^ c`, and Kauffman's `⟨·⟩` with
-`⟨unknot⟩ = 1` is this divided by `δ`. -/
+weight of the state times the loop value `TauCeti.TemperleyLieb.jonesDelta a` raised to one less
+than the number of circles of the smoothed diagram. This is Lickorish's normalisation
+`⟨unknot⟩ = 1`; with truncated subtraction the empty diagram also has bracket `1`. -/
 noncomputable def kauffmanBracket (D : PDCode n) (a : Rˣ) : R :=
-  ∑ s : Fin n → Bool, (stateWeight s a : R) * jonesDelta a ^ D.stateLoopCount s
+  ∑ s : Fin n → Bool, (stateWeight s a : R) * jonesDelta a ^ (D.stateLoopCount s - 1)
 
 /-- The defining state-sum equation of the Kauffman bracket. -/
 theorem kauffmanBracket_def (D : PDCode n) (a : Rˣ) :
     D.kauffmanBracket a =
-      ∑ s : Fin n → Bool, (stateWeight s a : R) * jonesDelta a ^ D.stateLoopCount s := (rfl)
+      ∑ s : Fin n → Bool, (stateWeight s a : R) * jonesDelta a ^ (D.stateLoopCount s - 1) :=
+    (rfl)
 
 /-- The Kauffman bracket depends on a PD-code only through its relabelling class. -/
 @[simp] theorem kauffmanBracket_relabel (D : PDCode n) (a : Rˣ)
@@ -319,11 +321,11 @@ theorem kauffmanBracket_def (D : PDCode n) (a : Rˣ) :
     (Function.Involutive.bijective fun s => by funext i; simp) _ _ fun s => ?_
   rw [stateLoopCount_mirror, stateWeight_inv, stateWeight_not, inv_inv, jonesDelta_inv]
 
-/-- A PD-code with no crossings and `c` crossing-free circles has Kauffman bracket `δ ^ c`. This
-pins the normalisation of `TauCeti.PDCode.kauffmanBracket`: the empty diagram has bracket `1`, and
+/-- A PD-code with no crossings and `c` crossing-free circles has Kauffman bracket `δ ^ (c - 1)`.
+This pins the normalisation of `TauCeti.PDCode.kauffmanBracket`: the unknot has bracket `1`, and
 each further circle contributes one factor of the loop value. -/
 theorem kauffmanBracket_eq_jonesDelta_pow (D : PDCode 0) (a : Rˣ) :
-    D.kauffmanBracket a = jonesDelta a ^ D.crossinglessComponentCount := by
+    D.kauffmanBracket a = jonesDelta a ^ (D.crossinglessComponentCount - 1) := by
   rw [kauffmanBracket, Fintype.sum_unique]
   simp [stateWeight]
 
@@ -456,21 +458,22 @@ theorem stateLoopCount_kink_false : kink.stateLoopCount (fun _ => false) = 1 := 
   rw [hperm]
   omega
 
-/-- **The Kauffman bracket of the kink is `-a ^ 3` times that of the unknot.** The two smoothings
-of the single crossing contribute `a * δ ^ 2` and `a⁻¹ * δ`, and the loop value collapses their
-sum to `-a ^ 3 * δ`: this is the framing factor by which the bracket fails to be invariant under
-the first Reidemeister move. -/
+/-- **The Kauffman bracket of the kink is `-a ^ 3`**, that is, `-a ^ 3` times that of the unknot.
+The two smoothings of the single crossing contribute `a * δ` and `a⁻¹`, and the loop value
+collapses their sum to `-a ^ 3`: this is the framing factor by which the bracket fails to be
+invariant under the first Reidemeister move. -/
 theorem kauffmanBracket_kink (a : Rˣ) :
-    kink.kauffmanBracket a = -((a : R) ^ 3) * jonesDelta a := by
+    kink.kauffmanBracket a = -((a : R) ^ 3) := by
   have hbij : Function.Bijective (fun (b : Bool) (_ : Fin 1) => b) :=
     ⟨fun b c hbc => congrFun hbc 0, fun s => ⟨s 0, funext fun i => by
       rw [Subsingleton.elim i 0]⟩⟩
   rw [kauffmanBracket, ← Fintype.sum_bijective _ hbij
     (fun b => (stateWeight (fun _ : Fin 1 => b) a : R) * jonesDelta a ^
-      kink.stateLoopCount fun _ => b) _ fun b => rfl, Fintype.sum_bool]
+      (kink.stateLoopCount (fun _ => b) - 1)) _ fun b => rfl, Fintype.sum_bool]
   simp only [stateLoopCount_kink_true, stateLoopCount_kink_false, stateWeight,
-    Fin.prod_univ_one, Bool.cond_true, Bool.cond_false, jonesDelta_def]
-  linear_combination (((a : R) ^ 2 + ((a⁻¹ : Rˣ) : R) ^ 2) * ((a⁻¹ : Rˣ) : R)) * a.mul_inv
+    Fin.prod_univ_one, Bool.cond_true, Bool.cond_false, Nat.add_one_sub_one, Nat.sub_self,
+    pow_one, pow_zero, mul_one, jonesDelta_def]
+  linear_combination (-((a⁻¹ : Rˣ) : R)) * a.mul_inv
 
 end Bracket
 
