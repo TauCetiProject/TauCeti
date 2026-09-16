@@ -162,14 +162,8 @@ theorem _root_.QuadraticForm.represents_of_finrank_pos_of_isAlgClosed
     [AddCommGroup W] [Module K W] [FiniteDimensional K W]
     (Q : QuadraticForm K W) (hQ : Q.Nondegenerate) (hW : 0 < Module.finrank K W) (a : K) :
     Q.Represents a := by
-  classical
-  have hsep : (QuadraticMap.associated Q).SeparatingLeft :=
-    (QuadraticMap.nondegenerate_associated_iff.mpr hQ).1
-  obtain ⟨e⟩ := Q.equivalent_weightedSumSquares_of_isAlgClosed hsep
-  obtain ⟨c, hc⟩ := IsAlgClosed.exists_eq_mul_self a
-  rw [e.represents_iff, QuadraticMap.represents_iff, Set.mem_range]
-  refine ⟨Pi.single ⟨0, hW⟩ c, ?_⟩
-  simp [weightedSumSquares_apply, Pi.single_apply, hc]
+  let _ : Nontrivial W := Module.nontrivial_of_finrank_pos hW
+  exact Q.represents_of_ne_zero_of_isAlgClosed hQ.ne_zero a
 
 /-- A regular quadratic form over an algebraically closed field represents a scalar exactly when
 the scalar is zero or the underlying space has positive dimension. -/
