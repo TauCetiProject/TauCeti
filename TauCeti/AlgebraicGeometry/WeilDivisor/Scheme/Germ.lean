@@ -10,11 +10,11 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Sheaf
 /-!
 # Germs of sections of the sheaf of a Weil divisor
 
-The sections of `𝒪_X(D)` over an open subset `U` are the rational functions whose order at every
-codimension-one point of `U` is at least `-D`. Shrinking `U` around a point `x` weakens that
-condition, and this file identifies what survives in the limit: a rational function is a section
-of `𝒪_X(D)` on *some* neighbourhood of `x` exactly when it satisfies the order bound at the
-codimension-one points which generize `x`.
+The sections of `𝒪_X(D)` over an open subset `U` are the zero rational function together with the
+rational functions whose order at every codimension-one point of `U` is at least `-D`. Shrinking
+`U` around a point `x` weakens that condition, and this file identifies what survives in the limit:
+a rational function is a section of `𝒪_X(D)` on *some* neighbourhood of `x` exactly when it is
+zero or satisfies the order bound at the codimension-one points which generize `x`.
 
 Only finitely many codimension-one points can obstruct the bound, because a nonzero rational
 function has nonzero order at finitely many of them and `D` has finite support; deleting the
@@ -27,11 +27,11 @@ at every codimension-one point.
   function violates the bound imposed by `D` are finite in number;
 * `SchemeWeilDivisor.exists_map_mem_sections_of_forall_specializes` and
   `SchemeWeilDivisor.exists_map_mem_sections_iff`: the germ criterion, that a section of `𝒦_X`
-  becomes a section of `𝒪_X(D)` near `x` exactly when it satisfies the order bound at every
-  codimension-one generization of `x`;
+  becomes a section of `𝒪_X(D)` near `x` exactly when its rational function is zero or satisfies
+  the order bound at every codimension-one generization of `x`;
 * `SchemeWeilDivisor.exists_map_mem_sections_iff_codimensionOne`: at a codimension-one point `x₀`
-  the only codimension-one generization is `x₀` itself, so near `x₀` the sheaf `𝒪_X(D)` is cut out
-  by the single valuation of the local ring there, and
+  the only codimension-one generization is `x₀` itself, so near `x₀` a section belongs to `𝒪_X(D)`
+  exactly when its rational function is zero or obeys the bound from the single valuation there, and
   `SchemeWeilDivisor.exists_map_mem_sections_ord_eq`: every order allowed by that valuation is
   attained.
 
@@ -91,10 +91,10 @@ lemma finite_setOf_ord_lt (D : SchemeWeilDivisor X) {f : X.functionField} (hf : 
   rw [Set.mem_ofPred_eq, hcon.1, hcon.2] at hy
   simp at hy
 
-/-- **A section of `𝒦_X` bounded at the codimension-one generizations of `x` is a section of
-`𝒪_X(D)` near `x`.** The finitely many codimension-one points where the bound fails are deleted
-together with their closures, which leaves a neighbourhood of `x` because none of them generizes
-`x`. -/
+/-- **A section of `𝒦_X` whose rational function is zero or is bounded at the codimension-one
+generizations of `x` is a section of `𝒪_X(D)` near `x`.** In the nonzero case, the finitely many
+codimension-one points where the bound fails are deleted together with their closures, which leaves
+a neighbourhood of `x` because none of them generizes `x`. -/
 theorem exists_map_mem_sections_of_forall_specializes (D : SchemeWeilDivisor X)
     {V : X.Opens} [Nonempty V] {x : X} (hxV : x ∈ V) (s : Γ(Scheme.rationalFunctions X, V))
     (h : ∀ y : CodimensionOnePoint X, (y : X) ⤳ x →
@@ -131,8 +131,9 @@ theorem exists_map_mem_sections_of_forall_specializes (D : SchemeWeilDivisor X)
     hyZ (Set.mem_biUnion ((hmemB y).mpr hlt) (subset_closure rfl)))
 
 /-- **The germ criterion for the sheaf of a Weil divisor.** A section of `𝒦_X` defined near `x`
-restricts to a section of `𝒪_X(D)` on some neighbourhood of `x` exactly when it satisfies the
-order bound imposed by `D` at every codimension-one point generizing `x`. -/
+restricts to a section of `𝒪_X(D)` on some neighbourhood of `x` exactly when its rational
+function is zero or satisfies the order bound imposed by `D` at every codimension-one point
+generizing `x`. -/
 theorem exists_map_mem_sections_iff (D : SchemeWeilDivisor X) {V : X.Opens} [Nonempty V] {x : X}
     (hxV : x ∈ V) (s : Γ(Scheme.rationalFunctions X, V)) :
     (∃ (U : X.Opens) (i : U ⟶ V), x ∈ U ∧
@@ -148,7 +149,7 @@ theorem exists_map_mem_sections_iff (D : SchemeWeilDivisor X) {V : X.Opens} [Non
 
 /-- **The local model of `𝒪_X(D)` at a codimension-one point.** A codimension-one point `x₀` has
 no codimension-one generization but itself, so a section of `𝒦_X` is a section of `𝒪_X(D)` near
-`x₀` exactly when its order at `x₀` is at least `-D x₀`. -/
+`x₀` exactly when its rational function is zero or its order at `x₀` is at least `-D x₀`. -/
 theorem exists_map_mem_sections_iff_codimensionOne (D : SchemeWeilDivisor X) {V : X.Opens}
     [Nonempty V] (x₀ : CodimensionOnePoint X) (hx₀ : (x₀ : X) ∈ V)
     (s : Γ(Scheme.rationalFunctions X, V)) :
