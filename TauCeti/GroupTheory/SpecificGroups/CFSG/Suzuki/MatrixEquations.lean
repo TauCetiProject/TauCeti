@@ -62,8 +62,9 @@ theorem mem_fixedSubgroup_steinberg_iff (g : d.toRankTwoBLieIndex.AmbientGroup) 
     intro x y h
     have hsq := congrArg d.halfFrobenius h
     rw [halfFrobenius_halfFrobenius, halfFrobenius_halfFrobenius,
-      RankTwoBLieIndex.primeFrobenius_def, SpStd.frobenius_eq_pointsMap] at hsq
-    exact SpStd.pointsMap_injective 1 (RingHom.injective _) hsq
+      RankTwoBLieIndex.primeFrobenius_def, SpStd.frobenius_eq_map] at hsq
+    exact (SpStd.pointsPresentation 1 d.1.Closure).map_injective
+      (SpStd.pointsPresentation 1 d.1.Closure) (RingHom.injective _) hsq
   rw [mem_fixedSubgroup, ← hinj.eq_iff, halfFrobenius_steinberg]
   constructor
   · intro h i j
