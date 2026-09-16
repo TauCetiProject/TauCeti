@@ -332,6 +332,7 @@ def kummerIso (hn : IsUnit (n : K)) :
       exact ⟨QuotientGroup.mk a, kummerClassMap_mk K n hn a⟩⟩
 
 /-- The Kummer isomorphism is the Kummer map on power classes. -/
+@[simp]
 theorem kummerIso_apply (hn : IsUnit (n : K)) (x : powerClassQuotient Kˣ n) :
     kummerIso K n hn x = kummerClassMap K n hn x :=
   (rfl)
