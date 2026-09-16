@@ -217,30 +217,6 @@ noncomputable def diagonalRootDatum (m : ℕ) :
     ((RootSubgroupIndex.equivTypeCIndex m).trans (typeCIndexEquiv m)).symm
     (characterEquiv m) (cocharacterEquiv m)
 
-/-- The root datum of the symplectic diagonal torus is reduced. -/
-instance instIsReducedDiagonalRootDatum (m : ℕ) : (diagonalRootDatum.{u} m).IsReduced := by
-  let P := typeCSimplyConnectedRootDatum m
-  let e := ((RootSubgroupIndex.equivTypeCIndex m).trans (typeCIndexEquiv m)).symm
-  let f := characterEquiv.{u} m
-  constructor
-  intro i j h
-  have h' : ¬ LinearIndependent ℤ ![P.root (e.symm i), P.root (e.symm j)] := by
-    intro hli
-    apply h
-    change LinearIndependent ℤ ![f (P.root (e.symm i)), f (P.root (e.symm j))]
-    have hm := hli.map' f.toLinearMap f.ker
-    have hfun : f.toLinearMap ∘ ![P.root (e.symm i), P.root (e.symm j)] =
-        ![f (P.root (e.symm i)), f (P.root (e.symm j))] := by
-      funext k
-      fin_cases k <;> rfl
-    rw [hfun] at hm
-    exact hm
-  rcases RootPairing.IsReduced.eq_or_eq_neg (P := P) (e.symm i) (e.symm j) h' with hij | hij
-  · left
-    simpa [diagonalRootDatum, P, e, f, RootPairing.map] using congrArg f hij
-  · right
-    simpa [diagonalRootDatum, P, e, f, RootPairing.map] using congrArg f hij
-
 /-- The root of `diagonalRootDatum` indexed by a root subgroup is the classical form of the pinned
 type `Cₘ` root with the corresponding index. -/
 private lemma diagonalRootDatum_root (r : RootSubgroupIndex m) :
@@ -256,6 +232,17 @@ private lemma diagonalRootDatum_coroot (r : RootSubgroupIndex m) :
       cocharacterEquiv.{u} m ((typeCSimplyConnectedRootDatum m).coroot
         (typeCIndexEquiv m (RootSubgroupIndex.equivTypeCIndex m r))) := by
   simp [diagonalRootDatum, RootPairing.map]
+
+/-- The root datum of the symplectic diagonal torus is reduced. -/
+instance instIsReducedDiagonalRootDatum (m : ℕ) : (diagonalRootDatum.{u} m).IsReduced := by
+  refine ⟨fun i j h => ?_⟩
+  simp only [diagonalRootDatum_root] at h ⊢
+  rw [← map_neg, (characterEquiv.{u} m).injective.eq_iff, (characterEquiv.{u} m).injective.eq_iff]
+  refine RootPairing.IsReduced.eq_or_eq_neg _ _ fun hli => h ?_
+  have hm := hli.map' (characterEquiv.{u} m).toLinearMap (characterEquiv.{u} m).ker
+  rwa [show ∀ x y, (characterEquiv.{u} m).toLinearMap ∘ ![x, y] =
+      ![characterEquiv.{u} m x, characterEquiv.{u} m y] from
+    fun x y => funext fun k => by fin_cases k <;> rfl] at hm
 
 /-- The pairing of `diagonalRootDatum` is the split-torus dot pairing. -/
 @[simp]
