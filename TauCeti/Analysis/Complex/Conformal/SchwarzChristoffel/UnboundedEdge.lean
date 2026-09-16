@@ -37,6 +37,9 @@ is approached but not reached at a finite parameter.
 * `TauCeti.schwarzChristoffelBoundary_image_Ici_prevertex` and
   `TauCeti.schwarzChristoffelBoundary_image_Iic_prevertex` -- the same edge descriptions with the
   finite endpoints expressed as Schwarz--Christoffel vertices.
+* `TauCeti.schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_le` and
+  `TauCeti.schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_ge` -- the finite endpoint of
+  either unbounded edge differs from its endpoint at infinity.
 
 ## References
 
@@ -187,6 +190,18 @@ theorem schwarzChristoffelBoundary_image_Ici_prevertex (a e : ι → ℝ) (z₀ 
   rw [schwarzChristoffelBoundary_image_Ici a e z₀ hj ha hS,
     schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj]
 
+/-- The finite endpoint of a right-hand unbounded Schwarz--Christoffel edge differs from its
+endpoint at infinity.  Thus the segment traced by the edge is nondegenerate. -/
+theorem schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_le (a e : ι → ℝ)
+    (z₀ : UpperHalfPlane) {p : ℝ} (hp : -1 < ∑ i with a i = p, e i)
+    (ha : ∀ i, e i ≠ 0 → a i ≤ p) (hS : ∑ i, e i < -1) :
+    schwarzChristoffelBoundary a e z₀ p ≠ schwarzChristoffelVertexAtInfinity a e z₀ := by
+  intro h
+  have hpimage : schwarzChristoffelBoundary a e z₀ p ∈
+      schwarzChristoffelBoundary a e z₀ '' Ici p := ⟨p, self_mem_Ici, rfl⟩
+  rw [schwarzChristoffelBoundary_image_Ici a e z₀ hp ha hS, h] at hpimage
+  exact hpimage.2 rfl
+
 /-! ### The left-hand edge -/
 
 /-- **The Schwarz--Christoffel boundary map is injective on a left-hand unbounded edge.**
@@ -336,5 +351,17 @@ theorem schwarzChristoffelBoundary_image_Iic_prevertex (a e : ι → ℝ) (z₀ 
           {schwarzChristoffelVertexAtInfinity a e z₀} := by
   rw [schwarzChristoffelBoundary_image_Iic a e z₀ hj ha hS,
     schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj]
+
+/-- The finite endpoint of a left-hand unbounded Schwarz--Christoffel edge differs from its
+endpoint at infinity.  Thus the segment traced by the edge is nondegenerate. -/
+theorem schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_ge (a e : ι → ℝ)
+    (z₀ : UpperHalfPlane) {p : ℝ} (hp : -1 < ∑ i with a i = p, e i)
+    (ha : ∀ i, e i ≠ 0 → p ≤ a i) (hS : ∑ i, e i < -1) :
+    schwarzChristoffelBoundary a e z₀ p ≠ schwarzChristoffelVertexAtInfinity a e z₀ := by
+  intro h
+  have hpimage : schwarzChristoffelBoundary a e z₀ p ∈
+      schwarzChristoffelBoundary a e z₀ '' Iic p := ⟨p, self_mem_Iic, rfl⟩
+  rw [schwarzChristoffelBoundary_image_Iic a e z₀ hp ha hS, h] at hpimage
+  exact hpimage.2 rfl
 
 end TauCeti

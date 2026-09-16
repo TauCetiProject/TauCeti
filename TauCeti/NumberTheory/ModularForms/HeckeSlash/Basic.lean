@@ -119,7 +119,7 @@ is stated over an arbitrary triple, with no transpose anywhere.
 
 public section
 
-open Matrix UpperHalfPlane DoubleCoset HeckeRing.GLn
+open Matrix TauCeti UpperHalfPlane DoubleCoset HeckeRing.GLn
 
 open scoped MatrixGroups ModularForm Pointwise
 

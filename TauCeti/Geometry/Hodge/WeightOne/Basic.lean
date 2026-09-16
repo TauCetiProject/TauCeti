@@ -88,14 +88,7 @@ private theorem eigenspace_eq_of_isCompl {f : W →ₗ[ℂ] W} {A B : Submodule 
 private theorem isCompl_piece_one_piece_zero (hs : HodgeStructureOn W ω 1)
     (heff : hs.IsEffective) : IsCompl (hs.piece 1) (hs.piece 0) := by
   have hFzero : hs.F 0 = ⊤ := heff.F_eq_top_of_nonpos (by norm_num)
-  have hconjFzero : hs.conjF 0 = ⊤ := by
-    apply top_unique
-    intro x _
-    rw [hs.mem_conjF_iff, hFzero]
-    exact Submodule.mem_top
-  have hone : hs.piece 1 = hs.F 1 := by
-    rw [hs.piece_def]
-    norm_num [hconjFzero]
+  have hone : hs.piece 1 = hs.F 1 := heff.piece_weight_eq_F
   have hzero : hs.piece 0 = hs.conjF 1 := by
     rw [hs.piece_def]
     norm_num [hFzero]

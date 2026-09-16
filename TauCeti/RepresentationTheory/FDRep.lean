@@ -14,9 +14,9 @@ public import Mathlib.RepresentationTheory.Character
 
 This file records how the forgetful functor `FDRep R G ⥤ Rep R G` preserves module-finiteness,
 finrank and characters. These facts let results proved for representation carriers transfer back to
-`FDRep`, in particular in `TauCeti.RepresentationTheory.Induction.FiniteDimensional`. In the same
-spirit it records that rebundling the representation an object carries returns that object, which
-is the identification a construction phrased as `FDRep.of ρ` needs in order to be read as a
+`FDRep`, in particular in `TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic`. In the
+same spirit it records that rebundling the representation an object carries returns that object,
+which is the identification a construction phrased as `FDRep.of ρ` needs in order to be read as a
 statement about the object it started from.
 
 It also records the character of a trivial representation, the constant `finrank`, in both the
@@ -54,6 +54,8 @@ subgroup.
 * `FDRep.moduleFinite_forget₂_obj`: the forgotten carrier is module-finite.
 * `FDRep.finrank_forget₂_obj`: forgetting does not change finrank.
 * `FDRep.character_forget₂_obj`: forgetting does not change the character.
+* `FDRep.forget₂_additive`: forgetting is an additive functor, and `FDRep.forget₂_obj_tensor`:
+  it takes a tensor product to the tensor product of the forgotten objects, on the nose.
 * `FDRep.of_ρ_eq_self`: rebundling the representation carried by an object returns that object.
 * `FDRep.ofShrinkEquiv`: `FDRep.ofShrink ρ` carries a representation equivalent to `ρ`, whence
   `FDRep.finrank_ofShrink` and `FDRep.character_ofShrink`.
@@ -133,6 +135,33 @@ theorem character_forget₂_obj {k : Type u} {G : Type v} [Field k] [Monoid G] (
 @[simp]
 theorem of_ρ_eq_self {R : Type u} {G : Type v} [CommRing R] [Monoid G] (A : FDRep R G) :
     FDRep.of A.ρ = A := (rfl)
+
+/-- **Forgetting finite-dimensionality is an additive functor**: `forget₂ (FDRep R G) (Rep R G)`
+preserves sums of intertwiners.  This is what lets an additive construction on `Rep R G` -- the
+induction of `TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic`, say -- be recognized
+through the forgetful functor. -/
+instance forget₂_additive {R : Type u} {G : Type v} [CommRing R] [Monoid G] :
+    (forget₂ (FDRep R G) (Rep R G)).Additive where
+  map_add := by
+    intros
+    apply Rep.hom_ext
+    ext x
+    -- The remaining `rfl` only identifies the two names of the single underlying addition of
+    -- intertwiners, the same definitional identification that lets `FDRep.forget₂_ρ` be stated.
+    rfl
+
+open MonoidalCategory in
+/-- **Forgetting finite-dimensionality preserves the tensor product on the nose.**  The monoidal
+structure of `FDRep R G` is that of `FGModuleCat R` with the diagonal action, and the monoidal
+structure of `FGModuleCat R` is that of `ModuleCat R` on a carrier that happens to be finite, so
+the two sides are the same object rather than isomorphic ones.
+
+Deliberately not a `simp` lemma: it is an equation between *objects* of `Rep R G`, which has no
+business in the global `simp` set. It is used through `CategoryTheory.eqToIso`, where the
+definitional equality it records is too deep for the unifier to find on its own. -/
+theorem forget₂_obj_tensor {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G) :
+    (forget₂ (FDRep R G) (Rep R G)).obj (X ⊗ Y) =
+      (forget₂ (FDRep R G) (Rep R G)).obj X ⊗ (forget₂ (FDRep R G) (Rep R G)).obj Y := (rfl)
 
 section Shrink
 

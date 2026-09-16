@@ -119,6 +119,21 @@ theorem ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot (L : Type*) [Field L]
     rw [hst] at hkey
     simpa using hkey
 
+open TauCeti.RamificationInertia in
+/-- **A full complement of primes forces unramifiedness.** If `𝓞 L` has `[L : K]` primes above a
+maximal ideal `𝔭` of `𝓞 K`, then every prime `Q` of `𝓞 L` above `𝔭` is unramified over `𝓞 K`.
+No Galois hypothesis is needed. -/
+theorem isUnramifiedAt_of_ncard_primesOver_eq_finrank {K L : Type*} [Field K] [NumberField K]
+    [Field L] [NumberField L] [Algebra K L] (𝔭 : Ideal (𝓞 K)) [𝔭.IsMaximal]
+    (hsplit : (primesOver 𝔭 (𝓞 L)).ncard = finrank K L) (Q : Ideal (𝓞 L)) [Q.IsPrime]
+    [Q.LiesOver 𝔭] : Algebra.IsUnramifiedAt (𝓞 K) Q := by
+  -- The fundamental identity `∑ e f = [L : K]` leaves no room for `e > 1` once the primes above
+  -- `𝔭` already number the rank; that count is taken over the rings, so the degree of the field
+  -- extension has to be transported down to `𝓞 L` over `𝓞 K` first.
+  rw [← Ideal.ramificationIdx_eq_one_iff]
+  exact (ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finrank 𝔭 Q
+    (by rwa [IsFractionRing.finrank_eq (𝓞 K) K (𝓞 L) L] at hsplit)).1
+
 /-- **Complete splitting makes the residue field at `Q` the prime field.** If `p` splits
 completely then `algebraMap (ℤ ⧸ (p)) (𝓞 K ⧸ Q)` is bijective. No Galois hypothesis is needed. -/
 theorem bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank {K : Type*} [Field K]

@@ -48,6 +48,8 @@ itself are those pinned in `TauCeti.Hodge.IsPolarization`.
 * `TauCeti.Hodge.Polarization.hodgeForm_eq_zero_of_mem_piece`: distinct Hodge components are
   orthogonal for it.
 * `TauCeti.Hodge.Polarization.hodgeForm_self_pos`: it is positive definite.
+* `TauCeti.Hodge.IsPolarization.integralFormBaseChange_weilOperator_self_pos`: read on the diagonal
+  at a real vector, positive definiteness says that a polarizing form is positive on `(C v, v)`.
 * `TauCeti.Hodge.Polarization.isPosSemidef_hodgeForm` and
   `TauCeti.Hodge.Polarization.hodgeForm_nondegenerate`: the packaged consequences.
 * `TauCeti.Hodge.tate_hodgeForm_apply`: the Hodge form of the polarized Tate structure `ℤ(m)` is the
@@ -246,6 +248,16 @@ theorem hodgeForm_nondegenerate (P : Polarization hℂ hs) :
     fun y hy ↦ P.hodgeForm_self_eq_zero_iff.mp (hy y)⟩
 
 end Polarization
+
+/-- **A polarizing form is positive on `(C v, v)` for every nonzero real vector `v`.** This is the
+Hodge form of the polarization evaluated on the diagonal, where the conjugation in its first
+argument acts trivially. In weight one it is the second Riemann bilinear relation. -/
+theorem IsPolarization.integralFormBaseChange_weilOperator_self_pos
+    {Q : LinearMap.BilinForm ℤ V} (h : IsPolarization hℂ hs Q) {v : Vℂ}
+    (hv : v ∈ realPoints (latticeConj hℂ)) (hv0 : v ≠ 0) :
+    0 < integralFormBaseChange hℂ Q (hs.weilOperator v) v := by
+  have hpos := (⟨Q, h⟩ : Polarization hℂ hs).hodgeForm_self_pos hv0
+  rwa [Polarization.hodgeForm_apply, mem_realPoints.mp hv, Polarization.Q_def] at hpos
 
 /-- The Hodge form of the polarized Tate structure `ℤ(m)` is the standard Hermitian form of the
 complex line: its Weil operator is the identity and its conjugation is complex conjugation. -/

@@ -7,8 +7,11 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
+
+import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 
 /-!
 # Integral lattices in a real vector space
@@ -40,6 +43,11 @@ forcing the integral and real ranks to agree.
 * `TauCeti.Toric.IsIntegralLattice.extend` and `TauCeti.Toric.IsIntegralLattice.eq_extend`: a map
   of integral vectors extends to a unique real-linear map, so the real-linear map accompanying a
   map of lattices is determined by it rather than being extra data.
+* `TauCeti.Toric.IsIntegralLattice.realCharacter` and
+  `TauCeti.Toric.IsIntegralLattice.eq_realCharacter`: an integral character extends to a unique
+  real-linear functional, additively in the character.
+* `TauCeti.Toric.IsIntegralLattice.prod`: products of integral lattices are integral lattices for
+  the componentwise lattice map.
 * `TauCeti.Toric.IsIntegralLattice.isZLattice`: in a normed space the image of an integral
   lattice is discrete, hence a `ZLattice` in Mathlib's sense.
 
@@ -178,6 +186,43 @@ theorem IsIntegralLattice.extend_comp (h : IsIntegralLattice i) (h' : IsIntegral
     (h'.extend i'' f').comp (h.extend i' f) = h.extend i'' (f'.comp f) :=
   h.eq_extend (i' := i'') (f := f'.comp f) fun n ↦ by simp
 
+/-- The real-linear extension of an integral character. Extension is additive in the character,
+so this is bundled as an additive homomorphism into the real dual space. -/
+noncomputable def IsIntegralLattice.realCharacter (h : IsIntegralLattice i) :
+    (N →+ ℤ) →+ Module.Dual ℝ V :=
+  (h.isBaseChange.toDual.comp (addMonoidHomLequivInt ℤ).toLinearMap).toAddMonoidHom
+
+/-- Extending an integral character and evaluating it on a lattice point recovers the integer
+value of the character, viewed as a real number. -/
+@[simp]
+theorem IsIntegralLattice.realCharacter_apply (h : IsIntegralLattice i)
+    (m : N →+ ℤ) (n : N) : h.realCharacter m (i n) = (m n : ℝ) := by
+  simpa [IsIntegralLattice.realCharacter] using
+    h.isBaseChange.toDual_comp_apply m.toIntLinearMap n
+
+/-- A real-linear functional agreeing with an integral character on lattice points is *the* real
+extension of that character. -/
+theorem IsIntegralLattice.eq_realCharacter (h : IsIntegralLattice i) {m : N →+ ℤ}
+    {φ : Module.Dual ℝ V} (hφ : ∀ n, φ (i n) = (m n : ℝ)) : φ = h.realCharacter m :=
+  h.isBaseChange.algHom_ext φ (h.realCharacter m) fun n ↦ by
+    simp only [AddMonoidHom.coe_toIntLinearMap, hφ, IsIntegralLattice.realCharacter_apply]
+
+/-- Real extension of integral characters is injective. -/
+theorem IsIntegralLattice.realCharacter_injective (h : IsIntegralLattice i) :
+    Function.Injective h.realCharacter := by
+  intro m m' hm
+  ext n
+  have hc : (m n : ℝ) = (m' n : ℝ) := by
+    simpa using DFunLike.congr_fun hm (i n)
+  exact Int.cast_injective hc
+
+/-- Real extension commutes with a compatible map of lattices. -/
+theorem IsIntegralLattice.realCharacter_comp (h : IsIntegralLattice i)
+    (h' : IsIntegralLattice i') (f : N →+ N') (g : V →ₗ[ℝ] V')
+    (hfg : ∀ n, g (i n) = i' (f n)) (m : N' →+ ℤ) :
+    h.realCharacter (m.comp f) = (h'.realCharacter m).comp g :=
+  (h.eq_realCharacter fun n ↦ by simp [hfg]).symm
+
 /-- Being an integral lattice transfers along an isomorphism of the integral vectors together
 with a compatible real-linear equivalence. -/
 theorem isIntegralLattice_congr (f : N ≃+ N') (e : V ≃ₗ[ℝ] V')
@@ -192,6 +237,16 @@ theorem isIntegralLattice_congr (f : N ≃+ N') (e : V ≃ₗ[ℝ] V')
   · intro h
     exact ⟨(Module.Free.iff_of_equiv f.toIntLinearEquiv).2 h.free,
       (Module.Finite.equiv_iff f.toIntLinearEquiv).2 h.finite, hbase.2 h.isBaseChange⟩
+
+/-- The product of two integral lattices is an integral lattice for the componentwise map. -/
+theorem IsIntegralLattice.prod (h : IsIntegralLattice i) (h' : IsIntegralLattice i') :
+    IsIntegralLattice (i.prodMap i') := by
+  let _ := h.free
+  let _ := h'.free
+  let _ := h.finite
+  let _ := h'.finite
+  exact ⟨inferInstance, inferInstance,
+    IsBaseChange.prodMap i.toIntLinearMap i'.toIntLinearMap h.isBaseChange h'.isBaseChange⟩
 
 end Naturality
 

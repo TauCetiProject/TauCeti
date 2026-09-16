@@ -67,7 +67,8 @@ variable {R H₁ H₂ A B : Type*} [CommSemiring R]
 variable [Semiring H₁] [Semiring H₂] [CommSemiring A] [CommSemiring B]
 variable [Algebra R H₁] [Algebra R H₂] [Algebra R A] [Algebra R B]
 
-private theorem comp_productMap (φ : A →ₐ[R] B) (f₁ : H₁ →ₐ[R] A) (f₂ : H₂ →ₐ[R] A) :
+/-- Post-composition distributes over the tensor-product map induced by a pair of algebra maps. -/
+theorem comp_productMap (φ : A →ₐ[R] B) (f₁ : H₁ →ₐ[R] A) (f₂ : H₂ →ₐ[R] A) :
     φ.comp (_root_.Algebra.TensorProduct.productMap f₁ f₂) =
       _root_.Algebra.TensorProduct.productMap (φ.comp f₁) (φ.comp f₂) := by
   apply _root_.Algebra.TensorProduct.ext'

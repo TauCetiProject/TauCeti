@@ -33,6 +33,8 @@ localization from `ℤ` to `ℚ` and then by scalar extension from `ℚ` to `ℂ
   abstract base change of its lattice.
 * `TauCeti.Hodge.integralFormBaseChange_ι`: its values on integral vectors.
 * `TauCeti.Hodge.integralFormBaseChange_unique`: it is the only such extension.
+* `TauCeti.Hodge.integralFormBaseChange_apply_symm`: a symmetry `Q y x = k * Q x y` between an
+  integral form and its flip passes to the extension.
 * `TauCeti.Hodge.integralFormBaseChange_conj`: the complex extension commutes with lattice-induced
   conjugation.
 * `TauCeti.Hodge.integralFormBaseChange_nondegenerate`: the complex extension inherits
@@ -89,6 +91,20 @@ theorem integralFormBaseChange_zsmul (h : IsBaseChange A ι) (k : ℤ)
     (Q : LinearMap.BilinForm ℤ V) :
     integralFormBaseChange h (k • Q) = k • integralFormBaseChange h Q :=
   (integralFormBaseChange_unique h _ _ fun x y ↦ by simp).symm
+
+/-- **A weight symmetry passes to the scalar extension.**  If an integral form satisfies
+`Q y x = k * Q x y` for an integer `k` -- the symmetry a polarizing form has, with
+`k = (-1)^n` -- then so does its scalar extension. -/
+theorem integralFormBaseChange_apply_symm (h : IsBaseChange A ι) (Q : LinearMap.BilinForm ℤ V)
+    {k : ℤ} (hQ : ∀ x y, Q y x = k * Q x y) (x y : V_A) :
+    integralFormBaseChange h Q y x = (k : A) * integralFormBaseChange h Q x y := by
+  have hflip : Q.flip = k • Q := by
+    ext u w
+    simpa using hQ u w
+  have hforms : (integralFormBaseChange h Q).flip = k • integralFormBaseChange h Q := by
+    rw [integralFormBaseChange_flip, hflip, integralFormBaseChange_zsmul]
+  simpa only [LinearMap.BilinForm.flip_apply, LinearMap.smul_apply, zsmul_eq_mul] using
+    DFunLike.congr_fun (DFunLike.congr_fun hforms x) y
 
 end BaseChange
 
