@@ -85,7 +85,9 @@ theorem mem_stabilizerBall {τ : ℍ} : τ ∈ stabilizerBall Γ z ε ↔ dist �
 /-- **The disc coordinate flattens the invariant hyperbolic disc**: it is a homeomorphism from
 the hyperbolic disc of radius `ε` about `z` onto the Euclidean disc of radius `tanh (ε / 2)`
 about `0`, carrying the stabilizer action to the rotation action of the `m`-th roots of unity by
-`Subgroup.stabilizerBallHomeomorph_smul`. -/
+`Subgroup.stabilizerBallHomeomorph_smul`. Its underlying coordinate and explicit inverse are
+holomorphic by `UpperHalfPlane.mdifferentiable_discCoordinate` and
+`UpperHalfPlane.analyticOnNhd_discCoordinateHomeomorph_symm`. -/
 def stabilizerBallHomeomorph [Finite (stabilizer Γ z)] :
     stabilizerBall Γ z ε ≃ₜ
       rootsOfUnityBall (Nat.card (stabilizer Γ z)) (Real.tanh (ε / 2)) where

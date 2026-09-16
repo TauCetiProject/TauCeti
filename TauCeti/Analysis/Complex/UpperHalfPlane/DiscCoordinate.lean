@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Metric
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
+public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Algebra.Field.LinearFractional
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import TauCeti.Analysis.Complex.UpperHalfPlane.SmulDeriv
@@ -36,6 +37,9 @@ hyperbolic discs about `z` are precisely the preimages of the Euclidean discs ab
 * `UpperHalfPlane.discCoordinate_eq_zero_iff` and `UpperHalfPlane.discCoordinate_injective`.
 * `UpperHalfPlane.norm_discCoordinate`: the modulus of the disc coordinate is
   `tanh (dist τ z / 2)`, so the coordinate takes values in the unit disc.
+* `UpperHalfPlane.mdifferentiable_discCoordinate` and
+  `UpperHalfPlane.analyticOnNhd_discCoordinateHomeomorph_symm`: the coordinate and its explicit
+  inverse are holomorphic.
 * `UpperHalfPlane.discCoordinateHomeomorph`: the disc coordinate as a homeomorphism `ℍ ≃ₜ 𝔻`,
   with explicit inverse, and `UpperHalfPlane.range_discCoordinate`: its range is the open unit
   disc.
@@ -58,7 +62,7 @@ public section
 
 noncomputable section
 
-open scoped MatrixGroups ComplexConjugate Complex.UnitDisc
+open scoped Manifold MatrixGroups ComplexConjugate Complex.UnitDisc
 
 namespace UpperHalfPlane
 
@@ -130,8 +134,30 @@ private theorem im_discCoordinateInv_pos (z : ℍ) (w : 𝔻) :
 theorem continuous_discCoordinate (z : ℍ) : Continuous (discCoordinate z) :=
   Continuous.div (by fun_prop) (by fun_prop) (coe_sub_conj_ne_zero z)
 
+/-- The disc coordinate centred at `z` is holomorphic. -/
+theorem mdifferentiable_discCoordinate (z : ℍ) : MDiff (discCoordinate z) := by
+  exact (mdifferentiable_coe.sub mdifferentiable_const).div
+    (mdifferentiable_coe.sub mdifferentiable_const) (coe_sub_conj_ne_zero z)
+
+/-- The explicit inverse of the disc coordinate is holomorphic on the open unit disc. -/
+theorem analyticOnNhd_discCoordinateHomeomorph_symm (z : ℍ) :
+    AnalyticOnNhd ℂ (fun w : ℂ ↦ ((z : ℂ) - conj (z : ℂ) * w) / (1 - w))
+      (Metric.ball 0 1) := by
+  apply DifferentiableOn.analyticOnNhd _ Metric.isOpen_ball
+  intro w hw
+  have hw1 : w ≠ 1 := by
+    intro h
+    rw [h, Metric.mem_ball, dist_zero_right, norm_one] at hw
+    exact lt_irrefl 1 hw
+  exact (((differentiableAt_const (z : ℂ)).sub
+      ((differentiableAt_const (conj (z : ℂ))).mul differentiableAt_id)).div
+    ((differentiableAt_const (1 : ℂ)).sub differentiableAt_id)
+      (sub_ne_zero.mpr hw1.symm)).differentiableWithinAt
+
 /-- The disc coordinate centred at `z` as a homeomorphism between the upper half-plane and the
-open unit disc `𝔻`, with inverse `w ↦ (z - conj z * w) / (1 - w)`. -/
+open unit disc `𝔻`, with inverse `w ↦ (z - conj z * w) / (1 - w)`. Both directions are
+holomorphic, by `UpperHalfPlane.mdifferentiable_discCoordinate` and
+`UpperHalfPlane.analyticOnNhd_discCoordinateHomeomorph_symm`. -/
 def discCoordinateHomeomorph (z : ℍ) : ℍ ≃ₜ 𝔻 where
   toFun τ := .mk (discCoordinate z τ) (norm_discCoordinate_lt_one z τ)
   invFun w := ⟨((z : ℂ) - conj (z : ℂ) * w) / (1 - w), im_discCoordinateInv_pos z w⟩
