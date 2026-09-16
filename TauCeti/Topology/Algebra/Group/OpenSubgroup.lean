@@ -140,9 +140,7 @@ theorem openSubgroup_comap_surjective (hG : IsTopologicallyFinitelyGenerated G) 
   have hinj : Function.Injective Φ := fun V W hVW ↦ by
     have h : (V.1 : Subgroup G).comap f = (W.1 : Subgroup G).comap f := by
       have h' := congrArg (fun X ↦ ((X.1 : OpenSubgroup G) : Subgroup G)) hVW
-      change ((V.1.comap f hf : OpenSubgroup G) : Subgroup G) =
-        ((W.1.comap f hf : OpenSubgroup G) : Subgroup G) at h'
-      rwa [OpenSubgroup.toSubgroup_comap, OpenSubgroup.toSubgroup_comap] at h'
+      simpa only [Φ, OpenSubgroup.toSubgroup_comap] using h'
     exact Subtype.ext (OpenSubgroup.toSubgroup_injective (Subgroup.comap_injective hsurj h))
   obtain ⟨V, hV⟩ := Finite.injective_iff_surjective.mp hinj ⟨U, rfl⟩
   exact ⟨V.1, congrArg Subtype.val hV⟩
