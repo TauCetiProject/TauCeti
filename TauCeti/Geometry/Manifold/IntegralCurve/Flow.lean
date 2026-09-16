@@ -37,6 +37,8 @@ public section
 open Function Manifold Set
 open scoped ContDiff Manifold Topology
 
+namespace TauCeti
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
@@ -84,10 +86,10 @@ private theorem sub_mem_maximalIntegralCurveInterval
   obtain ⟨a, b, h0, ht', hs', hγ⟩ :=
     exists_common_Ioo_maximalIntegralCurveInterval hv ht hs
   have hshift : IsMIntegralCurveOn (maximalIntegralCurve v x ∘ (· + t)) v
-      (Ioo (a - t) (b - t)) :=
-    (hγ.comp_add t).mono fun r hr ↦ by
-      simp only [mem_ofPred_eq]
-      constructor <;> linarith [hr.1, hr.2]
+      (Ioo (a - t) (b - t)) := by
+    convert hγ.comp_add t using 1
+    ext r
+    simp only [mem_Ioo, mem_ofPred_eq, sub_lt_iff_lt_add, lt_sub_iff_add_lt]
   exact hshift.subset_maximalIntegralCurveInterval
     ⟨by linarith [ht'.1], by linarith [ht'.2]⟩ (by simp)
     ⟨by linarith [hs'.1], by linarith [hs'.2]⟩
@@ -104,10 +106,10 @@ theorem maximalIntegralCurve_add
   obtain ⟨a, b, h0, ht', hst', hγ⟩ :=
     exists_common_Ioo_maximalIntegralCurveInterval hv ht hts
   have hshift : IsMIntegralCurveOn (maximalIntegralCurve v x ∘ (· + t)) v
-      (Ioo (a - t) (b - t)) :=
-    (hγ.comp_add t).mono fun r hr ↦ by
-      simp only [mem_ofPred_eq]
-      constructor <;> linarith [hr.1, hr.2]
+      (Ioo (a - t) (b - t)) := by
+    convert hγ.comp_add t using 1
+    ext r
+    simp only [mem_Ioo, mem_ofPred_eq, sub_lt_iff_lt_add, lt_sub_iff_add_lt]
   have h0shift : (0 : ℝ) ∈ Ioo (a - t) (b - t) :=
     ⟨by linarith [ht'.1], by linarith [ht'.2]⟩
   have hsshift : s ∈ Ioo (a - t) (b - t) :=
@@ -119,7 +121,7 @@ theorem maximalIntegralCurve_add
 /-- Restarting a maximal integral curve at time `t` translates its maximal interval by `-t`.
 This characterizes the domain of the partial flow without reference to the chosen integral-curve
 witnesses. -/
-theorem mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff
+@[simp] theorem mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (ht : t ∈ maximalIntegralCurveInterval v x) :
     s ∈ maximalIntegralCurveInterval v (maximalIntegralCurve v x t) ↔
@@ -152,3 +154,5 @@ theorem maximalIntegralCurveInterval_maximalIntegralCurve_eq_preimage
       (fun s : ℝ ↦ t + s) ⁻¹' maximalIntegralCurveInterval v x := by
   ext s
   exact mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv ht
+
+end TauCeti
