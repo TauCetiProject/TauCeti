@@ -96,7 +96,9 @@ theorem exists_isParityCheckMatrix (C : LinearCode F ι) :
     exact (H₀.generatedBy_submatrix_rows_eq_of_surjective e e.surjective).trans
       ((isGeneratorMatrix_def C.euclideanDual H₀).mp hH₀)
   refine ⟨H, isParityCheckMatrix_iff_isGeneratorMatrix_euclideanDual.mpr hgen, ?_⟩
-  have hrow : H.row = H₀.row ∘ e := by rfl
+  have hrow : H.row = H₀.row ∘ e := by
+    funext r i
+    simp only [H, Matrix.row_apply, Matrix.submatrix_apply, Function.comp_apply, id_eq]
   rw [hrow]
   exact hli.comp e e.injective
 
