@@ -28,7 +28,8 @@ be invertible.
 This is the mixed chart `ℂ ^ k × (ℂ ^ *) ^ l` of toric geometry. The dual semigroup of a smooth
 `k`-dimensional cone in a lattice of rank `k + l` splits in exactly this way, with `ι` indexing
 the rays of the cone and `κ` the remaining vectors of an integral basis extending their primitive
-generators; the coordinates indexed by `ι` are the ones that vanish on the boundary of the chart.
+generators. The coordinates indexed by `ι` may vanish: the boundary is the union of their
+coordinate hyperplanes, while the coordinates indexed by `κ` remain units.
 
 The identification is assembled from the universal properties of the two free factors, so it is a
 bijection of the functor-of-points carrier and mentions no generating family. The main result is
