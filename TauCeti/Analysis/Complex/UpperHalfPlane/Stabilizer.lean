@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import TauCeti.Analysis.Complex.UpperHalfPlane.DiscCoordinate
 public import TauCeti.Analysis.Complex.UpperHalfPlane.SmulDeriv
 import Mathlib.RingTheory.IntegralDomain
 
@@ -22,8 +23,10 @@ of a field is cyclic.
 
 The injectivity of the character turns the order of a generator into the order of its
 derivative, so the derivative of a generator of a finite point stabilizer is a primitive root of
-unity whose order is the order of the stabilizer. Finally, every nontrivial element of a point
-stabilizer is an elliptic matrix.
+unity whose order is the order of the stabilizer, and the derivatives of a finite stabilizer of
+order `m` are exactly the `m`-th roots of unity. In the disc coordinate centred at the point,
+every element of the stabilizer is the rotation by its derivative. Finally, every nontrivial
+element of a point stabilizer is an elliptic matrix.
 
 The specialization to discrete subgroups, whose point stabilizers are finite, is
 `TauCeti.Analysis.Complex.Fuchsian.Stabilizer`.
@@ -34,7 +37,11 @@ The specialization to discrete subgroups, whose point stabilizers are finite, is
   `Subgroup.stabilizerDeriv_injective`.
 * `Subgroup.isCyclic_stabilizer`: a finite point stabilizer is cyclic.
 * `Subgroup.exists_isPrimitiveRoot_stabilizerDeriv`: a generator of a finite point
-  stabilizer has a primitive root of unity of the stabilizer's order as its derivative.
+  stabilizer has a primitive root of unity of the stabilizer's order as its derivative, and
+  `Subgroup.range_stabilizerDeriv`: the derivatives are exactly the roots of unity of that order.
+* `Matrix.ProjectiveSpecialLinearGroup.discCoordinate_smul_of_smul_eq_self`: a transformation
+  fixing `z` multiplies the disc coordinate centred at `z` by its derivative at `z`, and
+  `Subgroup.discCoordinate_smul_stabilizer`: its form for the stabilizer of `z` in `Γ`.
 * `Matrix.SpecialLinearGroup.isElliptic_of_smul_eq_self_of_ne_one`: a matrix fixing a point of
   `ℍ` and nontrivial in `PSL(2, ℝ)` is elliptic.
 
@@ -52,7 +59,7 @@ noncomputable section
 
 open Matrix Matrix.SpecialLinearGroup MulAction UpperHalfPlane
 
-open scoped MatrixGroups
+open scoped MatrixGroups ComplexConjugate
 
 namespace Matrix.SpecialLinearGroup
 
@@ -118,6 +125,26 @@ theorem eq_one_of_smul_eq_self_of_smulDeriv_eq_one {q : PSL(2, ℝ)} {z : ℍ}
     (Matrix.SpecialLinearGroup.mem_center_of_smul_eq_self_of_denom_sq_eq_one ?_ h)
   rwa [pslMk_smul] at hz
 
+/-- **A Möbius transformation fixing `z` is a rotation in the disc coordinate centred at `z`**,
+by its derivative at `z`: the disc coordinate linearizes the transformation near its fixed
+point. -/
+theorem discCoordinate_smul_of_smul_eq_self {q : PSL(2, ℝ)} {z : ℍ} (hq : q • z = z)
+    (τ : ℍ) : discCoordinate z (q • τ) = smulDeriv q z * discCoordinate z τ := by
+  induction q using QuotientGroup.induction_on with | _ g =>
+  rw [pslMk_smul, MulAction.compHom_smul_def] at hq ⊢
+  have hdet : (0 : ℝ) < (mapGL ℝ g).det.val := by simp
+  have hd := denom_ne_zero (mapGL ℝ g) z
+  -- a transformation of determinant one fixing `z` has an automorphy factor of modulus one there
+  have hn : conj (denom (mapGL ℝ g) z) * denom (mapGL ℝ g) z = 1 := by
+    have h := im_smul_eq_div_normSq (mapGL ℝ g) z
+    rw [hq] at h
+    simp only [Matrix.SpecialLinearGroup.det_mapGL, Units.val_one, abs_one, one_mul] at h
+    rw [eq_div_iff (Complex.normSq_pos.mpr hd).ne', mul_eq_left₀ z.im_ne_zero] at h
+    rw [mul_comm, Complex.mul_conj, h, Complex.ofReal_one]
+  rw [UpperHalfPlane.discCoordinate_smul_of_smul_eq_self hdet hq, smulDeriv_coe,
+    eq_inv_of_mul_eq_one_left hn]
+  field_simp
+
 end Matrix.ProjectiveSpecialLinearGroup
 
 namespace Subgroup
@@ -146,6 +173,13 @@ theorem stabilizerDeriv_injective (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
   intro q hq
   exact Subtype.ext (Subtype.ext
     (Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smulDeriv_eq_one q.2 hq))
+
+/-- **An element of the stabilizer of `z` is a rotation in the disc coordinate centred at `z`**,
+by its derivative character. -/
+theorem discCoordinate_smul_stabilizer (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (q : stabilizer Γ z)
+    (τ : ℍ) : discCoordinate z (q • τ) = stabilizerDeriv Γ z q * discCoordinate z τ := by
+  rw [Subgroup.smul_def, Subgroup.smul_def]
+  exact Matrix.ProjectiveSpecialLinearGroup.discCoordinate_smul_of_smul_eq_self q.2 τ
 
 /-- A point stabilizer in a subgroup of `PSL(2, ℝ)` is commutative. -/
 instance instIsMulCommutativeStabilizer (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
@@ -177,6 +211,24 @@ theorem exists_isPrimitiveRoot_stabilizerDeriv (Γ : Subgroup PSL(2, ℝ)) (z : 
     rw [← Nat.card_zpowers, hq, Subgroup.card_top]
   rw [← hcard, ← orderOf_stabilizerDeriv]
   exact IsPrimitiveRoot.orderOf _
+
+/-- The derivative of an element of a finite point stabilizer is a root of unity of order
+dividing the stabilizer's order. -/
+theorem stabilizerDeriv_pow_card (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) [Finite (stabilizer Γ z)]
+    (q : stabilizer Γ z) : stabilizerDeriv Γ z q ^ Nat.card (stabilizer Γ z) = 1 := by
+  rw [← map_pow, pow_card_eq_one', map_one]
+
+/-- **The derivatives of a finite point stabilizer of order `m` are exactly the `m`-th roots of
+unity.** In the disc coordinate centred at the point, the stabilizer therefore acts as the full
+group of rotations by `m`-th roots of unity. -/
+theorem range_stabilizerDeriv (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) [Finite (stabilizer Γ z)] :
+    Set.range (stabilizerDeriv Γ z) = {ζ | ζ ^ Nat.card (stabilizer Γ z) = 1} := by
+  refine Set.Subset.antisymm (Set.range_subset_iff.mpr (stabilizerDeriv_pow_card Γ z))
+    fun ζ hζ ↦ ?_
+  have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
+  obtain ⟨q, -, hq⟩ := exists_isPrimitiveRoot_stabilizerDeriv Γ z
+  obtain ⟨k, -, hk⟩ := hq.eq_pow_of_pow_eq_one hζ
+  exact ⟨q ^ k, by rw [map_pow, hk]⟩
 
 end Subgroup
 

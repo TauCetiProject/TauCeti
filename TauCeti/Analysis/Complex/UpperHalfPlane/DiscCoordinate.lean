@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Metric
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
 public import TauCeti.Algebra.Field.LinearFractional
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
+import Mathlib.Analysis.SpecialFunctions.Artanh
 
 /-!
 # The disc coordinate centred at a point of the upper half-plane
@@ -32,6 +33,8 @@ derivative of `τ ↦ g • τ` at its fixed point `z`.
   `tanh (dist τ z / 2)`, so the coordinate takes values in the unit disc.
 * `UpperHalfPlane.discCoordinateEquiv`: the disc coordinate as an equivalence `ℍ ≃ 𝔻`, with
   explicit inverse, and `UpperHalfPlane.range_discCoordinate`: its range is the open unit disc.
+* `UpperHalfPlane.discCoordinateBallHomeomorph`: the disc coordinate maps the hyperbolic disc of
+  radius `r` about `z` homeomorphically onto the Euclidean disc of radius `tanh (r / 2)`.
 * `UpperHalfPlane.discCoordinate_smul_of_smul_eq_self`: a matrix of positive determinant
   fixing `z` acts in the disc coordinate by multiplication by `conj (denom g z) / denom g z`,
   with the `SL(2, ℝ)` specialization
@@ -158,6 +161,57 @@ theorem range_discCoordinate (z : ℍ) : Set.range (discCoordinate z) = Metric.b
   · lift w to 𝔻 using mem_ball_zero_iff.mp hw
     exact ⟨(discCoordinateEquiv z).symm w,
       congrArg ((↑) : 𝔻 → ℂ) ((discCoordinateEquiv z).apply_symm_apply w)⟩
+
+/-- The disc coordinate centred at `z` is continuous. -/
+@[fun_prop]
+theorem continuous_discCoordinate (z : ℍ) : Continuous (discCoordinate z) := by
+  simp only [funext (discCoordinate_def z)]
+  exact (by fun_prop : Continuous fun τ : ℍ ↦ (τ : ℂ) - z).div₀ (by fun_prop)
+    (coe_sub_conj_ne_zero z)
+
+/-- The inverse `w ↦ (z - conj z * w) / (1 - w)` of the disc coordinate centred at `z` is
+continuous on the open unit disc. -/
+theorem continuous_discCoordinateEquiv_symm (z : ℍ) :
+    Continuous (discCoordinateEquiv z).symm := by
+  rw [isEmbedding_coe.continuous_iff]
+  simp only [Function.comp_def, coe_discCoordinateEquiv_symm_apply]
+  exact (by fun_prop : Continuous fun w : 𝔻 ↦ (z : ℂ) - conj (z : ℂ) * w).div₀
+    (by fun_prop) fun w ↦ sub_ne_zero.mpr w.coe_ne_one.symm
+
+/-- A point lies in the hyperbolic disc of radius `r` about `z` exactly when its disc coordinate
+centred at `z` has modulus less than `tanh (r / 2)`. -/
+theorem norm_discCoordinate_lt_tanh_iff {z τ : ℍ} {r : ℝ} :
+    ‖discCoordinate z τ‖ < Real.tanh (r / 2) ↔ dist τ z < r := by
+  have hmem (x : ℝ) : Real.tanh x ∈ Set.Ioo (-1) 1 := ⟨Real.neg_one_lt_tanh x, Real.tanh_lt_one x⟩
+  rw [norm_discCoordinate, ← Real.artanh_lt_artanh_iff (hmem _) (hmem _), Real.artanh_tanh,
+    Real.artanh_tanh, div_lt_div_iff_of_pos_right two_pos]
+
+/-- The disc coordinate centred at `z` maps the hyperbolic disc of radius `r` about `z`
+homeomorphically onto the Euclidean disc of radius `tanh (r / 2)` about `0`. -/
+def discCoordinateBallHomeomorph (z : ℍ) (r : ℝ) :
+    Metric.ball z r ≃ₜ Metric.ball (0 : ℂ) (Real.tanh (r / 2)) where
+  toFun τ := ⟨discCoordinate z τ,
+    mem_ball_zero_iff.mpr (norm_discCoordinate_lt_tanh_iff.mpr τ.2)⟩
+  invFun w := ⟨(discCoordinateEquiv z).symm (.mk w
+      ((mem_ball_zero_iff.mp w.2).trans (Real.tanh_lt_one _))), by
+    rw [Metric.mem_ball, ← norm_discCoordinate_lt_tanh_iff, ← coe_discCoordinateEquiv_apply,
+      Equiv.apply_symm_apply, Complex.UnitDisc.coe_mk]
+    exact mem_ball_zero_iff.mp w.2⟩
+  left_inv τ := Subtype.ext ((discCoordinateEquiv z).symm_apply_apply τ)
+  right_inv w := Subtype.ext <| by
+    simp only [← coe_discCoordinateEquiv_apply, Equiv.apply_symm_apply,
+      Complex.UnitDisc.coe_mk]
+  continuous_toFun := by fun_prop
+  continuous_invFun := by
+    refine ((continuous_discCoordinateEquiv_symm z).comp ?_).subtype_mk _
+    simp only [Complex.UnitDisc.isEmbedding_coe.continuous_iff, Function.comp_def,
+      Complex.UnitDisc.coe_mk]
+    fun_prop
+
+@[simp]
+theorem coe_discCoordinateBallHomeomorph_apply (z : ℍ) (r : ℝ) (τ : Metric.ball z r) :
+    (discCoordinateBallHomeomorph z r τ : ℂ) = discCoordinate z τ :=
+  (rfl)
 
 /-- **A matrix of positive determinant fixing `z` is a rotation in the disc coordinate centred
 at `z`**, by the unimodular multiplier `conj (denom g z) / denom g z`.
