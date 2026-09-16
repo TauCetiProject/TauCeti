@@ -37,8 +37,8 @@ positions relabels one coordinate system into the other, and the resulting chart
 * `TauCeti.posDiagLowerRegion` — the coordinate region cut out by a positive diagonal.
 * `TauCeti.choleskyJacobianDensity` — the Jacobian weight of the change of variables.
 * `TauCeti.map_cholesky_symmetricLebesgue` — the change of variables.
-* `TauCeti.setLIntegral_posDef_symmetricLebesgue` and
-  `TauCeti.setIntegral_posDef_symmetricLebesgue` — its integral forms.
+* `TauCeti.setLIntegral_posDef_symmetricLebesgue` — its integral form.
+* `TauCeti.integral_posDef_symmetricLebesgue` — its Bochner-integral form.
 
 ## References
 
@@ -366,9 +366,8 @@ theorem setLIntegral_posDef_symmetricLebesgue
   rfl
 
 /-- The Bochner-integral form of the Cholesky change of variables: an integral over the
-positive-definite cone becomes a Jacobian-weighted integral over the positive-diagonal
-coordinate region. -/
-theorem setIntegral_posDef_symmetricLebesgue {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+positive-definite cone becomes a weighted integral over the positive-diagonal coordinate region. -/
+theorem integral_posDef_symmetricLebesgue {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → E}
     (hf : AEStronglyMeasurable f ((symmetricLebesgue p).restrict
       {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
@@ -376,21 +375,13 @@ theorem setIntegral_posDef_symmetricLebesgue {E : Type*} [NormedAddCommGroup E] 
     ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).PosDef}, f A ∂symmetricLebesgue p =
       ∫ x in posDiagLowerRegion p,
-        (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.1)) • f (lowerTriangleGram p x) := by
-  have hmap := map_cholesky_symmetricLebesgue p
-  calc ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
-          (A : Matrix (Fin p) (Fin p) ℝ).PosDef}, f A ∂symmetricLebesgue p
-      = ∫ A, f A ∂(((volume.restrict (posDiagLowerRegion p)).withDensity
-          (choleskyJacobianDensity p)).map (lowerTriangleGram p)) := by rw [hmap]
-    _ = ∫ x, f (lowerTriangleGram p x) ∂((volume.restrict (posDiagLowerRegion p)).withDensity
-          (choleskyJacobianDensity p)) :=
-        integral_map (measurable_lowerTriangleGram p).aemeasurable (hmap ▸ hf)
-    _ = ∫ x in posDiagLowerRegion p,
-          (choleskyJacobianDensity p x).toReal • f (lowerTriangleGram p x) :=
-        integral_withDensity_eq_integral_toReal_smul (measurable_choleskyJacobianDensity p)
-          (.of_forall fun _ => ENNReal.ofReal_lt_top) _
-    _ = _ :=
-        setIntegral_congr_fun (measurableSet_posDiagLowerRegion p) fun x hx => by
-          rw [toReal_choleskyJacobianDensity p hx]
+        ((2 : ℝ) ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.1)) •
+          f (lowerTriangleGram p x) := by
+  rw [← map_cholesky_symmetricLebesgue] at hf ⊢
+  rw [integral_map (measurable_lowerTriangleGram p).aemeasurable hf,
+    integral_withDensity_eq_integral_toReal_smul (measurable_choleskyJacobianDensity p)
+      (.of_forall fun _ => ENNReal.ofReal_lt_top)]
+  refine setIntegral_congr_fun (measurableSet_posDiagLowerRegion p) fun x hx => ?_
+  rw [toReal_choleskyJacobianDensity p hx]
 
 end TauCeti

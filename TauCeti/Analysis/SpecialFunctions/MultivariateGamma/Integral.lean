@@ -152,7 +152,7 @@ theorem integral_posDef_multivariateGamma (ha : ((p : ℝ) - 1) / 2 < a) :
       (A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
         exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace) ∂symmetricLebesgue p =
       multivariateGamma p a := by
-  rw [setIntegral_posDef_symmetricLebesgue p (Measurable.aestronglyMeasurable (by fun_prop)),
+  rw [integral_posDef_symmetricLebesgue p (Measurable.aestronglyMeasurable (by fun_prop)),
     ← integral_lowerTriangle_det_rpow_mul_exp_neg_trace ha, ← posDiagLowerRegion_def]
   refine setIntegral_congr_fun (measurableSet_posDiagLowerRegion p) fun x _ => ?_
   simp only [coe_lowerTriangleGram, smul_eq_mul]
