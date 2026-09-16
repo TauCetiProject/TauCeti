@@ -161,7 +161,7 @@ private lemma baseChangeHom_baseChangeMapHom (E : FiniteDVRExtension R K)
         baseChangeOverMap E f := by
     ext
     rfl
-  rw [baseChangeHom_eq]
+  rw [baseChangeHom_def]
   exact congrArg (fun g => ((Over.pullback
     (Spec.map (CommRingCat.ofHom (algebraMap E.localRing E.extensionField)))).map g).left) h
 
@@ -176,7 +176,7 @@ private lemma baseChangeMap_genericFiber (E : FiniteDVRExtension R K)
       (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).map (overHom f) ≫
           N.genericFiberIso.hom = M.genericFiberIso.hom := by
     have hfg := f.genericFiber
-    rw [baseChangeHom_eq] at hfg
+    rw [baseChangeHom_def] at hfg
     ext
     simpa only [overHom, Over.comp_left] using hfg
   have hNatLocal :
