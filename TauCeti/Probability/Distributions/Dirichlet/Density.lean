@@ -55,8 +55,6 @@ Gamma product density factors as the chart density times a Gamma density of shap
 
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Multivariate Distributions*, vol. 1,
   2nd ed., Wiley, 2000, Chapter 49.
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, the density paragraph of the
-  Dirichlet target and the change-of-variables paragraph for the Dirichlet normalization chart.
 -/
 public section
 
