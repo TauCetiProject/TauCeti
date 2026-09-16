@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Polynomial.Laurent
 public import TauCeti.CategoryTheory.GrothendieckGroup.Graded
+public import TauCeti.LinearAlgebra.SesquilinearForm.LaurentSpecialization
 
 /-!
 # The Laurent coefficient ring acting on the graded Grothendieck group
@@ -30,6 +31,10 @@ conflation-additive invariants `a` with `a(M{1}) = q · a(M)`, that is, the shif
 invariants of `TauCeti.GradedExactStructure.ShiftInvariant` for the automorphism
 `TauCeti.laurentTAut ℤ N` of multiplication by `q`.
 
+Specializing at `q = ε` for a unit `ε : ℤˣ`, that is at `q = 1` or `q = -1`, is the base change
+`TauCeti.LaurentSpecialization ε (LaurentK0 E)` along evaluation at `ε`.  There the grading shift
+acts by the scalar `ε`, so at `q = -1` it changes the sign of a class and at `q = 1` it fixes it.
+
 ## Main definitions
 
 * `TauCeti.LaurentK0`: the graded exact Grothendieck group as a `ℤ[q,q⁻¹]`-module.
@@ -47,6 +52,11 @@ invariants of `TauCeti.GradedExactStructure.ShiftInvariant` for the automorphism
 * `TauCeti.LaurentK0.of_conflation`: the defining relation `[M₂] = [M₁] + [M₃]` of a conflation.
 * `TauCeti.LaurentK0.hom_ext`: a `ℤ[q,q⁻¹]`-linear map out of `LaurentK0 E` is determined by its
   values on object classes.
+* `TauCeti.LaurentK0.mk_ofExactK0_shiftZPow`: the shift/sign formula `[M{n}] = εⁿ[M]` after
+  specializing at `q = ε`; at `q = -1` a shift changes the sign of a class, at `q = 1` it does not
+  change the class.
+* `TauCeti.LaurentK0.hom_ext_laurentSpecialization`: a map out of specialized graded `K₀` is
+  determined by its values on object classes.
 
 ## References
 
@@ -367,6 +377,41 @@ lemma mapEquiv_symm_of (h : GradedExactEquiv E E') (X : D) :
   simp [mapEquiv, LinearEquiv.ofLinearMap, GradedExactEquiv.symm_equiv]
 
 end Invariance
+
+section Specialization
+
+variable {E} (ε : ℤˣ)
+
+/-- **The shift/sign formula of specialized graded `K₀`.**  After specializing at `q = ε`, the
+`n`-fold grading shift multiplies a class by `εⁿ`.  At `q = -1` this is the sign `(-1)ⁿ`, and at
+`q = 1` all shifts of an object have the same specialized class. -/
+theorem mk_ofExactK0_shiftZPow (n : ℤ) (x : ExactK0 E.toExactStructure) :
+    LaurentSpecialization.mk ε (ofExactK0 E (E.shiftZPow n x)) =
+      ((ε ^ n : ℤˣ) : ℤ) • LaurentSpecialization.mk ε (ofExactK0 E x) := by
+  rw [← T_smul, LaurentSpecialization.mk_smul, laurentEval_T]
+
+/-- After specializing at `q = ε`, the class of `M{1}` is `ε` times the class of `M`. -/
+@[simp]
+theorem mk_of_shift_functor_obj (X : C) :
+    LaurentSpecialization.mk ε (of E (E.shift.functor.obj X)) =
+      (ε : ℤ) • LaurentSpecialization.mk ε (of E X) := by
+  rw [← T_one_smul_of, LaurentSpecialization.mk_smul, laurentEval_T_one]
+
+/-- **A map out of specialized graded `K₀` is determined by its values on object classes.** -/
+theorem hom_ext_laurentSpecialization {A : Type*} [AddCommGroup A]
+    {f g : LaurentSpecialization ε (LaurentK0 E) →ₗ[ℤ] A}
+    (h : ∀ X : C, f (LaurentSpecialization.mk ε (of E X)) =
+      g (LaurentSpecialization.mk ε (of E X))) :
+    f = g := by
+  refine LaurentSpecialization.hom_ext ε fun x => ?_
+  have key : (f.toAddMonoidHom.comp (LaurentSpecialization.mk ε).toAddMonoidHom).comp
+        (ofExactK0 E).toAddMonoidHom =
+      (g.toAddMonoidHom.comp (LaurentSpecialization.mk ε).toAddMonoidHom).comp
+        (ofExactK0 E).toAddMonoidHom :=
+    ExactK0.hom_ext fun X => by simpa using h X
+  simpa using DFunLike.congr_fun key ((ofExactK0 E).symm x)
+
+end Specialization
 
 end LaurentK0
 
