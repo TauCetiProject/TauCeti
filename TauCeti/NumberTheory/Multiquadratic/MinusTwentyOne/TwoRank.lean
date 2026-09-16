@@ -93,7 +93,8 @@ theorem nonempty_classGroup_mulEquiv_zmod_two_sq_of_minpoly_eq_X_sq_add_twenty_o
     simpa [NumberField.classNumber] using
       NumberField.classNumber_eq_four_of_minpoly_eq_X_sq_add_twenty_one hmin hgen
   have hrank : TauCeti.twoRank (ClassGroup (𝓞 K)) = 2 := by
-    simpa using twoRank_eq_two_of_minpoly_eq_X_sq_add_twenty_one hmin hgen
+    rw [TauCeti.twoRank_def, ← TauCeti.ClassGroup.twoRank_def]
+    exact twoRank_eq_two_of_minpoly_eq_X_sq_add_twenty_one hmin hgen
   have := TauCeti.isKleinFour_of_card_eq_four_of_twoRank_eq_two hcard hrank
   exact IsKleinFour.nonempty_mulEquiv
 

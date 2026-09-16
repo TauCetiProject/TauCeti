@@ -471,7 +471,7 @@ theorem sq_eq_one_of_card_elementaryTwoQuotient_eq_card
     (h : Nat.card (ElementaryTwoQuotient G) = Nat.card G) (g : G) : g ^ 2 = 1 := by
   rw [card_elementaryTwoQuotient_eq_card_twoTorsion, ← Set.coe_ofPred, Nat.card_coe_set_eq,
     ← Set.eq_univ_iff_ncard] at h
-  exact (Set.eq_univ_iff_forall.mp h g :)
+  simpa only [Set.mem_ofPred_eq] using Set.eq_univ_iff_forall.mp h g
 
 end FiniteCardinality
 
