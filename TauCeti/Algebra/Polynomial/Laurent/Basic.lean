@@ -119,6 +119,7 @@ theorem comp_laurentEval {B : Type*} [Semiring B] [Algebra R B] (g : A →ₐ[R]
   laurentEval_unique _ _ <| by simp
 
 /-- **Evaluating after the involution `T ↦ T⁻¹` is evaluating at the inverse unit.** -/
+@[simp]
 theorem laurentEval_invert (u : Aˣ) (p : R[T;T⁻¹]) :
     laurentEval u (invert p) = laurentEval u⁻¹ p := by
   rw [← AlgEquiv.coe_toAlgHom, ← AlgHom.comp_apply,
