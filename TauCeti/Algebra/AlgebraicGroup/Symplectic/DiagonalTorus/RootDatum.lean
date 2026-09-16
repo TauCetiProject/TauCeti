@@ -276,8 +276,7 @@ theorem diagonalRootDatum_reflection_apply (p : RootSubgroupIndex m)
       x a - (x.sum fun i c ↦ c * (diagonalRootDatum.{u} m).coroot p i) *
         (diagonalRootDatum.{u} m).root p a := by
   rw [RootPairing.reflection_apply]
-  change x a - (diagonalRootDatum.{u} m).coroot' p x *
-      (diagonalRootDatum.{u} m).root p a = _
+  simp only [Finsupp.sub_apply, Finsupp.smul_apply, smul_eq_mul]
   rw [RootPairing.coroot', diagonalRootDatum_toLinearMap, LinearMap.flip_apply,
     SplitTorus.dotPairing_apply]
 
@@ -289,8 +288,7 @@ theorem diagonalRootDatum_coreflection_apply (p : RootSubgroupIndex m)
       x a - ((diagonalRootDatum.{u} m).root p).sum (fun i c ↦ c * x i) *
         (diagonalRootDatum.{u} m).coroot p a := by
   rw [RootPairing.coreflection_apply]
-  change x a - (diagonalRootDatum.{u} m).root' p x *
-      (diagonalRootDatum.{u} m).coroot p a = _
+  simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
   rw [RootPairing.root', diagonalRootDatum_toLinearMap, SplitTorus.dotPairing_apply]
 
 /-- The index obtained by reflecting one symplectic root subgroup in another, transported from
