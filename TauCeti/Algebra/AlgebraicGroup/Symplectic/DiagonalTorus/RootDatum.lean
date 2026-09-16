@@ -56,6 +56,8 @@ is exactly the character through which the diagonal torus rescales that subgroup
   coordinates.
 * `TauCeti.Symplectic.diagonalRootDatum_reflection_positiveLong_apply` and its companions: each
   reflection is a signed permutation of the coordinates.
+* `TauCeti.Symplectic.diagonalRootDatum_coreflection_positiveLong_apply` and its companions: each
+  coreflection is the same signed permutation of the coordinates.
 * `TauCeti.Symplectic.charOfPoint_ofAdd_diagonalRootDatum_root`: the roots are the characters of
   the diagonal torus on the root subgroups.
 * `TauCeti.Symplectic.diagonalTorusPoints_mul_rootSubgroupPoints_mul_inv_eq_root`: the pinning
@@ -510,6 +512,85 @@ theorem diagonalRootDatum_reflection_negativeSum_apply {i j : Fin m} (hij : i < 
     diagonalRootDatum_root_negativeSum, diagonalRootDatum_coroot_positiveSum,
     diagonalRootDatum_root_positiveSum]
   simp only [Pi.neg_apply, Finsupp.neg_apply, mul_neg, Finsupp.sum_neg, neg_mul, neg_neg]
+
+/-! ### The coreflections in coordinates -/
+
+/-- Coreflection in the long root `2eᵢ` negates the `i`-th coordinate. -/
+@[simp high]
+theorem diagonalRootDatum_coreflection_positiveLong_apply (i : Fin m)
+    (x : ULift.{u} (Fin m) → ℤ) (a : ULift.{u} (Fin m)) :
+    (diagonalRootDatum.{u} m).coreflection (.positiveLong i) x a =
+      if a = ULift.up i then -x a else x a := by
+  classical
+  rw [diagonalRootDatum_coreflection_apply, diagonalRootDatum_root_positiveLong,
+    diagonalRootDatum_coroot_positiveLong, Finsupp.sum_single_index (zero_mul _)]
+  rcases eq_or_ne a (ULift.up i) with rfl | h
+  · simp only [Pi.single_eq_same, ↓reduceIte]
+    ring
+  · simp [h]
+
+/-- Coreflection in the long root `-2eᵢ` negates the `i`-th coordinate. -/
+@[simp high]
+theorem diagonalRootDatum_coreflection_negativeLong_apply (i : Fin m)
+    (x : ULift.{u} (Fin m) → ℤ) (a : ULift.{u} (Fin m)) :
+    (diagonalRootDatum.{u} m).coreflection (.negativeLong i) x a =
+      if a = ULift.up i then -x a else x a := by
+  rw [← diagonalRootDatum_coreflection_positiveLong_apply i, diagonalRootDatum_coreflection_apply,
+    diagonalRootDatum_coreflection_apply, diagonalRootDatum_root_negativeLong,
+    diagonalRootDatum_coroot_negativeLong, diagonalRootDatum_root_positiveLong,
+    diagonalRootDatum_coroot_positiveLong, Finsupp.sum_neg_index (fun _ => zero_mul _)]
+  simp only [Pi.neg_apply, neg_mul, Finsupp.sum_neg, mul_neg, neg_neg]
+
+/-- Coreflection in the short root `eᵢ - eⱼ` transposes the `i`-th and `j`-th coordinates. -/
+@[simp high]
+theorem diagonalRootDatum_coreflection_difference_apply {i j : Fin m} (hij : i ≠ j)
+    (x : ULift.{u} (Fin m) → ℤ) (a : ULift.{u} (Fin m)) :
+    (diagonalRootDatum.{u} m).coreflection (.difference i j hij) x a =
+      x (Equiv.swap (ULift.up i) (ULift.up j) a) := by
+  classical
+  have hij' : ULift.up.{u} i ≠ ULift.up j := fun h => hij (congrArg ULift.down h)
+  rw [diagonalRootDatum_coreflection_apply, diagonalRootDatum_coroot_difference,
+    diagonalRootDatum_root_difference, Finsupp.sum_sub_index (fun _ _ _ => sub_mul _ _ _),
+    Finsupp.sum_single_index (zero_mul _), Finsupp.sum_single_index (zero_mul _)]
+  rcases eq_or_ne a (ULift.up i) with rfl | hi
+  · simp [hij'.symm, Equiv.swap_apply_left]
+  rcases eq_or_ne a (ULift.up j) with rfl | hj
+  · simp [hij', Equiv.swap_apply_right]
+  · simp [Equiv.swap_apply_of_ne_of_ne hi hj, hi, hj]
+
+/-- Coreflection in the short root `eᵢ + eⱼ` transposes the `i`-th and `j`-th coordinates and
+negates both. -/
+@[simp high]
+theorem diagonalRootDatum_coreflection_positiveSum_apply {i j : Fin m} (hij : i < j)
+    (x : ULift.{u} (Fin m) → ℤ) (a : ULift.{u} (Fin m)) :
+    (diagonalRootDatum.{u} m).coreflection (.positiveSum i j hij) x a =
+      if a = ULift.up i ∨ a = ULift.up j then -x (Equiv.swap (ULift.up i) (ULift.up j) a)
+      else x a := by
+  classical
+  have hij' : ULift.up.{u} i ≠ ULift.up j := fun h => hij.ne (congrArg ULift.down h)
+  rw [diagonalRootDatum_coreflection_apply, diagonalRootDatum_coroot_positiveSum,
+    diagonalRootDatum_root_positiveSum, Finsupp.sum_add_index' (fun _ => zero_mul _)
+      (fun _ _ _ => add_mul _ _ _),
+    Finsupp.sum_single_index (zero_mul _), Finsupp.sum_single_index (zero_mul _)]
+  rcases eq_or_ne a (ULift.up i) with rfl | hi
+  · simp [hij'.symm, Equiv.swap_apply_left]
+  rcases eq_or_ne a (ULift.up j) with rfl | hj
+  · simp [hij', Equiv.swap_apply_right]
+  · simp [hi, hj]
+
+/-- Coreflection in the short root `-(eᵢ + eⱼ)` agrees with coreflection in `eᵢ + eⱼ`. -/
+@[simp high]
+theorem diagonalRootDatum_coreflection_negativeSum_apply {i j : Fin m} (hij : i < j)
+    (x : ULift.{u} (Fin m) → ℤ) (a : ULift.{u} (Fin m)) :
+    (diagonalRootDatum.{u} m).coreflection (.negativeSum i j hij) x a =
+      if a = ULift.up i ∨ a = ULift.up j then -x (Equiv.swap (ULift.up i) (ULift.up j) a)
+      else x a := by
+  rw [← diagonalRootDatum_coreflection_positiveSum_apply hij,
+    diagonalRootDatum_coreflection_apply, diagonalRootDatum_coreflection_apply,
+    diagonalRootDatum_coroot_negativeSum, diagonalRootDatum_root_negativeSum,
+    diagonalRootDatum_coroot_positiveSum, diagonalRootDatum_root_positiveSum,
+    Finsupp.sum_neg_index (fun _ => zero_mul _)]
+  simp only [Pi.neg_apply, neg_mul, Finsupp.sum_neg, mul_neg, neg_neg]
 
 /-! ### The roots as characters of the diagonal torus -/
 
