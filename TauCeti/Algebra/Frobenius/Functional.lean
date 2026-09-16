@@ -24,8 +24,8 @@ with the right `A`-action
 
 recorded as a left action of `Aᵐᵒᵖ`.
 
-The multiplication pairing `TauCeti.mulPairing` and the canonical map
-`TauCeti.toRightDualLinearMap` to the right dual are attached to an arbitrary functional: being
+The multiplication pairing `LinearMap.mulPairing` and the canonical map
+`LinearMap.toRightDualLinearMap` to the right dual are attached to an arbitrary functional: being
 Frobenius is not needed to form them, only to make them nondegenerate, respectively bijective. The
 right dual, the pairing, both functional structures and the reverse construction
 `TauCeti.FrobeniusFunctional.ofRightDualEquiv` need only a commutative semiring base and a semiring
@@ -44,7 +44,7 @@ It is deliberately stronger than an arbitrary Frobenius functional.
 ## Main definitions
 
 * `TauCeti.RightDual`: the linear dual carrying the right action above.
-* `TauCeti.mulPairing`: the pairing `(a, b) ↦ lambda (a * b)` of a linear functional.
+* `LinearMap.mulPairing`: the pairing `(a, b) ↦ lambda (a * b)` of a linear functional.
 * `TauCeti.FrobeniusFunctional`: a functional with two-sided nondegenerate multiplication pairing.
 * `TauCeti.FrobeniusFunctional.equivRightDualEquiv`: the equivalence between Frobenius
   functionals and right-module equivalences with the right dual.
@@ -76,11 +76,11 @@ See Curtis--Reiner, *Methods of Representation Theory*, Volume I, Section 9, and
 
 public section
 
-namespace TauCeti
-
 open Module
 
 universe u v
+
+namespace TauCeti
 
 section Semiring
 
@@ -167,7 +167,15 @@ instance : Module Aᵐᵒᵖ (RightDual k A) where
 
 end RightDual
 
-variable {k A}
+end Semiring
+
+end TauCeti
+
+namespace LinearMap
+
+open TauCeti
+
+variable {k : Type u} {A : Type v} [CommSemiring k] [Semiring A] [Algebra k A]
 
 /-- The multiplication pairing `(a, b) ↦ lambda (a * b)` of a linear functional. -/
 def mulPairing (lambda : A →ₗ[k] k) : LinearMap.BilinForm k A :=
@@ -175,16 +183,16 @@ def mulPairing (lambda : A →ₗ[k] k) : LinearMap.BilinForm k A :=
 
 @[simp]
 theorem mulPairing_apply (lambda : A →ₗ[k] k) (a b : A) :
-    mulPairing lambda a b = lambda (a * b) := (rfl)
+    lambda.mulPairing a b = lambda (a * b) := (rfl)
 
 /-- Multiplication makes the pairing associated to any functional associative. -/
 theorem mulPairing_mul_assoc (lambda : A →ₗ[k] k) (a b c : A) :
-    mulPairing lambda (a * b) c = mulPairing lambda a (b * c) := by
+    lambda.mulPairing (a * b) c = lambda.mulPairing a (b * c) := by
   simp only [mulPairing_apply, mul_assoc]
 
 /-- The canonical right-linear map from an algebra to its right dual attached to a functional. -/
 def toRightDualLinearMap (lambda : A →ₗ[k] k) : A →ₗ[Aᵐᵒᵖ] RightDual k A where
-  toFun a := RightDual.ofDual (mulPairing lambda a)
+  toFun a := RightDual.ofDual (lambda.mulPairing a)
   map_add' a b := by
     ext c
     simp
@@ -194,7 +202,15 @@ def toRightDualLinearMap (lambda : A →ₗ[k] k) : A →ₗ[Aᵐᵒᵖ] RightDu
 
 @[simp]
 theorem toRightDualLinearMap_apply_apply (lambda : A →ₗ[k] k) (a b : A) :
-    toRightDualLinearMap lambda a b = lambda (a * b) := (rfl)
+    lambda.toRightDualLinearMap a b = lambda (a * b) := (rfl)
+
+end LinearMap
+
+namespace TauCeti
+
+section Semiring
+
+variable {k : Type u} {A : Type v} [CommSemiring k] [Semiring A] [Algebra k A]
 
 /-- A right-module map from an algebra to its right dual is determined by its value at one. -/
 theorem rightDualMap_apply_apply {F : Type*} [FunLike F A (RightDual k A)]
@@ -221,7 +237,7 @@ variable {k A}
 
 /-- The multiplication pairing is nondegenerate on both sides. -/
 theorem nondegenerate_mulPairing (lambda : FrobeniusFunctional k A) :
-    (mulPairing lambda.functional).Nondegenerate :=
+    lambda.functional.mulPairing.Nondegenerate :=
   ⟨lambda.left_nondegenerate, lambda.right_nondegenerate⟩
 
 /-- A right-module equivalence with the right dual determines a Frobenius functional. Nothing
@@ -262,7 +278,7 @@ variable {k A}
 
 /-- The multiplication pairing of a symmetric Frobenius functional is symmetric. -/
 theorem isSymm_mulPairing (lambda : SymmetricFrobeniusFunctional k A) :
-    (mulPairing lambda.functional).IsSymm := ⟨lambda.trace_mul_comm⟩
+    lambda.functional.mulPairing.IsSymm := ⟨lambda.trace_mul_comm⟩
 
 end SymmetricFrobeniusFunctional
 
@@ -277,43 +293,43 @@ namespace FrobeniusFunctional
 /-- Left nondegeneracy says exactly that the multiplication pairing is injective in its first
 argument. -/
 theorem mulPairing_injective (lambda : FrobeniusFunctional k A) :
-    Function.Injective (mulPairing lambda.functional) :=
+    Function.Injective lambda.functional.mulPairing :=
   LinearMap.ker_eq_bot.mp <|
     LinearMap.separatingLeft_iff_ker_eq_bot.mp lambda.left_nondegenerate
 
 /-- Right nondegeneracy says exactly that the flipped multiplication pairing is injective. -/
 theorem mulPairing_flip_injective (lambda : FrobeniusFunctional k A) :
-    Function.Injective (mulPairing lambda.functional).flip :=
+    Function.Injective lambda.functional.mulPairing.flip :=
   LinearMap.ker_eq_bot.mp <|
     LinearMap.separatingLeft_iff_ker_eq_bot.mp lambda.right_nondegenerate
 
 /-- The multiplication pairing of a finite-dimensional Frobenius algebra is perfect. -/
 instance isPerfPair_mulPairing [FiniteDimensional k A] (lambda : FrobeniusFunctional k A) :
-    (mulPairing lambda.functional).IsPerfPair :=
+    lambda.functional.mulPairing.IsPerfPair :=
   LinearMap.IsPerfPair.of_injective lambda.mulPairing_injective lambda.mulPairing_flip_injective
 
 /-- On a finite-dimensional algebra, the canonical map to the right dual attached to a Frobenius
 functional is bijective. -/
 theorem toRightDualLinearMap_bijective [FiniteDimensional k A]
     (lambda : FrobeniusFunctional k A) :
-    Function.Bijective (toRightDualLinearMap lambda.functional) :=
+    Function.Bijective lambda.functional.toRightDualLinearMap :=
   (RightDual.ofDual (k := k) (A := A)).bijective.comp
     lambda.isPerfPair_mulPairing.bijective_left
 
 /-- A Frobenius functional identifies the regular right module with its right dual. -/
 noncomputable def toRightDualEquiv [FiniteDimensional k A] (lambda : FrobeniusFunctional k A) :
     A ≃ₗ[Aᵐᵒᵖ] RightDual k A :=
-  LinearEquiv.ofBijective (toRightDualLinearMap lambda.functional)
+  LinearEquiv.ofBijective lambda.functional.toRightDualLinearMap
     lambda.toRightDualLinearMap_bijective
 
 @[simp]
 theorem toRightDualEquiv_apply_apply [FiniteDimensional k A]
     (lambda : FrobeniusFunctional k A) (a b : A) :
     lambda.toRightDualEquiv a b = lambda.functional (a * b) := by
-  have h : lambda.toRightDualEquiv a = toRightDualLinearMap lambda.functional a := by
+  have h : lambda.toRightDualEquiv a = lambda.functional.toRightDualLinearMap a := by
     unfold toRightDualEquiv
     apply LinearEquiv.ofBijective_apply
-  rw [h, toRightDualLinearMap_apply_apply]
+  rw [h, LinearMap.toRightDualLinearMap_apply_apply]
 
 @[simp]
 theorem ofRightDualEquiv_toRightDualEquiv [FiniteDimensional k A]
