@@ -24,9 +24,9 @@ needed by `NumberFieldArithmetic.artinHomAway` and names the resulting specializ
 
 * `TauCeti.NumberField.isUnramifiedAway_ramifiedSupport`: primes outside the ramified support are
   unramified throughout the extension.
-* `TauCeti.NumberFieldArithmetic.artinHomAway_ramifiedSupport`: the Artin map on fractional
+* `TauCeti.NumberFieldArithmetic.artinHomAwayRamifiedSupport`: the Artin map on fractional
   ideals prime to the relative discriminant.
-* `TauCeti.NumberFieldArithmetic.artinHomAway_ramifiedSupport_apply_prime`: this map takes a prime
+* `TauCeti.NumberFieldArithmetic.artinHomAwayRamifiedSupport_apply_prime`: this map takes a prime
   outside the ramified support to its arithmetic Frobenius.
 
 ## References
@@ -68,14 +68,14 @@ variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Alge
 /-- **The Artin map away from the ramified support.** For an abelian Galois extension `L/K`,
 this is the multiplicative Artin map on fractional ideals whose multiplicity vanishes at every
 prime dividing the relative discriminant. -/
-noncomputable def artinHomAway_ramifiedSupport
+noncomputable def artinHomAwayRamifiedSupport
     (hab : ∀ σ τ : L ≃ₐ[K] L, Commute σ τ) :
     idealsAway (K := K) (NumberField.ramifiedSupport K L) →* (L ≃ₐ[K] L) :=
   artinHomAway (L := L) hab (NumberField.ramifiedSupport K L)
     NumberField.isUnramifiedAway_ramifiedSupport
 
 /-- **The Artin map away from the ramified support takes an unramified prime to Frobenius.** -/
-theorem artinHomAway_ramifiedSupport_apply_prime
+theorem artinHomAwayRamifiedSupport_apply_prime
     (hab : ∀ σ τ : L ≃ₐ[K] L, Commute σ τ)
     (I : idealsAway (K := K) (NumberField.ramifiedSupport K L))
     (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ NumberField.ramifiedSupport K L)
@@ -83,7 +83,7 @@ theorem artinHomAway_ramifiedSupport_apply_prime
       (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K))
     (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver v.asIdeal] (σ : L ≃ₐ[K] L)
     (hσ : IsArithFrobAt (𝓞 K) σ Q) :
-    artinHomAway_ramifiedSupport hab I = σ :=
+    artinHomAwayRamifiedSupport hab I = σ :=
   artinHomAway_apply_prime hab (NumberField.ramifiedSupport K L)
     NumberField.isUnramifiedAway_ramifiedSupport I v hv hI Q σ hσ
 
