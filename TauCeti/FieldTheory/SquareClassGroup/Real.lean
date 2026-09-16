@@ -33,7 +33,6 @@ public section
 namespace TauCeti
 
 /-- A real unit has trivial square class exactly when it is positive. -/
-@[simp]
 theorem squareClass_eq_zero_iff_pos (u : ℝˣ) : squareClass u = 0 ↔ 0 < (u : ℝ) := by
   rw [squareClass_eq_zero_iff, ← isSquare_units_val_iff, Real.isSquare_iff]
   exact ⟨fun h ↦ lt_of_le_of_ne h (Units.ne_zero u).symm, le_of_lt⟩
