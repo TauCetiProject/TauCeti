@@ -33,7 +33,8 @@ action, `ErgodicSMul.iff_mem_extremePoints`, composed with `jointlyDissociated_i
 * `TauCeti.Probability.jointlyExchangeableProbabilityMeasures` — the convex set, and its
   identification with the invariant measures of total mass one of the diagonal action;
 * `TauCeti.Probability.jointlyDissociated_iff_mem_extremePoints` — **joint dissociation is
-  extremality** among jointly exchangeable probability laws.
+  extremality** among jointly exchangeable probability laws, with
+  `jointlyDissociated_of_mem_extremePoints` reading dissociation off an extreme point.
 
 ## References
 
@@ -53,10 +54,8 @@ namespace Probability
 
 variable {α : Type*} [MeasurableSpace α]
 
-/-- Invariance under the finitary diagonal action gives joint exchangeability under every
-permutation: a law on `ℕ × ℕ → α` is determined by its finite-dimensional marginals, and on the
-finitely many indices a marginal reads, an arbitrary permutation agrees with a finitely supported
-one. -/
+/-- A finite law on `ℕ × ℕ → α` invariant under the finitary diagonal action is jointly
+exchangeable: invariant under the diagonal relabelling by every permutation of `ℕ`. -/
 theorem jointlyExchangeable_of_smulInvariantMeasure {ρ : Measure (ℕ × ℕ → α)}
     [IsFiniteMeasure ρ] [SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) ρ] :
     JointlyExchangeable ρ fun p x => x p := by
@@ -96,10 +95,10 @@ theorem jointlyExchangeable_of_smulInvariantMeasure {ρ : Measure (ℕ × ℕ �
     simp only [Finset.restrict_def, h1, h2]
   rwa [heq] at hτmap
 
-/-- A jointly exchangeable probability law is invariant under the finitary diagonal action, and
-conversely; the two hypotheses on a probability law coincide. -/
+/-- A finite law is jointly exchangeable if and only if it is invariant under the finitary
+diagonal action. -/
 theorem jointlyExchangeable_iff_smulInvariantMeasure {ρ : Measure (ℕ × ℕ → α)}
-    [IsProbabilityMeasure ρ] :
+    [IsFiniteMeasure ρ] :
     JointlyExchangeable ρ (fun p x => x p) ↔ SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) ρ :=
   ⟨JointlyExchangeable.smulInvariantMeasure, fun _ => jointlyExchangeable_of_smulInvariantMeasure⟩
 
@@ -107,6 +106,13 @@ theorem jointlyExchangeable_iff_smulInvariantMeasure {ρ : Measure (ℕ × ℕ �
 def jointlyExchangeableProbabilityMeasures (α : Type*) [MeasurableSpace α] :
     Set (Measure (ℕ × ℕ → α)) :=
   {ν | JointlyExchangeable ν (fun p x => x p) ∧ IsProbabilityMeasure ν}
+
+/-- Membership in the jointly exchangeable probability laws. -/
+@[simp]
+theorem mem_jointlyExchangeableProbabilityMeasures_iff {ν : Measure (ℕ × ℕ → α)} :
+    ν ∈ jointlyExchangeableProbabilityMeasures α
+      ↔ JointlyExchangeable ν (fun p x => x p) ∧ IsProbabilityMeasure ν :=
+  Iff.rfl
 
 /-- The jointly exchangeable probability laws are the probability laws invariant under the
 diagonal finitary action. -/
@@ -121,6 +127,11 @@ theorem jointlyExchangeableProbabilityMeasures_eq :
     have : IsProbabilityMeasure ν := ⟨hp⟩
     exact ⟨jointlyExchangeable_of_smulInvariantMeasure, inferInstance⟩
 
+/-- The jointly exchangeable probability laws form a convex set. -/
+theorem convex_jointlyExchangeableProbabilityMeasures :
+    Convex ℝ≥0∞ (jointlyExchangeableProbabilityMeasures α) := by
+  rw [jointlyExchangeableProbabilityMeasures_eq]; exact convex_invariantMeasuresOfMeasureUnivEq
+
 /-- **Joint dissociation is extremality**: a jointly exchangeable probability law is an extreme
 point of the jointly exchangeable probability laws if and only if its coordinate array is jointly
 dissociated. -/
@@ -130,6 +141,26 @@ theorem jointlyDissociated_iff_mem_extremePoints {ρ : Measure (ℕ × ℕ → �
       ↔ ρ ∈ extremePoints ℝ≥0∞ (jointlyExchangeableProbabilityMeasures α) := by
   rw [jointlyDissociated_iff_ergodicSMul hexch, jointlyExchangeableProbabilityMeasures_eq]
   exact ErgodicSMul.iff_mem_extremePoints
+
+/-- An extreme point of the jointly exchangeable probability laws is jointly exchangeable. -/
+theorem jointlyExchangeable_of_mem_extremePoints {ρ : Measure (ℕ × ℕ → α)}
+    (h : ρ ∈ extremePoints ℝ≥0∞ (jointlyExchangeableProbabilityMeasures α)) :
+    JointlyExchangeable ρ fun p x => x p :=
+  h.1.1
+
+/-- An extreme point of the jointly exchangeable probability laws is a probability law. -/
+theorem isProbabilityMeasure_of_mem_extremePoints {ρ : Measure (ℕ × ℕ → α)}
+    (h : ρ ∈ extremePoints ℝ≥0∞ (jointlyExchangeableProbabilityMeasures α)) :
+    IsProbabilityMeasure ρ :=
+  h.1.2
+
+/-- The coordinate array of an extreme point of the jointly exchangeable probability laws is
+jointly dissociated. -/
+theorem jointlyDissociated_of_mem_extremePoints {ρ : Measure (ℕ × ℕ → α)}
+    (h : ρ ∈ extremePoints ℝ≥0∞ (jointlyExchangeableProbabilityMeasures α)) :
+    JointlyDissociated ρ fun p x => x p :=
+  have := isProbabilityMeasure_of_mem_extremePoints h
+  (jointlyDissociated_iff_mem_extremePoints (jointlyExchangeable_of_mem_extremePoints h)).2 h
 
 end Probability
 
