@@ -57,7 +57,7 @@ private theorem map_injective_on_chart (L : InvertibleSheaf X) {T U V : X.Opens}
 
 /-- Restricting sections of a line bundle on an integral scheme to a nonempty open subset
 is injective. -/
-theorem map_injective (L : InvertibleSheaf X) {U V : X.Opens} (i : V ⟶ U)
+theorem map_injective_of_isIntegral (L : InvertibleSheaf X) {U V : X.Opens} (i : V ⟶ U)
     [Nonempty V] : Function.Injective (L.obj.presheaf.map i.op) := by
   classical
   let t := TauCeti.SheafOfModules.LocalTrivializations.ofIsInvertible L.obj
@@ -91,11 +91,12 @@ theorem map_injective (L : InvertibleSheaf X) {U V : X.Opens} (i : V ⟶ U)
 
 /-- A section of a line bundle on an integral scheme is determined by its germ at any
 point of its domain. At the generic point this embeds sections into rational sections. -/
-theorem germ_injective (L : InvertibleSheaf X) {U : X.Opens} (x : X) (hx : x ∈ U) :
+theorem germ_injective_of_isIntegral (L : InvertibleSheaf X) {U : X.Opens} (x : X)
+    (hx : x ∈ U) :
     Function.Injective (L.obj.presheaf.germ U x hx) := by
   intro a b hab
   obtain ⟨V, hxV, i, j, h⟩ := L.obj.presheaf.germ_eq x hx hx a b hab
   let : Nonempty V := ⟨⟨x, hxV⟩⟩
-  exact L.map_injective i (by simpa only [Subsingleton.elim j i] using h)
+  exact L.map_injective_of_isIntegral i (by simpa only [Subsingleton.elim j i] using h)
 
 end TauCeti.AlgebraicGeometry.InvertibleSheaf
