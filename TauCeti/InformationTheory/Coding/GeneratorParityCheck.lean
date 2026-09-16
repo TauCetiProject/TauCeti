@@ -67,16 +67,8 @@ theorem isGeneratorMatrix_iff_isParityCheckMatrix_euclideanDual
 theorem isParityCheckMatrix_iff_isGeneratorMatrix_euclideanDual
     {C : LinearCode F ι} {H : Matrix ρ ι F} [Fintype ρ] :
     C.IsParityCheckMatrix H ↔ IsGeneratorMatrix C.euclideanDual H := by
-  rw [isParityCheckMatrix_def, isGeneratorMatrix_def,
-    Matrix.checkedBy_eq_euclideanDual_generatedBy]
-  constructor
-  · intro h
-    calc
-      H.generatedBy = H.generatedBy.euclideanDual.euclideanDual :=
-        (Submodule.euclideanDual_euclideanDual H.generatedBy).symm
-      _ = C.euclideanDual := congrArg Submodule.euclideanDual h
-  · intro h
-    rw [h, Submodule.euclideanDual_euclideanDual]
+  simpa only [Submodule.euclideanDual_euclideanDual] using
+    (isGeneratorMatrix_iff_isParityCheckMatrix_euclideanDual (C := C.euclideanDual) (G := H)).symm
 
 /-- Every finite-length linear code has a parity-check matrix whose rows form a basis of the
 Euclidean dual. Its row type has cardinality equal to the codimension of the code. -/
