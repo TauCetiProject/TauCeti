@@ -47,6 +47,8 @@ Finally, both indices are additive under orthogonal products.
   inertia are additive under orthogonal products.
 * `QuadraticForm.posDef_iff_sigNeg_eq_zero_and_radical_eq_bot`: positive-definiteness
   is characterized by vanishing negative index and trivial radical.
+* `QuadraticForm.sigPos_add_sigNeg_of_nondegenerate`: the two indices of inertia of a
+  nondegenerate quadratic form add up to the dimension.
 
 ## References
 
@@ -375,6 +377,14 @@ theorem posDef_iff_sigNeg_eq_zero_and_radical_eq_bot (Q : _root_.QuadraticForm K
     intro x hx
     have hxW : x ∈ W := hWtop.symm ▸ Submodule.mem_top
     exact hWpos ⟨x, hxW⟩ (by simpa only [ne_eq, Submodule.mk_eq_zero])
+
+/-- The positive and negative indices of inertia of a nondegenerate quadratic form add up to the
+dimension of the space. -/
+theorem sigPos_add_sigNeg_of_nondegenerate (Q : _root_.QuadraticForm K M) (hQ : Q.Nondegenerate) :
+    sigPos Q + sigNeg Q = Module.finrank K M := by
+  have hsig := sigPos_add_sigNeg_add_radical (Q := Q)
+  rw [hQ.radical_eq_bot] at hsig
+  simpa only [finrank_bot, add_zero] using hsig
 
 end QuadraticForm
 

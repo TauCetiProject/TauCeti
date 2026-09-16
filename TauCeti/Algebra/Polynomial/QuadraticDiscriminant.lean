@@ -31,11 +31,12 @@ Over a field, with `a ≠ 0`:
   Artin-Schreier invariant `a c / b²` lies in the image of `z ↦ z² + z`, written division-free.
   Here `b ≠ 0` is also required, which by `separable_quadratic_iff_discrim_ne_zero` is separability.
 
-Two auxiliary identities need neither a field nor `a ≠ 0`, and are stated over a commutative
-(semi)ring: `Polynomial.derivative_quadratic`, computing the derivative as `2 a X + b`, and the
-Bézout-type `Polynomial.sq_derivative_quadratic_sub_mul_eq_C_discrim`,
-`(P')² - 4 a P = C (discrim a b c)`, which is what exhibits a nonzero discriminant as a
-coprimality witness in every characteristic.
+Three statements need neither a field nor `a ≠ 0`, and are stated over a commutative (semi)ring:
+`Polynomial.derivative_quadratic`, computing the derivative as `2 a X + b`; the Bézout-type
+`Polynomial.sq_derivative_quadratic_sub_mul_eq_C_discrim`, `(P')² - 4 a P = C (discrim a b c)`; and
+its consequence `Polynomial.separable_quadratic_of_isUnit_discrim`, that the quadratic is separable
+whenever its discriminant is a unit. Over a field that last statement is one direction of
+`Polynomial.separable_quadratic_iff_discrim_ne_zero`, in every characteristic.
 
 The two splitting criteria are consumed by the node-polynomial criteria of
 `TauCeti/AlgebraicGeometry/EllipticCurve/NodePolynomial.lean`, which advance
@@ -78,7 +79,7 @@ theorem derivative_quadratic {R : Type*} [CommSemiring R] (a b c : R) :
 /-- The Bézout-type identity `(P')² - 4 a · P = C (discrim a b c)` for the quadratic
 `P = a X² + b X + c`: the discriminant is an explicit `R[X]`-combination of `P` and its
 derivative, which is what makes it a coprimality witness in
-`separable_quadratic_iff_discrim_ne_zero`. -/
+`separable_quadratic_of_isUnit_discrim`. -/
 theorem sq_derivative_quadratic_sub_mul_eq_C_discrim {R : Type*} [CommRing R] (a b c : R) :
     derivative (C a * X ^ 2 + C b * X + C c) ^ 2
       - 4 * C a * (C a * X ^ 2 + C b * X + C c) = C (discrim a b c) := by
@@ -86,10 +87,26 @@ theorem sq_derivative_quadratic_sub_mul_eq_C_discrim {R : Type*} [CommRing R] (a
   simp only [map_sub, map_mul, map_pow, map_ofNat]
   ring
 
+/-- A quadratic `a X² + b X + c` over any commutative ring is separable as soon as `discrim a b c`
+is a unit. No hypothesis on `a` is needed: once the discriminant is inverted, the Bézout-type
+identity `sq_derivative_quadratic_sub_mul_eq_C_discrim` writes `1` as an `R[X]`-combination of the
+polynomial and its derivative. -/
+theorem separable_quadratic_of_isUnit_discrim {R : Type*} [CommRing R] {a b c : R}
+    (h : IsUnit (discrim a b c)) : (C a * X ^ 2 + C b * X + C c).Separable := by
+  set P := C a * X ^ 2 + C b * X + C c with hP
+  have hid : derivative P ^ 2 - 4 * C a * P = C (discrim a b c) :=
+    sq_derivative_quadratic_sub_mul_eq_C_discrim a b c
+  have hinv : C ((h.unit⁻¹ : Rˣ) : R) * C (discrim a b c) = 1 := by
+    rw [← C_mul, h.val_inv_mul, C_1]
+  rw [separable_def]
+  exact ⟨-(C ((h.unit⁻¹ : Rˣ) : R) * 4 * C a), C ((h.unit⁻¹ : Rˣ) : R) * derivative P,
+    by linear_combination C ((h.unit⁻¹ : Rˣ) : R) * hid + hinv⟩
+
 /-- A quadratic polynomial `a X² + b X + c` (with `a ≠ 0`) over a field is separable exactly when
 `discrim a b c` is nonzero. This holds in every characteristic; contrast
 `splits_quadratic_iff_isSquare`, which asks for the discriminant to be a square rather than
-nonzero, and only away from characteristic two. -/
+nonzero, and only away from characteristic two. The reverse direction needs neither a field nor
+`a ≠ 0`: it is `separable_quadratic_of_isUnit_discrim`. -/
 theorem separable_quadratic_iff_discrim_ne_zero {k : Type*} [Field k] {a b c : k} (ha : a ≠ 0) :
     (C a * X ^ 2 + C b * X + C c).Separable ↔ discrim a b c ≠ 0 := by
   set P := C a * X ^ 2 + C b * X + C c with hP
@@ -101,12 +118,7 @@ theorem separable_quadratic_iff_discrim_ne_zero {k : Type*} [Field k] {a b c : k
     have hdvd : P ∣ derivative P ^ 2 := ⟨4 * C a, by linear_combination hid⟩
     exact not_isUnit_of_natDegree_pos P (by rw [hP, natDegree_quadratic ha]; norm_num)
       (((separable_def P).mp hsep).pow_right.isUnit_of_dvd' dvd_rfl hdvd)
-  · intro hdisc
-    rw [separable_def]
-    have hdinv : C (discrim a b c)⁻¹ * C (discrim a b c) = 1 := by
-      rw [← C_mul, inv_mul_cancel₀ hdisc, C_1]
-    exact ⟨-(C (discrim a b c)⁻¹ * 4 * C a), C (discrim a b c)⁻¹ * derivative P,
-      by linear_combination C (discrim a b c)⁻¹ * hid + hdinv⟩
+  · exact fun hdisc ↦ separable_quadratic_of_isUnit_discrim (isUnit_iff_ne_zero.mpr hdisc)
 
 /-- A quadratic `a X² + b X + c` (`a ≠ 0`) over a field splits exactly when it has a root. This is
 the characteristic-free core of the two split criteria below, which only restate "has a root":

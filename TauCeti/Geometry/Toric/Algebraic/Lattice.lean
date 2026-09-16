@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 
+import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
+
 /-!
 # Integral lattices in a real vector space
 
@@ -40,6 +42,8 @@ forcing the integral and real ranks to agree.
 * `TauCeti.Toric.IsIntegralLattice.extend` and `TauCeti.Toric.IsIntegralLattice.eq_extend`: a map
   of integral vectors extends to a unique real-linear map, so the real-linear map accompanying a
   map of lattices is determined by it rather than being extra data.
+* `TauCeti.Toric.IsIntegralLattice.prod`: products of integral lattices are integral lattices for
+  the componentwise lattice map.
 * `TauCeti.Toric.IsIntegralLattice.isZLattice`: in a normed space the image of an integral
   lattice is discrete, hence a `ZLattice` in Mathlib's sense.
 
@@ -192,6 +196,16 @@ theorem isIntegralLattice_congr (f : N ≃+ N') (e : V ≃ₗ[ℝ] V')
   · intro h
     exact ⟨(Module.Free.iff_of_equiv f.toIntLinearEquiv).2 h.free,
       (Module.Finite.equiv_iff f.toIntLinearEquiv).2 h.finite, hbase.2 h.isBaseChange⟩
+
+/-- The product of two integral lattices is an integral lattice for the componentwise map. -/
+theorem IsIntegralLattice.prod (h : IsIntegralLattice i) (h' : IsIntegralLattice i') :
+    IsIntegralLattice (i.prodMap i') := by
+  let _ := h.free
+  let _ := h'.free
+  let _ := h.finite
+  let _ := h'.finite
+  exact ⟨inferInstance, inferInstance,
+    IsBaseChange.prodMap i.toIntLinearMap i'.toIntLinearMap h.isBaseChange h'.isBaseChange⟩
 
 end Naturality
 

@@ -181,11 +181,11 @@ private theorem eqOn_window_exciseCrossings_cons (W : CircularCapWindow)
 
 /-- After the first window, simultaneous excision agrees with excision by the tail. -/
 private theorem eqOn_tail_exciseCrossings_cons (W : CircularCapWindow)
-    (windows : List CircularCapWindow) (hWb : W.upper < b) :
+    (windows : List CircularCapWindow) (hWb : W.upper ≤ b) :
     EqOn (exciseCrossings γ s windows) (exciseCrossings γ s (W :: windows))
       (uIoo W.upper b) := by
   intro t ht
-  rw [uIoo_of_le hWb.le] at ht
+  rw [uIoo_of_le hWb] at ht
   rw [exciseCrossings_cons]
   apply exciseCrossings_apply_congr
   exact (W.excise_of_notMem fun htW =>
@@ -204,7 +204,7 @@ private theorem eqOn_pieces_exciseCrossings_cons (W : CircularCapWindow)
   rw [List.pairwise_cons] at hordered
   exact ⟨eqOn_left_exciseCrossings_cons W hordered.1 hW.1 hW.2.1,
     eqOn_window_exciseCrossings_cons W (List.pairwise_cons.mpr hordered) hW.2.1.le,
-    eqOn_tail_exciseCrossings_cons W windows hW.2.2⟩
+    eqOn_tail_exciseCrossings_cons W windows hW.2.2.le⟩
 
 /-- The Cauchy-kernel principal value exists after gluing finitely many ordered crossing windows
 to the point-avoiding pieces between them. -/

@@ -150,6 +150,17 @@ theorem atComplexEmbedding_def (Q : _root_.QuadraticForm K V) (w : InfinitePlace
     atComplexEmbedding Q w = Q.baseChange ℂ := by
   rfl
 
+/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate after scalar extension
+through a complex embedding. -/
+theorem Nondegenerate.atComplexEmbedding [FiniteDimensional K V]
+    {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (w : InfinitePlace K) :
+    (Q.atComplexEmbedding w).Nondegenerate := by
+  let : CharZero K := RingHom.charZero w.embedding
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  let : Algebra K ℂ := w.embedding.toAlgebra
+  rw [atComplexEmbedding_def]
+  exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
+
 section Diagonal
 
 variable {ι : Type*} [Fintype ι]

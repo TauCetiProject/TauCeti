@@ -29,6 +29,23 @@ env:
   MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
 
 jobs:
+  readiness-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout the pinned merge policy (read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: TauCetiProject/TauCetiReview
+          ref: 603b28011f779bd341d0a08e788498b81542bd7d
+          path: .tauceti-review
+          sparse-checkout: runner
+          persist-credentials: false
+
+      - run: python3 scripts/pr_status/test_readiness.py
+
   build:
     runs-on: ubuntu-latest
     # Read by publish-lake-cache below, the only job that ever holds the upload secret.
@@ -69,6 +86,7 @@ jobs:
           python3 scripts/pr_status/test_conflicts.py
           python3 scripts/test_structure_nudge.py
           python3 scripts/test_workflow_pins.py
+          python3 scripts/test_queue_release.py
           python3 scripts/test_bwrap_pin.py
           python3 scripts/test_elan_pin.py
           python3 scripts/test_web_pins.py
@@ -272,6 +290,9 @@ jobs:
       # generates an import-all module under .lake/ for lint-style's text-based checks. This is
       # deliberately narrower than the command header linter's unrelated import and module-doc
       # checks; the empty root makes that command linter skip every library module at this pin.
+      - name: Header audit equivalence tests
+        run: lake env python3 scripts/test_header_style.py
+
       - name: Source style lint (copyright headers + text linters)
         run: bash scripts/lint-style.sh
 

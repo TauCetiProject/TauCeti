@@ -168,20 +168,14 @@ theorem rep_ι_apply (x : Matrix.ToLieAlgebra ℚ (CartanMatrix.E 6)ᵀ)
 /-- Every rational raising matrix is square-zero. -/
 @[simp]
 theorem raisingMatrixQ_sq (i : Fin 6) : raisingMatrixQ i ^ 2 = 0 := by
-  ext a b
-  simp only [pow_two, Matrix.mul_apply, raisingMatrixQ_apply, Matrix.zero_apply]
-  by_cases hb : e6DoubledMinusculeWeight b i = -1
-  · simp [hb, e6DoubledMinusculeWeight_reflection_apply_self]
-  · simp [hb]
+  rw [raisingMatrixQ, pow_two, ← matrixIntCastLieHom_mul, ← pow_two, raisingMatrix_pow_two,
+    map_zero]
 
 /-- Every rational lowering matrix is square-zero. -/
 @[simp]
 theorem loweringMatrixQ_sq (i : Fin 6) : loweringMatrixQ i ^ 2 = 0 := by
-  ext a b
-  simp only [pow_two, Matrix.mul_apply, loweringMatrixQ_apply, Matrix.zero_apply]
-  by_cases hb : e6DoubledMinusculeWeight b i = 1
-  · simp [hb, e6DoubledMinusculeWeight_reflection_apply_self]
-  · simp [hb]
+  rw [loweringMatrixQ, pow_two, ← matrixIntCastLieHom_mul, ← pow_two, loweringMatrix_pow_two,
+    map_zero]
 
 /-- Every represented positive or negative Serre root generator is square-zero. -/
 theorem rep_serreRootGenerator_sq (k : Fin 6 ⊕ Fin 6) :

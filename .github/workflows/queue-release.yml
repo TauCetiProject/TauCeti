@@ -1,0 +1,54 @@
+name: Merge queue release
+
+# A Lake-pin bump clears the queue and defers other enqueues. Its departure must
+# wake those PRs even if their heads, builds, and review comments never change.
+on:
+  pull_request_target:
+    branches: [main]
+    types: [closed, dequeued]
+  workflow_dispatch:
+    inputs:
+      released_pr:
+        description: "Pin-changing PR that has left the queue"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: write
+
+concurrency:
+  group: queue-release-${{ github.event.pull_request.number || inputs.released_pr }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || github.event.action == 'dequeued'
+      || github.event.pull_request.merged == true
+    steps:
+      # Only trusted main code runs here; no PR checkout or App credentials.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: scripts
+          persist-credentials: false
+      - id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RELEASED_PR: ${{ github.event.pull_request.number || inputs.released_pr }}
+          RELEASE_ACTION: ${{ github.event.action || 'manual' }}
+        run: python3 scripts/queue_release.py
+      - name: Wake the existing queue reconciler
+        if: steps.release.outputs.sweep == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        # workflow_dispatch may trigger another workflow using GITHUB_TOKEN.
+        # The sweep's existing concurrency group serializes scheduled and release runs.
+        # It owns head-pinned review/CI checks, reservations, and eviction recovery.
+        run: gh workflow run merge-sweep.yml --repo "$REPO" --ref main -f dry-run=false

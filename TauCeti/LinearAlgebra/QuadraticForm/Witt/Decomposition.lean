@@ -30,7 +30,6 @@ decomposition follows from the regular one.
 
 ## Main definitions
 
-* `TauCeti.hyperbolicClass`: the isometry class of the hyperbolic plane.
 * `TauCeti.hyperbolicPresentation`: the diagonal presentation of `m` hyperbolic planes.
 * `TauCeti.RegularFormClass.Anisotropic`: anisotropy of an isometry class.
 * `TauCeti.RegularFormClass.wittIndex`: the number of hyperbolic planes in a class.
@@ -69,37 +68,6 @@ section Hyperbolic
 
 variable [Invertible (2 : K)]
 
-/-- The diagonal presentation `⟨1, -1⟩` presents the hyperbolic plane. -/
-@[simp]
-theorem presentedForm_one_neg_one :
-    presentedForm (⟨2, ![1, -1]⟩ : RegularFormPresentation K) = hyperbolicPlane K := by
-  ext x
-  rw [presentedForm_apply, hyperbolicPlane_apply, Fin.sum_univ_two]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Units.val_one, Units.val_neg, one_mul,
-    neg_mul]
-  ring
-
-/-- The isometry class of the hyperbolic plane `⟨1, -1⟩`.
-
-As with `TauCeti.hyperbolicPlane`, the invertibility hypothesis is not used by the formula; it
-confines the definition to characteristic not two, where `⟨1, -1⟩` is the hyperbolic plane. -/
-def hyperbolicClass (K : Type u) [Field K] [_i2 : Invertible (2 : K)] : RegularFormClass K :=
-  Quotient.mk (regularFormSetoid K) ⟨2, ![1, -1]⟩
-
-/-- The hyperbolic class has rank two. -/
-@[simp]
-theorem rank_hyperbolicClass : RegularFormClass.rank (hyperbolicClass K) = 2 := by
-  rw [hyperbolicClass, RegularFormClass.rank_mk]
-
-/-- The class of the hyperbolic plane, as a form, is the hyperbolic class. -/
-@[simp]
-theorem formClass_hyperbolicPlane :
-    formClass (hyperbolicPlane K) nondegenerate_hyperbolicPlane = hyperbolicClass K := by
-  rw [hyperbolicClass]
-  refine formClass_mk _ _ _ ?_
-  rw [presentedForm_one_neg_one]
-  exact QuadraticMap.Equivalent.refl _
-
 /-- The diagonal presentation `⟨1, -1, …, 1, -1⟩` of `m` hyperbolic planes. -/
 def hyperbolicPresentation (K : Type u) [Field K] [_i2 : Invertible (2 : K)] :
     ℕ → RegularFormPresentation K
@@ -124,7 +92,7 @@ theorem mk_hyperbolicPresentation (m : ℕ) :
   | zero => rw [hyperbolicPresentation, zero_nsmul, RegularFormClass.zero_def]
   | succ m ih =>
     rw [hyperbolicPresentation, ← RegularFormClass.mk_add_mk, ih, succ_nsmul',
-      hyperbolicClass]
+      hyperbolicClass_def]
 
 end Hyperbolic
 
@@ -170,7 +138,7 @@ theorem not_anisotropic_hyperbolicClass_add (c : RegularFormClass K) :
     ¬ RegularFormClass.Anisotropic (hyperbolicClass K + c) := by
   induction c using Quotient.inductionOn with
   | _ p =>
-    rw [hyperbolicClass, RegularFormClass.mk_add_mk, RegularFormClass.anisotropic_mk]
+    rw [hyperbolicClass_def, RegularFormClass.mk_add_mk, RegularFormClass.anisotropic_mk]
     intro hani
     refine QuadraticForm.not_anisotropic_hyperbolicPlane_prod (presentedForm p) ?_
     rw [← presentedForm_one_neg_one]
@@ -208,7 +176,7 @@ private theorem exists_nsmul_hyperbolicClass_add_aux (n : ℕ) :
           (nondegenerate_presentedForm p) hani
         have hsplit : (Quotient.mk (regularFormSetoid K) p : RegularFormClass K) =
             hyperbolicClass K + Quotient.mk (regularFormSetoid K) q := by
-          rw [hyperbolicClass, RegularFormClass.mk_add_mk, RegularFormClass.mk_eq_mk_iff]
+          rw [hyperbolicClass_def, RegularFormClass.mk_add_mk, RegularFormClass.mk_eq_mk_iff]
           refine hq.trans ?_
           rw [← presentedForm_one_neg_one]
           exact (equivalent_presentedForm_append_prod _ q).symm

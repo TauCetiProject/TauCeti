@@ -322,8 +322,8 @@ theorem graphAut_pow_twistOrder : d.graphAut ^ d.toGraphTwistedIndex.twistOrder 
 is the map on points induced by a ring endomorphism of the closure. -/
 theorem graphAut_comp_frobenius :
     d.graphAut.toMonoidHom.comp d.frobenius = d.frobenius.comp d.graphAut.toMonoidHom := by
-  rw [graphAut_def, frobenius_def, E6DoubledMinuscule.frobenius_eq_pointsMap]
-  exact (E6DoubledMinuscule.pointsMap_comp_graphAutomorphismPoints _).symm
+  rw [graphAut_def, frobenius_def, E6DoubledMinuscule.frobenius_eq_map]
+  exact (E6DoubledMinuscule.map_comp_graphAutomorphismPoints _).symm
 
 /-! ## The Steinberg endomorphism -/
 

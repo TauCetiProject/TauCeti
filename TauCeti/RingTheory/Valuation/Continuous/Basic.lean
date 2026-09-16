@@ -80,6 +80,7 @@ sets are *literally equal* for equivalent valuations, which is
   a discrete ring is continuous.
 * `Valuation.IsContinuous.comap` : **Remark 7.9**, continuity is inherited along a
   continuous ring homomorphism.
+* `TauCeti.isClosed_supp_of_isContinuous`: the support of a continuous valuation is closed.
 
 ## References
 
@@ -264,3 +265,21 @@ theorem isContinuous_iff_continuous [SeparatelyContinuousAdd A] [ContinuousConst
 end ValueGroup
 
 end Valuation
+
+namespace TauCeti
+
+open Set Topology
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [SeparatelyContinuousAdd A]
+  {Γ₀ : Type*} [LinearOrderedCommMonoidWithZero Γ₀] {v : Valuation A Γ₀}
+
+/-- The support of a continuous valuation is closed. Only separate continuity of addition is
+required, and the value monoid need not be a group. -/
+theorem isClosed_supp_of_isContinuous (hv : v.IsContinuous) : IsClosed (v.supp : Set A) := by
+  rw [← isOpen_compl_iff]
+  refine isOpen_iff_mem_nhds.mpr fun a ha ↦ ?_
+  have ha' : v a ≠ 0 := ha
+  filter_upwards [hv.sub_lt_mem_nhds a ha'] with y hy
+  exact fun hyzero ↦ ha' ((v.map_eq_of_sub_lt hy).symm.trans hyzero)
+
+end TauCeti

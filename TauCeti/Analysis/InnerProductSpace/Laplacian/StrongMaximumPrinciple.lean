@@ -45,6 +45,11 @@ function may be constant near a local maximum and increase further away.
 * `TauCeti.eqOn_const_of_laplacian_nonpos_of_isMinOn`: the strong minimum principle for
   superharmonic functions.
 * `TauCeti.eqOn_of_laplacian_le_of_le_of_eq`: the strong comparison principle.
+* `TauCeti.eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn`,
+  `TauCeti.eqOn_const_closure_of_laplacian_nonpos_of_isMinOn`,
+  `TauCeti.eqOn_closure_of_laplacian_le_of_le_of_eq`: the same three statements for functions
+  continuous up to the boundary, extremal (respectively dominated) over `closure U` at a point
+  of `U`.
 * `TauCeti.eqOn_const_of_harmonicOnNhd_of_isMaxOn_of_isOpen`,
   `TauCeti.eqOn_const_of_harmonicOnNhd_of_isMinOn_of_isOpen`,
   `TauCeti.eqOn_of_harmonicOnNhd_of_le_of_eq_of_isOpen`,
@@ -222,6 +227,43 @@ theorem eqOn_of_laplacian_le_of_le_of_eq (hU : IsOpen U) (ha : a ∈ U)
   have hx' := h hx
   simp only [Pi.sub_apply, const_apply, heq, sub_self, sub_eq_zero] at hx'
   exact hx'
+
+/-- **Strong maximum principle up to the boundary.** If `u` is continuous on `closure U`, is `C²`
+and subharmonic on the preconnected open set `U`, and attains its maximum over `closure U` at a
+point `a ∈ U`, then `u` is constant on `closure U`. -/
+theorem eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn (hU : IsOpen U) (ha : a ∈ U)
+    (hUconn : IsPreconnected U) (hcont : ContinuousOn u (closure U))
+    (hcd : ∀ x ∈ U, ContDiffAt ℝ 2 u x) (hlap : ∀ x ∈ U, 0 ≤ Δ u x)
+    (hmax : IsMaxOn u (closure U) a) :
+    EqOn u (const E (u a)) (closure U) :=
+  (eqOn_const_of_laplacian_nonneg_of_isMaxOn hU ha hUconn hcd hlap
+    (hmax.on_subset subset_closure)).of_subset_closure hcont continuousOn_const subset_closure
+    Subset.rfl
+
+/-- **Strong minimum principle up to the boundary.** If `u` is continuous on `closure U`, is `C²`
+and superharmonic on the preconnected open set `U`, and attains its minimum over `closure U` at a
+point `a ∈ U`, then `u` is constant on `closure U`. -/
+theorem eqOn_const_closure_of_laplacian_nonpos_of_isMinOn (hU : IsOpen U) (ha : a ∈ U)
+    (hUconn : IsPreconnected U) (hcont : ContinuousOn u (closure U))
+    (hcd : ∀ x ∈ U, ContDiffAt ℝ 2 u x) (hlap : ∀ x ∈ U, Δ u x ≤ 0)
+    (hmin : IsMinOn u (closure U) a) :
+    EqOn u (const E (u a)) (closure U) :=
+  (eqOn_const_of_laplacian_nonpos_of_isMinOn hU ha hUconn hcd hlap
+    (hmin.on_subset subset_closure)).of_subset_closure hcont continuousOn_const subset_closure
+    Subset.rfl
+
+/-- **Strong comparison principle up to the boundary.** Let `u` and `v` be continuous on
+`closure U` and `C²` on the preconnected open set `U`, with `Δ v ≤ Δ u` on `U`. If `u ≤ v` on
+`closure U` and they agree at a point of `U`, then they agree on all of `closure U`. -/
+theorem eqOn_closure_of_laplacian_le_of_le_of_eq (hU : IsOpen U) (ha : a ∈ U)
+    (hUconn : IsPreconnected U) (hucont : ContinuousOn u (closure U))
+    (hvcont : ContinuousOn v (closure U)) (hucd : ∀ x ∈ U, ContDiffAt ℝ 2 u x)
+    (hvcd : ∀ x ∈ U, ContDiffAt ℝ 2 v x) (hlap : ∀ x ∈ U, Δ v x ≤ Δ u x)
+    (hle : ∀ x ∈ closure U, u x ≤ v x) (heq : u a = v a) :
+    EqOn u v (closure U) :=
+  (eqOn_of_laplacian_le_of_le_of_eq hU ha hUconn hucd hvcd hlap
+    (fun x hx => hle x (subset_closure hx)) heq).of_subset_closure hucont hvcont subset_closure
+    Subset.rfl
 
 end Laplacian
 

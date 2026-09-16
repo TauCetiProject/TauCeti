@@ -45,9 +45,11 @@ Complex Algebraic Geometry I*, §7.1.2, and Peters–Steenbrink, *Mixed Hodge St
   subspace meets its orthogonal complement trivially.
 * `TauCeti.Hodge.RationalHodgeSubstructure.orthogonal`: the orthogonal complement of a rational
   Hodge substructure, again a rational Hodge substructure.
-* `TauCeti.Hodge.RationalHodgeSubstructure.isCompl_orthogonal` and
-  `TauCeti.Hodge.RationalHodgeSubstructure.isCompl_WC_orthogonal_WC`: it is a complement, both
-  rationally and after complexification.
+* `TauCeti.Hodge.RationalHodgeSubstructure.isCompl_orthogonal`: it is a complement in the lattice
+  of rational Hodge substructures, with
+  `TauCeti.Hodge.RationalHodgeSubstructure.isCompl_WQ_orthogonal_WQ` and
+  `TauCeti.Hodge.RationalHodgeSubstructure.isCompl_WC_orthogonal_WC` the same statement for the
+  rational subspace and after complexification.
 * `TauCeti.Hodge.RationalHodgeSubstructure.integralFormBaseChange_orthogonal_top_eq_bot`: the
   rationalified polarizing form is nondegenerate.
 * `TauCeti.Hodge.exists_isCompl_of_isPolarizable`: every rational Hodge substructure of a
@@ -181,9 +183,9 @@ theorem rationalToComplexSubmodule_orthogonal_le :
 variable [Module.Finite ℚ Vℚ]
 
 /-- **A polarization splits a rational Hodge substructure off over `ℚ`.** Stated for the
-orthogonal complement as a plain subspace; `isCompl_orthogonal` is the same statement for the
-rational Hodge substructure `orthogonal P W`, which is only available once the complement has been
-shown to be one. -/
+orthogonal complement as a plain subspace; `isCompl_WQ_orthogonal_WQ` is the same statement for
+the rational Hodge substructure `orthogonal P W`, which is only available once the complement has
+been shown to be one. -/
 private theorem isCompl_orthogonal_WQ :
     IsCompl W.WQ (LinearMap.BilinForm.orthogonal (integralFormBaseChange hℚ P.Qint) W.WQ) := by
   refine (LinearMap.BilinForm.isCompl_orthogonal_iff_disjoint
@@ -242,8 +244,14 @@ theorem orthogonal_WC : (orthogonal P W).WC = LinearMap.BilinForm.orthogonal P.Q
   exact rationalToComplexSubmodule_orthogonal P W
 
 /-- **A polarization splits a rational Hodge substructure off**, over `ℚ`. -/
-theorem isCompl_orthogonal : IsCompl W.WQ (orthogonal P W).WQ :=
+theorem isCompl_WQ_orthogonal_WQ : IsCompl W.WQ (orthogonal P W).WQ :=
   isCompl_orthogonal_WQ P W
+
+/-- **A polarization splits a rational Hodge substructure off** in the lattice of rational Hodge
+substructures: the orthogonal complement is a complement there, not merely a complementary
+subspace. -/
+theorem isCompl_orthogonal : IsCompl W (orthogonal P W) :=
+  isCompl_iff_WQ.2 (isCompl_WQ_orthogonal_WQ P W)
 
 /-- **A polarization splits a rational Hodge substructure off**, after complexification. -/
 theorem isCompl_WC_orthogonal_WC : IsCompl W.WC (orthogonal P W).WC := by
@@ -255,7 +263,7 @@ rational space. -/
 theorem integralFormBaseChange_orthogonal_top_eq_bot :
     LinearMap.BilinForm.orthogonal (integralFormBaseChange hℚ P.Qint)
       (⊤ : Submodule ℚ Vℚ) = ⊥ := by
-  have h := (isCompl_orthogonal_WQ P (top : RationalHodgeSubstructure hℚ hs)).disjoint
+  have h := (isCompl_orthogonal_WQ P (⊤ : RationalHodgeSubstructure hℚ hs)).disjoint
   rw [top_WQ] at h
   exact disjoint_top.1 h.symm
 
@@ -271,7 +279,7 @@ theorem exists_isCompl_of_isPolarizable [Module.Finite ℚ Vℚ] (h : IsPolariza
         ∀ v ∈ W.WC, ∀ w ∈ W'.WC, P.Q v w = 0 := by
   obtain ⟨P⟩ := isPolarizable_iff_nonempty.1 h
   refine ⟨P, RationalHodgeSubstructure.orthogonal P W,
-    RationalHodgeSubstructure.isCompl_orthogonal P W,
+    RationalHodgeSubstructure.isCompl_WQ_orthogonal_WQ P W,
     RationalHodgeSubstructure.isCompl_WC_orthogonal_WC P W, ?_⟩
   intro v hv w hw
   rw [RationalHodgeSubstructure.orthogonal_WC] at hw

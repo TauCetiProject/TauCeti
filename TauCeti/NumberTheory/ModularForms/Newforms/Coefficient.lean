@@ -78,7 +78,7 @@ theorem qExpansion_coeff_eq_eigenvalue_mul_coeff_one (n : ℕ+) (hn : Nat.Coprim
       f.eigenvalue n hn * (qExpansion 1 f.toCuspForm).coeff 1 := by
   have h := qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_of_coprime
     (N := N) (k := k) (χ := f.χ)
-    n.pos.ne' hn ⟨f.toCuspForm, f.mem_charSpace⟩ (m := 1) (Nat.coprime_one_left _)
+    n.pos.ne' ⟨f.toCuspForm, f.mem_charSpace⟩ (m := 1) (Nat.coprime_one_left _)
   rw [f.isEigen n hn, one_mul, Submodule.coe_smul, FunLike.coe_smul,
     ModularForm.qExpansion_smul one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map _), map_smul,
     smul_eq_mul] at h
