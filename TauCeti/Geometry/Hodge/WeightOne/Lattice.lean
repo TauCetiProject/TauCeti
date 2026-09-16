@@ -53,9 +53,7 @@ transported to a chosen abstract complexification of that lattice. -/
 noncomputable def latticeComplexification
     (J : AlmostComplexStructure (Hodge.Realification V)) (hℂ : IsBaseChange ℂ ιℂ) :
     Vℂ →ₗ[ℂ] Vℂ :=
-  (Hodge.realificationComplexEquiv hℂ).toLinearMap ∘ₗ
-    J.toLinearMap.baseChange ℂ ∘ₗ
-      (Hodge.realificationComplexEquiv hℂ).symm.toLinearMap
+  (Hodge.realificationComplexEquiv hℂ).conj (J.toLinearMap.baseChange ℂ)
 
 /-- The realification comparison intertwines the scalar extension of `J` with its transported
 action on the abstract complexification. -/
@@ -70,18 +68,10 @@ theorem realificationComplexEquiv_baseChange_apply
 theorem latticeComplexification_comp_self
     (J : AlmostComplexStructure (Hodge.Realification V)) (hℂ : IsBaseChange ℂ ιℂ) :
     J.latticeComplexification hℂ ∘ₗ J.latticeComplexification hℂ = -LinearMap.id := by
-  apply LinearMap.ext
-  intro x
-  obtain ⟨y, rfl⟩ := (Hodge.realificationComplexEquiv hℂ).surjective x
-  have h := congrArg (LinearMap.baseChange ℂ) J.square_neg
-  have hbase : J.toLinearMap.baseChange ℂ ∘ₗ J.toLinearMap.baseChange ℂ =
-      -LinearMap.id := by
-    simpa only [LinearMap.baseChange_comp, LinearMap.baseChange_neg,
-      LinearMap.baseChange_id] using h
-  simp only [LinearMap.comp_apply, LinearMap.neg_apply, LinearMap.id_apply]
-  rw [← realificationComplexEquiv_baseChange_apply]
-  rw [← realificationComplexEquiv_baseChange_apply,
-    ← LinearMap.comp_apply, hbase, LinearMap.neg_apply, LinearMap.id_apply, map_neg]
+  have hbase : J.toLinearMap.baseChange ℂ ∘ₗ J.toLinearMap.baseChange ℂ = -LinearMap.id := by
+    simpa only [LinearMap.baseChange_comp, LinearMap.baseChange_neg, LinearMap.baseChange_id]
+      using congrArg (LinearMap.baseChange ℂ) J.square_neg
+  rw [latticeComplexification, ← LinearEquiv.conj_comp, hbase, map_neg, LinearEquiv.conj_id]
 
 /-- The eigenspaces of the transported endomorphism are the transports of the eigenspaces of the
 literal scalar extension. -/
@@ -90,17 +80,9 @@ theorem eigenspace_latticeComplexification
     Module.End.eigenspace (J.latticeComplexification hℂ) z =
       (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) z).map
         (Hodge.realificationComplexEquiv hℂ).toLinearMap := by
-  ext x
-  simp only [Module.End.mem_eigenspace_iff, Submodule.mem_map]
-  constructor
-  · intro hx
-    refine ⟨(Hodge.realificationComplexEquiv hℂ).symm x, ?_, by simp⟩
-    apply (Hodge.realificationComplexEquiv hℂ).injective
-    rw [realificationComplexEquiv_baseChange_apply, LinearEquiv.apply_symm_apply, hx,
-      map_smul, LinearEquiv.apply_symm_apply]
-  · rintro ⟨y, hy, rfl⟩
-    simp only [latticeComplexification, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      LinearEquiv.symm_apply_apply, hy, map_smul]
+  rw [Hodge.HodgeStructureOn.eigenspace_eq_comap_of_intertwine
+      (Hodge.realificationComplexEquiv hℂ) _ _ (J.realificationComplexEquiv_baseChange_apply hℂ) z,
+    Submodule.map_comap_eq_of_surjective (Hodge.realificationComplexEquiv hℂ).surjective]
 
 /-- The effective weight-one Hodge structure determined by a complex structure on the realification
 of an integral lattice. -/

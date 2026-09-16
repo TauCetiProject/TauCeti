@@ -35,6 +35,8 @@ original complex vector space. The almost-complex structure reuses
 * `TauCeti.Hodge.HodgeStructureOn.eigenspace_weilOperator_I` and
   `TauCeti.Hodge.HodgeStructureOn.eigenspace_weilOperator_neg_I`: for an effective structure, the
   two eigenspaces of the Weil operator are the two Hodge components.
+* `TauCeti.Hodge.HodgeStructureOn.eigenspace_eq_comap_of_intertwine`: an intertwining linear
+  equivalence identifies the eigenspaces of the two endomorphisms.
 * `TauCeti.Hodge.HodgeStructureOn.eigenspace_baseChange_realAlmostComplexStructure_I` and
   `TauCeti.Hodge.HodgeStructureOn.eigenspace_baseChange_realAlmostComplexStructure_neg_I`: the same
   comparison on the literal complexification of the real form.
@@ -122,7 +124,7 @@ theorem eigenspace_weilOperator_neg_I (hs : HodgeStructureOn W ω 1) (heff : hs.
   exact (neg_ne_self.mpr Complex.I_ne_zero).symm
 
 /-- An intertwining linear equivalence identifies the eigenspaces of the two endomorphisms. -/
-private theorem eigenspace_eq_comap_of_intertwine {U : Type*} [AddCommGroup U] [Module ℂ U]
+theorem eigenspace_eq_comap_of_intertwine {U : Type*} [AddCommGroup U] [Module ℂ U]
     (e : U ≃ₗ[ℂ] W) (f : U →ₗ[ℂ] U) (g : W →ₗ[ℂ] W)
     (h : ∀ x, e (f x) = g (e x)) (μ : ℂ) :
     Module.End.eigenspace f μ = (Module.End.eigenspace g μ).comap e.toLinearMap := by
