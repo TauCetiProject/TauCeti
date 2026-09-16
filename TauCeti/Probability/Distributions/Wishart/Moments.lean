@@ -40,6 +40,11 @@ laws have the same mean and covariance as the nonsingular ones.
 
 ## References
 
+* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 6, item 4, **Wishart
+  distributions**, which asks for the mean `ν • S` and the entrywise covariance of the
+  Gaussian-Gram family and prescribes the derivation carried out here: differentiate the trace
+  moment-generating function at the origin, then polarize over the symmetrized matrix units
+  `TauCeti.symmetricSingle` to recover the entries.
 * R. J. Muirhead, *Aspects of Multivariate Statistical Theory*, Wiley, 1982, chapter 3.
 -/
 
@@ -68,11 +73,11 @@ theorem zero_mem_interior_integrableExpSet_trace_mul_wishartGramMeasure (ν : �
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
       (wishartGramMeasure ν S)) := by
   have hB := Matrix.isHermitian_sqrt_mul_mul_sqrt S (selfAdjoint.isHermitian_coe Θ)
-  refine zero_mem_interior_integrableExpSet_of_forall_mul_lt_one hB.eigenvalues fun t ht => ?_
+  refine zero_mem_interior_integrableExpSet_of_forall_pencil_pos hB.eigenvalues fun t ht => ?_
   rcases Nat.eq_zero_or_pos ν with rfl | hν
   · exact Set.eq_univ_iff_forall.1 (integrableExpSet_trace_mul_wishartGramMeasure_zero Θ S) t
   · exact (mem_integrableExpSet_trace_mul_wishartGramMeasure_iff hν S t).2
-      ((hB.posDef_one_sub_smul_iff (2 * t)).2 ht)
+      ((hB.posDef_one_sub_smul_iff (2 * t)).2 fun j => sub_pos.1 (ht j))
 
 /-- A Wishart trace statistic is square integrable, so it has a mean and a variance and pairs
 with every other trace statistic in a covariance. -/
@@ -93,10 +98,11 @@ private theorem mgf_trace_mul_wishartGramMeasure_eventuallyEq_prod (ν : ℕ)
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
       (wishartGramMeasure ν S) =ᶠ[𝓝 0]
       fun t => ∏ j, (1 - 2 * t * hB.eigenvalues j) ^ (-((ν : ℝ) / 2)) := by
-  filter_upwards [setOf_forall_mul_lt_one_mem_nhds_zero hB.eigenvalues] with t ht
-  rw [mgf_trace_mul_wishartGramMeasure_sqrt ν S ((hB.posDef_one_sub_smul_iff (2 * t)).2 ht),
+  filter_upwards [setOf_forall_pencil_pos_mem_nhds_zero hB.eigenvalues] with t ht
+  rw [mgf_trace_mul_wishartGramMeasure_sqrt ν S
+      ((hB.posDef_one_sub_smul_iff (2 * t)).2 fun j => sub_pos.1 (ht j)),
     hB.det_one_sub_smul (2 * t),
-    Real.finsetProd_rpow _ _ (fun j _ => (sub_pos.2 (ht j)).le) (-((ν : ℝ) / 2))]
+    Real.finsetProd_rpow _ _ (fun j _ => (ht j).le) (-((ν : ℝ) / 2))]
   simp [neg_div]
 
 /-! ### The mean and the variance of a trace statistic -/

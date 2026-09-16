@@ -24,7 +24,10 @@ first two derivatives there are the mean and the variance.
 
 ## Main results
 
-* `TauCeti.zero_mem_interior_integrableExpSet_of_forall_mul_lt_one` — exponential integrability
+* `TauCeti.isOpen_setOf_forall_pencil_pos` and `TauCeti.convex_setOf_forall_pencil_pos` — the
+  domain of the product is open and convex, and `TauCeti.setOf_forall_pencil_pos_mem_nhds_zero`
+  records that it is a neighbourhood of the origin;
+* `TauCeti.zero_mem_interior_integrableExpSet_of_forall_pencil_pos` — exponential integrability
   on the domain of the product puts the origin in the interior of the
   exponential-integrability domain, which is what makes the transform differentiable there;
 * `TauCeti.hasDerivAt_sum_log` and `TauCeti.hasDerivAt_sum_div` — the first two derivatives of
@@ -47,34 +50,46 @@ variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} {X : Ω �
 
 /-! ### The domain of the product -/
 
-/-- The set of real `t` at which every factor `1 - 2 * t * lam j` of a pencil product is
-positive is open. -/
-theorem isOpen_setOf_forall_mul_lt_one [Finite ι] (lam : ι → ℝ) :
-    IsOpen {t : ℝ | ∀ j, 2 * t * lam j < 1} := by
-  have hinter : {t : ℝ | ∀ j, 2 * t * lam j < 1} = ⋂ j, {t : ℝ | 2 * t * lam j < 1} := by
-    ext t
-    simp
+/-- The set of reals at which every factor of the pencil `1 - 2 * t * lam j` is positive is
+open. -/
+theorem isOpen_setOf_forall_pencil_pos [Finite ι] (lam : ι → ℝ) :
+    IsOpen {t : ℝ | ∀ j, 0 < 1 - 2 * t * lam j} := by
+  have hinter : {t : ℝ | ∀ j, 0 < 1 - 2 * t * lam j}
+      = ⋂ j, (fun t : ℝ => 1 - 2 * t * lam j) ⁻¹' Set.Ioi 0 := by
+    ext t; simp
   rw [hinter]
-  exact isOpen_iInter_of_finite fun j => isOpen_lt (by fun_prop) continuous_const
+  exact isOpen_iInter_of_finite fun j => isOpen_Ioi.preimage (by fun_prop)
+
+/-- The set of reals at which every factor of the pencil `1 - 2 * t * lam j` is positive is
+convex, being an intersection of half-spaces. -/
+theorem convex_setOf_forall_pencil_pos (lam : ι → ℝ) :
+    Convex ℝ {t : ℝ | ∀ j, 0 < 1 - 2 * t * lam j} := by
+  have hinter : {t : ℝ | ∀ j, 0 < 1 - 2 * t * lam j} = ⋂ j, {t : ℝ | 2 * lam j * t < 1} := by
+    ext t
+    simp only [Set.mem_ofPred_eq, Set.mem_iInter]
+    exact forall_congr' fun j => by constructor <;> intro h <;> nlinarith
+  rw [hinter]
+  exact convex_iInter fun j =>
+    convex_halfSpace_lt ⟨fun _ _ => by ring, fun _ _ => by simp only [smul_eq_mul]; ring⟩ 1
 
 /-- The origin lies in the domain of a pencil product: there every factor equals one. -/
-theorem zero_mem_setOf_forall_mul_lt_one (lam : ι → ℝ) :
-    (0 : ℝ) ∈ {t : ℝ | ∀ j, 2 * t * lam j < 1} := fun j => by norm_num
+theorem zero_mem_setOf_forall_pencil_pos (lam : ι → ℝ) :
+    (0 : ℝ) ∈ {t : ℝ | ∀ j, 0 < 1 - 2 * t * lam j} := fun j => by norm_num
 
 /-- The domain of a pencil product is a neighbourhood of the origin, being open and containing
 it. -/
-theorem setOf_forall_mul_lt_one_mem_nhds_zero [Finite ι] (lam : ι → ℝ) :
-    {t : ℝ | ∀ j, 2 * t * lam j < 1} ∈ 𝓝 (0 : ℝ) :=
-  (isOpen_setOf_forall_mul_lt_one lam).mem_nhds (zero_mem_setOf_forall_mul_lt_one lam)
+theorem setOf_forall_pencil_pos_mem_nhds_zero [Finite ι] (lam : ι → ℝ) :
+    {t : ℝ | ∀ j, 0 < 1 - 2 * t * lam j} ∈ 𝓝 (0 : ℝ) :=
+  (isOpen_setOf_forall_pencil_pos lam).mem_nhds (zero_mem_setOf_forall_pencil_pos lam)
 
 /-- A random variable whose exponential moments are finite on the domain of a pencil product has
 the origin interior to its exponential-integrability domain, hence finite moments of every order
 and an analytic transform at the origin. -/
-theorem zero_mem_interior_integrableExpSet_of_forall_mul_lt_one [Finite ι] (lam : ι → ℝ)
-    (h : ∀ t : ℝ, (∀ j, 2 * t * lam j < 1) → Integrable (fun ω => Real.exp (t * X ω)) μ) :
+theorem zero_mem_interior_integrableExpSet_of_forall_pencil_pos [Finite ι] (lam : ι → ℝ)
+    (h : ∀ t : ℝ, (∀ j, 0 < 1 - 2 * t * lam j) → Integrable (fun ω => Real.exp (t * X ω)) μ) :
     0 ∈ interior (integrableExpSet X μ) :=
-  interior_maximal (fun t ht => h t ht) (isOpen_setOf_forall_mul_lt_one lam)
-    (zero_mem_setOf_forall_mul_lt_one lam)
+  interior_maximal (fun t ht => h t ht) (isOpen_setOf_forall_pencil_pos lam)
+    (zero_mem_setOf_forall_pencil_pos lam)
 
 /-! ### Differentiating the cumulant-generating function -/
 
@@ -85,20 +100,19 @@ variable [Fintype ι]
 private theorem cgf_eventuallyEq_sum_log
     (hmgf : mgf X μ =ᶠ[𝓝 0] fun t => ∏ j, (1 - 2 * t * lam j) ^ (-a j)) :
     cgf X μ =ᶠ[𝓝 0] fun t => ∑ j, -a j * Real.log (1 - 2 * t * lam j) := by
-  filter_upwards [hmgf, setOf_forall_mul_lt_one_mem_nhds_zero lam] with t hmgft ht
-  have hpos : ∀ j, 0 < 1 - 2 * t * lam j := fun j => sub_pos.2 (ht j)
-  rw [cgf, hmgft, Real.log_prod fun j _ => (Real.rpow_pos_of_pos (hpos j) _).ne']
-  exact Finset.sum_congr rfl fun j _ => Real.log_rpow (hpos j) _
+  filter_upwards [hmgf, setOf_forall_pencil_pos_mem_nhds_zero lam] with t hmgft ht
+  rw [cgf, hmgft, Real.log_prod fun j _ => (Real.rpow_pos_of_pos (ht j) _).ne']
+  exact Finset.sum_congr rfl fun j _ => Real.log_rpow (ht j) _
 
 /-- The derivative of `fun s => ∑ j, -a j * log (1 - 2 * s * lam j)`, the sum of logarithms that
 a pencil cumulant-generating function equals on the domain of its product. -/
-theorem hasDerivAt_sum_log {t : ℝ} (ht : ∀ j, 2 * t * lam j < 1) :
+theorem hasDerivAt_sum_log {t : ℝ} (ht : ∀ j, 0 < 1 - 2 * t * lam j) :
     HasDerivAt (fun s : ℝ => ∑ j, -a j * Real.log (1 - 2 * s * lam j))
       (∑ j, -a j * (-(2 * lam j) / (1 - 2 * t * lam j))) t := by
   refine HasDerivAt.fun_sum fun j _ => HasDerivAt.const_mul _ ?_
   have hlin : HasDerivAt (fun s : ℝ => 1 - 2 * s * lam j) (-(2 * lam j)) t := by
     simpa using (((hasDerivAt_id t).const_mul (2 : ℝ)).mul_const (lam j)).const_sub 1
-  exact hlin.log (sub_pos.2 (ht j)).ne'
+  exact hlin.log (ht j).ne'
 
 /-- The derivative at the origin of `fun s => ∑ j, -a j * (-(2 * lam j) / (1 - 2 * s * lam j))`,
 the derivative of the sum of logarithms above. Every factor of the product equals one at the
@@ -126,7 +140,7 @@ theorem integral_eq_of_mgf_eq_prod_rpow (hX : 0 ∈ interior (integrableExpSet X
     rw [deriv_cgf_zero hX]
     simp
   rw [← hderiv, (cgf_eventuallyEq_sum_log hmgf).deriv_eq,
-    (hasDerivAt_sum_log (a := a) (zero_mem_setOf_forall_mul_lt_one lam)).deriv, Finset.mul_sum]
+    (hasDerivAt_sum_log (a := a) (zero_mem_setOf_forall_pencil_pos lam)).deriv, Finset.mul_sum]
   refine Finset.sum_congr rfl fun j _ => ?_
   simp only [mul_zero, zero_mul, sub_zero, div_one]
   ring
@@ -144,7 +158,7 @@ theorem variance_eq_of_mgf_eq_prod_rpow (hX : 0 ∈ interior (integrableExpSet X
     have hdderiv : deriv (cgf X μ) =ᶠ[𝓝 0]
         fun s : ℝ => ∑ j, -a j * (-(2 * lam j) / (1 - 2 * s * lam j)) := by
       filter_upwards [(cgf_eventuallyEq_sum_log hmgf).eventually_nhds,
-        setOf_forall_mul_lt_one_mem_nhds_zero lam] with s hs hst
+        setOf_forall_pencil_pos_mem_nhds_zero lam] with s hs hst
       rw [Filter.EventuallyEq.deriv_eq hs, (hasDerivAt_sum_log (a := a) hst).deriv]
     rw [hdderiv.deriv_eq, (hasDerivAt_sum_div lam a).deriv]
   rw [← hvar, iteratedDeriv_succ, iteratedDeriv_one, hsecond, Finset.mul_sum]

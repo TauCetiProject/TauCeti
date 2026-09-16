@@ -9,6 +9,8 @@ public import Mathlib.Probability.Moments.ComplexMGF
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
+import TauCeti.Probability.Moments.PencilMGF
+
 /-!
 # Analytic continuation of a moment-generating function
 
@@ -82,26 +84,6 @@ theorem eqOn_complexMGF_of_eqOn_mgf {s : Set ℝ} {g : ℂ → ℂ} (hs : IsOpen
     fun _ hx ↦ by simpa using hx).frequently hreal.frequently
 
 /-! ### A product of real powers of a linear pencil -/
-
-/-- The set of reals at which every factor of the pencil `1 - 2 * t * lam j` is positive is
-open. -/
-private theorem isOpen_setOf_forall_pencil_pos {ι : Type*} [Finite ι] (lam : ι → ℝ) :
-    IsOpen {t : ℝ | ∀ j, 0 < 1 - 2 * t * lam j} := by
-  have : {t : ℝ | ∀ j, 0 < 1 - 2 * t * lam j}
-      = ⋂ j, (fun t : ℝ ↦ 1 - 2 * t * lam j) ⁻¹' Ioi 0 := by
-    ext t; simp
-  rw [this]
-  exact isOpen_iInter_of_finite fun j ↦ isOpen_Ioi.preimage (by fun_prop)
-
-private theorem convex_setOf_forall_pencil_pos {ι : Type*} (lam : ι → ℝ) :
-    Convex ℝ {t : ℝ | ∀ j, 0 < 1 - 2 * t * lam j} := by
-  have : {t : ℝ | ∀ j, 0 < 1 - 2 * t * lam j} = ⋂ j, {t : ℝ | 2 * lam j * t < 1} := by
-    ext t
-    simp only [Set.mem_ofPred_eq, Set.mem_iInter]
-    exact forall_congr' fun j ↦ by constructor <;> intro h <;> nlinarith
-  rw [this]
-  exact convex_iInter fun j ↦
-    convex_halfSpace_lt ⟨fun _ _ ↦ by ring, fun _ _ ↦ by simp only [smul_eq_mul]; ring⟩ 1
 
 variable {ι : Type*} [Fintype ι]
 
