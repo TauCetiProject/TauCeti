@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Real.FixedField
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.OrdinaryClassGroup
+import TauCeti.Algebra.Module.ZMod.SpanSingleton
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
@@ -30,7 +31,7 @@ The description is classical; see F. Lemmermeyer, *Reciprocity Laws: From Euler 
 ## Main definitions and results
 
 * `candidateGenusFieldRestrictionToReal`: restriction from the full relative Galois group to the
-  real candidate.
+  real candidate, computed by `coe_candidateGenusFieldRestrictionToReal_apply`.
 * `ker_candidateGenusFieldRestrictionToReal`: its kernel is the sign-space line supported at the
   negative prime discriminants.
 * `autCandidateGenusFieldRealEquivElementaryTwoQuotient`: the ordinary real genus-field
@@ -70,6 +71,22 @@ noncomputable def candidateGenusFieldRestrictionToReal (hd : Squarefree d) (hpos
   exact AlgEquiv.restrictNormalHom (F := candidateGenusFieldBase hd)
     (K₁ := candidateGenusField hd) (candidateGenusFieldReal hd)
 
+/-- **Restriction to the real candidate acts by the ambient automorphism.** Read inside the full
+candidate genus field, the restriction of `σ` sends `x` to `σ x`. -/
+@[simp] theorem coe_candidateGenusFieldRestrictionToReal_apply (hd : Squarefree d) (hpos : 0 < d)
+    (σ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd)
+    (x : candidateGenusFieldReal hd) :
+    letI := candidateGenusFieldRealAlgebra hd hpos
+    ((candidateGenusFieldRestrictionToReal hd hpos σ x : candidateGenusFieldReal hd) :
+        candidateGenusField hd) = σ (x : candidateGenusField hd) := by
+  let _ := candidateGenusFieldRealAlgebra hd hpos
+  let _ : IsScalarTower (candidateGenusFieldBase hd) (candidateGenusFieldReal hd)
+      (candidateGenusField hd) := IsScalarTower.of_algebraMap_eq fun _ => rfl
+  let _ : IsAbelianGalois (candidateGenusFieldBase hd) (candidateGenusFieldReal hd) :=
+    IsAbelianGalois.tower_bot (candidateGenusFieldBase hd) (candidateGenusFieldReal hd)
+      (candidateGenusField hd)
+  exact AlgEquiv.restrictNormal_commutes σ (candidateGenusFieldReal hd) x
+
 /-- Restriction to the real candidate is surjective. -/
 theorem candidateGenusFieldRestrictionToReal_surjective (hd : Squarefree d) (hpos : 0 < d) :
     letI := candidateGenusFieldRealAlgebra hd hpos
@@ -90,40 +107,18 @@ private theorem candidateGenusFieldRestrictionToReal_eq_one_iff (hd : Squarefree
     candidateGenusFieldRestrictionToReal hd hpos σ = 1 ↔
       σ.restrictScalars ℚ ∈ Subgroup.zpowers (candidateGenusFieldConj hd) := by
   let _ := candidateGenusFieldRealAlgebra hd hpos
-  let _ : IsScalarTower (candidateGenusFieldBase hd) (candidateGenusFieldReal hd)
-      (candidateGenusField hd) := IsScalarTower.of_algebraMap_eq fun _ => rfl
-  let _ : IsAbelianGalois (candidateGenusFieldBase hd) (candidateGenusFieldReal hd) :=
-    IsAbelianGalois.tower_bot (candidateGenusFieldBase hd) (candidateGenusFieldReal hd)
-      (candidateGenusField hd)
   rw [← fixingSubgroup_candidateGenusFieldReal hd,
     IntermediateField.mem_fixingSubgroup_iff]
   constructor
   · intro h x hx
     have hx' := DFunLike.congr_fun h (⟨x, hx⟩ : candidateGenusFieldReal hd)
-    exact (AlgEquiv.restrictNormal_commutes σ (candidateGenusFieldReal hd) ⟨x, hx⟩).symm.trans
+    exact (coe_candidateGenusFieldRestrictionToReal_apply hd hpos σ ⟨x, hx⟩).symm.trans
       (congrArg Subtype.val hx')
   · intro h
     apply AlgEquiv.ext
     intro x
     apply Subtype.ext
-    exact (AlgEquiv.restrictNormal_commutes σ (candidateGenusFieldReal hd) x).trans
-      (h x x.property)
-
-private theorem toAddSubgroup_zpowers_ofAdd_eq_span (V : Type*) [AddCommGroup V]
-    [Module (ZMod 2) V] (z : V) :
-    (Subgroup.zpowers (Multiplicative.ofAdd z)).toAddSubgroup' =
-      (ZMod 2 ∙ z).toAddSubgroup := by
-  ext v
-  simp only [Subgroup.mem_toAddSubgroup', Subgroup.mem_zpowers_iff,
-    Submodule.mem_toAddSubgroup, Submodule.mem_span_singleton]
-  constructor
-  · rintro ⟨n, hn⟩
-    refine ⟨(n : ZMod 2), ?_⟩
-    apply Multiplicative.ofAdd.injective
-    rw [Int.cast_smul_eq_zsmul, ofAdd_zsmul, hn]
-  · rintro ⟨a, rfl⟩
-    refine ⟨ZMod.cast a, ?_⟩
-    rw [← ofAdd_zsmul, ← Int.cast_smul_eq_zsmul (ZMod 2), ZMod.intCast_zmod_cast]
+    exact (coe_candidateGenusFieldRestrictionToReal_apply hd hpos σ x).trans (h x x.property)
 
 private theorem candidateGenusFieldRelativeSignPattern_mem_negativeSpan_iff
     (hd : Squarefree d) (hpos : 0 < d)
@@ -179,8 +174,8 @@ private theorem candidateGenusFieldRelativeSignPattern_mem_negativeSpan_iff
   -- The cyclic subgroup lives on the multiplicative form of the ambient coordinate space.
   change (v : {P // P ∈ genusPrimeDiscriminants hd} → ZMod 2) ∈
       (ZMod 2 ∙ (z : {P // P ∈ genusPrimeDiscriminants hd} → ZMod 2)).toAddSubgroup ↔ _
-  rw [← toAddSubgroup_zpowers_ofAdd_eq_span
-      ({P // P ∈ genusPrimeDiscriminants hd} → ZMod 2) (z : _ → ZMod 2),
+  rw [← toAddSubgroup'_zpowers_ofAdd_eq_span (n := 2)
+      (V := {P // P ∈ genusPrimeDiscriminants hd} → ZMod 2) (z : _ → ZMod 2),
     Subgroup.mem_toAddSubgroup', ← heσ, ← hec]
   simp only [Subgroup.mem_zpowers_iff]
   constructor
@@ -276,7 +271,7 @@ noncomputable def autCandidateGenusFieldRealEquivElementaryTwoQuotient
 
 /-- The ordinary real genus-field isomorphism carries a restricted automorphism to the ordinary
 class-group image of its sign vector. This makes the isomorphism independent of the chosen lift. -/
-theorem autCandidateGenusFieldRealEquivElementaryTwoQuotient_apply_restrict
+@[simp] theorem autCandidateGenusFieldRealEquivElementaryTwoQuotient_apply_restrict
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d)
     (σ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd) :
     letI := candidateGenusFieldRealAlgebra hd hpos
