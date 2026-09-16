@@ -21,17 +21,13 @@ on an additive monoid whose extended distance is invariant under right addition,
 and symmetrically for left convolution under left-invariance. Both are instances of the estimate
 `TauCeti.wassersteinEDist_map_prod_le` for a common *random isometry*: if `f (·, z)` is an
 isometry for every `z`, then pushing `μ ⊗ η` and `ν ⊗ η` forward along `f` does not increase the
-Wasserstein distance. The proof runs a coupling `π` of `μ` and `ν` alongside an independent sample
-`z ∼ η` and applies `f (·, z)` to both coordinates; the displacement of each coupled pair is
-unchanged.
+Wasserstein distance.
 
 Translation is the Dirac case of convolution, and in a group whose ground distance is invariant
 under the corresponding left or right translations it is an isometry of every Wasserstein
 distance. Finally, on a real seminormed space, a law and its translate by `a` are at
-`W_p` distance exactly `‖a‖ₑ` for every `1 ≤ p`, with no moment assumption. The upper bound is
-the translation plan; the lower bound tests a coupling against bounded truncations of a norming
-functional for `a` supplied by the Hahn–Banach theorem and passes to the limit by dominated
-convergence. The restriction `1 ≤ p` cannot be dropped: for the uniform law on `[0, 1]` and
+`W_p` distance exactly `‖a‖ₑ` for every `1 ≤ p`, with no moment assumption. The restriction
+`1 ≤ p` cannot be dropped: for the uniform law on `[0, 1]` and
 `a = 1 / 2`, moving the left half to `[1, 3 / 2]` has objective `(1 / 2) ^ (1 / p)`, which is below
 `1 / 2` once `p < 1`.
 
@@ -122,25 +118,29 @@ theorem wassersteinEDist_map_add_left [IsIsometricVAdd G G]
 
 end Translation
 
-section Normed
+section NormedGroup
 
-variable {E : Type u} [SeminormedAddCommGroup E] [MeasurableSpace E] {p : ℝ≥0∞}
+variable {E : Type u} [SeminormedAddGroup E] [MeasurableSpace E] {p : ℝ≥0∞}
 
-/-- The Wasserstein distance from a probability law to its translate by `a` is at most `‖a‖ₑ`,
-for every exponent: the translation plan moves every point by exactly `‖a‖ₑ`. -/
+/-- The Wasserstein distance from a probability law to its right translate by `a` is at most
+`‖a‖ₑ`, for every exponent. -/
 theorem wassersteinEDist_map_add_right_le_enorm [MeasurableAdd E]
     (hd : Measurable fun z : E × E ↦ edist z.1 z.2) (μ : Measure E) [IsProbabilityMeasure μ]
     (a : E) : wassersteinEDist p μ (μ.map (· + a)) ≤ ‖a‖ₑ := by
   refine (wassersteinEDist_map_le hd (measurable_add_const a).aemeasurable p).trans ?_
-  simp only [edist_eq_enorm_sub, sub_add_cancel_left, enorm_neg]
+  simp only [edist_eq_enorm_neg_add, neg_add_cancel_left]
   simpa using eLpNorm_le_of_ae_enorm_bound (p := p) (μ := μ) (f := fun _ : E ↦ ‖a‖ₑ)
     (.of_forall fun _ ↦ le_rfl)
 
+end NormedGroup
+
+section Normed
+
+variable {E : Type u} [SeminormedAddCommGroup E] [MeasurableSpace E] {p : ℝ≥0∞}
 variable [NormedSpace ℝ E] [OpensMeasurableSpace E]
 
-/-- **The Hahn–Banach lower bound.** On a real seminormed space, every coupling of a probability
-law with its translate by `a` has mean displacement at least `‖a‖ₑ`. No moment of the law is
-assumed. -/
+/-- On a real seminormed space, every coupling of a probability law with its translate by `a` has
+mean displacement at least `‖a‖ₑ`. No moment of the law is assumed. -/
 theorem enorm_le_lintegral_edist_of_isCoupling_map_add_right [MeasurableAdd E] {μ : Measure E}
     [IsProbabilityMeasure μ] {a : E} {π : Measure (E × E)}
     (hπ : IsCoupling π μ (μ.map (· + a))) : ‖a‖ₑ ≤ ∫⁻ z, edist z.1 z.2 ∂π := by
