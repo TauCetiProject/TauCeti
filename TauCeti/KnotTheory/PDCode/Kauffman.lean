@@ -331,7 +331,7 @@ def kink : PDCode 1 where
 @[simp] theorem kink_overPair (i : Fin 1) : kink.overPair i = true := by simp [kink]
 
 /-- The half-edge of the kink in a given crossing slot is that slot. -/
-@[simp] theorem kink_crossing (i : Fin 1) (t : Fin 4) :
+theorem kink_crossing (i : Fin 1) (t : Fin 4) :
     kink.crossing i t = crossingSlotEquiv 1 (i, t) := by
   rw [crossing_apply, kink_halfEdge]
   simp
