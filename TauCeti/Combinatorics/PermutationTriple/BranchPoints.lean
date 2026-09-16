@@ -15,7 +15,7 @@ A permutation triple `t = (a, b, c) = (σ0, σ1, σinf)`, with `c * b * a = 1`, 
 of a cover of the sphere branched over the three ordered points `0, 1, ∞`. Reordering the three
 branch points gives a new triple, whose components are the old ones in a new order, each up to
 conjugacy; the conjugators are exactly what is needed to keep the product relation. This file
-defines the six resulting operations:
+defines the five nonidentity resulting operations:
 
 | operation  | branch points exchanged | formula                          |
 | ---------- | ----------------------- | -------------------------------- |
@@ -25,7 +25,8 @@ defines the six resulting operations:
 | `rot`      | `0 → 1 → ∞ → 0`         | `(b, c, a)`                      |
 | `rotInv`   | `0 → ∞ → 1 → 0`         | `(b⁻¹ * c * b, a, a * b * a⁻¹)`  |
 
-Geometrically they are the pullbacks along the six Möbius transformations permuting `0, 1, ∞`.
+Geometrically they, together with the identity operation, are the pullbacks along the six Möbius
+transformations permuting `0, 1, ∞`.
 
 ## Main results
 
@@ -45,8 +46,8 @@ Geometrically they are the pullbacks along the six Möbius transformations permu
   whose composite `rotInv` has order three, which are the Coxeter relations of the symmetric group
   on the three branch points.
 * The monodromy group, connectedness, the Euler characteristic, the genus and the geometry type
-  are unchanged by all six operations, while the cycle data, the cycle counts and the order
-  triple are permuted accordingly.
+  are unchanged by all five nonidentity operations, while the cycle data, the cycle counts and
+  the order triple are permuted accordingly.
 
 ## Implementation notes
 
@@ -57,6 +58,8 @@ and only on isomorphism classes, since `swap1Inf` is an involution only up to re
 
 ## References
 
+* `TauCetiRoadmap/BelyiMaps/README.md`, Layer 2.6, and the
+  `TauCetiRoadmap/BelyiMaps/Suggested.lean` prototype.
 * S. K. Lando, A. K. Zvonkin, *Graphs on Surfaces and Their Applications*, Encyclopaedia of
   Mathematical Sciences 141, Springer 2004, §1.5.
 * E. Girondo, G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins d'Enfants*,
@@ -73,7 +76,7 @@ namespace PermutationTriple
 
 variable {n : ℕ}
 
-/-! ### The six operations -/
+/-! ### The five nonidentity operations -/
 
 /-- Exchange the branch points `0` and `1`: `(a, b, c) ↦ (b, a, b⁻¹ * c * b)`. -/
 def swap01 (t : PermutationTriple n) : PermutationTriple n where
@@ -90,27 +93,18 @@ def swap1Inf (t : PermutationTriple n) : PermutationTriple n where
   product_eq_one := by rw [t.σinf_eq_inv]; group
 
 /-- Exchange the branch points `0` and `∞`: `(a, b, c) ↦ (c, b, b * a * b⁻¹)`. -/
-def swap0Inf (t : PermutationTriple n) : PermutationTriple n where
-  σ0 := t.σinf
-  σ1 := t.σ1
-  σinf := t.σ1 * t.σ0 * t.σ1⁻¹
-  product_eq_one := by rw [t.σinf_eq_inv]; group
+def swap0Inf (t : PermutationTriple n) : PermutationTriple n :=
+  swap01 (swap1Inf (swap01 t))
 
 /-- Rotate the branch points `0 → 1 → ∞ → 0`: `(a, b, c) ↦ (b, c, a)`, with no conjugation. -/
-def rot (t : PermutationTriple n) : PermutationTriple n where
-  σ0 := t.σ1
-  σ1 := t.σinf
-  σinf := t.σ0
-  product_eq_one := t.σ0_mul_σinf_mul_σ1_eq_one
+def rot (t : PermutationTriple n) : PermutationTriple n :=
+  swap1Inf (swap01 t)
 
 /-- Rotate the branch points `0 → ∞ → 1 → 0`: `(a, b, c) ↦ (b⁻¹ * c * b, a, a * b * a⁻¹)`. This
 is not the inverse of `TauCeti.PermutationTriple.rot` on triples, only on isomorphism classes;
 see `TauCeti.PermutationTriple.rotInv_rot`. -/
-def rotInv (t : PermutationTriple n) : PermutationTriple n where
-  σ0 := t.σ1⁻¹ * t.σinf * t.σ1
-  σ1 := t.σ0
-  σinf := t.σ0 * t.σ1 * t.σ0⁻¹
-  product_eq_one := by rw [t.σinf_eq_inv]; group
+def rotInv (t : PermutationTriple n) : PermutationTriple n :=
+  swap01 (swap1Inf t)
 
 variable (t : PermutationTriple n)
 
@@ -126,15 +120,22 @@ variable (t : PermutationTriple n)
 
 @[simp] theorem swap1Inf_σinf : (swap1Inf t).σinf = t.σ1 := (rfl)
 
-@[simp] theorem swap0Inf_σ0 : (swap0Inf t).σ0 = t.σinf := (rfl)
+@[simp] theorem swap0Inf_σ0 : (swap0Inf t).σ0 = t.σinf := by
+  simp only [swap0Inf, swap01_σ0, swap1Inf_σ1, swap01_σ1, swap01_σinf, t.σinf_eq_inv]
+  group
 
 @[simp] theorem swap0Inf_σ1 : (swap0Inf t).σ1 = t.σ1 := (rfl)
 
-@[simp] theorem swap0Inf_σinf : (swap0Inf t).σinf = t.σ1 * t.σ0 * t.σ1⁻¹ := (rfl)
+@[simp] theorem swap0Inf_σinf : (swap0Inf t).σinf = t.σ1 * t.σ0 * t.σ1⁻¹ := by
+  simp only [swap0Inf, swap01_σinf, swap1Inf_σ1, swap1Inf_σinf, swap01_σ1,
+    swap01_σinf, t.σinf_eq_inv]
+  group
 
 @[simp] theorem rot_σ0 : (rot t).σ0 = t.σ1 := (rfl)
 
-@[simp] theorem rot_σ1 : (rot t).σ1 = t.σinf := (rfl)
+@[simp] theorem rot_σ1 : (rot t).σ1 = t.σinf := by
+  simp only [rot, swap1Inf_σ1, swap01_σ1, swap01_σinf, t.σinf_eq_inv]
+  group
 
 @[simp] theorem rot_σinf : (rot t).σinf = t.σ0 := (rfl)
 
@@ -142,27 +143,25 @@ variable (t : PermutationTriple n)
 
 @[simp] theorem rotInv_σ1 : (rotInv t).σ1 = t.σ0 := (rfl)
 
-@[simp] theorem rotInv_σinf : (rotInv t).σinf = t.σ0 * t.σ1 * t.σ0⁻¹ := (rfl)
+@[simp] theorem rotInv_σinf : (rotInv t).σinf = t.σ0 * t.σ1 * t.σ0⁻¹ := by
+  simp only [rotInv, swap01_σinf, swap1Inf_σ1, swap1Inf_σinf, t.σinf_eq_inv]
+  group
 
 /-! ### Composites and relations -/
 
 /-- Rotating `0 → 1 → ∞` is exchanging `0, 1` and then `1, ∞`. -/
 theorem rot_eq : rot t = swap1Inf (swap01 t) := by
-  ext1
-  · rfl
-  · simp only [rot_σ1, swap1Inf_σ1, swap01_σ1, swap01_σinf, t.σinf_eq_inv]
-    group
+  simp only [rot]
 
 /-- Rotating `0 → ∞ → 1` is exchanging `1, ∞` and then `0, 1`. -/
-theorem rotInv_eq : rotInv t = swap01 (swap1Inf t) := (ext_of_two rfl rfl)
+theorem rotInv_eq : rotInv t = swap01 (swap1Inf t) := by
+  simp only [rotInv]
 
 /-- Exchanging `0, ∞` is exchanging `0, 1`, then `1, ∞`, then `0, 1`. -/
 theorem swap0Inf_eq : swap0Inf t = swap01 (swap1Inf (swap01 t)) := by
-  ext1
-  · simp only [swap0Inf_σ0, swap01_σ0, swap1Inf_σ1, swap01_σ1, swap01_σinf, t.σinf_eq_inv]
-    group
-  · rfl
+  simp only [swap0Inf]
 
+/-- Exchanging `0` and `1` twice is the identity on triples, on the nose. -/
 @[simp] theorem swap01_swap01 : swap01 (swap01 t) = t := (ext_of_two rfl rfl)
 
 /-- Exchanging `0` and `1` is an involution on triples. -/
@@ -170,20 +169,21 @@ theorem swap01_involutive : Function.Involutive (swap01 : PermutationTriple n �
   swap01_swap01
 
 /-- Exchanging `1` and `∞` twice relabels the triple by its first component. -/
-theorem swap1Inf_swap1Inf : swap1Inf (swap1Inf t) = t.σ0 • t := by
+@[simp] theorem swap1Inf_swap1Inf : swap1Inf (swap1Inf t) = t.σ0 • t := by
   ext1
   · simp
   · simp only [swap1Inf_σ1, swap1Inf_σinf, smul_σ1, t.σinf_eq_inv]
     group
 
 /-- Exchanging `0` and `∞` twice relabels the triple by its second component. -/
-theorem swap0Inf_swap0Inf : swap0Inf (swap0Inf t) = t.σ1 • t := by
+@[simp] theorem swap0Inf_swap0Inf : swap0Inf (swap0Inf t) = t.σ1 • t := by
   ext1
   · simp
   · simp
 
 /-- The rotation `0 → 1 → ∞ → 0` has order three on triples. -/
-@[simp] theorem rot_rot_rot : rot (rot (rot t)) = t := (ext_of_two rfl rfl)
+@[simp] theorem rot_rot_rot : rot (rot (rot t)) = t := by
+  ext1 <;> simp
 
 /-- The rotation `0 → ∞ → 1 → 0` has order three on triples. -/
 @[simp] theorem rotInv_rotInv_rotInv : rotInv (rotInv (rotInv t)) = t := by
@@ -194,14 +194,14 @@ theorem swap0Inf_swap0Inf : swap0Inf (swap0Inf t) = t.σ1 • t := by
     group
 
 /-- The two rotations compose to the relabeling by the second component. -/
-theorem rotInv_rot : rotInv (rot t) = t.σ1 • t := by
+@[simp] theorem rotInv_rot : rotInv (rot t) = t.σ1 • t := by
   ext1
   · simp only [rotInv_σ0, rot_σ1, rot_σinf, smul_σ0, t.σinf_eq_inv]
     group
   · simp
 
 /-- The two rotations, in the other order, compose to the relabeling by the first component. -/
-theorem rot_rotInv : rot (rotInv t) = t.σ0 • t := by
+@[simp] theorem rot_rotInv : rot (rotInv t) = t.σ0 • t := by
   ext1
   · simp
   · simp
@@ -327,28 +327,35 @@ type are symmetric functions of the three components' conjugacy classes. -/
     · simpa using (swap1Inf t).σ0_mem_monodromyGroup
     · simpa using (swap1Inf t).σinf_mem_monodromyGroup
 
+/-- Exchanging `0` and `∞` does not change the monodromy group. -/
 @[simp] theorem monodromyGroup_swap0Inf : (swap0Inf t).monodromyGroup = t.monodromyGroup := by
   rw [swap0Inf_eq, monodromyGroup_swap01, monodromyGroup_swap1Inf, monodromyGroup_swap01]
 
+/-- Rotating `0 → 1 → ∞ → 0` does not change the monodromy group. -/
 @[simp] theorem monodromyGroup_rot : (rot t).monodromyGroup = t.monodromyGroup := by
   rw [rot_eq, monodromyGroup_swap1Inf, monodromyGroup_swap01]
 
+/-- Rotating `0 → ∞ → 1 → 0` does not change the monodromy group. -/
 @[simp] theorem monodromyGroup_rotInv : (rotInv t).monodromyGroup = t.monodromyGroup := by
   rw [rotInv_eq, monodromyGroup_swap01, monodromyGroup_swap1Inf]
 
-/-- Reordering the branch points does not change connectedness. -/
+/-- Exchanging `0` and `1` does not change connectedness. -/
 @[simp] theorem isConnected_swap01_iff : (swap01 t).IsConnected ↔ t.IsConnected := by
   rw [isConnected_iff, isConnected_iff, monodromyGroup_swap01]
 
+/-- Exchanging `1` and `∞` does not change connectedness. -/
 @[simp] theorem isConnected_swap1Inf_iff : (swap1Inf t).IsConnected ↔ t.IsConnected := by
   rw [isConnected_iff, isConnected_iff, monodromyGroup_swap1Inf]
 
+/-- Exchanging `0` and `∞` does not change connectedness. -/
 @[simp] theorem isConnected_swap0Inf_iff : (swap0Inf t).IsConnected ↔ t.IsConnected := by
   rw [isConnected_iff, isConnected_iff, monodromyGroup_swap0Inf]
 
+/-- Rotating `0 → 1 → ∞ → 0` does not change connectedness. -/
 @[simp] theorem isConnected_rot_iff : (rot t).IsConnected ↔ t.IsConnected := by
   rw [isConnected_iff, isConnected_iff, monodromyGroup_rot]
 
+/-- Rotating `0 → ∞ → 1 → 0` does not change connectedness. -/
 @[simp] theorem isConnected_rotInv_iff : (rotInv t).IsConnected ↔ t.IsConnected := by
   rw [isConnected_iff, isConnected_iff, monodromyGroup_rotInv]
 
@@ -366,6 +373,7 @@ type are symmetric functions of the three components' conjugacy classes. -/
   rw [partition_eq_of_isConj] at h
   simp [Prod.ext_iff, ← h]
 
+/-- Exchanging `0` and `∞` exchanges their cycle partitions. -/
 @[simp] theorem cycleData_swap0Inf :
     (swap0Inf t).cycleData = (t.cycleData.2.2, t.cycleData.2.1, t.cycleData.1) := by
   rw [swap0Inf_eq, cycleData_swap01, cycleData_swap1Inf, cycleData_swap01]
@@ -375,109 +383,124 @@ type are symmetric functions of the three components' conjugacy classes. -/
     (rot t).cycleData = (t.cycleData.2.1, t.cycleData.2.2, t.cycleData.1) := by
   rw [rot_eq, cycleData_swap1Inf, cycleData_swap01]
 
+/-- Rotating the branch points backwards rotates the cycle partitions backwards. -/
 @[simp] theorem cycleData_rotInv :
     (rotInv t).cycleData = (t.cycleData.2.2, t.cycleData.1, t.cycleData.2.1) := by
   rw [rotInv_eq, cycleData_swap01, cycleData_swap1Inf]
 
+/-- Exchanging `0` and `1` exchanges their cycle counts. -/
 @[simp] theorem cycleCounts_swap01 :
     (swap01 t).cycleCounts = (t.cycleCounts.2.1, t.cycleCounts.1, t.cycleCounts.2.2) := by
   rw [cycleCounts_eq_card_cycleData, cycleCounts_eq_card_cycleData, cycleData_swap01]
 
+/-- Exchanging `1` and `∞` exchanges their cycle counts. -/
 @[simp] theorem cycleCounts_swap1Inf :
     (swap1Inf t).cycleCounts = (t.cycleCounts.1, t.cycleCounts.2.2, t.cycleCounts.2.1) := by
   rw [cycleCounts_eq_card_cycleData, cycleCounts_eq_card_cycleData, cycleData_swap1Inf]
 
+/-- Exchanging `0` and `∞` exchanges their cycle counts. -/
 @[simp] theorem cycleCounts_swap0Inf :
     (swap0Inf t).cycleCounts = (t.cycleCounts.2.2, t.cycleCounts.2.1, t.cycleCounts.1) := by
   rw [swap0Inf_eq, cycleCounts_swap01, cycleCounts_swap1Inf, cycleCounts_swap01]
 
+/-- Rotating the branch points rotates their cycle counts. -/
 @[simp] theorem cycleCounts_rot :
     (rot t).cycleCounts = (t.cycleCounts.2.1, t.cycleCounts.2.2, t.cycleCounts.1) := by
   rw [rot_eq, cycleCounts_swap1Inf, cycleCounts_swap01]
 
+/-- Rotating the branch points backwards rotates their cycle counts backwards. -/
 @[simp] theorem cycleCounts_rotInv :
     (rotInv t).cycleCounts = (t.cycleCounts.2.2, t.cycleCounts.1, t.cycleCounts.2.1) := by
   rw [rotInv_eq, cycleCounts_swap01, cycleCounts_swap1Inf]
 
+/-- Exchanging `0` and `1` exchanges their entries in the order triple. -/
 @[simp] theorem orderTriple_swap01 :
     (swap01 t).orderTriple = (t.orderTriple.2.1, t.orderTriple.1, t.orderTriple.2.2) := by
   rw [orderTriple_eq_lcm_cycleData, orderTriple_eq_lcm_cycleData, cycleData_swap01]
 
+/-- Exchanging `1` and `∞` exchanges their entries in the order triple. -/
 @[simp] theorem orderTriple_swap1Inf :
     (swap1Inf t).orderTriple = (t.orderTriple.1, t.orderTriple.2.2, t.orderTriple.2.1) := by
   rw [orderTriple_eq_lcm_cycleData, orderTriple_eq_lcm_cycleData, cycleData_swap1Inf]
 
+/-- Exchanging `0` and `∞` exchanges their entries in the order triple. -/
 @[simp] theorem orderTriple_swap0Inf :
     (swap0Inf t).orderTriple = (t.orderTriple.2.2, t.orderTriple.2.1, t.orderTriple.1) := by
   rw [swap0Inf_eq, orderTriple_swap01, orderTriple_swap1Inf, orderTriple_swap01]
 
+/-- Rotating the branch points rotates the order triple. -/
 @[simp] theorem orderTriple_rot :
     (rot t).orderTriple = (t.orderTriple.2.1, t.orderTriple.2.2, t.orderTriple.1) := by
   rw [rot_eq, orderTriple_swap1Inf, orderTriple_swap01]
 
+/-- Rotating the branch points backwards rotates the order triple backwards. -/
 @[simp] theorem orderTriple_rotInv :
     (rotInv t).orderTriple = (t.orderTriple.2.2, t.orderTriple.1, t.orderTriple.2.1) := by
   rw [rotInv_eq, orderTriple_swap01, orderTriple_swap1Inf]
 
-/-- Reordering the branch points does not change the Euler characteristic. -/
+/-- Exchanging `0` and `1` does not change the Euler characteristic. -/
 @[simp] theorem eulerChar_swap01 : (swap01 t).eulerChar = t.eulerChar := by
   rw [eulerChar_eq_cycleCounts, eulerChar_eq_cycleCounts, cycleCounts_swap01]
   ring
 
+/-- Exchanging `1` and `∞` does not change the Euler characteristic. -/
 @[simp] theorem eulerChar_swap1Inf : (swap1Inf t).eulerChar = t.eulerChar := by
   rw [eulerChar_eq_cycleCounts, eulerChar_eq_cycleCounts, cycleCounts_swap1Inf]
   ring
 
+/-- Exchanging `0` and `∞` does not change the Euler characteristic. -/
 @[simp] theorem eulerChar_swap0Inf : (swap0Inf t).eulerChar = t.eulerChar := by
   rw [swap0Inf_eq, eulerChar_swap01, eulerChar_swap1Inf, eulerChar_swap01]
 
+/-- Rotating `0 → 1 → ∞ → 0` does not change the Euler characteristic. -/
 @[simp] theorem eulerChar_rot : (rot t).eulerChar = t.eulerChar := by
   rw [rot_eq, eulerChar_swap1Inf, eulerChar_swap01]
 
+/-- Rotating `0 → ∞ → 1 → 0` does not change the Euler characteristic. -/
 @[simp] theorem eulerChar_rotInv : (rotInv t).eulerChar = t.eulerChar := by
   rw [rotInv_eq, eulerChar_swap01, eulerChar_swap1Inf]
 
-/-- Reordering the branch points does not change the genus. -/
+/-- Exchanging `0` and `1` does not change the genus. -/
 @[simp] theorem genus_swap01 : (swap01 t).genus = t.genus := by
   rw [genus_def, genus_def, eulerChar_swap01]
 
+/-- Exchanging `1` and `∞` does not change the genus. -/
 @[simp] theorem genus_swap1Inf : (swap1Inf t).genus = t.genus := by
   rw [genus_def, genus_def, eulerChar_swap1Inf]
 
+/-- Exchanging `0` and `∞` does not change the genus. -/
 @[simp] theorem genus_swap0Inf : (swap0Inf t).genus = t.genus := by
   rw [genus_def, genus_def, eulerChar_swap0Inf]
 
+/-- Rotating `0 → 1 → ∞ → 0` does not change the genus. -/
 @[simp] theorem genus_rot : (rot t).genus = t.genus := by
   rw [genus_def, genus_def, eulerChar_rot]
 
+/-- Rotating `0 → ∞ → 1 → 0` does not change the genus. -/
 @[simp] theorem genus_rotInv : (rotInv t).genus = t.genus := by
   rw [genus_def, genus_def, eulerChar_rotInv]
 
-/-- The geometry type depends on a triple only through the reciprocal sum of its orders. -/
-private theorem geometryType_eq_of_sum_eq {t t' : PermutationTriple n}
-    (h : (t.orderTriple.1 : ℚ)⁻¹ + (t.orderTriple.2.1 : ℚ)⁻¹ + (t.orderTriple.2.2 : ℚ)⁻¹ =
-      (t'.orderTriple.1 : ℚ)⁻¹ + (t'.orderTriple.2.1 : ℚ)⁻¹ + (t'.orderTriple.2.2 : ℚ)⁻¹) :
-    t.geometryType = t'.geometryType := by
-  simp only [orderTriple_σ0, orderTriple_σ1, orderTriple_σinf] at h
-  cases h' : t'.geometryType <;> simpa [h] using h'
-
-/-- Reordering the branch points does not change the geometry type. -/
+/-- Exchanging `0` and `1` does not change the geometry type. -/
 @[simp] theorem geometryType_swap01 : (swap01 t).geometryType = t.geometryType := by
   refine geometryType_eq_of_sum_eq ?_
   simp only [orderTriple_swap01]
   ring
 
+/-- Exchanging `1` and `∞` does not change the geometry type. -/
 @[simp] theorem geometryType_swap1Inf : (swap1Inf t).geometryType = t.geometryType := by
   refine geometryType_eq_of_sum_eq ?_
   simp only [orderTriple_swap1Inf]
   ring
 
+/-- Exchanging `0` and `∞` does not change the geometry type. -/
 @[simp] theorem geometryType_swap0Inf : (swap0Inf t).geometryType = t.geometryType := by
   rw [swap0Inf_eq, geometryType_swap01, geometryType_swap1Inf, geometryType_swap01]
 
+/-- Rotating `0 → 1 → ∞ → 0` does not change the geometry type. -/
 @[simp] theorem geometryType_rot : (rot t).geometryType = t.geometryType := by
   rw [rot_eq, geometryType_swap1Inf, geometryType_swap01]
 
+/-- Rotating `0 → ∞ → 1 → 0` does not change the geometry type. -/
 @[simp] theorem geometryType_rotInv : (rotInv t).geometryType = t.geometryType := by
   rw [rotInv_eq, geometryType_swap01, geometryType_swap1Inf]
 

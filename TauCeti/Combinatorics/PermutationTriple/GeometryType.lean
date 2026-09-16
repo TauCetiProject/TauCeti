@@ -28,6 +28,8 @@ inverting all three permutations to change composition convention.
 * `TauCeti.GeometryType`: the spherical, Euclidean, and hyperbolic trichotomy.
 * `TauCeti.GeometryType.ofOrders`: the geometry type determined by three orders.
 * `TauCeti.PermutationTriple.geometryType`: the geometry type of a permutation triple.
+* `TauCeti.PermutationTriple.geometryType_eq_of_sum_eq`: equality of reciprocal order sums
+  determines equality of geometry types.
 
 ## References
 
@@ -194,6 +196,15 @@ theorem geometryType_eq_hyperbolic_iff (t : PermutationTriple n) :
     t.geometryType = .hyperbolic ↔
       (orderOf t.σ0 : ℚ)⁻¹ + (orderOf t.σ1 : ℚ)⁻¹ + (orderOf t.σinf : ℚ)⁻¹ < 1 := by
   simp [geometryType]
+
+/-- Two permutation triples have the same geometry type if the reciprocal sums of their order
+triples are equal. -/
+theorem geometryType_eq_of_sum_eq {t t' : PermutationTriple n}
+    (h : (t.orderTriple.1 : ℚ)⁻¹ + (t.orderTriple.2.1 : ℚ)⁻¹ + (t.orderTriple.2.2 : ℚ)⁻¹ =
+      (t'.orderTriple.1 : ℚ)⁻¹ + (t'.orderTriple.2.1 : ℚ)⁻¹ + (t'.orderTriple.2.2 : ℚ)⁻¹) :
+    t.geometryType = t'.geometryType := by
+  simp only [orderTriple_σ0, orderTriple_σ1, orderTriple_σinf] at h
+  cases h' : t'.geometryType <;> simpa [h] using h'
 
 /-- Relabeling the sheets does not change the geometry type. -/
 @[simp]
