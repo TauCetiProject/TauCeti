@@ -22,9 +22,6 @@ below any prescribed open normal subgroup.
   descend to fixed-point-valued functions on sufficiently deep finite quotients.
 -/
 
--- Provenance: this is the continuous-primitive descent used in the injectivity half of Layer 4
--- of the human-authored roadmap `TauCetiRoadmap/ProfiniteCohomology/README.md`.
-
 public section
 
 namespace TauCeti.ContCohomology
@@ -70,9 +67,9 @@ theorem exists_openNormalSubgroup_descendContinuous (U : OpenNormalSubgroup G)
           (hright a ⟨a⁻¹ * b', QuotientGroup.leftRel_apply.1 hab⟩).symm
   have hbV : Continuous bV :=
     (QuotientGroup.isQuotientMap_mk V.toSubgroup).continuous_iff.2 <| by
-      change Continuous fun g => (⟨b g, (FixedPoints.mem_addSubgroup V.toSubgroup M _).2
-        fun n => hfixed n g⟩ : FixedPoints.addSubgroup V.toSubgroup M)
-      exact hb.subtype_mk _
+      dsimp only [bV, Function.comp_apply, QuotientGroup.mk, Quotient.liftOn'_mk'']
+      exact hb.subtype_mk fun g =>
+        (FixedPoints.mem_addSubgroup V.toSubgroup M _).2 fun n => hfixed n g
   exact ⟨V, hVU, bV, hbV, fun _ => rfl⟩
 
 end TauCeti.ContCohomology

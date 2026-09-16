@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
-import TauCeti.RepresentationTheory.Homological.ContCohomology.Discrete
 import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Descent
 import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.DegreeTwoDescent
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Explicit
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation
-import TauCeti.Topology.Algebra.Group.LocallyConstant
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
@@ -116,7 +114,7 @@ namespace TauCeti.ContCohomology
 
 open CategoryTheory CategoryTheory.Limits
 
-universe u v
+universe u v w
 
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
@@ -429,6 +427,83 @@ theorem exists_explicitInfl1_eq (x : H1 G M) :
     obtain ⟨U, hU⟩ := exists_openNormalSubgroup_apply_eq_zero G M z
     exact ⟨U, descendZ1 z fun n => hU (n : G) n.2, explicitInfl1_descendZ1 z _⟩
 
+variable {J : Type u} [Category.{w} J] {F : J ⥤ AddCommGrpCat.{v}}
+
+/-- Given a jointly surjective cocone, choose a representative for an element of its apex and
+evaluate the same representative in another cocone. -/
+private noncomputable def filteredCoconeDescFun (t : Cocone F)
+    (hsurj : ∀ x : t.pt, ∃ (j : J) (y : F.obj j), (t.ι.app j).hom y = x)
+    (_hcompat : ∀ (s : Cocone F) {j j' : J} (y : F.obj j) (y' : F.obj j'),
+      (t.ι.app j).hom y = (t.ι.app j').hom y' →
+        (s.ι.app j).hom y = (s.ι.app j').hom y')
+    (s : Cocone F) (x : t.pt) : s.pt :=
+  (s.ι.app (hsurj x).choose).hom (hsurj x).choose_spec.choose
+
+/-- The chosen descent is computed by any representative of an apex element. -/
+private theorem filteredCoconeDescFun_apply (t : Cocone F)
+    (hsurj : ∀ x : t.pt, ∃ (j : J) (y : F.obj j), (t.ι.app j).hom y = x)
+    (hcompat : ∀ (s : Cocone F) {j j' : J} (y : F.obj j) (y' : F.obj j'),
+      (t.ι.app j).hom y = (t.ι.app j').hom y' →
+        (s.ι.app j).hom y = (s.ι.app j').hom y')
+    (s : Cocone F) (j : J) (y : F.obj j) :
+    filteredCoconeDescFun t hsurj hcompat s ((t.ι.app j).hom y) = (s.ι.app j).hom y := by
+  apply hcompat
+  exact (hsurj ((t.ι.app j).hom y)).choose_spec.choose_spec
+
+/-- Descent from a filtered system is additive: two representatives may first be moved to a
+common object. -/
+private theorem filteredCoconeDescFun_add (t : Cocone F) [IsFilteredOrEmpty J]
+    (hsurj : ∀ x : t.pt, ∃ (j : J) (y : F.obj j), (t.ι.app j).hom y = x)
+    (hcompat : ∀ (s : Cocone F) {j j' : J} (y : F.obj j) (y' : F.obj j'),
+      (t.ι.app j).hom y = (t.ι.app j').hom y' →
+        (s.ι.app j).hom y = (s.ι.app j').hom y')
+    (s : Cocone F) (x x' : t.pt) :
+    filteredCoconeDescFun t hsurj hcompat s (x + x') =
+      filteredCoconeDescFun t hsurj hcompat s x +
+        filteredCoconeDescFun t hsurj hcompat s x' := by
+  obtain ⟨j, y, rfl⟩ := hsurj x
+  obtain ⟨j', y', rfl⟩ := hsurj x'
+  let k := IsFiltered.max j j'
+  let f := IsFiltered.leftToMax j j'
+  let g := IsFiltered.rightToMax j j'
+  have ht_f : (t.ι.app k).hom ((F.map f).hom y) = (t.ι.app j).hom y :=
+    congrArg (fun z : F.obj j ⟶ t.pt => z.hom y)
+      ((t.ι.naturality f).trans (Category.comp_id _))
+  have ht_g : (t.ι.app k).hom ((F.map g).hom y') = (t.ι.app j').hom y' :=
+    congrArg (fun z : F.obj j' ⟶ t.pt => z.hom y')
+      ((t.ι.naturality g).trans (Category.comp_id _))
+  rw [← ht_f, ← ht_g, ← map_add, filteredCoconeDescFun_apply,
+    map_add, ← filteredCoconeDescFun_apply t hsurj hcompat s k ((F.map f).hom y),
+    ← filteredCoconeDescFun_apply t hsurj hcompat s k ((F.map g).hom y')]
+
+/-- The additive homomorphism obtained by descending a cocone along a jointly surjective cocone
+whose equality relation is respected by every other cocone. -/
+private noncomputable def filteredCoconeDesc (t : Cocone F) [IsFilteredOrEmpty J]
+    (hsurj : ∀ x : t.pt, ∃ (j : J) (y : F.obj j), (t.ι.app j).hom y = x)
+    (hcompat : ∀ (s : Cocone F) {j j' : J} (y : F.obj j) (y' : F.obj j'),
+      (t.ι.app j).hom y = (t.ι.app j').hom y' →
+        (s.ι.app j).hom y = (s.ι.app j').hom y')
+    (s : Cocone F) : t.pt →+ s.pt :=
+  AddMonoidHom.mk' (filteredCoconeDescFun t hsurj hcompat s)
+    (filteredCoconeDescFun_add t hsurj hcompat s)
+
+/-- A jointly surjective cocone on a filtered diagram of additive commutative groups is colimiting
+when equality in its apex implies equality after applying the legs of every other cocone. -/
+private noncomputable def isColimitOfJointlySurjective (t : Cocone F) [IsFilteredOrEmpty J]
+    (hsurj : ∀ x : t.pt, ∃ (j : J) (y : F.obj j), (t.ι.app j).hom y = x)
+    (hcompat : ∀ (s : Cocone F) {j j' : J} (y : F.obj j) (y' : F.obj j'),
+      (t.ι.app j).hom y = (t.ι.app j').hom y' →
+        (s.ι.app j).hom y = (s.ι.app j').hom y') : IsColimit t where
+  desc s := AddCommGrpCat.ofHom (filteredCoconeDesc t hsurj hcompat s)
+  fac s j := by
+    refine AddCommGrpCat.hom_ext (AddMonoidHom.ext fun y => ?_)
+    exact filteredCoconeDescFun_apply t hsurj hcompat s j y
+  uniq s m hm := by
+    refine AddCommGrpCat.hom_ext (AddMonoidHom.ext fun x => ?_)
+    obtain ⟨j, y, rfl⟩ := hsurj x
+    refine Eq.trans ?_ (filteredCoconeDescFun_apply t hsurj hcompat s j y).symm
+    exact congrArg (fun z : F.obj j ⟶ s.pt => z.hom y) (hm j)
+
 omit [CompactSpace G] [TotallyDisconnectedSpace G] in
 /-- Restricting a cocone leg through a transition map gives the leg one level up. This is the
 naturality of the cocone, read on elements. -/
@@ -458,62 +533,16 @@ private theorem cocone_ι_eq_of_explicitInfl1_eq
   rw [← cocone_ι_explicitFiniteQuotientTransition1 s (inf_le_left : U ⊓ V ≤ U) y,
     ← cocone_ι_explicitFiniteQuotientTransition1 s (inf_le_right : U ⊓ V ≤ V) y', hkey]
 
-/-- The descent of a cocone to `H¹(G, M)`, as a bare function: a class is inflated from some
-finite level, and its value is the cocone leg applied to any such witness. -/
-private noncomputable def coconeDescFun (s : Cocone (explicitFiniteQuotientSystem1 G M))
-    (x : H1 G M) : s.pt :=
-  (s.ι.app (Opposite.op (exists_explicitInfl1_eq x).choose)).hom
-    (exists_explicitInfl1_eq x).choose_spec.choose
-
-/-- The descent of a cocone is computed by any level a class is inflated from. -/
-private theorem coconeDescFun_explicitInfl1 (s : Cocone (explicitFiniteQuotientSystem1 G M))
-    (U : OpenNormalSubgroup G)
-    (y : H1 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
-    coconeDescFun s (explicitInfl1 G M U.toSubgroup y) = (s.ι.app (Opposite.op U)).hom y :=
-  cocone_ι_eq_of_explicitInfl1_eq s _ y
-    (exists_explicitInfl1_eq (explicitInfl1 G M U.toSubgroup y)).choose_spec.choose_spec
-
-/-- The descent of a cocone is additive: two classes are inflated from a common level. -/
-private theorem coconeDescFun_add (s : Cocone (explicitFiniteQuotientSystem1 G M))
-    (x x' : H1 G M) :
-    coconeDescFun s (x + x') = coconeDescFun s x + coconeDescFun s x' := by
-  obtain ⟨U, y, rfl⟩ := exists_explicitInfl1_eq x
-  obtain ⟨V, y', rfl⟩ := exists_explicitInfl1_eq x'
-  rw [← explicitInfl1_explicitFiniteQuotientTransition1 (inf_le_left : U ⊓ V ≤ U) y,
-    ← explicitInfl1_explicitFiniteQuotientTransition1 (inf_le_right : U ⊓ V ≤ V) y', ← map_add,
-    coconeDescFun_explicitInfl1, coconeDescFun_explicitInfl1, coconeDescFun_explicitInfl1]
-  exact map_add _ _ _
-
-/-- The descent of a cocone to `H¹(G, M)`, as an additive homomorphism. -/
-private noncomputable def coconeDesc (s : Cocone (explicitFiniteQuotientSystem1 G M)) :
-    H1 G M →+ s.pt :=
-  AddMonoidHom.mk' (coconeDescFun s) (coconeDescFun_add s)
-
-/-- The homomorphism form of the descent is still computed by any level a class is inflated
-from. -/
-private theorem coconeDesc_explicitInfl1 (s : Cocone (explicitFiniteQuotientSystem1 G M))
-    (U : OpenNormalSubgroup G)
-    (y : H1 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
-    coconeDesc s (explicitInfl1 G M U.toSubgroup y) = (s.ι.app (Opposite.op U)).hom y :=
-  coconeDescFun_explicitInfl1 s U y
-
 variable (G M)
 
 /-- **The degree-one finite-quotient colimit theorem**: `H¹(G, M)` is the colimit of the
 finite-level first cohomology groups `H¹(G ⧸ U, M^U)`, through the inflation maps. -/
 noncomputable def explicitFiniteQuotientColimit1 :
-    IsColimit (explicitFiniteQuotientCocone1 G M) where
-  desc s := AddCommGrpCat.ofHom (coconeDesc s)
-  fac s U := by
-    refine AddCommGrpCat.hom_ext (AddMonoidHom.ext fun y => ?_)
-    exact coconeDesc_explicitInfl1 s U.unop y
-  uniq s m hm := by
-    refine AddCommGrpCat.hom_ext (AddMonoidHom.ext fun x => ?_)
-    obtain ⟨U, y, rfl⟩ := exists_explicitInfl1_eq x
-    refine Eq.trans ?_ (coconeDesc_explicitInfl1 s U y).symm
-    exact congrArg
-      (fun w : (explicitFiniteQuotientSystem1 G M).obj (Opposite.op U) ⟶ s.pt => w.hom y)
-      (hm (Opposite.op U))
+    IsColimit (explicitFiniteQuotientCocone1 G M) :=
+  isColimitOfJointlySurjective (explicitFiniteQuotientCocone1 G M) (fun x ↦ by
+    obtain ⟨U, y, hy⟩ := exists_explicitInfl1_eq x
+    exact ⟨Opposite.op U, y, hy⟩) fun s _ _ y y' h ↦
+      cocone_ι_eq_of_explicitInfl1_eq s y y' h
 
 variable {G M}
 
@@ -652,63 +681,16 @@ private theorem cocone_ι_eq_of_explicitInfl2_eq
   rw [← cocone_ι_explicitFiniteQuotientTransition2 s (hTW.trans inf_le_left) y,
     ← cocone_ι_explicitFiniteQuotientTransition2 s (hTW.trans inf_le_right) y', hkey]
 
-/-- The descent of a degree-two cocone, as a bare function. -/
-private noncomputable def cocone2DescFun (s : Cocone (explicitFiniteQuotientSystem2 G M))
-    (x : H2 G M) : s.pt :=
-  (s.ι.app (Opposite.op (exists_explicitInfl2_eq x).choose)).hom
-    (exists_explicitInfl2_eq x).choose_spec.choose
-
-/-- The descent of a degree-two cocone is computed by any level a class is inflated from. -/
-private theorem cocone2DescFun_explicitInfl2
-    (s : Cocone (explicitFiniteQuotientSystem2 G M)) (U : OpenNormalSubgroup G)
-    (y : H2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
-    cocone2DescFun s (explicitInfl2 G M U.toSubgroup y) =
-      (s.ι.app (Opposite.op U)).hom y :=
-  cocone_ι_eq_of_explicitInfl2_eq s _ y
-    (exists_explicitInfl2_eq (explicitInfl2 G M U.toSubgroup y)).choose_spec.choose_spec
-
-/-- The descent of a degree-two cocone is additive. -/
-private theorem cocone2DescFun_add (s : Cocone (explicitFiniteQuotientSystem2 G M))
-    (x x' : H2 G M) :
-    cocone2DescFun s (x + x') = cocone2DescFun s x + cocone2DescFun s x' := by
-  obtain ⟨U, y, rfl⟩ := exists_explicitInfl2_eq x
-  obtain ⟨V, y', rfl⟩ := exists_explicitInfl2_eq x'
-  rw [← explicitInfl2_explicitFiniteQuotientTransition2 (inf_le_left : U ⊓ V ≤ U) y,
-    ← explicitInfl2_explicitFiniteQuotientTransition2 (inf_le_right : U ⊓ V ≤ V) y', ← map_add,
-    cocone2DescFun_explicitInfl2, cocone2DescFun_explicitInfl2,
-    cocone2DescFun_explicitInfl2]
-  exact map_add _ _ _
-
-/-- The descent of a degree-two cocone, as an additive homomorphism. -/
-private noncomputable def cocone2Desc (s : Cocone (explicitFiniteQuotientSystem2 G M)) :
-    H2 G M →+ s.pt :=
-  AddMonoidHom.mk' (cocone2DescFun s) (cocone2DescFun_add s)
-
-/-- The additive descent is computed by any level a degree-two class is inflated from. -/
-private theorem cocone2Desc_explicitInfl2
-    (s : Cocone (explicitFiniteQuotientSystem2 G M)) (U : OpenNormalSubgroup G)
-    (y : H2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
-    cocone2Desc s (explicitInfl2 G M U.toSubgroup y) =
-      (s.ι.app (Opposite.op U)).hom y :=
-  cocone2DescFun_explicitInfl2 s U y
-
 variable (G M)
 
 /-- **The degree-two finite-quotient colimit theorem**: `H²(G, M)` is the colimit of the
 finite-level second cohomology groups `H²(G ⧸ U, M^U)`, through the inflation maps. -/
 noncomputable def explicitFiniteQuotientColimit2 :
-    IsColimit (explicitFiniteQuotientCocone2 G M) where
-  desc s := AddCommGrpCat.ofHom (cocone2Desc s)
-  fac s U := by
-    refine AddCommGrpCat.hom_ext (AddMonoidHom.ext fun y => ?_)
-    exact cocone2Desc_explicitInfl2 s U.unop y
-  uniq s m hm := by
-    refine AddCommGrpCat.hom_ext (AddMonoidHom.ext fun x => ?_)
-    obtain ⟨U, y, rfl⟩ := exists_explicitInfl2_eq x
-    refine Eq.trans ?_ (cocone2Desc_explicitInfl2 s U y).symm
-    exact congrArg
-      (fun w : (explicitFiniteQuotientSystem2 G M).obj (Opposite.op U) ⟶ s.pt => w.hom y)
-      (hm (Opposite.op U))
+    IsColimit (explicitFiniteQuotientCocone2 G M) :=
+  isColimitOfJointlySurjective (explicitFiniteQuotientCocone2 G M) (fun x ↦ by
+    obtain ⟨U, y, hy⟩ := exists_explicitInfl2_eq x
+    exact ⟨Opposite.op U, y, hy⟩) fun s _ _ y y' h ↦
+      cocone_ι_eq_of_explicitInfl2_eq s y y' h
 
 end Colimit
 
