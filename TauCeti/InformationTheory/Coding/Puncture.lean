@@ -5,19 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.Basic
+public import TauCeti.InformationTheory.Coding.Reindex
 
 /-!
 # Puncturing and shortening linear codes
 
-A linear code on coordinates `ι` is a submodule of the word space `ι → R`, as defined in
+A linear code on coordinates `ι` is a submodule of the word space `ι → F`, as defined in
 `TauCeti/InformationTheory/Coding/Basic.lean`. Given a set `s` of coordinates to retain,
 puncturing restricts every codeword to `s`. Shortening first restricts to the codewords which
 vanish outside `s`, and then forgets those zero coordinates.
 
-The definitions in this file work over a semiring and do not require the alphabet or the
-coordinate type to be finite. A division ring and finiteness are needed only for the dimension
-bounds. The API records membership, order preservation, the zero and whole-space cases, the
+Neither the field nor the coordinate type is assumed finite; finiteness enters only in the
+dimension bounds. The API records membership, order preservation, the zero and whole-space cases,
+naturality under a change of coordinates, the canonical identities for repeated operations, the
 comparison between shortening and puncturing, and the exact dimension of a shortened code before
 coordinates are discarded.
 
@@ -38,41 +38,37 @@ public section
 
 namespace TauCeti
 
-universe u v w
-
-section Operations
-
-variable {R : Type u} [Semiring R] {ι : Type v}
+variable {F : Type*} [Field F] {ι : Type*}
 
 /-- Puncturing a code at `s` retains precisely the coordinates in `s`. -/
-noncomputable def puncture (C : LinearCode R ι) (s : Set ι) : LinearCode R s :=
-  C.map (LinearMap.funLeft R R (Subtype.val : s → ι))
+noncomputable def puncture (C : LinearCode F ι) (s : Set ι) : LinearCode F s :=
+  C.map (LinearMap.funLeft F F (Subtype.val : s → ι))
 
 /-- Puncturing is the image under restriction to the retained coordinates. -/
-theorem puncture_def (C : LinearCode R ι) (s : Set ι) :
-    puncture C s = C.map (LinearMap.funLeft R R (Subtype.val : s → ι)) := (rfl)
+theorem puncture_def (C : LinearCode F ι) (s : Set ι) :
+    puncture C s = C.map (LinearMap.funLeft F F (Subtype.val : s → ι)) := (rfl)
 
 /-- Shortening a code at `s` first imposes zero outside `s`, then retains the coordinates in
 `s`. -/
-noncomputable def shorten (C : LinearCode R ι) (s : Set ι) : LinearCode R s :=
-  (C ⊓ Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule R R)).map
-    (LinearMap.funLeft R R (Subtype.val : s → ι))
+noncomputable def shorten (C : LinearCode F ι) (s : Set ι) : LinearCode F s :=
+  (C ⊓ Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule F F)).map
+    (LinearMap.funLeft F F (Subtype.val : s → ι))
 
 /-- Shortening is the image under restriction of the words supported on the retained set. -/
-theorem shorten_def (C : LinearCode R ι) (s : Set ι) :
-    shorten C s = (C ⊓ Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule R R)).map
-      (LinearMap.funLeft R R (Subtype.val : s → ι)) := (rfl)
+theorem shorten_def (C : LinearCode F ι) (s : Set ι) :
+    shorten C s = (C ⊓ Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule F F)).map
+      (LinearMap.funLeft F F (Subtype.val : s → ι)) := (rfl)
 
 /-- A word belongs to the punctured code exactly when it is the restriction of a codeword. -/
 @[simp]
-theorem mem_puncture {C : LinearCode R ι} {s : Set ι} {y : s → R} :
+theorem mem_puncture {C : LinearCode F ι} {s : Set ι} {y : s → F} :
     y ∈ puncture C s ↔ ∃ x ∈ C, ∀ j : s, x j = y j := by
   simp [puncture, Submodule.mem_map, LinearMap.funLeft_apply, funext_iff]
 
 /-- A word belongs to the shortened code exactly when its extension by zero is a codeword:
 equivalently, it is the restriction of a codeword which vanishes off the retained set. -/
 @[simp]
-theorem mem_shorten {C : LinearCode R ι} {s : Set ι} {y : s → R} :
+theorem mem_shorten {C : LinearCode F ι} {s : Set ι} {y : s → F} :
     y ∈ shorten C s ↔
       ∃ x ∈ C, (∀ i ∉ s, x i = 0) ∧ ∀ j : s, x j = y j := by
   rw [shorten, Submodule.mem_map]
@@ -86,7 +82,7 @@ theorem mem_shorten {C : LinearCode R ι} {s : Set ι} {y : s → R} :
     simpa [LinearMap.funLeft_apply] using hxy j
 
 /-- Membership in a puncture retaining one coordinate is determined by that coordinate. -/
-theorem mem_puncture_singleton {C : LinearCode R ι} {i : ι} {y : ({i} : Set ι) → R} :
+theorem mem_puncture_singleton {C : LinearCode F ι} {i : ι} {y : ({i} : Set ι) → F} :
     y ∈ puncture C {i} ↔ ∃ x ∈ C, x i = y ⟨i, Set.mem_singleton i⟩ := by
   rw [mem_puncture]
   constructor
@@ -98,7 +94,7 @@ theorem mem_puncture_singleton {C : LinearCode R ι} {i : ι} {y : ({i} : Set ι
 
 /-- Membership in a shortening retaining one coordinate is determined by a codeword supported
 at that coordinate. -/
-theorem mem_shorten_singleton {C : LinearCode R ι} {i : ι} {y : ({i} : Set ι) → R} :
+theorem mem_shorten_singleton {C : LinearCode F ι} {i : ι} {y : ({i} : Set ι) → F} :
     y ∈ shorten C {i} ↔
       ∃ x ∈ C, (∀ j, j ≠ i → x j = 0) ∧ x i = y ⟨i, Set.mem_singleton i⟩ := by
   rw [mem_shorten]
@@ -112,14 +108,14 @@ theorem mem_shorten_singleton {C : LinearCode R ι} {i : ι} {y : ({i} : Set ι)
 /-- Puncturing commutes with a change of coordinates. The retained set is pulled back along the
 coordinate equivalence. -/
 @[simp]
-theorem puncture_reindex {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) (s : Set ι) :
+theorem puncture_reindex {κ : Type*} (C : LinearCode F ι) (e : κ ≃ ι) (s : Set ι) :
     puncture (reindex C e) (e ⁻¹' s) =
       reindex (puncture C s) (e.subtypeEquiv fun _ ↦ Iff.rfl) := by
   have hmap :
-      (LinearMap.funLeft R R (Subtype.val : ↥(e ⁻¹' s) → κ)).comp
-          (LinearEquiv.funCongrLeft R R e).toLinearMap =
-        (LinearEquiv.funCongrLeft R R (e.subtypeEquiv fun _ ↦ Iff.rfl)).toLinearMap.comp
-          (LinearMap.funLeft R R (Subtype.val : s → ι)) := by
+      (LinearMap.funLeft F F (Subtype.val : ↥(e ⁻¹' s) → κ)).comp
+          (LinearEquiv.funCongrLeft F F e).toLinearMap =
+        (LinearEquiv.funCongrLeft F F (e.subtypeEquiv fun _ ↦ Iff.rfl)).toLinearMap.comp
+          (LinearMap.funLeft F F (Subtype.val : s → ι)) := by
     ext x j
     simp
   rw [puncture_def, reindex_def, reindex_def, puncture_def, ← Submodule.map_comp,
@@ -127,7 +123,7 @@ theorem puncture_reindex {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) (s 
 
 /-- Shortening commutes with a change of coordinates. -/
 @[simp]
-theorem shorten_reindex {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) (s : Set ι) :
+theorem shorten_reindex {κ : Type*} (C : LinearCode F ι) (e : κ ≃ ι) (s : Set ι) :
     shorten (reindex C e) (e ⁻¹' s) =
       reindex (shorten C s) (e.subtypeEquiv fun _ ↦ Iff.rfl) := by
   ext y
@@ -146,7 +142,7 @@ theorem shorten_reindex {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) (s :
   · intro hy
     obtain ⟨u, hu, huy⟩ := mem_reindex.mp hy
     obtain ⟨x, hxC, hx0, hxu⟩ := mem_shorten.mp hu
-    let z : κ → R := fun j ↦ x (e j)
+    let z : κ → F := fun j ↦ x (e j)
     refine mem_shorten.mpr ⟨z, mem_reindex.mpr ⟨x, hxC, fun _ ↦ rfl⟩, ?_, ?_⟩
     · intro j hj
       exact hx0 (e j) hj
@@ -156,16 +152,16 @@ theorem shorten_reindex {κ : Type w} (C : LinearCode R ι) (e : κ ≃ ι) (s :
 /-- Puncturing twice is puncturing once to the flattened set of retained coordinates, up to the
 canonical equivalence between a subtype of a subtype and the corresponding subtype. -/
 @[simp]
-theorem puncture_puncture (C : LinearCode R ι) (s : Set ι) (t : Set s) :
+theorem puncture_puncture (C : LinearCode F ι) (s : Set ι) (t : Set s) :
     reindex (puncture (puncture C s) t)
         (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm =
       puncture C {i | ∃ hi : i ∈ s, (⟨i, hi⟩ : s) ∈ t} := by
   have hmap :
-      (LinearEquiv.funCongrLeft R R
+      (LinearEquiv.funCongrLeft F F
             (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm).toLinearMap.comp
-          ((LinearMap.funLeft R R (Subtype.val : t → s)).comp
-            (LinearMap.funLeft R R (Subtype.val : s → ι))) =
-        LinearMap.funLeft R R (Subtype.val : {i | ∃ hi : i ∈ s, (⟨i, hi⟩ : s) ∈ t} → ι) := by
+          ((LinearMap.funLeft F F (Subtype.val : t → s)).comp
+            (LinearMap.funLeft F F (Subtype.val : s → ι))) =
+        LinearMap.funLeft F F (Subtype.val : {i | ∃ hi : i ∈ s, (⟨i, hi⟩ : s) ∈ t} → ι) := by
     ext x j
     exact congrArg x
       (Equiv.subtypeSubtypeEquivSubtypeExists_symm_apply_coe_coe (· ∈ s) (· ∈ t) j)
@@ -175,7 +171,7 @@ theorem puncture_puncture (C : LinearCode R ι) (s : Set ι) (t : Set s) :
 /-- Shortening twice is shortening once to the flattened set of retained coordinates, up to the
 canonical subtype equivalence. -/
 @[simp]
-theorem shorten_shorten (C : LinearCode R ι) (s : Set ι) (t : Set s) :
+theorem shorten_shorten (C : LinearCode F ι) (s : Set ι) (t : Set s) :
     reindex (shorten (shorten C s) t)
         (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm =
       shorten C {i | ∃ hi : i ∈ s, (⟨i, hi⟩ : s) ∈ t} := by
@@ -200,8 +196,8 @@ theorem shorten_shorten (C : LinearCode R ι) (s : Set ι) (t : Set s) :
       exact (hxz jt).trans ((hzv jt).trans (hj ▸ hvy j))
   · intro hy
     obtain ⟨x, hxC, hx0, hxy⟩ := mem_shorten.mp hy
-    let z : s → R := fun j ↦ x j
-    let v : t → R := fun j ↦ z j
+    let z : s → F := fun j ↦ x j
+    let v : t → F := fun j ↦ z j
     have hzs : z ∈ shorten C s := by
       refine mem_shorten.mpr ⟨x, hxC, ?_, fun _ ↦ rfl⟩
       intro i hi
@@ -215,45 +211,45 @@ theorem shorten_shorten (C : LinearCode R ι) (s : Set ι) (t : Set s) :
     exact hxy j
 
 /-- Every shortened word is a punctured word. -/
-theorem shorten_le_puncture (C : LinearCode R ι) (s : Set ι) : shorten C s ≤ puncture C s := by
+theorem shorten_le_puncture (C : LinearCode F ι) (s : Set ι) : shorten C s ≤ puncture C s := by
   intro y hy
   obtain ⟨x, hxC, _, hxy⟩ := mem_shorten.mp hy
   exact mem_puncture.mpr ⟨x, hxC, hxy⟩
 
 /-- Puncturing is monotone in the code. -/
-theorem puncture_mono {C D : LinearCode R ι} (h : C ≤ D) (s : Set ι) :
+theorem puncture_mono {C D : LinearCode F ι} (h : C ≤ D) (s : Set ι) :
     puncture C s ≤ puncture D s :=
   Submodule.map_mono h
 
 /-- Shortening is monotone in the code. -/
-theorem shorten_mono {C D : LinearCode R ι} (h : C ≤ D) (s : Set ι) :
+theorem shorten_mono {C D : LinearCode F ι} (h : C ≤ D) (s : Set ι) :
     shorten C s ≤ shorten D s :=
   Submodule.map_mono (inf_le_inf h le_rfl)
 
 /-- Puncturing sends the zero code to the zero code. -/
 @[simp]
-theorem puncture_bot (s : Set ι) : puncture (⊥ : LinearCode R ι) s = ⊥ := by
+theorem puncture_bot (s : Set ι) : puncture (⊥ : LinearCode F ι) s = ⊥ := by
   simp [puncture]
 
 /-- Shortening sends the zero code to the zero code. -/
 @[simp]
-theorem shorten_bot (s : Set ι) : shorten (⊥ : LinearCode R ι) s = ⊥ := by
+theorem shorten_bot (s : Set ι) : shorten (⊥ : LinearCode F ι) s = ⊥ := by
   simp [shorten]
 
 /-- Puncturing the whole word space gives the whole word space on the retained coordinates. -/
 @[simp]
-theorem puncture_top (s : Set ι) : puncture (⊤ : LinearCode R ι) s = ⊤ := by
+theorem puncture_top (s : Set ι) : puncture (⊤ : LinearCode F ι) s = ⊤ := by
   rw [puncture, Submodule.map_top]
   exact LinearMap.range_eq_top.mpr <|
-    LinearMap.funLeft_surjective_of_injective R R _ Subtype.val_injective
+    LinearMap.funLeft_surjective_of_injective F F _ Subtype.val_injective
 
 /-- Shortening the whole word space gives the whole word space on the retained coordinates. -/
 @[simp]
-theorem shorten_top (s : Set ι) : shorten (⊤ : LinearCode R ι) s = ⊤ := by
+theorem shorten_top (s : Set ι) : shorten (⊤ : LinearCode F ι) s = ⊤ := by
   ext y
   simp only [Submodule.mem_top, iff_true]
   classical
-  let x : ι → R := fun i ↦ if hi : i ∈ s then y ⟨i, hi⟩ else 0
+  let x : ι → F := fun i ↦ if hi : i ∈ s then y ⟨i, hi⟩ else 0
   refine mem_shorten.mpr ⟨x, Submodule.mem_top, ?_, ?_⟩
   · intro i hi
     simp [x, hi]
@@ -262,13 +258,13 @@ theorem shorten_top (s : Set ι) : shorten (⊤ : LinearCode R ι) s = ⊤ := by
 
 /-- Puncturing commutes with sums of codes. -/
 @[simp]
-theorem puncture_sup (C D : LinearCode R ι) (s : Set ι) :
+theorem puncture_sup (C D : LinearCode F ι) (s : Set ι) :
     puncture (C ⊔ D) s = puncture C s ⊔ puncture D s := by
   simp [puncture, Submodule.map_sup]
 
 /-- Shortening commutes with intersections. -/
 @[simp]
-theorem shorten_inf (C D : LinearCode R ι) (s : Set ι) :
+theorem shorten_inf (C D : LinearCode F ι) (s : Set ι) :
     shorten (C ⊓ D) s = shorten C s ⊓ shorten D s := by
   ext y
   simp only [mem_shorten, Submodule.mem_inf]
@@ -282,28 +278,22 @@ theorem shorten_inf (C D : LinearCode R ι) (s : Set ι) :
       · exact (hx0 i hi).trans (hz0 i hi).symm
     exact ⟨x, ⟨hxC, hxz ▸ hzD⟩, hx0, hxy⟩
 
-end Operations
-
-section Dimension
-
-variable {R : Type u} [DivisionRing R] {ι : Type v}
-
 /-- Puncturing cannot increase dimension. -/
-theorem finrank_puncture_le (C : LinearCode R ι) [FiniteDimensional R C] (s : Set ι) :
-    Module.finrank R (puncture C s) ≤ Module.finrank R C := by
+theorem finrank_puncture_le (C : LinearCode F ι) [FiniteDimensional F C] (s : Set ι) :
+    Module.finrank F (puncture C s) ≤ Module.finrank F C := by
   rw [puncture]
   exact Submodule.finrank_map_le _ _
 
 /-- Shortening preserves the dimension of the subcode of words supported on the retained
 coordinates. -/
-theorem finrank_shorten_eq (C : LinearCode R ι) (s : Set ι) :
-    Module.finrank R (shorten C s) =
-      Module.finrank R
-        (((C : Submodule R (ι → R)) ⊓
-          (Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule R R))) : Submodule R (ι → R)) := by
-  let P : Submodule R (ι → R) :=
-    (C : Submodule R (ι → R)) ⊓ (Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule R R))
-  let f := LinearMap.funLeft R R (Subtype.val : s → ι)
+theorem finrank_shorten_eq (C : LinearCode F ι) (s : Set ι) :
+    Module.finrank F (shorten C s) =
+      Module.finrank F
+        (((C : Submodule F (ι → F)) ⊓
+          (Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule F F))) : Submodule F (ι → F)) := by
+  let P : Submodule F (ι → F) :=
+    (C : Submodule F (ι → F)) ⊓ (Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule F F))
+  let f := LinearMap.funLeft F F (Subtype.val : s → ι)
   rw [shorten, ← LinearMap.range_domRestrict]
   apply LinearMap.finrank_range_of_inj
   intro x y hxy
@@ -314,49 +304,47 @@ theorem finrank_shorten_eq (C : LinearCode R ι) (s : Set ι) :
   · exact (Submodule.mem_pi.mp x.2.2 i hi).trans (Submodule.mem_pi.mp y.2.2 i hi).symm
 
 /-- Shortening cannot increase dimension. -/
-theorem finrank_shorten_le (C : LinearCode R ι) [FiniteDimensional R C] (s : Set ι) :
-    Module.finrank R (shorten C s) ≤ Module.finrank R C := by
+theorem finrank_shorten_le (C : LinearCode F ι) [FiniteDimensional F C] (s : Set ι) :
+    Module.finrank F (shorten C s) ≤ Module.finrank F C := by
   rw [finrank_shorten_eq]
   apply Submodule.finrank_mono
   exact inf_le_left
 
 /-- The dimension lost by shortening is at most the number of deleted coordinates. -/
 theorem finrank_le_finrank_shorten_add_ncard_compl [Finite ι]
-    (C : LinearCode R ι) (s : Set ι) :
-    Module.finrank R C ≤ Module.finrank R (shorten C s) + sᶜ.ncard := by
+    (C : LinearCode F ι) (s : Set ι) :
+    Module.finrank F C ≤ Module.finrank F (shorten C s) + sᶜ.ncard := by
   classical
   let _ := Fintype.ofFinite ι
-  let S : Submodule R (ι → R) := Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule R R)
-  have hS : S = Pi.spanSubset R s := by
+  let S : Submodule F (ι → F) := Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule F F)
+  have hS : S = Pi.spanSubset F s := by
     ext x
     simp [S, Submodule.mem_pi, Pi.mem_spanSubset_iff]
-  have hdimS : Module.finrank R S = s.ncard := by rw [hS, Pi.dim_spanSubset]
+  have hdimS : Module.finrank F S = s.ncard := by rw [hS, Pi.dim_spanSubset]
   have hsum := Submodule.finrank_sup_add_finrank_inf_eq C S
-  have hsup : Module.finrank R
-      (((C : Submodule R (ι → R)) ⊔ S) : Submodule R (ι → R)) ≤
+  have hsup : Module.finrank F
+      (((C : Submodule F (ι → F)) ⊔ S) : Submodule F (ι → F)) ≤
       Nat.card ι := by
     calc
-      Module.finrank R
-          (((C : Submodule R (ι → R)) ⊔ S) : Submodule R (ι → R)) ≤
-          Module.finrank R (ι → R) :=
+      Module.finrank F
+          (((C : Submodule F (ι → F)) ⊔ S) : Submodule F (ι → F)) ≤
+          Module.finrank F (ι → F) :=
         Submodule.finrank_le _
       _ = Nat.card ι := by
         rw [Module.finrank_fintype_fun_eq_card, Fintype.card_eq_nat_card]
   rw [hdimS] at hsum
   rw [finrank_shorten_eq]
   have hcard := Set.ncard_add_ncard_compl s
-  have hbound : Module.finrank R C ≤
-      Module.finrank R (((C : Submodule R (ι → R)) ⊓ S) : Submodule R (ι → R)) +
+  have hbound : Module.finrank F C ≤
+      Module.finrank F (((C : Submodule F (ι → F)) ⊓ S) : Submodule F (ι → F)) +
         sᶜ.ncard := by omega
   simpa [S] using hbound
 
 /-- The dimension lost by puncturing is at most the number of deleted coordinates. -/
 theorem finrank_le_finrank_puncture_add_ncard_compl [Finite ι]
-    (C : LinearCode R ι) (s : Set ι) :
-    Module.finrank R C ≤ Module.finrank R (puncture C s) + sᶜ.ncard := by
+    (C : LinearCode F ι) (s : Set ι) :
+    Module.finrank F C ≤ Module.finrank F (puncture C s) + sᶜ.ncard := by
   refine (finrank_le_finrank_shorten_add_ncard_compl C s).trans ?_
   exact Nat.add_le_add_right (Submodule.finrank_mono (shorten_le_puncture C s)) _
-
-end Dimension
 
 end TauCeti
