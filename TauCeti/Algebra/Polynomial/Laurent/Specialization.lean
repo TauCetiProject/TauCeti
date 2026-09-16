@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Quotient.Basic
-public import TauCeti.Algebra.Polynomial.Laurent
+public import TauCeti.Algebra.Polynomial.Laurent.Basic
 
 /-!
 # Specializing Laurent modules at a unit

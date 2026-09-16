@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Polynomial.Laurent
 public import TauCeti.CategoryTheory.GrothendieckGroup.Graded
-public import TauCeti.Algebra.Polynomial.LaurentSpecialization
+public import TauCeti.Algebra.Polynomial.Laurent.Specialization
 
 /-!
 # The Laurent coefficient ring acting on the graded Grothendieck group
@@ -395,9 +394,11 @@ theorem mk_ofExactK0_shiftZPow (n : ℤ) (x : ExactK0 E.toExactStructure) :
 theorem mk_of_shift_functor_obj (X : C) :
     LaurentSpecialization.mk ε (of E (E.shift.functor.obj X)) =
       (ε : ℤ) • LaurentSpecialization.mk ε (of E X) := by
-  rw [← T_one_smul_of, map_smul, LaurentSpecialization.mk_smul, laurentEval_T_one]
+  rw [← ofExactK0_exactK0_of, ← GradedExactStructure.shiftZPow_one_apply_of,
+    mk_ofExactK0_shiftZPow, zpow_one, ofExactK0_exactK0_of]
 
 /-- **A map out of specialized graded `K₀` is determined by its values on object classes.** -/
+@[ext]
 theorem hom_ext_laurentSpecialization {A : Type*} [AddCommGroup A]
     {f g : LaurentSpecialization ε (LaurentK0 E) →ₗ[ℤ] A}
     (h : ∀ X : C, f (LaurentSpecialization.mk ε (of E X)) =
@@ -408,8 +409,14 @@ theorem hom_ext_laurentSpecialization {A : Type*} [AddCommGroup A]
         (ofExactK0 E).toAddMonoidHom =
       (g.toAddMonoidHom.comp (LaurentSpecialization.mk ε).toAddMonoidHom).comp
         (ofExactK0 E).toAddMonoidHom :=
-    ExactK0.hom_ext fun X => by simpa using h X
-  simpa using DFunLike.congr_fun key ((ofExactK0 E).symm x)
+    ExactK0.hom_ext fun X => by
+      simp only [AddMonoidHom.coe_comp, Function.comp_apply, AddEquiv.coe_toAddMonoidHom,
+        LinearMap.toAddMonoidHom_coe, ofExactK0_exactK0_of]
+      exact h X
+  have hx := DFunLike.congr_fun key ((ofExactK0 E).symm x)
+  simp only [AddMonoidHom.coe_comp, Function.comp_apply, AddEquiv.coe_toAddMonoidHom,
+    LinearMap.toAddMonoidHom_coe] at hx
+  rwa [AddEquiv.apply_symm_apply] at hx
 
 end Specialization
 

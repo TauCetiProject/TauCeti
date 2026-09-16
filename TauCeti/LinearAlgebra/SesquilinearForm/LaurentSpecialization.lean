@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
-public import TauCeti.Algebra.Polynomial.LaurentSpecialization
+public import Mathlib.LinearAlgebra.Quotient.Bilinear
+public import TauCeti.Algebra.Polynomial.Laurent.Specialization
 
 /-!
 # Specializing q-sesquilinear forms at a unit
@@ -56,24 +57,26 @@ variable {N₁ N₂ : Type*} [AddCommGroup N₁] [Module R[T;T⁻¹] N₁] [Modu
   [IsScalarTower R R[T;T⁻¹] N₁] [AddCommGroup N₂] [Module R[T;T⁻¹] N₂] [Module R N₂]
   [IsScalarTower R R[T;T⁻¹] N₂]
 
-/-- The second argument of a specialized form, before specializing the first argument. -/
-private noncomputable def laurentSpecializeRight
-    (b : N₁ →ₛₗ[(invert (R := R)).toRingEquiv.toRingHom] N₂ →ₗ[R[T;T⁻¹]] R[T;T⁻¹]) (x : N₁) :
-    LaurentSpecialization ε₂ N₂ →ₗ[R] R :=
-  lift ε₂ ((laurentEval ε₂).toLinearMap ∘ₗ (b x).restrictScalars R) fun y => by
-    rw [LinearMap.comp_apply, LinearMap.restrictScalars_apply, map_smul, smul_eq_mul,
-      AlgHom.toLinearMap_apply, map_mul, laurentEval_T_one, LinearMap.comp_apply,
-      LinearMap.restrictScalars_apply, AlgHom.toLinearMap_apply, smul_eq_mul]
+/-- Evaluation at `ε₂` after the involution `q ↦ q⁻¹` is evaluation at `ε₁`, for `ε₁⁻¹ = ε₂`. -/
+private theorem laurentEval_invert (hε : ε₁⁻¹ = ε₂) (p : R[T;T⁻¹]) :
+    laurentEval ε₂ (invert p) = laurentEval ε₁ p := by
+  rw [← AlgEquiv.coe_toAlgHom, ← AlgHom.comp_apply,
+    laurentEval_unique ε₁ ((laurentEval ε₂).comp invert.toAlgHom) (by simp [← hε])]
 
-omit [Module R N₁] [IsScalarTower R R[T;T⁻¹] N₁] in
-@[simp]
-private theorem laurentSpecializeRight_mk
-    (b : N₁ →ₛₗ[(invert (R := R)).toRingEquiv.toRingHom] N₂ →ₗ[R[T;T⁻¹]] R[T;T⁻¹]) (x : N₁)
-    (y : N₂) :
-    laurentSpecializeRight (ε₂ := ε₂) b x (LaurentSpecialization.mk ε₂ y) =
-      laurentEval ε₂ (b x y) := by
-  rw [laurentSpecializeRight, lift_mk, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
-    AlgHom.toLinearMap_apply]
+/-- A q-sesquilinear form evaluated at `q = ε₂`, as an `R`-bilinear form on the unspecialized
+modules. -/
+private noncomputable def laurentEvalForm
+    (b : N₁ →ₛₗ[(invert (R := R)).toRingEquiv.toRingHom] N₂ →ₗ[R[T;T⁻¹]] R[T;T⁻¹]) :
+    N₁ →ₗ[R] N₂ →ₗ[R] R :=
+  LinearMap.mk₂ R (fun x y => laurentEval ε₂ (b x y))
+    (fun x₁ x₂ y => by rw [LinearMap.map_add₂, map_add])
+    (fun r x y => by
+      rw [← algebraMap_smul (A := R[T;T⁻¹]) r x, LinearMap.map_smulₛₗ₂, smul_eq_mul, map_mul]
+      simp)
+    (fun x y₁ y₂ => by rw [map_add, map_add])
+    (fun r x y => by
+      rw [← algebraMap_smul (A := R[T;T⁻¹]) r y, map_smul, smul_eq_mul, map_mul,
+        AlgHom.commutes, Algebra.algebraMap_self, RingHom.id_apply, smul_eq_mul])
 
 /-- **The specialization of a q-sesquilinear form**, at `q = ε₁` in the first argument and at
 `q = ε₂` in the second, for units with `ε₁⁻¹ = ε₂`.  The form `b` is antilinear in its first
@@ -85,20 +88,25 @@ noncomputable def laurentSpecialize
     (b : N₁ →ₛₗ[(invert (R := R)).toRingEquiv.toRingHom] N₂ →ₗ[R[T;T⁻¹]] R[T;T⁻¹])
     (hε : ε₁⁻¹ = ε₂) :
     LaurentSpecialization ε₁ N₁ →ₗ[R] LaurentSpecialization ε₂ N₂ →ₗ[R] R :=
-  lift ε₁
-    { toFun := laurentSpecializeRight b
-      map_add' := fun x₁ x₂ => hom_ext ε₂ fun y => by
-        rw [LinearMap.add_apply, laurentSpecializeRight_mk, laurentSpecializeRight_mk,
-          laurentSpecializeRight_mk, LinearMap.map_add₂, map_add]
-      map_smul' := fun r x => hom_ext ε₂ fun y => by
-        rw [← algebraMap_smul (A := R[T;T⁻¹]) r x, LinearMap.smul_apply,
-          laurentSpecializeRight_mk, laurentSpecializeRight_mk, LinearMap.map_smulₛₗ₂]
-        simp [smul_eq_mul] }
-    fun x => hom_ext ε₂ fun y => by
-      have hq : laurentEval ε₂ ((invert (R := R)).toRingEquiv.toRingHom (T 1)) = ε₁ := by
-        simp [← hε]
-      simp only [LinearMap.coe_mk, AddHom.coe_mk, LinearMap.smul_apply, laurentSpecializeRight_mk]
-      rw [LinearMap.map_smulₛₗ₂, smul_eq_mul, map_mul, hq, smul_eq_mul]
+  ((laurentEvalForm (ε₂ := ε₂) b).liftQ₂ _ _
+    (fun z hz => by
+      rw [Submodule.restrictScalars_mem] at hz
+      refine Submodule.smul_induction_on hz (fun p hp x _ => ?_) fun x y hx hy => add_mem hx hy
+      refine LinearMap.mem_ker.mpr (LinearMap.ext fun y => ?_)
+      change laurentEval ε₂ (b (p • x) y) = 0
+      rw [LinearMap.map_smulₛₗ₂, smul_eq_mul, map_mul]
+      change laurentEval ε₂ (invert p) * _ = 0
+      rw [laurentEval_invert hε, RingHom.mem_ker.mp hp, zero_mul])
+    (fun z hz => by
+      rw [Submodule.restrictScalars_mem] at hz
+      refine Submodule.smul_induction_on hz (fun p hp y _ => ?_) fun x y hx hy => add_mem hx hy
+      refine LinearMap.mem_ker.mpr (LinearMap.ext fun x => ?_)
+      change laurentEval ε₂ (b x (p • y)) = 0
+      rw [map_smul, smul_eq_mul, map_mul, RingHom.mem_ker.mp hp, zero_mul])).compl₁₂
+    (Submodule.Quotient.restrictScalarsEquiv R
+      (RingHom.ker (laurentEval (R := R) ε₁) • ⊤ : Submodule R[T;T⁻¹] N₁)).symm.toLinearMap
+    (Submodule.Quotient.restrictScalarsEquiv R
+      (RingHom.ker (laurentEval (R := R) ε₂) • ⊤ : Submodule R[T;T⁻¹] N₂)).symm.toLinearMap
 
 /-- **The specialized form is the evaluated form**: on specialized elements its value is the value
 of the Laurent form evaluated at `ε₂`. -/
@@ -108,8 +116,10 @@ theorem laurentSpecialize_mk_mk
     (hε : ε₁⁻¹ = ε₂) (x : N₁) (y : N₂) :
     b.laurentSpecialize hε (LaurentSpecialization.mk ε₁ x) (LaurentSpecialization.mk ε₂ y) =
       laurentEval ε₂ (b x y) := by
-  rw [laurentSpecialize, lift_mk]
-  exact laurentSpecializeRight_mk b x y
+  rw [laurentSpecialize, LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+    mk_apply, mk_apply, Submodule.Quotient.restrictScalarsEquiv_symm_mk,
+    Submodule.Quotient.restrictScalarsEquiv_symm_mk, LinearMap.liftQ₂_mk]
+  rfl
 
 end LinearMap
 
