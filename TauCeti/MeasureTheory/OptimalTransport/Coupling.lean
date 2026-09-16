@@ -43,6 +43,8 @@ measures, and the probability case is packaged separately as a subtype of
   of measures, which is what mixtures of transport problems use;
 * `TauCeti.IsCoupling.prodProdProdComm` — exchanging the two middle coordinates of a product of
   two couplings couples the two product measures;
+* `TauCeti.IsCoupling.map_prod` — a coupling run alongside an independent sample, with measurable
+  maps applied to both coordinates, couples the two pushed-forward products;
 * `TauCeti.exists_isCoupling_iff` — a finite measure and any other measure admit a coupling
   exactly when they have the same total mass, the witness being their normalised product;
 * `TauCeti.isCoupling_map_swap_iff` and `TauCeti.isCoupling_map_prodMap_iff` —
@@ -273,6 +275,25 @@ protected theorem prodProdProdComm {π' : Measure (X' × Y')} {μ' : Measure X'}
       Measure.snd_map_prodMk hX hY
     rw [h, ← Measure.map_prod_map π π' measurable_snd measurable_snd]
     exact congrArg₂ Measure.prod hπ.snd_eq hπ'.snd_eq
+
+/-- **Running a coupling alongside an independent sample.** If `π` couples `μ` and `ν`, then
+sampling `(x, y) ∼ π` and an independent `z ∼ η` and applying `f (·, z)` and `g (·, z)` to the two
+coordinates couples the pushforwards of `μ ⊗ η` along `f` and of `ν ⊗ η` along `g`. -/
+protected theorem map_prod {H : Type*} [MeasurableSpace H] (hπ : IsCoupling π μ ν) [SFinite π]
+    (η : Measure H) [SFinite η] {f : X × H → X'} {g : Y × H → Y'} (hf : Measurable f)
+    (hg : Measurable g) :
+    IsCoupling ((π.prod η).map fun w ↦ (f (w.1.1, w.2), g (w.1.2, w.2)))
+      ((μ.prod η).map f) ((ν.prod η).map g) := by
+  -- Pair `π` with the diagonal plan of `η`, rearrange, and push forward coordinatewise.
+  have hdiag : Measurable fun z : H ↦ (z, z) := measurable_id.prodMk measurable_id
+  have hη : IsCoupling (η.map fun z ↦ (z, z)) η η :=
+    ⟨by rw [Measure.fst, Measure.map_map measurable_fst hdiag]; exact Measure.map_id,
+      by rw [Measure.snd, Measure.map_map measurable_snd hdiag]; exact Measure.map_id⟩
+  have h := (hπ.prodProdProdComm hη).map hf hg
+  have hprod : π.prod (η.map fun z ↦ (z, z)) = (π.prod η).map (Prod.map id fun z ↦ (z, z)) := by
+    simpa only [Measure.map_id] using Measure.map_prod_map π η measurable_id hdiag
+  rwa [hprod, Measure.map_map (by fun_prop) (by fun_prop),
+    Measure.map_map (by fun_prop) (by fun_prop)] at h
 
 end IsCoupling
 

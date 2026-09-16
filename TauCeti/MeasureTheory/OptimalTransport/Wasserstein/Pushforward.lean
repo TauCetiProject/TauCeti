@@ -36,6 +36,8 @@ spaces.
   Wasserstein spaces.
 * `TauCeti.WassersteinSpace.mapIsometryEquiv` lifts measurable isometric equivalences.
 * `TauCeti.wassersteinEDist_map_eq` gives invariance under a measurable isometric equivalence.
+* `TauCeti.wassersteinEDist_map_prod_le` shows that a common random isometry does not increase the
+  Wasserstein distance.
 
 ## References
 
@@ -245,6 +247,45 @@ theorem hasFiniteMoment_map_iff
   exact h.map hdX e.symm.measurable ei.symm.isometry.lipschitzWith
 
 end Isometry
+
+section RandomIsometry
+
+variable {H : Type w} [MeasurableSpace H]
+
+/-- **A common random isometry does not increase the Wasserstein distance.** If every section
+`f (·, z)` is an isometry and `η` is a probability law, then pushing `μ ⊗ η` and `ν ⊗ η` forward
+along `f` does not increase the `p`-Wasserstein distance, for every exponent `p`.
+
+The source `μ` is σ-finite so that every coupling of `μ` is σ-finite as well, which is what the
+product with `η` needs; no finiteness is asked of `ν`. -/
+theorem wassersteinEDist_map_prod_le (hdY : Measurable fun z : Y × Y ↦ edist z.1 z.2)
+    {f : X × H → Y} (hf : Measurable f) (hfi : ∀ z, Isometry fun x ↦ f (x, z))
+    (μ ν : Measure X) [SigmaFinite μ] (η : Measure H) [IsProbabilityMeasure η] :
+    wassersteinEDist p ((μ.prod η).map f) ((ν.prod η).map f) ≤ wassersteinEDist p μ ν := by
+  obtain ⟨z₀⟩ := nonempty_of_isProbabilityMeasure η
+  -- The ground distance of `X` is the ground distance of `Y` read through the isometry `f (·, z₀)`.
+  have hdX : Measurable fun z : X × X ↦ edist z.1 z.2 := by
+    have hm : Measurable fun z : X × X ↦ (f (z.1, z₀), f (z.2, z₀)) := by fun_prop
+    convert hdY.comp hm using 1
+    exact funext fun z ↦ ((hfi z₀).edist_eq z.1 z.2).symm
+  refine le_wassersteinEDist fun π hπ ↦ ?_
+  -- A coupling of `μ` has `μ` as its first marginal, so it inherits σ-finiteness from `μ`.
+  have : SigmaFinite π := SigmaFinite.of_map π measurable_fst.aemeasurable
+    (by rw [← Measure.fst, hπ.fst_eq]; infer_instance)
+  have hg : Measurable fun w : (X × X) × H ↦ (f (w.1.1, w.2), f (w.1.2, w.2)) := by fun_prop
+  calc wassersteinEDist p ((μ.prod η).map f) ((ν.prod η).map f)
+      ≤ eLpNorm (fun z : Y × Y ↦ edist z.1 z.2) p
+          ((π.prod η).map fun w ↦ (f (w.1.1, w.2), f (w.1.2, w.2))) :=
+        wassersteinEDist_le (hπ.map_prod η hf hf) p
+    _ = eLpNorm (fun w : (X × X) × H ↦ edist w.1.1 w.1.2) p (π.prod η) := by
+        rw [eLpNorm_map_measure hdY.aestronglyMeasurable hg.aemeasurable]
+        exact eLpNorm_congr_ae (.of_forall fun w ↦ (hfi w.2).edist_eq w.1.1 w.1.2)
+    _ = eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π :=
+        eLpNorm_comp_measurePreserving (g := fun z : X × X ↦ edist z.1 z.2) (f := Prod.fst)
+          hdX.aestronglyMeasurable
+          ⟨measurable_fst, by rw [Measure.map_fst_prod, measure_univ, one_smul]⟩
+
+end RandomIsometry
 
 end PseudoEMetric
 
