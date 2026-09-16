@@ -22,10 +22,11 @@ for every `k : ℕ`, with `n_z(γ)` the generalized winding number. The case `k 
 `f(z) · n_z(γ) = (2πi)⁻¹ ∮_γ f(w)/(w − z) dw` that accompanies the homology Cauchy theorem,
 and the general `k` is its derivative form.
 
-The proof specializes `TauCeti.Contour.Cycle.cauchyIntegralFormula_iteratedDeriv_nullHomologous`
-to the cycle with the single generator `PiecewiseC1ClosedCurve.of γ hγ hclosed`. The comparison
-lemmas for this generator identify its integral, winding number, trace, and null-homology with
-those of the original parametrized curve, preserving the orientation of `a..b`.
+This is the single-curve case of
+`TauCeti.Contour.Cycle.cauchyIntegralFormula_iteratedDeriv_nullHomologous`:
+a closed curve is a cycle with one component and multiplicity one. The formulas here use the
+parametrization directly, so applications can express the contour integral as an interval integral
+over the oriented interval `a..b`.
 
 ## Main results
 
@@ -84,6 +85,7 @@ theorem cauchyIntegralFormula_iteratedDeriv_nullHomologous {f : ℂ → ℂ} {U 
     ∫ t in a..b, deriv γ t • (f (γ t) / (γ t - z) ^ (k + 1))
       = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b z *
           (iteratedDeriv k f z / (k.factorial : ℂ)) := by
+  -- The raw-curve comparison lemmas identify the single-generator cycle with the given curve.
   simpa only [Cycle.integral_of_raw, Cycle.windingNumber_of_raw] using
     Cycle.cauchyIntegralFormula_iteratedDeriv_nullHomologous hU hf
       ((Cycle.isIn_of_raw_iff γ hγ hclosed U).2 hγU)
