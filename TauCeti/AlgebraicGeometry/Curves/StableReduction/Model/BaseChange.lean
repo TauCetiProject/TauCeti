@@ -21,6 +21,9 @@ The construction retains the chosen generic-fibre identification, so it can be i
 comparing models after a common finite extension.
 -/
 
+-- Source: the Layer 0 model base-change functor target in the
+-- [StableReduction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/StableReduction/README.md#layer-0-relative-curves-and-extensions-of-dvrs).
+
 public section
 
 noncomputable section
