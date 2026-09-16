@@ -48,10 +48,6 @@ of the symmetric matrices.
 
 * M. L. Eaton, *Multivariate Statistics: A Vector Space Approach*, Chapter 5.
 * R. J. Muirhead, *Aspects of Multivariate Statistical Theory*, Section 2.1.
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 6, item 3 (the cone integral
-  characterizing `multivariateGamma`) and item 4, whose nonsingular real-degree Wishart density
-  is normalized by `2 ^ (n * p / 2) * (det S) ^ (n / 2) * multivariateGamma p (n / 2)`; the scale
-  identities below are exactly how that constant depends on `S`.
 -/
 
 public section
@@ -156,21 +152,20 @@ private theorem integrand_symmetricCongruence {C : Matrix.GeneralLinearGroup (Fi
   rw [det_coe_symmetricCongruence hC, trace_inv_mul_coe_symmetricCongruence hC,
     Real.mul_rpow hT.det_pos.le hA.det_pos.le, mul_assoc]
 
-/-- Doubling the scale halves the trace against its inverse. -/
-private theorem trace_two_smul_inv_mul (hS : S.PosDef)
-    {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)} :
-    ((((2 : ℝ) • S)⁻¹ * (A : Matrix (Fin p) (Fin p) ℝ)).trace) =
+/-- The halved Wishart integrand with scale `S` is the plain integrand for the doubled scale
+`2 • S`: doubling the scale halves the trace against its inverse. -/
+private theorem integrand_two_smul (hS : S.PosDef) (a : ℝ)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
+        exp (-(S⁻¹ * (A : Matrix (Fin p) (Fin p) ℝ)).trace / 2) =
+      (A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
+        exp (-(((2 : ℝ) • S)⁻¹ * (A : Matrix (Fin p) (Fin p) ℝ)).trace) := by
+  have htrace : ((((2 : ℝ) • S)⁻¹ * (A : Matrix (Fin p) (Fin p) ℝ)).trace) =
       (S⁻¹ * (A : Matrix (Fin p) (Fin p) ℝ)).trace / 2 := by
-  rw [Matrix.inv_smul S 2 (isUnit_iff_ne_zero.2 hS.det_pos.ne'), invOf_eq_inv, Matrix.smul_mul,
-    Matrix.trace_smul, smul_eq_mul]
-  ring
-
-/-- Doubling the scale multiplies the determinant power by `2 ^ (p * a)`. -/
-private theorem det_two_smul_rpow (hS : S.PosDef) (a : ℝ) :
-    ((2 : ℝ) • S).det ^ a = 2 ^ ((p : ℝ) * a) * S.det ^ a := by
-  rw [Matrix.det_smul, Fintype.card_fin,
-    Real.mul_rpow (by positivity) hS.det_pos.le, ← Real.rpow_natCast (2 : ℝ) p,
-    ← Real.rpow_mul (by norm_num)]
+    rw [Matrix.inv_smul S 2 (isUnit_iff_ne_zero.2 hS.det_pos.ne'), invOf_eq_inv, Matrix.smul_mul,
+      Matrix.trace_smul, smul_eq_mul]
+    ring
+  rw [htrace, neg_div]
 
 /-- **The scale matrix in the cone integral.** For a positive-definite `T`, weighting the
 exponential in the cone integral by the inverse scale `T⁻¹` multiplies the integral by
@@ -247,10 +242,11 @@ theorem lintegral_det_rpow_mul_exp_neg_trace_inv_mul_div_two (hS : S.PosDef) (a 
             exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace)) ∂symmetricLebesgue p := by
   have h2 : (0 : ℝ) < 2 := by norm_num
   have h := lintegral_det_rpow_mul_exp_neg_trace_inv_mul (hS.smul h2) a
-  rw [det_two_smul_rpow hS a] at h
+  rw [Matrix.det_smul, Fintype.card_fin, Real.mul_rpow (by positivity) hS.det_pos.le,
+    ← Real.rpow_natCast (2 : ℝ) p, ← Real.rpow_mul (by norm_num)] at h
   rw [← h]
   exact setLIntegral_congr_fun (measurableSet_posDefMatrix p)
-    fun A _ => by rw [trace_two_smul_inv_mul hS, neg_div]
+    fun A _ => by rw [integrand_two_smul hS a A]
 
 /-- The Bochner form of
 `Matrix.PosDef.lintegral_det_rpow_mul_exp_neg_trace_inv_mul_div_two`. -/
@@ -266,9 +262,10 @@ theorem integral_det_rpow_mul_exp_neg_trace_inv_mul_div_two (hS : S.PosDef) (a :
             exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace) ∂symmetricLebesgue p := by
   have h2 : (0 : ℝ) < 2 := by norm_num
   have h := integral_det_rpow_mul_exp_neg_trace_inv_mul (hS.smul h2) a
-  rw [det_two_smul_rpow hS a] at h
+  rw [Matrix.det_smul, Fintype.card_fin, Real.mul_rpow (by positivity) hS.det_pos.le,
+    ← Real.rpow_natCast (2 : ℝ) p, ← Real.rpow_mul (by norm_num)] at h
   rw [← h]
   exact setIntegral_congr_fun (measurableSet_posDefMatrix p)
-    fun A _ => by rw [trace_two_smul_inv_mul hS, neg_div]
+    fun A _ => by rw [integrand_two_smul hS a A]
 
 end Matrix.PosDef

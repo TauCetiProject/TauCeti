@@ -46,9 +46,6 @@ the invertible case as a corollary.
 
 * R. J. Muirhead, *Aspects of Multivariate Statistical Theory*, Wiley, 1982, chapter 2
   (the congruence Jacobian for symmetric matrices and the induced change of variables).
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 6, item 1, which asks for the
-  congruence determinant and the pushforward of `symmetricLebesgue` recorded here, and for the
-  separate change of variables on the positive-definite cone.
 -/
 
 public section
