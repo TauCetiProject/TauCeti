@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Basic
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Cholesky
 public import Mathlib.Probability.Distributions.Gaussian.Real
 
+import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Cholesky
 import TauCeti.MeasureTheory.Measure.PiWithDensity
 
 /-!
@@ -122,6 +123,8 @@ private theorem bartlettCoordinateMeasure_eq_withDensity (n : ℝ) (ij : lowerTr
     by_cases ht : t ∈ Ioi (0 : ℝ) <;> simp [ht]
   · rw [gaussianReal_of_var_ne_zero 0 one_ne_zero, gaussianPDF_def]
 
+/-- Every Bartlett coordinate measure is sigma-finite, enabling their product over the
+lower-triangular coordinates to be formed with `Measure.pi`. -/
 instance (n : ℝ) (ij : lowerTriangle p) : SigmaFinite (bartlettCoordinateMeasure n ij) := by
   rw [bartlettCoordinateMeasure_eq_withDensity]
   infer_instance
@@ -170,50 +173,36 @@ private theorem prod_bartlettCoordinatePDFReal {x : lowerTriangle p → ℝ}
     · have hij : ij = ⟨(ij.1.1, ij.1.1), le_rfl⟩ := Subtype.ext (Prod.ext rfl h.symm)
       rw [Set.indicator_of_mem (by rw [hij]; exact hpos ij.1.1), ← hij]
     · simp [gaussianPDFReal_def]
-  -- Each diagonal coordinate carries the determinant power and its Jacobian power together.
-  have hkey : ∀ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.1) *
-      x ⟨(i, i), le_rfl⟩ ^ (n - p - 1) = x ⟨(i, i), le_rfl⟩ ^ (n - i.1 - 1) := by
-    intro i
-    rw [← Real.rpow_natCast (x ⟨(i, i), le_rfl⟩) (p - i.1), ← Real.rpow_add (hpos i),
-      Nat.cast_sub i.2.le]
-    congr 1
-    ring
-  have hnn : ∀ i ∈ (Finset.univ : Finset (Fin p)), (0 : ℝ) ≤ x ⟨(i, i), le_rfl⟩ :=
-    fun i _ ↦ (hpos i).le
-  have hdet : (lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).det ^ ((n - p - 1) / 2) =
-      ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (n - p - 1) := by
-    rw [Matrix.det_mul, Matrix.det_transpose, det_lowerTriangleMatrix, ← pow_two,
-      ← Real.rpow_natCast (∏ i : Fin p, x ⟨(i, i), le_rfl⟩) 2,
-      ← Real.rpow_mul (Finset.prod_nonneg hnn), ← Real.finsetProd_rpow _ _ hnn]
-    congr 1
-    funext i
-    rw [Nat.cast_ofNat, mul_div_cancel₀ (n - p - 1) two_ne_zero]
   have htwo : (2 : ℝ) ^ (n * p / 2) = ∏ _i : Fin p, (2 : ℝ) ^ (n / 2) := by
     rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, ← Real.rpow_natCast,
       ← Real.rpow_mul two_pos.le]
     ring_nf
-  have hexp : ∏ ij : lowerTriangle p, exp (-x ij ^ 2 / 2) =
-      exp (-(lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).trace / 2) := by
-    rw [← Real.exp_sum, trace_lowerTriangleMatrix_mul_transpose, neg_div, Finset.sum_div,
-      ← Finset.sum_neg_distrib]
-    simp only [neg_div]
-  rw [Finset.prod_congr rfl fun ij _ ↦ hfac ij, Finset.prod_mul_distrib, hexp,
-    prod_lowerTriangle_ite
-      (fun i ↦ (2 : ℝ) ^ (1 - (n - i.1) / 2) / Real.Gamma ((n - i.1) / 2) *
-        x ⟨(i, i), le_rfl⟩ ^ (n - i.1 - 1)) fun _ ↦ (√(2 * π))⁻¹,
-    hdet, multivariateGamma_eq_prod, htwo]
-  have hrow : ∀ i : Fin p,
-      (2 : ℝ) ^ (1 - (n - i.1) / 2) / Real.Gamma ((n - i.1) / 2) *
-          x ⟨(i, i), le_rfl⟩ ^ (n - i.1 - 1) * (√(2 * π))⁻¹ ^ i.1 =
-        x ⟨(i, i), le_rfl⟩ ^ (n - i.1 - 1) * 2 /
-          (2 ^ (n / 2) * π ^ ((i.1 : ℝ) / 2) * Real.Gamma (n / 2 - (i.1 : ℝ) / 2)) := by
-    intro i
-    rw [mul_right_comm, bartlett_row_const]
+  have hconst :
+      (∏ i : Fin p,
+          ((2 : ℝ) ^ (1 - (n - i.1) / 2) / Real.Gamma ((n - i.1) / 2)) *
+            (√(2 * π))⁻¹ ^ i.1) =
+        2 ^ p / (2 ^ (n * p / 2) * multivariateGamma p (n / 2)) := by
+    rw [Finset.prod_congr rfl fun i _ ↦ by simpa using bartlett_row_const n i.1]
+    simp only [Finset.prod_div_distrib, Finset.prod_mul_distrib, Finset.prod_const,
+      Finset.card_univ, Fintype.card_fin]
+    have htwo' : ((2 : ℝ) ^ (n / 2)) ^ p = 2 ^ (n * p / 2) := by
+      simpa [Finset.prod_const, Finset.card_univ, Fintype.card_fin] using htwo.symm
+    rw [htwo', multivariateGamma_eq_prod, Finset.prod_mul_distrib]
     ring
-  rw [Finset.prod_congr rfl fun i _ ↦ hrow i]
-  simp only [Finset.prod_div_distrib, Finset.prod_mul_distrib, Finset.prod_const,
-    Finset.card_univ, Fintype.card_fin]
-  rw [← Finset.prod_congr rfl fun i _ ↦ hkey i, Finset.prod_mul_distrib]
+  have hcore := prod_lowerTriangle_diag_rpow_mul_exp_neg_sq x hpos ((n - p - 1) / 2)
+    (1 / 2) (fun i ↦ (2 : ℝ) ^ (1 - (n - i.1) / 2) /
+      Real.Gamma ((n - i.1) / 2)) (√(2 * π))⁻¹
+  have hexponent : ∀ i : Fin p,
+      2 * ((n - p - 1) / 2) + p - ((i : ℕ) : ℝ) = n - i.1 - 1 := by
+    intro i
+    ring
+  have hexp (t : ℝ) : -(1 / 2 : ℝ) * t ^ 2 = -t ^ 2 / 2 := by ring
+  have htrace : -(1 / 2 : ℝ) *
+      (lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).trace =
+        -(lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).trace / 2 := by ring
+  simp_rw [hexponent, hexp] at hcore
+  rw [htrace] at hcore
+  rw [Finset.prod_congr rfl fun ij _ ↦ hfac ij, hcore, hconst]
   ring
 
 /-- For `(p : ℝ) - 1 < n` every chi coordinate has positive degrees of freedom, so the coordinate

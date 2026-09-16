@@ -70,6 +70,55 @@ private theorem measurableSet_posDiagCoordinates : MeasurableSet (posDiagCoordin
   exact MeasurableSet.iInter fun i ↦
     measurableSet_lt measurable_const (measurable_pi_apply (⟨(i, i), le_rfl⟩ : lowerTriangle p))
 
+/-- The common algebraic core of Cholesky-coordinate density factorizations. A determinant power,
+the Cholesky diagonal powers, and an exponential trace factor split into one factor per lower
+triangular coordinate; `c` and `b` supply the diagonal and off-diagonal constants. -/
+theorem prod_lowerTriangle_diag_rpow_mul_exp_neg_sq (x : lowerTriangle p → ℝ)
+    (hpos : ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩) (d q : ℝ) (c : Fin p → ℝ) (b : ℝ) :
+    ∏ ij : lowerTriangle p,
+        (if ij.1.1 = ij.1.2 then
+            c ij.1.1 * x ⟨(ij.1.1, ij.1.1), le_rfl⟩ ^
+              (2 * d + p - ((ij.1.1 : ℕ) : ℝ))
+          else b) * exp (-q * x ij ^ 2) =
+      (∏ i : Fin p, c i * b ^ (i : ℕ)) *
+        ((lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).det ^ d *
+          (∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ))) *
+            exp (-q * (lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).trace)) := by
+  classical
+  have hnn : ∀ i ∈ (Finset.univ : Finset (Fin p)), (0 : ℝ) ≤ x ⟨(i, i), le_rfl⟩ :=
+    fun i _ ↦ (hpos i).le
+  have hkey : ∀ i : Fin p,
+      x ⟨(i, i), le_rfl⟩ ^ (2 * d) * x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ)) =
+        x ⟨(i, i), le_rfl⟩ ^ (2 * d + p - ((i : ℕ) : ℝ)) := by
+    intro i
+    rw [← Real.rpow_natCast (x ⟨(i, i), le_rfl⟩) (p - (i : ℕ)),
+      ← Real.rpow_add (hpos i), Nat.cast_sub i.2.le]
+    congr 1
+    ring
+  have hdet : (lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).det ^ d =
+      ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (2 * d) := by
+    rw [Matrix.det_mul, Matrix.det_transpose, det_lowerTriangleMatrix, ← pow_two,
+      ← Real.rpow_natCast (∏ i : Fin p, x ⟨(i, i), le_rfl⟩) 2,
+      ← Real.rpow_mul (Finset.prod_nonneg hnn), ← Real.finsetProd_rpow _ _ hnn]
+    refine Finset.prod_congr rfl fun i _ ↦ ?_
+    congr 1
+  have hexp : ∏ ij : lowerTriangle p, exp (-q * x ij ^ 2) =
+      exp (-q * (lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).trace) := by
+    rw [← Real.exp_sum, trace_lowerTriangleMatrix_mul_transpose, ← Finset.mul_sum]
+  rw [Finset.prod_mul_distrib, hexp,
+    prod_lowerTriangle_ite
+      (fun i ↦ c i * x ⟨(i, i), le_rfl⟩ ^ (2 * d + p - ((i : ℕ) : ℝ))) fun _ ↦ b,
+    hdet]
+  simp_rw [mul_assoc, ← hkey]
+  rw [Finset.prod_congr rfl fun i _ ↦ show
+      c i * (x ⟨(i, i), le_rfl⟩ ^ (2 * d) *
+          x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ)) * b ^ (i : ℕ)) =
+        (c i * b ^ (i : ℕ)) *
+          (x ⟨(i, i), le_rfl⟩ ^ (2 * d) *
+            x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ))) by ring,
+    Finset.prod_mul_distrib, Finset.prod_mul_distrib, Finset.prod_mul_distrib]
+  ring
+
 /-- The one-dimensional factor of the integrand attached to the coordinate `ij`.  A diagonal
 coordinate contributes a Gamma integrand, restricted to the positive half-line because the
 region constrains it; a strictly lower coordinate contributes a Gaussian integrand. -/
@@ -141,46 +190,18 @@ private theorem indicator_eq_prod_choleskyFactor (a : ℝ) (x : lowerTriangle p 
       · have hij : ij = ⟨(ij.1.1, ij.1.1), le_rfl⟩ := Subtype.ext (Prod.ext rfl h.symm)
         rw [Set.indicator_of_mem (by rw [hij]; exact hpos ij.1.1), ← hij]
       · ring
-    have hnn : ∀ i ∈ (Finset.univ : Finset (Fin p)), (0 : ℝ) ≤ x ⟨(i, i), le_rfl⟩ :=
-      fun i _ ↦ (hpos i).le
-    -- Each diagonal coordinate carries the determinant power and its Jacobian power together.
-    have hkey : ∀ i : Fin p,
-        x ⟨(i, i), le_rfl⟩ ^ (((2 : ℕ) : ℝ) * (a - ((p : ℝ) + 1) / 2)) *
-            x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ)) =
-          x ⟨(i, i), le_rfl⟩ ^ (2 * a - ((i : ℕ) : ℝ) - 1) := by
+    have hcore := prod_lowerTriangle_diag_rpow_mul_exp_neg_sq x hpos
+      (a - ((p : ℝ) + 1) / 2) 1 (fun _ ↦ 2) 1
+    have hexponent : ∀ i : Fin p,
+        2 * (a - ((p : ℝ) + 1) / 2) + p - ((i : ℕ) : ℝ) =
+          2 * a - ((i : ℕ) : ℝ) - 1 := by
       intro i
-      rw [← Real.rpow_natCast (x ⟨(i, i), le_rfl⟩) (p - (i : ℕ)), ← Real.rpow_add (hpos i),
-        Nat.cast_sub i.2.le]
-      congr 1
-      push_cast
       ring
-    have hdet : (lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).det ^
-          (a - ((p : ℝ) + 1) / 2) *
-            (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ))) =
-          ∏ i : Fin p, 2 * x ⟨(i, i), le_rfl⟩ ^ (2 * a - ((i : ℕ) : ℝ) - 1) := by
-      calc (lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).det ^
-              (a - ((p : ℝ) + 1) / 2) *
-            (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ)))
-          = (∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (((2 : ℕ) : ℝ) * (a - ((p : ℝ) + 1) / 2))) *
-              (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ))) := by
-            rw [Matrix.det_mul, Matrix.det_transpose, det_lowerTriangleMatrix, ← pow_two,
-              ← Real.rpow_natCast (∏ i : Fin p, x ⟨(i, i), le_rfl⟩) 2,
-              ← Real.rpow_mul (Finset.prod_nonneg hnn), ← Real.finsetProd_rpow _ _ hnn]
-        _ = 2 ^ p * ∏ i : Fin p,
-              x ⟨(i, i), le_rfl⟩ ^ (((2 : ℕ) : ℝ) * (a - ((p : ℝ) + 1) / 2)) *
-                x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ)) := by
-            rw [Finset.prod_mul_distrib]; ring
-        _ = 2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (2 * a - ((i : ℕ) : ℝ) - 1) := by
-            rw [Finset.prod_congr rfl fun i _ ↦ hkey i]
-        _ = ∏ i : Fin p, 2 * x ⟨(i, i), le_rfl⟩ ^ (2 * a - ((i : ℕ) : ℝ) - 1) := by
-            rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
-    rw [Set.indicator_of_mem hx, Finset.prod_congr rfl fun ij _ ↦ hfac ij,
-      Finset.prod_mul_distrib, ← Real.exp_sum, Finset.sum_neg_distrib,
-      ← trace_lowerTriangleMatrix_mul_transpose,
-      prod_lowerTriangle_ite
-        (fun i ↦ 2 * x ⟨(i, i), le_rfl⟩ ^ (2 * a - ((i : ℕ) : ℝ) - 1)) fun _ ↦ 1]
-    simp only [one_pow, mul_one]
-    rw [← hdet]
+    simp_rw [hexponent] at hcore
+    simp only [neg_one_mul, one_pow, mul_one] at hcore
+    rw [Set.indicator_of_mem hx, Finset.prod_congr rfl fun ij _ ↦ hfac ij]
+    rw [hcore]
+    simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
     ring
   · obtain ⟨i, hi⟩ := not_forall.1 hx
     rw [Set.indicator_of_notMem hx]
