@@ -250,19 +250,15 @@ theorem IsRightAlmostSplit.iso_comp (hf : IsRightAlmostSplit f) {X' : C} (e : X'
 split.** -/
 theorem IsLeftAlmostSplit.iso_comp (hf : IsLeftAlmostSplit f) {X' : C} (e : X' ≅ X) :
     IsLeftAlmostSplit (e.hom ≫ f) := by
-  refine ⟨fun _ => hf.not_isSplitMono (isSplitMono_of_isSplitMono_iso_comp e f), fun Z g hg => ?_⟩
-  have hg' : ¬ IsSplitMono (e.symm.hom ≫ g) :=
-    fun _ => hg (isSplitMono_of_isSplitMono_iso_comp e.symm g)
-  obtain ⟨h, hh⟩ := hf.factors Z (e.symm.hom ≫ g) hg'
-  exact ⟨h, by simp [hh]⟩
+  rw [← isRightAlmostSplit_op_iff, op_comp, ← Iso.op_hom]
+  exact (isRightAlmostSplit_op_iff.mpr hf).comp_iso e.op
 
 /-- **Postcomposing a left almost split morphism with an isomorphism keeps it left almost
 split.** -/
 theorem IsLeftAlmostSplit.comp_iso (hf : IsLeftAlmostSplit f) {Y' : C} (e : Y ≅ Y') :
     IsLeftAlmostSplit (f ≫ e.hom) := by
-  refine ⟨fun _ => hf.not_isSplitMono (isSplitMono_of_isSplitMono_comp f e.hom), fun Z g hg => ?_⟩
-  obtain ⟨h, hh⟩ := hf.factors Z g hg
-  exact ⟨e.inv ≫ h, by simp [hh]⟩
+  rw [← isRightAlmostSplit_op_iff, op_comp, ← Iso.op_hom]
+  exact (isRightAlmostSplit_op_iff.mpr hf).iso_comp e.op
 
 /-- Being right almost split is invariant under an isomorphism of the target. -/
 @[simp]
@@ -432,38 +428,10 @@ theorem IsRightAlmostSplit.indecomposable (hf : IsRightAlmostSplit f) : Indecomp
 /-- **The source of a left almost split morphism is indecomposable**, dually to
 `TauCeti.IsRightAlmostSplit.indecomposable`. -/
 theorem IsLeftAlmostSplit.indecomposable (hf : IsLeftAlmostSplit f) : Indecomposable X := by
-  refine ⟨fun hX => hf.not_isSplitMono (IsSplitMono.mk' ⟨0, hX.eq_of_src _ _⟩), fun A B e => ?_⟩
-  by_contra hcon
-  rw [not_or] at hcon
-  obtain ⟨hA, hB⟩ := hcon
-  -- Dually, a retraction of a projection `X ⟶ A` sections `A ⊞ B` off `A` along `biprod.fst`,
-  -- and `biprod.inr ≫ biprod.fst = 0` then collapses `B`.
-  have hpA : ¬ IsSplitMono (e.hom ≫ biprod.fst : X ⟶ A) := by
-    intro h
-    obtain ⟨r, hr⟩ := h.exists_splitMono.some
-    have h₁ : biprod.fst ≫ r = e.inv := by
-      rw [← cancel_epi e.hom, e.hom_inv_id, ← Category.assoc]; exact hr
-    refine hB ?_
-    rw [IsZero.iff_id_eq_zero]
-    calc 𝟙 B = biprod.inr ≫ ((biprod.fst ≫ r) ≫ e.hom) ≫ biprod.snd := by
-          rw [h₁, e.inv_hom_id, Category.id_comp, biprod.inr_snd]
-      _ = 0 := by simp
-  have hpB : ¬ IsSplitMono (e.hom ≫ biprod.snd : X ⟶ B) := by
-    intro h
-    obtain ⟨r, hr⟩ := h.exists_splitMono.some
-    have h₁ : biprod.snd ≫ r = e.inv := by
-      rw [← cancel_epi e.hom, e.hom_inv_id, ← Category.assoc]; exact hr
-    refine hA ?_
-    rw [IsZero.iff_id_eq_zero]
-    calc 𝟙 A = biprod.inl ≫ ((biprod.snd ≫ r) ≫ e.hom) ≫ biprod.fst := by
-          rw [h₁, e.inv_hom_id, Category.id_comp, biprod.inl_fst]
-      _ = 0 := by simp
-  obtain ⟨u, hu⟩ := hf.factors A _ hpA
-  obtain ⟨v, hv⟩ := hf.factors B _ hpB
-  refine hf.not_isSplitMono (IsSplitMono.mk' ⟨biprod.lift u v ≫ e.inv, ?_⟩)
-  have key : f ≫ biprod.lift u v = e.hom := by
-    apply biprod.hom_ext <;> simp [hu, hv]
-  rw [← Category.assoc, key, e.hom_inv_id]
+  have h := (isRightAlmostSplit_op_iff.mpr hf).indecomposable
+  refine ⟨fun hX => h.1 hX.op, fun A B e => ?_⟩
+  exact (h.2 (Opposite.op A) (Opposite.op B)
+    (e.op.symm ≪≫ biprod.opIso A B)).imp IsZero.unop IsZero.unop
 
 end Indecomposable
 

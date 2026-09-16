@@ -30,10 +30,6 @@ then `I = J`.
 The isomorphism-invariance API follows the formal organization of
 `TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Isomorphism` and
 `TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Isomorphism`.
-
-This supplies the Hopf-coordinate maximal-torus predicate required by Layer 7, "Borel subgroups,
-maximal tori, and their conjugacy", of the ReductiveGroups roadmap. Existence and conjugacy of
-maximal tori remain to be proved.
 -/
 
 public section
@@ -88,6 +84,7 @@ theorem comapOfIso (hI : IsMaximalTorus k K.obj I) (e : H ≅ K) :
   exact FiniteTypeCommHopfAlgCat.minimal_quotientProperty_comapOfIso
     (torusCommHopfAlgProperty k) I hI e
 
+open FiniteTypeCommHopfAlgCat in
 /-- Maximal-torus status is invariant under pulling the defining ideal back across an ambient
 Hopf-algebra isomorphism. -/
 theorem comapOfIso_iff (e : H ≅ K) (I : HopfIdeal k K.obj) :
@@ -97,28 +94,9 @@ theorem comapOfIso_iff (e : H ≅ K) (I : HopfIdeal k K.obj) :
       IsMaximalTorus k K.obj I := by
   constructor
   · intro hI
-    have hback := hI.comapOfIso e.symm
-    let e' := (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} k)
-      (_root_.CommHopfAlgCat.{u} k)).mapIso e
-    let e'' := _root_.CommHopfAlgCat.ofIso e'
-    -- `toBialgHom` for a finite-type morphism is definitionally the bialgebra morphism of
-    -- its image under this forgetful functor. No propositional compatibility lemma exists
-    -- for this reducible full-subcategory wrapper.
-    change IsMaximalTorus k K.obj
-      (HopfIdeal.comapOfSurjective
-        (I.comapOfSurjective e''.toBialgHom
-          (by simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
-            EquivLike.surjective e''))
-        e''.symm.toBialgHom
-          (by simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
-            EquivLike.surjective e''.symm)) at hback
-    have he := HopfIdeal.comapOfSurjective_bialgEquiv_symm_apply I e''.symm
-    have he_symm_symm : e''.symm.symm = e'' := by
-      ext
-      rfl
-    simp only [he_symm_symm] at he
-    rw [he] at hback
-    exact hback
+    simpa only [HopfIdeal.comapOfSurjective_comapOfSurjective, ← toBialgHom_comp,
+      Iso.symm_hom, e.inv_hom_id, toBialgHom_id, HopfIdeal.comapOfSurjective_id]
+      using hI.comapOfIso e.symm
   · exact fun hI ↦ hI.comapOfIso e
 
 end IsMaximalTorus

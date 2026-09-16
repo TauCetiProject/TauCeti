@@ -28,6 +28,7 @@ Witt--Grothendieck ring.
 
 ## Main results
 
+* `TauCeti.RegularFormPresentation.prod_tmul`: the weight product of a tensor presentation.
 * `TauCeti.RegularFormClass.mk_mul_mk`: multiplication computes by tensoring presentations.
 * `TauCeti.formClass_tmul`: the class of a tensor product is the product of the classes.
 * `TauCeti.RegularFormClass.rank_mul`: rank is multiplicative.
@@ -69,6 +70,20 @@ theorem RegularFormPresentation.tmul_apply (p q : RegularFormPresentation K)
       (Fin.cast (RegularFormPresentation.fst_tmul p q).symm (finProdFinEquiv (i, j))) =
         p.2 i * q.2 j := by
   simp [RegularFormPresentation.tmul]
+
+/-- The weight product of a tensor presentation: each factor's weight product raised to the rank
+of the other factor. -/
+theorem RegularFormPresentation.prod_tmul (p q : RegularFormPresentation K) :
+    (∏ k, (RegularFormPresentation.tmul p q).2 k)
+      = (∏ i, p.2 i) ^ q.1 * (∏ j, q.2 j) ^ p.1 := by
+  have h := Equiv.prod_comp (finProdFinEquiv (m := p.1) (n := q.1))
+    (fun k : Fin (p.1 * q.1) =>
+      (RegularFormPresentation.tmul p q).2
+        (Fin.cast (RegularFormPresentation.fst_tmul p q).symm k))
+  rw [Fintype.prod_prod_type] at h
+  simp only [RegularFormPresentation.tmul_apply] at h
+  refine Eq.trans h.symm ?_
+  simp [Finset.prod_mul_distrib, Finset.prod_const, Finset.prod_pow]
 
 variable [Invertible (2 : K)]
 

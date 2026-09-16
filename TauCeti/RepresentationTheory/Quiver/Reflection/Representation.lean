@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.EqToHom
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Basic
 public import TauCeti.RepresentationTheory.Quiver.Reflection.DimensionVector
 public import TauCeti.RepresentationTheory.Quiver.Representation.DimensionVector
@@ -75,7 +76,6 @@ representation concentrated at `i` whose space at `i` is nontrivial, of which th
   `TauCeti.nonempty_iso_of_dimVector_eq_of_forall_subsingleton`: two representations concentrated
   at the same sink are isomorphic as soon as their vertex spaces there are, respectively as soon
   as their dimension vectors agree.
-
 ## Implementation notes
 
 The vertex spaces branch on equality with `i`, so they are written with an `if` and decided
@@ -400,25 +400,9 @@ private theorem reflectRepMapApp_of_ne
   simp [reflectRepMapApp, hj]
 
 /-! The components of the reflected morphism are transports of components of the original one, so
-every identity about them is an identity of the original conjugated by `eqToHom`. The next five
-lemmas are those conjugations, stated generically. They are what the proofs below use instead of
-`simp`: the vertex `i` is used both as a vertex of `Q` and as an object of `CategoryTheory.Paths`
-of the reflected quiver, so a goal about the reflected representation is type-correct only up to
-unfolding the semireducible `CategoryTheory.Paths` and `TauCeti.Quiver.Reflect`, which is more than
-the transparency `rw` and `simp` use to build a motive. Conjugation is stripped by `subst` inside
-these lemmas, where no such identification is in play.
-
-The first and the last of them are public: that obstruction, and this remedy for it, recur wherever
-the reflection functor is used, so they are available to `TauCeti.reflectionFunctor`'s consumers
-rather than copied by each of them. -/
-
-/-- Transporting a morphism along object equalities and then back leaves it unchanged. -/
-theorem eqToHom_conjugate_cancel {C : Type*} [Category* C] {X X' Y Y' : C}
-    (hX : X = X') (hY : Y = Y') (f : X' ⟶ Y') :
-    eqToHom hX.symm ≫ (eqToHom hX ≫ f ≫ eqToHom hY.symm) ≫ eqToHom hY = f := by
-  subst X'
-  subst Y'
-  simp
+every identity about them is an identity of the original conjugated by `eqToHom`. The general
+transport API is in `TauCeti.CategoryTheory.EqToHom`; the next three private lemmas specialize it
+to the identities, compositions, and sums used to construct the reflection functor. -/
 
 /-- A conjugated identity is the identity. -/
 private theorem eqToHom_conjugate_eq_id {C : Type*} [Category* C] {X Y : C} (h : X = Y)
@@ -445,21 +429,6 @@ private theorem eqToHom_conjugate_add {C : Type*} [Category* C] [Preadditive C] 
   subst hX
   subst hY
   simp [hfgh]
-
-/-- **Conjugating a commuting square by object equalities leaves it commuting**, and nothing else
-becomes commuting that way: the square of transported edges commutes exactly when the original
-one does. -/
-theorem eqToHom_conjugate_square {C : Type*} [Category* C] {X X' Y Y' Z Z' W W' : C}
-    (hX : X = X') (hY : Y = Y') (hZ : Z = Z') (hW : W = W')
-    (f : X' ⟶ Y') (g : Y' ⟶ Z') (f' : X' ⟶ W') (g' : W' ⟶ Z') :
-    (eqToHom hX ≫ f ≫ eqToHom hY.symm) ≫ eqToHom hY ≫ g ≫ eqToHom hZ.symm =
-        (eqToHom hX ≫ f' ≫ eqToHom hW.symm) ≫ eqToHom hW ≫ g' ≫ eqToHom hZ.symm ↔
-      f ≫ g = f' ≫ g' := by
-  subst hX
-  subst hY
-  subst hZ
-  subst hW
-  simp
 
 /-- The components of the reflected morphism are natural for every arrow of the reflected
 quiver. -/
