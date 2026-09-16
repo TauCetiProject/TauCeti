@@ -147,24 +147,10 @@ theorem heckeTCuspNat_eq_smul_iff_forall_qExpansion_coeff_prime_mul
           if p ∣ m then (χ (ZMod.unitOfCoprime p hpN) : ℂ) * (p : ℂ) ^ (k - 1) *
             (qExpansion 1 F).coeff (m / p) else 0 := by
   have : NeZero p := ⟨hp.ne_zero⟩
-  -- the two operators have the same underlying slash sum, so the eigen-relations correspond
-  have hop : ((heckeTNat k p (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
-      ModularForm ((Gamma1 N).map (mapGL ℝ)) k) : ℍ → ℂ) =
-      ((heckeTCuspNat k p F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) : ℍ → ℂ) := by
-    simp [coe_heckeTNat, coe_heckeTCuspNat]
-  have key := heckeTNat_eq_smul_iff_forall_qExpansion_coeff_prime_mul hp hpN
-    ((coe_mem_modFormCharSpace_iff k χ F).mpr hF) c
-  simp only [ModularFormClass.coe_modularForm] at key
-  rw [← key]
-  constructor
-  · intro hT
-    refine DFunLike.ext _ _ fun τ ↦ ?_
-    have := DFunLike.congr_fun hT τ
-    simpa [hop] using this
-  · intro hT
-    refine CuspForm.toModularFormₗ_injective (DFunLike.ext _ _ fun τ ↦ ?_)
-    have := DFunLike.congr_fun hT τ
-    simpa [CuspForm.toModularFormₗ_eq_coe, hop] using this
+  rw [heckeTCuspNat_eq_smul_iff_heckeTNat_eq_smul]
+  simpa only [ModularFormClass.coe_modularForm] using
+    heckeTNat_eq_smul_iff_forall_qExpansion_coeff_prime_mul hp hpN
+      ((coe_mem_modFormCharSpace_iff k χ F).mpr hF) c
 
 /-- **The coefficient recurrence of an eigenvector at a good prime, on `M_k(N, χ)`.** If the ring
 generator at `p ∤ N` acts on `F ∈ M_k(N, χ)` by the scalar `c`, then
