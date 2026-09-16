@@ -42,8 +42,8 @@ statements about `TauCeti.Sym.pi A` as a subspace of the topological symmetric p
   `TauCeti.Sym.pi_nonempty_iff` recording when it is inhabited.
 * `TauCeti.Sym.mem_pi_iff` and `TauCeti.Sym.mem_pi_iff_card_filter`: membership, either through an
   ordered presentation or as "exactly one point in each member".
-* `TauCeti.Sym.ofFn_coe_injective` and `TauCeti.Sym.piEquiv`: for a pairwise disjoint family, the
-  unordered tuples in `TauCeti.Sym.pi A` are parametrized by `∀ i, ↥(A i)`.
+* `TauCeti.Sym.ofFn_subtypeVal_injective` and `TauCeti.Sym.piEquiv`: for a pairwise disjoint
+  family, the unordered tuples in `TauCeti.Sym.pi A` are parametrized by `∀ i, ↥(A i)`.
 * `TauCeti.Sym.matchingTuple` and `TauCeti.Sym.piInterEquiv`: the unordered tuple of a matching,
   and the resulting bijection between matchings and points of `pi A ∩ pi B`.
 * `TauCeti.Sym.finite_pi_inter_pi` and `TauCeti.Sym.natCard_pi_inter_pi`: the intersection is
@@ -123,17 +123,19 @@ private theorem pairwise_disjoint_range_val (h : Pairwise (Function.onFun Disjoi
 
 /-- For a pairwise disjoint family, the ordered tuple with `i`-th entry in `A i` presenting a given
 unordered tuple is unique: no point can be attributed to two different members. -/
-theorem ofFn_coe_injective (h : Pairwise (Function.onFun Disjoint A)) :
+theorem ofFn_subtypeVal_injective (h : Pairwise (Function.onFun Disjoint A)) :
     Function.Injective fun x : ∀ i, ↥(A i) => ofFn fun i => (x i : α) :=
   ofFn_map_injective _ (fun _ => Subtype.val_injective) (pairwise_disjoint_range_val h)
 
-/-- The `Set.InjOn` form of `TauCeti.Sym.ofFn_coe_injective`: for a pairwise disjoint family, two
-ordered tuples with `i`-th entry in `A i` presenting the same unordered tuple are equal. -/
-theorem injOn_ofFn_univ_pi (h : Pairwise (Function.onFun Disjoint A)) :
+/-- The `Set.InjOn` form of `TauCeti.Sym.ofFn_subtypeVal_injective`: for a pairwise disjoint
+family, two ordered tuples with `i`-th entry in `A i` presenting the same unordered tuple are
+equal. -/
+theorem ofFn_injOn_univ_pi (h : Pairwise (Function.onFun Disjoint A)) :
     Set.InjOn (ofFn : (Fin n → α) → Sym α n) (Set.univ.pi A) := by
   intro x hx y hy hxy
   rw [Set.mem_univ_pi] at hx hy
-  have hsub := ofFn_coe_injective h (a₁ := fun i => ⟨x i, hx i⟩) (a₂ := fun i => ⟨y i, hy i⟩) hxy
+  have hsub := ofFn_subtypeVal_injective h (a₁ := fun i => ⟨x i, hx i⟩)
+    (a₂ := fun i => ⟨y i, hy i⟩) hxy
   exact funext fun i => congrArg Subtype.val (congrFun hsub i)
 
 section Counting
@@ -157,7 +159,7 @@ with `α₁ × ⋯ × α_g`. -/
 noncomputable def piEquiv (h : Pairwise (Function.onFun Disjoint A)) :
     (∀ i, ↥(A i)) ≃ ↥(pi A) :=
   Equiv.ofBijective (fun x => ⟨ofFn fun i => (x i : α), ofFn_mem_pi fun i => (x i).2⟩)
-    ⟨fun _ _ hxy => ofFn_coe_injective h (congrArg Subtype.val hxy), by
+    ⟨fun _ _ hxy => ofFn_subtypeVal_injective h (congrArg Subtype.val hxy), by
       rintro ⟨s, hs⟩
       obtain ⟨x, hx, rfl⟩ := mem_pi_iff.1 hs
       exact ⟨fun i => ⟨x i, hx i⟩, rfl⟩⟩
@@ -216,7 +218,7 @@ theorem matchingTuple_injective (hA : Pairwise (Function.onFun Disjoint A))
     Function.Injective (matchingTuple (A := A) (B := B)) := by
   rintro ⟨σ, p⟩ ⟨τ, q⟩ hpq
   have hpts : (fun i => ((p i : α))) = fun i => ((q i : α)) :=
-    injOn_ofFn_univ_pi hA (Set.mem_univ_pi.2 fun i => (p i).2.1)
+    ofFn_injOn_univ_pi hA (Set.mem_univ_pi.2 fun i => (p i).2.1)
       (Set.mem_univ_pi.2 fun i => (q i).2.1) (congrArg Subtype.val hpq)
   obtain rfl : σ = τ := by
     refine Equiv.ext fun i => by_contra fun hne => ?_

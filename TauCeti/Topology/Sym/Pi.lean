@@ -30,8 +30,8 @@ than compact and the product is an open subspace, is
 
 * `TauCeti.Sym.isClosed_pi` and `TauCeti.Sym.isCompact_pi`: the subspace is closed, respectively
   compact, when the members of the family are.
-* `TauCeti.Sym.isClosedEmbedding_ofFn_coe`: for a pairwise disjoint family of compact sets in a
-  Hausdorff space, the parametrization by ordered tuples is a closed embedding.
+* `TauCeti.Sym.isClosedEmbedding_ofFn_subtypeVal`: for a pairwise disjoint family of compact sets
+  in a Hausdorff space, the parametrization by ordered tuples is a closed embedding.
 * `TauCeti.Sym.piHomeomorph`: the resulting homeomorphism with the product of the members.
 
 ## References
@@ -53,7 +53,7 @@ variable {α : Type*} [TopologicalSpace α] {n : ℕ} {A : Fin n → Set α}
 
 /-- The parametrization of `TauCeti.Sym.pi A` by ordered tuples is continuous. -/
 @[continuity, fun_prop]
-theorem continuous_ofFn_coe :
+theorem continuous_ofFn_subtypeVal :
     Continuous fun x : ∀ i, ↥(A i) => ofFn fun i => (x i : α) :=
   continuous_ofFn.comp (continuous_pi fun i => continuous_subtype_val.comp (continuous_apply i))
 
@@ -74,18 +74,18 @@ variable [T2Space α]
 /-- **The tuples with one point in each member of a pairwise disjoint family of compact sets are
 an embedded product.** For the attaching circles of a Heegaard diagram this says that the torus
 `T_α` is embedded, and closed, in the symmetric power of the surface. -/
-theorem isClosedEmbedding_ofFn_coe (hA : ∀ i, IsCompact (A i))
+theorem isClosedEmbedding_ofFn_subtypeVal (hA : ∀ i, IsCompact (A i))
     (h : Pairwise (Function.onFun Disjoint A)) :
     IsClosedEmbedding fun x : ∀ i, ↥(A i) => ofFn fun i => (x i : α) :=
   haveI (i : Fin n) : CompactSpace ↥(A i) := isCompact_iff_compactSpace.1 (hA i)
-  continuous_ofFn_coe.isClosedEmbedding (ofFn_coe_injective h)
+  continuous_ofFn_subtypeVal.isClosedEmbedding (ofFn_subtypeVal_injective h)
 
 /-- **The subspace `TauCeti.Sym.pi A` is the product of the members of the family**, for a pairwise
 disjoint family of compact sets in a Hausdorff space: the topological refinement of
 `TauCeti.Sym.piEquiv`. -/
 noncomputable def piHomeomorph (hA : ∀ i, IsCompact (A i))
     (h : Pairwise (Function.onFun Disjoint A)) : (∀ i, ↥(A i)) ≃ₜ ↥(pi A) :=
-  ((isClosedEmbedding_ofFn_coe hA h).isEmbedding.toHomeomorph).trans
+  ((isClosedEmbedding_ofFn_subtypeVal hA h).isEmbedding.toHomeomorph).trans
     (Homeomorph.setCongr (pi_eq_range A).symm)
 
 /-- The homeomorphism underlying `TauCeti.Sym.piHomeomorph` is the parametrization by ordered
