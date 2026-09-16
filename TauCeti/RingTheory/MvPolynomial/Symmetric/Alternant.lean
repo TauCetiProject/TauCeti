@@ -50,8 +50,8 @@ of beta-numbers, which is how the Murnaghan-Nakayama rule arises from it.
   exponents multiplies `a_α` by the sign, and a repeated exponent kills it.
 * `TauCeti.alternant_add_const`: shifting every exponent by `c` multiplies `a_α` by
   `(∏ i, X i) ^ c`.
-* `TauCeti.alternant_fin_val_eq_prod`: for the exponents `0, 1, …, n - 1` the alternant is the
-  Vandermonde product `∏_{i < j} (X_j - X_i)`.
+* `TauCeti.alternant_fin_val_eq_vandermonde`: for the exponents `0, 1, …, n - 1` the alternant
+  is the Vandermonde product `∏_{i < j} (X_j - X_i)`.
 * `TauCeti.psum_mul_alternant`: the power-sum multiplication rule `p_r · a_α = ∑_j a_{α + r e_j}`.
 
 ## References
@@ -79,8 +79,7 @@ noncomputable def alternant (α : σ → ℕ) : MvPolynomial σ R :=
 
 variable {σ R}
 
-/-- The defining determinant of an alternant, for downstream modules, to which the body of
-`TauCeti.alternant` is not exposed. -/
+/-- The alternant `a_α` is the determinant of the matrix whose `(i, j)` entry is `X i ^ α j`. -/
 theorem alternant_def (α : σ → ℕ) :
     alternant σ R α = (Matrix.of fun i j => (X i : MvPolynomial σ R) ^ α j).det :=
   (rfl)
@@ -177,7 +176,7 @@ theorem alternant_add_const (α : σ → ℕ) (c : ℕ) :
 
 /-- **The Vandermonde alternant**: for the exponents `0, 1, …, n - 1` the alternant is the
 Vandermonde product `∏_{i < j} (X_j - X_i)`. -/
-theorem alternant_fin_val_eq_prod (n : ℕ) :
+theorem alternant_fin_val_eq_vandermonde (n : ℕ) :
     alternant (Fin n) R (fun j => (j : ℕ)) = ∏ i : Fin n, ∏ j ∈ Ioi i, (X j - X i) :=
   Matrix.det_vandermonde (X : Fin n → MvPolynomial (Fin n) R)
 
