@@ -20,6 +20,9 @@ add to the length. Taking duals with `σ` and then `σ.symm` recovers the code; 
 involutive `σ`, this is Hermitian double duality.
 The field need not be finite.
 
+The API is in `TauCeti`: use `TauCeti.galoisDual σ C`, or `galoisDual σ C` after
+`open TauCeti`.
+
 The matrix convention is row generators (`range G.vecMulLinear`) and column syndromes
 (`ker H.mulVecLin`). In particular, omitting the conjugation can compute a different dual.
 
@@ -32,7 +35,7 @@ The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Code
 
 public section
 
-namespace TauCeti.RingEquiv
+namespace TauCeti
 
 open Module Matrix
 
@@ -198,4 +201,4 @@ theorem range_vecMulLinear_eq_iff_ker_map_eq_galoisDual_of_involutive (σ : K �
 
 end Field
 
-end TauCeti.RingEquiv
+end TauCeti
