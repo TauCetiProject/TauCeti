@@ -38,6 +38,10 @@ def crossingTurn (D : PDCode n) : Equiv.Perm (Fin (4 * n)) :=
 def componentPerm (D : PDCode n) : Equiv.Perm (Fin (4 * n)) :=
   D.crossingTurn * D.edgePair.val
 
+/-- The defining equation of component traversal. -/
+theorem componentPerm_def (D : PDCode n) : D.componentPerm = D.crossingTurn * D.edgePair.val :=
+  (rfl)
+
 /-- Traversal pairs the arc first, then takes the opposite crossing slot. -/
 @[simp] theorem componentPerm_apply (D : PDCode n) (h : Fin (4 * n)) :
     D.componentPerm h = D.crossingTurn (D.edgePair.val h) := by
