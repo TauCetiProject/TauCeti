@@ -43,6 +43,7 @@ variable {k H V : Type*} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k H
 
 /-- A connected affine group acts trivially on the nonzero joint weights of any normal subgroup
 of its rational point group, in every finite-dimensional rational representation. -/
+@[simp]
 theorem nonzeroJointWeightAction_basePointsRepresentation_eq_one
     (N : Subgroup (WithConv (H →ₐ[k] k))) [N.Normal] :
     nonzeroJointWeightAction N (basePointsRepresentation (R := k) (H := H) V) = 1 := by
@@ -127,6 +128,15 @@ theorem normalWeightSubcomodule_toSubmodule
     (normalWeightSubcomodule N χ).toSubmodule =
       ⨅ n : N, (basePointsRepresentation (R := k) (H := H) V n).eigenspace (χ.1 n : k) :=
   Subcomodule.ofEndOfPointStable_toSubmodule _ _
+
+/-- The subcomodule associated to a nonzero joint weight is nonzero. -/
+@[simp]
+theorem normalWeightSubcomodule_ne_bot
+    (N : Subgroup (WithConv (H →ₐ[k] k))) [N.Normal]
+    (χ : NonzeroJointWeight N (basePointsRepresentation (R := k) (H := H) V)) :
+    normalWeightSubcomodule N χ ≠ ⊥ := by
+  rw [ne_eq, ← Subcomodule.toSubmodule_eq_bot, normalWeightSubcomodule_toSubmodule]
+  exact χ.2
 
 /-- Membership in the normal weight subcomodule is the joint eigenvector equation. -/
 @[simp]
