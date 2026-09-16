@@ -47,6 +47,10 @@ of that namespace nested in `TauCeti` would break it.
   Studies in Advanced Mathematics 36, CUP (1995), Chapter IV, Section 1.
 * D. Happel, *Triangulated Categories in the Representation Theory of Finite Dimensional
   Algebras*, LMS Lecture Note Series 119, CUP (1988), Chapter I, Section 2.
+* The Lean prototype of `FactorsThrough` and `factorIdeal` in
+  `TauCetiRoadmap/StablePeriodicCurved/Suggested.lean` (TauCetiProject/TauCetiRoadmap). The
+  definitions here, including the `AddSubgroup.closure_induction` proofs of the two ideal
+  closure conditions, are adapted from it.
 -/
 
 public section
