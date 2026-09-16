@@ -23,6 +23,7 @@ those are available, the operations defined here are the operations of the Picar
 
 * `LineBundleClass X` is the type of line bundles on `X` up to isomorphism;
 * `LineBundleClass.mk` sends a line bundle to its isomorphism class;
+* `LineBundleClass.lift` descends an isomorphism-invariant function to line-bundle classes;
 * `LineBundleClass.mk_eq_mk_iff` characterizes equality by an isomorphism of the underlying
   sheaves;
 * multiplication is induced by `InvertibleSheaf.tensorProduct`, and `1` is the class of the
@@ -41,7 +42,7 @@ namespace TauCeti
 
 namespace AlgebraicGeometry
 
-universe u
+universe u v
 
 noncomputable section
 
@@ -56,6 +57,20 @@ variable {X : Scheme.{u}}
 /-- The isomorphism class of a line bundle. -/
 def mk (L : InvertibleSheaf X) : LineBundleClass X :=
   toSkeleton L
+
+/-- Descend a function on invertible sheaves that is invariant under isomorphism to line-bundle
+classes. -/
+noncomputable def lift {α : Sort v} (f : InvertibleSheaf X → α)
+    (hf : ∀ L M, Nonempty (L.obj ≅ M.obj) → f L = f M) : LineBundleClass X → α :=
+  Quotient.lift f fun L M e ↦
+    hf L M ⟨(SheafOfModules.isInvertible X).ι.mapIso e.some⟩
+
+/-- Applying `lift` to the class represented by `L` recovers the original function at `L`. -/
+@[simp]
+theorem lift_mk {α : Sort v} {f : InvertibleSheaf X → α}
+    {hf : ∀ L M, Nonempty (L.obj ≅ M.obj) → f L = f M} (L : InvertibleSheaf X) :
+    lift f hf (mk L) = f L :=
+  (rfl)
 
 /-- Two line bundles have the same class exactly when their underlying sheaves are isomorphic. -/
 @[simp]
