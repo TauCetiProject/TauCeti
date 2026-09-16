@@ -23,8 +23,8 @@ finite, nor does the code. The attained minimum and its lower-bound characteriza
 parameter computations for explicit codes, while invariance under distance-preserving maps
 handles changes of coordinates.
 
-Use `TauCeti.Set.hammingMinDist C`, or `C.hammingMinDist` after `open TauCeti`, for a
-set of words `C`. Its defining equation is `TauCeti.Set.hammingMinDist_def C`.
+Use `TauCeti.hammingMinDist C`, or `hammingMinDist C` after `open TauCeti`, for a
+set of words `C`. Its defining equation is `TauCeti.hammingMinDist_def C`.
 
 The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*,
 §§1.2–1.6. The metric comparison uses Mathlib's `Set.Nontrivial.le_infsep_iff`.
@@ -37,8 +37,6 @@ types and dependent alphabets, with `hammingMinDist_eq_infsep` providing the exp
 public section
 
 namespace TauCeti
-
-namespace Set
 
 variable {ι κ : Type*} {β : ι → Type*} {γ : κ → Type*}
   [Fintype ι] [∀ i, DecidableEq (β i)]
@@ -215,7 +213,5 @@ theorem le_hammingMinDist_iff_hammingNorm (hE : E ≠ ⊥) {d : ℕ} :
     exact hdist ▸ hd x hx hzero
 
 end Additive
-
-end Set
 
 end TauCeti
