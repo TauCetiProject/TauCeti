@@ -32,7 +32,7 @@ in `O`.
 * `WeierstrassCurve.isIntegral_of_forall_isIntegral_localizationAtPrime`: an equation integral
   over every `Oᵥ` is integral over `O`. This is the descent `O = ⋂ᵥ Oᵥ`, coefficient by
   coefficient: each coefficient has `v`-adic valuation at most one at every `v`
-  (`IsDedekindDomain.HeightOneSpectrum.valuation_algebraMap_le_one_of_isLocalization_atPrime`),
+  (`IsDedekindDomain.HeightOneSpectrum.valuation_algebraMap_le_one_of_isLocalizationAtPrime`),
   hence lies in `O` (`IsDedekindDomain.HeightOneSpectrum.mem_integers_of_valuation_le_one`).
 * `WeierstrassCurve.IsGlobalMinimal.isIntegral` and
   `WeierstrassCurve.IsSemiGlobalMinimal.isIntegral`: both predicates imply integrality over `O`,
@@ -138,7 +138,7 @@ theorem isIntegral_of_forall_isIntegral_localizationAtPrime {W : WeierstrassCurv
       algebraMap (Localization.AtPrime v.asIdeal) K r = a) → ∃ r : O, algebraMap O K r = a :=
     fun a ha => HeightOneSpectrum.mem_integers_of_valuation_le_one K a fun v => by
       obtain ⟨r, rfl⟩ := ha v
-      exact v.valuation_algebraMap_le_one_of_isLocalization_atPrime r
+      exact v.valuation_algebraMap_le_one_of_isLocalizationAtPrime r
   exact isIntegral_of_exists_lift O
     (key _ fun v => have := h v; ⟨_, integralModel_a₁_eq _ W⟩)
     (key _ fun v => have := h v; ⟨_, integralModel_a₂_eq _ W⟩)

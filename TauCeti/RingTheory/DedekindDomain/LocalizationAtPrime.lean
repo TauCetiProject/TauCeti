@@ -32,7 +32,7 @@ for any `IsLocalization.AtPrime` model of `Oᵥ` mapping to `K` over `O`, not on
 
 * `IsDedekindDomain.HeightOneSpectrum.isDiscreteValuationRing_localizationAtPrime`:
   `IsDiscreteValuationRing (Localization.AtPrime v.asIdeal)`, as an instance;
-* `IsDedekindDomain.HeightOneSpectrum.valuation_algebraMap_le_one_of_isLocalization_atPrime`:
+* `IsDedekindDomain.HeightOneSpectrum.valuation_algebraMap_le_one_of_isLocalizationAtPrime`:
   `v (x) ≤ 1` for `x` in the image of the localisation at `v`.
 -/
 
@@ -54,7 +54,7 @@ instance isDiscreteValuationRing_localizationAtPrime :
 `r / s` with `s ∉ v`, the valuation of `s` is one and that of `r` is at most one. Stated for any
 `IsLocalization.AtPrime` model `S` of the localisation with a map to `K` over `O`; the instances
 above make `Localization.AtPrime v.asIdeal` such a model. -/
-theorem valuation_algebraMap_le_one_of_isLocalization_atPrime {S : Type*} [CommRing S]
+theorem valuation_algebraMap_le_one_of_isLocalizationAtPrime {S : Type*} [CommRing S]
     [Algebra O S] [IsLocalization.AtPrime S v.asIdeal] [Algebra S K] [IsScalarTower O S K]
     (x : S) : v.valuation K (algebraMap S K x) ≤ 1 := by
   obtain ⟨⟨r, s⟩, rfl⟩ := IsLocalization.mk'_surjective v.asIdeal.primeCompl x
