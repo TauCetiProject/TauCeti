@@ -200,27 +200,9 @@ theorem points_eq_GLSymplecticFin : points n K = GLSymplecticFin (n + 1) K := by
 /-- **The full-weight type-`C_(n+1)` carrier's points are the symplectic group**, as a
 multiplicative equivalence. This packages `TauCeti.SpStd.points_eq_GLSymplecticFin` in the form
 needed to transport endomorphisms and subgroups while leaving the underlying matrices unchanged. -/
-noncomputable def pointsMulEquivGLSymplecticFin (K : Type v) [Field K] :
+@[expose] noncomputable def pointsMulEquivGLSymplecticFin (K : Type v) [Field K] :
     points n K ≃* GLSymplecticFin (n + 1) K :=
   MulEquiv.subgroupCongr (points_eq_GLSymplecticFin n)
-
-/-- The symplectic element underlying a point of the carrier is that point. -/
-@[simp]
-theorem coe_pointsMulEquivGLSymplecticFin_apply (g : points n K) :
-    ((pointsMulEquivGLSymplecticFin n K g : GLSymplecticFin (n + 1) K) :
-        GL (Fin ((n + 1) + (n + 1))) K) =
-      (g : GL (Fin ((n + 1) + (n + 1))) K) := by
-  rw [pointsMulEquivGLSymplecticFin]
-  rfl
-
-/-- The point of the carrier underlying a symplectic element is that element. -/
-@[simp]
-theorem coe_pointsMulEquivGLSymplecticFin_symm_apply (g : GLSymplecticFin (n + 1) K) :
-    (((pointsMulEquivGLSymplecticFin n K).symm g : points n K) :
-        GL (Fin ((n + 1) + (n + 1))) K) =
-      (g : GL (Fin ((n + 1) + (n + 1))) K) := by
-  rw [pointsMulEquivGLSymplecticFin]
-  rfl
 
 /-- Under the point-group equivalence, the final positive simple-root subgroup is the positive
 long-root transvection subgroup of the symplectic group. -/
@@ -231,7 +213,7 @@ theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_last
       GLSymplecticFin.positiveLongRootTransvectionUnit (Fin.last n)
         (Multiplicative.toAdd u) := by
   apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFin_apply,
+  rw [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply,
     rootSubgroupPoints_inl_last_eq_positiveLongRootTransvectionUnit]
 
 /-- Under the point-group equivalence, the final negative simple-root subgroup is the negative
@@ -243,7 +225,7 @@ theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inr_last
       GLSymplecticFin.negativeLongRootTransvectionUnit (Fin.last n)
         (Multiplicative.toAdd u) := by
   apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFin_apply,
+  rw [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply,
     rootSubgroupPoints_inr_last_eq_negativeLongRootTransvectionUnit]
 
 /-- Under the point-group equivalence, a nonfinal positive simple-root subgroup is the adjacent
@@ -254,7 +236,7 @@ theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_of_ne_last
       GLSymplecticFin.differenceShortRootUnit (lt_next n i hi).ne
         (Multiplicative.toAdd u) := by
   apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFin_apply,
+  rw [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply,
     rootSubgroupPoints_inl_eq_differenceShortRootUnit_of_ne_last n i hi]
 
 /-- Under the point-group equivalence, a nonfinal negative simple-root subgroup is the opposite
@@ -265,7 +247,7 @@ theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inr_of_ne_last
       GLSymplecticFin.differenceShortRootUnit (lt_next n i hi).ne'
         (Multiplicative.toAdd u) := by
   apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFin_apply,
+  rw [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply,
     rootSubgroupPoints_inr_eq_differenceShortRootUnit_of_ne_last n i hi]
 
 /-- Under the point-group equivalence, the carrier's weight torus is the standard paired diagonal
@@ -277,7 +259,7 @@ theorem pointsMulEquivGLSymplecticFin_weightTorusPoints
       GLSymplecticFin.diagonal fun i ↦
         TauCeti.torusCharacter s (DynkinType.TypeC.weight (n + 1) i) := by
   apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFin_apply, coe_weightTorusPoints,
+  rw [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply, coe_weightTorusPoints,
     UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, GLSymplecticFin.coe_diagonal]
   apply Matrix.GeneralLinearGroup.ext
   intro i j
