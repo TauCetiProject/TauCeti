@@ -17,10 +17,10 @@ The nonsingular Wishart law `TauCeti.nonsingularWishartMeasure n S` is the law o
 symmetric-matrix subspace whose density against `TauCeti.symmetricLebesgue` is
 `(det A) ^ ((n - p - 1) / 2) * exp (-trace (S⁻¹ * A) / 2)`, normalized by
 `2 ^ (n p / 2) * (det S) ^ (n / 2) * Γ_p(n / 2)` and supported on the positive-definite cone.
-Its degree `n` is a real parameter, and the density is only integrable when `p - 1 < n`; its
-scale `S` is positive definite, since a singular positive-semidefinite scale concentrates the law
-on a proper subspace, where it has no density at all. Outside those two parameter conditions the
-measure is zero.
+Its degree `n` is a real parameter, restricted to `p - 1 < n`, which in positive dimension is the
+range where the density is integrable; its scale `S` is positive definite, since a singular
+positive-semidefinite scale concentrates the law on a proper subspace, where it has no density at
+all. Outside those two parameter conditions the definition sets the measure to zero.
 
 The normalization is the one attached to `TauCeti.symmetricLebesgue`, whose coordinate unit cube
 has measure one; no other Haar normalization of the symmetric matrices produces the classical
@@ -233,7 +233,8 @@ open Classical in
 /-- The **nonsingular Wishart law** of real degree `n` and positive-definite scale `S`: the
 density `TauCeti.nonsingularWishartPDF` against `TauCeti.symmetricLebesgue`. Outside the
 classical parameter range — a scale that is not positive definite, or a degree at most `p - 1`,
-where the density is not integrable — it is the zero measure. -/
+which in positive dimension is where the density stops being integrable — the definition sets the
+measure to zero. -/
 def nonsingularWishartMeasure (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ) :
     Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
   if S.PosDef ∧ (p : ℝ) - 1 < n then
@@ -256,7 +257,8 @@ theorem nonsingularWishartMeasure_of_not_posDef (n : ℝ) (hS : ¬ S.PosDef) :
   classical
   rw [nonsingularWishartMeasure, ite_eq_right (fun h => hS h.1)]
 
-/-- At a degree at most `p - 1` the density is not integrable and the Wishart law is zero. -/
+/-- At a degree at most `p - 1` the Wishart law is zero by definition; in positive dimension this
+is the range where the density is not integrable. -/
 @[simp]
 theorem nonsingularWishartMeasure_of_le (S : Matrix (Fin p) (Fin p) ℝ)
     (hn : n ≤ (p : ℝ) - 1) :
