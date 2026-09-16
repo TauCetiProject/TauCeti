@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Analysis.Matrix.MeasurableSpace
+public import TauCeti.Analysis.Matrix.PosDef
 public import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Basic
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix
 
@@ -17,9 +18,9 @@ symmetric-matrix subspace whose density against `TauCeti.symmetricLebesgue` is
 `(det A) ^ ((n - p - 1) / 2) * exp (-trace (S⁻¹ * A) / 2)`, normalized by
 `2 ^ (n p / 2) * (det S) ^ (n / 2) * Γ_p(n / 2)` and supported on the positive-definite cone.
 Its degree `n` is a real parameter, and the density is only integrable when `p - 1 < n`; its
-scale `S` is positive definite, a singular scale producing a law that has no density at all and
-belongs instead to the Gaussian-Gram family `TauCeti.wishartGramMeasure`. Outside those two
-parameter conditions the measure is zero.
+scale `S` is positive definite, since a singular positive-semidefinite scale concentrates the law
+on a proper subspace, where it has no density at all. Outside those two parameter conditions the
+measure is zero.
 
 The normalization is the one attached to `TauCeti.symmetricLebesgue`, whose coordinate unit cube
 has measure one; no other Haar normalization of the symmetric matrices produces the classical
@@ -45,7 +46,7 @@ constant leave the density equal to `1`, so for `-1 < n` the law is that Dirac m
   `TauCeti.nonsingularWishartMeasure_of_le` describe the two invalid branches.
 * `TauCeti.ae_posDef_nonsingularWishartMeasure` — the sampled matrix is positive definite almost
   everywhere.
-* `TauCeti.nonsingularWishartMeasure_of_isEmpty` — in dimension zero the law is the Dirac mass at
+* `TauCeti.nonsingularWishartMeasure_zero` — in dimension zero the law is the Dirac mass at
   the unique symmetric matrix, hence a probability measure.
 * `TauCeti.measurable_nonsingularWishartMeasure` — the law is measurable jointly in its real
   degree and every coordinate of its scale matrix, and
@@ -87,6 +88,7 @@ def nonsingularWishartPDFReal (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ)
   else 0
 
 /-- On the positive-definite cone the Wishart density is its defining formula. -/
+@[simp]
 theorem nonsingularWishartPDFReal_of_posDef (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ)
     {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
     (hA : (A : Matrix (Fin p) (Fin p) ℝ).PosDef) :
@@ -144,6 +146,17 @@ theorem nonsingularWishartPDF_def (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ)
     nonsingularWishartPDF n S A = ENNReal.ofReal (nonsingularWishartPDFReal n S A) :=
   (rfl)
 
+/-- On the positive-definite cone the `ℝ≥0∞`-valued Wishart density is its defining formula. -/
+@[simp]
+theorem nonsingularWishartPDF_of_posDef (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ)
+    {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
+    (hA : (A : Matrix (Fin p) (Fin p) ℝ).PosDef) :
+    nonsingularWishartPDF n S A =
+      ENNReal.ofReal ((A : Matrix (Fin p) (Fin p) ℝ).det ^ ((n - (p : ℝ) - 1) / 2) *
+          Real.exp (-Matrix.trace (S⁻¹ * (A : Matrix (Fin p) (Fin p) ℝ)) / 2) /
+        ((2 : ℝ) ^ (n * (p : ℝ) / 2) * S.det ^ (n / 2) * multivariateGamma p (n / 2))) := by
+  rw [nonsingularWishartPDF_def, nonsingularWishartPDFReal_of_posDef n S hA]
+
 /-- Off the positive-definite cone the `ℝ≥0∞`-valued Wishart density vanishes. -/
 @[simp]
 theorem nonsingularWishartPDF_of_not_posDef (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ)
@@ -181,8 +194,10 @@ private theorem measurable_nonsingularWishartPDF_comp {γ : Type*} [MeasurableSp
   have hdetT : Measurable fun c => (T c).det :=
     (Continuous.matrix_det continuous_id).measurable.comp hT
   have hinv : Measurable fun c => (T c)⁻¹ := Matrix.measurable_inv.comp hT
-  -- Matrix multiplication has no `MeasurableMul₂` instance, so read the trace of the product
-  -- entrywise instead.
+  -- Matrix multiplication has neither a `MeasurableMul₂` instance nor a usable continuous
+  -- combinator here: `(continuous_fst.matrix_mul continuous_snd).measurable` needs
+  -- `OpensMeasurableSpace (Matrix ι ι ℝ × Matrix ι ι ℝ)`, which fails to synthesize because
+  -- Mathlib gives `Matrix` no `SecondCountableTopology` instance. So read the trace entrywise.
   have htrace : Measurable fun c =>
       Matrix.trace ((T c)⁻¹ * (g c : Matrix (Fin p) (Fin p) ℝ)) := by
     simp only [Matrix.trace, Matrix.diag_apply, Matrix.mul_apply]
@@ -233,8 +248,8 @@ theorem nonsingularWishartMeasure_of_posDef (hS : S.PosDef) (hn : (p : ℝ) - 1 
   classical
   rw [nonsingularWishartMeasure, ite_eq_left ⟨hS, hn⟩]
 
-/-- At a scale that is not positive definite the Wishart law is zero; the corresponding singular
-laws belong to the Gaussian-Gram family `TauCeti.wishartGramMeasure`. -/
+/-- At a scale that is not positive definite there is no Wishart density to normalize, and the
+law is zero. -/
 @[simp]
 theorem nonsingularWishartMeasure_of_not_posDef (n : ℝ) (hS : ¬ S.PosDef) :
     nonsingularWishartMeasure n S = 0 := by
@@ -277,7 +292,7 @@ theorem ae_posDef_nonsingularWishartMeasure (n : ℝ) (S : Matrix (Fin p) (Fin p
 /-- In dimension zero the symmetric space is a single point and the Wishart density is `1`
 there. -/
 @[simp]
-theorem nonsingularWishartPDF_of_isEmpty (n : ℝ) (S : Matrix (Fin 0) (Fin 0) ℝ)
+theorem nonsingularWishartPDF_zero (n : ℝ) (S : Matrix (Fin 0) (Fin 0) ℝ)
     (A : selfAdjoint.submodule ℝ (Matrix (Fin 0) (Fin 0) ℝ)) :
     nonsingularWishartPDF n S A = 1 := by
   have hA : (A : Matrix (Fin 0) (Fin 0) ℝ).PosDef :=
@@ -288,19 +303,19 @@ theorem nonsingularWishartPDF_of_isEmpty (n : ℝ) (S : Matrix (Fin 0) (Fin 0) �
 /-- In dimension zero every valid Wishart law is the Dirac mass at the unique symmetric matrix.
 The general definition already gives this: `TauCeti.symmetricLebesgue 0` is that Dirac mass and
 the density is identically `1`. -/
-theorem nonsingularWishartMeasure_of_isEmpty {n : ℝ} (hn : -1 < n)
+theorem nonsingularWishartMeasure_zero {n : ℝ} (hn : -1 < n)
     (S : Matrix (Fin 0) (Fin 0) ℝ) :
     nonsingularWishartMeasure n S = Measure.dirac 0 := by
   have hS : S.PosDef := ⟨Subsingleton.elim _ _, fun x hx => absurd (Subsingleton.elim x 0) hx⟩
   rw [nonsingularWishartMeasure_of_posDef hS (by simpa using hn), symmetricLebesgue_zero,
     dirac_withDensity' (measurable_nonsingularWishartPDF n S),
-    nonsingularWishartPDF_of_isEmpty, one_smul]
+    nonsingularWishartPDF_zero, one_smul]
 
 /-- In dimension zero every valid Wishart law is a probability measure. -/
-theorem isProbabilityMeasure_nonsingularWishartMeasure_of_isEmpty {n : ℝ} (hn : -1 < n)
+theorem isProbabilityMeasure_nonsingularWishartMeasure_zero {n : ℝ} (hn : -1 < n)
     (S : Matrix (Fin 0) (Fin 0) ℝ) :
     IsProbabilityMeasure (nonsingularWishartMeasure n S) := by
-  rw [nonsingularWishartMeasure_of_isEmpty hn]
+  rw [nonsingularWishartMeasure_zero hn]
   infer_instance
 
 /-! ### Parameter measurability -/

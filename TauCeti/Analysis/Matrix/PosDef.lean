@@ -5,10 +5,12 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.Analysis.Matrix.Normed
+public import Mathlib.LinearAlgebra.Matrix.PosDef
 
 /-!
-# Positivity of the quadratic form is an open condition
+# The positive-definite cone in the space of all square matrices
 
 Positivity of `x ⬝ᵥ M *ᵥ x` on nonzero vectors cuts out an open set of real square matrices,
 symmetric or not.
@@ -17,11 +19,14 @@ The positive-definite cone itself is not open in the space of all square matrice
 Hermitian condition cuts out a proper subspace once there are at least two rows — but on the
 symmetric subspace, where the Hermitian condition holds identically, the cone is the preimage
 of this open set and hence open; see `TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef`.
+Ambiently the cone is still measurable, being the intersection of the closed Hermitian condition
+with that open one.
 
 ## Main declarations
 
 * `TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos` — positivity of the quadratic form on nonzero
-  vectors is an open condition on real square matrices.
+  vectors is an open condition on real square matrices;
+* `Matrix.measurableSet_setOf_posDef` — the positive-definite matrices form a measurable set.
 -/
 
 public section
@@ -67,3 +72,20 @@ theorem isOpen_setOfPred_dotProduct_mulVec_pos :
   exact mul_pos (pow_pos (norm_pos_iff.2 hx) 2) (hN _ hmem)
 
 end TauCeti
+
+namespace Matrix
+
+/-- The positive-definite real matrices form a measurable set. -/
+theorem measurableSet_setOf_posDef {ι : Type*} [Finite ι] :
+    MeasurableSet {A : Matrix ι ι ℝ | A.PosDef} := by
+  have : Fintype ι := Fintype.ofFinite ι
+  have hsplit : {A : Matrix ι ι ℝ | A.PosDef} =
+      {A : Matrix ι ι ℝ | A.IsHermitian} ∩
+        {M : Matrix ι ι ℝ | ∀ x : ι → ℝ, x ≠ 0 → 0 < x ⬝ᵥ M *ᵥ x} := by
+    ext A
+    exact Matrix.posDef_iff_dotProduct_mulVec
+  rw [hsplit]
+  exact (isClosed_eq continuous_id.matrix_conjTranspose continuous_id).measurableSet.inter
+    TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos.measurableSet
+
+end Matrix
