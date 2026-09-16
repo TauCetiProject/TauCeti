@@ -78,9 +78,7 @@ noncomputable def standardComodule :
   have hcoact : c.coact = standardCoact R n := by
     apply (Pi.basisFun R (Fin n)).ext
     intro j
-    change Comodule.corestrictCoact (R := R) (M := Fin n → R)
-      (coordinateMap R n).hom.toCoalgHom _ = _
-    rw [Comodule.corestrictCoact_apply, GeneralLinear.standardComodule_coact,
+    rw [Comodule.corestrict_coact_apply, GeneralLinear.standardComodule_coact,
       Pi.basisFun_apply, GeneralLinear.standardCoact_apply_basisFun, standardCoact_apply_basisFun]
     simp [BialgHom.toCoalgHom_apply]
   -- Keep the explicit coaction definitionally so its computation lemmas remain simp-normal.
