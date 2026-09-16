@@ -20,8 +20,9 @@ with positive diagonal. This file shows that the standard Wishart density of rea
 `(det A) ^ ((n - p - 1) / 2) * exp (-trace A / 2) / (2 ^ (n * p / 2) * Γ_p (n / 2))`
 
 against `TauCeti.symmetricLebesgue p` on the positive-definite cone, becomes a product density in
-the entries of `L`. Precisely, take independent real coordinates indexed by the on-or-below
-diagonal positions `(i, j)`, `j ≤ i`, of a `p × p` matrix, where
+the entries of `L`. Precisely, assume `(p : ℝ) - 1 < n`, so that every `n - i` with `i < p` is
+positive, and take independent real coordinates indexed by the on-or-below diagonal positions
+`(i, j)`, `j ≤ i`, of a `p × p` matrix, where
 
 * the diagonal coordinate `(i, i)` has the chi density with `n - i` degrees of freedom,
   `2 ^ (1 - k / 2) / Γ (k / 2) * t ^ (k - 1) * exp (-t ^ 2 / 2)` on `t > 0` with `k = n - i`,
