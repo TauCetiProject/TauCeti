@@ -49,6 +49,8 @@ with multiplication by functions of `F`.
 * `TauCeti.comp_restrict_mem_repartitionSpace` and
   `TauCeti.comp_restrict_mem_repartitionSpace_iff`: the pullback of a relative repartition is a
   repartition of `F' / k'`.
+* `TauCeti.relativeRepartitionPullback_injective`: pullback faithfully identifies relative
+  repartitions with its range.
 * `TauCeti.mem_range_relativeRepartitionPullback_iff`: the range of pullback is exactly the
   fibre-constant repartitions.
 * `TauCeti.repartitionTrace_mem_adeleFiltration`: **the trace estimate**
@@ -165,6 +167,19 @@ theorem relativeRepartitionPullback_apply (β : ↥(relativeRepartitionSpace k F
       Place k' F' → F') P') = (β : Place k F → F') (P'.restrict k F) :=
   by simp [relativeRepartitionPullback]
 
+/-- Pullback along restriction of places is injective: every place downstairs has a place above
+it, so the pullback determines every entry of a relative repartition. -/
+theorem relativeRepartitionPullback_injective [Algebra.IsIntegral k k']
+    (hF' : IsFunctionField k' F') :
+    Function.Injective (relativeRepartitionPullback k k' F F') := by
+  intro β γ h
+  apply Subtype.ext
+  funext P
+  obtain ⟨P', hP'⟩ := Place.restrict_surjective (k := k) (F := F) hF' P
+  have hentry := congrArg
+    (fun a : ↥(repartitionSpace k' F') ↦ (a : Place k' F' → F') P') h
+  simpa only [relativeRepartitionPullback_apply, hP'] using hentry
+
 /-- **The relative repartitions are the fibre-constant repartitions of `F'`**: a family indexed by
 the places of `F` is a relative repartition exactly when its pullback to the places of `F'` is a
 repartition.  The converse direction needs every place of `F` to have a place above it and
@@ -216,7 +231,6 @@ omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F']
 
 variable (k F F') in
 /-- Multiplication by functions of `F` on relative repartitions. -/
-@[expose]
 noncomputable def relativeRepartitionMul (hF : IsFunctionField k F) :
     F →ₐ[k] Module.End k ↥(relativeRepartitionSpace k F F') where
   toFun f :=
@@ -231,14 +245,14 @@ noncomputable def relativeRepartitionMul (hF : IsFunctionField k F) :
 
 /-- The natural `F`-module structure on relative repartitions. It is a definition rather than a
 global instance because it depends on the explicit function-field hypothesis. -/
-@[expose, instance_reducible]
+@[instance_reducible]
 noncomputable def relativeRepartitionSpaceModule (hF : IsFunctionField k F) :
     Module F ↥(relativeRepartitionSpace k F F') :=
   Module.compHom _ (relativeRepartitionMul k F F' hF).toRingHom
 
 /-- The natural `F`-module structure on repartitions. It is a definition rather than a global
 instance because it depends on the explicit function-field hypothesis. -/
-@[expose, instance_reducible]
+@[instance_reducible]
 noncomputable def repartitionSpaceModule (hF : IsFunctionField k F) :
     Module F ↥(repartitionSpace k F) :=
   Module.compHom _ (repartitionMul hF).toRingHom
@@ -252,7 +266,7 @@ theorem coe_relativeRepartitionSpaceModule_smul (hF : IsFunctionField k F) (f : 
     letI := relativeRepartitionSpaceModule (F' := F') hF
     ((f • β : ↥(relativeRepartitionSpace k F F')) : Place k F → F') =
       f • (β : Place k F → F') :=
-  rfl
+  (rfl)
 
 omit [FiniteDimensional F F'] in
 /-- Scalar multiplication for the natural `F`-module structure on repartitions is entrywise
@@ -279,7 +293,6 @@ variable (k F F') in
 /-- **The trace of relative repartitions** `Tr_{F'/F}`, taken entrywise (Stichtenoth,
 Section III.4): the `F`-linear map carrying a relative repartition `β` of `F' / F` to the
 repartition `P ↦ Tr_{F'/F} (β P)` of `F / k`. -/
-@[expose]
 noncomputable def repartitionTrace (hF : IsFunctionField k F) :
     letI := relativeRepartitionSpaceModule (F' := F') hF
     letI := repartitionSpaceModule hF
