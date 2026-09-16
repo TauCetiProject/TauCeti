@@ -27,10 +27,8 @@ closure, while the explicit four-dimensional matrix group is defined over
 `GaloisField 2 (2 * m + 1)`. No group comparison is made here; these results identify only the
 coefficient fields and their matrix coordinates.
 
-## Main results
+## Main result
 
-* `TauCeti.ValidLieTypeIndex.exists_matrix_map_galoisFieldEmbedding_iff`: a matrix over the closure
-  comes from the finite field exactly when all its entries are Frobenius-fixed.
 * `TauCeti.ValidLieTypeIndex.mem_range_generalLinearGroup_map_galoisFieldEmbedding_iff`: an
   invertible matrix over the closure comes from the finite field exactly when its entries are
   Frobenius-fixed.
@@ -49,20 +47,6 @@ noncomputable section
 
 variable {d : ValidLieTypeIndex}
 
-/-- A matrix over the closure has coordinates in Mathlib's finite field exactly when every entry
-belongs to the image of the chosen finite-field embedding. -/
-theorem exists_matrix_map_galoisFieldEmbedding_iff {m n : Type*}
-    (A : Matrix m n d.Closure) :
-    (∃ B : Matrix m n (GaloisField d.characteristic d.fieldExponent),
-        B.map d.galoisFieldEmbedding = A) ↔
-      ∀ i j, A i j ∈ RingHom.range d.galoisFieldEmbedding := by
-  constructor
-  · rintro ⟨B, rfl⟩ i j
-    exact ⟨B i j, rfl⟩
-  · intro hA
-    choose B hB using hA
-    exact ⟨B, Matrix.ext fun i j ↦ hB i j⟩
-
 /-- A matrix over the closure has finite-field coordinates exactly when every entry is fixed by
 the `q`-power Frobenius. -/
 theorem exists_matrix_map_galoisFieldEmbedding_iff_frobenius
@@ -70,8 +54,18 @@ theorem exists_matrix_map_galoisFieldEmbedding_iff_frobenius
     (∃ B : Matrix m n (GaloisField d.characteristic d.fieldExponent),
         B.map d.galoisFieldEmbedding = A) ↔
       ∀ i j, (A i j) ^ d.fieldOrder = A i j := by
-  rw [exists_matrix_map_galoisFieldEmbedding_iff]
-  simp only [ValidLieTypeIndex.mem_range_galoisFieldEmbedding_iff]
+  change A ∈ Set.range (Pi.map fun _ ↦ Pi.map fun _ ↦
+    d.galoisFieldEmbedding) ↔ _
+  rw [Set.range_piMap]
+  constructor
+  · intro hA i j
+    apply ValidLieTypeIndex.mem_range_galoisFieldEmbedding_iff.mp
+    have hi := hA i (Set.mem_univ i)
+    rw [Set.range_piMap] at hi
+    exact hi j (Set.mem_univ j)
+  · intro hA i _
+    rw [Set.range_piMap]
+    exact fun j _ ↦ ValidLieTypeIndex.mem_range_galoisFieldEmbedding_iff.mpr (hA i j)
 
 /-- An invertible matrix over the closure comes by scalar extension from Mathlib's finite field
 exactly when every matrix entry is fixed by the `q`-power Frobenius.
