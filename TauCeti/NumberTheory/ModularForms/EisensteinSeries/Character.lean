@@ -14,7 +14,7 @@ public import TauCeti.NumberTheory.ModularForms.Parity
 
 For Dirichlet characters `ψ` modulo `u` and `φ` modulo `v` and a weight `k ≥ 3`, the Eisenstein
 series of Diamond–Shurman §4.5,
-`G_k^{ψ,φ}(z) = ∑_{c mod u} ∑_{d mod v} ∑_{e mod u} ψ(c) φ̄(d) G_k^{(cv, d + ev)}(z)`,
+`G_k^{ψ,φ}(z) = ∑_{c mod u} ∑_{d mod v} ∑_{e mod u} ψ(c) φ⁻¹(d) G_k^{(cv, d + ev)}(z)`,
 where `G_k^{a}` sums `(m z + n)^(-k)` over all `(m, n) ≡ a mod uv`. Collecting the terms, it is
 the series over all integer pairs `x`
 `∑_x w(x) (x₀ z + x₁)^(-k)`, `w(x) = ψ(x₀ / v) φ⁻¹(x₁)` if `v ∣ x₀` and `0` otherwise,
