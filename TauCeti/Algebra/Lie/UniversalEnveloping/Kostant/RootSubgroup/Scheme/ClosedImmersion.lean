@@ -53,11 +53,16 @@ left to the caller in the general construction.
   the class-two exponential formula for an operator with one nonzero basis column.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_transvectionUnit_of_action`:
   a class-two root operator with one nonzero basis column exponentiates to a transvection.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_sum`: a nilpotent root
+  operator exponentiates to the finite sum of its integral divided-power matrices.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_one_add_smul` and, in the same
   namespace,
-  `exists_map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul`:
+  `map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul`:
   without the single-column hypothesis a square-zero root operator still exponentiates to
   `1 + t X`, on a point and on the generic matrix respectively.
+* `TauCeti.UniversalEnvelopingAlgebra.map_genericMatrix_eq_kostantRootSubgroupMatrix`:
+  the universal additive-group point identifies the image of the generic matrix with the
+  represented root-subgroup matrix.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupPoints_injective`: the root subgroup is
   faithfully parametrized by `𝔾ₐ`.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap_surjective`: the coordinate
@@ -99,13 +104,6 @@ private theorem coe_basis_ne_zero (b : Module.Basis η ℤ M) (j : η) : ((b j :
   fun hj => b.ne_zero j (Subtype.ext hj)
 
 variable [Module ℚ V] {x : Module.End ℚ V} {b : Module.Basis η ℤ M} {r s : η}
-
-/-- The zeroth restricted divided power leaves a lattice vector alone. -/
-private theorem integralDividedPower_zero_apply
-    (hmem : ∀ v ∈ M, Associative.dividedPower 0 x • v ∈ M) (v : M) :
-    integralDividedPower x M 0 hmem v = v := by
-  rw [integralDividedPower_zero]
-  rfl
 
 /-- The first restricted divided power is the operator itself, so a root step computes it. -/
 private theorem integralDividedPower_one_apply_of_step
@@ -205,7 +203,7 @@ theorem repr_kostantRootSubgroupPoints_of_isRootStep {A : Type*} [CommRing A]
   rw [repr_kostantRootSubgroupPoints_baseChange,
     ← Finset.sum_subset
       (Finset.range_subset_range.2 (two_le_nilpotencyClass_of_step hnil hc hstep))]
-  · rw [Finset.sum_range_succ, Finset.sum_range_one, integralDividedPower_zero_apply,
+  · rw [Finset.sum_range_succ, Finset.sum_range_one, integralDividedPower_zero,
       integralDividedPower_one_apply_of_step _ hstep]
     simp [hrs]
   · intro k _ hk
@@ -433,6 +431,81 @@ variable (i : ι)
 variable (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
 variable {η : Type*} [Fintype η] [DecidableEq η] (b : Module.Basis η ℤ M)
 
+/-- The zeroth divided power has the identity matrix in an integral lattice basis. -/
+theorem integralDividedPower_zero_basis_eq_sum (s : η) :
+    integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M 0
+        (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i 0 hv) (b s) =
+      ∑ r, (1 : Matrix η η ℤ) r s • b r := by
+  rw [integralDividedPower_zero]
+  -- The rewrite leaves the identity endomorphism acting on the lattice subtype; exposing its
+  -- underlying function is the definitional step needed before applying the basis expansion.
+  change b s = ∑ r, (1 : Matrix η η ℤ) r s • b r
+  convert (b.sum_repr (b s)).symm using 1
+  apply Finset.sum_congr rfl
+  intro r _
+  by_cases hrs : r = s
+  · subst r
+    simp
+  · simp [hrs]
+
+omit [DecidableEq η] in
+/-- A divided power has the prescribed matrix in an integral lattice basis. -/
+theorem integralDividedPower_basis_eq_sum (k : ℕ) (X : Matrix η η ℤ)
+    (haction : ∀ s, Associative.dividedPower k
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) (b s : V) =
+      ∑ r, X r s • (b r : V)) (s : η) :
+    integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
+        (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i k hv) (b s) =
+      ∑ r, X r s • b r := by
+  classical
+  apply Subtype.ext
+  rw [coe_integralDividedPower_apply, Module.End.smul_def, haction]
+  push_cast
+  simp
+
+include hnil in
+/-- **A nilpotent root-subgroup matrix is the finite divided-power sum.** If `X k` is the
+integral matrix of the `k`th divided power for every `k < d`, and the nilpotency class is at most
+`d`, then evaluation at `t` is `∑ k < d, t ^ k • X k`. -/
+theorem kostantRootSubgroupMatrix_eq_sum {A : Type*} [CommRing A]
+    (d : ℕ) (X : ℕ → Matrix η η ℤ)
+    (hclass : nilpotencyClass
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) ≤ d)
+    (haction : ∀ k < d, ∀ s, integralDividedPower
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
+      (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i k hv)
+      (b s) = ∑ r, X k r s • b r)
+    (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
+    (kostantRootSubgroupMatrix e h ρ M hM i hnil b f).val =
+      ∑ k ∈ Finset.range d,
+        Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f) ^ k •
+          (X k).map (Int.cast : ℤ → A) := by
+  classical
+  ext r s
+  have hpad : ∑ k ∈ Finset.range
+        (nilpotencyClass (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))),
+      b.repr (integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
+          (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i k hv)
+          (b s)) r • Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f) ^ k =
+      ∑ k ∈ Finset.range d,
+        b.repr (integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
+            (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i k hv)
+            (b s)) r • Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f) ^ k := by
+    refine Finset.sum_subset (Finset.range_subset_range.2 hclass) fun k _ hk => ?_
+    rw [Finset.mem_range, not_lt] at hk
+    rw [integralDividedPower_eq_zero_of_le _ _ _ _ (pow_nilpotencyClass hnil) hk]
+    simp
+  rw [kostantRootSubgroupMatrix_apply, repr_kostantRootSubgroupPoints_baseChange, hpad,
+    Matrix.sum_apply]
+  apply Finset.sum_congr rfl
+  intro k hk
+  rw [Matrix.smul_apply, Matrix.map_apply, haction k (Finset.mem_range.1 hk) s,
+    map_sum]
+  simp only [Finsupp.coe_finsetSum, Finset.sum_apply, map_zsmul, Module.Basis.repr_self,
+    Finsupp.smul_single, Finsupp.single_apply, smul_eq_mul, mul_one]
+  rw [Finset.sum_ite_eq' Finset.univ r fun x => X k x s]
+  simp [mul_comm]
+
 include hnil in
 /-- **The matrix of a square-zero root subgroup is `1 + t X`.** When the root operator squares to
 zero its divided-power exponential stops after the linear term, so the root-subgroup matrix at
@@ -451,42 +524,16 @@ theorem kostantRootSubgroupMatrix_eq_one_add_smul {A : Type*} [CommRing A]
       1 + Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f) •
         X.map (Int.cast : ℤ → A) := by
   classical
-  have hone : ∀ s : η, integralDividedPower
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M 1
-      (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i 1 hv)
-      (b s) = ∑ r, X r s • b r := by
-    intro s
-    apply Subtype.ext
-    rw [coe_integralDividedPower_apply, Associative.dividedPower_one, Module.End.smul_def,
-      haction]
-    push_cast
-    simp
-  ext r s
-  -- Past the nilpotency class the divided powers vanish, so the exponential sum may be padded
-  -- out to the two terms that the square-zero truncation leaves.
-  have hpad : ∑ k ∈ Finset.range
-        (nilpotencyClass (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))),
-      b.repr (integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
-          (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i k hv)
-          (b s)) r • Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f) ^ k =
-      ∑ k ∈ Finset.range 2,
-        b.repr (integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
-            (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i k hv)
-            (b s)) r • Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f) ^ k := by
-    refine Finset.sum_subset (Finset.range_subset_range.2 hclass) fun k _ hk => ?_
-    rw [Finset.mem_range, not_lt] at hk
-    rw [integralDividedPower_eq_zero_of_le _ _ _ _ (pow_nilpotencyClass hnil) hk]
-    simp
-  rw [kostantRootSubgroupMatrix_apply, repr_kostantRootSubgroupPoints_baseChange, hpad,
-    Finset.sum_range_succ, Finset.sum_range_one, integralDividedPower_zero_apply, hone, map_sum]
-  simp only [Finsupp.coe_finsetSum, Finset.sum_apply, map_zsmul, Module.Basis.repr_self,
-    Finsupp.smul_single, smul_eq_mul, mul_one, Finsupp.single_apply, pow_zero, pow_one,
-    Matrix.add_apply, Matrix.one_apply, Matrix.smul_apply, Matrix.map_apply, zsmul_eq_mul,
-    Int.cast_ite, Int.cast_one, Int.cast_zero]
-  rw [Finset.sum_ite_eq' Finset.univ r fun x => X x s]
-  rcases eq_or_ne r s with rfl | hrs
-  · simp [mul_comm]
-  · simp [hrs, hrs.symm, mul_comm]
+  have hone := integralDividedPower_basis_eq_sum e h ρ M hM i b 1 X (fun s => by
+    simpa only [Associative.dividedPower_one, Module.End.smul_def] using haction s)
+  rw [kostantRootSubgroupMatrix_eq_sum e h ρ M hM i hnil b 2
+    (fun k => if k = 0 then 1 else X) hclass]
+  · simp [Finset.sum_range_succ, pow_succ]
+  · intro k hk s
+    have hk' : k = 0 ∨ k = 1 := by omega
+    rcases hk' with rfl | rfl
+    · exact integralDividedPower_zero_basis_eq_sum e h ρ M hM i b s
+    · simpa using hone s
 
 end ClassTwo
 
@@ -504,42 +551,55 @@ variable (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)
 variable {N : ℕ} (bb : Module.Basis (Fin N) ℤ M)
 
 include hnil in
+/-- **The generic matrix of a root subgroup is its matrix at the universal point of `𝔾ₐ`.** The
+identity of the additive coordinate algebra is a point of `𝔾ₐ` over that algebra, and the
+root-subgroup matrix there is the image of the generic matrix of `GL N` under the root-subgroup
+coordinate morphism. A matrix formula proved at every algebra-valued point is read on the
+coordinate morphism through this equation, which is the only place the universal point is
+handled. -/
+theorem map_genericMatrix_eq_kostantRootSubgroupMatrix :
+    (GeneralLinear.genericMatrix ℤ N).map
+        (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil bb).hom.toAlgHom =
+      (kostantRootSubgroupMatrix e h ρ M hM i hnil bb
+        (toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)))).val := by
+  let f := kostantRootSubgroupCoordinateMap e h ρ M hM i hnil bb
+  have hpoint : GeneralLinear.pointToGeneralLinear N
+      (toConv ((toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))).ofConv.comp
+        f.hom.toAlgHom)) =
+      kostantRootSubgroupMatrix e h ρ M hM i hnil bb
+        (toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))) :=
+    pointsMulEquiv_kostantRootSubgroupCoordinateMap e h ρ M hM i hnil bb
+      (AdditiveGroup.coordinateHopfAlgebra ℤ)
+      (toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)))
+  have hpoint' : GeneralLinear.pointToGeneralLinear N (toConv f.hom.toAlgHom) =
+      kostantRootSubgroupMatrix e h ρ M hM i hnil bb
+        (toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))) := by
+    simpa only [AlgHom.id_comp, WithConv.ofConv_toConv] using hpoint
+  rw [GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
+  simpa only [f] using congrArg
+    (fun g : Matrix.GeneralLinearGroup (Fin N) (AdditiveGroup.coordinateHopfAlgebra ℤ) => g.1)
+    hpoint'
+
+include hnil in
 /-- **The generic matrix of a square-zero root subgroup is `1 + t X`.** This is
 `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_one_add_smul` read on the
 coordinate morphism rather than on a point: the entries of the generic matrix of `GL N` are carried
 to those of `1 + t X` for the parameter `t` of the universal point of `𝔾ₐ`. A consumer that has to
 check a matrix equation on every algebra-valued point at once evaluates it here instead. -/
-theorem exists_map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul
+theorem map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul
     (X : Matrix (Fin N) (Fin N) ℤ)
     (hclass : nilpotencyClass
       (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) ≤ 2)
     (haction : ∀ s, ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (bb s : V) =
       ∑ r, X r s • (bb r : V)) :
-    ∃ t : AdditiveGroup.coordinateHopfAlgebra ℤ,
-      (GeneralLinear.genericMatrix ℤ N).map
-          (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil bb).hom.toAlgHom =
-        1 + t • X.map (Int.cast : ℤ → AdditiveGroup.coordinateHopfAlgebra ℤ) := by
-  let f := kostantRootSubgroupCoordinateMap e h ρ M hM i hnil bb
-  let q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ]
-      AdditiveGroup.coordinateHopfAlgebra ℤ) :=
-    toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))
-  have hq : q.ofConv = AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ) :=
-    WithConv.ofConv_toConv _
-  let m := kostantRootSubgroupMatrix e h ρ M hM i hnil bb q
-  have hpoint : GeneralLinear.pointToGeneralLinear N
-      (toConv (q.ofConv.comp f.hom.toAlgHom)) = m :=
-    pointsMulEquiv_kostantRootSubgroupCoordinateMap e h ρ M hM i hnil bb
-      (AdditiveGroup.coordinateHopfAlgebra ℤ) q
-  have hpoint' : GeneralLinear.pointToGeneralLinear N (toConv f.hom.toAlgHom) = m := by
-    simpa only [hq, AlgHom.id_comp, WithConv.ofConv_toConv] using hpoint
-  have hmval : m.val = 1 + Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv q) •
-      X.map (Int.cast : ℤ → AdditiveGroup.coordinateHopfAlgebra ℤ) :=
-    kostantRootSubgroupMatrix_eq_one_add_smul e h ρ M hM i hnil bb X hclass haction q
-  refine ⟨Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv q), ?_⟩
-  rw [← hmval, ← hpoint']
-  ext a c
-  rw [Matrix.map_apply, GeneralLinear.genericMatrix_apply,
-    GeneralLinear.pointToGeneralLinear_apply, WithConv.ofConv_toConv]
+    (GeneralLinear.genericMatrix ℤ N).map
+        (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil bb).hom.toAlgHom =
+      1 + SymmetricAlgebra.ι ℤ ℤ 1 •
+        X.map (Int.cast : ℤ → AdditiveGroup.coordinateHopfAlgebra ℤ) := by
+  rw [map_genericMatrix_eq_kostantRootSubgroupMatrix e h ρ M hM i hnil bb,
+    kostantRootSubgroupMatrix_eq_one_add_smul e h ρ M hM i hnil bb X hclass haction,
+    AdditiveGroup.toAdd_gaPointsMulEquiv, WithConv.ofConv_toConv]
+  rfl
 
 end GenericMatrix
 

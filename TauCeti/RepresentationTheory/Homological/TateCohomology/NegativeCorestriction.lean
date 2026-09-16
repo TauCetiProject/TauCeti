@@ -25,7 +25,8 @@ This file packages that composite in every such degree and proves that transport
 the Tate comparison is exactly Mathlib's group-homology map. The construction is a natural
 transformation in the coefficient representation. Degree `-2`, which corresponds to first group
 homology and hence to the abelianization for trivial integral coefficients, is exported under the
-separate name `HNegTwoCor` for the low-degree Artin--Tate applications.
+separate name `HNegTwoCor` for the low-degree Artin--Tate applications. Its interaction with the
+low-degree homology comparison is recorded explicitly.
 
 This construction treats degrees at most `-2` via group homology; positive degrees instead require
 a cohomological corestriction construction.
@@ -42,6 +43,8 @@ a cohomological corestriction construction.
 
 * `TauCeti.TateCohomology.negSuccCor_comp_isoGroupHomology_hom`: negative corestriction agrees
   with ordinary group-homology corestriction through Mathlib's comparison.
+* `TauCeti.TateCohomology.map_comp_negSuccCor`: negative corestriction is natural in its
+  coefficients.
 ## References
 
 * E. Artin and J. Tate, *Class Field Theory*, Chapter IV, §6 and Chapter XIV, §4.
@@ -103,10 +106,35 @@ theorem negSuccCor_comp_isoGroupHomology_hom (M : Rep R G) (f : H →* G) (n : �
         (groupHomology.coresNatTrans R f n).app M
   rw [(negSuccIsoGroupHomology R G n).inv_hom_id_app, Category.comp_id]
 
+/-- Negative-degree Tate corestriction is natural in the coefficient representation. -/
+@[reassoc (attr := simp)]
+theorem map_comp_negSuccCor {M N : Rep R G} (f : H →* G) (n : ℕ) [NeZero n]
+    (φ : M ⟶ N) :
+    (tateCohomologyFunctor (Int.negSucc n)).map ((Rep.resFunctor f).map φ) ≫
+        negSuccCor N f n =
+      negSuccCor M f n ≫ (tateCohomologyFunctor (Int.negSucc n)).map φ :=
+  (negSuccCorNatTrans f n).naturality φ
+
 /-- Corestriction along a group homomorphism in degree `-2` Tate cohomology. Under the comparison
 with group homology, this is the induced map on first homology. -/
 def HNegTwoCor (M : Rep R G) (f : H →* G) :
     tateCohomology (Rep.res f M) (-2) ⟶ tateCohomology M (-2) :=
   negSuccCor M f 1
+
+/-- Degree-`-2` corestriction is natural in the coefficient representation. -/
+@[reassoc (attr := simp)]
+theorem map_comp_HNegTwoCor {M N : Rep R G} (f : H →* G) (φ : M ⟶ N) :
+    (tateCohomologyFunctor (-2)).map ((Rep.resFunctor f).map φ) ≫ HNegTwoCor N f =
+      HNegTwoCor M f ≫ (tateCohomologyFunctor (-2)).map φ :=
+  map_comp_negSuccCor f 1 φ
+
+/-- Degree-`-2` corestriction agrees with the map induced on first group homology. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+theorem HNegTwoCor_comp_isoGroupHomology_hom (M : Rep R G) (f : H →* G) :
+    HNegTwoCor M f ≫
+        (TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app M =
+      (TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app (Rep.res f M) ≫
+        (groupHomology.coresNatTrans R f 1).app M :=
+  negSuccCor_comp_isoGroupHomology_hom M f 1
 
 end TauCeti.TateCohomology

@@ -141,11 +141,13 @@ theorem coe_geckSimpleWeylPoint (i : Fin t.rank) (A : Type v) [CommRing A] :
 
 /-- The simple Weyl representative is natural in the value ring. -/
 @[simp]
-theorem geckPointsMap_geckSimpleWeylPoint {A : Type v} {B : Type v'}
+theorem map_geckSimpleWeylPoint {A : Type v} {B : Type v'}
     [CommRing A] [CommRing B] (f : A →+* B) (i : Fin t.rank) :
-    t.geckPointsMap ht f (t.geckSimpleWeylPoint ht i A) =
+    (t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht B) f
+      (t.geckSimpleWeylPoint ht i A) =
       t.geckSimpleWeylPoint ht i B := by
   apply Subtype.ext
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map]
   have h := UniversalEnvelopingAlgebra.map_kostantToralWeylPoint
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
       (t.geckCoordinateLattice ht).toAddSubgroup
@@ -156,8 +158,7 @@ theorem geckPointsMap_geckSimpleWeylPoint {A : Type v} {B : Type v'}
   simp only [GeneralLinear.coe_mapHopfIdealPointsSubgroup,
     MulEquiv.subgroupCongr_apply] at hmatrix
   rw [RingHom.toIntAlgHom_toRingHom] at hmatrix
-  simpa only [coe_geckPointsMap, geckSimpleWeylPoint,
-    MulEquiv.subgroupCongr_apply] using hmatrix
+  simpa only [geckSimpleWeylPoint, MulEquiv.subgroupCongr_apply] using hmatrix
 
 /-- Conjugation by the simple Weyl representative exchanges the raising root subgroup at node
 `i` with its lowering root subgroup and negates the parameter. -/
@@ -373,13 +374,16 @@ theorem geckWeylWordPoint_append (l l' : List (Fin t.rank))
 
 /-- The Weyl-word representative is natural in the value ring. -/
 @[simp]
-theorem geckPointsMap_geckWeylWordPoint {A : Type v} {B : Type v'}
+theorem map_geckWeylWordPoint {A : Type v} {B : Type v'}
     [CommRing A] [CommRing B] (f : A →+* B) (l : List (Fin t.rank)) :
-    t.geckPointsMap ht f (t.geckWeylWordPoint ht l A) =
+    (t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht B) f
+      (t.geckWeylWordPoint ht l A) =
       t.geckWeylWordPoint ht l B := by
   induction l with
   | nil => simp
-  | cons i l ih => simp [ih]
+  | cons i l ih =>
+    rw [geckWeylWordPoint_cons, map_mul, map_geckSimpleWeylPoint,
+      ih, geckWeylWordPoint_cons]
 
 /-- **The action on split-torus points spelled by a word in simple reflections.**  The recursion
 has the same multiplication order as `geckWeylWordPoint`: the head reflection acts last on the

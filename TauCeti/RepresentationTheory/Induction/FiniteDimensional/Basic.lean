@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RepresentationTheory.FiniteIndex
 public import TauCeti.RepresentationTheory.FDRep
+public import TauCeti.RepresentationTheory.Induction.Basic
 
 /-!
 # Finite-dimensional induced representations
@@ -20,6 +21,10 @@ dimension formula
 Induction on finite-dimensional representations is packaged both objectwise, as `indFDRep`, and
 functorially, as `indFDRepFunctor`, the latter naturally isomorphic to `Rep.indFunctor` under the
 forgetful functor to `Rep k G`.
+
+That functor is additive (`indFDRepMap_add`); the general fact it rests on, additivity of induced
+intertwiners along an arbitrary group homomorphism, is `Rep.indMap_add` of
+`TauCeti.RepresentationTheory.Induction.Basic`.
 
 The objectwise construction, dimension theorem, and functor on `FDRep` allow the scalar field and
 group to live in separate universes. It uses a small model of Mathlib's induced carrier, compared by
@@ -377,6 +382,19 @@ theorem forget₂_map_indFDRepMap {k G : Type u} [Field k] [Group G] {S : Subgro
     forget₂_map_indFDRepMap_apply, Rep.indFunctor_map]
   rw [indFDRepForgetIso_hom_hom_apply, indFDRepForgetIso_inv_hom_apply]
 
+/-- **Induction of intertwiners from a finite-index subgroup is additive**,
+`indFDRepMap (f + g) = indFDRepMap f + indFDRepMap g`.  This is what makes `indFDRepFunctor` an
+additive functor. -/
+theorem indFDRepMap_add {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+    [S.FiniteIndex] {A B : FDRep k S} (f g : A ⟶ B) :
+    indFDRepMap (f + g) = indFDRepMap f + indFDRepMap g := by
+  apply (forget₂ (FDRep k G) (Rep k G)).map_injective
+  apply Rep.hom_ext
+  ext x
+  simp only [Functor.map_add, Rep.add_hom, forget₂_map_indFDRepMap_apply, Rep.indMap_add,
+    Representation.IntertwiningMap.toLinearMap_apply, Representation.IntertwiningMap.coe_add,
+    Pi.add_apply, map_add]
+
 /-- Induction of intertwiners preserves identities. -/
 private theorem indFDRepMap_id {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
     [S.FiniteIndex] (A : FDRep k S) : indFDRepMap (𝟙 A) = 𝟙 (indFDRep A) := by
@@ -431,6 +449,13 @@ theorem indFDRepFunctor_map {k : Type u} {G : Type v} [Field k] [Group G]
   -- The transports reconcile the opaque object projections with the types of `indFDRepMap`.
   -- They are not a useful simp normal form, so this projection is intentionally not a simp rule.
   rfl
+
+/-- **Induction from a finite-index subgroup is an additive functor**, which is what lets it be
+passed to the split Grothendieck group in
+`TauCeti.RepresentationTheory.RepresentationRing.Induction`. -/
+instance indFDRepFunctor_additive {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+    [S.FiniteIndex] : (indFDRepFunctor (k := k) (S := S)).Additive where
+  map_add {_ _} f g := indFDRepMap_add f g
 
 /-- Under the forgetful functor to `Rep k G`, `indFDRepFunctor` is naturally isomorphic to
 Mathlib's induction functor, componentwise by `indFDRepForgetIso`. -/

@@ -67,10 +67,11 @@ Ported from the AINTLIB `LeanModularForms` project
 ([`LeanModularForms/HeckeRIngs/GL2/HeckeAction.lean`](https://github.com/CBirkbeck/AINTLIB),
 commit `2baa76f742bdb4fb8ee323fabba41203bd390e08`, Apache-2.0, Chris Birkbeck): the
 `SlashAction ℤ (GL (Fin 2) ℚ) (ℍ → ℂ)` instance built by `monoidHomSlashAction`, and the
-scalar-pull-through step inside its `heckeSlash_smul`. AINTLIB names the embedding `glMap`; that
-is a one-use wrapper around Mathlib's `Matrix.GeneralLinearGroup.map`, so it is not ported and
-the map is spelled out instead. The scalar lemma is stated here at the `SMul`/`IsScalarTower`
-generality of Mathlib's `ModularForm.SL_smul_slash` rather than AINTLIB's `c : ℂ`.
+scalar-pull-through step inside its `heckeSlash_smul`. AINTLIB names the embedding `glMap`; here
+it is spelled out as `Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ)` at each use rather than
+abbreviated, so there is no corresponding declaration. The scalar lemma is stated here at the
+`SMul`/`IsScalarTower` generality of Mathlib's
+`ModularForm.SL_smul_slash` rather than AINTLIB's `c : ℂ`.
 
 The `SLnZ 2` / `𝒮ℒ` bridge corresponds to AINTLIB's `glMap_mem_SL` and `mem_SL_exists_H` (same
 file). AINTLIB's `glMap_mapGL_eq` has no counterpart: mathlib's
