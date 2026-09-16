@@ -34,7 +34,7 @@ as the S-equivalence class of a Seifert matrix — offers.
 ## Main results
 
 * `Matrix.signature_congr`: invariance under congruence by a matrix with unit determinant.
-* `Matrix.signature_reindex`: invariance under an equivalence of the coordinate type.
+* `Matrix.signature_submatrix_equiv_self`: invariance under an equivalence of the coordinate type.
 * `Matrix.signature_fromBlocks_zero`: additivity along a block diagonal.
 * `Matrix.signature_diagonal`: the signature of a diagonal matrix as a sum of signs.
 * `Matrix.signature_hyperbolicGram`: the hyperbolic plane has signature zero.
@@ -189,7 +189,7 @@ theorem signature_congr [DecidableEq ι] {P : Matrix ι ι 𝕜} (hP : IsUnit P.
 
 /-- Reindexing both coordinates of a matrix along an equivalence does not change its signature. -/
 @[simp]
-theorem signature_reindex (e : ι ≃ κ) (A : Matrix ι ι 𝕜) :
+theorem signature_submatrix_equiv_self (e : ι ≃ κ) (A : Matrix ι ι 𝕜) :
     signature (A.submatrix e.symm e.symm) = signature A := by
   classical
   exact signature_eq_of_equivalent ⟨isometryEquivReindex e A⟩
