@@ -4,6 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
 -/
 module
+import TauCeti.NumberTheory.ArithmeticFunction.PrimeRecurrence
+import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Eigenvector
+import TauCeti.NumberTheory.ModularForms.Newforms.EigenFromPrimes
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Composite
 public import TauCeti.NumberTheory.ModularForms.Newforms.RingEigenvalue
 
@@ -27,10 +30,22 @@ the `λ_n` — and the identity that turns the eigenvalue identities of `RingEig
 (`eigenvalue_mul`, `eigenvalue_prime_pow_add_two`) into the Fourier-coefficient conditions of
 Diamond–Shurman's Proposition 5.8.5.
 
+Conversely, the coefficient recurrence at every good prime characterises the existence of an
+`EigenformAwayFromLevel` with a prescribed underlying cusp form. In particular, normalisation,
+coprime multiplicativity, and the prime-power recurrence imply the good-prime recurrence and
+hence produce a bundled good Hecke eigenform. This is the away-from-the-level part of the
+coefficient characterisation in Diamond–Shurman, Proposition 5.8.5.
+
 ## Main results
 
 * `HeckeRing.GL2.EigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue_mul_coeff_one`:
   `a_n(f) = λ_n a_1(f)` at a good index.
+* `exists_toCuspForm_eq_and_chi_eq_iff_ne_zero_and_forall_prime_qExpansion_coeff_prime_mul`:
+  a nonzero cusp form of nebentypus `χ` underlies a good Hecke eigenform exactly when its
+  coefficients satisfy a scalar Hecke recurrence at every good prime.
+* `exists_toCuspForm_eq_and_chi_eq_of_qExpansion_coeff_mul_of_prime_pow_add_two`:
+  normalisation, coprime multiplicativity, and the prime-power recurrences produce a good Hecke
+  eigenform.
 * `HeckeRing.GL2.Newform.qExpansion_coeff_eq_eigenvalue`: `a_n(f) = λ_n` for a newform, and with
   it the two classical coefficient identities of a normalised eigenform at the good indices,
   `HeckeRing.GL2.Newform.qExpansion_coeff_mul` and
@@ -84,6 +99,106 @@ theorem qExpansion_coeff_eq_eigenvalue_mul_coeff_one (n : ℕ+) (hn : Nat.Coprim
     smul_eq_mul] at h
   exact h.symm
 
+/-- **Multiplicativity of the coefficients of a normalised good eigenform, at good indices**:
+`a_{mn} = a_m a_n` when `m` and `n` are coprime to each other and to the level. This is the image
+of `eigenvalue_mul`; newness is not used. -/
+theorem qExpansion_coeff_mul (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) {m n : ℕ+}
+    (hmn : Nat.Coprime (m : ℕ) (n : ℕ)) (hm : Nat.Coprime (m : ℕ) N)
+    (hn : Nat.Coprime (n : ℕ) N) :
+    (qExpansion 1 f.toCuspForm).coeff ((m : ℕ) * (n : ℕ)) =
+      (qExpansion 1 f.toCuspForm).coeff (m : ℕ) *
+        (qExpansion 1 f.toCuspForm).coeff (n : ℕ) := by
+  rw [← PNat.mul_coe, f.qExpansion_coeff_eq_eigenvalue_mul_coeff_one (m * n)
+      (PNat.mul_coe m n ▸ Nat.coprime_mul_iff_left.mpr ⟨hm, hn⟩),
+    f.qExpansion_coeff_eq_eigenvalue_mul_coeff_one m hm,
+    f.qExpansion_coeff_eq_eigenvalue_mul_coeff_one n hn, h₁, mul_one, mul_one,
+    f.eigenvalue_mul hmn hm hn]
+  ring
+
+/-- **The prime-power recurrence for a normalised good eigenform, at a good prime**:
+`a_{p^{r+2}} = a_p a_{p^{r+1}} - χ(p) p^{k-1} a_{p^r}`. This is the image of
+`eigenvalue_prime_pow_add_two`; newness is not used. -/
+theorem qExpansion_coeff_prime_pow_add_two (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1)
+    {p : ℕ+} (hp : (p : ℕ).Prime) (hpN : Nat.Coprime (p : ℕ) N) (r : ℕ) :
+    (qExpansion 1 f.toCuspForm).coeff ((p : ℕ) ^ (r + 2)) =
+      (qExpansion 1 f.toCuspForm).coeff (p : ℕ) *
+          (qExpansion 1 f.toCuspForm).coeff ((p : ℕ) ^ (r + 1)) -
+        (f.χ (ZMod.unitOfCoprime (p : ℕ) hpN) : ℂ) * (p : ℂ) ^ (k - 1) *
+          (qExpansion 1 f.toCuspForm).coeff ((p : ℕ) ^ r) := by
+  have hc (v : ℕ) : Nat.Coprime ((p ^ v : ℕ+) : ℕ) N := PNat.pow_coe p v ▸ hpN.pow_left v
+  rw [← PNat.pow_coe p (r + 2), ← PNat.pow_coe p (r + 1), ← PNat.pow_coe p r,
+    f.qExpansion_coeff_eq_eigenvalue_mul_coeff_one (p ^ (r + 2)) (hc (r + 2)),
+    f.qExpansion_coeff_eq_eigenvalue_mul_coeff_one (p ^ (r + 1)) (hc (r + 1)),
+    f.qExpansion_coeff_eq_eigenvalue_mul_coeff_one (p ^ r) (hc r),
+    f.qExpansion_coeff_eq_eigenvalue_mul_coeff_one p hpN, h₁, mul_one,
+    f.eigenvalue_prime_pow_add_two hp hpN r]
+  ring
+
+/-- **The coefficient recurrence characterises bundled eigen-ness away from the level.** A cusp
+form `f ∈ S_k(N, χ)` underlies an `EigenformAwayFromLevel` exactly when it is nonzero and, at
+every prime `p ∤ N`, its coefficients satisfy
+`a_{pm} = c_p a_m - χ(p) p^{k-1} a_{m/p}` for some scalar `c_p` and every `m`.
+
+The scalar is not required to be named as `a_p` here: that identification needs the separate
+normalisation `a₁ = 1`. -/
+theorem exists_toCuspForm_eq_and_chi_eq_iff_ne_zero_and_forall_prime_qExpansion_coeff_prime_mul
+    {f : CuspForm
+    ((Gamma1 N).map (mapGL ℝ)) k} {χ : (ZMod N)ˣ →* ℂˣ} (hχ : f ∈ cuspFormCharSpace k χ) :
+    (∃ F : EigenformAwayFromLevel N k, F.toCuspForm = f ∧ F.χ = χ) ↔
+      f ≠ 0 ∧ ∀ (p : ℕ) (_hp : p.Prime) (hpN : Nat.Coprime p N), ∃ c : ℂ, ∀ m : ℕ,
+        (qExpansion 1 f).coeff (p * m) = c * (qExpansion 1 f).coeff m -
+          if p ∣ m then (χ (ZMod.unitOfCoprime p hpN) : ℂ) *
+            (p : ℂ) ^ (k - 1) * (qExpansion 1 f).coeff (m / p) else 0 := by
+  constructor
+  · rintro ⟨F, rfl, rfl⟩
+    refine ⟨F.ne_zero, fun p hp hpN ↦ ⟨F.eigenvalue ⟨p, hp.pos⟩ hpN, fun m ↦ ?_⟩⟩
+    exact qExpansion_coeff_prime_mul_of_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_smul
+      hp hpN (F.isEigen ⟨p, hp.pos⟩ hpN) m
+  · rintro ⟨hf, hrec⟩
+    refine ⟨ofForallPrime hχ hf (fun p hp hpN ↦ ?_), ofForallPrime_toCuspForm _ _ _,
+      ofForallPrime_chi _ _ _⟩
+    obtain ⟨c, hc⟩ := hrec p hp hpN
+    refine ⟨c, ?_⟩
+    rw [heckeRingHomCuspCharSpace_heckeTGeneratorGamma0 k χ hp]
+    apply Subtype.ext
+    exact (heckeTCuspNat_eq_smul_iff_forall_qExpansion_coeff_prime_mul hp hpN hχ c).2 hc
+
+/-- **Diamond–Shurman's coefficient relations produce a good Hecke eigenform.** Let
+`f ∈ S_k(N, χ)` be normalised. If its coefficients are multiplicative at coprime indices and
+satisfy the Hecke recurrence along the powers of every good prime, then `f` underlies an
+`EigenformAwayFromLevel`.
+
+Multiplicativity is needed at all coprime indices, rather than only indices prime to `N`: to prove
+the `T_p` eigen-relation at a good prime, its coefficient recurrence must also hold at indices
+containing prime factors of the level. -/
+theorem exists_toCuspForm_eq_and_chi_eq_of_qExpansion_coeff_mul_of_prime_pow_add_two
+    {f : CuspForm
+    ((Gamma1 N).map (mapGL ℝ)) k} {χ : (ZMod N)ˣ →* ℂˣ} (hχ : f ∈ cuspFormCharSpace k χ)
+    (h₁ : (qExpansion 1 f).coeff 1 = 1)
+    (hmul : ∀ u v : ℕ, Nat.Coprime u v →
+      (qExpansion 1 f).coeff (u * v) =
+        (qExpansion 1 f).coeff u * (qExpansion 1 f).coeff v)
+    (hpow : ∀ (p : ℕ) (_hp : p.Prime) (hpN : Nat.Coprime p N) (r : ℕ),
+      (qExpansion 1 f).coeff (p ^ (r + 2)) =
+        (qExpansion 1 f).coeff p * (qExpansion 1 f).coeff (p ^ (r + 1)) -
+          (χ (ZMod.unitOfCoprime p hpN) : ℂ) * (p : ℂ) ^ (k - 1) *
+            (qExpansion 1 f).coeff (p ^ r)) :
+    ∃ F : EigenformAwayFromLevel N k, F.toCuspForm = f ∧ F.χ = χ := by
+  rw [exists_toCuspForm_eq_and_chi_eq_iff_ne_zero_and_forall_prime_qExpansion_coeff_prime_mul hχ]
+  refine ⟨?_, fun p hp hpN ↦ ⟨(qExpansion 1 f).coeff p, fun m ↦ ?_⟩⟩
+  · intro hf
+    subst hf
+    simp [UpperHalfPlane.qExpansion_zero] at h₁
+  · rcases eq_or_ne m 0 with rfl | hm
+    · simp only [mul_zero]
+      simp [CuspFormClass.qExpansion_coeff_zero f one_pos
+        (TauCeti.one_mem_strictPeriods_Gamma1_map N)]
+    · exact TauCeti.prime_mul_eq_of_prime_pow_recurrence_of_coprime_mul_eq
+        (a := fun n ↦ (qExpansion 1 f).coeff n) (L := 1)
+        (d := (χ (ZMod.unitOfCoprime p hpN) : ℂ) * (p : ℂ) ^ (k - 1)) hp
+        (Nat.coprime_one_right p) (fun u v huv _ _ ↦ hmul u v huv) (hpow p hp hpN) m hm
+        (Nat.coprime_one_right m)
+
 end EigenformAwayFromLevel
 
 namespace Newform
@@ -103,10 +218,7 @@ theorem qExpansion_coeff_mul {m n : ℕ+} (hmn : Nat.Coprime (m : ℕ) (n : ℕ)
     (hm : Nat.Coprime (m : ℕ) N) (hn : Nat.Coprime (n : ℕ) N) :
     (qExpansion 1 f.toCuspForm).coeff ((m : ℕ) * (n : ℕ)) =
       (qExpansion 1 f.toCuspForm).coeff (m : ℕ) * (qExpansion 1 f.toCuspForm).coeff (n : ℕ) := by
-  rw [← PNat.mul_coe, f.qExpansion_coeff_eq_eigenvalue (m * n)
-      (PNat.mul_coe m n ▸ Nat.coprime_mul_iff_left.mpr ⟨hm, hn⟩),
-    f.qExpansion_coeff_eq_eigenvalue m hm, f.qExpansion_coeff_eq_eigenvalue n hn,
-    f.toEigenformAwayFromLevel.eigenvalue_mul hmn hm hn]
+  exact f.toEigenformAwayFromLevel.qExpansion_coeff_mul f.isNorm hmn hm hn
 
 /-- **The recurrence along the powers of a good prime**:
 `a_{p^{r+2}} = a_p a_{p^{r+1}} − χ(p) p^{k−1} a_{p^r}` (Diamond–Shurman
@@ -118,12 +230,7 @@ theorem qExpansion_coeff_prime_pow_add_two {p : ℕ+} (hp : (p : ℕ).Prime)
           (qExpansion 1 f.toCuspForm).coeff ((p : ℕ) ^ (r + 1)) -
         (f.χ (ZMod.unitOfCoprime (p : ℕ) hpN) : ℂ) * (p : ℂ) ^ (k - 1) *
           (qExpansion 1 f.toCuspForm).coeff ((p : ℕ) ^ r) := by
-  have hc (v : ℕ) : Nat.Coprime ((p ^ v : ℕ+) : ℕ) N := PNat.pow_coe p v ▸ hpN.pow_left v
-  rw [← PNat.pow_coe p (r + 2), ← PNat.pow_coe p (r + 1), ← PNat.pow_coe p r,
-    f.qExpansion_coeff_eq_eigenvalue (p ^ (r + 2)) (hc (r + 2)),
-    f.qExpansion_coeff_eq_eigenvalue (p ^ (r + 1)) (hc (r + 1)),
-    f.qExpansion_coeff_eq_eigenvalue (p ^ r) (hc r), f.qExpansion_coeff_eq_eigenvalue p hpN,
-    f.toEigenformAwayFromLevel.eigenvalue_prime_pow_add_two hp hpN r]
+  exact f.toEigenformAwayFromLevel.qExpansion_coeff_prime_pow_add_two f.isNorm hp hpN r
 
 end Newform
 

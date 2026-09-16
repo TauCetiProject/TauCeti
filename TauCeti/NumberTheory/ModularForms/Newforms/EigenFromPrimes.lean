@@ -54,6 +54,22 @@ noncomputable def ofForallPrime {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
   isEigen n hn := (exists_smul_heckeTCompositeGamma0_of_forall_prime h n hn).choose_spec
   ne_zero := hf
 
+/-- The underlying cusp form of `ofForallPrime` is the form supplied to the constructor. -/
+@[simp]
+theorem ofForallPrime_toCuspForm {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hχ : f ∈ cuspFormCharSpace k χ) (hf : f ≠ 0)
+    (h : ∀ p : ℕ, p.Prime → Nat.Coprime p N → ∃ c : ℂ,
+      heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p) ⟨f, hχ⟩ = c • ⟨f, hχ⟩) :
+    (ofForallPrime hχ hf h).toCuspForm = f := (rfl)
+
+/-- The nebentypus of `ofForallPrime` is the character supplied to the constructor. -/
+@[simp]
+theorem ofForallPrime_chi {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hχ : f ∈ cuspFormCharSpace k χ) (hf : f ≠ 0)
+    (h : ∀ p : ℕ, p.Prime → Nat.Coprime p N → ∃ c : ℂ,
+      heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p) ⟨f, hχ⟩ = c • ⟨f, hχ⟩) :
+    (ofForallPrime hχ hf h).χ = χ := (rfl)
+
 end HeckeRing.GL2.EigenformAwayFromLevel
 
 end
