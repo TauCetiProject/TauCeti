@@ -62,6 +62,7 @@ namespace IsFrobenius
 variable {E : ExactStructure C} (hE : E.IsFrobenius)
 
 /-- In a Frobenius exact structure, relative injectivity is equivalent to relative projectivity. -/
+@[simp]
 theorem injective_iff_projective (hE : E.IsFrobenius) (X : C) :
     E.isInjective X ↔ E.isProjective X :=
   (IsFrobenius.projective_iff_injective hE X).symm
