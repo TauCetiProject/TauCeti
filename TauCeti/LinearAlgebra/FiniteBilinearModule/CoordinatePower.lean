@@ -158,9 +158,7 @@ abbrev coordinatePower (ι : Type v) [Fintype ι] : FiniteQuadraticModule where
   toFiniteBilinearModule := A.toFiniteBilinearModule.coordinatePower ι
   quadratic := QuadraticMap.pi fun _ : ι ↦ A.quadratic
   polar_eq_pairing' x y := by
-    rw [QuadraticMap.polar, QuadraticMap.pi_apply, QuadraticMap.pi_apply,
-      QuadraticMap.pi_apply, FiniteBilinearModule.coordinatePower_pairing,
-      ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib]
+    rw [QuadraticMap.Ring.polar_pi, FiniteBilinearModule.coordinatePower_pairing]
     exact Finset.sum_congr rfl fun i _ ↦ A.polar_eq_pairing (x i) (y i)
 
 /-- The quadratic value on a coordinate power is the sum of the coordinate quadratic values. -/
