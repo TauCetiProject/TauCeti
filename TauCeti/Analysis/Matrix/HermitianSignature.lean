@@ -94,17 +94,6 @@ theorem signature_congr {P : Matrix ι ι ℂ} (hP : IsUnit P.det) (hA : A.IsHer
     hA.signature_realify] at h
   omega
 
-/-- **The signature from an explicit diagonalising `*`-congruence.** -/
-theorem signature_eq_of_congr_diagonal {P : Matrix ι ι ℂ} (hP : IsUnit P.det) (hA : A.IsHermitian)
-    {d : ι → ℝ} (h : P * A * Pᴴ = (Matrix.diagonal d).map ((↑) : ℝ → ℂ)) :
-    hA.signature = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
-  have hcongr : Matrix.signature (P * A * Pᴴ).realify = Matrix.signature A.realify := by
-    rw [realify_mul, realify_mul, realify_conjTranspose,
-      Matrix.signature_congr (Matrix.isUnit_det_realify hP)]
-  rw [h, realify_map_ofReal, Matrix.signature_fromBlocks_zero, Matrix.signature_diagonal,
-    hA.signature_realify] at hcongr
-  omega
-
 /-- A real matrix, read as a Hermitian complex matrix, keeps its real signature. -/
 @[simp]
 theorem signature_map_ofReal {M : Matrix ι ι ℝ} (hM : (M.map ((↑) : ℝ → ℂ)).IsHermitian) :
@@ -112,6 +101,20 @@ theorem signature_map_ofReal {M : Matrix ι ι ℝ} (hM : (M.map ((↑) : ℝ �
   have h := hM.signature_realify
   rw [realify_map_ofReal, Matrix.signature_fromBlocks_zero] at h
   omega
+
+/-- **The signature from an explicit diagonalising `*`-congruence.** -/
+theorem signature_eq_of_congr_diagonal {P : Matrix ι ι ℂ} (hP : IsUnit P.det) (hA : A.IsHermitian)
+    {d : ι → ℝ} (h : P * A * Pᴴ = (Matrix.diagonal d).map ((↑) : ℝ → ℂ)) :
+    hA.signature = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
+  -- `h` rewrites the matrix under a Hermiticity proof, so read it off a universally
+  -- quantified matrix, where it becomes a substitution.
+  have key : ∀ {B : Matrix ι ι ℂ} (hB : B.IsHermitian),
+      B = (Matrix.diagonal d).map ((↑) : ℝ → ℂ) →
+        hB.signature = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
+    rintro B hB rfl
+    rw [signature_map_ofReal, Matrix.signature_diagonal]
+  rw [← hA.signature_congr hP]
+  exact key _ h
 
 /-- The zero matrix has signature zero. -/
 @[simp]
@@ -134,7 +137,7 @@ by the reflection negating the imaginary coordinates. -/
 theorem signature_map_starRingEnd (hA : A.IsHermitian) :
     (hA.map (starRingEnd ℂ) (by simp [Function.Semiconj])).signature = hA.signature := by
   have h : Matrix.signature (A.map (starRingEnd ℂ)).realify = Matrix.signature A.realify := by
-    rw [realify_map_starRingEnd, Matrix.signature_congr isUnit_det_realifyReflection]
+    rw [realify_map_starRingEnd, Matrix.signature_congr TauCeti.isUnit_det_realifyReflection]
   rw [(hA.map (starRingEnd ℂ) (by simp [Function.Semiconj])).signature_realify,
     hA.signature_realify] at h
   omega

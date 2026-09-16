@@ -81,6 +81,9 @@ theorem toQuadraticForm'_add_transpose (A : Matrix ι ι R) :
     toQuadraticForm'_transpose]
   ring
 
+-- Not a `simp` lemma, for the same reason as `toQuadraticForm'_transpose` above:
+-- `TauCeti.PDE.toQuadraticForm'_smul` is already `simp` and normalises the same left-hand side
+-- pointwise on `EuclideanSpace ℝ n`, so tagging this one makes that one non-simp-normal.
 /-- Scaling a matrix scales its quadratic form. -/
 theorem toQuadraticForm'_smul (c : R) (A : Matrix ι ι R) :
     (c • A).toQuadraticForm' = c • A.toQuadraticForm' := by

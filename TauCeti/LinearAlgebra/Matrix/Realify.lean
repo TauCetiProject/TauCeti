@@ -25,6 +25,8 @@ congruence. This is what lets real quadratic-form theory be applied to Hermitian
 ## Main definitions
 
 * `Matrix.realify`: the real matrix of the `ℝ`-linear map a complex matrix induces.
+* `TauCeti.realifyReflection`: the reflection of `ℝ^ι ⊕ ℝ^ι` negating the second summand, which
+  realises entrywise complex conjugation as a congruence of realifications.
 
 ## Main results
 
@@ -35,14 +37,43 @@ congruence. This is what lets real quadratic-form theory be applied to Hermitian
 * `Matrix.realify_map_ofReal`: a real matrix realifies to two diagonal copies of itself.
 * `Matrix.isUnit_det_realify`: realification preserves invertibility.
 * `Matrix.realify_map_starRingEnd`: entrywise conjugation becomes congruence by the reflection
-  that negates the imaginary coordinates.
+  `TauCeti.realifyReflection` that negates the imaginary coordinates.
 -/
 
 public section
 
-namespace Matrix
+open scoped Matrix
 
 variable {l m n ι : Type*}
+
+namespace TauCeti
+
+/-- The reflection of `ℝ^ι ⊕ ℝ^ι` negating the second summand, which realises complex
+conjugation as a congruence of realifications. -/
+def realifyReflection (ι : Type*) [DecidableEq ι] : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ :=
+  Matrix.fromBlocks 1 0 0 (-1)
+
+@[simp]
+theorem realifyReflection_transpose [DecidableEq ι] :
+    (realifyReflection ι)ᵀ = realifyReflection ι := by
+  simp [realifyReflection, Matrix.fromBlocks_transpose]
+
+@[simp]
+theorem realifyReflection_mul_self [Fintype ι] [DecidableEq ι] :
+    realifyReflection ι * realifyReflection ι = 1 := by
+  simp [realifyReflection, Matrix.fromBlocks_multiply, ← Matrix.fromBlocks_one]
+
+theorem isUnit_det_realifyReflection [Fintype ι] [DecidableEq ι] :
+    IsUnit (realifyReflection ι).det :=
+  (Matrix.isUnit_iff_isUnit_det _).mp
+    ⟨⟨realifyReflection ι, realifyReflection ι, realifyReflection_mul_self,
+      realifyReflection_mul_self⟩, rfl⟩
+
+end TauCeti
+
+namespace Matrix
+
+open TauCeti
 
 /-- The realification of a complex matrix: the real matrix of the `ℝ`-linear map it induces
 from `ℂ^n` to `ℂ^m`, read in the coordinates `ℂ^n ≃ ℝ^n ⊕ ℝ^n` given by real and imaginary
@@ -84,6 +115,7 @@ theorem realify_neg (A : Matrix m n ℂ) : (-A).realify = -A.realify := by
   rcases p with i | i <;> rcases q with j | j <;> simp
 
 /-- A matrix with real entries realifies to two diagonal copies of itself. -/
+@[simp]
 theorem realify_map_ofReal (M : Matrix m n ℝ) :
     (M.map ((↑) : ℝ → ℂ)).realify = fromBlocks M 0 0 M := by
   ext p q
@@ -122,27 +154,6 @@ theorem isUnit_det_realify [Fintype ι] [DecidableEq ι] {A : Matrix ι ι ℂ} 
   have h₂ : (A⁻¹).realify * A.realify = 1 := by
     rw [← realify_mul, Matrix.nonsing_inv_mul _ h, realify_one]
   exact (Matrix.isUnit_iff_isUnit_det _).mp ⟨⟨A.realify, (A⁻¹).realify, h₁, h₂⟩, rfl⟩
-
-/-- The reflection of `ℝ^ι ⊕ ℝ^ι` negating the second summand, which realises complex
-conjugation as a congruence. -/
-def realifyReflection (ι : Type*) [DecidableEq ι] : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ :=
-  fromBlocks 1 0 0 (-1)
-
-@[simp]
-theorem realifyReflection_transpose [DecidableEq ι] :
-    (realifyReflection ι)ᵀ = realifyReflection ι := by
-  simp [realifyReflection, fromBlocks_transpose]
-
-@[simp]
-theorem realifyReflection_mul_self [Fintype ι] [DecidableEq ι] :
-    realifyReflection ι * realifyReflection ι = 1 := by
-  simp [realifyReflection, fromBlocks_multiply, ← fromBlocks_one]
-
-theorem isUnit_det_realifyReflection [Fintype ι] [DecidableEq ι] :
-    IsUnit (realifyReflection ι).det :=
-  (Matrix.isUnit_iff_isUnit_det _).mp
-    ⟨⟨realifyReflection ι, realifyReflection ι, realifyReflection_mul_self,
-      realifyReflection_mul_self⟩, rfl⟩
 
 /-- Entrywise complex conjugation becomes congruence by the reflection negating the imaginary
 coordinates. -/

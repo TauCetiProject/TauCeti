@@ -16,8 +16,8 @@ the Hermitian matrix `(1 - ω) V + (1 - conj ω) Vᵀ` over `ℂ`, and the *Tris
 `σ_ω(V)` is its signature. It is a one-parameter extension of the classical (Murasugi)
 signature, recovered at `ω = -1`
 (`TauCeti.KnotTheory.tristramLevineSignature_neg_one`), and the family is not constant: for the
-trefoil the value drops from `-2` at `ω = -1` to `0` at the unit-circle point `(3 + 4i)/5`, both
-computed below.
+trefoil the value changes from `-2` at `ω = -1` to `0` at the unit-circle point `(3 + 4i)/5`,
+both computed below.
 
 The form is Hermitian for every `ω : ℂ`, so no hypothesis on `ω` is imposed here. This file
 constructs an invariant of a chosen Seifert matrix and proves congruence invariance, but not
@@ -169,15 +169,9 @@ for a matrix `P` with unit determinant does not change it; over `ℤ` this is a 
 the first homology of the Seifert surface. -/
 theorem tristramLevineSignature_congr {P : Matrix ι ι ℝ} (hP : IsUnit P.det) (V : Matrix ι ι ℝ)
     (ω : ℂ) : tristramLevineSignature (P * V * Pᵀ) ω = tristramLevineSignature V ω := by
-  have hP' : IsUnit (P.map ((↑) : ℝ → ℂ)).det := by
-    have hmapEq : P.map ((↑) : ℝ → ℂ) = Complex.ofRealHom.mapMatrix P := by
-      ext i j
-      simp
-    have hdet : (P.map ((↑) : ℝ → ℂ)).det = ((P.det : ℝ) : ℂ) := by
-      rw [hmapEq]
-      exact (RingHom.map_det Complex.ofRealHom P).symm
-    rw [hdet, isUnit_iff_ne_zero]
-    simpa using isUnit_iff_ne_zero.mp hP
+  -- `P.map (↑)` is `Complex.ofRealHom.mapMatrix P`, so its determinant is `↑P.det`.
+  have hP' : IsUnit (P.map ((↑) : ℝ → ℂ)).det :=
+    RingHom.map_det Complex.ofRealHom P ▸ hP.map Complex.ofRealHom
   unfold tristramLevineSignature
   simpa only [tristramLevineForm_congr] using
     (isHermitian_tristramLevineForm V ω).signature_congr hP'
@@ -219,7 +213,7 @@ theorem tristramLevineSignature_figureEightSeifertMatrix_neg_one :
 
 /-- **The Tristram--Levine signature of the trefoil is not constant on the unit circle.** The
 witness is the rational point `(3 + 4i)/5`, where the symmetrised form becomes indefinite and the
-signature drops from `-2` to `0`. -/
+signature changes from `-2` to `0`. -/
 theorem exists_tristramLevineSignature_trefoilSeifertMatrix_ne :
     ∃ ω : ℂ, ‖ω‖ = 1 ∧
       tristramLevineSignature (trefoilSeifertMatrix.map ((↑) : ℤ → ℝ)) ω ≠
