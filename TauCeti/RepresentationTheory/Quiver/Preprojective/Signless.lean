@@ -245,8 +245,8 @@ end Lift
 
 section DoubledQuiver
 
-variable (k : Type w) {V : Type u} [CommSemiring k] (G : SimpleGraph V) [Fintype V]
-  [DecidableRel G.Adj]
+variable (k : Type w) {V : Type u} [CommSemiring k] (G : SimpleGraph V)
+  [∀ v, Fintype (G.neighborSet v)] [∀ x : DoubledQuiver G, Fintype (Quiver.Star x)]
 
 /-- **The signless relator of a simple graph** at `v` is `∑_{j ∼ v} (v → j → v)`, the sum of the
 backtracks along the edges at `v`. -/
