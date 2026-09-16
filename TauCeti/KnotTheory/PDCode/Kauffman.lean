@@ -260,9 +260,9 @@ theorem stateLoopCount_def (D : PDCode n) (s : Fin n → Bool) :
     (D.relabel half cross).stateLoopCount s = D.stateLoopCount (s ∘ cross) := by
   simp [stateLoopCount_def]
 
-section Bracket
+section StateWeight
 
-variable {R : Type*} [CommRing R]
+variable {R : Type*} [CommMonoid R]
 
 /-- The weight of a state: the unit `a` at each `A`-smoothing and `a⁻¹` at each `B`-smoothing, so
 that a state with `p` of the former and `q` of the latter has weight `a ^ (p - q)`. -/
@@ -292,6 +292,12 @@ theorem stateWeight_def (s : Fin n → Bool) (a : Rˣ) :
     stateWeight (s ∘ cross) a = stateWeight s a :=
   Equiv.prod_comp cross fun i => bif s i then a else a⁻¹
 
+end StateWeight
+
+section Bracket
+
+variable {R : Type*} [CommRing R]
+
 /-- **The Kauffman bracket** of a PD-code at a unit `a`: the sum, over all `2 ^ n` states, of the
 weight of the state times the loop value `TauCeti.TemperleyLieb.jonesDelta a` raised to one less
 than the number of circles of the smoothed diagram. This is Lickorish's normalisation
@@ -309,9 +315,15 @@ theorem kauffmanBracket_def (D : PDCode n) (a : Rˣ) :
 @[simp] theorem kauffmanBracket_relabel (D : PDCode n) (a : Rˣ)
     (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
     (D.relabel half cross).kauffmanBracket a = D.kauffmanBracket a := by
+  let e := Equiv.piCongrLeft (fun _ : Fin n => Bool) cross.symm
+  have he : (fun s : Fin n → Bool => s ∘ cross) = e := by
+    funext s i
+    simp [e, Equiv.piCongrLeft_apply]
+  have hbij : Function.Bijective (fun s : Fin n → Bool => s ∘ cross) := by
+    rw [he]
+    exact e.bijective
   refine Fintype.sum_bijective (fun s => s ∘ cross)
-    (Function.bijective_iff_has_inverse.mpr ⟨fun s => s ∘ cross.symm, fun s => by
-      funext i; simp, fun s => by funext i; simp⟩) _ _ fun s => ?_
+    hbij _ _ fun s => ?_
   rw [stateLoopCount_relabel, stateWeight_comp]
 
 /-- Mirroring a PD-code inverts the unit in its Kauffman bracket. -/
@@ -421,9 +433,8 @@ private theorem kink_statePerm_true : kink.statePerm (fun _ => true) = 1 := by
   refine Equiv.ext fun h => ?_
   obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv 1).surjective h
   rw [statePerm_apply, kink_edgePair_apply, kink_smoothingTurn]
-  change crossingSlotEquiv 1 (i, slotSmoothing true (slotSmoothing true slot)) =
-    crossingSlotEquiv 1 (i, slot)
-  rw [slotSmoothing_apply_apply]
+  simp only [smoothingChoice, kink_overPair, Bool.cond_true, one_apply]
+  exact congrArg (crossingSlotEquiv 1) (Prod.ext rfl (slotSmoothing_apply_apply true slot))
 
 /-- The `B`-smoothing of the kink leaves a single circle. -/
 private theorem kink_statePerm_false : kink.statePerm (fun _ => false) =
@@ -465,8 +476,7 @@ invariant under the first Reidemeister move. -/
 theorem kauffmanBracket_kink (a : Rˣ) :
     kink.kauffmanBracket a = -((a : R) ^ 3) := by
   have hbij : Function.Bijective (fun (b : Bool) (_ : Fin 1) => b) :=
-    ⟨fun b c hbc => congrFun hbc 0, fun s => ⟨s 0, funext fun i => by
-      rw [Subsingleton.elim i 0]⟩⟩
+    (Equiv.funUnique (Fin 1) Bool).symm.bijective
   rw [kauffmanBracket, ← Fintype.sum_bijective _ hbij
     (fun b => (stateWeight (fun _ : Fin 1 => b) a : R) * jonesDelta a ^
       (kink.stateLoopCount (fun _ => b) - 1)) _ fun b => rfl, Fintype.sum_bool]
