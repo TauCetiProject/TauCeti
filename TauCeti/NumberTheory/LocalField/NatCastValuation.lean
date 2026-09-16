@@ -166,15 +166,14 @@ variable (K) in
 theorem natCastValuation_pow {n : ℕ} (k : ℕ) (hn : (n : K) ≠ 0) :
     natCastValuation K (n ^ k) (by simpa only [Nat.cast_pow] using pow_ne_zero k hn) =
       k * natCastValuation K n hn := by
-  have hnk : ((n ^ k : ℕ) : K) ≠ 0 := by
-    simpa only [Nat.cast_pow] using pow_ne_zero k hn
-  have h : normalizedValuationWithZero K ((n ^ k : ℕ) : K)
-      = normalizedValuationWithZero K (n : K) ^ k := by
-    push_cast
-    exact map_pow _ _ _
-  rw [normalizedValuationWithZero_natCast K _ hnk, normalizedValuationWithZero_natCast K n hn,
-    ← WithZero.exp_nsmul, WithZero.exp_inj, nsmul_eq_mul] at h
-  exact_mod_cast h
+  induction k with
+  | zero =>
+    simp only [pow_zero, Nat.zero_mul]
+    exact natCastValuation_one K
+  | succ k ih =>
+    have hk : ((n ^ k : ℕ) : K) ≠ 0 := by
+      simpa only [Nat.cast_pow] using pow_ne_zero k hn
+    simpa only [pow_succ, ih, Nat.succ_mul] using natCastValuation_mul K hk hn
 
 variable (K) in
 /-- The normalized absolute value of a natural number is `q ^ (-natCastValuation K n hn)`, where
