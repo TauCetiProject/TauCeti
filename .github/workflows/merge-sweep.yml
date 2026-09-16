@@ -10,6 +10,8 @@ name: Merge sweep
 # main or flags a conflict. It calls the lightweight TauCetiReview merge-sweep workflow, which mints no
 # provider keys and runs no reviewer; the merge decision is the same one auto-merge uses, so the sweep
 # can never merge something the normal gate would refuse.
+# queue-release.yml also dispatches this workflow when a Lake-pin reservation ends,
+# so waiting PRs need not wait for the scheduled backstop after a bump departs.
 
 on:
   schedule:
@@ -32,10 +34,10 @@ jobs:
   sweep:
     # Pinned to a TauCetiReview commit; bump deliberately. The reusable workflow receives the App
     # secrets, so a floating @main would be a supply-chain risk.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-sweep.yml@afb424eda89e8ac96d9eb69f6a88972055a4cd1b
+    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-sweep.yml@603b28011f779bd341d0a08e788498b81542bd7d
     with:
       dry_run: ${{ inputs.dry-run || false }}
-      review_ref: afb424eda89e8ac96d9eb69f6a88972055a4cd1b
+      review_ref: 603b28011f779bd341d0a08e788498b81542bd7d
     secrets:
       APP_ID: ${{ secrets.APP_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}

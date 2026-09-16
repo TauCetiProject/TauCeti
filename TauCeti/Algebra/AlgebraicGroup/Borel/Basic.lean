@@ -302,6 +302,7 @@ theorem comapOfIso (hI : IsBorel k L.obj I) (e : H ≅ L) :
         (ConcreteCategory.bijective_of_isIso e.hom).2))
   exact minimal_borelQuotientProperty_comapOfIso hI.2 e
 
+open FiniteTypeCommHopfAlgCat in
 /-- Borel status is invariant under pulling the defining ideal back across an ambient
 Hopf-algebra isomorphism. -/
 theorem comapOfIso_iff (e : H ≅ L) (I : HopfIdeal k L.obj) :
@@ -311,27 +312,9 @@ theorem comapOfIso_iff (e : H ≅ L) (I : HopfIdeal k L.obj) :
       IsBorel k L.obj I := by
   constructor
   · intro hI
-    have hback := hI.comapOfIso e.symm
-    let e' := (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} k)
-      (_root_.CommHopfAlgCat.{v} k)).mapIso e
-    let e'' := _root_.CommHopfAlgCat.ofIso e'
-    -- `toBialgHom` for a finite-type morphism is definitionally the bialgebra morphism of
-    -- its image under this forgetful functor; the full-subcategory wrapper has no separate
-    -- propositional compatibility lemma.
-    change IsBorel k L.obj
-      (HopfIdeal.comapOfSurjective
-        (I.comapOfSurjective e''.toBialgHom
-          (by simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
-            EquivLike.surjective e''))
-        e''.symm.toBialgHom
-          (by simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
-            EquivLike.surjective e''.symm)) at hback
-    have he := HopfIdeal.comapOfSurjective_bialgEquiv_symm_apply I e''.symm
-    have he_symm_symm : e''.symm.symm = e'' := by
-      ext
-      rfl
-    simp only [he_symm_symm] at he
-    rwa [he] at hback
+    simpa only [HopfIdeal.comapOfSurjective_comapOfSurjective, ← toBialgHom_comp,
+      Iso.symm_hom, e.inv_hom_id, toBialgHom_id, HopfIdeal.comapOfSurjective_id]
+      using hI.comapOfIso e.symm
   · exact fun hI ↦ hI.comapOfIso e
 
 end IsBorel

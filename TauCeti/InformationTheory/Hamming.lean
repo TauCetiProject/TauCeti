@@ -8,11 +8,14 @@ module
 public import Mathlib.InformationTheory.Hamming
 
 /-!
-# Hamming data on disjoint unions
+# Hamming data on disjoint unions and under coordinate reindexing
 
 This file records that Hamming weight and distance on a function whose domain is a disjoint union
 split as sums over the two coordinate types. These identities let constructions assembled from
 independent coordinate blocks reduce their Hamming data to the data of the blocks.
+
+It also proves that Hamming distance and Hamming weight are invariant under relabelling a finite
+coordinate type along an equivalence.
 -/
 
 public section
@@ -60,3 +63,21 @@ theorem hammingNorm_sumElim {A : Type*} [Fintype ι] [Fintype κ] [DecidableEq A
   hammingNorm_sumRec (β := fun _ ↦ A) x y
 
 end TauCeti
+
+namespace Equiv
+
+variable {α ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq α]
+
+/-- Relabelling coordinates along an equivalence preserves the Hamming distance. -/
+theorem hammingDist_comp (e : κ ≃ ι) (x y : ι → α) :
+    hammingDist (x ∘ e) (y ∘ e) = hammingDist x y := by
+  simp only [hammingDist, Function.comp_apply]
+  exact Finset.card_equiv e (by simp)
+
+/-- Relabelling coordinates along an equivalence preserves the Hamming weight. -/
+theorem hammingNorm_comp [Zero α] (e : κ ≃ ι) (x : ι → α) :
+    hammingNorm (x ∘ e) = hammingNorm x := by
+  simp only [hammingNorm, Function.comp_apply]
+  exact Finset.card_equiv e (by simp)
+
+end Equiv

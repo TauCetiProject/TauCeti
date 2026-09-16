@@ -277,13 +277,13 @@ private theorem linearIndependent_mul_pow_of_linearIndependent_residue {x : F}
     intro h
     exact hg0 (Subtype.ext (by simpa [h] using (hp i₁).symm))
   obtain ⟨m, q, hfactor, i₂, -, hq₂⟩ :=
-    TauCeti.Polynomial.exists_common_X_pow_factor Finset.univ p ⟨i₁, Finset.mem_univ _, hpne⟩
+    TauCeti.Polynomial.exists_common_X_pow_factor Set.univ p ⟨i₁, Set.mem_univ _, hpne⟩
   have hsumF : ∑ i, aeval x (q i) * (u i.1 i.2.2 * t i.1 ^ (i.2.1 : ℕ)) = 0 := by
     refine mul_left_cancel₀ (pow_ne_zero m hx0) ?_
     rw [Finset.mul_sum, mul_zero, ← hsum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [Algebra.smul_def, Subalgebra.algebraMap_apply, ← hp i,
-      hfactor i (Finset.mem_univ i), map_mul, map_pow, aeval_X]
+      hfactor i (Set.mem_univ i), map_mul, map_pow, aeval_X]
     ring
   rw [← Finset.univ_sigma_univ, Finset.sum_sigma] at hsumF
   simp only [Fintype.sum_prod_type] at hsumF

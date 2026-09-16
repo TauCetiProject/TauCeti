@@ -266,6 +266,17 @@ private theorem IsGeodesicCurveOnFrom.comp_mul_left_Ioo
   exact ⟨hu, hmap, h0u, huuniq, hγ.comp_mul_left a huuniq hmap h0u⟩
 
 omit [I.Boundaryless] in
+/-- A nonzero linear rescaling of the parameter transforms an open-interval geodesic witness into
+another open-interval witness.  The new interval is the inverse image of the old one. -/
+theorem IsGeodesicCurveOnFrom.exists_comp_mul_left_Ioo
+    {p : M} {v : TangentSpace I p} {γ : ℝ → M} {b c : ℝ}
+    (hγ : IsGeodesicCurveOnFrom I γ (Ioo b c) p v) {a : ℝ} (ha : a ≠ 0) :
+    ∃ d e : ℝ, (fun s : ℝ ↦ a * s) ⁻¹' Ioo b c = Ioo d e ∧
+      IsGeodesicCurveOnFrom I (γ ∘ fun s : ℝ ↦ a * s) (Ioo d e) p (a • v) := by
+  obtain ⟨hu, -, -, -, hγ'⟩ := hγ.comp_mul_left_Ioo ha
+  exact ⟨min (b / a) (c / a), max (b / a) (c / a), hu, hγ'⟩
+
+omit [I.Boundaryless] in
 /-- Nonzero rescaling of the initial velocity rescales the maximal interval by the inverse. -/
 @[simp] theorem mem_geodesicInterval_smul_iff
     {p : M} {v : TangentSpace I p} {a t : ℝ} (ha : a ≠ 0) :

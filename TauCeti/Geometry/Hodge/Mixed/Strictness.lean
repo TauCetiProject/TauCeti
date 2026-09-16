@@ -131,9 +131,7 @@ inclusion `(A ∩ B)_ℂ ≤ A_ℂ ∩ B_ℂ` is used, which is monotonicity. -/
   refine le_antisymm ?_ (le_inf LinearMap.map_le_range (f.map_WQ_le k))
   rw [← rationalToComplexSubmodule_le_iff h'ℚ h'ℂ]
   have hrange : rationalToComplexSubmodule h'ℚ h'ℂ (LinearMap.range f.toRatLinearMap) =
-      LinearMap.range f.toLinearMap := by
-    rw [← Submodule.map_top f.toRatLinearMap, ← map_rationalToComplexSubmodule hℚ hℂ h'ℚ h'ℂ,
-      rationalToComplexSubmodule_top, Submodule.map_top, toLinearMap_def]
+      LinearMap.range f.toLinearMap := f.range_toLinearMap.symm
   have hmap : rationalToComplexSubmodule h'ℚ h'ℂ ((source.WQ k).map f.toRatLinearMap) =
       (source.WC k).map f.toLinearMap := by
     rw [← map_rationalToComplexSubmodule hℚ hℂ h'ℚ h'ℂ, WC_def, toLinearMap_def]

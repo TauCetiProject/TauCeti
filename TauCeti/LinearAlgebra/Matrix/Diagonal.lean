@@ -11,8 +11,8 @@ public import Mathlib.LinearAlgebra.Matrix.Transvection
 /-!
 # Products of diagonal matrices and matrix units
 
-This file records a generic matrix identity for multiplying a matrix unit on both sides by
-diagonal matrices.
+This file records a generic matrix identity for multiplying a rectangular matrix unit on both
+sides by diagonal matrices of the corresponding row and column sizes.
 
 ## Main result
 
@@ -26,13 +26,13 @@ open Matrix
 
 namespace TauCeti
 
-variable {n : Type*} [DecidableEq n] [Fintype n]
-variable {A : Type*} [Semiring A] {i j : n}
+variable {m n : Type*} [DecidableEq m] [Fintype m] [DecidableEq n] [Fintype n]
+variable {A : Type*} [Semiring A] {i : m} {j : n}
 
 /-- Multiplying a matrix unit on the left and right by diagonal matrices rescales its nonzero
 entry by the corresponding diagonal entries. -/
 @[simp]
-theorem diagonal_mul_single_mul_diagonal {v w : n → A} (c : A) :
+theorem diagonal_mul_single_mul_diagonal {v : m → A} {w : n → A} (c : A) :
     diagonal v * single i j c * diagonal w = single i j (v i * c * w j) := by
   ext a b
   rw [Matrix.mul_assoc]

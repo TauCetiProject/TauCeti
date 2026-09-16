@@ -22,7 +22,7 @@ domain rationalizes to its ambient vector space over the fraction field.
 
 ## Main declarations
 
-* `TauCeti.Basis.span_range_extendOfIsLattice`: the span of an extended lattice basis is the
+* `Module.Basis.span_range_extendOfIsLattice`: the span of an extended lattice basis is the
   lattice.
 * `TauCeti.Submodule.IsLattice.toAddSubgroup_eq_closure_range_extendOfIsLattice`: the additive
   closure of an extended lattice basis is the lattice's underlying additive subgroup.
@@ -61,8 +61,8 @@ variable [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V]
 
 /-- The `R`-span of the ambient `K`-basis obtained from an `R`-basis of a lattice is the lattice
 itself. -/
-theorem Basis.span_range_extendOfIsLattice {κ : Type*} {N : Submodule R V} [N.IsLattice K]
-    (b : Basis κ R N) :
+theorem _root_.Module.Basis.span_range_extendOfIsLattice {κ : Type*} {N : Submodule R V}
+    [N.IsLattice K] (b : Basis κ R N) :
     Submodule.span R (Set.range (b.extendOfIsLattice K)) = N := by
   have hrange : Set.range (b.extendOfIsLattice K) = Set.range (N.subtype ∘ b) :=
     congrArg Set.range (funext fun i ↦ Basis.extendOfIsLattice_apply K b i)
@@ -95,7 +95,7 @@ theorem Submodule.IsLattice.toAddSubgroup_eq_closure_range_extendOfIsLattice
     {N : Submodule ℤ V} [N.IsLattice ℚ] {κ : Type*} (b : Basis κ ℤ N) :
     N.toAddSubgroup = AddSubgroup.closure (Set.range (b.extendOfIsLattice ℚ)) := by
   apply AddSubgroup.toIntSubmodule.injective
-  rw [AddSubgroup.toIntSubmodule_closure, TauCeti.Basis.span_range_extendOfIsLattice,
+  rw [AddSubgroup.toIntSubmodule_closure, Module.Basis.span_range_extendOfIsLattice,
     Submodule.toIntSubmodule_toAddSubgroup, Submodule.restrictScalars_self]
 
 end
