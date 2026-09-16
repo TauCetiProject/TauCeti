@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation
-public import Mathlib.RingTheory.DedekindDomain.Dvr
 public import TauCeti.RingTheory.Localization.AtPrime
 
 /-!
@@ -20,8 +19,7 @@ which carry that hypothesis as `v.ne_bot`. Together with the `Algebra Oᵥ K`, `
 and `IsFractionRing Oᵥ K` instances of `TauCeti/RingTheory/Localization/AtPrime.lean`, every result
 Mathlib states over a discrete valuation ring `R` with fraction field `K` — in particular its theory
 of integral and minimal Weierstrass equations — now applies to `Oᵥ ⊆ K` by instance search, for
-arbitrary `O` and `K`. These are the four localisation instances of
-`TauCetiRoadmap/EllipticCurves/README.md` §Layer 4.5a.
+arbitrary `O` and `K`.
 
 The one lemma is the bridge from the local rings back to `O`: an element of `K` that comes from
 `Oᵥ` has `v`-adic valuation at most one. Combined with Mathlib's

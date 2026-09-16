@@ -42,16 +42,17 @@ in `O`.
 
 * **Integrality over `O` is a theorem, not a conjunct.** Mathlib's instance gives integrality over
   each `Oᵥ` only, so `inferInstance` does not reach `IsIntegral O W`, and adding it as a hypothesis
-  to the definition would hide the descent. The roadmap asks for exactly this shape.
+  to the definition would hide the descent.
 * **The semi-global predicate is a disjunction.** A field is a Dedekind domain whose height-one
   spectrum is empty; there `IsGlobalMinimal` is vacuously true while the bare existential
   `∃ v₀, …` is false. The disjunct is what makes `IsGlobalMinimal.isSemiGlobalMinimal` hold at
   that degenerate base. The integrality clause at `v₀` cannot be dropped either: minimality away
   from `v₀` says nothing about the denominators at `v₀`.
-* **Every predicate carries `[W.IsElliptic]`**, the roadmap's convention for this layer, whose
-  later invariants (the minimal discriminant ideal, the obstruction exponents) are only meaningful
-  for `Δ ≠ 0`. `IsGlobalMinimal` does not consume the instance, so its binder is underscore-named
-  to satisfy the unused-argument linter; the signature is otherwise that of the roadmap.
+* **Both predicates carry `[W.IsElliptic]`.** Minimal models are a notion for elliptic curves: the
+  invariants built on these predicates — the minimal discriminant ideal, the obstruction exponents,
+  semistability — need `Δ ≠ 0`, and for a singular cubic the products defining them lose their
+  finite support. `IsGlobalMinimal` does not itself consume the instance, which its binder name
+  records.
 * **The definitions are not exposed.** `isGlobalMinimal_iff` and `isSemiGlobalMinimal_iff` are the
   interface outside this module.
 
@@ -59,19 +60,14 @@ The localisation instances that make `IsMinimal Oᵥ W` and `IsIntegral Oᵥ W` 
 abstract fraction field `K` are in `TauCeti/RingTheory/Localization/AtPrime.lean` and
 `TauCeti/RingTheory/DedekindDomain/LocalizationAtPrime.lean`.
 
-This advances `TauCetiRoadmap/EllipticCurves/README.md` §Layer 4.5a, item "Global and semi-global
-minimal models", with the signatures of `TauCetiRoadmap/EllipticCurves/Suggested.lean`
-§Layer 4.5a (`IsGlobalMinimal`, `IsSemiGlobalMinimal`).
-
 ## Provenance
 
 The two definitions are adapted from LeanBridge (`github.com/CBirkbeck/LeanBridge`, Apache-2.0),
 file `LeanBridge/ForMathlib/4-EC.lean` at `JaneShi99/LeanBridge@d84dd305` (branch
 `formalize/ec-defs`), by Jane Shi, where they formalise the LMFDB knowls `ec.global_minimal_model`
-and `ec.semi_global_minimal_model`. Two departures, both dictated by the roadmap: the semi-global
-predicate acquires the `IsGlobalMinimal` disjunct, and both predicates carry `[W.IsElliptic]`. The
-descent theorem is proved afresh here; LeanBridge records only that it had been proved and then
-removed.
+and `ec.semi_global_minimal_model`. Two departures: the semi-global predicate acquires the
+`IsGlobalMinimal` disjunct, and both predicates carry `[W.IsElliptic]`. The descent theorem is
+proved afresh here; LeanBridge records only that it had been proved and then removed.
 -/
 
 public section
@@ -86,8 +82,9 @@ variable {K : Type*} [Field K] [Algebra O K] [IsFractionRing O K]
 /-- **A globally minimal Weierstrass equation** (LMFDB `ec.global_minimal_model`): `W` is minimal
 over the discrete valuation ring `Localization.AtPrime v.asIdeal` at every height-one prime `v` of
 `O`. Integrality over `O` is not assumed; it is the theorem `IsGlobalMinimal.isIntegral`. The
-ellipticity instance is the roadmap's convention for this layer and is not consumed here, hence
-its underscore-named binder. -/
+ellipticity instance keeps the predicate to elliptic curves, the setting in which the invariants
+derived from it make sense; the definition itself does not consume it, which its binder name
+records. -/
 def IsGlobalMinimal (W : WeierstrassCurve K) [_hE : W.IsElliptic] : Prop :=
   ∀ v : HeightOneSpectrum O, IsMinimal (Localization.AtPrime v.asIdeal) W
 
@@ -103,7 +100,7 @@ theorem isGlobalMinimal_iff {W : WeierstrassCurve K} [W.IsElliptic] :
 `W` is globally minimal, or there is a height-one prime `v₀` of `O` at which `W` is integral and
 away from which it is minimal. Over a number field of class number greater than one a curve need
 not admit a globally minimal equation, but it always admits a semi-globally minimal one; that
-construction is Layer 4.5b of the roadmap. The disjunct is load-bearing: over a field, whose
+existence theorem is not proved here. The disjunct is load-bearing: over a field, whose
 height-one spectrum is empty, the existential alone is false while global minimality holds. -/
 def IsSemiGlobalMinimal (W : WeierstrassCurve K) [W.IsElliptic] : Prop :=
   IsGlobalMinimal O W ∨

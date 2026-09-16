@@ -37,9 +37,8 @@ the localisation is at a height-one prime of a Dedekind domain — finds them by
 rather than installing them locally at each use site. The `Algebra` instance carries data and is
 `noncomputable`, as `IsLocalization.lift` is.
 
-This is the domain-level part of the localisation instances asked for by
-`TauCetiRoadmap/EllipticCurves/README.md` §Layer 4.5a; the height-one-prime specialisation and its
-valuation bound are in `TauCeti/RingTheory/DedekindDomain/LocalizationAtPrime.lean`.
+The height-one-prime specialisation, where the localisation is moreover a discrete valuation ring,
+and its valuation bound are in `TauCeti/RingTheory/DedekindDomain/LocalizationAtPrime.lean`.
 -/
 
 public section
