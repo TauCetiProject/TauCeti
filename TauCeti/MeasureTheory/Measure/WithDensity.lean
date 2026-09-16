@@ -127,10 +127,8 @@ theorem map_withDensity_abs_deriv_mul (hs : MeasurableSet s) (hφ : Measurable �
       (volume.restrict (φ '' s)).withDensity f := by
   ext A hA
   rw [Measure.map_apply hφ hA, withDensity_apply _ (hφ hA), withDensity_apply _ hA,
-    Measure.restrict_restrict (hφ hA), Measure.restrict_restrict hA]
-  have himage : φ '' (φ ⁻¹' A ∩ s) = A ∩ φ '' s := by
-    rw [inter_comm, image_inter_preimage, inter_comm]
-  rw [← himage, lintegral_image_eq_lintegral_abs_deriv_mul ((hφ hA).inter hs)
+    Measure.restrict_restrict (hφ hA), Measure.restrict_restrict hA,
+    ← image_preimage_inter φ s A, lintegral_image_eq_lintegral_abs_deriv_mul ((hφ hA).inter hs)
     (fun x hx ↦ (hφ' x hx.2).mono inter_subset_right) (hinj.mono inter_subset_right)]
 
 /-- **The substitution `x = t ^ 2` on the positive half-line.** Weighting Lebesgue measure on

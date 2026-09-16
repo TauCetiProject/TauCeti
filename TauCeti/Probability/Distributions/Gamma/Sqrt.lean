@@ -97,11 +97,9 @@ one, which is what makes the constant `2 * r ^ a / Γ a` the right one. -/
 theorem isProbabilityMeasure_withDensity_rootGamma (ha : 0 < a) (hr : 0 < r) :
     IsProbabilityMeasure ((volume.restrict (Ioi (0 : ℝ))).withDensity fun t ↦ ENNReal.ofReal
       (2 * r ^ a / Real.Gamma a * t ^ (2 * a - 1) * exp (-(r * t ^ 2)))) := by
-  have _ : IsProbabilityMeasure (gammaMeasure a r) := isProbabilityMeasure_gammaMeasure ha hr
-  refine ⟨?_⟩
-  rw [← Set.preimage_univ (f := fun t : ℝ ↦ t ^ 2),
-    ← Measure.map_apply (by fun_prop) MeasurableSet.univ,
-    map_sq_withDensity_eq_gammaMeasure a r, measure_univ]
+  rw [← Measure.isProbabilityMeasure_map_iff (f := fun t : ℝ ↦ t ^ 2) (by fun_prop),
+    map_sq_withDensity_eq_gammaMeasure a r]
+  exact isProbabilityMeasure_gammaMeasure ha hr
 
 namespace Probability
 
@@ -143,12 +141,9 @@ which is what makes the constant `2 ^ (1 - k / 2) / Γ (k / 2)` the right one. -
 theorem isProbabilityMeasure_withDensity_chi (hk : 0 < k) :
     IsProbabilityMeasure ((volume.restrict (Ioi (0 : ℝ))).withDensity fun t ↦ ENNReal.ofReal
       ((2 : ℝ) ^ (1 - k / 2) / Real.Gamma (k / 2) * t ^ (k - 1) * exp (-t ^ 2 / 2))) := by
-  have _ : IsProbabilityMeasure (chiSquaredMeasure k) :=
-    isProbabilityMeasure_chiSquaredMeasure hk.le
-  refine ⟨?_⟩
-  rw [← Set.preimage_univ (f := fun t : ℝ ↦ t ^ 2),
-    ← Measure.map_apply (by fun_prop) MeasurableSet.univ,
-    map_sq_withDensity_eq_chiSquaredMeasure hk, measure_univ]
+  rw [← Measure.isProbabilityMeasure_map_iff (f := fun t : ℝ ↦ t ^ 2) (by fun_prop),
+    map_sq_withDensity_eq_chiSquaredMeasure hk]
+  exact isProbabilityMeasure_chiSquaredMeasure hk.le
 
 end Probability
 
