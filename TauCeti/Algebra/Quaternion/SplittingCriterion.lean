@@ -28,9 +28,10 @@ No hypothesis that `a` is a nonsquare is needed: when `a` is a square the form `
 universal and all five conditions hold.
 
 The arguments are elementary. A quaternion is invertible exactly when its norm is
-(`QuaternionAlgebra.anisotropic_normForm_iff`), so `ℍ[K,a,b]` is a division algebra exactly
-when its norm form is anisotropic; since `M₂(K)` has nonzero non-invertible elements, a split
-algebra has an isotropic norm form. An isotropic vector `t + u i + v j + w k` of the norm form gives
+(`QuaternionAlgebra.isUnit_iff_normForm_isUnit`), so `ℍ[K,a,b]` is a division algebra exactly
+when its norm form is anisotropic (`QuaternionAlgebra.anisotropic_normForm_iff`); since `M₂(K)`
+has nonzero non-invertible elements, a split algebra has an isotropic norm form. An isotropic
+vector `t + u i + v j + w k` of the norm form gives
 `t² - a u² = b (v² - a w²)`, and dividing in `K[√a]` exhibits `b` as a norm. Conversely, if
 `b = N(z)` then `TauCeti.QuaternionAlgebra.normMulEquiv` identifies `ℍ[K,a,b]` with `ℍ[K,a,1]`,
 which is split by `TauCeti.QuaternionAlgebra.oneEquivMatrix`.
@@ -39,6 +40,10 @@ which is split by `TauCeti.QuaternionAlgebra.oneEquivMatrix`.
 
 * `TauCeti.exists_eq_sq_sub_mul_sq_of_isSquare`: `x² - a y²` is universal when `a` is a square
   unit.
+* `TauCeti.sq_sub_mul_sq_eq_zero_iff`: over a field, `x² - a y²` is anisotropic when `a` is not a
+  square.
+* `TauCeti.exists_eq_sq_sub_mul_sq_of_not_anisotropic`: an isotropic ternary form `⟨1, -a, -b⟩`
+  exhibits `b` in the form `x² - a y²`.
 * `TauCeti.QuaternionAlgebra.nonempty_algEquiv_matrix_tfae`: the splitting criterion.
 * `TauCeti.QuaternionAlgebra.nonempty_algEquiv_matrix_iff_not_forall_isUnit` and
   `TauCeti.QuaternionAlgebra.forall_isUnit_or_nonempty_algEquiv_matrix`: `ℍ[K,a,b]` is split
@@ -78,19 +83,44 @@ theorem exists_eq_sq_sub_mul_sq_of_isSquare {a : R} (ha : IsSquare a) (ha' : IsU
 
 end Universal
 
-namespace QuaternionAlgebra
+section Field
 
 variable {K : Type*} [Field K]
 
 /-- Over a field, `p² - a q²` vanishes only at `p = q = 0` when `a` is not a square. -/
-private theorem eq_zero_of_sq_sub_mul_sq_eq_zero {a p q : K} (ha : ¬IsSquare a)
-    (h : p ^ 2 - a * q ^ 2 = 0) : p = 0 ∧ q = 0 := by
+theorem sq_sub_mul_sq_eq_zero_iff {a : K} (ha : ¬IsSquare a) {p q : K} :
+    p ^ 2 - a * q ^ 2 = 0 ↔ p = 0 ∧ q = 0 := by
+  refine ⟨fun h => ?_, fun ⟨hp, hq⟩ => by simp [hp, hq]⟩
   by_cases hq : q = 0
   · subst hq
     exact ⟨by simpa using h, rfl⟩
   · exact (ha ⟨p / q, by field_simp; linear_combination -h⟩).elim
 
 variable [Invertible (2 : K)]
+
+/-- An isotropic ternary form `⟨1, -a, -b⟩` exhibits `b` in the form `x² - a y²`. -/
+theorem exists_eq_sq_sub_mul_sq_of_not_anisotropic {a b : K} (ha : a ≠ 0)
+    (h : ¬(weightedSumSquares K ![1, -a, -b]).Anisotropic) :
+    ∃ x y : K, b = x ^ 2 - a * y ^ 2 := by
+  by_cases hsq : IsSquare a
+  · exact exists_eq_sq_sub_mul_sq_of_isSquare hsq ha.isUnit b
+  simp only [Anisotropic, not_forall] at h
+  obtain ⟨v, hv, hv0⟩ := h
+  simp only [weightedSumSquares_apply, smul_eq_mul, Fin.sum_univ_three, Matrix.cons_val_zero,
+    one_mul, Matrix.cons_val_one, neg_mul, Matrix.cons_val] at hv
+  by_cases h2 : v 2 = 0
+  · obtain ⟨h0, h1⟩ := (sq_sub_mul_sq_eq_zero_iff hsq (p := v 0) (q := v 1)).mp
+      (by rw [h2] at hv; linear_combination hv)
+    exact (hv0 (by ext i; fin_cases i <;> simp [h0, h1, h2])).elim
+  · refine ⟨v 0 / v 2, v 1 / v 2, ?_⟩
+    field_simp
+    linear_combination -hv
+
+end Field
+
+namespace QuaternionAlgebra
+
+variable {K : Type*} [Field K] [Invertible (2 : K)]
 
 /-- An isotropic norm form of `ℍ[K,a,b]` exhibits `b` in the form `x² - a y²`. -/
 private theorem exists_eq_sq_sub_mul_sq_of_not_anisotropic_normForm {a b : K} (ha : a ≠ 0)
@@ -104,32 +134,14 @@ private theorem exists_eq_sq_sub_mul_sq_of_not_anisotropic_normForm {a b : K} (h
   -- `t² - a u² = b (v² - a w²)`, and `v² - a w²` is nonzero since `a` is not a square.
   have hn : q.imJ ^ 2 - a * q.imK ^ 2 ≠ 0 := by
     intro hn
-    obtain ⟨hv, hw⟩ := eq_zero_of_sq_sub_mul_sq_eq_zero hsq hn
-    obtain ⟨ht, hu⟩ := eq_zero_of_sq_sub_mul_sq_eq_zero (p := q.re) (q := q.imI) hsq
+    obtain ⟨hv, hw⟩ := (sq_sub_mul_sq_eq_zero_iff hsq).mp hn
+    obtain ⟨ht, hu⟩ := (sq_sub_mul_sq_eq_zero_iff hsq (p := q.re) (q := q.imI)).mp
       (by rw [hv, hw] at hq; linear_combination hq)
     exact hq0 (_root_.QuaternionAlgebra.ext ht hu hv hw)
   refine ⟨(q.re * q.imJ - a * q.imI * q.imK) / (q.imJ ^ 2 - a * q.imK ^ 2),
     (q.imI * q.imJ - q.re * q.imK) / (q.imJ ^ 2 - a * q.imK ^ 2), ?_⟩
   field_simp
   linear_combination (-(q.imJ ^ 2 - a * q.imK ^ 2)) * hq
-
-/-- An isotropic ternary form `⟨1, -a, -b⟩` exhibits `b` in the form `x² - a y²`. -/
-private theorem exists_eq_sq_sub_mul_sq_of_not_anisotropic {a b : K} (ha : a ≠ 0)
-    (h : ¬(weightedSumSquares K ![1, -a, -b]).Anisotropic) :
-    ∃ x y : K, b = x ^ 2 - a * y ^ 2 := by
-  by_cases hsq : IsSquare a
-  · exact exists_eq_sq_sub_mul_sq_of_isSquare hsq ha.isUnit b
-  simp only [Anisotropic, not_forall] at h
-  obtain ⟨v, hv, hv0⟩ := h
-  simp only [weightedSumSquares_apply, smul_eq_mul, Fin.sum_univ_three, Matrix.cons_val_zero,
-    one_mul, Matrix.cons_val_one, neg_mul, Matrix.cons_val] at hv
-  by_cases h2 : v 2 = 0
-  · obtain ⟨h0, h1⟩ := eq_zero_of_sq_sub_mul_sq_eq_zero (p := v 0) (q := v 1) hsq
-      (by rw [h2] at hv; linear_combination hv)
-    exact (hv0 (by ext i; fin_cases i <;> simp [h0, h1, h2])).elim
-  · refine ⟨v 0 / v 2, v 1 / v 2, ?_⟩
-    field_simp
-    linear_combination -hv
 
 variable (a b : Kˣ)
 

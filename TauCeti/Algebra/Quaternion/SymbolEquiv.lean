@@ -236,6 +236,14 @@ private def normMulBasis (a c d : R) (w : QuadraticAlgebra R a 0) (h : w.norm * 
   i_mul_j := by ext <;> simp
   j_mul_i := by ext <;> simp
 
+/-- The lift of `normMulBasis` in coordinates. This is the only place where the construction of
+`QuaternionAlgebra.Basis.liftHom` is unfolded. -/
+private theorem normMulBasis_liftHom_apply {a c d : R} {w : QuadraticAlgebra R a 0}
+    (h : w.norm * c = d) (x : ℍ[R,a,d]) :
+    (normMulBasis a c d w h).liftHom x =
+      ⟨x.re, x.imI, x.imJ * w.re + x.imK * (a * w.im), x.imJ * w.im + x.imK * w.re⟩ := by
+  ext <;> simp [normMulBasis, _root_.QuaternionAlgebra.Basis.lift]
+
 /-- Multiplying `j` first by `w'` and then by `w` multiplies it by `w' w`, so the two lifts are
 mutually inverse when `w' w = 1`. -/
 private theorem normMulBasis_liftHom_comp_liftHom {a c d : R} {w w' : QuadraticAlgebra R a 0}
@@ -246,13 +254,9 @@ private theorem normMulBasis_liftHom_comp_liftHom {a c d : R} {w w' : QuadraticA
   simp only [QuadraticAlgebra.re_mul, QuadraticAlgebra.im_mul, QuadraticAlgebra.re_one,
     QuadraticAlgebra.im_one] at hre him
   apply _root_.QuaternionAlgebra.hom_ext <;> ext <;>
-    simp only [normMulBasis, _root_.QuaternionAlgebra.Basis.i_self,
-      _root_.QuaternionAlgebra.Basis.j_self, AlgHom.coe_comp, Function.comp_apply,
-      _root_.QuaternionAlgebra.Basis.liftHom_apply, _root_.QuaternionAlgebra.Basis.lift,
-      _root_.QuaternionAlgebra.coe_algebraMap, _root_.QuaternionAlgebra.coe_zero,
-      _root_.QuaternionAlgebra.smul_mk, _root_.QuaternionAlgebra.mk_add_mk, one_smul,
-      zero_smul, zero_add, add_zero, smul_eq_mul, mul_zero, AlgHom.coe_id, id_eq] <;>
-    first | linear_combination hre | linear_combination him
+    simp only [AlgHom.comp_apply, AlgHom.id_apply, normMulBasis_liftHom_apply,
+      _root_.QuaternionAlgebra.Basis.i_self, _root_.QuaternionAlgebra.Basis.j_self] <;>
+    first | ring1 | linear_combination hre | linear_combination him
 
 variable (a b : R) (z : (QuadraticAlgebra R a 0)ˣ)
 
@@ -273,35 +277,35 @@ def normMulEquiv : ℍ[R,a,(z : QuadraticAlgebra R a 0).norm * b] ≃ₐ[R] ℍ[
 
 @[simp]
 theorem normMulEquiv_apply_i : normMulEquiv a b z ⟨0, 1, 0, 0⟩ = ⟨0, 1, 0, 0⟩ := by
-  simp [normMulEquiv, normMulBasis, _root_.QuaternionAlgebra.Basis.lift]
+  simp [normMulEquiv, normMulBasis_liftHom_apply, -_root_.QuaternionAlgebra.Basis.liftHom_apply]
 
 @[simp]
 theorem normMulEquiv_apply_j :
     normMulEquiv a b z ⟨0, 0, 1, 0⟩ =
       ⟨0, 0, (z : QuadraticAlgebra R a 0).re, (z : QuadraticAlgebra R a 0).im⟩ := by
-  simp [normMulEquiv, normMulBasis, _root_.QuaternionAlgebra.Basis.lift]
+  simp [normMulEquiv, normMulBasis_liftHom_apply, -_root_.QuaternionAlgebra.Basis.liftHom_apply]
 
 @[simp]
 theorem normMulEquiv_apply_k :
     normMulEquiv a b z ⟨0, 0, 0, 1⟩ =
       ⟨0, 0, a * (z : QuadraticAlgebra R a 0).im, (z : QuadraticAlgebra R a 0).re⟩ := by
-  simp [normMulEquiv, normMulBasis, _root_.QuaternionAlgebra.Basis.lift]
+  simp [normMulEquiv, normMulBasis_liftHom_apply, -_root_.QuaternionAlgebra.Basis.liftHom_apply]
 
 @[simp]
 theorem normMulEquiv_symm_apply_i : (normMulEquiv a b z).symm ⟨0, 1, 0, 0⟩ = ⟨0, 1, 0, 0⟩ := by
-  simp [normMulEquiv, normMulBasis, _root_.QuaternionAlgebra.Basis.lift]
+  simp [normMulEquiv, normMulBasis_liftHom_apply, -_root_.QuaternionAlgebra.Basis.liftHom_apply]
 
 @[simp]
 theorem normMulEquiv_symm_apply_j :
     (normMulEquiv a b z).symm ⟨0, 0, 1, 0⟩ =
       ⟨0, 0, (↑z⁻¹ : QuadraticAlgebra R a 0).re, (↑z⁻¹ : QuadraticAlgebra R a 0).im⟩ := by
-  simp [normMulEquiv, normMulBasis, _root_.QuaternionAlgebra.Basis.lift]
+  simp [normMulEquiv, normMulBasis_liftHom_apply, -_root_.QuaternionAlgebra.Basis.liftHom_apply]
 
 @[simp]
 theorem normMulEquiv_symm_apply_k :
     (normMulEquiv a b z).symm ⟨0, 0, 0, 1⟩ =
       ⟨0, 0, a * (↑z⁻¹ : QuadraticAlgebra R a 0).im, (↑z⁻¹ : QuadraticAlgebra R a 0).re⟩ := by
-  simp [normMulEquiv, normMulBasis, _root_.QuaternionAlgebra.Basis.lift]
+  simp [normMulEquiv, normMulBasis_liftHom_apply, -_root_.QuaternionAlgebra.Basis.liftHom_apply]
 
 end Norm
 
