@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.Transitive
+public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Algebra.Group.NormalizerQuotient.Basic
 public import TauCeti.Data.Setoid.Basic
 
@@ -19,6 +20,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 
 * `TauCeti.MulAction.orbitRelQuotientBotEquiv`: the quotient by the trivial subgroup is the
   original space.
+* `TauCeti.MulAction.card_orbitRelQuotient_anti`: enlarging the acting subgroup can only
+  decrease the number of orbits.
 * `TauCeti.MulAction.orbitRelQuotientMapOfLE_bot_eq_iff`: equality after the bottom-to-`H`
   quotient map is membership in an `H`-orbit.
 * `TauCeti.MulAction.orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem`: in a cancellative
@@ -113,6 +116,16 @@ lemma orbitRel_le_of_subgroup_le {H K : Subgroup G} (hHK : H ≤ K) :
   rw [_root_.MulAction.orbitRel_apply] at h ⊢
   rcases h with ⟨g, hg⟩
   exact ⟨⟨g.1, hHK g.2⟩, hg⟩
+
+/-- Enlarging the acting subgroup can only decrease the number of orbits. -/
+theorem card_orbitRelQuotient_anti [Finite X] {H K : Subgroup G} (hHK : H ≤ K) :
+    Nat.card (_root_.MulAction.orbitRel.Quotient K X) ≤
+      Nat.card (_root_.MulAction.orbitRel.Quotient H X) := by
+  let f := Setoid.map_of_le (orbitRel_le_of_subgroup_le (G := G) (X := X) hHK)
+  apply Nat.card_le_card_of_surjective f
+  intro q
+  induction q using Quotient.inductionOn'
+  exact ⟨Quotient.mk'' _, rfl⟩
 
 /-- The map from the bottom-subgroup quotient to the `H`-quotient is the `H`-orbit class map
 under the bottom quotient equivalence. -/
