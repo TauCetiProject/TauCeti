@@ -38,9 +38,9 @@ an unrelated algebra structure on `L_w` over `K_v`.
   and reflects the valuative relations of the completions.
 
 In the `AdicCompletionExtension` scope, `L_w` is moreover a `ValuativeExtension` of `K_v`
-(`adicCompletionExtensionValuativeExtension`), and Mathlib's finiteness instance for completions
-of number fields applies to the canonical algebra structure, so `Module.Finite K_v L_w` holds for
-it by instance search.
+(`completionValuativeExtension`), and Mathlib's finiteness instance for completions of number
+fields applies to the canonical algebra structure, so `Module.Finite K_v L_w` holds for it by
+instance search.
 
 ## References
 

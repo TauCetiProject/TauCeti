@@ -22,15 +22,11 @@ that `L_w` is a `ValuativeExtension` of `K_v`. Local statements about valuative 
 then be applied to the completion of a global extension through this canonical structure, rather
 than through an arbitrary compatible algebra or valuative relation.
 
-The proof rests on `valued_adicCompletionExtension`: along the extension the valuation of `L_w`
-is the valuation of `K_v` raised to the ramification index, which is nonzero, and raising to a
-nonzero power is strictly monotone in `ℤᵐ⁰`.
-
 ## Main results
 
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionExtension_vle_iff_vle`: the canonical map
   `K_v → L_w` preserves and reflects the valuative relations.
-* `IsDedekindDomain.HeightOneSpectrum.adicCompletionExtensionValuativeExtension`: the resulting
+* `IsDedekindDomain.HeightOneSpectrum.completionValuativeExtension`: the resulting canonical
   `ValuativeExtension K_v L_w` instance, in the `AdicCompletionExtension` scope.
 
 ## References
@@ -67,13 +63,13 @@ theorem adicCompletionExtension_vle_iff_vle (a b : v.adicCompletion K) :
 
 /-- The completion `L_w` of `L` above `v` is a valuative extension of `K_v`, for the canonical
 algebra structure given by `adicCompletionExtension`. -/
-theorem adicCompletionExtensionValuativeExtension :
+theorem completionValuativeExtension :
     ValuativeExtension (v.adicCompletion K) (w.adicCompletion L) where
   vle_iff_vle a b := by
     rw [algebraMap_adicCompletionExtensionAlgebra]
     exact adicCompletionExtension_vle_iff_vle K L v w a b
 
 scoped[AdicCompletionExtension] attribute [instance]
-  IsDedekindDomain.HeightOneSpectrum.adicCompletionExtensionValuativeExtension
+  IsDedekindDomain.HeightOneSpectrum.completionValuativeExtension
 
 end IsDedekindDomain.HeightOneSpectrum
