@@ -29,8 +29,8 @@ so that `ℓ` depends only on the linear equivalence class of a divisor.  It is 
   class of a divisor.
 * `TauCeti.Divisor.dim_principal`: the dimension of a principal divisor is the degree of the
   full constant field over `k`.
-* `TauCeti.Divisor.eq_of_linearlyEquivalent_of_dim_eq_one`: a divisor class with `ℓ(D) = 1`
-  contains at most one effective divisor (Remark 1.4.5).
+* `TauCeti.Divisor.eq_of_linearlyEquivalent_of_dim_eq_dim_zero`: a divisor class with
+  `ℓ(D) = ℓ(0)` contains at most one effective divisor (Remark 1.4.5).
 * `TauCeti.riemannRochSpace_ne_bot_iff`: `L(D) ≠ 0` exactly when `D` is linearly equivalent to
   an effective divisor (Remark 1.4.5(b)).
 
@@ -143,39 +143,43 @@ theorem Divisor.dim_principal_of_isIntegrallyClosedIn (hF : IsFunctionField k F)
     Divisor.dim (Divisor.principal hF z) = 1 := by
   rw [Divisor.dim_principal hF, isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one.mp hex]
 
-/-- **A divisor class with `ℓ(D) = 1` contains at most one effective divisor** (Stichtenoth,
-Remark 1.4.5): the only effective divisor linearly equivalent to an effective `D` with
-`ℓ(D) = 1` is `D` itself, so the complete linear system of `D` is the singleton `{D}`.
-Exactness of the constant field is unnecessary here: an effective `E` in the class already has
-`L(0) ≤ L(E)`, and `L(0)` is nonzero, so `ℓ(E) = 1` forces `L(E) = L(0)` and the functions in
-`L(E)` are the constants. -/
-theorem Divisor.eq_of_linearlyEquivalent_of_dim_eq_one (hF : IsFunctionField k F)
+/-- **A divisor class with `ℓ(D) = ℓ(0)` contains at most one effective divisor** (Stichtenoth,
+Remark 1.4.5): the only effective divisor linearly equivalent to an effective `D` whose
+Riemann–Roch space has the dimension of the constant space is `D` itself, so the complete linear
+system of `D` is the singleton `{D}`. -/
+theorem Divisor.eq_of_linearlyEquivalent_of_dim_eq_dim_zero (hF : IsFunctionField k F)
     {D E : Divisor k F} (hD : 0 ≤ D) (hE : 0 ≤ E)
-    (hdim : Divisor.dim D = 1)
+    (hdim : Divisor.dim D = Divisor.dim (0 : Divisor k F))
     (h : (Place.orderSystem hF).LinearlyEquivalent D E) : D = E := by
   obtain ⟨z, hz⟩ := (Divisor.linearlyEquivalent_iff hF).mp h
   have hmem : (z : F) ∈ riemannRochSpace E := by
     rw [mem_riemannRochSpace_units_iff hF, hz]
     simpa using hD
-  have hdimE : Divisor.dim E = 1 := by
+  have hdimE : Divisor.dim E = Divisor.dim (0 : Divisor k F) := by
     rw [← Divisor.dim_eq_of_linearlyEquivalent hF h]
     exact hdim
   have : FiniteDimensional k (riemannRochSpace E) := finiteDimensional_riemannRochSpace hF E
-  have hdimZero : Divisor.dim (0 : Divisor k F) = 1 := by
-    have hpos : 0 < Divisor.dim (0 : Divisor k F) := by
-      rw [Divisor.dim_zero hF]
-      let _ := hF.finiteDimensional_algebraicClosure
-      exact Module.finrank_pos
-    have hle := Divisor.dim_mono hF hE
-    omega
   have heq : riemannRochSpace (0 : Divisor k F) = riemannRochSpace E := by
     refine Submodule.eq_of_le_of_finrank_eq (riemannRochSpace_mono hE) ?_
-    rw [← Divisor.dim_def, ← Divisor.dim_def, hdimE, hdimZero]
+    rw [← Divisor.dim_def, ← Divisor.dim_def, hdimE]
   have hz0 : Divisor.principal hF z = 0 :=
     (Divisor.principal_eq_zero_iff_mem_algebraicClosure hF z).mpr
       ((mem_riemannRochSpace_zero_iff hF).mp (heq.ge hmem))
   rw [hz0] at hz
   exact sub_eq_zero.mp hz.symm
+
+/-- A divisor class with `ℓ(D) = 1` contains at most one effective divisor. -/
+theorem Divisor.eq_of_linearlyEquivalent_of_dim_eq_one (hF : IsFunctionField k F)
+    {D E : Divisor k F} (hD : 0 ≤ D) (hE : 0 ≤ E)
+    (hdim : Divisor.dim D = 1)
+    (h : (Place.orderSystem hF).LinearlyEquivalent D E) : D = E := by
+  apply Divisor.eq_of_linearlyEquivalent_of_dim_eq_dim_zero hF hD hE ?_ h
+  have hpos : 0 < Divisor.dim (0 : Divisor k F) := by
+    rw [Divisor.dim_zero hF]
+    let _ := hF.finiteDimensional_algebraicClosure
+    exact Module.finrank_pos
+  have hle := Divisor.dim_mono hF hD
+  omega
 
 /-- **A Riemann–Roch space is nonzero exactly when its divisor is linearly equivalent to an
 effective divisor** (Stichtenoth, Remark 1.4.5(b)).  A nonzero `f ∈ L(D)` makes `div f + D`
