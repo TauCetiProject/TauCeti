@@ -8,12 +8,10 @@ module
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 
 /-!
-# Operations and regularity of localized quadratic forms
+# Operations on localized quadratic forms
 
 This file records how the canonical finite, real, and complex localizations of a quadratic form
-interact with orthogonal products, negation, and scalar multiplication.  It also proves that
-scalar extension preserves nondegeneracy, completing the finite- and real-place regularity API
-alongside the existing complex-place result.
+interact with orthogonal products, negation, and scalar multiplication.
 
 The product comparisons are isometries because scalar extension distributes over a product only
 up to the canonical tensor-product equivalence.  The other comparisons are equalities of forms
@@ -21,8 +19,6 @@ on the same scalar-extended module.  Together these results let local-global arg
 the standard structure of a global quadratic space without unfolding the localization maps.
 
 -/
-
--- Provenance: TauCetiRoadmap/GlobalQuadraticForms/README.md, Layer 0.1.
 
 public section
 noncomputable section
@@ -244,29 +240,5 @@ theorem atComplexEmbedding_smul (a : K) (Q : _root_.QuadraticForm K V)
     RingHom.algebraMap_toAlgebra]
 
 end Scaling
-
-section Nondegenerate
-
-variable [FiniteDimensional K V]
-
-/-- A nondegenerate form remains nondegenerate at every finite place. -/
-theorem Nondegenerate.atFinitePlace [NumberField K] {Q : _root_.QuadraticForm K V}
-    (hQ : Q.Nondegenerate) (place : HeightOneSpectrum (𝓞 K)) :
-    (Q.atFinitePlace place).Nondegenerate := by
-  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  rw [atFinitePlace_def]
-  exact QuadraticForm.Nondegenerate.baseChange hQ
-
-/-- A nondegenerate form remains nondegenerate at every real place. -/
-theorem Nondegenerate.atRealPlace {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate)
-    (place : {w : InfinitePlace K // w.IsReal}) :
-    (Q.atRealPlace place).Nondegenerate := by
-  let : CharZero K := RingHom.charZero place.1.embedding
-  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal place.2).toAlgebra
-  rw [atRealPlace_def]
-  exact QuadraticForm.Nondegenerate.baseChange hQ
-
-end Nondegenerate
 
 end QuadraticForm
