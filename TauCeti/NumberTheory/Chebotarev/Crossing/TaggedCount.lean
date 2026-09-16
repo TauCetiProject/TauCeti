@@ -12,8 +12,7 @@ public import Mathlib.GroupTheory.OrderOfElement
 
 In the cyclic auxiliary group used by the Chebotarev crossing, the useful tags are the elements
 whose order is divisible by the order of the chosen Frobenius element. This file gives that finite
-carrier and records the order-fibre decomposition of its cardinality. The latter is the finite sum
-of totients obtained by grouping the tagged elements by their exact order.
+carrier together with its membership and divisibility API.
 
 ## Main definitions
 
