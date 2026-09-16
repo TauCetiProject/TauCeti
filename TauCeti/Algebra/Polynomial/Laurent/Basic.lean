@@ -118,6 +118,12 @@ theorem comp_laurentEval {B : Type*} [Semiring B] [Algebra R B] (g : A →ₐ[R]
     g.comp (laurentEval u) = laurentEval (Units.map (g : A →* B) u) :=
   laurentEval_unique _ _ <| by simp
 
+/-- **Evaluating after the involution `T ↦ T⁻¹` is evaluating at the inverse unit.** -/
+theorem laurentEval_invert (u : Aˣ) (p : R[T;T⁻¹]) :
+    laurentEval u (invert p) = laurentEval u⁻¹ p := by
+  rw [← AlgEquiv.coe_toAlgHom, ← AlgHom.comp_apply,
+    laurentEval_unique u⁻¹ ((laurentEval u).comp invert.toAlgHom) (by simp)]
+
 /-- **Over a commutative target this is Mathlib's `LaurentPolynomial.eval₂`.**  The two
 constructions are separate only because `LaurentPolynomial.eval₂` is built by localization and so
 needs a commutative codomain. -/

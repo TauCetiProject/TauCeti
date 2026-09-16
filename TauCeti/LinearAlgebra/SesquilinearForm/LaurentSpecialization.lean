@@ -57,12 +57,6 @@ variable {N₁ N₂ : Type*} [AddCommGroup N₁] [Module R[T;T⁻¹] N₁] [Modu
   [IsScalarTower R R[T;T⁻¹] N₁] [AddCommGroup N₂] [Module R[T;T⁻¹] N₂] [Module R N₂]
   [IsScalarTower R R[T;T⁻¹] N₂]
 
-/-- Evaluation at `ε₂` after the involution `q ↦ q⁻¹` is evaluation at `ε₁`, for `ε₁⁻¹ = ε₂`. -/
-private theorem laurentEval_invert (hε : ε₁⁻¹ = ε₂) (p : R[T;T⁻¹]) :
-    laurentEval ε₂ (invert p) = laurentEval ε₁ p := by
-  rw [← AlgEquiv.coe_toAlgHom, ← AlgHom.comp_apply,
-    laurentEval_unique ε₁ ((laurentEval ε₂).comp invert.toAlgHom) (by simp [← hε])]
-
 /-- A q-sesquilinear form evaluated at `q = ε₂`, as an `R`-bilinear form on the unspecialized
 modules. -/
 private noncomputable def laurentEvalForm
@@ -77,6 +71,13 @@ private noncomputable def laurentEvalForm
     (fun r x y => by
       rw [← algebraMap_smul (A := R[T;T⁻¹]) r y, map_smul, smul_eq_mul, map_mul,
         AlgHom.commutes, Algebra.algebraMap_self, RingHom.id_apply, smul_eq_mul])
+
+/-- The evaluated form takes the values of `b` evaluated at `ε₂`. -/
+private theorem laurentEvalForm_apply
+    (b : N₁ →ₛₗ[(invert (R := R)).toRingEquiv.toRingHom] N₂ →ₗ[R[T;T⁻¹]] R[T;T⁻¹])
+    (x : N₁) (y : N₂) :
+    laurentEvalForm (ε₂ := ε₂) b x y = laurentEval ε₂ (b x y) :=
+  LinearMap.mk₂_apply ..
 
 /-- **The specialization of a q-sesquilinear form**, at `q = ε₁` in the first argument and at
 `q = ε₂` in the second, for units with `ε₁⁻¹ = ε₂`.  The form `b` is antilinear in its first
@@ -93,16 +94,16 @@ noncomputable def laurentSpecialize
       rw [Submodule.restrictScalars_mem] at hz
       refine Submodule.smul_induction_on hz (fun p hp x _ => ?_) fun x y hx hy => add_mem hx hy
       refine LinearMap.mem_ker.mpr (LinearMap.ext fun y => ?_)
-      change laurentEval ε₂ (b (p • x) y) = 0
-      rw [LinearMap.map_smulₛₗ₂, smul_eq_mul, map_mul]
-      change laurentEval ε₂ (invert p) * _ = 0
-      rw [laurentEval_invert hε, RingHom.mem_ker.mp hp, zero_mul])
+      rw [LinearMap.zero_apply, laurentEvalForm_apply, LinearMap.map_smulₛₗ₂, smul_eq_mul,
+        map_mul]
+      simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, AlgEquiv.coe_ringEquiv]
+      rw [laurentEval_invert, ← hε, inv_inv, RingHom.mem_ker.mp hp, zero_mul])
     (fun z hz => by
       rw [Submodule.restrictScalars_mem] at hz
       refine Submodule.smul_induction_on hz (fun p hp y _ => ?_) fun x y hx hy => add_mem hx hy
       refine LinearMap.mem_ker.mpr (LinearMap.ext fun x => ?_)
-      change laurentEval ε₂ (b x (p • y)) = 0
-      rw [map_smul, smul_eq_mul, map_mul, RingHom.mem_ker.mp hp, zero_mul])).compl₁₂
+      rw [LinearMap.zero_apply, LinearMap.flip_apply, laurentEvalForm_apply, map_smul, smul_eq_mul,
+        map_mul, RingHom.mem_ker.mp hp, zero_mul])).compl₁₂
     (Submodule.Quotient.restrictScalarsEquiv R
       (RingHom.ker (laurentEval (R := R) ε₁) • ⊤ : Submodule R[T;T⁻¹] N₁)).symm.toLinearMap
     (Submodule.Quotient.restrictScalarsEquiv R
@@ -118,8 +119,7 @@ theorem laurentSpecialize_mk_mk
       laurentEval ε₂ (b x y) := by
   rw [laurentSpecialize, LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
     mk_apply, mk_apply, Submodule.Quotient.restrictScalarsEquiv_symm_mk,
-    Submodule.Quotient.restrictScalarsEquiv_symm_mk, LinearMap.liftQ₂_mk]
-  rfl
+    Submodule.Quotient.restrictScalarsEquiv_symm_mk, LinearMap.liftQ₂_mk, laurentEvalForm_apply]
 
 end LinearMap
 
