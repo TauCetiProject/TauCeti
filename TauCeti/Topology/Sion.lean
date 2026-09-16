@@ -32,7 +32,7 @@ open Set
 namespace TauCeti
 
 /-- A real-valued convex function is quasiconvex after coercion to `EReal`. -/
-theorem ConvexOn.quasiconvexOn_ereal_coe {E : Type*} [AddCommMonoid E] [SMul ℝ E]
+theorem _root_.ConvexOn.quasiconvexOn_ereal_coe {E : Type*} [AddCommMonoid E] [SMul ℝ E]
     {s : Set E} {g : E → ℝ} (hg : ConvexOn ℝ s g) :
     QuasiconvexOn ℝ s fun x ↦ ((g x : ℝ) : EReal) := by
   intro r
@@ -53,7 +53,7 @@ theorem ConvexOn.quasiconvexOn_ereal_coe {E : Type*} [AddCommMonoid E] [SMul ℝ
     exact hg.1
 
 /-- A real-valued concave function is quasiconcave after coercion to `EReal`. -/
-theorem ConcaveOn.quasiconcaveOn_ereal_coe {E : Type*} [AddCommMonoid E] [SMul ℝ E]
+theorem _root_.ConcaveOn.quasiconcaveOn_ereal_coe {E : Type*} [AddCommMonoid E] [SMul ℝ E]
     {s : Set E} {g : E → ℝ} (hg : ConcaveOn ℝ s g) :
     QuasiconcaveOn ℝ s fun x ↦ ((g x : ℝ) : EReal) := by
   intro r
@@ -74,7 +74,7 @@ theorem ConcaveOn.quasiconcaveOn_ereal_coe {E : Type*} [AddCommMonoid E] [SMul �
     exact convex_empty
 
 /-- A function preserving affine combinations on a convex set is both convex and concave there. -/
-theorem Convex.convexOn_and_concaveOn_of_affine {E : Type*} [AddCommGroup E] [Module ℝ E]
+theorem _root_.Convex.convexOn_and_concaveOn_of_affine {E : Type*} [AddCommGroup E] [Module ℝ E]
     {s : Set E} (hs : Convex ℝ s) {g : E → ℝ}
     (h : ∀ (x y : E) (a b : ℝ), a + b = 1 →
       g (a • x + b • y) = a * g x + b * g y) :
