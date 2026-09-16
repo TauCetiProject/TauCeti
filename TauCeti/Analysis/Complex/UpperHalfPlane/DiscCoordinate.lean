@@ -290,7 +290,7 @@ theorem discCoordinate_psl_smul_of_smul_eq_self {q : PSL(2, ℝ)} {z : ℍ} (hq 
     rwa [MulAction.compHom_smul_def] at hsl
   rw [pslMk_smul, MulAction.compHom_smul_def,
     discCoordinate_smul_of_smul_eq_self (by simp) hgl,
-    Matrix.ProjectiveSpecialLinearGroup.smulDeriv_coe]
+    Matrix.SpecialLinearGroup.smulDeriv_coe]
   congr 1
   -- the automorphy factor at a fixed point is unimodular, so its conjugate is its inverse
   have hconj : conj (denom (Matrix.SpecialLinearGroup.mapGL ℝ g) (z : ℂ)) =
