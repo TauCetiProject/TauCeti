@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Hodge.Orthogonal
+public import TauCeti.Order.Atoms
 
 /-!
 # Polarizable pure Hodge structures are semisimple
@@ -19,7 +20,8 @@ the direct sum of finitely many **simple** rational Hodge substructures — the 
 
 The complement itself is the orthogonal complement
 `TauCeti.Hodge.RationalHodgeSubstructure.orthogonal` for a polarizing form; the decomposition is
-then an induction on the dimension of the rational subspace, splitting off one atom at a time.
+then the lattice-theoretic `TauCeti.exists_finset_isAtom_sup_eq`, which splits off one atom at a
+time in any complemented modular lattice with the descending chain condition.
 Only *some* polarizing form is used, never a chosen one, so the statements are about
 `TauCeti.Hodge.IsPolarizable` structures: this is the semisimplicity of the polarizable Hodge
 structures, for which the choice of a form is not part of the object.
@@ -66,56 +68,14 @@ theorem complementedLattice_of_isPolarizable (h : IsPolarizable hℂ hs) :
   let ⟨P⟩ := isPolarizable_iff_nonempty.1 h
   complementedLattice P
 
-/-- The inductive step behind `exists_finset_isAtom_sup_eq`: a rational Hodge substructure of
-dimension at most `d` is a finite independent supremum of simple substructures. Splitting off one
-atom at a time is what the bound on the dimension controls. -/
-private theorem exists_finset_isAtom_sup_eq_aux (P : Polarization hℂ hs) (d : ℕ) :
-    ∀ W : RationalHodgeSubstructure hℚ hs, Module.finrank ℚ W.WQ ≤ d →
-      ∃ s : Finset (RationalHodgeSubstructure hℚ hs),
-        (∀ U ∈ s, IsAtom U) ∧ s.SupIndep id ∧ s.sup id = W := by
-  classical
-  induction d with
-  | zero =>
-    intro W hW
-    have hWbot : W = ⊥ :=
-      RationalHodgeSubstructure.ext
-        (by rw [bot_WQ, ← Submodule.finrank_eq_zero]; exact Nat.le_zero.1 hW)
-    exact ⟨∅, by simp, Finset.supIndep_empty _, by simp [hWbot]⟩
-  | succ d ih =>
-    intro W hW
-    rcases eq_or_ne W ⊥ with rfl | hWne
-    · exact ⟨∅, by simp, Finset.supIndep_empty _, by simp⟩
-    obtain ⟨U, hU, hUW⟩ := exists_isAtom_le hWne
-    set U' := orthogonal P U ⊓ W with hU'
-    have hinf : U ⊓ U' = ⊥ :=
-      le_bot_iff.1 <| calc
-        U ⊓ U' ≤ U ⊓ orthogonal P U := inf_le_inf_left _ inf_le_left
-        _ = ⊥ := (isCompl_orthogonal P U).disjoint.eq_bot
-    have hsup : U ⊔ U' = W := by
-      rw [hU', ← sup_inf_assoc_of_le _ hUW, (isCompl_orthogonal P U).codisjoint.eq_top,
-        top_inf_eq]
-    -- the dimensions of the two summands add up to the dimension of `W`
-    have hadd : Module.finrank ℚ U.WQ + Module.finrank ℚ U'.WQ = Module.finrank ℚ W.WQ := by
-      have h := Submodule.finrank_sup_add_finrank_inf_eq U.WQ U'.WQ
-      rw [← sup_WQ, ← inf_WQ, hsup, hinf, bot_WQ, finrank_bot] at h
-      omega
-    have hUpos : Module.finrank ℚ U.WQ ≠ 0 := by
-      rw [Ne, Submodule.finrank_eq_zero]
-      exact fun h ↦ hU.1 (RationalHodgeSubstructure.ext (by rw [h, bot_WQ]))
-    obtain ⟨s, hatom, hindep, hssup⟩ := ih U' (by omega)
-    refine ⟨insert U s, ?_, hindep.insert ?_, ?_⟩
-    · exact fun V hV ↦ (Finset.mem_insert.1 hV).elim (fun h ↦ h ▸ hU) (hatom V)
-    · rw [hssup]
-      exact disjoint_iff.2 hinf
-    · rw [Finset.sup_insert, hssup, id_eq, hsup]
-
 /-- **Every rational Hodge substructure of a polarized pure Hodge structure is a finite direct sum
 of simple substructures**: it is the supremum of a finite family of atoms of the lattice of
 rational Hodge substructures, pairwise independent. -/
 theorem exists_finset_isAtom_sup_eq (P : Polarization hℂ hs) (W : RationalHodgeSubstructure hℚ hs) :
     ∃ s : Finset (RationalHodgeSubstructure hℚ hs),
       (∀ U ∈ s, IsAtom U) ∧ s.SupIndep id ∧ s.sup id = W :=
-  exists_finset_isAtom_sup_eq_aux P _ W le_rfl
+  have : ComplementedLattice (RationalHodgeSubstructure hℚ hs) := complementedLattice P
+  _root_.TauCeti.exists_finset_isAtom_sup_eq W
 
 end RationalHodgeSubstructure
 

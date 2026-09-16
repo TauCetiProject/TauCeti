@@ -145,9 +145,11 @@ instance : LE (RationalHodgeSubstructure hℚ hs) where
 instance : LT (RationalHodgeSubstructure hℚ hs) where
   lt W₁ W₂ := W₁.WQ < W₂.WQ
 
+@[simp]
 theorem le_def {W₁ W₂ : RationalHodgeSubstructure hℚ hs} : W₁ ≤ W₂ ↔ W₁.WQ ≤ W₂.WQ :=
   Iff.rfl
 
+@[simp]
 theorem lt_def {W₁ W₂ : RationalHodgeSubstructure hℚ hs} : W₁ < W₂ ↔ W₁.WQ < W₂.WQ :=
   Iff.rfl
 
@@ -213,6 +215,7 @@ theorem top_WC : (⊤ : RationalHodgeSubstructure hℚ hs).WC = ⊤ := by
 
 /-- Two rational Hodge substructures are complementary exactly when their rational subspaces
 are. -/
+@[simp]
 theorem isCompl_iff_WQ {W₁ W₂ : RationalHodgeSubstructure hℚ hs} :
     IsCompl W₁ W₂ ↔ IsCompl W₁.WQ W₂.WQ := by
   constructor
@@ -241,12 +244,12 @@ theorem finsetSup_WQ (s : Finset (RationalHodgeSubstructure hℚ hs)) :
   | insert a s ha ih => simp [ih]
 
 /-- Passing to the underlying rational subspace is strictly monotone. -/
-theorem strictMono_WQ :
+theorem WQ_strictMono :
     StrictMono (WQ : RationalHodgeSubstructure hℚ hs → Submodule ℚ Vℚ) :=
   fun _ _ h ↦ lt_def.1 h
 
 instance [Module.Finite ℚ Vℚ] : WellFoundedLT (RationalHodgeSubstructure hℚ hs) :=
-  (Submodule.finrank_strictMono.comp strictMono_WQ).wellFoundedLT
+  (Submodule.finrank_strictMono.comp WQ_strictMono).wellFoundedLT
 
 /-- **Every nonzero rational Hodge substructure contains a simple one.** The simple substructures
 are the atoms of the lattice of rational Hodge substructures, and over a finite-dimensional
