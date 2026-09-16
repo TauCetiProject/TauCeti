@@ -576,7 +576,6 @@ private theorem evalLinear_apply_impl (f : DiscreteCoind G U A) :
 theorem evalLinear_apply (f : DiscreteCoind G U A) : evalLinear (R := R) G U A f = f 1 :=
   evalLinear_apply_impl f
 
-@[simp]
 theorem evalLinear_map (f : A →ₗ[R] B) (hf) (a : DiscreteCoind G U A) :
     evalLinear (R := R) G U B (map f hf a) = f (evalLinear (R := R) G U A a) := by
   simp only [evalLinear_apply, map_apply]
@@ -663,11 +662,20 @@ object transports identify the opaque functor's objects with `coindDiscreteRep`.
 @[simp]
 theorem coindDiscreteFunctor_map_apply {A B : DiscreteRep.{u, v, w} R U}
     (f : A ⟶ B) (a : DiscreteCoind G U A.V) (g : G) :
-    ((eqToHom (coindDiscreteFunctor_obj R G U A).symm ≫
-      (coindDiscreteFunctor R G U).map f ≫
-      eqToHom (coindDiscreteFunctor_obj R G U B)).toLinearMap a) g =
+    ((show ((coindDiscreteFunctor R G U).obj B).ρ.IntertwiningMap
+        (coindDiscreteRep R G U B).ρ from
+        eqToHom (coindDiscreteFunctor_obj R G U B))
+      ((show ((coindDiscreteFunctor R G U).obj A).ρ.IntertwiningMap
+          ((coindDiscreteFunctor R G U).obj B).ρ from
+          (coindDiscreteFunctor R G U).map f)
+        ((show (coindDiscreteRep R G U A).ρ.IntertwiningMap
+            ((coindDiscreteFunctor R G U).obj A).ρ from
+            eqToHom (coindDiscreteFunctor_obj R G U A).symm) a))) g =
         f.toLinearMap (a g) :=
-  coindDiscreteFunctor_map_apply_impl R G U f a g
+  by
+    simpa only [DiscreteRep.comp_toLinearMap, LinearMap.coe_comp,
+      Representation.IntertwiningMap.coe_toLinearMap, Function.comp_apply] using
+        coindDiscreteFunctor_map_apply_impl R G U f a g
 
 /-- The locally constant coinduced module, bundled as a smooth discrete representation of `G`. -/
 noncomputable abbrev coindTopRep (A : SmoothDiscreteTopRep.{u, v, w} R U) :
@@ -734,9 +742,16 @@ object transports identify the opaque composite functor's objects with `coindTop
 theorem coindFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w} R U}
     (f : A ⟶ B) (a : DiscreteCoind G U A.obj.V) (g : G) :
     (show DiscreteCoind G U B.obj.V from
-      (eqToHom (coindFunctor_obj R G U A).symm ≫ (coindFunctor R G U).map f ≫
-        eqToHom (coindFunctor_obj R G U B)).hom.hom a) g = f.hom.hom (a g) :=
-  coindFunctor_map_apply_impl R G U f a g
+      (((eqToHom (congrArg
+          (fun X : SmoothDiscreteTopRep.{u, v, max v w} R G => X.obj)
+          (coindFunctor_obj R G U B))).hom.comp
+        ((coindFunctor R G U).map f).hom.hom).comp
+          (eqToHom (congrArg
+            (fun X : SmoothDiscreteTopRep.{u, v, max v w} R G => X.obj)
+            (coindFunctor_obj R G U A).symm)).hom) a) g = f.hom.hom (a g) := by
+  simpa only [CategoryTheory.ObjectProperty.FullSubcategory.comp_hom,
+    CategoryTheory.ObjectProperty.eqToHom_hom, TopRep.hom_comp] using
+      coindFunctor_map_apply_impl R G U f a g
 
 end Bundled
 
