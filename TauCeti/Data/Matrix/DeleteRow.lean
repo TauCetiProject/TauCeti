@@ -14,6 +14,10 @@ For a matrix `G` with rows indexed by `ρ` and a row index `r`, the matrix `Matr
 has rows indexed by `{s : ρ // s ≠ r}` and retains every row of `G` except row `r`. It is the
 submatrix of `G` along the inclusion of the remaining row indices.
 
+Row deletion is used to remove a redundant row, one lying in the span of the other rows, while
+studying the row span of a matrix; for example, a generator matrix of a linear code can be pruned
+this way to a matrix with linearly independent rows that presents the same code.
+
 ## Main definitions
 
 * `Matrix.deleteRow` deletes one row of a matrix.
