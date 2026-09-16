@@ -156,19 +156,13 @@ theorem _root_.LinearMap.isFrobeniusFunctional_apply_one {e : A ≃ₗ[k] Module
     (he : ∀ a c : A, e (a * c) = DomMulAct.mk c • e a) : (e 1).IsFrobeniusFunctional := by
   constructor
   · intro a ha
-    apply e.injective
-    apply LinearMap.ext
-    intro b
-    rw [map_zero, LinearMap.zero_apply]
-    change e.toLinearMap a b = 0
-    rw [dualLinearMap_apply_apply (fun a c => he a c)]
-    exact ha b
+    refine e.injective (LinearMap.ext fun b => ?_)
+    rw [map_zero, LinearMap.zero_apply, ← LinearEquiv.coe_coe, dualLinearMap_apply_apply he]
+    simpa using ha b
   · intro b hb
     exact (Module.forall_dual_apply_eq_zero_iff k b).mp fun f => by
-      rw [← e.apply_symm_apply f]
-      change e.toLinearMap (e.symm f) b = 0
-      rw [dualLinearMap_apply_apply (fun a c => he a c)]
-      exact hb _
+      rw [← e.apply_symm_apply f, ← LinearEquiv.coe_coe, dualLinearMap_apply_apply he]
+      simpa using hb _
 
 end Projective
 
