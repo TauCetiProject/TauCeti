@@ -30,6 +30,8 @@ terms used in Eisenstein series with character.
 
 ## Main results
 
+* `DirichletCharacter.generalizedBernoulli_def` is the defining finite-sum formula, which the
+  unexposed definition body does not otherwise make available to downstream files.
 * `DirichletCharacter.map_generalizedBernoulli` shows compatibility with extension of scalars.
 * `DirichletCharacter.generalizedBernoulli_modOne` recovers the positive-first-convention
   Bernoulli numbers at modulus one.
@@ -79,6 +81,18 @@ def generalizedBernoulli [NeZero N] (χ : DirichletCharacter R N) (n : ℕ) : R 
     ∑ a : ZMod N, χ a *
       algebraMap ℚ R
         ((Polynomial.bernoulli n).eval (((if a = 0 then N else a.val : ℕ) : ℚ) / N))
+
+/-- The defining finite-sum formula for `Bₙ,χ`.
+
+The body of `DirichletCharacter.generalizedBernoulli` is not exposed, so this is the public
+characterization of generalized Bernoulli numbers in arbitrary degree. -/
+theorem generalizedBernoulli_def [NeZero N] (χ : DirichletCharacter R N) (n : ℕ) :
+    χ.generalizedBernoulli n =
+      algebraMap ℚ R ((N : ℚ) ^ ((n : ℤ) - 1)) *
+        ∑ a : ZMod N, χ a *
+          algebraMap ℚ R
+            ((Polynomial.bernoulli n).eval (((if a = 0 then N else a.val : ℕ) : ℚ) / N)) := by
+  rw [generalizedBernoulli]
 
 /-- Generalized Bernoulli numbers commute with extension of the coefficient ring. -/
 @[simp]
