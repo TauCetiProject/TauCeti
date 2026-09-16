@@ -114,7 +114,6 @@ theorem coe_symmetricCongruenceLinearMap_apply (M : Matrix (Fin q) (Fin p) ℝ)
 
 /-- The trace pairing of a congruated symmetric matrix can be evaluated on the source by
 congruating the test matrix with the transpose. -/
-@[simp]
 theorem trace_mul_coe_symmetricCongruenceLinearMap (M : Matrix (Fin q) (Fin p) ℝ)
     (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))
     (Θ : selfAdjoint.submodule ℝ (Matrix (Fin q) (Fin q) ℝ)) :
@@ -125,7 +124,6 @@ theorem trace_mul_coe_symmetricCongruenceLinearMap (M : Matrix (Fin q) (Fin p) �
   rw [coe_symmetricCongruenceLinearMap_apply, trace_mul_congruence]
 
 /-- For the Frobenius pairing, congruence by `M` is adjoint to congruence by `Mᵀ`. -/
-@[simp]
 theorem inner_symmetricCongruenceLinearMap (M : Matrix (Fin q) (Fin p) ℝ)
     (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))
     (Θ : selfAdjoint.submodule ℝ (Matrix (Fin q) (Fin q) ℝ)) :
