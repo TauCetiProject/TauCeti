@@ -10,7 +10,7 @@ public import TauCeti.MeasureTheory.Group.CountableAction
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 -- Non-public: cylinder approximation and its real-valued measure estimates are proof tools.
 import TauCeti.MeasureTheory.Constructions.CylinderApproximation
-import TauCeti.MeasureTheory.Measure.ZeroOne
+import TauCeti.MeasureTheory.OuterMeasure.ZeroOne
 
 /-!
 # Ergodicity and dissociation for jointly exchangeable arrays
@@ -174,7 +174,7 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
   -- `t'`, also within `ε` of `s` by invariance, whose intersection factors by dissociation; the
   -- shared zero-one criterion then forces `ρ s ∈ {0, 1}`.
   refine TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_exists_symmDiff_lt_inter_eq_mul
-    hs.nullMeasurableSet ?_
+    (measure_ne_top ρ univ) ?_
   intro ε hε
   -- Step 1: the approximating cylinder `t` on a finite square `I × I` inside `[0, N)²`.
   obtain ⟨F, S, hS, hFS⟩ := TauCeti.MeasureTheory.exists_cylinder_measure_symmDiff_lt (ρ := ρ) hs
@@ -193,9 +193,6 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
   have ht_meas : MeasurableSet t := by
     rw [ht]
     exact MeasurableSet.cylinder (α := fun _ : ℕ × ℕ => α) F hS
-  have ht'_meas : MeasurableSet t' := by
-    rw [ht']
-    exact ht_meas.preimage (measurable_pairReindex π π)
   have ht_block : MeasurableSet[blockSigma (fun p (x : ℕ × ℕ → α) => x p)
       ((I : Set ℕ) ×ˢ (I : Set ℕ))] t := by
     rw [ht]
@@ -255,7 +252,7 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
   -- Step 4: `t` and `t'` read disjoint blocks, so dissociation factors their intersection.
   have hfactor_real : ρ.real (t ∩ t') = ρ.real t * ρ.real t' := by
     rw [measureReal_def, measureReal_def, measureReal_def, hfactor, ENNReal.toReal_mul]
-  exact ⟨t, t', ht_meas.nullMeasurableSet, ht'_meas.nullMeasurableSet, h1, h2, hfactor_real⟩
+  exact ⟨t, t', h1, h2, hfactor_real⟩
 
 /-- **Joint dissociation makes the diagonal finitary-permutation action ergodic**, for a law
 invariant under that action; joint exchangeability supplies the invariance
