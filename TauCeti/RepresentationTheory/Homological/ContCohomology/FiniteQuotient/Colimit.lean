@@ -501,67 +501,77 @@ theorem exists_explicitFiniteQuotientTransition2_eq_zero (U : OpenNormalSubgroup
     refine ⟨V, hVU, ?_⟩
     rw [explicitFiniteQuotientTransition2_mk]
     apply H2pi_eq_zero_iff.2
-    refine mem_B2_iff.2 ⟨bV, hbV, funext fun p => ?_⟩
+    refine mem_B2_iff.2 ⟨bV, hbV, ?_⟩
+    have hbV_eq :
+        cochainsMap1 (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+          (FixedPoints.addSubgroup V.toSubgroup M).subtype bV = b := by
+      funext g
+      rw [cochainsMap1_apply]
+      exact hbV_apply g
+    have hd1 := cochainsMap2_d1
+      (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+      (FixedPoints.addSubgroup V.toSubgroup M).subtype
+      (subtype_quotientMk_smul G M V.toSubgroup) bV
+    rw [hbV_eq] at hd1
+    have hquot : (continuousFiniteQuotientMap G hVU).comp
+        (ContinuousMonoidHom.quotientMk V.toSubgroup) =
+        ContinuousMonoidHom.quotientMk U.toSubgroup := by
+      ext g
+      simp
+    have hincl : ((FixedPoints.addSubgroup V.toSubgroup M).subtype).comp
+        (fixedPointsInclusion hVU : FixedPoints.addSubgroup U.toSubgroup M →+
+          FixedPoints.addSubgroup V.toSubgroup M) =
+        (FixedPoints.addSubgroup U.toSubgroup M).subtype :=
+      AddMonoidHom.ext fun m => coe_fixedPointsInclusion hVU m
+    have hcomp := cocyclesMap2_comp
+      (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
+      (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
+      (continuousFiniteQuotientMap G hVU) (fixedPointsInclusion hVU)
+      continuous_of_discreteTopology
+      (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU)
+      G M (ContinuousMonoidHom.quotientMk V.toSubgroup)
+      (FixedPoints.addSubgroup V.toSubgroup M).subtype
+      (continuous_fixedPoints_addSubgroup_subtype G M V.toSubgroup)
+      (subtype_quotientMk_smul G M V.toSubgroup)
+    simp only [hquot] at hcomp
+    funext p
     obtain ⟨q, q'⟩ := p
     induction q using QuotientGroup.induction_on with
     | H g =>
       induction q' using QuotientGroup.induction_on with
       | H g' =>
         apply Subtype.ext
-        -- Coerce out of the fixed-point subgroups and compare both finite-level formulas with
-        -- the ambient identity `d¹b = c`.
-        have hlhs :
-            ((d1 (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M) bV
-              ((g : G ⧸ V.toSubgroup), (g' : G ⧸ V.toSubgroup)) :
-                FixedPoints.addSubgroup V.toSubgroup M) : M) =
-              d1 G M b (g, g') := by
-          rw [d1_apply, d1_apply]
-          simp only [AddSubgroup.coe_add, AddSubgroup.coe_sub,
-            coe_quotient_smul_fixedPoints_addSubgroup, coe_smul_fixedPoints_addSubgroup]
-          rw [hbV_apply, ← QuotientGroup.mk_mul, hbV_apply, hbV_apply]
-        have htransition := cocyclesMap2_apply
-          (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
-          (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
-          (continuousFiniteQuotientMap G hVU) (fixedPointsInclusion hVU)
-          continuous_of_discreteTopology
-          (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) c
-          (g : G ⧸ V.toSubgroup) (g' : G ⧸ V.toSubgroup)
-        have hinflation := cocyclesMap2_apply
-          (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) G M
-          (ContinuousMonoidHom.quotientMk U.toSubgroup)
-          (FixedPoints.addSubgroup U.toSubgroup M).subtype
-          (continuous_fixedPoints_addSubgroup_subtype G M U.toSubgroup)
-          (subtype_quotientMk_smul G M U.toSubgroup) c g g'
-        have hinflation' :
-            ((cocyclesMap2 (G ⧸ U.toSubgroup)
-              (FixedPoints.addSubgroup U.toSubgroup M) G M
-              (ContinuousMonoidHom.quotientMk U.toSubgroup)
-              (FixedPoints.addSubgroup U.toSubgroup M).subtype
-              (continuous_fixedPoints_addSubgroup_subtype G M U.toSubgroup)
-              (subtype_quotientMk_smul G M U.toSubgroup) c : G × G → M) (g, g')) =
-                ((c : (G ⧸ U.toSubgroup) × (G ⧸ U.toSubgroup) →
-                  FixedPoints.addSubgroup U.toSubgroup M)
-                    ((g : G ⧸ U.toSubgroup), (g' : G ⧸ U.toSubgroup)) : M) := by
-          simpa only [AddSubgroup.coe_subtype, ContinuousMonoidHom.quotientMk_apply] using
-            hinflation
-        have htransition' :
-            ((cocyclesMap2 (G ⧸ U.toSubgroup)
-              (FixedPoints.addSubgroup U.toSubgroup M) (G ⧸ V.toSubgroup)
-              (FixedPoints.addSubgroup V.toSubgroup M)
-              (continuousFiniteQuotientMap G hVU) (fixedPointsInclusion hVU)
-              continuous_of_discreteTopology
-              (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) c :
-                (G ⧸ V.toSubgroup) × (G ⧸ V.toSubgroup) →
-                  FixedPoints.addSubgroup V.toSubgroup M)
-                    ((g : G ⧸ V.toSubgroup), (g' : G ⧸ V.toSubgroup)) : M) =
-              ((c : (G ⧸ U.toSubgroup) × (G ⧸ U.toSubgroup) →
-                  FixedPoints.addSubgroup U.toSubgroup M)
-                  ((g : G ⧸ U.toSubgroup), (g' : G ⧸ U.toSubgroup)) : M) := by
-          rw [continuousFiniteQuotientMap_mk, continuousFiniteQuotientMap_mk] at htransition
-          exact (congrArg Subtype.val htransition).trans
-            (coe_fixedPointsInclusion hVU _)
-        exact hlhs.trans <| (congrFun hd (g, g')).trans <|
-          hinflation'.trans htransition'.symm
+        have hlhs := congrFun hd1 (g, g')
+        rw [cochainsMap2_apply] at hlhs
+        rw [ContinuousMonoidHom.coe_quotientMk] at hlhs
+        rw [QuotientGroup.mk'_apply, QuotientGroup.mk'_apply] at hlhs
+        have hd_apply := congrFun hd (g, g')
+        simp only [cocyclesMap2_apply, AddSubgroup.coe_subtype] at hd_apply
+        have hrhs := congrArg (fun z : Z2 G M => ((z : G × G → M) (g, g')))
+          (DFunLike.congr_fun hcomp c)
+        simp only [cocyclesMap2_apply, AddMonoidHom.comp_apply] at hrhs
+        have hinflV := cocyclesMap2_apply
+          (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M) G M
+          (ContinuousMonoidHom.quotientMk V.toSubgroup)
+          (FixedPoints.addSubgroup V.toSubgroup M).subtype
+          (continuous_fixedPoints_addSubgroup_subtype G M V.toSubgroup)
+          (subtype_quotientMk_smul G M V.toSubgroup)
+          (cocyclesMap2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
+            (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
+            (continuousFiniteQuotientMap G hVU) (fixedPointsInclusion hVU)
+            continuous_of_discreteTopology
+            (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) c) g g'
+        rw [ContinuousMonoidHom.quotientMk_apply,
+          ContinuousMonoidHom.quotientMk_apply] at hinflV
+        have hincl_apply := congrArg (fun f => f
+          ((c : (G ⧸ U.toSubgroup) × (G ⧸ U.toSubgroup) →
+            FixedPoints.addSubgroup U.toSubgroup M)
+              ((g : G ⧸ U.toSubgroup), (g' : G ⧸ U.toSubgroup)))) hincl
+        simpa only [cochainsMap2_apply, AddSubgroup.coe_subtype, AddMonoidHom.comp_apply,
+          cocyclesMap2_apply, ContinuousMonoidHom.coe_comp, Function.comp_apply,
+          continuousFiniteQuotientMap_mk,
+          coe_fixedPointsInclusion] using
+          hlhs.trans (hd_apply.trans (hincl_apply.symm.trans (hrhs.trans hinflV)))
 
 /-- Two finite-level degree-two classes with the same inflation agree after transition to a
 common deeper level: their difference inflates to zero, hence dies at a sufficiently deep
