@@ -101,8 +101,9 @@ lemma cechTopDiagram_obj (s : CechIndex ι) :
 
 @[simp]
 lemma cechTopDiagram_map_apply {s t : CechIndex ι} (f : s ⟶ t)
-    (x : (cechTopDiagram U).obj s) :
-    (cechTopDiagram U).map f x =
+    (x : TopCat.of (cechIntersection U s)) :
+    ConcreteCategory.hom (X := TopCat.of (cechIntersection U s))
+      (Y := TopCat.of (cechIntersection U t)) ((cechTopDiagram U).map f) x =
       ⟨x.1, cechIntersection_mono U f.le x.2⟩ := rfl
 
 /-- The inclusion of a finite cover intersection into the ambient space. -/
@@ -110,8 +111,9 @@ def cechInclusion (s : CechIndex ι) : (cechTopDiagram U).obj s ⟶ X :=
   Opens.inclusion' (cechIntersection U s)
 
 @[simp]
-lemma cechInclusion_apply (s : CechIndex ι) (x : (cechTopDiagram U).obj s) :
-    cechInclusion U s x = x.1 := rfl
+lemma cechInclusion_apply (s : CechIndex ι) (x : TopCat.of (cechIntersection U s)) :
+    ConcreteCategory.hom (X := TopCat.of (cechIntersection U s))
+      (Y := X) (cechInclusion U s) x = x.1 := rfl
 
 @[reassoc]
 lemma cechTopDiagram_map_comp_inclusion {s t : CechIndex ι} (f : s ⟶ t) :
