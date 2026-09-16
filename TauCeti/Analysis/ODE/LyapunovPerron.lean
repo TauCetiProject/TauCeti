@@ -85,12 +85,6 @@ def lyapunovPerronIntegral (A P : X →L[ℝ] X) (g : ℝ → X) (t : ℝ) : X :
   (∫ s in (0 : ℝ)..t, exp ((t - s) • A) (P (g s))) -
     ∫ s in Ioi t, exp ((t - s) • A) (g s - P (g s))
 
-theorem lyapunovPerronIntegral_def (A P : X →L[ℝ] X) (g : ℝ → X) (t : ℝ) :
-    lyapunovPerronIntegral A P g t =
-      (∫ s in (0 : ℝ)..t, exp ((t - s) • A) (P (g s))) -
-        ∫ s in Ioi t, exp ((t - s) • A) (g s - P (g s)) :=
-  (rfl)
-
 variable [CompleteSpace X]
 
 private theorem exp_smul_apply_exp_smul_apply (A : X →L[ℝ] X) (t s : ℝ) (v : X) :
@@ -187,7 +181,7 @@ theorem norm_lyapunovPerronIntegral_le
     (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
     (hα : 0 < α) (hgM : ∀ s, ‖g s‖ ≤ M) (ht : 0 ≤ t) :
     ‖lyapunovPerronIntegral A P g t‖ ≤ 2 * K * M / α := by
-  rw [lyapunovPerronIntegral_def]
+  rw [lyapunovPerronIntegral]
   refine (norm_sub_le _ _).trans ?_
   have h₁ := norm_intervalIntegral_lyapunovPerron_stable_le hs hα hgM ht
   have h₂ := norm_setIntegral_lyapunovPerron_unstable_le hu hα hgM t
@@ -215,7 +209,7 @@ theorem lyapunovPerronIntegral_sub (hα : 0 < α) (hg₁ : Continuous g₁) (hg�
       Continuous fun s ↦ exp ((t - s) • A) (P (g s)) :=
     ((differentiable_exp_smul_const ℝ A).continuous.comp
       (continuous_const.sub continuous_id)).clm_apply (P.continuous.comp hg)
-  simp only [lyapunovPerronIntegral_def, hstable, hunstable]
+  simp only [lyapunovPerronIntegral, hstable, hunstable]
   rw [intervalIntegral.integral_sub ((hcont _ hg₁).intervalIntegrable _ _)
     ((hcont _ hg₂).intervalIntegrable _ _),
     integral_sub (integrableOn_lyapunovPerron_unstable hu hα hg₁ hg₁M t)
@@ -255,7 +249,7 @@ theorem hasDerivAt_lyapunovPerronIntegral (hα : 0 < α) (hg : Continuous g)
       exp (u • A) (∫ s in (0 : ℝ)..u, hp s) -
         exp (u • A) ((∫ s in Ioi 0, hq s) - ∫ s in (0 : ℝ)..u, hq s) := by
     ext u
-    rw [lyapunovPerronIntegral_def, hstable, hunstable]
+    rw [lyapunovPerronIntegral, hstable, hunstable]
   have hexp := hasDerivAt_exp_smul_const' A t
   have hP := hexp.clm_apply (intervalIntegral.integral_hasDerivAt_right
     (hp_cont.intervalIntegrable 0 t) (hp_cont.stronglyMeasurableAtFilter _ _)
@@ -429,7 +423,7 @@ datum is the zero solution. -/
 theorem lyapunovPerronSolution_zero (hN0 : N 0 = 0) :
     lyapunovPerronSolution A P N hs hu hα hN hsmall 0 = 0 := by
   refine (eq_lyapunovPerronSolution hs hu hα hN hsmall fun t ↦ ?_).symm
-  simp [lyapunovPerronIntegral_def, hN0]
+  simp [lyapunovPerronIntegral, hN0]
 
 /-- The Lyapunov--Perron solution solves `y' = A y + N y` on `[0, ∞)`. -/
 theorem isIntegralCurveOn_lyapunovPerronSolution (ξ : X) :
