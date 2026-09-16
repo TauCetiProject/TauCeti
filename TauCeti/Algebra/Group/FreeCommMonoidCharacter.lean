@@ -31,14 +31,6 @@ monoid factor may vanish, while those on the free abelian factor are units.
 * `TauCeti.freeCommMonoidCharEquiv`: the multiplicative equivalence
   `(Multiplicative (σ →₀ ℕ) →* M) ≃* (σ → M)`.
 
-## Implementation notes
-
-The equivalence is not exposed: `TauCeti.freeCommMonoidCharEquiv_apply` and
-`TauCeti.freeCommMonoidCharEquiv_symm_apply_ofAdd` characterise both of its directions, so
-nothing downstream needs to unfold it. The first is proved by the parenthesised `(rfl)`, which
-elaborates against the definition itself; a bare `rfl` in an exported theorem would demand that
-the definition be `@[expose]`d.
-
 ## References
 
 The construction reuses Mathlib's group-algebra-free toolkit: the `Finsupp.liftAddHom`

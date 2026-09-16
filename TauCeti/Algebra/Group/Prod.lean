@@ -17,13 +17,10 @@ separately, as `MonoidHom.coprod` and composition with `MonoidHom.inl` and `Mono
 together with the fact that they are mutually inverse; this file packages them as the
 corresponding equivalence.
 
-## Implementation notes
+## Main definitions
 
-The equivalence is not exposed: `MonoidHom.coprodEquiv_apply` and
-`MonoidHom.coprodEquiv_symm_apply` characterise both of its directions, so nothing downstream
-needs to unfold it. Both are proved by the parenthesised `(rfl)`, which elaborates against the
-definition itself; a bare `rfl` in an exported theorem would demand that the definition be
-`@[expose]`d.
+* `MonoidHom.coprodEquiv`: the multiplicative equivalence `((M →* P) × (N →* P)) ≃* (M × N →* P)`
+  for `P` a commutative monoid.
 -/
 
 public section
