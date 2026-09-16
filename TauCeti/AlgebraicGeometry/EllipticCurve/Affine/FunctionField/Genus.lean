@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Polynomial.DegreeLT
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.PointPlace
 public import TauCeti.FieldTheory.FunctionField.Elliptic
+-- Proof-only: `degreeLT` and its basis, for the private dimension count.
+import Mathlib.RingTheory.Polynomial.DegreeLT
 -- Proof-only: `algebraMap_smul_eq_mul`, moving `F[X]`-scalars into the function field.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint
 
