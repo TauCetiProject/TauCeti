@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.Cyclic.OrderCount
+public import Mathlib.GroupTheory.OrderOfElement
 
 /-!
 # Elements with a prescribed divisibility condition on their order
@@ -24,14 +24,10 @@ of totients obtained by grouping the tagged elements by their exact order.
 
 * `NumberField.Chebotarev.mem_taggedElements_iff`: the defining membership condition.
 * `NumberField.Chebotarev.taggedElements_mono`: divisibility makes the tag carrier shrink.
-* `NumberField.Chebotarev.card_taggedElements_eq_sum_totient`: the order-fibre decomposition of the
-  tagged carrier in a cyclic group.
 
 ## References
 
-The tagged carrier and its count are the group-theoretic component of the cyclic crossing in
-`TauCetiRoadmap/Chebotarev/README.md`, Layer 9 ("abelian Chebotarev"). The crossing construction
-follows R. Sharifi, *Algebraic Number Theory*, Theorem 7.2.2.
+The crossing construction follows R. Sharifi, *Algebraic Number Theory*, Theorem 7.2.2.
 -/
 
 public section
@@ -66,16 +62,5 @@ theorem taggedElements_one {H : Type*} [Group H] [Fintype H] :
     taggedElements (H := H) 1 = Finset.univ := by
   ext τ
   simp [taggedElements]
-
-/-- In a finite cyclic group, split the tagged elements according to their exact order.
-
-The arithmetic content is supplied by the generic cyclic order-counting API; this theorem keeps the
-Chebotarev carrier opaque to its consumers. -/
-theorem card_taggedElements_eq_sum_totient {H : Type*} [Group H] [Fintype H] [IsCyclic H]
-    (f : ℕ) :
-    (taggedElements (H := H) f).card =
-      ∑ d ∈ {d ∈ (Fintype.card H).divisors | f ∣ d}, Nat.totient d := by
-  change #{τ : H | f ∣ orderOf τ} = _
-  exact IsCyclic.card_filter_dvd_orderOf_eq_sum_totient f
 
 end NumberField.Chebotarev
