@@ -45,7 +45,8 @@ constant leave the density equal to `1`, so for `-1 < n` the law is that Dirac m
   `TauCeti.nonsingularWishartMeasure_of_not_posDef` and
   `TauCeti.nonsingularWishartMeasure_of_le` describe the two invalid branches.
 * `TauCeti.ae_posDef_nonsingularWishartMeasure` — the sampled matrix is positive definite almost
-  everywhere.
+  everywhere, so by `TauCeti.map_subtype_val_comap_nonsingularWishartMeasure` the law is recovered
+  from its lift to the cone.
 * `TauCeti.nonsingularWishartMeasure_zero` — in dimension zero the law is the Dirac mass at
   the unique symmetric matrix, hence a probability measure.
 * `TauCeti.measurable_nonsingularWishartMeasure` — the law is measurable jointly in its real
@@ -342,6 +343,20 @@ theorem ae_posDef_nonsingularWishartMeasure (n : ℝ) (S : Matrix (Fin p) (Fin p
       (A : Matrix (Fin p) (Fin p) ℝ).PosDef := by
   rw [ae_iff]
   exact nonsingularWishartMeasure_compl_posDef n S
+
+/-- **The Wishart law read on the positive-definite cone.** Mapping the lift
+`(nonsingularWishartMeasure n S).comap Subtype.val` back along the inclusion of the cone returns
+the law itself, because the cone carries all of its mass. This is the form in which the Cholesky
+equivalence, which is defined on the cone, acts on a Wishart matrix. -/
+theorem map_subtype_val_comap_nonsingularWishartMeasure (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ) :
+    ((nonsingularWishartMeasure n S).comap
+        (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))).map
+        Subtype.val = nonsingularWishartMeasure n S := by
+  have hemb : MeasurableEmbedding
+      (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
+    MeasurableEmbedding.subtype_coe (measurableSet_posDefMatrix p)
+  rw [hemb.map_comap, Subtype.range_coe_subtype]
+  exact Measure.restrict_eq_self_of_ae_mem (ae_posDef_nonsingularWishartMeasure n S)
 
 /-! ### Dimension zero -/
 

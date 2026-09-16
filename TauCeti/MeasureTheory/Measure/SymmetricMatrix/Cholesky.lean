@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Cholesky.Jacobian
-public import TauCeti.LinearAlgebra.Matrix.Cholesky.Equiv
+public import TauCeti.LinearAlgebra.Matrix.Cholesky.Topology
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Lebesgue
 public import Mathlib.MeasureTheory.Function.Jacobian
 
@@ -35,6 +35,8 @@ positions relabels one coordinate system into the other, and the resulting chart
 * `TauCeti.symmetricLowerCoordinates` — the on-or-below-diagonal chart on the symmetric matrices.
 * `TauCeti.lowerTriangleGram` — the symmetric matrix `L * Lᵀ` built from coordinates for `L`.
 * `TauCeti.posDiagLowerRegion` — the coordinate region cut out by a positive diagonal.
+* `TauCeti.choleskyLowerCoordinates` — the Cholesky factor of a positive-definite matrix, read
+  in those coordinates, inverting the Gram map there.
 * `TauCeti.choleskyJacobianDensity` — the Jacobian weight of the change of variables.
 * `TauCeti.map_cholesky_symmetricLebesgue` — the change of variables.
 * `TauCeti.setLIntegral_posDef_symmetricLebesgue` — its integral form.
@@ -277,6 +279,50 @@ theorem injOn_choleskyReconstructionCoordinates :
   intro x hx y hy h
   refine injOn_lowerTriangleGram p hx hy ?_
   rw [lowerTriangleGram_eq_symm_apply, lowerTriangleGram_eq_symm_apply, h]
+
+/-! ### Cholesky coordinates of a positive-definite matrix -/
+
+/-- The Gram map lands in the positive-definite cone on the positive-diagonal region. -/
+theorem posDef_lowerTriangleGram {x : lowerTriangle p → ℝ} (hx : x ∈ posDiagLowerRegion p) :
+    (lowerTriangleGram p x : Matrix (Fin p) (Fin p) ℝ).PosDef := by
+  have hmem : lowerTriangleGram p x ∈ lowerTriangleGram p '' posDiagLowerRegion p := ⟨x, hx, rfl⟩
+  rw [lowerTriangleGram_image_posDiagLowerRegion] at hmem
+  exact hmem
+
+/-- The on-or-below-diagonal entries of the Cholesky factor of a positive-definite symmetric
+matrix: the same coordinates in which `TauCeti.map_cholesky_symmetricLebesgue` expresses the
+change of variables, read off the matrix itself. -/
+def choleskyLowerCoordinates (A : PosDefMatrix p) : lowerTriangle p → ℝ :=
+  (lowerTriangleCoordinatesHomeomorph p (cholesky A) : lowerTriangle p → ℝ)
+
+@[simp]
+theorem choleskyLowerCoordinates_apply (A : PosDefMatrix p) (ij : lowerTriangle p) :
+    choleskyLowerCoordinates p A ij = (cholesky A).1 ij.1.1 ij.1.2 :=
+  lowerTriangleCoordinatesHomeomorph_apply_coe p (cholesky A) ij
+
+theorem continuous_choleskyLowerCoordinates : Continuous (choleskyLowerCoordinates p) :=
+  continuous_subtype_val.comp
+    ((lowerTriangleCoordinatesHomeomorph p).continuous.comp continuous_cholesky)
+
+@[fun_prop]
+theorem measurable_choleskyLowerCoordinates : Measurable (choleskyLowerCoordinates p) :=
+  (continuous_choleskyLowerCoordinates p).measurable
+
+/-- **Cholesky factorization inverts the Gram map.** On the positive-diagonal region the
+coordinates of the Cholesky factor of `L * Lᵀ` are the coordinates of `L` again. -/
+@[simp]
+theorem choleskyLowerCoordinates_lowerTriangleGram {x : lowerTriangle p → ℝ}
+    (hx : x ∈ posDiagLowerRegion p) :
+    choleskyLowerCoordinates p ⟨lowerTriangleGram p x, posDef_lowerTriangleGram p hx⟩ = x := by
+  set L : PosDiagLowerTriangular p := (lowerTriangleCoordinatesHomeomorph p).symm ⟨x, hx⟩ with hL
+  have hLcoe : L.1 = lowerTriangleMatrix p x :=
+    lowerTriangleCoordinatesHomeomorph_symm_apply_coe p ⟨x, hx⟩
+  have hrec : choleskyReconstruction L =
+      (⟨lowerTriangleGram p x, posDef_lowerTriangleGram p hx⟩ : PosDefMatrix p) :=
+    Subtype.ext <| Subtype.ext <| by rw [choleskyReconstruction_coe, coe_lowerTriangleGram, hLcoe]
+  funext ij
+  rw [choleskyLowerCoordinates_apply, ← hrec, cholesky_choleskyReconstruction, hLcoe,
+    lowerTriangleMatrix_apply_of_le x ij.2]
 
 /-! ### The change of variables -/
 
