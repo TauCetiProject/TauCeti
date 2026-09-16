@@ -260,8 +260,8 @@ theorem conjugateGalEquiv_mk (u : L.ground) :
 
 /-- **A conjugate layer has the same degree.** -/
 @[simp]
-theorem degree_conjugate : (L.conjugate g).degree = L.degree := by
-  rw [degree_eq_natCard_gal, degree_eq_natCard_gal]
+theorem degree_conjugate : Fintype.card (L.conjugate g).Gal = L.degree := by
+  rw [← Nat.card_eq_fintype_card, degree_eq_natCard_gal]
   exact (Nat.card_congr (L.conjugateGalEquiv g).toEquiv).symm
 
 /-! ### Conjugation of the levels and the coefficient module of a layer -/
