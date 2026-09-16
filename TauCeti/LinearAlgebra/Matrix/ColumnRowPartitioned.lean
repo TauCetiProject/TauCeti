@@ -34,19 +34,21 @@ namespace Matrix
 variable {R ρ τ : Type*} [Semiring R]
 
 /-- The rows of a systematic matrix `[I | A]` are linearly independent. -/
-theorem linearIndependent_row_one_fromCols [Finite ρ] [DecidableEq ρ] (A : Matrix ρ τ R) :
-    LinearIndependent R (fromCols (1 : Matrix ρ ρ R) A).row := by
-  cases nonempty_fintype ρ
-  rw [← vecMul_injective_iff]
-  intro a b h
-  simpa only [vecMul_fromCols, vecMul_one, Sum.elim_comp_inl] using congrArg (· ∘ Sum.inl) h
+theorem linearIndependent_row_one_fromCols [DecidableEq ρ] (A : Matrix ρ τ R) :
+    LinearIndependent R (fromCols (1 : Matrix ρ ρ R) A).row :=
+  .of_comp (LinearMap.funLeft R R Sum.inl) <| by
+    convert Pi.linearIndependent_single_one ρ R using 1
+    ext i j
+    simp only [Function.comp_apply, LinearMap.funLeft_apply, row_apply, fromCols_apply_inl,
+      one_apply, Pi.single_apply, eq_comm]
 
 /-- The rows of a systematic matrix `[B | I]` are linearly independent. -/
-theorem linearIndependent_row_fromCols_one [Finite τ] [DecidableEq τ] (B : Matrix τ ρ R) :
-    LinearIndependent R (fromCols B (1 : Matrix τ τ R)).row := by
-  cases nonempty_fintype τ
-  rw [← vecMul_injective_iff]
-  intro a b h
-  simpa only [vecMul_fromCols, vecMul_one, Sum.elim_comp_inr] using congrArg (· ∘ Sum.inr) h
+theorem linearIndependent_row_fromCols_one [DecidableEq τ] (B : Matrix τ ρ R) :
+    LinearIndependent R (fromCols B (1 : Matrix τ τ R)).row :=
+  .of_comp (LinearMap.funLeft R R Sum.inr) <| by
+    convert Pi.linearIndependent_single_one τ R using 1
+    ext i j
+    simp only [Function.comp_apply, LinearMap.funLeft_apply, row_apply, fromCols_apply_inr,
+      one_apply, Pi.single_apply, eq_comm]
 
 end Matrix
