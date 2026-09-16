@@ -92,6 +92,14 @@ off the over-strand, and applied to `!D.overPair i` the `B`-smoothing. -/
 def slotSmoothing (b : Bool) : Equiv.Perm (Fin 4) :=
   if b then Equiv.swap 0 1 * Equiv.swap 2 3 else Equiv.swap 0 3 * Equiv.swap 1 2
 
+/-- The `true` smoothing pairs slots `0`-`1` and `2`-`3`. -/
+@[simp] theorem slotSmoothing_true :
+    slotSmoothing true = Equiv.swap 0 1 * Equiv.swap 2 3 := (rfl)
+
+/-- The `false` smoothing pairs slots `0`-`3` and `1`-`2`. -/
+@[simp] theorem slotSmoothing_false :
+    slotSmoothing false = Equiv.swap 0 3 * Equiv.swap 1 2 := (rfl)
+
 /-- A local smoothing is an involution of the four slots. -/
 @[simp]
 theorem slotSmoothing_apply_apply (b : Bool) (slot : Fin 4) :
@@ -259,6 +267,10 @@ that a state with `p` of the former and `q` of the latter has weight `a ^ (p - q
 def stateWeight (s : Fin n → Bool) (a : Rˣ) : Rˣ :=
   ∏ i, bif s i then a else a⁻¹
 
+/-- The defining equation of a state's Kauffman-bracket weight. -/
+theorem stateWeight_def (s : Fin n → Bool) (a : Rˣ) :
+    stateWeight s a = ∏ i, bif s i then a else a⁻¹ := (rfl)
+
 /-- Negating a state inverts its weight, since it exchanges the `A`- and `B`-smoothings. -/
 @[simp] theorem stateWeight_not (s : Fin n → Bool) (a : Rˣ) :
     stateWeight (fun i => !(s i)) a = (stateWeight s a)⁻¹ := by
@@ -285,6 +297,11 @@ so a code with no crossings and `c` circles has bracket `δ ^ c`, and Kauffman's
 `⟨unknot⟩ = 1` is this divided by `δ`. -/
 noncomputable def kauffmanBracket (D : PDCode n) (a : Rˣ) : R :=
   ∑ s : Fin n → Bool, (stateWeight s a : R) * jonesDelta a ^ D.stateLoopCount s
+
+/-- The defining state-sum equation of the Kauffman bracket. -/
+theorem kauffmanBracket_def (D : PDCode n) (a : Rˣ) :
+    D.kauffmanBracket a =
+      ∑ s : Fin n → Bool, (stateWeight s a : R) * jonesDelta a ^ D.stateLoopCount s := (rfl)
 
 /-- The Kauffman bracket depends on a PD-code only through its relabelling class. -/
 @[simp] theorem kauffmanBracket_relabel (D : PDCode n) (a : Rˣ)
@@ -386,8 +403,13 @@ theorem crossingComponentCount_kink : kink.crossingComponentCount = 1 := by
           (0, 2) := by
       decide
     have hcard : Nat.card (Fin 1 × Fin 4) = 4 := by simp
-    have horbit := orbitCount_swap_mul_swap (x := ((0 : Fin 1), (0 : Fin 4))) (y := (0, 3))
-      (z := (0, 1)) (w := (0, 2)) (by decide) (by decide) (by decide) (by decide)
+    have h₁ := orbitCount_mul_swap_add_one
+      (τ := (1 : Equiv.Perm (Fin 1 × Fin 4))) (p := ((0 : Fin 1), (3 : Fin 4)))
+      (a := (0, 0)) rfl (by decide)
+    have h₂ := orbitCount_mul_swap_add_one
+      (τ := Equiv.swap ((0 : Fin 1), (0 : Fin 4)) (0, 3)) (p := ((0 : Fin 1), (2 : Fin 4)))
+      (a := (0, 1)) (by decide) (by decide)
+    rw [one_mul, orbitCount_one] at h₁
     rw [hperm]
     omega
   rw [crossingComponentCount_def, h]
@@ -397,7 +419,9 @@ private theorem kink_statePerm_true : kink.statePerm (fun _ => true) = 1 := by
   refine Equiv.ext fun h => ?_
   obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv 1).surjective h
   rw [statePerm_apply, kink_edgePair_apply, kink_smoothingTurn]
-  simp
+  change crossingSlotEquiv 1 (i, slotSmoothing true (slotSmoothing true slot)) =
+    crossingSlotEquiv 1 (i, slot)
+  rw [slotSmoothing_apply_apply]
 
 /-- The `B`-smoothing of the kink leaves a single circle. -/
 private theorem kink_statePerm_false : kink.statePerm (fun _ => false) =
@@ -422,8 +446,13 @@ theorem stateLoopCount_kink_false : kink.stateLoopCount (fun _ => false) = 1 := 
         (0, 2) := by
     decide
   have hcard : Nat.card (Fin 1 × Fin 4) = 4 := by simp
-  have horbit := orbitCount_swap_mul_swap (x := ((0 : Fin 1), (1 : Fin 4))) (y := (0, 3))
-    (z := (0, 0)) (w := (0, 2)) (by decide) (by decide) (by decide) (by decide)
+  have h₁ := orbitCount_mul_swap_add_one
+    (τ := (1 : Equiv.Perm (Fin 1 × Fin 4))) (p := ((0 : Fin 1), (3 : Fin 4)))
+    (a := (0, 1)) rfl (by decide)
+  have h₂ := orbitCount_mul_swap_add_one
+    (τ := Equiv.swap ((0 : Fin 1), (1 : Fin 4)) (0, 3)) (p := ((0 : Fin 1), (2 : Fin 4)))
+    (a := (0, 0)) (by decide) (by decide)
+  rw [one_mul, orbitCount_one] at h₁
   rw [hperm]
   omega
 

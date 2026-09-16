@@ -38,8 +38,6 @@ permutations of the same type.
   orbit more than `σ` — the extra orbit is the fixed point `p`.
 * `TauCeti.orbitCount_mul_swap_add_one`: multiplying a permutation by a transposition that moves
   one of its fixed points splices that fixed point into another orbit, so the count drops by one.
-* `TauCeti.orbitCount_swap_mul_swap`: a transposition times a transposition through one of its
-  fixed points has two orbits fewer than the identity.
 * `TauCeti.orbitCount_add_one_of_merge`: if the orbits of `τ` are the orbits of `σ` with the orbit
   of one point and the orbit of another merged, then `τ` has one orbit fewer.
 
@@ -395,19 +393,6 @@ theorem orbitCount_mul_swap_add_one [DecidableEq β] {τ : Equiv.Perm β}
         (F x)).trans ?_
       rw [id, hi]
     exact ((hFsame x).trans hxy).trans (hFsame y).symm
-
-/-- **A transposition times a transposition through one of its fixed points removes two orbits.**
-Multiplying `Equiv.swap x y` by a transposition `Equiv.swap z w` whose point `w` it fixes splices
-`w`, and with it `z`, into an existing orbit, so the product has two orbits fewer than the
-identity. The point `z` is unconstrained apart from `z ≠ w`, so it may coincide with `x` or `y`. -/
-theorem orbitCount_swap_mul_swap [DecidableEq α] [Finite α] {x y z w : α}
-    (hxy : x ≠ y) (hzw : z ≠ w) (hwx : w ≠ x) (hwy : w ≠ y) :
-    orbitCount (Equiv.swap x y * Equiv.swap z w) + 2 = Nat.card α := by
-  have h₁ := orbitCount_mul_swap_add_one (τ := (1 : Equiv.Perm α)) (p := y) (a := x) rfl hxy
-  have h₂ := orbitCount_mul_swap_add_one (τ := Equiv.swap x y) (p := w) (a := z)
-    (Equiv.swap_apply_of_ne_of_ne hwx hwy) hzw
-  rw [one_mul, orbitCount_one] at h₁
-  omega
 
 /-- **Merging two orbits removes one orbit.** If every orbit of `σ` is contained in an orbit of
 `τ`, if two points `a` and `b` lying in different orbits of `σ` lie in one orbit of `τ`, and if no
