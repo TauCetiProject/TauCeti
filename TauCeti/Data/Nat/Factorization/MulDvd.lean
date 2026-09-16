@@ -97,30 +97,18 @@ theorem pow_sub_factorization_add_one_dvd {f h : ℕ} (hh : h ≠ 0) (hf : f ∣
 
 /-- **The product of the prime powers tested by `mul_dvd_iff_forall_not_pow_dvd` divides `h`.**
 The primes of `f` are distinct, so the prime powers `p ^ (v_p h - v_p f + 1)` occur at distinct
-primes and their product still divides `h`. -/
+primes and their product still divides `h`: it is the product of prime powers read off a finitely
+supported exponent function bounded by the factorization of `h`. -/
 theorem prod_pow_sub_factorization_add_one_dvd {f h : ℕ} (hh : h ≠ 0) (hf : f ∣ h) :
     (∏ p ∈ f.primeFactors, p ^ (h.factorization p - f.factorization p + 1)) ∣ h := by
-  have hf0 : f ≠ 0 := fun h0 => hh (zero_dvd_iff.mp (h0 ▸ hf))
-  have hne : ∀ p ∈ f.primeFactors, p ^ (h.factorization p - f.factorization p + 1) ≠ 0 :=
-    fun p hp => pow_ne_zero _ (Nat.prime_of_mem_primeFactors hp).ne_zero
-  rw [← Nat.factorization_le_iff_dvd (Finset.prod_ne_zero_iff.mpr hne) hh, Finsupp.le_def,
-    Nat.factorization_prod hne]
-  intro q
-  have hterm : ∀ p ∈ f.primeFactors,
-      ((p ^ (h.factorization p - f.factorization p + 1)).factorization) q
-        = if p = q then h.factorization p - f.factorization p + 1 else 0 := by
-    intro p hp
-    rw [(Nat.prime_of_mem_primeFactors hp).factorization_pow, Finsupp.single_apply]
-  rw [Finsupp.coe_finsetSum, Finset.sum_apply, Finset.sum_congr rfl hterm,
-    Finset.sum_ite_eq' f.primeFactors q
-      (fun p => h.factorization p - f.factorization p + 1)]
-  split_ifs with hq
-  · have hprime := Nat.prime_of_mem_primeFactors hq
-    have hpos : 0 < f.factorization q :=
-      hprime.factorization_pos_of_dvd hf0 (Nat.dvd_of_mem_primeFactors hq)
-    have hle : f.factorization q ≤ h.factorization q :=
-      (Nat.factorization_le_iff_dvd hf0 hh).mpr hf q
-    omega
+  classical
+  rw [← Finsupp.prod_indicator_index (fun p => h.factorization p - f.factorization p + 1)
+    (h := (· ^ ·)) fun _ _ => pow_zero _]
+  refine Nat.prod_pow_dvd_of_le_factorization fun p => ?_
+  rw [Finsupp.indicator_apply]
+  split_ifs with hp
+  · exact ((Nat.prime_of_mem_primeFactors hp).pow_dvd_iff_le_factorization hh).mp
+      (pow_sub_factorization_add_one_dvd hh hf hp)
   · exact Nat.zero_le _
 
 end TauCeti.Nat
