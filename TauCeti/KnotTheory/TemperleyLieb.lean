@@ -32,6 +32,7 @@ the trace is not built here.
 
 ## Main results
 
+* `TauCeti.TemperleyLieb.jonesDelta_inv`: the loop value is unchanged by inverting the unit.
 * `TauCeti.TemperleyLieb.jones_sigma`: the representation sends `sigma i` to `jonesUnit a i`.
 * `TauCeti.TemperleyLieb.jones_sigma_ne_one_two`: the representation is nontrivial on two
   strands over a nontrivial base ring.
@@ -71,6 +72,11 @@ theorem jonesDelta_eq_neg_inv_sq_add_sq (a : Rˣ) :
     jonesDelta a = -((((a⁻¹ : Rˣ) : R)) ^ 2 + (a : R) ^ 2) := by
   rw [jonesDelta_def]
   ring
+
+/-- The Jones loop value is unchanged by inverting the unit. -/
+@[simp]
+theorem jonesDelta_inv (a : Rˣ) : jonesDelta a⁻¹ = jonesDelta a := by
+  rw [jonesDelta_def, inv_inv, ← jonesDelta_eq_neg_inv_sq_add_sq]
 
 /-- The Kauffman-bracket expansion of an elementary braid, as a unit of the Temperley-Lieb
 algebra: `a • 1 + a⁻¹ • e i`, with inverse `a⁻¹ • 1 + a • e i`. -/
