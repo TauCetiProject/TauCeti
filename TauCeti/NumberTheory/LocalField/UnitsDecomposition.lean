@@ -198,7 +198,8 @@ private theorem ker_unitFiltrationZeroReduction :
   rw [unitFiltrationZeroReduction, MulEquiv.toMonoidHom_eq_coe,
     MonoidHom.ker_mulEquiv_comp, QuotientGroup.ker_mk']
 
-/-- The reduction of an element of `U(K,0)` is the residue class of the corresponding integer. -/
+/-- The reduction of an element of `U(K,0)` is the residue class of the corresponding element
+of the valuation ring. -/
 private theorem coe_unitFiltrationZeroReduction (x : unitFiltration K 0) (y : 𝒪[K])
     (hy : (y : K) = ((x : Kˣ) : K)) :
     (unitFiltrationZeroReduction K x : 𝓀[K]) = residue 𝒪[K] y := by
