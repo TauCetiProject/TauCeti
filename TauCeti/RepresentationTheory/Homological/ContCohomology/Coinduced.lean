@@ -496,8 +496,8 @@ variable [TopologicalSpace R] [TopologicalSpace A] [DiscreteTopology A]
   [ContinuousSMul R A] [CompactSpace G]
 
 /-- The scalar orbit map `r ↦ r • f` of a discrete coinduced element is continuous when the group
-`G` is compact and the coefficient module is discrete. It is the continuity of the `R`-action that
-makes `Coind_U^G A` a representation over the topological ring `R`. -/
+`G` is compact and the coefficient module is discrete. Together these orbit maps give the
+`ContinuousSMul R (DiscreteCoind G U A)` instance below. -/
 theorem continuous_smul_const (f : DiscreteCoind G U A) : Continuous fun r : R => r • f := by
   rw [continuous_discrete_rng]
   intro y
@@ -576,6 +576,7 @@ private theorem evalLinear_apply_impl (f : DiscreteCoind G U A) :
 theorem evalLinear_apply (f : DiscreteCoind G U A) : evalLinear (R := R) G U A f = f 1 :=
   evalLinear_apply_impl f
 
+@[simp]
 theorem evalLinear_map (f : A →ₗ[R] B) (hf) (a : DiscreteCoind G U A) :
     evalLinear (R := R) G U B (map f hf a) = f (evalLinear (R := R) G U A a) := by
   simp only [evalLinear_apply, map_apply]
@@ -687,6 +688,15 @@ noncomputable abbrev coindTopRep (A : SmoothDiscreteTopRep.{u, v, w} R U) :
     SmoothDiscreteTopRep.{u, v, max v w} R G :=
   (toSmoothDiscrete R G).obj (coindDiscreteRep R G U ((ofSmoothDiscrete R U).obj A))
 
+/-- Restriction along `U → G` on smooth discrete representations. -/
+noncomputable def smoothDiscreteResFunctor :
+    SmoothDiscreteTopRep.{u, v, w} R G ⥤ SmoothDiscreteTopRep.{u, v, w} R U where
+  obj A := ⟨TopRep.res (U.subtype : U →* G) A.obj,
+    A.property.res continuous_subtype_val⟩
+  map f := ObjectProperty.homMk ((TopRep.resFunctor (U.subtype : U →* G)).map f.hom)
+  map_id _ := rfl
+  map_comp _ _ := rfl
+
 /-- Evaluation at `1` as the coinduction counit, from the restriction of the coinduced
 representation to its coefficient representation. -/
 noncomputable def coindCounit (A : SmoothDiscreteTopRep.{u, v, w} R U) :
@@ -755,6 +765,24 @@ theorem coindFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w} R U}
   simpa only [CategoryTheory.ObjectProperty.FullSubcategory.comp_hom,
     CategoryTheory.ObjectProperty.eqToHom_hom, TopRep.hom_comp] using
       coindFunctor_map_apply_impl R G U f a g
+
+/-- Evaluation at `1`, natural in the smooth discrete coefficient representation. -/
+noncomputable def coindCounitNatTrans :
+    coindFunctor.{u, v, max v w} R G U ⋙ smoothDiscreteResFunctor R G U ⟶
+      𝟭 (SmoothDiscreteTopRep.{u, v, max v w} R U) where
+  app A := ObjectProperty.homMk
+    (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, max v w} R G ↦
+        TopRep.res (U.subtype : U →* G) X.obj) (coindFunctor_obj R G U A)) ≫
+      TopRep.ofHom (coindCounit R G U A))
+  naturality {A B} f := by
+    apply ObjectProperty.hom_ext
+    apply TopRep.hom_ext
+    ext a
+    exact DiscreteCoind.evalLinear_map f.hom.hom.toContinuousLinearMap.toLinearMap
+      (fun u a ↦
+        (congrArg _ (TopRep.distribMulAction_smul A.obj u a)).trans
+          ((f.hom.hom.isIntertwining u a).trans
+            (TopRep.distribMulAction_smul B.obj u (f.hom.hom a)).symm)) a
 
 end Bundled
 
