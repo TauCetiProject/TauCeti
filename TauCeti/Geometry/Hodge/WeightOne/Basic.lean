@@ -130,10 +130,8 @@ theorem eigenspace_baseChange_realAlmostComplexStructure_I
         (LinearMap.baseChange ℂ (hs.realAlmostComplexStructure (by norm_num)).toLinearMap)
           Complex.I =
       (hs.piece 1).comap (realPointsEquiv ω.involutive).toLinearMap := by
-  rw [eigenspace_eq_comap_of_intertwine (realPointsEquiv ω.involutive)
-    (LinearMap.baseChange ℂ (hs.realAlmostComplexStructure (by norm_num)).toLinearMap)
-    hs.weilOperator (hs.realPointsEquiv_baseChange_realAlmostComplexStructure_apply (by norm_num))
-    Complex.I,
+  rw [eigenspace_eq_comap_of_intertwine
+    (hs.realPointsEquiv_baseChange_realAlmostComplexStructure_apply (by norm_num)) Complex.I,
     hs.eigenspace_weilOperator_I heff]
 
 /-- On the literal complexification `ℂ ⊗[ℝ] V_ℝ`, the `-i`-eigenspace of the scalar extension of
@@ -144,10 +142,8 @@ theorem eigenspace_baseChange_realAlmostComplexStructure_neg_I
         (LinearMap.baseChange ℂ (hs.realAlmostComplexStructure (by norm_num)).toLinearMap)
           (-Complex.I) =
       (hs.piece 0).comap (realPointsEquiv ω.involutive).toLinearMap := by
-  rw [eigenspace_eq_comap_of_intertwine (realPointsEquiv ω.involutive)
-    (LinearMap.baseChange ℂ (hs.realAlmostComplexStructure (by norm_num)).toLinearMap)
-    hs.weilOperator (hs.realPointsEquiv_baseChange_realAlmostComplexStructure_apply (by norm_num))
-    (-Complex.I),
+  rw [eigenspace_eq_comap_of_intertwine
+    (hs.realPointsEquiv_baseChange_realAlmostComplexStructure_apply (by norm_num)) (-Complex.I),
     hs.eigenspace_weilOperator_neg_I heff]
 
 end HodgeStructureOn

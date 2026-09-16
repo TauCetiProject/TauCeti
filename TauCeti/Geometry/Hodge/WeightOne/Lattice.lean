@@ -82,8 +82,7 @@ theorem eigenspace_latticeComplexification
     Module.End.eigenspace (J.latticeComplexification hℂ) z =
       (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) z).map
         (Hodge.realificationComplexEquiv hℂ).toLinearMap := by
-  rw [eigenspace_eq_comap_of_intertwine
-      (Hodge.realificationComplexEquiv hℂ) _ _ (J.realificationComplexEquiv_baseChange_apply hℂ) z,
+  rw [eigenspace_eq_comap_of_intertwine (J.realificationComplexEquiv_baseChange_apply hℂ) z,
     Submodule.map_comap_eq_of_surjective (Hodge.realificationComplexEquiv hℂ).surjective]
 
 /-- The effective weight-one Hodge structure determined by a complex structure on the realification

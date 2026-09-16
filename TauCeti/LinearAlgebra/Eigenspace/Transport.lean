@@ -29,7 +29,7 @@ variable {R U W : Type*} [CommRing R] [AddCommGroup U] [Module R U] [AddCommGrou
   [Module R W]
 
 /-- An intertwining linear equivalence identifies the eigenspaces of the two endomorphisms. -/
-theorem eigenspace_eq_comap_of_intertwine (e : U ≃ₗ[R] W) (f : U →ₗ[R] U) (g : W →ₗ[R] W)
+theorem eigenspace_eq_comap_of_intertwine {e : U ≃ₗ[R] W} {f : U →ₗ[R] U} {g : W →ₗ[R] W}
     (h : ∀ x, e (f x) = g (e x)) (μ : R) :
     Module.End.eigenspace f μ = (Module.End.eigenspace g μ).comap e.toLinearMap := by
   ext x
