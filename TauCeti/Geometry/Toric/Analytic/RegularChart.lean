@@ -81,6 +81,29 @@ noncomputable def regularAffinePointEquiv (e : S ≃+ ((ι →₀ ℕ) × (κ �
           Equiv.prodCongr freeCommMonoidCharEquiv.toEquiv
             (MonoidHom.toHomUnitsMulEquiv.trans freeAbelianCharEquiv).toEquiv
 
+/-- The complex point attached to a family of mixed coordinates takes, on the monomial of `s : S`,
+the mixed monomial value prescribed by the exponents of `s`: a product of natural powers of the
+unconstrained coordinates times a product of integral powers of the invertible ones.
+
+This is the only place where the assembled equivalence is unfolded; the coordinate formulas below
+are instances of it, read on the coordinates of a point. -/
+@[simp]
+theorem regularAffinePointEquiv_symm_apply_single (e : S ≃+ ((ι →₀ ℕ) × (κ →₀ ℤ)))
+    (z : (ι → ℂ) × (κ → ℂˣ)) (s : S) :
+    (regularAffinePointEquiv e).symm z (MonoidAlgebra.single (ofAdd s) 1) =
+      ((e s).1.prod fun i n => z.1 i ^ n) * ((e s).2.prod fun j n => z.2 j ^ n : ℂˣ) := by
+  simp only [regularAffinePointEquiv, MulEquiv.toEquiv_eq_coe, MulEquiv.toEquiv_symm,
+    Equiv.symm_trans, Equiv.prodCongr_symm, Equiv.symm_symm, Equiv.trans_apply,
+    Equiv.prodCongr_apply, MulEquiv.coe_toEquiv_symm, EquivLike.coe_coe,
+    MulEquiv.symm_monoidHomCongrLeft, MulEquiv.monoidHomCongrLeft_apply, MulEquiv.symm_symm,
+    MonoidAlgebra.lift_single, MonoidHom.coe_comp, MonoidHom.coe_coe, Function.comp_apply,
+    AddEquiv.toMultiplicative_apply_apply, AddEquiv.toAddMonoidHom_eq_coe,
+    AddMonoidHom.toMultiplicative_apply_apply, toAdd_ofAdd, AddMonoidHom.coe_coe,
+    MulEquiv.prodMultiplicative_apply, MonoidHom.coprodEquiv_apply, Prod.map_fst,
+    freeCommMonoidCharEquiv_symm_apply_ofAdd, Prod.map_snd, MulEquiv.symm_trans_apply,
+    MonoidHom.toHomUnitsMulEquiv_symm_apply, freeAbelianCharEquiv_symm_apply_ofAdd,
+    Units.coeHom_apply, smul_eq_mul, one_mul]
+
 /-- The coordinate of a complex point indexed by `i : ι` is its value on the monomial of the
 `i`-th generator of the free commutative monoid factor. -/
 @[simp]
@@ -88,7 +111,10 @@ theorem regularAffinePointEquiv_fst_apply (e : S ≃+ ((ι →₀ ℕ) × (κ �
     (x : AffineSemigroupComplexPoint S) (i : ι) :
     (regularAffinePointEquiv e x).1 i =
       x (MonoidAlgebra.single (ofAdd (e.symm (Finsupp.single i 1, 0))) 1) := by
-  simp [regularAffinePointEquiv, MonoidAlgebra.lift_symm_apply]
+  have h := regularAffinePointEquiv_symm_apply_single e (regularAffinePointEquiv e x)
+    (e.symm (Finsupp.single i 1, 0))
+  rw [Equiv.symm_apply_apply] at h
+  simpa using h.symm
 
 /-- The coordinate of a complex point indexed by `j : κ` is, as a complex number, its value on the
 monomial of the `j`-th generator of the free abelian factor. -/
@@ -97,7 +123,10 @@ theorem val_regularAffinePointEquiv_snd_apply (e : S ≃+ ((ι →₀ ℕ) × (�
     (x : AffineSemigroupComplexPoint S) (j : κ) :
     ((regularAffinePointEquiv e x).2 j : ℂ) =
       x (MonoidAlgebra.single (ofAdd (e.symm (0, Finsupp.single j 1))) 1) := by
-  simp [regularAffinePointEquiv, MonoidAlgebra.lift_symm_apply]
+  have h := regularAffinePointEquiv_symm_apply_single e (regularAffinePointEquiv e x)
+    (e.symm (0, Finsupp.single j 1))
+  rw [Equiv.symm_apply_apply] at h
+  simpa using h.symm
 
 /-- The inverse of the coordinate indexed by `j : κ` is the value of the point on the monomial of
 the opposite generator; this is what makes that coordinate a unit. -/
@@ -105,22 +134,10 @@ theorem inv_val_regularAffinePointEquiv_snd_apply (e : S ≃+ ((ι →₀ ℕ) �
     (x : AffineSemigroupComplexPoint S) (j : κ) :
     (((regularAffinePointEquiv e x).2 j)⁻¹ : ℂ) =
       x (MonoidAlgebra.single (ofAdd (e.symm (0, -Finsupp.single j 1))) 1) := by
-  have key : ((regularAffinePointEquiv e x).2 j : ℂ) *
-      x (MonoidAlgebra.single (ofAdd (e.symm (0, -Finsupp.single j 1))) 1) = 1 := by
-    rw [val_regularAffinePointEquiv_snd_apply, ← map_mul, MonoidAlgebra.single_mul_single,
-      one_mul, ← ofAdd_add, ← map_add]
-    simp [Prod.mk_zero_zero, ← MonoidAlgebra.one_def]
-  exact inv_eq_of_mul_eq_one_right key
-
-/-- The complex point attached to a family of mixed coordinates takes, on the monomial of `s : S`,
-the mixed monomial value prescribed by the exponents of `s`: a product of natural powers of the
-unconstrained coordinates times a product of integral powers of the invertible ones. -/
-@[simp]
-theorem regularAffinePointEquiv_symm_apply_single (e : S ≃+ ((ι →₀ ℕ) × (κ →₀ ℤ)))
-    (z : (ι → ℂ) × (κ → ℂˣ)) (s : S) :
-    (regularAffinePointEquiv e).symm z (MonoidAlgebra.single (ofAdd s) 1) =
-      ((e s).1.prod fun i n => z.1 i ^ n) * ((e s).2.prod fun j n => z.2 j ^ n : ℂˣ) := by
-  simp [regularAffinePointEquiv, MonoidAlgebra.lift_single]
+  have h := regularAffinePointEquiv_symm_apply_single e (regularAffinePointEquiv e x)
+    (e.symm (0, -Finsupp.single j 1))
+  rw [Equiv.symm_apply_apply] at h
+  simpa [← Finsupp.single_neg] using h.symm
 
 /-- Reading off the mixed coordinates is continuous for the monomial-embedding topology of any
 finite generating family: each coordinate is evaluation at a fixed monomial, and so is the inverse
