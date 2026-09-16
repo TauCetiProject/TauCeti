@@ -40,6 +40,7 @@ as the S-equivalence class of a Seifert matrix — offers.
 * `Matrix.signature_eq_of_congr_diagonal`: the signature read off an explicit diagonalising
   congruence.
 * `Matrix.signature_add_transpose`: the signature of `A + Aᵀ` is the signature of `A`.
+* `Matrix.signature_smul_of_pos`: positive scaling does not change the signature.
 
 ## References
 
@@ -79,6 +80,13 @@ theorem toQuadraticForm'_add_transpose (A : Matrix ι ι R) :
     add_mulVec, dotProduct_add, ← toQuadraticForm'_apply, ← toQuadraticForm'_apply,
     toQuadraticForm'_transpose]
   ring
+
+/-- Scaling a matrix scales its quadratic form. -/
+theorem toQuadraticForm'_smul (c : R) (A : Matrix ι ι R) :
+    (c • A).toQuadraticForm' = c • A.toQuadraticForm' := by
+  ext x
+  rw [toQuadraticForm'_apply, _root_.smul_apply, smul_eq_mul, toQuadraticForm'_apply,
+    Matrix.smul_mulVec, dotProduct_smul, smul_eq_mul]
 
 /-- The quadratic form of `-A` is the negative of the quadratic form of `A`. -/
 @[simp]
@@ -216,6 +224,14 @@ theorem signature_add_transpose (A : Matrix ι ι 𝕜) : signature (A + Aᵀ) =
   classical
   rw [signature_def, signature_def, toQuadraticForm'_add_transpose,
     QuadraticForm.sigPos_smul_of_pos _ two_pos, QuadraticForm.sigNeg_smul_of_pos _ two_pos]
+
+/-- Scaling a matrix by a positive scalar does not change its signature. -/
+@[simp]
+theorem signature_smul_of_pos {c : 𝕜} (hc : 0 < c) (A : Matrix ι ι 𝕜) :
+    signature (c • A) = signature A := by
+  classical
+  rw [signature_def, signature_def, toQuadraticForm'_smul,
+    QuadraticForm.sigPos_smul_of_pos _ hc, QuadraticForm.sigNeg_smul_of_pos _ hc]
 
 /-- **Additivity of the signature along a block diagonal.** -/
 @[simp]
