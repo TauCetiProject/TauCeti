@@ -10,11 +10,11 @@ public import Mathlib.NumberTheory.NumberField.DirichletDensity
 -- `NumberField.Set.HasDirichletDensity` is not exposed and Mathlib exports no lemma unfolding it;
 -- its defining limit is needed to compare it with the logarithmic normalization.
 import all Mathlib.NumberTheory.NumberField.DirichletDensity
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
+import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.Analysis.SpecialFunctions.Log.OneDivSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.DedekindZeta
 import TauCeti.Topology.Algebra.Order.Field
 
 /-!
@@ -27,34 +27,46 @@ For a number field `K`, write `P(s) = ∑_𝔭 N(𝔭) ^ (-s)` for the sum over 
 
 The proof has two inputs, and neither suffices alone.
 
-* **The Euler product.** For real `s > 1` the Dedekind zeta function is the product of the real
-  local factors `(1 - N(𝔭) ^ (-s))⁻¹`, so `log ζ_K(s)` is the convergent sum
-  `∑_𝔭 -log (1 - N(𝔭) ^ (-s))`. Since `N(𝔭) ≥ 2`, every local ratio `x = N(𝔭) ^ (-s)` lies in
-  `(0, 1/2]`, where `x ≤ -log (1 - x) ≤ x + 2 x ^ 2`. Summing, `log ζ_K(s)` differs from `P(s)` by
-  at most `2 P(2)`, uniformly in `s > 1`: the higher prime powers contribute a bounded amount.
+* **The Euler product.** For real `s > 1`, `log ζ_K(s)` is the convergent sum
+  `∑_𝔭 -log (1 - N(𝔭) ^ (-s))`, by `TauCeti.dedekindZeta_re_eq_exp`. Since `N(𝔭) ≥ 2`, every
+  local ratio `x = N(𝔭) ^ (-s)` lies in `(0, 1/2]`, where `x ≤ -log (1 - x) ≤ x + 2 x ^ 2`.
+  Summing, `log ζ_K(s)` differs from `P(s)` by at most `2 P(2)`, uniformly in `s > 1`: the higher
+  prime powers contribute a bounded amount.
 * **The residue.** Mathlib's class number formula
   `NumberField.tendsto_sub_one_mul_dedekindZeta_nhdsGT` says that `(s - 1) ζ_K(s)` tends to the
   positive residue as `s → 1⁺`, so `log ζ_K(s) - log (1 / (s - 1))` tends to its logarithm.
 
 ## Main results
 
-* `TauCeti.dedekindZeta_ofReal_eq_exp_tsum_neg_log_one_sub`: for real `s > 1`, `ζ_K(s)` is the
-  exponential of the real sum `∑_𝔭 -log (1 - N(𝔭) ^ (-s))`.
 * `TauCeti.primeIdealZetaSum_univ_le_log_dedekindZeta_re` and
   `TauCeti.log_dedekindZeta_re_le_primeIdealZetaSum_univ_add`: the two-sided comparison of
   `log ζ_K(s)` with `P(s)`, with error at most `2 P(2)`.
 * `TauCeti.tendsto_log_dedekindZeta_re_sub_log_one_div_sub_one`: `log ζ_K(s) - log (1 / (s - 1))`
   tends to the logarithm of the residue.
-* `TauCeti.primeIdealZetaSum_univ_sub_log_isBigO`: `P(s) - log (1 / (s - 1)) = O(1)` as `s → 1⁺`.
+* `TauCeti.primeIdealZetaSum_univ_sub_log_one_div_sub_one_isBigO`:
+  `P(s) - log (1 / (s - 1)) = O(1)` as `s → 1⁺`.
 * `TauCeti.tendsto_primeIdealZetaSum_univ_atTop`: `P(s) → ∞` as `s → 1⁺`.
-* `TauCeti.tendsto_primeIdealZetaSum_univ_div_log`: `P(s) / log (1 / (s - 1)) → 1` as `s → 1⁺`.
-* `NumberField.Set.hasDirichletDensity_iff_tendsto_div_log`: a set of primes has Dirichlet density
-  `δ` exactly when `P_S(s) / log (1 / (s - 1)) → δ`.
+* `TauCeti.tendsto_primeIdealZetaSum_univ_div_log_one_div_sub_one`:
+  `P(s) / log (1 / (s - 1)) → 1` as `s → 1⁺`.
+* `NumberField.Set.hasDirichletDensity_iff_tendsto_div_log_one_div_sub_one`: a set of primes has
+  Dirichlet density `δ` exactly when `P_S(s) / log (1 / (s - 1)) → δ`.
 
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VII, §13.
 * J.-P. Serre, *A Course in Arithmetic*, Chapter VI, §4.1.
+* The same argument (Sharifi, *Algebraic Number Theory*, 7.1.12) is formalized in the
+  Birkbeck–Brasca Chebotarev density project, <https://github.com/CBirkbeck/chebotarev-density>
+  (Apache-2.0), commit `8575c9df1ae0a61120ab5c964c7911414254bec7`, file
+  `CebotarevDensity/Density.lean`: `primeIdealZetaSum_univ_tendsto_log` and
+  `primeIdealZetaSum_univ_tendsto_atTop`, closed there by the helpers of
+  `CebotarevDensity/ForMathlib/LogOneDivSubOne.lean` that `Real.tendsto_log_one_div_sub_atTop`
+  and `TauCeti.tendsto_div_nhds_one_of_le_add_const_of_sub_const_le` adapt. This file follows
+  its outline (Euler-product logarithm, bounded higher-prime-power contribution, simple pole),
+  over `HeightOneSpectrum` rather than the nonzero prime ideals of `𝓞 K`. It differs in the
+  higher-power bound, taken termwise as `-log (1 - x) ≤ x + 2 x ^ 2` rather than through the
+  geometric tail `N(𝔭) ^ (-2 s) / (1 - N(𝔭) ^ (-s))`, and in deriving the logarithmic form of the
+  Euler product from `TauCeti.MultiplicativeIdealWeight.exp_tsum_neg_log_one_sub_eq_LSeries`.
 -/
 
 public section
@@ -66,99 +78,14 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-! ### The local ratios -/
-
-/-- For `1 ≤ s`, the local ratio `N(𝔭) ^ (-s)` of a height-one prime lies in `(0, 1/2]`, because
-`N(𝔭) ≥ 2`. -/
-private theorem absNorm_rpow_neg_le_half (P : HeightOneSpectrum (𝓞 K)) {s : ℝ} (hs : 1 ≤ s) :
-    (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) ≤ 1 / 2 := by
-  have h2 : (2 : ℝ) ≤ Ideal.absNorm P.asIdeal := by
-    exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P
-  calc (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) ≤ (Ideal.absNorm P.asIdeal : ℝ) ^ (-1 : ℝ) :=
-        Real.rpow_le_rpow_of_exponent_le (by linarith) (by linarith)
-    _ ≤ 1 / 2 := by
-        rw [Real.rpow_neg_one, one_div]
-        exact inv_anti₀ (by norm_num) h2
-
-/-- The local term `-log (1 - N(𝔭) ^ (-s))` of the logarithm of the Euler product lies between
-the local ratio `x = N(𝔭) ^ (-s)` and `x + 2 x ^ 2`, for `1 ≤ s`. -/
-private theorem neg_log_one_sub_absNorm_rpow_mem (P : HeightOneSpectrum (𝓞 K)) {s : ℝ}
-    (hs : 1 ≤ s) :
-    (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) ≤ -Real.log (1 - (Ideal.absNorm P.asIdeal : ℝ) ^ (-s)) ∧
-      -Real.log (1 - (Ideal.absNorm P.asIdeal : ℝ) ^ (-s)) ≤
-        (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) + 2 * ((Ideal.absNorm P.asIdeal : ℝ) ^ (-s)) ^ 2 := by
-  set x := (Ideal.absNorm P.asIdeal : ℝ) ^ (-s)
-  have hx0 : 0 ≤ x := by positivity
-  have hx : x ≤ 1 / 2 := absNorm_rpow_neg_le_half P hs
-  refine ⟨?_, ?_⟩
-  · linarith [Real.log_le_sub_one_of_pos (show 0 < 1 - x by linarith)]
-  · -- The first-order Taylor estimate `|x + log (1 - x)| ≤ x ^ 2 / (1 - x)`.
-    have h := Real.abs_log_sub_add_sum_range_le (x := x) (by rw [abs_of_nonneg hx0]; linarith) 1
-    simp only [Finset.range_one, Finset.sum_singleton, zero_add, pow_one, Nat.cast_zero, div_one,
-      abs_of_nonneg hx0] at h
-    have h' : x ^ 2 / (1 - x) ≤ 2 * x ^ 2 := by
-      rw [div_le_iff₀ (by linarith)]
-      nlinarith [sq_nonneg x]
-    linarith [(abs_le.mp h).1]
-
-private theorem summable_neg_log_one_sub_absNorm_rpow {s : ℝ} (hs : 1 < s) :
-    Summable fun P : HeightOneSpectrum (𝓞 K) ↦
-      -Real.log (1 - (Ideal.absNorm P.asIdeal : ℝ) ^ (-s)) := by
-  refine ((summable_absNorm_rpow_primes_of_one_lt hs).mul_left 2).of_nonneg_of_le
-    (fun P ↦ (Real.rpow_nonneg (Nat.cast_nonneg _) _).trans
-      (neg_log_one_sub_absNorm_rpow_mem P hs.le).1) (fun P ↦ ?_)
-  -- On `[0, 1/2]`, `x + 2 x ^ 2 ≤ 2 x`.
-  have h := (neg_log_one_sub_absNorm_rpow_mem P hs.le).2
-  have hx0 : 0 ≤ (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) := by positivity
-  have hx := absNorm_rpow_neg_le_half P hs.le
-  nlinarith
-
-/-! ### The Euler product in real logarithmic form -/
-
-/-- **The real Euler product of the Dedekind zeta function in exponential form.** For real
-`s > 1`, `ζ_K(s)` is the exponential of the convergent real sum
-`∑_𝔭 -log (1 - N(𝔭) ^ (-s))` over the height-one primes of `𝓞 K`. In particular `ζ_K(s)` is a
-positive real number, and that sum is its real logarithm. -/
-theorem dedekindZeta_ofReal_eq_exp_tsum_neg_log_one_sub {s : ℝ} (hs : 1 < s) :
-    dedekindZeta K s = (Real.exp (∑' P : HeightOneSpectrum (𝓞 K),
-      -Real.log (1 - (Ideal.absNorm P.asIdeal : ℝ) ^ (-s))) : ℂ) := by
-  have hprod := dedekindZeta_eulerProduct_hasProd (K := K) (s := (s : ℂ)) (by simpa using hs)
-  have hexp := ((summable_neg_log_one_sub_absNorm_rpow (K := K) hs).hasSum.rexp).map
-    Complex.ofRealHom Complex.continuous_ofReal
-  refine hprod.unique (hexp.congr_fun fun P ↦ ?_)
-  have hpos : 0 < 1 - (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) := by
-    linarith [absNorm_rpow_neg_le_half P hs.le]
-  simp only [Function.comp_apply, Real.exp_neg, Real.exp_log hpos, Complex.ofRealHom_eq_coe,
-    Complex.ofReal_inv, Complex.ofReal_sub, Complex.ofReal_one,
-    Complex.ofReal_cpow (Nat.cast_nonneg _), Complex.ofReal_neg, Complex.ofReal_natCast]
-
-/-- For real `s > 1`, the real part of `ζ_K(s)` is the exponential of `∑_𝔭 -log (1 - N(𝔭) ^ (-s))`.
--/
-private theorem dedekindZeta_re_eq_exp {s : ℝ} (hs : 1 < s) :
-    (dedekindZeta K s).re = Real.exp (∑' P : HeightOneSpectrum (𝓞 K),
-      -Real.log (1 - (Ideal.absNorm P.asIdeal : ℝ) ^ (-s))) := by
-  rw [dedekindZeta_ofReal_eq_exp_tsum_neg_log_one_sub hs, Complex.ofReal_re]
-
-/-- For real `s > 1`, the real part of `ζ_K(s)` is positive. -/
-private theorem dedekindZeta_re_pos {s : ℝ} (hs : 1 < s) : 0 < (dedekindZeta K s).re := by
-  rw [dedekindZeta_re_eq_exp hs]
-  exact Real.exp_pos _
-
-/-- The all-prime Dirichlet sum, as the sum over the whole height-one spectrum. -/
-private theorem primeIdealZetaSum_univ_eq_tsum (s : ℝ) :
-    (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s =
-      ∑' P : HeightOneSpectrum (𝓞 K), (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) := by
-  rw [Set.primeIdealZetaSum_def,
-    tsum_univ fun P : HeightOneSpectrum (𝓞 K) ↦ (Ideal.absNorm P.asIdeal : ℝ) ^ (-s)]
-
 /-- **The prime sum is at most `log ζ_K(s)`.** For real `s > 1`, the sum of `N(𝔭) ^ (-s)` over all
 height-one primes is at most the real logarithm of `ζ_K(s)`. -/
 theorem primeIdealZetaSum_univ_le_log_dedekindZeta_re {s : ℝ} (hs : 1 < s) :
     (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s ≤
       Real.log (dedekindZeta K s).re := by
-  rw [dedekindZeta_re_eq_exp hs, Real.log_exp, primeIdealZetaSum_univ_eq_tsum]
+  rw [dedekindZeta_re_eq_exp hs, Real.log_exp, Set.primeIdealZetaSum_univ]
   exact (summable_absNorm_rpow_primes_of_one_lt hs).tsum_le_tsum
-    (fun P ↦ (neg_log_one_sub_absNorm_rpow_mem P hs.le).1)
+    (fun P ↦ Real.le_neg_log_one_sub (by linarith [absNorm_rpow_neg_le_half P hs.le]))
     (summable_neg_log_one_sub_absNorm_rpow hs)
 
 /-- **`log ζ_K(s)` exceeds the prime sum by at most `2 P(2)`.** For real `s > 1`, the real
@@ -170,18 +97,18 @@ theorem log_dedekindZeta_re_le_primeIdealZetaSum_univ_add {s : ℝ} (hs : 1 < s)
         2 * (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum 2 := by
   have hsum := summable_absNorm_rpow_primes_of_one_lt (K := K) hs
   have hsum2 := summable_absNorm_rpow_primes_of_one_lt (K := K) one_lt_two
-  rw [dedekindZeta_re_eq_exp hs, Real.log_exp, primeIdealZetaSum_univ_eq_tsum,
-    primeIdealZetaSum_univ_eq_tsum, ← tsum_mul_left, ← hsum.tsum_add (hsum2.mul_left 2)]
+  rw [dedekindZeta_re_eq_exp hs, Real.log_exp, Set.primeIdealZetaSum_univ,
+    Set.primeIdealZetaSum_univ, ← tsum_mul_left, ← hsum.tsum_add (hsum2.mul_left 2)]
   -- Termwise, `-log (1 - x) ≤ x + 2 x ^ 2` and `x ^ 2 = N(𝔭) ^ (-2 s) ≤ N(𝔭) ^ (-2)`.
   refine (summable_neg_log_one_sub_absNorm_rpow hs).tsum_le_tsum (fun P ↦ ?_)
     (hsum.add (hsum2.mul_left 2))
-  have hN : (1 : ℝ) ≤ Ideal.absNorm P.asIdeal := by
-    exact_mod_cast (NumberField.HeightOneSpectrum.one_lt_absNorm P).le
+  have hN : (1 : ℝ) ≤ Ideal.absNorm P.asIdeal := by linarith [two_le_absNorm_asIdeal_real P]
   have hsq : ((Ideal.absNorm P.asIdeal : ℝ) ^ (-s)) ^ 2 ≤
       (Ideal.absNorm P.asIdeal : ℝ) ^ (-2 : ℝ) := by
     rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
     exact Real.rpow_le_rpow_of_exponent_le hN (by push_cast; linarith)
-  have h := (neg_log_one_sub_absNorm_rpow_mem P hs.le).2
+  have h :=
+    Real.neg_log_one_sub_le_add_two_mul_sq (by positivity) (absNorm_rpow_neg_le_half P hs.le)
   linarith
 
 /-! ### The residue and the logarithmic normalization -/
@@ -206,7 +133,7 @@ theorem tendsto_log_dedekindZeta_re_sub_log_one_div_sub_one :
   ring
 
 /-- The all-prime sum stays within a bounded distance of `log (1 / (s - 1))` near `1⁺`. -/
-private theorem exists_abs_primeIdealZetaSum_univ_sub_log_le :
+private theorem exists_abs_primeIdealZetaSum_univ_sub_log_one_div_sub_one_le :
     ∃ C : ℝ, ∀ᶠ s in 𝓝[>] (1 : ℝ),
       |(Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s -
         Real.log (1 / (s - 1))| ≤ C := by
@@ -227,10 +154,10 @@ private theorem exists_abs_primeIdealZetaSum_univ_sub_log_le :
 
 /-- **The all-prime normalization.** As `s → 1⁺`, the sum of `N(𝔭) ^ (-s)` over all height-one
 primes of `𝓞 K` is `log (1 / (s - 1)) + O(1)`. -/
-theorem primeIdealZetaSum_univ_sub_log_isBigO :
+theorem primeIdealZetaSum_univ_sub_log_one_div_sub_one_isBigO :
     (fun s : ℝ ↦ (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s -
       Real.log (1 / (s - 1))) =O[𝓝[>] 1] fun _ ↦ (1 : ℝ) := by
-  obtain ⟨C, hC⟩ := exists_abs_primeIdealZetaSum_univ_sub_log_le (K := K)
+  obtain ⟨C, hC⟩ := exists_abs_primeIdealZetaSum_univ_sub_log_one_div_sub_one_le (K := K)
   exact IsBigO.of_bound C (hC.mono fun s hs ↦ by simpa using hs)
 
 /-- **The all-prime sum diverges at `1`.** The sum of `N(𝔭) ^ (-s)` over all height-one primes of
@@ -238,7 +165,7 @@ theorem primeIdealZetaSum_univ_sub_log_isBigO :
 theorem tendsto_primeIdealZetaSum_univ_atTop :
     Tendsto (fun s : ℝ ↦ (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s)
       (𝓝[>] 1) atTop := by
-  obtain ⟨C, hC⟩ := exists_abs_primeIdealZetaSum_univ_sub_log_le (K := K)
+  obtain ⟨C, hC⟩ := exists_abs_primeIdealZetaSum_univ_sub_log_one_div_sub_one_le (K := K)
   refine tendsto_atTop_mono' _ (hC.mono fun s hs ↦ ?_)
     (tendsto_atTop_add_const_right _ (-C) (Real.tendsto_log_one_div_sub_atTop 1))
   linarith [(abs_le.mp hs).1]
@@ -246,10 +173,10 @@ theorem tendsto_primeIdealZetaSum_univ_atTop :
 /-- **The all-prime sum is asymptotic to `log (1 / (s - 1))`.** The ratio of the sum of
 `N(𝔭) ^ (-s)` over all height-one primes of `𝓞 K` to `log (1 / (s - 1))` tends to `1` as
 `s → 1⁺`. -/
-theorem tendsto_primeIdealZetaSum_univ_div_log :
+theorem tendsto_primeIdealZetaSum_univ_div_log_one_div_sub_one :
     Tendsto (fun s : ℝ ↦ (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s /
       Real.log (1 / (s - 1))) (𝓝[>] 1) (𝓝 1) := by
-  obtain ⟨C, hC⟩ := exists_abs_primeIdealZetaSum_univ_sub_log_le (K := K)
+  obtain ⟨C, hC⟩ := exists_abs_primeIdealZetaSum_univ_sub_log_one_div_sub_one_le (K := K)
   exact tendsto_div_nhds_one_of_le_add_const_of_sub_const_le
     (Real.tendsto_log_one_div_sub_atTop 1)
     ⟨C, hC.mono fun s hs ↦ by linarith [(abs_le.mp hs).2]⟩
@@ -266,10 +193,11 @@ variable {K : Type*} [Field K] [NumberField K]
 /-- **Dirichlet density in logarithmic normalization.** A set `S` of height-one primes of `𝓞 K`
 has Dirichlet density `δ`, defined as the limit of `P_S(s) / P(s)` with `P` the all-prime sum,
 exactly when `P_S(s) / log (1 / (s - 1))` tends to `δ` as `s → 1⁺`. -/
-theorem hasDirichletDensity_iff_tendsto_div_log (S : Set (HeightOneSpectrum (𝓞 K))) (δ : ℝ) :
+theorem hasDirichletDensity_iff_tendsto_div_log_one_div_sub_one
+    (S : Set (HeightOneSpectrum (𝓞 K))) (δ : ℝ) :
     S.HasDirichletDensity δ ↔
       Tendsto (fun s : ℝ ↦ S.primeIdealZetaSum s / Real.log (1 / (s - 1))) (𝓝[>] 1) (𝓝 δ) := by
-  have hratio := tendsto_primeIdealZetaSum_univ_div_log (K := K)
+  have hratio := tendsto_primeIdealZetaSum_univ_div_log_one_div_sub_one (K := K)
   have hP : ∀ᶠ s in 𝓝[>] (1 : ℝ),
       0 < (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s :=
     tendsto_primeIdealZetaSum_univ_atTop.eventually_gt_atTop 0
