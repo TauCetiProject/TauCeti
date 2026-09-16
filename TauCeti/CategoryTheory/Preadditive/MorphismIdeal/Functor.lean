@@ -104,7 +104,9 @@ theorem le_comap_comp (I : MorphismIdeal C) (J : MorphismIdeal D) (K : MorphismI
     (F : C ⥤ D) (G : D ⥤ E) [F.Additive] [G.Additive]
     (hF : I ≤ J.comap F) (hG : J ≤ K.comap G) : I ≤ K.comap (F ⋙ G) := by
   intro X Y f hf
-  exact (le_def.1 hG) (F.map f) ((le_def.1 hF) f hf)
+  have hFf := (mem_comap_hom J F).1 ((le_def.1 hF) f hf)
+  rw [mem_comap_hom, Functor.comp_map]
+  exact (mem_comap_hom K G).1 ((le_def.1 hG) (F.map f) hFf)
 
 /-! ### Functors between quotients -/
 
@@ -115,7 +117,7 @@ noncomputable def map (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D) 
     intro X Y f hf
     rw [CategoryTheory.Functor.mem_kerIdeal_hom, Functor.comp_map,
       J.quotientFunctor_map_eq_zero_iff]
-    exact (le_def.1 hF) f hf
+    exact (mem_comap_hom J F).1 ((le_def.1 hF) f hf)
 
 /-- The functor induced on ideal quotients is additive. -/
 instance map_additive (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D) [F.Additive]
