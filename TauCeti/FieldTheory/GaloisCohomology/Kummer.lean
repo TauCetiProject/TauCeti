@@ -338,7 +338,6 @@ theorem kummerIso_apply (hn : IsUnit (n : K)) (x : powerClassQuotient Kˣ n) :
   (rfl)
 
 /-- The Kummer isomorphism sends the power class of `a` to the Kummer class of `a`. -/
-@[simp]
 theorem kummerIso_mk (hn : IsUnit (n : K)) (a : Kˣ) :
     kummerIso K n hn (QuotientGroup.mk a) = kummerMap K n hn a := by
   rw [kummerIso_apply, kummerClassMap_mk]
