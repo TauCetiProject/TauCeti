@@ -71,31 +71,8 @@ theorem exists_contMDiffAt_localGeodesicFlow (z : TangentBundle I M) :
   intro w hw
   obtain ⟨hΦ0, hΦcurve, hΦadd⟩ := hΦ w hw
   refine ⟨hΦ0, hΦcurve, hΦadd, ?_⟩
-  have hbase : ContMDiffOn (modelWithCornersSelf ℝ ℝ) I 2
-      (fun t ↦ (Φ w t).proj) s := by
-    apply contMDiffOn_of_locally_contMDiffOn
-    intro t ht
-    have hcurveAt : IsMIntegralCurveAt (Φ w) (geodesicSpray I M) t :=
-      hΦcurve.isMIntegralCurveAt (hsopen.mem_nhds ht)
-    have hcurveTwo : ContMDiffAt (modelWithCornersSelf ℝ ℝ) I.tangent 2 (Φ w) t :=
-      IsMIntegralCurveAt.contMDiffAt_two hcurveAt (hspray.of_le (by norm_num)).contMDiffAt
-    have hproj : ContMDiffAt I.tangent I 2 TotalSpace.proj (Φ w t) :=
-      Bundle.contMDiffAt_proj (fun x : M ↦ TangentSpace I x) (IB := I) (n := (2 : ℕ∞ω))
-    have hbaseAt : ContMDiffAt (modelWithCornersSelf ℝ ℝ) I 2
-        ((fun q : TangentBundle I M ↦ q.proj) ∘ Φ w) t :=
-      hproj.comp t hcurveTwo
-    obtain ⟨u, hu, hbaseu⟩ := contMDiffAt_iff_contMDiffOn_nhds (n := (2 : ℕ∞ω))
-      (by norm_num) |>.mp hbaseAt
-    obtain ⟨V, hVsub, hVopen, htV⟩ := mem_nhds_iff.mp hu
-    refine ⟨V, hVopen, htV, ?_⟩
-    exact (hbaseu.mono (inter_subset_right.trans hVsub)).congr (fun _ _ ↦ rfl)
-  have hunique : UniqueDiffOn ℝ s := hsopen.uniqueDiffOn
-  have hgeodesic : IsGeodesicCurveOn I (fun t ↦ (Φ w t).proj) s :=
-    isGeodesicCurveOn_proj_of_isMIntegralCurveOn hunique hΦcurve hbase
-  refine ⟨hgeodesic, mem_of_mem_nhds hs, ?_⟩
-  simpa only [curveVelocityLiftWithin_apply] using
-    (eq_curveVelocityLiftWithin_of_isMIntegralCurveOn
-      (hunique 0 (mem_of_mem_nhds hs)) hΦcurve (mem_of_mem_nhds hs)).symm.trans hΦ0
+  exact IsMIntegralCurveOn.isGeodesicCurveOnFrom_proj hΦcurve hsopen
+    (mem_of_mem_nhds hs) hΦ0
 
 end TauCeti.Manifold
 
