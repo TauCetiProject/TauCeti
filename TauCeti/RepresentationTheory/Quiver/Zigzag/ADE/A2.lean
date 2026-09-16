@@ -170,19 +170,13 @@ theorem jacobson_pow_three_zigzagAlgebra_A2_eq_bot (k : Type w) [Field k] :
     Ring.jacobson (zigzagAlgebra k zigzagA2Graph) ^ 3 = ⊥ := by
   let e := zigzagAlgebraEquivNonisolated k zigzagA2Graph connected_zigzagA2Graph
   let _ : RingHomSurjective e.toRingEquiv.toRingHom := ⟨e.surjective⟩
-  let _ : RingHomSurjective e.symm.toRingEquiv.toRingHom := ⟨e.symm.surjective⟩
   have he : Submodule.map e.toAlgHom.toLinearMap
       (Submodule.restrictScalars k (Ring.jacobson (zigzagAlgebra k zigzagA2Graph))) =
       Submodule.restrictScalars k
         (Ring.jacobson (nonisolatedZigzagQuotient k zigzagA2Graph)) := by
     ext y
-    simp only [Submodule.mem_map, Submodule.restrictScalars_mem]
-    constructor
-    · rintro ⟨x, hx, rfl⟩
-      exact Ring.le_comap_jacobson (f := e.toRingEquiv.toRingHom) hx
-    · intro hy
-      exact ⟨e.symm y, Ring.le_comap_jacobson (f := e.symm.toRingEquiv.toRingHom) hy,
-        e.apply_symm_apply y⟩
+    exact SetLike.ext_iff.mp
+      (Ring.map_jacobson_of_ker_le (f := e.toRingEquiv.toRingHom) (by simp)) y
   apply (Submodule.restrictScalars_eq_bot_iff k _ _).mp
   rw [Submodule.restrictScalars_pow (by omega)]
   apply (Submodule.map_eq_bot_iff (e := e.toLinearEquiv)).mp
