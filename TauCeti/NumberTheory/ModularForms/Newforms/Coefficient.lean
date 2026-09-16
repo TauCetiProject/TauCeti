@@ -13,8 +13,8 @@ public import TauCeti.NumberTheory.ModularForms.Newforms.RingEigenvalue
 /-!
 # The Fourier coefficients of a good Hecke eigenform, and of a newform
 
-For an `EigenformAwayFromLevel` the coefficients are the eigenvalues *scaled by* `a₁`, and only
-for a normalised `Newform`, where `a₁ = 1`, are they the eigenvalues themselves.
+For an `EigenformAwayFromLevel` the coefficients are the eigenvalues *scaled by* `a₁`; when
+`a₁ = 1` they are the eigenvalues themselves, as for a `Newform` (via `Newform.isNorm`).
 
 `Newforms/RingEigenvalue.lean` reads the eigenvalue system `λ` of an `EigenformAwayFromLevel` off
 the multiplication table of the `Γ₀(N)` Hecke ring, touching no Fourier coefficient. This file
@@ -40,10 +40,10 @@ coefficient characterisation in Diamond–Shurman, Proposition 5.8.5.
 
 * `HeckeRing.GL2.EigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue_mul_coeff_one`:
   `a_n(f) = λ_n a_1(f)` at a good index.
-* `exists_toCuspForm_eq_and_chi_eq_iff_ne_zero_and_forall_prime_qExpansion_coeff_prime_mul`:
+* `exists_toCuspForm_eq_and_χ_eq_iff_ne_zero_and_forall_prime_qExpansion_coeff_prime_mul`:
   a nonzero cusp form of nebentypus `χ` underlies a good Hecke eigenform exactly when its
   coefficients satisfy a scalar Hecke recurrence at every good prime.
-* `exists_toCuspForm_eq_and_chi_eq_of_qExpansion_coeff_mul_of_prime_pow_add_two`:
+* `exists_toCuspForm_eq_and_χ_eq_of_qExpansion_coeff_mul_of_prime_pow_add_two`:
   nonvanishing, coprime multiplicativity, and the prime-power recurrences produce a good Hecke
   eigenform.
 * `HeckeRing.GL2.EigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue`: `a_n(f) = λ_n` for a
@@ -148,7 +148,7 @@ every prime `p ∤ N`, its coefficients satisfy
 
 The scalar is not required to be named as `a_p` here: that identification needs the separate
 normalisation `a₁ = 1`. -/
-theorem exists_toCuspForm_eq_and_chi_eq_iff_ne_zero_and_forall_prime_qExpansion_coeff_prime_mul
+theorem exists_toCuspForm_eq_and_χ_eq_iff_ne_zero_and_forall_prime_qExpansion_coeff_prime_mul
     {f : CuspForm
     ((Gamma1 N).map (mapGL ℝ)) k} {χ : (ZMod N)ˣ →* ℂˣ} (hχ : f ∈ cuspFormCharSpace k χ) :
     (∃ F : EigenformAwayFromLevel N k, F.toCuspForm = f ∧ F.χ = χ) ↔
@@ -163,7 +163,7 @@ theorem exists_toCuspForm_eq_and_chi_eq_iff_ne_zero_and_forall_prime_qExpansion_
       hp hpN (F.isEigen ⟨p, hp.pos⟩ hpN) m
   · rintro ⟨hf, hrec⟩
     refine ⟨ofForallPrime hχ hf (fun p hp hpN ↦ ?_), ofForallPrime_toCuspForm _ _ _,
-      ofForallPrime_chi _ _ _⟩
+      ofForallPrime_χ _ _ _⟩
     obtain ⟨c, hc⟩ := hrec p hp hpN
     refine ⟨c, ?_⟩
     rw [heckeRingHomCuspCharSpace_heckeTGeneratorGamma0 k χ hp]
@@ -179,7 +179,7 @@ implies `f ≠ 0`.)
 Multiplicativity is needed at all coprime indices, rather than only indices prime to `N`: to prove
 the `T_p` eigen-relation at a good prime, its coefficient recurrence must also hold at indices
 containing prime factors of the level. -/
-theorem exists_toCuspForm_eq_and_chi_eq_of_qExpansion_coeff_mul_of_prime_pow_add_two
+theorem exists_toCuspForm_eq_and_χ_eq_of_qExpansion_coeff_mul_of_prime_pow_add_two
     {f : CuspForm
     ((Gamma1 N).map (mapGL ℝ)) k} {χ : (ZMod N)ˣ →* ℂˣ} (hχ : f ∈ cuspFormCharSpace k χ)
     (hf : f ≠ 0)
@@ -192,7 +192,7 @@ theorem exists_toCuspForm_eq_and_chi_eq_of_qExpansion_coeff_mul_of_prime_pow_add
           (χ (ZMod.unitOfCoprime p hpN) : ℂ) * (p : ℂ) ^ (k - 1) *
             (qExpansion 1 f).coeff (p ^ r)) :
     ∃ F : EigenformAwayFromLevel N k, F.toCuspForm = f ∧ F.χ = χ := by
-  rw [exists_toCuspForm_eq_and_chi_eq_iff_ne_zero_and_forall_prime_qExpansion_coeff_prime_mul hχ]
+  rw [exists_toCuspForm_eq_and_χ_eq_iff_ne_zero_and_forall_prime_qExpansion_coeff_prime_mul hχ]
   refine ⟨hf, fun p hp hpN ↦ ⟨(qExpansion 1 f).coeff p, fun m ↦ ?_⟩⟩
   rcases eq_or_ne m 0 with rfl | hm
   · simp only [mul_zero]

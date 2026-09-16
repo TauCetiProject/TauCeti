@@ -64,7 +64,7 @@ theorem ofForallPrime_toCuspForm {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
 
 /-- The nebentypus of `ofForallPrime` is the character supplied to the constructor. -/
 @[simp]
-theorem ofForallPrime_chi {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
+theorem ofForallPrime_χ {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
     (hχ : f ∈ cuspFormCharSpace k χ) (hf : f ≠ 0)
     (h : ∀ p : ℕ, p.Prime → Nat.Coprime p N → ∃ c : ℂ,
       heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p) ⟨f, hχ⟩ = c • ⟨f, hχ⟩) :
