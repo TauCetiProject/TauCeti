@@ -93,7 +93,7 @@ lemma Gamma0Image_le_Delta0 : (Gamma0Image N).toSubmonoid ≤ Delta0 N := by
   · simp [mapGL_coe_matrix, algebraMap_int_eq]
   · rw [mapGL_coe_matrix, (SpecialLinearGroup.map (algebraMap ℤ ℚ) σ).prop]
     exact one_pos
-  · exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma0_mem.mp hσ)
+  · exact mem_Gamma0_iff_dvd.mp hσ
 
 /-- `Γ₀(N)` lands in `Δ₀(N)`: its elements are integral of determinant one, with lower-left
 entry divisible by `N` and upper-left entry a unit because `ad ≡ 1`. -/

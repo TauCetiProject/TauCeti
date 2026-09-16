@@ -81,6 +81,10 @@ infinitely many orbits. -/
 noncomputable def orbitCount (σ : Equiv.Perm α) : ℕ :=
   Nat.card (Quotient (Equiv.Perm.SameCycle.setoid σ))
 
+/-- The orbit count is the cardinality of the type of orbits. -/
+theorem orbitCount_def (σ : Equiv.Perm α) :
+    orbitCount σ = Nat.card (Quotient (Equiv.Perm.SameCycle.setoid σ)) := (rfl)
+
 /-- Each point of `α` is its own orbit under the identity permutation. -/
 @[simp]
 theorem orbitCount_one : orbitCount (1 : Equiv.Perm α) = Nat.card α := by

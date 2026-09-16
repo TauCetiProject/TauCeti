@@ -127,7 +127,7 @@ private theorem eq_primeDiscriminantPrime_of_apply_eq_neg {M : Type v} [Field M]
       rw [map_pow, hWcoe, neg_sq, ← IsScalarTower.algebraMap_apply ℤ (𝓞 M) M]
       exact hx
     have hdvd : (2 : ℤ) ∣ primeDiscriminantRadicand D :=
-      (TauCeti.algebraMap_int_mem_iff_dvd_of_liesOver P _).mp
+      (Ideal.algebraMap_int_mem_iff_dvd_of_liesOver P _).mp
         (hWsq ▸ P.pow_mem_of_mem hW 2 (by norm_num))
     omega
   · let R : 𝓞 M := NumberField.integralSqrt hx
@@ -145,7 +145,7 @@ private theorem eq_primeDiscriminantPrime_of_apply_eq_neg {M : Type v} [Field M]
       rw [mul_pow, NumberField.integralSqrt_sq, map_mul]
       norm_num
     have hdvd : (p : ℤ) ∣ 4 * primeDiscriminantRadicand D :=
-      (TauCeti.algebraMap_int_mem_iff_dvd_of_liesOver P _).mp
+      (Ideal.algebraMap_int_mem_iff_dvd_of_liesOver P _).mp
         (hsq ▸ P.pow_mem_of_mem htwoR 2 (by norm_num))
     have hpnot4 : ¬ (p : ℤ) ∣ 4 := by
       intro hp4

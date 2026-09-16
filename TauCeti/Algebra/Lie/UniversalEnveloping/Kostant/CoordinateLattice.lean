@@ -15,7 +15,9 @@ A standard Chevalley carrier is built from a rational representation on a coordi
 `ι → ℚ` whose coordinate `ℤ`-lattice is preserved by the Kostant integral form. This file proves
 that stability once, from the two properties every such representation supplies: each designated
 root operator is square-zero and preserves the coordinate lattice, and each standard coordinate
-vector is a Cartan weight vector with integral weights.
+vector is a Cartan weight vector with integral weights. A root operator that cubes rather than
+squares to zero is covered by the second criterion below, where the divided square is the one
+further operator whose integrality has to be checked.
 
 ## Main results
 
@@ -60,6 +62,27 @@ theorem ringChoose_apply_mem_coordinateLattice (h : κ → L)
   rw [Pi.basisFun_apply]
   exact (isCartanWeightVector_iff h ρ).1 (hwt a) i
 
+/-- The coordinate lattice is Kostant-stable when each root operator is nilpotent with a common
+bound and all divided powers below that bound preserve the lattice. -/
+theorem kostantForm_apply_mem_coordinateLattice_of_pow_eq_zero (e : ν → L) (h : κ → L)
+    (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ (ι → ℚ))
+    {wt : ι → κ → ℤ} (d : ℕ)
+    (hpow : ∀ k, ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) ^ d = 0)
+    (hstab : ∀ k m, m < d → ∀ v ∈ TauCeti.coordinateLattice ι,
+      Associative.dividedPower m (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))) v ∈
+        TauCeti.coordinateLattice ι)
+    (hwt : ∀ a, IsCartanWeightVector h ρ (wt a) (Pi.single a 1))
+    {u : _root_.UniversalEnvelopingAlgebra ℚ L} (hu : u ∈ kostantForm e h)
+    {v : ι → ℚ} (hv : v ∈ TauCeti.coordinateLattice ι) :
+    ρ u v ∈ TauCeti.coordinateLattice ι :=
+  kostantForm_apply_mem e h ρ (TauCeti.coordinateLattice ι)
+    (fun k m _ hw => by
+      rw [Associative.map_dividedPower]
+      exact Associative.dividedPower_apply_mem_of_pow_eq_zero _
+        (TauCeti.coordinateLattice ι) (zero_mem _) d (hpow k)
+        (fun j hj _ hjv => hstab k j hj _ hjv) m hw)
+    (fun i m _ hw => ringChoose_apply_mem_coordinateLattice h ρ hwt i m hw) u hu hv
+
 /-- **The coordinate lattice of a standard representation is an admissible lattice.** The Kostant
 `ℤ`-form presented by square-zero root operators and Cartan operators with integral coordinate
 weights preserves the coordinate `ℤ`-lattice. -/
@@ -73,11 +96,12 @@ theorem kostantForm_apply_mem_coordinateLattice (e : ν → L) (h : κ → L)
     {u : _root_.UniversalEnvelopingAlgebra ℚ L} (hu : u ∈ kostantForm e h)
     {v : ι → ℚ} (hv : v ∈ TauCeti.coordinateLattice ι) :
     ρ u v ∈ TauCeti.coordinateLattice ι :=
-  kostantForm_apply_mem e h ρ (TauCeti.coordinateLattice ι)
-    (fun k m _ hw => by
-      rw [Associative.map_dividedPower]
-      exact Associative.dividedPower_apply_mem_of_pow_two_eq_zero _ _ (hsq k)
-        (fun hw' => hstab k _ hw') m hw)
-    (fun i m _ hw => ringChoose_apply_mem_coordinateLattice h ρ hwt i m hw) u hu hv
+  kostantForm_apply_mem_coordinateLattice_of_pow_eq_zero e h ρ 2 hsq
+    (fun k m hm v hv => by
+      have : m = 0 ∨ m = 1 := by omega
+      rcases this with rfl | rfl
+      · simpa using hv
+      · simpa using hstab k v hv)
+    hwt hu hv
 
 end TauCeti.UniversalEnvelopingAlgebra

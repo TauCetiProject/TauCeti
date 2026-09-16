@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.ConstantMultiplication.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 
 /-!
@@ -123,33 +124,6 @@ theorem preserves_of_mem_kostantToralPointsSubgroup
 
 /-! ### The criterion on the generator matrices -/
 
-omit [Finite κ] in
-/-- The generic matrix of a represented root-subgroup coordinate map is the divided-power
-exponential matrix at the universal point of `𝔾ₐ`. -/
-private theorem exists_map_genericMatrix_kostantRootSubgroupCoordinateMap (i : I) :
-    ∃ q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ]
-        AdditiveGroup.coordinateHopfAlgebra ℤ),
-      (GeneralLinear.genericMatrix ℤ n).map
-          (kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b).hom.toAlgHom =
-        ((kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b q :
-          Matrix.GeneralLinearGroup (Fin n) (AdditiveGroup.coordinateHopfAlgebra ℤ)) :
-          Matrix (Fin n) (Fin n) (AdditiveGroup.coordinateHopfAlgebra ℤ)) := by
-  let q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ]
-      AdditiveGroup.coordinateHopfAlgebra ℤ) :=
-    toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))
-  have hq : q.ofConv = AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ) :=
-    WithConv.ofConv_toConv _
-  have hpoint := pointsMulEquiv_kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b
-    (AdditiveGroup.coordinateHopfAlgebra ℤ) q
-  have hpoint' : GeneralLinear.pointToGeneralLinear n
-      (toConv (kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b).hom.toAlgHom) =
-      kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b q := by
-    refine Eq.trans ?_ hpoint
-    refine congrArg (GeneralLinear.pointToGeneralLinear n) (congrArg toConv ?_)
-    exact AlgHom.ext fun x => rfl
-  refine ⟨q, ?_⟩
-  rw [GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
-  exact congrArg _ hpoint'
 
 section Generators
 
@@ -209,10 +183,8 @@ theorem constantMultiplicationDefiningHopfIdeal_le_kostantToralDefiningIdeal_of_
       kostantToralDefiningIdeal e h ρ M hM hnil b wt := by
   refine constantMultiplicationDefiningHopfIdeal_le_kostantToralDefiningIdeal
     e h ρ M hM hnil b wt C (fun i => ?_) ?_
-  · obtain ⟨q, hqm⟩ :=
-      exists_map_genericMatrix_kostantRootSubgroupCoordinateMap e h ρ M hM hnil b i
-    rw [hqm]
-    exact hroot i _ q
+  · rw [map_genericMatrix_eq_kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b]
+    exact hroot i _ _
   · let _ := Fintype.ofFinite κ
     obtain ⟨s, hsm⟩ := exists_map_genericMatrix_weightTorusCoordinateMap M b wt
     rw [hsm]
@@ -236,10 +208,8 @@ theorem preserves_of_mem_kostantToralPointsSubgroup_of_generators
     ConstantMultiplication.Preserves ℤ n C (g : Matrix (Fin n) (Fin n) A) := by
   refine preserves_of_mem_kostantToralPointsSubgroup e h ρ M hM hnil b wt C
     (fun i => ?_) ?_ A hg
-  · obtain ⟨q, hqm⟩ :=
-      exists_map_genericMatrix_kostantRootSubgroupCoordinateMap e h ρ M hM hnil b i
-    rw [hqm]
-    exact hroot i _ q
+  · rw [map_genericMatrix_eq_kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b]
+    exact hroot i _ _
   · let _ := Fintype.ofFinite κ
     obtain ⟨s, hsm⟩ := exists_map_genericMatrix_weightTorusCoordinateMap M b wt
     rw [hsm]
