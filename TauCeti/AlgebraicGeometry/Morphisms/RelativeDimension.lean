@@ -101,7 +101,7 @@ private theorem topologicalKrullDim_preimage_comp_eq (i : Z ⟶ X) (hi : IsEmbed
   refine IsHomeomorph.topologicalKrullDim_eq _ <| isHomeomorph_iff_isEmbedding_surjective.mpr
     ⟨hi.restrictPreimage (f ⁻¹' {y}), fun x ↦ ?_⟩
   obtain ⟨z, hz⟩ := hy x.2
-  exact ⟨⟨z, show f (i z) = y from hz ▸ x.2⟩, Subtype.ext hz⟩
+  exact ⟨⟨z, by simp [hz]⟩, Subtype.ext hz⟩
 
 /-- Precomposing with a preimmersion, such as an open or closed immersion, preserves the bound on
 the relative dimension. -/
