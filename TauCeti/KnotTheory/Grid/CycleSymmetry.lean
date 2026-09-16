@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Submodule.Equiv
 public import TauCeti.Algebra.Module.Equiv.Basic
 public import TauCeti.KnotTheory.Grid.BasicCycles
 public import TauCeti.KnotTheory.Grid.Differential.Symmetry

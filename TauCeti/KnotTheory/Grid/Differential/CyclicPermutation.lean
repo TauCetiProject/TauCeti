@@ -153,6 +153,7 @@ theorem fullyBlockedDifferential_relabelRows_finRotate :
     GridState.relabelRows_refl, fullyBlockedRectangleCount_relabelRows_finRotate]
 
 /-- The cyclic row relabelling intertwines the fully blocked differentials pointwise. -/
+@[simp]
 theorem fullyBlockedDifferential_relabelRows_finRotate_apply (c : GridChain (ZMod 2) n) :
     (G.relabelRows (finRotate n)).fullyBlockedDifferential
         (GridChain.relabelRowsEquiv (finRotate n) c) =
@@ -264,6 +265,7 @@ theorem fullyBlockedDifferential_relabelColumns_finRotate :
     fullyBlockedRectangleCount_relabelColumns_finRotate]
 
 /-- The cyclic column relabelling intertwines the fully blocked differentials pointwise. -/
+@[simp]
 theorem fullyBlockedDifferential_relabelColumns_finRotate_apply
     (c : GridChain (ZMod 2) n) :
     (G.relabelColumns (finRotate n)).fullyBlockedDifferential

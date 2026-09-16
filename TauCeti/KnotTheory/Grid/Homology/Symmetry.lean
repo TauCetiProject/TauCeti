@@ -102,6 +102,8 @@ noncomputable def fullyBlockedHomologyEquivOfIntertwining :
     have hd' : (d : GridChain (ZMod 2) n) ∈ G.fullyBlockedBoundaries :=
       (mem_fullyBlockedBoundariesInCycles G d).mp hd
     apply (mem_fullyBlockedBoundariesInCycles G' _).mpr
+    -- The membership lemma leaves a cycle subtype coercion here; expose its underlying chain
+    -- before applying the cycle-equivalence evaluation theorem.
     change (G.fullyBlockedCyclesEquivOfIntertwining G' e he d :
       GridChain (ZMod 2) n) ∈ G'.fullyBlockedBoundaries
     rw [fullyBlockedCyclesEquivOfIntertwining_apply]
@@ -174,6 +176,20 @@ theorem fullyBlockedHomologyEquivRelabelRowsFinRotate_apply_mk
     (e := GridChain.relabelRowsEquiv (finRotate n))
     (he := fullyBlockedDifferential_relabelRows_finRotate_apply (G := G)) c
 
+/-- The inverse cyclic row homology equivalence sends a represented class to the preimage class. -/
+@[simp]
+theorem fullyBlockedHomologyEquivRelabelRowsFinRotate_symm_apply_mk
+    (c : (G.relabelRows (finRotate n)).fullyBlockedCycles) :
+    G.fullyBlockedHomologyEquivRelabelRowsFinRotate.symm (Submodule.Quotient.mk c) =
+      Submodule.Quotient.mk
+        ((G.fullyBlockedCyclesEquivOfIntertwining (G.relabelRows (finRotate n))
+          (GridChain.relabelRowsEquiv (finRotate n))
+          (fullyBlockedDifferential_relabelRows_finRotate_apply (G := G))).symm c) := by
+  exact fullyBlockedHomologyEquivOfIntertwining_symm_apply_mk
+    (G := G) (G' := G.relabelRows (finRotate n))
+    (e := GridChain.relabelRowsEquiv (finRotate n))
+    (he := fullyBlockedDifferential_relabelRows_finRotate_apply (G := G)) c
+
 /-- Cyclic column relabelling induces an equivalence of fully blocked grid homology quotients. -/
 noncomputable def fullyBlockedHomologyEquivRelabelColumnsFinRotate :
     G.fullyBlockedHomology ≃ₗ[ZMod 2]
@@ -193,6 +209,21 @@ theorem fullyBlockedHomologyEquivRelabelColumnsFinRotate_apply_mk
           (GridChain.relabelColumnsEquiv (finRotate n))
           (fullyBlockedDifferential_relabelColumns_finRotate_apply (G := G)) c) := by
   exact fullyBlockedHomologyEquivOfIntertwining_apply_mk
+    (G := G) (G' := G.relabelColumns (finRotate n))
+    (e := GridChain.relabelColumnsEquiv (finRotate n))
+    (he := fullyBlockedDifferential_relabelColumns_finRotate_apply (G := G)) c
+
+/-- The inverse cyclic column homology equivalence sends a class to its preimage. -/
+@[simp]
+theorem fullyBlockedHomologyEquivRelabelColumnsFinRotate_symm_apply_mk
+    (c : (G.relabelColumns (finRotate n)).fullyBlockedCycles) :
+    G.fullyBlockedHomologyEquivRelabelColumnsFinRotate.symm
+        (Submodule.Quotient.mk c) =
+      Submodule.Quotient.mk
+        ((G.fullyBlockedCyclesEquivOfIntertwining (G.relabelColumns (finRotate n))
+          (GridChain.relabelColumnsEquiv (finRotate n))
+          (fullyBlockedDifferential_relabelColumns_finRotate_apply (G := G))).symm c) := by
+  exact fullyBlockedHomologyEquivOfIntertwining_symm_apply_mk
     (G := G) (G' := G.relabelColumns (finRotate n))
     (e := GridChain.relabelColumnsEquiv (finRotate n))
     (he := fullyBlockedDifferential_relabelColumns_finRotate_apply (G := G)) c
