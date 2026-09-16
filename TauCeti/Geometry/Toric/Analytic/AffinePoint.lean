@@ -33,7 +33,8 @@ not defined using them.
 ## Main declarations
 
 * `TauCeti.Toric.AffineSemigroupComplexPoint`: the complex points of an affine semigroup.
-* `TauCeti.Toric.affinePoint_ext`: a complex point is determined by its values on monomials.
+* `TauCeti.Toric.AffineSemigroupComplexPoint.ext`: a complex point is determined by its values
+  on monomials.
 * `TauCeti.Toric.AddGeneratingFamily`: a finite family generating an additive monoid, which
   exists exactly for a finitely generated additive monoid.
 * `TauCeti.Toric.monomialEmbedding`: evaluation of a complex point on such a family.
@@ -66,7 +67,7 @@ abbrev AffineSemigroupComplexPoint (S : Type*) [AddCommMonoid S] :=
 
 /-- Two complex points of `S` that agree on every monomial are equal. -/
 @[ext]
-theorem affinePoint_ext {x y : AffineSemigroupComplexPoint S}
+theorem AffineSemigroupComplexPoint.ext {x y : AffineSemigroupComplexPoint S}
     (h : ∀ s : S, x (MonoidAlgebra.single (ofAdd s) 1) = y (MonoidAlgebra.single (ofAdd s) 1)) :
     x = y :=
   MonoidAlgebra.algHom_ext (fun m ↦ h (toAdd m)) (Subsingleton.elim _ _)
@@ -123,7 +124,7 @@ theorem apply_single_eq_prod_monomialEmbedding (g : AddGeneratingFamily S r) {s 
 theorem monomialEmbedding_injective (g : AddGeneratingFamily S r) :
     Function.Injective (monomialEmbedding g) := by
   intro x y hxy
-  refine affinePoint_ext fun s ↦ ?_
+  refine AffineSemigroupComplexPoint.ext fun s ↦ ?_
   obtain ⟨a, ha⟩ := AddSubmonoid.exists_of_mem_closure_range g.toFun s (by
     rw [g.spans]
     trivial)
