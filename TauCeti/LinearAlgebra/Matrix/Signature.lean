@@ -199,7 +199,7 @@ theorem signature_congr [DecidableEq ι] {P : Matrix ι ι 𝕜} (hP : IsUnit P.
 /-- Reindexing both coordinates of a matrix along an equivalence does not change its signature. -/
 @[simp]
 theorem signature_reindex (e : ι ≃ κ) (A : Matrix ι ι 𝕜) :
-    signature (reindex e e A) = signature A := by
+    signature (A.submatrix e.symm e.symm) = signature A := by
   classical
   exact signature_eq_of_equivalent ⟨isometryEquivReindex e A⟩
 
