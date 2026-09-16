@@ -12,7 +12,7 @@ public import TauCeti.FieldTheory.FunctionField.Differential.CanonicalDivisor
 # Clifford's theorem for divisors of a function field
 
 This file proves Clifford's dimension bound for a divisor `D` of an algebraic function field
-over an infinite exact field of constants:
+over an infinite exact field of constants, assuming `0 ≤ deg D ≤ 2g - 2`:
 
 `2 * ℓ(D) ≤ deg D + 2`.
 
@@ -98,26 +98,6 @@ private theorem exists_minimal_riemannRochSpace (hF : IsFunctionField k F)
   have hm_lt : (m : ℤ) < n := by
     rw [← hmdegree, degree_sub, degree_ofPoint, hdegree]
     omega
-  omega
-
-/-- A section of `L(D)` outside `L(D-P)` has order exactly `-D(P)` at `P`. -/
-private theorem ord_eq_neg_coeff_of_not_mem_sub_ofPoint {D : Divisor k F}
-    {P : Place k F} {z : F} (hz : z ∈ riemannRochSpace D)
-    (hzsub : z ∉ riemannRochSpace (D - WeilDivisor.ofPoint P)) :
-    P.ord z = -D.coeff P := by
-  have hz0 : z ≠ 0 := by
-    rintro rfl
-    exact hzsub (Submodule.zero_mem _)
-  have hlower := (mem_riemannRochSpace_iff_neg_le_ord hz0).mp hz P
-  have hnot : ¬-(D - WeilDivisor.ofPoint P).coeff P ≤ P.ord z := by
-    intro hP
-    apply hzsub
-    rw [mem_riemannRochSpace_iff_neg_le_ord hz0]
-    intro Q
-    rcases eq_or_ne Q P with rfl | hQP
-    · exact hP
-    · simpa [hQP] using (mem_riemannRochSpace_iff_neg_le_ord hz0).mp hz Q
-  simp only [WeilDivisor.coeff_sub, WeilDivisor.coeff_ofPoint_self] at hnot
   omega
 
 /-- For effective `A` and `B`, choose a section of a minimal pole bound for `L(A)` that has the
