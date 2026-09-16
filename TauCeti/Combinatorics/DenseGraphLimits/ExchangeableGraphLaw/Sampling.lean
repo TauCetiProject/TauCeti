@@ -32,6 +32,7 @@ the upper masses of a disjoint union of patterns multiply because homomorphism d
 
 * `TauCeti.DenseGraphLimits.upperMass_sampleExchangeableLaw` — the upper mass of a pattern under
   a sampling law is its homomorphism density;
+* `TauCeti.DenseGraphLimits.sampleGraph_Ici` — the same identity as a measure of an upper ray;
 * `TauCeti.DenseGraphLimits.isDissociated_sampleExchangeableLaw` — sampling laws are dissociated.
 
 ## References
@@ -85,6 +86,14 @@ theorem upperMass_sampleExchangeableLaw {k : ℕ} (F : SimpleGraph (Fin k)) [Dec
   rw [← ENNReal.ofReal_sum_of_nonneg fun G _ => sampleMass_nonneg W G,
     sum_sampleMass_supergraph_eq_homDensity W F,
     ENNReal.toReal_ofReal (homDensity_nonneg F W)]
+
+/-- The probability that a graphon sample contains a pattern is the pattern's homomorphism
+density, as a measure of the upper ray at the pattern. -/
+theorem sampleGraph_Ici (W : Graphon Ω μ) {k : ℕ} (F : SimpleGraph (Fin k)) [DecidableRel F.Adj] :
+    sampleGraph W k (Set.Ici F) = ENNReal.ofReal (homDensity F W) := by
+  have hset : Set.Ici F = {G : SimpleGraph (Fin k) | F ≤ G} := Set.ext fun _ => Set.mem_Ici
+  rw [← upperMass_sampleExchangeableLaw F W, ExchangeableGraphLaw.upperMass_def,
+    sampleExchangeableLaw_law, ENNReal.ofReal_toReal (measure_ne_top _ _), hset]
 
 /-- **Sampling laws are dissociated.** Disjoint label windows of a graphon sample read disjoint
 sets of sampled points and coins. Through upper masses this is the multiplicativity of
