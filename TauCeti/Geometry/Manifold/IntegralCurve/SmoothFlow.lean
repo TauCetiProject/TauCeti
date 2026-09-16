@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.InitialCondition
 public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # Smooth dependence of integral curves on their initial point
@@ -147,7 +148,14 @@ theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E] [I.Boundaryless]
       · filter_upwards [hsopen.mem_nhds ht] with r hr
         have hw_eq (z : E) : w z =
             tangentCoordChange I ((extChartAt I a).symm z) a ((extChartAt I a).symm z)
-              (v ((extChartAt I a).symm z)) := rfl
+              (v ((extChartAt I a).symm z)) := by
+          -- The fibre coordinate of the preferred trivialization is the second coordinate of the
+          -- tangent-bundle chart, whose conversion to `tangentCoordChange` is recorded explicitly.
+          change (chartAt (ModelProd H E)
+            (⟨a, 0⟩ : TangentBundle I M)
+            (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ :
+              TangentBundle I M)).2 = _
+          exact TangentBundle.coe_chartAt_snd
         simpa only [hw_eq] using hderiv hxcoord.1 (hst hr).1
     exact hcurve.self_of_nhds.hasMFDerivWithinAt
   · intro t ht u
