@@ -93,6 +93,14 @@ theorem presentedForm_eq_weightedSumSquares (p : RegularFormPresentation K) :
   ext x
   simp [presentedForm, weightedSumSquares_apply, Units.smul_def]
 
+/-- A presented form is the scalar-coefficient weighted sum of squares obtained by coercing its
+unit weights to the base field. -/
+theorem presentedForm_eq_weightedSumSquares_coe {n : ℕ} (w : Fin n → Kˣ) :
+    presentedForm ⟨n, w⟩ = weightedSumSquares K (fun i ↦ (w i : K)) := by
+  rw [presentedForm_eq_weightedSumSquares]
+  ext x
+  simp only [weightedSumSquares_apply, Units.smul_def, smul_eq_mul]
+
 /-- A presented form is regular: all its weights are units, so its radical vanishes. -/
 theorem nondegenerate_presentedForm [Invertible (2 : K)] (p : RegularFormPresentation K) :
     (presentedForm p).Nondegenerate := by

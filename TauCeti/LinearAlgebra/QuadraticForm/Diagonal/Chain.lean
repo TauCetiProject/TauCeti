@@ -38,9 +38,9 @@ invertible.
 * `TauCeti.DiagonalChain.equivalent`: the endpoint diagonal forms of a chain are isometric.
 * `TauCeti.DiagonalChain.cons`: chains are stable under adjoining a fixed first coefficient.
 * `TauCeti.diagonalChain_iff_equivalent_fin_zero`: the chain theorem in rank zero.
-* `TauCeti.diagonalChain_fin_one_iff`: in rank one, a chain is exactly equality of coefficient
-  families. Isometry is strictly weaker there, so the converse of
-  `TauCeti.DiagonalChain.equivalent` needs rank at least two.
+* `TauCeti.diagonalChain_fin_one_iff_eq`: in rank one, a chain is exactly equality of coefficient
+  families. Isometry can be strictly weaker there, so the unrestricted converse of
+  `TauCeti.DiagonalChain.equivalent` fails in general.
 
 ## References
 
@@ -61,13 +61,11 @@ section Steps
 variable {R : Type u} [CommSemiring R] {n : ℕ}
 
 /-- A permutation step reorders the unit coefficients of a diagonal quadratic form. -/
-@[expose]
 def PermutationStep (w w' : Fin n → Rˣ) : Prop :=
   ∃ σ : Equiv.Perm (Fin n), ∀ i, w' i = w (σ i)
 
 /-- A binary step replaces two distinct unit coefficients by an equivalent binary form and fixes
 all other coefficients. -/
-@[expose]
 def BinaryStep (w w' : Fin n → Rˣ) : Prop :=
   ∃ i j : Fin n, i ≠ j ∧
     (∀ k, k ≠ i → k ≠ j → w k = w' k) ∧
@@ -76,16 +74,23 @@ def BinaryStep (w w' : Fin n → Rˣ) : Prop :=
 
 /-- An elementary step between diagonal coefficient families is either a permutation step or a
 binary step. -/
-@[expose]
 def DiagonalStep (w w' : Fin n → Rˣ) : Prop :=
   PermutationStep w w' ∨ BinaryStep w w'
 
 /-- A diagonal chain is a finite sequence of permutation or binary steps. -/
-@[expose]
 def DiagonalChain (w w' : Fin n → Rˣ) : Prop :=
   Relation.ReflTransGen DiagonalStep w w'
 
 namespace BinaryStep
+
+/-- Construct a binary step from the changed pair, equality away from that pair, and an
+equivalence of the corresponding binary forms. -/
+theorem of_pair {w w' : Fin n → Rˣ} (i j : Fin n) (hij : i ≠ j)
+    (hrest : ∀ k, k ≠ i → k ≠ j → w k = w' k)
+    (hpair : (weightedSumSquares R ![(w i : R), (w j : R)]).Equivalent
+      (weightedSumSquares R ![(w' i : R), (w' j : R)])) :
+    BinaryStep w w' := by
+  exact ⟨i, j, hij, hrest, hpair⟩
 
 /-- Swapping two distinct coefficients is a binary step. -/
 theorem swap (w : Fin n → Rˣ) {i j : Fin n} (hij : i ≠ j) :
@@ -100,6 +105,11 @@ theorem swap (w : Fin n → Rˣ) {i j : Fin n} (hij : i ≠ j) :
 end BinaryStep
 
 namespace PermutationStep
+
+/-- Construct a permutation step from a permutation of the indices. -/
+theorem of_perm {w w' : Fin n → Rˣ} (σ : Equiv.Perm (Fin n))
+    (hσ : ∀ i, w' i = w (σ i)) : PermutationStep w w' := by
+  exact ⟨σ, hσ⟩
 
 /-- Permutation steps may be reversed. -/
 theorem symm {w w' : Fin n → Rˣ} (h : PermutationStep w w') : PermutationStep w' w := by
@@ -181,6 +191,19 @@ end BinaryStep
 
 namespace DiagonalStep
 
+/-- A permutation step is an elementary diagonal step. -/
+theorem permutation {w w' : Fin n → Rˣ} (h : PermutationStep w w') : DiagonalStep w w' :=
+  Or.inl h
+
+/-- A binary step is an elementary diagonal step. -/
+theorem binary {w w' : Fin n → Rˣ} (h : BinaryStep w w') : DiagonalStep w w' :=
+  Or.inr h
+
+/-- Eliminate an elementary diagonal step by treating its permutation and binary cases. -/
+theorem elim {w w' : Fin n → Rˣ} {P : Prop} (h : DiagonalStep w w')
+    (hperm : PermutationStep w w' → P) (hbinary : BinaryStep w w' → P) : P :=
+  Or.elim h hperm hbinary
+
 /-- Elementary diagonal steps may be reversed. -/
 theorem symm {w w' : Fin n → Rˣ} (h : DiagonalStep w w') : DiagonalStep w' w :=
   h.elim (Or.inl ∘ PermutationStep.symm) (Or.inr ∘ BinaryStep.symm)
@@ -194,6 +217,37 @@ theorem equivalent {w w' : Fin n → Rˣ} (h : DiagonalStep w w') :
 end DiagonalStep
 
 namespace DiagonalChain
+
+/-- The empty sequence is a diagonal chain. -/
+theorem refl (w : Fin n → Rˣ) : DiagonalChain w w :=
+  Relation.ReflTransGen.refl
+
+/-- A single elementary diagonal step is a diagonal chain. -/
+theorem single {w w' : Fin n → Rˣ} (h : DiagonalStep w w') : DiagonalChain w w' :=
+  Relation.ReflTransGen.single h
+
+/-- A single binary step is a diagonal chain. -/
+theorem binary {w w' : Fin n → Rˣ} (h : BinaryStep w w') : DiagonalChain w w' :=
+  single (DiagonalStep.binary h)
+
+/-- Append an elementary step to a diagonal chain. -/
+theorem tail {w w' w'' : Fin n → Rˣ} (h : DiagonalChain w w')
+    (h' : DiagonalStep w' w'') : DiagonalChain w w'' :=
+  Relation.ReflTransGen.tail h h'
+
+/-- Concatenate two diagonal chains. -/
+theorem trans {w w' w'' : Fin n → Rˣ} (h : DiagonalChain w w')
+    (h' : DiagonalChain w' w'') : DiagonalChain w w'' :=
+  Relation.ReflTransGen.trans h h'
+
+/-- Prove a property of diagonal chains from the reflexive, single-step, and transitive cases. -/
+theorem trans_induction_on {P : (Fin n → Rˣ) → (Fin n → Rˣ) → Prop}
+    {w w' : Fin n → Rˣ} (h : DiagonalChain w w')
+    (hrefl : ∀ v, P v v)
+    (hsingle : ∀ {v v'}, DiagonalStep v v' → P v v')
+    (htrans : ∀ {v v' v''}, DiagonalChain v v' → DiagonalChain v' v'' →
+      P v v' → P v' v'' → P v v'') : P w w' := by
+  exact Relation.ReflTransGen.trans_induction_on h hrefl hsingle htrans
 
 /-- Diagonal chains may be reversed. -/
 theorem symm {w w' : Fin n → Rˣ} (h : DiagonalChain w w') : DiagonalChain w' w := by
@@ -253,12 +307,12 @@ theorem diagonalChain_iff_equivalent_fin_zero {w w' : Fin 0 → Rˣ} :
     unfold TauCeti.DiagonalChain
     exact Relation.ReflTransGen.refl
 
-/-- In rank one a diagonal chain is equality of coefficient families. The converse of
-`TauCeti.DiagonalChain.equivalent` therefore fails in rank one, since isometric one-dimensional
-forms need only have coefficients in the same square class; this is why Witt's chain theorem
-assumes rank at least two. -/
+/-- In rank one a diagonal chain is equality of coefficient families. Isometry can be strictly
+weaker than equality, since isometric one-dimensional forms need only have coefficients in the
+same square class; thus the unrestricted converse of `TauCeti.DiagonalChain.equivalent` fails in
+general. -/
 @[simp]
-theorem diagonalChain_fin_one_iff {w w' : Fin 1 → Rˣ} :
+theorem diagonalChain_fin_one_iff_eq {w w' : Fin 1 → Rˣ} :
     DiagonalChain w w' ↔ w = w' := by
   constructor
   · intro h
