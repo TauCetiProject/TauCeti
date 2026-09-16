@@ -622,7 +622,6 @@ theorem mem_cIco_finRotate_finRotate (a b x : Fin n) :
       mem_cIoo_finRotate_finRotate]
 
 /-- The open cyclic interval from a point to its cyclic successor is empty. -/
-@[simp]
 theorem cIoo_finRotate_eq_empty (a : Fin n) : cIoo a (finRotate n a) = ∅ := by
   cases n with
   | zero => exact a.elim0
