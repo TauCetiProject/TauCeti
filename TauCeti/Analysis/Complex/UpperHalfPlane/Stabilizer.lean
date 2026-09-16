@@ -212,10 +212,10 @@ theorem exists_isPrimitiveRoot_stabilizerDeriv (Γ : Subgroup PSL(2, ℝ)) (z : 
   rw [← hcard, ← orderOf_stabilizerDeriv]
   exact IsPrimitiveRoot.orderOf _
 
-/-- The derivative of an element of a finite point stabilizer is a root of unity of order
-dividing the stabilizer's order. -/
-theorem stabilizerDeriv_pow_card (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) [Finite (stabilizer Γ z)]
-    (q : stabilizer Γ z) : stabilizerDeriv Γ z q ^ Nat.card (stabilizer Γ z) = 1 := by
+/-- The derivative of an element of a point stabilizer is a root of unity of order dividing the
+stabilizer's order (vacuously so, with `Nat.card = 0`, when the stabilizer is infinite). -/
+theorem stabilizerDeriv_pow_card (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (q : stabilizer Γ z) :
+    stabilizerDeriv Γ z q ^ Nat.card (stabilizer Γ z) = 1 := by
   rw [← map_pow, pow_card_eq_one', map_one]
 
 /-- **The derivatives of a finite point stabilizer of order `m` are exactly the `m`-th roots of
