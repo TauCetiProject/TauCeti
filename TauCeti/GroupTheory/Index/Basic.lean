@@ -24,6 +24,8 @@ centre gives the `Γ.withCenter` readings.
 
 ## Main results
 
+* `Subgroup.card_inf_mul_relIndex`: `|H ⊓ K| · [K : H ⊓ K] = |K|`, the relative order-index
+  formula.
 * `Subgroup.mem_withCenter_iff`: an element of `Γ·Z(G)` is one of `Γ` times a central one.
 * `TauCeti.index_eq_of_natCard_eq_mul`: cancel a known nonzero subgroup order from the
   order-index formula.
@@ -60,6 +62,14 @@ instance instCountableQuotient {G : Type*} [Group G] [Countable G] (H : Subgroup
 instance instFiniteIndexComap {G G' : Type*} [Group G] [Group G'] (H : Subgroup G) [H.FiniteIndex]
     (f : G' →* G) : (H.comap f).FiniteIndex :=
   ⟨by rw [index_comap]; exact FiniteIndex.index_ne_zero⟩
+
+/-- **The relative order-index formula.** The order of `H ⊓ K` times the relative index of `H`
+in `K` is the order of `K`: the relative form of `Subgroup.card_mul_index`. -/
+@[to_additive /-- **The relative order-index formula.** The order of `H ⊓ K` times the relative
+index of `H` in `K` is the order of `K`. -/]
+theorem card_inf_mul_relIndex {G : Type*} [Group G] (H K : Subgroup G) :
+    Nat.card (H ⊓ K : Subgroup G) * H.relIndex K = Nat.card K := by
+  simpa using relIndex_inf_mul_relIndex ⊥ H K
 
 /-- `Γ` with the centre of the ambient group adjoined. For `Γ ≤ SL(2, ℤ)` the centre is
 `{±I}`, which acts trivially on `ℍ`; it is the cosets of `Γ·{±I}` — not those of `Γ` itself —

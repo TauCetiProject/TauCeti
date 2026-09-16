@@ -10,11 +10,11 @@ public import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.RamificationInertia.Basic
 
 /-!
-# Complete splitting forces trivial ramification and inertia
+# Complete splitting is trivial ramification and inertia
 
-This file records the non-Galois half of the counting criterion for primes in finite flat
-extensions of domains: if a prime has as many primes above it as the degree allows, then every
-one of them is unramified with trivial residue extension.
+This file records the non-Galois counting criterion for primes in finite flat extensions of
+domains: a prime has as many primes above it as the degree allows exactly when every one of them
+is unramified with trivial residue extension.
 
 The Galois form, where the count is compared with the order of the Galois group, is in
 `TauCeti/NumberTheory/RamificationInertia/Galois.lean`. No Galois hypothesis is needed here:
@@ -26,6 +26,8 @@ In the `TauCeti.RamificationInertia` namespace:
 
 * `ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finrank` — a maximal count
   of primes above `P` makes `e = f = 1` at each of them.
+* `ncard_primesOver_eq_finrank_iff_forall` — conversely, `e = f = 1` at every prime above `P`
+  makes the count maximal.
 * `bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank` — for `P` maximal, the same count
   makes the residue map `R ⧸ P → S ⧸ Q` bijective.
 
@@ -71,6 +73,23 @@ theorem ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finr
     Finset.mem_univ _
   have := (Finset.sum_eq_sum_iff_of_le hone).mp hEqSum _ hQ
   exact ⟨Nat.eq_one_of_mul_eq_one_right this.symm, Nat.eq_one_of_mul_eq_one_left this.symm⟩
+
+/-- **The count criterion for complete splitting.** The number of primes of `S` lying over a
+prime `P` of `R` equals the rank of `S` over `R` exactly when every one of them has
+ramification index and inertia degree `1`. No Galois hypothesis is needed: both directions are the
+fundamental identity `∑ e * f = [S : R]`, a sum of positive terms indexed by those primes. -/
+theorem ncard_primesOver_eq_finrank_iff_forall
+    {R S : Type*} [CommRing R] [IsDomain R] [CommRing S] [Algebra R S] [Module.Finite R S]
+    [Module.Flat R S] (P : Ideal R) [P.IsPrime] :
+    (P.primesOver S).ncard = finrank R S ↔
+      ∀ Q ∈ P.primesOver S, Q.ramificationIdx R = 1 ∧ Q.inertiaDeg R = 1 := by
+  refine ⟨fun h Q ⟨_, _⟩ ↦
+    ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finrank P Q h,
+    fun h ↦ ?_⟩
+  have := (Algebra.QuasiFinite.finite_primesOver (S := S) P).fintype
+  rw [← Ideal.sum_ramification_inertia_eq_finrank (p := P),
+    Finset.sum_congr rfl fun q _ ↦ by rw [(h q.1 q.2).1, (h q.1 q.2).2, mul_one]]
+  simp
 
 /-- **A maximal count of primes above `P` makes the residue extension trivial.** If `P` is maximal
 and the number of primes of `S` lying over `P` equals the rank of `S` over `R`, then the residue
