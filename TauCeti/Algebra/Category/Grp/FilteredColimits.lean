@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.Grp.FilteredColimits
-public import Mathlib.Algebra.Category.Grp.Colimits
-public import Mathlib.CategoryTheory.Limits.Types.Filtered
+import Mathlib.Algebra.Category.Grp.Colimits
 
 /-!
 # Recognising filtered colimits of additive commutative groups

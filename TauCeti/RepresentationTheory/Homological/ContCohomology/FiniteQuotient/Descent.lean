@@ -29,7 +29,7 @@ namespace TauCeti.ContCohomology
 universe u v
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  {M : Type v} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  {M : Type v} [AddGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M] [CompactSpace G] [TotallyDisconnectedSpace G]
 
 /-- A continuous function from a profinite group to a discrete module descends below any
