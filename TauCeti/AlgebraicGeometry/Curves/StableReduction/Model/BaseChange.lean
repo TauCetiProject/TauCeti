@@ -21,9 +21,6 @@ The construction retains the chosen generic-fibre identification, so it can be i
 comparing models after a common finite extension.
 -/
 
--- Source: the Layer 0 model base-change functor target in the
--- [StableReduction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/StableReduction/README.md#layer-0-relative-curves-and-extensions-of-dvrs).
-
 public section
 
 noncomputable section
@@ -159,8 +156,14 @@ private lemma baseChangeHom_baseChangeMapHom (E : FiniteDVRExtension R K)
       ((Over.pullback
         (Spec.map (CommRingCat.ofHom (algebraMap E.localRing E.extensionField)))).map
           (baseChangeOverMap E f)).left := by
+  have h : (Over.homMk (baseChangeMapHom E f) (baseChangeMapHom_overBase E f) :
+      Over.mk (baseChange E M).toBase ⟶ Over.mk (baseChange E N).toBase) =
+        baseChangeOverMap E f := by
+    ext
+    rfl
   rw [baseChangeHom_eq]
-  congr 2
+  exact congrArg (fun g => ((Over.pullback
+    (Spec.map (CommRingCat.ofHom (algebraMap E.localRing E.extensionField)))).map g).left) h
 
 private lemma baseChangeMap_genericFiber (E : FiniteDVRExtension R K)
     {M N : Model R K C toK} (f : M ⟶ N) :
