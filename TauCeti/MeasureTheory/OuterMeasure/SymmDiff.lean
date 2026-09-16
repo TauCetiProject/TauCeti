@@ -36,7 +36,10 @@ namespace TauCeti.MeasureTheory
 variable {Ω F : Type*} [FunLike F (Set Ω) ℝ≥0∞] [OuterMeasureClass F Ω] {μ : F}
 
 /-- For sets of finite outer measure, the difference of their masses is bounded by the mass
-of their symmetric difference. No measurability or additivity is needed. -/
+of their symmetric difference. No measurability or additivity is needed.
+
+This generalizes Mathlib's `MeasureTheory.abs_measureReal_sub_le_measureReal_symmDiff'`
+and its finite-measure wrapper `MeasureTheory.abs_measureReal_sub_le_measureReal_symmDiff`. -/
 theorem abs_toReal_sub_le_toReal_symmDiff {s t : Set Ω} (hs : μ s ≠ ∞) (ht : μ t ≠ ∞) :
     |(μ s).toReal - (μ t).toReal| ≤ (μ (s ∆ t)).toReal := by
   have hle (a b : Set Ω) (ha : μ a ≠ ∞) (hb : μ b ≠ ∞) :
