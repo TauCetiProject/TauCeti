@@ -18,14 +18,14 @@ reverse inclusion makes the evident inclusions of intersections into morphisms i
 This file constructs the resulting diagrams in open sets and topological spaces, together with
 the natural transformation formed by the inclusions of the finite intersections into `X`.
 
-The section is `@[expose]` because the diagram is a packaging of existing functors: downstream
-uses need its objects and maps to stay definitionally the finite intersections and their
-inclusions, which also makes every characteristic lemma below a `rfl`.
+## References
 
-The finite-intersection presentation follows R. Brown, *Topology and Groupoids*, Chapters 6--7.
+* R. Brown, *Topology and Groupoids*, Chapters 6--7.
+* T. Zhu, [mathlib4#41603](https://github.com/leanprover-community/mathlib4/pull/41603), whose
+  open-set and fundamental-groupoid object and map shapes guide this interface.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -63,6 +63,15 @@ def cechIntersection (s : CechIndex ι) : Opens X :=
   s.1.inf U
 
 @[simp]
+lemma mem_cechIntersection (x : X) (s : CechIndex ι) :
+    x ∈ cechIntersection U s ↔ ∀ i ∈ s.1, x ∈ U i := by
+  classical
+  unfold cechIntersection
+  induction s.1 using Finset.induction with
+  | empty => simp
+  | insert i s hi ih => simp [Finset.inf_insert, ih]
+
+@[simp]
 lemma cechIntersection_singleton (i : ι) :
     cechIntersection U (CechIndex.singleton i) = U i := by
   unfold cechIntersection CechIndex.singleton
@@ -87,8 +96,10 @@ lemma cechOpenDiagram_obj (s : CechIndex ι) :
 
 @[simp]
 lemma cechOpenDiagram_map {s t : CechIndex ι} (f : s ⟶ t) :
-    (cechOpenDiagram U).map f = homOfLE (cechIntersection_mono U f.le) :=
-  rfl
+    (cechOpenDiagram U).map f =
+      eqToHom (cechOpenDiagram_obj U s) ≫ homOfLE (cechIntersection_mono U f.le) ≫
+        eqToHom (cechOpenDiagram_obj U t).symm :=
+  Subsingleton.elim _ _
 
 /-- The topological-space Čech diagram of a family of open sets. -/
 def cechTopDiagram : CechIndex ι ⥤ TopCat :=
@@ -99,8 +110,12 @@ lemma cechTopDiagram_obj (s : CechIndex ι) :
     (cechTopDiagram U).obj s = TopCat.of (cechIntersection U s) := (rfl)
 
 @[simp]
-lemma cechTopDiagram_map_apply {s t : CechIndex ι} (f : s ⟶ t) (x : (cechTopDiagram U).obj s) :
-    (cechTopDiagram U).map f x = ⟨x.1, cechIntersection_mono U f.le x.2⟩ :=
+lemma cechTopDiagram_map_apply {s t : CechIndex ι} (f : s ⟶ t)
+    (x : TopCat.of (cechIntersection U s)) :
+    eqToHom (cechTopDiagram_obj U t)
+        ((cechTopDiagram U).map f (eqToHom (cechTopDiagram_obj U s).symm x)) =
+      ⟨x.1, cechIntersection_mono U f.le x.2⟩ := by
+  unfold cechTopDiagram cechOpenDiagram cechIntersection
   rfl
 
 /-- The inclusion of a finite-family intersection into the ambient space. -/
@@ -108,8 +123,9 @@ def cechInclusion (s : CechIndex ι) : (cechTopDiagram U).obj s ⟶ X :=
   Opens.inclusion' (cechIntersection U s)
 
 @[simp]
-lemma cechInclusion_apply (s : CechIndex ι) (x : (cechTopDiagram U).obj s) :
-    cechInclusion U s x = x.1 :=
+lemma cechInclusion_apply (s : CechIndex ι) (x : TopCat.of (cechIntersection U s)) :
+    cechInclusion U s (eqToHom (cechTopDiagram_obj U s).symm x) = x.1 := by
+  unfold cechInclusion cechTopDiagram cechOpenDiagram cechIntersection
   rfl
 
 @[reassoc]
