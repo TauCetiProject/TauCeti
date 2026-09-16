@@ -31,10 +31,6 @@ coefficient fields and their matrix coordinates.
 
 * `TauCeti.ValidLieTypeIndex.exists_matrix_map_galoisFieldEmbedding_iff`: a matrix over the closure
   comes from the finite field exactly when all its entries are Frobenius-fixed.
-* `TauCeti.ValidLieTypeIndex.matrix_map_galoisFieldEmbedding_injective`: entrywise scalar extension
-  along the finite-field embedding is injective.
-* `TauCeti.ValidLieTypeIndex.generalLinearGroup_map_galoisFieldEmbedding_injective`: scalar
-  extension embeds the corresponding general linear groups.
 * `TauCeti.ValidLieTypeIndex.mem_range_generalLinearGroup_map_galoisFieldEmbedding_iff`: an
   invertible matrix over the closure comes from the finite field exactly when its entries are
   Frobenius-fixed.
@@ -51,16 +47,7 @@ namespace TauCeti.ValidLieTypeIndex
 
 noncomputable section
 
-variable (d : ValidLieTypeIndex)
-
-/-- Entrywise scalar extension from Mathlib's finite field to the closure is injective. -/
-theorem matrix_map_galoisFieldEmbedding_injective {m n : Type*} :
-    Function.Injective
-      (fun A : Matrix m n (GaloisField d.characteristic d.fieldExponent) ↦
-        A.map d.galoisFieldEmbedding) :=
-  Matrix.map_injective d.galoisFieldEmbedding_injective
-
-variable {d}
+variable {d : ValidLieTypeIndex}
 
 /-- A matrix over the closure has coordinates in Mathlib's finite field exactly when every entry
 belongs to the image of the chosen finite-field embedding. -/
@@ -85,18 +72,6 @@ theorem exists_matrix_map_galoisFieldEmbedding_iff_frobenius
       ∀ i j, (A i j) ^ d.fieldOrder = A i j := by
   rw [exists_matrix_map_galoisFieldEmbedding_iff]
   simp only [ValidLieTypeIndex.mem_range_galoisFieldEmbedding_iff]
-
-variable (d)
-
-/-- Scalar extension from Mathlib's finite field embeds the general linear group into the general
-linear group over the closure. -/
-theorem generalLinearGroup_map_galoisFieldEmbedding_injective
-    {n : Type*} [Fintype n] [DecidableEq n] :
-    Function.Injective
-      (Matrix.GeneralLinearGroup.map (n := n) d.galoisFieldEmbedding) := by
-  exact Units.map_injective (Matrix.map_injective d.galoisFieldEmbedding_injective)
-
-variable {d}
 
 /-- An invertible matrix over the closure comes by scalar extension from Mathlib's finite field
 exactly when every matrix entry is fixed by the `q`-power Frobenius.

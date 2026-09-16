@@ -184,10 +184,6 @@ theorem galoisFieldEmbedding_apply
     d.galoisFieldEmbedding x = d.galoisFieldEquivFixedField x :=
   (rfl)
 
-/-- The chosen finite-field embedding is injective. -/
-theorem galoisFieldEmbedding_injective : Function.Injective d.galoisFieldEmbedding :=
-  d.galoisFieldEmbedding.injective
-
 /-- The image of the chosen finite-field embedding is exactly the Frobenius-fixed field, viewed
 as a subring of the closure. -/
 theorem range_galoisFieldEmbedding :
