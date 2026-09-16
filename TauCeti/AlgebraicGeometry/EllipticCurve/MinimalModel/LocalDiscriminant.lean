@@ -34,8 +34,6 @@ multiples of twelve; no obstruction exponent is defined here.
 
 ## Main results
 
-* `WeierstrassCurve.exists_smul_eq_minimal`: the chosen minimal equation lies in the
-  variable-change orbit.
 * `WeierstrassCurve.associated_integralModel_Δ_of_isMinimal_smul`: minimal equations in the same
   variable-change orbit have associated integral discriminants.
 * `WeierstrassCurve.localMinimalDiscriminant_eq_span_Δ`: any such minimal equation computes the
@@ -66,12 +64,6 @@ The definition uses Mathlib's chosen `W.minimal R`; use `localMinimalDiscriminan
 compute it from any minimal equation in the same orbit. -/
 noncomputable def localMinimalDiscriminant (W : WeierstrassCurve K) : Ideal R :=
   Ideal.span {((W.minimal R).integralModel R).Δ}
-
-/-- **Mathlib's chosen minimal equation lies in the variable-change orbit.** This is the only place
-the construction of `WeierstrassCurve.minimal` is unfolded; the arguments below use it instead. -/
-theorem exists_smul_eq_minimal (W : WeierstrassCurve K) :
-    ∃ C : VariableChange K, C • W = W.minimal R :=
-  ⟨_, rfl⟩
 
 /-- **Minimal equations in one variable-change orbit have associated integral discriminants.**
 Their discriminants have the same valuation in `K`; equality of valuations in a discrete

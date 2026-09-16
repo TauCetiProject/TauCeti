@@ -27,6 +27,8 @@ scaling factor of valuation `1`.
 
 * `WeierstrassCurve.isMinimal_of_valuation_c₄_eq_one`: over the fraction field of a discrete
   valuation ring, an integral Weierstrass equation with `v (c₄) = 1` is minimal.
+* `WeierstrassCurve.exists_smul_eq_minimal`: Mathlib's chosen minimal equation is obtained by a
+  change of variables.
 * `WeierstrassCurve.valuation_Δ_eq_of_isMinimal_smul`: two minimal models related by a change of
   variables have equal `v (Δ)`.
 * `WeierstrassCurve.valuation_u_eq_one_of_isMinimal_smul`: for an elliptic curve, the scaling
@@ -139,6 +141,12 @@ theorem isMinimal_of_valuation_c₄_eq_one (W : WeierstrassCurve K) [IsIntegral 
   rw [variableChange_c₄, map_mul, map_pow, hc₄, mul_one] at hint
   simpa [variableChange_Δ, map_mul, map_pow] using mul_le_of_le_one_left'
     (pow_le_one' ((pow_le_one_iff (by norm_num)).mp hint) 12)
+
+/-- **Mathlib's chosen minimal equation lies in the variable-change orbit.** The equation
+`W.minimal R` is obtained from `W` by a change of variables. -/
+theorem exists_smul_eq_minimal (W : WeierstrassCurve K) :
+    ∃ C : VariableChange K, C • W = W.minimal R :=
+  ⟨_, rfl⟩
 
 /-! ### Comparing two minimal models
 
