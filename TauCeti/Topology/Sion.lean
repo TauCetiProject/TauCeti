@@ -73,13 +73,15 @@ theorem _root_.ConcaveOn.quasiconcaveOn_ereal_coe {E : Type*} [AddCommMonoid E] 
     rw [hs]
     exact convex_empty
 
-/-- A function preserving affine combinations on a convex set is both convex and concave there. -/
-theorem _root_.Convex.convexOn_and_concaveOn_of_affine {E : Type*} [AddCommGroup E] [Module ℝ E]
+/-- A function preserving the convex combinations of points of a convex set is both convex and
+concave there. Only the combinations used by `ConvexOn` and `ConcaveOn` are required, so the
+identity may fail off `s` and for coefficients outside `[0, 1]`. -/
+theorem _root_.Convex.convexOn_and_concaveOn_of_affine {E : Type*} [AddCommMonoid E] [SMul ℝ E]
     {s : Set E} (hs : Convex ℝ s) {g : E → ℝ}
-    (h : ∀ (x y : E) (a b : ℝ), a + b = 1 →
+    (h : ∀ x ∈ s, ∀ y ∈ s, ∀ a b : ℝ, 0 ≤ a → 0 ≤ b → a + b = 1 →
       g (a • x + b • y) = a * g x + b * g y) :
     ConvexOn ℝ s g ∧ ConcaveOn ℝ s g :=
-  ⟨⟨hs, fun x _ y _ a b _ _ hab ↦ by rw [h x y a b hab]; simp⟩,
-    ⟨hs, fun x _ y _ a b _ _ hab ↦ by rw [h x y a b hab]; simp⟩⟩
+  ⟨⟨hs, fun x hx y hy a b ha hb hab ↦ by rw [h x hx y hy a b ha hb hab]; simp⟩,
+    ⟨hs, fun x hx y hy a b ha hb hab ↦ by rw [h x hx y hy a b ha hb hab]; simp⟩⟩
 
 end TauCeti

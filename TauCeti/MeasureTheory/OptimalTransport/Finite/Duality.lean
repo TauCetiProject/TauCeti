@@ -613,13 +613,13 @@ theorem exists_cost_eq_finiteDualValue (c : ι × κ → ℝ) (μ : PMF ι) (ν 
     · exact ConvexOn.quasiconvexOn_ereal_coe
         (Convex.convexOn_and_concaveOn_of_affine
           (g := fun f ↦ lagrangian c μ ν f p) convex_stdSimplexSet
-          (fun x y a b hab ↦ lagrangian_affine_left c μ ν x y p a b hab)).1
+          (fun x _ y _ a b _ _ hab ↦ lagrangian_affine_left c μ ν x y p a b hab)).1
     · exact (continuous_coe_real_ereal.comp
         (continuous_lagrangian_right c μ ν f)).upperSemicontinuous.upperSemicontinuousOn _
     · exact ConcaveOn.quasiconcaveOn_ereal_coe
         (Convex.convexOn_and_concaveOn_of_affine
           (g := fun p ↦ lagrangian c μ ν f p) convex_univ
-          (fun x y a b hab ↦ lagrangian_affine_right c μ ν f x y a b hab)).2
+          (fun x _ y _ a b _ _ hab ↦ lagrangian_affine_right c μ ν f x y a b hab)).2
   simp only [iSup_univ] at key
   have h1 : ((A.cost c : ℝ) : EReal) ≤ ⨅ f ∈ stdSimplexSet,
       ⨆ p : (ι → ℝ) × (κ → ℝ), ((lagrangian c μ ν f p : ℝ) : EReal) := by
