@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.Grp.FilteredColimits
+-- supplies the `HasColimit` instance through which the colimit is reflected along `forget`
 import Mathlib.Algebra.Category.Grp.Colimits
 
 /-!
