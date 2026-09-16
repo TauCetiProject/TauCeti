@@ -78,8 +78,8 @@ theorem coe_specialIsogeny (g : points 1 K) :
         Matrix (Fin (1 + 1 + (1 + 1))) (Fin (1 + 1 + (1 + 1))) K) := by
   rw [specialIsogeny, MonoidHom.comp_apply, MonoidHom.comp_apply]
   simp only [MulEquiv.coe_toMonoidHom]
-  rw [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_symm_apply,
-    TauCeti.coe_specialIsogeny, MulEquiv.subgroupCongr_apply]
+  rw [coe_pointsMulEquivGLSymplecticFin_symm_apply, TauCeti.coe_specialIsogeny,
+    coe_pointsMulEquivGLSymplecticFin_apply]
 
 /-- The special isogeny of the carrier, read in the symplectic group. -/
 theorem coe_specialIsogeny_gl (g : points 1 K) :
@@ -88,7 +88,7 @@ theorem coe_specialIsogeny_gl (g : points 1 K) :
         GLSymplecticFin 2 K) : GL (Fin (2 + 2)) K) := by
   rw [specialIsogeny, MonoidHom.comp_apply, MonoidHom.comp_apply]
   simp only [MulEquiv.coe_toMonoidHom]
-  rw [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_symm_apply]
+  rw [coe_pointsMulEquivGLSymplecticFin_symm_apply]
 
 /-- The identification intertwines the two special isogenies. -/
 @[simp]
@@ -107,7 +107,7 @@ theorem specialIsogeny_specialIsogeny (g : points 1 K) :
   apply Units.ext
   rw [coe_specialIsogeny_gl, pointsMulEquivGLSymplecticFin_specialIsogeny,
     TauCeti.specialIsogeny_specialIsogeny, GLSymplecticFin.coe_map,
-    pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply]
+    coe_pointsMulEquivGLSymplecticFin_apply]
   ext i j
   rw [coe_frobenius_apply]
   simp [frobenius_def]
@@ -135,7 +135,7 @@ private theorem shortRootUnit_eq (t : K) :
   rw [← GLSymplecticFin.differenceShortRootUnit_congr (lt_next 1 0 zero_ne_last).ne
     (show (0 : Fin (1 + 1)) ≠ 1 by decide) rfl next_zero t]
   apply Subtype.ext
-  rw [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply,
+  rw [coe_pointsMulEquivGLSymplecticFin_apply,
     rootSubgroupPoints_inl_eq_differenceShortRootUnit_of_ne_last 1 0 zero_ne_last
       (Multiplicative.ofAdd t)]
   rfl
@@ -147,7 +147,7 @@ private theorem longRootUnit_eq (t : K) :
       GLSymplecticFin.positiveLongRootTransvectionUnit 1 t := by
   rw [← last_one]
   apply Subtype.ext
-  rw [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply,
+  rw [coe_pointsMulEquivGLSymplecticFin_apply,
     rootSubgroupPoints_inl_last_eq_positiveLongRootTransvectionUnit 1 (Multiplicative.ofAdd t)]
   rfl
 
@@ -159,7 +159,7 @@ theorem specialIsogeny_rootSubgroupPoints_inl_zero (t : K) :
   apply Subtype.ext
   rw [coe_specialIsogeny_gl, shortRootUnit_eq,
     TauCeti.specialIsogeny_differenceShortRootUnit]
-  simpa only [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply] using
+  simpa only [coe_pointsMulEquivGLSymplecticFin_apply] using
     congrArg (fun x : GLSymplecticFin 2 K => (x : GL (Fin (2 + 2)) K))
       (longRootUnit_eq K (t ^ 2)).symm
 
@@ -171,7 +171,7 @@ theorem specialIsogeny_rootSubgroupPoints_inl_last (t : K) :
   apply Subtype.ext
   rw [coe_specialIsogeny_gl, longRootUnit_eq,
     TauCeti.specialIsogeny_positiveLongRootTransvectionUnit]
-  simpa only [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply] using
+  simpa only [coe_pointsMulEquivGLSymplecticFin_apply] using
     congrArg (fun x : GLSymplecticFin 2 K => (x : GL (Fin (2 + 2)) K))
       (shortRootUnit_eq K t).symm
 
@@ -183,7 +183,7 @@ private theorem negShortRootUnit_eq (t : K) :
   rw [← GLSymplecticFin.differenceShortRootUnit_congr (lt_next 1 0 zero_ne_last).ne'
     (show (1 : Fin (1 + 1)) ≠ 0 by decide) next_zero rfl t]
   apply Subtype.ext
-  rw [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply,
+  rw [coe_pointsMulEquivGLSymplecticFin_apply,
     rootSubgroupPoints_inr_eq_differenceShortRootUnit_of_ne_last 1 0 zero_ne_last
       (Multiplicative.ofAdd t)]
   rfl
@@ -195,7 +195,7 @@ private theorem negLongRootUnit_eq (t : K) :
       GLSymplecticFin.negativeLongRootTransvectionUnit 1 t := by
   rw [← last_one]
   apply Subtype.ext
-  rw [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply,
+  rw [coe_pointsMulEquivGLSymplecticFin_apply,
     rootSubgroupPoints_inr_last_eq_negativeLongRootTransvectionUnit 1 (Multiplicative.ofAdd t)]
   rfl
 
@@ -207,7 +207,7 @@ theorem specialIsogeny_rootSubgroupPoints_inr_zero (t : K) :
   apply Subtype.ext
   rw [coe_specialIsogeny_gl, negShortRootUnit_eq,
     TauCeti.specialIsogeny_differenceShortRootUnit_one_zero]
-  simpa only [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply] using
+  simpa only [coe_pointsMulEquivGLSymplecticFin_apply] using
     congrArg (fun x : GLSymplecticFin 2 K => (x : GL (Fin (2 + 2)) K))
       (negLongRootUnit_eq K (t ^ 2)).symm
 
@@ -219,7 +219,7 @@ theorem specialIsogeny_rootSubgroupPoints_inr_last (t : K) :
   apply Subtype.ext
   rw [coe_specialIsogeny_gl, negLongRootUnit_eq,
     TauCeti.specialIsogeny_negativeLongRootTransvectionUnit]
-  simpa only [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply] using
+  simpa only [coe_pointsMulEquivGLSymplecticFin_apply] using
     congrArg (fun x : GLSymplecticFin 2 K => (x : GL (Fin (2 + 2)) K))
       (negShortRootUnit_eq K t).symm
 

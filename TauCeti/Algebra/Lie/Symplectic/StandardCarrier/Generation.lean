@@ -200,12 +200,32 @@ theorem points_eq_GLSymplecticFin : points n K = GLSymplecticFin (n + 1) K := by
 /-- **The full-weight type-`C_(n+1)` carrier's points are the symplectic group**, as a
 multiplicative equivalence. This packages `TauCeti.SpStd.points_eq_GLSymplecticFin` in the form
 needed to transport endomorphisms and subgroups while leaving the underlying matrices unchanged. -/
-@[expose] noncomputable def pointsMulEquivGLSymplecticFin (K : Type v) [Field K] :
+noncomputable def pointsMulEquivGLSymplecticFin (K : Type v) [Field K] :
     points n K ≃* GLSymplecticFin (n + 1) K :=
   MulEquiv.subgroupCongr (points_eq_GLSymplecticFin n)
 
+/-- The symplectic element underlying a point of the carrier is that point. This is
+`MulEquiv.subgroupCongr_apply` stated for the named equivalence, so that consumers need not unfold
+`TauCeti.SpStd.pointsMulEquivGLSymplecticFin`. -/
+@[simp]
+theorem coe_pointsMulEquivGLSymplecticFin_apply (g : points n K) :
+    ((pointsMulEquivGLSymplecticFin n K g : GLSymplecticFin (n + 1) K) :
+        GL (Fin ((n + 1) + (n + 1))) K) =
+      (g : GL (Fin ((n + 1) + (n + 1))) K) :=
+  MulEquiv.subgroupCongr_apply _ g
+
+/-- The point of the carrier underlying a symplectic element is that element. This is
+`MulEquiv.subgroupCongr_symm_apply` stated for the named equivalence. -/
+@[simp]
+theorem coe_pointsMulEquivGLSymplecticFin_symm_apply (g : GLSymplecticFin (n + 1) K) :
+    (((pointsMulEquivGLSymplecticFin n K).symm g : points n K) :
+        GL (Fin ((n + 1) + (n + 1))) K) =
+      (g : GL (Fin ((n + 1) + (n + 1))) K) :=
+  MulEquiv.subgroupCongr_symm_apply _ g
+
 /-- Under the point-group equivalence, the final positive simple-root subgroup is the positive
 long-root transvection subgroup of the symplectic group. -/
+@[simp]
 theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_last
     (u : Multiplicative K) :
     pointsMulEquivGLSymplecticFin n K
@@ -213,11 +233,12 @@ theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_last
       GLSymplecticFin.positiveLongRootTransvectionUnit (Fin.last n)
         (Multiplicative.toAdd u) := by
   apply Subtype.ext
-  rw [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply,
+  rw [coe_pointsMulEquivGLSymplecticFin_apply,
     rootSubgroupPoints_inl_last_eq_positiveLongRootTransvectionUnit]
 
 /-- Under the point-group equivalence, the final negative simple-root subgroup is the negative
 long-root transvection subgroup of the symplectic group. -/
+@[simp]
 theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inr_last
     (u : Multiplicative K) :
     pointsMulEquivGLSymplecticFin n K
@@ -225,41 +246,44 @@ theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inr_last
       GLSymplecticFin.negativeLongRootTransvectionUnit (Fin.last n)
         (Multiplicative.toAdd u) := by
   apply Subtype.ext
-  rw [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply,
+  rw [coe_pointsMulEquivGLSymplecticFin_apply,
     rootSubgroupPoints_inr_last_eq_negativeLongRootTransvectionUnit]
 
 /-- Under the point-group equivalence, a nonfinal positive simple-root subgroup is the adjacent
 difference-root subgroup of the symplectic group. -/
+@[simp]
 theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_of_ne_last
     (i : Fin (n + 1)) (hi : i ≠ Fin.last n) (u : Multiplicative K) :
     pointsMulEquivGLSymplecticFin n K (rootSubgroupPoints n (.inl i) K u) =
       GLSymplecticFin.differenceShortRootUnit (lt_next n i hi).ne
         (Multiplicative.toAdd u) := by
   apply Subtype.ext
-  rw [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply,
+  rw [coe_pointsMulEquivGLSymplecticFin_apply,
     rootSubgroupPoints_inl_eq_differenceShortRootUnit_of_ne_last n i hi]
 
 /-- Under the point-group equivalence, a nonfinal negative simple-root subgroup is the opposite
 adjacent difference-root subgroup of the symplectic group. -/
+@[simp]
 theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inr_of_ne_last
     (i : Fin (n + 1)) (hi : i ≠ Fin.last n) (u : Multiplicative K) :
     pointsMulEquivGLSymplecticFin n K (rootSubgroupPoints n (.inr i) K u) =
       GLSymplecticFin.differenceShortRootUnit (lt_next n i hi).ne'
         (Multiplicative.toAdd u) := by
   apply Subtype.ext
-  rw [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply,
+  rw [coe_pointsMulEquivGLSymplecticFin_apply,
     rootSubgroupPoints_inr_eq_differenceShortRootUnit_of_ne_last n i hi]
 
 /-- Under the point-group equivalence, the carrier's weight torus is the standard paired diagonal
 torus. Its first-block coordinate at `i` is the character of the classical type-`C` weight
 `ε_i`; the second block is its inverse. -/
+@[simp]
 theorem pointsMulEquivGLSymplecticFin_weightTorusPoints
     (s : Fin (n + 1) → Kˣ) :
     pointsMulEquivGLSymplecticFin n K (weightTorusPoints n K s) =
       GLSymplecticFin.diagonal fun i ↦
         TauCeti.torusCharacter s (DynkinType.TypeC.weight (n + 1) i) := by
   apply Subtype.ext
-  rw [pointsMulEquivGLSymplecticFin, MulEquiv.subgroupCongr_apply, coe_weightTorusPoints,
+  rw [coe_pointsMulEquivGLSymplecticFin_apply, coe_weightTorusPoints,
     UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, GLSymplecticFin.coe_diagonal]
   apply Matrix.GeneralLinearGroup.ext
   intro i j
