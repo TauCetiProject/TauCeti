@@ -22,11 +22,12 @@ at the scale `S` rather than at `C * S * Cᵀ` multiplies it by a further `|det 
 scale enters the normalizing constant through `(det S) ^ (n / 2)`. Their product `|det C| ^ (p + 1)`
 is exactly the factor by which congruence rescales `TauCeti.symmetricLebesgue`.
 
-This makes the scale parameter inessential: every nonsingular Wishart law is a congruence image
-of the standard one, whose scale is the identity matrix, so a statement proved at one scale
-transfers to all of them. The total mass is such a statement. At the scale `2⁻¹ • 1` the
-exponential weight of the density is `exp (-trace A)` and the normalizing constant collapses to
-`Γ_p (n / 2)`, so the mass is the multivariate Gamma integral
+This makes the scale parameter inessential where the law is not the zero measure: a nonsingular
+Wishart law of positive-definite scale is a congruence image of the standard one, whose scale is
+the identity matrix, so any property preserved by congruence pushforward transfers from the
+standard scale to every positive-definite one. The total mass is such a property. At the scale
+`2⁻¹ • 1` the exponential weight of the density is `exp (-trace A)` and the normalizing constant
+collapses to `Γ_p (n / 2)`, so the mass is the multivariate Gamma integral
 `TauCeti.lintegral_posDef_multivariateGamma` divided by that constant, namely `1`, and congruence
 spreads this to every positive-definite scale.
 
@@ -34,8 +35,8 @@ spreads this to every positive-definite scale.
 
 * `TauCeti.map_symmetricCongruence_nonsingularWishartMeasure` — congruence by an invertible
   matrix carries the law of scale `S` to the law of scale `C * S * Cᵀ`;
-* `TauCeti.nonsingularWishartMeasure_eq_map_sqrt` — every nonsingular Wishart law is the standard
-  one transported by the congruence with the square root of its scale;
+* `TauCeti.nonsingularWishartMeasure_eq_map_sqrt` — a nonsingular Wishart law of positive-definite
+  scale is the standard one transported by the congruence with the square root of that scale;
 * `TauCeti.isProbabilityMeasure_nonsingularWishartMeasure` — the law is a probability measure at
   exactly the parameters where a density defines it.
 
@@ -60,13 +61,6 @@ variable {p : ℕ} {n : ℝ} {S : Matrix (Fin p) (Fin p) ℝ}
 
 /-! ### Congruence -/
 
-/-- Congruence by an invertible matrix preserves positive definiteness in both directions. Over
-`ℝ` the transpose is the star operation that Mathlib's conjugation criterion uses. -/
-private theorem posDef_mul_mul_transpose_iff {C : Matrix (Fin p) (Fin p) ℝ} (hC : IsUnit C)
-    (S : Matrix (Fin p) (Fin p) ℝ) : (C * S * Cᵀ).PosDef ↔ S.PosDef := by
-  have h := Matrix.IsUnit.posDef_star_right_conjugate_iff (U := C) (x := S) hC
-  rwa [Matrix.star_eq_conjTranspose, Matrix.conjTranspose_eq_transpose_of_trivial] at h
-
 /-- **The substituted Wishart density.** Undoing congruence by `C` in the density of scale `S`
 gives the density of scale `C * S * Cᵀ`, times the Jacobian factor `|det C| ^ (p + 1)` that the
 change of variables contributes. -/
@@ -88,8 +82,9 @@ private theorem nonsingularWishartPDFReal_symmetricCongruence_inv (hS : S.PosDef
         selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) : Matrix (Fin p) (Fin p) ℝ) =
       Cm⁻¹ * Bm * (Cm⁻¹)ᵀ := by
     rw [Matrix.GeneralLinearGroup.coe_symmetricCongruence_apply, hCm, Matrix.coe_units_inv]
+  -- over `ℝ` the star of a matrix is its transpose, so the conjugation criterion applies as is
   have hApos : (Cm⁻¹ * Bm * (Cm⁻¹)ᵀ).PosDef :=
-    (posDef_mul_mul_transpose_iff (Matrix.isUnit_nonsing_inv_iff.2 hCu) Bm).2 hB
+    (Matrix.IsUnit.posDef_star_right_conjugate_iff (Matrix.isUnit_nonsing_inv_iff.2 hCu)).2 hB
   have hdetA : (Cm⁻¹ * Bm * (Cm⁻¹)ᵀ).det = (Cm.det ^ 2)⁻¹ * Bm.det := by
     rw [Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose, hdinv, sq, mul_inv]
     ring
@@ -99,8 +94,7 @@ private theorem nonsingularWishartPDFReal_symmetricCongruence_inv (hS : S.PosDef
   -- cyclicity of the trace moves the two inverse factors onto the scale matrix
   have htrace : Matrix.trace (S⁻¹ * (Cm⁻¹ * Bm * (Cm⁻¹)ᵀ)) =
       Matrix.trace ((Cm * S * Cmᵀ)⁻¹ * Bm) := by
-    rw [show S⁻¹ * (Cm⁻¹ * Bm * (Cm⁻¹)ᵀ) = S⁻¹ * Cm⁻¹ * Bm * (Cm⁻¹)ᵀ by
-        simp only [Matrix.mul_assoc], Matrix.trace_mul_comm, Matrix.mul_inv_rev,
+    rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, Matrix.trace_mul_comm, Matrix.mul_inv_rev,
       Matrix.mul_inv_rev, Matrix.transpose_nonsing_inv]
     simp only [Matrix.mul_assoc]
   rw [nonsingularWishartPDFReal_of_posDef n S (hA ▸ hApos),
@@ -140,7 +134,7 @@ theorem map_symmetricCongruence_nonsingularWishartMeasure (n : ℝ)
       Measure.map_zero]
   by_cases hS : S.PosDef
   · have hT : ((C : Matrix (Fin p) (Fin p) ℝ) * S * (C : Matrix (Fin p) (Fin p) ℝ)ᵀ).PosDef :=
-      (posDef_mul_mul_transpose_iff hCu S).2 hS
+      (Matrix.IsUnit.posDef_star_right_conjugate_iff hCu).2 hS
     rw [nonsingularWishartMeasure_of_posDef hS hn, nonsingularWishartMeasure_of_posDef hT hn]
     have hfun : (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
         (0 : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) +
@@ -165,14 +159,15 @@ theorem map_symmetricCongruence_nonsingularWishartMeasure (n : ℝ)
           selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
             Matrix (Fin p) (Fin p) ℝ).PosDef := by
         rw [Matrix.GeneralLinearGroup.coe_symmetricCongruence_apply]
-        exact fun h => hB ((posDef_mul_mul_transpose_iff
+        exact fun h => hB ((Matrix.IsUnit.posDef_star_right_conjugate_iff
           ((Matrix.isUnit_iff_isUnit_det _).2
-            (isUnit_iff_ne_zero.2 (Matrix.GeneralLinearGroup.det_ne_zero C⁻¹))) _).1 h)
+            (isUnit_iff_ne_zero.2 (Matrix.GeneralLinearGroup.det_ne_zero C⁻¹)))).1 h)
       rw [nonsingularWishartPDF_of_not_posDef _ _ hBc,
         nonsingularWishartPDF_of_not_posDef _ _ hB, mul_zero]
-  · rw [nonsingularWishartMeasure_of_not_posDef n hS, Measure.map_zero,
-      nonsingularWishartMeasure_of_not_posDef n
-        (fun h => hS ((posDef_mul_mul_transpose_iff hCu S).1 h))]
+  · have hT : ¬ ((C : Matrix (Fin p) (Fin p) ℝ) * S * (C : Matrix (Fin p) (Fin p) ℝ)ᵀ).PosDef :=
+      fun h => hS ((Matrix.IsUnit.posDef_star_right_conjugate_iff hCu).1 h)
+    rw [nonsingularWishartMeasure_of_not_posDef n hS, Measure.map_zero,
+      nonsingularWishartMeasure_of_not_posDef n hT]
 
 /-! ### The standard scale -/
 
@@ -220,10 +215,8 @@ private theorem isProbabilityMeasure_nonsingularWishartMeasure_inv_two_smul_one
     rw [nonsingularWishartPDF_of_posDef n S₀ hA, hnorm, hinv,
       ← ENNReal.ofReal_mul (by positivity)]
     refine congrArg ENNReal.ofReal ?_
-    rw [Matrix.smul_mul, Matrix.one_mul, Matrix.trace_smul, smul_eq_mul,
-      show -((2 : ℝ) * (A : Matrix (Fin p) (Fin p) ℝ).trace) / 2 =
-        -(A : Matrix (Fin p) (Fin p) ℝ).trace by ring,
-      show (n - (p : ℝ) - 1) / 2 = n / 2 - ((p : ℝ) + 1) / 2 by ring, div_eq_inv_mul]
+    rw [Matrix.smul_mul, Matrix.one_mul, Matrix.trace_smul, smul_eq_mul]
+    ring_nf
   constructor
   rw [nonsingularWishartMeasure_of_posDef hS₀ hn, withDensity_apply _ MeasurableSet.univ,
     Measure.restrict_univ, hcone,
@@ -234,9 +227,9 @@ private theorem isProbabilityMeasure_nonsingularWishartMeasure_inv_two_smul_one
 
 /-! ### Reduction to a scalar scale -/
 
-/-- Every nonsingular Wishart law is a congruence image of one whose scale is a positive multiple
-of the identity: for positive `c`, the congruence with the square root of `c⁻¹ • S` carries the
-law of scale `c • 1` to the law of scale `S`. -/
+/-- A nonsingular Wishart law of positive-definite scale is a congruence image of one whose scale
+is a positive multiple of the identity: for positive `c`, the congruence with the square root of
+`c⁻¹ • S` carries the law of scale `c • 1` to the law of scale `S`. -/
 private theorem nonsingularWishartMeasure_eq_map_sqrt_smul_one (n : ℝ) (hS : S.PosDef) {c : ℝ}
     (hc : 0 < c) :
     nonsingularWishartMeasure n S =
@@ -248,10 +241,7 @@ private theorem nonsingularWishartMeasure_eq_map_sqrt_smul_one (n : ℝ) (hS : S
   have hherm : (CFC.sqrt (c⁻¹ • S))ᵀ = CFC.sqrt (c⁻¹ • S) := by
     have h := (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg (c⁻¹ • S))).1.eq
     rwa [Matrix.conjTranspose_eq_transpose_of_trivial] at h
-  have hdet : (CFC.sqrt (c⁻¹ • S)).det ≠ 0 := fun h =>
-    hT.det_pos.ne' (by rw [← hsq, Matrix.det_mul, h, mul_zero])
-  have hCu : IsUnit (CFC.sqrt (c⁻¹ • S)) :=
-    (Matrix.isUnit_iff_isUnit_det _).2 (isUnit_iff_ne_zero.2 hdet)
+  have hCu : IsUnit (CFC.sqrt (c⁻¹ • S)) := hT.isStrictlyPositive.isUnit_cfcSqrt _
   have hcoe : ((hCu.unit : Matrix.GeneralLinearGroup (Fin p) ℝ) :
       Matrix (Fin p) (Fin p) ℝ) = CFC.sqrt (c⁻¹ • S) := hCu.unit_spec
   have hscale : ((hCu.unit : Matrix.GeneralLinearGroup (Fin p) ℝ) :
@@ -270,9 +260,10 @@ private theorem nonsingularWishartMeasure_eq_map_sqrt_smul_one (n : ℝ) (hS : S
         Matrix.coe_symmetricCongruenceLinearMap_apply, hcoe])
   rw [← hmap, hfun]
 
-/-- **Every nonsingular Wishart law is the standard one transported by a congruence.** The
-congruence with the square root of the scale carries the law of scale `1` to the law of scale
-`S`. This is the density-family analogue of `TauCeti.wishartGramMeasure_eq_map_sqrt`. -/
+/-- **A nonsingular Wishart law of positive-definite scale is the standard one transported by a
+congruence.** The congruence with the square root of the scale carries the law of scale `1` to the
+law of scale `S`. This is the density-family analogue of
+`TauCeti.wishartGramMeasure_eq_map_sqrt`. -/
 theorem nonsingularWishartMeasure_eq_map_sqrt (n : ℝ) (hS : S.PosDef) :
     nonsingularWishartMeasure n S =
       (nonsingularWishartMeasure n 1).map
