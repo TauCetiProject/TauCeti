@@ -1,16 +1,17 @@
 /-
 Copyright (c) 2026 Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Codex
 -/
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Quotient
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.Restriction
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.RelativeNorm
 
 /-!
-# Restriction and corestriction to a subgroup in degrees `0` and `-1` of Tate cohomology
+# Restriction in negative Tate degrees and the two low-degree maps
 
 Let `G` be a finite group, `H ≤ G` a subgroup and `M` a `G`-representation. In every Tate degree
 there are a restriction map `tateCohomology M n ⟶ tateCohomology (Rep.res H.subtype M) n` and a
@@ -22,7 +23,9 @@ change-of-group map of group homology, both of which Mathlib already provides. D
 `-1` are the two degrees where the Tate complex is neither, being glued there by the norm map:
 degree `0` is `Mᴳ / N_G M` and degree `-1` is `ker N_G / I_G M`.
 
-This file supplies all four maps in exactly those two degrees, using the identifications of
+This file supplies restriction in degrees at most `-2` by transporting homological restriction
+through Mathlib's comparison with group homology. It also supplies all four maps in degrees `0`
+and `-1`, using the identifications of
 `TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree`. Restriction in degree `0` and
 corestriction in degree `-1` are induced by inclusions of representatives, `Mᴳ ⊆ Mᴴ` and
 `ker N_G ⊇ ker N_H`. The other two are induced by the relative norm and the relative transfer of
@@ -40,6 +43,8 @@ modulo `I_G M`.
   in degree `0`.
 * `TauCeti.TateCohomology.HNegOneRes`, `TauCeti.TateCohomology.HNegOneCor`: restriction and
   corestriction in degree `-1`.
+* `TauCeti.TateCohomology.negSuccRes`: restriction in degree `-(n+1)` for `n > 0`.
+* `TauCeti.TateCohomology.HNegTwoRes`: the degree-`-2` specialization.
 
 ## Main results
 
@@ -75,6 +80,30 @@ noncomputable local instance fintypeSubgroup : Fintype H := Fintype.ofFinite H
 /-- The quotient of a finite group by a subgroup is a finite type. -/
 noncomputable local instance fintypeQuotientGroup : Fintype (G ⧸ H) :=
   H.fintypeQuotientOfFiniteIndex
+
+section Negative
+
+private abbrev negSuccIsoGroupHomology (R G : Type u) [CommRing R] [Group G] [Fintype G]
+    (n : ℕ) [NeZero n] :=
+  _root_.TateCohomology.isoGroupHomology (R := R) (G := G) (Int.negSucc n) n (by
+    rw [Int.negSucc_eq])
+
+/-- Restriction to a subgroup in Tate degree `-(n+1)`, for `n > 0`. Through Mathlib's
+negative-degree comparison, this is restriction in `n`th group homology. -/
+def negSuccRes (n : ℕ) [NeZero n] :
+    tateCohomology M (Int.negSucc n) ⟶
+      tateCohomology (Rep.res H.subtype M) (Int.negSucc n) :=
+  (negSuccIsoGroupHomology R G n).hom.app M ≫
+    TauCeti.groupHomology.res M H n ≫
+      (negSuccIsoGroupHomology R H n).inv.app (Rep.res H.subtype M)
+
+/-- Restriction to a subgroup in degree `-2` Tate cohomology. Under the comparison with first
+group homology, this is the homological transfer. -/
+def HNegTwoRes :
+    tateCohomology M (-2) ⟶ tateCohomology (Rep.res H.subtype M) (-2) :=
+  negSuccRes M H 1
+
+end Negative
 
 section Zero
 
