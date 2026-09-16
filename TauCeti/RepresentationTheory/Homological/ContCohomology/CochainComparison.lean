@@ -48,11 +48,13 @@ variable (G M : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 omit [ContinuousSMul G M] in
 /-- A homogeneous zero-cochain is determined by its value at the identity. -/
-theorem homogeneousCochains_zero_apply
+private theorem smul_homogeneousCochain0
     (c : (ofDiscreteModule ℤ G M).ρ.coind₁.invariants) (g : G) :
     (SMul.smul g : M → M) (c.val 1) = c.val g := by
   have h := congrArg (fun f : C(G, M) ↦ f g) (c.property g)
-  -- Evaluate the invariant equation in the underlying continuous function space.
+  -- The bundled carrier `(ofDiscreteModule ℤ G M).V` is only semireducibly `M`.
+  -- `simp [coind₁_apply_apply, ofDiscreteModule_ρ_apply_apply]` cannot match that
+  -- carrier with the explicit `C(G, M)` evaluation; normalize it before simplifying.
   change (SMul.smul g : M → M) (c.val (g⁻¹ * g)) = c.val g at h
   simpa using h
 
@@ -61,7 +63,9 @@ def cochainEquiv0 : M ≃+ (ofDiscreteModule ℤ G M).ρ.coind₁.invariants whe
   toFun m := ⟨(⟨fun g ↦ g • m, continuous_id.smul continuous_const⟩ : C(G, M)), by
     intro g
     ext h
-    -- Unpack the coinduced action on the explicitly constructed continuous map.
+    -- The bundled topology on `ofDiscreteModule` is only semireducibly the topology
+    -- of `M`, so the coinduction/currying evaluation lemmas do not match these
+    -- explicitly constructed continuous maps. Normalize the carrier and topology first.
     change g • ((g⁻¹ * h) • m) = h • m
     simp [← mul_smul]⟩
   invFun c := c.val 1
@@ -69,7 +73,7 @@ def cochainEquiv0 : M ≃+ (ofDiscreteModule ℤ G M).ρ.coind₁.invariants whe
   right_inv c := by
     apply Subtype.ext
     ext g
-    exact homogeneousCochains_zero_apply G M c g
+    exact smul_homogeneousCochain0 G M c g
   map_add' m n := by
     apply Subtype.ext
     ext g
@@ -86,11 +90,13 @@ theorem cochainEquiv0_symm_apply
 
 omit [ContinuousSMul G M] in
 /-- A homogeneous one-cochain is determined by evaluation with first argument `1`. -/
-theorem homogeneousCochains_one_apply
+private theorem smul_homogeneousCochain1
     (c : (ofDiscreteModule ℤ G M).ρ.coind₁.coind₁.invariants) (g h : G) :
     (SMul.smul g : M → M) (c.val 1 (g⁻¹ * h)) = c.val g h := by
   have e := congrArg (fun f : C(G, C(G, M)) ↦ f g h) (c.property g)
-  -- The iterated coinduced action translates both arguments.
+  -- The bundled carrier `(ofDiscreteModule ℤ G M).V` is only semireducibly `M`.
+  -- `simp [coind₁_apply_apply, ofDiscreteModule_ρ_apply_apply]` cannot match that
+  -- carrier with the explicit `C(G, M)` evaluation; normalize it before simplifying.
   change (SMul.smul g : M → M) (c.val (g⁻¹ * g) (g⁻¹ * h)) = c.val g h at e
   simpa using e
 
@@ -104,7 +110,9 @@ def cochainEquiv1 : C1 G M ≃+
         continuous_snd⟩ : C(G × G, M)), by
     intro g
     ext h k
-    -- Unpack the two coinduced actions and the curried map.
+    -- The bundled topology on `ofDiscreteModule` is only semireducibly the topology
+    -- of `M`, so the coinduction/currying evaluation lemmas do not match these
+    -- explicitly constructed continuous maps. Normalize the carrier and topology first.
     change g • homogeneous1 c.val (g⁻¹ * h) (g⁻¹ * k) = homogeneous1 c.val h k
     simp [← mul_smul, mul_assoc]⟩
   invFun c := ⟨c.val 1, mem_C1_iff.mpr (c.val 1).continuous⟩
@@ -116,13 +124,12 @@ def cochainEquiv1 : C1 G M ≃+
     apply Subtype.ext
     ext g h
     exact (homogeneous1_apply (M := M) (c.val 1) g h).trans
-      (homogeneousCochains_one_apply G M c g h)
+      (smul_homogeneousCochain1 G M c g h)
   map_add' c d := by
     apply Subtype.ext
     ext g h
-    -- Evaluate the addition of the curried continuous maps.
-    change homogeneous1 (c + d).val g h = homogeneous1 c.val g h + homogeneous1 d.val g h
-    simp
+    simp only [homogeneous1_apply]
+    exact smul_add g (c.val (g⁻¹ * h)) (d.val (g⁻¹ * h))
 
 @[simp]
 theorem cochainEquiv1_apply (c : C1 G M) (g h : G) :
@@ -135,26 +142,41 @@ theorem cochainEquiv1_symm_apply
 
 omit [ContinuousSMul G M] in
 /-- A homogeneous two-cochain is determined by evaluation with first argument `1`. -/
-theorem homogeneousCochains_two_apply
+private theorem smul_homogeneousCochain2
     (c : (ofDiscreteModule ℤ G M).ρ.coind₁.coind₁.coind₁.invariants) (g h k : G) :
     (SMul.smul g : M → M) (c.val 1 (g⁻¹ * h) (g⁻¹ * k)) = c.val g h k := by
   have e := congrArg (fun f : C(G, C(G, C(G, M))) ↦ f g h k) (c.property g)
-  -- The three coinduced actions translate all three arguments.
+  -- The bundled carrier `(ofDiscreteModule ℤ G M).V` is only semireducibly `M`.
+  -- `simp [coind₁_apply_apply, ofDiscreteModule_ρ_apply_apply]` cannot match that
+  -- carrier with the explicit `C(G, M)` evaluation; normalize it before simplifying.
   change (SMul.smul g : M → M) (c.val (g⁻¹ * g) (g⁻¹ * h) (g⁻¹ * k)) =
     c.val g h k at e
   simpa using e
 
 /-- The degree-zero comparison carries `d0` to Mathlib's homogeneous differential. -/
-theorem cochainEquiv_d0 (m : M) :
+theorem d_cochainEquiv0 (m : M) :
     ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 0 1).hom
         (cochainEquiv0 G M m) =
       cochainEquiv1 G M ⟨d0 G M m, mem_C1_iff.mpr (continuous_d0_apply m)⟩ := by
   apply Subtype.ext
   rw [TopRep.homogeneousCochains.d_apply]
   ext g h
-  -- The recursive differential in degree zero evaluates to the difference of two values.
-  change h • m - g • m = homogeneous1 (d0 G M m) g h
+  simp only [TopRep.hom_d_succ, TopRep.d_zero, TopRep.hom_ofHom, ContIntertwiningMap.sub_apply,
+    ContRepresentation.coind₁ι_toFun, ContRepresentation.coind₁Map_toFun,
+    ContinuousMap.sub_apply, ContinuousMap.const_apply, ContinuousMap.comp_apply,
+    ContinuousMap.coe_mk]
   simp [smul_sub, ← mul_smul]
+  rfl
+
+/-- The inverse degree-one comparison carries the canonical differential to `d0`. -/
+theorem cochainEquiv1_symm_d
+    (c : (ofDiscreteModule ℤ G M).ρ.coind₁.invariants) :
+    (cochainEquiv1 G M).symm
+        (((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 0 1).hom c) =
+      ⟨d0 G M ((cochainEquiv0 G M).symm c),
+        mem_C1_iff.mpr (continuous_d0_apply _)⟩ := by
+  apply (cochainEquiv1 G M).injective
+  simpa only [AddEquiv.apply_symm_apply] using d_cochainEquiv0 G M ((cochainEquiv0 G M).symm c)
 
 variable [LocallyCompactSpace G]
 
@@ -173,7 +195,9 @@ def cochainEquiv2 : C2 G M ≃+
           continuous_snd⟩, by
     intro g
     ext h k l
-    -- Unpack the three coinduced actions and the two currying operations.
+    -- The bundled topology on `ofDiscreteModule` is only semireducibly the topology
+    -- of `M`, so the coinduction/currying evaluation lemmas do not match these
+    -- explicitly constructed continuous maps. Normalize the carrier and topology first.
     change g • homogeneous2 c.val (g⁻¹ * h) (g⁻¹ * k) (g⁻¹ * l) =
       homogeneous2 c.val h k l
     simp [← mul_smul, mul_assoc]⟩
@@ -190,14 +214,12 @@ def cochainEquiv2 : C2 G M ≃+
     have e := homogeneous2_apply (M := M)
       (fun p : G × G ↦ c.val 1 p.1 (p.1 * p.2)) g h k
     simp only [mul_assoc, mul_inv_cancel_left] at e
-    exact e.trans (homogeneousCochains_two_apply G M c g h k)
+    exact e.trans (smul_homogeneousCochain2 G M c g h k)
   map_add' c d := by
     apply Subtype.ext
     ext g h k
-    -- Evaluate addition in the iterated continuous function spaces.
-    change homogeneous2 (c + d).val g h k =
-      homogeneous2 c.val g h k + homogeneous2 d.val g h k
-    simp
+    simp only [homogeneous2_apply]
+    exact smul_add g (c.val (g⁻¹ * h, h⁻¹ * k)) (d.val (g⁻¹ * h, h⁻¹ * k))
 
 @[simp]
 theorem cochainEquiv2_apply (c : C2 G M) (g h k : G) :
@@ -209,7 +231,7 @@ theorem cochainEquiv2_symm_apply
     ((cochainEquiv2 G M).symm c).val (g, h) = c.val 1 g (g * h) := (rfl)
 
 /-- The degree-one comparison carries `d1` to Mathlib's homogeneous differential. -/
-theorem cochainEquiv_d1 (c : C1 G M) :
+theorem d_cochainEquiv1 (c : C1 G M) :
     ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 1 2).hom
         (cochainEquiv1 G M c) =
       cochainEquiv2 G M ⟨d1 G M c.val,
@@ -217,12 +239,25 @@ theorem cochainEquiv_d1 (c : C1 G M) :
   apply Subtype.ext
   rw [TopRep.homogeneousCochains.d_apply]
   ext g h k
-  -- Mathlib's recursive differential is the alternating sum on three arguments.
-  change homogeneous1 c.val h k -
-    (homogeneous1 c.val g k - homogeneous1 c.val g h) =
-      homogeneous2 (d1 G M c.val) g h k
-  rw [homogeneous2_d1]
-  abel
+  simp only [TopRep.hom_d_succ, TopRep.d_zero, TopRep.hom_ofHom,
+    ContIntertwiningMap.sub_apply, ContRepresentation.coind₁ι_toFun,
+    ContRepresentation.coind₁Map_toFun, ContinuousMap.sub_apply,
+    ContinuousMap.const_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk]
+  rw [cochainEquiv1_apply, cochainEquiv1_apply, cochainEquiv1_apply,
+    cochainEquiv2_apply, homogeneous2_d1]
+  exact (sub_sub_eq_add_sub (homogeneous1 c.val h k) (homogeneous1 c.val g k)
+    (homogeneous1 c.val g h)).trans (add_sub_right_comm _ _ _)
+
+/-- The inverse degree-two comparison carries the canonical differential to `d1`. -/
+theorem cochainEquiv2_symm_d
+    (c : (ofDiscreteModule ℤ G M).ρ.coind₁.coind₁.invariants) :
+    (cochainEquiv2 G M).symm
+        (((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 1 2).hom c) =
+      ⟨d1 G M ((cochainEquiv1 G M).symm c).val,
+        mem_C2_iff.mpr (continuous_d1_apply
+          (mem_C1_iff.mp ((cochainEquiv1 G M).symm c).property))⟩ := by
+  apply (cochainEquiv2 G M).injective
+  simpa only [AddEquiv.apply_symm_apply] using d_cochainEquiv1 G M ((cochainEquiv1 G M).symm c)
 
 section Naturality
 
@@ -240,9 +275,12 @@ theorem cochainEquiv0_naturality (m : M) :
         (cochainEquiv0 G M m) = cochainEquiv0 H N (f m) := by
   apply Subtype.ext
   ext h
-  -- Evaluate the canonical map on a coinduced function.
-  change (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap
-    (fun h m ↦ hf h m)).hom (φ h • m) = h • f m
+  simp only [_root_.ContinuousCohomology.cochainsMap_f, TopRep.invariantsResMap,
+    TopModuleCat.hom_ofHom]
+  rw [ContIntertwiningMap.mapInvariantsOfRes_apply]
+  simp only [_root_.ContinuousCohomology.resolutionMap_succ, TopRep.hom_ofHom,
+    ContRepresentation.coind₁ResMap_apply, _root_.ContinuousCohomology.resolutionMap_zero,
+    cochainEquiv0_apply]
   exact (ofDiscreteModulePair_hom_apply (φ : H →* G) f.toIntLinearMap
     (fun h m ↦ hf h m) (φ h • m)).trans (hf h m)
 
@@ -257,10 +295,12 @@ theorem cochainEquiv1_naturality (c : C1 G M) :
           (mem_C1_iff.mp c.property))⟩ := by
   apply Subtype.ext
   ext h k
-  -- Evaluate the canonical map on the two curried arguments.
-  change (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap (fun h m ↦ hf h m)).hom
-    (homogeneous1 (M := M) c.val (φ h) (φ k)) =
-      homogeneous1 (cochainsMap1 (φ : H →* G) f c.val) h k
+  simp only [_root_.ContinuousCohomology.cochainsMap_f, TopRep.invariantsResMap,
+    TopModuleCat.hom_ofHom]
+  rw [ContIntertwiningMap.mapInvariantsOfRes_apply]
+  simp only [_root_.ContinuousCohomology.resolutionMap_succ, TopRep.hom_ofHom,
+    ContRepresentation.coind₁ResMap_apply, _root_.ContinuousCohomology.resolutionMap_zero,
+    cochainEquiv1_apply]
   refine (ofDiscreteModulePair_hom_apply (φ : H →* G) f.toIntLinearMap
     (fun h m ↦ hf h m) _).trans ?_
   simp [hf]
@@ -276,10 +316,12 @@ theorem cochainEquiv2_naturality [LocallyCompactSpace H] (c : C2 G M) :
           (mem_C2_iff.mp c.property))⟩ := by
   apply Subtype.ext
   ext h k l
-  -- Evaluate the canonical map on the three curried arguments.
-  change (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap (fun h m ↦ hf h m)).hom
-    (homogeneous2 (M := M) c.val (φ h) (φ k) (φ l)) =
-      homogeneous2 (cochainsMap2 (φ : H →* G) f c.val) h k l
+  simp only [_root_.ContinuousCohomology.cochainsMap_f, TopRep.invariantsResMap,
+    TopModuleCat.hom_ofHom]
+  rw [ContIntertwiningMap.mapInvariantsOfRes_apply]
+  simp only [_root_.ContinuousCohomology.resolutionMap_succ, TopRep.hom_ofHom,
+    ContRepresentation.coind₁ResMap_apply, _root_.ContinuousCohomology.resolutionMap_zero,
+    cochainEquiv2_apply]
   refine (ofDiscreteModulePair_hom_apply (φ : H →* G) f.toIntLinearMap
     (fun h m ↦ hf h m) _).trans ?_
   simp [hf]
