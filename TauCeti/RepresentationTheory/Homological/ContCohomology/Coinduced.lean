@@ -687,28 +687,6 @@ noncomputable abbrev coindTopRep (A : SmoothDiscreteTopRep.{u, v, w} R U) :
     SmoothDiscreteTopRep.{u, v, max v w} R G :=
   (toSmoothDiscrete R G).obj (coindDiscreteRep R G U ((ofSmoothDiscrete R U).obj A))
 
-/-- Restriction along `U → G` on smooth discrete representations. -/
-noncomputable def smoothDiscreteResFunctor :
-    SmoothDiscreteTopRep.{u, v, w} R G ⥤ SmoothDiscreteTopRep.{u, v, w} R U where
-  obj A := ⟨TopRep.res (U.subtype : U →* G) A.obj,
-    A.property.res continuous_subtype_val⟩
-  map f := ObjectProperty.homMk ((TopRep.resFunctor (U.subtype : U →* G)).map f.hom)
-  map_id _ := rfl
-  map_comp _ _ := rfl
-
-omit [IsTopologicalGroup G] [CompactSpace G] in
-private theorem smoothDiscreteResFunctor_obj_impl (A : SmoothDiscreteTopRep.{u, v, w} R G) :
-    (smoothDiscreteResFunctor R G U).obj A =
-      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ := rfl
-
-omit [IsTopologicalGroup G] [CompactSpace G] in
-/-- Restriction along `U → G` restricts the underlying topological representation. -/
-@[simp]
-theorem smoothDiscreteResFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R G) :
-    (smoothDiscreteResFunctor R G U).obj A =
-      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ :=
-  smoothDiscreteResFunctor_obj_impl R G U A
-
 /-- Evaluation at `1` as the coinduction counit, from the restriction of the coinduced
 representation to its coefficient representation. -/
 noncomputable def coindCounit (A : SmoothDiscreteTopRep.{u, v, w} R U) :

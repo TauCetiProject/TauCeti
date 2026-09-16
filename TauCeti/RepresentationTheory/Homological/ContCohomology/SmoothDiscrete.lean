@@ -52,6 +52,8 @@ unrestricted construction is larger than the smooth discrete subcategory.
   source side of the dictionary in bundled form; its morphisms are Mathlib's
   `Representation.IntertwiningMap`s.
 * `TauCeti.toSmoothDiscrete`, `TauCeti.ofSmoothDiscrete`: the two translations as functors.
+* `TauCeti.smoothDiscreteResFunctor`: restriction to a subgroup as a functor between the smooth
+  discrete subcategories.
 
 ## Main results
 
@@ -623,6 +625,30 @@ to the smooth discrete object it names, and an equivariant map to the morphism i
     (x : X.V) : ((toSmoothDiscrete R G).map f).hom.hom x = f.toLinearMap x := (rfl)
 
 end CoefficientCategories
+
+/-! ### Restriction to a subgroup -/
+
+section Restriction
+
+variable (R : Type u) [Ring R] [TopologicalSpace R]
+  (G : Type v) [Group G] [TopologicalSpace G] (U : Subgroup G)
+
+/-- Restriction along `U → G` on smooth discrete representations. -/
+@[expose] noncomputable def smoothDiscreteResFunctor :
+    SmoothDiscreteTopRep.{u, v, w} R G ⥤ SmoothDiscreteTopRep.{u, v, w} R U where
+  obj A := ⟨TopRep.res (U.subtype : U →* G) A.obj,
+    A.property.res continuous_subtype_val⟩
+  map f := ObjectProperty.homMk ((TopRep.resFunctor (U.subtype : U →* G)).map f.hom)
+  map_id _ := rfl
+  map_comp _ _ := rfl
+
+/-- Restriction along `U → G` restricts the underlying topological representation. -/
+@[simp]
+theorem smoothDiscreteResFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R G) :
+    (smoothDiscreteResFunctor R G U).obj A =
+      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ := (rfl)
+
+end Restriction
 
 /-! ### The equivalence of coefficient categories -/
 
