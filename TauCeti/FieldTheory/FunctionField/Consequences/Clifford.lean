@@ -267,12 +267,13 @@ private theorem dim_add_le_one_add_dim_add_of_effective (hF : IsFunctionField k 
       have hle : T.range ≤ (⊤ : Submodule k (riemannRochSpace (A + B) ⧸ LA)) := le_top
       have := Submodule.finrank_mono hle
       simpa using this
-  have hLAfinrank : Module.finrank k LA = dim A :=
-    (Submodule.submoduleOfEquivOfLe hAle).finrank_eq.trans (dim_def A).symm
-  have hquot := Submodule.finrank_quotient_add_finrank LA
+  have hquotRank := rank_quotient_riemannRochSpace_add_dim hF
+    (D := A) (E := A + B) (le_add_of_nonneg_right hB)
+  have hquot : Module.finrank k (riemannRochSpace (A + B) ⧸ LA) + dim A = dim (A + B) := by
+    rw [← Module.finrank_eq_rank] at hquotRank
+    exact_mod_cast hquotRank
   rw [hkerfinrank, Nat.add_comm] at hrank
   rw [← dim_def B] at hrank
-  rw [hLAfinrank, ← dim_def (A + B)] at hquot
   omega
 
 /-- **Stichtenoth, Lemma 1.6.14**: over an infinite exact constant field, if `L(A)` and
