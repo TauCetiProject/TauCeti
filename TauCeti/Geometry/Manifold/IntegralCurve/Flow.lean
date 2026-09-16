@@ -211,8 +211,7 @@ private theorem isMaximalIntegralCurveFlowPoint_zero [CompleteSpace E] [FiniteDi
   simpa using hv.contMDiffAt
 
 /-- Regular points compose according to the flow law. -/
-private theorem IsMaximalIntegralCurveFlowPoint.add [CompleteSpace E]
-    [FiniteDimensional ℝ E] (n : ℕ) [IsManifold I (n + 1 : ℕ) M]
+private theorem IsMaximalIntegralCurveFlowPoint.add (n : ℕ)
     (hv : CMDiff (n + 1 : ℕ) (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     {x : M} {s u : ℝ}
     (hs : IsMaximalIntegralCurveFlowPoint (I := I) n v (x, s))
