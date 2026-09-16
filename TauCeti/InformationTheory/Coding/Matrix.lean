@@ -130,6 +130,7 @@ theorem _root_.Matrix.row_mem_generatedBy [Fintype ρ] (G : Matrix ρ ι F) (r :
   exact Submodule.subset_span (Set.mem_range_self r)
 
 /-- The row code of `G` lies in `C` exactly when every row of `G` lies in `C`. -/
+@[simp]
 theorem _root_.Matrix.generatedBy_le_iff [Fintype ρ] {G : Matrix ρ ι F} {C : LinearCode F ι} :
     G.generatedBy ≤ C ↔ ∀ r, G.row r ∈ C := by
   rw [generatedBy_eq_span_rows, Submodule.span_le]
@@ -183,6 +184,7 @@ theorem _root_.Matrix.mem_checkedBy_iff [Fintype ι] {H : Matrix ρ ι F} {x : �
   rw [checkedBy_def, LinearMap.mem_ker, Matrix.mulVecLin_apply]
 
 /-- A code lies in the code checked by `H` exactly when `H` kills each of its words. -/
+@[simp]
 theorem _root_.Matrix.le_checkedBy_iff [Fintype ι] {C : LinearCode F ι} {H : Matrix ρ ι F} :
     C ≤ H.checkedBy ↔ ∀ x ∈ C, H *ᵥ x = 0 := by
   simp only [SetLike.le_def, mem_checkedBy_iff]
