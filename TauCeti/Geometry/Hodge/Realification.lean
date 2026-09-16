@@ -70,7 +70,6 @@ theorem realificationComplexEquiv_tmul_tmul (hℂ : IsBaseChange ℂ ιℂ)
 
 /-- Passing an integral vector through realification and then complexification gives its image in
 the chosen abstract complexification. -/
-@[simp]
 theorem realificationComplexEquiv_one_tmul_realificationMap
     (hℂ : IsBaseChange ℂ ιℂ) (x : V) :
     realificationComplexEquiv hℂ (1 ⊗ₜ[ℝ] realificationMap x) = ιℂ x := by
