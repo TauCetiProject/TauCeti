@@ -90,17 +90,7 @@ theorem regularAffinePointEquiv_symm_apply_single (e : S ≃+ ((ι →₀ ℕ) �
     (z : (ι → ℂ) × (κ → ℂˣ)) (s : S) :
     (regularAffinePointEquiv e).symm z (MonoidAlgebra.single (ofAdd s) 1) =
       ((e s).1.prod fun i n => z.1 i ^ n) * ((e s).2.prod fun j n => z.2 j ^ n : ℂˣ) := by
-  simp only [regularAffinePointEquiv, MulEquiv.toEquiv_eq_coe, MulEquiv.toEquiv_symm,
-    Equiv.symm_trans, Equiv.prodCongr_symm, Equiv.symm_symm, Equiv.trans_apply,
-    Equiv.prodCongr_apply, MulEquiv.coe_toEquiv_symm, EquivLike.coe_coe,
-    MulEquiv.symm_monoidHomCongrLeft, MulEquiv.monoidHomCongrLeft_apply, MulEquiv.symm_symm,
-    MonoidAlgebra.lift_single, MonoidHom.coe_comp, MonoidHom.coe_coe, Function.comp_apply,
-    AddEquiv.toMultiplicative_apply_apply, AddEquiv.toAddMonoidHom_eq_coe,
-    AddMonoidHom.toMultiplicative_apply_apply, toAdd_ofAdd, AddMonoidHom.coe_coe,
-    MulEquiv.prodMultiplicative_apply, MonoidHom.coprodEquiv_apply, Prod.map_fst,
-    freeCommMonoidCharEquiv_symm_apply_ofAdd, Prod.map_snd, MulEquiv.symm_trans_apply,
-    MonoidHom.toHomUnitsMulEquiv_symm_apply, freeAbelianCharEquiv_symm_apply_ofAdd,
-    Units.coeHom_apply, smul_eq_mul, one_mul]
+  simp [regularAffinePointEquiv]
 
 /-- The coordinate of a complex point indexed by `i : ι` is its value on the monomial of the
 `i`-th generator of the free commutative monoid factor. -/
