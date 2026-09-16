@@ -27,6 +27,8 @@ permutations of the same type.
   nontrivial cycle factors of the permutation together with its fixed points.
 * `Equiv.Perm.orbitCount_eq_card_parts_partition`: on a finite type, the orbit count is the number
   of parts in Mathlib's full, fixed-point-aware permutation partition.
+* `TauCeti.orbitCount_eq_one_of_forall_sameCycle`: a transitive permutation of a nonempty type has
+  orbit count one.
 * `Equiv.Perm.orbitCount_le_card`: on a finite type, a permutation has at most as many orbits as
   the type has points, the orbits being the classes of a partition of it.
 * `Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount`: the sign is determined by the parity of
@@ -79,12 +81,26 @@ infinitely many orbits. -/
 noncomputable def orbitCount (σ : Equiv.Perm α) : ℕ :=
   Nat.card (Quotient (Equiv.Perm.SameCycle.setoid σ))
 
+/-- The orbit count is the cardinality of the type of orbits. -/
+theorem orbitCount_def (σ : Equiv.Perm α) :
+    orbitCount σ = Nat.card (Quotient (Equiv.Perm.SameCycle.setoid σ)) := (rfl)
+
 /-- Each point of `α` is its own orbit under the identity permutation. -/
 @[simp]
 theorem orbitCount_one : orbitCount (1 : Equiv.Perm α) = Nat.card α := by
   refine (Nat.card_congr (Equiv.ofBijective (Quotient.mk (SameCycle.setoid (1 : Perm α)))
     ⟨fun x y hxy ↦ ?_, Quotient.mk_surjective⟩)).symm
   exact sameCycle_one.mp (Quotient.eq.mp hxy)
+
+/-- A permutation with a single orbit on a nonempty type has orbit count one. -/
+theorem orbitCount_eq_one_of_forall_sameCycle [Nonempty α] {σ : Equiv.Perm α}
+    (h : ∀ x y, σ.SameCycle x y) : orbitCount σ = 1 := by
+  let _ : Nonempty (Quotient (SameCycle.setoid σ)) :=
+    ⟨Quotient.mk _ (Classical.choice (inferInstance : Nonempty α))⟩
+  let _ : Subsingleton (Quotient (SameCycle.setoid σ)) :=
+    ⟨fun q r => Quotient.inductionOn q fun x => Quotient.inductionOn r fun y =>
+      Quotient.sound (h x y)⟩
+  exact Nat.card_unique
 
 /-- A permutation of a finite type has at most as many orbits as there are points. -/
 theorem _root_.Equiv.Perm.orbitCount_le_card [Finite α] (σ : Equiv.Perm α) :

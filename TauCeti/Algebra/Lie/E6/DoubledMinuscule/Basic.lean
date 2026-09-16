@@ -139,6 +139,22 @@ theorem serreRepresentation_serreF (i : Fin 6) :
   rw [serreRepresentation_apply]
   simp [dualSerreRepresentation, loweringMatrix]
 
+/-- Every raising matrix of the doubled minuscule representation squares to zero, each of its two
+diagonal blocks doing so. -/
+@[simp]
+theorem raisingMatrix_pow_two (i : Fin 6) : raisingMatrix i ^ 2 = 0 := by
+  rw [raisingMatrix, pow_two, Matrix.fromBlocks_multiply]
+  simp [← pow_two, TauCeti.E6Minuscule.raisingMatrix_pow_two,
+    TauCeti.E6Minuscule.loweringMatrix_pow_two]
+
+/-- Every lowering matrix of the doubled minuscule representation squares to zero, each of its two
+diagonal blocks doing so. -/
+@[simp]
+theorem loweringMatrix_pow_two (i : Fin 6) : loweringMatrix i ^ 2 = 0 := by
+  rw [loweringMatrix, pow_two, Matrix.fromBlocks_multiply]
+  simp [← pow_two, TauCeti.E6Minuscule.raisingMatrix_pow_two,
+    TauCeti.E6Minuscule.loweringMatrix_pow_two]
+
 /-- **The integral doubled minuscule matrices satisfy the type-`E₆` Serre relations.** -/
 theorem isSerreSystem :
     TauCeti.IsSerreSystem ℤ (CartanMatrix.E 6)ᵀ cartanGeneratorMatrix raisingMatrix

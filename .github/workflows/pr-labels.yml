@@ -1,31 +1,13 @@
 name: PR status labels
 
-# Keep exactly one status label on every open PR, so the PR list shows at a glance where each PR sits:
-#
-#   awaiting-CI         CI has not yet reported on the latest commit
-#   awaiting-review     CI is green; waiting for review verdicts
-#   review-in-progress  a review is running on this exact commit right now
-#   ci-failed           the build failed on the latest commit
-#   awaiting-author     a review requested changes
-#   ready-to-merge      CI green and every rubric approved
-#
-# scripts/pr_status/labels.py is the SOLE writer of these labels and derives all six from GitHub
-# truth alone (core.derive): the `build` commit status, the canonical <!--tauceti-scoreboard--> meta,
-# and the review engine's <!--tauceti-review-in-progress--> marker. It assumes nothing about any
-# worker or review harness -- a harness that posts the (optional) in-progress marker gets a
-# review-in-progress label; one that doesn't just shows awaiting-review during review. reconcile is
-# idempotent and convergent, so the trigger only decides *when* to refresh. Like the worker and
-# auto-merge, status derivation deliberately accepts the newest marked scoreboard from any author;
-# the label is presentation, while trusted build/scope/axiom/bump statuses remain the hard boundary.
-#
-# Runs on pull_request_target so it can label fork PRs, but it NEVER checks out or executes PR head
-# code: it reads only PR metadata via the API and runs the trusted base-branch script under a scoped
-# GitHub App token (the default GITHUB_TOKEN is read-only for fork pull_request_target).
+# Labels use the same pinned merge gate as Auto-merge. A ready label means the PR
+# passes its prerequisites; queue membership/reservations are reported separately.
+# Only trusted base and pinned policy code execute; PR contents are API data.
 
 on:
   # New commit / open / reopen / close -> awaiting-CI, or strip labels on close.
   pull_request_target:
-    types: [opened, reopened, synchronize, closed]
+    types: [opened, reopened, synchronize, closed, edited, converted_to_draft, ready_for_review, labeled, unlabeled]
   # Build finished -> ci-failed / review / ready. (We do NOT react to "requested": a late
   # requested event for an old head could force awaiting-CI onto a moved PR, and a new commit already
   # paints awaiting-CI via pull_request_target: synchronize.)
@@ -34,16 +16,16 @@ on:
     types: [completed]
   # A review scoreboard or an in-progress marker was posted/edited -> re-derive the label.
   issue_comment:
-    types: [created, edited]
+    types: [created, edited, deleted]
   # Hourly backstop: clears a review-in-progress whose in-flight marker has expired with no other
   # event (a crashed review), and self-heals any drift.
   schedule:
     - cron: "5 * * * *"
-  # Manual re-sync of a single PR.
+  # Manual re-sync of one PR or all open PRs.
   workflow_dispatch:
     inputs:
       pr:
-        description: "PR number to reconcile"
+        description: "PR number to reconcile, or all for a complete backfill"
         required: true
         type: string
 
@@ -73,22 +55,27 @@ jobs:
   label:
     if: >
       github.repository == 'TauCetiProject/TauCeti' && (
-        github.event_name == 'pull_request_target'
+        (github.event_name == 'pull_request_target'
+          && (github.event.action != 'edited' || github.event.changes.base != null)
+          && (!contains(fromJSON('["labeled","unlabeled"]'), github.event.action)
+            || contains(fromJSON('["keep","hold","wip","human","do-not-close"]'), github.event.label.name)))
         || (github.event_name == 'workflow_run'
             && github.event.workflow_run.event == 'pull_request_target'
             && github.event.workflow_run.pull_requests[0] != null)
         || (github.event_name == 'issue_comment'
             && github.event.issue.pull_request != null
             && (contains(github.event.comment.body, 'tauceti-scoreboard')
-                || contains(github.event.comment.body, 'tauceti-review-in-progress')))
+                || contains(github.event.comment.body, 'tauceti-review-in-progress')
+                || contains(github.event.changes.body.from, 'tauceti-scoreboard')
+                || contains(github.event.changes.body.from, 'tauceti-review-in-progress')))
       )
     runs-on: ubuntu-latest
     # Serialize all events for one PR on its number. Don't cancel: GitHub already collapses a burst
     # (one run in progress, one pending, and a third cancels the pending one), so cancelling would buy
     # only the tail of a run that is already executing -- and it would buy it by interrupting a
     # non-atomic mutation. reconcile removes labels one API call at a time before adding the right
-    # one, so a run killed mid-sequence can leave a PR carrying two status labels, and `sweep` would
-    # not repair it: the hourly backstop only looks at PRs holding review-in-progress.
+    # one, so a run killed mid-sequence can leave a PR carrying two status labels, and a later reconcile
+    # must repair it. The backstop now revisits all open PRs.
     concurrency:
       group: pr-labels-${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.pull_requests[0].number }}
       cancel-in-progress: false
@@ -103,22 +90,29 @@ jobs:
           permission-issues: write
           permission-pull-requests: read
           permission-statuses: read
+          permission-contents: read
       # The trusted base checkout: the labels script that runs is the one on the target branch, never
       # the version proposed by the PR.
       - uses: actions/checkout@v4
         with:
           sparse-checkout: scripts/pr_status
           persist-credentials: false
+      - name: Checkout the pinned merge policy (read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: TauCetiProject/TauCetiReview
+          ref: 603b28011f779bd341d0a08e788498b81542bd7d
+          path: .tauceti-review
+          sparse-checkout: runner
+          persist-credentials: false
+
       - name: Reconcile status label
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           GH_REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.pull_requests[0].number }}
-          # Only the number is taken from the payload. core.derive can also be handed the PR's state
-          # and head sha through PR_STATE/PR_MERGED/PR_HEAD to save an API call, and this workflow
-          # used to do that -- but a payload is a snapshot of the moment the event fired, and after a
-          # queue wait it can describe a commit the PR has already moved past. One API call is a good
-          # price for a label that always reflects live truth. A PR's NUMBER cannot go stale.
+          # Only the PR number comes from the event; readiness reads fresh GitHub
+          # evidence and rechecks routing/head state before returning its decision.
         run: python3 scripts/pr_status/labels.py reconcile "$PR"
 
   # Resolve the PR number for the events whose payload doesn't carry it, so `label-resolved` can key
@@ -126,7 +120,7 @@ jobs:
   resolve:
     if: >
       github.repository == 'TauCetiProject/TauCeti' && (
-        github.event_name == 'workflow_dispatch'
+        (github.event_name == 'workflow_dispatch' && inputs.pr != 'all')
         || (github.event_name == 'workflow_run'
             && github.event.workflow_run.event == 'pull_request_target'
             && github.event.workflow_run.pull_requests[0] == null)
@@ -198,12 +192,22 @@ jobs:
           permission-issues: write
           permission-pull-requests: read
           permission-statuses: read
+          permission-contents: read
       # The trusted base checkout: the labels script that runs is the one on the target branch, never
       # the version proposed by the PR.
       - uses: actions/checkout@v4
         with:
           sparse-checkout: scripts/pr_status
           persist-credentials: false
+      - name: Checkout the pinned merge policy (read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: TauCetiProject/TauCetiReview
+          ref: 603b28011f779bd341d0a08e788498b81542bd7d
+          path: .tauceti-review
+          sparse-checkout: runner
+          persist-credentials: false
+
       - name: Reconcile status label
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -211,19 +215,13 @@ jobs:
           PR: ${{ needs.resolve.outputs.pr }}
         run: python3 scripts/pr_status/labels.py reconcile "$PR"
 
-  # Scheduled backstop: reconcile PRs currently waiting for or undergoing review. This clears an
-  # expired review-in-progress marker even though nothing else fired, self-heals a missed scoreboard
-  # event, and migrates existing awaiting-review labels when the scoreboard selection policy changes.
-  # Keep the scope to these two labels rather than rereading every open PR forever: after a migration
-  # drains, the steady-state cost is just the genuine review queue.
-  #
-  # Its own concurrency group keeps two sweeps from overlapping. It is a different group from the
-  # per-PR one, so a sweep CAN run alongside a per-PR job for a PR it happens to be reconciling. That
-  # is tolerable rather than intended: both are convergent reconcilers reading live truth, so the
-  # worst case is a PR that briefly shows two labels until the next event settles it. Closing the gap
-  # properly means one job per swept PR, which costs more runner time than the drift is worth.
+  # Reconcile every open PR on the backstop or an explicit migration/backfill.
+  # Per-PR jobs can overlap this pass; both read fresh state and converge.
   sweep:
-    if: github.event_name == 'schedule' && github.repository == 'TauCetiProject/TauCeti'
+    if: >-
+      github.repository == 'TauCetiProject/TauCeti'
+      && (github.event_name == 'schedule'
+        || (github.event_name == 'workflow_dispatch' && inputs.pr == 'all'))
     runs-on: ubuntu-latest
     concurrency:
       group: pr-labels-sweep
@@ -239,26 +237,23 @@ jobs:
           permission-issues: write
           permission-pull-requests: read
           permission-statuses: read
+          permission-contents: read
       - uses: actions/checkout@v4
         with:
           sparse-checkout: scripts/pr_status
           persist-credentials: false
-      - name: Reconcile PRs waiting for or undergoing review
+      - name: Checkout the pinned merge policy (read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: TauCetiProject/TauCetiReview
+          ref: 603b28011f779bd341d0a08e788498b81542bd7d
+          path: .tauceti-review
+          sparse-checkout: runner
+          persist-credentials: false
+
+      - name: Reconcile open PRs
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           GH_REPO: ${{ github.repository }}
           REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          # Tolerate either label not existing yet: an empty/failed list for that label contributes
-          # nothing. De-duplicate defensively even though the status-label invariant says a PR carries
-          # exactly one of them.
-          prs=$(
-            for label in awaiting-review review-in-progress; do
-              gh pr list --repo "$REPO" --state open --label "$label" \
-                --limit 1000 --json number --jq '.[].number' 2>/dev/null || true
-            done | sort -nu
-          )
-          for pr in $prs; do
-            python3 scripts/pr_status/labels.py reconcile "$pr"
-          done
+        run: python3 scripts/pr_status/labels.py reconcile-all

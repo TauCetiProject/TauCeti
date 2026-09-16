@@ -5,295 +5,366 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
-public import TauCeti.LinearAlgebra.TensorProduct.Basis
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
 
 /-!
-# Base change of regular-form classes
+# Scalar extension of isometry classes and their discriminants
 
-Extending scalars sends a diagonal presentation to the presentation obtained by mapping each
-unit coefficient. This gives a canonical additive map on isometry classes of regular quadratic
-forms, compatible with identity extensions and scalar towers.
+Extension of scalars along a field extension `K → L` carries a diagonal presentation to the
+presentation of the same rank whose weights are the images of the original weights. That operation
+descends to isometry classes as `TauCeti.RegularFormClass.baseChange`, and the discriminant
+commutes with it: the discriminant of an extended class is the image of the original discriminant
+under the functorial map on square-class groups induced by the field homomorphism.
+
+Everything here is about field extensions in characteristic different from two. That restriction is
+not an artefact: `QuadraticForm.baseChange` is only defined when two is invertible in the base
+field, and `TauCeti.RegularFormClass.discr` is only defined over a field in which two is
+invertible, so both hypotheses are needed already to state the results.
+
+These results let invariants computed over a global field be read after passing to any such field
+extension, in particular to the completions of a number field.
 
 ## Main definitions
 
-* `TauCeti.RegularFormPresentation.baseChange`: extension of a diagonal presentation.
-* `TauCeti.RegularFormClass.baseChange`: extension of an isometry class of regular forms.
+* `TauCeti.RegularFormPresentation.baseChange`: the presentation whose weights are the images of
+  the original weights.
+* `TauCeti.RegularFormClass.baseChange`: scalar extension of isometry classes.
 
-## References
+## Main results
 
-* T. Y. Lam, *Introduction to Quadratic Forms over Fields* (2005), Chapter I, §4.
+* `TauCeti.presentedFormBaseChange`: extending a presented form presents the extended weights.
+* `TauCeti.RegularFormClass.rank_baseChange`, `TauCeti.RegularFormClass.baseChange_add` and
+  `TauCeti.RegularFormClass.baseChange_mul`: scalar extension preserves the rank and commutes with
+  the orthogonal sum and the tensor product of classes.
+* `TauCeti.RegularFormClass.baseChange_self` and
+  `TauCeti.RegularFormClass.baseChange_baseChange`: scalar extension along the identity is the
+  identity, and iterated scalar extension along a tower is scalar extension along the composite.
+* `QuadraticForm.formClass_baseChange`: the class of an extended form is the extension of its
+  class.
+* `TauCeti.RegularFormClass.discr_baseChange`: the discriminant commutes with scalar extension.
 -/
 
 public section
 noncomputable section
 
-open scoped TensorProduct
 open QuadraticMap QuadraticForm
+open scoped TensorProduct
 
 namespace TauCeti
 
 universe u v w
 
 variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
+variable {M : Type*} [Field M] [Algebra K M] [Algebra L M] [IsScalarTower K L M]
 
-/-! ### Base change of presentations -/
+/-! ### Scalar extension of presentations -/
 
--- `@[reducible]` is load-bearing: the rank `p.1` of a presentation indexes the type
--- `Fin p.1 → K` the presented form lives on, so `(p.baseChange L).1` has to reduce to `p.1` at
--- instance transparency for `presentedForm (p.baseChange L)` to be comparable with the
--- trivialization of `L ⊗[K] (Fin p.1 → K)` below.
-/-- Extend a diagonal presentation along a field extension by mapping each unit coefficient. -/
-@[reducible]
-def RegularFormPresentation.baseChange (L : Type v) [Field L] [Algebra K L]
-    (p : RegularFormPresentation K) : RegularFormPresentation L :=
-  ⟨p.1, fun i ↦ Units.map (algebraMap K L) (p.2 i)⟩
+variable (L) in
+/-- The presentation obtained by mapping every weight into the extension field `L`. The rank is
+unchanged. -/
+def RegularFormPresentation.baseChange (p : RegularFormPresentation K) :
+    RegularFormPresentation L :=
+  ⟨p.1, fun i ↦ Units.map (algebraMap K L).toMonoidHom (p.2 i)⟩
 
-/-- Base change is computed by mapping the coefficients of a presentation. -/
-@[simp]
-theorem RegularFormPresentation.baseChange_mk (n : ℕ) (w : Fin n → Kˣ) :
-    RegularFormPresentation.baseChange L ⟨n, w⟩ =
-      ⟨n, fun i ↦ Units.map (algebraMap K L) (w i)⟩ := (rfl)
-
-/-- Base change does not alter the rank of a presentation. -/
+variable (L) in
+/-- Mapping the weights into `L` leaves the rank unchanged. -/
 @[simp]
 theorem RegularFormPresentation.fst_baseChange (p : RegularFormPresentation K) :
-    (p.baseChange L).1 = p.1 := (rfl)
+    (RegularFormPresentation.baseChange L p).1 = p.1 := (rfl)
 
-/-- The coefficients of a base-changed presentation are the images of the original
-coefficients. -/
+variable (L) in
+/-- Every weight of the mapped presentation is the image of the weight of `p` at the same index,
+read through `TauCeti.RegularFormPresentation.fst_baseChange`. -/
 @[simp]
-theorem RegularFormPresentation.baseChange_apply (p : RegularFormPresentation K) (i : Fin p.1) :
-    ((p.baseChange L).2 (Fin.cast (RegularFormPresentation.fst_baseChange p).symm i) : L) =
-      algebraMap K L (p.2 i : K) := (rfl)
+theorem RegularFormPresentation.baseChange_apply (p : RegularFormPresentation K)
+    (i : Fin (RegularFormPresentation.baseChange L p).1) :
+    (RegularFormPresentation.baseChange L p).2 i =
+      Units.map (algebraMap K L).toMonoidHom
+        (p.2 (Fin.cast (RegularFormPresentation.fst_baseChange L p) i)) := (rfl)
 
-/-- Extending a presentation along the identity extension changes nothing. -/
+variable (L) in
+/-- The weight product of a mapped presentation is the image of the original weight product. -/
+-- Not a `simp` lemma: `RegularFormPresentation.baseChange_apply` rewrites inside the product, so
+-- the left-hand side below is not in `simp`-normal form and `simpNF` rejects the attribute.
+theorem RegularFormPresentation.prod_baseChange (p : RegularFormPresentation K) :
+    (∏ i, (RegularFormPresentation.baseChange L p).2 i) =
+      Units.map (algebraMap K L).toMonoidHom (∏ i, p.2 i) := by
+  rw [map_prod]
+  exact Fintype.prod_equiv (finCongr (RegularFormPresentation.fst_baseChange L p)) _ _ (by simp)
+
+/-- Mapping the weights into the base field itself leaves a presentation unchanged. -/
 @[simp]
 theorem RegularFormPresentation.baseChange_self (p : RegularFormPresentation K) :
-    p.baseChange K = p := by
-  apply Sigma.ext rfl
-  apply heq_of_eq
-  funext i
-  apply Units.ext
+    RegularFormPresentation.baseChange K p = p := by
+  refine RegularFormPresentation.ext rfl fun i ↦ Units.ext ?_
   simp
 
-/-- Successive base changes agree with base change along the composite extension. -/
+variable (L M) in
+/-- Mapping the weights into `L` and then into `M` is mapping them into `M` in one step. -/
 @[simp]
-theorem RegularFormPresentation.baseChange_baseChange {M : Type w} [Field M] [Algebra L M]
-    [Algebra K M] [IsScalarTower K L M] (p : RegularFormPresentation K) :
-    (p.baseChange L).baseChange M = p.baseChange M := by
-  rcases p with ⟨n, w⟩
-  rw [RegularFormPresentation.baseChange_mk, RegularFormPresentation.baseChange_mk]
-  congr 1
-  funext i
-  apply Units.ext
-  rw [Units.coe_map, Units.coe_map, Units.coe_map]
-  exact (IsScalarTower.algebraMap_apply K L M (w i)).symm
+theorem RegularFormPresentation.baseChange_baseChange (p : RegularFormPresentation K) :
+    RegularFormPresentation.baseChange M (RegularFormPresentation.baseChange L p) =
+      RegularFormPresentation.baseChange M p := by
+  refine RegularFormPresentation.ext rfl fun i ↦ Units.ext ?_
+  rw [RegularFormPresentation.baseChange_apply, RegularFormPresentation.baseChange_apply,
+    RegularFormPresentation.baseChange_apply]
+  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe,
+    IsScalarTower.algebraMap_apply K L M]
+  -- Both sides now read the weight of `p` at the same index, identified once through the two
+  -- ranks of the iterated extension and once through the rank of the composite extension.
+  exact congrArg (fun j : Fin p.1 ↦ algebraMap L M (algebraMap K L (p.2 j : K))) (Fin.ext rfl)
 
-/-- Base change commutes with concatenation of presentations. -/
+variable (L) in
+/-- Mapping the weights into `L` fixes the rank-one presentation with weight one. -/
+@[simp]
+theorem RegularFormPresentation.baseChange_one :
+    RegularFormPresentation.baseChange L (RegularFormPresentation.one (K := K)) =
+      RegularFormPresentation.one := by
+  refine RegularFormPresentation.ext (by simp) fun i ↦ ?_
+  simp
+
+variable (L) in
+/-- Mapping the weights into `L` commutes with concatenation of presentations. -/
 @[simp]
 theorem RegularFormPresentation.baseChange_append (p q : RegularFormPresentation K) :
-    (p.append q).baseChange L = (p.baseChange L).append (q.baseChange L) := by
-  refine Sigma.ext (by simp) ((Fin.heq_fun_iff (by simp)).2 fun i ↦ ?_)
-  obtain ⟨j, rfl⟩ := (finCongr (RegularFormPresentation.fst_append p q).symm).surjective i
-  induction j using Fin.addCases with
-  | left k =>
-    exact ((congrArg (Units.map _) (RegularFormPresentation.append_apply_castAdd p q k)).trans
-      (RegularFormPresentation.append_apply_castAdd (p.baseChange L) (q.baseChange L) k).symm).trans
-        (congrArg _ (Fin.ext rfl))
-  | right k =>
-    exact ((congrArg (Units.map _) (RegularFormPresentation.append_apply_natAdd p q k)).trans
-      (RegularFormPresentation.append_apply_natAdd (p.baseChange L) (q.baseChange L) k).symm).trans
-        (congrArg _ (Fin.ext rfl))
+    RegularFormPresentation.baseChange L (p.append q) =
+      (RegularFormPresentation.baseChange L p).append
+        (RegularFormPresentation.baseChange L q) := by
+  have h₁ : (RegularFormPresentation.baseChange L (p.append q)).1 = p.1 + q.1 := by simp
+  have hrank : (RegularFormPresentation.baseChange L (p.append q)).1 =
+      ((RegularFormPresentation.baseChange L p).append
+        (RegularFormPresentation.baseChange L q)).1 := by simp
+  refine RegularFormPresentation.ext hrank fun i ↦ ?_
+  -- Read the index as one of the two concatenated halves of `Fin (p.1 + q.1)`.
+  have hi : i = Fin.cast h₁.symm (Fin.cast h₁ i) := by simp
+  rw [hi]
+  generalize Fin.cast h₁ i = j
+  refine Fin.addCases (fun a ↦ ?_) (fun b ↦ ?_) j
+  · have hindex : Fin.cast hrank (Fin.cast h₁.symm (Fin.castAdd q.1 a)) =
+        Fin.cast (RegularFormPresentation.fst_append (RegularFormPresentation.baseChange L p)
+            (RegularFormPresentation.baseChange L q)).symm
+          (Fin.castAdd (RegularFormPresentation.baseChange L q).1
+            (Fin.cast (RegularFormPresentation.fst_baseChange L p).symm a)) := by
+      apply Fin.ext
+      simp
+    rw [hindex, RegularFormPresentation.append_apply_castAdd,
+      RegularFormPresentation.baseChange_apply, RegularFormPresentation.baseChange_apply]
+    simp [RegularFormPresentation.append_apply_castAdd]
+  · have hindex : Fin.cast hrank (Fin.cast h₁.symm (Fin.natAdd p.1 b)) =
+        Fin.cast (RegularFormPresentation.fst_append (RegularFormPresentation.baseChange L p)
+            (RegularFormPresentation.baseChange L q)).symm
+          (Fin.natAdd (RegularFormPresentation.baseChange L p).1
+            (Fin.cast (RegularFormPresentation.fst_baseChange L q).symm b)) := by
+      apply Fin.ext
+      simp
+    rw [hindex, RegularFormPresentation.append_apply_natAdd,
+      RegularFormPresentation.baseChange_apply, RegularFormPresentation.baseChange_apply]
+    simp [RegularFormPresentation.append_apply_natAdd]
 
-/-- A base-changed presented form evaluates on a vector with coordinates in `K` as the image of
-the original form. -/
-theorem presentedForm_baseChange_algebraMap (p : RegularFormPresentation K)
-    (a : Fin p.1 → K) :
-    presentedForm (p.baseChange L) (fun i ↦
-      algebraMap K L (a (Fin.cast (RegularFormPresentation.fst_baseChange p) i))) =
-      algebraMap K L (presentedForm p a) := by
-  simp [map_sum, map_mul]
-
-/-- Isometric presented forms remain isometric after extending scalars. Unlike
-`TauCeti.equivalent_presentedForm_baseChange`, this needs no assumption on the characteristic. -/
-theorem equivalent_presentedForm_baseChange_of_equivalent {p q : RegularFormPresentation K}
-    (h : (presentedForm p).Equivalent (presentedForm q)) :
-    (presentedForm (p.baseChange L)).Equivalent (presentedForm (q.baseChange L)) := by
-  obtain ⟨e⟩ := h
-  let Ep := Algebra.TensorProduct.equivPiOfFiniteBasis L (Pi.basisFun K (Fin p.1))
-  let F : (Fin p.1 → L) ≃ₗ[L] (Fin q.1 → L) :=
-    Ep.symm ≪≫ₗ e.toLinearEquiv.baseChange K L _ _ ≪≫ₗ
-      Algebra.TensorProduct.equivPiOfFiniteBasis L (Pi.basisFun K (Fin q.1))
-  have hcomp : (presentedForm (q.baseChange L)).comp (F.toLinearMap ∘ₗ Ep.toLinearMap) =
-      (presentedForm (p.baseChange L)).comp Ep.toLinearMap := by
-    apply _root_.baseChange_ext
-    intro a
-    have hF : F (Ep (1 ⊗ₜ a)) = fun i ↦ algebraMap K L (e a i) := by
-      simp only [F, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply,
-        LinearEquiv.baseChange_tmul, Algebra.TensorProduct.equivPiOfFiniteBasis_one_tmul,
-        Pi.basisFun_repr]
-      rfl
-    rw [QuadraticMap.comp_apply, QuadraticMap.comp_apply, LinearMap.comp_apply,
-      LinearEquiv.coe_coe, LinearEquiv.coe_coe, hF,
-      Algebra.TensorProduct.equivPiOfFiniteBasis_one_tmul]
-    simp only [Pi.basisFun_repr]
-    have hq := presentedForm_baseChange_algebraMap (L := L) q (e a)
-    have hp := presentedForm_baseChange_algebraMap (L := L) p a
-    simpa using hq.trans ((congrArg (algebraMap K L) (e.map_app a)).trans hp.symm)
-  refine ⟨{ toLinearEquiv := F, map_app' := fun x ↦ ?_ }⟩
-  have hx := DFunLike.congr_fun hcomp (Ep.symm x)
-  rwa [QuadraticMap.comp_apply, QuadraticMap.comp_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] at hx
-
-/-! ### Base change of regular-form classes -/
-
-/-- Extend an isometry class of regular quadratic forms along a field extension. -/
-def RegularFormClass.baseChange (L : Type v) [Field L] [Algebra K L] :
-    RegularFormClass K → RegularFormClass L :=
-  Quotient.map (RegularFormPresentation.baseChange L) fun _ _ h ↦
-    equivalent_presentedForm_baseChange_of_equivalent h
-
-/-- Base change is computed by mapping a representative presentation. -/
+variable (L) in
+/-- Mapping the weights into `L` commutes with the tensor product of presentations. -/
 @[simp]
-theorem RegularFormClass.baseChange_mk (p : RegularFormPresentation K) :
-    RegularFormClass.baseChange L (Quotient.mk (regularFormSetoid K) p) =
-      Quotient.mk (regularFormSetoid L) (p.baseChange L) := (rfl)
+theorem RegularFormPresentation.baseChange_tmul (p q : RegularFormPresentation K) :
+    RegularFormPresentation.baseChange L (p.tmul q) =
+      (RegularFormPresentation.baseChange L p).tmul
+        (RegularFormPresentation.baseChange L q) := by
+  have h₁ : (RegularFormPresentation.baseChange L (p.tmul q)).1 = p.1 * q.1 := by simp
+  have hrank : (RegularFormPresentation.baseChange L (p.tmul q)).1 =
+      ((RegularFormPresentation.baseChange L p).tmul
+        (RegularFormPresentation.baseChange L q)).1 := by simp
+  refine RegularFormPresentation.ext hrank fun i ↦ ?_
+  -- Read the index as a pair of indices of the two factors.
+  have hi : i = Fin.cast h₁.symm
+      (finProdFinEquiv (finProdFinEquiv.symm (Fin.cast h₁ i))) := by
+    rw [Equiv.apply_symm_apply]; simp
+  rw [hi]
+  generalize finProdFinEquiv.symm (Fin.cast h₁ i) = ab
+  obtain ⟨a, b⟩ := ab
+  have hindex : Fin.cast hrank (Fin.cast h₁.symm (finProdFinEquiv (a, b))) =
+      Fin.cast (RegularFormPresentation.fst_tmul (RegularFormPresentation.baseChange L p)
+          (RegularFormPresentation.baseChange L q)).symm
+        (finProdFinEquiv
+          (Fin.cast (RegularFormPresentation.fst_baseChange L p).symm a,
+            Fin.cast (RegularFormPresentation.fst_baseChange L q).symm b)) := by
+    apply Fin.ext
+    simp
+  rw [hindex, RegularFormPresentation.tmul_apply, RegularFormPresentation.baseChange_apply,
+    RegularFormPresentation.baseChange_apply]
+  simp [RegularFormPresentation.tmul_apply]
 
-/-- Extending a regular-form class along the identity extension changes nothing. -/
-@[simp]
-theorem RegularFormClass.baseChange_self (c : RegularFormClass K) : c.baseChange K = c := by
-  induction c using Quotient.inductionOn with
-  | _ p => simp
-
-/-- Successive base changes of regular-form classes agree with the composite extension. -/
-@[simp]
-theorem RegularFormClass.baseChange_baseChange {M : Type w} [Field M] [Algebra L M]
-    [Algebra K M] [IsScalarTower K L M] (c : RegularFormClass K) :
-    (c.baseChange L).baseChange M = c.baseChange M := by
-  induction c using Quotient.inductionOn with
-  | _ p =>
-    rw [RegularFormClass.baseChange_mk, RegularFormClass.baseChange_mk,
-      RegularFormClass.baseChange_mk, RegularFormPresentation.baseChange_baseChange]
-
-/-- Base change preserves rank. -/
-@[simp]
-theorem RegularFormClass.rank_baseChange (c : RegularFormClass K) :
-    RegularFormClass.rank (c.baseChange L) = RegularFormClass.rank c := by
-  induction c using Quotient.inductionOn with
-  | _ p => simp
-
-/-- Base change preserves orthogonal sums. -/
-@[simp]
-theorem RegularFormClass.baseChange_add (c d : RegularFormClass K) :
-    (c + d).baseChange L = c.baseChange L + d.baseChange L := by
-  induction c using Quotient.inductionOn with
-  | _ p =>
-    induction d using Quotient.inductionOn with
-    | _ q =>
-      rw [RegularFormClass.mk_add_mk, RegularFormClass.baseChange_mk,
-        RegularFormClass.baseChange_mk, RegularFormClass.baseChange_mk,
-        RegularFormClass.mk_add_mk, RegularFormPresentation.baseChange_append]
-
-/-- Base change preserves the zero class. -/
-@[simp]
-theorem RegularFormClass.baseChange_zero :
-    RegularFormClass.baseChange L (0 : RegularFormClass K) = 0 := by
-  rw [RegularFormClass.zero_def, RegularFormClass.baseChange_mk,
-    RegularFormClass.zero_def, RegularFormClass.mk_eq_mk_iff]
-  have h : presentedForm (RegularFormPresentation.baseChange L
-      (⟨0, Fin.elim0⟩ : RegularFormPresentation K)) =
-      presentedForm (⟨0, Fin.elim0⟩ : RegularFormPresentation L) := by
-    congr 1
-    refine Sigma.ext (x := RegularFormPresentation.baseChange L
-      (⟨0, Fin.elim0⟩ : RegularFormPresentation K))
-      (y := (⟨0, Fin.elim0⟩ : RegularFormPresentation L)) rfl ?_
-    apply heq_of_eq
-    funext i
-    exact Fin.elim0 i
-  rw [h]
-
-/-- Base change of regular-form classes as an additive monoid homomorphism. -/
-def RegularFormClass.baseChangeAddMonoidHom (L : Type v) [Field L] [Algebra K L] :
-    RegularFormClass K →+ RegularFormClass L where
-  toFun := RegularFormClass.baseChange L
-  map_zero' := RegularFormClass.baseChange_zero
-  map_add' := RegularFormClass.baseChange_add
-
-/-- The bundled base-change homomorphism applies `RegularFormClass.baseChange`. -/
-@[simp]
-theorem RegularFormClass.baseChangeAddMonoidHom_apply (c : RegularFormClass K) :
-    RegularFormClass.baseChangeAddMonoidHom L c = c.baseChange L := (rfl)
-
--- Not `@[simp]`: `RegularFormClass K` is a semiring in downstream modules, where
--- `nsmul_eq_mul` rewrites the left-hand side and makes this declaration fail `simpNF`.
-/-- Base change preserves finite orthogonal sums. -/
-theorem RegularFormClass.baseChange_nsmul (n : ℕ) (c : RegularFormClass K) :
-    (n • c).baseChange L = n • c.baseChange L :=
-  map_nsmul (RegularFormClass.baseChangeAddMonoidHom L) n c
+/-! ### Scalar extension of presented forms -/
 
 variable [Invertible (2 : K)]
 
-/-- Extending the scalars of a presented form gives the form presented by the mapped
-coefficients. -/
-def presentedFormBaseChangeIsometryEquiv (p : RegularFormPresentation K) :
-    ((presentedForm p).baseChange L).IsometryEquiv (presentedForm (p.baseChange L)) := by
-  rcases p with ⟨n, w⟩
-  exact
-    { toLinearEquiv :=
-        Algebra.TensorProduct.equivPiOfFiniteBasis L (Pi.basisFun K (Fin n))
-      map_app' := fun x ↦ by
-        have h : (presentedForm (RegularFormPresentation.baseChange L
-            (⟨n, w⟩ : RegularFormPresentation K))).comp
-            (Algebra.TensorProduct.equivPiOfFiniteBasis L
-              (Pi.basisFun K (Fin n))).toLinearMap =
-              (presentedForm (⟨n, w⟩ : RegularFormPresentation K)).baseChange L := by
-          apply _root_.baseChange_ext
-          intro a
-          rw [QuadraticMap.comp_apply, QuadraticForm.baseChange_tmul, LinearEquiv.coe_coe,
-            Algebra.TensorProduct.equivPiOfFiniteBasis_one_tmul]
-          simp only [Pi.basisFun_repr]
-          have hp := presentedForm_baseChange_algebraMap (L := L)
-            (⟨n, w⟩ : RegularFormPresentation K) a
-          simpa [Algebra.algebraMap_eq_smul_one] using hp
-        exact DFunLike.congr_fun h x }
+/-- The canonical coordinate equivalence identifies scalar extension of a presented form with
+the presentation obtained by mapping every weight into the larger field. -/
+def presentedFormBaseChange (p : RegularFormPresentation K) :
+    ((presentedForm p).baseChange L).IsometryEquiv
+      (presentedForm (RegularFormPresentation.baseChange L p)) := by
+  let e := _root_.QuadraticForm.baseChangeWeightedSumSquares (A := L)
+    fun i ↦ (p.2 i : K)
+  have hK : presentedForm p =
+      QuadraticMap.weightedSumSquares K fun i ↦ (p.2 i : K) := by
+    simp only [presentedForm_eq_weightedSumSquares, QuadraticMap.weightedSumSquares,
+      Units.smul_def]
+  have hL : presentedForm (RegularFormPresentation.baseChange L p) =
+      QuadraticMap.weightedSumSquares L fun i ↦ algebraMap K L (p.2 i : K) := by
+    simp only [RegularFormPresentation.baseChange, presentedForm_eq_weightedSumSquares,
+      QuadraticMap.weightedSumSquares, Units.coe_map, RingHom.toMonoidHom_eq_coe,
+      MonoidHom.coe_coe, Units.smul_def]
+    -- The two sums are indexed by `Fin (RegularFormPresentation.baseChange L p).1` and by
+    -- `Fin p.1`, which are the same type once the mapped presentation is unfolded.
+    rfl
+  refine { toLinearEquiv := e.toLinearEquiv, map_app' := ?_ }
+  intro x
+  rw [hL, hK]
+  exact e.map_app' x
 
-/-- The base-change isometry is the standard tensor-product coordinate equivalence. -/
+/-- The presentation base-change isometry uses the canonical linear equivalence distributing
+the tensor product over the finite coordinate space. -/
 @[simp]
-theorem presentedFormBaseChangeIsometryEquiv_apply (p : RegularFormPresentation K)
-    (x : L ⊗[K] (Fin p.1 → K)) :
-    presentedFormBaseChangeIsometryEquiv p x =
-      fun i ↦ Algebra.TensorProduct.equivPiOfFiniteBasis L (Pi.basisFun K (Fin p.1)) x
-        (Fin.cast (RegularFormPresentation.fst_baseChange p) i) := by
-  rcases p with ⟨n, w⟩
-  rfl
+theorem presentedFormBaseChange_apply (p : RegularFormPresentation K)
+    (x : L ⊗[K] (Fin p.1 → K)) (i : Fin (RegularFormPresentation.baseChange L p).1) :
+    presentedFormBaseChange (L := L) p x i =
+      TensorProduct.piScalarRightHom K L L (Fin p.1) x
+        (Fin.cast (RegularFormPresentation.fst_baseChange L p) i) := by
+  rw [presentedFormBaseChange]
+  exact congrFun (_root_.QuadraticForm.baseChangeWeightedSumSquares_apply
+    (A := L) (fun i ↦ (p.2 i : K)) x) _
 
-/-- Base change of presented forms, stated as `QuadraticMap.Equivalent`. -/
-theorem equivalent_presentedForm_baseChange (p : RegularFormPresentation K) :
-    ((presentedForm p).baseChange L).Equivalent (presentedForm (p.baseChange L)) :=
-  ⟨presentedFormBaseChangeIsometryEquiv p⟩
+/-! ### Scalar extension of isometry classes -/
+
+variable (L) in
+/-- **Scalar extension of isometry classes**: the class over `L` presented by the images of the
+weights of any presentation over `K`. -/
+def RegularFormClass.baseChange : RegularFormClass K → RegularFormClass L :=
+  Quotient.map (RegularFormPresentation.baseChange L) fun p q h ↦ by
+    have hp : (presentedForm (RegularFormPresentation.baseChange L p)).Equivalent
+        ((presentedForm p).baseChange L) := ⟨(presentedFormBaseChange (L := L) p).symm⟩
+    have hq : ((presentedForm q).baseChange L).Equivalent
+        (presentedForm (RegularFormPresentation.baseChange L q)) :=
+      ⟨presentedFormBaseChange (L := L) q⟩
+    exact hp.trans ((QuadraticMap.Equivalent.baseChange h L).trans hq)
+
+variable (L) in
+/-- Scalar extension of classes is computed on presentations by mapping the weights. -/
+@[simp]
+theorem RegularFormClass.baseChange_mk (p : RegularFormPresentation K) :
+    RegularFormClass.baseChange L (Quotient.mk (regularFormSetoid K) p) =
+      Quotient.mk (regularFormSetoid L) (RegularFormPresentation.baseChange L p) :=
+  (rfl)
+
+/-- Scalar extension along the identity extension is the identity. -/
+@[simp]
+theorem RegularFormClass.baseChange_self (x : RegularFormClass K) :
+    RegularFormClass.baseChange K x = x := by
+  refine Quotient.inductionOn x fun p ↦ ?_
+  rw [RegularFormClass.baseChange_mk, RegularFormPresentation.baseChange_self]
+
+variable (L M) in
+/-- Scalar extension along a tower `K → L → M` is scalar extension along the composite. Two is
+assumed invertible in `L` because extension of scalars out of `L` is only defined then. -/
+@[simp]
+theorem RegularFormClass.baseChange_baseChange [Invertible (2 : L)] (x : RegularFormClass K) :
+    RegularFormClass.baseChange M (RegularFormClass.baseChange L x) =
+      RegularFormClass.baseChange M x := by
+  refine Quotient.inductionOn x fun p ↦ ?_
+  rw [RegularFormClass.baseChange_mk, RegularFormClass.baseChange_mk,
+    RegularFormClass.baseChange_mk, RegularFormPresentation.baseChange_baseChange]
+
+variable (L) in
+/-- Scalar extension preserves the rank of a class. -/
+@[simp]
+theorem RegularFormClass.rank_baseChange (x : RegularFormClass K) :
+    RegularFormClass.rank (RegularFormClass.baseChange L x) = RegularFormClass.rank x := by
+  refine Quotient.inductionOn x fun p ↦ ?_
+  rw [RegularFormClass.baseChange_mk, RegularFormClass.rank_mk, RegularFormClass.rank_mk,
+    RegularFormPresentation.fst_baseChange]
+
+variable (L) in
+/-- Scalar extension commutes with the orthogonal sum of classes. -/
+@[simp]
+theorem RegularFormClass.baseChange_add (x y : RegularFormClass K) :
+    RegularFormClass.baseChange L (x + y) =
+      RegularFormClass.baseChange L x + RegularFormClass.baseChange L y := by
+  refine Quotient.inductionOn₂ x y fun p q ↦ ?_
+  rw [RegularFormClass.mk_add_mk, RegularFormClass.baseChange_mk, RegularFormClass.baseChange_mk,
+    RegularFormClass.baseChange_mk, RegularFormClass.mk_add_mk,
+    RegularFormPresentation.baseChange_append]
+
+variable (L) in
+/-- Scalar extension takes the rank-zero class to the rank-zero class. -/
+@[simp]
+theorem RegularFormClass.baseChange_zero :
+    RegularFormClass.baseChange L (0 : RegularFormClass K) = 0 := by
+  rw [RegularFormClass.zero_def, RegularFormClass.baseChange_mk, RegularFormClass.zero_def]
+  refine congrArg _ (RegularFormPresentation.ext (by simp) fun i ↦ ?_)
+  exact (Fin.cast (by simp) i : Fin 0).elim0
+
+-- Not `@[simp]`: `RegularFormClass K` is a semiring in downstream modules, where
+-- `nsmul_eq_mul` rewrites the left-hand side and makes this declaration fail `simpNF`.
+/-- Scalar extension preserves finite orthogonal sums. -/
+theorem RegularFormClass.baseChange_nsmul (n : ℕ) (x : RegularFormClass K) :
+    RegularFormClass.baseChange L (n • x) =
+      n • RegularFormClass.baseChange L x := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp only [succ_nsmul, RegularFormClass.baseChange_add, ih]
+
+variable (L) in
+/-- Scalar extension takes the multiplicative unit to the multiplicative unit. -/
+@[simp]
+theorem RegularFormClass.baseChange_one :
+    RegularFormClass.baseChange L (1 : RegularFormClass K) = 1 := by
+  rw [RegularFormClass.one_def, RegularFormClass.baseChange_mk, RegularFormClass.one_def,
+    RegularFormPresentation.baseChange_one]
+
+variable [Invertible (2 : L)]
+
+variable (L) in
+/-- Scalar extension commutes with the tensor product of classes. -/
+@[simp]
+theorem RegularFormClass.baseChange_mul (x y : RegularFormClass K) :
+    RegularFormClass.baseChange L (x * y) =
+      RegularFormClass.baseChange L x * RegularFormClass.baseChange L y := by
+  refine Quotient.inductionOn₂ x y fun p q ↦ ?_
+  rw [RegularFormClass.mk_mul_mk, RegularFormClass.baseChange_mk, RegularFormClass.baseChange_mk,
+    RegularFormClass.baseChange_mk, RegularFormClass.mk_mul_mk,
+    RegularFormPresentation.baseChange_tmul]
+
+/-! ### Scalar extension of the discriminant -/
+
+variable {V : Type w} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- **The discriminant commutes with scalar extension of isometry classes**: extending an isometry
+class to `L` pushes its discriminant forward along the induced map of square-class groups. -/
+@[simp]
+theorem RegularFormClass.discr_baseChange (x : RegularFormClass K) :
+    RegularFormClass.discr (RegularFormClass.baseChange L x) =
+      (algebraMap K L).squareClassMap (RegularFormClass.discr x) := by
+  refine Quotient.inductionOn x fun p ↦ ?_
+  rw [RegularFormClass.baseChange_mk, RegularFormClass.discr_mk, RegularFormClass.discr_mk,
+    RingHom.squareClassMap_apply, RegularFormPresentation.prod_baseChange]
 
 end TauCeti
 
 namespace QuadraticForm
 
-variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
-variable [Invertible (2 : K)]
+open TauCeti
 
-/-- The class-level construction agrees with base change of a regular quadratic form. -/
-theorem formClass_baseChange {V : Type w} [AddCommGroup V] [Module K V]
-    [FiniteDimensional K V] (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) :
-    letI : Invertible (2 : L) :=
-      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-    TauCeti.RegularFormClass.baseChange L (TauCeti.formClass Q hQ) =
-      TauCeti.formClass (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ) := by
-  let _ : Invertible (2 : L) :=
-    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  obtain ⟨p, hp⟩ := TauCeti.exists_presentedForm_equivalent Q hQ
-  rw [TauCeti.formClass_mk Q hQ p hp, TauCeti.RegularFormClass.baseChange_mk,
-    ← TauCeti.formClass_presentedForm (p.baseChange L)]
-  exact (TauCeti.formClass_eq_iff _ _ _ _).mpr
-    ((hp.baseChange L).trans (TauCeti.equivalent_presentedForm_baseChange p)).symm
+variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
+variable {V : Type w} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+variable [Invertible (2 : K)] [Invertible (2 : L)]
+
+/-- The class of a form extended to `L` is the scalar extension of its class. -/
+@[simp]
+theorem formClass_baseChange (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    formClass (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ) =
+      RegularFormClass.baseChange L (formClass Q hQ) := by
+  obtain ⟨p, hp⟩ := exists_presentedForm_equivalent Q hQ
+  rw [formClass_mk Q hQ p hp, RegularFormClass.baseChange_mk,
+    formClass_mk _ _ _ ((hp.baseChange L).trans ⟨presentedFormBaseChange p⟩)]
 
 end QuadraticForm

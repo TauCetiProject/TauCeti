@@ -300,7 +300,8 @@ theorem typeBSpinRep_kostantForm_apply_mem_integralLattice
     (P.typeBSpinRep b z hz) (TauCeti.ExteriorAlgebra.integralLattice b)
     (fun k m _ hw ↦ by
       rw [Associative.map_dividedPower]
-      exact Associative.dividedPower_apply_mem_of_pow_two_eq_zero _ _
+      exact Associative.dividedPower_apply_mem_of_pow_two_eq_zero _
+        (TauCeti.ExteriorAlgebra.integralLattice b).toAddSubgroup
         (P.typeBSpinRep_simpleRootGenerator_sq b z hz k)
         (fun hw' ↦ P.typeBSpinRep_simpleRootGenerator_apply_mem_integralLattice b z hz k hw') m hw)
     (fun i m _ hw ↦ P.typeBSpinRep_ringChoose_coroot_apply_mem_integralLattice

@@ -16,7 +16,8 @@ A map `f : ι → κ` of finite index types coarsens a Euclidean coordinate syst
 of a vector indexed by `ι` are merged into the groups cut out by the fibres of `f`, one group
 summed into each coordinate of a vector indexed by `κ`.  This is Mathlib's `FunOnFinite.map`,
 here read through `EuclideanSpace.equiv` so that it acts on Euclidean space, where it is again
-continuous and measurable.
+continuous and measurable. The coordinates may be real or complex; measurability uses the
+Borel measurable structure on the scalar field.
 
 ## Main definitions
 
@@ -30,30 +31,30 @@ noncomputable section
 
 namespace TauCeti
 
-variable {ι κ : Type*} [Fintype ι] [Fintype κ]
+variable {𝕜 : Type*} [RCLike 𝕜] {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 /-- Sum the coordinates of a Euclidean vector over each fibre of `f`.
 
 This is Mathlib's `FunOnFinite.map` read in Euclidean coordinates. -/
-def euclideanFiberSum (f : ι → κ) (x : EuclideanSpace ℝ ι) : EuclideanSpace ℝ κ :=
-  (EuclideanSpace.equiv κ ℝ).symm (FunOnFinite.map f (EuclideanSpace.equiv ι ℝ x))
+def euclideanFiberSum (f : ι → κ) (x : EuclideanSpace 𝕜 ι) : EuclideanSpace 𝕜 κ :=
+  (EuclideanSpace.equiv κ 𝕜).symm (FunOnFinite.map f (EuclideanSpace.equiv ι 𝕜 x))
 
 @[simp]
-theorem euclideanFiberSum_apply [DecidableEq κ] (f : ι → κ) (x : EuclideanSpace ℝ ι) (j : κ) :
+theorem euclideanFiberSum_apply [DecidableEq κ] (f : ι → κ) (x : EuclideanSpace 𝕜 ι) (j : κ) :
     euclideanFiberSum f x j = ∑ i with f i = j, x i := by
   simp [euclideanFiberSum, FunOnFinite.map_apply_apply]
 
 /-- Fibrewise summation is continuous. -/
 @[fun_prop]
 theorem continuous_euclideanFiberSum (f : ι → κ) :
-    Continuous (euclideanFiberSum (ι := ι) f) :=
-  (EuclideanSpace.equiv κ ℝ).symm.continuous.comp <|
-    (FunOnFinite.continuous_map ℝ f).comp (EuclideanSpace.equiv ι ℝ).continuous
+    Continuous (euclideanFiberSum (𝕜 := 𝕜) (ι := ι) f) :=
+  (EuclideanSpace.equiv κ 𝕜).symm.continuous.comp <|
+    (FunOnFinite.continuous_map 𝕜 f).comp (EuclideanSpace.equiv ι 𝕜).continuous
 
 /-- Fibrewise summation is measurable. -/
 @[fun_prop]
-theorem measurable_euclideanFiberSum (f : ι → κ) :
-    Measurable (euclideanFiberSum (ι := ι) f) :=
-  (continuous_euclideanFiberSum f).measurable
+theorem measurable_euclideanFiberSum [MeasurableSpace 𝕜] [BorelSpace 𝕜] (f : ι → κ) :
+    Measurable (euclideanFiberSum (𝕜 := 𝕜) (ι := ι) f) :=
+  (continuous_euclideanFiberSum (𝕜 := 𝕜) f).measurable
 
 end TauCeti

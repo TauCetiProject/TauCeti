@@ -29,7 +29,9 @@ Iterating the two steps measures how many transpositions it takes to build `σ`:
 factorization of `σ` into transpositions has at least `Nat.card α - TauCeti.orbitCount σ` factors
 (`TauCeti.card_le_orbitCount_add_length`), and one with exactly that many exists
 (`Equiv.Perm.exists_isSwap_list_prod_eq_and_orbitCount_add_length_eq_card`), so that number is
-the reflection length of `σ` (`Equiv.Perm.isLeast_card_sub_orbitCount`).
+the reflection length of `σ` (`Equiv.Perm.isLeast_card_sub_orbitCount`). If the transpositions
+together act transitively, `TauCeti.card_add_orbitCount_le_length_add_two` sharpens the lower bound
+by retaining the orbit count of their product.
 
 Both steps rest on a description of the orbits of the product:
 `Equiv.Perm.SameCycle.sameCycle_or_of_swap_mul` says that two points sharing an orbit of
@@ -381,6 +383,109 @@ theorem card_le_orbitCount_add_length [Finite α] {L : List (Perm α)} (hL : ∀
     have hstep := L.prod.orbitCount_le_orbitCount_swap_mul_add_one u v
     rw [List.prod_cons, List.length_cons]
     omega
+
+/-- The subgroup of permutations which move every point within its orbit under `π`. -/
+private def cyclePreservingSubgroup (π : Perm α) : Subgroup (Perm α) where
+  carrier := {g | ∀ x, π.SameCycle x (g x)}
+  one_mem' := fun x => SameCycle.refl π x
+  mul_mem' := fun {g h} hg hh x => (hh x).trans (hg (h x))
+  inv_mem' := by
+    intro g hg x
+    have hx := (hg (g⁻¹ x)).symm
+    simpa using hx
+
+omit [DecidableEq α] in
+/-- Membership in `TauCeti.cyclePreservingSubgroup`. -/
+private theorem mem_cyclePreservingSubgroup {π g : Perm α} :
+    g ∈ cyclePreservingSubgroup π ↔ ∀ x, π.SameCycle x (g x) := Iff.rfl
+
+/-- A list of transpositions admits a permutation whose cycles are the components joined by the
+transpositions. The numerical inequality records, simultaneously, the number of components and
+the number of cycles of the list product. -/
+private theorem exists_componentPerm [Finite α] (L : List (Perm α))
+    (hL : ∀ g ∈ L, g.IsSwap) :
+    ∃ π : Perm α, Nat.card α + orbitCount L.prod ≤ L.length + 2 * orbitCount π ∧
+      ∀ g ∈ L, ∀ x, π.SameCycle x (g x) := by
+  induction L with
+  | nil =>
+      refine ⟨1, ?_, by simp⟩
+      simp only [List.prod_nil, orbitCount_one, List.length_nil, zero_add]
+      omega
+  | cons t L ih =>
+      obtain ⟨a, b, hab, rfl⟩ := hL t (by simp)
+      obtain ⟨π, hbound, hpres⟩ := ih (fun g hg => hL g (List.mem_cons_of_mem _ hg))
+      by_cases hcomp : π.SameCycle a b
+      · have hswapPres' : ∀ x, π.SameCycle x (Equiv.swap a b x) := by
+          intro x
+          rcases eq_or_ne x a with rfl | hxa
+          · simpa using hcomp
+          rcases eq_or_ne x b with rfl | hxb
+          · simpa using hcomp.symm
+          · rw [Equiv.swap_apply_of_ne_of_ne hxa hxb]
+        have hstep : orbitCount (Equiv.swap a b * L.prod) ≤ orbitCount L.prod + 1 := by
+          by_cases hcycle : L.prod.SameCycle a b
+          · rw [orbitCount_swap_mul_of_sameCycle hab hcycle]
+          · have hmerge := orbitCount_swap_mul_add_one_of_not_sameCycle hcycle
+            omega
+        refine ⟨π, ?_, ?_⟩
+        · simp only [List.prod_cons, List.length_cons]
+          omega
+        · intro g hg x
+          rcases List.mem_cons.mp hg with rfl | hg
+          · exact hswapPres' x
+          · exact hpres g hg x
+      · have hprod_mem : L.prod ∈ cyclePreservingSubgroup π :=
+          (cyclePreservingSubgroup π).list_prod_mem (fun g hg => hpres g hg)
+        have hcycle : ¬ L.prod.SameCycle a b := by
+          intro hcycle
+          obtain ⟨i, hi⟩ := hcycle
+          have hpow := mem_cyclePreservingSubgroup.mp
+            ((cyclePreservingSubgroup π).zpow_mem hprod_mem i)
+          exact hcomp (by simpa [hi] using hpow a)
+        have hprodMerge := orbitCount_swap_mul_add_one_of_not_sameCycle hcycle
+        have hcompMerge := orbitCount_swap_mul_add_one_of_not_sameCycle hcomp
+        have hab' : (Equiv.swap a b * π).SameCycle a b :=
+          sameCycle_swap_mul_of_mem_periodicPts_of_not_sameCycle
+            (π.injective.mem_periodicPts b) hcomp
+        refine ⟨Equiv.swap a b * π, ?_, ?_⟩
+        · simp only [List.prod_cons, List.length_cons]
+          omega
+        · intro g hg x
+          rcases List.mem_cons.mp hg with rfl | hg
+          · rcases eq_or_ne x a with rfl | hxa
+            · simpa using hab'
+            rcases eq_or_ne x b with rfl | hxb
+            · simpa using hab'.symm
+            · rw [Equiv.swap_apply_of_ne_of_ne hxa hxb]
+          · exact hab'.swap_mul_of_sameCycle (hpres g hg x)
+
+/-- **Hurwitz's transposition bound.** If a list of transpositions generates a group acting
+transitively on a finite type, its length is at least the number of points plus the number of
+cycles of its product, minus two. Equivalently,
+`Nat.card α + orbitCount L.prod ≤ L.length + 2`. -/
+theorem card_add_orbitCount_le_length_add_two [Finite α]
+    {L : List (Perm α)} (hL : ∀ g ∈ L, g.IsSwap)
+    (htrans : MulAction.IsPretransitive (Subgroup.closure {g | g ∈ L}) α) :
+    Nat.card α + orbitCount L.prod ≤ L.length + 2 := by
+  rcases isEmpty_or_nonempty α with _ | _
+  · have := L.prod.orbitCount_le_card
+    have hcard : Nat.card α = 0 := Nat.card_of_isEmpty
+    omega
+  -- Track the components joined by the transpositions. Adding a transposition within one
+  -- component may split a cycle of the product; adding one between components merges both a
+  -- component and a cycle of the product. Transitivity leaves exactly one component.
+  obtain ⟨π, hbound, hpres⟩ := exists_componentPerm L hL
+  have hclosure : Subgroup.closure {g | g ∈ L} ≤ cyclePreservingSubgroup π := by
+    rw [Subgroup.closure_le]
+    exact fun g hg => hpres g hg
+  have hall : ∀ x y, π.SameCycle x y := by
+    intro x y
+    obtain ⟨g, hg⟩ := htrans.exists_smul_eq x y
+    have hxy := mem_cyclePreservingSubgroup.mp (hclosure g.2) x
+    rw [Subgroup.smul_def, Equiv.Perm.smul_def] at hg
+    rwa [hg] at hxy
+  have horbit : orbitCount π = 1 := orbitCount_eq_one_of_forall_sameCycle hall
+  omega
 
 /-- Mathlib's `Equiv.Perm.swapFactorsAux` construction has exactly the reflection length. -/
 private theorem swapFactorsAux_orbitCount_add_length_eq_card [Fintype α]

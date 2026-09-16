@@ -56,7 +56,7 @@ private theorem trivializationAt_geodesicSpray_coord [IsManifold I 2 M]
     let eT := trivializationAt (E × E) (TangentSpace I.tangent) z₀
     (eT (TotalSpace.mk' (E × E) z (geodesicSpray I M z))).2 =
       ((e z).2, -christoffelMap (finBasis ℝ E)
-        ((leviCivita I M).isCovariantDerivativeOn (s := e.baseSet)) z.proj
+        ((leviCivitaConnection I M).isCovariantDerivativeOn (s := e.baseSet)) z.proj
         (e z).2 (e z).2) := by
   dsimp only
   have hbase : z.proj ∈ (extChartAt I z₀.proj).source := by
@@ -110,7 +110,7 @@ theorem contMDiff_geodesicSpray [IsManifold I 2 M] [IsManifold I m M]
   suffices hcoord : ContMDiffOn I.tangent 𝓘(ℝ, E × E) n
       (fun z : TangentBundle I M ↦
         ((e z).2, -christoffelMap (finBasis ℝ E)
-          ((leviCivita I M).isCovariantDerivativeOn (s := e.baseSet)) z.proj
+          ((leviCivitaConnection I M).isCovariantDerivativeOn (s := e.baseSet)) z.proj
           (e z).2 (e z).2)) e.source by
     refine (hcoord z₀ hz₀e).contMDiffAt (hopen.mem_nhds hz₀e) |>.congr_of_eventuallyEq ?_
     · filter_upwards [hopen.mem_nhds hz₀e] with z hz
@@ -129,12 +129,12 @@ theorem contMDiff_geodesicSpray [IsManifold I 2 M] [IsManifold I m M]
       TangentBundle.trivializationAt_baseSet] using hz
   have hΓ : ContMDiffOn I 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E) n
       (christoffelMap (finBasis ℝ E)
-        ((leviCivita I M).isCovariantDerivativeOn (s := e.baseSet))) e.baseSet :=
-    contMDiffOn_christoffelMap_leviCivita (n := n) (m := m) (k := k)
+        ((leviCivitaConnection I M).isCovariantDerivativeOn (s := e.baseSet))) e.baseSet :=
+    contMDiffOn_christoffelMap_leviCivitaConnection (n := n) (m := m) (k := k)
       (finBasis ℝ E) hm hk
   have hΓ' : ContMDiffOn I.tangent 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E) n
       (fun z : TangentBundle I M ↦ christoffelMap (finBasis ℝ E)
-        ((leviCivita I M).isCovariantDerivativeOn (s := e.baseSet)) z.proj) e.source :=
+        ((leviCivitaConnection I M).isCovariantDerivativeOn (s := e.baseSet)) z.proj) e.source :=
     hΓ.comp hproj hmaps
   exact (contMDiffOn_prod_module_iff _).2
     ⟨hv, ((hΓ'.clm_apply hv).clm_apply hv).neg⟩

@@ -15,11 +15,10 @@ Two facts about linear factors that Mathlib does not carry.
 The *reversed* factor `C x - X` — the shape that arises as `x - θ` in `AdjoinRoot f` — has degree
 `1`, like `X - C x` itself, which is the form Mathlib states.
 
-And Mathlib's `Polynomial.dvd_iff_isRoot` factors `X - C x` out of any polynomial vanishing at
-`x`, but leaves the cofactor unidentified. When the polynomial has degree at most one the cofactor
-is forced to be a constant, so the polynomial is `C γ * (X - C x)` for a single scalar `γ`. That
-sharpened form is what is needed to read off the *coefficient* of a linear factor, which
-`Polynomial.eq_X_add_C_of_natDegree_le_one` does not give once a root is prescribed.
+A polynomial of degree at most one with root `x` is `C γ * (X - C x)` for a single scalar `γ`.
+Writing it as `C a * X + C b`, the root condition gives `a * x + b = 0`, which identifies the
+constant term and factors the polynomial. This works over noncommutative rings, with the scalar
+factor on the left.
 
 ## Main results
 
@@ -29,8 +28,8 @@ sharpened form is what is needed to read off the *coefficient* of a linear facto
 
 ## Provenance
 
-`exists_eq_C_mul_X_sub_C_of_natDegree_le_one` is adapted, with the author's proof, from Michael
-Stoll's `EllipticCurves` project
+The statement of `exists_eq_C_mul_X_sub_C_of_natDegree_le_one` generalizes the commutative-ring
+result adapted from Michael Stoll's `EllipticCurves` project
 (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
 `TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`), `EllipticCurves/Mathlib/Basic.lean`.
 Its consumer is the `x - T` descent map of
@@ -42,31 +41,24 @@ public section
 
 namespace Polynomial
 
-variable {R : Type*} [CommRing R]
+variable {R : Type*} [Ring R]
 
-/-- The reversed linear polynomial `C x - X` has degree `1`, like `X - C x`.
-
-Stated over a `Ring` rather than the file's ambient `CommRing`: neither the statement nor its
-proof uses commutativity. -/
+/-- The reversed linear polynomial `C x - X` has degree `1`, like `X - C x`. -/
 @[simp]
 theorem natDegree_C_sub_X {R : Type*} [Ring R] [Nontrivial R] (x : R) :
     (C x - X).natDegree = 1 := by
   rw [natDegree_sub, natDegree_X_sub_C]
 
-/-- A polynomial of degree at most one with prescribed root `x` is a scalar multiple of
-`X - C x`. -/
+/-- A polynomial of degree at most one with prescribed root `x` is a left scalar multiple of
+`X - C x`, over any ring. -/
 lemma exists_eq_C_mul_X_sub_C_of_natDegree_le_one {p : R[X]} (hdeg : p.natDegree ≤ 1)
     {x : R} (hx : p.IsRoot x) :
     ∃ γ, p = C γ * (X - C x) := by
-  nontriviality R
-  obtain ⟨q, rfl⟩ := dvd_iff_isRoot.mpr hx
-  rcases eq_or_ne q 0 with rfl | hq
-  · exact ⟨0, by simp⟩
-  have h1 : (X - C x).leadingCoeff * q.leadingCoeff ≠ 0 := by
-    rwa [(monic_X_sub_C x).leadingCoeff, one_mul, leadingCoeff_ne_zero]
-  rw [natDegree_mul' h1, natDegree_X_sub_C] at hdeg
-  refine ⟨q.coeff 0, ?_⟩
-  nth_rw 1 [eq_C_of_natDegree_eq_zero (by lia : q.natDegree = 0), mul_comm]
+  obtain ⟨a, b, hp⟩ := exists_eq_X_add_C_of_natDegree_le_one hdeg
+  have hx' : a * x + b = 0 := by
+    simpa only [IsRoot, hp, eval_add, eval_C_mul, eval_C, eval_X] using hx
+  refine ⟨a, ?_⟩
+  rw [hp, mul_sub, ← C_mul, eq_neg_of_add_eq_zero_right hx', map_neg, sub_eq_add_neg]
 
 end Polynomial
 

@@ -28,6 +28,8 @@ natural primes, which is the form in which `t` is counted.
 
 * `NumberField.mem_ramifiedPrimes_iff_dvd_discr`: a prime ramifies iff it divides the
   discriminant.
+* `NumberField.coprime_natAbs_discr_of_isUnramifiedIn`: an unramified prime is coprime to the
+  discriminant.
 * `NumberField.finite_ramifiedPrimes`: only finitely many primes ramify.
 * `NumberField.ramifiedPrimes_nonempty`: some prime ramifies, unless `K = ℚ`
   (Minkowski, via `NumberField.exists_not_isUnramifiedIn`).
@@ -70,6 +72,30 @@ theorem mem_ramifiedPrimes_iff_dvd_discr {p : ℕ} (hp : p.Prime) :
   rw [mem_ramifiedPrimes_iff, and_iff_right hp,
     ← NumberField.not_dvd_discr_iff_isUnramifiedIn K (𝓞 K) (Nat.prime_iff_prime_int.mp hp),
     not_not]
+
+-- Source. The hypothesis this discharges is
+-- `hcop : ((NumberField.discr L).natAbs).Coprime m` in the Birkbeck--Brasca Chebotarev
+-- development, CBirkbeck/chebotarev-density (Apache-2.0), branch `development` at
+-- `8575c9df1ae0a61120ab5c964c7911414254bec7`. There `CebotarevDensity/Abelian.lean` carries it
+-- undischarged throughout, obtaining `p ∤ discr E` from
+-- `NumberField.not_dvd_discr_iff_forall_liesOver` inline. The statement below is that hypothesis;
+-- deriving it from `Algebra.IsUnramifiedIn` is not done in the source, which propagates it.
+
+/-- **An unramified prime is coprime to the discriminant.** If the rational prime `p` is
+unramified in `K` then it does not divide `NumberField.discr K`, so `|discr K|` and `p` are
+coprime.
+
+This is `mem_ramifiedPrimes_iff_dvd_discr` in the form the cyclotomic-crossing lemmas consume.
+They take `((NumberField.discr _).natAbs).Coprime m` as an undischarged hypothesis, and
+`IsCyclotomicExtension.finrank_eq_totient` records in its implementation notes that a caller is
+expected to arrange it "by choosing `m` to be a prime unramified in `K`". This is that sentence
+as a lemma, so the hypothesis can be discharged rather than propagated. -/
+theorem coprime_natAbs_discr_of_isUnramifiedIn {p : ℕ} (hp : p.Prime)
+    (hur : Algebra.IsUnramifiedIn (𝓞 K) (Ideal.span {(p : ℤ)})) :
+    (NumberField.discr K).natAbs.Coprime p := by
+  refine (hp.coprime_iff_not_dvd.mpr fun hdvd => ?_).symm
+  exact (mem_ramifiedPrimes_iff.mp
+    ((mem_ramifiedPrimes_iff_dvd_discr hp).mpr (Int.natCast_dvd.mpr hdvd))).2 hur
 
 /-- **Only finitely many primes ramify**, since they all divide the nonzero integer
 `NumberField.discr K`. -/
