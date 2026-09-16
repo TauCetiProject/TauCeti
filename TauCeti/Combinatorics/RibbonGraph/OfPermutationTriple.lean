@@ -146,6 +146,16 @@ def ribbonGraphIsoSmul (τ : Perm (Fin n)) : t.ribbonGraph.Iso (τ • t).ribbon
 @[simp] theorem ribbonGraphIsoSmul_edge_apply (τ : Perm (Fin n)) (i : Fin n) :
     (t.ribbonGraphIsoSmul τ).edge i = τ i := (rfl)
 
+/-- Relabeling sends a black vertex represented by `i` to the vertex represented by `τ i`. -/
+@[simp] theorem ribbonGraphIsoSmul_black_apply (τ : Perm (Fin n)) (i : Fin n) :
+    (t.ribbonGraphIsoSmul τ).black (Quotient.mk (SameCycle.setoid t.σ0) i) =
+      Quotient.mk (SameCycle.setoid (τ • t).σ0) (τ i) := (rfl)
+
+/-- Relabeling sends a white vertex represented by `i` to the vertex represented by `τ i`. -/
+@[simp] theorem ribbonGraphIsoSmul_white_apply (τ : Perm (Fin n)) (i : Fin n) :
+    (t.ribbonGraphIsoSmul τ).white (Quotient.mk (SameCycle.setoid t.σ1) i) =
+      Quotient.mk (SameCycle.setoid (τ • t).σ1) (τ i) := (rfl)
+
 /-! ### Counting cells -/
 
 /-- The edges of the graph are the sheets of the triple. -/
