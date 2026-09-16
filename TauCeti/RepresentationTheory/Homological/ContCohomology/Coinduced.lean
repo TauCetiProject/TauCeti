@@ -6,6 +6,7 @@ Authors: Claude, Codex
 module
 
 public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.RepresentationTheory.Coinduced
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 public import TauCeti.Topology.Algebra.Group.LocallyConstant
 public import TauCeti.Topology.Algebra.Group.Profinite.Section
@@ -40,6 +41,9 @@ argument consume:
   maps induce linear maps (`TauCeti.DiscreteCoind.map`);
 * it is packaged as the functor `TauCeti.coindFunctor` between categories of smooth discrete
   representations;
+* for an open subgroup, every algebraically coinduced function is automatically locally constant,
+  and `TauCeti.topologicalCoindIsoAlgebraic` identifies this construction with Mathlib's
+  `Representation.coind`;
 * the two degenerate subgroups are computed: `TauCeti.mem_coind_bot_iff` characterizes membership
   in `Coind_1^G A` as local constancy, so it is the group of all locally constant maps `G → A`,
   the acyclic module of the dimension-shifting argument, and
@@ -833,6 +837,191 @@ theorem coindCounitNatTrans_app_apply (A : SmoothDiscreteTopRep.{u, v, max v w} 
     Category.id_comp, TopRep.hom_ofHom, coindCounit_apply]
 
 end Bundled
+
+section AlgebraicComparison
+
+open CategoryTheory
+open scoped Pointwise
+
+universe u v w
+
+attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
+
+section LocallyConstant
+
+variable (R : Type u) [Semiring R]
+  (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- An algebraically coinduced function from an open subgroup is locally constant when the
+coefficient action is continuous and the coefficient space is discrete.
+
+Indeed, around `g : G` the function is determined by the orbit map on the open coset `U * g`.
+Shrinking `U` to the open stabilizer of the value at `g` makes the function constant there. -/
+theorem isLocallyConstant_algebraicCoind (U : OpenSubgroup G)
+    {A : Type w} [AddCommGroup A] [Module R A] [TopologicalSpace A] [DiscreteTopology A]
+    [DistribMulAction U.toSubgroup A] [SMulCommClass U.toSubgroup R A]
+    [ContinuousSMul U.toSubgroup A]
+    (f : Representation.coindV U.toSubgroup.subtype
+      (Representation.ofDistribMulAction R U.toSubgroup A)) :
+    IsLocallyConstant f.1 := by
+  rw [IsLocallyConstant.iff_exists_open]
+  intro g
+  let V : Set U := MulAction.stabilizer U (f.1 g)
+  have hV : IsOpen V := stabilizer_isOpen U (f.1 g)
+  refine ⟨(Subtype.val '' V) * {g},
+    (U.isOpen.isOpenMap_subtype_val V hV).mul_right, ?_, ?_⟩
+  · refine ⟨(1 : G), ?_, g, Set.mem_singleton g, one_mul g⟩
+    exact ⟨(1 : U.toSubgroup), Subgroup.one_mem _, rfl⟩
+  · intro x hx
+    obtain ⟨_, ⟨u, hu, rfl⟩, z, hz, rfl⟩ := hx
+    have : z = g := Set.mem_singleton_iff.mp hz
+    subst z
+    exact (f.2 u g).trans (MulAction.mem_stabilizer_iff.mp hu)
+
+end LocallyConstant
+
+variable (R : Type u) [CommRing R] [TopologicalSpace R]
+  (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  (U : OpenSubgroup G)
+  (A : SmoothDiscreteTopRep.{u, v, w} R U.toSubgroup)
+
+local instance : DiscreteTopology A.obj.V := A.property.discreteTopology
+local instance : ContinuousSMul U.toSubgroup A.obj.V := A.property.continuousSMul
+local instance : SMulCommClass U.toSubgroup R A.obj.V := TopRep.smulCommClass A.obj
+local instance : SMulCommClass G R (DiscreteCoind G U.toSubgroup A.obj.V) :=
+  DiscreteCoind.instSMulCommClass (G := G) (U := U.toSubgroup) (A := A.obj.V)
+
+/-- For an open subgroup, locally constant coinduction is linearly equivalent to Mathlib's
+algebraic `Rep.coind`. Both directions preserve the underlying function on `G`.
+
+Openness is used only in the inverse direction: it makes every algebraically coinduced function
+locally constant. -/
+noncomputable def discreteCoindEquivAlgebraic :
+    DiscreteCoind G U.toSubgroup A.obj.V ≃ₗ[R]
+      Representation.coindV U.toSubgroup.subtype
+        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) where
+  toFun f := ⟨f, fun u g ↦ DiscreteCoind.apply_mul f u g⟩
+  invFun f := DiscreteCoind.mk G U.toSubgroup A.obj.V f.1
+    (isLocallyConstant_algebraicCoind R G U f) fun u g ↦ by
+      simpa using f.2 u g
+  left_inv f := DiscreteCoind.ext fun _ ↦ rfl
+  right_inv f := Subtype.ext rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+/-- The comparison sends a locally constant coinduced function to the same underlying
+algebraically coinduced function. -/
+@[simp]
+theorem discreteCoindEquivAlgebraic_apply (f : DiscreteCoind G U.toSubgroup A.obj.V) (g : G) :
+    (discreteCoindEquivAlgebraic R G U A f).1 g = f g := (rfl)
+
+/-- The inverse comparison sends an algebraically coinduced function to the same underlying
+function, now equipped with its automatic local constancy. -/
+@[simp]
+theorem discreteCoindEquivAlgebraic_symm_apply
+    (f : Representation.coindV U.toSubgroup.subtype
+      (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) (g : G) :
+    (discreteCoindEquivAlgebraic R G U A).symm f g = f.1 g := (rfl)
+
+/-- The locally constant/algebraic coinduction comparison intertwines the right-translation
+actions of `G`. -/
+theorem discreteCoindEquivAlgebraic_smul (g : G)
+    (f : DiscreteCoind G U.toSubgroup A.obj.V) :
+    discreteCoindEquivAlgebraic R G U A (g • f) =
+      Representation.coind U.toSubgroup.subtype
+        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) g
+        (discreteCoindEquivAlgebraic R G U A f) := by
+  apply Subtype.ext
+  funext x
+  rfl
+
+variable [CompactSpace G]
+
+/-- Mathlib's algebraic coinduction, equipped with the discrete topology and the continuous
+actions transported from locally constant coinduction. -/
+noncomputable abbrev algebraicCoindDiscreteRep : DiscreteRep.{u, v, max v w} R G := by
+  let e := discreteCoindEquivAlgebraic R G U A
+  let V := Representation.coindV U.toSubgroup.subtype
+    (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)
+  letI : TopologicalSpace
+      V := ⊥
+  letI : DiscreteTopology V := ⟨rfl⟩
+  letI : DistribMulAction G V := e.symm.toAddEquiv.distribMulAction G
+  letI : SMulCommClass G R V := ⟨fun g r f ↦ by
+    apply Subtype.ext
+    funext x
+    rfl⟩
+  letI : ContinuousSMul R V := by
+    constructor
+    have he : Continuous e := continuous_of_discreteTopology
+    have he' : Continuous e.symm := continuous_of_discreteTopology
+    have hsource : Continuous fun p : R × DiscreteCoind G U.toSubgroup A.obj.V =>
+        p.1 • p.2 := continuous_smul
+    have h := he.comp (hsource.comp (continuous_fst.prodMk (he'.comp continuous_snd)))
+    have heq : (fun p : R × V => p.1 • p.2) =
+        fun p => e (p.1 • e.symm p.2) := by
+      funext p
+      symm
+      exact (e.map_smul p.1 (e.symm p.2)).trans
+        (congrArg (p.1 • ·) (e.apply_symm_apply p.2))
+    rw [heq]
+    exact h
+  letI : ContinuousSMul G V := by
+    constructor
+    have he : Continuous e := continuous_of_discreteTopology
+    have he' : Continuous e.symm := continuous_of_discreteTopology
+    have hsource : Continuous fun p : G × DiscreteCoind G U.toSubgroup A.obj.V =>
+        p.1 • p.2 := continuous_smul
+    exact he.comp (hsource.comp (continuous_fst.prodMk (he'.comp continuous_snd)))
+  exact { V := V }
+
+/-- The representation carried by `algebraicCoindDiscreteRep` is Mathlib's
+`Representation.coind`, not merely an abstractly isomorphic action. -/
+theorem algebraicCoindDiscreteRep_ρ :
+    (algebraicCoindDiscreteRep R G U A).ρ =
+      Representation.coind U.toSubgroup.subtype
+        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) := by
+  ext g f x
+  rfl
+
+/-- Algebraic coinduction from an open subgroup, regarded as a smooth discrete topological
+representation. -/
+noncomputable abbrev algebraicCoindAsSmooth : SmoothDiscreteTopRep.{u, v, max v w} R G :=
+  (toSmoothDiscrete R G).obj (algebraicCoindDiscreteRep R G U A)
+
+/-- Locally constant topological coinduction from an open subgroup agrees with Mathlib's
+algebraic coinduction. The isomorphism is the identity on the underlying equivariant functions. -/
+noncomputable def topologicalCoindIsoAlgebraic :
+    coindTopRep R G U.toSubgroup A ≅ algebraicCoindAsSmooth R G U A := by
+  apply (toSmoothDiscrete R G).mapIso
+  refine
+    { hom := (discreteCoindEquivAlgebraic R G U A).toLinearMap.intertwiningMap_of_isIntertwiningMap
+        _ _ fun g f ↦ discreteCoindEquivAlgebraic_smul R G U A g f
+      inv := (discreteCoindEquivAlgebraic R G U A).symm.toLinearMap
+        |>.intertwiningMap_of_isIntertwiningMap _ _ fun _ _ ↦ by
+          apply DiscreteCoind.ext
+          intro x
+          rfl
+      hom_inv_id := Representation.IntertwiningMap.ext
+        (LinearMap.ext (discreteCoindEquivAlgebraic R G U A).symm_apply_apply)
+      inv_hom_id := Representation.IntertwiningMap.ext
+        (LinearMap.ext (discreteCoindEquivAlgebraic R G U A).apply_symm_apply) }
+
+/-- The forward map of the topological/algebraic comparison leaves every value unchanged. -/
+@[simp]
+theorem topologicalCoindIsoAlgebraic_hom_apply
+    (f : DiscreteCoind G U.toSubgroup A.obj.V) (g : G) :
+    ((topologicalCoindIsoAlgebraic R G U A).hom.hom.hom f).1 g = f g := (rfl)
+
+/-- The inverse map of the topological/algebraic comparison leaves every value unchanged. -/
+@[simp]
+theorem topologicalCoindIsoAlgebraic_inv_apply
+    (f : Representation.coindV U.toSubgroup.subtype
+      (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) (g : G) :
+    (show DiscreteCoind G U.toSubgroup A.obj.V from
+      (topologicalCoindIsoAlgebraic R G U A).inv.hom.hom f) g = f.1 g := (rfl)
+
+end AlgebraicComparison
 
 section Degenerate
 
