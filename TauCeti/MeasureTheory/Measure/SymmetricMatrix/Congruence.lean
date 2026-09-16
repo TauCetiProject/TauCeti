@@ -9,6 +9,8 @@ public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Lebesgue
 public import Mathlib.LinearAlgebra.Matrix.Bilinear
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Transvection
+public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
+import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
@@ -29,6 +31,12 @@ the invertible case as a corollary.
 
 * `Matrix.symmetricCongruenceLinearMap` — congruence by an arbitrary rectangular matrix, as a
   linear map between symmetric subspaces.
+* `Matrix.inner_symmetricCongruenceLinearMap` — congruence by `M` is adjoint to congruence by
+  `Mᵀ` for the Frobenius pairing.
+* `Matrix.charFun_map_symmetricCongruenceLinearMap` — the corresponding transformation rule for
+  characteristic functions.
+* `Matrix.det_one_sub_smul_transpose_mul_mul` — the rectangular determinant identity used to
+  transport Wishart trace transforms.
 * `Matrix.det_symmetricCongruenceLinearMap` — its determinant is `(det M) ^ (p + 1)`.
 * `Matrix.GeneralLinearGroup.symmetricCongruence` — congruence by an invertible matrix, as a
   continuous linear automorphism.
@@ -46,10 +54,44 @@ public section
 noncomputable section
 
 open MeasureTheory Module TauCeti
+open scoped RealInnerProductSpace
 
 namespace Matrix
 
 variable {p q : ℕ}
+
+/-! ### Trace pairing and rectangular determinant pencils -/
+
+/-- Moving a rectangular congruence across a trace pairing transposes the congruence matrix.
+No symmetry hypotheses on `A` or `B` are needed. -/
+theorem trace_mul_congruence {m n R : Type*} [Fintype m] [Fintype n]
+    [NonUnitalCommSemiring R]
+    (B : Matrix m m R) (M : Matrix m n R) (A : Matrix n n R) :
+    (B * (M * A * Mᵀ)).trace = ((Mᵀ * B * M) * A).trace := by
+  simpa only [Matrix.mul_assoc] using Matrix.trace_mul_comm (B * M * A) Mᵀ
+
+/-- The Weinstein--Aronszajn identity in the form used by a rectangular congruence: the
+determinant pencil can be computed either before or after applying the congruence. -/
+theorem det_one_add_smul_transpose_mul_mul {m n R : Type*} [Fintype m] [Fintype n]
+    [DecidableEq m] [DecidableEq n] [CommRing R] (c : R) (B : Matrix m m R)
+    (M : Matrix m n R) (A : Matrix n n R) :
+    det (1 + c • ((Mᵀ * B * M) * A)) = det (1 + c • (B * (M * A * Mᵀ))) := by
+  calc
+    det (1 + c • ((Mᵀ * B * M) * A)) = det (1 + Mᵀ * (c • (B * M * A))) := by
+      simp only [Matrix.mul_assoc, Matrix.mul_smul]
+    _ = det (1 + (c • (B * M * A)) * Mᵀ) :=
+      Matrix.det_one_add_mul_comm Mᵀ (c • (B * M * A))
+    _ = det (1 + c • (B * (M * A * Mᵀ))) := by
+      simp only [Matrix.smul_mul, Matrix.mul_assoc]
+
+/-- The subtractive form of `Matrix.det_one_add_smul_transpose_mul_mul`. This is the form of the
+determinant pencil occurring in Wishart moment-generating functions. -/
+theorem det_one_sub_smul_transpose_mul_mul {m n R : Type*} [Fintype m] [Fintype n]
+    [DecidableEq m] [DecidableEq n] [CommRing R] (c : R) (B : Matrix m m R)
+    (M : Matrix m n R) (A : Matrix n n R) :
+    det (1 - c • ((Mᵀ * B * M) * A)) = det (1 - c • (B * (M * A * Mᵀ))) := by
+  simpa only [sub_eq_add_neg, neg_smul] using
+    det_one_add_smul_transpose_mul_mul (-c) B M A
 
 /-- Congruence `A ↦ M * A * Mᵀ` by an arbitrary rectangular matrix, as a linear map between
 symmetric subspaces. -/
@@ -69,6 +111,45 @@ theorem coe_symmetricCongruenceLinearMap_apply (M : Matrix (Fin q) (Fin p) ℝ)
     (symmetricCongruenceLinearMap M A : Matrix (Fin q) (Fin q) ℝ) =
       M * (A : Matrix (Fin p) (Fin p) ℝ) * Mᵀ :=
   (rfl)
+
+/-- The trace pairing of a congruated symmetric matrix can be evaluated on the source by
+congruating the test matrix with the transpose. -/
+@[simp]
+theorem trace_mul_coe_symmetricCongruenceLinearMap (M : Matrix (Fin q) (Fin p) ℝ)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin q) (Fin q) ℝ)) :
+    ((Θ : Matrix (Fin q) (Fin q) ℝ) *
+        (symmetricCongruenceLinearMap M A : Matrix (Fin q) (Fin q) ℝ)).trace =
+      ((Mᵀ * (Θ : Matrix (Fin q) (Fin q) ℝ) * M) *
+        (A : Matrix (Fin p) (Fin p) ℝ)).trace := by
+  rw [coe_symmetricCongruenceLinearMap_apply, trace_mul_congruence]
+
+/-- For the Frobenius pairing, congruence by `M` is adjoint to congruence by `Mᵀ`. -/
+@[simp]
+theorem inner_symmetricCongruenceLinearMap (M : Matrix (Fin q) (Fin p) ℝ)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin q) (Fin q) ℝ)) :
+    ⟪symmetricCongruenceLinearMap M A, Θ⟫ =
+      ⟪A, symmetricCongruenceLinearMap Mᵀ Θ⟫ := by
+  rw [selfAdjoint.inner_eq_trace_mul, selfAdjoint.inner_eq_trace_mul,
+    coe_symmetricCongruenceLinearMap_apply,
+    coe_symmetricCongruenceLinearMap_apply, trace_mul_congruence]
+  simp
+
+/-- Mapping a measure by rectangular congruence precomposes its characteristic function with
+congruence by the transpose. -/
+theorem charFun_map_symmetricCongruenceLinearMap
+    (μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)))
+    (M : Matrix (Fin q) (Fin p) ℝ)
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin q) (Fin q) ℝ)) :
+    charFun (μ.map (symmetricCongruenceLinearMap M)) Θ =
+      charFun μ (symmetricCongruenceLinearMap Mᵀ Θ) := by
+  rw [charFun_apply, integral_map
+    (LinearMap.continuous_of_finiteDimensional (symmetricCongruenceLinearMap M)).aemeasurable
+    (by fun_prop), charFun_apply]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun A => ?_)
+  exact congrArg (fun x : ℝ => Complex.exp (x * Complex.I))
+    (inner_symmetricCongruenceLinearMap M A Θ)
 
 theorem symmetricCongruenceLinearMap_mul {r : ℕ} (M : Matrix (Fin q) (Fin p) ℝ)
     (N : Matrix (Fin p) (Fin r) ℝ) :
