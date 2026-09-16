@@ -204,7 +204,7 @@ noncomputable def narrowSignBoundary :
       MonoidHom.comp_apply] at hs
     exact MonoidHom.mem_ker.mpr <| oneEquivClassGroup.injective <| by simpa only [map_one]
 
-@[simp] private theorem coe_narrowSignBoundary
+private theorem coe_narrowSignBoundary
     (s : {w : InfinitePlace K // w.IsReal} → (ℝˣ ⧸ Units.posSubgroup ℝ)) :
     (narrowSignBoundary (K := K) s : RayClassGroup (narrowModulus K)) =
       narrowSignRayClass s := rfl

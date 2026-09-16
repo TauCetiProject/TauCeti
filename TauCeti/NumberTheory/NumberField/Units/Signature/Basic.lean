@@ -88,7 +88,7 @@ image of `u` under the real embedding `w` composed with `(𝓞 K) → K`. -/
 
 omit [NumberField K] in
 /-- The signature of an integer unit is the field-unit signature of its image in `Kˣ`. -/
-@[simp] theorem unitSignature_eq_fieldUnitSignature (u : (RingOfIntegers K)ˣ) :
+theorem unitSignature_eq_fieldUnitSignature (u : (RingOfIntegers K)ˣ) :
     unitSignature u =
       fieldUnitSignature (Units.map (algebraMap (RingOfIntegers K) K).toMonoidHom u) := by
   funext w
