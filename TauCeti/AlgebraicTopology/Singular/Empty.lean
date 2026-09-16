@@ -65,6 +65,20 @@ noncomputable def singularChainComplexInclComparison :
     Functor.whiskerLeft (incl ⋙ toSSetPair) ((SSetPair.chainComplexFunctorπ C).app R) ≫
       eqToHom (incl_comp_singularChainComplexFunctor_eq C R).symm
 
+/-- Each component of the comparison from ordinary to relative singular chains is the quotient
+map, up to the transports identifying the source and target chain complexes. -/
+@[simp]
+lemma singularChainComplexInclComparison_app (X : TopCat.{w}) :
+    (singularChainComplexInclComparison C R).app X =
+      eqToHom (Functor.congr_obj
+        (singularChainComplexFunctor_eq_incl_chainComplexFunctorRight C R) X) ≫
+        (incl.obj X).singularChainComplexπ R ≫
+          eqToHom (Functor.congr_obj
+            (incl_comp_singularChainComplexFunctor_eq C R).symm X) := by
+  simp only [singularChainComplexInclComparison, NatTrans.comp_app, eqToHom_app,
+    Functor.whiskerLeft_app, Functor.comp_obj, singularChainComplexπ,
+    SSetPair.chainComplexπ]
+
 /-- Ordinary singular chains are naturally isomorphic to relative singular chains modulo the
 empty subspace. -/
 @[no_expose]
