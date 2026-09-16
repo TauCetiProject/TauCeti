@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
+import TauCeti.GroupTheory.GroupAction.Burnside
 import Mathlib.Dynamics.PeriodicPts.Lemmas
 
 /-!
@@ -486,26 +487,8 @@ theorem card_add_orbitCount_le_length_add_two_mul_card_orbits [Finite α]
     intro q
     induction q using Quotient.inductionOn'
     exact ⟨Quotient.mk'' _, rfl⟩
-  let _ : Fintype (Quotient (SameCycle.setoid π)) := Fintype.ofFinite _
-  have horbit : orbitCount π = Nat.card (Quotient (SameCycle.setoid π)) := by
-    rw [π.orbitCount_eq_card_parts_partition, Nat.card_eq_fintype_card,
-      Fintype.card_congr π.orbitQuotientEquivCycleFactorsSumFixedPoints, Fintype.card_sum,
-      Fintype.card_coe]
-    have hfixed : Fintype.card {x : α // π x = x} =
-        Fintype.card α - π.support.card := by
-      have hp : (fun x : α ↦ π x = x) = (fun x ↦ x ∈ π.supportᶜ) := by
-        funext x
-        simp [Equiv.Perm.mem_support]
-      calc
-        _ = Fintype.card {x : α // x ∈ π.supportᶜ} :=
-          Fintype.card_congr (Equiv.subtypeEquivProp hp)
-        _ = π.supportᶜ.card := Fintype.card_coe _
-        _ = Fintype.card α - π.support.card := Finset.card_compl (s := π.support)
-    rw [hfixed, Equiv.Perm.card_parts_partition, Equiv.Perm.cycleType_def]
-    simp
-  have hcard : orbitCount π ≤ Nat.card (MulAction.orbitRel.Quotient H α) := by
-    rw [horbit]
-    exact Nat.card_le_card_of_surjective f hf
+  have hcard : orbitCount π ≤ Nat.card (MulAction.orbitRel.Quotient H α) :=
+    Nat.card_le_card_of_surjective f hf
   exact hbound.trans (by dsimp only [H] at hcard ⊢; omega)
 
 /-- **Hurwitz's transposition bound.** If a list of transpositions generates a group acting
@@ -522,8 +505,7 @@ theorem card_add_orbitCount_le_length_add_two [Finite α]
     omega
   let H := Subgroup.closure {g : Perm α | g ∈ L}
   have horbit : Nat.card (MulAction.orbitRel.Quotient H α) = 1 :=
-    let _ := ((MulAction.pretransitive_iff_unique_quotient_of_nonempty H α).mp htrans).some
-    Nat.card_unique
+    card_orbitQuotient_eq_one α
   have hbound := card_add_orbitCount_le_length_add_two_mul_card_orbits hL
   dsimp only [H] at horbit
   rw [horbit] at hbound

@@ -118,7 +118,8 @@ lemma orbitRel_le_of_subgroup_le {H K : Subgroup G} (hHK : H ≤ K) :
   exact ⟨⟨g.1, hHK g.2⟩, hg⟩
 
 /-- Enlarging the acting subgroup can only decrease the number of orbits. -/
-theorem card_orbitRelQuotient_anti [Finite X] {H K : Subgroup G} (hHK : H ≤ K) :
+theorem card_orbitRelQuotient_anti {H K : Subgroup G} (hHK : H ≤ K)
+    [Finite (_root_.MulAction.orbitRel.Quotient H X)] :
     Nat.card (_root_.MulAction.orbitRel.Quotient K X) ≤
       Nat.card (_root_.MulAction.orbitRel.Quotient H X) := by
   let f := Setoid.map_of_le (orbitRel_le_of_subgroup_le (G := G) (X := X) hHK)
