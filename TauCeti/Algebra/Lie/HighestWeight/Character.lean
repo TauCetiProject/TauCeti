@@ -43,8 +43,10 @@ Together these are the input to the alternation step of the character formula: `
 alternating element, supported in `lam - Q⁺`, whose coefficient at `lam` is `1`. Being alternating
 and supported in `lam - Q⁺` already pins the element down completely once its coefficients at the
 **dominant integral** weights are known, and the last result below says so. Identifying it with
-the Weyl numerator `N(lam)` therefore comes down to a single further statement, which is not
-proved here: that no dominant integral weight other than `lam` carries a nonzero coefficient.
+the Weyl numerator `N(lam)` therefore comes down to the statement that no dominant integral weight
+other than `lam` carries a nonzero coefficient, which is
+`TauCeti.coeff_formalCharacter_mul_weylDenominator_eq_zero_of_isDominantIntegral` in
+`TauCeti/Algebra/Lie/HighestWeight/WeylCharacter.lean`, together with the same facts about `N(lam)`.
 
 The determination is read off from
 `TauCeti.IsDotAlternating.eq_of_forall_coeff_dominantIntegral_eq` rather than from the chamber

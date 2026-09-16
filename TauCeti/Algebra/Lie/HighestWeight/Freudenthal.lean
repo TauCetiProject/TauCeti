@@ -239,7 +239,7 @@ private theorem exists_forall_genWeightSpace_add_zsmul_eq_bot {alpha : Dual K H}
 omit [IsAlgClosed K] in
 /-- A string sum is a sum over any long enough initial segment of `ℕ`, the summands off the string
 vanishing. -/
-private theorem sum_weightString_erase_eq_sum_range {beta : Dual K H} (hbeta : beta ≠ 0)
+theorem sum_weightString_erase_eq_sum_range {beta : Dual K H} (hbeta : beta ≠ 0)
     (mu : Dual K H) {N : ℕ}
     (hbot : ∀ j : ℕ, N ≤ j → genWeightSpace M ((mu + j • beta : Dual K H) : H → K) = ⊥) :
     ∑ j ∈ (weightString M hbeta mu).erase 0,
