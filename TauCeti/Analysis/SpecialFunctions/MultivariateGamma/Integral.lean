@@ -74,14 +74,6 @@ theorem integral_posDef_multivariateGamma_zero (a : ℝ) :
   rw [hset, Measure.restrict_univ, symmetricLebesgue_zero, integral_dirac]
   simp [Matrix.det_fin_zero]
 
-/-- The integrand of the cone integral is measurable on the whole symmetric subspace, not only on
-the cone. -/
-private theorem measurable_det_rpow_mul_exp_neg_trace (p : ℕ) (c : ℝ) :
-    Measurable fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
-      (A : Matrix (Fin p) (Fin p) ℝ).det ^ c *
-        exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace) := by
-  fun_prop
-
 /-- Pulled back along the Cholesky parametrization the integrand is nonnegative everywhere, not
 only over the positive-diagonal region: a Gram determinant is a square. -/
 private theorem det_rpow_mul_exp_neg_trace_nonneg (x : lowerTriangle p → ℝ) (c : ℝ) :
@@ -90,13 +82,6 @@ private theorem det_rpow_mul_exp_neg_trace_nonneg (x : lowerTriangle p → ℝ) 
   refine mul_nonneg (Real.rpow_nonneg ?_ _) (Real.exp_nonneg _)
   rw [Matrix.det_mul, Matrix.det_transpose]
   exact mul_self_nonneg _
-
-/-- The positive-diagonal coordinate region, spelled out as a set of coordinate vectors. The
-evaluated coordinate integral is stated in that spelling, the change of variables in the named
-one. -/
-private theorem posDiagLowerRegion_eq (p : ℕ) :
-    posDiagLowerRegion p = {x : lowerTriangle p → ℝ | ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩} :=
-  Set.ext fun _ => mem_posDiagLowerRegion p
 
 /-- **The multivariate Gamma integral**, in lower-integral form: the integral of
 `(det A) ^ (a - (p + 1) / 2) * exp (-trace A)` over the positive-definite cone against
@@ -126,14 +111,13 @@ theorem lintegral_posDef_multivariateGamma (ha : ((p : ℝ) - 1) / 2 < a) :
         ((lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).det ^ (a - ((p : ℝ) + 1) / 2) *
             exp (-(lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).trace)) *
           (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ))) := by
-    rw [← posDiagLowerRegion_eq]
+    rw [← posDiagLowerRegion_def]
     filter_upwards [ae_restrict_mem (measurableSet_posDiagLowerRegion p)] with x hx
     exact mul_nonneg (det_rpow_mul_exp_neg_trace_nonneg x _) (mul_nonneg (by positivity)
       (Finset.prod_nonneg fun i _ => pow_nonneg ((mem_posDiagLowerRegion p).mp hx i).le _))
-  rw [setLIntegral_posDef_symmetricLebesgue p
-    (measurable_det_rpow_mul_exp_neg_trace p _).ennreal_ofReal]
+  rw [setLIntegral_posDef_symmetricLebesgue p (by fun_prop)]
   simp_rw [hpt]
-  rw [posDiagLowerRegion_eq, ← ofReal_integral_eq_lintegral_ofReal
+  rw [posDiagLowerRegion_def, ← ofReal_integral_eq_lintegral_ofReal
       (integrableOn_lowerTriangle_det_rpow_mul_exp_neg_trace ha) hnonneg,
     integral_lowerTriangle_det_rpow_mul_exp_neg_trace ha]
 
@@ -145,7 +129,7 @@ theorem integrableOn_posDef_det_rpow_mul_exp_neg_trace (ha : ((p : ℝ) - 1) / 2
           exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace))
       {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).PosDef} (symmetricLebesgue p) := by
-  refine ⟨(measurable_det_rpow_mul_exp_neg_trace p _).aestronglyMeasurable, ?_⟩
+  refine ⟨Measurable.aestronglyMeasurable (by fun_prop), ?_⟩
   -- On the cone the determinant is positive, so the integrand is its own norm.
   have henorm : ∫⁻ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
       (A : Matrix (Fin p) (Fin p) ℝ).PosDef},
@@ -168,9 +152,8 @@ theorem integral_posDef_multivariateGamma (ha : ((p : ℝ) - 1) / 2 < a) :
       (A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
         exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace) ∂symmetricLebesgue p =
       multivariateGamma p a := by
-  rw [setIntegral_posDef_symmetricLebesgue p
-      (measurable_det_rpow_mul_exp_neg_trace p _).aestronglyMeasurable,
-    ← integral_lowerTriangle_det_rpow_mul_exp_neg_trace ha, ← posDiagLowerRegion_eq]
+  rw [setIntegral_posDef_symmetricLebesgue p (Measurable.aestronglyMeasurable (by fun_prop)),
+    ← integral_lowerTriangle_det_rpow_mul_exp_neg_trace ha, ← posDiagLowerRegion_def]
   refine setIntegral_congr_fun (measurableSet_posDiagLowerRegion p) fun x _ => ?_
   simp only [coe_lowerTriangleGram, smul_eq_mul]
   ring

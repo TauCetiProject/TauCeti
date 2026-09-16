@@ -198,6 +198,12 @@ theorem lowerTriangleGram_eq_symm_apply (x : lowerTriangle p → ℝ) :
 def posDiagLowerRegion : Set (lowerTriangle p → ℝ) :=
   {x | ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩}
 
+/-- The positive-diagonal region spelled out as a set of coordinate vectors, for rewriting an
+integral stated in that spelling into the named one. -/
+theorem posDiagLowerRegion_def :
+    posDiagLowerRegion p = {x : lowerTriangle p → ℝ | ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩} :=
+  (rfl)
+
 @[simp]
 theorem mem_posDiagLowerRegion {x : lowerTriangle p → ℝ} :
     x ∈ posDiagLowerRegion p ↔ ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩ :=
@@ -337,6 +343,7 @@ theorem map_cholesky_symmetricLebesgue :
 
 /-- On the positive-diagonal region the Jacobian weight is nonnegative, so it agrees with the
 real number `2 ^ p * ∏ i, (L i i) ^ (p - i)` it truncates. -/
+@[simp]
 theorem toReal_choleskyJacobianDensity {x : lowerTriangle p → ℝ}
     (hx : x ∈ posDiagLowerRegion p) :
     (choleskyJacobianDensity p x).toReal =
