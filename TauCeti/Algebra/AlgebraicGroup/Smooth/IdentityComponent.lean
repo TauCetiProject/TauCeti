@@ -31,13 +31,15 @@ instance smooth_identityComponent (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     [Algebra.Smooth k H] : Algebra.Smooth k (identityComponent H) := by
   let e : H := PrimeSpectrum.connectedComponentIdempotent (R := H)
     (Bialgebra.augmentationPoint k H)
+  -- The ideal's definition is not exposed across modules, so use its public membership lemma.
   have hI : PrimeSpectrum.connectedComponentIdeal (R := H) (Bialgebra.augmentationPoint k H) =
       Ideal.span {1 - e} := by
     ext x
     exact (PrimeSpectrum.mem_connectedComponentIdeal_iff
       (x := Bialgebra.augmentationPoint k H) (r := x)).trans Ideal.mem_span_singleton'.symm
   let _ : IsLocalization.Away e (identityComponent H) := by
-    -- Identify the Hopf quotient carrier with the quotient by the complementary idempotent.
+    -- Direct application through the bundled identity component exceeds the heartbeat limit.
+    -- Expose the quotient carrier so the underlying Hopf ideal can be rewritten explicitly.
     change IsLocalization.Away e
       (H ⧸ (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)).toIdeal)
     rw [HopfAlgebra.identityComponentHopfIdeal_toIdeal, hI]
