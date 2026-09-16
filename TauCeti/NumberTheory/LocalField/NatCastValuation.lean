@@ -73,8 +73,9 @@ def natCastValuation (n : ℕ) (hn : (n : K) ≠ 0) : ℕ :=
 
 variable (K) in
 /-- The characteristic equation of `natCastValuation`: it decodes the normalized valuation of
-`(n : K)`. Since the left-hand side is a natural number, the equation also records that the
-image of `n` lies in `𝒪[K]`. -/
+`(n : K)`. The right-hand side expresses the valuation as the image of a natural number, so the
+equation also records that the image of `n` lies in `𝒪[K]`. -/
+@[simp]
 theorem normalizedValuation_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
     normalizedValuation K (Units.mk0 (n : K) hn)
       = Multiplicative.ofAdd (natCastValuation K n hn : ℤ) := by
@@ -85,6 +86,7 @@ theorem normalizedValuation_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
 
 variable (K) in
 /-- The zero-preserving form of the characteristic equation of `natCastValuation`. -/
+@[simp]
 theorem normalizedValuationWithZero_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
     normalizedValuationWithZero K (n : K) = WithZero.exp (natCastValuation K n hn : ℤ) := by
   have h := normalizedValuationWithZero_coe (Units.mk0 (n : K) hn)
@@ -94,6 +96,7 @@ theorem normalizedValuationWithZero_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
 variable (K) in
 /-- The vanishing criterion: the normalized valuation of `n` is zero exactly when `n` is
 invertible in the ring of integers. -/
+@[simp]
 theorem natCastValuation_eq_zero_iff (n : ℕ) (hn : (n : K) ≠ 0) :
     natCastValuation K n hn = 0 ↔ IsUnit (n : 𝒪[K]) := by
   have hcast : ((n : 𝒪[K]) : K) = (n : K) := by push_cast; rfl
@@ -135,14 +138,20 @@ theorem natCastValuation_eq_zero_of_ringChar_ne_zero (hK : ringChar K ≠ 0) (n 
 variable (K) in
 /-- The normalized valuation of `1` vanishes. -/
 @[simp]
-theorem natCastValuation_one (h1 : ((1 : ℕ) : K) ≠ 0) : natCastValuation K 1 h1 = 0 :=
-  (natCastValuation_eq_zero_iff K 1 h1).mpr (by simp)
+theorem natCastValuation_one :
+    natCastValuation K 1 (by simpa only [Nat.cast_one] using (one_ne_zero : (1 : K) ≠ 0)) = 0 := by
+  have h1 : ((1 : ℕ) : K) ≠ 0 := by
+    simpa only [Nat.cast_one] using (one_ne_zero : (1 : K) ≠ 0)
+  exact (natCastValuation_eq_zero_iff K 1 h1).mpr (by simp)
 
 variable (K) in
 /-- The normalized valuation of a natural number is additive in it. -/
-theorem natCastValuation_mul {m n : ℕ} (hm : (m : K) ≠ 0) (hn : (n : K) ≠ 0)
-    (hmn : ((m * n : ℕ) : K) ≠ 0) :
-    natCastValuation K (m * n) hmn = natCastValuation K m hm + natCastValuation K n hn := by
+@[simp]
+theorem natCastValuation_mul {m n : ℕ} (hm : (m : K) ≠ 0) (hn : (n : K) ≠ 0) :
+    natCastValuation K (m * n) (by simpa only [Nat.cast_mul] using mul_ne_zero hm hn) =
+      natCastValuation K m hm + natCastValuation K n hn := by
+  have hmn : ((m * n : ℕ) : K) ≠ 0 := by
+    simpa only [Nat.cast_mul] using mul_ne_zero hm hn
   have h : normalizedValuationWithZero K ((m * n : ℕ) : K)
       = normalizedValuationWithZero K (m : K) * normalizedValuationWithZero K (n : K) := by
     push_cast
@@ -153,8 +162,12 @@ theorem natCastValuation_mul {m n : ℕ} (hm : (m : K) ≠ 0) (hn : (n : K) ≠ 
 
 variable (K) in
 /-- The normalized valuation of a power of a natural number. -/
-theorem natCastValuation_pow {n : ℕ} (k : ℕ) (hn : (n : K) ≠ 0) (hnk : ((n ^ k : ℕ) : K) ≠ 0) :
-    natCastValuation K (n ^ k) hnk = k * natCastValuation K n hn := by
+@[simp]
+theorem natCastValuation_pow {n : ℕ} (k : ℕ) (hn : (n : K) ≠ 0) :
+    natCastValuation K (n ^ k) (by simpa only [Nat.cast_pow] using pow_ne_zero k hn) =
+      k * natCastValuation K n hn := by
+  have hnk : ((n ^ k : ℕ) : K) ≠ 0 := by
+    simpa only [Nat.cast_pow] using pow_ne_zero k hn
   have h : normalizedValuationWithZero K ((n ^ k : ℕ) : K)
       = normalizedValuationWithZero K (n : K) ^ k := by
     push_cast
@@ -166,6 +179,7 @@ theorem natCastValuation_pow {n : ℕ} (k : ℕ) (hn : (n : K) ≠ 0) (hnk : ((n
 variable (K) in
 /-- The normalized absolute value of a natural number is `q ^ (-natCastValuation K n hn)`, where
 `q` is the cardinality of the residue field. -/
+@[simp]
 theorem normalizedAbsoluteValue_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
     normalizedAbsoluteValue K (n : K)
       = ((Nat.card 𝓀[K] : ℚ≥0)⁻¹) ^ natCastValuation K n hn := by
