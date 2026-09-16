@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.Restricted.TwoSidedSeries.Basic
 public import TauCeti.Topology.Algebra.Nonarchimedean.DiscreteConvolution
+import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 
 /-!
 # Convolution of two-sided restricted series
@@ -23,9 +24,9 @@ to summability on every addition fiber. The resulting coefficients again tend to
 open additive subgroup, only finitely many pairs contribute, hence only their finitely many degrees
 can contribute.
 
-This supplies the analytic part of multiplication on Wedhorn's `A⟨X, X⁻¹⟩` (Example 6.39).
-This module constructs the bilinear convolution but does not establish a multiplicative unit or
-associativity.
+This supplies multiplication on Wedhorn's `A⟨X, X⁻¹⟩` (Example 6.39). After constructing the
+bilinear convolution, the module proves associativity, installs the commutative algebra structure,
+and shows that the variable `X` is a unit.
 
 ## Main results
 
@@ -35,7 +36,9 @@ associativity.
   two-sided restricted condition.
 * `TauCeti.Huber.twoSidedRestrictedMul`: convolution as a bilinear map on the restricted
   coefficient module.
-* `TauCeti.Huber.twoSidedRestrictedMul_comm`: commutativity of this multiplication.
+* `TauCeti.Huber.addRingConvolution_assoc`: associativity on restricted coefficient families.
+* The `CommRing` and `Algebra A` instances on `TauCeti.Huber.twoSidedRestrictedSubmodule A A`.
+* `TauCeti.Huber.isUnit_twoSidedX`: the variable `X` is invertible.
 
 ## References
 
@@ -142,6 +145,229 @@ theorem twoSidedRestrictedMul_comm (f g : twoSidedRestrictedSubmodule A A) :
       DiscreteConvolution.addRingConvolution_comm]
 
 end Bilinear
+
+section Identities
+
+open DiscreteConvolution
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A]
+
+/-- A coefficient of a convolution, with the addition fiber parametrized by its first index. -/
+theorem addRingConvolution_apply_sub (a b : ℤ → A) (n : ℤ) :
+    addRingConvolution a b n = ∑' i : ℤ, a i * b (n - i) := by
+  rw [addRingConvolution_apply]
+  refine (Equiv.tsum_eq (⟨fun i : ℤ ↦ ⟨(i, n - i), by simp [mem_addFiber]⟩,
+      fun ab ↦ (ab : ℤ × ℤ).1, fun _ ↦ rfl, ?_⟩ : ℤ ≃ addFiber n)
+    (fun ab : addFiber n ↦ a (ab : ℤ × ℤ).1 * b (ab : ℤ × ℤ).2)).symm
+  rintro ⟨⟨i, j⟩, h⟩
+  rw [mem_addFiber] at h
+  simp only [Subtype.mk.injEq, Prod.mk.injEq, true_and]
+  omega
+
+/-- Convolving with `x Xᵐ` on the left shifts degrees by `m` and scales by `x`. -/
+theorem pi_single_addRingConvolution (m : ℤ) (x : A) (b : ℤ → A) :
+    addRingConvolution (Pi.single m x) b = fun n ↦ x * b (n - m) := by
+  funext n
+  rw [addRingConvolution_apply_sub,
+    tsum_eq_single m fun i hi ↦ by rw [Pi.single_eq_of_ne hi, zero_mul], Pi.single_eq_same]
+
+end Identities
+
+section Associativity
+
+open DiscreteConvolution
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
+  [NonarchimedeanRing A] [CompleteSpace A] [T2Space A]
+
+omit [T2Space A] in
+/-- The single-index form of a convolution coefficient is summable for restricted families. -/
+theorem summable_mul_sub_of_zeroAtFilter {a b : ℤ → A} (ha : ZeroAtFilter cofinite a)
+    (hb : ZeroAtFilter cofinite b) (n : ℤ) : Summable fun i : ℤ ↦ a i * b (n - i) := by
+  have hab := (NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero ha).mul_of_nonarchimedean
+    (NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero hb)
+  have hinj : Function.Injective fun i : ℤ ↦ (i, n - i) := fun _ _ h ↦ congrArg Prod.fst h
+  simpa [Function.comp_def] using hab.comp_injective hinj
+
+/-- Additive ring convolution is associative on restricted coefficient families. -/
+theorem addRingConvolution_assoc {a b c : ℤ → A} (ha : ZeroAtFilter cofinite a)
+    (hb : ZeroAtFilter cofinite b) (hc : ZeroAtFilter cofinite c) :
+    addRingConvolution (addRingConvolution a b) c =
+      addRingConvolution a (addRingConvolution b c) := by
+  have hA := NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero ha
+  have hB := NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero hb
+  have hC := NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero hc
+  funext n
+  simp only [addRingConvolution_apply_sub]
+  have hF : Summable fun p : ℤ × ℤ ↦ a p.2 * b (p.1 - p.2) * c (n - p.1) := by
+    have hinj : Function.Injective fun p : ℤ × ℤ ↦ ((p.2, p.1 - p.2), n - p.1) := by
+      rintro ⟨j₁, i₁⟩ ⟨j₂, i₂⟩ h
+      simp only [Prod.mk.injEq] at h ⊢
+      omega
+    simpa [Function.comp_def] using
+      ((hA.mul_of_nonarchimedean hB).mul_of_nonarchimedean hC).comp_injective hinj
+  have hG : Summable fun q : ℤ × ℤ ↦ a q.1 * (b q.2 * c (n - q.1 - q.2)) := by
+    have hinj : Function.Injective fun q : ℤ × ℤ ↦ (q.1, (q.2, n - q.1 - q.2)) := by
+      rintro ⟨i₁, k₁⟩ ⟨i₂, k₂⟩ h
+      simp only [Prod.mk.injEq] at h ⊢
+      omega
+    simpa [Function.comp_def] using
+      (hA.mul_of_nonarchimedean (hB.mul_of_nonarchimedean hC)).comp_injective hinj
+  have hlhs : ∑' j : ℤ, (∑' i : ℤ, a i * b (j - i)) * c (n - j) =
+      ∑' p : ℤ × ℤ, a p.2 * b (p.1 - p.2) * c (n - p.1) := by
+    rw [hF.tsum_prod]
+    exact tsum_congr fun j ↦ ((summable_mul_sub_of_zeroAtFilter ha hb j).tsum_mul_right _).symm
+  have hrhs : ∑' i : ℤ, a i * ∑' k : ℤ, b k * c (n - i - k) =
+      ∑' q : ℤ × ℤ, a q.1 * (b q.2 * c (n - q.1 - q.2)) := by
+    rw [hG.tsum_prod]
+    exact tsum_congr fun i ↦
+      ((summable_mul_sub_of_zeroAtFilter hb hc (n - i)).tsum_mul_left _).symm
+  rw [hlhs, hrhs, ← Equiv.tsum_eq
+    (⟨fun p : ℤ × ℤ ↦ (p.2, p.1 - p.2), fun q : ℤ × ℤ ↦ (q.1 + q.2, q.1),
+      by rintro ⟨j, i⟩; simp, by rintro ⟨x, y⟩; simp⟩ : ℤ × ℤ ≃ ℤ × ℤ)
+    fun q : ℤ × ℤ ↦ a q.1 * (b q.2 * c (n - q.1 - q.2))]
+  refine tsum_congr ?_
+  rintro ⟨j, i⟩
+  have hshift : n - i - (j - i) = n - j := by ring
+  rw [Equiv.coe_fn_mk, hshift, mul_assoc]
+
+end Associativity
+
+section Algebra
+
+open DiscreteConvolution
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
+  [NonarchimedeanRing A] [CompleteSpace A] [T2Space A]
+
+/-- Multiplication on `A⟨X, X⁻¹⟩` is the bilinear convolution of coefficient families. -/
+noncomputable instance : Mul (twoSidedRestrictedSubmodule A A) :=
+  ⟨fun f g ↦ twoSidedRestrictedMul f g⟩
+
+@[simp]
+theorem twoSidedRestricted_coe_mul (f g : twoSidedRestrictedSubmodule A A) :
+    ((f * g : twoSidedRestrictedSubmodule A A) : ℤ → A) =
+      (f : ℤ → A) ⋆ᵣ₊ (g : ℤ → A) :=
+  coe_twoSidedRestrictedMul f g
+
+/-- The unit of `A⟨X, X⁻¹⟩` is the constant series supported in degree zero. -/
+instance : One (twoSidedRestrictedSubmodule A A) :=
+  ⟨⟨Pi.single 0 1, twoSidedRestrictedSubmodule_pi_single 0 1⟩⟩
+
+omit [IsUniformAddGroup A] [CompleteSpace A] [T2Space A] in
+@[simp]
+theorem twoSidedRestricted_coe_one :
+    ((1 : twoSidedRestrictedSubmodule A A) : ℤ → A) = Pi.single 0 1 := (rfl)
+
+/-- The coefficient formula for a product in `A⟨X, X⁻¹⟩`. -/
+theorem twoSidedRestricted_coe_mul_apply
+    (f g : twoSidedRestrictedSubmodule A A) (n : ℤ) :
+    ((f * g : twoSidedRestrictedSubmodule A A) : ℤ → A) n =
+      ∑' i : ℤ, (f : ℤ → A) i * (g : ℤ → A) (n - i) := by
+  rw [twoSidedRestricted_coe_mul]
+  exact addRingConvolution_apply_sub _ _ n
+
+/-- The two-sided restricted series form a commutative ring under convolution. -/
+noncomputable instance : CommRing (twoSidedRestrictedSubmodule A A) :=
+  { (inferInstance : AddCommGroup (twoSidedRestrictedSubmodule A A)),
+    (inferInstance : Mul (twoSidedRestrictedSubmodule A A)),
+    (inferInstance : One (twoSidedRestrictedSubmodule A A)) with
+    mul_assoc := fun f g h ↦ Subtype.ext (by
+      simp only [twoSidedRestricted_coe_mul]
+      exact addRingConvolution_assoc (mem_twoSidedRestrictedSubmodule.mp f.2)
+        (mem_twoSidedRestrictedSubmodule.mp g.2) (mem_twoSidedRestrictedSubmodule.mp h.2))
+    one_mul := fun f ↦ Subtype.ext (by
+      simp only [twoSidedRestricted_coe_mul, twoSidedRestricted_coe_one,
+        single_addRingConvolution])
+    mul_one := fun f ↦ Subtype.ext (by
+      simp only [twoSidedRestricted_coe_mul, twoSidedRestricted_coe_one,
+        addRingConvolution_single])
+    left_distrib := fun f g h ↦ Subtype.ext (by
+      simp only [twoSidedRestricted_coe_mul, Submodule.coe_add]
+      exact addRingConvolution_add _ _ _
+        (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.2 g.2)
+        (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.2 h.2))
+    right_distrib := fun f g h ↦ Subtype.ext (by
+      simp only [twoSidedRestricted_coe_mul, Submodule.coe_add]
+      exact add_addRingConvolution _ _ _
+        (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.2 h.2)
+        (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule g.2 h.2))
+    zero_mul := fun f ↦ Subtype.ext (by
+      simp only [twoSidedRestricted_coe_mul, Submodule.coe_zero, zero_addRingConvolution])
+    mul_zero := fun f ↦ Subtype.ext (by
+      simp only [twoSidedRestricted_coe_mul, Submodule.coe_zero, addRingConvolution_zero])
+    mul_comm := fun f g ↦ twoSidedRestrictedMul_comm f g }
+
+/-- The coefficientwise module structure makes `A⟨X, X⁻¹⟩` an `A`-algebra. -/
+noncomputable instance : Algebra A (twoSidedRestrictedSubmodule A A) :=
+  Algebra.ofModule
+    (fun r f g ↦ Subtype.ext (by
+      simp only [twoSidedRestricted_coe_mul, Submodule.coe_smul]
+      exact smul_addRingConvolution r _ _
+        (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.2 g.2)))
+    (fun r f g ↦ Subtype.ext (by
+      simp only [twoSidedRestricted_coe_mul, Submodule.coe_smul]
+      exact addRingConvolution_smul r _ _
+        (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.2 g.2)))
+
+/-- The monomial `x Xᵐ` in the two-sided restricted series ring. -/
+def twoSidedMonomial (m : ℤ) (x : A) : twoSidedRestrictedSubmodule A A :=
+  ⟨Pi.single m x, twoSidedRestrictedSubmodule_pi_single m x⟩
+
+omit [IsUniformAddGroup A] [CompleteSpace A] [T2Space A] in
+@[simp]
+theorem twoSidedRestricted_coe_monomial (m : ℤ) (x : A) :
+    ((twoSidedMonomial m x : twoSidedRestrictedSubmodule A A) : ℤ → A) = Pi.single m x := (rfl)
+
+omit [IsUniformAddGroup A] [CompleteSpace A] [T2Space A] in
+@[simp]
+theorem twoSidedMonomial_zero_one : twoSidedMonomial (0 : ℤ) (1 : A) = 1 := (rfl)
+
+/-- Monomials multiply as monomials. -/
+@[simp]
+theorem twoSidedMonomial_mul (m k : ℤ) (x y : A) :
+    twoSidedMonomial m x * twoSidedMonomial k y = twoSidedMonomial (m + k) (x * y) :=
+  Subtype.ext (by
+    rw [twoSidedRestricted_coe_mul, twoSidedRestricted_coe_monomial,
+      twoSidedRestricted_coe_monomial, twoSidedRestricted_coe_monomial,
+      pi_single_addRingConvolution]
+    funext n
+    by_cases h : n = m + k
+    · subst h
+      simp
+    · rw [Pi.single_eq_of_ne h, Pi.single_eq_of_ne (by omega : n - m ≠ k), mul_zero])
+
+/-- The algebra structure map places a scalar in degree zero. -/
+@[simp]
+theorem algebraMap_eq_twoSidedMonomial (x : A) :
+    algebraMap A (twoSidedRestrictedSubmodule A A) x = twoSidedMonomial 0 x := by
+  refine Subtype.ext (funext fun n ↦ ?_)
+  rw [Algebra.algebraMap_eq_smul_one]
+  simp [Pi.single_apply]
+
+/-- A monomial with a unit coefficient is a unit. -/
+theorem isUnit_twoSidedMonomial (m : ℤ) {x : A} (hx : IsUnit x) :
+    IsUnit (twoSidedMonomial m x) := by
+  obtain ⟨u, rfl⟩ := hx
+  have h : ∀ y z : A, y * z = 1 →
+      twoSidedMonomial m y * twoSidedMonomial (-m) z = 1 := fun y z hyz ↦ by
+    rw [twoSidedMonomial_mul, add_neg_cancel, hyz, twoSidedMonomial_zero_one]
+  exact ⟨⟨twoSidedMonomial m (u : A), twoSidedMonomial (-m) ((u⁻¹ : Aˣ) : A),
+    h _ _ u.mul_inv, (mul_comm _ _).trans (h _ _ u.mul_inv)⟩, rfl⟩
+
+/-- The variable `X` in the two-sided restricted series ring. -/
+def twoSidedX : twoSidedRestrictedSubmodule A A := twoSidedMonomial 1 1
+
+omit [IsUniformAddGroup A] [CompleteSpace A] [T2Space A] in
+theorem twoSidedX_def :
+    (twoSidedX : twoSidedRestrictedSubmodule A A) = twoSidedMonomial 1 1 := (rfl)
+
+/-- The variable `X` is invertible, with inverse the monomial in degree `-1`. -/
+theorem isUnit_twoSidedX : IsUnit (twoSidedX : twoSidedRestrictedSubmodule A A) := by
+  rw [twoSidedX_def]
+  exact isUnit_twoSidedMonomial 1 isUnit_one
+
+end Algebra
 
 end TauCeti.Huber
 

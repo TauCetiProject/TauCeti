@@ -55,6 +55,8 @@ a placement hazard:
   `TauCeti/Topology/Algebra/Nonarchimedean/ZeroAtFilter.lean` because neither direction of it
   looks at the index set or at series.
 * `TauCeti.Huber.twoSidedRestrictedSubmodule_ext`: coefficientwise extensionality.
+* `TauCeti.Huber.twoSidedRestrictedSubmodule_pi_single`: a family supported in one degree is
+  restricted.
 * `TauCeti.Huber.twoSidedRestrictedSubmodule_eq_sup` and
   `TauCeti.Huber.disjoint_twoSidedRestricted_nonneg_neg`: **the degree decomposition and its
   directness** — `A⟨X, X⁻¹⟩` is the sum of its non-negative and negative parts, and that sum is
@@ -122,6 +124,13 @@ map that does not exist until there is a ring structure. -/
 theorem twoSidedRestrictedSubmodule_ext {f g : twoSidedRestrictedSubmodule A M}
     (h : ∀ n, (f : ℤ → M) n = (g : ℤ → M) n) : f = g :=
   Subtype.ext (funext h)
+
+/-- A family supported in a single degree is restricted. -/
+theorem twoSidedRestrictedSubmodule_pi_single (m : ℤ) (x : M) :
+    Pi.single m x ∈ twoSidedRestrictedSubmodule A M :=
+  (mem_twoSidedRestrictedSubmodule.mp
+      (twoSidedRestrictedSubmodule A M).zero_mem).of_eventually_eq_or_eq_zero
+    ((Filter.eventually_cofinite_ne m).mono fun _ hn ↦ Or.inr (Pi.single_eq_of_ne hn _))
 
 end Submodule
 
