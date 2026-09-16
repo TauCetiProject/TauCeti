@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Hodge.Realification
 public import TauCeti.Geometry.Hodge.WeightOne.Basic
-public import TauCeti.LinearAlgebra.Eigenspace.Transport
 
 /-!
 # Weight-one Hodge structures from complex structures on lattices
