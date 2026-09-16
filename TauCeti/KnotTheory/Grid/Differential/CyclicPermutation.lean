@@ -152,6 +152,14 @@ theorem fullyBlockedDifferential_relabelRows_finRotate :
     GridChain.relabelRowsEquiv_apply, GridState.relabelRows_relabelRows, Equiv.self_trans_symm,
     GridState.relabelRows_refl, fullyBlockedRectangleCount_relabelRows_finRotate]
 
+/-- The cyclic row relabelling intertwines the fully blocked differentials pointwise. -/
+theorem fullyBlockedDifferential_relabelRows_finRotate_apply (c : GridChain (ZMod 2) n) :
+    (G.relabelRows (finRotate n)).fullyBlockedDifferential
+        (GridChain.relabelRowsEquiv (finRotate n) c) =
+      GridChain.relabelRowsEquiv (finRotate n) (G.fullyBlockedDifferential c) := by
+  have h := DFunLike.congr_fun G.fullyBlockedDifferential_relabelRows_finRotate c
+  simpa [LinearMap.comp_apply] using h
+
 /-! ### Cyclic permutation of the columns -/
 
 omit R in
@@ -254,6 +262,15 @@ theorem fullyBlockedDifferential_relabelColumns_finRotate :
     GridChain.relabelColumnsEquiv_apply, GridState.relabelColumns_relabelColumns,
     Equiv.self_trans_symm, GridState.relabelColumns_refl,
     fullyBlockedRectangleCount_relabelColumns_finRotate]
+
+/-- The cyclic column relabelling intertwines the fully blocked differentials pointwise. -/
+theorem fullyBlockedDifferential_relabelColumns_finRotate_apply
+    (c : GridChain (ZMod 2) n) :
+    (G.relabelColumns (finRotate n)).fullyBlockedDifferential
+        (GridChain.relabelColumnsEquiv (finRotate n) c) =
+      GridChain.relabelColumnsEquiv (finRotate n) (G.fullyBlockedDifferential c) := by
+  have h := DFunLike.congr_fun G.fullyBlockedDifferential_relabelColumns_finRotate c
+  simpa [LinearMap.comp_apply] using h
 
 end GridDiagram
 

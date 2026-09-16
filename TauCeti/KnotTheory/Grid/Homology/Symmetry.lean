@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Quotient.Basic
-public import TauCeti.KnotTheory.Grid.CycleSymmetry
+public import TauCeti.Algebra.Module.Equiv.Basic
 public import TauCeti.KnotTheory.Grid.Differential.CyclicPermutation
-public import TauCeti.KnotTheory.Grid.Homology
+public import TauCeti.KnotTheory.Grid.Homology.Basic
 
 /-!
 # Cyclic symmetries of fully blocked grid homology
@@ -22,7 +22,7 @@ intertwines two fully blocked differentials maps cycles to cycles and boundaries
 it induces an equivalence of the corresponding homology quotients. The cyclic row and column
 permutations are then the two concrete instances needed for the cyclic-permutation moves.
 
-The quotient homology used here is the subquotient from `Homology.lean`; no choice of
+The quotient homology used here is the subquotient from `Homology/Basic.lean`; no choice of
 representatives is involved. The `_apply_mk` lemmas record the representative-level computation,
 which is the characteristic API for using the induced equivalences without unfolding the quotient
 construction.
@@ -31,8 +31,9 @@ construction.
 
 * `TauCeti.GridDiagram.fullyBlockedHomologyEquivOfIntertwining`: an invertible intertwining map
   induces an equivalence of fully blocked homology quotients.
-* `TauCeti.GridDiagram.fullyBlockedCyclesEquiv`: the same map induces an equivalence of cycle
-  submodules, with its action on representatives exposed by `fullyBlockedCyclesEquiv_apply`.
+* `TauCeti.GridDiagram.fullyBlockedCyclesEquivOfIntertwining`: the same map induces an equivalence
+  of cycle submodules, with its action on representatives exposed by
+  `fullyBlockedCyclesEquivOfIntertwining_apply`.
 * `TauCeti.GridDiagram.fullyBlockedHomologyEquivRelabelRowsFinRotate` and
   `TauCeti.GridDiagram.fullyBlockedHomologyEquivRelabelColumnsFinRotate`: cyclic row and column
   relabellings induce homology equivalences, with representative formulas given by their
@@ -62,23 +63,23 @@ include he
 
 /-- The chain equivalence induced by `e` between the cycle submodules of two intertwined grid
 differentials. -/
-noncomputable def fullyBlockedCyclesEquiv :
+noncomputable def fullyBlockedCyclesEquivOfIntertwining :
     G.fullyBlockedCycles ≃ₗ[ZMod 2] G'.fullyBlockedCycles := by
   apply e.ofSubmodules
   rw [G.fullyBlockedCycles_eq_ker, G'.fullyBlockedCycles_eq_ker]
-  exact e.map_ker_eq_ker_of_intertwine G.fullyBlockedDifferential
+  exact e.map_ker_of_intertwine G.fullyBlockedDifferential
     G'.fullyBlockedDifferential he
 
 /-- The induced cycle equivalence acts on underlying chains by the intertwining map. -/
 @[simp]
-theorem fullyBlockedCyclesEquiv_apply (c : G.fullyBlockedCycles) :
-    (G.fullyBlockedCyclesEquiv G' e he c : GridChain (ZMod 2) n) = e c := by
+theorem fullyBlockedCyclesEquivOfIntertwining_apply (c : G.fullyBlockedCycles) :
+    (G.fullyBlockedCyclesEquivOfIntertwining G' e he c : GridChain (ZMod 2) n) = e c := by
   exact e.ofSubmodules_apply _ c
 
 /-- The inverse induced cycle equivalence acts on underlying chains by the inverse map. -/
 @[simp]
-theorem fullyBlockedCyclesEquiv_symm_apply (c : G'.fullyBlockedCycles) :
-    ((G.fullyBlockedCyclesEquiv G' e he).symm c : GridChain (ZMod 2) n) =
+theorem fullyBlockedCyclesEquivOfIntertwining_symm_apply (c : G'.fullyBlockedCycles) :
+    ((G.fullyBlockedCyclesEquivOfIntertwining G' e he).symm c : GridChain (ZMod 2) n) =
       e.symm (c : GridChain (ZMod 2) n) := by
   exact e.ofSubmodules_symm_apply _ c
 
@@ -88,66 +89,67 @@ noncomputable def fullyBlockedHomologyEquivOfIntertwining :
     G.fullyBlockedHomology ≃ₗ[ZMod 2] G'.fullyBlockedHomology := by
   apply Submodule.Quotient.equiv
     G.fullyBlockedBoundariesInCycles G'.fullyBlockedBoundariesInCycles
-    (G.fullyBlockedCyclesEquiv G' e he)
+    (G.fullyBlockedCyclesEquivOfIntertwining G' e he)
   ext c
+  have hboundaries :
+      Submodule.map (e : GridChain (ZMod 2) n →ₗ[ZMod 2] GridChain (ZMod 2) n)
+          G.fullyBlockedBoundaries = G'.fullyBlockedBoundaries := by
+    rw [G.fullyBlockedBoundaries_eq_range, G'.fullyBlockedBoundaries_eq_range]
+    exact e.map_range_of_intertwine G.fullyBlockedDifferential G'.fullyBlockedDifferential he
   rw [Submodule.mem_map]
   constructor
   · rintro ⟨d, hd, rfl⟩
     have hd' : (d : GridChain (ZMod 2) n) ∈ G.fullyBlockedBoundaries :=
       (mem_fullyBlockedBoundariesInCycles G d).mp hd
-    obtain ⟨b, hb⟩ := (mem_fullyBlockedBoundaries G (d : GridChain (ZMod 2) n)).mp hd'
     apply (mem_fullyBlockedBoundariesInCycles G' _).mpr
-    apply (mem_fullyBlockedBoundaries G' _).mpr
-    refine ⟨e b, ?_⟩
-    calc
-      G'.fullyBlockedDifferential (e b) = e (G.fullyBlockedDifferential b) := he b
-      _ = e (d : GridChain (ZMod 2) n) := by rw [hb]
-      _ = (G.fullyBlockedCyclesEquiv G' e he d : GridChain (ZMod 2) n) :=
-        (fullyBlockedCyclesEquiv_apply G G' e he d).symm
+    change (G.fullyBlockedCyclesEquivOfIntertwining G' e he d :
+      GridChain (ZMod 2) n) ∈ G'.fullyBlockedBoundaries
+    rw [fullyBlockedCyclesEquivOfIntertwining_apply]
+    rw [← hboundaries]
+    exact ⟨d, hd', rfl⟩
   · intro hc
     have hc' : (c : GridChain (ZMod 2) n) ∈ G'.fullyBlockedBoundaries :=
       (mem_fullyBlockedBoundariesInCycles G' c).mp hc
-    obtain ⟨b, hb⟩ := (mem_fullyBlockedBoundaries G' (c : GridChain (ZMod 2) n)).mp hc'
-    refine ⟨(G.fullyBlockedCyclesEquiv G' e he).symm c, ?_,
-      (G.fullyBlockedCyclesEquiv G' e he).apply_symm_apply c⟩
+    have hcmap : (c : GridChain (ZMod 2) n) ∈
+        Submodule.map (e : GridChain (ZMod 2) n →ₗ[ZMod 2] GridChain (ZMod 2) n)
+          G.fullyBlockedBoundaries := by
+      rw [hboundaries]
+      exact hc'
+    obtain ⟨b, hb, hbe⟩ := hcmap
+    refine ⟨(G.fullyBlockedCyclesEquivOfIntertwining G' e he).symm c, ?_,
+      (G.fullyBlockedCyclesEquivOfIntertwining G' e he).apply_symm_apply c⟩
     · apply (mem_fullyBlockedBoundariesInCycles G _).mpr
-      apply (mem_fullyBlockedBoundaries G _).mpr
-      refine ⟨e.symm b, ?_⟩
-      rw [fullyBlockedCyclesEquiv_symm_apply]
-      calc
-        G.fullyBlockedDifferential (e.symm b) = e.symm
-            (G'.fullyBlockedDifferential b) := by
-          simpa using (congrArg e.symm (he (e.symm b))).symm
-        _ = e.symm c := by rw [hb]
+      rw [fullyBlockedCyclesEquivOfIntertwining_symm_apply]
+      have hsymm : e.symm (c : GridChain (ZMod 2) n) = b := by
+        calc
+          e.symm (c : GridChain (ZMod 2) n) = e.symm (e b) := by
+            simpa only [LinearEquiv.coe_coe] using congrArg e.symm hbe.symm
+          _ = b := e.symm_apply_apply b
+      rw [hsymm]
+      exact hb
 /-- The induced homology equivalence sends the class of a cycle to the class of its image cycle. -/
 @[simp]
 theorem fullyBlockedHomologyEquivOfIntertwining_apply_mk (c : G.fullyBlockedCycles) :
     G.fullyBlockedHomologyEquivOfIntertwining G' e he (Submodule.Quotient.mk c) =
-      Submodule.Quotient.mk (G.fullyBlockedCyclesEquiv G' e he c) := by
+      Submodule.Quotient.mk (G.fullyBlockedCyclesEquivOfIntertwining G' e he c) := by
   rw [fullyBlockedHomologyEquivOfIntertwining, Submodule.Quotient.equiv_apply,
     Submodule.mapQ_apply]
+  rfl
+
+/-- The inverse induced homology equivalence sends the class of a cycle to the class of its
+preimage cycle. -/
+@[simp]
+theorem fullyBlockedHomologyEquivOfIntertwining_symm_apply_mk (c : G'.fullyBlockedCycles) :
+    (G.fullyBlockedHomologyEquivOfIntertwining G' e he).symm (Submodule.Quotient.mk c) =
+      Submodule.Quotient.mk
+        ((G.fullyBlockedCyclesEquivOfIntertwining G' e he).symm c) := by
+  rw [fullyBlockedHomologyEquivOfIntertwining, Submodule.Quotient.equiv_symm,
+    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
   rfl
 
 end Intertwining
 
 section Cyclic
-
-/-- The cyclic row relabelling intertwines the fully blocked differentials pointwise. -/
-theorem fullyBlockedDifferential_relabelRows_finRotate_apply (c : GridChain (ZMod 2) n) :
-    (G.relabelRows (finRotate n)).fullyBlockedDifferential
-        (GridChain.relabelRowsEquiv (finRotate n) c) =
-      GridChain.relabelRowsEquiv (finRotate n) (G.fullyBlockedDifferential c) := by
-  have h := DFunLike.congr_fun G.fullyBlockedDifferential_relabelRows_finRotate c
-  simpa [LinearMap.comp_apply] using h
-
-/-- The cyclic column relabelling intertwines the fully blocked differentials pointwise. -/
-theorem fullyBlockedDifferential_relabelColumns_finRotate_apply
-    (c : GridChain (ZMod 2) n) :
-    (G.relabelColumns (finRotate n)).fullyBlockedDifferential
-        (GridChain.relabelColumnsEquiv (finRotate n) c) =
-      GridChain.relabelColumnsEquiv (finRotate n) (G.fullyBlockedDifferential c) := by
-  have h := DFunLike.congr_fun G.fullyBlockedDifferential_relabelColumns_finRotate c
-  simpa [LinearMap.comp_apply] using h
 
 /-- Cyclic row relabelling induces an equivalence of fully blocked grid homology quotients. -/
 noncomputable def fullyBlockedHomologyEquivRelabelRowsFinRotate :
@@ -159,12 +161,12 @@ noncomputable def fullyBlockedHomologyEquivRelabelRowsFinRotate :
 
 /-- The cyclic row homology equivalence sends a represented class to the relabelled class. -/
 @[simp]
-theorem fullyBlockedHomologyEquiv_relabelRows_finRotate_apply_mk
+theorem fullyBlockedHomologyEquivRelabelRowsFinRotate_apply_mk
     (c : G.fullyBlockedCycles) :
     G.fullyBlockedHomologyEquivRelabelRowsFinRotate
         (Submodule.Quotient.mk c) =
       Submodule.Quotient.mk
-        (G.fullyBlockedCyclesEquiv (G.relabelRows (finRotate n))
+        (G.fullyBlockedCyclesEquivOfIntertwining (G.relabelRows (finRotate n))
           (GridChain.relabelRowsEquiv (finRotate n))
           (fullyBlockedDifferential_relabelRows_finRotate_apply (G := G)) c) := by
   exact fullyBlockedHomologyEquivOfIntertwining_apply_mk
@@ -182,12 +184,12 @@ noncomputable def fullyBlockedHomologyEquivRelabelColumnsFinRotate :
 
 /-- The cyclic column homology equivalence sends a represented class to the relabelled class. -/
 @[simp]
-theorem fullyBlockedHomologyEquiv_relabelColumns_finRotate_apply_mk
+theorem fullyBlockedHomologyEquivRelabelColumnsFinRotate_apply_mk
     (c : G.fullyBlockedCycles) :
     G.fullyBlockedHomologyEquivRelabelColumnsFinRotate
         (Submodule.Quotient.mk c) =
       Submodule.Quotient.mk
-        (G.fullyBlockedCyclesEquiv (G.relabelColumns (finRotate n))
+        (G.fullyBlockedCyclesEquivOfIntertwining (G.relabelColumns (finRotate n))
           (GridChain.relabelColumnsEquiv (finRotate n))
           (fullyBlockedDifferential_relabelColumns_finRotate_apply (G := G)) c) := by
   exact fullyBlockedHomologyEquivOfIntertwining_apply_mk
