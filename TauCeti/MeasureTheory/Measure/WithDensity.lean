@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Pow
+public import Mathlib.MeasureTheory.Function.JacobianOneDim
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.MeasureTheory.Measure.WithDensity
@@ -23,6 +25,10 @@ space, this gives the change-of-variables formula for a density under an inverti
 That is the shape a location–scale family needs: it turns a density for the standard member of the
 family into a density for every other member.
 
+A map that is injective only on part of the line admits the same change of variables there, at the
+price of restricting Lebesgue measure to that part and inserting the absolute derivative into the
+weight. The substitution `x = t ^ 2` on the positive half-line is the case a square-root law needs.
+
 ## Main statements
 
 * `MeasurableEquiv.map_withDensity`: the image of a weighted measure along a measurable
@@ -30,6 +36,10 @@ family into a density for every other member.
 * `MeasureTheory.Measure.map_affine_withDensity`: the image of a weighted Haar measure under an
   invertible affine map is that Haar measure weighted by the substituted density, rescaled by the
   constant Jacobian factor.
+* `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
+  along a map injective and differentiable on a measurable set.
+* `TauCeti.MeasureTheory.map_sq_withDensity_restrict_Ioi`: its instance for squaring on the
+  positive half-line.
 -/
 public section
 
@@ -92,3 +102,58 @@ theorem map_affine_withDensity (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃
           map_add_left_eq_self, neg_add_eq_sub]
 
 end MeasureTheory.Measure
+
+namespace TauCeti.MeasureTheory
+
+open Set
+
+variable {s : Set ℝ} {φ φ' : ℝ → ℝ} {f : ℝ → ℝ≥0∞}
+
+/-- **Change of variables for a weighted Lebesgue measure on the real line.** If `φ` is injective
+and differentiable on a measurable set `s`, then weighting Lebesgue measure on `s` by
+`|φ' t| * f (φ t)` and pushing forward along `φ` gives Lebesgue measure on the image `φ '' s`
+weighted by `f`.
+
+This is the measure-level form of Mathlib's
+`MeasureTheory.lintegral_image_eq_lintegral_abs_deriv_mul`, and it carries a weight where
+`MeasureTheory.map_withDensity_abs_det_fderiv_eq_addHaar` has none: that theorem is the case
+`f = 1`. Unlike
+`MeasurableEquiv.withDensity_ofReal_map_symm_apply_eq_integral_abs_deriv_mul`, it does not ask
+`φ` to be injective off `s`, which is what a substitution on a half-line needs. The weight `f` is
+arbitrary; no measurability of it is required. -/
+theorem map_withDensity_abs_deriv_mul (hs : MeasurableSet s) (hφ : Measurable φ)
+    (hφ' : ∀ x ∈ s, HasDerivWithinAt φ (φ' x) s x) (hinj : InjOn φ s) :
+    ((volume.restrict s).withDensity fun t ↦ ENNReal.ofReal |φ' t| * f (φ t)).map φ =
+      (volume.restrict (φ '' s)).withDensity f := by
+  ext A hA
+  rw [Measure.map_apply hφ hA, withDensity_apply _ (hφ hA), withDensity_apply _ hA,
+    Measure.restrict_restrict (hφ hA), Measure.restrict_restrict hA]
+  have himage : φ '' (φ ⁻¹' A ∩ s) = A ∩ φ '' s := by
+    rw [inter_comm, image_inter_preimage, inter_comm]
+  rw [← himage, lintegral_image_eq_lintegral_abs_deriv_mul ((hφ hA).inter hs)
+    (fun x hx ↦ (hφ' x hx.2).mono inter_subset_right) (hinj.mono inter_subset_right)]
+
+/-- **The substitution `x = t ^ 2` on the positive half-line.** Weighting Lebesgue measure on
+`Ioi 0` by `2 * t * f (t ^ 2)` and pushing forward along squaring gives Lebesgue measure on
+`Ioi 0` weighted by `f`. -/
+theorem map_sq_withDensity_restrict_Ioi (f : ℝ → ℝ≥0∞) :
+    ((volume.restrict (Ioi (0 : ℝ))).withDensity fun t ↦
+        ENNReal.ofReal (2 * t) * f (t ^ 2)).map (fun t ↦ t ^ 2) =
+      (volume.restrict (Ioi (0 : ℝ))).withDensity f := by
+  have himage : (fun t : ℝ ↦ t ^ 2) '' Ioi 0 = Ioi 0 := by
+    ext x
+    refine ⟨fun ⟨t, ht, htx⟩ ↦ htx ▸ mem_Ioi.mpr (pow_pos ht 2),
+      fun hx ↦ ⟨√x, Real.sqrt_pos.mpr hx, ?_⟩⟩
+    simpa using Real.sq_sqrt (mem_Ioi.mp hx).le
+  have hinj : InjOn (fun t : ℝ ↦ t ^ 2) (Ioi 0) :=
+    (pow_left_strictMonoOn₀ two_ne_zero).injOn.mono fun t ht ↦ le_of_lt ht
+  have hweight : (fun t : ℝ ↦ ENNReal.ofReal (2 * t) * f (t ^ 2)) =ᵐ[volume.restrict (Ioi 0)]
+      fun t ↦ ENNReal.ofReal |2 * t| * f (t ^ 2) := by
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+    rw [abs_of_pos (by simpa using ht : (0 : ℝ) < 2 * t)]
+  have hderiv : ∀ t : ℝ, HasDerivAt (fun u : ℝ ↦ u ^ 2) (2 * t) t := fun t ↦ by
+    simpa using hasDerivAt_pow 2 t
+  rw [withDensity_congr_ae hweight, map_withDensity_abs_deriv_mul measurableSet_Ioi (by fun_prop)
+    (fun t _ ↦ (hderiv t).hasDerivWithinAt) hinj, himage]
+
+end TauCeti.MeasureTheory
