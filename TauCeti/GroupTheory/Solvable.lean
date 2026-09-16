@@ -15,8 +15,8 @@ The `n`th derived word evaluates a perfect binary argument tree of depth `n` by 
 commutators: the zeroth word is one group element, and the successor word is the commutator of two
 copies of the preceding word. This file proves that its values generate the `n`th derived subgroup.
 Consequently, a group is solvable exactly when one derived word is identically one. It also records
-the characterization of solvability for direct products via the two surjective projections and the
-converse product instance.
+that solvability is invariant under isomorphism, and the characterization of solvability for
+direct products via the two surjective projections and the converse product instance.
 
 The identity formulation is useful when a group is represented by an affine scheme: an identity
 between derived words can be checked on a schematically dense family of points, while the
@@ -24,6 +24,7 @@ subgroup-valued definition of the derived series cannot be compared pointwise in
 
 ## Main declarations
 
+* `TauCeti.isSolvable_congr`: isomorphic groups are solvable together.
 * `TauCeti.isSolvable_prod_iff`: `G × H` is solvable if and only if both `G` and `H` are.
 * `TauCeti.DerivedWordArgs`: the recursively paired arguments of a derived word.
 * `TauCeti.derivedWord`: the balanced iterated commutator word.
@@ -47,6 +48,12 @@ public section
 open scoped commutatorElement
 
 namespace TauCeti
+
+/-- Isomorphic groups are solvable together. -/
+theorem isSolvable_congr {G H : Type*} [Group G] [Group H] (e : G ≃* H) :
+    Group.IsSolvable G ↔ Group.IsSolvable H :=
+  ⟨fun _ ↦ Group.isSolvable_of_surjective (f := e.toMonoidHom) e.surjective,
+    fun _ ↦ Group.isSolvable_of_surjective (f := e.symm.toMonoidHom) e.symm.surjective⟩
 
 /-- A direct product of groups is solvable exactly when both of its factors are. -/
 @[simp]
