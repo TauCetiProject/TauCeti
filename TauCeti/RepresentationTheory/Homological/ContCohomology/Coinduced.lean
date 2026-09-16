@@ -703,6 +703,7 @@ private theorem smoothDiscreteResFunctor_obj_impl (A : SmoothDiscreteTopRep.{u, 
 
 omit [IsTopologicalGroup G] [CompactSpace G] in
 /-- Restriction along `U → G` restricts the underlying topological representation. -/
+@[simp]
 theorem smoothDiscreteResFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R G) :
     (smoothDiscreteResFunctor R G U).obj A =
       ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ :=
