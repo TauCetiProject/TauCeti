@@ -154,10 +154,8 @@ theorem coweightPairing_neg {lam : Dual K H} (hlam : IsIntegralWeight lam) (i : 
 @[simp]
 theorem coweightPairing_sub {lam mu : Dual K H} (hlam : IsIntegralWeight lam)
     (hmu : IsIntegralWeight mu) (i : H.root) :
-    coweightPairing (lam - mu) i = coweightPairing lam i - coweightPairing mu i :=
-  coweightPairing_eq_of_apply_coroot_eq_intCast <| by
-    rw [LinearMap.sub_apply, Int.cast_sub, intCast_coweightPairing hlam,
-      intCast_coweightPairing hmu]
+    coweightPairing (lam - mu) i = coweightPairing lam i - coweightPairing mu i := by
+  rw [sub_eq_add_neg, coweightPairing_add hlam hmu.neg, coweightPairing_neg hmu, ← sub_eq_add_neg]
 
 /-- **The coroot pairing commutes with integer scaling of the weight.** -/
 @[simp]
@@ -168,11 +166,10 @@ theorem coweightPairing_zsmul {lam : Dual K H} (hlam : IsIntegralWeight lam) (z 
 
 /-- **At a root the coroot pairing is the Cartan integer**, in the spelling of Mathlib's
 crystallographic root-pairing API: the root system of a splitting Cartan subalgebra is valued in
-`ℤ`, and `RootPairing.pairingIn` names the same integers this file names for a general weight.
-
-Not a `simp` lemma: `LieAlgebra.IsKilling.rootSystem_root_apply` is one, so the left-hand side
-rewrites to `TauCeti.coweightPairing (j : Dual K H) i` and is not in simp-normal form; tagging it
-fails the `simpNF` linter. -/
+`ℤ`, and `RootPairing.pairingIn` names the same integers this file names for a general weight. -/
+-- Not a `simp` lemma: `LieAlgebra.IsKilling.rootSystem_root_apply` is one, so the left-hand side
+-- rewrites to `TauCeti.coweightPairing (j : Dual K H) i` and is not in simp-normal form; tagging
+-- it fails the `simpNF` linter.
 theorem coweightPairing_root_eq_pairingIn (j i : H.root) :
     coweightPairing ((IsKilling.rootSystem H).root j) i =
       (IsKilling.rootSystem H).pairingIn ℤ j i :=
