@@ -68,6 +68,8 @@ positive root is a nonnegative integer combination of the simple coroots.
   `Q⁺` of height zero.
 * `TauCeti.exists_intCast_eq_coroot'_of_mem_posRootCone` says a coroot functional takes integer
   values on `Q⁺`.
+* `TauCeti.one_le_height_flip_of_mem_posRoots` and `TauCeti.height_flip_neg_of_mem_negRoots`
+  transfer the two height bounds to the coroot side.
 * `TauCeti.exists_coroot_eq_sum_nat_of_mem_posRoots` says the coroot of a positive root is a
   nonnegative integer combination of the simple coroots.
 
@@ -664,6 +666,17 @@ theorem posRoots_flip : posRoots P.flip b.flip = posRoots P b := by
 theorem negRoots_flip : negRoots P.flip b.flip = negRoots P b := by
   ext i
   simpa only [mem_negRoots] using not_congr (RootPairing.Base.isPos_flip_iff P b i)
+
+/-- **The coroot of a positive root has height at least one.** Height on the coroot side is the
+height of the flipped base, and a base and its flip have the same positive roots. -/
+theorem one_le_height_flip_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P b) :
+    1 ≤ b.flip.height i :=
+  one_le_height_of_mem_posRoots P.flip b.flip (by rwa [posRoots_flip])
+
+/-- **The coroot of a negative root has negative height.** -/
+theorem height_flip_neg_of_mem_negRoots {i : ι} (hi : i ∈ negRoots P b) :
+    b.flip.height i < 0 :=
+  height_neg_of_mem_negRoots P.flip b.flip (by rwa [negRoots_flip])
 
 /-- The coroot of a positive root is a nonnegative integer combination of the simple coroots. -/
 theorem exists_coroot_eq_sum_nat_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P b) :
