@@ -23,12 +23,13 @@ zigzag algebra of `A₂` is therefore not a quadratic algebra. It is instead the
 **radical-cube-zero** quotient
 
 ```text
-Z(A₂) = k Q̄ / R³,
+Z(A₂) = k DQ / R³,
 ```
 
-of the doubled path algebra by the cube of its arrow ideal `R`, and the cubic relations cannot be
-omitted: the quotient by the quadratic relations alone is the whole path algebra of the doubled
-quiver, which is infinite-dimensional because the doubled quiver has oriented cycles.
+of the path algebra of the doubled quiver `DQ` by the cube of its arrow ideal `R`, and the cubic
+relations cannot be omitted: the quotient by the quadratic relations alone is the whole path
+algebra of the doubled quiver, which is infinite-dimensional because the doubled quiver has
+oriented cycles.
 
 The graph is read from the Bourbaki-numbered Cartan matrix of `A₂`, and the general theorems then
 give the remaining invariants: dimension `6` (a basis of two idempotents, two arrows and two
@@ -43,7 +44,7 @@ C_A₂(q) = [1 + q²    q   ]
 
 * `TauCeti.zigzagA2Graph`: the `A₂` graph.
 * `TauCeti.nonisolatedZigzagQuotientEquivA2` and `TauCeti.zigzagAlgebraEquivA2`: the relation
-  quotient and the public zigzag algebra of `A₂` are the radical-cube-zero quotient `k Q̄ / R³`.
+  quotient and the public zigzag algebra of `A₂` are the radical-cube-zero quotient `k DQ / R³`.
 
 ## Main results
 
@@ -163,7 +164,7 @@ theorem nonisolatedZigzagQuotientEquivA2_zigzagMk
     nonisolatedZigzagQuotientEquivA2 k (zigzagMk k zigzagA2Graph x) = Ideal.Quotient.mk _ x := by
   rw [nonisolatedZigzagQuotientEquivA2, zigzagMk_apply, Ideal.quotientEquivAlgOfEq_mk]
 
-/-- **The public zigzag algebra of `A₂`** is the radical-cube-zero quotient `k Q̄ / R³` of the
+/-- **The public zigzag algebra of `A₂`** is the radical-cube-zero quotient `k DQ / R³` of the
 path algebra of its doubled quiver. -/
 noncomputable def zigzagAlgebraEquivA2 :
     zigzagAlgebra k zigzagA2Graph ≃ₐ[k]
