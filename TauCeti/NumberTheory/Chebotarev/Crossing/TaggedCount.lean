@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.OrderOfElement
+public import TauCeti.GroupTheory.SpecificGroups.Cyclic.OrderCount
 
 /-!
 # Elements with a prescribed divisibility condition on their order
@@ -16,13 +16,15 @@ carrier together with its membership and divisibility API.
 
 ## Main definitions
 
-* `NumberField.Chebotarev.taggedElements`: elements whose order is divisible by a given natural
-  number.
+* `TauCeti.NumberField.Chebotarev.taggedElements`: elements whose order is divisible by a given
+  natural number.
 
 ## Main results
 
-* `NumberField.Chebotarev.mem_taggedElements_iff`: the defining membership condition.
-* `NumberField.Chebotarev.taggedElements_mono`: divisibility makes the tag carrier shrink.
+* `TauCeti.NumberField.Chebotarev.mem_taggedElements_iff`: the defining membership condition.
+* `TauCeti.NumberField.Chebotarev.taggedElements_anti`: divisibility makes the tag carrier shrink.
+* `TauCeti.NumberField.Chebotarev.card_taggedElements_eq_sum_totient`: the exact cyclic count,
+  expressed as a sum of Euler totients over the allowed orders.
 
 ## References
 
@@ -33,7 +35,7 @@ public section
 
 open scoped BigOperators
 
-namespace NumberField.Chebotarev
+namespace TauCeti.NumberField.Chebotarev
 
 open Finset Nat
 
@@ -50,7 +52,7 @@ theorem mem_taggedElements_iff {H : Type*} [Group H] [Fintype H] {f : ℕ} {τ :
   simp [taggedElements]
 
 /-- A stronger divisibility requirement gives a smaller tagged carrier. -/
-theorem taggedElements_mono {H : Type*} [Group H] [Fintype H] {f g : ℕ} (hfg : f ∣ g) :
+theorem taggedElements_anti {H : Type*} [Group H] [Fintype H] {f g : ℕ} (hfg : f ∣ g) :
     taggedElements (H := H) g ⊆ taggedElements (H := H) f := by
   unfold taggedElements
   exact Finset.monotone_filter_right Finset.univ fun _ _ h => hfg.trans h
@@ -62,4 +64,12 @@ theorem taggedElements_one {H : Type*} [Group H] [Fintype H] :
   ext τ
   simp [taggedElements]
 
-end NumberField.Chebotarev
+/-- In a finite cyclic group, count the tagged elements by their exact orders. -/
+theorem card_taggedElements_eq_sum_totient {H : Type*} [Group H] [Fintype H] [IsCyclic H]
+    (f : ℕ) :
+    (taggedElements (H := H) f).card =
+      ∑ d ∈ (Fintype.card H).divisors.filter (f ∣ ·), Nat.totient d := by
+  change #{τ : H | f ∣ orderOf τ} = _
+  exact IsCyclic.card_filter_dvd_orderOf_eq_sum_totient f
+
+end TauCeti.NumberField.Chebotarev
