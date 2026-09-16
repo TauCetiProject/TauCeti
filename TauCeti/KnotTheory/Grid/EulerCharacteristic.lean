@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Homology.EulerCharacteristic
 public import TauCeti.Algebra.Bigraded.Basic
 public import TauCeti.KnotTheory.Grid.Determinant
-public import TauCeti.KnotTheory.Grid.Grading.Chain
+public import TauCeti.KnotTheory.Grid.Grading.Complex
 import Mathlib.Algebra.MonoidAlgebra.MapDomain
 
 /-!
@@ -34,11 +34,10 @@ contributes `(-1)^m T^{2a}`, so that the graded Euler characteristic lives in th
 state sum and compares with the determinant on the nose. The Maslov grading is the one that the
 grid differential drops, which is why the alternating signs are read off `ComplexShape.down ℤ`.
 
-Nothing here needs a differential, and in particular nothing here assumes `∂² = 0`: the Euler
-characteristic of a bigraded module is defined by its ranks alone. Over a field it agrees with the
-Euler characteristic of a future square-zero differential; that comparison is not formalized
-here. That is why Mathlib's graded-object Euler characteristic, rather than its
-`HomologicalComplex` version, is the one consumed.
+The graded-object Euler characteristic is defined by ranks alone. Over `ZMod 2`, it is also the
+Euler characteristic of `OddComponentGridDiagram.gradedFullyBlockedComplex`, whose differential
+lowers the Maslov degree and preserves the Alexander degree. The comparison with the Euler
+characteristic of its homology remains a separate step.
 
 ## Main definitions
 
@@ -52,6 +51,8 @@ here. That is why Mathlib's graded-object Euler characteristic, rather than its
 
 ## Main results
 
+* `TauCeti.OddComponentGridDiagram.eulerChar_gradedFullyBlockedComplex`: the graded complex has
+  Euler characteristic equal to the alternating state count in each Alexander degree.
 * `TauCeti.OddComponentGridDiagram.alexanderEulerChar_eq_sum_states`: the Euler characteristic in
   one Alexander degree is the alternating count of the grid states of that degree.
 * `TauCeti.OddComponentGridDiagram.gradedEulerChar_eq_stateSum`: the graded Euler characteristic is
@@ -135,6 +136,15 @@ The complex shape is `ComplexShape.down ℤ` because the grid differential drops
 grading by one. -/
 noncomputable def alexanderEulerChar (R : Type*) [Ring R] (a : ℤ) : ℤ :=
   GradedObject.eulerChar (ComplexShape.down ℤ) (G.alexanderGradedObject R a)
+
+/-- The Euler characteristic of the Maslov-graded fully blocked complex is the alternating
+state count in its Alexander degree. -/
+theorem eulerChar_gradedFullyBlockedComplex (a : ℤ) :
+    (G.gradedFullyBlockedComplex a).eulerChar = G.alexanderEulerChar (ZMod 2) a := by
+  unfold HomologicalComplex.eulerChar alexanderEulerChar
+  congr 1
+  funext m
+  rw [G.gradedFullyBlockedComplex_X, G.alexanderGradedObject_apply]
 
 /-- The Euler characteristic of an Alexander degree, as a finite alternating sum of the ranks of
 its homogeneous pieces. -/
