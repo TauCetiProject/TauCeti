@@ -285,10 +285,12 @@ variable {N : Type x} [AddCommMonoid N] [Module R N] [Comodule R C N]
     rcases A.coact_mem hm with ⟨t, ht⟩
     refine ⟨TensorProduct.map (f.toLinearMap.submoduleMap A.carrier)
       (LinearMap.id : C →ₗ[R] C) t, ?_⟩
-    rw [TensorProduct.map_map]
-    change TensorProduct.map (f.toLinearMap ∘ₗ A.carrier.subtype)
-      ((LinearMap.id : C →ₗ[R] C) ∘ₗ (LinearMap.id : C →ₗ[R] C)) t = _
-    rw [← TensorProduct.map_map, ht]
+    have hcomp : (A.carrier.map f.toLinearMap).subtype ∘ₗ
+        f.toLinearMap.submoduleMap A.carrier = f.toLinearMap ∘ₗ A.carrier.subtype := by
+      ext x
+      simp only [LinearMap.comp_apply, Submodule.subtype_apply,
+        LinearMap.submoduleMap_coe_apply]
+    rw [TensorProduct.map_map, hcomp, ← TensorProduct.map_map, ht]
     exact Comodule.Hom.map_coact_apply f m
 
 /-- The underlying submodule of the image subcomodule is the image of the underlying

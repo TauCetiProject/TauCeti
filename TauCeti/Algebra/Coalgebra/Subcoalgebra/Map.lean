@@ -56,10 +56,12 @@ namespace Subcoalgebra
     rcases A.comul_mem hc with ⟨t, ht⟩
     refine ⟨TensorProduct.map (f.toLinearMap.submoduleMap A.carrier)
       (f.toLinearMap.submoduleMap A.carrier) t, ?_⟩
-    rw [TensorProduct.map_map]
-    change TensorProduct.map (f.toLinearMap ∘ₗ A.carrier.subtype)
-      (f.toLinearMap ∘ₗ A.carrier.subtype) t = _
-    rw [← TensorProduct.map_map, ht]
+    have hcomp : (A.carrier.map f.toLinearMap).subtype ∘ₗ
+        f.toLinearMap.submoduleMap A.carrier = f.toLinearMap ∘ₗ A.carrier.subtype := by
+      ext x
+      simp only [LinearMap.comp_apply, Submodule.subtype_apply,
+        LinearMap.submoduleMap_coe_apply]
+    rw [TensorProduct.map_map, hcomp, ← TensorProduct.map_map, ht]
     exact CoalgHomClass.map_comp_comul_apply f c
 
 /-- The underlying submodule of the image subcoalgebra is the image of the underlying
