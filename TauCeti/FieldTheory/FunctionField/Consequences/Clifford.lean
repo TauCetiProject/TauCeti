@@ -100,8 +100,8 @@ private theorem exists_minimal_riemannRochSpace (hF : IsFunctionField k F)
     omega
   omega
 
-/-- For effective `A` and `B`, choose a section of a minimal pole bound for `L(A)` that has the
-exact allowed order at every place in the support of `B`. -/
+/-- For effective `A` and any divisor `B`, choose a section of a minimal pole bound for `L(A)`
+that has the exact allowed order at every place in the support of `B`. -/
 private theorem exists_section_exact_on_support (hF : IsFunctionField k F) [Infinite k]
     {A B : Divisor k F} (hA : 0 ≤ A) :
     ∃ (D : Divisor k F) (z : F), D ≤ A ∧ riemannRochSpace D = riemannRochSpace A ∧
