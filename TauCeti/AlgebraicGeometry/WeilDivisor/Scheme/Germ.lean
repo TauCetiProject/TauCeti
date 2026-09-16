@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Principal
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Sheaf
 
 /-!
@@ -34,20 +33,16 @@ at every codimension-one point.
   the only codimension-one generization is `x₀` itself, so near `x₀` the sheaf `𝒪_X(D)` is cut out
   by the single valuation of the local ring there, and
   `SchemeWeilDivisor.exists_map_mem_sections_ord_eq`: every order allowed by that valuation is
-  attained;
-* `SchemeWeilDivisor.sections_congr`, `SchemeWeilDivisor.sections_add_zsmul_ofPoint_eq`,
-  `SchemeWeilDivisor.sheafHomOfLE_app_bijective` and
-  `SchemeWeilDivisor.sheafHomOfLE_app_bijective_of_coeff_eq`: the sections of `𝒪_X(D)` over `U`
-  depend only on the coefficients of `D` at the codimension-one points of `U`, so altering the
-  coefficient at a point `x₀` changes nothing away from the closure of `x₀`, where the comparison
-  map `𝒪_X(D) ⟶ 𝒪_X(E)` is then bijective on sections.
+  attained.
 
-The last two groups say that the quotient of `𝒪_X(D + x₀)` by `𝒪_X(D)` is concentrated at `x₀`
-and compute the sections of both sheaves there. They are the local input for the exact sequence
-`0 ⟶ 𝒪_X(D) ⟶ 𝒪_X(D + x₀) ⟶ 𝒮 ⟶ 0` with `𝒮` a skyscraper sheaf at `x₀`, along which the Euler
-characteristic of a divisor sheaf is computed by induction on the divisor.
+Together with the comparison-map results in
+`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Sheaf.lean`, the germ results show that the
+comparison `𝒪_X(D) ⟶ 𝒪_X(D + x₀)` is an isomorphism on sections away from `closure {x₀}` and
+compute the sections of both sheaves near `x₀`. They are the local input for the later construction
+of the exact sequence `0 ⟶ 𝒪_X(D) ⟶ 𝒪_X(D + x₀) ⟶ 𝒮 ⟶ 0` with `𝒮` a skyscraper sheaf at `x₀`,
+along which the Euler characteristic of a divisor sheaf is computed by induction on the divisor.
 
-No formalization is vendored. The finiteness input is
+The finiteness input is
 `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Principal.lean`, the sections are
 `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Sheaf.lean`, the surjectivity of the order at a
 codimension-one point with a discrete valuation ring as local ring is
@@ -185,63 +180,6 @@ theorem exists_map_mem_sections_ord_eq (D : SchemeWeilDivisor X) {V : X.Opens} [
   exact ⟨U, i, hxU, hU, hord⟩
 
 end Noetherian
-
-section LocallyNoetherian
-
-variable [IsLocallyNoetherian X]
-
-/-! ### Dependence on the coefficients inside an open subset -/
-
-/-- The sections of `𝒪_X(D)` over `U` depend only on the coefficients of `D` at the
-codimension-one points of `U`. -/
-lemma sections_congr {D E : SchemeWeilDivisor X} {U : X.Opens}
-    (h : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
-      WeilDivisor.coeff D y = WeilDivisor.coeff E y) :
-    sections D U = sections E U := by
-  ext s
-  simp only [mem_sections]
-  exact forall_congr' fun y ↦ forall_congr' fun hy ↦ by rw [h y hy]
-
-/-- Altering a divisor at a codimension-one point `x₀` leaves the sections of its sheaf unchanged
-over every open subset missing `x₀`: the two divisor sheaves agree away from the closure of
-`x₀`. -/
-lemma sections_add_zsmul_ofPoint_eq (D : SchemeWeilDivisor X) (x₀ : CodimensionOnePoint X)
-    (n : ℤ) {U : X.Opens} (hU : (x₀ : X) ∉ U) :
-    sections (D + n • WeilDivisor.ofPoint x₀) U = sections D U :=
-  sections_congr fun y hy ↦ by
-    have hne : y ≠ x₀ := fun hyx ↦ hU (hyx ▸ hy)
-    simp [hne]
-
-/-- The comparison map `𝒪_X(D) ⟶ 𝒪_X(E)` of a pair `D ≤ E` is bijective on sections over an open
-subset on which the larger sheaf has no more sections than the smaller one. -/
-lemma sheafHomOfLE_app_bijective {D E : SchemeWeilDivisor X} (h : D ≤ E) (U : X.Opens)
-    (hDE : sections E U ≤ sections D U) :
-    Function.Bijective (Scheme.Modules.Hom.app (sheafHomOfLE h) U) := by
-  have happ : Scheme.Modules.Hom.app (sheafHomOfLE h) U ≫ Scheme.Modules.Hom.app (sheafι E) U =
-      Scheme.Modules.Hom.app (sheafι D) U := by
-    rw [← Scheme.Modules.Hom.comp_app, sheafHomOfLE_ι]
-  have hcomp : ∀ a : Γ(sheaf D, U),
-      Scheme.Modules.Hom.app (sheafι E) U (Scheme.Modules.Hom.app (sheafHomOfLE h) U a) =
-        Scheme.Modules.Hom.app (sheafι D) U a := fun a ↦ by
-    simpa using ConcreteCategory.congr_hom happ a
-  have hinj : Function.Injective (Scheme.Modules.Hom.app (sheafHomOfLE h) U) := fun a b hab ↦
-    sheafι_app_injective D U (by rw [← hcomp a, ← hcomp b, hab])
-  refine ⟨hinj, fun t ↦ ?_⟩
-  obtain ⟨a, ha⟩ : Scheme.Modules.Hom.app (sheafι E) U t ∈
-      Set.range (Scheme.Modules.Hom.app (sheafι D) U) := by
-    rw [range_sheafι_app]
-    exact hDE (sheafι_app_mem E U t)
-  exact ⟨a, sheafι_app_injective E U (by rw [hcomp a, ha])⟩
-
-/-- The comparison map `𝒪_X(D) ⟶ 𝒪_X(E)` of a pair `D ≤ E` is bijective on sections over an open
-subset at whose codimension-one points the two divisors agree. -/
-lemma sheafHomOfLE_app_bijective_of_coeff_eq {D E : SchemeWeilDivisor X} (h : D ≤ E)
-    {U : X.Opens} (hcoeff : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
-      WeilDivisor.coeff D y = WeilDivisor.coeff E y) :
-    Function.Bijective (Scheme.Modules.Hom.app (sheafHomOfLE h) U) :=
-  sheafHomOfLE_app_bijective h U (sections_congr hcoeff).ge
-
-end LocallyNoetherian
 
 end
 
