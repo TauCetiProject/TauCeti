@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.Convex.StdSimplex
 public import Mathlib.Probability.ProbabilityMassFunction.Integrals
-public import Mathlib.Topology.Sion
 public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.TransportMatrix
+public import TauCeti.Topology.Sion
 
 /-!
 # Kantorovich duality on finite spaces
@@ -319,11 +319,6 @@ supremum is unchanged by restricting to potentials normalised at a base point.  
 `c`-transforms turn an arbitrary feasible pair into a normalised one with at least the same
 value, and normalised pairs are confined to a box. -/
 
-private theorem nonempty_of_pmf {α : Type*} (μ : PMF α) : Nonempty α := by
-  rcases isEmpty_or_nonempty α with h | h
-  · exact absurd μ.tsum_coe (by simp)
-  · exact h
-
 /-- Two infimal transforms and a shift turn a dual-feasible pair into one that is confined to a
 box depending only on a bound for the cost, without decreasing the dual value. -/
 private theorem exists_bounded_of_feasible [Nonempty ι] [Nonempty κ] {M : ℝ}
@@ -399,8 +394,8 @@ theorem exists_forall_finiteDualValue_le (c : ι × κ → ℝ) (μ : PMF ι) (�
     ∃ φ ψ, (∀ i j, φ i + ψ j ≤ c (i, j)) ∧
       ∀ φ' ψ', (∀ i j, φ' i + ψ' j ≤ c (i, j)) →
         finiteDualValue μ ν φ' ψ' ≤ finiteDualValue μ ν φ ψ := by
-  have := nonempty_of_pmf μ
-  have := nonempty_of_pmf ν
+  have : Nonempty ι := ⟨μ.support_nonempty.some⟩
+  have : Nonempty κ := ⟨ν.support_nonempty.some⟩
   obtain ⟨q₀, hq₀⟩ := Finite.exists_max fun q : ι × κ ↦ |c q|
   set M : ℝ := |c q₀| with hMdef
   have hM : ∀ q, |c q| ≤ M := hq₀
@@ -527,43 +522,6 @@ private theorem continuous_lagrangian_right (c : ι × κ → ℝ) (μ : PMF ι)
   exact ((continuous_const.sub ((continuous_apply q.1).comp continuous_fst)).sub
     ((continuous_apply q.2).comp continuous_snd)).mul continuous_const
 
-private theorem quasiconvexOn_coe {E : Type*} [AddCommMonoid E] [SMul ℝ E] {s : Set E}
-    {g : E → ℝ} (hg : ConvexOn ℝ s g) : QuasiconvexOn ℝ s fun x ↦ ((g x : ℝ) : EReal) := by
-  intro r
-  induction r with
-  | bot =>
-    have hs : {x ∈ s | ((g x : ℝ) : EReal) ≤ ⊥} = ∅ := by ext x; simp [le_bot_iff]
-    rw [hs]; exact convex_empty
-  | coe a =>
-    have hs : {x ∈ s | ((g x : ℝ) : EReal) ≤ (a : EReal)} = {x ∈ s | g x ≤ a} := by
-      ext x; simp
-    rw [hs]; exact hg.convex_le a
-  | top =>
-    have hs : {x ∈ s | ((g x : ℝ) : EReal) ≤ ⊤} = s := by ext x; simp
-    rw [hs]; exact hg.1
-
-private theorem quasiconcaveOn_coe {E : Type*} [AddCommMonoid E] [SMul ℝ E] {s : Set E}
-    {g : E → ℝ} (hg : ConcaveOn ℝ s g) : QuasiconcaveOn ℝ s fun x ↦ ((g x : ℝ) : EReal) := by
-  intro r
-  induction r with
-  | bot =>
-    have hs : {x ∈ s | (⊥ : EReal) ≤ ((g x : ℝ) : EReal)} = s := by ext x; simp
-    rw [hs]; exact hg.1
-  | coe a =>
-    have hs : {x ∈ s | (a : EReal) ≤ ((g x : ℝ) : EReal)} = {x ∈ s | a ≤ g x} := by
-      ext x; simp
-    rw [hs]; exact hg.convex_ge a
-  | top =>
-    have hs : {x ∈ s | (⊤ : EReal) ≤ ((g x : ℝ) : EReal)} = ∅ := by ext x; simp [top_le_iff]
-    rw [hs]; exact convex_empty
-
-private theorem affine_convexOn_concaveOn {E : Type*} [AddCommGroup E] [Module ℝ E] {s : Set E}
-    (hs : Convex ℝ s) {g : E → ℝ}
-    (h : ∀ (x y : E) (a b : ℝ), a + b = 1 → g (a • x + b • y) = a * g x + b * g y) :
-    ConvexOn ℝ s g ∧ ConcaveOn ℝ s g :=
-  ⟨⟨hs, fun x _ y _ a b _ _ hab ↦ by rw [h x y a b hab]; simp⟩,
-    ⟨hs, fun x _ y _ a b _ _ hab ↦ by rw [h x y a b hab]; simp⟩⟩
-
 private theorem iSup_lagrangian_of_mem (c : ι × κ → ℝ) (hf : f ∈ RealPlans μ ν) :
     ⨆ p : (ι → ℝ) × (κ → ℝ), ((lagrangian c μ ν f p : ℝ) : EReal)
       = ((costFun c f : ℝ) : EReal) := by
@@ -636,8 +594,8 @@ theorem exists_cost_eq_finiteDualValue (c : ι × κ → ℝ) (μ : PMF ι) (ν 
     ∃ (A : TransportMatrix μ ν) (φ : ι → ℝ) (ψ : κ → ℝ),
       (∀ B : TransportMatrix μ ν, A.cost c ≤ B.cost c) ∧
       (∀ i j, φ i + ψ j ≤ c (i, j)) ∧ A.cost c = finiteDualValue μ ν φ ψ := by
-  have := nonempty_of_pmf μ
-  have := nonempty_of_pmf ν
+  have : Nonempty ι := ⟨μ.support_nonempty.some⟩
+  have : Nonempty κ := ⟨ν.support_nonempty.some⟩
   obtain ⟨A, hA⟩ := TransportMatrix.exists_forall_cost_le c μ ν
   obtain ⟨φ, ψ, hfeas, hmax⟩ := exists_forall_finiteDualValue_le c μ ν
   refine ⟨A, φ, ψ, hA, hfeas, le_antisymm ?_ (A.finiteDualValue_le_cost hfeas)⟩
@@ -652,12 +610,16 @@ theorem exists_cost_eq_finiteDualValue (c : ι × κ → ℝ) (μ : PMF ι) (ν 
       (hfx := fun f _ ↦ ?_) (hfx' := fun f _ ↦ ?_)
     · exact (continuous_coe_real_ereal.comp
         (continuous_lagrangian_left c μ ν p)).lowerSemicontinuous.lowerSemicontinuousOn _
-    · exact quasiconvexOn_coe (affine_convexOn_concaveOn convex_stdSimplexSet
-        (fun x y a b hab ↦ lagrangian_affine_left c μ ν x y p a b hab)).1
+    · exact ConvexOn.quasiconvexOn_ereal_coe
+        (Convex.convexOn_and_concaveOn_of_affine
+          (g := fun f ↦ lagrangian c μ ν f p) convex_stdSimplexSet
+          (fun x y a b hab ↦ lagrangian_affine_left c μ ν x y p a b hab)).1
     · exact (continuous_coe_real_ereal.comp
         (continuous_lagrangian_right c μ ν f)).upperSemicontinuous.upperSemicontinuousOn _
-    · exact quasiconcaveOn_coe (affine_convexOn_concaveOn convex_univ
-        (fun x y a b hab ↦ lagrangian_affine_right c μ ν f x y a b hab)).2
+    · exact ConcaveOn.quasiconcaveOn_ereal_coe
+        (Convex.convexOn_and_concaveOn_of_affine
+          (g := fun p ↦ lagrangian c μ ν f p) convex_univ
+          (fun x y a b hab ↦ lagrangian_affine_right c μ ν f x y a b hab)).2
   simp only [iSup_univ] at key
   have h1 : ((A.cost c : ℝ) : EReal) ≤ ⨅ f ∈ stdSimplexSet,
       ⨆ p : (ι → ℝ) × (κ → ℝ), ((lagrangian c μ ν f p : ℝ) : EReal) := by
