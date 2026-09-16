@@ -28,6 +28,12 @@ the minimal polynomial over `ℤ`. That last identity is the standing hypothesis
 quadratic-field API in `TauCeti.NumberTheory.NumberField.Quadratic` and of the multiquadratic
 files built on it, so it is recorded here once.
 
+For `d ≡ 1 (mod 4)`, the half-generator `(1 + x) / 2` is integral as well. This is the
+integral generator that separates conjugates at primes above `2`. Its integrality proof
+generalizes the existing half-generator arguments in
+`TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers` and
+`TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Ramification`.
+
 ## Main definitions and results
 
 * `NumberField.integralSqrt`: the packaging in `𝓞 K`, with
@@ -90,3 +96,22 @@ theorem minpoly_integralSqrt [NumberField K] (hx : x ^ 2 = algebraMap ℤ K d)
   norm_num
 
 end NumberField
+
+namespace TauCeti
+
+/-- If `x² = d` and `d ≡ 1 (mod 4)`, then `(1 + x) / 2` is an algebraic integer.
+No nonsquareness or squarefreeness assumption on `d` is needed. -/
+theorem isIntegral_one_add_div_two_of_sq_eq {K : Type*} [Field K] [CharZero K]
+    {x : K} {d : ℤ} (hx : x ^ 2 = algebraMap ℤ K d) (hd : d % 4 = 1) :
+    IsIntegral ℤ ((1 + x) / 2) := by
+  obtain ⟨e, he⟩ : ∃ e : ℤ, d = 4 * e + 1 := ⟨d / 4, by omega⟩
+  have hde : algebraMap ℤ K d = 4 * algebraMap ℤ K e + 1 := by
+    rw [he]
+    simp only [map_add, map_mul, map_ofNat, map_one]
+  refine ⟨X ^ 2 - X - C e, ?_, ?_⟩
+  · monicity!
+  · simp only [eval₂_sub, eval₂_pow, eval₂_X, eval₂_C]
+    field_simp
+    linear_combination hx + hde
+
+end TauCeti
