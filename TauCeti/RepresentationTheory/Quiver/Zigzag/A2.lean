@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Acyclic.PathAlgebra
-public import TauCeti.RepresentationTheory.Quiver.Radical
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.ArrowIdealPresentation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.CartanMatrix
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Center
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise
@@ -26,29 +25,13 @@ becomes the radical of the finite-dimensional quotient. This file does not prove
 identification, and over a general commutative ring it states only the arrow-ideal-cube
 presentation.
 
-The first part of this file proves that description for every simple graph in which each vertex
-has at most one neighbour, the only hypothesis the argument uses. The second part specializes it
-to `A₂`, realized as the complete graph `⊤` on `Fin 2`, and records the named invariants of its
-zigzag algebra, all read off from the general theorems.
-
 ## Main definitions
 
-* `TauCeti.nonisolatedZigzagQuotientEquivArrowIdealPow`: when every vertex has at most one
-  neighbour, the zigzag relation quotient is the path algebra modulo the cube of the arrow ideal.
 * `TauCeti.zigzagAlgebraEquivA2`: the public zigzag algebra of `A₂` is the path algebra of its
   doubled quiver modulo the paths of length at least three.
 
 ## Main results
 
-* `TauCeti.IsQuadraticZigzagRelator.eq_zero`, `TauCeti.quadraticZigzagIdeal_eq_bot`: when every
-  vertex has at most one neighbour, the quadratic relators vanish.
-* `TauCeti.arrowIdeal_pow_three_le_asIdeal_zigzagIdeal`: for every graph the paths of length at
-  least three generate a subideal of the zigzag relation ideal.
-* `TauCeti.asIdeal_zigzagIdeal_eq_arrowIdeal_pow`: when every vertex has at most one neighbour,
-  the zigzag relation ideal is exactly the cube of the arrow ideal.
-* `TauCeti.not_module_finite_quotient_quadraticZigzagIdeal`: on a graph with an edge in which
-  every vertex has at most one neighbour, the quadratic presentation is not a finitely generated
-  module, the backtrack along the edge being a closed path of positive length.
 * `TauCeti.not_module_finite_quotient_quadraticZigzagIdeal_A2` and
   `TauCeti.quadraticZigzagIdeal_A2_ne_zigzagIdeal_A2`: for `A₂`, omitting the cubic paths gives an
   algebra which is not a finitely generated module (over a field, an infinite-dimensional one), so
@@ -71,132 +54,7 @@ namespace TauCeti
 
 open PathAlgebra DoubledQuiver Polynomial
 
-universe u w
-
-/-! ### The long-path generators -/
-
-section LongPaths
-
-variable (k : Type w) [CommRing k] {V : Type u} [Finite V] (G : SimpleGraph V)
-
-/-- **The cube of the arrow ideal lies in the zigzag relation ideal**, for every simple graph: the
-paths of length at least three span that cube, and each of them is a uniform zigzag relator. -/
-theorem arrowIdeal_pow_three_le_asIdeal_zigzagIdeal :
-    arrowIdeal k (DoubledQuiver G) ^ 3 ≤ (zigzagIdeal k G).asIdeal := by
-  intro x hx
-  -- Expand `x` in the path basis: every path carrying a nonzero coordinate is long.
-  rw [mem_arrowIdeal_pow, mem_pathSpan_iff] at hx
-  rw [← (pathAlgebraBasis k (DoubledQuiver G)).linearCombination_repr x,
-    Finsupp.linearCombination_apply]
-  refine Ideal.sum_mem _ fun y hy => ?_
-  -- `Finsupp.linearCombination_apply` leaves the summand as an unreduced lambda.
-  dsimp only
-  rw [Algebra.smul_def, coe_pathAlgebraBasis, TwoSidedIdeal.mem_asIdeal]
-  exact TwoSidedIdeal.mul_mem_left _ _ _ (mem_zigzagIdeal_of_isZigzagRelator k G
-    (IsZigzagRelator.long_path y (hx y (Finsupp.mem_support_iff.mp hy))))
-
-end LongPaths
-
-/-! ### Graphs whose vertices have at most one neighbour -/
-
-section AtMostOneNeighbour
-
-variable (k : Type w) [CommRing k] {V : Type u} {G : SimpleGraph V}
-
-/-- **When every vertex has at most one neighbour, every quadratic zigzag relator is zero.** A
-length-two path through a vertex with a single neighbour returns to its source, and the
-backtracks at a vertex with a single neighbour all coincide. -/
-theorem IsQuadraticZigzagRelator.eq_zero (hG : ∀ i, (G.neighborSet i).Subsingleton)
-    {x : pathAlgebra k (DoubledQuiver G)} (hx : IsQuadraticZigzagRelator k G x) : x = 0 := by
-  cases hx with
-  | @nonreturn i l p length_eq different_endpoints =>
-    obtain ⟨a, rfl⟩ : ∃ a, i = vertex G a :=
-      ⟨(vertexEquiv G).symm i, (vertexEquiv_symm_apply G i).symm⟩
-    obtain ⟨b, rfl⟩ : ∃ b, l = vertex G b :=
-      ⟨(vertexEquiv G).symm l, (vertexEquiv_symm_apply G l).symm⟩
-    obtain ⟨m, h, h', -⟩ := exists_eq_comp_arrowPath G p length_eq
-    exact absurd (congrArg (vertex G) (hG m h.symm h')) different_endpoints
-  | @equal_backtracks i p q p_length q_length =>
-    obtain ⟨a, rfl⟩ : ∃ a, i = vertex G a :=
-      ⟨(vertexEquiv G).symm i, (vertexEquiv_symm_apply G i).symm⟩
-    obtain ⟨j, h, rfl⟩ := exists_eq_backtrackPath G p p_length
-    obtain ⟨j', h', rfl⟩ := exists_eq_backtrackPath G q q_length
-    obtain rfl : j = j' := hG _ h h'
-    exact sub_self _
-
-/-- **When every vertex has at most one neighbour, the quadratic zigzag ideal is zero.** -/
-theorem quadraticZigzagIdeal_eq_bot [Finite V] (hG : ∀ i, (G.neighborSet i).Subsingleton) :
-    quadraticZigzagIdeal k G = ⊥ := by
-  rw [quadraticZigzagIdeal_eq_span, eq_bot_iff, TwoSidedIdeal.span_le]
-  intro x hx
-  rw [SetLike.mem_coe, TwoSidedIdeal.mem_bot]
-  exact hx.eq_zero k hG
-
-/-- **When every vertex has at most one neighbour, the zigzag relation ideal is the cube of the
-arrow ideal**: the uniform relators reduce to the paths of length at least three, which span that
-cube. -/
-theorem asIdeal_zigzagIdeal_eq_arrowIdeal_pow [Finite V]
-    (hG : ∀ i, (G.neighborSet i).Subsingleton) :
-    (zigzagIdeal k G).asIdeal = arrowIdeal k (DoubledQuiver G) ^ 3 := by
-  refine le_antisymm (fun x hx => ?_) (fun x hx => ?_)
-  · rw [TwoSidedIdeal.mem_asIdeal] at hx
-    have hle : zigzagIdeal k G ≤ (arrowIdeal k (DoubledQuiver G) ^ 3).toTwoSided := by
-      rw [zigzagIdeal_eq_span, TwoSidedIdeal.span_le]
-      intro y hy
-      rw [SetLike.mem_coe, ← TwoSidedIdeal.mem_asIdeal, Ideal.asIdeal_toTwoSided]
-      cases hy with
-      | quadratic h =>
-        rw [h.eq_zero k hG]
-        exact Submodule.zero_mem _
-      | long_path y three_le =>
-        exact Ideal.pow_le_pow_right three_le (ofPath_mem_arrowIdeal_pow y)
-    have := hle hx
-    rwa [← TwoSidedIdeal.mem_asIdeal, Ideal.asIdeal_toTwoSided] at this
-  · exact arrowIdeal_pow_three_le_asIdeal_zigzagIdeal k G hx
-
-/-- **The arrow-ideal-cube presentation.** When every vertex has at most one neighbour, the
-zigzag relation quotient is the path algebra of the doubled quiver modulo the cube of its arrow
-ideal. -/
-noncomputable def nonisolatedZigzagQuotientEquivArrowIdealPow [Finite V]
-    (hG : ∀ i, (G.neighborSet i).Subsingleton) :
-    nonisolatedZigzagQuotient k G ≃ₐ[k]
-      pathAlgebra k (DoubledQuiver G) ⧸ arrowIdeal k (DoubledQuiver G) ^ 3 :=
-  Ideal.quotientEquivAlgOfEq k (asIdeal_zigzagIdeal_eq_arrowIdeal_pow k hG)
-
-/-- The arrow-ideal-cube presentation sends the class of a path-algebra element to its class. -/
-@[simp]
-theorem nonisolatedZigzagQuotientEquivArrowIdealPow_zigzagMk [Finite V]
-    (hG : ∀ i, (G.neighborSet i).Subsingleton) (x : pathAlgebra k (DoubledQuiver G)) :
-    nonisolatedZigzagQuotientEquivArrowIdealPow k hG (zigzagMk k G x) =
-      Ideal.Quotient.mk (arrowIdeal k (DoubledQuiver G) ^ 3) x := by
-  rw [nonisolatedZigzagQuotientEquivArrowIdealPow, zigzagMk_apply, Ideal.quotientEquivAlgOfEq_mk]
-
-/-- The inverse of the arrow-ideal-cube presentation sends the class of a path-algebra element
-to its class. -/
-@[simp]
-theorem nonisolatedZigzagQuotientEquivArrowIdealPow_symm_mk [Finite V]
-    (hG : ∀ i, (G.neighborSet i).Subsingleton) (x : pathAlgebra k (DoubledQuiver G)) :
-    (nonisolatedZigzagQuotientEquivArrowIdealPow k hG).symm
-        (Ideal.Quotient.mk (arrowIdeal k (DoubledQuiver G) ^ 3) x) =
-      zigzagMk k G x := by
-  rw [AlgEquiv.symm_apply_eq, nonisolatedZigzagQuotientEquivArrowIdealPow_zigzagMk]
-
-/-- **The quadratic presentation is infinite.** On a graph with an edge in which every vertex has
-at most one neighbour, the quadratic relators vanish, so the quadratic quotient is the whole path
-algebra of the doubled quiver. That algebra is not a finitely generated module, because the
-backtrack along the edge is a closed path of positive length. -/
-theorem not_module_finite_quotient_quadraticZigzagIdeal [Nontrivial k] [Finite V]
-    (hG : ∀ i, (G.neighborSet i).Subsingleton) {i j : V} (h : G.Adj i j) :
-    ¬Module.Finite k (pathAlgebra k (DoubledQuiver G) ⧸ (quadraticZigzagIdeal k G).asIdeal) := by
-  intro hfin
-  have hbot : (quadraticZigzagIdeal k G).asIdeal = ⊥ := by
-    rw [quadraticZigzagIdeal_eq_bot k hG, TwoSidedIdeal.bot_asIdeal]
-  have hacyclic := isAcyclic_of_module_finite_pathAlgebra k (DoubledQuiver G) <|
-    Module.Finite.equiv
-      ((Ideal.quotientEquivAlgOfEq k hbot).trans (AlgEquiv.quotientBot k _)).toLinearEquiv
-  exact hacyclic.not_length_pos (backtrackPath G h) (by simp)
-
-end AtMostOneNeighbour
+universe w
 
 /-! ### The graph `A₂` -/
 
@@ -205,7 +63,7 @@ section A2
 variable (k : Type w) [CommRing k]
 
 /-- In `A₂` every vertex has at most one neighbour. -/
-theorem neighborSet_subsingleton_A2 (i : Fin 2) :
+theorem subsingleton_neighborSet_A2 (i : Fin 2) :
     ((⊤ : SimpleGraph (Fin 2)).neighborSet i).Subsingleton := by
   intro j hj j' hj'
   simp only [SimpleGraph.mem_neighborSet, SimpleGraph.top_adj] at hj hj'
@@ -218,16 +76,20 @@ noncomputable def zigzagAlgebraEquivA2 :
       pathAlgebra k (DoubledQuiver (⊤ : SimpleGraph (Fin 2))) ⧸
         arrowIdeal k (DoubledQuiver (⊤ : SimpleGraph (Fin 2))) ^ 3 :=
   (zigzagAlgebraEquivNonisolated k _ SimpleGraph.connected_top).trans
-    (nonisolatedZigzagQuotientEquivArrowIdealPow k neighborSet_subsingleton_A2)
+    (nonisolatedZigzagQuotientEquivArrowIdealPow k subsingleton_neighborSet_A2)
 
-/-- The `A₂` presentation is the comparison with the relation quotient followed by the
-arrow-ideal-cube presentation. -/
+/-- The inverse `A₂` presentation sends the class of a path-algebra element through the public
+comparison with the zigzag relation quotient. -/
 @[simp]
-theorem zigzagAlgebraEquivA2_apply (x : zigzagAlgebra k (⊤ : SimpleGraph (Fin 2))) :
-    zigzagAlgebraEquivA2 k x =
-      nonisolatedZigzagQuotientEquivArrowIdealPow k neighborSet_subsingleton_A2
-        (zigzagAlgebraEquivNonisolated k _ SimpleGraph.connected_top x) :=
-  (rfl)
+theorem zigzagAlgebraEquivA2_symm_mk
+    (x : pathAlgebra k (DoubledQuiver (⊤ : SimpleGraph (Fin 2)))) :
+    (zigzagAlgebraEquivA2 k).symm
+        (Ideal.Quotient.mk (arrowIdeal k (DoubledQuiver (⊤ : SimpleGraph (Fin 2))) ^ 3) x) =
+      (zigzagAlgebraEquivNonisolated k _ SimpleGraph.connected_top).symm
+        (zigzagMk k (⊤ : SimpleGraph (Fin 2)) x) := by
+  rw [AlgEquiv.symm_apply_eq, zigzagAlgebraEquivA2, AlgEquiv.trans_apply,
+    AlgEquiv.apply_symm_apply,
+    nonisolatedZigzagQuotientEquivArrowIdealPow_zigzagMk]
 
 /-- **Omitting the cubic paths from the `A₂` ideal gives an infinite algebra**: the quadratic
 presentation of `A₂` is not a finitely generated module, so over a field it is
@@ -235,7 +97,7 @@ infinite-dimensional. -/
 theorem not_module_finite_quotient_quadraticZigzagIdeal_A2 [Nontrivial k] :
     ¬Module.Finite k (pathAlgebra k (DoubledQuiver (⊤ : SimpleGraph (Fin 2))) ⧸
       (quadraticZigzagIdeal k (⊤ : SimpleGraph (Fin 2))).asIdeal) :=
-  not_module_finite_quotient_quadraticZigzagIdeal k neighborSet_subsingleton_A2
+  not_module_finite_quotient_quadraticZigzagIdeal k subsingleton_neighborSet_A2
     (i := 0) (j := 1) (by simp)
 
 /-- **The quadratic relators do not generate the zigzag ideal of `A₂`**: the quotient by the
