@@ -139,13 +139,14 @@ theorem orbitRel_stabilizerBall_iff [Finite (stabilizer Γ z)] (τ σ : stabiliz
     exact ⟨q, (stabilizerBallHomeomorph Γ z ε).injective
       (by rw [stabilizerBallHomeomorph_smul, hζ])⟩
 
-/-- **The elliptic disc chart.** The orbit space of the invariant hyperbolic disc of radius `ε`
-about `z` under the stabilizer of `z`, a group of order `m`, is the Euclidean disc of radius
-`tanh (ε / 2) ^ m`; the identification sends the orbit of `τ` to the `m`-th power of its disc
-coordinate. For a discrete `Γ` and a small enough `ε` this orbit space is a neighbourhood of the
-image of `z` in the orbit space of `Γ`, by
-`TauCeti.exists_ball_disjoint_smul_of_notMem_stabilizer`. -/
-def stabilizerBallQuotientHomeomorph [Finite (stabilizer Γ z)] (hε : 0 ≤ ε) :
+/-- **The elliptic disc chart.** The orbit space of the invariant hyperbolic disc of radius
+`ε > 0` about `z` under the stabilizer of `z`, a group of order `m`, is the Euclidean disc of
+radius `tanh (ε / 2) ^ m`; the identification sends the orbit of `τ` to the `m`-th power of its
+disc coordinate. The radius is positive so that the source really is a chart about `z`: it
+contains `z` itself (`TauCeti.mem_stabilizerBall`), and the target contains `0`. For a discrete
+`Γ` and a small enough `ε` this orbit space is a neighbourhood of the image of `z` in the orbit
+space of `Γ`, by `TauCeti.exists_ball_disjoint_smul_of_notMem_stabilizer`. -/
+def stabilizerBallQuotientHomeomorph [Finite (stabilizer Γ z)] (hε : 0 < ε) :
     orbitRel.Quotient (stabilizer Γ z) (stabilizerBall Γ z ε) ≃ₜ
       ball (0 : ℂ) (Real.tanh (ε / 2) ^ Nat.card (stabilizer Γ z)) :=
   (Homeomorph.Quotient.congr (stabilizerBallHomeomorph Γ z ε)
@@ -155,7 +156,7 @@ def stabilizerBallQuotientHomeomorph [Finite (stabilizer Γ z)] (hε : 0 ≤ ε)
       exact Real.tanh_strictMono.monotone (by linarith)))
 
 @[simp]
-theorem coe_stabilizerBallQuotientHomeomorph_mk [Finite (stabilizer Γ z)] (hε : 0 ≤ ε)
+theorem coe_stabilizerBallQuotientHomeomorph_mk [Finite (stabilizer Γ z)] (hε : 0 < ε)
     (τ : stabilizerBall Γ z ε) :
     (stabilizerBallQuotientHomeomorph Γ z ε hε (Quotient.mk _ τ) : ℂ) =
       discCoordinate z τ ^ Nat.card (stabilizer Γ z) := by
