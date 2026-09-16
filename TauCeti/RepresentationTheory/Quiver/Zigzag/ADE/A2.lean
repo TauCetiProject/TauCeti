@@ -50,6 +50,8 @@ C_A₂(q) = [1 + q²    q   ]
 
 * `TauCeti.quadraticZigzagIdeal_A2_eq_bot`: every quadratic zigzag relator of `A₂` vanishes.
 * `TauCeti.zigzagIdeal_A2_eq_arrowIdeal_pow_three`: the zigzag ideal of `A₂` is `R³`.
+* `TauCeti.jacobson_pow_three_zigzagAlgebra_A2_eq_bot`: the Jacobson radical of the zigzag algebra
+  of `A₂` has cube zero.
 * `TauCeti.not_module_finite_quotient_quadraticZigzagIdeal_A2`: the quotient by the quadratic
   relations alone is not a finite module.
 * `TauCeti.finrank_zigzagAlgebra_A2`, `TauCeti.finrank_center_zigzagAlgebra_A2` and
@@ -173,11 +175,29 @@ noncomputable def zigzagAlgebraEquivA2 :
   (zigzagAlgebraEquivNonisolated k zigzagA2Graph connected_zigzagA2Graph).trans
     (nonisolatedZigzagQuotientEquivA2 k)
 
-/-- The public `A₂` comparison passes through the relation quotient. -/
-theorem zigzagAlgebraEquivA2_apply (x : zigzagAlgebra k zigzagA2Graph) :
-    zigzagAlgebraEquivA2 k x = nonisolatedZigzagQuotientEquivA2 k
-      (zigzagAlgebraEquivNonisolated k zigzagA2Graph connected_zigzagA2Graph x) :=
-  AlgEquiv.trans_apply _ _ x
+/-- **The Jacobson radical of the zigzag algebra of `A₂` has cube zero.** -/
+theorem jacobson_pow_three_zigzagAlgebra_A2_eq_bot (k : Type w) [Field k] :
+    Ring.jacobson (zigzagAlgebra k zigzagA2Graph) ^ 3 = ⊥ := by
+  let e := (zigzagAlgebraEquivNonisolated k zigzagA2Graph connected_zigzagA2Graph).toRingHom
+  have : RingHomSurjective e := ⟨AlgEquiv.surjective _⟩
+  have hpow (n : ℕ) {a} (ha : a ∈ Ring.jacobson (zigzagAlgebra k zigzagA2Graph) ^ (n + 1)) :
+      e a ∈ Ring.jacobson (nonisolatedZigzagQuotient k zigzagA2Graph) ^ (n + 1) := by
+    induction n generalizing a with
+    | zero =>
+      rw [Submodule.pow_one] at ha ⊢
+      exact Ring.le_comap_jacobson (f := e) ha
+    | succ n ih =>
+      rw [Submodule.pow_succ] at ha ⊢
+      refine Submodule.mul_induction_on ha (fun y hy z hz => ?_) (fun y z hy hz => ?_)
+      · rw [map_mul]
+        exact Submodule.mul_mem_mul (ih hy) (Ring.le_comap_jacobson (f := e) hz)
+      · rw [map_add]
+        exact add_mem hy hz
+  rw [eq_bot_iff]
+  intro x hx
+  have hx' := hpow 2 hx
+  rwa [jacobson_pow_three_nonisolatedZigzagQuotient_eq_bot exists_adj_zigzagA2Graph,
+    Ideal.mem_bot, map_eq_zero_iff e (AlgEquiv.injective _), ← Ideal.mem_bot] at hx'
 
 /-- The doubled quiver of `A₂` has an oriented cycle: the backtrack at a node. -/
 private theorem not_isAcyclic_doubledQuiver_A2 :
