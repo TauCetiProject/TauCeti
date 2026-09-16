@@ -162,7 +162,7 @@ theorem isCompl_complexGradedF (h : IsHodgeBigrading hℚ hℂ WQ F I) (k p : �
     ext x
     rw [mem_complexGradedF_iff]
     exact ⟨fun ⟨y, hy, hyx⟩ ↦ ⟨y, ⟨hy, y.2⟩, hyx⟩, fun ⟨y, hy, hyx⟩ ↦ ⟨y, hy.1, hyx⟩⟩
-  rw [hdef, hdef, TauCeti.Submodule.isCompl_map_mkQ_iff,
+  rw [hdef, hdef, Submodule.isCompl_map_mkQ_iff,
     ← Submodule.map_le_map_iff_of_injective (W k).injective_subtype,
     ← (Submodule.map_injective_of_injective (W k).injective_subtype).eq_iff]
   simp only [Submodule.map_inf _ (W k).injective_subtype, Submodule.map_sup,

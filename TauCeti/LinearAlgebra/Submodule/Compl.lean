@@ -32,7 +32,7 @@ factor by factor, and it is used that way for the doubled totally real modules i
 
 * `TauCeti.Submodule.isCompl_comap_subtype`: a disjoint pair of submodules whose intersections with
   `U` span `U` restricts to a complementary pair of submodules of `U`.
-* `TauCeti.Submodule.isCompl_map_mkQ_iff`: complementarity of images in a quotient, read in the
+* `Submodule.isCompl_map_mkQ_iff`: complementarity of images in a quotient, read in the
   ambient module.
 * `IsCompl.prod`: a product of complementary pairs is complementary.
 -/
@@ -63,7 +63,8 @@ theorem isCompl_comap_subtype {U A B : Submodule R M} (hAB : Disjoint A B)
 
 /-- The images of two submodules in the quotient by `p` are complementary exactly when, after
 adding `p`, they meet in `p`, and together with `p` they span the whole module. -/
-theorem isCompl_map_mkQ_iff {R : Type u} {M : Type v} [Ring R] [AddCommGroup M] [Module R M]
+theorem _root_.Submodule.isCompl_map_mkQ_iff {R : Type u} {M : Type v} [Ring R]
+    [AddCommGroup M] [Module R M]
     {p A B : Submodule R M} :
     IsCompl (A.map p.mkQ) (B.map p.mkQ) ↔ (p ⊔ A) ⊓ (p ⊔ B) ≤ p ∧ p ⊔ (A ⊔ B) = ⊤ := by
   rw [isCompl_iff, disjoint_iff, codisjoint_iff, ← Submodule.map_sup, Submodule.map_mkQ_eq_top,
