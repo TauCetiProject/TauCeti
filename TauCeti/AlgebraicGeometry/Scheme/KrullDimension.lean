@@ -26,8 +26,6 @@ the fibre of a base change is the base change of a fibre along an extension of r
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec`: the Krull dimension of `Spec R` is the
-  Krull dimension of `R`.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_iSup_openCover`: the Krull dimension of a
   scheme is the supremum of the Krull dimensions of the members of an open cover.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_pullback_Spec_map_of_field`: the Krull dimension
@@ -49,12 +47,6 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- The Krull dimension of the underlying space of `Spec R` is the Krull dimension of `R`. -/
-@[simp]
-theorem topologicalKrullDim_Spec (R : CommRingCat.{u}) :
-    topologicalKrullDim (Spec R) = ringKrullDim R :=
-  PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim R
-
 /-- The Krull dimension of a scheme is the supremum of the Krull dimensions of the members of an
 open cover. -/
 theorem topologicalKrullDim_eq_iSup_openCover {X : Scheme.{u}} (𝒰 : X.OpenCover) :
@@ -68,10 +60,11 @@ theorem topologicalKrullDim_pullback_Spec_algebraMap (K L A : Type u) [Field K] 
     [CommRing A] [Algebra K L] [Algebra K A] [Algebra.FiniteType K A] :
     topologicalKrullDim (pullback (Spec.map (CommRingCat.ofHom (algebraMap K A)))
       (Spec.map (CommRingCat.ofHom (algebraMap K L))) : Scheme.{u}) = ringKrullDim A := by
-  rw [(pullbackSpecIso K A L).hom.homeomorph.isHomeomorph.topologicalKrullDim_eq,
-    topologicalKrullDim_Spec]
-  exact (ringKrullDim_eq_of_ringEquiv (Algebra.TensorProduct.comm K A L).toRingEquiv).trans
-    (ringKrullDim_tensorProduct_field_of_finiteType L A)
+  rw [(pullbackSpecIso K A L).hom.homeomorph.isHomeomorph.topologicalKrullDim_eq]
+  -- The underlying space of `Spec R` is `PrimeSpectrum R` by definition.
+  exact (PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim _).trans <|
+    (ringKrullDim_eq_of_ringEquiv (Algebra.TensorProduct.comm K A L).toRingEquiv).trans
+      (ringKrullDim_tensorProduct_field_of_finiteType L A)
 
 /-- The Krull dimension of an affine scheme locally of finite type over a field `K` is invariant
 under extension of the base field. -/
@@ -83,8 +76,8 @@ private theorem topologicalKrullDim_pullback_Spec_of_field {K L : Type u} [Field
   let := φ.hom.toAlgebra
   have : Algebra.FiniteType K A :=
     (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType) (φ := φ)).mp ‹_›
-  rw [topologicalKrullDim_Spec]
-  exact topologicalKrullDim_pullback_Spec_algebraMap K L A
+  exact (topologicalKrullDim_pullback_Spec_algebraMap K L A).trans
+    (PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim A).symm
 
 /-- The Krull dimension of a scheme locally of finite type over a field `K` is invariant under
 extension of the base field. -/

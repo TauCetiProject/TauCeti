@@ -8,8 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Hom.Iso
 public import TauCeti.AlgebraicGeometry.AbelianVariety.MorphismGroup
 public import TauCeti.AlgebraicGeometry.Geometrically.Integral
-public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 public import Mathlib.RingTheory.KrullDimension.Field
+public import Mathlib.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # The trivial abelian variety
@@ -38,7 +38,7 @@ genus `0` has trivial Jacobian, and there the acceptance criterion `dim (Jac X) 
 structure on the monoidal unit together with its uniqueness API for the trivial group object
 (`CommGrp.uniqueHomFromTrivial`, `Grp.uniqueHomToTrivial`), the terminal object of `Over S`,
 preservation of terminal objects by the right adjoint `Over.pullback`, and
-`TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec` together with `ringKrullDim_eq_zero_of_field`.
+`PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim` together with `ringKrullDim_eq_zero_of_field`.
 The geometric-integrality input is `TauCeti.AlgebraicGeometry.geometricallyIntegral_of_isIso`.
 The abelian variety itself is assembled by the existing constructor
 `AbelianVariety.ofGeometricallyIntegral`; its characteristic lemmas identify the underlying group
@@ -64,6 +64,16 @@ namespace TauCeti
 namespace AlgebraicGeometry
 
 universe u
+
+/-- The spectrum of a field has topological Krull dimension `0`. -/
+private lemma topologicalKrullDim_spec_eq_zero (K : Type u) [Field K] :
+    topologicalKrullDim (Spec (.of K)) = 0 := by
+  -- The underlying topological space of `Spec R` *is* `PrimeSpectrum R`, definitionally
+  -- (`AlgebraicGeometry.Scheme.Spec_carrier`); no lemma states `topologicalKrullDim` of a scheme
+  -- in terms of its coordinate ring, and Mathlib crosses the same gap by `change`, in
+  -- `AlgebraicGeometry.IsLocallyArtinian.of_topologicalKrullDim_le_zero`.
+  change topologicalKrullDim (PrimeSpectrum K) = 0
+  rw [PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim, ringKrullDim_eq_zero_of_field]
 
 namespace AbelianVariety
 
@@ -157,8 +167,7 @@ lemma trivial_inv :
 /-- The trivial abelian variety has dimension `0`. -/
 @[simp]
 lemma dim_trivial : (trivial K).dim = 0 := by
-  rw [dim_def, trivial_toScheme, topologicalKrullDim_Spec]
-  exact ringKrullDim_eq_zero_of_field K
+  rw [dim_def, trivial_toScheme, topologicalKrullDim_spec_eq_zero]
 
 variable {K}
 
