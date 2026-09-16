@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
-public import TauCeti.NumberTheory.NumberField.Frobenius.FiberCount
+import TauCeti.NumberTheory.NumberField.Frobenius.FiberCount
 public import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Fiber
 
 /-!
