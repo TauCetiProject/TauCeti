@@ -10,7 +10,6 @@ public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
-import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
 import Mathlib.Algebra.Order.Star.Real
 import Mathlib.Analysis.PSeries
 import Mathlib.Topology.Instances.Matrix
@@ -94,7 +93,8 @@ private theorem tsum_setLIntegral_add_smul_le {g : selfAdjoint.submodule ℝ
       rw [dist_add_right, dist_eq_norm, neg_sub_neg, ← sub_smul, norm_smul, Real.norm_eq_abs,
         abs_sub_comm]
     have h1 : 1 ≤ |(k : ℝ) - l| := by
-      have h := Int.one_le_abs (sub_ne_zero.2 (show (k : ℤ) ≠ l by exact_mod_cast hkl))
+      have hklz : (k : ℤ) ≠ l := by exact_mod_cast hkl
+      have h := Int.one_le_abs (sub_ne_zero.2 hklz)
       exact_mod_cast h
     have htri := dist_triangle_right (-((k : ℝ) • E) + A) (-((l : ℝ) • E) + A) A₀
     have hEpos : 0 < ‖E‖ := norm_pos_iff.2 hE0
