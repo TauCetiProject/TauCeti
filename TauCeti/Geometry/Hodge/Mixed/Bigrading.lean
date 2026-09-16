@@ -20,9 +20,10 @@ filtrations are read off,
 
 and whose pieces are conjugate to each other modulo lower weight. This file proves the converse:
 a rational weight filtration and a Hodge filtration admitting such a bigrading form a mixed Hodge
-structure. The conjugation condition asked for is the weakest one that works,
-`conj I^{p,q} ≤ I^{q,p} ⊔ W_{p+q-1}` — the images of `I^{p,q}` and `I^{q,p}` in `grᵂ_{p+q}` are
-conjugate — and it need not be Deligne's own bigrading: no uniqueness is claimed or needed.
+structure. The conjugation condition used here, `conj I^{p,q} ≤ I^{q,p} ⊔ W_{p+q-1}` — the
+images of `I^{p,q}` and `I^{q,p}` in `grᵂ_{p+q}` are conjugate — is weaker than Deligne's and
+suffices for the converse, and the bigrading need not be Deligne's own: no uniqueness is claimed
+or needed.
 
 The converse is a way to recognise new mixed Hodge structures. Verifying purity of every graded
 piece directly means computing induced filtrations on quotients, whereas exhibiting a bigrading is
