@@ -363,7 +363,9 @@ private theorem orderedVertex_antitone {K : AbstractSimplicialComplex ι} (x : R
     x.1 (orderedVertex x j).1 ≤ x.1 (orderedVertex x i).1 := by
   let e : Fin (carrier K x).1.card ≃ {v // v ∈ (carrier K x).1} :=
     (Fintype.equivFinOfCardEq (by simp)).symm
-  exact Tuple.monotone_sort (fun i => OrderDual.toDual (x.1 (e i).1)) hij
+  simpa only [orderedVertex, Equiv.trans_apply, Function.comp_apply,
+    OrderDual.toDual_le_toDual, e] using
+    Tuple.monotone_sort (fun i => OrderDual.toDual (x.1 (e i).1)) hij
 
 private theorem sum_orderedVertex {K : AbstractSimplicialComplex ι} (x : Realization K)
     (g : ι → ℝ) :

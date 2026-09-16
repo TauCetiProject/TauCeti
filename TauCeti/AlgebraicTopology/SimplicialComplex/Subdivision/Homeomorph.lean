@@ -80,7 +80,9 @@ private theorem mem_orderChamber_decreasingVertexOrder {K : AbstractSimplicialCo
     (σ : Face K) (x : StandardSimplex σ.1) :
     x ∈ orderChamber σ (decreasingVertexOrder σ x) := by
   let e : VertexOrder σ := (Fintype.equivFinOfCardEq (by simp)).symm
-  exact Tuple.monotone_sort (fun i => OrderDual.toDual (x.1 (e i).1))
+  simpa only [orderChamber, Set.mem_ofPred_eq, decreasingVertexOrder, Equiv.trans_apply,
+    Monotone, Antitone, Function.comp_apply, OrderDual.toDual_le_toDual, e] using
+    Tuple.monotone_sort (fun i => OrderDual.toDual (x.1 (e i).1))
 
 private theorem iUnion_orderChamber {K : AbstractSimplicialComplex ι} (σ : Face K) :
     ⋃ e : VertexOrder σ, orderChamber σ e = Set.univ := by
