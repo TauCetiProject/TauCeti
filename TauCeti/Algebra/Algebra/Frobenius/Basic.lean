@@ -89,8 +89,8 @@ form `(a, b) ↦ φ (a * b)` is nondegenerate: `φ (a * b) = 0` for all `b` forc
 def _root_.LinearMap.IsFrobeniusFunctional (φ : A →ₗ[k] k) : Prop :=
   ((LinearMap.mul k A).compr₂ φ).Nondegenerate
 
-/-- An isomorphism of right `A`-modules from `A` to its dual is determined by its value at `1`. -/
-theorem dualEquiv_apply_apply {e : A ≃ₗ[k] Module.Dual k A}
+/-- A right `A`-linear map from `A` to its dual is determined by its value at `1`. -/
+theorem dualLinearMap_apply_apply {e : A →ₗ[k] Module.Dual k A}
     (he : ∀ a c : A, e (a * c) = DomMulAct.mk c • e a) (a b : A) : e a b = e 1 (a * b) := by
   simpa [DomMulAct.smul_linearMap_apply] using LinearMap.congr_fun (he 1 a) b
 
@@ -159,11 +159,15 @@ theorem _root_.LinearMap.isFrobeniusFunctional_apply_one {e : A ≃ₗ[k] Module
     apply e.injective
     apply LinearMap.ext
     intro b
-    rw [map_zero, LinearMap.zero_apply, dualEquiv_apply_apply he]
+    rw [map_zero, LinearMap.zero_apply]
+    change e.toLinearMap a b = 0
+    rw [dualLinearMap_apply_apply (fun a c => he a c)]
     exact ha b
   · intro b hb
     exact (Module.forall_dual_apply_eq_zero_iff k b).mp fun f => by
-      rw [← e.apply_symm_apply f, dualEquiv_apply_apply he]
+      rw [← e.apply_symm_apply f]
+      change e.toLinearMap (e.symm f) b = 0
+      rw [dualLinearMap_apply_apply (fun a c => he a c)]
       exact hb _
 
 end Projective
@@ -247,7 +251,7 @@ theorem toDualEquiv_isFrobeniusFunctional_apply_one {e : A ≃ₗ[k] Module.Dual
     (LinearMap.isFrobeniusFunctional_apply_one he).toDualEquiv = e :=
   LinearEquiv.ext fun a => LinearMap.ext fun b => by
     rw [LinearMap.IsFrobeniusFunctional.toDualEquiv_apply_apply]
-    exact (dualEquiv_apply_apply he a b).symm
+    exact (dualLinearMap_apply_apply (e := e.toLinearMap) (fun x y => he x y) a b).symm
 
 variable (k A) in
 /-- **Frobenius functionals are the isomorphisms `A ≅ A⁺` of right modules.** The pointwise form of
