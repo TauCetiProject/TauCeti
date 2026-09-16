@@ -274,6 +274,7 @@ end DiagonalChain
 
 /-- In rank zero, the unique coefficient families are connected by a diagonal chain and their
 weighted sums of squares are isometric. -/
+@[simp]
 theorem diagonalChain_iff_equivalent_fin_zero {w w' : Fin 0 → Rˣ} :
     DiagonalChain w w' ↔
       (weightedSumSquares R fun i ↦ (w i : R)).Equivalent

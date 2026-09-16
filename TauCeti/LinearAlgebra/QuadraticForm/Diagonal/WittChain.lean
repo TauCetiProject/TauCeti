@@ -135,6 +135,7 @@ theorem exists_diagonalChain_first_eq_of_mem_unitValueSet {n : ℕ}
 
 /-- **Witt's chain theorem** in its nontrivial range: two diagonal forms of rank at least two are
 isometric if and only if their coefficient families are connected by a diagonal chain. -/
+@[simp]
 theorem diagonalChain_iff_equivalent {n : ℕ} {w w' : Fin (n + 2) → Kˣ} :
     DiagonalChain w w' ↔
       (weightedSumSquares K fun i ↦ (w i : K)).Equivalent
