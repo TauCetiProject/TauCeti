@@ -58,8 +58,6 @@ and only on isomorphism classes, since `swap1Inf` is an involution only up to re
 
 ## References
 
-* `TauCetiRoadmap/BelyiMaps/README.md`, Layer 2.6, and the
-  `TauCetiRoadmap/BelyiMaps/Suggested.lean` prototype.
 * S. K. Lando, A. K. Zvonkin, *Graphs on Surfaces and Their Applications*, Encyclopaedia of
   Mathematical Sciences 141, Springer 2004, §1.5.
 * E. Girondo, G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins d'Enfants*,
