@@ -67,6 +67,15 @@ theorem injective_iff_projective (hE : E.IsFrobenius) (X : C) :
     E.isInjective X ↔ E.isProjective X :=
   (IsFrobenius.projective_iff_injective hE X).symm
 
+/-- The opposite of a Frobenius exact structure is Frobenius. -/
+theorem op (hE : E.IsFrobenius) : E.op.IsFrobenius where
+  enoughProjectives := enoughInjectives_iff_op_enoughProjectives.mp hE.enoughInjectives
+  enoughInjectives := enoughProjectives_iff_op_enoughInjectives.mp hE.enoughProjectives
+  projective_iff_injective X := by
+    rw [← E.isInjective_iff_isProjective_op X.unop,
+      ← E.isProjective_iff_isInjective_op X.unop]
+    exact hE.injective_iff_projective X.unop
+
 end IsFrobenius
 
 /-- Every split exact structure is Frobenius: all objects are both relatively projective and

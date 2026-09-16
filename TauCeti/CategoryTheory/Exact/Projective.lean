@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
 public import TauCeti.CategoryTheory.Exact.Resolution
+public import Mathlib.CategoryTheory.ObjectProperty.Retract
 
 /-!
 # Relative projectives in an exact category, and the horseshoe lemma
@@ -152,9 +153,10 @@ theorem factorThru_comp {Q : C} (hQ : E.isProjective Q) {X Y : C} {p : X ⟶ Y}
 
 end isProjective
 
-/-- Projectivity is invariant under isomorphism: transport the lift along the isomorphism. -/
-instance : (E.isProjective).IsClosedUnderIsomorphisms where
-  of_iso e hQ _ _ _ hp f := ⟨e.inv ≫ hQ.factorThru hp (e.hom ≫ f), by simp⟩
+/-- Relative projectives are closed under retracts. -/
+instance : (E.isProjective).IsStableUnderRetracts where
+  of_retract r hQ _ _ _ hp f :=
+    ⟨r.i ≫ hQ.factorThru hp (r.r ≫ f), by simp⟩
 
 /-- A zero object is projective: every morphism out of it is zero. -/
 instance : (E.isProjective).ContainsZero where

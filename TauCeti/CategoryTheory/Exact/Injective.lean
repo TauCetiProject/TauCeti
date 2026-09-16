@@ -74,10 +74,10 @@ theorem comp_factorThru {I : C} (hI : E.isInjective I) {X Y : C} {i : X ⟶ Y}
 
 end isInjective
 
-/-- Relative injectivity is invariant under isomorphism. -/
-instance : (E.isInjective).IsClosedUnderIsomorphisms where
-  of_iso e hI _ _ _ hi f :=
-    ⟨hI.factorThru hi (f ≫ e.inv) ≫ e.hom, by simp⟩
+/-- Relative injectives are closed under retracts. -/
+instance : (E.isInjective).IsStableUnderRetracts where
+  of_retract r hI _ _ _ hi f :=
+    ⟨hI.factorThru hi (f ≫ r.i) ≫ r.r, by simp⟩
 
 /-- A zero object is injective relative to every exact structure. -/
 instance : (E.isInjective).ContainsZero where
@@ -273,6 +273,76 @@ theorem isProjective_iff_isInjective_op (P : C) :
     rw [isInjective_iff] at hP
     obtain ⟨g, hg⟩ := hP ((E.op_isInflation_iff p.op).mpr (by simpa)) f.op
     exact ⟨g.unop, Quiver.Hom.op_inj (by simpa using hg)⟩
+
+namespace InjectivePresentation
+
+/-- An injective presentation in `C` is a projective presentation in `Cᵒᵖ`. -/
+def op {X : C} (P : E.InjectivePresentation X) :
+    E.op.ProjectivePresentation (Opposite.op X) where
+  K := Opposite.op P.K
+  P := Opposite.op P.I
+  i := P.p.op
+  p := P.i.op
+  zero := by simpa using congrArg Quiver.Hom.op P.zero
+  conflation := (E.op_conflation_op_iff _).mpr P.conflation
+  isProjective := (E.isInjective_iff_isProjective_op P.I).mp P.isInjective
+
+/-- Unopposing an injective presentation gives a projective presentation. -/
+def unop {X : Cᵒᵖ} (P : E.op.InjectivePresentation X) :
+    E.ProjectivePresentation X.unop where
+  K := P.K.unop
+  P := P.I.unop
+  i := P.p.unop
+  p := P.i.unop
+  zero := by simpa using congrArg Quiver.Hom.unop P.zero
+  conflation := (E.op_conflation _).mp P.conflation
+  isProjective := (E.isProjective_iff_isInjective_op P.I.unop).mpr P.isInjective
+
+end InjectivePresentation
+
+namespace ProjectivePresentation
+
+/-- A projective presentation in `C` is an injective presentation in `Cᵒᵖ`. -/
+def op {X : C} (P : E.ProjectivePresentation X) :
+    E.op.InjectivePresentation (Opposite.op X) where
+  I := Opposite.op P.P
+  K := Opposite.op P.K
+  i := P.p.op
+  p := P.i.op
+  zero := by simpa using congrArg Quiver.Hom.op P.zero
+  conflation := (E.op_conflation_op_iff _).mpr P.conflation
+  isInjective := (E.isProjective_iff_isInjective_op P.P).mp P.isProjective
+
+/-- Unopposing a projective presentation gives an injective presentation. -/
+def unop {X : Cᵒᵖ} (P : E.op.ProjectivePresentation X) :
+    E.InjectivePresentation X.unop where
+  I := P.P.unop
+  K := P.K.unop
+  i := P.p.unop
+  p := P.i.unop
+  zero := by simpa using congrArg Quiver.Hom.unop P.zero
+  conflation := (E.op_conflation _).mp P.conflation
+  isInjective := (E.isInjective_iff_isProjective_op P.P.unop).mpr P.isProjective
+
+end ProjectivePresentation
+
+/-- Enough relative injectives in `C` are equivalent to enough relative projectives in `Cᵒᵖ`. -/
+theorem enoughInjectives_iff_op_enoughProjectives :
+    E.EnoughInjectives ↔ E.op.EnoughProjectives := by
+  constructor
+  · intro h
+    exact ⟨fun X ↦ ⟨(h.injectivePresentation X.unop).op⟩⟩
+  · intro h
+    exact ⟨fun X ↦ ⟨(h.projectivePresentation (Opposite.op X)).unop⟩⟩
+
+/-- Enough relative projectives in `C` are equivalent to enough relative injectives in `Cᵒᵖ`. -/
+theorem enoughProjectives_iff_op_enoughInjectives :
+    E.EnoughProjectives ↔ E.op.EnoughInjectives := by
+  constructor
+  · intro h
+    exact ⟨fun X ↦ ⟨(h.projectivePresentation X.unop).op⟩⟩
+  · intro h
+    exact ⟨fun X ↦ ⟨(h.injectivePresentation (Opposite.op X)).unop⟩⟩
 
 end ExactStructure
 
