@@ -56,7 +56,9 @@ scale matrix `S`, whose exponential weight is `exp (-trace (S⁻¹ * A) / 2)` an
 * `Matrix.PosDef.lintegral_det_rpow_mul_exp_neg_trace_inv_mul_div_two` and
   `Matrix.PosDef.integral_det_rpow_mul_exp_neg_trace_inv_mul_div_two` — the same statement in
   the halved form `exp (-trace (S⁻¹ * A) / 2)` used by the Wishart densities, where the factor
-  is `2 ^ (p * a) * (det S) ^ a`.
+  is `2 ^ (p * a) * (det S) ^ a`;
+* `Matrix.PosDef.integrableOn_det_rpow_mul_exp_neg_trace_inv_mul_div_two` — integrability of that
+  halved integrand on the cone.
 
 ## References
 
@@ -359,5 +361,31 @@ theorem integral_det_rpow_mul_exp_neg_trace_inv_mul_div_two (hS : S.PosDef) (a :
   rw [← h]
   exact setIntegral_congr_fun (measurableSet_posDefMatrix p)
     fun A _ => by rw [integrand_two_smul hS a A]
+
+/-- With an inverse positive-definite scale in the exponential weight, the cone integrand is
+still integrable in the classical range of the shape parameter. This is the integrability that
+makes the tilted Wishart density an honest Bochner integrand. -/
+theorem integrableOn_det_rpow_mul_exp_neg_trace_inv_mul_div_two (hS : S.PosDef)
+    (ha : ((p : ℝ) - 1) / 2 < a) :
+    IntegrableOn (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+        (A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
+          exp (-(S⁻¹ * (A : Matrix (Fin p) (Fin p) ℝ)).trace / 2))
+      {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (A : Matrix (Fin p) (Fin p) ℝ).PosDef} (symmetricLebesgue p) := by
+  refine ⟨Measurable.aestronglyMeasurable (by fun_prop), ?_⟩
+  -- On the cone the determinant is positive, so the integrand is its own norm.
+  have henorm : ∫⁻ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+      (A : Matrix (Fin p) (Fin p) ℝ).PosDef},
+      ‖(A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
+        exp (-(S⁻¹ * (A : Matrix (Fin p) (Fin p) ℝ)).trace / 2)‖ₑ ∂symmetricLebesgue p =
+      ENNReal.ofReal ((2 : ℝ) ^ ((p : ℝ) * a) * S.det ^ a) *
+        ENNReal.ofReal (multivariateGamma p a) := by
+    rw [← lintegral_posDef_multivariateGamma ha,
+      ← lintegral_det_rpow_mul_exp_neg_trace_inv_mul_div_two hS a]
+    refine setLIntegral_congr_fun (measurableSet_posDefMatrix p) fun A hA => ?_
+    exact Real.enorm_eq_ofReal
+      (mul_nonneg (Real.rpow_nonneg hA.det_pos.le _) (Real.exp_nonneg _))
+  rw [hasFiniteIntegral_iff_enorm, henorm]
+  exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top ENNReal.ofReal_lt_top
 
 end Matrix.PosDef
