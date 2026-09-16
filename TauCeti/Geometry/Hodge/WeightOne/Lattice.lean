@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Hodge.Realification
 public import TauCeti.Geometry.Hodge.WeightOne.Basic
+public import TauCeti.LinearAlgebra.Eigenspace.Transport
 
 /-!
 # Weight-one Hodge structures from complex structures on lattices
@@ -28,7 +29,8 @@ need no transport isomorphism in their public statements.
 * `TauCeti.AlmostComplexStructure.latticeHodgeStructure`: the associated effective integral Hodge
   structure of weight one.
 * `TauCeti.AlmostComplexStructure.latticeHodgeStructure_piece_one` and
-  `TauCeti.AlmostComplexStructure.latticeHodgeStructure_piece_zero`: its two nonzero pieces.
+  `TauCeti.AlmostComplexStructure.latticeHodgeStructure_piece_zero`: its degree-one and
+  degree-zero pieces.
 * `TauCeti.AlmostComplexStructure.latticeHodgeStructure_weilOperator`: the Weil operator recovers
   the transported complex structure.
 
@@ -57,6 +59,7 @@ noncomputable def latticeComplexification
 
 /-- The realification comparison intertwines the scalar extension of `J` with its transported
 action on the abstract complexification. -/
+@[simp]
 theorem realificationComplexEquiv_baseChange_apply
     (J : AlmostComplexStructure (Hodge.Realification V)) (hℂ : IsBaseChange ℂ ιℂ)
     (x : ℂ ⊗[ℝ] Hodge.Realification V) :
@@ -80,7 +83,7 @@ theorem eigenspace_latticeComplexification
     Module.End.eigenspace (J.latticeComplexification hℂ) z =
       (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) z).map
         (Hodge.realificationComplexEquiv hℂ).toLinearMap := by
-  rw [Hodge.HodgeStructureOn.eigenspace_eq_comap_of_intertwine
+  rw [eigenspace_eq_comap_of_intertwine
       (Hodge.realificationComplexEquiv hℂ) _ _ (J.realificationComplexEquiv_baseChange_apply hℂ) z,
     Submodule.map_comap_eq_of_surjective (Hodge.realificationComplexEquiv hℂ).surjective]
 
@@ -90,8 +93,10 @@ noncomputable def latticeHodgeStructure
     (J : AlmostComplexStructure (Hodge.Realification V)) (hℂ : IsBaseChange ℂ ιℂ) :
     Hodge.HodgeStructure hℂ 1 :=
   Hodge.HodgeStructureOn.comap (Hodge.realificationComplexEquiv hℂ).symm
-    (fun x ↦ by simpa only [Hodge.latticeConjugation_toEquiv_apply] using
-      Hodge.realificationComplexEquiv_symm_conj hℂ x) J.hodgeStructure
+    (fun x ↦ by
+      simpa only [Hodge.latticeConjugation_toEquiv_apply,
+        Hodge.complexificationConjugation_toEquiv_apply] using
+        Hodge.realificationComplexEquiv_symm_conj hℂ x) J.hodgeStructure
 
 /-- The filtration associated with a lattice complex structure is top in nonpositive degrees, its
 `i`-eigenspace in degree one, and bottom above degree one. -/

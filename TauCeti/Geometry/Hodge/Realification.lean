@@ -79,10 +79,10 @@ theorem realificationComplexEquiv_one_tmul_realificationMap
 
 /-- The comparison between the iterated and abstract complexifications intertwines their
 conjugations. -/
+@[simp]
 theorem realificationComplexEquiv_conj (hℂ : IsBaseChange ℂ ιℂ)
     (x : ℂ ⊗[ℝ] Realification V) :
-    realificationComplexEquiv hℂ
-        ((complexificationConjugation (Realification V)).toEquiv x) =
+    realificationComplexEquiv hℂ (tmulConj (Realification V) x) =
       latticeConj hℂ (realificationComplexEquiv hℂ x) := by
   induction x using TensorProduct.induction_on with
   | zero => simp
@@ -92,17 +92,16 @@ theorem realificationComplexEquiv_conj (hℂ : IsBaseChange ℂ ιℂ)
       | zero => simp
       | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
       | tmul r v =>
-          rw [complexificationConjugation_toEquiv_tmul,
-            realificationComplexEquiv_tmul_tmul,
+          rw [tmulConj_tmul, realificationComplexEquiv_tmul_tmul,
             realificationComplexEquiv_tmul_tmul, map_smulₛₗ]
           simp [map_mul]
 
 /-- The inverse realification comparison intertwines lattice-induced conjugation with ordinary
 conjugation. -/
+@[simp]
 theorem realificationComplexEquiv_symm_conj (hℂ : IsBaseChange ℂ ιℂ) (x : Vℂ) :
     (realificationComplexEquiv hℂ).symm (latticeConj hℂ x) =
-      (complexificationConjugation (Realification V)).toEquiv
-        ((realificationComplexEquiv hℂ).symm x) := by
+      tmulConj (Realification V) ((realificationComplexEquiv hℂ).symm x) := by
   apply (realificationComplexEquiv hℂ).injective
   rw [realificationComplexEquiv_conj, LinearEquiv.apply_symm_apply,
     LinearEquiv.apply_symm_apply]
