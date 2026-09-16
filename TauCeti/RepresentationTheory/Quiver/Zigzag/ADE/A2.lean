@@ -208,7 +208,6 @@ theorem finrank_zigzagAlgebra_A2 [Nontrivial k] :
 
 /-- The vertex, arrow and volume basis of the zigzag relation quotient of `A₂` has six
 elements. -/
-@[simp]
 theorem card_zigzagBasisIndex_A2 : Fintype.card (ZigzagBasisIndex zigzagA2Graph) = 6 := by
   simp [ZigzagBasisIndex, zigzagA2Graph.dart_card_eq_twice_card_edges]
 
