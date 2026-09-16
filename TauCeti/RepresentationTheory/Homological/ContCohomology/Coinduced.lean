@@ -498,7 +498,7 @@ variable [TopologicalSpace R] [TopologicalSpace A] [DiscreteTopology A]
 
 /-- The scalar orbit map of every discrete coinduced element is continuous when the source group
 is compact and the coefficient module is discrete. -/
-theorem continuous_const_smul (f : DiscreteCoind G U A) : Continuous fun r : R => r • f := by
+theorem continuous_smul_const (f : DiscreteCoind G U A) : Continuous fun r : R => r • f := by
   rw [continuous_discrete_rng]
   intro y
   by_cases h : (fun r : R => r • f) ⁻¹' {y} = ∅
@@ -523,7 +523,7 @@ theorem continuous_const_smul (f : DiscreteCoind G U A) : Continuous fun r : R =
       exact ext fun g => hr (f g) ⟨g, rfl⟩
 
 instance instContinuousSMulScalar : ContinuousSMul R (DiscreteCoind G U A) :=
-  ⟨continuous_prod_of_discrete_right.2 continuous_const_smul⟩
+  ⟨continuous_prod_of_discrete_right.2 continuous_smul_const⟩
 
 end ScalarAction
 
@@ -535,16 +535,18 @@ variable {R : Type*} [Semiring R] {B C : Type*}
   [AddCommGroup C] [Module R C] [DistribMulAction U C] [SMulCommClass U R C]
 
 /-- Coinduction of a `U`-equivariant linear map, acting pointwise on locally constant functions. -/
-@[expose] def map (f : A →ₗ[R] B) (hf : ∀ (u : U) (a : A), f (u • a) = u • f a) :
+def map (f : A →ₗ[R] B) (hf : ∀ (u : U) (a : A), f (u • a) = u • f a) :
     DiscreteCoind G U A →ₗ[R] DiscreteCoind G U B where
-  toFun a := mk G U B (fun g => f (a g)) (a.isLocallyConstant.comp f)
-    (fun u g => by rw [a.apply_mul, hf])
-  map_add' _ _ := ext fun _ => map_add f _ _
+  toAddHom := ((toCoind G U B).symm.toAddMonoidHom.comp
+    ((coindMap G U f.toAddMonoidHom hf).comp (toCoind G U A).toAddMonoidHom)).toAddHom
   map_smul' _ _ := ext fun _ => map_smul f _ _
+
+private theorem map_apply_impl (f : A →ₗ[R] B) (hf) (a : DiscreteCoind G U A) (g : G) :
+    map f hf a g = f (a g) := rfl
 
 @[simp]
 theorem map_apply (f : A →ₗ[R] B) (hf) (a : DiscreteCoind G U A) (g : G) :
-    map f hf a g = f (a g) := rfl
+    map f hf a g = f (a g) := map_apply_impl f hf a g
 
 @[simp]
 theorem map_id :
@@ -563,17 +565,21 @@ theorem map_comp (f : A →ₗ[R] B) (hf) (f' : B →ₗ[R] C) (hf') :
 
 variable (R G U A) in
 /-- Evaluation at `1` as a linear map, the counit of linear coinduction. -/
-@[expose] def evalLinear : DiscreteCoind G U A →ₗ[R] A where
-  toFun f := f 1
-  map_add' _ _ := rfl
+def evalLinear : DiscreteCoind G U A →ₗ[R] A where
+  toAddHom := (eval G U A).toAddHom
   map_smul' _ _ := rfl
 
+private theorem evalLinear_apply_impl (f : DiscreteCoind G U A) :
+    evalLinear (R := R) G U A f = f 1 := rfl
+
 @[simp]
-theorem evalLinear_apply (f : DiscreteCoind G U A) : evalLinear (R := R) G U A f = f 1 := rfl
+theorem evalLinear_apply (f : DiscreteCoind G U A) : evalLinear (R := R) G U A f = f 1 :=
+  evalLinear_apply_impl f
 
 @[simp]
 theorem evalLinear_map (f : A →ₗ[R] B) (hf) (a : DiscreteCoind G U A) :
-    evalLinear (R := R) G U B (map f hf a) = f (evalLinear (R := R) G U A a) := rfl
+    evalLinear (R := R) G U B (map f hf a) = f (evalLinear (R := R) G U A a) := by
+  simp only [evalLinear_apply, map_apply]
 
 end Map
 
@@ -608,7 +614,7 @@ local instance instContinuousSMulOfSmoothDiscreteCoind
     [TopologicalSpace G] [IsTopologicalGroup G] (A : SmoothDiscreteTopRep.{u, v, w} R G) :
     ContinuousSMul G A.obj.V := A.property.continuousSMul
 
-variable (R : Type u) [CommRing R] [TopologicalSpace R]
+variable (R : Type u) [Ring R] [TopologicalSpace R]
   (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   (U : Subgroup G)
 
@@ -620,7 +626,7 @@ noncomputable abbrev coindDiscreteRep (A : DiscreteRep.{u, v, w} R U) :
   continuousSMulRing := DiscreteCoind.instContinuousSMulScalar
 
 /-- Coinduction from discrete `U`-representations to discrete `G`-representations. -/
-@[expose] noncomputable def coindDiscreteFunctor :
+noncomputable def coindDiscreteFunctor :
     DiscreteRep.{u, v, w} R U ⥤ DiscreteRep.{u, v, max v w} R G where
   obj := coindDiscreteRep R G U
   map {A B} f :=
@@ -634,47 +640,80 @@ noncomputable abbrev coindDiscreteRep (A : DiscreteRep.{u, v, w} R U) :
   map_comp f f' := Representation.IntertwiningMap.ext (LinearMap.ext fun a =>
     DiscreteCoind.ext fun g => by rfl)
 
+private theorem coindDiscreteFunctor_obj_impl (A : DiscreteRep.{u, v, w} R U) :
+    (coindDiscreteFunctor R G U).obj A = coindDiscreteRep R G U A := rfl
+
 /-- The object part of discrete coinduction is the locally constant coinduced representation. -/
 @[simp]
 theorem coindDiscreteFunctor_obj (A : DiscreteRep.{u, v, w} R U) :
-    (coindDiscreteFunctor R G U).obj A = coindDiscreteRep R G U A := rfl
+    (coindDiscreteFunctor R G U).obj A = coindDiscreteRep R G U A :=
+  coindDiscreteFunctor_obj_impl R G U A
+
+private theorem coindDiscreteFunctor_map_apply_impl {A B : DiscreteRep.{u, v, w} R U}
+    (f : A ⟶ B) (a : DiscreteCoind G U A.V) (g : G) :
+    ((eqToHom (coindDiscreteFunctor_obj R G U A).symm ≫
+      (coindDiscreteFunctor R G U).map f ≫
+      eqToHom (coindDiscreteFunctor_obj R G U B)).toLinearMap a) g =
+        f.toLinearMap (a g) := by
+  change DiscreteCoind.map f.toLinearMap (DiscreteRep.equivariant f) a g = _
+  exact DiscreteCoind.map_apply f.toLinearMap _ a g
 
 /-- Discrete coinduction maps act pointwise on their locally constant functions. The explicit
-`IntertwiningMap` type identifies the functor's object abbreviations with `coindDiscreteRep`. -/
+object transports identify the opaque functor's objects with `coindDiscreteRep`. -/
 @[simp]
 theorem coindDiscreteFunctor_map_apply {A B : DiscreteRep.{u, v, w} R U}
     (f : A ⟶ B) (a : DiscreteCoind G U A.V) (g : G) :
-    ((show Representation.IntertwiningMap
-        (coindDiscreteRep R G U A).ρ (coindDiscreteRep R G U B).ρ
-      from (coindDiscreteFunctor R G U).map f) a) g = f.toLinearMap (a g) := by
-  -- Remove the categorical packaging before applying the public pointwise computation lemma.
-  change DiscreteCoind.map f.toLinearMap (DiscreteRep.equivariant f) a g = _
-  exact DiscreteCoind.map_apply f.toLinearMap _ a g
+    ((eqToHom (coindDiscreteFunctor_obj R G U A).symm ≫
+      (coindDiscreteFunctor R G U).map f ≫
+      eqToHom (coindDiscreteFunctor_obj R G U B)).toLinearMap a) g =
+        f.toLinearMap (a g) :=
+  coindDiscreteFunctor_map_apply_impl R G U f a g
 
 /-- The locally constant coinduced module, bundled as a smooth discrete representation of `G`. -/
 noncomputable abbrev coindTopRep (A : SmoothDiscreteTopRep.{u, v, w} R U) :
     SmoothDiscreteTopRep.{u, v, max v w} R G :=
   (toSmoothDiscrete R G).obj (coindDiscreteRep R G U ((ofSmoothDiscrete R U).obj A))
 
+/-- Evaluation at `1` as the coinduction counit, from the restriction of the coinduced
+representation to its coefficient representation. -/
+noncomputable def coindCounit (A : SmoothDiscreteTopRep.{u, v, w} R U) :
+    ContIntertwiningMap (TopRep.res (U.subtype : U →* G) (coindTopRep R G U A).obj).ρ
+      A.obj.ρ where
+  toContinuousLinearMap :=
+    ⟨DiscreteCoind.evalLinear (R := R) G U A.obj.V, continuous_of_discreteTopology⟩
+  isIntertwining' u := by
+    ext f
+    exact DiscreteCoind.eval_smul u f
+
+private theorem coindCounit_apply_impl (A : SmoothDiscreteTopRep.{u, v, w} R U)
+    (f : DiscreteCoind G U A.obj.V) : coindCounit R G U A f = f 1 := rfl
+
+@[simp]
+theorem coindCounit_apply (A : SmoothDiscreteTopRep.{u, v, w} R U)
+    (f : DiscreteCoind G U A.obj.V) : coindCounit R G U A f = f 1 :=
+  coindCounit_apply_impl R G U A f
+
 /-- Coinduction from smooth discrete `U`-representations to smooth discrete
 `G`-representations. -/
-@[expose] noncomputable def coindFunctor :
+noncomputable def coindFunctor :
     SmoothDiscreteTopRep.{u, v, w} R U ⥤ SmoothDiscreteTopRep.{u, v, max v w} R G :=
   ofSmoothDiscrete R U ⋙ coindDiscreteFunctor R G U ⋙ toSmoothDiscrete R G
 
-@[simp]
-theorem coindFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R U) :
+private theorem coindFunctor_obj_impl (A : SmoothDiscreteTopRep.{u, v, w} R U) :
     (coindFunctor R G U).obj A = coindTopRep R G U A := by
   exact congrArg (toSmoothDiscrete R G).obj
     (coindDiscreteFunctor_obj R G U ((ofSmoothDiscrete R U).obj A))
 
-/-- Smooth discrete coinduction maps act pointwise on their locally constant functions. The
-outer carrier annotation identifies the composite functor's object with `DiscreteCoind`. -/
 @[simp]
-theorem coindFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w} R U}
+theorem coindFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R U) :
+    (coindFunctor R G U).obj A = coindTopRep R G U A := by
+  exact coindFunctor_obj_impl R G U A
+
+private theorem coindFunctor_map_apply_impl {A B : SmoothDiscreteTopRep.{u, v, w} R U}
     (f : A ⟶ B) (a : DiscreteCoind G U A.obj.V) (g : G) :
-    (show DiscreteCoind G U B.obj.V from (coindFunctor R G U).map f a) g =
-      f.hom.hom (a g) := by
+    (show DiscreteCoind G U B.obj.V from
+      (eqToHom (coindFunctor_obj R G U A).symm ≫ (coindFunctor R G U).map f ≫
+        eqToHom (coindFunctor_obj R G U B)).hom.hom a) g = f.hom.hom (a g) := by
   -- Display the three constituent functor maps so their public computation lemmas apply.
   change (show DiscreteCoind G U B.obj.V from
     ((toSmoothDiscrete R G).map
@@ -688,6 +727,16 @@ theorem coindFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w} R U}
   have h' := h.trans
     (ofSmoothDiscrete_map_toLinearMap_apply (R := R) (G := U) f (a g))
   exact htop'.trans h'
+
+/-- Smooth discrete coinduction maps act pointwise on their locally constant functions. The
+object transports identify the opaque composite functor's objects with `coindTopRep`. -/
+@[simp]
+theorem coindFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w} R U}
+    (f : A ⟶ B) (a : DiscreteCoind G U A.obj.V) (g : G) :
+    (show DiscreteCoind G U B.obj.V from
+      (eqToHom (coindFunctor_obj R G U A).symm ≫ (coindFunctor R G U).map f ≫
+        eqToHom (coindFunctor_obj R G U B)).hom.hom a) g = f.hom.hom (a g) :=
+  coindFunctor_map_apply_impl R G U f a g
 
 end Bundled
 
