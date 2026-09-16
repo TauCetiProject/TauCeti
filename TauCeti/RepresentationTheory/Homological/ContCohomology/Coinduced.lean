@@ -6,7 +6,6 @@ Authors: Claude, Codex
 module
 
 public import Mathlib.Topology.Algebra.ConstMulAction
-public import Mathlib.Topology.Algebra.MulAction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 public import TauCeti.Topology.Algebra.Group.LocallyConstant
 public import TauCeti.Topology.Algebra.Group.Profinite.Section
@@ -496,8 +495,9 @@ instance instSMulCommClass : SMulCommClass G R (DiscreteCoind G U A) :=
 variable [TopologicalSpace R] [TopologicalSpace A] [DiscreteTopology A]
   [ContinuousSMul R A] [CompactSpace G]
 
-/-- The scalar orbit map of every discrete coinduced element is continuous when the source group
-is compact and the coefficient module is discrete. -/
+/-- The scalar orbit map `r ↦ r • f` of a discrete coinduced element is continuous when the group
+`G` is compact and the coefficient module is discrete. It is the continuity of the `R`-action that
+makes `Coind_U^G A` a representation over the topological ring `R`. -/
 theorem continuous_smul_const (f : DiscreteCoind G U A) : Continuous fun r : R => r • f := by
   rw [continuous_discrete_rng]
   intro y
@@ -654,6 +654,11 @@ private theorem coindDiscreteFunctor_map_apply_impl {A B : DiscreteRep.{u, v, w}
       (coindDiscreteFunctor R G U).map f ≫
       eqToHom (coindDiscreteFunctor_obj R G U B)).toLinearMap a) g =
         f.toLinearMap (a g) := by
+  -- `coindDiscreteFunctor` is defined objectwise as `coindDiscreteRep`, so both object equalities
+  -- are `rfl` and the `eqToHom` transports around the functor map are identities. No categorical
+  -- lemma discharges a transport along a proof of a definitional equality without unfolding the
+  -- functor, so that one reduction is made here, in a private lemma, and the public statement is
+  -- derived from it; what is left is the underlying map, computed by `DiscreteCoind.map_apply`.
   change DiscreteCoind.map f.toLinearMap (DiscreteRep.equivariant f) a g = _
   exact DiscreteCoind.map_apply f.toLinearMap _ a g
 
@@ -707,15 +712,13 @@ noncomputable def coindFunctor :
     SmoothDiscreteTopRep.{u, v, w} R U ⥤ SmoothDiscreteTopRep.{u, v, max v w} R G :=
   ofSmoothDiscrete R U ⋙ coindDiscreteFunctor R G U ⋙ toSmoothDiscrete R G
 
-private theorem coindFunctor_obj_impl (A : SmoothDiscreteTopRep.{u, v, w} R U) :
-    (coindFunctor R G U).obj A = coindTopRep R G U A := by
-  exact congrArg (toSmoothDiscrete R G).obj
-    (coindDiscreteFunctor_obj R G U ((ofSmoothDiscrete R U).obj A))
-
+/-- The object part of smooth discrete coinduction is the bundled locally constant coinduced
+representation. -/
 @[simp]
 theorem coindFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R U) :
-    (coindFunctor R G U).obj A = coindTopRep R G U A := by
-  exact coindFunctor_obj_impl R G U A
+    (coindFunctor R G U).obj A = coindTopRep R G U A :=
+  congrArg (toSmoothDiscrete R G).obj
+    (coindDiscreteFunctor_obj R G U ((ofSmoothDiscrete R U).obj A))
 
 private theorem coindFunctor_map_apply_impl {A B : SmoothDiscreteTopRep.{u, v, w} R U}
     (f : A ⟶ B) (a : DiscreteCoind G U A.obj.V) (g : G) :
