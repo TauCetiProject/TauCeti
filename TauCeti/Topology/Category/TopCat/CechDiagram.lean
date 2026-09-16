@@ -18,10 +18,14 @@ reverse inclusion makes the evident inclusions of intersections into morphisms i
 This file constructs the resulting diagrams in open sets and topological spaces, together with
 the natural transformation formed by the inclusions of the finite intersections into `X`.
 
+The section is `@[expose]` because the diagram is a packaging of existing functors: downstream
+uses need its objects and maps to stay definitionally the finite intersections and their
+inclusions, which also makes every characteristic lemma below a `rfl`.
+
 The finite-intersection presentation follows R. Brown, *Topology and Groupoids*, Chapters 6--7.
 -/
 
-public section
+@[expose] public section
 
 noncomputable section
 
@@ -83,10 +87,8 @@ lemma cechOpenDiagram_obj (s : CechIndex ι) :
 
 @[simp]
 lemma cechOpenDiagram_map {s t : CechIndex ι} (f : s ⟶ t) :
-    (cechOpenDiagram U).map f =
-      eqToHom (cechOpenDiagram_obj U s) ≫ homOfLE (cechIntersection_mono U f.le) ≫
-        eqToHom (cechOpenDiagram_obj U t).symm :=
-  Subsingleton.elim _ _
+    (cechOpenDiagram U).map f = homOfLE (cechIntersection_mono U f.le) :=
+  rfl
 
 /-- The topological-space Čech diagram of a family of open sets. -/
 def cechTopDiagram : CechIndex ι ⥤ TopCat :=
@@ -97,13 +99,8 @@ lemma cechTopDiagram_obj (s : CechIndex ι) :
     (cechTopDiagram U).obj s = TopCat.of (cechIntersection U s) := (rfl)
 
 @[simp]
-lemma cechTopDiagram_map_apply {s t : CechIndex ι} (f : s ⟶ t)
-    (x : TopCat.of (cechIntersection U s)) :
-    ConcreteCategory.hom
-      (eqToHom (cechTopDiagram_obj U s).symm ≫ (cechTopDiagram U).map f ≫
-        eqToHom (cechTopDiagram_obj U t)) x =
-      ⟨x.1, cechIntersection_mono U f.le x.2⟩ := by
-  unfold cechTopDiagram cechOpenDiagram cechIntersection
+lemma cechTopDiagram_map_apply {s t : CechIndex ι} (f : s ⟶ t) (x : (cechTopDiagram U).obj s) :
+    (cechTopDiagram U).map f x = ⟨x.1, cechIntersection_mono U f.le x.2⟩ :=
   rfl
 
 /-- The inclusion of a finite-family intersection into the ambient space. -/
@@ -111,10 +108,8 @@ def cechInclusion (s : CechIndex ι) : (cechTopDiagram U).obj s ⟶ X :=
   Opens.inclusion' (cechIntersection U s)
 
 @[simp]
-lemma cechInclusion_apply (s : CechIndex ι) (x : TopCat.of (cechIntersection U s)) :
-    ConcreteCategory.hom
-      (eqToHom (cechTopDiagram_obj U s).symm ≫ cechInclusion U s) x = x.1 := by
-  unfold cechInclusion cechTopDiagram cechOpenDiagram cechIntersection
+lemma cechInclusion_apply (s : CechIndex ι) (x : (cechTopDiagram U).obj s) :
+    cechInclusion U s x = x.1 :=
   rfl
 
 @[reassoc]
