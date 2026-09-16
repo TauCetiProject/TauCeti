@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.SpecificGroups.KleinFour
+public import TauCeti.NumberTheory.Multiquadratic.MinusTwentyOne.ClassNumber
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.TwoRank
 public import TauCeti.NumberTheory.Multiquadratic.MinusTwentyOne.Basic
 
@@ -15,10 +17,11 @@ Applying the genus-theoretic `2`-rank formula `2-rank Cl(K) = t - 1` to `K = ℚ
 fundamental discriminant is `-84 = (-4) · (-3) · (-7)`, a product of three prime discriminants, so
 `t = 3` rational primes ramify (`2`, `3` and `7`) and the `2`-rank of the class group is `2`.
 
-Combined with `NumberField.classNumber ℚ(√-21) = 4` (`MinusTwentyOne/ClassNumber.lean`), this pins
-down the group structure: a group of order `4` and `2`-rank `2` is `(ℤ/2ℤ)²`, so `Cl ≅ (ℤ/2ℤ)²`.
-This is not an independent check — that class-number proof itself uses the ramified-prime lower
-bound `ncard_ramifiedPrimes_sub_one_le_twoRank` to get divisibility by `4`.
+Combined with `NumberField.classNumber ℚ(√-21) = 4` (`MinusTwentyOne/ClassNumber.lean`), this
+determines the group structure: the quotient map `Cl → Cl/Cl²` is a bijection, so every class
+has square one and `Cl ≅ (ℤ/2ℤ)²`. This is not an independent check — the class-number proof
+itself uses the ramified-prime lower bound `ncard_ramifiedPrimes_sub_one_le_twoRank` to get
+divisibility by `4`.
 
 ## Main results
 
@@ -26,6 +29,8 @@ bound `ncard_ramifiedPrimes_sub_one_le_twoRank` to get divisibility by `4`.
   presentation-independent statement.
 * `TauCeti.Multiquadratic.twoRank_adjoinRoot_sqrt_neg_twenty_one_eq_two`: on the concrete model
   `AdjoinRoot (X² + 21)`.
+* `TauCeti.Multiquadratic.nonempty_classGroup_adjoinRoot_sqrt_neg_twenty_one_mulEquiv_zmod_two_sq`:
+  on the concrete model, the class group is isomorphic to `(ℤ/2ℤ)²`.
 -/
 
 public section
@@ -77,5 +82,56 @@ theorem twoRank_adjoinRoot_sqrt_neg_twenty_one_eq_two :
     TauCeti.ClassGroup.twoRank (𝓞 (AdjoinRoot (X ^ 2 - C (-21 : ℚ)))) = 2 := by
   obtain ⟨θ, hmin, hgen⟩ := NumberField.exists_minpoly_eq_X_sq_add_twenty_one_and_adjoin_eq_top
   exact twoRank_eq_two_of_minpoly_eq_X_sq_add_twenty_one hmin hgen
+
+/-- **The class group of `ℚ(√-21)` is `(ℤ/2ℤ)²`.** For any presentation by an integral
+generator with minimal polynomial `X² + 21`, its ideal class group is isomorphic to the Klein four
+group. -/
+theorem nonempty_classGroup_mulEquiv_zmod_two_sq_of_minpoly_eq_X_sq_add_twenty_one
+    (hmin : minpoly ℤ θ = X ^ 2 - C (-21 : ℤ)) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
+    Nonempty (ClassGroup (𝓞 K) ≃* Multiplicative (ZMod 2 × ZMod 2)) := by
+  have hcard : Nat.card (ClassGroup (𝓞 K)) = 4 := by
+    simpa [NumberField.classNumber] using
+      NumberField.classNumber_eq_four_of_minpoly_eq_X_sq_add_twenty_one hmin hgen
+  have hquotientCard :
+      Nat.card (TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 K)) = 4 := by
+    rw [TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
+      twoRank_eq_two_of_minpoly_eq_X_sq_add_twenty_one hmin hgen]
+    norm_num
+  have hquotientBijective : Function.Bijective
+      (TauCeti.ClassGroup.elementaryTwoQuotientMk (𝓞 K)) :=
+    (Nat.bijective_iff_surjective_and_card _).2
+      ⟨TauCeti.ClassGroup.elementaryTwoQuotientMk_surjective (𝓞 K), hcard.trans hquotientCard.symm⟩
+  have hsquare (C : ClassGroup (𝓞 K)) : C ^ 2 = 1 := by
+    apply hquotientBijective.injective
+    simp only [TauCeti.ClassGroup.elementaryTwoQuotientMk_pow,
+      TauCeti.ClassGroup.elementaryTwoQuotientMk_one]
+    calc
+      2 • TauCeti.ClassGroup.elementaryTwoQuotientMk (𝓞 K) C =
+          (2 : ZMod 2) • TauCeti.ClassGroup.elementaryTwoQuotientMk (𝓞 K) C :=
+        (Nat.cast_smul_eq_nsmul (ZMod 2) 2 _).symm
+      _ = 0 := by
+        have htwo : (2 : ZMod 2) = 0 := by decide
+        rw [htwo, zero_smul]
+  let _ : Nontrivial (ClassGroup (𝓞 K)) :=
+    Finite.one_lt_card_iff_nontrivial.mp (by omega)
+  let _ : IsKleinFour (ClassGroup (𝓞 K)) := {
+    card_four := hcard
+    exponent_two := by
+      have hdvd : Monoid.exponent (ClassGroup (𝓞 K)) ∣ 2 :=
+        Monoid.exponent_dvd_of_forall_pow_eq_one hsquare
+      have hle : Monoid.exponent (ClassGroup (𝓞 K)) ≤ 2 :=
+        Nat.le_of_dvd (by norm_num) hdvd
+      have hlt : 1 < Monoid.exponent (ClassGroup (𝓞 K)) := Monoid.one_lt_exponent
+      omega }
+  exact IsKleinFour.nonempty_mulEquiv
+
+/-- **Worked example.** The ideal class group of the concrete number-field model
+`AdjoinRoot (X² + 21)` is isomorphic to `(ℤ/2ℤ)²`. -/
+theorem nonempty_classGroup_adjoinRoot_sqrt_neg_twenty_one_mulEquiv_zmod_two_sq :
+    Nonempty
+      (ClassGroup (𝓞 (AdjoinRoot (X ^ 2 - C (-21 : ℚ)))) ≃*
+        Multiplicative (ZMod 2 × ZMod 2)) := by
+  obtain ⟨θ, hmin, hgen⟩ := NumberField.exists_minpoly_eq_X_sq_add_twenty_one_and_adjoin_eq_top
+  exact nonempty_classGroup_mulEquiv_zmod_two_sq_of_minpoly_eq_X_sq_add_twenty_one hmin hgen
 
 end TauCeti.Multiquadratic
