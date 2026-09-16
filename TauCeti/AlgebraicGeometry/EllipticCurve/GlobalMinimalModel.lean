@@ -127,13 +127,14 @@ theorem IsGlobalMinimal.isSemiGlobalMinimal {W : WeierstrassCurve K} [W.IsEllipt
 /-! ### Descent of integrality from the localisations to `O` -/
 
 /-- **A Weierstrass equation integral over every localisation of `O` at a height-one prime is
-integral over `O`.** Each coefficient is the image of an element of `Localization.AtPrime v.asIdeal`
-for every `v`, so has `v`-adic valuation at most one at every `v`, and
-`IsDedekindDomain.HeightOneSpectrum.mem_integers_of_valuation_le_one` puts it in `O`. -/
+integral over `O`**: `O = ⋂ᵥ Oᵥ`, applied to the coefficients. This is how integrality over `O` is
+obtained from local data, as in `IsGlobalMinimal.isIntegral`. -/
 theorem isIntegral_of_forall_isIntegral_localizationAtPrime {W : WeierstrassCurve K}
     (h : ∀ v : HeightOneSpectrum O, IsIntegral (Localization.AtPrime v.asIdeal) W) :
     IsIntegral O W := by
-  -- `O = ⋂ᵥ Oᵥ`, one element of `K` at a time.
+  -- `O = ⋂ᵥ Oᵥ`, one element of `K` at a time: an element of `K` lying in every localisation has
+  -- `v`-adic valuation at most one at every `v`, hence lies in `O` by
+  -- `mem_integers_of_valuation_le_one`. Then apply this to each coefficient.
   have key : ∀ a : K, (∀ v : HeightOneSpectrum O, ∃ r : Localization.AtPrime v.asIdeal,
       algebraMap (Localization.AtPrime v.asIdeal) K r = a) → ∃ r : O, algebraMap O K r = a :=
     fun a ha => HeightOneSpectrum.mem_integers_of_valuation_le_one K a fun v => by
@@ -146,19 +147,21 @@ theorem isIntegral_of_forall_isIntegral_localizationAtPrime {W : WeierstrassCurv
     (key _ fun v => have := h v; ⟨_, integralModel_a₄_eq _ W⟩)
     (key _ fun v => have := h v; ⟨_, integralModel_a₆_eq _ W⟩)
 
-/-- **A globally minimal equation is integral over `O`.** Mathlib's `IsMinimal → IsIntegral`
-instance gives integrality over each localisation; the descent does the rest. -/
+/-- **A globally minimal equation is integral over `O`.** Integrality is thus a consequence of
+`IsGlobalMinimal`, not a hypothesis of it, and `integralModel O W` is available for such `W`. -/
 theorem IsGlobalMinimal.isIntegral {W : WeierstrassCurve K} [W.IsElliptic]
     (h : IsGlobalMinimal O W) : IsIntegral O W :=
   isIntegral_of_forall_isIntegral_localizationAtPrime fun v => have := h v; inferInstance
 
-/-- **A semi-globally minimal equation is integral over `O`.** At the exceptional prime the
-definition supplies integrality directly; everywhere else it comes from minimality. -/
+/-- **A semi-globally minimal equation is integral over `O`**, so `integralModel O W` is available
+for such `W` just as for a globally minimal one. -/
 theorem IsSemiGlobalMinimal.isIntegral {W : WeierstrassCurve K} [W.IsElliptic]
     (h : IsSemiGlobalMinimal O W) : IsIntegral O W := by
   rcases h with hg | ⟨v₀, h₀, hmin⟩
   · exact hg.isIntegral
-  · refine isIntegral_of_forall_isIntegral_localizationAtPrime fun v => ?_
+  · -- Integral at `v₀` by the definition's integrality clause, and at every other prime by
+    -- minimality.
+    refine isIntegral_of_forall_isIntegral_localizationAtPrime fun v => ?_
     by_cases hv : v = v₀
     · exact hv ▸ h₀
     · have := hmin v hv

@@ -43,20 +43,23 @@ namespace IsDedekindDomain.HeightOneSpectrum
 variable {O : Type*} [CommRing O] [IsDedekindDomain O] {K : Type*} [Field K] [Algebra O K]
   [IsFractionRing O K] (v : HeightOneSpectrum O)
 
-/-- The localisation of a Dedekind domain at a height-one prime is a discrete valuation ring. This
-is Mathlib's `IsLocalization.AtPrime.isDiscreteValuationRing_of_dedekind_domain` made an instance:
-a height-one prime is nonzero by definition, so the theorem's `P ≠ ⊥` hypothesis is `v.ne_bot`. -/
+/-- The localisation of a Dedekind domain at a height-one prime is a discrete valuation ring. With
+the `Algebra`, `IsScalarTower` and `IsFractionRing` instances of
+`TauCeti/RingTheory/Localization/AtPrime.lean`, this is what lets Mathlib's theory over a discrete
+valuation ring and its fraction field apply at each height-one prime of `O`. -/
 instance isDiscreteValuationRing_localizationAtPrime :
     IsDiscreteValuationRing (Localization.AtPrime v.asIdeal) :=
   IsLocalization.AtPrime.isDiscreteValuationRing_of_dedekind_domain O v.ne_bot _
 
-/-- **Elements of the localisation at `v` have `v`-adic valuation at most one.** Writing `x` as
-`r / s` with `s ∉ v`, the valuation of `s` is one and that of `r` is at most one. Stated for any
-`IsLocalization.AtPrime` model `S` of the localisation with a map to `K` over `O`; the instances
-above make `Localization.AtPrime v.asIdeal` such a model. -/
+/-- **Elements of the localisation at `v` have `v`-adic valuation at most one**, for any
+`IsLocalization.AtPrime` model `S` of the localisation mapping to `K` over `O`, such as
+`Localization.AtPrime v.asIdeal` with the instances above. Together with
+`IsDedekindDomain.HeightOneSpectrum.mem_integers_of_valuation_le_one` this descends membership in
+every localisation to membership in `O`. -/
 theorem valuation_algebraMap_le_one_of_isLocalizationAtPrime {S : Type*} [CommRing S]
     [Algebra O S] [IsLocalization.AtPrime S v.asIdeal] [Algebra S K] [IsScalarTower O S K]
     (x : S) : v.valuation K (algebraMap S K x) ≤ 1 := by
+  -- Write `x = r / s` with `s ∉ v`: the valuation of `s` is one and that of `r` at most one.
   obtain ⟨⟨r, s⟩, rfl⟩ := IsLocalization.mk'_surjective v.asIdeal.primeCompl x
   dsimp only
   rw [← IsLocalization.mk'_eq_algebraMap_mk'_of_submonoid_le (S := S) (T := K)
