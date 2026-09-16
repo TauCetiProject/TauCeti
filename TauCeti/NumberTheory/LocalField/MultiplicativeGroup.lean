@@ -62,18 +62,6 @@ the graded pieces of the unit filtration. This is the shape used to count power 
   `TauCeti.unitFiltrationToIntegerUnits_snd_integerUnitsEquivProd`: the remaining components,
   which are what is left after dividing by the image of the section.
 
-## Implementation notes
-
-The `ℤ`-factor is spelled `Multiplicative ℤ`, matching the codomain of
-`TauCeti.normalizedValuation`, so that both splittings are isomorphisms of multiplicative
-groups and compose without a type synonym in between.
-
-Each splitting is built by exhibiting the section-and-inclusion homomorphism out of the product
-and proving it bijective; the equivalence is then the inverse of that bijection. This keeps the
-easy direction definitional, so `unitsEquivProd_symm_apply` and
-`integerUnitsEquivProd_symm_apply` hold by `rfl`, and states the substance as the bijectivity
-lemmas `unitsProdHom_bijective` and `integerUnitsProdHom_bijective`.
-
 ## References
 
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter II, §§4–5.
