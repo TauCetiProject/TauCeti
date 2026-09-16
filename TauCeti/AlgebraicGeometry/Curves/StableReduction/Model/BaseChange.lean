@@ -19,6 +19,11 @@ between the two ways of pulling the total space to that field.
 This file constructs base change on both models and their morphisms and packages it as a functor.
 The construction retains the chosen generic-fibre identification, so it can be iterated when
 comparing models after a common finite extension.
+
+## Roadmap
+
+This implements the model base-change functor target in Layer 0 of the
+[StableReduction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/StableReduction/README.md).
 -/
 
 public section
@@ -63,7 +68,8 @@ noncomputable def baseChangeGenericFiberIso (E : FiniteDVRExtension R K)
               M.genericFiberIso))))
 
 /-- Base change of a model to the chosen local ring of a finite DVR extension. -/
--- Exposure is needed by the projection lemmas below, whose types use the resulting total space.
+-- Exposure is required because the projection lemmas below compare morphisms whose domains use
+-- the resulting total space.
 @[expose]
 noncomputable def baseChange (E : FiniteDVRExtension R K) (M : Model R K C toK) :
     Model E.localRing E.extensionField
@@ -143,13 +149,6 @@ private noncomputable def baseChangeMapHom (E : FiniteDVRExtension R K)
     (baseChange E M).total ⟶ (baseChange E N).total :=
   (baseChangeOverMap E f).left
 
-private lemma baseChangeMapHom_eq (E : FiniteDVRExtension R K)
-    {M N : Model R K C toK} (f : M ⟶ N) :
-    baseChangeMapHom E f =
-      ((Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R E.localRing)))).map
-        (overHom f)).left :=
-  (rfl)
-
 private lemma baseChangeMapHom_overBase (E : FiniteDVRExtension R K)
     {M N : Model R K C toK} (f : M ⟶ N) :
     baseChangeMapHom E f ≫ (baseChange E N).toBase = (baseChange E M).toBase :=
@@ -216,6 +215,8 @@ private lemma baseChangeMap_genericFiber (E : FiniteDVRExtension R K)
     rw [reassoc_of% hNatLocal, reassoc_of% hNatField]
     simp only [← Functor.map_comp, hfOver]
   rw [baseChange_genericFiberIso, baseChange_genericFiberIso]
+  -- Taking `Over.Hom.left` turns the composite in `hCore` into the composite in the goal;
+  -- the remaining conversions identify the chosen pullback presentations definitionally.
   convert congrArg Over.Hom.left hCore using 1 <;> rfl
 
 /-- Base change of a morphism of models. -/
@@ -235,13 +236,9 @@ lemma hom_baseChangeMap (E : FiniteDVRExtension R K)
         (Over.homMk f.hom f.overBase)).left :=
   (rfl)
 
-private lemma baseChangeMap_hom (E : FiniteDVRExtension R K)
-    {M N : Model R K C toK} (f : M ⟶ N) :
-    (baseChangeMap E f).hom = baseChangeMapHom E f :=
-  (rfl)
-
 /-- Pullback to a chosen finite DVR extension defines a functor on models. -/
--- Exposure makes the object and morphism characterizations below definitionally true.
+-- Exposure is required because the map characterization below has source and target involving
+-- the functor's object projection.
 @[expose]
 noncomputable def baseChangeFunctor (E : FiniteDVRExtension R K) :
     Model R K C toK ⥤
@@ -252,23 +249,25 @@ noncomputable def baseChangeFunctor (E : FiniteDVRExtension R K) :
   map := baseChangeMap E
   map_id M := by
     apply Hom.ext
-    rw [baseChangeMap_hom, baseChangeMapHom_eq, overHom_id]
+    rw [hom_baseChangeMap]
     have h := congrArg Over.Hom.left
       ((Over.pullback
         (Spec.map (CommRingCat.ofHom (algebraMap R E.localRing)))).map_id
           (Over.mk M.toBase))
-    rw [Over.id_left] at h
+    rw [← overHom_id M, Over.id_left] at h
+    -- The functor law uses the pullback object, while the goal uses its definitionally equal
+    -- presentation as the total space of `baseChange E M`.
     convert h using 1
     all_goals rfl
   map_comp f g := by
     apply Hom.ext
-    rw [baseChangeMap_hom, baseChangeMapHom_eq, overHom_comp, comp_hom,
-      baseChangeMap_hom, baseChangeMap_hom, baseChangeMapHom_eq, baseChangeMapHom_eq]
+    rw [comp_hom, hom_baseChangeMap, hom_baseChangeMap, hom_baseChangeMap]
     have h := congrArg Over.Hom.left
       ((Over.pullback
         (Spec.map (CommRingCat.ofHom (algebraMap R E.localRing)))).map_comp
           (overHom f) (overHom g))
-    rw [Over.comp_left] at h
+    rw [← overHom_comp f g, Over.comp_left] at h
+    -- As in `map_id`, only the definitionally equal presentations of the pullbacks differ.
     convert h using 1
     all_goals rfl
 
@@ -289,6 +288,8 @@ lemma baseChangeFunctor_map (E : FiniteDVRExtension R K)
 lemma isProper_baseChange (E : FiniteDVRExtension R K) (M : Model R K C toK)
     (hM : M.IsProper) : (baseChange E M).IsProper := by
   let _ : AlgebraicGeometry.IsProper M.toBase := hM
+  -- `baseChange_toBase` cannot rewrite this dependent morphism property: its source contains
+  -- Mathlib's opaque chosen pullback. The change is exactly the defining projection equality.
   change AlgebraicGeometry.IsProper (genericFiber R E.localRing M.toBase).hom
   rw [genericFiber_hom]
   infer_instance
