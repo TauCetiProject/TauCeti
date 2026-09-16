@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Units.Hom
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.Algebra.Group.ZPow
 public import TauCeti.Algebra.Group.FreeAbelianCharacter
+public import TauCeti.Algebra.Group.FreeCommMonoidCharacter
 public import TauCeti.Algebra.Group.Prod
 public import TauCeti.Geometry.Toric.Analytic.AffinePoint
 

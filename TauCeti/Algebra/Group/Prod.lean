@@ -16,6 +16,14 @@ A product of two monoids is their coproduct in commutative monoids: a homomorphi
 separately, as `MonoidHom.coprod` and composition with `MonoidHom.inl` and `MonoidHom.inr`,
 together with the fact that they are mutually inverse; this file packages them as the
 corresponding equivalence.
+
+## Implementation notes
+
+The equivalence is not exposed: `MonoidHom.coprodEquiv_apply` and
+`MonoidHom.coprodEquiv_symm_apply` characterise both of its directions, so nothing downstream
+needs to unfold it. Both are proved by the parenthesised `(rfl)`, which elaborates against the
+definition itself; a bare `rfl` in an exported theorem would demand that the definition be
+`@[expose]`d.
 -/
 
 public section
@@ -27,7 +35,7 @@ variable {M N P : Type*} [MulOneClass M] [MulOneClass N] [CommMonoid P]
 /-- Homomorphisms from a product of two monoids to a commutative monoid `P` are pairs of
 homomorphisms out of the factors: the forward map is `MonoidHom.coprod` and the inverse
 restricts along `MonoidHom.inl` and `MonoidHom.inr`. -/
-@[expose, to_additive /-- Homomorphisms from a product of two additive monoids to a commutative
+@[to_additive /-- Homomorphisms from a product of two additive monoids to a commutative
 additive monoid `P` are pairs of homomorphisms out of the factors: the forward map is
 `AddMonoidHom.coprod` and the inverse restricts along `AddMonoidHom.inl` and
 `AddMonoidHom.inr`. -/]
