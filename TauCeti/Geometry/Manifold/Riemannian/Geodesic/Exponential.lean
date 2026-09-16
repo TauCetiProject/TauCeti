@@ -89,7 +89,7 @@ theorem riemannianExp_def (p : M) (v : TangentSpace I p) :
 
 omit [I.Boundaryless] in
 /-- The zero vector lies in the domain of the exponential map. -/
-@[simp] theorem zero_mem_expDomain (p : M) : (0 : TangentSpace I p) ∈ expDomain I M p := by
+theorem zero_mem_expDomain (p : M) : (0 : TangentSpace I p) ∈ expDomain I M p := by
   simp only [mem_expDomain_iff, geodesicInterval_zero, mem_univ]
 
 /-- The exponential map sends the zero vector to the base point. -/
