@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Weight
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Classical
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Datum
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NonSimplyLaced
 
 /-!
@@ -451,12 +450,11 @@ theorem diagonalRootDatum_reflection_negativeLong_apply (i : Fin m)
     (x : ULift.{u} (Fin m) →₀ ℤ) (a : ULift.{u} (Fin m)) :
     (diagonalRootDatum.{u} m).reflection (.negativeLong i) x a =
       if a = ULift.up i then -x a else x a := by
-  classical
-  rw [diagonalRootDatum_reflection_apply]
-  rcases eq_or_ne a (ULift.up i) with rfl | h
-  · simp [Pi.single_apply, Finsupp.sum_ite_eq']
-    split_ifs <;> linarith
-  · simp [h]
+  rw [← diagonalRootDatum_reflection_positiveLong_apply, diagonalRootDatum_reflection_apply,
+    diagonalRootDatum_reflection_apply, diagonalRootDatum_coroot_negativeLong,
+    diagonalRootDatum_root_negativeLong, diagonalRootDatum_coroot_positiveLong,
+    diagonalRootDatum_root_positiveLong]
+  simp only [Pi.neg_apply, Finsupp.neg_apply, mul_neg, Finsupp.sum_neg, neg_mul, neg_neg]
 
 /-- Reflection in the short root `eᵢ - eⱼ` transposes the `i`-th and `j`-th coordinates. -/
 @[simp high]
