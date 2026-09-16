@@ -121,10 +121,7 @@ theorem finite_openSubgroup_index_eq (hG : IsTopologicallyFinitelyGenerated G) (
 
 /-- **Pulling back open subgroups along a continuous surjective endomorphism is surjective.** If
 `f : G →* G` is continuous and surjective, every open subgroup of a topologically finitely
-generated compact group `G` is of the form `f ⁻¹' V` for an open subgroup `V`.
-
-Pulling back preserves the index and is injective, so on the finite set of open subgroups of a
-given index it is a bijection. -/
+generated compact group `G` is of the form `f ⁻¹' V` for an open subgroup `V`. -/
 theorem openSubgroup_comap_surjective (hG : IsTopologicallyFinitelyGenerated G) {f : G →* G}
     (hf : Continuous f) (hsurj : Function.Surjective f) :
     Function.Surjective fun V : OpenSubgroup G ↦ V.comap f hf := by

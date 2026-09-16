@@ -61,9 +61,7 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Comp
   [TotallyDisconnectedSpace G] {f : G →* G}
 
 /-- **A continuous surjective endomorphism of a topologically finitely generated profinite group
-has trivial kernel.** Every open subgroup of `G` is a preimage `f ⁻¹' V`
-(`TauCeti.IsTopologicallyFinitelyGenerated.openSubgroup_comap_surjective`), hence contains
-`ker f`; the open normal subgroups of a profinite group intersect in `⊥`. -/
+has trivial kernel.** -/
 theorem ker_eq_bot_of_surjective (hG : IsTopologicallyFinitelyGenerated G) (hf : Continuous f)
     (hsurj : Function.Surjective f) : f.ker = ⊥ := by
   refine le_bot_iff.mp ?_
@@ -88,8 +86,7 @@ theorem bijective_of_surjective (hG : IsTopologicallyFinitelyGenerated G) (hf : 
   ⟨hG.injective_of_surjective hf hsurj, hsurj⟩
 
 /-- A continuous surjective endomorphism of a topologically finitely generated profinite group,
-packaged as a topological automorphism: it is bijective, and a continuous bijection from a
-compact space to a Hausdorff space is a homeomorphism. -/
+packaged as a topological automorphism. -/
 noncomputable def continuousMulEquivOfSurjective (hG : IsTopologicallyFinitelyGenerated G)
     (hf : Continuous f) (hsurj : Function.Surjective f) : G ≃ₜ* G := by
   have hb := hG.bijective_of_surjective hf hsurj
