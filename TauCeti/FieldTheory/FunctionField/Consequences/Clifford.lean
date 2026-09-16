@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.CosetCover
+public import Mathlib.Algebra.Module.Submodule.Union
 public import TauCeti.FieldTheory.FunctionField.Differential.CanonicalDivisor
 
 /-!
@@ -129,17 +129,7 @@ private theorem exists_section_exact_on_support (hF : IsFunctionField k F) [Infi
       intro htop
       exact (hminimal P.1).ne (le_antisymm (hminimal P.1).le
         (Submodule.submoduleOf_eq_top.mp htop))
-  have hex : ∃ z : riemannRochSpace D, z ∉ ⋃ P, (U P : Set (riemannRochSpace D)) := by
-    by_contra h
-    push Not at h
-    have hcover : ⋃ P, (U P : Set (riemannRochSpace D)) = Set.univ :=
-      Set.eq_univ_of_forall h
-    obtain ⟨P, hP⟩ := Subspace.exists_eq_top_of_iUnion_eq_univ hcover
-    exact hU P hP
-  obtain ⟨z, hz⟩ := hex
-  have hzU : ∀ P, z ∉ U P := by
-    intro P hzP
-    exact hz (Set.mem_iUnion.mpr ⟨P, hzP⟩)
+  obtain ⟨z, hzU⟩ := Submodule.exists_forall_notMem_of_forall_ne_top U hU
   have hz0 : (z : F) ≠ 0 := by
     intro hz0
     apply hzU none
@@ -243,10 +233,7 @@ private theorem dim_add_le_one_add_dim_add_of_effective (hF : IsFunctionField k 
   have hrank := LinearMap.finrank_range_add_finrank_ker T
   have hrange : Module.finrank k T.range ≤
       Module.finrank k (riemannRochSpace (A + B) ⧸ LA) :=
-    by
-      have hle : T.range ≤ (⊤ : Submodule k (riemannRochSpace (A + B) ⧸ LA)) := le_top
-      have := Submodule.finrank_mono hle
-      simpa using this
+    Submodule.finrank_le T.range
   have hquotRank := rank_quotient_riemannRochSpace_add_dim hF
     (D := A) (E := A + B) (le_add_of_nonneg_right hB)
   have hquot : Module.finrank k (riemannRochSpace (A + B) ⧸ LA) + dim A = dim (A + B) := by
