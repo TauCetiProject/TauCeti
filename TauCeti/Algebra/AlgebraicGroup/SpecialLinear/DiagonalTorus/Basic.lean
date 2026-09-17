@@ -75,19 +75,22 @@ theorem diagonalTorusWeight_apply (k : Fin (r + 1)) (i : ULift.{u} (Fin r)) :
   (rfl)
 
 /-- The standard weights sum to zero. -/
-theorem sum_diagonalTorusWeight : ∑ k, diagonalTorusWeight.{u} r k = 0 := by
+theorem sum_diagonalTorusWeight_eq_zero : ∑ k, diagonalTorusWeight.{u} r k = 0 := by
   funext i
   simpa only [Finset.sum_apply, diagonalTorusWeight_apply, Pi.zero_apply] using
     congrFun (SlStd.sum_weight_eq_zero r) i.down
 
 /-- The standard weights span the character lattice of the rank-`r` split torus. -/
-theorem span_range_diagonalTorusWeight :
+theorem span_range_diagonalTorusWeight_eq_top :
     Submodule.span ℤ (Set.range (diagonalTorusWeight.{u} r)) = ⊤ := by
   let e : (Fin r → ℤ) ≃ₗ[ℤ] (ULift.{u} (Fin r) → ℤ) :=
     LinearEquiv.funCongrLeft ℤ ℤ Equiv.ulift
   have hrange : Set.range (diagonalTorusWeight.{u} r) = e '' Set.range (SlStd.weight r) := by
     rw [← Set.range_comp]
-    rfl
+    apply congrArg Set.range
+    funext k i
+    rw [Function.comp_apply, LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply,
+      Equiv.ulift_apply, diagonalTorusWeight_apply]
   rw [hrange, ← LinearEquiv.coe_toLinearMap, Submodule.span_image,
     SlStd.span_range_weight_eq_top, Submodule.map_top, LinearEquiv.range]
 
@@ -106,7 +109,8 @@ private theorem weightTorusCoordinateMap_determinantGroupLike_diagonalTorusWeigh
     (GeneralLinear.weightTorusCoordinateMap (R := R) (diagonalTorusWeight.{u} r)).hom
       (GeneralLinear.determinantGroupLike R (r + 1) :
         GeneralLinear.coordinateHopfAlgebra R (r + 1)) = 1 :=
-  GeneralLinear.weightTorusCoordinateMap_determinantGroupLike _ (sum_diagonalTorusWeight r)
+  GeneralLinear.weightTorusCoordinateMap_determinantGroupLike _
+    (sum_diagonalTorusWeight_eq_zero r)
 
 /-- **The coordinate morphism of the diagonal torus of `SL_{r+1}`.** It restricts functions on
 `SL_{r+1}` to the rank-`r` split torus embedded through the standard weights. Its direction is
@@ -133,12 +137,13 @@ commutative base ring. -/
 theorem diagonalTorusCoordinateMap_surjective :
     Function.Surjective (diagonalTorusCoordinateMap r R).hom :=
   CommHopfAlgCat.liftQuotient_surjective_of_surjective _ _ _
-    (GeneralLinear.weightTorusCoordinateMap_surjective _ (span_range_diagonalTorusWeight r))
+    (GeneralLinear.weightTorusCoordinateMap_surjective _
+      (span_range_diagonalTorusWeight_eq_top r))
 
 /-- **The diagonal torus of `SL_{r+1}` on algebra-valued points.** A point `s` of the split torus
 goes to the diagonal matrix whose `k`-th entry is the character of the standard weight `ε_k`. -/
 theorem toGL_pointsMulEquiv_mapPointsFunctor_diagonalTorusCoordinateMap
-    (A : Type u) [CommRing A] [Algebra R A]
+    (A : Type w) [CommRing A] [Algebra R A]
     (p : HopfAlgebra.points (R := R)
       (H := MonoidAlgebra R (SplitTorus.characterGroup (ULift.{u} (Fin r))))
       (CommAlgCat.of R A)) :

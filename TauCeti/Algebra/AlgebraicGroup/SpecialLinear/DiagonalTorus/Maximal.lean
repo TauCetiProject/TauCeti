@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.DiagonalTorus.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
 import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
+import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.FieldPoints
 import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.MaximalTorus
 
 /-!
@@ -21,10 +22,12 @@ subgroup need not be a torus, or even connected.
 
 The defining Hopf ideal is the kernel of the surjective restriction morphism
 `TauCeti.SpecialLinear.diagonalTorusCoordinateMap`, and its quotient is the coordinate Hopf algebra
-of the rank-`r` split torus. Maximality is proved on algebraically closed points. A reduced
-commutative closed subgroup containing the diagonal torus has commutative point group containing
-all determinant-one diagonal matrices. Some such matrix separates any two diagonal positions, so
-every point of the subgroup is diagonal, and therefore already a point of the torus. Reduced
+of the rank-`r` split torus, whose points are exactly the points with diagonal matrix. Maximality
+is proved on algebraically closed points. A reduced commutative closed subgroup containing the
+diagonal torus has commutative point group containing all determinant-one diagonal matrices.
+Transported into the standard type `A_r` carrier, the maximality of its weight torus among
+commutative subgroups shows that every point of the subgroup is diagonal, and therefore already a
+point of the torus. Reduced
 finite-type point separation turns this equality of point groups into an equality of defining
 Hopf ideals, and maximality over an arbitrary field descends from an algebraic closure.
 
@@ -40,6 +43,8 @@ Hopf ideals, and maximality over an arbitrary field descends from an algebraic c
   is compatible with scalar extension.
 * `TauCeti.SpecialLinear.quotientPointsSubgroup_diagonalTorusDefiningIdeal`: its points are the
   range of the diagonal-torus point morphism.
+* `TauCeti.SpecialLinear.mem_quotientPointsSubgroup_diagonalTorusDefiningIdeal_iff`: a point lies
+  in the diagonal torus exactly when its matrix is diagonal.
 * `TauCeti.SpecialLinear.eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm`: over an algebraically
   closed field, no larger reduced commutative closed subgroup contains the diagonal torus.
 * `TauCeti.SpecialLinear.isMaximalTorus_diagonalTorusDefiningIdeal`: **the diagonal torus of
@@ -51,9 +56,9 @@ Hopf ideals, and maximality over an arbitrary field descends from an algebraic c
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), §§15.3 and 26.3.
 * The Hopf-ideal organization and the point-subgroup comparison follow
   `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Maximal` and
-  `TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.Maximal`; the matrix calculation follows
-  `TauCeti.SlStd.centralizer_range_weightTorusPoints_eq_diagonalPoints` and
-  `TauCeti.SlStd.range_weightTorusPoints_eq_diagonalPoints`.
+  `TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.Maximal`; the point-level maximality is
+  `TauCeti.SlStd.eq_range_weightTorusPoints_of_le_of_isMulCommutative`, and the diagonal-point
+  criterion follows `TauCeti.SlStd.range_weightTorusPoints_eq_diagonalPoints`.
 -/
 
 public section
@@ -180,6 +185,38 @@ theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} R)
   rw [AlgHom.mapDomain_apply]
   exact (CommHopfAlgCat.mapPointsFunctor_app_apply (diagonalTorusCoordinateMap r R) A q).symm
 
+/-- **Membership in the diagonal torus of `SL_{r+1}` on points.** A point lies in the torus
+exactly when its matrix is diagonal. -/
+theorem mem_quotientPointsSubgroup_diagonalTorusDefiningIdeal_iff (A : Type u) [CommRing A]
+    [Algebra R A]
+    (g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R (r + 1)) (CommAlgCat.of R A)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R (r + 1))
+        (diagonalTorusDefiningIdeal r R) (CommAlgCat.of R A) ↔
+      (Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := R) (A := A) (r + 1) g) :
+        Matrix (Fin (r + 1)) (Fin (r + 1)) A).IsDiag := by
+  rw [quotientPointsSubgroup_diagonalTorusDefiningIdeal]
+  constructor
+  · rintro ⟨p, rfl⟩
+    exact mem_diagonalTorus_iff.mp (mem_diagonalTorus_iff_exists_diagGL.mpr
+      ⟨_, (toGL_pointsMulEquiv_mapPointsFunctor_diagonalTorusCoordinateMap r R A p).symm⟩)
+  · intro hg
+    obtain ⟨t, ht⟩ := mem_diagonalTorus_iff_exists_diagGL.mp (mem_diagonalTorus_iff.mpr hg)
+    have hprod : ∏ i, t i = 1 := by
+      have hdet := congrArg Matrix.GeneralLinearGroup.det ht
+      rw [det_diagGL] at hdet
+      rw [hdet]
+      ext
+      simp
+    refine ⟨(SplitTorus.pointsMulEquiv (R := R) (A := A)).symm
+      fun i : ULift.{u} (Fin r) ↦ Fin.partialProd t i.down.succ.castSucc, ?_⟩
+    apply (pointsMulEquiv (R := R) (A := A) (r + 1)).injective
+    apply Matrix.SpecialLinearGroup.toGL_injective
+    rw [toGL_pointsMulEquiv_mapPointsFunctor_diagonalTorusCoordinateMap, MulEquiv.apply_symm_apply,
+      ← ht]
+    refine congrArg diagGL (funext fun l ↦ ?_)
+    rw [torusCharacter_diagonalTorusWeight]
+    exact SlStd.torusCharacter_partialProd r t hprod l
+
 end CommRing
 
 variable (k : Type u) [Field k]
@@ -202,40 +239,6 @@ private theorem isReduced_quotient_diagonalTorusDefiningIdeal :
     (diagonalTorusCoordinateMap_surjective r k)
   exact isReduced_of_injective e.toAlgEquiv.toRingEquiv.toRingHom e.injective
 
-/-- The rational point of the diagonal torus with torus coordinates `s`. -/
-private abbrev diagonalTorusPoint (s : Fin r → kˣ) :
-    HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k (r + 1)) (CommAlgCat.of k k) :=
-  (CommHopfAlgCat.mapPointsFunctor (diagonalTorusCoordinateMap r k)).app (CommAlgCat.of k k)
-    ((SplitTorus.pointsMulEquiv (R := k) (A := k)).symm fun i : ULift.{u} (Fin r) ↦ s i.down)
-
-/-- The rational point of the diagonal torus with coordinates `s` is the diagonal matrix of the
-standard weight characters of `s`. -/
-private theorem toGL_pointsMulEquiv_diagonalTorusPoint (s : Fin r → kˣ) :
-    Matrix.SpecialLinearGroup.toGL
-        (pointsMulEquiv (R := k) (A := k) (r + 1) (diagonalTorusPoint r k s)) =
-      diagGL fun l ↦ torusCharacter s (SlStd.weight r l) := by
-  rw [toGL_pointsMulEquiv_mapPointsFunctor_diagonalTorusCoordinateMap, MulEquiv.apply_symm_apply]
-  simp only [torusCharacter_diagonalTorusWeight]
-
-/-- A rational point of `SL_{r+1}` whose matrix is diagonal is a point of the diagonal torus. -/
-private theorem mem_range_of_isDiag
-    (g : HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k (r + 1)) (CommAlgCat.of k k))
-    (hg : (Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := k) (A := k) (r + 1) g) :
-      Matrix (Fin (r + 1)) (Fin (r + 1)) k).IsDiag) :
-    ∃ s : Fin r → kˣ, diagonalTorusPoint r k s = g := by
-  let e := pointsMulEquiv (R := k) (A := k) (r + 1)
-  obtain ⟨t, ht⟩ := mem_diagonalTorus_iff_exists_diagGL.mp (mem_diagonalTorus_iff.mpr hg)
-  have hprod : ∏ i, t i = 1 := by
-    have hdet := congrArg Matrix.GeneralLinearGroup.det ht
-    rw [det_diagGL] at hdet
-    rw [hdet]
-    ext
-    simp
-  refine ⟨fun i : Fin r ↦ Fin.partialProd t i.succ.castSucc, e.injective ?_⟩
-  apply Matrix.SpecialLinearGroup.toGL_injective
-  rw [toGL_pointsMulEquiv_diagonalTorusPoint, ← ht]
-  exact congrArg diagGL (funext (SlStd.torusCharacter_partialProd r t hprod))
-
 variable [IsAlgClosed k]
 
 /-- **The diagonal torus of `SL_{r+1}` is maximal among reduced commutative closed subgroup
@@ -257,34 +260,31 @@ theorem eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm
   let GI := CommHopfAlgCat.quotientPointsSubgroup H I A
   let GD := CommHopfAlgCat.quotientPointsSubgroup H D A
   let e := pointsMulEquiv (R := k) (A := k) (r + 1)
+  -- Transport the point group of `I` into the standard carrier points of type `A_r`.
+  let φ : HopfAlgebra.points (R := k) (H := H) A →* SlStd.points r k :=
+    (Matrix.SpecialLinearGroup.toGL.comp e.toMonoidHom).codRestrict _
+      fun g ↦ SlStd.toGL_mem_points r (e g)
+  have hmem (g : HopfAlgebra.points (R := k) (H := H) A) :
+      g ∈ GD ↔ φ g ∈ SlStd.diagonalPoints r k := by
+    rw [SlStd.mem_diagonalPoints_iff]
+    exact mem_quotientPointsSubgroup_diagonalTorusDefiningIdeal_iff r k k g
+  let P : Subgroup (SlStd.points r k) := GI.map φ
   let _ : IsMulCommutative GI :=
     CommHopfAlgCat.instIsMulCommutativeQuotientPointsSubgroup H I A
+  let _ : IsMulCommutative P := Subgroup.map_isMulCommutative GI φ
   have hDG : GD ≤ GI := CommHopfAlgCat.quotientPointsSubgroup_le_of_le H hI A
-  have hpoint (s : Fin r → kˣ) : diagonalTorusPoint r k s ∈ GD := by
-    dsimp only [GD, D]
-    rw [quotientPointsSubgroup_diagonalTorusDefiningIdeal]
-    exact ⟨_, rfl⟩
-  have hpoints : GI = GD := by
-    refine le_antisymm (fun g hg ↦ ?_) hDG
-    -- Every point of `GI` commutes with the whole diagonal torus, so its matrix is diagonal.
-    have hdiag : (Matrix.SpecialLinearGroup.toGL (e g) :
-        Matrix (Fin (r + 1)) (Fin (r + 1)) k).IsDiag := by
-      intro i j hij
-      have hne : weightChar k (SlStd.weight r i) ≠ weightChar k (SlStd.weight r j) :=
-        fun h ↦ hij ((weightChar_injective.comp (SlStd.weight_injective r)) h)
-      obtain ⟨s, hs⟩ := DFunLike.ne_iff.mp hne
-      have hcomm : Commute (diagonalTorusPoint r k s) g :=
-        congrArg Subtype.val
-          (mul_comm' (⟨_, hDG (hpoint s)⟩ : GI) (⟨g, hg⟩ : GI))
-      have hmatrix :=
-        ((hcomm.map e).map Matrix.SpecialLinearGroup.toGL).map
-          (Units.coeHom (Matrix (Fin (r + 1)) (Fin (r + 1)) k))
-      rw [Units.coeHom_apply, toGL_pointsMulEquiv_diagonalTorusPoint, diagGL_coe] at hmatrix
-      apply apply_eq_zero_of_commute_diagonal hmatrix
-      rw [weightChar_apply, weightChar_apply] at hs
-      exact fun h ↦ hs (Units.ext h)
-    obtain ⟨s, rfl⟩ := mem_range_of_isDiag r k g hdiag
-    exact hpoint s
+  have hle : (SlStd.weightTorusPoints r k).range ≤ P := by
+    rw [SlStd.range_weightTorusPoints_eq_diagonalPoints]
+    intro x hx
+    obtain ⟨y, hy⟩ :
+        x.1 ∈ (Matrix.SpecialLinearGroup.toGL (n := Fin (r + 1)) (R := k)).range :=
+      SlStd.points_eq_range_toGL (K := k) r ▸ x.2
+    have hφy : φ (e.symm y) = x := Subtype.ext (by simp [φ, hy])
+    exact ⟨e.symm y, hDG ((hmem _).mpr (hφy ▸ hx)), hφy⟩
+  have hP := SlStd.eq_range_weightTorusPoints_of_le_of_isMulCommutative r k P hle
+  rw [SlStd.range_weightTorusPoints_eq_diagonalPoints] at hP
+  have hpoints : GI = GD :=
+    le_antisymm (fun g hg ↦ (hmem g).mpr (hP ▸ Subgroup.mem_map_of_mem φ hg)) hDG
   let _ : IsReduced (CommHopfAlgCat.quotient H D) :=
     isReduced_quotient_diagonalTorusDefiningIdeal r k
   exact HopfIdeal.eq_of_quotientPointsSubgroup_eq hpoints
