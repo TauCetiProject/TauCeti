@@ -35,15 +35,13 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti
-
-open TauCeti.GroupLike
+namespace TauCeti.GroupLike
 
 variable {R K A : Type*} [CommSemiring R] [CommSemiring K] [Algebra R K]
   [Semiring A] [Bialgebra R A]
 
 /-- Scalar extension of a group-like element, sending `g` to `1 ⊗ g`. -/
-noncomputable def groupLikeBaseChange :
+noncomputable def baseChange :
     _root_.GroupLike R A →* _root_.GroupLike K (K ⊗[R] A) where
   toFun g := ⟨1 ⊗ₜ[R] g.val, {
     counit_eq_one := by simp
@@ -54,15 +52,15 @@ noncomputable def groupLikeBaseChange :
 
 /-- The underlying value of an extended character. -/
 @[simp]
-theorem val_groupLikeBaseChange (g : _root_.GroupLike R A) :
-    (groupLikeBaseChange (K := K) g).val = 1 ⊗ₜ[R] g.val := (rfl)
+theorem val_baseChange (g : _root_.GroupLike R A) :
+    (baseChange (K := K) g).val = 1 ⊗ₜ[R] g.val := (rfl)
 
 /-- Extending a character commutes with a bialgebra morphism. -/
 @[simp]
-theorem groupLikeBaseChange_map {B : Type*} [Semiring B] [Bialgebra R B]
+theorem baseChange_map {B : Type*} [Semiring B] [Bialgebra R B]
     (f : A →ₐc[R] B) (g : _root_.GroupLike R A) :
-    groupLikeBaseChange (K := K) (map f g) =
-      map (Bialgebra.TensorProduct.map (BialgHom.id K K) f) (groupLikeBaseChange g) := by
+    baseChange (K := K) (map f g) =
+      map (Bialgebra.TensorProduct.map (BialgHom.id K K) f) (baseChange g) := by
   apply _root_.GroupLike.val_injective
   simp
 
@@ -75,9 +73,9 @@ variable {R K A : Type*} [CommRing R] [IsDomain R] [CommRing K] [Algebra R K]
 /-- Scalar extension preserves the characters of a torsion-free commutative bialgebra
 spanned by group-like elements, provided the extended base has connected prime spectrum.
 The `ConnectedSpace` hypothesis includes nonemptiness, so the extended base is nontrivial. -/
-theorem groupLikeBaseChange_bijective
+theorem baseChange_bijective
     (hspan : Submodule.span R (Set.range (_root_.GroupLike.val (R := R) (A := A))) = ⊤) :
-    Function.Bijective (groupLikeBaseChange (R := R) (K := K) (A := A)) := by
+    Function.Bijective (baseChange (R := R) (K := K) (A := A)) := by
   let e := evaluationBialgEquiv R A hspan
   let f := Bialgebra.TensorProduct.map (BialgHom.id K K) e.toBialgHom
   have hf : Function.Bijective f := by
@@ -93,41 +91,41 @@ theorem groupLikeBaseChange_bijective
     (BialgEquiv.ofBijective f hf)
   let q := (TauCeti.MonoidAlgebra.groupLikeEquiv (R := K)
     (H := _root_.GroupLike R A)).symm.trans (mapEquiv eK)
-  have hq (g : _root_.GroupLike R A) : q g = groupLikeBaseChange (K := K) g := by
+  have hq (g : _root_.GroupLike R A) : q g = baseChange (K := K) g := by
     apply _root_.GroupLike.val_injective
     simp only [q, eK, f, e, BialgEquiv.toBialgHom_eq_coe,
       evaluationBialgEquiv_toBialgHom, mapEquiv_trans, MulEquiv.trans_apply,
       val_mapEquiv, TauCeti.MonoidAlgebra.val_groupLikeEquiv_symm,
       TauCeti.MonoidAlgebra.scalarTensorBialgEquiv_symm_single,
       BialgEquiv.ofBijective_apply, Bialgebra.TensorProduct.map_tmul,
-      BialgHom.id_apply, evaluationBialgHom_single, one_smul, val_groupLikeBaseChange]
-  have hfun : (q : _ → _) = groupLikeBaseChange (R := R) (K := K) (A := A) := funext hq
+      BialgHom.id_apply, evaluationBialgHom_single, one_smul, val_baseChange]
+  have hfun : (q : _ → _) = baseChange (R := R) (K := K) (A := A) := funext hq
   rw [← hfun]
   exact q.bijective
 
 /-- The character equivalence induced by scalar extension of a split commutative bialgebra.
 Its forward map is the canonical scalar-extension map, independently of the spanning proof. -/
-noncomputable def groupLikeBaseChangeEquiv
+noncomputable def baseChangeEquiv
     (hspan : Submodule.span R (Set.range (_root_.GroupLike.val (R := R) (A := A))) = ⊤) :
     _root_.GroupLike R A ≃* _root_.GroupLike K (K ⊗[R] A) :=
-  MulEquiv.ofBijective groupLikeBaseChange (groupLikeBaseChange_bijective hspan)
+  MulEquiv.ofBijective baseChange (baseChange_bijective hspan)
 
 /-- The equivalence applies as the canonical scalar-extension map. -/
 @[simp]
-theorem groupLikeBaseChangeEquiv_apply
+theorem baseChangeEquiv_apply
     (hspan : Submodule.span R (Set.range (_root_.GroupLike.val (R := R) (A := A))) = ⊤)
     (g : _root_.GroupLike R A) :
-    groupLikeBaseChangeEquiv (K := K) hspan g = groupLikeBaseChange g := (rfl)
+    baseChangeEquiv (K := K) hspan g = baseChange g := (rfl)
 
 /-- Every extended character is the tensor with one of its unique original character. -/
 @[simp]
-theorem one_tmul_val_groupLikeBaseChangeEquiv_symm
+theorem one_tmul_val_baseChangeEquiv_symm
     (hspan : Submodule.span R (Set.range (_root_.GroupLike.val (R := R) (A := A))) = ⊤)
     (g : _root_.GroupLike K (K ⊗[R] A)) :
-    1 ⊗ₜ[R] ((groupLikeBaseChangeEquiv (K := K) hspan).symm g).val = g.val := by
-  rw [← val_groupLikeBaseChange, ← groupLikeBaseChangeEquiv_apply hspan,
+    1 ⊗ₜ[R] ((baseChangeEquiv (K := K) hspan).symm g).val = g.val := by
+  rw [← val_baseChange, ← baseChangeEquiv_apply hspan,
     MulEquiv.apply_symm_apply]
 
 end Split
 
-end TauCeti
+end TauCeti.GroupLike
