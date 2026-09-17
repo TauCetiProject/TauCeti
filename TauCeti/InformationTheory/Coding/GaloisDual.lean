@@ -26,10 +26,7 @@ The matrix convention is row generators (`range G.vecMulLinear`) and column synd
 (`ker H.mulVecLin`). In particular, omitting the conjugation can compute a different dual.
 
 The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*,
-§§1.3–1.4. The Hermitian-duality statements and pairing orientation follow the
-[formal prototype in `AlgebraicCodingTheory/Suggested.lean`][hermitian-prototype].
-
-[hermitian-prototype]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/368157aaeaf6d07617b20f935b6c7b1367b1aee0/TauCetiRoadmap/AlgebraicCodingTheory/Suggested.lean#L65-L100
+§§1.3–1.4.
 -/
 
 public section
@@ -88,9 +85,7 @@ theorem le_galoisDual_symm_galoisDual (σ : R ≃+* R)
 /-- Every code is contained in its double Hermitian dual for an involutive automorphism. -/
 theorem le_galoisDual_galoisDual (σ : R ≃+* R) (hσ : Function.Involutive σ)
     (C : Submodule R (ι → R)) : C ≤ galoisDual σ (galoisDual σ C) := by
-  have hsymm : σ.symm = σ := by
-    ext x
-    exact σ.injective (by simp [hσ x])
+  have hsymm : σ.symm = σ := DFunLike.coe_injective (hσ.leftInverse_iff.mp σ.left_inv)
   simpa only [hsymm] using le_galoisDual_symm_galoisDual σ C
 
 /-- The Galois dual of a row space is the kernel of the matrix obtained by applying
@@ -114,9 +109,7 @@ theorem galoisDual_range_vecMulLinear_of_involutive (σ : R ≃+* R)
     (hσ : Function.Involutive σ) {ρ : Type*} [Fintype ρ] (G : Matrix ρ ι R) :
     galoisDual σ (LinearMap.range G.vecMulLinear) =
       LinearMap.ker (G.map σ).mulVecLin := by
-  have hsymm : σ.symm = σ := by
-    ext x
-    exact σ.injective (by simp [hσ x])
+  have hsymm : σ.symm = σ := DFunLike.coe_injective (hσ.leftInverse_iff.mp σ.left_inv)
   simpa only [hsymm] using galoisDual_range_vecMulLinear σ G
 
 section Field
@@ -155,9 +148,7 @@ theorem galoisDual_symm_galoisDual (σ : K ≃+* K)
 @[simp]
 theorem galoisDual_galoisDual (σ : K ≃+* K) (hσ : Function.Involutive σ)
     (C : Submodule K (ι → K)) : galoisDual σ (galoisDual σ C) = C := by
-  have hsymm : σ.symm = σ := by
-    ext x
-    exact σ.injective (by simp [hσ x])
+  have hsymm : σ.symm = σ := DFunLike.coe_injective (hσ.leftInverse_iff.mp σ.left_inv)
   simpa only [hsymm] using galoisDual_symm_galoisDual σ C
 
 /-- The Galois dual of an intersection is the sum of the Galois duals. -/
@@ -193,9 +184,7 @@ theorem range_vecMulLinear_eq_iff_ker_map_eq_galoisDual_of_involutive (σ : K �
     (G : Matrix ρ ι K) (C : Submodule K (ι → K)) :
     LinearMap.range G.vecMulLinear = C ↔
       LinearMap.ker (G.map σ).mulVecLin = galoisDual σ C := by
-  have hsymm : σ.symm = σ := by
-    ext x
-    exact σ.injective (by simp [hσ x])
+  have hsymm : σ.symm = σ := DFunLike.coe_injective (hσ.leftInverse_iff.mp σ.left_inv)
   simpa only [hsymm] using range_vecMulLinear_eq_iff_ker_map_eq_galoisDual σ G C
 
 end Field
