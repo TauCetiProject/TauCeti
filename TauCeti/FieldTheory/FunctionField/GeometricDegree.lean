@@ -237,9 +237,9 @@ theorem finrank_constantCompositum_eq_finrank_of_linearDisjoint [Algebra.IsAlgeb
     e.toLinearEquiv.finrank_eq]
   exact congrArg Cardinal.toNat hrank
 
-/-- **Adjoining a finite separable constant field extension to the lower function field costs
-exactly its degree**, provided the constant field downstairs is exact: `[F·k' : F] = [k' : k]`,
-which is the degree form of linear disjointness of `F` and `k'` over `k`.
+/-- **Adjoining a separable constant field extension to the lower function field preserves
+finrank**, provided the constant field downstairs is exact: `[F·k' : F] = [k' : k]`, which for
+finite `k' / k` is the degree form of linear disjointness of `F` and `k'` over `k`.
 
 This is the degree consequence of Stichtenoth's Proposition 3.6.1(b); that proposition's own
 statement — the persistence over `k'` of linear independence over `k` — is
@@ -248,11 +248,11 @@ statement — the persistence over `k'` of linear independence over `k` — is
 This is the statement in which that condition has content, and it is stated over the full
 compatible tower: `k` embeds in `F` and in `k'`, and the two routes `k → F → F'` and `k → k' → F'`
 agree.  Both hypotheses are used: exactness of `k` in `F` keeps the minimal polynomial of a
-constant irreducible over `F` (`TauCeti.minpoly.map_algebraMap_of_isIntegrallyClosedIn`), and
-separability makes `k' / k` simple, so that a single such minimal polynomial computes the whole
-degree. -/
+constant irreducible over `F` (`TauCeti.minpoly.map_algebraMap_of_isIntegrallyClosedIn`), while
+separability lets the linear-disjointness proof reduce each finite family in `k'` to a finite
+separable subextension. -/
 theorem finrank_constantCompositum_eq_finrank_of_isSeparable (hex : IsIntegrallyClosedIn k F)
-    [FiniteDimensional k k'] [Algebra.IsSeparable k k'] :
+    [Algebra.IsSeparable k k'] :
     Module.finrank F (constantCompositum F k' F') = Module.finrank k k' := by
   exact finrank_constantCompositum_eq_finrank_of_linearDisjoint F k' F'
     (linearDisjoint_fieldRange_of_isIntegrallyClosedIn hex)
