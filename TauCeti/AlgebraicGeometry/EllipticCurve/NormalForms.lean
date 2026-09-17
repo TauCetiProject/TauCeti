@@ -9,13 +9,20 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
 
 /-!
-# Characteristic-≠-2 normal form: transport, and its elementary consequences
+# Normal forms: transport, changes of variables, and elementary consequences
 
-Mathlib's `WeierstrassCurve.IsCharNeTwoNF` asserts `a₁ = a₃ = 0`, and its `NormalForms` file
-proves a great deal from that hypothesis. This file collects two things it does not record.
+Mathlib's `WeierstrassCurve.IsCharNeTwoNF` asserts `a₁ = a₃ = 0` and its
+`WeierstrassCurve.IsShortNF` asserts `a₁ = a₂ = a₃ = 0`, and its `NormalForms` file proves a
+great deal from those hypotheses. This file collects three things it does not record.
 
-**Transport.** The condition is preserved by `map` and `baseChange` — the coefficients of
+**Transport.** Both conditions are preserved by `map` and `baseChange` — the coefficients of
 `W.map f` are the images of `W`'s, so a vanishing coefficient stays vanishing.
+
+**Changes of variables between short normal forms.** When `2` and `3` are invertible, a change
+of variables carrying one short equation to another is a pure scaling `(x, y) ↦ (u²x, u³y)`: its
+`r`, `s` and `t` vanish, so it acts on the coefficients by `(a₄, a₆) ↦ (u⁻⁴a₄, u⁻⁶a₆)`. This is
+the only freedom left in a short equation, and it is what a canonical short equation has to
+normalise away.
 
 **Elementary consequences.** Facts that follow from `a₁ = a₃ = 0` alone, by unfolding `negY`, with
 no further machinery. `y_eq_zero_of_order_two` is the current example: negation is `(x, y) ↦
@@ -34,6 +41,13 @@ re-established by hand at every such crossing.
 * `WeierstrassCurve.isCharNeTwoNF_map`: `a₁ = a₃ = 0` is preserved by a ring hom.
 * `WeierstrassCurve.isCharNeTwoNF_baseChange`: the same for a base change, which is the spelling
   consumers hold. Both are instances, so the crossing is silent.
+* `WeierstrassCurve.isShortNF_map` and `WeierstrassCurve.isShortNF_baseChange`: the same two
+  statements for short normal form.
+* `WeierstrassCurve.VariableChange.r_eq_zero_of_isShortNF`, `…s_eq_zero_of_isShortNF` and
+  `…t_eq_zero_of_isShortNF`: a change of variables between short normal forms is a scaling.
+* `WeierstrassCurve.variableChange_a₄_of_isShortNF` and
+  `WeierstrassCurve.variableChange_a₆_of_isShortNF`: it acts on the coefficients by
+  `(a₄, a₆) ↦ (u⁻⁴a₄, u⁻⁶a₆)`.
 * `WeierstrassCurve.y_eq_zero_of_order_two`: in a characteristic-≠-2 normal form, an affine
   point killed by `2` has `y = 0`.
 -/
@@ -58,6 +72,67 @@ caller holds and instance search does not unfold it. -/
 instance isCharNeTwoNF_baseChange [Algebra R S] [W.IsCharNeTwoNF] :
     (W.baseChange S).IsCharNeTwoNF :=
   W.isCharNeTwoNF_map (algebraMap R S)
+
+/-- **Short normal form is preserved by a ring hom.** `(W.map f).a₂` is `f W.a₂`, and a hom sends
+`0` to `0`, so the vanishing survives; likewise for `a₁` and `a₃`. As an instance, it carries
+`IsShortNF` across `W.map f` in typeclass search. -/
+instance isShortNF_map (f : R →+* S) [W.IsShortNF] : (W.map f).IsShortNF :=
+  ⟨by simp, by simp, by simp⟩
+
+/-- **Short normal form is preserved by a base change.** This is `isShortNF_map` at
+`algebraMap R S`, stated separately because `baseChange` is the spelling a caller holds and
+instance search does not unfold it. -/
+instance isShortNF_baseChange [Algebra R S] [W.IsShortNF] : (W.baseChange S).IsShortNF :=
+  W.isShortNF_map (algebraMap R S)
+
+/-! ### Changes of variables between short normal forms
+
+With `2` and `3` invertible, the coefficients `a₁`, `a₃` and `a₂` of `C • W` are `u⁻¹ · 2s`,
+`u⁻³ · 2t` and `u⁻² · 3r` when `W` is short, so if `C • W` is short as well then `r = s = t = 0`
+and `C` is the scaling `(x, y) ↦ (u²x, u³y)`. -/
+
+section ShortNF
+
+variable (C : VariableChange R) [W.IsShortNF] [(C • W).IsShortNF]
+include W
+
+/-- A change of variables between short normal forms has `s = 0`, when `2` is invertible. -/
+lemma VariableChange.s_eq_zero_of_isShortNF [Invertible (2 : R)] : C.s = 0 := by
+  have h := (C • W).a₁_of_isShortNF
+  rw [variableChange_a₁, W.a₁_of_isShortNF, C.u⁻¹.isUnit.mul_right_eq_zero] at h
+  exact (isUnit_of_invertible (2 : R)).mul_right_eq_zero.mp (by linear_combination h)
+
+/-- A change of variables between short normal forms has `t = 0`, when `2` is invertible. -/
+lemma VariableChange.t_eq_zero_of_isShortNF [Invertible (2 : R)] : C.t = 0 := by
+  have h := (C • W).a₃_of_isShortNF
+  rw [variableChange_a₃, W.a₁_of_isShortNF, W.a₃_of_isShortNF,
+    (C.u⁻¹.isUnit.pow 3).mul_right_eq_zero] at h
+  exact (isUnit_of_invertible (2 : R)).mul_right_eq_zero.mp (by linear_combination h)
+
+/-- A change of variables between short normal forms has `r = 0`, when `2` and `3` are
+invertible. -/
+lemma VariableChange.r_eq_zero_of_isShortNF [Invertible (2 : R)] [Invertible (3 : R)] :
+    C.r = 0 := by
+  have h := (C • W).a₂_of_isShortNF
+  rw [variableChange_a₂, W.a₁_of_isShortNF, W.a₂_of_isShortNF, C.s_eq_zero_of_isShortNF W,
+    (C.u⁻¹.isUnit.pow 2).mul_right_eq_zero] at h
+  exact (isUnit_of_invertible (3 : R)).mul_right_eq_zero.mp (by linear_combination h)
+
+/-- Between short normal forms, a change of variables scales `a₄` by `u⁻⁴`. -/
+lemma variableChange_a₄_of_isShortNF [Invertible (2 : R)] [Invertible (3 : R)] :
+    (C • W).a₄ = C.u⁻¹ ^ 4 * W.a₄ := by
+  rw [variableChange_a₄, C.r_eq_zero_of_isShortNF W, C.s_eq_zero_of_isShortNF W,
+    C.t_eq_zero_of_isShortNF W, W.a₁_of_isShortNF, W.a₂_of_isShortNF, W.a₃_of_isShortNF]
+  ring
+
+/-- Between short normal forms, a change of variables scales `a₆` by `u⁻⁶`. -/
+lemma variableChange_a₆_of_isShortNF [Invertible (2 : R)] [Invertible (3 : R)] :
+    (C • W).a₆ = C.u⁻¹ ^ 6 * W.a₆ := by
+  rw [variableChange_a₆, C.r_eq_zero_of_isShortNF W, C.t_eq_zero_of_isShortNF W,
+    W.a₁_of_isShortNF, W.a₂_of_isShortNF, W.a₃_of_isShortNF]
+  ring
+
+end ShortNF
 
 /-- **In characteristic-≠-2 normal form, a two-torsion point has `y = 0`.** Negation is
 `(x, y) ↦ (x, -y)`, so a point equal to its own negative has `2y = 0`; cancelling `2` finishes it.
