@@ -24,6 +24,8 @@ geodesic equation.
 
 * `TauCeti.Manifold.contMDiff_geodesicSpray`: the geodesic spray is `C^n` when the manifold is
   `C^(n + 2)` and its Riemannian metric is `C^(n + 1)`.
+* `IsMIntegralCurveOn.isGeodesicCurveOnFrom_proj`: a spray integral curve on an open set projects
+  to a geodesic with the initial data encoded by its value at zero.
 
 ## References
 
@@ -38,13 +40,13 @@ open scoped ContDiff Manifold Topology
 
 noncomputable section
 
-namespace TauCeti.Manifold
-
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {n m k : ℕ∞ω}
+
+namespace TauCeti.Manifold
 
 /-- In the trivialization of the iterated tangent bundle centred at `z₀`, the geodesic spray has
 the Christoffel-coordinate formula associated to the tangent trivialization centred at `z₀.proj`.
@@ -140,5 +142,53 @@ theorem contMDiff_geodesicSpray [IsManifold I 2 M] [IsManifold I m M]
     ⟨hv, ((hΓ'.clm_apply hv).clm_apply hv).neg⟩
 
 end TauCeti.Manifold
+
+namespace IsMIntegralCurveOn
+
+open TauCeti.Manifold
+
+variable [I.Boundaryless] [IsManifold I 3 M]
+  [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)]
+
+/-- The projection of an integral curve of the geodesic spray on an open set is the geodesic
+whose initial data are encoded by the integral curve's value at zero. -/
+theorem isGeodesicCurveOnFrom_proj
+    {z : ℝ → TangentBundle I M} {s : Set ℝ} {w : TangentBundle I M}
+    (hz : IsMIntegralCurveOn z (geodesicSpray I M) s) (hs : IsOpen s)
+    (h0s : (0 : ℝ) ∈ s) (h0 : z 0 = w) :
+    IsGeodesicCurveOnFrom I (fun t ↦ (z t).proj) s w.proj w.2 := by
+  -- `C²` regularity of the curve is read in the tangent bundle, whose `C²` vector-bundle
+  -- structure is exactly what `IsManifold I 3 M` supplies.
+  have : IsManifold I (2 + 1) M := IsManifold.of_le (n := 3) (by norm_num)
+  let _ : ContMDiffVectorBundle 2 E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  have hspray : CMDiff 1 (fun q : TangentBundle I M ↦
+      (⟨q, geodesicSpray I M q⟩ : TangentBundle I.tangent (TangentBundle I M))) :=
+    contMDiff_geodesicSpray (I := I) (M := M) (n := (1 : ℕ∞ω)) (m := 3) (k := 2)
+      (by norm_num) (by norm_num)
+  have hbase : ContMDiffOn (modelWithCornersSelf ℝ ℝ) I 2
+      (fun t ↦ (z t).proj) s := by
+    apply contMDiffOn_of_locally_contMDiffOn
+    intro t ht
+    have hcurveAt : IsMIntegralCurveAt z (geodesicSpray I M) t :=
+      hz.isMIntegralCurveAt (hs.mem_nhds ht)
+    have hcurveTwo : ContMDiffAt (modelWithCornersSelf ℝ ℝ) I.tangent 2 z t :=
+      IsMIntegralCurveAt.contMDiffAt_two hcurveAt hspray.contMDiffAt
+    have hproj : ContMDiffAt I.tangent I 2 TotalSpace.proj (z t) :=
+      Bundle.contMDiffAt_proj (fun x : M ↦ TangentSpace I x) (IB := I) (n := (2 : ℕ∞ω))
+    have hbaseAt : ContMDiffAt (modelWithCornersSelf ℝ ℝ) I 2
+        ((fun q : TangentBundle I M ↦ q.proj) ∘ z) t :=
+      hproj.comp t hcurveTwo
+    obtain ⟨u, hu, hbaseu⟩ := contMDiffAt_iff_contMDiffOn_nhds (n := (2 : ℕ∞ω))
+      (by norm_num) |>.mp hbaseAt
+    obtain ⟨V, hVsub, hVopen, htV⟩ := mem_nhds_iff.mp hu
+    refine ⟨V, hVopen, htV, ?_⟩
+    exact (hbaseu.mono (inter_subset_right.trans hVsub)).congr (fun _ _ ↦ rfl)
+  have hunique : UniqueDiffOn ℝ s := hs.uniqueDiffOn
+  refine ⟨isGeodesicCurveOn_proj_of_isMIntegralCurveOn hunique hz hbase, h0s, ?_⟩
+  simpa only [curveVelocityLiftWithin_apply] using
+    (eq_curveVelocityLiftWithin_of_isMIntegralCurveOn (hunique 0 h0s) hz h0s).symm.trans h0
+
+end IsMIntegralCurveOn
 
 end

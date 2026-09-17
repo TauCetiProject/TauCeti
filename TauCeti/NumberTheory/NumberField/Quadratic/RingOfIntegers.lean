@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Internal.QuadraticIntegralBasis
 public import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
 public import Mathlib.NumberTheory.NumberField.Norm
 import TauCeti.RingTheory.Norm.Quadratic
+import TauCeti.NumberTheory.NumberField.IntegralSqrt
 
 /-!
 # The ring of integers of a quadratic field
@@ -170,19 +171,6 @@ private theorem two_dvd_sub_of_sq_sub_mul_sq {A B N : ℤ} (hd4 : d % 4 = 1)
   · have h0' : ((A - B - 2 : ℤ) : ZMod 4) = 0 := by push_cast; rw [h2]; ring
     have := (ZMod.intCast_zmod_eq_zero_iff_dvd (A - B - 2) 4).mp h0'; omega
 
-/-- For `d ≡ 1 (mod 4)`, `ω = (1 + θ)/2` is an algebraic integer: it is a root of the monic
-integer polynomial `X² - X - (d-1)/4`. -/
-private theorem isIntegral_halfGen (hmin : minpoly ℤ θ = X ^ 2 - C d) (hd4 : d % 4 = 1) :
-    IsIntegral ℤ ((1 + (θ : K)) / 2) := by
-  obtain ⟨e, he⟩ : ∃ e : ℤ, d = 4 * e + 1 := ⟨d / 4, by omega⟩
-  have ht : (θ : K) ^ 2 = algebraMap ℤ K d := coe_gen_sq hmin
-  have hde : algebraMap ℤ K d = 4 * algebraMap ℤ K e + 1 := by
-    rw [he]; simp only [map_add, map_mul, map_ofNat, map_one]
-  refine ⟨X ^ 2 - X - C e, ?_, ?_⟩
-  · monicity!
-  · simp only [eval₂_sub, eval₂_pow, eval₂_X, eval₂_C]
-    field_simp
-    linear_combination ht + hde
 /-- **Shared half-integer coordinate/norm data.** For squarefree `d` and any `z : 𝓞 K`, the
 `{1, θ}`-coordinates of `z` are half-integers: `z = (A/2)·1 + (B/2)·θ` with `A` its trace and `B`
 twice its second coordinate, and the norm relation `A² - d·B² = 4N` holds for some `N : ℤ`. Both
@@ -236,7 +224,7 @@ private theorem exists_int_repr (hmin : minpoly ℤ θ = X ^ 2 - C d)
 
 /-- For `d ≡ 1 (mod 4)`, the half-integer generator `ω = (1 + θ)/2 ∈ 𝓞 K`. -/
 noncomputable def halfGen (hmin : minpoly ℤ θ = X ^ 2 - C d) (hd4 : d % 4 = 1) : 𝓞 K :=
-  ⟨(1 + (θ : K)) / 2, isIntegral_halfGen hmin hd4⟩
+  ⟨(1 + (θ : K)) / 2, TauCeti.isIntegral_one_add_div_two_of_sq_eq (coe_gen_sq hmin) hd4⟩
 
 /-- The half-integer generator coerces to `(1 + θ)/2` in `K`. -/
 @[simp] theorem coe_halfGen (hmin : minpoly ℤ θ = X ^ 2 - C d) (hd4 : d % 4 = 1) :
@@ -307,7 +295,7 @@ theorem discr_eq_of_squarefree_of_mod_four_eq_one (hmin : minpoly ℤ θ = X ^ 2
     rintro ⟨q, hq⟩
     exact gen_notMem_range hmin ⟨2 * q - 1, by rw [map_sub, map_mul, map_one, map_ofNat, hq]; ring⟩
   obtain ⟨bs, hbs, hb⟩ := Internal.exists_basis_eq_one_self_of_notMem_range_of_isIntegral
-    hfr hωnotmem (isIntegral_halfGen hmin hd4)
+    hfr hωnotmem (TauCeti.isIntegral_one_add_div_two_of_sq_eq (coe_gen_sq hmin) hd4)
   have hdd : Algebra.discr ℚ (bs : Fin 2 → K) = ((d : ℤ) : ℚ) := by
     rw [hbs]; exact discr_one_halfGen hmin hgen
   have hbs' : (bs : Fin 2 → K) = ![1, (halfGen hmin hd4 : K)] := by rw [coe_halfGen]; exact hbs

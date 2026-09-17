@@ -5,11 +5,11 @@ This is an EMERGENCY channel, not a "ask the humans for help" queue. Every alert
 here means a piece of Tau Ceti's own automation was supposed to make progress and
 could not unstick itself: a bump that will not cross a breaking change, a green PR
 the merge machinery never merged, a scheduled job that stopped firing, main gone
-red. The expected response to any alert is to FIX THE INFRASTRUCTURE, e.g. a
-script, a workflow, a pin, or a guard, so that the situation cannot recur. Do not
-hand-hold one PR and move on. If an alert can only ever be resolved by a human
-doing a one-off favour, it does not belong here; see the "deliberately NOT
-alerted" list below.
+red. Diagnose the failing operation before prescribing a fix. A merge-group
+failure can be a PR integration defect (including duplicate declarations), while
+repeated review-command failures can be a worker, provider, or engine problem.
+Repair the cause and the automation's recovery path; see the "deliberately NOT
+alerted" list below for ordinary backlog that does not belong here.
 
 Detectors (each names the infra failure it implies):
 
@@ -25,10 +25,10 @@ Detectors (each names the infra failure it implies):
                      green for any pin change), `build` green, every blocking
                      rubric green at HEAD, not draft/hold, mergeable, and quiet for
                      the grace window. auto-merge / the queue / merge-sweep broke.
-  4. review-stuck    An open `Review stuck: PR #N` issue whose PR #N is also still
-                     open: the review engine self-flagged a PR it cannot resolve.
-                     An issue left open after its PR merged or closed is stale
-                     bookkeeping by the (out-of-repo) worker, not a live wedge.
+  4. review-stuck    A worker exhausted its review-command failure budget. An
+                     open tracking issue remains active until the PR finishes or
+                     a later completed review proves recovery. The issue
+                     alone does not establish a rubric or engine defect.
   5. dead-scheduler  A scheduled workflow is missing, disabled, or its last
                      SCHEDULED run is older than its cadence + slack. GitHub
                      disabled the cron (60-day inactivity), or it errors at dispatch.
@@ -49,7 +49,11 @@ Detectors (each names the infra failure it implies):
                      build, e.g. a flaky cache.
   9. missing-status  A concluded pr-build left an open PR's head with no `build`
                      status. The PR is BLOCKED forever and its label is pinned at
-                     `awaiting-CI`; nothing re-runs pr-build without a push.
+                     `awaiting-CI`; nothing re-runs pr-build without a push. A
+                     cancelled run counts once it has stayed the newest for the
+                     head past ABANDONED_CANCEL_HOURS: a cancellation is normally
+                     a supersede, but one nothing came after is a wedge, and
+                     skipping every cancellation left three PRs stuck for days.
  10. diverged-head   A PR's recorded head is not its branch tip, so GitHub never
                      recomputes mergeability and it sits at `mergeable: null`,
                      invisible to every mergeability-gated path.
@@ -143,6 +147,12 @@ EVICTION_WINDOW_HOURS = 24
 # How long a concluded pr-build may leave its head without a `build` status before that is
 # a wedge rather than a race between the run finishing and the status landing.
 MISSING_STATUS_HOURS = 0.5
+# How long a cancelled pr-build may be the newest run for a head before the cancellation
+# counts as terminal rather than as a head about to be rebuilt. A cancellation is normally
+# a supersede -- the head was re-dispatched and the next run posts the status -- and this
+# runs at eight to eighty-six cancellations a day, so the wait has to be long enough that
+# no ordinary re-dispatch is still pending. A day is many times the slowest build.
+ABANDONED_CANCEL_HOURS = 24
 FKB_STALE_DAYS = 3
 SCHEDULERS = {
     # workflow file            (human name,               max age hours)
@@ -334,8 +344,8 @@ def detect_eviction_loops():
     A single eviction is invisible: the PR stays green, simply is not merged, and merge-sweep
     re-enqueues it an hour or two later. Nothing about any one cycle looks wrong, so a PR can
     bounce for days while every other detector reports healthy. Counting the evictions is the
-    only way to see it, and a repeated eviction always means something upstream is broken (a
-    flaky cache, a genuinely red merge-group build) rather than one PR needing a nudge.
+    only way to see it. The build log distinguishes a PR integration defect from
+    shared infrastructure trouble; the eviction count alone cannot diagnose either.
 
     Only PRs the pipeline currently calls ready can be in the queue, so that label bounds the
     per-PR timeline reads to a handful.
@@ -367,10 +377,13 @@ def detect_eviction_loops():
             "body": (
                 f"https://github.com/{REPO}/pull/{pr['number']} has been evicted from the merge "
                 f"queue {len(recent)} times in the last {EVICTION_WINDOW_HOURS}h without merging.\n\n"
-                f"**Fix:** the PR is not the problem — find why the merge-group build fails. "
+                f"**Diagnose:** inspect the failed merge-group jobs before choosing a fix. "
                 f"Check the `merge_group` runs for its `gh-readonly-queue/main/pr-{pr['number']}-*` "
-                f"branches. A failure mode shared across several PRs (cache, toolchain, a red "
-                f"main) is infrastructure and must be fixed there, not by re-queuing."),
+                f"branches. Duplicate declarations or incompatible changes introduced since the "
+                f"PR branched require updating and fixing the PR against main. Shared cache, "
+                f"toolchain, or main-build failures require an infrastructure fix. Also check "
+                f"merge-sweep's recovery attempts for permission errors; re-queuing alone does "
+                f"not repair a deterministic failure."),
         })
     return out
 
@@ -406,21 +419,43 @@ def detect_missing_required_status():
         # Newest run first, so this is the latest run that actually reported a verdict.
         finished = next((r["updated_at"] for r in runs
                          if r.get("conclusion") not in ("", "cancelled", "skipped")), "")
-        if not finished or hours_since(finished) < MISSING_STATUS_HOURS:
+        if finished and hours_since(finished) >= MISSING_STATUS_HOURS:
+            out.append(missing_status_alert(pr, verdict=True))
             continue
-        out.append({
-            "key": f"missing-status/{pr['number']}",
-            "title": "Required `build` status was never posted",
-            "body": (
-                f"https://github.com/{REPO}/pull/{pr['number']} has a completed pr-build run for "
-                f"its head commit but no `build` commit status, so it is BLOCKED forever and its "
-                f"label is pinned at `awaiting-CI`.\n\n"
-                f"**Fix:** re-dispatch pr-build for the PR to post the missing status "
-                f"(`gh workflow run pr-build.yml -f pr={pr['number']}`), then fix whatever "
-                f"dropped it — the report step must post all three statuses even when one POST "
-                f"fails."),
-        })
+        if finished:
+            continue
+        # No run reached a verdict, so every one of them was cancelled. That is
+        # ordinarily a supersede: the head was re-dispatched and the next run
+        # will post the status, which is why cancellations are skipped here at
+        # all. But a cancellation that stays the newest run for a head is not a
+        # supersede, because nothing came after it to rebuild. PRs 6633, 6583
+        # and 6590 sat wedged that way for three days, each with exactly one
+        # cancelled run for its head and no `build` status, invisible to this
+        # detector precisely because the run was cancelled.
+        newest = next((r["updated_at"] for r in runs if r.get("updated_at")), "")
+        if not newest or hours_since(newest) < ABANDONED_CANCEL_HOURS:
+            continue
+        out.append(missing_status_alert(pr, verdict=False))
     return out
+
+
+def missing_status_alert(pr, *, verdict):
+    """The alert for a head that will never receive its required `build` status."""
+    became = ("has a completed pr-build run for its head commit but no `build` commit status"
+              if verdict else
+              "has no `build` commit status, and the only pr-build run for its head was "
+              f"cancelled over {ABANDONED_CANCEL_HOURS:g}h ago with nothing dispatched since")
+    return {
+        "key": f"missing-status/{pr['number']}",
+        "title": "Required `build` status was never posted",
+        "body": (
+            f"https://github.com/{REPO}/pull/{pr['number']} {became}, so it is BLOCKED "
+            f"forever and its label is pinned at `awaiting-CI`.\n\n"
+            f"**Fix:** re-dispatch pr-build for the PR to post the missing status "
+            f"(`gh workflow run pr-build.yml -f pr={pr['number']}`), then fix whatever "
+            f"dropped it — the report step must post all three statuses even when one POST "
+            f"fails."),
+    }
 
 
 def detect_diverged_head():
@@ -526,17 +561,42 @@ def detect_stranded_prs():
 REVIEW_STUCK_TITLE_RE = re.compile(r"Review stuck: PR #([0-9]+)")
 
 
-def flagged_pr_is_finished(number):
-    """True iff the PR the issue flagged is definitely merged or closed.
+def flagged_pr_has_recovered(number, issue):
+    """A finished PR or a completed review after the reported failures.
 
     Any doubt (an API error, a number that is not a PR, an unexpected state) is
     False, so the caller keeps alerting. Fail closed: a live wedge must never be
     silenced by a lookup that did not work.
     """
     try:
-        return gh_scalar(f"/repos/{REPO}/pulls/{number}", jq='.state // ""') == "closed"
+        pr = gh_obj(f"/repos/{REPO}/pulls/{number}", jq='{state, head: .head.sha}') or {}
+        if pr.get("state") == "closed":
+            return True
+        if pr.get("state") != "open" or not pr.get("head"):
+            return False
+        meta = core.scoreboard_meta(number)
+        if not isinstance(meta, dict) or meta.get("kind") != "scoreboard" or meta.get("mode") == "init":
+            return False
+        if meta.get("repo") != REPO or str(meta.get("pr")) != str(number):
+            return False
+        if not meta.get("head_sha"):
+            return False
+        # A later push is ordinary review backlog, not a recurrence of the old
+        # command failure. Recovery is dated against the failure, not today's head.
+        states = meta.get("states")
+        if not isinstance(states, dict) or not states:
+            return False
+        if not all(s in ("green", "blocking_request", "blocking_block") for s in states.values()):
+            return False
+        # A changes-requested verdict also demonstrates recovery: it is now author
+        # work, not a failed review command. An old verdict must not mask new failures.
+        cutoff = parse_ts(issue["created_at"])
+        for stamp in re.findall(r"^- (\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ): `",
+                                issue.get("body") or "", re.M):
+            cutoff = max(cutoff, parse_ts(stamp))
+        return parse_ts(meta["ts"]) > cutoff
     except Exception as exc:
-        zp.log(f"review-stuck: state of PR #{number} unreadable ({exc}); alerting anyway")
+        zp.log(f"review-stuck: recovery of PR #{number} unreadable ({exc}); alerting anyway")
         return False
 
 
@@ -549,29 +609,28 @@ def detect_review_stuck():
     issues = gh_stream(
         f"/repos/{REPO}/issues?state=open&per_page=100",
         jq='.[] | select(.pull_request == null) '
-           '| select(.title | test("^Review stuck: PR #[0-9]+$")) | {number, title}')
+           '| select(.title | test("^Review stuck: PR #[0-9]+$")) | {number, title, body, created_at}')
     out = []
     for i in issues:
-        # The engine is wedged only while the PR it flagged is still open. The
-        # worker that files these issues closes them once their PR merges or is
-        # closed, but that self-close is out of this repo and has been observed to
-        # miss: issue #1137's PR #1134 merged 16 minutes later and the alert still
-        # fired for two days. An issue outliving its PR is stale bookkeeping, not
-        # an emergency, and the topic is worthless once it cries wolf.
+        # Tracking issues can outlive their failure. Check public evidence without
+        # changing issues, worker budgets, or review state.
         m = REVIEW_STUCK_TITLE_RE.fullmatch(i.get("title") or "")
-        if m and flagged_pr_is_finished(m.group(1)):
-            zp.log(f"review-stuck: issue #{i['number']} names finished PR #{m.group(1)}; skipping")
+        if m and flagged_pr_has_recovered(m.group(1), i):
+            zp.log(f"review-stuck: issue #{i['number']} names recovered PR #{m.group(1)}; skipping")
             continue
         out.append({
             "key": f"review-stuck/{i['number']}",
-            "title": "Review engine self-flagged a PR it cannot resolve",
+            "title": "Worker stopped reviewing after repeated command failures",
             "body": (
                 f"An open `Review stuck` issue is unresolved: "
                 f"https://github.com/{REPO}/issues/{i['number']}\n\n"
-                f"**Fix:** this is not a one-off review to nudge. The engine hit a "
-                f"state it has no rule for, e.g. a rubric contradiction or an error "
-                f"loop. Fix the review logic / rubric in TauCetiReview so it cannot "
-                f"re-wedge."),
+                f"**Diagnose:** use the issue's failure categories and subsequent public "
+                f"review evidence to distinguish worker setup, GitHub/provider failures, "
+                f"and review-engine defects. A generic exit code does not establish a "
+                f"rubric contradiction. If private logs are unavailable, reproduce once "
+                f"in an isolated workspace and retain a classified diagnostic. Keep the "
+                f"retry cap; do not repeatedly reset it without fixing the cause. Close the "
+                f"tracking issue once the cause is repaired and reviewing succeeds."),
         })
     return out
 

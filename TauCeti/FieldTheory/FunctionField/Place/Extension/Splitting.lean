@@ -41,7 +41,7 @@ of such a place is trivial.
 
 The orbit--stabilizer proof of the Galois criterion follows the existing number-field analogue
 `NumberField.ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot` in
-`TauCeti/NumberTheory/NumberField/SplitsCompletely.lean`. The non-Galois criterion is proved
+`TauCeti/NumberTheory/NumberField/SplitsCompletely/Basic.lean`. The non-Galois criterion is proved
 directly from the function-field fundamental identity.
 
 ## References

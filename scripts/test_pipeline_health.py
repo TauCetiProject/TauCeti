@@ -70,6 +70,69 @@ class IntervalTests(unittest.TestCase):
         self.assertEqual(list(health_lc.label_intervals(pr(4, []), NOW)), [])
 
 
+class DwellEstimatorTests(unittest.TestCase):
+    """`median_dwell` has to use spells that have not ended yet.
+
+    They are not missing observations; they are the knowledge that those spells
+    have already lasted at least that long, and in a filling stage they are the
+    slow ones. A median over completions alone cannot see them.
+    """
+
+    def test_with_nothing_still_running_it_is_just_the_median(self):
+        self.assertEqual(health.median_dwell([1.0, 2.0, 3.0], []), 2.0)
+
+    def test_a_long_running_spell_raises_the_estimate(self):
+        """Completions alone would call this 10.5h by averaging 1 and 20. The
+        spell sitting at 10h and still going is evidence against that."""
+        self.assertEqual(health.median_dwell([1.0, 20.0], [10.0]), 20.0)
+
+    def test_it_declines_to_answer_when_most_spells_are_still_running(self):
+        """The old estimator called this 1.5h, which is the one thing it is
+        certainly not: two spells finished quickly and three are still going."""
+        self.assertIsNone(health.median_dwell([1.0, 2.0], [10.0, 10.0, 10.0]))
+
+    def test_an_empty_sample_has_no_median(self):
+        self.assertIsNone(health.median_dwell([], []))
+        self.assertIsNone(health.median_dwell([], [5.0]))
+
+    def test_a_censoring_tied_with_an_event_stays_in_the_risk_set(self):
+        """Standard convention: at equal durations the event is taken first, so
+        S(1) = 1 - 1/3 and the median falls at 2 rather than 1."""
+        self.assertEqual(health.median_dwell([1.0, 2.0], [1.0]), 2.0)
+
+    def test_a_survival_of_exactly_a_half_is_not_missed_by_rounding(self):
+        """S(3) here is 0.9 * 6/9 * 5/6, which is exactly a half and computes to
+        0.5000000000000001. Compared strictly the median skipped to the next
+        event time and reported 8.0 -- nearly three times the right answer, on a
+        cohort of ten. Checked against lifelines, which gives 3.0."""
+        completed = [8.0, 2.0, 13.0, 2.0, 3.0, 2.0, 1.0, 8.0]
+        self.assertEqual(health.median_dwell(completed, [13.0, 5.0]), 3.0)
+
+    def test_survival_at_a_horizon_answers_where_a_median_cannot(self):
+        """Four spells sitting unfinished at 6h, none of them finished. There is
+        no median to find, but whether half are still running at 2h is not in
+        doubt, and that is the same claim as the median being at least 2h."""
+        self.assertIsNone(health.median_dwell([], [6.0] * 4))
+        self.assertEqual(health.survival_at([], [6.0] * 4, 2.0), (1.0, 4))
+
+    def test_survival_falls_as_spells_complete_before_the_horizon(self):
+        self.assertEqual(health.survival_at([1.0, 1.0, 1.0], [4.0], 2.0), (0.25, 1))
+
+    def test_survival_is_none_when_follow_up_ran_out_before_the_horizon(self):
+        """A cohort last seen still running at 1h says nothing about 5h. That is
+        not the same as nothing having lasted that long, and must not read as
+        zero survival, which would be evidence of a fast stage."""
+        self.assertEqual(health.survival_at([], [1.0], 5.0), (None, 0))
+        # Whereas a cohort that all finished by 1h genuinely has none left.
+        self.assertEqual(health.survival_at([1.0], [], 5.0), (0.0, 0))
+
+    def test_it_matches_the_estimator_worked_by_hand(self):
+        """Events at 1, 3, 5 with censorings at 2 and 4, which is the textbook
+        shape. Survival steps 1 -> 4/5, then 4/5 * 2/3 = 0.533 at t=3, then 0 at
+        t=5, so the median is 5 -- not the 3 an uncensored median would give."""
+        self.assertEqual(health.median_dwell([1.0, 3.0, 5.0], [2.0, 4.0]), 5.0)
+
+
 class AnalysisTests(unittest.TestCase):
     def test_depth_counts_only_prs_still_in_the_stage(self):
         data = snapshot([
@@ -97,6 +160,144 @@ class AnalysisTests(unittest.TestCase):
         self.assertEqual(stage["median_dwell_hours"], 1.0)
         self.assertEqual(stage["oldest_waiting_hours"], 100.0)
 
+    def test_a_filling_stage_cannot_report_a_fast_dwell_from_its_completions(self):
+        """The failure this exists to prevent: one PR passes through quickly
+        while five pile up behind it, and the stage reports the quick one."""
+        data = snapshot(
+            [pr(1, [(NOW - timedelta(hours=4), "awaiting-review"),
+                    (NOW - timedelta(hours=3), "ready-to-merge")])]          # 1h, done
+            + [pr(n, [(NOW - timedelta(hours=20), "awaiting-review")])       # still waiting
+               for n in range(2, 7)]
+        )
+        stage = next(s for s in health.analyse(data, 24, 24 * 14, NOW)["stages"]
+                     if s["stage"] == "awaiting-review")
+        self.assertEqual(stage["depth"], 5)
+        self.assertIsNone(stage["median_dwell_hours"])
+        self.assertEqual(stage["median_waiting_hours"], 20.0)
+
+    def test_a_spell_already_under_way_when_the_window_opened_is_not_in_it(self):
+        """It was never at risk at the ages below the one it had when the
+        window opened, so counting it from zero would credit it with time in
+        which nothing could have been observed. Dwell takes an inception
+        cohort; the departure *rate* still counts it, having seen it leave."""
+        data = snapshot([
+            pr(1, [(NOW - timedelta(hours=100), "awaiting-review"),
+                   (NOW - timedelta(hours=23), "ready-to-merge")]),   # 77h, began long before
+            pr(2, [(NOW - timedelta(hours=6), "awaiting-review"),
+                   (NOW - timedelta(hours=4), "ready-to-merge")]),    # 2h, began inside
+        ])
+        stage = next(s for s in health.analyse(data, 24, 24 * 14, NOW)["stages"]
+                     if s["stage"] == "awaiting-review")
+        self.assertEqual(stage["median_dwell_hours"], 2.0)
+        self.assertEqual(stage["left_count"], 2)
+
+    def test_a_baseline_spell_is_censored_at_the_baseline_end_not_resolved_later(self):
+        """What happened after the baseline closed is look-ahead: the estimate
+        has to be the one that period could have supported at the time."""
+        data = snapshot([
+            # Begins well inside the baseline, still running 13 days later.
+            pr(1, [(NOW - timedelta(days=14), "awaiting-review"),
+                   (NOW - timedelta(hours=2), "ready-to-merge")]),
+        ])
+        stage = next(s for s in health.analyse(data, 24, 24 * 14, NOW)["stages"]
+                     if s["stage"] == "awaiting-review")
+        # Censored at baseline_end, so no completed baseline spell to average.
+        self.assertEqual(stage["baseline_dwell_completions"], 0)
+        self.assertIsNone(stage["baseline_median_dwell_hours"])
+
+    def test_departures_do_not_vouch_for_a_dwell_median_they_are_not_part_of(self):
+        """Three spells begin before the baseline and end inside it, and one
+        begins inside. The departure count reads four; the median rests on the
+        one, and `baseline_dwell_completions` is what says so."""
+        began_before = [
+            pr(n, [(NOW - timedelta(days=20), "awaiting-review"),
+                   (NOW - timedelta(days=10), "ready-to-merge")],
+               state="MERGED", merged=NOW - timedelta(days=9))
+            for n in range(3)
+        ]
+        began_inside = pr(99, [(NOW - timedelta(days=5), "awaiting-review"),
+                               (NOW - timedelta(days=5) + timedelta(hours=7), "ready-to-merge")],
+                          state="MERGED", merged=NOW - timedelta(days=4))
+        stage = next(s for s in health.analyse(snapshot(began_before + [began_inside]),
+                                               24, 24 * 14, NOW)["stages"]
+                     if s["stage"] == "awaiting-review")
+        self.assertEqual(stage["baseline_left_count"], 4)
+        self.assertEqual(stage["baseline_dwell_completions"], 1)
+
+    def test_a_stage_stalled_but_not_filling_is_still_caught(self):
+        """The case a median cannot reach. Old spells leave while new ones sit,
+        so arrivals and departures balance and nothing is piling up, yet no
+        spell that began in the window has finished. A recent median is null
+        here -- there is no half to find -- so a ratio of medians would have to
+        stay silent. Survival at the horizon is answerable, and says it."""
+        old_departing = [                                   # entered before the
+            pr(n, [(NOW - timedelta(hours=72), "awaiting-review")],    # window,
+               state="MERGED", merged=NOW - timedelta(hours=12))      # left in it
+            for n in range(1, 26)
+        ]
+        used_to_be_quick = [                                # baseline: 1h each
+            pr(100 + n, [(NOW - timedelta(hours=240), "awaiting-review")],
+               state="MERGED", merged=NOW - timedelta(hours=239))
+            for n in range(25)
+        ]
+        stuck_now = [                                       # began in the window
+            pr(200 + n, [(NOW - timedelta(hours=6), "awaiting-review")])
+            for n in range(25)
+        ]
+        result = health.analyse(snapshot(old_departing + used_to_be_quick + stuck_now),
+                                24, 24 * 14, NOW)
+        stage = next(s for s in result["stages"] if s["stage"] == "awaiting-review")
+
+        self.assertEqual(stage["baseline_median_dwell_hours"], 1.0)
+        self.assertEqual(stage["stall_horizon_hours"], 2.0)
+        self.assertIsNone(stage["median_dwell_hours"])       # no ratio to be had
+        self.assertEqual(stage["stall_horizon_surviving"], 1.0)
+        # Flow is balanced, so `filling` cannot be what catches this.
+        self.assertAlmostEqual(stage["entered_per_hour"], stage["left_per_hour"])
+
+        found = next(a for a in result["anomalies"] if a["stage"] == "awaiting-review")
+        self.assertIsNone(found["slowdown_factor"])          # unmeasurable, not zero
+        self.assertIn("still running at 2.0h", found["why"])
+        self.assertNotIn("filling faster", found["why"])
+
+    def test_the_occupants_of_a_stage_are_described_not_just_the_oldest(self):
+        """Dwell times describe spells that ended, and a filling stage holds
+        exactly the spells that have not. `oldest_waiting_hours` is one PR, so
+        on its own it cannot separate a backlog from a single straggler."""
+        data = snapshot([
+            pr(1, [(NOW - timedelta(hours=2), "awaiting-review")]),
+            pr(2, [(NOW - timedelta(hours=6), "awaiting-review")]),
+            pr(3, [(NOW - timedelta(hours=10), "awaiting-review")]),
+        ])
+        stage = next(s for s in health.analyse(data, 24, 24 * 14, NOW)["stages"]
+                     if s["stage"] == "awaiting-review")
+        self.assertEqual(stage["median_waiting_hours"], 6.0)
+        self.assertEqual(stage["oldest_waiting_hours"], 10.0)
+
+    def test_waiting_percentiles_say_how_much_of_the_stage_they_describe(self):
+        """A pull request the audit moved to another stage is counted in that
+        stage's depth, but its old label's clock says nothing about how long it
+        has been in the new one, so it contributes no waiting age. The reader
+        has to be able to see that the percentiles cover part of the stage."""
+        data = snapshot([
+            pr(1, [(NOW - timedelta(hours=8), "awaiting-CI")]),
+            pr(2, [(NOW - timedelta(hours=3), "awaiting-review")]),   # drifts
+        ])
+        data["merge_readiness"] = {"prs": {
+            "2": {"eligible": False, "category": "awaiting-CI", "reason": "head moved"},
+        }}
+        stage = next(s for s in health.analyse(data, 24, 24 * 14, NOW)["stages"]
+                     if s["stage"] == "awaiting-CI")
+        self.assertEqual(stage["depth"], 2)
+        self.assertEqual(stage["waiting_count"], 1)
+        self.assertEqual(stage["median_waiting_hours"], 8.0)
+
+    def test_an_empty_stage_has_no_waiting_percentiles_rather_than_zero(self):
+        stage = next(s for s in health.analyse(snapshot([]), 24, 24 * 14, NOW)["stages"]
+                     if s["stage"] == "awaiting-review")
+        self.assertIsNone(stage["median_waiting_hours"])
+        self.assertIsNone(stage["p90_waiting_hours"])
+
     def test_author_owned_stages_are_marked_as_such(self):
         result = health.analyse(snapshot([]), 24, 24 * 14, NOW)
         owned = {s["stage"]: s["owned_by_project"] for s in result["stages"]}
@@ -119,9 +320,14 @@ class CauseTests(unittest.TestCase):
 
     def stage(self, name, **kw):
         item = {"stage": name, "owned_by_project": name not in health.STATE_AUTHOR_ACTION,
-                "depth": 0, "oldest_waiting_hours": 0.0, "entered_per_hour": 0.0,
+                "depth": 0, "oldest_waiting_hours": 0.0, "median_waiting_hours": None,
+                "p90_waiting_hours": None, "entered_per_hour": 0.0,
                 "left_per_hour": 0.0, "baseline_median_dwell_hours": None,
-                "baseline_left_count": 20, "baseline_entered_per_hour": 0.0}
+                "baseline_left_count": 20, "baseline_dwell_completions": 20,
+                "dwell_completions": 20, "dwell_cohort": 20,
+                "median_dwell_hours": None, "stall_horizon_hours": None,
+                "stall_horizon_surviving": None, "stall_horizon_at_risk": 0,
+                "baseline_entered_per_hour": 0.0}
         item.update(kw)
         return item
 
@@ -180,14 +386,76 @@ class CauseTests(unittest.TestCase):
         ])
         self.assertIsNone(health.find_cause(result)["stage"])
 
+    def test_a_dwell_median_resting_on_too_few_spells_is_not_judged(self):
+        """The gate has to count the cohort the median came from. Departures
+        are a different set: spells that began before the baseline and ended
+        inside it leave from it without ever joining its inception cohort, so
+        they would vouch for a median resting on one observation."""
+        result = self.base(stages=[
+            self.stage("awaiting-review", depth=2, entered_per_hour=0.1, left_per_hour=0.1,
+                       oldest_waiting_hours=500.0, baseline_median_dwell_hours=1.0,
+                       baseline_left_count=40, baseline_dwell_completions=1),
+        ])
+        self.assertIsNone(health.find_cause(result)["stage"])
+
+    def test_a_length_biased_census_is_not_read_as_a_slowdown(self):
+        """A census catches long spells in proportion to their length, so on a
+        healthy heavy-tailed stage its occupants read far older than a typical
+        spell: 33x the median dwell, and 91% already past the baseline p90, on a
+        simulated stable queue. Both were once the stall test here and both fire
+        on a queue with nothing wrong, so no occupant age may enter it."""
+        result = self.base(stages=[
+            self.stage("awaiting-CI", depth=60, entered_per_hour=2.0, left_per_hour=2.1,
+                       oldest_waiting_hours=100.0, median_waiting_hours=33.0,
+                       p90_waiting_hours=90.0, baseline_median_dwell_hours=1.0,
+                       stall_horizon_hours=2.0, stall_horizon_surviving=0.2,
+                       stall_horizon_at_risk=12),
+        ])
+        self.assertEqual(health.anomalies(result), [])
+
+    def test_survival_of_exactly_a_half_is_the_median_reached_not_missed(self):
+        """The boundary has to match `median_dwell`, which calls the median
+        reached at the first duration where survival falls to a half. One spell
+        finishing at 1h and one still running at 5h leaves survival at exactly
+        0.5 at a 2h horizon -- and a median of 1h, half the horizon. Firing here
+        would assert a doubling on a stage that has not slowed at all."""
+        self.assertEqual(health.median_dwell([1.0], [5.0]), 1.0)
+        self.assertEqual(health.survival_at([1.0], [5.0], 2.0), (0.5, 1))
+        # And the same half arrived at by a route that rounds above it, which
+        # a strict comparison would read as a stall: 0.9 * 6/9 * 5/6.
+        surviving, _ = health.survival_at(
+            [1.0, 2.0, 2.0, 2.0, 3.0], [5.0, 13.0, 13.0, 8.0, 8.0], 4.0)
+        self.assertGreater(surviving, 0.5)          # 0.5000000000000001
+        self.assertAlmostEqual(surviving, 0.5)
+        for value in (0.5, surviving):              # exact, and rounded above
+            result = self.base(stages=[
+                self.stage("awaiting-CI", depth=2, entered_per_hour=1.0,
+                           left_per_hour=1.0, baseline_median_dwell_hours=1.0,
+                           stall_horizon_hours=2.0, stall_horizon_surviving=value,
+                           stall_horizon_at_risk=1),
+            ])
+            self.assertEqual(health.anomalies(result), [], f"fired on {value!r}")
+
+    def test_a_stage_whose_survival_cannot_be_read_is_not_called_healthy(self):
+        """Follow-up that ran out before the horizon is an absence of evidence.
+        Firing on it would invent a stall; calling it fine would invent health,
+        so it does neither and the stage is simply not judged on dwell."""
+        result = self.base(stages=[
+            self.stage("awaiting-CI", depth=5, entered_per_hour=2.0, left_per_hour=2.0,
+                       baseline_median_dwell_hours=1.0, stall_horizon_hours=2.0,
+                       stall_horizon_surviving=None, stall_horizon_at_risk=0),
+        ])
+        self.assertEqual(health.anomalies(result), [])
+
     def test_a_stalled_stage_is_named_even_without_growth(self):
         result = self.base(stages=[
             self.stage("ready-to-merge", depth=4, entered_per_hour=0.1, left_per_hour=0.1,
-                       oldest_waiting_hours=100.0, baseline_median_dwell_hours=2.0),
+                       baseline_median_dwell_hours=2.0, stall_horizon_hours=4.0,
+                       stall_horizon_surviving=0.9, stall_horizon_at_risk=5),
         ])
         found = health.find_cause(result)
         self.assertEqual(found["stage"], "ready-to-merge")
-        self.assertIn("normal dwell", found["why"])
+        self.assertIn("still running at 4.0h", found["why"])
 
     def test_a_thin_baseline_reports_insufficient_data_not_health(self):
         """Zero merges over the baseline made the old gate read 0 >= 0 and call
@@ -200,7 +468,7 @@ class CauseTests(unittest.TestCase):
         result = self.base(stages=[
             self.stage("awaiting-review", depth=2, entered_per_hour=0.1, left_per_hour=0.1,
                        oldest_waiting_hours=500.0, baseline_median_dwell_hours=1.0,
-                       baseline_left_count=1),
+                       baseline_left_count=1, baseline_dwell_completions=1),
         ])
         self.assertIsNone(health.find_cause(result)["stage"])
 
@@ -349,11 +617,16 @@ class BuildingQueueTests(unittest.TestCase):
             "repo": "x", "generated_at": "2026-08-25T00:00:00Z",
             "stages": [{
                 "stage": "awaiting-review", "owned_by_project": True, "depth": 70,
-                "oldest_waiting_hours": 342.0, "entered_per_hour": 23.5,
+                "oldest_waiting_hours": 342.0, "median_waiting_hours": 6.0,
+                "p90_waiting_hours": 90.0, "entered_per_hour": 23.5,
                 "left_per_hour": 20.9, "baseline_entered_per_hour": 20.0,
                 "baseline_left_per_hour": 20.0, "left_count": 500,
-                "baseline_left_count": 5000, "median_dwell_hours": 2.0,
+                "baseline_left_count": 5000, "baseline_dwell_completions": 5000,
+                "dwell_completions": 500, "dwell_cohort": 560,
+                "median_dwell_hours": 2.0,
                 "baseline_median_dwell_hours": 1.0,
+                "stall_horizon_hours": 2.0, "stall_horizon_surviving": 0.2,
+                "stall_horizon_at_risk": 60,
             }],
         }
 
