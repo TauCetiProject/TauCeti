@@ -17,6 +17,8 @@ a finite subgroup, and what the correspondence gives for a cyclic subgroup.
 
 For a finite Galois extension `M / K`, a subgroup `H ≤ Gal(M/K)` and an intermediate field `E`,
 the fixed field of `H` and `E` generate `M` exactly when `H` meets the fixers of `E` trivially.
+With no hypothesis on `M / K`, the fixers of an arbitrary join of intermediate fields are the
+automorphisms fixing each of them.
 
 The correspondence is equivariant for conjugation: the fixed field of a conjugate subgroup is the
 image of the fixed field under the conjugating automorphism.
@@ -45,6 +47,7 @@ its fixing subgroup is the stabilizer of `x`; this too needs no hypothesis on `M
 * `Subgroup.fixedField_sup_eq_top_iff`
 * `Subgroup.fixedField_map_conj`
 * `IntermediateField.fixingSubgroup_inf`
+* `IntermediateField.fixingSubgroup_iSup`
 * `IntermediateField.fixingSubgroup_fixedField_of_finite`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
@@ -101,6 +104,17 @@ theorem fixingSubgroup_inf [FiniteDimensional K M] [IsGalois K M] (E E' : Interm
     (E ⊓ E').fixingSubgroup = E.fixingSubgroup ⊔ E'.fixingSubgroup :=
   congrArg OrderDual.ofDual
     ((IsGalois.intermediateFieldEquivSubgroup (F := K) (E := M)).map_inf E E')
+
+/-- **The fixing subgroup of a join of fields is the meet of the fixing subgroups.** An
+automorphism fixes `⨆ i, E i` pointwise exactly when it fixes every `E i` pointwise. This is the
+indexed form of Mathlib's `IntermediateField.fixingSubgroup_sup`, and like it needs no hypothesis
+on `M / K`. -/
+theorem fixingSubgroup_iSup {ι : Sort*} (E : ι → IntermediateField K M) :
+    (⨆ i, E i).fixingSubgroup = ⨅ i, (E i).fixingSubgroup := by
+  ext σ
+  rw [Subgroup.mem_iInf]
+  exact ⟨fun h i ↦ fixingSubgroup_antitone (le_iSup E i) h,
+    by simp [← Subgroup.zpowers_le, ← IntermediateField.le_iff_le]⟩
 
 /-- **A finite group of automorphisms is the whole fixing subgroup of its fixed field.** Every
 `K`-automorphism of `M` that fixes `M ^ H` pointwise already lies in `H`.
