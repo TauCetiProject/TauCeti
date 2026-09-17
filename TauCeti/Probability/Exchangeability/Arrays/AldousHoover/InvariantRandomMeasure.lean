@@ -13,7 +13,7 @@ public import TauCeti.Probability.Exchangeability.RandomMeasure
 import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
-# The first factorization of an invariant random row law
+# Coded coordinate marginals of an invariant random row law
 
 For a separately exchangeable array, de Finetti supplies a random probability measure `ν` on row
 paths. Its law is invariant under permuting the column coordinates, although `ν` itself is not
@@ -22,13 +22,12 @@ marginals of `ν` into an exchangeable measure-valued sequence.
 
 Because the Giry measurable space on `ProbabilityMeasure α` is not available as a standard Borel
 space, the sequence is represented by the measurable injective evaluation code from
-`MeasureTheory.Measure.ProbabilityMeasure.Coding`. De Finetti then gives its first genuine
-factorization: conditionally on one global random law, the coded coordinate marginals are i.i.d.
-This retains every one-coordinate marginal of the random row law.
+`MeasureTheory.Measure.ProbabilityMeasure.Coding`. De Finetti then shows that, conditionally on one
+global random law, the coded coordinate marginals are i.i.d. This retains every one-coordinate
+marginal of the random row law.
 
-This is the first factorization step in the hard direction of the Aldous--Hoover representation.
-It deliberately does not claim to recover the row law from its coordinate marginals; the later
-steps must factor its higher finite-dimensional marginals to construct the cell noise.
+The one-coordinate marginals do not in general recover the row law, since they omit its higher
+finite-dimensional marginals.
 
 ## Main result
 
@@ -68,7 +67,8 @@ theorem SeparatelyExchangeable.exists_directing_arrayRow_codedCoordinateMarginal
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     ∃ ν : Ω → ProbabilityMeasure (ℕ → α),
       ConditionallyIIDWith μ (arrayRow X) ν ∧
-        ConditionallyIID (μ.map ν) fun i P => codedCoordinateMarginals P i := by
+        ConditionallyIID (μ.map ν) fun i P =>
+          TauCeti.ProbabilityMeasure.codedCoordinateMarginals P i := by
   obtain ⟨ν, hν, hinv⟩ := h.exists_directing_arrayRow_mixingLaw_invariant hX
   have hinv' : ∀ τ : Equiv.Perm ℕ,
       (μ.map ν).map (fun P => P.map (permReindex τ)) = μ.map ν := by
@@ -82,7 +82,8 @@ theorem SeparatelyExchangeable.exists_directing_arrayRow_codedCoordinateMarginal
       congr 1
     rw [hcomp]
     exact hinv τ
-  exact ⟨ν, hν, conditionallyIID_codedCoordinateMarginals_of_invariant (μ.map ν) hinv'⟩
+  exact ⟨ν, hν,
+    TauCeti.Measure.conditionallyIID_codedCoordinateMarginals_of_invariant (μ.map ν) hinv'⟩
 
 end Probability
 

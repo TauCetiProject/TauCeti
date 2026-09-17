@@ -222,13 +222,13 @@ theorem IsZeroOneMeasure.exists_eq_dirac_probabilityMeasure [CountablyGenerated 
     rcases IsZeroOrProbabilityMeasure.measure_univ (μ := π) with (h | h)
     · simp_all
     · exact ⟨h⟩
-  let : ∀ _ : probabilityMeasureCodeIndex α, StandardBorelSpace ℝ≥0∞ :=
+  let : ∀ _ : ProbabilityMeasure.codeIndex α, StandardBorelSpace ℝ≥0∞ :=
     fun _ => standardBorel_of_polish
   obtain ⟨q, heq⟩ := IsZeroOneMeasure.exists_ae_eq_const (π := π)
-    measurable_probabilityMeasureCode.aemeasurable
+    ProbabilityMeasure.measurable_code.aemeasurable
   obtain ⟨P, hP⟩ := heq.exists
   have hid : (id : ProbabilityMeasure α → ProbabilityMeasure α) =ᵐ[π] fun _ => P :=
-    heq.mono fun Q hQ => probabilityMeasureCode_injective (hQ.trans hP.symm)
+    heq.mono fun Q hQ => ProbabilityMeasure.code_injective (hQ.trans hP.symm)
   refine ⟨P, ?_⟩
   calc
     π = π.map id := Measure.map_id.symm
