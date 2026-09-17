@@ -508,8 +508,9 @@ noncomputable def forgetGradingEquiv (hF : E.toExactStructure.IsConflationExact 
     (hclass : ∀ X X' : C, Nonempty (F.obj X ≅ F.obj X') →
       LaurentSpecialization.mk (1 : ℤˣ) (of E X) = LaurentSpecialization.mk 1 (of E X')) :
     LaurentSpecialization (1 : ℤˣ) (LaurentK0 E) ≃ₗ[ℤ] ExactK0 E' :=
-  haveI : F.EssSurj := ExactStructure.essSurj_of_lift_conflation fun S hS =>
-    (hlift S hS).imp fun _ h => ⟨h.1, h.2.2.1⟩
+  haveI : F.EssSurj := ExactStructure.essSurj_of_lift_conflation fun S hS => by
+    obtain ⟨S', _, _, h₂, _⟩ := hlift S hS
+    exact ⟨S'.X₂, h₂⟩
   LinearEquiv.ofLinearMap (forgetGrading hF comm)
     (ExactK0.lift (forgetGradingInvInvariant hlift hclass)).toIntLinearMap
     (LinearMap.toAddMonoidHom_injective <| ExactK0.hom_ext fun Y => by
@@ -520,6 +521,19 @@ noncomputable def forgetGradingEquiv (hF : E.toExactStructure.IsConflationExact 
       simp only [LinearMap.coe_comp, Function.comp_apply, forgetGrading_mk_of,
         AddMonoidHom.coe_toIntLinearMap, ExactK0.lift_of, LinearMap.id_coe, id_eq]
       exact hclass _ _ ⟨F.objObjPreimageIso (F.obj X)⟩)
+
+/-- The forward linear map of `TauCeti.LaurentK0.forgetGradingEquiv` is
+`TauCeti.LaurentK0.forgetGrading`. -/
+@[simp]
+theorem forgetGradingEquiv_toLinearMap (hF : E.toExactStructure.IsConflationExact E' F)
+    (comm : E.shift.functor ⋙ F ≅ F)
+    (hlift : ∀ S : ShortComplex D, E'.Conflation S → ∃ S' : ShortComplex C,
+      E.Conflation S' ∧ Nonempty (F.obj S'.X₁ ≅ S.X₁) ∧ Nonempty (F.obj S'.X₂ ≅ S.X₂) ∧
+        Nonempty (F.obj S'.X₃ ≅ S.X₃))
+    (hclass : ∀ X X' : C, Nonempty (F.obj X ≅ F.obj X') →
+      LaurentSpecialization.mk (1 : ℤˣ) (of E X) = LaurentSpecialization.mk 1 (of E X')) :
+    (forgetGradingEquiv hF comm hlift hclass).toLinearMap = forgetGrading hF comm :=
+  by simp [forgetGradingEquiv]
 
 /-- The inverse of `TauCeti.LaurentK0.forgetGradingEquiv` sends the class of `F M` to the
 specialized class of `M`. -/

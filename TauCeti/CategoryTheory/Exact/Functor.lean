@@ -177,16 +177,15 @@ theorem isConflationExact_split (F : C ⥤ D) [F.Additive] :
     obtain ⟨s⟩ := (split_conflation S).mp hS
     exact (split_conflation (S.map F)).mpr ⟨s.map F⟩
 
-/-- A functor is essentially surjective when every conflation of the target lifts to a conflation
-of the source whose middle term maps to the given middle term up to isomorphism: lift the trivial
-conflation `0 ↪ Y ↠ Y`. -/
-theorem essSurj_of_lift_conflation {E : ExactStructure C} {E' : ExactStructure D} {F : C ⥤ D}
+omit [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C] in
+/-- A functor is essentially surjective when the middle term of every target conflation has a
+preimage up to isomorphism. -/
+theorem essSurj_of_lift_conflation {E' : ExactStructure D} {F : C ⥤ D}
     (hlift : ∀ S : ShortComplex D, E'.Conflation S →
-      ∃ S' : ShortComplex C, E.Conflation S' ∧ Nonempty (F.obj S'.X₂ ≅ S.X₂)) :
+      ∃ X : C, Nonempty (F.obj X ≅ S.X₂)) :
     F.EssSurj where
   mem_essImage Y :=
-    let ⟨S', _, h₂⟩ := hlift _ (E'.conflation_zero_id Y)
-    ⟨S'.X₂, h₂⟩
+    hlift _ (E'.conflation_zero_id Y)
 
 section Abelian
 
