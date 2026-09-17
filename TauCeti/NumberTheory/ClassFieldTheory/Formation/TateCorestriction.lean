@@ -98,7 +98,7 @@ theorem tateCor_zero (T : LayerRestriction small big) (F : Formation G) :
 through the canonical positive-degree comparisons. -/
 @[simp]
 theorem tateCor_ofNat_succ (T : LayerRestriction small big) (F : Formation G) (n : ℕ) :
-    T.tateCor F (Int.ofNat (n + 1)) =
+    T.tateCor F ((n : ℤ) + 1) =
       (small.tateHIsoH F (n + 1)).hom ≫ T.cohomologyCor F (n + 1) ≫
         (big.tateHIsoH F (n + 1)).inv :=
   (rfl)
@@ -191,7 +191,7 @@ theorem trivialTateCor_zero (T : LayerRestriction small big) :
 corestriction after identifying the smaller Galois group with its image. -/
 @[simp]
 theorem trivialTateCor_ofNat_succ (T : LayerRestriction small big) (n : ℕ) :
-    T.trivialTateCor (Int.ofNat (n + 1)) =
+    T.trivialTateCor ((n : ℤ) + 1) =
       (T.trivialTateRangeIso (n + 1)).hom ≫
         (TateCohomology.isoGroupCohomology (n + 1)).hom.app
           (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)) ≫
