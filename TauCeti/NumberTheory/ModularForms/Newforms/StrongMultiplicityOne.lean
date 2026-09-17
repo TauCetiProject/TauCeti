@@ -25,7 +25,8 @@ newforms it is also new, and old and new are disjoint, so it is zero.
 
 Miyake states the theorem on the Fourier coefficients rather than the eigenvalues; for a
 normalised newform the coefficient at a good index *is* the eigenvalue there
-(`Newform.qExpansion_coeff_eq_eigenvalue`), so that form is a corollary.
+(`EigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue` with `Newform.isNorm`), so that form is
+a corollary.
 
 ## Main results
 
@@ -111,14 +112,16 @@ theorem Newform.eq_of_forall_notMem_eigenvalue_eq {f g : Newform N k} (hχ : f.�
 two newforms of level `N`, weight `k` and the same nebentypus whose `q`-expansion coefficients
 agree at every index coprime to `N` outside a finite set are equal. For a normalised newform the
 coefficient at a good index *is* the eigenvalue there
-(`HeckeRing.GL2.Newform.qExpansion_coeff_eq_eigenvalue`), so this is the eigenvalue form. -/
+(`HeckeRing.GL2.EigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue`), so this is the eigenvalue
+form. -/
 theorem Newform.eq_of_forall_notMem_qExpansion_coeff_eq {f g : Newform N k} (hχ : f.χ = g.χ)
     {S : Finset ℕ}
     (h : ∀ (n : ℕ+), Nat.Coprime (n : ℕ) N → (n : ℕ) ∉ S →
       (qExpansion 1 f.toCuspForm).coeff (n : ℕ) = (qExpansion 1 g.toCuspForm).coeff (n : ℕ)) :
     f = g :=
   Newform.eq_of_forall_notMem_eigenvalue_eq hχ fun n hn hnS ↦ by
-    rw [← f.qExpansion_coeff_eq_eigenvalue n hn, ← g.qExpansion_coeff_eq_eigenvalue n hn]
+    rw [← f.toEigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue f.isNorm n hn,
+      ← g.toEigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue g.isNorm n hn]
     exact h n hn hnS
 
 end HeckeRing.GL2
