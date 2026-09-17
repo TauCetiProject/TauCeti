@@ -50,6 +50,10 @@ the signed permutation group, the Weyl group of the standard symplectic torus.
   transports `x_{2e_j}(c)` to `x_{2e_i}(c)`.
 * `differenceShortRootWeylElement_mul_negativeLongRootTransvectionUnit_mul_inv`:
   the corresponding transport of `x_{-2e_j}(c)`.
+* `differenceShortRootWeylElement_mul_diagonal_mul_inv`: the short-root reflection exchanges two
+  diagonal-torus coordinates.
+* `differenceShortRootWeylElement_mem_normalizer_diagonalTorus`: the short-root representative
+  belongs to the normalizer of the paired diagonal torus.
 
 ## References
 
@@ -309,6 +313,107 @@ theorem map_differenceShortRootWeylElement {S : Type v} [CommRing S]
     GLSymplecticFin.map m R f (differenceShortRootWeylElement hij) =
       differenceShortRootWeylElement hij := by
   simp [differenceShortRootWeylElement]
+
+private theorem diagonalCoordinates_comp_swaps (t : Fin m → Rˣ) :
+    (diagonalCoordinates t ∘
+          Equiv.swap (finSumFinEquiv (Sum.inr i)) (finSumFinEquiv (Sum.inr j))) ∘
+        Equiv.swap (finSumFinEquiv (Sum.inl i)) (finSumFinEquiv (Sum.inl j)) =
+      diagonalCoordinates (t ∘ Equiv.swap i j) := by
+  funext k
+  obtain ⟨a | a, rfl⟩ := finSumFinEquiv.surjective k
+  · -- On the first block only the first-block swap moves the index.
+    rw [Function.comp_apply, Function.comp_apply]
+    by_cases hai : a = i
+    · rw [hai, Equiv.swap_apply_left, Equiv.swap_apply_of_ne_of_ne
+        (finSumFinEquiv_inl_ne_inr j i) (finSumFinEquiv_inl_ne_inr j j)]
+      simp [finSumFinEquiv_apply_left]
+    · by_cases haj : a = j
+      · rw [haj, Equiv.swap_apply_right, Equiv.swap_apply_of_ne_of_ne
+          (finSumFinEquiv_inl_ne_inr i i) (finSumFinEquiv_inl_ne_inr i j)]
+        simp [finSumFinEquiv_apply_left]
+      · rw [Equiv.swap_apply_of_ne_of_ne
+            (finSumFinEquiv.injective.ne (Sum.inl_injective.ne hai))
+            (finSumFinEquiv.injective.ne (Sum.inl_injective.ne haj)),
+          Equiv.swap_apply_of_ne_of_ne (finSumFinEquiv_inl_ne_inr a i)
+            (finSumFinEquiv_inl_ne_inr a j)]
+        simp [finSumFinEquiv_apply_left, Equiv.swap_apply_of_ne_of_ne hai haj]
+  · -- On the second block only the second-block swap moves the index.
+    rw [Function.comp_apply, Function.comp_apply,
+      Equiv.swap_apply_of_ne_of_ne (finSumFinEquiv_inr_ne_inl a i)
+        (finSumFinEquiv_inr_ne_inl a j)]
+    by_cases hai : a = i
+    · rw [hai, Equiv.swap_apply_left]
+      simp [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat]
+    · by_cases haj : a = j
+      · rw [haj, Equiv.swap_apply_right]
+        simp [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat]
+      · rw [Equiv.swap_apply_of_ne_of_ne
+          (finSumFinEquiv.injective.ne (Sum.inr_injective.ne hai))
+          (finSumFinEquiv.injective.ne (Sum.inr_injective.ne haj))]
+        simp [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat,
+          Equiv.swap_apply_of_ne_of_ne hai haj]
+
+/-- **A short-root Weyl element permutes torus coordinates.** Conjugation by the reflection
+representative for `e_i-e_j` exchanges the `i`-th and `j`-th coordinates of the paired diagonal
+torus. -/
+@[simp]
+theorem differenceShortRootWeylElement_mul_diagonal_mul_inv (hij : i ≠ j) (t : Fin m → Rˣ) :
+    differenceShortRootWeylElement hij * diagonal t *
+        differenceShortRootWeylElement hij.symm =
+      diagonal (t ∘ Equiv.swap i j) := by
+  rw [← differenceShortRootWeylElement_inv hij]
+  apply (GLSymplecticFin m R).subtype_injective
+  simp only [map_mul, map_inv, Subgroup.coe_subtype,
+    coe_differenceShortRootWeylElement, coe_diagonal]
+  set left := TauCeti.transvectionWeylElement (A := R)
+    (differenceShortRoot_first_indices_ne hij) with hleft
+  set right := TauCeti.transvectionWeylElement (A := R)
+    (differenceShortRoot_second_indices_ne hij) with hright
+  have hsecond : right⁻¹ * diagGL (diagonalCoordinates t) * right =
+      diagGL (diagonalCoordinates t ∘
+        Equiv.swap (finSumFinEquiv (Sum.inr i)) (finSumFinEquiv (Sum.inr j))) := by
+    simpa only [hright, TauCeti.transvectionWeylElement_inv] using
+      TauCeti.transvectionWeylElement_mul_diagGL_mul_inv
+        (differenceShortRoot_second_indices_ne hij).symm (diagonalCoordinates t)
+  have hfirst : ∀ u : Fin (m + m) → Rˣ, left * diagGL u * left⁻¹ =
+      diagGL (u ∘ Equiv.swap (finSumFinEquiv (Sum.inl i)) (finSumFinEquiv (Sum.inl j))) := by
+    intro u
+    simpa only [hleft, TauCeti.transvectionWeylElement_inv] using
+      TauCeti.transvectionWeylElement_mul_diagGL_mul_inv
+        (differenceShortRoot_first_indices_ne hij) u
+  calc left * right⁻¹ * diagGL (diagonalCoordinates t) * (left * right⁻¹)⁻¹ =
+        left * (right⁻¹ * diagGL (diagonalCoordinates t) * right) * left⁻¹ := by group
+    _ = left * diagGL (diagonalCoordinates t ∘
+          Equiv.swap (finSumFinEquiv (Sum.inr i)) (finSumFinEquiv (Sum.inr j))) * left⁻¹ := by
+      rw [hsecond]
+    _ = diagGL ((diagonalCoordinates t ∘
+          Equiv.swap (finSumFinEquiv (Sum.inr i)) (finSumFinEquiv (Sum.inr j))) ∘
+          Equiv.swap (finSumFinEquiv (Sum.inl i)) (finSumFinEquiv (Sum.inl j))) := hfirst _
+    _ = diagGL (diagonalCoordinates (t ∘ Equiv.swap i j)) := by
+      rw [diagonalCoordinates_comp_swaps t]
+
+private theorem differenceShortRootWeylElement_conj_mem_diagonalTorus (hij : i ≠ j)
+    {d : GLSymplecticFin m R} (hd : d ∈ diagonalTorus R m) :
+    differenceShortRootWeylElement hij * d * (differenceShortRootWeylElement hij)⁻¹ ∈
+      diagonalTorus R m := by
+  obtain ⟨t, rfl⟩ := mem_diagonalTorus_iff_exists_diagonal.mp hd
+  rw [differenceShortRootWeylElement_inv, differenceShortRootWeylElement_mul_diagonal_mul_inv]
+  exact mem_diagonalTorus_iff_exists_diagonal.mpr ⟨t ∘ Equiv.swap i j, rfl⟩
+
+/-- The short-root Weyl representative normalizes the paired diagonal torus. -/
+theorem differenceShortRootWeylElement_mem_normalizer_diagonalTorus (hij : i ≠ j) :
+    differenceShortRootWeylElement (R := R) hij ∈
+      Subgroup.normalizer (diagonalTorus R m : Set (GLSymplecticFin m R)) := by
+  rw [Subgroup.mem_normalizer_iff]
+  intro d
+  refine ⟨differenceShortRootWeylElement_conj_mem_diagonalTorus hij, fun hd => ?_⟩
+  have hback := differenceShortRootWeylElement_conj_mem_diagonalTorus hij.symm hd
+  rw [← differenceShortRootWeylElement_inv hij] at hback
+  have heq : (differenceShortRootWeylElement (R := R) hij)⁻¹ *
+      (differenceShortRootWeylElement hij * d * (differenceShortRootWeylElement hij)⁻¹) *
+        ((differenceShortRootWeylElement hij)⁻¹)⁻¹ = d := by
+    group
+  rwa [heq] at hback
 
 /-! ## Long-root reflections -/
 
