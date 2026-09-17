@@ -16,9 +16,8 @@ The local predicates `QuadraticForm.IsLocallyIsotropic`, `QuadraticForm.LocallyR
 finite and real places of a number field.  This file proves that each of them already implies the
 corresponding statement after scalar extension along the complex embedding of every infinite
 place; for `LocallyRepresents` and `LocallyEquivalent`, the forms are finite-dimensional and
-nondegenerate.  The `_iff_and_complex` characterizations record the consequence: adjoining
-complex clauses under these hypotheses changes none of the local-to-global statements
-formulated with them.
+nondegenerate.  Consequently, adjoining complex clauses under these hypotheses changes none of
+the local-to-global statements formulated with them.
 
 The complex clause is supplied by the classification of quadratic forms over an algebraically
 closed field: rank at least two forces isotropy, a nonzero form represents every scalar, and
@@ -34,10 +33,6 @@ is stated for regular forms, where dimension is the only complex invariant.
 * `QuadraticForm.LocallyRepresentsScalar.represents_atComplexEmbedding`
 * `QuadraticForm.LocallyRepresents.isRepresentedBy_atComplexEmbedding`
 * `QuadraticForm.LocallyEquivalent.equivalent_atComplexEmbedding`
-* `QuadraticForm.isLocallyIsotropic_iff_and_complex`
-* `QuadraticForm.locallyRepresentsScalar_iff_and_complex`
-* `QuadraticForm.locallyRepresents_iff_and_complex`
-* `QuadraticForm.locallyEquivalent_iff_and_complex`
 -/
 
 public section
@@ -114,38 +109,5 @@ theorem LocallyEquivalent.equivalent_atComplexEmbedding [FiniteDimensional K V]
   exact _root_.QuadraticForm.equivalent_of_finrank_eq_of_isAlgClosed _ _
     (Nondegenerate.baseChange hQ) (Nondegenerate.baseChange hR)
     (by rw [Module.finrank_baseChange, Module.finrank_baseChange, h.finrank_eq])
-
-/-- Adding isotropy at every complex embedding does not change local isotropy. -/
-theorem isLocallyIsotropic_iff_and_complex [FiniteDimensional K V]
-    (Q : _root_.QuadraticForm K V) :
-    Q.IsLocallyIsotropic ↔ Q.IsLocallyIsotropic ∧
-      ∀ w : InfinitePlace K, ¬ (Q.atComplexEmbedding w).Anisotropic :=
-  ⟨fun h ↦ ⟨h, h.not_anisotropic_atComplexEmbedding⟩, And.left⟩
-
-/-- Adding scalar representation at every complex embedding does not change local scalar
-representation. -/
-theorem locallyRepresentsScalar_iff_and_complex (Q : _root_.QuadraticForm K V) (a : K) :
-    Q.LocallyRepresentsScalar a ↔ Q.LocallyRepresentsScalar a ∧
-      ∀ w : InfinitePlace K, (Q.atComplexEmbedding w).Represents (w.embedding a) :=
-  ⟨fun h ↦ ⟨h, h.represents_atComplexEmbedding⟩, And.left⟩
-
-/-- Adding representation at every complex embedding does not change local representation for
-regular forms. -/
-theorem locallyRepresents_iff_and_complex [FiniteDimensional K V] [FiniteDimensional K W]
-    {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
-    (hQ : Q.Nondegenerate) (hR : R.Nondegenerate) :
-    Q.LocallyRepresents R ↔ Q.LocallyRepresents R ∧
-      ∀ w : InfinitePlace K,
-        (Q.atComplexEmbedding w).IsRepresentedBy (R.atComplexEmbedding w) :=
-  ⟨fun h ↦ ⟨h, h.isRepresentedBy_atComplexEmbedding hQ hR⟩, And.left⟩
-
-/-- Adding equivalence at every complex embedding does not change local equivalence for regular
-forms. -/
-theorem locallyEquivalent_iff_and_complex [FiniteDimensional K V] [FiniteDimensional K W]
-    {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
-    (hQ : Q.Nondegenerate) (hR : R.Nondegenerate) :
-    Q.LocallyEquivalent R ↔ Q.LocallyEquivalent R ∧
-      ∀ w : InfinitePlace K, (Q.atComplexEmbedding w).Equivalent (R.atComplexEmbedding w) :=
-  ⟨fun h ↦ ⟨h, h.equivalent_atComplexEmbedding hQ hR⟩, And.left⟩
 
 end QuadraticForm
