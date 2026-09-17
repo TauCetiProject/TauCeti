@@ -17,7 +17,7 @@ Let `k : α → β → ℝ≥0∞` be a jointly measurable kernel whose row inte
 at most `A` and whose column integrals `∫⁻ x, k x y ∂μ` are at most `B`. Then, for `1 ≤ p`, the
 integral operator `g ↦ (x ↦ ∫⁻ y, k x y * g y ∂ν)` satisfies
 
-`∫⁻ x, (∫⁻ y, k x y * g y ∂ν) ^ p ∂μ ≤ A ^ (p - 1) * B * ∫⁻ y, g y ^ p ∂ν`,
+`∫⁻ x, (∫⁻ y, k x y * g y ∂ν) ^ p ∂μ ≤ A ^ (p - 1) * B * ∫⁻ y, g y ^ p ∂ν`.
 
 When `A` and `B` are finite, this says that it maps `Lᵖ(ν)` to `Lᵖ(μ)` with norm at most
 `A ^ (1 - 1/p) * B ^ (1/p)`. For a translation-invariant kernel `k x y = K (x - y)` with `K`
