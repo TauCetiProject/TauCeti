@@ -43,7 +43,7 @@ compositum is unramified. -/
 theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_dvd
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
     (v : IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd)))
-    (hodd : TauCeti.rationalPrimeBelow v ≠ 2)
+    (_hodd : TauCeti.rationalPrimeBelow v ≠ 2)
     (hv : (TauCeti.rationalPrimeBelow v : ℤ) ∣ fundamentalDiscriminant d)
     (Q : Ideal (𝓞 (candidateGenusField hd))) [Q.LiesOver v.asIdeal]
     (σ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd)
@@ -70,7 +70,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_dvd
   have hgood (P : {P // P ∈ genusPrimeDiscriminants hd})
       (hP : ¬ (TauCeti.rationalPrimeBelow v : ℤ) ∣ P.val) : x.val P = y.val P := by
     rw [narrowElementaryTwoQuotientEquivRelativeSign_apply_coe]
-    exact candidateGenusFieldRelativeSignPattern_frobenius_eq_genusChar hd hnsq hodd
+    exact candidateGenusFieldRelativeSignPattern_frobenius_eq_genusChar hd hnsq
       v.asIdeal hnorm _ Q σ hσ P hP
   -- The rational prime divides exactly one prime-discriminant factor.
   obtain ⟨hs, heven, hprod⟩ := genusPrimeDiscriminants_spec hd
@@ -127,11 +127,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_odd
       hd hnsq v hodd hv Q σ hσ
   · apply autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_not_dvd
       hd hnsq v _ Q σ hσ
-    have hq := TauCeti.prime_rationalPrimeBelow v
     intro hdiv
-    rcases (Nat.prime_iff_prime_int.mp hq).dvd_mul.mp hdiv with htwo | hdisc
-    · have htwoNat : TauCeti.rationalPrimeBelow v ∣ 2 := by exact_mod_cast htwo
-      exact hodd ((Nat.prime_dvd_prime_iff_eq hq Nat.prime_two).mp htwoNat)
-    · exact hv hdisc
+    exact hv hdiv
 
 end TauCeti.Multiquadratic

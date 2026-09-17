@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Ideal.ArtinMap
 public import TauCeti.NumberTheory.NumberField.ResidueDegree
 import TauCeti.NumberTheory.NumberField.Frobenius.Tower
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.NarrowClassGroup
-import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminants
+import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Frobenius
 
 /-!
 # The genus-field isomorphism on Artin symbols
@@ -24,8 +24,10 @@ extension of its embedded quadratic base \(K = \mathbb{Q}(\sqrt d)\). The isomor
 \]
 
 constructed from sign patterns and genus characters agrees with the inverse Artin map on every
-degree-one prime above an odd rational prime away from the discriminant. Namely, the Frobenius at
-such a prime is sent to the elementary-2 class of that prime.
+degree-one prime above a rational prime away from the discriminant. Namely, the Frobenius at
+such a prime is sent to the elementary-2 class of that prime. The prime `2` is included when the
+discriminant is odd: there Frobenius acts on `√P` through the congruence class of `P` modulo `8`,
+which is the value at `2` of the character of the prime discriminant `P`.
 
 This module first exposes the local compatibility between relative Frobenius elements and
 singleton genus characters: both associate to each prime discriminant the same quadratic character
@@ -50,7 +52,7 @@ The classical account is in D. A. Cox, *Primes of the Form x² + ny²*, §6.A, a
 ## Main definitions
 
 * `TauCeti.Multiquadratic.genusFieldArtinExcludedPrimes`: the primes of the quadratic base whose
-  residue characteristic divides twice the discriminant, the canonical set the Artin map is taken
+  residue characteristic divides the discriminant, the canonical set the Artin map is taken
   away from.
 
 ## Main results
@@ -80,12 +82,12 @@ namespace TauCeti.Multiquadratic
 
 variable {d : ℤ}
 
-/-- At a degree-one prime above an odd rational prime `q`, the Frobenius sign on a
+/-- At a degree-one prime above a rational prime `q`, the Frobenius sign on a
 prime-discriminant generator agrees with the corresponding genus character whenever `q` does
 not divide that prime discriminant. Other prime discriminants may be divisible by `q`. -/
 theorem candidateGenusFieldRelativeSignPattern_frobenius_eq_genusChar
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
-    {q : ℕ} [Fact q.Prime] (hodd : q ≠ 2)
+    {q : ℕ} [Fact q.Prime]
     (qIdeal : Ideal (𝓞 (candidateGenusFieldBase hd)))
     (hnorm : Ideal.absNorm qIdeal = q)
     (hqIdeal : qIdeal ∈ (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰)
@@ -122,19 +124,16 @@ theorem candidateGenusFieldRelativeSignPattern_frobenius_eq_genusChar
   -- above so their equality reduces to equivalence of their respective fixed-sign tests.
   change (if σ (candidateGenusFieldGen hd P) = candidateGenusFieldGen hd P then 0 else 1) =
     if u = 1 then 0 else 1
-  have hqRadicand : ¬ (q : ℤ) ∣ primeDiscriminantRadicand P.val :=
-    fun hdiv ↦ hqP ((dvd_primeDiscriminant_iff_dvd_radicand P.val hodd).mpr hdiv)
   have hroot : candidateGenusFieldGen hd P ^ 2 =
       algebraMap ℤ (candidateGenusField hd) (primeDiscriminantRadicand P.val) := by
     rw [candidateGenusFieldGen_sq]
     simp
   have hfix :
       σ (candidateGenusFieldGen hd P) = candidateGenusFieldGen hd P ↔
-        legendreSym q (primeDiscriminantRadicand P.val) = 1 :=
-    NumberField.isArithFrobAt_apply_sqrt_eq_self_iff
-      hodd hqRadicand hroot Q hσint
-  have hchar : (u : ℤ) =
-        legendreSym q (primeDiscriminantRadicand P.val) := by
+        primeDiscriminantCharFun P.val q = 1 :=
+    isArithFrobAt_apply_sqrt_primeDiscriminantRadicand_eq_self_iff
+      ((genusPrimeDiscriminants_spec hd).1 P.val P.property) hqP hroot Q hσint
+  have hchar : (u : ℤ) = primeDiscriminantCharFun P.val q := by
     dsimp only [u]
     rw [genusCharFunNarrowClassGroupHom_mk0_eq_primeDiscriminantCharFun_absNorm
       (genusPrimeDiscriminants_spec hd).1 (genusPrimeDiscriminants_spec hd).2.1
@@ -143,23 +142,20 @@ theorem candidateGenusFieldRelativeSignPattern_frobenius_eq_genusChar
       (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd qIdeal hqIdeal P.val P.property (by
         rw [hnorm]
         exact (Nat.prime_iff_prime_int.mp Fact.out).coprime_iff_not_dvd.mpr hqP),
-      hnorm,
-      primeDiscriminantCharFun_eq_legendreSym
-        ((genusPrimeDiscriminants_spec hd).1 P.val P.property) hodd,
-      legendreSym_eq_legendreSym_primeDiscriminantRadicand P.val hodd]
+      hnorm]
   have hunit :
-      u = 1 ↔ legendreSym q (primeDiscriminantRadicand P.val) = 1 := by
+      u = 1 ↔ primeDiscriminantCharFun P.val q = 1 := by
     rw [← Units.val_eq_one, hchar]
   simp only [hfix, hunit]
 
 /-- **The genus-field isomorphism sends Frobenius to the prime class.**
-Let q be an odd rational prime not dividing the discriminant of K = ℚ(√d), let qIdeal be a
+Let q be a rational prime not dividing the discriminant of K = ℚ(√d), let qIdeal be a
 degree-one prime of K above q, and let Q be a prime of the candidate genus field above qIdeal.
 Every relative arithmetic Frobenius σ at Q is sent by the genus-field isomorphism to the class
 of qIdeal in the maximal elementary-2 quotient of the narrow class group. -/
 theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
-    {q : ℕ} [Fact q.Prime] (hodd : q ≠ 2)
+    {q : ℕ} [Fact q.Prime]
     (hqD : ¬ (q : ℤ) ∣ fundamentalDiscriminant d)
     (qIdeal : Ideal (𝓞 (candidateGenusFieldBase hd)))
     (hnorm : Ideal.absNorm qIdeal = q)
@@ -194,7 +190,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
     rw [hsignCoe, narrowElementaryTwoQuotientEquivRelativeSign_apply_coe]
     funext P
     exact candidateGenusFieldRelativeSignPattern_frobenius_eq_genusChar
-      hd hnsq hodd qIdeal hnorm hqIdeal Q σ hσ P (fun hdiv ↦ hqD
+      hd hnsq qIdeal hnorm hqIdeal Q σ hσ P (fun hdiv ↦ hqD
         (hdiv.trans ((genusPrimeDiscriminants_spec hd).2.2 ▸
           Finset.dvd_prod_of_mem (fun P ↦ P) P.property)))
   rw [autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_apply]
@@ -207,7 +203,7 @@ elementary-2 class of qIdeal. Thus the sign-pattern/genus-character isomorphism 
 with the inverse ideal-theoretic Artin map. -/
 theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinElement
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
-    {q : ℕ} [Fact q.Prime] (hodd : q ≠ 2)
+    {q : ℕ} [Fact q.Prime]
     (hqD : ¬ (q : ℤ) ∣ fundamentalDiscriminant d)
     (qIdeal : Ideal (𝓞 (candidateGenusFieldBase hd)))
     (hnorm : Ideal.absNorm qIdeal = q) :
@@ -247,7 +243,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinElement
   let _ : Q.IsPrime := hQprime
   let _ : Q.LiesOver qIdeal := hQlies
   apply autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
-    hd hnsq hodd hqD qIdeal hnorm Q
+    hd hnsq hqD qIdeal hnorm Q
   exact NumberFieldArithmetic.isArithFrobAt_artinElement
     IsMulCommutative.is_comm.comm qIdeal
       (fun Q hQ hQl =>
@@ -257,7 +253,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinElement
 
 /-- **The genus-field isomorphism sends every Frobenius to the class of the prime below it.**
 Let `v` be a height-one prime of the embedded quadratic base `K = ℚ(√d)` whose rational prime `q`
-does not divide twice the discriminant of `K` — equivalently, `q` is odd and unramified in `K` —
+does not divide the discriminant of `K` — equivalently, `q` is unramified in `K` —
 and let `Q` be a prime of the candidate genus field above `v`. Every relative arithmetic
 Frobenius `σ` at `Q` is sent by the genus-field isomorphism to the class of `v` in the maximal
 elementary-`2` quotient of the narrow class group.
@@ -270,7 +266,7 @@ is generated by the totally positive rational integer `q`. -/
 theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_not_dvd
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
     (v : IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd)))
-    (hv : ¬ ((TauCeti.rationalPrimeBelow v : ℤ) ∣ 2 * fundamentalDiscriminant d))
+    (hv : ¬ ((TauCeti.rationalPrimeBelow v : ℤ) ∣ fundamentalDiscriminant d))
     (Q : Ideal (𝓞 (candidateGenusField hd))) [Q.IsPrime] [Q.LiesOver v.asIdeal]
     (σ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd)
     (hσ : IsArithFrobAt (𝓞 (candidateGenusFieldBase hd)) σ Q) :
@@ -281,11 +277,6 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_not_
             ⟨v.asIdeal, mem_nonZeroDivisors_iff_ne_zero.mpr v.ne_bot⟩)) := by
   have hqprime := TauCeti.prime_rationalPrimeBelow v
   have : Fact (TauCeti.rationalPrimeBelow v).Prime := ⟨hqprime⟩
-  have hodd : TauCeti.rationalPrimeBelow v ≠ 2 := by
-    intro h
-    exact hv ⟨fundamentalDiscriminant d, by rw [h]; norm_num⟩
-  have hqD : ¬ ((TauCeti.rationalPrimeBelow v : ℤ) ∣ fundamentalDiscriminant d) :=
-    fun h ↦ hv (h.mul_left 2)
   have : v.asIdeal.LiesOver (Ideal.span {(TauCeti.rationalPrimeBelow v : ℤ)}) :=
     ⟨(TauCeti.under_eq_span_rationalPrimeBelow v).symm⟩
   -- The residue degree of `v` over `ℚ` is one or two.
@@ -298,7 +289,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_not_
     exact absurd hnorm v.isPrime.ne_top
   · -- `v` is a degree-one prime: this is the split case.
     rw [pow_one] at hnorm
-    exact autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius hd hnsq hodd hqD
+    exact autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius hd hnsq hv
       v.asIdeal hnorm Q σ hσ
   · -- `v` is inert: the Frobenius and the narrow class are both trivial.
     have : Q.LiesOver (Ideal.span {(TauCeti.rationalPrimeBelow v : ℤ)}) :=
@@ -341,7 +332,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_not_
 /-- **The genus-field isomorphism inverts the ideal-theoretic Artin map.** Let `d` be a squarefree
 integer that is not a rational square, let `K = ℚ(√d)` be the embedded quadratic base of the
 candidate genus field `K_gen`, and let `S` be any finite set of primes of `𝓞 K` containing every
-prime whose residue characteristic divides twice the discriminant of `K`. Then, on the group of
+prime whose residue characteristic divides the discriminant of `K`. Then, on the group of
 invertible fractional ideals of multiplicity zero along `S`, the genus-field isomorphism carries
 the Artin map to the narrow elementary-`2` ideal class:
 
@@ -358,7 +349,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
     (S : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))))
     (hS : ∀ v : IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd)),
-      (TauCeti.rationalPrimeBelow v : ℤ) ∣ 2 * fundamentalDiscriminant d → v ∈ S)
+      (TauCeti.rationalPrimeBelow v : ℤ) ∣ fundamentalDiscriminant d → v ∈ S)
     (I : NumberFieldArithmetic.idealsAway (K := candidateGenusFieldBase hd) S) :
     autCandidateGenusFieldEquivNarrowElementaryTwoQuotient hd hnsq
         (NumberFieldArithmetic.artinHomAway IsMulCommutative.is_comm.comm S
@@ -413,7 +404,7 @@ theorem artinHomAway_candidateGenusField_eq_one_iff
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
     (S : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))))
     (hS : ∀ v : IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd)),
-      (TauCeti.rationalPrimeBelow v : ℤ) ∣ 2 * fundamentalDiscriminant d → v ∈ S)
+      (TauCeti.rationalPrimeBelow v : ℤ) ∣ fundamentalDiscriminant d → v ∈ S)
     (I : NumberFieldArithmetic.idealsAway (K := candidateGenusFieldBase hd) S) :
     NumberFieldArithmetic.artinHomAway IsMulCommutative.is_comm.comm S
         (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
@@ -428,26 +419,26 @@ theorem artinHomAway_candidateGenusField_eq_one_iff
 /-! ### The canonical excluded set -/
 
 /-- **The primes excluded from the genus-field Artin map**: the primes of the embedded quadratic
-base `K = ℚ(√d)` whose residue characteristic divides twice the discriminant of `K`. Away from
-them every prime of `K` is odd, unramified over `ℚ`, and of residue degree one or two, which is
+base `K = ℚ(√d)` whose residue characteristic divides the discriminant of `K`. Away from
+them every prime of `K` is unramified over `ℚ`, and of residue degree one or two, which is
 what the local Frobenius comparison needs. -/
 noncomputable def genusFieldArtinExcludedPrimes (hd : Squarefree d) :
     Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))) :=
-  TauCeti.primesDividing (candidateGenusFieldBase hd) (2 * fundamentalDiscriminant d)
-    (mul_ne_zero two_ne_zero (fundamentalDiscriminant_ne_zero hd.ne_zero))
+  TauCeti.primesDividing (candidateGenusFieldBase hd) (fundamentalDiscriminant d)
+    (fundamentalDiscriminant_ne_zero hd.ne_zero)
 
-/-- Membership in `genusFieldArtinExcludedPrimes` is divisibility of twice the discriminant by the
+/-- Membership in `genusFieldArtinExcludedPrimes` is divisibility of the discriminant by the
 rational prime below. -/
 @[simp]
 theorem mem_genusFieldArtinExcludedPrimes (hd : Squarefree d)
     (v : IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))) :
     v ∈ genusFieldArtinExcludedPrimes hd ↔
-      (TauCeti.rationalPrimeBelow v : ℤ) ∣ 2 * fundamentalDiscriminant d :=
+      (TauCeti.rationalPrimeBelow v : ℤ) ∣ fundamentalDiscriminant d :=
   TauCeti.mem_primesDividing _ v
 
 /-- **The genus-field isomorphism inverts the Artin map away from the discriminant.** The
 canonical instance of `autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway`: on
-the invertible fractional ideals prime to `2 · disc K`, the Artin map of `K_gen / K` is the
+the invertible fractional ideals prime to `disc K`, the Artin map of `K_gen / K` is the
 inverse of the genus-field isomorphism composed with the narrow elementary-`2` class. -/
 theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway_excludedPrimes
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
@@ -466,7 +457,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway_excl
     (fun v hv ↦ (mem_genusFieldArtinExcludedPrimes hd v).mpr hv) I
 
 /-- **The genus-field Artin map is surjective.** Every automorphism of `K_gen` over `K` is the
-Artin automorphism of an integral ideal of `K` prime to `2 · disc K`. The genus-field isomorphism
+Artin automorphism of an integral ideal of `K` prime to `disc K`. The genus-field isomorphism
 turns this into the statement that every narrow ideal class modulo squares is represented by such
 an ideal, which is the coprime-representative theorem
 `NumberField.NarrowClassGroup.exists_mk0_eq_and_isCoprime`. -/
@@ -482,12 +473,12 @@ theorem artinHomAwayIntegral_candidateGenusField_surjective
   obtain ⟨C, hC⟩ := TauCeti.elementaryTwoQuotientMk_surjective
     (Multiplicative.toAdd (autCandidateGenusFieldEquivNarrowElementaryTwoQuotient hd hnsq σ))
   have hDne : algebraMap ℤ (𝓞 (candidateGenusFieldBase hd))
-      (2 * fundamentalDiscriminant d) ≠ 0 := fun h ↦
-    mul_ne_zero two_ne_zero (fundamentalDiscriminant_ne_zero hd.ne_zero)
+      (fundamentalDiscriminant d) ≠ 0 := fun h ↦
+    fundamentalDiscriminant_ne_zero hd.ne_zero
       (FaithfulSMul.algebraMap_injective ℤ (𝓞 (candidateGenusFieldBase hd))
         (h.trans (map_zero _).symm))
   have hM : Ideal.span {algebraMap ℤ (𝓞 (candidateGenusFieldBase hd))
-      (2 * fundamentalDiscriminant d)} ∈ (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰ :=
+      (fundamentalDiscriminant d)} ∈ (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰ :=
     Ideal.span_singleton_nonZeroDivisors.mpr (mem_nonZeroDivisors_iff_ne_zero.mpr hDne)
   obtain ⟨J, hJC, hcop⟩ := NarrowClassGroup.exists_mk0_eq_and_isCoprime C ⟨_, hM⟩
   have hmem : (J : Ideal (𝓞 (candidateGenusFieldBase hd))) ∈
@@ -496,7 +487,7 @@ theorem artinHomAwayIntegral_candidateGenusField_surjective
     rw [NumberFieldArithmetic.mem_integralIdealsAway_iff]
     refine ⟨mem_nonZeroDivisors_iff_ne_zero.mp J.2, fun v hv hdvdJ ↦ ?_⟩
     have hdvdM : v.asIdeal ∣ Ideal.span {algebraMap ℤ (𝓞 (candidateGenusFieldBase hd))
-        (2 * fundamentalDiscriminant d)} :=
+        (fundamentalDiscriminant d)} :=
       Ideal.dvd_span_singleton.mpr <|
         (v.intCast_mem_asIdeal_iff _).mpr ((mem_genusFieldArtinExcludedPrimes hd v).mp hv)
     refine v.isPrime.ne_top (top_le_iff.mp ?_)
@@ -517,7 +508,7 @@ theorem artinHomAwayIntegral_candidateGenusField_surjective
 
 /-- **The genus-field Artin map on fractional ideals is surjective.** This follows from
 `artinHomAwayIntegral_candidateGenusField_surjective` by including the integral ideals prime to
-`2 · disc K` into the corresponding group of fractional ideals. -/
+`disc K` into the corresponding group of fractional ideals. -/
 theorem artinHomAway_candidateGenusField_surjective
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) :
     Function.Surjective

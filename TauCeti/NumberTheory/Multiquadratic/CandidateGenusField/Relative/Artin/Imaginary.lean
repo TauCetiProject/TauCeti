@@ -17,9 +17,9 @@ its narrow and ordinary class groups agree, and the genus-field isomorphism take
 
 This file identifies that isomorphism with the inverse Artin map in its ordinary form:
 
-* at a prime `v` of `K` prime to `2 · disc K`, every Frobenius element above `v` is sent to the
+* at a prime `v` of `K` prime to `disc K`, every Frobenius element above `v` is sent to the
   class of `v` in `Cl(K)/Cl(K)²`;
-* on fractional ideals prime to `2 · disc K`, the Artin automorphism of `I` is sent to the class of
+* on fractional ideals prime to `disc K`, the Artin automorphism of `I` is sent to the class of
   `I` in `Cl(K)/Cl(K)²`.
 
 Consequently the Frobenius at `v` is trivial exactly when the ideal class of `v` is a square, and
@@ -56,13 +56,13 @@ variable {d : ℤ}
 
 /-- **The imaginary genus-field isomorphism sends every Frobenius to the class of the prime below
 it.** Let `d < 0` be squarefree, let `v` be a prime of `K = ℚ(√d)` whose rational prime does not
-divide `2 · disc K`, and let `Q` be a prime of the genus field above `v`. Every relative arithmetic
+divide `disc K`, and let `Q` be a prime of the genus field above `v`. Every relative arithmetic
 Frobenius `σ` at `Q` is sent by `Gal(K_gen/K) ≃* Cl(K)/Cl(K)²` to the ordinary ideal class of `v`
 modulo squares. -/
 theorem autCandidateGenusFieldEquivElementaryTwoQuotient_frobenius_of_not_dvd
     (hd : Squarefree d) (hneg : d < 0)
     (v : IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd)))
-    (hv : ¬ ((TauCeti.rationalPrimeBelow v : ℤ) ∣ 2 * fundamentalDiscriminant d))
+    (hv : ¬ ((TauCeti.rationalPrimeBelow v : ℤ) ∣ fundamentalDiscriminant d))
     (Q : Ideal (𝓞 (candidateGenusField hd))) [Q.IsPrime] [Q.LiesOver v.asIdeal]
     (σ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd)
     (hσ : IsArithFrobAt (𝓞 (candidateGenusFieldBase hd)) σ Q) :
@@ -75,13 +75,13 @@ theorem autCandidateGenusFieldEquivElementaryTwoQuotient_frobenius_of_not_dvd
   simp
 
 /-- **A prime is in the principal genus exactly when its Frobenius in the genus field is
-trivial.** For negative squarefree `d` and a prime `v` of `K = ℚ(√d)` prime to `2 · disc K`, a
+trivial.** For negative squarefree `d` and a prime `v` of `K = ℚ(√d)` prime to `disc K`, a
 relative arithmetic Frobenius at any prime of the genus field above `v` is the identity exactly
 when the ideal class of `v` is a square in `Cl(K)`. -/
 theorem isArithFrobAt_candidateGenusField_eq_one_iff_of_neg
     (hd : Squarefree d) (hneg : d < 0)
     (v : IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd)))
-    (hv : ¬ ((TauCeti.rationalPrimeBelow v : ℤ) ∣ 2 * fundamentalDiscriminant d))
+    (hv : ¬ ((TauCeti.rationalPrimeBelow v : ℤ) ∣ fundamentalDiscriminant d))
     (Q : Ideal (𝓞 (candidateGenusField hd))) [Q.IsPrime] [Q.LiesOver v.asIdeal]
     (σ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd)
     (hσ : IsArithFrobAt (𝓞 (candidateGenusFieldBase hd)) σ Q) :
@@ -94,14 +94,14 @@ theorem isArithFrobAt_candidateGenusField_eq_one_iff_of_neg
 
 /-- **The imaginary genus-field isomorphism inverts the ideal-theoretic Artin map.** Let `d < 0` be
 squarefree, let `K = ℚ(√d)`, and let `S` be any finite set of primes of `𝓞 K` containing every
-prime whose residue characteristic divides `2 · disc K`. On invertible fractional ideals of
+prime whose residue characteristic divides `disc K`. On invertible fractional ideals of
 multiplicity zero along `S`, the isomorphism `Gal(K_gen/K) ≃* Cl(K)/Cl(K)²` carries the Artin
 automorphism of `I` to the ordinary ideal class of `I` modulo squares. -/
 theorem autCandidateGenusFieldEquivElementaryTwoQuotient_artinHomAway
     (hd : Squarefree d) (hneg : d < 0)
     (S : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))))
     (hS : ∀ v : IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd)),
-      (TauCeti.rationalPrimeBelow v : ℤ) ∣ 2 * fundamentalDiscriminant d → v ∈ S)
+      (TauCeti.rationalPrimeBelow v : ℤ) ∣ fundamentalDiscriminant d → v ∈ S)
     (I : NumberFieldArithmetic.idealsAway (K := candidateGenusFieldBase hd) S) :
     autCandidateGenusFieldEquivElementaryTwoQuotient hd hneg
         (NumberFieldArithmetic.artinHomAway IsMulCommutative.is_comm.comm S
@@ -119,14 +119,14 @@ theorem autCandidateGenusFieldEquivElementaryTwoQuotient_artinHomAway
 
 /-- **The imaginary genus-field Artin map is trivial exactly on the principal genus.** For negative
 squarefree `d`, let `S` be any finite set of primes of `𝓞 K` containing every prime whose residue
-characteristic divides `2 · disc K`. An invertible fractional ideal of `K = ℚ(√d)` prime to `S`
+characteristic divides `disc K`. An invertible fractional ideal of `K = ℚ(√d)` prime to `S`
 has trivial Artin automorphism in `Gal(K_gen/K)` precisely when its ideal class is a square in
 `Cl(K)`. -/
 theorem artinHomAway_candidateGenusField_eq_one_iff_of_neg
     (hd : Squarefree d) (hneg : d < 0)
     (S : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))))
     (hS : ∀ v : IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd)),
-      (TauCeti.rationalPrimeBelow v : ℤ) ∣ 2 * fundamentalDiscriminant d → v ∈ S)
+      (TauCeti.rationalPrimeBelow v : ℤ) ∣ fundamentalDiscriminant d → v ∈ S)
     (I : NumberFieldArithmetic.idealsAway (K := candidateGenusFieldBase hd) S) :
     NumberFieldArithmetic.artinHomAway IsMulCommutative.is_comm.comm S
         (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd
