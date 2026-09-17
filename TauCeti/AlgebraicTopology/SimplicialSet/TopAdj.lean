@@ -11,6 +11,8 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 # Naturality of singular vertices
 
 The identification of points with singular zero-simplices commutes with continuous maps.
+This transfers naturality of simplicial vertex classes to singular homology, giving naturality
+of the basepoint section of the augmentation in `TauCeti.singularHomology₀Section_naturality`.
 -/
 
 public section
