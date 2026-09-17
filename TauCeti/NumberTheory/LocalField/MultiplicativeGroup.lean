@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+public import TauCeti.NumberTheory.LocalField.Teichmuller
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 
 /-!
 # The multiplicative group of a nonarchimedean local field
@@ -81,7 +83,12 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 -- in `TauCetiRoadmap/LocalFieldsRamification/Suggested.lean`.
 /-! ### The kernel of the normalized valuation -/
 
-attribute [simp] ker_normalizedValuation
+/-- The kernel of the normalized valuation is the depth-zero step `U(K,0)` of the unit
+filtration: a unit of `K` has valuation `0` exactly when it is a unit of `𝒪[K]`. -/
+@[simp]
+theorem ker_normalizedValuation : (normalizedValuation K).ker = unitFiltration K 0 :=
+  Subgroup.ext fun x ↦ by
+    rw [MonoidHom.mem_ker, normalizedValuation_eq_one_iff, mem_unitFiltration_zero]
 
 /-- The normalized valuation is trivial on the units of `𝒪[K]`. -/
 @[simp]

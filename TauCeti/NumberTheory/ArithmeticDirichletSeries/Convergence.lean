@@ -37,7 +37,7 @@ value.  The results below supply it for every `s > 1` and every set of primes.
   inclusion of sets of primes, given summability over the larger set;
   `NumberField.Set.primeIdealZetaSum_mono_set_of_one_lt` is its `1 < s` specialization.
 * `NumberField.Set.primeIdealZetaSum_pos`: a summable sum over a nonempty set of primes is
-  positive; `NumberField.Set.primeIdealZetaSum_univ_pos` applies this to all primes. Their
+  positive; `NumberField.Set.primeIdealZetaSum_univ_pos` applies this to all primes. The
   corresponding `_of_one_lt` lemmas supply summability from `1 < s`.
 
 ## Implementation notes
