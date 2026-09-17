@@ -88,6 +88,21 @@ cyclotomic integer. -/
 theorem coeffs_ofCoeffList (e : ℕ) (l : List ℤ) :
     (ofCoeffList e l).coeffs = modByCyclotomic e l := rfl
 
+/-- A coefficient list that already has the canonical length `φ e` is its own reduction modulo
+`Φ_e`, the polynomial it presents having degree less than `φ e` already. -/
+theorem coeffs_ofCoeffList_of_length_eq {l : List ℤ} (h : l.length = e.totient) :
+    (ofCoeffList e l).coeffs = l :=
+  eq_of_length_eq_of_ofCoeffList_eq (by simp [h])
+    (by
+      rw [coeffs_ofCoeffList, ofCoeffList_modByCyclotomic]
+      exact (modByMonic_eq_self_iff (cyclotomic.monic e ℤ)).2
+        (by rw [degree_cyclotomic]; simpa [h] using degree_ofCoeffList_lt l))
+
+/-- An exact cyclotomic integer is rebuilt from its own coefficient list. -/
+@[simp]
+theorem ofCoeffList_coeffs (x : Cyclotomic e) : ofCoeffList e x.coeffs = x :=
+  ext_coeffs (coeffs_ofCoeffList_of_length_eq x.length_coeffs)
+
 /-- Zero in the coefficient-vector model. -/
 @[expose] def zero (e : ℕ) : Cyclotomic e := ofCoeffList e []
 
@@ -280,6 +295,21 @@ theorem coeff_zero (j : ℕ) : (0 : Cyclotomic e).coeff j = 0 := by
     exact toAdjoinRoot_zero
   rw [← coeff_toPolynomial, eq_zero_of_dvd_of_degree_lt hdvd (degree_toPolynomial_lt _),
     Polynomial.coeff_zero]
+
+/-- **Multiplication by an integer constant scales every coefficient.**  A constant multiple
+raises no power of `ζ`, so no reduction modulo `Φ_e` takes place. -/
+theorem coeffs_intCast_mul (z : ℤ) (x : Cyclotomic e) :
+    ((z : Cyclotomic e) * x).coeffs = x.coeffs.map (z * ·) := by
+  have hmul : (z : Cyclotomic e) * x = ofCoeffList e (x.coeffs.map (z * ·)) := by
+    have hz : TauCeti.Polynomial.ofCoeffList [z] = Polynomial.C z := by
+      simp [TauCeti.Polynomial.ofCoeffList_cons]
+    refine toAdjoinRoot_injective ?_
+    rw [toAdjoinRoot_mul, show (z : Cyclotomic e) = ofCoeffList e [z] from rfl,
+      toAdjoinRoot_ofCoeffList, toAdjoinRoot_ofCoeffList, hz,
+      TauCeti.Polynomial.ofCoeffList_map_mul_left, map_mul]
+    rfl
+  rw [hmul]
+  exact coeffs_ofCoeffList_of_length_eq (by simp)
 
 /-! ## Comparison with `AdjoinRoot` -/
 

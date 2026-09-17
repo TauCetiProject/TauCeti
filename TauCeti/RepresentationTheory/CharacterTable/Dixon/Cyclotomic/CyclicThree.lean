@@ -267,11 +267,10 @@ theorem isSome_dixonCyclotomicCharacterTable_cyclicGroupThree :
       |>.two_mul_natAbs_lt_of_natAbs_le_sqrt h
   · intro j i i' h
     let k : CyclicGroupThreeClassIndex := ⟨1, by decide⟩
-    have hk := congrFun h k
-    change Cyclotomic.conjugateResidues cyclicGroupThreeDixonPrimeData.root
+    have hk : Cyclotomic.conjugateResidues cyclicGroupThreeDixonPrimeData.root
         (cyclicGroupThreeExactCharacterTable i k) j =
       Cyclotomic.conjugateResidues cyclicGroupThreeDixonPrimeData.root
-        (cyclicGroupThreeExactCharacterTable i' k) j at hk
+        (cyclicGroupThreeExactCharacterTable i' k) j := congrFun h k
     rw [cyclicGroupThreeExactCharacterTable_apply,
       cyclicGroupThreeExactCharacterTable_apply] at hk
     have hbase : IsPrimitiveRoot cyclicGroupThreeDixonPrimeData.root 3 := by
@@ -286,8 +285,6 @@ theorem isSome_dixonCyclotomicCharacterTable_cyclicGroupThree :
       simpa only [map_pow, Cyclotomic.reduceRingHom_apply,
         Cyclotomic.reduce_zeta cyclicGroupThreeDixonPrimeData.p _ hroot] using hk
     exact Fin.ext (hroot.pow_inj (by simpa using i.isLt) (by simpa using i'.isLt) hpows)
-  · intro i j
-    fin_cases i <;> fin_cases j <;> decide
 
 /-- The displayed exact table, embedded in `ℂ` and reindexed by actual conjugacy classes. -/
 noncomputable def cyclicGroupThreeComplexCharacterTable :

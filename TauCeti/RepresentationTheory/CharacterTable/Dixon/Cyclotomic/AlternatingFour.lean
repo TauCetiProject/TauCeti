@@ -117,8 +117,7 @@ theorem alternatingGroupFourDixonPrimeData_root :
 
 local instance fact_prime_thirteen_alternatingFour : Fact (Nat.Prime 13) := ⟨by decide⟩
 
-/-- **`13` is a good Dixon prime for `A₄`** whose residue window also contains every
-central-character coefficient in the displayed table. -/
+/-- **`13` is a good Dixon prime for `A₄`.** -/
 theorem isGoodDixonPrime_alternatingGroup_four_thirteen :
     IsGoodDixonPrime (alternatingGroup (Fin 4)) 13 := by
   refine ⟨by decide, ?_, ?_, ?_⟩
@@ -358,11 +357,14 @@ theorem isSome_dixonCyclotomicCharacterTable_alternatingGroupFour :
     rw [alternatingGroupFourSolverDixonPrimeData_p]
     fin_cases i <;> fin_cases j <;> fin_cases k <;> decide
   · intro j i i' h
+    have hbase : IsPrimitiveRoot (4 : ZMod 13) 6 := by
+      have hprime := alternatingGroupFourSolverDixonPrimeData.isPrimitiveRoot_root
+      rw [alternatingGroupFourSolverDixonPrimeData_root,
+        exponent_alternatingGroup_four] at hprime
+      exact hprime
     have hroot : IsPrimitiveRoot
         (Cyclotomic.conjugateRoot 6 (4 : ZMod 13) j) 6 :=
-      Cyclotomic.isPrimitiveRoot_conjugateRoot
-        (IsPrimitiveRoot.mk_of_lt (4 : ZMod 13) (by norm_num) (by decide)
-          fun l hl0 hl6 ↦ by interval_cases l <;> decide) j
+      Cyclotomic.isPrimitiveRoot_conjugateRoot hbase j
     let f := Cyclotomic.reduceRingHom 13
       (Cyclotomic.conjugateRoot 6 (4 : ZMod 13) j) hroot
     let k₁ : AlternatingGroupFourClassIndex := ⟨1, by decide⟩
@@ -375,23 +377,24 @@ theorem isSome_dixonCyclotomicCharacterTable_alternatingGroupFour :
         alternatingGroupFourExactCentralCharacterTable r k₂ =
           if r.val = 3 then 0 else 4 * alternatingGroupFourOmega ^ r.val := by
       fin_cases r <;> decide
-    have h₁ := congrFun h k₁
-    have h₂ := congrFun h k₂
-    change Cyclotomic.conjugateResidues (4 : ZMod 13)
+    -- The prime data carries the literals `13` and `4`, so the hypothesis reads off at each
+    -- column as a residue equation at the `j`-th conjugate root.
+    have hres₁ : Cyclotomic.conjugateResidues (4 : ZMod 13)
         (alternatingGroupFourExactCentralCharacterTable i k₁) j =
       Cyclotomic.conjugateResidues (4 : ZMod 13)
-        (alternatingGroupFourExactCentralCharacterTable i' k₁) j at h₁
-    change Cyclotomic.conjugateResidues (4 : ZMod 13)
+        (alternatingGroupFourExactCentralCharacterTable i' k₁) j := congrFun h k₁
+    have hres₂ : Cyclotomic.conjugateResidues (4 : ZMod 13)
         (alternatingGroupFourExactCentralCharacterTable i k₂) j =
       Cyclotomic.conjugateResidues (4 : ZMod 13)
-        (alternatingGroupFourExactCentralCharacterTable i' k₂) j at h₂
-    simp only [Cyclotomic.conjugateResidues_apply] at h₁ h₂
-    rw [← Cyclotomic.reduceRingHom_apply 13 _ hroot,
-      ← Cyclotomic.reduceRingHom_apply 13 _ hroot] at h₁ h₂
-    change f (alternatingGroupFourExactCentralCharacterTable i k₁) =
-      f (alternatingGroupFourExactCentralCharacterTable i' k₁) at h₁
-    change f (alternatingGroupFourExactCentralCharacterTable i k₂) =
-      f (alternatingGroupFourExactCentralCharacterTable i' k₂) at h₂
+        (alternatingGroupFourExactCentralCharacterTable i' k₂) j := congrFun h k₂
+    have h₁ : f (alternatingGroupFourExactCentralCharacterTable i k₁) =
+        f (alternatingGroupFourExactCentralCharacterTable i' k₁) := by
+      simpa only [f, Cyclotomic.reduceRingHom_apply, Cyclotomic.conjugateResidues_apply]
+        using hres₁
+    have h₂ : f (alternatingGroupFourExactCentralCharacterTable i k₂) =
+        f (alternatingGroupFourExactCentralCharacterTable i' k₂) := by
+      simpa only [f, Cyclotomic.reduceRingHom_apply, Cyclotomic.conjugateResidues_apply]
+        using hres₂
     rw [hcol₁ i, hcol₁ i'] at h₁
     rw [hcol₂ i, hcol₂ i'] at h₂
     have hfzeta : f (Cyclotomic.zeta 6) =
@@ -404,6 +407,7 @@ theorem isSome_dixonCyclotomicCharacterTable_alternatingGroupFour :
     have hfneg1 : f (-1 : Cyclotomic 6) = (-1 : ZMod 13) := by
       rw [map_neg, map_one]
     have hthree_ne_neg_one : (3 : ZMod 13) ≠ -1 := by decide
+    have hfour_ne_zero : (4 : ZMod 13) ≠ 0 := by decide
     apply Fin.ext
     have hi_lt : i.val < 4 := by
       simpa only [numClasses_alternatingGroupFourClassData] using i.isLt
@@ -416,12 +420,10 @@ theorem isSome_dixonCyclotomicCharacterTable_alternatingGroupFour :
       | exact (hthree_ne_neg_one (by simpa only [hf3, hfneg1] using h₁)).elim
       | exact (hthree_ne_neg_one (by simpa only [hf3, hfneg1] using h₁.symm)).elim
       | simp only [map_mul, map_pow, hf4, alternatingGroupFourOmega, hfzeta] at h₂
-        have hpows := mul_left_cancel₀ (show (4 : ZMod 13) ≠ 0 by decide) h₂
+        have hpows := mul_left_cancel₀ hfour_ne_zero h₂
         rw [← pow_mul, ← pow_mul] at hpows
         have hexponents := hroot.pow_inj (by norm_num) (by norm_num) hpows
         omega
-  · intro i j
-    fin_cases i <;> fin_cases j <;> decide
 
 /-- The displayed exact ordinary table, embedded in `ℂ` and reindexed by actual conjugacy
 classes. -/
