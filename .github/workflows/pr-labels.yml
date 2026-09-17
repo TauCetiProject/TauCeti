@@ -80,7 +80,7 @@ jobs:
       group: pr-labels-${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.pull_requests[0].number }}
       cancel-in-progress: false
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
         id: app-token
         with:
           app-id: ${{ secrets.APP_ID }}
@@ -88,8 +88,7 @@ jobs:
           owner: TauCetiProject
           repositories: TauCeti
           permission-issues: write
-          permission-pull-requests: read
-          permission-statuses: read
+          permission-pull-requests: write
           permission-contents: read
       # The trusted base checkout: the labels script that runs is the one on the target branch, never
       # the version proposed by the PR.
@@ -101,7 +100,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: TauCetiProject/TauCetiReview
-          ref: 603b28011f779bd341d0a08e788498b81542bd7d
+          ref: 692ebde95eea2a6d9d9f21954ba912c49f675d9d
           path: .tauceti-review
           sparse-checkout: runner
           persist-credentials: false
@@ -129,7 +128,7 @@ jobs:
     outputs:
       pr: ${{ steps.r.outputs.pr }}
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
         id: app-token
         with:
           app-id: ${{ secrets.APP_ID }}
@@ -182,7 +181,7 @@ jobs:
       group: pr-labels-${{ needs.resolve.outputs.pr }}
       cancel-in-progress: false
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
         id: app-token
         with:
           app-id: ${{ secrets.APP_ID }}
@@ -190,8 +189,7 @@ jobs:
           owner: TauCetiProject
           repositories: TauCeti
           permission-issues: write
-          permission-pull-requests: read
-          permission-statuses: read
+          permission-pull-requests: write
           permission-contents: read
       # The trusted base checkout: the labels script that runs is the one on the target branch, never
       # the version proposed by the PR.
@@ -203,7 +201,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: TauCetiProject/TauCetiReview
-          ref: 603b28011f779bd341d0a08e788498b81542bd7d
+          ref: 692ebde95eea2a6d9d9f21954ba912c49f675d9d
           path: .tauceti-review
           sparse-checkout: runner
           persist-credentials: false
@@ -227,7 +225,7 @@ jobs:
       group: pr-labels-sweep
       cancel-in-progress: false
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
         id: app-token
         with:
           app-id: ${{ secrets.APP_ID }}
@@ -235,8 +233,7 @@ jobs:
           owner: TauCetiProject
           repositories: TauCeti
           permission-issues: write
-          permission-pull-requests: read
-          permission-statuses: read
+          permission-pull-requests: write
           permission-contents: read
       - uses: actions/checkout@v4
         with:
@@ -246,7 +243,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: TauCetiProject/TauCetiReview
-          ref: 603b28011f779bd341d0a08e788498b81542bd7d
+          ref: 692ebde95eea2a6d9d9f21954ba912c49f675d9d
           path: .tauceti-review
           sparse-checkout: runner
           persist-credentials: false
