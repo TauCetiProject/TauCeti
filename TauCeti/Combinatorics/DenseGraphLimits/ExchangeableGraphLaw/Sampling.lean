@@ -89,6 +89,7 @@ theorem upperMass_sampleExchangeableLaw {k : ℕ} (F : SimpleGraph (Fin k)) [Dec
 
 /-- The probability that a graphon sample contains a pattern is the pattern's homomorphism
 density, as a measure of the upper ray at the pattern. -/
+@[simp]
 theorem sampleGraph_Ici (W : Graphon Ω μ) {k : ℕ} (F : SimpleGraph (Fin k)) [DecidableRel F.Adj] :
     sampleGraph W k (Set.Ici F) = ENNReal.ofReal (homDensity F W) := by
   have hset : Set.Ici F = {G : SimpleGraph (Fin k) | F ≤ G} := Set.ext fun _ => Set.mem_Ici

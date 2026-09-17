@@ -50,6 +50,9 @@ and the mixture of a Dirac mass at `⟦W⟧` is the sampling law of `W`.
 
 ## References
 
+* The human-authored roadmap blueprint `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`, from which
+  the interfaces of `mixtureExchangeableLaw`, `upperMass_mixtureExchangeableLaw`, and
+  `mixtureExchangeableLaw_diracProba` are adapted.
 * P. Diaconis, S. Janson, *Graph limits and exchangeable random graphs*, Rend. Mat. Appl. (7) 28
   (2008), 33--61, Section 5.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012),
@@ -105,6 +108,7 @@ instance isProbabilityMeasure_sampleGraphOnSpace (n : ℕ) (x : GraphonSpace Ω 
 
 /-- The probability that a sample from a graphon class contains a pattern is the descended
 homomorphism density. -/
+@[simp]
 theorem sampleGraphOnSpace_Ici {n : ℕ} (F : SimpleGraph (Fin n)) [DecidableRel F.Adj]
     (x : GraphonSpace Ω μ) :
     sampleGraphOnSpace n x (Set.Ici F) = ENNReal.ofReal (homDensityOnSpace F x) := by
@@ -114,6 +118,7 @@ theorem sampleGraphOnSpace_Ici {n : ℕ} (F : SimpleGraph (Fin n)) [DecidableRel
 /-- **The sampling law depends measurably on the graphon class.** Its upper-ray masses are the
 continuous descended homomorphism densities, and on the finite lattice of graphs these control
 every evaluation. -/
+@[fun_prop]
 theorem measurable_sampleGraphOnSpace (n : ℕ) :
     Measurable (sampleGraphOnSpace (μ := μ) n) := by
   classical
