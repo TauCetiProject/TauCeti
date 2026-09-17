@@ -9,11 +9,11 @@ public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.A
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
 
 /-!
-# Genus-field Frobenius at odd ramified rational primes
+# Genus-field Frobenius at ramified rational primes
 
 A prime of `K = ℚ(√d)` above a rational prime dividing `disc K` is still unramified in the
 prime-discriminant compositum over `K`. Its Frobenius therefore has a well-defined Artin class.
-For odd rational primes this file identifies that class with the narrow ideal class modulo squares,
+This file identifies that class with the narrow ideal class modulo squares,
 including the primes excluded by the coprime-discriminant comparison.
 
 Exactly one prime discriminant is divisible by the rational prime below the ideal. All other
@@ -36,14 +36,13 @@ namespace TauCeti.Multiquadratic
 
 variable {d : ℤ}
 
-/-- At an odd rational prime dividing the quadratic discriminant, the genus-field isomorphism
+/-- At a rational prime dividing the quadratic discriminant, the genus-field isomorphism
 sends every relative Frobenius to the narrow class modulo squares of the prime below it.
 Ramification here is over `ℚ`; the extension of the quadratic base by its prime-discriminant
 compositum is unramified. -/
 theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_dvd
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
     (v : IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd)))
-    (_hodd : TauCeti.rationalPrimeBelow v ≠ 2)
     (hv : (TauCeti.rationalPrimeBelow v : ℤ) ∣ fundamentalDiscriminant d)
     (Q : Ideal (𝓞 (candidateGenusField hd))) [Q.LiesOver v.asIdeal]
     (σ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd)
@@ -71,7 +70,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_dvd
       (hP : ¬ (TauCeti.rationalPrimeBelow v : ℤ) ∣ P.val) : x.val P = y.val P := by
     rw [narrowElementaryTwoQuotientEquivRelativeSign_apply_coe]
     exact candidateGenusFieldRelativeSignPattern_frobenius_eq_genusChar hd hnsq
-      v.asIdeal hnorm _ Q σ hσ P hP
+      v.asIdeal hnorm Q σ hσ P hP
   -- The rational prime divides exactly one prime-discriminant factor.
   obtain ⟨hs, heven, hprod⟩ := genusPrimeDiscriminants_spec hd
   have hex : ∃ P ∈ genusPrimeDiscriminants hd,
@@ -86,8 +85,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_dvd
     intro hdiv
     apply hne
     apply Subtype.ext
-    exact eq_of_primeDiscriminantPrime_eq (hs R.val R.property) (hs P₀ hP₀)
-      (heven R.val R.property P₀ hP₀)
+    exact injOn_primeDiscriminantPrime hs heven R.property P.property
       (((natCast_dvd_primeDiscriminant_iff (hs R.val R.property) hq).mp hdiv).symm.trans
         ((natCast_dvd_primeDiscriminant_iff (hs P₀ hP₀) hq).mp hdiv₀))
   -- Equality away from that factor, together with parity, recovers its coordinate.
@@ -110,12 +108,11 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_dvd
   rw [LinearEquiv.symm_apply_apply] at heq
   exact congrArg Multiplicative.ofAdd heq
 
-/-- At every odd rational prime, including those dividing the quadratic discriminant, the
+/-- At every rational prime, including those dividing the quadratic discriminant, the
 relative genus-field Frobenius corresponds to the narrow prime class modulo squares. -/
-theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_odd
+theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_at_prime
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
     (v : IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd)))
-    (hodd : TauCeti.rationalPrimeBelow v ≠ 2)
     (Q : Ideal (𝓞 (candidateGenusField hd))) [Q.IsPrime] [Q.LiesOver v.asIdeal]
     (σ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd)
     (hσ : IsArithFrobAt (𝓞 (candidateGenusFieldBase hd)) σ Q) :
@@ -124,7 +121,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_odd
         (NarrowClassGroup.mk0 ⟨v.asIdeal, mem_nonZeroDivisors_iff_ne_zero.mpr v.ne_bot⟩)) := by
   by_cases hv : (TauCeti.rationalPrimeBelow v : ℤ) ∣ fundamentalDiscriminant d
   · exact autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_dvd
-      hd hnsq v hodd hv Q σ hσ
+      hd hnsq v hv Q σ hσ
   · apply autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_of_not_dvd
       hd hnsq v _ Q σ hσ
     intro hdiv

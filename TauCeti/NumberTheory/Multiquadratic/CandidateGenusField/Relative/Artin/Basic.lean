@@ -90,14 +90,19 @@ theorem candidateGenusFieldRelativeSignPattern_frobenius_eq_genusChar
     {q : ℕ} [Fact q.Prime]
     (qIdeal : Ideal (𝓞 (candidateGenusFieldBase hd)))
     (hnorm : Ideal.absNorm qIdeal = q)
-    (hqIdeal : qIdeal ∈ (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰)
     (Q : Ideal (𝓞 (candidateGenusField hd))) [Q.LiesOver qIdeal]
     (σ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd)
     (hσ : IsArithFrobAt (𝓞 (candidateGenusFieldBase hd)) σ Q)
     (P : {P // P ∈ genusPrimeDiscriminants hd}) (hqP : ¬ (q : ℤ) ∣ P.val) :
     candidateGenusFieldRelativeSignPattern hd σ P =
       candidateGenusFieldBaseGenusCharLinearMap hd hnsq
-        (TauCeti.elementaryTwoQuotientMk (NarrowClassGroup.mk0 ⟨qIdeal, hqIdeal⟩)) P := by
+        (TauCeti.elementaryTwoQuotientMk
+          (NarrowClassGroup.mk0 ⟨qIdeal, by
+            rw [← Ideal.absNorm_ne_zero_iff_mem_nonZeroDivisors, hnorm]
+            exact (Fact.out : q.Prime).ne_zero⟩)) P := by
+  have hqIdeal : qIdeal ∈ (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰ := by
+    rw [← Ideal.absNorm_ne_zero_iff_mem_nonZeroDivisors, hnorm]
+    exact (Fact.out : q.Prime).ne_zero
   have hprimeNorm : (Ideal.absNorm qIdeal).Prime := hnorm ▸ Fact.out
   let _ : qIdeal.IsPrime := Ideal.isPrime_of_irreducible_absNorm hprimeNorm
   let _ : qIdeal.LiesOver (Ideal.span {(q : ℤ)}) := ⟨by
@@ -190,7 +195,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
     rw [hsignCoe, narrowElementaryTwoQuotientEquivRelativeSign_apply_coe]
     funext P
     exact candidateGenusFieldRelativeSignPattern_frobenius_eq_genusChar
-      hd hnsq qIdeal hnorm hqIdeal Q σ hσ P (fun hdiv ↦ hqD
+      hd hnsq qIdeal hnorm Q σ hσ P (fun hdiv ↦ hqD
         (hdiv.trans ((genusPrimeDiscriminants_spec hd).2.2 ▸
           Finset.dvd_prod_of_mem (fun P ↦ P) P.property)))
   rw [autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_apply]
