@@ -5,19 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.QuadraticAlgebra.Basic
 public import Mathlib.Algebra.QuaternionBasis
 
 /-!
 # Change of generators in a quaternion algebra
 
-This file proves the quaternion-symbol square-rescaling relation by changing the standard
+This file proves the quaternion-symbol rescaling relations by changing the standard
 generators. `TauCeti.QuaternionAlgebra.rescaleJEquiv` identifies `ℍ[R,a,c²b]` with `ℍ[R,a,b]`
 by sending `j` to `c j`, for a unit `c`. Its first-parameter counterpart
 `TauCeti.QuaternionAlgebra.rescaleIEquiv` is obtained from it using Mathlib's
 `QuaternionAlgebra.swapEquiv`, whose formulas on the standard generators are recorded here as
 well.
 
-Both equivalences are defined through `QuaternionAlgebra.Basis.liftHom`, Mathlib's universal
+More generally, `TauCeti.QuaternionAlgebra.normMulEquiv` identifies `ℍ[R,a,N(z) b]` with
+`ℍ[R,a,b]` for a unit `z = x + y √a` of `QuadraticAlgebra R a 0`, by sending `j` to `(x + y i) j`.
+
+All three equivalences are defined through `QuaternionAlgebra.Basis.liftHom`, Mathlib's universal
 property for quaternion algebras.  The formulas on `i`, `j`, and `k` are exposed as simplification
 lemmas, so later proofs can use these equivalences without unfolding their construction.
 
@@ -215,6 +219,95 @@ theorem rescaleIEquiv_symm_apply_k (a b : R) (c : Rˣ) :
     _root_.QuaternionAlgebra.Basis.j_self, rescaleIEquiv_symm_apply_i,
     rescaleIEquiv_symm_apply_j]
   simp
+
+section Norm
+
+/-- The basis of `ℍ[R,a,c]` of type `(a, d)` obtained by multiplying `j` and `k` on the left by the
+image of `w` under `√a ↦ i`, for `w : R[√a]` with `N(w) c = d`. -/
+private def normMulBasis (a c d : R) (w : QuadraticAlgebra R a 0) (h : w.norm * c = d) :
+    _root_.QuaternionAlgebra.Basis ℍ[R,a,c] a 0 d where
+  i := ⟨0, 1, 0, 0⟩
+  j := ⟨0, 0, w.re, w.im⟩
+  k := ⟨0, 0, a * w.im, w.re⟩
+  i_mul_i := by ext <;> simp
+  j_mul_j := by
+    subst h
+    ext <;> simp [QuadraticAlgebra.norm_def] <;> ring
+  i_mul_j := by ext <;> simp
+  j_mul_i := by ext <;> simp
+
+/-- The lift of `normMulBasis` in coordinates. This is the only place where the construction of
+`QuaternionAlgebra.Basis.liftHom` is unfolded. -/
+private theorem normMulBasis_liftHom_apply {a c d : R} {w : QuadraticAlgebra R a 0}
+    (h : w.norm * c = d) (x : ℍ[R,a,d]) :
+    (normMulBasis a c d w h).liftHom x =
+      ⟨x.re, x.imI, x.imJ * w.re + x.imK * (a * w.im), x.imJ * w.im + x.imK * w.re⟩ := by
+  ext <;> simp [normMulBasis, _root_.QuaternionAlgebra.Basis.lift]
+
+/-- Multiplying `j` first by `w'` and then by `w` multiplies it by `w' w`, so the two lifts are
+mutually inverse when `w' w = 1`. -/
+private theorem normMulBasis_liftHom_comp_liftHom {a c d : R} {w w' : QuadraticAlgebra R a 0}
+    (h : w.norm * c = d) (h' : w'.norm * d = c) (hw : w' * w = 1) :
+    (normMulBasis a c d w h).liftHom.comp (normMulBasis a d c w' h').liftHom = AlgHom.id R _ := by
+  have hre := congrArg QuadraticAlgebra.re hw
+  have him := congrArg QuadraticAlgebra.im hw
+  simp only [QuadraticAlgebra.re_mul, QuadraticAlgebra.im_mul, QuadraticAlgebra.re_one,
+    QuadraticAlgebra.im_one] at hre him
+  apply _root_.QuaternionAlgebra.hom_ext <;> ext <;>
+    simp only [AlgHom.comp_apply, AlgHom.id_apply, normMulBasis_liftHom_apply,
+      _root_.QuaternionAlgebra.Basis.i_self, _root_.QuaternionAlgebra.Basis.j_self] <;>
+    first | ring1 | linear_combination hre | linear_combination him
+
+variable (a b : R) (z : (QuadraticAlgebra R a 0)ˣ)
+
+private theorem norm_inv_mul_norm_mul :
+    (↑z⁻¹ : QuadraticAlgebra R a 0).norm * ((z : QuadraticAlgebra R a 0).norm * b) = b := by
+  rw [← mul_assoc, ← map_mul, Units.inv_mul, map_one, one_mul]
+
+/-- **Norm rescaling of the second quaternion parameter.** For a unit `z = x + y √a` of the
+quadratic algebra `R[√a] = QuadraticAlgebra R a 0`, sending `j` to `(x + y i) j` gives an
+`R`-algebra equivalence `ℍ[R,a,N(z) b] ≃ₐ[R] ℍ[R,a,b]`. The quaternion symbol `(a, b)` therefore
+depends on `b` only up to norms of units of `R[√a]`; `TauCeti.QuaternionAlgebra.rescaleJEquiv` is
+the analogous statement for a unit scalar `c`, whose norm is `c²`. -/
+def normMulEquiv : ℍ[R,a,(z : QuadraticAlgebra R a 0).norm * b] ≃ₐ[R] ℍ[R,a,b] :=
+  AlgEquiv.ofAlgHom (normMulBasis a b _ z rfl).liftHom
+    (normMulBasis a _ b (↑z⁻¹ : QuadraticAlgebra R a 0) (norm_inv_mul_norm_mul a b z)).liftHom
+    (normMulBasis_liftHom_comp_liftHom _ _ z.inv_mul)
+    (normMulBasis_liftHom_comp_liftHom _ _ z.mul_inv)
+
+@[simp]
+theorem normMulEquiv_apply_i : normMulEquiv a b z ⟨0, 1, 0, 0⟩ = ⟨0, 1, 0, 0⟩ := by
+  simp [normMulEquiv, normMulBasis_liftHom_apply, -_root_.QuaternionAlgebra.Basis.liftHom_apply]
+
+@[simp]
+theorem normMulEquiv_apply_j :
+    normMulEquiv a b z ⟨0, 0, 1, 0⟩ =
+      ⟨0, 0, (z : QuadraticAlgebra R a 0).re, (z : QuadraticAlgebra R a 0).im⟩ := by
+  simp [normMulEquiv, normMulBasis_liftHom_apply, -_root_.QuaternionAlgebra.Basis.liftHom_apply]
+
+@[simp]
+theorem normMulEquiv_apply_k :
+    normMulEquiv a b z ⟨0, 0, 0, 1⟩ =
+      ⟨0, 0, a * (z : QuadraticAlgebra R a 0).im, (z : QuadraticAlgebra R a 0).re⟩ := by
+  simp [normMulEquiv, normMulBasis_liftHom_apply, -_root_.QuaternionAlgebra.Basis.liftHom_apply]
+
+@[simp]
+theorem normMulEquiv_symm_apply_i : (normMulEquiv a b z).symm ⟨0, 1, 0, 0⟩ = ⟨0, 1, 0, 0⟩ := by
+  simp [normMulEquiv, normMulBasis_liftHom_apply, -_root_.QuaternionAlgebra.Basis.liftHom_apply]
+
+@[simp]
+theorem normMulEquiv_symm_apply_j :
+    (normMulEquiv a b z).symm ⟨0, 0, 1, 0⟩ =
+      ⟨0, 0, (↑z⁻¹ : QuadraticAlgebra R a 0).re, (↑z⁻¹ : QuadraticAlgebra R a 0).im⟩ := by
+  simp [normMulEquiv, normMulBasis_liftHom_apply, -_root_.QuaternionAlgebra.Basis.liftHom_apply]
+
+@[simp]
+theorem normMulEquiv_symm_apply_k :
+    (normMulEquiv a b z).symm ⟨0, 0, 0, 1⟩ =
+      ⟨0, 0, a * (↑z⁻¹ : QuadraticAlgebra R a 0).im, (↑z⁻¹ : QuadraticAlgebra R a 0).re⟩ := by
+  simp [normMulEquiv, normMulBasis_liftHom_apply, -_root_.QuaternionAlgebra.Basis.liftHom_apply]
+
+end Norm
 
 end QuaternionAlgebra
 

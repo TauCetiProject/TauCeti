@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.InnerConjugation
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.NumberedSymmetry
@@ -58,9 +58,8 @@ weights are the weights of an admissible lattice: all of that is supplied by the
 
 * `pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso`: on algebra-valued points
   the coordinate automorphism is conjugation by the base-changed matrix.
-* `pointsMulEquiv_toConv_comp_kostantNumberedSymmetryCoordinateIso`: the same statement for a value
-  ring in an arbitrary universe, obtained by transporting the generic point of the coordinate Hopf
-  algebra along the naturality of the matrix.
+* `pointsMulEquiv_toConv_comp_kostantNumberedSymmetryCoordinateIso`: the explicit precomposition
+  form of the same statement.
 * `kostantNumberedSymmetryCoordinateIso_hom_comp_rootSubgroupCoordinateMap`: the pinning equation
   `γ ≫ xᵢ = x_{σ i}` on coordinate algebras.
 * `kostantNumberedSymmetryCoordinateIso_hom_comp_weightTorusCoordinateMap`: a monomial-basis
@@ -235,103 +234,18 @@ theorem kostantNumberedSymmetryPoints_pow_eq_one (A : Type v) [CommRing A]
       exact hm)
   rw [kostantNumberedSymmetryPoints, ← map_pow, hX, map_one]
 
-/-- Conjugation by the numbered symmetry on the points of the general-linear coordinate
-Hopf algebra. -/
-private noncomputable def generalLinearPointsNumberedSymmetryMulEquiv (A : CommAlgCat.{0} ℤ) :
-    HopfAlgebra.points
-        (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n) A ≃*
-      HopfAlgebra.points
-        (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n) A :=
-  ((GeneralLinear.pointsMulEquiv (R := ℤ) (A := A) n).trans
-    (MulAut.conj (kostantNumberedSymmetryMatrix M b θ hθM A))).trans
-      (GeneralLinear.pointsMulEquiv (R := ℤ) (A := A) n).symm
-
-private theorem pointsMulEquiv_generalLinearPointsNumberedSymmetryMulEquiv
-    (A : CommAlgCat.{0} ℤ)
-    (f : HopfAlgebra.points
-      (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n) A) :
-    GeneralLinear.pointsMulEquiv n
-        (generalLinearPointsNumberedSymmetryMulEquiv M b θ hθM A f) =
-      kostantNumberedSymmetryMatrix M b θ hθM A *
-          GeneralLinear.pointsMulEquiv n f *
-        (kostantNumberedSymmetryMatrix M b θ hθM A)⁻¹ := by
-  rw [generalLinearPointsNumberedSymmetryMulEquiv]
-  rw [MulEquiv.trans_apply, MulEquiv.trans_apply]
-  exact (GeneralLinear.pointsMulEquiv (R := ℤ) (A := A) n).apply_symm_apply _
-
-/-- The pointwise symmetry, transported to the object presentation used by the points functor. -/
-private noncomputable def generalLinearPointsNumberedSymmetryIsoApp (A : CommAlgCat.{0} ℤ) :
-    (HopfAlgebra.pointsFunctor
-        (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n)).obj A ≅
-      (HopfAlgebra.pointsFunctor
-        (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n)).obj A :=
-  eqToIso (HopfAlgebra.pointsFunctor_obj
-      (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n) A) ≪≫
-    (generalLinearPointsNumberedSymmetryMulEquiv M b θ hθM A).toGrpIso ≪≫
-      eqToIso (HopfAlgebra.pointsFunctor_obj
-        (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n) A).symm
-
-/-- The numbered symmetry transported to the functor of points of the general-linear
-coordinate Hopf algebra. -/
-private noncomputable def generalLinearPointsNumberedSymmetryNatIso :
-    HopfAlgebra.pointsFunctor
-        (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n) ≅
-      HopfAlgebra.pointsFunctor
-        (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n) :=
-  NatIso.ofComponents
-    (fun A ↦ generalLinearPointsNumberedSymmetryIsoApp M b θ hθM A)
-    (fun {A B} φ ↦ by
-      apply (cancel_epi (eqToHom (HopfAlgebra.pointsFunctor_obj
-        (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n) A).symm)).1
-      apply (cancel_mono (eqToHom (HopfAlgebra.pointsFunctor_obj
-        (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n) B))).1
-      rw [generalLinearPointsNumberedSymmetryIsoApp,
-        generalLinearPointsNumberedSymmetryIsoApp]
-      simp only [Iso.trans_hom, eqToIso.hom, Category.assoc, eqToHom_trans_assoc,
-        eqToHom_refl, Category.id_comp, eqToHom_trans, Category.comp_id]
-      simp only [← Category.assoc]
-      rw [HopfAlgebra.pointsFunctor_map_eqToHom]
-      slice_rhs 2 3 => rw [HopfAlgebra.pointsFunctor_map_eqToHom]
-      slice_rhs 3 4 => simp
-      simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
-        Category.comp_id]
-      apply GrpCat.hom_ext
-      apply MonoidHom.ext
-      intro f
-      rw [GrpCat.comp_apply, GrpCat.comp_apply]
-      -- Cancelling the object transports leaves the underlying `MulEquiv`; its application
-      -- is definitionally the displayed pointwise operation, but has no named rewrite lemma.
-      change generalLinearPointsNumberedSymmetryMulEquiv M b θ hθM B
-          (HopfAlgebra.mapPoints φ f) =
-        HopfAlgebra.mapPoints φ
-          (generalLinearPointsNumberedSymmetryMulEquiv M b θ hθM A f)
-      apply (GeneralLinear.pointsMulEquiv (R := ℤ) (A := B) n).injective
-      simp only [HopfAlgebra.mapPoints]
-      rw [pointsMulEquiv_generalLinearPointsNumberedSymmetryMulEquiv]
-      -- `mapPoints` is implemented by `AlgHom.mapValue`; exposing that implementation is
-      -- necessary before the public `pointsMulEquiv_mapValue` theorem can rewrite the goal.
-      change kostantNumberedSymmetryMatrix M b θ hθM B *
-            GeneralLinear.pointsMulEquiv n (AlgHom.mapValue φ.hom f) *
-          (kostantNumberedSymmetryMatrix M b θ hθM B)⁻¹ =
-        GeneralLinear.pointsMulEquiv n
-          (AlgHom.mapValue φ.hom
-            (generalLinearPointsNumberedSymmetryMulEquiv M b θ hθM A f))
-      rw [GeneralLinear.pointsMulEquiv_mapValue,
-        GeneralLinear.pointsMulEquiv_mapValue,
-        pointsMulEquiv_generalLinearPointsNumberedSymmetryMulEquiv]
-      rw [map_mul, map_mul, map_inv, map_kostantNumberedSymmetryMatrix M b θ hθM])
-
 /-- The coordinate Hopf-algebra automorphism recovered from conjugation on points. -/
 noncomputable def kostantNumberedSymmetryCoordinateIso :
     GeneralLinear.coordinateHopfAlgebra ℤ n ≅
       GeneralLinear.coordinateHopfAlgebra ℤ n :=
-  ((CommHopfAlgCat.pointsFunctor (R := ℤ)).preimageIso
-    (generalLinearPointsNumberedSymmetryNatIso M b θ hθM)).unop
+  CommHopfAlgCat.innerConjugationIso (GeneralLinear.coordinateHopfAlgebra ℤ n)
+    ((GeneralLinear.pointsMulEquiv (R := ℤ) (A := ℤ) n).symm
+      (kostantNumberedSymmetryMatrix M b θ hθM ℤ))
 
 /-- On algebra-valued points, the recovered coordinate automorphism is conjugation by the
 base-changed numbered-symmetry matrix. -/
 theorem pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso
-    (A : CommAlgCat.{0} ℤ)
+    (A : CommAlgCat.{v} ℤ)
     (f : HopfAlgebra.points
       (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n) A) :
     GeneralLinear.pointsMulEquiv n
@@ -340,54 +254,22 @@ theorem pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso
       kostantNumberedSymmetryMatrix M b θ hθM A *
           GeneralLinear.pointsMulEquiv n f *
         (kostantNumberedSymmetryMatrix M b θ hθM A)⁻¹ := by
-  have hmap := (CommHopfAlgCat.pointsFunctor (R := ℤ)).map_preimage
-    (generalLinearPointsNumberedSymmetryNatIso M b θ hθM).hom
-  have happ := congrArg (fun α => α.app A f) hmap
-  have hcoordinate :
-      (kostantNumberedSymmetryCoordinateIso M b θ hθM).hom.op =
-        (CommHopfAlgCat.pointsFunctor (R := ℤ)).preimage
-          (generalLinearPointsNumberedSymmetryNatIso M b θ hθM).hom := rfl
-  -- Fix the concrete presentation of the point before moving between the two functor APIs;
-  -- their agreement below is mediated by `pointsFunctor.map_preimage`, not a rewrite lemma.
-  change GeneralLinear.pointsMulEquiv n
-      ((CommHopfAlgCat.mapPointsFunctor
-        (kostantNumberedSymmetryCoordinateIso M b θ hθM).hom).app A f) = _
-  -- `mapPointsFunctor` is definitionally the opposite-coordinate morphism under
-  -- `pointsFunctor`; expose that representation so `hcoordinate` can rewrite its argument.
-  change GeneralLinear.pointsMulEquiv n
-      (((CommHopfAlgCat.pointsFunctor (R := ℤ)).map
-        (kostantNumberedSymmetryCoordinateIso M b θ hθM).hom.op).app A f) = _
-  rw [hcoordinate]
-  rw [happ]
-  -- `NatIso.ofComponents` stores this component through equality transports; after `happ`
-  -- those transports reduce to the underlying pointwise `MulEquiv`, with no named theorem.
-  change GeneralLinear.pointsMulEquiv n
-      (generalLinearPointsNumberedSymmetryMulEquiv M b θ hθM A f) = _
-  exact pointsMulEquiv_generalLinearPointsNumberedSymmetryMulEquiv M b θ hθM A f
+  rw [kostantNumberedSymmetryCoordinateIso,
+    CommHopfAlgCat.mapPointsFunctor_innerConjugationIso_hom,
+    HopfAlgebra.innerConjugationPointNatIso_hom_app_apply, map_mul, map_mul, map_inv]
+  have hext : GeneralLinear.pointsMulEquiv n
+      (HopfAlgebra.extendPoint (GeneralLinear.coordinateHopfAlgebra ℤ n) A
+        ((GeneralLinear.pointsMulEquiv (R := ℤ) (A := ℤ) n).symm
+          (kostantNumberedSymmetryMatrix M b θ hθM ℤ))) =
+      kostantNumberedSymmetryMatrix M b θ hθM A := by
+    rw [← HopfAlgebra.mapValue_extendPoint _ (A := CommAlgCat.of ℤ ℤ)
+      (Algebra.ofId ℤ A),
+      HopfAlgebra.extendPoint_self, GeneralLinear.pointsMulEquiv_mapValue,
+      MulEquiv.apply_symm_apply, map_kostantNumberedSymmetryMatrix]
+  rw [hext]
 
-/-- Explicit precomposition form of the action of the recovered coordinate automorphism. -/
-private theorem pointsMulEquiv_comp_kostantNumberedSymmetryCoordinateIso
-    (A : CommAlgCat.{0} ℤ)
-    (f : HopfAlgebra.points
-      (R := ℤ) (H := GeneralLinear.coordinateHopfAlgebra ℤ n) A) :
-    GeneralLinear.pointsMulEquiv n
-        (toConv (f.ofConv.comp
-          ((kostantNumberedSymmetryCoordinateIso M b θ hθM).hom.hom :
-            GeneralLinear.coordinateHopfAlgebra ℤ n →ₐ[ℤ]
-              GeneralLinear.coordinateHopfAlgebra ℤ n))) =
-      kostantNumberedSymmetryMatrix M b θ hθM A *
-          GeneralLinear.pointsMulEquiv n f *
-        (kostantNumberedSymmetryMatrix M b θ hθM A)⁻¹ := by
-  rw [← CommHopfAlgCat.mapPointsFunctor_app_apply]
-  exact pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso
-    M b θ hθM A f
-
-/-- **On the algebra-valued points of `GLₙ` over a value ring in any universe, the recovered
-coordinate automorphism is conjugation by the base-changed numbered-symmetry matrix.** The
-comparison through the functor of points is available only for a value algebra of the category that
-functor is taken over. Both sides here are natural in the value ring, so reading that comparison at
-the generic point of the coordinate Hopf algebra and pushing it forward along an arbitrary point
-removes the restriction. -/
+/-- On points over a value ring in any universe, precomposition with the coordinate
+automorphism is conjugation by the base-changed numbered-symmetry matrix. -/
 theorem pointsMulEquiv_toConv_comp_kostantNumberedSymmetryCoordinateIso (A : Type v) [CommRing A]
     (f : WithConv (GeneralLinear.coordinateHopfAlgebra ℤ n →ₐ[ℤ] A)) :
     GeneralLinear.pointsMulEquiv n
@@ -398,30 +280,9 @@ theorem pointsMulEquiv_toConv_comp_kostantNumberedSymmetryCoordinateIso (A : Typ
       kostantNumberedSymmetryMatrix M b θ hθM A *
           GeneralLinear.pointsMulEquiv n f *
         (kostantNumberedSymmetryMatrix M b θ hθM A)⁻¹ := by
-  have hgeneric := pointsMulEquiv_comp_kostantNumberedSymmetryCoordinateIso M b θ hθM
-    (CommAlgCat.of ℤ (GeneralLinear.coordinateHopfAlgebra ℤ n))
-    (toConv (AlgHom.id ℤ (GeneralLinear.coordinateHopfAlgebra ℤ n)))
-  rw [ofConv_toConv, AlgHom.id_comp] at hgeneric
-  have hnat (g : WithConv (GeneralLinear.coordinateHopfAlgebra ℤ n →ₐ[ℤ]
-      GeneralLinear.coordinateHopfAlgebra ℤ n)) :
-      GeneralLinear.pointsMulEquiv n
-          (AlgHom.mapValue (H := GeneralLinear.coordinateHopfAlgebra ℤ n) f.ofConv g) =
-        Matrix.GeneralLinearGroup.map f.ofConv.toRingHom (GeneralLinear.pointsMulEquiv n g) :=
-    GeneralLinear.pointsMulEquiv_mapValue n f.ofConv g
-  have hgen : AlgHom.mapValue (H := GeneralLinear.coordinateHopfAlgebra ℤ n) f.ofConv
-      (toConv (AlgHom.id ℤ (GeneralLinear.coordinateHopfAlgebra ℤ n))) = f := by
-    rw [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_id, toConv_ofConv]
-  have hsym : AlgHom.mapValue (H := GeneralLinear.coordinateHopfAlgebra ℤ n) f.ofConv
-      (toConv ((kostantNumberedSymmetryCoordinateIso M b θ hθM).hom.hom :
-        GeneralLinear.coordinateHopfAlgebra ℤ n →ₐ[ℤ]
-          GeneralLinear.coordinateHopfAlgebra ℤ n)) =
-      toConv (f.ofConv.comp
-        ((kostantNumberedSymmetryCoordinateIso M b θ hθM).hom.hom :
-          GeneralLinear.coordinateHopfAlgebra ℤ n →ₐ[ℤ]
-            GeneralLinear.coordinateHopfAlgebra ℤ n)) := by
-    rw [AlgHom.mapValue_apply, ofConv_toConv]
-  rw [← hsym, hnat, hgeneric, map_mul, map_mul, map_inv,
-    map_kostantNumberedSymmetryMatrix M b θ hθM, ← hnat, hgen]
+  simpa only [CommHopfAlgCat.mapPointsFunctor_app_apply] using
+    pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso
+      M b θ hθM (CommAlgCat.of ℤ A) f
 
 include hθe in
 /-- Matrix-coordinate form of the pinning equation. -/
@@ -498,7 +359,9 @@ theorem kostantNumberedSymmetryCoordinateIso_hom_comp_rootSubgroupCoordinateMap
   have hp : toConv (f.ofConv.comp c.hom.toAlgHom) = g := by
     apply (GeneralLinear.pointsMulEquiv
       (R := ℤ) (A := CommAlgCat.of ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) n).injective
-    rw [pointsMulEquiv_comp_kostantNumberedSymmetryCoordinateIso,
+    rw [← CommHopfAlgCat.mapPointsFunctor_app_apply c
+      (CommAlgCat.of ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) f,
+      pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso,
       GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointsMulEquiv_apply]
     have hleft := congrArg
       (fun z => kostantNumberedSymmetryMatrix M b θ hθM
@@ -653,7 +516,8 @@ theorem kostantNumberedSymmetryCoordinateIso_hom_comp_weightTorusCoordinateMap
         (fun i => wt (basisPerm⁻¹ i)) (CommAlgCat.of ℤ T) q
   have hp : toConv (f.ofConv.comp c.hom.toAlgHom) = g := by
     apply (GeneralLinear.pointsMulEquiv (R := ℤ) (A := CommAlgCat.of ℤ T) n).injective
-    rw [pointsMulEquiv_comp_kostantNumberedSymmetryCoordinateIso, htorus_r, htorus_s,
+    rw [← CommHopfAlgCat.mapPointsFunctor_app_apply c (CommAlgCat.of ℤ T) f,
+      pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso, htorus_r, htorus_s,
       kostantNumberedSymmetryMatrix_conj_diagGL
         M b θ hθM basisPerm basisScale hbasis]
   have hx := congrArg (fun p => p.ofConv x) hp

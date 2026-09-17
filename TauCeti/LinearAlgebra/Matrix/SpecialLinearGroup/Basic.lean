@@ -55,6 +55,9 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup` is countable when its coefficient ring is.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates.
+* `Matrix.det_eq_one_of_mul_eq_of_dets_eq`: a left factor of a product has determinant one when
+  the right factor and the product share the same nonzero determinant — determinant
+  multiplicativity plus cancellation, the usual way a special-linear factor is produced.
 * `Matrix.SpecialLinearGroup.coe_mapGL_fin_two`: the entrywise matrix of `mapGL S` on `SL₂(R)`,
   with `coe_mapGL_int_rat_fin_two` its `ℤ`-to-`ℚ` specialization.
 * `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(N, p)` gives the
@@ -87,6 +90,24 @@ open Matrix
 open scoped MatrixGroups
 
 variable {d : ℕ}
+
+namespace Matrix
+
+/-- **A left factor has determinant one** when it is read off a product identity in which the
+right factor and the product share the same nonzero determinant.
+
+This is determinant multiplicativity plus cancellation, and it is how a determinant-one — that
+is, special-linear — factor is produced from a matrix identity that was not set up to give one.
+Nothing about the shape of the matrices enters; only that the ring has no zero divisors, so that
+the shared determinant can be cancelled. -/
+theorem det_eq_one_of_mul_eq_of_dets_eq {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    [NoZeroDivisors R] {q : R} (hq : q ≠ 0) {τ X C : Matrix n n R} (h : τ * X = C)
+    (hX : X.det = q) (hC : C.det = q) : τ.det = 1 := by
+  have h' := congrArg Matrix.det h
+  rw [Matrix.det_mul, hX, hC] at h'
+  exact mul_right_cancel₀ hq (by rw [h', one_mul])
+
+end Matrix
 
 namespace Matrix.SpecialLinearGroup
 
