@@ -19,10 +19,11 @@ integral operator `g ↦ (x ↦ ∫⁻ y, k x y * g y ∂ν)` satisfies
 
 `∫⁻ x, (∫⁻ y, k x y * g y ∂ν) ^ p ∂μ ≤ A ^ (p - 1) * B * ∫⁻ y, g y ^ p ∂ν`,
 
-that is, it maps `Lᵖ(ν)` to `Lᵖ(μ)` with norm at most `A ^ (1 - 1/p) * B ^ (1/p)`. For a
-translation-invariant kernel `k x y = K (x - y)` with `K` integrable this is Young's inequality
-for convolution with an `L¹` function; a typical use is for weakly singular kernels such as
-`‖x - y‖ ^ (1 - n)` restricted to a bounded set, which bound Riesz potentials in `Lᵖ`.
+When `A` and `B` are finite, this says that it maps `Lᵖ(ν)` to `Lᵖ(μ)` with norm at most
+`A ^ (1 - 1/p) * B ^ (1/p)`. For a translation-invariant kernel `k x y = K (x - y)` with `K`
+integrable this is Young's inequality for convolution with an `L¹` function; a typical use is for
+weakly singular kernels such as `‖x - y‖ ^ (1 - n)` restricted to a bounded set, which bound Riesz
+potentials in `Lᵖ`.
 
 The proof applies Hölder's inequality, in the form
 `TauCeti.rpow_lintegral_le_measure_univ_rpow_mul`, to the measure `ν.withDensity (k x)` for each
