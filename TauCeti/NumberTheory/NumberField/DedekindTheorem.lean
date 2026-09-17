@@ -359,7 +359,7 @@ theorem rootSetEquivQuotientStabilizer_subgroup_smul {α : M}
 
 omit [IsGalois ℚ M] [Fact p.Prime] in
 /-- The primes of a subfield above `Q ∩ 𝓞 ℚ` are the primes above `p`. -/
-theorem primesOver_under_ringOfIntegers_rat_eq (Q : Ideal (𝓞 M)) [Q.IsPrime]
+theorem primesOver_under_ringOfIntegers_rat_eq (Q : Ideal (𝓞 M))
     [Q.LiesOver (Ideal.span {(p : ℤ)})] (E : IntermediateField ℚ M) :
     (Q.under (𝓞 ℚ)).primesOver (𝓞 E) = (Ideal.span {(p : ℤ)}).primesOver (𝓞 E) := by
   have : IsScalarTower ℤ (𝓞 ℚ) (𝓞 E) :=
