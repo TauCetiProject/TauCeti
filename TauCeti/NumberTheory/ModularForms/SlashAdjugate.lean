@@ -42,9 +42,6 @@ namespace ModularForm
 
 open UpperHalfPlane Matrix TauCeti
 
--- Preserve the simp API here while sharing the declaration from Basic.
-attribute [simp] slash_scalar
-
 /-- **The slash by the main involution.** `f ∣[k] α^ι = (det α) ^ (k - 2) • (f ∣[k] α⁻¹)`: the
 involution and the inverse differ by the scalar `det α`, which slashes by `slash_scalar`.
 
