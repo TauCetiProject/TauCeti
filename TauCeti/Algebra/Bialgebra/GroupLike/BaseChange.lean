@@ -26,6 +26,13 @@ the monoid algebra of its group-like elements, `MonoidAlgebra.scalarTensorBialgE
 for scalar extension, and `MonoidAlgebra.groupLikeEquiv` to classify the resulting
 characters. No finite-generation, smoothness, or characteristic hypothesis is needed.
 
+## Main declarations
+
+* `TauCeti.groupLikeBaseChange`: the canonical scalar-extension map on characters.
+* `TauCeti.groupLikeBaseChange_bijective`: preservation of characters under the stated
+  spanning, torsion-free, and connected-spectrum hypotheses.
+* `TauCeti.groupLikeBaseChangeEquiv`: the resulting multiplicative equivalence.
+
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Definition 12.7 and Theorems 12.8--12.9.
