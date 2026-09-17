@@ -375,13 +375,6 @@ theorem nonsingularWishartMeasure_zero {n : ℝ} (hn : -1 < n)
     dirac_withDensity' (measurable_nonsingularWishartPDF n S),
     nonsingularWishartPDF_zero, one_smul]
 
-/-- In dimension zero every valid Wishart law is a probability measure. -/
-theorem isProbabilityMeasure_nonsingularWishartMeasure_zero {n : ℝ} (hn : -1 < n)
-    (S : Matrix (Fin 0) (Fin 0) ℝ) :
-    IsProbabilityMeasure (nonsingularWishartMeasure n S) := by
-  rw [nonsingularWishartMeasure_zero hn]
-  infer_instance
-
 /-! ### Parameter measurability -/
 
 /-- **Parameter measurability of the nonsingular Wishart law.** The law is measurable jointly in

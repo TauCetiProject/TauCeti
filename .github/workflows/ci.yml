@@ -39,7 +39,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: TauCetiProject/TauCetiReview
-          ref: 603b28011f779bd341d0a08e788498b81542bd7d
+          ref: 692ebde95eea2a6d9d9f21954ba912c49f675d9d
           path: .tauceti-review
           sparse-checkout: runner
           persist-credentials: false
@@ -94,6 +94,7 @@ jobs:
           python3 scripts/test_profile_workflow.py
           python3 scripts/test_lake_cache_probe.py
           python3 scripts/test_lake_cache_get.py
+          python3 scripts/test_lake_cache_reuse.py
           PYTHONPATH=. python3 scripts/perf/test_perf.py
           PYTHONPATH=scripts python3 scripts/test_claims_access.py
           python3 scripts/test_lint_dot_notation.py
@@ -215,6 +216,12 @@ jobs:
           PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
         run: bash scripts/lake-cache-get.sh .
 
+      - name: Save verified Lake archive records before building
+        run: python3 scripts/lake_cache_reuse.py snapshot . "$RUNNER_TEMP/lake-cache-reuse.json"
+
+      - name: Lake archive reuse integration tests
+        run: python3 scripts/test_lake_cache_reuse.py --integration
+
       # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
       # The build globs every TauCeti/ module directly, so nothing depends on a root that
       # re-exports the library.
@@ -247,6 +254,12 @@ jobs:
         with:
           path: ${{ steps.mathlib_ltar_restore.outputs.cache-dir }}/*.ltar
           key: ${{ steps.mathlib_ltar_restore.outputs.cache-primary-key }}
+
+      - name: Duplicate-declaration audit
+        run: lake env lean --run scripts/DuplicateDeclarations.lean
+
+      - name: Duplicate-declaration audit regression tests
+        run: lake env python3 scripts/test_duplicate_declarations.py
 
       # Axiom audit (replaces the old textual no-sorry grep). Inspects the built
       # TauCeti environment and rejects any axiom outside {propext, Classical.choice,
@@ -374,7 +387,9 @@ jobs:
           # a staging directory, alongside a copy of the mappings themselves. `lake cache
           # stage` reads no credential and contacts no network.
           lake build >/dev/null
-          lake build --no-build -o .lake/outputs.jsonl
+          python3 scripts/lake_cache_reuse.py reconnect . "$RUNNER_TEMP/lake-cache-reuse.json"
+          # Hash the linked archives themselves, ignoring any old .ltar.hash sidecars.
+          lake build --no-build --rehash -o .lake/outputs.jsonl
           echo "root-package mapping entries: $(wc -l < .lake/outputs.jsonl)"
           lake cache stage .lake/outputs.jsonl "$RUNNER_TEMP/lake-cache-staging"
           # `lake cache put-staged` does not configure the workspace, which is precisely what
