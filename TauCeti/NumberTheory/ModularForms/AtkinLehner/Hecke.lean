@@ -13,16 +13,15 @@ import TauCeti.NumberTheory.ModularForms.AtkinLehner.DoubleCoset
 import TauCeti.NumberTheory.ModularForms.HeckeSlash.Conjugation
 
 /-!
-# Atkin–Lehner operators commute with the good Hecke operators
+# Atkin–Lehner operators commute with Γ₀ double-coset slash operators
 
 For an exact divisor `Q` of `N`, the Atkin–Lehner operator `W_Q` on `M_k(Γ₀(N))` commutes with
 the Hecke operator `[Γ₀(N) α Γ₀(N)]` of every double coset whose determinant is coprime to `Q`,
-and so does its normalization `𝒲_Q`; likewise on `S_k(Γ₀(N))`. The classical `Tₙ` with
-`gcd(n, Q) = 1` is the sum of the double-coset operators of determinant `n` (Shimura §3.4), so
-this is the commutation of the `𝒲_Q` with the Hecke operators away from `Q`, stated coset by
-coset; it includes the `U_p` double cosets at the primes `p ∣ N / Q`. It is
-the input that lets the good Hecke operators and the `𝒲_Q` be diagonalized simultaneously, which
-is how a newform of trivial nebentypus comes to be an eigenvector of each `𝒲_Q`.
+and so does its normalization `𝒲_Q`; likewise on `S_k(Γ₀(N))`. These results are strictly
+coset-by-coset. Once a future identification theorem expresses the classical `Tₙ` and `U_p`
+operators as the relevant sums of Γ₀ double-coset slash operators, they will imply the
+corresponding commutation statements for those classical operators; that identification is not
+proved here.
 
 The proof is `HeckeRing.GL2.heckeSlashSum_slash_of_mem_normalizer` applied to the Atkin–Lehner
 matrix read in `GL(2, ℚ)`: that matrix normalizes `Γ₀(N)`

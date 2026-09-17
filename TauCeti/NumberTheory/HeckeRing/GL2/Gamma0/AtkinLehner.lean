@@ -18,7 +18,6 @@ import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Diagonal.Coset
 import TauCeti.LinearAlgebra.Matrix.SmithNormalForm
 import TauCeti.Data.ZMod.Units
 import Mathlib.Data.Nat.Prime.Int
-import Mathlib.Data.ZMod.Units
 
 /-!
 # The Atkin-Lehner anti-involution of the `Γ₀(N)` Hecke pair

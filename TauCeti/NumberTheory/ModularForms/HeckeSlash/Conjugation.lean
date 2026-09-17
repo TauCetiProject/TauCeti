@@ -69,17 +69,19 @@ theorem heckeSlashSum_slash_of_mem_normalizer
     doubleCoset_eq_of_mem hD
   -- `f ∣[k] g` is again `Γ₁`-invariant, since `g γ = (g γ g⁻¹) g`
   have hfg : ∀ γ ∈ Γ₁, (f ∣[k] g) ∣[k] γ = f ∣[k] g := fun γ hγ ↦ by
-    rw [← SlashAction.slash_mul, show g * γ = g * γ * g⁻¹ * g by group, SlashAction.slash_mul,
+    have hmul : g * γ = g * γ * g⁻¹ * g := by group
+    rw [← SlashAction.slash_mul, hmul, SlashAction.slash_mul,
       hf _ ((Subgroup.mem_normalizer_iff.mp hg₁ γ).mp hγ)]
   -- the conjugated representatives decompose the same double coset
   have hcover : doubleCoset (D.out : GL (Fin 2) ℚ) (Γ₁ : Set (GL (Fin 2) ℚ)) Γ₂ =
       ⋃ v, MulOpposite.op (g⁻¹ * rightCosetRep D v * g) • (Γ₁ : Set (GL (Fin 2) ℚ)) := by
     ext x
+    have hconj : g⁻¹ * (g * x * g⁻¹) * g = x := by group
     simp only [Set.mem_iUnion, mem_rightCoset_conj_iff_of_mem_normalizer hg₁]
     rw [← Set.mem_iUnion (s := fun v ↦ MulOpposite.op (rightCosetRep D v) •
       (Γ₁ : Set (GL (Fin 2) ℚ))), ← doubleCoset_eq_iUnion_rightCosetRep,
       ← conj_mem_doubleCoset_conj_iff_of_mem_normalizer hg₁ hg₂ _ (g * x * g⁻¹), hdc,
-      show g⁻¹ * (g * x * g⁻¹) * g = x by group]
+      hconj]
   have hinj : Function.Injective fun v ↦
       MulOpposite.op (g⁻¹ * rightCosetRep D v * g) • (Γ₁ : Set (GL (Fin 2) ℚ)) := by
     refine fun v w h ↦ op_rightCosetRep_smul_injective D ?_
