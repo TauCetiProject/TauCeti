@@ -99,10 +99,19 @@ theorem affineCoordinateRingMap_comp (hi : IsIntegralLattice i)
         (affineCoordinateRingMap hi' hi'' f' g' hf'g' hτυ) =
       affineCoordinateRingMap hi hi'' (f'.comp f) (g'.comp g)
         (fun n ↦ by simp [hfg, hf'g']) (hτυ.comp hστ) := by
+  have hcomp :
+      AddMonoidHom.toMultiplicative
+          ((dualSemigroupMap hi hi' f g hfg hστ).comp
+            (dualSemigroupMap hi' hi'' f' g' hf'g' hτυ)) =
+        (AddMonoidHom.toMultiplicative (dualSemigroupMap hi hi' f g hfg hστ)).comp
+          (AddMonoidHom.toMultiplicative (dualSemigroupMap hi' hi'' f' g' hf'g' hτυ)) := by
+    apply MonoidHom.ext
+    intro m
+    simp only [MonoidHom.comp_apply, AddMonoidHom.comp_apply,
+      AddMonoidHom.coe_toMultiplicative, Function.comp_apply, toAdd_ofAdd]
   rw [affineCoordinateRingMap, affineCoordinateRingMap, affineCoordinateRingMap,
-    dualSemigroupMap_comp, ← MonoidAlgebra.mapDomainAlgHom_comp]
-  -- Mathlib has no `AddMonoidHom.toMultiplicative_comp`; the two composites agree by `rfl`.
-  rfl
+    dualSemigroupMap_comp hi hi' hi'' f f' g g' hfg hf'g' hστ hτυ, hcomp,
+    ← MonoidAlgebra.mapDomainAlgHom_comp]
 
 end CoordinateRing
 
