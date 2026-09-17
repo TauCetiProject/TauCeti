@@ -81,13 +81,13 @@ theorem groupLikeBaseChange_bijective
   let e := evaluationBialgEquiv R A hspan
   let f := Bialgebra.TensorProduct.map (BialgHom.id K K) e.toBialgHom
   have hf : Function.Bijective f := by
-    let c := Algebra.TensorProduct.congr (AlgEquiv.refl : K ≃ₐ[K] K) e.toAlgEquiv
-    have hc : c.toAlgHom = f.toAlgHom := by
+    have hmap : Algebra.TensorProduct.map (AlgHom.id R K) e.toAlgEquiv.toAlgHom =
+        f.toAlgHom.restrictScalars R := by
       apply Algebra.TensorProduct.ext'
       intro a b
-      simp [c, f]
-    rw [← BialgHom.coe_toAlgHom f, ← hc]
-    exact c.bijective
+      simp [f]
+    rw [← BialgHom.coe_toAlgHom f, ← AlgHom.coe_restrictScalars' R, ← hmap]
+    exact Algebra.TensorProduct.map_bijective Function.bijective_id e.bijective
   let eK := (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv R K
     (G := _root_.GroupLike R A)).symm.trans
     (BialgEquiv.ofBijective f hf)
