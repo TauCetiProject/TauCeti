@@ -26,13 +26,19 @@ objects of `K`. The argument is carried out for an arbitrary additive invariant,
 smallness hypothesis on `A`; specializing it to the tautological invariant `X ↦ [X]` gives the
 statement in `TauCeti.AbelianK0 A`, which is the form the rest of the theory consumes.
 
-The finiteness is carried by data, not inferred: the summation range is an explicit `Finset ℤ`,
-and boundedness is Mathlib's `CochainComplex.IsStrictlyGE`/`CochainComplex.IsStrictlyLE`. Nothing
-here is a `finsum`, so every value is a truncation to an explicitly given finite range of degrees;
-what boundedness buys is that all large enough ranges give the same answer, so a complex with
-infinite support is assigned no canonical, range-independent Euler characteristic rather than a
-junk one. The comparison with the totalized `HomologicalComplex.eulerChar` of Mathlib is left to
-the finite-dimensionality layer that gives it a `ℤ`-valued additive invariant.
+The finiteness is carried by data, not inferred: the summation range is an explicit `Finset ℤ`.
+Nothing here is a `finsum`, so every value is a truncation to an explicitly given finite range of
+degrees, and what boundedness buys is that all large enough ranges give the same answer.
+
+Which boundedness is needed depends on what is being summed. The alternating class of the *terms*,
+and with it Euler–Poincaré, needs the terms to vanish outside a finite range, which is Mathlib's
+`CochainComplex.IsStrictlyGE`/`CochainComplex.IsStrictlyLE`. The alternating class of the
+*cohomology* needs only the cohomology to vanish there, which is `IsGE`/`IsLE`; so a complex whose
+terms are nonzero in every degree, such as an unbounded resolution, still has a range-independent
+`homologyEulerChar`, while having no canonical `eulerChar`. A complex outside both regimes is
+assigned no canonical value rather than a junk one. The comparison with the totalized
+`HomologicalComplex.eulerChar` of Mathlib is left to the finite-dimensionality layer that gives it
+a `ℤ`-valued additive invariant.
 
 ## Main definitions
 
@@ -51,6 +57,9 @@ the finite-dimensionality layer that gives it a `ℤ`-valued additive invariant.
   and from its cohomology, for every invariant additive on short exact sequences.
 * `TauCeti.AbelianK0.of_kernel_add_of_kernel` and
   `TauCeti.AbelianK0.eulerChar_eq_homologyEulerChar`: the two statements above in abelian `K₀`.
+* `TauCeti.AbelianK0.homologyEulerChar_eq_homologyEulerChar`: the alternating class of the
+  cohomology does not depend on the summation range as soon as the cohomology is bounded; the
+  terms of the complex need not be.
 * `TauCeti.AbelianK0.eulerChar_eq_of_quasiIso`: the Euler characteristic of a bounded complex
   depends only on its image in the derived category.
 
