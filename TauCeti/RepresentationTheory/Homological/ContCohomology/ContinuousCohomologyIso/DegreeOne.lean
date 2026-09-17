@@ -211,10 +211,10 @@ theorem explicitH1IsoContinuousCohomology_hom_apply (z : Z1 G M) :
     ((explicitH1IsoContinuousCohomology G M).hom :
         TopModuleCat.of ℤ (DiscreteH1 G M) ⟶
           continuousCohomology 1 (ofDiscreteModule ℤ G M))
-      ((discreteH1Equiv G M).symm (H1pi G M z)) = canonicalH1pi G M z := by
+      ((discreteH1Equiv G M).symm (z : H1 G M)) = canonicalH1pi G M z := by
   -- Unfold the categorical packaging, then cancel the change of carrier.
   change explicitH1AddEquivContinuousCohomology G M
-    ((discreteH1Equiv G M) ((discreteH1Equiv G M).symm (H1pi G M z))) = _
+    ((discreteH1Equiv G M) ((discreteH1Equiv G M).symm (z : H1 G M))) = _
   rw [AddEquiv.apply_symm_apply]
   rfl
 
