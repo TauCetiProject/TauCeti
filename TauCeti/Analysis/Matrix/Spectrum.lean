@@ -11,11 +11,12 @@ public import Mathlib.Analysis.Matrix.PosDef
 # Eigen-coordinates of a Hermitian matrix
 
 Let `B` be a Hermitian matrix over an `RCLike` field with orthonormal eigenvector basis
-`hB.eigenvectorBasis` and real eigenvalues `hB.eigenvalues`. This file reads three quantities
+`hB.eigenvectorBasis` and real eigenvalues `hB.eigenvalues`. This file reads four quantities
 off the eigen-coordinates: the quadratic form `x ↦ ⟪x, B x⟫`, which becomes a weighted sum of
-squared moduli, and the diagonalization and the determinant of the pencil `1 - c • B`, which are
-read off the scalars `1 - c * hB.eigenvalues j`. The pencil is diagonal in the eigenbasis for
-any scalar `c`; only its positive definiteness asks for a real one.
+squared moduli, the diagonalization and the determinant of the pencil `1 - c • B`, which are
+read off the scalars `1 - c * hB.eigenvalues j`, and the trace of `B * B`, which is the sum of
+the squared eigenvalues. The pencil is diagonal in the eigenbasis for any scalar `c`; only its
+positive definiteness asks for a real one.
 
 These are the spectral facts behind the moment-generating function of a Gaussian quadratic form,
 whose exponential-integrability domain is a positive-definiteness condition on such a pencil and
@@ -27,9 +28,13 @@ whose value is a power of its determinant.
   `B` at `∑ j, c j • b j` is `∑ j, hB.eigenvalues j * ‖c j‖ ^ 2`;
 * `Matrix.IsHermitian.posDef_one_sub_smul_iff` — `1 - c • B` is positive definite exactly when
   `c * hB.eigenvalues j < 1` for every `j`;
+* `Matrix.IsHermitian.eventually_posDef_one_sub_smul` — `1 - c • B` is positive definite for all
+  real `c` near `0`;
 * `Matrix.IsHermitian.one_sub_smul_eq_conjStarAlgAut_diagonal` and
   `Matrix.IsHermitian.det_one_sub_smul` — `1 - c • B` is conjugate to a diagonal matrix, and its
-  determinant is `∏ j, (1 - c * hB.eigenvalues j)`.
+  determinant is `∏ j, (1 - c * hB.eigenvalues j)`;
+* `Matrix.IsHermitian.trace_mul_self_eq_sum_eigenvalues_sq` — the trace of `B * B` is
+  `∑ j, hB.eigenvalues j ^ 2`.
 -/
 
 public section
@@ -92,5 +97,30 @@ theorem det_one_sub_smul (c : 𝕜) :
   rw [hB.one_sub_smul_eq_conjStarAlgAut_diagonal c, conjStarAlgAut_apply, det_mul, det_mul,
     mul_right_comm, ← det_mul, mul_star_self_of_mem hB.eigenvectorUnitary.2, det_one,
     one_mul, det_diagonal]
+
+/-- The trace of the square of a Hermitian matrix is the sum of the squares of its
+eigenvalues. -/
+theorem trace_mul_self_eq_sum_eigenvalues_sq :
+    (B * B).trace = ∑ j, (hB.eigenvalues j : 𝕜) ^ 2 := by
+  conv_lhs => rw [hB.spectral_theorem, ← map_mul]
+  rw [conjStarAlgAut_apply, trace_mul_cycle, star_mul_self_of_mem hB.eigenvectorUnitary.2,
+    one_mul, diagonal_mul_diagonal, trace_diagonal]
+  simp [sq]
+
+end Matrix.IsHermitian
+
+namespace Matrix.IsHermitian
+
+variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Finite ι] [DecidableEq ι] {B : Matrix ι ι 𝕜}
+
+open scoped ComplexOrder Topology in
+/-- For all real `c` close enough to `0`, the pencil `1 - c • B` is positive definite. -/
+theorem eventually_posDef_one_sub_smul (hB : B.IsHermitian) :
+    ∀ᶠ c in 𝓝 (0 : ℝ), (1 - c • B).PosDef := by
+  have := Fintype.ofFinite ι
+  simp only [hB.posDef_one_sub_smul_iff]
+  exact Filter.eventually_all.2 fun j =>
+    ((continuous_id.mul continuous_const).tendsto' 0 0 (zero_mul _)).eventually
+      (gt_mem_nhds zero_lt_one)
 
 end Matrix.IsHermitian

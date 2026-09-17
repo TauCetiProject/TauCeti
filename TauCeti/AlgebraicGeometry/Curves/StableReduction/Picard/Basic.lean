@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Quotient.Basic
-public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Basic
 
 /-!
 # The Picard group of a numerical type

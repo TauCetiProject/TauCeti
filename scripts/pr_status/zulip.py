@@ -393,7 +393,7 @@ def set_group(z, message, bot_id, group, desired, dry_run=False):
 
 
 def review_emoji(status):
-    """Review reaction derived from the same truth as the automatic labels.
+    """Review reaction from the completed review signal, not merge eligibility.
 
     In particular, the live review marker that produces `review-in-progress`
     produces 👀 here. A completed blocking review produces ✍️, and an all-green

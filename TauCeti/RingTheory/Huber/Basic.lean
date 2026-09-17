@@ -390,7 +390,7 @@ theorem isOpen_closure_zero_of_eventually_constant_powers [IsTopologicalRing A]
 Multiplication by `x` is continuous, so the preimage of `B` is a neighbourhood of `0`, and the
 images of the powers of `I` are a neighbourhood basis there
 (`TauCeti.Huber.PairOfDefinition.hasBasis_nhds_zero`). -/
-theorem exists_pow_idealOfDefinition_mul_mem [IsTopologicalRing A] (P : PairOfDefinition A)
+theorem exists_pow_idealOfDefinition_mul_mem [SeparatelyContinuousMul A] (P : PairOfDefinition A)
     {B : Subring A} (hB : IsOpen (B : Set A)) (x : A) :
     ∃ n : ℕ, ∀ a ∈ P.idealOfDefinition ^ n, x * (a : A) ∈ B := by
   have h0 : (0 : A) ∈ (x * ·) ⁻¹' (B : Set A) := by simp
@@ -516,7 +516,7 @@ definition.** The ring of definition is open and `sⁿ c → 0`, so `sⁿ c` is 
 This is the arbitrary-`c` generalisation of
 `TauCeti.Huber.IsPseudoUniformizer.eventually_pow_mem_ringOfDefinition`, which is the case
 `c = 1`; it also asks only for topological nilpotence rather than for a pseudouniformiser. -/
-theorem exists_pow_mul_mem [IsTopologicalRing A] (P : PairOfDefinition A) {s : A}
+theorem exists_pow_mul_mem [SeparatelyContinuousMul A] (P : PairOfDefinition A) {s : A}
     (hs : IsTopologicallyNilpotent s) (c : A) : ∃ i : ℕ, s ^ i * c ∈ P.ringOfDefinition :=
   ((hs.mul_const c).eventually
     (P.isOpen_ringOfDefinition.mem_nhds (by simp))).exists

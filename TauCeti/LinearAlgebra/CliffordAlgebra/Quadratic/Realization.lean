@@ -51,17 +51,12 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] [Invertible (2 : K)]
 
-omit [FiniteDimensional K V] [Invertible (2 : K)] in
-private theorem polarBilin_isSymm (Q : QuadraticForm K V) :
-    LinearMap.BilinForm.IsSymm (QuadraticMap.polarBilin Q) :=
-  ⟨fun x y => QuadraticMap.polar_comm Q x y⟩
-
 /-- The exterior-square model of the skew-adjoint endomorphisms of the polar form. -/
 private noncomputable def exteriorSquareEquivSkewAdjointPolar
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
     ⋀[K]^2 V ≃ₗ[K] skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q) :=
   exteriorSquareEquivSkewAdjoint (QuadraticMap.polarBilin Q)
-    (QuadraticMap.nondegenerate_polar_iff.mpr hQ) (polarBilin_isSymm Q)
+    (QuadraticMap.nondegenerate_polar_iff.mpr hQ) Q.isSymm_polarBilin
 
 private theorem ι_exteriorSquareEquivSkewAdjoint_apply
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (z : ⋀[K]^2 V) (x : V) :

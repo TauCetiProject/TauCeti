@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.FixedPoints
 public import TauCeti.GroupTheory.DoubleCoset.Orbits
 public import TauCeti.RepresentationTheory.CharacterTable.Pairing
 public import TauCeti.RepresentationTheory.Induction.Permutation
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # The pairing of two permutation characters counts double cosets
@@ -150,12 +151,14 @@ theorem characterPairing_ofMulAction_quotient_sub_punit_eq_card_doubleCosetQuoti
       characterPairing (ofCharacter (Representation.ofMulAction k G (G ⧸ L)))
         (ofCharacter (Representation.ofMulAction k G PUnit.{w + 1})) = 1 := by
     have := isPretransitive_prod_left (G := G) (G ⧸ L) PUnit.{w + 1}
-    rw [characterPairing_ofMulAction_eq_card_orbits k _ _ hG, card_orbitQuotient_eq_one]
+    rw [characterPairing_ofMulAction_eq_card_orbits k _ _ hG,
+      MulAction.card_orbitRelQuotient_eq_one]
     norm_num
   have hqq : characterPairing (ofCharacter (Representation.ofMulAction k G PUnit.{w + 1}))
       (ofCharacter (Representation.ofMulAction k G PUnit.{w + 1})) = 1 := by
     have := isPretransitive_prod_left (G := G) PUnit.{w + 1} PUnit.{w + 1}
-    rw [characterPairing_ofMulAction_eq_card_orbits k _ _ hG, card_orbitQuotient_eq_one]
+    rw [characterPairing_ofMulAction_eq_card_orbits k _ _ hG,
+      MulAction.card_orbitRelQuotient_eq_one]
     norm_num
   simp only [map_sub, LinearMap.sub_apply]
   rw [characterPairing_ofMulAction_quotient_eq_card_doubleCosetQuotient k H K hG, hpq H,

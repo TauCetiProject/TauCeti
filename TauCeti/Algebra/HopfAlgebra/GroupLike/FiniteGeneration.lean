@@ -49,7 +49,7 @@ nontrivial commutative ring form a finitely generated group.
 The spanning hypothesis is expressed intrinsically through the subcoalgebra spanned by all
 group-like elements. -/
 theorem fg_of_finiteType_of_linearIndependent_of_groupLikeSetSpan_eq_top
-    (R : Type u) (H : Type v) [CommRing R] [Nontrivial R] [Ring H] [HopfAlgebra R H]
+    (R : Type u) (H : Type v) [CommRing R] [Nontrivial R] [Semiring H] [HopfAlgebra R H]
     (hfinite : Algebra.FiniteType R H)
     (hlinear : LinearIndependent R (_root_.GroupLike.val (R := R) (A := H)))
     (hspan : Subcoalgebra.groupLikeSetSpan (R := R) (C := H) Set.univ = ⊤) :

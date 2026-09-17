@@ -33,6 +33,7 @@ centre gives the `Γ.withCenter` readings.
 * `Subgroup.relIndex_sup_eq_two`, `Subgroup.index_eq_two_mul_index_sup`: the relative index `2`
   and the index doubling, for an `N` normalised by `Γ` whose elements are `1` and `a ∉ Γ`.
 * `Subgroup.instCountableQuotient`: a coset space of a countable group is countable.
+* `Subgroup.finiteIndex_of_finiteIndex_subgroupOf`: finite index composes along `V ≤ U ≤ G`.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}`.
 -/
@@ -60,6 +61,20 @@ instance instCountableQuotient {G : Type*} [Group G] [Countable G] (H : Subgroup
 instance instFiniteIndexComap {G G' : Type*} [Group G] [Group G'] (H : Subgroup G) [H.FiniteIndex]
     (f : G' →* G) : (H.comap f).FiniteIndex :=
   ⟨by rw [index_comap]; exact FiniteIndex.index_ne_zero⟩
+
+/-- **Finite index composes along a chain of subgroups.** If `K` has finite index in `G` and `H`
+has finite index in `K` -- that is, the copy `H.subgroupOf K` of `H` inside `K` has finite index --
+then `H` has finite index in `G`. This is the converse of `Subgroup.instFiniteIndex_subgroupOf`,
+which restricts a finite index in `G` to one in `K`; neither direction is an instance, because the
+intermediate subgroup `K` cannot be recovered from the goal `H.FiniteIndex`. -/
+@[to_additive /-- **Finite index composes along a chain of additive subgroups.** If `K` has finite
+index in `G` and `H` has finite index in `K` -- that is, the copy `H.addSubgroupOf K` of `H` inside
+`K` has finite index -- then `H` has finite index in `G`. -/]
+theorem finiteIndex_of_finiteIndex_subgroupOf {G : Type*} [Group G] (H K : Subgroup G)
+    [K.FiniteIndex] [(H.subgroupOf K).FiniteIndex] : H.FiniteIndex :=
+  isFiniteRelIndex_top_iff.mp <|
+    ((isFiniteRelIndex_iff_finiteIndex (H := H) (K := K)).mpr inferInstance).trans
+      (isFiniteRelIndex_top_iff.mpr inferInstance)
 
 /-- `Γ` with the centre of the ambient group adjoined. For `Γ ≤ SL(2, ℤ)` the centre is
 `{±I}`, which acts trivially on `ℍ`; it is the cosets of `Γ·{±I}` — not those of `Γ` itself —

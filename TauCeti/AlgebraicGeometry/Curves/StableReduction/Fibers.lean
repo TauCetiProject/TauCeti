@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model
+public import TauCeti.AlgebraicGeometry.Curves.Family
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Basic
 
 /-!
 # Generic fibres of models over a discrete valuation ring
 
 This file defines the canonical inclusion of a model's chosen generic fibre into its total space.
 It records compatibility with the structure morphism and proves that the inclusion is open.
+When the model is a family of curves, so is its generic fibre.
 -/
 
 public section
@@ -65,6 +67,12 @@ lemma isOpenImmersion_genericι (M : Model R K C toK) : IsOpenImmersion M.generi
     inferInstanceAs (IsIso ((Over.forget _).map M.genericFiberIso.inv))
   rw [genericι]
   infer_instance
+
+/-- If a model is a family of curves, then so is its chosen generic fibre over the fraction
+field. -/
+lemma familyOfCurves_toK (M : Model R K C toK) [AlgebraicGeometry.FamilyOfCurves M.toBase] :
+    AlgebraicGeometry.FamilyOfCurves toK :=
+  .of_isPullback M.isPullback_genericι
 
 end Model
 

@@ -1,32 +1,13 @@
 #!/usr/bin/env python3
-"""Shared derivation of a TauCeti PR's status from GitHub truth.
+"""GitHub-reading helpers and build/review signals for PR status consumers.
 
-This is the single place that reads what a PR's status *is* -- its lifecycle
-(open / merged / closed), its `build` CI state, and its review state (from the
-newest `<!--tauceti-scoreboard-->` comment's meta JSON), plus whether a review is
-in flight right now (from the engine's `<!--tauceti-review-in-progress-->`
-marker). Every status *sink* imports it and renders that one truth its own way:
+Zulip renders derive() as build and review reactions. Merge eligibility is stricter:
+labels and pipeline health call readiness.py, which uses the pinned Auto-merge gate.
+These summary helpers must not be used to infer that a PR can enter the queue.
 
-  * zulip.py   -> two independent groups of emoji reactions on the PR's message
-  * labels.py  -> exactly one of the six status labels on the PR itself
-
-Keeping the derivation here means the two sinks can never disagree about what a
-PR's state is: they read the same `derive()` and only differ in how they show it.
-
-The status sinks deliberately use the same no-author-bar policy as the worker and auto-merge: the
-newest marked scoreboard counts regardless of the comment author's repository association. A review
-posted by a contributor is therefore reflected in labels and Zulip instead of remaining visibly
-`awaiting-review` after the worker has recorded the head as reviewed. The status labels are not a
-security boundary; the build, scope, axiom and bump guards remain trusted commit statuses.
-
-Destructive housekeeping is intentionally stricter. It calls
-`repo_associated_scoreboard_meta`, which accepts only comments by OWNER/MEMBER/COLLABORATOR accounts,
-so an arbitrary commenter cannot make housekeeping close somebody else's PR. Both status review
-signals are extracted from one all-comments fetch.
-
-The module is a pure library -- importing it has no side effects, writes nothing,
-and needs only python3's standard library plus an authenticated `gh` CLI (via
-GH_TOKEN / GITHUB_TOKEN). It reads GitHub; it never touches Zulip or labels.
+Destructive housekeeping separately uses repo_associated_scoreboard_meta, which
+accepts only OWNER/MEMBER/COLLABORATOR comments. Ordinary review signals accept
+contributor comments. The module writes nothing and executes no PR code.
 """
 
 import json
@@ -367,7 +348,7 @@ def review_state(meta, head):
         "none"     nothing posted yet          (no Zulip review emoji / label awaiting-review)
         "running"  behind HEAD, or undecided    (no Zulip review emoji / label awaiting-review)
         "changes"  at HEAD, a blocking rubric   (Zulip ✍️ / label awaiting-author)
-        "approved" at HEAD, every rubric green  (Zulip ✔️ / label ready-to-merge)
+        "approved" at HEAD, supplied review signals green (Zulip ✔️; not merge readiness)
     """
     if not meta:
         return "none"

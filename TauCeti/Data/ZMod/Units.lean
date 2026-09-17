@@ -27,6 +27,9 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Basic.lean`.
 * `TauCeti.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left` — a lowered unit homomorphism
   stays lowered after restricting to a multiple of its modulus.
+* `ZMod.exists_unitOfCoprime_eq` — every unit of `ZMod d` is `ZMod.unitOfCoprime` of a natural
+  number coprime to `d`, so a statement about all units may be checked on those.
+* `ZMod.unitOfCoprime_mul` — `ZMod.unitOfCoprime` is multiplicative in its numerator.
 * `TauCeti.eq_comp_unitsMap_of_comp_unitsMap_eq` — a unit homomorphism that agrees with a lowered
   one after restriction along `ZMod.unitsMap` is itself that lowered one, read at the smaller
   modulus. Its consumers are the descent arguments of
@@ -58,7 +61,7 @@ private lemma isCoprime_emod {a₁ c₁ : ℤ}
 from `χ₀` modulo `M / p`, and `χ'` modulo `N'` agrees with `χM` after restriction to the units
 modulo a common multiple `M'`, then `χ'` is itself pulled back from `χ₀`, along `N' / p`.
 `ZMod.unitsMap` is surjective onto the units of a divisor, so the restriction can be cancelled. -/
-theorem TauCeti.eq_comp_unitsMap_of_comp_unitsMap_eq {G : Type*} [Monoid G] {p M M' N' : ℕ}
+theorem TauCeti.eq_comp_unitsMap_of_comp_unitsMap_eq {G : Type*} [MulOne G] {p M M' N' : ℕ}
     [NeZero M'] (hpM : p ∣ M) (hMN' : M ∣ N') (hN'M' : N' ∣ M')
     {χM : (ZMod M)ˣ →* G} {χ₀ : (ZMod (M / p))ˣ →* G}
     (hcomp : χM = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpM))) {χ' : (ZMod N')ˣ →* G}
@@ -74,7 +77,7 @@ theorem TauCeti.eq_comp_unitsMap_of_comp_unitsMap_eq {G : Type*} [Monoid G] {p M
 `N` is pulled back from `χ₀` modulo `N / p`, then restricting `χ` to the units modulo `N * L` is
 again a pull-back of `χ₀`, now along `N * L / p`. Both sides collapse to one `ZMod.unitsMap` by
 `ZMod.unitsMap_comp`. -/
-theorem TauCeti.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left {G : Type*} [Monoid G]
+theorem TauCeti.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left {G : Type*} [MulOne G]
     {p N L : ℕ} (hpN : p ∣ N) {χ : (ZMod N)ˣ →* G} {χ₀ : (ZMod (N / p))ˣ →* G}
     (hcomp : χ = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpN))) :
     χ.comp (ZMod.unitsMap (dvd_mul_left N L)) =
@@ -118,3 +121,18 @@ theorem IsCoprime.exists_int_lifts {a c : ZMod d}
     conv_rhs => rw [← Int.emod_add_ediv_mul a₁ c₁]
     push_cast
     rw [hr₀, hc₀]
+
+/-- **Every unit of `ZMod d` is `ZMod.unitOfCoprime` of a natural number coprime to `d`.**
+A property of all units may therefore be checked on the units of this shape. -/
+theorem ZMod.exists_unitOfCoprime_eq [NeZero d] (u : (ZMod d)ˣ) :
+    ∃ (m : ℕ) (hm : Nat.Coprime m d), ZMod.unitOfCoprime m hm = u :=
+  ⟨(u : ZMod d).val, ZMod.val_coe_unit_coprime u, ZMod.unitsEquivCoprime.symm_apply_apply u⟩
+
+-- Deliberately not `@[simp]`: the right-hand side needs coprimality proofs for `m` and `n`
+-- separately, which `simp` cannot synthesise from the left-hand side, so Mathlib's `simpNF`
+-- linter reports that the lemma would never apply.
+/-- **`ZMod.unitOfCoprime` is multiplicative in its numerator.** -/
+theorem ZMod.unitOfCoprime_mul {m n : ℕ} (hm : Nat.Coprime m d) (hn : Nat.Coprime n d) :
+    ZMod.unitOfCoprime (m * n) (Nat.coprime_mul_iff_left.mpr ⟨hm, hn⟩)
+      = ZMod.unitOfCoprime m hm * ZMod.unitOfCoprime n hn :=
+  Units.ext (by push_cast [ZMod.coe_unitOfCoprime]; ring)

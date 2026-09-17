@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Module.Injective.SelfInjective
 public import TauCeti.Algebra.DualNumber.Trace
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Dimension
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Trace
 
 /-!
