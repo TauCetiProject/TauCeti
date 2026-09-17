@@ -37,10 +37,10 @@ conductor.
   ideal containing it. `P` contains `Φ i (θ)` for some `i`, and the right-hand side at `i`
   produces `σ ∈ A` outside `P` with `σ z ∈ A` whenever `p z ∈ A`
   (`exists_notMem_mul_mem_adjoin`): for `e i = 1` take `σ = ∏_{j ≠ i} Φ j (θ) ^ e j`, and for
-  `φ i ∤ H̄` take `σ = H(θ) ^ e i ∏_{j ≠ i} Φ j (θ) ^ e j`, descending along the powers of
+  `φ i ∤ (H mod p)` take `σ = H(θ) ^ e i ∏_{j ≠ i} Φ j (θ) ^ e j`, descending along the powers of
   `Φ i (θ)` with the identity `p H(θ) = -∏ j, Φ j (θ) ^ e j`. Iterating, a power of `σ` times the
   `p`-free part of the index lies in `𝔣 ⊆ P`, a contradiction (`not_dvd_index_of_forall`).
-* If `e i ≥ 2` and `φ i ∣ H̄`, then `β = Φ i (θ) ^ (e i - 1) ∏_{j ≠ i} Φ j (θ) ^ e j / p` is an
+* If `e i ≥ 2` and `φ i ∣ (H mod p)`, then `β = Φ i (θ) ^ (e i - 1) ∏_{j ≠ i} Φ j (θ) ^ e j / p` is an
   algebraic integer, because it preserves the finitely generated `ℤ`-submodule
   `p A + Φ i (θ) A` of `K`. It is not in `A`, since otherwise `f mod p` would divide a nonzero
   polynomial of smaller degree. So `β` has order `p` in `𝓞 K / A`, and `p` divides the index
@@ -227,7 +227,7 @@ theorem exists_notMem_mul_mem_adjoin (hφ : ∀ i, Irreducible (φ i)) (hφm : �
     rw [mul_left_cancel₀ hp0 key]
     exact θ.adjoin.add_mem (θ.adjoin.neg_mem (θ.adjoin.mul_mem (θ.aeval_mem_adjoin _)
       (θ.aeval_mem_adjoin _))) (θ.adjoin.mul_mem htA (θ.aeval_mem_adjoin _))
-  · -- `φ i ∤ H̄`: `H(θ)` is a unit modulo `P`, and `p H(θ) = -Φ i (θ) ^ e i * t`.
+  · -- `φ i ∤ (H mod p)`: `H(θ)` is a unit modulo `P`, and `p H(θ) = -Φ i (θ) ^ e i * t`.
     have hHP : Hθ ∉ P := fun h =>
       hnd (hΦ i ▸ θ.map_dvd_map_of_aeval_mem hPtop hp (hΦ i ▸ hφ i) hi h)
     have hpH : (p : 𝓞 K) * Hθ = -(ai ^ e i * t) := by rw [hprod, hsplit]
