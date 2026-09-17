@@ -21,11 +21,12 @@ Mathlib states over a discrete valuation ring `R` with fraction field `K` — in
 of integral and minimal Weierstrass equations — now applies to `Oᵥ ⊆ K` by instance search, for
 arbitrary `O` and `K`.
 
-The one lemma is the bridge from the local rings back to `O`: an element of `K` that comes from
-`Oᵥ` has `v`-adic valuation at most one. Combined with Mathlib's
-`IsDedekindDomain.HeightOneSpectrum.mem_integers_of_valuation_le_one`, which is `O = ⋂ᵥ Oᵥ` in
-valuation terms, it lets a property that holds over every localisation descend to `O`. It is stated
-for any `IsLocalization.AtPrime` model of `Oᵥ` mapping to `K` over `O`, not only for
+The two lemmas are the bridge from the local rings back to `O`. An element of `K` that comes from
+`Oᵥ` has `v`-adic valuation at most one; hence, by Mathlib's
+`IsDedekindDomain.HeightOneSpectrum.mem_integers_of_valuation_le_one`, an element that comes from
+every `Oᵥ` comes from `O`. The latter is `O = ⋂ᵥ Oᵥ` inside `K`, and is what lets a property that
+holds over every localisation descend to `O`. The valuation bound is stated for any
+`IsLocalization.AtPrime` model of `Oᵥ` mapping to `K` over `O`, not only for
 `Localization.AtPrime v.asIdeal` itself.
 
 ## Main declarations
@@ -33,7 +34,9 @@ for any `IsLocalization.AtPrime` model of `Oᵥ` mapping to `K` over `O`, not on
 * `IsDedekindDomain.HeightOneSpectrum.isDiscreteValuationRing_localizationAtPrime`:
   `IsDiscreteValuationRing (Localization.AtPrime v.asIdeal)`, as an instance;
 * `IsDedekindDomain.HeightOneSpectrum.valuation_algebraMap_le_one_of_isLocalizationAtPrime`:
-  `v (x) ≤ 1` for `x` in the image of the localisation at `v`.
+  `v (x) ≤ 1` for `x` in the image of the localisation at `v`;
+* `IsDedekindDomain.HeightOneSpectrum.isInteger_of_forall_isInteger_localizationAtPrime`:
+  an element of `K` lying in every `Localization.AtPrime v.asIdeal` lies in `O`.
 -/
 
 public section
@@ -66,6 +69,21 @@ theorem valuation_algebraMap_le_one_of_isLocalizationAtPrime {S : Type*} [CommRi
     v.asIdeal.primeCompl_le_nonZeroDivisors, valuation_of_mk',
     (v.intValuation_eq_one_iff_mem_primeCompl s).mpr s.2, div_one]
   exact v.intValuation_le_one r
+
+/-- **`O` is the intersection of its localisations at height-one primes**, inside `K`: an element
+of `K` that comes from `Localization.AtPrime v.asIdeal` for every `v` comes from `O`. This is the
+form in which a property holding over every localisation descends to `O`, as for the coefficients
+of a Weierstrass equation in
+`WeierstrassCurve.isIntegral_of_forall_isIntegral_localizationAtPrime`. -/
+theorem isInteger_of_forall_isInteger_localizationAtPrime (x : K)
+    (h : ∀ v : HeightOneSpectrum O, IsLocalization.IsInteger (Localization.AtPrime v.asIdeal) x) :
+    IsLocalization.IsInteger O x := by
+  -- Coming from every localisation bounds every `v`-adic valuation by one, which is the
+  -- hypothesis of `mem_integers_of_valuation_le_one`.
+  refine RingHom.mem_rangeS.mpr
+    (RingHom.mem_range.mp (mem_integers_of_valuation_le_one K x fun v => ?_))
+  obtain ⟨r, rfl⟩ := RingHom.mem_rangeS.mp (h v)
+  exact v.valuation_algebraMap_le_one_of_isLocalizationAtPrime r
 
 end IsDedekindDomain.HeightOneSpectrum
 
