@@ -44,6 +44,10 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
   `Equiv.permCongrHom_coe` rewrites it to `Equiv.permCongr`.
 * `Equiv.Perm.parts_partition_of_isCycle`, `Equiv.Perm.parts_partition_swap`: the values on a cycle
   and on a transposition, which are the two shapes the low-degree recognition theorems read.
+* `Equiv.Perm.fullCycleType_eq_map_card_orbit`: the full cycle type is the multiset of the sizes
+  of the orbits of `⟨σ⟩` on the carrier, with `Equiv.Perm.sameCycle_iff_mem_orbit_zpowers`,
+  `Equiv.Perm.coe_support_cycleOf_eq_orbit_zpowers` and `Equiv.Perm.orbit_zpowers_eq_singleton`
+  identifying those orbits with the cycle supports and the fixed points.
 
 ## Implementation notes
 
@@ -360,6 +364,121 @@ theorem _root_.Equiv.Perm.count_one_fullCycleType (σ : Equiv.Perm α) :
     (fullCycleType σ).count 1 = Fintype.card α - σ.support.card := by
   rw [fullCycleType_def]
   exact Equiv.Perm.count_one_parts_partition σ
+
+/-! ### Orbit sizes -/
+
+section OrbitSizes
+
+open MulAction
+
+variable (σ : Equiv.Perm α)
+
+omit [Fintype α] [DecidableEq α] in
+/-- Two points lie on the same cycle of `σ` exactly when one is a `⟨σ⟩`-translate of the
+other. -/
+theorem _root_.Equiv.Perm.sameCycle_iff_mem_orbit_zpowers {x y : α} :
+    σ.SameCycle x y ↔ y ∈ orbit (Subgroup.zpowers σ) x := by
+  constructor
+  · rintro ⟨i, hi⟩
+    exact ⟨⟨σ ^ i, Subgroup.zpow_mem_zpowers σ i⟩, hi⟩
+  · rintro ⟨g, hg⟩
+    obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.mp g.2
+    exact ⟨i, by rw [hi]; exact hg⟩
+
+/-- The `⟨σ⟩`-orbit of a moved point is the support of its cycle. -/
+theorem _root_.Equiv.Perm.coe_support_cycleOf_eq_orbit_zpowers {x : α} (hx : x ∈ σ.support) :
+    ((σ.cycleOf x).support : Set α) = orbit (Subgroup.zpowers σ) x := by
+  ext y
+  rw [Finset.mem_coe, mem_support_cycleOf_iff, ← sameCycle_iff_mem_orbit_zpowers]
+  exact and_iff_left hx
+
+/-- The `⟨σ⟩`-orbit of a fixed point is a singleton. -/
+theorem _root_.Equiv.Perm.orbit_zpowers_eq_singleton {x : α} (hx : x ∉ σ.support) :
+    orbit (Subgroup.zpowers σ) x = {x} := by
+  rw [notMem_support] at hx
+  ext y
+  rw [← sameCycle_iff_mem_orbit_zpowers, Set.mem_singleton_iff]
+  constructor
+  · rintro ⟨i, rfl⟩
+    exact zpow_apply_eq_self_of_apply_eq_self hx i
+  · rintro rfl
+    exact SameCycle.refl σ y
+
+/-- The size of the `⟨σ⟩`-orbit of a moved point is the length of its cycle. -/
+theorem _root_.Equiv.Perm.card_orbit_zpowers_of_mem_support {x : α} (hx : x ∈ σ.support) :
+    Nat.card (orbit (Subgroup.zpowers σ) x) = (σ.cycleOf x).support.card := by
+  rw [← coe_support_cycleOf_eq_orbit_zpowers σ hx, Nat.card_coe_set_eq, Set.ncard_coe_finset]
+
+/-- The `⟨σ⟩`-orbit of a fixed point has one element. -/
+theorem _root_.Equiv.Perm.card_orbit_zpowers_of_notMem_support {x : α} (hx : x ∉ σ.support) :
+    Nat.card (orbit (Subgroup.zpowers σ) x) = 1 := by
+  rw [orbit_zpowers_eq_singleton σ hx, Nat.card_coe_set_eq, Set.ncard_singleton]
+
+open scoped Classical in
+/-- **The full cycle type lists the orbit sizes.** The full cycle type of `σ` is the multiset of
+the sizes of the orbits of `⟨σ⟩` on the carrier: the cycles of length at least two are the orbits
+of the moved points, and each fixed point is an orbit of size one. -/
+theorem _root_.Equiv.Perm.fullCycleType_eq_map_card_orbit :
+    fullCycleType σ =
+      (Finset.univ : Finset (orbitRel.Quotient (Subgroup.zpowers σ) α)).val.map
+        (fun ω => Nat.card ω.orbit) := by
+  have hφ : ∀ ω : orbitRel.Quotient (Subgroup.zpowers σ) α,
+      Nat.card ω.orbit = Nat.card (orbit (Subgroup.zpowers σ) ω.out) := fun ω => by
+    rw [orbitRel.Quotient.orbit_eq_orbit_out ω Quotient.out_eq']
+  have hout : ∀ ω : orbitRel.Quotient (Subgroup.zpowers σ) α, ∀ x : α,
+      ω = Quotient.mk'' x → σ.SameCycle x ω.out := fun ω x hx => by
+    rw [sameCycle_iff_mem_orbit_zpowers, ← orbitRel_apply, hx]
+    exact Quotient.mk_out' x
+  rw [fullCycleType, cycleType_def,
+    ← Multiset.filter_add_not (fun ω : orbitRel.Quotient (Subgroup.zpowers σ) α =>
+      ω.out ∈ σ.support) Finset.univ.val, Multiset.map_add]
+  congr 1
+  · -- The classes of moved points are the cycles, with matching sizes.
+    symm
+    refine Multiset.map_eq_map_of_bij_of_nodup _ _ (Finset.univ.nodup.filter _)
+      (Finset.nodup _) (fun ω _ => σ.cycleOf ω.out) ?_ ?_ ?_ ?_
+    · intro ω hω
+      exact cycleOf_mem_cycleFactorsFinset_iff.mpr (Multiset.mem_filter.mp hω).2
+    · intro ω hω ω' hω' h
+      have hω' := (Multiset.mem_filter.mp hω').2
+      have hmem : ω'.out ∈ (σ.cycleOf ω.out).support := by
+        rw [h]
+        exact mem_support_cycleOf_iff.mpr ⟨SameCycle.refl σ _, hω'⟩
+      rw [← Quotient.out_equiv_out]
+      change orbitRel (Subgroup.zpowers σ) α ω.out ω'.out
+      rw [orbitRel_apply, ← sameCycle_iff_mem_orbit_zpowers]
+      exact ((mem_support_cycleOf_iff.mp hmem).1).symm
+    · intro c hc
+      obtain ⟨a, ha⟩ := (mem_cycleFactorsFinset_iff.mp hc).1.nonempty_support
+      have ha' : a ∈ σ.support := by
+        rw [mem_support, ← (mem_cycleFactorsFinset_iff.mp hc).2 a ha]
+        exact mem_support.mp ha
+      refine ⟨Quotient.mk'' a, Multiset.mem_filter.mpr ⟨Finset.mem_univ _, ?_⟩, ?_⟩
+      · exact (hout _ a rfl).mem_support_iff.mp ha'
+      · rw [← (hout _ a rfl).cycleOf_eq]
+        exact (cycle_is_cycleOf ha hc).symm
+    · intro ω hω
+      rw [hφ, card_orbit_zpowers_of_mem_support σ (Multiset.mem_filter.mp hω).2]
+      rfl
+  · -- The classes of fixed points each contribute a part equal to one.
+    symm
+    rw [Multiset.map_congr rfl fun ω hω =>
+      (hφ ω).trans (card_orbit_zpowers_of_notMem_support σ (Multiset.mem_filter.mp hω).2),
+      Multiset.map_const', ← Finset.filter_val, Finset.card_val, ← Finset.card_univ_sdiff]
+    congr 1
+    refine Finset.card_bij (fun ω _ => ω.out) (fun ω hω => ?_) (fun ω _ ω' _ h => ?_)
+      (fun x hx => ?_)
+    · exact Finset.mem_sdiff.mpr ⟨Finset.mem_univ _, (Finset.mem_filter.mp hω).2⟩
+    · exact Quotient.out_injective h
+    · have hx' : x ∉ σ.support := (Finset.mem_sdiff.mp hx).2
+      have hfix : ∀ y, σ.SameCycle x y → y = x := fun y hy => by
+        rw [sameCycle_iff_mem_orbit_zpowers, orbit_zpowers_eq_singleton σ hx'] at hy
+        exact hy
+      refine ⟨Quotient.mk'' x, Finset.mem_filter.mpr ⟨Finset.mem_univ _, ?_⟩, hfix _ (hout _ x rfl)⟩
+      rw [hfix _ (hout _ x rfl)]
+      exact hx'
+
+end OrbitSizes
 
 /-! ### Worked examples
 
