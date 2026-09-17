@@ -4,9 +4,9 @@ name: Stuck-automation alerts
 # Ceti's own automation wedged and cannot unstick itself: a bump that will not
 # cross a breaking change, a green PR the merge machinery never merged, a
 # scheduled job that stopped firing, main gone red, an unresolved mathlib
-# incompatibility. Every alert means "go FIX THE INFRASTRUCTURE", not "a human
-# please hand-hold one PR" — see scripts/pr_status/stuck_alerts.py for the full
-# contract and the list of states deliberately NOT alerted (normal backlog).
+# incompatibility. Diagnose the failed operation: queue builds can expose PR
+# integration defects as well as infrastructure failures. See
+# scripts/pr_status/stuck_alerts.py for the contract and ordinary backlog exclusions.
 #
 # The alerts live in Zulip and are idempotent (one message per active alert,
 # edited to a checkmark when it clears), so the run's own red/green is NOT the

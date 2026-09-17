@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
-public import TauCeti.Algebra.Polynomial.Laurent
+public import TauCeti.Algebra.Polynomial.Laurent.Basic
 import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
 public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.QuadraticForm
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Basic

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
-public import TauCeti.NumberTheory.NumberField.SplitsCompletely
+public import TauCeti.NumberTheory.NumberField.SplitsCompletely.Basic
 
 /-!
 # The completely split primes as the identity Artin fibre
@@ -24,7 +24,7 @@ complement of `[L : K]` primes above `𝔭`.
 That asymmetry is the point of the file. A full complement of primes above `𝔭` already forces
 the ramification index at every prime above `𝔭` to be `1`, hence forces `𝔭` to be unramified —
 that is `NumberField.isUnramifiedAt_of_ncard_primesOver_eq_finrank`, in
-`TauCeti.NumberTheory.NumberField.SplitsCompletely`. So the counting characterization and its
+`TauCeti.NumberTheory.NumberField.SplitsCompletely.Basic`. So the counting characterization and its
 set-level corollary both stand unconditionally, and `frobeniusPrimeSet K L 1` is the set of
 completely split primes on the nose, with no finite exceptional set to discard.
 

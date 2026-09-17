@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Diagonal.Basic
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # The centralizer of the symplectic diagonal torus

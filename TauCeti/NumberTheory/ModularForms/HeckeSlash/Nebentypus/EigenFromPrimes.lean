@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Diagonal.Composite
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Prime.Recurrence
 
 /-!
-# Eigen at the good primes is eigen at every good index
+# Eigen at the primes is eigen at the composite indices
 
 A cusp form of nebentypus `χ` that is an eigenvector of the `Γ₀(N)` Hecke ring at the generator
 `T_p` of every prime `p ∤ N` is an eigenvector at `heckeTCompositeGamma0 N n` for *every* `n`
@@ -25,10 +25,16 @@ scalar are closed under products, which carries the eigen-property along both; a
 powers the recurrence contributes the term `(p • S_p) · T_{p^r}`, whose scalar action is the
 nebentypus (`heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_succ_succ`).
 
+If the form is an eigenvector at the bad primes as well, the same argument covers every positive
+index. At a bad prime the recurrence family is a power of `T_p`; the same coprime multiplication
+law then assembles arbitrary mixtures of good and bad prime-power blocks.
+
 ## Main results
 
-* `HeckeRing.GL2.exists_smul_heckeTCompositeGamma0_of_forall_prime`: the eigen-property spreads
-  from the good primes to every good index.
+* `HeckeRing.GL2.exists_smul_heckeTCompositeGamma0_of_forall_prime_of_coprime`: the
+  eigen-property spreads from the good primes to every good index.
+* `HeckeRing.GL2.exists_smul_heckeTCompositeGamma0_of_forall_prime`: eigen-relations at every
+  prime, including those dividing the level, spread to every positive index.
 
 ## References
 
@@ -57,6 +63,17 @@ private theorem exists_smul_mul {F : cuspFormCharSpace k χ}
   obtain ⟨a, ha⟩ := hx
   obtain ⟨b, hb⟩ := hy
   exact ⟨a * b, by rw [map_mul, Module.End.mul_apply, hb, map_smul, ha, smul_smul, mul_comm]⟩
+
+/-- A power of a Hecke-ring element acting on `F` by a scalar again acts by a scalar. -/
+private theorem exists_smul_pow {F : cuspFormCharSpace k χ}
+    {x : 𝕋 (Delta0 N) ((Gamma0 N).map (mapGL ℚ)) ℤ}
+    (hx : ∃ c : ℂ, heckeRingHomCuspCharSpace k χ x F = c • F) (v : ℕ) :
+    ∃ c : ℂ, heckeRingHomCuspCharSpace k χ (x ^ v) F = c • F := by
+  induction v with
+  | zero => exact ⟨1, by rw [pow_zero, map_one, Module.End.one_apply, one_smul]⟩
+  | succ v ih =>
+      rw [pow_succ]
+      exact exists_smul_mul ih hx
 
 /-- The eigen-property at the generator `T_p` of a good prime spreads along the recurrence family
 to every `T_{p^v}`. The `r + 2` step is the Diamond–Shurman recurrence, whose scalar term acts
@@ -87,7 +104,8 @@ at every `n` coprime to `N`.
 This is what makes an eigenvalue system away from the level available from prime data: a form
 satisfying the hypothesis has a scalar at each good index, and choosing one at each index is a
 complete eigenvalue system in the sense `EigenformAwayFromLevel` asks for. -/
-theorem exists_smul_heckeTCompositeGamma0_of_forall_prime {F : cuspFormCharSpace k χ}
+theorem exists_smul_heckeTCompositeGamma0_of_forall_prime_of_coprime
+    {F : cuspFormCharSpace k χ}
     (h : ∀ p : ℕ, p.Prime → Nat.Coprime p N →
       ∃ c : ℂ, heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p) F = c • F)
     (n : ℕ) (hnN : Nat.Coprime n N) :
@@ -103,6 +121,32 @@ theorem exists_smul_heckeTCompositeGamma0_of_forall_prime {F : cuspFormCharSpace
     rw [heckeTCompositeGamma0_mul_of_coprime N hab]
     rw [Nat.coprime_mul_iff_left] at hnN
     exact exists_smul_mul (iha hnN.1) (ihb hnN.2)
+
+/-- **Eigen at every prime is eigen at every positive index.** If the Hecke-ring generator at every
+prime acts on `F ∈ S_k(N, χ)` by a scalar, then so does `heckeTCompositeGamma0 N n` for every
+positive index `n`.
+
+At a good prime the prime-power blocks follow the Diamond–Shurman recurrence. At a prime dividing
+the level the scalar term vanishes, so the block is a power of `T_p`. Coprime products, including
+products of good and bad prime powers, are assembled by
+`heckeTCompositeGamma0_mul_of_coprime`. -/
+theorem exists_smul_heckeTCompositeGamma0_of_forall_prime {F : cuspFormCharSpace k χ}
+    (h : ∀ p : ℕ, p.Prime →
+      ∃ c : ℂ, heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p) F = c • F)
+    (n : ℕ) (hn : n ≠ 0) :
+    ∃ c : ℂ, heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N n) F = c • F := by
+  induction n using Nat.recOnPosPrimePosCoprime with
+  | prime_pow p v hp _ =>
+      rw [heckeTCompositeGamma0_prime_pow N hp]
+      by_cases hpN : Nat.Coprime p N
+      · exact exists_smul_heckeTGeneratorRecGamma0 hp hpN (h p hp) v
+      · rw [heckeTGeneratorRecGamma0_eq_generator_pow_of_not_coprime N hpN]
+        exact exists_smul_pow (h p hp) v
+  | zero => exact (hn rfl).elim
+  | one => exact ⟨1, by rw [heckeTCompositeGamma0_one, map_one, Module.End.one_apply, one_smul]⟩
+  | coprime a b ha hb hab iha ihb =>
+      rw [heckeTCompositeGamma0_mul_of_coprime N hab]
+      exact exists_smul_mul (iha (by omega)) (ihb (by omega))
 
 end HeckeRing.GL2
 
