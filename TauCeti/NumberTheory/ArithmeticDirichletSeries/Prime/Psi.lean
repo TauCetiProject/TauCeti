@@ -107,6 +107,15 @@ theorem primePowerWeight_eq_vonMangoldt_re (A : IdealPrimePower K) :
     (prime_primePowerBase A) (primePowerExponent_pos A)
     (primePowerBase_pow_primePowerExponent A), Complex.ofReal_re]
 
+/-- On a prime-power ideal the ideal von Mangoldt function is the standard logarithmic weight,
+as a complex number. -/
+@[simp]
+theorem vonMangoldt_eq_primePowerWeight (A : IdealPrimePower K) :
+    (IdealArithmeticFunction.vonMangoldt : IdealArithmeticFunction K) A =
+      (primePowerWeight A : ℂ) :=
+  Complex.ext (by rw [primePowerWeight_eq_vonMangoldt_re, Complex.ofReal_re])
+    (by rw [IdealArithmeticFunction.vonMangoldt_im, Complex.ofReal_im])
+
 /-- The standard logarithmic prime-power weight is positive. -/
 theorem primePowerWeight_pos (A : IdealPrimePower K) : 0 < primePowerWeight A :=
   log_absNorm_asIdeal_pos (primePowerBase A)

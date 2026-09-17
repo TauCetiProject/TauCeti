@@ -98,23 +98,6 @@ namespace TauCeti
 
 variable {R : Type u} [CommRing R]
 
-/-! ### The standard alternating form in rank two -/
-
-/-- The transported alternating form of `Sp₄`, written out. -/
-private theorem jFin_two_eq : JFin 2 R = !![0, 0, -1, 0; 0, 0, 0, -1; 1, 0, 0, 0; 0, 1, 0, 0] := by
-  have hJ : JFin 2 R =
-      (Matrix.J (Fin 2) R).submatrix finSumFinEquiv.symm finSumFinEquiv.symm := by
-    rw [← JFin_submatrix 2 (R := R), Matrix.submatrix_submatrix]
-    simp
-  have e0 : finSumFinEquiv.symm (0 : Fin (2 + 2)) = Sum.inl 0 := by rw [Equiv.symm_apply_eq]; rfl
-  have e1 : finSumFinEquiv.symm (1 : Fin (2 + 2)) = Sum.inl 1 := by rw [Equiv.symm_apply_eq]; rfl
-  have e2 : finSumFinEquiv.symm (2 : Fin (2 + 2)) = Sum.inr 0 := by rw [Equiv.symm_apply_eq]; rfl
-  have e3 : finSumFinEquiv.symm (3 : Fin (2 + 2)) = Sum.inr 1 := by rw [Equiv.symm_apply_eq]; rfl
-  rw [hJ]
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [e0, e1, e2, e3, Matrix.J, Matrix.fromBlocks]
-
 variable {g : Matrix (Fin 4) (Fin 4) R}
 
 /-- **The symplectic condition, read on minors.** The two minors supported by the form on a fixed
@@ -122,7 +105,7 @@ row pair sum to the corresponding entry of the form. -/
 theorem pairMinor_row_add_eq_neg_jFin (hg : g * JFin 2 R * gᵀ = JFin 2 R) (p : Fin 4 × Fin 4) :
     pairMinor g p (0, 2) + pairMinor g p (1, 3) = -JFin 2 R p.1 p.2 := by
   have h := congrFun (congrFun hg p.1) p.2
-  simp [Matrix.mul_apply, Matrix.transpose_apply, Fin.sum_univ_four, jFin_two_eq,
+  simp [Matrix.mul_apply, Matrix.transpose_apply, Fin.sum_univ_four, JFin_two_eq,
     pairMinor_eq] at h ⊢
   linear_combination -h
 
@@ -131,7 +114,7 @@ form on a fixed column pair sum to the corresponding entry of the form. -/
 theorem pairMinor_column_add_eq_neg_jFin (hg : g * JFin 2 R * gᵀ = JFin 2 R) (q : Fin 4 × Fin 4) :
     pairMinor g (0, 2) q + pairMinor g (1, 3) q = -JFin 2 R q.1 q.2 := by
   have h := congrFun (congrFun (transpose_mul_JFin_mul_self (m := 2) hg) q.1) q.2
-  simp [Matrix.mul_apply, Matrix.transpose_apply, Fin.sum_univ_four, jFin_two_eq,
+  simp [Matrix.mul_apply, Matrix.transpose_apply, Fin.sum_univ_four, JFin_two_eq,
     pairMinor_eq] at h ⊢
   linear_combination -h
 
@@ -156,7 +139,7 @@ def specialIsogenyPair : Fin 4 → Fin 4 × Fin 4 := ![(0, 1), (0, 3), (2, 3), (
 @[simp]
 theorem jFin_specialIsogenyPair_eq_zero (i : Fin 4) :
     JFin 2 R (specialIsogenyPair i).1 (specialIsogenyPair i).2 = 0 := by
-  fin_cases i <;> simp [specialIsogenyPair, jFin_two_eq]
+  fin_cases i <;> simp [specialIsogenyPair, JFin_two_eq]
 
 end TauCeti
 
@@ -173,7 +156,7 @@ private theorem neg_jFin_mul_transpose_mul_jFin_eq (M : Matrix (Fin 4) (Fin 4) R
         M 2 3, M 3 3, -M 0 3, -M 1 3;
         -M 2 0, -M 3 0, M 0 0, M 1 0;
         -M 2 1, -M 3 1, M 0 1, M 1 1] := by
-  rw [jFin_two_eq]
+  rw [JFin_two_eq]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_four, -Matrix.cons_mul]
 
@@ -280,7 +263,7 @@ theorem symplecticSpecialIsogeny_symplecticSpecialIsogeny [CharP R 2]
   have h12 := pairMinor_row_add_eq_neg_jFin hg (1, 2)
   have h13 := pairMinor_row_add_eq_neg_jFin hg (1, 3)
   have h23 := pairMinor_row_add_eq_neg_jFin hg (2, 3)
-  simp [jFin_two_eq, pairMinor_eq] at h01 h02 h03 h12 h13 h23
+  simp [JFin_two_eq, pairMinor_eq] at h01 h02 h03 h12 h13 h23
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp only [symplecticSpecialIsogeny_apply, specialIsogenyPair_zero, specialIsogenyPair_one,

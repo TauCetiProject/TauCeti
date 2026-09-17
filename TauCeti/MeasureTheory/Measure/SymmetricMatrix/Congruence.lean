@@ -11,6 +11,8 @@ public import Mathlib.LinearAlgebra.Matrix.Bilinear
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Transvection
+public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
+public import TauCeti.LinearAlgebra.Matrix.Congruence
 import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
@@ -25,12 +27,17 @@ upper-triangular coordinates its determinant is
 general-scale Wishart formulas.
 
 The determinant is computed for an arbitrary square matrix `M`, not only invertible ones, with
-the invertible case as a corollary.
+the invertible case as a corollary. The underlying generic trace and determinant-pencil
+identities for rectangular congruence are in `TauCeti.LinearAlgebra.Matrix.Congruence`.
 
 ## Main declarations
 
 * `Matrix.symmetricCongruenceLinearMap` — congruence by an arbitrary rectangular matrix, as a
   linear map between symmetric subspaces.
+* `Matrix.inner_symmetricCongruenceLinearMap` — congruence by `M` is adjoint to congruence by
+  `Mᵀ` for the Frobenius pairing.
+* `MeasureTheory.Measure.charFun_map_symmetricCongruenceLinearMap` — the corresponding
+  transformation rule for characteristic functions.
 * `Matrix.det_symmetricCongruenceLinearMap` — its determinant is `(det M) ^ (p + 1)`.
 * `Matrix.GeneralLinearGroup.symmetricCongruence` — congruence by an invertible matrix, as a
   continuous linear automorphism.
@@ -55,6 +62,7 @@ public section
 noncomputable section
 
 open MeasureTheory Module TauCeti
+open scoped RealInnerProductSpace
 
 open scoped ENNReal
 
@@ -80,6 +88,28 @@ theorem coe_symmetricCongruenceLinearMap_apply (M : Matrix (Fin q) (Fin p) ℝ)
     (symmetricCongruenceLinearMap M A : Matrix (Fin q) (Fin q) ℝ) =
       M * (A : Matrix (Fin p) (Fin p) ℝ) * Mᵀ :=
   (rfl)
+
+/-- The trace pairing of a congruated symmetric matrix can be evaluated on the source by
+congruating the test matrix with the transpose. -/
+theorem trace_mul_coe_symmetricCongruenceLinearMap (M : Matrix (Fin q) (Fin p) ℝ)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin q) (Fin q) ℝ)) :
+    ((Θ : Matrix (Fin q) (Fin q) ℝ) *
+        (symmetricCongruenceLinearMap M A : Matrix (Fin q) (Fin q) ℝ)).trace =
+      ((Mᵀ * (Θ : Matrix (Fin q) (Fin q) ℝ) * M) *
+        (A : Matrix (Fin p) (Fin p) ℝ)).trace := by
+  rw [coe_symmetricCongruenceLinearMap_apply, trace_mul_congruence]
+
+/-- For the Frobenius pairing, congruence by `M` is adjoint to congruence by `Mᵀ`. -/
+theorem inner_symmetricCongruenceLinearMap (M : Matrix (Fin q) (Fin p) ℝ)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin q) (Fin q) ℝ)) :
+    ⟪symmetricCongruenceLinearMap M A, Θ⟫ =
+      ⟪A, symmetricCongruenceLinearMap Mᵀ Θ⟫ := by
+  rw [selfAdjoint.inner_eq_trace_mul, selfAdjoint.inner_eq_trace_mul,
+    coe_symmetricCongruenceLinearMap_apply,
+    coe_symmetricCongruenceLinearMap_apply, trace_mul_congruence]
+  simp
 
 theorem symmetricCongruenceLinearMap_mul {r : ℕ} (M : Matrix (Fin q) (Fin p) ℝ)
     (N : Matrix (Fin p) (Fin r) ℝ) :
@@ -492,3 +522,25 @@ end Cone
 end GeneralLinearGroup
 
 end Matrix
+
+namespace MeasureTheory.Measure
+
+open scoped Matrix
+
+variable {p q : ℕ}
+
+/-- Mapping a measure by rectangular congruence precomposes its characteristic function with
+congruence by the transpose. -/
+theorem charFun_map_symmetricCongruenceLinearMap
+    (μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)))
+    (M : Matrix (Fin q) (Fin p) ℝ)
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin q) (Fin q) ℝ)) :
+    charFun (μ.map (Matrix.symmetricCongruenceLinearMap M)) Θ =
+      charFun μ (Matrix.symmetricCongruenceLinearMap Mᵀ Θ) := by
+  have hM := LinearMap.continuous_of_finiteDimensional (Matrix.symmetricCongruenceLinearMap M)
+  rw [charFun_apply, integral_map hM.aemeasurable (by fun_prop), charFun_apply]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun A => ?_)
+  exact congrArg (fun x : ℝ => Complex.exp (x * Complex.I))
+    (Matrix.inner_symmetricCongruenceLinearMap M A Θ)
+
+end MeasureTheory.Measure
