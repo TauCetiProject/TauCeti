@@ -46,6 +46,23 @@ namespace TauCeti
 
 variable (k : Type*) [Field k] [Finite k]
 
+/-- A product of distinct monic irreducible polynomials is monic and squarefree, its factor
+degrees are the degrees of the given polynomials, and its degree is their sum. -/
+private theorem exists_monic_squarefree_of_nodup (K : Type*) [Field K] [DecidableEq K]
+    {s : Multiset K[X]}
+    (hmonic : ∀ p ∈ s, p.Monic) (hirr : ∀ p ∈ s, Irreducible p) (hs : s.Nodup) :
+    ∃ g : K[X], g.Monic ∧ g.natDegree = (s.map natDegree).sum ∧ Squarefree g ∧
+      (normalizedFactors g).map natDegree = s.map natDegree := by
+  have hfac : normalizedFactors s.prod = s := by
+    rw [normalizedFactors_prod_eq s hirr]
+    exact (Multiset.map_congr rfl fun p hp ↦ (hmonic p hp).normalize_eq_self).trans s.map_id'
+  have hsq : Squarefree s.prod := by
+    rw [squarefree_iff_nodup_normalizedFactors
+        (Multiset.prod_ne_zero fun h ↦ (hirr 0 h).ne_zero rfl), hfac]
+    exact hs
+  refine ⟨s.prod, by simpa using monic_multiset_prod_of_monic s id hmonic, ?_, hsq, by rw [hfac]⟩
+  rw [← sum_natDegree_normalizedFactors, hfac]
+
 /-- For `2 ≤ n`, a finite field has a monic squarefree polynomial of degree `n` whose irreducible
 factors have degrees `1` and `n - 1`. -/
 theorem exists_monic_squarefree_map_natDegree_normalizedFactors_eq_pair_one_sub_one
