@@ -78,8 +78,13 @@ theorem signature_zero :
 /-- **The signature of a real diagonal matrix** counts its positive entries against its negative
 ones: the diagonal entries are the eigenvalues, up to the order in which they are listed. -/
 @[simp]
-theorem signature_diagonal {d : ι → ℝ} (hd : (diagonal fun i => (d i : 𝕜)).IsHermitian) :
-    hd.signature = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
+theorem signature_diagonal {d : ι → ℝ} :
+    (Matrix.isHermitian_diagonal_of_self_adjoint (fun i => (d i : 𝕜))
+      (by ext i; simp)).signature =
+      ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
+  let hd := Matrix.isHermitian_diagonal_of_self_adjoint (fun i => (d i : 𝕜))
+    (by ext i; simp)
+  change hd.signature = _
   -- Both lists of reals are the real parts of the roots of the characteristic polynomial.
   have h : Multiset.map hd.eigenvalues Finset.univ.val = Multiset.map d Finset.univ.val := by
     have hr := congrArg (Multiset.map RCLike.re) hd.roots_charpoly_eq_eigenvalues

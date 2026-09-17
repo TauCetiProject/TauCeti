@@ -92,6 +92,7 @@ theorem tristramLevineForm_one (V : Matrix ι ι ℝ) : tristramLevineForm V 1 =
   simp [tristramLevineForm]
 
 /-- At `ω = -1` the Tristram--Levine form is twice the symmetrised Seifert matrix. -/
+@[simp]
 theorem tristramLevineForm_neg_one (V : Matrix ι ι ℝ) :
     tristramLevineForm V (-1) = ((2 : ℝ) • (V + Vᵀ)).map ((↑) : ℝ → ℂ) := by
   ext i j
