@@ -80,7 +80,6 @@ namespace TauCeti
 open Matrix
 
 local instance fact_prime_seven_alternatingFour : Fact (Nat.Prime 7) := ⟨by decide⟩
-local instance fact_prime_thirteen_alternatingFour : Fact (Nat.Prime 13) := ⟨by decide⟩
 
 private theorem sqrt_twelve : Nat.sqrt 12 = 3 := by
   exact ((Nat.eq_sqrt).2 (by norm_num)).symm
@@ -115,6 +114,8 @@ theorem alternatingGroupFourDixonPrimeData_p : alternatingGroupFourDixonPrimeDat
 @[simp]
 theorem alternatingGroupFourDixonPrimeData_root :
     alternatingGroupFourDixonPrimeData.root = 3 := rfl
+
+local instance fact_prime_thirteen_alternatingFour : Fact (Nat.Prime 13) := ⟨by decide⟩
 
 /-- **`13` is a good Dixon prime for `A₄`** whose residue window also contains every
 central-character coefficient in the displayed table. -/
