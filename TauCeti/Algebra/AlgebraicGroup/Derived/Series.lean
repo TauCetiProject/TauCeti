@@ -29,11 +29,11 @@ for arguments about connected solvable algebraic groups.
 
 public section
 
-namespace TauCeti.CommHopfAlgCat
+namespace TauCeti
 
 noncomputable section
 
-open WithConv
+open TauCeti.CommHopfAlgCat WithConv
 
 section CommRing
 
@@ -103,4 +103,4 @@ theorem isSolvable_points_iff_exists_derivedSeriesDefiningIdeal_eq_augmentation 
 
 end
 
-end TauCeti.CommHopfAlgCat
+end TauCeti
