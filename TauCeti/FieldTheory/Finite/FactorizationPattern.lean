@@ -64,12 +64,10 @@ theorem exists_monic_squarefree_map_natDegree_normalizedFactors_eq_pair_one_sub_
     rw [squarefree_iff_nodup_normalizedFactors
         (Multiset.prod_ne_zero fun hp ↦ (sirr 0 hp).ne_zero rfl), hfac]
     simp [s, Ne.symm hX]
-  have gdeg : s.prod.natDegree = (s.map natDegree).sum := by
-    rw [← sum_natDegree_normalizedFactors, hfac]
   have gfac : (normalizedFactors s.prod).map natDegree = s.map natDegree := by rw [hfac]
   refine ⟨s.prod, by simpa using monic_multiset_prod_of_monic s id smonic, ?_, gsq,
     by simpa [s, hdeg] using gfac⟩
-  rw [gdeg]
+  rw [natDegree_multiset_prod_of_monic s smonic]
   simp only [s, Multiset.insert_eq_cons, Multiset.map_cons, Multiset.map_singleton,
     Multiset.sum_cons, Multiset.sum_singleton, natDegree_X, hdeg]
   omega
@@ -101,11 +99,9 @@ theorem exists_monic_squarefree_count_two_map_natDegree_normalizedFactors_eq_one
       rw [squarefree_iff_nodup_normalizedFactors
           (Multiset.prod_ne_zero fun hp ↦ (sirr 0 hp).ne_zero rfl), hfac]
       simp [s, qX, Ne.symm hq, Ne.symm hX]
-    have gdeg : s.prod.natDegree = (s.map natDegree).sum := by
-      rw [← sum_natDegree_normalizedFactors, hfac]
     have gfac : (normalizedFactors s.prod).map natDegree = s.map natDegree := by rw [hfac]
     refine ⟨s.prod, by simpa using monic_multiset_prod_of_monic s id smonic, ?_, gsq, ?_, ?_⟩
-    · rw [gdeg]
+    · rw [natDegree_multiset_prod_of_monic s smonic]
       simp only [s, Multiset.insert_eq_cons, Multiset.map_cons, Multiset.map_singleton,
         Multiset.sum_cons, Multiset.sum_singleton, natDegree_X, qdeg, hdeg]
       omega
@@ -133,11 +129,9 @@ theorem exists_monic_squarefree_count_two_map_natDegree_normalizedFactors_eq_one
       rw [squarefree_iff_nodup_normalizedFactors
           (Multiset.prod_ne_zero fun hp ↦ (sirr 0 hp).ne_zero rfl), hfac]
       simp [s, Ne.symm hq]
-    have gdeg : s.prod.natDegree = (s.map natDegree).sum := by
-      rw [← sum_natDegree_normalizedFactors, hfac]
     have gfac : (normalizedFactors s.prod).map natDegree = s.map natDegree := by rw [hfac]
     refine ⟨s.prod, by simpa using monic_multiset_prod_of_monic s id smonic, ?_, gsq, ?_, ?_⟩
-    · rw [gdeg]
+    · rw [natDegree_multiset_prod_of_monic s smonic]
       simp only [s, Multiset.insert_eq_cons, Multiset.map_cons, Multiset.map_singleton,
         Multiset.sum_cons, Multiset.sum_singleton, qdeg, hdeg]
       omega
