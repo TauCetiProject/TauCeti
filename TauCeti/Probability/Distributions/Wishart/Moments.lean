@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.Wishart.Transforms
 
 import TauCeti.Analysis.SpecialFunctions.Log.SumLogOneSub
 import TauCeti.LinearAlgebra.Matrix.Trace
+import TauCeti.Probability.Moments.Basic
 import Mathlib.MeasureTheory.SpecificCodomains.Pi
 
 /-!
@@ -88,8 +89,8 @@ private lemma isProbabilityMeasure_of_mgf_trace_mul_eq_det_rpow
           ^ (-n / 2)) :
     IsProbabilityMeasure μ := by
   have h := hmgf 0 (by simpa using Matrix.PosDef.one)
-  simp only [mgf_zero', mul_zero, zero_smul, sub_zero, Matrix.det_one, Real.one_rpow] at h
-  exact ⟨(ENNReal.toReal_eq_one_iff _).1 h⟩
+  simp only [mul_zero, zero_smul, sub_zero, Matrix.det_one, Real.one_rpow] at h
+  exact isProbabilityMeasure_of_mgf_zero_eq_one h
 
 private lemma zero_mem_interior_integrableExpSet_of_mgf_trace_mul_eq_det_rpow
     (hmgf : ∀ t : ℝ,
@@ -234,12 +235,34 @@ variable
         ^ (-n / 2))
 include hmgf
 
+omit hmgf in
 /-- **The covariance of two symmetric trace statistics under a law with a Wishart trace
-transform.** If every trace statistic has the Wishart moment-generating function of degree `n` and
-positive-semidefinite scale `S`, then `A ↦ trace (Θ * A)` and `A ↦ trace (Φ * A)` have covariance
-`2 * n * trace (Θ * S * Φ * S)`. -/
+transform.** If the trace statistics at `Θ`, `Φ`, and `Θ + Φ` have the Wishart
+moment-generating function of degree `n` and positive-semidefinite scale `S`, then the statistics
+at `Θ` and `Φ` have covariance `2 * n * trace (Θ * S * Φ * S)`. -/
 theorem covariance_trace_mul_of_mgf_trace_mul_eq_det_rpow (hS : S.PosSemidef)
-    (Θ Φ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (Θ Φ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))
+    (hΘ : ∀ t : ℝ,
+      (1 - (2 * t) • (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).PosDef →
+      mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+          ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) μ t =
+        (1 - (2 * t) • (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).det
+          ^ (-n / 2))
+    (hΦ : ∀ t : ℝ,
+      (1 - (2 * t) • (CFC.sqrt S * (Φ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).PosDef →
+      mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+          ((Φ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) μ t =
+        (1 - (2 * t) • (CFC.sqrt S * (Φ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).det
+          ^ (-n / 2))
+    (hΘΦ : ∀ t : ℝ,
+      (1 - (2 * t) • (CFC.sqrt S * ((Θ + Φ : selfAdjoint.submodule ℝ
+        (Matrix (Fin p) (Fin p) ℝ)) : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).PosDef →
+      mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+          (((Θ + Φ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+            Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) μ t =
+        (1 - (2 * t) • (CFC.sqrt S * ((Θ + Φ : selfAdjoint.submodule ℝ
+          (Matrix (Fin p) (Fin p) ℝ)) : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).det
+          ^ (-n / 2)) :
     cov[fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
           ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace,
         fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
@@ -251,18 +274,18 @@ theorem covariance_trace_mul_of_mgf_trace_mul_eq_det_rpow (hS : S.PosSemidef)
     ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace
   let Y := fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
     ((Φ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace
-  have := isProbabilityMeasure_of_mgf_trace_mul_eq_det_rpow (hmgf Θ)
-  have hX : MemLp X 2 μ := memLp_trace_mul_of_mgf_trace_mul_eq_det_rpow (hmgf Θ) 2
-  have hY : MemLp Y 2 μ := memLp_trace_mul_of_mgf_trace_mul_eq_det_rpow (hmgf Φ) 2
+  have := isProbabilityMeasure_of_mgf_trace_mul_eq_det_rpow hΘ
+  have hX : MemLp X 2 μ := memLp_trace_mul_of_mgf_trace_mul_eq_det_rpow hΘ 2
+  have hY : MemLp Y 2 μ := memLp_trace_mul_of_mgf_trace_mul_eq_det_rpow hΦ 2
   have hsum : X + Y = fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       ((((Θ + Φ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
         Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) := by
     funext A
     simp [X, Y, Matrix.add_mul, Matrix.trace_add]
   have hpolar := variance_add hX hY
-  rw [hsum, variance_trace_mul_of_mgf_trace_mul_eq_det_rpow hS (hmgf (Θ + Φ)),
-    variance_trace_mul_of_mgf_trace_mul_eq_det_rpow hS (hmgf Θ),
-    variance_trace_mul_of_mgf_trace_mul_eq_det_rpow hS (hmgf Φ)] at hpolar
+  rw [hsum, variance_trace_mul_of_mgf_trace_mul_eq_det_rpow hS hΘΦ,
+    variance_trace_mul_of_mgf_trace_mul_eq_det_rpow hS hΘ,
+    variance_trace_mul_of_mgf_trace_mul_eq_det_rpow hS hΦ] at hpolar
   rw [Submodule.coe_add, Matrix.trace_add_mul_add_mul] at hpolar
   dsimp [X, Y] at hpolar
   linarith
@@ -334,8 +357,8 @@ theorem covariance_coe_apply_of_mgf_trace_mul_eq_det_rpow (hS : S.PosSemidef)
         fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
           (A : Matrix (Fin p) (Fin p) ℝ) k l; μ] =
       n * (S i k * S j l + S i l * S j k) := by
-  have h := covariance_trace_mul_of_mgf_trace_mul_eq_det_rpow hmgf hS
-    (symmetricEntry i j) (symmetricEntry k l)
+  have h := covariance_trace_mul_of_mgf_trace_mul_eq_det_rpow hS
+    (symmetricEntry i j) (symmetricEntry k l) (hmgf _) (hmgf _) (hmgf _)
   rw [trace_symmetricEntry_mul_mul_symmetricEntry_mul i j k l hS.1] at h
   have hij : (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       (((symmetricEntry i j : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
@@ -430,7 +453,9 @@ theorem covariance_trace_mul_wishartGramMeasure (hS : S.PosSemidef)
         (((Θ : Matrix (Fin p) (Fin p) ℝ) * S *
           (Φ : Matrix (Fin p) (Fin p) ℝ) * S).trace) :=
   covariance_trace_mul_of_mgf_trace_mul_eq_det_rpow
-    (fun _ _ ht => mgf_trace_mul_wishartGramMeasure_sqrt ν S ht) hS Θ Φ
+    hS Θ Φ (fun _ ht => mgf_trace_mul_wishartGramMeasure_sqrt ν S ht)
+      (fun _ ht => mgf_trace_mul_wishartGramMeasure_sqrt ν S ht)
+      (fun _ ht => mgf_trace_mul_wishartGramMeasure_sqrt ν S ht)
 
 /-- **The entrywise mean of a Gaussian-Gram Wishart matrix** is `ν Sᵢⱼ`. -/
 theorem integral_coe_apply_wishartGramMeasure (hS : S.PosSemidef) (ν : ℕ) (i j : Fin p) :
