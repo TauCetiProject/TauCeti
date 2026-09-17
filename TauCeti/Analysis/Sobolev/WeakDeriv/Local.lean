@@ -60,8 +60,8 @@ theorem hasWeakLineDerivOn_iff_forall_isCompact_closure :
       ⟨φ, φ.contDiff, φ.hasCompactSupport, hφV⟩
 
 /-- Weak Fréchet derivatives are detected on relatively compact open subdomains.
-The equivalence holds for arbitrary codomain and measure, without assumptions on the boundary
-of the domain. -/
+The equivalence holds for arbitrary real normed codomain and measure, without assumptions on the
+boundary of the domain. -/
 theorem hasWeakFDerivOn_iff_forall_isCompact_closure {U : E → E →L[ℝ] F} :
     HasWeakFDerivOn μ Ω u U ↔
       ∀ V : Opens E, IsCompact (closure (V : Set E)) → closure (V : Set E) ⊆ Ω →
