@@ -77,10 +77,10 @@ private lemma heckeSlashSum_slash_atkinLehnerGL (hQ : 0 < Q) (hQN : Q ∣ N)
     simp [hw]
   rw [← HeckeCoset.mk_rep D, coprimeDetCoset_mk, HeckeCoset.rep_def] at hD
   rw [← hmap, ← ModularForm.rat_slash, ← ModularForm.rat_slash]
-  have hnorm := h.mem_normalizer_map_mapGL hQ.ne' hQN hw
+  have hnorm := h.mem_normalizer_map_mapGL hQN hw
   obtain ⟨A, hA, -⟩ := (mem_Delta0_iff N).mp (Quotient.out D).2
   exact heckeSlashSum_slash_of_mem_normalizer k D hnorm hnorm
-    (h.inv_mul_mul_mem_doubleCoset hQ.ne' hQN hw (Quotient.out D).2 hA (hD A hA)) f hf
+    (h.inv_mul_mul_mem_doubleCoset hQN hw (Quotient.out D).2 hA (hD A hA)) f hf
 
 /-- **The Atkin–Lehner operator `W_Q` commutes with the Hecke operator of a double coset of
 determinant coprime to `Q`**, on `M_k(Γ₀(N))`. -/

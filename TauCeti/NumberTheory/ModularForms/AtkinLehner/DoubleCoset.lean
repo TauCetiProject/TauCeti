@@ -77,11 +77,16 @@ private lemma val_inv_mul_mul_eq_of_mul_eq_mul {α : GL (Fin 2) ℚ} {A B : Matr
   rw [mul_assoc, ← hB', inv_mul_cancel_left, Matrix.GeneralLinearGroup.val_mkOfDetNeZero]
 
 /-- **An Atkin–Lehner matrix normalizes `Γ₀(N)` in `GL(2, ℚ)`.** -/
-theorem IsAtkinLehnerMatrix.mem_normalizer_map_mapGL (hQ : Q ≠ 0) (hQN : Q ∣ N)
+theorem IsAtkinLehnerMatrix.mem_normalizer_map_mapGL (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M)
     (hw : (w : Matrix (Fin 2) (Fin 2) ℚ) = M.map (Int.cast : ℤ → ℚ)) :
     w ∈ Subgroup.normalizer
       (((Gamma0 N).map (mapGL ℚ) : Subgroup (GL (Fin 2) ℚ)) : Set (GL (Fin 2) ℚ)) := by
+  have hQ : Q ≠ 0 := by
+    intro hQ
+    apply Matrix.GeneralLinearGroup.det_ne_zero w
+    rw [hw, ← Int.cast_det, h.det_eq, hQ]
+    norm_num
   refine Subgroup.mem_normalizer_iff.mpr fun x ↦ ⟨?_, fun hx ↦ ?_⟩
   · rintro ⟨γ, hγ, rfl⟩
     obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQ hQN hγ
@@ -138,13 +143,18 @@ private lemma isCoprime_atkinLehnerConj_zero_zero {Q m a b c d p q r s : ℤ}
 /-- **Conjugation by an Atkin–Lehner matrix fixes a `Γ₀(N)` double coset of determinant coprime
 to `Q`.** If `W` is an Atkin–Lehner matrix for `Q ∣ N` and `α ∈ Δ₀(N)` has an integral matrix `A`
 with determinant coprime to `Q`, then `W⁻¹ α W` lies in the double coset `Γ₀(N) α Γ₀(N)`. -/
-theorem IsAtkinLehnerMatrix.inv_mul_mul_mem_doubleCoset [NeZero N] (hQ : Q ≠ 0) (hQN : Q ∣ N)
+theorem IsAtkinLehnerMatrix.inv_mul_mul_mem_doubleCoset [NeZero N] (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M)
     (hw : (w : Matrix (Fin 2) (Fin 2) ℚ) = M.map (Int.cast : ℤ → ℚ)) {α : GL (Fin 2) ℚ}
     (hα : α ∈ Delta0 N) {A : Matrix (Fin 2) (Fin 2) ℤ}
     (hA : (α : Matrix (Fin 2) (Fin 2) ℚ) = A.map (Int.cast : ℤ → ℚ)) (hAdet : Int.gcd A.det Q = 1) :
     w⁻¹ * α * w ∈ DoubleCoset.doubleCoset α ((Gamma0 N).map (mapGL ℚ))
       ((Gamma0 N).map (mapGL ℚ)) := by
+  have hQ : Q ≠ 0 := by
+    intro hQ
+    obtain ⟨m, hm⟩ := hQN
+    apply NeZero.ne N
+    simpa [hQ] using hm
   obtain ⟨A₁, hA₁, hdet_pos, ⟨r, hr⟩, hAunit⟩ := (mem_Delta0_iff N).mp hα
   obtain rfl : A = A₁ := Matrix.map_injective Int.cast_injective (hA.symm.trans hA₁)
   have hsQ : IsCoprime (A 1 1) (Q : ℤ) := Int.isCoprime_iff_gcd_eq_one.mpr
