@@ -26,7 +26,9 @@ public section
 
 open AlgebraicGeometry IsLocalRing
 
-namespace TauCeti.AlgHom
+namespace TauCeti
+
+open TauCeti.AlgHom
 
 variable {k A : Type*} [Field k] [CommRing A] [Algebra k A] (f : A →ₐ[k] k)
 
@@ -71,4 +73,4 @@ theorem isRegularLocalRing_kernelStalk_iff :
   rw [IsRegularLocalRing.iff_finrank_cotangentSpace,
     finrank_kernelCotangent_eq_finrank_residueFieldCotangent]
 
-end TauCeti.AlgHom
+end TauCeti
