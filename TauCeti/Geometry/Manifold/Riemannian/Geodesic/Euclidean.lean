@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
+public import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
 # Geodesics in inner-product spaces
@@ -47,31 +48,6 @@ namespace TauCeti.Manifold
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
   [FiniteDimensional ℝ F]
 
-omit [FiniteDimensional ℝ F] in
-private theorem mlieBracket_const_modelSpace (a b x : F) :
-    VectorField.mlieBracket 𝓘(ℝ, F) (fun _ : F ↦ a) (fun _ : F ↦ b) x = 0 := by
-  let A : ∀ y : F, TangentSpace 𝓘(ℝ, F) y := fun _ ↦ a
-  let B : ∀ y : F, TangentSpace 𝓘(ℝ, F) y := fun _ ↦ b
-  -- The explicit dependent fields expose the model-space representatives needed by the
-  -- ordinary Fréchet derivative formula for the Lie bracket.
-  change VectorField.mlieBracket 𝓘(ℝ, F) A B x = 0
-  have h := congrFun (VectorField.mlieBracketWithin_eq_lieBracketWithin
-    (V := A) (W := B) (s := univ)) x
-  rw [VectorField.mlieBracketWithin_univ] at h
-  rw [h]
-  have hA : fderivWithin ℝ A univ x = 0 := by
-    -- On the model space, `A` is definitionally the ordinary constant map with value `a`.
-    change fderivWithin ℝ (fun _ : F ↦ a) univ x = 0
-    exact fderivWithin_const_apply (𝕜 := ℝ) (E := F) (s := univ) (x := x) a
-  have hB : fderivWithin ℝ B univ x = 0 := by
-    -- On the model space, `B` is definitionally the ordinary constant map with value `b`.
-    change fderivWithin ℝ (fun _ : F ↦ b) univ x = 0
-    exact fderivWithin_const_apply (𝕜 := ℝ) (E := F) (s := univ) (x := x) b
-  rw [VectorField.lieBracketWithin, hA, hB]
-  -- The tangent space of the model manifold is definitionally its model vector space.
-  change (0 : F) - 0 = 0
-  simp
-
 private theorem leviCivitaConnection_const_apply (u v : F) (x : F) :
     leviCivitaConnection 𝓘(ℝ, F) F (fun _ : F ↦ v) x u = 0 := by
   let C (a : F) : ∀ y : F, TangentSpace 𝓘(ℝ, F) y := fun _ ↦ a
@@ -84,7 +60,7 @@ private theorem leviCivitaConnection_const_apply (u v : F) (x : F) :
         (V := fun _ : F ↦ a)).2 contDiffAt_const).mdifferentiableAt one_ne_zero
   have hbracket (a b : F) :
       VectorField.mlieBracket 𝓘(ℝ, F) (C a) (C b) x = 0 := by
-    simpa only [C] using mlieBracket_const_modelSpace a b x
+    simpa only [C] using TauCeti.mlieBracket_const_modelSpace a b x
   let w : F := leviCivitaConnection 𝓘(ℝ, F) F (C v) x (C u x)
   -- `w` abbreviates a tangent vector represented in the model vector space.
   change w = 0
@@ -177,6 +153,14 @@ theorem christoffelMap_leviCivita_modelSpace (x : F) :
   simp only [christoffelSymbol_apply, hframe, leviCivitaConnection_const_modelSpace,
     hz, map_zero, zero_smul, Finset.sum_const_zero]
 
+omit [FiniteDimensional ℝ F] in
+private theorem hasDerivAt_add_smul (p v : F) (t : ℝ) :
+    HasDerivAt (fun s : ℝ ↦ p + s • v) v t := by
+  rw [show (fun s : ℝ ↦ p + s • v) =
+    (fun _ : ℝ ↦ p) + fun s : ℝ ↦ s • v by rfl]
+  simpa only [id_eq, zero_add, one_smul] using
+    (hasDerivAt_const t p).add ((hasDerivAt_id t).smul_const v)
+
 /-- Every affine line in a finite-dimensional real inner-product space is a geodesic for the
 standard Riemannian metric. -/
 theorem isGeodesicCurve_add_smul (p v : F) :
@@ -196,12 +180,8 @@ theorem isGeodesicCurve_add_smul (p v : F) :
       rfl
     rw [hchart, id_comp]
     have hderiv : deriv (fun t : ℝ ↦ p + t • v) = fun _ ↦ v := by
-      -- Split the affine map into constant and linear parts for the derivative rules.
-      rw [show (fun t : ℝ ↦ p + t • v) =
-        (fun _ : ℝ ↦ p) + fun t : ℝ ↦ t • v by rfl]
       funext t
-      simpa only [id_eq, zero_add, one_smul] using
-        (hasDerivAt_const t p).add ((hasDerivAt_id t).smul_const v) |>.deriv
+      exact (hasDerivAt_add_smul p v t).deriv
     rw [hderiv]
     rw [deriv_const']
 
@@ -210,15 +190,9 @@ theorem isGeodesicCurveOnFrom_add_smul (p v : F) :
     IsGeodesicCurveOnFrom 𝓘(ℝ, F) (fun t : ℝ ↦ p + t • v) univ p v := by
   refine ⟨(isGeodesicCurveOn_univ (I := 𝓘(ℝ, F))).2
     (isGeodesicCurve_add_smul p v), mem_univ 0, ?_⟩
-  have hderiv : deriv (fun t : ℝ ↦ p + t • v) 0 = v := by
-    -- Split the affine map into constant and linear parts for the derivative rules.
-    rw [show (fun t : ℝ ↦ p + t • v) =
-      (fun _ : ℝ ↦ p) + fun t : ℝ ↦ t • v by rfl]
-    simpa only [id_eq, zero_add, one_smul] using
-      (hasDerivAt_const (0 : ℝ) p).add ((hasDerivAt_id (0 : ℝ)).smul_const v) |>.deriv
   have hvelocity : curveVelocityWithin 𝓘(ℝ, F) (fun t : ℝ ↦ p + t • v) univ 0 = v := by
     rw [curveVelocityWithin_univ, curveVelocity_apply, mfderiv_eq_fderiv]
-    exact hderiv
+    exact (hasDerivAt_add_smul p v 0).deriv
   apply TotalSpace.ext
   · simp
   · exact heq_of_eq hvelocity
@@ -242,10 +216,9 @@ theorem geodesicInterval_modelSpace (p v : F) :
   exact (mem_geodesicInterval_iff (I := 𝓘(ℝ, F)) (M := F)).2
     ⟨fun s : ℝ ↦ p + s • v, a, b, hline, ht⟩
 
-/-- The chosen maximal geodesic in an inner-product space is its affine line. -/
-@[simp]
-theorem maximalGeodesic_modelSpace (p v : F) (t : ℝ) :
-    maximalGeodesic 𝓘(ℝ, F) F p v t = p + t • v := by
+private theorem IsGeodesicCurveOnFrom.eq_maximalGeodesic_of_univ
+    {p v : F} {γ : ℝ → F} (hγ : IsGeodesicCurveOnFrom 𝓘(ℝ, F) γ univ p v) (t : ℝ) :
+    maximalGeodesic 𝓘(ℝ, F) F p v t = γ t := by
   let _ : T2Space (ModelProd F F) := Prod.t2Space
   let _ : T2Space (TangentBundle 𝓘(ℝ, F) F) :=
     (tangentBundleModelSpaceHomeomorph 𝓘(ℝ, F)).symm.t2Space
@@ -257,34 +230,27 @@ theorem maximalGeodesic_modelSpace (p v : F) (t : ℝ) :
   have ht : t ∈ Ioo a b := by
     simp only [a, b, mem_Ioo]
     constructor <;> linarith [neg_abs_le t, le_abs_self t]
-  have hline := (isGeodesicCurveOnFrom_add_smul p v).mono
-    (uniqueDiffOn_Ioo a b) (subset_univ _) h0
-  exact hline.eqOn_maximalGeodesic ht
+  exact (hγ.mono (uniqueDiffOn_Ioo a b) (subset_univ _) h0).eqOn_maximalGeodesic ht
+
+/-- The chosen maximal geodesic in an inner-product space is its affine line. -/
+@[simp]
+theorem maximalGeodesic_modelSpace (p v : F) (t : ℝ) :
+    maximalGeodesic 𝓘(ℝ, F) F p v t = p + t • v := by
+  exact (isGeodesicCurveOnFrom_add_smul p v).eq_maximalGeodesic_of_univ t
 
 /-- The geodesics in a finite-dimensional real inner-product space are exactly the affine
 lines. -/
 theorem isGeodesicCurve_iff_exists_eq_add_smul {γ : ℝ → F} :
     IsGeodesicCurve 𝓘(ℝ, F) γ ↔ ∃ p v : F, γ = fun t : ℝ ↦ p + t • v := by
-  let _ : T2Space (ModelProd F F) := Prod.t2Space
-  let _ : T2Space (TangentBundle 𝓘(ℝ, F) F) :=
-    (tangentBundleModelSpaceHomeomorph 𝓘(ℝ, F)).symm.t2Space
   constructor
   · intro hγ
     let p := γ 0
     let v : F := curveVelocityWithin 𝓘(ℝ, F) γ univ 0
     refine ⟨p, v, funext fun t ↦ ?_⟩
-    let a := -(|t| + 1)
-    let b := |t| + 1
-    have h0 : (0 : ℝ) ∈ Ioo a b := by
-      simp only [a, b, mem_Ioo]
-      constructor <;> linarith [abs_nonneg t]
-    have ht : t ∈ Ioo a b := by
-      simp only [a, b, mem_Ioo]
-      constructor <;> linarith [neg_abs_le t, le_abs_self t]
-    have hfrom : IsGeodesicCurveOnFrom 𝓘(ℝ, F) γ (Ioo a b) p v :=
+    have hfrom : IsGeodesicCurveOnFrom 𝓘(ℝ, F) γ univ p v :=
       ((isGeodesicCurveOn_univ (I := 𝓘(ℝ, F))).2 hγ).isGeodesicCurveOnFrom
-        (mem_univ 0) |>.mono (uniqueDiffOn_Ioo a b) (subset_univ _) h0
-    have heq := hfrom.eqOn_maximalGeodesic ht
+        (mem_univ 0)
+    have heq := hfrom.eq_maximalGeodesic_of_univ t
     rw [maximalGeodesic_modelSpace] at heq
     exact heq.symm
   · rintro ⟨p, v, rfl⟩

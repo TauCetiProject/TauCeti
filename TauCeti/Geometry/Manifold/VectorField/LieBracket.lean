@@ -9,11 +9,12 @@ public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
-# Directional derivatives and the manifold Lie bracket
+# Model-space and directional-derivative formulas for the manifold Lie bracket
 
 This file transports Mathlib's normed-space identity `fderivWithin_apply_lieBracket` through a
 manifold chart. It identifies the differential of a vector-valued function on the manifold Lie
-bracket with the commutator of its directional derivatives.
+bracket with the commutator of its directional derivatives. It also records that constant vector
+fields on a model space have zero manifold Lie bracket.
 
 The chart argument follows the pullback idiom used for the manifold bracket in
 `Mathlib/Geometry/Manifold/VectorField/LieBracket.lean`. The resulting lemma is a general manifold
@@ -21,6 +22,8 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
 
 ## Main result
 
+* `TauCeti.mlieBracket_const_modelSpace`: constant model-space vector fields have zero
+  manifold Lie bracket.
 * `mvfderiv_mlieBracket`: a differential sends the manifold bracket to the commutator of
   directional derivatives.
 
@@ -45,6 +48,36 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I (minSmoothness 𝕜 2) M]
+
+namespace TauCeti
+
+/-- Constant vector fields on a real normed vector space have zero manifold Lie bracket. -/
+theorem mlieBracket_const_modelSpace {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (a b x : F) :
+    VectorField.mlieBracket 𝓘(ℝ, F) (fun _ : F ↦ a) (fun _ : F ↦ b) x = 0 := by
+  let A : ∀ y : F, TangentSpace 𝓘(ℝ, F) y := fun _ ↦ a
+  let B : ∀ y : F, TangentSpace 𝓘(ℝ, F) y := fun _ ↦ b
+  -- The explicit dependent fields expose the model-space representatives needed by the
+  -- ordinary Fréchet derivative formula for the Lie bracket.
+  change VectorField.mlieBracket 𝓘(ℝ, F) A B x = 0
+  have h := congrFun (VectorField.mlieBracketWithin_eq_lieBracketWithin
+    (V := A) (W := B) (s := Set.univ)) x
+  rw [VectorField.mlieBracketWithin_univ] at h
+  rw [h]
+  have hA : fderivWithin ℝ A Set.univ x = 0 := by
+    -- On the model space, `A` is definitionally the ordinary constant map with value `a`.
+    change fderivWithin ℝ (fun _ : F ↦ a) Set.univ x = 0
+    exact fderivWithin_const_apply (𝕜 := ℝ) (E := F) (s := Set.univ) (x := x) a
+  have hB : fderivWithin ℝ B Set.univ x = 0 := by
+    -- On the model space, `B` is definitionally the ordinary constant map with value `b`.
+    change fderivWithin ℝ (fun _ : F ↦ b) Set.univ x = 0
+    exact fderivWithin_const_apply (𝕜 := ℝ) (E := F) (s := Set.univ) (x := x) b
+  rw [VectorField.lieBracketWithin, hA, hB]
+  -- The tangent space of the model manifold is definitionally its model vector space.
+  change (0 : F) - 0 = 0
+  simp
+
+end TauCeti
 
 omit [CompleteSpace E] in
 private theorem fderivWithin_chart_apply_mpullbackWithin
