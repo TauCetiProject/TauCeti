@@ -39,7 +39,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: TauCetiProject/TauCetiReview
-          ref: 603b28011f779bd341d0a08e788498b81542bd7d
+          ref: 692ebde95eea2a6d9d9f21954ba912c49f675d9d
           path: .tauceti-review
           sparse-checkout: runner
           persist-credentials: false
@@ -254,6 +254,12 @@ jobs:
         with:
           path: ${{ steps.mathlib_ltar_restore.outputs.cache-dir }}/*.ltar
           key: ${{ steps.mathlib_ltar_restore.outputs.cache-primary-key }}
+
+      - name: Duplicate-declaration audit
+        run: lake env lean --run scripts/DuplicateDeclarations.lean
+
+      - name: Duplicate-declaration audit regression tests
+        run: lake env python3 scripts/test_duplicate_declarations.py
 
       # Axiom audit (replaces the old textual no-sorry grep). Inspects the built
       # TauCeti environment and rejects any axiom outside {propext, Classical.choice,
