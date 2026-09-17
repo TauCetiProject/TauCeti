@@ -42,6 +42,8 @@ separate boundary analysis.
   the value at the new base point.
 * `TauCeti.conformalAt_schwarzChristoffelPrimitive` -- it is conformal throughout the upper
   half-plane.
+* `TauCeti.logDeriv_deriv_schwarzChristoffelPrimitive` -- its pre-Schwarzian derivative is the
+  sum of the simple fractions `e i / (z - a i)`.
 * `TauCeti.eqOn_schwarzChristoffelPrimitive` -- the derivative and normalization uniquely
   characterize it on the upper half-plane.
 * `TauCeti.norm_schwarzChristoffelPrimitive_sub_le_integral` -- along an affine segment of the
@@ -104,6 +106,21 @@ theorem deriv_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : UpperHalfPl
     {z : ℂ} (hz : z ∈ upperHalfPlaneSet) :
     deriv (schwarzChristoffelPrimitive a e z₀) z = schwarzChristoffelIntegrand a e z :=
   (hasDerivAt_schwarzChristoffelPrimitive a e z₀ hz).deriv
+
+/-- **The pre-Schwarzian derivative of the Schwarz--Christoffel map.**  Throughout the upper
+half-plane the quotient `F'' / F'` of the normalized primitive `F` is the sum of simple fractions
+`∑ i, e i / (z - a i)`.  This is the Schwarz--Christoffel differential equation, the identity a
+conformal map of the upper half-plane onto a polygon has to satisfy for `a` its prevertices and
+`e` its turning exponents. -/
+theorem logDeriv_deriv_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    {z : ℂ} (hz : z ∈ upperHalfPlaneSet) :
+    logDeriv (deriv (schwarzChristoffelPrimitive a e z₀)) z =
+      ∑ i, (e i : ℂ) / (z - (a i : ℂ)) := by
+  have heq : deriv (schwarzChristoffelPrimitive a e z₀) =ᶠ[nhds z]
+      schwarzChristoffelIntegrand a e :=
+    Filter.eventuallyEq_of_mem (isOpen_upperHalfPlaneSet.mem_nhds hz)
+      fun _ hw => deriv_schwarzChristoffelPrimitive a e z₀ hw
+  rw [(logDeriv_congr_nhds heq).eq_of_nhds, logDeriv_schwarzChristoffelIntegrand a e hz]
 
 /-- The normalized Schwarz--Christoffel primitive is holomorphic on the upper half-plane. -/
 theorem differentiableOn_schwarzChristoffelPrimitive (a e : ι → ℝ)

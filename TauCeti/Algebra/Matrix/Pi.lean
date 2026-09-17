@@ -28,7 +28,8 @@ Artin--Wedderburn type presents an algebra as, and these are the invariants such
 transports; nothing here needs the presentation to come from Artin--Wedderburn, nor the
 coefficients to be division algebras.
 
-* `TauCeti.finrank_pi_matrix`: the dimension of the product is `∑ᵢ nᵢ²`;
+* `TauCeti.finrank_pi_matrix`: over a semiring with the strong rank condition, the dimension of
+  the product is `∑ᵢ nᵢ²`;
 * `TauCeti.centerPiMatrixAlgEquiv`: when every size is nonzero the center consists of the tuples of
   scalar matrices, so it is the algebra `ι → k` of functions on the index, whose dimension is the
   number of factors (`TauCeti.finrank_center_pi_matrix`);
@@ -60,6 +61,23 @@ namespace TauCeti
 
 open scoped BigOperators
 
+section Semiring
+
+variable (k : Type*) [Semiring k] [StrongRankCondition k] {ι : Type*} [Fintype ι] (d : ι → ℕ)
+
+/-- The dimension of a finite product of matrix modules over a semiring with the strong rank
+condition is the sum of the squares of the sizes. -/
+theorem finrank_pi_matrix :
+    Module.finrank k (Π i, Matrix (Fin (d i)) (Fin (d i)) k) = ∑ i, d i ^ 2 := by
+  rw [Module.finrank_pi_fintype]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [Module.finrank_matrix]
+  simp [sq]
+
+end Semiring
+
+section Field
+
 variable (k : Type*) [Field k] {ι : Type*} (d : ι → ℕ)
 
 /-- The center of a product of nonzero matrix algebras over a field consists of the tuples of
@@ -90,14 +108,6 @@ theorem centerPiMatrixAlgEquiv_symm_apply_coe [∀ i, NeZero (d i)] (f : ι → 
 section FiniteIndex
 
 variable [Fintype ι]
-
-/-- The dimension of a finite product of matrix algebras is the sum of the squares of the sizes. -/
-theorem finrank_pi_matrix :
-    Module.finrank k (Π i, Matrix (Fin (d i)) (Fin (d i)) k) = ∑ i, d i ^ 2 := by
-  rw [Module.finrank_pi_fintype]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [Module.finrank_matrix]
-  simp [sq]
 
 /-- The center of a finite product of nonzero matrix algebras over a field has dimension the number
 of factors. -/
@@ -214,5 +224,7 @@ theorem card_le_finrank_of_algEquiv_pi_matrix [Finite ι] [∀ i, NeZero (d i)]
 end Bounds
 
 end Presentation
+
+end Field
 
 end TauCeti

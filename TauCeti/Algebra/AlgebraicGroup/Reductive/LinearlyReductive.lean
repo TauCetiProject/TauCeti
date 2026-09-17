@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
 public import TauCeti.Algebra.AlgebraicGroup.LinearlyReductive
-import TauCeti.Algebra.AlgebraicGroup.Representation.NormalInvariants
+import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.Invariants
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.LinearlyReductive
 import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
 import TauCeti.Algebra.Coalgebra.Subcoalgebra.Finite

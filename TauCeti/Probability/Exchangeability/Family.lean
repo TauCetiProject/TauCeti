@@ -35,9 +35,8 @@ this file relates them to exchangeable families.
 * `ExchangeableFamily.congr` transports the predicate across a coordinatewise a.e. change of
   family, matching the sequence-level congruences in `Exchangeability/Congr.lean`.
 
-This is the family exchangeability API needed for the Layer 8 target “de Finetti for other
-countable index types” in `TauCetiRoadmap/Exchangeability/README.md`. The countable-index theorem
-itself is in `TauCeti.Probability.DeFinetti.CountableIndex`.
+The de Finetti theorem for countably infinite index types is in
+`TauCeti.Probability.DeFinetti.CountableIndex`.
 -/
 
 public section
@@ -168,16 +167,16 @@ theorem ExchangeableFamily.exchangeable {μ : Measure Ω} {X : ℕ → Ω → α
 
 /-- An exchangeable sequence with a.e. measurable coordinates is exchangeable as an
 `ℕ`-indexed family. -/
-theorem Exchangeable.exchangeableFamily {μ : Measure Ω} [IsFiniteMeasure μ]
+theorem Exchangeable.exchangeableFamily {μ : Measure Ω}
     {X : ℕ → Ω → α} (h : Exchangeable μ X) (hX : ∀ i, AEMeasurable (X i) μ) :
     ExchangeableFamily μ X := by
   refine ExchangeableFamily.intro fun m k l hk hl => ?_
   exact (h.blockLaw_eq_prefixLaw_of_injective hX k hk).trans
     (h.blockLaw_eq_prefixLaw_of_injective hX l hl).symm
 
-/-- For a finite measure and a.e. measurable coordinates, exchangeability as an `ℕ`-indexed family
+/-- For a.e. measurable coordinates, exchangeability as an `ℕ`-indexed family
 is equivalent to the existing sequence predicate. -/
-theorem exchangeableFamily_iff_exchangeable {μ : Measure Ω} [IsFiniteMeasure μ]
+theorem exchangeableFamily_iff_exchangeable {μ : Measure Ω}
     {X : ℕ → Ω → α} (hX : ∀ i, AEMeasurable (X i) μ) :
     ExchangeableFamily μ X ↔ Exchangeable μ X :=
   ⟨ExchangeableFamily.exchangeable, fun h => h.exchangeableFamily hX⟩
