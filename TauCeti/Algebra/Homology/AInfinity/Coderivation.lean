@@ -98,6 +98,7 @@ noncomputable def suspensionTaylor (G : InternalGrading R A)
     PiTensorProduct.lift ((m n.1).compLinearMap fun i ↦ G.koszulTwist ((n.1 : ℤ) - 1 - i))
 
 /-- The suspension Taylor map on a pure tensor word. -/
+@[simp]
 theorem suspensionTaylor_of_tprod (G : InternalGrading R A)
     (m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A) (n : {n : ℕ // 0 < n})
     (x : Fin n.1 → A) :
