@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.CompletelyMonotone.Closure
+import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 public import TauCeti.Analysis.CompletelyMonotone.Integral
 -- Non-public: the bundled Laplace kernel and its integrability.
 import TauCeti.Analysis.CompletelyMonotone.Laplace.Kernel
@@ -1263,12 +1264,10 @@ private lemma exp_neg_mul_sub_one_sub_pow_le (u : ℝ) (hu_nn : 0 ≤ u) (hu_lt_
     have hfactor : -(↑m * u) - ↑m * u ^ 2 / (1 - u) = ↑m * (-u - u ^ 2 / (1 - u)) := by ring
     rw [hfactor]
     apply mul_le_mul_of_nonneg_left _ (Nat.cast_nonneg m)
-    have habs : |u| < 1 := by rwa [abs_of_nonneg hu_nn]
-    have hlog := Real.abs_log_sub_add_sum_range_le habs 1
-    simp only [Finset.sum_range_one, Nat.cast_zero, zero_add, div_one, pow_one] at hlog
-    have hu_sq : u ^ (1 + 1) = u ^ 2 := by ring
-    rw [abs_of_nonneg hu_nn, hu_sq] at hlog
-    linarith [(abs_le.mp hlog).1]
+    -- The sharp bound carries a `2` in the denominator; the goal needs only the unhalved form.
+    have hhalf : u ^ 2 / (2 * (1 - u)) ≤ u ^ 2 / (1 - u) :=
+      div_le_div_of_nonneg_left (sq_nonneg u) h1u (by linarith)
+    linarith [Real.neg_log_one_sub_sub_self_le hu_nn hu_lt_1]
   set b := ↑m * u ^ 2 / (1 - u) with hb_def
   have hb_nn : 0 ≤ b := div_nonneg (mul_nonneg (Nat.cast_nonneg m) (sq_nonneg u)) h1u.le
   have hmu_nn : 0 ≤ ↑m * u := mul_nonneg (Nat.cast_nonneg m) hu_nn
