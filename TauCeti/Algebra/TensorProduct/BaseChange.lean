@@ -207,7 +207,44 @@ end Algebra.TensorProduct
 
 namespace ScalarAut
 
-variable {K L A : Type*} [CommSemiring K] [CommSemiring L] [Algebra K L]
+section Module
+
+-- The action of a scalar automorphism on `L ⊗[K] A` is the left-factor action, which is already
+-- available as soon as `A` is a `K`-module. `instMulSemiringAction` below records that it is a
+-- `MulSemiringAction` when `A` carries an algebra structure; it does not introduce the action.
+variable {K L A : Type*} [CommSemiring K] [Semiring L] [Algebra K L]
+  [AddCommMonoid A] [Module K A]
+
+/-- Scalar multiplication on a pure tensor acts through the first factor. -/
+@[simp]
+theorem smul_tmul (σ : L ≃ₐ[K] L) (a : L) (x : A) :
+    σ • (a ⊗ₜ[K] x) = σ a ⊗ₜ[K] x :=
+  rfl
+
+/-- The scalar-factor action is semilinear for the corresponding automorphism of `L`. -/
+theorem smul_smulₛₗ (σ : L ≃ₐ[K] L) (a : L) (x : L ⊗[K] A) :
+    σ • (a • x) = σ a • σ • x := by
+  induction x using TensorProduct.induction_on with
+  | zero => simp
+  | add x y hx hy => simp [smul_add, hx, hy]
+  | tmul b x => simp [TensorProduct.smul_tmul']
+
+/-- The scalar action as a semilinear map over `L`. -/
+noncomputable def semilinearMap (σ : L ≃ₐ[K] L) :
+    L ⊗[K] A →ₛₗ[σ.toRingHom] L ⊗[K] A where
+  toFun x := σ • x
+  map_add' := smul_add σ
+  map_smul' := smul_smulₛₗ (A := A) σ
+
+/-- The semilinear scalar map agrees pointwise with the scalar action. -/
+@[simp]
+theorem semilinearMap_apply (σ : L ≃ₐ[K] L) (x : L ⊗[K] A) :
+    semilinearMap (A := A) σ x = σ • x :=
+  (rfl)
+
+end Module
+
+variable {K L A : Type*} [CommSemiring K] [Semiring L] [Algebra K L]
   [Semiring A] [Algebra K A]
 
 /-- Scalar automorphisms act on a scalar extension through the scalar factor. -/
@@ -233,12 +270,6 @@ theorem smul_def (σ : L ≃ₐ[K] L) (x : L ⊗[K] A) :
     σ • x = Algebra.TensorProduct.congr σ (.refl : A ≃ₐ[K] A) x :=
   rfl
 
-/-- Scalar multiplication on a pure tensor acts through the first factor. -/
-@[simp]
-theorem smul_tmul (σ : L ≃ₐ[K] L) (a : L) (x : A) :
-    σ • (a ⊗ₜ[K] x) = σ a ⊗ₜ[K] x := by
-  simp [smul_def]
-
 /-- Scalar extension of an algebra morphism commutes with the scalar-factor action. -/
 @[simp]
 theorem baseChangeMap_smul {B : Type*} [Semiring B] [Algebra K B] (f : A →ₐ[K] B)
@@ -252,29 +283,6 @@ theorem baseChangeMap_smul {B : Type*} [Semiring B] [Algebra K B] (f : A →ₐ[
   | tmul a x =>
       simp only [Algebra.TensorProduct.map_tmul, AlgHom.id_apply, smul_tmul]
       rfl
-
-/-- The scalar-factor action is semilinear for the corresponding automorphism of `L`. -/
-theorem smul_smulₛₗ (σ : L ≃ₐ[K] L) (a : L) (x : L ⊗[K] A) :
-    σ • (a • x) = σ a • σ • x := by
-  simp [Algebra.smul_def, Algebra.TensorProduct.algebraMap_apply]
-
-/-- The scalar action as a semilinear map over `L`. -/
-noncomputable def semilinearMap (σ : L ≃ₐ[K] L) :
-    L ⊗[K] A →ₛₗ[σ.toRingHom] L ⊗[K] A where
-  toFun x := σ • x
-  map_add' := smul_add σ
-  map_smul' := smul_smulₛₗ (A := A) σ
-
-/-- The semilinear scalar map agrees pointwise with the scalar action. -/
-@[simp]
-theorem semilinearMap_apply (σ : L ≃ₐ[K] L) (x : L ⊗[K] A) :
-    semilinearMap (A := A) σ x = σ • x :=
-  by
-    -- Exported semilinear-map application unfolds to `TensorProduct.map`, whereas the action
-    -- unfolds to `TensorProduct.congr`; expose both representations before comparing them.
-    change Algebra.TensorProduct.map σ.toAlgHom (AlgHom.id K A) x = σ • x
-    rw [smul_def, Algebra.TensorProduct.congr_apply]
-    rw [AlgEquiv.refl_toAlgHom]
 
 end ScalarAut
 
