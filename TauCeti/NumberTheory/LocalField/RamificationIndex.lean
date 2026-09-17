@@ -49,9 +49,10 @@ filtration.
 ## Implementation notes
 
 The definition only uses the algebra map and the two normalized valuations, so it does not carry
-the compatibility hypothesis `ValuativeExtension K L`. Every theorem about it assumes
-compatibility, which is what makes the restricted valuation trivial on the units of `𝒪[K]` and
-hence a power of `v_K`. Finiteness of `L/K` is used by no statement in this file.
+the compatibility hypothesis `ValuativeExtension K L`. Apart from the unfolding lemma
+`ramificationIndex_def`, every public theorem about it assumes compatibility, which makes the
+restricted valuation trivial on the units of `𝒪[K]` and hence a power of `v_K`. Finiteness of
+`L/K` is used by no statement in this file.
 
 ## References
 
