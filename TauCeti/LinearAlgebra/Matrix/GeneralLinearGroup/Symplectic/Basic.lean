@@ -236,6 +236,25 @@ end Map
 
 end GLSymplectic
 
+/-! ### Reindexing general linear groups -/
+
+section Reindex
+
+variable {n p : Type*} [Fintype n] [DecidableEq n] [Fintype p] [DecidableEq p]
+  (e : n ≃ p) (R : Type u) [CommSemiring R]
+
+/-- Reindexing along an equivalence of index types, as a group isomorphism of general linear
+groups. -/
+def reindexGL : GL n R ≃* GL p R :=
+  Units.mapEquiv (Matrix.reindexAlgEquiv R R e).toRingEquiv.toMulEquiv
+
+@[simp]
+theorem coe_reindexGL (M : GL n R) :
+    (reindexGL e R M : Matrix p p R) = (M : Matrix n n R).submatrix e.symm e.symm := by
+  simp [reindexGL, Units.coe_mapEquiv, Matrix.reindex_apply]
+
+end Reindex
+
 /-! ### The `Fin`-indexed presentation
 
 The coordinate ring of `GLₙ` is indexed by `Fin n`, so the symplectic group scheme cuts its
@@ -246,24 +265,8 @@ section FinIndex
 
 variable (m : ℕ) (R : Type u)
 
-section
-
-variable [CommSemiring R]
-
-/-- Reindexing along `finSumFinEquiv`, as a group isomorphism of general linear groups. -/
-def reindexGL : GL (Fin (m + m)) R ≃* GL (Fin m ⊕ Fin m) R :=
-  Units.mapEquiv (Matrix.reindexAlgEquiv R R finSumFinEquiv.symm).toRingEquiv.toMulEquiv
-
-@[simp]
-theorem coe_reindexGL (M : GL (Fin (m + m)) R) :
-    (reindexGL m R M : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R) =
-      (M : Matrix (Fin (m + m)) (Fin (m + m)) R).submatrix finSumFinEquiv finSumFinEquiv := by
-  simp [reindexGL, Units.coe_mapEquiv, Matrix.reindex_apply]
-
-end
-
 -- `Matrix.J` and `Matrix.map_J` are stated for commutative rings, so the form and the
--- subgroup require `[CommRing R]` even though the reindexing above does not.
+-- subgroup require `[CommRing R]` even though `reindexGL` does not.
 variable [CommRing R]
 
 /-- The standard alternating form in `Fin (m + m)` coordinates: `Matrix.J`, transported along
@@ -364,7 +367,7 @@ theorem transpose_mul_JFin_mul_self {g : Matrix (Fin (m + m)) (Fin (m + m)) R}
 /-- The symplectic subgroup of `GL (Fin (m + m)) R`: the pullback of `TauCeti.GLSymplectic`
 along the reindexing isomorphism. -/
 def GLSymplecticFin : Subgroup (GL (Fin (m + m)) R) :=
-  (GLSymplectic (Fin m) R).comap (reindexGL m R).toMonoidHom
+  (GLSymplectic (Fin m) R).comap (reindexGL finSumFinEquiv.symm R).toMonoidHom
 
 namespace GLSymplecticFin
 
@@ -379,7 +382,7 @@ theorem mem_iff {M : GL (Fin (m + m)) R} :
           (M : Matrix (Fin (m + m)) (Fin (m + m)) R)ᵀ =
         JFin m R := by
   rw [GLSymplecticFin, Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, GLSymplectic.mem_iff,
-    coe_reindexGL, ← JFin_submatrix m (R := R), Matrix.transpose_submatrix,
+    coe_reindexGL, Equiv.symm_symm, ← JFin_submatrix m (R := R), Matrix.transpose_submatrix,
     Matrix.submatrix_mul_equiv, Matrix.submatrix_mul_equiv]
   constructor
   · intro h
@@ -395,7 +398,7 @@ theorem mem_iff' {M : GL (Fin (m + m)) R} :
           (M : Matrix (Fin (m + m)) (Fin (m + m)) R) =
         JFin m R := by
   rw [GLSymplecticFin, Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, GLSymplectic.mem_iff',
-    coe_reindexGL, ← JFin_submatrix m (R := R), Matrix.transpose_submatrix,
+    coe_reindexGL, Equiv.symm_symm, ← JFin_submatrix m (R := R), Matrix.transpose_submatrix,
     Matrix.submatrix_mul_equiv, Matrix.submatrix_mul_equiv]
   constructor
   · intro h
@@ -409,19 +412,19 @@ variable (m R)
 /-- The two presentations of the symplectic subgroup agree: reindexing along `finSumFinEquiv`
 identifies the `Fin (m + m)`-indexed subgroup with the `Fin m ⊕ Fin m`-indexed one. -/
 def mulEquivGLSymplectic : GLSymplecticFin m R ≃* GLSymplectic (Fin m) R where
-  toFun M := ⟨reindexGL m R M, M.2⟩
-  invFun N := ⟨(reindexGL m R).symm N, by
+  toFun M := ⟨reindexGL finSumFinEquiv.symm R M, M.2⟩
+  invFun N := ⟨(reindexGL finSumFinEquiv.symm R).symm N, by
     rw [GLSymplecticFin, Subgroup.mem_comap]
     simp only [MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply]
     exact N.2⟩
   left_inv M := Subtype.ext (by simp)
   right_inv N := Subtype.ext (by simp)
-  map_mul' M N := Subtype.ext (map_mul (reindexGL m R) _ _)
+  map_mul' M N := Subtype.ext (map_mul (reindexGL finSumFinEquiv.symm R) _ _)
 
 @[simp]
 theorem coe_mulEquivGLSymplectic (M : GLSymplecticFin m R) :
     ((mulEquivGLSymplectic m R M : GLSymplectic (Fin m) R) : GL (Fin m ⊕ Fin m) R) =
-      reindexGL m R (M : GL (Fin (m + m)) R) := by
+      reindexGL finSumFinEquiv.symm R (M : GL (Fin (m + m)) R) := by
   simp [mulEquivGLSymplectic]
 
 /-- A ring morphism carries `Fin`-indexed symplectic matrices to symplectic matrices. -/
@@ -467,12 +470,12 @@ theorem finSumFinEquiv_inr_ne_inl (i j : Fin m) :
 transvection at the corresponding sum indices. -/
 @[simp]
 theorem reindexGL_transvectionUnit (i j : Fin m ⊕ Fin m) (hij : i ≠ j) (c : R) :
-    reindexGL m R
+    reindexGL finSumFinEquiv.symm R
         (transvectionUnit (finSumFinEquiv.injective.ne hij) c) =
       transvectionUnit hij c := by
   apply Matrix.GeneralLinearGroup.ext
   intro a b
-  simp only [coe_reindexGL, coe_transvectionUnit, Matrix.submatrix_apply]
+  simp only [coe_reindexGL, Equiv.symm_symm, coe_transvectionUnit, Matrix.submatrix_apply]
   simp [Matrix.transvection, Matrix.single, Matrix.one_apply,
     finSumFinEquiv.injective.eq_iff]
 
@@ -512,7 +515,7 @@ def positiveLongRootTransvectionUnit (i : Fin m) (c : R) : GLSymplecticFin m R :
     rw [GLSymplecticFin, Subgroup.mem_comap]
     -- Membership in the comap is definitionally membership after `reindexGL`; there is no
     -- dedicated theorem for this specialized transvection goal.
-    change reindexGL m R (transvectionUnit (finSumFinEquiv_inl_ne_inr i i) c) ∈ _
+    change reindexGL finSumFinEquiv.symm R (transvectionUnit (finSumFinEquiv_inl_ne_inr i i) c) ∈ _
     rw [reindexGL_transvectionUnit]
     exact upperLongRoot_mem i c⟩
 
@@ -530,7 +533,7 @@ def negativeLongRootTransvectionUnit (i : Fin m) (c : R) : GLSymplecticFin m R :
     rw [GLSymplecticFin, Subgroup.mem_comap]
     -- Membership in the comap is definitionally membership after `reindexGL`; there is no
     -- dedicated theorem for this specialized transvection goal.
-    change reindexGL m R (transvectionUnit (finSumFinEquiv_inr_ne_inl i i) c) ∈ _
+    change reindexGL finSumFinEquiv.symm R (transvectionUnit (finSumFinEquiv_inr_ne_inl i i) c) ∈ _
     rw [reindexGL_transvectionUnit]
     exact lowerLongRoot_mem i c⟩
 

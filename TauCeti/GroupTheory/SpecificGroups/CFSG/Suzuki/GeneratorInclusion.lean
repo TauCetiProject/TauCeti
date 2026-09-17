@@ -42,23 +42,8 @@ def coordinateSwap : Fin 4 ≃ Fin 4 := Equiv.swap 2 3
 
 /-- Simultaneous row and column reindexing from the standard generator coordinates to the
 coordinates used by `SpStd`. -/
-def coordinateEquiv (R : Type*) [CommRing R] : GL (Fin 4) R ≃* GL (Fin 4) R :=
-  Units.mapEquiv (Matrix.reindexAlgEquiv R R coordinateSwap).toRingEquiv.toMulEquiv
-
-/-- The underlying matrix of `coordinateEquiv` is obtained by swapping its final two rows and
-columns. -/
-@[simp]
-theorem coe_coordinateEquiv (R : Type*) [CommRing R] (g : GL (Fin 4) R) :
-    ((coordinateEquiv R g : GL (Fin 4) R) : Matrix (Fin 4) (Fin 4) R) =
-      Matrix.reindex coordinateSwap coordinateSwap (g : Matrix (Fin 4) (Fin 4) R) := by
-  simp [coordinateEquiv]
-
-private theorem reindex_coordinateSwap_apply {R : Type*}
-    (A : Matrix (Fin 4) (Fin 4) R) (i j : Fin 4) :
-    Matrix.reindex coordinateSwap coordinateSwap A i j =
-      A (coordinateSwap i) (coordinateSwap j) := by
-  rw [Matrix.reindex_apply]
-  simp [coordinateSwap]
+abbrev coordinateEquiv (R : Type*) [CommRing R] : GL (Fin 4) R ≃* GL (Fin 4) R :=
+  reindexGL coordinateSwap R
 
 /-- After the standard coordinate change, every unipotent Suzuki generator preserves the
 alternating form used by `SpStd`. -/
@@ -77,15 +62,14 @@ theorem coordinateEquiv_unipotent_mul_jFin_mul_transpose
     calc
       (4 : GaloisField 2 (2 * m + 1)) = 2 + 2 := by norm_num
       _ = 0 := by rw [htwo]; simp
-  rw [coe_coordinateEquiv, coe_unipotent]
+  rw [coe_reindexGL, coe_unipotent]
   rw [JFin_two_eq]
   ext i j
   rw [Matrix.mul_apply]
-  simp only [Matrix.transpose_apply]
-  simp_rw [reindex_coordinateSwap_apply]
+  simp only [Matrix.transpose_apply, Matrix.submatrix_apply]
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Fin.sum_univ_four, CharTwo.neg_eq, unipotentMatrix_apply,
-      coordinateSwap, Equiv.swap_apply_def] <;> ring_nf
+      coordinateSwap, Equiv.symm_swap, Equiv.swap_apply_def] <;> ring_nf
   all_goals simp [htwo, hfour]
 
 /-- After the standard coordinate change, the Weyl generator preserves the alternating form
@@ -99,15 +83,14 @@ theorem coordinateEquiv_weyl_mul_jFin_mul_transpose :
             GL (Fin 4) (GaloisField 2 (2 * m + 1))) :
           Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1)))ᵀ =
       JFin 2 (GaloisField 2 (2 * m + 1)) := by
-  rw [coe_coordinateEquiv, coe_weyl]
+  rw [coe_reindexGL, coe_weyl]
   rw [JFin_two_eq]
   ext i j
   rw [Matrix.mul_apply]
-  simp only [Matrix.transpose_apply]
-  simp_rw [reindex_coordinateSwap_apply]
+  simp only [Matrix.transpose_apply, Matrix.submatrix_apply]
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Fin.sum_univ_four, CharTwo.neg_eq, weylMatrix_apply,
-      coordinateSwap, Equiv.swap_apply_def]
+      coordinateSwap, Equiv.symm_swap, Equiv.swap_apply_def]
 
 /-- After the standard coordinate change, the special isogeny sends a unipotent generator to
 its entrywise `2^(m+1)`-st power. -/
@@ -124,13 +107,12 @@ theorem symplecticSpecialIsogeny_coordinateEquiv_unipotent
   have ha := pow_two_pow_succ_pow_two_pow_succ m a
   have hb := pow_two_pow_succ_pow_two_pow_succ m b
   have htwo : (2 : GaloisField 2 (2 * m + 1)) = 0 := CharTwo.two_eq_zero
-  rw [coe_coordinateEquiv, coe_unipotent]
+  rw [coe_reindexGL, coe_unipotent]
   ext i j
-  simp only [Matrix.symplecticSpecialIsogeny_apply, Matrix.map_apply]
-  simp_rw [reindex_coordinateSwap_apply]
+  simp only [Matrix.symplecticSpecialIsogeny_apply, Matrix.map_apply, Matrix.submatrix_apply]
   fin_cases i <;> fin_cases j <;>
-    simp [pairMinor_eq, unipotentMatrix_apply, coordinateSwap, Equiv.swap_apply_def,
-      CharTwo.sub_eq_add, add_pow_char_pow, mul_pow, ha, hb] <;> ring_nf
+    simp [pairMinor_eq, unipotentMatrix_apply, coordinateSwap, Equiv.symm_swap,
+      Equiv.swap_apply_def, CharTwo.sub_eq_add, add_pow_char_pow, mul_pow, ha, hb] <;> ring_nf
   all_goals simp [htwo]
 
 /-- After the standard coordinate change, the special isogeny fixes the Weyl generator. -/
@@ -143,12 +125,11 @@ theorem symplecticSpecialIsogeny_coordinateEquiv_weyl :
             GL (Fin 4) (GaloisField 2 (2 * m + 1))) :
           Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))).map
             (fun x ↦ x ^ 2 ^ (m + 1))) := by
-  rw [coe_coordinateEquiv, coe_weyl]
+  rw [coe_reindexGL, coe_weyl]
   ext i j
-  simp only [Matrix.symplecticSpecialIsogeny_apply, Matrix.map_apply]
-  simp_rw [reindex_coordinateSwap_apply]
+  simp only [Matrix.symplecticSpecialIsogeny_apply, Matrix.map_apply, Matrix.submatrix_apply]
   fin_cases i <;> fin_cases j <;>
-    simp [pairMinor_eq, weylMatrix_apply, coordinateSwap, Equiv.swap_apply_def,
+    simp [pairMinor_eq, weylMatrix_apply, coordinateSwap, Equiv.symm_swap, Equiv.swap_apply_def,
       CharTwo.sub_eq_add]
 
 end TauCeti.Suzuki
