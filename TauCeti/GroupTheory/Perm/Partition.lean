@@ -432,10 +432,12 @@ def _root_.Equiv.Perm.cycleFactorOrFixedPoint (x : α) :
   if hx : σ x = x then Sum.inr ⟨x, hx⟩
   else Sum.inl ⟨σ.cycleOf x, cycleOf_mem_cycleFactorsFinset_iff.mpr (mem_support.mpr hx)⟩
 
+@[simp]
 theorem _root_.Equiv.Perm.cycleFactorOrFixedPoint_of_apply_eq {x : α} (hx : σ x = x) :
     σ.cycleFactorOrFixedPoint x = Sum.inr ⟨x, hx⟩ :=
   dite_eq_left hx
 
+@[simp]
 theorem _root_.Equiv.Perm.cycleFactorOrFixedPoint_of_apply_ne {x : α} (hx : σ x ≠ x) :
     σ.cycleFactorOrFixedPoint x =
       Sum.inl ⟨σ.cycleOf x, cycleOf_mem_cycleFactorsFinset_iff.mpr (mem_support.mpr hx)⟩ :=
@@ -520,7 +522,10 @@ theorem _root_.Equiv.Perm.fullCycleType_eq_map_card_orbit :
         congr 1
         · rw [Finset.univ_eq_attach, Finset.attach_val]
           exact (Multiset.attach_map_val' _ _).symm
-        · rw [show (Sum.elim (fun c : σ.cycleFactorsFinset => c.1.support.card) (fun _ => 1) ∘
+        · -- `Multiset.map_const'` matches only the literal form `fun _ => 1`; the composite
+          -- `Sum.elim _ (fun _ => 1) ∘ Sum.inr` is that function by `rfl` (`Sum.elim_inr`), so
+          -- reshape it before rewriting.
+          rw [show (Sum.elim (fun c : σ.cycleFactorsFinset => c.1.support.card) (fun _ => 1) ∘
               Sum.inr) = fun _ => 1 from rfl,
             Multiset.map_const', Finset.card_val, Finset.card_univ, card_subtype_apply_eq]
     _ = (Finset.univ.map e.toEmbedding).val.map
