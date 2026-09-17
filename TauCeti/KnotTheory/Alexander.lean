@@ -458,6 +458,12 @@ theorem trefoilSeifertMatrix_apply (i j : Fin 2) :
     trefoilSeifertMatrix i j = !![-1, 1; 0, -1] i j := by
   rw [trefoilSeifertMatrix]
 
+/-- The right-handed trefoil's Seifert matrix, read in an arbitrary additive group with one. -/
+theorem map_trefoilSeifertMatrix {S : Type*} [AddGroupWithOne S] :
+    trefoilSeifertMatrix.map ((↑) : ℤ → S) = !![-1, 1; 0, -1] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
+
 /-- The Seifert matrix of the figure-eight knot, read off the standard genus-one Seifert
 surface. -/
 def figureEightSeifertMatrix : Matrix (Fin 2) (Fin 2) ℤ := !![1, 1; 0, -1]
@@ -467,6 +473,12 @@ def figureEightSeifertMatrix : Matrix (Fin 2) (Fin 2) ℤ := !![1, 1; 0, -1]
 theorem figureEightSeifertMatrix_apply (i j : Fin 2) :
     figureEightSeifertMatrix i j = !![1, 1; 0, -1] i j := by
   rw [figureEightSeifertMatrix]
+
+/-- The figure-eight knot's Seifert matrix, read in an arbitrary additive group with one. -/
+theorem map_figureEightSeifertMatrix {S : Type*} [AddGroupWithOne S] :
+    figureEightSeifertMatrix.map ((↑) : ℤ → S) = !![1, 1; 0, -1] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
 
 /-- The Alexander polynomial of the right-handed trefoil is `t - 1 + t⁻¹`. -/
 theorem alexander_trefoilSeifertMatrix :
