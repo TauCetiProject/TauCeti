@@ -28,7 +28,7 @@ degree identity `[k' : k] · deg (Con D) = [F' : F] · deg D` for the conorm int
 Linear disjointness is not automatic; it is what an inseparable constant field extension can
 destroy.  It does hold whenever `k' / k` is separable and `k` is the exact constant field of `F`;
 that is `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn`, from which the degree
-equality for finite `k' / k` is derived here.
+equality is derived here.
 Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree equality, through
 `TauCeti.finrank_constantCompositum_eq_finrank_of_linearDisjoint`.
 
@@ -45,7 +45,7 @@ Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree 
   `[F' : F] = n(F'/F) · [k' : k]` when adjoining the constants to `F` costs `[k' : k]`, and
   `TauCeti.finrank_dvd_finrank_of_finrank_constantCompositum_eq` for the divisibility it contains.
 * `TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`: that degree equality holds for a
-  finite separable constant field extension over an exact constant field.
+  separable constant field extension over an exact constant field.
 * `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn` and
   `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`: the stronger
   linear-disjointness and persistence-of-linear-independence statements from which that degree
