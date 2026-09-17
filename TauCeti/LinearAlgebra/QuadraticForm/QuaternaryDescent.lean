@@ -20,7 +20,7 @@ isotropic (O'Meara 58:7).
 This is what makes a quaternary form accessible to arguments over the discriminant field: over
 `E` the discriminant of `Q` becomes a square, and the theorem descends isotropy back to `F`.
 
-Each hypothesis is needed.
+The hypotheses have the following roles.
 
 * The dimension is exactly four. Over `F = ℚ(i)`, the binary form `⟨1, 2⟩` has discriminant `[2]`
   and is anisotropic, as `-2` is not a square in `ℚ(i)`, but it becomes isotropic over `F(√2)`,
@@ -33,17 +33,10 @@ Each hypothesis is needed.
 
 ## Main results
 
-* `TauCeti.not_anisotropic_of_not_anisotropic_baseChange_quaternary`: quaternary descent of
+* `QuadraticForm.not_anisotropic_of_not_anisotropic_baseChange_quaternary`: quaternary descent of
   isotropy from `F(√d)` to `F`.
-* `TauCeti.anisotropic_baseChange_iff_quaternary`: a quaternary form of nonsquare discriminant
+* `QuadraticForm.anisotropic_baseChange_iff_quaternary`: a quaternary form of nonsquare discriminant
   `d` is anisotropic over `F(√d)` exactly when it is anisotropic over `F`.
-
-## Implementation notes
-
-An isotropic vector of `E ⊗ V` is written as `1 ⊗ x + s ⊗ y`. Its coordinates along the basis
-`1, s` of `E` give `Q x = -d Q y` and `B(x, y) = 0`. If `Q` were anisotropic, `x` and `y` would
-span a regular plane `⟨-dε, ε⟩` with `ε = Q y`, and comparing discriminants shows that its
-orthogonal complement is a plane of discriminant `[-1]`, which is isotropic.
 
 ## References
 
@@ -63,39 +56,7 @@ variable {F : Type u} [Field F] {V : Type v} [AddCommGroup V] [Module F V]
 
 section OrthogonalPair
 
-variable [Invertible (2 : F)]
-
-/-- Two orthogonal anisotropic vectors span a copy of the diagonal plane `⟨Q x, Q y⟩`. -/
-private noncomputable def orthogonalPairIsometryEquiv (Q : QuadraticForm F V) {x y : V}
-    (a b : Fˣ) (hx : Q x = a) (hy : Q y = b) (hxy : polar Q x y = 0) :
-    (presentedForm ⟨2, ![a, b]⟩).IsometryEquiv
-      (Q.restrict (LinearMap.range (Fintype.linearCombination F ![x, y]))) where
-  toLinearEquiv := LinearEquiv.ofInjective _ <| by
-    rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-    intro c hc
-    simp only [Fintype.linearCombination_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val_fin_one] at hc
-    have h2 : (2 : F) ≠ 0 := (isUnit_of_invertible (2 : F)).ne_zero
-    have hc0 := congrArg (polar Q x) hc
-    have hc1 := congrArg (polar Q y) hc
-    simp only [polar_add_right, polar_smul_right, polar_self, polar_comm Q y x, hxy, hx, hy,
-      polar_zero_right, smul_eq_mul, mul_zero, add_zero, zero_add] at hc0 hc1
-    ext i
-    fin_cases i
-    · simpa [h2, a.ne_zero] using hc0
-    · simpa [h2, b.ne_zero] using hc1
-  map_app' c := by
-    -- The range equivalence evaluates to the linear combination `c 0 • x + c 1 • y`.
-    change Q (Fintype.linearCombination F ![x, y] c) = _
-    simp only [Fintype.linearCombination_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val_fin_one, QuadraticMap.map_add, QuadraticMap.map_smul,
-      polar_smul_left, polar_smul_right, hxy, hx, hy, smul_eq_mul]
-    rw [presentedForm_apply]
-    simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_fin_one]
-    ring
-
-variable [FiniteDimensional F V]
+variable [Invertible (2 : F)] [FiniteDimensional F V]
 
 /-- The descent step: in a regular quaternary space of discriminant `[d]`, an orthogonal pair
 `x, y` with `Q x = -d Q y ≠ 0` forces isotropy, because its orthogonal complement is a plane of
@@ -107,7 +68,7 @@ private theorem not_anisotropic_of_orthogonal_pair (Q : QuadraticForm F V) (hQ :
     ¬Q.Anisotropic := by
   intro hA
   let W := LinearMap.range (Fintype.linearCombination F ![x, y])
-  let eW := orthogonalPairIsometryEquiv Q (-d * e) e hx hy hxy
+  let eW := Q.orthogonalPairIsometryEquiv (-d * e) e hx hy hxy
   have hW : (Q.restrict W).Nondegenerate :=
     eW.nondegenerate_iff.mp (nondegenerate_presentedForm _)
   let P := LinearMap.BilinForm.orthogonal Q.polarBilin W
@@ -155,7 +116,8 @@ variable [Invertible (2 : F)] [FiniteDimensional F V]
 over a field `F` of characteristic not two, whose discriminant is the square class of a nonsquare
 `d`, and let `E` be a field of degree two over `F` containing a square root `s` of `d`, so that
 `E = F(s)`. If `Q` is isotropic over `E`, then it is isotropic over `F`. -/
-theorem not_anisotropic_of_not_anisotropic_baseChange_quaternary (Q : QuadraticForm F V)
+theorem _root_.QuadraticForm.not_anisotropic_of_not_anisotropic_baseChange_quaternary
+    (Q : QuadraticForm F V)
     (hQ : Q.Nondegenerate) (hdim : Module.finrank F V = 4) (d : Fˣ)
     (hd : RegularFormClass.discr (formClass Q hQ) = squareClass d) (hdsq : ¬IsSquare d)
     (s : E) (hs : s * s = algebraMap F E d)
@@ -206,13 +168,14 @@ theorem not_anisotropic_of_not_anisotropic_baseChange_quaternary (Q : QuadraticF
 /-- **Quaternary descent**, as an equivalence: a regular quaternary form whose discriminant is the
 square class of a nonsquare `d` is anisotropic over `F(√d)` exactly when it is anisotropic over
 `F`. -/
-theorem anisotropic_baseChange_iff_quaternary (Q : QuadraticForm F V) (hQ : Q.Nondegenerate)
+theorem _root_.QuadraticForm.anisotropic_baseChange_iff_quaternary
+    (Q : QuadraticForm F V) (hQ : Q.Nondegenerate)
     (hdim : Module.finrank F V = 4) (d : Fˣ)
     (hd : RegularFormClass.discr (formClass Q hQ) = squareClass d) (hdsq : ¬IsSquare d)
     (s : E) (hs : s * s = algebraMap F E d) :
     (Q.baseChange E).Anisotropic ↔ Q.Anisotropic :=
   ⟨fun h => by_contra fun hQ' => not_anisotropic_baseChange hQ' h,
     fun h => by_contra fun hE =>
-      not_anisotropic_of_not_anisotropic_baseChange_quaternary Q hQ hdim d hd hdsq s hs hE h⟩
+      Q.not_anisotropic_of_not_anisotropic_baseChange_quaternary hQ hdim d hd hdsq s hs hE h⟩
 
 end TauCeti

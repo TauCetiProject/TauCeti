@@ -43,6 +43,8 @@ rank is additive.
 
 * `TauCeti.RegularFormPresentation.ext`: presentations with the same rank and weights agree.
 * `TauCeti.nondegenerate_presentedForm`: a presented form is nondegenerate.
+* `QuadraticForm.orthogonalPairIsometryEquiv`: two orthogonal anisotropic vectors identify their
+  span with the corresponding diagonal plane.
 * `TauCeti.exists_presentedForm_equivalent`: every regular form has a diagonal presentation.
 * `TauCeti.formClass_mk`: the class of a form is computed by any of its diagonalizations.
 * `TauCeti.formClass_eq_iff`: two regular forms are isometric exactly when their classes agree.
@@ -124,6 +126,37 @@ theorem nondegenerate_presentedForm [Invertible (2 : K)] (p : RegularFormPresent
   rw [Pi.mem_spanSubset_iff] at hv
   funext i
   exact hv i (by simp [Units.ne_zero])
+
+/-- Two orthogonal anisotropic vectors span a copy of the diagonal plane `⟨Q x, Q y⟩`. -/
+noncomputable def _root_.QuadraticForm.orthogonalPairIsometryEquiv
+    {V : Type v} [AddCommGroup V] [Module K V] [Invertible (2 : K)]
+    (Q : QuadraticForm K V) {x y : V} (a b : Kˣ) (hx : Q x = a) (hy : Q y = b)
+    (hxy : polar Q x y = 0) :
+    (presentedForm ⟨2, ![a, b]⟩).IsometryEquiv
+      (Q.restrict (LinearMap.range (Fintype.linearCombination K ![x, y]))) where
+  toLinearEquiv := LinearEquiv.ofInjective _ <| by
+    rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+    intro c hc
+    simp only [Fintype.linearCombination_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val_fin_one] at hc
+    have h2 : (2 : K) ≠ 0 := (isUnit_of_invertible (2 : K)).ne_zero
+    have hc0 := congrArg (polar Q x) hc
+    have hc1 := congrArg (polar Q y) hc
+    simp only [polar_add_right, polar_smul_right, polar_self, polar_comm Q y x, hxy, hx, hy,
+      polar_zero_right, smul_eq_mul, mul_zero, add_zero, zero_add] at hc0 hc1
+    ext i
+    fin_cases i
+    · simpa [h2, a.ne_zero] using hc0
+    · simpa [h2, b.ne_zero] using hc1
+  map_app' c := by
+    change Q (Fintype.linearCombination K ![x, y] c) = _
+    simp only [Fintype.linearCombination_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val_fin_one, QuadraticMap.map_add, QuadraticMap.map_smul,
+      polar_smul_left, polar_smul_right, hxy, hx, hy, smul_eq_mul]
+    rw [presentedForm_apply]
+    simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.cons_val_fin_one]
+    ring
 
 /-! ### The carrier -/
 
