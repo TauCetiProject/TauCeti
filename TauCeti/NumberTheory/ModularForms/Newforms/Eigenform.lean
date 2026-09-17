@@ -154,8 +154,8 @@ theorem heckeTCuspNat_eq_eigenvalue_smul (f : Eigenform N k) {p : ℕ} (hp : p.P
     (⟨f.toCuspForm, f.mem_charSpace⟩ : cuspFormCharSpace k f.χ)]
   simpa [heckeTCompositeGamma0_prime N hp] using h
 
-/-- **Every coefficient of a full eigenform is its eigenvalue times `a₁`.** The first
-coefficient of `T_n f` is `a_n(f)`, at good and bad indices alike. -/
+/-- **Every positive-index coefficient of a full eigenform is its eigenvalue times `a₁`.**
+The first coefficient of `T_n f` is `a_n(f)`, at good and bad indices alike. -/
 theorem qExpansion_coeff_eq_eigenvalue_mul_coeff_one (f : Eigenform N k) (n : ℕ+) :
     (qExpansion 1 f.toCuspForm).coeff n =
       f.eigenvalue n * (qExpansion 1 f.toCuspForm).coeff 1 := by
@@ -206,6 +206,15 @@ theorem toEigenform_toEigenformAwayFromLevel (f : EigenformAwayFromLevel N k)
       heckeTCuspNat k p (_hn := ⟨hp.ne_zero⟩) f.toCuspForm = c • f.toCuspForm) :
     (f.toEigenform hbad).toEigenformAwayFromLevel = f :=
   EigenformAwayFromLevel.ext rfl
+
+@[simp]
+theorem toEigenform_eigenvalue (f : EigenformAwayFromLevel N k)
+    (hbad : ∀ (p : ℕ) (hp : p.Prime), p ∣ N → ∃ c : ℂ,
+      heckeTCuspNat k p (_hn := ⟨hp.ne_zero⟩) f.toCuspForm = c • f.toCuspForm)
+    (n : ℕ+) (hn : Nat.Coprime n.val N) :
+    (f.toEigenform hbad).eigenvalue n = f.eigenvalue n hn := by
+  rw [← Eigenform.toEigenformAwayFromLevel_eigenvalue _ n hn,
+    toEigenform_toEigenformAwayFromLevel]
 
 end EigenformAwayFromLevel
 
