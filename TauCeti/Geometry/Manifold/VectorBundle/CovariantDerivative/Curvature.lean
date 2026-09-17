@@ -83,8 +83,14 @@ def curvatureOperator
     cov (fun y ↦ cov σ y (X y)) x (Y x) -
       cov σ x (mlieBracket I X Y x)
 
-/-- The defining formula for the curvature operator. -/
-@[simp]
+/-- The curvature operator as a section, expressed using covariant derivatives. -/
+theorem curvatureOperator_def (X Y : Π x : M, TangentSpace I x) (σ : Π x : M, V x) :
+    curvatureOperator cov X Y σ = fun x ↦
+      cov (fun y ↦ cov σ y (Y y)) x (X x) -
+        cov (fun y ↦ cov σ y (X y)) x (Y x) -
+          cov σ x (mlieBracket I X Y x) := (rfl)
+
+/-- The defining formula for the curvature operator evaluated at a point. -/
 theorem curvatureOperator_apply (X Y : Π x : M, TangentSpace I x) (σ : Π x : M, V x) (x : M) :
     curvatureOperator cov X Y σ x =
       cov (fun y ↦ cov σ y (Y y)) x (X x) -
@@ -256,6 +262,34 @@ theorem curvatureOperator_add_section
     cov.isCovariantDerivativeOn.add (hσd x) (hτd x)]
   simp only [add_apply]
   abel
+
+/-- Curvature changes sign when its first vector-field argument is negated. -/
+@[simp]
+theorem curvatureOperator_neg_first
+    (hX : CMDiff ∞ (T% X)) (hσ : CMDiff ∞ (T% σ)) :
+    curvatureOperator cov (-X) Y σ = -curvatureOperator cov X Y σ := by
+  apply eq_neg_of_add_eq_zero_left
+  rw [← curvatureOperator_add_first hX.neg_section hX hσ, neg_add_cancel,
+    curvatureOperator_zero_first]
+
+/-- Curvature changes sign when its second vector-field argument is negated. -/
+@[simp]
+theorem curvatureOperator_neg_second
+    (hY : CMDiff ∞ (T% Y)) (hσ : CMDiff ∞ (T% σ)) :
+    curvatureOperator cov X (-Y) σ = -curvatureOperator cov X Y σ := by
+  apply eq_neg_of_add_eq_zero_left
+  rw [← curvatureOperator_add_second hY.neg_section hY hσ, neg_add_cancel,
+    curvatureOperator_zero_second]
+
+omit [CompleteSpace E] in
+/-- Curvature changes sign when its section argument is negated. -/
+@[simp]
+theorem curvatureOperator_neg_section
+    (hX : CMDiff ∞ (T% X)) (hY : CMDiff ∞ (T% Y)) (hσ : CMDiff ∞ (T% σ)) :
+    curvatureOperator cov X Y (-σ) = -curvatureOperator cov X Y σ := by
+  apply eq_neg_of_add_eq_zero_left
+  rw [← curvatureOperator_add_section hX hY hσ.neg_section hσ, neg_add_cancel,
+    curvatureOperator_zero_section]
 
 /-- Curvature is linear over smooth functions in its first vector-field argument. -/
 @[simp]
