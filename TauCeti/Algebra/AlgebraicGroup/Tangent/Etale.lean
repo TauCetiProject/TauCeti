@@ -84,7 +84,7 @@ theorem algebraEtale_iff_finrank_lie_eq_zero :
   · intro h
     let A := _root_.CommHopfAlgCat.of k H
     let K := AlgebraicClosure k
-    let AK := CommHopfAlgCat.baseChange (K := K) A
+    let AK := K ⊗[k] H
     have hcot : Subsingleton (Bialgebra.CotangentSpace k H) := by
       apply (Module.finrank_zero_iff (R := k)).mp
       rwa [← Derivation.finrank_eq_finrank_cotangentSpace]
@@ -114,9 +114,6 @@ theorem algebraEtale_iff_finrank_lie_eq_zero :
     let _ : Algebra.Etale K AK :=
       FiniteTypeCommHopfAlgCat.algebraEtale_of_identityComponentHopfIdeal_eq_augmentation
         HK hidentity
-    -- `CommHopfAlgCat.baseChange` abbreviates the bundled tensor-product Hopf algebra,
-    -- so `AK` is definitionally `K ⊗[k] H`, with the same `K`-algebra structure.
-    -- Thus the instance above supplies the tensor-product étaleness needed for descent.
     exact Algebra.Etale.of_etale_tensorProduct_of_faithfullyFlat K
 
 end HopfAlgebra
