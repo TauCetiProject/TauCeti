@@ -13,10 +13,10 @@ public import TauCeti.NumberTheory.ModularForms.Newforms.Newform
 
 `EigenformAwayFromLevel` bundles a cusp form with an eigenvalue at every index coprime to the
 level. Eigen-ness at those indices is already determined by the primes
-(`exists_smul_heckeTCompositeGamma0_of_forall_prime`), so a nonzero cusp form of nebentypus `χ`
-that is an eigenvector of the Hecke-ring generator at every prime `p ∤ N` bundles into one. That
-is the shape in which eigenforms are produced: a coefficient recurrence, a diagonalisation or a
-spectral argument gives the eigenvector equation one prime at a time.
+(`exists_smul_heckeTCompositeGamma0_of_forall_prime_of_coprime`), so a nonzero cusp form of
+nebentypus `χ` that is an eigenvector of the Hecke-ring generator at every prime `p ∤ N` bundles
+into one. That is the shape in which eigenforms are produced: a coefficient recurrence, a
+diagonalisation or a spectral argument gives the eigenvector equation one prime at a time.
 
 ## Main results
 
@@ -41,7 +41,7 @@ variable {N : ℕ} [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
 
 /-- **A nonzero cusp form of nebentypus `χ`, eigen at every good prime, is a good Hecke
 eigenform.** Its eigenvalue at a good index is the scalar by which the Hecke ring acts there,
-supplied by `exists_smul_heckeTCompositeGamma0_of_forall_prime`. -/
+supplied by `exists_smul_heckeTCompositeGamma0_of_forall_prime_of_coprime`. -/
 noncomputable def ofForallPrime {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
     (hχ : f ∈ cuspFormCharSpace k χ) (hf : f ≠ 0)
     (h : ∀ p : ℕ, p.Prime → Nat.Coprime p N → ∃ c : ℂ,
@@ -50,8 +50,10 @@ noncomputable def ofForallPrime {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
   toCuspForm := f
   χ := χ
   mem_charSpace := hχ
-  eigenvalue n hn := (exists_smul_heckeTCompositeGamma0_of_forall_prime h n hn).choose
-  isEigen n hn := (exists_smul_heckeTCompositeGamma0_of_forall_prime h n hn).choose_spec
+  eigenvalue n hn :=
+    (exists_smul_heckeTCompositeGamma0_of_forall_prime_of_coprime h n hn).choose
+  isEigen n hn :=
+    (exists_smul_heckeTCompositeGamma0_of_forall_prime_of_coprime h n hn).choose_spec
   ne_zero := hf
 
 /-- The underlying cusp form of `ofForallPrime` is the form supplied to the constructor. -/
