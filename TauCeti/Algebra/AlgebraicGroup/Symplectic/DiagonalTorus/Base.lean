@@ -324,7 +324,8 @@ private lemma isPos_of_root_mem {p : RootSubgroupIndex m}
     (h : (diagonalRootDatum.{u} m).root p ∈ AddSubmonoid.closure
       ((diagonalRootDatum.{u} m).root '' (diagonalSimpleSupport m : Set _))) :
     (diagonalRootBase.{u} m).IsPos p :=
-  (mem_posRoots _ _ _).1 ((mem_posRoots_iff_root_mem_posRootCone _ _).2 h)
+  (mem_posRoots _ _ _).1 ((mem_posRoots_iff_root_mem_posRootCone _ _).2
+    (by rwa [posRootCone_def]))
 
 private lemma not_isPos_of_root_eq_neg {p q : RootSubgroupIndex m}
     (hq : (diagonalRootBase.{u} m).IsPos q)
