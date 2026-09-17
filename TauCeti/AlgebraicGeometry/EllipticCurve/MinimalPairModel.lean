@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
 
 import Mathlib.Algebra.CharP.Invertible
 import Mathlib.Data.Int.Interval
+import TauCeti.Data.Int.WeightedPrimitivePair
 import TauCeti.Data.Rat.NumDenDvd
 
 /-!
@@ -101,6 +102,7 @@ variable (W : WeierstrassCurve ℤ) [W.IsShortNF]
 
 /-- `shortEquationHeight`, unfolded. This is the interface to
 `WeierstrassCurve.shortEquationHeight` outside its defining module. -/
+@[simp]
 theorem shortEquationHeight_def :
     shortEquationHeight W = max (4 * W.a₄.natAbs ^ 3) (27 * W.a₆.natAbs ^ 2) :=
   (rfl)
@@ -227,6 +229,7 @@ def height : ℕ :=
 
 /-- `MinimalPairModel.height`, unfolded. This is the interface to
 `WeierstrassCurve.MinimalPairModel.height` outside its defining module. -/
+@[simp]
 theorem height_def : M.height = max (4 * M.model.a₄.natAbs ^ 3) (27 * M.model.a₆.natAbs ^ 2) :=
   (rfl)
 
@@ -239,68 +242,44 @@ end MinimalPairModel
 
 /-! ### Existence -/
 
-/-- Every pair of rationals is `(d⁻⁴A, d⁻⁶B)` for a positive integer `d` and integers `A`, `B`. -/
-private theorem exists_natCast_pow_mul_eq_intCast (a b : ℚ) :
-    ∃ (d : ℕ) (A B : ℤ), 0 < d ∧ (d : ℚ) ^ 4 * a = A ∧ (d : ℚ) ^ 6 * b = B :=
-  ⟨a.den * b.den, a.num * b.den * (a.den * b.den) ^ 3, b.num * a.den * (a.den * b.den) ^ 5,
-    Nat.mul_pos a.den_pos b.den_pos,
-    by push_cast; linear_combination ((b.den : ℚ) * ((a.den : ℚ) * b.den) ^ 3) * a.mul_den_eq_num,
-    by push_cast; linear_combination ((a.den : ℚ) * ((a.den : ℚ) * b.den) ^ 5) * b.mul_den_eq_num⟩
-
-/-- Every pair of integers, not both zero, is `(d⁴A, d⁶B)` for a nonzero integer `d` and a pair
-`(A, B)` such that no prime `ℓ` has both `ℓ⁴ ∣ A` and `ℓ⁶ ∣ B`. -/
-private theorem exists_pow_mul_eq_of_ne_zero (A B : ℤ) (h : A ≠ 0 ∨ B ≠ 0) :
-    ∃ d A' B' : ℤ, d ≠ 0 ∧ A = d ^ 4 * A' ∧ B = d ^ 6 * B' ∧
-      ∀ ℓ : ℕ, ℓ.Prime → ¬ ((ℓ : ℤ) ^ 4 ∣ A' ∧ (ℓ : ℤ) ^ 6 ∣ B') := by
-  -- Strong induction on `|A| + |B|`, stripping one prime `ℓ` with `ℓ⁴ ∣ A` and `ℓ⁶ ∣ B` at a
-  -- time; the measure drops because `ℓ ≥ 2` and `(A, B) ≠ (0, 0)`.
-  generalize hn : A.natAbs + B.natAbs = n
-  induction n using Nat.strong_induction_on generalizing A B with
-  | _ n ih =>
-  by_cases hmin : ∀ ℓ : ℕ, ℓ.Prime → ¬ ((ℓ : ℤ) ^ 4 ∣ A ∧ (ℓ : ℤ) ^ 6 ∣ B)
-  · exact ⟨1, A, B, one_ne_zero, by ring, by ring, hmin⟩
-  push Not at hmin
-  obtain ⟨ℓ, hℓ, ⟨A₁, rfl⟩, ⟨B₁, rfl⟩⟩ := hmin
-  have hne : A₁ ≠ 0 ∨ B₁ ≠ 0 := h.imp right_ne_zero_of_mul right_ne_zero_of_mul
-  have hlt : A₁.natAbs + B₁.natAbs < n := by
-    subst hn
-    have h₄ : 16 ≤ ℓ ^ 4 := by simpa using Nat.pow_le_pow_left hℓ.two_le 4
-    have h₆ : 64 ≤ ℓ ^ 6 := by simpa using Nat.pow_le_pow_left hℓ.two_le 6
-    have h₄' := Nat.mul_le_mul_right A₁.natAbs h₄
-    have h₆' := Nat.mul_le_mul_right B₁.natAbs h₆
-    have hpos : 0 < A₁.natAbs + B₁.natAbs := by
-      rcases hne with h | h
-      · exact Nat.add_pos_left (Int.natAbs_pos.mpr h) _
-      · exact Nat.add_pos_right _ (Int.natAbs_pos.mpr h)
-    simp only [Int.natAbs_mul, Int.natAbs_pow, Int.natAbs_natCast]
-    omega
-  obtain ⟨d, A', B', hd, hA', hB', hmin'⟩ := ih _ hlt A₁ B₁ hne rfl
-  exact ⟨ℓ * d, A', B', mul_ne_zero (Nat.cast_ne_zero.mpr hℓ.ne_zero) hd,
-    by rw [hA']; ring, by rw [hB']; ring, hmin'⟩
-
 /-- **Existence of a minimal-pair model**: every elliptic curve over `ℚ` is isomorphic over `ℚ`
 to the base change of a minimal-pair short equation over `ℤ`. -/
 theorem exists_minimalPairModel (E : WeierstrassCurve ℚ) [E.IsElliptic] :
     Nonempty (MinimalPairModel E) := by
-  -- Take a short equation `C • E` over `ℚ`, clear its denominators by `(A, B) ↦ (d⁴A, d⁶B)`, and
-  -- strip every prime `ℓ` with `ℓ⁴ ∣ A` and `ℓ⁶ ∣ B`, writing `(d⁴A, d⁶B) = (e⁴A', e⁶B')`. The
-  -- scaling by `u = d / e` then carries `y² = x³ + A'x + B'` back to `C • E`.
+  -- Take a short equation `C • E` over `ℚ` and a common denominator `d` of `a₄` and `a₆`, so that
+  -- `(d⁴a₄, d⁶a₆)` is a pair of integers; strip every prime `ℓ` with `ℓ⁴ ∣ A` and `ℓ⁶ ∣ B` from
+  -- it, writing `(d⁴a₄, d⁶a₆) = (e⁴A', e⁶B')`. The scaling by `u = d / e` then carries
+  -- `y² = x³ + A'x + B'` back to `C • E`.
   obtain ⟨C, hC⟩ := E.exists_variableChange_isShortNF
-  obtain ⟨d, A₀, B₀, hd, hA₀, hB₀⟩ := exists_natCast_pow_mul_eq_intCast (C • E).a₄ (C • E).a₆
-  have hd' : (d : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hd.ne'
-  have hne : A₀ ≠ 0 ∨ B₀ ≠ 0 := by
+  obtain ⟨⟨d, hdmem⟩, hd⟩ := IsLocalization.exist_integer_multiples_of_finset (nonZeroDivisors ℤ)
+    ({(C • E).a₄, (C • E).a₆} : Finset ℚ)
+  have hd' : (d : ℚ) ≠ 0 := Int.cast_ne_zero.mpr (nonZeroDivisors.ne_zero hdmem)
+  obtain ⟨A₀, hA₀⟩ := hd _ (Finset.mem_insert_self _ _)
+  obtain ⟨B₀, hB₀⟩ := hd _ (Finset.mem_insert_of_mem (Finset.mem_singleton_self _))
+  simp only [eq_intCast, zsmul_eq_mul] at hA₀ hB₀
+  have hA₁ : (d : ℚ) ^ 4 * (C • E).a₄ = ((d ^ 3 * A₀ : ℤ) : ℚ) := by
+    push_cast
+    linear_combination (-(d : ℚ) ^ 3) * hA₀
+  have hB₁ : (d : ℚ) ^ 6 * (C • E).a₆ = ((d ^ 5 * B₀ : ℤ) : ℚ) := by
+    push_cast
+    linear_combination (-(d : ℚ) ^ 5) * hB₀
+  generalize d ^ 3 * A₀ = A₂ at hA₁
+  generalize d ^ 5 * B₀ = B₂ at hB₁
+  have hne : A₂ ≠ 0 ∨ B₂ ≠ 0 := by
     -- Otherwise `a₄ = a₆ = 0` for `C • E`, whose discriminant `-16(4a₄³ + 27a₆²)` would vanish.
     by_contra h
     push Not at h
     have ha₄ : (C • E).a₄ = 0 :=
-      (mul_eq_zero.mp (hA₀.trans (by rw [h.1, Int.cast_zero]))).resolve_left (pow_ne_zero 4 hd')
+      (mul_eq_zero.mp (hA₁.trans (by rw [h.1, Int.cast_zero]))).resolve_left (pow_ne_zero 4 hd')
     have ha₆ : (C • E).a₆ = 0 :=
-      (mul_eq_zero.mp (hB₀.trans (by rw [h.2, Int.cast_zero]))).resolve_left (pow_ne_zero 6 hd')
+      (mul_eq_zero.mp (hB₁.trans (by rw [h.2, Int.cast_zero]))).resolve_left (pow_ne_zero 6 hd')
     exact (C • E).isUnit_Δ.ne_zero (by rw [Δ_of_isShortNF, ha₄, ha₆]; norm_num)
-  obtain ⟨e, A, B, he, hA, hB, hmin⟩ := exists_pow_mul_eq_of_ne_zero A₀ B₀ hne
+  obtain ⟨e, A, B, he, hA, hB, hmin⟩ :=
+    Int.exists_eq_pow_mul_and_forall_prime_not_pow_dvd_of_ne_zero (m := 4) (n := 6) (by norm_num)
+      (by norm_num) A₂ B₂ hne
   have he' : (e : ℚ) ≠ 0 := Int.cast_ne_zero.mpr he
-  have hA' : (A₀ : ℚ) = (e : ℚ) ^ 4 * A := by exact_mod_cast hA
-  have hB' : (B₀ : ℚ) = (e : ℚ) ^ 6 * B := by exact_mod_cast hB
+  have hA' : (A₂ : ℚ) = (e : ℚ) ^ 4 * A := by exact_mod_cast hA
+  have hB' : (B₂ : ℚ) = (e : ℚ) ^ 6 * B := by exact_mod_cast hB
   let u : ℚˣ := Units.mk0 ((d : ℚ) / e) (div_ne_zero hd' he')
   have key : (⟨u, 0, 0, 0⟩ : VariableChange ℚ) • (shortCurve A B).baseChange ℚ = C • E := by
     rw [baseChange_shortCurve, smul_shortCurve, ← shortCurve_a₄_a₆ (C • E)]
@@ -308,9 +287,9 @@ theorem exists_minimalPairModel (E : WeierstrassCurve ℚ) [E.IsElliptic] :
       div_mul_eq_mul_div]
     congr 1
     · rw [div_eq_iff (pow_ne_zero 4 hd')]
-      linear_combination -hA₀ - hA'
+      linear_combination -hA₁ - hA'
     · rw [div_eq_iff (pow_ne_zero 6 hd')]
-      linear_combination -hB₀ - hB'
+      linear_combination -hB₁ - hB'
   exact ⟨⟨shortCurve A B, .of_forall_not_dvd (by simpa using hmin), C⁻¹ * ⟨u, 0, 0, 0⟩,
     by rw [mul_smul, key, inv_smul_smul]⟩⟩
 
