@@ -40,8 +40,8 @@ conductor.
   `φ i ∤ (H mod p)` take `σ = H(θ) ^ e i ∏_{j ≠ i} Φ j (θ) ^ e j`, descending along the powers of
   `Φ i (θ)` with the identity `p H(θ) = -∏ j, Φ j (θ) ^ e j`. Iterating, a power of `σ` times the
   `p`-free part of the index lies in `𝔣 ⊆ P`, a contradiction (`not_dvd_index_of_forall`).
-* If `e i ≥ 2` and `φ i ∣ (H mod p)`, then `β = Φ i (θ) ^ (e i - 1) ∏_{j ≠ i} Φ j (θ) ^ e j / p` is an
-  algebraic integer, because it preserves the finitely generated `ℤ`-submodule
+* If `e i ≥ 2` and `φ i ∣ (H mod p)`, then `β = Φ i (θ) ^ (e i - 1) ∏_{j ≠ i} Φ j (θ) ^ e j / p`
+  is an algebraic integer, because it preserves the finitely generated `ℤ`-submodule
   `p A + Φ i (θ) A` of `K`. It is not in `A`, since otherwise `f mod p` would divide a nonzero
   polynomial of smaller degree. So `β` has order `p` in `𝓞 K / A`, and `p` divides the index
   (`dvd_index_of_ne_one_of_dvd`).
