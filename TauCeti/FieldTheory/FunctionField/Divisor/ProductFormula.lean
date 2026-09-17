@@ -34,12 +34,16 @@ strictly stronger than nonconstancy.
   `Pic⁰`, and `TauCeti.Divisor.degree_eq_of_linearlyEquivalent` records invariance under linear
   equivalence.
 * `TauCeti.riemannRochSpace_eq_bot_of_degree_neg` and
-  `TauCeti.Divisor.dim_eq_zero_of_degree_neg` are the negative-degree consequence.
+  `TauCeti.Divisor.dim_eq_zero_of_degree_neg` are the negative-degree consequence, and
+  `TauCeti.Divisor.dim_le_degree_add_finrank_of_riemannRochSpace_ne_bot` bounds `ℓ(D)` by
+  `deg D + [algebraicClosure k F : k]` whenever `L(D)` is nonzero, and
+  `TauCeti.Divisor.exists_mem_dim_sub_ofPoint_lt` shows that such an `L(D)` drops when some place
+  of a set of sufficiently large total degree is removed.
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Theorem 1.4.11 and Corollary 1.4.12.
+  Proposition 1.4.9, Theorem 1.4.11, and Corollary 1.4.12.
 -/
 
 public section
@@ -309,5 +313,42 @@ theorem Divisor.dim_eq_zero_of_degree_neg (hF : IsFunctionField k F) {D : Diviso
     (hD : Divisor.degree D < 0) : Divisor.dim D = 0 := by
   exact (Divisor.dim_eq_zero_iff_riemannRochSpace_eq_bot hF D).mpr
     (riemannRochSpace_eq_bot_of_degree_neg hF hD)
+
+/-- A divisor with a nonzero Riemann–Roch space satisfies
+`ℓ(D) ≤ deg D + [algebraicClosure k F : k]` (Stichtenoth, Proposition 1.4.9 with
+Corollary 1.4.12(a)). -/
+theorem Divisor.dim_le_degree_add_finrank_of_riemannRochSpace_ne_bot (hF : IsFunctionField k F)
+    {D : Divisor k F} (hD : riemannRochSpace D ≠ ⊥) :
+    (Divisor.dim D : ℤ) ≤ Divisor.degree D + Module.finrank k (algebraicClosure k F) := by
+  obtain ⟨D', hD', hlin⟩ := (riemannRochSpace_ne_bot_iff hF).mp hD
+  rw [Divisor.dim_eq_of_linearlyEquivalent hF hlin,
+    Divisor.degree_eq_of_linearlyEquivalent hF hlin]
+  simpa only [posPart_eq_self.mpr hD'] using Divisor.dim_le_degree_posPart_add_finrank hF D'
+
+/-- **A nonzero Riemann–Roch space drops along a set of large degree.**  If `ℓ(D) > 0` and the
+places of a finite set `T` have total degree exceeding `deg D + [algebraicClosure k F : k] - ℓ(D)`,
+then removing some place of `T` strictly shrinks `L(D)`.  Over an exact constant field the
+threshold is `deg D + 1 - ℓ(D)`. -/
+theorem Divisor.exists_mem_dim_sub_ofPoint_lt (hF : IsFunctionField k F) {D : Divisor k F}
+    {T : Finset (Place k F)} (hD : 0 < Divisor.dim D)
+    (hdeg : Divisor.degree D + Module.finrank k (algebraicClosure k F) <
+      Divisor.dim D + ∑ P ∈ T, (P.degree : ℤ)) :
+    ∃ P ∈ T, Divisor.dim (D - WeilDivisor.ofPoint P) < Divisor.dim D := by
+  by_contra! h
+  have := finiteDimensional_riemannRochSpace hF D
+  have heq : riemannRochSpace (D - WeilDivisor.ofFinset T) = riemannRochSpace D :=
+    riemannRochSpace_sub_ofFinset_eq fun P hP ↦
+      Submodule.eq_of_le_of_finrank_le
+        (riemannRochSpace_mono (sub_le_self _ (WeilDivisor.isEffective_iff_zero_le.mp
+          (WeilDivisor.isEffective_ofPoint P))))
+        (by rw [← Divisor.dim_def, ← Divisor.dim_def]; exact h P hP)
+  have hne : riemannRochSpace (D - WeilDivisor.ofFinset T) ≠ ⊥ := by
+    rw [heq, ← Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF]
+    exact hD
+  have hle := Divisor.dim_le_degree_add_finrank_of_riemannRochSpace_ne_bot hF hne
+  rw [Divisor.dim_def, heq, ← Divisor.dim_def, Divisor.degree_sub,
+    Divisor.degree_eq_weightedDegree (WeilDivisor.ofFinset T),
+    WeilDivisor.weightedDegree_ofFinset] at hle
+  omega
 
 end TauCeti

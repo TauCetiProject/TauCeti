@@ -29,6 +29,8 @@ This is the summation step of Chebyshev-type bounds, where a local estimate on w
 
 * `TauCeti.isBigO_sum_Icc_of_sum_Ioc_floor_mul_le`: a window bound `O(x)` implies partial sums
   `O(x)`.
+* `TauCeti.exists_sum_Icc_le_mul_of_isBigO`: partial sums that are `O(x)` are bounded by `C N`
+  at every natural cutoff `N`, with one constant `C`.
 -/
 
 public section
@@ -102,5 +104,35 @@ theorem isBigO_sum_Icc_of_sum_Ioc_floor_mul_le {f : ℕ → ℝ} (hf : 0 ≤ f) 
   have := key ⌊x⌋₊ x hx0 le_rfl
   have := hSnn x₁
   nlinarith
+
+/-- **A uniform linear bound from linear growth.** If the partial sums `∑_{1 ≤ n ≤ x} f n`
+are `O(x)`, then a single constant `C` bounds them by `C N` at every natural cutoff `N`, including
+the finitely many cutoffs below the range where the `O(x)` estimate starts. -/
+theorem exists_sum_Icc_le_mul_of_isBigO {f : ℕ → ℝ}
+    (h : (fun x : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, f n) =O[atTop] fun x ↦ x) :
+    ∃ C : ℝ, ∀ N : ℕ, ∑ n ∈ Finset.Icc 1 N, f n ≤ C * N := by
+  obtain ⟨c, hc⟩ := h.bound
+  obtain ⟨x₀, hx₀⟩ := eventually_atTop.1 hc
+  set S : ℕ → ℝ := fun N ↦ ∑ n ∈ Finset.Icc 1 N, f n with hS
+  set B : ℝ := ∑ n ∈ Finset.Icc 1 ⌈x₀⌉₊, ‖f n‖ with hB
+  have hBnn : 0 ≤ B := Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
+  refine ⟨max c B, fun N ↦ ?_⟩
+  have hN0 : (0 : ℝ) ≤ N := N.cast_nonneg
+  rcases le_or_gt ⌈x₀⌉₊ N with hN | hN
+  · have hbound := hx₀ N ((Nat.le_ceil x₀).trans (Nat.cast_le.2 hN))
+    rw [Nat.floor_natCast, Real.norm_of_nonneg hN0] at hbound
+    have hSnorm : S N ≤ ‖S N‖ := by
+      simpa only [Real.norm_eq_abs] using le_abs_self (S N)
+    exact hSnorm.trans (hbound.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hN0))
+  · rcases Nat.eq_zero_or_pos N with rfl | hNpos
+    · simp
+    have hN1 : (1 : ℝ) ≤ N := by exact_mod_cast hNpos
+    calc S N ≤ ∑ n ∈ Finset.Icc 1 N, ‖f n‖ :=
+          Finset.sum_le_sum fun n _ ↦ by
+            simpa only [Real.norm_eq_abs] using le_abs_self (f n)
+      _ ≤ B := Finset.sum_le_sum_of_subset_of_nonneg (Finset.Icc_subset_Icc_right hN.le)
+        fun _ _ _ ↦ norm_nonneg _
+      _ ≤ B * N := le_mul_of_one_le_right hBnn hN1
+      _ ≤ max c B * N := mul_le_mul_of_nonneg_right (le_max_right _ _) hN0
 
 end TauCeti
