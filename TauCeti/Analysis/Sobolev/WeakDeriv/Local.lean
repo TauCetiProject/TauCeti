@@ -13,13 +13,8 @@ import Mathlib.Topology.Separation.Regular
 
 A weak derivative on an open domain can be detected on all open subdomains whose closures
 are compact and contained in the domain. No boundary regularity or boundedness of the domain
-is needed. This supplies an interior local-to-global criterion for the general-domain
-smooth-density target in PDE Lane A.2.
-
-The proof uses `exists_open_between_and_isCompact_closure`: each compact subset of the domain,
-in particular the support of a test function, lies in one such subdomain. Local integrability
-is recovered from integrability on compact subsets, using `locallyIntegrableOn_iff`.
-No partition of unity or exchange of derivatives with infinite sums is needed.
+is needed. Thus completeness, local integrability, and the test-function identities defining
+the weak derivative can be verified on relatively compact subdomains.
 
 ## Main results
 
@@ -71,8 +66,8 @@ theorem hasWeakLineDerivOn_iff_forall_isCompact_closure :
       ⟨φ, φ.contDiff, φ.hasCompactSupport, hφV⟩
 
 /-- Weak Fréchet derivatives are detected on relatively compact open subdomains.
-This applies the directional criterion to each direction; the codomain and the measure are
-arbitrary, and no boundary regularity is required. -/
+The equivalence holds for arbitrary codomain and measure, without assumptions on the boundary
+of the domain. -/
 theorem hasWeakFDerivOn_iff_forall_isCompact_closure {U : E → E →L[ℝ] F} :
     HasWeakFDerivOn μ Ω u U ↔
       ∀ V : Opens E, IsCompact (closure (V : Set E)) → closure (V : Set E) ⊆ Ω →
