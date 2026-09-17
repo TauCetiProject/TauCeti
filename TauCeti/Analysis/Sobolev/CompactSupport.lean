@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-public import TauCeti.Analysis.Sobolev.WeakDeriv
+public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
