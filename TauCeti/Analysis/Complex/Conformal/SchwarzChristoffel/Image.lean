@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.FDeriv.Analytic
-public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
+-- Public: the compactified boundary path and the filled hull occur in the exported statements.
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Compactification
 public import TauCeti.Topology.FilledHull
+-- Non-public: analyticity of the primitive and the inverse function theorem are used only to
+-- prove that the primitive is an open map.
+import Mathlib.Analysis.Calculus.FDeriv.Analytic
+import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 
 /-!
 # The image of the Schwarz--Christoffel primitive and its boundary
