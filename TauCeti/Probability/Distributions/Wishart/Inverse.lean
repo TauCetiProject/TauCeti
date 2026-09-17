@@ -553,7 +553,10 @@ private theorem map_coe_apply_last_inverseWishartMeasure_one {q : ℕ} (hn : (q 
           (bartlettCoordinateMeasure (p := q + 1) n)]
       (fun t : ℝ => (t ^ 2)⁻¹) ∘
         Function.eval (⟨(Fin.last q, Fin.last q), le_rfl⟩ : lowerTriangle (q + 1)) := by
-    filter_upwards [ae_mem_posDiagLowerRegion_pi_bartlettCoordinateMeasure hn'] with x hx
+    have hpos : ∀ᵐ x ∂(Measure.pi (bartlettCoordinateMeasure (p := q + 1) n)),
+        x ∈ posDiagLowerRegion (q + 1) :=
+      ae_iff.2 (pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion hn')
+    filter_upwards [hpos] with x hx
     simpa using inv_coe_lowerTriangleGram_apply_last hx
   have heval : (Measure.pi (bartlettCoordinateMeasure (p := q + 1) n)).map
       (Function.eval (⟨(Fin.last q, Fin.last q), le_rfl⟩ : lowerTriangle (q + 1))) =
