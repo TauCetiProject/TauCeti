@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.Bilinear
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Transvection
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
-import Mathlib.LinearAlgebra.Matrix.SchurComplement
+public import TauCeti.LinearAlgebra.Matrix.Congruence
 import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
@@ -25,7 +25,8 @@ upper-triangular coordinates its determinant is
 general-scale Wishart formulas.
 
 The determinant is computed for an arbitrary square matrix `M`, not only invertible ones, with
-the invertible case as a corollary.
+the invertible case as a corollary. The underlying generic trace and determinant-pencil
+identities for rectangular congruence are in `TauCeti.LinearAlgebra.Matrix.Congruence`.
 
 ## Main declarations
 
@@ -33,10 +34,8 @@ the invertible case as a corollary.
   linear map between symmetric subspaces.
 * `Matrix.inner_symmetricCongruenceLinearMap` — congruence by `M` is adjoint to congruence by
   `Mᵀ` for the Frobenius pairing.
-* `Matrix.charFun_map_symmetricCongruenceLinearMap` — the corresponding transformation rule for
-  characteristic functions.
-* `Matrix.det_one_sub_smul_transpose_mul_mul` — the rectangular determinant identity used to
-  transport Wishart trace transforms.
+* `MeasureTheory.Measure.charFun_map_symmetricCongruenceLinearMap` — the corresponding
+  transformation rule for characteristic functions.
 * `Matrix.det_symmetricCongruenceLinearMap` — its determinant is `(det M) ^ (p + 1)`.
 * `Matrix.GeneralLinearGroup.symmetricCongruence` — congruence by an invertible matrix, as a
   continuous linear automorphism.
@@ -59,39 +58,6 @@ open scoped RealInnerProductSpace
 namespace Matrix
 
 variable {p q : ℕ}
-
-/-! ### Trace pairing and rectangular determinant pencils -/
-
-/-- Moving a rectangular congruence across a trace pairing transposes the congruence matrix.
-No symmetry hypotheses on `A` or `B` are needed. -/
-theorem trace_mul_congruence {m n R : Type*} [Fintype m] [Fintype n]
-    [NonUnitalCommSemiring R]
-    (B : Matrix m m R) (M : Matrix m n R) (A : Matrix n n R) :
-    (B * (M * A * Mᵀ)).trace = ((Mᵀ * B * M) * A).trace := by
-  simpa only [Matrix.mul_assoc] using Matrix.trace_mul_comm (B * M * A) Mᵀ
-
-/-- The Weinstein--Aronszajn identity in the form used by a rectangular congruence: the
-determinant pencil can be computed either before or after applying the congruence. -/
-theorem det_one_add_smul_transpose_mul_mul {m n R : Type*} [Fintype m] [Fintype n]
-    [DecidableEq m] [DecidableEq n] [CommRing R] (c : R) (B : Matrix m m R)
-    (M : Matrix m n R) (A : Matrix n n R) :
-    det (1 + c • ((Mᵀ * B * M) * A)) = det (1 + c • (B * (M * A * Mᵀ))) := by
-  calc
-    det (1 + c • ((Mᵀ * B * M) * A)) = det (1 + Mᵀ * (c • (B * M * A))) := by
-      simp only [Matrix.mul_assoc, Matrix.mul_smul]
-    _ = det (1 + (c • (B * M * A)) * Mᵀ) :=
-      Matrix.det_one_add_mul_comm Mᵀ (c • (B * M * A))
-    _ = det (1 + c • (B * (M * A * Mᵀ))) := by
-      simp only [Matrix.smul_mul, Matrix.mul_assoc]
-
-/-- The subtractive form of `Matrix.det_one_add_smul_transpose_mul_mul`. This is the form of the
-determinant pencil occurring in Wishart moment-generating functions. -/
-theorem det_one_sub_smul_transpose_mul_mul {m n R : Type*} [Fintype m] [Fintype n]
-    [DecidableEq m] [DecidableEq n] [CommRing R] (c : R) (B : Matrix m m R)
-    (M : Matrix m n R) (A : Matrix n n R) :
-    det (1 - c • ((Mᵀ * B * M) * A)) = det (1 - c • (B * (M * A * Mᵀ))) := by
-  simpa only [sub_eq_add_neg, neg_smul] using
-    det_one_add_smul_transpose_mul_mul (-c) B M A
 
 /-- Congruence `A ↦ M * A * Mᵀ` by an arbitrary rectangular matrix, as a linear map between
 symmetric subspaces. -/
@@ -133,21 +99,6 @@ theorem inner_symmetricCongruenceLinearMap (M : Matrix (Fin q) (Fin p) ℝ)
     coe_symmetricCongruenceLinearMap_apply,
     coe_symmetricCongruenceLinearMap_apply, trace_mul_congruence]
   simp
-
-/-- Mapping a measure by rectangular congruence precomposes its characteristic function with
-congruence by the transpose. -/
-theorem charFun_map_symmetricCongruenceLinearMap
-    (μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)))
-    (M : Matrix (Fin q) (Fin p) ℝ)
-    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin q) (Fin q) ℝ)) :
-    charFun (μ.map (symmetricCongruenceLinearMap M)) Θ =
-      charFun μ (symmetricCongruenceLinearMap Mᵀ Θ) := by
-  rw [charFun_apply, integral_map
-    (LinearMap.continuous_of_finiteDimensional (symmetricCongruenceLinearMap M)).aemeasurable
-    (by fun_prop), charFun_apply]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun A => ?_)
-  exact congrArg (fun x : ℝ => Complex.exp (x * Complex.I))
-    (inner_symmetricCongruenceLinearMap M A Θ)
 
 theorem symmetricCongruenceLinearMap_mul {r : ℕ} (M : Matrix (Fin q) (Fin p) ℝ)
     (N : Matrix (Fin p) (Fin r) ℝ) :
@@ -456,3 +407,25 @@ theorem map_symmetricCongruence_symmetricLebesgue (C : Matrix.GeneralLinearGroup
 end GeneralLinearGroup
 
 end Matrix
+
+namespace MeasureTheory.Measure
+
+open scoped Matrix
+
+variable {p q : ℕ}
+
+/-- Mapping a measure by rectangular congruence precomposes its characteristic function with
+congruence by the transpose. -/
+theorem charFun_map_symmetricCongruenceLinearMap
+    (μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)))
+    (M : Matrix (Fin q) (Fin p) ℝ)
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin q) (Fin q) ℝ)) :
+    charFun (μ.map (Matrix.symmetricCongruenceLinearMap M)) Θ =
+      charFun μ (Matrix.symmetricCongruenceLinearMap Mᵀ Θ) := by
+  have hM := LinearMap.continuous_of_finiteDimensional (Matrix.symmetricCongruenceLinearMap M)
+  rw [charFun_apply, integral_map hM.aemeasurable (by fun_prop), charFun_apply]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun A => ?_)
+  exact congrArg (fun x : ℝ => Complex.exp (x * Complex.I))
+    (Matrix.inner_symmetricCongruenceLinearMap M A Θ)
+
+end MeasureTheory.Measure
