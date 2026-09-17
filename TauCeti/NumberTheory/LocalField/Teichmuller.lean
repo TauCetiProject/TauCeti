@@ -138,7 +138,7 @@ theorem teichmuller_mem_rootsOfUnity (α : 𝓀[K]ˣ) :
   exact ((rootsOfUnityEquivResidueFieldUnits K).symm α).2
 
 /-- **The Teichmüller lift is a section of reduction.** -/
-@[simp]
+-- This is not a `simp` lemma: `simp` proves it via `coe_teichmuller_apply`.
 theorem residue_teichmuller (α : 𝓀[K]ˣ) :
     residue 𝒪[K] ((teichmuller K α : 𝒪[K]ˣ) : 𝒪[K]) = (α : 𝓀[K]) := by
   have h := coe_rootsOfUnityEquivResidueFieldUnits K
@@ -172,7 +172,7 @@ theorem eq_teichmuller {α : 𝓀[K]ˣ} {u : 𝒪[K]ˣ} (hpow : u ^ (Nat.card �
       ⟨teichmuller K α, teichmuller_mem_rootsOfUnity K α⟩ := by
     refine rootsOfUnityResidue_injective (isUnit_natCard_residueField_sub_one K) ?_
     ext
-    simp [hres]
+    simp [hres, residue_teichmuller]
   exact congrArg (fun x : rootsOfUnity (Nat.card 𝓀[K] - 1) 𝒪[K] ↦ (x : 𝒪[K]ˣ)) h
 
 /-- **The Teichmüller lift is the unique `(q-1)`-torsion-valued section of reduction.** -/
@@ -283,6 +283,7 @@ theorem teichmullerLift_pow_fintype_card (a : 𝓀[K]) :
   exact teichmullerLift_pow_natCard K a
 
 /-- On units, the zero-preserving Teichmüller lift is `teichmuller K`. -/
+@[simp]
 theorem coe_teichmuller_apply (α : 𝓀[K]ˣ) :
     ((teichmuller K α : 𝒪[K]ˣ) : 𝒪[K]) = teichmullerLift K (α : 𝓀[K]) := by
   have hsection (β : 𝓀[K]ˣ) :
