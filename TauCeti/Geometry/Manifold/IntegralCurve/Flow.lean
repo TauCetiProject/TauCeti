@@ -223,10 +223,8 @@ private theorem IsMaximalIntegralCurveFlowPoint.add (n : ℕ)
   have hslice : ContMDiffAt I I (n + 1 : ℕ) (fun y ↦ maximalIntegralCurve v y s) x :=
     hs.2.comp x (contMDiffAt_id.prodMk contMDiffAt_const)
   have hsub : ContMDiffAt (I.prod 𝓘(ℝ, ℝ)) 𝓘(ℝ, ℝ) (n + 1 : ℕ)
-      (fun p : M × ℝ ↦ -s + p.2) (x, s + u) := by
-    have haff : ContDiff ℝ (n + 1 : ℕ) (fun r : ℝ ↦ -s + r) :=
-      contDiff_const.add contDiff_id
-    exact haff.contMDiff.contMDiffAt.comp (x, s + u) contMDiffAt_snd
+      (fun p : M × ℝ ↦ -s + p.2) (x, s + u) :=
+    ContMDiffAt.add contMDiffAt_const contMDiffAt_snd
   have hG : ContMDiffAt (I.prod 𝓘(ℝ, ℝ)) (I.prod 𝓘(ℝ, ℝ)) (n + 1 : ℕ) G
       (x, s + u) := by
     exact (hslice.comp (x, s + u) contMDiffAt_fst).prodMk hsub
@@ -272,8 +270,7 @@ private theorem IsMaximalIntegralCurveFlowPoint.add (n : ℕ)
   ring_nf at hadd
   simpa only [F, G, Function.comp_apply] using hadd
 
-/-- Every point in the natural domain is a regular point of the finite-order maximal flow. The
-proof propagates the time-zero result along the connected maximal interval. -/
+/-- Every point in the natural domain is a regular point of the finite-order maximal flow. -/
 private theorem isMaximalIntegralCurveFlowPoint_of_mem [CompleteSpace E]
     [FiniteDimensional ℝ E] (n : ℕ) [IsManifold I (n + 1 : ℕ) M]
     (hv : CMDiff (n + 1 : ℕ) (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
