@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Divergence
-public import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Integral
 public import TauCeti.Probability.Distributions.Gaussian.QuadraticForm
 public import TauCeti.Probability.Distributions.Wishart.Basic
 public import TauCeti.Probability.Distributions.Wishart.Nonsingular
 
+import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Divergence
+import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Integral
 import TauCeti.LinearAlgebra.Matrix.InvSub
 import TauCeti.Probability.Moments.Pi
 
@@ -22,9 +22,12 @@ A symmetric matrix `Θ` pairs with a Wishart matrix `A` through the real trace s
 the symmetric subspace, so it is the pairing that `MeasureTheory.charFun` uses there. This file
 determines exactly when that statistic has finite exponential moments under each of the two
 Wishart families, and computes its moment- and cumulant-generating functions. Both answers are
-governed by one matrix, the pencil `1 - (2 * t) • (√S * Θ * √S)`: the moment is finite exactly
-when that pencil is positive definite, and there the transform is a negative half-power of its
-determinant, with the degree as exponent.
+governed by one matrix, the pencil `1 - (2 * t) • (√S * Θ * √S)`: at a positive Gaussian-Gram
+degree, and for the density family at a positive-definite scale and a degree in the classical
+range `p - 1 < n`, the moment is finite exactly when that pencil is positive definite, and there
+the transform is a negative half-power of its determinant, with the degree as exponent.
+Gaussian-Gram degree zero is the one exception, where the law is a Dirac mass and every order has
+a finite moment whether or not the pencil is positive definite.
 
 For the Gaussian-Gram family, writing the law as the image of a product of `ν` centred Gaussian
 factors turns the trace statistic into a sum of `ν` independent Gaussian quadratic forms, which
@@ -343,16 +346,17 @@ theorem mem_integrableExpSet_trace_mul_nonsingularWishartMeasure_iff (hS : S.Pos
   rw [integrableExpSet, Set.mem_ofPred_eq,
     integrable_exp_trace_mul_nonsingularWishartMeasure_iff_integrableOn hS hn t,
     ← hS.posDef_inv_sub_smul_iff (Θ : Matrix (Fin p) (Fin p) ℝ) (2 * t)]
+  -- The halved weight of the Wishart density is the plain weight of the halved pencil.
+  have hhalf : ∀ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
+      -(((2 : ℝ)⁻¹ • (S⁻¹ - (2 * t) • (Θ : Matrix (Fin p) (Fin p) ℝ))) *
+          (A : Matrix (Fin p) (Fin p) ℝ)).trace =
+        -((S⁻¹ - (2 * t) • (Θ : Matrix (Fin p) (Fin p) ℝ)) *
+          (A : Matrix (Fin p) (Fin p) ℝ)).trace / 2 := fun A => by
+    rw [Matrix.smul_mul, Matrix.trace_smul, smul_eq_mul]
+    ring
   refine ⟨fun hint => ?_, fun hB => ?_⟩
   · -- Off the positive-definite pencil the cone integral diverges.
     by_contra hB
-    have hhalf : ∀ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
-        -(((2 : ℝ)⁻¹ • (S⁻¹ - (2 * t) • (Θ : Matrix (Fin p) (Fin p) ℝ))) *
-            (A : Matrix (Fin p) (Fin p) ℝ)).trace =
-          -((S⁻¹ - (2 * t) • (Θ : Matrix (Fin p) (Fin p) ℝ)) *
-            (A : Matrix (Fin p) (Fin p) ℝ)).trace / 2 := fun A => by
-      rw [Matrix.smul_mul, Matrix.trace_smul, smul_eq_mul]
-      ring
     have hherm : (((2 : ℝ)⁻¹ • (S⁻¹ - (2 * t) • (Θ : Matrix (Fin p) (Fin p) ℝ)))).IsHermitian :=
       ((hS.inv.isHermitian.sub ((selfAdjoint.isHermitian_coe Θ).smul
         (IsSelfAdjoint.all (2 * t : ℝ)))).smul (IsSelfAdjoint.all ((2 : ℝ)⁻¹)))
@@ -361,12 +365,9 @@ theorem mem_integrableExpSet_trace_mul_nonsingularWishartMeasure_iff (hS : S.Pos
     · have hdouble := hhalfpd.smul (by norm_num : (0 : ℝ) < 2)
       rwa [smul_smul, mul_inv_cancel₀ (two_ne_zero' ℝ), one_smul] at hdouble
     · simpa only [hhalf] using hint
-  · have hinv : ((S⁻¹ - (2 * t) • (Θ : Matrix (Fin p) (Fin p) ℝ))⁻¹)⁻¹ =
-        S⁻¹ - (2 * t) • (Θ : Matrix (Fin p) (Fin p) ℝ) :=
-      Matrix.nonsing_inv_nonsing_inv _ (isUnit_iff_ne_zero.2 hB.det_pos.ne')
-    have hint := hB.inv.integrableOn_det_rpow_mul_exp_neg_trace_inv_mul_div_two
-      (a := n / 2) (by linarith)
-    rwa [hinv] at hint
+  · have hint := Matrix.PosDef.integrableOn_posDef_det_rpow_mul_exp_neg_trace_mul
+      (hB.smul (by norm_num : (0 : ℝ) < 2⁻¹)) (a := n / 2) (by linarith)
+    simpa only [hhalf] using hint
 
 /-! #### The moment- and cumulant-generating functions -/
 
