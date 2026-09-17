@@ -43,13 +43,6 @@ private theorem map_map_intCast_rat (f : ℤ[X]) :
     RingHom.ext_int ((algebraMap ℚ M).comp (Int.castRingHom ℚ))
       ((algebraMap (𝓞 M) M).comp (algebraMap ℤ (𝓞 M)))]
 
-/-- A root of a monic integer polynomial is an algebraic integer. -/
-private theorem isIntegral_of_aeval_eq_zero (hf : f.Monic) {x : M}
-    (hx : aeval x (f.map (Int.castRingHom ℚ)) = 0) : IsIntegral ℤ x :=
-  ⟨f, hf, by
-    rwa [aeval_def, eval₂_map,
-      RingHom.ext_int ((algebraMap ℚ M).comp (Int.castRingHom ℚ)) (algebraMap ℤ M)] at hx⟩
-
 /-- **Reducing the roots of `f` modulo a prime.** Let `f` be monic, split in `M`, and squarefree
 modulo `p`, and let `ρ : 𝓞 M →+* k` be a ring homomorphism to a field `k` over `𝔽_p`. Then
 `f mod p` splits in `k`, and reduction along `ρ` is a bijection from the roots of `f` in `M` onto
@@ -66,8 +59,11 @@ theorem splits_and_exists_rootSet_equiv_of_squarefree_map_zmod (hf : f.Monic)
   classical
   set fM := (f.map (Int.castRingHom ℚ)).map (algebraMap ℚ M) with hfM
   -- The roots of `f` in `M` are algebraic integers, so they form a multiset `t` of `𝓞 M`.
+  -- Along the tower `ℤ → ℚ → M`, being a root of `f` over `ℚ` is being a root of `f` itself.
   have hint : ∀ x ∈ fM.roots, IsIntegral ℤ x := fun x hx =>
-    isIntegral_of_aeval_eq_zero hf (by rw [← eval_map_algebraMap]; exact (mem_roots'.mp hx).2)
+    ⟨f, hf, by
+      rw [← aeval_def, ← aeval_map_algebraMap (A := ℚ), algebraMap_int_eq, ← eval_map_algebraMap]
+      exact (mem_roots'.mp hx).2⟩
   obtain ⟨t, ht⟩ : ∃ t : Multiset (𝓞 M), t.map (algebraMap (𝓞 M) M) = fM.roots :=
     ⟨fM.roots.attach.map fun x => IsIntegralClosure.mk' (𝓞 M) x.1 (hint x.1 x.2), by
       simp [Multiset.map_map, IsIntegralClosure.algebraMap_mk']⟩
