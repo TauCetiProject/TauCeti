@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.LinearAlgebra.Matrix.Reindex
 
 /-!
 # Two-sided invertible equivalence of matrices
@@ -18,6 +19,8 @@ semiring.
 
 * `Matrix.GeneralLinearGroup.inv_mul_mul_inv_of_mul_mul_eq`: inverting a two-sided
   invertible transformation.
+* `Equiv.reindexGL`: reindexing the rows and columns of a general linear group along an
+  equivalence of index types.
 -/
 
 namespace Matrix.GeneralLinearGroup
@@ -45,3 +48,26 @@ theorem inv_mul_mul_inv_of_mul_mul_eq {S : Type*} [Semiring S]
 end
 
 end Matrix.GeneralLinearGroup
+
+namespace Equiv
+
+public section
+
+universe u
+
+variable {n p : Type*} [Fintype n] [DecidableEq n] [Fintype p] [DecidableEq p]
+  (e : n ≃ p) (R : Type u) [CommSemiring R]
+
+/-- Reindexing along an equivalence of index types, as a group isomorphism of general linear
+groups. -/
+def reindexGL : GL n R ≃* GL p R :=
+  Units.mapEquiv (Matrix.reindexAlgEquiv R R e).toRingEquiv.toMulEquiv
+
+@[simp]
+theorem coe_reindexGL (M : GL n R) :
+    (reindexGL e R M : Matrix p p R) = (M : Matrix n n R).submatrix e.symm e.symm := by
+  simp [reindexGL, Units.coe_mapEquiv, Matrix.reindex_apply]
+
+end
+
+end Equiv

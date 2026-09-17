@@ -272,14 +272,20 @@ theorem _root_.Representation.asAlgebraHom_surjective_of_isIrreducible
 
 /-! ### Atoms exist in finite dimensions -/
 
+section DivisionRing
+
+variable {k G V : Type*} [DivisionRing k] [Monoid G] [AddCommGroup V] [Module k V]
+
 /-- **Atoms exist.** Every nonzero finite-dimensional subrepresentation contains an atom of the
 lattice of subrepresentations.
 
 Finite-dimensionality is what makes a minimal nonzero subrepresentation exist, and only the
 subrepresentation being minimised inside has to be finite-dimensional: the ambient representation
-may be infinite-dimensional, and the acting monoid stays arbitrary.  Combined with
-`TauCeti.Representation.isIrreducible_toRepresentation_of_isAtom` it exhibits an irreducible
-subrepresentation inside any nonzero one. -/
+may be infinite-dimensional, the scalars need only be a division ring, and the acting monoid stays
+arbitrary.  Over a field it combines with
+`TauCeti.Representation.isIrreducible_toRepresentation_of_isAtom` to exhibit an irreducible
+subrepresentation inside any nonzero one; that companion needs the field, because
+`Representation.IsIrreducible` is defined only there. -/
 theorem exists_isAtom_le {ρ : Representation k G V} {σ : Subrepresentation ρ}
     [FiniteDimensional k σ.toSubmodule] (hσ : σ ≠ ⊥) :
     ∃ τ : Subrepresentation ρ, τ ≤ σ ∧ IsAtom τ := by
@@ -301,7 +307,7 @@ theorem exists_isAtom_le {ρ : Representation k G V} {σ : Subrepresentation ρ}
 
 /-- **A nonzero finite-dimensional representation has a minimal nonzero subrepresentation.**  This
 is `TauCeti.Representation.exists_isAtom_le` applied to the whole space, which is nonzero exactly
-because `V` is; the acting monoid stays arbitrary. -/
+because `V` is; the scalars need only be a division ring and the acting monoid stays arbitrary. -/
 theorem exists_isAtom [FiniteDimensional k V] [Nontrivial V] (ρ : Representation k G V) :
     ∃ σ : Subrepresentation ρ, IsAtom σ := by
   have htop : (⊤ : Subrepresentation ρ) ≠ ⊥ := fun hc =>
@@ -310,6 +316,8 @@ theorem exists_isAtom [FiniteDimensional k V] [Nontrivial V] (ρ : Representatio
         (ρ := ρ), hc])
   obtain ⟨σ, -, hσ⟩ := exists_isAtom_le htop
   exact ⟨σ, hσ⟩
+
+end DivisionRing
 
 /-- **Every nonzero finite-dimensional representation contains an irreducible subrepresentation.**
 Finite-dimensionality alone suffices; no semisimplicity is assumed.  This produces a single

@@ -7,8 +7,13 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Basic
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Cholesky
+public import TauCeti.Probability.Distributions.Gamma.Sqrt
+public import TauCeti.Probability.Distributions.Wishart.Nonsingular
 public import Mathlib.Probability.Distributions.Gaussian.Real
+public import Mathlib.Probability.HasLaw
+public import Mathlib.Probability.Independence.Basic
 
+import Mathlib.Algebra.Order.Star.Real
 import TauCeti.LinearAlgebra.Matrix.Cholesky.Coordinates
 import TauCeti.MeasureTheory.Measure.PiWithDensity
 
@@ -31,10 +36,12 @@ positive, and take independent real coordinates indexed by the on-or-below diago
 * a strictly lower coordinate has the standard Gaussian law `gaussianReal 0 1`.
 
 Then the random symmetric matrix `L * Lᵀ` built from these coordinates has the standard Wishart
-density. Since `L ↦ L * Lᵀ` is the inverse of the Cholesky factorization on the positive-definite
-cone, this is the input from which the Bartlett decomposition of a standard Wishart matrix into
-independent chi-distributed diagonal and standard Gaussian strictly lower Cholesky entries is
-read off.
+density, which is the law `TauCeti.nonsingularWishartMeasure n 1`. Since `L ↦ L * Lᵀ` is the
+inverse of the Cholesky factorization on the positive-definite cone, reading the implication
+backwards gives the Bartlett decomposition: lift the Wishart law to the cone, factor, and the
+on-or-below-diagonal entries of the Cholesky factor are independent, the diagonal entry `T i i`
+having `(T i i) ^ 2` chi-squared with `n - i` degrees of freedom and each strictly lower entry
+standard Gaussian.
 
 In the coordinates of `L` the determinant of `L * Lᵀ` is the square of the product of the
 diagonal entries and its trace is the sum of the squares of all entries, so, multiplied by the
@@ -47,6 +54,16 @@ Jacobian `2 ^ p * ∏ i, (L i i) ^ (p - i)` of the Cholesky change of variables
   `(p : ℝ) - 1 < n` it is the chi or standard Gaussian law of that coordinate.
 * `TauCeti.map_lowerTriangleGram_pi_bartlettCoordinateMeasure` — the Gram matrix of independent
   coordinates with these laws has the standard Wishart density.
+* `TauCeti.map_sq_bartlettCoordinateMeasure_of_eq` and
+  `TauCeti.isProbabilityMeasure_bartlettCoordinateMeasure` — the square of a diagonal coordinate
+  is chi-squared, and every coordinate law is normalized.
+* `TauCeti.nonsingularWishartMeasure_one_eq_map_lowerTriangleGram` — the standard Wishart law is
+  the Gram image of the product of the coordinate laws.
+* `TauCeti.map_choleskyLowerCoordinates_comap_nonsingularWishartMeasure` — the Cholesky
+  coordinates of the lifted standard Wishart law are that product, the Bartlett decomposition at
+  the level of measures.
+* `TauCeti.bartlett_nonsingularWishartMeasure` — its random-variable form: independence of the
+  Cholesky entries together with their chi-squared and standard Gaussian laws.
 
 ## References
 
@@ -149,6 +166,14 @@ private theorem bartlett_row_const (n : ℝ) (i : ℕ) :
   rcases eq_or_ne (Real.Gamma (n / 2 - (i : ℝ) / 2)) 0 with hΓ | hΓ
   · simp [hΓ]
   · field_simp
+
+/-- The product of the coordinate measures is Lebesgue measure on the coordinate space weighted
+by the product of the coordinate densities. -/
+private theorem pi_bartlettCoordinateMeasure_eq_withDensity (n : ℝ) :
+    Measure.pi (bartlettCoordinateMeasure (p := p) n) =
+      volume.withDensity fun x ↦ ∏ ij, ENNReal.ofReal (bartlettCoordinatePDFReal n ij (x ij)) := by
+  rw [funext (bartlettCoordinateMeasure_eq_withDensity n), volume_pi,
+    pi_withDensity _ fun ij ↦ (measurable_bartlettCoordinatePDFReal n ij).ennreal_ofReal]
 
 /-- On the positive-diagonal region the product of the coordinate densities is the standard
 Wishart density of `L * Lᵀ` times the Cholesky Jacobian. -/
@@ -263,10 +288,7 @@ theorem map_lowerTriangleGram_pi_bartlettCoordinateMeasure
   have hw : Measurable w :=
     ENNReal.measurable_ofReal.comp <| (((hcoe.matrix_det.measurable.pow_const _).mul
       (hcoe.matrix_trace.neg.div_const _).rexp.measurable)).div_const _
-  have hpi : Measure.pi (bartlettCoordinateMeasure (p := p) n) =
-      volume.withDensity fun x ↦ ∏ ij, ENNReal.ofReal (bartlettCoordinatePDFReal n ij (x ij)) := by
-    rw [funext (bartlettCoordinateMeasure_eq_withDensity n), volume_pi,
-      pi_withDensity _ fun ij ↦ (measurable_bartlettCoordinatePDFReal n ij).ennreal_ofReal]
+  have hpi := pi_bartlettCoordinateMeasure_eq_withDensity (p := p) n
   have hgram := measurable_lowerTriangleGram p
   -- Both sides are integrals over the coordinate space: the left by definition of the
   -- pushforward, the right by the Cholesky change of variables. Compare the integrands.
@@ -291,5 +313,149 @@ theorem map_lowerTriangleGram_pi_bartlettCoordinateMeasure
     intro _
     rw [← ENNReal.ofReal_prod_of_nonneg fun ij _ ↦ bartlettCoordinatePDFReal_nonneg hn ij (x ij),
       prod_bartlettCoordinatePDFReal_of_notMem hx, ENNReal.ofReal_zero]
+
+/-! ### The coordinate laws -/
+
+/-- Under `(p : ℝ) - 1 < n` the diagonal Cholesky coordinate in row `i` has positive degrees of
+freedom `n - i`, since `i` ranges only over `0, …, p - 1`. -/
+private theorem bartlett_degreesOfFreedom_pos (hn : (p : ℝ) - 1 < n) (i : Fin p) : 0 < n - i.1 := by
+  have h : ((i : ℕ) : ℝ) + 1 ≤ (p : ℝ) := by exact_mod_cast Nat.succ_le_of_lt i.isLt
+  linarith
+
+/-- **The square of a diagonal Bartlett coordinate is chi-squared** with `n - i` degrees of
+freedom: squaring carries the chi density to the chi-squared density. -/
+theorem map_sq_bartlettCoordinateMeasure_of_eq (hn : (p : ℝ) - 1 < n) {ij : lowerTriangle p}
+    (h : ij.1.1 = ij.1.2) :
+    (bartlettCoordinateMeasure n ij).map (fun t ↦ t ^ 2) =
+      Probability.chiSquaredMeasure (n - ij.1.1) := by
+  rw [bartlettCoordinateMeasure_of_eq n h]
+  exact Probability.map_sq_withDensity_eq_chiSquaredMeasure
+    (bartlett_degreesOfFreedom_pos hn ij.1.1)
+
+/-- Every Bartlett coordinate law is a probability measure: the chi density is normalized at
+positive degrees of freedom, and the strictly lower coordinates are standard Gaussian. -/
+theorem isProbabilityMeasure_bartlettCoordinateMeasure (hn : (p : ℝ) - 1 < n)
+    (ij : lowerTriangle p) : IsProbabilityMeasure (bartlettCoordinateMeasure n ij) := by
+  by_cases h : ij.1.1 = ij.1.2
+  · rw [bartlettCoordinateMeasure_of_eq n h]
+    exact Probability.isProbabilityMeasure_withDensity_chi
+      (bartlett_degreesOfFreedom_pos hn ij.1.1)
+  · rw [bartlettCoordinateMeasure_of_ne n h]
+    infer_instance
+
+/-- The product of the coordinate laws gives no mass to a nonpositive diagonal coordinate. -/
+theorem pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion (hn : (p : ℝ) - 1 < n) :
+    Measure.pi (bartlettCoordinateMeasure (p := p) n) (posDiagLowerRegion p)ᶜ = 0 := by
+  rw [pi_bartlettCoordinateMeasure_eq_withDensity,
+    withDensity_apply _ (measurableSet_posDiagLowerRegion p).compl]
+  refine setLIntegral_eq_zero (measurableSet_posDiagLowerRegion p).compl fun x hx ↦ ?_
+  rw [← ENNReal.ofReal_prod_of_nonneg fun ij _ ↦ bartlettCoordinatePDFReal_nonneg hn ij (x ij),
+    prod_bartlettCoordinatePDFReal_of_notMem hx, ENNReal.ofReal_zero, Pi.zero_apply]
+
+/-! ### The Bartlett decomposition -/
+
+/-- **The standard Wishart law is the Gram image of the Bartlett coordinates.** This is
+`TauCeti.map_lowerTriangleGram_pi_bartlettCoordinateMeasure` with the density on the right
+recognised as `TauCeti.nonsingularWishartMeasure n 1`: at the scale `1` both the inverse scale in
+the exponential weight and the scale determinant in the normalizing constant disappear. -/
+theorem nonsingularWishartMeasure_one_eq_map_lowerTriangleGram (hn : (p : ℝ) - 1 < n) :
+    nonsingularWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ) =
+      (Measure.pi (bartlettCoordinateMeasure (p := p) n)).map (lowerTriangleGram p) := by
+  classical
+  rw [map_lowerTriangleGram_pi_bartlettCoordinateMeasure (Or.inr hn),
+    nonsingularWishartMeasure_of_posDef Matrix.PosDef.one hn,
+    ← withDensity_indicator (measurableSet_posDefMatrix p)]
+  congr 1
+  funext A
+  rw [Set.indicator_apply]
+  split_ifs with hA
+  · rw [nonsingularWishartPDF_of_posDef n _ hA]
+    simp
+  · rw [nonsingularWishartPDF_of_not_posDef n _ hA]
+
+/-- **The Bartlett decomposition of the standard Wishart law.** Lift
+`TauCeti.nonsingularWishartMeasure n 1` to the positive-definite cone, where Cholesky
+factorization is defined, and read the on-or-below-diagonal entries of the factor: the resulting
+law is the product of the Bartlett coordinate laws. Cholesky factorization inverts the Gram map
+of `TauCeti.map_lowerTriangleGram_pi_bartlettCoordinateMeasure`, and the product law lives on the
+positive-diagonal region where that inversion is valid. -/
+theorem map_choleskyLowerCoordinates_comap_nonsingularWishartMeasure (hn : (p : ℝ) - 1 < n) :
+    ((nonsingularWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ)).comap
+        (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))).map
+        (choleskyLowerCoordinates p) = Measure.pi (bartlettCoordinateMeasure (p := p) n) := by
+  have hemb : MeasurableEmbedding
+      (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
+    MeasurableEmbedding.subtype_coe (measurableSet_posDefMatrix p)
+  have hres : (Measure.pi (bartlettCoordinateMeasure (p := p) n)).restrict
+      (posDiagLowerRegion p) = Measure.pi (bartlettCoordinateMeasure (p := p) n) :=
+    Measure.restrict_eq_self_of_ae_mem <| by
+      rw [ae_iff]
+      exact pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion hn
+  ext s hs
+  have hE : MeasurableSet (Subtype.val '' (choleskyLowerCoordinates p ⁻¹' s)) :=
+    hemb.measurableSet_image.2 (measurable_choleskyLowerCoordinates p hs)
+  have hset : lowerTriangleGram p ⁻¹' (Subtype.val '' (choleskyLowerCoordinates p ⁻¹' s)) ∩
+      posDiagLowerRegion p = s ∩ posDiagLowerRegion p := by
+    ext x
+    constructor
+    · rintro ⟨⟨A, hAs, hA⟩, hx⟩
+      have hAeq : A = ⟨lowerTriangleGram p x, posDef_lowerTriangleGram p hx⟩ := Subtype.ext hA
+      rw [hAeq, Set.mem_preimage, choleskyLowerCoordinates_lowerTriangleGram p hx] at hAs
+      exact ⟨hAs, hx⟩
+    · rintro ⟨hxs, hx⟩
+      refine ⟨⟨⟨lowerTriangleGram p x, posDef_lowerTriangleGram p hx⟩, ?_, rfl⟩, hx⟩
+      rw [Set.mem_preimage, choleskyLowerCoordinates_lowerTriangleGram p hx]
+      exact hxs
+  rw [Measure.map_apply (measurable_choleskyLowerCoordinates p) hs, hemb.comap_apply,
+    nonsingularWishartMeasure_one_eq_map_lowerTriangleGram hn,
+    Measure.map_apply (measurable_lowerTriangleGram p) hE, ← hres,
+    Measure.restrict_apply (measurable_lowerTriangleGram p hE), Measure.restrict_apply hs, hset]
+
+/-- **The Bartlett decomposition.** Let `A` be a random positive-definite symmetric matrix whose
+law is the standard Wishart law of degree `n` read on the cone, and let `T` be its Cholesky
+factor. Then the on-or-below-diagonal entries of `T` are independent, the square of the `i`-th
+diagonal entry is chi-squared with `n - i` degrees of freedom, and every strictly lower entry is
+standard Gaussian. The degrees of freedom decrease along the diagonal because the zero-based
+index `i` counts the coordinates already consumed by the preceding rows. -/
+theorem bartlett_nonsingularWishartMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    (hn : (p : ℝ) - 1 < n) {A : Ω → PosDefMatrix p}
+    (hA : HasLaw A ((nonsingularWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ)).comap
+      Subtype.val) P) :
+    iIndepFun (fun (ij : lowerTriangle p) (ω : Ω) ↦ (cholesky (A ω)).1 ij.1.1 ij.1.2) P ∧
+      (∀ i : Fin p, HasLaw (fun ω ↦ (cholesky (A ω)).1 i i ^ 2)
+          (Probability.chiSquaredMeasure (n - i.1)) P) ∧
+      (∀ i j : Fin p, j < i →
+        HasLaw (fun ω ↦ (cholesky (A ω)).1 i j) (gaussianReal 0 1) P) := by
+  have hcoordprob := isProbabilityMeasure_bartlettCoordinateMeasure (p := p) hn
+  have hL : HasLaw (fun ω ↦ choleskyLowerCoordinates p (A ω))
+      (Measure.pi (bartlettCoordinateMeasure (p := p) n)) P :=
+    HasLaw.fun_comp ⟨(measurable_choleskyLowerCoordinates p).aemeasurable,
+      map_choleskyLowerCoordinates_comap_nonsingularWishartMeasure hn⟩ hA
+  have hP : IsProbabilityMeasure P := hL.isProbabilityMeasure
+  -- Every coordinate of the product law is the corresponding Bartlett coordinate law.
+  have heval : ∀ ij : lowerTriangle p,
+      HasLaw (fun x : lowerTriangle p → ℝ ↦ x ij) (bartlettCoordinateMeasure n ij)
+        (Measure.pi (bartlettCoordinateMeasure (p := p) n)) :=
+    fun ij ↦ (measurePreserving_eval _ ij).hasLaw
+  have hcoord : ∀ ij : lowerTriangle p,
+      HasLaw (fun ω ↦ choleskyLowerCoordinates p (A ω) ij) (bartlettCoordinateMeasure n ij) P :=
+    fun ij ↦ (heval ij).fun_comp hL
+  have hentry : ∀ ij : lowerTriangle p, (fun ω ↦ (cholesky (A ω)).1 ij.1.1 ij.1.2) =
+      fun ω ↦ choleskyLowerCoordinates p (A ω) ij :=
+    fun ij ↦ funext fun ω ↦ (choleskyLowerCoordinates_apply p (A ω) ij).symm
+  refine ⟨?_, fun i ↦ ?_, fun i j hij ↦ ?_⟩
+  · rw [funext hentry]
+    exact (iIndepFun_iff_hasLaw_pi_pi hcoord).2 hL
+  · have hdiag : (fun ω ↦ (cholesky (A ω)).1 i i ^ 2) =
+        fun ω ↦ choleskyLowerCoordinates p (A ω) (⟨(i, i), le_rfl⟩ : lowerTriangle p) ^ 2 :=
+      funext fun ω ↦ congrArg (· ^ 2)
+        (choleskyLowerCoordinates_apply p (A ω) (⟨(i, i), le_rfl⟩ : lowerTriangle p)).symm
+    rw [hdiag]
+    exact HasLaw.fun_comp ⟨by fun_prop,
+      map_sq_bartlettCoordinateMeasure_of_eq hn (ij := ⟨(i, i), le_rfl⟩) rfl⟩
+      (hcoord ⟨(i, i), le_rfl⟩)
+  · rw [hentry ⟨(i, j), hij.le⟩]
+    have h := hcoord ⟨(i, j), hij.le⟩
+    rwa [bartlettCoordinateMeasure_of_ne n (fun h' ↦ absurd h' hij.ne')] at h
 
 end TauCeti
