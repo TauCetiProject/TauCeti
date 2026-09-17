@@ -26,9 +26,9 @@ degree identity `[k' : k] · deg (Con D) = [F' : F] · deg D` for the conorm int
 `deg (Con D) = n(F'/F) · deg D`.
 
 Linear disjointness is not automatic; it is what an inseparable constant field extension can
-destroy.  It does hold whenever `k' / k` is finite separable and `k` is the exact constant field
-of `F`, and that is proved here from
-`TauCeti.IntermediateField.finrank_adjoin_simple_eq_finrank_adjoin_simple_of_isIntegrallyClosedIn`.
+destroy.  It does hold whenever `k' / k` is separable and `k` is the exact constant field of `F`;
+that is `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn`, from which the degree
+equality for finite `k' / k` is derived here.
 Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree equality, through
 `TauCeti.finrank_constantCompositum_eq_finrank_of_linearDisjoint`.
 
@@ -47,8 +47,9 @@ Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree 
 * `TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`: that degree equality holds for a
   finite separable constant field extension over an exact constant field.
 * `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn` and
-  `TauCeti.linearIndependent_algebraMap_of_isIntegrallyClosedIn`: the stronger linear-disjointness
-  and persistence-of-linear-independence statements from which that degree equality follows.
+  `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`: the stronger
+  linear-disjointness and persistence-of-linear-independence statements from which that degree
+  equality follows.
 * `TauCeti.finrank_constantCompositum_eq_finrank_of_linearDisjoint`: it also follows from
   `IntermediateField.LinearDisjoint`.
 
@@ -56,8 +57,9 @@ Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree 
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Section III.6: the degree form `[F·k' : F] = [k' : k]` extracted from Proposition 3.6.1(b) (whose
-  own statement, the persistence over `k'` of linear independence over `k`, is not formalized here)
-  is `TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`, the geometric degree
+  own statement, the persistence over `k'` of linear independence over `k`, is
+  `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`) is
+  `TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`, the geometric degree
   `[F' : F·k']` is the factor appearing in Corollary 3.6.4, and the splitting
   `[F' : F] = n(F'/F) · [k' : k]` is the companion of Proposition 3.6.6.  Section III.1
   (Corollary 3.1.14) is the cross-multiplied conorm identity this feeds, in
@@ -241,7 +243,7 @@ which is the degree form of linear disjointness of `F` and `k'` over `k`.
 
 This is the degree consequence of Stichtenoth's Proposition 3.6.1(b); that proposition's own
 statement — the persistence over `k'` of linear independence over `k` — is
-`TauCeti.linearIndependent_algebraMap_of_isIntegrallyClosedIn`.
+`TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`.
 
 This is the statement in which that condition has content, and it is stated over the full
 compatible tower: `k` embeds in `F` and in `k'`, and the two routes `k → F → F'` and `k → k' → F'`
