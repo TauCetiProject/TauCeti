@@ -207,9 +207,12 @@ theorem denseRange_algebraMap : DenseRange (algebraMap K (FiniteAdeleRing R K)) 
   have heq : a + ι w = algebraMap K (FiniteAdeleRing R K) x := by
     apply RestrictedProduct.ext
     intro v
-    change a v + (algebraMap K (v.adicCompletion K) x - a v) =
-      algebraMap K (v.adicCompletion K) x
-    exact add_sub_cancel _ _
+    calc
+      (a + ι w) v = a v + (ι w) v := RestrictedProduct.add_apply _ _ _ v
+      _ = a v + (w v : v.adicCompletion K) := by
+        exact congrArg (a v + ·) (RestrictedProduct.structureMap_apply _ _ v)
+      _ = algebraMap K (v.adicCompletion K) x := add_sub_cancel _ _
+      _ = (algebraMap K (FiniteAdeleRing R K) x) v := (algebraMap_apply R K x v).symm
   exact heq ▸ hIt hw
 
 end FiniteAdeleRing
