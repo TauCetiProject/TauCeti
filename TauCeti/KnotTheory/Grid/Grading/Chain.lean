@@ -162,16 +162,24 @@ theorem bigradedChainInclusion_apply (R : Type*) [Semiring R] (g : ℤ × ℤ)
 
 /-- Projection is a left inverse to the inclusion of the same homogeneous piece. -/
 @[simp]
-theorem bigradedChainProjection_inclusion (R : Type*) [Semiring R] (g : ℤ × ℤ)
+theorem bigradedChainProjection_bigradedChainInclusion (R : Type*) [Semiring R] (g : ℤ × ℤ)
     (c : G.BigradedChainPiece R g) :
     G.bigradedChainProjection R g (G.bigradedChainInclusion R g c) = c := by
   ext x
   simp [bigradedChainInclusion_apply, x.property]
 
+/-- Projection onto a different bidegree annihilates a homogeneous inclusion. -/
+@[simp]
+theorem bigradedChainProjection_bigradedChainInclusion_of_ne (R : Type*) [Semiring R]
+    {g g' : ℤ × ℤ} (h : g ≠ g') (c : G.BigradedChainPiece R g') :
+    G.bigradedChainProjection R g (G.bigradedChainInclusion R g' c) = 0 := by
+  ext x
+  simp [bigradedChainInclusion_apply, x.property, h]
+
 /-- Inclusion of a homogeneous piece is injective. -/
 theorem bigradedChainInclusion_injective (R : Type*) [Semiring R] (g : ℤ × ℤ) :
     Function.Injective (G.bigradedChainInclusion R g) :=
-  Function.LeftInverse.injective (G.bigradedChainProjection_inclusion R g)
+  Function.LeftInverse.injective (G.bigradedChainProjection_bigradedChainInclusion R g)
 
 /-- The rank of a homogeneous grid-chain piece is the number of states in its bidegree. -/
 theorem finrank_bigradedChainPiece (R : Type*) [Semiring R] [StrongRankCondition R]

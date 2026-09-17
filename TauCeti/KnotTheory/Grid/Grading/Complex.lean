@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Grading.Chain
-public import TauCeti.KnotTheory.Grid.Chain.Complex
+public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import Mathlib.Algebra.Homology.HomologicalComplex
+import TauCeti.KnotTheory.Grid.Differential.Square.Zero
 
 /-!
 # The graded fully blocked grid complex
@@ -15,8 +17,8 @@ For each Alexander degree, the fully blocked differential restricts to a chain c
 by the integer Maslov grading. Its objects are the homogeneous pieces of the grid chain module,
 and its differential is the restriction of the rectangle-counting differential. Inclusion into
 the total chain module intertwines the differentials, so square-zero follows from the total
-complex. This supplies the graded homology groups whose ranks enter the Alexander-graded Euler
-characteristic.
+complex. This supplies the graded fully blocked complex whose Euler characteristic agrees with
+the Alexander-graded chain Euler characteristic.
 
 The coefficient field is `ZMod 2`, as for the total fully blocked differential. The diagram has
 an odd number of components so that its Alexander grading is integral. The differential lowers
@@ -62,7 +64,8 @@ theorem bidegree_eq_sub_of_mem_fullyBlockedRectangles {x y : GridState n}
   · simp only [bidegree_snd, Prod.snd_sub, sub_zero]
     exact hA'.symm
 
-/-- A nonzero fully blocked differential coefficient has bidegree `(-1, 0)`. -/
+/-- A nonzero fully blocked rectangle count from `x` to `y` implies
+`G.bidegree y = G.bidegree x - (1, 0)`. -/
 theorem bidegree_eq_sub_of_fullyBlockedRectangleCount_ne_zero {x y : GridState n}
     (h : G.1.fullyBlockedRectangleCount x y ≠ 0) :
     G.bidegree y = G.bidegree x - (1, 0) := by
@@ -74,7 +77,7 @@ theorem bidegree_eq_sub_of_fullyBlockedRectangleCount_ne_zero {x y : GridState n
 
 /-- The total differential of a homogeneous chain is supported in bidegree one lower in Maslov
 and unchanged in Alexander. -/
-theorem fullyBlockedDifferential_inclusion_apply_eq_zero (g : ℤ × ℤ)
+theorem fullyBlockedDifferential_bigradedChainInclusion_apply_eq_zero_of_ne (g : ℤ × ℤ)
     (c : G.BigradedChainPiece (ZMod 2) g) {y : GridState n}
     (hy : G.bidegree y ≠ g - (1, 0)) :
     G.1.fullyBlockedDifferential (G.bigradedChainInclusion (ZMod 2) g c) y = 0 := by
@@ -115,11 +118,11 @@ theorem bigradedChainInclusion_gradedFullyBlockedDifferential (a m : ℤ)
   rw [G.bigradedChainInclusion_apply]
   split_ifs with hy
   · exact G.gradedFullyBlockedDifferential_apply a m c ⟨y, hy⟩
-  · exact (G.fullyBlockedDifferential_inclusion_apply_eq_zero (m + 1, a) c
+  · exact (G.fullyBlockedDifferential_bigradedChainInclusion_apply_eq_zero_of_ne (m + 1, a) c
       (by simpa using hy)).symm
 
 /-- Consecutive graded fully blocked differentials compose to zero. -/
-theorem gradedFullyBlockedDifferential_comp (a m : ℤ) :
+theorem gradedFullyBlockedDifferential_comp_eq_zero (a m : ℤ) :
     (G.gradedFullyBlockedDifferential a m).comp
       (G.gradedFullyBlockedDifferential a (m + 1)) = 0 := by
   apply LinearMap.ext
@@ -133,7 +136,8 @@ theorem gradedFullyBlockedDifferential_comp (a m : ℤ) :
 noncomputable def gradedFullyBlockedComplex (a : ℤ) : ChainComplex (ModuleCat (ZMod 2)) ℤ :=
   ChainComplex.of (fun m => ModuleCat.of (ZMod 2) (G.BigradedChainPiece (ZMod 2) (m, a)))
     (fun m => ModuleCat.ofHom (G.gradedFullyBlockedDifferential a m)) (fun m => by
-      rw [← ModuleCat.ofHom_comp, G.gradedFullyBlockedDifferential_comp, ModuleCat.ofHom_zero])
+      rw [← ModuleCat.ofHom_comp, G.gradedFullyBlockedDifferential_comp_eq_zero,
+        ModuleCat.ofHom_zero])
 
 /-- The objects of the graded complex are the homogeneous grid-chain pieces. -/
 @[simp]

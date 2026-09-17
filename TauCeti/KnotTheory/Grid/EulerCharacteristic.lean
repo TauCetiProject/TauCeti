@@ -52,7 +52,7 @@ characteristic of its homology remains a separate step.
 ## Main results
 
 * `TauCeti.OddComponentGridDiagram.eulerChar_gradedFullyBlockedComplex`: the graded complex has
-  Euler characteristic equal to the alternating state count in each Alexander degree.
+  Euler characteristic `alexanderEulerChar (ZMod 2) a` in Alexander degree `a`.
 * `TauCeti.OddComponentGridDiagram.alexanderEulerChar_eq_sum_states`: the Euler characteristic in
   one Alexander degree is the alternating count of the grid states of that degree.
 * `TauCeti.OddComponentGridDiagram.gradedEulerChar_eq_stateSum`: the graded Euler characteristic is
@@ -137,8 +137,10 @@ grading by one. -/
 noncomputable def alexanderEulerChar (R : Type*) [Ring R] (a : ℤ) : ℤ :=
   GradedObject.eulerChar (ComplexShape.down ℤ) (G.alexanderGradedObject R a)
 
-/-- The Euler characteristic of the Maslov-graded fully blocked complex is the alternating
-state count in its Alexander degree. -/
+/-- The Euler characteristic of `gradedFullyBlockedComplex a` equals
+`alexanderEulerChar (ZMod 2) a`. Its identification with the alternating state count is given by
+`alexanderEulerChar_eq_sum_states`. -/
+@[simp]
 theorem eulerChar_gradedFullyBlockedComplex (a : ℤ) :
     (G.gradedFullyBlockedComplex a).eulerChar = G.alexanderEulerChar (ZMod 2) a := by
   unfold HomologicalComplex.eulerChar alexanderEulerChar
