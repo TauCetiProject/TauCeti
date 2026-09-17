@@ -8,9 +8,20 @@ module
 public import Mathlib.FieldTheory.Separable
 
 /-!
-# Numbering the roots of a polynomial
+# Root sets: numbering the roots, and the roots of a product
 
-This file relates an explicit numbering of a polynomial's root set to its multiset of roots.
+This file records two facts about the root set `f.rootSet E` of a polynomial `f` after base
+change to a domain `E`.
+
+First, an explicit numbering of the root set of a separable polynomial enumerates its full root
+multiset: separability makes the roots simple, so the multiset is the image of the numbering.
+This lets root-product formulas be expressed as finite products indexed by `Fin f.natDegree`,
+without choosing a global order on the root set.
+
+Second, the root set of a product of polynomials whose base changes to `E` are nonzero is the
+union of the root sets of the factors. This is the lemma that decomposes the roots of a
+polynomial along a factorisation, for instance the roots of a monic integer polynomial along its
+monic irreducible factors.
 
 ## Main results
 
@@ -18,9 +29,6 @@ This file relates an explicit numbering of a polynomial's root set to its multis
   its root set enumerates its full root multiset after base change.
 * `Polynomial.rootSet_mul`: the root set of a product of polynomials whose base changes to `E` are
   nonzero is the union of the root sets of the factors.
-
-The numbering lemma lets root-product formulas be expressed as finite products indexed by
-`Fin f.natDegree`, without choosing a global order on the root set.
 -/
 
 public section
