@@ -98,23 +98,6 @@ namespace TauCeti
 
 variable {R : Type u} [CommRing R]
 
-/-! ### The standard alternating form in rank two -/
-
-/-- The transported alternating form of `Sp₄`, written out. -/
-theorem JFin_two_eq : JFin 2 R = !![0, 0, -1, 0; 0, 0, 0, -1; 1, 0, 0, 0; 0, 1, 0, 0] := by
-  have hJ : JFin 2 R =
-      (Matrix.J (Fin 2) R).submatrix finSumFinEquiv.symm finSumFinEquiv.symm := by
-    rw [← JFin_submatrix 2 (R := R), Matrix.submatrix_submatrix]
-    simp
-  have e0 : finSumFinEquiv.symm (0 : Fin (2 + 2)) = Sum.inl 0 := by rw [Equiv.symm_apply_eq]; rfl
-  have e1 : finSumFinEquiv.symm (1 : Fin (2 + 2)) = Sum.inl 1 := by rw [Equiv.symm_apply_eq]; rfl
-  have e2 : finSumFinEquiv.symm (2 : Fin (2 + 2)) = Sum.inr 0 := by rw [Equiv.symm_apply_eq]; rfl
-  have e3 : finSumFinEquiv.symm (3 : Fin (2 + 2)) = Sum.inr 1 := by rw [Equiv.symm_apply_eq]; rfl
-  rw [hJ]
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [e0, e1, e2, e3, Matrix.J, Matrix.fromBlocks]
-
 variable {g : Matrix (Fin 4) (Fin 4) R}
 
 /-- **The symplectic condition, read on minors.** The two minors supported by the form on a fixed

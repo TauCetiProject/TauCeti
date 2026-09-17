@@ -49,6 +49,7 @@ namespace Suzuki
 variable (n : ℕ)
 
 /-- Applying `x ↦ x ^ 2 ^ (n + 1)` twice on `𝔽_(2^(2n+1))` is the Frobenius `x ↦ x ^ 2`. -/
+@[simp]
 theorem pow_two_pow_succ_pow_two_pow_succ (x : GaloisField 2 (2 * n + 1)) :
     (x ^ 2 ^ (n + 1)) ^ 2 ^ (n + 1) = x ^ 2 := by
   let _ : Fintype (GaloisField 2 (2 * n + 1)) := Fintype.ofFinite _
