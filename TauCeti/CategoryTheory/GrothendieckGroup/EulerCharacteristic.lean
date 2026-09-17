@@ -260,6 +260,31 @@ noncomputable def homologyEulerChar (s : Finset ℤ) : AbelianK0 A :=
       = ((n.negOnePow : ℤ)) • of (K.homology n) + homologyEulerChar K s :=
   Finset.sum_insert hn
 
+section CohomologyBounded
+
+variable (a b : ℤ) [K.IsGE a] [K.IsLE b]
+
+/-- Enlarging the range of degrees beyond the support of the cohomology does not change the
+alternating class of that cohomology.
+
+Only the cohomology has to be bounded here: `HomologicalComplex.isZero_homology_of_notMem_Icc`
+asks for `K.IsGE a` and `K.IsLE b`, not for the strict bounds that the terms of the complex
+would need. -/
+theorem homologyEulerChar_eq_homologyEulerChar_Icc {s : Finset ℤ} (hs : Finset.Icc a b ⊆ s) :
+    homologyEulerChar K s = homologyEulerChar K (Finset.Icc a b) :=
+  (Finset.sum_subset hs fun x _ hx => by
+    rw [of_eq_zero_of_isZero
+      (K.isZero_homology_of_notMem_Icc a b hx), smul_zero]).symm
+
+/-- The alternating class of the cohomology of a complex with bounded cohomology does not depend
+on the finite range of degrees over which it is summed. -/
+theorem homologyEulerChar_eq_homologyEulerChar {s t : Finset ℤ} (hs : Finset.Icc a b ⊆ s)
+    (ht : Finset.Icc a b ⊆ t) : homologyEulerChar K s = homologyEulerChar K t := by
+  rw [homologyEulerChar_eq_homologyEulerChar_Icc K a b hs,
+    homologyEulerChar_eq_homologyEulerChar_Icc K a b ht]
+
+end CohomologyBounded
+
 section Bounded
 
 variable (a b : ℤ) [K.IsStrictlyGE a] [K.IsStrictlyLE b]
@@ -272,26 +297,11 @@ theorem eulerChar_eq_eulerChar_Icc {s : Finset ℤ} (hs : Finset.Icc a b ⊆ s) 
     rw [of_eq_zero_of_isZero
       (K.isZero_X_of_notMem_Icc a b hx), smul_zero]).symm
 
-/-- Enlarging the range of degrees beyond the support of a bounded complex does not change the
-alternating class of its cohomology. -/
-theorem homologyEulerChar_eq_homologyEulerChar_Icc {s : Finset ℤ} (hs : Finset.Icc a b ⊆ s) :
-    homologyEulerChar K s = homologyEulerChar K (Finset.Icc a b) :=
-  (Finset.sum_subset hs fun x _ hx => by
-    rw [of_eq_zero_of_isZero
-      (K.isZero_homology_of_notMem_Icc a b hx), smul_zero]).symm
-
 /-- The Euler characteristic of a bounded complex does not depend on the finite range of degrees
 over which it is summed, as long as that range contains the support. -/
 theorem eulerChar_eq_eulerChar {s t : Finset ℤ} (hs : Finset.Icc a b ⊆ s)
     (ht : Finset.Icc a b ⊆ t) : eulerChar K s = eulerChar K t := by
   rw [eulerChar_eq_eulerChar_Icc K a b hs, eulerChar_eq_eulerChar_Icc K a b ht]
-
-/-- The alternating class of the cohomology of a bounded complex does not depend on the finite
-range of degrees over which it is summed. -/
-theorem homologyEulerChar_eq_homologyEulerChar {s t : Finset ℤ} (hs : Finset.Icc a b ⊆ s)
-    (ht : Finset.Icc a b ⊆ t) : homologyEulerChar K s = homologyEulerChar K t := by
-  rw [homologyEulerChar_eq_homologyEulerChar_Icc K a b hs,
-    homologyEulerChar_eq_homologyEulerChar_Icc K a b ht]
 
 /-- **The Euler–Poincaré theorem in abelian `K₀`.** For a cochain complex that is strictly
 supported in degrees `a` to `b`, and any finite range of degrees containing `[a, b]`, the
