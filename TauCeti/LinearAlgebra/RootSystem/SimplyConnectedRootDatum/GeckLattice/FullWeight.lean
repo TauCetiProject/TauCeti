@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Torus
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.GroupScheme
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.WeightSpan
 
 /-!
 # The pinned Geck carrier is full-weight in the unimodular types
@@ -42,8 +43,7 @@ statements can hold.
   of Geck weights, so the two spanning conditions agree
   (`TauCeti.DynkinType.span_range_geckWeightFin_eq_top_iff`).
 * `TauCeti.DynkinType.isClosedImmersion_geckWeightTorus_E8`, and the analogous `F4` and `G2`
-  instances, imported from `GeckLattice.Torus`: the weight torus is a closed subgroup scheme
-  of the carrier.
+  results: the weight torus is a closed subgroup scheme of the carrier.
 * `TauCeti.DynkinType.geckTorusPoints_E8_injective`, and the analogous `F4` and `G2` results: the
   weight torus is injective on points.
 
@@ -88,6 +88,24 @@ theorem span_range_geckWeightFin_eq_top_iff :
   rw [range_geckWeightFin]
 
 /-! ## The three unimodular types -/
+
+/-- **The weight torus of the pinned Geck carrier of type `E₈` is a closed subgroup scheme.** -/
+theorem isClosedImmersion_geckWeightTorus_E8 (ht : E8.Valid) :
+    IsClosedImmersion (E8.geckWeightTorus ht).hom.hom.left :=
+  isClosedImmersion_geckWeightTorus _ _
+    ((span_range_geckWeightFin_eq_top_iff _ ht).mpr (span_range_geckWeight_E8_eq_top ht))
+
+/-- **The weight torus of the pinned Geck carrier of type `F₄` is a closed subgroup scheme.** -/
+theorem isClosedImmersion_geckWeightTorus_F4 (ht : F4.Valid) :
+    IsClosedImmersion (F4.geckWeightTorus ht).hom.hom.left :=
+  isClosedImmersion_geckWeightTorus _ _
+    ((span_range_geckWeightFin_eq_top_iff _ ht).mpr (span_range_geckWeight_F4_eq_top ht))
+
+/-- **The weight torus of the pinned Geck carrier of type `G₂` is a closed subgroup scheme.** -/
+theorem isClosedImmersion_geckWeightTorus_G2 (ht : G2.Valid) :
+    IsClosedImmersion (G2.geckWeightTorus ht).hom.hom.left :=
+  isClosedImmersion_geckWeightTorus _ _
+    ((span_range_geckWeightFin_eq_top_iff _ ht).mpr (span_range_geckWeight_G2_eq_top ht))
 
 /-- **The weight torus of the pinned Geck carrier of type `E₈` is injective on points.** -/
 theorem geckTorusPoints_E8_injective (ht : E8.Valid) (A : CommAlgCat.{v} ℤ) :
