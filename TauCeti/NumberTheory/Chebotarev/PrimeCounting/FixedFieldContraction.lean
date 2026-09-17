@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Chebotarev.FixedField.FiberCount
-public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.VonMangoldt
+public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.Discard
 public import TauCeti.NumberTheory.Chebotarev.PrimesAboveRamifiedPrimes
 
 /-!
-# Contracting Frobenius `ϑ` from a cyclic fixed field
+# Contracting Frobenius `ϑ` and `ψ` from a cyclic fixed field
 
 Let `L / K` be a finite Galois extension of number fields, let `C` be a conjugacy class of
 `Gal(L/K)`, choose `sigma ∈ C`, and put `E = L ^ <sigma>`.  This file proves the exact identity
@@ -33,13 +33,24 @@ residue degree at least two over `ℚ` or lie above `ramifiedPrimes K L`, so the
 the unrestricted sums appearing in `NumberField.Chebotarev.frobeniusDiscard_isLittleO` over
 `L ^ <sigma>`.  In general there is no such identity for `ψ`: a prime power `𝔓 ^ m` with `m ≥ 2`
 is selected by the `m`-th power of its Frobenius, and the prime of `K` below it need not have
-class `C`.
+class `C`.  So the transfer of `ψ` is only asymptotic,
 
-## Main result
+```text
+ψ_sigma^{L/E}(x) = (#G / (#C * orderOf sigma)) * ψ_C^{L/K}(x) + o(x),
+```
+
+obtained by removing the prime powers with `m ≥ 2` on both sides, applying the exact identity to
+what remains, and discarding the relative primes of higher residue degree or above
+`ramifiedPrimes K L`.
+
+## Main results
 
 * `NumberField.Chebotarev.primeTheta_fixedField_eq_mul_frobeniusTheta`: the residue-degree-one
   part of the relative Frobenius `ϑ` over `L ^ <sigma>`, away from the primes above
   `ramifiedPrimes K L`, is the fixed-field multiplicity times `frobeniusTheta K L C`.
+* `NumberField.Chebotarev.frobeniusPsi_fixedField_sub_mul_frobeniusPsi_isLittleO`: the relative
+  Frobenius `ψ` of `sigma` over `L ^ <sigma>` is the fixed-field multiplicity times
+  `frobeniusPsi K L C`, up to `o(x)`.
 
 ## References
 
@@ -49,8 +60,8 @@ class `C`.
 
 public section
 
-open IntermediateField
-open scoped NumberField
+open Filter IntermediateField
+open scoped Asymptotics NumberField
 open IsDedekindDomain (HeightOneSpectrum)
 
 namespace NumberField.Chebotarev
@@ -132,5 +143,62 @@ theorem primeTheta_fixedField_eq_mul_frobeniusTheta (C : ConjClasses (L ≃ₐ[K
   have hram : P.under (𝓞 K) ∉ ramifiedPrimes K L := fun h ↦
     frobeniusPrimeSet_subset_compl_ramifiedPrimes _ hp (Finset.mem_coe.mpr h)
   exact ⟨hP, hram, (inertiaDeg_eq_one_iff_under_mem_frobeniusPrimeSet sigma hP hram).mpr hp⟩
+
+/-- **The weighted contraction of Frobenius `ψ`.** Let `sigma` represent `C` and let
+`E = L ^ <sigma>`.  The relative Frobenius `ψ` of `sigma` in `L / E` is the fixed-field
+multiplicity `#Gal(L/K) / (#C * orderOf sigma)` times `frobeniusPsi K L C`, up to `o(x)`.
+
+Unlike `primeTheta_fixedField_eq_mul_frobeniusTheta`, this is not an identity: the error collects
+the prime powers with exponent at least two on both sides, the relative primes of residue degree
+above one over `K`, and the relative primes above `ramifiedPrimes K L`. -/
+theorem frobeniusPsi_fixedField_sub_mul_frobeniusPsi_isLittleO (C : ConjClasses (L ≃ₐ[K] L))
+    (sigma : L ≃ₐ[K] L) (hsigma : sigma ∈ C.carrier) :
+    (fun x : ℝ ↦
+      frobeniusPsi ↥(fixedField (Subgroup.zpowers sigma)) L
+          (ConjClasses.mk sigma.toFixedFieldAlgEquiv) x -
+        ((Nat.card (L ≃ₐ[K] L) / (Nat.card C.carrier * orderOf sigma) : ℕ) : ℝ) *
+          frobeniusPsi K L C x) =o[atTop] fun x : ℝ ↦ x := by
+  set E := fixedField (Subgroup.zpowers sigma)
+  set d : ℝ := ((Nat.card (L ≃ₐ[K] L) / (Nat.card C.carrier * orderOf sigma) : ℕ) : ℝ)
+  set T := primesAboveRamifiedPrimes K L E
+  set S := frobeniusPrimeSet E L (ConjClasses.mk sigma.toFixedFieldAlgEquiv)
+  set A : Set (HeightOneSpectrum (𝓞 E)) :=
+    {P | P ∈ S ∧ P ∉ T ∧ P.asIdeal.inertiaDeg (𝓞 K) = 1}
+  -- The relative primes outside the exact contraction have higher degree or lie in `T`.
+  have hsub : S \ A ⊆ higherDegreePrimes E ∪ (T \ higherDegreePrimes E) := by
+    rw [Set.union_sdiff_self]
+    intro P ⟨hPS, hPA⟩
+    by_cases hPT : P ∈ T
+    · exact Or.inr hPT
+    · exact Or.inl (mem_higherDegreePrimes_of_one_lt_inertiaDeg
+        (lt_of_le_of_ne (Ideal.inertiaDeg_pos P.asIdeal (𝓞 K))
+          fun h ↦ hPA ⟨hPS, hPT, h.symm⟩))
+  -- `u` is everything discarded on the `E` side; it lies between `0` and the discard majorant.
+  set u : ℝ → ℝ := fun x ↦ frobeniusPsi E L (ConjClasses.mk sigma.toFixedFieldAlgEquiv) x -
+    frobeniusTheta E L (ConjClasses.mk sigma.toFixedFieldAlgEquiv) x + primeTheta E (S \ A) x
+  have hu : u =o[atTop] fun x : ℝ ↦ x := by
+    refine (Asymptotics.isBigO_of_le _ fun x ↦ ?_).trans_isLittleO
+      (frobeniusDiscard_isLittleO (ConjClasses.mk sigma.toFixedFieldAlgEquiv) T)
+    have h0 := sub_nonneg.mpr (frobeniusTheta_le_frobeniusPsi
+      (ConjClasses.mk sigma.toFixedFieldAlgEquiv) x)
+    have hB : primeTheta E (S \ A) x ≤ primeTheta E (higherDegreePrimes E) x + primePsi E T x := by
+      refine (primeTheta_mono_set hsub x).trans ?_
+      rw [primeTheta_union Set.disjoint_sdiff_right]
+      exact add_le_add_right ((primeTheta_mono_set Set.sdiff_subset x).trans
+        (primeTheta_le_primePsi _ x)) _
+    rw [Real.norm_of_nonneg (add_nonneg h0 (primeTheta_nonneg _ x)), Real.norm_of_nonneg]
+    · linarith
+    · linarith [primeTheta_nonneg (higherDegreePrimes E) x, primeTheta_nonneg (S \ A) x]
+  refine ((hu.sub ((frobeniusPsi_sub_frobeniusTheta_isLittleO C).const_mul_left d))).congr
+    (fun x ↦ ?_) fun _ ↦ rfl
+  -- Split the relative `ϑ` into the exact contraction and the discarded primes.
+  have hsplit : frobeniusTheta E L (ConjClasses.mk sigma.toFixedFieldAlgEquiv) x =
+      d * frobeniusTheta K L C x + primeTheta E (S \ A) x := by
+    rw [frobeniusTheta_apply, ← primeTheta_apply,
+      ← primeTheta_fixedField_eq_mul_frobeniusTheta C sigma hsigma x,
+      ← primeTheta_union Set.disjoint_sdiff_right,
+      Set.union_sdiff_cancel fun P hP ↦ hP.1]
+  simp only [u, hsplit]
+  ring
 
 end NumberField.Chebotarev
