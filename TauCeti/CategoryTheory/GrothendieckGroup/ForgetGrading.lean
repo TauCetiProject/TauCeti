@@ -133,15 +133,19 @@ theorem forgetGradingMap_surjective_iff
     (hF : E.toExactStructure.IsConflationExact E' F) (comm : E.shift.functor ⋙ F ≅ F) :
     Function.Surjective (forgetGradingMap hF comm) ↔
       Function.Surjective (ExactK0.map F hF) := by
-  constructor
-  · intro h y
-    obtain ⟨z, hz⟩ := h y
-    obtain ⟨x, rfl⟩ := LaurentSpecialization.mk_surjective 1 z
-    obtain ⟨x, rfl⟩ := (ofExactK0 E).surjective x
-    exact ⟨x, by simpa using hz⟩
-  · intro h y
-    obtain ⟨x, rfl⟩ := h y
-    exact ⟨LaurentSpecialization.mk 1 (ofExactK0 E x), by simp⟩
+  calc
+    Function.Surjective (forgetGradingMap hF comm) ↔
+        Function.Surjective (forgetGradingMap hF comm ∘ LaurentSpecialization.mk 1) :=
+      (Function.Surjective.of_comp_iff _ (LaurentSpecialization.mk_surjective 1)).symm
+    _ ↔ Function.Surjective (forgetGradingUnderlyingMap hF) := by
+      rw [show forgetGradingMap hF comm ∘ LaurentSpecialization.mk 1 =
+          forgetGradingUnderlyingMap hF by
+        funext x
+        exact forgetGradingMap_mk hF comm x]
+    _ ↔ Function.Surjective (ExactK0.map F hF) := by
+      rw [← Function.Surjective.of_comp_iff
+        (ExactK0.map F hF) (ofExactK0 E).symm.surjective]
+      rfl
 
 /-- The comparison after forgetting grading is injective exactly when the kernel of the original
 map consists of the relations imposed by specialization at `q = 1`. -/
@@ -151,34 +155,46 @@ theorem forgetGradingMap_injective_iff
       LinearMap.ker (forgetGradingUnderlyingMap hF) =
         ((RingHom.ker (laurentEval (R := ℤ) (1 : ℤˣ)) • ⊤ :
           Submodule (LaurentPolynomial ℤ) (LaurentK0 E)).restrictScalars ℤ) := by
-  constructor
-  · intro hinj
-    apply le_antisymm
-    · intro x hx
-      rw [LinearMap.mem_ker] at hx
-      have hzero : LaurentSpecialization.mk 1 x = 0 := hinj (by simpa using hx)
-      rwa [LaurentSpecialization.mk_apply, Submodule.Quotient.mk_eq_zero] at hzero
-    · intro x hx
-      rw [LinearMap.mem_ker]
-      have hzero : (LaurentSpecialization.mk (R := ℤ) 1 x :
-          LaurentSpecialization (1 : ℤˣ) (LaurentK0 E)) = 0 := by
-        rw [LaurentSpecialization.mk_apply, Submodule.Quotient.mk_eq_zero]
-        exact hx
-      have := congrArg (forgetGradingMap hF comm) hzero
-      simpa using this
-  · intro hker
-    apply LinearMap.ker_eq_bot.mp
-    apply le_antisymm
-    · intro z hz
-      rw [Submodule.mem_bot]
-      obtain ⟨x, rfl⟩ := LaurentSpecialization.mk_surjective 1 z
-      rw [LinearMap.mem_ker, forgetGradingMap_mk] at hz
-      have hx : x ∈ LinearMap.ker (forgetGradingUnderlyingMap hF) :=
-        LinearMap.mem_ker.mpr hz
-      rw [hker] at hx
+  let p := ((RingHom.ker (laurentEval (R := ℤ) (1 : ℤˣ)) • ⊤ :
+    Submodule (LaurentPolynomial ℤ) (LaurentK0 E)).restrictScalars ℤ)
+  have hp : p ≤ LinearMap.ker (forgetGradingUnderlyingMap hF) := by
+    intro x hx
+    rw [LinearMap.mem_ker]
+    have hzero : (LaurentSpecialization.mk (R := ℤ) 1 x :
+        LaurentSpecialization (1 : ℤˣ) (LaurentK0 E)) = 0 := by
       rw [LaurentSpecialization.mk_apply, Submodule.Quotient.mk_eq_zero]
       exact hx
-    · exact bot_le
+    have := congrArg (forgetGradingMap hF comm) hzero
+    simpa using this
+  let g := p.liftQ (forgetGradingUnderlyingMap hF)
+    (fun x hx ↦ LinearMap.mem_ker.mp (hp hx))
+  let e := Submodule.Quotient.restrictScalarsEquiv ℤ
+    (RingHom.ker (laurentEval (R := ℤ) (1 : ℤˣ)) • ⊤ :
+      Submodule (LaurentPolynomial ℤ) (LaurentK0 E))
+  have hmap : forgetGradingMap hF comm = g.comp e.symm.toLinearMap := by
+    apply LaurentSpecialization.hom_ext
+    intro x
+    rw [forgetGradingMap_mk]
+    simpa [g, e, LaurentSpecialization.mk_apply] using
+      (Submodule.liftQ_apply (p := p) (forgetGradingUnderlyingMap hF) x).symm
+  rw [hmap]
+  change Function.Injective (g ∘ e.symm) ↔ _
+  rw [Function.Injective.of_comp_iff' _ e.symm.bijective, ← LinearMap.ker_eq_bot]
+  constructor
+  · intro hbot
+    apply le_antisymm
+    · intro x hx
+      have hmk : Submodule.mkQ p x ∈
+          (LinearMap.ker (forgetGradingUnderlyingMap hF)).map (Submodule.mkQ p) :=
+        ⟨x, hx, rfl⟩
+      rw [← Submodule.ker_liftQ p (forgetGradingUnderlyingMap hF)
+          (fun y hy ↦ LinearMap.mem_ker.mp (hp hy)),
+        show LinearMap.ker g = ⊥ from hbot,
+        Submodule.mem_bot] at hmk
+      rwa [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at hmk
+    · exact hp
+  · intro hker
+    exact Submodule.ker_liftQ_eq_bot' p (forgetGradingUnderlyingMap hF) hker.symm
 
 end LaurentK0
 
