@@ -40,14 +40,50 @@ def IsInformationSet (C : LinearCode F ι) (s : Set ι) : Prop :=
   Function.Bijective (fun x : C ↦ fun i : s ↦ (x : ι → F) i)
 
 /-- The defining restriction criterion for an information set. -/
-theorem isInformationSet_iff_bijective (C : LinearCode F ι) (s : Set ι) :
+theorem isInformationSet_def (C : LinearCode F ι) (s : Set ι) :
     IsInformationSet C s ↔
       Function.Bijective (fun x : C ↦ fun i : s ↦ (x : ι → F) i) := Iff.rfl
+
+/-- Restriction to an information set is bijective. -/
+theorem IsInformationSet.bijective {C : LinearCode F ι} {s : Set ι}
+    (h : IsInformationSet C s) :
+    Function.Bijective (fun x : C ↦ fun i : s ↦ (x : ι → F) i) := h
+
+/-- Restriction to an information set is injective. -/
+theorem IsInformationSet.injective {C : LinearCode F ι} {s : Set ι}
+    (h : IsInformationSet C s) :
+    Function.Injective (fun x : C ↦ fun i : s ↦ (x : ι → F) i) := h.bijective.1
+
+/-- Every word on an information set is the restriction of a codeword. -/
+theorem IsInformationSet.surjective {C : LinearCode F ι} {s : Set ι}
+    (h : IsInformationSet C s) :
+    Function.Surjective (fun x : C ↦ fun i : s ↦ (x : ι → F) i) := h.bijective.2
+
+/-- Codewords agreeing on an information set are equal. -/
+theorem IsInformationSet.ext {C : LinearCode F ι} {s : Set ι}
+    (h : IsInformationSet C s) {x y : C} (hxy : ∀ i : s, (x : ι → F) i = (y : ι → F) i) :
+    x = y := h.injective (funext hxy)
+
+/-- The empty set is an information set of the zero code. -/
+@[simp]
+theorem isInformationSet_bot : IsInformationSet (⊥ : LinearCode F ι) ∅ :=
+  Function.bijective_of_subsingleton' _
+
+/-- All coordinates form an information set of the whole word space. -/
+@[simp]
+theorem isInformationSet_top : IsInformationSet (⊤ : LinearCode F ι) Set.univ := by
+  constructor
+  · intro x y hxy
+    apply Subtype.ext
+    funext i
+    exact congrFun hxy ⟨i, Set.mem_univ i⟩
+  · intro y
+    exact ⟨⟨fun i ↦ y ⟨i, Set.mem_univ i⟩, Submodule.mem_top⟩, rfl⟩
 
 /-- Every message on an information set extends to exactly one codeword. -/
 theorem isInformationSet_iff_existsUnique (C : LinearCode F ι) (s : Set ι) :
     IsInformationSet C s ↔ ∀ y : s → F, ∃! x : C, ∀ i : s, (x : ι → F) i = y i := by
-  simp only [isInformationSet_iff_bijective, Function.bijective_iff_existsUnique, funext_iff]
+  simp only [isInformationSet_def, Function.bijective_iff_existsUnique, funext_iff]
 
 /-- Restriction to an information set is a linear equivalence. Its inverse is the systematic
 encoder with those information coordinates. -/
@@ -109,6 +145,18 @@ theorem isInformationSet_iff_puncture_eq_top_and_shorten_compl_eq_bot
       obtain ⟨x, hx, hxy⟩ := mem_puncture.mp hy
       exact ⟨⟨x, hx⟩, funext hxy⟩
 
+/-- Puncturing to an information set gives the whole word space. -/
+@[simp]
+theorem IsInformationSet.puncture_eq_top {C : LinearCode F ι} {s : Set ι}
+    (h : IsInformationSet C s) : puncture C s = ⊤ :=
+  ((isInformationSet_iff_puncture_eq_top_and_shorten_compl_eq_bot C s).mp h).1
+
+/-- Shortening to the complement of an information set gives the zero code. -/
+@[simp]
+theorem IsInformationSet.shorten_compl_eq_bot {C : LinearCode F ι} {s : Set ι}
+    (h : IsInformationSet C s) : shorten C sᶜ = ⊥ :=
+  ((isInformationSet_iff_puncture_eq_top_and_shorten_compl_eq_bot C s).mp h).2
+
 /-- A finite information set has one coordinate per dimension of the code. -/
 theorem IsInformationSet.ncard_eq_finrank {C : LinearCode F ι} {s : Set ι}
     [Finite s] (h : IsInformationSet C s) : s.ncard = Module.finrank F C := by
@@ -145,7 +193,7 @@ theorem exists_isInformationSet (C : LinearCode F ι) [FiniteDimensional F C] :
       Module.evalEquiv_apply, Module.Dual.eval_apply]
     exact congrArg (fun f : Module.Dual F C ↦ f x) (Module.Basis.mk_apply hli hs.ge i)
   refine ⟨s, Set.toFinite s, ?_⟩
-  rw [isInformationSet_iff_bijective, ← funext he]
+  rw [isInformationSet_def, ← funext he]
   exact e.bijective
 
 /-- A coordinate reindexing carries an information set to its inverse image. -/
