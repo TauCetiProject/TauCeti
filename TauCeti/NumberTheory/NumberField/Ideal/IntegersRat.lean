@@ -27,7 +27,7 @@ The residue degrees are compared through the absolute norm, `absNorm (P.under R)
 for both base rings, since the ideal of `𝓞 ℚ` below `P` is the image of the ideal of `ℤ` below
 `P` under the structure map. The ramification indices are compared as multiplicities of `P` in
 the extension of the prime below, and the Frobenius conditions only involve the size of the
-residue field below `P`.
+residue field below `P`. The comparison lemmas are `simp` lemmas oriented towards the `ℤ` forms.
 
 ## Main results
 
@@ -37,7 +37,8 @@ residue field below `P`.
   agree.
 * `Ideal.ramificationIdx_ringOfIntegers_rat_eq_int`: the ramification indices over `𝓞 ℚ` and over
   `ℤ` agree.
-* `Ideal.isArithFrobAt_int_iff`: the Frobenius conditions over `ℤ` and over `𝓞 ℚ` agree.
+* `Ideal.isArithFrobAt_ringOfIntegers_rat_iff`: the Frobenius conditions over `𝓞 ℚ` and over `ℤ`
+  agree.
 -/
 
 public section
@@ -53,7 +54,9 @@ theorem _root_.Rat.algebraMap_int_ringOfIntegers_eq :
     algebraMap ℤ (𝓞 ℚ) = (Rat.ringOfIntegersEquiv.symm : ℤ →+* 𝓞 ℚ) :=
   (RingHom.eq_intCast' _).trans (RingHom.eq_intCast' _).symm
 
-/-- The prime of `𝓞 ℚ` below an ideal `P` of `𝓞 E` is the image of the ideal of `ℤ` below `P`. -/
+/-- The ideal of `𝓞 ℚ` below an ideal `P` of `𝓞 E` is the image of the ideal of `ℤ` below `P`. -/
+-- Not a `simp` lemma: it would rewrite the left-hand sides of `absNorm_under_ringOfIntegers_rat`
+-- and `card_quot_under_ringOfIntegers_rat` out of simp normal form (`simpNF`).
 theorem under_ringOfIntegers_rat_eq_map (P : Ideal (𝓞 E)) :
     P.under (𝓞 ℚ) = (P.under ℤ).map (algebraMap ℤ (𝓞 ℚ)) := by
   have : IsScalarTower ℤ (𝓞 ℚ) (𝓞 E) :=
@@ -63,28 +66,32 @@ theorem under_ringOfIntegers_rat_eq_map (P : Ideal (𝓞 E)) :
     (Rat.algebraMap_int_ringOfIntegers_eq ▸ Rat.ringOfIntegersEquiv.symm.surjective) _).symm
 
 /-- The absolute norm of the ideal of `𝓞 ℚ` below `P` is that of the ideal of `ℤ` below `P`. -/
+@[simp]
 theorem absNorm_under_ringOfIntegers_rat (P : Ideal (𝓞 E)) :
     absNorm (P.under (𝓞 ℚ)) = absNorm (P.under ℤ) := by
   rw [under_ringOfIntegers_rat_eq_map, Rat.algebraMap_int_ringOfIntegers_eq]
   exact absNorm_map_of_ringEquiv Rat.ringOfIntegersEquiv.symm _
 
 /-- The residue rings of `𝓞 ℚ` and of `ℤ` below `P` have the same number of elements. -/
+@[simp]
 theorem card_quot_under_ringOfIntegers_rat (P : Ideal (𝓞 E)) :
     Nat.card (𝓞 ℚ ⧸ P.under (𝓞 ℚ)) = Nat.card (ℤ ⧸ P.under ℤ) := by
   rw [← Submodule.cardQuot_apply, ← Submodule.cardQuot_apply, ← absNorm_apply, ← absNorm_apply,
     absNorm_under_ringOfIntegers_rat]
 
-/-- **Frobenius elements over `ℤ` and over `𝓞 ℚ` are the same.** An element `σ` is an arithmetic
-Frobenius at `Q` relative to the base ring `ℤ` exactly when it is one relative to `𝓞 ℚ`: the
+/-- **Frobenius elements over `𝓞 ℚ` and over `ℤ` are the same.** An element `σ` is an arithmetic
+Frobenius at `Q` relative to the base ring `𝓞 ℚ` exactly when it is one relative to `ℤ`: the
 defining congruence only involves the size of the residue field below `Q`, which is the same
 for both base rings. -/
-theorem isArithFrobAt_int_iff {G : Type*} [Group G] [MulSemiringAction G (𝓞 E)]
+@[simp]
+theorem isArithFrobAt_ringOfIntegers_rat_iff {G : Type*} [Group G] [MulSemiringAction G (𝓞 E)]
     [SMulCommClass G ℤ (𝓞 E)] [SMulCommClass G (𝓞 ℚ) (𝓞 E)] (σ : G) (Q : Ideal (𝓞 E)) :
-    IsArithFrobAt ℤ σ Q ↔ IsArithFrobAt (𝓞 ℚ) σ Q := by
+    IsArithFrobAt (𝓞 ℚ) σ Q ↔ IsArithFrobAt ℤ σ Q := by
   simp only [IsArithFrobAt, AlgHom.IsArithFrobAt, MulSemiringAction.toAlgHom_apply,
     card_quot_under_ringOfIntegers_rat]
 
 /-- **The residue degree over `ℤ` is the residue degree over `𝓞 ℚ`.** -/
+@[simp]
 theorem inertiaDeg_ringOfIntegers_rat_eq_int (P : Ideal (𝓞 E)) [P.IsPrime] (hP : P ≠ ⊥) :
     P.inertiaDeg (𝓞 ℚ) = P.inertiaDeg ℤ := by
   have h1 := absNorm_pow_inertiaDeg (P.under ℤ) P
@@ -100,6 +107,7 @@ theorem inertiaDeg_ringOfIntegers_rat_eq_int (P : Ideal (𝓞 E)) [P.IsPrime] (h
   exact Nat.pow_right_injective h2le (h2.trans h1.symm)
 
 /-- **The ramification index over `ℤ` is the ramification index over `𝓞 ℚ`.** -/
+@[simp]
 theorem ramificationIdx_ringOfIntegers_rat_eq_int (P : Ideal (𝓞 E)) [P.IsPrime] (hP : P ≠ ⊥) :
     P.ramificationIdx (𝓞 ℚ) = P.ramificationIdx ℤ := by
   have : IsScalarTower ℤ (𝓞 ℚ) (𝓞 E) :=
