@@ -16,6 +16,8 @@ This file relates an explicit numbering of a polynomial's root set to its multis
 
 * `Polynomial.Separable.roots_map_eq_map_numbering`: for a separable polynomial, a numbering of
   its root set enumerates its full root multiset after base change.
+* `Polynomial.rootSet_mul`: the root set of a product is the union of the root sets of the
+  factors.
 
 The numbering lemma lets root-product formulas be expressed as finite products indexed by
 `Fin f.natDegree`, without choosing a global order on the root set.
@@ -41,5 +43,14 @@ theorem _root_.Polynomial.Separable.roots_map_eq_map_numbering (hsep : f.Separab
   · intro a
     simp only [Multiset.mem_map, Finset.mem_val, mem_univ, true_and]
     exact ⟨fun ha ↦ ⟨e.symm ⟨a, hmem.mp ha⟩, by simp⟩, fun ⟨i, hi⟩ ↦ hi ▸ hmem.mpr (e i).2⟩
+
+/-- The root set of a product of polynomials is the union of the root sets of the factors. -/
+theorem _root_.Polynomial.rootSet_mul {g : F[X]} (hfg : (f * g).map (algebraMap F E) ≠ 0) :
+    (f * g).rootSet E = f.rootSet E ∪ g.rootSet E := by
+  rw [Polynomial.map_mul] at hfg
+  obtain ⟨hf, hg⟩ := mul_ne_zero_iff.mp hfg
+  ext x
+  simp only [Set.mem_union, mem_rootSet', Polynomial.map_mul, map_mul, mul_eq_zero, ne_eq, hf, hg,
+    or_self, not_false_eq_true, true_and]
 
 end TauCeti
