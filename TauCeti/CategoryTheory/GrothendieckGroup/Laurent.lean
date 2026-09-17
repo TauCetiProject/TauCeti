@@ -470,38 +470,24 @@ theorem forgetGrading_mk_of (hF : E.toExactStructure.IsConflationExact E' F)
     forgetGrading hF comm (LaurentSpecialization.mk 1 (of E X)) = ExactK0.of (F.obj X) := by
   rw [← ofExactK0_exactK0_of, forgetGrading_mk_ofExactK0, ExactK0.map_of]
 
-omit [EssentiallySmall.{w} C] [EssentiallySmall.{w'} D] [F.Additive] in
-/-- The conflation-lifting hypothesis of `TauCeti.LaurentK0.forgetGradingEquiv` makes `F`
-essentially surjective: lift the trivial conflation `0 ↪ Y ↠ Y`. -/
-private theorem exists_nonempty_iso_of_lift_conflation
-    (hlift : ∀ S : ShortComplex D, E'.Conflation S → ∃ S' : ShortComplex C,
-      E.Conflation S' ∧ Nonempty (F.obj S'.X₁ ≅ S.X₁) ∧ Nonempty (F.obj S'.X₂ ≅ S.X₂) ∧
-        Nonempty (F.obj S'.X₃ ≅ S.X₃))
-    (Y : D) : ∃ X : C, Nonempty (F.obj X ≅ Y) :=
-  let ⟨S', _, _, h₂, _⟩ := hlift _ (E'.conflation_zero_id Y)
-  ⟨S'.X₂, h₂⟩
-
 /-- The inverse of `TauCeti.LaurentK0.forgetGrading`, as an additive invariant of the ungraded
 category: an object `Y ≅ F M` is sent to the specialized class of `M`. -/
-private noncomputable def forgetGradingInvInvariant
+private noncomputable def forgetGradingInvInvariant [F.EssSurj]
     (hlift : ∀ S : ShortComplex D, E'.Conflation S → ∃ S' : ShortComplex C,
       E.Conflation S' ∧ Nonempty (F.obj S'.X₁ ≅ S.X₁) ∧ Nonempty (F.obj S'.X₂ ≅ S.X₂) ∧
         Nonempty (F.obj S'.X₃ ≅ S.X₃))
     (hclass : ∀ X X' : C, Nonempty (F.obj X ≅ F.obj X') →
       LaurentSpecialization.mk (1 : ℤˣ) (of E X) = LaurentSpecialization.mk 1 (of E X')) :
     ExactK0.AdditiveInvariant E' (LaurentSpecialization (1 : ℤˣ) (LaurentK0 E)) where
-  obj Y := LaurentSpecialization.mk 1
-    (of E (exists_nonempty_iso_of_lift_conflation hlift Y).choose)
+  obj Y := LaurentSpecialization.mk 1 (of E (F.objPreimage Y))
   map_iso Y Y' e := hclass _ _
-    ⟨(exists_nonempty_iso_of_lift_conflation hlift Y).choose_spec.some ≪≫ e ≪≫
-      (exists_nonempty_iso_of_lift_conflation hlift Y').choose_spec.some.symm⟩
+    ⟨F.objObjPreimageIso Y ≪≫ e ≪≫ (F.objObjPreimageIso Y').symm⟩
   map_conflation S hS := by
     obtain ⟨S', hS', ⟨e₁⟩, ⟨e₂⟩, ⟨e₃⟩⟩ := hlift S hS
     have key : ∀ (Y : D) (X : C), (F.obj X ≅ Y) →
-        LaurentSpecialization.mk (1 : ℤˣ)
-          (of E (exists_nonempty_iso_of_lift_conflation hlift Y).choose) =
+        LaurentSpecialization.mk (1 : ℤˣ) (of E (F.objPreimage Y)) =
           LaurentSpecialization.mk 1 (of E X) := fun Y X e =>
-      hclass _ _ ⟨(exists_nonempty_iso_of_lift_conflation hlift Y).choose_spec.some ≪≫ e.symm⟩
+      hclass _ _ ⟨F.objObjPreimageIso Y ≪≫ e.symm⟩
     rw [key _ _ e₁, key _ _ e₂, key _ _ e₃, of_conflation E hS', map_add]
 
 /-- **Sufficient hypotheses for forgetting the grading to be an isomorphism at `q = 1`.**  Let `F`
@@ -522,30 +508,18 @@ noncomputable def forgetGradingEquiv (hF : E.toExactStructure.IsConflationExact 
     (hclass : ∀ X X' : C, Nonempty (F.obj X ≅ F.obj X') →
       LaurentSpecialization.mk (1 : ℤˣ) (of E X) = LaurentSpecialization.mk 1 (of E X')) :
     LaurentSpecialization (1 : ℤˣ) (LaurentK0 E) ≃ₗ[ℤ] ExactK0 E' :=
+  haveI : F.EssSurj := ExactStructure.essSurj_of_lift_conflation fun S hS =>
+    (hlift S hS).imp fun _ h => ⟨h.1, h.2.2.1⟩
   LinearEquiv.ofLinearMap (forgetGrading hF comm)
     (ExactK0.lift (forgetGradingInvInvariant hlift hclass)).toIntLinearMap
     (LinearMap.toAddMonoidHom_injective <| ExactK0.hom_ext fun Y => by
-      obtain ⟨e⟩ := (exists_nonempty_iso_of_lift_conflation hlift Y).choose_spec
       simp only [LinearMap.toAddMonoidHom_coe, LinearMap.coe_comp, Function.comp_apply,
         AddMonoidHom.coe_toIntLinearMap, ExactK0.lift_of, LinearMap.id_coe, id_eq]
-      exact (forgetGrading_mk_of hF comm _).trans (ExactK0.of_congr e))
+      exact (forgetGrading_mk_of hF comm _).trans (ExactK0.of_congr (F.objObjPreimageIso Y)))
     (hom_ext_laurentSpecialization 1 fun X => by
-      obtain ⟨e⟩ := (exists_nonempty_iso_of_lift_conflation hlift (F.obj X)).choose_spec
       simp only [LinearMap.coe_comp, Function.comp_apply, forgetGrading_mk_of,
         AddMonoidHom.coe_toIntLinearMap, ExactK0.lift_of, LinearMap.id_coe, id_eq]
-      exact hclass _ _ ⟨e⟩)
-
-@[simp]
-lemma forgetGradingEquiv_apply (hF : E.toExactStructure.IsConflationExact E' F)
-    (comm : E.shift.functor ⋙ F ≅ F)
-    (hlift : ∀ S : ShortComplex D, E'.Conflation S → ∃ S' : ShortComplex C,
-      E.Conflation S' ∧ Nonempty (F.obj S'.X₁ ≅ S.X₁) ∧ Nonempty (F.obj S'.X₂ ≅ S.X₂) ∧
-        Nonempty (F.obj S'.X₃ ≅ S.X₃))
-    (hclass : ∀ X X' : C, Nonempty (F.obj X ≅ F.obj X') →
-      LaurentSpecialization.mk (1 : ℤˣ) (of E X) = LaurentSpecialization.mk 1 (of E X'))
-    (x : LaurentSpecialization (1 : ℤˣ) (LaurentK0 E)) :
-    forgetGradingEquiv hF comm hlift hclass x = forgetGrading hF comm x :=
-  (rfl)
+      exact hclass _ _ ⟨F.objObjPreimageIso (F.obj X)⟩)
 
 /-- The inverse of `TauCeti.LaurentK0.forgetGradingEquiv` sends the class of `F M` to the
 specialized class of `M`. -/
@@ -560,7 +534,8 @@ lemma forgetGradingEquiv_symm_of (hF : E.toExactStructure.IsConflationExact E' F
     (X : C) :
     (forgetGradingEquiv hF comm hlift hclass).symm (ExactK0.of (F.obj X)) =
       LaurentSpecialization.mk 1 (of E X) := by
-  rw [LinearEquiv.symm_apply_eq, forgetGradingEquiv_apply, forgetGrading_mk_of]
+  rw [LinearEquiv.symm_apply_eq]
+  exact (forgetGrading_mk_of hF comm X).symm
 
 end ForgetGrading
 

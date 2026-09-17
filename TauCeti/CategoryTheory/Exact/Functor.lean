@@ -35,6 +35,8 @@ finite-colimit exactness.
   and natural-isomorphism invariance.
 * `TauCeti.ExactStructure.ReflectsConflations`: a functor detects the distinguished
   conflations, with the corresponding composition and natural-isomorphism API.
+* `TauCeti.ExactStructure.essSurj_of_lift_conflation`: a functor along which every conflation
+  lifts, up to isomorphism of the middle term, is essentially surjective.
 * `TauCeti.ExactStructure.isConflationExact_split`: every additive functor preserves split
   conflations.
 * `TauCeti.ExactStructure.isConflationExact_abelian_iff`: for canonical abelian exact structures,
@@ -174,6 +176,17 @@ theorem isConflationExact_split (F : C ⥤ D) [F.Additive] :
   map_conflation {S} hS := by
     obtain ⟨s⟩ := (split_conflation S).mp hS
     exact (split_conflation (S.map F)).mpr ⟨s.map F⟩
+
+/-- A functor is essentially surjective when every conflation of the target lifts to a conflation
+of the source whose middle term maps to the given middle term up to isomorphism: lift the trivial
+conflation `0 ↪ Y ↠ Y`. -/
+theorem essSurj_of_lift_conflation {E : ExactStructure C} {E' : ExactStructure D} {F : C ⥤ D}
+    (hlift : ∀ S : ShortComplex D, E'.Conflation S →
+      ∃ S' : ShortComplex C, E.Conflation S' ∧ Nonempty (F.obj S'.X₂ ≅ S.X₂)) :
+    F.EssSurj where
+  mem_essImage Y :=
+    let ⟨S', _, h₂⟩ := hlift _ (E'.conflation_zero_id Y)
+    ⟨S'.X₂, h₂⟩
 
 section Abelian
 
