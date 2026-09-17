@@ -54,7 +54,7 @@ Jacobian `2 ^ p * ∏ i, (L i i) ^ (p - i)` of the Cholesky change of variables
   `(p : ℝ) - 1 < n` it is the chi or standard Gaussian law of that coordinate.
 * `TauCeti.map_lowerTriangleGram_pi_bartlettCoordinateMeasure` — the Gram matrix of independent
   coordinates with these laws has the standard Wishart density.
-* `TauCeti.map_sq_bartlettCoordinateMeasure` and
+* `TauCeti.map_sq_bartlettCoordinateMeasure_of_eq` and
   `TauCeti.isProbabilityMeasure_bartlettCoordinateMeasure` — the square of a diagonal coordinate
   is chi-squared, and every coordinate law is normalized.
 * `TauCeti.nonsingularWishartMeasure_one_eq_map_lowerTriangleGram` — the standard Wishart law is
@@ -318,13 +318,13 @@ theorem map_lowerTriangleGram_pi_bartlettCoordinateMeasure
 
 /-- Under `(p : ℝ) - 1 < n` the diagonal Cholesky coordinate in row `i` has positive degrees of
 freedom `n - i`, since `i` ranges only over `0, …, p - 1`. -/
-theorem bartlett_degreesOfFreedom_pos (hn : (p : ℝ) - 1 < n) (i : Fin p) : 0 < n - i.1 := by
+private theorem bartlett_degreesOfFreedom_pos (hn : (p : ℝ) - 1 < n) (i : Fin p) : 0 < n - i.1 := by
   have h : ((i : ℕ) : ℝ) + 1 ≤ (p : ℝ) := by exact_mod_cast Nat.succ_le_of_lt i.isLt
   linarith
 
 /-- **The square of a diagonal Bartlett coordinate is chi-squared** with `n - i` degrees of
 freedom: squaring carries the chi density to the chi-squared density. -/
-theorem map_sq_bartlettCoordinateMeasure (hn : (p : ℝ) - 1 < n) {ij : lowerTriangle p}
+theorem map_sq_bartlettCoordinateMeasure_of_eq (hn : (p : ℝ) - 1 < n) {ij : lowerTriangle p}
     (h : ij.1.1 = ij.1.2) :
     (bartlettCoordinateMeasure n ij).map (fun t ↦ t ^ 2) =
       Probability.chiSquaredMeasure (n - ij.1.1) := by
@@ -452,7 +452,7 @@ theorem bartlett_nonsingularWishartMeasure {Ω : Type*} {mΩ : MeasurableSpace �
         (choleskyLowerCoordinates_apply p (A ω) (⟨(i, i), le_rfl⟩ : lowerTriangle p)).symm
     rw [hdiag]
     exact HasLaw.fun_comp ⟨by fun_prop,
-      map_sq_bartlettCoordinateMeasure hn (ij := ⟨(i, i), le_rfl⟩) rfl⟩
+      map_sq_bartlettCoordinateMeasure_of_eq hn (ij := ⟨(i, i), le_rfl⟩) rfl⟩
       (hcoord ⟨(i, i), le_rfl⟩)
   · rw [hentry ⟨(i, j), hij.le⟩]
     have h := hcoord ⟨(i, j), hij.le⟩
