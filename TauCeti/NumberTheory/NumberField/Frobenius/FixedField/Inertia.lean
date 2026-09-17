@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Index
+public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.NumberTheory.NumberField.FixedField
 public import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 
@@ -23,6 +24,10 @@ product for `Q` over `𝓞 K`. The proof combines multiplicativity of ramificati
 residue degrees in the tower `K ⊆ E ⊆ L` with the identification of the decomposition group over
 `E` with `D(Q) ∩ H`. Applied to a translate `σ • Q`, this is the decomposition-group index formula
 for the prime of `E` below that translate.
+
+The ramification index alone is the relative index `[I(Q) : I(Q) ∩ H]` of inertia groups, by the
+same argument with the inertia group of `Q` over `E` identified with `I(Q) ∩ H`. So the prime
+below `Q` in `E` has `e = 1` exactly when `I(Q) ≤ H`, and `e = f = 1` exactly when `D(Q) ≤ H`.
 
 If `Q` is unramified over `K`, all ramification indices in the tower are one. The general formula
 then specializes to the residue-degree identity previously used in Frobenius arguments. Nothing
@@ -43,6 +48,10 @@ runs through.
   `L ^ H`, multiplied by the order of `D(Q) ∩ H`, is the local degree of `Q` over the base.
 * `Ideal.ramificationIdx_mul_inertiaDeg_under_fixedField_eq_relIndex`: the local degree below
   `L ^ H` is `[D(Q) : D(Q) ∩ H]`.
+* `Ideal.ramificationIdx_under_fixedField_mul_card_inf`: the ramification index below `L ^ H`,
+  multiplied by the order of `I(Q) ∩ H`, is the ramification index of `Q` over the base.
+* `Ideal.ramificationIdx_under_fixedField_eq_relIndex`: the ramification index below `L ^ H` is
+  `[I(Q) : I(Q) ∩ H]`.
 * `Ideal.inertiaDeg_under_fixedField_mul_card_inf`: the number of elements of `D(Q) ⊓ H` times the
   residue degree below `L ^ H` is the residue degree of `Q`.
 * `Ideal.inertiaDeg_under_fixedField_eq_relIndex`: that residue degree is `Subgroup.relIndex`,
@@ -122,15 +131,43 @@ theorem ramificationIdx_mul_inertiaDeg_under_fixedField_eq_relIndex
     rw [Ideal.card_stabilizer_eq (Q.under (𝓞 K)) Q,
       Ideal.ramificationIdxIn_eq_ramificationIdx (Q.under (𝓞 K)) Q (L ≃ₐ[K] L),
       Ideal.inertiaDegIn_eq_inertiaDeg (Q.under (𝓞 K)) Q (L ≃ₐ[K] L)]
-  have hidx :
-      H.relIndex D * Nat.card ((D ⊓ H : Subgroup (L ≃ₐ[K] L))) = Nat.card D := by
-    rw [Subgroup.relIndex, ← Subgroup.index_mul_card (H.subgroupOf D)]
-    congr 1
-    rw [inf_comm, ← Subgroup.inf_subgroupOf_right]
-    exact (Nat.card_congr (Subgroup.subgroupOfEquivOfLe
-      (H := H ⊓ D) (K := D) inf_le_right).toEquiv).symm
-  rw [hcardD] at hidx
-  exact Nat.eq_of_mul_eq_mul_right Nat.card_pos (hmul.trans hidx.symm)
+  have hidx := Subgroup.relIndex_inf_mul_relIndex ⊥ H D
+  simp only [Subgroup.relIndex_bot_left, bot_inf_eq] at hidx
+  rw [inf_comm, hcardD, ← hmul, mul_comm] at hidx
+  exact Nat.eq_of_mul_eq_mul_right Nat.card_pos hidx.symm
+
+omit [IsGalois K L] in
+/-- **The ramification index below a fixed field.** For any subgroup `H` and `E = L ^ H`, the
+ramification index of `Q ∩ 𝓞 E` over `𝓞 K`, multiplied by the size of `I(Q) ∩ H`, is the
+ramification index of `Q` over `𝓞 K`.
+
+This is the division-free form of `Ideal.ramificationIdx_under_fixedField_eq_relIndex`. -/
+theorem ramificationIdx_under_fixedField_mul_card_inf
+    (Q : Ideal (𝓞 L)) [Q.IsPrime] (H : Subgroup (L ≃ₐ[K] L)) :
+    (Q.under (𝓞 ↥(fixedField H))).ramificationIdx (𝓞 K)
+          * Nat.card ((Q.inertia (L ≃ₐ[K] L) ⊓ H : Subgroup (L ≃ₐ[K] L)))
+      = Q.ramificationIdx (𝓞 K) := by
+  set E := fixedField H
+  let _ : IsScalarTower K E L := E.isScalarTower_mid'
+  let _ : IsGalois E L := IsGalois.of_fixed_field L H
+  rw [← card_inertia_fixedField_eq_card_inf Q H,
+    Ideal.card_inertia_eq_ramificationIdx (𝓞 E) (L ≃ₐ[E] L) Q,
+    Ideal.ramificationIdx_tower (R := 𝓞 K) (Q.under (𝓞 E)) Q]
+
+/-- **The inertia-group index formula.** For any subgroup `H` of `Gal(L/K)`, the ramification
+index of the prime below `Q` in `L ^ H` is the index of `I(Q) ∩ H` in the inertia group `I(Q)`.
+
+In particular that prime is unramified over `𝓞 K` exactly when `I(Q) ≤ H`, by
+`Subgroup.relIndex_eq_one`. -/
+theorem ramificationIdx_under_fixedField_eq_relIndex
+    (Q : Ideal (𝓞 L)) [Q.IsPrime] (H : Subgroup (L ≃ₐ[K] L)) :
+    (Q.under (𝓞 ↥(fixedField H))).ramificationIdx (𝓞 K) =
+      H.relIndex (Q.inertia (L ≃ₐ[K] L)) := by
+  have hidx := Subgroup.relIndex_inf_mul_relIndex ⊥ H (Q.inertia (L ≃ₐ[K] L))
+  simp only [Subgroup.relIndex_bot_left, bot_inf_eq] at hidx
+  rw [inf_comm, Ideal.card_inertia_eq_ramificationIdx (𝓞 K) (L ≃ₐ[K] L) Q,
+    ← ramificationIdx_under_fixedField_mul_card_inf Q H, mul_comm] at hidx
+  exact Nat.eq_of_mul_eq_mul_right Nat.card_pos hidx.symm
 
 omit [IsGalois K L] in
 /-- **The residue degree below a fixed field.**  For any subgroup `H` and `E = L ^ H`, the residue
@@ -162,16 +199,10 @@ theorem inertiaDeg_under_fixedField_eq_relIndex (Q : Ideal (𝓞 L)) [Q.IsPrime]
   have hmul := inertiaDeg_under_fixedField_mul_card_inf Q hQ H
   rw [← zpowers_eq_stabilizer_of_isArithFrobAt Q hQ hφ,
     ← orderOf_eq_inertiaDeg_of_isArithFrobAt Q hQ hφ] at hmul
-  have hidx : H.relIndex (Subgroup.zpowers φ)
-      * Nat.card ((Subgroup.zpowers φ ⊓ H : Subgroup (L ≃ₐ[K] L))) = orderOf φ := by
-    rw [Subgroup.relIndex, ← Nat.card_zpowers φ,
-      ← Subgroup.index_mul_card (H.subgroupOf (Subgroup.zpowers φ))]
-    congr 1
-    rw [inf_comm, ← Subgroup.inf_subgroupOf_right]
-    exact (Nat.card_congr (Subgroup.subgroupOfEquivOfLe
-      (H := H ⊓ Subgroup.zpowers φ) (K := Subgroup.zpowers φ) inf_le_right).toEquiv).symm
-  have hpos : 0 < Nat.card ((Subgroup.zpowers φ ⊓ H : Subgroup (L ≃ₐ[K] L))) := Nat.card_pos
-  exact Nat.eq_of_mul_eq_mul_right hpos (hmul.trans hidx.symm)
+  have hidx := Subgroup.relIndex_inf_mul_relIndex ⊥ H (Subgroup.zpowers φ)
+  simp only [Subgroup.relIndex_bot_left, bot_inf_eq] at hidx
+  rw [inf_comm, Nat.card_zpowers φ, ← hmul, mul_comm] at hidx
+  exact Nat.eq_of_mul_eq_mul_right Nat.card_pos hidx.symm
 
 /-- **The residue degree is the least exponent landing in `H`.**  For `φ` a Frobenius at an
 unramified `Q`, the residue degree below `L ^ H` is the smallest `n ≥ 1` with `φ ^ n ∈ H`.
