@@ -266,10 +266,11 @@ theorem _root_.Matrix.generatedBy_one_fromCols_eq_checkedBy_fromCols_neg_transpo
 `e`, with the information coordinates `ρ`, then `[I | A]` and `[-Aᵀ | I]` with columns arranged by
 `e` still present the same code. -/
 theorem _root_.Matrix.generatedBy_one_fromCols_eq_checkedBy_fromCols_neg_transpose_one_submatrix
-    [Fintype ι] [Fintype ρ] [Finite τ] [DecidableEq ρ] [DecidableEq τ] (A : Matrix ρ τ F)
+    [Fintype ι] [Fintype ρ] [DecidableEq ρ] [DecidableEq τ] (A : Matrix ρ τ F)
     (e : ι ≃ ρ ⊕ τ) :
     ((fromCols (1 : Matrix ρ ρ F) A).submatrix id e).generatedBy =
       ((fromCols (-Aᵀ) (1 : Matrix τ τ F)).submatrix id e).checkedBy := by
+  have : Finite τ := .of_injective (e.symm ∘ Sum.inr) (e.symm.injective.comp Sum.inr_injective)
   cases nonempty_fintype τ
   rw [generatedBy_submatrix_equiv, checkedBy_submatrix_equiv,
     generatedBy_one_fromCols_eq_checkedBy_fromCols_neg_transpose_one]
