@@ -7,10 +7,13 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Basic
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Cholesky
+public import TauCeti.Probability.Distributions.Wishart.Nonsingular
 public import Mathlib.Probability.Distributions.Gaussian.Real
 
 import TauCeti.LinearAlgebra.Matrix.Cholesky.Coordinates
 import TauCeti.MeasureTheory.Measure.PiWithDensity
+import TauCeti.Probability.Distributions.Gamma.Sqrt
+import Mathlib.Algebra.Order.Star.Real
 
 /-!
 # The standard Wishart density in Cholesky coordinates
@@ -46,7 +49,13 @@ Jacobian `2 ^ p * ∏ i, (L i i) ^ (p - i)` of the Cholesky change of variables
 * `TauCeti.bartlettCoordinateMeasure` — the coordinate measure of one Cholesky coordinate; for
   `(p : ℝ) - 1 < n` it is the chi or standard Gaussian law of that coordinate.
 * `TauCeti.map_lowerTriangleGram_pi_bartlettCoordinateMeasure` — the Gram matrix of independent
-  coordinates with these laws has the standard Wishart density.
+  coordinates with these laws has the standard Wishart density, and
+  `TauCeti.nonsingularWishartMeasure_one_eq_map_lowerTriangleGram` records that density as the
+  named law `TauCeti.nonsingularWishartMeasure n 1`.
+* `TauCeti.isProbabilityMeasure_bartlettCoordinateMeasure` — each coordinate law is a probability
+  measure in the degree range where the diagonal degrees of freedom are positive, and
+  `TauCeti.ae_mem_posDiagLowerRegion_pi_bartlettCoordinateMeasure` — the coordinates almost surely
+  have positive diagonal.
 
 ## References
 
@@ -291,5 +300,56 @@ theorem map_lowerTriangleGram_pi_bartlettCoordinateMeasure
     intro _
     rw [← ENNReal.ofReal_prod_of_nonneg fun ij _ ↦ bartlettCoordinatePDFReal_nonneg hn ij (x ij),
       prod_bartlettCoordinatePDFReal_of_notMem hx, ENNReal.ofReal_zero]
+
+/-- Every Cholesky coordinate of a standard Wishart matrix of degree `n` follows a probability
+law: a strictly lower coordinate is standard Gaussian, and the diagonal coordinate at `i` has the
+chi law with the positive number `n - i` of degrees of freedom. -/
+theorem isProbabilityMeasure_bartlettCoordinateMeasure (hn : (p : ℝ) - 1 < n)
+    (ij : lowerTriangle p) : IsProbabilityMeasure (bartlettCoordinateMeasure n ij) := by
+  by_cases hd : ij.1.1 = ij.1.2
+  · rw [bartlettCoordinateMeasure_of_eq n hd]
+    refine Probability.isProbabilityMeasure_withDensity_chi ?_
+    have hlt : ((ij.1.1 : ℕ) : ℝ) + 1 ≤ (p : ℝ) := by
+      exact_mod_cast Nat.succ_le_of_lt ij.1.1.isLt
+    linarith
+  · rw [bartlettCoordinateMeasure_of_ne n hd]
+    infer_instance
+
+/-- **Almost every vector of Cholesky coordinates of a standard Wishart matrix has positive
+diagonal**, each diagonal coordinate carrying the chi law of the positive half-line. That is the
+region on which the coordinates are the Cholesky factor of their Gram matrix. -/
+theorem ae_mem_posDiagLowerRegion_pi_bartlettCoordinateMeasure (hn : (p : ℝ) - 1 < n) :
+    ∀ᵐ x ∂(Measure.pi (bartlettCoordinateMeasure (p := p) n)), x ∈ posDiagLowerRegion p := by
+  have : ∀ ij : lowerTriangle p, IsProbabilityMeasure (bartlettCoordinateMeasure n ij) :=
+    fun ij => isProbabilityMeasure_bartlettCoordinateMeasure hn ij
+  simp only [mem_posDiagLowerRegion]
+  rw [ae_all_iff]
+  intro i
+  have hae : ∀ᵐ t ∂(bartlettCoordinateMeasure (p := p) n ⟨(i, i), le_rfl⟩), 0 < t := by
+    rw [bartlettCoordinateMeasure_of_eq n rfl]
+    exact (withDensity_absolutelyContinuous _ _).ae_le (ae_restrict_mem measurableSet_Ioi)
+  refine ae_of_ae_map (f := Function.eval (⟨(i, i), le_rfl⟩ : lowerTriangle p))
+    (measurable_pi_apply _).aemeasurable ?_
+  rw [(measurePreserving_eval (μ := bartlettCoordinateMeasure (p := p) n)
+    (⟨(i, i), le_rfl⟩ : lowerTriangle p)).map_eq]
+  exact hae
+
+/-- **The standard Wishart law is the Gram law of its Cholesky coordinates.** For a degree above
+`p - 1` the law `TauCeti.nonsingularWishartMeasure n 1` is the image, under `L ↦ L * Lᵀ`, of
+independent Cholesky coordinates with the chi and standard Gaussian laws. -/
+theorem nonsingularWishartMeasure_one_eq_map_lowerTriangleGram (hn : (p : ℝ) - 1 < n) :
+    nonsingularWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ) =
+      (Measure.pi (bartlettCoordinateMeasure (p := p) n)).map (lowerTriangleGram p) := by
+  classical
+  rw [map_lowerTriangleGram_pi_bartlettCoordinateMeasure (Or.inr hn),
+    nonsingularWishartMeasure_of_posDef Matrix.PosDef.one hn,
+    ← withDensity_indicator (measurableSet_posDefMatrix p)]
+  congr 1
+  funext A
+  rw [Set.indicator_apply]
+  split_ifs with hA
+  · rw [nonsingularWishartPDF_def, nonsingularWishartPDFReal_of_posDef n 1 hA]
+    simp
+  · exact nonsingularWishartPDF_of_not_posDef n 1 hA
 
 end TauCeti

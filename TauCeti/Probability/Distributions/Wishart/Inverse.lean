@@ -7,7 +7,16 @@ module
 
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Inv
 public import TauCeti.MeasureTheory.Measure.WithDensity
-public import TauCeti.Probability.Distributions.Wishart.Nonsingular
+public import TauCeti.Probability.Distributions.InverseGamma
+public import TauCeti.Probability.Distributions.Wishart.Congruence
+
+import TauCeti.Analysis.Matrix.PosSemidef
+import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Integrable
+import TauCeti.Probability.Distributions.Gamma.Sqrt
+import TauCeti.Probability.Distributions.Wishart.Bartlett
+import Mathlib.LinearAlgebra.Matrix.Swap
+import Mathlib.MeasureTheory.SpecificCodomains.Pi
 
 /-!
 # The inverse-Wishart family
@@ -27,6 +36,15 @@ Since the source law is zero outside the classical parameter range — a scale t
 definite, or a degree at most `p - 1` — so is the inverse-Wishart law, and positive definiteness of
 `S` and of `S⁻¹` are equivalent, so the two families are invalid on exactly the same parameters.
 
+The mean of the family is `(n - p - 1)⁻¹ • S`, and this is sharp: at or below the degree `p + 1`
+the sampled matrix is not integrable at all in positive dimension. Both statements come from the
+law of a single diagonal entry at the standard scale. In the Cholesky coordinates of the source
+Wishart matrix that entry is the inverse square of one diagonal coordinate, so it is inverse gamma
+of shape `(n - p + 1) / 2`, whose mean exists exactly above the threshold. Congruence by an
+orthogonal matrix preserves the standard law, which transports the value to every diagonal entry
+and makes the off-diagonal means vanish; congruence by a square root of the scale then carries the
+standard mean to the general one.
+
 ## Main definitions
 
 * `TauCeti.inverseWishartPDFReal` and `TauCeti.inverseWishartPDF` — the inverse-Wishart density,
@@ -38,8 +56,19 @@ definite, or a degree at most `p - 1` — so is the inverse-Wishart law, and pos
 * `TauCeti.inverseWishartMeasure_of_posDef` — at a valid degree and scale the law is the density
   against `TauCeti.symmetricLebesgue`, while `TauCeti.inverseWishartMeasure_of_not_posDef` and
   `TauCeti.inverseWishartMeasure_of_le` describe the two invalid branches.
+* `TauCeti.isProbabilityMeasure_inverseWishartMeasure` — at those parameters the law has total
+  mass one.
 * `TauCeti.ae_posDef_inverseWishartMeasure` — the sampled matrix is positive definite almost
   everywhere.
+* `TauCeti.map_symmetricCongruence_inverseWishartMeasure` — congruence by an invertible matrix
+  carries the law of scale `S` to the law of scale `C * S * Cᵀ`.
+* `TauCeti.map_coe_apply_inverseWishartMeasure_one` — at the standard scale every diagonal entry
+  is inverse gamma of shape `(n - p + 1) / 2` and scale `1 / 2`.
+* `TauCeti.integrable_id_inverseWishartMeasure` and
+  `TauCeti.integral_id_inverseWishartMeasure` — above the degree `p + 1` the sampled matrix is
+  integrable with mean `(n - p - 1)⁻¹ • S`, while
+  `TauCeti.not_integrable_id_inverseWishartMeasure` shows that in positive dimension it is not
+  integrable at or below that degree.
 * `TauCeti.inverseWishartMeasure_zero` — in dimension zero the law is the Dirac mass at the unique
   symmetric matrix, hence a probability measure whose mean is zero
   (`TauCeti.integral_id_inverseWishartMeasure_zero`).
@@ -61,7 +90,7 @@ noncomputable section
 
 open MeasureTheory
 
-open scoped ENNReal
+open scoped ENNReal Matrix MatrixOrder
 
 namespace TauCeti
 
@@ -406,6 +435,427 @@ theorem inverseWishartMeasure_of_posDef (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
           (measurable_inverseWishartPDF n S) hmap hfactor
     _ = (symmetricLebesgue p).withDensity (inverseWishartPDF n S) :=
         (hrestrict _ fun A hA => inverseWishartPDF_of_not_posDef n S hA).symm
+
+/-- **The inverse-Wishart law is a probability measure** at exactly the parameters where a density
+defines it: a positive-definite scale and a degree above `p - 1`. -/
+theorem isProbabilityMeasure_inverseWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) - 1 < n) :
+    IsProbabilityMeasure (inverseWishartMeasure n S) := by
+  have := isProbabilityMeasure_nonsingularWishartMeasure hS.inv hn
+  rw [inverseWishartMeasure_def]
+  infer_instance
+
+/-! ### Congruence -/
+
+/-- **Congruence carries the inverse-Wishart law of scale `S` to the one of scale `C * S * Cᵀ`.**
+On the Wishart side the same change of scale is the congruence by the inverse transpose of `C`,
+and inverting exchanges the two congruences. -/
+theorem map_symmetricCongruence_inverseWishartMeasure (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ)
+    (C : Matrix.GeneralLinearGroup (Fin p) ℝ) :
+    (inverseWishartMeasure n S).map (Matrix.GeneralLinearGroup.symmetricCongruence C) =
+      inverseWishartMeasure n
+        ((C : Matrix (Fin p) (Fin p) ℝ) * S * (C : Matrix (Fin p) (Fin p) ℝ)ᵀ) := by
+  set M : Matrix (Fin p) (Fin p) ℝ := (C : Matrix (Fin p) (Fin p) ℝ)
+  have hMdet : IsUnit M.det := isUnit_iff_ne_zero.2 (Matrix.GeneralLinearGroup.det_ne_zero C)
+  -- the inverse transpose of `C`, as an invertible matrix
+  set D : Matrix.GeneralLinearGroup (Fin p) ℝ :=
+    ⟨(M⁻¹)ᵀ, Mᵀ, by rw [← Matrix.transpose_mul, Matrix.mul_nonsing_inv M hMdet,
+        Matrix.transpose_one],
+      by rw [← Matrix.transpose_mul, Matrix.nonsing_inv_mul M hMdet, Matrix.transpose_one]⟩
+  have hDcoe : (D : Matrix (Fin p) (Fin p) ℝ) = (M⁻¹)ᵀ := rfl
+  have hDt : (D : Matrix (Fin p) (Fin p) ℝ)ᵀ = M⁻¹ := by rw [hDcoe, Matrix.transpose_transpose]
+  have hcongrC : Measurable (Matrix.GeneralLinearGroup.symmetricCongruence C) :=
+    (Matrix.GeneralLinearGroup.symmetricCongruence C).continuous.measurable
+  have hcongrD : Measurable (Matrix.GeneralLinearGroup.symmetricCongruence D) :=
+    (Matrix.GeneralLinearGroup.symmetricCongruence D).continuous.measurable
+  have hfun : (Matrix.GeneralLinearGroup.symmetricCongruence C) ∘ symmetricInv =
+      symmetricInv ∘ (Matrix.GeneralLinearGroup.symmetricCongruence D) := by
+    funext A
+    refine Subtype.ext ?_
+    have hMt : IsUnit (Mᵀ).det := by rwa [Matrix.det_transpose]
+    simp only [Function.comp_apply, Matrix.GeneralLinearGroup.coe_symmetricCongruence_apply,
+      coe_symmetricInv, hDcoe, Matrix.transpose_transpose]
+    rw [Matrix.mul_inv_rev, Matrix.mul_inv_rev, Matrix.nonsing_inv_nonsing_inv M hMdet,
+      Matrix.transpose_nonsing_inv, Matrix.nonsing_inv_nonsing_inv _ hMt, Matrix.mul_assoc]
+  have hscale : (D : Matrix (Fin p) (Fin p) ℝ) * S⁻¹ * (D : Matrix (Fin p) (Fin p) ℝ)ᵀ =
+      (M * S * Mᵀ)⁻¹ := by
+    rw [hDcoe, hDt, Matrix.mul_inv_rev, Matrix.mul_inv_rev, ← Matrix.transpose_nonsing_inv,
+      Matrix.mul_assoc]
+  rw [inverseWishartMeasure_def, inverseWishartMeasure_def,
+    Measure.map_map hcongrC measurable_symmetricInv, hfun,
+    ← Measure.map_map measurable_symmetricInv hcongrD,
+    map_symmetricCongruence_nonsingularWishartMeasure n S⁻¹ D, hscale]
+
+/-! ### The law of a diagonal entry at the standard scale -/
+
+/-- The last diagonal entry of the inverse of the Gram matrix `L * Lᵀ` of a lower-triangular `L`
+with positive diagonal is the inverse square of the last diagonal entry of `L`: the inverse of a
+lower-triangular matrix is again lower triangular, so a single term of the Gram sum survives at
+the last index. -/
+private theorem inv_coe_lowerTriangleGram_apply_last {q : ℕ} {x : lowerTriangle (q + 1) → ℝ}
+    (hx : x ∈ posDiagLowerRegion (q + 1)) :
+    ((lowerTriangleGram (q + 1) x : Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ)⁻¹)
+        (Fin.last q) (Fin.last q) = (x ⟨(Fin.last q, Fin.last q), le_rfl⟩ ^ 2)⁻¹ := by
+  set L := lowerTriangleMatrix (q + 1) x with hLdef
+  have htri : L.IsLowerTriangular := isLowerTriangular_lowerTriangleMatrix x
+  have hdiag : ∀ i : Fin (q + 1), L i i = x ⟨(i, i), le_rfl⟩ :=
+    fun i => lowerTriangleMatrix_apply_of_le x le_rfl
+  have hpos : ∀ i : Fin (q + 1), 0 < L i i := by
+    intro i
+    rw [hdiag i]
+    exact (mem_posDiagLowerRegion _).1 hx i
+  have hdet : IsUnit L.det := by
+    rw [Matrix.det_of_isLowerTriangular L htri, isUnit_iff_ne_zero]
+    exact Finset.prod_ne_zero_iff.2 fun i _ => (hpos i).ne'
+  have hinvtri : L⁻¹.IsLowerTriangular := by
+    have : Invertible L := Matrix.invertibleOfIsUnitDet L hdet
+    exact Matrix.blockTriangular_inv_of_blockTriangular htri
+  have hne : L (Fin.last q) (Fin.last q) ≠ 0 := (hpos _).ne'
+  have hinvdiag : L⁻¹ (Fin.last q) (Fin.last q) = (L (Fin.last q) (Fin.last q))⁻¹ := by
+    have h := congrFun (congrFun (Matrix.nonsing_inv_mul L hdet) (Fin.last q)) (Fin.last q)
+    rw [Matrix.mul_apply_diag_of_isLowerTriangular hinvtri htri, Matrix.one_apply_eq] at h
+    field_simp
+    exact h
+  have hgram : (lowerTriangleGram (q + 1) x : Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ)⁻¹ =
+      L⁻¹ᵀ * L⁻¹ := by
+    rw [coe_lowerTriangleGram, ← hLdef, Matrix.mul_inv_rev, ← Matrix.transpose_nonsing_inv]
+  rw [hgram, Matrix.mul_apply, Finset.sum_eq_single (Fin.last q)]
+  · rw [Matrix.transpose_apply, hinvdiag, hdiag]
+    ring
+  · intro k _ hk
+    have hklt : k < Fin.last q := lt_of_le_of_ne (Fin.le_last k) hk
+    rw [hinvtri (by simpa using hklt), mul_zero]
+  · exact fun h => absurd (Finset.mem_univ _) h
+
+/-- **The last diagonal entry of an inverse-Wishart matrix of standard scale is inverse gamma.**
+In Cholesky coordinates this entry is the inverse square of the last diagonal coordinate, whose
+chi law with `n - p + 1` degrees of freedom passes to the inverse-gamma law on inverting its
+square. -/
+private theorem map_coe_apply_last_inverseWishartMeasure_one {q : ℕ} (hn : (q : ℝ) < n) :
+    (inverseWishartMeasure n (1 : Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ)).map
+        (fun B : selfAdjoint.submodule ℝ (Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ) =>
+          (B : Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ) (Fin.last q) (Fin.last q)) =
+      Probability.inverseGammaMeasure ((n - (q : ℝ)) / 2) (1 / 2) := by
+  have hn' : ((q + 1 : ℕ) : ℝ) - 1 < n := by push_cast; linarith
+  have hk : 0 < n - (q : ℝ) := by linarith
+  have : ∀ ij : lowerTriangle (q + 1), IsProbabilityMeasure (bartlettCoordinateMeasure n ij) :=
+    fun ij => isProbabilityMeasure_bartlettCoordinateMeasure hn' ij
+  have hIW : inverseWishartMeasure n (1 : Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ) =
+      (Measure.pi (bartlettCoordinateMeasure (p := q + 1) n)).map
+        (symmetricInv ∘ lowerTriangleGram (q + 1)) := by
+    rw [inverseWishartMeasure_def, inv_one,
+      nonsingularWishartMeasure_one_eq_map_lowerTriangleGram hn',
+      Measure.map_map measurable_symmetricInv (measurable_lowerTriangleGram _)]
+  rw [hIW, Measure.map_map (selfAdjoint.measurable_coe_apply _ _)
+    (measurable_symmetricInv.comp (measurable_lowerTriangleGram _))]
+  have hcongr : (fun B : selfAdjoint.submodule ℝ (Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ) =>
+        (B : Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ) (Fin.last q) (Fin.last q)) ∘
+        (symmetricInv ∘ lowerTriangleGram (q + 1)) =ᵐ[Measure.pi
+          (bartlettCoordinateMeasure (p := q + 1) n)]
+      (fun t : ℝ => (t ^ 2)⁻¹) ∘
+        Function.eval (⟨(Fin.last q, Fin.last q), le_rfl⟩ : lowerTriangle (q + 1)) := by
+    filter_upwards [ae_mem_posDiagLowerRegion_pi_bartlettCoordinateMeasure hn'] with x hx
+    simpa using inv_coe_lowerTriangleGram_apply_last hx
+  have heval : (Measure.pi (bartlettCoordinateMeasure (p := q + 1) n)).map
+      (Function.eval (⟨(Fin.last q, Fin.last q), le_rfl⟩ : lowerTriangle (q + 1))) =
+      bartlettCoordinateMeasure n (⟨(Fin.last q, Fin.last q), le_rfl⟩ : lowerTriangle (q + 1)) :=
+    (measurePreserving_eval (μ := bartlettCoordinateMeasure (p := q + 1) n) _).map_eq
+  have hcomp := Measure.map_map (μ := Measure.pi (bartlettCoordinateMeasure (p := q + 1) n))
+    (g := fun t : ℝ => (t ^ 2)⁻¹)
+    (f := Function.eval (⟨(Fin.last q, Fin.last q), le_rfl⟩ : lowerTriangle (q + 1)))
+    (by fun_prop) (measurable_pi_apply _)
+  rw [Measure.map_congr hcongr, ← hcomp, heval, bartlettCoordinateMeasure_of_eq n rfl]
+  -- squaring and then inverting, so that the chi law passes through the chi-squared law
+  have hsq : (fun t : ℝ => (t ^ 2)⁻¹) = Inv.inv ∘ fun t : ℝ => t ^ 2 := rfl
+  rw [hsq, ← Measure.map_map measurable_inv (by fun_prop)]
+  simp only [Fin.val_last]
+  rw [Probability.map_sq_withDensity_eq_chiSquaredMeasure hk,
+    Probability.chiSquaredMeasure_eq_gammaMeasure hk,
+    Probability.inverseGammaMeasure_of_pos (by linarith) (by norm_num)]
+
+/-! ### The mean -/
+
+/-- Congruence by an orthogonal matrix leaves the inverse-Wishart law of standard scale
+unchanged. -/
+private theorem map_symmetricCongruence_inverseWishartMeasure_one
+    {C : Matrix.GeneralLinearGroup (Fin p) ℝ}
+    (hC : (C : Matrix (Fin p) (Fin p) ℝ) * (C : Matrix (Fin p) (Fin p) ℝ)ᵀ = 1) :
+    (inverseWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ)).map
+        (Matrix.GeneralLinearGroup.symmetricCongruence C) =
+      inverseWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ) := by
+  rw [map_symmetricCongruence_inverseWishartMeasure, Matrix.mul_one, hC]
+
+/-- Congruence by a swap matrix permutes the two indices of every entry. -/
+private theorem coe_symmetricCongruence_swap_apply (i j a b : Fin p)
+    (B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (Matrix.GeneralLinearGroup.symmetricCongruence (Matrix.GeneralLinearGroup.swap ℝ i j) B :
+        Matrix (Fin p) (Fin p) ℝ) a b =
+      (B : Matrix (Fin p) (Fin p) ℝ) (Equiv.swap i j a) (Equiv.swap i j b) := by
+  rw [Matrix.GeneralLinearGroup.coe_symmetricCongruence_apply,
+    Matrix.GeneralLinearGroup.val_swap, Matrix.transpose_swap, Matrix.swap,
+    PEquiv.toMatrix_toPEquiv_mul, PEquiv.mul_toMatrix_toPEquiv]
+  simp
+
+/-- **Every diagonal entry of an inverse-Wishart matrix of standard scale is inverse gamma**, with
+shape `(n - p + 1) / 2` and scale `1 / 2`. Equivalently, the reciprocal of a diagonal entry is
+chi-squared with `n - p + 1` degrees of freedom. -/
+theorem map_coe_apply_inverseWishartMeasure_one (hn : (p : ℝ) - 1 < n) (i : Fin p) :
+    (inverseWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ)).map
+        (fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+          (B : Matrix (Fin p) (Fin p) ℝ) i i) =
+      Probability.inverseGammaMeasure ((n - (p : ℝ) + 1) / 2) (1 / 2) := by
+  obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, by have := i.pos; omega⟩
+  set C : Matrix.GeneralLinearGroup (Fin (q + 1)) ℝ :=
+    Matrix.GeneralLinearGroup.swap ℝ i (Fin.last q) with hC
+  have hmeasC : Measurable (Matrix.GeneralLinearGroup.symmetricCongruence C) :=
+    (Matrix.GeneralLinearGroup.symmetricCongruence C).continuous.measurable
+  have hfun : (fun B : selfAdjoint.submodule ℝ (Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ) =>
+        (B : Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ) i i) =
+      (fun B : selfAdjoint.submodule ℝ (Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ) =>
+          (B : Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ) (Fin.last q) (Fin.last q)) ∘
+        (Matrix.GeneralLinearGroup.symmetricCongruence C) := by
+    funext B
+    rw [Function.comp_apply, hC, coe_symmetricCongruence_swap_apply, Equiv.swap_apply_right]
+  have hcomp := Measure.map_map (μ := inverseWishartMeasure n
+      (1 : Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ))
+    (g := fun B : selfAdjoint.submodule ℝ (Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ) =>
+      (B : Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ) (Fin.last q) (Fin.last q))
+    (f := (Matrix.GeneralLinearGroup.symmetricCongruence C))
+    (selfAdjoint.measurable_coe_apply _ _) hmeasC
+  have horth : (C : Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ) *
+      (C : Matrix (Fin (q + 1)) (Fin (q + 1)) ℝ)ᵀ = 1 := by
+    rw [hC, Matrix.GeneralLinearGroup.val_swap, Matrix.transpose_swap]
+    exact Matrix.swap_mul_self i (Fin.last q)
+  rw [hfun, ← hcomp, map_symmetricCongruence_inverseWishartMeasure_one horth,
+    map_coe_apply_last_inverseWishartMeasure_one (by push_cast at hn; linarith)]
+  congr 2
+  push_cast
+  ring
+
+/-- Congruence by the diagonal sign matrix that flips the index `k` changes the sign of exactly
+the entries with one index equal to `k`. -/
+private theorem coe_symmetricCongruence_sign_apply {D : Matrix.GeneralLinearGroup (Fin p) ℝ}
+    {d : Fin p → ℝ} (hD : (D : Matrix (Fin p) (Fin p) ℝ) = Matrix.diagonal d) (a b : Fin p)
+    (B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (Matrix.GeneralLinearGroup.symmetricCongruence D B : Matrix (Fin p) (Fin p) ℝ) a b =
+      d a * (B : Matrix (Fin p) (Fin p) ℝ) a b * d b := by
+  rw [Matrix.GeneralLinearGroup.coe_symmetricCongruence_apply, hD, Matrix.diagonal_transpose,
+    Matrix.mul_diagonal, Matrix.diagonal_mul]
+
+/-- The diagonal sign matrix flipping the index `k` is an involution. -/
+private theorem diagonal_sign_mul_self (k : Fin p) :
+    (Matrix.diagonal fun j : Fin p => if j = k then (-1 : ℝ) else 1) *
+      (Matrix.diagonal fun j : Fin p => if j = k then (-1 : ℝ) else 1) = 1 := by
+  rw [Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
+  exact congrArg Matrix.diagonal (by funext j; by_cases h : j = k <;> simp [h])
+
+/-- The diagonal sign matrix flipping the index `k`, as an invertible matrix. -/
+private noncomputable def signCongruence (k : Fin p) : Matrix.GeneralLinearGroup (Fin p) ℝ :=
+  ⟨Matrix.diagonal fun j => if j = k then -1 else 1,
+    Matrix.diagonal fun j => if j = k then -1 else 1,
+    diagonal_sign_mul_self k, diagonal_sign_mul_self k⟩
+
+private theorem coe_signCongruence (k : Fin p) :
+    (signCongruence k : Matrix (Fin p) (Fin p) ℝ) =
+      Matrix.diagonal fun j => if j = k then -1 else 1 := rfl
+
+private theorem signCongruence_mul_transpose (k : Fin p) :
+    (signCongruence k : Matrix (Fin p) (Fin p) ℝ) *
+      (signCongruence k : Matrix (Fin p) (Fin p) ℝ)ᵀ = 1 := by
+  rw [coe_signCongruence, Matrix.diagonal_transpose]
+  exact diagonal_sign_mul_self k
+
+/-- An off-diagonal entry of an inverse-Wishart matrix of standard scale has mean zero, by the
+sign symmetry of the law: flipping one index is a congruence that preserves the law and reverses
+the sign of that entry. -/
+private theorem integral_coe_apply_inverseWishartMeasure_one_of_ne {i j : Fin p} (hij : i ≠ j) :
+    ∫ B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
+        (B : Matrix (Fin p) (Fin p) ℝ) i j ∂inverseWishartMeasure n 1 = 0 := by
+  have hmeas : Measurable (Matrix.GeneralLinearGroup.symmetricCongruence (signCongruence i)) :=
+    (Matrix.GeneralLinearGroup.symmetricCongruence (signCongruence i)).continuous.measurable
+  have h := integral_map (μ := inverseWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ))
+    (φ := Matrix.GeneralLinearGroup.symmetricCongruence (signCongruence i))
+    (f := fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      (B : Matrix (Fin p) (Fin p) ℝ) i j)
+    hmeas.aemeasurable (selfAdjoint.measurable_coe_apply i j).aestronglyMeasurable
+  rw [map_symmetricCongruence_inverseWishartMeasure_one (signCongruence_mul_transpose i)] at h
+  have hsign : (fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      (Matrix.GeneralLinearGroup.symmetricCongruence (signCongruence i) B :
+        Matrix (Fin p) (Fin p) ℝ) i j) =
+      fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+        -((B : Matrix (Fin p) (Fin p) ℝ) i j) := by
+    funext B
+    rw [coe_symmetricCongruence_sign_apply (coe_signCongruence i)]
+    simp [hij.symm]
+  rw [hsign, integral_neg] at h
+  linarith
+
+/-- Each diagonal entry of an inverse-Wishart matrix of standard scale is integrable above the
+degree threshold `p + 1`, its inverse-gamma law then having shape above one. -/
+private theorem integrable_coe_apply_diag_inverseWishartMeasure_one (hn : (p : ℝ) + 1 < n)
+    (i : Fin p) :
+    Integrable (fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      (B : Matrix (Fin p) (Fin p) ℝ) i i) (inverseWishartMeasure n 1) := by
+  have hmap := map_coe_apply_inverseWishartMeasure_one (by linarith : (p : ℝ) - 1 < n) i
+  have hint : Integrable id (Probability.inverseGammaMeasure ((n - (p : ℝ) + 1) / 2) (1 / 2)) :=
+    (Probability.integrable_id_inverseGammaMeasure_iff (by linarith) (by norm_num)).2 (by linarith)
+  rw [← hmap] at hint
+  simpa using (integrable_map_measure aestronglyMeasurable_id
+    (selfAdjoint.measurable_coe_apply i i).aemeasurable).1 hint
+
+/-- Every entry of an inverse-Wishart matrix of standard scale is integrable above the degree
+threshold `p + 1`: positive semidefiniteness bounds an entry by the mean of the two diagonal
+entries in its row and column. -/
+private theorem integrable_coe_apply_inverseWishartMeasure_one (hn : (p : ℝ) + 1 < n)
+    (i j : Fin p) :
+    Integrable (fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      (B : Matrix (Fin p) (Fin p) ℝ) i j) (inverseWishartMeasure n 1) := by
+  refine Integrable.mono' (((integrable_coe_apply_diag_inverseWishartMeasure_one hn i).add
+      (integrable_coe_apply_diag_inverseWishartMeasure_one hn j)).div_const 2)
+    (selfAdjoint.measurable_coe_apply i j).aestronglyMeasurable ?_
+  filter_upwards [ae_posDef_inverseWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ)] with B hB
+  have hsq : ((B : Matrix (Fin p) (Fin p) ℝ) i j) ^ 2 ≤
+      (B : Matrix (Fin p) (Fin p) ℝ) i i * (B : Matrix (Fin p) (Fin p) ℝ) j j := by
+    simpa [RCLike.normSq_apply, sq] using hB.posSemidef.normSq_le i j
+  have hii : 0 ≤ (B : Matrix (Fin p) (Fin p) ℝ) i i := hB.posSemidef.diag_nonneg
+  have hjj : 0 ≤ (B : Matrix (Fin p) (Fin p) ℝ) j j := hB.posSemidef.diag_nonneg
+  simp only [Pi.add_apply]
+  rw [Real.norm_eq_abs]
+  nlinarith [sq_abs ((B : Matrix (Fin p) (Fin p) ℝ) i j),
+    abs_nonneg ((B : Matrix (Fin p) (Fin p) ℝ) i j),
+    sq_nonneg ((B : Matrix (Fin p) (Fin p) ℝ) i i - (B : Matrix (Fin p) (Fin p) ℝ) j j)]
+
+/-- The entrywise mean of an inverse-Wishart matrix of standard scale: the diagonal entries have
+the common value `(n - p - 1)⁻¹` and the off-diagonal entries vanish. -/
+private theorem integral_coe_apply_inverseWishartMeasure_one (hn : (p : ℝ) + 1 < n) (i j : Fin p) :
+    ∫ B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
+        (B : Matrix (Fin p) (Fin p) ℝ) i j ∂inverseWishartMeasure n 1 =
+      (n - (p : ℝ) - 1)⁻¹ * (1 : Matrix (Fin p) (Fin p) ℝ) i j := by
+  rcases eq_or_ne i j with rfl | hij
+  · rw [Matrix.one_apply_eq, mul_one]
+    have h := integral_map (μ := inverseWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ))
+      (φ := fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+        (B : Matrix (Fin p) (Fin p) ℝ) i i)
+      (f := id) (selfAdjoint.measurable_coe_apply i i).aemeasurable aestronglyMeasurable_id
+    rw [map_coe_apply_inverseWishartMeasure_one (by linarith : (p : ℝ) - 1 < n) i] at h
+    simp only [id_eq] at h
+    rw [← h, Probability.integral_id_inverseGammaMeasure (by norm_num) (by linarith),
+      show (n - (p : ℝ) + 1) / 2 - 1 = (n - (p : ℝ) - 1) / 2 by ring]
+    have hne : n - (p : ℝ) - 1 ≠ 0 := by linarith
+    field_simp
+  · rw [Matrix.one_apply_ne hij, mul_zero]
+    exact integral_coe_apply_inverseWishartMeasure_one_of_ne hij
+
+/-- The mean of an inverse-Wishart matrix of standard scale is `(n - p - 1)⁻¹` times the
+identity. -/
+private theorem integral_id_inverseWishartMeasure_one (hn : (p : ℝ) + 1 < n) :
+    ∫ B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ), B ∂inverseWishartMeasure n 1 =
+      (n - (p : ℝ) - 1)⁻¹ •
+        (⟨1, Matrix.isHermitian_iff_isSelfAdjoint.1 Matrix.isHermitian_one⟩ :
+          selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) := by
+  have hcoords : Integrable (fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      symmetricCoordinates p B) (inverseWishartMeasure n 1) :=
+    (symmetricCoordinates p).toContinuousLinearMap.integrable_comp
+      (integrable_iff_integrable_coe_apply.2
+        fun i j => integrable_coe_apply_inverseWishartMeasure_one hn i j)
+  apply (symmetricCoordinates p).injective
+  funext ij
+  rw [← (symmetricCoordinates p).integral_comp_comm, eval_integral fun ij => hcoords.eval ij]
+  simp only [symmetricCoordinates_apply, Submodule.coe_smul, Matrix.smul_apply]
+  rw [integral_coe_apply_inverseWishartMeasure_one hn]
+  simp
+
+/-- Every positive-definite matrix is `C * Cᵀ` for an invertible `C`, its principal square
+root. -/
+private theorem exists_gl_mul_transpose_eq (hS : S.PosDef) :
+    ∃ C : Matrix.GeneralLinearGroup (Fin p) ℝ,
+      (C : Matrix (Fin p) (Fin p) ℝ) * (C : Matrix (Fin p) (Fin p) ℝ)ᵀ = S := by
+  have hsq : CFC.sqrt S * CFC.sqrt S = S := CFC.sqrt_mul_sqrt_self _ hS.posSemidef.nonneg
+  have hherm : (CFC.sqrt S)ᵀ = CFC.sqrt S := by
+    have h := (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).1.eq
+    rwa [Matrix.conjTranspose_eq_transpose_of_trivial] at h
+  have hCu : IsUnit (CFC.sqrt S) := hS.isStrictlyPositive.isUnit_cfcSqrt _
+  exact ⟨hCu.unit, by rw [hCu.unit_spec, hherm, hsq]⟩
+
+/-- An inverse-Wishart law of positive-definite scale is the standard one transported by the
+congruence with a square root of the scale. -/
+private theorem inverseWishartMeasure_eq_map_symmetricCongruence
+    {C : Matrix.GeneralLinearGroup (Fin p) ℝ}
+    (hC : (C : Matrix (Fin p) (Fin p) ℝ) * (C : Matrix (Fin p) (Fin p) ℝ)ᵀ = S) :
+    inverseWishartMeasure n S =
+      (inverseWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ)).map
+        (Matrix.GeneralLinearGroup.symmetricCongruence C) := by
+  rw [map_symmetricCongruence_inverseWishartMeasure, Matrix.mul_one, hC]
+
+/-- **An inverse-Wishart matrix is integrable above the degree threshold `p + 1`.** -/
+theorem integrable_id_inverseWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) + 1 < n) :
+    Integrable (fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) => B)
+      (inverseWishartMeasure n S) := by
+  obtain ⟨C, hC⟩ := exists_gl_mul_transpose_eq hS
+  have hmeasC : Measurable (Matrix.GeneralLinearGroup.symmetricCongruence C) :=
+    (Matrix.GeneralLinearGroup.symmetricCongruence C).continuous.measurable
+  have hiff := integrable_map_measure
+    (μ := inverseWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ))
+    (g := fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) => B)
+    (f := Matrix.GeneralLinearGroup.symmetricCongruence C)
+    aestronglyMeasurable_id hmeasC.aemeasurable
+  rw [inverseWishartMeasure_eq_map_symmetricCongruence hC, hiff]
+  exact (Matrix.GeneralLinearGroup.symmetricCongruence C).toContinuousLinearMap.integrable_comp
+    (integrable_iff_integrable_coe_apply.2
+      fun i j => integrable_coe_apply_inverseWishartMeasure_one hn i j)
+
+/-- **The mean of an inverse-Wishart law** of degree `n` and positive-definite scale `S` is
+`(n - p - 1)⁻¹ • S`, for a degree above the threshold `p + 1` at which the identity stops being
+integrable. -/
+theorem integral_id_inverseWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) + 1 < n) :
+    ∫ B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ), B ∂inverseWishartMeasure n S =
+      (n - (p : ℝ) - 1)⁻¹ •
+        (⟨S, Matrix.isHermitian_iff_isSelfAdjoint.1 hS.1⟩ :
+          selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) := by
+  obtain ⟨C, hC⟩ := exists_gl_mul_transpose_eq hS
+  have hmeasC : Measurable (Matrix.GeneralLinearGroup.symmetricCongruence C) :=
+    (Matrix.GeneralLinearGroup.symmetricCongruence C).continuous.measurable
+  have hint := integral_map (μ := inverseWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ))
+    (φ := Matrix.GeneralLinearGroup.symmetricCongruence C)
+    (f := fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) => B)
+    hmeasC.aemeasurable aestronglyMeasurable_id
+  rw [inverseWishartMeasure_eq_map_symmetricCongruence hC, hint,
+    (Matrix.GeneralLinearGroup.symmetricCongruence C).integral_comp_comm,
+    integral_id_inverseWishartMeasure_one hn, map_smul]
+  congr 1
+  refine Subtype.ext ?_
+  rw [Matrix.GeneralLinearGroup.coe_symmetricCongruence_apply]
+  simpa using hC
+
+/-- **Below the degree threshold `p + 1` an inverse-Wishart matrix is not integrable**, in every
+positive dimension: a diagonal entry then has an inverse-gamma law of shape at most one. -/
+theorem not_integrable_id_inverseWishartMeasure (hp : 0 < p) (hS : S.PosDef)
+    (hn : (p : ℝ) - 1 < n) (hn' : n ≤ (p : ℝ) + 1) :
+    ¬ Integrable (fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) => B)
+      (inverseWishartMeasure n S) := by
+  intro hint
+  obtain ⟨C, hC⟩ := exists_gl_mul_transpose_eq hS
+  have hmeasC : Measurable (Matrix.GeneralLinearGroup.symmetricCongruence C) :=
+    (Matrix.GeneralLinearGroup.symmetricCongruence C).continuous.measurable
+  have hiff := integrable_map_measure
+    (μ := inverseWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ))
+    (g := fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) => B)
+    (f := Matrix.GeneralLinearGroup.symmetricCongruence C)
+    aestronglyMeasurable_id hmeasC.aemeasurable
+  rw [inverseWishartMeasure_eq_map_symmetricCongruence hC, hiff] at hint
+  have hone : Integrable (fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) => B)
+      (inverseWishartMeasure n 1) :=
+    (((Matrix.GeneralLinearGroup.symmetricCongruence C).symm.toContinuousLinearMap).integrable_comp
+      hint).congr (Filter.Eventually.of_forall fun x =>
+        (Matrix.GeneralLinearGroup.symmetricCongruence C).symm_apply_apply x)
+  have hdiag := integrable_iff_integrable_coe_apply.1 hone ⟨0, hp⟩ ⟨0, hp⟩
+  have hgamma : Integrable id
+      (Probability.inverseGammaMeasure ((n - (p : ℝ) + 1) / 2) (1 / 2)) := by
+    rw [← map_coe_apply_inverseWishartMeasure_one hn ⟨0, hp⟩]
+    exact (integrable_map_measure aestronglyMeasurable_id
+      (selfAdjoint.measurable_coe_apply (⟨0, hp⟩ : Fin p) ⟨0, hp⟩).aemeasurable).2
+      (by simpa using hdiag)
+  exact Probability.not_integrable_id_inverseGammaMeasure (by linarith) (by norm_num)
+    (by linarith) hgamma
 
 /-! ### Dimension zero -/
 
