@@ -42,6 +42,10 @@ jobs:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: TauCetiProject
+          repositories: TauCeti
+          permission-contents: read
+          permission-issues: write
+          permission-pull-requests: write  # also posts the unknown-roadmap nudge
 
       # The base checkout (trusted): the classifier that runs is the one on the target
       # branch, not the version proposed by the PR.

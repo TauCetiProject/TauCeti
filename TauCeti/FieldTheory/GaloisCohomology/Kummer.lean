@@ -7,10 +7,11 @@ module
 
 public import TauCeti.Algebra.Group.PowerClassGroup
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
+public import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
 
 /-!
-# The Kummer map `Kˣ → H¹(G_K, μₙ)`
+# The Kummer map `Kˣ → H¹(G_K, μₙ)` and the Kummer isomorphism
 
 Let `K` be a field, `Kˢ` a separable closure, `G_K = AbsoluteGaloisGroup K`, and `n` a natural
 number invertible in `K`. The Kummer sequence
@@ -21,8 +22,8 @@ number invertible in `K`. The Kummer sequence
 
 of discrete `G_K`-modules is `TauCeti.kummerShortExact`; its degree-zero connecting map, read
 through the identification `TauCeti.baseUnitsEquivInvariants` of `H⁰(G_K, (Kˢ)ˣ)` with `Kˣ`, is
-the **Kummer map** `Kˣ → H¹(G_K, μₙ)`. This file constructs it, computes it on cocycles, and
-identifies its kernel.
+the **Kummer map** `Kˣ → H¹(G_K, μₙ)`. This file constructs it, computes it on cocycles, identifies
+its kernel, and proves that it induces the Kummer isomorphism `Kˣ ⧸ (Kˣ)ⁿ ≃ H¹(G_K, μₙ)`.
 
 The computation is the classical one. Choose an `n`th root `α ∈ (Kˢ)ˣ` of `a ∈ Kˣ`; then
 `g ↦ g α / α` takes values in `μₙ`, because raising it to the `n` gives `g a / a = 1`, and it is a
@@ -38,9 +39,11 @@ The kernel is `(Kˣ)ⁿ`. This is exactness of the long exact sequence at `H⁰(
 invariants of `(Kˢ)ˣ` is the `n`th power map of `Kˣ`. So the Kummer map descends to an
 **injection** of the power-class group `Kˣ ⧸ (Kˣ)ⁿ` into `H¹(G_K, μₙ)`.
 
-What is not here is surjectivity, which is Hilbert 90 for `Kˢ/K` and needs the description of
-`H¹` as a colimit over the finite quotients of `G_K`. Surjectivity is the only missing input for
-the Kummer isomorphism `Kˣ ⧸ (Kˣ)ⁿ ≅ H¹(G_K, μₙ)`.
+The Kummer map is **surjective**. This is exactness of the same sequence at `H¹(G_K, μₙ)` —
+`explicitLongExact_H1A` — together with Hilbert 90, `H¹(G_K, (Kˢ)ˣ) = 0`
+(`TauCeti.subsingleton_H1_unitsCoeff`): every class of `H¹(G_K, μₙ)` dies in `H¹(G_K, (Kˢ)ˣ)` and so
+is a connecting image. Injectivity on power classes and surjectivity together give the **Kummer
+isomorphism** `TauCeti.kummerIso`.
 
 ## Main definitions
 
@@ -49,6 +52,7 @@ the Kummer isomorphism `Kˣ ⧸ (Kˣ)ⁿ ≅ H¹(G_K, μₙ)`.
 * `TauCeti.kummerMap`: the multiplicative Kummer map
   `Kˣ →* Multiplicative (H¹(G_K, μₙ))`.
 * `TauCeti.kummerClassMap`: the induced map on the power classes `Kˣ ⧸ (Kˣ)ⁿ`.
+* `TauCeti.kummerIso`: the Kummer isomorphism `Kˣ ⧸ (Kˣ)ⁿ ≃* H¹(G_K, μₙ)`.
 
 ## Main results
 
@@ -59,6 +63,7 @@ the Kummer isomorphism `Kˣ ⧸ (Kˣ)ⁿ ≅ H¹(G_K, μₙ)`.
 * `TauCeti.ker_kummerMap`: the kernel of the Kummer map is `(Kˣ)ⁿ`, with
   `TauCeti.kummerMap_eq_one_iff` the pointwise form.
 * `TauCeti.kummerClassMap_injective`: `Kˣ ⧸ (Kˣ)ⁿ` injects into `H¹(G_K, μₙ)`.
+* `TauCeti.kummerMap_surjective`: every class of `H¹(G_K, μₙ)` is a Kummer class.
 
 ## References
 
@@ -274,8 +279,8 @@ theorem kummerMap_eq_one_iff (hn : IsUnit (n : K)) (a : Kˣ) :
 variable (K n)
 
 /-- **The Kummer map on power classes**, `Kˣ ⧸ (Kˣ)ⁿ → H¹(G_K, μₙ)`. It is injective
-(`TauCeti.kummerClassMap_injective`); surjectivity, which needs Hilbert 90, is what would upgrade
-it to the Kummer isomorphism. -/
+(`TauCeti.kummerClassMap_injective`) and surjective, and `TauCeti.kummerIso` is the resulting
+isomorphism. -/
 def kummerClassMap (hn : IsUnit (n : K)) :
     powerClassQuotient Kˣ n →*
       Multiplicative (H1 (AbsoluteGaloisGroup K) (KummerCoeff K n)) :=
@@ -298,5 +303,43 @@ theorem kummerClassMap_powerClassHom (hn : IsUnit (n : K)) (a : Kˣ) :
 theorem kummerClassMap_injective (hn : IsUnit (n : K)) :
     Function.Injective (kummerClassMap K n hn) := by
   exact (QuotientGroup.injective_lift_iff _ _ _).2 (ker_kummerMap hn).symm
+
+/-! ### Surjectivity and the Kummer isomorphism -/
+
+variable {K n}
+
+/-- **Every class of `H¹(G_K, μₙ)` is a Kummer class**, by Hilbert 90: the class dies in
+`H¹(G_K, (Kˢ)ˣ) = 0`, so it is the image of the connecting map of the Kummer sequence. -/
+theorem kummerMap_surjective (hn : IsUnit (n : K)) : Function.Surjective (kummerMap K n hn) := by
+  intro y
+  have hy : Multiplicative.toAdd y ∈ (kummerShortExact K n hn).explicitDelta0.range := by
+    rw [(kummerShortExact K n hn).explicitLongExact_H1A, AddMonoidHom.mem_ker]
+    exact Subsingleton.elim _ _
+  obtain ⟨u, hu⟩ := hy
+  obtain ⟨c, rfl⟩ := (baseUnitsEquivInvariants K).surjective u
+  exact ⟨c.toMul, by rw [kummerMap_apply, ofMul_toMul, hu, ofAdd_toAdd]⟩
+
+variable (K n)
+
+/-- **The Kummer isomorphism** `Kˣ ⧸ (Kˣ)ⁿ ≃* H¹(G_K, μₙ)` (NSW (6.2.1) and the display following
+it), for `n` invertible in `K`. It is `TauCeti.kummerClassMap`, which is injective since the
+kernel of the Kummer map is `(Kˣ)ⁿ` and surjective by Hilbert 90. -/
+def kummerIso (hn : IsUnit (n : K)) :
+    powerClassQuotient Kˣ n ≃* Multiplicative (H1 (AbsoluteGaloisGroup K) (KummerCoeff K n)) :=
+  MulEquiv.ofBijective (kummerClassMap K n hn)
+    ⟨kummerClassMap_injective K n hn, fun y => by
+      obtain ⟨a, rfl⟩ := kummerMap_surjective hn y
+      exact ⟨QuotientGroup.mk a, kummerClassMap_mk K n hn a⟩⟩
+
+/-- The Kummer isomorphism is the Kummer map on power classes. -/
+@[simp]
+theorem kummerIso_apply (hn : IsUnit (n : K)) (x : powerClassQuotient Kˣ n) :
+    kummerIso K n hn x = kummerClassMap K n hn x :=
+  (rfl)
+
+/-- The Kummer isomorphism sends the power class of `a` to the Kummer class of `a`. -/
+theorem kummerIso_mk (hn : IsUnit (n : K)) (a : Kˣ) :
+    kummerIso K n hn (QuotientGroup.mk a) = kummerMap K n hn a := by
+  rw [kummerIso_apply, kummerClassMap_mk]
 
 end TauCeti

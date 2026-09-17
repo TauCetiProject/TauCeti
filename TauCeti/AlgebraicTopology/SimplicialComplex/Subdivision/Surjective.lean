@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Data.Fin.Tuple.Sort
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Realization
 
 /-!
@@ -17,8 +18,9 @@ inverse coordinates explicitly: order the nonzero barycentric coordinates of a p
 take the nested initial segments in that order, and express the point as a convex combination of
 their barycenters.
 
-This is the first bijectivity step in the subdivision-realization milestone in Layer 11 of the
-geometric topology roadmap. `Subdivision.Injective` proves injectivity, and
+Ties in the ordering do not affect the resulting point: a prefix ending inside a block of equal
+coordinates has weight zero, while a prefix ending at the end of that block contains the same
+vertices in any tie order. `Subdivision.Injective` proves injectivity, and
 `Subdivision.Homeomorph` proves continuity of the inverse.
 
 The construction follows Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2,
@@ -348,37 +350,22 @@ theorem continuous_orderedSubdivisionPoint {K : AbstractSimplicialComplex ι} {�
 
 end BarycentricSubdivision
 
-@[instance_reducible]
-private noncomputable def carrierLinearOrder {K : AbstractSimplicialComplex ι}
-    (x : Realization K) : LinearOrder {v // v ∈ (carrier K x).1} :=
-  LinearOrder.lift'
-    (fun v => toLex (OrderDual.toDual (x.1 v.1), Fintype.equivFin _ v))
-    (fun _ _ h => (Fintype.equivFin _).injective
-      (congrArg (fun z => (ofLex z).2) h))
-
 /-- The vertices in the carrier of `x`, numbered in decreasing order of their barycentric
 coordinate. An arbitrary finite numbering breaks ties. -/
 private noncomputable def orderedVertex {K : AbstractSimplicialComplex ι} (x : Realization K) :
     Fin (carrier K x).1.card ≃ {v // v ∈ (carrier K x).1} :=
-  let _ := carrierLinearOrder x
-  (Fintype.orderIsoFinOfCardEq _ (by simp)).toEquiv
+  let e : Fin (carrier K x).1.card ≃ {v // v ∈ (carrier K x).1} :=
+    (Fintype.equivFinOfCardEq (by simp)).symm
+  (Tuple.sort (fun i => OrderDual.toDual (x.1 (e i).1))).trans e
 
 private theorem orderedVertex_antitone {K : AbstractSimplicialComplex ι} (x : Realization K)
     {i j : Fin (carrier K x).1.card} (hij : i ≤ j) :
     x.1 (orderedVertex x j).1 ≤ x.1 (orderedVertex x i).1 := by
-  let _ := carrierLinearOrder x
-  have h := (Fintype.orderIsoFinOfCardEq
-    {v // v ∈ (carrier K x).1} (by simp)).monotone hij
-  -- Expose the lexicographic order installed by `carrierLinearOrder` so its first coordinate can
-  -- be read as the reverse order on the barycentric coordinates.
-  change toLex (OrderDual.toDual (x.1 (orderedVertex x i).1),
-      Fintype.equivFin {v // v ∈ (carrier K x).1} (orderedVertex x i)) ≤
-    toLex (OrderDual.toDual (x.1 (orderedVertex x j).1),
-      Fintype.equivFin {v // v ∈ (carrier K x).1} (orderedVertex x j)) at h
-  rw [Prod.Lex.le_iff] at h
-  rcases h with h | h
-  · exact h.le
-  · exact h.1.le
+  let e : Fin (carrier K x).1.card ≃ {v // v ∈ (carrier K x).1} :=
+    (Fintype.equivFinOfCardEq (by simp)).symm
+  simpa only [orderedVertex, Equiv.trans_apply, Function.comp_apply,
+    OrderDual.toDual_le_toDual, e] using
+    Tuple.monotone_sort (fun i => OrderDual.toDual (x.1 (e i).1)) hij
 
 private theorem sum_orderedVertex {K : AbstractSimplicialComplex ι} (x : Realization K)
     (g : ι → ℝ) :

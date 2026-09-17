@@ -94,6 +94,7 @@ jobs:
           python3 scripts/test_profile_workflow.py
           python3 scripts/test_lake_cache_probe.py
           python3 scripts/test_lake_cache_get.py
+          python3 scripts/test_lake_cache_reuse.py
           PYTHONPATH=. python3 scripts/perf/test_perf.py
           PYTHONPATH=scripts python3 scripts/test_claims_access.py
           python3 scripts/test_lint_dot_notation.py
@@ -214,6 +215,12 @@ jobs:
           PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
           PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
         run: bash scripts/lake-cache-get.sh .
+
+      - name: Save verified Lake archive records before building
+        run: python3 scripts/lake_cache_reuse.py snapshot . "$RUNNER_TEMP/lake-cache-reuse.json"
+
+      - name: Lake archive reuse integration tests
+        run: python3 scripts/test_lake_cache_reuse.py --integration
 
       # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
       # The build globs every TauCeti/ module directly, so nothing depends on a root that
@@ -374,7 +381,9 @@ jobs:
           # a staging directory, alongside a copy of the mappings themselves. `lake cache
           # stage` reads no credential and contacts no network.
           lake build >/dev/null
-          lake build --no-build -o .lake/outputs.jsonl
+          python3 scripts/lake_cache_reuse.py reconnect . "$RUNNER_TEMP/lake-cache-reuse.json"
+          # Hash the linked archives themselves, ignoring any old .ltar.hash sidecars.
+          lake build --no-build --rehash -o .lake/outputs.jsonl
           echo "root-package mapping entries: $(wc -l < .lake/outputs.jsonl)"
           lake cache stage .lake/outputs.jsonl "$RUNNER_TEMP/lake-cache-staging"
           # `lake cache put-staged` does not configure the workspace, which is precisely what

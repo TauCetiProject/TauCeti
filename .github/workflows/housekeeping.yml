@@ -35,6 +35,10 @@ jobs:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: TauCetiProject
+          repositories: TauCeti
+          permission-contents: read
+          permission-issues: read
+          permission-pull-requests: write
 
       - uses: actions/checkout@v4
 

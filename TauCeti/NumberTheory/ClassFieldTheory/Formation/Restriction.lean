@@ -321,6 +321,11 @@ def cohomologyRes (T : LayerRestriction small big) (F : Formation G) (n : ℕ) :
     big.H F n ⟶ small.H F n :=
   groupCohomology.map T.galHom (T.repIso F).inv n
 
+/-- Layer restriction is the group-cohomology map for the inclusion of Galois groups,
+with the canonical identification of coefficients. -/
+theorem cohomologyRes_def (T : LayerRestriction small big) (F : Formation G) (n : ℕ) :
+    T.cohomologyRes F n = groupCohomology.map T.galHom (T.repIso F).inv n := (rfl)
+
 /-- **Restricting along the trivial restriction does nothing.** -/
 @[simp]
 theorem cohomologyRes_self {L : NormalLayer G} (T : LayerRestriction L L) (F : Formation G)
