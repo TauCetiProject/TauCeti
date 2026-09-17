@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia
 public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Basic
+import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Decomposition-group orbits on cosets and the primes of a fixed field
@@ -118,14 +119,6 @@ theorem primesOverOfCoset_surjective [IsGalois K M] :
   exact ⟨((σ⁻¹ : M ≃ₐ[K] M) : (M ≃ₐ[K] M) ⧸ H),
     Subtype.ext (by rw [coe_primesOverOfCoset_mk, inv_inv]; exact hσ)⟩
 
-omit [NumberField K] [NumberField M] in
-/-- The stabilizer in `Gal(M/K)` of the coset `τ H` is the conjugate `τ H τ⁻¹`. -/
-theorem stabilizer_coset_eq_map_conj (τ : M ≃ₐ[K] M) :
-    stabilizer (M ≃ₐ[K] M) (τ : (M ≃ₐ[K] M) ⧸ H) = H.map (MulAut.conj τ).toMonoidHom := by
-  rw [show (τ : (M ≃ₐ[K] M) ⧸ H) = τ • ((1 : M ≃ₐ[K] M) : (M ≃ₐ[K] M) ⧸ H) by
-      rw [MulAction.Quotient.smul_mk, smul_eq_mul, mul_one],
-    stabilizer_smul_eq_stabilizer_map_conj, MulAction.stabilizer_quotient]
-
 /-- **Orbit sizes are local degrees.** The orbit of the coset `τ H` under the decomposition group
 of `Q` has as many elements as the ramification index times the residue degree of the prime
 `τ⁻¹ Q ∩ 𝓞 (M ^ H)` attached to it. -/
@@ -140,7 +133,7 @@ theorem card_orbit_stabilizer_coset [IsGalois K M] (τ : M ≃ₐ[K] M) :
   congr 1
   ext d
   rw [mem_stabilizer_iff, Subgroup.mem_subgroupOf, MulAction.subgroup_smul_def,
-    ← mem_stabilizer_iff, stabilizer_coset_eq_map_conj]
+    ← mem_stabilizer_iff, TauCeti.stabilizer_quotientGroup_mk]
   rfl
 
 open scoped Classical in
