@@ -34,8 +34,8 @@ objects that description involves and records their elementary theory.
   below it raised to the residue degree.
 * `TauCeti.mem_higherDegreePrimes_iff_not_prime_absNorm`: a height-one prime has residue degree
   above one exactly when its absolute norm is not a prime number.
-* `TauCeti.sq_rationalPrimeBelow_le_absNorm`: such a prime has norm at least the square of the
-  rational prime below it.
+* `TauCeti.rationalPrimeBelow_pow_le_absNorm`: the norm of `𝔭` is at least the rational prime
+  below it raised to any power at most the residue degree.
 * `TauCeti.card_filter_rationalPrimeBelow_le_finrank`: at most `[K : ℚ]` height-one primes have
   a given rational prime below them.
 * `IsDedekindDomain.HeightOneSpectrum.absNorm_dvd_rationalPrimeBelow_pow_finrank`: the absolute
@@ -123,13 +123,16 @@ theorem mem_higherDegreePrimes_iff_not_prime_absNorm {𝔭 : HeightOneSpectrum (
     ← Nat.prime_iff, not_and_or, or_iff_right (not_not_intro (prime_rationalPrimeBelow 𝔭))]
   omega
 
-/-- A prime of residue degree above one has norm at least the square of the rational prime below
-it. -/
-theorem sq_rationalPrimeBelow_le_absNorm {𝔭 : HeightOneSpectrum (𝓞 K)}
-    (h𝔭 : 𝔭 ∈ higherDegreePrimes K) :
-    rationalPrimeBelow 𝔭 ^ 2 ≤ Ideal.absNorm 𝔭.asIdeal := by
-  rw [absNorm_eq_rationalPrimeBelow_pow 𝔭]
-  exact Nat.pow_le_pow_right (prime_rationalPrimeBelow 𝔭).one_lt.le h𝔭
+/-- The absolute norm of a height-one prime is at least the rational prime below it raised to any
+exponent bounded by the residue degree.  The matching bound from above is the divisibility
+`IsDedekindDomain.HeightOneSpectrum.absNorm_dvd_rationalPrimeBelow_pow_finrank`.  Use
+`TauCeti.absNorm_eq_rationalPrimeBelow_pow` for the exact value instead, and
+`TauCeti.mem_higherDegreePrimes` to supply the hypothesis at the common instance `n = 2`. -/
+theorem rationalPrimeBelow_pow_le_absNorm {𝔭 : HeightOneSpectrum (𝓞 K)} {n : ℕ}
+    (hn : n ≤ Ideal.inertiaDeg 𝔭.asIdeal ℤ) : rationalPrimeBelow 𝔭 ^ n ≤ Ideal.absNorm 𝔭.asIdeal :=
+  -- the norm is `p ^ f`, and `p` is at least `2`, so the power is monotone in the exponent
+  absNorm_eq_rationalPrimeBelow_pow 𝔭 ▸
+    Nat.pow_le_pow_right (prime_rationalPrimeBelow 𝔭).one_lt.le hn
 
 /-! ### Fibring the primes over the rational primes below them -/
 

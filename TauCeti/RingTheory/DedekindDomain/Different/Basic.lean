@@ -12,10 +12,12 @@ public import Mathlib.RingTheory.DedekindDomain.Different
 
 This file supplies general lemmas about trace-dual fractional ideals. The coercion result connects
 the fractional-ideal and submodule trace duals, allowing submodule results such as localization to
-be transferred to fractional ideals. The identity-extension trace-dual theorem gives the unit
-different, which is used to compute the relative discriminant of the identity extension. The
-trace criterion `TauCeti.dvd_differentIdeal_iff_forall_intTrace_mem` decides when an ideal `I`
-with `I * Q = p · B` divides the different ideal of an extension of Dedekind domains.
+be transferred to fractional ideals. The elementwise description of the trace dual of `S` as the
+inverse of the different ideal is what reads the different off valuations. The identity-extension
+trace-dual theorem gives the unit different, which is used to compute the relative discriminant of
+the identity extension. The trace criterion `TauCeti.dvd_differentIdeal_iff_forall_intTrace_mem`
+decides when an ideal `I` with `I * Q = p · B` divides the different ideal of an extension of
+Dedekind domains.
 -/
 
 public section
@@ -55,6 +57,23 @@ theorem coe_dual_one_of_isDomain [IsDomain S] :
   rfl
 
 end FractionalIdeal
+
+/-- **The trace dual of `S` is the inverse of the different ideal, elementwise**: an element of
+`L` has integral traces against `S` exactly when it multiplies the different ideal of `S / R`
+into `S`. -/
+theorem mem_traceDual_one_iff_forall_mem_differentIdeal [IsDedekindDomain S]
+    [IsTorsionFree R S] {x : L} :
+    x ∈ Submodule.traceDual R K (1 : Submodule S L) ↔
+      ∀ y ∈ differentIdeal R S, x * algebraMap S L y ∈ (1 : Submodule S L) := by
+  rw [← FractionalIdeal.coe_dual_one (A := R) (K := K), FractionalIdeal.mem_coe,
+    ← inv_inv (FractionalIdeal.dual R K _),
+    FractionalIdeal.mem_inv_iff (inv_ne_zero (FractionalIdeal.dual_ne_zero R K one_ne_zero)),
+    ← coeIdeal_differentIdeal (A := R) (K := K) (L := L)]
+  refine ⟨fun h y hy ↦ ?_, fun h w hw ↦ ?_⟩
+  · exact Submodule.mem_one.mpr
+      ((FractionalIdeal.mem_one_iff _).mp (h _ (FractionalIdeal.mem_coeIdeal_of_mem _ hy)))
+  · obtain ⟨y, hy, rfl⟩ := (FractionalIdeal.mem_coeIdeal _).mp hw
+    exact (FractionalIdeal.mem_one_iff _).mpr (Submodule.mem_one.mp (h y hy))
 
 section TraceCriterion
 
@@ -104,7 +123,6 @@ theorem dvd_differentIdeal_iff_forall_intTrace_mem
     exact ⟨Algebra.intTrace A B z, htr z hz, rfl⟩
   rwa [mul_comm, ← smul_eq_mul, ← map_smul, Algebra.smul_def, mul_comm,
     ← IsScalarTower.algebraMap_apply, IsScalarTower.algebraMap_apply A B L, ← hz']
-
 
 end TraceCriterion
 

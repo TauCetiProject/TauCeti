@@ -38,9 +38,8 @@ theorem discr_atFinitePlace (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate
     letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
     letI : Invertible (2 : place.adicCompletion K) :=
       (Invertible.map (algebraMap K (place.adicCompletion K)) 2).copy 2 (map_ofNat _ _).symm
-    let hQv : (atFinitePlace Q place).Nondegenerate := by
-      rw [atFinitePlace_def]
-      exact QuadraticForm.Nondegenerate.baseChange hQ
+    let hQv : (atFinitePlace Q place).Nondegenerate :=
+      QuadraticForm.Nondegenerate.atFinitePlace hQ place
     TauCeti.RegularFormClass.discr (TauCeti.formClass (atFinitePlace Q place) hQv) =
       (algebraMap K (place.adicCompletion K)).squareClassMap
         (TauCeti.RegularFormClass.discr (TauCeti.formClass Q hQ)) := by
@@ -56,10 +55,8 @@ discriminant under the place's real embedding. -/
 theorem discr_atRealPlace (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
     (place : {w : InfinitePlace K // w.IsReal}) :
     letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-    let hQw : (atRealPlace Q place).Nondegenerate := by
-      let _ : Algebra K ℝ := (embedding_of_isReal place.2).toAlgebra
-      rw [atRealPlace_def]
-      exact QuadraticForm.Nondegenerate.baseChange hQ
+    let hQw : (atRealPlace Q place).Nondegenerate :=
+      QuadraticForm.Nondegenerate.atRealPlace hQ place
     TauCeti.RegularFormClass.discr (TauCeti.formClass (atRealPlace Q place) hQw) =
       (embedding_of_isReal place.2).squareClassMap
         (TauCeti.RegularFormClass.discr (TauCeti.formClass Q hQ)) := by
@@ -75,10 +72,8 @@ global discriminant. -/
 theorem discr_atComplexEmbedding (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
     (place : InfinitePlace K) :
     letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-    let hQw : (atComplexEmbedding Q place).Nondegenerate := by
-      let _ : Algebra K ℂ := place.embedding.toAlgebra
-      rw [atComplexEmbedding_def]
-      exact QuadraticForm.Nondegenerate.baseChange hQ
+    let hQw : (atComplexEmbedding Q place).Nondegenerate :=
+      QuadraticForm.Nondegenerate.atComplexEmbedding hQ place
     TauCeti.RegularFormClass.discr (TauCeti.formClass (atComplexEmbedding Q place) hQw) =
       place.embedding.squareClassMap
         (TauCeti.RegularFormClass.discr (TauCeti.formClass Q hQ)) := by

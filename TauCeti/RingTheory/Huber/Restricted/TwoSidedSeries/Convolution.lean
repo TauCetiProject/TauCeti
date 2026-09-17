@@ -24,8 +24,8 @@ open additive subgroup, only finitely many pairs contribute, hence only their fi
 can contribute.
 
 This supplies the analytic part of multiplication on Wedhorn's `A⟨X, X⁻¹⟩` (Example 6.39).
-This module constructs the bilinear convolution but does not establish a multiplicative unit or
-associativity.
+This module constructs the bilinear convolution; the unit and the ring structure are built in
+`TauCeti.RingTheory.Huber.Restricted.TwoSidedSeries.Ring`.
 
 ## Main results
 

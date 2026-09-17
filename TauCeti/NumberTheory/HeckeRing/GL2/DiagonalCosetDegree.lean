@@ -127,7 +127,7 @@ private lemma natDiagGL_conj_relIndex_eq_Gamma0_index (N : ℕ) (a : Fin 2 → �
   have h_gamma0_iff : ∀ σ : SL(2, ℤ),
       σ ∈ Gamma0 N ↔ α⁻¹ * f σ * α ∈ H := by
     intro σ
-    rw [Gamma0_mem, ZMod.intCast_zmod_eq_zero_iff_dvd]
+    rw [mem_Gamma0_iff_dvd]
     exact ⟨conj_natDiagGL_mem_of_dvd N a ha h_ratio h_dvd_a σ,
            dvd_of_conj_natDiagGL_mem N a ha h_ratio h_dvd_a σ⟩
   have h_inf_eq : (ConjAct.toConjAct α • H) ⊓ H = Subgroup.map f (Gamma0 N) := by

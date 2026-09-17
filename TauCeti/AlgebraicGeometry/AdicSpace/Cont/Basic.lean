@@ -173,20 +173,12 @@ section SeparatelyContinuousAdd
 
 variable [SeparatelyContinuousAdd A]
 
-/-- The support of every continuous valuation contains the closure of zero. -/
+/-- The support of every continuous valuation contains the closure of zero. This is the set-level
+form, needing only separately continuous addition; over a topological ring,
+`closure_zero_le_supp_of_isContinuous` states it for the ideal `Ideal.closure ⊥`. -/
 theorem closure_zero_subset_supp_of_isContinuous {v : Spv A} (hv : v.IsContinuous) :
-    closure ({0} : Set A) ⊆ v.supp := by
-  intro x hx
-  rw [v.supp_eq_valuation_supp]
-  apply (v.valuation.mem_supp_iff x).mpr
-  by_contra hx0
-  have hball := ((isContinuous_def v).mp hv).sub_lt_mem_nhds x hx0
-  obtain ⟨y, hyball, hy⟩ := mem_closure_iff_nhds.mp hx _ hball
-  rw [Set.mem_singleton_iff] at hy
-  subst y
-  simp only [Set.mem_ofPred_eq] at hyball
-  rw [zero_sub, v.valuation.map_neg] at hyball
-  exact (lt_irrefl _ hyball)
+    closure ({0} : Set A) ⊆ v.supp :=
+  closure_minimal (by simp) <| v.supp_eq_valuation_supp ▸ isClosed_supp_of_isContinuous hv
 
 /-- **The `1 ∈ closure {0} → Cont A = ∅` half of Wedhorn Proposition 7.49(1).** If `1 ∈ closure {0}`
 in a commutative ring `A` with separately continuous addition, then `Cont A = ∅`. -/

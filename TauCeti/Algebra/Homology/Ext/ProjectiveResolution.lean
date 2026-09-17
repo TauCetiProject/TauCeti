@@ -6,10 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Linear
+public import Mathlib.CategoryTheory.Abelian.Ext
 public import Mathlib.CategoryTheory.Abelian.Projective.Ext
+public import TauCeti.Algebra.Homology.Opposite
 
 /-!
-# `Ext` out of a resolution whose `Hom`-complex has zero differentials
+# Computing `Ext` from projective resolutions
+
+Mathlib's `CategoryTheory.ProjectiveResolution.isoExt` computes `Extⁿ(X, Y)` from any projective
+resolution `P` of `X`. When two resolutions of `X` are related by a chain map lying over the
+identity of `X`, `isoExt_hom_comp_homologyMap` identifies the resulting computations.
 
 Mathlib computes `Extⁿ(X, Y)` from a projective resolution `R` of `X` as the `n`-th cohomology of
 the complex `Hom(R, Y)`: `CategoryTheory.ProjectiveResolution.extMk` builds a class from a cocycle,
@@ -30,11 +36,16 @@ Degree `0` is deliberately excluded: there `Ext⁰(X, Y)` is `Hom(X, Y)`, which 
 * `CategoryTheory.ProjectiveResolution.extLinearEquiv`: the linear equivalence
   `Hom(Rₙ₊₁, Y) ≃ₗ Extⁿ⁺¹(X, Y)`, sending `f` to its class.
 
+## Main results
+
+* `CategoryTheory.ProjectiveResolution.isoExt_hom_comp_homologyMap`: computing `Ext` from two
+  resolutions related by a chain map agrees with the induced map on cohomology.
+
 ## References
 
 * Charles A. Weibel, *An Introduction to Homological Algebra*, Cambridge Studies in Advanced
-  Mathematics 38, Cambridge University Press (1994), Section 2.5, for `Ext` computed from a
-  projective resolution.
+  Mathematics 38, Cambridge University Press (1994), Sections 2.2 and 2.4, for independence of
+  `Ext` from the resolution, and Section 2.5, for `Ext` computed from a projective resolution.
 -/
 
 public section
@@ -42,6 +53,37 @@ public section
 namespace CategoryTheory.ProjectiveResolution
 
 open CategoryTheory.Abelian
+
+section Comparison
+
+variable {R : Type*} [Ring R] {D : Type*} [Category* D] [Abelian D] [Linear R D]
+  [EnoughProjectives D]
+
+/-- **`Ext` computed from two resolutions related by a chain map.** If `φ : P ⟶ Q` is a chain map
+between projective resolutions of `X` lying over the identity of `X`, then computing `Extⁿ(X, Y)`
+from `Q` and precomposing with `φ` gives the computation from `P`. -/
+theorem isoExt_hom_comp_homologyMap {X : D} (P Q : ProjectiveResolution X)
+    (φ : P.complex ⟶ Q.complex) (comm : φ.f 0 ≫ Q.π.f 0 = P.π.f 0) (n : ℕ) (Y : D) :
+    (Q.isoExt n Y).hom ≫ HomologicalComplex.homologyMap
+      ((HomologicalComplex.unopFunctor _ _).map
+        ((((linearYoneda R D).obj Y).rightOp.mapHomologicalComplex _).map φ).op) n =
+      (P.isoExt n Y).hom := by
+  have h := isoLeftDerivedObj_hom_naturality (𝟙 X) P Q φ
+    (comm.trans (Category.comp_id _).symm) ((linearYoneda R D).obj Y).rightOp n
+  rw [CategoryTheory.Functor.map_id, Category.id_comp] at h
+  have hP := congrArg Quiver.Hom.unop ((Iso.comp_inv_eq _).2 ((Iso.eq_inv_comp _).2 h.symm))
+  have hn := TauCeti.HomologicalComplex.homologyUnop_inv_naturality
+    ((((linearYoneda R D).obj Y).rightOp.mapHomologicalComplex _).map φ) n
+  -- `isoExt` is by definition the inverse of `isoLeftDerivedObj`, unopposed, followed by the
+  -- inverse of `homologyUnop`; its two constituents are what the two naturality squares govern.
+  have e : (Q.isoExt n Y).hom =
+      (Q.isoLeftDerivedObj ((linearYoneda R D).obj Y).rightOp n).inv.unop ≫
+        (HomologicalComplex.homologyUnop _ n).inv := rfl
+  rw [e]
+  exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) hn.symm).trans
+    ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hP)))
+
+end Comparison
 
 universe w v u t
 
