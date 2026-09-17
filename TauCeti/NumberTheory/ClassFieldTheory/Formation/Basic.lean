@@ -52,6 +52,8 @@ as `Kˣ` enters through an `Additive` adapter.
 * `TauCeti.ClassFieldTheory.NormalLayer.H`, `TateH`, `TrivialTateH`: the ordinary and Tate
   cohomology carriers of the layer, in the coefficient module `A^V` and in trivial integral
   coefficients.
+* `TauCeti.ClassFieldTheory.NormalLayer.tateHIsoH`: the identification of positive-degree Tate
+  cohomology of the layer with its ordinary cohomology.
 * `TauCeti.ClassFieldTheory.NormalLayer.norm`, `normSubgroup`, `NormQuotient`, `normQuotientMk`:
   the norm of the layer, its image, the norm quotient and the quotient map onto it.
 
@@ -369,6 +371,18 @@ abbrev TateH (r : ℤ) : ModuleCat ℤ := tateCohomology (L.rep F) r
 group `H^r(U/V, ℤ)`. Its degree `-2` is the abelianization of the Galois group of the layer, and
 the Artin map of a class formation is a cup product between this carrier and `TateH`. -/
 abbrev TrivialTateH (r : ℤ) : ModuleCat ℤ := tateCohomology (Rep.trivial ℤ L.Gal ℤ) r
+
+/-- **In positive degrees the Tate cohomology of a finite normal layer is its ordinary
+cohomology.** This is Mathlib's comparison `TateCohomology.isoGroupCohomology`, stated between the
+carriers `TateH` and `H` of the layer, so that it composes with maps between those carriers. -/
+def tateHIsoH (r : ℕ) [NeZero r] : L.TateH F r ≅ L.H F r :=
+  (TateCohomology.isoGroupCohomology r).app (L.rep F)
+
+/-- The identification of positive-degree Tate cohomology of a layer with its ordinary cohomology
+is Mathlib's comparison isomorphism at the coefficient module of the layer. -/
+theorem tateHIsoH_def (r : ℕ) [NeZero r] :
+    L.tateHIsoH F r = (TateCohomology.isoGroupCohomology r).app (L.rep F) :=
+  (rfl)
 
 end Cohomology
 
