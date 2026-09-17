@@ -46,7 +46,7 @@ factor, so the bijection can be evaluated on a concrete example.
   residue degree is the degree of the factor.
 * `TauCeti.KummerDedekind.ramificationIdx_primesOverEquivNormalizedFactorsMinPolyMk_symm_apply`:
   its ramification index is the multiplicity of the factor in `minpoly R x` modulo `p`.
-* `TauCeti.KummerDedekind.irreducible_map_iff_irreducible_minpoly`: `p` stays prime in `S`
+* `TauCeti.KummerDedekind.Ideal.irreducible_map_iff_irreducible_minpoly`: `p` stays prime in `S`
   exactly when `minpoly R x` is irreducible modulo `p`.
 
 ## Provenance
@@ -198,6 +198,8 @@ theorem ramificationIdx_primesOverEquivNormalizedFactorsMinPolyMk_symm_apply {d 
   exact congrArg Subtype.val ((KummerDedekind.normalizedFactorsMapEquivNormalizedFactorsMinPolyMk
     hp hp0 hx hx').apply_symm_apply ⟨d, hd⟩)
 
+namespace Ideal
+
 omit hp0 in
 open scoped Classical in
 /-- **The converse of `Ideal.irreducible_map_of_irreducible_minpoly`.** If `p S` is irreducible,
@@ -234,6 +236,8 @@ theorem irreducible_map_iff_irreducible_minpoly :
       Irreducible ((minpoly R x).map (Ideal.Quotient.mk p)) :=
   ⟨irreducible_minpoly_of_irreducible_map hp hx hx',
     KummerDedekind.Ideal.irreducible_map_of_irreducible_minpoly hp hp0 hx hx'⟩
+
+end Ideal
 
 end KummerDedekind
 
