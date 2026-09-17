@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative
 public import TauCeti.AlgebraicTopology.Singular.Relative
 public import TauCeti.CategoryTheory.Abelian.DiagramLemmas.CokernelComp
 public import TauCeti.Topology.Category.TopTriple
@@ -53,8 +54,7 @@ lemma singularChainComplexπ_comp_innerToTotal :
       SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R ≫
         (totalPair.obj T).singularChainComplexπ R := by
   rw [← innerToTotal_app_fst]
-  exact (((SSetPair.chainComplexFunctorπ C).app R).naturality
-    (TopPair.toSSetPair.map (innerToTotal.app T))).symm
+  exact SSetPair.chainComplexπ_naturality (TopPair.toSSetPair.map (innerToTotal.app T)) R
 
 @[reassoc]
 lemma singularChainComplexπ_comp_totalToOuter :
@@ -63,14 +63,14 @@ lemma singularChainComplexπ_comp_totalToOuter :
       (outerPair.obj T).singularChainComplexπ R := by
   -- The map of pairs `(X, B) ⟶ (X, A)` is the identity on the ambient space `X`, so the map
   -- it induces on the chains of that ambient space is the identity.
-  have key : ((SSetPair.chainComplexFunctorRight C).obj R).map
-      (TopPair.toSSetPair.map (totalToOuter.app T)) = 𝟙 _ := by
+  have key :
+      SSet.chainComplexMap (TopPair.toSSetPair.map (totalToOuter.app T)).right R = 𝟙 _ := by
     have h : TopCat.toSSet.map (TopPair.Hom.fst (totalToOuter.app T)) = 𝟙 _ := by
       rw [totalToOuter_app_fst, TopCat.toSSet.map_id]
     exact (congrArg (((SSet.chainComplexFunctor C).obj R).map) h).trans
       (((SSet.chainComplexFunctor C).obj R).map_id _)
-  refine (((SSetPair.chainComplexFunctorπ C).app R).naturality
-    (TopPair.toSSetPair.map (totalToOuter.app T))).symm.trans ?_
+  refine (SSetPair.chainComplexπ_naturality
+    (TopPair.toSSetPair.map (totalToOuter.app T)) R).trans ?_
   rw [key]
   -- `Category.id_comp` is applied as a term because the two ambient simplicial sets it
   -- identifies are definitionally, but not syntactically, equal.
