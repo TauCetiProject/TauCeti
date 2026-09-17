@@ -40,6 +40,9 @@ Equality requires descent of an arbitrary radical candidate over `K` and is not 
   solvable-radical candidates.
 * `TauCeti.FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_baseChange_le`: the base-changed
   solvable radical is contained in the radical after base change.
+* `TauCeti.FiniteTypeCommHopfAlgCat.
+    solvableRadicalDefiningIdeal_eq_augmentation_of_baseChange_eq_augmentation`: triviality of
+  the solvable radical after a field extension descends to the ground field.
 
 ## References
 
@@ -101,6 +104,21 @@ theorem solvableRadicalDefiningIdeal_baseChange_le
   solvableRadicalDefiningIdeal_le _ _
     (HopfIdeal.IsSolvableRadicalCandidate.baseChange
       (isSolvableRadicalCandidate_solvableRadicalDefiningIdeal H))
+
+/-- Triviality of the solvable radical after base change to a field extension descends to the
+ground field. -/
+theorem solvableRadicalDefiningIdeal_eq_augmentation_of_baseChange_eq_augmentation
+    {H : FiniteTypeCommHopfAlgCat.{u, u} k}
+    (hgeometric :
+      solvableRadicalDefiningIdeal (baseChange (K := K) H) =
+        HopfIdeal.augmentation K (baseChange (K := K) H)) :
+    solvableRadicalDefiningIdeal H = HopfIdeal.augmentation k H := by
+  apply CommHopfAlgCat.baseChangeHopfIdeal_injective (K := K)
+  rw [CommHopfAlgCat.baseChangeHopfIdeal_augmentation]
+  apply le_antisymm
+  · exact HopfIdeal.le_augmentation K _ _
+  · rw [← hgeometric]
+    exact solvableRadicalDefiningIdeal_baseChange_le H
 
 end FiniteTypeCommHopfAlgCat
 

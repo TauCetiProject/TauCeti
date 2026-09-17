@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Construction
+public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.BaseChange
 
 /-!
 # The solvable radical and semisimplicity
@@ -15,11 +15,15 @@ This file connects the solvable-radical construction to the definition of a semi
 finite-type affine group. Semisimplicity is equivalent to smoothness, geometric connectedness,
 and triviality of the solvable radical after base change to an algebraic closure.
 
-## Main declaration
+## Main declarations
 
 * `semisimpleCommHopfAlgProperty_iff_solvableRadicalDefiningIdeal_baseChange_eq_augmentation`:
   semisimplicity is equivalent to smoothness, geometric connectedness, and triviality of the
   geometric solvable radical.
+* `TauCeti.semisimpleCommHopfAlgProperty.solvableRadicalDefiningIdeal_eq_augmentation`: the
+  solvable radical over the ground field of a semisimple group is trivial.
+* `TauCeti.semisimpleCommHopfAlgProperty.eq_augmentation_ground`: every ground-field
+  solvable-radical candidate in a semisimple group is trivial.
 
 ## References
 
@@ -66,6 +70,37 @@ theorem semisimpleCommHopfAlgProperty_iff_solvableRadicalDefiningIdeal_baseChang
     exact (FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_eq_augmentation_iff
       (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H)).mp hradical I
         (HopfIdeal.IsSolvableRadicalCandidate.mk hnormal hIconnected hIsmooth hIsolvable)
+
+namespace semisimpleCommHopfAlgProperty
+
+open FiniteTypeCommHopfAlgCat
+
+variable {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
+
+/-- The solvable radical of a semisimple finite-type affine group over its ground field is the
+identity subgroup.
+
+The definition of semisimplicity makes the radical trivial after extension to an algebraic
+closure. Triviality then descends along that field extension. -/
+theorem solvableRadicalDefiningIdeal_eq_augmentation
+    (hH : semisimpleCommHopfAlgProperty k H) :
+    FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal H =
+      HopfIdeal.augmentation k H :=
+  solvableRadicalDefiningIdeal_eq_augmentation_of_baseChange_eq_augmentation
+    ((semisimpleCommHopfAlgProperty_iff_solvableRadicalDefiningIdeal_baseChange_eq_augmentation
+      k H).mp hH |>.2.2)
+
+/-- Every connected normal smooth solvable closed subgroup of a semisimple group which is
+defined over the ground field is trivial. -/
+theorem eq_augmentation_ground
+    (hH : semisimpleCommHopfAlgProperty k H) (I : HopfIdeal k H)
+    (hI : HopfIdeal.IsSolvableRadicalCandidate H I) :
+    I = HopfIdeal.augmentation k H := by
+  apply le_antisymm (HopfIdeal.le_augmentation k H I)
+  rw [← hH.solvableRadicalDefiningIdeal_eq_augmentation]
+  exact FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_le H I hI
+
+end semisimpleCommHopfAlgProperty
 
 end
 
