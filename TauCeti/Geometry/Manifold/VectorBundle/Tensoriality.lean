@@ -78,23 +78,7 @@ theorem eq_of_contMDiff_tensorial
     intro y hy
     have hyρ : y ∈ tsupport (ρ : M → ℝ) :=
       (tsupport_mul_subset_left : tsupport (coeff' u i) ⊆ tsupport (ρ : M → ℝ)) hy
-    -- On the support of the bump function, the local coefficient is the corresponding coordinate
-    -- of the section in the chosen trivialization.
-    have hcoeffAt : ContMDiffAt I 𝓘(ℝ) ∞ (fun z ↦ coeff i z (u z)) y := by
-      let aux := fun z ↦ b.repr (t ((T% u) z)).2 i
-      have htriv : CMDiffAt ∞ (fun z ↦ (t ((T% u) z)).2) y := by
-        simpa using (t.contMDiffAt_section_iff (hρt hyρ)).1 (hu y)
-      let breprl : G →L[ℝ] ℝ :=
-        LinearMap.toContinuousLinearMap
-          { toFun := fun v ↦ b.repr v i
-            map_add' := fun v w ↦ by simp
-            map_smul' := fun c v ↦ by simp }
-      have haux : ContMDiffAt I 𝓘(ℝ) ∞ aux y := by
-        exact (contMDiffAt_iff_contDiffAt.mpr (by fun_prop : ContDiffAt ℝ ∞ breprl _)).comp y htriv
-      refine haux.congr_of_eventuallyEq ?_
-      filter_upwards [t.open_baseSet.mem_nhds (hρt hyρ)] with z hz
-      simp [aux, coeff, t.localFrameCoeff_eq_coeff hz]
-    exact ρ.contMDiffAt.mul hcoeffAt
+    exact ρ.contMDiffAt.mul (contMDiffAt_localFrameCoeff b (hρt hyρ) (hu y) i)
   have hexpansion (u : Π x : M, W x) (hu : CMDiff ∞ (T% u)) :
       CMDiff ∞ (T% (expansion u)) := by
     simpa only [expansion, Finset.sum_apply] using
