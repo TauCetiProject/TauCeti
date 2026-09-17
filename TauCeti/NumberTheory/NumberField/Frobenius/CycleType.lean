@@ -63,12 +63,13 @@ namespace TauCeti.NumberField
 
 variable {M : Type*} [Field M] [NumberField M] {f : ℤ[X]} {p : ℕ} [Fact p.Prime]
 
+open scoped Classical in
 /-- **Dedekind's theorem.** Let `f` be a monic integer polynomial which is squarefree modulo the
 prime `p`, and let `M` be a number field in which `f` splits. If `σ ∈ Gal(M/ℚ)` is an arithmetic
 Frobenius at a prime `Q` of `𝓞 M` over `p`, then the permutation of the roots of `f` in `M`
 induced by `σ` has, counting fixed points, cycle lengths the degrees of the irreducible factors
 of `f` modulo `p`, with multiplicity. -/
-theorem fullCycleType_galActionHom_restrict_eq_factorDegrees [DecidableEq M] (hf : f.Monic)
+theorem fullCycleType_galActionHom_restrict_eq_factorDegrees (hf : f.Monic)
     (hsq : Squarefree (f.map (Int.castRingHom (ZMod p))))
     [Fact (((f.map (Int.castRingHom ℚ)).map (algebraMap ℚ M)).Splits)]
     (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
@@ -96,7 +97,9 @@ theorem fullCycleType_galActionHom_restrict_eq_factorDegrees [DecidableEq M] (hf
     splits_and_exists_rootSet_equiv_of_squarefree_map_zmod hf hsq Fact.out (Ideal.Quotient.mk Q)
   have : Fact _ := ⟨hsplit⟩
   rw [factorDegrees_def, ← Equiv.Perm.fullCycleType_permCongr e]
-  refine FiniteField.fullCycleType_eq_map_natDegree_normalizedFactors _ hsq _ fun z => ?_
+  -- Match the concrete `ZMod` decision procedure with the classical one in the finite-field API.
+  rw [show ZMod.decidableEq p = Classical.decEq (ZMod p) from Subsingleton.elim _ _]
+  refine FiniteField.fullCycleType_eq_map_natDegree_normalizedFactors (𝓞 M ⧸ Q) hsq _ fun z => ?_
   obtain ⟨x, rfl⟩ := e.surjective z
   have hx : IsIntegral ℤ (x : M) := ⟨f, hf, by
     have h := aeval_eq_zero_of_mem_rootSet x.2
@@ -112,6 +115,7 @@ theorem fullCycleType_galActionHom_restrict_eq_factorDegrees [DecidableEq M] (hf
   have h := hσ y
   rwa [← LiesOver.over (P := Q) (p := span {(p : ℤ)}), Int.card_ideal_quot] at h
 
+open scoped Classical in
 /-- **Dedekind's theorem for a generator.** Let `θ` be an algebraic integer of a number field `K`
 whose minimal polynomial is squarefree modulo the prime `p`, and let `M` be a number field in which
 the minimal polynomial of `θ` splits. If `σ ∈ Gal(M/ℚ)` is an arithmetic Frobenius at a prime `Q`
@@ -119,7 +123,7 @@ of `𝓞 M` over `p`, then the permutation of the roots of `minpoly ℚ θ` in `
 counting fixed points, cycle lengths the degrees of the monic irreducible factors
 `RingOfIntegers.monicFactorsMod θ p` of `minpoly ℤ θ` modulo `p`. -/
 theorem fullCycleType_galActionHom_restrict_minpoly_eq_map_natDegree_monicFactorsMod
-    [DecidableEq M] {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
+    {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
     (hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p))))
     [Fact (((minpoly ℚ (θ : K)).map (algebraMap ℚ M)).Splits)]
     (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]

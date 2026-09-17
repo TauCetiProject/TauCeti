@@ -97,13 +97,14 @@ private theorem sameCycle_iff_minpoly_eq {π : Equiv.Perm (g.rootSet E)}
   obtain ⟨n, rfl⟩ := h.exists_nat_pow_eq
   exact ⟨n, (hpow n x).symm⟩
 
+open scoped Classical in
 /-- **The cycle type of the Frobenius on the roots of a squarefree polynomial is its
 factorization type.** Let `g` be a squarefree polynomial over a finite field `F` with `q`
 elements, split in an algebraic extension `E`. A permutation of the roots of `g` in `E` that acts
 as the `q`-th power map has, counting fixed points, cycle lengths the degrees of the monic
 irreducible factors of `g`. -/
-theorem fullCycleType_eq_map_natDegree_normalizedFactors [DecidableEq F] [DecidableEq E]
-    (hg : Squarefree g) (π : Equiv.Perm (g.rootSet E))
+theorem fullCycleType_eq_map_natDegree_normalizedFactors (hg : Squarefree g)
+    (π : Equiv.Perm (g.rootSet E))
     (hπ : ∀ x, (π x : E) = (x : E) ^ Fintype.card F) :
     π.fullCycleType = (UniqueFactorizationMonoid.normalizedFactors g).map natDegree := by
   classical
