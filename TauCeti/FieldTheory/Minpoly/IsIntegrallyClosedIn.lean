@@ -23,8 +23,8 @@ algebraic closedness puts them back into `k`.
 Consequently, for `E` a field, `F⟮x⟯ / F` and `k⟮x⟯ / k` have the same degree.  This is the
 mechanism behind the degree behaviour of a constant field extension: adjoining constants to `F`
 costs exactly what adjoining them to `k` costs. More strongly, every separable extension
-of `k` inside `E` is linearly disjoint from `F`, so a family of constants linearly independent
-over `k` stays linearly independent over `F`.
+of `k` inside `E` is linearly disjoint from `F`, and a linearly independent family of separable
+constants over `k` stays linearly independent over `F`.
 
 ## Main results
 
@@ -32,10 +32,10 @@ over `k` stays linearly independent over `F`.
   `minpoly k x`.
 * `TauCeti.IntermediateField.finrank_adjoin_simple_eq_finrank_adjoin_simple_of_isIntegrallyClosedIn`
   : `[F⟮x⟯ : F] = [k⟮x⟯ : k]`.
-* `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn`: a separable extension of
+* `TauCeti.IsIntegrallyClosedIn.linearDisjoint_fieldRange`: a separable extension of
   `k` inside a common overfield is linearly disjoint from `F`.
-* `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`: linear independence in that
-  extension persists after extending scalars from `k` to `F`.
+* `TauCeti.IsIntegrallyClosedIn.linearIndependent_algebraMap_comp`: a linearly independent family
+  of separable elements stays linearly independent after extending scalars from `k` to `F`.
 
 ## References
 
@@ -92,7 +92,7 @@ theorem IntermediateField.finrank_adjoin_simple_eq_finrank_adjoin_simple_of_isIn
 
 /-! ### Linear disjointness from a separable extension -/
 
-/-- The finite-dimensional case of `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn`,
+/-- The finite-dimensional case of `TauCeti.IsIntegrallyClosedIn.linearDisjoint_fieldRange`,
 for an intermediate field of `E / k`. -/
 private theorem linearDisjoint_of_isIntegrallyClosedIn_of_finiteDimensional
     (hex : IsIntegrallyClosedIn k F) (K : IntermediateField k E) [FiniteDimensional k K]
@@ -116,13 +116,15 @@ private theorem linearDisjoint_of_isIntegrallyClosedIn_of_finiteDimensional
 variable {k' : Type*} [Field k'] [Algebra k k'] [Algebra k' E]
 variable [IsScalarTower k k' E]
 
+namespace IsIntegrallyClosedIn
+
 /-- A separable extension `k'` of a relatively algebraically closed field `k` is linearly
 disjoint from `F` inside any common overfield `E`.
 
 Consequently the compositum of `F` and `k'` inside `E` behaves like `F ⊗[k] k'`: for finite
 `k' / k` it has degree `[k' : k]` over `F`. This is the field-theoretic content of Stichtenoth,
 Proposition 3.6.1(b), for separable constant field extensions. -/
-theorem linearDisjoint_fieldRange_of_isIntegrallyClosedIn
+theorem linearDisjoint_fieldRange
     (hex : IsIntegrallyClosedIn k F) [Algebra.IsSeparable k k'] :
     (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F := by
   set K := (IsScalarTower.toAlgHom k k' E).fieldRange
@@ -147,20 +149,39 @@ theorem linearDisjoint_fieldRange_of_isIntegrallyClosedIn
   ext i
   simp only [Function.comp_apply, IntermediateField.coe_val, v]
 
-/-- A linearly independent family in a separable extension of a relatively algebraically closed
+/-- A linearly independent family of separable elements over a relatively algebraically closed
 field `k` remains linearly independent after extending scalars to `F` inside a common overfield.
 
 For an algebraic function field and a separable constant field extension, this is Stichtenoth,
 Proposition 3.6.1(b). -/
-theorem linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn
-    (hex : IsIntegrallyClosedIn k F) [Algebra.IsSeparable k k']
-    {ι : Type*} {v : ι → k'} (hv : LinearIndependent k v) :
+theorem linearIndependent_algebraMap_comp
+    (hex : IsIntegrallyClosedIn k F) {ι : Type*} {v : ι → k'}
+    (hsep : ∀ i, IsSeparable k (v i)) (hv : LinearIndependent k v) :
     LinearIndependent F (algebraMap k' E ∘ v) := by
-  let e : k' ≃ₐ[k] (IsScalarTower.toAlgHom k k' E).fieldRange :=
-    (IsScalarTower.toAlgHom k k' E).equivFieldRange
-  have he : LinearIndependent k (e ∘ v) := hv.map' e.toLinearMap e.toLinearEquiv.ker
-  have h := (linearDisjoint_fieldRange_of_isIntegrallyClosedIn hex).linearIndependent_left he
-  simpa [e, Function.comp_def] using h
+  rw [linearIndependent_iff_finset_linearIndependent]
+  intro s
+  let K₀ : IntermediateField k E :=
+    adjoin k (Set.range fun i : s ↦ algebraMap k' E (v i))
+  have : FiniteDimensional k K₀ := finiteDimensional_adjoin fun _ ⟨i, hi⟩ ↦
+    hi ▸ (hsep i).isIntegral.map (IsScalarTower.toAlgHom k k' E)
+  have : Algebra.IsSeparable k K₀ := (isSeparable_adjoin_iff_isSeparable k E).2 <| by
+    rintro _ ⟨i, rfl⟩
+    exact (hsep i).map (IsScalarTower.toAlgHom k k' E) (algebraMap k' E).injective
+  let w : s → K₀ := fun i ↦ ⟨algebraMap k' E (v i), subset_adjoin k _ ⟨i, rfl⟩⟩
+  have hw : LinearIndependent k w := by
+    apply LinearIndependent.of_comp K₀.val.toLinearMap
+    simpa only [Function.comp_apply, w, IntermediateField.coe_val, AlgHom.toLinearMap_apply,
+      IsScalarTower.toAlgHom_apply] using!
+        (hv.comp Subtype.val Subtype.val_injective).map'
+          (IsScalarTower.toAlgHom k k' E).toLinearMap
+          (LinearMap.ker_eq_bot.2 (algebraMap k' E).injective)
+  have h := LinearDisjoint.linearIndependent_left
+    (linearDisjoint_of_isIntegrallyClosedIn_of_finiteDimensional hex K₀) hw
+  convert h using 1
+  ext i
+  rfl
+
+end IsIntegrallyClosedIn
 
 end Field
 
