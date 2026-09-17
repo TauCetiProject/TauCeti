@@ -34,8 +34,13 @@ diagonalizing the sandwich `√S * Θ * √S` writes the cumulant-generating fun
 variance of the statistic; polarization gives covariances, and the symmetrized elementary matrices
 `TauCeti.symmetricEntry i j` recover the entries.
 
-The last section specializes these results to the Gaussian-Gram family `wishartGramMeasure ν S`,
-whose trace transform is `TauCeti.mgf_trace_mul_wishartGramMeasure_sqrt`.
+The last two sections specialize these results to the two Wishart families: the Gaussian-Gram
+family `wishartGramMeasure ν S`, whose trace transform is
+`TauCeti.mgf_trace_mul_wishartGramMeasure_sqrt`, and the nonsingular density family
+`nonsingularWishartMeasure n S`, whose trace transform is
+`TauCeti.mgf_trace_mul_nonsingularWishartMeasure_sqrt`. The Gaussian-Gram family carries a
+natural degree and any scale, while the density family carries a real degree above `p - 1` and a
+positive-definite scale, so neither list of moments subsumes the other.
 
 ## Main results
 
@@ -54,7 +59,10 @@ whose trace transform is `TauCeti.mgf_trace_mul_wishartGramMeasure_sqrt`.
   `TauCeti.covariance_coe_apply_of_mgf_trace_mul_eq_det_rpow` give the Bochner mean and the
   entrywise mean and covariance;
 * `TauCeti.integral_id_wishartGramMeasure`, `TauCeti.covariance_coe_apply_wishartGramMeasure` and
-  their companions specialize all of these to the Gaussian-Gram family.
+  their companions specialize all of these to the Gaussian-Gram family;
+* `TauCeti.integral_id_nonsingularWishartMeasure`,
+  `TauCeti.covariance_coe_apply_nonsingularWishartMeasure` and their companions do the same for
+  the nonsingular density family.
 
 ## References
 
@@ -488,5 +496,110 @@ theorem covariance_coe_apply_wishartGramMeasure (hS : S.PosSemidef) (ν : ℕ)
       (ν : ℝ) * (S i k * S j l + S i l * S j k) :=
   covariance_coe_apply_of_mgf_trace_mul_eq_det_rpow
     (fun _ _ ht => mgf_trace_mul_wishartGramMeasure_sqrt ν S ht) hS i j k l
+
+/-! ### The nonsingular density family -/
+
+section Nonsingular
+
+variable (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
+include hS hn
+
+/-- Every symmetric trace statistic `A ↦ trace (Θ * A)` has finite moments of all orders under a
+nonsingular Wishart law. -/
+theorem memLp_trace_mul_nonsingularWishartMeasure
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (q : ℝ≥0) :
+    MemLp (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+        ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) q
+      (nonsingularWishartMeasure n S) :=
+  memLp_trace_mul_of_mgf_trace_mul_eq_det_rpow
+    (fun _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht) q
+
+/-- Every entry of a nonsingular Wishart matrix has finite moments of all orders. -/
+theorem memLp_coe_apply_nonsingularWishartMeasure (i j : Fin p) (q : ℝ≥0) :
+    MemLp (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+        (A : Matrix (Fin p) (Fin p) ℝ) i j) q (nonsingularWishartMeasure n S) :=
+  memLp_coe_apply_of_mgf_trace_mul_eq_det_rpow
+    (fun _ _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht) i j q
+
+/-- A nonsingular Wishart matrix has finite moments of all orders. -/
+theorem memLp_id_nonsingularWishartMeasure (q : ℝ≥0) :
+    MemLp (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) => A) q
+      (nonsingularWishartMeasure n S) :=
+  memLp_id_of_mgf_trace_mul_eq_det_rpow
+    (fun _ _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht) q
+
+/-- A nonsingular Wishart matrix is integrable. -/
+theorem integrable_id_nonsingularWishartMeasure :
+    Integrable (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) => A)
+      (nonsingularWishartMeasure n S) :=
+  integrable_id_of_mgf_trace_mul_eq_det_rpow
+    (fun _ _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht)
+
+/-- **The mean of a symmetric trace statistic under a nonsingular Wishart law.** The statistic
+`A ↦ trace (Θ * A)` has mean `n * trace (Θ * S)`. -/
+theorem integral_trace_mul_nonsingularWishartMeasure
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    ∫ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
+        ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace
+      ∂nonsingularWishartMeasure n S =
+      n * ((Θ : Matrix (Fin p) (Fin p) ℝ) * S).trace :=
+  integral_trace_mul_of_mgf_trace_mul_eq_det_rpow hS.posSemidef
+    (fun _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht)
+
+/-- **The variance of a symmetric trace statistic under a nonsingular Wishart law.** The statistic
+`A ↦ trace (Θ * A)` has variance `2 * n * trace (Θ * S * Θ * S)`, twice the degree times the trace
+of the square of `Θ * S`. -/
+theorem variance_trace_mul_nonsingularWishartMeasure
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    Var[fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+        ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace;
+      nonsingularWishartMeasure n S] =
+      2 * n * (((Θ : Matrix (Fin p) (Fin p) ℝ) * S * (Θ : Matrix (Fin p) (Fin p) ℝ) * S).trace) :=
+  variance_trace_mul_of_mgf_trace_mul_eq_det_rpow hS.posSemidef
+    (fun _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht)
+
+/-- **The covariance of two symmetric trace statistics under a nonsingular Wishart law.** The
+statistics `A ↦ trace (Θ * A)` and `A ↦ trace (Φ * A)` have covariance
+`2 * n * trace (Θ * S * Φ * S)`. -/
+theorem covariance_trace_mul_nonsingularWishartMeasure
+    (Θ Φ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    cov[fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+          ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace,
+        fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+          ((Φ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace;
+        nonsingularWishartMeasure n S] =
+      2 * n * (((Θ : Matrix (Fin p) (Fin p) ℝ) * S * (Φ : Matrix (Fin p) (Fin p) ℝ) * S).trace) :=
+  covariance_trace_mul_of_mgf_trace_mul_eq_det_rpow hS.posSemidef Θ Φ
+    (fun _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht)
+    (fun _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht)
+    (fun _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht)
+
+/-- **The entrywise mean of a nonsingular Wishart matrix** is `n Sᵢⱼ`. -/
+theorem integral_coe_apply_nonsingularWishartMeasure (i j : Fin p) :
+    ∫ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
+        (A : Matrix (Fin p) (Fin p) ℝ) i j ∂nonsingularWishartMeasure n S = n * S i j :=
+  integral_coe_apply_of_mgf_trace_mul_eq_det_rpow
+    (fun _ _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht) hS.posSemidef i j
+
+/-- **The mean of a nonsingular Wishart matrix** is the degree times its scale matrix. -/
+theorem integral_id_nonsingularWishartMeasure :
+    ∫ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ), A ∂nonsingularWishartMeasure n S =
+      n • (⟨S, Matrix.isHermitian_iff_isSelfAdjoint.1 hS.isHermitian⟩ :
+        selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
+  integral_id_of_mgf_trace_mul_eq_det_rpow
+    (fun _ _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht) hS.posSemidef
+
+/-- **The entrywise covariance of a nonsingular Wishart matrix** is `n (Sᵢₖ Sⱼₗ + Sᵢₗ Sⱼₖ)`. -/
+theorem covariance_coe_apply_nonsingularWishartMeasure (i j k l : Fin p) :
+    cov[fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+          (A : Matrix (Fin p) (Fin p) ℝ) i j,
+        fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+          (A : Matrix (Fin p) (Fin p) ℝ) k l;
+        nonsingularWishartMeasure n S] =
+      n * (S i k * S j l + S i l * S j k) :=
+  covariance_coe_apply_of_mgf_trace_mul_eq_det_rpow
+    (fun _ _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht) hS.posSemidef i j k l
+
+end Nonsingular
 
 end TauCeti
