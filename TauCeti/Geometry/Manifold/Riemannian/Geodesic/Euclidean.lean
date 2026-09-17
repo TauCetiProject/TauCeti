@@ -58,9 +58,16 @@ private theorem leviCivitaConnection_const_apply (u v : F) (x : F) :
     simpa only [C] using
       ((contMDiffAt_vectorSpace_iff_contDiffAt (n := (1 : ℕ∞ω))
         (V := fun _ : F ↦ a)).2 contDiffAt_const).mdifferentiableAt one_ne_zero
-  have hbracket (a b : F) :
-      VectorField.mlieBracket 𝓘(ℝ, F) (C a) (C b) x = 0 := by
-    simpa only [C] using TauCeti.mlieBracket_const_modelSpace a b x
+  -- The inner product of two constant fields is constant, so its differential vanishes.
+  have hinner (a b : F) : d% (fun y : F ↦ inner ℝ (C a y) (C b y)) x = 0 :=
+    mvfderiv_const (I := 𝓘(ℝ, F)) (c := inner ℝ a b)
+  -- Constant fields commute, so every bracket term of the Koszul formula vanishes.
+  have hbracket (a b c : F) :
+      inner ℝ (C a x) (VectorField.mlieBracket 𝓘(ℝ, F) (C b) (C c) x) = 0 := by
+    have h : VectorField.mlieBracket 𝓘(ℝ, F) (C b) (C c) x = 0 := by
+      simpa only [C] using TauCeti.mlieBracket_const_modelSpace b c x
+    rw [h]
+    exact inner_zero_right (𝕜 := ℝ) (C a x)
   let w : F := leviCivitaConnection 𝓘(ℝ, F) F (C v) x (C u x)
   -- `w` abbreviates a tangent vector represented in the model vector space.
   change w = 0
@@ -69,37 +76,7 @@ private theorem leviCivitaConnection_const_apply (u v : F) (x : F) :
   change inner ℝ (leviCivitaConnection 𝓘(ℝ, F) F (C v) x (C u x)) (C w x) = 0
   rw [leviCivitaConnection_apply_inner 𝓘(ℝ, F)
     (X := C u) (Y := C v) (Z := C w) (hconst u) (hconst v) (hconst w)]
-  have hinner (a b : F) :
-      (fun y : F ↦ inner ℝ (C a y) (C b y)) = fun _ ↦ inner ℝ a b := by
-    rfl
-  have h₁ : d% (fun y : F ↦ inner ℝ (C v y) (C w y)) x = 0 := calc
-    d% (fun y : F ↦ inner ℝ (C v y) (C w y)) x =
-        d% (fun _ : F ↦ inner ℝ v w) x := congrArg (fun f : F → ℝ ↦ d% f x) (hinner v w)
-    _ = 0 := mvfderiv_const (I := 𝓘(ℝ, F)) (c := inner ℝ v w)
-  have h₂ : d% (fun y : F ↦ inner ℝ (C w y) (C u y)) x = 0 := calc
-    d% (fun y : F ↦ inner ℝ (C w y) (C u y)) x =
-        d% (fun _ : F ↦ inner ℝ w u) x := congrArg (fun f : F → ℝ ↦ d% f x) (hinner w u)
-    _ = 0 := mvfderiv_const (I := 𝓘(ℝ, F)) (c := inner ℝ w u)
-  have h₃ : d% (fun y : F ↦ inner ℝ (C u y) (C v y)) x = 0 := calc
-    d% (fun y : F ↦ inner ℝ (C u y) (C v y)) x =
-        d% (fun _ : F ↦ inner ℝ u v) x := congrArg (fun f : F → ℝ ↦ d% f x) (hinner u v)
-    _ = 0 := mvfderiv_const (I := 𝓘(ℝ, F)) (c := inner ℝ u v)
-  have hb₁ : inner ℝ (C v x)
-      (VectorField.mlieBracket 𝓘(ℝ, F) (C u) (C w) x) = 0 := by
-    rw [hbracket]
-    exact inner_zero_right (𝕜 := ℝ) (C v x)
-  have hb₂ : inner ℝ (C w x)
-      (VectorField.mlieBracket 𝓘(ℝ, F) (C v) (C u) x) = 0 := by
-    rw [hbracket]
-    exact inner_zero_right (𝕜 := ℝ) (C w x)
-  have hb₃ : inner ℝ (C u x)
-      (VectorField.mlieBracket 𝓘(ℝ, F) (C w) (C v) x) = 0 := by
-    rw [hbracket]
-    exact inner_zero_right (𝕜 := ℝ) (C u x)
-  rw [h₁, h₂, h₃]
-  simp only [zero_apply]
-  rw [hb₁, hb₂, hb₃]
-  norm_num
+  simp [hinner, hbracket]
 
 /-- The Levi-Civita connection of the standard Riemannian metric differentiates a constant vector
 field to zero. -/
@@ -153,49 +130,33 @@ theorem christoffelMap_leviCivita_modelSpace (x : F) :
   simp only [christoffelSymbol_apply, hframe, leviCivitaConnection_const_modelSpace,
     hz, map_zero, zero_smul, Finset.sum_const_zero]
 
-omit [FiniteDimensional ℝ F] in
-private theorem hasDerivAt_add_smul (p v : F) (t : ℝ) :
-    HasDerivAt (fun s : ℝ ↦ p + s • v) v t := by
-  rw [show (fun s : ℝ ↦ p + s • v) =
-    (fun _ : ℝ ↦ p) + fun s : ℝ ↦ s • v by rfl]
-  simpa only [id_eq, zero_add, one_smul] using
-    (hasDerivAt_const t p).add ((hasDerivAt_id t).smul_const v)
+/-- Every affine line in a finite-dimensional real inner-product space is a geodesic for the
+standard Riemannian metric, with its evident initial point and velocity. -/
+theorem isGeodesicCurveOnFrom_add_smul (p v : F) :
+    IsGeodesicCurveOnFrom 𝓘(ℝ, F) (fun t : ℝ ↦ p + t • v) univ p v := by
+  have hline (t : ℝ) : HasDerivAt (fun s : ℝ ↦ p + s • v) v t := by
+    simpa using ((hasDerivAt_id t).smul_const v).const_add p
+  have hderiv : deriv (fun t : ℝ ↦ p + t • v) = fun _ : ℝ ↦ v :=
+    funext fun t ↦ (hline t).deriv
+  refine ⟨?_, mem_univ 0, ?_⟩
+  · rw [isGeodesicCurveOn_iff_chart (I := 𝓘(ℝ, F)) uniqueDiffOn_univ]
+    refine ⟨?_, fun r _ ↦ ?_⟩
+    · rw [contMDiffOn_univ, contMDiff_iff_contDiff]
+      fun_prop
+    · simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, id_comp, derivWithin_univ,
+        hderiv, deriv_const', christoffelMap_leviCivita_modelSpace, zero_apply, add_zero]
+  · apply TotalSpace.ext
+    · simp
+    · refine heq_of_eq ?_
+      rw [curveVelocityWithin_univ, curveVelocity_apply, mfderiv_eq_fderiv]
+      exact (hline 0).deriv
 
 /-- Every affine line in a finite-dimensional real inner-product space is a geodesic for the
 standard Riemannian metric. -/
 theorem isGeodesicCurve_add_smul (p v : F) :
-    IsGeodesicCurve 𝓘(ℝ, F) (fun t : ℝ ↦ p + t • v) := by
-  rw [← isGeodesicCurveOn_univ,
-    isGeodesicCurveOn_iff_chart (I := 𝓘(ℝ, F)) uniqueDiffOn_univ]
-  constructor
-  · rw [contMDiffOn_univ, contMDiff_iff_contDiff]
-    fun_prop
-  · intro r _
-    simp only [extChartAt, OpenPartialHomeomorph.extend, modelWithCornersSelf_partialEquiv,
-      PartialEquiv.trans_refl, PartialHomeomorph.toFun_eq_coe,
-      OpenPartialHomeomorph.coe_toPartialHomeomorph, derivWithin_univ,
-      christoffelMap_leviCivita_modelSpace, zero_apply, add_zero]
-    have hchart : (⇑(chartAt F (p + r • v)) : F → F) = id := by
-      rw [chartAt_self_eq]
-      rfl
-    rw [hchart, id_comp]
-    have hderiv : deriv (fun t : ℝ ↦ p + t • v) = fun _ ↦ v := by
-      funext t
-      exact (hasDerivAt_add_smul p v t).deriv
-    rw [hderiv]
-    rw [deriv_const']
-
-/-- An affine line has its evident initial point and velocity. -/
-theorem isGeodesicCurveOnFrom_add_smul (p v : F) :
-    IsGeodesicCurveOnFrom 𝓘(ℝ, F) (fun t : ℝ ↦ p + t • v) univ p v := by
-  refine ⟨(isGeodesicCurveOn_univ (I := 𝓘(ℝ, F))).2
-    (isGeodesicCurve_add_smul p v), mem_univ 0, ?_⟩
-  have hvelocity : curveVelocityWithin 𝓘(ℝ, F) (fun t : ℝ ↦ p + t • v) univ 0 = v := by
-    rw [curveVelocityWithin_univ, curveVelocity_apply, mfderiv_eq_fderiv]
-    exact (hasDerivAt_add_smul p v 0).deriv
-  apply TotalSpace.ext
-  · simp
-  · exact heq_of_eq hvelocity
+    IsGeodesicCurve 𝓘(ℝ, F) (fun t : ℝ ↦ p + t • v) :=
+  (isGeodesicCurveOn_univ (I := 𝓘(ℝ, F))).1
+    (isGeodesicCurveOnFrom_add_smul p v).isGeodesicCurveOn
 
 /-- Geodesics in a finite-dimensional inner-product space exist for every real parameter. -/
 @[simp]

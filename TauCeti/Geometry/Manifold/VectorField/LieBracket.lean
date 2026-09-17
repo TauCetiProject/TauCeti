@@ -51,27 +51,26 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
 
 namespace TauCeti
 
-/-- Constant vector fields on a real normed vector space have zero manifold Lie bracket. -/
-theorem mlieBracket_const_modelSpace {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (a b x : F) :
-    VectorField.mlieBracket 𝓘(ℝ, F) (fun _ : F ↦ a) (fun _ : F ↦ b) x = 0 := by
-  let A : ∀ y : F, TangentSpace 𝓘(ℝ, F) y := fun _ ↦ a
-  let B : ∀ y : F, TangentSpace 𝓘(ℝ, F) y := fun _ ↦ b
+/-- Constant vector fields on a normed vector space have zero manifold Lie bracket. -/
+theorem mlieBracket_const_modelSpace (a b x : F) :
+    VectorField.mlieBracket 𝓘(𝕜, F) (fun _ : F ↦ a) (fun _ : F ↦ b) x = 0 := by
+  let A : ∀ y : F, TangentSpace 𝓘(𝕜, F) y := fun _ ↦ a
+  let B : ∀ y : F, TangentSpace 𝓘(𝕜, F) y := fun _ ↦ b
   -- The explicit dependent fields expose the model-space representatives needed by the
   -- ordinary Fréchet derivative formula for the Lie bracket.
-  change VectorField.mlieBracket 𝓘(ℝ, F) A B x = 0
+  change VectorField.mlieBracket 𝓘(𝕜, F) A B x = 0
   have h := congrFun (VectorField.mlieBracketWithin_eq_lieBracketWithin
     (V := A) (W := B) (s := Set.univ)) x
   rw [VectorField.mlieBracketWithin_univ] at h
   rw [h]
-  have hA : fderivWithin ℝ A Set.univ x = 0 := by
+  have hA : fderivWithin 𝕜 A Set.univ x = 0 := by
     -- On the model space, `A` is definitionally the ordinary constant map with value `a`.
-    change fderivWithin ℝ (fun _ : F ↦ a) Set.univ x = 0
-    exact fderivWithin_const_apply (𝕜 := ℝ) (E := F) (s := Set.univ) (x := x) a
-  have hB : fderivWithin ℝ B Set.univ x = 0 := by
+    change fderivWithin 𝕜 (fun _ : F ↦ a) Set.univ x = 0
+    exact fderivWithin_const_apply (𝕜 := 𝕜) (E := F) (s := Set.univ) (x := x) a
+  have hB : fderivWithin 𝕜 B Set.univ x = 0 := by
     -- On the model space, `B` is definitionally the ordinary constant map with value `b`.
-    change fderivWithin ℝ (fun _ : F ↦ b) Set.univ x = 0
-    exact fderivWithin_const_apply (𝕜 := ℝ) (E := F) (s := Set.univ) (x := x) b
+    change fderivWithin 𝕜 (fun _ : F ↦ b) Set.univ x = 0
+    exact fderivWithin_const_apply (𝕜 := 𝕜) (E := F) (s := Set.univ) (x := x) b
   rw [VectorField.lieBracketWithin, hA, hB]
   -- The tangent space of the model manifold is definitionally its model vector space.
   change (0 : F) - 0 = 0
