@@ -73,14 +73,8 @@ theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} R)
         (diagonalTorusDefiningIdeal R m) A =
       ((CommHopfAlgCat.mapPointsFunctor
         (diagonalTorusCoordinateMap (R := R) (m := m))).app A).hom.range := by
-  rw [diagonalTorusDefiningIdeal_eq_ker,
-    HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range]
-  apply congrArg MonoidHom.range
-  apply MonoidHom.ext
-  intro q
-  rw [AlgHom.mapDomain_apply]
-  exact (CommHopfAlgCat.mapPointsFunctor_app_apply
-    (diagonalTorusCoordinateMap (R := R) (m := m)) A q).symm
+  rw [diagonalTorusDefiningIdeal_eq_ker]
+  exact HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor _ _ A
 
 end CommRing
 

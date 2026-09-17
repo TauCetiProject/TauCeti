@@ -55,6 +55,8 @@ along `h ↦ 1 ⊗ h`.
 * `TauCeti.CommHopfAlgCat.map_baseChangeHopfIdeal_of_quotientIso`: an ambient base-change
   isomorphism carries a base-changed Hopf ideal onto a target ideal presented as the kernel of
   the base change of the quotient morphism.
+* `TauCeti.CommHopfAlgCat.map_baseChangeHopfIdeal_kerOfSurjective`: the specialization to kernels
+  of surjective morphisms matched by base change.
 * `TauCeti.CommHopfAlgCat.quotientBaseChangeIsoOfMapEq`: transport of this identification
   across an ambient base-change isomorphism carrying the base-changed ideal to a target ideal.
 * `TauCeti.CommHopfAlgCat.mkQuotient_comp_quotientBaseChangeIso_hom`: the identification is
@@ -448,6 +450,21 @@ theorem map_baseChangeHopfIdeal_of_quotientIso
     rw [mem_baseChangeHopfIdeal_iff]
     apply (hzero _).mpr
     rwa [_root_.CommHopfAlgCat.hom_inv_apply]
+
+/-- An ambient base-change isomorphism carries the base change of the kernel of a surjective
+morphism `f` onto the kernel of a surjective morphism `f'`, when `f'` is the base change of `f`
+read through `e` and `t`. -/
+theorem map_baseChangeHopfIdeal_kerOfSurjective
+    {T : _root_.CommHopfAlgCat.{v} k} {H' T' : _root_.CommHopfAlgCat.{max w v} K}
+    (e : baseChange (K := K) H ≅ H') (t : baseChange (K := K) T ≅ T')
+    {f : H ⟶ T} (hf : Function.Surjective f.hom) {f' : H' ⟶ T'}
+    (hf' : Function.Surjective f'.hom)
+    (hbase : e.inv ≫ baseChangeMap (K := K) f ≫ t.hom = f') :
+    (baseChangeHopfIdeal (K := K) (HopfIdeal.kerOfSurjective f.hom hf)).map e.hom.hom =
+      HopfIdeal.kerOfSurjective f'.hom hf' :=
+  map_baseChangeHopfIdeal_of_quotientIso _ _ e t (quotientKerOfSurjectiveIso f hf)
+    (mkQuotient_comp_quotientKerOfSurjectiveIso_hom f hf) hbase
+    (fun _ ↦ HopfIdeal.mem_kerOfSurjective _ _)
 
 /-- Pulling a target Hopf ideal back along an ambient isomorphism which is its image recovers
 the original ideal. -/
