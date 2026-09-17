@@ -21,15 +21,20 @@ sequence of laws whose
 consecutive Wasserstein distances are bounded by a summable sequence has a limit law, together
 with the quantitative estimate that its distance to the `n`-th term is at most the `n`-th tail of
 those bounds. It uses `TauCeti.Measure.chainMeasure` to realize consecutive couplings on one path
-space. The completeness theorems apply this result to anchored components; finite-moment laws are
-then handled by their isometric identification with a Dirac-anchored component. The finite-exponent
-hypothesis is essential to the `L^p` limit estimate, so no completeness result for `p = ∞` is stated
-here.
+space; the exponent-independent part of that argument, extracting a measurable pathwise limit
+coupled to every term, is `TauCeti.exists_measurable_isCoupling_map_chainMeasure`. The criterion
+`TauCeti.WassersteinComponent.completeSpace_of_exists_wassersteinEDist_le_tsum` turns such a limit
+theorem into completeness of every anchored component; finite-moment laws are then handled by their
+isometric identification with a Dirac-anchored component. The finite-exponent hypothesis is
+essential to the `L^p` limit estimate; the case `p = ∞` is treated in
+`TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Infinity.Complete`.
 
 ## Main statements
 
 * `TauCeti.exists_isProbabilityMeasure_wassersteinEDist_le_tsum` — a chain of laws with summable
   consecutive Wasserstein distances converges, with the tail bound on the distances to its limit;
+* `TauCeti.WassersteinComponent.completeSpace_of_exists_wassersteinEDist_le_tsum` — an anchored
+  component is complete once chains with summable consecutive distances have limits;
 * `TauCeti.WassersteinComponent.completeSpace` and
   `TauCeti.WassersteinComponent.instCompleteSpace` — every anchored finite-distance component is
   complete;
@@ -62,6 +67,46 @@ section Limit
 variable [MeasurableSpace X] [PseudoMetricSpace X] [BorelSpace X] [SecondCountableTopology X]
   [CompleteSpace X] [StandardBorelSpace X]
 
+omit [PseudoMetricSpace X] [BorelSpace X] [SecondCountableTopology X] [CompleteSpace X] in
+/-- Along the countable gluing `TauCeti.Measure.chainMeasure π` of couplings `π n` of consecutive
+laws, the `n`th and `(n + 1)`st coordinates have joint law `π n`. -/
+theorem map_adjacent_chainMeasure_of_isCoupling [Nonempty X] {μ : ℕ → Measure X}
+    {π : ℕ → Measure (X × X)} [∀ n, IsProbabilityMeasure (π n)]
+    (hπ : ∀ n, IsCoupling (π n) (μ n) (μ (n + 1))) (n : ℕ) :
+    (TauCeti.Measure.chainMeasure (X := fun _ ↦ X) π).map (fun x ↦ (x n, x (n + 1))) = π n :=
+  TauCeti.Measure.map_adjacent_chainMeasure π
+    (fun n ↦ by rw [(hπ n).snd_eq, (hπ (n + 1)).fst_eq]) n
+
+omit [SecondCountableTopology X] in
+/-- **The pathwise limit of a glued chain.** If couplings `π n` of consecutive probability laws are
+glued by `TauCeti.Measure.chainMeasure` and almost every path is Cauchy, then some measurable `Z` is
+the almost-sure limit of the coordinates, and the joint law of the `n`th coordinate and `Z` couples
+`μ n` with the law of `Z`. -/
+theorem exists_measurable_isCoupling_map_chainMeasure [Nonempty X] {μ : ℕ → Measure X}
+    {π : ℕ → Measure (X × X)} [∀ n, IsProbabilityMeasure (π n)]
+    (hπ : ∀ n, IsCoupling (π n) (μ n) (μ (n + 1)))
+    (hcauchy : ∀ᵐ x ∂TauCeti.Measure.chainMeasure (X := fun _ ↦ X) π,
+      CauchySeq fun n ↦ x n) :
+    ∃ Z : (ℕ → X) → X, Measurable Z ∧
+      (∀ᵐ x ∂TauCeti.Measure.chainMeasure (X := fun _ ↦ X) π,
+        Tendsto (fun n ↦ x n) atTop (𝓝 (Z x))) ∧
+      ∀ n, IsCoupling ((TauCeti.Measure.chainMeasure (X := fun _ ↦ X) π).map fun x ↦ (x n, Z x))
+        (μ n) ((TauCeti.Measure.chainMeasure (X := fun _ ↦ X) π).map Z) := by
+  set P : Measure (ℕ → X) := TauCeti.Measure.chainMeasure (X := fun _ ↦ X) π
+  have hev : ∀ n, Measurable fun x : ℕ → X ↦ x n := fun n ↦ measurable_pi_apply n
+  have hgtendsto : ∀ᵐ x ∂P, Tendsto (fun n ↦ x n) atTop (𝓝 (limUnder atTop fun n ↦ x n)) := by
+    filter_upwards [hcauchy] with x hx
+    exact tendsto_nhds_limUnder (cauchySeq_tendsto_of_complete hx)
+  obtain ⟨Z, hZ, hZg⟩ :=
+    aemeasurable_of_tendsto_metrizable_ae atTop (fun n ↦ (hev n).aemeasurable) hgtendsto
+  refine ⟨Z, hZ, ?_, fun n ↦ ⟨?_, ?_⟩⟩
+  · filter_upwards [hgtendsto, hZg] with x hx hx' using hx' ▸ hx
+  · rw [Measure.fst, Measure.map_map measurable_fst ((hev n).prodMk hZ), ← (hπ n).fst_eq]
+    exact TauCeti.Measure.map_eval_chainMeasure π
+      (fun n ↦ by rw [(hπ n).snd_eq, (hπ (n + 1)).fst_eq]) n
+  · rw [Measure.snd, Measure.map_map measurable_snd ((hev n).prodMk hZ)]
+    rfl
+
 /-- **A chain of laws with summable Wasserstein jumps converges.** If consecutive terms of a
 sequence `μ` of probability measures have `p`-Wasserstein distance strictly below a summable
 sequence `b`, then some probability measure `ν` satisfies
@@ -77,15 +122,10 @@ theorem exists_isProbabilityMeasure_wassersteinEDist_le_tsum (hp : 1 ≤ p) (hp'
   -- the near-optimal couplings of consecutive laws, and their countable gluing
   choose π hπ hπb using fun n ↦ wassersteinEDist_lt_iff.1 (hμ n)
   have : ∀ n, IsProbabilityMeasure (π n) := fun n ↦ (hπ n).isProbabilityMeasure
-  have hchain : ∀ n, (π n).snd = (π (n + 1)).fst := fun n ↦ by
-    rw [(hπ n).snd_eq, (hπ (n + 1)).fst_eq]
-  set P : Measure (ℕ → X) := TauCeti.Measure.chainMeasure (X := fun _ ↦ X) π with hP
-  have : IsProbabilityMeasure P := by rw [hP]; infer_instance
+  set P : Measure (ℕ → X) := TauCeti.Measure.chainMeasure (X := fun _ ↦ X) π
   have hev : ∀ n, Measurable fun x : ℕ → X ↦ x n := fun n ↦ measurable_pi_apply n
-  have hcoord : ∀ n, P.map (fun x ↦ x n) = μ n := fun n ↦ by
-    rw [hP, TauCeti.Measure.map_eval_chainMeasure π hchain n, (hπ n).fst_eq]
-  have hadj : ∀ n, P.map (fun x ↦ (x n, x (n + 1))) = π n := fun n ↦ by
-    rw [hP, TauCeti.Measure.map_adjacent_chainMeasure π hchain n]
+  have hadj : ∀ n, P.map (fun x ↦ (x n, x (n + 1))) = π n :=
+    map_adjacent_chainMeasure_of_isCoupling hπ
   -- the jumps of the coordinate process have the prescribed `L^p` sizes
   have hjump : ∀ n, eLpNorm (fun x : ℕ → X ↦ edist (x n) (x (n + 1))) p P < b n := fun n ↦ by
     have : eLpNorm (fun x : ℕ → X ↦ edist (x n) (x (n + 1))) p P
@@ -112,23 +152,10 @@ theorem exists_isProbabilityMeasure_wassersteinEDist_le_tsum (hp : 1 ≤ p) (hp'
       exact ne_top_of_le_ne_top hb (ENNReal.tsum_le_tsum hint)
     filter_upwards [ae_lt_top (Measurable.tsum hjumpmeas) hlt] with x hx
     exact cauchySeq_of_edist_le_of_tsum_ne_top _ (fun _ ↦ le_rfl) hx.ne
-  -- hence almost every path converges, to a measurable limit `Z`
-  have hgtendsto : ∀ᵐ x ∂P, Tendsto (fun n ↦ x n) atTop (𝓝 (limUnder atTop fun n ↦ x n)) := by
-    filter_upwards [hcauchy] with x hx
-    exact tendsto_nhds_limUnder (cauchySeq_tendsto_of_complete hx)
-  obtain ⟨Z, hZ, hZg⟩ :=
-    aemeasurable_of_tendsto_metrizable_ae atTop (fun n ↦ (hev n).aemeasurable) hgtendsto
-  have hZtendsto : ∀ᵐ x ∂P, Tendsto (fun n ↦ x n) atTop (𝓝 (Z x)) := by
-    filter_upwards [hgtendsto, hZg] with x hx hx' using hx' ▸ hx
+  -- hence almost every path converges, to a measurable limit `Z` coupled to every `μ n`
+  obtain ⟨Z, hZ, hZtendsto, hcoupling⟩ := exists_measurable_isCoupling_map_chainMeasure hπ hcauchy
   refine ⟨P.map Z, (Measure.isProbabilityMeasure_map_iff hZ.aemeasurable).2 inferInstance,
     fun n ↦ ?_⟩
-  -- the limit is coupled to every `μ n` by the joint law of the `n`-th coordinate and `Z`
-  have hcoupling : IsCoupling (P.map fun x ↦ (x n, Z x)) (μ n) (P.map Z) := by
-    constructor
-    · rw [Measure.fst, Measure.map_map measurable_fst ((hev n).prodMk hZ)]
-      exact hcoord n
-    · rw [Measure.snd, Measure.map_map measurable_snd ((hev n).prodMk hZ)]
-      rfl
   -- the displacement to the limit is the limit of the displacements along the chain
   have hstep : ∀ N, eLpNorm (fun x : ℕ → X ↦ edist (x n) (x (n + N))) p P
       ≤ ∑ k ∈ Finset.range N, b (n + k) := by
@@ -151,7 +178,7 @@ theorem exists_isProbabilityMeasure_wassersteinEDist_le_tsum (hp : 1 ≤ p) (hp'
           _ = ∑ k ∈ Finset.range (N + 1), b (n + k) := (Finset.sum_range_succ _ _).symm
   calc wassersteinEDist p (μ n) (P.map Z)
       ≤ eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (P.map fun x ↦ (x n, Z x)) :=
-        wassersteinEDist_le hcoupling p
+        wassersteinEDist_le (hcoupling n) p
     _ = eLpNorm (fun x : ℕ → X ↦ edist (x n) (Z x)) p P := by
         rw [eLpNorm_map_measure hd.aestronglyMeasurable ((hev n).prodMk hZ).aemeasurable]
         rfl
@@ -165,26 +192,10 @@ theorem exists_isProbabilityMeasure_wassersteinEDist_le_tsum (hp : 1 ≤ p) (hp'
 
 end Limit
 
-section Complete
+section Controlled
 
 variable [MeasurableSpace X] [PseudoMetricSpace X] [BorelSpace X] [SecondCountableTopology X]
-  [CompleteSpace X] [StandardBorelSpace X]
-
-/-- The geometric instance of `TauCeti.exists_isProbabilityMeasure_wassersteinEDist_le_tsum` that
-the two completeness proofs consume: a chain whose consecutive distances are below `2⁻¹ ^ n`
-converges, with the explicit geometric tail `2⁻¹ ^ n * 2`. -/
-private theorem exists_isProbabilityMeasure_wassersteinEDist_le_geometric
-    (hp : 1 ≤ p) (hp' : p ≠ ∞) {μ : ℕ → Measure X} [∀ n, IsProbabilityMeasure (μ n)]
-    (hμ : ∀ n, wassersteinEDist p (μ n) (μ (n + 1)) < 2⁻¹ ^ n) :
-    ∃ ν : Measure X, IsProbabilityMeasure ν ∧
-      ∀ n, wassersteinEDist p (μ n) ν ≤ 2⁻¹ ^ n * 2 := by
-  have hgeom : ∀ n : ℕ, ∑' k, (2 : ℝ≥0∞)⁻¹ ^ (n + k) = 2⁻¹ ^ n * 2 := fun n ↦ by
-    simp_rw [pow_add]
-    rw [ENNReal.tsum_mul_left, ENNReal.tsum_geometric, ENNReal.one_sub_inv_two, inv_inv]
-  have hb : ∑' n, (2 : ℝ≥0∞)⁻¹ ^ n ≠ ∞ := by
-    simp [ENNReal.tsum_geometric, ENNReal.one_sub_inv_two]
-  obtain ⟨ν, hν, hνle⟩ := exists_isProbabilityMeasure_wassersteinEDist_le_tsum hp hp' hb hμ
-  exact ⟨ν, hν, fun n ↦ (hνle n).trans (hgeom n).le⟩
+  [StandardBorelSpace X]
 
 /-- The geometric tails bounding the distances to the limit tend to `0`. -/
 private theorem tendsto_geometric_mul_two :
@@ -195,6 +206,51 @@ private theorem tendsto_geometric_mul_two :
   simpa using ENNReal.Tendsto.mul_const
     (ENNReal.tendsto_pow_atTop_nhds_zero_of_lt_one h2) (Or.inr (by simp))
 
+variable [Fact (1 ≤ p)] {μ₀ : ProbabilityMeasure X}
+
+/-- **Completeness from convergent chains.** An anchored Wasserstein component is complete as soon
+as every chain of probability laws whose consecutive distances lie strictly below a summable
+sequence `b` has a limit law at distance at most `∑' k, b (n + k)` from the `n`th law. The
+finite-exponent and infinite-exponent completeness theorems both apply this criterion. -/
+theorem WassersteinComponent.completeSpace_of_exists_wassersteinEDist_le_tsum
+    (H : ∀ (μ : ℕ → Measure X) [∀ n, IsProbabilityMeasure (μ n)] (b : ℕ → ℝ≥0∞),
+      ∑' n, b n ≠ ∞ → (∀ n, wassersteinEDist p (μ n) (μ (n + 1)) < b n) →
+        ∃ ν : Measure X, IsProbabilityMeasure ν ∧
+          ∀ n, wassersteinEDist p (μ n) ν ≤ ∑' k, b (n + k)) :
+    CompleteSpace (WassersteinComponent p μ₀) := by
+  refine EMetric.complete_of_convergent_controlled_sequences (fun n ↦ 2⁻¹ ^ n)
+    (fun n ↦ ENNReal.pow_pos (by simp) n) fun u hu ↦ ?_
+  have hjump : ∀ n, wassersteinEDist p ((u n : ProbabilityMeasure X) : Measure X)
+      ((u (n + 1) : ProbabilityMeasure X) : Measure X) < 2⁻¹ ^ n := fun n ↦ by
+    have := hu n n (n + 1) le_rfl (Nat.le_succ n)
+    rwa [edist_def] at this
+  have hgeom : ∀ n : ℕ, ∑' k, (2 : ℝ≥0∞)⁻¹ ^ (n + k) = 2⁻¹ ^ n * 2 := fun n ↦ by
+    simp_rw [pow_add]
+    rw [ENNReal.tsum_mul_left, ENNReal.tsum_geometric, ENNReal.one_sub_inv_two, inv_inv]
+  obtain ⟨ν, hν, hνle'⟩ := H _ _ (by simp [ENNReal.tsum_geometric, ENNReal.one_sub_inv_two]) hjump
+  have hνle : ∀ n, wassersteinEDist p ((u n : ProbabilityMeasure X) : Measure X) ν
+      ≤ 2⁻¹ ^ n * 2 := fun n ↦ (hνle' n).trans (hgeom n).le
+  have hanchor : wassersteinEDist p (μ₀ : Measure X) ν ≠ ∞ := by
+    refine ne_top_of_le_ne_top
+      (ENNReal.add_ne_top.2 ⟨WassersteinComponent.wassersteinEDist_anchor_ne_top (u 0), ?_⟩)
+      (wassersteinEDist_triangle measurable_edist Fact.out _ _ _)
+    exact ne_top_of_le_ne_top (by simp) (hνle 0)
+  have hcoe : ((WassersteinComponent.mk (⟨ν, hν⟩ : ProbabilityMeasure X) hanchor :
+      WassersteinComponent p μ₀) : ProbabilityMeasure X) = ⟨ν, hν⟩ :=
+    WassersteinComponent.coe_mk _ _
+  refine ⟨WassersteinComponent.mk ⟨ν, hν⟩ hanchor, tendsto_iff_edist_tendsto_0.2 ?_⟩
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds tendsto_geometric_mul_two
+    (fun _ ↦ zero_le) fun n ↦ ?_
+  rw [WassersteinComponent.edist_def, hcoe]
+  exact hνle n
+
+end Controlled
+
+section Complete
+
+variable [MeasurableSpace X] [PseudoMetricSpace X] [BorelSpace X] [SecondCountableTopology X]
+  [CompleteSpace X] [StandardBorelSpace X]
+
 variable [Fact (1 ≤ p)]
 
 namespace WassersteinComponent
@@ -203,27 +259,9 @@ variable {μ₀ : ProbabilityMeasure X}
 
 /-- Every anchored finite-distance Wasserstein component over a Polish ground space is complete
 for a finite exponent `1 ≤ p < ∞`. -/
-theorem completeSpace (hp' : p ≠ ∞) : CompleteSpace (WassersteinComponent p μ₀) := by
-  refine EMetric.complete_of_convergent_controlled_sequences (fun n ↦ 2⁻¹ ^ n)
-    (fun n ↦ ENNReal.pow_pos (by simp) n) fun u hu ↦ ?_
-  have hjump : ∀ n, wassersteinEDist p ((u n : ProbabilityMeasure X) : Measure X)
-      ((u (n + 1) : ProbabilityMeasure X) : Measure X) < 2⁻¹ ^ n := fun n ↦ by
-    have := hu n n (n + 1) le_rfl (Nat.le_succ n)
-    rwa [edist_def] at this
-  obtain ⟨ν, hν, hνle⟩ :=
-    exists_isProbabilityMeasure_wassersteinEDist_le_geometric Fact.out hp' hjump
-  have hanchor : wassersteinEDist p (μ₀ : Measure X) ν ≠ ∞ := by
-    refine ne_top_of_le_ne_top
-      (ENNReal.add_ne_top.2 ⟨wassersteinEDist_anchor_ne_top (u 0), ?_⟩)
-      (wassersteinEDist_triangle measurable_edist Fact.out _ _ _)
-    exact ne_top_of_le_ne_top (by simp) (hνle 0)
-  have hcoe : ((mk (⟨ν, hν⟩ : ProbabilityMeasure X) hanchor : WassersteinComponent p μ₀) :
-      ProbabilityMeasure X) = ⟨ν, hν⟩ := coe_mk _ _
-  refine ⟨mk ⟨ν, hν⟩ hanchor, tendsto_iff_edist_tendsto_0.2 ?_⟩
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds tendsto_geometric_mul_two
-    (fun _ ↦ zero_le) fun n ↦ ?_
-  rw [edist_def, hcoe]
-  exact hνle n
+theorem completeSpace (hp' : p ≠ ∞) : CompleteSpace (WassersteinComponent p μ₀) :=
+  completeSpace_of_exists_wassersteinEDist_le_tsum fun _ _ _ hb hμ ↦
+    exists_isProbabilityMeasure_wassersteinEDist_le_tsum Fact.out hp' hb hμ
 
 /-- Every anchored finite-distance Wasserstein component over a Polish ground space is complete,
 read off the exponent facts. -/
