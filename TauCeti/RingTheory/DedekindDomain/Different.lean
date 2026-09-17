@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DedekindDomain.Different
+public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 public import TauCeti.RingTheory.Trace.QuotientPow
 
 /-!
@@ -20,11 +21,9 @@ the residue extension `(B ⧸ P) / (A ⧸ p)` is inseparable or the residue char
 `e`.  So the different exponent at `P` is exactly `e - 1` at the tame primes and at least `e` at
 the others.
 
-The criterion used is the trace criterion: if `I * Q = p · B`, then `I` divides `𝔡(B/A)` exactly
-when the integral trace carries `Q` into `p`.  One direction is Mathlib's
-`not_dvd_differentIdeal_of_intTrace_not_mem`; the other, stated here as
-`TauCeti.dvd_differentIdeal_iff_forall_intTrace_mem`, is the argument Mathlib runs inline for
-`pow_sub_one_dvd_differentIdeal` and `dvd_differentIdeal_of_not_isSeparable`.  Taking `I = P ^ e`
+The criterion used is the trace criterion `TauCeti.dvd_differentIdeal_iff_forall_intTrace_mem`:
+if `I * Q = p · B`, then `I` divides `𝔡(B/A)` exactly when the integral trace carries `Q` into
+`p`.  Taking `I = P ^ e`
 and `Q` the prime-to-`P` part of `p · B`, the Chinese remainder theorem turns the question into
 whether the trace form of the `A ⧸ p`-algebra `B ⧸ P ^ e` vanishes, and
 `Algebra.trace_quotient_pow_mk` evaluates it: the trace of a residue is `e` times its trace in
@@ -34,15 +33,11 @@ residue separability the residue trace is zero (`Algebra.trace_eq_zero_of_not_is
 
 ## Main results
 
-* `TauCeti.dvd_differentIdeal_iff_forall_intTrace_mem`: the trace criterion for divisibility of
-  the different ideal.
 * `TauCeti.pow_dvd_differentIdeal_iff_of_isCoprime`: the answer in the form that names a
   complement `Q` of `P ^ e` in `p · B`.
 * `TauCeti.pow_ramificationIdx_dvd_differentIdeal_iff`: **Dedekind's different theorem, second
   part** — `P ^ e(P ∣ p) ∣ 𝔡(B/A)` exactly when the residue extension is inseparable or
   `e(P ∣ p)` vanishes in `A ⧸ p`.
-* `TauCeti.not_pow_ramificationIdx_dvd_differentIdeal`: its tame direction — for a tame `P` with
-  separable residue extension, `P ^ e(P ∣ p) ∤ 𝔡(B/A)`.
 
 ## References
 
@@ -65,59 +60,10 @@ variable [IsDedekindDomain A] [IsDedekindDomain B] [Module.IsTorsionFree A B] [M
 
 attribute [local instance] Ideal.Quotient.field
 
-/-- **The trace criterion for divisibility of the different ideal.** If `I * Q = p · B` for a
-nonzero ideal `p` of `A`, then `I` divides `differentIdeal A B` exactly when the integral trace
-carries the complement `Q` into `p`.
-
-The implication from a trace outside `p` to non-divisibility is Mathlib's
-`not_dvd_differentIdeal_of_intTrace_not_mem`; the converse identifies `I⁻¹` with `Q / p · B`, the
-argument Mathlib runs inline for `pow_sub_one_dvd_differentIdeal` and
-`dvd_differentIdeal_of_not_isSeparable`. -/
-theorem dvd_differentIdeal_iff_forall_intTrace_mem
-    [Algebra.IsSeparable (FractionRing A) (FractionRing B)]
-    {p : Ideal A} (hp : p ≠ ⊥) (I Q : Ideal B) (hIQ : I * Q = Ideal.map (algebraMap A B) p) :
-    I ∣ differentIdeal A B ↔ ∀ x ∈ Q, Algebra.intTrace A B x ∈ p := by
-  refine ⟨fun hdvd x hx ↦ ?_, fun htr ↦ ?_⟩
-  · by_contra hx'
-    exact not_dvd_differentIdeal_of_intTrace_not_mem A I Q hIQ x hx hx' hdvd
-  let K := FractionRing A
-  let L := FractionRing B
-  have hp' : Ideal.map (algebraMap A B) p ≠ ⊥ :=
-    (Ideal.map_eq_bot_iff_of_injective (FaithfulSMul.algebraMap_injective A B)).not.mpr hp
-  have hQ : Q ≠ ⊥ := fun h ↦ hp' (by rw [← hIQ, h, Ideal.mul_bot])
-  have hI : I ≠ ⊥ := fun h ↦ hp' (by rw [← hIQ, h, Ideal.bot_mul])
-  -- `I⁻¹ = Q / p · B` as fractional ideals of `B`
-  have hIinv : ((I : FractionalIdeal B⁰ L))⁻¹ = Q / p.map (algebraMap A B) := by
-    apply inv_involutive.injective
-    simp only [← hIQ, FractionalIdeal.coeIdeal_mul, inv_div, mul_div_assoc]
-    rw [div_self (by simpa), mul_one, inv_inv]
-  rw [Ideal.dvd_iff_le, differentialIdeal_le_iff (K := K) (L := L) hI, hIinv,
-    Submodule.map_le_iff_le_comap]
-  intro x hx
-  rw [Submodule.restrictScalars_mem, FractionalIdeal.mem_coe,
-    FractionalIdeal.mem_div_iff_of_ne_zero (by simpa using hp')] at hx
-  rw [Submodule.mem_comap, LinearMap.coe_restrictScalars, ← FractionalIdeal.coe_one,
-    ← div_self (G₀ := FractionalIdeal A⁰ K) (a := p) (by simpa using hp),
-    FractionalIdeal.mem_coe, FractionalIdeal.mem_div_iff_of_ne_zero (by simpa using hp)]
-  simp only [FractionalIdeal.mem_coeIdeal, forall_exists_index, and_imp,
-    forall_apply_eq_imp_iff₂] at hx
-  intro y hy'
-  obtain ⟨y, hy, rfl : algebraMap A K _ = _⟩ := (FractionalIdeal.mem_coeIdeal _).mp hy'
-  obtain ⟨z, hz, hz'⟩ := hx _ (Ideal.mem_map_of_mem _ hy)
-  have : Algebra.trace K L (algebraMap B L z) ∈ (p : FractionalIdeal A⁰ K) := by
-    rw [← Algebra.algebraMap_intTrace (A := A)]
-    exact ⟨Algebra.intTrace A B z, htr z hz, rfl⟩
-  rwa [mul_comm, ← smul_eq_mul, ← map_smul, Algebra.smul_def, mul_comm,
-    ← IsScalarTower.algebraMap_apply, IsScalarTower.algebraMap_apply A B L, ← hz']
-
 /-- **Dedekind's different theorem at a prime power with a coprime complement.** If
 `p · B = P ^ e * Q` with `P ^ e` and `Q` coprime and `p ≠ ⊥`, then `P ^ e` divides
 `differentIdeal A B` exactly when the residue extension at `P` is inseparable or `e` vanishes in
-the residue field `A ⧸ p`.
-
-Modulo `p`, the integral trace of an element of `Q` is the trace of its residue in `B ⧸ P ^ e`,
-which is `e` times its trace in the residue field `B ⧸ P` (`Algebra.trace_quotient_pow_mk`); the
-trace criterion `TauCeti.dvd_differentIdeal_iff_forall_intTrace_mem` then reads off the answer. -/
+the residue field `A ⧸ p`. -/
 theorem pow_dvd_differentIdeal_iff_of_isCoprime
     [Algebra.IsSeparable (FractionRing A) (FractionRing B)]
     {p : Ideal A} [p.IsMaximal] (hp : p ≠ ⊥) (P Q : Ideal B) [P.IsMaximal] [P.LiesOver p] {e : ℕ}
@@ -181,9 +127,7 @@ Corollary 3.5.5): for a maximal ideal `P` of `B` over a nonzero maximal ideal `p
 extension at `P` is inseparable or `e(P ∣ p)` vanishes in the residue field `A ⧸ p`.
 
 Together with Mathlib's `pow_sub_one_dvd_differentIdeal`, the different exponent at `P` is
-therefore `e(P ∣ p) - 1` at the tame primes and at least `e(P ∣ p)` at all others.  The complement
-of `P ^ e(P ∣ p)` in `p · B` is produced by `Ideal.eq_prime_pow_mul_coprime`, whose exponent is the
-ramification index by `Ideal.IsDedekindDomain.ramificationIdx_eq_normalizedFactors_count`. -/
+therefore `e(P ∣ p) - 1` at the tame primes and at least `e(P ∣ p)` at all others. -/
 theorem pow_ramificationIdx_dvd_differentIdeal_iff
     [Algebra.IsSeparable (FractionRing A) (FractionRing B)]
     {p : Ideal A} [p.IsMaximal] (hp : p ≠ ⊥) (P : Ideal B) [P.IsMaximal] [P.LiesOver p] :
@@ -195,18 +139,5 @@ theorem pow_ramificationIdx_dvd_differentIdeal_iff
   rw [← Ideal.IsDedekindDomain.ramificationIdx_eq_normalizedFactors_count p P hp'] at h₂
   exact pow_dvd_differentIdeal_iff_of_isCoprime A hp P Q
     (Ideal.isCoprime_iff_sup_eq.mpr h₁).pow_left h₂.symm
-
-/-- **Dedekind's different theorem, the tame half** (Stichtenoth, Theorem 3.5.1(b)): at a prime
-`P` whose residue extension is separable and whose ramification index is invertible in the residue
-field of `p`, the different ideal is divisible by `P ^ (e - 1)` — Mathlib's
-`pow_sub_one_dvd_differentIdeal` — but not by `P ^ e`. -/
-theorem not_pow_ramificationIdx_dvd_differentIdeal
-    [Algebra.IsSeparable (FractionRing A) (FractionRing B)]
-    {p : Ideal A} [p.IsMaximal] (hp : p ≠ ⊥) (P : Ideal B) [P.IsMaximal] [P.LiesOver p]
-    [hsep : Algebra.IsSeparable (A ⧸ p) (B ⧸ P)]
-    (he : ((P.ramificationIdx A : ℕ) : A ⧸ p) ≠ 0) :
-    ¬ P ^ P.ramificationIdx A ∣ differentIdeal A B := by
-  rw [pow_ramificationIdx_dvd_differentIdeal_iff A hp P, not_or, not_not]
-  exact ⟨hsep, he⟩
 
 end TauCeti
