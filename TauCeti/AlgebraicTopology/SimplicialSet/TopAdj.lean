@@ -8,10 +8,12 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 
 /-!
-# Naturality of singular vertices
+# Naturality of the singular simplices of a space
 
-The identification of points with singular zero-simplices commutes with continuous maps.
-This transfers naturality of simplicial vertex classes to singular homology, giving naturality
+The identification of the `n`-simplices of the singular simplicial set of `X` with the continuous
+maps from the topological `n`-simplex to `X` turns the map induced by a continuous map into
+postcomposition with it.  In degree zero this identifies points with singular zero-simplices,
+which transfers naturality of simplicial vertex classes to singular homology, giving naturality
 of the basepoint section of the augmentation in `TauCeti.singularHomology₀Section_naturality`.
 -/
 
@@ -28,5 +30,14 @@ namespace TauCeti.TopCat
 lemma toSSet_map_app_toSSetObj₀Equiv_symm {X Y : TopCat.{u}} (f : X ⟶ Y) (x : X) :
     (TopCat.toSSet.map f).app (Opposite.op ⦋0⦌) (TopCat.toSSetObj₀Equiv.symm x) =
       TopCat.toSSetObj₀Equiv.symm (f x) := rfl
+
+/-- The map of singular simplicial sets induced by a continuous map is postcomposition with that
+map, read through the identification of singular simplices with continuous maps out of the
+topological simplex. -/
+@[simp]
+lemma toSSetObjEquiv_toSSet_map_app {X Y : TopCat.{u}} (f : X ⟶ Y) (n : SimplexCategoryᵒᵖ)
+    (x : (TopCat.toSSet.obj X).obj n) :
+    TopCat.toSSetObjEquiv Y n ((TopCat.toSSet.map f).app n x) =
+      f.hom.comp (TopCat.toSSetObjEquiv X n x) := rfl
 
 end TauCeti.TopCat
