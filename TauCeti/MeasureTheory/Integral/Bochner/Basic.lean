@@ -196,14 +196,18 @@ theorem tendsto_eLpNorm_one_of_tendsto_integral_norm_sub {Ω E ι : Type*} [Meas
 nonnegative probability density with respect to `μ` vanishing outside `[-ε, 0]`, and `F` is antitone
 on `[t, t + ε]`, then the average `∫ s, ψ s * F (t - s) ∂μ` lies between `F (t + ε)` and `F t`.
 
-Use this to bound a mollification of a monotone function by two of its values; no regularity of
-`F` beyond antitonicity on the sampled interval is needed. -/
+Use this to bound a mollification of a monotone function by two of its values. No separate
+integrability hypotheses or sign assumption on `ε` are needed. -/
 theorem integral_kernel_mem_Icc_of_antitoneOn {μ : Measure ℝ} {ψ F : ℝ → ℝ} {ε t : ℝ}
-    (hε : 0 ≤ ε) (hFanti : AntitoneOn F (Set.Icc t (t + ε))) (hψ0 : ∀ s, 0 ≤ ψ s)
-    (hψint : ∫ s, ψ s ∂μ = 1) (hψi : Integrable ψ μ)
-    (hintF : Integrable (fun s => ψ s * F (t - s)) μ)
+    (hFanti : AntitoneOn F (Set.Icc t (t + ε))) (hψ0 : ∀ s, 0 ≤ ψ s)
+    (hψint : ∫ s, ψ s ∂μ = 1)
     (hsupp : ∀ s : ℝ, ψ s ≠ 0 → s ∈ Set.Icc (-ε) 0) :
     (∫ s, ψ s * F (t - s) ∂μ) ∈ Set.Icc (F (t + ε)) (F t) := by
+  have hψi : Integrable ψ μ := integrable_of_integral_eq_one hψint
+  have hε : 0 ≤ ε := by
+    obtain ⟨s, hs⟩ := exists_ne_zero_of_integral_ne_zero (hψint ▸ one_ne_zero)
+    have := hsupp s hs
+    linarith [this.1, this.2]
   have hmass : ∀ c : ℝ, ∫ s, ψ s * c ∂μ = c := by
     intro c
     rw [integral_mul_const, hψint, one_mul]
@@ -211,23 +215,35 @@ theorem integral_kernel_mem_Icc_of_antitoneOn {μ : Measure ℝ} {ψ F : ℝ →
     ⟨by linarith, by linarith⟩
   have hlo : t ∈ Set.Icc t (t + ε) := ⟨le_rfl, by linarith⟩
   have hhi : t + ε ∈ Set.Icc t (t + ε) := ⟨by linarith, le_rfl⟩
-  refine Set.mem_Icc.mpr ⟨?_, ?_⟩
-  · have hle : ∀ s : ℝ, ψ s * F (t + ε) ≤ ψ s * F (t - s) := by
-      intro s
-      rcases eq_or_ne (ψ s) 0 with h0 | h0
-      · simp [h0]
-      · obtain ⟨hs1, hs2⟩ := hsupp s h0
-        exact mul_le_mul_of_nonneg_left (hFanti (hsample s hs1 hs2) hhi (by linarith)) (hψ0 s)
-    calc F (t + ε) = ∫ s, ψ s * F (t + ε) ∂μ := (hmass _).symm
-      _ ≤ ∫ s, ψ s * F (t - s) ∂μ := integral_mono (hψi.mul_const _) hintF hle
-  · have hle : ∀ s : ℝ, ψ s * F (t - s) ≤ ψ s * F t := by
-      intro s
-      rcases eq_or_ne (ψ s) 0 with h0 | h0
-      · simp [h0]
-      · obtain ⟨hs1, hs2⟩ := hsupp s h0
-        exact mul_le_mul_of_nonneg_left (hFanti hlo (hsample s hs1 hs2) (by linarith)) (hψ0 s)
-    calc ∫ s, ψ s * F (t - s) ∂μ ≤ ∫ s, ψ s * F t ∂μ := integral_mono hintF (hψi.mul_const _) hle
-      _ = F t := hmass _
+  have hbounds (s : ℝ) : ψ s * F (t + ε) ≤ ψ s * F (t - s) ∧
+      ψ s * F (t - s) ≤ ψ s * F t := by
+    by_cases hs : ψ s = 0
+    · simp [hs]
+    obtain ⟨hs1, hs2⟩ := hsupp s hs
+    exact ⟨mul_le_mul_of_nonneg_left
+      (hFanti (hsample s hs1 hs2) hhi (by linarith)) (hψ0 s),
+      mul_le_mul_of_nonneg_left (hFanti hlo (hsample s hs1 hs2) (by linarith)) (hψ0 s)⟩
+  -- Monotonicity gives measurability on the sampled interval. Cutting off outside it
+  -- does not change the weighted integrand, which lies between two integrable functions.
+  have hmono : MonotoneOn (fun s => F (t - s)) (Set.Icc (-ε) 0) := by
+    intro x hx y hy hxy
+    exact hFanti (hsample y hy.1 hy.2) (hsample x hx.1 hx.2) (by linarith)
+  have hmeas :=
+    (aemeasurable_restrict_of_monotoneOn (μ := μ) measurableSet_Icc hmono).aestronglyMeasurable
+  have hprod : AEStronglyMeasurable (fun s => ψ s * F (t - s)) μ := by
+    refine (hψi.aestronglyMeasurable.mul
+      ((aestronglyMeasurable_indicator_iff measurableSet_Icc).2 hmeas)).congr
+        (ae_of_all μ fun s => ?_)
+    by_cases hs : ψ s = 0
+    · simp [hs]
+    · simp only [Pi.mul_apply, Set.indicator_of_mem (hsupp s hs)]
+  have hintF := integrable_of_le_of_le hprod (ae_of_all μ fun s => (hbounds s).1)
+    (ae_of_all μ fun s => (hbounds s).2) (hψi.mul_const _) (hψi.mul_const _)
+  constructor
+  · rw [← hmass (F (t + ε))]
+    exact integral_mono (hψi.mul_const _) hintF fun s => (hbounds s).1
+  · rw [← hmass (F t)]
+    exact integral_mono hintF (hψi.mul_const _) fun s => (hbounds s).2
 
 /-- **A Bochner integral over a finite almost-everywhere disjoint union splits as a sum.**
 

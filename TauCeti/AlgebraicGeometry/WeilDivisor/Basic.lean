@@ -111,6 +111,18 @@ lemma coeff_ofPoint_of_ne {x y : X} (h : y ≠ x) : coeff (ofPoint x) y = 0 :=
 lemma support_ofPoint (x : X) : (ofPoint x).support = {x} :=
   Finsupp.support_single x one_ne_zero
 
+/-- Distinct points have distinct point divisors. -/
+lemma ofPoint_injective : Function.Injective (ofPoint : X → WeilDivisor X) := by
+  intro x y h
+  by_contra hne
+  have hcoeff : coeff (ofPoint x) x = coeff (ofPoint y) x := by rw [h]
+  rw [coeff_ofPoint_self, coeff_ofPoint_of_ne hne] at hcoeff
+  exact one_ne_zero hcoeff
+
+@[simp]
+lemma ofPoint_inj {x y : X} : ofPoint x = ofPoint y ↔ x = y :=
+  ofPoint_injective.eq_iff
+
 /-- The scaled point divisor `b • ofPoint a` is the single spike `Finsupp.single a b`. This is the
 `ofPoint`/`Finsupp.single` bridge in its integer-scaled form, shared by the divisor files that
 expand a divisor into its point contributions. -/

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+public import Mathlib.Algebra.BigOperators.Ring.Finset
 
 /-!
 # Regrouping a finite sum by the fibres of a map
@@ -18,10 +20,16 @@ which needs the codomain finite. The version here indexes the outer sum by the *
 so it applies to a map into an arbitrary type — the situation whenever the codomain is a
 quotient or a subtype with no finiteness available.
 
+Regrouping along the coordinate projections of a finite dependent product turns a sum whose
+summand is weighted by a sum of coordinate functions into a sum of one-coordinate sums against
+the fibrewise masses; this is the algebraic core of multi-marginal linear programming.
+
 ## Main results
 
 * `TauCeti.sum_eq_sum_image_fiber`: `∑ i, F i` is the sum, over the values `g` takes, of the sums
   of `F` over the fibres of `g`.
+* `TauCeti.sum_sum_eval_mul`: summing `(∑ i, φ i (z i)) * f z` over a finite dependent product
+  regroups, coordinate by coordinate, into `∑ i, ∑ a, φ i a * ∑ z with z i = a, f z`.
 -/
 
 public section
@@ -42,5 +50,23 @@ theorem sum_eq_sum_image_fiber {ι κ M : Type*} [Fintype ι] [DecidableEq κ] [
   rw [← sum_fiberwise_of_maps_to (g := g) fun i _ ↦ mem_image_of_mem _ (mem_univ i)]
   exact sum_congr rfl fun k _ ↦
     sum_subtype (p := fun i ↦ g i = k) (univ.filter fun i ↦ g i = k) (fun i ↦ by simp) F
+
+/-- **Regrouping a product-indexed sum by coordinates.** Summing `f` against a weight that is a
+sum of one-coordinate functions is the same as summing, for each coordinate `i` and each value
+`a` there, the value `φ i a` against the mass `f` puts on the fibre `{z | z i = a}`. -/
+theorem sum_sum_eval_mul {ι : Type*} {X : ι → Type*} {R : Type*} [Fintype ι] [DecidableEq ι]
+    [∀ i, Fintype (X i)] [∀ i, DecidableEq (X i)] [NonUnitalNonAssocSemiring R]
+    (φ : ∀ i, X i → R) (f : (∀ i, X i) → R) :
+    ∑ z : ∀ i, X i, (∑ i, φ i (z i)) * f z =
+      ∑ i, ∑ a, φ i a * ∑ z with z i = a, f z := by
+  simp_rw [sum_mul]
+  rw [sum_comm]
+  refine sum_congr rfl fun i _ ↦ ?_
+  rw [← sum_fiberwise univ (Function.eval i) fun z ↦ φ i (z i) * f z]
+  refine sum_congr rfl fun a _ ↦ ?_
+  rw [mul_sum]
+  refine sum_congr rfl fun z hz ↦ ?_
+  have hz' : z i = a := (mem_filter.1 hz).2
+  rw [hz']
 
 end TauCeti

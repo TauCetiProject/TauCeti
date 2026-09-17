@@ -198,6 +198,12 @@ theorem lowerTriangleGram_eq_symm_apply (x : lowerTriangle p → ℝ) :
 def posDiagLowerRegion : Set (lowerTriangle p → ℝ) :=
   {x | ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩}
 
+/-- The positive-diagonal region spelled out as a set of coordinate vectors, for rewriting an
+integral stated in that spelling into the named one. -/
+theorem posDiagLowerRegion_def :
+    posDiagLowerRegion p = {x : lowerTriangle p → ℝ | ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩} :=
+  (rfl)
+
 @[simp]
 theorem mem_posDiagLowerRegion {x : lowerTriangle p → ℝ} :
     x ∈ posDiagLowerRegion p ↔ ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩ :=
@@ -335,6 +341,16 @@ theorem map_cholesky_symmetricLebesgue :
   rw [← lowerTriangleGram_image_posDiagLowerRegion p, hcomp, Set.image_comp,
     Set.preimage_image_eq _ (symmetricLowerCoordinatesMeasurableEquiv p).symm.injective]
 
+/-- On the positive-diagonal region the Jacobian weight is nonnegative, so it agrees with the
+real number `2 ^ p * ∏ i, (L i i) ^ (p - i)` it truncates. -/
+@[simp]
+theorem toReal_choleskyJacobianDensity {x : lowerTriangle p → ℝ}
+    (hx : x ∈ posDiagLowerRegion p) :
+    (choleskyJacobianDensity p x).toReal =
+      2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.1) :=
+  ENNReal.toReal_ofReal <| mul_nonneg (by positivity) <|
+    Finset.prod_nonneg fun i _ => pow_nonneg (hx i).le _
+
 /-- The integral form of the Cholesky change of variables: an integral over the positive-definite
 cone becomes a weighted integral over the positive-diagonal coordinate region. -/
 theorem setLIntegral_posDef_symmetricLebesgue
@@ -364,11 +380,8 @@ theorem integral_posDef_symmetricLebesgue {E : Type*} [NormedAddCommGroup E] [No
   rw [← map_cholesky_symmetricLebesgue] at hf ⊢
   rw [integral_map (measurable_lowerTriangleGram p).aemeasurable hf,
     integral_withDensity_eq_integral_toReal_smul (measurable_choleskyJacobianDensity p)
-      (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
-  refine integral_congr_ae ?_
-  filter_upwards [ae_restrict_mem (measurableSet_posDiagLowerRegion p)] with x hx
-  rw [choleskyJacobianDensity_def, ENNReal.toReal_ofReal]
-  exact mul_nonneg (by positivity) <| Finset.prod_nonneg fun i _ =>
-    pow_nonneg (hx i).le _
+      (.of_forall fun _ => ENNReal.ofReal_lt_top)]
+  refine setIntegral_congr_fun (measurableSet_posDiagLowerRegion p) fun x hx => ?_
+  rw [toReal_choleskyJacobianDensity p hx]
 
 end TauCeti

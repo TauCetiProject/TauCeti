@@ -92,6 +92,10 @@ half-edges. -/
 noncomputable def crossingComponentCount (D : PDCode n) : ℕ :=
   orbitCount D.componentPerm / 2
 
+/-- The number of crossing-bearing components is half the number of directed traversal orbits. -/
+theorem crossingComponentCount_def (D : PDCode n) :
+    D.crossingComponentCount = orbitCount D.componentPerm / 2 := (rfl)
+
 /-- A code with no crossing visits has no crossing-bearing components. -/
 @[simp] theorem crossingComponentCount_eq_zero (D : PDCode 0) :
     D.crossingComponentCount = 0 := by

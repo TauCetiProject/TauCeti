@@ -60,39 +60,21 @@ abbrev MaximalIdealGraded (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpa
   (𝓂[K] ^ n : Ideal 𝒪[K]) ⧸
     (𝓂[K] • ⊤ : Submodule 𝒪[K] (𝓂[K] ^ n : Ideal 𝒪[K]))
 
-/-- Regard an element of `U(K,n)` as a unit of the integer ring. -/
-private noncomputable def unitFiltrationIntegerUnit (n : ℕ) :
-    unitFiltration K n →* 𝒪[K]ˣ :=
-  (valuation K).valuationSubring.unitGroupMulEquiv.toMonoidHom.comp
-    { toFun := fun x ↦
-        ⟨(x : Kˣ), by
-          rw [← unitFiltration_zero]
-          exact unitFiltration_antitone (Nat.zero_le n) x.prop⟩
-      map_one' := rfl
-      map_mul' := fun _ _ ↦ rfl }
-
-@[simp]
-private theorem coe_unitFiltrationIntegerUnit (n : ℕ) (x : unitFiltration K n) :
-    (((unitFiltrationIntegerUnit n x : 𝒪[K]ˣ) : 𝒪[K]) : K) = ((x : Kˣ) : K) :=
-  rfl
-
-private theorem map_unitFiltrationIntegerUnit (n : ℕ) (x : unitFiltration K n) :
-    Units.map (Subring.subtype 𝒪[K]).toMonoidHom (unitFiltrationIntegerUnit n x) = (x : Kˣ) := by
-  ext
-  exact coe_unitFiltrationIntegerUnit n x
-
 /-- The difference `u - 1` attached to `u ∈ U(K,n+1)`, as an element of `𝓂[K]^(n+1)`. -/
 noncomputable def unitFiltrationDifference (n : ℕ)
     (x : unitFiltration K (n + 1)) : (𝓂[K] ^ (n + 1) : Ideal 𝒪[K]) :=
-  ⟨unitFiltrationIntegerUnit (n + 1) x - 1, by
-    apply (mem_unitFiltration_succ_congr n (unitFiltrationIntegerUnit (n + 1) x)).mp
-    rw [map_unitFiltrationIntegerUnit]
+  ⟨unitFiltrationToIntegerUnits (n + 1) x - 1, by
+    -- `mem_unitFiltration_succ_congr` spells the inclusion `𝒪[K]ˣ →* Kˣ` through
+    -- `RingHom.toMonoidHom`, which is not the simp-normal form of the coercion.
+    apply (mem_unitFiltration_succ_congr n (unitFiltrationToIntegerUnits (n + 1) x)).mp
+    rw [RingHom.toMonoidHom_eq_coe, unitsMap_subtype_unitFiltrationToIntegerUnits]
     exact x.prop⟩
 
-@[simp]
+-- Not a `simp` lemma: the ambient-field form `coe_coe_unitFiltrationDifference` below is the
+-- `simp`-normal one, and both firing would take its left-hand side out of normal form.
 private theorem coe_unitFiltrationDifference (n : ℕ) (x : unitFiltration K (n + 1)) :
     (unitFiltrationDifference n x : 𝒪[K]) =
-      (unitFiltrationIntegerUnit (n + 1) x : 𝒪[K]) - 1 :=
+      (unitFiltrationToIntegerUnits (n + 1) x : 𝒪[K]) - 1 :=
   rfl
 
 /-- In the ambient field, `unitFiltrationDifference n u` is `u - 1`. -/
@@ -101,9 +83,9 @@ theorem coe_coe_unitFiltrationDifference (n : ℕ) (x : unitFiltration K (n + 1)
     (((unitFiltrationDifference n x : 𝒪[K]) : K)) = ((x : Kˣ) : K) - 1 := by
   rw [coe_unitFiltrationDifference]
   -- Expose the two subtype coercions before applying the ambient-field comparison lemma.
-  change (((unitFiltrationIntegerUnit (n + 1) x : 𝒪[K]) : K)) - 1 =
+  change (((unitFiltrationToIntegerUnits (n + 1) x : 𝒪[K]) : K)) - 1 =
     ((x : Kˣ) : K) - 1
-  rw [coe_unitFiltrationIntegerUnit]
+  rw [coe_unitFiltrationToIntegerUnits]
 
 /-- Subtracting one, modulo the next power of the maximal ideal, is a homomorphism from a
 positive unit-filtration step to the multiplicative copy of the corresponding ideal quotient. -/
@@ -144,15 +126,15 @@ noncomputable def unitFiltrationToMaximalIdealGraded (n : ℕ) :
         coe_unitFiltrationDifference, map_mul]
       have hx := (unitFiltrationDifference n x).prop
       have hy := (unitFiltrationDifference n y).prop
-      have hx' : (unitFiltrationIntegerUnit (n + 1) x : 𝒪[K]) - 1 ∈
+      have hx' : (unitFiltrationToIntegerUnits (n + 1) x : 𝒪[K]) - 1 ∈
           𝓂[K] ^ (n + 1) := by
         simpa only [coe_unitFiltrationDifference] using hx
-      have hy' : (unitFiltrationIntegerUnit (n + 1) y : 𝒪[K]) - 1 ∈
+      have hy' : (unitFiltrationToIntegerUnits (n + 1) y : 𝒪[K]) - 1 ∈
           𝓂[K] ^ (n + 1) := by
         simpa only [coe_unitFiltrationDifference] using hy
       have hxy :
-          ((unitFiltrationIntegerUnit (n + 1) x : 𝒪[K]) - 1) *
-              ((unitFiltrationIntegerUnit (n + 1) y : 𝒪[K]) - 1) ∈ 𝓂[K] ^ (n + 2) := by
+          ((unitFiltrationToIntegerUnits (n + 1) x : 𝒪[K]) - 1) *
+              ((unitFiltrationToIntegerUnits (n + 1) y : 𝒪[K]) - 1) ∈ 𝓂[K] ^ (n + 2) := by
         have hn : n + 2 ≤ (n + 1) + (n + 1) := by omega
         apply Ideal.pow_le_pow_right hn
         simpa only [← pow_add] using Ideal.mul_mem_mul hx' hy'
@@ -181,7 +163,10 @@ theorem ker_unitFiltrationToMaximalIdealGraded (n : ℕ) :
   rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf]
   rw [unitFiltrationToMaximalIdealGraded_apply, ofAdd_eq_one,
     Submodule.Quotient.mk_eq_zero]
-  have hxmap := map_unitFiltrationIntegerUnit (n + 1) x
+  -- Stated through `RingHom.toMonoidHom`, the spelling used by `mem_unitFiltration_succ_congr`.
+  have hxmap : Units.map (Subring.subtype 𝒪[K]).toMonoidHom
+      (unitFiltrationToIntegerUnits (n + 1) x) = (x : Kˣ) :=
+    unitsMap_subtype_unitFiltrationToIntegerUnits (n + 1) x
   constructor
   · intro h
     rw [← hxmap, mem_unitFiltration_succ_congr]
@@ -213,10 +198,10 @@ theorem unitFiltrationToMaximalIdealGraded_surjective (n : ℕ) :
       (mem_unitFiltration_succ_congr n u).mpr (by
         rw [hu_spec, add_sub_cancel_left]
         exact a.prop)⟩
-  have hinter : unitFiltrationIntegerUnit (n + 1) x = u := by
+  have hinter : unitFiltrationToIntegerUnits (n + 1) x = u := by
     apply Units.ext
     apply Subtype.ext
-    simp only [coe_unitFiltrationIntegerUnit, x, Units.coe_map,
+    simp only [coe_unitFiltrationToIntegerUnits, x, Units.coe_map,
       RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, Subring.coe_subtype]
   refine ⟨x, ?_⟩
   -- Strip the multiplicative type tag to compare the two representatives in the module quotient.
