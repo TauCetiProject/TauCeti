@@ -48,6 +48,9 @@ Chris Birkbeck), with `CoprimeDet` and `coprimeDet_iff` from the `CoprimeDet` se
   representative has determinant coprime to `N`, and the fact that one witness decides it.
 * `HeckeRing.GL2.Delta0_le_posDetInt`: `Δ₀(N)` consists of integral matrices of positive
   determinant, which is what puts it in the commensurator of `SL₂(ℤ)`.
+* `HeckeRing.GL2.Delta0_le_commensurator_map`: and therefore in the commensurator of the image
+  of **any** finite-index subgroup of `SL₂(ℤ)` — the half of a Hecke triple that does not depend
+  on which congruence subgroup is being used.
 * `HeckeRing.GL2.exists_primitive_content_quotient`: dividing a matrix of the `Δ₀(N)` shape by
   the gcd of its entries leaves a primitive matrix of the same shape.
 
@@ -185,6 +188,16 @@ lemma Delta0_le_posDetInt : Delta0 N ≤ posDetInt 2 := by
   intro g hg
   obtain ⟨A, hA, hdet, -, -⟩ := (mem_Delta0_iff N).mp hg
   exact (mem_posDetInt_iff 2).mpr ⟨(hasIntEntries_iff 2).mpr ⟨A, hA⟩, hdet⟩
+
+/-- **`Δ₀(N)` lies in the commensurator of the image of any finite-index subgroup of `SL₂(ℤ)`.**
+
+This is the right-hand half of the Hecke triple `Γ ≤ Δ₀(N) ≤ commensurator(Γ.map (mapGL ℚ))`,
+and it holds for every finite-index `Γ ≤ SL₂(ℤ)`: nothing about the subgroup enters beyond its
+index. Shimura's Lemma 3.10. -/
+lemma Delta0_le_commensurator_map (Γ : Subgroup SL(2, ℤ)) [Γ.FiniteIndex] :
+    Delta0 N ≤ (Subgroup.Commensurable.commensurator (Γ.map (mapGL ℚ))).toSubmonoid := by
+  rw [Subgroup.Commensurable.eq (commensurable_map_SLnZ 2 Γ)]
+  exact (Delta0_le_posDetInt N).trans (posDetInt_le_commensurator 2)
 
 /-- The gcd of the four entries, as a natural number. -/
 private def entryGCD (A : Matrix (Fin 2) (Fin 2) ℤ) : ℕ :=

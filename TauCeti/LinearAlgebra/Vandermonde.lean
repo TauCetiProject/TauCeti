@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.LinearAlgebra.Matrix.Block
 import TauCeti.LinearAlgebra.Determinant
+import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
 # Vandermonde determinants in the falling-factorial basis
@@ -75,10 +76,10 @@ scaled entry by entry multiplies the determinant by the total of the scaling fac
 the `j`-weighted correction into `(0 + 1 + ⋯ + (m - 1)) · det`.
 
 Mathlib's `monic_descPochhammer` and `descPochhammer_natDegree` assume the coefficient ring is a
-nontrivial ring without zero divisors, which the lowering identity does not; the two facts hold in
-general because `descPochhammer R j` is the image of `descPochhammer ℤ j` under the unique ring
-homomorphism, and a monic polynomial stays monic of the same degree under any ring homomorphism to
-a nontrivial ring.  The trivial ring is handled separately, where the identity is vacuous.
+nontrivial ring without zero divisors, which the lowering identity does not; it uses
+`TauCeti.monic_descPochhammer`, which holds over any ring, and `TauCeti.descPochhammer_natDegree`,
+which holds over any nontrivial ring.  The trivial ring is handled separately, where the identity is
+vacuous.
 
 ## Main results
 
@@ -150,22 +151,6 @@ theorem sum_Icc_descPochhammer_eval (m : ℕ) {p q : ℤ} (h : p ≤ q) :
 
 /-! ### The box-sum identity -/
 
-/-- A falling factorial is monic over any commutative ring, being the image of the falling
-factorial over `ℤ` under the unique ring homomorphism.  Mathlib's `monic_descPochhammer` assumes
-the ring is nontrivial and has no zero divisors. -/
-private theorem monic_descPochhammer' (R : Type*) [CommRing R] (m : ℕ) :
-    (descPochhammer R m).Monic := by
-  rw [← descPochhammer_map (Int.castRingHom R) m]
-  exact (monic_descPochhammer ℤ m).map _
-
-/-- A falling factorial has the expected degree over any nontrivial commutative ring, monic
-polynomials keeping their degree under a ring homomorphism to a nontrivial ring.  Mathlib's
-`descPochhammer_natDegree` also assumes there are no zero divisors. -/
-private theorem descPochhammer_natDegree' (R : Type*) [CommRing R] [Nontrivial R] (m : ℕ) :
-    (descPochhammer R m).natDegree = m := by
-  rw [← descPochhammer_map (Int.castRingHom R) m, (monic_descPochhammer ℤ m).natDegree_map,
-    descPochhammer_natDegree ℤ m]
-
 /-- The Vandermonde determinant of a node vector, computed in the falling-factorial basis: the
 falling factorials are monic of degree `j`, so they give the same determinant as the powers. -/
 private theorem det_vandermonde_eq_det_descPochhammer {R : Type*} [CommRing R] [Nontrivial R]
@@ -173,8 +158,8 @@ private theorem det_vandermonde_eq_det_descPochhammer {R : Type*} [CommRing R] [
     (Matrix.vandermonde y).det
       = (Matrix.of fun i j : Fin m => (descPochhammer R (j : ℕ)).eval (y i)).det :=
   Matrix.det_eval_matrixOfPolynomials_eq_det_vandermonde y
-    (fun j => descPochhammer R (j : ℕ)) (fun j => descPochhammer_natDegree' R (j : ℕ))
-    (fun j => monic_descPochhammer' R (j : ℕ))
+    (fun j => descPochhammer R (j : ℕ)) (fun j => descPochhammer_natDegree (j : ℕ))
+    (fun j => monic_descPochhammer (j : ℕ))
 
 /-- The one surviving term of a sum whose summand is supported on the index one step above a
 given one. -/

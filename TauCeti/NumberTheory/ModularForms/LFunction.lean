@@ -5,6 +5,8 @@ Authors: Chris Birkbeck
 -/
 module
 
+import Mathlib.Analysis.Analytic.Order
+import Mathlib.NumberTheory.LSeries.Injectivity
 public import Mathlib.NumberTheory.ModularForms.LFunction
 public import TauCeti.NumberTheory.LSeries.EntireExtension
 
@@ -34,6 +36,10 @@ API and Mathlib's `LSeries` of the `q`-expansion coefficients:
   `(Γ.strictWidthInfty : ℂ) ^ (-s) * L hk f s` for Mathlib's `ModularForm.L`.
 * `CuspForm.hasEntireExtension_qExpansion_coeff`: the coefficient series of a cusp form
   of positive weight has an entire extension (the Layer-7 continuation milestone).
+* `CuspForm.L_ne_zero_of_qExpansion_coeff_ne_zero`: a nonzero positive-index coefficient makes
+  the entire L-function nonzero.
+* `CuspForm.eq_strictWidthInfty_cpow_mul_L`: uniqueness of the width-normalized entire
+  continuation.
 
 The non-cuspidal abscissa bound `k + 1` is weaker than Diamond–Shurman Prop. 5.9.1
 (which gives convergence for `Re s > k` via `aₙ = O(n^{k-1})`); tightening it is a
@@ -140,5 +146,55 @@ theorem hasEntireExtension_qExpansion_coeff (hk : 0 < k) [CuspFormClass F Γ k] 
   · exact (Differentiable.const_cpow differentiable_neg
       (Or.inl (Complex.ofReal_ne_zero.mpr Γ.strictWidthInfty_pos.ne'))).mul
       (differentiable_L hk f)
+
+/-- The entire L-function of a positive-weight cusp form is nonzero if one of its
+positive-index coefficients is nonzero. This ensures that its analytic order is finite. -/
+theorem L_ne_zero_of_qExpansion_coeff_ne_zero [CuspFormClass F Γ k] (f : F) (hk : 0 < k)
+    {n : ℕ} (hn : n ≠ 0) (hcoeff : (qExpansion Γ.strictWidthInfty f).coeff n ≠ 0) :
+    ModularForm.L hk f ≠ 0 := by
+  intro hL
+  have hzero :
+      (fun x : ℝ ↦ LSeries (fun m ↦ (qExpansion Γ.strictWidthInfty f).coeff m) x)
+        =ᶠ[atTop] 0 := by
+    filter_upwards [eventually_ge_atTop ((k : ℝ) / 2 + 2)] with x hx
+    have hs : (k : ℝ) / 2 + 1 < x := by linarith
+    simpa [hL] using CuspForm.LSeries_qExpansion_coeff_eq hk f hs
+  rcases LSeries_eventually_eq_zero_iff'.mp hzero with hzero | habscissa
+  · exact hcoeff (hzero n hn)
+  · have hfinite := (CuspForm.hasEntireExtension_qExpansion_coeff hk f).abscissa_lt_top
+    rw [habscissa] at hfinite
+    exact (lt_irrefl ⊤ hfinite).elim
+
+/-- A positive-weight cusp form with a nonzero positive-index coefficient has finite analytic
+order at every point. -/
+theorem analyticOrderAt_L_ne_top_of_qExpansion_coeff_ne_zero [CuspFormClass F Γ k] (f : F)
+    (hk : 0 < k) (s : ℂ) {n : ℕ} (hn : n ≠ 0)
+    (hcoeff : (qExpansion Γ.strictWidthInfty f).coeff n ≠ 0) :
+    analyticOrderAt (ModularForm.L hk f) s ≠ ⊤ := by
+  intro htop
+  apply L_ne_zero_of_qExpansion_coeff_ne_zero f hk hn hcoeff
+  exact (AnalyticOnNhd.analyticOrderAt_eq_top_iff_eq_zero s fun _ ↦
+    (CuspForm.differentiable_L hk f).analyticAt _).mp htop
+
+/-- Any entire function agreeing with the coefficient Dirichlet series of a positive-weight
+cusp form on its convergence half-plane is the width-normalized entire L-function. -/
+theorem eq_strictWidthInfty_cpow_mul_L [CuspFormClass F Γ k] (f : F) (hk : 0 < k)
+    {G : ℂ → ℂ} (hG : Differentiable ℂ G)
+    (hGL : ∀ {s : ℂ}, (k : ℝ) / 2 + 1 < s.re →
+      G s = LSeries (fun n ↦ (qExpansion Γ.strictWidthInfty f).coeff n) s) :
+    G = fun s ↦ (Γ.strictWidthInfty : ℂ) ^ (-s) * ModularForm.L hk f s := by
+  exact (Complex.analyticOnNhd_univ_iff_differentiable.mpr hG).eq_of_eventuallyEq
+    (Complex.analyticOnNhd_univ_iff_differentiable.mpr
+      ((Differentiable.const_cpow differentiable_neg
+        (Or.inl (Complex.ofReal_ne_zero.mpr Γ.strictWidthInfty_pos.ne'))).mul
+        (CuspForm.differentiable_L hk f))) (by
+      refine Filter.eventuallyEq_iff_exists_mem.mpr
+        ⟨{s : ℂ | (k : ℝ) / 2 + 1 < s.re}, ?_, ?_⟩
+      · exact (isOpen_lt continuous_const Complex.continuous_re).mem_nhds (by
+          simp only [Set.mem_ofPred_eq, Complex.ofReal_re]
+          linarith : (((k : ℝ) / 2 + 2 : ℝ) : ℂ) ∈
+            {s : ℂ | (k : ℝ) / 2 + 1 < s.re})
+      · intro s hs
+        exact (hGL hs).trans (CuspForm.LSeries_qExpansion_coeff_eq hk f hs))
 
 end CuspForm
