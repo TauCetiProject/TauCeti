@@ -21,6 +21,12 @@ the weak derivative can be verified on relatively compact subdomains.
 
 * `hasWeakLineDerivOn_iff_forall_isCompact_closure`: detection of weak directional derivatives.
 * `hasWeakFDerivOn_iff_forall_isCompact_closure`: detection of weak Fréchet derivatives.
+
+## Attribution
+
+The reduction to relatively compact subdomains follows Mathlib's
+`exists_open_between_and_isCompact_closure`, which places each test function's compact support
+inside a single testing subdomain.
 -/
 
 public section

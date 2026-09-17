@@ -14,6 +14,12 @@ import Mathlib.Topology.Separation.Regular
 Local integrability on an open set is equivalent to local integrability on every open subdomain
 whose closure is compact and contained in the original set. This form is useful when a proof can be
 localized to relatively compact subdomains.
+
+## Attribution
+
+The characterization adapts Mathlib's `locallyIntegrableOn_iff` and
+`LocallyIntegrableOn.integrableOn_compact_subset`, combined with
+`exists_open_between_and_isCompact_closure` to reach relatively compact open subdomains.
 -/
 
 public section
