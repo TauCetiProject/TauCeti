@@ -16,11 +16,6 @@ A reduced finite-type algebra over an algebraically closed field stays reduced a
 with any reduced algebra. This applies in particular to the tensor square of a coordinate ring
 modulo its nilradical, before any Hopf structure has been constructed on that quotient.
 
-The argument uses the Nullstellensatz point-separation theorem from
-`TauCeti.RingTheory.FiniteType.PointSeparation`. Specializing the finite-type factor at each
-rational point kills a nilpotent tensor. The shared linear separation lemma
-in `TauCeti.LinearAlgebra.TensorProduct.Separation` then detects that the tensor is zero.
-
 ## References
 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §11.4, for the application to

@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Basis
+-- Supplies `Module.Free.of_divisionRing`, hence projectivity of vector spaces.
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
@@ -13,9 +14,7 @@ import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 Separating families of linear functionals detect zero tensors by contraction, first in one
 factor and then in both. These lemmas supply the shared separation step for rational-point
-separation and reducedness of tensor products of algebras. The proof reuses
-`TensorProduct.tensor_eq_of_forall_tensorComponent_eq` and
-`LinearMap.tensorComponent_map` from the existing contraction API.
+separation and reducedness of tensor products of algebras.
 -/
 
 public section
@@ -32,6 +31,7 @@ theorem tensor_eq_zero_of_forall_lid_rTensor_eq_zero
     (x : M ⊗[k] N)
     (hx : ∀ i, TensorProduct.lid k N ((f i).rTensor N x) = 0) :
     x = 0 := by
+  -- Use the contraction API: `tensor_eq_of_forall_tensorComponent_eq` and `tensorComponent_map`.
   apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
   intro φ
   simp only [map_zero]

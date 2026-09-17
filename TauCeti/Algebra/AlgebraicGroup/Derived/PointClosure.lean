@@ -64,7 +64,7 @@ theorem derivedDefiningIdeal_eq_vanishingIdeal_commutator :
 
 /-- A function vanishes on the derived subgroup exactly when it vanishes on every
 element of the abstract commutator subgroup of rational points. -/
-theorem mem_derivedDefiningIdeal_iff_forall_commutator_apply_eq_zero (x : H) :
+@[simp] theorem mem_derivedDefiningIdeal_iff_forall_commutator_apply_eq_zero (x : H) :
     x ∈ derivedDefiningIdeal (R := k) H ↔
       ∀ g : commutator (WithConv (H →ₐ[k] k)), g.val.ofConv x = 0 := by
   rw [derivedDefiningIdeal_eq_vanishingIdeal_commutator, HopfIdeal.mem_vanishingIdeal]
