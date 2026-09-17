@@ -214,7 +214,6 @@ slash is multiplication by the scalar to the power `k - 2`.
 The calculation generalizes AINTLIB's `slash_diag_scalar` (Chris Birkbeck, Apache-2.0), in
 `LeanModularForms/HeckeRIngs/GL2/Unified/NebentypusHeckeRingHom.lean` at commit
 `2baa76f742bdb4fb8ee323fabba41203bd390e08`. -/
-@[simp]
 theorem _root_.ModularForm.slash_scalar (k : ℤ) (u : ℝˣ) (f : ℍ → ℂ) :
     f ∣[k] Matrix.GeneralLinearGroup.scalar (Fin 2) u =
       ((u : ℝ) : ℂ) ^ (k - 2) • f := by
