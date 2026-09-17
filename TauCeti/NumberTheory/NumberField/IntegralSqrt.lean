@@ -29,13 +29,13 @@ quadratic-field API in `TauCeti.NumberTheory.NumberField.Quadratic` and of the m
 files built on it, so it is recorded here once.
 
 For `d ≡ 1 (mod 4)`, the half-generator `(1 + x) / 2` is integral as well. This is the
-integral generator that separates conjugates at primes above `2`. Its integrality proof
-generalizes the existing half-generator arguments in
-`TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers` and
-`TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Ramification`.
+integral generator that separates conjugates at primes above `2`.
 
 ## Main definitions and results
 
+* `TauCeti.sq_one_add_div_two_sub_self`: the quadratic relation for the half-generator.
+* `TauCeti.isIntegral_one_add_div_two_of_sq_eq`: the half-generator is integral when
+  `d ≡ 1 (mod 4)`.
 * `NumberField.integralSqrt`: the packaging in `𝓞 K`, with
   `NumberField.algebraMap_integralSqrt` and `NumberField.integralSqrt_sq`.
 * `NumberField.minpoly_integralSqrt`: its minimal polynomial over `ℤ` is `X² - d`,
@@ -99,19 +99,24 @@ end NumberField
 
 namespace TauCeti
 
+/-- If `x² = d` and `d ≡ 1 (mod 4)`, the half-generator satisfies
+`((1 + x) / 2)² - (1 + x) / 2 = ⌊d / 4⌋`. -/
+theorem sq_one_add_div_two_sub_self {K : Type*} [Field K] [CharZero K]
+    {x : K} {d : ℤ} (hx : x ^ 2 = algebraMap ℤ K d) (hd : d % 4 = 1) :
+    ((1 + x) / 2) ^ 2 - (1 + x) / 2 = algebraMap ℤ K (d / 4) := by
+  have he : d = 4 * (d / 4) + 1 := by omega
+  have heK : (d : K) = 4 * ((d / 4 : ℤ) : K) + 1 := by exact_mod_cast he
+  field_simp
+  linear_combination hx + heK
+
 /-- If `x² = d` and `d ≡ 1 (mod 4)`, then `(1 + x) / 2` is an algebraic integer.
 No nonsquareness or squarefreeness assumption on `d` is needed. -/
 theorem isIntegral_one_add_div_two_of_sq_eq {K : Type*} [Field K] [CharZero K]
     {x : K} {d : ℤ} (hx : x ^ 2 = algebraMap ℤ K d) (hd : d % 4 = 1) :
     IsIntegral ℤ ((1 + x) / 2) := by
-  obtain ⟨e, he⟩ : ∃ e : ℤ, d = 4 * e + 1 := ⟨d / 4, by omega⟩
-  have hde : algebraMap ℤ K d = 4 * algebraMap ℤ K e + 1 := by
-    rw [he]
-    simp only [map_add, map_mul, map_ofNat, map_one]
-  refine ⟨X ^ 2 - X - C e, ?_, ?_⟩
+  refine ⟨X ^ 2 - X - C (d / 4), ?_, ?_⟩
   · monicity!
-  · simp only [eval₂_sub, eval₂_pow, eval₂_X, eval₂_C]
-    field_simp
-    linear_combination hx + hde
+  · simpa only [eval₂_sub, eval₂_pow, eval₂_X, eval₂_C, sub_eq_zero] using
+      sq_one_add_div_two_sub_self hx hd
 
 end TauCeti
