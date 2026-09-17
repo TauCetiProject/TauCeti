@@ -7,8 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Dihedral
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Dihedral
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.IntegerChecker
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.Basic
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.Solver
 
 /-!
 # The rational Dixon computation for the dihedral group of order six
@@ -52,6 +51,8 @@ three outputs.
   character-table specification.
 * `TauCeti.integerCharacterTableChecker_dihedralGroupThree`: the executable exact checker accepts
   them.
+* `TauCeti.isSome_dixonRationalCharacterTable_dihedralGroupThree`: the assembled rational solver
+  succeeds on the certified prime.
 * `TauCeti.isCharacterTableSpec_dihedralGroupThree`: their complex image satisfies the character
   table specification.
 
@@ -234,6 +235,18 @@ theorem integerCharacterTableChecker_dihedralGroupThree :
       dihedralGroupThreeCharacterDegrees = true := by
   rw [(dihedralClassData 3).integerCharacterTableChecker_eq_true_iff]
   exact isIntegerCharacterTableSpec_dihedralGroupThree
+
+/-- **The assembled rational Dixon--Schneider solver succeeds on the certified prime for
+`DihedralGroup 3`.** -/
+theorem isSome_dixonRationalCharacterTable_dihedralGroupThree :
+    ((dihedralClassData 3).dixonRationalCharacterTable?
+      dihedralGroupThreeDixonPrimeData.p).isSome = true := by
+  rw [(dihedralClassData 3).isSome_dixonRationalCharacterTable_iff]
+  refine ⟨⟨dihedralGroupThreeCentralCharacterTable, dihedralGroupThreeCharacterTable,
+    dihedralGroupThreeCharacterDegrees⟩, ?_, isIntegerCharacterTableSpec_dihedralGroupThree⟩
+  intro i
+  rw [dihedralGroupThree_liftedCentralRows]
+  exact Finset.mem_image.mpr ⟨i, Finset.mem_univ i, rfl⟩
 
 /-- **The exact rational Dixon output for `DihedralGroup 3`, cast to `ℂ`, satisfies the character
 table specification.** Consequently it is the ordinary complex character table up to a row

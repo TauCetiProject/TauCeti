@@ -88,7 +88,7 @@ theorem coe_map {S : Type v} [CommRing S] (phi : R →+* S)
     (g : upperTriangularGroup m R) :
     ((map phi g : upperTriangularGroup m S) : GL m S) =
       Matrix.GeneralLinearGroup.map phi (g : GL m R) :=
-  by simp [map]
+  by rfl
 
 /-- Entrywise application of a ring homomorphism to an upper-triangular matrix. -/
 theorem map_apply {S : Type v} [CommRing S] (phi : R →+* S)
@@ -101,7 +101,7 @@ theorem map_apply {S : Type v} [CommRing S] (phi : R →+* S)
 @[simp]
 theorem map_id :
     map (m := m) (RingHom.id R) = MonoidHom.id (upperTriangularGroup m R) := by
-  ext g i j
+  ext x i j
   simp only [map_apply, RingHom.id_apply, MonoidHom.id_apply]
 
 /-- Successive entrywise maps agree with mapping along the composite ring homomorphism. -/
@@ -109,10 +109,7 @@ theorem map_id :
 theorem map_comp {S T : Type*} [CommRing S] [CommRing T]
     (f : R →+* S) (g : S →+* T) :
     map (m := m) (g.comp f) = (map (m := m) g).comp (map (m := m) f) := by
-  apply MonoidHom.ext
-  intro x
-  apply Subtype.ext
-  ext i j
+  ext x i j
   simp only [map_apply, RingHom.coe_comp, Function.comp_apply, MonoidHom.coe_comp]
 
 /-- The diagonal projection from the upper-triangular group to the coordinatewise unit group.

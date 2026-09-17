@@ -64,11 +64,18 @@ jobs:
   # job for exactly that reason.
   verify:
     if: github.repository == 'TauCetiProject/TauCeti'
-    # Namespace runners are provisioned for the leanprover organisation; this repository is in
-    # TauCetiProject, where a job with those labels is never picked up and sits queued forever.
-    # The bubblewrap policy itself runs correctly on a privileged Namespace runner, so this is a
-    # question of provisioning rather than of the sandbox.
-    runs-on: ubuntu-24.04
+    # `container.privileged` is required and documented by Namespace for this case: without it
+    # the job container's seccomp profile denies `pivot_root`, and bwrap cannot build its sandbox
+    # at all, for root as well as for the job user. The `-with-features` suffix on the machine
+    # label is what makes the feature label apply.
+    #
+    # Both the provisioning and the feature are per-organisation configuration. A job whose
+    # labels this organisation does not serve is not rejected: it sits queued with an empty
+    # runner name until it expires, taking the required builds with it. Before changing these
+    # labels, confirm them in the organisation that will run the job.
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-8x16-with-features
+      - namespace-features:container.privileged=true
     # The from-scratch build alone ran about 49 minutes as ci.yml's Build step before #3715, and the
     # cache-restored build adds roughly 15. Generous headroom, but bounded; a run that hits this
     # still reports, because the report job keys off the job result.

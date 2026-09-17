@@ -32,6 +32,8 @@ the reductive-groups roadmap Layer 0 target "R-points as a group" and its follow
   isomorphism into a multiplicative equivalence of convolution monoids.
 * `AlgHom.mapValue_mapDomain`: pre-composition in the coordinate algebra commutes with
   post-composition in the value algebra.
+* `AlgHom.mapValue_algebraOfId`: mapping a base-valued point through an algebra-valued point
+  gives the corresponding constant point.
 * `AlgHom.mapDomain_inv_apply`: pointwise inverse formula after pre-composition.
 
 The convolution-preservation proof is the bialgebra-morphism version of Mathlib's
@@ -182,6 +184,24 @@ lemma mapValue_mapDomain (φ : H₁ →ₐc[R] H₂) (χ : A →ₐ[R] B) :
     mapDomain_apply, mapValue_apply, toConv_ofConv, toConv_ofConv, AlgHom.comp_assoc]
 
 end BialgebraMapValue
+
+section BialgebraConstantPoint
+
+variable [CommSemiring H₁] [_root_.Bialgebra R H₁]
+variable [CommSemiring A] [Algebra R A]
+
+/-- Mapping a base-valued point first to the coordinate algebra and then through an
+algebra-valued point gives the corresponding constant point in the value algebra. -/
+lemma mapValue_algebraOfId (x : WithConv (H₁ →ₐ[R] A))
+    (g : WithConv (H₁ →ₐ[R] R)) :
+    mapValue (H := H₁) x.ofConv
+        (mapValue (H := H₁) (Algebra.ofId R H₁) g) =
+      mapValue (H := H₁) (Algebra.ofId R A) g := by
+  have h := DFunLike.congr_fun
+    (mapValue_comp (H := H₁) x.ofConv (Algebra.ofId R H₁)) g
+  simpa [Algebra.comp_ofId] using h.symm
+
+end BialgebraConstantPoint
 
 section Hopf
 

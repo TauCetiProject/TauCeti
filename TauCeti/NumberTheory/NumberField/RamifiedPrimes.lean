@@ -73,6 +73,14 @@ theorem mem_ramifiedPrimes_iff_dvd_discr {p : ℕ} (hp : p.Prime) :
     ← NumberField.not_dvd_discr_iff_isUnramifiedIn K (𝓞 K) (Nat.prime_iff_prime_int.mp hp),
     not_not]
 
+-- Source. The hypothesis this discharges is
+-- `hcop : ((NumberField.discr L).natAbs).Coprime m` in the Birkbeck--Brasca Chebotarev
+-- development, CBirkbeck/chebotarev-density (Apache-2.0), branch `development` at
+-- `8575c9df1ae0a61120ab5c964c7911414254bec7`. There `CebotarevDensity/Abelian.lean` carries it
+-- undischarged throughout, obtaining `p ∤ discr E` from
+-- `NumberField.not_dvd_discr_iff_forall_liesOver` inline. The statement below is that hypothesis;
+-- deriving it from `Algebra.IsUnramifiedIn` is not done in the source, which propagates it.
+
 /-- **An unramified prime is coprime to the discriminant.** If the rational prime `p` is
 unramified in `K` then it does not divide `NumberField.discr K`, so `|discr K|` and `p` are
 coprime.

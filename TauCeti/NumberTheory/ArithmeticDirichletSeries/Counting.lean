@@ -9,6 +9,9 @@ public import Mathlib.Algebra.IsPrimePow
 public import Mathlib.Algebra.CharZero.Infinite
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
+import Mathlib.NumberTheory.Padics.HeightOneSpectrum
+import Mathlib.Order.Filter.AtTopBot.Finset
+import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
@@ -86,6 +89,7 @@ public section
 
 namespace TauCeti
 
+open Filter
 open scoped nonZeroDivisors NumberField
 open IsDedekindDomain
 
@@ -536,6 +540,49 @@ theorem primeCount_eq_card (S : Set (HeightOneSpectrum (𝓞 K))) [DecidablePred
     primeCount K S x = ((primesLE K x).filter (· ∈ S)).card := by
   rw [primeCount_apply]
   simp [Set.indicator_apply, Finset.sum_boole]
+
+/-- The number of all height-one primes of a number field below the inclusive real cutoff tends
+to infinity.
+
+This count is the normalizing denominator of a density ratio, so its divergence is what makes such
+a ratio usable: the denominator is eventually positive, and a finite discrepancy between two
+numerators vanishes in the limit. -/
+theorem tendsto_primeCount_univ_atTop (K : Type*) [Field K] [NumberField K] :
+    Tendsto (primeCount K Set.univ) atTop atTop := by
+  -- The arithmetic input is lying over for the integral extension `ℤ → 𝓞 K`: contraction from the
+  -- height-one spectrum of `𝓞 K` onto that of `ℤ` is surjective. The latter spectrum is equivalent
+  -- to the infinite type of natural primes. The rest is the generic fact that cardinality tends to
+  -- infinity along the directed set of finite subsets.
+  let _ : Infinite (HeightOneSpectrum ℤ) :=
+    Infinite.of_surjective Rat.HeightOneSpectrum.primesEquiv
+      Rat.HeightOneSpectrum.primesEquiv.surjective
+  have hsurj : Function.Surjective (HeightOneSpectrum.under ℤ :
+      HeightOneSpectrum (𝓞 K) → HeightOneSpectrum ℤ) := by
+    intro p
+    let Q := Classical.choice (Ideal.nonempty_primesOver (S := 𝓞 K) p.asIdeal)
+    refine ⟨⟨Q.1, Q.2.1, Ideal.ne_bot_of_mem_primesOver p.ne_bot Q.2⟩,
+      HeightOneSpectrum.ext ?_⟩
+    exact Q.2.2.over.symm
+  let _ : Infinite (HeightOneSpectrum (𝓞 K)) :=
+    Infinite.of_surjective (HeightOneSpectrum.under ℤ) hsurj
+  have hcarrier : Tendsto (primesLE K) atTop atTop := by
+    rw [Filter.tendsto_atTop]
+    intro s
+    filter_upwards [Filter.eventually_ge_atTop
+        ((s.sup fun p => Ideal.absNorm p.asIdeal : ℕ) : ℝ)] with x hx
+    intro p hp
+    rw [mem_normLE]
+    have hle : (Ideal.absNorm p.asIdeal : ℝ) ≤
+        (s.sup fun p => Ideal.absNorm p.asIdeal : ℕ) := by
+      exact_mod_cast Finset.le_sup (f := fun p => Ideal.absNorm p.asIdeal) hp
+    exact hle.trans hx
+  have hcard : Tendsto (fun x => (primesLE K x).card) atTop atTop :=
+    Filter.tendsto_card_atTop_atTop.comp hcarrier
+  have hcast : Tendsto (fun x => ((primesLE K x).card : ℝ)) atTop atTop :=
+    tendsto_natCast_atTop_atTop.comp hcard
+  refine hcast.congr' (Filter.Eventually.of_forall fun x => ?_)
+  rw [primeCount_eq_card]
+  simp
 
 @[simp]
 theorem primeTheta_empty (x : ℝ) : primeTheta K (∅ : Set (HeightOneSpectrum (𝓞 K))) x = 0 := by

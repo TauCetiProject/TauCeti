@@ -73,7 +73,7 @@ theorem IsProP.exists_le_map_conj (hQ : IsProP p Q) (hP : IsProPSylow p P) :
       Q.map (QuotientGroup.mk' U.toSubgroup) ≤
         (P.map (MulAut.conj g).toMonoidHom).map (QuotientGroup.mk' U.toSubgroup) := by
     simp only [t, conjugators, Set.mem_preimage, Set.mem_ofPred_eq, Sylow.coe_subgroup_smul,
-      QuotientGroup.mk'_apply, Subgroup.map_conj_map, hPSylow]
+      QuotientGroup.mk'_apply, Subgroup.map_map_conj, hPSylow]
     -- Mathlib defines the pointwise `MulAut` action on subgroups as `Subgroup.map`
     -- (`Subgroup.pointwise_smul_def` is `rfl`) and provides no rewrite lemma to `toMonoidHom`.
     exact Iff.rfl

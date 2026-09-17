@@ -10,17 +10,17 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 /-!
 # Comparing two presentations of a rational localisation
 
-A rational subset `U = R(T/s)` of `Spa(A,A⁺)` has many presentations `(T,s)`, and the roadmap's
-Layer 3.1 asks for the canonical isomorphism between the localisations they give, together with
-compatibility for three presentations. **This file does not discharge that target.** It supplies
-the conditional half: *given* comparison maps compatible with the structure maps from `A`, they
-are mutually inverse and compose correctly.
+A rational subset `U = R(T/s)` of `Spa(A,A⁺)` has many presentations `(T,s)`, so the completed
+localisations they give must be compared by canonical isomorphisms, compatible for three
+presentations. This file supplies the conditional half: *given* comparison maps compatible with the
+structure maps from `A`, they are mutually inverse and compose correctly.
 
-What is missing is the passage from equality of two rational subsets to the existence of those
+The other half is the passage from an equality of two rational subsets to the existence of those
 maps — the step Mathlib-side `rationalSubset_subset_rationalSubset_iff` stops short of, in its own
 words "leaving the passage from those facts to invertibility of `s` and power-boundedness of `t/s`
-in the coordinate ring as a separate, genuinely algebraic step" (Wedhorn §8.2). Until that exists,
-nothing here can be instantiated at two presentations of one subset.
+in the coordinate ring as a separate, genuinely algebraic step" (Wedhorn §8.2). That passage is
+`TauCeti.ValuationSpectrum.presentationRingEquivOfEq`, which instantiates the comparison theory
+here through Wedhorn's Proposition 8.2(1).
 
 The file has two halves. The first bundles a presentation as `Presentation` and orders those
 bundles by refinement — the `Preorder` and `IsDirected` instances,
@@ -58,14 +58,6 @@ is a single application of one of them.
 * `TauCeti.Huber.PairOfDefinition.continuous_presentationRingEquiv`, its `…_symm`
   counterpart, and `…_coe_comp_toCompletionLoc`: it is an isomorphism of topological rings,
   and compatible with the structure maps from `A` — the property that determines it.
-
-## What this file does not do
-
-It does not show that two presentations *of the same rational subset* satisfy the compatibility
-hypotheses. That is the remaining input: from `R(T/s) = R(T'/s')` one must deduce that `s'`
-becomes a unit in `A⟨T/s⟩` and each `t'/s'` power-bounded there, which is where the universal
-property is applied to produce the comparison maps this file consumes. Until that is available
-the isomorphism is stated from the hypotheses rather than from equality of subsets.
 
 ## Provenance
 
@@ -263,10 +255,9 @@ each composite fixes a structure map and is therefore the identity.
 
 This is the *canonical* half of presentation independence: it says the comparison is an
 isomorphism and is determined by compatibility, not that the compatibility hypotheses hold for
-two presentations of the same rational subset. Supplying those is a separate step, and it is not
-taken unconditionally anywhere: `TauCeti.ValuationSpectrum.presentationRingEquivOfEq` derives
-them from an equality of rational subsets through Wedhorn's Proposition 8.2(1), but only for
-coordinate rings in which the denominators are invertible and whose plus subrings are open. -/
+two presentations of the same rational subset. Supplying those is a separate step:
+`TauCeti.ValuationSpectrum.presentationRingEquivOfEq` derives them from an equality of rational
+subsets through Wedhorn's Proposition 8.2(1). -/
 noncomputable def presentationRingEquiv [IsTopologicalRing A]
     (P : PairOfDefinition A) (T : Finset A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
