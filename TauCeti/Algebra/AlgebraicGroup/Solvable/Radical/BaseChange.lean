@@ -49,6 +49,9 @@ Equality requires descent of an arbitrary radical candidate over `K` and is not 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 6.42 and Sections 6.45--6.46.
 * A. Borel, *Linear Algebraic Groups*, Section 11.21.
 
+The descent of triviality follows the formal pattern of
+`TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.BaseChange`.
+
 This advances the scalar-extension compatibility of the radical in Layer 6, "Reductive and
 semisimple groups", of the ReductiveGroups roadmap.
 -/
