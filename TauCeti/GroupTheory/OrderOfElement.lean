@@ -18,8 +18,8 @@ at a time: it fails at `p` exactly when `k` is divisible by `p ^ (v_p n - v_p f 
 
 ## Main results
 
-* `IsOfFinOrder.dvd_orderOf_pow_iff`: `f ∣ orderOf (g ^ k)` as non-divisibility of `k` by a prime
-  power at each prime of `f`.
+* `IsOfFinOrder.dvd_orderOf_pow_iff`, and its additive counterpart: divisibility of the order of
+  a power as non-divisibility of its exponent by a prime power at each prime of `f`.
 -/
 
 public section
@@ -35,6 +35,11 @@ exponent `k` is not divisible by `p ^ (v_p (orderOf g) - v_p f + 1)`.
 The exponent is the room `orderOf g` leaves at `p` after `f` has taken `v_p f`, plus one: the
 order of `g ^ k` is `orderOf g / gcd (orderOf g) k`, so `k` may absorb at most
 `v_p (orderOf g) - v_p f` powers of `p`; the first forbidden exponent is that room plus one. -/
+@[to_additive
+/-- **When a number divides the additive order of a multiple.** Let `g` have finite additive order
+and let `f` divide that order. Then `f` divides the additive order of `k • g` exactly when, for
+every prime `p` of `f`, the exponent `k` is not divisible by
+`p ^ (v_p (addOrderOf g) - v_p f + 1)`. -/]
 theorem dvd_orderOf_pow_iff {g : G} (hg : IsOfFinOrder g) {f : ℕ}
     (hf : f ∣ orderOf g) (k : ℕ) :
     f ∣ orderOf (g ^ k) ↔

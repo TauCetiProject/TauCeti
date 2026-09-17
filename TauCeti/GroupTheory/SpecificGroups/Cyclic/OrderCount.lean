@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
-public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import TauCeti.Data.ZMod.Count
 public import TauCeti.GroupTheory.OrderOfElement
@@ -32,11 +31,13 @@ alone.
   elements whose order satisfies `p` is `∑ φ d` over the divisors `d` of the group order with
   `p d`.
 * `IsCyclic.card_filter_dvd_orderOf_eq_sum_totient`: the case `p = (f ∣ ·)`.
-* `IsCyclic.card_filter_dvd_orderOf_mul_prod_primeFactors`: that case in closed form, in `ℕ`.
-* `IsCyclic.card_filter_dvd_orderOf_eq_mul_prod_primeFactors`: the closed form as a product
-  over `ℚ`.
-* `IsCyclic.le_card_filter_dvd_orderOf`: the uniform lower bound `(1 - 2 ^ -r) ^ #f.primeFactors`
-  for the proportion of elements of order divisible by `f`, when `f ^ r ∣ #α`.
+* `IsCyclic.card_filter_dvd_orderOf_mul_prod_primeFactors`, and its additive counterpart: that
+  case in closed form, in `ℕ`.
+* `IsCyclic.card_filter_dvd_orderOf_eq_mul_prod_primeFactors`, and its additive counterpart: the
+  closed form as a product over `ℚ`.
+* `IsCyclic.le_card_filter_dvd_orderOf`, and its additive counterpart: the uniform lower bound
+  `(1 - 2 ^ -r) ^ #f.primeFactors` for the proportion of elements of order divisible by `f`, when
+  `f ^ r ∣ #α`.
 
 ## The elements of order divisible by `f`, in closed form
 
@@ -114,6 +115,7 @@ variable {f : ℕ}
 /-- Reindexing the elements of a cyclic group of order `h` by `ZMod h`, through a generator: the
 elements of order divisible by `f` correspond to the residues avoiding a prime power at each prime
 of `f`. -/
+@[to_additive]
 private theorem card_filter_dvd_orderOf_eq_card_zmod [NeZero (Fintype.card α)]
     (hf : f ∣ Fintype.card α) :
     #{τ : α | f ∣ orderOf τ}
@@ -153,6 +155,10 @@ dividing the order `h` of a cyclic group, the elements of order divisible by `f`
 At `f = h` every exponent is `1` and this is Euler's product formula
 `Nat.totient_mul_prod_primeFactors`, the elements of order divisible by `h` being the `φ h`
 generators. -/
+@[to_additive
+/-- **The number of elements of an additive cyclic group whose additive order is a multiple of
+`f`.** This is the additive counterpart of
+`IsCyclic.card_filter_dvd_orderOf_mul_prod_primeFactors`. -/]
 theorem card_filter_dvd_orderOf_mul_prod_primeFactors (hf : f ∣ Fintype.card α) :
     #{τ : α | f ∣ orderOf τ} *
         ∏ p ∈ f.primeFactors,
@@ -221,6 +227,9 @@ theorem card_filter_dvd_orderOf_mul_prod_primeFactors (hf : f ∣ Fintype.card �
 order `h` of a cyclic group, the elements of order divisible by `f` are a proportion
 `∏ p ∣ f, (1 - p ^ -(v_p h - v_p f + 1))` of the group, the product running over the primes of
 `f`. -/
+@[to_additive
+/-- **Euler's product formula for the elements of additive order divisible by `f`.** This is the
+additive counterpart of `IsCyclic.card_filter_dvd_orderOf_eq_mul_prod_primeFactors`. -/]
 theorem card_filter_dvd_orderOf_eq_mul_prod_primeFactors (hf : f ∣ Fintype.card α) :
     (#{τ : α | f ∣ orderOf τ} : ℚ) = Fintype.card α *
       ∏ p ∈ f.primeFactors,
@@ -262,6 +271,9 @@ Each factor of `card_filter_dvd_orderOf_eq_mul_prod_primeFactors` is bounded bel
 because `f ^ r ∣ h` forces the exponent `v_p h - v_p f + 1` to be at least `r` at every prime `p`
 of `f`, and `p` is at least `2`. The bound depends on `f` only through its number of prime
 factors, so it tends to `1` as `r` grows. -/
+@[to_additive
+/-- **A uniform lower bound for the elements of additive order divisible by `f`.** This is the
+additive counterpart of `IsCyclic.le_card_filter_dvd_orderOf`. -/]
 theorem le_card_filter_dvd_orderOf {r : ℕ} (hr : 1 ≤ r) (hfr : f ^ r ∣ Fintype.card α) :
     (1 - (2 : ℚ)⁻¹ ^ r) ^ f.primeFactors.card * Fintype.card α
       ≤ #{τ : α | f ∣ orderOf τ} := by
