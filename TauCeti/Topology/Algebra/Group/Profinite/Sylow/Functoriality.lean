@@ -9,12 +9,14 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Basic
 import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
-# Images of Sylow subgroups of profinite groups
+# Images of Sylow pro-`p` subgroups under continuous surjections
 
-A continuous surjection of profinite groups carries a Sylow pro-`p` subgroup onto a Sylow
-pro-`p` subgroup. At each finite quotient of the target, pull the quotient back to the source.
-The induced map between the two finite quotients is surjective, so the index of the image divides
-the original prime-to-`p` index.
+A continuous surjective group homomorphism from a compact source onto a Hausdorff target carries
+a Sylow pro-`p` subgroup onto a Sylow pro-`p` subgroup. For each open normal subgroup of the
+target, pull it back to the source. The induced map between the two quotients is surjective, so
+the index of the image divides the original prime-to-`p` index. Compactness of the source and
+separation of the target enter only to see that the image is closed: it is a continuous image of
+a closed, hence compact, set.
 
 This is the profinite counterpart of the finite-group fact that a surjective homomorphism carries
 a Sylow subgroup onto a Sylow subgroup. Unlike invariance under a topological isomorphism, proved
@@ -24,7 +26,7 @@ homomorphism.
 ## Main result
 
 * `TauCeti.IsProPSylow.map_of_surjective`: the image of a Sylow pro-`p` subgroup under a
-  continuous surjection is Sylow pro-`p`.
+  continuous surjective homomorphism with compact source and Hausdorff target is Sylow pro-`p`.
 
 ## References
 
@@ -45,7 +47,8 @@ variable {P : Subgroup G}
 namespace IsProPSylow
 
 /-- **Surjective functoriality of Sylow pro-`p` subgroups.** The image of a Sylow pro-`p`
-subgroup under a continuous surjection of profinite groups is again Sylow pro-`p`. -/
+subgroup under a continuous surjective homomorphism from a group with a compact topology to a
+group with a Hausdorff topology is again Sylow pro-`p`. -/
 theorem map_of_surjective (hP : IsProPSylow p P) (f : G →* H) (hf : Continuous f)
     (hsurj : Function.Surjective f) : IsProPSylow p (P.map f) := by
   refine isProPSylow_iff.mpr ⟨?_, ?_, fun U hpU ↦ ?_⟩
