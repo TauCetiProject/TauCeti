@@ -51,7 +51,10 @@ the point being that invertibility upgrades the diagonal entries of a diagonal m
 The embedding, the torus, the equivalence and the membership criterion ask only that `k` be a
 semiring; commutativity of `k` enters with the self-centralization and with the determinant,
 cancellation by nonzero elements with the self-centralization as well, and the order asks for a
-division ring, where the nonzero elements are exactly the units.
+division ring, where the nonzero elements are exactly the units.  The two statements about diagonal
+matrices proper ask for less than any of these: their entries need neither a unit nor an associative
+multiplication, only a commutative one with cancellation, so they are stated over a
+`NonUnitalNonAssocCommSemiring`.
 
 Self-centralization is proved under two hypotheses, neither of them idle.  Cancellation is a
 sufficient hypothesis rather than a necessary one: an off-diagonal entry `g i j` of a centralizing
@@ -121,6 +124,28 @@ universe u
 namespace TauCeti
 
 variable {k : Type u} {n : ℕ}
+
+section Diagonal
+
+variable [NonUnitalNonAssocCommSemiring k] [IsCancelMulZero k]
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- A matrix commuting with a diagonal matrix has vanishing `(i, j)` entry whenever the diagonal
+matrix separates the coordinates `i` and `j`. -/
+theorem apply_eq_zero_of_commute_diagonal {t : ι → k} {g : Matrix ι ι k}
+    (hg : Commute (Matrix.diagonal t) g) {i j : ι} (hij : t i ≠ t j) : g i j = 0 := by
+  have hentry : (Matrix.diagonal t * g) i j = (g * Matrix.diagonal t) i j := by rw [hg.eq]
+  rw [Matrix.diagonal_mul, Matrix.mul_diagonal] at hentry
+  -- `hentry : t i * g i j = g i j * t j`; cancelling `g i j` on the left would give `t i = t j`.
+  by_contra h
+  exact hij (mul_left_cancel₀ h (by rw [mul_comm (g i j) (t i)]; exact hentry))
+
+/-- **A matrix commuting with a diagonal matrix of pairwise distinct entries is diagonal.** -/
+theorem isDiag_of_commute_diagonal {t : ι → k} (ht : Function.Injective t)
+    {g : Matrix ι ι k} (hg : Commute (Matrix.diagonal t) g) : g.IsDiag :=
+  fun _ _ hij => apply_eq_zero_of_commute_diagonal hg (ht.ne hij)
+
+end Diagonal
 
 section Semiring
 
@@ -322,27 +347,6 @@ end Scalar
 section IsCancelMulZero
 
 variable [IsCancelMulZero k]
-
-section Diagonal
-
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- A matrix commuting with a diagonal matrix has vanishing `(i, j)` entry whenever the diagonal
-matrix separates the coordinates `i` and `j`. -/
-theorem apply_eq_zero_of_commute_diagonal {t : ι → k} {g : Matrix ι ι k}
-    (hg : Commute (Matrix.diagonal t) g) {i j : ι} (hij : t i ≠ t j) : g i j = 0 := by
-  have hentry : (Matrix.diagonal t * g) i j = (g * Matrix.diagonal t) i j := by rw [hg.eq]
-  rw [Matrix.diagonal_mul, Matrix.mul_diagonal] at hentry
-  -- `hentry : t i * g i j = g i j * t j`; cancelling `g i j` on the left would give `t i = t j`.
-  by_contra h
-  exact hij (mul_left_cancel₀ h (by rw [mul_comm (g i j) (t i)]; exact hentry))
-
-/-- **A matrix commuting with a diagonal matrix of pairwise distinct entries is diagonal.** -/
-theorem isDiag_of_commute_diagonal {t : ι → k} (ht : Function.Injective t)
-    {g : Matrix ι ι k} (hg : Commute (Matrix.diagonal t) g) : g.IsDiag :=
-  fun _ _ hij => apply_eq_zero_of_commute_diagonal hg (ht.ne hij)
-
-end Diagonal
 
 variable [Nontrivial kˣ]
 
