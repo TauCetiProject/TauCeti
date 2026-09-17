@@ -139,6 +139,7 @@ def finiteExtensionValuativeRel : ValuativeRel M :=
 
 variable {K M} in
 /-- The relation `finiteExtensionValuativeRel K M` compares norms. -/
+@[simp]
 theorem finiteExtensionValuativeRel_vle_iff (x y : M) :
     letI := finiteExtensionValuativeRel K M
     letI := finiteExtensionNormedField K M

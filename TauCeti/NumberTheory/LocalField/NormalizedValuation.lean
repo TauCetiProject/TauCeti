@@ -390,6 +390,7 @@ theorem isNonarchimedean_normalizedAbsoluteValue :
   apply Valuation.isNonarchimedean_toAbsoluteValue
 
 /-- The normalized absolute value induces the order of Mathlib's valuation. -/
+@[simp]
 theorem normalizedAbsoluteValue_le_normalizedAbsoluteValue_iff (x y : K) :
     normalizedAbsoluteValue K x ≤ normalizedAbsoluteValue K y ↔
       valuation K x ≤ valuation K y := by
@@ -398,6 +399,7 @@ theorem normalizedAbsoluteValue_le_normalizedAbsoluteValue_iff (x y : K) :
   exact OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K)
 
 /-- The normalized absolute value induces the strict order of Mathlib's valuation. -/
+@[simp]
 theorem normalizedAbsoluteValue_lt_normalizedAbsoluteValue_iff (x y : K) :
     normalizedAbsoluteValue K x < normalizedAbsoluteValue K y ↔
       valuation K x < valuation K y := by
