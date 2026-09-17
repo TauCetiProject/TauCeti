@@ -402,10 +402,10 @@ theorem _root_.Equiv.Perm.coe_support_cycleOf_eq_orbit_zpowers {x : α} (hx : x 
   rw [Finset.mem_coe, mem_support_cycleOf_iff, ← sameCycle_iff_mem_orbit_zpowers]
   exact and_iff_left hx
 
+omit [Fintype α] [DecidableEq α] in
 /-- The `⟨σ⟩`-orbit of a fixed point is a singleton. -/
-theorem _root_.Equiv.Perm.orbit_zpowers_eq_singleton {x : α} (hx : x ∉ σ.support) :
+theorem _root_.Equiv.Perm.orbit_zpowers_eq_singleton {x : α} (hx : σ x = x) :
     orbit (Subgroup.zpowers σ) x = {x} := by
-  rw [notMem_support] at hx
   ext y
   rw [← sameCycle_iff_mem_orbit_zpowers, Set.mem_singleton_iff]
   constructor
@@ -508,7 +508,7 @@ theorem _root_.Equiv.Perm.fullCycleType_eq_map_card_orbit :
     rw [orbitRel.Quotient.orbit_mk, he]
     by_cases hx : σ x = x
     · rw [cycleFactorOrFixedPoint_of_apply_eq σ hx, Sum.elim_inr,
-        orbit_zpowers_eq_singleton σ (notMem_support.mpr hx), Nat.card_coe_set_eq,
+        orbit_zpowers_eq_singleton σ hx, Nat.card_coe_set_eq,
         Set.ncard_singleton]
     · rw [cycleFactorOrFixedPoint_of_apply_ne σ hx, Sum.elim_inl,
         ← coe_support_cycleOf_eq_orbit_zpowers σ (mem_support.mpr hx), Nat.card_coe_set_eq,
