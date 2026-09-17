@@ -118,8 +118,10 @@ theorem autCandidateGenusFieldEquivElementaryTwoQuotient_artinHomAway
   simp
 
 /-- **The imaginary genus-field Artin map is trivial exactly on the principal genus.** For negative
-squarefree `d`, an invertible fractional ideal of `K = ℚ(√d)` prime to `S` has trivial Artin
-automorphism in `Gal(K_gen/K)` precisely when its ideal class is a square in `Cl(K)`. -/
+squarefree `d`, let `S` be any finite set of primes of `𝓞 K` containing every prime whose residue
+characteristic divides `2 · disc K`. An invertible fractional ideal of `K = ℚ(√d)` prime to `S`
+has trivial Artin automorphism in `Gal(K_gen/K)` precisely when its ideal class is a square in
+`Cl(K)`. -/
 theorem artinHomAway_candidateGenusField_eq_one_iff_of_neg
     (hd : Squarefree d) (hneg : d < 0)
     (S : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))))
