@@ -44,10 +44,8 @@ serves `TauCeti.GridDiagram.fullyBlockedDifferential` unchanged.
 
 * `TauCeti.GridRectangleBetween.sideColumns_eq_sideColumns`: a returning pair of rectangles uses
   the same two side columns.
-* `TauCeti.GridRectangleBetween.left_eq_left_or_left_eq_right`,
-  `TauCeti.GridRectangleBetween.right_eq_right_of_left_eq_left`,
-  `TauCeti.GridRectangleBetween.right_eq_left_of_left_eq_right`: the returning rectangle either
-  has the same oriented side columns or the reversed ones.
+* `TauCeti.GridRectangleBetween.left_right_eq_cases`: the returning rectangle either has the
+  same ordered side columns or the reversed ones.
 * `TauCeti.GridRectangleBetween.coveredSquares_union_coveredSquares`: the squares covered by a
   returning pair are a full vertical band or a full horizontal band.
 * `TauCeti.GridRectangleBetween.disjoint_coveredSquares`: the two rectangles of a returning pair
@@ -75,7 +73,7 @@ variable {n : ℕ} {x y : GridState n} (R : GridRectangleBetween x y) (S : GridR
 /-- The initial side column of a returning rectangle is a side column of the outgoing one: away
 from the two side columns of `R` the states `x` and `y` agree, and there `S` could not exchange
 two distinct rows. -/
-theorem left_eq_left_or_left_eq_right : S.left = R.left ∨ S.left = R.right := by
+private theorem left_eq_left_or_left_eq_right : S.left = R.left ∨ S.left = R.right := by
   by_cases hl : S.left = R.left
   · exact Or.inl hl
   by_cases hr : S.left = R.right
@@ -98,17 +96,26 @@ private theorem right_eq_left_or_right_eq_right : S.right = R.left ∨ S.right =
 
 /-- If a returning rectangle starts on the same side column as the outgoing one, then it also
 ends on the same side column. -/
-theorem right_eq_right_of_left_eq_left (h : S.left = R.left) : S.right = R.right := by
+private theorem right_eq_right_of_left_eq_left (h : S.left = R.left) : S.right = R.right := by
   rcases R.right_eq_left_or_right_eq_right S with h' | h'
   · exact absurd (h.trans h'.symm) S.left_ne_right
   · exact h'
 
 /-- If a returning rectangle starts on the terminal side column of the outgoing one, then it ends
 on the initial one. -/
-theorem right_eq_left_of_left_eq_right (h : S.left = R.right) : S.right = R.left := by
+private theorem right_eq_left_of_left_eq_right (h : S.left = R.right) : S.right = R.left := by
   rcases R.right_eq_left_or_right_eq_right S with h' | h'
   · exact h'
   · exact absurd (h.trans h'.symm) S.left_ne_right
+
+/-- The returning rectangle has either the same ordered side columns as the outgoing rectangle or
+the reversed ordered side columns. -/
+theorem left_right_eq_cases :
+    (S.left = R.left ∧ S.right = R.right) ∨
+      (S.left = R.right ∧ S.right = R.left) := by
+  rcases R.left_eq_left_or_left_eq_right S with h | h
+  · exact Or.inl ⟨h, R.right_eq_right_of_left_eq_left S h⟩
+  · exact Or.inr ⟨h, R.right_eq_left_of_left_eq_right S h⟩
 
 /-- A returning pair of rectangles uses the same unordered pair of side columns. -/
 theorem sideColumns_eq_sideColumns : S.sideColumns = R.sideColumns := by

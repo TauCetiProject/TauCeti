@@ -186,9 +186,9 @@ private theorem XHomotopyDecompositions_self (hn : 1 < n) (k : Fin n) (x : GridS
     (D.first.disjoint_coveredSquares D.second), Finset.mem_insert, Finset.mem_singleton]
   constructor
   · rintro ⟨-, -, hX⟩
-    rcases D.first.left_eq_left_or_left_eq_right D.second with h | h
+    rcases D.first.left_right_eq_cases D.second with ⟨hleft, hright⟩ | ⟨hleft, hright⟩
     · -- a column band: it is the column annulus of column `k`
-      rw [coveredSquares_union_coveredSquares_of_left_eq_left _ _ h,
+      rw [coveredSquares_union_coveredSquares_of_left_eq_left _ _ hleft,
         product_univ_inter_XSet_eq_singleton_iff, GridRectangle.coveredColumns_def,
         toGridRectangle_left, toGridRectangle_right, Grid.cIco_eq_singleton_iff] at hX
       obtain ⟨hl, hr, -⟩ := hX
@@ -197,12 +197,12 @@ private theorem XHomotopyDecompositions_self (hn : 1 < n) (k : Fin n) (x : GridS
         simp only [columnAnnulus, ofSwapColumns_left, ofSwapColumns_right]
       · exact hl
       · exact hr
-      · rw [h]
+      · rw [hleft]
         exact hl
-      · rw [D.first.right_eq_right_of_left_eq_left D.second h]
+      · rw [hright]
         exact hr
     · -- a row band: it is the row annulus of the row of `X_k`
-      rw [coveredSquares_union_coveredSquares_of_left_eq_right _ _ h,
+      rw [coveredSquares_union_coveredSquares_of_left_eq_right _ _ hleft,
         univ_product_inter_XSet_eq_singleton_iff, GridRectangle.coveredRows_def,
         Grid.cIco_eq_singleton_iff] at hX
       obtain ⟨hb, ht, -⟩ := hX
@@ -217,9 +217,9 @@ private theorem XHomotopyDecompositions_self (hn : 1 < n) (k : Fin n) (x : GridS
         simp only [rowAnnulus, ofSwapColumns_left, ofSwapColumns_right]
       · exact hl
       · exact hr
-      · rw [h]
+      · rw [hleft]
         exact hr
-      · rw [D.first.right_eq_left_of_left_eq_right D.second h]
+      · rw [hright]
         exact hl
   · rintro (rfl | rfl)
     · refine ⟨(columnAnnulus_isEmpty x k _).1, (columnAnnulus_isEmpty x k _).2, ?_⟩
