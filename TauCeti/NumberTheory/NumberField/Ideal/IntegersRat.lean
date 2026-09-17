@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharZero.Infinite
+public import Mathlib.FieldTheory.IntermediateField.Basic
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.Frobenius
 public import Mathlib.RingTheory.RamificationInertia.Inertia
@@ -39,6 +40,8 @@ residue field below `P`. The comparison lemmas are `simp` lemmas oriented toward
   `ℤ` agree.
 * `Ideal.isArithFrobAt_ringOfIntegers_rat_iff`: the Frobenius conditions over `𝓞 ℚ` and over `ℤ`
   agree.
+* `Ideal.primesOver_under_ringOfIntegers_rat_eq`: for a prime `Q` above the rational prime `p`,
+  the primes of a subfield above `Q ∩ 𝓞 ℚ` are the primes above `p`.
 -/
 
 public section
@@ -119,5 +122,22 @@ theorem ramificationIdx_ringOfIntegers_rat_eq_int (P : Ideal (𝓞 E)) [P.IsPrim
     IsDedekindDomain.ramificationIdx_eq_multiplicity (p := P.under ℤ) (q := P)
       (map_ne_bot_of_ne_bot hne),
     under_ringOfIntegers_rat_eq_map, map_map, ← IsScalarTower.algebraMap_eq]
+
+/-- The primes of a subfield above `Q ∩ 𝓞 ℚ` are the primes above `p`, when `Q` lies over the
+rational prime `p`. -/
+theorem primesOver_under_ringOfIntegers_rat_eq {M : Type*} [Field M] [NumberField M] {p : ℕ}
+    (Q : Ideal (𝓞 M)) [Q.LiesOver (Ideal.span {(p : ℤ)})] (E : IntermediateField ℚ M) :
+    (Q.under (𝓞 ℚ)).primesOver (𝓞 E) = (Ideal.span {(p : ℤ)}).primesOver (𝓞 E) := by
+  have : IsScalarTower ℤ (𝓞 ℚ) (𝓞 E) :=
+    IsScalarTower.of_algebraMap_eq' ((RingHom.eq_intCast' _).trans (RingHom.eq_intCast' _).symm)
+  have : IsScalarTower ℤ (𝓞 ℚ) (𝓞 M) :=
+    IsScalarTower.of_algebraMap_eq' ((RingHom.eq_intCast' _).trans (RingHom.eq_intCast' _).symm)
+  ext 𝔮
+  simp only [Ideal.primesOver, Set.mem_ofPred_eq]
+  refine and_congr_right fun _ => ⟨fun h => ⟨?_⟩, fun h => ⟨?_⟩⟩
+  · rw [Ideal.over_def (P := Q) (p := Ideal.span {(p : ℤ)}),
+      ← Ideal.under_under (A := ℤ) (B := 𝓞 ℚ) Q, h.over, Ideal.under_under]
+  · rw [under_ringOfIntegers_rat_eq_map, under_ringOfIntegers_rat_eq_map, ← h.over,
+      ← Ideal.over_def (P := Q) (p := Ideal.span {(p : ℤ)})]
 
 end Ideal

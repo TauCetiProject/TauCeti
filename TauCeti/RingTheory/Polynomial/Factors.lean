@@ -43,6 +43,8 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
   `(f) = ⨅ p, (p)`.
 * `Polynomial.sum_natDegree_normalizedFactors`: the degrees of the normalized irreducible
   factors, counted with multiplicity, sum to the degree.
+* `Polynomial.multiplicity_eq_one_of_mem_normalizedFactors_of_squarefree`: in a squarefree
+  polynomial, every normalized irreducible factor has multiplicity one.
 * `Polynomial.map_natDegree_normalizedFactors_eq_singleton_iff`: those degrees form a singleton
   exactly when the polynomial is irreducible.
 
@@ -243,6 +245,17 @@ lemma map_natDegree_normalizedFactors_eq_singleton_iff {g : K[X]} :
   refine ⟨fun h ↦ irreducible_of_card_normalizedFactors_eq_one ?_, fun h ↦ ?_⟩
   · simpa using congrArg Multiset.card h
   · rw [normalizedFactors_irreducible h, Multiset.map_singleton, natDegree_normalize]
+
+/-- In a squarefree polynomial over a field, every normalized factor has multiplicity one. -/
+theorem multiplicity_eq_one_of_mem_normalizedFactors_of_squarefree {g φ : K[X]}
+    (hsq : Squarefree g) (hφ : φ ∈ normalizedFactors g) : multiplicity φ g = 1 := by
+  have hirr : Irreducible φ := irreducible_of_normalized_factor φ hφ
+  have hdvd : φ ∣ g := dvd_of_mem_normalizedFactors hφ
+  have hle : emultiplicity φ g ≤ 1 :=
+    ((squarefree_iff_emultiplicity_le_one g).mp hsq φ).resolve_right hirr.not_isUnit
+  have hge : (1 : ℕ∞) ≤ emultiplicity φ g := by
+    simpa using (pow_dvd_iff_le_emultiplicity (k := 1)).mp (by simpa using hdvd)
+  exact multiplicity_eq_of_emultiplicity_eq_some (by simpa using le_antisymm hle hge)
 
 end Polynomial
 

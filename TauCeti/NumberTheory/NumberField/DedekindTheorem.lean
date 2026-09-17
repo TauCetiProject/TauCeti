@@ -16,6 +16,7 @@ import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.NumberField.Inertia
 import TauCeti.NumberTheory.NumberField.Minpoly
+import TauCeti.RingTheory.Polynomial.Factors
 import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.DecompositionOrbits
 
 /-!
@@ -52,8 +53,10 @@ The proof is a chain of identifications of multisets of natural numbers.
   (`Ideal.inertiaDeg_ringOfIntegers_rat_eq_int`).
 
 No transport between `K` and the subfields of `M` is needed: `K` only enters through `θ`, whose
-minimal polynomial is shared by all the roots. In particular the hypotheses `ℚ(θ) = K` and
-`p ∤ exponent θ` of the roadmap's statement are not needed.
+minimal polynomial is shared by all the roots. In particular no hypothesis that `θ` generates
+`K` over `ℚ`, and none on the conductor exponent of `θ`, is needed: every root generates its own
+field, and squarefreeness of `minpoly ℤ θ` modulo `p` already keeps `p` away from the conductor
+exponent.
 
 ## Main results
 
@@ -165,20 +168,6 @@ theorem adjoin_eq_top_of_fixedField_stabilizer (β : M) :
 
 end FixedField
 
-/-! ### Multiplicities in a squarefree reduction -/
-
-/-- In a squarefree polynomial over a field, every normalized factor has multiplicity one. -/
-theorem _root_.Polynomial.multiplicity_eq_one_of_mem_normalizedFactors_of_squarefree
-    {F : Type*} [Field F] [DecidableEq F] {f φ : F[X]} (hsq : Squarefree f)
-    (hφ : φ ∈ UniqueFactorizationMonoid.normalizedFactors f) : multiplicity φ f = 1 := by
-  have hirr : Irreducible φ := UniqueFactorizationMonoid.irreducible_of_normalized_factor φ hφ
-  have hdvd : φ ∣ f := UniqueFactorizationMonoid.dvd_of_mem_normalizedFactors hφ
-  have hle : emultiplicity φ f ≤ 1 :=
-    ((squarefree_iff_emultiplicity_le_one f).mp hsq φ).resolve_right hirr.not_isUnit
-  have hge : (1 : ℕ∞) ≤ emultiplicity φ f := by
-    simpa using (pow_dvd_iff_le_emultiplicity (k := 1)).mp (by simpa using hdvd)
-  exact multiplicity_eq_of_emultiplicity_eq_some (by simpa using le_antisymm hle hge)
-
 /-! ### A root as an integral primitive element of its field -/
 
 section RootField
@@ -197,8 +186,15 @@ noncomputable def rootIntegralPrimitiveElement (hβ : β ∈ (minpoly ℚ (θ : 
 
 variable (hβ : β ∈ (minpoly ℚ (θ : K)).rootSet M)
 
+/-- The underlying element of `rootIntegralPrimitiveElement hβ` is the root `β`. -/
+@[simp]
+theorem coe_coe_rootIntegralPrimitiveElement :
+    (((rootIntegralPrimitiveElement hβ).1 : fixedField (stabilizer (M ≃ₐ[ℚ] M) β)) : M) = β :=
+  (rfl)
+
 /-- The minimal polynomial over `ℤ` of a root, as an integral primitive element of its own field,
 is `minpoly ℤ θ`. -/
+@[simp]
 theorem minpoly_rootIntegralPrimitiveElement :
     minpoly ℤ (rootIntegralPrimitiveElement hβ).1 = minpoly ℤ θ := by
   set E := fixedField (stabilizer (M ≃ₐ[ℚ] M) β)
@@ -349,36 +345,9 @@ theorem rootSetEquivQuotientStabilizer_smul {α : M} (hα : α ∈ (minpoly ℚ 
   apply Subtype.ext
   rw [hsymm, rootSet.coe_smul, hx, smul_eq_mul, mul_smul]
 
-/-- The subgroup form of `rootSetEquivQuotientStabilizer_smul`, for the decomposition group. -/
-theorem rootSetEquivQuotientStabilizer_subgroup_smul {α : M}
-    (hα : α ∈ (minpoly ℚ (θ : K)).rootSet M) (D : Subgroup (M ≃ₐ[ℚ] M)) (d : D)
-    (x : (minpoly ℚ (θ : K)).rootSet M) :
-    rootSetEquivQuotientStabilizer hα (d • x) = d • rootSetEquivQuotientStabilizer hα x := by
-  rw [MulAction.subgroup_smul_def, MulAction.subgroup_smul_def]
-  exact rootSetEquivQuotientStabilizer_smul hα d x
-
-omit [IsGalois ℚ M] [Fact p.Prime] in
-/-- The primes of a subfield above `Q ∩ 𝓞 ℚ` are the primes above `p`. -/
-theorem primesOver_under_ringOfIntegers_rat_eq (Q : Ideal (𝓞 M))
-    [Q.LiesOver (Ideal.span {(p : ℤ)})] (E : IntermediateField ℚ M) :
-    (Q.under (𝓞 ℚ)).primesOver (𝓞 E) = (Ideal.span {(p : ℤ)}).primesOver (𝓞 E) := by
-  have : IsScalarTower ℤ (𝓞 ℚ) (𝓞 E) :=
-    IsScalarTower.of_algebraMap_eq' ((RingHom.eq_intCast' _).trans (RingHom.eq_intCast' _).symm)
-  have : IsScalarTower ℤ (𝓞 ℚ) (𝓞 M) :=
-    IsScalarTower.of_algebraMap_eq' ((RingHom.eq_intCast' _).trans (RingHom.eq_intCast' _).symm)
-  ext 𝔮
-  simp only [Ideal.primesOver, Set.mem_ofPred_eq]
-  refine and_congr_right fun _ => ⟨fun h => ⟨?_⟩, fun h => ⟨?_⟩⟩
-  · rw [Ideal.over_def (P := Q) (p := Ideal.span {(p : ℤ)}),
-      ← Ideal.under_under (A := ℤ) (B := 𝓞 ℚ) Q, h.over, Ideal.under_under]
-  · rw [Ideal.under_ringOfIntegers_rat_eq_map, Ideal.under_ringOfIntegers_rat_eq_map, ← h.over,
-      ← Ideal.over_def (P := Q) (p := Ideal.span {(p : ℤ)})]
-
--- The statement follows the human-authored specification
--- `TauCetiRoadmap/NumberFieldArithmetic/Suggested.lean`, Layer 3.9, read through
--- `Equiv.Perm.fullCycleType`; the hypotheses `Algebra.adjoin ℚ {θ} = ⊤` and `¬ p ∣ exponent θ`
--- of that specification are not needed, since every root generates its own field and the
--- squarefree reduction already forces `p ∤ exponent` there.
+-- The hypotheses that `θ` generates `K` and that `p` does not divide the conductor exponent of
+-- `θ` are not needed: every root generates its own field, and squarefreeness modulo `p` bounds
+-- the conductor exponent of each root away from `p`.
 open scoped Classical in
 /-- **Dedekind's theorem.** Let `θ` be an algebraic integer of a number field `K` whose minimal
 polynomial `minpoly ℤ θ` is squarefree modulo a prime `p`. Let `M` be a Galois number field in
@@ -416,14 +385,16 @@ theorem fullCycleType_galActionHom_restrict_eq_map_natDegree_monicFactorsMod
     (Ideal.orbit_stabilizer_eq_orbit_zpowers_of_isArithFrobAt Q hσ' x
       (fun τ hτ => inertia_smul_eq_self (p := p) hsq Q hτ x)).symm)).trans ?_
   refine (Equiv.map_card_orbit_eq_of_map_smul (G := stabilizer (M ≃ₐ[ℚ] M) Q)
-    (rootSetEquivQuotientStabilizer hα) (rootSetEquivQuotientStabilizer_subgroup_smul hα _)).trans
+    (rootSetEquivQuotientStabilizer hα) fun d x => by
+      rw [MulAction.subgroup_smul_def, MulAction.subgroup_smul_def]
+      exact rootSetEquivQuotientStabilizer_smul hα d x).trans
     ?_
   refine (Ideal.map_card_orbit_stabilizer_eq_map_ramificationIdx_mul_inertiaDeg (Q.under (𝓞 ℚ)) Q
     (stabilizer (M ≃ₐ[ℚ] M) α)).trans ?_
   refine Eq.trans ?_ (map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod (p := p) hα hsq)
   -- Primes above `Q ∩ 𝓞 ℚ` are primes above `p`, with the same residue degree and trivial
   -- ramification.
-  have hset := primesOver_under_ringOfIntegers_rat_eq (p := p) Q
+  have hset := Ideal.primesOver_under_ringOfIntegers_rat_eq (p := p) Q
     (fixedField (stabilizer (M ≃ₐ[ℚ] M) α))
   refine Multiset.map_eq_map_of_bij_of_nodup _ _ Finset.univ.nodup Finset.univ.nodup
     (fun 𝔮 _ => ⟨𝔮.1, hset ▸ 𝔮.2⟩) (fun _ _ => Finset.mem_univ _) ?_ ?_ ?_
@@ -442,24 +413,10 @@ theorem fullCycleType_galActionHom_restrict_eq_map_natDegree_monicFactorsMod
       ramificationIdx_eq_one_of_liesOver_span (p := p) hα hsq 𝔮.1, one_mul]
 
 open scoped Classical in
-/-- Dedekind's theorem, stated for any polynomial `g` known to be the minimal polynomial of `θ`
-over `ℚ`; this form is convenient when `g` is given first and `θ` is a root of it. -/
-theorem fullCycleType_galActionHom_restrict_eq_map_natDegree_monicFactorsMod_of_minpoly_eq
-    {g : ℚ[X]} (hg : minpoly ℚ (θ : K) = g)
-    (hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p))))
-    [Fact (g.map (algebraMap ℚ M)).Splits]
-    (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver (Ideal.span {(p : ℤ)})]
-    {σ : M ≃ₐ[ℚ] M} (hσ : IsArithFrobAt ℤ σ Q) :
-    Equiv.Perm.fullCycleType (Gal.galActionHom g M (Gal.restrict g M σ)) =
-      (RingOfIntegers.monicFactorsMod θ p).val.map natDegree := by
-  subst hg
-  exact fullCycleType_galActionHom_restrict_eq_map_natDegree_monicFactorsMod hsq Q hσ
-
-open scoped Classical in
 /-- **Dedekind's theorem, with the fixed points counted separately.** The multiset of degrees of
 the monic irreducible factors of `minpoly ℤ θ` modulo `p` is the cycle type of a Frobenius at a
 prime above `p` acting on the roots of `minpoly ℚ θ`, together with one part `1` for each fixed
-root. This is the form of the statement in the roadmap; the full cycle type of
+root. This is the form with the cycle type and the fixed points separated; the full cycle type of
 `fullCycleType_galActionHom_restrict_eq_map_natDegree_monicFactorsMod` packages the two
 summands. -/
 theorem factorizationType_eq_cycleType_isArithFrobAt
