@@ -54,7 +54,8 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
   factor has as many roots in the matching orbit as its degree.
 * `TauCeti.coe_rootSet_eq_orbit_of_irreducible`, `TauCeti.rootSetEquivQuotientStabilizer`: in a
   normal extension `M / F`, the roots of an irreducible polynomial form one orbit of `Gal(M/F)`,
-  and are identified equivariantly with the cosets of the stabilizer of a chosen root.
+  and are identified equivariantly with the cosets of the stabilizer of a chosen root, the coset
+  of `ρ` corresponding to the root `ρ • α`.
 -/
 
 public section
@@ -402,24 +403,28 @@ noncomputable def rootSetEquivQuotientStabilizer {q : F[X]} (hq : Irreducible q)
     Set.ext_iff.mp (coe_rootSet_eq_orbit_of_irreducible hq hα) β).trans
     (MulAction.orbitEquivQuotientStabilizer _ α)
 
+/-- The coset of `ρ` corresponds to the root `ρ • α`. -/
+@[simp]
+theorem coe_rootSetEquivQuotientStabilizer_symm_mk {q : F[X]} (hq : Irreducible q) {α : M}
+    (hα : α ∈ q.rootSet M) (ρ : M ≃ₐ[F] M) :
+    (((rootSetEquivQuotientStabilizer hq hα).symm
+      (ρ : (M ≃ₐ[F] M) ⧸ MulAction.stabilizer (M ≃ₐ[F] M) α) : q.rootSet M) : M) = ρ • α :=
+  MulAction.orbitEquivQuotientStabilizer_symm_apply (M ≃ₐ[F] M) α ρ
+
 /-- The identification of the roots with the cosets of a stabilizer is equivariant. -/
 theorem rootSetEquivQuotientStabilizer_smul {q : F[X]} (hq : Irreducible q) {α : M}
     (hα : α ∈ q.rootSet M) (g : M ≃ₐ[F] M) (x : q.rootSet M) :
     rootSetEquivQuotientStabilizer hq hα (g • x) = g • rootSetEquivQuotientStabilizer hq hα x := by
-  have hsymm : ∀ ρ : M ≃ₐ[F] M,
-      (((rootSetEquivQuotientStabilizer hq hα).symm
-        (ρ : (M ≃ₐ[F] M) ⧸ MulAction.stabilizer (M ≃ₐ[F] M) α) : q.rootSet M) : M) = ρ • α :=
-    fun ρ => MulAction.orbitEquivQuotientStabilizer_symm_apply (M ≃ₐ[F] M) α ρ
   apply (rootSetEquivQuotientStabilizer hq hα).symm.injective
   rw [Equiv.symm_apply_apply]
   obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (rootSetEquivQuotientStabilizer hq hα x)
   have hx : (x : M) = τ • α := by
     have := congrArg (fun c => ((rootSetEquivQuotientStabilizer hq hα).symm c : M)) hτ
     rw [Equiv.symm_apply_apply] at this
-    rw [← this, hsymm]
+    rw [← this, coe_rootSetEquivQuotientStabilizer_symm_mk]
   rw [← hτ, MulAction.Quotient.smul_mk]
   apply Subtype.ext
-  rw [hsymm, rootSet.coe_smul, hx, smul_eq_mul, mul_smul]
+  rw [coe_rootSetEquivQuotientStabilizer_symm_mk, rootSet.coe_smul, hx, smul_eq_mul, mul_smul]
 
 end Normal
 
