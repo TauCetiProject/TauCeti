@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.PSeries
-public import Mathlib.Analysis.Real.Pi.Bounds
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.NumberTheory.NumberField.DirichletDensity
-public import Mathlib.NumberTheory.ZetaValues
+public import TauCeti.Analysis.PSeries
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.NumberField.ResidueDegree
 
@@ -121,7 +120,7 @@ theorem primeCount_higherDegreePrimes_le (x : ℝ) :
     rw [hF, Finset.mem_filter, mem_normLE] at h𝔭
     refine Finset.mem_Icc.mpr ⟨(prime_rationalPrimeBelow 𝔭).two_le, Nat.le_floor ?_⟩
     have hsq : ((rationalPrimeBelow 𝔭 : ℝ)) ^ 2 ≤ x :=
-      le_trans (mod_cast sq_rationalPrimeBelow_le_absNorm h𝔭.2) h𝔭.1
+      le_trans (mod_cast rationalPrimeBelow_pow_le_absNorm (mem_higherDegreePrimes.mp h𝔭.2)) h𝔭.1
     exact (Real.le_sqrt (Nat.cast_nonneg _) (le_trans (by positivity) hsq)).mpr hsq
   have hcount : primeCount K (higherDegreePrimes K) x = ∑ _𝔭 ∈ F, (1 : ℝ) := by
     rw [primeCount_eq_card, hF, Finset.sum_const, nsmul_eq_mul, mul_one]
@@ -180,23 +179,6 @@ theorem primeTheta_higherDegreePrimes_isLittleO (K : Type*) [Field K] [NumberFie
 
 /-! ### Convergence of the prime Dirichlet series over the degree-above-one primes -/
 
-private theorem tsum_nat_rpow_neg_le_two {t : ℝ} (ht : 2 ≤ t) :
-    ∑' m : ℕ, (m : ℝ) ^ (-t) ≤ 2 := by
-  have hsum : ∀ u : ℝ, 1 < u → Summable fun m : ℕ ↦ (m : ℝ) ^ (-u) := fun u hu ↦
-    Real.summable_nat_rpow.mpr (by linarith)
-  have hfun : (fun m : ℕ ↦ (m : ℝ) ^ (-(2 : ℝ))) = fun m : ℕ ↦ (1 : ℝ) / (m : ℝ) ^ 2 := by
-    funext m
-    rw [Real.rpow_neg (Nat.cast_nonneg m), Real.rpow_two, one_div]
-  have hzeta : ∑' m : ℕ, (m : ℝ) ^ (-(2 : ℝ)) = Real.pi ^ 2 / 6 := by
-    rw [hfun]
-    exact hasSum_zeta_two.tsum_eq
-  refine le_trans (Summable.tsum_le_tsum (fun m ↦ ?_) (hsum t (by linarith))
-    (hsum 2 one_lt_two)) ?_
-  · rcases Nat.eq_zero_or_pos m with rfl | hm
-    · rw [Nat.cast_zero, Real.zero_rpow (by linarith), Real.zero_rpow (by norm_num)]
-    · exact Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast hm) (by linarith)
-  · rw [hzeta]
-    nlinarith [Real.pi_lt_d2, Real.pi_pos]
 
 /-- The key comparison: a finite sum of `N(𝔭) ^ (-s)` over primes of residue degree above one is
 bounded by `[K : ℚ]` times the full sum of `m ^ (-2s)` over the natural numbers. -/
@@ -214,7 +196,8 @@ theorem sum_absNorm_rpow_higherDegreePrimes_le_finrank_mul_tsum {s : ℝ} (hs : 
     set a : ℝ := (rationalPrimeBelow 𝔭 : ℝ) with ha
     have ha1 : (1 : ℝ) ≤ a := by rw [ha]; exact_mod_cast (prime_rationalPrimeBelow 𝔭).one_lt.le
     have hle : a ^ (2 : ℕ) ≤ (Ideal.absNorm 𝔭.asIdeal : ℝ) := by
-      rw [ha]; exact_mod_cast sq_rationalPrimeBelow_le_absNorm (hF 𝔭 h𝔭)
+      rw [ha]
+      exact_mod_cast rationalPrimeBelow_pow_le_absNorm (mem_higherDegreePrimes.mp (hF 𝔭 h𝔭))
     have hpow : a ^ (-(2 * s)) = (a ^ (2 : ℕ)) ^ (-s) := by
       rw [← Real.rpow_natCast a 2, ← Real.rpow_mul (by linarith)]
       congr 1

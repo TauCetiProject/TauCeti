@@ -76,34 +76,9 @@ theorem exists_geodesicCurveOnFrom
   obtain ⟨s, hs, hγs⟩ := isMIntegralCurveAt_iff.mp hγ
   obtain ⟨u, hu, huopen, hu0⟩ := mem_nhds_iff.mp hs
   have hγu : IsMIntegralCurveOn γ (geodesicSpray I M) u := hγs.mono hu
-  have hbase : ContMDiffOn 𝓘(ℝ, ℝ) I 2 (fun t ↦ (γ t).proj) u := by
-    apply contMDiffOn_of_locally_contMDiffOn
-    intro t ht
-    have hγt : IsMIntegralCurveAt γ (geodesicSpray I M) t :=
-      hγu.isMIntegralCurveAt (huopen.mem_nhds ht)
-    have hγt2 : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2 γ t :=
-      IsMIntegralCurveAt.contMDiffAt_two hγt hv.contMDiffAt
-    have hproj : ContMDiffAt I.tangent I 2 TotalSpace.proj (γ t) :=
-      Bundle.contMDiffAt_proj (fun x : M ↦ TangentSpace I x) (IB := I) (n := (2 : ℕ∞ω))
-    have hbase_t : ContMDiffAt 𝓘(ℝ, ℝ) I 2 ((fun z : TangentBundle I M => z.proj) ∘ γ) t :=
-      hproj.comp t hγt2
-    obtain ⟨u, hu, h'u⟩ := contMDiffAt_iff_contMDiffOn_nhds (n := (2 : ℕ∞ω))
-      (by norm_num) |>.mp hbase_t
-    obtain ⟨w, hwsub, hwopen, hwt⟩ := mem_nhds_iff.mp hu
-    refine ⟨w, hwopen, hwt, ?_⟩
-    exact (h'u.mono (inter_subset_right.trans hwsub)).congr
-      (fun x _ => rfl)
-  let hsu : UniqueDiffOn ℝ u := huopen.uniqueDiffOn
   let base : ℝ → M := fun t => (γ t).proj
-  have hlift : EqOn γ (curveVelocityLiftWithin I base u) u := by
-    intro r hr
-    exact eq_curveVelocityLiftWithin_of_isMIntegralCurveOn (s := u) (t := r)
-      (hsu r hr) hγu hr
-  have hgeo : IsGeodesicCurveOn I base u :=
-    (isMIntegralCurveOn_curveVelocityLiftWithin_iff hsu hbase).1
-      (hγu.congr fun r hr => (hlift hr).symm)
-  refine ⟨u, huopen.mem_nhds hu0, base, hgeo, hu0, ?_⟩
-  simpa only [curveVelocityLiftWithin_apply, base, z₀] using (hlift hu0).symm.trans hγ₀
+  refine ⟨u, huopen.mem_nhds hu0, base, ?_⟩
+  exact hγu.isGeodesicCurveOnFrom_proj huopen hu0 hγ₀
 
 /-- A neighbourhood of zero contains an interval of geodesic existence. -/
 theorem exists_geodesicCurveOnFrom_Ioo
