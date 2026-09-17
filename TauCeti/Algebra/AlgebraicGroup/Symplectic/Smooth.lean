@@ -68,7 +68,7 @@ private theorem pointsMulEquivGLSymplectic_mapValue
   rw [GLSymplecticFin.coe_map] at hlhs
   rw [GLSymplectic.coe_map]
   rw [hlhs, hrhs]
-  simp only [TauCeti.Equiv.coe_reindexGL, Equiv.symm_symm,
+  simp only [Equiv.coe_reindexGL, Equiv.symm_symm,
     Matrix.GeneralLinearGroup.map_apply,
     Matrix.submatrix_apply]
 

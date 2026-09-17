@@ -154,7 +154,7 @@ noncomputable def lowerUnipotent (C : Matrix (Fin m) (Fin m) R) (hC : C.IsSymm) 
 @[simp]
 theorem coe_mulEquivGLSymplectic_upperUnipotent (B : Matrix (Fin m) (Fin m) R)
     (hB : B.IsSymm) :
-    TauCeti.Equiv.reindexGL finSumFinEquiv.symm R
+    Equiv.reindexGL finSumFinEquiv.symm R
         ((upperUnipotent B hB : GLSymplecticFin m R) : GL (Fin (m + m)) R) =
       GLSymplectic.ofSymplecticGroup (Fin m) R
         ⟨Matrix.fromBlocks 1 B 0 1, GLSymplectic.fromBlocks_upper_mem B hB.eq⟩ := by
@@ -168,7 +168,7 @@ theorem coe_mulEquivGLSymplectic_upperUnipotent (B : Matrix (Fin m) (Fin m) R)
 @[simp]
 theorem coe_mulEquivGLSymplectic_lowerUnipotent (C : Matrix (Fin m) (Fin m) R)
     (hC : C.IsSymm) :
-    TauCeti.Equiv.reindexGL finSumFinEquiv.symm R
+    Equiv.reindexGL finSumFinEquiv.symm R
         ((lowerUnipotent C hC : GLSymplecticFin m R) : GL (Fin (m + m)) R) =
       GLSymplectic.ofSymplecticGroup (Fin m) R
         ⟨Matrix.fromBlocks 1 0 C 1, GLSymplectic.fromBlocks_lower_mem C hC.eq⟩ := by
@@ -188,7 +188,7 @@ theorem upperUnipotent_apply (B : Matrix (Fin m) (Fin m) R) (hB : B.IsSymm)
   have h := congrArg
     (fun M : GL (Fin m ⊕ Fin m) R => (M : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R) i j)
     (coe_mulEquivGLSymplectic_upperUnipotent B hB)
-  simpa only [TauCeti.Equiv.coe_reindexGL, Equiv.symm_symm, Matrix.submatrix_apply,
+  simpa only [Equiv.coe_reindexGL, Equiv.symm_symm, Matrix.submatrix_apply,
     GLSymplectic.coe_ofSymplecticGroup] using h
 
 /-- The entries of a lower unipotent are the entries of the block matrix `[1 0; C 1]`. -/
@@ -201,7 +201,7 @@ theorem lowerUnipotent_apply (C : Matrix (Fin m) (Fin m) R) (hC : C.IsSymm)
   have h := congrArg
     (fun M : GL (Fin m ⊕ Fin m) R => (M : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R) i j)
     (coe_mulEquivGLSymplectic_lowerUnipotent C hC)
-  simpa only [TauCeti.Equiv.coe_reindexGL, Equiv.symm_symm, Matrix.submatrix_apply,
+  simpa only [Equiv.coe_reindexGL, Equiv.symm_symm, Matrix.submatrix_apply,
     GLSymplectic.coe_ofSymplecticGroup] using h
 
 /-- The underlying matrix of an upper unipotent is `[1 B; 0 1]`, reindexed by

@@ -19,7 +19,7 @@ semiring.
 
 * `Matrix.GeneralLinearGroup.inv_mul_mul_inv_of_mul_mul_eq`: inverting a two-sided
   invertible transformation.
-* `TauCeti.Equiv.reindexGL`: reindexing the rows and columns of a general linear group along an
+* `Equiv.reindexGL`: reindexing the rows and columns of a general linear group along an
   equivalence of index types.
 -/
 
@@ -49,7 +49,7 @@ end
 
 end Matrix.GeneralLinearGroup
 
-namespace TauCeti.Equiv
+namespace Equiv
 
 public section
 
@@ -70,5 +70,4 @@ theorem coe_reindexGL (M : GL n R) :
 
 end
 
-
-end TauCeti.Equiv
+end Equiv

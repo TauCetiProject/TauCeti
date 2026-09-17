@@ -197,7 +197,7 @@ theorem coe_leviHom (A : GL (Fin m) R) :
       (((M : GL (Fin m ⊕ Fin m) R) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R)
         (finSumFinEquiv.symm i) (finSumFinEquiv.symm j)))
     (mulEquivGLSymplectic_leviHom A)
-  simpa only [coe_mulEquivGLSymplectic, TauCeti.Equiv.coe_reindexGL, Equiv.symm_symm,
+  simpa only [coe_mulEquivGLSymplectic, Equiv.coe_reindexGL, Equiv.symm_symm,
     Matrix.submatrix_apply, Equiv.apply_symm_apply, GLSymplectic.coe_leviHom] using h
 
 /-- The `Fin`-indexed Levi embedding commutes with extension of the value ring. -/
@@ -213,7 +213,7 @@ theorem map_leviHom {S : Type*} [CommRing S] (f : R →+* S) (A : GL (Fin m) R) 
     apply Matrix.GeneralLinearGroup.ext
     intro i j
     simp only [coe_mulEquivGLSymplectic, GLSymplecticFin.coe_map,
-      GLSymplectic.coe_map, TauCeti.Equiv.coe_reindexGL, Equiv.symm_symm,
+      GLSymplectic.coe_map, Equiv.coe_reindexGL, Equiv.symm_symm,
       Matrix.GeneralLinearGroup.map_apply, Matrix.submatrix_apply]
   rw [hmap, mulEquivGLSymplectic_leviHom, GLSymplectic.map_leviHom,
     mulEquivGLSymplectic_leviHom]

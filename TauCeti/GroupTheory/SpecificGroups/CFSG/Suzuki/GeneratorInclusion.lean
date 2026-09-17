@@ -43,7 +43,7 @@ def coordinateSwap : Fin 4 ≃ Fin 4 := Equiv.swap 2 3
 /-- Simultaneous row and column reindexing from the standard generator coordinates to the
 coordinates used by `SpStd`. -/
 abbrev coordinateEquiv (R : Type*) [CommSemiring R] : GL (Fin 4) R ≃* GL (Fin 4) R :=
-  TauCeti.Equiv.reindexGL coordinateSwap R
+  Equiv.reindexGL coordinateSwap R
 
 /-- After the standard coordinate change, every unipotent Suzuki generator preserves the
 alternating form used by `SpStd`. -/
@@ -62,7 +62,7 @@ theorem coordinateEquiv_unipotent_mul_jFin_mul_transpose
     calc
       (4 : GaloisField 2 (2 * m + 1)) = 2 + 2 := by norm_num
       _ = 0 := by rw [htwo]; simp
-  rw [TauCeti.Equiv.coe_reindexGL, coe_unipotent]
+  rw [Equiv.coe_reindexGL, coe_unipotent]
   rw [JFin_two_eq]
   ext i j
   rw [Matrix.mul_apply]
@@ -83,7 +83,7 @@ theorem coordinateEquiv_weyl_mul_jFin_mul_transpose :
             GL (Fin 4) (GaloisField 2 (2 * m + 1))) :
           Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1)))ᵀ =
       JFin 2 (GaloisField 2 (2 * m + 1)) := by
-  rw [TauCeti.Equiv.coe_reindexGL, coe_weyl]
+  rw [Equiv.coe_reindexGL, coe_weyl]
   rw [JFin_two_eq]
   ext i j
   rw [Matrix.mul_apply]
@@ -107,7 +107,7 @@ theorem symplecticSpecialIsogeny_coordinateEquiv_unipotent
   have ha := pow_two_pow_succ_pow_two_pow_succ m a
   have hb := pow_two_pow_succ_pow_two_pow_succ m b
   have htwo : (2 : GaloisField 2 (2 * m + 1)) = 0 := CharTwo.two_eq_zero
-  rw [TauCeti.Equiv.coe_reindexGL, coe_unipotent]
+  rw [Equiv.coe_reindexGL, coe_unipotent]
   ext i j
   simp only [Matrix.symplecticSpecialIsogeny_apply, Matrix.map_apply, Matrix.submatrix_apply]
   fin_cases i <;> fin_cases j <;>
@@ -125,7 +125,7 @@ theorem symplecticSpecialIsogeny_coordinateEquiv_weyl :
             GL (Fin 4) (GaloisField 2 (2 * m + 1))) :
           Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))).map
             (fun x ↦ x ^ 2 ^ (m + 1))) := by
-  rw [TauCeti.Equiv.coe_reindexGL, coe_weyl]
+  rw [Equiv.coe_reindexGL, coe_weyl]
   ext i j
   simp only [Matrix.symplecticSpecialIsogeny_apply, Matrix.map_apply, Matrix.submatrix_apply]
   fin_cases i <;> fin_cases j <;>
