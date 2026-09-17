@@ -68,10 +68,7 @@ private theorem cartanMatrix_eq_toMatrix_cartanEquiv
         (simpleClassBasis S hSnoniso hSexhaustive)
         (cartanEquiv R h).toIntLinearEquiv := by
   ext i j
-  rw [cartanMatrix_apply, LinearMap.toMatrix_apply, LinearEquiv.coe_coe,
-    AddEquiv.coe_toIntLinearEquiv, cartanEquiv_apply,
-    indecomposableProjectiveClassBasis_apply, cartanMap_of,
-    simpleClassBasis_repr_apply, jordanHolderCoordinate_of]
+  simp [LinearMap.toMatrix_apply, cartanMap_of R (P j).2]
 
 /-- The matrix of the inverse Cartan map in the simple-class basis on the source and the
 indecomposable-projective basis on the target. Its columns are the projective coordinates of the
@@ -86,7 +83,19 @@ noncomputable def inverseCartanMatrix
     (indecomposableProjectiveClassBasis P hind hPnoniso hPexhaustive)
     (cartanInverse R h).toIntLinearMap
 
+/-- The `(i, j)` entry of the inverse Cartan matrix is the `i`th projective-basis coordinate of the
+inverse Cartan map applied to the `j`th simple-basis vector. -/
+theorem inverseCartanMatrix_apply
+    (h : ModuleCat.isFG R ≤
+      (ExactStructure.abelian (ModuleCat.{u} R)).admitsFiniteResolution
+        (finiteProjectiveModules R)) (i j : I) :
+    inverseCartanMatrix P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive h i j =
+      (indecomposableProjectiveClassBasis P hind hPnoniso hPexhaustive).repr
+        (cartanInverse R h (simpleClassBasis S hSnoniso hSexhaustive j)) i :=
+  LinearMap.toMatrix_apply _ _ _ i j
+
 /-- The inverse Cartan matrix is a right inverse of the Cartan matrix. -/
+@[simp]
 theorem cartanMatrix_mul_inverseCartanMatrix
     (h : ModuleCat.isFG R ≤
       (ExactStructure.abelian (ModuleCat.{u} R)).admitsFiniteResolution
@@ -106,24 +115,15 @@ theorem cartanMatrix_mul_inverseCartanMatrix
   rw [hcomp, LinearMap.toMatrix_id]
 
 /-- The inverse Cartan matrix is a left inverse of the Cartan matrix. -/
+@[simp]
 theorem inverseCartanMatrix_mul_cartanMatrix
     (h : ModuleCat.isFG R ≤
       (ExactStructure.abelian (ModuleCat.{u} R)).admitsFiniteResolution
         (finiteProjectiveModules R)) :
     inverseCartanMatrix P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive h *
-      cartanMatrix P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive = 1 := by
-  let bP := indecomposableProjectiveClassBasis P hind hPnoniso hPexhaustive
-  let bS := simpleClassBasis S hSnoniso hSexhaustive
-  rw [cartanMatrix_eq_toMatrix_cartanEquiv P S hind hPnoniso hPexhaustive hSnoniso
-    hSexhaustive h, inverseCartanMatrix, ← LinearMap.toMatrix_comp]
-  have hcomp : (cartanInverse R h).toIntLinearMap.comp
-      (cartanEquiv R h).toIntLinearEquiv.toLinearMap = LinearMap.id := by
-    ext x
-    simpa only [LinearMap.comp_apply, LinearMap.id_apply, LinearEquiv.coe_coe,
-      AddEquiv.coe_toIntLinearEquiv, AddMonoidHom.coe_toIntLinearMap,
-      ← cartanEquiv_apply, ← cartanEquiv_symm_apply] using
-        (cartanEquiv R h).symm_apply_apply x
-  rw [hcomp, LinearMap.toMatrix_id]
+      cartanMatrix P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive = 1 :=
+  mul_eq_one_comm.mp
+    (cartanMatrix_mul_inverseCartanMatrix P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive h)
 
 /-- Under the finite-projective-resolution hypothesis, the Cartan matrix is invertible over
 `ℤ`. -/
