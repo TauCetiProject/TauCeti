@@ -42,6 +42,7 @@ namespace TauCeti.ClassFieldTheory.LayerRestriction
 variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   [TotallyDisconnectedSpace G] {small big : NormalLayer G}
 
+/-- The range of the inclusion between finite layer Galois groups is finite. -/
 noncomputable local instance instFintypeRange (T : LayerRestriction small big) :
     Fintype T.galHom.range :=
   Fintype.ofFinite _
