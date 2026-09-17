@@ -501,39 +501,57 @@ theorem covariance_coe_apply_wishartGramMeasure (hS : S.PosSemidef) (ν : ℕ)
 
 section Nonsingular
 
-variable (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
-include hS hn
-
 /-- Every symmetric trace statistic `A ↦ trace (Θ * A)` has finite moments of all orders under a
 nonsingular Wishart law. -/
 theorem memLp_trace_mul_nonsingularWishartMeasure
-    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (q : ℝ≥0) :
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (S : Matrix (Fin p) (Fin p) ℝ)
+    (n : ℝ) (q : ℝ≥0) :
     MemLp (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace) q
-      (nonsingularWishartMeasure n S) :=
-  memLp_trace_mul_of_mgf_trace_mul_eq_det_rpow
-    (fun _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht) q
+      (nonsingularWishartMeasure n S) := by
+  by_cases hS : S.PosDef
+  · by_cases hn : (p : ℝ) - 1 < n
+    · exact memLp_trace_mul_of_mgf_trace_mul_eq_det_rpow
+        (fun _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht) q
+    · simp [nonsingularWishartMeasure_of_le S (not_lt.1 hn)]
+  · simp [nonsingularWishartMeasure_of_not_posDef n hS]
 
 /-- Every entry of a nonsingular Wishart matrix has finite moments of all orders. -/
-theorem memLp_coe_apply_nonsingularWishartMeasure (i j : Fin p) (q : ℝ≥0) :
+theorem memLp_coe_apply_nonsingularWishartMeasure (S : Matrix (Fin p) (Fin p) ℝ) (n : ℝ)
+    (i j : Fin p) (q : ℝ≥0) :
     MemLp (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
-        (A : Matrix (Fin p) (Fin p) ℝ) i j) q (nonsingularWishartMeasure n S) :=
-  memLp_coe_apply_of_mgf_trace_mul_eq_det_rpow
-    (fun _ _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht) i j q
+        (A : Matrix (Fin p) (Fin p) ℝ) i j) q (nonsingularWishartMeasure n S) := by
+  by_cases hS : S.PosDef
+  · by_cases hn : (p : ℝ) - 1 < n
+    · exact memLp_coe_apply_of_mgf_trace_mul_eq_det_rpow
+        (fun _ _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht) i j q
+    · simp [nonsingularWishartMeasure_of_le S (not_lt.1 hn)]
+  · simp [nonsingularWishartMeasure_of_not_posDef n hS]
 
 /-- A nonsingular Wishart matrix has finite moments of all orders. -/
-theorem memLp_id_nonsingularWishartMeasure (q : ℝ≥0) :
+theorem memLp_id_nonsingularWishartMeasure (S : Matrix (Fin p) (Fin p) ℝ) (n : ℝ) (q : ℝ≥0) :
     MemLp (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) => A) q
-      (nonsingularWishartMeasure n S) :=
-  memLp_id_of_mgf_trace_mul_eq_det_rpow
-    (fun _ _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht) q
+      (nonsingularWishartMeasure n S) := by
+  by_cases hS : S.PosDef
+  · by_cases hn : (p : ℝ) - 1 < n
+    · exact memLp_id_of_mgf_trace_mul_eq_det_rpow
+        (fun _ _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht) q
+    · simp [nonsingularWishartMeasure_of_le S (not_lt.1 hn)]
+  · simp [nonsingularWishartMeasure_of_not_posDef n hS]
 
 /-- A nonsingular Wishart matrix is integrable. -/
-theorem integrable_id_nonsingularWishartMeasure :
+theorem integrable_id_nonsingularWishartMeasure (S : Matrix (Fin p) (Fin p) ℝ) (n : ℝ) :
     Integrable (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) => A)
-      (nonsingularWishartMeasure n S) :=
-  integrable_id_of_mgf_trace_mul_eq_det_rpow
-    (fun _ _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht)
+      (nonsingularWishartMeasure n S) := by
+  by_cases hS : S.PosDef
+  · by_cases hn : (p : ℝ) - 1 < n
+    · exact integrable_id_of_mgf_trace_mul_eq_det_rpow
+        (fun _ _ ht => mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht)
+    · simp [nonsingularWishartMeasure_of_le S (not_lt.1 hn)]
+  · simp [nonsingularWishartMeasure_of_not_posDef n hS]
+
+variable (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
+include hS hn
 
 /-- **The mean of a symmetric trace statistic under a nonsingular Wishart law.** The statistic
 `A ↦ trace (Θ * A)` has mean `n * trace (Θ * S)`. -/
