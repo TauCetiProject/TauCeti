@@ -8,6 +8,9 @@ module
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 public import TauCeti.Data.Nat.ExactDivisor
 
+-- `mem_Gamma0_iff_dvd`, used only inside proofs.
+import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+
 /-!
 # Atkin–Lehner matrices
 
@@ -166,7 +169,7 @@ theorem isAtkinLehnerMatrix_atkinLehnerMatrix (h : Q ∥ N) :
 the identity, which is why the family is indexed by exact divisors up to this normalization. -/
 theorem isAtkinLehnerMatrix_one_iff_mem_Gamma0 (γ : SL(2, ℤ)) :
     IsAtkinLehnerMatrix N 1 (γ : Matrix (Fin 2) (Fin 2) ℤ) ↔ γ ∈ Gamma0 N := by
-  rw [Gamma0_mem, ZMod.intCast_zmod_eq_zero_iff_dvd]
+  rw [mem_Gamma0_iff_dvd]
   refine ⟨fun h ↦ h.dvd_apply_one_zero, fun h ↦ ⟨by simp, h, by simp, ?_⟩⟩
   simp [γ.property]
 
@@ -183,7 +186,7 @@ for the same `Q`. -/
 theorem IsAtkinLehnerMatrix.mul_left (hQN : Q ∣ N) (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)}
     (hγ : γ ∈ Gamma0 N) :
     IsAtkinLehnerMatrix N Q ((γ : Matrix (Fin 2) (Fin 2) ℤ) * M) := by
-  rw [Gamma0_mem, ZMod.intCast_zmod_eq_zero_iff_dvd] at hγ
+  rw [mem_Gamma0_iff_dvd] at hγ
   have hQN' : (Q : ℤ) ∣ (N : ℤ) := Int.natCast_dvd_natCast.mpr hQN
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [Matrix.mul_apply, Fin.sum_univ_two]
@@ -201,7 +204,7 @@ for the same `Q`. -/
 theorem IsAtkinLehnerMatrix.mul_right (hQN : Q ∣ N) (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)}
     (hγ : γ ∈ Gamma0 N) :
     IsAtkinLehnerMatrix N Q (M * (γ : Matrix (Fin 2) (Fin 2) ℤ)) := by
-  rw [Gamma0_mem, ZMod.intCast_zmod_eq_zero_iff_dvd] at hγ
+  rw [mem_Gamma0_iff_dvd] at hγ
   have hQN' : (Q : ℤ) ∣ (N : ℤ) := Int.natCast_dvd_natCast.mpr hQN
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [Matrix.mul_apply, Fin.sum_univ_two]
@@ -242,7 +245,7 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_eq_mul_left (hQ : Q ≠ 0) (hQN : 
     exact mul_right_cancel₀ hQ' (by rw [one_mul]; exact hd)
   have hdvd : (N : ℤ) ∣ G 1 0 := ⟨c' * d - c * d', by rw [hG, hN]; simp⟩
   exact ⟨⟨G, hdetG⟩,
-    Gamma0_mem.mpr ((ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mpr hdvd), hmul.symm⟩
+    mem_Gamma0_iff_dvd.mpr hdvd, hmul.symm⟩
 
 /-- **Two Atkin–Lehner matrices for the same `Q` differ by `Γ₀(N)` on the right**, the mirror of
 `IsAtkinLehnerMatrix.exists_mem_Gamma0_eq_mul_left` with witness `W⁻¹ W'`. -/
@@ -272,7 +275,7 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_eq_mul_right (hQ : Q ≠ 0) (hQN :
     exact mul_left_cancel₀ hQ' (by rw [mul_one]; exact hd)
   have hdvd : (N : ℤ) ∣ G 1 0 := ⟨a * c' - a' * c, by rw [hG, hN]; simp⟩
   exact ⟨⟨G, hdetG⟩,
-    Gamma0_mem.mpr ((ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mpr hdvd), hmul.symm⟩
+    mem_Gamma0_iff_dvd.mpr hdvd, hmul.symm⟩
 
 /-- **An Atkin–Lehner matrix normalizes `Γ₀(N)`**: `W γ = δ W` with `δ ∈ Γ₀(N)`. This is the fact
 that turns the weight-`k` slash by `W` into an operator on `M_k(Γ₀(N))`. -/
@@ -312,7 +315,7 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_self (hQ : Q ≠ 0) (hQN : Q �
     ext i j
     fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two] <;> ring
   exact ⟨⟨G, hdetG⟩,
-    Gamma0_mem.mpr ((ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mpr hdvd), hsq⟩
+    mem_Gamma0_iff_dvd.mpr hdvd, hsq⟩
 
 /-- **Multiplicativity of the family.** As soon as `Q * R` divides the level, an Atkin–Lehner
 matrix for `Q` times one for `R` is an Atkin–Lehner matrix for `Q * R`. Coprime exact divisors

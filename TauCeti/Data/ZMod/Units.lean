@@ -61,7 +61,7 @@ private lemma isCoprime_emod {a₁ c₁ : ℤ}
 from `χ₀` modulo `M / p`, and `χ'` modulo `N'` agrees with `χM` after restriction to the units
 modulo a common multiple `M'`, then `χ'` is itself pulled back from `χ₀`, along `N' / p`.
 `ZMod.unitsMap` is surjective onto the units of a divisor, so the restriction can be cancelled. -/
-theorem TauCeti.eq_comp_unitsMap_of_comp_unitsMap_eq {G : Type*} [Monoid G] {p M M' N' : ℕ}
+theorem TauCeti.eq_comp_unitsMap_of_comp_unitsMap_eq {G : Type*} [MulOne G] {p M M' N' : ℕ}
     [NeZero M'] (hpM : p ∣ M) (hMN' : M ∣ N') (hN'M' : N' ∣ M')
     {χM : (ZMod M)ˣ →* G} {χ₀ : (ZMod (M / p))ˣ →* G}
     (hcomp : χM = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpM))) {χ' : (ZMod N')ˣ →* G}
@@ -77,7 +77,7 @@ theorem TauCeti.eq_comp_unitsMap_of_comp_unitsMap_eq {G : Type*} [Monoid G] {p M
 `N` is pulled back from `χ₀` modulo `N / p`, then restricting `χ` to the units modulo `N * L` is
 again a pull-back of `χ₀`, now along `N * L / p`. Both sides collapse to one `ZMod.unitsMap` by
 `ZMod.unitsMap_comp`. -/
-theorem TauCeti.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left {G : Type*} [Monoid G]
+theorem TauCeti.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left {G : Type*} [MulOne G]
     {p N L : ℕ} (hpN : p ∣ N) {χ : (ZMod N)ˣ →* G} {χ₀ : (ZMod (N / p))ˣ →* G}
     (hcomp : χ = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpN))) :
     χ.comp (ZMod.unitsMap (dvd_mul_left N L)) =

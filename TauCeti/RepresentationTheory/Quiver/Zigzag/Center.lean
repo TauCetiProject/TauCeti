@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.Algebra.Subalgebra.Center
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Multiplication
 
 /-!
@@ -495,19 +495,6 @@ theorem finrank_center_nonisolatedZigzagQuotient [Nontrivial k] [Fintype V] [Non
   rw [Module.finrank_eq_card_basis (zigzagCenterBasis k G hconn), Fintype.card_option]
 
 /-! ### The centre of the public algebra -/
-
--- The carrier of `zigzagAlgebra k G` is the dependent product of its component algebras, but that
--- product is opaque across the public import, so the equivalence with the product is rebuilt from
--- the public component projections and the reconstruction map.
-private noncomputable def zigzagAlgebraPiAlgEquiv :
-    zigzagAlgebra k G ≃ₐ[k] ∀ C : G.ConnectedComponent, zigzagComponentAlgebra k G C where
-  toFun x C := zigzagComponentProjection k G C x
-  invFun := zigzagAlgebraMk k G
-  left_inv := zigzagAlgebra.mk_projections k G
-  right_inv _ := funext fun _ => zigzagComponentProjection_zigzagAlgebraMk k G _ _
-  map_mul' x y := funext fun C => map_mul (zigzagComponentProjection k G C) x y
-  map_add' x y := funext fun C => map_add (zigzagComponentProjection k G C) x y
-  commutes' r := funext fun C => (zigzagComponentProjection k G C).commutes r
 
 -- The centre of a singleton component factor is the whole factor, since the dual numbers are
 -- commutative, and Mathlib exposes `DualNumber k` as `TrivSqZeroExt k k`, whose carrier is `k × k`

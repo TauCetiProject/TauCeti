@@ -33,6 +33,8 @@ extension, and in degree `2` it has exactly one such place.
   unramified at all infinite places of any extension.
 * `NumberField.InfinitePlace.nrComplexPlaces_eq_one_of_finrank_eq_two`: a totally complex
   field of degree `2` — an imaginary quadratic field — has exactly one complex place.
+* `NumberField.InfinitePlace.finrank_sub_nrRealPlaces_div_two_eq_nrComplexPlaces`: halving the
+  degree less the real places counts the complex places, for any number field.
 -/
 
 public section
@@ -138,6 +140,14 @@ infinite place. This is the imaginary quadratic case. -/
 theorem InfinitePlace.nrComplexPlaces_eq_one_of_finrank_eq_two [IsTotallyComplex K]
     (hK : Module.finrank ℚ K = 2) : InfinitePlace.nrComplexPlaces K = 1 := by
   have := NumberField.IsTotallyComplex.finrank (K := K)
+  omega
+
+variable (K) in
+/-- **Halving the degree less the real places counts the complex places.** The degree is
+`r₁ + 2 r₂`, so subtracting the real places and halving leaves the complex ones. -/
+theorem InfinitePlace.finrank_sub_nrRealPlaces_div_two_eq_nrComplexPlaces :
+    (Module.finrank ℚ K - nrRealPlaces K) / 2 = nrComplexPlaces K := by
+  have key := card_add_two_mul_card_eq_rank K
   omega
 
 end NumberField
