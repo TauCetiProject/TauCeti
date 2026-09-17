@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport
+public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
 public import TauCeti.NumberTheory.NumberField.Ideal.ArtinMap
 
 /-!
