@@ -33,7 +33,9 @@ open AlgebraicGeometry
 
 namespace TauCeti.HopfAlgebra
 
-variable {k H : Type*} [Field k] [CommRing H] [_root_.HopfAlgebra k H]
+section CommRing
+
+variable {k H : Type*} [CommRing k] [CommRing H] [_root_.HopfAlgebra k H]
 
 /-- Translation identifies the height of the ideal of any rational point with the height of
 the augmentation ideal. -/
@@ -41,14 +43,19 @@ theorem height_kernel_eq_height_augmentation (g : WithConv (H →ₐ[k] k)) :
     (RingHom.ker (g.ofConv : H →+* k)).height = (Bialgebra.AugmentationIdeal k H).height := by
   have h : (Bialgebra.AugmentationIdeal k H).comap
       (rightTranslationAlgEquiv g).toRingEquiv = RingHom.ker (g.ofConv : H →+* k) := by
-    ext x
-    have hx := DFunLike.congr_fun (counitAlgHom_comp_rightTranslationAlgHom g) x
-    simpa [← rightTranslationAlgEquiv_toAlgHom, Bialgebra.AugmentationIdeal] using
-      (congrArg (fun y : k ↦ y = 0) hx).to_iff
+    exact (RingHom.comap_ker (_root_.Bialgebra.counitAlgHom k H).toRingHom
+      (rightTranslationAlgEquiv g).toAlgHom.toRingHom).trans
+      (congrArg (fun f : H →ₐ[k] k ↦ RingHom.ker f.toRingHom)
+      ((congrArg ((_root_.Bialgebra.counitAlgHom k H).comp)
+        (rightTranslationAlgEquiv_toAlgHom g)).trans
+          (counitAlgHom_comp_rightTranslationAlgHom g)))
   rw [← h]
   exact (rightTranslationAlgEquiv g).toRingEquiv.height_comap _
 
-variable [IsAlgClosed k] [Algebra.FiniteType k H]
+end CommRing
+
+variable {k H : Type*} [Field k] [CommRing H] [_root_.HopfAlgebra k H]
+  [IsAlgClosed k] [Algebra.FiniteType k H]
 
 /-- The dimension of an affine group over an algebraically closed field equals the height of
 its augmentation ideal. -/
@@ -84,7 +91,7 @@ theorem ringKrullDim_le_finrank_lie :
       Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
   let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
   rw [Derivation.finrank_eq_finrank_cotangentSpace, ← ringKrullDim_augmentationStalk (k := k)]
-  exact ringKrullDim_kernelStalk_le_finrank_kernelCotangent
+  exact AlgHom.ringKrullDim_kernelStalk_le_finrank_kernelCotangent
     (_root_.Bialgebra.counitAlgHom k H)
 
 /-- Lie dimension equals group dimension exactly when the local ring at the identity is
@@ -95,7 +102,7 @@ theorem isRegularLocalRing_augmentationStalk_iff :
       (Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) : WithBot ℕ∞) =
         ringKrullDim H := by
   let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
-  rw [isRegularLocalRing_kernelStalk_iff,
+  rw [AlgHom.isRegularLocalRing_kernelStalk_iff,
     Derivation.finrank_eq_finrank_cotangentSpace, ringKrullDim_augmentationStalk]
 
 end TauCeti.HopfAlgebra

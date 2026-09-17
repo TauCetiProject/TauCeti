@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.AlgebraicGeometry.TangentSpace.Affine
-public import Mathlib.RingTheory.RegularLocalRing.Defs
 
 /-!
 # Dimension and regularity at a rational point
@@ -26,9 +25,7 @@ public section
 
 open AlgebraicGeometry IsLocalRing
 
-namespace TauCeti
-
-open TauCeti.AlgHom
+namespace TauCeti.AlgHom
 
 variable {k A : Type*} [Field k] [CommRing A] [Algebra k A] (f : A →ₐ[k] k)
 
@@ -73,4 +70,4 @@ theorem isRegularLocalRing_kernelStalk_iff :
   rw [IsRegularLocalRing.iff_finrank_cotangentSpace,
     finrank_kernelCotangent_eq_finrank_residueFieldCotangent]
 
-end TauCeti
+end TauCeti.AlgHom
