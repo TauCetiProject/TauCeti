@@ -31,6 +31,7 @@ variable {n : ℕ}
 
 /-- An integer polynomial reduces to zero modulo `n` exactly when the constant `n` divides it,
 that is, when `n` divides each of its coefficients. -/
+@[simp]
 theorem map_intCastRingHom_zmod_eq_zero_iff (G : ℤ[X]) :
     G.map (Int.castRingHom (ZMod n)) = 0 ↔ C (n : ℤ) ∣ G := by
   rw [C_dvd_iff_dvd_coeff, Polynomial.ext_iff]

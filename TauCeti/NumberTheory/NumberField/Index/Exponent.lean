@@ -32,6 +32,8 @@ discriminant of the minimal polynomial does not divide the conductor exponent.
   index exactly when it divides the conductor exponent.
 * `TauCeti.NumberField.IntegralPrimitiveElement.not_dvd_exponent_of_not_dvd_discr_minpoly`: a
   natural number not dividing `disc (minpoly ℤ θ)` does not divide the conductor exponent.
+* `TauCeti.NumberField.IntegralPrimitiveElement.not_dvd_index_of_conductor_sup_span_eq_top`: a
+  prime coprime to the conductor of `ℤ[θ]` does not divide the index.
 
 ## References
 
@@ -87,6 +89,40 @@ theorem dvd_exponent_of_dvd_index (θ : IntegralPrimitiveElement K) {p : ℕ} [F
 theorem dvd_index_iff_dvd_exponent (θ : IntegralPrimitiveElement K) {p : ℕ} [Fact p.Prime] :
     p ∣ θ.index ↔ p ∣ exponent θ.1 :=
   ⟨θ.dvd_exponent_of_dvd_index, fun h => h.trans θ.exponent_dvd_index⟩
+
+/-- If the conductor of `ℤ[θ]` in `𝓞 K` is coprime to `p`, then `p` does not divide the index:
+multiplication by `p` is then surjective, hence bijective, on the finite group `𝓞 K / ℤ[θ]`,
+which therefore has no element of order `p`. -/
+theorem not_dvd_index_of_conductor_sup_span_eq_top (θ : IntegralPrimitiveElement K) {p : ℕ}
+    [Fact p.Prime] (h : conductor ℤ θ.1 ⊔ Ideal.span {(p : 𝓞 K)} = ⊤) : ¬ p ∣ θ.index := by
+  classical
+  have : Fintype θ.Quotient := Fintype.ofFinite _
+  intro hp
+  rw [index_def, Nat.card_eq_fintype_card] at hp
+  obtain ⟨x, hx⟩ := exists_prime_addOrderOf_dvd_card p hp
+  have hsurj : Function.Surjective (fun y : θ.Quotient => p • y) := by
+    have h1 : (1 : 𝓞 K) ∈ conductor ℤ θ.1 ⊔ Ideal.span {(p : 𝓞 K)} := h ▸ Submodule.mem_top
+    obtain ⟨c, hc, m, hm, hcm⟩ := Submodule.mem_sup.mp h1
+    obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton'.mp hm
+    intro y
+    obtain ⟨b, rfl⟩ := Submodule.mkQ_surjective _ y
+    refine ⟨θ.adjoin.toSubmodule.mkQ (a * b), ?_⟩
+    dsimp only
+    have hb : b = c * b + (p : 𝓞 K) * (a * b) := by
+      calc b = (c + a * (p : 𝓞 K)) * b := by rw [hcm, one_mul]
+        _ = c * b + (p : 𝓞 K) * (a * b) := by ring
+    have hcb : θ.adjoin.toSubmodule.mkQ (c * b) = 0 := by
+      rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, Subalgebra.mem_toSubmodule,
+        adjoin_def]
+      exact mem_conductor_iff.mp hc b
+    conv_rhs => rw [hb]
+    rw [map_add, hcb, zero_add, ← map_nsmul, nsmul_eq_mul]
+  have hinj := Finite.injective_iff_surjective.mpr hsurj
+  have hx0 : x = 0 := hinj (by
+    dsimp only
+    rw [smul_zero, ← hx, addOrderOf_nsmul_eq_zero])
+  rw [hx0, addOrderOf_zero] at hx
+  exact (Fact.out : p.Prime).one_lt.ne hx
 
 /-- **The checkable Kummer–Dedekind hypothesis.** A natural number not dividing the discriminant
 of `minpoly ℤ θ` does not divide the conductor exponent of `θ`. -/

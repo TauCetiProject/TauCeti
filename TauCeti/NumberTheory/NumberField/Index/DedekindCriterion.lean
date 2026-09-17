@@ -6,13 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Basic
-public import Mathlib.RingTheory.Conductor
 public import TauCeti.NumberTheory.NumberField.Index.Basic
-import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
-import Mathlib.GroupTheory.Perm.Cycle.Type
+import Mathlib.RingTheory.Conductor
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 import Mathlib.RingTheory.PrincipalIdealDomain
 import TauCeti.Algebra.Polynomial.MapZMod
+import TauCeti.NumberTheory.NumberField.Index.Exponent
 
 /-!
 # Dedekind's criterion
@@ -29,33 +28,25 @@ criterion** (`not_dvd_index_iff`) states that
 
 `p ∤ [𝓞 K : ℤ[θ]]  ↔  ∀ i, e i = 1 ∨ ¬ φ i ∣ (H mod p)`.
 
-The proof is elementary and takes place inside `𝓞 K`. Write `A = ℤ[θ]` and `𝔣` for its
-conductor.
-
-* Suppose `p` divides the index. Then `𝔣 + p 𝓞 K` is a proper ideal, since otherwise
-  multiplication by `p` would be bijective on the finite group `𝓞 K / A`; let `P` be a maximal
-  ideal containing it. `P` contains `Φ i (θ)` for some `i`, and the right-hand side at `i`
-  produces `σ ∈ A` outside `P` with `σ z ∈ A` whenever `p z ∈ A`
-  (`exists_notMem_mul_mem_adjoin`): for `e i = 1` take `σ = ∏_{j ≠ i} Φ j (θ) ^ e j`, and for
-  `φ i ∤ (H mod p)` take `σ = H(θ) ^ e i ∏_{j ≠ i} Φ j (θ) ^ e j`, descending along the powers of
-  `Φ i (θ)` with the identity `p H(θ) = -∏ j, Φ j (θ) ^ e j`. Iterating, a power of `σ` times the
-  `p`-free part of the index lies in `𝔣 ⊆ P`, a contradiction (`not_dvd_index_of_forall`).
-* If `e i ≥ 2` and `φ i ∣ (H mod p)`, then `β = Φ i (θ) ^ (e i - 1) ∏_{j ≠ i} Φ j (θ) ^ e j / p`
-  is an algebraic integer, because it preserves the finitely generated `ℤ`-submodule
-  `p A + Φ i (θ) A` of `K`. It is not in `A`, since otherwise `f mod p` would divide a nonzero
-  polynomial of smaller degree. So `β` has order `p` in `𝓞 K / A`, and `p` divides the index
-  (`dvd_index_of_ne_one_of_dvd`).
-
-In particular the right-hand side of the criterion does not depend on the choice of the lifts
-(`forall_eq_one_or_not_dvd_map_iff`).
+The criterion decides, from the factorisation of `f mod p` alone, whether `p` divides the index
+of the order `ℤ[θ]` in `𝓞 K`, that is, whether `ℤ[θ]` is `p`-maximal; in particular it makes
+the hypothesis of the Kummer–Dedekind theorem at `p` checkable. Its right-hand side depends
+neither on the lifts `Φ i` nor on `H` (`forall_eq_one_or_not_dvd_map_iff`). The proof is
+elementary and takes place inside `𝓞 K`, without localisation.
 
 ## Main results
 
-* `TauCeti.NumberField.IntegralPrimitiveElement.exists_C_mul_eq_minpoly_sub_prod`: the
-  polynomial `H` exists.
 * `TauCeti.NumberField.IntegralPrimitiveElement.not_dvd_index_iff`: Dedekind's criterion.
-* `TauCeti.NumberField.IntegralPrimitiveElement.forall_eq_one_or_not_dvd_map_iff`: the
-  criterion does not depend on the lifts.
+* `TauCeti.NumberField.IntegralPrimitiveElement.not_dvd_index_of_forall_eq_one_or_not_dvd_map`,
+  `TauCeti.NumberField.IntegralPrimitiveElement.dvd_index_of_multiplicity_ne_one_of_dvd_map`: its
+  sufficient and its necessary direction.
+* `TauCeti.NumberField.IntegralPrimitiveElement.forall_eq_one_or_not_dvd_map_iff`: the criterion
+  does not depend on the lifts.
+* `TauCeti.NumberField.IntegralPrimitiveElement.exists_notMem_mul_mem_adjoin`: the element of
+  `ℤ[θ]` outside a prime above `p` that carries the sufficient direction.
+* `TauCeti.NumberField.IntegralPrimitiveElement.map_dvd_map_of_aeval_mem`,
+  `TauCeti.NumberField.IntegralPrimitiveElement.exists_aeval_eq_of_map_dvd_map`: membership of
+  `G(θ)` in a prime above `p` containing `Φ(θ)`, against divisibility of `G mod p` by `Φ mod p`.
 
 ## References
 
@@ -136,48 +127,25 @@ theorem exists_aeval_eq_of_map_dvd_map {Φ G : ℤ[X]}
   simp only [map_mul, map_sub, map_natCast] at h1
   rw [← sub_eq_iff_eq_add'.mp h1.symm]
 
-/-- If the conductor of `ℤ[θ]` in `𝓞 K` is coprime to `p`, then `p` does not divide the index:
-multiplication by `p` is then surjective, hence bijective, on the finite group `𝓞 K / ℤ[θ]`,
-which therefore has no element of order `p`. -/
-theorem not_dvd_index_of_conductor_sup_span_eq_top
-    (h : conductor ℤ θ.1 ⊔ Ideal.span {(p : 𝓞 K)} = ⊤) : ¬ p ∣ θ.index := by
-  classical
-  have : Fintype θ.Quotient := Fintype.ofFinite _
-  intro hp
-  rw [index_def, Nat.card_eq_fintype_card] at hp
-  obtain ⟨x, hx⟩ := exists_prime_addOrderOf_dvd_card p hp
-  have hsurj : Function.Surjective (fun y : θ.Quotient => p • y) := by
-    have h1 : (1 : 𝓞 K) ∈ conductor ℤ θ.1 ⊔ Ideal.span {(p : 𝓞 K)} := h ▸ Submodule.mem_top
-    obtain ⟨c, hc, m, hm, hcm⟩ := Submodule.mem_sup.mp h1
-    obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton'.mp hm
-    intro y
-    obtain ⟨b, rfl⟩ := Submodule.mkQ_surjective _ y
-    refine ⟨θ.adjoin.toSubmodule.mkQ (a * b), ?_⟩
-    change p • θ.adjoin.toSubmodule.mkQ (a * b) = θ.adjoin.toSubmodule.mkQ b
-    have hb : b = c * b + (p : 𝓞 K) * (a * b) := by
-      calc b = (c + a * (p : 𝓞 K)) * b := by rw [hcm, one_mul]
-        _ = c * b + (p : 𝓞 K) * (a * b) := by ring
-    have hcb : θ.adjoin.toSubmodule.mkQ (c * b) = 0 := by
-      rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, Subalgebra.mem_toSubmodule,
-        adjoin_def]
-      exact mem_conductor_iff.mp hc b
-    conv_rhs => rw [hb]
-    rw [map_add, hcb, zero_add, ← map_nsmul, nsmul_eq_mul]
-  have hinj := Finite.injective_iff_surjective.mpr hsurj
-  have hx0 : x = 0 := hinj (by
-    change p • x = p • (0 : θ.Quotient)
-    rw [smul_zero, ← hx, addOrderOf_nsmul_eq_zero])
-  rw [hx0, addOrderOf_zero] at hx
-  exact (Fact.out : p.Prime).one_lt.ne hx
-
-/-- Every polynomial expression in `θ` lies in `ℤ[θ]`. -/
-theorem aeval_mem_adjoin (G : ℤ[X]) : aeval θ.1 G ∈ θ.adjoin := by
-  rw [adjoin_def]
-  exact Polynomial.aeval_mem_adjoin_singleton ℤ θ.1
-
 section Criterion
 
 variable {ι : Type*} [Fintype ι] {φ : ι → (ZMod p)[X]} {e : ι → ℕ} {Φ : ι → ℤ[X]} {H : ℤ[X]}
+
+/- The proof of the criterion, in outline. Write `A = ℤ[θ]` and `𝔣` for its conductor.
+
+* Suppose `p` divides the index. Then `𝔣 + p 𝓞 K` is a proper ideal
+  (`not_dvd_index_of_conductor_sup_span_eq_top`); let `P` be a maximal ideal containing it. `P`
+  contains `Φ i (θ)` for some `i`, and the right-hand side at `i` produces `σ ∈ A` outside `P`
+  with `σ z ∈ A` whenever `p z ∈ A` (`exists_notMem_mul_mem_adjoin`): for `e i = 1` take
+  `σ = ∏_{j ≠ i} Φ j (θ) ^ e j`, and for `φ i ∤ (H mod p)` take
+  `σ = H(θ) ^ e i ∏_{j ≠ i} Φ j (θ) ^ e j`, descending along the powers of `Φ i (θ)` with the
+  identity `p H(θ) = -∏ j, Φ j (θ) ^ e j`. Iterating, a power of `σ` times the `p`-free part of
+  the index lies in `𝔣 ⊆ P`, a contradiction (`not_dvd_index_of_forall_eq_one_or_not_dvd_map`).
+* If `e i ≥ 2` and `φ i ∣ (H mod p)`, then `β = Φ i (θ) ^ (e i - 1) ∏_{j ≠ i} Φ j (θ) ^ e j / p`
+  is an algebraic integer, because it preserves the finitely generated `ℤ`-submodule
+  `p A + Φ i (θ) A` of `K`. It is not in `A`, since otherwise `f mod p` would divide a nonzero
+  polynomial of smaller degree. So `β` has order `p` in `𝓞 K / A`, and `p` divides the index,
+  by `dvd_index_of_multiplicity_ne_one_of_dvd_map`. -/
 
 /-- **The key step of Dedekind's criterion.** Let `P` be a prime of `𝓞 K` containing `p` and
 `Φ i (θ)`. If `e i = 1`, or if `φ i` does not divide the reduction of `H`, then there is
@@ -255,8 +223,8 @@ theorem exists_notMem_mul_mem_adjoin (hφ : ∀ i, Irreducible (φ i)) (hφm : �
           exact θ.adjoin.sub_mem (θ.adjoin.mul_mem (θ.aeval_mem_adjoin _) (θ.aeval_mem_adjoin _))
             (θ.adjoin.mul_mem (θ.adjoin.mul_mem (θ.adjoin.pow_mem (θ.aeval_mem_adjoin _) _) htA)
               (θ.aeval_mem_adjoin _)))
-        rw [show t * Hθ ^ (m + 1) * w = t * Hθ ^ m * (Hθ * w) by ring]
-        exact hw'
+        convert hw' using 1
+        ring
     refine ⟨t * Hθ ^ e i, θ.adjoin.mul_mem htA (θ.adjoin.pow_mem (θ.aeval_mem_adjoin _) _),
       fun h => ?_, fun z hz => ?_⟩
     · rcases Ideal.IsPrime.mem_or_mem inferInstance h with h | h
@@ -269,8 +237,8 @@ theorem exists_notMem_mul_mem_adjoin (hφ : ∀ i, Irreducible (φ i)) (hφm : �
 
 /-- **Dedekind's criterion, the sufficient direction.** If for every `i` either `e i = 1` or
 `φ i` does not divide the reduction of `H`, then `p` does not divide the index `[𝓞 K : ℤ[θ]]`. -/
-theorem not_dvd_index_of_forall (hφ : ∀ i, Irreducible (φ i)) (hφm : ∀ i, (φ i).Monic)
-    (hinj : Function.Injective φ) (he : ∀ i, 0 < e i)
+theorem not_dvd_index_of_forall_eq_one_or_not_dvd_map (hφ : ∀ i, Irreducible (φ i))
+    (hφm : ∀ i, (φ i).Monic) (hinj : Function.Injective φ) (he : ∀ i, 0 < e i)
     (hΦ : ∀ i, (Φ i).map (Int.castRingHom (ZMod p)) = φ i)
     (hH : C (p : ℤ) * H = minpoly ℤ θ.1 - ∏ i, Φ i ^ e i)
     (hcrit : ∀ i, e i = 1 ∨ ¬ φ i ∣ H.map (Int.castRingHom (ZMod p))) : ¬ p ∣ θ.index := by
@@ -300,9 +268,9 @@ theorem not_dvd_index_of_forall (hφ : ∀ i, Irreducible (φ i)) (hφm : ∀ i,
         rw [← mul_assoc, ← pow_succ']
         exact hz
       have h2 : (p : 𝓞 K) ^ k * (σ * z) ∈ θ.adjoin := by
-        rw [show (p : 𝓞 K) ^ k * (σ * z) = σ * ((p : 𝓞 K) ^ k * z) by ring]
+        rw [mul_left_comm]
         exact hσ _ h1
-      rw [show σ ^ (k + 1) * z = σ ^ k * (σ * z) by ring]
+      rw [pow_succ, mul_assoc]
       exact ih _ h2
   obtain ⟨k, N, hN, hkN⟩ :=
     Nat.exists_eq_pow_mul_and_not_dvd θ.index_pos.ne' p (Fact.out : p.Prime).ne_one
@@ -334,10 +302,10 @@ theorem not_dvd_index_of_forall (hφ : ∀ i, Irreducible (φ i)) (hφm : ∀ i,
 reduction of `H` for some `i`, then `p` divides the index `[𝓞 K : ℤ[θ]]`: the element
 `Φ i (θ) ^ (e i - 1) · ∏_{j ≠ i} Φ j (θ) ^ e j / p` of `K` is an algebraic integer that does not
 lie in `ℤ[θ]`, although `p` times it does. -/
-theorem dvd_index_of_ne_one_of_dvd (hφ : ∀ i, Irreducible (φ i))
+theorem dvd_index_of_multiplicity_ne_one_of_dvd_map (i : ι) (hφi : Irreducible (φ i))
     (hfact : (minpoly ℤ θ.1).map (Int.castRingHom (ZMod p)) = ∏ i, φ i ^ e i)
     (hΦ : ∀ i, (Φ i).map (Int.castRingHom (ZMod p)) = φ i)
-    (hH : C (p : ℤ) * H = minpoly ℤ θ.1 - ∏ i, Φ i ^ e i) {i : ι} (h1 : e i ≠ 1)
+    (hH : C (p : ℤ) * H = minpoly ℤ θ.1 - ∏ i, Φ i ^ e i) (h1 : e i ≠ 1)
     (he : 0 < e i) (hdvd : φ i ∣ H.map (Int.castRingHom (ZMod p))) : p ∣ θ.index := by
   classical
   have hp0 : (p : K) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
@@ -430,9 +398,9 @@ theorem dvd_index_of_ne_one_of_dvd (hφ : ∀ i, Irreducible (φ i))
     have hG0 : φ i * G₁.map (Int.castRingHom (ZMod p)) ≠ 0 :=
       right_ne_zero_of_mul (hfbar ▸ hf0)
     have hdeg := Polynomial.natDegree_le_of_dvd hf hG0
-    rw [hfbar, Polynomial.natDegree_mul (hφ i).ne_zero hG0] at hdeg
+    rw [hfbar, Polynomial.natDegree_mul hφi.ne_zero hG0] at hdeg
     have hpos : 0 < (φ i).natDegree :=
-      Polynomial.natDegree_pos_iff_degree_pos.mpr (degree_pos_of_irreducible (hφ i))
+      Polynomial.natDegree_pos_iff_degree_pos.mpr (degree_pos_of_irreducible hφi)
     omega
   have hq0 : θ.adjoin.toSubmodule.mkQ βₒ ≠ 0 := by
     rw [Ne, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, Subalgebra.mem_toSubmodule]
@@ -443,8 +411,6 @@ theorem dvd_index_of_ne_one_of_dvd (hφ : ∀ i, Irreducible (φ i))
   rw [index_def, ← addOrderOf_eq_prime hpq hq0]
   exact addOrderOf_dvd_natCard _
 
--- The statement follows the human-authored specification
--- `TauCetiRoadmap/NumberFieldArithmetic/Suggested.lean`, Layer 3.7.
 /-- **Dedekind's criterion.** Let `θ` be an integral primitive element of `K` with minimal
 polynomial `f = minpoly ℤ θ`, let `p` be a prime, and factor `f mod p = ∏ i, φ i ^ e i` into
 distinct monic irreducible polynomials `φ i` over `ZMod p`, each with multiplicity `e i > 0`.
@@ -457,10 +423,10 @@ theorem not_dvd_index_iff (hφ : ∀ i, Irreducible (φ i)) (hφm : ∀ i, (φ i
     (hΦ : ∀ i, (Φ i).map (Int.castRingHom (ZMod p)) = φ i)
     (hH : C (p : ℤ) * H = minpoly ℤ θ.1 - ∏ i, Φ i ^ e i) :
     ¬ p ∣ θ.index ↔ ∀ i, e i = 1 ∨ ¬ φ i ∣ H.map (Int.castRingHom (ZMod p)) := by
-  refine ⟨fun h i => ?_, θ.not_dvd_index_of_forall hφ hφm hinj he hΦ hH⟩
+  refine ⟨fun h i => ?_, θ.not_dvd_index_of_forall_eq_one_or_not_dvd_map hφ hφm hinj he hΦ hH⟩
   by_contra hcon
   rw [not_or, not_not] at hcon
-  exact h (θ.dvd_index_of_ne_one_of_dvd hφ hfact hΦ hH hcon.1 (he i) hcon.2)
+  exact h (θ.dvd_index_of_multiplicity_ne_one_of_dvd_map i (hφ i) hfact hΦ hH hcon.1 (he i) hcon.2)
 
 /-- The right-hand side of Dedekind's criterion does not depend on the choice of the lifts
 `Φ i` of the `φ i`, nor on the resulting `H`. -/

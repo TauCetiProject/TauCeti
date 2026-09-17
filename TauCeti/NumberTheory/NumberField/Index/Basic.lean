@@ -41,6 +41,8 @@ invariances under translating the generator by an integer and negating it.
 * `TauCeti.NumberField.IntegralPrimitiveElement.index_addIntCast`: integer translation preserves
   the index.
 * `TauCeti.NumberField.IntegralPrimitiveElement.index_neg`: negation preserves the index.
+* `TauCeti.NumberField.IntegralPrimitiveElement.aeval_mem_adjoin`: polynomial expressions in `θ`
+  lie in `ℤ[θ]`.
 
 ## References
 
@@ -102,6 +104,12 @@ def adjoin (θ : IntegralPrimitiveElement K) : Subalgebra ℤ (𝓞 K) :=
 theorem adjoin_def (θ : IntegralPrimitiveElement K) :
     θ.adjoin = Algebra.adjoin ℤ {θ.1} :=
   (rfl)
+
+/-- Every polynomial expression in `θ` lies in `ℤ[θ]`. -/
+theorem aeval_mem_adjoin (θ : IntegralPrimitiveElement K) (G : Polynomial ℤ) :
+    Polynomial.aeval θ.1 G ∈ θ.adjoin := by
+  rw [adjoin_def]
+  exact Polynomial.aeval_mem_adjoin_singleton ℤ θ.1
 
 /-- The additive quotient of `𝓞 K` by the order `ℤ[θ]`. -/
 abbrev Quotient (θ : IntegralPrimitiveElement K) :=
