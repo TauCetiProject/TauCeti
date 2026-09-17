@@ -17,15 +17,19 @@ of `L` is unramified over `K`. Specializing the ideal-theoretic Artin map to thi
 classical Artin map on fractional ideals prime to the relative discriminant.
 
 The carrier remains `NumberFieldArithmetic.idealsAway`. In particular, this file introduces no
-second notion of ideals prime to the discriminant; it only supplies the unramifiedness theorem
-needed by `NumberFieldArithmetic.artinHomAway` and names the resulting specialization.
+second notion of ideals prime to the discriminant; it only feeds the ramified support and its
+unramifiedness theorem `NumberField.isUnramifiedAway_ramifiedSupport` into
+`NumberFieldArithmetic.artinHomAway` and names the resulting specialization.
+
+## Main definitions
+
+* `TauCeti.NumberFieldArithmetic.artinHomAwayRamifiedSupport`: the Artin map on fractional
+  ideals prime to the relative discriminant.
 
 ## Main results
 
-* `TauCeti.NumberField.isUnramifiedAway_ramifiedSupport`: primes outside the ramified support are
-  unramified throughout the extension.
-* `TauCeti.NumberFieldArithmetic.artinHomAwayRamifiedSupport`: the Artin map on fractional
-  ideals prime to the relative discriminant.
+* `TauCeti.NumberFieldArithmetic.artinHomAwayRamifiedSupport_def`: this map is the generic Artin
+  map at the ramified support.
 * `TauCeti.NumberFieldArithmetic.artinHomAwayRamifiedSupport_apply_prime`: this map takes a prime
   outside the ramified support to its arithmetic Frobenius.
 
@@ -41,25 +45,6 @@ open scoped NumberField nonZeroDivisors
 
 namespace TauCeti
 
-namespace NumberField
-
-variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
-
-/-- **Every prime outside the ramified support is unramified.** If a finite place `v` does not
-divide the relative discriminant of `L/K`, then every prime of `L` above `v` is unramified over
-`K`. This is the unramified-away hypothesis used to specialize the Artin map. -/
-theorem isUnramifiedAway_ramifiedSupport :
-    ∀ v : HeightOneSpectrum (𝓞 K), v ∉ ramifiedSupport K L →
-      ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver v.asIdeal],
-        Algebra.IsUnramifiedAt (𝓞 K) Q := by
-  intro v hv Q _ _
-  by_contra hQ
-  apply hv
-  rw [mem_ramifiedSupport, TauCeti.dvd_relDiscr_iff_exists_not_isUnramifiedAt v.ne_bot]
-  exact ⟨⟨Q, inferInstance, inferInstance⟩, hQ⟩
-
-end NumberField
-
 namespace NumberFieldArithmetic
 
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
@@ -73,6 +58,19 @@ noncomputable def artinHomAwayRamifiedSupport
     idealsAway (K := K) (NumberField.ramifiedSupport K L) →* (L ≃ₐ[K] L) :=
   artinHomAway (L := L) hab (NumberField.ramifiedSupport K L)
     NumberField.isUnramifiedAway_ramifiedSupport
+
+/-- **The defining equation of the Artin map away from the ramified support.** It is the generic
+`artinHomAway` at the ramified support, so every lemma about the generic map transfers to it
+without unfolding the definition. This is not a `simp` lemma: the specialized name, not the
+displayed specialization, is the normal form. -/
+theorem artinHomAwayRamifiedSupport_def (hab : ∀ σ τ : L ≃ₐ[K] L, Commute σ τ) :
+    artinHomAwayRamifiedSupport (L := L) hab =
+      artinHomAway hab (NumberField.ramifiedSupport K L)
+        NumberField.isUnramifiedAway_ramifiedSupport :=
+  -- The parentheses are the module system's: the body of `artinHomAwayRamifiedSupport` is not
+  -- `@[expose]`d, so the parenthesised form elaborates here, where the body is visible, whereas a
+  -- bare `rfl` would export its proof term and fail.
+  (rfl)
 
 /-- **The Artin map away from the ramified support takes an unramified prime to Frobenius.** -/
 theorem artinHomAwayRamifiedSupport_apply_prime
