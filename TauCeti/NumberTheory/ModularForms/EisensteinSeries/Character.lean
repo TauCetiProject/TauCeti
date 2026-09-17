@@ -98,10 +98,13 @@ theorem charWeight_intCast [NeZero N] (huv : u * v ∣ N) (x : Fin 2 → ℤ) :
   · obtain ⟨c, hc⟩ := h'
     have hv0 : (v : ℤ) ≠ 0 := by
       rintro hv0
-      exact NeZero.ne (u * v * t) (by simp [show v = 0 by exact_mod_cast hv0])
+      have hv0' : v = 0 := by exact_mod_cast hv0
+      exact NeZero.ne (u * v * t) (by simp [hv0'])
+    have hfactor : (↑(u * v * t) : ℤ) * s + v * c = v * (c + u * t * s) := by
+      push_cast
+      ring
     have hval : ((((x 0 : ZMod (u * v * t)).val / v : ℕ) : ℤ)) = c + u * t * s := by
-      rw [Int.natCast_div, eq_add_of_sub_eq hs, hc, show (↑(u * v * t) : ℤ) * s + v * c =
-        v * (c + u * t * s) by push_cast; ring, Int.mul_ediv_cancel_left _ hv0]
+      rw [Int.natCast_div, eq_add_of_sub_eq hs, hc, hfactor, Int.mul_ediv_cancel_left _ hv0]
     rw [← Int.cast_natCast, hval, hc, Int.mul_ediv_cancel_left _ hv0]
     simp
   · exact absurd (hdvd.mp h) h'
@@ -122,7 +125,8 @@ theorem charWeight_vecMul_inv [NeZero N] (huv : u * v ∣ N) {γ : SL(2, ℤ)} (
   obtain ⟨n, rfl⟩ := huv
   have hv0 : (v : ℤ) ≠ 0 := by
     rintro hv0
-    exact NeZero.ne (u * v * n) (by simp [show v = 0 by exact_mod_cast hv0])
+    have hv0' : v = 0 := by exact_mod_cast hv0
+    exact NeZero.ne (u * v * n) (by simp [hv0'])
   have hdet : γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 = 1 := by
     have := γ.det_coe
     rwa [Matrix.det_fin_two] at this
@@ -139,15 +143,21 @@ theorem charWeight_vecMul_inv [NeZero N] (huv : u * v ∣ N) {γ : SL(2, ℤ)} (
   -- `d` is a unit modulo `v`, so divisibility of the first entry does not change
   have hcop : IsCoprime (v : ℤ) d :=
     ⟨-(u * n * t) * b, a, by rw [← hdet, ht]; push_cast; ring⟩
+  have hfirst : x 0 * d - x 1 * (↑(u * v * n) * t) =
+      x 0 * d + v * (-(x 1 * u * n * t)) := by
+    push_cast
+    ring
   have hiff : (v : ℤ) ∣ x 0 * d - x 1 * c ↔ (v : ℤ) ∣ x 0 := by
-    rw [ht, show x 0 * d - x 1 * (↑(u * v * n) * t) = x 0 * d + v * (-(x 1 * u * n * t)) by
-      push_cast; ring, dvd_add_left (dvd_mul_right _ _)]
+    rw [ht, hfirst, dvd_add_left (dvd_mul_right _ _)]
     exact ⟨fun h ↦ hcop.dvd_of_dvd_mul_right h, fun h ↦ h.mul_right _⟩
   split_ifs with h h' h''
   · obtain ⟨e, he⟩ := h'
+    have hsecond : (v : ℤ) * e * d - x 1 * (↑(u * v * n) * t) =
+        v * (e * d - x 1 * (u * n * t)) := by
+      push_cast
+      ring
     have hq : (x 0 * d - x 1 * c) / v = e * d - x 1 * (u * n * t) := by
-      rw [ht, he, show (v : ℤ) * e * d - x 1 * (↑(u * v * n) * t) =
-        v * (e * d - x 1 * (u * n * t)) by push_cast; ring, Int.mul_ediv_cancel_left _ hv0]
+      rw [ht, he, hsecond, Int.mul_ediv_cancel_left _ hv0]
     have hr : ((-(x 0 * b) + x 1 * a : ℤ) : ZMod v) = (x 1 : ZMod v) * (a : ZMod v) := by
       rw [he]
       push_cast
@@ -204,6 +214,7 @@ def charEisensteinSeriesMF (hk : 3 ≤ k) (huv : u * v ∣ N) :
         h1 (dvd_of_mul_left_dvd huv), map_one, map_one, one_mul, one_smul]
 
 /-- The Eisenstein series with character is the series weighted by `charWeight N ψ φ`. -/
+@[simp]
 lemma coe_charEisensteinSeriesMF (hk : 3 ≤ k) (huv : u * v ∣ N) :
     ⇑(charEisensteinSeriesMF ψ φ hk huv) = weightedEisensteinSeries (charWeight N ψ φ) k := by
   rw [charEisensteinSeriesMF, ModularForm.coe_ofSlashInvariant, coe_weightedEisensteinSeriesMF]

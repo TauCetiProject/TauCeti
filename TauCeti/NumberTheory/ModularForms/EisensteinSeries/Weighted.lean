@@ -44,11 +44,12 @@ weight under `Γ₀(N)`.
 ## References
 
 * [F. Diamond and J. Shurman, *A first course in modular forms*][diamondshurman2005], §4.2, §4.5.
-* The analytic arguments follow Mathlib's
-  `EisensteinSeries.eisensteinSeries_tendstoLocallyUniformly`,
+* The uniform-convergence argument follows Mathlib's
+  `EisensteinSeries.eisensteinSeries_tendstoLocallyUniformly` (Chris Birkbeck and David Loeffler),
+  while the holomorphy and boundedness arguments follow
   `EisensteinSeries.eisensteinSeriesSIF_mdifferentiable` and
-  `EisensteinSeries.isBoundedAtImInfty_eisensteinSeriesSIF` (Chris Birkbeck), with the sum over a
-  coprime residue class replaced by a sum over all pairs with bounded weights.
+  `EisensteinSeries.isBoundedAtImInfty_eisensteinSeriesSIF` (Chris Birkbeck), with the sum over
+  a coprime residue class replaced by a sum over all pairs with bounded weights.
 -/
 
 public section
@@ -86,13 +87,6 @@ lemma intCast_comp_vecMul (v : Fin 2 → ℤ) (γ : SL(2, ℤ)) :
   ext i
   simp [vecMul, dotProduct]
 
-/-- Right multiplication by `γ ∈ SL(2, ℤ)`, as a permutation of `ℤ²`. -/
-private def vecMulEquiv (γ : SL(2, ℤ)) : (Fin 2 → ℤ) ≃ (Fin 2 → ℤ) where
-  toFun v := v ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)
-  invFun v := v ᵥ* ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)
-  left_inv v := by simp [vecMul_vecMul, Matrix.mul_adjugate]
-  right_inv v := by simp [vecMul_vecMul, Matrix.adjugate_mul]
-
 /-- **The slash action on a weighted Eisenstein series.** Slashing by `γ ∈ SL(2, ℤ)` replaces
 the weight `W` by `a ↦ W (a ᵥ* γ⁻¹)`. -/
 theorem weightedEisensteinSeries_slash_apply (γ : SL(2, ℤ)) :
@@ -104,11 +98,16 @@ theorem weightedEisensteinSeries_slash_apply (γ : SL(2, ℤ)) :
     mul_inv_eq_iff_eq_mul₀ (zpow_ne_zero _ <| denom_ne_zero _ z), weightedEisensteinSeries,
     eisSummand_SL2_apply, mul_left_comm _ (_ ^ k), tsum_mul_left, mul_comm (_ ^ k)]
   congr 1
-  rw [← (vecMulEquiv γ).symm.tsum_eq]
+  let e : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) :=
+    Matrix.toLinearEquivRight'OfInv
+      (M := ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ))
+      (M' := (γ : Matrix (Fin 2) (Fin 2) ℤ))
+      (by simp [Matrix.adjugate_mul]) (by simp [Matrix.mul_adjugate])
+  rw [← e.symm.tsum_eq]
   refine tsum_congr fun v ↦ ?_
-  simp only [vecMulEquiv, Equiv.coe_fn_symm_mk, ← intCast_comp_vecMul]
+  simp only [e, ← intCast_comp_vecMul]
   congr 2
-  simp [vecMul_vecMul, Matrix.adjugate_mul]
+  exact e.apply_symm_apply v
 
 /-- The weighted Eisenstein series as a slash invariant form of level `Γ(N)`: an element of
 `Γ(N)` reduces to the identity modulo `N`, so it does not change the weight. -/
@@ -228,5 +227,24 @@ def weightedEisensteinSeriesMF (hk : 3 ≤ k) : ModularForm Γ(N) k where
 @[simp]
 lemma coe_weightedEisensteinSeriesMF (hk : 3 ≤ k) :
     ⇑(weightedEisensteinSeriesMF W hk) = weightedEisensteinSeries W k := (rfl)
+
+@[simp]
+lemma weightedEisensteinSeriesMF_zero (hk : 3 ≤ k) :
+    weightedEisensteinSeriesMF (0 : (Fin 2 → ZMod N) → ℂ) hk = 0 := by
+  ext z
+  simp [weightedEisensteinSeries]
+
+@[simp]
+lemma weightedEisensteinSeriesMF_add (hk : 3 ≤ k) (W' : (Fin 2 → ZMod N) → ℂ) :
+    weightedEisensteinSeriesMF (W + W') hk =
+      weightedEisensteinSeriesMF W hk + weightedEisensteinSeriesMF W' hk := by
+  ext z
+  exact congrFun (weightedEisensteinSeries_add W hk W') z
+
+@[simp]
+lemma weightedEisensteinSeriesMF_smul (hk : 3 ≤ k) (c : ℂ) :
+    weightedEisensteinSeriesMF (c • W) hk = c • weightedEisensteinSeriesMF W hk := by
+  ext z
+  exact congrFun (weightedEisensteinSeries_smul W k c) z
 
 end TauCeti.EisensteinSeries
