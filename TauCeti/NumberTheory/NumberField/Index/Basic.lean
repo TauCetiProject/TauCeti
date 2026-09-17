@@ -113,6 +113,7 @@ theorem mem_adjoin_iff (θ : IntegralPrimitiveElement K) (x : 𝓞 K) :
   rw [adjoin_def, Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range]
 
 /-- Every polynomial expression in `θ` lies in `ℤ[θ]`. -/
+@[simp]
 theorem aeval_mem_adjoin (θ : IntegralPrimitiveElement K) (G : Polynomial ℤ) :
     Polynomial.aeval θ.1 G ∈ θ.adjoin :=
   (θ.mem_adjoin_iff _).mpr ⟨G, rfl⟩
@@ -131,6 +132,8 @@ theorem index_def (θ : IntegralPrimitiveElement K) :
   Submodule.cardQuot_apply θ.adjoin.toSubmodule
 
 /-- An element vanishes in the quotient `𝓞 K / ℤ[θ]` exactly when it lies in the order `ℤ[θ]`. -/
+-- Not a `simp` lemma: `simp` already proves it from `Submodule.mkQ_apply`,
+-- `Submodule.Quotient.mk_eq_zero` and `Subalgebra.mem_toSubmodule`, so `simpNF` rejects the tag.
 theorem mkQ_eq_zero_iff (θ : IntegralPrimitiveElement K) (b : 𝓞 K) :
     (θ.adjoin.toSubmodule.mkQ b : θ.Quotient) = 0 ↔ b ∈ θ.adjoin := by
   rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, Subalgebra.mem_toSubmodule]

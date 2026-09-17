@@ -31,8 +31,7 @@ The criterion decides, from `f`, `p`, the factorisation of `f mod p` and any cho
 whether `p` divides the index of the order `ℤ[θ]` in `𝓞 K`, that is, whether `ℤ[θ]` is
 `p`-maximal; in particular it makes the hypothesis of the Kummer–Dedekind theorem at `p`
 checkable. Its truth value does not depend on which lifts `Φ i`, and hence which `H`, are chosen
-(`forall_eq_one_or_not_dvd_map_iff`). The proof is elementary and takes place inside `𝓞 K`,
-without localisation.
+(`forall_eq_one_or_not_dvd_map_iff`).
 
 ## Main results
 
@@ -101,27 +100,26 @@ section Prime
 
 variable [Fact p.Prime]
 
-/-- An element of `ℤ[θ]` lying in a prime `P` of `𝓞 K` that contains `p` and `Φ(θ)`, where `Φ`
-reduces modulo `p` to an irreducible polynomial, is `Φ(θ) Q(θ) + p D(θ)` for integer polynomials
-`Q`, `D`. -/
+/-- An element of `ℤ[θ]` lying in a proper ideal `P` of `𝓞 K` that contains `p` and `Φ(θ)`,
+where `Φ` reduces modulo `p` to an irreducible polynomial, is `Φ(θ) Q(θ) + p D(θ)` for integer
+polynomials `Q`, `D`. -/
 theorem exists_aeval_eq_of_mem_adjoin_of_mem {Φ : ℤ[X]}
-    (hirr : Irreducible (Φ.map (Int.castRingHom (ZMod p)))) {P : Ideal (𝓞 K)} [P.IsPrime]
+    (hirr : Irreducible (Φ.map (Int.castRingHom (ZMod p)))) {P : Ideal (𝓞 K)} (hP : P ≠ ⊤)
     (hp : (p : 𝓞 K) ∈ P) (hΦ : aeval θ.1 Φ ∈ P) {g : 𝓞 K} (hgA : g ∈ θ.adjoin) (hgP : g ∈ P) :
     ∃ Q D : ℤ[X], g = aeval θ.1 Φ * aeval θ.1 Q + (p : 𝓞 K) * aeval θ.1 D := by
   obtain ⟨G, rfl⟩ := (θ.mem_adjoin_iff g).mp hgA
   obtain ⟨Q, D, hQD⟩ := Polynomial.exists_eq_mul_add_C_mul_of_map_zmod_dvd
-    (Polynomial.map_zmod_dvd_map_of_aeval_mem θ.1 (Ideal.IsPrime.ne_top inferInstance) hp hirr
-      hΦ hgP)
+    (Polynomial.map_zmod_dvd_map_of_aeval_mem θ.1 hP hp hirr hΦ hgP)
   refine ⟨Q, D, ?_⟩
   have h := congrArg (aeval θ.1) hQD
   simp only [map_add, map_mul, map_natCast] at h
   exact h
 
-/-- **Descent along the powers of `Φ(θ)`.** Let `P` be a prime of `𝓞 K` containing `p` and
-`a = Φ(θ)`, where `Φ` reduces modulo `p` to an irreducible polynomial and `a ≠ 0`, and let
-`t, h ∈ ℤ[θ]` satisfy `p h = -(a ^ (k + 1) t)`. If `a ^ m t w ∈ ℤ[θ]`, then `t h ^ m w ∈ ℤ[θ]`. -/
-theorem mul_pow_mul_mem_adjoin_of_pow_mul_mul_mem {Φ : ℤ[X]}
-    (hirr : Irreducible (Φ.map (Int.castRingHom (ZMod p)))) {P : Ideal (𝓞 K)} [P.IsPrime]
+/-- Let `P` be a proper ideal of `𝓞 K` containing `p` and `a = Φ(θ)`, where `Φ` reduces modulo
+`p` to an irreducible polynomial and `a ≠ 0`, and let `t, h ∈ ℤ[θ]` satisfy
+`p h = -(a ^ (k + 1) t)`. If `a ^ m t w ∈ ℤ[θ]`, then `t h ^ m w ∈ ℤ[θ]`. -/
+private theorem mul_pow_mul_mem_adjoin_of_pow_mul_mul_mem {Φ : ℤ[X]}
+    (hirr : Irreducible (Φ.map (Int.castRingHom (ZMod p)))) {P : Ideal (𝓞 K)} (hP : P ≠ ⊤)
     (hp : (p : 𝓞 K) ∈ P) (hi : aeval θ.1 Φ ∈ P) (ha0 : aeval θ.1 Φ ≠ 0) {t h : 𝓞 K}
     (htA : t ∈ θ.adjoin) (hhA : h ∈ θ.adjoin) {k : ℕ}
     (hph : (p : 𝓞 K) * h = -(aeval θ.1 Φ ^ (k + 1) * t)) (m : ℕ) (w : 𝓞 K)
@@ -131,7 +129,7 @@ theorem mul_pow_mul_mem_adjoin_of_pow_mul_mul_mem {Φ : ℤ[X]}
   | succ m ih =>
     have hwP : aeval θ.1 Φ ^ (m + 1) * t * w ∈ P :=
       P.mul_mem_right _ (P.mul_mem_right _ (P.pow_mem_of_mem hi _ m.succ_pos))
-    obtain ⟨Q, D, hQD⟩ := θ.exists_aeval_eq_of_mem_adjoin_of_mem hirr hp hi hw hwP
+    obtain ⟨Q, D, hQD⟩ := θ.exists_aeval_eq_of_mem_adjoin_of_mem hirr hP hp hi hw hwP
     have key : aeval θ.1 Φ * (aeval θ.1 Φ ^ m * t * (h * w)) =
         aeval θ.1 Φ * (h * aeval θ.1 Q - aeval θ.1 Φ ^ k * t * aeval θ.1 D) := by
       linear_combination h * hQD + aeval θ.1 D * hph
@@ -143,15 +141,15 @@ theorem mul_pow_mul_mem_adjoin_of_pow_mul_mul_mem {Φ : ℤ[X]}
     convert hw' using 1
     ring
 
-/-- **An integrality criterion in `K`.** Let `g, q, d ∈ ℤ[θ]` and `a, h ∈ 𝓞 K`, and let `β ∈ K`
-satisfy `p β = a g` and `a β = -h`, where `h = a q + p d`. Then `β` is an algebraic integer:
-multiplication by `β` preserves the finitely generated `ℤ`-submodule `p ℤ[θ] + a ℤ[θ]` of `K`. -/
-theorem isIntegral_of_natCast_mul_eq_of_mul_eq_neg {a g h q d : 𝓞 K} (hg : g ∈ θ.adjoin)
-    (hq : q ∈ θ.adjoin) (hd : d ∈ θ.adjoin) {β : K}
+omit [Fact p.Prime] in
+/-- Let `p ≠ 0`, let `g, q, d ∈ ℤ[θ]` and `a, h ∈ 𝓞 K`, and let `β ∈ K` satisfy `p β = a g` and
+`a β = -h`, where `h = a q + p d`. Then `β` is an algebraic integer. -/
+private theorem isIntegral_of_natCast_mul_eq_of_mul_eq_neg (hp : p ≠ 0) {a g h q d : 𝓞 K}
+    (hg : g ∈ θ.adjoin) (hq : q ∈ θ.adjoin) (hd : d ∈ θ.adjoin) {β : K}
     (hβp : (p : K) * β = algebraMap (𝓞 K) K a * algebraMap (𝓞 K) K g)
     (hβa : algebraMap (𝓞 K) K a * β = -algebraMap (𝓞 K) K h)
     (hh : h = a * q + (p : 𝓞 K) * d) : IsIntegral ℤ β := by
-  have hp0 : (p : K) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  have hp0 : (p : K) ≠ 0 := Nat.cast_ne_zero.mpr hp
   have hh' := congrArg (algebraMap (𝓞 K) K) hh
   simp only [map_mul, map_add, map_natCast] at hh'
   let N₀ : Submodule ℤ (𝓞 K) := θ.adjoin.toSubmodule.map (LinearMap.mulLeft ℤ (p : 𝓞 K)) ⊔
@@ -185,11 +183,10 @@ theorem isIntegral_of_natCast_mul_eq_of_mul_eq_neg {a g h q d : 𝓞 K} (hg : g 
       linear_combination -(algebraMap (𝓞 K) K a') * hβp - (algebraMap (𝓞 K) K b) * hβa +
         (algebraMap (𝓞 K) K b) * hh'
 
-/-- **The witness of the necessary direction is not in `ℤ[θ]`.** Let `Φ` reduce modulo `p` to
-an irreducible polynomial `φ`, and let `minpoly ℤ θ` reduce to `φ * (φ * ψ)` with `ψ` the
-reduction of `G₁`. Then no `β ∈ 𝓞 K` with `p β = Φ(θ) G₁(θ)` lies in `ℤ[θ]`: otherwise
-`minpoly ℤ θ` would divide a nonzero polynomial of smaller degree modulo `p`. -/
-theorem notMem_adjoin_of_natCast_mul_eq {Φ G₁ : ℤ[X]}
+/-- Let `Φ` reduce modulo `p` to an irreducible polynomial `φ`, and let `minpoly ℤ θ` reduce to
+`φ * (φ * ψ)` with `ψ` the reduction of `G₁`. Then no `β ∈ 𝓞 K` with `p β = Φ(θ) G₁(θ)` lies in
+`ℤ[θ]`. -/
+private theorem notMem_adjoin_of_natCast_mul_eq {Φ G₁ : ℤ[X]}
     (hirr : Irreducible (Φ.map (Int.castRingHom (ZMod p))))
     (hf : (minpoly ℤ θ.1).map (Int.castRingHom (ZMod p)) =
       Φ.map (Int.castRingHom (ZMod p)) *
@@ -268,7 +265,7 @@ theorem exists_notMem_mul_mem_adjoin (hφ : ∀ i, Irreducible (φ i)) (hφm : �
   · -- `e i = 1`: multiply by `t`.
     refine ⟨t, htA, htP, fun z hz => ?_⟩
     obtain ⟨Q, D, hQD⟩ :=
-      θ.exists_aeval_eq_of_mem_adjoin_of_mem hirr hp hi hz (P.mul_mem_right z hp)
+      θ.exists_aeval_eq_of_mem_adjoin_of_mem hirr hPtop hp hi hz (P.mul_mem_right z hp)
     have key : (p : 𝓞 K) * (t * z) =
         (p : 𝓞 K) * (-(Hθ * aeval θ.1 Q) + t * aeval θ.1 D) := by
       rw [h1, pow_one] at hsplit
@@ -291,7 +288,7 @@ theorem exists_notMem_mul_mem_adjoin (hφ : ∀ i, Irreducible (φ i)) (hφm : �
       · exact htP h
       · exact hHP (Ideal.IsPrime.mem_of_pow_mem inferInstance _ h)
     · rw [hk] at hpH
-      apply θ.mul_pow_mul_mem_adjoin_of_pow_mul_mul_mem hirr hp hi hai0 htA
+      apply θ.mul_pow_mul_mem_adjoin_of_pow_mul_mul_mem hirr hPtop hp hi hai0 htA
         (θ.aeval_mem_adjoin H) hpH (e i) z
       have : ai ^ e i * t * z = -(Hθ * ((p : 𝓞 K) * z)) := by
         rw [hk]
@@ -310,7 +307,7 @@ theorem not_dvd_index_of_forall_eq_one_or_not_dvd_map (hφ : ∀ i, Irreducible 
   have hprod := θ.natCast_mul_aeval_eq_neg_prod hH
   intro hdvd
   have hne : conductor ℤ θ.1 ⊔ Ideal.span {(p : 𝓞 K)} ≠ ⊤ := fun h =>
-    θ.not_dvd_index_of_conductor_sup_span_eq_top h hdvd
+    θ.not_dvd_index_of_conductor_sup_span_eq_top (Fact.out : p.Prime).ne_one h hdvd
   obtain ⟨P, hPmax, hle⟩ := Ideal.exists_le_maximal _ hne
   have : P.IsPrime := hPmax.isPrime
   have hp : (p : 𝓞 K) ∈ P := hle (Ideal.mem_sup_right (Ideal.mem_span_singleton_self _))
@@ -363,9 +360,7 @@ theorem not_dvd_index_of_forall_eq_one_or_not_dvd_map (hφ : ∀ i, Irreducible 
     exact P.add_mem (P.mul_mem_left _ hp) (P.mul_mem_left _ h)
 
 /-- **Dedekind's criterion, the necessary direction.** If `e i ≥ 2` and `φ i` divides the
-reduction of `H` for some `i`, then `p` divides the index `[𝓞 K : ℤ[θ]]`: the element
-`Φ i (θ) ^ (e i - 1) · ∏_{j ≠ i} Φ j (θ) ^ e j / p` of `K` is an algebraic integer that does not
-lie in `ℤ[θ]`, although `p` times it does. -/
+reduction of `H` for some `i`, then `p` divides the index `[𝓞 K : ℤ[θ]]`. -/
 theorem dvd_index_of_ne_one_of_dvd_map (i : ι) (hφi : Irreducible (φ i))
     (hΦ : ∀ i, (Φ i).map (Int.castRingHom (ZMod p)) = φ i)
     (hH : C (p : ℤ) * H = minpoly ℤ θ.1 - ∏ i, Φ i ^ e i) (h1 : e i ≠ 1)
@@ -408,7 +403,8 @@ theorem dvd_index_of_ne_one_of_dvd_map (i : ι) (hφi : Irreducible (φ i))
     rw [mul_left_comm, hβp]
     linear_combination hag'
   have hβint : IsIntegral ℤ β := θ.isIntegral_of_natCast_mul_eq_of_mul_eq_neg
-    (θ.aeval_mem_adjoin G₁) (θ.aeval_mem_adjoin Q) (θ.aeval_mem_adjoin D) hβp hβai hHQ'
+    (Fact.out : p.Prime).ne_zero (θ.aeval_mem_adjoin G₁) (θ.aeval_mem_adjoin Q)
+    (θ.aeval_mem_adjoin D) hβp hβai hHQ'
   set βₒ : 𝓞 K := ⟨β, hβint⟩ with hβₒ
   have hpβ : (p : 𝓞 K) * βₒ = ai * g₁ := by
     apply NumberField.RingOfIntegers.ext
