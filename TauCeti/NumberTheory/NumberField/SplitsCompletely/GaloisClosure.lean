@@ -9,9 +9,7 @@ public import Mathlib.FieldTheory.Normal.Closure
 public import Mathlib.RingTheory.Unramified.Locus
 public import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia
 import Mathlib.NumberTheory.RamificationInertia.Unramified
-import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.NumberTheory.RamificationInertia.Splitting
-import TauCeti.RingTheory.Ideal.PrimesOver
 
 /-!
 # Complete splitting and unramifiedness in composita and Galois closures
@@ -84,17 +82,23 @@ theorem ncard_primesOver_eq_finrank_iff_forall_stabilizer_le (p : Ideal (𝓞 K)
       ∀ Q ∈ p.primesOver (𝓞 M), MulAction.stabilizer (M ≃ₐ[K] M) Q ≤ E.fixingSubgroup := by
   obtain ⟨H, rfl⟩ : ∃ H, fixedField H = E := ⟨_, IsGalois.fixedField_fixingSubgroup E⟩
   rw [fixingSubgroup_fixedField, IsFractionRing.finrank_eq (𝓞 K) K (𝓞 (fixedField H)),
-    TauCeti.RamificationInertia.ncard_primesOver_eq_finrank_iff_forall]
+    Ideal.ncard_primesOver_eq_finrank_iff_forall_ramificationIdx_eq_one_and_inertiaDeg_eq_one]
   -- at each prime, `e = f = 1` says the index `[D(Q) : D(Q) ∩ H]` is one
   simp_rw [← mul_eq_one, ← Subgroup.relIndex_eq_one]
   refine ⟨fun h Q hQ ↦ ?_, fun h P hP ↦ ?_⟩
   · have := hQ.1
     rw [← ramificationIdx_mul_inertiaDeg_under_fixedField_eq_relIndex]
-    exact h _ (under_mem_primesOver hQ)
-  · obtain ⟨Q, hQ, rfl⟩ := exists_mem_primesOver_under_eq (B := 𝓞 M) hP
-    have := hQ.1
+    have : Q.under (𝓞 ↥(fixedField H)) ∈ p.primesOver (𝓞 ↥(fixedField H)) := by
+      exact ⟨inferInstance, ⟨by rw [under_under]; exact hQ.2.over⟩⟩
+    exact h _ this
+  · have := hP.1
+    have := hP.2
+    obtain ⟨⟨Q, hQprime, hQover⟩⟩ := (inferInstance : Nonempty (P.primesOver (𝓞 M)))
+    have : Q.IsPrime := hQprime
+    have : Q.LiesOver P := hQover
+    rw [← (over_def Q P).symm]
     rw [ramificationIdx_mul_inertiaDeg_under_fixedField_eq_relIndex]
-    exact h Q hQ
+    exact h Q ⟨inferInstance, LiesOver.trans Q P p⟩
 
 /-- **Complete splitting in a Galois extension.** For `M / K` Galois, a prime `p` of `𝓞 K` has
 `[M : K]` primes above it exactly when the decomposition group of every prime above it is
@@ -104,7 +108,7 @@ theorem ncard_primesOver_eq_finrank_iff_forall_stabilizer_eq_bot (p : Ideal (�
     (p.primesOver (𝓞 M)).ncard = finrank K M ↔
       ∀ Q ∈ p.primesOver (𝓞 M), MulAction.stabilizer (M ≃ₐ[K] M) Q = ⊥ := by
   rw [IsFractionRing.finrank_eq (𝓞 K) K (𝓞 M) M,
-    TauCeti.RamificationInertia.ncard_primesOver_eq_finrank_iff_forall]
+    Ideal.ncard_primesOver_eq_finrank_iff_forall_ramificationIdx_eq_one_and_inertiaDeg_eq_one]
   refine forall₂_congr fun Q ⟨_, _⟩ ↦ ?_
   -- the decomposition group of `Q` has order `e * f`
   rw [← mul_eq_one, ← Subgroup.card_eq_one, Ideal.card_stabilizer_eq p Q,
@@ -143,11 +147,19 @@ theorem ncard_primesOver_map_eq_finrank_iff (p : Ideal (𝓞 K)) [p.IsPrime]
     fixingSubgroup_fixedField]
   -- `D(σ • Q) = σ D(Q) σ⁻¹`, and `σ` permutes the primes above `p`
   refine ⟨fun h Q hQ ↦ ?_, fun h Q hQ ↦ ?_⟩
-  · have := h _ (smul_mem_primesOver σ hQ)
+  · have hσQ : σ • Q ∈ p.primesOver (𝓞 M) := by
+      have := hQ.1
+      have := hQ.2
+      exact ⟨inferInstance, inferInstance⟩
+    have := h _ hσQ
     rwa [MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
       Subgroup.map_le_map_iff_of_injective (MulAut.conj σ).injective] at this
   · rw [← smul_inv_smul σ Q, MulAction.stabilizer_smul_eq_stabilizer_map_conj]
-    exact Subgroup.map_mono (h _ (smul_mem_primesOver σ⁻¹ hQ))
+    have hσQ : σ⁻¹ • Q ∈ p.primesOver (𝓞 M) := by
+      have := hQ.1
+      have := hQ.2
+      exact ⟨inferInstance, inferInstance⟩
+    exact Subgroup.map_mono (h _ hσQ)
 
 /-- **Complete splitting in the normal closure.** A prime `p` of `𝓞 K` splits completely in an
 intermediate field `E` of `M / K` exactly when it splits completely in the normal closure of `E`
@@ -174,7 +186,7 @@ theorem ncard_primesOver_eq_finrank_iff_of_normalClosure_eq_top (p : Ideal (𝓞
 /-! ### Unramifiedness -/
 
 /-- **Unramifiedness through inertia groups.** For `M / K` Galois and `E` an intermediate field,
-a prime `p` of `𝓞 K` is unramified in `E` exactly when the inertia group of every prime of `𝓞 M`
+an ideal `p` of `𝓞 K` is unramified in `E` exactly when the inertia group of every prime of `𝓞 M`
 above `p` fixes `E` pointwise. -/
 theorem isUnramifiedIn_iff_forall_inertia_le (p : Ideal (𝓞 K)) (E : IntermediateField K M) :
     Algebra.IsUnramifiedIn (𝓞 E) p ↔
@@ -186,27 +198,33 @@ theorem isUnramifiedIn_iff_forall_inertia_le (p : Ideal (𝓞 K)) (E : Intermedi
   refine ⟨fun h Q hQ ↦ ?_, fun h P _ hP ↦ ?_⟩
   · have := hQ.1
     rw [← ramificationIdx_under_fixedField_eq_relIndex]
-    exact h _ (under_mem_primesOver hQ).2
-  · obtain ⟨Q, hQ, rfl⟩ := exists_mem_primesOver_under_eq (B := 𝓞 M) (p := p) ⟨inferInstance, hP⟩
-    have := hQ.1
+    have : Q.under (𝓞 ↥(fixedField H)) ∈ p.primesOver (𝓞 ↥(fixedField H)) := by
+      exact ⟨inferInstance, ⟨by rw [under_under]; exact hQ.2.over⟩⟩
+    exact h _ this.2
+  · have : P.IsPrime := inferInstance
+    have : P.LiesOver p := hP
+    obtain ⟨⟨Q, hQprime, hQover⟩⟩ := (inferInstance : Nonempty (P.primesOver (𝓞 M)))
+    have : Q.IsPrime := hQprime
+    have : Q.LiesOver P := hQover
+    rw [← (over_def Q P).symm]
     rw [ramificationIdx_under_fixedField_eq_relIndex]
-    exact h Q hQ
+    exact h Q ⟨inferInstance, LiesOver.trans Q P p⟩
 
-/-- **Unramifiedness in a compositum.** A prime `p` of `𝓞 K` is unramified in `E₁ ⊔ E₂` exactly
+/-- **Unramifiedness in a compositum.** An ideal `p` of `𝓞 K` is unramified in `E₁ ⊔ E₂` exactly
 when it is unramified in `E₁` and in `E₂`. -/
 theorem isUnramifiedIn_sup_iff (p : Ideal (𝓞 K)) (E₁ E₂ : IntermediateField K M) :
     Algebra.IsUnramifiedIn (𝓞 ↥(E₁ ⊔ E₂)) p ↔
       Algebra.IsUnramifiedIn (𝓞 E₁) p ∧ Algebra.IsUnramifiedIn (𝓞 E₂) p := by
   simp only [isUnramifiedIn_iff_forall_inertia_le, fixingSubgroup_sup, le_inf_iff, ← forall_and]
 
-/-- **Unramifiedness in an arbitrary compositum.** A prime `p` of `𝓞 K` is unramified in
+/-- **Unramifiedness in an arbitrary compositum.** An ideal `p` of `𝓞 K` is unramified in
 `⨆ i, E i` exactly when it is unramified in every `E i`. -/
 theorem isUnramifiedIn_iSup_iff (p : Ideal (𝓞 K)) {ι : Sort*} (E : ι → IntermediateField K M) :
     Algebra.IsUnramifiedIn (𝓞 ↥(⨆ i, E i)) p ↔ ∀ i, Algebra.IsUnramifiedIn (𝓞 (E i)) p := by
   simp only [isUnramifiedIn_iff_forall_inertia_le, fixingSubgroup_iSup, le_iInf_iff]
   exact ⟨fun h i Q hQ ↦ h Q hQ i, fun h Q hQ i ↦ h i Q hQ⟩
 
-/-- **Unramifiedness in a conjugate field.** A prime `p` of `𝓞 K` is unramified in `σ E` exactly
+/-- **Unramifiedness in a conjugate field.** An ideal `p` of `𝓞 K` is unramified in `σ E` exactly
 when it is unramified in `E`. -/
 theorem isUnramifiedIn_map_iff (p : Ideal (𝓞 K)) (E : IntermediateField K M) (σ : M ≃ₐ[K] M) :
     Algebra.IsUnramifiedIn (𝓞 ↥(E.map (σ : M →ₐ[K] M))) p ↔ Algebra.IsUnramifiedIn (𝓞 E) p := by
@@ -215,13 +233,21 @@ theorem isUnramifiedIn_map_iff (p : Ideal (𝓞 K)) (E : IntermediateField K M) 
     isUnramifiedIn_iff_forall_inertia_le, fixingSubgroup_fixedField, fixingSubgroup_fixedField]
   -- `I(σ • Q) = σ I(Q) σ⁻¹`, and `σ` permutes the primes above `p`
   refine ⟨fun h Q hQ ↦ ?_, fun h Q hQ ↦ ?_⟩
-  · have := h _ (smul_mem_primesOver σ hQ)
+  · have hσQ : σ • Q ∈ p.primesOver (𝓞 M) := by
+      have := hQ.1
+      have := hQ.2
+      exact ⟨inferInstance, inferInstance⟩
+    have := h _ hσQ
     rwa [Ideal.inertia_smul,
       Subgroup.map_le_map_iff_of_injective (MulAut.conj σ).injective] at this
   · rw [← smul_inv_smul σ Q, Ideal.inertia_smul]
-    exact Subgroup.map_mono (h _ (smul_mem_primesOver σ⁻¹ hQ))
+    have hσQ : σ⁻¹ • Q ∈ p.primesOver (𝓞 M) := by
+      have := hQ.1
+      have := hQ.2
+      exact ⟨inferInstance, inferInstance⟩
+    exact Subgroup.map_mono (h _ hσQ)
 
-/-- **Unramifiedness in the normal closure.** A prime `p` of `𝓞 K` is unramified in an
+/-- **Unramifiedness in the normal closure.** An ideal `p` of `𝓞 K` is unramified in an
 intermediate field `E` of `M / K` exactly when it is unramified in the normal closure of `E`
 in `M`. -/
 theorem isUnramifiedIn_normalClosure_iff (p : Ideal (𝓞 K)) (E : IntermediateField K M) :

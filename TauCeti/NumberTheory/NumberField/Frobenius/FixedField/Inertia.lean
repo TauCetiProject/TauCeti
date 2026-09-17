@@ -131,7 +131,8 @@ theorem ramificationIdx_mul_inertiaDeg_under_fixedField_eq_relIndex
     rw [Ideal.card_stabilizer_eq (Q.under (𝓞 K)) Q,
       Ideal.ramificationIdxIn_eq_ramificationIdx (Q.under (𝓞 K)) Q (L ≃ₐ[K] L),
       Ideal.inertiaDegIn_eq_inertiaDeg (Q.under (𝓞 K)) Q (L ≃ₐ[K] L)]
-  have hidx := Subgroup.card_inf_mul_relIndex H D
+  have hidx := Subgroup.relIndex_inf_mul_relIndex ⊥ H D
+  simp only [Subgroup.relIndex_bot_left, bot_inf_eq] at hidx
   rw [inf_comm, hcardD, ← hmul, mul_comm] at hidx
   exact Nat.eq_of_mul_eq_mul_right Nat.card_pos hidx.symm
 
@@ -162,7 +163,8 @@ theorem ramificationIdx_under_fixedField_eq_relIndex
     (Q : Ideal (𝓞 L)) [Q.IsPrime] (H : Subgroup (L ≃ₐ[K] L)) :
     (Q.under (𝓞 ↥(fixedField H))).ramificationIdx (𝓞 K) =
       H.relIndex (Q.inertia (L ≃ₐ[K] L)) := by
-  have hidx := Subgroup.card_inf_mul_relIndex H (Q.inertia (L ≃ₐ[K] L))
+  have hidx := Subgroup.relIndex_inf_mul_relIndex ⊥ H (Q.inertia (L ≃ₐ[K] L))
+  simp only [Subgroup.relIndex_bot_left, bot_inf_eq] at hidx
   rw [inf_comm, Ideal.card_inertia_eq_ramificationIdx (𝓞 K) (L ≃ₐ[K] L) Q,
     ← ramificationIdx_under_fixedField_mul_card_inf Q H, mul_comm] at hidx
   exact Nat.eq_of_mul_eq_mul_right Nat.card_pos hidx.symm
@@ -197,7 +199,8 @@ theorem inertiaDeg_under_fixedField_eq_relIndex (Q : Ideal (𝓞 L)) [Q.IsPrime]
   have hmul := inertiaDeg_under_fixedField_mul_card_inf Q hQ H
   rw [← zpowers_eq_stabilizer_of_isArithFrobAt Q hQ hφ,
     ← orderOf_eq_inertiaDeg_of_isArithFrobAt Q hQ hφ] at hmul
-  have hidx := Subgroup.card_inf_mul_relIndex H (Subgroup.zpowers φ)
+  have hidx := Subgroup.relIndex_inf_mul_relIndex ⊥ H (Subgroup.zpowers φ)
+  simp only [Subgroup.relIndex_bot_left, bot_inf_eq] at hidx
   rw [inf_comm, Nat.card_zpowers φ, ← hmul, mul_comm] at hidx
   exact Nat.eq_of_mul_eq_mul_right Nat.card_pos hidx.symm
 

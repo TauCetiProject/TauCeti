@@ -22,12 +22,10 @@ the fundamental identity alone forces each summand `e * f` down to `1`.
 
 ## Main results
 
-In the `TauCeti.RamificationInertia` namespace:
-
 * `ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finrank` — a maximal count
   of primes above `P` makes `e = f = 1` at each of them.
-* `ncard_primesOver_eq_finrank_iff_forall` — conversely, `e = f = 1` at every prime above `P`
-  makes the count maximal.
+* `Ideal.ncard_primesOver_eq_finrank_iff_forall_ramificationIdx_eq_one_and_inertiaDeg_eq_one` —
+  conversely, `e = f = 1` at every prime above `P` makes the count maximal.
 * `bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank` — for `P` maximal, the same count
   makes the residue map `R ⧸ P → S ⧸ Q` bijective.
 
@@ -74,11 +72,17 @@ theorem ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finr
   have := (Finset.sum_eq_sum_iff_of_le hone).mp hEqSum _ hQ
   exact ⟨Nat.eq_one_of_mul_eq_one_right this.symm, Nat.eq_one_of_mul_eq_one_left this.symm⟩
 
+end TauCeti.RamificationInertia
+
+open TauCeti.RamificationInertia
+
+namespace Ideal
+
 /-- **The count criterion for complete splitting.** The number of primes of `S` lying over a
 prime `P` of `R` equals the rank of `S` over `R` exactly when every one of them has
 ramification index and inertia degree `1`. No Galois hypothesis is needed: both directions are the
 fundamental identity `∑ e * f = [S : R]`, a sum of positive terms indexed by those primes. -/
-theorem ncard_primesOver_eq_finrank_iff_forall
+theorem ncard_primesOver_eq_finrank_iff_forall_ramificationIdx_eq_one_and_inertiaDeg_eq_one
     {R S : Type*} [CommRing R] [IsDomain R] [CommRing S] [Algebra R S] [Module.Finite R S]
     [Module.Flat R S] (P : Ideal R) [P.IsPrime] :
     (P.primesOver S).ncard = finrank R S ↔
@@ -90,6 +94,10 @@ theorem ncard_primesOver_eq_finrank_iff_forall
   rw [← Ideal.sum_ramification_inertia_eq_finrank (p := P),
     Finset.sum_congr rfl fun q _ ↦ by rw [(h q.1 q.2).1, (h q.1 q.2).2, mul_one]]
   simp
+
+end Ideal
+
+namespace TauCeti.RamificationInertia
 
 /-- **A maximal count of primes above `P` makes the residue extension trivial.** If `P` is maximal
 and the number of primes of `S` lying over `P` equals the rank of `S` over `R`, then the residue
