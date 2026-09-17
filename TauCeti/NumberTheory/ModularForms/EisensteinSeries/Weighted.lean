@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.Basic
-public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.UniformConvergence
-public import Mathlib.NumberTheory.ModularForms.Identities
 
 /-!
 # Eisenstein series weighted by a function of residues
@@ -38,6 +36,9 @@ weight under `Γ₀(N)`.
 ## Main results
 
 * `TauCeti.EisensteinSeries.weightedEisensteinSeries_slash_apply`: the slash action on the series.
+* `TauCeti.EisensteinSeries.weightedEisensteinSeries_eq_tsum_eisensteinSeries`: the series in
+  terms of Mathlib's coprime-pair `eisensteinSeries`, through the `gammaSet` decomposition by gcd
+  and residue class.
 * `TauCeti.EisensteinSeries.weightedEisensteinSeries_smul`,
   `TauCeti.EisensteinSeries.weightedEisensteinSeries_add`: linearity in the weight.
 
@@ -214,6 +215,65 @@ theorem isBoundedAtImInfty_weightedEisensteinSeriesSIF (hk : 3 ≤ k) (γ : SL(2
   simp_rw [eisSummand, norm_zpow]
   exact_mod_cast summand_bound_of_mem_verticalStrip (lt_trans two_pos hk').le v two_pos
     (verticalStrip_anti_right N hz hn)
+
+/-- The coprime integer pairs are the disjoint union of the coprime pairs in each residue class. -/
+private def gammaSetOneSigmaEquiv (N : ℕ) :
+    gammaSet 1 1 0 ≃ Σ a : Fin 2 → ZMod N, gammaSet N 1 a where
+  toFun y := ⟨(↑) ∘ y.1, y.1, rfl, y.2.2⟩
+  invFun p := ⟨p.2.1, Subsingleton.elim _ _, p.2.2.2⟩
+  left_inv _ := rfl
+  right_inv := by
+    rintro ⟨a, x, rfl, hx⟩
+    rfl
+
+/-- **The weighted series in terms of Mathlib's `eisensteinSeries`.** Writing each nonzero pair as
+its gcd `r` times a coprime pair and sorting the coprime pairs by residue class,
+`∑_v W(v) (v₀ z + v₁)^(-k) = ∑_r r^(-k) ∑_a W(r a) eisensteinSeries a k z`. -/
+theorem weightedEisensteinSeries_eq_tsum_eisensteinSeries (hk : 3 ≤ k) (z : ℍ) :
+    weightedEisensteinSeries W k z =
+      ∑' r : ℕ, ((r : ℂ) ^ k)⁻¹ * ∑ a, W (r • a) * eisensteinSeries a k z := by
+  have hS := (summable_norm_weightedEisensteinSummand W hk z).of_norm
+  have hσ := gammaSetDivGcdSigmaEquiv.symm.summable_iff.mpr hS
+  rw [Function.comp_def] at hσ
+  -- sort all pairs by their gcd `r`
+  rw [weightedEisensteinSeries, ← gammaSetDivGcdSigmaEquiv.symm.tsum_eq, hσ.tsum_sigma]
+  refine tsum_congr fun r ↦ ?_
+  simp only [gammaSetDivGcdSigmaEquiv_symm_eq]
+  rcases eq_or_ne r 0 with rfl | hr
+  · have hk0 : k ≠ 0 := by omega
+    have h0 (x : gammaSet 1 0 0) : x.1 = 0 := by
+      simpa using gammaSet_eq_gcd_mul_divIntMap x.2
+    simp [h0, eisSummand, zero_zpow _ hk0, zero_zpow _ (neg_ne_zero.mpr hk0)]
+  have : NeZero r := ⟨hr⟩
+  -- write each pair of gcd `r` as `r` times a coprime pair
+  rw [← (gammaSetDivGcdEquiv r).symm.tsum_eq]
+  have hmul (y : gammaSet 1 1 0) : ((gammaSetDivGcdEquiv r).symm y).1 = r • y.1 := by
+    conv_lhs => rw [gammaSet_eq_gcd_mul_divIntMap ((gammaSetDivGcdEquiv r).symm y).2]
+    rw [← gammaSetDivGcdEquiv_eq, Equiv.apply_symm_apply]
+  simp_rw [hmul]
+  -- the factor `r` comes out of the summand as `r^(-k)`
+  have hsmul (x : Fin 2 → ℤ) :
+      W ((↑) ∘ (r • x)) * eisSummand k (r • x) z =
+        ((r : ℂ) ^ k)⁻¹ * (W (r • ((↑) ∘ x)) * eisSummand k x z) := by
+    have hcast : ((↑) ∘ (r • x) : Fin 2 → ZMod N) = r • ((↑) ∘ x) := by
+      ext i
+      simp
+    rw [hcast]
+    simp only [eisSummand, Pi.smul_apply, nsmul_eq_mul, Int.cast_mul, Int.cast_natCast,
+      mul_assoc, ← mul_add, mul_zpow, zpow_neg]
+    ring
+  simp_rw [hsmul, tsum_mul_left]
+  congr 1
+  -- sort the coprime pairs by residue class
+  have hsub := ((summable_norm_weightedEisensteinSummand (fun a ↦ W (r • a)) hk z).subtype
+    (gammaSet 1 1 0)).of_norm
+  have hσ' := (gammaSetOneSigmaEquiv N).symm.summable_iff.mpr hsub
+  rw [Function.comp_def] at hσ'
+  rw [← (gammaSetOneSigmaEquiv N).symm.tsum_eq, hσ'.tsum_sigma, tsum_fintype]
+  refine Finset.sum_congr rfl fun a _ ↦ ?_
+  rw [eisensteinSeries, ← tsum_mul_left]
+  refine tsum_congr fun x ↦ ?_
+  simp [gammaSetOneSigmaEquiv, x.2.1]
 
 /-- **The weighted Eisenstein series is a modular form** of weight `k ≥ 3` and level `Γ(N)`. -/
 def weightedEisensteinSeriesMF (hk : 3 ≤ k) : ModularForm Γ(N) k where
