@@ -177,8 +177,7 @@ theorem _root_.QuadraticMap.Nondegenerate.not_anisotropic_restrict_of_finrank_eq
 /-- **O'Meara 42:12.** For a ternary subspace of a regular quaternary quadratic space with
 square discriminant, the restricted form is isotropic exactly when the ambient form is.
 
-The restriction need not be assumed regular: once the ambient form is the sum of two hyperbolic
-planes, the conclusion follows from the dimension of a maximal totally isotropic subspace. -/
+The restriction need not be assumed regular. -/
 theorem _root_.QuadraticMap.Nondegenerate.not_anisotropic_restrict_iff_of_finrank_eq_three
     {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) (U : Submodule K V)
     (hUrank : Module.finrank K U = 3) (hrank : Module.finrank K V = 4)
