@@ -207,6 +207,8 @@ theorem toEigenform_toEigenformAwayFromLevel (f : EigenformAwayFromLevel N k)
     (f.toEigenform hbad).toEigenformAwayFromLevel = f :=
   EigenformAwayFromLevel.ext rfl
 
+-- Not `@[simp]`: the proof argument `hn` appears only on the right, so the rule cannot apply;
+-- the `simpNF` linter reports that its left-hand side does not simplify when using the rule itself.
 theorem toEigenform_eigenvalue (f : EigenformAwayFromLevel N k)
     (hbad : ∀ (p : ℕ) (hp : p.Prime), p ∣ N → ∃ c : ℂ,
       heckeTCuspNat k p (_hn := ⟨hp.ne_zero⟩) f.toCuspForm = c • f.toCuspForm)
