@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.Data.Matrix.Basic
+public import Mathlib.Data.Matrix.Mul
 public import TauCeti.LinearAlgebra.CoordinateLattice
 
 /-!
@@ -64,6 +65,12 @@ theorem matrixIntCastLieHom_apply (R : Type*) [Ring R] (M : Matrix n n ℤ) (a b
     matrixIntCastLieHom R M a b = (M a b : R) := by
   simp only [matrixIntCastLieHom, AlgHom.toLieHom_apply, RingHom.toIntAlgHom_apply,
     RingHom.mapMatrix_apply, Matrix.map_apply, Int.coe_castRingHom]
+
+/-- Entrywise coercion through `matrixIntCastLieHom` is the usual matrix map by integer cast. -/
+theorem matrixIntCastLieHom_eq_map (R : Type*) [Ring R] (M : Matrix n n ℤ) :
+    matrixIntCastLieHom R M = M.map (Int.cast : ℤ → R) := by
+  ext a b
+  rw [matrixIntCastLieHom_apply, Matrix.map_apply]
 
 /-- Entrywise coercion of integer matrices is multiplicative, being a ring homomorphism read as
 a homomorphism of Lie rings. -/

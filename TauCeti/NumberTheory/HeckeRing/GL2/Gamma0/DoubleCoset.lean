@@ -137,7 +137,7 @@ private lemma mem_Gamma0_of_mul_mem_Delta0 (α : GL (Fin 2) ℚ) (A : Matrix (Fi
   have hB_eq : B = (τ_N : Matrix (Fin 2) (Fin 2) ℤ) * A * (γ₂' : Matrix (Fin 2) (Fin 2) ℤ) :=
     Matrix.map_injective Int.cast_injective
       (hB.symm.trans (mapGL_mul_coe_eq_intMatrix 2 τ_N γ₂' α A hA))
-  rw [Gamma0_mem, ZMod.intCast_zmod_eq_zero_iff_dvd]
+  rw [mem_Gamma0_iff_dvd]
   exact dvd_apply_one_zero_of_dvd_mul N _ (γ₂' : Matrix (Fin 2) (Fin 2) ℤ)
     (hB_eq ▸ hBN) hCN hC11
 
@@ -164,7 +164,7 @@ private lemma mem_doubleCoset_Gamma0Image_of_mem_Delta0
     Subgroup.mem_sup_of_normal_left.mp (h_top ▸ Subgroup.mem_top σ₁)
   have hτ_N_Gamma0 : τ_N ∈ Gamma0 N := Gamma_le_Gamma0 N hτ_N
   have hτ10 : (N : ℤ) ∣ (τ_N : Matrix (Fin 2) (Fin 2) ℤ) 1 0 :=
-    (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma0_mem.mp hτ_N_Gamma0)
+    mem_Gamma0_iff_dvd.mp hτ_N_Gamma0
   have hτ11 : (N : ℤ) ∣ ((τ_N : Matrix (Fin 2) (Fin 2) ℤ) 1 1 - 1) :=
     (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (by push_cast; simp [(Gamma_mem.mp hτ_N).2.2.2])
   -- the `Γ(det α)` factor crosses `α` and lands back in `SL₂(ℤ)`

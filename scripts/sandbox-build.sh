@@ -39,6 +39,10 @@ export LEAN="$WATCHDOG_TOOLCHAIN/bin/lean"
 # logs nothing above trace, so this is exit-code enforcement, not output scraping.
 lake build --iofail
 
+# Reject duplicate declaration ownership before merging imported environments can hide it.
+# This also checks orphan modules and runs on the exact merge-group candidate before landing.
+lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/DuplicateDeclarations.lean"
+
 # Axiom audit: inspect the built environment and reject any axiom outside
 # {propext, Classical.choice, Quot.sound} — catching sorry, native_decide, and
 # home-rolled axioms, including ones reaching in through imports.
@@ -80,7 +84,10 @@ if [ "${STAGE_LAKE_CACHE:-}" = "1" ]; then
   export LAKE_NO_CACHE=true
   export LAKE_CACHE_DIR="$PWD/.lake/cache"
   lake build >/dev/null
-  lake build --no-build -o .lake/outputs.jsonl
+  python3 "$TRUSTED_SCRIPTS/lake_cache_reuse.py" reconnect . "$TRUSTED_SCRIPTS/../lake-cache-reuse.json"
+  # Linked archives may have stale or candidate-written .ltar.hash sidecars.
+  # --rehash makes Lake hash the archive bytes instead of trusting those sidecars.
+  lake build --no-build --rehash -o .lake/outputs.jsonl
   echo "root-package mapping entries: $(wc -l < .lake/outputs.jsonl)"
   rm -rf .lake/cache-staging
   lake cache stage .lake/outputs.jsonl .lake/cache-staging

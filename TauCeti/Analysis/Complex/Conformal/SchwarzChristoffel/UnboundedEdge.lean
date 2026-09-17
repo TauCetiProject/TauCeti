@@ -34,6 +34,9 @@ is approached but not reached at a finite parameter.
 * `TauCeti.schwarzChristoffelBoundary_injOn_Ici` and
   `TauCeti.schwarzChristoffelBoundary_injOn_Iic` -- the two unbounded boundary maps are injective
   on their finite parameters.
+* `TauCeti.schwarzChristoffelVertexAtInfinity_sub_boundary_eq_norm_mul` and
+  `TauCeti.schwarzChristoffelBoundary_sub_vertexAtInfinity_eq_norm_mul` -- the endpoint vectors
+  of the two unbounded sides have the expected directions.
 * `TauCeti.schwarzChristoffelBoundary_image_Ici_prevertex` and
   `TauCeti.schwarzChristoffelBoundary_image_Iic_prevertex` -- the same edge descriptions with the
   finite endpoints expressed as Schwarz--Christoffel vertices.
@@ -83,6 +86,45 @@ theorem schwarzChristoffelBoundary_injOn_Ici (a e : ι → ℝ) (z₀ : UpperHal
   · exact h
   · exact (schwarzChristoffelBoundary_injOn_Icc a e z₀ (hfree hx) hp (hsum hx)
       ⟨hy, h.le⟩ ⟨hx, le_rfl⟩ hxy.symm).symm
+
+/-- The vector from the finite endpoint of a right-hand unbounded Schwarz--Christoffel edge to
+its vertex at infinity has the direction of that edge. -/
+theorem schwarzChristoffelVertexAtInfinity_sub_boundary_eq_norm_mul
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane) {p : ℝ}
+    (hp : -1 < ∑ i with a i = p, e i)
+    (ha : ∀ i, e i ≠ 0 → a i ≤ p) (hS : ∑ i, e i < -1) :
+    schwarzChristoffelVertexAtInfinity a e z₀ - schwarzChristoffelBoundary a e z₀ p =
+      (‖schwarzChristoffelVertexAtInfinity a e z₀ -
+        schwarzChristoffelBoundary a e z₀ p‖ : ℂ) *
+        Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) := by
+  let B : ℝ → ℂ := schwarzChristoffelBoundary a e z₀
+  let V : ℂ := schwarzChristoffelVertexAtInfinity a e z₀
+  let u : ℂ := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
+  have hfree : ∀ {q : ℝ}, q ∈ Ici p → ∀ i, e i ≠ 0 → a i ∉ Ioo p q :=
+    fun _ i hei hi ↦ (not_lt_of_ge (ha i hei)) hi.1
+  have hsum : ∀ {q : ℝ}, q ∈ Ici p → -1 < ∑ i with a i = q, e i :=
+    fun {q} hq ↦ by
+      simpa using
+        (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (β := ℝ) (a := a) (e := e)
+          (p := p) (c := -1) Finset.univ (by norm_num) (by simpa using hp) (by simpa using ha) hq)
+  have hformula : ∀ {x : ℝ}, x ∈ Ici p →
+      B x - B p = ((‖B x - B p‖ : ℝ) : ℂ) * u := by
+    intro x hx
+    simpa [B, u] using
+      schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ (hfree hx) hp (hsum hx)
+        (x := x) (y := p) ⟨hx, le_rfl⟩ ⟨le_rfl, hx⟩ hx
+  have hBtop : Tendsto B atTop (𝓝 V) := by
+    apply tendsto_schwarzChristoffelBoundaryValue_atInfinity a e z₀ hS
+      tendsto_abs_atTop_atTop
+    filter_upwards [eventually_ge_atTop p] with x hx
+    exact tendsto_schwarzChristoffelPrimitive_boundary a e z₀ x (hsum hx)
+  have hnorm : Tendsto (fun x ↦ ‖B x - B p‖) atTop (𝓝 ‖V - B p‖) :=
+    (hBtop.sub tendsto_const_nhds).norm
+  have hright : Tendsto (fun x ↦ ((‖B x - B p‖ : ℝ) : ℂ) * u) atTop
+      (𝓝 (((‖V - B p‖ : ℝ) : ℂ) * u)) :=
+    ((Complex.continuous_ofReal.tendsto _).comp hnorm).mul_const u
+  apply tendsto_nhds_unique (hBtop.sub tendsto_const_nhds)
+  exact hright.congr' ((eventually_ge_atTop p).mono fun _ hx ↦ (hformula hx).symm)
 
 /-- The image of the right-hand unbounded boundary edge is the segment from its finite endpoint to
 the vertex at infinity, with the latter not attained at a finite boundary parameter. -/
@@ -154,13 +196,9 @@ theorem schwarzChristoffelBoundary_image_Ici (a e : ι → ℝ) (z₀ : UpperHal
       have hy : y ∈ Ici p := hp1.trans hxy
       exact hdmono.monotoneOn hp1 hy hxy
     simpa [d, D] using hstrict.trans_le hle
-  -- The boundary displacement has the same limiting direction and length as the distance ray.
   have hVdir : V - B p = ((D : ℝ) : ℂ) * u := by
-    have hright : Tendsto (fun x => ((d x : ℝ) : ℂ) * u) atTop
-        (𝓝 (((D : ℝ) : ℂ) * u)) := by
-      exact ((Complex.continuous_ofReal.tendsto D).comp hdl).mul_const u
-    apply tendsto_nhds_unique (hBtop.sub tendsto_const_nhds)
-    exact hright.congr' ((eventually_ge_atTop p).mono fun x hx => (hformula hx).symm)
+    simpa [B, V, D, u] using
+      schwarzChristoffelVertexAtInfinity_sub_boundary_eq_norm_mul a e z₀ hp ha hS
   -- Convert the half-open scalar interval into the geometric segment with its terminal point
   -- removed.
   have hscalar : (fun t : ℝ => B p + (t : ℂ) * u) '' Ico 0 D =
@@ -263,6 +301,56 @@ theorem schwarzChristoffelBoundary_injOn_Iic (a e : ι → ℝ) (z₀ : UpperHal
   · exact (schwarzChristoffelBoundary_injOn_Icc a e z₀ (hfree hy) (hsum hy) hp
       ⟨le_rfl, hy⟩ ⟨h.le, hx⟩ hxy.symm).symm
 
+/-- The vector from the vertex at infinity of a left-hand unbounded Schwarz--Christoffel edge to
+its finite endpoint has the direction of that edge. -/
+theorem schwarzChristoffelBoundary_sub_vertexAtInfinity_eq_norm_mul
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane) {p : ℝ}
+    (hp : -1 < ∑ i with a i = p, e i)
+    (ha : ∀ i, e i ≠ 0 → p ≤ a i) (hS : ∑ i, e i < -1) :
+    schwarzChristoffelBoundary a e z₀ p - schwarzChristoffelVertexAtInfinity a e z₀ =
+      (‖schwarzChristoffelBoundary a e z₀ p -
+        schwarzChristoffelVertexAtInfinity a e z₀‖ : ℂ) *
+        Complex.exp ((Real.pi * ∑ i, e i) * Complex.I) := by
+  let B : ℝ → ℂ := schwarzChristoffelBoundary a e z₀
+  let V : ℂ := schwarzChristoffelVertexAtInfinity a e z₀
+  let u : ℂ := Complex.exp ((Real.pi * ∑ i, e i) * Complex.I)
+  have hfree : ∀ {q : ℝ}, q ∈ Iic p → ∀ i, e i ≠ 0 → a i ∉ Ioo q p :=
+    fun _ i hei hi ↦ (not_lt_of_ge (ha i hei)) hi.2
+  have hsum : ∀ {q : ℝ}, q ∈ Iic p → -1 < ∑ i with a i = q, e i :=
+    fun {_} hq ↦
+      Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
+        Finset.univ (by norm_num) hp (by intro i _ hei; exact ha i hei) hq
+  have hangle : ∀ {x : ℝ}, x < p →
+      schwarzChristoffelEdgeAngle a e x = Real.pi * ∑ i, e i := by
+    intro x hx
+    rw [schwarzChristoffelEdgeAngle_eq_sum_filter, Finset.sum_filter]
+    congr 1
+    apply Finset.sum_congr rfl
+    intro i _
+    rcases eq_or_ne (e i) 0 with hei | hei
+    · simp [hei]
+    · simp [hx.trans_le (ha i hei)]
+  have hformula : ∀ {x : ℝ}, x ∈ Iic p →
+      B p - B x = ((‖B p - B x‖ : ℝ) : ℂ) * u := by
+    intro x hx
+    rcases eq_or_lt_of_le (mem_Iic.mp hx) with rfl | hxp
+    · simp
+    · simpa [B, u, hangle hxp] using
+        schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ (hfree hx) (hsum hx) hp
+          (x := p) (y := x) ⟨hx, le_rfl⟩ ⟨le_rfl, hx⟩ hx
+  have hBbot : Tendsto B atBot (𝓝 V) := by
+    apply tendsto_schwarzChristoffelBoundaryValue_atInfinity a e z₀ hS
+      tendsto_abs_atBot_atTop
+    filter_upwards [eventually_le_atBot p] with x hx
+    exact tendsto_schwarzChristoffelPrimitive_boundary a e z₀ x (hsum hx)
+  have hnorm : Tendsto (fun x ↦ ‖B p - B x‖) atBot (𝓝 ‖B p - V‖) :=
+    (tendsto_const_nhds.sub hBbot).norm
+  have hright : Tendsto (fun x ↦ ((‖B p - B x‖ : ℝ) : ℂ) * u) atBot
+      (𝓝 (((‖B p - V‖ : ℝ) : ℂ) * u)) :=
+    ((Complex.continuous_ofReal.tendsto _).comp hnorm).mul_const u
+  apply tendsto_nhds_unique (tendsto_const_nhds.sub hBbot)
+  exact hright.congr' ((eventually_le_atBot p).mono fun _ hx ↦ (hformula hx).symm)
+
 /-- The image of the left-hand unbounded boundary edge is the segment from its finite endpoint to
 the vertex at infinity, with the latter not attained at a finite boundary parameter. -/
 theorem schwarzChristoffelBoundary_image_Iic (a e : ι → ℝ) (z₀ : UpperHalfPlane) {p : ℝ}
@@ -345,17 +433,13 @@ theorem schwarzChristoffelBoundary_image_Iic (a e : ι → ℝ) (z₀ : UpperHal
       have hy : y ∈ Iic p := hxy.trans hp1
       exact hdanti.antitoneOn hy hp1 hxy
     simpa [d, D] using hstrict.trans_le hle
-  -- The boundary displacement has the same limiting direction and length as the distance ray.
   have hVdir : V - B p = ((D : ℝ) : ℂ) * (-u) := by
-    have hright : Tendsto (fun x => ((d x : ℝ) : ℂ) * u) atBot
-        (nhds (((D : ℝ) : ℂ) * u)) := by
-      exact ((Complex.continuous_ofReal.tendsto D).comp hdl).mul_const u
     have hleft : B p - V = ((D : ℝ) : ℂ) * u := by
-      apply tendsto_nhds_unique (tendsto_const_nhds.sub hBbot)
-      exact hright.congr' ((eventually_le_atBot p).mono fun x hx => (hformula hx).symm)
+      simpa [B, V, D, u] using
+        schwarzChristoffelBoundary_sub_vertexAtInfinity_eq_norm_mul a e z₀ hp ha hS
     calc
       V - B p = -(B p - V) := by abel
-      _ = -(((D : ℝ) : ℂ) * u) := by rw [hleft]
+      _ = -(((D : ℝ) : ℂ) * u) := congrArg Neg.neg hleft
       _ = ((D : ℝ) : ℂ) * (-u) := by ring
   have hscalar : (fun t : ℝ => B p + (t : ℂ) * (-u)) '' Ico 0 D =
       segment ℝ (B p) V \ {V} := by
