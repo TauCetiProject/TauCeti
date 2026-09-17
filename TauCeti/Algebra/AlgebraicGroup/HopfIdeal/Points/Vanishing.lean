@@ -5,8 +5,10 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 import TauCeti.RingTheory.TensorProduct.PointSeparation
+import TauCeti.RingTheory.FiniteType.PointSeparation
 import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 
 /-!
@@ -125,6 +127,39 @@ theorem le_vanishingIdeal_iff (S : Subgroup (WithConv (H →ₐ[k] k))) (I : Hop
     intro g
     exact (CommHopfAlgCat.mem_quotientPointsSubgroup_iff
       (_root_.CommHopfAlgCat.of k H) I (CommAlgCat.of k k) g.val).mp (h g.2) x hx
+
+/-- The closure of the trivial point subgroup is the identity subgroup scheme. -/
+@[simp] theorem vanishingIdeal_bot :
+    vanishingIdeal (⊥ : Subgroup (WithConv (H →ₐ[k] k))) = augmentation k H := by
+  ext x
+  simp [mem_vanishingIdeal, mem_augmentation, AlgHom.convOne_apply]
+
+/-- A point subgroup has trivial reduced closure exactly when it is trivial. -/
+@[simp] theorem vanishingIdeal_eq_augmentation_iff
+    (S : Subgroup (WithConv (H →ₐ[k] k))) :
+    vanishingIdeal S = augmentation k H ↔ S = ⊥ := by
+  constructor
+  · intro h
+    apply le_bot_iff.mp
+    intro g hg
+    apply Subgroup.mem_bot.mpr
+    apply CommHopfAlgCat.eq_one_of_mem_quotientPointsSubgroup_augmentation
+      (_root_.CommHopfAlgCat.of k H) (CommAlgCat.of k k)
+    exact ((le_vanishingIdeal_iff S (augmentation k H)).mp h.ge) hg
+  · rintro rfl
+    exact vanishingIdeal_bot
+
+/-- Rational points are schematically dense in a reduced finite-type affine group over an
+algebraically closed field. -/
+@[simp] theorem vanishingIdeal_top [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H] :
+    vanishingIdeal (⊤ : Subgroup (WithConv (H →ₐ[k] k))) = ⊥ := by
+  apply le_bot_iff.mp
+  intro x hx
+  apply HopfIdeal.mem_bot.mpr
+  apply eq_of_forall_algHom_apply_eq (k := k) (K := k)
+  intro f
+  exact ((mem_vanishingIdeal _ x).mp hx ⟨toConv f, Subgroup.mem_top _⟩).trans
+    (map_zero f).symm
 
 end
 
