@@ -44,14 +44,16 @@ namespace TauCeti.Toric
 
 universe u
 
-variable {N N' N'' V V' V'' : Type u}
-  [AddCommGroup N] [AddCommGroup N'] [AddCommGroup N'']
-  [AddCommGroup V] [AddCommGroup V'] [AddCommGroup V'']
+variable {V V' V'' : Type*} [AddCommGroup V] [AddCommGroup V'] [AddCommGroup V'']
   [Module ℝ V] [Module ℝ V'] [Module ℝ V'']
-  {i : N →+ V} {i' : N' →+ V'} {i'' : N'' →+ V''}
   {σ : PointedCone ℝ V} {τ : PointedCone ℝ V'} {υ : PointedCone ℝ V''}
 
 /-! ### Coordinate rings -/
+
+section CoordinateRing
+
+variable {N N' N'' : Type*} [AddCommGroup N] [AddCommGroup N'] [AddCommGroup N'']
+  {i : N →+ V} {i' : N' →+ V'} {i'' : N'' →+ V''}
 
 /-- The coordinate ring of the affine toric chart of a cone: the complex monoid algebra of its
 dual semigroup. -/
@@ -87,6 +89,7 @@ theorem affineCoordinateRingMap_id (hi : IsIntegralLattice i) (σ : PointedCone 
     MonoidAlgebra.mapDomainAlgHom_id]
 
 /-- Coordinate-ring maps reverse composition, as required by their contravariance in cones. -/
+@[simp]
 theorem affineCoordinateRingMap_comp (hi : IsIntegralLattice i)
     (hi' : IsIntegralLattice i') (hi'' : IsIntegralLattice i'')
     (f : N →+ N') (f' : N' →+ N'') (g : V →ₗ[ℝ] V') (g' : V' →ₗ[ℝ] V'')
@@ -96,18 +99,20 @@ theorem affineCoordinateRingMap_comp (hi : IsIntegralLattice i)
         (fun n ↦ by simp [hfg, hf'g']) (hτυ.comp hστ) =
       (affineCoordinateRingMap hi hi' f g hfg hστ).comp
         (affineCoordinateRingMap hi' hi'' f' g' hf'g' hτυ) := by
-  have hdual := dualSemigroupMap_comp hi hi' hi'' f f' g g' hfg hf'g' hστ hτυ
-  rw [affineCoordinateRingMap, affineCoordinateRingMap, affineCoordinateRingMap, hdual]
-  rw [show AddMonoidHom.toMultiplicative
-      ((dualSemigroupMap hi hi' f g hfg hστ).comp
-        (dualSemigroupMap hi' hi'' f' g' hf'g' hτυ)) =
-      (AddMonoidHom.toMultiplicative (dualSemigroupMap hi hi' f g hfg hστ)).comp
-        (AddMonoidHom.toMultiplicative (dualSemigroupMap hi' hi'' f' g' hf'g' hτυ)) by
-    ext m
-    rfl]
-  exact MonoidAlgebra.mapDomainAlgHom_comp _ _
+  refine MonoidAlgebra.algHom_ext (fun m ↦ ?_) (by ext)
+  obtain ⟨m, rfl⟩ := ofAdd.surjective m
+  simp [dualSemigroupMap_comp hi hi' hi'' f f' g g' hfg hf'g' hστ hτυ]
+
+end CoordinateRing
 
 /-! ### Affine spectra -/
+
+section Scheme
+
+/- Morphisms of schemes require a common universe, and the coordinate ring of a lattice `N`
+lives in the universe of `N`; the ambient real vector spaces remain universe-polymorphic. -/
+variable {N N' N'' : Type u} [AddCommGroup N] [AddCommGroup N'] [AddCommGroup N'']
+  {i : N →+ V} {i' : N' →+ V'} {i'' : N'' →+ V''}
 
 /-- The affine toric scheme associated to a cone is the spectrum of its complex monoid algebra. -/
 noncomputable abbrev affineToricScheme (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
@@ -120,6 +125,14 @@ noncomputable def affineToricSchemeMap (hi : IsIntegralLattice i)
     (hfg : ∀ n, g (i n) = i' (f n)) (hστ : Set.MapsTo g σ τ) :
     affineToricScheme hi σ ⟶ affineToricScheme hi' τ :=
   Spec.map (CommRingCat.ofHom (affineCoordinateRingMap hi hi' f g hfg hστ).toRingHom)
+
+/-- The affine toric morphism is `Spec` of the induced coordinate-ring map. -/
+theorem affineToricSchemeMap_def (hi : IsIntegralLattice i)
+    (hi' : IsIntegralLattice i') (f : N →+ N') (g : V →ₗ[ℝ] V')
+    (hfg : ∀ n, g (i n) = i' (f n)) (hστ : Set.MapsTo g σ τ) :
+    affineToricSchemeMap hi hi' f g hfg hστ =
+      Spec.map (CommRingCat.ofHom (affineCoordinateRingMap hi hi' f g hfg hστ).toRingHom) :=
+  (rfl)
 
 /-- The identity map of a lattice cone induces the identity of its affine toric scheme. -/
 @[simp]
@@ -146,5 +159,7 @@ theorem affineToricSchemeMap_comp (hi : IsIntegralLattice i)
   congr 1
   exact congrArg CommRingCat.ofHom <| congrArg AlgHom.toRingHom
     (affineCoordinateRingMap_comp hi hi' hi'' f f' g g' hfg hf'g' hστ hτυ).symm
+
+end Scheme
 
 end TauCeti.Toric
