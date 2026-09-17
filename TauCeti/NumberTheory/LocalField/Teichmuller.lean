@@ -55,6 +55,8 @@ delivers the uniqueness characterization below directly. The zero-preserving ext
   `α` is the Teichmüller lift, so it is the unique `(q-1)`-torsion-valued section.
 * `TauCeti.eq_teichmuller_iff`: a unit is `teichmuller K α` exactly when it reduces to `α` and is
   killed by `q - 1`.
+* `TauCeti.eq_teichmullerLift_iff`: an element of `𝒪[K]` is `teichmullerLift K a` exactly when
+  it reduces to `a` and is fixed by the `q`-th power map.
 * `TauCeti.teichmuller_unique` and `TauCeti.teichmullerLift_unique`: the Teichmüller lift is the
   only multiplicative section of reduction, on unit groups and on the whole residue field.
 * `TauCeti.range_teichmuller`: its image is `μ_{q-1} ⊆ 𝒪[K]ˣ`.
@@ -293,6 +295,27 @@ theorem coe_teichmuller_apply (α : 𝓀[K]ˣ) :
     congrArg (fun f : 𝓀[K]ˣ →* 𝒪[K]ˣ ↦ f α)
       (teichmuller_unique K (Units.map (teichmullerLift K : 𝓀[K] →* 𝒪[K])) hsection)
   rw [← h, Units.coe_map, MonoidHom.coe_coe]
+
+/-- **The zero-preserving Teichmüller lift is characterized by its residue and Frobenius
+equation.** An element of `𝒪[K]` is `teichmullerLift K a` exactly when it reduces to `a` and is
+fixed by the `q`-th power map. -/
+theorem eq_teichmullerLift_iff {a : 𝓀[K]} {x : 𝒪[K]} :
+    x = teichmullerLift K a ↔ residue 𝒪[K] x = a ∧ x ^ Nat.card 𝓀[K] = x := by
+  refine ⟨?_, fun ⟨hres, hpow⟩ ↦ ?_⟩
+  · rintro rfl
+    exact ⟨residue_teichmullerLift K a, teichmullerLift_pow_natCard K a⟩
+  rcases eq_or_ne x 0 with rfl | hx
+  · rw [← hres, map_zero, map_zero]
+  have hq : Nat.card 𝓀[K] ≠ 0 := Nat.card_pos.ne'
+  have hq₁ : Nat.card 𝓀[K] - 1 ≠ 0 := Nat.sub_ne_zero_of_lt Finite.one_lt_card
+  have hunit : x ^ (Nat.card 𝓀[K] - 1) = 1 :=
+    mul_right_cancel₀ hx (by rw [pow_sub_one_mul hq, hpow, one_mul])
+  let u := Units.ofPowEqOne x _ hunit hq₁
+  have ha : a ≠ 0 := by
+    rw [← hres]
+    exact (residue_ne_zero_iff_isUnit x).2 u.isUnit
+  have h := eq_teichmuller K (α := Units.mk0 a ha) (Units.pow_ofPowEqOne hunit hq₁) hres
+  rw [← Units.val_mk0 ha, ← coe_teichmuller_apply, ← h, Units.val_ofPowEqOne]
 
 /-- **The zero-preserving Teichmüller lift is the unique multiplicative section of reduction.** -/
 theorem teichmullerLift_unique (f : 𝓀[K] →*₀ 𝒪[K])
