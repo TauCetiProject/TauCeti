@@ -90,18 +90,6 @@ theorem add_transpose_enlargeRow (V : Matrix ι ι R) (η : ι → R) :
   · fin_cases i <;> simp [Matrix.transpose_apply]
   · fin_cases i <;> fin_cases j <;> simp [Matrix.transpose_apply]
 
-/-- The trefoil Seifert matrix, read in an arbitrary commutative ring. -/
-theorem map_trefoilSeifertMatrix :
-    trefoilSeifertMatrix.map ((↑) : ℤ → R) = !![-1, 1; 0, -1] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
-
-/-- The figure-eight Seifert matrix, read in an arbitrary commutative ring. -/
-theorem map_figureEightSeifertMatrix :
-    figureEightSeifertMatrix.map ((↑) : ℤ → R) = !![1, 1; 0, -1] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
-
 end CommRing
 
 variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]

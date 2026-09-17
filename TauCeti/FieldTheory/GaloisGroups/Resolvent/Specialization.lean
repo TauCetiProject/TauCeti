@@ -53,6 +53,7 @@ it is not the substitution above.
   is monic of degree the size of the orbit, whatever the values of the orbit at `x` are.
 * `MvPolynomial.galResolvent_comp_perm` and `MvPolynomial.galResolvent_map`: it does not depend
   on the numbering of the roots, and it commutes with a ring morphism applied to them.
+* `MvPolynomial.galResolvent_rename`: renaming the invariant does not change the orbit resolvent.
 * `TauCeti.monic_map_vietaHom` and `TauCeti.natDegree_map_vietaHom`: the specialization is monic
   of degree the size of the orbit, over every nonzero coefficient ring.
 -/
@@ -77,6 +78,13 @@ theorem galResolvent_def (Φ : MvPolynomial (Fin n) ℤ) (x : Fin n → L) :
     galResolvent Φ x =
       ∏ Ψ ∈ renameOrbit Φ,
         (Polynomial.X - Polynomial.C (MvPolynomial.eval₂ (Int.castRingHom L) x Ψ)) := (rfl)
+
+/-- A renamed invariant has the same orbit resolvent at every root family. -/
+@[simp]
+theorem galResolvent_rename (e : Equiv.Perm (Fin n)) (Φ : MvPolynomial (Fin n) ℤ)
+    (x : Fin n → L) :
+    galResolvent (rename (⇑e) Φ) x = galResolvent Φ x := by
+  rw [galResolvent_def, galResolvent_def, renameOrbit_rename]
 
 /-- The orbit resolvent at `x` is the image of the universal resolvent under evaluation at `x`. -/
 theorem map_universalResolvent_eq_galResolvent (Φ : MvPolynomial (Fin n) ℤ) (x : Fin n → L) :

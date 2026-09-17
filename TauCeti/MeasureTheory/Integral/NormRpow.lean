@@ -32,6 +32,8 @@ averaged over a ball in the proof of the Poincaré--Wirtinger inequality.
 * `TauCeti.locallyIntegrable_norm_sub_rpow_one_sub_finrank`: local integrability after translation.
 * `TauCeti.integral_norm_sub_rpow_one_sub_finrank_ball`: the exact integral with any centre.
 * `TauCeti.integral_norm_sub_rpow_one_sub_finrank_le`: the translated-ball bound.
+* `TauCeti.setLIntegral_closedBall_enorm_sub_rpow_one_sub_finrank`: the lower integral with any
+  centre, over a closed ball.
 
 ## References
 
@@ -173,5 +175,25 @@ theorem integral_norm_sub_rpow_one_sub_finrank_le {R : ℝ} (x : E) {z : E}
       · exact hsub.eventuallyLE
     _ = (Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) * (2 * R) :=
       integral_norm_sub_rpow_one_sub_finrank_ball htwoR x
+
+/-- The lower integral of the kernel with pole `x` over the closed ball of radius `R` about `x`.
+Unlike its Bochner counterpart `TauCeti.integral_norm_sub_rpow_one_sub_finrank_ball`, the kernel
+takes the value `∞` at the pole when the dimension is at least two; this does not change the
+integral, since the pole is a null set. -/
+theorem setLIntegral_closedBall_enorm_sub_rpow_one_sub_finrank {R : ℝ} (hR : 0 ≤ R) (x : E) :
+    ∫⁻ y in closedBall x R, ‖x - y‖ₑ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu =
+      ENNReal.ofReal ((Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) * R) := by
+  have hball : closedBall x R =ᵐ[mu] ball x R :=
+    (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
+      (Measure.addHaar_closedBall_eq_addHaar_ball mu x R).le measurableSet_ball.nullMeasurableSet
+      measure_closedBall_lt_top.ne).symm
+  rw [Measure.restrict_congr_set hball, ← integral_norm_sub_rpow_one_sub_finrank_ball hR x,
+    ofReal_integral_eq_lintegral_ofReal (integrableOn_norm_sub_rpow_one_sub_finrank_ball x)
+      (ae_of_all _ fun y => Real.rpow_nonneg (norm_nonneg _) _)]
+  refine lintegral_congr_ae ?_
+  filter_upwards [ae_restrict_of_ae (compl_mem_ae_iff.mpr (measure_singleton (μ := mu) x))]
+    with y hy
+  have hxy : 0 < ‖x - y‖ := norm_pos_iff.mpr (sub_ne_zero.mpr fun h => hy (h ▸ rfl))
+  rw [← ENNReal.ofReal_rpow_of_pos hxy, ofReal_norm]
 
 end TauCeti

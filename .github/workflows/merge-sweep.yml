@@ -7,7 +7,7 @@ name: Merge sweep
 # merged. housekeeping.yml only CLOSES PRs (and only blocking ones), so a wedged-but-green PR is closed
 # by nothing. This scheduled sweep re-enqueues such PRs (reusing the existing head-pinned review — no
 # re-review, no API spend), and for a head the queue has repeatedly rejected, updates the branch onto
-# main or flags a conflict. It calls the lightweight TauCetiReview merge-sweep workflow, which mints no
+# main or hands a fork/conflict to its tending worker. It calls the lightweight TauCetiReview merge-sweep workflow, which mints no
 # provider keys and runs no reviewer; the merge decision is the same one auto-merge uses, so the sweep
 # can never merge something the normal gate would refuse.
 # queue-release.yml also dispatches this workflow when a Lake-pin reservation ends,
@@ -34,10 +34,10 @@ jobs:
   sweep:
     # Pinned to a TauCetiReview commit; bump deliberately. The reusable workflow receives the App
     # secrets, so a floating @main would be a supply-chain risk.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-sweep.yml@ca764b8caa8ff24e8521f4fe0c78c63232cbf0c3
+    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-sweep.yml@b82f68f045454264bb7a5ca1f80f4d2c6bdb849b
     with:
       dry_run: ${{ inputs.dry-run || false }}
-      review_ref: ca764b8caa8ff24e8521f4fe0c78c63232cbf0c3
+      review_ref: b82f68f045454264bb7a5ca1f80f4d2c6bdb849b
     secrets:
       APP_ID: ${{ secrets.APP_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
