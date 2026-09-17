@@ -138,7 +138,7 @@ theorem fullyExchangeable_coordinateMarginals_of_invariant
 
 /-- **The coordinate marginals of an invariant random path measure are exchangeable.** -/
 theorem exchangeable_coordinateMarginals_of_invariant
-    (π : Measure (ProbabilityMeasure (ℕ → α))) [IsFiniteMeasure π]
+    (π : Measure (ProbabilityMeasure (ℕ → α)))
     (hπ : ∀ τ : Equiv.Perm ℕ,
       π.map (fun P => P.map (permReindex τ)) = π) :
     Exchangeable π fun i P => coordinateMarginals P i :=
@@ -189,7 +189,7 @@ theorem codedCoordinateMarginals_map_permReindex [MeasurableSpace.CountablyGener
 The code loses no information about any coordinate marginal. -/
 theorem exchangeable_codedCoordinateMarginals_of_invariant
     [MeasurableSpace.CountablyGenerated α]
-    (π : Measure (ProbabilityMeasure (ℕ → α))) [IsFiniteMeasure π]
+    (π : Measure (ProbabilityMeasure (ℕ → α)))
     (hπ : ∀ τ : Equiv.Perm ℕ,
       π.map (fun P => P.map (permReindex τ)) = π) :
     Exchangeable π fun i P => codedCoordinateMarginals P i :=
