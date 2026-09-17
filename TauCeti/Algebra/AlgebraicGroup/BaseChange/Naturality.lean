@@ -89,7 +89,7 @@ end MapValue
 section MapDomain
 
 variable {k K A B R : Type*} [CommSemiring k] [CommSemiring K] [Algebra k K]
-variable [CommSemiring A] [Semiring B] [_root_.Bialgebra k A] [_root_.Bialgebra k B]
+variable [Semiring A] [Semiring B] [_root_.Bialgebra k A] [_root_.Bialgebra k B]
 variable [CommSemiring R] [Algebra K R] [Algebra k R] [IsScalarTower k K R]
 
 /-- Base change of points is natural in the coordinate bialgebra.

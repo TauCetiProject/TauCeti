@@ -1,46 +1,43 @@
-import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected.Basic
-import TauCeti.Analysis.PDE.Ellipticity.Basic
-import TauCeti.AlgebraicGeometry.WeilDivisor.Basic
-import TauCeti.Algebra.HopfAlgebra.Basic
+import TauCeti.RepresentationTheory.CharacterTable.Solvable
+import TauCeti.Analysis.Complex.Conformal.Jordan.Approach
+import TauCeti.RepresentationTheory.Symmetric.TensorAction.GeneralLinear
 import SubVerso.Examples
 open SubVerso.Examples
 
-%example deck_rigidity
+%example burnside
 open TauCeti in
-/-- Universal covers — two deck transformations of a connected covering space that
-agree at a single point of the total space are equal. -/
-theorem deck_rigidity {E B : Type*} [TopologicalSpace E] [TopologicalSpace B]
-    {p : E → B} [PreconnectedSpace E] (hp : IsCoveringMap p)
-    (φ ψ : Deck p) {e : E} (h : φ.1 e = ψ.1 e) : φ = ψ :=
-  Deck.eq_of_apply_eq hp φ ψ h
+/-- Burnside's theorem — every finite group of order pᵃqᵇ, for primes p and q,
+is solvable. -/
+theorem burnside {G : Type*} [Group G] [Finite G] {p q a b : ℕ}
+    (hp : p.Prime) (hq : q.Prime) (h : Nat.card G = p ^ a * q ^ b) :
+    Group.IsSolvable G :=
+  isSolvable_of_card_eq_prime_pow_mul_prime_pow hp hq h
 %end
 
-%example ellipticity_coercive
-open TauCeti.PDE Matrix in
-/-- Partial differential equations — on a uniformly elliptic region the coefficient
-matrix induces a coercive bilinear form, the hypothesis that powers Lax–Milgram. -/
-theorem ellipticity_coercive {X n : Type*} [Fintype n] [DecidableEq n]
-    {Ω : Set X} {a : X → Matrix n n ℝ} {lam Lam : ℝ}
-    (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) :
-    IsCoercive (matrixBilinearForm (a x)) :=
-  h.isCoercive_matrixBilinearForm hx
+%example caratheodory
+open TauCeti Set Metric Bornology in
+/-- Carathéodory's boundary extension theorem — a Riemann map onto a Jordan
+domain extends to a homeomorphism of the closures. -/
+theorem caratheodory {Ω : Set ℂ}
+    (hΩo : IsOpen Ω) (hΩc : IsSimplyConnected Ω) (hΩb : IsBounded Ω)
+    (hΩJ : IsJordanCurve (frontier Ω)) :
+    ∃ g : ℂ → ℂ, ContinuousOn g (closedBall 0 1) ∧
+      DifferentiableOn ℂ g (ball 0 1) ∧ BijOn g (ball 0 1) Ω ∧
+      ∃ e : closedBall (0 : ℂ) 1 ≃ₜ closure Ω,
+        ∀ z : closedBall (0 : ℂ) 1, (e z : ℂ) = g z :=
+  exists_homeomorph_closedBall_closure_of_isJordanCurve_frontier hΩo hΩc hΩb hΩJ
 %end
 
-%example effective_divisor
-open TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.WeilDivisor in
-/-- The Jacobian challenge — a nonzero effective Weil divisor has a point with
-strictly positive coefficient. -/
-theorem effective_divisor {X : Type*} {D : WeilDivisor X}
-    (hD : IsEffective D) (hD0 : D ≠ 0) : ∃ x, 0 < D.coeff x :=
-  hD.exists_pos_coeff_of_ne_zero hD0
-%end
-
-%example hopf_antipode
-open HopfAlgebra in
-/-- Reductive algebraic groups — a bialgebra homomorphism between Hopf algebras
-commutes with the antipodes. -/
-theorem hopf_antipode {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B]
-    [HopfAlgebra R A] [HopfAlgebra R B] (φ : A →ₐc[R] B) :
-    φ.toLinearMap.comp (antipode R (A := A)) = (antipode R (A := B)).comp φ.toLinearMap :=
-  TauCeti.BialgHom.toLinearMap_comp_antipode φ
+%example schur_weyl
+open TauCeti in
+/-- Schur–Weyl duality — on the d-th tensor power of kⁿ, the images of the
+general linear and symmetric group algebras are each other's centralizers. -/
+theorem schur_weyl {k : Type*} [Field k] [Infinite k] {n d : ℕ}
+    [NeZero (Nat.factorial d : k)] :
+    Subalgebra.centralizer k (Set.range ⇑(tensorPowerRep k n d).asAlgebraHom) =
+        (permTensorActionAlgHom k n d).range ∧
+      Subalgebra.centralizer k (Set.range ⇑(permTensorActionAlgHom k n d)) =
+        (tensorPowerRep k n d).asAlgebraHom.range :=
+  ⟨centralizer_range_tensorPowerRep_asAlgebraHom_eq_range_permTensorActionAlgHom,
+    centralizer_range_permTensorActionAlgHom_eq_range_tensorPowerRep_asAlgebraHom⟩
 %end
