@@ -259,6 +259,14 @@ def mapNormQuotient {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
     simpa only [LinearMap.comp_apply] using
       (LinearMap.congr_fun (Representation.IsIntertwiningMap.comp_norm hφ) y).symm)
 
+/-- The map on norm quotients sends the class of an invariant to the class of its image. -/
+@[simp]
+theorem mapNormQuotient_mk {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) (x : M.ρ.invariants) :
+    mapNormQuotient hφ (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk (mapInvariants hφ x) := by
+  rw [mapNormQuotient, Submodule.mapQ_apply]
+
 /-- The degree-zero Tate map sends the class of an invariant to the class of its image under the
 compatible coefficient map. -/
 @[reassoc (attr := simp), elementwise (attr := simp)]
