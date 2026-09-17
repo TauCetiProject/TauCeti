@@ -65,7 +65,6 @@ exactly when some prime of `𝓞 L` above it has ramification index greater than
 theorem mem_ramifiedSupport_iff_exists {v : HeightOneSpectrum (𝓞 K)} :
     v ∈ ramifiedSupport K L ↔
       ∃ P : (v.asIdeal).primesOver (𝓞 L), 1 < (P : Ideal (𝓞 L)).ramificationIdx (𝓞 K) := by
-  have _ := v.isPrime
   rw [mem_ramifiedSupport]
   exact dvd_relDiscr_iff_exists_one_lt_ramificationIdx v.ne_bot
 

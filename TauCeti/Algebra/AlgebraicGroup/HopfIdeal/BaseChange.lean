@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import TauCeti.Algebra.AlgebraicGroup.BaseChange.CentralPoint
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation

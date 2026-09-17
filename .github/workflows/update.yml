@@ -25,12 +25,16 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
         id: app-token
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: TauCetiProject
+          repositories: TauCeti
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
 
       - uses: actions/checkout@v4
         with:
@@ -71,12 +75,16 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
         id: app-token
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: TauCetiProject
+          repositories: TauCeti
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
 
       - uses: actions/checkout@v4
 
