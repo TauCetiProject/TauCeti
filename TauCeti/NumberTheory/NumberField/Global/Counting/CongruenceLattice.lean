@@ -89,6 +89,7 @@ instance (𝔪 : Modulus K) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
   infer_instance
 
 /-- The points of the congruence lattice are the images of the elements of `I * 𝔪₀`. -/
+@[simp]
 theorem mem_congruenceLattice_iff {𝔪 : Modulus K} {I : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
     {x : mixedSpace K} :
     x ∈ congruenceLattice 𝔪 I ↔
