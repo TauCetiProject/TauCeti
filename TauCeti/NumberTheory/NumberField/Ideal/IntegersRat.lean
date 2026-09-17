@@ -125,6 +125,8 @@ theorem ramificationIdx_ringOfIntegers_rat_eq_int (P : Ideal (𝓞 E)) [P.IsPrim
 
 /-- The primes of a subfield above `Q ∩ 𝓞 ℚ` are the primes above `p`, when `Q` lies over the
 rational prime `p`. -/
+-- Not a `simp` lemma: `p` occurs only in the `LiesOver` instance and on the right-hand side, so
+-- the `simpNF` linter reports that `simp` could never infer it.
 theorem primesOver_under_ringOfIntegers_rat_eq {M : Type*} [Field M] [NumberField M] {p : ℕ}
     (Q : Ideal (𝓞 M)) [Q.LiesOver (Ideal.span {(p : ℤ)})] (E : IntermediateField ℚ M) :
     (Q.under (𝓞 ℚ)).primesOver (𝓞 E) = (Ideal.span {(p : ℤ)}).primesOver (𝓞 E) := by

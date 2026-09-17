@@ -45,7 +45,7 @@ namespace TauCeti.NumberField
 
 open Polynomial
 
-variable {K : Type*} [Field K] [NumberField K] {M : Type*} [Field M] [NumberField M] {θ : 𝓞 K}
+variable {K : Type*} [Field K] [NumberField K] {M : Type*} [Field M] [Algebra ℚ M] {θ : 𝓞 K}
 
 /-- A root in `M` of `minpoly ℚ θ` is a root of `minpoly ℤ θ`. -/
 theorem aeval_minpoly_int_eq_zero_of_mem_rootSet {β : M}
@@ -64,9 +64,9 @@ theorem minpoly_rat_eq_of_mem_rootSet {β : M} (hβ : β ∈ (minpoly ℚ (θ : 
   (minpoly.eq_of_irreducible_of_monic (minpoly.irreducible (IsIntegral.of_finite ℚ _))
     (mem_rootSet.mp hβ).2 (minpoly.monic (IsIntegral.of_finite ℚ _))).symm
 
-/-- An algebraic integer of `M` that is a root of `minpoly ℚ θ` has the same minimal polynomial
-over `ℤ` as `θ`. -/
-theorem minpoly_int_eq_of_coe_mem_rootSet {β : 𝓞 M}
+/-- An algebraic integer of a number field `M` that is a root of `minpoly ℚ θ` has the same
+minimal polynomial over `ℤ` as `θ`. -/
+theorem minpoly_int_eq_of_coe_mem_rootSet {M : Type*} [Field M] [NumberField M] {β : 𝓞 M}
     (hβ : (β : M) ∈ (minpoly ℚ (θ : K)).rootSet M) : minpoly ℤ β = minpoly ℤ θ := by
   have h := minpoly_rat_eq_of_mem_rootSet hβ
   rw [_root_.NumberField.RingOfIntegers.minpoly_rat_coe,

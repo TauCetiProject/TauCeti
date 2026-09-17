@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.GroupAction.Quotient
 public import TauCeti.FieldTheory.Galois.FixedField
 public import TauCeti.FieldTheory.GaloisGroups.Orbits
 
@@ -34,6 +35,10 @@ separable, and for irreducible `p` this follows from `p.Separable`.
 * `TauCeti.stabilizer_eq_bot_iff_adjoin_simple_eq_top`,
   `TauCeti.stabilizer_eq_top_iff_adjoin_simple_eq_bot`: the two ends of the correspondence, a
   root that generates the whole splitting field and a root that lies in the base field.
+* `TauCeti.coe_rootSet_eq_orbit_of_irreducible`, `TauCeti.rootSetEquivQuotientStabilizer`: for the
+  action of `Gal(M/F)` on the roots in a normal extension `M / F` of an irreducible polynomial,
+  the roots form one orbit and are identified equivariantly with the cosets of the stabilizer of
+  a chosen root `α`, the coset of `ρ` corresponding to the root `ρ • α`.
 
 ## Implementation notes
 
@@ -126,5 +131,66 @@ theorem stabilizer_eq_top_iff_adjoin_simple_eq_bot [IsGalois F p.SplittingField]
     exact IsGalois.fixedField_top
   · rw [stabilizer_eq_fixingSubgroup_adjoin_simple, h]
     exact IntermediateField.fixingSubgroup_bot
+
+/-! ### The roots of an irreducible polynomial in a normal extension -/
+
+section Normal
+
+variable {M : Type*} [Field M] [Algebra F M] [Normal F M]
+
+/-- In a normal extension `M / F`, the roots in `M` of an irreducible polynomial over `F` form one
+orbit of `Gal(M/F)`: the orbit of any of them. -/
+theorem coe_rootSet_eq_orbit_of_irreducible {q : F[X]} (hq : Irreducible q) {α : M}
+    (hα : α ∈ q.rootSet M) : (q.rootSet M : Set M) = orbit (M ≃ₐ[F] M) α := by
+  ext β
+  constructor
+  · intro hβ
+    rw [← Normal.minpoly_eq_iff_mem_orbit, ← minpoly.eq_of_irreducible hq (mem_rootSet.mp hβ).2,
+      ← minpoly.eq_of_irreducible hq (mem_rootSet.mp hα).2]
+  · rintro ⟨τ, rfl⟩
+    exact smul_mem_rootSet τ hα
+
+/-- The roots in a normal extension `M / F` of an irreducible polynomial over `F`, as the cosets
+of the stabilizer in `Gal(M/F)` of a chosen root. -/
+noncomputable def rootSetEquivQuotientStabilizer {q : F[X]} (hq : Irreducible q) {α : M}
+    (hα : α ∈ q.rootSet M) : q.rootSet M ≃ (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α :=
+  (Equiv.subtypeEquivRight fun β =>
+    Set.ext_iff.mp (coe_rootSet_eq_orbit_of_irreducible hq hα) β).trans
+    (orbitEquivQuotientStabilizer _ α)
+
+/-- The coset of `ρ` corresponds to the root `ρ • α`. -/
+@[simp]
+theorem coe_rootSetEquivQuotientStabilizer_symm_mk {q : F[X]} (hq : Irreducible q) {α : M}
+    (hα : α ∈ q.rootSet M) (ρ : M ≃ₐ[F] M) :
+    (((rootSetEquivQuotientStabilizer hq hα).symm
+      (ρ : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α) : q.rootSet M) : M) = ρ • α :=
+  orbitEquivQuotientStabilizer_symm_apply (M ≃ₐ[F] M) α ρ
+
+/-- The root `ρ α` corresponds to the coset of `ρ`. -/
+@[simp]
+theorem rootSetEquivQuotientStabilizer_mk_apply {q : F[X]} (hq : Irreducible q) {α : M}
+    (hα : α ∈ q.rootSet M) (ρ : M ≃ₐ[F] M) (h : ρ α ∈ q.rootSet M) :
+    rootSetEquivQuotientStabilizer hq hα ⟨ρ α, h⟩ =
+      (ρ : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α) :=
+  (Equiv.eq_symm_apply _).mp
+    (Subtype.ext (coe_rootSetEquivQuotientStabilizer_symm_mk hq hα ρ).symm)
+
+/-- The identification of the roots with the cosets of a stabilizer is equivariant. -/
+@[simp]
+theorem rootSetEquivQuotientStabilizer_smul {q : F[X]} (hq : Irreducible q) {α : M}
+    (hα : α ∈ q.rootSet M) (g : M ≃ₐ[F] M) (x : q.rootSet M) :
+    rootSetEquivQuotientStabilizer hq hα (g • x) = g • rootSetEquivQuotientStabilizer hq hα x := by
+  apply (rootSetEquivQuotientStabilizer hq hα).symm.injective
+  rw [Equiv.symm_apply_apply]
+  obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (rootSetEquivQuotientStabilizer hq hα x)
+  have hx : (x : M) = τ • α := by
+    have := congrArg (fun c => ((rootSetEquivQuotientStabilizer hq hα).symm c : M)) hτ
+    rw [Equiv.symm_apply_apply] at this
+    rw [← this, coe_rootSetEquivQuotientStabilizer_symm_mk]
+  rw [← hτ, MulAction.Quotient.smul_mk]
+  apply Subtype.ext
+  rw [coe_rootSetEquivQuotientStabilizer_symm_mk, rootSet.coe_smul, hx, smul_eq_mul, mul_smul]
+
+end Normal
 
 end TauCeti

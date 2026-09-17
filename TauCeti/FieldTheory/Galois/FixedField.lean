@@ -178,6 +178,7 @@ theorem mem_fixedField_stabilizer (x : M) :
   (mem_fixedField_iff _ x).mpr fun _ hσ => hσ
 
 /-- For a finite Galois extension, the fixed field of the stabilizer of `x` is `K⟮x⟯`. -/
+@[simp]
 theorem fixedField_stabilizer_eq_adjoin_simple [FiniteDimensional K M] [IsGalois K M] (x : M) :
     fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x) = K⟮x⟯ := by
   rw [← fixingSubgroup_adjoin_simple, IsGalois.fixedField_fixingSubgroup]

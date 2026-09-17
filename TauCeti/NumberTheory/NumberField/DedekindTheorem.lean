@@ -16,9 +16,8 @@ import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.NumberField.Inertia
 import TauCeti.FieldTheory.Galois.FixedField
-import TauCeti.FieldTheory.GaloisGroups.Orbits
+import TauCeti.FieldTheory.GaloisGroups.Stabilizer
 import TauCeti.NumberTheory.NumberField.Minpoly
-import TauCeti.RingTheory.Polynomial.Factors
 import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.DecompositionOrbits
 
 /-!
@@ -157,7 +156,13 @@ theorem ramificationIdx_eq_one_of_liesOver_span
   rw [h, minpoly_rootIntegralPrimitiveElement]
   rw [monicFactorsMod_rootIntegralPrimitiveElement, RingOfIntegers.monicFactorsMod,
     Multiset.mem_toFinset] at hφ
-  exact Polynomial.multiplicity_eq_one_of_mem_normalizedFactors_of_squarefree hsq hφ
+  have hf0 : (minpoly ℤ θ).map (Int.castRingHom (ZMod p)) ≠ 0 :=
+    ((minpoly.monic θ.isIntegral).map _).ne_zero
+  rw [UniqueFactorizationMonoid.multiplicity_eq_count_normalizedFactors
+    (UniqueFactorizationMonoid.irreducible_of_normalized_factor _ hφ) hf0,
+    UniqueFactorizationMonoid.normalize_normalized_factor _ hφ]
+  exact Multiset.count_eq_one_of_mem
+    ((UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors hf0).mp hsq) hφ
 
 include hβ in
 /-- **The residue degrees of the primes of the root field above `p` are the degrees of the
