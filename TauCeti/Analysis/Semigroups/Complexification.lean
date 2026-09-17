@@ -183,25 +183,11 @@ private theorem tendsto_complexify_genQuot_iff (S : StronglyContinuousSemigroup 
           (nhdsWithin 0 (Set.Ioi 0)) (nhds w.re) ∧
       Tendsto (fun t : ℝ => (1 / t) • (S.realOperator t z.im - z.im))
         (nhdsWithin 0 (Set.Ioi 0)) (nhds w.im) := by
-  -- Unfold `Tendsto` to transport convergence through the injective product equivalence.
-  change Filter.map _ _ ≤ nhds w ↔ _
-  rw [← Filter.map_le_map_iff (TauCeti.Complexification.equivProd X).injective,
-    (TauCeti.Complexification.equivProd X).map_nhds_eq, Filter.map_map]
-  have hquot :
-      (TauCeti.Complexification.equivProd X ∘ fun t : ℝ =>
-          (1 / t) • (S.complexify.realOperator t z - z)) =
-        fun t : ℝ => ((1 / t) • (S.realOperator t z.re - z.re),
-          (1 / t) • (S.realOperator t z.im - z.im)) := by
-    funext t
-    apply Prod.ext <;> simp
-  rw [hquot]
-  rw [TauCeti.Complexification.equivProd_apply]
-  -- Refold the filter inequality as product convergence for `Prod.tendsto_iff`.
-  change Tendsto (fun t : ℝ =>
-      ((1 / t) • (S.realOperator t z.re - z.re),
-        (1 / t) • (S.realOperator t z.im - z.im)))
-      (nhdsWithin 0 (Set.Ioi 0)) (nhds (w.re, w.im)) ↔ _
-  exact Prod.tendsto_iff _ _
+  rw [(equivProd X).toHomeomorph.isEmbedding.tendsto_nhds_iff, Prod.tendsto_iff]
+  simp only [ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_apply, equivProd_apply,
+    real_smul_re, real_smul_im, sub_re, sub_im, complexify_realOperator,
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.complexify_apply_re,
+    ContinuousLinearMap.complexify_apply_im]
 
 omit [CompleteSpace X] in
 /-- Membership in the generator domain of the complexified semigroup is componentwise membership

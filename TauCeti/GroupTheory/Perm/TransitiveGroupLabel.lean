@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAction.FinRotate
+public import TauCeti.GroupTheory.Perm.PermCongr
+public import TauCeti.GroupTheory.Solvable
 public import Mathlib.GroupTheory.Perm.List
 public import Mathlib.GroupTheory.SpecificGroups.Alternating.KleinFour
 
@@ -25,6 +27,17 @@ transitive-groups table. The reference family is empty outside degrees one throu
 * `TransitiveGroupIndex`: the type of valid zero-based label indices.
 * `referenceSubgroup`: the subgroup represented by a valid index.
 * `TransitiveGroupLabel`: conjugacy to a reference subgroup.
+
+## Main results
+
+* `TauCeti.isPretransitive_referenceSubgroup`: every reference subgroup is transitive.
+* `Subgroup.transitiveGroupLabel_map_permCongrHom_iff`: the label of a permutation group on an
+  arbitrary set of `n` points does not depend on the numbering by `Fin n` used to read it.
+* `TauCeti.TransitiveGroupLabel.natCard_eq`, `TauCeti.TransitiveGroupLabel.le_alternatingGroup_iff`,
+  `TauCeti.TransitiveGroupLabel.isPreprimitive_iff`, `TauCeti.TransitiveGroupLabel.isSolvable_iff`:
+  a labelled subgroup has the order, parity, primitivity, and solvability of its reference.
+* `TauCeti.transitiveGroupLabel_one`, `TauCeti.transitiveGroupLabel_two_iff`: in degrees one and
+  two, a subgroup carries the unique label exactly when it is transitive.
 
 ## References
 
@@ -52,6 +65,12 @@ def numTransitiveGroups : ℕ → ℕ
 
 An index `j` is displayed externally as `nT(j + 1)`. -/
 abbrev TransitiveGroupIndex (n : ℕ) := Fin (numTransitiveGroups n)
+
+/-- There are no labels in degree zero, so a label index has a positive degree. -/
+theorem pos_of_transitiveGroupIndex {n : ℕ} (j : TransitiveGroupIndex n) : 0 < n :=
+  Nat.pos_of_ne_zero fun hn => by
+    subst hn
+    exact j.elim0
 
 private def doubleSwap5 : Perm (Fin 5) :=
   swap 0 3 * swap 1 2
@@ -315,5 +334,84 @@ theorem TransitiveGroupLabel.isPretransitive {n : ℕ} {j : TransitiveGroupIndex
   rw [← hgr]
   simp only [MulEquiv.coe_toMonoidHom, MulAut.conj_apply, Equiv.Perm.mul_apply,
     Equiv.Perm.inv_def, Equiv.symm_apply_apply]
+
+/-- A label is witnessed by a transport of the subgroup along a renumbering of `Fin n`. -/
+theorem TransitiveGroupLabel.exists_map_permCongrHom_eq {n : ℕ} {j : TransitiveGroupIndex n}
+    {G : Subgroup (Perm (Fin n))} (h : TransitiveGroupLabel j G) :
+    ∃ τ : Perm (Fin n), G.map τ.permCongrHom.toMonoidHom = referenceSubgroup n j := by
+  obtain ⟨τ, hτ⟩ := h
+  refine ⟨τ, hτ ▸ congrArg (Subgroup.map · G) ?_⟩
+  ext σ x
+  simp [Equiv.permCongr_eq_mul]
+
+/-- Reading a permutation group on `n` points through two numberings by `Fin n` gives the same
+transitive-group labels. -/
+theorem _root_.Subgroup.transitiveGroupLabel_map_permCongrHom_iff {α : Type*} {n : ℕ}
+    {j : TransitiveGroupIndex n} (G : Subgroup (Perm α)) (e e' : α ≃ Fin n) :
+    TransitiveGroupLabel j (G.map e.permCongrHom.toMonoidHom) ↔
+      TransitiveGroupLabel j (G.map e'.permCongrHom.toMonoidHom) := by
+  have h : G.map e'.permCongrHom.toMonoidHom =
+      Subgroup.map (MulAut.conj (e.symm.trans e')) (G.map e.permCongrHom.toMonoidHom) := by
+    rw [Subgroup.map_map]
+    congr 1
+    ext σ x
+    simp [Equiv.permCongrHom_coe]
+  rw [h, transitiveGroupLabel_map_conj_iff]
+
+/-- A subgroup carrying a transitive-group label has the order of its reference subgroup. -/
+theorem TransitiveGroupLabel.natCard_eq {n : ℕ} {j : TransitiveGroupIndex n}
+    {G : Subgroup (Perm (Fin n))} (h : TransitiveGroupLabel j G) :
+    Nat.card G = Nat.card (referenceSubgroup n j) := by
+  obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
+  rw [← hτ, Subgroup.card_map_of_injective τ.permCongrHom.injective]
+
+/-- A subgroup carrying a transitive-group label consists of even permutations exactly when its
+reference subgroup does. -/
+theorem TransitiveGroupLabel.le_alternatingGroup_iff {n : ℕ} {j : TransitiveGroupIndex n}
+    {G : Subgroup (Perm (Fin n))} (h : TransitiveGroupLabel j G) :
+    G ≤ alternatingGroup (Fin n) ↔ referenceSubgroup n j ≤ alternatingGroup (Fin n) := by
+  obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
+  rw [← hτ, Equiv.map_permCongrHom_le_alternatingGroup_iff]
+
+/-- A subgroup carrying a transitive-group label acts primitively exactly when its reference
+subgroup does. -/
+theorem TransitiveGroupLabel.isPreprimitive_iff {n : ℕ} {j : TransitiveGroupIndex n}
+    {G : Subgroup (Perm (Fin n))} (h : TransitiveGroupLabel j G) :
+    IsPreprimitive G (Fin n) ↔ IsPreprimitive (referenceSubgroup n j) (Fin n) := by
+  obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
+  rw [← hτ, Equiv.isPreprimitive_map_permCongrHom_iff]
+
+/-- A subgroup carrying a transitive-group label is solvable exactly when its reference subgroup
+is. -/
+theorem TransitiveGroupLabel.isSolvable_iff {n : ℕ} {j : TransitiveGroupIndex n}
+    {G : Subgroup (Perm (Fin n))} (h : TransitiveGroupLabel j G) :
+    Group.IsSolvable G ↔ Group.IsSolvable (referenceSubgroup n j) := by
+  obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
+  rw [← hτ, MulEquiv.toMonoidHom_eq_coe]
+  exact (τ.permCongrHom.subgroupMap G).isSolvable_congr
+
+/-- In degree one every subgroup carries the label `1T1`. -/
+@[simp]
+theorem transitiveGroupLabel_one (j : TransitiveGroupIndex 1) (G : Subgroup (Perm (Fin 1))) :
+    TransitiveGroupLabel j G :=
+  ⟨1, Subsingleton.elim _ _⟩
+
+/-- In degree two a subgroup carries the label `2T1` exactly when it is transitive: the only
+transitive subgroup of the symmetric group on two letters is the whole group. -/
+@[simp]
+theorem transitiveGroupLabel_two_iff (j : TransitiveGroupIndex 2) (G : Subgroup (Perm (Fin 2))) :
+    TransitiveGroupLabel j G ↔ IsPretransitive G (Fin 2) := by
+  refine ⟨TransitiveGroupLabel.isPretransitive, fun hG => ⟨1, ?_⟩⟩
+  obtain ⟨g, hg⟩ := hG.exists_smul_eq 0 1
+  have hg1 : (g : Perm (Fin 2)) ≠ 1 := by
+    rintro h
+    simp [Subgroup.smul_def, h] at hg
+  have hperm : ∀ σ τ : Perm (Fin 2), τ ≠ 1 → σ = 1 ∨ σ = τ := by decide
+  have htop : G = ⊤ := by
+    refine eq_top_iff.mpr fun σ _ => ?_
+    rcases hperm σ g hg1 with rfl | rfl
+    exacts [G.one_mem, g.2]
+  rw [htop, referenceSubgroup_two]
+  exact Subgroup.map_top_of_surjective _ (MulAut.conj 1).surjective
 
 end TauCeti

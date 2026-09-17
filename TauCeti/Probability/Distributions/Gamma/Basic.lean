@@ -55,6 +55,8 @@ the inverse-moment threshold `n < a`.
 * `TauCeti.gammaMeasure_conv_gammaMeasure` — convolution at a common rate adds the shape
   parameters;
 * `TauCeti.gammaMeasure_map_const_mul` — scaling by `c > 0` sends the rate `r` to `r / c`;
+* `TauCeti.gammaMeasure_eq_withDensity_restrict_Ioi` — the law is its density against Lebesgue
+  measure on `Ioi 0`;
 
 The cumulative distribution function is computed in
 `TauCeti/Probability/Distributions/Gamma/Cdf.lean`.
@@ -91,6 +93,14 @@ theorem ae_pos_gammaMeasure (a r : ℝ) :
   filter_upwards [(volume : Measure ℝ).ae_ne 0] with x hx hpdf
   by_contra hxpos
   exact hpdf (gammaPDF_of_neg (lt_of_le_of_ne (le_of_not_gt hxpos) hx))
+
+/-- The gamma law is its density against Lebesgue measure on the open positive half-line: the
+density vanishes below the origin, and the origin itself is null. -/
+theorem gammaMeasure_eq_withDensity_restrict_Ioi (a r : ℝ) :
+    gammaMeasure a r = (volume.restrict (Ioi (0 : ℝ))).withDensity (gammaPDF a r) := by
+  have hae : ∀ᵐ x ∂gammaMeasure a r, x ∈ Ioi (0 : ℝ) := ae_pos_gammaMeasure a r
+  rw [← restrict_withDensity measurableSet_Ioi, ← gammaMeasure,
+    Measure.restrict_eq_self_of_ae_mem hae]
 
 /-- Almost every point of a product of two gamma laws with positive parameters lies in the
 open positive quadrant. -/
