@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Acyclic.PathAlgebra
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Admissible
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.ADE.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.ArrowIdealPresentation
@@ -92,7 +91,7 @@ theorem quadraticZigzagIdeal_A2_eq_bot : quadraticZigzagIdeal k zigzagA2Graph = 
 the quotient of its doubled path algebra by the cube of the arrow ideal. -/
 theorem zigzagIdeal_A2_eq_arrowIdeal_pow_three :
     (zigzagIdeal k zigzagA2Graph).asIdeal = arrowIdeal k (DoubledQuiver zigzagA2Graph) ^ 3 :=
-  asIdeal_zigzagIdeal_eq_arrowIdeal_pow k subsingleton_neighborSet_A2
+  asIdeal_zigzagIdeal_eq_arrowIdeal_pow_three k subsingleton_neighborSet_A2
 
 /-- The zigzag relation quotient of `A₂` is the quotient of its doubled path algebra by the cube
 of the arrow ideal. -/
@@ -100,7 +99,7 @@ noncomputable def nonisolatedZigzagQuotientEquivA2 :
     nonisolatedZigzagQuotient k zigzagA2Graph ≃ₐ[k]
       pathAlgebra k (DoubledQuiver zigzagA2Graph) ⧸
         arrowIdeal k (DoubledQuiver zigzagA2Graph) ^ 3 :=
-  nonisolatedZigzagQuotientEquivArrowIdealPow k subsingleton_neighborSet_A2
+  nonisolatedZigzagQuotientEquivArrowIdealPowThree k subsingleton_neighborSet_A2
 
 /-- The cubic-quotient comparison fixes the class of every element of the path algebra. -/
 @[simp]
@@ -108,7 +107,7 @@ theorem nonisolatedZigzagQuotientEquivA2_zigzagMk
     (x : pathAlgebra k (DoubledQuiver zigzagA2Graph)) :
     nonisolatedZigzagQuotientEquivA2 k (zigzagMk k zigzagA2Graph x) = Ideal.Quotient.mk _ x := by
   simpa only [nonisolatedZigzagQuotientEquivA2] using
-    nonisolatedZigzagQuotientEquivArrowIdealPow_zigzagMk k subsingleton_neighborSet_A2 x
+    nonisolatedZigzagQuotientEquivArrowIdealPowThree_zigzagMk k subsingleton_neighborSet_A2 x
 
 /-- **The public zigzag algebra of `A₂`** is the quotient `k DQ / R³` of the path algebra of its
 doubled quiver. -/
