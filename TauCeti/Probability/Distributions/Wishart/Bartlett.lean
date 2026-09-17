@@ -318,7 +318,7 @@ theorem map_lowerTriangleGram_pi_bartlettCoordinateMeasure
 
 /-- Under `(p : ℝ) - 1 < n` the diagonal Cholesky coordinate in row `i` has positive degrees of
 freedom `n - i`, since `i` ranges only over `0, …, p - 1`. -/
-private theorem bartlett_degreesOfFreedom_pos (hn : (p : ℝ) - 1 < n) (i : Fin p) : 0 < n - i.1 := by
+theorem bartlett_degreesOfFreedom_pos (hn : (p : ℝ) - 1 < n) (i : Fin p) : 0 < n - i.1 := by
   have h : ((i : ℕ) : ℝ) + 1 ≤ (p : ℝ) := by exact_mod_cast Nat.succ_le_of_lt i.isLt
   linarith
 
@@ -344,7 +344,7 @@ theorem isProbabilityMeasure_bartlettCoordinateMeasure (hn : (p : ℝ) - 1 < n)
     infer_instance
 
 /-- The product of the coordinate laws gives no mass to a nonpositive diagonal coordinate. -/
-private theorem pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion (hn : (p : ℝ) - 1 < n) :
+theorem pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion (hn : (p : ℝ) - 1 < n) :
     Measure.pi (bartlettCoordinateMeasure (p := p) n) (posDiagLowerRegion p)ᶜ = 0 := by
   rw [pi_bartlettCoordinateMeasure_eq_withDensity,
     withDensity_apply _ (measurableSet_posDiagLowerRegion p).compl]
@@ -435,15 +435,8 @@ theorem bartlett_nonsingularWishartMeasure {Ω : Type*} {mΩ : MeasurableSpace �
   -- Every coordinate of the product law is the corresponding Bartlett coordinate law.
   have heval : ∀ ij : lowerTriangle p,
       HasLaw (fun x : lowerTriangle p → ℝ ↦ x ij) (bartlettCoordinateMeasure n ij)
-        (Measure.pi (bartlettCoordinateMeasure (p := p) n)) := by
-    classical
-    refine fun ij ↦ ⟨(measurable_pi_apply ij).aemeasurable, ?_⟩
-    -- `Measure.pi_map_eval` is stated for `Function.eval ij`, the coordinate map here.
-    have h : (Measure.pi (bartlettCoordinateMeasure (p := p) n)).map (Function.eval ij) =
-        bartlettCoordinateMeasure n ij := by
-      rw [Measure.pi_map_eval]
-      simp [(hcoordprob _).measure_univ]
-    exact h
+        (Measure.pi (bartlettCoordinateMeasure (p := p) n)) :=
+    fun ij ↦ (measurePreserving_eval _ ij).hasLaw
   have hcoord : ∀ ij : lowerTriangle p,
       HasLaw (fun ω ↦ choleskyLowerCoordinates p (A ω) ij) (bartlettCoordinateMeasure n ij) P :=
     fun ij ↦ (heval ij).fun_comp hL
@@ -452,9 +445,7 @@ theorem bartlett_nonsingularWishartMeasure {Ω : Type*} {mΩ : MeasurableSpace �
     fun ij ↦ funext fun ω ↦ (choleskyLowerCoordinates_apply p (A ω) ij).symm
   refine ⟨?_, fun i ↦ ?_, fun i j hij ↦ ?_⟩
   · rw [funext hentry]
-    refine (iIndepFun_iff_map_fun_eq_pi_map fun ij ↦ (hcoord ij).aemeasurable).2 ?_
-    rw [funext fun ij ↦ (hcoord ij).map_eq]
-    exact hL.map_eq
+    exact (iIndepFun_iff_hasLaw_pi_pi hcoord).2 hL
   · have hdiag : (fun ω ↦ (cholesky (A ω)).1 i i ^ 2) =
         fun ω ↦ choleskyLowerCoordinates p (A ω) (⟨(i, i), le_rfl⟩ : lowerTriangle p) ^ 2 :=
       funext fun ω ↦ congrArg (· ^ 2)

@@ -308,20 +308,36 @@ theorem continuous_choleskyLowerCoordinates : Continuous (choleskyLowerCoordinat
 theorem measurable_choleskyLowerCoordinates : Measurable (choleskyLowerCoordinates p) :=
   (continuous_choleskyLowerCoordinates p).measurable
 
+/-- The Cholesky factor has positive diagonal, so its coordinates lie in the positive-diagonal
+region. -/
+theorem choleskyLowerCoordinates_mem_posDiagLowerRegion (A : PosDefMatrix p) :
+    choleskyLowerCoordinates p A ∈ posDiagLowerRegion p := by
+  rw [mem_posDiagLowerRegion]
+  intro i
+  rw [choleskyLowerCoordinates_apply]
+  exact (cholesky A).2.2 i
+
+/-- **The Gram map inverts Cholesky factorization.** A positive-definite matrix is the Gram
+matrix built from the coordinates of its Cholesky factor. -/
+@[simp]
+theorem lowerTriangleGram_choleskyLowerCoordinates (A : PosDefMatrix p) :
+    lowerTriangleGram p (choleskyLowerCoordinates p A) = A.1 := by
+  refine Subtype.ext ?_
+  rw [coe_lowerTriangleGram, funext (choleskyLowerCoordinates_apply p A),
+    lowerTriangleMatrix_entries (cholesky A).2.1]
+  exact cholesky_mul_transpose A
+
 /-- **Cholesky factorization inverts the Gram map.** On the positive-diagonal region the
 coordinates of the Cholesky factor of `L * Lᵀ` are the coordinates of `L` again. -/
 @[simp]
 theorem choleskyLowerCoordinates_lowerTriangleGram {x : lowerTriangle p → ℝ}
     (hx : x ∈ posDiagLowerRegion p) :
     choleskyLowerCoordinates p ⟨lowerTriangleGram p x, posDef_lowerTriangleGram p hx⟩ = x := by
-  set L : PosDiagLowerTriangular p := (lowerTriangleCoordinatesHomeomorph p).symm ⟨x, hx⟩ with hL
-  have hLcoe : L.1 = lowerTriangleMatrix p x :=
-    lowerTriangleCoordinatesHomeomorph_symm_apply_coe p ⟨x, hx⟩
-  have hrec : choleskyReconstruction L =
+  have hrec : choleskyReconstruction (posDiagOfMem p hx) =
       (⟨lowerTriangleGram p x, posDef_lowerTriangleGram p hx⟩ : PosDefMatrix p) :=
-    Subtype.ext <| Subtype.ext <| by rw [choleskyReconstruction_coe, coe_lowerTriangleGram, hLcoe]
+    Subtype.ext (coe_choleskyReconstruction_posDiagOfMem p hx)
   funext ij
-  rw [choleskyLowerCoordinates_apply, ← hrec, cholesky_choleskyReconstruction, hLcoe,
+  rw [choleskyLowerCoordinates_apply, ← hrec, cholesky_choleskyReconstruction, coe_posDiagOfMem,
     lowerTriangleMatrix_apply_of_le x ij.2]
 
 /-! ### The change of variables -/

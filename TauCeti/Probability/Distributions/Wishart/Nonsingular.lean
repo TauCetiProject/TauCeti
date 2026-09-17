@@ -348,15 +348,13 @@ theorem ae_posDef_nonsingularWishartMeasure (n : ℝ) (S : Matrix (Fin p) (Fin p
 `(nonsingularWishartMeasure n S).comap Subtype.val` back along the inclusion of the cone returns
 the law itself, because the cone carries all of its mass. This is the form in which the Cholesky
 equivalence, which is defined on the cone, acts on a Wishart matrix. -/
+@[simp]
 theorem map_subtype_val_comap_nonsingularWishartMeasure (n : ℝ) (S : Matrix (Fin p) (Fin p) ℝ) :
     ((nonsingularWishartMeasure n S).comap
         (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))).map
-        Subtype.val = nonsingularWishartMeasure n S := by
-  have hemb : MeasurableEmbedding
-      (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
-    MeasurableEmbedding.subtype_coe (measurableSet_posDefMatrix p)
-  rw [hemb.map_comap, Subtype.range_coe_subtype]
-  exact Measure.restrict_eq_self_of_ae_mem (ae_posDef_nonsingularWishartMeasure n S)
+        Subtype.val = nonsingularWishartMeasure n S :=
+  (map_comap_subtype_coe (measurableSet_posDefMatrix p) _).trans
+    (Measure.restrict_eq_self_of_ae_mem (ae_posDef_nonsingularWishartMeasure n S))
 
 /-! ### Dimension zero -/
 
