@@ -238,9 +238,6 @@ lemma hom_baseChangeMap (E : FiniteDVRExtension R K)
   (rfl)
 
 /-- Pullback to a chosen finite DVR extension defines a functor on models. -/
--- Exposure is required because the map characterization below has source and target involving
--- the functor's object projection.
-@[expose]
 noncomputable def baseChangeFunctor (E : FiniteDVRExtension R K) :
     Model R K C toK ⥤
       Model E.localRing E.extensionField
@@ -282,7 +279,9 @@ lemma baseChangeFunctor_obj (E : FiniteDVRExtension R K) (M : Model R K C toK) :
 @[simp]
 lemma baseChangeFunctor_map (E : FiniteDVRExtension R K)
     {M N : Model R K C toK} (f : M ⟶ N) :
-    (baseChangeFunctor E).map f = baseChangeMap E f :=
+    (baseChangeFunctor E).map f =
+      eqToHom (baseChangeFunctor_obj E M) ≫ baseChangeMap E f ≫
+        eqToHom (baseChangeFunctor_obj E N).symm :=
   (rfl)
 
 /-- Proper models remain proper after base change to the chosen finite DVR extension. -/
