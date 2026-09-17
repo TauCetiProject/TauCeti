@@ -11,6 +11,7 @@ public import TauCeti.Probability.Distributions.InverseGamma
 public import TauCeti.Probability.Distributions.Wishart.Congruence
 
 import TauCeti.Analysis.Matrix.PosSemidef
+import TauCeti.Analysis.Matrix.Sqrt
 import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Integrable
 import TauCeti.Probability.Distributions.Gamma.Sqrt
@@ -36,14 +37,16 @@ Since the source law is zero outside the classical parameter range — a scale t
 definite, or a degree at most `p - 1` — so is the inverse-Wishart law, and positive definiteness of
 `S` and of `S⁻¹` are equivalent, so the two families are invalid on exactly the same parameters.
 
-The mean of the family is `(n - p - 1)⁻¹ • S`, and this is sharp: at or below the degree `p + 1`
-the sampled matrix is not integrable at all in positive dimension. Both statements come from the
-law of a single diagonal entry at the standard scale. In the Cholesky coordinates of the source
-Wishart matrix that entry is the inverse square of one diagonal coordinate, so it is inverse gamma
-of shape `(n - p + 1) / 2`, whose mean exists exactly above the threshold. Congruence by an
-orthogonal matrix preserves the standard law, which transports the value to every diagonal entry
-and makes the off-diagonal means vanish; congruence by a square root of the scale then carries the
-standard mean to the general one.
+The mean of the family is `(n - p - 1)⁻¹ • S`, and this is sharp within the valid family: for a
+degree `p - 1 < n ≤ p + 1` the sampled matrix is not integrable at all in positive dimension. The
+restriction to valid degrees is needed, since for `n ≤ p - 1` the law is the zero measure, against
+which everything is integrable. Both statements come from the law of a single diagonal entry at
+the standard scale. In the Cholesky coordinates of the source Wishart matrix that entry is the
+inverse square of one diagonal coordinate, so it is inverse gamma of shape `(n - p + 1) / 2`,
+whose mean exists exactly above the threshold. Congruence by an orthogonal matrix preserves the
+standard law, which transports the value to every diagonal entry and makes the off-diagonal means
+vanish; congruence by a square root of the scale then carries the standard mean to the general
+one.
 
 ## Main definitions
 
@@ -68,7 +71,7 @@ standard mean to the general one.
   `TauCeti.integral_id_inverseWishartMeasure` — above the degree `p + 1` the sampled matrix is
   integrable with mean `(n - p - 1)⁻¹ • S`, while
   `TauCeti.not_integrable_id_inverseWishartMeasure` shows that in positive dimension it is not
-  integrable at or below that degree.
+  integrable at a valid degree `p - 1 < n ≤ p + 1`.
 * `TauCeti.inverseWishartMeasure_zero` — in dimension zero the law is the Dirac mass at the unique
   symmetric matrix, hence a probability measure whose mean is zero
   (`TauCeti.integral_id_inverseWishartMeasure_zero`).
@@ -741,8 +744,8 @@ private theorem integral_coe_apply_inverseWishartMeasure_one (hn : (p : ℝ) + 1
       (f := id) (selfAdjoint.measurable_coe_apply i i).aemeasurable aestronglyMeasurable_id
     rw [map_coe_apply_inverseWishartMeasure_one (by linarith : (p : ℝ) - 1 < n) i] at h
     simp only [id_eq] at h
-    rw [← h, Probability.integral_id_inverseGammaMeasure (by norm_num) (by linarith),
-      show (n - (p : ℝ) + 1) / 2 - 1 = (n - (p : ℝ) - 1) / 2 by ring]
+    have hshape : (n - (p : ℝ) + 1) / 2 - 1 = (n - (p : ℝ) - 1) / 2 := by ring
+    rw [← h, Probability.integral_id_inverseGammaMeasure (by norm_num) (by linarith), hshape]
     have hne : n - (p : ℝ) - 1 ≠ 0 := by linarith
     field_simp
   · rw [Matrix.one_apply_ne hij, mul_zero]
@@ -767,18 +770,6 @@ private theorem integral_id_inverseWishartMeasure_one (hn : (p : ℝ) + 1 < n) :
   rw [integral_coe_apply_inverseWishartMeasure_one hn]
   simp
 
-/-- Every positive-definite matrix is `C * Cᵀ` for an invertible `C`, its principal square
-root. -/
-private theorem exists_gl_mul_transpose_eq (hS : S.PosDef) :
-    ∃ C : Matrix.GeneralLinearGroup (Fin p) ℝ,
-      (C : Matrix (Fin p) (Fin p) ℝ) * (C : Matrix (Fin p) (Fin p) ℝ)ᵀ = S := by
-  have hsq : CFC.sqrt S * CFC.sqrt S = S := CFC.sqrt_mul_sqrt_self _ hS.posSemidef.nonneg
-  have hherm : (CFC.sqrt S)ᵀ = CFC.sqrt S := by
-    have h := (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).1.eq
-    rwa [Matrix.conjTranspose_eq_transpose_of_trivial] at h
-  have hCu : IsUnit (CFC.sqrt S) := hS.isStrictlyPositive.isUnit_cfcSqrt _
-  exact ⟨hCu.unit, by rw [hCu.unit_spec, hherm, hsq]⟩
-
 /-- An inverse-Wishart law of positive-definite scale is the standard one transported by the
 congruence with a square root of the scale. -/
 private theorem inverseWishartMeasure_eq_map_symmetricCongruence
@@ -793,7 +784,7 @@ private theorem inverseWishartMeasure_eq_map_symmetricCongruence
 theorem integrable_id_inverseWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) + 1 < n) :
     Integrable (fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) => B)
       (inverseWishartMeasure n S) := by
-  obtain ⟨C, hC⟩ := exists_gl_mul_transpose_eq hS
+  obtain ⟨C, hC⟩ := hS.exists_generalLinearGroup_mul_transpose_eq
   have hmeasC : Measurable (Matrix.GeneralLinearGroup.symmetricCongruence C) :=
     (Matrix.GeneralLinearGroup.symmetricCongruence C).continuous.measurable
   have hiff := integrable_map_measure
@@ -807,14 +798,14 @@ theorem integrable_id_inverseWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) + 1 
       fun i j => integrable_coe_apply_inverseWishartMeasure_one hn i j)
 
 /-- **The mean of an inverse-Wishart law** of degree `n` and positive-definite scale `S` is
-`(n - p - 1)⁻¹ • S`, for a degree above the threshold `p + 1` at which the identity stops being
-integrable. -/
+`(n - p - 1)⁻¹ • S`, for a degree above the threshold `p + 1`; at a valid degree at or below the
+threshold the identity is no longer integrable. -/
 theorem integral_id_inverseWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) + 1 < n) :
     ∫ B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ), B ∂inverseWishartMeasure n S =
       (n - (p : ℝ) - 1)⁻¹ •
         (⟨S, Matrix.isHermitian_iff_isSelfAdjoint.1 hS.1⟩ :
           selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) := by
-  obtain ⟨C, hC⟩ := exists_gl_mul_transpose_eq hS
+  obtain ⟨C, hC⟩ := hS.exists_generalLinearGroup_mul_transpose_eq
   have hmeasC : Measurable (Matrix.GeneralLinearGroup.symmetricCongruence C) :=
     (Matrix.GeneralLinearGroup.symmetricCongruence C).continuous.measurable
   have hint := integral_map (μ := inverseWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ))
@@ -830,13 +821,15 @@ theorem integral_id_inverseWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) + 1 < 
   simpa using hC
 
 /-- **Below the degree threshold `p + 1` an inverse-Wishart matrix is not integrable**, in every
-positive dimension: a diagonal entry then has an inverse-gamma law of shape at most one. -/
+positive dimension, as long as the degree is that of a genuine member of the family: a diagonal
+entry then has an inverse-gamma law of shape at most one. Below the valid range the law is zero
+and the statement fails for want of any mass. -/
 theorem not_integrable_id_inverseWishartMeasure (hp : 0 < p) (hS : S.PosDef)
     (hn : (p : ℝ) - 1 < n) (hn' : n ≤ (p : ℝ) + 1) :
     ¬ Integrable (fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) => B)
       (inverseWishartMeasure n S) := by
   intro hint
-  obtain ⟨C, hC⟩ := exists_gl_mul_transpose_eq hS
+  obtain ⟨C, hC⟩ := hS.exists_generalLinearGroup_mul_transpose_eq
   have hmeasC : Measurable (Matrix.GeneralLinearGroup.symmetricCongruence C) :=
     (Matrix.GeneralLinearGroup.symmetricCongruence C).continuous.measurable
   have hiff := integrable_map_measure
