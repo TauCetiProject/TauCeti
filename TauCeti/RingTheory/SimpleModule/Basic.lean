@@ -17,9 +17,9 @@ the same universe, since the family `M : ι → Type u` is universe-monomorphic;
 the binary case with the two factors in unrelated universes.
 
 It also records which elements of a semisimple module an endomorphism can connect: some
-`R`-linear endomorphism sends `w` to `x` exactly when every scalar killing `w` kills `x`. One
-direction is linearity; for the other, `r • w ↦ r • x` is a well-defined map on `R ∙ w`, and
-semisimplicity extends it to the whole module.
+`R`-linear endomorphism sends `w` to `x` exactly when every scalar killing `w` kills `x`. This
+criterion turns reachability under endomorphisms into a containment between torsion ideals, a form
+useful in centralizer arguments.
 
 ## Main results
 

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
-public import Mathlib.RingTheory.SimpleModule.Basic
 public import Mathlib.RingTheory.SimpleRing.Basic
 public import TauCeti.RingTheory.SimpleModule.Basic
 
