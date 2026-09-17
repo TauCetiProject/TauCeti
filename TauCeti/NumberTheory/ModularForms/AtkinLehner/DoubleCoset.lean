@@ -10,24 +10,25 @@ public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Matrix
 
 import TauCeti.Data.ZMod.Units
 import TauCeti.LinearAlgebra.Matrix.Divisibility
-import TauCeti.LinearAlgebra.Matrix.SmithNormalForm
+import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.ElementaryDivisors
 
 /-!
 # Atkin–Lehner matrices and the `Γ₀(N)` double cosets
 
 An Atkin–Lehner matrix `W` for a divisor `Q` of `N`, read in `GL(2, ℚ)`, normalizes the image of
 `Γ₀(N)`. This file shows that conjugation by `W` moreover fixes every double coset
-`Γ₀(N) α Γ₀(N)` with `α ∈ Δ₀(N)` of determinant coprime to `N`:
+`Γ₀(N) α Γ₀(N)` with `α ∈ Δ₀(N)` of determinant coprime to `Q`:
 
 `W⁻¹ α W ∈ Γ₀(N) α Γ₀(N)`.
 
 Writing `W = !![Q a, b; N c, Q d]` and `α = !![p, q; N r, s]`, the conjugate is the integral
 matrix `B` with `W B = α W`. Its lower-left entry is divisible by `N`, and its upper-left entry
-is congruent to `s` modulo `Q` and to `p` modulo `N / Q`, hence a unit modulo `N`; so
-`W⁻¹ α W ∈ Δ₀(N)`. It has the determinant of `α`, and the same common divisors of entries (a
-common divisor of either matrix is coprime to `Q`, and `Q • B = adj W · α · W`), so the two are
-`SL₂(ℤ)`-equivalent (`Matrix.exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff`). Shimura's
-Lemma 3.29(3) then cuts the level-one double coset down to the `Γ₀(N)` one.
+is congruent to `s` modulo `Q` and to `p` modulo `N / Q`, hence a unit modulo `N` (`s` is a unit
+modulo `Q` because `det α ≡ p s` is); so `W⁻¹ α W ∈ Δ₀(N)`. It has the determinant of `α`, and
+the same common divisors of entries (a common divisor of either matrix is coprime to `Q`, and
+`Q • B = adj W · α · W`), so the two lie in the same `Γ₀(N)`-double coset
+(`HeckeRing.GL2.mem_doubleCoset_of_det_eq_of_dvd_iff`). No coprimality with `N / Q` is needed, so
+this covers the `U_p` double cosets at the primes `p ∣ N / Q`.
 
 These are the two hypotheses under which the slash by `W` commutes with the Hecke operator of
 `Γ₀(N) α Γ₀(N)` (`HeckeRing.GL2.heckeSlashSum_slash_of_mem_normalizer`).
@@ -37,12 +38,12 @@ These are the two hypotheses under which the slash by `W` commutes with the Heck
 * `TauCeti.IsAtkinLehnerMatrix.mem_normalizer_map_mapGL`: `W` normalizes the image of `Γ₀(N)` in
   `GL(2, ℚ)`.
 * `TauCeti.IsAtkinLehnerMatrix.inv_mul_mul_mem_doubleCoset`: for `α ∈ Δ₀(N)` of determinant
-  coprime to `N`, `W⁻¹ α W ∈ Γ₀(N) α Γ₀(N)`.
+  coprime to `Q`, `W⁻¹ α W ∈ Γ₀(N) α Γ₀(N)`.
 
 ## References
 
 * [G. Shimura, *Introduction to the arithmetic theory of automorphic functions*][shimura1971],
-  Lemma 3.29.
+  Proposition 3.32.
 * A. O. L. Atkin and J. Lehner, *Hecke operators on `Γ₀(m)`*, Math. Ann. 185 (1970), 134–160.
 -/
 
@@ -113,10 +114,10 @@ private lemma mul_atkinLehnerConj {Q m a b c d p q r s : ℤ}
   · linear_combination (Q * m * (Q * a * r + c * s)) * hred
   · linear_combination (Q * (b * m * r + d * s)) * hred
 
-/-- The upper-left entry of the conjugate is a unit modulo `N = Q m` as soon as `p` and `s` are:
-it is `s` modulo `Q` and `p` modulo `m`. -/
+/-- The upper-left entry of the conjugate is a unit modulo `N = Q m` as soon as `p` is and `s`
+is a unit modulo `Q`: it is `s` modulo `Q` and `p` modulo `m`. -/
 private lemma isCoprime_atkinLehnerConj_zero_zero {Q m a b c d p q r s : ℤ}
-    (hred : Q * (a * d) - m * (b * c) = 1) (hp : IsCoprime p (Q * m)) (hs : IsCoprime s (Q * m)) :
+    (hred : Q * (a * d) - m * (b * c) = 1) (hp : IsCoprime p (Q * m)) (hs : IsCoprime s Q) :
     IsCoprime (atkinLehnerConj Q m a b c d p q r s 0 0) (Q * m) := by
   have hQ : atkinLehnerConj Q m a b c d p q r s 0 0 =
       s + Q * (d * p * a + d * q * m * c - b * m * r * a - s * a * d) := by
@@ -130,21 +131,24 @@ private lemma isCoprime_atkinLehnerConj_zero_zero {Q m a b c d p q r s : ℤ}
     linear_combination p * hred
   refine IsCoprime.mul_right ?_ ?_
   · rw [hQ]
-    exact (hs.of_mul_right_left).add_mul_left_left _
+    exact hs.add_mul_left_left _
   · rw [hm]
     exact (hp.of_mul_right_right).add_mul_left_left _
 
-/-- **Conjugation by an Atkin–Lehner matrix fixes a coprime-determinant `Γ₀(N)` double coset.**
-If `W` is an Atkin–Lehner matrix for `Q ∣ N` and `α ∈ Δ₀(N)` has determinant coprime to `N`, then
-`W⁻¹ α W` lies in the double coset `Γ₀(N) α Γ₀(N)`. -/
-theorem IsAtkinLehnerMatrix.inv_mul_mul_mem_doubleCoset (hQ : Q ≠ 0) (hQN : Q ∣ N)
+/-- **Conjugation by an Atkin–Lehner matrix fixes a `Γ₀(N)` double coset of determinant coprime
+to `Q`.** If `W` is an Atkin–Lehner matrix for `Q ∣ N` and `α ∈ Δ₀(N)` has an integral matrix `A`
+with determinant coprime to `Q`, then `W⁻¹ α W` lies in the double coset `Γ₀(N) α Γ₀(N)`. -/
+theorem IsAtkinLehnerMatrix.inv_mul_mul_mem_doubleCoset [NeZero N] (hQ : Q ≠ 0) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M)
     (hw : (w : Matrix (Fin 2) (Fin 2) ℚ) = M.map (Int.cast : ℤ → ℚ)) {α : GL (Fin 2) ℚ}
-    (hα : α ∈ Delta0 N) (hcop : CoprimeDet N ⟨α, hα⟩) :
+    (hα : α ∈ Delta0 N) {A : Matrix (Fin 2) (Fin 2) ℤ}
+    (hA : (α : Matrix (Fin 2) (Fin 2) ℚ) = A.map (Int.cast : ℤ → ℚ)) (hAdet : Int.gcd A.det Q = 1) :
     w⁻¹ * α * w ∈ DoubleCoset.doubleCoset α ((Gamma0 N).map (mapGL ℚ))
       ((Gamma0 N).map (mapGL ℚ)) := by
-  obtain ⟨A, hA, hdet_pos, ⟨r, hr⟩, hAunit⟩ := (mem_Delta0_iff N).mp hα
-  have hAdet : Int.gcd A.det N = 1 := (coprimeDet_iff N hA).mp hcop
+  obtain ⟨A₁, hA₁, hdet_pos, ⟨r, hr⟩, hAunit⟩ := (mem_Delta0_iff N).mp hα
+  obtain rfl : A = A₁ := Matrix.map_injective Int.cast_injective (hA.symm.trans hA₁)
+  have hsQ : IsCoprime (A 1 1) (Q : ℤ) := Int.isCoprime_iff_gcd_eq_one.mpr
+    (gcd_apply_one_one_eq_one Q A (hr ▸ (Int.natCast_dvd_natCast.mpr hQN).mul_right r) hAdet)
   obtain ⟨m, hm⟩ := hQN
   obtain ⟨a, b, c, d, rfl, hred⟩ := h.exists_entries hQ hm
   have hN : (N : ℤ) = (Q : ℤ) * m := by exact_mod_cast congrArg (Nat.cast : ℕ → ℤ) hm
@@ -174,11 +178,8 @@ theorem IsAtkinLehnerMatrix.inv_mul_mul_mem_doubleCoset (hQ : Q ≠ 0) (hQN : Q 
   have hpN : IsCoprime (A 0 0) ((Q : ℤ) * m) := by
     rw [← hN]
     exact Int.isCoprime_iff_gcd_eq_one.mpr (Int.isUnit_intCast_iff_gcd_eq_one.mp hAunit)
-  have hsN : IsCoprime (A 1 1) ((Q : ℤ) * m) := by
-    rw [← hN]
-    exact Int.isCoprime_iff_gcd_eq_one.mpr (gcd_apply_one_one_eq_one N A ⟨r, hr⟩ hAdet)
   have hB00 : IsCoprime (B 0 0) ((Q : ℤ) * m) :=
-    isCoprime_atkinLehnerConj_zero_zero hred hpN hsN
+    isCoprime_atkinLehnerConj_zero_zero hred hpN hsQ
   -- `β ∈ Δ₀(N)`
   have hβΔ : β ∈ Delta0 N := by
     refine (mem_Delta0_iff N).mpr ⟨B, hβB, ?_, ?_, ?_⟩
@@ -195,8 +196,6 @@ theorem IsAtkinLehnerMatrix.inv_mul_mul_mem_doubleCoset (hQ : Q ≠ 0) (hQN : Q 
   have hdvd : ∀ e : ℤ, (∀ i j, e ∣ A i j) ↔ ∀ i j, e ∣ B i j := fun e ↦
     ⟨fun he ↦ (forall_dvd_apply_iff_of_mul_eq_mul hWB (hcopQ e _ hpN (he 0 0))).mp he,
       fun he ↦ (forall_dvd_apply_iff_of_mul_eq_mul hWB (hcopQ e _ hB00 (he 0 0))).mpr he⟩
-  obtain ⟨P, P', hPP'⟩ := Matrix.exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff hApos hdetB hdvd
-  rw [← doubleCoset_SLnZ_inter_Delta0_eq_doubleCoset_Gamma0_map N α hα A hA hAdet]
-  exact ⟨mem_doubleCoset_SLnZ_of_intMatrix_eq 2 P P' α β A B hA hβB hPP', hβΔ⟩
+  exact mem_doubleCoset_of_det_eq_of_dvd_iff N hα hβΔ hA hβB hdetB hdvd
 
 end TauCeti

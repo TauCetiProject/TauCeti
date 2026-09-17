@@ -38,15 +38,16 @@ here, and AINTLIB's `HeckePair` bundle is Mathlib's `HeckeCoset`.
 
 ## Main definitions
 
-* `HeckeRing.GL2.CoprimeDetCoset`: the same condition on a `Γ₀(N)`-double coset — well defined
+* `HeckeRing.GL2.CoprimeDetCoset`: coprimality of the determinant to a modulus, on a
+  `Γ₀(N)`-double coset — at the level `N` the same condition as `CoprimeDet` — well defined
   because the coefficients have determinant one, so the determinant is constant on a coset.
 * `HeckeRing.GL2.toLevelOneCoset`: the map `Γ₀(N) α Γ₀(N) ↦ SL₂(ℤ) α SL₂(ℤ)`, the `Γ₀`
   specialisation of `HeckeCoset.map`.
 
 ## Main results
 
-* `HeckeRing.GL2.toLevelOneCoset_mk`, `HeckeRing.GL2.coprimeDetCoset_mk`: the computation rules
-  on a representative.
+* `HeckeRing.GL2.toLevelOneCoset_mk`, `HeckeRing.GL2.coprimeDetCoset_mk`,
+  `HeckeRing.GL2.coprimeDetCoset_self_mk`: the computation rules on a representative.
 * `HeckeRing.GL2.toLevelOneCoset_injOn`: **Shimura, Proposition 3.31** — `toLevelOneCoset` is
   injective on the set of coprime-determinant double cosets.
 
@@ -97,41 +98,69 @@ private lemma intMatrix_det_eq_of_mem_doubleCoset {a b : GL (Fin 2) ℚ}
     rw [Int.cast_det B, Int.cast_det A, ← hB, ← hA]; exact hdet
   exact_mod_cast hcast
 
-/-- Coprimality of the determinant to the level depends only on the double coset. -/
-private lemma coprimeDet_congr {a b : Delta0 N}
+/-- Coprimality of the determinant to a modulus `M` depends only on the double coset. -/
+private lemma gcd_det_eq_one_congr (M : ℕ) {a b : Delta0 N}
     (h : HeckeCoset.mk ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)) a =
       HeckeCoset.mk ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)) b) :
-    CoprimeDet N a ↔ CoprimeDet N b := by
+    (∀ A : Matrix (Fin 2) (Fin 2) ℤ,
+        (↑(a : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ) = A.map (Int.cast : ℤ → ℚ) →
+          Int.gcd A.det M = 1) ↔
+      ∀ A : Matrix (Fin 2) (Fin 2) ℤ,
+        (↑(b : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ) = A.map (Int.cast : ℤ → ℚ) →
+          Int.gcd A.det M = 1 := by
   obtain ⟨Aa, hAa, -, -, -⟩ := (mem_Delta0_iff N).mp a.2
   obtain ⟨Ab, hAb, -, -, -⟩ := (mem_Delta0_iff N).mp b.2
   have hba : Ab.det = Aa.det := intMatrix_det_eq_of_mem_doubleCoset N
     (HeckeCoset.eq_iff.mp h ▸ DoubleCoset.mem_doubleCoset_self _ _ _) hAa hAb
-  rw [coprimeDet_iff N hAa, coprimeDet_iff N hAb, hba]
+  -- the integral witness is unique, so each side is a statement about its single witness
+  have key : ∀ {g : GL (Fin 2) ℚ} {W : Matrix (Fin 2) (Fin 2) ℤ},
+      (g : Matrix (Fin 2) (Fin 2) ℚ) = W.map (Int.cast : ℤ → ℚ) →
+        ((∀ A : Matrix (Fin 2) (Fin 2) ℤ,
+          (g : Matrix (Fin 2) (Fin 2) ℚ) = A.map (Int.cast : ℤ → ℚ) → Int.gcd A.det M = 1) ↔
+            Int.gcd W.det M = 1) := fun hW ↦
+    ⟨fun h ↦ h _ hW, fun h A hA ↦
+      (Matrix.map_injective Int.cast_injective (hA.symm.trans hW)) ▸ h⟩
+  rw [key hAa, key hAb, hba]
 
-/-- Coprimality of the determinant to the level, as a predicate on `Γ₀(N)`-double cosets. -/
-def CoprimeDetCoset : HeckeCoset (Delta0 N) ((Gamma0 N).map (mapGL ℚ))
+/-- Coprimality of the determinant to a modulus `M`, as a predicate on `Γ₀(N)`-double cosets.
+At `M = N` it is `CoprimeDet` on a representative. -/
+def CoprimeDetCoset (M : ℕ) : HeckeCoset (Delta0 N) ((Gamma0 N).map (mapGL ℚ))
       ((Gamma0 N).map (mapGL ℚ)) → Prop :=
-  Quotient.lift (CoprimeDet N)
-    (fun _ _ hab ↦ propext (coprimeDet_congr N (Quotient.sound hab)))
+  Quotient.lift (fun g : Delta0 N ↦ ∀ A : Matrix (Fin 2) (Fin 2) ℤ,
+      (↑(g : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ) = A.map (Int.cast : ℤ → ℚ) →
+        Int.gcd A.det M = 1)
+    (fun _ _ hab ↦ propext (gcd_det_eq_one_congr N M (Quotient.sound hab)))
 
-/-- `CoprimeDetCoset` is `CoprimeDet` on any representative. -/
-@[simp] lemma coprimeDetCoset_mk (g : Delta0 N) :
-    CoprimeDetCoset N
+/-- `CoprimeDetCoset` reads the determinant of any integral witness of a representative. -/
+@[simp] lemma coprimeDetCoset_mk (M : ℕ) (g : Delta0 N) :
+    CoprimeDetCoset N M
         (HeckeCoset.mk ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)) g) ↔
-      CoprimeDet N g :=
+      ∀ A : Matrix (Fin 2) (Fin 2) ℤ,
+        (↑(g : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ) = A.map (Int.cast : ℤ → ℚ) →
+          Int.gcd A.det M = 1 :=
   Iff.rfl
+
+/-- At the level itself, `CoprimeDetCoset` is `CoprimeDet` on any representative. -/
+lemma coprimeDetCoset_self_mk (g : Delta0 N) :
+    CoprimeDetCoset N N
+        (HeckeCoset.mk ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)) g) ↔
+      CoprimeDet N g := by
+  obtain ⟨A, hA, -, -, -⟩ := (mem_Delta0_iff N).mp g.2
+  rw [coprimeDetCoset_mk, coprimeDet_iff N hA]
+  exact ⟨fun h ↦ h A hA, fun h A' hA' ↦
+    (Matrix.map_injective Int.cast_injective (hA'.symm.trans hA)) ▸ h⟩
 
 /-- **Shimura, Proposition 3.31.** `toLevelOneCoset` is injective on the double cosets whose
 determinant is coprime to `N`: the level-one double coset determines the `Γ₀(N)` one, because
 intersecting it with `Δ₀(N)` returns the latter. -/
 theorem toLevelOneCoset_injOn :
-    Set.InjOn (toLevelOneCoset N) {D | CoprimeDetCoset N D} := by
+    Set.InjOn (toLevelOneCoset N) {D | CoprimeDetCoset N N D} := by
   rintro D₁ hD₁ D₂ hD₂ h
   -- work with representatives, so that `toLevelOneCoset_mk` applies
   have hD₁' : CoprimeDet N D₁.rep :=
-    (coprimeDetCoset_mk N D₁.rep).mp (by rwa [HeckeCoset.mk_rep])
+    (coprimeDetCoset_self_mk N D₁.rep).mp (by rwa [HeckeCoset.mk_rep])
   have hD₂' : CoprimeDet N D₂.rep :=
-    (coprimeDetCoset_mk N D₂.rep).mp (by rwa [HeckeCoset.mk_rep])
+    (coprimeDetCoset_self_mk N D₂.rep).mp (by rwa [HeckeCoset.mk_rep])
   rw [← HeckeCoset.mk_rep D₁, ← HeckeCoset.mk_rep D₂] at h ⊢
   rw [toLevelOneCoset_mk, toLevelOneCoset_mk, HeckeCoset.eq_iff, Submonoid.coe_inclusion,
     Submonoid.coe_inclusion] at h
