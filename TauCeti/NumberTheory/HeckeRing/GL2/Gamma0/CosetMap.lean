@@ -142,9 +142,8 @@ def CoprimeDetCoset (M : ℕ) : HeckeCoset (Delta0 N) ((Gamma0 N).map (mapGL ℚ
 
 /-- At the level itself, `CoprimeDetCoset` is `CoprimeDet` on any representative.
 
-Not a `simp` lemma: `coprimeDetCoset_mk` already rewrites the left-hand side, so this
-specialisation is stated off the simp normal form. -/
-lemma coprimeDetCoset_self_mk (g : Delta0 N) :
+This has high simp priority so it fires before the general `coprimeDetCoset_mk`. -/
+@[simp high] lemma coprimeDetCoset_self_mk (g : Delta0 N) :
     CoprimeDetCoset N N
         (HeckeCoset.mk ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)) g) ↔
       CoprimeDet N g := by
