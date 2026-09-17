@@ -14,6 +14,8 @@ import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 
 This file complements Mathlib's pointwise tensoriality API with a criterion for operations whose
 locality, additivity, and smooth-function linearity laws are available for globally smooth sections.
+The criterion applies to finite-rank smooth real vector bundles over finite-dimensional Hausdorff
+manifolds.
 
 ## Main results
 
@@ -35,7 +37,8 @@ variable
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- A local operation which is additive and linear over globally smooth functions on globally
+/-- On a finite-rank smooth real vector bundle over a finite-dimensional Hausdorff manifold,
+a local operation which is additive and linear over globally smooth functions on globally
 smooth sections depends only on the value of such a section at the point of evaluation. -/
 theorem eq_of_contMDiff_tensorial
     [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]

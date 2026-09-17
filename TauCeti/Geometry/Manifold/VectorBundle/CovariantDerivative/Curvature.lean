@@ -37,8 +37,9 @@ of a connection on the tangent bundle.
   `CovariantDerivative.curvatureOperator_smul_second`, and
   `CovariantDerivative.curvatureOperator_smul_section`: curvature is linear over smooth
   functions in each argument.
-* `CovariantDerivative.curvatureOperator_congr`: on finite-rank smooth bundles, curvature at a
-  point depends only on the values of its three inputs there.
+* `CovariantDerivative.curvatureOperator_congr`: on finite-rank smooth bundles over
+  finite-dimensional Hausdorff manifolds, curvature at a point depends only on the values of
+  its three inputs there.
 * `CovariantDerivative.curvatureOperator_congr_of_eventuallyEq`: curvature agrees at a point
   when its smooth inputs agree in a neighborhood of that point.
 
