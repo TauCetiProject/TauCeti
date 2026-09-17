@@ -48,9 +48,8 @@ information coordinates `ρ`.
   matrix rank.
 * `Matrix.checkedBy_eq_orthogonal_generatedBy`: checking by `H` is orthogonality to the rows
   of `H`.
-* `TauCeti.LinearCode.exists_isGeneratorMatrix` and
-  `TauCeti.LinearCode.exists_isParityCheckMatrix`: presentations with linearly independent rows
-  exist.
+* `TauCeti.LinearCode.exists_isGeneratorMatrix`: generator presentations with linearly independent
+  rows exist.
 * `Matrix.generatedBy_one_fromCols_eq_checkedBy_fromCols_neg_transpose_one`: `[I | A]` generates
   the code checked by `[-Aᵀ | I]`.
 * `Matrix.exists_linearIndependent_generatedBy_submatrix`: deleting dependent rows.
@@ -135,31 +134,6 @@ theorem _root_.Matrix.generatedBy_le_iff [Fintype ρ] {G : Matrix ρ ι F} {C : 
     G.generatedBy ≤ C ↔ ∀ r, G.row r ∈ C := by
   rw [generatedBy_eq_span_rows, Submodule.span_le]
   exact Set.range_subset_iff
-
-/-- The rows of `P * G` are combinations of the rows of `G`. -/
-theorem _root_.Matrix.generatedBy_mul_le [Fintype ρ] [Fintype ρ'] (P : Matrix ρ' ρ F)
-    (G : Matrix ρ ι F) : (P * G).generatedBy ≤ G.generatedBy := by
-  intro x hx
-  obtain ⟨a, rfl⟩ := mem_generatedBy_iff.mp hx
-  exact mem_generatedBy_iff.mpr ⟨a ᵥ* P, vecMul_vecMul a P G⟩
-
-/-- Invertible row operations do not change the generated code. -/
-theorem _root_.Matrix.generatedBy_mul_of_isUnit [Fintype ρ] [DecidableEq ρ] {P : Matrix ρ ρ F}
-    (hP : IsUnit P) (G : Matrix ρ ι F) : (P * G).generatedBy = G.generatedBy := by
-  refine (generatedBy_mul_le P G).antisymm ?_
-  obtain ⟨u, rfl⟩ := hP
-  calc G.generatedBy = ((↑u⁻¹ : Matrix ρ ρ F) * ((u : Matrix ρ ρ F) * G)).generatedBy := by
-        rw [← Matrix.mul_assoc, Units.inv_mul, Matrix.one_mul]
-    _ ≤ ((u : Matrix ρ ρ F) * G).generatedBy := generatedBy_mul_le _ _
-
-/-- Reindexing the rows along a surjection does not change the generated code. -/
-theorem _root_.Matrix.generatedBy_submatrix_of_surjective [Fintype ρ] [Fintype ρ']
-    (G : Matrix ρ ι F) {f : ρ' → ρ} (hf : Function.Surjective f) :
-    (G.submatrix f id).generatedBy = G.generatedBy := by
-  simp only [generatedBy_eq_span_rows]
-  congr 1
-  -- The rows of `G.submatrix f id` are `G.row ∘ f` by definition.
-  exact hf.range_comp G.row
 
 /-- Reindexing the coordinates along `e` transports the generated code along
 `LinearEquiv.funCongrLeft`. -/
@@ -405,26 +379,6 @@ theorem card_eq_card_sub_finrank_of_isParityCheckMatrix_of_linearIndependent
   have hrank := Matrix.rank_le_card_width H
   rw [hli.rank_matrix] at hrank
   omega
-
-/-- Every finite-length linear code has a parity-check matrix with `length - dim C` rows, and
-those rows are linearly independent. -/
-theorem exists_isParityCheckMatrix [Fintype ι] (C : LinearCode F ι) :
-    ∃ H : Matrix (Fin (Fintype.card ι - Module.finrank F C)) ι F,
-      C.IsParityCheckMatrix H ∧ LinearIndependent F H.row := by
-  classical
-  have hdim : Module.finrank F ((ι → F) ⧸ C) =
-      Module.finrank F (Fin (Fintype.card ι - Module.finrank F C) → F) := by
-    rw [C.finrank_quotient, Module.finrank_fintype_fun_eq_card,
-      Module.finrank_fintype_fun_eq_card, Fintype.card_fin]
-  let e := LinearEquiv.ofFinrankEq _ _ hdim
-  let f : (ι → F) →ₗ[F] Fin (Fintype.card ι - Module.finrank F C) → F := e.toLinearMap ∘ₗ C.mkQ
-  have hf : Function.Surjective f := e.surjective.comp C.mkQ_surjective
-  have hH : (LinearMap.toMatrix' f).mulVecLin = f := Matrix.toLin'_toMatrix' f
-  refine ⟨LinearMap.toMatrix' f, ?_, ?_⟩
-  · rw [isParityCheckMatrix_def, checkedBy_def, hH, LinearEquiv.ker_comp, Submodule.ker_mkQ]
-  · rw [linearIndependent_iff_card_eq_finrank_span, Set.finrank, ← rank_eq_finrank_span_row,
-      Matrix.rank, hH, LinearMap.range_eq_top.2 hf, finrank_top,
-      Module.finrank_fintype_fun_eq_card]
 
 /-- A generator matrix and a parity-check matrix for the same code satisfy `H * Gᵀ = 0`. -/
 theorem IsGeneratorMatrix.mul_transpose_eq_zero [Fintype ρ] [Fintype ι]
