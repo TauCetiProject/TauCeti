@@ -91,7 +91,7 @@ theorem ringKrullDim_le_finrank_lie :
       Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
   let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
   rw [Derivation.finrank_eq_finrank_cotangentSpace, ← ringKrullDim_augmentationStalk (k := k)]
-  exact AlgHom.ringKrullDim_kernelStalk_le_finrank_kernelCotangent
+  exact ringKrullDim_kernelStalk_le_finrank_kernelCotangent
     (_root_.Bialgebra.counitAlgHom k H)
 
 /-- Lie dimension equals group dimension exactly when the local ring at the identity is
@@ -102,7 +102,7 @@ theorem isRegularLocalRing_augmentationStalk_iff :
       (Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) : WithBot ℕ∞) =
         ringKrullDim H := by
   let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
-  rw [AlgHom.isRegularLocalRing_kernelStalk_iff,
+  rw [isRegularLocalRing_kernelStalk_iff,
     Derivation.finrank_eq_finrank_cotangentSpace, ringKrullDim_augmentationStalk]
 
 end TauCeti.HopfAlgebra
