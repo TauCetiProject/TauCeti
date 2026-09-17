@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.Splitting
-public import Mathlib.RepresentationTheory.Intertwining
+public import TauCeti.Algebra.HopfAlgebra.Basic
 
 /-!
 # Morphisms of descended group algebras
@@ -35,34 +35,6 @@ namespace TauCeti.GaloisDescent
 variable {k L M N P : Type*}
 variable [AddCommGroup M] [AddCommGroup N] [AddCommGroup P]
 
-section Action
-
-variable [CommSemiring k] [CommSemiring L] [Algebra k L]
-variable {rho : Representation ℤ (L ≃ₐ[k] L) M}
-variable {tau : Representation ℤ (L ≃ₐ[k] L) N}
-
-/-- The map of split group algebras induced by an equivariant exponent map commutes with
-the simultaneous Galois action on coefficients and exponents. -/
-@[simp]
-theorem groupAlgebraAction_mapDomain (f : Representation.IntertwiningMap rho tau)
-    (sigma : L ≃ₐ[k] L) (x : MonoidAlgebra L (Multiplicative M)) :
-    groupAlgebraAction tau sigma
-        (MonoidAlgebra.mapDomainBialgHom L f.toLinearMap.toAddMonoidHom.toMultiplicative x) =
-      MonoidAlgebra.mapDomainBialgHom L f.toLinearMap.toAddMonoidHom.toMultiplicative
-        (groupAlgebraAction rho sigma x) := by
-  induction x using MonoidAlgebra.induction_on with
-  | of m =>
-      simp only [MonoidAlgebra.of_apply, MonoidAlgebra.mapDomainBialgHom_single,
-        groupAlgebraAction_single]
-      congr 1
-      exact congrArg Multiplicative.ofAdd
-        (Representation.IntertwiningMap.isIntertwining rho tau f sigma m.toAdd).symm
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | smul a x hx =>
-      simp only [map_smul, groupAlgebraAction_smul, hx]
-
-end Action
-
 variable [Field k] [Field L] [Algebra k L]
 variable {rho : Representation ℤ (L ≃ₐ[k] L) M}
 variable {tau : Representation ℤ (L ≃ₐ[k] L) N}
@@ -78,7 +50,7 @@ noncomputable def groupAlgebraInvariantsAlgHom (f : Representation.IntertwiningM
         intro sigma
         simpa only [AlgHom.comp_apply, AlgHom.restrictScalars_apply, Subalgebra.val_apply,
           BialgHom.coe_toAlgHom] using
-          (groupAlgebraAction_mapDomain f sigma x).trans
+          (groupAlgebraAction_mapDomainBialgHom f sigma x).trans
             (congrArg (MonoidAlgebra.mapDomainBialgHom L
               f.toLinearMap.toAddMonoidHom.toMultiplicative)
                 ((mem_groupAlgebraInvariants_iff rho x).mp x.property sigma))
@@ -165,42 +137,43 @@ private theorem invariantsMap_comul (f : Representation.IntertwiningMap rho tau)
     groupAlgebraInvariantsComul_apply, coe_groupAlgebraInvariantsAlgHom]
   exact AlgHom.congr_fun (BialgHom.map_comp_comulAlgHom _) _
 
-/-- An equivariant map of exponent groups descends to a Hopf-algebra morphism.
-Antipode compatibility follows from the bialgebra-homomorphism laws. -/
-noncomputable def groupAlgebraInvariantsMap (f : Representation.IntertwiningMap rho tau) :
+/-- An equivariant map of exponent groups descends to a bialgebra morphism.
+Antipode compatibility is given by `BialgHom.map_antipode` and the simp lemma
+`BialgHomClass.map_antipode`. -/
+noncomputable def groupAlgebraInvariantsBialgHom (f : Representation.IntertwiningMap rho tau) :
     groupAlgebraInvariants rho →ₐc[k] groupAlgebraInvariants tau :=
   BialgHom.ofAlgHom (groupAlgebraInvariantsAlgHom f)
     (invariantsMap_counit f) (invariantsMap_comul f)
 
-/-- The algebra homomorphism underlying the descended Hopf map. -/
+/-- The algebra homomorphism underlying the descended bialgebra morphism. -/
 @[simp]
-theorem groupAlgebraInvariantsMap_toAlgHom (f : Representation.IntertwiningMap rho tau) :
-    (groupAlgebraInvariantsMap f).toAlgHom = groupAlgebraInvariantsAlgHom f := (rfl)
+theorem groupAlgebraInvariantsBialgHom_toAlgHom (f : Representation.IntertwiningMap rho tau) :
+    (groupAlgebraInvariantsBialgHom f).toAlgHom = groupAlgebraInvariantsAlgHom f := (rfl)
 
-/-- The descended Hopf map agrees with the split map on invariant elements. -/
+/-- The descended bialgebra morphism agrees with the split map on invariant elements. -/
 @[simp]
-theorem coe_groupAlgebraInvariantsMap (f : Representation.IntertwiningMap rho tau)
+theorem coe_groupAlgebraInvariantsBialgHom (f : Representation.IntertwiningMap rho tau)
     (x : groupAlgebraInvariants rho) :
-    (groupAlgebraInvariantsMap f x : MonoidAlgebra L (Multiplicative N)) =
+    (groupAlgebraInvariantsBialgHom f x : MonoidAlgebra L (Multiplicative N)) =
       MonoidAlgebra.mapDomainBialgHom L f.toLinearMap.toAddMonoidHom.toMultiplicative
         (x : MonoidAlgebra L (Multiplicative M)) := by
-  rw [← BialgHom.coe_toAlgHom, groupAlgebraInvariantsMap_toAlgHom,
+  rw [← BialgHom.coe_toAlgHom, groupAlgebraInvariantsBialgHom_toAlgHom,
     coe_groupAlgebraInvariantsAlgHom]
 
-/-- Descent sends the identity exponent map to the identity Hopf map. -/
+/-- Descent sends the identity exponent map to the identity bialgebra morphism. -/
 @[simp]
-theorem groupAlgebraInvariantsMap_id :
-    groupAlgebraInvariantsMap (Representation.IntertwiningMap.id rho) =
+theorem groupAlgebraInvariantsBialgHom_id :
+    groupAlgebraInvariantsBialgHom (Representation.IntertwiningMap.id rho) =
       BialgHom.id k (groupAlgebraInvariants rho) := by
   apply BialgHom.coe_toAlgHom_injective
   simp
 
-/-- Descent of Hopf maps respects composition of equivariant exponent maps. -/
+/-- Descent of bialgebra morphisms respects composition of equivariant exponent maps. -/
 @[simp]
-theorem groupAlgebraInvariantsMap_comp (f : Representation.IntertwiningMap rho tau)
+theorem groupAlgebraInvariantsBialgHom_comp (f : Representation.IntertwiningMap rho tau)
     (g : Representation.IntertwiningMap tau upsilon) :
-    groupAlgebraInvariantsMap (g.comp f) =
-      (groupAlgebraInvariantsMap g).comp (groupAlgebraInvariantsMap f) := by
+    groupAlgebraInvariantsBialgHom (g.comp f) =
+      (groupAlgebraInvariantsBialgHom g).comp (groupAlgebraInvariantsBialgHom f) := by
   apply BialgHom.coe_toAlgHom_injective
   simp
 
@@ -210,7 +183,7 @@ the ordinary split group-algebra morphism. -/
 theorem groupAlgebraInvariantsBaseChangeBialgEquiv_naturality
     (f : Representation.IntertwiningMap rho tau) :
     (groupAlgebraInvariantsBaseChangeBialgEquiv tau : _ →ₐc[L] _).comp
-        (Bialgebra.TensorProduct.map (BialgHom.id L L) (groupAlgebraInvariantsMap f)) =
+        (Bialgebra.TensorProduct.map (BialgHom.id L L) (groupAlgebraInvariantsBialgHom f)) =
       (MonoidAlgebra.mapDomainBialgHom L
         f.toLinearMap.toAddMonoidHom.toMultiplicative).comp
           ↑(groupAlgebraInvariantsBaseChangeBialgEquiv rho) := by
