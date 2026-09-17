@@ -77,7 +77,7 @@ namespace TauCeti
 
 open Matrix
 
-local instance fact_prime_seven : Fact (Nat.Prime 7) := ⟨by decide⟩
+local instance fact_prime_seven_cyclicThree : Fact (Nat.Prime 7) := ⟨by decide⟩
 
 private theorem exponent_cyclicGroup_three :
     Monoid.exponent (Multiplicative (ZMod 3)) = 3 := by

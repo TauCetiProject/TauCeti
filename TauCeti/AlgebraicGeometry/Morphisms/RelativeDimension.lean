@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Fiber
-public import Mathlib.AlgebraicGeometry.Morphisms.Preimmersion
+public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 
 /-!
@@ -132,12 +132,12 @@ instance RelativeDimensionLE.comp_isPreimmersion (f : X ⟶ Y) [RelativeDimensio
     (g : Y ⟶ Z) [IsPreimmersion g] : RelativeDimensionLE d (f ≫ g) :=
   (relativeDimensionLE_comp_iff_of_injective f g g.isEmbedding.injective).mpr ‹_›
 
-/-- A preimmersion, such as an open or closed immersion, has relative dimension zero. -/
-instance (priority := low) RelativeDimensionLE.of_isPreimmersion (f : X ⟶ Y)
-    [IsPreimmersion f] : RelativeDimensionLE 0 f := by
+/-- A locally quasi-finite morphism, such as a finite morphism or an immersion, has relative
+dimension zero: its fibres are discrete. -/
+instance (priority := low) RelativeDimensionLE.of_locallyQuasiFinite (f : X ⟶ Y)
+    [LocallyQuasiFinite f] : RelativeDimensionLE 0 f := by
   refine (relativeDimensionLE_iff_topologicalKrullDim_preimage_le f).mpr fun y ↦ ?_
-  have : Subsingleton (f ⁻¹' {y}) :=
-    ⟨fun a b ↦ Subtype.ext (f.isEmbedding.injective (a.2.trans b.2.symm))⟩
+  have := isDiscrete_iff_discreteTopology.mp (f.isDiscrete_preimage_singleton y)
   exact_mod_cast topologicalKrullDim_zero_of_discreteTopology _
 
 /-- Having relative dimension at most `d` is invariant under isomorphisms of arrows. -/
