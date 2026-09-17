@@ -218,8 +218,8 @@ variable {K L A : Type*} [CommSemiring K] [Semiring L] [Algebra K L]
 /-- Scalar multiplication on a pure tensor acts through the first factor. -/
 @[simp]
 theorem smul_tmul (σ : L ≃ₐ[K] L) (a : L) (x : A) :
-    σ • (a ⊗ₜ[K] x) = σ a ⊗ₜ[K] x :=
-  rfl
+    σ • (a ⊗ₜ[K] x) = σ a ⊗ₜ[K] x := by
+  rw [TensorProduct.smul_tmul', AlgEquiv.smul_def]
 
 /-- The scalar-factor action is semilinear for the corresponding automorphism of `L`. -/
 theorem smul_smulₛₗ (σ : L ≃ₐ[K] L) (a : L) (x : L ⊗[K] A) :
