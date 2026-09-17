@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Zero
+public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
@@ -20,7 +21,7 @@ coefficient object; the splitting commutes with maps preserving that point.
 
 Coefficients lie in a preadditive category with coproducts, homology and kernels. The splitting
 isomorphism additionally uses binary biproducts. No connectedness assumption is needed for the
-splitting; for a path-connected space the reduced group in degree zero vanishes.
+splitting; for a path-connected space the reduced homology object in degree zero vanishes.
 
 This follows Hatcher, *Algebraic Topology*, Section 2.1, using Mathlib's singular homology and
 augmentation and `ShortComplex.Splitting.isoBinaryBiproduct`.
@@ -41,7 +42,7 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
 
 /-- The augmentation of zeroth singular homology is natural in the space. -/
 @[reassoc (attr := simp)]
-lemma singularHomologyMap_comp_ε {X Y : TopCat.{w}} (f : X ⟶ Y) :
+lemma singularHomologyMap_singularHomology₀ε {X Y : TopCat.{w}} (f : X ⟶ Y) :
     ((singularHomologyFunctor C 0).obj R).map f ≫ Y.singularHomology₀ε R =
       X.singularHomology₀ε R :=
   SSet.homologyMap_homology₀ε R (TopCat.toSSet.map f)
@@ -54,17 +55,20 @@ def singularHomology₀Section {X : TopCat.{w}} (x : X) :
 lemma singularHomology₀Section_def {X : TopCat.{w}} (x : X) :
     singularHomology₀Section R x = SSet.ιHomology₀ R (TopCat.toSSetObj₀Equiv.symm x) := (rfl)
 
+/-- The class of a chosen point is a right inverse to the augmentation. -/
 @[reassoc (attr := simp)]
-lemma singularHomology₀Section_comp_ε {X : TopCat.{w}} (x : X) :
+lemma singularHomology₀Section_singularHomology₀ε {X : TopCat.{w}} (x : X) :
     singularHomology₀Section R x ≫ X.singularHomology₀ε R = 𝟙 R :=
   SSet.ιHomology₀_homology₀ε R _
 
+/-- The section is natural in the chosen point under continuous maps. -/
 @[reassoc (attr := simp)]
 lemma singularHomology₀Section_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (x : X) :
     singularHomology₀Section R x ≫ ((singularHomologyFunctor C 0).obj R).map f =
       singularHomology₀Section R (f x) := by
   exact (SSet.ιHomology₀_homologyMap R (TopCat.toSSet.map f)
-    (TopCat.toSSetObj₀Equiv.symm x)).trans (by rfl)
+    (TopCat.toSSetObj₀Equiv.symm x)).trans
+      (congrArg (SSet.ιHomology₀ R) (TopCat.toSSet_map_app_toSSetObj₀Equiv_symm f x))
 
 variable [HasKernels C]
 
@@ -148,7 +152,7 @@ private def singularHomology₀Splitting {X : TopCat.{w}} (x : X) :
   f_r := by
     apply (cancel_mono (kernel.ι (X.singularHomology₀ε R))).1
     simp [Preadditive.comp_sub]
-  s_g := singularHomology₀Section_comp_ε R x
+  s_g := singularHomology₀Section_singularHomology₀ε R x
   id := by simp
 
 variable [HasBinaryBiproducts C]
@@ -160,17 +164,30 @@ def singularHomology₀SplitIso {X : TopCat.{w}} (x : X) :
       (reducedSingularHomologyFunctor R 0).obj X ⊞ R :=
   (singularHomology₀Splitting R x).isoBinaryBiproduct
 
+/-- The reduced projection subtracts the chosen point class weighted by the augmentation. -/
+@[reassoc (attr := simp)]
+lemma singularHomology₀SplitIso_hom_fst {X : TopCat.{w}} (x : X) :
+    (singularHomology₀SplitIso R x).hom ≫ biprod.fst =
+      kernel.lift (X.singularHomology₀ε R)
+        (𝟙 _ - X.singularHomology₀ε R ≫ singularHomology₀Section R x)
+        (by simp [Preadditive.sub_comp]) ≫
+        eqToHom (reducedSingularHomologyFunctor_zero_obj R X).symm := by
+  exact (biprod.lift_fst _ _).trans (Category.comp_id _).symm
+
+/-- The coefficient projection of the splitting is the augmentation. -/
 @[reassoc (attr := simp)]
 lemma singularHomology₀SplitIso_hom_snd {X : TopCat.{w}} (x : X) :
     (singularHomology₀SplitIso R x).hom ≫ biprod.snd = X.singularHomology₀ε R := by
   exact biprod.lift_snd _ _
 
+/-- The reduced summand of the inverse splitting is the canonical reduced inclusion. -/
 @[reassoc (attr := simp)]
 lemma inl_singularHomology₀SplitIso_inv {X : TopCat.{w}} (x : X) :
     biprod.inl ≫ (singularHomology₀SplitIso R x).inv =
       (reducedSingularHomologyι R 0).app X := by
   exact biprod.inl_desc _ _
 
+/-- The coefficient summand of the inverse splitting is the section at the chosen point. -/
 @[reassoc (attr := simp)]
 lemma inr_singularHomology₀SplitIso_inv {X : TopCat.{w}} (x : X) :
     biprod.inr ≫ (singularHomology₀SplitIso R x).inv = singularHomology₀Section R x := by

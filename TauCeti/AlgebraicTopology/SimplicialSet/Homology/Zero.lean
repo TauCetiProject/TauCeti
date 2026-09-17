@@ -36,6 +36,7 @@ def ιHomology₀ (x : X _⦋0⦌) : R ⟶ X.homology R 0 :=
   (X.chainComplex R).liftCycles (X.ιChainComplex x) 0 (by simp) (by simp) ≫
     (X.chainComplex R).homologyπ 0
 
+/-- A vertex class corresponds to the coproduct inclusion indexed by its connected component. -/
 @[reassoc (attr := simp)]
 lemma ιHomology₀_homology₀Iso_hom (x : X _⦋0⦌) :
     ιHomology₀ R x ≫ (X.homology₀Iso R).hom =
@@ -56,6 +57,7 @@ lemma homology₀_hom_ext {T : C} {f g : X.homology R 0 ⟶ T}
     simp
   simpa only [ιHomology₀, Category.assoc, ← hx] using h x
 
+/-- The homology map of a simplicial map sends a vertex class to the class of its image. -/
 @[reassoc (attr := simp)]
 lemma ιHomology₀_homologyMap (f : X ⟶ Y) (x : X _⦋0⦌) :
     ιHomology₀ R x ≫ _root_.SSet.homologyMap f R 0 =
@@ -64,6 +66,7 @@ lemma ιHomology₀_homologyMap (f : X ⟶ Y) (x : X _⦋0⦌) :
     HomologicalComplex.homologyπ_naturality,
     HomologicalComplex.liftCycles_comp_cyclesMap_assoc, _root_.SSet.ι_chainComplexMap_f]
 
+/-- The augmentation sends each vertex class to the identity of the coefficient object. -/
 @[reassoc (attr := simp)]
 lemma ιHomology₀_homology₀ε (x : X _⦋0⦌) :
     ιHomology₀ R x ≫ X.homology₀ε R = 𝟙 R := by
