@@ -35,6 +35,8 @@ in particular over fields, where every module is flat.
   the kernel of a surjective morphism.
 * `TauCeti.HopfIdeal.kerLiftBialgEquiv`: the resulting bialgebra equivalence from the quotient
   by the kernel to the codomain.
+* `TauCeti.HopfIdeal.isReduced_quotient_kerOfSurjective`: the kernel quotient is reduced when
+  the codomain is.
 * `TauCeti.HopfIdeal.kerOfSurjective_mkBialgHom`: the kernel of the quotient morphism by `I`
   is `I`.
 * `TauCeti.HopfIdeal.ker_lTensor_eq_rightTensorIdeal`: tensoring on the left by a flat algebra
@@ -373,6 +375,13 @@ theorem kerLiftBialgEquiv_toBialgHom (f : H →ₐc[R] K) (hf : Function.Surject
     (kerLiftBialgEquiv f hf : H ⧸ (kerOfSurjective f hf).toIdeal →ₐc[R] K) =
       kerLiftBialgHom f hf :=
   rfl
+
+/-- The quotient by the Hopf-ideal kernel of a surjective morphism is reduced when the codomain
+is. -/
+theorem isReduced_quotient_kerOfSurjective [IsReduced K] (f : H →ₐc[R] K)
+    (hf : Function.Surjective f) : IsReduced (H ⧸ (kerOfSurjective f hf).toIdeal) :=
+  isReduced_of_injective (kerLiftBialgEquiv f hf).toAlgEquiv.toRingEquiv.toRingHom
+    (kerLiftBialgEquiv f hf).injective
 
 /-- The Hopf-ideal kernel of the quotient morphism by `I` is `I`. -/
 @[simp]

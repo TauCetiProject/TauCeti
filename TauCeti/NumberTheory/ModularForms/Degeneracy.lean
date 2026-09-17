@@ -505,7 +505,7 @@ theorem Gamma0_map_le_conjAct_scaleGL (M d : ℕ) [NeZero d] :
   rintro _ ⟨γ, hγ, rfl⟩
   rw [mem_conjAct_inv_scaleGL_iff]
   obtain ⟨t, ht⟩ : ((d * M : ℕ) : ℤ) ∣ γ 1 0 :=
-    (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma0_mem.mp hγ)
+    mem_Gamma0_iff_dvd.mp hγ
   have hc : γ 1 0 = d * ((M : ℤ) * t) := by rw [ht]; push_cast; ring
   exact ⟨conjScale d γ _ hc, Gamma0_mem.mpr (by simp), (mapGL_conjScale γ _ hc).symm⟩
 
@@ -561,7 +561,7 @@ private lemma exists_sub_mul_isCoprime (a c : ℤ) (l : ℕ) [NeZero l] (hac : I
 `N / l ∣ c`, then `γ ∈ Γ₀(N)`. -/
 private lemma mem_Gamma0_of_eq_mul_of_dvd {l N : ℕ} (hlN : l ∣ N) {γ : SL(2, ℤ)} {c : ℤ}
     (hc : γ 1 0 = l * c) (hdvd : ((N / l : ℕ) : ℤ) ∣ c) : γ ∈ Gamma0 N := by
-  refine Gamma0_mem.mpr ((ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mpr ?_)
+  refine mem_Gamma0_iff_dvd.mpr ?_
   rw [hc, ← Nat.mul_div_cancel' hlN, Nat.cast_mul]
   exact mul_dvd_mul_left _ hdvd
 
@@ -593,7 +593,7 @@ theorem exists_eq_T_zpow_mul_conjScale_mul_T_zpow (l N : ℕ) [NeZero l] (hlN : 
   set γ : SL(2, ℤ) := ⟨_, hdetM⟩ with hγ
   have hc : γ 1 0 = l * γ' 1 0 := by simp [hγ]
   refine ⟨i, j, γ' 1 0, γ, hc, mem_Gamma0_of_eq_mul_of_dvd hlN hc
-    ((ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma0_mem.mp hγ')), ?_, by simp [hγ]⟩
+    (mem_Gamma0_iff_dvd.mp hγ'), ?_, by simp [hγ]⟩
   refine Subtype.ext ?_
   rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, ModularGroup.coe_T_zpow,
     ModularGroup.coe_T_zpow, coe_conjScale]
@@ -719,7 +719,7 @@ lemma exists_conjScale_mem_Gamma0 (d M : ℕ) (γ : ↥(Gamma0 (d * M))) :
       (Gamma0Map M).toHomUnits ⟨conjScale d γ c hc, hm⟩ =
         ZMod.unitsMap (Dvd.intro_left d rfl : M ∣ d * M) ((Gamma0Map (d * M)).toHomUnits γ) := by
   obtain ⟨t, ht⟩ : ((d * M : ℕ) : ℤ) ∣ (γ : SL(2, ℤ)) 1 0 :=
-    (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma0_mem.mp γ.2)
+    mem_Gamma0_iff_dvd.mp γ.2
   have hc : (γ : SL(2, ℤ)) 1 0 = d * ((M : ℤ) * t) := by rw [ht]; push_cast; ring
   refine ⟨_, hc, Gamma0_mem.mpr (by simp), ?_⟩
   ext

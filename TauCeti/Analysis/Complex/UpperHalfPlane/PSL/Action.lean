@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
 
 /-!
-# The `PSL(2)` actions on the upper half-plane
+# `PSL(2)` actions on the upper half-plane
 
 The projective special linear groups `PSL(2, ℤ)` and `PSL(2, ℝ)` (quotients of `SL(2, ·)`
 by their centers `{±I}`) act faithfully on the upper half-plane `ℍ`. The `PSL(2, ℝ)`-action

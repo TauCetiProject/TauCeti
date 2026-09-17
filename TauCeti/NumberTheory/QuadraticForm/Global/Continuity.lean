@@ -8,6 +8,10 @@ module
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 public import TauCeti.Topology.Algebra.QuadraticForm.Continuity
 
+import TauCeti.NumberTheory.LocalField.Squares
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
+import TauCeti.Topology.Algebra.Field.Squares
+
 /-!
 # Continuity of localized quadratic forms
 
@@ -18,6 +22,9 @@ for the module topology on their scalar extensions. The statements accept any to
 At a real place, a neighborhood of a vector with nonzero value preserves the square class of
 that value. This is the real-place input for choosing a global vector by weak approximation
 while controlling its quadratic value, as in O'Meara, *Introduction to Quadratic Forms*, §66.
+
+The same conclusion holds at every finite place, including places above two. It uses openness
+of the square subgroup in the unit group of the nonarchimedean completion.
 -/
 
 public section
@@ -77,6 +84,25 @@ theorem _root_.QuadraticForm.exists_isOpen_isSquare_div_atRealPlace
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   obtain ⟨U, hU, hUo, hxU⟩ :=
     mem_nhds_iff.mp ((Q.atRealPlace w).eventually_isSquare_div hx)
+  exact ⟨U, hUo, hxU, fun z hz ↦ hU hz⟩
+
+/-- Around a finite local vector with nonzero value there is an open neighborhood on which
+the quadratic value stays nonzero and in the same square class. -/
+theorem _root_.QuadraticForm.exists_isOpen_isSquare_div_atFinitePlace [NumberField K]
+    (Q : QuadraticForm K V) (v : HeightOneSpectrum (𝓞 K))
+    [TopologicalSpace (v.FiniteScalarExtension (V := V))]
+    [IsModuleTopology (v.adicCompletion K) (v.FiniteScalarExtension (V := V))]
+    {x : v.FiniteScalarExtension (V := V)} (hx : Q.atFinitePlace v x ≠ 0) :
+    ∃ U : Set (v.FiniteScalarExtension (V := V)), IsOpen U ∧ x ∈ U ∧
+      ∀ z ∈ U, Q.atFinitePlace v z ≠ 0 ∧
+        IsSquare (Q.atFinitePlace v z / Q.atFinitePlace v x) := by
+  have h2 : (2 : v.adicCompletion K) ≠ 0 := by
+    have : CharZero (v.adicCompletion K) :=
+      charZero_of_injective_algebraMap (algebraMap K (v.adicCompletion K)).injective
+    exact two_ne_zero
+  obtain ⟨U, hU, hUo, hxU⟩ := mem_nhds_iff.mp
+    ((Q.continuous_atFinitePlace v).continuousAt.eventually_isSquare_div_of_isOpen_squares
+      (isOpen_range_powMonoidHom_two h2) hx)
   exact ⟨U, hUo, hxU, fun z hz ↦ hU hz⟩
 
 end TauCeti

@@ -39,12 +39,46 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: TauCetiProject/TauCetiReview
-          ref: 603b28011f779bd341d0a08e788498b81542bd7d
+          ref: 692ebde95eea2a6d9d9f21954ba912c49f675d9d
           path: .tauceti-review
           sparse-checkout: runner
           persist-credentials: false
 
       - run: python3 scripts/pr_status/test_readiness.py
+
+  # The fixtures use only Lean's sysroot, so run them beside the library build without
+  # downloading Mathlib. Both jobs must pass before the publisher receives any credentials.
+  duplicate-audit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install elan (pinned + checksum) and the toolchain
+        env:
+          ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
+          ELAN_VER: v4.2.3
+        run: |
+          curl -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
+          tar -xzf elan.tar.gz elan-init
+          ./elan-init -y --default-toolchain none
+          rm -f elan.tar.gz elan-init
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.elan/bin:$PATH"
+          elan toolchain install "$(cat lean-toolchain)"
+          lean --version
+          lake --version
+
+      - name: Duplicate-declaration audit regression tests
+        # Fixtures compile in temporary directories without a lean-toolchain file.
+        # Pin both the compiler and findSysroot's library path before leaving the checkout.
+        run: |
+          LEAN="$(elan which lean)"
+          LEAN_SYSROOT="$("$LEAN" --print-prefix)"
+          export LEAN LEAN_SYSROOT
+          python3 scripts/test_duplicate_declarations.py
 
   build:
     runs-on: ubuntu-latest
@@ -89,6 +123,7 @@ jobs:
           python3 scripts/test_queue_release.py
           python3 scripts/test_bwrap_pin.py
           python3 scripts/test_elan_pin.py
+          python3 scripts/test_duplicate_audit_workflow.py
           python3 scripts/test_web_pins.py
           python3 scripts/test_attest_pr_config.py
           python3 scripts/test_profile_workflow.py
@@ -254,6 +289,9 @@ jobs:
         with:
           path: ${{ steps.mathlib_ltar_restore.outputs.cache-dir }}/*.ltar
           key: ${{ steps.mathlib_ltar_restore.outputs.cache-primary-key }}
+
+      - name: Duplicate-declaration audit
+        run: lake env lean --run scripts/DuplicateDeclarations.lean
 
       # Axiom audit (replaces the old textual no-sorry grep). Inspects the built
       # TauCeti environment and rejects any axiom outside {propext, Classical.choice,
@@ -433,8 +471,8 @@ jobs:
   # by merge-group CI. Main publication remains a fallback: merge groups normally publish the
   # exact commit before landing, while this covers human-owned changes and operational retries.
   publish-lake-cache:
-    needs: build
-    if: ${{ needs.build.outputs.staged == 'true' }}
+    needs: [build, duplicate-audit-tests]
+    if: ${{ needs.build.result == 'success' && needs['duplicate-audit-tests'].result == 'success' && needs.build.outputs.staged == 'true' }}
     permissions:
       contents: read
     uses: ./.github/workflows/publish-lake-cache.yml
