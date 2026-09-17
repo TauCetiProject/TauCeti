@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
-public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
+public import TauCeti.NumberTheory.NumberField.Global.Places.ScalarExtension
 
 /-!
 # Weak approximation for vectors at finite and real places
