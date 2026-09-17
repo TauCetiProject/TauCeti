@@ -37,20 +37,21 @@ theorem map_card_orbit_eq_of_orbit_eq {G G' X : Type*} [Group G] [Group G'] [Mul
     [MulAction G' X] [Fintype X] (h : ∀ x : X, orbit G x = orbit G' x) :
     (Finset.univ : Finset (orbitRel.Quotient G X)).val.map (fun ω => Nat.card ω.orbit) =
       (Finset.univ : Finset (orbitRel.Quotient G' X)).val.map (fun ω => Nat.card ω.orbit) := by
-  have key : ∀ x y : X, orbitRel G X x y ↔ orbitRel G' X x y := fun x y => by
-    rw [orbitRel_apply, orbitRel_apply, h]
-  refine Multiset.map_eq_map_of_bij_of_nodup _ _ Finset.univ.nodup Finset.univ.nodup
-    (fun ω _ => Quotient.mk'' ω.out) (fun _ _ => Finset.mem_univ _) ?_ ?_ ?_
-  · intro ω _ ω' _ hω
-    rw [Quotient.eq''] at hω
-    exact Quotient.out_equiv_out.mp ((key _ _).mpr hω)
-  · intro ω' _
-    refine ⟨Quotient.mk'' ω'.out, Finset.mem_univ _, ?_⟩
-    conv_rhs => rw [← Quotient.out_eq' ω']
-    rw [Quotient.eq'']
-    exact (key _ _).mp (Quotient.mk_out' ω'.out)
-  · intro ω _
-    rw [orbitRel.Quotient.orbit_eq_orbit_out ω Quotient.out_eq', orbitRel.Quotient.orbit_mk, h]
+  have key : ∀ x y : X, orbitRel G X x y ↔ orbitRel G' X (Equiv.refl X x) (Equiv.refl X y) :=
+    fun x y => by rw [orbitRel_apply, orbitRel_apply, h, Equiv.refl_apply, Equiv.refl_apply]
+  -- The identity of `X` induces an equivalence of the orbit quotients preserving orbit sizes.
+  let e : orbitRel.Quotient G X ≃ orbitRel.Quotient G' X := Quotient.congr (Equiv.refl X) key
+  have hcard : ∀ ω : orbitRel.Quotient G X, Nat.card ω.orbit = Nat.card (e ω).orbit := by
+    intro ω
+    refine Quotient.inductionOn' ω fun x => ?_
+    rw [orbitRel.Quotient.orbit_mk, Quotient.mk''_eq_mk, Quotient.congr_mk, Equiv.refl_apply,
+      ← Quotient.mk''_eq_mk, orbitRel.Quotient.orbit_mk, h]
+  calc (Finset.univ : Finset (orbitRel.Quotient G X)).val.map (fun ω => Nat.card ω.orbit)
+      = Finset.univ.val.map (fun ω => Nat.card (e ω).orbit) :=
+        Multiset.map_congr rfl fun ω _ => hcard ω
+    _ = (Finset.univ.val.map e).map (fun ω => Nat.card ω.orbit) := by
+        rw [Multiset.map_map, Function.comp_def]
+    _ = _ := by rw [Multiset.map_univ_val_equiv]
 
 open scoped Classical in
 /-- **Equivariant bijections preserve orbit sizes.** If `e : X ≃ Y` is a bijection between finite
@@ -68,19 +69,18 @@ theorem map_card_orbit_eq_of_equiv {G X Y : Type*} [Group G] [MulAction G X] [Mu
       exact ⟨g • x, ⟨g, rfl⟩, he g x⟩
   have key : ∀ x y : X, orbitRel G X x y ↔ orbitRel G Y (e x) (e y) := fun x y => by
     rw [orbitRel_apply, orbitRel_apply, ← himage, e.injective.mem_set_image]
-  refine Multiset.map_eq_map_of_bij_of_nodup _ _ Finset.univ.nodup Finset.univ.nodup
-    (fun ω _ => Quotient.mk'' (e ω.out)) (fun _ _ => Finset.mem_univ _) ?_ ?_ ?_
-  · intro ω _ ω' _ hω
-    rw [Quotient.eq''] at hω
-    exact Quotient.out_equiv_out.mp ((key _ _).mpr hω)
-  · intro ω' _
-    refine ⟨Quotient.mk'' (e.symm ω'.out), Finset.mem_univ _, ?_⟩
-    conv_rhs => rw [← Quotient.out_eq' ω']
-    rw [Quotient.eq'']
-    have := (key _ _).mp (Quotient.mk_out' (e.symm ω'.out))
-    rwa [e.apply_symm_apply] at this
-  · intro ω _
-    rw [orbitRel.Quotient.orbit_eq_orbit_out ω Quotient.out_eq', orbitRel.Quotient.orbit_mk,
-      ← himage, Nat.card_image_of_injective e.injective]
+  -- `e` induces an equivalence of the orbit quotients preserving orbit sizes.
+  let e' : orbitRel.Quotient G X ≃ orbitRel.Quotient G Y := Quotient.congr e key
+  have hcard : ∀ ω : orbitRel.Quotient G X, Nat.card ω.orbit = Nat.card (e' ω).orbit := by
+    intro ω
+    refine Quotient.inductionOn' ω fun x => ?_
+    rw [orbitRel.Quotient.orbit_mk, Quotient.mk''_eq_mk, Quotient.congr_mk, ← Quotient.mk''_eq_mk,
+      orbitRel.Quotient.orbit_mk, ← himage, Nat.card_image_of_injective e.injective]
+  calc (Finset.univ : Finset (orbitRel.Quotient G X)).val.map (fun ω => Nat.card ω.orbit)
+      = Finset.univ.val.map (fun ω => Nat.card (e' ω).orbit) :=
+        Multiset.map_congr rfl fun ω _ => hcard ω
+    _ = (Finset.univ.val.map e').map (fun ω => Nat.card ω.orbit) := by
+        rw [Multiset.map_map, Function.comp_def]
+    _ = _ := by rw [Multiset.map_univ_val_equiv]
 
 end MulAction
