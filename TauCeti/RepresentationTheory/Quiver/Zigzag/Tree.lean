@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Gauge
 
 /-!

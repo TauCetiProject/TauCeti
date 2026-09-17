@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import Mathlib.NumberTheory.NumberField.Ideal.KummerDedekind
 public import Mathlib.RingTheory.Discriminant
 public import TauCeti.NumberTheory.NumberField.Quadratic.Basic
-public import TauCeti.NumberTheory.NumberField.SplitsCompletely
+public import TauCeti.NumberTheory.NumberField.SplitsCompletely.Basic
 
 /-!
 # The prime-splitting law for a quadratic field

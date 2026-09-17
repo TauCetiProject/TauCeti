@@ -48,6 +48,20 @@ namespace Suzuki
 
 variable (n : ℕ)
 
+/-- Applying `x ↦ x ^ 2 ^ (n + 1)` twice on `𝔽_(2^(2n+1))` is the Frobenius `x ↦ x ^ 2`. -/
+@[simp]
+theorem pow_two_pow_succ_pow_two_pow_succ (x : GaloisField 2 (2 * n + 1)) :
+    (x ^ 2 ^ (n + 1)) ^ 2 ^ (n + 1) = x ^ 2 := by
+  let _ : Fintype (GaloisField 2 (2 * n + 1)) := Fintype.ofFinite _
+  have hcard : Fintype.card (GaloisField 2 (2 * n + 1)) = 2 ^ (2 * n + 1) := by
+    rw [← Nat.card_eq_fintype_card, GaloisField.card]
+    omega
+  have hexp : 2 ^ (n + 1) * 2 ^ (n + 1) = 2 ^ (2 * n + 1) * 2 := by
+    rw [← pow_add, ← pow_succ]
+    congr 1
+    omega
+  rw [← pow_mul, hexp, pow_mul, ← hcard, FiniteField.pow_card]
+
 /-- The standard unipotent matrix generator of a Suzuki group, over `𝔽_(2^(2n+1))`, where
 `x ↦ x ^ 2 ^ (n + 1)` is the field endomorphism squaring to the Frobenius. -/
 def unipotentMatrix (n : ℕ) (a b : GaloisField 2 (2 * n + 1)) :
@@ -63,6 +77,26 @@ def weylMatrix (n : ℕ) : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * n + 1)) :=
     ![0, 0, 1, 0],
     ![0, 1, 0, 0],
     ![1, 0, 0, 0]]
+
+/-- An entry of the standard unipotent generator matrix. -/
+@[simp]
+theorem unipotentMatrix_apply (a b : GaloisField 2 (2 * n + 1)) (i j : Fin 4) :
+    unipotentMatrix n a b i j =
+      ![![1, 0, 0, 0],
+        ![a, 1, 0, 0],
+        ![a * a ^ 2 ^ (n + 1) + b, a ^ 2 ^ (n + 1), 1, 0],
+        ![a ^ 2 * a ^ 2 ^ (n + 1) + a * b + b ^ 2 ^ (n + 1), b, a, 1]] i j := by
+  rfl
+
+/-- An entry of the standard Weyl generator matrix. -/
+@[simp]
+theorem weylMatrix_apply (i j : Fin 4) :
+    weylMatrix n i j =
+      ![![0, 0, 0, 1],
+        ![0, 0, 1, 0],
+        ![0, 1, 0, 0],
+        ![1, 0, 0, 0]] i j := by
+  rfl
 
 /-- Every standard unipotent generator matrix has determinant one. -/
 @[simp]
