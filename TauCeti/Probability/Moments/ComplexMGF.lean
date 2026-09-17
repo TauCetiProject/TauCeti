@@ -20,8 +20,11 @@ analytic there.  For an a.e.-measurable `X`, `complexMGF X μ` on the imaginary 
 characteristic function of the law of `X`, so this is the standard route from a moment-generating
 function to a characteristic function.
 
-`TauCeti.eqOn_complexMGF_of_eqOn_mgf` packages that continuation step.  The rest of the file
-carries it out for the closed form
+`TauCeti.eqOn_complexMGF_of_eqOn_mgf` packages that continuation step, and
+`MeasureTheory.charFun_eq_complexMGF_inner` supplies its vector-valued end point: on a type
+carrying a real-valued pairing `⟪·, ·⟫`, the characteristic function at `t` is the value at
+`Complex.I` of the complex moment-generating function of the statistic `x ↦ ⟪x, t⟫`.  The bulk of
+the file carries the continuation out for the closed form
 
 `mgf X μ t = ∏ j, (1 - 2 * t * lam j) ^ (-a j)`,
 
@@ -40,6 +43,9 @@ product: multiplying the factors before taking the logarithm can cross the branc
   the strip on which the pencil `1 - 2 * z.re * lam j` is positive.
 * `TauCeti.complexMGF_I_eq_exp_of_mgf_eq_prod_rpow`: its value at `Complex.I`, which for a
   measurable `X` is the characteristic function of the law of `X` at `1`.
+* `MeasureTheory.charFun_eq_complexMGF_inner`: for a real-valued pairing `⟪·, ·⟫`, the
+  characteristic function at `t` is the value at `Complex.I` of the complex moment-generating
+  function of the statistic `x ↦ ⟪x, t⟫`.
 
 ## References
 
@@ -178,3 +184,19 @@ theorem complexMGF_I_eq_exp_of_mgf_eq_prod_rpow (lam a : ι → ℝ)
   complexMGF_eq_exp_of_mgf_eq_prod_rpow lam a hmgf fun j ↦ by simp
 
 end TauCeti
+
+/-! ### The characteristic function of a real-valued pairing -/
+
+namespace MeasureTheory
+
+open scoped RealInnerProductSpace in
+/-- For a type carrying a real-valued pairing `⟪·, ·⟫`, the characteristic function at `t` is the
+value at `Complex.I` of the complex moment-generating function of the statistic `x ↦ ⟪x, t⟫`.  This
+is the vector-valued companion of `ProbabilityTheory.complexMGF_id_mul_I`, and it is how a closed
+form for the moment-generating function of such a statistic turns into a characteristic function.
+No inner-product axioms are needed: both sides read off the same `Inner ℝ E` instance. -/
+theorem charFun_eq_complexMGF_inner {E : Type*} [Inner ℝ E] [MeasurableSpace E] (μ : Measure E)
+    (t : E) : charFun μ t = complexMGF (fun x ↦ ⟪x, t⟫) μ Complex.I :=
+  integral_congr_ae <| .of_forall fun x ↦ by simp only [mul_comm]
+
+end MeasureTheory

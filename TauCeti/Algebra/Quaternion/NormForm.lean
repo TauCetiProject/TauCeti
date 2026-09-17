@@ -43,6 +43,9 @@ question about `⟨1, -a, -b, ab⟩`.
 ## Main results
 
 * `QuaternionAlgebra.normForm_mul`: the norm form is multiplicative.
+* `QuaternionAlgebra.isUnit_iff_normForm_isUnit`: a quaternion is invertible exactly when its norm
+  is, and `QuaternionAlgebra.anisotropic_normForm_iff`: over a field, a quaternion algebra is a
+  division algebra exactly when its norm form is anisotropic.
 * `QuaternionAlgebra.equivalent_normForm_weightedSumSquares`: the norm form of `ℍ[R,a,b]` is the
   diagonal form `⟨1, -a, -b, ab⟩`, with the explicit isometry
   `QuaternionAlgebra.normFormIsometryEquivWeightedSumSquares`.
@@ -123,6 +126,24 @@ theorem normForm_mul (x y : ℍ[R,c₁,c₂,c₃]) :
         _ = ((normForm c₁ c₂ c₃ x * normForm c₁ c₂ c₃ y : R) : ℍ[R,c₁,c₂,c₃]) := by
           rw [self_mul_star, coe_mul]
   rw [normForm_apply, h, re_coe]
+
+/-- **A quaternion is invertible exactly when its norm is.** The inverse of `x` is
+`N(x)⁻¹ star x`, and conversely the norm form is multiplicative. -/
+theorem isUnit_iff_normForm_isUnit (x : ℍ[R,c₁,c₂,c₃]) :
+    IsUnit x ↔ IsUnit (normForm c₁ c₂ c₃ x) := by
+  refine ⟨fun ⟨u, hu⟩ => ?_, fun ⟨n, hn⟩ => ?_⟩
+  · refine IsUnit.of_mul_eq_one (normForm c₁ c₂ c₃ ↑u⁻¹) ?_
+    rw [← hu, ← normForm_mul, Units.mul_inv, ← coe_one, normForm_coe, one_pow]
+  · refine ⟨⟨x, star x * ((n⁻¹ : Rˣ) : R), ?_, ?_⟩, rfl⟩
+    · rw [← mul_assoc, self_mul_star, ← hn, ← coe_mul, Units.mul_inv, coe_one]
+    · rw [mul_assoc, coe_commutes, ← mul_assoc, star_mul_self, ← hn, ← coe_mul, Units.mul_inv,
+        coe_one]
+
+/-- **Division or not, by the norm form.** A quaternion algebra over a field is a division algebra,
+in the sense that every nonzero element is invertible, exactly when its norm form is anisotropic. -/
+theorem anisotropic_normForm_iff {K : Type*} [Field K] (c₁ c₂ c₃ : K) :
+    (normForm c₁ c₂ c₃).Anisotropic ↔ ∀ x : ℍ[K,c₁,c₂,c₃], x ≠ 0 → IsUnit x := by
+  simp only [Anisotropic, isUnit_iff_normForm_isUnit, isUnit_iff_ne_zero, ne_eq, not_imp_not]
 
 section Diagonal
 

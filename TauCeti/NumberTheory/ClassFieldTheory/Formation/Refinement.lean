@@ -37,8 +37,10 @@ ground level `A^U` (`LayerRefinement.groundLevelEquiv_cohomologyInfl_zero_apply`
 
 Refinements compose (`LayerRefinement.trans`): along a tower `F ⊆ K ⊆ L ⊆ M` of top fields the
 relative degree is multiplicative, the Galois-group quotients compose, and inflation is
-functorial. Any two layers over the same ground, in particular any two refinements of one layer,
-have a common refinement, the compositum of the two top fields, whose top subgroup is the
+functorial. In positive degree the Tate groups are the ordinary cohomology groups, and inflation
+of Tate cohomology, `LayerRefinement.tateInfl`, is `cohomologyInfl` read through that
+identification. Any two layers over the same ground, in particular any two refinements of one
+layer, have a common refinement, the compositum of the two top fields, whose top subgroup is the
 intersection of the two top subgroups (`LayerRefinement.exists_commonRefinement`). This is what
 lets the invariant of a class, defined by inflating it to *some* refinement, be compared across
 refinements.
@@ -53,6 +55,8 @@ refinements.
   modules, equivariant along `galHom`.
 * `TauCeti.ClassFieldTheory.LayerRefinement.groundEquiv`: the identity of the common ground level.
 * `TauCeti.ClassFieldTheory.LayerRefinement.cohomologyInfl`: inflation of layer cohomology.
+* `TauCeti.ClassFieldTheory.LayerRefinement.tateInfl`: inflation of layer Tate cohomology, in
+  positive degrees.
 
 ## Main statements
 
@@ -62,10 +66,13 @@ refinements.
 * `TauCeti.ClassFieldTheory.LayerRefinement.degree_mul_relativeDegree`:
   `[U : V] * [V : V'] = [U : V']`.
 * `TauCeti.ClassFieldTheory.LayerRefinement.relativeDegree_trans`,
-  `TauCeti.ClassFieldTheory.LayerRefinement.galHom_trans` and
-  `TauCeti.ClassFieldTheory.LayerRefinement.cohomologyInfl_trans`: towers of refinements.
+  `TauCeti.ClassFieldTheory.LayerRefinement.galHom_trans`,
+  `TauCeti.ClassFieldTheory.LayerRefinement.cohomologyInfl_trans` and
+  `TauCeti.ClassFieldTheory.LayerRefinement.tateInfl_trans`: towers of refinements.
 * `TauCeti.ClassFieldTheory.LayerRefinement.groundLevelEquiv_cohomologyInfl_zero_apply`: in degree
   zero, inflation is the identity of the ground level.
+* `TauCeti.ClassFieldTheory.LayerRefinement.tateInfl_comp_tateHIsoH_hom`: in positive degree, Tate
+  inflation is ordinary inflation.
 * `TauCeti.ClassFieldTheory.LayerRefinement.exists_commonRefinement`: two layers over the same
   ground have a common refinement.
 
@@ -84,10 +91,10 @@ than a quotient map on one fixed group.
 * J.-P. Serre, *Local Fields*, Chapter VII, §5, and Chapter XI, §1.
 -/
 
--- The signatures of `LayerRefinement`, `relativeDegree`, `cohomologyInfl`, `groundEquiv`, the tower
--- lemmas and `exists_commonRefinement` below follow the Tau Ceti `ClassFieldTheory` blueprint,
--- `README.md` and `Suggested.lean`, which write down the refinement relation between two normal
--- layers formalised here.
+-- The signatures of `LayerRefinement`, `relativeDegree`, `cohomologyInfl`, `tateInfl`,
+-- `groundEquiv`, the tower lemmas and `exists_commonRefinement` below follow the Tau Ceti
+-- `ClassFieldTheory` blueprint, `README.md` and `Suggested.lean`, which write down the refinement
+-- relation between two normal layers formalised here.
 
 public noncomputable section
 
@@ -333,6 +340,43 @@ theorem groundLevelEquiv_cohomologyInfl_zero_apply (T : LayerRefinement old new)
     NormalLayer.groundLevelEquiv_apply_coe]
   have h := groupCohomology.map_H0Iso_hom_f_apply T.galHom (T.repHom F) x
   exact (congrArg Subtype.val h).trans (T.repHom_hom_apply_coe F _)
+
+/-- **Inflation of Tate cohomology along a refinement of layers**, in positive degrees only:
+`Ĥ^r(U/V, A^V) ⟶ Ĥ^r(U/V', A^{V'})` for `r ≠ 0`. In positive degree the Tate groups of a
+layer are its ordinary cohomology groups (`NormalLayer.tateHIsoH`), and Tate inflation is
+`cohomologyInfl` read through that identification at both layers. -/
+def tateInfl (T : LayerRefinement old new) (F : Formation G) (r : ℕ) [NeZero r] :
+    old.TateH F r ⟶ new.TateH F r :=
+  (old.tateHIsoH F r).hom ≫ T.cohomologyInfl F r ≫ (new.tateHIsoH F r).inv
+
+/-- **Tate inflation is ordinary inflation read through the identifications** `tateHIsoH` of
+positive-degree Tate cohomology with ordinary cohomology at the two layers. -/
+theorem tateInfl_def (T : LayerRefinement old new) (F : Formation G) (r : ℕ) [NeZero r] :
+    T.tateInfl F r = (old.tateHIsoH F r).hom ≫ T.cohomologyInfl F r ≫ (new.tateHIsoH F r).inv :=
+  (rfl)
+
+/-- **Tate inflation commutes with the identifications of positive-degree Tate cohomology with
+ordinary cohomology:** inflating a Tate class and reading it as an ordinary class is inflating the
+ordinary class. -/
+@[reassoc]
+theorem tateInfl_comp_tateHIsoH_hom (T : LayerRefinement old new) (F : Formation G) (r : ℕ)
+    [NeZero r] :
+    T.tateInfl F r ≫ (new.tateHIsoH F r).hom = (old.tateHIsoH F r).hom ≫ T.cohomologyInfl F r := by
+  rw [tateInfl_def, Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+
+/-- **Inflating Tate cohomology along the trivial refinement does nothing.** -/
+@[simp]
+theorem tateInfl_self {L : NormalLayer G} (T : LayerRefinement L L) (F : Formation G) (r : ℕ)
+    [NeZero r] : T.tateInfl F r = 𝟙 (L.TateH F r) := by
+  rw [tateInfl_def, cohomologyInfl_self, Category.id_comp, Iso.hom_inv_id]
+
+/-- **Inflation of Tate cohomology is functorial along a tower of refinements**, in every positive
+degree. -/
+theorem tateInfl_trans (T : LayerRefinement a b) (T' : LayerRefinement b c) (F : Formation G)
+    (r : ℕ) [NeZero r] :
+    (T.trans T').tateInfl F r = T.tateInfl F r ≫ T'.tateInfl F r := by
+  rw [tateInfl_def, tateInfl_def, tateInfl_def, cohomologyInfl_trans T T']
+  simp only [Category.assoc, Iso.inv_hom_id_assoc]
 
 /-! ### Common refinements -/
 

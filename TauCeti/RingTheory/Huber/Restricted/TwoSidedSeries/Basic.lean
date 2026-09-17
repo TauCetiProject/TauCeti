@@ -55,6 +55,8 @@ a placement hazard:
   `TauCeti/Topology/Algebra/Nonarchimedean/ZeroAtFilter.lean` because neither direction of it
   looks at the index set or at series.
 * `TauCeti.Huber.twoSidedRestrictedSubmodule_ext`: coefficientwise extensionality.
+* `TauCeti.Huber.single_mem_twoSidedRestrictedSubmodule`: a family supported at one degree is
+  restricted.
 * `TauCeti.Huber.twoSidedRestrictedSubmodule_eq_sup` and
   `TauCeti.Huber.disjoint_twoSidedRestricted_nonneg_neg`: **the degree decomposition and its
   directness** — `A⟨X, X⁻¹⟩` is the sum of its non-negative and negative parts, and that sum is
@@ -75,7 +77,8 @@ a placement hazard:
 Only the additive and `A`-module structure and the degree decomposition are built here. The
 coefficient multiplication, whose infinite antidiagonals require a summability argument in a
 complete ring, is constructed in
-`TauCeti.RingTheory.Huber.Restricted.TwoSidedSeries.Convolution`.
+`TauCeti.RingTheory.Huber.Restricted.TwoSidedSeries.Convolution`, and the ring structure in
+`TauCeti.RingTheory.Huber.Restricted.TwoSidedSeries.Ring`.
 
 ## References
 
@@ -98,9 +101,8 @@ variable (A M : Type*) [Semiring A] [AddCommMonoid M] [TopologicalSpace M] [Modu
 to `0` along the cofinite filter, i.e. those whose coefficients leave every neighbourhood of zero
 finitely often.
 
-At `M = A` this is the coefficient object of Wedhorn's `A⟨X, X⁻¹⟩` (Example 6.39). It is only the
-*coefficients*: no ring structure is defined here, so this is not yet that algebra — see the
-implementation notes.
+At `M = A` this is the coefficient object of Wedhorn's `A⟨X, X⁻¹⟩` (Example 6.39); its ring
+structure is built in `TauCeti.RingTheory.Huber.Restricted.TwoSidedSeries.Ring`.
 
 This is `TauCeti.Huber.restrictedMvPowerSeriesSubmodule`'s condition at the index set `ℤ`, and is
 built from the same Mathlib primitive. -/
@@ -116,12 +118,23 @@ theorem mem_twoSidedRestrictedSubmodule {f : ℤ → M} :
 
 /-- **Coefficientwise extensionality**: two members of the submodule that agree at every index are
 equal. This is subtype-and-function extensionality, nothing more — in particular it does *not* say
-that a coefficient family is recovered from any sum it represents, which would need an evaluation
-map that does not exist until there is a ring structure. -/
+that a coefficient family is recovered from any sum it represents, which would need a topology on
+`A⟨X, X⁻¹⟩` and an evaluation map. -/
 @[ext]
 theorem twoSidedRestrictedSubmodule_ext {f g : twoSidedRestrictedSubmodule A M}
     (h : ∀ n, (f : ℤ → M) n = (g : ℤ → M) n) : f = g :=
   Subtype.ext (funext h)
+
+/-- **A family supported at a single degree is restricted.** At `M = A` these are the monomials
+`a Xⁿ` of `A⟨X, X⁻¹⟩`, and this is the two-sided counterpart of
+`TauCeti.Huber.isRestricted_monomial`. -/
+-- Not `@[simp]`: `mem_twoSidedRestrictedSubmodule` is already `@[simp]` and simplifies the
+-- left-hand side, so `simpNF` rejects this as a simp lemma.
+theorem single_mem_twoSidedRestrictedSubmodule (n : ℤ) (m : M) :
+    Pi.single n m ∈ twoSidedRestrictedSubmodule A M :=
+  -- the support of `Pi.single n m` lies in `{n}`, so it is finite and the family is eventually zero
+  -- along the cofinite filter
+  (tendsto_cofinite_pure_iff.mpr Pi.subsingleton_support_single.finite).mono_right (pure_le_nhds 0)
 
 end Submodule
 

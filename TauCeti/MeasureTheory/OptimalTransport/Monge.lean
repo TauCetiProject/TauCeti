@@ -61,6 +61,8 @@ non-top value implies feasibility.
   a target that is null on singletons, where
   `TauCeti.mongeCost_eq_top_of_measure_singleton_ne_zero` makes the Monge problem infeasible
   while the Kantorovich problem is not;
+* `TauCeti.mongeCost_eq_top_of_measure_atom` — a positive finite-mass measurable atom makes the
+  Monge problem infeasible when the standard Borel target law is null on singletons;
 * `TauCeti.isMongeMinimizer_iff` — minimality among transport maps is the form of
   `TauCeti.IsMongeMinimizer` that avoids the value `TauCeti.mongeCost c μ ν`, which may be `∞`;
 * `TauCeti.IsKantorovichOptimalTransportMap.isMongeMinimizer` and
@@ -351,7 +353,18 @@ theorem mongeCost_dirac_dirac (hc : Measurable c) (x : X) (y : Y) :
   (isKantorovichOptimalTransportMap_dirac_dirac hc x y).mongeCost_eq_transportCost.trans
     (transportCost_dirac_dirac hc x y)
 
-/-! ### Nonzero singletons obstruct the Monge problem -/
+/-! ### Source atoms obstruct the Monge problem -/
+
+/-- **A positive finite-mass source atom makes the Monge problem infeasible over a singleton-null
+standard Borel target.** An a.e.-measurable map sends the entire mass of the atom to one point,
+whereas a law that is null on singletons gives that point no mass. Consequently the Monge value
+is `∞` for every cost. -/
+theorem mongeCost_eq_top_of_measure_atom [StandardBorelSpace Y]
+    [NullSingletonClass ν] {A : Set X} (hAfin : μ A ≠ ⊤) (hAatom : μ.IsAtom A)
+    (c : X × Y → ℝ≥0∞) : mongeCost c μ ν = ⊤ :=
+  mongeCost_eq_top_of_not_exists_hasLaw
+    (fun ⟨T, hT⟩ ↦
+      TauCeti.Probability.not_hasLaw_of_measure_atom hAfin hAatom T hT) c
 
 /-- **A nonzero source singleton makes the Monge problem infeasible over a target that is null on
 singletons.** No map can split the mass sitting at a single point, so such a source has no

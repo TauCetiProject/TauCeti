@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.GroupTheory.GroupAction.Transitive
 import TauCeti.Algebra.Group.Subgroup.Map
-import TauCeti.GroupTheory.GroupAction.Burnside
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # Finite bipartite ribbon graphs
@@ -156,7 +156,7 @@ theorem isConnected_iff_card_connectedComponent_eq_one :
     let _ : Nonempty Γ.E := hΓ.1
     let _ : MulAction.IsPretransitive Γ.rotationGroup Γ.E := hΓ.2
     rw [← Nat.card_eq_fintype_card]
-    exact card_orbitQuotient_eq_one (G := Γ.rotationGroup) (X := Γ.E)
+    exact MulAction.card_orbitRelQuotient_eq_one (G := Γ.rotationGroup) (X := Γ.E)
   · intro hcard
     have hcardPos : 0 < Fintype.card Γ.ConnectedComponent := hcard ▸ Nat.zero_lt_one
     have hE : Nonempty Γ.E :=
