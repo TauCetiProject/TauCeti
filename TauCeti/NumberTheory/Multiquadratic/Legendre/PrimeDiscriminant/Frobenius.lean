@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Frobenius
 import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminants
 
 /-!
-# Frobenius on the square root of a prime discriminant
+# Frobenius on the square root of a prime-discriminant radicand
 
 Let `P` be a prime discriminant and `x` a square root of its radicand in a number field. At every
 rational prime `q` not dividing `P`, an arithmetic Frobenius fixes `x` exactly when the character
@@ -29,7 +29,8 @@ See D. A. Cox, *Primes of the Form x² + ny²*, §5.A and §6.A.
 ## Main results
 
 * `TauCeti.Multiquadratic.isArithFrobAt_apply_sqrt_primeDiscriminantRadicand_eq_self_iff`: a
-  Frobenius at a prime `q ∤ P` fixes `√P` exactly when the character of `P` is `1` at `q`.
+  Frobenius at a prime `q ∤ P` fixes `√(primeDiscriminantRadicand P)` exactly when the character
+  of `P` is `1` at `q`.
 -/
 
 public section
@@ -38,10 +39,11 @@ open NumberField Ideal
 
 namespace TauCeti.Multiquadratic
 
-/-- **Frobenius acts on `√P` by the character of the prime discriminant `P`.** Let `K` be a number
-field, `P` a prime discriminant, and `x ∈ K` a square root of the radicand of `P`. For a rational
-prime `q` not dividing `P` (including `q = 2` when `P` is odd), an arithmetic Frobenius `σ` at an
-ideal of `𝓞 K` above `q` fixes `x` exactly when `primeDiscriminantCharFun P q = 1`. -/
+/-- **Frobenius acts on the square root of the radicand of `P` by the character of the prime
+discriminant `P`.** Let `K` be a number field, `P` a prime discriminant, and `x ∈ K` a square root
+of the radicand of `P`. For a rational prime `q` not dividing `P` (including `q = 2` when `P` is
+odd), an arithmetic Frobenius `σ` at an ideal of `𝓞 K` above `q` fixes `x` exactly when
+`primeDiscriminantCharFun P q = 1`. -/
 theorem isArithFrobAt_apply_sqrt_primeDiscriminantRadicand_eq_self_iff
     {K : Type*} [Field K] [NumberField K] {P : ℤ} (hP : IsPrimeDiscriminant P)
     {q : ℕ} [Fact q.Prime] (hq : ¬ (q : ℤ) ∣ P)
