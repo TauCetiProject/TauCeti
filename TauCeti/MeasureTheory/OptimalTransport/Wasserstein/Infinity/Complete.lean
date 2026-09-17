@@ -24,9 +24,10 @@ simultaneously at every time almost surely, so almost every path is Cauchy. Its 
 provides the limiting probability law and retains the same tail bound.
 
 The Cauchy argument is specific to the infinite exponent; the pathwise-limit extraction
-`TauCeti.exists_measurable_isCoupling_map_chainMeasure` and the completeness criterion
-`TauCeti.WassersteinComponent.completeSpace_of_exists_wassersteinEDist_le_tsum` are shared with the
-finite-exponent development in `TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Complete`.
+`TauCeti.Measure.exists_measurable_isCoupling_map_chainMeasure` and the completeness criterion
+`TauCeti.WassersteinComponent.completeSpace_of_exists_wassersteinEDist_le_geometric` are shared
+with the finite-exponent development in
+`TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Complete`.
 
 ## Main statements
 
@@ -58,7 +59,7 @@ variable {X : Type u}
 section Limit
 
 variable [MeasurableSpace X] [MetricSpace X] [BorelSpace X] [SecondCountableTopology X]
-  [CompleteSpace X] [StandardBorelSpace X]
+  [CompleteSpace X]
 
 /-- **A chain of laws with summable `W_∞` jumps converges.** If consecutive probability laws
 have infinite-exponent Wasserstein distance at most `b n`, where `b` is summable, then some
@@ -78,7 +79,7 @@ theorem exists_isProbabilityMeasure_wassersteinEDist_top_le_tsum
   set P : Measure (ℕ → X) := TauCeti.Measure.chainMeasure (X := fun _ ↦ X) π
   have hev : ∀ n, Measurable fun x : ℕ → X ↦ x n := fun n ↦ measurable_pi_apply n
   have hadj : ∀ n, P.map (fun x ↦ (x n, x (n + 1))) = π n :=
-    map_adjacent_chainMeasure_of_isCoupling hπ
+    TauCeti.Measure.map_adjacent_chainMeasure_of_isCoupling hπ
   have hjumpNorm : ∀ n,
       eLpNorm (fun x : ℕ → X ↦ edist (x n) (x (n + 1))) ∞ P ≤ b n := fun n ↦ by
     calc
@@ -103,7 +104,8 @@ theorem exists_isProbabilityMeasure_wassersteinEDist_top_le_tsum
     filter_upwards [ae_all_iff.2 hjump] with x hx
     exact cauchySeq_of_edist_le_of_tsum_ne_top b
       (fun n ↦ by simpa only [Nat.succ_eq_add_one] using hx n) hb
-  obtain ⟨Z, hZ, hZtendsto, hcoupling⟩ := exists_measurable_isCoupling_map_chainMeasure hπ hcauchy
+  obtain ⟨Z, hZ, hZtendsto, hcoupling⟩ :=
+    TauCeti.Measure.exists_measurable_isCoupling_map_chainMeasure hπ hcauchy
   refine ⟨P.map Z, (Measure.isProbabilityMeasure_map_iff hZ.aemeasurable).2 inferInstance,
     fun n ↦ ?_⟩
   calc
@@ -126,12 +128,13 @@ end Limit
 section Complete
 
 variable [MeasurableSpace X] [MetricSpace X] [BorelSpace X] [SecondCountableTopology X]
-  [CompleteSpace X] [StandardBorelSpace X] {μ₀ : ProbabilityMeasure X}
+  [CompleteSpace X] {μ₀ : ProbabilityMeasure X}
 
 /-- Every anchored finite-`W_∞` component over a Polish metric space is complete. -/
 instance WassersteinComponent.instCompleteSpaceTop : CompleteSpace (WassersteinComponent ∞ μ₀) :=
-  WassersteinComponent.completeSpace_of_exists_wassersteinEDist_le_tsum fun _ _ _ hb hμ ↦
-    exists_isProbabilityMeasure_wassersteinEDist_top_le_tsum hb fun n ↦ (hμ n).le
+  WassersteinComponent.completeSpace_of_exists_wassersteinEDist_le_geometric fun _ _ hμ ↦
+    exists_isProbabilityMeasure_wassersteinEDist_top_le_tsum
+      (by simp [ENNReal.tsum_geometric, ENNReal.one_sub_inv_two]) fun n ↦ (hμ n).le
 
 end Complete
 
