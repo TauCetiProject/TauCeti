@@ -282,9 +282,10 @@ lattice of subrepresentations.
 Finite-dimensionality is what makes a minimal nonzero subrepresentation exist, and only the
 subrepresentation being minimised inside has to be finite-dimensional: the ambient representation
 may be infinite-dimensional, the scalars need only be a division ring, and the acting monoid stays
-arbitrary.  Combined with
-`TauCeti.Representation.isIrreducible_toRepresentation_of_isAtom` it exhibits an irreducible
-subrepresentation inside any nonzero one. -/
+arbitrary.  Over a field it combines with
+`TauCeti.Representation.isIrreducible_toRepresentation_of_isAtom` to exhibit an irreducible
+subrepresentation inside any nonzero one; that companion needs the field, because
+`Representation.IsIrreducible` is defined only there. -/
 theorem exists_isAtom_le {ρ : Representation k G V} {σ : Subrepresentation ρ}
     [FiniteDimensional k σ.toSubmodule] (hσ : σ ≠ ⊥) :
     ∃ τ : Subrepresentation ρ, τ ≤ σ ∧ IsAtom τ := by
