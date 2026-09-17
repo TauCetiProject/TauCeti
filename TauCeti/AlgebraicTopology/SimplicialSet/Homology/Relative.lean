@@ -34,7 +34,7 @@ variable {C : Type*} [Category* C] [HasCoproducts.{w} C] [Preadditive C]
 
 /-- The morphism of chain complex sequences `C(X) ⟶ C(Y) ⟶ C(Y, X)` induced by a morphism of
 pairs of simplicial sets. -/
-@[simps]
+@[no_expose]
 noncomputable def chainComplexShortComplexMap {P P' : SSetPair.{w}} (f : P ⟶ P') (R : C) :
     P.chainComplexShortComplex R ⟶ P'.chainComplexShortComplex R where
   τ₁ := SSet.chainComplexMap f.left R
@@ -42,6 +42,21 @@ noncomputable def chainComplexShortComplexMap {P P' : SSetPair.{w}} (f : P ⟶ P
   τ₃ := chainComplexMap f R
   comm₁₂ := ((chainComplexFunctorLeftToRight C).app R).naturality f
   comm₂₃ := ((chainComplexFunctorπ C).app R).naturality f
+
+@[simp]
+lemma chainComplexShortComplexMap_τ₁ {P P' : SSetPair.{w}} (f : P ⟶ P') (R : C) :
+    (chainComplexShortComplexMap f R).τ₁ = SSet.chainComplexMap f.left R := by
+  rw [chainComplexShortComplexMap.eq_def]
+
+@[simp]
+lemma chainComplexShortComplexMap_τ₂ {P P' : SSetPair.{w}} (f : P ⟶ P') (R : C) :
+    (chainComplexShortComplexMap f R).τ₂ = SSet.chainComplexMap f.right R := by
+  rw [chainComplexShortComplexMap.eq_def]
+
+@[simp]
+lemma chainComplexShortComplexMap_τ₃ {P P' : SSetPair.{w}} (f : P ⟶ P') (R : C) :
+    (chainComplexShortComplexMap f R).τ₃ = chainComplexMap f R := by
+  rw [chainComplexShortComplexMap.eq_def]
 
 variable {A : Type*} [Category* A] [HasCoproducts.{w} A] [Abelian A]
 
@@ -60,11 +75,16 @@ lemma homologyδ_naturality {P P' : SSetPair.{w}} (f : P ⟶ P') (R : A) (n m : 
 /-- The connecting morphism `Hₙ(Y, X) ⟶ Hₘ(X)` of the long exact sequence of a pair of simplicial
 sets `X ⟶ Y`, for `m + 1 = n`, as a natural transformation from relative homology to the homology
 of the subobject. -/
-@[simps]
+@[no_expose]
 noncomputable def homologyδNatTrans (R : A) (n m : ℕ) (h : m + 1 = n := by lia) :
     SSetPair.homologyFunctor.{w} R n ⟶
       (SSetPair.forget ⋙ Arrow.leftFunc) ⋙ SSet.homologyFunctor R m where
   app P := P.homologyδ R n m h
   naturality _ _ f := (homologyδ_naturality f R n m h).symm
+
+@[simp]
+lemma homologyδNatTrans_app (R : A) (n m : ℕ) (h : m + 1 = n) (P : SSetPair.{w}) :
+    (homologyδNatTrans R n m h).app P = P.homologyδ R n m h := by
+  rw [homologyδNatTrans.eq_def]
 
 end SSetPair
