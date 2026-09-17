@@ -48,7 +48,7 @@ splitting type is not realizable modulo `p` — and is deliberately not proved h
 
 ## References
 
-* [J. Neukirch, *Algebraic number theory*][neukirch1999], III §2 Exercise 1.
+* [J. Neukirch, *Algebraic number theory*][Neukirch1992], III §2 Exercise 1.
 -/
 
 public section

@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.ModularForms.SlashActions
-public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
+public import TauCeti.NumberTheory.ModularForms.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Adjugate
 
 /-!
@@ -43,33 +42,8 @@ namespace ModularForm
 
 open UpperHalfPlane Matrix TauCeti
 
-/-- **Slashing by a scalar matrix is multiplication by `u ^ (k - 2)`.** The determinant of
-`u · I` is `u ^ 2`, contributing `u ^ (2 * (k - 1))`, and the denominator is `u`, contributing
-`u ^ (-k)`; the two combine to `u ^ (k - 2)`. No sign condition on `u`: the determinant is a
-square, so the absolute value in the slash is inert. -/
-@[simp]
-theorem slash_scalar (k : ℤ) (u : ℝˣ) (f : ℍ → ℂ) :
-    f ∣[k] (Matrix.GeneralLinearGroup.scalar (Fin 2) u) = ((u : ℝ) : ℂ) ^ (k - 2) • f := by
-  have hu : ((u : ℝ) : ℂ) ≠ 0 := by exact_mod_cast u.ne_zero
-  have hdet : ((Matrix.GeneralLinearGroup.scalar (Fin 2) u) :
-      Matrix (Fin 2) (Fin 2) ℝ).det = (u : ℝ) ^ 2 := by
-    rw [← Matrix.GeneralLinearGroup.val_det_apply, Matrix.GeneralLinearGroup.det_scalar]
-    simp [pow_succ]
-  have hpos : (0 : ℝ) < ((Matrix.GeneralLinearGroup.scalar (Fin 2) u) :
-      Matrix (Fin 2) (Fin 2) ℝ).det := by
-    have hu0 : (u : ℝ) ≠ 0 := u.ne_zero
-    rw [hdet]
-    positivity
-  ext τ
-  rw [slash_apply, glScalar_smul, denom_scalar, UpperHalfPlane.σ_eq_refl_of_det_pos hpos,
-    Matrix.GeneralLinearGroup.val_det_apply, hdet, abs_of_nonneg (sq_nonneg _)]
-  have hcombine : (((u : ℝ) ^ 2 : ℝ) : ℂ) ^ (k - 1) * ((u : ℝ) : ℂ) ^ (-k) =
-      ((u : ℝ) : ℂ) ^ (k - 2) := by
-    push_cast
-    rw [← zpow_natCast (((u : ℝ) : ℂ)) 2, ← zpow_mul, ← zpow_add₀ hu]
-    ring_nf
-  simp only [ContinuousAlgEquiv.refl_apply, Pi.smul_apply, smul_eq_mul, mul_assoc, hcombine]
-  ring
+-- Preserve the simp API here while sharing the declaration from Basic.
+attribute [simp] slash_scalar
 
 /-- **The slash by the main involution.** `f ∣[k] α^ι = (det α) ^ (k - 2) • (f ∣[k] α⁻¹)`: the
 involution and the inverse differ by the scalar `det α`, which slashes by `slash_scalar`.
