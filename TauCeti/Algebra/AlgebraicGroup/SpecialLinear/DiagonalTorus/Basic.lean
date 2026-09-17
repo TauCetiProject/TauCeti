@@ -49,10 +49,8 @@ base ring; contravariantly, the torus is a closed subgroup of `SL_{r+1}`.
 
 * J. S. Milne, *Algebraic Groups* (2017), Chapters 12 and 21.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), §§15.3 and 26.3.
-* The factorization through the general-linear weight torus combines
-  `TauCeti.SpecialLinear.definingHopfIdeal_toIdeal_le_ker_of_map_determinant_eq_one` with
-  `TauCeti.GeneralLinear.weightTorusCoordinateMap_determinantGroupLike`, and the base-change
-  argument follows `TauCeti.Symplectic.diagonalTorusCoordinateMap_baseChange`.
+* The construction follows the diagonal torus of
+  `TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.Basic`.
 -/
 
 public section
