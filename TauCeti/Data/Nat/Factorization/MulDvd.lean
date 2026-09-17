@@ -25,16 +25,16 @@ one prime at a time and all at once, since the primes of `f` are distinct.
 
 ## Main results
 
-* `TauCeti.Nat.mul_dvd_iff_forall_not_pow_dvd`: `f * d ∣ h` as non-divisibility of `d` by a
+* `Nat.mul_dvd_iff_forall_not_pow_dvd`: `f * d ∣ h` as non-divisibility of `d` by a
   prime power at each prime of `f`.
-* `TauCeti.Nat.pow_sub_factorization_add_one_dvd`: the tested prime power divides `h`.
-* `TauCeti.Nat.prod_pow_sub_factorization_add_one_dvd`: so does their product over the primes
+* `Nat.pow_sub_factorization_add_one_dvd`: the tested prime power divides `h`.
+* `Nat.prod_pow_sub_factorization_add_one_dvd`: so does their product over the primes
   of `f`.
 -/
 
 public section
 
-namespace TauCeti.Nat
+namespace Nat
 
 open Finset
 
@@ -111,4 +111,4 @@ theorem prod_pow_sub_factorization_add_one_dvd {f h : ℕ} (hh : h ≠ 0) (hf : 
       (pow_sub_factorization_add_one_dvd hh hf hp)
   · exact Nat.zero_le _
 
-end TauCeti.Nat
+end Nat

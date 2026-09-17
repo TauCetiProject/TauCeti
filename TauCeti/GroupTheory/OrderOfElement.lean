@@ -33,16 +33,16 @@ that order. Then `f` divides the order of `g ^ k` exactly when, for every prime 
 exponent `k` is not divisible by `p ^ (v_p (orderOf g) - v_p f + 1)`.
 
 The exponent is the room `orderOf g` leaves at `p` after `f` has taken `v_p f`, plus one: the
-order of `g ^ k` is `orderOf g / gcd (orderOf g) k`, so `k` may absorb `p` to at most that many
-powers. -/
+order of `g ^ k` is `orderOf g / gcd (orderOf g) k`, so `k` may absorb at most
+`v_p (orderOf g) - v_p f` powers of `p`; the first forbidden exponent is that room plus one. -/
 theorem dvd_orderOf_pow_iff {g : G} (hg : IsOfFinOrder g) {f : ℕ}
     (hf : f ∣ orderOf g) (k : ℕ) :
     f ∣ orderOf (g ^ k) ↔
       ∀ p ∈ f.primeFactors, ¬p ^ ((orderOf g).factorization p - f.factorization p + 1) ∣ k := by
   have h0 : orderOf g ≠ 0 := hg.orderOf_pos.ne'
   rw [hg.orderOf_pow, Nat.dvd_div_iff_mul_dvd (Nat.gcd_dvd_left _ k), mul_comm,
-    TauCeti.Nat.mul_dvd_iff_forall_not_pow_dvd h0 hf (Nat.gcd_dvd_left _ k)]
+    Nat.mul_dvd_iff_forall_not_pow_dvd h0 hf (Nat.gcd_dvd_left _ k)]
   refine forall₂_congr fun p hp => not_congr ?_
-  rw [Nat.dvd_gcd_iff, and_iff_right (TauCeti.Nat.pow_sub_factorization_add_one_dvd h0 hf hp)]
+  rw [Nat.dvd_gcd_iff, and_iff_right (Nat.pow_sub_factorization_add_one_dvd h0 hf hp)]
 
 end IsOfFinOrder

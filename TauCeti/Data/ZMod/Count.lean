@@ -83,6 +83,7 @@ theorem mul_card_filter_natCast_val [NeZero m] [NeZero n] (hmn : m ∣ n)
 
 /-- **All residues but zero have a representative the modulus does not divide.** A representative
 is smaller than the modulus, so the modulus divides it exactly when it vanishes. -/
+@[simp]
 theorem card_filter_not_self_dvd_val [NeZero m] : #{z : ZMod m | ¬m ∣ z.val} = m - 1 := by
   have hzero : ∀ z : ZMod m, m ∣ z.val ↔ z = 0 := fun z =>
     ⟨fun hdvd => (ZMod.val_eq_zero z).mp (Nat.eq_zero_of_dvd_of_lt hdvd z.val_lt),
