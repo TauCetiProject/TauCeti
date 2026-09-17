@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus
 
@@ -15,14 +14,17 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus
 Let `𝔪` be a modulus of a number field `K` with finite part `𝔪₀`, and let `I` be an invertible
 fractional ideal.  Under the mixed embedding `K → ℝ^r₁ × ℂ^r₂`, the ideal `I` becomes the full
 lattice `mixedEmbedding.idealLattice K I`.  The **congruence lattice** `congruenceLattice 𝔪 I` is
-the sublattice coming from `I * 𝔪₀`: the elements of `I` congruent to `0` modulo `𝔪₀`.
+the sublattice coming from `I * 𝔪₀`: the elements of `I` congruent to `0` modulo `I * 𝔪₀`.
 
 Counting the elements of `I` in a region that satisfy a congruence `x ≡ a mod I * 𝔪₀` is
 counting the points of one coset of this sublattice, which is itself a translate of a full
-lattice.  The index computation below says that there are exactly `N 𝔪₀` such cosets, so each
-congruence class carries the fraction `1 / N 𝔪₀` of the lattice points of `I`, and the covolume
-grows by the factor `N 𝔪₀`.  These are the lattice inputs to counting integral ideals in a ray
-class.
+lattice.  The index computation below says that there are exactly `N 𝔪₀` such cosets, and the
+covolume grows by the factor `N 𝔪₀`.  These are the lattice inputs to counting integral ideals in
+a ray class.
+
+Only the finite part `𝔪₀` enters the lattice: the infinite part of `𝔪` plays no role here, and
+the sign conditions at the real places of `𝔪.infinitePart` are imposed by the region, not by the
+sublattice.
 
 ## Main definitions
 
@@ -38,8 +40,11 @@ class.
   is the absolute norm of `𝔪₀`.
 * `TauCeti.GlobalNumberFields.covolume_congruenceLattice`: its covolume is `N 𝔪₀` times the
   covolume of the ideal lattice of `I`.
-* `TauCeti.GlobalNumberFields.congruenceLattice_one`: for the trivial modulus it is the ideal
-  lattice itself.
+* `TauCeti.GlobalNumberFields.congruenceLattice_eq_of_finitePart_eq`: it depends only on the
+  finite part of the modulus.
+* `TauCeti.GlobalNumberFields.congruenceLattice_eq_idealLattice_of_finitePart_eq_top`: for a
+  modulus with trivial finite part it is the ideal lattice itself; `congruenceLattice_one` and
+  `congruenceLattice_narrowModulus` are the cases of the trivial and the narrow modulus.
 
 ## References
 
@@ -58,7 +63,7 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- The **congruence lattice** of a modulus `𝔪` inside the ideal lattice of `I`: the image in the
 mixed space of the fractional ideal `I * 𝔪₀`, whose elements are those of `I` congruent to `0`
-modulo the finite part `𝔪₀`. -/
+modulo `I * 𝔪₀`, where `𝔪₀` is the finite part of `𝔪`. -/
 noncomputable def congruenceLattice (𝔪 : Modulus K) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     Submodule ℤ (mixedSpace K) :=
   idealLattice K
@@ -101,34 +106,45 @@ theorem congruenceLattice_le_idealLattice (𝔪 : Modulus K) (I : (FractionalIde
 /-- **The index of the congruence lattice.**  The congruence lattice of `𝔪` has index `N 𝔪₀` in
 the ideal lattice of `I`, so it has exactly `N 𝔪₀` cosets there, one for each residue class
 modulo `I * 𝔪₀`. -/
+@[simp]
 theorem relIndex_congruenceLattice (𝔪 : Modulus K) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     (congruenceLattice 𝔪 I).toAddSubgroup.relIndex (idealLattice K I).toAddSubgroup =
       Ideal.absNorm 𝔪.finitePart := by
-  have hI : FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) ≠ 0 :=
-    FractionalIdeal.absNorm_eq_zero_iff.not.mpr I.ne_zero
-  have := relIndex_idealLattice (I := I) (J := I * FractionalIdeal.mk0 K
-    ⟨𝔪.finitePart, mem_nonZeroDivisors_of_ne_zero 𝔪.finitePart_ne_zero⟩)
-    (mul_le_of_le_one_right' FractionalIdeal.coeIdeal_le_one)
-  rw [Units.val_mul, map_mul, FractionalIdeal.coe_mk0, FractionalIdeal.coeIdeal_absNorm,
-    mul_div_cancel_left₀ _ hI] at this
-  exact_mod_cast this
+  rw [congruenceLattice_def, relIndex_idealLattice_mul_mk0]
 
 open scoped Classical in
 /-- **The covolume of the congruence lattice** is `N 𝔪₀` times the covolume of the ideal lattice
 of `I`. -/
+@[simp]
 theorem covolume_congruenceLattice (𝔪 : Modulus K) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     ZLattice.covolume (congruenceLattice 𝔪 I) =
       Ideal.absNorm 𝔪.finitePart * ZLattice.covolume (idealLattice K I) := by
-  rw [congruenceLattice_def, covolume_idealLattice, covolume_idealLattice,
-    Units.val_mul, map_mul, FractionalIdeal.coe_mk0, FractionalIdeal.coeIdeal_absNorm]
-  push_cast
-  ring
+  rw [congruenceLattice_def, covolume_idealLattice_mul_mk0]
+
+/-- The congruence lattice depends only on the finite part of the modulus. -/
+theorem congruenceLattice_eq_of_finitePart_eq {𝔪 𝔫 : Modulus K}
+    (h : 𝔪.finitePart = 𝔫.finitePart) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    congruenceLattice 𝔪 I = congruenceLattice 𝔫 I := by
+  ext x
+  simp [mem_congruenceLattice_iff, h]
+
+/-- For a modulus with trivial finite part the congruence lattice is the whole ideal lattice. -/
+theorem congruenceLattice_eq_idealLattice_of_finitePart_eq_top {𝔪 : Modulus K}
+    (h : 𝔪.finitePart = ⊤) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    congruenceLattice 𝔪 I = idealLattice K I := by
+  ext x
+  simp [mem_congruenceLattice_iff, h]
 
 /-- For the trivial modulus the congruence lattice is the whole ideal lattice. -/
 @[simp]
 theorem congruenceLattice_one (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-    congruenceLattice (Modulus.one K) I = idealLattice K I := by
-  ext x
-  simp [mem_congruenceLattice_iff]
+    congruenceLattice (Modulus.one K) I = idealLattice K I :=
+  congruenceLattice_eq_idealLattice_of_finitePart_eq_top (Modulus.one_finitePart) I
+
+/-- For the narrow modulus the congruence lattice is the whole ideal lattice. -/
+@[simp]
+theorem congruenceLattice_narrowModulus (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    congruenceLattice (narrowModulus K) I = idealLattice K I :=
+  congruenceLattice_eq_idealLattice_of_finitePart_eq_top (narrowModulus_finitePart) I
 
 end TauCeti.GlobalNumberFields

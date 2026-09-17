@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
+public import Mathlib.NumberTheory.NumberField.Discriminant.Basic
+public import Mathlib.RingTheory.ClassGroup.Basic
+public import TauCeti.NumberTheory.NumberField.FractionalIdeal
 
 /-!
 # The index of one ideal lattice in another
@@ -17,16 +19,17 @@ lattice-theoretic meaning of the norm of a fractional ideal: for an integral ide
 lattice of `I * 𝔞` has index `N 𝔞` in the lattice of `I`, which is how congruence conditions
 modulo `𝔞` are counted among the lattice points of `I`.
 
-The index is computed in `K` from the determinant formula
-`NumberField.det_basisOfFractionalIdeal_eq_absNorm`, and transported to the mixed space along the
-injective embedding.
+The index is computed in `K` by `NumberField.relIndex_fractionalIdeal_eq_absNorm_div_absNorm`, and
+transported to the mixed space along the injective embedding.
 
 ## Main results
 
-* `NumberField.relIndex_fractionalIdeal_eq_absNorm_div_absNorm`: the index of `J` in `I`, as
-  additive subgroups of `K`, is `absNorm J / absNorm I`.
-* `NumberField.mixedEmbedding.relIndex_idealLattice`: the same index for the ideal lattices in the
-  mixed space.
+* `NumberField.mixedEmbedding.relIndex_idealLattice`: the index of the lattice of `J` in the
+  lattice of `I` is `absNorm J / absNorm I`.
+* `NumberField.mixedEmbedding.relIndex_idealLattice_mul_mk0`: the lattice of `I * 𝔞` has index
+  `N 𝔞` in the lattice of `I`.
+* `NumberField.mixedEmbedding.covolume_idealLattice_mul_mk0`: the covolume of the lattice of
+  `I * 𝔞` is `N 𝔞` times the covolume of the lattice of `I`.
 -/
 
 public section
@@ -34,43 +37,9 @@ public section
 open Module NumberField
 open scoped nonZeroDivisors
 
-namespace NumberField
+namespace NumberField.mixedEmbedding
 
 variable {K : Type*} [Field K] [NumberField K]
-
-/-- **The index of a fractional ideal in a larger one is the ratio of the norms.**  For invertible
-fractional ideals `J ≤ I` of a number field, the index of `J` in `I`, as additive subgroups of the
-field, is `absNorm J / absNorm I`. -/
-theorem relIndex_fractionalIdeal_eq_absNorm_div_absNorm {I J : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
-    (hJI : (J : FractionalIdeal (𝓞 K)⁰ K) ≤ I) :
-    ((J : Submodule (𝓞 K) K).toAddSubgroup.relIndex (I : Submodule (𝓞 K) K).toAddSubgroup : ℚ) =
-      FractionalIdeal.absNorm (J : FractionalIdeal (𝓞 K)⁰ K) /
-        FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) := by
-  classical
-  -- Reindex the `ℚ`-bases of `K` coming from `ℤ`-bases of `I` and `J` by the index type of the
-  -- integral basis, so that all three bases share one index type.
-  have equiv (L : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-      Free.ChooseBasisIndex ℤ (𝓞 K) ≃ Free.ChooseBasisIndex ℤ L :=
-    Fintype.equivOfCardEq <| by
-      rw [← finrank_eq_card_chooseBasisIndex, ← finrank_eq_card_chooseBasisIndex,
-        fractionalIdeal_rank]
-  let bI := (basisOfFractionalIdeal K I).reindex (equiv I).symm
-  let bJ := (basisOfFractionalIdeal K J).reindex (equiv J).symm
-  have closure_eq (L : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-      (L : Submodule (𝓞 K) K).toAddSubgroup =
-        AddSubgroup.closure (Set.range ((basisOfFractionalIdeal K L).reindex (equiv L).symm)) := by
-    rw [Basis.range_reindex, ← Submodule.span_int_eq_addSubgroupClosure]
-    ext x
-    exact (mem_span_basisOfFractionalIdeal K).symm
-  have hI : |(integralBasis K).det bI| = FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) :=
-    det_basisOfFractionalIdeal_eq_absNorm K I (equiv I)
-  have hJ : |(integralBasis K).det bJ| = FractionalIdeal.absNorm (J : FractionalIdeal (𝓞 K)⁰ K) :=
-    det_basisOfFractionalIdeal_eq_absNorm K J (equiv J)
-  rw [AddSubgroup.relIndex_eq_abs_det _ _ hJI bJ bI (closure_eq J) (closure_eq I), ← hI, ← hJ,
-    ← (integralBasis K).det_mul_det bI bJ, abs_mul,
-    mul_div_cancel_left₀ _ (abs_ne_zero.mpr ((integralBasis K).isUnit_det bI).ne_zero)]
-
-namespace mixedEmbedding
 
 omit [NumberField K] in
 /-- The ideal lattice of `I` is the image of `I` under the mixed embedding, as an additive
@@ -93,6 +62,28 @@ theorem relIndex_idealLattice {I J : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
     AddSubgroup.relIndex_map_map_of_injective _ _ (mixedEmbedding_injective K),
     relIndex_fractionalIdeal_eq_absNorm_div_absNorm hJI]
 
-end mixedEmbedding
+/-- **The index of the lattice of `I * 𝔞`.**  For an integral ideal `𝔞`, the lattice of `I * 𝔞`
+has index `N 𝔞` in the lattice of `I`. -/
+theorem relIndex_idealLattice_mul_mk0 (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (𝔞 : (Ideal (𝓞 K))⁰) :
+    (idealLattice K (I * FractionalIdeal.mk0 K 𝔞)).toAddSubgroup.relIndex
+      (idealLattice K I).toAddSubgroup = Ideal.absNorm (𝔞 : Ideal (𝓞 K)) := by
+  have hI : FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) ≠ 0 :=
+    FractionalIdeal.absNorm_eq_zero_iff.not.mpr I.ne_zero
+  have := relIndex_idealLattice (I := I) (J := I * FractionalIdeal.mk0 K 𝔞)
+    (mul_le_of_le_one_right' FractionalIdeal.coeIdeal_le_one)
+  rw [Units.val_mul, map_mul, FractionalIdeal.coe_mk0, FractionalIdeal.coeIdeal_absNorm,
+    mul_div_cancel_left₀ _ hI] at this
+  exact_mod_cast this
 
-end NumberField
+open scoped Classical in
+/-- **The covolume of the lattice of `I * 𝔞`** is `N 𝔞` times the covolume of the lattice of
+`I`. -/
+theorem covolume_idealLattice_mul_mk0 (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (𝔞 : (Ideal (𝓞 K))⁰) :
+    ZLattice.covolume (idealLattice K (I * FractionalIdeal.mk0 K 𝔞)) =
+      Ideal.absNorm (𝔞 : Ideal (𝓞 K)) * ZLattice.covolume (idealLattice K I) := by
+  rw [covolume_idealLattice, covolume_idealLattice, Units.val_mul, map_mul,
+    FractionalIdeal.coe_mk0, FractionalIdeal.coeIdeal_absNorm]
+  push_cast
+  ring
+
+end NumberField.mixedEmbedding
