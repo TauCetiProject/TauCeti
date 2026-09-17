@@ -41,11 +41,15 @@ rank is additive.
 
 ## Main results
 
+* `TauCeti.RegularFormPresentation.ext`: presentations with the same rank and weights agree.
 * `TauCeti.nondegenerate_presentedForm`: a presented form is nondegenerate.
 * `TauCeti.exists_presentedForm_equivalent`: every regular form has a diagonal presentation.
 * `TauCeti.formClass_mk`: the class of a form is computed by any of its diagonalizations.
 * `TauCeti.formClass_eq_iff`: two regular forms are isometric exactly when their classes agree.
+* `TauCeti.RegularFormPresentation.prod_append`: concatenation multiplies the weight products.
 * `TauCeti.presentedFormAppendIsometryEquiv`: concatenating weights presents the orthogonal sum.
+* `TauCeti.presentedFormConsIsometryEquiv`: peeling the first weight off presents the form as a
+  line orthogonal to the presentation of the remaining weights.
 * `TauCeti.formClass_prod`: the class of an orthogonal product is the sum of the classes.
 
 ## References
@@ -74,6 +78,17 @@ form `⟨w 0, …, w (n - 1)⟩`. The presented form is regular when `2` is inve
 not be nondegenerate. -/
 abbrev RegularFormPresentation (K : Type u) [Field K] : Type u := Σ n : ℕ, Fin n → Kˣ
 
+/-- Two presentations agree as soon as they have the same rank and, at every index read through
+that identification, the same weight. -/
+-- `iff := false`: the rank hypothesis occurs in the type of the weight hypothesis, so the
+-- attribute cannot generate the `ext_iff` companion.
+@[ext (iff := false)]
+theorem RegularFormPresentation.ext {p q : RegularFormPresentation K} (hrank : p.1 = q.1)
+    (hweight : ∀ i : Fin p.1, p.2 i = q.2 (Fin.cast hrank i)) : p = q := by
+  refine Sigma.ext hrank (Function.hfunext (congrArg Fin hrank) fun i j hij => ?_)
+  have hj : j = Fin.cast hrank i := Fin.ext ((Fin.heq_ext_iff hrank).mp hij).symm
+  exact heq_of_eq (hj ▸ hweight i)
+
 /-- The form presented by `(n, w)`, namely the weighted sum of squares with weights `w`. -/
 def presentedForm (p : RegularFormPresentation K) : QuadraticForm K (Fin p.1 → K) :=
   weightedSumSquares K fun i => ((p.2 i : K))
@@ -90,6 +105,14 @@ theorem presentedForm_eq_weightedSumSquares (p : RegularFormPresentation K) :
     presentedForm p = weightedSumSquares K p.2 := by
   ext x
   simp [presentedForm, weightedSumSquares_apply, Units.smul_def]
+
+/-- A presented form is the scalar-coefficient weighted sum of squares obtained by coercing its
+unit weights to the base field. -/
+theorem presentedForm_eq_weightedSumSquares_coe {n : ℕ} (w : Fin n → Kˣ) :
+    presentedForm ⟨n, w⟩ = weightedSumSquares K (fun i ↦ (w i : K)) := by
+  rw [presentedForm_eq_weightedSumSquares]
+  ext x
+  simp only [weightedSumSquares_apply, Units.smul_def, smul_eq_mul]
 
 /-- A presented form is regular: all its weights are units, so its radical vanishes. -/
 theorem nondegenerate_presentedForm [Invertible (2 : K)] (p : RegularFormPresentation K) :
@@ -178,6 +201,17 @@ theorem RegularFormPresentation.append_apply_natAdd (p q : RegularFormPresentati
       (Fin.cast (RegularFormPresentation.fst_append p q).symm (Fin.natAdd p.1 j)) = q.2 j := by
   simp [RegularFormPresentation.append]
 
+/-- The weight product of a concatenation is the product of the two weight products. -/
+theorem RegularFormPresentation.prod_append (p q : RegularFormPresentation K) :
+    (∏ i, (RegularFormPresentation.append p q).2 i) = (∏ i, p.2 i) * ∏ j, q.2 j := by
+  have h := Fin.prod_univ_add (M := Kˣ)
+    (f := fun i : Fin (p.1 + q.1) =>
+      (RegularFormPresentation.append p q).2
+        (Fin.cast (RegularFormPresentation.fst_append p q).symm i))
+  simp only [RegularFormPresentation.append_apply_castAdd,
+    RegularFormPresentation.append_apply_natAdd] at h
+  exact h
+
 /-- The value of an orthogonal product on the two halves of a concatenated coordinate vector. -/
 private theorem prod_apply_split {m n : ℕ} (w : Fin m → Kˣ) (v : Fin n → Kˣ)
     (x : Fin (m + n) → K) :
@@ -240,6 +274,42 @@ theorem equivalent_presentedForm_append_prod (p q : RegularFormPresentation K) :
     (presentedForm (RegularFormPresentation.append p q)).Equivalent
       ((presentedForm p).prod (presentedForm q)) :=
   ⟨presentedFormAppendIsometryEquiv p q⟩
+
+/-- Peeling the first weight off a presentation of positive rank exhibits the presented form as
+the orthogonal sum of the line `⟨w 0⟩` and the presentation of the remaining weights:
+`⟨w 0⟩ ⊥ ⟨w 1, …, w n⟩ ≅ ⟨w 0, …, w n⟩`. The first factor is carried by `K` itself rather than by
+`Fin 1 → K`, which is what makes it a line spanned by `1`. -/
+def presentedFormConsIsometryEquiv {n : ℕ} (w : Fin (n + 1) → Kˣ) :
+    (((w 0 : K) • (QuadraticMap.sq : QuadraticForm K K)).prod
+        (presentedForm ⟨n, fun i => w i.succ⟩)).IsometryEquiv (presentedForm ⟨n + 1, w⟩) where
+  toLinearEquiv := Fin.consLinearEquiv K fun _ : Fin (n + 1) => K
+  map_app' x := by
+    -- `presentedForm_apply` does not fire under `simp` here: the rank of the presentation appears
+    -- in the type of `x`, so the rewrite has to be directed by hand.
+    rw [presentedForm_apply, QuadraticMap.prod_apply, presentedForm_apply, Fin.sum_univ_succ]
+    simp
+
+private theorem presentedFormConsIsometryEquiv_toLinearEquiv {n : ℕ} (w : Fin (n + 1) → Kˣ) :
+    (presentedFormConsIsometryEquiv w).toLinearEquiv =
+      Fin.consLinearEquiv K (fun _ : Fin (n + 1) ↦ K) := rfl
+
+/-- The forward map of `TauCeti.presentedFormConsIsometryEquiv` prepends the line coordinate. -/
+@[simp]
+theorem presentedFormConsIsometryEquiv_apply {n : ℕ} (w : Fin (n + 1) → Kˣ)
+    (x : K × (Fin n → K)) :
+    presentedFormConsIsometryEquiv w x = Fin.cons x.1 x.2 := by
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv, presentedFormConsIsometryEquiv_toLinearEquiv]
+  ext i
+  exact Fin.consLinearEquiv_apply K (fun _ : Fin (n + 1) ↦ K) x i
+
+/-- The inverse map of `TauCeti.presentedFormConsIsometryEquiv` separates the first coordinate
+from the remaining coordinates. -/
+@[simp]
+theorem presentedFormConsIsometryEquiv_symm_apply {n : ℕ} (w : Fin (n + 1) → Kˣ)
+    (x : Fin (n + 1) → K) :
+    (presentedFormConsIsometryEquiv w).symm x = (x 0, Fin.tail x) := by
+  rw [QuadraticMap.IsometryEquiv.symm_apply_eq, presentedFormConsIsometryEquiv_apply,
+    Fin.cons_self_tail]
 
 /-- Concatenation of presentations respects isometry in each argument. -/
 theorem presentedForm_append_congr {p p' q q' : RegularFormPresentation K}

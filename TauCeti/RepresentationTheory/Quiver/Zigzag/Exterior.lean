@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.Basic
 
 /-!
 # The exterior skew-zigzag parameter

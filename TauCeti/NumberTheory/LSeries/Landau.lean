@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.Complex.TaylorSeries
+import Mathlib.Analysis.Meromorphic.NormalForm
 import Mathlib.Analysis.SpecialFunctions.Exponential
+public import Mathlib.Analysis.Meromorphic.Order
 import Mathlib.NumberTheory.LSeries.Positivity
 public import Mathlib.NumberTheory.LSeries.Deriv
 public import TauCeti.NumberTheory.LSeries.EntireExtension
@@ -30,6 +32,8 @@ its own analytic continuation.
   `LSeries.abscissaOfAbsConv a = (σ : EReal)`, then `¬ HasAnalyticExtensionAt a σ`. The equality
   hypothesis is what makes `σ` the *actual* boundary and records its finiteness; convergence
   throughout `Re s > σ` alone would not suffice.
+* `TauCeti.LSeries.meromorphicOrderAt_lt_zero_of_eq_LSeries`: a meromorphic continuation at the
+  actual abscissa has negative order there, so the singularity is a pole rather than removable.
 * `TauCeti.LSeries.abscissaOfAbsConv_le_of_differentiableOn`: the half-plane form. A nonnegative
   Dirichlet series with finite abscissa converges as far to the left as it continues analytically.
 * `TauCeti.LSeries.abscissaOfAbsConv_eq_bot_of_hasEntireExtension`: the same conclusion phrased
@@ -320,6 +324,33 @@ theorem landau (ha : 0 ≤ a) {σ : ℝ} (habs : LSeries.abscissaOfAbsConv a = (
   rw [habs, Complex.ofReal_re] at hle
   have hσx : σ ≤ x := mod_cast hle
   linarith
+
+/-- **Meromorphic form of Landau's theorem.** Let `F` be a meromorphic continuation of a
+Dirichlet series with nonnegative coefficients to a neighborhood of its finite, actual abscissa
+of absolute convergence. Then the meromorphic order of `F` at that abscissa is negative. In
+particular, the singularity forced by `landau` is a pole, not a removable singularity.
+
+Meromorphicity and meromorphic order depend only on the punctured germ, so no convention is
+imposed on the value of `F` at the centre. -/
+theorem meromorphicOrderAt_lt_zero_of_eq_LSeries (ha : 0 ≤ a) {σ r : ℝ}
+    (habs : LSeries.abscissaOfAbsConv a = (σ : EReal)) (hr : 0 < r) {F : ℂ → ℂ}
+    (hF : MeromorphicAt F (σ : ℂ))
+    (hFeq : ∀ s ∈ ball (σ : ℂ) r, σ < s.re → F s = LSeries a s) :
+    meromorphicOrderAt F (σ : ℂ) < 0 := by
+  by_contra hnot
+  let F' := toMeromorphicNFAt F (σ : ℂ)
+  have hF'analytic : AnalyticAt ℂ F' (σ : ℂ) :=
+    hF.meromorphicOrderAt_nonneg_iff_analyticAt_toMeromorphicNFAt.1 (not_lt.mp hnot)
+  obtain ⟨r', hr', hF'analyticOn⟩ := hF'analytic.exists_ball_analyticOnNhd
+  apply landau ha habs
+  refine ⟨min r r', lt_min hr hr', F', ?_, ?_⟩
+  · intro s hs
+    exact (hF'analyticOn s (ball_subset_ball (min_le_right r r') hs)).differentiableAt
+      |>.differentiableWithinAt
+  · intro s hs hσs
+    have hsne : s ≠ (σ : ℂ) := fun h ↦ by simp [h] at hσs
+    exact (hF.eqOn_compl_singleton_toMeromorphicNFAt (by simpa using hsne)).symm.trans
+      (hFeq s (ball_subset_ball (min_le_left r r') hs) hσs)
 
 /-- **Landau's theorem, half-plane form.** A Dirichlet series with nonnegative coefficients and
 finite abscissa of absolute convergence converges as far to the left as it continues

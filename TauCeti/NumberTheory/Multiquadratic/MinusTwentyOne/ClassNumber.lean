@@ -59,19 +59,13 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
-/-- The radicand `-21` is squarefree. -/
-private theorem squarefree_neg_twenty_one : Squarefree (-21 : ℤ) := by
-  rw [← Int.squarefree_natAbs]
-  simpa using (Nat.squarefree_mul (by decide : Nat.Coprime 3 7)).mpr
-    ⟨(by decide : Nat.Prime 3).squarefree, (by decide : Nat.Prime 7).squarefree⟩
-
 /-- The discriminant of a presentation of `ℚ(√-21)` is `-84`. -/
 private theorem discr_eq_neg_eighty_four
     (hmin : minpoly ℤ θ = X ^ 2 - C (-21 : ℤ))
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
     NumberField.discr K = -84 := by
   simpa using discr_eq_four_mul_of_mod_four_ne_one hmin hgen
-    squarefree_neg_twenty_one (by norm_num)
+    Multiquadratic.squarefree_neg_twenty_one (by norm_num)
 
 /-- The Minkowski bound of `ℚ(√-21)` is strictly less than `6`. -/
 private theorem minkowski_bound_lt_six
@@ -267,7 +261,7 @@ private theorem two_le_twoRank_of_minpoly_eq_X_sq_add_twenty_one
         Set.ncard_le_ncard hsubset (NumberField.finite_ramifiedPrimes (K := K))
   exact le_trans (by omega : 2 ≤ (ramifiedPrimes K).ncard - 1)
     (TauCeti.Multiquadratic.ncard_ramifiedPrimes_sub_one_le_twoRank
-      hmin hgen squarefree_neg_twenty_one (by norm_num))
+      hmin hgen Multiquadratic.squarefree_neg_twenty_one (by norm_num))
 
 /-- **The class number of `ℚ(√-21)` is four.** This presentation-independent statement assumes
 an integral generator with minimal polynomial `X² + 21` which generates the field over `ℚ`. -/

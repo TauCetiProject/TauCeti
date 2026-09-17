@@ -20,6 +20,8 @@ This is infrastructure for the base-change lane of
 
 public section
 
+open Polynomial
+
 open _root_.WeierstrassCurve
 
 section
@@ -33,5 +35,6 @@ instance _root_.WeierstrassCurve.Affine.instIsEllipticBaseChange : (W⁄A).toAff
   inferInstanceAs (W.map (algebraMap R A)).IsElliptic
 
 end
+
 
 end

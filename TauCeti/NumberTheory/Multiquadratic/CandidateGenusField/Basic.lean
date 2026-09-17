@@ -45,6 +45,7 @@ F. Lemmermeyer, *Reciprocity Laws*.
 
 * `TauCeti.Multiquadratic.genusPrimeDiscriminants_eq`: the chosen factor finset is equal to every
   prime-discriminant factorization satisfying the defining conditions.
+* `TauCeti.Multiquadratic.candidateGenusFieldGen_ne_zero`: every chosen generator is nonzero.
 * `TauCeti.Multiquadratic.candidateGenusField_le_iff`: its universal property — it is below an
   intermediate field iff that field contains every chosen root.
 * `TauCeti.Multiquadratic.exists_mem_candidateGenusField_sq_eq`: it contains an element squaring
@@ -136,6 +137,20 @@ underlying value. -/
         (((primeDiscriminantRadicand P.val : ℤ) : ℚ)) := by
   apply Subtype.ext
   simp [candidateGenusFieldGen]
+
+/-- Every chosen candidate-genus-field generator is nonzero. -/
+@[simp] theorem candidateGenusFieldGen_ne_zero {d : ℤ} (hd : Squarefree d)
+    (P : {P // P ∈ genusPrimeDiscriminants hd}) : candidateGenusFieldGen hd P ≠ 0 := by
+  have hrad : primeDiscriminantRadicand P.val ≠ 0 :=
+    primeDiscriminantRadicand_ne_zero ((genusPrimeDiscriminants_spec hd).1 P.val P.property)
+  have hq : (((primeDiscriminantRadicand P.val : ℤ) : ℚ)) ≠ 0 := by
+    exact_mod_cast hrad
+  have hmap : algebraMap ℚ (candidateGenusField hd)
+      (((primeDiscriminantRadicand P.val : ℤ) : ℚ)) ≠ 0 :=
+    by simpa using (algebraMap ℚ (candidateGenusField hd)).injective.ne hq
+  intro hzero
+  apply hmap
+  simpa [hzero] using (candidateGenusFieldGen_sq hd P).symm
 
 /-- **Universal property of the candidate genus field.** It is contained in an intermediate field
 `F` exactly when `F` contains every chosen root. -/

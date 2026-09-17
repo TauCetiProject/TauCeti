@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
+public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import TauCeti.RingTheory.Polynomial.Factors
 
 /-!
@@ -25,6 +26,9 @@ The dictionary also identifies transitivity of the root action with irreducibili
 separable polynomial of positive degree, and records the same descriptions for the action inside
 the splitting field itself, where an irreducible polynomial acts transitively.
 
+For the intrinsic action, this file also records the evaluation rule on the splitting field and
+the instances identifying `Polynomial.Gal p` as a Galois group for that field over the base.
+
 ## Main results
 
 * `TauCeti.mem_orbit_iff_minpoly_eq`: two roots of `p` are in the same Galois orbit exactly when
@@ -41,6 +45,8 @@ the splitting field itself, where an irreducible polynomial acts transitively.
   orbit for the intrinsic action on the roots in the splitting field.
 * `TauCeti.isPretransitive_of_irreducible`: inside the splitting field, an irreducible
   polynomial has a transitive root action.
+* `Polynomial.Gal.smul_eq_apply`: the action on the splitting field is evaluation.
+* `TauCeti.galIsGaloisGroup`: `Polynomial.Gal p` is a Galois group for its splitting field.
 * `TauCeti.orbitQuotientEquivFactors`: the orbit quotient is in bijection with the
   monic irreducible factors of `p`, the orbit of a root going to its minimal polynomial.
 * `TauCeti.natCard_orbit_eq_natDegree_factor`: along that bijection, a separable
@@ -201,6 +207,32 @@ goes through the `Algebra p.SplittingField p.SplittingField` instance built from
 here; the orbit descriptions are obtained by feeding the intrinsic orbit criterion to the same
 proofs as above, and transitivity is proved directly rather than read off
 `TauCeti.isPretransitive_iff_irreducible` or `Polynomial.Gal.galAction_isPretransitive`. -/
+
+/-- The action of the polynomial Galois group on its splitting field is evaluation. -/
+@[simp]
+theorem _root_.Polynomial.Gal.smul_eq_apply (g : p.Gal) (y : p.SplittingField) : g • y = g y :=
+  rfl
+
+/-- The Galois action on the splitting field commutes with the scalar action of the base field.
+
+This is Mathlib's `AlgEquiv.apply_smulCommClass'` for
+`p.SplittingField ≃ₐ[F] p.SplittingField`; `Polynomial.Gal p` is a distinct type carrying the
+derived action, so the instance is transported here. -/
+instance galSMulCommClass : SMulCommClass p.Gal F p.SplittingField :=
+  inferInstanceAs (SMulCommClass (p.SplittingField ≃ₐ[F] p.SplittingField) F p.SplittingField)
+
+/-- **`Polynomial.Gal p` is a Galois group for `L/F`**, where `L = p.SplittingField`: it acts
+faithfully on `L` with fixed field `F`.
+
+Mathlib's `IsGaloisGroup.of_isGalois` says this for `Gal(L/F)`, but `Polynomial.Gal p` is a
+distinct type with its own action, so the instance is restated here; it is what makes the
+`IsGaloisGroup` form of the Galois correspondence, and the fixed-field lemmas that come with it,
+apply to the polynomial Galois group. -/
+instance galIsGaloisGroup [IsGalois F p.SplittingField] :
+    IsGaloisGroup p.Gal F p.SplittingField where
+  faithful := ⟨fun {σ τ} h ↦ @Gal.ext F _ p σ τ fun y _ ↦ h y⟩
+  commutes := inferInstance
+  isInvariant := ⟨fun y hy ↦ (IsGalois.mem_range_algebraMap_iff_fixed y).2 fun σ ↦ hy σ⟩
 
 /-- The Galois action on the roots in the splitting field is the action by evaluation. -/
 @[simp]

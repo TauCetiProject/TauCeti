@@ -200,12 +200,12 @@ theorem heckeSlashUpperTri_slash_scaleRep_comm (hd : 0 < d) (hp : 0 < p)
     exact slash_zpow_eq_self_of_slash_eq k f (by rwa [ModularForm.rat_slash_mapGL] at hT) q
   rw [heckeSlashUpperTri_def, heckeSlashUpperTri_def, SlashAction.sum_slash]
   have : NeZero p := ⟨hp.ne'⟩
-  rw [← Equiv.sum_comp (ZMod.mulModEquiv p hdp) fun b ↦ (f ∣[k] upperTriRep p b) ∣[k]
+  rw [← Equiv.sum_comp (TauCeti.mulModEquiv p hdp) fun b ↦ (f ∣[k] upperTriRep p b) ∣[k]
     (scaleRep d : GL (Fin 2) ℚ)]
   refine Finset.sum_congr rfl fun b _ ↦ ?_
-  -- the reindexed representative is `d b mod p`, by the defining lemma of `ZMod.mulModEquiv`
-  have hb : ZMod.mulModEquiv p hdp b = ⟨d * (b : ℕ) % p, Nat.mod_lt _ hp⟩ :=
-    Fin.ext (ZMod.coe_mulModEquiv p hdp b)
+  -- the reindexed representative is `d b mod p`, by the defining lemma of `TauCeti.mulModEquiv`
+  have hb : TauCeti.mulModEquiv p hdp b = ⟨d * (b : ℕ) % p, Nat.mod_lt _ hp⟩ :=
+    Fin.ext (TauCeti.mulModEquiv_apply_val p hdp b)
   rw [← SlashAction.slash_mul,
     scaleRep_mul_upperTriRep p hd b (Nat.mod_lt _ hp) (Nat.div_add_mod' (d * (b : ℕ)) p).symm,
     SlashAction.slash_mul, hTpow, SlashAction.slash_mul, hb]

@@ -29,6 +29,23 @@ env:
   MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
 
 jobs:
+  readiness-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout the pinned merge policy (read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: TauCetiProject/TauCetiReview
+          ref: 692ebde95eea2a6d9d9f21954ba912c49f675d9d
+          path: .tauceti-review
+          sparse-checkout: runner
+          persist-credentials: false
+
+      - run: python3 scripts/pr_status/test_readiness.py
+
   build:
     runs-on: ubuntu-latest
     # Read by publish-lake-cache below, the only job that ever holds the upload secret.
@@ -69,6 +86,7 @@ jobs:
           python3 scripts/pr_status/test_conflicts.py
           python3 scripts/test_structure_nudge.py
           python3 scripts/test_workflow_pins.py
+          python3 scripts/test_queue_release.py
           python3 scripts/test_bwrap_pin.py
           python3 scripts/test_elan_pin.py
           python3 scripts/test_web_pins.py
@@ -76,6 +94,7 @@ jobs:
           python3 scripts/test_profile_workflow.py
           python3 scripts/test_lake_cache_probe.py
           python3 scripts/test_lake_cache_get.py
+          python3 scripts/test_lake_cache_reuse.py
           PYTHONPATH=. python3 scripts/perf/test_perf.py
           PYTHONPATH=scripts python3 scripts/test_claims_access.py
           python3 scripts/test_lint_dot_notation.py
@@ -175,8 +194,8 @@ jobs:
           fi
 
       # Anonymous GETs from the PUBLIC read host, the same trusted, publisher-built data
-      # pr-build restores. The shared script discards a partial fetch rather than keeping it;
-      # see its header.
+      # pr-build restores. The shared script retains hash-verified artifacts between attempts,
+      # then discards the partial cache only if every attempt remains incomplete; see its header.
       #
       # What this does NOT establish: that a restored module matches what a compile of the
       # checked-out source would produce. Lake keys artifacts by an input hash that is a single
@@ -196,6 +215,12 @@ jobs:
           PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
           PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
         run: bash scripts/lake-cache-get.sh .
+
+      - name: Save verified Lake archive records before building
+        run: python3 scripts/lake_cache_reuse.py snapshot . "$RUNNER_TEMP/lake-cache-reuse.json"
+
+      - name: Lake archive reuse integration tests
+        run: python3 scripts/test_lake_cache_reuse.py --integration
 
       # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
       # The build globs every TauCeti/ module directly, so nothing depends on a root that
@@ -229,6 +254,12 @@ jobs:
         with:
           path: ${{ steps.mathlib_ltar_restore.outputs.cache-dir }}/*.ltar
           key: ${{ steps.mathlib_ltar_restore.outputs.cache-primary-key }}
+
+      - name: Duplicate-declaration audit
+        run: lake env lean --run scripts/DuplicateDeclarations.lean
+
+      - name: Duplicate-declaration audit regression tests
+        run: lake env python3 scripts/test_duplicate_declarations.py
 
       # Axiom audit (replaces the old textual no-sorry grep). Inspects the built
       # TauCeti environment and rejects any axiom outside {propext, Classical.choice,
@@ -272,6 +303,9 @@ jobs:
       # generates an import-all module under .lake/ for lint-style's text-based checks. This is
       # deliberately narrower than the command header linter's unrelated import and module-doc
       # checks; the empty root makes that command linter skip every library module at this pin.
+      - name: Header audit equivalence tests
+        run: lake env python3 scripts/test_header_style.py
+
       - name: Source style lint (copyright headers + text linters)
         run: bash scripts/lint-style.sh
 
@@ -353,7 +387,9 @@ jobs:
           # a staging directory, alongside a copy of the mappings themselves. `lake cache
           # stage` reads no credential and contacts no network.
           lake build >/dev/null
-          lake build --no-build -o .lake/outputs.jsonl
+          python3 scripts/lake_cache_reuse.py reconnect . "$RUNNER_TEMP/lake-cache-reuse.json"
+          # Hash the linked archives themselves, ignoring any old .ltar.hash sidecars.
+          lake build --no-build --rehash -o .lake/outputs.jsonl
           echo "root-package mapping entries: $(wc -l < .lake/outputs.jsonl)"
           lake cache stage .lake/outputs.jsonl "$RUNNER_TEMP/lake-cache-staging"
           # `lake cache put-staged` does not configure the workspace, which is precisely what

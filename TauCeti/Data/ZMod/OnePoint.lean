@@ -11,7 +11,7 @@ public import Mathlib.Topology.Compactification.OnePoint.Basic
 /-!
 # Multiplication on the one-point extension of `ZMod p`
 
-`ZMod.mulModEquiv` (`Data/ZMod/FinEquiv.lean`) is multiplication by a unit as a permutation of
+`TauCeti.mulModEquiv` (`Data/ZMod/FinEquiv.lean`) is multiplication by a unit as a permutation of
 the residues themselves. This file is its companion on the one-point extension: multiplication by
 a `d` coprime to `p`, acting on `OnePoint (ZMod p)` and fixing `∞`.
 
@@ -22,23 +22,24 @@ It is the projective line exactly when `p` is prime: for composite `p` the proje
 
 ## Main results
 
-* `ZMod.onePointMulPerm`: multiplication by `d` as a permutation of `OnePoint (ZMod p)`.
-* `ZMod.onePointMulPerm_coe` and `ZMod.onePointMulPerm_infty`: its two evaluation rules, on an
-  affine point and at `∞`.
+* `TauCeti.onePointMulPerm`: multiplication by `d` as a permutation of `OnePoint (ZMod p)`.
+* `TauCeti.onePointMulPerm_coe` and `TauCeti.onePointMulPerm_infty`: its two evaluation rules, on
+  an affine point and at `∞`. The first explicit argument is a modulus, not a `ZMod` value, so
+  these are not dot notation on `ZMod` and live in `TauCeti`.
 -/
 
 public section
 
-namespace ZMod
+namespace TauCeti
 
 /-- **Multiplication by `d` on the one-point extension of `ZMod p`**, fixing `∞`. The companion
-of `ZMod.mulModEquiv`: `d` coprime to `p` is a unit, so multiplying by it permutes the residues,
+of `TauCeti.mulModEquiv`: `d` coprime to `p` is a unit, so multiplying by it permutes the residues,
 and the permutation is extended by fixing the adjoined point. -/
 def onePointMulPerm (p : ℕ) {d : ℕ} (hdp : Nat.Coprime d p) :
     Equiv.Perm (OnePoint (ZMod p)) :=
   Equiv.optionCongr (Units.mulLeft (ZMod.unitOfCoprime d hdp))
 
-/-- **The value of `ZMod.onePointMulPerm` at an affine point**: it multiplies by `d`. -/
+/-- **The value of `TauCeti.onePointMulPerm` at an affine point**: it multiplies by `d`. -/
 @[simp]
 lemma onePointMulPerm_coe (p : ℕ) {d : ℕ} (hdp : Nat.Coprime d p) (x : ZMod p) :
     onePointMulPerm p hdp ((x : ZMod p) : OnePoint (ZMod p)) =
@@ -51,9 +52,9 @@ lemma onePointMulPerm_coe (p : ℕ) {d : ℕ} (hdp : Nat.Coprime d p) (x : ZMod 
       OnePoint (ZMod p)) = _
   rw [ZMod.coe_unitOfCoprime]
 
-/-- **`ZMod.onePointMulPerm` fixes the point at infinity.** -/
+/-- **`TauCeti.onePointMulPerm` fixes the point at infinity.** -/
 @[simp]
 lemma onePointMulPerm_infty (p : ℕ) {d : ℕ} (hdp : Nat.Coprime d p) :
     onePointMulPerm p hdp (OnePoint.infty : OnePoint (ZMod p)) = OnePoint.infty := (rfl)
 
-end ZMod
+end TauCeti

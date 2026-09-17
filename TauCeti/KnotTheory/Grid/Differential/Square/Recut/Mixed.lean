@@ -20,7 +20,7 @@ column is initial for one rectangle and terminal for the other.
 Diagonal reflection turns either mixed column orientation into one of the same-side orientations.
 Reflecting its recut back gives the required second decomposition. Accordingly, its side *rows*
 rather than its side columns are computed explicitly. The reflected domain is still a repartition,
-so the new rectangles have the same combined weight and inherit avoidance of the `X` markings.
+so the new rectangles cover the same squares as the old ones.
 
 ## Main results
 
@@ -28,9 +28,6 @@ so the new rectangles have the same combined weight and inherit avoidance of the
   `exists_isRepartition_of_isEmpty_of_right_eq_left`: the two mixed common-side configurations
   admit recuts through different intermediate states, uniquely characterized by their computed
   side rows and row configurations, with both new rectangles empty.
-* `exists_isRepartition_of_mem_unblockedRectangles_of_left_eq_right`
-  and `exists_isRepartition_of_mem_unblockedRectangles_of_right_eq_left`: the recuts again give
-  terms counted by the unblocked differential.
 
 ## References
 
@@ -206,41 +203,6 @@ theorem exists_isRepartition_of_isEmpty_of_left_eq_right
   apply (transposeEquiv x z).injective
   simpa only [transposeEquiv_apply, hEF] using hF'
 
-/-- The mixed-side recut of two terms counted by the unblocked differential again consists of
-two counted rectangles. Its covered-square domain, and hence its combined monomial weight, is
-unchanged. -/
-theorem exists_isRepartition_of_mem_unblockedRectangles_of_left_eq_right
-    (G : GridDiagram n) (D : GridRectangleDecomposition x z)
-    (hcommon : D.first.left = D.second.right) (hother : D.first.right ≠ D.second.left)
-    (hfirst : D.first ∈ G.unblockedRectangles x D.middle)
-    (hsecond : D.second ∈ G.unblockedRectangles D.middle z) :
-    ∃! E : GridRectangleDecomposition x z,
-      D.IsRepartition E ∧ E.middle ≠ D.middle ∧
-        E.first ∈ G.unblockedRectangles x E.middle ∧
-          E.second ∈ G.unblockedRectangles E.middle z ∧
-            E.first.bottom = D.second.bottom ∧ E.second.bottom = D.first.bottom ∧
-              ((D.first.bottom ∈ Grid.cIoo D.second.bottom D.first.top ∧
-                  E.middle = x.swapRows D.second.bottom D.first.bottom ∧
-                    E.first.top = D.first.bottom ∧ E.second.top = D.first.top) ∨
-                (D.second.bottom ∈ Grid.cIoo D.first.bottom D.first.top ∧
-                  E.middle = x.swapRows D.second.bottom D.first.top ∧
-                    E.first.top = D.first.top ∧ E.second.top = D.second.bottom)) := by
-  obtain ⟨E, ⟨hrecut, hmiddle, hEfirst, hEsecond, hE1bottom, hE2bottom, hrows⟩, hunique⟩ :=
-    D.exists_isRepartition_of_isEmpty_of_left_eq_right hcommon hother
-      (G.isEmpty_of_mem_unblockedRectangles hfirst) (G.isEmpty_of_mem_unblockedRectangles hsecond)
-  have hX₁ := G.disjoint_XSet_of_mem_unblockedRectangles hfirst
-  have hX₂ := G.disjoint_XSet_of_mem_unblockedRectangles hsecond
-  refine ⟨E, ⟨hrecut, hmiddle,
-    (G.mem_unblockedRectangles _).mpr
-      ⟨hEfirst, hrecut.disjoint_coveredSquares_first hX₁ hX₂⟩,
-    (G.mem_unblockedRectangles _).mpr
-      ⟨hEsecond, hrecut.disjoint_coveredSquares_second hX₁ hX₂⟩,
-    hE1bottom, hE2bottom, hrows⟩, ?_⟩
-  intro E' hE'
-  apply hunique E'
-  exact ⟨hE'.1, hE'.2.1, (G.mem_unblockedRectangles _).mp hE'.2.2.1 |>.1,
-    (G.mem_unblockedRectangles _).mp hE'.2.2.2.1 |>.1, hE'.2.2.2.2⟩
-
 /-! ### Terminal side of the first rectangle equals initial side of the second -/
 
 /-- Two composable empty rectangles whose common column is the terminal side of the first and the
@@ -386,40 +348,6 @@ theorem exists_isRepartition_of_isEmpty_of_right_eq_left
         · simpa only [transpose_second_left, transpose_second_right] using hbottom₂
   apply (transposeEquiv x z).injective
   simpa only [transposeEquiv_apply, hEF] using hF'
-
-/-- The other mixed-side recut of two terms counted by the unblocked differential again consists
-of two counted rectangles, with unchanged covered-square domain and combined monomial weight. -/
-theorem exists_isRepartition_of_mem_unblockedRectangles_of_right_eq_left
-    (G : GridDiagram n) (D : GridRectangleDecomposition x z)
-    (hcommon : D.first.right = D.second.left) (hother : D.first.left ≠ D.second.right)
-    (hfirst : D.first ∈ G.unblockedRectangles x D.middle)
-    (hsecond : D.second ∈ G.unblockedRectangles D.middle z) :
-    ∃! E : GridRectangleDecomposition x z,
-      D.IsRepartition E ∧ E.middle ≠ D.middle ∧
-        E.first ∈ G.unblockedRectangles x E.middle ∧
-          E.second ∈ G.unblockedRectangles E.middle z ∧
-            E.first.top = D.second.top ∧ E.second.top = D.first.top ∧
-              ((D.first.top ∈ Grid.cIoo D.first.bottom D.second.top ∧
-                  E.middle = x.swapRows D.first.top D.second.top ∧
-                    E.first.bottom = D.first.top ∧ E.second.bottom = D.first.bottom) ∨
-                (D.second.top ∈ Grid.cIoo D.first.bottom D.first.top ∧
-                  E.middle = x.swapRows D.first.bottom D.second.top ∧
-                    E.first.bottom = D.first.bottom ∧ E.second.bottom = D.second.top)) := by
-  obtain ⟨E, ⟨hrecut, hmiddle, hEfirst, hEsecond, hE1top, hE2top, hrows⟩, hunique⟩ :=
-    D.exists_isRepartition_of_isEmpty_of_right_eq_left hcommon hother
-      (G.isEmpty_of_mem_unblockedRectangles hfirst) (G.isEmpty_of_mem_unblockedRectangles hsecond)
-  have hX₁ := G.disjoint_XSet_of_mem_unblockedRectangles hfirst
-  have hX₂ := G.disjoint_XSet_of_mem_unblockedRectangles hsecond
-  refine ⟨E, ⟨hrecut, hmiddle,
-    (G.mem_unblockedRectangles _).mpr
-      ⟨hEfirst, hrecut.disjoint_coveredSquares_first hX₁ hX₂⟩,
-    (G.mem_unblockedRectangles _).mpr
-      ⟨hEsecond, hrecut.disjoint_coveredSquares_second hX₁ hX₂⟩,
-    hE1top, hE2top, hrows⟩, ?_⟩
-  intro E' hE'
-  apply hunique E'
-  exact ⟨hE'.1, hE'.2.1, (G.mem_unblockedRectangles _).mp hE'.2.2.1 |>.1,
-    (G.mem_unblockedRectangles _).mp hE'.2.2.2.1 |>.1, hE'.2.2.2.2⟩
 
 end GridRectangleDecomposition
 

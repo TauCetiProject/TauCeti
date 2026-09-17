@@ -33,6 +33,8 @@ over a finite field, `TauCeti.Isogeny.isSeparable_oneSubFrobeniusIsogeny`:
 * `TauCeti.Isogeny.Hom.pullbackDifferential_add_invariantDifferential`: `(f + g)^*ω = f^*ω + g^*ω`.
 * `TauCeti.Isogeny.Hom.pullbackDifferential_neg_invariantDifferential`: `(-f)^*ω = -f^*ω`.
 * `TauCeti.Isogeny.Hom.pullbackDifferential_sub_invariantDifferential`: `(f - g)^*ω = f^*ω - g^*ω`.
+* `TauCeti.Isogeny.Hom.pullbackDifferential_zsmul_invariantDifferential`: `(n • f)^*ω = n • f^*ω`.
+* `TauCeti.Isogeny.Hom.pullbackDifferential_zsmul_id_invariantDifferential`: `[n]^*ω = n • ω`.
 * `TauCeti.Isogeny.Hom.pullbackDifferential_id` and `pullbackDifferential_comp`: the pullback is
   functorial in the morphism.
 
@@ -152,6 +154,32 @@ theorem pullbackDifferential_sub_invariantDifferential (f g : Hom W₁ W₂) :
         g.pullbackDifferential (invariantDifferential W₂) := by
   rw [sub_eq_add_neg, pullbackDifferential_add_invariantDifferential,
     pullbackDifferential_neg_invariantDifferential, sub_eq_add_neg]
+
+/-- **The pullback of `ω` scales with an integer multiple of a morphism**:
+`(n • f)^*ω = n • f^*ω`. -/
+@[simp]
+theorem pullbackDifferential_zsmul_invariantDifferential (f : Hom W₁ W₂) (n : ℤ) :
+    (n • f).pullbackDifferential (invariantDifferential W₂) =
+      n • f.pullbackDifferential (invariantDifferential W₂) := by
+  induction n using Int.induction_on with
+  | zero => simp [pullbackDifferential_zero]
+  | succ k ih =>
+    rw [add_smul, one_smul, pullbackDifferential_add_invariantDifferential, ih, add_smul, one_smul]
+  | pred k ih =>
+    rw [sub_smul, one_smul, pullbackDifferential_sub_invariantDifferential, ih, sub_smul, one_smul]
+
+/-- **`[n]^*ω = n • ω`** (Silverman III.5.4): the invariant differential pulls back along
+multiplication by `n` with the factor `n`. -/
+-- Not `@[simp]`, unlike the two scaling rules above: they are what reduce this left-hand side, so
+-- `simp` already closes this goal with
+-- `simp only [pullbackDifferential_zsmul_invariantDifferential, pullbackDifferential_id,
+-- LinearMap.id_coe, id_eq]`, and `simpNF` rejects a rule whose left-hand side is not normal.
+theorem pullbackDifferential_zsmul_id_invariantDifferential (W : WeierstrassCurve.Affine F)
+    [W.IsElliptic] (n : ℤ) :
+    (n • Hom.id W).pullbackDifferential (invariantDifferential W) =
+      n • invariantDifferential W := by
+  rw [pullbackDifferential_zsmul_invariantDifferential, pullbackDifferential_id,
+    LinearMap.id_apply]
 
 end Hom
 

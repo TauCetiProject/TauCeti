@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Tactic.Abel
 
 /-!
 # Range reindexing for finite sums
@@ -24,6 +26,9 @@ square and enlarge a vanishing-off-the-block range.
 * `sum_sum_range_eq_of_eq_zero_right`: enlarging both ranges of a double sum that vanishes outside
   a rectangle.
 * `sum_range_add_add`: splitting a `range n` sum into a prefix, a block, and a suffix.
+* `sum_range_min_add_two`: the two-step recurrence satisfied by the sums
+  `∑_{i ≤ min j r} c^i a (j + r − 2i)`.
+* `sum_range_min_zero`: the base case `j = 0` of that recurrence, which its `j + 1` cannot state.
 -/
 
 public section
@@ -92,5 +97,73 @@ theorem sum_range_add_add {N : Type*} [AddCommMonoid N] (g : ℕ → N) {p d n :
     refine key.trans ?_
     simp only [Nat.add_assoc]
   rw [s1, s2, ← add_assoc]
+
+
+
+/-! ### The two-step recurrence of the sums `∑_{i ≤ min j r} c^i a (j + r − 2i)` -/
+
+/-- **A two-step recurrence for the sums `S j r = ∑_{i ≤ min j r} c^i a (j + r − 2i)`**:
+`S (j+2) (r+1) + c · S j (r+1) = S (j+1) (r+2) + c · S (j+1) r`.
+
+This is the identity the Fourier coefficients of the Hecke operators at a prime power satisfy
+(`TauCeti/NumberTheory/ModularForms/HeckeSlash/Nebentypus/Prime/Power.lean`), with `a t` the
+coefficient at `p^t m` and `c = χ(p) p^{k−1}`; the `min` is what makes it hold with no relation
+between `j` and `r`. -/
+theorem sum_range_min_add_two {R : Type*} [Semiring R] (a : ℕ → R) (c : R) (j r : ℕ) :
+    (∑ i ∈ range (min (j + 2) (r + 1) + 1), c ^ i * a (j + 2 + (r + 1) - 2 * i)) +
+        c * ∑ i ∈ range (min j (r + 1) + 1), c ^ i * a (j + (r + 1) - 2 * i) =
+      (∑ i ∈ range (min (j + 1) (r + 2) + 1), c ^ i * a (j + 1 + (r + 2) - 2 * i)) +
+        c * ∑ i ∈ range (min (j + 1) r + 1), c ^ i * a (j + 1 + r - 2 * i) := by
+  -- every one of the four sums is a sum of `A i = c^i a (j + r + 3 − 2i)`, the two scalar
+  -- multiples with the index shifted by one, and the upper limits pair up, so both sides are the
+  -- same pair of sums with the `i = 0` term of one of them removed
+  set A : ℕ → R := fun i ↦ c ^ i * a (j + r + 3 - 2 * i) with hA
+  -- a sum whose index reads `t - 2 i` with `t = j + r + 3` is a sum of `A`
+  have eA : ∀ t n : ℕ, t = j + r + 3 →
+      ∑ i ∈ range n, c ^ i * a (t - 2 * i) = ∑ i ∈ range n, A i := by
+    rintro t n rfl
+    rfl
+  -- a scalar multiple of such a sum with `t + 2 = j + r + 3` is a sum of `A` shifted by one
+  have eshift : ∀ t n : ℕ, t + 2 = j + r + 3 →
+      c * ∑ i ∈ range n, c ^ i * a (t - 2 * i) = ∑ i ∈ range n, A (i + 1) := by
+    intro t n ht
+    rw [Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    have hidx : j + r + 3 - 2 * (i + 1) = t - 2 * i := by omega
+    simp only [hA]
+    rw [hidx, ← mul_assoc, ← pow_succ']
+  -- and a shifted sum is the unshifted one without its `i = 0` term
+  have hsh : ∀ n : ℕ, ∑ i ∈ range n, A (i + 1) + A 0 = ∑ i ∈ range (n + 1), A i := fun n ↦
+    (Finset.sum_range_succ' A n).symm
+  have hmin₁ : min j (r + 1) + 1 + 1 = min (j + 1) (r + 2) + 1 := by omega
+  have hmin₂ : min (j + 1) r + 1 + 1 = min (j + 2) (r + 1) + 1 := by omega
+  rw [eA (j + 2 + (r + 1)) _ (by omega), eA (j + 1 + (r + 2)) _ (by omega),
+    eshift (j + (r + 1)) _ (by omega), eshift (j + 1 + r) _ (by omega)]
+  -- both sides become the same pair of sums of `A`, once the shifted ones absorb `A 0`
+  have h₁ := hsh (min j (r + 1) + 1)
+  have h₂ := hsh (min (j + 1) r + 1)
+  rw [hmin₁] at h₁
+  rw [hmin₂] at h₂
+  -- no cancellation is needed: each unshifted sum is rewritten back into a shifted one plus `A 0`,
+  -- after which the two sides differ only by the order of the summands
+  rw [← h₁, ← h₂]
+  abel
+
+/-- **The base case of the two-step recurrence, at `j = 0`.** `S 0 (r+2) + c · S 0 r = S 1 (r+1)`
+for `S j r = ∑_{i ≤ min j r} c^i a (j + r − 2i)`.
+
+`sum_range_min_add_two` states the recurrence only from `j + 1` upwards — its second index is
+`j + 1`, never `0` — so the degenerate case where the `min` pins two of the sums to a single term
+is stated separately here. Together the two cover every `j`. -/
+theorem sum_range_min_zero {R : Type*} [Semiring R] (a : ℕ → R) (c : R) (r : ℕ) :
+    (∑ i ∈ range (min 0 (r + 2) + 1), c ^ i * a (0 + (r + 2) - 2 * i)) +
+        c * ∑ i ∈ range (min 0 r + 1), c ^ i * a (0 + r - 2 * i) =
+      ∑ i ∈ range (min 1 (r + 1) + 1), c ^ i * a (1 + (r + 1) - 2 * i) := by
+  -- `min 0 _ = 0` pins the two sums on the left to their `i = 0` terms, and `min 1 (r+1) = 1`
+  -- pins the one on the right to its `i = 0` and `i = 1` terms
+  have hmin : min 1 (r + 1) + 1 = 2 := by omega
+  have hidx : 1 + (r + 1) = r + 2 := by omega
+  rw [hmin]
+  simp [Finset.sum_range_succ, hidx]
 
 end TauCeti

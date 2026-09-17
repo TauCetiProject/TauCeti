@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.TensorProduct.Closure
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Associator
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
@@ -22,13 +23,16 @@ for the trivial line bundle.
 * `InvertibleSheaf.tensorProduct` packages the tensor product of two line bundles;
 * `InvertibleSheaf.tensorProduct_obj` identifies its underlying sheaf;
 * `InvertibleSheaf.tensorProductCongrLeft` and `InvertibleSheaf.tensorProductCongrRight` transport
-  isomorphisms through either tensor factor;
+  isomorphisms through either tensor factor, so `InvertibleSheaf.isIsomorphic_tensorProduct`
+  shows that tensor product respects isomorphism;
 * `InvertibleSheaf.tensorProductComm` exchanges the two tensor factors;
+* `InvertibleSheaf.tensorProductAssoc` is the associativity isomorphism;
 * `InvertibleSheaf.tensorTrivialLeftIso` and `InvertibleSheaf.tensorTrivialRightIso` are the
   unit isomorphisms in the full category of invertible sheaves.
 
-The underlying sheaf is exposed by `tensorProduct_obj`, while the congruence, symmetry, and unit
-isomorphisms provide the categorical API for manipulating tensor products of line bundles.
+The underlying sheaf is exposed by `tensorProduct_obj`, while the congruence, symmetry,
+associativity, and unit isomorphisms provide the categorical API for manipulating tensor products
+of line bundles.
 -/
 
 -- This implementation follows `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A.
@@ -122,6 +126,14 @@ lemma tensorProductCongrRight_inv_val {L K K' : InvertibleSheaf X} (e : K ≅ K'
   simp only [tensorProductCongrRight, ObjectProperty.isoMk, ObjectProperty.homMk,
     _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
 
+/-- Tensor product preserves isomorphism of line bundles in both variables. -/
+lemma isIsomorphic_tensorProduct {L L' K K' : InvertibleSheaf X}
+    (hL : IsIsomorphic L L') (hK : IsIsomorphic K K') :
+    IsIsomorphic (tensorProduct L K) (tensorProduct L' K') := by
+  obtain ⟨e⟩ := hL
+  obtain ⟨f⟩ := hK
+  exact ⟨tensorProductCongrLeft e ≪≫ tensorProductCongrRight f⟩
+
 /-- The sheaf isomorphism underlying symmetry of the tensor product of line bundles. -/
 def tensorProductCommIso (L K : InvertibleSheaf X) :
     @Iso (SheafOfModules X.ringCatSheaf) _ (tensorProduct L K).obj (tensorProduct K L).obj := by
@@ -147,6 +159,35 @@ lemma tensorProductComm_inv_val (L K : InvertibleSheaf X) :
     (tensorProductComm L K).inv.hom.val =
       (tensorProductCommIso L K).inv.val := by
   simp only [tensorProductComm, ObjectProperty.isoMk, ObjectProperty.homMk,
+    _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
+
+/-- The sheaf isomorphism underlying associativity of the tensor product of line bundles. -/
+def tensorProductAssocIso (L K M : InvertibleSheaf X) :
+    @Iso (SheafOfModules X.ringCatSheaf) _ (tensorProduct (tensorProduct L K) M).obj
+      (tensorProduct L (tensorProduct K M)).obj := by
+  simpa only [tensorProduct_obj, ObjectProperty.ι_obj,
+    _root_.AlgebraicGeometry.Scheme.Modules.tensorProduct] using
+    (SheafOfModules.tensorProductAssoc X.sheaf L.obj K.obj M.obj)
+
+/-- The tensor product of line bundles is associative. -/
+def tensorProductAssoc (L K M : InvertibleSheaf X) :
+    tensorProduct (tensorProduct L K) M ≅ tensorProduct L (tensorProduct K M) :=
+  ObjectProperty.isoMk (SheafOfModules.isInvertible X)
+    (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X
+      (tensorProductAssocIso L K M))
+
+@[simp]
+lemma tensorProductAssoc_hom_val (L K M : InvertibleSheaf X) :
+    (tensorProductAssoc L K M).hom.hom.val =
+      (tensorProductAssocIso L K M).hom.val := by
+  simp only [tensorProductAssoc, ObjectProperty.isoMk, ObjectProperty.homMk,
+    _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_hom_val]
+
+@[simp]
+lemma tensorProductAssoc_inv_val (L K M : InvertibleSheaf X) :
+    (tensorProductAssoc L K M).inv.hom.val =
+      (tensorProductAssocIso L K M).inv.val := by
+  simp only [tensorProductAssoc, ObjectProperty.isoMk, ObjectProperty.homMk,
     _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
 
 /-- The sheaf isomorphism underlying the left unit for the tensor product of line bundles. -/

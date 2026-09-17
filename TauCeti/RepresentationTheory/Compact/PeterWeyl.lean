@@ -154,6 +154,14 @@ namespace IrrepModel
 
 variable {𝕜 G : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G]
 
+/-- The canonical linear isometry from the scalar field to the standard one-dimensional carrier of
+an `IrrepModel`. It matches the standard orthonormal bases on the two spaces. -/
+noncomputable def oneDimensionalEquiv :
+    𝕜 ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin 1) :=
+  let e : Fin (Module.finrank 𝕜 𝕜) ≃ Fin 1 := finCongr (by simp)
+  ((stdOrthonormalBasis 𝕜 𝕜).reindex e).equiv
+    (EuclideanSpace.basisFun (Fin 1) 𝕜) (Equiv.refl (Fin 1))
+
 /-- The canonical orthonormal basis of the carrier of a model. -/
 noncomputable def basis (m : IrrepModel 𝕜 G) :
     OrthonormalBasis (Fin m.dim) 𝕜 (EuclideanSpace 𝕜 (Fin m.dim)) :=

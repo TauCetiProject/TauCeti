@@ -32,6 +32,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   lift to a multiple level through `d` descends to a factorisation of `χ` through `gcd (N, d)`,
   and `DirichletCharacter.factorsThrough_div_of_changeLevel_factorsThrough`: its arithmetic
   specialisation, from `L N / p` to `N / p`.
+* `DirichletCharacter.exists_eq_comp_unitsMap_of_factorsThrough`: a factorisation of
+  `MulChar.ofUnitHom χ` through `d`, read back on unit homomorphisms as `χ = χ₀ ∘ unitsMap`.
 
 ## Provenance
 
@@ -104,5 +106,22 @@ theorem factorsThrough_div_of_changeLevel_factorsThrough {R : Type*} [CommMonoid
       _ = N / p := by rw [hpL.gcd_eq_one, one_mul]
   rw [← hgcd]
   exact factorsThrough_gcd_of_changeLevel_factorsThrough _ hfac
+
+/-- **A factorisation, read on unit homomorphisms.** If the Dirichlet character
+`MulChar.ofUnitHom χ` factors through `d ∣ N`, the unit homomorphism `χ` is itself a composition
+`χ₀ ∘ ZMod.unitsMap` with a unit homomorphism modulo `d` — the form in which a lowered
+nebentypus is consumed, by the descent lemmas of `Newforms/Descent` and by the Main Lemma's
+induction. -/
+theorem exists_eq_comp_unitsMap_of_factorsThrough {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
+    (hd : d ∣ N) {χ : (ZMod N)ˣ →* Rˣ}
+    (hfac : FactorsThrough (MulChar.ofUnitHom χ : DirichletCharacter R N) d) :
+    ∃ χ₀ : (ZMod d)ˣ →* Rˣ, χ = χ₀.comp (ZMod.unitsMap hd) := by
+  -- Proved forwards, by applying `MulChar.toUnitHom` to `eq_changeLevel`: `hfac.χ₀` mentions `χ`
+  -- through the type of `hfac`, so rewriting `χ` in the goal would break the motive.
+  refine ⟨hfac.χ₀.toUnitHom, ?_⟩
+  have hχ : MulChar.toUnitHom (MulChar.ofUnitHom χ : DirichletCharacter R N) = χ :=
+    MulChar.equivToUnitHom.apply_symm_apply χ
+  have h := congrArg MulChar.toUnitHom hfac.eq_changeLevel
+  rwa [DirichletCharacter.changeLevel_toUnitHom, hχ] at h
 
 end DirichletCharacter

@@ -106,7 +106,7 @@ in the tangent-bundle chart centred at the argument, in which the base direction
 extended chart of `M` at `x` and the fibre direction in the trivialization at `x`. -/
 def geodesicSpray (z : TangentBundle I M) : TangentSpace I.tangent z :=
   (z.2, -christoffelMap (finBasis ℝ E)
-    ((leviCivita I M).isCovariantDerivativeOn
+    ((leviCivitaConnection I M).isCovariantDerivativeOn
       (s := (trivializationAt E (TangentSpace I) z.proj).baseSet)) z.proj z.2 z.2)
 
 /-- **The chart formula for the geodesic spray**, restating the definition, whose body is not
@@ -114,7 +114,7 @@ exposed across the module boundary. -/
 theorem geodesicSpray_apply (z : TangentBundle I M) :
     geodesicSpray I M z =
       (z.2, -christoffelMap (finBasis ℝ E)
-        ((leviCivita I M).isCovariantDerivativeOn
+        ((leviCivitaConnection I M).isCovariantDerivativeOn
           (s := (trivializationAt E (TangentSpace I) z.proj).baseSet)) z.proj z.2 z.2) :=
   (rfl)
 
@@ -125,7 +125,7 @@ theorem geodesicSpray_zero (x : M) :
   rw [geodesicSpray_apply]
   -- Reduce the projections of the displayed total-space point; they have no rewriting lemma.
   change (0, -christoffelMap (finBasis ℝ E)
-    ((leviCivita I M).isCovariantDerivativeOn
+    ((leviCivitaConnection I M).isCovariantDerivativeOn
       (s := (trivializationAt E (TangentSpace I) x).baseSet)) x 0 0) = (0, 0)
   rw [map_zero]
   rw [neg_zero]
@@ -139,18 +139,18 @@ private theorem geodesicSpray_coordChange {x x₀ : M}
     (hx₀ : x ∈ (extChartAt I x₀).source) (u : TangentSpace I x) :
     let A := tangentCoordChange I x x₀ x
     let Γ := christoffelMap (finBasis ℝ E)
-      ((leviCivita I M).isCovariantDerivativeOn
+      ((leviCivitaConnection I M).isCovariantDerivativeOn
         (s := (trivializationAt E (TangentSpace I) x).baseSet)) x
     let Γ₀ := christoffelMap (finBasis ℝ E)
-      ((leviCivita I M).isCovariantDerivativeOn
+      ((leviCivitaConnection I M).isCovariantDerivativeOn
         (s := (trivializationAt E (TangentSpace I) x₀).baseSet)) x
     (A u, mvfderiv I (fun y ↦ tangentCoordChange I x x₀ y u) x u - A (Γ u u)) =
       (A u, -Γ₀ (A u) (A u)) := by
   dsimp only
   have h := christoffelMap_coordChange (finBasis ℝ E) hx₀ u u
-    ((leviCivita I M).isCovariantDerivativeOn
+    ((leviCivitaConnection I M).isCovariantDerivativeOn
       (s := (trivializationAt E (TangentSpace I) x₀).baseSet))
-    ((leviCivita I M).isCovariantDerivativeOn
+    ((leviCivitaConnection I M).isCovariantDerivativeOn
       (s := (trivializationAt E (TangentSpace I) x).baseSet))
   rw [h]
   simp only [neg_sub]
@@ -165,12 +165,12 @@ theorem tangentCoordChange_geodesicSpray {x x₀ : M}
         (TotalSpace.mk' E x u) (geodesicSpray I M (TotalSpace.mk' E x u)) =
       let v := tangentCoordChange I x x₀ x u
       (v, -christoffelMap (finBasis ℝ E)
-        ((leviCivita I M).isCovariantDerivativeOn
+        ((leviCivitaConnection I M).isCovariantDerivativeOn
           (s := (trivializationAt E (TangentSpace I) x₀).baseSet)) x v v) := by
   rw [geodesicSpray_apply]
   have hT := tangentCoordChange_tangent_apply (I := I) (M := M) hx₀ u
     (-christoffelMap (finBasis ℝ E)
-      ((leviCivita I M).isCovariantDerivativeOn
+      ((leviCivitaConnection I M).isCovariantDerivativeOn
         (s := (trivializationAt E (TangentSpace I) x).baseSet)) x u u)
   simp only [continuousLinearMapAt_trivializationAt_self] at hT
   -- Reduce the projections of the displayed total-space point so that the general tangent-chart
@@ -178,7 +178,7 @@ theorem tangentCoordChange_geodesicSpray {x x₀ : M}
   change tangentCoordChange I.tangent (TotalSpace.mk' E x u) (TotalSpace.mk' E x₀ 0)
       (TotalSpace.mk' E x u)
         (u, -christoffelMap (finBasis ℝ E)
-          ((leviCivita I M).isCovariantDerivativeOn
+          ((leviCivitaConnection I M).isCovariantDerivativeOn
             (s := (trivializationAt E (TangentSpace I) x).baseSet)) x u u) = _
   rw [hT]
   simpa only [map_neg, ← sub_eq_add_neg] using
@@ -191,7 +191,7 @@ theorem hasMFDerivWithinAt_curveVelocityLiftWithin_iff
     (hs : UniqueDiffOn ℝ s) (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 2 γ s) (ht : t ∈ s) :
     HasMFDerivWithinAt 𝓘(ℝ, ℝ) I.tangent (curveVelocityLiftWithin I γ s) s t
         ((1 : ℝ →L[ℝ] ℝ).smulRight (geodesicSpray I M (curveVelocityLiftWithin I γ s t))) ↔
-      alongCurveWithin (leviCivita I M) γ (curveVelocityWithin I γ s) s t = 0 := by
+      alongCurveWithin (leviCivitaConnection I M) γ (curveVelocityWithin I γ s) s t = 0 := by
   rw [geodesicSpray_apply, curveVelocityLiftWithin_snd, curveVelocityLiftWithin_proj]
   have hxbase : γ t ∈ (trivializationAt E (TangentSpace I) (γ t)).baseSet :=
     FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
@@ -225,24 +225,24 @@ theorem hasMFDerivWithinAt_curveVelocityLiftWithin_iff
           hxbase)).continuousWithinAt⟩
   -- the Christoffel term of the spray, read through the two presentations of the velocity
   have hchris : christoffelMap (finBasis ℝ E)
-        ((leviCivita I M).isCovariantDerivativeOn
+        ((leviCivitaConnection I M).isCovariantDerivativeOn
           (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t)
         (derivWithin (extChartAt I (γ t) ∘ γ) s t)
         (derivWithin (extChartAt I (γ t) ∘ γ) s t) =
       christoffelMap (finBasis ℝ E)
-        ((leviCivita I M).isCovariantDerivativeOn
+        ((leviCivitaConnection I M).isCovariantDerivativeOn
           (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t)
         (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t) :=
     congrArg (fun v : E ↦ christoffelMap (finBasis ℝ E)
-      ((leviCivita I M).isCovariantDerivativeOn
+      ((leviCivitaConnection I M).isCovariantDerivativeOn
         (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t) v v) hw
-  rw [alongCurveWithin_curveVelocityWithin_eq_zero_iff (leviCivita I M) γ hs hγd ht]
+  rw [alongCurveWithin_curveVelocityWithin_eq_zero_iff (leviCivitaConnection I M) γ hs hγd ht]
   have htotal := hasMFDerivWithinAt_totalSpace_curve_iff_of_continuousWithinAt
     (F := E) (V := fun x : M ↦ TangentSpace I x) (IB := I)
     (z := curveVelocityLiftWithin I γ s)
     (a := curveVelocityWithin I γ s t)
     (b := -christoffelMap (finBasis ℝ E)
-      ((leviCivita I M).isCovariantDerivativeOn
+      ((leviCivitaConnection I M).isCovariantDerivativeOn
         (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t)
       (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t)) hcont
   simp only [curveVelocityLiftWithin_proj] at htotal
@@ -256,7 +256,7 @@ theorem hasMFDerivWithinAt_curveVelocityLiftWithin_iff
   · intro h
     have h1 : derivWithin (derivWithin (extChartAt I (γ t) ∘ γ) s) s t =
         -christoffelMap (finBasis ℝ E)
-          ((leviCivita I M).isCovariantDerivativeOn
+          ((leviCivitaConnection I M).isCovariantDerivativeOn
             (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t)
           (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t) := by
       rw [← hchris]
@@ -290,7 +290,7 @@ theorem eq_curveVelocityLiftWithin_of_isMIntegralCurveOn {z : ℝ → TangentBun
     (F := E) (V := fun x : M ↦ TangentSpace I x) (IB := I) (z := z)
     (a := (z t).2)
     (b := -christoffelMap (finBasis ℝ E)
-      ((leviCivita I M).isCovariantDerivativeOn
+      ((leviCivitaConnection I M).isCovariantDerivativeOn
         (s := (trivializationAt E (TangentSpace I) (z t).proj).baseSet)) (z t).proj
       (z t).2 (z t).2) (h t ht).continuousWithinAt).1 (h t ht)
   have hvel : curveVelocityWithin I (fun r ↦ (z r).proj) s t = (z t).2 :=

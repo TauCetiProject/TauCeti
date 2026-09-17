@@ -26,6 +26,10 @@ projections, while `DirectSum.isInternal_comap` and
 map whose range contains the homogeneous projections of its elements, with
 `DirectSum.map_decompose_restrict` computing the projections of the restricted decomposition.
 
+A third group is about maps compatible with a decomposition: if a linear map carries each
+summand of a spanning family into the corresponding member of an independent family, then its
+kernel is spanned by its homogeneous parts, `LinearMap.ker_eq_iSup_inf_of_map_le`.
+
 The file also specializes the compactness bound
 `TauCeti.finite_ne_bot_of_iSupIndep_of_isCompactElement` to submodules,
 `TauCeti.Submodule.finite_ne_bot_of_iSupIndep_of_fg`.
@@ -280,5 +284,29 @@ theorem Submodule.finite_ne_bot_of_iSupIndep_of_fg {R ι M : Type*} [Semiring R]
     [Module R M] {A : ι → Submodule R M} (hAi : iSupIndep A) (hAf : (⨆ i, A i).FG) :
     {i | A i ≠ ⊥}.Finite :=
   Submodule.finite_ne_bot_of_iSupIndep_of_fg_aux hAi hAf
+
+/-- **The kernel of a map compatible with a decomposition is spanned by its homogeneous parts.**
+If the submodules `A i` span the source, the submodules `A' i` are independent, and `g` carries
+`A i` into `A' i`, then the kernel of `g` is the supremum of its intersections with the `A i`.
+
+The hypothesis on the source is only that its family spans; independence there is not used, and
+an internal direct sum supplies it through `DirectSum.IsInternal.submodule_iSup_eq_top`. -/
+theorem _root_.LinearMap.ker_eq_iSup_inf_of_map_le {R ι M N : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] (g : M →ₗ[R] N) {A : ι → Submodule R M}
+    {A' : ι → Submodule R N} (hA : ⨆ i, A i = ⊤) (hA' : iSupIndep A')
+    (hg : ∀ i, (A i).map g ≤ A' i) :
+    LinearMap.ker g = ⨆ i, LinearMap.ker g ⊓ A i := by
+  classical
+  refine le_antisymm (fun x hx ↦ ?_) (iSup_le fun _ ↦ inf_le_left)
+  obtain ⟨c, hc, rfl⟩ :=
+    (Submodule.mem_iSup_iff_exists_finsupp A x).1 (hA ▸ Submodule.mem_top)
+  have hsum : ∑ i ∈ c.support, g (c i) = 0 := by
+    rw [← map_sum]
+    simpa [Finsupp.sum] using hx
+  have hzero := (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero A').1 hA' c.support
+    (fun i ↦ g (c i)) (fun i _ ↦ hg i ⟨c i, hc i, rfl⟩) hsum
+  simp only [Finsupp.sum]
+  exact Submodule.sum_mem _ fun i hi ↦
+    Submodule.mem_iSup_of_mem i ⟨LinearMap.mem_ker.2 (hzero i hi), hc i⟩
 
 end TauCeti

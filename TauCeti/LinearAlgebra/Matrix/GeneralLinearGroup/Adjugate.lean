@@ -34,6 +34,9 @@ which is proved where those objects live, not here.
 * `TauCeti.adjugateGL_eq_inv`: on determinant one, `adj(g) = g⁻¹`.
 * `TauCeti.adjugateGL_mapGL`: on a special-linear image, `adj(mapGL σ) = mapGL σ⁻¹`.
 * `TauCeti.adjugateGL_adjugateGL`: in size two, `adj` is an involution.
+* `Matrix.adjugate_eq_det_smul_inv`: `adj(A) = det A • A⁻¹` for `A` of unit determinant, at
+  any finite size.
+* `Matrix.GeneralLinearGroup.adjugateGL_eq_scalar_mul_inv`: `adj(g) = (det g · I) * g⁻¹`.
 
 ## References
 
@@ -100,3 +103,33 @@ lemma adjugateGL_adjugateGL (h2 : Fintype.card n = 2) (g : GL n R) :
   simp
 
 end TauCeti
+
+namespace Matrix.GeneralLinearGroup
+
+open TauCeti
+
+/-- **The adjugate is the determinant times the inverse**: `adj A = det A • A⁻¹`, whenever the
+determinant is a unit. `Matrix.inv_def` read backwards, at any finite size. -/
+theorem _root_.Matrix.adjugate_eq_det_smul_inv {n R : Type*} [DecidableEq n] [Fintype n]
+    [CommRing R] {A : Matrix n n R} (hA : IsUnit A.det) : adjugate A = A.det • A⁻¹ := by
+  rw [Matrix.inv_def, smul_smul, Ring.mul_inverse_cancel _ hA, one_smul]
+
+/-- **The adjugate of an invertible matrix is its inverse rescaled by the determinant**:
+`adj g = (det g · I) * g⁻¹`, in `GL n R`. Writing it as a product with a scalar matrix is what
+lets a multiplicative action be *split* along the adjugate — the weight-`k` slash is, in
+`TauCeti/NumberTheory/ModularForms/SlashAdjugate.lean`.
+
+In size two, and only there, the adjugate is an involution (`adjugateGL_adjugateGL`); it is that
+specialisation that the modular literature calls the main involution and writes `α^ι`.
+
+Adapted from AINTLIB (github.com/CBirkbeck/AINTLIB @ `6d87d596a537`, Apache-2.0),
+`projects/LeanModularForms/LeanModularForms/HeckeRIngs/GL2/AdjointTheory.lean`, whose
+`peterssonAdj` is `adjugateGL` at `GL (Fin 2) ℝ` and records the same identity in its docstring
+("`α† = det(α) · α⁻¹ = adjugate(α)`"). -/
+theorem adjugateGL_eq_scalar_mul_inv {n R : Type*} [DecidableEq n] [Fintype n] [CommRing R]
+    (g : GL n R) : adjugateGL g = scalar n (GeneralLinearGroup.det g) * g⁻¹ :=
+  Units.ext <| by
+    simp [adjugateGL_val, Matrix.adjugate_eq_det_smul_inv (Matrix.isUnit_det_of_invertible _),
+      Matrix.smul_eq_diagonal_mul, Matrix.scalar_apply]
+
+end Matrix.GeneralLinearGroup

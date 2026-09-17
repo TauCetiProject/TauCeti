@@ -50,7 +50,8 @@ arbitrary initial time is recovered by translating the parameter with
 
 * `isOpen_maximalIntegralCurveInterval`, `ordConnected_maximalIntegralCurveInterval` and
   `isPreconnected_maximalIntegralCurveInterval`: the maximal interval of existence is an open
-  interval, and `zero_mem_maximalIntegralCurveInterval` puts `0` in it.
+  interval, and `zero_mem_maximalIntegralCurveInterval` puts `0` in it, uniformly in the initial
+  point in `TauCeti.eventually_mem_maximalIntegralCurveInterval`.
 * `isMIntegralCurveOn_maximalIntegralCurve`: the maximal curve is an integral curve of `v` on the
   maximal interval, with `maximalIntegralCurve_zero` giving its value at `0`.
 * `IsMIntegralCurveOn.eqOn_maximalIntegralCurve` and
@@ -181,6 +182,24 @@ theorem zero_mem_maximalIntegralCurveInterval [CompleteSpace E] [IsManifold I 1 
   rw [Real.ball_eq_Ioo, zero_sub, zero_add] at hγε
   have h0 : (0 : ℝ) ∈ Ioo (-ε) ε := ⟨by linarith, by linarith⟩
   exact hγε.subset_maximalIntegralCurveInterval h0 hγ0 h0
+
+namespace TauCeti
+
+/-- **The domain of the maximal flow contains a neighbourhood of `(x, 0)`.** For a vector field
+which is `C^1` at `x`, every initial point near `x` has a maximal integral curve defined at every
+time near `0`. This is the uniform-in-the-initial-point form of
+`zero_mem_maximalIntegralCurveInterval`. -/
+theorem eventually_mem_maximalIntegralCurveInterval [CompleteSpace E] [IsManifold I 1 M]
+    [BoundarylessManifold I M]
+    (hv : CMDiffAt 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)) x) :
+    ∀ᶠ p in 𝓝 ((x, 0) : M × ℝ), p.2 ∈ maximalIntegralCurveInterval v p.1 := by
+  obtain ⟨w, hw, ε, hε, hγ⟩ := exists_mem_nhds_forall_exists_isMIntegralCurveOn_Ioo hv
+  have h0 : (0 : ℝ) ∈ Ioo (0 - ε) (0 + ε) := by simpa using hε
+  filter_upwards [prod_mem_nhds hw (Ioo_mem_nhds h0.1 h0.2)] with p hp
+  obtain ⟨γ, hγ0, hγ⟩ := hγ 0 p.1 hp.1
+  exact hγ.subset_maximalIntegralCurveInterval h0 hγ0 hp.2
+
+end TauCeti
 
 /-- **The maximal integral curve** of `v` through `x`: at a time of `maximalIntegralCurveInterval
 v x` it is the value there of one integral curve of `v` through `x` defined at that time, chosen

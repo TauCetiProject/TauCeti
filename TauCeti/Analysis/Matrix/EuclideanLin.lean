@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import Mathlib.LinearAlgebra.Matrix.Rank
 
 /-!
 # The map of a matrix on Euclidean space
@@ -17,6 +18,10 @@ rectangular matrix `A` gives the quadratic form of the congruent matrix `Aᴴ * 
 the change-of-variables identity behind every computation of a quadratic statistic after a linear
 transformation of the underlying vector.
 
+The rank of a matrix is the rank of the linear map it induces, in both the `ℕ`-valued and the
+`Cardinal`-valued sense; this is what lets a matrix-rank statement be read off an operator-rank
+one.
+
 An invertible square matrix induces not just a map but a continuous linear equivalence, whose
 inverse is the map of the inverse matrix. That is the form a substitution needs: it supplies the
 inverse substitution and, through `LinearMap.det_toLpLin`, the Jacobian.
@@ -25,6 +30,9 @@ inverse substitution and, through `LinearMap.det_toLpLin`, the Jacobian.
 
 * `Matrix.inner_toEuclideanLin_toEuclideanLin` — the quadratic form of `B` at `A x` is the
   quadratic form of `Aᴴ * B * A` at `x`;
+* `Matrix.rank_eq_finrank_range_toEuclideanLin`, `Matrix.rank_coe_toEuclideanCLM` — the matrix
+  rank is the dimension of the range of the induced map, and the `LinearMap.rank` of the induced
+  continuous linear map;
 * `Matrix.toEuclideanCLE` — the continuous linear equivalence of an invertible matrix, with its
   `apply`, `symm_apply`, coercion and determinant lemmas.
 -/
@@ -46,6 +54,25 @@ theorem inner_toEuclideanLin_toEuclideanLin (A : Matrix κ ι 𝕜) (B : Matrix 
       ⟪x, (Aᴴ * B * A).toEuclideanLin x⟫_𝕜 := by
   rw [← LinearMap.adjoint_inner_right, ← toEuclideanLin_conjTranspose_eq_adjoint]
   simp only [toEuclideanLin, toLpLin_mul_same, LinearMap.comp_apply]
+
+omit [Fintype κ] [DecidableEq κ] in
+/-- The rank of a matrix is the dimension of the range of the linear map it induces on Euclidean
+space. -/
+theorem rank_eq_finrank_range_toEuclideanLin [Finite κ] (A : Matrix κ ι 𝕜) :
+    A.rank = Module.finrank 𝕜 (LinearMap.range (toEuclideanLin A)) := by
+  have : Fintype κ := Fintype.ofFinite κ
+  rw [toEuclideanLin_eq_toLin_orthonormal]
+  exact A.rank_eq_finrank_range_toLin (EuclideanSpace.basisFun κ 𝕜).toBasis
+    (EuclideanSpace.basisFun ι 𝕜).toBasis
+
+/-- The `Cardinal`-valued rank of the continuous linear map of a square matrix is its matrix rank.
+This is the bridge that turns an operator-rank statement into a matrix-rank one. -/
+theorem rank_coe_toEuclideanCLM (A : Matrix ι ι 𝕜) :
+    LinearMap.rank
+        (toEuclideanCLM (n := ι) (𝕜 := 𝕜) A : EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι) =
+      A.rank := by
+  rw [LinearMap.rank, coe_toEuclideanCLM_eq_toEuclideanLin, ← Module.finrank_eq_rank,
+    rank_eq_finrank_range_toEuclideanLin]
 
 section Invertible
 
