@@ -6,6 +6,8 @@ Authors: Chris Birkbeck, Claude
 module
 
 import TauCeti.Data.Int.LinearCongruence
+-- `mem_Gamma0_iff_dvd`, used only inside a proof.
+import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 import TauCeti.Data.ZMod.Units
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.DoubleCoset
 public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
@@ -227,9 +229,9 @@ theorem mem_doubleCoset_natDiagGL_of_intWitness (N m : ℕ) (β : GL (Fin 2) ℚ
       (g : Matrix (Fin 2) (Fin 2) ℤ) = Matrix.of ![![(1 : ℤ), r], ![0, 1]] := ⟨⟨_, hR_det⟩, rfl⟩
   have hDiag := natDiagGL_coe_eq_map_intCast 2 ![1, m] fun i ↦ by fin_cases i <;> simp [hm_pos]
   rw [DoubleCoset.mem_doubleCoset]
-  refine ⟨mapGL ℚ L_sl, Subgroup.mem_map_of_mem _ (Gamma0_mem.mpr ?_),
-    mapGL ℚ R_sl, Subgroup.mem_map_of_mem _ (Gamma0_mem.mpr ?_), Units.ext ?_⟩
-  · exact hL_sl ▸ (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mpr hL_N
+  refine ⟨mapGL ℚ L_sl, Subgroup.mem_map_of_mem _ (mem_Gamma0_iff_dvd.mpr ?_),
+    mapGL ℚ R_sl, Subgroup.mem_map_of_mem _ (mem_Gamma0_iff_dvd.mpr ?_), Units.ext ?_⟩
+  · exact hL_sl ▸ hL_N
   · simp [hR_sl]
   · rw [mapGL_mul_coe_eq_intMatrix 2 L_sl R_sl _ _ hDiag, hL_sl, hR_sl, hA, hA_eq,
       upperTriangular_eq_diagonal_mul_unipotent, ← mul_assoc]

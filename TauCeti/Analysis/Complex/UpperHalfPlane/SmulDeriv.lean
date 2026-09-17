@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
-public import TauCeti.Analysis.Complex.UpperHalfPlane.PSLAction
+public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
