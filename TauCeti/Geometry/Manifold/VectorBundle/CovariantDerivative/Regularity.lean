@@ -17,7 +17,7 @@ field.  It turns the hom-bundle-valued regularity supplied by
 
 ## Main results
 
-* `TauCeti.Manifold.contMDiff_covariantDerivative_apply`: applying a `C^n` covariant derivative
+* `CovariantDerivative.contMDiff_apply`: applying a `C^n` covariant derivative
   to a `C^(n + 1)` section along a `C^n` vector field produces a `C^n` section.
 -/
 
@@ -26,7 +26,7 @@ public section
 open Bundle FiberBundle
 open scoped ContDiff Manifold
 
-namespace TauCeti.Manifold
+namespace CovariantDerivative
 
 variable
   {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -41,7 +41,7 @@ variable
 
 /-- Applying a `C^n` covariant derivative to a `C^(n + 1)` section along a `C^n` vector field
 produces a `C^n` section. -/
-theorem contMDiff_covariantDerivative_apply
+theorem contMDiff_apply
     (cov : _root_.CovariantDerivative I F V)
     [_root_.CovariantDerivative.ContMDiffCovariantDerivative cov n]
     {X : Π x : M, TangentSpace I x} {σ : Π x : M, V x}
@@ -52,4 +52,4 @@ theorem contMDiff_covariantDerivative_apply
     (_root_.CovariantDerivative.ContMDiffCovariantDerivative.contMDiff.contMDiff
       hσ.contMDiffOn) hX.contMDiffOn
 
-end TauCeti.Manifold
+end CovariantDerivative
