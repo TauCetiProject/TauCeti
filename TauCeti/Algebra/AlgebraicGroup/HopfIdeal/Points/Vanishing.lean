@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 import TauCeti.RingTheory.TensorProduct.PointSeparation
+import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 
 /-!
 # The Hopf ideal vanishing on a subgroup of rational points
@@ -33,38 +34,38 @@ noncomputable section
 variable {k H : Type*} [Field k] [CommRing H] [HopfAlgebra k H]
 
 /-- Functions vanishing at every point of the subgroup. -/
-private def vanishingIdeal (S : Subgroup (WithConv (H →ₐ[k] k))) : Ideal H :=
+private def pointKernelIdeal (S : Subgroup (WithConv (H →ₐ[k] k))) : Ideal H :=
   ⨅ g : S, RingHom.ker g.val.ofConv
 
-private theorem mem_vanishingIdeal (S : Subgroup (WithConv (H →ₐ[k] k))) (x : H) :
-    x ∈ vanishingIdeal S ↔ ∀ g : S, g.val.ofConv x = 0 := by
-  simp [vanishingIdeal, RingHom.mem_ker]
+private theorem mem_pointKernelIdeal (S : Subgroup (WithConv (H →ₐ[k] k))) (x : H) :
+    x ∈ pointKernelIdeal S ↔ ∀ g : S, g.val.ofConv x = 0 := by
+  simp [pointKernelIdeal, RingHom.mem_ker]
 
 /-- Evaluation at a subgroup point descends to the quotient by its vanishing ideal. -/
 private def quotientEval (S : Subgroup (WithConv (H →ₐ[k] k))) (g : S) :
-    H ⧸ vanishingIdeal S →ₐ[k] k :=
-  Ideal.Quotient.liftₐ _ g.val.ofConv fun x hx ↦ (mem_vanishingIdeal S x).mp hx g
+    H ⧸ pointKernelIdeal S →ₐ[k] k :=
+  Ideal.Quotient.liftₐ _ g.val.ofConv fun x hx ↦ (mem_pointKernelIdeal S x).mp hx g
 
 private theorem quotientEval_mk (S : Subgroup (WithConv (H →ₐ[k] k))) (g : S) (x : H) :
-    quotientEval S g (Ideal.Quotient.mk (vanishingIdeal S) x) = g.val.ofConv x :=
+    quotientEval S g (Ideal.Quotient.mk (pointKernelIdeal S) x) = g.val.ofConv x :=
   Ideal.Quotient.liftₐ_apply _ _ _ _
 
 private theorem quotientEval_separates (S : Subgroup (WithConv (H →ₐ[k] k)))
-    (x : H ⧸ vanishingIdeal S) (hx : ∀ g, quotientEval S g x = 0) : x = 0 := by
-  obtain ⟨x, rfl⟩ := Ideal.Quotient.mkₐ_surjective k (vanishingIdeal S) x
+    (x : H ⧸ pointKernelIdeal S) (hx : ∀ g, quotientEval S g x = 0) : x = 0 := by
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mkₐ_surjective k (pointKernelIdeal S) x
   apply Ideal.Quotient.eq_zero_iff_mem.mpr
-  exact (mem_vanishingIdeal S x).mpr hx
+  exact (mem_pointKernelIdeal S x).mpr hx
 
-private theorem comul_mem_vanishingIdeal (S : Subgroup (WithConv (H →ₐ[k] k)))
-    {x : H} (hx : x ∈ vanishingIdeal S) :
+private theorem comul_mem_pointKernelIdeal (S : Subgroup (WithConv (H →ₐ[k] k)))
+    {x : H} (hx : x ∈ pointKernelIdeal S) :
     Coalgebra.comul (R := k) x ∈
-      leftTensorIdeal (R := k) (H := H) (vanishingIdeal S) ⊔
-        rightTensorIdeal (R := k) (H := H) (vanishingIdeal S) := by
-  let q := Ideal.Quotient.mkₐ k (vanishingIdeal S)
-  have hker : RingHom.ker q = vanishingIdeal S := Ideal.mk_ker
+      leftTensorIdeal (R := k) (H := H) (pointKernelIdeal S) ⊔
+        rightTensorIdeal (R := k) (H := H) (pointKernelIdeal S) := by
+  let q := Ideal.Quotient.mkₐ k (pointKernelIdeal S)
+  have hker : RingHom.ker q = pointKernelIdeal S := Ideal.Quotient.mkₐ_ker k (pointKernelIdeal S)
   rw [← hker, ← ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q
     (Ideal.Quotient.mkₐ_surjective k _) (Ideal.Quotient.mkₐ_surjective k _), RingHom.mem_ker]
-  apply tensorProduct_eq_zero_of_forall_productMap_eq_zero
+  apply tensor_eq_zero_of_forall_productMap_eq_zero
     (quotientEval S) (quotientEval S) (quotientEval_separates S) (quotientEval_separates S)
   intro g h
   have heq : (Algebra.TensorProduct.productMap (quotientEval S g) (quotientEval S h)).comp
@@ -73,44 +74,54 @@ private theorem comul_mem_vanishingIdeal (S : Subgroup (WithConv (H →ₐ[k] k)
     ext : 1 <;> ext b <;> simp [AlgHom.comp_apply, q, quotientEval_mk]
   rw [← AlgHom.comp_apply, heq]
   exact (AlgHom.convMul_apply g.val h.val x).symm.trans
-    ((mem_vanishingIdeal S x).mp hx (g * h))
+    ((mem_pointKernelIdeal S x).mp hx (g * h))
 
 /-- The radical Hopf ideal of functions vanishing on a subgroup of rational points. -/
-def ofPoints (S : Subgroup (WithConv (H →ₐ[k] k))) : HopfIdeal k H :=
-  ofIdeal (vanishingIdeal S) (fun _ hx ↦ comul_mem_vanishingIdeal S hx)
-    (fun x hx ↦ by simpa using (mem_vanishingIdeal S x).mp hx 1)
-    (fun x hx ↦ (mem_vanishingIdeal S _).mpr fun g ↦ by
-      simpa using (mem_vanishingIdeal S x).mp hx g⁻¹)
+def vanishingIdeal (S : Subgroup (WithConv (H →ₐ[k] k))) : HopfIdeal k H :=
+  ofIdeal (pointKernelIdeal S) (fun _ hx ↦ comul_mem_pointKernelIdeal S hx)
+    (fun x hx ↦ by simpa using (mem_pointKernelIdeal S x).mp hx 1)
+    (fun x hx ↦ (mem_pointKernelIdeal S _).mpr fun g ↦ by
+      simpa using (mem_pointKernelIdeal S x).mp hx g⁻¹)
 
 /-- Membership means vanishing at every point of the subgroup. -/
 @[simp]
-theorem mem_ofPoints (S : Subgroup (WithConv (H →ₐ[k] k))) (x : H) :
-    x ∈ ofPoints S ↔ ∀ g : S, g.val.ofConv x = 0 :=
-  mem_vanishingIdeal S x
+theorem mem_vanishingIdeal (S : Subgroup (WithConv (H →ₐ[k] k))) (x : H) :
+    x ∈ vanishingIdeal S ↔ ∀ g : S, g.val.ofConv x = 0 :=
+  mem_ofIdeal.trans (mem_pointKernelIdeal S x)
 
 /-- The underlying ideal is the intersection of the kernels of the evaluations. -/
-theorem ofPoints_toIdeal (S : Subgroup (WithConv (H →ₐ[k] k))) :
-    (ofPoints S).toIdeal = ⨅ g : S, RingHom.ker g.val.ofConv := by rfl
+theorem vanishingIdeal_toIdeal (S : Subgroup (WithConv (H →ₐ[k] k))) :
+    (vanishingIdeal S).toIdeal = ⨅ g : S, RingHom.ker g.val.ofConv := by
+  ext x
+  rw [mem_toIdeal, mem_vanishingIdeal]
+  simp [RingHom.mem_ker]
 
-/-- The closed subgroup generated by rational points is reduced. -/
-theorem isRadical_ofPoints (S : Subgroup (WithConv (H →ₐ[k] k))) :
-    (ofPoints S).toIdeal.IsRadical := by
-  rw [ofPoints_toIdeal]
+/-- The vanishing ideal of a point subgroup is radical. -/
+theorem isRadical_vanishingIdeal (S : Subgroup (WithConv (H →ₐ[k] k))) :
+    (vanishingIdeal S).toIdeal.IsRadical := by
+  rw [vanishingIdeal_toIdeal]
   exact Ideal.isRadical_iInf _ fun g ↦ (Ideal.isRadical_bot (R := k)).comap g.val.ofConv
+
+/-- The closed subgroup cut out by the vanishing ideal of a point subgroup is reduced. -/
+instance isReduced_quotient_vanishingIdeal (S : Subgroup (WithConv (H →ₐ[k] k))) :
+    IsReduced (CommHopfAlgCat.quotient (_root_.CommHopfAlgCat.of k H)
+      (vanishingIdeal S)) := by
+  rw [← Ideal.isRadical_iff_quotient_reduced]
+  exact isRadical_vanishingIdeal S
 
 /-- A Hopf ideal vanishes on a point subgroup exactly when the associated closed subgroup
 contains that point subgroup. This is the minimality property of its closed subgroup closure. -/
-theorem le_ofPoints_iff (S : Subgroup (WithConv (H →ₐ[k] k))) (I : HopfIdeal k H) :
-    I ≤ ofPoints S ↔
+theorem le_vanishingIdeal_iff (S : Subgroup (WithConv (H →ₐ[k] k))) (I : HopfIdeal k H) :
+    I ≤ vanishingIdeal S ↔
       S ≤ CommHopfAlgCat.quotientPointsSubgroup (CommHopfAlgCat.of k H) I (CommAlgCat.of k k) := by
   constructor
   · intro h g hg
     apply (CommHopfAlgCat.mem_quotientPointsSubgroup_iff
       (_root_.CommHopfAlgCat.of k H) I (CommAlgCat.of k k) g).mpr
     intro x hx
-    exact (mem_ofPoints S x).mp (h hx) ⟨g, hg⟩
+    exact (mem_vanishingIdeal S x).mp (h hx) ⟨g, hg⟩
   · intro h x hx
-    apply (mem_ofPoints S x).mpr
+    apply (mem_vanishingIdeal S x).mpr
     intro g
     exact (CommHopfAlgCat.mem_quotientPointsSubgroup_iff
       (_root_.CommHopfAlgCat.of k H) I (CommAlgCat.of k k) g.val).mp (h g.2) x hx
