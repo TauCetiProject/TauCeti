@@ -388,6 +388,19 @@ theorem _root_.Equiv.Perm.sameCycle_iff_mem_orbit_zpowers {x y : α} :
     obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.mp g.2
     exact ⟨i, by rw [hi]; exact hg⟩
 
+omit [Fintype α] [DecidableEq α] in
+/-- The orbit relation of `⟨σ⟩` is the same-cycle relation of `σ`. -/
+theorem _root_.Equiv.Perm.orbitRel_zpowers_apply {x y : α} :
+    orbitRel (Subgroup.zpowers σ) α x y ↔ σ.SameCycle x y := by
+  rw [orbitRel_apply, ← sameCycle_iff_mem_orbit_zpowers]
+  exact ⟨SameCycle.symm, SameCycle.symm⟩
+
+omit [Fintype α] [DecidableEq α] in
+/-- The relation of the setoid `Equiv.Perm.SameCycle.setoid σ` is `σ.SameCycle`. -/
+theorem _root_.Equiv.Perm.sameCycle_setoid_apply {x y : α} :
+    (SameCycle.setoid σ) x y ↔ σ.SameCycle x y :=
+  (Iff.rfl)
+
 /-- The `⟨σ⟩`-orbit of a moved point is the support of its cycle. -/
 theorem _root_.Equiv.Perm.coe_support_cycleOf_eq_orbit_zpowers {x : α} (hx : x ∈ σ.support) :
     ((σ.cycleOf x).support : Set α) = orbit (Subgroup.zpowers σ) x := by
@@ -406,16 +419,6 @@ theorem _root_.Equiv.Perm.orbit_zpowers_eq_singleton {x : α} (hx : x ∉ σ.sup
     exact zpow_apply_eq_self_of_apply_eq_self hx i
   · rintro rfl
     exact SameCycle.refl σ y
-
-/-- The size of the `⟨σ⟩`-orbit of a moved point is the length of its cycle. -/
-theorem _root_.Equiv.Perm.card_orbit_zpowers_of_mem_support {x : α} (hx : x ∈ σ.support) :
-    Nat.card (orbit (Subgroup.zpowers σ) x) = (σ.cycleOf x).support.card := by
-  rw [← coe_support_cycleOf_eq_orbit_zpowers σ hx, Nat.card_coe_set_eq, Set.ncard_coe_finset]
-
-/-- The `⟨σ⟩`-orbit of a fixed point has one element. -/
-theorem _root_.Equiv.Perm.card_orbit_zpowers_of_notMem_support {x : α} (hx : x ∉ σ.support) :
-    Nat.card (orbit (Subgroup.zpowers σ) x) = 1 := by
-  rw [orbit_zpowers_eq_singleton σ hx, Nat.card_coe_set_eq, Set.ncard_singleton]
 
 /-- The fixed points of a permutation are the complement of its support. -/
 theorem _root_.Equiv.Perm.card_subtype_apply_eq :
@@ -497,9 +500,7 @@ theorem _root_.Equiv.Perm.fullCycleType_eq_map_card_orbit :
   -- The `⟨σ⟩`-orbit classes are the cycle classes, hence the cycle factors and the fixed points.
   let e : orbitRel.Quotient (Subgroup.zpowers σ) α ≃ σ.cycleFactorsFinset ⊕ {x : α // σ x = x} :=
     (Quotient.congrRight fun x y =>
-      show x ∈ orbit (Subgroup.zpowers σ) y ↔ σ.SameCycle x y from
-        ⟨fun h => ((sameCycle_iff_mem_orbit_zpowers σ).mpr h).symm,
-          fun h => (sameCycle_iff_mem_orbit_zpowers σ).mp h.symm⟩).trans
+      (orbitRel_zpowers_apply σ).trans (sameCycle_setoid_apply σ).symm).trans
       σ.orbitQuotientEquivCycleFactorsSumFixedPoints
   -- `Quotient.congrRight` and `Quotient.lift` both compute on representatives.
   have he : ∀ x : α, e (Quotient.mk'' x) = σ.cycleFactorOrFixedPoint x := fun _ => rfl
@@ -510,10 +511,12 @@ theorem _root_.Equiv.Perm.fullCycleType_eq_map_card_orbit :
     refine Quotient.inductionOn' ω fun x => ?_
     rw [orbitRel.Quotient.orbit_mk, he]
     by_cases hx : σ x = x
-    · rw [cycleFactorOrFixedPoint_of_apply_eq σ hx, Sum.elim_inr]
-      exact card_orbit_zpowers_of_notMem_support σ (notMem_support.mpr hx)
-    · rw [cycleFactorOrFixedPoint_of_apply_ne σ hx, Sum.elim_inl]
-      exact card_orbit_zpowers_of_mem_support σ (mem_support.mpr hx)
+    · rw [cycleFactorOrFixedPoint_of_apply_eq σ hx, Sum.elim_inr,
+        orbit_zpowers_eq_singleton σ (notMem_support.mpr hx), Nat.card_coe_set_eq,
+        Set.ncard_singleton]
+    · rw [cycleFactorOrFixedPoint_of_apply_ne σ hx, Sum.elim_inl,
+        ← coe_support_cycleOf_eq_orbit_zpowers σ (mem_support.mpr hx), Nat.card_coe_set_eq,
+        Set.ncard_coe_finset]
   -- Split the sum type into cycles and fixed points, then reindex the classes along `e`.
   calc fullCycleType σ
       = (Finset.univ : Finset (σ.cycleFactorsFinset ⊕ {x : α // σ x = x})).val.map
