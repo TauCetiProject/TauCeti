@@ -27,9 +27,9 @@ one prime at a time and all at once, since the primes of `f` are distinct.
 
 * `Nat.mul_dvd_iff_forall_not_pow_dvd`: `f * d ∣ h` as non-divisibility of `d` by a
   prime power at each prime of `f`.
-* `Nat.pow_sub_factorization_add_one_dvd`: the tested prime power divides `h`.
-* `Nat.prod_pow_sub_factorization_add_one_dvd`: so does their product over the primes
-  of `f`.
+* `Nat.pow_factorization_sub_factorization_add_one_dvd`: the tested prime power divides `h`.
+* `Nat.prod_pow_factorization_sub_factorization_add_one_dvd`: so does their product over the
+  primes of `f`.
 -/
 
 public section
@@ -81,12 +81,14 @@ theorem mul_dvd_iff_forall_not_pow_dvd {f d h : ℕ} (hh : h ≠ 0) (hf : f ∣ 
       have := hdh p
       omega
 
-/-- **The prime power tested by `mul_dvd_iff_forall_not_pow_dvd` divides `h`.** For `f` dividing a
-nonzero `h` and `p` a prime of `f`, the exponent `v_p h - v_p f + 1` does not exceed `v_p h`,
+/-- **The prime power tested by `mul_dvd_iff_forall_not_pow_dvd` divides `h`.** For `f`
+dividing `h` and `p` a prime of `f`, the exponent `v_p h - v_p f + 1` does not exceed `v_p h`,
 because `f` contributes at least one power of `p`. -/
-theorem pow_sub_factorization_add_one_dvd {f h : ℕ} (hh : h ≠ 0) (hf : f ∣ h) {p : ℕ}
+theorem pow_factorization_sub_factorization_add_one_dvd {f h : ℕ} (hf : f ∣ h) {p : ℕ}
     (hp : p ∈ f.primeFactors) :
     p ^ (h.factorization p - f.factorization p + 1) ∣ h := by
+  rcases eq_or_ne h 0 with rfl | hh
+  · exact dvd_zero _
   have hprime := Nat.prime_of_mem_primeFactors hp
   have hf0 : f ≠ 0 := (Nat.mem_primeFactors.mp hp).2.2
   have hpos : 0 < f.factorization p :=
@@ -99,16 +101,18 @@ theorem pow_sub_factorization_add_one_dvd {f h : ℕ} (hh : h ≠ 0) (hf : f ∣
 The primes of `f` are distinct, so the prime powers `p ^ (v_p h - v_p f + 1)` occur at distinct
 primes and their product still divides `h`: it is the product of prime powers read off a finitely
 supported exponent function bounded by the factorization of `h`. -/
-theorem prod_pow_sub_factorization_add_one_dvd {f h : ℕ} (hh : h ≠ 0) (hf : f ∣ h) :
+theorem prod_pow_factorization_sub_factorization_add_one_dvd {f h : ℕ} (hf : f ∣ h) :
     (∏ p ∈ f.primeFactors, p ^ (h.factorization p - f.factorization p + 1)) ∣ h := by
   classical
+  rcases eq_or_ne h 0 with rfl | hh
+  · exact dvd_zero _
   rw [← Finsupp.prod_indicator_index (fun p => h.factorization p - f.factorization p + 1)
     (h := (· ^ ·)) fun _ _ => pow_zero _]
   refine Nat.prod_pow_dvd_of_le_factorization fun p => ?_
   rw [Finsupp.indicator_apply]
   split_ifs with hp
   · exact ((Nat.prime_of_mem_primeFactors hp).pow_dvd_iff_le_factorization hh).mp
-      (pow_sub_factorization_add_one_dvd hh hf hp)
+      (pow_factorization_sub_factorization_add_one_dvd hf hp)
   · exact Nat.zero_le _
 
 end Nat

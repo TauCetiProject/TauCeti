@@ -107,11 +107,6 @@ theorem IsCyclic.card_filter_dvd_orderOf_eq_sum_totient (f : ℕ) :
       ∑ d ∈ {d ∈ (Fintype.card α).divisors | f ∣ d}, φ d :=
   IsCyclic.card_filter_orderOf_eq_sum_totient (f ∣ ·)
 
--- Source. The count and the uniform bound are specified by the Chebotarev roadmap,
--- `TauCetiRoadmap/Chebotarev/README.md` §9, which displays them for the cyclic Galois group of a
--- cyclotomic extension as `#{τ ∈ H | f ∣ orderOf τ} = h * ∏_{p ∣ f} (1 - p^{-(v_p h - v_p f + 1)})`
--- and `c_q ≥ (1 - 2^{-r})^{#f.primeFactors} / #G`.
-
 namespace IsCyclic
 
 variable {f : ℕ}
@@ -185,7 +180,7 @@ theorem card_filter_dvd_orderOf_mul_prod_primeFactors (hf : f ∣ Fintype.card �
     exact Finset.prod_coe_sort f.primeFactors fun p => p ^ e p
   have hdvd : (∏ i, a i) ∣ Fintype.card α := by
     rw [hprod, Finset.prod_congr rfl fun p _ => by rw [he p]]
-    exact Nat.prod_pow_sub_factorization_add_one_dvd Fintype.card_ne_zero hf
+    exact Nat.prod_pow_factorization_sub_factorization_add_one_dvd hf
   have hmem : ∀ p (hp : p ∈ f.primeFactors), p ^ e p ∣ ∏ i, a i := fun p hp =>
     Finset.dvd_prod_of_mem a (Finset.mem_univ (⟨p, hp⟩ : ↥f.primeFactors))
   -- reducing a residue modulo a multiple of `p ^ e p` does not change divisibility by `p ^ e p`

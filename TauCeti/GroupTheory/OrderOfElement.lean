@@ -43,6 +43,6 @@ theorem dvd_orderOf_pow_iff {g : G} (hg : IsOfFinOrder g) {f : ℕ}
   rw [hg.orderOf_pow, Nat.dvd_div_iff_mul_dvd (Nat.gcd_dvd_left _ k), mul_comm,
     Nat.mul_dvd_iff_forall_not_pow_dvd h0 hf (Nat.gcd_dvd_left _ k)]
   refine forall₂_congr fun p hp => not_congr ?_
-  rw [Nat.dvd_gcd_iff, and_iff_right (Nat.pow_sub_factorization_add_one_dvd h0 hf hp)]
+  rw [Nat.dvd_gcd_iff, and_iff_right (Nat.pow_factorization_sub_factorization_add_one_dvd hf hp)]
 
 end IsOfFinOrder
