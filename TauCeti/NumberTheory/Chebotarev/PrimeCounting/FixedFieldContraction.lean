@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Chebotarev.FixedField.FiberCount
-public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.Discard
+public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.VonMangoldt
 public import TauCeti.NumberTheory.Chebotarev.PrimesAboveRamifiedPrimes
+import TauCeti.NumberTheory.Chebotarev.PrimeCounting.Discard
 
 /-!
 # Contracting Frobenius `ϑ` and `ψ` from a cyclic fixed field
