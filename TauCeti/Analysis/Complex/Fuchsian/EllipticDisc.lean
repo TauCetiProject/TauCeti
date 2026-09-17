@@ -143,8 +143,10 @@ theorem coe_stabilizerBallQuotientHomeomorph_mk {r : ℝ} (hr : 0 ≤ r)
     (stabilizerBallQuotientHomeomorph Γ z hr (Quotient.mk _ τ) : ℂ) =
       discCoordinate z τ ^ Nat.card (stabilizer Γ z) := by
   have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
-  rw [stabilizerBallQuotientHomeomorph, Homeomorph.trans_apply, Homeomorph.Quotient.congr_mk,
-    TauCeti.coe_rootsOfUnityBallQuotientHomeomorph_mk, coe_stabilizerBallHomeomorph]
+  rw [stabilizerBallQuotientHomeomorph, Homeomorph.trans_apply,
+    ← coe_stabilizerBallHomeomorph Γ z r τ]
+  -- `Homeomorph.Quotient.congr` is `Quotient.congr` on the underlying equivalences.
+  exact TauCeti.coe_rootsOfUnityBallQuotientHomeomorph_mk _ _
 
 end LocalModel
 
