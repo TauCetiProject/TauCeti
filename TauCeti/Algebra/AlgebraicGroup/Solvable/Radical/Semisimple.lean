@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Construction
+import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.BaseChange
 
 /-!
 # The solvable radical and semisimplicity
