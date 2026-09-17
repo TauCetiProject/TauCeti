@@ -9,8 +9,6 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Topology.Category.TopCat.EpiMono
 public import Mathlib.Topology.Category.TopPair
-public import Mathlib.Topology.Homotopy.TopCat.ToSSet
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
 
 /-!
 # Relative singular chains
@@ -21,9 +19,6 @@ singular chains of the subspace into those of the ambient space.  In an abelian 
 category this gives the short exact sequence of chain complexes used to construct the connecting
 morphisms in relative singular homology.
 
-The file also transports a homotopy of maps of topological pairs to the corresponding pairs of
-singular simplicial sets, using Mathlib's `TopCat.Homotopy.toSSet`.
-
 The construction follows the quotient-chain presentation in Eilenberg--Steenrod, *Foundations of
 Algebraic Topology*, Chapters I--III, and is implemented using Mathlib's `SSetPair` relative-chain
 functor.
@@ -33,7 +28,7 @@ functor.
 
 noncomputable section
 
-open CategoryTheory Limits MonoidalCategory
+open CategoryTheory Limits
 
 universe w v u
 
@@ -70,20 +65,6 @@ lemma toSSetPair_map_left {P P' : TopPair.{w}} (f : P ⟶ P') :
 @[simp]
 lemma toSSetPair_map_right {P P' : TopPair.{w}} (f : P ⟶ P') :
     (toSSetPair.map f).right = TopCat.toSSet.map (Hom.fst f) := rfl
-
-namespace Homotopy
-
-variable {P P' : TopPair.{w}} {f g : P ⟶ P'} (H : Homotopy f g)
-
-/-- The homotopy between the induced maps of pairs of singular simplicial sets. -/
-@[simps]
-def toSSetPair : SSetPair.Homotopy (TopPair.toSSetPair.map f) (TopPair.toSSetPair.map g) where
-  left := H.snd.toSSet
-  right := H.fst.toSSet
-  w := by
-    simp [TopCat.Homotopy.toSSet, ← whisker_exchange_assoc, ← Functor.map_comp, H.w]
-
-end Homotopy
 
 variable (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
 
