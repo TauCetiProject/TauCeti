@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.GaloisGroups.FrobeniusOrbits
 public import TauCeti.NumberTheory.NumberField.Frobenius
+public import TauCeti.NumberTheory.NumberField.RootReduction
 public import TauCeti.NumberTheory.NumberField.SplittingField
 public import TauCeti.RingTheory.Polynomial.FactorDegrees
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
@@ -40,6 +41,9 @@ vocabulary of `Polynomial.Gal`.
 
 * `TauCeti.NumberField.fullCycleType_galActionHom_restrict_eq_factorDegrees`: Dedekind's theorem
   for a Frobenius element of a number field in which `f` splits.
+* `TauCeti.NumberField.fullCycleType_galActionHom_restrict_minpoly_eq_map_natDegree_monicFactorsMod`
+  is the same statement for the minimal polynomial of an algebraic integer `θ`, with the factor
+  degrees read off from `RingOfIntegers.monicFactorsMod θ p`.
 * `TauCeti.NumberField.exists_gal_fullCycleType_eq_factorizationType`: for monic `f` and a prime
   `p ∤ disc f`, some element of the Galois group of `f` over `ℚ` acts on the complex roots of `f`
   with full cycle type the factor degrees of `f` modulo `p`.
@@ -58,92 +62,6 @@ open scoped NumberField
 namespace TauCeti.NumberField
 
 variable {M : Type*} [Field M] [NumberField M] {f : ℤ[X]} {p : ℕ} [Fact p.Prime]
-
-/-- The two ways of viewing an integer polynomial over a number field agree. -/
-private theorem map_map_intCast_rat (f : ℤ[X]) :
-    (f.map (Int.castRingHom ℚ)).map (algebraMap ℚ M) =
-      (f.map (algebraMap ℤ (𝓞 M))).map (algebraMap (𝓞 M) M) := by
-  rw [Polynomial.map_map, Polynomial.map_map,
-    RingHom.ext_int ((algebraMap ℚ M).comp (Int.castRingHom ℚ))
-      ((algebraMap (𝓞 M) M).comp (algebraMap ℤ (𝓞 M)))]
-
-/-- A root of a monic integer polynomial is an algebraic integer. -/
-private theorem isIntegral_of_aeval_eq_zero (hf : f.Monic) {x : M}
-    (hx : aeval x (f.map (Int.castRingHom ℚ)) = 0) : IsIntegral ℤ x :=
-  ⟨f, hf, by
-    rwa [aeval_def, eval₂_map,
-      RingHom.ext_int ((algebraMap ℚ M).comp (Int.castRingHom ℚ)) (algebraMap ℤ M)] at hx⟩
-
-/-- **Reducing the roots of `f` modulo a prime.** Let `f` be monic, split in `M`, and squarefree
-modulo `p`, and let `ρ : 𝓞 M →+* k` be a ring homomorphism to a field `k` over `𝔽_p`. Then
-`f mod p` splits in `k`, and reduction along `ρ` is a bijection from the roots of `f` in `M` onto
-the roots of `f mod p` in `k`. -/
-private theorem exists_rootSet_equiv (hf : f.Monic)
-    (hsq : Squarefree (f.map (Int.castRingHom (ZMod p))))
-    (hsplit : ((f.map (Int.castRingHom ℚ)).map (algebraMap ℚ M)).Splits)
-    {k : Type*} [Field k] [Algebra (ZMod p) k] (ρ : 𝓞 M →+* k) :
-    ((f.map (Int.castRingHom (ZMod p))).map (algebraMap (ZMod p) k)).Splits ∧
-      ∃ e : (f.map (Int.castRingHom ℚ)).rootSet M ≃
-          (f.map (Int.castRingHom (ZMod p))).rootSet k,
-        ∀ (x : (f.map (Int.castRingHom ℚ)).rootSet M) (y : 𝓞 M),
-          algebraMap (𝓞 M) M y = x → (e x : k) = ρ y := by
-  classical
-  set fM := (f.map (Int.castRingHom ℚ)).map (algebraMap ℚ M) with hfM
-  -- The roots of `f` in `M` are algebraic integers, so they form a multiset `t` of `𝓞 M`.
-  have hint : ∀ x ∈ fM.roots, IsIntegral ℤ x := fun x hx =>
-    isIntegral_of_aeval_eq_zero hf (by rw [← eval_map_algebraMap]; exact (mem_roots'.mp hx).2)
-  obtain ⟨t, ht⟩ : ∃ t : Multiset (𝓞 M), t.map (algebraMap (𝓞 M) M) = fM.roots :=
-    ⟨fM.roots.attach.map fun x => IsIntegralClosure.mk' (𝓞 M) x.1 (hint x.1 x.2), by
-      simp [Multiset.map_map, IsIntegralClosure.algebraMap_mk']⟩
-  have hfO : f.map (algebraMap ℤ (𝓞 M)) = (t.map fun a => X - C a).prod := by
-    refine Polynomial.map_injective _ (FaithfulSMul.algebraMap_injective (𝓞 M) M) ?_
-    rw [← map_map_intCast_rat, ← hfM]
-    conv_lhs => rw [hsplit.eq_prod_roots_of_monic ((hf.map _).map _)]
-    rw [← ht, Polynomial.map_multiset_prod, Multiset.map_map, Multiset.map_map]
-    simp
-  -- Reducing, `f mod p` is the product of the `X - ρ a` over `a ∈ t`.
-  have hk : (f.map (Int.castRingHom (ZMod p))).map (algebraMap (ZMod p) k) =
-      ((t.map ρ).map fun a => X - C a).prod := by
-    rw [Polynomial.map_map,
-      RingHom.ext_int ((algebraMap (ZMod p) k).comp (Int.castRingHom (ZMod p)))
-        (ρ.comp (algebraMap ℤ (𝓞 M))),
-      ← Polynomial.map_map, hfO, Polynomial.map_multiset_prod, Multiset.map_map,
-      Multiset.map_map]
-    simp
-  have hroots : ((f.map (Int.castRingHom (ZMod p))).map (algebraMap (ZMod p) k)).roots =
-      t.map ρ := by
-    rw [hk, roots_multiset_prod_X_sub_C]
-  -- `f mod p` is separable, so the reductions of the roots are distinct.
-  have hnodup : (t.map ρ).Nodup :=
-    hroots ▸ nodup_roots ((PerfectField.separable_iff_squarefree.mpr hsq).map)
-  have hmem : ∀ x, x ∈ (f.map (Int.castRingHom ℚ)).rootSet M ↔
-      ∃ a ∈ t, algebraMap (𝓞 M) M a = x := fun x => by
-    rw [rootSet_def, Finset.mem_coe, Multiset.mem_toFinset, aroots_def, ← hfM, ← ht,
-      Multiset.mem_map]
-  have hmemk : ∀ z, z ∈ (f.map (Int.castRingHom (ZMod p))).rootSet k ↔ z ∈ t.map ρ :=
-    fun z => by rw [rootSet_def, Finset.mem_coe, Multiset.mem_toFinset, aroots_def, hroots]
-  -- Reduction of a root, as a map of root sets.
-  let red (x : (f.map (Int.castRingHom ℚ)).rootSet M) :
-      (f.map (Int.castRingHom (ZMod p))).rootSet k :=
-    ⟨ρ ((hmem x).mp x.2).choose,
-      (hmemk _).mpr (Multiset.mem_map_of_mem _ ((hmem x).mp x.2).choose_spec.1)⟩
-  have hred (x : (f.map (Int.castRingHom ℚ)).rootSet M) (y : 𝓞 M)
-      (hy : algebraMap (𝓞 M) M y = x) : (red x : k) = ρ y := by
-    obtain rfl : ((hmem x).mp x.2).choose = y :=
-      FaithfulSMul.algebraMap_injective (𝓞 M) M (((hmem x).mp x.2).choose_spec.2.trans hy.symm)
-    rfl
-  have hbij : Function.Bijective red := by
-    refine ⟨fun x y hxy => ?_, fun z => ?_⟩
-    · have h := Multiset.inj_on_of_nodup_map hnodup _ ((hmem x).mp x.2).choose_spec.1 _
-        ((hmem y).mp y.2).choose_spec.1 (congrArg Subtype.val hxy)
-      exact Subtype.ext (((hmem x).mp x.2).choose_spec.2.symm.trans
-        ((congrArg (algebraMap (𝓞 M) M) h).trans ((hmem y).mp y.2).choose_spec.2))
-    · obtain ⟨a, ha, hz⟩ := Multiset.mem_map.mp ((hmemk z).mp z.2)
-      refine ⟨⟨_, (hmem _).mpr ⟨a, ha, rfl⟩⟩, Subtype.ext ?_⟩
-      rw [hred _ a rfl, hz]
-  refine ⟨hk ▸ Splits.multisetProd fun g hg => ?_, Equiv.ofBijective red hbij, hred⟩
-  obtain ⟨a, -, rfl⟩ := Multiset.mem_map.mp hg
-  exact Splits.X_sub_C a
 
 /-- **Dedekind's theorem.** Let `f` be a monic integer polynomial which is squarefree modulo the
 prime `p`, and let `M` be a number field in which `f` splits. If `σ ∈ Gal(M/ℚ)` is an arithmetic
@@ -174,13 +92,16 @@ theorem fullCycleType_galActionHom_restrict_eq_factorDegrees [DecidableEq M] (hf
     exact hpQ
   let := ZMod.algebra (𝓞 M ⧸ Q) p
   have : Algebra.IsAlgebraic (ZMod p) (𝓞 M ⧸ Q) := Algebra.IsAlgebraic.of_finite _ _
-  obtain ⟨hsplit, e, he⟩ := exists_rootSet_equiv hf hsq Fact.out (Ideal.Quotient.mk Q)
+  obtain ⟨hsplit, e, he⟩ :=
+    splits_and_exists_rootSet_equiv_of_squarefree_map_zmod hf hsq Fact.out (Ideal.Quotient.mk Q)
   have : Fact _ := ⟨hsplit⟩
   rw [factorDegrees_def, ← Equiv.Perm.fullCycleType_permCongr e]
   refine FiniteField.fullCycleType_eq_map_natDegree_normalizedFactors _ hsq _ fun z => ?_
   obtain ⟨x, rfl⟩ := e.surjective z
-  have hx : IsIntegral ℤ (x : M) :=
-    isIntegral_of_aeval_eq_zero hf (aeval_eq_zero_of_mem_rootSet x.2)
+  have hx : IsIntegral ℤ (x : M) := ⟨f, hf, by
+    have h := aeval_eq_zero_of_mem_rootSet x.2
+    rwa [aeval_def, eval₂_map,
+      RingHom.ext_int ((algebraMap ℚ M).comp (Int.castRingHom ℚ)) (algebraMap ℤ M)] at h⟩
   obtain ⟨y, hy⟩ : ∃ y : 𝓞 M, algebraMap (𝓞 M) M y = x :=
     ⟨_, IsIntegralClosure.algebraMap_mk' _ _ hx⟩
   have hσy : algebraMap (𝓞 M) M (σ • y) =
@@ -190,6 +111,39 @@ theorem fullCycleType_galActionHom_restrict_eq_factorDegrees [DecidableEq M] (hf
     ← map_pow, Ideal.Quotient.eq]
   have h := hσ y
   rwa [← LiesOver.over (P := Q) (p := span {(p : ℤ)}), Int.card_ideal_quot] at h
+
+/-- **Dedekind's theorem for a generator.** Let `θ` be an algebraic integer of a number field `K`
+whose minimal polynomial is squarefree modulo the prime `p`, and let `M` be a number field in which
+the minimal polynomial of `θ` splits. If `σ ∈ Gal(M/ℚ)` is an arithmetic Frobenius at a prime `Q`
+of `𝓞 M` over `p`, then the permutation of the roots of `minpoly ℚ θ` in `M` induced by `σ` has,
+counting fixed points, cycle lengths the degrees of the monic irreducible factors
+`RingOfIntegers.monicFactorsMod θ p` of `minpoly ℤ θ` modulo `p`. -/
+theorem fullCycleType_galActionHom_restrict_minpoly_eq_map_natDegree_monicFactorsMod
+    [DecidableEq M] {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
+    (hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p))))
+    [Fact (((minpoly ℚ (θ : K)).map (algebraMap ℚ M)).Splits)]
+    (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
+    {σ : M ≃ₐ[ℚ] M} (hσ : IsArithFrobAt ℤ σ Q) :
+    (Gal.galActionHom (minpoly ℚ (θ : K)) M
+      (Gal.restrict (minpoly ℚ (θ : K)) M σ)).fullCycleType =
+        (RingOfIntegers.monicFactorsMod θ p).val.map natDegree := by
+  have hmin : minpoly ℚ (θ : K) = (minpoly ℤ θ).map (Int.castRingHom ℚ) := by
+    rw [← NumberField.RingOfIntegers.minpoly_coe,
+      minpoly.isIntegrallyClosed_eq_field_fractions' ℚ θ.isIntegral_coe, algebraMap_int_eq]
+  -- Transport the general theorem along `hmin`, generalizing the splitting instance.
+  have key : ∀ (g : ℚ[X]) [Fact ((g.map (algebraMap ℚ M)).Splits)],
+      g = (minpoly ℤ θ).map (Int.castRingHom ℚ) →
+        (Gal.galActionHom g M (Gal.restrict g M σ)).fullCycleType =
+          (minpoly ℤ θ).factorDegrees p := by
+    rintro g _ rfl
+    exact fullCycleType_galActionHom_restrict_eq_factorDegrees
+      (minpoly.monic θ.isIntegral) hsq Q hσ
+  have hnodup : (UniqueFactorizationMonoid.normalizedFactors
+      ((minpoly ℤ θ).map (Int.castRingHom (ZMod p)))).Nodup :=
+    (UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors
+      ((minpoly.monic θ.isIntegral).map _).ne_zero).mp hsq
+  rw [key _ hmin, factorDegrees_def, RingOfIntegers.monicFactorsMod, Multiset.toFinset_val,
+    hnodup.dedup]
 
 attribute [local instance] Gal.splits_ℚ_ℂ
 
