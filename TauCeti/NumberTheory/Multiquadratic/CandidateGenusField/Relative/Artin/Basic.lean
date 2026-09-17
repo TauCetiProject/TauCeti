@@ -80,6 +80,78 @@ namespace TauCeti.Multiquadratic
 
 variable {d : ℤ}
 
+/-- At a degree-one prime above an odd rational prime `q`, the Frobenius sign on a
+prime-discriminant generator agrees with the corresponding genus character whenever `q` does
+not divide that prime discriminant. Other prime discriminants may be divisible by `q`. -/
+theorem candidateGenusFieldRelativeSignPattern_frobenius_eq_genusChar
+    (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
+    {q : ℕ} [Fact q.Prime] (hodd : q ≠ 2)
+    (qIdeal : Ideal (𝓞 (candidateGenusFieldBase hd)))
+    (hnorm : Ideal.absNorm qIdeal = q)
+    (hqIdeal : qIdeal ∈ (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰)
+    (Q : Ideal (𝓞 (candidateGenusField hd))) [Q.LiesOver qIdeal]
+    (σ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd)
+    (hσ : IsArithFrobAt (𝓞 (candidateGenusFieldBase hd)) σ Q)
+    (P : {P // P ∈ genusPrimeDiscriminants hd}) (hqP : ¬ (q : ℤ) ∣ P.val) :
+    candidateGenusFieldRelativeSignPattern hd σ P =
+      candidateGenusFieldBaseGenusCharLinearMap hd hnsq
+        (TauCeti.elementaryTwoQuotientMk (NarrowClassGroup.mk0 ⟨qIdeal, hqIdeal⟩)) P := by
+  have hprimeNorm : (Ideal.absNorm qIdeal).Prime := hnorm ▸ Fact.out
+  let _ : qIdeal.IsPrime := Ideal.isPrime_of_irreducible_absNorm hprimeNorm
+  let _ : qIdeal.LiesOver (Ideal.span {(q : ℤ)}) := ⟨by
+    simpa [hnorm, Ideal.under_def] using
+      Ideal.span_singleton_absNorm (I := qIdeal) hprimeNorm⟩
+  let _ : Q.LiesOver (Ideal.span {(q : ℤ)}) :=
+    Ideal.LiesOver.trans Q qIdeal (Ideal.span {(q : ℤ)})
+  have hσint : IsArithFrobAt ℤ (σ.restrictScalars ℚ) Q :=
+    NumberField.isArithFrobAt_int_of_absNorm_eq qIdeal hnorm Q hσ
+  let u : ℤˣ :=
+    genusCharFunNarrowClassGroupHom
+      (genusPrimeDiscriminants_spec hd).1 (genusPrimeDiscriminants_spec hd).2.1
+      (genusPrimeDiscriminants_spec hd).2.2
+      (minpoly_candidateGenusFieldBaseGen hd hnsq)
+      (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd
+      (Finset.singleton_subset_iff.mpr P.property)
+      (NarrowClassGroup.mk0 ⟨qIdeal, hqIdeal⟩)
+  rw [candidateGenusFieldBaseGenusCharLinearMap_apply,
+    genusCharFunElementaryTwoQuotientFamilyLinearMap_apply,
+    genusCharFunElementaryTwoQuotientLinearMap_mk,
+    candidateGenusFieldRelativeSignPattern_apply,
+    TauCeti.additiveIntUnitsLinearEquiv_apply]
+  -- The two sign encodings are definitionally if-expressions; name the genus-character unit
+  -- above so their equality reduces to equivalence of their respective fixed-sign tests.
+  change (if σ (candidateGenusFieldGen hd P) = candidateGenusFieldGen hd P then 0 else 1) =
+    if u = 1 then 0 else 1
+  have hqRadicand : ¬ (q : ℤ) ∣ primeDiscriminantRadicand P.val :=
+    fun hdiv ↦ hqP ((dvd_primeDiscriminant_iff_dvd_radicand P.val hodd).mpr hdiv)
+  have hroot : candidateGenusFieldGen hd P ^ 2 =
+      algebraMap ℤ (candidateGenusField hd) (primeDiscriminantRadicand P.val) := by
+    rw [candidateGenusFieldGen_sq]
+    simp
+  have hfix :
+      σ (candidateGenusFieldGen hd P) = candidateGenusFieldGen hd P ↔
+        legendreSym q (primeDiscriminantRadicand P.val) = 1 :=
+    NumberField.isArithFrobAt_apply_sqrt_eq_self_iff
+      hodd hqRadicand hroot Q hσint
+  have hchar : (u : ℤ) =
+        legendreSym q (primeDiscriminantRadicand P.val) := by
+    dsimp only [u]
+    rw [genusCharFunNarrowClassGroupHom_mk0_eq_primeDiscriminantCharFun_absNorm
+      (genusPrimeDiscriminants_spec hd).1 (genusPrimeDiscriminants_spec hd).2.1
+      (genusPrimeDiscriminants_spec hd).2.2
+      (minpoly_candidateGenusFieldBaseGen hd hnsq)
+      (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd qIdeal hqIdeal P.val P.property (by
+        rw [hnorm]
+        exact (Nat.prime_iff_prime_int.mp Fact.out).coprime_iff_not_dvd.mpr hqP),
+      hnorm,
+      primeDiscriminantCharFun_eq_legendreSym
+        ((genusPrimeDiscriminants_spec hd).1 P.val P.property) hodd,
+      legendreSym_eq_legendreSym_primeDiscriminantRadicand P.val hodd]
+  have hunit :
+      u = 1 ↔ legendreSym q (primeDiscriminantRadicand P.val) = 1 := by
+    rw [← Units.val_eq_one, hchar]
+  simp only [hfix, hunit]
+
 /-- **The genus-field isomorphism sends Frobenius to the prime class.**
 Let q be an odd rational prime not dividing the discriminant of K = ℚ(√d), let qIdeal be a
 degree-one prime of K above q, and let Q be a prime of the candidate genus field above qIdeal.
@@ -101,23 +173,9 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
             ⟨qIdeal, by
               rw [← Ideal.absNorm_ne_zero_iff_mem_nonZeroDivisors, hnorm]
               exact (Fact.out : q.Prime).ne_zero⟩)) := by
-  have hprimeNorm : (Ideal.absNorm qIdeal).Prime := by
-    rw [hnorm]
-    exact Fact.out
-  let _ : qIdeal.IsPrime := Ideal.isPrime_of_irreducible_absNorm hprimeNorm
-  let _ : qIdeal.LiesOver (Ideal.span {(q : ℤ)}) := ⟨by
-    simpa [hnorm, Ideal.under_def] using
-      Ideal.span_singleton_absNorm (I := qIdeal) hprimeNorm⟩
   have hqIdeal : qIdeal ∈ (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰ := by
     rw [← Ideal.absNorm_ne_zero_iff_mem_nonZeroDivisors, hnorm]
     exact (Fact.out : q.Prime).ne_zero
-  have hcop : IsCoprime (q : ℤ) (∏ P ∈ genusPrimeDiscriminants hd, P) := by
-    rw [(genusPrimeDiscriminants_spec hd).2.2]
-    exact (Nat.prime_iff_prime_int.mp Fact.out).coprime_iff_not_dvd.mpr hqD
-  let _ : Q.LiesOver (Ideal.span {(q : ℤ)}) :=
-    Ideal.LiesOver.trans Q qIdeal (Ideal.span {(q : ℤ)})
-  have hσint : IsArithFrobAt ℤ (σ.restrictScalars ℚ) Q :=
-    NumberField.isArithFrobAt_int_of_absNorm_eq qIdeal hnorm Q hσ
   have heq :
       (narrowElementaryTwoQuotientEquivRelativeSign hd hnsq).symm
           ⟨candidateGenusFieldRelativeSignPattern hd σ,
@@ -135,56 +193,10 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
           candidateGenusFieldRelativeSignPattern hd σ := rfl
     rw [hsignCoe, narrowElementaryTwoQuotientEquivRelativeSign_apply_coe]
     funext P
-    let u : ℤˣ :=
-      genusCharFunNarrowClassGroupHom
-        (genusPrimeDiscriminants_spec hd).1 (genusPrimeDiscriminants_spec hd).2.1
-        (genusPrimeDiscriminants_spec hd).2.2
-        (minpoly_candidateGenusFieldBaseGen hd hnsq)
-        (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd
-        (Finset.singleton_subset_iff.mpr P.property)
-        (NarrowClassGroup.mk0 ⟨qIdeal, hqIdeal⟩)
-    rw [candidateGenusFieldBaseGenusCharLinearMap_apply,
-      genusCharFunElementaryTwoQuotientFamilyLinearMap_apply,
-      genusCharFunElementaryTwoQuotientLinearMap_mk,
-      candidateGenusFieldRelativeSignPattern_apply,
-      TauCeti.additiveIntUnitsLinearEquiv_apply]
-    -- The two sign encodings are definitionally if-expressions; name the genus-character unit
-    -- above so their equality reduces to equivalence of their respective fixed-sign tests.
-    change (if σ (candidateGenusFieldGen hd P) = candidateGenusFieldGen hd P then 0 else 1) =
-      if u = 1 then 0 else 1
-    have hqRadicand : ¬ (q : ℤ) ∣ primeDiscriminantRadicand P.val := by
-      intro hdiv
-      apply hqD
-      exact ((dvd_primeDiscriminant_iff_dvd_radicand P.val hodd).mpr hdiv).trans
-        ((genusPrimeDiscriminants_spec hd).2.2 ▸
-          Finset.dvd_prod_of_mem (fun P => P) P.property)
-    have hroot : candidateGenusFieldGen hd P ^ 2 =
-        algebraMap ℤ (candidateGenusField hd) (primeDiscriminantRadicand P.val) := by
-      rw [candidateGenusFieldGen_sq]
-      simp
-    have hfix :
-        σ (candidateGenusFieldGen hd P) = candidateGenusFieldGen hd P ↔
-          legendreSym q (primeDiscriminantRadicand P.val) = 1 :=
-      NumberField.isArithFrobAt_apply_sqrt_eq_self_iff
-        hodd hqRadicand hroot Q hσint
-    have hchar : (u : ℤ) =
-          legendreSym q (primeDiscriminantRadicand P.val) := by
-      dsimp only [u]
-      rw [genusCharFunNarrowClassGroupHom_mk0_eq_primeDiscriminantCharFun_absNorm
-        (genusPrimeDiscriminants_spec hd).1 (genusPrimeDiscriminants_spec hd).2.1
-        (genusPrimeDiscriminants_spec hd).2.2
-        (minpoly_candidateGenusFieldBaseGen hd hnsq)
-        (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd qIdeal hqIdeal P.val P.property (by
-          rw [hnorm]
-          exact IsCoprime.prod_right_iff.mp hcop P.val P.property),
-        hnorm,
-        primeDiscriminantCharFun_eq_legendreSym
-          ((genusPrimeDiscriminants_spec hd).1 P.val P.property) hodd,
-        legendreSym_eq_legendreSym_primeDiscriminantRadicand P.val hodd]
-    have hunit :
-        u = 1 ↔ legendreSym q (primeDiscriminantRadicand P.val) = 1 := by
-      rw [← Units.val_eq_one, hchar]
-    simp only [hfix, hunit]
+    exact candidateGenusFieldRelativeSignPattern_frobenius_eq_genusChar
+      hd hnsq hodd qIdeal hnorm hqIdeal Q σ hσ P (fun hdiv ↦ hqD
+        (hdiv.trans ((genusPrimeDiscriminants_spec hd).2.2 ▸
+          Finset.dvd_prod_of_mem (fun P ↦ P) P.property)))
   rw [autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_apply]
   exact congrArg (fun x : NarrowClassGroup.ElementaryTwoQuotient
     (candidateGenusFieldBase hd) => Multiplicative.ofAdd x) heq
