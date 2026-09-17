@@ -18,6 +18,12 @@ inside a simplex independent of the path.
 
 Finiteness of `M` is used through `StdSimplex.isEmbedding_toFun_comp_weights`: it is only for a
 finite `M` that the topology of `StdSimplex ℝ M` is induced by the weights.
+
+The continuity argument is adapted from Joël Riou's proof of
+`Convexity.StdSimplex.continuous_convexCombPair` in
+`Mathlib/Geometry/Convex/ConvexSpace/PathConnectedSpaceStdSimplex.lean`, which establishes
+continuity in the time variable alone; the contraction needs joint continuity in time and in the
+point of the simplex, which is where finiteness of `M` enters.
 -/
 
 public section

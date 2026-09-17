@@ -31,16 +31,19 @@ namespace FundamentalGroupoid
 /-- In a simply connected space there is exactly one morphism of the fundamental groupoid
 between any two points; `default` is that morphism. -/
 noncomputable instance instUniqueHom (x y : FundamentalGroupoid X) : Unique (x ⟶ y) :=
-  have : Subsingleton (x ⟶ y) :=
-    inferInstanceAs (Subsingleton (Path.Homotopic.Quotient x.as y.as))
-  uniqueOfSubsingleton (Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x.as y.as))
+  ((simply_connected_iff_unique_homotopic X).mp inferInstance).2 x.as y.as |>.some
 
 variable {D : Type*} [Category D] (F : FundamentalGroupoid X ⥤ D)
 
+/-- A functor out of the fundamental groupoid of a simply connected space sends the unique
+endomorphism of an object to the identity. -/
 @[simp]
 theorem map_default_self (x : FundamentalGroupoid X) : F.map (default : x ⟶ x) = 𝟙 (F.obj x) := by
   rw [Subsingleton.elim (default : x ⟶ x) (𝟙 x), F.map_id]
 
+/-- A functor out of the fundamental groupoid of a simply connected space sends the unique
+morphisms `x ⟶ y` and `y ⟶ z` to maps whose composite is the image of the unique morphism
+`x ⟶ z`. -/
 @[reassoc (attr := simp)]
 theorem map_default_comp (x y z : FundamentalGroupoid X) :
     F.map (default : x ⟶ y) ≫ F.map (default : y ⟶ z) = F.map (default : x ⟶ z) := by
