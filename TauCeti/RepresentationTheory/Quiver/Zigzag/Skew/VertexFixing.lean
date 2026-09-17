@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Cycle
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Gauge
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.Multiplication
 
 /-!
@@ -28,10 +28,6 @@ spanned by the arrow `i ⟶ j`. So `φ` multiplies every arrow by a scalar, nece
 applying `φ` to the defining relation `backtrack(h) = c.ratio h h' • backtrack(h')` shows that
 these units gauge `c` to `c'`.
 
-Combined with the monodromy computation for cycles, the exterior skew-zigzag algebra of an odd
-cycle over a field of characteristic other than two is not isomorphic to the ordinary one by any
-vertex-fixing isomorphism.
-
 ## Main results
 
 * `TauCeti.skewZigzagMk_vertexIdempotent_mul_mul_vertexIdempotent_mem_span`: the corner between
@@ -40,9 +36,6 @@ vertex-fixing isomorphism.
   skew-zigzag relation quotients forces the parameters to be gauge equivalent.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_iff_exists_algEquiv`: two parameters are gauge
   equivalent exactly when their relation quotients are isomorphic by a vertex-fixing isomorphism.
-* `TauCeti.not_exists_algEquiv_skewZigzagQuotient_exteriorCycle`: on an odd cycle, away from
-  characteristic two, no vertex-fixing isomorphism identifies the ordinary relation quotient with
-  the exterior one.
 
 ## References
 
@@ -216,21 +209,5 @@ theorem isGaugeEquivalent_iff_exists_algEquiv :
     rw [skewZigzagQuotientGaugeEquiv_skewZigzagMk, rescale_vertexIdempotent]⟩
 
 end SkewZigzagParameter
-
-/-! ### The odd cycles -/
-
-open SkewZigzagParameter in
-/-- **The exterior skew-zigzag algebra of an odd cycle is not the ordinary one up to vertex-fixing
-isomorphism.** On a cycle with an odd number `m ≥ 3` of vertices, over a field of characteristic
-other than two, no algebra isomorphism from the ordinary relation quotient, presented by the
-constant parameter, to the exterior relation quotient fixes every vertex idempotent. -/
-theorem not_exists_algEquiv_skewZigzagQuotient_exteriorCycle [Field k] {m : ℕ} [NeZero m]
-    (hm : 3 ≤ m) (hodd : Odd m) (h2 : (2 : k) ≠ 0) :
-    ¬ ∃ φ : skewZigzagQuotient k (SimpleGraph.cycleGraph m) 1 ≃ₐ[k]
-        skewZigzagQuotient k (SimpleGraph.cycleGraph m) (exteriorCycle k m),
-      ∀ i : Fin m, φ (skewZigzagMk k _ 1 (vertexIdempotent k (vertex _ i))) =
-        skewZigzagMk k _ (exteriorCycle k m) (vertexIdempotent k (vertex _ i)) :=
-  fun hφ => not_isGaugeEquivalent_one_exteriorCycle hm hodd h2
-    (isGaugeEquivalent_iff_exists_algEquiv.mpr hφ)
 
 end TauCeti
