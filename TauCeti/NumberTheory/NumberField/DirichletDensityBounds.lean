@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.DirichletDensity
+-- Mathlib does not expose the body of `NumberField.Set.HasDirichletDensity`, nor a lemma unfolding
+-- it; `hasDirichletDensity_iff` below supplies that lemma, so no other file needs this import.
+import all Mathlib.NumberTheory.NumberField.DirichletDensity
 
 /-!
 # One-sided bounds for Dirichlet density
@@ -22,20 +25,22 @@ sides of this limit separately.  This file records those one-sided conclusions a
 
 The predicates use eventual epsilon inequalities, rather than assigning junk-valued lower and
 upper densities.  They are monotone in the proposed bound, and a common lower and upper bound
-forces the defining ratio to converge.  A lower bound is always at most an upper bound; this
+forces a Dirichlet density.  A lower bound is always at most an upper bound; this
 comparison also gives the natural interval restrictions on one-sided bounds.
 
 ## Main results
 
-* `NumberField.Set.isLowerDirichletDensityBound_of_tendsto` and
-  `NumberField.Set.isUpperDirichletDensityBound_of_tendsto`: convergence of the defining
-  ratio supplies its one-sided bounds.
+* `NumberField.Set.hasDirichletDensity_iff`: Mathlib's `HasDirichletDensity`, unfolded to the
+  convergence of the defining ratio.
+* `NumberField.Set.HasDirichletDensity.isLowerDirichletDensityBound` and
+  `NumberField.Set.HasDirichletDensity.isUpperDirichletDensityBound`: a Dirichlet density is
+  both a lower and an upper bound.
 * `NumberField.Set.IsLowerDirichletDensityBound.le_of_isUpperDirichletDensityBound`:
   every lower bound is at most every upper bound.
-* `NumberField.Set.tendsto_primeIdealZetaSum_div_of_upperBound_of_lowerBound`: matching
-  one-sided bounds force convergence of the defining ratio.
-* `NumberField.Set.tendsto_primeIdealZetaSum_div_iff_bounds`: the resulting
-  characterization of that convergence.
+* `NumberField.Set.hasDirichletDensity_of_upperBound_of_lowerBound`: matching one-sided bounds
+  force a Dirichlet density.
+* `NumberField.Set.hasDirichletDensity_iff_bounds`: the resulting characterization of
+  Dirichlet density.
 
 ## References
 
@@ -51,6 +56,15 @@ open scoped Topology
 namespace NumberField.Set
 
 variable {K : Type*} [Field K] [NumberField K]
+
+/-- Unfolds `HasDirichletDensity S δ` to the convergence, as `s → 1⁺`, of the ratio of the
+partial prime sum over `S` to the sum over all primes. -/
+theorem hasDirichletDensity_iff {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ} :
+    S.HasDirichletDensity δ ↔
+      Tendsto (fun s : ℝ ↦ S.primeIdealZetaSum s /
+        NumberField.Set.primeIdealZetaSum (Set.univ : Set (HeightOneSpectrum (𝓞 K))) s)
+        (𝓝[>] 1) (𝓝 δ) :=
+  Iff.rfl
 
 /-- A real number `δ` is a lower Dirichlet-density bound for `S` if, for every positive `ε`,
 the ratio defining Dirichlet density is eventually strictly above `δ - ε` as `s → 1⁺`. -/
@@ -151,31 +165,19 @@ theorem IsUpperDirichletDensityBound.mono {S : Set (HeightOneSpectrum (𝓞 K))}
   filter_upwards [h ε hε] with s hs
   exact hs.trans_le (by linarith)
 
-/-- Convergence of the ratio defining Dirichlet density makes its limit a lower
-Dirichlet-density bound. -/
-theorem isLowerDirichletDensityBound_of_tendsto
-    {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ}
-    (h : Tendsto
-      (fun s : ℝ ↦ S.primeIdealZetaSum s /
-        NumberField.Set.primeIdealZetaSum
-          (Set.univ : Set (HeightOneSpectrum (𝓞 K))) s)
-      (𝓝[>] 1) (𝓝 δ)) :
+/-- A Dirichlet density is a lower Dirichlet-density bound. -/
+theorem HasDirichletDensity.isLowerDirichletDensityBound
+    {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ} (h : S.HasDirichletDensity δ) :
     IsLowerDirichletDensityBound S δ := by
   intro ε hε
-  exact (tendsto_order.1 h).1 (δ - ε) (by linarith)
+  exact (tendsto_order.1 (hasDirichletDensity_iff.1 h)).1 (δ - ε) (by linarith)
 
-/-- Convergence of the ratio defining Dirichlet density makes its limit an upper
-Dirichlet-density bound. -/
-theorem isUpperDirichletDensityBound_of_tendsto
-    {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ}
-    (h : Tendsto
-      (fun s : ℝ ↦ S.primeIdealZetaSum s /
-        NumberField.Set.primeIdealZetaSum
-          (Set.univ : Set (HeightOneSpectrum (𝓞 K))) s)
-      (𝓝[>] 1) (𝓝 δ)) :
+/-- A Dirichlet density is an upper Dirichlet-density bound. -/
+theorem HasDirichletDensity.isUpperDirichletDensityBound
+    {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ} (h : S.HasDirichletDensity δ) :
     IsUpperDirichletDensityBound S δ := by
   intro ε hε
-  exact (tendsto_order.1 h).2 (δ + ε) (by linarith)
+  exact (tendsto_order.1 (hasDirichletDensity_iff.1 h)).2 (δ + ε) (by linarith)
 
 /-- Every lower Dirichlet-density bound is at most every upper Dirichlet-density bound for the
 same set of primes. -/
@@ -207,18 +209,14 @@ theorem IsUpperDirichletDensityBound.nonneg
     (h : IsUpperDirichletDensityBound S δ) : 0 ≤ δ :=
   (isLowerDirichletDensityBound_zero S).le_of_isUpperDirichletDensityBound h
 
-/-- Matching lower and upper Dirichlet-density bounds force the defining ratio to tend to their
+/-- Matching lower and upper Dirichlet-density bounds force a Dirichlet density equal to their
 common value. -/
-theorem tendsto_primeIdealZetaSum_div_of_upperBound_of_lowerBound
+theorem hasDirichletDensity_of_upperBound_of_lowerBound
     {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ}
     (hupper : IsUpperDirichletDensityBound S δ)
     (hlower : IsLowerDirichletDensityBound S δ) :
-    Tendsto
-      (fun s : ℝ ↦ S.primeIdealZetaSum s /
-        NumberField.Set.primeIdealZetaSum
-          (Set.univ : Set (HeightOneSpectrum (𝓞 K))) s)
-      (𝓝[>] 1) (𝓝 δ) := by
-  refine tendsto_order.2 ⟨?_, ?_⟩
+    S.HasDirichletDensity δ := by
+  refine hasDirichletDensity_iff.2 <| tendsto_order.2 ⟨?_, ?_⟩
   · intro a ha
     let ε := (δ - a) / 2
     have hε : 0 < ε := div_pos (sub_pos.mpr ha) zero_lt_two
@@ -236,18 +234,13 @@ theorem tendsto_primeIdealZetaSum_div_of_upperBound_of_lowerBound
       linarith
     exact hs.trans hlt
 
-/-- The ratio defining Dirichlet density tends to `δ` exactly when `δ` is both an upper and a
-lower Dirichlet-density bound. -/
-theorem tendsto_primeIdealZetaSum_div_iff_bounds
+/-- A set of primes has Dirichlet density `δ` exactly when `δ` is both an upper and a lower
+Dirichlet-density bound for it. -/
+theorem hasDirichletDensity_iff_bounds
     {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ} :
-    Tendsto
-      (fun s : ℝ ↦ S.primeIdealZetaSum s /
-        NumberField.Set.primeIdealZetaSum
-          (Set.univ : Set (HeightOneSpectrum (𝓞 K))) s)
-      (𝓝[>] 1) (𝓝 δ) ↔
+    S.HasDirichletDensity δ ↔
       IsUpperDirichletDensityBound S δ ∧ IsLowerDirichletDensityBound S δ :=
-  ⟨fun h ↦ ⟨isUpperDirichletDensityBound_of_tendsto h,
-      isLowerDirichletDensityBound_of_tendsto h⟩,
-    fun h ↦ tendsto_primeIdealZetaSum_div_of_upperBound_of_lowerBound h.1 h.2⟩
+  ⟨fun h ↦ ⟨h.isUpperDirichletDensityBound, h.isLowerDirichletDensityBound⟩,
+    fun h ↦ hasDirichletDensity_of_upperBound_of_lowerBound h.1 h.2⟩
 
 end NumberField.Set

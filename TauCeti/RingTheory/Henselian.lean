@@ -18,6 +18,9 @@ This is the standard source of `n`-th roots of principal units away from the res
 characteristic: over the integer ring of a local field it shows that each positive-depth step of
 the unit filtration is carried onto itself by the `n`-th power map.
 
+Without assuming `2` invertible, every element of `1 + 4J` is a square. This supplies deep
+square roots in residue characteristic two, by solving `t² + t = c` for `c ∈ J`.
+
 ## Main results
 
 * `TauCeti.HenselianRing.exists_pow_eq_and_sub_one_mem_of_sub_one_mem`: if `n` is invertible,
@@ -72,6 +75,26 @@ theorem exists_pow_eq_and_sub_one_mem_of_sub_one_mem {I J : Ideal R} [HenselianR
     rw [← hpow, ← geom_sum_mul, ← hu, Units.inv_mul_cancel_left]
   rw [hsub]
   exact I.mul_mem_left _ hw
+
+/-- In a ring Henselian at `J`, an element `c ∈ J` has the form `t² + t` for some `t ∈ J`.
+This is the simple-root form of Hensel's lemma that also works in residue characteristic two. -/
+theorem exists_sq_add_eq_of_mem {J : Ideal R} [HenselianRing R J] {c : R} (hc : c ∈ J) :
+    ∃ t ∈ J, t ^ 2 + t = c := by
+  obtain ⟨t, ht, htJ⟩ := HenselianRing.is_henselian (X ^ 2 + X - C c)
+    (by
+      rw [add_sub_assoc]
+      exact monic_X_pow_add (lt_of_le_of_lt (degree_X_sub_C_le c) (by decide)))
+    0 (by simpa using J.neg_mem hc) (by simp)
+  exact ⟨t, by simpa using htJ, by simpa [sub_eq_zero] using ht⟩
+
+/-- In a ring Henselian at `J`, every element of `1 + 4J` is a square. No invertibility
+assumption on `2` in the ring or its residue rings is needed. -/
+theorem isSquare_one_add_four_mul_of_mem {J : Ideal R} [HenselianRing R J]
+    {c : R} (hc : c ∈ J) : IsSquare (1 + 4 * c) := by
+  obtain ⟨t, -, ht⟩ := exists_sq_add_eq_of_mem hc
+  refine ⟨1 + 2 * t, ?_⟩
+  rw [← ht]
+  ring
 
 end HenselianRing
 
