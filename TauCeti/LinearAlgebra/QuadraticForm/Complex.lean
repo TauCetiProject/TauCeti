@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.AlgClosed
-public import Mathlib.LinearAlgebra.QuadraticForm.Radical
+public import TauCeti.LinearAlgebra.QuadraticForm.Radical
+public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 
 /-!
 # Quadratic forms over algebraically closed fields
@@ -15,6 +16,11 @@ Over an algebraically closed field of characteristic not two, a regular finite-d
 quadratic form is determined up to equivalence by its dimension.  In particular, every form on a
 space of dimension at least two is isotropic.  These facts justify the omission of complex places
 from the local predicates used by the global local-to-global theory.
+
+The same classification also determines representation: one regular form embeds isometrically
+in another exactly when its dimension is no larger, and a regular form represents every scalar
+as soon as its space has positive dimension.  More generally, every nonzero quadratic form over
+an algebraically closed field represents every scalar.
 
 The proofs use Mathlib's algebraically closed classification.  No separate complex quadratic-form
 carrier is introduced.
@@ -96,5 +102,87 @@ their dimensions agree. -/
   · rintro ⟨e⟩
     exact e.toLinearEquiv.finrank_eq
   · exact _root_.QuadraticForm.equivalent_of_finrank_eq_of_isAlgClosed Q R hQ hR
+
+/-- A nonzero quadratic form over an algebraically closed field represents every scalar. -/
+theorem _root_.QuadraticForm.represents_of_ne_zero_of_isAlgClosed
+    {K W : Type*} [Field K] [IsAlgClosed K] [AddCommGroup W] [Module K W]
+    {Q : QuadraticForm K W} (hQ : Q ≠ 0) (a : K) : QuadraticMap.Represents Q a := by
+  obtain ⟨v, hv⟩ : ∃ v, Q v ≠ 0 := by
+    by_contra! h
+    exact hQ (QuadraticMap.ext h)
+  obtain ⟨t, ht⟩ := IsAlgClosed.exists_eq_mul_self (a / Q v)
+  exact (QuadraticMap.represents_iff Q a).2
+    ⟨t • v, by rw [QuadraticMap.map_smul, ← ht, smul_eq_mul, div_mul_cancel₀ _ hv]⟩
+
+/-- A regular quadratic form over an algebraically closed field is represented by another regular
+form exactly when the dimension of its space is no larger. -/
+@[simp]
+theorem _root_.QuadraticForm.isRepresentedBy_iff_finrank_le_of_isAlgClosed
+    {K W₁ W₂ : Type*} [Field K] [IsAlgClosed K] [Invertible (2 : K)]
+    [AddCommGroup W₁] [Module K W₁] [FiniteDimensional K W₁]
+    [AddCommGroup W₂] [Module K W₂] [FiniteDimensional K W₂]
+    (Q : QuadraticForm K W₁) (R : QuadraticForm K W₂)
+    (hQ : Q.Nondegenerate) (hR : R.Nondegenerate) :
+    Q.IsRepresentedBy R ↔ Module.finrank K W₁ ≤ Module.finrank K W₂ := by
+  constructor
+  · rw [QuadraticMap.isRepresentedBy_iff]
+    rintro ⟨f, hf, -⟩
+    exact LinearMap.finrank_le_finrank_of_injective hf
+  · intro h
+    let S : QuadraticForm K (Fin (Module.finrank K W₂ - Module.finrank K W₁) → K) :=
+      weightedSumSquares K
+        (1 : Fin (Module.finrank K W₂ - Module.finrank K W₁) → K)
+    have hS : S.Nondegenerate := by
+      rw [QuadraticMap.nondegenerate_iff_radical_eq_bot,
+        _root_.QuadraticForm.radical_weightedSumSquares]
+      ext x
+      rw [Pi.mem_spanSubset_iff, Submodule.mem_bot]
+      constructor
+      · intro hx
+        funext i
+        exact hx i (by simp)
+      · rintro rfl i -
+        rfl
+    have hprod : (Q.prod S).Nondegenerate := hQ.prod hS
+    have hrank : Module.finrank K
+          (W₁ × (Fin (Module.finrank K W₂ - Module.finrank K W₁) → K)) =
+        Module.finrank K W₂ := by
+      simp only [Module.finrank_prod, Module.finrank_fin_fun]
+      omega
+    obtain ⟨e⟩ := QuadraticForm.equivalent_of_finrank_eq_of_isAlgClosed
+      (Q.prod S) R hprod hR hrank
+    rw [QuadraticMap.isRepresentedBy_iff]
+    exact ⟨(e.toIsometry.comp (QuadraticMap.Isometry.inl Q S)).toLinearMap,
+      e.injective.comp LinearMap.inl_injective, fun x ↦ by simp⟩
+
+/-- A regular quadratic form on a space of positive rank over an algebraically closed field
+represents every scalar. The positive-rank hypothesis supplies nontriviality directly, so no
+finite-dimensionality typeclass assumption is needed. -/
+theorem _root_.QuadraticForm.represents_of_finrank_pos_of_isAlgClosed
+    {K W : Type*} [Field K] [IsAlgClosed K] [AddCommGroup W] [Module K W]
+    (Q : QuadraticForm K W) (hQ : Q.Nondegenerate) (hW : 0 < Module.finrank K W) (a : K) :
+    Q.Represents a := by
+  let _ : Nontrivial W := Module.nontrivial_of_finrank_pos hW
+  exact Q.represents_of_ne_zero_of_isAlgClosed hQ.ne_zero a
+
+/-- A regular quadratic form over an algebraically closed field represents a scalar exactly when
+the scalar is zero or the underlying space has positive dimension. -/
+@[simp]
+theorem _root_.QuadraticForm.represents_iff_eq_zero_or_finrank_pos_of_isAlgClosed
+    {K W : Type*} [Field K] [IsAlgClosed K] [AddCommGroup W] [Module K W]
+    [FiniteDimensional K W]
+    (Q : QuadraticForm K W) (hQ : Q.Nondegenerate) (a : K) :
+    Q.Represents a ↔ a = 0 ∨ 0 < Module.finrank K W := by
+  constructor
+  · rw [QuadraticMap.represents_iff, Set.mem_range]
+    rintro ⟨x, hx⟩
+    by_cases ha : a = 0
+    · exact Or.inl ha
+    · exact Or.inr <| Module.finrank_pos_iff_exists_ne_zero.mpr ⟨x, fun h ↦ by
+        subst x
+        exact ha (by simpa using hx.symm)⟩
+  · rintro (rfl | hW)
+    · exact QuadraticMap.represents_zero Q
+    · exact Q.represents_of_finrank_pos_of_isAlgClosed hQ hW a
 
 end TauCeti.QuadraticForm

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Deriv
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.PrimePowerIndex
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.PowerIndex
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.VonMangoldt
 
 /-!

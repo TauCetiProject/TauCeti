@@ -25,6 +25,8 @@ completely multiplicative, and so is open to Euler-product and Dirichlet-series 
 
 * `AlgEquiv.sum_inv_mul_galoisCharacterWeight_apply_of_unramified`: the orthogonality identity at
   an unramified height-one prime, selecting the fibre of a chosen `σ`.
+* `AlgEquiv.sum_inv_mul_galoisCharacterWeight_pow_apply_of_unramified`: the same identity for the
+  `j`-th power of the weight, selecting the primes whose Frobenius has `j`-th power `σ`.
 * `AlgEquiv.sum_inv_mul_galoisCharacterWeight_apply_eq_zero_of_mem_ramifiedPrimes`: the sum
   vanishes at a ramified prime, for the trivial reason that every summand does.
 
@@ -82,6 +84,35 @@ theorem sum_inv_mul_galoisCharacterWeight_apply_eq_zero_of_mem_ramifiedPrimes (�
     rw [(MonoidHom.galoisCharacterWeight_apply_eq_zero_iff χ 𝔭).mpr h𝔭, mul_zero]
 
 open scoped Classical IsMulCommutative in
+/-- **Character orthogonality for a power of the Galois character weight.** For `L / K` abelian,
+`σ` a chosen element of `Gal(L/K)`, `𝔭` a height-one prime unramified in `L` and `j` a natural
+number, summing `(χ σ)⁻¹` against the `j`-th power of the weight at `𝔭` gives `#Gal(L/K)` when
+the `j`-th power of the Frobenius at `𝔭` is `σ`, and `0` otherwise.
+
+This is the form the prime-power terms of a logarithmic derivative need: the weight at `𝔭 ^ j` is
+`χ (Frob 𝔭) ^ j = χ (Frob 𝔭 ^ j)`, so the power lands on the Frobenius argument and the inverse
+stays on the tag. -/
+theorem sum_inv_mul_galoisCharacterWeight_pow_apply_of_unramified
+    [IsMulCommutative (L ≃ₐ[K] L)] (σ : L ≃ₐ[K] L) (𝔭 : HeightOneSpectrum (𝓞 K))
+    (hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal],
+      Algebra.IsUnramifiedAt (𝓞 K) Q) (j : ℕ) :
+    haveI : 𝔭.asIdeal.IsMaximal := 𝔭.isMaximal
+    ∑ χ : (L ≃ₐ[K] L) →* ℂˣ,
+          (((χ σ)⁻¹ : ℂˣ) : ℂ) * MonoidHom.galoisCharacterWeight (L := L) χ 𝔭.asIdeal ^ j =
+      if (artinSymbol (L := L) 𝔭.asIdeal hur).out ^ j = σ then (Nat.card (L ≃ₐ[K] L) : ℂ)
+      else 0 := by
+  have hexp : Monoid.exponent (L ≃ₐ[K] L) ≠ 0 := Monoid.exponent_ne_zero_of_finite
+  have : NeZero ((Monoid.exponent (L ≃ₐ[K] L) : ℕ) : ℂ) := ⟨Nat.cast_ne_zero.mpr hexp⟩
+  calc ∑ χ : (L ≃ₐ[K] L) →* ℂˣ,
+          (((χ σ)⁻¹ : ℂˣ) : ℂ) * MonoidHom.galoisCharacterWeight (L := L) χ 𝔭.asIdeal ^ j
+      = ∑ χ : (L ≃ₐ[K] L) →* ℂˣ,
+          (((χ σ)⁻¹ : ℂˣ) : ℂ) * ((χ ((artinSymbol (L := L) 𝔭.asIdeal hur).out ^ j) : ℂˣ) : ℂ) :=
+        Finset.sum_congr rfl fun χ _ ↦ by
+          rw [MonoidHom.galoisCharacterWeight_apply_of_unramified χ 𝔭 hur, map_pow,
+            Units.val_pow_eq_pow_val]
+    _ = _ := CommGroup.sum_inv_mul_monoidHom_apply_eq_ite _ _
+
+open scoped Classical in
 /-- **Character orthogonality for the Galois character weight.** For `L / K` abelian, `σ` a chosen
 element of `Gal(L/K)` and `𝔭` a height-one prime unramified in `L`, summing `(χ σ)⁻¹` against the
 weight over every character gives `#Gal(L/K)` when the Frobenius at `𝔭` is `σ`, and `0` otherwise.
@@ -104,14 +135,6 @@ theorem sum_inv_mul_galoisCharacterWeight_apply_of_unramified [IsMulCommutative 
     ∑ χ : (L ≃ₐ[K] L) →* ℂˣ,
           (((χ σ)⁻¹ : ℂˣ) : ℂ) * MonoidHom.galoisCharacterWeight (L := L) χ 𝔭.asIdeal =
       if (artinSymbol (L := L) 𝔭.asIdeal hur).out = σ then (Nat.card (L ≃ₐ[K] L) : ℂ) else 0 := by
-  have hexp : Monoid.exponent (L ≃ₐ[K] L) ≠ 0 := Monoid.exponent_ne_zero_of_finite
-  have : NeZero ((Monoid.exponent (L ≃ₐ[K] L) : ℕ) : ℂ) := ⟨Nat.cast_ne_zero.mpr hexp⟩
-  calc ∑ χ : (L ≃ₐ[K] L) →* ℂˣ,
-          (((χ σ)⁻¹ : ℂˣ) : ℂ) * MonoidHom.galoisCharacterWeight (L := L) χ 𝔭.asIdeal
-      = ∑ χ : (L ≃ₐ[K] L) →* ℂˣ,
-          (((χ σ)⁻¹ : ℂˣ) : ℂ) * ((χ (artinSymbol (L := L) 𝔭.asIdeal hur).out : ℂˣ) : ℂ) :=
-        Finset.sum_congr rfl fun χ _ ↦ by
-          rw [MonoidHom.galoisCharacterWeight_apply_of_unramified χ 𝔭 hur]
-    _ = _ := CommGroup.sum_inv_mul_monoidHom_apply_eq_ite _ _
+  simpa only [pow_one] using sum_inv_mul_galoisCharacterWeight_pow_apply_of_unramified σ 𝔭 hur 1
 
 end AlgEquiv

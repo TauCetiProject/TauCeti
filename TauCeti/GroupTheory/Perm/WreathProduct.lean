@@ -35,6 +35,11 @@ primitivity of the product action requires additional hypotheses and is not asse
   `ι × Λ`.
 * `TauCeti.WreathProduct.productToPerm`: the product permutation representation on `ι → Λ`.
 
+## Main results
+
+* `TauCeti.WreathProduct.mem_range_imprimitiveToPerm_iff`: the image of `Sym(Λ) ≀ Sym(ι)` in
+  `Equiv.Perm (ι × Λ)` consists of the permutations that permute the fibres `{i} × Λ`.
+
 The convention agrees with `Mathlib.GroupTheory.RegularWreathProduct`: an element `(a, q)` acts
 on the base by `b i ↦ b (q⁻¹ i)`. In the imprimitive action it sends `(i, x)` to
 `(q i, a (q i) • x)`.
@@ -347,6 +352,32 @@ fibre is faithful. -/
 theorem imprimitiveToPerm_injective [Nonempty Λ] [FaithfulSMul D Λ] :
     Function.Injective (imprimitiveToPerm D ι Λ) :=
   MulAction.toPerm_injective
+
+variable {ι Λ} in
+/-- A permutation of `ι × Λ` comes from the imprimitive action of `Sym(Λ) ≀ Sym(ι)` exactly when it
+permutes the fibres `{i} × Λ`, that is, when its first coordinate is a permutation of the first
+coordinate of its argument. -/
+theorem mem_range_imprimitiveToPerm_iff {σ : Equiv.Perm (ι × Λ)} :
+    σ ∈ (imprimitiveToPerm (Equiv.Perm Λ) ι Λ).range ↔
+      ∃ τ : Equiv.Perm ι, ∀ x, (σ x).1 = τ x.1 := by
+  constructor
+  · rintro ⟨w, rfl⟩
+    exact ⟨w.right, fun x ↦ by simp⟩
+  · rintro ⟨τ, hτ⟩
+    -- `σ` carries the fibre over `τ.symm i` onto the fibre over `i`, and `σ.symm` carries it back.
+    have hfib (i : ι) (l : Λ) : σ (τ.symm i, l) = (i, (σ (τ.symm i, l)).2) :=
+      Prod.ext (by rw [hτ, Equiv.apply_symm_apply]) rfl
+    have hfib' (i : ι) (l : Λ) : σ.symm (i, l) = (τ.symm i, (σ.symm (i, l)).2) := by
+      refine Prod.ext ?_ rfl
+      rw [Equiv.eq_symm_apply, ← hτ, Equiv.apply_symm_apply]
+    refine ⟨⟨fun i ↦
+      { toFun := fun l ↦ (σ (τ.symm i, l)).2
+        invFun := fun l ↦ (σ.symm (i, l)).2
+        left_inv := fun l ↦ by simp only [← hfib, Equiv.symm_apply_apply]
+        right_inv := fun l ↦ by simp only [← hfib', Equiv.apply_symm_apply] }, τ⟩, ?_⟩
+    ext x
+    · simp [hτ]
+    · simp
 
 end Imprimitive
 

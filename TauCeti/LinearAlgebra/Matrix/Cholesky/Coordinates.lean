@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Cholesky.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -17,8 +19,10 @@ lower-triangular positions whose diagonal values are positive. This file package
 identification as a homeomorphism for the subtype topologies on both sides, and as a measurable
 equivalence for the corresponding Borel structures. These are the product coordinates in which
 the Jacobian of Cholesky reconstruction is computed. The file also reads the determinant of a
-lower-triangular matrix and the trace of its Gram matrix `L * Lᵀ` off these coordinates, and
-records how a product over the lower-triangular positions splits into a product over the rows.
+lower-triangular matrix and the trace of its Gram matrix `L * Lᵀ` off these coordinates,
+records how a product over the lower-triangular positions splits into a product over the rows,
+and combines these into the factorization, one factor per coordinate, of a determinant power
+times an exponential trace factor that underlies Cholesky-coordinate density computations.
 
 ## Main declarations
 
@@ -27,6 +31,8 @@ records how a product over the lower-triangular positions splits into a product 
 * `TauCeti.PosDiagLowerCoordinates` — the coordinate functions with positive diagonal values.
 * `TauCeti.lowerTriangleCoordinatesHomeomorph` — the coordinate homeomorphism.
 * `TauCeti.lowerTriangleCoordinates` — its measurable-equivalence form.
+* `TauCeti.prod_lowerTriangle_diag_rpow_mul_exp_neg_sq` — the coordinatewise factorization of a
+  determinant power times an exponential trace factor.
 -/
 
 public section
@@ -133,6 +139,57 @@ theorem trace_lowerTriangleMatrix_mul_transpose (x : lowerTriangle p → ℝ) :
         rw [Finset.sum_subtype (p := fun q : Fin p × Fin p ↦ q.2 ≤ q.1) _ (fun q ↦ by simp)
           fun q ↦ if h : q.2 ≤ q.1 then x ⟨q, h⟩ ^ 2 else 0]
         exact Finset.sum_congr rfl fun ij _ ↦ dite_eq_left ij.2
+
+/-- The common algebraic core of Cholesky-coordinate density factorizations. A determinant power,
+the Cholesky diagonal powers, and an exponential trace factor split into one factor per lower
+triangular coordinate; `c` and `b` supply the diagonal and off-diagonal constants. -/
+theorem prod_lowerTriangle_diag_rpow_mul_exp_neg_sq (x : lowerTriangle p → ℝ)
+    (hpos : ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩) (d q : ℝ) (c : Fin p → ℝ) (b : ℝ) :
+    ∏ ij : lowerTriangle p,
+        (if ij.1.1 = ij.1.2 then
+            c ij.1.1 * x ⟨(ij.1.1, ij.1.1), le_rfl⟩ ^
+              (2 * d + p - ((ij.1.1 : ℕ) : ℝ))
+          else b) * Real.exp (-q * x ij ^ 2) =
+      (∏ i : Fin p, c i * b ^ (i : ℕ)) *
+        ((lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).det ^ d *
+          (∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ))) *
+            Real.exp (-q * (lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).trace)) := by
+  classical
+  have hnn : ∀ i ∈ (Finset.univ : Finset (Fin p)), (0 : ℝ) ≤ x ⟨(i, i), le_rfl⟩ :=
+    fun i _ ↦ (hpos i).le
+  have hkey : ∀ i : Fin p,
+      x ⟨(i, i), le_rfl⟩ ^ (2 * d) * x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ)) =
+        x ⟨(i, i), le_rfl⟩ ^ (2 * d + p - ((i : ℕ) : ℝ)) := by
+    intro i
+    rw [← Real.rpow_natCast (x ⟨(i, i), le_rfl⟩) (p - (i : ℕ)),
+      ← Real.rpow_add (hpos i), Nat.cast_sub i.2.le]
+    congr 1
+    ring
+  have hdet : (lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).det ^ d =
+      ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (2 * d) := by
+    rw [Matrix.det_mul, Matrix.det_transpose, det_lowerTriangleMatrix, ← pow_two,
+      ← Real.rpow_natCast (∏ i : Fin p, x ⟨(i, i), le_rfl⟩) 2,
+      ← Real.rpow_mul (Finset.prod_nonneg hnn), ← Real.finsetProd_rpow _ _ hnn]
+    refine Finset.prod_congr rfl fun i _ ↦ ?_
+    congr 1
+  have hexp : ∏ ij : lowerTriangle p, Real.exp (-q * x ij ^ 2) =
+      Real.exp (-q * (lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).trace) := by
+    rw [← Real.exp_sum, trace_lowerTriangleMatrix_mul_transpose, ← Finset.mul_sum]
+  rw [Finset.prod_mul_distrib, hexp,
+    prod_lowerTriangle_ite
+      (fun i ↦ c i * x ⟨(i, i), le_rfl⟩ ^ (2 * d + p - ((i : ℕ) : ℝ))) fun _ ↦ b,
+    hdet]
+  simp_rw [mul_assoc, ← hkey]
+  -- Separate each row's constants `c i * b ^ i` from its coordinate powers, so the product over
+  -- the rows splits into the constant product and the determinant and Jacobian products.
+  have hrow : ∀ i : Fin p,
+      c i * (x ⟨(i, i), le_rfl⟩ ^ (2 * d) * x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ)) * b ^ (i : ℕ)) =
+        (c i * b ^ (i : ℕ)) *
+          (x ⟨(i, i), le_rfl⟩ ^ (2 * d) * x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ))) :=
+    fun i ↦ by ring
+  rw [Finset.prod_congr rfl fun i _ ↦ hrow i, Finset.prod_mul_distrib, Finset.prod_mul_distrib,
+    Finset.prod_mul_distrib]
+  ring
 
 theorem continuous_lowerTriangleMatrix :
     Continuous fun x : lowerTriangle p → ℝ ↦ lowerTriangleMatrix p x :=

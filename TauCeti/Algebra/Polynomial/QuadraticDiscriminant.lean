@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.QuadraticDiscriminant
-public import Mathlib.FieldTheory.Separable
+public import Mathlib.FieldTheory.Perfect
+
+import Mathlib.Algebra.Polynomial.SpecificDegree
 
 /-!
 # Separability and splitting criteria for quadratic polynomials
@@ -25,6 +27,10 @@ Over a field, with `a ≠ 0`:
   characteristic-free core the other two are read off from;
 * `Polynomial.splits_quadratic_iff_isSquare`: away from characteristic two, splits exactly when
   `discrim a b c` is a square;
+* `Polynomial.splits_quadratic_of_discrim_eq_zero`: over a perfect field, splits as soon as
+  `discrim a b c = 0`;
+* `Polynomial.card_rootSet_quadratic_of_discrim_eq_zero`: if it splits and `discrim a b c = 0`, it
+  has exactly one root;
 * `Polynomial.splits_quadratic_iff_exists_artinSchreier_of_two_eq_zero`: in characteristic two,
   where the discriminant degenerates to `b²` (`discrim_eq_sq_of_two_eq_zero`) and the square-class
   criterion says nothing, splits exactly when the
@@ -175,6 +181,42 @@ theorem splits_quadratic_iff_exists_artinSchreier_of_two_eq_zero {k : Type*} [Fi
     refine ⟨b * z / a, ?_⟩
     field_simp
     linear_combination hz + a * c * h2
+
+/-- Over a perfect field, a quadratic `a X² + b X + c` (with `a ≠ 0`) whose discriminant vanishes
+splits. Perfectness is needed in characteristic two, where `X² - c` can have vanishing
+discriminant without a root. -/
+theorem splits_quadratic_of_discrim_eq_zero {k : Type*} [Field k] [PerfectField k] {a b c : k}
+    (ha : a ≠ 0) (hd : discrim a b c = 0) : (C a * X ^ 2 + C b * X + C c).Splits := by
+  set p := C a * X ^ 2 + C b * X + C c with hp
+  have hdeg : p.natDegree = 2 := natDegree_quadratic ha
+  have hsep : ¬ p.Separable := by
+    rw [separable_quadratic_iff_discrim_ne_zero ha, not_not]
+    exact hd
+  have hroots : p.roots ≠ 0 := fun h0 ↦ hsep (PerfectField.separable_of_irreducible
+    ((irreducible_iff_roots_eq_zero_of_degree_le_three (by omega) (by omega)).2 h0))
+  obtain ⟨x, hx⟩ := Multiset.exists_mem_of_ne_zero hroots
+  exact Splits.of_natDegree_eq_two hdeg (mem_roots'.1 hx).2
+
+/-- A split quadratic `a X² + b X + c` (with `a ≠ 0`) whose discriminant vanishes has exactly one
+root. -/
+theorem card_rootSet_quadratic_of_discrim_eq_zero {k : Type*} [Field k] {a b c : k} (ha : a ≠ 0)
+    (hs : (C a * X ^ 2 + C b * X + C c).Splits) (hd : discrim a b c = 0) :
+    Fintype.card ((C a * X ^ 2 + C b * X + C c).rootSet k) = 1 := by
+  set p := C a * X ^ 2 + C b * X + C c with hp
+  have hdeg : p.natDegree = 2 := natDegree_quadratic ha
+  have hp0 : p ≠ 0 := ne_zero_of_natDegree_gt (n := 0) (by omega)
+  have hs' : (p.map (algebraMap k k)).Splits := by rwa [Algebra.algebraMap_self, map_id]
+  have hne : Fintype.card (p.rootSet k) ≠ 2 := by
+    rw [← hdeg, Ne, card_rootSet_eq_natDegree_iff_of_splits hp0 hs',
+      separable_quadratic_iff_discrim_ne_zero ha, not_not]
+    exact hd
+  have hle : Fintype.card (p.rootSet k) ≤ 2 := by
+    rw [← hdeg, ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
+    exact ncard_rootSet_le p k
+  obtain ⟨x, hx⟩ := hs.exists_eval_eq_zero (by rw [degree_eq_natDegree hp0, hdeg]; decide)
+  have hpos : 0 < Fintype.card (p.rootSet k) :=
+    Fintype.card_pos_iff.2 ⟨⟨x, mem_rootSet.2 ⟨hp0, by simpa using hx⟩⟩⟩
+  omega
 
 end Polynomial
 

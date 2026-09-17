@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
-public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
+public import TauCeti.NumberTheory.NumberField.FinitePlace
 
 /-!
 # Localization of quadratic forms over number fields
@@ -17,9 +17,9 @@ finite completions and to the real or complex field selected by an infinite plac
 definitions use `QuadraticForm.baseChange`; in particular, their underlying spaces are genuine
 tensor products over the global field rather than independently chosen local spaces.
 
-The evaluation, localization of diagonal forms, and algebraic-compatibility lemmas make the local
-forms usable without unfolding the localization definitions. They are the common input for local
-isotropy, representation, and invariant comparisons over number fields.
+The evaluation, nondegeneracy, localization of diagonal forms, and algebraic-compatibility
+lemmas make the local forms usable without unfolding the localization definitions. They are the
+common input for local isotropy, representation, and invariant comparisons over number fields.
 
 -/
 
@@ -149,6 +149,35 @@ theorem atComplexEmbedding_def (Q : _root_.QuadraticForm K V) (w : InfinitePlace
     let _ : Algebra K ℂ := w.embedding.toAlgebra
     atComplexEmbedding Q w = Q.baseChange ℂ := by
   rfl
+
+/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate at every finite place. -/
+theorem Nondegenerate.atFinitePlace [NumberField K] [FiniteDimensional K V]
+    {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (v : HeightOneSpectrum (𝓞 K)) :
+    (Q.atFinitePlace v).Nondegenerate := by
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  rw [atFinitePlace_def]
+  exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
+
+/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate at every real place. -/
+theorem Nondegenerate.atRealPlace [FiniteDimensional K V]
+    {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (w : {w : InfinitePlace K // w.IsReal}) :
+    (Q.atRealPlace w).Nondegenerate := by
+  let : CharZero K := RingHom.charZero w.1.embedding
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  rw [atRealPlace_def]
+  exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
+
+/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate after scalar extension
+through a complex embedding. -/
+theorem Nondegenerate.atComplexEmbedding [FiniteDimensional K V]
+    {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (w : InfinitePlace K) :
+    (Q.atComplexEmbedding w).Nondegenerate := by
+  let : CharZero K := RingHom.charZero w.embedding
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  let : Algebra K ℂ := w.embedding.toAlgebra
+  rw [atComplexEmbedding_def]
+  exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
 
 section Diagonal
 

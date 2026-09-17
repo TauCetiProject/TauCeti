@@ -88,7 +88,9 @@ theorem transportCost_sum_le {ι : Type*} [Countable ι] (c : X × Y → ℝ≥0
   obtain ⟨δ, hδ, hδε⟩ := ENNReal.exists_pos_sum_of_countable' (ENNReal.coe_ne_zero.2 hε.ne') ι
   -- Each summand is finite, so it is strictly below itself plus its share `δ i` of the slack.
   have hlt' (i : ι) : transportCost c (μ i) (ν i) < transportCost c (μ i) (ν i) + δ i :=
-    ENNReal.lt_add_right (ne_top_of_le_ne_top hlt.ne (ENNReal.le_tsum i)) (hδ i).ne'
+    ENNReal.lt_add_right
+      (ne_top_of_le_ne_top hlt.ne (ENNReal.le_tsum (f := fun i ↦ transportCost c (μ i) (ν i)) i))
+      (hδ i).ne'
   choose π hπ hπc using fun i ↦ transportCost_lt_iff.1 (hlt' i)
   calc transportCost c (Measure.sum μ) (Measure.sum ν) ≤ ∫⁻ z, c z ∂Measure.sum π :=
         transportCost_le_lintegral (IsCoupling.sum hπ) c
