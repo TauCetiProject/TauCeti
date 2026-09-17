@@ -39,6 +39,8 @@ whose trace transform is `TauCeti.mgf_trace_mul_wishartGramMeasure_sqrt`.
 
 ## Main results
 
+* `TauCeti.isProbabilityMeasure_of_mgf_trace_mul_eq_det_rpow`: a Wishart trace transform, even at a
+  single `Θ`, forces total mass `1`;
 * `TauCeti.memLp_trace_mul_of_mgf_trace_mul_eq_det_rpow`,
   `TauCeti.memLp_coe_apply_of_mgf_trace_mul_eq_det_rpow` and
   `TauCeti.memLp_id_of_mgf_trace_mul_eq_det_rpow` give finite moments of all orders for trace
@@ -80,7 +82,7 @@ variable {Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
 
 /-- A Wishart trace transform at a single `Θ` already forces total mass `1`: at `t = 0` the
 moment-generating function is the total mass, and the determinant power is `1`. -/
-private lemma isProbabilityMeasure_of_mgf_trace_mul_eq_det_rpow
+theorem isProbabilityMeasure_of_mgf_trace_mul_eq_det_rpow
     (hmgf : ∀ t : ℝ,
       (1 - (2 * t) • (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).PosDef →
       mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
