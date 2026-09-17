@@ -49,6 +49,12 @@ open MulAction
 variable {G X : Type*} [Group G] [MulAction G X] [IsPretransitive G X]
   {B : Set X} {a : X}
 
+/-- For a transitive action, every point lies in exactly one translate of a nonempty block. -/
+theorem _root_.MulAction.IsBlock.existsUnique_mem_orbit (hB : IsBlock G B) (hBne : B.Nonempty)
+    (x : X) : ∃! C : orbit G B, x ∈ (C : Set X) := by
+  obtain ⟨C, ⟨hC, hxC⟩, huniq⟩ := (hB.isBlockSystem hBne).1.2 x
+  exact ⟨⟨C, hC⟩, hxC, fun D hxD ↦ Subtype.ext (huniq D ⟨D.2, hxD⟩)⟩
+
 /-- A block `B` containing `a` is an atom in the block lattice exactly when its setwise stabilizer
 covers the point stabilizer of `a`. -/
 theorem _root_.MulAction.IsBlock.isAtom_iff_stabilizer_covBy

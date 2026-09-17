@@ -210,6 +210,13 @@ theorem coe_apply_comm {p : ℕ} (A : selfAdjoint.submodule ℝ (Matrix (Fin p) 
     (A : Matrix (Fin p) (Fin p) ℝ) i j = (A : Matrix (Fin p) (Fin p) ℝ) j i := by
   simpa using (isHermitian_coe A).apply j i
 
+open scoped Matrix in
+/-- An element of the symmetric subspace is fixed by transposition. -/
+@[simp]
+theorem transpose_coe {p : ℕ} (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (A : Matrix (Fin p) (Fin p) ℝ)ᵀ = (A : Matrix (Fin p) (Fin p) ℝ) :=
+  (Matrix.isHermitian_iff_isSymm.1 (isHermitian_coe A)).eq
+
 end selfAdjoint
 
 namespace TauCeti
@@ -407,8 +414,8 @@ theorem inner_eq_trace_mul {p : ℕ}
     ⟪A, Θ⟫ = ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace := by
   let _ : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusNormedAddCommGroup
   let _ : InnerProductSpace ℝ (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusInnerProductSpace
-  rw [coe_inner, Matrix.frobenius_inner_eq_trace_transpose_mul,
-    (Matrix.isHermitian_iff_isSymm.1 (isHermitian_coe A)).eq, Matrix.trace_mul_comm]
+  rw [coe_inner, Matrix.frobenius_inner_eq_trace_transpose_mul, transpose_coe A,
+    Matrix.trace_mul_comm]
 
 /-- The trace pairing against a fixed symmetric matrix is continuous, being the Frobenius inner
 product with that matrix. -/
