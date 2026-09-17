@@ -39,8 +39,10 @@ variable {F : Type*} [Field F] [Finite F] (W : WeierstrassCurve.Affine F) [W.IsE
 
 /-- **`[#E(𝔽_q)]` factors through `1 − π_q`**, by a unique isogeny: the dual of `1 − π_q`. -/
 theorem existsUnique_comp_oneSubFrobeniusIsogeny_eq_mulByIntIsogenyOfNeZero
-    {hn : (W.pointCount : ℤ) ≠ 0} :
-    ∃! χ : Isogeny W W, χ.comp (oneSubFrobeniusIsogeny W) = mulByIntIsogenyOfNeZero W hn := by
+    : ∃! χ : Isogeny W W, χ.comp (oneSubFrobeniusIsogeny W) =
+      mulByIntIsogenyOfNeZero W (by
+        rw [WeierstrassCurve.pointCount_def]
+        omega : (W.pointCount : ℤ) ≠ 0) := by
   classical
   have h := existsUnique_comp_eq_mulByIntIsogenyOfNeZero_degree
     (card_ker_oneSubFrobeniusIsogeny_eq_degree W)
@@ -49,14 +51,15 @@ theorem existsUnique_comp_oneSubFrobeniusIsogeny_eq_mulByIntIsogenyOfNeZero
 
 /-- **The dual of `1 − π_q` has degree `#E(𝔽_q)`.** -/
 theorem degree_eq_pointCount_of_comp_oneSubFrobeniusIsogeny_eq {χ : Isogeny W W}
-    {hn : (W.pointCount : ℤ) ≠ 0}
-    (h : χ.comp (oneSubFrobeniusIsogeny W) = mulByIntIsogenyOfNeZero W hn) :
+    (h : χ.comp (oneSubFrobeniusIsogeny W) =
+      mulByIntIsogenyOfNeZero W (by
+        rw [WeierstrassCurve.pointCount_def]
+        omega : (W.pointCount : ℤ) ≠ 0)) :
     χ.degree = W.pointCount := by
   rw [← degree_oneSubFrobeniusIsogeny_eq_pointCount W]
   refine degree_eq_of_comp_eq_mulByIntIsogenyOfNeZero_degree (hn := ?_) ?_
-  · rwa [degree_oneSubFrobeniusIsogeny_eq_pointCount]
-  · simp_rw [degree_oneSubFrobeniusIsogeny_eq_pointCount]
-    exact h
+  · exact_mod_cast (oneSubFrobeniusIsogeny W).degree_pos.ne'
+  · simpa only [degree_oneSubFrobeniusIsogeny_eq_pointCount] using h
 
 end TauCeti.Isogeny
 

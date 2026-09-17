@@ -104,9 +104,10 @@ theorem degree_oneSubFrobeniusIsogeny_eq_pointCount :
 theorem card_ker_oneSubFrobeniusIsogeny_eq_degree [DecidableEq F] :
     Nat.card (oneSubFrobeniusIsogeny W).ker = (oneSubFrobeniusIsogeny W).degree := by
   rw [degree_oneSubFrobeniusIsogeny_eq_pointCount, WeierstrassCurve.pointCount_eq_card_point]
-  -- The kernel lives in the points of `W⁄F`, the base change of `W` along `F → F`, which is `W`
-  -- by definition; `pointCount_le_degree_oneSubFrobeniusIsogeny` crosses the same way.
-  exact card_ker_oneSubFrobeniusIsogeny W
+  calc
+    Nat.card (oneSubFrobeniusIsogeny W).ker = Nat.card (W⁄F).toAffine.Point :=
+      card_ker_oneSubFrobeniusIsogeny W
+    _ = Nat.card W.Point := by rw [WeierstrassCurve.Affine.baseChange_self]
 
 end TauCeti.Isogeny
 
