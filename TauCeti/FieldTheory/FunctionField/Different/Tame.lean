@@ -38,7 +38,8 @@ the statement.
 ## Main results
 
 * `TauCeti.Place.IsTame` and `TauCeti.Place.IsWild`: tame and wild places, with
-  `TauCeti.Place.isWild_iff` unfolding wildness into its two alternatives.
+  `TauCeti.Place.isTame_iff` and `TauCeti.Place.isWild_iff` unfolding the two predicates into
+  their defining residue conditions.
 * `TauCeti.Place.ramificationIdx_eq_differentExponent_add_one_iff`: **Dedekind's different theorem,
   second part** (Stichtenoth, Theorem 3.5.1(b)), in the subtraction-free form
   `e(P' ∣ P) = d(P' ∣ P) + 1`, holding exactly at the tame places.
@@ -92,6 +93,20 @@ def IsTame : Prop :=
     ((ramificationIdx F P' : ℕ) :
       ((P'.restrict k F).integers) ⧸ IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) ≠ 0
 
+/-- A place is tame exactly when the residue extension of its local model is separable and its
+ramification index is invertible in the residue field of `P`. -/
+@[simp]
+theorem isTame_iff :
+    IsTame k F P' ↔
+      Algebra.IsSeparable
+          (((P'.restrict k F).integers) ⧸ IsLocalRing.maximalIdeal ((P'.restrict k F).integers))
+          (integralClosure ((P'.restrict k F).integers) F' ⧸
+            (centerIntegralClosure k F P').asIdeal) ∧
+        ((ramificationIdx F P' : ℕ) :
+          ((P'.restrict k F).integers) ⧸ IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) ≠
+          0 :=
+  Iff.rfl
+
 /-- A place `P'` of `F'` is **wild** over `F` (Stichtenoth, Definition 3.5.4) when it is not tame:
 the residue extension of its local model is inseparable or its ramification index vanishes in the
 residue field of `P`. -/
@@ -100,6 +115,7 @@ def IsWild : Prop :=
 
 /-- A place is wild exactly when the residue extension of its local model is inseparable or its
 ramification index vanishes in the residue field of `P`. -/
+@[simp]
 theorem isWild_iff :
     IsWild k F P' ↔
       ¬ Algebra.IsSeparable

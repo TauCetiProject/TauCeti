@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.DedekindDomain.Different
 public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 public import TauCeti.RingTheory.Trace.QuotientPow
 
