@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.ContMDiffMap.ChartJet
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Jet
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 
 /-!
@@ -17,14 +17,18 @@ corners. In coordinates, spatial derivatives are restrictions of total derivativ
 directions in the source factor; unique differentiation on extended chart targets makes
 this valid even at boundary points. Compact-open currying then gives the continuous family.
 
-This extends the global-chart construction in `ContMDiffMap.SmoothFamily` to manifold
-parameters and sources, using the topology in `ContMDiffMap.ChartJet`. It is the
-vector-valued coordinate-family construction used for smooth families of manifold maps.
+This applies to manifold parameters and sources, using the topology in
+`ContMDiffMap.Chart.Jet`. It is the vector-valued coordinate-family construction used for
+smooth families of manifold maps.
 Only the forward implication is asserted, with no differentiability claimed for an
 arbitrary continuous family in the function-space topology.
 
 Use `open scoped TauCeti.ChartWeakWhitney` to select the source-chart topology when
 forming continuous maps into the smooth-map space or using `TauCeti.chartWeakWhitneyCurry`.
+For normed spaces, `modelWithCornersSelf_prod` and `chartedSpaceSelf_prod` identify the
+product manifold structure with the global chart, and
+`ContMDiffMap.chartWeakWhitneyTopology_self` identifies the resulting function-space topology
+with the global weak Whitney topology.
 
 The weak topology convention follows M. Hirsch, *Differential Topology*, GTM 33,
 Chapter 2, §1.
@@ -46,9 +50,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {P : Type*} [TopologicalSpace P] [ChartedSpace H' P]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {n : WithTop ℕ∞} [IsManifold I n M] [IsManifold J n P]
-
--- When selected, prefer this topology to the global-chart instance on normed spaces.
-scoped[TauCeti.ChartWeakWhitney] attribute [instance 1100] ContMDiffMap.chartWeakWhitneyTopology
 
 open scoped TauCeti.ChartWeakWhitney
 
@@ -100,6 +101,7 @@ noncomputable def chartWeakWhitneyCurry
     f.contMDiff.comp (contMDiff_const.prodMk contMDiff_id)⟩
   continuous_toFun := continuous_chartWeakWhitney_of_contMDiff f.contMDiff
 
+/-- Evaluating the curried family at `p` and `x` recovers `f (p, x)`. -/
 @[simp]
 theorem chartWeakWhitneyCurry_apply
     (f : C^n⟮J.prod I, P × M; 𝓘(𝕜, F), F⟯) (p : P) (x : M) :

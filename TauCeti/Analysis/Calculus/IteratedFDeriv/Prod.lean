@@ -17,8 +17,7 @@ continuously in both variables when `f` is sufficiently differentiable. This giv
 joint derivative continuity needed for smooth families in function spaces.
 
 The within-set versions apply to products of sets with unique derivatives, so they also
-handle coordinate domains of manifolds with boundary or corners. They use Mathlib's
-`HasFTaylorSeriesUpToOn.comp_continuousAffineMap` to restrict the Taylor series to a slice.
+handle coordinate domains of manifolds with boundary or corners.
 -/
 
 public section
@@ -78,7 +77,8 @@ theorem iteratedFDerivWithin_prod_right (hf : ContDiffOn 𝕜 n f (s ×ˢ t))
     (ContinuousAffineMap.const 𝕜 E p).prod (ContinuousAffineMap.id 𝕜 E)
   have hpre : g ⁻¹' (s ×ˢ t) = t := by ext y; simp [g, hp]
   have hg : g.contLinear = ContinuousLinearMap.inr 𝕜 P E := by
-    rfl
+    ext y : 1
+    simpa [g] using g.contLinear_map_vsub y 0
   have h := ((hf.of_le hm).ftaylorSeriesWithin (hs.prod ht)).comp_continuousAffineMap g
   rw [hpre] at h
   simpa only [hg, ftaylorSeriesWithin, g, ContinuousAffineMap.prod_apply,
