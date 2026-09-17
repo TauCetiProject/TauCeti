@@ -9,8 +9,6 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
-import Mathlib.Tactic.LinearCombination
-
 /-!
 # Parabolic elements of `PSL(2, R)`
 
@@ -139,11 +137,7 @@ def upperRightHom : AddChar R PSL(2, R) where
   toFun x := (SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) x : PSL(2, R))
   map_zero_eq_one' := by simp [SpecialLinearGroup.transvection_coeff_zero]
   map_add_eq_mul' x y := by
-    rw [← QuotientGroup.mk_mul]
-    congr 1
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [SpecialLinearGroup.transvection_coe, Matrix.mul_apply, Fin.sum_univ_two, add_comm]
+    rw [SpecialLinearGroup.transvection_add, QuotientGroup.mk_mul]
 
 omit [NoZeroDivisors R] in
 theorem upperRightHom_apply (x : R) :
@@ -152,18 +146,13 @@ theorem upperRightHom_apply (x : R) :
 
 omit [NoZeroDivisors R] in
 /-- Distinct translations are distinct in `PSL(2, R)`: if the classes of two transvections are
-equal, then the transvections differ by a central factor, and comparing upper-right entries shows
-that their parameters are equal. -/
+equal, then the transvections differ by a central factor, which is the transvection of the
+difference of their parameters, and a transvection is central only when its parameter is zero. -/
 theorem upperRightHom_injective : Function.Injective (upperRightHom : AddChar R PSL(2, R)) := by
   intro x y h
-  rw [upperRightHom_apply, upperRightHom_apply, QuotientGroup.eq,
-    SpecialLinearGroup.mem_center_iff] at h
-  obtain ⟨r, -, hr⟩ := h
-  -- the upper-right entry of the central element `(!![1, x; 0, 1])⁻¹ * !![1, y; 0, 1]` is `y - x`
-  have h01 := congrFun₂ hr 0 1
-  simp [SpecialLinearGroup.transvection_coe, Matrix.mul_apply, Fin.sum_univ_two,
-    Matrix.adjugate_fin_two] at h01
-  linear_combination h01
+  rwa [upperRightHom_apply, upperRightHom_apply, QuotientGroup.eq,
+    SpecialLinearGroup.transvection_inv, ← SpecialLinearGroup.transvection_add,
+    SpecialLinearGroup.transvection_mem_center_iff, neg_add_eq_zero] at h
 
 /-- A translation is parabolic exactly when it is nontrivial. -/
 @[simp]
