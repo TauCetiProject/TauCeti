@@ -253,7 +253,7 @@ section UnitTensorLattice
 
 variable {R : Type u} {K : Type v} {M : Type w}
 variable [CommRing R] [CommRing K] [Algebra R K]
-variable [AddCommGroup M] [Module R M] [Module.Finite R M]
+variable [AddCommMonoid M] [Module R M] [Module.Finite R M]
 
 /-- The unit pure tensors form a full lattice in the scalar extension of a finite module. -/
 instance isLattice_range_mk_one :
