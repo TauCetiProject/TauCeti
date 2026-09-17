@@ -118,16 +118,10 @@ lemma out_mem_glpos_of_delta0 {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℚ)}
 
 variable [NeZero N]
 
-/-- `Γ₀(N)` is commensurable with `SL₂(ℤ)`: it has finite index in it. -/
-lemma commensurable_Gamma0Image_SLnZ : Commensurable (Gamma0Image N) (SLnZ 2) :=
-  commensurable_map_SLnZ 2 (Gamma0 N)
-
-/-- `Δ₀(N)` lies in the commensurator of `Γ₀(N)`: it lies in that of `SL₂(ℤ)`, and the two
-groups are commensurable. -/
+/-- `Δ₀(N)` lies in the commensurator of `Γ₀(N)`, the right-hand half of its Hecke triple. -/
 lemma Delta0_le_commensurator_Gamma0Image :
-    Delta0 N ≤ (commensurator (Gamma0Image N)).toSubmonoid := by
-  rw [Subgroup.Commensurable.eq (commensurable_Gamma0Image_SLnZ N)]
-  exact (Delta0_le_posDetInt N).trans (posDetInt_le_commensurator 2)
+    Delta0 N ≤ (commensurator (Gamma0Image N)).toSubmonoid :=
+  Delta0_le_commensurator_map N (Gamma0 N)
 
 /-- **The Hecke triple of `Γ₀(N)`**: `Γ₀(N) ≤ Δ₀(N) ≤ commensurator(Γ₀(N))` inside `GL₂(ℚ)` —
 the setting of Shimura §3.3, in which the Hecke ring `R(Γ₀(N), Δ₀(N))` is formed.

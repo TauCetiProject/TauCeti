@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
-public import TauCeti.Topology.Category.TopCat.CechDiagram
+public import TauCeti.Topology.Category.TopCat.Cech.Diagram
 
 /-!
 # The fundamental-groupoid Čech diagram of a family of open sets
@@ -37,7 +37,10 @@ open TauCeti.TopCat
 
 variable {X : TopCat.{v}} {ι : Type u} (U : ι → Opens X)
 
+/- The definitions of the diagram and cocone are exposed because refinement maps are obtained by
+mapping the corresponding topological maps through the fundamental-groupoid functor. -/
 /-- The fundamental-groupoid Čech diagram of a family of open sets. -/
+@[expose]
 def cechDiagram : CechIndex ι ⥤ Grpd :=
   cechTopDiagram U ⋙ _root_.FundamentalGroupoid.fundamentalGroupoidFunctor
 
@@ -59,6 +62,7 @@ lemma cechDiagram_map {s t : CechIndex ι} (f : s ⟶ t) :
   simp only [Functor.comp_map, Functor.map_comp, eqToHom_map]
 
 /-- The canonical cocone from the Čech diagram to the fundamental groupoid of the ambient space. -/
+@[expose]
 def cechCocone : Cocone (cechDiagram U) :=
   _root_.FundamentalGroupoid.fundamentalGroupoidFunctor.mapCocone
     (Cocone.mk X (cechInclusionNatTrans U))
