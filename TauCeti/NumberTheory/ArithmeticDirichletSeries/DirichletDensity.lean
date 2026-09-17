@@ -110,10 +110,8 @@ theorem HasDirichletDensity.union (hS : HasDirichletDensity S δ)
     intro i _ j _ hij
     cases i <;> cases j
     · exact (hij rfl).elim
-    · change Disjoint T S
-      exact hST.symm
-    · change Disjoint S T
-      exact hST
+    · simpa [Function.onFun] using hST.symm
+    · simpa [Function.onFun] using hST
     · exact (hij rfl).elim
   have hsets : (⋃ b ∈ ({false, true} : Finset Bool), if b then S else T) = S ∪ T := by
     rw [Finset.set_biUnion_insert, Finset.set_biUnion_singleton]
@@ -142,10 +140,8 @@ theorem HasDirichletDensity.compl (hS : HasDirichletDensity S δ) :
       intro i _ j _ hij
       cases i <;> cases j
       · exact (hij rfl).elim
-      · change Disjoint Sᶜ S
-        exact disjoint_compl_left
-      · change Disjoint S Sᶜ
-        exact disjoint_compl_right
+      · simpa [Function.onFun] using (disjoint_compl_left : Disjoint Sᶜ S)
+      · simpa [Function.onFun] using (disjoint_compl_right : Disjoint S Sᶜ)
       · exact (hij rfl).elim
     have hsets : (⋃ b ∈ ({false, true} : Finset Bool), if b then S else Sᶜ) = Set.univ := by
       rw [Finset.set_biUnion_insert, Finset.set_biUnion_singleton]
