@@ -90,39 +90,31 @@ theorem dvd_index_iff_dvd_exponent (θ : IntegralPrimitiveElement K) {p : ℕ} [
     p ∣ θ.index ↔ p ∣ exponent θ.1 :=
   ⟨θ.dvd_exponent_of_dvd_index, fun h => h.trans θ.exponent_dvd_index⟩
 
-/-- If the conductor of `ℤ[θ]` in `𝓞 K` is coprime to `p`, then `p` does not divide the index:
-multiplication by `p` is then surjective, hence bijective, on the finite group `𝓞 K / ℤ[θ]`,
-which therefore has no element of order `p`. -/
+/-- If the conductor of `ℤ[θ]` in `𝓞 K` is comaximal with `p`, then `p` does not divide the
+index `[𝓞 K : ℤ[θ]]`. -/
 theorem not_dvd_index_of_conductor_sup_span_eq_top (θ : IntegralPrimitiveElement K) {p : ℕ}
     [Fact p.Prime] (h : conductor ℤ θ.1 ⊔ Ideal.span {(p : 𝓞 K)} = ⊤) : ¬ p ∣ θ.index := by
-  classical
-  have : Fintype θ.Quotient := Fintype.ofFinite _
   intro hp
-  rw [index_def, Nat.card_eq_fintype_card] at hp
-  obtain ⟨x, hx⟩ := exists_prime_addOrderOf_dvd_card p hp
-  have hsurj : Function.Surjective (fun y : θ.Quotient => p • y) := by
-    have h1 : (1 : 𝓞 K) ∈ conductor ℤ θ.1 ⊔ Ideal.span {(p : 𝓞 K)} := h ▸ Submodule.mem_top
-    obtain ⟨c, hc, m, hm, hcm⟩ := Submodule.mem_sup.mp h1
-    obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton'.mp hm
-    intro y
-    obtain ⟨b, rfl⟩ := Submodule.mkQ_surjective _ y
-    refine ⟨θ.adjoin.toSubmodule.mkQ (a * b), ?_⟩
-    dsimp only
-    have hb : b = c * b + (p : 𝓞 K) * (a * b) := by
-      calc b = (c + a * (p : 𝓞 K)) * b := by rw [hcm, one_mul]
-        _ = c * b + (p : 𝓞 K) * (a * b) := by ring
-    have hcb : θ.adjoin.toSubmodule.mkQ (c * b) = 0 := by
-      rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, Subalgebra.mem_toSubmodule,
-        adjoin_def]
-      exact mem_conductor_iff.mp hc b
-    conv_rhs => rw [hb]
-    rw [map_add, hcb, zero_add, ← map_nsmul, nsmul_eq_mul]
-  have hinj := Finite.injective_iff_surjective.mpr hsurj
-  have hx0 : x = 0 := hinj (by
-    dsimp only
-    rw [smul_zero, ← hx, addOrderOf_nsmul_eq_zero])
-  rw [hx0, addOrderOf_zero] at hx
-  exact (Fact.out : p.Prime).one_lt.ne hx
+  obtain ⟨e', he'⟩ := θ.dvd_exponent_of_dvd_index hp
+  have h1 : (1 : 𝓞 K) ∈ conductor ℤ θ.1 ⊔ Ideal.span {(p : 𝓞 K)} := h ▸ Submodule.mem_top
+  obtain ⟨c, hc, m, hm, hcm⟩ := Submodule.mem_sup.mp h1
+  obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton'.mp hm
+  -- `e' = c e' + a · exponent θ` lies in the conductor, so the exponent divides `e'`.
+  have hmem : (e' : 𝓞 K) ∈ conductor ℤ θ.1 := by
+    have : (e' : 𝓞 K) = c * e' + a * (exponent θ.1 : 𝓞 K) := by
+      rw [he', Nat.cast_mul]
+      linear_combination -(e' : 𝓞 K) * hcm
+    rw [this]
+    exact (conductor ℤ θ.1).add_mem ((conductor ℤ θ.1).mul_mem_right _ hc)
+      ((conductor ℤ θ.1).mul_mem_left _ ((exponent_dvd_iff θ.1).mp dvd_rfl))
+  have hdvd : exponent θ.1 ∣ e' := (exponent_dvd_iff θ.1).mpr hmem
+  have he0 : e' ≠ 0 := by
+    rintro rfl
+    rw [mul_zero] at he'
+    exact θ.index_pos.ne' (zero_dvd_iff.mp (he' ▸ θ.exponent_dvd_index))
+  have hle := Nat.le_of_dvd (Nat.pos_of_ne_zero he0) (he' ▸ hdvd)
+  have := (Fact.out : p.Prime).two_le
+  linarith [Nat.pos_of_ne_zero he0, Nat.mul_le_mul_right e' this]
 
 /-- **The checkable Kummer–Dedekind hypothesis.** A natural number not dividing the discriminant
 of `minpoly ℤ θ` does not divide the conductor exponent of `θ`. -/
