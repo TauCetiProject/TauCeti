@@ -25,9 +25,6 @@ unique integral expression of the orbit product in the elementary symmetric poly
 last field is determined by the invariant (`MvPolynomial.existsUnique_orbitProduct`), and so is
 the subgroup, so a specification is determined by its invariant (`TauCeti.ResolventSpec.ext`).
 
-The shape of `ResolventSpec` follows the
-[PolynomialGaloisGroups roadmap design](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/PolynomialGaloisGroups/Suggested.lean).
-
 Specializing at a polynomial `f` over any commutative ring substitutes the signed coefficients of
 `f` for the elementary symmetric polynomials. The result is monic of degree the index `[Sₙ : H]`
 over every nonzero ring, commutes with every ring morphism applied to the coefficients, and, when
