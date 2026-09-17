@@ -15,18 +15,15 @@ exact category to an ungraded exact category.  If `F` identifies the grading shi
 then the induced map on exact Grothendieck groups identifies `[M{1}]` with `[M]`.  Consequently it
 factors through the specialization of graded `K₀` at `q = 1`.
 
-This file constructs that factorization and records its exact algebraic boundary.  It is
-surjective precisely when the original map on exact `K₀` is surjective, and it is injective
-precisely when the only relations introduced by forgetting the grading are the relations killed
-by specialization at `q = 1`.  Thus the two conditions together give the comparison isomorphism;
-shift compatibility by itself does not.
+This file constructs that factorization.  It also characterizes surjectivity in terms of the
+original map on exact `K₀`, and injectivity in terms of the relations introduced by forgetting the
+grading.  Establishing independently checkable hypotheses that imply these conditions requires
+additional structure and is not attempted here; shift compatibility by itself is not sufficient.
 
 ## Main definitions
 
 * `TauCeti.LaurentK0.forgetGradingMap`: the map from graded `K₀` specialized at `q = 1` to the
   exact `K₀` of an ungraded target.
-* `TauCeti.LaurentK0.forgetGradingEquiv`: the resulting linear equivalence when the induced map is
-  surjective and has exactly the specialization relations as its kernel.
 
 ## Main results
 
@@ -147,8 +144,7 @@ theorem forgetGradingMap_surjective_iff
     exact ⟨LaurentSpecialization.mk 1 (ofExactK0 E x), by simp⟩
 
 /-- The comparison after forgetting grading is injective exactly when the kernel of the original
-map consists of the relations imposed by specialization at `q = 1`.  This is the precise
-additional hypothesis needed beyond shift compatibility. -/
+map consists of the relations imposed by specialization at `q = 1`. -/
 theorem forgetGradingMap_injective_iff
     (hF : E.toExactStructure.IsConflationExact E' F) (comm : E.shift.functor ⋙ F ≅ F) :
     Function.Injective (forgetGradingMap hF comm) ↔
@@ -183,34 +179,6 @@ theorem forgetGradingMap_injective_iff
       rw [LaurentSpecialization.mk_apply, Submodule.Quotient.mk_eq_zero]
       exact hx
     · exact bot_le
-
-/-- **The `q = 1` comparison isomorphism.**  If every ungraded `K₀` class is represented after
-forgetting and forgetting introduces exactly the specialization relations, then specialized
-graded `K₀` is the ungraded exact Grothendieck group. -/
-noncomputable def forgetGradingEquiv
-    (hF : E.toExactStructure.IsConflationExact E' F) (comm : E.shift.functor ⋙ F ≅ F)
-    (hsurj : Function.Surjective (ExactK0.map F hF))
-    (hker : LinearMap.ker (forgetGradingUnderlyingMap hF) =
-      ((RingHom.ker (laurentEval (R := ℤ) (1 : ℤˣ)) • ⊤ :
-        Submodule (LaurentPolynomial ℤ) (LaurentK0 E)).restrictScalars ℤ)) :
-    LaurentSpecialization (1 : ℤˣ) (LaurentK0 E) ≃ₗ[ℤ] ExactK0 E' :=
-  LinearEquiv.ofBijective (forgetGradingMap hF comm)
-    ⟨(forgetGradingMap_injective_iff hF comm).mpr hker,
-      (forgetGradingMap_surjective_iff hF comm).mpr hsurj⟩
-
-/-- The comparison equivalence sends a specialized object class to its ungraded class. -/
-@[simp]
-theorem forgetGradingEquiv_mk_of
-    (hF : E.toExactStructure.IsConflationExact E' F) (comm : E.shift.functor ⋙ F ≅ F)
-    (hsurj : Function.Surjective (ExactK0.map F hF))
-    (hker : LinearMap.ker (forgetGradingUnderlyingMap hF) =
-      ((RingHom.ker (laurentEval (R := ℤ) (1 : ℤˣ)) • ⊤ :
-        Submodule (LaurentPolynomial ℤ) (LaurentK0 E)).restrictScalars ℤ))
-    (X : C) :
-    forgetGradingEquiv hF comm hsurj hker (LaurentSpecialization.mk 1 (of E X)) =
-      ExactK0.of (F.obj X) := by
-  unfold forgetGradingEquiv
-  exact forgetGradingMap_mk_of hF comm X
 
 end LaurentK0
 
