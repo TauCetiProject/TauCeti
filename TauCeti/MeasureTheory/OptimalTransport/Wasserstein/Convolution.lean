@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.MeasureTheory.Group.Convolution
-public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Pushforward
+import Mathlib.Analysis.Normed.Module.HahnBanach
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # The Wasserstein distance under convolution and translation
