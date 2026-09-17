@@ -141,7 +141,7 @@ def CoprimeDetCoset (M : ℕ) : HeckeCoset (Delta0 N) ((Gamma0 N).map (mapGL ℚ
   Iff.rfl
 
 /-- At the level itself, `CoprimeDetCoset` is `CoprimeDet` on any representative. -/
-lemma coprimeDetCoset_self_mk (g : Delta0 N) :
+@[simp] lemma coprimeDetCoset_self_mk (g : Delta0 N) :
     CoprimeDetCoset N N
         (HeckeCoset.mk ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)) g) ↔
       CoprimeDet N g := by
