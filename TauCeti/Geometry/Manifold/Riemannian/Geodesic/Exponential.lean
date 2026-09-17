@@ -98,9 +98,9 @@ theorem zero_mem_expDomain (p : M) : (0 : TangentSpace I p) ∈ expDomain I M p 
   simp [riemannianExp_def]
 
 /-- Outside its natural domain, the exponential map takes its junk value `p`. -/
-theorem riemannianExp_of_notMem_expDomain {p : M} {v : TangentSpace I p}
+@[simp] theorem riemannianExp_of_notMem_expDomain {p : M} {v : TangentSpace I p}
     (hv : v ∉ expDomain I M p) : riemannianExp I M p v = p :=
-  maximalGeodesic_eq_of_not_mem hv
+  maximalGeodesic_eq_of_not_mem (mt mem_expDomain_iff.2 hv)
 
 /-! ### Homogeneity -/
 
@@ -127,16 +127,6 @@ theorem riemannianExp_smul [T2Space (TangentBundle I M)] {p : M} {v : TangentSpa
   have h1 : (1 : ℝ) ∈ geodesicInterval I M p (t • v) :=
     mem_expDomain_iff.1 (mem_geodesicInterval_iff_smul_mem_expDomain.1 ht)
   rw [riemannianExp_def, maximalGeodesic_smul h1, mul_one]
-
-/-- Any geodesic with initial data `(p, v)` on an open interval is read off from the exponential
-map: at every time `t` of the interval, `t • v` lies in the domain and `exp_p (t • v) = γ t`. -/
-theorem IsGeodesicCurveOnFrom.riemannianExp_smul [T2Space (TangentBundle I M)]
-    {p : M} {v : TangentSpace I p} {γ : ℝ → M} {a b t : ℝ}
-    (hγ : IsGeodesicCurveOnFrom I γ (Ioo a b) p v) (ht : t ∈ Ioo a b) :
-    t • v ∈ expDomain I M p ∧ riemannianExp I M p (t • v) = γ t := by
-  have htJ : t ∈ geodesicInterval I M p v := hγ.subset_geodesicInterval ht
-  exact ⟨mem_geodesicInterval_iff_smul_mem_expDomain.1 htJ,
-    (TauCeti.Manifold.riemannianExp_smul htJ).trans (hγ.eqOn_maximalGeodesic ht)⟩
 
 /-- The domain of the exponential map is star-shaped at the zero vector. -/
 theorem starConvex_expDomain (p : M) : StarConvex ℝ (0 : TangentSpace I p) (expDomain I M p) := by
