@@ -146,16 +146,12 @@ private theorem cyclesIsoInvariants_inv_comp_homologyπ_comp_homologyIsoNormQuot
 
 end Zero
 
-private def H0IsoHomology (M : Rep R G) :
-    tateCohomology M 0 ≅ (tateComplex M).homology 0 :=
-  Iso.refl _
-
 /-- Degree-zero Tate cohomology is the quotient of the invariant submodule by the image of the
 norm. -/
 def H0IsoNormQuotient (M : Rep R G) :
     tateCohomology M 0 ≅
       ModuleCat.of R (M.ρ.invariants ⧸ (range M.ρ.norm).submoduleOf M.ρ.invariants) :=
-  H0IsoHomology M ≪≫ Zero.homologyIso M ≪≫ Zero.homologyIsoNormQuotient M
+  Zero.homologyIso M ≪≫ Zero.homologyIsoNormQuotient M
 
 /-- The cycles in degree zero of the Tate complex are the invariant submodule. -/
 def H0CyclesIso (M : Rep R G) :
@@ -178,42 +174,17 @@ def H0π (M : Rep R G) : ModuleCat.of R M.ρ.invariants ⟶ tateCohomology M 0 :
   ModuleCat.ofHom (Submodule.mkQ ((range M.ρ.norm).submoduleOf M.ρ.invariants)) ≫
     (H0IsoNormQuotient M).inv
 
-/-- The canonical projection from degree-zero cycles to degree-zero Tate cohomology. -/
-def H0homologyπ (M : Rep R G) :
-    (tateComplex M).cycles 0 ⟶ tateCohomology M 0 :=
-  (tateComplex M).homologyπ 0 ≫ (H0IsoHomology M).inv
-
-/-- The map on degree-zero Tate cohomology induced by a map of Tate complexes. -/
-def H0homologyMap {H : Type u} [Group H] [Fintype H] (M : Rep R G) (N : Rep R H)
-    (f : tateComplex M ⟶ tateComplex N) : tateCohomology M 0 ⟶ tateCohomology N 0 :=
-  (H0IsoHomology M).hom ≫ HomologicalComplex.homologyMap f 0 ≫ (H0IsoHomology N).inv
-
-/-- The degree-zero wrapper for a homology map is the underlying homology map. -/
-theorem H0homologyMap_eq_homologyMap {H : Type u} [Group H] [Fintype H]
-    (M : Rep R G) (N : Rep R H) (f : tateComplex M ⟶ tateComplex N) :
-    H0homologyMap M N f = HomologicalComplex.homologyMap f 0 := by
-  unfold H0homologyMap H0IsoHomology
-  cat_disch
-
-@[reassoc]
-theorem H0homologyπ_naturality {H : Type u} [Group H] [Fintype H] (M : Rep R G) (N : Rep R H)
-    (f : tateComplex M ⟶ tateComplex N) :
-    H0homologyπ M ≫ H0homologyMap M N f =
-      HomologicalComplex.cyclesMap f 0 ≫ H0homologyπ N := by
-  simp only [H0homologyπ, H0homologyMap, Category.assoc, Iso.inv_hom_id_assoc]
-  exact HomologicalComplex.homologyπ_naturality f 0
-
 /-- The representative map to degree-zero Tate cohomology is the canonical projection from
 degree-zero cycles to homology, after identifying those cycles with the invariants. -/
 theorem H0π_eq_cyclesIso_inv_comp_homologyπ (M : Rep R G) :
-    H0π M = (H0CyclesIso M).inv ≫ H0homologyπ M := by
-  rw [← cancel_mono (H0IsoNormQuotient M).hom]
-  simp only [H0π, H0IsoNormQuotient, H0CyclesIso, H0homologyπ, Iso.trans_inv,
-    Iso.trans_hom, Category.assoc, Iso.inv_hom_id_assoc]
-  simp only [Iso.inv_hom_id, Category.comp_id]
-  rw [Zero.cyclesIso_inv_comp_homologyπ_comp_homologyIso_hom_assoc]
-  exact
-    (Zero.cyclesIsoInvariants_inv_comp_homologyπ_comp_homologyIsoNormQuotient_hom M).symm
+    H0π M = (H0CyclesIso M).inv ≫ (tateComplex M).homologyπ 0 := by
+  refine (cancel_mono (H0IsoNormQuotient M).hom).1 ?_
+  rw [H0π, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  refine
+    (Zero.cyclesIsoInvariants_inv_comp_homologyπ_comp_homologyIsoNormQuotient_hom M).symm.trans ?_
+  rw [← Zero.cyclesIso_inv_comp_homologyπ_comp_homologyIso_hom_assoc]
+  exact ((Category.assoc _ _ _).trans (congrArg ((Zero.cyclesIsoInvariants M).inv ≫ ·)
+    (Category.assoc _ _ _))).symm
 
 instance (M : Rep R G) : Epi (H0π M) :=
   have : Epi (ModuleCat.ofHom (Submodule.mkQ ((range M.ρ.norm).submoduleOf M.ρ.invariants))) :=

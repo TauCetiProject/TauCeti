@@ -100,8 +100,6 @@ so that membership in the conjugate subgroups is definitionally the membership c
 
 * E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §4.
 * J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, Chapter I, §5.
-* `TauCetiRoadmap/ClassFieldTheory/README.md`, §4, Layer 1, and the representative API in
-  `TauCetiRoadmap/ClassFieldTheory/Suggested.lean`.
 -/
 
 public noncomputable section
@@ -317,8 +315,8 @@ theorem conjugateCoefficientEquiv_rep_mk_apply (u : L.ground) (x : F.level L.top
       ((L.conjugate g).rep F).ρ (L.conjugateGalEquiv g (QuotientGroup.mk u))
         (L.conjugateCoefficientEquiv F g x) := by
   refine Subtype.ext ?_
-  change F.toRep.ρ g (F.toRep.ρ u x) =
-    F.toRep.ρ (g * u * g⁻¹) (F.toRep.ρ g x)
+  rw [conjugateGalEquiv_mk, conjugateCoefficientEquiv_apply_coe, rep_ρ_mk_apply_coe,
+    rep_ρ_mk_apply_coe, conjugateGroundEquiv_apply_coe, conjugateCoefficientEquiv_apply_coe]
   simp only [← Module.End.mul_apply, ← map_mul]
   congr 1
   group
@@ -386,8 +384,7 @@ theorem conjugateGroundLevelEquiv_norm (x : F.level L.top) :
   rw [norm_apply_coe, conjugateGroundLevelEquiv_apply_coe, norm_apply_coe]
   have hnorm := LinearMap.congr_fun (Representation.IsIntertwiningMap.comp_norm
     (L.isIntertwiningMap_conjugateCoefficientEquiv F g)) x
-  change L.conjugateCoefficientEquiv F g ((L.rep F).ρ.norm x) =
-    ((L.conjugate g).rep F).ρ.norm (L.conjugateCoefficientEquiv F g x) at hnorm
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hnorm
   have hnorm' := congrArg (fun y : F.level (L.conjugate g).top ↦ (y : F.toRep.V)) hnorm.symm
   calc
     ∑ γ, ((((L.conjugate g).rep F).ρ γ (L.conjugateCoefficientEquiv F g x) :

@@ -107,6 +107,13 @@ def complexMap (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
     (groupCohomology.cochainsMap (e.symm : H →* G) (IsIntertwiningMap.ofRes hφ))
     (chainsMap_comp_d₀ hφ)
 
+/-- In degree zero, the map of Tate complexes is the degree-zero component of
+`groupCohomology.cochainsMap` along `e.symm`. -/
+theorem complexMap_f_zero (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    (complexMap hφ).f 0 =
+      (groupCohomology.cochainsMap (e.symm : H →* G) (IsIntertwiningMap.ofRes hφ)).f 0 := by
+  rw [complexMap, CochainComplex.ConnectData.map_f]
+
 end Complex
 
 section Degrees
@@ -248,7 +255,7 @@ def mapNormQuotient {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
   Submodule.mapQ _ _ (mapInvariants hφ) (by
     rintro ⟨_, hx⟩ ⟨y, rfl⟩
     refine ⟨φ y, ?_⟩
-    change N.ρ.norm (φ y) = φ (M.ρ.norm y)
+    rw [Submodule.subtype_apply, mapInvariants_apply_coe]
     simpa only [LinearMap.comp_apply] using
       (LinearMap.congr_fun (Representation.IsIntertwiningMap.comp_norm hφ) y).symm)
 
@@ -263,11 +270,6 @@ theorem H0π_comp_map {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
         ModuleCat.ofHom M.ρ.invariants.subtype ≫ ModuleCat.ofHom φ := by
     ext
     rfl
-  have hcomplexMapZero :
-      (complexMap hφ).f 0 =
-        (groupCohomology.cochainsMap (e.symm : H →* G)
-          (IsIntertwiningMap.ofRes hφ)).f 0 :=
-    rfl
   have hcochainsZero :
       (groupCohomology.cochainsMap (e.symm : H →* G)
           (IsIntertwiningMap.ofRes hφ)).f 0 ≫ (groupCohomology.cochainsIso₀ N).hom =
@@ -278,7 +280,7 @@ theorem H0π_comp_map {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
       (complexMap hφ).f 0 ≫ (groupCohomology.cochainsIso₀ N).hom =
         (groupCohomology.cochainsIso₀ M).hom ≫ ModuleCat.ofHom φ :=
     (congrArg (fun k ↦ k ≫ (groupCohomology.cochainsIso₀ N).hom)
-      hcomplexMapZero).trans hcochainsZero
+      (complexMap_f_zero hφ)).trans hcochainsZero
   have hcycles :
       HomologicalComplex.cyclesMap (complexMap hφ) 0 ≫ (H0CyclesIso N).hom =
         (H0CyclesIso M).hom ≫ ModuleCat.ofHom (mapInvariants hφ) := by
@@ -303,18 +305,14 @@ theorem H0π_comp_map {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
     rw [Category.assoc, Category.assoc, hcycles]
     simp
   have hπ :
-      H0homologyπ M ≫ map hφ 0 =
-        HomologicalComplex.cyclesMap (complexMap hφ) 0 ≫ H0homologyπ N := by
-    have hmapZero : map hφ 0 = H0homologyMap M N (complexMap hφ) :=
-      (map_def hφ 0).trans
-        (H0homologyMap_eq_homologyMap M N (complexMap hφ)).symm
-    rw [hmapZero]
-    exact H0homologyπ_naturality M N (complexMap hφ)
-  rw [H0π_eq_cyclesIso_inv_comp_homologyπ,
-    H0π_eq_cyclesIso_inv_comp_homologyπ]
-  rw [Category.assoc, hπ]
-  rw [← Category.assoc, hcyclesInv]
-  rw [Category.assoc]
+      (tateComplex M).homologyπ 0 ≫ map hφ 0 =
+        HomologicalComplex.cyclesMap (complexMap hφ) 0 ≫ (tateComplex N).homologyπ 0 := by
+    rw [map_def]
+    exact HomologicalComplex.homologyπ_naturality (complexMap hφ) 0
+  rw [H0π_eq_cyclesIso_inv_comp_homologyπ, H0π_eq_cyclesIso_inv_comp_homologyπ]
+  exact (Category.assoc _ _ _).trans <|
+    (congrArg ((H0CyclesIso M).inv ≫ ·) hπ).trans <| (Category.assoc _ _ _).symm.trans <|
+      (congrArg (· ≫ (tateComplex N).homologyπ 0) hcyclesInv).trans (Category.assoc _ _ _)
 
 /-- In degree zero, the map attached to a compatible pair is the induced map on the quotient of
 invariants by the norm image. -/
