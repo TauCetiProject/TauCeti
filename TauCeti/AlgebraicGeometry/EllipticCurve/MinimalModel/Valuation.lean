@@ -49,15 +49,6 @@ open IsDiscreteValuationRing
 variable (R : Type*) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
-/-- **The valuation of the local minimal discriminant.** This is the exponent of the maximal
-ideal of `R` in `W.localMinimalDiscriminant R`, equivalently the additive valuation of the
-discriminant of a minimal integral equation in the variable-change orbit of `W`.
-
-For an elliptic curve, the discriminant is nonzero, so the theorems below show that the
-extended-natural additive valuation is finite and this natural-number value recovers it. -/
-noncomputable def localMinimalDiscriminantValuation (W : WeierstrassCurve K) : ℕ :=
-  ENat.toNat (addVal R ((W.minimal R).integralModel R).Δ)
-
 /-- **The integral discriminant of the chosen minimal equation is nonzero.** This is the
 element-level form of `localMinimalDiscriminant_ne_bot`, useful for removing the `∞` value from
 the additive valuation. -/
@@ -69,13 +60,24 @@ private theorem integralModel_minimal_Δ_ne_zero (W : WeierstrassCurve K) [W.IsE
   rw [W.localMinimalDiscriminant_eq_span_Δ R C hC, hΔ]
   simp
 
+/-- **The valuation of the local minimal discriminant.** This is the exponent of the maximal
+ideal of `R` in `W.localMinimalDiscriminant R`, equivalently the additive valuation of the
+discriminant of a minimal integral equation in the variable-change orbit of `W`.
+
+The ellipticity hypothesis ensures that this discriminant is nonzero, so the extended-natural
+additive valuation is finite and has an honest natural-number value. -/
+noncomputable def localMinimalDiscriminantValuation (W : WeierstrassCurve K) [W.IsElliptic] :
+    ℕ :=
+  (addVal R ((W.minimal R).integralModel R).Δ).untop
+    (addVal_eq_top_iff.not.mpr <| integralModel_minimal_Δ_ne_zero R W)
+
 /-- **The chosen minimal equation computes the local minimal discriminant valuation.** The cast
 to `ℕ∞` records explicitly that the additive valuation is finite. -/
 theorem localMinimalDiscriminantValuation_eq_addVal (W : WeierstrassCurve K) [W.IsElliptic] :
     (W.localMinimalDiscriminantValuation R : ENat) =
       addVal R ((W.minimal R).integralModel R).Δ := by
   rw [localMinimalDiscriminantValuation]
-  exact ENat.natCast_toNat <| (addVal_eq_top_iff.not.mpr <| integralModel_minimal_Δ_ne_zero R W)
+  exact WithTop.coe_untop _ _
 
 /-- **Any minimal equation in the variable-change orbit computes the local minimal discriminant
 valuation.** Thus the number does not depend on Mathlib's chosen minimal equation. -/
@@ -103,7 +105,8 @@ theorem localMinimalDiscriminant_eq_maximalIdeal_pow (W : WeierstrassCurve K) [W
   obtain ⟨ϖ, hϖ⟩ := exists_irreducible R
   obtain ⟨n, u, hu⟩ := eq_unit_mul_pow_irreducible hδ hϖ
   have hv : W.localMinimalDiscriminantValuation R = n := by
-    simp [localMinimalDiscriminantValuation, δ, hu, addVal_def' u hϖ]
+    apply ENat.natCast_inj.mp
+    simp [localMinimalDiscriminantValuation_eq_addVal, δ, hu, addVal_def' u hϖ]
   obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
   rw [W.localMinimalDiscriminant_eq_span_Δ R C hC,
     show ((W.minimal R).integralModel R).Δ = δ from rfl, hu,
