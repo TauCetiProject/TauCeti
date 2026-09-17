@@ -196,13 +196,6 @@ theorem torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal :
 grind_pattern torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal =>
   diagonalTorusDefiningIdeal r k
 
-private theorem isReduced_quotient_diagonalTorusDefiningIdeal :
-    IsReduced (CommHopfAlgCat.quotient (coordinateHopfAlgebra k (r + 1))
-      (diagonalTorusDefiningIdeal r k)) := by
-  let e := HopfIdeal.kerLiftBialgEquiv (diagonalTorusCoordinateMap r k).hom
-    (diagonalTorusCoordinateMap_surjective r k)
-  exact isReduced_of_injective e.toAlgEquiv.toRingEquiv.toRingHom e.injective
-
 variable [IsAlgClosed k]
 
 /-- **The diagonal torus of `SL_{r+1}` is maximal among reduced commutative closed subgroup
@@ -250,7 +243,7 @@ theorem eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm
   have hpoints : GI = GD :=
     le_antisymm (fun g hg ↦ (hmem g).mpr (hP ▸ Subgroup.mem_map_of_mem φ hg)) hDG
   let _ : IsReduced (CommHopfAlgCat.quotient H D) :=
-    isReduced_quotient_diagonalTorusDefiningIdeal r k
+    HopfIdeal.isReduced_quotient_kerOfSurjective _ (diagonalTorusCoordinateMap_surjective r k)
   exact HopfIdeal.eq_of_quotientPointsSubgroup_eq hpoints
 
 /-- The diagonal torus of `SL_{r+1}` is a maximal torus over an algebraically closed field. -/

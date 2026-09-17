@@ -163,15 +163,6 @@ private instance instNontrivialUnitsOfInfiniteField {F : Type*} [Field F] [Infin
   exact congrArg Units.val h
 
 omit [IsAlgClosed k] in
-private theorem isReduced_quotient_diagonalTorusDefiningIdeal :
-    IsReduced (CommHopfAlgCat.quotient (coordinateHopfAlgebra k n)
-      (diagonalTorusDefiningIdeal k n)) := by
-  let f := (diagonalTorusCoordinateMap (R := k) (N := n)).hom
-  let hf : Function.Surjective f := diagonalTorusCoordinateMap_surjective k n
-  let e := HopfIdeal.kerLiftBialgEquiv f hf
-  exact isReduced_of_injective e.toAlgEquiv.toRingEquiv.toRingHom e.injective
-
-omit [IsAlgClosed k] in
 private theorem pointsMulEquiv_diagonalTorusPoints_symm (t : Fin n → kˣ) :
     pointsMulEquiv (R := k) (A := k) n
         (diagonalTorusPoints
@@ -251,7 +242,7 @@ theorem eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm
       exact hdiag.trans ht
     · exact hDG
   let _ : IsReduced (CommHopfAlgCat.quotient H D) :=
-    isReduced_quotient_diagonalTorusDefiningIdeal k n
+    HopfIdeal.isReduced_quotient_kerOfSurjective _ (diagonalTorusCoordinateMap_surjective k n)
   exact HopfIdeal.eq_of_quotientPointsSubgroup_eq hpoints
 
 /-- **The diagonal torus of `GL_n` is a maximal torus.** This packages the stronger result that

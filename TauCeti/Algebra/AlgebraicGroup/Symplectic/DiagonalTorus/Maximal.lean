@@ -84,10 +84,7 @@ private theorem isReduced_quotient_diagonalTorusDefiningIdeal :
     IsReduced (CommHopfAlgCat.quotient (coordinateHopfAlgebra k m)
       (diagonalTorusDefiningIdeal k m)) := by
   rw [diagonalTorusDefiningIdeal_eq_ker]
-  let f := (diagonalTorusCoordinateMap (R := k) (m := m)).hom
-  let hf : Function.Surjective f := diagonalTorusCoordinateMap_surjective (R := k) (m := m)
-  let e := HopfIdeal.kerLiftBialgEquiv f hf
-  exact isReduced_of_injective e.toAlgEquiv.toRingEquiv.toRingHom e.injective
+  exact HopfIdeal.isReduced_quotient_kerOfSurjective _ _
 
 /-- A rational point of the split torus, read through the symplectic point equivalence, is the
 paired diagonal matrix of its coordinates. -/
