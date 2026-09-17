@@ -176,6 +176,7 @@ theorem stabilizerDeriv_injective (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
 
 /-- **An element of the stabilizer of `z` is a rotation in the disc coordinate centred at `z`**,
 by its derivative character. -/
+@[simp]
 theorem discCoordinate_smul_stabilizer (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (q : stabilizer Γ z)
     (τ : ℍ) : discCoordinate z (q • τ) = stabilizerDeriv Γ z q * discCoordinate z τ := by
   rw [Subgroup.smul_def, Subgroup.smul_def]
@@ -214,6 +215,7 @@ theorem exists_isPrimitiveRoot_stabilizerDeriv (Γ : Subgroup PSL(2, ℝ)) (z : 
 
 /-- The derivative of an element of a point stabilizer is a root of unity of order dividing the
 stabilizer's order (vacuously so, with `Nat.card = 0`, when the stabilizer is infinite). -/
+@[simp]
 theorem stabilizerDeriv_pow_card (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (q : stabilizer Γ z) :
     stabilizerDeriv Γ z q ^ Nat.card (stabilizer Γ z) = 1 := by
   rw [← map_pow, pow_card_eq_one', map_one]

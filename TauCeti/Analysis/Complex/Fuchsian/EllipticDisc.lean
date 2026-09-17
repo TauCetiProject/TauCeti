@@ -153,13 +153,15 @@ theorem coe_stabilizerBallQuotientHomeomorph_mk {r : ℝ} (hr : 0 ≤ r)
       discCoordinate z τ ^ Nat.card (stabilizer Γ z) := by
   have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
   rw [stabilizerBallQuotientHomeomorph, Homeomorph.trans_apply]
-  change ((TauCeti.rootsOfUnityBallQuotientHomeomorph _)
-    (Quotient.congr (stabilizerBallHomeomorph Γ z r).toEquiv
-      (orbitRel_stabilizerBallHomeomorph_iff Γ z r) (Quotient.mk _ τ)) : ℂ) = _
-  rw [Quotient.congr_mk]
+  rw [show
+    Homeomorph.Quotient.congr (stabilizerBallHomeomorph Γ z r)
+        (orbitRel_stabilizerBallHomeomorph_iff Γ z r) (Quotient.mk _ τ) =
+      Quotient.mk _ (stabilizerBallHomeomorph Γ z r τ) by
+    exact Quotient.congr_mk (stabilizerBallHomeomorph Γ z r).toEquiv
+      (orbitRel_stabilizerBallHomeomorph_iff Γ z r) τ]
   rw [TauCeti.coe_rootsOfUnityBallQuotientHomeomorph_mk]
-  change (stabilizerBallHomeomorph Γ z r τ : ℂ) ^ Nat.card (stabilizer Γ z) = _
-  rw [coe_stabilizerBallHomeomorph]
+  exact congrArg (fun w : ℂ ↦ w ^ Nat.card (stabilizer Γ z))
+    (coe_stabilizerBallHomeomorph Γ z r τ)
 
 end LocalModel
 

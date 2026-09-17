@@ -171,6 +171,7 @@ theorem continuous_discCoordinate (z : ℍ) : Continuous (discCoordinate z) := b
 
 /-- The inverse `w ↦ (z - conj z * w) / (1 - w)` of the disc coordinate centred at `z` is
 continuous on the open unit disc. -/
+@[fun_prop]
 theorem continuous_discCoordinateEquiv_symm (z : ℍ) :
     Continuous (discCoordinateEquiv z).symm := by
   rw [isEmbedding_coe.continuous_iff]
