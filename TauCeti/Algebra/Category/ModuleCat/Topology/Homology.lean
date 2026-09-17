@@ -23,7 +23,11 @@ Mathlib's `ShortComplex.homologyIsoCokernelLift` is the analogous statement for 
 `cokernel`, which says nothing about which topology that object carries; the point of the
 isomorphism below is that the topology is the quotient topology on a cokernel.
 
-The consequence recorded here is that homology in `TopModuleCat R` inherits discreteness: a short
+The class map is surjective, its kernel is the range of the boundary map, and the inclusion of
+cycles is injective. These concrete descriptions are available for short complexes and, for the
+class map, with explicit degree indices in a homological complex.
+
+Homology in `TopModuleCat R` also inherits discreteness: a short
 complex whose middle term is discrete has discrete cycles and discrete homology, and likewise
 degreewise for a homological complex. This is what makes continuous cohomology of a discrete
 representation of a compact group an isomorphism problem between *discrete* topological modules
@@ -59,6 +63,37 @@ theorem cokerπ_comp_homologyIsoCoker_inv :
   IsColimit.comp_coconePointUniqueUpToIso_inv S.homologyIsCokernel
     (TopModuleCat.isColimitCoker S.toCycles) WalkingParallelPair.one
 
+/-- Every homology class of topological modules has a cycle representative. -/
+theorem topModuleCat_homologyπ_surjective : Function.Surjective S.homologyπ.hom := by
+  intro x
+  obtain ⟨y, hy⟩ := TopModuleCat.cokerπ_surjective S.toCycles
+    (S.homologyIsoCoker.hom.hom x)
+  refine ⟨y, S.homologyIsoCoker.toContinuousLinearEquiv.injective ?_⟩
+  have he := DFunLike.congr_fun
+    (congrArg TopModuleCat.Hom.hom (S.homologyπ_comp_homologyIsoCoker_hom)) y
+  exact he.trans hy
+
+/-- A cycle in a short complex of topological modules represents zero exactly when it is a
+boundary. -/
+theorem topModuleCat_homologyπ_eq_zero_iff (x : S.cycles) :
+    S.homologyπ.hom x = 0 ↔ x ∈ S.toCycles.hom.range := by
+  have he : S.homologyIsoCoker.toContinuousLinearEquiv (S.homologyπ.hom x) =
+      (TopModuleCat.cokerπ S.toCycles).hom x :=
+    DFunLike.congr_fun
+      (congrArg TopModuleCat.Hom.hom S.homologyπ_comp_homologyIsoCoker_hom) x
+  rw [← S.homologyIsoCoker.toContinuousLinearEquiv.map_eq_zero_iff, he]
+  exact Submodule.Quotient.mk_eq_zero _
+
+/-- The inclusion of cycles into a short complex of topological modules is injective. -/
+theorem topModuleCat_iCycles_injective : Function.Injective S.iCycles.hom := by
+  intro x y hxy
+  let e := S.isoCyclesOfIsLimit (TopModuleCat.isLimitKer S.g)
+  apply e.symm.toContinuousLinearEquiv.injective
+  apply Subtype.ext
+  have he := congrArg TopModuleCat.Hom.hom
+    (S.isoCyclesOfIsLimit_inv_ι (TopModuleCat.isLimitKer S.g))
+  exact (DFunLike.congr_fun he x).trans (hxy.trans (DFunLike.congr_fun he y).symm)
+
 /-- The cycles of a short complex of topological modules with discrete middle term are discrete. -/
 theorem discreteTopology_cycles [DiscreteTopology S.X₂] : DiscreteTopology S.cycles :=
   -- the point of the kernel fork is `TopModuleCat.ker S.g` by definition, but not syntactically,
@@ -93,5 +128,19 @@ homology in degree `n`. -/
 theorem discreteTopology_homology [DiscreteTopology (K.X n)] : DiscreteTopology (K.homology n) :=
   have : DiscreteTopology (K.sc n).X₂ := ‹DiscreteTopology (K.X n)›
   ShortComplex.discreteTopology_homology (K.sc n)
+
+variable (i j : ι)
+
+/-- Every homology class of a complex of topological modules has a cycle representative. -/
+theorem topModuleCat_homologyπ_surjective : Function.Surjective (K.homologyπ j).hom :=
+  ShortComplex.topModuleCat_homologyπ_surjective (K.sc j)
+
+/-- A cycle represents zero precisely when it is a boundary from the preceding term. -/
+theorem topModuleCat_homologyπ_eq_zero_iff (hij : c.prev j = i) (x : K.cycles j) :
+    (K.homologyπ j).hom x = 0 ↔ ∃ u : K.X i, (K.toCycles i j).hom u = x := by
+  subst i
+  -- At the preceding index, `toCycles` and its short-complex form agree by definition;
+  -- membership in the linear-map range is the displayed existence of a primitive.
+  exact ShortComplex.topModuleCat_homologyπ_eq_zero_iff (K.sc j) x
 
 end HomologicalComplex
