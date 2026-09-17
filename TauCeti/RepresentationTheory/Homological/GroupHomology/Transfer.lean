@@ -56,13 +56,15 @@ def transfer (M : Rep R G) (S : Subgroup G) [S.FiniteIndex] (n : ℕ) :
     (_root_.groupHomology.indIso S (Rep.res S.subtype M) n).hom
 
 open scoped Classical in
-set_option backward.isDefEq.respectTransparency false in
 /-- Through the inverse of the homological Shapiro isomorphism, transfer is the map induced by
 the unit of the finite-index induction--restriction adjunction. -/
 @[reassoc (attr := simp)]
 theorem transfer_comp_indIso_inv (M : Rep R G) (S : Subgroup G) [S.FiniteIndex] (n : ℕ) :
     transfer M S n ≫ (_root_.groupHomology.indIso S (Rep.res S.subtype M) n).inv =
-      (_root_.groupHomology.functor R G n).map ((Rep.resIndAdjunction R S).unit.app M) := by
-  simp [transfer, Category.assoc]
+      (_root_.groupHomology.functor R G n).map ((Rep.resIndAdjunction R S).unit.app M) :=
+  -- Cancelling Shapiro's isomorphism against the definition, rather than rewriting with
+  -- `Iso.hom_inv_id`: the two occurrences of `Resˢᴳ M` carry different `Monoid ↥S` instances, so
+  -- the rewrite does not match syntactically, while this equation holds by `rfl`.
+  (Iso.comp_inv_eq _).2 rfl
 
 end TauCeti.groupHomology

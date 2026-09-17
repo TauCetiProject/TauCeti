@@ -97,7 +97,6 @@ def negSuccRes (n : ℕ) [NeZero n] :
       (_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n (Int.negSucc_eq n)).inv.app
         (Rep.res H.subtype M)
 
-set_option backward.isDefEq.respectTransparency false in
 /-- Negative-degree Tate restriction is the homological transfer through Mathlib's comparison
 between Tate cohomology in degree `-(n+1)` and group homology in degree `n`. -/
 @[reassoc (attr := simp), elementwise (attr := simp)]
@@ -106,11 +105,13 @@ theorem negSuccRes_comp_isoGroupHomology_hom (n : ℕ) [NeZero n] :
         (_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n
           (Int.negSucc_eq n)).hom.app (Rep.res H.subtype M) =
       (_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n
-        (Int.negSucc_eq n)).hom.app M ≫ TauCeti.groupHomology.transfer M H n := by
-  simp only [negSuccRes, Category.assoc, Iso.inv_hom_id_app]
-  exact Category.comp_id
-    ((_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n
-      (Int.negSucc_eq n)).hom.app M ≫ TauCeti.groupHomology.transfer M H n)
+        (Int.negSucc_eq n)).hom.app M ≫ TauCeti.groupHomology.transfer M H n :=
+  -- Cancelling the comparison isomorphism against the definition, rather than rewriting with
+  -- `Iso.inv_hom_id_app`: the objects involved appear both as `tateCohomology` and as values of
+  -- `tateCohomologyFunctor`, so the rewrite does not match syntactically, while this equation
+  -- holds by `rfl`.
+  (Iso.eq_comp_inv ((_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n
+    (Int.negSucc_eq n)).app (Rep.res H.subtype M))).1 rfl
 
 /-- Restriction to a subgroup in degree `-2` Tate cohomology. Under the comparison with first
 group homology, this is the homological transfer. -/
