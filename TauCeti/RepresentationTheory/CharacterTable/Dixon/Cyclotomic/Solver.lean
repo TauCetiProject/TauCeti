@@ -139,10 +139,6 @@ private def canonicalModularRow (q : DixonPrimeData G)
     (i : Fin d.numClasses) : Fin d.numClasses → ZMod q.p :=
   (d.modularCentralRowsList q).getD i 0
 
-/-- The canonical numbering reads the executable row list, with the unreachable default `0`. -/
-private theorem canonicalModularRow_eq_getD (q : DixonPrimeData G) (i : Fin d.numClasses) :
-    d.canonicalModularRow q i = (d.modularCentralRowsList q).getD i 0 := rfl
-
 /-- Every canonically numbered modular row belongs to the central-character search. -/
 private theorem canonicalModularRow_mem (q : DixonPrimeData G) (i : Fin d.numClasses) :
     d.canonicalModularRow q i ∈ d.centralCharacterSearch := by
@@ -171,11 +167,17 @@ a constant multiple scales every coordinate, and the integer quotients are then 
 private theorem cyclotomicQuotient_natCast_mul (e : ℕ) (x : Cyclotomic e) {n : ℕ}
     (hn : 0 < n) : cyclotomicQuotient e ((n : Cyclotomic e) * x) n = x := by
   have hn' : (n : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
-  rw [cyclotomicQuotient, ← Int.cast_natCast (R := Cyclotomic e) n,
-    Cyclotomic.coeffs_intCast_mul, List.map_map]
-  rw [show ((fun c ↦ c / (n : ℤ)) ∘ fun c ↦ (n : ℤ) * c) = id from
-    funext fun c ↦ Int.mul_ediv_cancel_left c hn', List.map_id,
-    Cyclotomic.ofCoeffList_coeffs]
+  have hcoeffs :
+      (((n : Cyclotomic e) * x).coeffs.map fun c ↦ c / (n : ℤ)) = x.coeffs := by
+    rw [← Int.cast_natCast (R := Cyclotomic e) n, Cyclotomic.coeffs_intCast_mul,
+      List.map_map]
+    calc
+      _ = List.map id x.coeffs := by
+        apply List.map_congr_left
+        intro c _
+        simpa only [Function.comp_apply, id_eq] using Int.mul_ediv_cancel_left c hn'
+      _ = x.coeffs := List.map_id _
+  rw [cyclotomicQuotient, hcoeffs, Cyclotomic.ofCoeffList_coeffs]
 
 /-- **The certified ordinary table is the solver's coefficientwise quotient.**  The
 division-free conversion identity of the specification makes every coordinate division exact,
@@ -363,7 +365,7 @@ theorem isSome_dixonCyclotomicCharacterTable_of_spec (e : ℕ)
           rw [← d.modularCentralRowsEquiv_apply q (perms j i)]
           simp only [perms, Equiv.apply_symm_apply, residueEquiv, residueRow,
             Equiv.ofBijective_apply]
-        simp only [← canonicalModularRow_eq_getD]
+        simp only [canonicalModularRow] at hconjugate
         rw [hconjugate]
         apply Cyclotomic.lift_conjugateResidues
           (by simpa only [he] using q.isPrimitiveRoot_root)

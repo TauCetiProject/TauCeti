@@ -146,6 +146,9 @@ theorem zero_def : (0 : Cyclotomic e) = ofCoeffList e [] := rfl
 /-- One is the coefficient list `[1]`. -/
 theorem one_def : (1 : Cyclotomic e) = ofCoeffList e [1] := rfl
 
+/-- An integer cast is its singleton coefficient list. -/
+theorem intCast_def (z : ℤ) : (z : Cyclotomic e) = ofCoeffList e [z] := rfl
+
 /-- Addition adds coefficient lists entrywise. -/
 theorem add_def (x y : Cyclotomic e) :
     x + y = ofCoeffList e (List.zipWith (fun a b => a + b) x.coeffs y.coeffs) := rfl
@@ -298,13 +301,14 @@ theorem coeff_zero (j : ℕ) : (0 : Cyclotomic e).coeff j = 0 := by
 
 /-- **Multiplication by an integer constant scales every coefficient.**  A constant multiple
 raises no power of `ζ`, so no reduction modulo `Φ_e` takes place. -/
+@[simp]
 theorem coeffs_intCast_mul (z : ℤ) (x : Cyclotomic e) :
     ((z : Cyclotomic e) * x).coeffs = x.coeffs.map (z * ·) := by
   have hmul : (z : Cyclotomic e) * x = ofCoeffList e (x.coeffs.map (z * ·)) := by
     have hz : TauCeti.Polynomial.ofCoeffList [z] = Polynomial.C z := by
       simp [TauCeti.Polynomial.ofCoeffList_cons]
     refine toAdjoinRoot_injective ?_
-    rw [toAdjoinRoot_mul, show (z : Cyclotomic e) = ofCoeffList e [z] from rfl,
+    rw [toAdjoinRoot_mul, intCast_def,
       toAdjoinRoot_ofCoeffList, toAdjoinRoot_ofCoeffList, hz,
       TauCeti.Polynomial.ofCoeffList_map_mul_left, map_mul]
     rfl
