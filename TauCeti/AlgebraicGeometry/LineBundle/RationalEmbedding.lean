@@ -12,10 +12,10 @@ public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
 # Rational functions represented by generically free rank-one module sections
 
 A sheaf of modules on an irreducible scheme that is free of rank one on a dense open subset has a
-rational trivialization. A chosen basis there identifies every local section with a rational
+rational trivialization. A chosen basis there maps every local section to a rational
 function and hence gives a morphism from the sheaf of modules to the sheaf of rational functions.
-For an invertible sheaf, this is the rational embedding used to associate a Weil divisor to a line
-bundle.
+For an invertible sheaf, this morphism is an ingredient in associating a Weil divisor to a line
+bundle once its injectivity is established.
 
 ## Main declarations
 
