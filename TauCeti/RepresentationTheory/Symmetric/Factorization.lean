@@ -32,7 +32,9 @@ multiple of the Young symmetrizer `c_t = a_t b_t`
 `0` or `sign q • c_t`, and the general case follows by linearity.  Consequently `c_t` is
 **essentially idempotent**, `c_t x c_t ∈ ℚ ∙ c_t` for every `x`
 (`TauCeti.YoungTableau.exists_eq_smul_youngSymmetrizer_mul_mul`), and in particular
-`c_t ^ 2 = n_t • c_t` (`TauCeti.YoungTableau.exists_eq_smul_youngSymmetrizer_sq`).  Identifying the
+`c_t ^ 2 = n_t • c_t` (`TauCeti.YoungTableau.exists_eq_smul_youngSymmetrizer_sq`).  The same holds
+for the symmetrizer transported to any `ℚ`-algebra `k`, with `x` now ranging over `k[Sₙ]`
+(`TauCeti.YoungTableau.exists_eq_smul_youngSymmetrizerOver_mul_mul`).  Identifying the
 scalar `n_t` as `μ.card ! / f^μ`, and with it the idempotent generating the Specht ideal, needs the
 dimension count of the Specht module and is not done here.
 
@@ -174,6 +176,34 @@ theorem exists_eq_smul_youngSymmetrizer_sq (t : YoungTableau μ) :
     ∃ κ : ℚ, youngSymmetrizer t * youngSymmetrizer t = κ • youngSymmetrizer t := by
   obtain ⟨κ, hκ⟩ := exists_eq_smul_youngSymmetrizer_mul_mul t 1
   exact ⟨κ, by rwa [mul_one] at hκ⟩
+
+/-- **The transported Young symmetrizer is essentially idempotent**: over a `ℚ`-algebra `k`,
+`c_t x c_t` is a `k`-multiple of `c_t` for every element `x` of `k[Sₙ]`.  On a single permutation
+this is the image of the rational statement
+`TauCeti.YoungTableau.exists_eq_smul_youngSymmetrizer_mul_mul`, and the general case follows by
+`k`-linearity. -/
+theorem exists_eq_smul_youngSymmetrizerOver_mul_mul (k : Type*) [CommSemiring k] [Algebra ℚ k]
+    (t : YoungTableau μ) (x : MonoidAlgebra k (Equiv.Perm (Fin μ.card))) :
+    ∃ κ : k, youngSymmetrizerOver k t * x * youngSymmetrizerOver k t =
+      κ • youngSymmetrizerOver k t := by
+  have hspan : youngSymmetrizerOver k t * x * youngSymmetrizerOver k t ∈
+      Submodule.span k {youngSymmetrizerOver k t} := by
+    induction x using MonoidAlgebra.induction_linear with
+    | zero => simp
+    | add f g hf hg =>
+      rw [mul_add, add_mul]
+      exact Submodule.add_mem _ hf hg
+    | single σ r =>
+      obtain ⟨κ, hκ⟩ := exists_eq_smul_youngSymmetrizer_mul_mul t (MonoidAlgebra.single σ 1)
+      have hmap := congrArg (MonoidAlgebra.mapAlgHom _ (Algebra.ofId ℚ k)) hκ
+      rw [map_mul, map_mul, map_smul, MonoidAlgebra.mapAlgHom_single, map_one,
+        ← youngSymmetrizerOver_def] at hmap
+      have hsingle : MonoidAlgebra.single σ r = r • MonoidAlgebra.single σ (1 : k) := by
+        rw [MonoidAlgebra.smul_single, smul_eq_mul, mul_one]
+      rw [hsingle, mul_smul_comm, smul_mul_assoc, hmap, ← algebraMap_smul k κ, smul_smul]
+      exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
+  obtain ⟨κ, hκ⟩ := Submodule.mem_span_singleton.mp hspan
+  exact ⟨κ, hκ.symm⟩
 
 end YoungTableau
 

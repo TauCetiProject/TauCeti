@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.RingTheory.SimpleModule.Basic
 public import Mathlib.RingTheory.SimpleRing.Basic
+public import TauCeti.RingTheory.SimpleModule.Basic
 
 /-!
 # The double centralizer theorem
@@ -57,6 +58,10 @@ implies the other.
 * `TauCeti.centralizer_centralizer_range`: the same statement for the image of a semisimple
   algebra, the form a representation supplies. The image, not the algebra itself, is what the
   double centralizer returns, since the representation need not be faithful.
+* `TauCeti.exists_mem_centralizer_apply_eq_of_isSemisimpleModule` and
+  `TauCeti.exists_mem_centralizer_range_apply_eq`: an endomorphism commuting with `A` (respectively
+  with the image of a semisimple algebra) carries `w` to `x` as soon as everything in `A` killing
+  `w` kills `x`.
 
 ## Implementation notes
 
@@ -323,6 +328,32 @@ theorem centralizer_centralizer_range [Module.Finite K N] {S : Type*} [Ring S] [
   have : IsSemisimpleModule ρ.range N := IsSemisimpleRing.isSemisimpleModule
   have : Module.Finite (Module.End ρ.range N) N := finite_end_of_smulCommClass (R := ρ.range) K
   exact centralizer_centralizer_of_isSemisimpleModule _
+
+/-- **The centralizer moves vectors as freely as annihilators allow.** Let `A` be a `K`-subalgebra
+of `Module.End K N` over which `N` is semisimple. If every element of `A` annihilating `w` also
+annihilates `x`, then some endomorphism commuting with `A` sends `w` to `x`. -/
+theorem exists_mem_centralizer_apply_eq_of_isSemisimpleModule [IsSemisimpleModule A N] {w x : N}
+    (h : ∀ a ∈ A, a w = 0 → a x = 0) :
+    ∃ f ∈ Subalgebra.centralizer K (A : Set (Module.End K N)), f w = x := by
+  obtain ⟨f, hf⟩ := (IsSemisimpleModule.exists_end_apply_eq_iff (R := A)).mpr
+    fun a ha => h a a.2 ha
+  exact ⟨f.restrictScalars K, restrictScalars_mem_centralizer A f, hf⟩
+
+/-- **The centralizer of a semisimple image moves vectors as freely as annihilators allow.** For a
+semisimple `K`-algebra `S` acting on `N` through `ρ`, if every `s` with `ρ s w = 0` also has
+`ρ s x = 0`, then some endomorphism commuting with the image of `ρ` sends `w` to `x`. -/
+theorem exists_mem_centralizer_range_apply_eq {S : Type*} [Ring S] [Algebra K S]
+    [IsSemisimpleRing S] (ρ : S →ₐ[K] Module.End K N) {w x : N}
+    (h : ∀ s, ρ s w = 0 → ρ s x = 0) :
+    ∃ f ∈ Subalgebra.centralizer K (Set.range ρ), f w = x := by
+  have : IsSemisimpleRing ρ.range :=
+    RingHom.isSemisimpleRing_of_surjective ρ.rangeRestrict.toRingHom
+      (AlgHom.rangeRestrict_surjective _)
+  have : IsSemisimpleModule ρ.range N := IsSemisimpleRing.isSemisimpleModule
+  rw [← AlgHom.coe_range]
+  refine exists_mem_centralizer_apply_eq_of_isSemisimpleModule _ ?_
+  rintro _ ⟨s, rfl⟩
+  exact h s
 
 end EndSubalgebra
 
