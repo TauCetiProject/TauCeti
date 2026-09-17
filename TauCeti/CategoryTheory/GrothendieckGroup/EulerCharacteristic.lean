@@ -267,9 +267,9 @@ variable (a b : ℤ) [K.IsGE a] [K.IsLE b]
 /-- Enlarging the range of degrees beyond the support of the cohomology does not change the
 alternating class of that cohomology.
 
-Only the cohomology has to be bounded here: `HomologicalComplex.isZero_homology_of_notMem_Icc`
-asks for `K.IsGE a` and `K.IsLE b`, not for the strict bounds that the terms of the complex
-would need. -/
+Only the cohomology has to be bounded: `K.IsGE a` and `K.IsLE b` say that the cohomology of `K`
+vanishes outside `[a, b]`. The terms `K.X n` may be nonzero in every degree, as they are for an
+unbounded resolution. -/
 theorem homologyEulerChar_eq_homologyEulerChar_Icc {s : Finset ℤ} (hs : Finset.Icc a b ⊆ s) :
     homologyEulerChar K s = homologyEulerChar K (Finset.Icc a b) :=
   (Finset.sum_subset hs fun x _ hx => by
