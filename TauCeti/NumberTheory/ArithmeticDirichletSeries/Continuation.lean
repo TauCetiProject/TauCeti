@@ -112,15 +112,41 @@ theorem HasCancellation.analyticOnNhd_continuedLFunctionOfWeight
 
 /-- On the absolute-convergence half-plane the continuation agrees with the
 norm-regrouped Dirichlet series. -/
-theorem HasCancellation.continuedLFunctionOfWeight_eq_LSeries
-    {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ) {s : ℂ} (hs : 1 < s.re) :
+theorem continuedLFunctionOfWeight_eq_LSeries
+    (χ : UnitaryIdealWeight K) {s : ℂ} (hs : 1 < s.re) :
     continuedLFunctionOfWeight χ s =
       _root_.LSeries (normCoeff K χ.toIdealArithmeticFunction) s := by
-  have hd : (1 : ℝ) ≤ Module.finrank ℚ K := by
-    exact_mod_cast Module.finrank_pos (R := ℚ) (M := K)
+  have hO :
+      (fun n : ℕ ↦ ∑ k ∈ Finset.Icc 1 n,
+        normCoeff K χ.toIdealArithmeticFunction k) =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ (1 : ℝ) := by
+    obtain ⟨b⟩ := idealCount_linearBounds K
+    refine Asymptotics.IsBigO.of_bound b.upper ?_
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    have hn' : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+    rw [Real.rpow_one, Real.norm_natCast]
+    calc
+      ‖∑ k ∈ Finset.Icc 1 n, normCoeff K χ.toIdealArithmeticFunction k‖
+          ≤ ∑ k ∈ Finset.Icc 1 n, ‖normCoeff K χ.toIdealArithmeticFunction k‖ := by
+            exact norm_sum_le _ _
+      _ ≤ ∑ k ∈ Finset.Icc 1 n, ‖normCoeff K (1 : IdealArithmeticFunction K) k‖ := by
+            exact Finset.sum_le_sum fun k hk ↦ by
+              calc
+                ‖normCoeff K χ.toIdealArithmeticFunction k‖
+                    ≤ ∑ I ∈ normFiber K k, ‖χ.toIdealArithmeticFunction I‖ := by
+                      rw [normCoeff_eq_sum_normFiber]
+                      exact norm_sum_le _ _
+                _ ≤ ∑ I ∈ normFiber K k, (1 : ℝ) := by
+                      exact Finset.sum_le_sum fun I hI ↦ by
+                        simpa only [UnitaryIdealWeight.toIdealArithmeticFunction_apply] using
+                          χ.norm_le_one I
+                _ = (normFiber K k).card := by simp
+                _ = ‖normCoeff K (1 : IdealArithmeticFunction K) k‖ :=
+                  (norm_normCoeff_one K k).symm
+      _ = Nat.card {I : (Ideal (𝓞 K))⁰ //
+          (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ (n : ℝ)} := sum_norm_normCoeff_one K n
+      _ ≤ b.upper * (n : ℝ) := b.card_le (n : ℝ) hn'
   exact LSeries.continuedLSeries_eq_LSeries
-    (sub_nonneg.mpr ((div_le_one (by positivity)).mpr hd)) hχ.isBigO_sum_normCoeff
-    ((sub_le_self _ (by positivity)).trans_lt hs)
+    zero_le_one hO hs
     (LSeriesSummable_normCoeff K (summable_idealTerm_of_unitary_of_one_lt_re χ hs))
 
 
