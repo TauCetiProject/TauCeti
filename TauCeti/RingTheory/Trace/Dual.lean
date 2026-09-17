@@ -24,13 +24,13 @@ the smaller one.
 
 ## Main definitions
 
-* `TauCeti.Module.Dual.traceCompEquiv`: the `K`-linear equivalence
+* `Module.Dual.traceCompEquiv`: the `K`-linear equivalence
   `Module.Dual L V ≃ₗ[K] Module.Dual K V`, `φ ↦ Tr_{L/K} ∘ φ`.
 
 ## Main results
 
-* `TauCeti.Module.Dual.traceCompEquiv_apply`: the equivalence composes with the trace.
-* `TauCeti.Module.Dual.apply_eq_zero_iff_forall_trace_eq_zero`: an `L`-linear form vanishes at `v`
+* `Module.Dual.traceCompEquiv_apply`: the equivalence composes with the trace.
+* `Module.Dual.apply_eq_zero_iff_forall_trace_eq_zero`: an `L`-linear form vanishes at `v`
   exactly when the traces of its values on the `L`-line through `v` all vanish.
 
 ## References
@@ -42,7 +42,7 @@ the smaller one.
 
 public section
 
-namespace TauCeti.Module.Dual
+namespace Module.Dual
 
 variable {K L V : Type*} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L]
   [Algebra.IsSeparable K L] [AddCommGroup V] [Module L V] [Module K V] [IsScalarTower K L V]
@@ -115,4 +115,4 @@ theorem apply_eq_zero_iff_forall_trace_eq_zero (φ : Module.Dual L V) (v : V) :
   rw [Algebra.traceForm_apply, mul_comm, ← smul_eq_mul, ← map_smul]
   exact h b
 
-end TauCeti.Module.Dual
+end Module.Dual

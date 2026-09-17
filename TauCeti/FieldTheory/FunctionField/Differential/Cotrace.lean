@@ -31,7 +31,7 @@ many fibres where the repartition is not already bounded by `B'`
 `B' = Con D + Diff(F'/F)`, the trace estimate `TauCeti.repartitionTrace_mem_adeleFiltration`
 shows that `α ↦ ω (Tr α)` is well defined on `A_{F'} ⧸ A_{F'}(B')`, which gives a `k`-linear form
 on `A_{F'}`; the trace form of `k' / k` turns it into a `k'`-linear one
-(`TauCeti.Module.Dual.traceCompEquiv`).
+(`Module.Dual.traceCompEquiv`).
 
 ## Main definitions
 
