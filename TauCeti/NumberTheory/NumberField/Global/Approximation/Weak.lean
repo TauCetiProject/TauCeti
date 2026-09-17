@@ -294,9 +294,9 @@ theorem denseRange_algebraMap_embedding_of_isReal
   have hrc : Continuous r := continuous_pi fun w =>
     (Completion.isometry_extensionEmbeddingOfIsReal w.1.2).continuous.comp (continuous_apply _)
   have hrs : Function.Surjective r := fun t => by
-    refine ⟨fun u => (Completion.ringEquivRealOfIsReal (hr u)).symm (t ⟨_, hrT u⟩), ?_⟩
-    funext w
-    exact (Completion.ringEquivRealOfIsReal w.1.2).apply_symm_apply (t w)
+    choose y hy using fun u : {u // u ∈ Sinf} =>
+      Completion.surjective_extensionEmbeddingOfIsReal (hr u) (t ⟨_, hrT u⟩)
+    exact ⟨y, funext fun w => hy ⟨w.1.1, hmem w⟩⟩
   have hdense := (Prod.map_surjective.mpr ⟨Function.surjective_id, hrs⟩).denseRange.comp
     (weakApproximation_denseRange S Sinf) (continuous_id.prodMap hrc)
   convert hdense using 1
