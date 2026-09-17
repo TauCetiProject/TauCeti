@@ -20,10 +20,11 @@ This file names the small permutation triples that serve as test cases for the t
 three-point covers, and computes their invariants: connectedness, cycle data, Euler
 characteristic, genus, orders, geometry type, monodromy group and automorphism group.
 
-* The unique triple of degree one: the identity cover of the sphere.
-* `TauCeti.PermutationTriple.cyclicTriple n`: the monodromy of `z ↦ zⁿ`, totally ramified over
-  `0` and `∞` and unramified over `1`. It is connected of genus zero and spherical, with cyclic
-  monodromy of order `n`. Disjoint sums of two such triples are disconnected, with Euler
+* `TauCeti.PermutationTriple.cyclicTriple n`: for `n ≠ 0`, the monodromy of `z ↦ zⁿ`, totally
+  ramified over `0` and `∞` and unramified over `1`. For `n ≠ 0` it is connected of genus zero,
+  with cyclic monodromy of order `n`; it is spherical in every degree. `cyclicTriple 0` is the
+  formal empty triple, which is not connected, and `cyclicTriple 1` is the trivial triple, the
+  identity cover of the sphere. Disjoint sums of two such triples are disconnected, with Euler
   characteristic `4`, and relabeling `cyclicTriple 4` gives a different but isomorphic triple.
 * `TauCeti.PermutationTriple.chebyshevTriple`: the monodromy of `z ↦ 4z(1 - z)`, a connected
   genus-zero triple whose component over `0` is the identity. Being unramified over a point is
@@ -55,21 +56,11 @@ namespace PermutationTriple
 
 variable {m n : ℕ}
 
-/-! ### Degree one -/
-
-/-- A triple of degree one is connected. -/
-theorem isConnected_of_degree_one (t : PermutationTriple 1) : t.IsConnected := by
-  rw [Subsingleton.elim t 1, isConnected_one_iff]
-
-/-- A triple of degree one has genus zero. -/
-theorem genus_of_degree_one (t : PermutationTriple 1) : t.genus = 0 := by
-  rw [Subsingleton.elim t 1, genus_def, eulerChar_one]
-  norm_num
-
 /-! ### The cyclic triple -/
 
-/-- The monodromy triple of the cover `z ↦ zⁿ` of the sphere: the sheets are rotated cyclically
-around `0` and in the opposite direction around `∞`, and are not permuted around `1`. -/
+/-- The cyclic triple of degree `n`: the sheets are rotated cyclically around `0` and in the
+opposite direction around `∞`, and are not permuted around `1`. For `n ≠ 0` it is the monodromy
+triple of the cover `z ↦ zⁿ` of the sphere; `cyclicTriple 0` is the formal empty triple. -/
 def cyclicTriple (n : ℕ) : PermutationTriple n where
   σ0 := finRotate n
   σ1 := 1
@@ -162,7 +153,7 @@ theorem swap_smul_cyclicTriple_four_ne :
 therefore has the same cycle data. -/
 theorem equivalent_swap_smul_cyclicTriple_four :
     Equivalent ((swap 0 1 : Perm (Fin 4)) • cyclicTriple 4) (cyclicTriple 4) :=
-  equivalent_iff_exists_smul_eq.mpr ⟨swap 0 1, by rw [smul_smul, swap_mul_self, one_smul]⟩
+  equivalent_smul _ _
 
 /-! ### A triple unramified over `0` -/
 
@@ -181,10 +172,12 @@ def chebyshevTriple : PermutationTriple 2 where
 @[simp] theorem chebyshevTriple_σinf : chebyshevTriple.σinf = swap 0 1 := (rfl)
 
 /-- The triple of `z ↦ 4z(1 - z)` is connected. -/
-theorem isConnected_chebyshevTriple : chebyshevTriple.IsConnected :=
-  isConnected_iff.mpr ⟨two_ne_zero, isPretransitive_of_finRotate_mem (by
-    rw [show finRotate 2 = chebyshevTriple.σ1 by decide]
-    exact σ1_mem_monodromyGroup _)⟩
+theorem isConnected_chebyshevTriple : chebyshevTriple.IsConnected := by
+  -- On two sheets the rotation is the transposition around `1`, which lies in the monodromy group;
+  -- a monodromy group containing the rotation is transitive.
+  have hrot : finRotate 2 = chebyshevTriple.σ1 := by decide
+  exact isConnected_iff.mpr ⟨two_ne_zero,
+    isPretransitive_of_finRotate_mem (hrot ▸ chebyshevTriple.σ1_mem_monodromyGroup)⟩
 
 /-- The triple of `z ↦ 4z(1 - z)` has two unramified sheets over `0`, and one double point over each
 of `1` and `∞`. -/
@@ -320,8 +313,10 @@ def s3Triple : PermutationTriple 3 where
 
 /-- The monodromy group of `s3Triple` is the whole symmetric group. -/
 @[simp] theorem monodromyGroup_s3Triple : s3Triple.monodromyGroup = ⊤ := by
-  rw [← closure_pair_eq_monodromyGroup, s3Triple_σ0, s3Triple_σ1,
-    show (1 : Fin 3) = finRotate 3 0 by decide]
+  -- `closure_cycle_adjacent_swap` generates everything from a full cycle `σ` and the adjacent
+  -- transposition `swap x (σ x)`, so the transposition `swap 0 1` is rewritten into that shape.
+  have h1 : (1 : Fin 3) = finRotate 3 0 := by decide
+  rw [← closure_pair_eq_monodromyGroup, s3Triple_σ0, s3Triple_σ1, h1]
   exact closure_cycle_adjacent_swap isCycle_finRotate support_finRotate 0
 
 /-- The triple `s3Triple` is connected. -/

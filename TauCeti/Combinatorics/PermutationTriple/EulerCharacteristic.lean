@@ -209,6 +209,11 @@ theorem genus_transport (e : Fin n ≃ Fin m) (t : PermutationTriple n) :
     (transport e t).genus = t.genus := by
   rw [genus_def, genus_def, eulerChar_transport]
 
+/-- A triple of degree one has genus zero. -/
+theorem genus_of_degree_one (t : PermutationTriple 1) : t.genus = 0 := by
+  rw [Subsingleton.elim t 1, genus_def, eulerChar_one]
+  norm_num
+
 /-- For a connected triple, coercing its genus back to the integers recovers the exact quotient
 `(2 - χ) / 2`; the connected Euler bound supplies its nonnegativity. -/
 theorem IsConnected.natCast_genus {t : PermutationTriple n} (ht : t.IsConnected) :

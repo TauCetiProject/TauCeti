@@ -268,6 +268,10 @@ theorem equivalent_iff_exists_smul_eq {t t' : PermutationTriple n} :
   rw [Equivalent, MulAction.orbitRel_apply, MulAction.mem_orbit_symm,
     MulAction.mem_orbit_iff]
 
+/-- Every relabeling of a permutation triple is isomorphic to it. -/
+theorem equivalent_smul (τ : Perm (Fin n)) (t : PermutationTriple n) : Equivalent (τ • t) t :=
+  equivalent_iff_exists_smul_eq.mpr ⟨τ⁻¹, inv_smul_smul τ t⟩
+
 /-- Isomorphism of triples — relabeling the sheets — is decidable, by searching the finitely many
 relabelings. -/
 instance : DecidableRel (@Equivalent n) :=
@@ -383,6 +387,10 @@ in degree one. -/
     simp [Fin.ext_iff] at hg
   · subst hn
     exact Subsingleton.elim _ _
+
+/-- A triple of degree one is connected. -/
+theorem isConnected_of_degree_one (t : PermutationTriple 1) : t.IsConnected := by
+  rw [Subsingleton.elim t 1, isConnected_one_iff]
 
 /-- Translating to the opposite convention preserves connectedness. -/
 theorem isConnected_equivOppositeConvention_iff (t : PermutationTriple n) :
