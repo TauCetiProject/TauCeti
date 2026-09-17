@@ -952,33 +952,21 @@ noncomputable abbrev algebraicCoindDiscreteRep : DiscreteRep.{u, v, max v w} R G
     apply Subtype.ext
     funext x
     rfl⟩
-  letI : ContinuousSMul R V := by
-    constructor
-    have he : Continuous e := continuous_of_discreteTopology
-    have he' : Continuous e.symm := continuous_of_discreteTopology
-    have hsource : Continuous fun p : R × DiscreteCoind G U.toSubgroup A.obj.V =>
-        p.1 • p.2 := continuous_smul
-    have h := he.comp (hsource.comp (continuous_fst.prodMk (he'.comp continuous_snd)))
-    have heq : (fun p : R × V => p.1 • p.2) =
-        fun p => e (p.1 • e.symm p.2) := by
-      funext p
-      symm
-      exact (e.map_smul p.1 (e.symm p.2)).trans
-        (congrArg (p.1 • ·) (e.apply_symm_apply p.2))
-    rw [heq]
-    exact h
-  letI : ContinuousSMul G V := by
-    constructor
-    have he : Continuous e := continuous_of_discreteTopology
-    have he' : Continuous e.symm := continuous_of_discreteTopology
-    have hsource : Continuous fun p : G × DiscreteCoind G U.toSubgroup A.obj.V =>
-        p.1 • p.2 := continuous_smul
-    have h := he.comp (hsource.comp (continuous_fst.prodMk (he'.comp continuous_snd)))
-    have heq : (fun p : G × V => p.1 • p.2) =
-        fun p => e (p.1 • e.symm p.2) :=
-      funext fun p ↦ e.symm.toEquiv.smul_def p.1 p.2
-    rw [heq]
-    exact h
+  -- Both actions on `V` are transported along the single map `e.symm`, a homeomorphism because
+  -- both sides are discrete. Each continuity statement is therefore one instance of
+  -- `Topology.IsInducing.continuousSMul` along `e.symm`, acting as the identity on scalars.
+  let h : V ≃ₜ DiscreteCoind G U.toSubgroup A.obj.V :=
+    { toEquiv := e.symm.toEquiv
+      continuous_toFun := continuous_of_discreteTopology
+      continuous_invFun := continuous_of_discreteTopology }
+  letI : ContinuousSMul R V :=
+    -- `by exact` defers `LinearEquiv.map_smul` until instance synthesis has fixed which scalar
+    -- action on `DiscreteCoind` the transport is taken along.
+    h.isInducing.continuousSMul continuous_id fun {r f} => by exact e.symm.map_smul r f
+  letI : ContinuousSMul G V :=
+    h.isInducing.continuousSMul continuous_id fun {g f} => by
+      rw [e.symm.toEquiv.smul_def g f]
+      exact e.symm_apply_apply _
   exact { V := V }
 
 /-- The representation carried by `algebraicCoindDiscreteRep` is Mathlib's
