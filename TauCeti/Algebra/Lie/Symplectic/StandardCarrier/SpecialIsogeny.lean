@@ -26,10 +26,8 @@ square relation below are the symplectic-group statements read through that iden
 
 ## Main definitions
 
-* `TauCeti.SpStd.pointsMulEquivGLSymplecticFin`: the identification of the rank-two carrier's
-  points with the symplectic group. Both directions of it are read on the underlying
-  matrices by `TauCeti.SpStd.coe_pointsMulEquivGLSymplecticFin_apply` and
-  `TauCeti.SpStd.coe_pointsMulEquivGLSymplecticFin_symm_apply`, so no consumer unfolds it.
+* `TauCeti.SpStd.pointsMulEquivGLSymplecticFin`: the all-rank identification of the carrier's
+  points with the symplectic group, specialized here to rank two.
 * `TauCeti.SpStd.specialIsogeny`: the special isogeny of the carrier in characteristic two.
 
 ## Main results
@@ -64,33 +62,12 @@ universe v
 
 variable (K : Type v) [Field K]
 
-/-- The rank-two carrier's points are the symplectic group. -/
-noncomputable def pointsMulEquivGLSymplecticFin :
-    points 1 K ≃* GLSymplecticFin 2 K :=
-  MulEquiv.subgroupCongr (points_eq_GLSymplecticFin 1)
-
-/-- The symplectic element underlying a point of the carrier is that point. -/
-@[simp]
-theorem coe_pointsMulEquivGLSymplecticFin_apply (g : points 1 K) :
-    ((pointsMulEquivGLSymplecticFin K g : GLSymplecticFin 2 K) :
-        GL (Fin (1 + 1 + (1 + 1))) K) = (g : GL (Fin (1 + 1 + (1 + 1))) K) := by
-  rw [pointsMulEquivGLSymplecticFin]
-  rfl
-
-/-- The points of the carrier underlying a symplectic element are that element. -/
-@[simp]
-theorem coe_pointsMulEquivGLSymplecticFin_symm_apply (g : GLSymplecticFin 2 K) :
-    (((pointsMulEquivGLSymplecticFin K).symm g : points 1 K) :
-        GL (Fin (1 + 1 + (1 + 1))) K) = (g : GL (Fin (2 + 2)) K) := by
-  rw [pointsMulEquivGLSymplecticFin]
-  rfl
-
 variable [CharP K 2]
 
 /-- **The special isogeny of the rank-two type-`C` carrier in characteristic two.** -/
 noncomputable def specialIsogeny : points 1 K →* points 1 K :=
-  (pointsMulEquivGLSymplecticFin K).symm.toMonoidHom.comp
-    ((TauCeti.specialIsogeny (R := K)).comp (pointsMulEquivGLSymplecticFin K).toMonoidHom)
+  (pointsMulEquivGLSymplecticFin 1 K).symm.toMonoidHom.comp
+    ((TauCeti.specialIsogeny (R := K)).comp (pointsMulEquivGLSymplecticFin 1 K).toMonoidHom)
 
 /-- The matrix of the carrier's special isogeny is the matrix of `2 × 2` minors. -/
 @[simp]
@@ -99,22 +76,25 @@ theorem coe_specialIsogeny (g : points 1 K) :
         Matrix (Fin (1 + 1 + (1 + 1))) (Fin (1 + 1 + (1 + 1))) K) =
       Matrix.symplecticSpecialIsogeny ((g : GL (Fin (1 + 1 + (1 + 1))) K) :
         Matrix (Fin (1 + 1 + (1 + 1))) (Fin (1 + 1 + (1 + 1))) K) := by
-  rw [specialIsogeny]
-  simp [pointsMulEquivGLSymplecticFin]
+  rw [specialIsogeny, MonoidHom.comp_apply, MonoidHom.comp_apply]
+  simp only [MulEquiv.coe_toMonoidHom]
+  rw [coe_pointsMulEquivGLSymplecticFin_symm_apply, TauCeti.coe_specialIsogeny,
+    coe_pointsMulEquivGLSymplecticFin_apply]
 
 /-- The special isogeny of the carrier, read in the symplectic group. -/
 theorem coe_specialIsogeny_gl (g : points 1 K) :
     ((specialIsogeny K g : points 1 K) : GL (Fin (1 + 1 + (1 + 1))) K) =
-      ((TauCeti.specialIsogeny (pointsMulEquivGLSymplecticFin K g) :
+      ((TauCeti.specialIsogeny (pointsMulEquivGLSymplecticFin 1 K g) :
         GLSymplecticFin 2 K) : GL (Fin (2 + 2)) K) := by
-  rw [specialIsogeny]
-  simp [pointsMulEquivGLSymplecticFin]
+  rw [specialIsogeny, MonoidHom.comp_apply, MonoidHom.comp_apply]
+  simp only [MulEquiv.coe_toMonoidHom]
+  rw [coe_pointsMulEquivGLSymplecticFin_symm_apply]
 
 /-- The identification intertwines the two special isogenies. -/
 @[simp]
 theorem pointsMulEquivGLSymplecticFin_specialIsogeny (g : points 1 K) :
-    pointsMulEquivGLSymplecticFin K (specialIsogeny K g) =
-      TauCeti.specialIsogeny (pointsMulEquivGLSymplecticFin K g) := by
+    pointsMulEquivGLSymplecticFin 1 K (specialIsogeny K g) =
+      TauCeti.specialIsogeny (pointsMulEquivGLSymplecticFin 1 K g) := by
   rw [specialIsogeny]
   simp
 
@@ -149,26 +129,18 @@ private theorem last_one : Fin.last 1 = (1 : Fin (1 + 1)) := rfl
 -- other, so they need the index pair of a difference short-root element to be all that matters.
 omit [CharP K 2] in
 private theorem shortRootUnit_eq (t : K) :
-    pointsMulEquivGLSymplecticFin K (rootSubgroupPoints 1 (.inl 0) K (Multiplicative.ofAdd t)) =
+    pointsMulEquivGLSymplecticFin 1 K
+        (rootSubgroupPoints 1 (.inl 0) K (Multiplicative.ofAdd t)) =
       GLSymplecticFin.differenceShortRootUnit (show (0 : Fin (1 + 1)) ≠ 1 by decide) t := by
-  rw [← GLSymplecticFin.differenceShortRootUnit_congr (lt_next 1 0 zero_ne_last).ne
-    (show (0 : Fin (1 + 1)) ≠ 1 by decide) rfl next_zero t]
-  apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFin_apply,
-    rootSubgroupPoints_inl_eq_differenceShortRootUnit_of_ne_last 1 0 zero_ne_last
-      (Multiplicative.ofAdd t)]
-  rfl
+  rw [pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_of_ne_last 1 0 zero_ne_last,
+    toAdd_ofAdd, GLSymplecticFin.differenceShortRootUnit_congr _ _ rfl next_zero]
 
 omit [CharP K 2] in
 private theorem longRootUnit_eq (t : K) :
-    pointsMulEquivGLSymplecticFin K
+    pointsMulEquivGLSymplecticFin 1 K
         (rootSubgroupPoints 1 (.inl (Fin.last 1)) K (Multiplicative.ofAdd t)) =
       GLSymplecticFin.positiveLongRootTransvectionUnit 1 t := by
-  rw [← last_one]
-  apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFin_apply,
-    rootSubgroupPoints_inl_last_eq_positiveLongRootTransvectionUnit 1 (Multiplicative.ofAdd t)]
-  rfl
+  rw [pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_last, toAdd_ofAdd, last_one]
 
 /-- The isogeny carries the short simple root subgroup to the long one, squaring the parameter. -/
 @[simp]
@@ -196,26 +168,18 @@ theorem specialIsogeny_rootSubgroupPoints_inl_last (t : K) :
 
 omit [CharP K 2] in
 private theorem negShortRootUnit_eq (t : K) :
-    pointsMulEquivGLSymplecticFin K (rootSubgroupPoints 1 (.inr 0) K (Multiplicative.ofAdd t)) =
+    pointsMulEquivGLSymplecticFin 1 K
+        (rootSubgroupPoints 1 (.inr 0) K (Multiplicative.ofAdd t)) =
       GLSymplecticFin.differenceShortRootUnit (show (1 : Fin (1 + 1)) ≠ 0 by decide) t := by
-  rw [← GLSymplecticFin.differenceShortRootUnit_congr (lt_next 1 0 zero_ne_last).ne'
-    (show (1 : Fin (1 + 1)) ≠ 0 by decide) next_zero rfl t]
-  apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFin_apply,
-    rootSubgroupPoints_inr_eq_differenceShortRootUnit_of_ne_last 1 0 zero_ne_last
-      (Multiplicative.ofAdd t)]
-  rfl
+  rw [pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inr_of_ne_last 1 0 zero_ne_last,
+    toAdd_ofAdd, GLSymplecticFin.differenceShortRootUnit_congr _ _ next_zero rfl]
 
 omit [CharP K 2] in
 private theorem negLongRootUnit_eq (t : K) :
-    pointsMulEquivGLSymplecticFin K
+    pointsMulEquivGLSymplecticFin 1 K
         (rootSubgroupPoints 1 (.inr (Fin.last 1)) K (Multiplicative.ofAdd t)) =
       GLSymplecticFin.negativeLongRootTransvectionUnit 1 t := by
-  rw [← last_one]
-  apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFin_apply,
-    rootSubgroupPoints_inr_last_eq_negativeLongRootTransvectionUnit 1 (Multiplicative.ofAdd t)]
-  rfl
+  rw [pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inr_last, toAdd_ofAdd, last_one]
 
 /-- The isogeny on the negative short simple root subgroup. -/
 @[simp]

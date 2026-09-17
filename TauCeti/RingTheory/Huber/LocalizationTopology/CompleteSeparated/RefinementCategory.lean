@@ -22,9 +22,8 @@ functor over the presentations whose rational subset lies in `V` — but no pres
 this file's imports, and refinement is the cofactor relation on presentation data: sufficient
 for containment of the rational subsets, and not proved equivalent to it.
 `TauCeti.ValuationSpectrum.existsUnique_continuous_ringHom_of_rationalSubset_subset` produces the
-comparison map from a containment alone, but only for targets in which the denominator is
-invertible and whose plus subring is open; refinement remains the route that works
-unconditionally.
+comparison map from a containment alone, when `A⁺` consists of power-bounded elements; refinement
+needs no such hypothesis.
 
 ## Main definitions
 

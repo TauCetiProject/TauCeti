@@ -5,10 +5,11 @@ Authors: Chris Birkbeck, Claude
 -/
 module
 
+public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.NumberTheory.HeckeRing.GL2.Delta0
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 
--- only the Γ₀ unit-entry lemma is needed, and only inside a proof
+-- the Γ₀ unit-entry lemma and `withCenter_le_Gamma0`, both only inside proofs
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 
 /-!
@@ -42,6 +43,8 @@ The Γ₀ pair corresponds to the AINTLIB
 ## Main results
 
 * `HeckeRing.GL2.Gamma0Image_le_Delta0`: `Γ₀(N) ≤ Δ₀(N)`.
+* `HeckeRing.GL2.map_withCenter_le_Delta0`: and `H·{±I} ≤ Δ₀(N)` for any `H ≤ Γ₀(N)`, the
+  centre being absorbed.
 * `HeckeRing.GL2.Delta0_le_commensurator_Gamma0Image`: `Δ₀(N)` lies in the commensurator of
   `Γ₀(N)`.
 * `HeckeRing.GL2.out_mem_glpos_of_delta0`: the chosen representative of a double coset of
@@ -93,13 +96,22 @@ lemma Gamma0Image_le_Delta0 : (Gamma0Image N).toSubmonoid ≤ Delta0 N := by
   · simp [mapGL_coe_matrix, algebraMap_int_eq]
   · rw [mapGL_coe_matrix, (SpecialLinearGroup.map (algebraMap ℤ ℚ) σ).prop]
     exact one_pos
-  · exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma0_mem.mp hσ)
+  · exact mem_Gamma0_iff_dvd.mp hσ
 
 /-- `Γ₀(N)` lands in `Δ₀(N)`: its elements are integral of determinant one, with lower-left
 entry divisible by `N` and upper-left entry a unit because `ad ≡ 1`. -/
 lemma mapGL_mem_Delta0 (γ : Gamma0 N) :
     (mapGL ℚ (γ : SL(2, ℤ)) : GL (Fin 2) ℚ) ∈ Delta0 N :=
   Gamma0Image_le_Delta0 N ((mem_Gamma0Image_iff N).mpr ⟨(γ : SL(2, ℤ)), γ.2, rfl⟩)
+
+/-- **`H·{±I} ≤ Δ₀(N)`** for any `H ≤ Γ₀(N)`, transported to the images in `GL₂(ℚ)`. Adjoining
+the centre costs nothing on the `Δ₀(N)` side, because `Γ₀(N)` already contains `-I` and so
+absorbs the central factor; `withCenter_le_Gamma0` is that step. This is what puts the enlarged
+group `Γ₁(N)·{±I}` — the one the Petersson layer sums over — into the same Hecke triple. -/
+lemma map_withCenter_le_Delta0 {H : Subgroup SL(2, ℤ)} (hH : H ≤ Gamma0 N) :
+    ((H.withCenter).map (mapGL ℚ)).toSubmonoid ≤ Delta0 N :=
+  fun _ hg ↦ Gamma0Image_le_Delta0 N ((mem_Gamma0Image_iff N).mpr
+    (Subgroup.mem_map.mp (Subgroup.map_mono (withCenter_le_Gamma0 hH) hg)))
 
 /-- The chosen representative of a double coset of `Δ₀(N)` has positive determinant, whatever the
 two flanking subgroups: `Δ₀(N)` consists of integral matrices of positive determinant. This is the
@@ -118,16 +130,10 @@ lemma out_mem_glpos_of_delta0 {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℚ)}
 
 variable [NeZero N]
 
-/-- `Γ₀(N)` is commensurable with `SL₂(ℤ)`: it has finite index in it. -/
-lemma commensurable_Gamma0Image_SLnZ : Commensurable (Gamma0Image N) (SLnZ 2) :=
-  commensurable_map_SLnZ 2 (Gamma0 N)
-
-/-- `Δ₀(N)` lies in the commensurator of `Γ₀(N)`: it lies in that of `SL₂(ℤ)`, and the two
-groups are commensurable. -/
+/-- `Δ₀(N)` lies in the commensurator of `Γ₀(N)`, the right-hand half of its Hecke triple. -/
 lemma Delta0_le_commensurator_Gamma0Image :
-    Delta0 N ≤ (commensurator (Gamma0Image N)).toSubmonoid := by
-  rw [Subgroup.Commensurable.eq (commensurable_Gamma0Image_SLnZ N)]
-  exact (Delta0_le_posDetInt N).trans (posDetInt_le_commensurator 2)
+    Delta0 N ≤ (commensurator (Gamma0Image N)).toSubmonoid :=
+  Delta0_le_commensurator_map N (Gamma0 N)
 
 /-- **The Hecke triple of `Γ₀(N)`**: `Γ₀(N) ≤ Δ₀(N) ≤ commensurator(Γ₀(N))` inside `GL₂(ℚ)` —
 the setting of Shimura §3.3, in which the Hecke ring `R(Γ₀(N), Δ₀(N))` is formed.

@@ -120,7 +120,7 @@ theorem primeCount_higherDegreePrimes_le (x : ℝ) :
     rw [hF, Finset.mem_filter, mem_normLE] at h𝔭
     refine Finset.mem_Icc.mpr ⟨(prime_rationalPrimeBelow 𝔭).two_le, Nat.le_floor ?_⟩
     have hsq : ((rationalPrimeBelow 𝔭 : ℝ)) ^ 2 ≤ x :=
-      le_trans (mod_cast sq_rationalPrimeBelow_le_absNorm h𝔭.2) h𝔭.1
+      le_trans (mod_cast rationalPrimeBelow_pow_le_absNorm (mem_higherDegreePrimes.mp h𝔭.2)) h𝔭.1
     exact (Real.le_sqrt (Nat.cast_nonneg _) (le_trans (by positivity) hsq)).mpr hsq
   have hcount : primeCount K (higherDegreePrimes K) x = ∑ _𝔭 ∈ F, (1 : ℝ) := by
     rw [primeCount_eq_card, hF, Finset.sum_const, nsmul_eq_mul, mul_one]
@@ -196,7 +196,8 @@ theorem sum_absNorm_rpow_higherDegreePrimes_le_finrank_mul_tsum {s : ℝ} (hs : 
     set a : ℝ := (rationalPrimeBelow 𝔭 : ℝ) with ha
     have ha1 : (1 : ℝ) ≤ a := by rw [ha]; exact_mod_cast (prime_rationalPrimeBelow 𝔭).one_lt.le
     have hle : a ^ (2 : ℕ) ≤ (Ideal.absNorm 𝔭.asIdeal : ℝ) := by
-      rw [ha]; exact_mod_cast sq_rationalPrimeBelow_le_absNorm (hF 𝔭 h𝔭)
+      rw [ha]
+      exact_mod_cast rationalPrimeBelow_pow_le_absNorm (mem_higherDegreePrimes.mp (hF 𝔭 h𝔭))
     have hpow : a ^ (-(2 * s)) = (a ^ (2 : ℕ)) ^ (-s) := by
       rw [← Real.rpow_natCast a 2, ← Real.rpow_mul (by linarith)]
       congr 1
