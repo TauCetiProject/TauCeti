@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.Topology.Separation.Regular
 
 /-!
@@ -14,7 +15,8 @@ import Mathlib.Topology.Separation.Regular
 A weak derivative on an open domain can be detected on all open subdomains whose closures
 are compact and contained in the domain. No boundary regularity or boundedness of the domain
 is needed. Thus completeness, local integrability, and the test-function identities defining
-the weak derivative can be verified on relatively compact subdomains.
+the weak derivative can be verified on relatively compact subdomains. The proof uses Mathlib's
+`exists_open_between_and_isCompact_closure` and `MeasureTheory.locallyIntegrableOn_iff`.
 
 ## Main results
 
@@ -47,18 +49,11 @@ theorem hasWeakLineDerivOn_iff_forall_isCompact_closure :
   · intro h
     have hc : CompleteSpace F :=
       (h ⊥ (by simp) (by simp)).completeSpace
-    have hli (w : E → F)
-        (hw : ∀ V : Opens E, IsCompact (closure (V : Set E)) →
-          closure (V : Set E) ⊆ Ω → LocallyIntegrableOn w V μ) :
-        LocallyIntegrableOn w Ω μ := by
-      refine (locallyIntegrableOn_iff Ω.isOpen.isLocallyClosed).2 ?_
-      intro K hKΩ hK
-      obtain ⟨V, hVo, hKV, hVΩ, hVc⟩ :=
-        exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
-      exact (hw ⟨V, hVo⟩ hVc hVΩ).integrableOn_compact_subset hKV hK
     refine hasWeakLineDerivOn_iff_testFunction.2 ⟨hc,
-      hli u (fun V hVc hVΩ => (h V hVc hVΩ).locallyIntegrableOn),
-      hli u' (fun V hVc hVΩ => (h V hVc hVΩ).locallyIntegrableOn_deriv), ?_⟩
+      locallyIntegrableOn_iff_forall_isCompact_closure.2
+        (fun V hVc hVΩ => (h V hVc hVΩ).locallyIntegrableOn),
+      locallyIntegrableOn_iff_forall_isCompact_closure.2
+        (fun V hVc hVΩ => (h V hVc hVΩ).locallyIntegrableOn_deriv), ?_⟩
     intro φ
     obtain ⟨V, hVo, hφV, hVΩ, hVc⟩ :=
       exists_open_between_and_isCompact_closure φ.hasCompactSupport Ω.isOpen φ.tsupport_subset
