@@ -28,8 +28,9 @@ For a number field `K`, write `P(s) = ∑_𝔭 N(𝔭) ^ (-s)` for the sum over 
 The proof has two inputs, and neither suffices alone.
 
 * **The Euler product.** For real `s > 1`, `log ζ_K(s)` is the convergent sum
-  `∑_𝔭 -log (1 - N(𝔭) ^ (-s))`, by `TauCeti.dedekindZeta_re_eq_exp`. Since `N(𝔭) ≥ 2`, every
-  local ratio `x = N(𝔭) ^ (-s)` lies in `(0, 1/2]`, where `x ≤ -log (1 - x) ≤ x + 2 x ^ 2`.
+  `∑_𝔭 -log (1 - N(𝔭) ^ (-s))`, by `TauCeti.log_dedekindZeta_re_eq_tsum_neg_log_one_sub`. Since
+  `N(𝔭) ≥ 2`, every local ratio `x = N(𝔭) ^ (-s)` lies in `(0, 1/2]`, where
+  `x ≤ -log (1 - x) ≤ x + 2 x ^ 2`.
   Summing, `log ζ_K(s)` differs from `P(s)` by at most `2 P(2)`, uniformly in `s > 1`: the higher
   prime powers contribute a bounded amount.
 * **The residue.** Mathlib's class number formula
@@ -83,7 +84,7 @@ height-one primes is at most the real logarithm of `ζ_K(s)`. -/
 theorem primeIdealZetaSum_univ_le_log_dedekindZeta_re {s : ℝ} (hs : 1 < s) :
     (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s ≤
       Real.log (dedekindZeta K s).re := by
-  rw [dedekindZeta_re_eq_exp hs, Real.log_exp, Set.primeIdealZetaSum_univ]
+  rw [log_dedekindZeta_re_eq_tsum_neg_log_one_sub hs, Set.primeIdealZetaSum_univ]
   exact (summable_absNorm_rpow_primes_of_one_lt hs).tsum_le_tsum
     (fun P ↦ Real.le_neg_log_one_sub (by linarith [absNorm_rpow_neg_le_half P hs.le]))
     (summable_neg_log_one_sub_absNorm_rpow hs)
@@ -97,7 +98,7 @@ theorem log_dedekindZeta_re_le_primeIdealZetaSum_univ_add {s : ℝ} (hs : 1 < s)
         2 * (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum 2 := by
   have hsum := summable_absNorm_rpow_primes_of_one_lt (K := K) hs
   have hsum2 := summable_absNorm_rpow_primes_of_one_lt (K := K) one_lt_two
-  rw [dedekindZeta_re_eq_exp hs, Real.log_exp, Set.primeIdealZetaSum_univ,
+  rw [log_dedekindZeta_re_eq_tsum_neg_log_one_sub hs, Set.primeIdealZetaSum_univ,
     Set.primeIdealZetaSum_univ, ← tsum_mul_left, ← hsum.tsum_add (hsum2.mul_left 2)]
   -- Termwise, `-log (1 - x) ≤ x + 2 x ^ 2` and `x ^ 2 = N(𝔭) ^ (-2 s) ≤ N(𝔭) ^ (-2)`.
   refine (summable_neg_log_one_sub_absNorm_rpow hs).tsum_le_tsum (fun P ↦ ?_)

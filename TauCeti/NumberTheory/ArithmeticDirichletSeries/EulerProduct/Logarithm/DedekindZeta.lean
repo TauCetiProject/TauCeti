@@ -31,10 +31,12 @@ positive real number, and that sum is its real logarithm.
   exponential of that real sum.
 * `TauCeti.dedekindZeta_re_eq_exp` and `TauCeti.dedekindZeta_re_pos`: the same for the real part,
   which is therefore positive.
+* `TauCeti.log_dedekindZeta_re_eq_tsum_neg_log_one_sub`: that real sum is the real logarithm of
+  `ζ_K(s)`.
 
 ## References
 
-* The real logarithmic identity is `log_dedekindZeta_re_eq_tsum_neg_log_one_sub` in the
+* The real logarithmic identity also appears, under the same name, in the
   Birkbeck–Brasca Chebotarev density project, <https://github.com/CBirkbeck/chebotarev-density>
   (Apache-2.0), commit `8575c9df1ae0a61120ab5c964c7911414254bec7`, file
   `CebotarevDensity/Density.lean`, where it is proved from `Real.hasProd_of_hasSum_log` and the
@@ -107,6 +109,14 @@ theorem dedekindZeta_re_eq_exp {s : ℝ} (hs : 1 < s) :
     (dedekindZeta K s).re = Real.exp (∑' P : HeightOneSpectrum (𝓞 K),
       -Real.log (1 - (Ideal.absNorm P.asIdeal : ℝ) ^ (-s))) := by
   rw [dedekindZeta_ofReal_eq_exp_tsum_neg_log_one_sub hs, Complex.ofReal_re]
+
+/-- **The real logarithm of the Dedekind zeta function.** For real `s > 1`, the real logarithm of
+`ζ_K(s)` is the convergent sum `∑_𝔭 -log (1 - N(𝔭) ^ (-s))` over the height-one primes of `𝓞 K`.
+-/
+theorem log_dedekindZeta_re_eq_tsum_neg_log_one_sub {s : ℝ} (hs : 1 < s) :
+    Real.log (dedekindZeta K s).re = ∑' P : HeightOneSpectrum (𝓞 K),
+      -Real.log (1 - (Ideal.absNorm P.asIdeal : ℝ) ^ (-s)) := by
+  rw [dedekindZeta_re_eq_exp hs, Real.log_exp]
 
 /-- For real `s > 1`, the real part of `ζ_K(s)` is positive. -/
 theorem dedekindZeta_re_pos {s : ℝ} (hs : 1 < s) : 0 < (dedekindZeta K s).re := by
