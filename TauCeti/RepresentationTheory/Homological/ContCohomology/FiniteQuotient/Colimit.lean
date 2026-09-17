@@ -109,10 +109,6 @@ deeper level.
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Cor. 6.5.6(a).
 -/
 
--- Provenance: the statements follow the human-authored roadmap
--- `TauCetiRoadmap/ProfiniteCohomology`, whose `README.md` and `Suggested.lean` fix the names and
--- the signatures used here.
-
 public section
 
 namespace TauCeti.ContCohomology
