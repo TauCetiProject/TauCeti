@@ -25,9 +25,9 @@ inclusions of sets, which is what makes the squeeze work.
 All of these are statements about the ratio for `s` close to `1` from the right, and on that
 side both inputs they need are available: for `1 < s` each partial sum is a genuine sum rather
 than the `tsum` junk value (`TauCeti.summable_absNorm_rpow_subtype_of_one_lt`), and the all-prime
-denominator is positive (`NumberField.Set.primeIdealZetaSum_univ_pos`). In particular nothing
-here uses the divergence of the all-prime sum at `s = 1`. That divergence is what makes a finite
-set of primes have density zero, and those finite-error statements are not proved here.
+denominator is positive (`NumberField.Set.primeIdealZetaSum_univ_pos_of_one_lt`). In particular
+nothing here uses the divergence of the all-prime sum at `s = 1`. That divergence is what makes a
+finite set of primes have density zero, and those finite-error statements are not proved here.
 
 ## Main results
 
@@ -73,7 +73,7 @@ theorem hasDirichletDensity_univ :
     HasDirichletDensity (Set.univ : Set (HeightOneSpectrum (𝓞 K))) 1 := by
   refine hasDirichletDensity_iff.2 <| tendsto_const_nhds.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with s (hs : 1 < s)
-  exact (div_self (primeIdealZetaSum_univ_pos hs).ne').symm
+  exact (div_self (primeIdealZetaSum_univ_pos_of_one_lt hs).ne').symm
 
 /-- The Dirichlet density of the set of all prime ideals is one. -/
 @[simp]
@@ -132,7 +132,7 @@ theorem HasDirichletDensity.compl (hS : HasDirichletDensity S δ) :
       (hasDirichletDensity_iff.1 hS) |>.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with s (hs : 1 < s)
   have hne : primeIdealZetaSum (Set.univ : Set (HeightOneSpectrum (𝓞 K))) s ≠ 0 :=
-    (primeIdealZetaSum_univ_pos hs).ne'
+    (primeIdealZetaSum_univ_pos_of_one_lt hs).ne'
   have hsplit : primeIdealZetaSum (Set.univ : Set (HeightOneSpectrum (𝓞 K))) s =
       primeIdealZetaSum S s + primeIdealZetaSum Sᶜ s := by
     have hdisj : ((↑({false, true} : Finset Bool)) : Set Bool).PairwiseDisjoint

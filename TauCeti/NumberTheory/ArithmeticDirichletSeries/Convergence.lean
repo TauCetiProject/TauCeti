@@ -36,8 +36,9 @@ value.  The results below supply it for every `s > 1` and every set of primes.
 * `NumberField.Set.primeIdealZetaSum_mono_set`: the prime ideal zeta sum is monotone under
   inclusion of sets of primes, given summability over the larger set;
   `NumberField.Set.primeIdealZetaSum_mono_set_of_one_lt` is its `1 < s` specialization.
-* `NumberField.Set.primeIdealZetaSum_pos`: for `1 < s`, the sum over a nonempty set of primes is
-  positive; `NumberField.Set.primeIdealZetaSum_univ_pos` applies this to all primes.
+* `NumberField.Set.primeIdealZetaSum_pos`: a summable sum over a nonempty set of primes is
+  positive; `NumberField.Set.primeIdealZetaSum_univ_pos` applies this to all primes. The
+  corresponding `_of_one_lt` lemmas supply summability from `1 < s`.
 
 ## Implementation notes
 
@@ -140,23 +141,36 @@ theorem primeIdealZetaSum_mono_set_of_one_lt {S T : Set (HeightOneSpectrum (𝓞
     {s : ℝ} (hs : 1 < s) : S.primeIdealZetaSum s ≤ T.primeIdealZetaSum s :=
   primeIdealZetaSum_mono_set hST (summable_absNorm_rpow_subtype_of_one_lt T hs)
 
-/-- **The prime ideal zeta sum over a nonempty set of primes is positive for `s > 1`.** Every term
-is positive, and for `1 < s` the sum is a genuine sum rather than the `tsum` junk value `0`. -/
+/-- **A summable prime ideal zeta sum over a nonempty set of primes is positive.** Every term is
+positive; summability ensures that the sum is genuine rather than the `tsum` junk value `0`. -/
 theorem primeIdealZetaSum_pos {S : Set (HeightOneSpectrum (𝓞 K))} (hS : S.Nonempty) {s : ℝ}
-    (hs : 1 < s) : 0 < S.primeIdealZetaSum s := by
+    (h : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)) :
+    0 < S.primeIdealZetaSum s := by
   obtain ⟨𝔭, h𝔭⟩ := hS
   rw [primeIdealZetaSum_def]
-  exact (summable_absNorm_rpow_subtype_of_one_lt S hs).tsum_pos (fun _ ↦ by positivity) ⟨𝔭, h𝔭⟩
+  exact h.tsum_pos (fun _ ↦ by positivity) ⟨𝔭, h𝔭⟩
     (Real.rpow_pos_of_pos (Nat.cast_pos.2 (Ideal.absNorm_pos_of_nonZeroDivisors
       ⟨_, mem_nonZeroDivisors_of_ne_zero 𝔭.ne_bot⟩)) _)
 
-/-- **The sum over all primes is positive for `s > 1`.** This is the denominator of the ratio
-defining `NumberField.Set.HasDirichletDensity`; the ring of integers is not a field, so it has a
-height-one prime. -/
-theorem primeIdealZetaSum_univ_pos {s : ℝ} (hs : 1 < s) :
+/-- The `1 < s` specialization of `primeIdealZetaSum_pos`, where summability is automatic. -/
+theorem primeIdealZetaSum_pos_of_one_lt {S : Set (HeightOneSpectrum (𝓞 K))} (hS : S.Nonempty)
+    {s : ℝ} (hs : 1 < s) : 0 < S.primeIdealZetaSum s :=
+  primeIdealZetaSum_pos hS (summable_absNorm_rpow_subtype_of_one_lt S hs)
+
+/-- **A summable sum over all primes is positive.** This is the denominator of the ratio defining
+`NumberField.Set.HasDirichletDensity`; the ring of integers is not a field, so it has a height-one
+prime. -/
+theorem primeIdealZetaSum_univ_pos {s : ℝ}
+    (h : Summable fun 𝔭 : (Set.univ : Set (HeightOneSpectrum (𝓞 K))) ↦
+      (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)) :
     0 < (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s := by
   obtain ⟨𝔭, -⟩ := (HeightOneSpectrum.ideal_ne_top_iff_exists
     (RingOfIntegers.not_isField K) (⊥ : Ideal (𝓞 K))).1 bot_ne_top
-  exact primeIdealZetaSum_pos ⟨𝔭, Set.mem_univ 𝔭⟩ hs
+  exact primeIdealZetaSum_pos ⟨𝔭, Set.mem_univ 𝔭⟩ h
+
+/-- The `1 < s` specialization of `primeIdealZetaSum_univ_pos`, where summability is automatic. -/
+theorem primeIdealZetaSum_univ_pos_of_one_lt {s : ℝ} (hs : 1 < s) :
+    0 < (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s :=
+  primeIdealZetaSum_univ_pos (summable_absNorm_rpow_subtype_of_one_lt Set.univ hs)
 
 end NumberField.Set
