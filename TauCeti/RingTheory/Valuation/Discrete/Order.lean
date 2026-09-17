@@ -203,6 +203,10 @@ theorem ord_sum_eq_of_forall_lt (v : _root_.Valuation F ℤᵐ⁰) {ι : Type*} 
     ord v (∑ i ∈ s, f i) = ord v (f j) := by
   rw [ord_def, ord_def, valuation_sum_eq_of_forall_ord_lt v hj hfj hlt]
 
+section ValueGroup
+
+variable {F : Type*} [Ring F]
+
 /-- Surjectivity of `v` makes its value group the whole of `ℤᵐ⁰`. -/
 theorem valueGroup_eq_top_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
     (hv : Function.Surjective v) : valueGroup (.ofClass v) = ⊤ :=
@@ -213,6 +217,10 @@ theorem nontrivial_valueGroup_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
     (hv : Function.Surjective v) : Nontrivial (valueGroup (.ofClass v)) := by
   rw [valueGroup_eq_top_of_surjective v hv]
   exact (Subgroup.topEquiv (G := ℤᵐ⁰ˣ)).toEquiv.nontrivial
+
+end ValueGroup
+
+variable {F : Type*} [Field F]
 
 /-- The valuation ring of a surjective `ℤᵐ⁰`-valued valuation is a DVR. -/
 theorem valuationSubring_isDiscreteValuationRing_of_surjective
