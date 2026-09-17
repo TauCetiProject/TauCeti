@@ -62,6 +62,9 @@ and only on isomorphism classes, since `swap1Inf` is an involution only up to re
   Mathematical Sciences 141, Springer 2004, §1.5.
 * E. Girondo, G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins d'Enfants*,
   London Mathematical Society Student Texts 79, Cambridge University Press 2012, §4.
+* Tau Ceti Project, [Belyi branch-point operations prototype][branch-point-prototype].
+
+[branch-point-prototype]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/318e636435644f93eea44901d3d75bd1e9204e1d/TauCetiRoadmap/BelyiMaps/Suggested.lean
 -/
 
 public section
