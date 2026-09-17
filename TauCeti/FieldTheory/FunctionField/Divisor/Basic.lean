@@ -57,6 +57,12 @@ lemma degree_apply (D : Divisor k F) :
   simpa only [degree] using
     WeilDivisor.weightedDegree_apply (fun P : Place k F => (P.degree : ℤ)) D
 
+/-- The degree of a function-field divisor is the formal weighted degree against the residue
+degrees; this is the bridge to the weight-generic `TauCeti.AlgebraicGeometry.WeilDivisor` API. -/
+lemma degree_eq_weightedDegree (D : Divisor k F) :
+    degree D = WeilDivisor.weightedDegree (fun P : Place k F => (P.degree : ℤ)) D := by
+  simp only [degree]
+
 /-- The support-indexed form of the degree sum. -/
 lemma degree_eq_sum_support (D : Divisor k F) :
     degree D = ∑ P ∈ D.support, D P * P.degree := by

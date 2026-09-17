@@ -32,7 +32,8 @@ work below is the passage from a lifting square to an extension.
 * `TauCeti.exists_continuous_eqOn_range_subset_image`: for a nonempty closed `s`, a map
   continuous on `s` extends to a continuous map on `X` whose range is still contained in the
   image of `s`.
-* `TauCeti.exists_continuous_eqOn`: the same for an arbitrary closed `s` and a nonempty target.
+* `TauCeti.exists_continuous_eqOn`: an ambient function continuous on an arbitrary closed `s`
+  agrees there with a continuous function on `X`, without a nonemptiness assumption.
 * `ContinuousMap.exists_restrict_eq_of_discrete` and
   `ContinuousMap.restrict_surjective_of_discrete`: the bundled form, for a closed set.
 * `ContinuousMap.exists_extension_of_discrete`: the bundled form, for a closed embedding.
@@ -45,8 +46,9 @@ form mirrors Mathlib's Tietze API; it lives in the root `ContinuousMap` namespac
 notation on a `C(s, Y)` reaches it, and carries an `_of_discrete` suffix to distinguish it from
 Mathlib's `TietzeExtension` form of the same statement.
 
-The nonemptiness hypotheses are not decoration. If `s` is empty and `Y` is empty while `X` is not,
+The bundled forms need a nonemptiness hypothesis. If `s` is empty and `Y` is empty while `X` is not,
 there is a continuous map on `s` and none on `X`, so one of `s` and `Y` has to be assumed nonempty.
+In the unbundled form, the ambient function `f : X → Y` already rules out this obstruction.
 
 Total disconnectedness of `X` is not decoration either. On the compact Hausdorff space
 `[0, 1] ⊆ ℝ` no map into a discrete space separates the two points of the closed subspace
@@ -98,12 +100,14 @@ theorem exists_continuous_eqOn_range_subset_image {f : X → Y} (hs : IsClosed s
     fun x hx => congrArg Subtype.val (congrFun hgf ⟨x, hx⟩),
     by rintro _ ⟨x, rfl⟩; exact (g x).2⟩
 
-/-- **Continuous extension from a closed subspace of a profinite space**, for an arbitrary closed
-subset and a nonempty discrete target. -/
-theorem exists_continuous_eqOn [Nonempty Y] {f : X → Y} (hs : IsClosed s)
+/-- **Continuous extension from a closed subspace of a profinite space**, for an ambient function
+continuous on an arbitrary closed subset. No nonemptiness hypothesis is needed. -/
+theorem exists_continuous_eqOn {f : X → Y} (hs : IsClosed s)
     (hf : ContinuousOn f s) : ∃ g : X → Y, Continuous g ∧ EqOn g f s := by
+  rcases isEmpty_or_nonempty X with hX | hX
+  · exact ⟨f, continuous_of_discreteTopology, fun _ _ => rfl⟩
   rcases s.eq_empty_or_nonempty with rfl | hsne
-  · exact ⟨fun _ => Classical.arbitrary Y, continuous_const, by simp⟩
+  · exact ⟨fun _ => f (Classical.arbitrary X), continuous_const, by simp⟩
   · obtain ⟨g, hg, hgf, -⟩ := exists_continuous_eqOn_range_subset_image hs hsne hf
     exact ⟨g, hg, hgf⟩
 

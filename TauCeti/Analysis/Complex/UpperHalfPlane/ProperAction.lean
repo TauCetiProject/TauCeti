@@ -6,7 +6,7 @@ Authors: The Tau Ceti authors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.ProperAction
-public import TauCeti.Analysis.Complex.UpperHalfPlane.PSLAction
+public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 public import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup
 
 /-!

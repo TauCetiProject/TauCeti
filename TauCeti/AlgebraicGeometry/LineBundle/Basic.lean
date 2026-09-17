@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTriviality
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 
 /-!
@@ -107,5 +107,23 @@ end InvertibleSheaf
 end
 
 end AlgebraicGeometry
+
+namespace SheafOfModules.LocalTrivializations
+
+universe u
+
+variable {X : AlgebraicGeometry.Scheme.{u}} {M : X.Modules} {U : X.Opens}
+
+/-- A free rank-one trivialization over an open is an isomorphism from the structure sheaf of
+the open subscheme to the restricted module sheaf. -/
+noncomputable def unitIsoRestrict
+    (e : _root_.SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U) :
+    _root_.SheafOfModules.unit (U : AlgebraicGeometry.Scheme).ringCatSheaf ≅
+      M.restrict (AlgebraicGeometry.Scheme.Opens.ι U) :=
+  (AlgebraicGeometry.Scheme.Modules.overEquiv U).functor.mapIso
+      ((TauCeti.SheafOfModules.freePUnitIsoUnit (X.ringCatSheaf.over U)).symm ≪≫ e) ≪≫
+    (AlgebraicGeometry.Scheme.Modules.overFunctorEquiv U).app M
+
+end SheafOfModules.LocalTrivializations
 
 end TauCeti

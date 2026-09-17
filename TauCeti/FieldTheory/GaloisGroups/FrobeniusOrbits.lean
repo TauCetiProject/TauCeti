@@ -35,7 +35,7 @@ compared with the cycle type of a permutation of the roots.
 
 ## References
 
-* [S. Lang, *Algebra*][lang2002], Chapter V, §5.
+* [S. Lang, *Algebra*][serge_lang_algebra], Chapter V, §5.
 -/
 
 public section

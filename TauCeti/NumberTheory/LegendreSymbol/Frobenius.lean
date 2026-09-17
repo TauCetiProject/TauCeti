@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import Mathlib.RingTheory.Frobenius
-public import Mathlib.RingTheory.Ideal.Int
 import TauCeti.RingTheory.Ideal.LiesOver
 
 /-!
@@ -45,15 +44,6 @@ namespace TauCeti
 variable {S : Type*} [CommRing S] {p : ℕ} [Fact p.Prime] {d : ℤ}
 
 omit [Fact p.Prime] in
-/-- The residue cardinality entering `AlgHom.IsArithFrobAt` over the rational prime `p` is `p`
-itself: for `Q` lying over `(p)`, `Nat.card (ℤ ⧸ Q ∩ ℤ) = p`. Internal plumbing for
-`apply_sqrt`. -/
-private theorem natCard_quotient_under (Q : Ideal S) [Q.LiesOver (span {(p : ℤ)})] :
-    Nat.card (ℤ ⧸ Q.under ℤ) = p := by
-  rw [← Ideal.LiesOver.over (P := Q) (p := span {(p : ℤ)})]
-  exact Int.card_ideal_quot p
-
-omit [Fact p.Prime] in
 /-- The base Frobenius congruence over a rational prime: for an arithmetic Frobenius
 `φ : S →ₐ[ℤ] S` at an ideal `Q` lying over `(p)`, `φ y ≡ y ^ p (mod Q)`, the exponent being `p`,
 the cardinality of the base residue ring `ℤ ⧸ Q ∩ ℤ`. Internal plumbing for `apply_sqrt`. -/
@@ -61,7 +51,7 @@ private theorem _root_.AlgHom.IsArithFrobAt.sub_pow_mem {φ : S →ₐ[ℤ] S}
     (H : φ.IsArithFrobAt Q)
     [Q.LiesOver (span {(p : ℤ)})] (y : S) : φ y - y ^ p ∈ Q := by
   have h := H y
-  rwa [natCard_quotient_under (p := p) Q] at h
+  rwa [Ideal.natCard_quotient_under_of_liesOver (p := p) Q] at h
 
 variable [IsDomain S] {Q : Ideal S} {x : S}
 

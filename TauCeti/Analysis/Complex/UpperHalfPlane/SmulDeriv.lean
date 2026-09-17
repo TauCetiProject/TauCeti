@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
-public import TauCeti.Analysis.Complex.UpperHalfPlane.PSLAction
+public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -81,11 +81,20 @@ def smulDeriv (q : PSL(2, ℝ)) (z : ℍ) : ℂ :=
       subst hb
       rw [Matrix.SpecialLinearGroup.denom_mapGL_neg, neg_sq]
 
+end Matrix.ProjectiveSpecialLinearGroup
+
+namespace Matrix.SpecialLinearGroup
+
 /-- The derivative of the transformation of a representative, in terms of its automorphy
 factor. -/
 @[simp]
 theorem smulDeriv_coe (g : SL(2, ℝ)) (z : ℍ) :
-    smulDeriv (g : PSL(2, ℝ)) z = (denom (mapGL ℝ g) (z : ℂ) ^ 2)⁻¹ := (rfl)
+    Matrix.ProjectiveSpecialLinearGroup.smulDeriv (g : PSL(2, ℝ)) z =
+      (denom (mapGL ℝ g) (z : ℂ) ^ 2)⁻¹ := (rfl)
+
+end Matrix.SpecialLinearGroup
+
+namespace Matrix.ProjectiveSpecialLinearGroup
 
 /-- A Möbius transformation of `ℍ` has nowhere vanishing derivative. -/
 @[simp]

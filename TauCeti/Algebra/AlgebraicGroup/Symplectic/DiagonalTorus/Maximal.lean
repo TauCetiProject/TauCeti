@@ -73,14 +73,8 @@ theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} R)
         (diagonalTorusDefiningIdeal R m) A =
       ((CommHopfAlgCat.mapPointsFunctor
         (diagonalTorusCoordinateMap (R := R) (m := m))).app A).hom.range := by
-  rw [diagonalTorusDefiningIdeal_eq_ker,
-    HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range]
-  apply congrArg MonoidHom.range
-  apply MonoidHom.ext
-  intro q
-  rw [AlgHom.mapDomain_apply]
-  exact (CommHopfAlgCat.mapPointsFunctor_app_apply
-    (diagonalTorusCoordinateMap (R := R) (m := m)) A q).symm
+  rw [diagonalTorusDefiningIdeal_eq_ker]
+  exact HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor _ _ A
 
 end CommRing
 
@@ -90,10 +84,7 @@ private theorem isReduced_quotient_diagonalTorusDefiningIdeal :
     IsReduced (CommHopfAlgCat.quotient (coordinateHopfAlgebra k m)
       (diagonalTorusDefiningIdeal k m)) := by
   rw [diagonalTorusDefiningIdeal_eq_ker]
-  let f := (diagonalTorusCoordinateMap (R := k) (m := m)).hom
-  let hf : Function.Surjective f := diagonalTorusCoordinateMap_surjective (R := k) (m := m)
-  let e := HopfIdeal.kerLiftBialgEquiv f hf
-  exact isReduced_of_injective e.toAlgEquiv.toRingEquiv.toRingHom e.injective
+  exact HopfIdeal.isReduced_quotient_kerOfSurjective _ _
 
 /-- A rational point of the split torus, read through the symplectic point equivalence, is the
 paired diagonal matrix of its coordinates. -/

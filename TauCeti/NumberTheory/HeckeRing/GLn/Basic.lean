@@ -40,6 +40,11 @@ modular forms); the AINTLIB `HeckePair` bundle is replaced by Mathlib's `IsHecke
 * `commensurable_map_SLnZ`: the image of a finite-index subgroup of `SL_n(ℤ)` is commensurable
   with `SL_n(ℤ)` — the step by which each congruence subgroup inherits Lemma 3.10 and so sits
   in a Hecke triple of its own.
+* `mem_doubleCoset_of_intMatrix_eq_of_mem`: double-coset membership from an integral identity
+  `τ * A * δ = B` between the witnesses, for any two subgroups containing the images of `τ` and
+  `δ`. `mem_doubleCoset_SLnZ_of_intMatrix_eq` is its `SL_n(ℤ)` case, and
+  `det_eq_of_mem_doubleCoset_of_le_SLnZ` extracts the determinant invariant in the other
+  direction.
 * the `IsHeckeTriple (posDetInt n) (SLnZ n) (SLnZ n)` instance, and the
   Hecke ring `IntegralHeckeRing n` it founds.
 
@@ -133,23 +138,38 @@ lemma eq_mapGL_mul_mul_mapGL_of_intMatrix_eq (τ δ : SpecialLinearGroup (Fin n)
     h = mapGL ℚ τ * g * mapGL ℚ δ :=
   Units.ext (by rw [hB, ← hτδ, ← mapGL_mul_coe_eq_intMatrix n τ δ g A hA])
 
-/-- **Double-coset membership from an integral equivalence.** Determinant-one integral matrices
-relating the witnesses of `g` and `h` put `h` in the `SL_n(ℤ)`-double coset of `g`.
+/-- **Double-coset membership from an integral equivalence.** Integral matrices of determinant
+one relating the witnesses of `g` and `h` put `h` in the `H₁`-`H₂`-double coset of `g`, for any
+two subgroups containing the images of those matrices.
 
 This is the shape every "same double coset" argument ends in: the work is done over `ℤ`, by
 exhibiting the two determinant-one factors, and this converts that into the membership
-statement.
-`det_eq_of_mem_doubleCoset_SLnZ` is the companion in the other direction, extracting the
+statement. Nothing forces the subgroups to be `SL_n(ℤ)` — all that is used is that each factor
+lies in its own subgroup, which is a hypothesis here, so the lemma applies equally to images of
+congruence subgroups.
+`det_eq_of_mem_doubleCoset_of_le_SLnZ` is the companion in the other direction, extracting the
 determinant invariant from such a membership. -/
+lemma mem_doubleCoset_of_intMatrix_eq_of_mem {H₁ H₂ : Subgroup (GL (Fin n) ℚ)}
+    (τ δ : SpecialLinearGroup (Fin n) ℤ) (hτ : mapGL ℚ τ ∈ H₁) (hδ : mapGL ℚ δ ∈ H₂)
+    (g h : GL (Fin n) ℚ) (A B : Matrix (Fin n) (Fin n) ℤ)
+    (hA : (↑g : Matrix (Fin n) (Fin n) ℚ) = A.map (Int.cast : ℤ → ℚ))
+    (hB : (↑h : Matrix (Fin n) (Fin n) ℚ) = B.map (Int.cast : ℤ → ℚ))
+    (hτδ : (τ : Matrix (Fin n) (Fin n) ℤ) * A * (δ : Matrix (Fin n) (Fin n) ℤ) = B) :
+    h ∈ DoubleCoset.doubleCoset g H₁ H₂ :=
+  DoubleCoset.mem_doubleCoset.mpr
+    ⟨mapGL ℚ τ, hτ, mapGL ℚ δ, hδ,
+      eq_mapGL_mul_mul_mapGL_of_intMatrix_eq n τ δ g h A B hA hB hτδ⟩
+
+/-- The `SL_n(ℤ)` case of `mem_doubleCoset_of_intMatrix_eq_of_mem`, where the two factors lie in
+the subgroups for free. -/
 lemma mem_doubleCoset_SLnZ_of_intMatrix_eq (τ δ : SpecialLinearGroup (Fin n) ℤ)
     (g h : GL (Fin n) ℚ) (A B : Matrix (Fin n) (Fin n) ℤ)
     (hA : (↑g : Matrix (Fin n) (Fin n) ℚ) = A.map (Int.cast : ℤ → ℚ))
     (hB : (↑h : Matrix (Fin n) (Fin n) ℚ) = B.map (Int.cast : ℤ → ℚ))
     (hτδ : (τ : Matrix (Fin n) (Fin n) ℤ) * A * (δ : Matrix (Fin n) (Fin n) ℤ) = B) :
     h ∈ DoubleCoset.doubleCoset g (SLnZ n) (SLnZ n) :=
-  DoubleCoset.mem_doubleCoset.mpr
-    ⟨mapGL ℚ τ, coe_mem_SLnZ n τ, mapGL ℚ δ, coe_mem_SLnZ n δ,
-      eq_mapGL_mul_mul_mapGL_of_intMatrix_eq n τ δ g h A B hA hB hτδ⟩
+  mem_doubleCoset_of_intMatrix_eq_of_mem n τ δ (coe_mem_SLnZ n τ) (coe_mem_SLnZ n δ)
+    g h A B hA hB hτδ
 
 /-- The case of coefficient subgroups inside `SL_n(ℤ)`, which is how the congruence subgroups
 get it. -/

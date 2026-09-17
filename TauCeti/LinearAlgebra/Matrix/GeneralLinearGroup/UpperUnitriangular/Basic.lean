@@ -175,11 +175,9 @@ variable [CommRing R]
 /-- Applying a ring homomorphism entrywise gives the base-change homomorphism between
 upper-unitriangular groups. -/
 def map {S : Type*} [CommRing S] (f : R →+* S) :
-    upperUnitriangularGroup m R →* upperUnitriangularGroup m S where
-  toFun g := ⟨Matrix.GeneralLinearGroup.map (n := m) f g,
-    (isUpperUnitriangular g).map f⟩
-  map_one' := Subtype.ext (map_one _)
-  map_mul' g h := Subtype.ext ((Matrix.GeneralLinearGroup.map (n := m) f).map_mul g h)
+    upperUnitriangularGroup m R →* upperUnitriangularGroup m S :=
+  ((Matrix.GeneralLinearGroup.map f).domRestrict (upperUnitriangularGroup m R)).codRestrict
+    (upperUnitriangularGroup m S) fun g ↦ (isUpperUnitriangular g).map f
 
 /-- The underlying `GLₘ` element of base change is Mathlib's base change map. -/
 @[simp]
@@ -187,7 +185,7 @@ theorem coe_map {S : Type*} [CommRing S] (f : R →+* S)
     (g : upperUnitriangularGroup m R) :
     ((map f g : upperUnitriangularGroup m S) : GL m S) =
       Matrix.GeneralLinearGroup.map f g :=
-  by simp [map]
+  by rfl
 
 /-- Base change acts entrywise on upper-unitriangular matrices. -/
 theorem map_apply {S : Type*} [CommRing S] (f : R →+* S)
@@ -199,7 +197,7 @@ theorem map_apply {S : Type*} [CommRing S] (f : R →+* S)
 @[simp]
 theorem map_id :
     map (m := m) (RingHom.id R) = MonoidHom.id (upperUnitriangularGroup m R) := by
-  ext g i j
+  ext x i j
   simp only [map_apply, RingHom.id_apply, MonoidHom.id_apply]
 
 /-- Successive base changes agree with base change along the composite ring homomorphism. -/
@@ -207,12 +205,8 @@ theorem map_id :
 theorem map_comp {S T : Type*} [CommRing S] [CommRing T]
     (f : R →+* S) (g : S →+* T) :
     map (m := m) (g.comp f) = (map (m := m) g).comp (map (m := m) f) := by
-  apply MonoidHom.ext
-  intro x
-  apply Subtype.ext
-  ext i j
-  simp only [map_apply, RingHom.coe_comp, Function.comp_apply,
-    MonoidHom.coe_comp]
+  ext x i j
+  simp only [map_apply, RingHom.coe_comp, Function.comp_apply, MonoidHom.coe_comp]
 
 /-- The natural linear action of every upper-unitriangular matrix is unipotent. -/
 theorem isUnipotent_toLin (g : upperUnitriangularGroup m R) :
