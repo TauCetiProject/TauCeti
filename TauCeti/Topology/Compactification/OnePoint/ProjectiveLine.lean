@@ -21,8 +21,9 @@ It then equips `OnePoint K` with the action of the projective special linear gro
 (`OnePoint.pslMk_smul`); the action is faithful and transitive. For `K = ℝ` this is the action of
 `PSL(2, ℝ)` on the ideal boundary of the upper half-plane.
 
-A parabolic element `g` of `PSL(2, K)` (`Matrix.ProjectiveSpecialLinearGroup.IsParabolic`) has
-exactly one fixed point, `parabolicFixedPoint g`, the descent of Mathlib's
+When `K` has characteristic other than two (`[NeZero (2 : K)]`), a parabolic element `g` of
+`PSL(2, K)` (`Matrix.ProjectiveSpecialLinearGroup.IsParabolic`) has exactly one fixed point,
+`parabolicFixedPoint g`, the descent of Mathlib's
 `Matrix.GeneralLinearGroup.parabolicFixedPoint`. A parabolic element fixing `∞` is a nonzero
 translation, and so a parabolic element is conjugate to a translation by any `σ` carrying `∞` to
 its fixed point. This normal form is where the cusps of a Fuchsian group are measured from: the
@@ -34,12 +35,12 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
   `g 1 0 * k + g 1 1` vanishes.
 * `OnePoint.instMulActionPSL`: the action of `PSL(2, K)` on `OnePoint K`, with `pslMk_smul`.
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic.smul_eq_self_iff`: a parabolic element fixes
-  a point exactly when it is `parabolicFixedPoint g`.
+  a point exactly when it is `parabolicFixedPoint g` (in characteristic other than two).
 * `Matrix.ProjectiveSpecialLinearGroup.isParabolic_iff_exists_eq_upperRightHom`: an element
   fixing `∞` is parabolic exactly when it is a nonzero translation.
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic.exists_conj_eq_upperRightHom` and
   `Matrix.ProjectiveSpecialLinearGroup.isParabolic_iff_exists_conj_upperRightHom`: the parabolic
-  elements are exactly the conjugates of nonzero translations.
+  elements are exactly the conjugates of nonzero translations (in characteristic other than two).
 
 ## References
 

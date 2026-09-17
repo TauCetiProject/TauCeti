@@ -32,7 +32,8 @@ them; that classification, which runs through the action on the projective line,
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic`: an element of `PSL(2, R)` is parabolic when
   it has a parabolic representative, and `isParabolic_mk_iff`: then every representative is.
 * `Matrix.ProjectiveSpecialLinearGroup.isParabolic_conj_iff`: parabolicity is invariant under
-  conjugation, and `IsParabolic.pow`: under nonzero powers in characteristic zero.
+  conjugation, `isParabolic_inv_iff`: under inversion, and `IsParabolic.pow`, `IsParabolic.zpow`:
+  under nonzero powers in characteristic zero.
 * `Matrix.ProjectiveSpecialLinearGroup.upperRightHom`: the translations `x ↦ !![1, x; 0, 1]`, as
   an injective additive character `R → PSL(2, R)`, parabolic exactly away from `x = 0`
   (`isParabolic_upperRightHom_iff`).
@@ -58,10 +59,6 @@ variable {R : Type*} [CommRing R]
 (`Matrix.ProjectiveSpecialLinearGroup.isParabolic_mk_iff`). -/
 def IsParabolic (g : PSL(2, R)) : Prop :=
   ∃ a : SL(2, R), (a : PSL(2, R)) = g ∧ (a : GL (Fin 2) R).IsParabolic
-
-theorem isParabolic_def {g : PSL(2, R)} :
-    IsParabolic g ↔ ∃ a : SL(2, R), (a : PSL(2, R)) = g ∧ (a : GL (Fin 2) R).IsParabolic :=
-  Iff.rfl
 
 variable [NoZeroDivisors R]
 
@@ -95,6 +92,7 @@ theorem isParabolic_conj_iff' (g h : PSL(2, R)) :
   simpa using isParabolic_conj_iff g⁻¹ h
 
 /-- The identity of `PSL(2, R)` is not parabolic: a parabolic matrix is not scalar. -/
+@[simp]
 theorem not_isParabolic_one : ¬ IsParabolic (1 : PSL(2, R)) := by
   rw [← QuotientGroup.mk_one, isParabolic_mk_iff, map_one]
   exact fun h ↦ h.1 ⟨1, by simp⟩
@@ -103,12 +101,36 @@ theorem IsParabolic.ne_one {g : PSL(2, R)} (hg : IsParabolic g) : g ≠ 1 := by
   rintro rfl
   exact not_isParabolic_one hg
 
+/-- Parabolicity is invariant under inversion in `PSL(2, R)`: the inverse of a matrix of
+`SL(2, R)` is its adjugate, which has the same trace and is scalar exactly when the matrix is. -/
+@[simp]
+theorem isParabolic_inv_iff {g : PSL(2, R)} : IsParabolic g⁻¹ ↔ IsParabolic g := by
+  induction g using QuotientGroup.induction_on with | H a => ?_
+  rw [← QuotientGroup.mk_inv, isParabolic_mk_iff, isParabolic_mk_iff]
+  have hscalar (m : Matrix (Fin 2) (Fin 2) R) :
+      m ∈ Set.range (scalar (Fin 2)) ↔ m 0 1 = 0 ∧ m 1 0 = 0 ∧ m 0 0 = m 1 1 := by
+    refine ⟨by rintro ⟨r, rfl⟩; simp, fun ⟨h01, h10, h00⟩ ↦ ⟨m 0 0, ?_⟩⟩
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [h01, h10, h00]
+  simp only [GeneralLinearGroup.IsParabolic, SpecialLinearGroup.coe_GL_coe_matrix,
+    SpecialLinearGroup.coe_inv, Matrix.IsParabolic, hscalar, Matrix.discr_fin_two,
+    Matrix.adjugate_fin_two, Matrix.trace_fin_two, Matrix.det_fin_two]
+  simp [eq_comm, and_comm, add_comm, mul_comm]
+
+alias ⟨_, IsParabolic.inv⟩ := isParabolic_inv_iff
+
 /-- A nonzero power of a parabolic element of `PSL(2, K)` is parabolic. -/
 theorem IsParabolic.pow {K : Type*} [Field K] [CharZero K] {g : PSL(2, K)} (hg : IsParabolic g)
     {n : ℕ} (hn : n ≠ 0) : IsParabolic (g ^ n) := by
   induction g using QuotientGroup.induction_on with | H a => ?_
   rw [← QuotientGroup.mk_pow, isParabolic_mk_iff, map_pow]
   exact ((isParabolic_mk_iff a).mp hg).pow hn
+
+/-- A nonzero integer power of a parabolic element of `PSL(2, K)` is parabolic. -/
+theorem IsParabolic.zpow {K : Type*} [Field K] [CharZero K] {g : PSL(2, K)} (hg : IsParabolic g)
+    {n : ℤ} (hn : n ≠ 0) : IsParabolic (g ^ n) := by
+  obtain ⟨m, rfl | rfl⟩ := n.eq_nat_or_neg <;>
+    simpa only [zpow_neg, zpow_natCast, isParabolic_inv_iff] using hg.pow (by simpa using hn)
 
 omit [NoZeroDivisors R] in
 /-- The translation `upperRightHom x ∈ PSL(2, R)`, the class of the transvection
@@ -129,8 +151,9 @@ theorem upperRightHom_apply (x : R) :
   (rfl)
 
 omit [NoZeroDivisors R] in
-/-- Distinct translations are distinct in `PSL(2, R)`: two transvections differing by a central
-factor are equal. -/
+/-- Distinct translations are distinct in `PSL(2, R)`: if the classes of two transvections are
+equal, then the transvections differ by a central factor, and comparing upper-right entries shows
+that their parameters are equal. -/
 theorem upperRightHom_injective : Function.Injective (upperRightHom : AddChar R PSL(2, R)) := by
   intro x y h
   rw [upperRightHom_apply, upperRightHom_apply, QuotientGroup.eq,
