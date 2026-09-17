@@ -95,10 +95,10 @@ theorem affineCoordinateRingMap_comp (hi : IsIntegralLattice i)
     (f : N →+ N') (f' : N' →+ N'') (g : V →ₗ[ℝ] V') (g' : V' →ₗ[ℝ] V'')
     (hfg : ∀ n, g (i n) = i' (f n)) (hf'g' : ∀ n, g' (i' n) = i'' (f' n))
     (hστ : Set.MapsTo g σ τ) (hτυ : Set.MapsTo g' τ υ) :
-    affineCoordinateRingMap hi hi'' (f'.comp f) (g'.comp g)
-        (fun n ↦ by simp [hfg, hf'g']) (hτυ.comp hστ) =
-      (affineCoordinateRingMap hi hi' f g hfg hστ).comp
-        (affineCoordinateRingMap hi' hi'' f' g' hf'g' hτυ) := by
+    (affineCoordinateRingMap hi hi' f g hfg hστ).comp
+        (affineCoordinateRingMap hi' hi'' f' g' hf'g' hτυ) =
+      affineCoordinateRingMap hi hi'' (f'.comp f) (g'.comp g)
+        (fun n ↦ by simp [hfg, hf'g']) (hτυ.comp hστ) := by
   refine MonoidAlgebra.algHom_ext (fun m ↦ ?_) (by ext)
   obtain ⟨m, rfl⟩ := ofAdd.surjective m
   simp [dualSemigroupMap_comp hi hi' hi'' f f' g g' hfg hf'g' hστ hτυ]
@@ -158,7 +158,7 @@ theorem affineToricSchemeMap_comp (hi : IsIntegralLattice i)
     ← Spec.map_comp, ← CommRingCat.ofHom_comp]
   congr 1
   exact congrArg CommRingCat.ofHom <| congrArg AlgHom.toRingHom
-    (affineCoordinateRingMap_comp hi hi' hi'' f f' g g' hfg hf'g' hστ hτυ).symm
+    (affineCoordinateRingMap_comp hi hi' hi'' f f' g g' hfg hf'g' hστ hτυ)
 
 end Scheme
 
