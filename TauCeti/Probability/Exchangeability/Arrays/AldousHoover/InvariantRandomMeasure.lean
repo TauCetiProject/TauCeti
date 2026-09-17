@@ -67,8 +67,7 @@ theorem SeparatelyExchangeable.exists_directing_arrayRow_codedCoordinateMarginal
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     ∃ ν : Ω → ProbabilityMeasure (ℕ → α),
       ConditionallyIIDWith μ (arrayRow X) ν ∧
-        ConditionallyIID (μ.map ν) fun i P =>
-          TauCeti.ProbabilityMeasure.codedCoordinateMarginals P i := by
+        ConditionallyIID (μ.map ν) fun i P => codedCoordinateMarginals P i := by
   obtain ⟨ν, hν, hinv⟩ := h.exists_directing_arrayRow_mixingLaw_invariant hX
   have hinv' : ∀ τ : Equiv.Perm ℕ,
       (μ.map ν).map (fun P => P.map (permReindex τ)) = μ.map ν := by
@@ -82,8 +81,7 @@ theorem SeparatelyExchangeable.exists_directing_arrayRow_codedCoordinateMarginal
       congr 1
     rw [hcomp]
     exact hinv τ
-  exact ⟨ν, hν,
-    TauCeti.Measure.conditionallyIID_codedCoordinateMarginals_of_invariant (μ.map ν) hinv'⟩
+  exact ⟨ν, hν, conditionallyIID_codedCoordinateMarginals_of_invariant (μ.map ν) hinv'⟩
 
 end Probability
 

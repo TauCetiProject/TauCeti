@@ -44,17 +44,17 @@ one-coordinate pushforwards, not its higher finite-dimensional marginals.
 
 ## Main definitions and results
 
-* `TauCeti.ProbabilityMeasure.coordinateMarginals` -- the path of one-coordinate marginals of a
+* `TauCeti.Probability.coordinateMarginals` -- the path of one-coordinate marginals of a
   path law;
-* `TauCeti.ProbabilityMeasure.coordinateMarginals_map_permReindex` -- equivariance under coordinate
+* `TauCeti.Probability.coordinateMarginals_map_permReindex` -- equivariance under coordinate
   permutations;
-* `TauCeti.Measure.exchangeable_coordinateMarginals_of_invariant` -- an invariant law of
+* `TauCeti.Probability.exchangeable_coordinateMarginals_of_invariant` -- an invariant law of
   random path measures gives an exchangeable measure-valued sequence;
-* `TauCeti.ProbabilityMeasure.codedCoordinateMarginals` -- the same marginals in a standard Borel
+* `TauCeti.Probability.codedCoordinateMarginals` -- the same marginals in a standard Borel
   code;
-* `TauCeti.Measure.conditionallyIID_codedCoordinateMarginals_of_invariant` -- the
+* `TauCeti.Probability.conditionallyIID_codedCoordinateMarginals_of_invariant` -- the
   corresponding conditional de Finetti factorization;
-* `TauCeti.Measure.exists_pathLaw_codedCoordinateMarginals_eq_map_unitIntervalCoding` -- the
+* `TauCeti.Probability.exists_pathLaw_codedCoordinateMarginals_eq_map_unitIntervalCoding` -- the
   functional representation by a global parameter and independent coordinate noise.
 
 ## References
@@ -77,9 +77,9 @@ open scoped ENNReal
 
 namespace TauCeti
 
-open Probability
+namespace Probability
 
-namespace ProbabilityMeasure
+open TauCeti.MeasureTheory
 
 variable {α : Type*} [MeasurableSpace α]
 
@@ -98,7 +98,7 @@ theorem measurable_coordinateMarginals :
     Measurable (coordinateMarginals : ProbabilityMeasure (ℕ → α) →
       ℕ → ProbabilityMeasure α) :=
   Measurable.of_eval fun i =>
-    TauCeti.MeasureTheory.measurable_probabilityMeasure_map (measurable_pi_apply i)
+    measurable_probabilityMeasure_map (measurable_pi_apply i)
 
 /-- Coordinate marginals are equivariant under a permutation of path coordinates. -/
 @[simp]
@@ -119,22 +119,22 @@ theorem coordinateMarginals_map_permReindex (P : ProbabilityMeasure (ℕ → α)
 injective code for probability measures on a countably generated space. -/
 def codedCoordinateMarginals [MeasurableSpace.CountablyGenerated α]
     (P : ProbabilityMeasure (ℕ → α)) :
-    ℕ → (ProbabilityMeasure.codeIndex α → ℝ≥0∞) :=
-  fun i => ProbabilityMeasure.code (coordinateMarginals P i)
+    ℕ → (probabilityMeasureCodeIndex α → ℝ≥0∞) :=
+  fun i => probabilityMeasureCode (coordinateMarginals P i)
 
 /-- Evaluation of a coded coordinate marginal. -/
 @[simp]
 theorem codedCoordinateMarginals_apply [MeasurableSpace.CountablyGenerated α]
     (P : ProbabilityMeasure (ℕ → α)) (i : ℕ) :
     codedCoordinateMarginals P i =
-      ProbabilityMeasure.code (coordinateMarginals P i) :=
+      probabilityMeasureCode (coordinateMarginals P i) :=
   (rfl)
 
 /-- The path of coded coordinate marginals is measurable. -/
 theorem measurable_codedCoordinateMarginals [MeasurableSpace.CountablyGenerated α] :
     Measurable (codedCoordinateMarginals (α := α)) :=
   Measurable.of_eval fun i =>
-    ProbabilityMeasure.measurable_code.comp
+    measurable_probabilityMeasureCode.comp
       ((measurable_pi_apply i).comp measurable_coordinateMarginals)
 
 /-- Coding commutes with reindexing the coordinate marginals. -/
@@ -145,14 +145,8 @@ theorem codedCoordinateMarginals_map_permReindex [MeasurableSpace.CountablyGener
       permReindex τ (codedCoordinateMarginals P) := by
   funext i
   simp only [codedCoordinateMarginals_apply, permReindex_apply]
-  exact congrArg ProbabilityMeasure.code
+  exact congrArg probabilityMeasureCode
     (congrFun (coordinateMarginals_map_permReindex P τ) i)
-
-end ProbabilityMeasure
-
-namespace Measure
-
-variable {α : Type*} [MeasurableSpace α]
 
 /-- **The coordinate marginals of an invariant random path measure are fully exchangeable.**
 
@@ -162,33 +156,33 @@ theorem fullyExchangeable_coordinateMarginals_of_invariant
     (π : Measure (ProbabilityMeasure (ℕ → α)))
     (hπ : ∀ τ : Equiv.Perm ℕ,
       π.map (fun P => P.map (permReindex τ)) = π) :
-    FullyExchangeable π fun i P => ProbabilityMeasure.coordinateMarginals P i := by
+    FullyExchangeable π fun i P => coordinateMarginals P i := by
   intro τ
   have hmap : Measurable fun P : ProbabilityMeasure (ℕ → α) => P.map (permReindex τ) :=
-    TauCeti.MeasureTheory.measurable_probabilityMeasure_map (measurable_reindex τ)
+    measurable_probabilityMeasure_map (measurable_reindex τ)
   have hfun : (fun P : ProbabilityMeasure (ℕ → α) =>
-      fun i => ProbabilityMeasure.coordinateMarginals P (τ i)) =
-      ProbabilityMeasure.coordinateMarginals ∘ fun P => P.map (permReindex τ) := by
+      fun i => coordinateMarginals P (τ i)) =
+      coordinateMarginals ∘ fun P => P.map (permReindex τ) := by
     funext P
-    exact (ProbabilityMeasure.coordinateMarginals_map_permReindex P τ).symm
+    exact (coordinateMarginals_map_permReindex P τ).symm
   calc
-    π.map (fun P => fun i => ProbabilityMeasure.coordinateMarginals P (τ i)) =
-        π.map (ProbabilityMeasure.coordinateMarginals ∘
+    π.map (fun P => fun i => coordinateMarginals P (τ i)) =
+        π.map (coordinateMarginals ∘
           fun P => P.map (permReindex τ)) := by rw [hfun]
-    _ = (π.map fun P => P.map (permReindex τ)).map ProbabilityMeasure.coordinateMarginals :=
-      (Measure.map_map ProbabilityMeasure.measurable_coordinateMarginals hmap).symm
-    _ = π.map ProbabilityMeasure.coordinateMarginals := by rw [hπ τ]
-    _ = pathLaw π (fun i P => ProbabilityMeasure.coordinateMarginals P i) := (rfl)
+    _ = (π.map fun P => P.map (permReindex τ)).map coordinateMarginals :=
+      (Measure.map_map measurable_coordinateMarginals hmap).symm
+    _ = π.map coordinateMarginals := by rw [hπ τ]
+    _ = pathLaw π (fun i P => coordinateMarginals P i) := (rfl)
 
 /-- **The coordinate marginals of an invariant random path measure are exchangeable.** -/
 theorem exchangeable_coordinateMarginals_of_invariant
     (π : Measure (ProbabilityMeasure (ℕ → α)))
     (hπ : ∀ τ : Equiv.Perm ℕ,
       π.map (fun P => P.map (permReindex τ)) = π) :
-    Exchangeable π fun i P => ProbabilityMeasure.coordinateMarginals P i :=
+    Exchangeable π fun i P => coordinateMarginals P i :=
   (fullyExchangeable_coordinateMarginals_of_invariant π hπ).exchangeable
     fun _ => ((measurable_pi_apply _).comp
-      ProbabilityMeasure.measurable_coordinateMarginals).aemeasurable
+      measurable_coordinateMarginals).aemeasurable
 
 /-- **The coded coordinate marginals of an invariant random path measure are exchangeable.**
 The code loses no information about any coordinate marginal. -/
@@ -197,13 +191,13 @@ theorem exchangeable_codedCoordinateMarginals_of_invariant
     (π : Measure (ProbabilityMeasure (ℕ → α)))
     (hπ : ∀ τ : Equiv.Perm ℕ,
       π.map (fun P => P.map (permReindex τ)) = π) :
-    Exchangeable π fun i P => ProbabilityMeasure.codedCoordinateMarginals P i :=
+    Exchangeable π fun i P => codedCoordinateMarginals P i :=
   by
-    simpa only [ProbabilityMeasure.codedCoordinateMarginals_apply] using
+    simpa only [codedCoordinateMarginals_apply] using
       (exchangeable_coordinateMarginals_of_invariant π hπ).map_values
-        ProbabilityMeasure.measurable_code
+        measurable_probabilityMeasureCode
         fun _ => ((measurable_pi_apply _).comp
-          ProbabilityMeasure.measurable_coordinateMarginals).aemeasurable
+          measurable_coordinateMarginals).aemeasurable
 
 /-- **Conditional de Finetti factorization of the coded coordinate marginals of an invariant
 random path measure.** Because the evaluation code is injective, this retains every
@@ -214,11 +208,11 @@ theorem conditionallyIID_codedCoordinateMarginals_of_invariant
     (π : Measure (ProbabilityMeasure (ℕ → α))) [IsFiniteMeasure π]
     (hπ : ∀ τ : Equiv.Perm ℕ,
       π.map (fun P => P.map (permReindex τ)) = π) :
-    ConditionallyIID π fun i P => ProbabilityMeasure.codedCoordinateMarginals P i :=
+    ConditionallyIID π fun i P => codedCoordinateMarginals P i :=
   conditionallyIID_of_exchangeable
     (exchangeable_codedCoordinateMarginals_of_invariant π hπ)
     fun _ => ((measurable_pi_apply _).comp
-      ProbabilityMeasure.measurable_codedCoordinateMarginals).aemeasurable
+      measurable_codedCoordinateMarginals).aemeasurable
 
 /-- **Uniform-noise representation of the coded coordinate marginals of an invariant random path
 measure.** Under a probability law `π`, their whole path has the law obtained by drawing one
@@ -230,19 +224,19 @@ theorem exists_pathLaw_codedCoordinateMarginals_eq_map_unitIntervalCoding
     (hπ : ∀ τ : Equiv.Perm ℕ,
       π.map (fun P => P.map (permReindex τ)) = π) :
     ∃ Λ : ProbabilityMeasure
-        (ProbabilityMeasure (ProbabilityMeasure.codeIndex α → ℝ≥0∞)),
-      pathLaw π (fun i P => ProbabilityMeasure.codedCoordinateMarginals P i) =
+        (ProbabilityMeasure (probabilityMeasureCodeIndex α → ℝ≥0∞)),
+      pathLaw π (fun i P => codedCoordinateMarginals P i) =
         ((Λ : Measure (ProbabilityMeasure
-            (ProbabilityMeasure.codeIndex α → ℝ≥0∞))).prod
+            (probabilityMeasureCodeIndex α → ℝ≥0∞))).prod
           (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).map
             fun q i => unitIntervalCoding
-              (ProbabilityMeasure.codeIndex α → ℝ≥0∞) q.1 (q.2 i) :=
+              (probabilityMeasureCodeIndex α → ℝ≥0∞) q.1 (q.2 i) :=
   exists_pathLaw_eq_map_unitIntervalCoding
     (fun _ => ((measurable_pi_apply _).comp
-      ProbabilityMeasure.measurable_codedCoordinateMarginals).aemeasurable)
+      measurable_codedCoordinateMarginals).aemeasurable)
     (exchangeable_codedCoordinateMarginals_of_invariant π hπ)
 
-end Measure
+end Probability
 
 end TauCeti
 
