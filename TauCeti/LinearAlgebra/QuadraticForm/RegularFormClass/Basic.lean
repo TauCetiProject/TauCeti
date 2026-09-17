@@ -149,7 +149,10 @@ noncomputable def _root_.QuadraticForm.orthogonalPairIsometryEquiv
     · simpa [h2, a.ne_zero] using hc0
     · simpa [h2, b.ne_zero] using hc1
   map_app' c := by
-    change Q (Fintype.linearCombination K ![x, y] c) = _
+    -- Unfold the restriction and the range equivalence, so that the goal is about `Q` applied to
+    -- the linear combination `c 0 • x + c 1 • y` itself.
+    simp only [QuadraticMap.restrict_apply, LinearMap.toFun_eq_coe, LinearEquiv.coe_coe,
+      LinearEquiv.ofInjective_apply]
     simp only [Fintype.linearCombination_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
       Matrix.cons_val_one, Matrix.cons_val_fin_one, QuadraticMap.map_add, QuadraticMap.map_smul,
       polar_smul_left, polar_smul_right, hxy, hx, hy, smul_eq_mul]
