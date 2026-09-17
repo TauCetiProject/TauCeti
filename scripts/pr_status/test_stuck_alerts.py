@@ -471,8 +471,36 @@ class MissingStatusTest(unittest.TestCase):
 
     def test_cancelled_run_is_not_proof_of_a_missing_status(self):
         # A cancelled run (concurrency or manual) never reaches its reporting step, so it
-        # posting no status is by design, not a wedge.
+        # posting no status is by design, not a wedge. A supersede re-dispatches within
+        # minutes, so a recent cancellation is still presumed to be one.
         _install(self, self._routes("", [self._run(2, conclusion="cancelled")]))
+        self.assertEqual(sa.detect_missing_required_status(), [])
+
+    def test_a_cancellation_nothing_came_after_is_a_wedge(self):
+        """A supersede is followed by the run that replaces it. A cancellation that is
+        still the newest run for a head a day later was not superseded by anything, and
+        nothing will now post the status. PRs 6633, 6583 and 6590 sat wedged exactly
+        this way for three days, each with one cancelled run and no `build` status,
+        invisible here because every cancellation was skipped."""
+        _install(self, self._routes(
+            "", [self._run(sa.ABANDONED_CANCEL_HOURS + 1, conclusion="cancelled")]))
+        found = sa.detect_missing_required_status()
+        self.assertEqual([a["key"] for a in found], ["missing-status/8"])
+        self.assertIn("cancelled", found[0]["body"])
+
+    def test_a_cancellation_still_inside_the_grace_window_stays_quiet(self):
+        # Long enough to be a wedge is the whole distinction; just under it is not.
+        _install(self, self._routes(
+            "", [self._run(sa.ABANDONED_CANCEL_HOURS - 1, conclusion="cancelled")]))
+        self.assertEqual(sa.detect_missing_required_status(), [])
+
+    def test_a_newer_cancellation_over_an_older_one_is_still_read_from_the_newest(self):
+        # Two cancellations, the newer inside the window: something was still being
+        # dispatched recently, so this is churn rather than abandonment.
+        _install(self, self._routes("", [
+            self._run(1, conclusion="cancelled"),
+            self._run(sa.ABANDONED_CANCEL_HOURS + 5, conclusion="cancelled"),
+        ]))
         self.assertEqual(sa.detect_missing_required_status(), [])
 
     def test_older_concluded_run_still_alerts_behind_a_cancellation(self):
