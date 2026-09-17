@@ -459,6 +459,7 @@ theorem trefoilSeifertMatrix_apply (i j : Fin 2) :
   rw [trefoilSeifertMatrix]
 
 /-- The right-handed trefoil's Seifert matrix, read in an arbitrary additive group with one. -/
+@[simp]
 theorem map_trefoilSeifertMatrix {S : Type*} [AddGroupWithOne S] :
     trefoilSeifertMatrix.map ((↑) : ℤ → S) = !![-1, 1; 0, -1] := by
   ext i j
@@ -475,6 +476,7 @@ theorem figureEightSeifertMatrix_apply (i j : Fin 2) :
   rw [figureEightSeifertMatrix]
 
 /-- The figure-eight knot's Seifert matrix, read in an arbitrary additive group with one. -/
+@[simp]
 theorem map_figureEightSeifertMatrix {S : Type*} [AddGroupWithOne S] :
     figureEightSeifertMatrix.map ((↑) : ℤ → S) = !![1, 1; 0, -1] := by
   ext i j
