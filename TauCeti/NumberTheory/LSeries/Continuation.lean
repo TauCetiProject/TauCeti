@@ -23,6 +23,8 @@ integral representation in `Mathlib.NumberTheory.LSeries.SumCoeff`.
 ## References
 
 * H. Davenport, *Multiplicative Number Theory*, chapters on Dirichlet series and partial summation.
+* J. Korevaar, *Tauberian Theory*, Chapter III, for the Mellin-transform continuation from partial
+  sums.
 -/
 
 public section
@@ -65,11 +67,19 @@ theorem locallyIntegrableOn_partialSum (a : ℕ → ℂ) :
   simpa using h.mono_set Set.Ioi_subset_Ici_self
 
 /-- A polynomial bound at natural cutoffs transfers to real cutoffs by taking the floor. -/
-theorem isBigO_partialSum_atTop {a : ℕ → ℂ} {r : ℝ} (hr : 0 ≤ r)
+theorem isBigO_partialSum_atTop {a : ℕ → ℂ} {r : ℝ}
     (hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, a k) =O[atTop] fun n ↦ (n : ℝ) ^ r) :
-    (fun x : ℝ ↦ ∑ k ∈ Icc 1 ⌊x⌋₊, a k) =O[atTop] fun x ↦ x ^ r :=
-  (hO.comp_tendsto tendsto_nat_floor_atTop).trans <|
-    isEquivalent_nat_floor.isBigO.rpow hr (eventually_ge_atTop 0)
+    (fun x : ℝ ↦ ∑ k ∈ Icc 1 ⌊x⌋₊, a k) =O[atTop] fun x ↦ x ^ r := by
+  have hmax : (fun x : ℝ ↦ max x 1) =ᶠ[atTop] fun x ↦ x := by
+    filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
+    simp [max_eq_left hx]
+  have hfloor_rpow :
+      (fun x : ℝ ↦ (⌊x⌋₊ : ℝ) ^ r) ~[atTop] fun x ↦ x ^ r := by
+    refine (Asymptotics.IsEquivalent.rpow (fun x : ℝ ↦ by positivity)
+      (isEquivalent_nat_floor.trans_eventuallyEq hmax.symm)).trans_eventuallyEq ?_
+    filter_upwards [hmax] with x hx
+    simp [hx]
+  exact (hO.comp_tendsto tendsto_nat_floor_atTop).trans_isEquivalent hfloor_rpow
 
 /-- Near zero, coefficient partial sums vanish and hence satisfy every power bound. -/
 theorem isBigO_partialSum_nhdsGT_zero (a : ℕ → ℂ) (b : ℝ) :
@@ -80,31 +90,41 @@ theorem isBigO_partialSum_nhdsGT_zero (a : ℕ → ℂ) (b : ℝ) :
 
 /-- A polynomial cancellation bound makes the named continuation differentiable on the
 corresponding open half-plane. No summability of the original Dirichlet series is needed. -/
-theorem differentiableAt_continuedLSeries {a : ℕ → ℂ} {r : ℝ} (hr : 0 ≤ r)
+theorem differentiableAt_continuedLSeries {a : ℕ → ℂ} {r : ℝ}
     (hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, a k) =O[atTop] fun n ↦ (n : ℝ) ^ r)
     {s : ℂ} (hs : r < s.re) : DifferentiableAt ℂ (continuedLSeries a) s := by
   have h := mellin_differentiableAt_of_isBigO_rpow
     (a := -r) (b := (-s).re - 1) (s := -s) (locallyIntegrableOn_partialSum a)
-    (by simpa using isBigO_partialSum_atTop hr hO)
+    (by simpa using isBigO_partialSum_atTop hO)
     (by simpa using hs)
     (isBigO_partialSum_nhdsGT_zero a _) (sub_one_lt _)
   exact differentiableAt_id.mul (h.comp s differentiableAt_id.neg)
 
 /-- The Mellin continuation is analytic strictly to the right of the partial-sum growth
 exponent. -/
-theorem analyticOnNhd_continuedLSeries {a : ℕ → ℂ} {r : ℝ} (hr : 0 ≤ r)
+theorem analyticOnNhd_continuedLSeries {a : ℕ → ℂ} {r : ℝ}
     (hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, a k) =O[atTop] fun n ↦ (n : ℝ) ^ r) :
     AnalyticOnNhd ℂ (continuedLSeries a) {s | r < s.re} := by
   exact DifferentiableOn.analyticOnNhd
-    (fun s hs ↦ (differentiableAt_continuedLSeries hr hO hs).differentiableWithinAt)
+    (fun s hs ↦ (differentiableAt_continuedLSeries hO hs).differentiableWithinAt)
     (isOpen_lt continuous_const continuous_re)
 
-/-- The named continuation agrees with the original series at summable points to the right
-of the partial-sum growth exponent. Summability is separate from cancellation. -/
-theorem continuedLSeries_eq_LSeries {a : ℕ → ℂ} {r : ℝ} (hr : 0 ≤ r)
+/-- The named continuation agrees with the original series at summable points to the right of both
+the partial-sum growth exponent and zero. Summability is separate from cancellation. -/
+theorem continuedLSeries_eq_LSeries {a : ℕ → ℂ} {r : ℝ}
     (hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, a k) =O[atTop] fun n ↦ (n : ℝ) ^ r)
-    {s : ℂ} (hs : r < s.re) (hS : LSeriesSummable a s) :
+    {s : ℂ} (hs : max r 0 < s.re) (hS : LSeriesSummable a s) :
     continuedLSeries a s = _root_.LSeries a s := by
-  rw [continuedLSeries_eq_mul_integral, LSeries_eq_mul_integral a hr hs hS hO]
+  rw [continuedLSeries_eq_mul_integral]
+  have hOmax :
+      (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, a k) =O[atTop] fun n ↦ (n : ℝ) ^ max r 0 :=
+    hO.trans <| Filter.Eventually.isBigO <| by
+      filter_upwards [eventually_ge_atTop (1 : ℕ)] with n hn
+      have hn' : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+      calc
+        ‖(n : ℝ) ^ r‖ = (n : ℝ) ^ r :=
+          Real.norm_of_nonneg (Real.rpow_nonneg (Nat.cast_nonneg _) _)
+        _ ≤ (n : ℝ) ^ max r 0 := Real.rpow_le_rpow_of_exponent_le hn' (le_max_left _ _)
+  exact (LSeries_eq_mul_integral (r := max r 0) a (le_max_right _ _) hs hS hOmax).symm
 
 end TauCeti.LSeries

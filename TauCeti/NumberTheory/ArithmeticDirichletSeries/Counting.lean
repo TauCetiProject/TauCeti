@@ -484,6 +484,16 @@ theorem idealSummatory_eq_sum_range_normFiber {M : Type*} [AddCommMonoid M]
     exact Finset.sum_congr rfl fun n hn ↦ by
       rw [idealsLE_filter_absNorm_eq K (Finset.mem_range_succ_iff.mp hn) (zero_le_one.trans hx)]
 
+/-- The inclusive ideal sum is the partial sum of the norm coefficients, with the zero
+coefficient omitted. -/
+theorem idealSummatory_eq_sum_Icc_normCoeff (f : IdealArithmeticFunction K) (x : ℝ) :
+    idealSummatory K f x = ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, normCoeff K f n := by
+  rw [idealSummatory_eq_sum_range_normFiber]
+  simp_rw [← normCoeff_eq_sum_normFiber]
+  rw [Nat.range_succ_eq_Icc_zero,
+    ← Finset.insert_Icc_add_one_left_eq_Icc (Nat.zero_le ⌊x⌋₊)]
+  simp
+
 /-- **An ideal weight concentrated on the prime powers, read as a prime-power weight.** An ideal
 weight vanishing off the prime-power ideals has the same summatory function as its restriction to
 the prime-power carrier.  This is the ideal-level counterpart of

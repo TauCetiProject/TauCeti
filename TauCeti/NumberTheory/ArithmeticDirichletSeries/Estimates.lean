@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.Convergence
 public import Mathlib.NumberTheory.LSeries.SumCoeff
 public import Mathlib.NumberTheory.NumberField.Ideal.Asymptotics
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Regroup
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 
@@ -244,6 +245,31 @@ theorem sum_norm_normCoeff_one (n : ℕ) :
       = hfin.toFinset.card := Nat.card_eq_card_finite_toFinset hfin
   rw [hcard, key, Nat.cast_sum]
   exact Finset.sum_congr rfl fun k _ ↦ norm_normCoeff_one K k
+
+/-- The norm of the trivial ideal sum at a natural cutoff is the ideal count. -/
+theorem norm_idealSummatory_one_eq_card (n : ℕ) :
+    ‖idealSummatory K (1 : IdealArithmeticFunction K) (n : ℝ)‖
+      = ((Nat.card {I : (Ideal (𝓞 K))⁰ //
+          (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ (n : ℝ)}) : ℝ) := by
+  classical
+  rw [idealSummatory_eq_sum_Icc_normCoeff, Nat.floor_natCast]
+  have hcoeff : ∀ k ∈ Finset.Icc 1 n, normCoeff K (1 : IdealArithmeticFunction K) k
+      = Complex.ofReal ((normFiber K k).card : ℝ) := by
+    intro k hk
+    have hk0 : k ≠ 0 := fun h ↦ by
+      rw [h] at hk
+      exact absurd (Finset.mem_Icc.mp hk).1 (by omega)
+    rw [normCoeff_one_apply K k, ite_eq_right hk0, ← card_normFiber_eq_dedekindZetaCoeff K hk0]
+    norm_cast
+  have hsum : (∑ k ∈ Finset.Icc 1 n, normCoeff K (1 : IdealArithmeticFunction K) k)
+      = Complex.ofReal (∑ k ∈ Finset.Icc 1 n, ((normFiber K k).card : ℝ)) := by
+    rw [Finset.sum_congr rfl fun k hk ↦ hcoeff k hk, Complex.ofReal_sum]
+  have hcard : (∑ k ∈ Finset.Icc 1 n, ((normFiber K k).card : ℝ))
+      = ((Nat.card {I : (Ideal (𝓞 K))⁰ //
+          (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ (n : ℝ)}) : ℝ) := by
+    rw [← sum_norm_normCoeff_one K n]
+    exact Finset.sum_congr rfl fun k _ ↦ (norm_normCoeff_one K k).symm
+  rw [hsum, hcard, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (Nat.cast_nonneg _)]
 
 /-! ### The exact abscissa of the trivial ideal weight -/
 

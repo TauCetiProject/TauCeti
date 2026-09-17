@@ -34,40 +34,26 @@ open scoped NumberField nonZeroDivisors
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- The inclusive ideal sum is the partial sum of the norm coefficients, with the zero
-coefficient omitted. -/
-theorem idealSummatory_eq_sum_Icc_normCoeff (f : IdealArithmeticFunction K) (x : ℝ) :
-    idealSummatory K f x = ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, normCoeff K f n := by
-  rw [idealSummatory_eq_sum_range_normFiber]
-  simp_rw [← normCoeff_eq_sum_normFiber]
-  rw [Nat.range_succ_eq_Icc_zero,
-    ← Finset.insert_Icc_add_one_left_eq_Icc (Nat.zero_le ⌊x⌋₊)]
-  simp
-
 /-- A unitary ideal weight has cancellation when its inclusive ideal sums are
 `O(X^(1-1/[K:ℚ]))`. The norm is taken after summing, not term by term. -/
 def HasCancellation (χ : UnitaryIdealWeight K) : Prop :=
   idealSummatory K χ.toIdealArithmeticFunction =O[atTop]
     fun x : ℝ ↦ x ^ (1 - 1 / (Module.finrank ℚ K : ℝ))
 
-/-- The partial-sum bound defining cancellation. -/
-theorem hasCancellation_iff (χ : UnitaryIdealWeight K) :
-    HasCancellation χ ↔ idealSummatory K χ.toIdealArithmeticFunction =O[atTop]
-      fun x : ℝ ↦ x ^ (1 - 1 / (Module.finrank ℚ K : ℝ)) := Iff.rfl
-
 /-- Cancellation gives the polynomial partial-sum bound for the regrouped coefficients. -/
 theorem HasCancellation.isBigO_sum_normCoeff {χ : UnitaryIdealWeight K}
     (hχ : HasCancellation χ) :
     (fun n : ℕ ↦ ∑ k ∈ Finset.Icc 1 n, normCoeff K χ.toIdealArithmeticFunction k)
       =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ (1 - 1 / (Module.finrank ℚ K : ℝ)) := by
+  unfold HasCancellation at hχ
   simpa only [Function.comp_def, idealSummatory_eq_sum_Icc_normCoeff, Nat.floor_natCast] using
-    (hasCancellation_iff χ).mp hχ |>.comp_tendsto tendsto_natCast_atTop_atTop
+    hχ.comp_tendsto tendsto_natCast_atTop_atTop
 
 
 /-- Conjugation preserves cancellation; it does not change the norm of any partial sum. -/
 theorem HasCancellation.conj {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ) :
     HasCancellation χ.conj := by
-  rw [hasCancellation_iff] at hχ ⊢
+  unfold HasCancellation at hχ ⊢
   refine hχ.norm_left.congr_left ?_ |>.of_norm_left
   intro x
   rw [idealSummatory_apply, idealSummatory_apply]
@@ -105,10 +91,8 @@ theorem HasCancellation.analyticOnNhd_continuedLFunctionOfWeight
     {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ) :
     AnalyticOnNhd ℂ (continuedLFunctionOfWeight χ)
       {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} := by
-  have hd : (1 : ℝ) ≤ Module.finrank ℚ K := by
-    exact_mod_cast Module.finrank_pos (R := ℚ) (M := K)
   exact LSeries.analyticOnNhd_continuedLSeries
-    (sub_nonneg.mpr ((div_le_one (by positivity)).mpr hd)) hχ.isBigO_sum_normCoeff
+    hχ.isBigO_sum_normCoeff
 
 /-- On the absolute-convergence half-plane the continuation agrees with the
 norm-regrouped Dirichlet series. -/
@@ -116,14 +100,9 @@ theorem continuedLFunctionOfWeight_eq_LSeries
     (χ : UnitaryIdealWeight K) {s : ℂ} (hs : 1 < s.re) :
     continuedLFunctionOfWeight χ s =
       _root_.LSeries (normCoeff K χ.toIdealArithmeticFunction) s := by
-  have hO :
-      (fun n : ℕ ↦ ∑ k ∈ Finset.Icc 1 n,
-        normCoeff K χ.toIdealArithmeticFunction k) =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ (1 : ℝ) := by
-    obtain ⟨b⟩ := idealCount_linearBounds K
-    refine Asymptotics.IsBigO.of_bound b.upper ?_
-    filter_upwards [eventually_ge_atTop 1] with n hn
-    have hn' : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
-    rw [Real.rpow_one, Real.norm_natCast]
+  have hpoint (n : ℕ) :
+      ‖∑ k ∈ Finset.Icc 1 n, normCoeff K χ.toIdealArithmeticFunction k‖ ≤
+        ∑ k ∈ Finset.Icc 1 n, ‖normCoeff K (1 : IdealArithmeticFunction K) k‖ := by
     calc
       ‖∑ k ∈ Finset.Icc 1 n, normCoeff K χ.toIdealArithmeticFunction k‖
           ≤ ∑ k ∈ Finset.Icc 1 n, ‖normCoeff K χ.toIdealArithmeticFunction k‖ := by
@@ -142,39 +121,18 @@ theorem continuedLFunctionOfWeight_eq_LSeries
                 _ = (normFiber K k).card := by simp
                 _ = ‖normCoeff K (1 : IdealArithmeticFunction K) k‖ :=
                   (norm_normCoeff_one K k).symm
-      _ = Nat.card {I : (Ideal (𝓞 K))⁰ //
-          (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ (n : ℝ)} := sum_norm_normCoeff_one K n
-      _ ≤ b.upper * (n : ℝ) := b.card_le (n : ℝ) hn'
+  have hO :
+      (fun n : ℕ ↦ ∑ k ∈ Finset.Icc 1 n,
+        normCoeff K χ.toIdealArithmeticFunction k) =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ (1 : ℝ) :=
+    (Asymptotics.isBigO_of_le _ fun n ↦ by
+      simpa only [Real.norm_eq_abs,
+        abs_of_nonneg (Finset.sum_nonneg fun k hk ↦ norm_nonneg _)] using
+        hpoint n).trans (isBigO_sum_norm_normCoeff_one K)
   exact LSeries.continuedLSeries_eq_LSeries
-    zero_le_one hO hs
+    hO (by simpa only [max_eq_left zero_le_one] using hs)
     (LSeriesSummable_normCoeff K (summable_idealTerm_of_unitary_of_one_lt_re χ hs))
 
 
-
-/-- The norm of the trivial ideal sum at a natural cutoff is the ideal count. -/
-theorem norm_idealSummatory_one_eq_card (n : ℕ) :
-    ‖idealSummatory K (1 : IdealArithmeticFunction K) (n : ℝ)‖
-      = ((Nat.card {I : (Ideal (𝓞 K))⁰ //
-          (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ (n : ℝ)}) : ℝ) := by
-  classical
-  rw [idealSummatory_eq_sum_Icc_normCoeff, Nat.floor_natCast]
-  have hcoeff : ∀ k ∈ Finset.Icc 1 n, normCoeff K (1 : IdealArithmeticFunction K) k
-      = Complex.ofReal ((normFiber K k).card : ℝ) := by
-    intro k hk
-    have hk0 : k ≠ 0 := fun h ↦ by
-      rw [h] at hk
-      exact absurd (Finset.mem_Icc.mp hk).1 (by omega)
-    rw [normCoeff_one_apply K k, ite_eq_right hk0, ← card_normFiber_eq_dedekindZetaCoeff K hk0]
-    norm_cast
-  have hsum : (∑ k ∈ Finset.Icc 1 n, normCoeff K (1 : IdealArithmeticFunction K) k)
-      = Complex.ofReal (∑ k ∈ Finset.Icc 1 n, ((normFiber K k).card : ℝ)) := by
-    rw [Finset.sum_congr rfl fun k hk ↦ hcoeff k hk, Complex.ofReal_sum]
-  have hcard : (∑ k ∈ Finset.Icc 1 n, ((normFiber K k).card : ℝ))
-      = ((Nat.card {I : (Ideal (𝓞 K))⁰ //
-          (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ (n : ℝ)}) : ℝ) := by
-    rw [← sum_norm_normCoeff_one K n]
-    exact Finset.sum_congr rfl fun k _ ↦ (norm_normCoeff_one K k).symm
-  rw [hsum, hcard, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (Nat.cast_nonneg _)]
 
 /-- **Rejection test.** The trivial weight does not satisfy `HasCancellation`: its inclusive
 ideal sums grow at least linearly with a uniform slope, while cancellation would force them
@@ -182,8 +140,8 @@ below `C₀ · x^(1-1/[K:ℚ])` for a fixed `C₀`. -/
 theorem not_hasCancellation_one : ¬ HasCancellation (1 : UnitaryIdealWeight K) := by
   intro h
   obtain ⟨b⟩ := idealCount_linearBounds K
-  obtain ⟨C₀, hC₀⟩ := Asymptotics.IsBigO.isBigOWith
-    ((hasCancellation_iff (1 : UnitaryIdealWeight K)).mp h)
+  unfold HasCancellation at h
+  obtain ⟨C₀, hC₀⟩ := Asymptotics.IsBigO.isBigOWith h
   rw [UnitaryIdealWeight.toIdealArithmeticFunction_one] at hC₀
   rw [Asymptotics.isBigOWith_iff] at hC₀
   obtain ⟨N, hN⟩ := Filter.eventually_atTop.mp hC₀
@@ -206,7 +164,7 @@ theorem not_hasCancellation_one : ¬ HasCancellation (1 : UnitaryIdealWeight K) 
     have hnorm2 : ‖idealSummatory K (1 : IdealArithmeticFunction K) (n:ℝ)‖
         = ((Nat.card {I : (Ideal (𝓞 K))⁰ //
             (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ (n:ℝ)}) : ℝ) :=
-      norm_idealSummatory_one_eq_card n
+      norm_idealSummatory_one_eq_card K n
     rw [hnorm2, hnorm1] at hpt
     have hn0' : (0:ℝ) < (n:ℝ) := by exact_mod_cast hn0
     have hstep : b.lower * (n:ℝ) * (n:ℝ)⁻¹
@@ -219,7 +177,7 @@ theorem not_hasCancellation_one : ¬ HasCancellation (1 : UnitaryIdealWeight K) 
       rw [Real.rpow_sub hn0' (1 - 1 / (Module.finrank ℚ K : ℝ)) 1, Real.rpow_one, div_eq_mul_inv]
     calc b.lower = b.lower * (n:ℝ) * (n:ℝ)⁻¹ := by field_simp
       _ ≤ C₀ * (n:ℝ) ^ (1 - 1 / (Module.finrank ℚ K : ℝ)) * (n:ℝ)⁻¹ :=
-          mul_le_mul_of_nonneg_right (le_trans hlower hpt) (inv_nonneg.mpr hn0'.le)
+          hstep
       _ = C₀ * ((n:ℝ) ^ (1 - 1 / (Module.finrank ℚ K : ℝ)) * (n:ℝ)⁻¹) := by ring
       _ = C₀ * (n:ℝ) ^ (-(1 / (Module.finrank ℚ K : ℝ))) := by rw [hrpow]
   have hlim : Tendsto
