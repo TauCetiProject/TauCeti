@@ -44,7 +44,7 @@ through.
   type.
 * `WeierstrassCurve.frobeniusTrace_eq_card_point`: over a finite field, on an elliptic model the
   trace is `q + 1` minus the cardinality of Mathlib's point type, which is the classical `a_q`.
-* `WeierstrassCurve.pointCount_variableChange` and `WeierstrassCurve.frobeniusTrace_variableChange`:
+* `WeierstrassCurve.variableChange_pointCount` and `WeierstrassCurve.variableChange_frobeniusTrace`:
   both are invariant under a change of variables, singular models included.
 
 ## Provenance
@@ -119,8 +119,8 @@ theorem _root_.WeierstrassCurve.frobeniusTrace_eq_card_point [Finite F] [W.IsEll
 /-- **The point count is invariant under a change of variables**, singular models included: the
 affine substitution `(x, y) ↦ (u² x + r, u³ y + u² s x + t)` is a bijection of `F × F` carrying the
 solutions of the equation of `C • W` onto those of `W`. -/
--- Not `@[simp]`: the simp lemma `pointCount_def` unfolds the left-hand side first.
-theorem _root_.WeierstrassCurve.pointCount_variableChange (C : WeierstrassCurve.VariableChange F) :
+@[simp 1100]
+theorem _root_.WeierstrassCurve.variableChange_pointCount (C : WeierstrassCurve.VariableChange F) :
     (C • W).pointCount = W.pointCount := by
   have hu : (C.u : F) ≠ 0 := C.u.ne_zero
   let e : F × F ≃ F × F :=
@@ -134,12 +134,12 @@ theorem _root_.WeierstrassCurve.pointCount_variableChange (C : WeierstrassCurve.
       (WeierstrassCurve.Affine.variableChange_equation W C p.1 p.2).symm)]
 
 /-- **The Frobenius trace is invariant under a change of variables.** -/
--- Not `@[simp]`: the simp lemma `frobeniusTrace_def` unfolds the left-hand side first.
-theorem _root_.WeierstrassCurve.frobeniusTrace_variableChange [Finite F]
+@[simp 1100]
+theorem _root_.WeierstrassCurve.variableChange_frobeniusTrace [Finite F]
     (C : WeierstrassCurve.VariableChange F) :
     (C • W).frobeniusTrace = W.frobeniusTrace := by
   rw [WeierstrassCurve.frobeniusTrace_def, WeierstrassCurve.frobeniusTrace_def,
-    WeierstrassCurve.pointCount_variableChange]
+    WeierstrassCurve.variableChange_pointCount]
 
 end TauCeti
 

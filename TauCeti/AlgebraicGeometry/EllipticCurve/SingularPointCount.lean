@@ -209,7 +209,7 @@ private theorem exists_isSingular_zero_frobeniusTrace_eq [Finite F] (hΔ : W.Δ 
   · have := congrArg (Nat.cast : ℕ → ℤ)
       (card_equation_add_card_rootSet_of_isSingular_zero (C • W) h₀)
     push_cast at this
-    rw [← WeierstrassCurve.frobeniusTrace_variableChange W C, WeierstrassCurve.frobeniusTrace_def,
+    rw [← WeierstrassCurve.variableChange_frobeniusTrace W C, WeierstrassCurve.frobeniusTrace_def,
       WeierstrassCurve.pointCount_def]
     push_cast
     linarith

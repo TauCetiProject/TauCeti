@@ -183,9 +183,8 @@ theorem splits_quadratic_iff_exists_artinSchreier_of_two_eq_zero {k : Type*} [Fi
     linear_combination hz + a * c * h2
 
 /-- Over a perfect field, a quadratic `a X² + b X + c` (with `a ≠ 0`) whose discriminant vanishes
-splits: it is inseparable by `separable_quadratic_iff_discrim_ne_zero`, hence not irreducible, and a
-reducible quadratic has a root. Perfectness is needed in characteristic two, where `X² - c` has
-vanishing discriminant and no root once `c` is not a square. -/
+splits. Perfectness is needed in characteristic two, where `X² - c` can have vanishing
+discriminant without a root. -/
 theorem splits_quadratic_of_discrim_eq_zero {k : Type*} [Field k] [PerfectField k] {a b c : k}
     (ha : a ≠ 0) (hd : discrim a b c = 0) : (C a * X ^ 2 + C b * X + C c).Splits := by
   set p := C a * X ^ 2 + C b * X + C c with hp
@@ -199,7 +198,7 @@ theorem splits_quadratic_of_discrim_eq_zero {k : Type*} [Field k] [PerfectField 
   exact Splits.of_natDegree_eq_two hdeg (mem_roots'.1 hx).2
 
 /-- A split quadratic `a X² + b X + c` (with `a ≠ 0`) whose discriminant vanishes has exactly one
-root: it has one because it splits, and not two because it is inseparable. -/
+root. -/
 theorem card_rootSet_quadratic_of_discrim_eq_zero {k : Type*} [Field k] {a b c : k} (ha : a ≠ 0)
     (hs : (C a * X ^ 2 + C b * X + C c).Splits) (hd : discrim a b c = 0) :
     Fintype.card ((C a * X ^ 2 + C b * X + C c).rootSet k) = 1 := by
