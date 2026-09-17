@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Analysis.Contour.Residue.Basic
+import Mathlib.Analysis.Complex.RemovableSingularity
 
 /-!
 # The residue at a simple pole as a limit
@@ -37,6 +38,9 @@ direction one uses in practice to read off a residue.
   f z₀` (at most a simple pole); the analytic case gives the limit `0 = residue f z₀`.
 * `TauCeti.Contour.residue_eq_of_tendsto_sub_mul` — the converse: if `f` is meromorphic at `z₀` and
   `(z − z₀) · f z` converges to `L`, then `residue f z₀ = L`.
+* `TauCeti.Contour.meromorphicAt_of_tendsto_sub_mul` — if `f` is holomorphic on a punctured
+  neighbourhood of `z₀` and `(z − z₀) · f z` converges, then `f` is meromorphic at `z₀`, so the
+  converse applies without a separate meromorphy hypothesis.
 * `TauCeti.Contour.neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul` — a punctured limit of
   `(z − z₀) · f z` forces the pole to be at worst simple.
 * `TauCeti.Contour.residue_sub_inv` — `residue (fun z => (z − z₀)⁻¹) z₀ = 1`, and
@@ -152,6 +156,29 @@ theorem residue_eq_of_tendsto_sub_mul {L : ℂ} (hf : MeromorphicAt f z₀)
 /-- The reciprocal `(· − z₀)⁻¹` of the simple factor `(· − z₀)` is meromorphic at `z₀`. -/
 theorem meromorphicAt_sub_inv (z₀ : ℂ) : MeromorphicAt (fun z => (z - z₀)⁻¹) z₀ :=
   ((analyticAt_id.sub analyticAt_const).meromorphicAt).inv
+
+/-- **A punctured limit of `(z − z₀) · f z` makes `f` meromorphic.** If `f` is holomorphic on a
+punctured neighbourhood of `z₀` and `(z − z₀) · f z` converges as `z → z₀`, then `f` is meromorphic
+at `z₀`: by the removable singularity theorem, `(z − z₀) · f z` extends analytically across `z₀`.
+With `residue_eq_of_tendsto_sub_mul`, the limit is then the residue. -/
+theorem meromorphicAt_of_tendsto_sub_mul {L : ℂ}
+    (hd : ∀ᶠ z in 𝓝[≠] z₀, DifferentiableAt ℂ f z)
+    (h : Tendsto (fun z => (z - z₀) * f z) (𝓝[≠] z₀) (𝓝 L)) :
+    MeromorphicAt f z₀ := by
+  classical
+  set g : ℂ → ℂ := Function.update (fun z => (z - z₀) * f z) z₀ L with hg_def
+  have hg : AnalyticAt ℂ g z₀ := by
+    refine Complex.analyticAt_of_differentiable_on_punctured_nhds_of_continuousAt ?_
+      (continuousAt_update_same.mpr h)
+    filter_upwards [hd, self_mem_nhdsWithin] with z hz hne
+    have heq : (fun w => (w - z₀) * f w) =ᶠ[𝓝 z] g := by
+      filter_upwards [isOpen_ne.mem_nhds hne] with w hw
+      rw [hg_def, Function.update_of_ne hw]
+    exact ((differentiableAt_id.sub_const z₀).mul hz).congr_of_eventuallyEq heq.symm
+  refine ((meromorphicAt_sub_inv z₀).mul hg.meromorphicAt).congr ?_
+  filter_upwards [self_mem_nhdsWithin] with z hz
+  simp only [Pi.mul_apply, hg_def, Function.update_of_ne hz]
+  rw [inv_mul_cancel_left₀ (sub_ne_zero.2 hz)]
 
 /-- The residue of the elementary simple pole `(· − z₀)⁻¹` at `z₀` is `1`: since
 `(z − z₀) · (z − z₀)⁻¹ → 1` as `z → z₀`, the simple-pole limit formula gives the residue. -/
