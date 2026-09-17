@@ -43,11 +43,6 @@ of `d` i.i.d. exponentials of rate `r` is exponential of rate `d * r`.
   the laws of the two extremes.
 
 Only the two extremes are treated; a general theory of order statistics is not.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 4, item 6,
-  **Finite minima and maxima**.
 -/
 
 public section
