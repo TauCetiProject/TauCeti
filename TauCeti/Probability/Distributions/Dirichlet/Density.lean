@@ -337,16 +337,11 @@ omit [Fintype ι] [DecidableEq ι] in
 theorem mem_dirichletUnchartTarget_iff {z : ℝ × ({i // i ≠ i₀} → ℝ)} :
     z ∈ dirichletUnchartTarget i₀ ↔ 0 < z.1 ∧ ∀ j, 0 < z.2 j := Iff.rfl
 
-/-- The scaling map is continuous. -/
-@[fun_prop]
-theorem continuous_dirichletUnchart (i₀ : ι) : Continuous (dirichletUnchart i₀) := by
-  unfold dirichletUnchart
-  fun_prop
-
 /-- The scaling map is measurable. -/
 @[fun_prop]
-theorem measurable_dirichletUnchart (i₀ : ι) : Measurable (dirichletUnchart i₀) :=
-  (continuous_dirichletUnchart i₀).measurable
+theorem measurable_dirichletUnchart (i₀ : ι) : Measurable (dirichletUnchart i₀) := by
+  unfold dirichletUnchart
+  fun_prop
 
 /-- The coordinate map is measurable. -/
 @[fun_prop]
