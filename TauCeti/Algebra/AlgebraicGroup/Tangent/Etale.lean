@@ -62,7 +62,7 @@ theorem identityComponentHopfIdeal_eq_augmentation_of_finrank_lie_eq_zero
     rw [HopfIdeal.mem_augmentation, CoalgHomClass.counit_comp_apply]
     exact (HopfIdeal.mem_augmentation k H).mp hx
   rw [haug, HopfIdeal.mem_bot] at hxQ
-  exact (Ideal.Quotient.eq_zero_iff_mem).mp hxQ
+  exact HopfIdeal.mem_toIdeal.mp ((CommHopfAlgCat.mkQuotient_eq_zero_iff H.obj I x).mp hxQ)
 
 end FiniteTypeCommHopfAlgCat
 

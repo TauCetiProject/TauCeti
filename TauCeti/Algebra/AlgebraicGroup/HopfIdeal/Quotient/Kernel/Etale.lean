@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Etale
+import TauCeti.Algebra.Lie.Submodule.Finrank
 
 /-!
 # Étale kernels and injective differentials
@@ -40,10 +41,7 @@ theorem algebraEtale_quotient_kernelHopfIdeal_iff [Algebra.FiniteType k K] (f : 
     Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal) ↔
       Function.Injective (derivationCompLieHom (B := k) f.hom) := by
   rw [HopfAlgebra.algebraEtale_iff_finrank_lie_eq_zero, finrank_kernelLie]
-  -- A Lie ideal and its underlying submodule have the same carrier and scalar action.
-  change Module.finrank k (LinearMap.ker
-    (derivationCompLieHom (B := k) f.hom).toLinearMap) = 0 ↔ _
-  rw [Submodule.finrank_eq_zero, LinearMap.ker_eq_bot]
-  rfl
+  rw [← finrank_toSubmodule, Submodule.finrank_eq_zero, LieSubmodule.toSubmodule_eq_bot,
+    LieHom.ker_eq_bot]
 
 end TauCeti.CommHopfAlgCat
