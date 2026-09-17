@@ -34,29 +34,16 @@ namespace TauCeti.TopCat
 
 namespace CechIndex
 
-private noncomputable def image {ι : Type u} {κ : Type w} (r : ι → κ) (s : Finset ι) :
-    Finset κ := by
-  classical
-  exact s.image r
-
-private lemma image_mono {ι : Type u} {κ : Type w} (r : ι → κ) :
-    Monotone (image r) := by
-  classical
-  exact Finset.image_mono r
-
-private lemma image_nonempty {ι : Type u} {κ : Type w} {r : ι → κ} {s : Finset ι}
-    (hs : s.Nonempty) : (image r s).Nonempty := by
-  classical
-  exact hs.image r
-
 /-- The functor on Čech index categories induced by a map of indexing types. It sends a nonempty
 finite set to its image. -/
 noncomputable def map {ι : Type u} {κ : Type w} (r : ι → κ) :
-    CechIndex.{u} ι ⥤ CechIndex.{w} κ :=
-  { obj := fun s ↦ OrderDual.toDual ⟨image r s.1, image_nonempty s.2⟩
-    map := fun f ↦ homOfLE (image_mono r f.le)
-    map_id := fun _ ↦ Subsingleton.elim _ _
-    map_comp := fun _ _ ↦ Subsingleton.elim _ _ }
+    CechIndex.{u} ι ⥤ CechIndex.{w} κ := by
+  classical
+  exact
+    { obj := fun s ↦ OrderDual.toDual ⟨s.1.image r, s.2.image r⟩
+      map := fun f ↦ homOfLE (Finset.image_mono r f.le)
+      map_id := fun _ ↦ Subsingleton.elim _ _
+      map_comp := fun _ _ ↦ Subsingleton.elim _ _ }
 
 @[simp]
 lemma mem_map_obj_iff {ι : Type u} {κ : Type w} (r : ι → κ) (s : CechIndex ι) (j : κ) :
