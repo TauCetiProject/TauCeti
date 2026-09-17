@@ -31,17 +31,13 @@ The construction follows Hartshorne, *Algebraic Geometry*, II.6. No formalizatio
 
 public section
 
-open AlgebraicGeometry CategoryTheory Opposite Set TopologicalSpace
-
-namespace TauCeti
-
-namespace AlgebraicGeometry
+open CategoryTheory Opposite Set TopologicalSpace TauCeti.AlgebraicGeometry
 
 universe u
 
 noncomputable section
 
-namespace Scheme.Modules
+namespace AlgebraicGeometry.Scheme.Modules
 
 variable {X : Scheme.{u}} [IrreducibleSpace X]
 
@@ -148,7 +144,7 @@ private def rationalApp (M : X.Modules) {U : X.Opens}
           _ = (Scheme.rationalFunctionsEquiv V).symm
               ((id r : Γ(X, V)) • rationalFunction M e hU V s) := by
             rw [Algebra.smul_def, RingHom.algebraMap_toAlgebra]
-          _ = _ := map_smul _ _ _ }
+          _ = _ := _root_.map_smul _ _ _ }
 
 private lemma rationalApp_naturality (M : X.Modules) {U V T : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
@@ -209,10 +205,6 @@ theorem rationalFunctionsEquiv_rationalTrivializationHom_app (M : X.Modules)
     (inferInstance : Nonempty V)]
   exact (Scheme.rationalFunctionsEquiv V).apply_symm_apply _
 
-end Scheme.Modules
+end AlgebraicGeometry.Scheme.Modules
 
 end
-
-end AlgebraicGeometry
-
-end TauCeti
