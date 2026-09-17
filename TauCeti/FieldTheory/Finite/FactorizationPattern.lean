@@ -11,23 +11,21 @@ public import TauCeti.RingTheory.Polynomial.Factors
 /-!
 # Squarefree polynomials with prescribed factorization patterns over finite fields
 
-Over a finite field there are monic irreducible polynomials of every positive degree, so a
-squarefree polynomial with any prescribed multiset of factor degrees can be assembled as a product
-of distinct ones. This file does so for the two patterns used to exhibit a large symmetric Galois
-group by reduction modulo primes:
+This file constructs two squarefree factorization patterns over finite fields that are used to
+exhibit a large symmetric Galois group by reduction modulo primes:
 
 * degrees `(1, n - 1)`, whose Frobenius cycle type is an `(n - 1)`-cycle with one fixed point,
   which makes a transitive group doubly transitive;
 * exactly one factor of degree `2` and all other factor degrees odd, whose Frobenius cycle type
   has an odd power that is a transposition.
 
-Together with a polynomial irreducible modulo a third prime, and a coefficientwise Chinese
-remainder theorem, these realize the full symmetric group `Sₙ` as a Galois group over `ℚ`.
+These patterns are inputs to the three-prime realization of the full symmetric group `Sₙ` as a
+Galois group over `ℚ`.
 
 ## Main results
 
-* `TauCeti.exists_monic_squarefree_map_natDegree_normalizedFactors_eq_one_sub_one`: for `2 ≤ n`,
-  a monic squarefree polynomial of degree `n` whose factor degrees are `{1, n - 1}`.
+* `TauCeti.exists_monic_squarefree_map_natDegree_normalizedFactors_eq_pair_one_sub_one`: for
+  `2 ≤ n`, a monic squarefree polynomial of degree `n` whose factor degrees are `{1, n - 1}`.
 * `TauCeti.exists_monic_squarefree_count_two_map_natDegree_normalizedFactors_eq_one_and_odd`:
   for `3 ≤ n`, a monic squarefree polynomial of degree `n` with exactly one quadratic irreducible
   factor and all other irreducible factors of odd degree.
@@ -48,34 +46,10 @@ namespace TauCeti
 
 variable (k : Type*) [Field k] [Finite k]
 
-omit [Finite k] in
-/-- A product of distinct monic irreducible polynomials is monic and squarefree, its factor
-degrees are the degrees of the given polynomials, and its degree is their sum. -/
-private theorem exists_monic_squarefree_of_nodup [DecidableEq k] {s : Multiset k[X]}
-    (hmonic : ∀ p ∈ s, p.Monic) (hirr : ∀ p ∈ s, Irreducible p) (hs : s.Nodup) :
-    ∃ g : k[X], g.Monic ∧ g.natDegree = (s.map natDegree).sum ∧ Squarefree g ∧
-      (normalizedFactors g).map natDegree = s.map natDegree := by
-  have hfac := normalizedFactors_multiset_prod_of_monic_of_irreducible hmonic hirr
-  refine ⟨s.prod, by simpa using monic_multiset_prod_of_monic s id hmonic, ?_,
-    (squarefree_multiset_prod_iff_nodup_of_monic_of_irreducible hmonic hirr).mpr hs, by rw [hfac]⟩
-  rw [← sum_natDegree_normalizedFactors, hfac]
-
-/-- For every positive `d`, a finite field has a monic irreducible polynomial of degree `d` other
-than `X`: in degree `1` take `X + 1`, and in higher degree any irreducible polynomial differs
-from `X` by its degree. -/
-private theorem exists_monic_irreducible_natDegree_eq_ne_X (d : ℕ) (hd : 0 < d) :
-    ∃ h : k[X], h.Monic ∧ Irreducible h ∧ h.natDegree = d ∧ h ≠ X := by
-  obtain rfl | hd1 := eq_or_lt_of_le (Nat.one_le_iff_ne_zero.mpr hd.ne')
-  · refine ⟨X + C 1, monic_X_add_C 1, irreducible_of_degree_eq_one (degree_X_add_C 1),
-      natDegree_X_add_C 1, fun h ↦ ?_⟩
-    simpa using congrArg (coeff · 0) h
-  · obtain ⟨h, hmonic, hirr, hdeg⟩ := exists_monic_irreducible_natDegree_eq k d hd
-    exact ⟨h, hmonic, hirr, hdeg, fun hX ↦ by simp [hX] at hdeg; omega⟩
-
 /-- For `2 ≤ n`, a finite field has a monic squarefree polynomial of degree `n` whose irreducible
 factors have degrees `1` and `n - 1`. -/
-theorem exists_monic_squarefree_map_natDegree_normalizedFactors_eq_one_sub_one [DecidableEq k]
-    (n : ℕ) (hn : 2 ≤ n) :
+theorem exists_monic_squarefree_map_natDegree_normalizedFactors_eq_pair_one_sub_one
+    [DecidableEq k] (n : ℕ) (hn : 2 ≤ n) :
     ∃ g : k[X], g.Monic ∧ g.natDegree = n ∧ Squarefree g ∧
       (normalizedFactors g).map natDegree = {1, n - 1} := by
   obtain ⟨h, hmonic, hirr, hdeg, hX⟩ :=
