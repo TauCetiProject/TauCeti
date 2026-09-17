@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.PosDef
+import Mathlib.Algebra.Order.Star.Real
 
 /-!
 # The positive-definite cone in the space of all square matrices
@@ -26,6 +27,8 @@ with that open one.
 
 * `TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos` — positivity of the quadratic form on nonzero
   vectors is an open condition on real square matrices;
+* `TauCeti.posDef_fin_one_iff` — a real `1 × 1` matrix is positive definite exactly when its
+  single entry is positive;
 * `TauCeti.measurableSet_setOfPred_posDef` — the positive-definite matrices form a measurable
   set.
 -/
@@ -39,6 +42,17 @@ open Topology
 open scoped Matrix
 
 namespace TauCeti
+
+/-- A real `1 × 1` matrix is positive definite exactly when its single entry is positive. -/
+theorem posDef_fin_one_iff (M : Matrix (Fin 1) (Fin 1) ℝ) :
+    M.PosDef ↔ 0 < M 0 0 := by
+  have hdiag : M = Matrix.diagonal ![M 0 0] := by
+    ext i j
+    fin_cases i
+    fin_cases j
+    simp
+  rw [hdiag, Matrix.posDef_diagonal_iff]
+  simp
 
 section
 

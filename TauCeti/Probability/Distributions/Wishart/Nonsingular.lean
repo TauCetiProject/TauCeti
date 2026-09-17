@@ -408,16 +408,7 @@ theorem map_symmetricFinOneEquiv_nonsingularWishartMeasure {n : ℝ} (hn : 0 < n
     {S : Matrix (Fin 1) (Fin 1) ℝ} (hS : 0 < S 0 0) :
     (nonsingularWishartMeasure n S).map symmetricFinOneEquiv =
       (Probability.chiSquaredMeasure n).map (S 0 0 * ·) := by
-  -- A `1 × 1` real matrix is positive definite as soon as its entry is positive.
-  have hposDef_of_pos {M : Matrix (Fin 1) (Fin 1) ℝ} (hM : 0 < M 0 0) : M.PosDef := by
-    have hdiag : M = Matrix.diagonal ![M 0 0] := by
-      ext i j
-      fin_cases i
-      fin_cases j
-      simp
-    rw [hdiag, Matrix.posDef_diagonal_iff]
-    simp [hM]
-  have hposDef : S.PosDef := hposDef_of_pos hS
+  have hposDef : S.PosDef := (posDef_fin_one_iff S).2 hS
   have hdet : S.det = S 0 0 := Matrix.det_fin_one S
   let e := symmetricFinOneEquiv.toHomeomorph.toMeasurableEquiv
   have he : (e : _ → ℝ) = symmetricFinOneEquiv := by
@@ -435,12 +426,12 @@ theorem map_symmetricFinOneEquiv_nonsingularWishartMeasure {n : ℝ} (hn : 0 < n
   have hA : ∀ i j, (A : Matrix (Fin 1) (Fin 1) ℝ) i j = x :=
     coe_symmetricFinOneEquiv_symm_apply x
   rcases (Set.mem_compl_singleton_iff.1 hx).lt_or_gt with hx | hx
-  · have hnot : ¬ (A : Matrix (Fin 1) (Fin 1) ℝ).PosDef := fun h => by
-      have := h.diag_pos (i := 0)
-      rw [hA] at this
-      exact hx.not_gt this
+  · have hnot : ¬ (A : Matrix (Fin 1) (Fin 1) ℝ).PosDef := by
+      rw [posDef_fin_one_iff, hA]
+      exact hx.not_gt
     rw [nonsingularWishartPDF_of_not_posDef n S hnot, ProbabilityTheory.gammaPDF_of_neg hx]
-  · have hApos : (A : Matrix (Fin 1) (Fin 1) ℝ).PosDef := hposDef_of_pos (by rwa [hA])
+  · have hApos : (A : Matrix (Fin 1) (Fin 1) ℝ).PosDef :=
+      (posDef_fin_one_iff _).2 (by rwa [hA])
     have htrace : Matrix.trace (S⁻¹ * (A : Matrix (Fin 1) (Fin 1) ℝ)) = x / S 0 0 := by
       simp [Matrix.trace, Matrix.mul_apply, hA, div_eq_inv_mul]
     rw [nonsingularWishartPDF_of_posDef n S hApos, ProbabilityTheory.gammaPDF_of_nonneg hx.le,
@@ -450,9 +441,15 @@ theorem map_symmetricFinOneEquiv_nonsingularWishartMeasure {n : ℝ} (hn : 0 < n
     have h2 := (Real.rpow_pos_of_pos (two_pos : (0 : ℝ) < 2) (n / 2)).ne'
     have hσ := (Real.rpow_pos_of_pos hS (n / 2)).ne'
     have hΓ := (Real.Gamma_pos_of_pos (by positivity : 0 < n / 2)).ne'
-    rw [show (n - ((1 : ℕ) : ℝ) - 1) / 2 = n / 2 - 1 by push_cast; ring,
-      show n * ((1 : ℕ) : ℝ) / 2 = n / 2 by push_cast; ring,
-      show -(x / S 0 0) / 2 = -(1 / 2 / S 0 0 * x) by ring]
+    have hdetExponent : (n - ((1 : ℕ) : ℝ) - 1) / 2 = n / 2 - 1 := by
+      push_cast
+      ring
+    have hnormalizerExponent : n * ((1 : ℕ) : ℝ) / 2 = n / 2 := by
+      push_cast
+      ring
+    have hexponentialArgument : -(x / S 0 0) / 2 = -(1 / 2 / S 0 0 * x) := by
+      ring
+    rw [hdetExponent, hnormalizerExponent, hexponentialArgument]
     field_simp
 
 /-! ### Parameter measurability -/
