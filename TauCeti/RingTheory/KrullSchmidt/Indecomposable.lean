@@ -300,9 +300,10 @@ theorem isIndecomposableModule_self [IsLocalRing A] : IsIndecomposableModule A A
 /-- **An indecomposable free module is isomorphic to the ring.** For a basis vector `b i`, the span
 of `b i` and the span of the remaining basis vectors are complementary, so the latter span is zero
 and `i` is the only index. -/
-theorem IsIndecomposableModule.nonempty_linearEquiv_of_free [Nontrivial A] [Module.Free A M]
+theorem IsIndecomposableModule.nonempty_linearEquiv_of_free [Module.Free A M]
     (h : IsIndecomposableModule A M) : Nonempty (M ≃ₗ[A] A) := by
   have := h.nontrivial
+  have := Module.nontrivial A M
   let b := Module.Free.chooseBasis A M
   obtain ⟨i⟩ := b.index_nonempty
   have hi (j : Module.Free.ChooseBasisIndex A M) : j = i := by
