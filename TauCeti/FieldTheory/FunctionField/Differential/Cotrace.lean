@@ -77,27 +77,22 @@ variable [Algebra.IsSeparable F F'] [FiniteDimensional k k'] [Algebra.IsSeparabl
 omit [Algebra k k'] [IsScalarTower k k' F'] [Algebra.IsSeparable F F'] [FiniteDimensional k k']
   [Algebra.IsSeparable k k'] in
 /-- The linear form `β ↦ ω (Tr β)` on the relative repartitions. -/
-private noncomputable def traceDual (ω : Module.Dual k ↥(repartitionSpace k F)) :
-    Module.Dual k ↥(relativeRepartitionSpace k F F') where
-  toFun β := ω ⟨fun P ↦ Algebra.trace F F' ((β : Place k F → F') P),
-    trace_comp_mem_repartitionSpace β.2⟩
-  map_add' β γ := by
-    rw [← map_add]
-    congr 1
-    ext P
-    simp
-  map_smul' c β := by
-    rw [RingHom.id_apply, ← map_smul]
-    congr 1
-    ext P
-    simp [LinearMap.map_smul_of_tower]
-
-omit [Algebra k k'] [IsScalarTower k k' F'] [Algebra.IsSeparable F F'] [FiniteDimensional k k']
-  [Algebra.IsSeparable k k'] in
-private theorem traceDual_apply (hF : IsFunctionField k F)
-    (ω : Module.Dual k ↥(repartitionSpace k F)) (β : ↥(relativeRepartitionSpace k F F')) :
-    traceDual ω β = ω (repartitionTrace k F F' hF β) :=
-  congrArg ω (Subtype.ext (funext fun P ↦ (repartitionTrace_apply hF β P).symm))
+private noncomputable def traceDual (hF : IsFunctionField k F)
+    (ω : Module.Dual k ↥(repartitionSpace k F)) :
+    Module.Dual k ↥(relativeRepartitionSpace k F F') := by
+  letI := relativeRepartitionSpaceModule (F' := F') hF
+  letI := repartitionSpaceModule hF
+  letI : IsScalarTower k F ↥(relativeRepartitionSpace k F F') :=
+    IsScalarTower.of_algebraMap_smul fun c β ↦ by
+      ext P
+      rw [congrFun (coe_relativeRepartitionSpaceModule_smul hF (algebraMap k F c) β) P]
+      simp only [Submodule.coe_smul, Pi.smul_apply, Algebra.smul_def]
+      rw [← IsScalarTower.algebraMap_apply k F F']
+  letI : IsScalarTower k F ↥(repartitionSpace k F) :=
+    IsScalarTower.of_algebraMap_smul fun c a ↦ by
+      ext P
+      simp [Algebra.smul_def]
+  exact ω.comp ((repartitionTrace k F F' hF).restrictScalars k)
 
 /-- **Existence of the cotrace** (Stichtenoth, Theorem 3.4.6): for a Weil differential `ω` of
 `F / k` bounded by `D`, some Weil differential `ω'` of `F' / k'` bounded by
@@ -116,10 +111,10 @@ theorem exists_mem_weilDifferentialFiltration_trace_apply_eq (hF : IsFunctionFie
   set N : Submodule k V :=
     ((adeleFiltration B').comap (repartitionSpace k' F').subtype).restrictScalars k with hN
   -- the form `β ↦ ω (Tr β)` kills the relative repartitions whose pullback is bounded by `B'`
-  have hvanish : ∀ β, p β ∈ N → traceDual ω β = 0 := fun β hβ ↦ by
-    rw [traceDual_apply hF]
-    exact weilDifferentialFiltration_apply_eq_zero_of_mem_adeleFiltration hω _
-      (repartitionTrace_mem_adeleFiltration hF hF' β hβ)
+  have hvanish : ∀ β, p β ∈ N → traceDual hF ω β = 0 := fun β hβ ↦ by
+    simpa only [traceDual, LinearMap.comp_apply, LinearMap.restrictScalars_apply] using
+      weilDifferentialFiltration_apply_eq_zero_of_mem_adeleFiltration hω _
+        (repartitionTrace_mem_adeleFiltration hF hF' β hβ)
   -- so it descends to `A_{F'} ⧸ A_{F'}(B')`, which every relative repartition reaches
   set q : ↥(relativeRepartitionSpace k F F') →ₗ[k] V ⧸ N := N.mkQ ∘ₗ p
   have hq : Function.Surjective q := by
@@ -130,11 +125,11 @@ theorem exists_mem_weilDifferentialFiltration_trace_apply_eq (hF : IsFunctionFie
     refine ⟨β, (Submodule.Quotient.eq N).mpr ?_⟩
     rw [hN, Submodule.restrictScalars_mem, Submodule.mem_comap, ← neg_mem_iff, map_sub, neg_sub]
     exact hβ
-  have hker : LinearMap.ker q ≤ LinearMap.ker (traceDual ω) := fun β hβ ↦
+  have hker : LinearMap.ker q ≤ LinearMap.ker (traceDual hF ω) := fun β hβ ↦
     hvanish β ((Submodule.Quotient.mk_eq_zero N).mp hβ)
-  let μ : Module.Dual k V := (LinearMap.ker q).liftQ (traceDual ω) hker ∘ₗ
+  let μ : Module.Dual k V := (LinearMap.ker q).liftQ (traceDual hF ω) hker ∘ₗ
     (q.quotKerEquivOfSurjective hq).symm.toLinearMap ∘ₗ N.mkQ
-  have hμp (β) : μ (p β) = traceDual ω β := by
+  have hμp (β) : μ (p β) = traceDual hF ω β := by
     have hqβ : q β = N.mkQ (p β) := LinearMap.comp_apply _ _ _
     simp only [μ, LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe, ← hqβ,
       LinearMap.quotKerEquivOfSurjective_symm_apply, Submodule.liftQ_apply]
@@ -143,7 +138,9 @@ theorem exists_mem_weilDifferentialFiltration_trace_apply_eq (hF : IsFunctionFie
   -- the `k'`-linear form with trace `μ` is the required Weil differential
   refine ⟨(Module.Dual.traceCompEquiv k k' V).symm μ,
     mem_weilDifferentialFiltration_of_apply_eq_zero (fun a ha ↦ ?_) (fun a ha ↦ ?_),
-    fun β ↦ by rw [Module.Dual.trace_traceCompEquiv_symm_apply, hμp, traceDual_apply hF]⟩
+    fun β ↦ by
+      rw [Module.Dual.trace_traceCompEquiv_symm_apply, hμp]
+      simp only [traceDual, LinearMap.comp_apply, LinearMap.restrictScalars_apply]⟩
   · refine (Module.Dual.apply_eq_zero_iff_forall_trace_eq_zero (K := k) _ a).mpr fun b ↦ ?_
     rw [Module.Dual.trace_traceCompEquiv_symm_apply]
     exact hμN _ ((adeleFiltration B').smul_mem b ha)
@@ -152,7 +149,8 @@ theorem exists_mem_weilDifferentialFiltration_trace_apply_eq (hF : IsFunctionFie
     obtain ⟨β, hβ⟩ := smul_mem_range_relativeRepartitionPullback (k := k) (F := F) hF' b
       (const_mem_range_relativeRepartitionPullback (F := F) hF' ha)
     obtain ⟨x, hx⟩ := mem_diagonalRepartitions_iff.mp ha
-    rw [← hβ, hμp, traceDual_apply hF]
+    rw [← hβ, hμp]
+    simp only [traceDual, LinearMap.comp_apply, LinearMap.restrictScalars_apply]
     refine weilDifferentialFiltration_apply_eq_zero_of_mem_diagonalRepartitions hω _
       (mem_diagonalRepartitions_iff.mpr ⟨Algebra.trace F F' (b • x), funext fun P ↦ ?_⟩)
     obtain ⟨P', rfl⟩ := Place.restrict_surjective (k := k) (F := F) hF' P
