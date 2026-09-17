@@ -16,8 +16,7 @@ of `ι`, ordered by reverse inclusion. An index `s` represents the intersection 
 reverse inclusion makes the evident inclusions of intersections into morphisms in `Opens X`.
 
 This file constructs the resulting diagrams in open sets and topological spaces, together with
-the natural transformation formed by the inclusions of the finite intersections into `X`. A
-chosen refinement induces a functor between index categories and a natural map of Čech diagrams.
+the natural transformation formed by the inclusions of the finite intersections into `X`.
 
 ## References
 
@@ -32,7 +31,7 @@ noncomputable section
 
 open CategoryTheory TopologicalSpace
 
-universe u v w
+universe u v
 
 namespace TauCeti.TopCat
 
@@ -148,99 +147,5 @@ lemma cechInclusionNatTrans_app (s : CechIndex ι) :
 lemma exists_mem_cechIntersection_singleton (hU : IsOpenCover U) (x : X) :
     ∃ i, x ∈ cechIntersection U (CechIndex.singleton i) := by
   simpa using hU.exists_mem x
-
-/-! ### Refinements -/
-
-namespace CechIndex
-
-private noncomputable def image {ι : Type u} {κ : Type w} (r : ι → κ) (s : Finset ι) :
-    Finset κ := by
-  classical
-  exact s.image r
-
-private lemma image_mono {ι : Type u} {κ : Type w} (r : ι → κ) :
-    Monotone (image r) := by
-  classical
-  exact Finset.image_mono r
-
-private lemma image_nonempty {ι : Type u} {κ : Type w} {r : ι → κ} {s : Finset ι}
-    (hs : s.Nonempty) : (image r s).Nonempty := by
-  classical
-  exact hs.image r
-
-/-- The functor on Čech index categories induced by a map of indexing types. It sends a nonempty
-finite set to its image. -/
-noncomputable def map {ι : Type u} {κ : Type w} (r : ι → κ) :
-    CechIndex.{u} ι ⥤ CechIndex.{w} κ :=
-  { obj := fun s ↦ OrderDual.toDual ⟨image r s.1, image_nonempty s.2⟩
-    map := fun f ↦ homOfLE (image_mono r f.le)
-    map_id := fun _ ↦ Subsingleton.elim _ _
-    map_comp := fun _ _ ↦ Subsingleton.elim _ _ }
-
-@[simp]
-lemma mem_map_obj_iff {ι : Type u} {κ : Type w} (r : ι → κ) (s : CechIndex ι) (j : κ) :
-    j ∈ ((map r).obj s).1 ↔ ∃ i ∈ s.1, r i = j := by
-  classical
-  change j ∈ s.1.image r ↔ _
-  exact Finset.mem_image
-
-@[simp]
-lemma map_obj_singleton {ι : Type u} {κ : Type w} (r : ι → κ) (i : ι) :
-    (map r).obj (singleton i) = singleton (r i) := by
-  classical
-  apply Subtype.ext
-  ext j
-  simp [eq_comm]
-
-end CechIndex
-
-section Refinement
-
-variable {X : TopCat.{v}} {ι : Type u} {κ : Type w} (U : ι → Opens X) (V : κ → Opens X)
-  (r : ι → κ) (hr : ∀ i, U i ≤ V (r i))
-
-include hr
-
-/-- The intersection indexed by `s` in a finer family is contained in the intersection indexed
-by the image of `s` in a coarser family. -/
-lemma cechIntersection_le_refinement (s : CechIndex ι) :
-    cechIntersection U s ≤ cechIntersection V ((CechIndex.map r).obj s) := by
-  classical
-  intro x hx
-  rw [mem_cechIntersection] at hx ⊢
-  intro j hj
-  rw [CechIndex.mem_map_obj_iff] at hj
-  obtain ⟨i, hi, rfl⟩ := hj
-  exact hr i (hx i hi)
-
-/-- The inclusion from an intersection in a finer family to the corresponding intersection in a
-coarser family. -/
-def cechRefinement (s : CechIndex ι) :
-    (cechTopDiagram U).obj s ⟶ (cechTopDiagram V).obj ((CechIndex.map r).obj s) :=
-  (Opens.toTopCat X).map (homOfLE (cechIntersection_le_refinement U V r hr s))
-
-/-- Refinement inclusions commute with the canonical inclusions of Čech intersections into the
-ambient space. -/
-@[reassoc]
-lemma cechRefinement_comp_inclusion (s : CechIndex ι) :
-    cechRefinement U V r hr s ≫ cechInclusion V ((CechIndex.map r).obj s) =
-      cechInclusion U s := by
-  ext x
-  rfl
-
-/-- The inclusions associated to a chosen refinement form a natural transformation between the
-two topological Čech diagrams. -/
-def cechRefinementNatTrans :
-    cechTopDiagram U ⟶ CechIndex.map r ⋙ cechTopDiagram V where
-  app := cechRefinement U V r hr
-  naturality _ _ _ := by
-    ext x
-    rfl
-
-@[simp]
-lemma cechRefinementNatTrans_app (s : CechIndex ι) :
-    (cechRefinementNatTrans U V r hr).app s = cechRefinement U V r hr s := (rfl)
-
-end Refinement
 
 end TauCeti.TopCat

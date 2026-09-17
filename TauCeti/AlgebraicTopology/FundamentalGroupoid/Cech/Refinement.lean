@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Cech.Diagram
+public import TauCeti.Topology.Category.TopCat.Cech.Refinement
 
 /-!
 # Refinements of fundamental-groupoid Čech diagrams
@@ -15,9 +16,8 @@ A chosen refinement `r` from a family of open sets `U` to a family `V`, with
 its indices under `r`. Applying the fundamental-groupoid functor to these inclusions gives a
 natural transformation between the corresponding Čech diagrams.
 
-The transformation commutes with the canonical cocones into the fundamental groupoid of the
-ambient space. Thus any universal map constructed from one cover is compatible with passage to a
-coarser cover, as required by the refinement naturality in the groupoid van Kampen theorem.
+The transformation commutes with the legs of the canonical cocones into the fundamental groupoid
+of the ambient space.
 
 ## References
 
@@ -45,20 +45,16 @@ include hr
 /-- A chosen refinement induces a natural transformation between the fundamental-groupoid Čech
 diagrams. -/
 def cechRefinementNatTrans :
-    cechDiagram U ⟶ CechIndex.map r ⋙ cechDiagram V where
-  app s := _root_.FundamentalGroupoid.fundamentalGroupoidFunctor.map
-    (TopCat.cechRefinement U V r hr s)
-  naturality _ _ f := by
-    simpa only [cechDiagram, Functor.comp_map, Functor.map_comp,
-      TopCat.cechRefinementNatTrans_app] using congrArg
-      _root_.FundamentalGroupoid.fundamentalGroupoidFunctor.map
-        ((TopCat.cechRefinementNatTrans U V r hr).naturality f)
+    cechDiagram U ⟶ CechIndex.map r ⋙ cechDiagram V :=
+  Functor.whiskerRight (TopCat.cechRefinementNatTrans U V r hr)
+    _root_.FundamentalGroupoid.fundamentalGroupoidFunctor
 
 @[simp]
 lemma cechRefinementNatTrans_app (s : CechIndex ι) :
     (cechRefinementNatTrans U V r hr).app s =
       _root_.FundamentalGroupoid.fundamentalGroupoidFunctor.map
-        (TopCat.cechRefinement U V r hr s) := (rfl)
+        (TopCat.cechRefinement U V r hr s) := by
+  rw [cechRefinementNatTrans, Functor.whiskerRight_app, TopCat.cechRefinementNatTrans_app]
 
 /-- The natural transformation induced by a refinement commutes with the canonical cocones into
 the ambient fundamental groupoid. -/
