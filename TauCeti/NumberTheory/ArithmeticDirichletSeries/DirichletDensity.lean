@@ -46,6 +46,8 @@ set of primes have density zero, and those finite-error statements are not prove
 
 ## References
 
+* The declarations and proof structure are adapted from the `HasNaturalDensity` calculus in
+  `TauCeti.NumberTheory.ArithmeticDirichletSeries.NaturalDensity`.
 * J.-P. Serre, *A Course in Arithmetic*, Chapter VI, §4.1.
 * J. Neukirch, *Algebraic Number Theory*, Chapter VII, §13.
 -/
@@ -87,24 +89,6 @@ theorem HasDirichletDensity.mono (hST : S ⊆ T) (hS : HasDirichletDensity S δ)
   exact div_le_div_of_nonneg_right (primeIdealZetaSum_mono_set_of_one_lt hST hs)
     (primeIdealZetaSum_nonneg _ s)
 
-/-- For `1 < s`, the prime ideal zeta sum over a disjoint union is the sum of the two sums. -/
-private theorem primeIdealZetaSum_union_of_one_lt (hST : Disjoint S T) {s : ℝ} (hs : 1 < s) :
-    primeIdealZetaSum (S ∪ T) s = primeIdealZetaSum S s + primeIdealZetaSum T s := by
-  simp only [primeIdealZetaSum_def]
-  -- `f` is pinned because `Summable.tsum_union_disjoint` states each piece as `f ∘ Subtype.val`.
-  exact Summable.tsum_union_disjoint (f := fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦
-    (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)) hST (summable_absNorm_rpow_subtype_of_one_lt S hs)
-    (summable_absNorm_rpow_subtype_of_one_lt T hs)
-
-/-- Dirichlet density is additive on disjoint unions of prime sets. -/
-theorem HasDirichletDensity.union (hS : HasDirichletDensity S δ)
-    (hT : HasDirichletDensity T ε) (hST : Disjoint S T) :
-    HasDirichletDensity (S ∪ T) (δ + ε) := by
-  refine hasDirichletDensity_iff.2 <|
-    ((hasDirichletDensity_iff.1 hS).add (hasDirichletDensity_iff.1 hT)).congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with s (hs : 1 < s)
-  rw [primeIdealZetaSum_union_of_one_lt hST hs, add_div]
-
 /-- Dirichlet density is additive on a finite family of pairwise disjoint prime sets. -/
 theorem hasDirichletDensity_biUnion_finset {ι : Type*} {s : Finset ι}
     {f : ι → Set (HeightOneSpectrum (𝓞 K))} {d : ι → ℝ}
@@ -116,6 +100,30 @@ theorem hasDirichletDensity_biUnion_finset {ι : Type*} {s : Finset ι}
   filter_upwards [self_mem_nhdsWithin] with t (ht : 1 < t)
   rw [primeIdealZetaSum_biUnion_of_pairwiseDisjoint s f hdisj
     fun i _ ↦ summable_absNorm_rpow_subtype_of_one_lt (f i) ht, Finset.sum_div]
+
+/-- Dirichlet density is additive on disjoint unions of prime sets. -/
+theorem HasDirichletDensity.union (hS : HasDirichletDensity S δ)
+    (hT : HasDirichletDensity T ε) (hST : Disjoint S T) :
+    HasDirichletDensity (S ∪ T) (δ + ε) := by
+  have hdisj : ((↑({false, true} : Finset Bool)) : Set Bool).PairwiseDisjoint
+      (fun b ↦ if b then S else T) := by
+    intro i _ j _ hij
+    cases i <;> cases j
+    · exact (hij rfl).elim
+    · change Disjoint T S
+      exact hST.symm
+    · change Disjoint S T
+      exact hST
+    · exact (hij rfl).elim
+  have hsets : (⋃ b ∈ ({false, true} : Finset Bool), if b then S else T) = S ∪ T := by
+    rw [Finset.set_biUnion_insert, Finset.set_biUnion_singleton]
+    simp [Set.union_comm]
+  have hfinite := hasDirichletDensity_biUnion_finset
+      (s := {false, true}) (f := fun b : Bool ↦ if b then S else T)
+      (d := fun b : Bool ↦ if b then δ else ε)
+      (by intro i _; cases i <;> assumption) hdisj
+  rw [hsets] at hfinite
+  simpa [add_comm] using hfinite
 
 /-- The complement of a set of Dirichlet density `δ` has Dirichlet density `1 - δ`. -/
 theorem HasDirichletDensity.compl (hS : HasDirichletDensity S δ) :
@@ -129,7 +137,25 @@ theorem HasDirichletDensity.compl (hS : HasDirichletDensity S δ) :
     (primeIdealZetaSum_univ_pos hs).ne'
   have hsplit : primeIdealZetaSum (Set.univ : Set (HeightOneSpectrum (𝓞 K))) s =
       primeIdealZetaSum S s + primeIdealZetaSum Sᶜ s := by
-    rw [← primeIdealZetaSum_union_of_one_lt disjoint_compl_right hs, Set.union_compl_self]
+    have hdisj : ((↑({false, true} : Finset Bool)) : Set Bool).PairwiseDisjoint
+        (fun b ↦ if b then S else Sᶜ) := by
+      intro i _ j _ hij
+      cases i <;> cases j
+      · exact (hij rfl).elim
+      · change Disjoint Sᶜ S
+        exact disjoint_compl_left
+      · change Disjoint S Sᶜ
+        exact disjoint_compl_right
+      · exact (hij rfl).elim
+    have hsets : (⋃ b ∈ ({false, true} : Finset Bool), if b then S else Sᶜ) = Set.univ := by
+      rw [Finset.set_biUnion_insert, Finset.set_biUnion_singleton]
+      simp [Set.union_comm]
+    have hzeta := primeIdealZetaSum_biUnion_of_pairwiseDisjoint
+      ({false, true} : Finset Bool)
+        (fun b ↦ if b then S else Sᶜ) hdisj
+        (fun i _ ↦ by cases i <;> exact summable_absNorm_rpow_subtype_of_one_lt _ hs)
+    rw [hsets] at hzeta
+    simpa [add_comm] using hzeta
   rw [div_self hne, eq_div_iff hne, sub_mul, one_mul, div_mul_cancel₀ _ hne]
   linarith
 
