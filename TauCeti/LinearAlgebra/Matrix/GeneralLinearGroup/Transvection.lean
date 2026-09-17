@@ -564,10 +564,10 @@ theorem diagGL_mul_transvectionUnit_mul_inv (hij : i ≠ j) (t : Fin N → Aˣ) 
 
 /-- Conjugating an invertible diagonal matrix by the Weyl representative for `εᵢ - εⱼ`
 exchanges its `i`-th and `j`-th diagonal entries. -/
+@[simp]
 theorem transvectionWeylElement_mul_diagGL_mul_inv (hij : i ≠ j) (t : Fin N → Aˣ) :
-    transvectionWeylElement hij * diagGL t * (transvectionWeylElement hij)⁻¹ =
+    transvectionWeylElement hij * diagGL t * transvectionWeylElement hij.symm =
       diagGL (t ∘ Equiv.swap i j) := by
-  rw [transvectionWeylElement_inv]
   apply Units.ext
   ext a b
   simp only [Units.val_mul, diagGL_coe]

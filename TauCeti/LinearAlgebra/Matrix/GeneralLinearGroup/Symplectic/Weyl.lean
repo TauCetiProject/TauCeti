@@ -36,8 +36,9 @@ the signed permutation group, the Weyl group of the standard symplectic torus.
   reflection in `2e_i`.
 * `positiveLongRootWeylElement_mul_diagonal_mul_inv`: the long-root reflection inverts one
   diagonal-torus coordinate.
-* `positiveLongRootWeylElement_mem_normalizer_diagonalTorus`: the representative belongs to the
-  normalizer of the paired diagonal torus.
+* `positiveLongRootWeylElement_mem_normalizer_diagonalTorus` and
+  `negativeLongRootWeylElement_mem_normalizer_diagonalTorus`: both long-root representatives belong
+  to the normalizer of the paired diagonal torus.
 * `differenceShortRootWeylElement_mem`: a subgroup containing the two difference-root elements
   forming a Weyl word contains the corresponding Weyl representative.
 * `coe_differenceShortRootWeylElement`: in sum coordinates it is a product of two type-`A` Weyl
@@ -54,6 +55,9 @@ the signed permutation group, the Weyl group of the standard symplectic torus.
 
 * R. W. Carter, *Simple Groups of Lie Type* (1972), §5.2.
 * R. Steinberg, *Lectures on Chevalley Groups* (1968), §3.
+
+Both the short-root and the long-root representatives follow the Chevalley Weyl-word
+construction `n_α = x_α(1) x_{-α}(-1) x_α(1)` of these references.
 -/
 
 public section
@@ -419,7 +423,7 @@ theorem positiveLongRootWeylElement_mul_diagonal_mul_inv
   apply (GLSymplecticFin m R).subtype_injective
   simp only [map_mul, map_inv, Subgroup.coe_subtype, coe_positiveLongRootWeylElement,
     coe_diagonal]
-  rw [TauCeti.transvectionWeylElement_mul_diagGL_mul_inv]
+  rw [TauCeti.transvectionWeylElement_inv, TauCeti.transvectionWeylElement_mul_diagGL_mul_inv]
   congr 1
   funext a
   obtain ⟨a | a, rfl⟩ := finSumFinEquiv.surjective a
@@ -455,16 +459,11 @@ theorem negativeLongRootWeylElement_mul_diagonal_mul_inv
     (i : Fin m) (t : Fin m → Rˣ) :
     negativeLongRootWeylElement i * diagonal t * positiveLongRootWeylElement i =
       diagonal (Function.update t i (t i)⁻¹) := by
-  let u := Function.update t i (t i)⁻¹
-  have hu : Function.update u i (u i)⁻¹ = t := by
-    funext a
-    by_cases hai : a = i
-    · subst a
-      simp [u]
-    · simp [u, Function.update_of_ne hai]
-  change negativeLongRootWeylElement i * diagonal t * positiveLongRootWeylElement i =
-    diagonal u
-  have hconj := positiveLongRootWeylElement_mul_diagonal_mul_inv (R := R) i u
+  have hu : Function.update (Function.update t i (t i)⁻¹) i
+      ((Function.update t i (t i)⁻¹) i)⁻¹ = t := by
+    simp
+  have hconj := positiveLongRootWeylElement_mul_diagonal_mul_inv (R := R) i
+    (Function.update t i (t i)⁻¹)
   rw [hu] at hconj
   rw [← positiveLongRootWeylElement_inv, ← hconj,
     ← positiveLongRootWeylElement_inv]
@@ -494,6 +493,13 @@ theorem positiveLongRootWeylElement_mem_normalizer_diagonalTorus (i : Fin m) :
     rw [heq] at hback
     rw [mem_diagonalTorus_iff_exists_diagonal]
     exact ⟨Function.update t i (t i)⁻¹, hback.symm⟩
+
+/-- The opposite long-root Weyl representative normalizes the paired diagonal torus. -/
+theorem negativeLongRootWeylElement_mem_normalizer_diagonalTorus (i : Fin m) :
+    negativeLongRootWeylElement (R := R) i ∈
+      Subgroup.normalizer (diagonalTorus R m : Set (GLSymplecticFin m R)) := by
+  rw [← positiveLongRootWeylElement_inv]
+  exact inv_mem (positiveLongRootWeylElement_mem_normalizer_diagonalTorus i)
 
 /-- Applying a ring homomorphism entrywise to a long-root Weyl representative gives the
 corresponding representative over the target ring. -/
