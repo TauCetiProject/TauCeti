@@ -15,8 +15,7 @@ import Mathlib.Topology.Separation.Regular
 A weak derivative on an open domain can be detected on all open subdomains whose closures
 are compact and contained in the domain. No boundary regularity or boundedness of the domain
 is needed. Thus completeness, local integrability, and the test-function identities defining
-the weak derivative can be verified on relatively compact subdomains. The proof uses Mathlib's
-`exists_open_between_and_isCompact_closure` and `MeasureTheory.locallyIntegrableOn_iff`.
+the weak derivative can be verified on relatively compact subdomains.
 
 ## Main results
 
