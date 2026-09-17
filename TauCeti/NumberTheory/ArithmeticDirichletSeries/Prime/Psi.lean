@@ -109,6 +109,7 @@ theorem primePowerWeight_eq_vonMangoldt_re (A : IdealPrimePower K) :
 
 /-- On a prime-power ideal the ideal von Mangoldt function is the standard logarithmic weight,
 as a complex number. -/
+@[simp]
 theorem vonMangoldt_eq_primePowerWeight (A : IdealPrimePower K) :
     (IdealArithmeticFunction.vonMangoldt : IdealArithmeticFunction K) A =
       (primePowerWeight A : ℂ) :=

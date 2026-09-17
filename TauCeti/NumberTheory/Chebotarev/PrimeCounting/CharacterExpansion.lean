@@ -131,7 +131,7 @@ theorem sum_inv_mul_vonMangoldtTransform_galoisCharacterWeight_apply
 
 /-- The regrouped coefficients of the Frobenius von Mangoldt ideal weight are the Frobenius von
 Mangoldt coefficients. -/
-private theorem normCoeff_frobeniusVonMangoldtWeight (C : ConjClasses (L ≃ₐ[K] L)) (n : ℕ) :
+theorem normCoeff_frobeniusVonMangoldtWeight (C : ConjClasses (L ≃ₐ[K] L)) (n : ℕ) :
     normCoeff K (fun I ↦ (frobeniusVonMangoldtWeight K L C I : ℂ)) n =
       (frobeniusVonMangoldtCoeff K L C n : ℂ) := by
   rw [normCoeff_eq_sum_normFiber, frobeniusVonMangoldtCoeff_apply, Complex.ofReal_sum]
