@@ -18,6 +18,9 @@ for every scalar extension with connected prime spectrum. In particular, extendi
 splitting field of a diagonalizable group does not create new characters. This allows
 characters computed over a splitting field to be compared with geometric characters.
 
+Here `ConnectedSpace (PrimeSpectrum K)` includes nonemptiness of the spectrum and hence
+implies `Nontrivial K`; in particular, the zero ring is excluded.
+
 The proof uses `GroupLike.evaluationBialgEquiv` to reconstruct the original bialgebra as
 the monoid algebra of its group-like elements, `MonoidAlgebra.scalarTensorBialgEquiv`
 for scalar extension, and `MonoidAlgebra.groupLikeEquiv` to classify the resulting
@@ -70,7 +73,8 @@ variable {R K A : Type*} [CommRing R] [IsDomain R] [CommRing K] [Algebra R K]
   [Module.IsTorsionFree R A]
 
 /-- Scalar extension preserves the characters of a torsion-free commutative bialgebra
-spanned by group-like elements, provided the extended base has connected prime spectrum. -/
+spanned by group-like elements, provided the extended base has connected prime spectrum.
+The `ConnectedSpace` hypothesis includes nonemptiness, so the extended base is nontrivial. -/
 theorem groupLikeBaseChange_bijective
     (hspan : Submodule.span R (Set.range (_root_.GroupLike.val (R := R) (A := A))) = ⊤) :
     Function.Bijective (groupLikeBaseChange (R := R) (K := K) (A := A)) := by
