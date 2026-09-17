@@ -41,8 +41,8 @@ approximates `a`.
   are simultaneously approximated by one element of `R`.
 * `IsDedekindDomain.FiniteAdeleRing.mul_nonZeroDivisor_mem_adicCompletionIntegers`: a finite adele
   has a common denominator in `R`.
-* `IsDedekindDomain.FiniteAdeleRing.exists_forall_valued_sub_le`: strong approximation with explicit
-  precision at finitely many places and integrality everywhere.
+* `IsDedekindDomain.FiniteAdeleRing.exists_forall_valued_sub_le_and_forall_valued_sub_le_one`:
+  strong approximation with explicit precision at finitely many places and integrality everywhere.
 * `IsDedekindDomain.FiniteAdeleRing.denseRange_algebraMap`: `K` is dense in the finite adele ring.
 
 ## References
@@ -127,7 +127,8 @@ theorem mul_nonZeroDivisor_mem_adicCompletionIntegers (a : FiniteAdeleRing R K) 
 /-- **Strong approximation for the finite adeles, in explicit form.** Every finite adele `a` is
 approximated by an element `x` of `K` to any prescribed precision at finitely many places, while
 `x - a` is integral at every place. -/
-theorem exists_forall_valued_sub_le (a : FiniteAdeleRing R K) (s : Finset (HeightOneSpectrum R))
+theorem exists_forall_valued_sub_le_and_forall_valued_sub_le_one (a : FiniteAdeleRing R K)
+    (s : Finset (HeightOneSpectrum R))
     (n : HeightOneSpectrum R → ℕ) :
     ∃ x : K, (∀ v ∈ s, Valued.v (algebraMap K (v.adicCompletion K) x - a v) ≤ exp (-(n v : ℤ))) ∧
       ∀ v, Valued.v (algebraMap K (v.adicCompletion K) x - a v) ≤ 1 := by
@@ -196,15 +197,19 @@ theorem denseRange_algebraMap : DenseRange (algebraMap K (FiniteAdeleRing R K)) 
   rw [nhds_pi, Filter.mem_pi] at hU1
   obtain ⟨I, hI, t, ht, hIt⟩ := hU1
   choose n hn using fun v ↦ exists_maximalIdeal_pow_subset_of_mem_nhds v (ht v)
-  obtain ⟨x, hxI, hx⟩ := exists_forall_valued_sub_le a hI.toFinset n
+  obtain ⟨x, hxI, hx⟩ :=
+    exists_forall_valued_sub_le_and_forall_valued_sub_le_one a hI.toFinset n
   refine ⟨algebraMap K _ x, ?_, x, rfl⟩
   let w : ∀ v : HeightOneSpectrum R, v.adicCompletionIntegers K :=
     fun v ↦ ⟨algebraMap K (v.adicCompletion K) x - a v, hx v⟩
   have hw : w ∈ I.pi t := fun v hv ↦
     hn v ((mem_maximalIdeal_pow_iff v).mpr (hxI v (hI.mem_toFinset.mpr hv)))
-  -- `ι w` and `algebraMap K _ x - a` have the same components by definition
   have heq : a + ι w = algebraMap K (FiniteAdeleRing R K) x := by
-    rw [show ι w = algebraMap K (FiniteAdeleRing R K) x - a from rfl, add_sub_cancel]
+    apply RestrictedProduct.ext
+    intro v
+    change a v + (algebraMap K (v.adicCompletion K) x - a v) =
+      algebraMap K (v.adicCompletion K) x
+    exact add_sub_cancel _ _
   exact heq ▸ hIt hw
 
 end FiniteAdeleRing
