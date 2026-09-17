@@ -43,7 +43,14 @@ reuses the same analyticity strip and the same
 identity-principle idiom.  That file's `## TODO` note ("once we know that equal `mgf` implies equal
 distributions …")
 records the determinacy fact as an open gap in Mathlib; the results here complete it for finite
-measures via the polynomial-moment route.
+measures, both via the polynomial-moment route and directly from the moment-generating function.
+
+The transform route is shorter, because Mathlib's `ProbabilityTheory.eqOn_complexMGF_of_mgf`
+already performs the strip propagation from an equality of moment-generating functions.  What
+remains is to read off the imaginary axis, so this file also records the last two steps as named
+theorems: a law on `ℝ` with finite exponential moments near `0` is determined by its
+moment-generating function.  This is how a convolution or a limit is identified once its
+moment-generating function is in closed form on a neighbourhood of the origin.
 
 ## Main declarations
 
@@ -56,6 +63,8 @@ measures via the polynomial-moment route.
   which already puts `0` in the interior of the integrability strip.  This is the form the
   completeness argument consumes: the hypothesis holds for Gaussian decay and automatically for
   compactly supported measures.
+* `TauCeti.charFun_eq_of_mgf_eq` and `TauCeti.Measure.ext_of_mgf`: the same two conclusions from an
+  equality of moment-generating functions instead of an equality of moments.
 -/
 
 public section
@@ -66,6 +75,38 @@ open MeasureTheory ProbabilityTheory Complex Filter
 open scoped Topology
 
 variable {μ ν : Measure ℝ}
+
+/-! ### Determinacy from the moment-generating function -/
+
+/-- **Determinacy at the level of characteristic functions, from the moment-generating function.**
+Two measures on `ℝ` with the same moment-generating function, one of them a probability measure
+with finite exponential moments near `0`, have the same characteristic function.
+
+The moment-generating functions must agree on all of `ℝ`, not only where they are finite.  In
+practice that costs nothing: a closed form is usually known on the integrability set, and
+`ProbabilityTheory.mgf_undef` gives the value `0` on its complement. -/
+theorem charFun_eq_of_mgf_eq [IsProbabilityMeasure μ]
+    (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ)) (hmgf : mgf id μ = mgf id ν) :
+    charFun μ = charFun ν := by
+  ext t
+  have hre : ((t : ℂ) * I).re ∈ interior (integrableExpSet id μ) := by
+    simpa using hμ
+  have h := eqOn_complexMGF_of_mgf hmgf hre
+  rwa [complexMGF_id_mul_I, complexMGF_id_mul_I] at h
+
+/-- **A law on `ℝ` with finite exponential moments near `0` is determined by its
+moment-generating function.** This is the determinacy statement recorded as a `TODO` in Mathlib's
+`Mathlib/Probability/Moments/ComplexMGF.lean`.
+
+Only finiteness is assumed of the second measure: evaluating the hypothesis at `0` gives
+`ν Set.univ = 1`, so a finite `ν` with the moment-generating function of a probability measure is
+itself one. -/
+theorem Measure.ext_of_mgf [IsProbabilityMeasure μ] [IsFiniteMeasure ν]
+    (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ)) (hmgf : mgf id μ = mgf id ν) :
+    μ = ν :=
+  Measure.ext_of_charFun (charFun_eq_of_mgf_eq hμ hmgf)
+
+/-! ### Determinacy from the moments -/
 
 /-- The `n`-th derivative at `0` of the complex moment-generating function of `μ` is the `n`-th
 complex moment `↑(∫ xⁿ dμ)`.  Immediate from `iteratedDeriv_complexMGF` at `z = 0`, where the
