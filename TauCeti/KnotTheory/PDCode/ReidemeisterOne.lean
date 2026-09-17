@@ -44,7 +44,7 @@ that factor, and the second and third moves leave the bracket unchanged; neither
   components.
 * `TauCeti.PDCode.kauffmanBracket_reidemeisterOne`: the move multiplies the Kauffman bracket by
   `-a ^ 3` or `-a⁻¹ ^ 3`, depending on the crossing it adds.
-* `TauCeti.PDCode.reidemeisterOne_mirror`: mirroring the new code adds the mirror kink to the
+* `TauCeti.PDCode.mirror_reidemeisterOne`: mirroring the new code adds the mirror kink to the
   mirror code.
 
 ## References
@@ -151,10 +151,6 @@ private theorem sumCongr_slotSmoothing_false_mul_kinkPerm (he : e (e h) = h) (hn
     · simp [kinkPerm_inr_two, swap_apply_of_ne_of_ne]
     · simp [kinkPerm_inr_three, swap_apply_of_ne_of_ne]
 
-private theorem oppositeCrossingSlot_eq_add_two (slot : Fin 4) :
-    oppositeCrossingSlot slot = slot + 2 :=
-  Fin.ext (oppositeCrossingSlot_apply slot)
-
 /-- Following the strands through the new crossing, after the arcs of the kink, is the old
 component traversal `T * e` with all four slots spliced in along it. -/
 private theorem sumCongr_oppositeCrossingSlot_mul_kinkPerm (he : e (e h) = h) (hne : e h ≠ h)
@@ -166,17 +162,16 @@ private theorem sumCongr_oppositeCrossingSlot_mul_kinkPerm (he : e (e h) = h) (h
   rcases x with x | t
   · by_cases hx : x = h
     · subst hx
-      simp [kinkPerm_inl_self hne, swap_apply_of_ne_of_ne, Ne.symm hne,
-        oppositeCrossingSlot_eq_add_two]
+      simp [kinkPerm_inl_self hne, swap_apply_of_ne_of_ne, Ne.symm hne, Fin.ext_iff]
     by_cases hx' : x = e h
     · subst hx'
-      simp [kinkPerm_inl_apply_self, swap_apply_of_ne_of_ne, oppositeCrossingSlot_eq_add_two]
+      simp [kinkPerm_inl_apply_self, swap_apply_of_ne_of_ne, Fin.ext_iff]
     simp [kinkPerm_inl_of_ne hx hx', swap_apply_of_ne_of_ne, hx, hx']
   · fin_cases t
     · simp [kinkPerm_inr_zero he hne, swap_apply_of_ne_of_ne, hne, he]
     · simp [kinkPerm_inr_one, swap_apply_of_ne_of_ne]
-    · simp [kinkPerm_inr_two, swap_apply_of_ne_of_ne, oppositeCrossingSlot_eq_add_two]
-    · simp [kinkPerm_inr_three, swap_apply_of_ne_of_ne, oppositeCrossingSlot_eq_add_two]
+    · simp [kinkPerm_inr_two, swap_apply_of_ne_of_ne, Fin.ext_iff]
+    · simp [kinkPerm_inr_three, swap_apply_of_ne_of_ne, Fin.ext_iff]
 
 omit [DecidableEq α] in
 private theorem orbitCount_sumCongr_one [Finite α] (σ : Perm α) :
@@ -324,14 +319,14 @@ private theorem reidemeisterOne_edgePair_val :
   simp [reidemeisterOne_edgePair_val, Equiv.permCongr_apply, kinkPerm_inr_three]
 
 /-- Every half-edge off the cut arc keeps its old partner. -/
-theorem reidemeisterOne_edgePair_inl_of_ne {x : Fin (4 * n)} (hx : x ≠ h)
+@[simp] theorem reidemeisterOne_edgePair_inl_of_ne {x : Fin (4 * n)} (hx : x ≠ h)
     (hx' : x ≠ D.edgePair.val h) :
     (D.reidemeisterOne h b).edgePair.val (halfEdgeSuccEquiv n (.inl x)) =
       halfEdgeSuccEquiv n (.inl (D.edgePair.val x)) := by
   simp [reidemeisterOne_edgePair_val, Equiv.permCongr_apply, kinkPerm_inl_of_ne hx hx']
 
 /-- Mirroring the new code adds the mirror kink to the mirror code. -/
-@[simp] theorem reidemeisterOne_mirror :
+@[simp] theorem mirror_reidemeisterOne :
     (D.reidemeisterOne h b).mirror = D.mirror.reidemeisterOne h !b := by
   apply PDCode.ext
   · simp [reidemeisterOne]
@@ -402,7 +397,8 @@ private theorem orbitCount_statePerm_reidemeisterOne (s : Fin (n + 1) → Bool) 
   by_cases hs : s (Fin.last n) = b
   · simp only [hs, ↓reduceIte, beq_self_eq_true]
     rw [sumCongr_slotSmoothing_true_mul_kinkPerm he hne, orbitCount_splice_two]
-  · rw [show (s (Fin.last n) == b) = false by simpa using hs]
+  · have hbne : (s (Fin.last n) == b) = false := by simpa using hs
+    rw [hbne]
     simp only [hs, ↓reduceIte, add_zero]
     rw [sumCongr_slotSmoothing_false_mul_kinkPerm he hne,
       orbitCount_splice_four _ _ _ (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -411,7 +407,7 @@ private theorem orbitCount_statePerm_reidemeisterOne (s : Fin (n + 1) → Bool) 
 /-- **Circles after the first Reidemeister move.** A state of the new code leaves one circle more
 than its restriction to the old crossings when its choice at the new crossing is `b`, the
 smoothing that cuts off the loop of the kink, and the same number of circles otherwise. -/
-theorem stateLoopCount_reidemeisterOne (s : Fin (n + 1) → Bool) :
+@[simp] theorem stateLoopCount_reidemeisterOne (s : Fin (n + 1) → Bool) :
     (D.reidemeisterOne h b).stateLoopCount s =
       D.stateLoopCount (Fin.init s) + if s (Fin.last n) = b then 1 else 0 := by
   rw [stateLoopCount_def, stateLoopCount_def, orbitCount_statePerm_reidemeisterOne,
@@ -432,7 +428,7 @@ theorem stateLoopCount_reidemeisterOne (s : Fin (n + 1) → Bool) :
 
 /-- **The Kauffman bracket under the first Reidemeister move.** Adding a kink with over-pair
 indicator `b` multiplies the bracket by `-a ^ 3` if `b = true` and by `-a⁻¹ ^ 3` if `b = false`. -/
-theorem kauffmanBracket_reidemeisterOne {R : Type*} [CommRing R] (a : Rˣ) :
+@[simp] theorem kauffmanBracket_reidemeisterOne {R : Type*} [CommRing R] (a : Rˣ) :
     (D.reidemeisterOne h b).kauffmanBracket a =
       -(((bif b then a else a⁻¹ : Rˣ) : R) ^ 3) * D.kauffmanBracket a := by
   have hn : n ≠ 0 := by

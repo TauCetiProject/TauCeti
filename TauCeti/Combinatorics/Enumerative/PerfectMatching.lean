@@ -428,7 +428,8 @@ theorem IsPerfectMatching.even_orbitCount_mul [Finite α] {f g : Equiv.Perm α}
   obtain ⟨m, hm⟩ := even_card_of_nonempty_perfectMatching α ⟨⟨f, hf⟩⟩
   by_contra hodd
   obtain ⟨j, hj⟩ := Nat.not_even_iff_odd.mp hodd
-  rw [show (Fintype.card α - orbitCount (f * g)) % 2 = 1 by omega, pow_one] at hs
+  have hparity : (Fintype.card α - orbitCount (f * g)) % 2 = 1 := by omega
+  rw [hparity, pow_one] at hs
   exact absurd hs (by decide)
 
 end Parity
