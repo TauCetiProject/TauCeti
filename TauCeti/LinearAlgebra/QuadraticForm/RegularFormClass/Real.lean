@@ -22,10 +22,10 @@ trivial exactly when the negative index is even.
 
 ## Main results
 
-* `TauCeti.discr_formClass_eq_sigNeg_nsmul`: the discriminant of a regular real form is
+* `QuadraticForm.discr_formClass_eq_sigNeg_nsmul`: the discriminant of a regular real form is
   `sigNeg Q • [-1]`.
-* `TauCeti.discr_formClass_eq_zero_iff_even_sigNeg`: it is trivial exactly when `sigNeg Q` is
-  even.
+* `QuadraticForm.discr_formClass_eq_zero_iff_even_sigNeg`: it is trivial exactly when `sigNeg Q`
+  is even.
 * `TauCeti.discr_formClass_realSignatureForm`: the normal form of signature `(p, q)` has
   discriminant `q • [-1]`.
 
@@ -36,15 +36,15 @@ trivial exactly when the negative index is even.
 
 public section
 
-open QuadraticMap QuadraticForm
-
-namespace TauCeti
+open QuadraticMap QuadraticForm TauCeti
 
 variable {M : Type*} [AddCommGroup M] [Module ℝ M] [FiniteDimensional ℝ M]
 
+namespace QuadraticForm
+
 /-- **The determinant-sign formula.** The discriminant of a regular real quadratic form is the
 class of `(-1)^q`, where `q` is its negative index of inertia. -/
-theorem discr_formClass_eq_sigNeg_nsmul (Q : QuadraticForm ℝ M) (hQ : Q.Nondegenerate) :
+theorem discr_formClass_eq_sigNeg_nsmul (Q : _root_.QuadraticForm ℝ M) (hQ : Q.Nondegenerate) :
     RegularFormClass.discr (formClass Q hQ) = sigNeg Q • squareClass (-1 : ℝˣ) := by
   obtain ⟨⟨n, w⟩, hp⟩ := exists_presentedForm_equivalent Q hQ
   rw [discr_formClass Q hQ ⟨n, w⟩ hp, squareClass_prod, sum_squareClass_eq_ncard_nsmul,
@@ -52,9 +52,15 @@ theorem discr_formClass_eq_sigNeg_nsmul (Q : QuadraticForm ℝ M) (hQ : Q.Nondeg
 
 /-- The discriminant of a regular real quadratic form is trivial exactly when its negative index
 of inertia is even. -/
-theorem discr_formClass_eq_zero_iff_even_sigNeg (Q : QuadraticForm ℝ M) (hQ : Q.Nondegenerate) :
+@[simp]
+theorem discr_formClass_eq_zero_iff_even_sigNeg (Q : _root_.QuadraticForm ℝ M)
+    (hQ : Q.Nondegenerate) :
     RegularFormClass.discr (formClass Q hQ) = 0 ↔ Even (sigNeg Q) := by
   rw [discr_formClass_eq_sigNeg_nsmul, nsmul_squareClass_neg_one_eq_zero_iff_even]
+
+end QuadraticForm
+
+namespace TauCeti
 
 /-- The normal form `p⟨1⟩ ⊥ q⟨-1⟩` of signature `(p, q)` has discriminant `q • [-1]`. -/
 @[simp]

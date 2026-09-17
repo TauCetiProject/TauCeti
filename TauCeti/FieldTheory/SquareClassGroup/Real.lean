@@ -19,7 +19,7 @@ form.
 
 ## Main results
 
-* `TauCeti.squareClass_eq_zero_iff_pos`: a real unit has trivial square class iff it is positive.
+* `Units.squareClass_eq_zero_iff_pos`: a real unit has trivial square class iff it is positive.
 * `TauCeti.squareClass_eq_squareClass_neg_one_of_neg`: every negative real unit has the square
   class of `-1`.
 * `TauCeti.sum_squareClass_eq_ncard_nsmul`: the square classes of a finite family of real units
@@ -30,12 +30,18 @@ form.
 
 public section
 
-namespace TauCeti
+open TauCeti
+
+namespace Units
 
 /-- A real unit has trivial square class exactly when it is positive. -/
 theorem squareClass_eq_zero_iff_pos (u : ℝˣ) : squareClass u = 0 ↔ 0 < (u : ℝ) := by
   rw [squareClass_eq_zero_iff, ← isSquare_units_val_iff, Real.isSquare_iff]
   exact ⟨fun h ↦ lt_of_le_of_ne h (Units.ne_zero u).symm, le_of_lt⟩
+
+end Units
+
+namespace TauCeti
 
 /-- A negative real unit has the square class of `-1`. -/
 theorem squareClass_eq_squareClass_neg_one_of_neg {u : ℝˣ} (hu : (u : ℝ) < 0) :
@@ -48,8 +54,8 @@ exactly when `n` is even. -/
 @[simp]
 theorem nsmul_squareClass_neg_one_eq_zero_iff_even (n : ℕ) :
     n • squareClass (-1 : ℝˣ) = 0 ↔ Even n := by
-  rw [← squareClass_pow, squareClass_eq_zero_iff_pos, Units.val_pow_eq_pow_val, Units.val_neg,
-    Units.val_one]
+  rw [← squareClass_pow, Units.squareClass_eq_zero_iff_pos, Units.val_pow_eq_pow_val,
+    Units.val_neg, Units.val_one]
   rcases n.even_or_odd with hn | hn
   · simp [hn, hn.neg_one_pow]
   · simp [hn.neg_one_pow, Nat.not_even_iff_odd.mpr hn]
@@ -63,7 +69,7 @@ theorem sum_squareClass_eq_ncard_nsmul {ι : Type*} [Fintype ι] (w : ι → ℝ
       if (w i : ℝ) < 0 then squareClass (-1 : ℝˣ) else 0 := fun i ↦ by
     split_ifs with hi
     · exact squareClass_eq_squareClass_neg_one_of_neg hi
-    · exact (squareClass_eq_zero_iff_pos _).mpr
+    · exact (Units.squareClass_eq_zero_iff_pos _).mpr
         (lt_of_le_of_ne (not_lt.mp hi) (Units.ne_zero (w i)).symm)
   rw [Finset.sum_congr rfl fun i _ ↦ hterm i, Finset.sum_ite, Finset.sum_const_zero, add_zero,
     Finset.sum_const, ← Set.ncard_coe_finset]
