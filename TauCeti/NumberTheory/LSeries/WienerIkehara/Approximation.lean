@@ -199,7 +199,8 @@ private lemma sum_range_norm_term_mul_inv_one_add_sq_le
     fun n _ _ ↦ norm_term_mul_inv_one_add_sq_nonneg n) ?_
   rw [Finset.sum_range_succ']
   simp only [norm_term_mul_inv_one_add_sq_eq]
-  rw [show logWeight x ((0 : ℕ) : ℝ) = 0 by simp [logWeight], mul_zero, add_zero]
+  have hlogWeight_zero : logWeight x ((0 : ℕ) : ℝ) = 0 := by simp [logWeight]
+  rw [hlogWeight_zero, mul_zero, add_zero]
   -- Abel's inequality against the constant sequence `C`.
   have hpartial : ∀ k ≤ N, ∑ i ∈ Finset.range k, ‖a (i + 1)‖ ≤
       ∑ _i ∈ Finset.range k, C := fun k _ ↦ by
@@ -305,8 +306,8 @@ theorem tendsto_tsum_term_mul_atTop_of_approx_fourier (ha : 0 ≤ a)
     Tendsto (fun x : ℝ ↦
         ∑' n : ℕ, _root_.LSeries.term a 1 n * W (1 / (2 * π) * Real.log (n / x)))
       atTop (𝓝 (2 * (π : ℂ) * A * L)) := by
-  obtain ⟨C₀, hC⟩ := exists_sum_Icc_le_mul_of_isBigO (fun n ↦ norm_nonneg (a n))
-    (isBigO_sum_Icc_norm_id_of_boundary ha hG hG' hsum)
+  obtain ⟨C₀, hC⟩ :=
+    exists_sum_Icc_le_mul_of_isBigO (isBigO_sum_Icc_norm_id_of_boundary ha hG hG' hsum)
   set C := max C₀ 0
   replace hC : ∀ N : ℕ, ∑ n ∈ Finset.Icc 1 N, ‖a n‖ ≤ C * N := fun N ↦
     (hC N).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) N.cast_nonneg)
@@ -357,10 +358,19 @@ theorem tendsto_tsum_term_mul_atTop_of_approx_fourier (ha : 0 ≤ a)
           exact le_add_of_nonneg_right zero_le_one
       _ = ε / 2 := by field_simp
   rw [dist_eq_norm] at hmain ⊢
-  rw [hsplit, show ∀ S E P Q : ℂ, S + E - Q = (S - P) + E + (P - Q) from fun _ _ _ _ ↦ by ring]
-  refine (norm_add₃_le.trans_lt (add_lt_add_of_lt_of_le
-    (add_lt_add_of_lt_of_le hmain herr) hconst)).trans_le ?_
-  rw [add_assoc]
-  exact (add_le_add_right hsmall _).trans (add_halves ε).le
+  rw [hsplit]
+  calc
+    _ = ‖(∑' n : ℕ, _root_.LSeries.term a 1 n * 𝓕 psi
+          (1 / (2 * π) * Real.log (n / x))) - 2 * (π : ℂ) * A * psi 0 +
+        ∑' n : ℕ, _root_.LSeries.term a 1 n *
+          (W (1 / (2 * π) * Real.log (n / x)) - 𝓕 psi
+            (1 / (2 * π) * Real.log (n / x))) +
+        (2 * (π : ℂ) * A * psi 0 - 2 * (π : ℂ) * A * L)‖ :=
+      congrArg norm (by abel)
+    _ < ε := by
+      refine (norm_add₃_le.trans_lt (add_lt_add_of_lt_of_le
+        (add_lt_add_of_lt_of_le hmain herr) hconst)).trans_le ?_
+      rw [add_assoc]
+      exact (add_le_add_right hsmall _).trans (add_halves ε).le
 
 end TauCeti.LSeries
