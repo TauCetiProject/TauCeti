@@ -192,6 +192,10 @@ theorem apply_columnOfRow (x : GridState n) (r : Fin n) : x (x.columnOfRow r) = 
 theorem columnOfRow_apply (x : GridState n) (c : Fin n) : x.columnOfRow (x c) = c := by
   simp [columnOfRow]
 
+/-- Distinct rows are occupied in distinct columns. -/
+theorem columnOfRow_injective (x : GridState n) : Function.Injective x.columnOfRow :=
+  x.toPerm.symm.injective
+
 /-- A grid state occupies a square in every column, so it meets every nonempty vertical band of
 squares. -/
 theorem not_disjoint_product_univ_pointSet (M : GridState n) {s : Finset (Fin n)}

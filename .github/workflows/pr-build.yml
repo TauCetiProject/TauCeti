@@ -828,6 +828,21 @@ jobs:
           LAKE_CACHE_MAX_REVS: ${{ env.TOOLCHAIN_CHANGED == '1' && '1' || '1000' }}
         run: bash gate/scripts/lake-cache-get.sh pr
 
+      - name: Save verified Lake archive records before candidate code runs
+        if: ${{ env.INFRA != '1' && env.STAGE_LAKE_CACHE == '1' }}
+        # gate/ is mounted read-only below. Candidate builds overwrite the live
+        # cache records, so retain the downloaded associations and archive digests here.
+        run: python3 gate/scripts/lake_cache_reuse.py snapshot pr gate/lake-cache-reuse.json
+
+      - name: Validate Lake archive reuse against a changed toolchain
+        if: ${{ env.INFRA != '1' && env.TOOLCHAIN_CHANGED == '1' }}
+        # The pin was validated above; Mathlib setup has installed that toolchain.
+        # Build only the trusted test's synthetic modules, never candidate sources.
+        # Catch Lake schema/CLI drift before a bump can land and fail main's tests.
+        run: |
+          ELAN_TOOLCHAIN="$(cat pr/lean-toolchain)" \
+            python3 gate/scripts/test_lake_cache_reuse.py --integration
+
       - name: Prepare trusted read-only Lean watchdog toolchain
         if: ${{ env.INFRA != '1' }}
         run: |

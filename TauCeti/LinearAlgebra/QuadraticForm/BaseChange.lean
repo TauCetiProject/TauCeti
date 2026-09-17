@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.RingTheory.Flat.Basic
 import TauCeti.LinearAlgebra.BilinearForm.BaseChange
+import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Base change of quadratic forms
@@ -308,6 +309,17 @@ theorem baseChange_smul (r : R) (Q : _root_.QuadraticForm R M) :
   apply _root_.baseChange_ext
   simp [Algebra.smul_def, mul_comm]
 
+/-- A quadratic form vanishes after a faithful scalar extension exactly when it vanishes.
+This is the quadratic-form analogue of Mathlib's
+`LinearMap.BilinForm.baseChange_eq_zero_iff`. -/
+@[simp]
+theorem baseChange_eq_zero_iff [FaithfulSMul R A] {Q : _root_.QuadraticForm R M} :
+    Q.baseChange A = 0 ↔ Q = 0 := by
+  refine ⟨fun h ↦ QuadraticMap.ext fun x ↦ ?_, fun h ↦ h ▸ baseChange_zero⟩
+  have hx := congrArg (fun F : _root_.QuadraticForm A (A ⊗[R] M) ↦ F (1 ⊗ₜ x)) h
+  simp only [baseChange_tmul, mul_one, zero_apply, Algebra.smul_def] at hx
+  exact FaithfulSMul.algebraMap_injective R A (hx.trans (map_zero _).symm)
+
 /-- Isotropy is preserved by a faithful scalar extension when the underlying module is flat. -/
 theorem not_anisotropic_baseChange [FaithfulSMul R A] [Module.Flat R M]
     {Q : _root_.QuadraticForm R M} (hQ : ¬ Q.Anisotropic) :
@@ -419,6 +431,27 @@ theorem Nondegenerate.baseChange [Invertible (2 : K)]
   rw [_root_.QuadraticForm.associated_baseChange]
   exact (TauCeti.nondegenerate_baseChange_iff (QuadraticMap.associated Q) b).2
     (QuadraticMap.nondegenerate_associated_iff.mpr hQ)
+
+/-- On a space of dimension at most one, a quadratic form is anisotropic exactly when its
+extension to a nontrivial ring without zero divisors is anisotropic.  Dimension one is sharp:
+`⟨1, 1⟩` over `ℚ` is anisotropic, while its extension to `ℂ` is not. -/
+@[simp]
+theorem anisotropic_baseChange_iff_of_finrank_le_one [Invertible (2 : K)]
+    {A : Type*} [CommRing A] [Nontrivial A] [NoZeroDivisors A] [Algebra K A]
+    [FiniteDimensional K V]
+    {Q : _root_.QuadraticForm K V} (hV : Module.finrank K V ≤ 1) :
+    (Q.baseChange A).Anisotropic ↔ Q.Anisotropic := by
+  refine ⟨fun hQA ↦ ?_, fun hQ x hx ↦ ?_⟩
+  · by_contra hQ
+    exact not_anisotropic_baseChange hQ hQA
+  let b := Module.finBasis K V
+  have : Subsingleton (Fin (Module.finrank K V)) := Fin.subsingleton_iff_le_one.mpr hV
+  refine (b.baseChange A).ext_elem fun i ↦ ?_
+  rw [b.eq_baseChange_repr_tmul_of_subsingleton x i, baseChange_tmul, Algebra.smul_def,
+    mul_eq_zero, mul_self_eq_zero] at hx
+  rw [map_zero, Finsupp.zero_apply]
+  refine hx.resolve_left fun h ↦ b.ne_zero i (hQ _ ?_)
+  exact (FaithfulSMul.algebraMap_injective K A).eq_iff.mp (h.trans (map_zero _).symm)
 
 end QuadraticForm
 
