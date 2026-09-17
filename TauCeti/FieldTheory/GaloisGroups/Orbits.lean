@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
+public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import TauCeti.RingTheory.Polynomial.Factors
 
@@ -51,6 +52,9 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
   monic irreducible factors of `p`, the orbit of a root going to its minimal polynomial.
 * `TauCeti.natCard_orbit_eq_natDegree_factor`: along that bijection, a separable
   factor has as many roots in the matching orbit as its degree.
+* `TauCeti.coe_rootSet_eq_orbit_of_irreducible`, `TauCeti.rootSetEquivQuotientStabilizer`: in a
+  normal extension `M / F`, the roots of an irreducible polynomial form one orbit of `Gal(M/F)`,
+  and are identified equivariantly with the cosets of the stabilizer of a chosen root.
 -/
 
 public section
@@ -370,5 +374,53 @@ theorem natCard_orbitQuotient (hp : p ≠ 0) :
     Nat.card (MulAction.orbitRel.Quotient p.Gal (p.rootSet E))
       = Nat.card p.Factors :=
   Nat.card_congr (orbitQuotientEquivFactors p E hp)
+
+/-! ## The automorphisms of a normal extension on the roots of an irreducible polynomial -/
+
+section Normal
+
+variable {M : Type v} [Field M] [Algebra F M] [Normal F M]
+
+/-- In a normal extension `M / F`, the roots in `M` of an irreducible polynomial over `F` form one
+orbit of `Gal(M/F)`: the orbit of any of them. -/
+theorem coe_rootSet_eq_orbit_of_irreducible {q : F[X]} (hq : Irreducible q) {α : M}
+    (hα : α ∈ q.rootSet M) : (q.rootSet M : Set M) = MulAction.orbit (M ≃ₐ[F] M) α := by
+  ext β
+  constructor
+  · intro hβ
+    rw [← Normal.minpoly_eq_iff_mem_orbit, ← minpoly.eq_of_irreducible hq (mem_rootSet.mp hβ).2,
+      ← minpoly.eq_of_irreducible hq (mem_rootSet.mp hα).2]
+  · rintro ⟨τ, rfl⟩
+    exact smul_mem_rootSet τ hα
+
+/-- The roots in a normal extension `M / F` of an irreducible polynomial over `F`, as the cosets
+of the stabilizer in `Gal(M/F)` of a chosen root. -/
+noncomputable def rootSetEquivQuotientStabilizer {q : F[X]} (hq : Irreducible q) {α : M}
+    (hα : α ∈ q.rootSet M) :
+    q.rootSet M ≃ (M ≃ₐ[F] M) ⧸ MulAction.stabilizer (M ≃ₐ[F] M) α :=
+  (Equiv.subtypeEquivRight fun β =>
+    Set.ext_iff.mp (coe_rootSet_eq_orbit_of_irreducible hq hα) β).trans
+    (MulAction.orbitEquivQuotientStabilizer _ α)
+
+/-- The identification of the roots with the cosets of a stabilizer is equivariant. -/
+theorem rootSetEquivQuotientStabilizer_smul {q : F[X]} (hq : Irreducible q) {α : M}
+    (hα : α ∈ q.rootSet M) (g : M ≃ₐ[F] M) (x : q.rootSet M) :
+    rootSetEquivQuotientStabilizer hq hα (g • x) = g • rootSetEquivQuotientStabilizer hq hα x := by
+  have hsymm : ∀ ρ : M ≃ₐ[F] M,
+      (((rootSetEquivQuotientStabilizer hq hα).symm
+        (ρ : (M ≃ₐ[F] M) ⧸ MulAction.stabilizer (M ≃ₐ[F] M) α) : q.rootSet M) : M) = ρ • α :=
+    fun ρ => MulAction.orbitEquivQuotientStabilizer_symm_apply (M ≃ₐ[F] M) α ρ
+  apply (rootSetEquivQuotientStabilizer hq hα).symm.injective
+  rw [Equiv.symm_apply_apply]
+  obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (rootSetEquivQuotientStabilizer hq hα x)
+  have hx : (x : M) = τ • α := by
+    have := congrArg (fun c => ((rootSetEquivQuotientStabilizer hq hα).symm c : M)) hτ
+    rw [Equiv.symm_apply_apply] at this
+    rw [← this, hsymm]
+  rw [← hτ, MulAction.Quotient.smul_mk]
+  apply Subtype.ext
+  rw [hsymm, rootSet.coe_smul, hx, smul_eq_mul, mul_smul]
+
+end Normal
 
 end TauCeti

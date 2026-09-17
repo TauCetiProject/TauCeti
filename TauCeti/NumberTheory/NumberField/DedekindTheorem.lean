@@ -15,6 +15,8 @@ import TauCeti.GroupTheory.GroupAction.OrbitCard
 import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.NumberField.Inertia
+import TauCeti.FieldTheory.Galois.FixedField
+import TauCeti.FieldTheory.GaloisGroups.Orbits
 import TauCeti.NumberTheory.NumberField.Minpoly
 import TauCeti.RingTheory.Polynomial.Factors
 import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.DecompositionOrbits
@@ -83,90 +85,6 @@ open scoped NumberField Pointwise
 namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {M : Type*} [Field M] [NumberField M]
-
-/-! ### A root of the minimal polynomial generates its own field -/
-
-section Root
-
-variable {θ : 𝓞 K}
-
-/-- A root in `M` of `minpoly ℚ θ` is a root of `minpoly ℤ θ`. -/
-theorem aeval_minpoly_int_eq_zero_of_mem_rootSet {β : M}
-    (hβ : β ∈ (minpoly ℚ (θ : K)).rootSet M) : aeval β (minpoly ℤ θ) = 0 := by
-  have h := (mem_rootSet.mp hβ).2
-  rwa [_root_.NumberField.RingOfIntegers.minpoly_rat_coe, aeval_map_algebraMap] at h
-
-/-- A root in `M` of `minpoly ℚ θ` is an algebraic integer. -/
-theorem isIntegral_of_mem_rootSet {β : M} (hβ : β ∈ (minpoly ℚ (θ : K)).rootSet M) :
-    IsIntegral ℤ β :=
-  ⟨minpoly ℤ θ, minpoly.monic θ.isIntegral, aeval_minpoly_int_eq_zero_of_mem_rootSet hβ⟩
-
-/-- A root in `M` of `minpoly ℚ θ` has that polynomial as its minimal polynomial over `ℚ`. -/
-theorem minpoly_rat_eq_of_mem_rootSet {β : M} (hβ : β ∈ (minpoly ℚ (θ : K)).rootSet M) :
-    minpoly ℚ β = minpoly ℚ (θ : K) :=
-  (minpoly.eq_of_irreducible_of_monic (minpoly.irreducible (IsIntegral.of_finite ℚ _))
-    (mem_rootSet.mp hβ).2 (minpoly.monic (IsIntegral.of_finite ℚ _))).symm
-
-/-- An algebraic integer of `M` that is a root of `minpoly ℚ θ` has the same minimal polynomial
-over `ℤ` as `θ`. -/
-theorem minpoly_int_eq_of_coe_mem_rootSet {β : 𝓞 M}
-    (hβ : (β : M) ∈ (minpoly ℚ (θ : K)).rootSet M) : minpoly ℤ β = minpoly ℤ θ := by
-  have h := minpoly_rat_eq_of_mem_rootSet hβ
-  rw [_root_.NumberField.RingOfIntegers.minpoly_rat_coe,
-    _root_.NumberField.RingOfIntegers.minpoly_rat_coe] at h
-  exact Polynomial.map_injective _ (algebraMap ℤ ℚ).injective_int h
-
-end Root
-
-/-! ### The fixed field of the stabilizer of a root -/
-
-section FixedField
-
-variable [IsGalois ℚ M]
-
-omit [IsGalois ℚ M] in
-/-- The stabilizer of an element `β` of `M` in `Gal(M/ℚ)` is the subgroup fixing `ℚ(β)`. -/
-theorem stabilizer_eq_fixingSubgroup_adjoin (β : M) :
-    stabilizer (M ≃ₐ[ℚ] M) β = (ℚ⟮β⟯).fixingSubgroup := by
-  ext σ
-  rw [IntermediateField.mem_fixingSubgroup_iff]
-  constructor
-  · intro h x hx
-    have : ℚ⟮β⟯ ≤ fixedField (Subgroup.zpowers σ) := by
-      rw [adjoin_simple_le_iff, IntermediateField.mem_fixedField_iff]
-      intro f hf
-      exact mem_stabilizer_iff.mp (Subgroup.zpowers_le.mpr h hf)
-    exact (IntermediateField.mem_fixedField_iff _ x).mp (this hx) σ (Subgroup.mem_zpowers σ)
-  · intro h
-    exact h β (mem_adjoin_simple_self ℚ β)
-
-/-- The fixed field of the stabilizer of `β` is `ℚ(β)`. -/
-theorem fixedField_stabilizer_eq_adjoin (β : M) :
-    fixedField (stabilizer (M ≃ₐ[ℚ] M) β) = ℚ⟮β⟯ := by
-  rw [stabilizer_eq_fixingSubgroup_adjoin, IsGalois.fixedField_fixingSubgroup]
-
-omit [IsGalois ℚ M] in
-/-- `β` lies in the fixed field of its stabilizer. -/
-theorem mem_fixedField_stabilizer (β : M) : β ∈ fixedField (stabilizer (M ≃ₐ[ℚ] M) β) :=
-  (IntermediateField.mem_fixedField_iff _ β).mpr fun _ hσ => hσ
-
-/-- Inside the fixed field of its stabilizer, `β` generates the whole field over `ℚ`. -/
-theorem adjoin_eq_top_of_fixedField_stabilizer (β : M) :
-    Algebra.adjoin ℚ {(⟨β, mem_fixedField_stabilizer β⟩ : fixedField (stabilizer (M ≃ₐ[ℚ] M) β))}
-      = ⊤ := by
-  set E := fixedField (stabilizer (M ≃ₐ[ℚ] M) β) with hE
-  set β' : E := ⟨β, mem_fixedField_stabilizer β⟩
-  let _ : Algebra ℚ E := E.algebra'
-  have hβ' : IsAlgebraic ℚ β' := IsAlgebraic.of_finite ℚ β'
-  have htop : ℚ⟮β'⟯ = ⊤ := by
-    apply IntermediateField.map_injective E.val
-    rw [adjoin_map, Set.image_singleton, ← AlgHom.fieldRange_eq_map, fieldRange_val]
-    exact (fixedField_stabilizer_eq_adjoin β).symm
-  have h := adjoin_simple_toSubalgebra_of_isAlgebraic hβ'
-  rw [htop, IntermediateField.top_toSubalgebra] at h
-  convert h.symm using 2
-
-end FixedField
 
 /-! ### A root as an integral primitive element of its field -/
 
@@ -307,44 +225,6 @@ theorem inertia_smul_eq_self (hsq : Squarefree ((minpoly ℤ θ).map (Int.castRi
     (ramificationIdx_eq_one_of_liesOver_span hβ hsq _)
   exact Subtype.ext (mem_stabilizer_iff.mp (h hτ))
 
-omit [IsGalois ℚ M] in
-/-- The root set of `minpoly ℚ θ` in `M` is the Galois orbit of any of its elements. -/
-theorem coe_rootSet_eq_orbit [Normal ℚ M] {α : M} (hα : α ∈ (minpoly ℚ (θ : K)).rootSet M) :
-    ((minpoly ℚ (θ : K)).rootSet M : Set M) = orbit (M ≃ₐ[ℚ] M) α := by
-  ext β
-  constructor
-  · intro hβ
-    rw [← Normal.minpoly_eq_iff_mem_orbit, minpoly_rat_eq_of_mem_rootSet hβ,
-      minpoly_rat_eq_of_mem_rootSet hα]
-  · rintro ⟨τ, rfl⟩
-    exact smul_mem_rootSet τ hα
-
-/-- The roots of `minpoly ℚ θ` in `M`, as the cosets of the stabilizer of a chosen root. -/
-noncomputable def rootSetEquivQuotientStabilizer {α : M}
-    (hα : α ∈ (minpoly ℚ (θ : K)).rootSet M) :
-    (minpoly ℚ (θ : K)).rootSet M ≃ (M ≃ₐ[ℚ] M) ⧸ stabilizer (M ≃ₐ[ℚ] M) α :=
-  (Equiv.subtypeEquivRight fun β => Set.ext_iff.mp (coe_rootSet_eq_orbit hα) β).trans
-    (orbitEquivQuotientStabilizer _ α)
-
-/-- The identification of the roots with cosets is equivariant. -/
-theorem rootSetEquivQuotientStabilizer_smul {α : M} (hα : α ∈ (minpoly ℚ (θ : K)).rootSet M)
-    (g : M ≃ₐ[ℚ] M) (x : (minpoly ℚ (θ : K)).rootSet M) :
-    rootSetEquivQuotientStabilizer hα (g • x) = g • rootSetEquivQuotientStabilizer hα x := by
-  have hsymm : ∀ ρ : M ≃ₐ[ℚ] M,
-      (((rootSetEquivQuotientStabilizer hα).symm (ρ : (M ≃ₐ[ℚ] M) ⧸ stabilizer (M ≃ₐ[ℚ] M) α) :
-        (minpoly ℚ (θ : K)).rootSet M) : M) = ρ • α := fun ρ =>
-    orbitEquivQuotientStabilizer_symm_apply (M ≃ₐ[ℚ] M) α ρ
-  apply (rootSetEquivQuotientStabilizer hα).symm.injective
-  rw [Equiv.symm_apply_apply]
-  obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (rootSetEquivQuotientStabilizer hα x)
-  have hx : (x : M) = τ • α := by
-    have := congrArg (fun q => ((rootSetEquivQuotientStabilizer hα).symm q : M)) hτ
-    rw [Equiv.symm_apply_apply] at this
-    rw [← this, hsymm]
-  rw [← hτ, MulAction.Quotient.smul_mk]
-  apply Subtype.ext
-  rw [hsymm, rootSet.coe_smul, hx, smul_eq_mul, mul_smul]
-
 -- The hypotheses that `θ` generates `K` and that `p` does not divide the conductor exponent of
 -- `θ` are not needed: every root generates its own field, and squarefreeness modulo `p` bounds
 -- the conductor exponent of each root away from `p`.
@@ -377,6 +257,7 @@ theorem fullCycleType_galActionHom_restrict_eq_map_natDegree_monicFactorsMod
   have hσ' : IsArithFrobAt (𝓞 ℚ) σ Q := (Ideal.isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ
   have hp' : (Q.under (𝓞 ℚ)).IsMaximal :=
     Ideal.IsPrime.isMaximal inferInstance (Ideal.under_ne_bot (𝓞 ℚ) hQ0)
+  have hirr : Irreducible (minpoly ℚ (θ : K)) := minpoly.irreducible (IsIntegral.of_finite ℚ _)
   -- The chain of identifications.
   refine (Equiv.Perm.fullCycleType_eq_map_card_orbit _).trans ?_
   refine (TauCeti.map_card_orbit_eq_of_orbit_eq (G' := Subgroup.zpowers σ)
@@ -385,9 +266,9 @@ theorem fullCycleType_galActionHom_restrict_eq_map_natDegree_monicFactorsMod
     (Ideal.orbit_stabilizer_eq_orbit_zpowers_of_isArithFrobAt Q hσ' x
       (fun τ hτ => inertia_smul_eq_self (p := p) hsq Q hτ x)).symm)).trans ?_
   refine (Equiv.map_card_orbit_eq_of_map_smul (G := stabilizer (M ≃ₐ[ℚ] M) Q)
-    (rootSetEquivQuotientStabilizer hα) fun d x => by
+    (rootSetEquivQuotientStabilizer hirr hα) fun d x => by
       rw [MulAction.subgroup_smul_def, MulAction.subgroup_smul_def]
-      exact rootSetEquivQuotientStabilizer_smul hα d x).trans
+      exact rootSetEquivQuotientStabilizer_smul hirr hα d x).trans
     ?_
   refine (Ideal.map_card_orbit_stabilizer_eq_map_ramificationIdx_mul_inertiaDeg (Q.under (𝓞 ℚ)) Q
     (stabilizer (M ≃ₐ[ℚ] M) α)).trans ?_
