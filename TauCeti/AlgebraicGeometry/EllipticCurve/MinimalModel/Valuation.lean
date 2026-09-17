@@ -54,11 +54,8 @@ element-level form of `localMinimalDiscriminant_ne_bot`, useful for removing the
 the additive valuation. -/
 private theorem integralModel_minimal_Δ_ne_zero (W : WeierstrassCurve K) [W.IsElliptic] :
     ((W.minimal R).integralModel R).Δ ≠ 0 := by
-  intro hΔ
-  apply W.localMinimalDiscriminant_ne_bot R
   obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
-  rw [W.localMinimalDiscriminant_eq_span_Δ R C hC, hΔ]
-  simp
+  simpa [W.localMinimalDiscriminant_eq_span_Δ R C hC] using W.localMinimalDiscriminant_ne_bot R
 
 /-- **The valuation of the local minimal discriminant.** This is the exponent of the maximal
 ideal of `R` in `W.localMinimalDiscriminant R`, equivalently the additive valuation of the
@@ -100,18 +97,14 @@ used to assemble local factors over a Dedekind domain. -/
 theorem localMinimalDiscriminant_eq_maximalIdeal_pow (W : WeierstrassCurve K) [W.IsElliptic] :
     W.localMinimalDiscriminant R =
       IsLocalRing.maximalIdeal R ^ W.localMinimalDiscriminantValuation R := by
-  let δ : R := ((W.minimal R).integralModel R).Δ
-  have hδ : δ ≠ 0 := integralModel_minimal_Δ_ne_zero R W
-  obtain ⟨ϖ, hϖ⟩ := exists_irreducible R
-  obtain ⟨n, u, hu⟩ := eq_unit_mul_pow_irreducible hδ hϖ
-  have hv : W.localMinimalDiscriminantValuation R = n := by
-    apply ENat.natCast_inj.mp
-    simp [localMinimalDiscriminantValuation_eq_addVal, δ, hu, addVal_def' u hϖ]
   obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
-  rw [W.localMinimalDiscriminant_eq_span_Δ R C hC,
-    show ((W.minimal R).integralModel R).Δ = δ from rfl, hu,
-    Ideal.span_singleton_mul_left_unit u.isUnit, hv, hϖ.maximalIdeal_eq,
-    Ideal.span_singleton_pow]
+  have h : idealOrderIsoENat R (W.localMinimalDiscriminant R) =
+      .toDual (W.localMinimalDiscriminantValuation R : ENat) := by
+    rw [idealOrderIsoENat_apply, localMinimalDiscriminantValuation_eq_addVal,
+      W.localMinimalDiscriminant_eq_span_Δ R C hC, OrderDual.toDual_inj, addVal_eq_iff_associated]
+    exact Submodule.IsPrincipal.associated_generator_span_self _
+  rw [← (idealOrderIsoENat R).symm_apply_apply (W.localMinimalDiscriminant R), h]
+  exact idealOrderIsoENat_symm_apply_coe R _
 
 /-- **The local minimal discriminant valuation is invariant under a change of variables.** -/
 @[simp]
@@ -125,6 +118,7 @@ theorem localMinimalDiscriminantValuation_smul (D : VariableChange K)
   exact ENat.natCast_inj.mp h
 
 /-- **The local minimal discriminant valuation vanishes exactly at good reduction.** -/
+@[simp]
 theorem localMinimalDiscriminantValuation_eq_zero_iff (W : WeierstrassCurve K) [W.IsElliptic] :
     W.localMinimalDiscriminantValuation R = 0 ↔
       (W.minimal R).HasGoodReduction R := by
@@ -139,6 +133,7 @@ theorem localMinimalDiscriminantValuation_eq_zero_iff (W : WeierstrassCurve K) [
     simpa [coheight_pow_maximalIdeal] using this
 
 /-- **The local minimal discriminant valuation is positive exactly at bad reduction.** -/
+@[simp]
 theorem localMinimalDiscriminantValuation_pos_iff (W : WeierstrassCurve K) [W.IsElliptic] :
     0 < W.localMinimalDiscriminantValuation R ↔
       ¬(W.minimal R).HasGoodReduction R := by
