@@ -249,7 +249,13 @@ theorem range_mk_one_eq_span {ι : Type*} (b : Basis ι R M) :
   exact congrArg (Submodule.span R)
     (congrArg Set.range (funext fun i ↦ (Basis.baseChange_apply K b i).symm))
 
-/-- The unit pure tensors form a full lattice in the scalar extension of a finite free module. -/
+section UnitTensorLattice
+
+variable {R : Type u} {K : Type v} {M : Type w}
+variable [CommRing R] [CommRing K] [Algebra R K]
+variable [AddCommGroup M] [Module R M] [Module.Finite R M]
+
+/-- The unit pure tensors form a full lattice in the scalar extension of a finite module. -/
 instance isLattice_range_mk_one :
     (LinearMap.range (TensorProduct.mk R K M 1)).IsLattice K where
   fg := by
@@ -264,6 +270,8 @@ instance isLattice_range_mk_one :
     | tmul k m =>
       rw [tmul_eq_smul_one_tmul]
       exact Submodule.smul_mem _ k (Submodule.subset_span ⟨m, rfl⟩)
+
+end UnitTensorLattice
 
 variable (R K M) in
 /-- A finite free module is canonically isomorphic to the lattice of unit pure tensors in its
