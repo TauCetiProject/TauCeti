@@ -5,7 +5,7 @@ and why", which merge throughput on its own cannot: throughput is one number at
 the end of a queue, so a fall in it says something is wrong without saying what.
 
 It measures each lifecycle stage separately — arrival rate, departure rate,
-current depth, how long the oldest occupant has waited, and median dwell — each
+current depth, how long its occupants have been waiting, and median dwell — each
 against a trailing baseline, and names the cause: a stage backing up, an intake
 that has thinned, both, or neither.
 
@@ -21,6 +21,46 @@ Three things it deliberately does not do.
 **Depth is not evidence.** A stage can be very deep and perfectly healthy if it
 drains as fast as it fills. The bottleneck is chosen on arrivals outrunning
 departures, and on occupants waiting longer than that stage normally takes.
+
+**Waiting and dwell are different questions, and not a ratio.**
+`median_waiting_hours` and `p90_waiting_hours` describe the pull requests
+sitting in a stage right now; `median_dwell_hours` describes how long a spell
+in it takes. Do not read the first against the second. A census catches long
+spells more often than short ones, simply because they are there longer, so the
+occupants of a perfectly healthy stage are older than its typical spell — on a
+simulated stable queue whose dwell is 1h for nine spells in ten and 100h for
+the tenth, the median occupant is 33 times the median dwell, and nothing is
+wrong. Read the waiting figures as a description of the backlog, against
+arrivals outrunning departures, and `oldest_waiting_hours` as the tail.
+`waiting_count` says how many of `depth` they describe: a waiting age is read
+only where the verified stage agrees with the label, because an old label's
+clock says nothing about a stage the readiness audit moved a pull request to,
+so under label drift these cover part of the stage rather than all of it.
+
+**Dwell times count the spells that have not ended.** They are the whole
+difficulty: a stage that is backing up is accumulating exactly the spells that
+have not finished, so a median over completed ones describes the pull requests
+that got served and not the stage. Taking the elapsed time of an unfinished
+spell as if it were final is no better, because at any instant most occupants
+are young. `median_dwell_hours` is therefore a Kaplan-Meier estimate over the
+spells that *began* in the period, censoring any that had not ended by the end
+of it. Selecting by where a spell ended would instead mix in spells already
+under way when the period opened, which were at risk only from the age they had
+then. It is `null` when the estimator never falls to half, which is what a
+stage where most spells are still running honestly supports.
+`dwell_completions` and `baseline_dwell_completions` count the spells in those
+cohorts that actually finished, which is what a median rests on, and gate
+whether it is trusted. Not `baseline_left_count`, which counts departures: a
+spell can leave a period it never began in, so a handful of those would vouch
+for a median resting on one observation.
+
+**One known exception, in `anomalies` rather than the report.** Its `stalled`
+test still divides `oldest_waiting_hours` by the baseline dwell, which is the
+census-against-dwell comparison the paragraph above says not to make, and on a
+heavy-tailed stage it will fire on a healthy queue. It predates the figures
+described here and wants the anomaly detector reworked rather than patched: the
+honest form compares occupant ages against a baseline survival curve, asking
+what share of them have already outlasted the historical p90.
 
 **A thin intake is an answer, not a shrug.** Fewer merges can mean the queue is
 stuck or simply that less went into it, and those want opposite responses:
@@ -52,8 +92,9 @@ throughput. Recorded label depths remain available as `label_depth`.
 Historical flow rates still come from label transitions. An old label's waiting
 time is not assigned to a newly verified different stage, and a newly introduced
 stage needs a historical baseline before label migration can count as a filling
-anomaly. In schema version 2, ready-stage `depth` is null when some ready labels
-are unverified; that label count cannot establish a merge-capacity problem.
+anomaly. From schema version 3, ready-stage `depth` is null when some ready
+labels are unverified; that label count cannot establish a merge-capacity
+problem.
 
 ## Where the data comes from
 
