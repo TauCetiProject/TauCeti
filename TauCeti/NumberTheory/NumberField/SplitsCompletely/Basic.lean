@@ -91,7 +91,7 @@ theorem ncard_primesOver_eq_finrank_iff (K : Type*) [Field K] [NumberField K] [I
   have h := ncard_primesOver_eq_finrank_iff_of_isGalois ℚ K (A := ℤ) (span {(p : ℤ)})
   exact h
 
-/-- **Splitting completely ⟺ decomposition group trivial.** For a Galois number field `L` and a
+/-- **Splitting completely iff decomposition group trivial.** For a Galois number field `L` and a
 prime `Q` of `𝓞 L` above the rational prime `p`, the prime `p` splits completely (there are
 `[L : ℚ]` primes above it) iff the decomposition group of `Q` — its stabilizer under `Gal(L/ℚ)` —
 is trivial. -/

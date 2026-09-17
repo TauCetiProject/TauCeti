@@ -13,7 +13,7 @@ public import TauCeti.NumberTheory.NumberField.UnramifiedTower
 public import TauCeti.NumberTheory.RamificationInertia.Tower
 import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 import TauCeti.NumberTheory.NumberField.Frobenius.Tower
-import TauCeti.NumberTheory.NumberField.SplitsCompletely
+import TauCeti.NumberTheory.NumberField.SplitsCompletely.Basic
 
 /-!
 # The Artin symbol of an unramified prime
