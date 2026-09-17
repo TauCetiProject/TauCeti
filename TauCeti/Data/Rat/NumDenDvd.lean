@@ -45,7 +45,7 @@ theorem den_dvd_of_intCast_eq_mul_intCast (h : (a' : ℚ) = r * a) : (r.den : �
   · rw [eq_divInt_of_intCast_eq_mul_intCast h ha]
     exact den_dvd a' a
 
-/-- **The numerator of a rational multiplier between integers divides the product**: if
+/-- **The numerator of a rational multiplier between integers divides the result**: if
 `a' = r * a` with `a, a'` integers, then `r.num ∣ a'`. -/
 theorem num_dvd_of_intCast_eq_mul_intCast (h : (a' : ℚ) = r * a) : r.num ∣ a' := by
   rcases eq_or_ne a 0 with rfl | ha

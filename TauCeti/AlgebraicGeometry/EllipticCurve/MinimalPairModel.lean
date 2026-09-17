@@ -42,8 +42,9 @@ such a table finite.
 * `WeierstrassCurve.minimalPairModel_unique`: any two minimal-pair models of `E` have the same
   equation. Hence `WeierstrassCurve.naiveHeight_eq` (every model computes the curve's height) and
   `WeierstrassCurve.naiveHeight_variableChange` (invariance under `ℚ`-isomorphism).
-* `WeierstrassCurve.finite_minimalPairEquations_bounded_height`: finitely many minimal-pair
-  equations have height at most `H`.
+* `WeierstrassCurve.finite_shortEquations_bounded_height` and
+  `WeierstrassCurve.finite_minimalPairEquations_bounded_height`: finitely many short equations
+  over `ℤ`, in particular finitely many minimal-pair equations, have height at most `H`.
 
 ## Design
 
@@ -370,6 +371,23 @@ theorem naiveHeight_variableChange (E : WeierstrassCurve ℚ) [E.IsElliptic]
 
 /-! ### Finiteness -/
 
+/-- **There are only finitely many short equations over `ℤ` of bounded height**: the bound
+`max (4|a₄|³) (27a₆²) ≤ H` leaves `|a₄|, |a₆| ≤ H`, and the two coefficients determine a short
+equation. -/
+theorem finite_shortEquations_bounded_height (H : ℕ) :
+    Set.Finite {W : WeierstrassCurve ℤ |
+      W.IsShortNF ∧ max (4 * W.a₄.natAbs ^ 3) (27 * W.a₆.natAbs ^ 2) ≤ H} := by
+  -- Such an equation is `shortCurve A B` with `|A|, |B| ≤ H`, and there are finitely many pairs.
+  refine (((Set.finite_Icc (-(H : ℤ)) H).prod (Set.finite_Icc (-(H : ℤ)) H)).image
+    fun p : ℤ × ℤ => shortCurve p.1 p.2).subset ?_
+  rintro W ⟨hW, hH⟩
+  rw [← shortEquationHeight_def] at hH
+  have h₄ := W.natAbs_a₄_le_shortEquationHeight.trans hH
+  have h₆ := W.natAbs_a₆_le_shortEquationHeight.trans hH
+  refine ⟨(W.a₄, W.a₆), ?_, W.shortCurve_a₄_a₆⟩
+  simp only [Set.mem_prod, Set.mem_Icc]
+  omega
+
 /-- **There are only finitely many minimal-pair short equations of bounded height.** The
 statement is about equations over `ℤ` in minimal-pair normal form: the set of all rational
 equations of a single curve is infinite, so finiteness of bounded-height `ℚ`-isomorphism classes
@@ -377,18 +395,8 @@ is a consequence of this statement, not a statement about terms `E : Weierstrass
 theorem finite_minimalPairEquations_bounded_height (H : ℕ) :
     Set.Finite {W : WeierstrassCurve ℤ |
       IsMinimalPairNF W ∧ (W.baseChange ℚ).IsElliptic ∧
-        max (4 * W.a₄.natAbs ^ 3) (27 * W.a₆.natAbs ^ 2) ≤ H} := by
-  -- Such an equation is `shortCurve A B` with `|A|, |B| ≤ H`, and there are finitely many pairs.
-  refine (((Set.finite_Icc (-(H : ℤ)) H).prod (Set.finite_Icc (-(H : ℤ)) H)).image
-    fun p : ℤ × ℤ => shortCurve p.1 p.2).subset ?_
-  rintro W ⟨hW, -, hH⟩
-  have := hW.isShortNF
-  rw [← shortEquationHeight_def] at hH
-  have h₄ := W.natAbs_a₄_le_shortEquationHeight.trans hH
-  have h₆ := W.natAbs_a₆_le_shortEquationHeight.trans hH
-  refine ⟨(W.a₄, W.a₆), ?_, W.shortCurve_a₄_a₆⟩
-  simp only [Set.mem_prod, Set.mem_Icc]
-  omega
+        max (4 * W.a₄.natAbs ^ 3) (27 * W.a₆.natAbs ^ 2) ≤ H} :=
+  (finite_shortEquations_bounded_height H).subset fun _ ⟨hW, _, hH⟩ => ⟨hW.isShortNF, hH⟩
 
 end WeierstrassCurve
 
