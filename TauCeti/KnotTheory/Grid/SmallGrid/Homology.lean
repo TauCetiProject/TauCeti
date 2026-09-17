@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
-public import TauCeti.KnotTheory.Grid.Homology
+public import TauCeti.KnotTheory.Grid.Homology.Basic
 
 /-!
 # An explicit basis for small-grid homology

@@ -52,6 +52,8 @@ unrestricted construction is larger than the smooth discrete subcategory.
   source side of the dictionary in bundled form; its morphisms are Mathlib's
   `Representation.IntertwiningMap`s.
 * `TauCeti.toSmoothDiscrete`, `TauCeti.ofSmoothDiscrete`: the two translations as functors.
+* `TauCeti.smoothDiscreteResFunctor`: restriction to a subgroup as a functor between the smooth
+  discrete subcategories.
 
 ## Main results
 
@@ -623,6 +625,57 @@ to the smooth discrete object it names, and an equivariant map to the morphism i
     (x : X.V) : ((toSmoothDiscrete R G).map f).hom.hom x = f.toLinearMap x := (rfl)
 
 end CoefficientCategories
+
+/-! ### Restriction to a subgroup -/
+
+section Restriction
+
+variable (R : Type u) [Ring R] [TopologicalSpace R]
+  (G : Type v) [Group G] [TopologicalSpace G] (U : Subgroup G)
+
+/-- Restriction along `U → G` on smooth discrete representations. -/
+noncomputable def smoothDiscreteResFunctor :
+    SmoothDiscreteTopRep.{u, v, w} R G ⥤ SmoothDiscreteTopRep.{u, v, w} R U where
+  obj A := ⟨TopRep.res (U.subtype : U →* G) A.obj,
+    A.property.res continuous_subtype_val⟩
+  map f := ObjectProperty.homMk ((TopRep.resFunctor (U.subtype : U →* G)).map f.hom)
+  map_id _ := rfl
+  map_comp _ _ := rfl
+
+private theorem smoothDiscreteResFunctor_obj_impl (A : SmoothDiscreteTopRep.{u, v, w} R G) :
+    (smoothDiscreteResFunctor R G U).obj A =
+      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ := rfl
+
+/-- Restriction along `U → G` restricts the underlying topological representation. -/
+@[simp]
+theorem smoothDiscreteResFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R G) :
+    (smoothDiscreteResFunctor R G U).obj A =
+      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ :=
+  smoothDiscreteResFunctor_obj_impl R G U A
+
+private theorem smoothDiscreteResFunctor_map_apply_impl
+    {A B : SmoothDiscreteTopRep.{u, v, w} R G} (f : A ⟶ B) (x : A.obj.V) :
+    (show B.obj.V from
+      (((eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, w} R U => X.obj)
+          (smoothDiscreteResFunctor_obj R G U B))).hom.comp
+        ((smoothDiscreteResFunctor R G U).map f).hom.hom).comp
+          (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, w} R U => X.obj)
+            (smoothDiscreteResFunctor_obj R G U A).symm)).hom) x) = f.hom.hom x := rfl
+
+/-- Restriction along `U → G` does not change the underlying map of a morphism. The object
+transports identify the opaque functor's objects with the restricted representations. -/
+@[simp]
+theorem smoothDiscreteResFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w} R G}
+    (f : A ⟶ B) (x : A.obj.V) :
+    (show B.obj.V from
+      (((eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, w} R U => X.obj)
+          (smoothDiscreteResFunctor_obj R G U B))).hom.comp
+        ((smoothDiscreteResFunctor R G U).map f).hom.hom).comp
+          (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, w} R U => X.obj)
+            (smoothDiscreteResFunctor_obj R G U A).symm)).hom) x) = f.hom.hom x :=
+  smoothDiscreteResFunctor_map_apply_impl R G U f x
+
+end Restriction
 
 /-! ### The equivalence of coefficient categories -/
 

@@ -24,12 +24,17 @@ A decomposition has at most one orientation of its common column, so exactly one
 hold and the relation has a unique solution. Recutting twice returns the original decomposition:
 a common initial or terminal column recuts to a mixed common column and conversely, and in each of
 the eight resulting configurations the original decomposition satisfies precisely the side data
-that describes the recut of the recut. On the decompositions the unblocked differential counts
-whose two rectangles share exactly one side column -- the only ones for which a recut is
-constructed -- the relation is therefore symmetric, and uniqueness turns it into an involution
-`GridRectangleDecomposition.recut` of that set. It has no fixed point, since the intermediate state
-changes, and it preserves the covered-square domain, hence the weight `V^{O(r₁)} · V^{O(r₂)}` that
-the square of the differential attaches to a two-step term.
+that describes the recut of the recut. On the decompositions by two empty rectangles sharing
+exactly one side column -- the only ones for which a recut is constructed -- the relation is
+therefore symmetric, and uniqueness turns it into an involution `GridRectangleDecomposition.recut`
+of that set. It has no fixed point, since the intermediate state changes, and it preserves the
+covered-square domain, hence every weight computed from the squares a two-step term covers: the
+monomial `V^{O(r₁)} · V^{O(r₂)}` that the square of the differential attaches to it, and which
+markings the domain carries.
+
+The pairing is stated for empty rectangles, with no condition on the markings they cover: any
+condition on the markings in the covered domain, such as the avoidance of `X`-markings that
+`∂⁻ ∘ ∂⁻` requires, is transported separately along `GridRectangleDecomposition.IsRepartition`.
 
 The geometric input is the cyclic order forced by emptiness of both rectangles: for a common
 initial or terminal column the corner row of the common side lies strictly between the other two
@@ -45,17 +50,17 @@ the recut's own side data holds.
   `TauCeti.GridRectangleDecomposition.IsRecutOfRightEqLeft`: the side data computed for the recut
   in each of the four orientations of the common side column.
 * `TauCeti.GridRectangleDecomposition.IsRecut`: a second two-step decomposition repartitioning the
-  same domain into rectangles the unblocked differential counts, through a different intermediate
-  state, with the side data of the matching orientation.
+  same domain into empty rectangles, through a different intermediate state, with the side data of
+  the matching orientation.
 * `TauCeti.GridRectangleDecomposition.recut`: the recut of a decomposition sharing exactly one
   side column.
 
 ## Main results
 
-* `TauCeti.GridRectangleDecomposition.existsUnique_isRecut`: a counted decomposition sharing
-  exactly one side column has exactly one recut.
-* `TauCeti.GridRectangleDecomposition.IsRecut.symm`: a counted decomposition sharing exactly one
-  side column is a recut of its own recut.
+* `TauCeti.GridRectangleDecomposition.existsUnique_isRecut`: a decomposition by two empty
+  rectangles sharing exactly one side column has exactly one recut.
+* `TauCeti.GridRectangleDecomposition.IsRecut.symm`: such a decomposition is a recut of its own
+  recut.
 * `TauCeti.GridRectangleDecomposition.recut_recut`: recutting is an involution.
 * `TauCeti.GridRectangleDecomposition.recut_ne`: it has no fixed point.
 * `TauCeti.GridRectangleDecomposition.hasOneCommonSide_recut`: the recut again shares exactly one
@@ -123,29 +128,24 @@ def IsRecutOfRightEqLeft (D E : GridRectangleDecomposition x z) : Prop :=
             E.first.bottom = D.first.bottom ∧ E.second.bottom = D.second.top))
 
 /-- `E` is the recut of the two-step decomposition `D`: it repartitions the same domain into two
-rectangles the unblocked differential counts, passes through a different intermediate state, and
-carries the side data computed for the orientation of the common side column of `D`. -/
-def IsRecut (G : GridDiagram n) (D E : GridRectangleDecomposition x z) : Prop :=
-  D.IsRepartition E ∧ E.middle ≠ D.middle ∧
-    E.first ∈ G.unblockedRectangles x E.middle ∧
-      E.second ∈ G.unblockedRectangles E.middle z ∧
-        (D.IsRecutOfLeftEqLeft E ∨ D.IsRecutOfRightEqRight E ∨
-          D.IsRecutOfLeftEqRight E ∨ D.IsRecutOfRightEqLeft E)
+empty rectangles, passes through a different intermediate state, and carries the side data
+computed for the orientation of the common side column of `D`. -/
+def IsRecut (D E : GridRectangleDecomposition x z) : Prop :=
+  D.IsRepartition E ∧ E.middle ≠ D.middle ∧ E.first.IsEmpty ∧ E.second.IsEmpty ∧
+    (D.IsRecutOfLeftEqLeft E ∨ D.IsRecutOfRightEqRight E ∨
+      D.IsRecutOfLeftEqRight E ∨ D.IsRecutOfRightEqLeft E)
 
 /-! ### Existence and uniqueness of the recut -/
 
-/-- A two-step decomposition counted by the unblocked differential whose two rectangles share
-exactly one side column has exactly one recut. -/
-theorem existsUnique_isRecut (G : GridDiagram n) (D : GridRectangleDecomposition x z)
-    (hone : D.HasOneCommonSide)
-    (hfirst : D.first ∈ G.unblockedRectangles x D.middle)
-    (hsecond : D.second ∈ G.unblockedRectangles D.middle z) :
-    ∃! E : GridRectangleDecomposition x z, D.IsRecut G E := by
+/-- A two-step decomposition by two empty rectangles sharing exactly one side column has exactly
+one recut. -/
+theorem existsUnique_isRecut (D : GridRectangleDecomposition x z) (hone : D.HasOneCommonSide)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    ∃! E : GridRectangleDecomposition x z, D.IsRecut E := by
   rcases D.side_eq_cases_of_hasOneCommonSide hone with
       ⟨hcommon, hother⟩ | ⟨hcommon, hother⟩ | ⟨hcommon, hother⟩ | ⟨hcommon, hother⟩
   · obtain ⟨E, ⟨hrep, hmid, hEf, hEs, hE₁, hE₂, hbranch⟩, hunique⟩ :=
-      D.exists_isRepartition_of_mem_unblockedRectangles_of_left_eq_left G hcommon hother hfirst
-        hsecond
+      D.exists_isRepartition_of_isEmpty_of_left_eq_left hcommon hother hfirst hsecond
     refine ⟨E, ⟨hrep, hmid, hEf, hEs, Or.inl ⟨hcommon, hE₁, hE₂, hbranch⟩⟩, ?_⟩
     rintro E' ⟨hrep', hmid', hEf', hEs', hdata'⟩
     rcases hdata' with ⟨-, h⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩
@@ -154,8 +154,7 @@ theorem existsUnique_isRecut (G : GridDiagram n) (D : GridRectangleDecomposition
     · exact absurd (hcommon.symm.trans h) D.second.left_ne_right
     · exact absurd (h.trans hcommon.symm) D.first.left_ne_right.symm
   · obtain ⟨E, ⟨hrep, hmid, hEf, hEs, hE₁, hE₂, hbranch⟩, hunique⟩ :=
-      D.exists_isRepartition_of_mem_unblockedRectangles_of_left_eq_right G hcommon hother hfirst
-        hsecond
+      D.exists_isRepartition_of_isEmpty_of_left_eq_right hcommon hother hfirst hsecond
     refine ⟨E, ⟨hrep, hmid, hEf, hEs, Or.inr (Or.inr (Or.inl ⟨hcommon, hE₁, hE₂, hbranch⟩))⟩, ?_⟩
     rintro E' ⟨hrep', hmid', hEf', hEs', hdata'⟩
     rcases hdata' with ⟨h, -⟩ | ⟨h, -⟩ | ⟨-, h⟩ | ⟨h, -⟩
@@ -164,8 +163,7 @@ theorem existsUnique_isRecut (G : GridDiagram n) (D : GridRectangleDecomposition
     · exact hunique E' ⟨hrep', hmid', hEf', hEs', h⟩
     · exact absurd h hother
   · obtain ⟨E, ⟨hrep, hmid, hEf, hEs, hE₁, hE₂, hbranch⟩, hunique⟩ :=
-      D.exists_isRepartition_of_mem_unblockedRectangles_of_right_eq_left G hcommon hother hfirst
-        hsecond
+      D.exists_isRepartition_of_isEmpty_of_right_eq_left hcommon hother hfirst hsecond
     refine ⟨E, ⟨hrep, hmid, hEf, hEs, Or.inr (Or.inr (Or.inr ⟨hcommon, hE₁, hE₂, hbranch⟩))⟩, ?_⟩
     rintro E' ⟨hrep', hmid', hEf', hEs', hdata'⟩
     rcases hdata' with ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨-, h⟩
@@ -174,8 +172,7 @@ theorem existsUnique_isRecut (G : GridDiagram n) (D : GridRectangleDecomposition
     · exact absurd h hother
     · exact hunique E' ⟨hrep', hmid', hEf', hEs', h⟩
   · obtain ⟨E, ⟨hrep, hmid, hEf, hEs, hE₁, hE₂, hbranch⟩, hunique⟩ :=
-      D.exists_isRepartition_of_mem_unblockedRectangles_of_right_eq_right G hcommon hother hfirst
-        hsecond
+      D.exists_isRepartition_of_isEmpty_of_right_eq_right hcommon hother hfirst hsecond
     refine ⟨E, ⟨hrep, hmid, hEf, hEs, Or.inr (Or.inl ⟨hcommon, hE₁, hE₂, hbranch⟩)⟩, ?_⟩
     rintro E' ⟨hrep', hmid', hEf', hEs', hdata'⟩
     rcases hdata' with ⟨h, -⟩ | ⟨-, h⟩ | ⟨h, -⟩ | ⟨h, -⟩
@@ -191,7 +188,7 @@ private theorem eq_swap_of_swapColumns_apply_eq {a b c d : Fin n}
     (h : x.swapColumns a b c = x d) : c = Equiv.swap a b d :=
   Equiv.swap_apply_eq_iff.mp (x.toPerm.injective (by rwa [GridState.swapColumns_apply] at h))
 
-/-- The recut of a counted decomposition whose two rectangles share their initial side column
+/-- The recut of a decomposition whose two rectangles share their initial side column
 carries the side data describing the original decomposition as its own recut. The common column
 of the recut is mixed, so which of the two mixed alternatives holds is decided by the cyclic
 order of the three corner rows that emptiness forces. -/
@@ -251,7 +248,7 @@ private theorem isRecut_symm_of_left_eq_left {D E : GridRectangleDecomposition x
     · rw [hEbot₁, GridRectangleBetween.bottom_def]
     · rw [hEtop₂, hDbot₂]
 
-/-- The recut of a counted decomposition whose two rectangles share their terminal side column
+/-- The recut of a decomposition whose two rectangles share their terminal side column
 carries the side data describing the original decomposition as its own recut. As in the initial
 case the common column of the recut is mixed, and the cyclic order of the corner rows decides
 which mixed alternative holds. -/
@@ -311,7 +308,7 @@ private theorem isRecut_symm_of_right_eq_right {D E : GridRectangleDecomposition
     · rw [hEtop₁, GridRectangleBetween.top_def]
     · rw [hEbot₂, hDtop₂]
 
-/-- The recut of a counted decomposition whose common column is initial for its first rectangle
+/-- The recut of a decomposition whose common column is initial for its first rectangle
 and terminal for its second carries the side data describing the original decomposition as its
 own recut. Here the recut has both its rectangles on one side column, so the intermediate state
 is a column swap and the side columns are read off the rows they occupy. -/
@@ -380,7 +377,7 @@ private theorem isRecut_symm_of_left_eq_right {D E : GridRectangleDecomposition 
     · rw [hEl₂]
       exact hcommon.symm
 
-/-- The recut of a counted decomposition whose common column is terminal for its first rectangle
+/-- The recut of a decomposition whose common column is terminal for its first rectangle
 and initial for its second carries the side data describing the original decomposition as its own
 recut. As in the previous case the recut shares a side column and its side columns are read off
 the rows they occupy. -/
@@ -446,49 +443,47 @@ private theorem isRecut_symm_of_right_eq_left {D E : GridRectangleDecomposition 
     · rw [hEr₂]
       exact hcommon.symm
 
-/-- If `E` is a recut of a counted two-step decomposition `D` whose rectangles share exactly one
+/-- If `E` is a recut of a two-step decomposition `D` by two empty rectangles sharing exactly one
 side column, then `D` is a recut of `E`: in each of the four orientations of the common column of
 `D`, the recut carries precisely the side data that describes `D` as its recut. -/
-theorem IsRecut.symm {G : GridDiagram n} {D E : GridRectangleDecomposition x z}
-    (h : D.IsRecut G E) (hone : D.HasOneCommonSide)
-    (hfirst : D.first ∈ G.unblockedRectangles x D.middle)
-    (hsecond : D.second ∈ G.unblockedRectangles D.middle z) :
-    E.IsRecut G D := by
-  obtain ⟨hrep, hmid, hEf, hEs, hdata⟩ := h
-  have hDempty₁ := G.isEmpty_of_mem_unblockedRectangles hfirst
-  have hDempty₂ := G.isEmpty_of_mem_unblockedRectangles hsecond
+theorem IsRecut.symm {D E : GridRectangleDecomposition x z} (h : D.IsRecut E)
+    (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    E.IsRecut D := by
+  obtain ⟨hrep, hmid, -, -, hdata⟩ := h
   refine ⟨hrep.symm, hmid.symm, hfirst, hsecond, ?_⟩
   rcases hdata with hdata | hdata | hdata | hdata
-  · exact isRecut_symm_of_left_eq_left hdata hone hDempty₁ hDempty₂
-  · exact isRecut_symm_of_right_eq_right hdata hone hDempty₁ hDempty₂
-  · exact isRecut_symm_of_left_eq_right hdata hone hDempty₁ hDempty₂
-  · exact isRecut_symm_of_right_eq_left hdata hone hDempty₁ hDempty₂
+  · exact isRecut_symm_of_left_eq_left hdata hone hfirst hsecond
+  · exact isRecut_symm_of_right_eq_right hdata hone hfirst hsecond
+  · exact isRecut_symm_of_left_eq_right hdata hone hfirst hsecond
+  · exact isRecut_symm_of_right_eq_left hdata hone hfirst hsecond
 
 /-! ### The recut as an involution -/
 
 /-- The two decompositions of a recut pair repartition the same domain. -/
-theorem IsRecut.isRepartition {G : GridDiagram n} {D E : GridRectangleDecomposition x z}
-    (h : D.IsRecut G E) : D.IsRepartition E := h.1
+theorem IsRecut.isRepartition {D E : GridRectangleDecomposition x z} (h : D.IsRecut E) :
+    D.IsRepartition E :=
+  h.1
 
 /-- A recut passes through a different intermediate grid state. -/
-theorem IsRecut.middle_ne {G : GridDiagram n} {D E : GridRectangleDecomposition x z}
-    (h : D.IsRecut G E) : E.middle ≠ D.middle := h.2.1
+theorem IsRecut.middle_ne {D E : GridRectangleDecomposition x z} (h : D.IsRecut E) :
+    E.middle ≠ D.middle :=
+  h.2.1
 
-/-- The unblocked differential counts the first rectangle of a recut. -/
-theorem IsRecut.mem_unblockedRectangles_first {G : GridDiagram n}
-    {D E : GridRectangleDecomposition x z} (h : D.IsRecut G E) :
-    E.first ∈ G.unblockedRectangles x E.middle := h.2.2.1
+/-- The first rectangle of a recut is empty. -/
+theorem IsRecut.isEmpty_first {D E : GridRectangleDecomposition x z} (h : D.IsRecut E) :
+    E.first.IsEmpty :=
+  h.2.2.1
 
-/-- The unblocked differential counts the second rectangle of a recut. -/
-theorem IsRecut.mem_unblockedRectangles_second {G : GridDiagram n}
-    {D E : GridRectangleDecomposition x z} (h : D.IsRecut G E) :
-    E.second ∈ G.unblockedRectangles E.middle z := h.2.2.2.1
+/-- The second rectangle of a recut is empty. -/
+theorem IsRecut.isEmpty_second {D E : GridRectangleDecomposition x z} (h : D.IsRecut E) :
+    E.second.IsEmpty :=
+  h.2.2.2.1
 
 /-- A nondiagonal decomposition admitting a recut has exactly one common side column: the side
 data of that recut records which of the four orientations the decomposition's own common column
 has. -/
-theorem hasOneCommonSide_of_isRecut {G : GridDiagram n} {D E : GridRectangleDecomposition x z}
-    (h : E.IsRecut G D) (hzx : z ≠ x) : E.HasOneCommonSide := by
+theorem hasOneCommonSide_of_isRecut {D E : GridRectangleDecomposition x z} (h : E.IsRecut D)
+    (hzx : z ≠ x) : E.HasOneCommonSide := by
   obtain ⟨-, -, -, -, hdata⟩ := h
   rcases hdata with ⟨hc, -⟩ | ⟨hc, -⟩ | ⟨hc, -⟩ | ⟨hc, -⟩
   · exact E.hasOneCommonSide_of_mem_commonSideColumns (c := E.first.left) (by simp [hc]) hzx
@@ -496,56 +491,45 @@ theorem hasOneCommonSide_of_isRecut {G : GridDiagram n} {D E : GridRectangleDeco
   · exact E.hasOneCommonSide_of_mem_commonSideColumns (c := E.first.left) (by simp [hc]) hzx
   · exact E.hasOneCommonSide_of_mem_commonSideColumns (c := E.first.right) (by simp [hc]) hzx
 
-/-- The recut of a two-step decomposition counted by the unblocked differential whose two
-rectangles share exactly one side column. -/
-noncomputable def recut (G : GridDiagram n) (D : GridRectangleDecomposition x z)
-    (hone : D.HasOneCommonSide) (hfirst : D.first ∈ G.unblockedRectangles x D.middle)
-    (hsecond : D.second ∈ G.unblockedRectangles D.middle z) :
-    GridRectangleDecomposition x z :=
-  (D.existsUnique_isRecut G hone hfirst hsecond).choose
+/-- The recut of a two-step decomposition by two empty rectangles sharing exactly one side
+column. -/
+noncomputable def recut (D : GridRectangleDecomposition x z) (hone : D.HasOneCommonSide)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) : GridRectangleDecomposition x z :=
+  (D.existsUnique_isRecut hone hfirst hsecond).choose
 
 /-- The recut of a decomposition is a recut of it. -/
-theorem isRecut_recut (G : GridDiagram n) (D : GridRectangleDecomposition x z)
-    (hone : D.HasOneCommonSide) (hfirst : D.first ∈ G.unblockedRectangles x D.middle)
-    (hsecond : D.second ∈ G.unblockedRectangles D.middle z) :
-    D.IsRecut G (D.recut G hone hfirst hsecond) :=
-  (D.existsUnique_isRecut G hone hfirst hsecond).choose_spec.1
+theorem isRecut_recut (D : GridRectangleDecomposition x z) (hone : D.HasOneCommonSide)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    D.IsRecut (D.recut hone hfirst hsecond) :=
+  (D.existsUnique_isRecut hone hfirst hsecond).choose_spec.1
 
 /-- The recut of a decomposition again shares exactly one side column. -/
-theorem hasOneCommonSide_recut (G : GridDiagram n) (D : GridRectangleDecomposition x z)
-    (hone : D.HasOneCommonSide) (hfirst : D.first ∈ G.unblockedRectangles x D.middle)
-    (hsecond : D.second ∈ G.unblockedRectangles D.middle z) :
-    (D.recut G hone hfirst hsecond).HasOneCommonSide :=
-  hasOneCommonSide_of_isRecut
-    ((D.isRecut_recut G hone hfirst hsecond).symm hone hfirst hsecond)
+theorem hasOneCommonSide_recut (D : GridRectangleDecomposition x z) (hone : D.HasOneCommonSide)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    (D.recut hone hfirst hsecond).HasOneCommonSide :=
+  hasOneCommonSide_of_isRecut ((D.isRecut_recut hone hfirst hsecond).symm hone hfirst hsecond)
     (D.target_ne_source_of_hasOneCommonSide hone)
 
 /-- The recut of a decomposition is different from it: the two pass through different
 intermediate grid states. -/
-theorem recut_ne (G : GridDiagram n) (D : GridRectangleDecomposition x z)
-    (hone : D.HasOneCommonSide) (hfirst : D.first ∈ G.unblockedRectangles x D.middle)
-    (hsecond : D.second ∈ G.unblockedRectangles D.middle z) :
-    D.recut G hone hfirst hsecond ≠ D := fun h =>
-  (D.isRecut_recut G hone hfirst hsecond).middle_ne (congrArg GridRectangleDecomposition.middle h)
+theorem recut_ne (D : GridRectangleDecomposition x z) (hone : D.HasOneCommonSide)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    D.recut hone hfirst hsecond ≠ D := fun h =>
+  (D.isRecut_recut hone hfirst hsecond).middle_ne (congrArg GridRectangleDecomposition.middle h)
 
-/-- Recutting is an involution on the two-step decompositions counted by the unblocked
-differential whose two rectangles share exactly one side column. -/
-@[simp] theorem recut_recut (G : GridDiagram n) (D : GridRectangleDecomposition x z)
-    (hone : D.HasOneCommonSide) (hfirst : D.first ∈ G.unblockedRectangles x D.middle)
-    (hsecond : D.second ∈ G.unblockedRectangles D.middle z) :
-    (D.recut G hone hfirst hsecond).recut G
-      (D.hasOneCommonSide_recut G hone hfirst hsecond)
-      ((D.isRecut_recut G hone hfirst hsecond).mem_unblockedRectangles_first)
-      ((D.isRecut_recut G hone hfirst hsecond).mem_unblockedRectangles_second) = D :=
-  ((D.recut G hone hfirst hsecond).existsUnique_isRecut G
-      (D.hasOneCommonSide_recut G hone hfirst hsecond)
-      ((D.isRecut_recut G hone hfirst hsecond).mem_unblockedRectangles_first)
-      ((D.isRecut_recut G hone hfirst hsecond).mem_unblockedRectangles_second)).unique
-    ((D.recut G hone hfirst hsecond).isRecut_recut G
-      (D.hasOneCommonSide_recut G hone hfirst hsecond)
-      ((D.isRecut_recut G hone hfirst hsecond).mem_unblockedRectangles_first)
-      ((D.isRecut_recut G hone hfirst hsecond).mem_unblockedRectangles_second))
-    ((D.isRecut_recut G hone hfirst hsecond).symm hone hfirst hsecond)
+/-- Recutting is an involution on the two-step decompositions by two empty rectangles sharing
+exactly one side column. -/
+@[simp] theorem recut_recut (D : GridRectangleDecomposition x z) (hone : D.HasOneCommonSide)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    (D.recut hone hfirst hsecond).recut (D.hasOneCommonSide_recut hone hfirst hsecond)
+      (D.isRecut_recut hone hfirst hsecond).isEmpty_first
+      (D.isRecut_recut hone hfirst hsecond).isEmpty_second = D :=
+  ((D.recut hone hfirst hsecond).existsUnique_isRecut
+      (D.hasOneCommonSide_recut hone hfirst hsecond)
+      (D.isRecut_recut hone hfirst hsecond).isEmpty_first
+      (D.isRecut_recut hone hfirst hsecond).isEmpty_second).unique
+    ((D.recut hone hfirst hsecond).isRecut_recut _ _ _)
+    ((D.isRecut_recut hone hfirst hsecond).symm hone hfirst hsecond)
 
 end GridRectangleDecomposition
 

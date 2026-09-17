@@ -9,9 +9,11 @@ public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Algebra.AlgebraicGroup.PointsFunctor
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Corestrict
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.PointAction
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
+import TauCeti.Algebra.Coalgebra.Comodule.Evaluation
 
 /-!
 # The points action of a comodule, by automorphisms
@@ -121,6 +123,18 @@ theorem endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation
   apply (TensorProduct.lid R M).injective
   rw [basePointsRepresentation_apply]
   simp
+
+/-- Evaluating a matrix coefficient at a base-valued point pairs the functional with the
+point's action on the vector. -/
+@[simp]
+theorem apply_matrixCoefficient (g : WithConv (H →ₐ[R] R))
+    (φ : Module.Dual R M) (m : M) :
+    g.ofConv (matrixCoefficient (C := H) φ m) =
+      φ (basePointsRepresentation (H := H) M g m) := by
+  have h := baseChangeEvaluation_endOfPoint_tmul g.ofConv (1 : R) 1 φ m
+  rw [endOfPoint_tmul, one_smul,
+    endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation] at h
+  simpa using h.symm
 
 section Corestrict
 

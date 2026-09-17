@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable
+public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E6.MinusculeWeight
 
 

@@ -400,9 +400,16 @@ theorem weightTorus_conj_rootSubgroup (k : Fin 6 ⊕ Fin 6) (A : Type) [CommRing
             ((TauCeti.torusCharacter
               (SplitTorus.schemePointsMulEquiv (R := ℤ) (A := A) s)
               (TauCeti.E6Minuscule.rootGeneratorWeight k) : A) * u)) ≫
-        (rootSubgroup k).hom.hom :=
-  kostantWeightTorusToToral_conj_kostantRootSubgroupToToralParam
-      _ _ _ _ _ _ _ isCartanWeightVector_matrixBasis
-      isNilpotent_rep_serreRootGenerator A (TauCeti.E6Minuscule.lie_serreH_rootGenerator k) s u
+        (rootSubgroup k).hom.hom := by
+  have hroot : ∀ j : Fin 6,
+      ⁅serreH ℚ (CartanMatrix.E 6)ᵀ j,
+          serreRootGenerator (CartanMatrix.E 6)ᵀ k⁆ =
+        (TauCeti.E6Minuscule.rootGeneratorWeight k j : ℚ) •
+          serreRootGenerator (CartanMatrix.E 6)ᵀ k := by
+    rw [← TauCeti.E6Minuscule.weightTable_cartanMatrix]
+    exact TauCeti.E6Minuscule.lie_serreH_rootGenerator k
+  exact kostantWeightTorusToToral_conj_kostantRootSubgroupToToralParam
+    _ _ _ _ _ _ _ isCartanWeightVector_matrixBasis
+    isNilpotent_rep_serreRootGenerator A hroot s u
 
 end TauCeti.E6DoubledMinuscule

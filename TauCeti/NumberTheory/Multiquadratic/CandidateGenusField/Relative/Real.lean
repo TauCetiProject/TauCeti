@@ -91,6 +91,15 @@ noncomputable def candidateGenusFieldRestrictionToReal (hd : Squarefree d) (hpos
   exact AlgEquiv.restrictNormalHom (F := candidateGenusFieldBase hd)
     (K₁ := candidateGenusField hd) (candidateGenusFieldReal hd)
 
+/-- The restriction map to the real candidate is the normal-restriction homomorphism. -/
+theorem candidateGenusFieldRestrictionToReal_def (hd : Squarefree d) (hpos : 0 < d) :
+    letI := candidateGenusFieldRealAlgebra hd hpos
+    letI := candidateGenusFieldRealIsScalarTower hd hpos
+    letI := isAbelianGalois_candidateGenusFieldReal_over_base hd hpos
+    candidateGenusFieldRestrictionToReal hd hpos =
+      AlgEquiv.restrictNormalHom (F := candidateGenusFieldBase hd)
+        (K₁ := candidateGenusField hd) (candidateGenusFieldReal hd) := (rfl)
+
 /-- **Restriction to the real candidate acts by the ambient automorphism.** Read inside the full
 candidate genus field, the restriction of `σ` sends `x` to `σ x`. -/
 @[simp] theorem coe_candidateGenusFieldRestrictionToReal_apply (hd : Squarefree d) (hpos : 0 < d)
