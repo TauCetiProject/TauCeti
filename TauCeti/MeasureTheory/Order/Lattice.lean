@@ -22,8 +22,7 @@ Mathlib proves the measurable supremum, `Finset.measurable_sup'`, and has no inf
 this file supplies the infimum, the almost-everywhere forms of both, and the coordinatewise
 versions `x ↦ sup' (fun n => f n x)` and `x ↦ inf' (fun n => f n x)` of all four, which is the
 spelling their consumers use. Every lemma is registered with `fun_prop`, so extrema in either
-spelling are discharged by automation. The infimum lemmas are the supremum lemmas at the order
-dual `αᵒᵈ`: `Finset.inf'` at `α` is `Finset.sup'` at `αᵒᵈ` by definition.
+spelling are discharged by automation.
 -/
 
 public section
