@@ -353,8 +353,7 @@ private theorem coe_levelRaise_slash_descendMatrix_of_le {N : ℕ} (hp : p.Prime
       pow_zero, map_one, one_mul]
   obtain ⟨c, hc⟩ : (l : ℤ) ∣ descendExtraGamma p (l * N) 1 0 := by
     refine (Int.natCast_dvd_natCast.mpr ?_ : (l : ℤ) ∣ ((l * N / p : ℕ) : ℤ)).trans
-      ((ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp
-        (Gamma0_mem.mp (descendExtraGamma_mem_Gamma0 hp hplN hpsq')))
+      (mem_Gamma0_iff_dvd.mp (descendExtraGamma_mem_Gamma0 hp hplN hpsq'))
     rw [Nat.mul_div_assoc l hpN]
     exact dvd_mul_right l _
   rw [ModularForm.coe_levelRaise,

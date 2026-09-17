@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Basic
-public import TauCeti.NumberTheory.NumberField.SplitsCompletely
+public import TauCeti.NumberTheory.NumberField.SplitsCompletely.Basic
 import TauCeti.NumberTheory.NumberField.AutomorphismAction
 import TauCeti.RingTheory.Ideal.LiesOver
 import TauCeti.NumberTheory.NumberField.IntegralSqrt

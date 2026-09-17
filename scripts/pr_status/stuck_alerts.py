@@ -49,7 +49,11 @@ Detectors (each names the infra failure it implies):
                      build, e.g. a flaky cache.
   9. missing-status  A concluded pr-build left an open PR's head with no `build`
                      status. The PR is BLOCKED forever and its label is pinned at
-                     `awaiting-CI`; nothing re-runs pr-build without a push.
+                     `awaiting-CI`; nothing re-runs pr-build without a push. A
+                     cancelled run counts once it has stayed the newest for the
+                     head past ABANDONED_CANCEL_HOURS: a cancellation is normally
+                     a supersede, but one nothing came after is a wedge, and
+                     skipping every cancellation left three PRs stuck for days.
  10. diverged-head   A PR's recorded head is not its branch tip, so GitHub never
                      recomputes mergeability and it sits at `mergeable: null`,
                      invisible to every mergeability-gated path.
@@ -143,6 +147,12 @@ EVICTION_WINDOW_HOURS = 24
 # How long a concluded pr-build may leave its head without a `build` status before that is
 # a wedge rather than a race between the run finishing and the status landing.
 MISSING_STATUS_HOURS = 0.5
+# How long a cancelled pr-build may be the newest run for a head before the cancellation
+# counts as terminal rather than as a head about to be rebuilt. A cancellation is normally
+# a supersede -- the head was re-dispatched and the next run posts the status -- and this
+# runs at eight to eighty-six cancellations a day, so the wait has to be long enough that
+# no ordinary re-dispatch is still pending. A day is many times the slowest build.
+ABANDONED_CANCEL_HOURS = 24
 FKB_STALE_DAYS = 3
 SCHEDULERS = {
     # workflow file            (human name,               max age hours)
@@ -409,21 +419,43 @@ def detect_missing_required_status():
         # Newest run first, so this is the latest run that actually reported a verdict.
         finished = next((r["updated_at"] for r in runs
                          if r.get("conclusion") not in ("", "cancelled", "skipped")), "")
-        if not finished or hours_since(finished) < MISSING_STATUS_HOURS:
+        if finished and hours_since(finished) >= MISSING_STATUS_HOURS:
+            out.append(missing_status_alert(pr, verdict=True))
             continue
-        out.append({
-            "key": f"missing-status/{pr['number']}",
-            "title": "Required `build` status was never posted",
-            "body": (
-                f"https://github.com/{REPO}/pull/{pr['number']} has a completed pr-build run for "
-                f"its head commit but no `build` commit status, so it is BLOCKED forever and its "
-                f"label is pinned at `awaiting-CI`.\n\n"
-                f"**Fix:** re-dispatch pr-build for the PR to post the missing status "
-                f"(`gh workflow run pr-build.yml -f pr={pr['number']}`), then fix whatever "
-                f"dropped it — the report step must post all three statuses even when one POST "
-                f"fails."),
-        })
+        if finished:
+            continue
+        # No run reached a verdict, so every one of them was cancelled. That is
+        # ordinarily a supersede: the head was re-dispatched and the next run
+        # will post the status, which is why cancellations are skipped here at
+        # all. But a cancellation that stays the newest run for a head is not a
+        # supersede, because nothing came after it to rebuild. PRs 6633, 6583
+        # and 6590 sat wedged that way for three days, each with exactly one
+        # cancelled run for its head and no `build` status, invisible to this
+        # detector precisely because the run was cancelled.
+        newest = next((r["updated_at"] for r in runs if r.get("updated_at")), "")
+        if not newest or hours_since(newest) < ABANDONED_CANCEL_HOURS:
+            continue
+        out.append(missing_status_alert(pr, verdict=False))
     return out
+
+
+def missing_status_alert(pr, *, verdict):
+    """The alert for a head that will never receive its required `build` status."""
+    became = ("has a completed pr-build run for its head commit but no `build` commit status"
+              if verdict else
+              "has no `build` commit status, and the only pr-build run for its head was "
+              f"cancelled over {ABANDONED_CANCEL_HOURS:g}h ago with nothing dispatched since")
+    return {
+        "key": f"missing-status/{pr['number']}",
+        "title": "Required `build` status was never posted",
+        "body": (
+            f"https://github.com/{REPO}/pull/{pr['number']} {became}, so it is BLOCKED "
+            f"forever and its label is pinned at `awaiting-CI`.\n\n"
+            f"**Fix:** re-dispatch pr-build for the PR to post the missing status "
+            f"(`gh workflow run pr-build.yml -f pr={pr['number']}`), then fix whatever "
+            f"dropped it — the report step must post all three statuses even when one POST "
+            f"fails."),
+    }
 
 
 def detect_diverged_head():
