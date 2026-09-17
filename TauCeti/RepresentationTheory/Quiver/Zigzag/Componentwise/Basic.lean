@@ -143,6 +143,26 @@ theorem zigzagAlgebra.mk_projections (x : zigzagAlgebra k G) :
   intro C
   rw [zigzagComponentProjection_zigzagAlgebraMk]
 
+/-- The public zigzag algebra as the product of its connected-component factors. -/
+noncomputable def zigzagAlgebraPiAlgEquiv :
+    zigzagAlgebra k G ≃ₐ[k] ∀ C : G.ConnectedComponent, zigzagComponentAlgebra k G C where
+  toFun x C := zigzagComponentProjection k G C x
+  invFun := zigzagAlgebraMk k G
+  left_inv := zigzagAlgebra.mk_projections k G
+  right_inv _ := funext fun _ => zigzagComponentProjection_zigzagAlgebraMk k G _ _
+  map_mul' x y := funext fun C => map_mul (zigzagComponentProjection k G C) x y
+  map_add' x y := funext fun C => map_add (zigzagComponentProjection k G C) x y
+  commutes' r := funext fun C => (zigzagComponentProjection k G C).commutes r
+
+@[simp]
+theorem zigzagAlgebraPiAlgEquiv_apply (x : zigzagAlgebra k G) (C : G.ConnectedComponent) :
+    zigzagAlgebraPiAlgEquiv k G x C = zigzagComponentProjection k G C x := (rfl)
+
+@[simp]
+theorem zigzagAlgebraPiAlgEquiv_symm_apply
+    (x : ∀ C : G.ConnectedComponent, zigzagComponentAlgebra k G C) :
+    (zigzagAlgebraPiAlgEquiv k G).symm x = zigzagAlgebraMk k G x := (rfl)
+
 /-- Evaluation identifies a dependent product of algebras over a one-point index type with its
 unique factor. -/
 private noncomputable def algEquivPiUnique {ι : Type*} [Unique ι] (A : ι → AlgCat k) :

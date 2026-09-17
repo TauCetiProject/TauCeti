@@ -32,7 +32,7 @@ The coefficient `mult_p(I)` is Mathlib's `multiplicity`, the normalization in wh
 
 ## References
 
-* [J. Neukirch, *Algebraic number theory*][neukirch1999], Chapter III, §2.
+* [J. Neukirch, *Algebraic number theory*][Neukirch1992], Chapter III, §2.
 -/
 
 public section

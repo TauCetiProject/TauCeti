@@ -74,6 +74,15 @@ theorem componentPerm_apply (c : Fin n) :
     G.componentPerm c = XColumnOfRow G (G.O c) :=
   (rfl)
 
+/-- The `O`-marking in the row of the `X`-marking of column `componentPerm c` is the `O`-marking
+of column `c`: the component permutation walks from `O_c` along its row to that `X`-marking. -/
+theorem columnOfRow_X_componentPerm (c : Fin n) :
+    G.O.columnOfRow (G.X (G.componentPerm c)) = c := by
+  have h : G.X (G.componentPerm c) = G.O c := by
+    rw [componentPerm_def, Equiv.Perm.mul_apply, Equiv.Perm.inv_def]
+    exact G.X.toPerm.apply_symm_apply _
+  rw [h, GridState.columnOfRow_apply]
+
 /-- The component permutation has no fixed columns, because an `O` and an `X` cannot occupy the
 same square. -/
 theorem componentPerm_apply_ne_self (c : Fin n) : G.componentPerm c ≠ c := by
