@@ -19,13 +19,12 @@ symmetry. This orientation is useful for Hermitian duals of codes over finite fi
 This identification with the dual gives a nondegenerate pairing for studying orthogonality
 in finite coordinate spaces.
 
-The API is in `TauCeti`: use `TauCeti.sesquilinearForm σ`, or `sesquilinearForm σ`
-after `open TauCeti`.
+The API is in `RingEquiv`: use `σ.sesquilinearForm`, or `RingEquiv.sesquilinearForm σ`.
 -/
 
 public section
 
-namespace TauCeti
+namespace RingEquiv
 
 open Matrix
 
@@ -92,4 +91,4 @@ theorem sesquilinearForm_flip_bijective (σ : R ≃+* R) :
     ext x
     simp [sesquilinearForm_apply, dotProduct, mul_comm]
 
-end TauCeti
+end RingEquiv
