@@ -41,7 +41,7 @@ characteristic is the absolute ramification index of `K`.
 * `TauCeti.natCastValuation_eq_zero_of_ringChar_ne_zero`: in equal characteristic the invariant
   is identically zero.
 * `TauCeti.normalizedAbsoluteValue_natCast`: the normalized absolute value of `n` is
-  `q ^ (-natCastValuation K n hn)`.
+  `q ^ (-natCastValuation K n hn)`, where `q` is the residue-field cardinality.
 
 ## References
 
