@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `Matrix.diagonal`, `Matrix.single`, and matrix multiplication occur in the statement below.
-public import Mathlib.LinearAlgebra.Matrix.Transvection
+public import Mathlib.Data.Matrix.Basis
 
 /-!
 # Products of diagonal matrices and matrix units
