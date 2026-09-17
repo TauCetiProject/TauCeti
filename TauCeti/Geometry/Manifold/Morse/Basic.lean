@@ -51,9 +51,11 @@ variable [TopologicalSpace M] [ChartedSpace E M]
 variable {f g : M → ℝ} {s t : Set M} {x : M}
 
 /-- A point `x` is a Morse critical point of `f` when, in the preferred extended chart at `x`,
-the coordinate expression of `f` has a nondegenerate critical point. Manifolds with boundary are
-excluded: ordinary Morse theory uses open coordinate neighbourhoods in the model vector space,
-while boundary Morse theory has different critical-point conditions. -/
+the coordinate expression of `f` has a nondegenerate critical point. As with `mfderiv` and
+`ContMDiff`, the definition carries no smoothness or boundary hypotheses; it is the intended
+chart-independent notion when `I.Boundaryless` and `IsManifold I ∞ M` hold, and results relying on
+intrinsic meaning assume these. For models with boundary the unconstrained Hessian is not the
+boundary Morse condition, which is a different theory. -/
 def IsMorseCriticalPoint (I : ModelWithCorners ℝ E E) (f : M → ℝ) (x : M) : Prop :=
   IsNondegenerateCriticalPoint (f ∘ (extChartAt I x).symm) (extChartAt I x x)
 
