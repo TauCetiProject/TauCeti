@@ -207,7 +207,6 @@ theorem toEigenform_toEigenformAwayFromLevel (f : EigenformAwayFromLevel N k)
     (f.toEigenform hbad).toEigenformAwayFromLevel = f :=
   EigenformAwayFromLevel.ext rfl
 
-@[simp]
 theorem toEigenform_eigenvalue (f : EigenformAwayFromLevel N k)
     (hbad : ∀ (p : ℕ) (hp : p.Prime), p ∣ N → ∃ c : ℂ,
       heckeTCuspNat k p (_hn := ⟨hp.ne_zero⟩) f.toCuspForm = c • f.toCuspForm)
