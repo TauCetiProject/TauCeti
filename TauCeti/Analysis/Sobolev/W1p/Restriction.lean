@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
+public import TauCeti.Analysis.Sobolev.W1p.Basic
 
 /-!
 # Restriction of first-order Sobolev functions
@@ -16,20 +16,15 @@ open set.  This file packages that operation as the contractive continuous linea
 the smaller domain, and restriction is functorial.
 
 Restriction is the basic localization operation for Sobolev spaces.  In particular, it lets
-local smooth approximations be compared with a given Sobolev function on relatively compact
-subdomains, as required in the Meyers--Serrin density theorem, and lets interior regularity
-arguments pass from a weak solution on `Ω` to smaller open sets.
+interior regularity arguments pass from a weak solution on `Ω` to smaller open sets.
 
 ## Main declarations
 
 * `TauCeti.W1p.restrictL`: the contractive restriction map from `W^{1,p}(Ω)` to
   `W^{1,p}(U)` for `U ⊆ Ω`.
-* `TauCeti.W1p.value_restrictL_ae` and `TauCeti.W1p.gradient_restrictL_ae`: restriction keeps
-  the value and weak-gradient representatives on the smaller domain.
+* `TauCeti.W1p.value_restrictL` and `TauCeti.W1p.gradient_restrictL`: restriction commutes with
+  the value and weak-gradient projections; their `_ae` variants identify representatives.
 * `TauCeti.W1p.restrictL_self` and `TauCeti.W1p.restrictL_restrictL`: restriction is functorial.
-* `TauCeti.W1p.restrictL_mem_closure_range_ofTestFunctionₗ`: on a relatively compact subdomain,
-  every restriction is a Sobolev-norm limit of restrictions of test functions on the larger
-  domain.
 
 ## References
 
@@ -77,11 +72,51 @@ theorem Sobolev1JetLp.norm_restrictL_le (hU : U ≤ Omega) (J : Sobolev1JetLp mu
         (μ := mu.restrict U) (ν := mu.restrict Omega) (c := 1) (by simp)
         (by simpa only [one_smul] using
           Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU))
-  calc
-    ‖Sobolev1JetLp.restrictL hU J‖ ≤ ‖Sobolev1JetLp.restrictL (mu := mu) (p := p) hU‖ * ‖J‖ :=
-      (Sobolev1JetLp.restrictL hU).le_opNorm J
-    _ ≤ 1 * ‖J‖ := mul_le_mul_of_nonneg_right hop (norm_nonneg J)
-    _ = ‖J‖ := one_mul _
+  simpa only [one_mul] using
+    (Sobolev1JetLp.restrictL (mu := mu) (p := p) hU).le_of_opNorm_le hop J
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
+/-- The value component of a restricted ambient jet is the restriction of its value component. -/
+@[simp]
+theorem Sobolev1JetLp.value_restrictL (hU : U ≤ Omega) (J : Sobolev1JetLp mu Omega p) :
+    Sobolev1JetLp.value (Sobolev1JetLp.restrictL hU J) =
+      Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp) (by
+        simpa only [one_smul] using
+          Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU))
+        (Sobolev1JetLp.value J) := by
+  apply Lp.ext
+  have hmeasure : mu.restrict U ≤ (1 : ENNReal) • mu.restrict Omega := by
+    simpa only [one_smul] using
+      Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)
+  have hvalue := (Sobolev1JetLp.value_apply_ae J).filter_mono
+    (MeasureTheory.ae_mono (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)))
+  filter_upwards [Sobolev1JetLp.value_apply_ae (Sobolev1JetLp.restrictL hU J),
+    Sobolev1JetLp.coeFn_restrictL hU J,
+    Lp.coeFn_LpToLpOfMeasureLeSMul (by simp) hmeasure (Sobolev1JetLp.value J), hvalue]
+    with x hleft hrestrict hright hvalue
+  rw [hleft, hrestrict, hright, hvalue]
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
+/-- The gradient component of a restricted ambient jet is the restriction of its gradient
+component. -/
+@[simp]
+theorem Sobolev1JetLp.gradient_restrictL (hU : U ≤ Omega) (J : Sobolev1JetLp mu Omega p) :
+    Sobolev1JetLp.gradient (Sobolev1JetLp.restrictL hU J) =
+      Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp) (by
+        simpa only [one_smul] using
+          Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU))
+        (Sobolev1JetLp.gradient J) := by
+  apply Lp.ext
+  have hmeasure : mu.restrict U ≤ (1 : ENNReal) • mu.restrict Omega := by
+    simpa only [one_smul] using
+      Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)
+  have hgradient := (Sobolev1JetLp.gradient_apply_ae J).filter_mono
+    (MeasureTheory.ae_mono (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)))
+  filter_upwards [Sobolev1JetLp.gradient_apply_ae (Sobolev1JetLp.restrictL hU J),
+    Sobolev1JetLp.coeFn_restrictL hU J,
+    Lp.coeFn_LpToLpOfMeasureLeSMul (by simp) hmeasure (Sobolev1JetLp.gradient J), hgradient]
+    with x hleft hrestrict hright hgradient
+  rw [hleft, hrestrict, hright, hgradient]
 
 /-! ### Restriction of Sobolev functions -/
 
@@ -125,6 +160,27 @@ theorem W1p.coe_restrictL (hU : U ≤ Omega) (u : W1p mu Omega p) :
     ((W1p.restrictL hU u : W1p mu U p) : Sobolev1JetLp mu U p) =
       Sobolev1JetLp.restrictL hU (u : Sobolev1JetLp mu Omega p) :=
   (rfl)
+
+/-- The value component of a restricted Sobolev function is the restriction of its value
+component. -/
+@[simp]
+theorem W1p.value_restrictL (hU : U ≤ Omega) (u : W1p mu Omega p) :
+    W1p.value (W1p.restrictL hU u) =
+      Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp) (by
+        simpa only [one_smul] using
+          Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)) (W1p.value u) := by
+  rw [W1p.value_coe, W1p.coe_restrictL, Sobolev1JetLp.value_restrictL, W1p.value_coe]
+
+/-- The gradient component of a restricted Sobolev function is the restriction of its gradient
+component. -/
+@[simp]
+theorem W1p.gradient_restrictL (hU : U ≤ Omega) (u : W1p mu Omega p) :
+    W1p.gradient (W1p.restrictL hU u) =
+      Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp) (by
+        simpa only [one_smul] using
+          Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)) (W1p.gradient u) := by
+  rw [W1p.gradient_coe, W1p.coe_restrictL, Sobolev1JetLp.gradient_restrictL,
+    W1p.gradient_coe]
 
 /-- Restriction keeps the same value representative on the smaller open set. -/
 theorem W1p.value_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :
@@ -176,57 +232,5 @@ theorem W1p.restrictL_restrictL (hU : U ≤ Omega) (hV : V ≤ U) (u : W1p mu Om
       (MeasureTheory.ae_mono (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hV)))
   exact ((W1p.value_restrictL_ae hV (W1p.restrictL hU u)).trans hsecond).trans
     (W1p.value_restrictL_ae (hV.trans hU) u).symm
-
-/-! ### Local approximation by test functions -/
-
-/-- **Local smooth approximation.**  Let `U` be relatively compact in `Ω`.  For
-`1 ≤ p < ∞`, the restriction to `U` of every `u ∈ W^{1,p}(Ω)` lies in the closure of the
-restrictions of test functions on `Ω`.
-
-The approximants are smooth on all of `Ω`, not merely on `U`.  This is the local approximation
-step in Meyers--Serrin density: a smooth cutoff equal to one on `closure U` first localizes `u`
-away from `∂Ω`, after which density of test functions in `W^{1,p}_0(Ω)` applies. -/
-theorem W1p.restrictL_mem_closure_range_ofTestFunctionₗ (hp : p ≠ ∞) (hU : U ≤ Omega)
-    (hcompact : IsCompact (closure (U : Set E)))
-    (hclosure : closure (U : Set E) ⊆ (Omega : Set E)) (u : W1p mu Omega p) :
-    W1p.restrictL hU u ∈ closure (Set.range (fun (phi : 𝓓(Omega, ℝ)) =>
-      W1p.restrictL hU (W1p.ofTestFunctionₗ mu Omega p phi))) := by
-  obtain ⟨chi, hchi, hchi_range, hchi_one_nhds, hchi_cpt, hchi_ts⟩ :=
-    hcompact.exists_contDiff_cutoff Omega.isOpen hclosure
-  have hchi_mem : ∀ x, chi x ∈ Icc (0 : ℝ) 1 := fun x => hchi_range (mem_range_self x)
-  obtain ⟨C, hC⟩ := (hchi.continuous_fderiv (by simp)).norm.bddAbove_range_of_hasCompactSupport
-    ((hchi_cpt.fderiv ℝ).norm)
-  let M : ℝ := max 1 C
-  have hM0 : (0 : ℝ) ≤ M := zero_le_one.trans (le_max_left _ _)
-  have hchiM : ∀ x ∈ (Omega : Set E), |chi x| ≤ M := fun x _ => by
-    rw [abs_of_nonneg (hchi_mem x).1]
-    exact (hchi_mem x).2.trans (le_max_left _ _)
-  have hchigradM : ∀ x ∈ (Omega : Set E), ‖∇ chi x‖ ≤ M := fun x _ => by
-    rw [_root_.gradient, LinearIsometryEquiv.norm_map]
-    exact (hC ⟨x, rfl⟩).trans (le_max_right _ _)
-  let v := W1p.contDiffSMul chi hchi hM0 hchiM hchigradM u
-  have hv_zero : v ∈ w1p0Submodule mu Omega p :=
-    W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport hp hchi hM0 hchiM hchigradM
-      hchi_cpt hchi_ts u
-  have hv_closure : v ∈ closure (Set.range (W1p.ofTestFunctionₗ mu Omega p)) := by
-    rw [← coe_w1p0Submodule]
-    exact hv_zero
-  have hrestrict : W1p.restrictL hU v = W1p.restrictL hU u := by
-    apply W1p.ext_value
-    apply Lp.ext
-    have hv_value := (W1p.value_contDiffSMul_ae hchi hM0 hchiM hchigradM u).filter_mono
-      (MeasureTheory.ae_mono (Measure.restrict_mono_set mu
-        (SetLike.coe_subset_coe.mpr hU)))
-    filter_upwards [W1p.value_restrictL_ae hU v, W1p.value_restrictL_ae hU u,
-      hv_value, ae_restrict_mem U.isOpen.measurableSet] with x hv hu hmul hxU
-    rw [hv, hu, hmul]
-    have hxpre : x ∈ chi ⁻¹' ({1} : Set ℝ) :=
-      interior_subset (hchi_one_nhds (subset_closure hxU))
-    have hx_one : chi x = 1 := by simpa only [mem_preimage, mem_singleton_iff] using hxpre
-    rw [hx_one, one_smul]
-  rw [← hrestrict]
-  refine map_mem_closure (W1p.restrictL hU).continuous hv_closure ?_
-  rintro _ ⟨phi, rfl⟩
-  exact ⟨phi, rfl⟩
 
 end TauCeti
