@@ -88,6 +88,7 @@ def tateCor (T : LayerRestriction small big) (F : Formation G) :
 
 /-- In degree zero, layer Tate corestriction is the range comparison followed by the relative
 norm map on degree-zero Tate cohomology. -/
+@[simp]
 theorem tateCor_zero (T : LayerRestriction small big) (F : Formation G) :
     T.tateCor F 0 = (T.tateRangeIso F 0).hom ≫
       TauCeti.TateCohomology.H0Cor (big.rep F) T.galHom.range :=
@@ -95,6 +96,7 @@ theorem tateCor_zero (T : LayerRestriction small big) (F : Formation G) :
 
 /-- In a positive degree, layer Tate corestriction is ordinary cohomological corestriction read
 through the canonical positive-degree comparisons. -/
+@[simp]
 theorem tateCor_ofNat_succ (T : LayerRestriction small big) (F : Formation G) (n : ℕ) :
     T.tateCor F (Int.ofNat (n + 1)) =
       (small.tateHIsoH F (n + 1)).hom ≫ T.cohomologyCor F (n + 1) ≫
@@ -115,6 +117,7 @@ theorem tateCor_comp_tateHIsoH_hom (T : LayerRestriction small big) (F : Formati
 
 /-- In degree minus one, layer Tate corestriction is the range comparison followed by inclusion
 of the subgroup norm kernel into the ambient norm kernel. -/
+@[simp]
 theorem tateCor_neg_one (T : LayerRestriction small big) (F : Formation G) :
     T.tateCor F (-1) = (T.tateRangeIso F (-1)).hom ≫
       TauCeti.TateCohomology.HNegOneCor (big.rep F) T.galHom.range :=
@@ -122,6 +125,7 @@ theorem tateCor_neg_one (T : LayerRestriction small big) (F : Formation G) :
 
 /-- In degree `-(n+2)`, layer Tate corestriction is the range comparison followed by the
 covariant group-homology map in degree `n+1`. -/
+@[simp]
 theorem tateCor_negSucc_succ (T : LayerRestriction small big) (F : Formation G) (n : ℕ) :
     T.tateCor F (Int.negSucc (n + 1)) =
       (T.tateRangeIso F (Int.negSucc (n + 1))).hom ≫
@@ -177,6 +181,7 @@ def trivialTateCor (T : LayerRestriction small big) :
 
 /-- In degree zero, trivial-coefficient Tate corestriction is the range comparison followed by
 the relative norm map. -/
+@[simp]
 theorem trivialTateCor_zero (T : LayerRestriction small big) :
     T.trivialTateCor 0 = (T.trivialTateRangeIso 0).hom ≫
       TauCeti.TateCohomology.H0Cor (Rep.trivial ℤ big.Gal ℤ) T.galHom.range :=
@@ -184,6 +189,7 @@ theorem trivialTateCor_zero (T : LayerRestriction small big) :
 
 /-- In a positive degree, trivial-coefficient Tate corestriction is ordinary cohomological
 corestriction after identifying the smaller Galois group with its image. -/
+@[simp]
 theorem trivialTateCor_ofNat_succ (T : LayerRestriction small big) (n : ℕ) :
     T.trivialTateCor (Int.ofNat (n + 1)) =
       (T.trivialTateRangeIso (n + 1)).hom ≫
@@ -195,8 +201,37 @@ theorem trivialTateCor_ofNat_succ (T : LayerRestriction small big) (n : ℕ) :
           (Rep.trivial ℤ big.Gal ℤ) :=
   (rfl)
 
+/-- Positive-degree trivial-coefficient Tate corestriction commutes with Mathlib's canonical
+comparison to ordinary cohomology. -/
+@[reassoc]
+theorem trivialTateCor_comp_isoGroupCohomology_hom (T : LayerRestriction small big)
+    (n : ℕ) [NeZero n] :
+    T.trivialTateCor n ≫
+        (TateCohomology.isoGroupCohomology n).hom.app (Rep.trivial ℤ big.Gal ℤ) =
+      (T.trivialTateRangeIso n).hom ≫
+        (TateCohomology.isoGroupCohomology n).hom.app
+          (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)) ≫
+        TauCeti.groupCohomology.corestriction
+          T.galHom.range (Rep.trivial ℤ big.Gal ℤ) n := by
+  cases n with
+  | zero => exact (NeZero.ne 0 rfl).elim
+  | succ k =>
+    simp only [trivialTateCor]
+    -- Peel off the semireducible group-cohomology carrier before cancelling the comparison iso.
+    rw [Category.assoc, Category.assoc]
+    congr 1
+    congr 1
+    have cancel {X Y Z : ModuleCat ℤ} (f : X ⟶ Z) (e : Y ≅ Z) :
+        (f ≫ e.inv) ≫ e.hom = f := by simp
+    exact cancel
+      (TauCeti.groupCohomology.corestriction
+        T.galHom.range (Rep.trivial ℤ big.Gal ℤ) (k + 1))
+      ((TateCohomology.isoGroupCohomology (k + 1)).app
+        (Rep.trivial ℤ big.Gal ℤ))
+
 /-- In degree minus one, trivial-coefficient Tate corestriction is the range comparison followed
 by inclusion of norm kernels. -/
+@[simp]
 theorem trivialTateCor_neg_one (T : LayerRestriction small big) :
     T.trivialTateCor (-1) = (T.trivialTateRangeIso (-1)).hom ≫
       TauCeti.TateCohomology.HNegOneCor (Rep.trivial ℤ big.Gal ℤ) T.galHom.range :=
@@ -204,6 +239,7 @@ theorem trivialTateCor_neg_one (T : LayerRestriction small big) :
 
 /-- In degree `-(n+2)`, trivial-coefficient Tate corestriction is the range comparison followed
 by the covariant group-homology map in degree `n+1`. -/
+@[simp]
 theorem trivialTateCor_negSucc_succ (T : LayerRestriction small big) (n : ℕ) :
     T.trivialTateCor (Int.negSucc (n + 1)) =
       (T.trivialTateRangeIso (Int.negSucc (n + 1))).hom ≫
