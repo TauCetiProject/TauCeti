@@ -8,7 +8,6 @@ module
 public import TauCeti.RepresentationTheory.Quiver.Acyclic.PathAlgebra
 public import TauCeti.RepresentationTheory.Quiver.Radical
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Relations
-public import Mathlib.RingTheory.Ideal.BigOperators
 
 import TauCeti.RepresentationTheory.Quiver.Zigzag.Admissible
 
@@ -21,9 +20,6 @@ least three, and equals the cube of the arrow ideal. This file packages that pre
 shows that, when the graph has an edge, omitting the cubic paths gives an algebra which is not a
 finitely generated module.
 
-The inclusion from the cube of the arrow ideal into the zigzag relation ideal is proved for every
-finite simple graph.
-
 ## Main definitions
 
 * `TauCeti.nonisolatedZigzagQuotientEquivArrowIdealPowThree`: when every vertex has at most one
@@ -33,8 +29,6 @@ finite simple graph.
 
 * `TauCeti.IsQuadraticZigzagRelator.eq_zero`, `TauCeti.quadraticZigzagIdeal_eq_bot`: when every
   vertex has at most one neighbour, the quadratic relators vanish.
-* `TauCeti.arrowIdeal_pow_three_le_asIdeal_zigzagIdeal`: paths of length at least three generate a
-  subideal of the zigzag relation ideal.
 * `TauCeti.asIdeal_zigzagIdeal_eq_arrowIdeal_pow_three`: when every vertex has at most one
   neighbour, the zigzag relation ideal is the cube of the arrow ideal.
 * `TauCeti.not_module_finite_quotient_quadraticZigzagIdeal`: when such a graph has an edge, the
@@ -48,30 +42,6 @@ namespace TauCeti
 open PathAlgebra DoubledQuiver
 
 universe u w
-
-/-! ### The long-path generators -/
-
-section LongPaths
-
-variable (k : Type w) [CommRing k] {V : Type u} [Finite V] (G : SimpleGraph V)
-
-/-- **The cube of the arrow ideal lies in the zigzag relation ideal**, for every simple graph: the
-paths of length at least three span that cube, and each of them is a uniform zigzag relator. -/
-theorem arrowIdeal_pow_three_le_asIdeal_zigzagIdeal :
-    arrowIdeal k (DoubledQuiver G) ^ 3 ≤ (zigzagIdeal k G).asIdeal := by
-  intro x hx
-  -- Expand `x` in the path basis: every path carrying a nonzero coordinate is long.
-  rw [mem_arrowIdeal_pow, mem_pathSpan_iff] at hx
-  rw [← (pathAlgebraBasis k (DoubledQuiver G)).linearCombination_repr x,
-    Finsupp.linearCombination_apply]
-  refine Ideal.sum_mem _ fun y hy => ?_
-  -- `Finsupp.linearCombination_apply` leaves the summand as an unreduced lambda.
-  dsimp only
-  rw [Algebra.smul_def, coe_pathAlgebraBasis, TwoSidedIdeal.mem_asIdeal]
-  exact TwoSidedIdeal.mul_mem_left _ _ _ (mem_zigzagIdeal_of_isZigzagRelator k G
-    (IsZigzagRelator.long_path y (hx y (Finsupp.mem_support_iff.mp hy))))
-
-end LongPaths
 
 /-! ### Graphs whose vertices have at most one neighbour -/
 
