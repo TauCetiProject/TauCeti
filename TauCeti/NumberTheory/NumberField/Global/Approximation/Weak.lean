@@ -47,6 +47,8 @@ directly in terms of the real embeddings.
 
 * `GlobalNumberFields.weakApproximation_denseRange`: the diagonal image of a number field is dense
   in every finite product of finite and infinite completions.
+* `GlobalNumberFields.denseRange_algebraMap_embedding_of_isReal`: the same with each real
+  completion read as `ℝ` through the embedding of its real place.
 * `GlobalNumberFields.exists_fieldUnit_valuation_sub_lt_and_signHom_eq`: one field unit of `K`
   approximates
   independently prescribed targets at finitely many finite places while realizing a prescribed
@@ -269,6 +271,42 @@ theorem weakApproximation_denseRange
       ← (WithAbs.equiv w.1.1).apply_symm_apply (x - ainf w),
       InfinitePlace.Completion.norm_coe]
     exact hxinf w
+
+/-- **Weak approximation at finite and real places.** The diagonal image of a number field is
+dense in the product of its completions at finitely many finite places and of `ℝ` at finitely
+many real places, embedded through the real embeddings of those places. -/
+theorem denseRange_algebraMap_embedding_of_isReal
+    (S : Finset (HeightOneSpectrum (𝓞 K))) (T : Finset {w : InfinitePlace K // w.IsReal}) :
+    DenseRange fun x : K =>
+      ((fun v : S => algebraMap K (v.1.adicCompletion K) x),
+        fun w : T => embedding_of_isReal w.1.2 x) := by
+  classical
+  let Sinf : Finset (InfinitePlace K) := T.map (Function.Embedding.subtype _)
+  have hmem (w : T) : w.1.1 ∈ Sinf := Finset.mem_map_of_mem _ w.2
+  have hreal (u : {u // u ∈ Sinf}) : ∃ h : u.1.IsReal, ⟨u.1, h⟩ ∈ T := by
+    obtain ⟨u, hu⟩ := u
+    obtain ⟨w, hw, rfl⟩ := Finset.mem_map.mp hu
+    exact ⟨w.2, hw⟩
+  choose hr hrT using hreal
+  -- Read each archimedean completion as `ℝ` through its real embedding.
+  let r : (∀ u : {u // u ∈ Sinf}, u.1.Completion) → ∀ w : T, ℝ :=
+    fun y w => Completion.extensionEmbeddingOfIsReal w.1.2 (y ⟨w.1.1, hmem w⟩)
+  have hrc : Continuous r := continuous_pi fun w =>
+    (Completion.isometry_extensionEmbeddingOfIsReal w.1.2).continuous.comp (continuous_apply _)
+  have hrs : Function.Surjective r := fun t => by
+    refine ⟨fun u => (Completion.ringEquivRealOfIsReal (hr u)).symm (t ⟨_, hrT u⟩), ?_⟩
+    funext w
+    exact (Completion.ringEquivRealOfIsReal w.1.2).apply_symm_apply (t w)
+  have hdense := (Prod.map_surjective.mpr ⟨Function.surjective_id, hrs⟩).denseRange.comp
+    (weakApproximation_denseRange S Sinf) (continuous_id.prodMap hrc)
+  convert hdense using 1
+  funext x
+  ext w
+  · rw [Function.comp_apply, Prod.map_fst, id]
+  · rw [Function.comp_apply, Prod.map_snd]
+    simp only [r, Completion.algebraMap_apply]
+    exact ((Completion.extensionEmbeddingOfIsReal_coe w.1.2 (WithAbs.toAbs _ x)).trans
+      (by simp)).symm
 
 /-! ### Simultaneous approximation in `Kˣ`
 

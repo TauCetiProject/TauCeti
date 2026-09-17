@@ -26,16 +26,14 @@ to any basis. The statements are therefore independent of a choice of basis, and
 The proof reduces to the scalar statement. After choosing a basis `b` of `V`, the coordinates of
 `1 ⊗ x` for `b.baseChange` are the images of the coordinates of `x`, and the coordinate maps are
 homeomorphisms for the module topology. Scalar weak approximation at finite and real places is
-Artin--Whaples weak approximation, `GlobalNumberFields.weakApproximation_denseRange`, read through
-the identification of the completion at a real place with `ℝ`.
+`GlobalNumberFields.denseRange_algebraMap_embedding_of_isReal`, Artin--Whaples weak approximation
+read through the identification of the completion at a real place with `ℝ`.
 
 This is the form of weak approximation used to approximate vectors of a quadratic space, such as
 the coordinates of a vector in a binary summand in the proof of the Hasse--Minkowski theorem.
 
 ## Main results
 
-* `TauCeti.NumberField.denseRange_algebraMap_embedding_of_isReal`: `K` is dense in the product of
-  finitely many finite completions and finitely many copies of `ℝ` indexed by real places.
 * `TauCeti.NumberField.denseRange_one_tmul`: `V` is dense in the corresponding product of localized
   spaces.
 * `TauCeti.NumberField.exists_one_tmul_mem_of_mem_nhds`: one global vector lies in prescribed
@@ -58,42 +56,6 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- **Weak approximation at finite and real places.** The diagonal image of a number field is
-dense in the product of its completions at finitely many finite places and of `ℝ` at finitely
-many real places, embedded through the real embeddings of those places. -/
-theorem denseRange_algebraMap_embedding_of_isReal
-    (S : Finset (HeightOneSpectrum (𝓞 K))) (T : Finset {w : InfinitePlace K // w.IsReal}) :
-    DenseRange fun x : K =>
-      ((fun v : S => algebraMap K (v.1.adicCompletion K) x),
-        fun w : T => embedding_of_isReal w.1.2 x) := by
-  classical
-  let Sinf : Finset (InfinitePlace K) := T.map (Function.Embedding.subtype _)
-  have hmem (w : T) : w.1.1 ∈ Sinf := Finset.mem_map_of_mem _ w.2
-  have hreal (u : {u // u ∈ Sinf}) : ∃ h : u.1.IsReal, ⟨u.1, h⟩ ∈ T := by
-    obtain ⟨u, hu⟩ := u
-    obtain ⟨w, hw, rfl⟩ := Finset.mem_map.mp hu
-    exact ⟨w.2, hw⟩
-  choose hr hrT using hreal
-  -- Read each archimedean completion as `ℝ` through its real embedding.
-  let r : (∀ u : {u // u ∈ Sinf}, u.1.Completion) → ∀ w : T, ℝ :=
-    fun y w => Completion.extensionEmbeddingOfIsReal w.1.2 (y ⟨w.1.1, hmem w⟩)
-  have hrc : Continuous r := continuous_pi fun w =>
-    (Completion.isometry_extensionEmbeddingOfIsReal w.1.2).continuous.comp (continuous_apply _)
-  have hrs : Function.Surjective r := fun t => by
-    refine ⟨fun u => (Completion.ringEquivRealOfIsReal (hr u)).symm (t ⟨_, hrT u⟩), ?_⟩
-    funext w
-    exact (Completion.ringEquivRealOfIsReal w.1.2).apply_symm_apply (t w)
-  have hdense := (Prod.map_surjective.mpr ⟨Function.surjective_id, hrs⟩).denseRange.comp
-    (GlobalNumberFields.weakApproximation_denseRange S Sinf) (continuous_id.prodMap hrc)
-  convert hdense using 1
-  funext x
-  ext w
-  · rw [Function.comp_apply, Prod.map_fst, id]
-  · rw [Function.comp_apply, Prod.map_snd]
-    simp only [r, Completion.algebraMap_apply]
-    exact ((Completion.extensionEmbeddingOfIsReal_coe w.1.2 (WithAbs.toAbs _ x)).trans
-      (by simp)).symm
-
 variable {V : Type*} [AddCommGroup V] [Module K V]
 
 /-- **Vector weak approximation.** A finite-dimensional vector space over a number field is dense
@@ -101,12 +63,10 @@ in the product of its scalar extensions to finitely many finite completions and 
 finitely many real places, for the module topologies on those scalar extensions. -/
 theorem denseRange_one_tmul [FiniteDimensional K V]
     (S : Finset (HeightOneSpectrum (𝓞 K))) (T : Finset {w : InfinitePlace K // w.IsReal})
-    [∀ v : HeightOneSpectrum (𝓞 K), TopologicalSpace (v.FiniteScalarExtension (V := V))]
-    [∀ v : HeightOneSpectrum (𝓞 K),
-      IsModuleTopology (v.adicCompletion K) (v.FiniteScalarExtension (V := V))]
-    [∀ w : {w : InfinitePlace K // w.IsReal}, TopologicalSpace (RealScalarExtension (V := V) w)]
-    [∀ w : {w : InfinitePlace K // w.IsReal}, IsModuleTopology ℝ
-      (RealScalarExtension (V := V) w)] :
+    [∀ v : S, TopologicalSpace (v.1.FiniteScalarExtension (V := V))]
+    [∀ v : S, IsModuleTopology (v.1.adicCompletion K) (v.1.FiniteScalarExtension (V := V))]
+    [∀ w : T, TopologicalSpace (RealScalarExtension (V := V) w.1)]
+    [∀ w : T, IsModuleTopology ℝ (RealScalarExtension (V := V) w.1)] :
     DenseRange fun x : V =>
       ((fun v : S => ((1 : v.1.adicCompletion K) ⊗ₜ[K] x : v.1.FiniteScalarExtension)),
         fun w : T =>
@@ -144,7 +104,8 @@ theorem denseRange_one_tmul [FiniteDimensional K V]
         (b.baseChange ℝ).equivFun (y.2 w) i), ?_⟩
     ext v <;> simp only [Φ, LinearEquiv.symm_apply_apply]
   have hcoord := hΦs.denseRange.comp
-    (DenseRange.piMap fun _ => denseRange_algebraMap_embedding_of_isReal S T) hΦc
+    (DenseRange.piMap fun _ =>
+      GlobalNumberFields.denseRange_algebraMap_embedding_of_isReal S T) hΦc
   rw [DenseRange, ← b.equivFun.surjective.range_comp] at hcoord
   rw [DenseRange]
   convert hcoord using 2
@@ -167,27 +128,24 @@ a number field has its localization in every one of these neighbourhoods. The lo
 carry their module topologies. -/
 theorem exists_one_tmul_mem_of_mem_nhds [FiniteDimensional K V]
     (S : Finset (HeightOneSpectrum (𝓞 K))) (T : Finset {w : InfinitePlace K // w.IsReal})
-    [∀ v : HeightOneSpectrum (𝓞 K), TopologicalSpace (v.FiniteScalarExtension (V := V))]
-    [∀ v : HeightOneSpectrum (𝓞 K),
-      IsModuleTopology (v.adicCompletion K) (v.FiniteScalarExtension (V := V))]
-    [∀ w : {w : InfinitePlace K // w.IsReal}, TopologicalSpace (RealScalarExtension (V := V) w)]
-    [∀ w : {w : InfinitePlace K // w.IsReal}, IsModuleTopology ℝ
-      (RealScalarExtension (V := V) w)]
-    {y : ∀ v : HeightOneSpectrum (𝓞 K), v.FiniteScalarExtension (V := V)}
-    {z : ∀ w : {w : InfinitePlace K // w.IsReal}, RealScalarExtension (V := V) w}
-    {N : ∀ v : HeightOneSpectrum (𝓞 K), Set (v.FiniteScalarExtension (V := V))}
-    {M : ∀ w : {w : InfinitePlace K // w.IsReal}, Set (RealScalarExtension (V := V) w)}
-    (hN : ∀ v ∈ S, N v ∈ 𝓝 (y v)) (hM : ∀ w ∈ T, M w ∈ 𝓝 (z w)) :
-    ∃ x : V, (∀ v ∈ S, ((1 : v.adicCompletion K) ⊗ₜ[K] x : v.FiniteScalarExtension) ∈ N v) ∧
-      ∀ w ∈ T,
-        letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-        ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w) ∈ M w := by
-  have hU : (Set.univ.pi fun v : S => N v.1) ×ˢ (Set.univ.pi fun w : T => M w.1) ∈
-      𝓝 ((fun v : S => y v.1), fun w : T => z w.1) :=
-    prod_mem_nhds (set_pi_mem_nhds Set.finite_univ fun v _ => hN v.1 v.2)
-      (set_pi_mem_nhds Set.finite_univ fun w _ => hM w.1 w.2)
+    [∀ v : S, TopologicalSpace (v.1.FiniteScalarExtension (V := V))]
+    [∀ v : S, IsModuleTopology (v.1.adicCompletion K) (v.1.FiniteScalarExtension (V := V))]
+    [∀ w : T, TopologicalSpace (RealScalarExtension (V := V) w.1)]
+    [∀ w : T, IsModuleTopology ℝ (RealScalarExtension (V := V) w.1)]
+    {y : ∀ v : S, v.1.FiniteScalarExtension (V := V)}
+    {z : ∀ w : T, RealScalarExtension (V := V) w.1}
+    {N : ∀ v : S, Set (v.1.FiniteScalarExtension (V := V))}
+    {M : ∀ w : T, Set (RealScalarExtension (V := V) w.1)}
+    (hN : ∀ v, N v ∈ 𝓝 (y v)) (hM : ∀ w, M w ∈ 𝓝 (z w)) :
+    ∃ x : V, (∀ v : S, ((1 : v.1.adicCompletion K) ⊗ₜ[K] x : v.1.FiniteScalarExtension) ∈ N v) ∧
+      ∀ w : T,
+        letI : Algebra K ℝ := (embedding_of_isReal w.1.2).toAlgebra
+        ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w.1) ∈ M w := by
+  have hU : (Set.univ.pi N) ×ˢ (Set.univ.pi M) ∈ 𝓝 (y, z) :=
+    prod_mem_nhds (set_pi_mem_nhds Set.finite_univ fun v _ => hN v)
+      (set_pi_mem_nhds Set.finite_univ fun w _ => hM w)
   obtain ⟨-, ⟨x, rfl⟩, hx⟩ := (denseRange_one_tmul (V := V) S T).inter_nhds_nonempty hU
   simp only [Set.mem_prod, Set.mem_univ_pi] at hx
-  exact ⟨x, fun v hv => hx.1 ⟨v, hv⟩, fun w hw => hx.2 ⟨w, hw⟩⟩
+  exact ⟨x, hx.1, hx.2⟩
 
 end TauCeti.NumberField
