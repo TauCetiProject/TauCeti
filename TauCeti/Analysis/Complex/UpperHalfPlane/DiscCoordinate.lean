@@ -213,6 +213,14 @@ theorem coe_discCoordinateBallHomeomorph_apply (z : ℍ) (r : ℝ) (τ : Metric.
     (discCoordinateBallHomeomorph z r τ : ℂ) = discCoordinate z τ :=
   (rfl)
 
+/-- The inverse of `discCoordinateBallHomeomorph` is the inverse disc-coordinate formula. -/
+@[simp]
+theorem coe_discCoordinateBallHomeomorph_symm_apply (z : ℍ) (r : ℝ)
+    (w : Metric.ball (0 : ℂ) (Real.tanh (r / 2))) :
+    ((discCoordinateBallHomeomorph z r).symm w : ℂ) =
+      ((z : ℂ) - conj (z : ℂ) * w) / (1 - w) :=
+  (rfl)
+
 /-- **A matrix of positive determinant fixing `z` is a rotation in the disc coordinate centred
 at `z`**, by the unimodular multiplier `conj (denom g z) / denom g z`.
 

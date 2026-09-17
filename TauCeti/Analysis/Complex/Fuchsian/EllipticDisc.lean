@@ -120,6 +120,18 @@ private theorem coe_stabilizerBallHomeomorph (r : ℝ) (τ : stabilizerBall Γ z
   rw [stabilizerBallHomeomorph, Homeomorph.trans_apply, Homeomorph.trans_apply,
     Homeomorph.setCongr_apply, Homeomorph.setCongr_apply, coe_discCoordinateBallHomeomorph_apply]
 
+private theorem orbitRel_stabilizerBallHomeomorph_iff (r : ℝ)
+    (τ σ : stabilizerBall Γ z r) :
+    orbitRel (stabilizer Γ z) (stabilizerBall Γ z r) τ σ ↔
+      orbitRel (rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ)
+        (TauCeti.rootsOfUnityBall (Nat.card (stabilizer Γ z)) (Real.tanh (r / 2)))
+        (stabilizerBallHomeomorph Γ z r τ) (stabilizerBallHomeomorph Γ z r σ) := by
+  have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
+  rw [orbitRel_apply, orbitRel_apply, SubMulAction.mem_orbit_subMul_iff,
+    SubMulAction.mem_orbit_subMul_iff, mem_orbit_stabilizer_iff_discCoordinate_pow_eq_pow,
+    ← orbitRel_apply (G := rootsOfUnity _ ℂ), TauCeti.orbitRel_rootsOfUnity_apply (NeZero.ne _),
+    coe_stabilizerBallHomeomorph, coe_stabilizerBallHomeomorph]
+
 /-- **The local model of the quotient at a point with finite stabilizer.** If the stabilizer of
 `z` in `Γ` has order `m` and `0 ≤ r`, the orbit space of the hyperbolic disc of radius `r`
 about `z` under that stabilizer is homeomorphic to the Euclidean disc of radius
@@ -128,11 +140,8 @@ def stabilizerBallQuotientHomeomorph {r : ℝ} (hr : 0 ≤ r) :
     orbitRel.Quotient (stabilizer Γ z) (stabilizerBall Γ z r) ≃ₜ
       ball (0 : ℂ) (Real.tanh (r / 2) ^ Nat.card (stabilizer Γ z)) :=
   have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
-  (Homeomorph.Quotient.congr (stabilizerBallHomeomorph Γ z r) fun τ σ ↦ by
-      rw [orbitRel_apply, orbitRel_apply, SubMulAction.mem_orbit_subMul_iff,
-        SubMulAction.mem_orbit_subMul_iff, mem_orbit_stabilizer_iff_discCoordinate_pow_eq_pow,
-        ← orbitRel_apply (G := rootsOfUnity _ ℂ), TauCeti.orbitRel_rootsOfUnity_apply (NeZero.ne _),
-        coe_stabilizerBallHomeomorph, coe_stabilizerBallHomeomorph]).trans
+  (Homeomorph.Quotient.congr (stabilizerBallHomeomorph Γ z r)
+      (orbitRel_stabilizerBallHomeomorph_iff Γ z r)).trans
     (TauCeti.rootsOfUnityBallQuotientHomeomorph (by
       rw [Real.tanh_eq_sinh_div_cosh]
       exact div_nonneg (Real.sinh_nonneg_iff.mpr (by positivity)) (Real.cosh_pos _).le))
@@ -143,10 +152,14 @@ theorem coe_stabilizerBallQuotientHomeomorph_mk {r : ℝ} (hr : 0 ≤ r)
     (stabilizerBallQuotientHomeomorph Γ z hr (Quotient.mk _ τ) : ℂ) =
       discCoordinate z τ ^ Nat.card (stabilizer Γ z) := by
   have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
-  rw [stabilizerBallQuotientHomeomorph, Homeomorph.trans_apply,
-    ← coe_stabilizerBallHomeomorph Γ z r τ]
-  -- `Homeomorph.Quotient.congr` is `Quotient.congr` on the underlying equivalences.
-  exact TauCeti.coe_rootsOfUnityBallQuotientHomeomorph_mk _ _
+  rw [stabilizerBallQuotientHomeomorph, Homeomorph.trans_apply]
+  change ((TauCeti.rootsOfUnityBallQuotientHomeomorph _)
+    (Quotient.congr (stabilizerBallHomeomorph Γ z r).toEquiv
+      (orbitRel_stabilizerBallHomeomorph_iff Γ z r) (Quotient.mk _ τ)) : ℂ) = _
+  rw [Quotient.congr_mk]
+  rw [TauCeti.coe_rootsOfUnityBallQuotientHomeomorph_mk]
+  change (stabilizerBallHomeomorph Γ z r τ : ℂ) ^ Nat.card (stabilizer Γ z) = _
+  rw [coe_stabilizerBallHomeomorph]
 
 end LocalModel
 
