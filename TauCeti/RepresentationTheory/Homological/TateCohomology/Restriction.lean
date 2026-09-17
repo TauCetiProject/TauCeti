@@ -52,8 +52,8 @@ modulo `I_G M`.
   `TauCeti.TateCohomology.HNegOneπ_comp_HNegOneRes`,
   `TauCeti.TateCohomology.HNegOneπ_comp_HNegOneCor`: the effect of each map on the class of a
   representative.
-* `TauCeti.TateCohomology.negSuccRes_def`: restriction in degree `-(n+1)` is the homological
-  transfer, transported through Mathlib's comparison with group homology.
+* `TauCeti.TateCohomology.HNegTwoRes_def`: restriction in degree `-2` is the transfer in first
+  group homology, transported through Mathlib's comparison with group homology.
 * `TauCeti.TateCohomology.H0Res_comp_H0Cor` and
   `TauCeti.TateCohomology.HNegOneRes_comp_HNegOneCor`: corestriction after restriction is
   multiplication by the index.
@@ -85,35 +85,32 @@ noncomputable local instance fintypeQuotientGroup : Fintype (G ⧸ H) :=
 
 section Negative
 
-private abbrev negSuccIsoGroupHomology (R G : Type u) [CommRing R] [Group G] [Fintype G]
-    (n : ℕ) [NeZero n] :=
-  _root_.TateCohomology.isoGroupHomology (R := R) (G := G) (Int.negSucc n) n (by
-    rw [Int.negSucc_eq])
-
 /-- Restriction to a subgroup in Tate degree `-(n+1)`, for `n > 0`. Through Mathlib's
 negative-degree comparison, this is the transfer in `n`th group homology. -/
 def negSuccRes (n : ℕ) [NeZero n] :
     tateCohomology M (Int.negSucc n) ⟶
       tateCohomology (Rep.res H.subtype M) (Int.negSucc n) :=
-  (negSuccIsoGroupHomology R G n).hom.app M ≫
+  (_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n (Int.negSucc_eq n)).hom.app M ≫
     TauCeti.groupHomology.transfer M H n ≫
-      (negSuccIsoGroupHomology R H n).inv.app (Rep.res H.subtype M)
-
-/-- Restriction in Tate degree `-(n+1)` is the transfer in `n`th group homology, transported
-through Mathlib's negative-degree comparison `TateCohomology.isoGroupHomology`. -/
-theorem negSuccRes_def (n : ℕ) [NeZero n] :
-    negSuccRes M H n =
-      (_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n (Int.negSucc_eq n)).hom.app M ≫
-        TauCeti.groupHomology.transfer M H n ≫
-          (_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n (Int.negSucc_eq n)).inv.app
-            (Rep.res H.subtype M) := by
-  rw [negSuccRes]
+      (_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n (Int.negSucc_eq n)).inv.app
+        (Rep.res H.subtype M)
 
 /-- Restriction to a subgroup in degree `-2` Tate cohomology. Under the comparison with first
 group homology, this is the homological transfer. -/
 def HNegTwoRes :
     tateCohomology M (-2) ⟶ tateCohomology (Rep.res H.subtype M) (-2) :=
   negSuccRes M H 1
+
+/-- Restriction in Tate degree `-2` is the transfer in first group homology, transported through
+Mathlib's negative-degree comparison `TateCohomology.isoGroupHomology`. -/
+theorem HNegTwoRes_def :
+    HNegTwoRes M H =
+      (_root_.TateCohomology.isoGroupHomology (-2) 1 (by norm_num)).hom.app M ≫
+        TauCeti.groupHomology.transfer M H 1 ≫
+          (_root_.TateCohomology.isoGroupHomology (-2) 1 (by norm_num)).inv.app
+            (Rep.res H.subtype M) := by
+  rw [HNegTwoRes, negSuccRes]
+  rfl
 
 end Negative
 
