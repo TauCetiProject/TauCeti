@@ -557,17 +557,16 @@ private lemma Gamma0_relindex_step_surj (k : ℕ) (hk : 0 < k) :
   intro x
   obtain ⟨⟨σ, hσ_K⟩, rfl⟩ := QuotientGroup.mk_surjective x
   obtain ⟨q, hq⟩ : (↑(p ^ k) : ℤ) ∣ σ.1 1 0 := by
-    rwa [← ZMod.intCast_zmod_eq_zero_iff_dvd, ← Gamma0_mem]
+    rwa [← mem_Gamma0_iff_dvd]
   push_cast at hq
   have h00_unit : IsUnit ((σ.1 0 0 : ℤ) : ZMod p) :=
-    isUnit_intCast_apply_zero_zero_of_mem_Gamma0 (Gamma0_mem.mpr (by
-      rw [ZMod.intCast_zmod_eq_zero_iff_dvd]
-      exact hq ▸ dvd_mul_of_dvd_left (dvd_pow_self _ hk.ne') q))
+    isUnit_intCast_apply_zero_zero_of_mem_Gamma0
+      (mem_Gamma0_iff_dvd.mpr (hq ▸ dvd_mul_of_dvd_left (dvd_pow_self _ hk.ne') q))
   obtain ⟨c₀, hc₀⟩ := ZMod.exists_dvd_sub_val_mul p q (σ.1 0 0) h00_unit
   refine ⟨⟨c₀.val, ZMod.val_lt c₀⟩, ?_⟩
   rw [QuotientGroup.eq, Subgroup.mem_subgroupOf]
   simp only [relindexRep, InvMemClass.coe_inv, MulMemClass.coe_mul]
-  rw [Gamma0_mem, lowerTriRep_inv_mul_10, hq, ZMod.intCast_zmod_eq_zero_iff_dvd, pow_succ]
+  rw [mem_Gamma0_iff_dvd, lowerTriRep_inv_mul_10, hq, pow_succ]
   push_cast
   calc (p : ℤ) ^ k * (p : ℤ)
       ∣ (p : ℤ) ^ k * (q - ↑c₀.val * σ.1 0 0) := mul_dvd_mul_left _ hc₀
@@ -768,7 +767,7 @@ theorem intCast_mul_apply_one_zero_eq_zero_of_mem_Gamma0_div {p N : ℕ} (hpN : 
   have hpNp : (N : ℤ) = (p : ℤ) * ((N / p : ℕ) : ℤ) := by
     exact_mod_cast (Nat.mul_div_cancel' hpN).symm
   rw [hpNp]
-  exact mul_dvd_mul_left _ ((ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma0_mem.mp hδ))
+  exact mul_dvd_mul_left _ (mem_Gamma0_iff_dvd.mp hδ)
 
 /-- **The entry equation reads as a congruence at any level where `c` vanishes.** If a
 factorisation gives `α 1 1 = δ 1 1 - δ 1 0 * k`, then modulo a level `M` with `δ ∈ Γ₀(M)` the

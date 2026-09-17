@@ -255,6 +255,12 @@ jobs:
           path: ${{ steps.mathlib_ltar_restore.outputs.cache-dir }}/*.ltar
           key: ${{ steps.mathlib_ltar_restore.outputs.cache-primary-key }}
 
+      - name: Duplicate-declaration audit
+        run: lake env lean --run scripts/DuplicateDeclarations.lean
+
+      - name: Duplicate-declaration audit regression tests
+        run: lake env python3 scripts/test_duplicate_declarations.py
+
       # Axiom audit (replaces the old textual no-sorry grep). Inspects the built
       # TauCeti environment and rejects any axiom outside {propext, Classical.choice,
       # Quot.sound}, catching sorry/admit (sorryAx), native_decide (Lean.ofReduceBool),
