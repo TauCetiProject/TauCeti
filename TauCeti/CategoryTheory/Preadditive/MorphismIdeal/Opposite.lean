@@ -103,24 +103,24 @@ theorem unop_injective : Function.Injective (unop : MorphismIdeal Cᵒᵖ → Mo
   rw [← I.op_unop, ← J.op_unop, h]
 
 /-- Taking opposites preserves inclusions of morphism ideals. -/
-theorem op_monotone {I J : MorphismIdeal C} (h : I ≤ J) : I.op ≤ J.op := by
-  intro X Y f hf
+theorem op_monotone : Monotone (op : MorphismIdeal C → MorphismIdeal Cᵒᵖ) := by
+  intro I J h X Y f hf
   exact (J.mem_op_hom f).2 (h _ _ ((I.mem_op_hom f).1 hf))
 
 /-- Taking unopposites preserves inclusions of morphism ideals. -/
-theorem unop_monotone {I J : MorphismIdeal Cᵒᵖ} (h : I ≤ J) : I.unop ≤ J.unop := by
-  intro X Y f hf
+theorem unop_monotone : Monotone (unop : MorphismIdeal Cᵒᵖ → MorphismIdeal C) := by
+  intro I J h X Y f hf
   exact (J.mem_unop_hom f).2 (h _ _ ((I.mem_unop_hom f).1 hf))
 
 /-- Inclusion of opposite ideals is equivalent to inclusion of the original ideals. -/
 @[simp]
 theorem op_le_op_iff {I J : MorphismIdeal C} : I.op ≤ J.op ↔ I ≤ J :=
-  ⟨unop_monotone, op_monotone⟩
+  ⟨fun h ↦ unop_monotone h, fun h ↦ op_monotone h⟩
 
 /-- Inclusion of unopposite ideals is equivalent to inclusion of the original ideals. -/
 @[simp]
 theorem unop_le_unop_iff {I J : MorphismIdeal Cᵒᵖ} : I.unop ≤ J.unop ↔ I ≤ J :=
-  ⟨op_monotone, unop_monotone⟩
+  ⟨fun h ↦ op_monotone h, fun h ↦ unop_monotone h⟩
 
 /-- Congruence modulo the opposite ideal is congruence modulo the original ideal after taking
 unopposites. -/
@@ -138,7 +138,7 @@ theorem unop_rel_iff (I : MorphismIdeal Cᵒᵖ) {X Y : C} {f g : X ⟶ Y} :
 
 /-- The canonical functor from the quotient by the opposite ideal to the opposite of the quotient.
 It sends the class of `f` to the opposite of the class of `f.unop`. -/
-@[expose] noncomputable def opQuotientFunctor (I : MorphismIdeal C) :
+noncomputable def opQuotientFunctor (I : MorphismIdeal C) :
     CategoryTheory.Functor I.op.Quotient I.Quotientᵒᵖ :=
   I.op.lift I.quotientFunctor.op fun X Y f hf ↦ by
     rw [CategoryTheory.Functor.mem_kerIdeal_hom]
@@ -158,24 +158,31 @@ theorem opQuotientFunctor_obj (I : MorphismIdeal C) (X : Cᵒᵖ) :
 @[simp]
 theorem opQuotientFunctor_map (I : MorphismIdeal C) {X Y : Cᵒᵖ} (f : X ⟶ Y) :
     I.opQuotientFunctor.map (I.op.quotientFunctor.map f) =
-      (I.quotientFunctor.map f.unop).op := by
-  dsimp only [opQuotientFunctor]
+      eqToHom (I.opQuotientFunctor_obj X) ≫ (I.quotientFunctor.map f.unop).op ≫
+        eqToHom (I.opQuotientFunctor_obj Y).symm := by
+  apply (conj_eqToHom_iff_heq _ _ (I.opQuotientFunctor_obj X)
+    (I.opQuotientFunctor_obj Y)).2
+  rw [opQuotientFunctor]
   rw [CategoryTheory.Quotient.lift_map_functor_map, CategoryTheory.Functor.op_map]
 
-instance (I : MorphismIdeal C) : I.opQuotientFunctor.Faithful where
-  map_injective {X Y} f g h := by
-    obtain ⟨f, rfl⟩ := I.op.quotientFunctor.map_surjective f
-    obtain ⟨g, rfl⟩ := I.op.quotientFunctor.map_surjective g
-    rw [I.opQuotientFunctor_map, I.opQuotientFunctor_map] at h
-    rw [I.op.quotientFunctor_map_eq_iff, mem_op_hom, CategoryTheory.unop_sub]
-    exact I.quotientFunctor_map_eq_iff.mp (Quiver.Hom.op_inj h)
+instance (I : MorphismIdeal C) : I.opQuotientFunctor.Faithful := by
+  rw [opQuotientFunctor]
+  constructor
+  intro X Y f g h
+  obtain ⟨f, rfl⟩ := I.op.quotientFunctor.map_surjective f
+  obtain ⟨g, rfl⟩ := I.op.quotientFunctor.map_surjective g
+  rw [CategoryTheory.Quotient.lift_map_functor_map, CategoryTheory.Functor.op_map] at h
+  rw [I.op.quotientFunctor_map_eq_iff, mem_op_hom, CategoryTheory.unop_sub]
+  exact I.quotientFunctor_map_eq_iff.mp (Quiver.Hom.op_inj h)
 
-instance (I : MorphismIdeal C) : I.opQuotientFunctor.Full where
-  map_surjective {X Y} f := by
-    obtain ⟨g, hg⟩ := I.quotientFunctor.map_surjective f.unop
-    refine ⟨I.op.quotientFunctor.map g.op, ?_⟩
-    rw [I.opQuotientFunctor_map]
-    exact Quiver.Hom.unop_inj hg
+instance (I : MorphismIdeal C) : I.opQuotientFunctor.Full := by
+  rw [opQuotientFunctor]
+  constructor
+  intro X Y f
+  obtain ⟨g, hg⟩ := I.quotientFunctor.map_surjective f.unop
+  refine ⟨I.op.quotientFunctor.map g.op, ?_⟩
+  rw [CategoryTheory.Quotient.lift_map_functor_map, CategoryTheory.Functor.op_map]
+  exact Quiver.Hom.unop_inj hg
 
 instance (I : MorphismIdeal C) : I.opQuotientFunctor.EssSurj where
   mem_essImage := by
@@ -191,7 +198,7 @@ noncomputable instance (I : MorphismIdeal C) : I.opQuotientFunctor.IsEquivalence
 
 /-- Quotienting the opposite category by the opposite ideal is canonically equivalent to taking
 the opposite of the quotient category. -/
-@[expose] noncomputable def opQuotientEquivalence (I : MorphismIdeal C) :
+noncomputable def opQuotientEquivalence (I : MorphismIdeal C) :
     I.op.Quotient ≌ I.Quotientᵒᵖ :=
   I.opQuotientFunctor.asEquivalence
 
