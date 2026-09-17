@@ -85,6 +85,7 @@ noncomputable def inverseCartanMatrix
 
 /-- The `(i, j)` entry of the inverse Cartan matrix is the `i`th projective-basis coordinate of the
 inverse Cartan map applied to the `j`th simple-basis vector. -/
+@[simp]
 theorem inverseCartanMatrix_apply
     (h : ModuleCat.isFG R ≤
       (ExactStructure.abelian (ModuleCat.{u} R)).admitsFiniteResolution
