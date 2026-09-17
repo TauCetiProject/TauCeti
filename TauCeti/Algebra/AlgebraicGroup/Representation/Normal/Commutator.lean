@@ -6,17 +6,14 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.Weights
-public import TauCeti.Algebra.AlgebraicGroup.Solvable.Trigonalizable
 import Mathlib.LinearAlgebra.Determinant
-import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
 
 /-!
 # Joint weights of the commutator subgroup
 
 For a reduced connected affine group of finite type over an algebraically closed field, every
 nonzero joint weight of the commutator subgroup in a finite-dimensional rational representation
-is trivial. Consequently, a joint eigenvector for the commutator subgroup supplies a weight
-vector for the whole group.
+is trivial.
 
 The ambient group preserves the joint weight space. On that space a commutator acts by a scalar
 whose power, with exponent the dimension of the weight space, is its determinant and hence one.
@@ -138,49 +135,6 @@ theorem nonzeroJointWeight_commutator_eq_one
   obtain ⟨m, hm, hmn⟩ := hle n.2
   have hmn' : m = n := Subtype.ext hmn
   exact MonoidHom.mem_ker.mp (hmn' ▸ hm)
-
-/-- A nonzero joint weight for the commutator subgroup supplies a weight vector for the whole
-reduced connected affine group. This is the induction step from a commutator eigenvector to an
-ambient eigenline in Lie--Kolchin. -/
-theorem hasNonzeroWeightVector_of_nonzeroJointWeight_commutator
-    (χ : NonzeroJointWeight (commutator (WithConv (H →ₐ[k] k)))
-      (basePointsRepresentation (R := k) (H := H) V)) :
-    HasNonzeroWeightVector k H V := by
-  let ρ : _root_.Representation k (WithConv (H →ₐ[k] k)) V :=
-    basePointsRepresentation (R := k) (H := H) V
-  let W := normalWeightSubcomodule _ χ
-  let σ := ρ.subrepresentation W.toSubmodule
-    (fun x _ hv ↦ basePointsRepresentation_mem W x hv)
-  have hW : W.toSubmodule ≠ ⊥ := by
-    rw [ne_eq, Subcomodule.toSubmodule_eq_bot]
-    exact normalWeightSubcomodule_ne_bot _ χ
-  let _ : Nontrivial W.toSubmodule := Submodule.nontrivial_iff_ne_bot.mpr hW
-  have hfixed (n : commutator (WithConv (H →ₐ[k] k))) : σ n = 1 := by
-    ext v
-    have hv := (mem_normalWeightSubcomodule _ χ v).mp v.2 n
-    simp only [nonzeroJointWeight_commutator_eq_one χ, MonoidHom.one_apply,
-      Units.val_one, one_smul] at hv
-    exact hv
-  -- The restricted operators commute because their group homomorphism kills every commutator.
-  have hcomm : Pairwise fun g h ↦ Commute (σ g) (σ h) := by
-    intro g h _
-    have heq : σ.asGroupHom ⁅g, h⁆ = 1 := by
-      apply Units.ext
-      exact hfixed ⟨⁅g, h⁆, Subgroup.commutator_mem_commutator
-        (Subgroup.mem_top g) (Subgroup.mem_top h)⟩
-    rw [map_commutatorElement, commutatorElement_eq_one_iff_mul_comm] at heq
-    exact congrArg Units.val heq
-  obtain ⟨ψ, v, hv, heigen⟩ :=
-    exists_unitHom_jointEigenvector_of_pairwise_commute_of_isAlgClosed σ hcomm
-  have hv0 : (v : V) ≠ 0 := Submodule.coe_eq_zero.not.mpr hv
-  have heigen' (g : WithConv (H →ₐ[k] k)) : ρ g v = (ψ g : k) • (v : V) :=
-    congrArg Subtype.val (heigen g)
-  apply hasNonzeroWeightVector_of_basePointsRepresentation_stable (k ∙ (v : V)) v hv0 rfl
-  intro g m hm
-  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hm
-  rw [map_smul, heigen' g]
-  exact Submodule.smul_mem _ _
-    (Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self (v : V)))
 
 end
 
