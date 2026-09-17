@@ -199,10 +199,11 @@ theorem exists_isPrimitiveRoot_stabilizerDeriv (Γ : Subgroup PSL(2, ℝ)) (z : 
   exact IsPrimitiveRoot.orderOf _
 
 /-- The rotation character of a point stabilizer: its derivative character at the fixed point,
-which lands in the group of `m`-th roots of unity for `m = Nat.card (stabilizer Γ z)`, by
-Lagrange. For a finite stabilizer — the case of interest, and the only one in which `m` is the
-order of the stabilizer — this character is an isomorphism, by
-`Subgroup.stabilizerRotationEquiv`. -/
+which lands in the group of `m`-th roots of unity for `m = Nat.card (stabilizer Γ z)`. For a
+finite stabilizer — the case of interest, and the only one in which `m` is the order of the
+stabilizer — that is Lagrange's theorem, and the character is moreover an isomorphism, by
+`Subgroup.stabilizerRotationEquiv`. For an infinite stabilizer `m = 0`, so the codomain is the
+whole unit group and the roots-of-unity condition is vacuous. -/
 def stabilizerRotation (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
     stabilizer Γ z →* rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ :=
   (stabilizerDeriv Γ z).toHomUnits.codRestrict _ fun q ↦ by
@@ -240,6 +241,7 @@ theorem coe_stabilizerRotationEquiv (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) [Finit
 
 /-- **The disc coordinate conjugates a point stabilizer into the roots of unity**: an element of
 the stabilizer of `z` acts, in the disc coordinate centred at `z`, by its rotation. -/
+@[simp]
 theorem discCoordinate_smul_eq_rotation_smul (Γ : Subgroup PSL(2, ℝ)) (z : ℍ)
     (q : stabilizer Γ z) (τ : ℍ) :
     discCoordinate z (q • τ) = stabilizerRotation Γ z q • discCoordinate z τ := by
