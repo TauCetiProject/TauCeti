@@ -153,9 +153,9 @@ theorem gradedFullyBlockedComplex_d (a m : ℤ) :
       eqToHom (G.gradedFullyBlockedComplex_X a (m + 1)) ≫
         ModuleCat.ofHom (G.gradedFullyBlockedDifferential a m) ≫
           eqToHom (G.gradedFullyBlockedComplex_X a m).symm := by
-  have h (j : ℤ) : G.gradedFullyBlockedComplex_X a j = rfl := Subsingleton.elim _ _
-  rw [h, h]
-  unfold gradedFullyBlockedComplex
-  simp only [ChainComplex.of_d, eqToHom_refl, Category.id_comp, Category.comp_id]
+  simp only [gradedFullyBlockedComplex, ChainComplex.of_d]
+  -- The object identifications act as identity maps on homogeneous chains.
+  ext c
+  rfl
 
 end TauCeti.OddComponentGridDiagram
