@@ -354,6 +354,33 @@ theorem _root_.Equiv.Perm.fullCycleType_permCongr (e : α ≃ β) (σ : Equiv.Pe
   rw [fullCycleType_def, fullCycleType_def,
     Equiv.Perm.parts_partition_permCongr]
 
+/-- The full cycle type of a permutation of a sum type acting separately on the two summands is
+the sum of the full cycle types of the two pieces. -/
+@[simp]
+theorem _root_.Equiv.Perm.fullCycleType_sumCongr (σ : Equiv.Perm α) (τ : Equiv.Perm β) :
+    fullCycleType (Equiv.sumCongr σ τ) = fullCycleType σ + fullCycleType τ := by
+  classical
+  have hd : Equiv.Perm.Disjoint (Equiv.sumCongr σ 1) (Equiv.sumCongr 1 τ) := by
+    rintro (a | b) <;> simp
+  have h1 : Equiv.sumCongr σ 1 =
+      σ.extendDomain (Equiv.ofInjective (Sum.inl : α → α ⊕ β) Sum.inl_injective) := by
+    ext (a | b)
+    · simp [Equiv.Perm.extendDomain_apply_subtype _ _ (Set.mem_range_self a)]
+    · simp [Equiv.Perm.extendDomain_apply_not_subtype]
+  have h2 : Equiv.sumCongr 1 τ =
+      τ.extendDomain (Equiv.ofInjective (Sum.inr : β → α ⊕ β) Sum.inr_injective) := by
+    ext (a | b)
+    · simp [Equiv.Perm.extendDomain_apply_not_subtype]
+    · simp [Equiv.Perm.extendDomain_apply_subtype _ _ (Set.mem_range_self b)]
+  rw [show Equiv.sumCongr σ τ = Equiv.sumCongr σ 1 * Equiv.sumCongr 1 τ by
+    rw [Equiv.Perm.sumCongr_mul, mul_one, one_mul]]
+  simp only [fullCycleType]
+  rw [hd.cycleType_mul, hd.card_support_mul, h1, h2, Equiv.Perm.cycleType_extendDomain,
+    Equiv.Perm.cycleType_extendDomain, Equiv.Perm.card_support_extend_domain,
+    Equiv.Perm.card_support_extend_domain, Fintype.card_sum,
+    ← tsub_add_tsub_comm (Finset.card_le_univ _) (Finset.card_le_univ _), Multiset.replicate_add]
+  ac_rfl
+
 /-- The parts equal to one in the full cycle type are precisely the fixed points. -/
 @[simp]
 theorem _root_.Equiv.Perm.count_one_fullCycleType (σ : Equiv.Perm α) :
