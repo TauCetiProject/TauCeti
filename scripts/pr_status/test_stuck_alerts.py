@@ -8,6 +8,7 @@ or `gh` is needed. Run: python3 scripts/pr_status/test_stuck_alerts.py
 """
 
 import datetime
+import json
 import os
 import unittest
 
@@ -211,18 +212,28 @@ class ReconcileTest(unittest.TestCase):
 class ReviewStuckTest(unittest.TestCase):
     """An issue outliving its PR must not alert; anything unreadable still must."""
 
-    ISSUES = '{"number": 1137, "title": "Review stuck: PR #1134"}\n'
+    ISSUE = {"number": 1137, "title": "Review stuck: PR #1134", "body": "",
+             "created_at": "2026-09-16T08:00:00Z"}
+    META = {"kind": "scoreboard", "repo": sa.REPO, "pr": 1134, "mode": "commit",
+            "head_sha": "a" * 40, "ts": "2026-09-16T09:00:00Z",
+            "states": {"correctness": "green", "reuse": "green"}}
 
-    def fake_gh(self, pr_state):
+    def fake_gh(self, pr_state, meta=None, issue=None):
         """Serve the issue list, then `pr_state` for the PR lookup (or raise)."""
         def gh_api(path, jq=None, paginate=False):
             if path.startswith("/repos/") and "/pulls/" in path:
                 if isinstance(pr_state, Exception):
                     raise pr_state
-                return pr_state + "\n"
-            return self.ISSUES
+                return json.dumps({"state": pr_state, "head": "a" * 40}) + "\n"
+            return json.dumps(issue or self.ISSUE) + "\n"
         self.addCleanup(setattr, core, "gh_api", core.gh_api)
         core.gh_api = gh_api
+        self.addCleanup(setattr, core, "scoreboard_meta", core.scoreboard_meta)
+        def scoreboard(_pr):
+            if isinstance(meta, Exception):
+                raise meta
+            return meta if meta is not None else {}
+        core.scoreboard_meta = scoreboard
 
     def test_open_pr_alerts(self):
         self.fake_gh("open")
@@ -248,6 +259,47 @@ class ReviewStuckTest(unittest.TestCase):
         body = sa.detect_review_stuck()[0]["body"]
         self.assertIn("/issues/1137", body)
         self.assertNotIn("1134", body)
+        self.assertNotIn("state it has no rule for", body)
+
+    def test_completed_current_head_review_clears(self):
+        self.fake_gh("open", self.META)
+        self.assertEqual(sa.detect_review_stuck(), [])
+
+    def test_changes_requested_also_proves_review_recovery(self):
+        self.fake_gh("open", {**self.META, "states": {"reuse": "blocking_request"}})
+        self.assertEqual(sa.detect_review_stuck(), [])
+
+    def test_new_push_does_not_revive_a_recovered_command_failure(self):
+        self.fake_gh("open", {**self.META, "head_sha": "b" * 40})
+        self.assertEqual(sa.detect_review_stuck(), [])
+
+    def test_old_verdict_does_not_mask_new_failure(self):
+        self.fake_gh("open", {**self.META, "ts": "2026-09-16T07:00:00Z"})
+        self.assertEqual(len(sa.detect_review_stuck()), 1)
+
+    def test_later_diagnostic_takes_precedence_over_issue_creation(self):
+        issue = {**self.ISSUE, "body": "- 2026-09-16T10:00:00Z: `review-engine` via `codex` (exit 1): review engine failed"}
+        self.fake_gh("open", self.META, issue)
+        self.assertEqual(len(sa.detect_review_stuck()), 1)
+
+    def test_review_after_latest_failure_clears(self):
+        issue = {**self.ISSUE, "body": "- 2026-09-16T10:00:00Z: `review-engine` via `codex` (exit 1): review engine failed"}
+        self.fake_gh("open", {**self.META, "ts": "2026-09-16T11:00:00Z"}, issue)
+        self.assertEqual(sa.detect_review_stuck(), [])
+
+    def test_incomplete_or_malformed_review_keeps_alert(self):
+        for state in ("stale", "error", "not_run", None, {}, []):
+            with self.subTest(state=state):
+                self.fake_gh("open", {**self.META, "states": {"reuse": state}})
+                self.assertEqual(len(sa.detect_review_stuck()), 1)
+
+    def test_missing_wrong_or_unreadable_evidence_keeps_alert(self):
+        for meta in ({}, [], {**self.META, "states": {}}, {**self.META, "repo": "other/repo"},
+                     {**self.META, "pr": 99}, {**self.META, "mode": "init"}, {**self.META, "head_sha": ""},
+                     {**self.META, "ts": "bad"}, RuntimeError("GitHub unavailable")):
+            with self.subTest(meta=meta):
+                self.fake_gh("open", meta)
+                self.assertEqual(len(sa.detect_review_stuck()), 1)
 
 
 class MarkerSafetyTest(unittest.TestCase):

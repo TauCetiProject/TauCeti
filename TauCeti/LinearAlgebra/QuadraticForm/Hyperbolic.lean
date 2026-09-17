@@ -29,6 +29,7 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
 
 * `TauCeti.hyperbolicPlane`: the diagonal form `⟨1, -1⟩`, over a commutative ring in which two is
   invertible.
+* `TauCeti.hyperbolicClass`: the isometry class of the hyperbolic plane.
 
 ## Main results
 
@@ -39,6 +40,8 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
   `⟨a, -a⟩`, for `a ≠ 0`, is hyperbolic.
 * `TauCeti.exists_hyperbolicPlane_prod_equivalent`: in characteristic not two, every
   finite-dimensional nondegenerate isotropic form splits off a hyperbolic plane.
+* `TauCeti.formClass_hyperbolicPlane`: the regular-form class of the hyperbolic plane is
+  `TauCeti.hyperbolicClass`.
 
 ## References
 
@@ -165,6 +168,50 @@ theorem equivalent_weightedSumSquares_self_neg_hyperbolicPlane [Invertible (2 : 
     exact represents_hyperbolicPlane (a : K)
   exact equivalent_binary_of_isSquare_of_mem_unitValueSet
     (a := a) (b := -a) (c := 1) (d := -1) (e := a) hdisc hsource htarget
+
+/-! ### The hyperbolic class -/
+
+section HyperbolicClass
+
+variable [Invertible (2 : K)]
+
+/-- The diagonal presentation `⟨1, -1⟩` presents the hyperbolic plane. -/
+@[simp]
+theorem presentedForm_one_neg_one :
+    presentedForm (⟨2, ![1, -1]⟩ : RegularFormPresentation K) = hyperbolicPlane K := by
+  ext x
+  rw [presentedForm_apply, hyperbolicPlane_apply, Fin.sum_univ_two]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Units.val_one, Units.val_neg, one_mul,
+    neg_mul]
+  ring
+
+/-- The isometry class of the hyperbolic plane `⟨1, -1⟩`.
+
+As with `TauCeti.hyperbolicPlane`, the invertibility hypothesis is not used by the formula; it
+confines the definition to characteristic not two, where `⟨1, -1⟩` is the hyperbolic plane. -/
+public def hyperbolicClass (K : Type u) [Field K] [_i2 : Invertible (2 : K)] :
+    RegularFormClass K :=
+  Quotient.mk (regularFormSetoid K) ⟨2, ![1, -1]⟩
+
+/-- The defining presentation of the hyperbolic class. -/
+theorem hyperbolicClass_def :
+    hyperbolicClass K = Quotient.mk (regularFormSetoid K) ⟨2, ![1, -1]⟩ := (rfl)
+
+/-- The hyperbolic class has rank two. -/
+@[simp]
+theorem rank_hyperbolicClass : RegularFormClass.rank (hyperbolicClass K) = 2 := by
+  rw [hyperbolicClass_def, RegularFormClass.rank_mk]
+
+/-- The class of the hyperbolic plane, as a form, is the hyperbolic class. -/
+@[simp]
+theorem formClass_hyperbolicPlane :
+    formClass (hyperbolicPlane K) nondegenerate_hyperbolicPlane = hyperbolicClass K := by
+  rw [hyperbolicClass_def]
+  refine formClass_mk _ _ _ ?_
+  rw [presentedForm_one_neg_one]
+  exact QuadraticMap.Equivalent.refl _
+
+end HyperbolicClass
 
 variable {V : Type v} [AddCommGroup V] [Module K V]
 

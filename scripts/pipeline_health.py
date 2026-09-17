@@ -6,22 +6,27 @@ something is wrong without saying what. This measures each stage separately:
 how fast pull requests arrive at it, how fast they leave, how deep it currently
 is, and how long they sit in it, each against a trailing baseline.
 
-The stages are the lifecycle labels, which the pipeline maintains one at a time:
+Historical rates describe lifecycle-label transitions. Current depths are checked
+against the pinned merge gate; label disagreements and unknown reads are explicit.
+Queue membership and reservations are reported separately. The stages include:
 
   awaiting-CI          waiting for a build on the latest commit
   awaiting-review      green, waiting for a reviewer
   review-in-progress   a review is running on this commit
   ci-failed            build failed; the author has to act
   awaiting-author      changes requested; the author has to act
-  ready-to-merge       approved and green; waiting to merge
+  ready-to-merge       all per-PR merge prerequisites pass
+  needs-human-review   approved changes require human review
+  awaiting-dependency  waiting for a stacked base
+  on-hold              a draft or explicit hold
 
 Two of those are not the project's to fix. `ci-failed` and `awaiting-author`
 sit with the contributor, and reading a backlog there as a project problem
 would point effort at exactly the wrong place, so they are reported separately
 from the stages the project owns.
 
-Data comes from the same snapshot the statistics charts use, so this needs no
-new API surface and can be replayed offline:
+Historical data comes from the statistics snapshot. Live reports also audit open
+PRs and read the queue once; --data replays the stored evidence offline:
 
     scripts/pipeline_health.py                       # fetch and report
     scripts/pipeline_health.py --json                # machine-readable
@@ -44,6 +49,7 @@ from pr_lifecycle import (  # noqa: E402
     LIFECYCLE_EPOCH,
     STAGE_ORDER,
     STATE_AUTHOR_ACTION,
+    STATE_INACTIVE,
     current_stage,
     label_intervals,
     waiting_since,
@@ -54,7 +60,42 @@ from pr_stats_graphs import (  # noqa: E402
     atomic_write, fetch_snapshot, load_previous, percentile,
 )
 
-OWNED_BY_PROJECT = [s for s in STAGE_ORDER if s not in STATE_AUTHOR_ACTION]
+OWNED_BY_PROJECT = [s for s in STAGE_ORDER if s not in STATE_AUTHOR_ACTION | STATE_INACTIVE]
+
+
+def readiness_summary(snapshot):
+    """Separate a displayed label, verified prerequisites, and actual queue state."""
+    audit = snapshot.get("merge_readiness") or {}
+    checked = audit.get("prs") or {}
+    queue = audit.get("queue") or {"known": False, "reason": "queue has not been checked"}
+    summary = {"labelled_ready": 0, "verified_eligible": 0, "blocked": 0,
+               "unknown": 0, "unverified_ready": 0, "label_drift": [],
+               "queue": queue, "checked_at": audit.get("checked_at")}
+    eligible = set()
+    for pr in snapshot["prs"]:
+        if pr["state"] != "OPEN" or pr["is_draft"]:
+            continue
+        label = current_stage(pr)
+        ready = label == "ready-to-merge"
+        summary["labelled_ready"] += ready
+        result = checked.get(str(pr["number"]))
+        if result is None or result.get("eligible") is None:
+            summary["unknown"] += 1
+            summary["unverified_ready"] += ready
+            continue
+        if result["eligible"]:
+            summary["verified_eligible"] += 1
+            eligible.add(pr["number"])
+        elif result["category"] is not None:
+            summary["blocked"] += 1
+        if result["category"] is not None and label != result["category"]:
+            summary["label_drift"].append({"pr": pr["number"], "label": label,
+                                            "actual": result["category"], "reason": result["reason"]})
+    if queue["known"]:
+        queued = set(queue["numbers"])
+        summary["eligible_queued"] = len(eligible & queued)
+        summary["eligible_not_queued"] = len(eligible - queued)
+    return summary
 
 
 def rate(count: int, hours: float) -> float:
@@ -104,20 +145,27 @@ def analyse(
     depth: defaultdict[str, int] = defaultdict(int)
     oldest: dict[str, float] = {}
     unlabelled_open = 0
+    checked = (snapshot.get("merge_readiness") or {}).get("prs") or {}
+    label_depth = defaultdict(int)
 
     for pr in prs:
         if pr["state"] == "OPEN" and not pr["is_draft"]:
-            stage = current_stage(pr)
-            if stage is None:
-                unlabelled_open += 1
+            stage = label_stage = current_stage(pr)
+            if stage is not None:
+                label_depth[stage] += 1
             else:
+                unlabelled_open += 1
+            verified = checked.get(str(pr["number"]))
+            if verified is not None and verified.get("eligible") is not None:
+                stage = verified["category"]
+            if stage is not None:
                 depth[stage] += 1
                 # How long this pull request has been waiting is a question
                 # about its spell, not about the label currently on it: the
                 # clock does not restart when the pipeline swaps a label for
                 # its sibling. Rates below are the opposite, and use the atomic
                 # per-label intervals.
-                began = waiting_since(pr, now)
+                began = waiting_since(pr, now) if stage == label_stage else None
                 if began:
                     waiting = (now - began).total_seconds() / 3600
                     oldest[stage] = max(oldest.get(stage, 0.0), waiting)
@@ -147,12 +195,15 @@ def analyse(
             if pr.get(field) and start <= parse_dt(pr[field]) < end
         )
 
+    merge_readiness = readiness_summary(snapshot)
     stages = []
     for label in STAGE_ORDER:
         stages.append({
             "stage": label,
-            "owned_by_project": label not in STATE_AUTHOR_ACTION,
-            "depth": depth[label],
+            "owned_by_project": label in OWNED_BY_PROJECT,
+            "depth": (None if label == "ready-to-merge" and merge_readiness["unverified_ready"]
+                      else depth[label]),
+            "label_depth": label_depth[label],
             "oldest_waiting_hours": oldest.get(label, 0.0),
             "entered_per_hour": rate(entered[label]["window"], window_span),
             "left_per_hour": rate(left[label]["window"], window_span),
@@ -165,7 +216,7 @@ def analyse(
         })
 
     result = {
-        "schema_version": 1,
+        "schema_version": 2,
         "repo": snapshot.get("repo"),
         "generated_at": iso_z(now),
         "snapshot_fetched_at": snapshot.get("fetched_at"),
@@ -186,6 +237,7 @@ def analyse(
         "open_prs": sum(1 for pr in prs if pr["state"] == "OPEN"),
         "open_prs_without_a_lifecycle_label": unlabelled_open,
         "stages": stages,
+        "merge_readiness": merge_readiness,
     }
     result["anomalies"] = anomalies(result)
     result["cause"] = find_cause(result)
@@ -229,6 +281,9 @@ def anomalies(result: dict) -> list[dict]:
     """
     found = []
     for stage in result["stages"]:
+        if (stage["stage"] == "ready-to-merge"
+                and (result.get("merge_readiness") or {}).get("unverified_ready", 0)):
+            continue  # label depth alone cannot establish a merge bottleneck
         if not stage["owned_by_project"] or not stage["depth"]:
             continue
         growth = stage["entered_per_hour"] - stage["left_per_hour"]
@@ -238,7 +293,11 @@ def anomalies(result: dict) -> list[dict]:
             stage["oldest_waiting_hours"] / normal
             if enough and normal and stage["oldest_waiting_hours"] else 0.0
         )
-        filling = growth > GROWTH_PER_HOUR
+        # A newly introduced label has no historical baseline; a backfill into
+        # it is not evidence of a new performance failure.
+        established = (stage["baseline_left_count"] >= MIN_COMPLETIONS
+                       or stage["baseline_entered_per_hour"] > 0)
+        filling = growth > GROWTH_PER_HOUR and established
         stalled = slowdown >= SLOWDOWN_FACTOR
         if not (filling or stalled):
             continue
@@ -285,6 +344,8 @@ def find_cause(result: dict) -> dict | None:
     if result["merged_per_hour"] >= baseline * THROUGHPUT_FRACTION:
         return None
 
+    readiness = result.get("merge_readiness") or {}
+
     found = result["anomalies"] if "anomalies" in result else anomalies(result)
     opened, opened_baseline = result["opened_per_hour"], result["baseline_opened_per_hour"]
     intake_down = (
@@ -293,6 +354,10 @@ def find_cause(result: dict) -> dict | None:
         and result["baseline_opened_count"] >= MIN_COMPLETIONS
     )
 
+    if readiness.get("unverified_ready") and not found:
+        return {"kind": "unverified", "stage": None,
+                "why": "ready labels have not been verified against the merge gate; "
+                       "merge-queue capacity cannot be inferred from them"}
     if intake_down and not found:
         return {
             "kind": "intake", "stage": None,
@@ -339,15 +404,34 @@ def report(result: dict) -> str:
         dwell = stage["median_dwell_hours"]
         normal = stage["baseline_median_dwell_hours"]
         lines.append(
-            f"  {mark}{stage['stage']:<19}{stage['depth']:>6}"
+            f"  {mark}{stage['stage']:<19}{str(stage['depth']) if stage['depth'] is not None else '?':>6}"
             f"{stage['oldest_waiting_hours']:>8.0f}h"
             f"{stage['entered_per_hour']:>7}{stage['left_per_hour']:>7}"
             f"{(f'{dwell:.1f}h' if dwell is not None else '-'):>8}"
             f"{(f'{normal:.1f}h' if normal is not None else '-'):>8}"
         )
     lines.append("")
-    lines.append("  * waiting on the contributor, not on the project")
+    lines.append("  * waiting on the contributor, a dependency, or an explicit hold")
     lines.append("")
+    readiness = result.get("merge_readiness")
+    if readiness:
+        lines.append(f"  merge prerequisites: {readiness['verified_eligible']} verified eligible; "
+                     f"{readiness['blocked']} blocked; {readiness['unknown']} unknown "
+                     f"({readiness['labelled_ready']} labelled ready)")
+        if readiness["label_drift"]:
+            lines.append(f"  label drift: {len(readiness['label_drift'])} PR(s) disagree with live evidence; "
+                         "current stage depths above use the verified classification")
+        queue = readiness["queue"]
+        if queue["known"]:
+            lines.append(f"  queue: {readiness['eligible_queued']} eligible PR(s) queued; "
+                         f"{readiness['eligible_not_queued']} eligible PR(s) not queued")
+            if queue.get("reservation_holder") is not None:
+                lines.append(f"  queue reservation: pin-moving #{queue['reservation_holder']}")
+        else:
+            lines.append("  queue state: unknown")
+        if readiness["unverified_ready"]:
+            lines.append("  ready-label counts are unverified; they are not evidence of merge capacity")
+        lines.append("")
     if result.get("open_prs_without_a_lifecycle_label"):
         lines.append(
             f"  note: {result['open_prs_without_a_lifecycle_label']} open PR(s) carry no single "
@@ -393,12 +477,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--window", type=float, default=24.0, help="recent window, hours")
     parser.add_argument("--baseline", type=float, default=14 * 24.0, help="baseline, hours")
     parser.add_argument("--json", action="store_true", help="print JSON instead of a report")
+    parser.add_argument("--verify-readiness", action="store_true",
+                        help="check current merge prerequisites and queue even when using --data")
     parser.add_argument("--as-of", type=parse_dt,
                         help="analyse as at this instant (default: the snapshot's fetched_at)")
     args = parser.parse_args(argv)
 
     snapshot = (json.loads(args.data.read_text()) if args.data
                 else fetch_snapshot(args.repo, load_previous(args.since_data, args.repo)))
+    if not args.data or args.verify_readiness:
+        if args.as_of:
+            parser.error("live readiness verification cannot be combined with historical --as-of")
+        sys.path.insert(0, str(Path(__file__).resolve().parent / "pr_status"))
+        import readiness
+        snapshot["merge_readiness"] = readiness.audit(snapshot)
     if args.dump_data:
         args.dump_data.write_text(json.dumps(snapshot, indent=1))
 

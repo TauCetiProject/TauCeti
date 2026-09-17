@@ -8,17 +8,22 @@ module
 public import Mathlib.Probability.CDF
 
 /-!
-# Extensionality for symmetric finite real measures
+# Real measures and the squaring map
 
-This file gives an extensionality principle for symmetric finite measures on the real line:
-their pushforwards under squaring determine them. It packages the elementary observation that the
-square records the mass of intervals symmetric about zero, while reflection invariance makes the
-two complementary tails equal.
+Squaring loses the sign of a real number and nothing else, so it determines a measure on the line
+as soon as the measure cannot tell the two signs apart. This file records the two readings of that
+observation. For a reflection-invariant finite measure, the pushforward under squaring is a
+complete invariant: the square records the mass of intervals symmetric about zero, while
+reflection invariance makes the two complementary tails equal. For a measure carried by the
+nonnegative half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the
+measure outright.
 
-## Main result
+## Main results
 
 * `MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric finite real
   measures with the same pushforward after squaring are equal.
+* `MeasureTheory.Measure.map_sqrt_map_sq` — on the nonnegative half-line, taking square roots
+  undoes squaring.
 -/
 
 public section
@@ -153,6 +158,15 @@ theorem _root_.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self (μ ν :
         ← Ioo_union_Ici_eq_Ioi hbounds,
         measureReal_union hdisj_inner measurableSet_Ici]
     linarith
+
+/-- **Square roots undo squaring** for a measure carried by the nonnegative half-line: the
+pushforward of `μ` under `x ↦ x ^ 2` returns to `μ` under `Real.sqrt`. -/
+theorem _root_.MeasureTheory.Measure.map_sqrt_map_sq (μ : Measure ℝ) (hμ : ∀ᵐ t ∂μ, 0 ≤ t) :
+    (μ.map fun t : ℝ ↦ t ^ 2).map Real.sqrt = μ := by
+  rw [Measure.map_map (by fun_prop) (by fun_prop)]
+  refine (Measure.map_congr ?_).trans Measure.map_id
+  filter_upwards [hμ] with t ht
+  simpa using Real.sqrt_sq ht
 
 end MeasureTheory
 

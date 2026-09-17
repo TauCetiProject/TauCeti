@@ -5,22 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Existence
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 public import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Regularity of the Levi-Civita connection
 
-On a `C^m` manifold carrying a `C^k` Riemannian metric, the Levi-Civita connection
-`CovariantDerivative.leviCivita` is `C^n` as soon as `n + 2 ≤ m` and `n + 1 ≤ k`: it sends a
+On a `C^m` manifold carrying a `C^k` Riemannian metric, Mathlib's Levi-Civita connection
+`CovariantDerivative.leviCivitaConnection` is `C^n` once `n + 2 ≤ m` and `n + 1 ≤ k`: it sends a
 `C^(n+1)` section of the tangent bundle to a `C^n` section of `Hom(TM, TM)`. This file proves
 that, in the class form `ContMDiffCovariantDerivative` which Mathlib's covariant-derivative API
 consumes — a class which already carries that one-derivative loss, asking a `C^(n+1)` section to
 produce a `C^n` one — together with the set-local form on an arbitrary open set. Taking
 `n = m = k = ∞` the loss is invisible and **the Levi-Civita connection of a `C^∞` metric on a
 `C^∞` manifold is `C^∞`**, which is the instance
-`CovariantDerivative.instContMDiffCovariantDerivativeLeviCivita`.
+`CovariantDerivative.instContMDiffCovariantDerivativeLeviCivitaConnection`.
 
 The proof follows the Koszul formula `2 ⟪∇_X Y, Z⟫ = koszul I X Y Z`. The right-hand side is built
 from derivatives of pointwise inner products and from Lie brackets, so it loses exactly one degree
@@ -46,21 +47,21 @@ the hypotheses `n + 2 ≤ m` and `n + 1 ≤ k`, rather than being spelled `n + 2
 outright, so that the `C^∞` case remains an instantiation: Mathlib's instance search derives
 `IsManifold I m M` from `IsManifold I ∞ M` for `m = ∞`, but not `IsManifold I (n + 2) M` for a
 variable `n`. The low-order hypotheses `[IsManifold I 2 M]` and
-`[IsContMDiffRiemannianBundle I 1 E _]`, which `CovariantDerivative.leviCivita` needs merely to be
-written down, are carried for the same reason.
+`[IsContMDiffRiemannianBundle I 1 E _]`, which `CovariantDerivative.leviCivitaConnection` needs
+merely to be written down, are carried for the same reason.
 
 ## Main results
 
 * `TauCeti.Manifold.contMDiffOn_koszul`: the Koszul expression of three `C^(n+1)` sections is
   `C^n`.
-* `CovariantDerivative.contMDiffOn_leviCivita`: on an open set, the Levi-Civita connection carries
-  a `C^(n+1)` section to a `C^n` section of `Hom(TM, TM)`.
-* `CovariantDerivative.contMDiffCovariantDerivativeOn_leviCivita` and the instance
-  `CovariantDerivative.instContMDiffCovariantDerivativeLeviCivita`: **the Levi-Civita connection
-  is of class `C^n`**, and in particular `C^∞` for a `C^∞` metric.
-* `CovariantDerivative.contMDiffOn_christoffelSymbol_leviCivita` and
-  `CovariantDerivative.contMDiffOn_christoffelMap_leviCivita`: its Christoffel symbols and its
-  model-space Christoffel map are `C^n` on a trivialization base set.
+* `CovariantDerivative.contMDiffOn_leviCivitaConnection`: on an open set, the Levi-Civita connection
+  carries a `C^(n+1)` section to a `C^n` section of `Hom(TM, TM)`.
+* `CovariantDerivative.contMDiffCovariantDerivativeOn_leviCivitaConnection` and the instance
+  `CovariantDerivative.instContMDiffCovariantDerivativeLeviCivitaConnection`: **the Levi-Civita
+  connection is of class `C^n`**, and in particular `C^∞` for a `C^∞` metric.
+* `CovariantDerivative.contMDiffOn_christoffelSymbol_leviCivitaConnection` and
+  `CovariantDerivative.contMDiffOn_christoffelMap_leviCivitaConnection`: its Christoffel symbols and
+  its model-space Christoffel map are `C^n` on a trivialization base set.
 
 ## References
 
@@ -159,12 +160,13 @@ variable {n m k : ℕ∞ω} [IsManifold I m M]
 /-- **The Levi-Civita connection differentiates with one derivative lost.** On an open set `u`, a
 section of the tangent bundle which is `C^(n+1)` on `u` has a covariant derivative which is `C^n`
 on `u` as a section of `Hom(TM, TM)`. -/
-theorem contMDiffOn_leviCivita {u : Set M} (hu : IsOpen u) (hm : n + 2 ≤ m) (hk : n + 1 ≤ k)
-    {σ : Π x : M, TangentSpace I x}
+theorem contMDiffOn_leviCivitaConnection {u : Set M} (hu : IsOpen u) (hm : n + 2 ≤ m)
+    (hk : n + 1 ≤ k) {σ : Π x : M, TangentSpace I x}
     (hσ : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (σ y)) u) :
     ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
       (fun y ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun y : M ↦ (TangentSpace I y →L[ℝ] TangentSpace I y)) y (leviCivita I M σ y)) u := by
+        (E := fun y : M ↦ (TangentSpace I y →L[ℝ] TangentSpace I y)) y
+          (leviCivitaConnection I M σ y)) u := by
   have hone : IsManifold I (n + 1) M :=
     IsManifold.of_le (n := m) ((by gcongr; norm_num : n + 1 ≤ n + 2).trans hm)
   have hsucc : IsManifold I (n + 1 + 1) M :=
@@ -193,66 +195,69 @@ theorem contMDiffOn_leviCivita {u : Set M} (hu : IsOpen u) (hm : n + 2 ≤ m) (h
     ((hframe i).mdifferentiableOn (by simp)).mdifferentiableAt (hsopen.mem_nhds hy)
   -- Each direction of the connection is the Riesz dual of half the Koszul functional.
   have hdir (j : Fin (finrank ℝ E)) : ContMDiffOn I (I.prod 𝓘(ℝ, E)) n
-      (fun y ↦ TotalSpace.mk' E y (leviCivita I M σ y (chartLocalFrame (I := I) x j y))) s := by
+      (fun y ↦ TotalSpace.mk' E y
+        (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y))) s := by
     have hrepr (y : M) : rieszDual (I := I) y ((rieszDual (I := I) y).symm
-        (leviCivita I M σ y (chartLocalFrame (I := I) x j y))) =
-        leviCivita I M σ y (chartLocalFrame (I := I) x j y) :=
+        (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y))) =
+        leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y) :=
       LinearIsometryEquiv.apply_symm_apply _ _
     have hval (y : M) (w : TangentSpace I y) :
-        ((rieszDual (I := I) y).symm (leviCivita I M σ y (chartLocalFrame (I := I) x j y))) w =
-          inner ℝ (leviCivita I M σ y (chartLocalFrame (I := I) x j y)) w := by
+        ((rieszDual (I := I) y).symm
+          (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y))) w =
+          inner ℝ (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y)) w := by
       conv_rhs => rw [← hrepr y]
       exact (inner_rieszDual _ w).symm
     have heval (l : Fin (finrank ℝ E)) : ContMDiffOn I 𝓘(ℝ) n
         (fun y ↦ ((rieszDual (I := I) y).symm
-          (leviCivita I M σ y (chartLocalFrame (I := I) x j y)))
+          (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y)))
             (chartLocalFrame (I := I) x l y)) s := by
       have hmul : ContMDiffOn I 𝓘(ℝ) n (fun y ↦ (2 : ℝ)⁻¹ *
           koszul I (chartLocalFrame (I := I) x j) σ (chartLocalFrame (I := I) x l) y) s :=
         contMDiffOn_const.mul
           (contMDiffOn_koszul hsopen hm hk (hframe j) hσs (hframe l))
       refine hmul.congr fun y hy ↦ ?_
-      have h := two_inner_leviCivita_eq_koszul (I := I) (M := M)
+      have h := two_inner_leviCivitaConnection_eq_koszul (I := I) (M := M)
         (hframed j hy) (hσd hy) (hframed l hy)
       rw [hval y]
       linarith
     have hfun : (fun y : M ↦ TotalSpace.mk' E y
-        (leviCivita I M σ y (chartLocalFrame (I := I) x j y))) =
+        (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y))) =
         fun y : M ↦ TotalSpace.mk' E y (rieszDual (I := I) y
           ((rieszDual (I := I) y).symm
-            (leviCivita I M σ y (chartLocalFrame (I := I) x j y)))) := by
+            (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y)))) := by
       funext y
       rw [hrepr y]
     rw [hfun]
     exact fun y hy ↦ (contMDiffAt_rieszDual (I := I) (n := n) x (hsub hy)
       (Φ := fun y ↦ (rieszDual (I := I) y).symm
-        (leviCivita I M σ y (chartLocalFrame (I := I) x j y)))
+        (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y)))
       fun l ↦ (heval l).contMDiffAt (hsopen.mem_nhds hy)).contMDiffWithinAt
   -- Testing the hom-bundle section on the chart-local frame gives smoothness at `x`.
   have hhom := contMDiffOn_hom_of_localFrame (I := I) (n := n)
     (e := trivializationAt E (TangentSpace I) x) (e' := trivializationAt E (TangentSpace I) x)
     (finBasis ℝ E) hsopen
     (by rw [TangentBundle.trivializationAt_baseSet, inter_self]; exact hsub)
-    (A := fun y ↦ leviCivita I M σ y)
+    (A := fun y ↦ leviCivitaConnection I M σ y)
     (fun j ↦ by simpa only [← chartLocalFrame_def] using hdir j)
   exact (hhom.contMDiffAt (hsopen.mem_nhds hxs)).contMDiffWithinAt
 
 /-- **The Levi-Civita connection is of class `C^n`**, in the set-local form used to read it in a
 local frame. -/
-theorem contMDiffCovariantDerivativeOn_leviCivita {u : Set M} (hu : IsOpen u)
+theorem contMDiffCovariantDerivativeOn_leviCivitaConnection {u : Set M} (hu : IsOpen u)
     (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) :
-    ContMDiffCovariantDerivativeOn E n (leviCivita I M).toFun u where
-  contMDiff hσ := contMDiffOn_leviCivita hu hm hk hσ
+    ContMDiffCovariantDerivativeOn E n (leviCivitaConnection I M).toFun u where
+  contMDiff hσ := contMDiffOn_leviCivitaConnection hu hm hk hσ
 
 variable {ι : Type*} (b : Basis ι ℝ E)
   {e : Trivialization E (TotalSpace.proj : TangentBundle I M → M)} [MemTrivializationAtlas e]
 
 /-- The scalar Christoffel symbols of the Levi-Civita connection in a local frame are `C^n` on
 the base set of the trivialization defining the frame. -/
-theorem contMDiffOn_christoffelSymbol_leviCivita (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) (i j l : ι) :
+theorem contMDiffOn_christoffelSymbol_leviCivitaConnection (hm : n + 2 ≤ m) (hk : n + 1 ≤ k)
+    (i j l : ι) :
     ContMDiffOn I 𝓘(ℝ) n
-      (christoffelSymbol I b e (leviCivita I M).toFun i j l) e.baseSet := by
-  have := contMDiffCovariantDerivativeOn_leviCivita (I := I) (M := M) e.open_baseSet hm hk
+      (christoffelSymbol I b e (leviCivitaConnection I M).toFun i j l) e.baseSet := by
+  have := contMDiffCovariantDerivativeOn_leviCivitaConnection (I := I) (M := M) e.open_baseSet hm hk
   have hone : IsManifold I (n + 1) M :=
     IsManifold.of_le (n := m) ((by gcongr; norm_num : n + 1 ≤ n + 2).trans hm)
   have hsucc : IsManifold I (n + 1 + 1) M :=
@@ -265,11 +270,12 @@ theorem contMDiffOn_christoffelSymbol_leviCivita (hm : n + 2 ≤ m) (hk : n + 1 
 
 /-- The model-space Christoffel map of the Levi-Civita connection is `C^n` on the base set of the
 trivialization defining its coordinates. -/
-theorem contMDiffOn_christoffelMap_leviCivita [Fintype ι] (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) :
+theorem contMDiffOn_christoffelMap_leviCivitaConnection [Fintype ι] (hm : n + 2 ≤ m)
+    (hk : n + 1 ≤ k) :
     ContMDiffOn I 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E) n
-      (christoffelMap b ((leviCivita I M).isCovariantDerivativeOn (s := e.baseSet)))
+      (christoffelMap b ((leviCivitaConnection I M).isCovariantDerivativeOn (s := e.baseSet)))
       e.baseSet := by
-  have := contMDiffCovariantDerivativeOn_leviCivita (I := I) (M := M) e.open_baseSet hm hk
+  have := contMDiffCovariantDerivativeOn_leviCivitaConnection (I := I) (M := M) e.open_baseSet hm hk
   have hone : IsManifold I (n + 1) M :=
     IsManifold.of_le (n := m) ((by gcongr; norm_num : n + 1 ≤ n + 2).trans hm)
   have hsucc : IsManifold I (n + 1 + 1) M :=
@@ -283,10 +289,10 @@ theorem contMDiffOn_christoffelMap_leviCivita [Fintype ι] (hm : n + 2 ≤ m) (h
 end Finite
 
 /-- **The Levi-Civita connection of a `C^∞` metric on a `C^∞` manifold is `C^∞`.** -/
-instance instContMDiffCovariantDerivativeLeviCivita [IsManifold I ∞ M]
+instance instContMDiffCovariantDerivativeLeviCivitaConnection [IsManifold I ∞ M]
     [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] :
-    ContMDiffCovariantDerivative (leviCivita I M) ∞ where
-  contMDiff := contMDiffCovariantDerivativeOn_leviCivita (n := ∞) (m := ∞) (k := ∞)
+    ContMDiffCovariantDerivative (leviCivitaConnection I M) ∞ where
+  contMDiff := contMDiffCovariantDerivativeOn_leviCivitaConnection (n := ∞) (m := ∞) (k := ∞)
     isOpen_univ le_rfl le_rfl
 
 end CovariantDerivative

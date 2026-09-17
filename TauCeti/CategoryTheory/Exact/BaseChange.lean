@@ -150,7 +150,7 @@ theorem conflation_cobaseChange {S : ShortComplex C} (hS : E.Conflation S) {X' Q
     E.isStableUnderCobaseChange_inflations.of_isPushout sq.flip (E.isInflation_f hS)
   have hepi : Epi (cobaseChangeπ S sq) := by
     have := hpair.epi_g
-    have h : Epi (v ≫ cobaseChangeπ S sq) := by rw [inl_cobaseChangeπ]; assumption
+    have h : Epi (v ≫ cobaseChangeπ S sq) := by rwa [inl_cobaseChangeπ]
     exact epi_of_epi v (cobaseChangeπ S sq)
   have key : ∀ (A : C) (k : Q ⟶ A), w ≫ k = 0 →
       ∃ l : S.X₃ ⟶ A, cobaseChangeπ S sq ≫ l = k := fun A k hk => by
@@ -174,7 +174,7 @@ theorem conflation_baseChange {S : ShortComplex C} (hS : E.Conflation S) {Z' Q :
     E.isStableUnderBaseChange_deflations.of_isPullback sq (E.isDeflation_g hS)
   have hmono : Mono (baseChangeι S sq) := by
     have := hpair.mono_f
-    have h : Mono (baseChangeι S sq ≫ v) := by rw [baseChangeι_fst]; assumption
+    have h : Mono (baseChangeι S sq ≫ v) := by rwa [baseChangeι_fst]
     exact mono_of_mono (baseChangeι S sq) v
   have key : ∀ (A : C) (k : A ⟶ Q), k ≫ w = 0 →
       ∃ l : A ⟶ S.X₁, l ≫ baseChangeι S sq = k := fun A k hk => by

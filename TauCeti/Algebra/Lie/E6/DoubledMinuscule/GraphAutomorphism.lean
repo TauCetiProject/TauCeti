@@ -43,7 +43,7 @@ is asserted here.
 * `TauCeti.E6DoubledMinuscule.graphAutomorphismPoints_rootSubgroupPoints` and
   `TauCeti.E6DoubledMinuscule.graphAutomorphismPoints_weightTorusPoints`: its pointwise equations
   on the numbered simple-root subgroups and represented weight torus.
-* `TauCeti.E6DoubledMinuscule.pointsMap_comp_graphAutomorphismPoints`: its naturality in the value
+* `TauCeti.E6DoubledMinuscule.map_comp_graphAutomorphismPoints`: its naturality in the value
   ring, which makes it commute with Frobenius.
 * `TauCeti.E6DoubledMinuscule.graphAutomorphismPoints_sq`: its pointwise order-two relation.
 * `TauCeti.E6DoubledMinuscule.graphAutomorphismPoints_graphAutomorphismPoints`: the corresponding
@@ -645,14 +645,18 @@ theorem schemePointsMulEquiv_graphAutomorphism_comp_carrierι
 
 /-- The graph automorphism on points is natural in the value ring. In particular, it commutes
 with every iterated Frobenius map. -/
-theorem pointsMap_comp_graphAutomorphismPoints {A : Type v} {B : Type v'}
+theorem map_comp_graphAutomorphismPoints {A : Type v} {B : Type v'}
     [CommRing A] [CommRing B] (f : A →+* B) :
-    (pointsMap f).comp (graphAutomorphismPoints A).toMonoidHom =
-      (graphAutomorphismPoints B).toMonoidHom.comp (pointsMap f) :=
+    ((pointsPresentation A).map (pointsPresentation B) f).comp
+        (graphAutomorphismPoints A).toMonoidHom =
+      (graphAutomorphismPoints B).toMonoidHom.comp
+        ((pointsPresentation A).map (pointsPresentation B) f) :=
   comp_kostantNumberedSymmetryPoints lattice.toAddSubgroup matrixBasis graphModuleEquiv
     graphModuleEquiv_mem_lattice_iff
     (points A) (map_points_conj_graphAutomorphismMatrix A)
-    (points B) (map_points_conj_graphAutomorphismMatrix B) f (pointsMap f) (coe_pointsMap f)
+    (points B) (map_points_conj_graphAutomorphismMatrix B) f
+    ((pointsPresentation A).map (pointsPresentation B) f)
+    ((pointsPresentation A).coe_map (pointsPresentation B) f)
 
 /-- **The graph automorphism on matrix-valued points is an involution.** -/
 @[simp]

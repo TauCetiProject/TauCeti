@@ -93,7 +93,7 @@ the Geck carrier is
   `TauCeti.TypeDSpinCarrier.graphAutPoints_apply_apply`: the order relation `γ ^ 2 = 1`, in the
   automorphism group of the carrier, as a composition of scheme morphisms, and on points.
 * `TauCeti.TypeDSpinCarrier.graphAutMatrix_mul_self`: the matrix implementing it squares to `-1`.
-* `TauCeti.TypeDSpinCarrier.pointsMap_comp_graphAutPoints`: the automorphism on points is natural
+* `TauCeti.TypeDSpinCarrier.map_comp_graphAutPoints`: the automorphism on points is natural
   in the value ring, so in particular it commutes with the Frobenius of
   `TauCeti/Algebra/Lie/Orthogonal/TypeD/SpinCarrier/Frobenius.lean`.
 
@@ -599,14 +599,17 @@ theorem graphAutPoints_apply_apply (A : Type v) [CommRing A] (g : points n hn A)
 
 /-- **The graph automorphism on points is natural in the value ring.** In particular it commutes
 with the Frobenius endomorphism of the points of the carrier. -/
-theorem pointsMap_comp_graphAutPoints {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
+theorem map_comp_graphAutPoints {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
     (f : A →+* B) :
-    (pointsMap n hn f).comp (graphAutPoints n hn A).toMonoidHom =
-      (graphAutPoints n hn B).toMonoidHom.comp (pointsMap n hn f) := by
+    ((pointsPresentation n hn A).map (pointsPresentation n hn B) f).comp
+        (graphAutPoints n hn A).toMonoidHom =
+      (graphAutPoints n hn B).toMonoidHom.comp
+        ((pointsPresentation n hn A).map (pointsPresentation n hn B) f) := by
   refine MonoidHom.ext fun g => Subtype.ext ?_
   rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    MulEquiv.coe_toMonoidHom, coe_pointsMap, coe_graphAutPoints, coe_graphAutPoints,
-    coe_pointsMap, map_mul, map_mul, map_inv, map_graphAutMatrix]
+    MulEquiv.coe_toMonoidHom, GeneralLinear.IntegralPointsPresentation.coe_map,
+    coe_graphAutPoints, coe_graphAutPoints,
+    GeneralLinear.IntegralPointsPresentation.coe_map, map_mul, map_mul, map_inv, map_graphAutMatrix]
 
 end
 

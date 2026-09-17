@@ -395,8 +395,8 @@ is the map on points induced by a ring endomorphism of the closure. -/
 theorem graphAut_comp_frobenius :
     d.graphAut.toMonoidHom.comp d.toTypeDDiagramLieIndex.frobenius =
       d.toTypeDDiagramLieIndex.frobenius.comp d.graphAut.toMonoidHom := by
-  rw [graphAut_def, TypeDDiagramLieIndex.frobenius_def, TypeDSpinCarrier.frobenius_eq_pointsMap]
-  exact (TypeDSpinCarrier.pointsMap_comp_graphAutPoints _ _ _).symm
+  rw [graphAut_def, TypeDDiagramLieIndex.frobenius_def, TypeDSpinCarrier.frobenius_eq_map]
+  exact (TypeDSpinCarrier.map_comp_graphAutPoints _ _ _).symm
 
 /-! ## The Steinberg endomorphism of the graph-twisted family -/
 
