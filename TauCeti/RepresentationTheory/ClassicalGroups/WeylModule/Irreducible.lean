@@ -176,7 +176,6 @@ theorem simple_weylFDRepOfShape_iff (μ : YoungDiagram) :
   exact isIrreducible_weylRepOfShape_iff μ
 
 /-- **The Schur functor `𝕊^μ(ℂⁿ)` is irreducible** exactly when `μ` has at most `n` rows. -/
-@[simp]
 theorem simple_schurFunctor_iff (n : ℕ) (μ : YoungDiagram) :
     CategoryTheory.Simple (schurFunctor n μ) ↔ μ.colLen 0 ≤ n :=
   simple_weylFDRepOfShape_iff μ
