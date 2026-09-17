@@ -28,10 +28,11 @@ chain homotopic (`unblockedComplexXHomotopy`), and so induce the same map on hom
 
 Walking from `O_j` along its row to `X_k` and then along column `k` to `O_k` is one step of the
 component permutation, so `k = componentPerm j`. Consequently the multiplications by any two
-variables belonging to the same link component are chain homotopic. For a knot grid there is a
-single component, so all the variables `V_c` act identically on the homology of `GC⁻`
-(`IsKnot.homologyMap_X_smul_eq`), which is what makes that homology a module over a
-one-variable polynomial ring.
+variables belonging to the same link component are chain homotopic
+(`nonempty_homotopy_X_smul_of_pow_componentPerm_apply`) and act identically on the homology of
+`GC⁻` (`homologyMap_X_smul_eq_of_pow_componentPerm_apply`). For a knot grid there is a single
+component, so the action of `V_c` on the homology of `GC⁻` is independent of the choice of `c`
+(`IsKnot.homologyMap_X_smul_eq`).
 
 ## Main definitions
 
@@ -46,6 +47,9 @@ one-variable polynomial ring.
   of `∂⁻ ∘ H_k + H_k ∘ ∂⁻`.
 * `TauCeti.GridDiagram.unblockedDifferential_comp_XHomotopy_add_XHomotopy_comp`: the homotopy
   identity `∂⁻ ∘ H_k + H_k ∘ ∂⁻ = V_k + V_j`.
+* `TauCeti.GridDiagram.nonempty_homotopy_X_smul_of_pow_componentPerm_apply` and
+  `TauCeti.GridDiagram.homologyMap_X_smul_eq_of_pow_componentPerm_apply`: the multiplications by
+  two variables on the same link component are chain homotopic and agree on homology.
 * `TauCeti.GridDiagram.IsKnot.nonempty_homotopy_X_smul` and
   `TauCeti.GridDiagram.IsKnot.homologyMap_X_smul_eq`: on a knot grid, the multiplications by any
   two variables are chain homotopic and agree on homology.
@@ -154,21 +158,38 @@ noncomputable def unblockedComplexComponentHomotopy (c : Fin n) :
   (G.unblockedComplexXHomotopy R (G.componentPerm c)).trans
     (Homotopy.ofEq (by rw [columnOfRow_X_componentPerm]))
 
-/-- On a knot grid, multiplication by any two variables is chain homotopic on the unblocked grid
-complex. -/
-theorem IsKnot.nonempty_homotopy_X_smul {G : GridDiagram n} (hG : G.IsKnot) (c c' : Fin n) :
+/-- Multiplication by the variables of two columns on the same link component is chain homotopic
+on the unblocked grid complex. -/
+theorem nonempty_homotopy_X_smul_of_pow_componentPerm_apply {c c' : Fin n} (i : ℕ)
+    (h : (G.componentPerm ^ i) c = c') :
     Nonempty (Homotopy ((MvPolynomial.X c : MvPolynomial (Fin n) R) • 𝟙 (G.unblockedComplex R))
       ((MvPolynomial.X c' : MvPolynomial (Fin n) R) • 𝟙 (G.unblockedComplex R))) := by
-  have hcycle := (G.isKnot_iff_componentPerm_isCycle).mp hG
-  obtain ⟨i, hi⟩ := hcycle.exists_pow_eq (G.componentPerm_apply_ne_self c)
-    (G.componentPerm_apply_ne_self c')
-  subst hi
+  subst h
   induction i with
   | zero => exact ⟨Homotopy.refl _⟩
   | succ i ih =>
     obtain ⟨h⟩ := ih
     rw [pow_succ', Equiv.Perm.mul_apply]
     exact ⟨h.trans (G.unblockedComplexComponentHomotopy R _).symm⟩
+
+/-- The variables of two columns on the same link component act identically on the homology of
+the unblocked grid complex. -/
+theorem homologyMap_X_smul_eq_of_pow_componentPerm_apply {c c' : Fin n} (i : ℕ)
+    (h : (G.componentPerm ^ i) c = c') :
+    HomologicalComplex.homologyMap
+        ((MvPolynomial.X c : MvPolynomial (Fin n) R) • 𝟙 (G.unblockedComplex R)) () =
+      HomologicalComplex.homologyMap
+        ((MvPolynomial.X c' : MvPolynomial (Fin n) R) • 𝟙 (G.unblockedComplex R)) () :=
+  (G.nonempty_homotopy_X_smul_of_pow_componentPerm_apply R i h).some.homologyMap_eq ()
+
+/-- On a knot grid, multiplication by any two variables is chain homotopic on the unblocked grid
+complex. -/
+theorem IsKnot.nonempty_homotopy_X_smul {G : GridDiagram n} (hG : G.IsKnot) (c c' : Fin n) :
+    Nonempty (Homotopy ((MvPolynomial.X c : MvPolynomial (Fin n) R) • 𝟙 (G.unblockedComplex R))
+      ((MvPolynomial.X c' : MvPolynomial (Fin n) R) • 𝟙 (G.unblockedComplex R))) := by
+  obtain ⟨i, hi⟩ := ((G.isKnot_iff_componentPerm_isCycle).mp hG).exists_pow_eq
+    (G.componentPerm_apply_ne_self c) (G.componentPerm_apply_ne_self c')
+  exact G.nonempty_homotopy_X_smul_of_pow_componentPerm_apply R i hi
 
 /-- On a knot grid, all the variables `V_c` act identically on the homology of the unblocked grid
 complex. -/

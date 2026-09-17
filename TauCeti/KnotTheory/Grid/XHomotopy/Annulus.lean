@@ -17,8 +17,9 @@ This file computes the diagonal matrix entries of `∂⁻ ∘ H_k + H_k ∘ ∂�
 A two-step decomposition from a grid state `x` back to `x` covers a full vertical or horizontal
 band of the torus, and its two rectangles cover disjoint squares. The decomposition is counted
 exactly when both rectangles are empty and the band carries a single `X`-marking, namely `X_k`. A
-band carries one `X`-marking in each of its columns and in each of its rows, so it must be the
-column annulus of column `k` or the row annulus of the row of `X_k`, each one square thick. On a
+vertical band carries one `X`-marking in each column it covers, and a horizontal band one in
+each row it covers, so it must be the column annulus of column `k` or the row annulus of the row
+of `X_k`, each one square thick. On a
 grid of size at least two, each thin annulus is cut by `x` into exactly one pair of rectangles,
 both automatically empty. The column annulus covers the single `O`-marking of column `k`, and the
 row annulus covers the `O`-marking in the row of `X_k`, so the diagonal entry is
