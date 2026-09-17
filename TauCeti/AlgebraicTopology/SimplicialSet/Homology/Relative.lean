@@ -24,7 +24,7 @@ transformation `SSetPair.chainComplexFunctorπ`.
 The source is Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
