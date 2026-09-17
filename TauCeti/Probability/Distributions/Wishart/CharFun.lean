@@ -130,8 +130,9 @@ it is the exponential of `-n / 2` times the sum of the principal logarithms of `
 over the eigenvalues `λ` of the Hermitian sandwich `√S * Θ * √S`.
 
 This is the Gaussian-Gram formula of `TauCeti.charFun_wishartGramMeasure` with the natural degree
-`ν` replaced by the real degree `n`, which is what identifies the two families where both are
-defined. -/
+`ν` replaced by the real degree `n`. Agreeing on characteristic functions is one ingredient of an
+identification of the two families where both are defined; that identification is not proved
+here. -/
 theorem charFun_nonsingularWishartMeasure {n : ℝ} {S : Matrix (Fin p) (Fin p) ℝ}
     (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
     (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
