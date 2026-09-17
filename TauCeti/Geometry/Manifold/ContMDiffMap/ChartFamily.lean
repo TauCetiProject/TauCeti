@@ -23,6 +23,9 @@ vector-valued coordinate-family construction used for smooth families of manifol
 Only the forward implication is asserted, with no differentiability claimed for an
 arbitrary continuous family in the function-space topology.
 
+Use `open scoped TauCeti.ChartWeakWhitney` to select the source-chart topology when
+forming continuous maps into the smooth-map space or using `TauCeti.chartWeakWhitneyCurry`.
+
 The weak topology convention follows M. Hirsch, *Differential Topology*, GTM 33,
 Chapter 2, §1.
 -/
@@ -44,7 +47,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {n : WithTop ℕ∞} [IsManifold I n M] [IsManifold J n P]
 
-attribute [local instance] ContMDiffMap.chartWeakWhitneyTopology
+-- When selected, prefer this topology to the global-chart instance on normed spaces.
+scoped[TauCeti.ChartWeakWhitney] attribute [instance 1100] ContMDiffMap.chartWeakWhitneyTopology
+
+open scoped TauCeti.ChartWeakWhitney
 
 /-- Joint `C^n` regularity gives continuity into the source-chart weak Whitney topology.
 Neither compactness nor absence of boundary is required of the parameter or source manifold. -/
