@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.KnotTheory.Grid.XHomotopy.Basic
 
 /-!
@@ -48,11 +47,6 @@ namespace GridDiagram
 open GridRectangleDecomposition GridRectangleBetween
 
 variable {n : ℕ} (G : GridDiagram n)
-
-/-- On a grid of size at least two, no point is fixed by the cyclic successor. -/
-private theorem finRotate_ne_self (hn : 1 < n) (a : Fin n) : finRotate n a ≠ a := by
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
-  exact Equiv.Perm.mem_support.mp (by rw [support_finRotate]; exact Finset.mem_univ a)
 
 /-- The weight of a returning pair of rectangles is the product, over the band of squares they
 cover together, of the variable of the column of each `O`-marked square. -/
@@ -185,8 +179,8 @@ private theorem univ_product_inter_XSet_eq_singleton_iff (k : Fin n) (s : Finset
 `∂⁻ ∘ H_k + H_k ∘ ∂⁻` are exactly the two thin annuli through `X_k`. -/
 private theorem XHomotopyDecompositions_self (hn : 1 < n) (k : Fin n) (x : GridState n) :
     G.XHomotopyDecompositions k x x =
-      {columnAnnulus x k (finRotate_ne_self hn k).symm,
-        rowAnnulus x (G.X k) (finRotate_ne_self hn (G.X k)).symm} := by
+      {columnAnnulus x k (Grid.finRotate_ne_self hn k).symm,
+        rowAnnulus x (G.X k) (Grid.finRotate_ne_self hn (G.X k)).symm} := by
   ext D
   rw [G.mem_XHomotopyDecompositions_iff_of_disjoint k D
     (D.first.disjoint_coveredSquares D.second), Finset.mem_insert, Finset.mem_singleton]

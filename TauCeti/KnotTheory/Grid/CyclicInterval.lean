@@ -48,6 +48,8 @@ directions before taking products.
   open arc with reversed, exchanged endpoints.
 * `TauCeti.Grid.mem_cIoo_finRotate_finRotate`, `TauCeti.Grid.mem_cIco_finRotate_finRotate`: the
   cyclic permutation `finRotate n` preserves the open and half-open arcs.
+* `TauCeti.Grid.finRotate_ne_self`: on a cycle of length at least two, the cyclic successor has
+  no fixed point.
 * `TauCeti.Grid.cIoo_finRotate_eq_empty`, `TauCeti.Grid.cIco_eq_singleton_iff`: the arcs from a
   point to its cyclic successor are empty and a single point, and these are the only one-point
   half-open arcs.
@@ -620,6 +622,15 @@ theorem mem_cIco_finRotate_finRotate (a b x : Fin n) :
   · rw [cIco_of_ne ((finRotate n).injective.ne hab), cIco_of_ne hab,
       Finset.mem_insert, Finset.mem_insert, (finRotate n).injective.eq_iff,
       mem_cIoo_finRotate_finRotate]
+
+/-- On a cycle of length at least two, no point is fixed by the cyclic successor `finRotate n`. -/
+theorem finRotate_ne_self (hn : 1 < n) (a : Fin n) : finRotate n a ≠ a := by
+  cases n with
+  | zero => exact a.elim0
+  | succ n =>
+    rw [Ne, Fin.ext_iff, coe_finRotate]
+    have := a.isLt
+    split_ifs with h <;> simp only [Fin.ext_iff, Fin.val_last] at h <;> omega
 
 /-- The open cyclic interval from a point to its cyclic successor is empty. -/
 theorem cIoo_finRotate_eq_empty (a : Fin n) : cIoo a (finRotate n a) = ∅ := by
