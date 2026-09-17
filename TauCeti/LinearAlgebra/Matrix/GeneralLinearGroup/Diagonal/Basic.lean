@@ -12,25 +12,27 @@ public import Mathlib.LinearAlgebra.Matrix.Permutation
 -- `MulEquiv.piUnits` identifies the units of a product with the product of the units, and is what
 -- makes the diagonal embedding a homomorphism.
 public import Mathlib.Algebra.Group.Pi.Units
--- `Matrix.IsDiag` occurs in the statements below.
-public import Mathlib.LinearAlgebra.Matrix.IsDiag
 -- `Subgroup.centralizer` and its maximal-commutative-subgroup API occur below.
 public import TauCeti.Algebra.Group.Subgroup.Centralizer
+-- `Matrix.IsDiag` occurs in the statements below.
+public import Mathlib.LinearAlgebra.Matrix.IsDiag
 -- `Nat.card` occurs in the statement of `TauCeti.natCard_diagonalTorus`.
 public import Mathlib.SetTheory.Cardinal.Finite
 -- Non-public: `Nat.card_units`, the number of units of a `GroupWithZero`, is used only inside the
 -- proof of `TauCeti.natCard_diagonalTorus`, so downstream importers do not pay for it.
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # Diagonal elements of the general linear group, and the diagonal torus
 
 A family of units indexed by a finite type `ι` is the diagonal of an invertible diagonal matrix,
 and this assignment is a group homomorphism `TauCeti.diagGL : (ι → kˣ) →* GL ι k`. Its entries,
-its determinant and its injectivity are recorded here, together with two facts about diagonal
-matrices proper: invertibility of a diagonal matrix upgrades its diagonal entries to units, and a
-matrix commuting with a diagonal matrix has no entries away from the diagonal wherever that
-diagonal matrix separates two coordinates.
+its determinant and its injectivity are recorded here, together with the fact that invertibility
+of a diagonal matrix upgrades its diagonal entries to units.  The facts about diagonal matrices
+that involve no general linear group live in `TauCeti/LinearAlgebra/Matrix/Diagonal.lean`; the one
+used below is that a matrix commuting with a diagonal matrix has no entry away from the diagonal
+wherever that diagonal matrix separates two coordinates.
 
 The image of `diagGL` is gathered into a subgroup
 
@@ -51,10 +53,7 @@ the point being that invertibility upgrades the diagonal entries of a diagonal m
 The embedding, the torus, the equivalence and the membership criterion ask only that `k` be a
 semiring; commutativity of `k` enters with the self-centralization and with the determinant,
 cancellation by nonzero elements with the self-centralization as well, and the order asks for a
-division ring, where the nonzero elements are exactly the units.  The two statements about diagonal
-matrices proper ask for less than any of these: their entries need neither a unit nor an associative
-multiplication, only a commutative one with cancellation, so they are stated over a
-`NonUnitalNonAssocCommSemiring`.
+division ring, where the nonzero elements are exactly the units.
 
 Self-centralization is proved under two hypotheses, neither of them idle.  Cancellation is a
 sufficient hypothesis rather than a necessary one: an off-diagonal entry `g i j` of a centralizing
@@ -95,8 +94,6 @@ The action of the torus on the coordinate lines of the standard representation i
 
 * `TauCeti.isUnit_apply_of_isDiag`: the diagonal entries of an invertible diagonal matrix are
   units.
-* `TauCeti.isDiag_of_commute_diagonal`: a matrix commuting with a diagonal matrix of pairwise
-  distinct entries is itself diagonal.
 * `TauCeti.mem_diagonalTorus_iff`: membership in the torus is diagonality of the matrix.
 * `TauCeti.mul_diagGL_of_coe_eq_permMatrix`: a permutation matrix moves past a diagonal by
   relabelling its entries.
@@ -124,28 +121,6 @@ universe u
 namespace TauCeti
 
 variable {k : Type u} {n : ℕ}
-
-section Diagonal
-
-variable [NonUnitalNonAssocCommSemiring k] [IsCancelMulZero k]
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- A matrix commuting with a diagonal matrix has vanishing `(i, j)` entry whenever the diagonal
-matrix separates the coordinates `i` and `j`. -/
-theorem apply_eq_zero_of_commute_diagonal {t : ι → k} {g : Matrix ι ι k}
-    (hg : Commute (Matrix.diagonal t) g) {i j : ι} (hij : t i ≠ t j) : g i j = 0 := by
-  have hentry : (Matrix.diagonal t * g) i j = (g * Matrix.diagonal t) i j := by rw [hg.eq]
-  rw [Matrix.diagonal_mul, Matrix.mul_diagonal] at hentry
-  -- `hentry : t i * g i j = g i j * t j`; cancelling `g i j` on the left would give `t i = t j`.
-  by_contra h
-  exact hij (mul_left_cancel₀ h (by rw [mul_comm (g i j) (t i)]; exact hentry))
-
-/-- **A matrix commuting with a diagonal matrix of pairwise distinct entries is diagonal.** -/
-theorem isDiag_of_commute_diagonal {t : ι → k} (ht : Function.Injective t)
-    {g : Matrix ι ι k} (hg : Commute (Matrix.diagonal t) g) : g.IsDiag :=
-  fun _ _ hij => apply_eq_zero_of_commute_diagonal hg (ht.ne hij)
-
-end Diagonal
 
 section Semiring
 
