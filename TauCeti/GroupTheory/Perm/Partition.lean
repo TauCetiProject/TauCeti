@@ -395,12 +395,6 @@ theorem _root_.Equiv.Perm.orbitRel_zpowers_apply {x y : α} :
   rw [orbitRel_apply, ← sameCycle_iff_mem_orbit_zpowers]
   exact ⟨SameCycle.symm, SameCycle.symm⟩
 
-omit [Fintype α] [DecidableEq α] in
-/-- The relation of the setoid `Equiv.Perm.SameCycle.setoid σ` is `σ.SameCycle`. -/
-theorem _root_.Equiv.Perm.sameCycle_setoid_apply {x y : α} :
-    (SameCycle.setoid σ) x y ↔ σ.SameCycle x y :=
-  (Iff.rfl)
-
 /-- The `⟨σ⟩`-orbit of a moved point is the support of its cycle. -/
 theorem _root_.Equiv.Perm.coe_support_cycleOf_eq_orbit_zpowers {x : α} (hx : x ∈ σ.support) :
     ((σ.cycleOf x).support : Set α) = orbit (Subgroup.zpowers σ) x := by
@@ -498,9 +492,9 @@ theorem _root_.Equiv.Perm.fullCycleType_eq_map_card_orbit :
       (Finset.univ : Finset (orbitRel.Quotient (Subgroup.zpowers σ) α)).val.map
         (fun ω => Nat.card ω.orbit) := by
   -- The `⟨σ⟩`-orbit classes are the cycle classes, hence the cycle factors and the fixed points.
+  -- The relation of `SameCycle.setoid σ` is `σ.SameCycle` by definition, whence the `Iff.rfl`.
   let e : orbitRel.Quotient (Subgroup.zpowers σ) α ≃ σ.cycleFactorsFinset ⊕ {x : α // σ x = x} :=
-    (Quotient.congrRight fun x y =>
-      (orbitRel_zpowers_apply σ).trans (sameCycle_setoid_apply σ).symm).trans
+    (Quotient.congrRight fun x y => (orbitRel_zpowers_apply σ).trans Iff.rfl).trans
       σ.orbitQuotientEquivCycleFactorsSumFixedPoints
   -- `Quotient.congrRight` and `Quotient.lift` both compute on representatives.
   have he : ∀ x : α, e (Quotient.mk'' x) = σ.cycleFactorOrFixedPoint x := fun _ => rfl
