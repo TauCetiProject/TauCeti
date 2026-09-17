@@ -24,6 +24,7 @@ those are available, the operations defined here are the operations of the Picar
 * `LineBundleClass X` is the type of line bundles on `X` up to isomorphism;
 * `LineBundleClass.mk` sends a line bundle to its isomorphism class;
 * `LineBundleClass.lift` descends an isomorphism-invariant function to line-bundle classes;
+* `LineBundleClass.ind` reduces a statement about all classes to representatives;
 * `LineBundleClass.mk_eq_mk_iff` characterizes equality by an isomorphism of the underlying
   sheaves;
 * multiplication is induced by `InvertibleSheaf.tensorProduct`, and `1` is the class of the
@@ -71,6 +72,12 @@ theorem lift_mk {α : Sort v} {f : InvertibleSheaf X → α}
     {hf : ∀ L M, Nonempty (L.obj ≅ M.obj) → f L = f M} (L : InvertibleSheaf X) :
     lift f hf (mk L) = f L :=
   (rfl)
+
+/-- To prove a property of every line-bundle class, it suffices to prove it for the class of each
+line bundle. -/
+@[elab_as_elim]
+theorem ind {p : LineBundleClass X → Prop} (h : ∀ L, p (mk L)) (a : LineBundleClass X) : p a :=
+  Quotient.ind h a
 
 /-- Two line bundles have the same class exactly when their underlying sheaves are isomorphic. -/
 @[simp]

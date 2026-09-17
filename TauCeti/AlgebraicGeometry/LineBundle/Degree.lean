@@ -30,6 +30,7 @@ of a divisor require the coherent-cohomology and Riemann--Roch theory.
 ## Main declarations
 
 * `InvertibleSheaf.eulerDegree` is `χ(L) - χ(𝒪_X)` for an invertible sheaf;
+* `InvertibleSheaf.eulerDegree_def` is its defining formula;
 * `InvertibleSheaf.eulerDegree_eq_finrank` expands it as the difference of the dimensions of
   `H⁰` and `H¹`;
 * `LineBundleClass.eulerDegree` descends the invariant to isomorphism classes of line bundles;
@@ -63,10 +64,17 @@ degree-`2` truncation `χ(M) = dim H⁰(X, M) - dim H¹(X, M)`.
 For a proper curve, finite-dimensionality and vanishing above degree one make this the usual
 Euler characteristic degree. No such hypotheses are needed to form the invariant itself; in
 their absence it has the same possible junk values as `Scheme.Modules.eulerCharBelow`. -/
-@[expose]
 def eulerDegree (L : InvertibleSheaf X) : ℤ :=
   Scheme.Modules.eulerCharBelow k X L.obj 2 -
     Scheme.Modules.eulerCharBelow k X (trivial X).obj 2
+
+/-- The defining formula of the Euler-characteristic degree as a difference of truncated Euler
+characteristics. -/
+lemma eulerDegree_def (L : InvertibleSheaf X) :
+    L.eulerDegree k =
+      Scheme.Modules.eulerCharBelow k X L.obj 2 -
+        Scheme.Modules.eulerCharBelow k X (trivial X).obj 2 :=
+  (rfl)
 
 /-- The Euler-characteristic degree is the difference of `dim H⁰ - dim H¹` for the line bundle
 and the trivial line bundle. -/
@@ -101,7 +109,6 @@ variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
 
 This is well defined because sheaf cohomology, and hence its truncated Euler characteristic, is
 invariant under isomorphism of coefficient sheaves. -/
-@[expose]
 def eulerDegree (a : LineBundleClass X) : ℤ :=
   lift (InvertibleSheaf.eulerDegree k)
     (fun _ _ h ↦ h.elim (InvertibleSheaf.eulerDegree_congr k)) a
