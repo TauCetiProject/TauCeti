@@ -178,14 +178,13 @@ theorem exists_eq_smul_youngSymmetrizer_sq (t : YoungTableau μ) :
   exact ⟨κ, by rwa [mul_one] at hκ⟩
 
 /-- **The transported Young symmetrizer is essentially idempotent**: over a `ℚ`-algebra `k`,
-`c_t x c_t` is a `k`-multiple of `c_t` for every element `x` of `k[Sₙ]`.  On a single permutation
-this is the image of the rational statement
-`TauCeti.YoungTableau.exists_eq_smul_youngSymmetrizer_mul_mul`, and the general case follows by
-`k`-linearity. -/
+`c_t x c_t` is a `k`-multiple of `c_t` for every element `x` of `k[Sₙ]`. -/
 theorem exists_eq_smul_youngSymmetrizerOver_mul_mul (k : Type*) [CommSemiring k] [Algebra ℚ k]
     (t : YoungTableau μ) (x : MonoidAlgebra k (Equiv.Perm (Fin μ.card))) :
     ∃ κ : k, youngSymmetrizerOver k t * x * youngSymmetrizerOver k t =
       κ • youngSymmetrizerOver k t := by
+  -- on a single permutation this is the image of the rational statement
+  -- `exists_eq_smul_youngSymmetrizer_mul_mul`; the general case follows by `k`-linearity
   have hspan : youngSymmetrizerOver k t * x * youngSymmetrizerOver k t ∈
       Submodule.span k {youngSymmetrizerOver k t} := by
     induction x using MonoidAlgebra.induction_linear with

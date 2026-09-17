@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.CharZero.Infinite
 public import Mathlib.RepresentationTheory.Maschke
-public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule
+public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Basic
 public import TauCeti.RepresentationTheory.Irreducible
 public import TauCeti.RepresentationTheory.Simple.Basic
 public import TauCeti.RepresentationTheory.Subrepresentation
@@ -40,7 +40,7 @@ this is irreducibility. Take `w = c_t u ≠ 0` and `x = c_t u'` in the Weyl modu
   (`TauCeti.Submodule.eq_bot_of_forall_mul_eq_zero`). In particular `r` also kills `x = c_t u'`.
 * **Moving `w` to `x`.** Since `U` is a semisimple module over the image of `k[S_d]`, this
   inclusion of annihilators produces an endomorphism of `U` commuting with every factor permutation
-  and sending `w` to `x` (`TauCeti.exists_mem_centralizer_range_apply_eq`).
+  and sending `w` to `x` (`TauCeti.exists_mem_centralizer_range_apply_eq_iff`).
 * **Schur-Weyl duality.** An endomorphism commuting with the permutations is the action of an
   element of `k[GLₙ]`
   (`TauCeti.centralizer_range_permTensorActionAlgHom_eq_range_tensorPowerRep_asAlgebraHom`), so
@@ -76,7 +76,7 @@ namespace TauCeti
 
 namespace YoungTableau
 
-variable {k : Type u} [Field k] [Algebra ℚ k] {n : ℕ} {μ : YoungDiagram}
+variable {k : Type u} [Field k] [CharZero k] {n : ℕ} {μ : YoungDiagram}
 
 /-- An element of `k[S_d]` killing a nonzero vector `c_t u` of the Weyl module already
 annihilates `c_t` from the right. -/
@@ -87,7 +87,6 @@ private theorem mul_youngSymmetrizerOver_eq_zero (t : YoungTableau μ)
     (hr : permTensorActionAlgHom k n μ.card r
       (permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t) u) = 0) :
     r * youngSymmetrizerOver k t = 0 := by
-  have : CharZero k := charZero_of_injective_algebraMap (algebraMap ℚ k).injective
   -- Maschke's theorem makes `k[S_d]` semisimple
   have : NeZero (Nat.card (Equiv.Perm (Fin μ.card)) : k) :=
     ⟨Nat.cast_ne_zero.mpr Nat.card_pos.ne'⟩
@@ -119,7 +118,6 @@ private theorem exists_asAlgebraHom_apply_eq (t : YoungTableau μ)
     {w x : ⨂[k]^μ.card (Fin n → k)} (hw : w ∈ (weylModule k n t).toSubmodule) (hw0 : w ≠ 0)
     (hx : x ∈ (weylModule k n t).toSubmodule) :
     ∃ a : MonoidAlgebra k (GL (Fin n) k), (tensorPowerRep k n μ.card).asAlgebraHom a w = x := by
-  have : CharZero k := charZero_of_injective_algebraMap (algebraMap ℚ k).injective
   have : NeZero (Nat.card (Equiv.Perm (Fin μ.card)) : k) :=
     ⟨Nat.cast_ne_zero.mpr Nat.card_pos.ne'⟩
   have : NeZero (μ.card ! : k) := ⟨Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)⟩
@@ -128,8 +126,9 @@ private theorem exists_asAlgebraHom_apply_eq (t : YoungTableau μ)
   obtain ⟨u', rfl⟩ := hx
   -- an element of `k[S_d]` killing `c_t u` kills `c_t u'`, so some endomorphism commuting with
   -- `k[S_d]` carries `c_t u` to `c_t u'`
-  obtain ⟨f, hf, hfx⟩ := exists_mem_centralizer_range_apply_eq (permTensorActionAlgHom k n μ.card)
-    (x := permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t) u') fun r hr => by
+  obtain ⟨f, hf, hfx⟩ := (exists_mem_centralizer_range_apply_eq_iff
+    (permTensorActionAlgHom k n μ.card)
+    (x := permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t) u')).mpr fun r hr => by
       rw [← Module.End.mul_apply, ← map_mul, mul_youngSymmetrizerOver_eq_zero t hw0 hr, map_zero,
         LinearMap.zero_apply]
   -- by Schur-Weyl duality, such an endomorphism is the action of an element of `k[GLₙ]`
@@ -173,7 +172,7 @@ end YoungTableau
 
 section Shape
 
-variable {k : Type u} [Field k] [Algebra ℚ k] {n : ℕ}
+variable {k : Type u} [Field k] [CharZero k] {n : ℕ}
 
 /-- **The irreducibility criterion for the Weyl module of a shape.** In characteristic zero, the
 Weyl module of `μ` is an irreducible representation of `GL n k` exactly when `μ` has at most `n`
