@@ -35,7 +35,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 variable (I n) in
 /-- The diffeomorphism given by a fixed element of a pointwise `Cⁿ` group action. Its inverse is
 scalar multiplication by the inverse group element. -/
-@[expose, to_additive
+@[to_additive
 /-- The diffeomorphism given by a fixed element of a pointwise `Cⁿ` additive group action. Its
 inverse is addition by the negated group element. -/]
 def constSmul : M ≃ₘ^n⟮I, I⟯ M where
@@ -47,13 +47,13 @@ def constSmul : M ≃ₘ^n⟮I, I⟯ M where
 @[to_additive (attr := simp)
   /-- Evaluating the diffeomorphism associated to a fixed additive-group element agrees with its
   action. -/]
-lemma constSmul_apply (x : M) : constSmul I n g x = g • x := rfl
+lemma constSmul_apply (x : M) : constSmul I n g x = g • x := (rfl)
 
 /-- The inverse of the diffeomorphism associated to a fixed group element acts by its inverse. -/
 @[to_additive (attr := simp)
   /-- The inverse of the diffeomorphism associated to a fixed additive-group element acts by its
   negation. -/]
-lemma constSmul_symm_apply (x : M) : (constSmul I n g).symm x = g⁻¹ • x := rfl
+lemma constSmul_symm_apply (x : M) : (constSmul I n g).symm x = g⁻¹ • x := (rfl)
 
 /-- Taking the inverse of a fixed-action diffeomorphism inverts the acting group element. -/
 @[to_additive
@@ -61,6 +61,7 @@ lemma constSmul_symm_apply (x : M) : (constSmul I n g).symm x = g⁻¹ • x := 
   element. -/]
 lemma constSmul_symm :
     (constSmul I n g : M ≃ₘ^n⟮I, I⟯ M).symm = constSmul I n g⁻¹ :=
-  Diffeomorph.ext fun _ ↦ rfl
+  Diffeomorph.ext fun x ↦ by
+    rw [constSmul_symm_apply, constSmul_apply]
 
 end Diffeomorph
