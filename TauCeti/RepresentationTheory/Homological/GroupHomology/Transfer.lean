@@ -26,6 +26,11 @@ comparison gives restriction in Tate cohomology below degree `-1`.
 
 * `TauCeti.groupHomology.transfer`: the transfer from a group to a finite-index subgroup.
 
+## Main results
+
+* `TauCeti.groupHomology.transfer_comp_indIso_inv`: through the inverse of Shapiro's isomorphism,
+  transfer is the map induced by the unit of the finite-index adjunction.
+
 ## References
 
 * K. S. Brown, *Cohomology of Groups*, Chapter III, Sections 9–10.
@@ -49,5 +54,15 @@ def transfer (M : Rep R G) (S : Subgroup G) [S.FiniteIndex] (n : ℕ) :
     _root_.groupHomology M n ⟶ _root_.groupHomology (Rep.res S.subtype M) n :=
   (_root_.groupHomology.functor R G n).map ((Rep.resIndAdjunction R S).unit.app M) ≫
     (_root_.groupHomology.indIso S (Rep.res S.subtype M) n).hom
+
+open scoped Classical in
+set_option backward.isDefEq.respectTransparency false in
+/-- Through the inverse of the homological Shapiro isomorphism, transfer is the map induced by
+the unit of the finite-index induction--restriction adjunction. -/
+@[reassoc (attr := simp)]
+theorem transfer_comp_indIso_inv (M : Rep R G) (S : Subgroup G) [S.FiniteIndex] (n : ℕ) :
+    transfer M S n ≫ (_root_.groupHomology.indIso S (Rep.res S.subtype M) n).inv =
+      (_root_.groupHomology.functor R G n).map ((Rep.resIndAdjunction R S).unit.app M) := by
+  simp [transfer, Category.assoc]
 
 end TauCeti.groupHomology

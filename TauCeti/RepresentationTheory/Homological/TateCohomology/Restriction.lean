@@ -48,6 +48,8 @@ modulo `I_G M`.
 
 ## Main results
 
+* `TauCeti.TateCohomology.negSuccRes_comp_isoGroupHomology_hom`: negative restriction agrees with
+  homological transfer through Mathlib's comparison with group homology.
 * `TauCeti.TateCohomology.H0π_comp_H0Res`, `TauCeti.TateCohomology.H0π_comp_H0Cor`,
   `TauCeti.TateCohomology.HNegOneπ_comp_HNegOneRes`,
   `TauCeti.TateCohomology.HNegOneπ_comp_HNegOneCor`: the effect of each map on the class of a
@@ -94,6 +96,21 @@ def negSuccRes (n : ℕ) [NeZero n] :
     TauCeti.groupHomology.transfer M H n ≫
       (_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n (Int.negSucc_eq n)).inv.app
         (Rep.res H.subtype M)
+
+set_option backward.isDefEq.respectTransparency false in
+/-- Negative-degree Tate restriction is the homological transfer through Mathlib's comparison
+between Tate cohomology in degree `-(n+1)` and group homology in degree `n`. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+theorem negSuccRes_comp_isoGroupHomology_hom (n : ℕ) [NeZero n] :
+    negSuccRes M H n ≫
+        (_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n
+          (Int.negSucc_eq n)).hom.app (Rep.res H.subtype M) =
+      (_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n
+        (Int.negSucc_eq n)).hom.app M ≫ TauCeti.groupHomology.transfer M H n := by
+  simp only [negSuccRes, Category.assoc, Iso.inv_hom_id_app]
+  exact Category.comp_id
+    ((_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n
+      (Int.negSucc_eq n)).hom.app M ≫ TauCeti.groupHomology.transfer M H n)
 
 /-- Restriction to a subgroup in degree `-2` Tate cohomology. Under the comparison with first
 group homology, this is the homological transfer. -/
