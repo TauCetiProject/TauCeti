@@ -64,10 +64,10 @@ universe u v w
 
 variable {A : Type u} {B : Type v} {C : Type w} [Group A] [Group B] [Group C]
 
-/-- For an injective `φ₂`, the right cosets of `(φ₂.comp φ₁).range` are represented uniquely by
-products `φ₂ b * c`, where `b` and `c` are the chosen representatives of right cosets for the two
-successive ranges. -/
-theorem mk_mul_out_bijective (φ₁ : A →* B) (φ₂ : B →* C) (h₂ : Function.Injective φ₂) :
+/-- If `φ₂.ker ≤ φ₁.range`, the right cosets of `(φ₂.comp φ₁).range` are represented
+uniquely by products `φ₂ b * c`, where `b` and `c` are the chosen representatives of right
+cosets for the two successive ranges. -/
+theorem mk_mul_out_bijective (φ₁ : A →* B) (φ₂ : B →* C) (hker : φ₂.ker ≤ φ₁.range) :
     Function.Bijective fun x : Quotient (QuotientGroup.rightRel φ₂.range) ×
         Quotient (QuotientGroup.rightRel φ₁.range) =>
       Quotient.mk (QuotientGroup.rightRel (φ₂.comp φ₁).range) (φ₂ x.2.out * x.1.out) := by
@@ -83,9 +83,12 @@ theorem mk_mul_out_bijective (φ₁ : A →* B) (φ₂ : B →* C) (h₂ : Funct
     subst hp
     have hq : q = q' := by
       rw [← Quotient.out_eq q, ← Quotient.out_eq q']
-      refine Quotient.sound (QuotientGroup.rightRel_apply.2 ⟨a, h₂ ?_⟩)
-      rw [← MonoidHom.comp_apply φ₂ φ₁, ha]
+      refine Quotient.sound (QuotientGroup.rightRel_apply.2 ?_)
+      rw [show q'.out * q.out⁻¹ = φ₁ a * ((φ₁ a)⁻¹ * q'.out * q.out⁻¹) by group]
+      refine φ₁.range.mul_mem ⟨a, rfl⟩ (hker ?_)
+      rw [MonoidHom.mem_ker]
       simp only [map_mul, map_inv]
+      rw [← MonoidHom.comp_apply φ₂ φ₁, ha]
       group
     rw [hq]
   · intro t

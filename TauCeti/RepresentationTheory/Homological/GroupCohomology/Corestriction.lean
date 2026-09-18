@@ -301,7 +301,8 @@ private theorem coindTrace_comp_counit [φ₁.range.FiniteIndex] [φ₂.range.Fi
         rw [coindTrace_hom_apply_coe, map_sum]
         refine Finset.sum_congr rfl fun q _ => ?_
         simp only [F, ← Module.End.mul_apply, ← map_mul, mul_inv_rev]
-    _ = _ := Fintype.sum_bijective _ (MonoidHom.mk_mul_out_bijective φ₁ φ₂ h₂)
+    _ = _ := Fintype.sum_bijective _
+      (MonoidHom.mk_mul_out_bijective φ₁ φ₂ (by simp [φ₂.ker_eq_bot h₂]))
       _ _ fun _ => hF _
 
 /-- **Transitivity of corestriction.** Let `φ₁ : A →* B` and `φ₂ : B →* C` be injective with
