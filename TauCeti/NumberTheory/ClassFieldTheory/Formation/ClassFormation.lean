@@ -153,8 +153,9 @@ theorem zmultiples_fundamentalClass (cf : ClassFormation F) (L : NormalLayer G) 
 /-- `H²` of a finite normal layer of a class formation is cyclic; by
 `ClassFormation.natCard_H2` it is cyclic of order `[K : F]`. -/
 theorem isAddCyclic_H2 (cf : ClassFormation F) (L : NormalLayer G) : IsAddCyclic (L.H F 2) :=
-  ⟨⟨cf.fundamentalClass L, fun x ↦ AddSubgroup.mem_zmultiples_iff.mpr
-    ((cf.fundamentalClass_generates L x).imp fun _ h ↦ h.symm)⟩⟩
+  ⟨⟨cf.fundamentalClass L, fun x ↦ AddSubgroup.mem_zmultiples_iff.mp <| by
+    rw [cf.zmultiples_fundamentalClass L]
+    trivial⟩⟩
 
 /-- The fundamental class has order exactly `[K : F]`. -/
 @[simp]
@@ -177,6 +178,7 @@ theorem fundamentalClass_restrict (cf : ClassFormation F)
 
 /-- **Inflation of the fundamental class is scaled**: under a refinement of the top field from
 `K` to `L`, `inf u_{K/F} = [L : K] • u_{L/F}`. -/
+@[simp]
 theorem fundamentalClass_infl (cf : ClassFormation F)
     {old new : NormalLayer G} (T : LayerRefinement old new) :
     T.cohomologyInfl F 2 (cf.fundamentalClass old) =
@@ -219,6 +221,7 @@ theorem inv_cor (cf : ClassFormation F)
 
 /-- **Corestriction of the fundamental class is scaled**: `cor u_{K/E} = [E : F] • u_{K/F}` for an
 intermediate ground field `E`. -/
+@[simp]
 theorem fundamentalClass_cor (cf : ClassFormation F)
     {small big : NormalLayer G} (T : LayerRestriction small big) :
     T.cohomologyCor F 2 (cf.fundamentalClass small) =
