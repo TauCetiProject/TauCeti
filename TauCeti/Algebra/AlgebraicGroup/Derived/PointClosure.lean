@@ -20,8 +20,8 @@ this comparison can be iterated along the abstract derived series.
 
 For a reduced finite-type affine group over an algebraically closed field, specializing to
 all rational points identifies the derived defining ideal with the vanishing ideal of the
-abstract commutator subgroup. The general proof extends the original formalization of
-`derivedDefiningIdeal_eq_vanishingIdeal_commutator` in this module.
+abstract commutator subgroup. Thus the all-points comparison is a specialization of the
+subgroup-closure comparison.
 
 If the rational points of the ambient group have finite derived length, then commutators of
 closures lie in the closure of the commutator
@@ -51,17 +51,8 @@ namespace TauCeti.CommHopfAlgCat
 
 noncomputable section
 
-private theorem commutator_liftQuotientPoint_apply_mkQuotient
-    {R : Type*} [CommRing R] {A : _root_.CommHopfAlgCat R}
-    (I : HopfIdeal R A) (B : CommAlgCat R) (g h : WithConv (A →ₐ[R] B))
-    (hg : ∀ x ∈ I, g.ofConv x = 0) (hh : ∀ x ∈ I, h.ofConv x = 0) (x : A) :
-    (⁅liftQuotientPoint A I B g hg, liftQuotientPoint A I B h hh⁆).ofConv
-      ((mkQuotient A I).hom x) = ⁅g, h⁆.ofConv x := by
-  have heval := quotientPointsHom_apply_apply A I B
-    ⁅liftQuotientPoint A I B g hg, liftQuotientPoint A I B h hh⁆ x
-  rw [map_commutatorElement, quotientPointsHom_liftQuotientPoint,
-    quotientPointsHom_liftQuotientPoint] at heval
-  exact heval.symm
+-- The subgroup-closure proof adapts the in-repository proof of
+-- `derivedDefiningIdeal_eq_vanishingIdeal_commutator` previously in this module.
 
 section Field
 

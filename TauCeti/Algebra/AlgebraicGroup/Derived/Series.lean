@@ -17,7 +17,7 @@ successor step. These ideals increase, since the closed subgroups decrease.
 
 For a reduced finite-type affine group over an algebraically closed field, the `n`th ideal
 is the vanishing ideal of the `n`th abstract derived subgroup of rational points. The resulting
-solvability characterization is in `TauCeti.Algebra.AlgebraicGroup.Solvable.DerivedSeries`.
+solvability characterization is in `TauCeti.Algebra.AlgebraicGroup.Solvable.Derived.Series`.
 
 ## References
 
@@ -31,7 +31,7 @@ namespace TauCeti
 
 noncomputable section
 
-open TauCeti.CommHopfAlgCat WithConv
+open CategoryTheory TauCeti.CommHopfAlgCat WithConv
 
 section CommRing
 
@@ -55,11 +55,34 @@ into the original group. -/
         (mkQuotient H (derivedSeriesDefiningIdeal H n)).hom (mkQuotient_surjective _ _) := (rfl)
 
 /-- The first derived-series term is the usual derived closed subgroup. -/
-theorem derivedSeriesDefiningIdeal_one :
+@[simp↓] theorem derivedSeriesDefiningIdeal_one :
     derivedSeriesDefiningIdeal H 1 = derivedDefiningIdeal H := by
   rw [derivedSeriesDefiningIdeal_succ, derivedSeriesDefiningIdeal_zero]
   simpa only [CategoryTheory.Iso.symm_hom, quotientBotIso_inv] using
     comapOfSurjective_derivedDefiningIdeal (quotientBotIso H).symm
+
+/-- An isomorphism of coordinate Hopf algebras preserves every derived-series term. -/
+@[simp] theorem comapOfSurjective_derivedSeriesDefiningIdeal
+    {H K : _root_.CommHopfAlgCat R} (e : H ≅ K) (n : ℕ) :
+    (derivedSeriesDefiningIdeal K n).comapOfSurjective e.hom.hom
+        (ConcreteCategory.bijective_of_isIso e.hom).2 = derivedSeriesDefiningIdeal H n := by
+  induction n with
+  | zero =>
+      ext x
+      simp only [derivedSeriesDefiningIdeal_zero, HopfIdeal.mem_comapOfSurjective,
+        HopfIdeal.mem_bot]
+      exact map_eq_zero_iff e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).1
+  | succ n ih =>
+      rw [derivedSeriesDefiningIdeal_succ, derivedSeriesDefiningIdeal_succ, ← ih]
+      let q := quotientIsoOfIso e (derivedSeriesDefiningIdeal K n)
+      have hq := comapOfSurjective_derivedDefiningIdeal q
+      ext x
+      have hx := congrArg (fun I : HopfIdeal R _ =>
+        (mkQuotient H _).hom x ∈ I) hq
+      have hcomm := congrArg (fun f : H ⟶ quotient K (derivedSeriesDefiningIdeal K n) =>
+        f.hom x) (mkQuotient_comp_quotientIsoOfIso_hom e (derivedSeriesDefiningIdeal K n))
+      simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply] at hcomm
+      simpa only [HopfIdeal.mem_comapOfSurjective, q, hcomm] using iff_of_eq hx
 
 /-- The defining ideals increase along the derived series. -/
 theorem derivedSeriesDefiningIdeal_monotone : Monotone (derivedSeriesDefiningIdeal H) := by
