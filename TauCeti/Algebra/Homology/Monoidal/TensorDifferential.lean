@@ -42,6 +42,7 @@ variable {R : Type v} [CommRing R]
 
 /-- The differential of a tensor product of cochain complexes on a homogeneous summand is the
 sum of the two factor differentials, with the Koszul sign on the second term. -/
+@[reassoc (attr := simp)]
 lemma ι_tensorObj_d (X Y : CochainComplex (ModuleCat.{v} R) ℤ) (p q j : ℤ)
     (hpq : p + q = j) :
     ιTensorObj X Y p q j hpq ≫ (X ⊗ Y).d j (j + 1) =
