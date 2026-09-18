@@ -29,7 +29,7 @@ every grid diagram as `GridDiagram.simplyBlockedComplex`.
 
 ## Main definitions
 
-* `TauCeti.GridDiagram.IsKnot.simplyBlockedHomology`: the simply blocked homology `GĤ`.
+* `TauCeti.GridDiagram.IsKnot.simplyBlockedHomology`: the simply blocked homology `G-hat`.
 * `TauCeti.GridDiagram.IsKnot.simplyBlockedCycles`: its cycles as a kernel.
 * `TauCeti.GridDiagram.IsKnot.simplyBlockedHomologyQuotient`: the concrete cycles-modulo-boundaries
   model.
@@ -62,7 +62,7 @@ namespace TauCeti.GridDiagram.IsKnot
 variable {n : ℕ} {G : GridDiagram n}
 variable (R : Type*) [CommRing R] [CharP R 2]
 
-/-- The simply blocked grid homology `GĤ` obtained by setting the variable of column `i` to
+/-- The simply blocked grid homology `G-hat` obtained by setting the variable of column `i` to
 zero.
 
 The knot hypothesis records when the one-variable specialization has its standard topological
