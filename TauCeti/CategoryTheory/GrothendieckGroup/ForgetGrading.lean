@@ -109,6 +109,7 @@ theorem forgetGradingMap_mk
   rw [forgetGradingMap, LaurentSpecialization.lift_mk]
 
 /-- Forgetting the grading sends the specialized class of an object to the class of its image. -/
+@[simp]
 theorem forgetGradingMap_mk_of
     (hF : E.toExactStructure.IsConflationExact E' F) (comm : E.shift.functor ⋙ F ≅ F)
     (X : C) :
@@ -133,15 +134,16 @@ theorem forgetGradingMap_surjective_iff
     (hF : E.toExactStructure.IsConflationExact E' F) (comm : E.shift.functor ⋙ F ≅ F) :
     Function.Surjective (forgetGradingMap hF comm) ↔
       Function.Surjective (ExactK0.map F hF) := by
+  have hcomp : forgetGradingMap hF comm ∘ LaurentSpecialization.mk 1 =
+      forgetGradingUnderlyingMap hF := by
+    funext x
+    exact forgetGradingMap_mk hF comm x
   calc
     Function.Surjective (forgetGradingMap hF comm) ↔
         Function.Surjective (forgetGradingMap hF comm ∘ LaurentSpecialization.mk 1) :=
       (Function.Surjective.of_comp_iff _ (LaurentSpecialization.mk_surjective 1)).symm
     _ ↔ Function.Surjective (forgetGradingUnderlyingMap hF) := by
-      rw [show forgetGradingMap hF comm ∘ LaurentSpecialization.mk 1 =
-          forgetGradingUnderlyingMap hF by
-        funext x
-        exact forgetGradingMap_mk hF comm x]
+      rw [hcomp]
     _ ↔ Function.Surjective (ExactK0.map F hF) := by
       rw [← Function.Surjective.of_comp_iff
         (ExactK0.map F hF) (ofExactK0 E).symm.surjective]
@@ -177,9 +179,12 @@ theorem forgetGradingMap_injective_iff
     rw [forgetGradingMap_mk]
     simpa [g, e, LaurentSpecialization.mk_apply] using
       (Submodule.liftQ_apply (p := p) (forgetGradingUnderlyingMap hF) x).symm
+  have hinjective : Function.Injective (g.comp e.symm.toLinearMap) ↔
+      Function.Injective g := by
+    rw [LinearMap.coe_comp, LinearEquiv.coe_toLinearMap]
+    exact Function.Injective.of_comp_iff' g e.symm.bijective
   rw [hmap]
-  change Function.Injective (g ∘ e.symm) ↔ _
-  rw [Function.Injective.of_comp_iff' _ e.symm.bijective, ← LinearMap.ker_eq_bot]
+  rw [hinjective, ← LinearMap.ker_eq_bot]
   constructor
   · intro hbot
     apply le_antisymm
@@ -189,8 +194,7 @@ theorem forgetGradingMap_injective_iff
         ⟨x, hx, rfl⟩
       rw [← Submodule.ker_liftQ p (forgetGradingUnderlyingMap hF)
           (fun y hy ↦ LinearMap.mem_ker.mp (hp hy)),
-        show LinearMap.ker g = ⊥ from hbot,
-        Submodule.mem_bot] at hmk
+        hbot, Submodule.mem_bot] at hmk
       rwa [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at hmk
     · exact hp
   · intro hker
