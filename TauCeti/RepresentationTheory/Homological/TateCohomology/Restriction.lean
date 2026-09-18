@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Quotient
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Transfer
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.NegativeCorestriction
 public import TauCeti.RepresentationTheory.RelativeNorm
 
 /-!
@@ -35,7 +36,9 @@ carries `ker N_G` into `ker N_H` and `I_G M` into `I_H M`.
 
 In both degrees the composite of restriction and corestriction is multiplication by `[G : H]`,
 because the relative norm is `[G : H] • ·` on `Mᴳ` and the relative transfer is `[G : H] • ·`
-modulo `I_G M`.
+modulo `I_G M`. In degrees at most `-2` the same identity is corestriction after transfer in group
+homology, `TauCeti.groupHomology.transfer_comp_map_subtype_id`, with corestriction taken from
+`TauCeti.RepresentationTheory.Homological.TateCohomology.NegativeCorestriction`.
 
 ## Main definitions
 
@@ -56,8 +59,9 @@ modulo `I_G M`.
   representative.
 * `TauCeti.TateCohomology.HNegTwoRes_def`: restriction in degree `-2` is the transfer in first
   group homology, transported through Mathlib's comparison with group homology.
-* `TauCeti.TateCohomology.H0Res_comp_H0Cor` and
-  `TauCeti.TateCohomology.HNegOneRes_comp_HNegOneCor`: corestriction after restriction is
+* `TauCeti.TateCohomology.H0Res_comp_H0Cor`,
+  `TauCeti.TateCohomology.HNegOneRes_comp_HNegOneCor` and
+  `TauCeti.TateCohomology.negSuccRes_comp_negSuccCor`: corestriction after restriction is
   multiplication by the index.
 
 ## References
@@ -129,6 +133,21 @@ theorem HNegTwoRes_def :
             (Rep.res H.subtype M) := by
   rw [HNegTwoRes, negSuccRes]
   rfl
+
+/-- Restriction followed by corestriction is multiplication by the index, in every Tate degree
+`-(n+1)` with `n > 0`. -/
+theorem negSuccRes_comp_negSuccCor (n : ℕ) [NeZero n] :
+    negSuccRes M H n ≫ negSuccCor M H.subtype n =
+      H.index • 𝟙 (tateCohomology M (Int.negSucc n)) := by
+  rw [← cancel_mono ((_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n
+    (Int.negSucc_eq n)).hom.app M), Preadditive.nsmul_comp, Category.id_comp, Category.assoc,
+    negSuccCor_comp_isoGroupHomology_hom, negSuccRes_comp_isoGroupHomology_hom_assoc,
+    groupHomology.coresNatTrans_app]
+  -- Through the comparison with group homology this is `cor ∘ transfer = [G : H]`; the two
+  -- sides are composed across the `groupHomology.functor` presentation of the same object, so
+  -- the identity is applied as a term rather than by rewriting.
+  exact (congrArg (_ ≫ ·) (TauCeti.groupHomology.transfer_comp_map_subtype_id M H n)).trans
+    ((Preadditive.comp_nsmul _ _ _).trans (congrArg (H.index • ·) (Category.comp_id _)))
 
 end Negative
 
