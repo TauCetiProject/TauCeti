@@ -47,8 +47,8 @@ namespace TauCeti.LSeries
 /-- The Dirichlet term at a prime power is the coefficient times a power of `p ^ (-s)`. -/
 theorem term_prime_pow (a : ℕ → ℂ) (s : ℂ) {p : ℕ} (hp : p.Prime) (e : ℕ) :
     term a s (p ^ e) = a (p ^ e) * ((p : ℂ) ^ (-s)) ^ e := by
-  rw [term_of_ne_zero (pow_ne_zero e hp.ne_zero), Nat.cast_pow, ← natCast_cpow_natCast_mul,
-    cpow_nat_mul, cpow_neg, inv_pow, div_eq_mul_inv]
+  simp [term_of_ne_zero (pow_ne_zero e hp.ne_zero), ← natCast_cpow_natCast_mul, cpow_nat_mul,
+    cpow_neg, div_eq_mul_inv]
 
 /-- The Dirichlet terms of a function multiplicative on coprime arguments are multiplicative on
 coprime arguments. -/

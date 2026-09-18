@@ -187,8 +187,7 @@ private theorem eq_of_smul_eq (f : Eigenform N k) {a b : ℂ}
 @[simp]
 theorem eigenvalue_one (f : Eigenform N k) : f.eigenvalue 1 = 1 := by
   refine f.eq_of_smul_eq ?_
-  rw [← f.isEigen 1, PNat.val_ofNat, heckeTCompositeGamma0_one, map_one, Module.End.one_apply,
-    one_smul]
+  simp [← f.isEigen 1, heckeTCompositeGamma0_one]
 
 /-- **Multiplicativity on coprime indices**: `λ_{mn} = λ_m λ_n`, the image of the coprime
 multiplication rule `heckeTCompositeGamma0_mul_of_coprime`. Unlike
@@ -196,8 +195,8 @@ multiplication rule `heckeTCompositeGamma0_mul_of_coprime`. Unlike
 theorem eigenvalue_mul (f : Eigenform N k) {m n : ℕ+} (hmn : Nat.Coprime m n) :
     f.eigenvalue (m * n) = f.eigenvalue m * f.eigenvalue n := by
   refine f.eq_of_smul_eq ?_
-  rw [← f.isEigen (m * n), PNat.mul_coe, heckeTCompositeGamma0_mul_of_coprime N hmn, map_mul,
-    Module.End.mul_apply, f.isEigen n, map_smul, f.isEigen m, smul_smul, mul_comm]
+  rw [← f.isEigen (m * n), PNat.mul_coe, heckeTCompositeGamma0_mul_of_coprime N hmn, map_mul]
+  simp only [Module.End.mul_apply, f.isEigen, map_smul, smul_smul, mul_comm]
 
 /-- At a bad prime, the power identity for Hecke operators acts on a full eigenform by the
 product of the eigenvalues at `p` and `p ^ (r + 1)`. -/
@@ -207,10 +206,14 @@ private theorem heckeRingHomCuspCharSpace_prime_pow_add_two_of_not_coprime
         ⟨f.toCuspForm, f.mem_charSpace⟩ =
       (f.eigenvalue p * f.eigenvalue (p ^ (r + 1))) •
         (⟨f.toCuspForm, f.mem_charSpace⟩ : cuspFormCharSpace k f.χ) := by
-  rw [heckeTCompositeGamma0_prime_pow_of_not_coprime N hp hpN, pow_succ',
-    map_mul, Module.End.mul_apply, ← heckeTCompositeGamma0_prime_pow_of_not_coprime N hp hpN,
-    ← PNat.pow_coe, f.isEigen, map_smul, ← heckeTCompositeGamma0_prime N hp, f.isEigen,
-    smul_smul, mul_comm]
+  -- `T_{p^{r+2}} = T_p * T_{p^{r+1}}`, since both sides are powers of `T_p`
+  have hT : heckeTCompositeGamma0 N (p ^ (r + 2)) =
+      heckeTCompositeGamma0 N p * heckeTCompositeGamma0 N (p ^ (r + 1)) := by
+    rw [heckeTCompositeGamma0_prime_pow_of_not_coprime N hp hpN,
+      heckeTCompositeGamma0_prime_pow_of_not_coprime N hp hpN, heckeTCompositeGamma0_prime N hp,
+      ← pow_succ']
+  rw [hT, map_mul, Module.End.mul_apply, ← PNat.pow_coe]
+  simp only [f.isEigen, map_smul, smul_smul, mul_comm]
 
 /-- **The recurrence along the powers of a prime**:
 `λ_{p^{r+2}} = λ_p λ_{p^{r+1}} − χ(p) p^{k−1} λ_{p^r}`, with `χ(p)` read through Mathlib's
@@ -262,8 +265,7 @@ theorem qExpansion_coeff_mul (f : Eigenform N k)
   · simp [h₀]
   lift m to ℕ+ using hm
   lift n to ℕ+ using hn
-  rw [← PNat.mul_coe, f.qExpansion_coeff_eq_eigenvalue h₁, f.qExpansion_coeff_eq_eigenvalue h₁,
-    f.qExpansion_coeff_eq_eigenvalue h₁, f.eigenvalue_mul hmn]
+  simp only [← PNat.mul_coe, f.qExpansion_coeff_eq_eigenvalue h₁, f.eigenvalue_mul hmn]
 
 /-- **The prime-power recurrence for the coefficients of a normalised full eigenform**:
 `a_{p^{r+2}} = a_p a_{p^{r+1}} − χ(p) p^{k−1} a_{p^r}` at every prime `p`, with `χ(p) = 0` for
@@ -275,9 +277,8 @@ theorem qExpansion_coeff_prime_pow_add_two (f : Eigenform N k)
         (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ (k - 1) *
           (qExpansion 1 f.toCuspForm).coeff (p ^ r) := by
   lift p to ℕ+ using hp.pos
-  rw [← PNat.pow_coe, ← PNat.pow_coe, ← PNat.pow_coe, f.qExpansion_coeff_eq_eigenvalue h₁,
-    f.qExpansion_coeff_eq_eigenvalue h₁, f.qExpansion_coeff_eq_eigenvalue h₁,
-    f.qExpansion_coeff_eq_eigenvalue h₁, f.eigenvalue_prime_pow_add_two hp r]
+  simp only [← PNat.pow_coe, f.qExpansion_coeff_eq_eigenvalue h₁]
+  exact f.eigenvalue_prime_pow_add_two hp r
 
 end Eigenform
 
