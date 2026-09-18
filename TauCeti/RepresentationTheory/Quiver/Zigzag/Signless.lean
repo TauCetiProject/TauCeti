@@ -38,6 +38,8 @@ universe u w
 variable (k : Type w) {V : Type u} [CommSemiring k] (G : SimpleGraph V)
   [∀ v, Fintype (G.neighborSet v)]
 
+/-- Each star of the doubled quiver of `G` is finite, being in bijection with the corresponding
+neighbour set of `G`. -/
 noncomputable local instance (x : DoubledQuiver G) : Fintype (Quiver.Star x) :=
   Fintype.ofEquiv (G.neighborSet ((DoubledQuiver.vertexEquiv G).symm x))
     ((DoubledQuiver.starEquivNeighborSet G _).symm.trans
