@@ -583,6 +583,40 @@ through `q`. -/
   rw [← halfEdgeTwoSuccEquiv_inr, reidemeisterTwo_edgePair_apply]
   rfl
 
+/-- The half-edge `p` is joined to slot `0` of the first new crossing. -/
+@[simp] theorem reidemeisterTwo_edgePair_inl_inl_self :
+    (D.reidemeisterTwo p q b hqp hqe).edgePair.val
+        (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl p)))) =
+      halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr 0))) := by
+  rw [← halfEdgeTwoSuccEquiv_inl_inl, reidemeisterTwo_edgePair_apply, claspFun_self]
+  rfl
+
+/-- The half-edge `q` is joined to slot `1` of the first new crossing. -/
+@[simp] theorem reidemeisterTwo_edgePair_inl_inl_right :
+    (D.reidemeisterTwo p q b hqp hqe).edgePair.val
+        (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl q)))) =
+      halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr 1))) := by
+  rw [← halfEdgeTwoSuccEquiv_inl_inl, reidemeisterTwo_edgePair_apply, claspFun_right hqp hqe]
+  rfl
+
+/-- The other end of the arc at `p` is joined to slot `3` of the second new crossing. -/
+@[simp] theorem reidemeisterTwo_edgePair_inl_inl_apply_self :
+    (D.reidemeisterTwo p q b hqp hqe).edgePair.val
+        (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl (D.edgePair.val p))))) =
+      halfEdgeSuccEquiv (n + 1) (.inr 3) := by
+  rw [← halfEdgeTwoSuccEquiv_inl_inl, reidemeisterTwo_edgePair_apply,
+    claspFun_apply_self D.edgePair.prop]
+  rfl
+
+/-- The other end of the arc at `q` is joined to slot `2` of the second new crossing. -/
+@[simp] theorem reidemeisterTwo_edgePair_inl_inl_apply_right :
+    (D.reidemeisterTwo p q b hqp hqe).edgePair.val
+        (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl (D.edgePair.val q))))) =
+      halfEdgeSuccEquiv (n + 1) (.inr 2) := by
+  rw [← halfEdgeTwoSuccEquiv_inl_inl, reidemeisterTwo_edgePair_apply,
+    claspFun_apply_right D.edgePair.prop hqp hqe]
+  rfl
+
 /-- Every half-edge off the two cut arcs keeps its old partner. -/
 @[simp] theorem reidemeisterTwo_edgePair_inl_inl_of_ne {x : Fin (4 * n)} (hxp : x ≠ p)
     (hxe : x ≠ D.edgePair.val p) (hxq : x ≠ q) (hxe' : x ≠ D.edgePair.val q) :
