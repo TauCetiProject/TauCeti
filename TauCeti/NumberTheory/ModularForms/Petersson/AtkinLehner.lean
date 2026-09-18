@@ -36,12 +36,12 @@ Atkin–Lehner sign.
 
 ## Main results
 
-* `TauCeti.CuspForm.peterssonInnerCosets_frickeOperatorCusp`: the raw Fricke operator scales the
+* `CuspForm.peterssonInnerCosets_frickeOperatorCusp`: the raw Fricke operator scales the
   Petersson product by `N ^ (k - 2)`.
-* `TauCeti.CuspForm.peterssonInnerCosets_normalizedFrickeOperatorCusp`: `𝒲_N` is unitary.
-* `TauCeti.CuspForm.peterssonInnerCosets_normalizedFrickeOperatorCusp_left`: its adjoint is
+* `CuspForm.peterssonInnerCosets_normalizedFrickeOperatorCusp`: `𝒲_N` is unitary.
+* `CuspForm.peterssonInnerCosets_normalizedFrickeOperatorCusp_left`: its adjoint is
   `(-1) ^ k • 𝒲_N`.
-* `TauCeti.CuspForm.normalizedFrickeOperatorCusp_mem_peterssonOrthogonal`: the orthogonal
+* `CuspForm.normalizedFrickeOperatorCusp_mem_peterssonOrthogonal`: the orthogonal
   complement of a `𝒲_N`-stable subspace is `𝒲_N`-stable.
 * `TauCeti.Nat.IsExactDivisor.peterssonInnerCosets_atkinLehnerOperatorCusp`: the raw
   Atkin–Lehner operator scales the Petersson product by `Q ^ (k - 2)`.
@@ -66,11 +66,9 @@ open Matrix.SpecialLinearGroup CongruenceSubgroup
 
 open scoped MatrixGroups ModularForm ComplexConjugate TauCeti.ExactDivisor
 
-namespace TauCeti
-
-open _root_.CuspForm
-
 namespace CuspForm
+
+open TauCeti TauCeti.CuspForm
 
 variable {N : ℕ} [NeZero N]
 
@@ -131,6 +129,10 @@ theorem normalizedFrickeOperatorCusp_mem_peterssonOrthogonal {k : ℤ}
 end CuspForm
 
 /-! ### The Atkin–Lehner operators -/
+
+namespace TauCeti
+
+open _root_.CuspForm
 
 namespace Nat.IsExactDivisor
 
