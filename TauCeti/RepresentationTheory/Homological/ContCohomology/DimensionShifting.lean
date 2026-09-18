@@ -156,6 +156,7 @@ variable {G M}
 theorem mk_surjective : Function.Surjective (mk G M) := QuotientAddGroup.mk'_surjective _
 
 /-- A coinduced element dies in the quotient exactly when it is an orbit map. -/
+@[simp]
 theorem mk_eq_zero_iff {f : DiscreteCoind G ⊥ M} :
     mk G M f = 0 ↔ f ∈ (coindBotEmbedding G M).range :=
   QuotientAddGroup.eq_zero_iff f
