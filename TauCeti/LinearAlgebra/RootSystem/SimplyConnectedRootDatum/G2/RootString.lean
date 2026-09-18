@@ -38,9 +38,7 @@ isogeny are later steps.
 
 The coordinates and numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*,
 Plate IX.  The coefficient-three phenomenon is the type `G₂` entry in the Chevalley commutator
-relations; see R. W. Carter, *Simple Groups of Lie Type*, Chapter 5.  These calculations supply a
-prerequisite for the characteristic-three special-isogeny target in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
+relations; see R. W. Carter, *Simple Groups of Lie Type*, Chapter 5.
 -/
 
 public section
