@@ -60,9 +60,11 @@ universe u
 
 noncomputable section
 
-/-- The Picard group of a curve, represented by isomorphism classes of line bundles. The
-dimension bound is recorded in the type so that its group structure is canonical. -/
-@[expose] def PicardGroup (X : Scheme.{u}) (_hX : ∀ y : X, coheight y ≤ 1) :=
+/-- The type of isomorphism classes of line bundles on `X`, intended as the Picard group of `X`.
+It carries a `CommGroup` structure (under tensor product) when `X` is a Noetherian integral scheme
+of dimension at most one (recorded as `Fact (∀ y : X, coheight y ≤ 1)`) whose codimension-one
+local rings are discrete valuation rings. -/
+@[expose] def PicardGroup (X : Scheme.{u}) :=
   LineBundleClass X
 
 /-- Every point lies in the domain of a rank-one trivialization of a line bundle. -/
@@ -362,16 +364,22 @@ theorem isUnit_lineBundleClass (a : LineBundleClass X) : IsUnit a := by
   obtain ⟨D, rfl⟩ := toLineBundleClass_surjective hX a
   exact isUnit_toLineBundleClass hX D
 
-/-- Tensor product makes the line-bundle classes of a Noetherian integral curve into its Picard
-group. -/
-noncomputable instance : CommGroup (PicardGroup X hX) :=
-  letI : CommGroup (LineBundleClass X) := commGroupOfIsUnit (isUnit_lineBundleClass hX)
-  (Equiv.refl (LineBundleClass X) : PicardGroup X hX ≃ LineBundleClass X).commGroup
+omit hX
 
+variable [hX : Fact (∀ y : X, coheight y ≤ 1)]
+
+/-- Tensor product makes the line-bundle classes into the Picard group of a Noetherian integral
+scheme `X` of dimension at most one (`Fact (∀ y : X, coheight y ≤ 1)`) whose codimension-one local
+rings are discrete valuation rings. -/
+noncomputable instance : CommGroup (PicardGroup X) :=
+  letI : CommGroup (LineBundleClass X) := commGroupOfIsUnit (isUnit_lineBundleClass hX.out)
+  (Equiv.refl (LineBundleClass X) : PicardGroup X ≃ LineBundleClass X).commGroup
+
+variable (X) in
 /-- The multiplicative equivalence between the Picard group and its underlying line-bundle
 classes. -/
 noncomputable def picardGroupMulEquivLineBundleClass :
-    PicardGroup X hX ≃* LineBundleClass X where
+    PicardGroup X ≃* LineBundleClass X where
   toEquiv := Equiv.refl (LineBundleClass X)
   map_mul' _ _ := rfl
 
@@ -380,45 +388,46 @@ multiplicative type tags. -/
 @[simp]
 lemma toMul_picardGroupMulEquivLineBundleClass_symm_toAdditive (a : LineBundleClass X) :
     Additive.toMul
-        ((picardGroupMulEquivLineBundleClass hX).symm.toAdditive (Additive.ofMul a)) =
-      (picardGroupMulEquivLineBundleClass hX).symm a :=
+        ((picardGroupMulEquivLineBundleClass X).symm.toAdditive (Additive.ofMul a)) =
+      (picardGroupMulEquivLineBundleClass X).symm a :=
   rfl
 
+variable (X) in
 /-- **`Cl(X) ≅ Pic(X)`.** On a Noetherian integral scheme of dimension at most one whose
 codimension-one local rings are discrete valuation rings, `D ↦ 𝒪_X(D)` identifies the divisor
 class group with the line-bundle classes under tensor product. -/
 def classGroupAddEquivPicardGroup :
-    (WeilDivisor.OrderSystem.ofScheme X).ClassGroup ≃+ Additive (PicardGroup X hX) :=
+    (WeilDivisor.OrderSystem.ofScheme X).ClassGroup ≃+ Additive (PicardGroup X) :=
   let e : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup ≃+ Additive (LineBundleClass X) :=
-    AddEquiv.ofBijective (classGroupToLineBundleClassHom hX) <| by
-      have hfun : ⇑(classGroupToLineBundleClassHom hX) = Additive.ofMul ∘
-          classGroupToLineBundleClass hX :=
-        funext (classGroupToLineBundleClassHom_apply hX)
+    AddEquiv.ofBijective (classGroupToLineBundleClassHom hX.out) <| by
+      have hfun : ⇑(classGroupToLineBundleClassHom hX.out) = Additive.ofMul ∘
+          classGroupToLineBundleClass hX.out :=
+        funext (classGroupToLineBundleClassHom_apply hX.out)
       rw [hfun]
-      exact Additive.ofMul.bijective.comp (classGroupToLineBundleClass_bijective hX)
-  e.trans (picardGroupMulEquivLineBundleClass hX).symm.toAdditive
+      exact Additive.ofMul.bijective.comp (classGroupToLineBundleClass_bijective hX.out)
+  e.trans (picardGroupMulEquivLineBundleClass X).symm.toAdditive
 
 /-- The equivalence `Cl(X) ≃+ Pic(X)` sends a divisor class to the class of its line bundle. -/
 @[simp]
 lemma classGroupAddEquivPicardGroup_apply
     (c : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) :
-    classGroupAddEquivPicardGroup hX c =
-      (picardGroupMulEquivLineBundleClass hX).symm.toAdditive
-        (Additive.ofMul (classGroupToLineBundleClass hX c)) := by
+    classGroupAddEquivPicardGroup X c =
+      (picardGroupMulEquivLineBundleClass X).symm.toAdditive
+        (Additive.ofMul (classGroupToLineBundleClass hX.out c)) := by
   simpa only [classGroupAddEquivPicardGroup, AddEquiv.trans_apply,
     AddEquiv.ofBijective_apply] using congrArg
-    (picardGroupMulEquivLineBundleClass hX).symm.toAdditive
-    (classGroupToLineBundleClassHom_apply hX c)
+    (picardGroupMulEquivLineBundleClass X).symm.toAdditive
+    (classGroupToLineBundleClassHom_apply hX.out c)
 
 /-- Negating a divisor class gives the inverse line-bundle class in the Picard group. -/
 @[simp]
 lemma classGroupToLineBundleClass_neg
     (c : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) :
-    (picardGroupMulEquivLineBundleClass hX).symm (classGroupToLineBundleClass hX (-c)) =
-      ((picardGroupMulEquivLineBundleClass hX).symm (classGroupToLineBundleClass hX c))⁻¹ := by
+    (picardGroupMulEquivLineBundleClass X).symm (classGroupToLineBundleClass hX.out (-c)) =
+      ((picardGroupMulEquivLineBundleClass X).symm (classGroupToLineBundleClass hX.out c))⁻¹ := by
   simpa only [classGroupAddEquivPicardGroup_apply, toMul_ofMul, toMul_neg,
     toMul_picardGroupMulEquivLineBundleClass_symm_toAdditive] using
-    congrArg Additive.toMul ((classGroupAddEquivPicardGroup hX).map_neg c)
+    congrArg Additive.toMul ((classGroupAddEquivPicardGroup X).map_neg c)
 
 end Picard
 

@@ -293,6 +293,8 @@ def sheafLift {M : X.Modules} (D : SchemeWeilDivisor X) (φ : M ⟶ Scheme.ratio
     M ⟶ sheaf D :=
   TauCeti.SheafOfModules.liftToSubmodule (submodule D) φ fun U s ↦ hφ U.unop s
 
+/-- `sheafLift` factors `φ` through `𝒪_X(D)`: composing it with the canonical inclusion
+`sheafι D : 𝒪_X(D) ⟶ 𝒦_X` recovers the original morphism `φ`. -/
 @[reassoc (attr := simp)]
 lemma sheafLift_ι {M : X.Modules} (D : SchemeWeilDivisor X) (φ : M ⟶ Scheme.rationalFunctions X)
     (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ sections D U) :
