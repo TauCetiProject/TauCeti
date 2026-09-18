@@ -74,33 +74,31 @@ namespace RestrictScalars
 variable (f : DGAlgHom hA hB) (M : Type uM)
   [AddCommGroup M] [Module R M] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M]
 
-/-- The restricted carrier is canonically equivalent to the original carrier. -/
-@[expose]
-def equiv : RestrictScalars f M ≃ M where
-  toFun := RestrictScalars.val
-  invFun := RestrictScalars.mk
-  left_inv x := by cases x; rfl
-  right_inv _ := rfl
+instance : AddCommGroup (RestrictScalars f M) :=
+  Equiv.addCommGroup
+    { toFun := RestrictScalars.val, invFun := RestrictScalars.mk
+      left_inv _ := rfl, right_inv _ := rfl }
 
-instance : AddCommGroup (RestrictScalars f M) := (equiv f M).addCommGroup
-
-/-- The additive equivalence from the restricted carrier to the original carrier. -/
-@[expose]
-def addEquiv : RestrictScalars f M ≃+ M where
-  __ := equiv f M
-  map_add' _ _ := rfl
-
-instance : Module R (RestrictScalars f M) := (addEquiv f M).module R
+instance : Module R (RestrictScalars f M) :=
+  AddEquiv.module R
+    { toFun := RestrictScalars.val, invFun := RestrictScalars.mk
+      left_inv _ := rfl, right_inv _ := rfl, map_add' _ _ := rfl }
 
 /-- The restricted right action: `a : A` acts through `f a : B`. -/
 instance : Module Aᵐᵒᵖ (RestrictScalars f M) :=
   letI : Module Aᵐᵒᵖ M :=
     Module.compHom M (AlgHom.op f.toGradedAlgHom.toAlgHom).toRingHom
-  (addEquiv f M).module Aᵐᵒᵖ
+  AddEquiv.module Aᵐᵒᵖ
+    { toFun := RestrictScalars.val, invFun := RestrictScalars.mk
+      left_inv _ := rfl, right_inv _ := rfl, map_add' _ _ := rfl }
 
 /-- The identity `R`-linear equivalence from a restricted module to its original carrier. -/
 def linearEquiv : RestrictScalars f M ≃ₗ[R] M where
-  __ := addEquiv f M
+  toFun := RestrictScalars.val
+  invFun := RestrictScalars.mk
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
 omit [Module R M] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] in
@@ -113,8 +111,7 @@ theorem val_add (x y : RestrictScalars f M) : (x + y).val = x.val + y.val := rfl
 
 omit [Module R M] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] in
 @[simp]
-theorem val_zsmul (n : ℤ) (x : RestrictScalars f M) : (n • x).val = n • x.val :=
-  map_zsmul (addEquiv f M) n x
+theorem val_zsmul (n : ℤ) (x : RestrictScalars f M) : (n • x).val = n • x.val := rfl
 
 omit [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] in
 @[simp]
