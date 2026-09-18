@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.TransferInstance
-public import Mathlib.RingTheory.Binomial
 public import TauCeti.Algebra.Module.GradedModule.Opposite
 
 /-!
@@ -28,8 +27,6 @@ associativity follow from transport.
 
 ## Main definitions
 
-* `InternalGrading.quadraticTwist`: multiplication of degree `p` by
-  `(-1) ^ (p choose 2)`.
 * `GradedOpposite G`: the Koszul-signed opposite algebra associated to an internal grading `G`.
 * `GradedOpposite.op` and `GradedOpposite.unop`: the additive, degree-preserving passage between
   an algebra and its graded opposite.
@@ -49,96 +46,7 @@ open scoped DirectSum
 
 namespace TauCeti
 
-universe uR uA uM
-
-namespace InternalGrading
-
-section QuadraticTwist
-
-variable {R : Type uR} {M : Type uM}
-  [CommRing R] [AddCommMonoid M] [Module R M]
-
-/-- The quadratic sign exponent attached to degree `p`, namely the generalized binomial
-coefficient `p choose 2`. -/
-def quadraticExponent (p : ℤ) : ℤ := Ring.choose p 2
-
-/-- The quadratic exponent turns addition into addition plus the bilinear cross term. -/
-theorem quadraticExponent_add (p q : ℤ) :
-    quadraticExponent (p + q) = quadraticExponent p + quadraticExponent q + p * q := by
-  rw [quadraticExponent, quadraticExponent, quadraticExponent,
-    Ring.add_choose_eq 2 (Commute.all _ _)]
-  norm_num [Finset.antidiagonal]
-  ring
-
-/-- The signs associated to the quadratic exponent differ under addition by the Koszul sign. -/
-theorem negOnePow_quadraticExponent_add (p q : ℤ) :
-    (quadraticExponent (p + q)).negOnePow =
-      (p * q).negOnePow * (quadraticExponent p).negOnePow *
-        (quadraticExponent q).negOnePow := by
-  rw [quadraticExponent_add, Int.negOnePow_add, Int.negOnePow_add]
-  ac_rfl
-
-/-- The quadratic twist multiplies the degree-`p` component by `(-1) ^ (p choose 2)`.
-
-Transporting the ordinary opposite multiplication through this involution produces the
-Koszul-signed opposite multiplication. -/
-noncomputable def quadraticTwist (G : InternalGrading R M) : M →ₗ[R] M :=
-  DirectSum.coeLinearMap (fun p => G.piece p) ∘ₗ
-    DirectSum.toModule R ℤ (⨁ p : ℤ, G.piece p)
-      (fun p => (((quadraticExponent p).negOnePow : ℤ) : R) •
-        DirectSum.lof R ℤ (fun p => G.piece p) p) ∘ₗ
-    (DirectSum.decomposeLinearEquiv (ℳ := G.piece)).toLinearMap
-
-/-- On a homogeneous element of degree `p`, the quadratic twist is multiplication by
-`(-1) ^ (p choose 2)`. -/
-theorem quadraticTwist_apply_of_mem (G : InternalGrading R M) {x : M} {p : ℤ}
-    (hx : x ∈ G.piece p) :
-    G.quadraticTwist x = (((quadraticExponent p).negOnePow : ℤ) : R) • x := by
-  rw [quadraticTwist]
-  simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-    DirectSum.decomposeLinearEquiv_apply]
-  rw [DirectSum.decompose_of_mem (ℳ := G.piece) hx,
-    ← DirectSum.lof_eq_of R ℤ (fun i : ℤ => G.piece i)]
-  simp [DirectSum.toModule_lof]
-
-/-- The quadratic twist preserves every homogeneous piece. -/
-theorem quadraticTwist_mem_piece (G : InternalGrading R M) {x : M} {p : ℤ}
-    (hx : x ∈ G.piece p) : G.quadraticTwist x ∈ G.piece p := by
-  rw [G.quadraticTwist_apply_of_mem hx]
-  exact Submodule.smul_mem _ _ hx
-
-/-- Applying the quadratic twist twice is the identity. -/
-theorem quadraticTwist_involutive (G : InternalGrading R M) :
-    Function.Involutive G.quadraticTwist :=
-  fun x => by
-    have hmaps : G.quadraticTwist ∘ₗ G.quadraticTwist = LinearMap.id := by
-      apply G.linearMap_ext
-      intro p y hy
-      simp only [LinearMap.comp_apply, LinearMap.id_apply]
-      rw [G.quadraticTwist_apply_of_mem hy, map_smul, G.quadraticTwist_apply_of_mem hy,
-        smul_smul]
-      rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self]
-      simp
-    exact LinearMap.congr_fun hmaps x
-
-/-- The quadratic twist as a linear involution. -/
-noncomputable def quadraticTwistEquiv (G : InternalGrading R M) : M ≃ₗ[R] M :=
-  LinearEquiv.ofInvolutive G.quadraticTwist G.quadraticTwist_involutive
-
-@[simp]
-theorem quadraticTwistEquiv_apply (G : InternalGrading R M) (x : M) :
-    G.quadraticTwistEquiv x = G.quadraticTwist x := by
-  exact congr_fun (LinearEquiv.coe_ofInvolutive G.quadraticTwist
-    G.quadraticTwist_involutive) x
-
-@[simp]
-theorem quadraticTwistEquiv_symm_apply (G : InternalGrading R M) (x : M) :
-    G.quadraticTwistEquiv.symm x = G.quadraticTwist x := by
-  rfl
-
-end QuadraticTwist
-
-end InternalGrading
+universe uR uA
 
 /-- The Koszul-signed opposite of the internally graded algebra `A`.
 
@@ -285,7 +193,7 @@ theorem op_one : op G (1 : A) = 1 := by
   rw [map_one, transportAlgEquiv_op,
     G.opposite.quadraticTwist_apply_of_mem (G.op_mem_opposite_piece_iff 0 1 |>.2
       (SetLike.one_mem_graded G.piece))]
-  simp [InternalGrading.quadraticExponent]
+  simp
 
 @[simp]
 theorem unop_one : unop G (1 : GradedOpposite G) = 1 := by

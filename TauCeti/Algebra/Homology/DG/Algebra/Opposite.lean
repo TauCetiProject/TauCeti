@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Algebra.Defs
-public import TauCeti.Algebra.Module.GradedModule.GradedOpposite
+public import TauCeti.RingTheory.GradedAlgebra.Opposite
 
 /-!
 # Opposites of differential graded algebras
@@ -25,6 +25,8 @@ without the Koszul sign puts the Leibniz sign on the wrong term.
 
 ## Main results
 
+* `GradedOpposite.differential_op` and `GradedOpposite.differential_unop`: normalization of the
+  differential through the two directions of the underlying linear equivalence.
 * `IsDGAlgebra.gradedOpposite`: the Koszul-signed opposite of a differential graded algebra is a
   differential graded algebra.
 
@@ -48,13 +50,23 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
 /-- The differential on the graded opposite, unchanged on underlying elements. -/
 noncomputable def differential (d : A →ₗ[R] A) :
     GradedOpposite G →ₗ[R] GradedOpposite G :=
-  opLinearEquiv G ∘ₗ d ∘ₗ (opLinearEquiv G).symm.toLinearMap
+  (opLinearEquiv G).conj d
 
 /-- The opposite differential acts by the original differential on underlying elements. -/
 @[simp]
 theorem differential_op (d : A →ₗ[R] A) (a : A) :
     differential G d (op G a) = op G (d a) := by
-  simp [differential]
+  rw [differential, LinearEquiv.conj_apply_apply]
+  simp
+
+/-- Returning the opposite differential to the original algebra gives the original
+differential. -/
+@[simp]
+theorem differential_unop (d : A →ₗ[R] A) (a : GradedOpposite G) :
+    unop G (differential G d a) = d (unop G a) := by
+  have h := differential_op G d (unop G a)
+  rw [op_unop G a] at h
+  exact (congrArg (unop G) h).trans (unop_op G _)
 
 variable [GradedAlgebra G.piece] {d : A →ₗ[R] A}
 
