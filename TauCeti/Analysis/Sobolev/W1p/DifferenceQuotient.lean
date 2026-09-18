@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 public import TauCeti.MeasureTheory.Function.Lp.Translation
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
 # Difference quotients of `W^{1,p}(Ω)` functions
@@ -35,8 +34,6 @@ space; neither operation changes `u` or its gradient near the segments.
 
 ## Main declarations
 
-* `TauCeti.W1p.exists_ae_eq_top_of_isCompact`: near a compact subset of `Ω`, a function in
-  `W^{1,p}(Ω)` agrees with one in `W^{1,p}(ℝⁿ)`.
 * `TauCeti.W1p.eLpNorm_value_comp_add_sub_le`: the local translation estimate on `W^{1,p}(Ω)`.
 * `TauCeti.W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le`: the difference-quotient bound.
 * `TauCeti.W1p.eventually_eLpNorm_inv_mul_value_comp_add_smul_sub_le`: the difference-quotient
@@ -64,7 +61,7 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 
 /-- The local translation estimate on `W^{1,p}(ℝⁿ)`, obtained from the smooth case by density of
 the test functions. -/
-private theorem eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu ⊤ p) (h : E)
+theorem W1p.eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu ⊤ p) (h : E)
     {K T : Set E} (hT : MeasurableSet T) (hKT : ∀ x ∈ K, ∀ t ∈ Icc (0 : ℝ) 1, x + t • h ∈ T) :
     eLpNorm (fun x => W1p.value w (x + h) - W1p.value w x) p (mu.restrict K)
       ≤ eLpNorm (fun x => ⟪h, W1p.gradient w x⟫_ℝ) p (mu.restrict T) := by
@@ -130,52 +127,6 @@ private theorem eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p m
   exact eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply (phi.contDiff.of_le (by simp)) Fact.out hp
     h hT hKT
 
-/-- **Localisation to the whole space.** For `1 ≤ p < ∞`, a Sobolev function `u ∈ W^{1,p}(Ω)`
-agrees, in value and in gradient, almost everywhere on any compact `S ⊆ Ω` with some
-`w ∈ W^{1,p}(ℝⁿ)`. One may take for `w` the product of `u` with a smooth cutoff equal to one near
-`S` and compactly supported in `Ω`, extended by zero. -/
-theorem W1p.exists_ae_eq_top_of_isCompact (hp : p ≠ ∞) (u : W1p mu Omega p) {S : Set E}
-    (hS : IsCompact S) (hSO : S ⊆ Omega) :
-    ∃ w : W1p mu ⊤ p, (∀ᵐ x ∂mu, x ∈ S → W1p.value w x = W1p.value u x) ∧
-      ∀ᵐ x ∂mu, x ∈ S → W1p.gradient w x = W1p.gradient u x := by
-  -- A smooth cutoff, equal to one near `S` and compactly supported in `Ω`.
-  obtain ⟨chi, M, hchi, -, hchi_one, hchi_cpt, hchi_ts, hM0, hchiM_all, hchigradM_all⟩ :=
-    hS.exists_contDiff_cutoff_with_bounds Omega.isOpen hSO
-  have hchiM : ∀ x ∈ (Omega : Set E), |chi x| ≤ M := fun x _ => hchiM_all x
-  have hchigradM : ∀ x ∈ (Omega : Set E), ‖∇ chi x‖ ≤ M := fun x _ => hchigradM_all x
-  -- Near `S` the cutoff is one and its gradient vanishes.
-  have hchi_S : ∀ x ∈ S, chi x = 1 ∧ ∇ chi x = 0 := fun x hx => by
-    have hev : chi =ᶠ[𝓝 x] fun _ => (1 : ℝ) :=
-      Filter.mem_of_superset (mem_interior_iff_mem_nhds.1 (hchi_one hx)) fun y hy => hy
-    refine ⟨hev.eq_of_nhds, ?_⟩
-    rw [_root_.gradient, hev.fderiv_eq, fderiv_const_apply, map_zero]
-  -- The cutoff product lies in `W^{1,p}_0(Ω)`, so it extends by zero to the whole space.
-  set w0 := W1p.contDiffSMul chi hchi hM0 hchiM hchigradM u
-  have hw0 : w0 ∈ w1p0Submodule mu Omega p :=
-    W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport hp hchi hM0 hchiM hchigradM hchi_cpt
-      hchi_ts u
-  have hOmega := Omega.isOpen.measurableSet
-  have htop : mu.restrict ((⊤ : Opens E) : Set E) = mu := by
-    rw [Opens.coe_top, Measure.restrict_univ]
-  refine ⟨(W1p0.extendByZeroL (p := p) (Omega := Omega) le_top ⟨w0, hw0⟩).1, ?_, ?_⟩
-  · have h2 := coeFn_extendByZeroLpₗᵢ ℝ (μ := mu) hOmega
-      (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤)) (W1p.value w0) |>.filter_mono
-      (ae_mono htop.ge)
-    have h3 := (ae_restrict_iff' hOmega).1 (W1p.value_contDiffSMul_ae hchi hM0 hchiM hchigradM u)
-    filter_upwards [h2, h3] with x hx2 hx3 hxS
-    have hxO : x ∈ (Omega : Set E) := hSO hxS
-    rw [W1p0.value_extendByZeroL, hx2, indicator_of_mem hxO, hx3 hxO, (hchi_S x hxS).1,
-      one_smul]
-  · have h2 := coeFn_extendByZeroLpₗᵢ ℝ (μ := mu) hOmega
-      (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤)) (W1p.gradient w0) |>.filter_mono
-      (ae_mono htop.ge)
-    have h3 := (ae_restrict_iff' hOmega).1
-      (W1p.gradient_contDiffSMul_ae hchi hM0 hchiM hchigradM u)
-    filter_upwards [h2, h3] with x hx2 hx3 hxS
-    have hxO : x ∈ (Omega : Set E) := hSO hxS
-    rw [W1p0.gradient_extendByZeroL, hx2, indicator_of_mem hxO, hx3 hxO, (hchi_S x hxS).1,
-      (hchi_S x hxS).2, one_smul, smul_zero, add_zero]
-
 /-- **The local translation estimate on `W^{1,p}(Ω)`.** Let `u ∈ W^{1,p}(Ω)`, `1 ≤ p < ∞`, and
 let `K` be compact. If every segment `[x, x + h]` with `x ∈ K` lies in a set `T ⊆ Ω`, then
 
@@ -216,7 +167,7 @@ theorem W1p.eLpNorm_value_comp_add_sub_le (hp : p ≠ ∞) (u : W1p mu Omega p) 
   calc eLpNorm (fun x => W1p.value u (x + h) - W1p.value u x) p (mu.restrict K)
       = eLpNorm (fun x => W1p.value w (x + h) - W1p.value w x) p (mu.restrict K) := hL.symm
     _ ≤ eLpNorm (fun x => ⟪h, W1p.gradient w x⟫_ℝ) p (mu.restrict S) :=
-      eLpNorm_value_comp_add_sub_le_of_top hp w h hS.measurableSet hKS
+        W1p.eLpNorm_value_comp_add_sub_le_of_top hp w h hS.measurableSet hKS
     _ = eLpNorm (fun x => ⟪h, W1p.gradient u x⟫_ℝ) p (mu.restrict S) := hR
     _ ≤ eLpNorm (fun x => ⟪h, W1p.gradient u x⟫_ℝ) p (mu.restrict T) :=
       eLpNorm_mono_measure _ (Measure.restrict_mono hST le_rfl)
@@ -237,10 +188,16 @@ theorem W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le (hp : p ≠ ∞) (u : W1p
   · simp
   have hbound := W1p.eLpNorm_value_comp_add_sub_le hp u (t • v) hK hTO hKT
   simp_rw [real_inner_smul_left] at hbound
-  have hmul : ∀ f : E → ℝ, (fun x => t⁻¹ * f x) = t⁻¹ • f := fun f => rfl
-  rw [hmul, eLpNorm_const_smul]
+  rw [show (fun x => t⁻¹ * (W1p.value u (x + t • v) - W1p.value u x)) =
+      t⁻¹ • fun x => W1p.value u (x + t • v) - W1p.value u x by
+        ext x
+        simp only [Pi.smul_apply, smul_eq_mul],
+    eLpNorm_const_smul]
   rw [show (fun x => t * ⟪v, W1p.gradient u x⟫_ℝ) = t • fun x => ⟪v, W1p.gradient u x⟫_ℝ
-    from rfl, eLpNorm_const_smul] at hbound
+    by
+      ext x
+      simp only [Pi.smul_apply, smul_eq_mul],
+    eLpNorm_const_smul] at hbound
   calc ‖t⁻¹‖ₑ * eLpNorm (fun x => W1p.value u (x + t • v) - W1p.value u x) p (mu.restrict K)
       ≤ ‖t⁻¹‖ₑ * (‖t‖ₑ * eLpNorm (fun x => ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict T)) := by
         gcongr

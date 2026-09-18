@@ -190,7 +190,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- The `r`-th power of the segment estimate, in the direction of the increment. Raising to the
 power `r ≥ 1` costs nothing because the segment is parametrized by the probability space
 `Set.Icc 0 1`. -/
-private theorem enorm_sub_rpow_le_lintegral_fderiv_apply (hu : ContDiff ℝ 1 u) {r : ℝ}
+theorem enorm_sub_rpow_le_lintegral_fderiv_apply (hu : ContDiff ℝ 1 u) {r : ℝ}
     (hr : 1 ≤ r) (x h : E) :
     ‖u (x + h) - u x‖ₑ ^ r ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ ^ r := by
   have hr0 : (0 : ℝ) < r := one_pos.trans_le hr
