@@ -23,6 +23,8 @@ and the residue field of the valuative relation with the ones `K_v` already has.
 
 * `IsDedekindDomain.HeightOneSpectrum.integer_eq_adicCompletionIntegers`: the ring of integers of
   the valuative relation is `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.integers_adicCompletionIntegers`: the same statement in the
+  form `Valuation.Integers`, for results stated over an arbitrary ring of integers.
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletion`: the residue field of the
   valuative relation is `R ⧸ v`; `residueFieldEquivAdicCompletion_apply_mk` describes it on a
   quotient representative.
@@ -84,6 +86,19 @@ theorem integer_eq_adicCompletionIntegers :
   rw [ValuationSubring.mem_toSubring, mem_adicCompletionIntegers, Valuation.mem_integer_iff]
   exact (Valuation.vle_one_iff (ValuativeRel.valuation (v.adicCompletion K))).symm.trans
     (Valuation.vle_one_iff (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰))
+
+/-- The canonical ring of integers `𝒪_v` is a ring of integers for the valuation of the
+valuative relation on `K_v`. -/
+theorem integers_adicCompletionIntegers :
+    (ValuativeRel.valuation (v.adicCompletion K)).Integers (v.adicCompletionIntegers K) where
+  hom_inj := Subtype.val_injective
+  map_le_one x := (Valuation.mem_integer_iff _ _).1 <| by
+    rw [integer_eq_adicCompletionIntegers, ValuationSubring.mem_toSubring]
+    exact x.2
+  exists_of_le_one r hr := by
+    rw [← Valuation.mem_integer_iff, integer_eq_adicCompletionIntegers,
+      ValuationSubring.mem_toSubring] at hr
+    exact ⟨⟨r, hr⟩, rfl⟩
 
 /-- An element of `R` lands in the ring of integers of the valuative relation on `K_v`. -/
 theorem algebraMap_mem_integer_adicCompletion (a : R) :
