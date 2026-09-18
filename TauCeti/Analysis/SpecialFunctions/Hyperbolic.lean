@@ -78,6 +78,7 @@ theorem _root_.Real.tanh_strictMono : StrictMono Real.tanh := by
   exact absurd hab (not_lt.mpr hba)
 
 /-- The hyperbolic tangent compares two real numbers exactly as they compare. -/
+@[simp]
 theorem _root_.Real.tanh_lt_tanh_iff {a b : ℝ} : Real.tanh a < Real.tanh b ↔ a < b :=
   Real.tanh_strictMono.lt_iff_lt
 

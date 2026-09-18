@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.RootsOfUnityQuotient
 public import TauCeti.Analysis.Complex.UpperHalfPlane.ProperAction
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
-public import TauCeti.Topology.MetricSpace.ProperlyDiscontinuous
 
 /-!
 # The elliptic disc of a point of the upper half-plane
