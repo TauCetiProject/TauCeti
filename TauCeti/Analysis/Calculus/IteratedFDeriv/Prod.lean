@@ -74,9 +74,10 @@ theorem iteratedFDerivWithin_prod_right (hf : ContDiffOn 𝕜 n f (s ×ˢ t))
       (iteratedFDerivWithin 𝕜 m f (s ×ˢ t) (p, x)).compContinuousLinearMap
         (fun _ ↦ ContinuousLinearMap.inr 𝕜 P E) := by
   have ht : UniqueDiffOn 𝕜 t := by
+    have hsnd : Function.Surjective (ContinuousLinearMap.snd 𝕜 P E) :=
+      fun y ↦ ⟨(p, y), rfl⟩
     have h := hst.image (fun _ _ ↦ hasFDerivWithinAt_snd (𝕜 := 𝕜))
-      (fun _ _ ↦ (show Function.Surjective (ContinuousLinearMap.snd 𝕜 P E) from
-        fun y ↦ ⟨(p, y), rfl⟩).denseRange)
+      (fun _ _ ↦ hsnd.denseRange)
     simpa only [snd_image_prod ⟨p, hp⟩] using h
   let g : E →ᴬ[𝕜] P × E :=
     (ContinuousAffineMap.const 𝕜 E p).prod (ContinuousAffineMap.id 𝕜 E)
