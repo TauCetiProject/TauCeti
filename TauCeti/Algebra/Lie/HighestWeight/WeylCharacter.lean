@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.HighestWeight.Character
-public import TauCeti.Algebra.Lie.HighestWeight.Freudenthal
 public import TauCeti.Algebra.Lie.HighestWeight.Separation
-public import TauCeti.Data.Finset.Basic
+import TauCeti.Algebra.Lie.HighestWeight.Freudenthal
+import TauCeti.Data.Finset.Basic
 
 /-!
 # The Casimir scalar on the support of `ch M · Δ`
@@ -189,18 +189,6 @@ private theorem sum_powerset_neg_one_pow_mul_casimirScalar_mul_eq_zero (g : Dual
 
 end Denominator
 
-/-! ### Bilinear preliminaries -/
-
-/-- **The Casimir scalar along a translation**:
-`c(χ + σ) - c(χ) = 2⟨χ + σ, σ⟩ - c(-σ)`. -/
-private theorem casimirScalar_add_sub_casimirScalar (b : (IsKilling.rootSystem H).Base)
-    (chi sigma : Dual K H) :
-    casimirScalar b (chi + sigma) - casimirScalar b chi =
-      2 * invForm (chi + sigma) sigma - casimirScalar b (-sigma) := by
-  have h1 := (invForm_isSymm (H := H)).eq chi sigma
-  simp only [casimirScalar_def, map_add, map_neg, LinearMap.add_apply, LinearMap.neg_apply]
-  linear_combination -h1
-
 /-! ### The Casimir scalar on the support of `ch M · Δ` -/
 
 variable {b : (IsKilling.rootSystem H).Base}
@@ -254,7 +242,7 @@ theorem casimirScalar_eq_of_coeff_formalCharacter_mul_weylDenominator_ne_zero {c
       2 * (∑ i ∈ P, str i (chi + σ T) + ∑ i ∈ T, F i T) -
         casimirScalar b (-σ T) * m (chi + σ T) := fun T ↦ by
     have hfreud := freudenthal_multiplicity_formula hv hgen (chi + σ T)
-    have htrans := casimirScalar_add_sub_casimirScalar b chi (σ T)
+    have htrans := casimirScalar_add_sub_casimirScalar (base := b) chi (σ T)
     have hsum : invForm (chi + σ T) (σ T) = ∑ i ∈ T, invForm (chi + σ T) ((i : Weight K H L) :
         Dual K H) := map_sum _ _ _
     simp only [F, str, m] at hfreud htrans hsum ⊢
@@ -297,10 +285,9 @@ theorem coeff_formalCharacter_mul_weylDenominator_eq_zero_of_isDominantIntegral_
     {nu : Dual K H} (hnu : IsDominantIntegral b nu) (hne : nu ≠ lam) :
     (formalCharacter K H M * weylDenominator (IsKilling.rootSystem H) b).coeff nu = 0 := by
   by_contra h
-  exact
-    casimirScalar_ne_of_isDominantIntegral_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne
-      hv.isDominantIntegral hnu
-      (sub_mem_posRootCone_of_coeff_formalCharacter_mul_weylDenominator_ne_zero hv hgen h) hne
+  have hlam := hv.isDominantIntegral
+  exact hlam.casimirScalar_ne_casimirScalar_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne
+      hnu (sub_mem_posRootCone_of_coeff_formalCharacter_mul_weylDenominator_ne_zero hv hgen h) hne
       (casimirScalar_eq_of_coeff_formalCharacter_mul_weylDenominator_ne_zero hv hgen h).symm
 
 end HighestWeightModule

@@ -83,9 +83,9 @@ in the cone. A nonnegative rational plus a positive one is nonzero.
   action the Casimir element acts by zero.
 * `TauCeti.IsDominantIntegral.exists_nonneg_rat_invForm_of_mem_posRootCone`: a dominant integral
   weight pairs to a nonnegative rational with every member of the positive root cone.
-* `casimirScalar_ne_of_isDominantIntegral_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne`:
-  **the Casimir scalar separates a dominant integral weight from the dominant integral weights
-  strictly below it.**
+* `casimirScalar_ne_casimirScalar_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne` (in the
+  `TauCeti.IsDominantIntegral` namespace): **the Casimir scalar separates a dominant integral
+  weight from the dominant integral weights strictly below it.**
 * `TauCeti.casimirScalar_ne_casimirScalar_of_genWeightSpace_ne_bot_of_isHighestWeightVector`:
   **over an algebraically closed field, the Casimir scalar of a weight of a finite-dimensional
   highest weight module differs from that of the highest weight, except at the highest weight
@@ -257,30 +257,7 @@ private theorem exists_pos_rat_invForm_twoWeylVector {u : Module.Dual K H}
 
 /-! ### Separating dominant integral weights -/
 
-/-- **The difference of two Casimir scalars**, split into a quadratic part and a root part:
-`c(lam) - c(mu) = (⟨lam, lam⟩ - ⟨mu, mu⟩) + ⟨2ρ, lam - mu⟩`. -/
-private theorem casimirScalar_sub_casimirScalar (mu : Module.Dual K H) :
-    casimirScalar base lam - casimirScalar base mu =
-      (invForm lam lam - invForm mu mu) +
-        invForm (twoWeylVector (IsKilling.rootSystem H) base) (lam - mu) := by
-  have hsum : ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) base,
-      (invForm lam ((IsKilling.rootSystem H).root i) -
-        invForm mu ((IsKilling.rootSystem H).root i)) =
-      invForm (twoWeylVector (IsKilling.rootSystem H) base) (lam - mu) := by
-    rw [(invForm_isSymm (H := H)).eq (twoWeylVector (IsKilling.rootSystem H) base) (lam - mu),
-      twoWeylVector_def, map_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ by rw [map_sub, LinearMap.sub_apply]
-  rw [casimirScalar_eq_add_sum (lam := lam), casimirScalar_eq_add_sum (lam := mu), ← hsum,
-    Finset.sum_sub_distrib]
-  ring
-
-omit [CharZero K] [IsTriangularizable K H L] in
-/-- `⟨lam, lam⟩ - ⟨nu, nu⟩ = ⟨lam + nu, lam - nu⟩`, by the symmetry of the invariant form. -/
-private theorem invForm_self_sub_invForm_self (nu : Module.Dual K H) :
-    invForm lam lam - invForm nu nu = invForm (lam + nu) (lam - nu) := by
-  simp only [map_add, map_sub, LinearMap.add_apply]
-  rw [(invForm_isSymm (H := H)).eq nu lam]
-  ring
+namespace IsDominantIntegral
 
 /-- **The Casimir scalar separates a dominant integral weight from the dominant integral weights
 below it**: if `lam` and `nu` are dominant integral, `lam - nu` lies in the positive root cone and
@@ -289,7 +266,7 @@ below it**: if `lam` and `nu` are dominant integral, `lam - nu` lies in the posi
 In the expansion `c(lam) - c(nu) = ⟨lam + nu, lam - nu⟩ + ⟨2ρ, lam - nu⟩` the first summand is a
 nonnegative rational, `lam + nu` being dominant integral, and the second a positive one, `lam - nu`
 being a nonzero member of the cone. -/
-theorem casimirScalar_ne_of_isDominantIntegral_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne
+theorem casimirScalar_ne_casimirScalar_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne
     (hlam : IsDominantIntegral base lam) {nu : Module.Dual K H}
     (hnu : IsDominantIntegral base nu)
     (hle : lam - nu ∈ posRootCone (IsKilling.rootSystem H) base) (hne : nu ≠ lam) :
@@ -302,6 +279,8 @@ theorem casimirScalar_ne_of_isDominantIntegral_of_isDominantIntegral_of_sub_mem_
     have hpos : (0 : ℚ) < q₁ + q₂ := by linarith
     exact_mod_cast hpos.ne'
   exact fun hcon ↦ hne0 (by rw [← hdiff, hcon, sub_self])
+
+end IsDominantIntegral
 
 /-! ### Separating the weights of a highest weight module -/
 
