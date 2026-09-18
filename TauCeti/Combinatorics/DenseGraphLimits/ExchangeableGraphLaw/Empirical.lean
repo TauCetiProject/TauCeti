@@ -19,12 +19,12 @@ take the graphon class of its step graphon. This is the *empirical mixing measur
 `empiricalMixing L n`, the pushforward of `L.law n` along `G ↦ ⟦W_G⟧`.
 
 The point of these measures is that they recover the upper masses of `L` in the limit. The
-average of `t(F, ·)` against `empiricalMixing L n` is, for positive `n`, the mean ordinary
-homomorphism density `E[t(F, G)]` of an `L`-sample `G` on `n` vertices. Its injective
+average of `t(F, ·)` against `empiricalMixing L n` is, for positive `n` (or an empty pattern), the
+mean ordinary homomorphism density `E[t(F, G)]` of an `L`-sample `G` on `n` vertices. Its injective
 counterpart is exact: by consistency of `L`, each of the `(n)_k` vertex embeddings of a `k`-vertex
 pattern `F` sees the pattern with probability `upperMass F`, so `E[t₀(F, G)] = upperMass F`
-whenever `k ≤ n`. The two densities differ by at most the proportion `C(k, 2) / n` of
-non-injective vertex maps, which gives the **collision estimate**
+whenever `k ≤ n`. The two densities differ by at most `C(k, 2) / n`, the union bound on
+the proportion of non-injective vertex maps, which gives the **collision estimate**
 `|∫ t(F, ·) d(empiricalMixing L (n + 1)) - upperMass F| ≤ C(k, 2) / (n + 1)`
 and hence convergence of the empirical hom-density averages to the upper masses. Any weak limit
 point of the empirical mixing measures is therefore a mixing measure with the upper masses of `L`,
@@ -39,7 +39,7 @@ obtained.
 ## Main results
 
 * `TauCeti.DenseGraphLimits.integral_homDensityOnSpace_empiricalMixing` — averaging `t(F, ·)`
-  against an empirical mixing measure of positive sample size is taking the mean homomorphism
+  against an empirical mixing measure is taking the mean homomorphism
   density of a sample;
 * `TauCeti.DenseGraphLimits.abs_integral_homDensityOnSpace_empiricalMixing_sub_le` — the collision
   estimate;
@@ -83,16 +83,23 @@ theorem toMeasure_empiricalMixing (n : ℕ) :
     (empiricalMixing L n : Measure GraphonSpaceI) =
       (L.law n).map fun G => SeparationQuotient.mk (finiteGraphGraphon G) := (rfl)
 
-/-- Averaging a homomorphism density against an empirical mixing measure of positive sample size
-is taking the mean homomorphism density of a sample from the law. Positivity of `n` is needed when
-`V` is nonempty, since the finite density of a nonempty pattern in the empty graph is `0`. -/
+/-- Averaging a homomorphism density against an empirical mixing measure is taking the mean
+homomorphism density of a sample from the law. Positivity of `n` is needed when `V` is nonempty,
+since the finite density of a nonempty pattern in the empty graph is `0`; an empty pattern has
+density `1` on both sides. -/
 theorem integral_homDensityOnSpace_empiricalMixing {V : Type*} [Fintype V] (F : SimpleGraph V)
-    [DecidableRel F.Adj] {n : ℕ} (hn : 0 < n) :
+    [DecidableRel F.Adj] {n : ℕ} (hn : Nonempty V → 0 < n) :
     ∫ x, homDensityOnSpace F x ∂(empiricalMixing L n : Measure GraphonSpaceI) =
       ∫ G, homDensityFin F G ∂L.law n := by
   rw [toMeasure_empiricalMixing, integral_map Measurable.of_discrete.aemeasurable
     (continuous_homDensityOnSpace F).aestronglyMeasurable]
-  simp_rw [homDensityOnSpace_mk, homDensity_finiteGraphGraphon F hn]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun G => ?_)
+  simp only [homDensityOnSpace_mk]
+  rcases n.eq_zero_or_pos with rfl | hn
+  · -- With no sample vertices the pattern is empty, and both densities are `1`.
+    have : IsEmpty V := not_nonempty_iff.mp fun h => (hn h).false
+    simp [homDensity_def, homDensityFin_def, Finset.eq_empty_of_isEmpty F.edgeFinset]
+  · exact homDensity_finiteGraphGraphon F hn G
 
 /-- **The collision estimate.** Averaging `t(F, ·)` against the empirical mixing measure of an
 exchangeable graph law at sample size `n + 1` recovers the upper mass of `F` up to
@@ -101,7 +108,7 @@ theorem abs_integral_homDensityOnSpace_empiricalMixing_sub_le (n : ℕ) {k : ℕ
     (F : SimpleGraph (Fin k)) [DecidableRel F.Adj] :
     |(∫ x, homDensityOnSpace F x ∂(empiricalMixing L (n + 1) : Measure GraphonSpaceI)) -
         L.upperMass F| ≤ (k.choose 2 : ℝ) / (n + 1) := by
-  rw [integral_homDensityOnSpace_empiricalMixing L F n.succ_pos]
+  rw [integral_homDensityOnSpace_empiricalMixing L F fun _ => n.succ_pos]
   exact_mod_cast L.abs_integral_homDensityFin_law_sub_upperMass_le F n.succ_pos
 
 /-- The average of `t(F, ·)` against the empirical mixing measures of an exchangeable graph law

@@ -17,8 +17,8 @@ The level-`m` marginal of an exchangeable graph law `L` is a random `m`-vertex g
 compares the mean homomorphism densities of such a sample with the upper masses of `L`. The
 injective density is exact: by consistency of `L`, each of the `(m)_k` vertex embeddings of a
 `k`-vertex pattern `F` sees the pattern with probability `upperMass F`, so
-`E[t₀(F, G)] = upperMass F` whenever `k ≤ m`. The ordinary density differs from it by at most the
-proportion `C(k, 2) / m` of non-injective vertex maps.
+`E[t₀(F, G)] = upperMass F` whenever `k ≤ m`. The ordinary density differs from it by at most
+`C(k, 2) / m`, the union bound on the proportion of non-injective vertex maps.
 
 ## Main results
 

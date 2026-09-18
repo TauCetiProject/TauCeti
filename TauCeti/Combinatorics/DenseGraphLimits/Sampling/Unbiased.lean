@@ -131,8 +131,8 @@ theorem integral_injHomDensity_eq_of_forall {V W : Type*} [Fintype V] [Fintype W
   exact mul_div_cancel_left₀ c hd
 
 /-- Under any probability measure on host graphs, the mean ordinary and injective homomorphism
-densities of a pattern differ by at most the proportion `C(k, 2) / n` of non-injective vertex maps,
-where `k` and `n` are the numbers of pattern and host vertices. -/
+densities of a pattern differ by at most `C(k, 2) / n`, the union bound on the proportion of
+non-injective vertex maps, where `k` and `n` are the numbers of pattern and host vertices. -/
 theorem abs_integral_homDensityFin_sub_integral_injHomDensity_le {V W : Type*} [Fintype V]
     [Fintype W] (F : SimpleGraph V) (ν : Measure (SimpleGraph W)) [IsProbabilityMeasure ν] :
     |(∫ G, homDensityFin F G ∂ν) - ∫ G, injHomDensity F G ∂ν| ≤
