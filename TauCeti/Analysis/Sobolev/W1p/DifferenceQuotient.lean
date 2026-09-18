@@ -27,7 +27,7 @@ The bound comes from a local translation estimate,
 `‖u(· + h) - u‖_{Lᵖ(K)} ≤ ‖⟪h, ∇u⟫‖_{Lᵖ(T)}`
 
 whenever the segments `[x, x + h]`, `x ∈ K`, lie in `T ⊆ Ω`. For smooth functions this is
-`TauCeti.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply`; it passes to `W^{1,p}(ℝⁿ)` by density of
+`ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply`; it passes to `W^{1,p}(ℝⁿ)` by density of
 the test functions. A general `u ∈ W^{1,p}(Ω)` is first multiplied by a smooth cutoff equal to
 one near the segments and compactly supported in `Ω`, and then extended by zero to the whole
 space; neither operation changes `u` or its gradient near the segments.
@@ -124,8 +124,8 @@ theorem W1p.eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu �
     filter_upwards [hgrad] with x hx
     rw [hx, real_inner_comm, inner_gradient_left]
   rw [Set.mem_ofPred_eq, hL, hR]
-  exact eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply (phi.contDiff.of_le (by simp)) Fact.out hp
-    h hT hKT
+  have hphi : ContDiff ℝ 1 (phi : E → ℝ) := phi.contDiff.of_le (by simp)
+  exact hphi.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply Fact.out hp h hT hKT
 
 /-- **The local translation estimate on `W^{1,p}(Ω)`.** Let `u ∈ W^{1,p}(Ω)`, `1 ≤ p < ∞`, and
 let `K` be compact. If every segment `[x, x + h]` with `x ∈ K` lies in a set `T ⊆ Ω`, then
@@ -188,11 +188,10 @@ theorem W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le (hp : p ≠ ∞) (u : W1p
   · simp
   have hbound := W1p.eLpNorm_value_comp_add_sub_le hp u (t • v) hK hTO hKT
   simp_rw [real_inner_smul_left] at hbound
-  -- `fun x => c * f x` is definitionally `c • f`, so `eLpNorm_const_smul` pulls out scalars.
-  have hmul (c : ℝ) (f : E → ℝ) (ν : Measure E) :
-      eLpNorm (fun x => c * f x) p ν = ‖c‖ₑ * eLpNorm f p ν :=
-    eLpNorm_const_smul c f p ν
-  rw [hmul] at hbound ⊢
+  -- Pointwise multiplication by a real scalar is the function-space scalar action.
+  change eLpNorm (t⁻¹ • fun x => W1p.value u (x + t • v) - W1p.value u x) p (mu.restrict K) ≤ _
+  change _ ≤ eLpNorm (t • fun x => ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict T) at hbound
+  rw [eLpNorm_const_smul] at hbound ⊢
   calc ‖t⁻¹‖ₑ * eLpNorm (fun x => W1p.value u (x + t • v) - W1p.value u x) p (mu.restrict K)
       ≤ ‖t⁻¹‖ₑ * (‖t‖ₑ * eLpNorm (fun x => ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict T)) := by
         gcongr

@@ -45,7 +45,7 @@ exchanging the order of integration.
 * `TauCeti.lintegral_enorm_comp_add_sub_rpow_le`: the translation estimate in `∫⁻` form.
 * `TauCeti.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`: the `Lᵖ` translation estimate for a `C¹`
   function.
-* `TauCeti.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply`: the local form, bounding the increment
+* `ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply`: the local form, bounding the increment
   on a set `K` by the directional derivative on a set containing the segments `[x, x + h]`,
   `x ∈ K`.
 * `TauCeti.tendsto_eLpNorm_comp_add_sub`: continuity of translation in `Lᵖ` for a `C¹` function
@@ -190,8 +190,8 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- The `r`-th power of the segment estimate, in the direction of the increment. Raising to the
 power `r ≥ 1` costs nothing because the segment is parametrized by the probability space
 `Set.Icc 0 1`. -/
-theorem enorm_sub_rpow_le_lintegral_fderiv_apply (hu : ContDiff ℝ 1 u) {r : ℝ}
-    (hr : 1 ≤ r) (x h : E) :
+theorem _root_.ContDiff.enorm_sub_rpow_le_lintegral_fderiv_apply (hu : ContDiff ℝ 1 u)
+    {r : ℝ} (hr : 1 ≤ r) (x h : E) :
     ‖u (x + h) - u x‖ₑ ^ r ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ ^ r := by
   have hr0 : (0 : ℝ) < r := one_pos.trans_le hr
   have hmeas : AEMeasurable (fun t : ℝ => ‖fderiv ℝ u (x + t • h) h‖ₑ)
@@ -219,7 +219,7 @@ private theorem enorm_sub_rpow_le (hu : ContDiff ℝ 1 u) {r : ℝ} (hr : 1 ≤ 
   have hr0 : (0 : ℝ) < r := one_pos.trans_le hr
   calc ‖u (x + h) - u x‖ₑ ^ r
       ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ ^ r :=
-        enorm_sub_rpow_le_lintegral_fderiv_apply hu hr x h
+        hu.enorm_sub_rpow_le_lintegral_fderiv_apply hr x h
     _ ≤ ∫⁻ t in Icc (0 : ℝ) 1, (‖fderiv ℝ u (x + t • h)‖ₑ * ‖h‖ₑ) ^ r := by
         gcongr with t
         exact ContinuousLinearMap.le_opENorm _ _
@@ -299,7 +299,8 @@ segment `[x, x + h]` starting in `K` lies in the measurable set `T`, then
 Only the directional derivative `Du · h` enters, and only on `T`. The proof is that of
 `TauCeti.lintegral_enorm_comp_add_sub_rpow_le`, with the derivative cut off to `T` before the
 order of integration is exchanged. -/
-theorem setLIntegral_enorm_comp_add_sub_rpow_le (hu : ContDiff ℝ 1 u) {r : ℝ} (hr : 1 ≤ r)
+theorem _root_.ContDiff.setLIntegral_enorm_comp_add_sub_rpow_le (hu : ContDiff ℝ 1 u) {r : ℝ}
+    (hr : 1 ≤ r)
     (h : E) {K T : Set E} (hT : MeasurableSet T)
     (hKT : ∀ x ∈ K, ∀ t ∈ Icc (0 : ℝ) 1, x + t • h ∈ T) :
     ∫⁻ x in K, ‖u (x + h) - u x‖ₑ ^ r ∂mu ≤ ∫⁻ x in T, ‖fderiv ℝ u x h‖ₑ ^ r ∂mu := by
@@ -311,7 +312,7 @@ theorem setLIntegral_enorm_comp_add_sub_rpow_le (hu : ContDiff ℝ 1 u) {r : ℝ
   calc ∫⁻ x in K, ‖u (x + h) - u x‖ₑ ^ r ∂mu
       ≤ ∫⁻ x in K, (∫⁻ t in Icc (0 : ℝ) 1, g (x + t • h)) ∂mu := by
         refine setLIntegral_mono hjoint.lintegral_prod_right' fun x hx => ?_
-        refine (enorm_sub_rpow_le_lintegral_fderiv_apply hu hr x h).trans
+        refine (hu.enorm_sub_rpow_le_lintegral_fderiv_apply hr x h).trans
           (setLIntegral_mono' measurableSet_Icc fun t ht => ?_)
         simp [g, indicator_of_mem (hKT x hx t ht)]
     _ ≤ ∫⁻ x, (∫⁻ t in Icc (0 : ℝ) 1, g (x + t • h)) ∂mu := setLIntegral_le_lintegral _ _
@@ -331,7 +332,8 @@ segment `[x, x + h]` starting in `K` lies in the measurable set `T`, then
 Unlike `TauCeti.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`, the right-hand side sees only the
 derivative in the direction `h`, and only on `T`: this is the form in which translation increments
 of a function defined on a domain are controlled away from the boundary. -/
-theorem eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply (hu : ContDiff ℝ 1 u) {p : ℝ≥0∞}
+theorem _root_.ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply (hu : ContDiff ℝ 1 u)
+    {p : ℝ≥0∞}
     (hp : 1 ≤ p) (hp' : p ≠ ∞) (h : E) {K T : Set E} (hT : MeasurableSet T)
     (hKT : ∀ x ∈ K, ∀ t ∈ Icc (0 : ℝ) 1, x + t • h ∈ T) :
     eLpNorm (fun x => u (x + h) - u x) p (mu.restrict K)
@@ -340,7 +342,7 @@ theorem eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply (hu : ContDiff ℝ 1 u) {p 
   have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
   rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp',
     eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp']
-  exact ENNReal.rpow_le_rpow (setLIntegral_enorm_comp_add_sub_rpow_le hu hr h hT hKT)
+  exact ENNReal.rpow_le_rpow (hu.setLIntegral_enorm_comp_add_sub_rpow_le hr h hT hKT)
     (by positivity)
 
 end Translation
