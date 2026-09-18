@@ -44,7 +44,6 @@ theorem TauCeti.Algebra.adjoin_singleton_eq_top_of_finrank_prime
     (hp : Nat.Prime (Module.finrank F E))
     {x : E} (hx : x ∉ (⊥ : IntermediateField F E)) : Algebra.adjoin F {x} = ⊤ := by
   have : FiniteDimensional F E := Module.finite_of_finrank_pos hp.pos
-  rw [← IntermediateField.adjoin_simple_toSubalgebra_of_isAlgebraic
-    (Algebra.IsAlgebraic.isAlgebraic x),
-    TauCeti.IntermediateField.adjoin_simple_eq_top_of_finrank_prime hp hx,
-    IntermediateField.top_toSubalgebra]
+  exact (IntermediateField.adjoin_eq_top_iff_of_isAlgebraic fun x _ =>
+    Algebra.IsAlgebraic.isAlgebraic x).mp
+    (TauCeti.IntermediateField.adjoin_simple_eq_top_of_finrank_prime hp hx)
