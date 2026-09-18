@@ -85,20 +85,17 @@ conflations, so the identity functor compares their exact `K₀` groups. -/
 private noncomputable def toUngraded :
     ExactK0 (E.fullSubcategory R hR hRshift).toExactStructure ≃+
       ExactK0 (E.toExactStructure.fullSubcategory R hR) :=
-  AddMonoidHom.toAddEquiv (ExactK0.ofLE fun S hS => by simpa using hS)
-    (ExactK0.ofLE fun S hS => (fullSubcategory_conflation_iff E R hR hRshift S).mpr
-      ((ExactStructure.fullSubcategory_conflation_iff hR S).mp hS))
-    (ExactK0.hom_ext fun X => by simp) (ExactK0.hom_ext fun X => by simp)
+  ExactK0.ofLEEquiv fun _ => by rw [fullSubcategory_toExactStructure]
 
 @[simp]
 private lemma toUngraded_of (X : R.FullSubcategory) :
     toUngraded E R hR hRshift (ExactK0.of X) = ExactK0.of X :=
-  ExactK0.ofLE_of _ X
+  ExactK0.ofLEEquiv_of _ X
 
 @[simp]
 private lemma toUngraded_symm_of (X : R.FullSubcategory) :
     (toUngraded E R hR hRshift).symm (ExactK0.of X) = ExactK0.of X :=
-  ExactK0.ofLE_of _ X
+  ExactK0.ofLEEquiv_symm_of _ X
 
 /-- Transported to the graded Grothendieck group, the Euler class of a finite `R`-resolution is
 the alternating sum of the graded classes of its terms. -/
@@ -151,8 +148,7 @@ private lemma resolutionAddEquiv_apply (x : LaurentK0 (E.fullSubcategory P hP hs
         AddEquiv.trans_apply, AddEquiv.symm_apply_apply, toUngraded_of,
         ExactStructure.resolutionEquiv_of, toUngraded_symm_of, LinearMap.toAddMonoidHom_coe]
       rw [LaurentK0.ofExactK0_exactK0_of, LaurentK0.ofExactK0_exactK0_of, LaurentK0.map_of]
-      -- `(ObjectProperty.ιOfLE _).obj X` is `⟨X.obj, _⟩` by Mathlib's (exposed) definition
-      rfl
+      exact congrArg _ (ObjectProperty.FullSubcategory.ext (ObjectProperty.ιOfLE_obj_obj _ X).symm)
   exact DFunLike.congr_fun key y
 
 /-- **The graded resolution theorem.** Let `P` be a class of `E`-projectives containing a zero
@@ -186,8 +182,7 @@ theorem laurentResolutionEquiv_of (X : P.FullSubcategory) :
     E.laurentResolutionEquiv hproj hshift (LaurentK0.of _ X) =
       LaurentK0.of _ ⟨X.obj, E.le_admitsFiniteResolution P X.obj X.property⟩ := by
   rw [laurentResolutionEquiv_apply, resolutionAddEquiv_apply, LaurentK0.map_of]
-  -- `(ObjectProperty.ιOfLE _).obj X` is `⟨X.obj, _⟩` by Mathlib's (exposed) definition
-  rfl
+  exact congrArg _ (ObjectProperty.FullSubcategory.ext (ObjectProperty.ιOfLE_obj_obj _ X))
 
 /-- **The inverse of the graded resolution isomorphism is the Euler class**: it sends the class
 of an object of finite `P`-dimension to the alternating sum `[Q₀] - [Q₁] + ⋯ + (-1)ⁿ [Kₙ]` of the
