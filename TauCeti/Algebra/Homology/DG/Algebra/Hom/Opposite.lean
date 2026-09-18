@@ -48,6 +48,7 @@ noncomputable def gradedOpposite (f : DGAlgHom hA hB) :
     simp only [GradedOpposite.map_apply, coe_toGradedAlgHom,
       GradedOpposite.differential_op, GradedOpposite.differential_unop, map_d]
 
+/-- The underlying graded map is the signed opposite of the original underlying graded map. -/
 @[simp]
 theorem gradedOpposite_toGradedAlgHom (f : DGAlgHom hA hB) :
     f.gradedOpposite.toGradedAlgHom = GradedOpposite.map G H f.toGradedAlgHom := (rfl)
@@ -57,11 +58,13 @@ theorem gradedOpposite_apply (f : DGAlgHom hA hB) (x : GradedOpposite G) :
     f.gradedOpposite x = GradedOpposite.op H (f (GradedOpposite.unop G x)) :=
   GradedOpposite.map_apply G H f.toGradedAlgHom x
 
+/-- The opposite DG morphism sends `op a` to `op (f a)`. -/
 @[simp]
 theorem gradedOpposite_op (f : DGAlgHom hA hB) (a : A) :
     f.gradedOpposite (GradedOpposite.op G a) = GradedOpposite.op H (f a) := by
   rw [gradedOpposite_apply, GradedOpposite.unop_op]
 
+/-- Applying `unop` after the opposite DG morphism recovers the original morphism on `unop x`. -/
 @[simp]
 theorem unop_gradedOpposite (f : DGAlgHom hA hB) (x : GradedOpposite G) :
     GradedOpposite.unop H (f.gradedOpposite x) = f (GradedOpposite.unop G x) := by

@@ -357,6 +357,17 @@ private theorem map_mul_aux (f : G.piece →ₐᵍ[R] H.piece) :
       simp only [Units.smul_def, map_zsmul, map_mul]
       exact map_zsmul (opLinearEquiv H) _ _
 
+/-- The underlying algebra homomorphism acts by the original map between `unop` and `op`. -/
+private theorem map_algHom_apply (f : G.piece →ₐᵍ[R] H.piece) (x : GradedOpposite G) :
+    AlgHom.ofLinearMap
+      ((opLinearEquiv H).toLinearMap ∘ₗ
+        f.toAlgHom.toLinearMap ∘ₗ (opLinearEquiv G).symm.toLinearMap)
+      (by simp) (map_mul_aux G H f) x = op H (f (unop G x)) := by
+  exact (AlgHom.ofLinearMap_apply _ _ _ x).trans (by
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
+      opLinearEquiv_apply, opLinearEquiv_symm_apply, AlgHom.toLinearMap_apply,
+      GradedAlgHom.coe_toAlgHom])
+
 /-- A graded algebra homomorphism induces a homomorphism of Koszul-signed opposites. -/
 noncomputable def map (f : G.piece →ₐᵍ[R] H.piece) :
     (grading G).piece →ₐᵍ[R] (grading H).piece where
@@ -365,17 +376,21 @@ noncomputable def map (f : G.piece →ₐᵍ[R] H.piece) :
       f.toAlgHom.toLinearMap ∘ₗ (opLinearEquiv G).symm.toLinearMap)
     (by simp) (map_mul_aux G H f)
   map_mem hx := (mem_piece_iff H _ _).2 <| by
-    simpa [AlgHom.ofLinearMap] using Graded.map_mem f ((mem_piece_iff G _ _).1 hx)
+    exact (congrArg (fun y => unop H y ∈ H.piece _) (map_algHom_apply G H f _)).mpr
+      (by simpa only [unop_op] using Graded.map_mem f ((mem_piece_iff G _ _).1 hx))
 
 /-- On underlying elements, the induced map is the original homomorphism. -/
 theorem map_apply (f : G.piece →ₐᵍ[R] H.piece) (x : GradedOpposite G) :
-    map G H f x = op H (f (unop G x)) := (rfl)
+    map G H f x = op H (f (unop G x)) := by
+  simpa only [map, GradedAlgHom.coe_mk] using map_algHom_apply G H f x
 
+/-- The induced opposite map sends `op a` to `op (f a)`. -/
 @[simp]
 theorem map_op (f : G.piece →ₐᵍ[R] H.piece) (a : A) :
     map G H f (op G a) = op H (f a) := by
   rw [map_apply, unop_op]
 
+/-- Applying `unop` after the induced opposite map recovers the original map on `unop x`. -/
 @[simp]
 theorem unop_map (f : G.piece →ₐᵍ[R] H.piece) (x : GradedOpposite G) :
     unop H (map G H f x) = f (unop G x) := by
