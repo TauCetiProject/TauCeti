@@ -174,21 +174,20 @@ theorem surjective_galActionHom_of_prime_natDegree (hf : f.Monic)
 
 open scoped Classical in
 /-- **The full symmetric group from two reductions.** Let `f` be a monic integral polynomial of
-degree `n`, irreducible over `ℚ`, and let `q` and `r` be primes not dividing `disc f`. Suppose
-that `f` modulo `q` is the product of an irreducible factor of degree `n - 1` and a linear
-factor, and that exactly one irreducible factor of `f` modulo `r` is quadratic, all the others
-having odd degree. Then the Galois group of `f` over `ℚ` induces every permutation of the complex
-roots of `f`.
+degree `n`, irreducible over `ℚ`, and let `q` and `r` be primes. Suppose that `f` modulo `q` is the
+product of an irreducible factor of degree `n - 1` and a linear factor, and that `r` does not
+divide `disc f`, with exactly one irreducible factor of `f` modulo `r` quadratic and all the
+others of odd degree. Then the Galois group of `f` over `ℚ` induces every permutation of the
+complex roots of `f`.
 
 Irreducibility over `ℚ` may itself come from a third prime, modulo which `f` is irreducible. -/
 theorem surjective_galActionHom_of_factorDegrees (hf : f.Monic)
     (hirr : Irreducible (f.map (Int.castRingHom ℚ)))
-    (q : ℕ) [Fact q.Prime] (hq : ¬ (q : ℤ) ∣ f.discr)
-    (hqdeg : f.factorDegrees q = {1, f.natDegree - 1})
+    (q : ℕ) [Fact q.Prime] (hqdeg : f.factorDegrees q = {1, f.natDegree - 1})
     (r : ℕ) [Fact r.Prime] (hr : ¬ (r : ℤ) ∣ f.discr) (htwo : (f.factorDegrees r).count 2 = 1)
     (hodd : ∀ k ∈ f.factorDegrees r, k ≠ 2 → Odd k) :
     Function.Surjective (Gal.galActionHom (f.map (Int.castRingHom ℚ)) ℂ) := by
-  have hcard := natCard_rootSet_complex_eq_natDegree hf fun h => hq (h ▸ dvd_zero _)
+  have hcard := natCard_rootSet_complex_eq_natDegree hf fun h => hr (h ▸ dvd_zero _)
   obtain ⟨τ, hτG, hτ⟩ := exists_isSwap_mem_range_galActionHom hf r hr htwo hodd
   -- A transposition moves two roots, so the degree is at least two; degree two is prime.
   have h2 : 2 ≤ f.natDegree := by
@@ -198,10 +197,16 @@ theorem surjective_galActionHom_of_factorDegrees (hf : f.Monic)
   · exact surjective_galActionHom_of_prime_natDegree hf hirr (h2 ▸ Nat.prime_two) r hr htwo hodd
   -- In degree at least three, the type `(1, n - 1)` exhibits a cycle fixing exactly one root,
   -- which makes the transitive Galois image primitive.
+  have hq : ¬ (q : ℤ) ∣ f.discr := (hf.separable_map_zmod_iff_not_dvd_discr q).mp <| by
+    rw [PerfectField.separable_iff_squarefree]
+    apply squarefree_map_of_nodup_factorDegrees (hf.map _).ne_zero
+    rw [hqdeg]
+    simpa using (show 1 ≠ f.natDegree - 1 by omega)
   obtain ⟨σ, hσG, hσ⟩ := exists_mem_range_galActionHom_fullCycleType_eq_factorDegrees hf q hq
   have hcyc : σ.cycleType = {f.natDegree - 1} := by
     rw [← filter_fullCycleType_eq_cycleType, hσ, hqdeg]
-    simp [show 2 ≤ f.natDegree - 1 by omega, Multiset.filter_singleton]
+    have hn : 2 ≤ f.natDegree - 1 := by omega
+    simp [hn, Multiset.filter_singleton]
   obtain ⟨hcyc, hsupp⟩ := cycleType_eq_singleton_iff.mp hcyc
   have := isPretransitive_range_galActionHom ℂ hirr
   have hprim := isPreprimitive_of_isCycle_mem_of_card_support_add_one_eq_card _ hcyc hσG

@@ -289,6 +289,7 @@ theorem _root_.Equiv.Perm.filter_fullCycleType_eq_cycleType {σ : Equiv.Perm α}
 
 /-- A permutation has a single cycle length `n`, and no other, exactly when it is a cycle
 moving `n` points. -/
+@[simp]
 theorem _root_.Equiv.Perm.cycleType_eq_singleton_iff {σ : Equiv.Perm α} {n : ℕ} :
     σ.cycleType = {n} ↔ σ.IsCycle ∧ σ.support.card = n := by
   refine ⟨fun h => ⟨card_cycleType_eq_one.mp (by rw [h, Multiset.card_singleton]), ?_⟩,
