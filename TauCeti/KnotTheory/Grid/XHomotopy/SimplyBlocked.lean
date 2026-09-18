@@ -18,11 +18,11 @@ public import TauCeti.KnotTheory.Grid.XHomotopy.Complex
 
 Blocking the `O`-marking of column `i` specializes the unblocked grid complex `GC⁻` at `V_i = 0`
 to the simply blocked complex `GC^`, a complex over `R[V_c | c ≠ i]`. The `X`-marking homotopy
-`H_k` of `GC⁻` specializes in the same way to a map `Ĥ_k` of `GC^`
+`H_k` of `GC⁻` specializes in the same way to a map `hat H_k` of `GC^`
 (`simplyBlockedXHomotopy`), and specializing the homotopy identity `∂⁻ ∘ H_k + H_k ∘ ∂⁻ = V_k + V_j`
 gives
 
-`∂^ ∘ Ĥ_k + Ĥ_k ∘ ∂^ = V_k + V_j` with `V_i` read as zero
+`∂^ ∘ hat H_k + hat H_k ∘ ∂^ = V_k + V_j` with `V_i` read as zero
 
 (`simplyBlockedDifferential_comp_simplyBlockedXHomotopy_add_simplyBlockedXHomotopy_comp`), where
 `O_j` is the `O`-marking in the row of `X_k`. So, as for `GC⁻`, the variables of two consecutive
@@ -31,11 +31,11 @@ acts by zero, every variable on the component of the blocked marking acts by zer
 (`homologyMap_X_smul_simplyBlockedComplex_eq_zero_of_sameCycle`).
 
 For a knot grid all markings lie on one component, so every variable acts by zero on the simply
-blocked grid homology `GĤ` (`IsKnot.X_smul_simplyBlockedHomology`), and a polynomial acts through
+blocked grid homology `G-hat` (`IsKnot.X_smul_simplyBlockedHomology`), and a polynomial acts through
 its constant coefficient (`IsKnot.smul_simplyBlockedHomology`). The chain module of `GC^` is
 finitely generated over the Noetherian ring `R[V_c | c ≠ i]` when `R` is Noetherian, hence so is
-`GĤ`; and since the variables act by zero, `GĤ` is then finitely generated over `R` itself
-(`IsKnot.finite_restrictScalars_simplyBlockedHomology`). Over a field `GĤ` is thus a
+`G-hat`; and since the variables act by zero, `G-hat` is then finitely generated over `R` itself
+(`IsKnot.finite_restrictScalars_simplyBlockedHomology`). Over a field `G-hat` is thus a
 finite-dimensional vector space, although the complex computing it is not.
 
 ## Main definitions
@@ -48,23 +48,23 @@ finite-dimensional vector space, although the complex computing it is not.
 ## Main results
 
 * `TauCeti.GridDiagram.simplyBlockedSpecialization_XHomotopy`: specialization intertwines `H_k`
-  with `Ĥ_k`.
+  with `hat H_k`.
 * `simplyBlockedDifferential_comp_simplyBlockedXHomotopy_add_simplyBlockedXHomotopy_comp`: the
   specialized homotopy identity.
 * `TauCeti.GridDiagram.homologyMap_X_smul_simplyBlockedComplex_eq_zero_of_sameCycle`: the variables
   on the component of the blocked marking act by zero on homology.
 * `TauCeti.GridDiagram.IsKnot.X_smul_simplyBlockedHomology` and
   `TauCeti.GridDiagram.IsKnot.smul_simplyBlockedHomology`: on a knot grid every variable acts by
-  zero on `GĤ`, and a polynomial acts through its constant coefficient.
+  zero on `G-hat`, and a polynomial acts through its constant coefficient.
 * `TauCeti.GridDiagram.IsKnot.finite_simplyBlockedHomology` and
   `TauCeti.GridDiagram.IsKnot.finite_restrictScalars_simplyBlockedHomology`: over a Noetherian
-  coefficient ring `GĤ` is finitely generated, over `R[V_c | c ≠ i]` and over `R`.
+  coefficient ring `G-hat` is finitely generated, over `R[V_c | c ≠ i]` and over `R`.
 
 ## References
 
 This follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 4.6: by
 Lemma 4.6.9 the variables of a knot grid act identically on grid homology, so on the simply blocked
-theory, where one of them is zero, they all act by zero and `GĤ` is a finite-dimensional vector
+theory, where one of them is zero, they all act by zero and `G-hat` is a finite-dimensional vector
 space.
 -/
 
@@ -134,9 +134,9 @@ theorem simplyBlockedSpecialization_XHomotopy (i k : Fin n) (c : GridChainMinus 
 
 variable [CharP R 2]
 
-/-- The homotopy identity `∂^ ∘ Ĥ_k + Ĥ_k ∘ ∂^ = V_k + V_j` on the simply blocked chain module in
-characteristic two, where `O_j` is the `O`-marking in the row of `X_k` and the variable `V_i` of
-the blocked column is read as zero. -/
+/-- The homotopy identity `∂^ ∘ hat H_k + hat H_k ∘ ∂^ = V_k + V_j` on the simply blocked chain
+module in characteristic two, where `O_j` is the `O`-marking in the row of `X_k` and the variable
+`V_i` of the blocked column is read as zero. -/
 theorem simplyBlockedDifferential_comp_simplyBlockedXHomotopy_add_simplyBlockedXHomotopy_comp
     (i k : Fin n) :
     G.simplyBlockedDifferential R i ∘ₗ G.simplyBlockedXHomotopy R i k +
@@ -166,9 +166,9 @@ end Specialization
 
 variable (R : Type*) [CommRing R] [CharP R 2]
 
-/-- The specialized `X`-marking homotopy `Ĥ_k` as a chain homotopy on the simply blocked complex,
-from multiplication by `V_k` to multiplication by `V_j`, where `O_j` is the `O`-marking in the row
-of `X_k` and the variable `V_i` of the blocked column is read as zero. -/
+/-- The specialized `X`-marking homotopy `hat H_k` as a chain homotopy on the simply blocked
+complex, from multiplication by `V_k` to multiplication by `V_j`, where `O_j` is the `O`-marking in
+the row of `X_k` and the variable `V_i` of the blocked column is read as zero. -/
 noncomputable def simplyBlockedComplexXHomotopy (i k : Fin n) :
     Homotopy
       (MvPolynomial.killCompl (σ := {c : Fin n // c ≠ i}) Subtype.val_injective
@@ -275,8 +275,8 @@ theorem finite_restrictScalars_simplyBlockedHomology [IsNoetherianRing R] (i : F
       (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)).obj
         (hG.simplyBlockedHomology R i)) := by
   obtain ⟨s, hs⟩ := (hG.finite_simplyBlockedHomology R i).fg_top
-  -- Restriction of scalars keeps the carrier of `GĤ`, so `s` also lists elements of it, and every
-  -- `R[V_c | c ≠ i]`-combination of `s` is an `R`-combination.
+  -- Restriction of scalars keeps the carrier of `G-hat`, so `s` also lists elements of it, and
+  -- every `R[V_c | c ≠ i]`-combination of `s` is an `R`-combination.
   let N : ModuleCat R := (ModuleCat.restrictScalars
     (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)).obj
       (hG.simplyBlockedHomology R i)
