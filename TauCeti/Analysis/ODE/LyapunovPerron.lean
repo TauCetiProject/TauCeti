@@ -34,7 +34,7 @@ splitting. For a globally `ε`-Lipschitz nonlinearity `N`, the *Lyapunov--Perron
 `y t = exp (t A) (P ξ) + ∫₀ᵗ exp ((t - s) A) (P (N (y s))) ds
   - ∫ₜ^∞ exp ((t - s) A) (N (y s) - P (N (y s))) ds`
 
-builds a bounded forward solution of `y' = A y + N y` out of the datum `ξ`.
+builds a bounded forward solution of `y' = A y + N y` from the input parameter `ξ`.
 
 This file shows that when `2 K ε < α` the right-hand side is a contraction of the complete space
 of bounded continuous functions on `[0, ∞)`. Its unique fixed point
@@ -319,14 +319,13 @@ variable
   (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
   (hα : 0 < α) (hN : LipschitzWith ε N)
 
-/-- The **Lyapunov--Perron operator** of `y' = A y + N y` with stable datum `ξ`, acting on bounded
-continuous functions on `[0, ∞)`:
+/-- The **Lyapunov--Perron operator** of `y' = A y + N y` with input parameter `ξ`, acting on
+bounded continuous functions on `[0, ∞)`:
 
 `γ ↦ (t ↦ exp (t A) (P ξ) + lyapunovPerronIntegral A P (N ∘ γ) t)`.
 
-It is the integral form of `y' = A y + N y` in which the part `P (y 0)` of the initial value is
-prescribed to be `P ξ` and the remaining part `y 0 - P (y 0)` is determined by the requirement
-that the solution stay bounded. -/
+Here `P ξ` is only the parameter in the homogeneous term. Without projection and commutation
+hypotheses on `P`, it is not identified with `P (y 0)`. -/
 def lyapunovPerronMap (ξ : X) (γ : ℝ≥0 →ᵇ X) : ℝ≥0 →ᵇ X :=
   BoundedContinuousFunction.ofNormedAddCommGroup
     (fun t : ℝ≥0 ↦ exp ((t : ℝ) • A) (P ξ) +
@@ -375,7 +374,7 @@ theorem contractingWith_lyapunovPerronMap (hsmall : 2 * K * ε < α) (ξ : X) :
   ⟨(div_lt_one hα).2 hsmall, LipschitzWith.of_dist_le_mul fun γ η ↦ by
     simpa using dist_lyapunovPerronMap_le hs hu hα hN ξ γ η⟩
 
-/-- Changing the stable datum moves the Lyapunov--Perron operator by at most `K ‖ξ - ζ‖`. -/
+/-- Changing the input parameter moves the Lyapunov--Perron operator by at most `K ‖ξ - ζ‖`. -/
 theorem dist_lyapunovPerronMap_lyapunovPerronMap_le (ξ ζ : X) (γ : ℝ≥0 →ᵇ X) :
     dist (lyapunovPerronMap A P N hs hu hα hN ξ γ) (lyapunovPerronMap A P N hs hu hα hN ζ γ) ≤
       K * dist ξ ζ := by
@@ -391,7 +390,7 @@ theorem dist_lyapunovPerronMap_lyapunovPerronMap_le (ξ ζ : X) (γ : ℝ≥0 �
 
 variable (A P N)
 
-/-- The **Lyapunov--Perron solution** with stable datum `ξ`: the unique fixed point of the
+/-- The **Lyapunov--Perron solution** with input parameter `ξ`: the unique fixed point of the
 Lyapunov--Perron operator, when `2 K ε < α`. -/
 def lyapunovPerronSolution (hsmall : 2 * K * ε < α) (ξ : X) : ℝ≥0 →ᵇ X :=
   ContractingWith.fixedPoint _ (contractingWith_lyapunovPerronMap hs hu hα hN hsmall ξ)
@@ -419,7 +418,7 @@ theorem eq_lyapunovPerronSolution {ξ : X} {γ : ℝ≥0 →ᵇ X}
     γ = lyapunovPerronSolution A P N hs hu hα hN hsmall ξ :=
   ContractingWith.fixedPoint_unique _ <| BoundedContinuousFunction.ext fun t ↦ (hγ t).symm
 
-/-- The Lyapunov--Perron solution depends Lipschitz-continuously on the stable datum. -/
+/-- The Lyapunov--Perron solution depends Lipschitz-continuously on the input parameter. -/
 theorem lipschitzWith_lyapunovPerronSolution :
     LipschitzWith (K / (1 - 2 * K * ε / α)) (lyapunovPerronSolution A P N hs hu hα hN hsmall) := by
   have hlt : 2 * K * ε / α < 1 := (div_lt_one hα).2 hsmall
@@ -433,8 +432,8 @@ theorem lipschitzWith_lyapunovPerronSolution :
   calc _ ≤ K * dist ξ ζ / (1 - ((2 * K * ε / α : ℝ≥0) : ℝ)) := h
     _ = _ := by ring
 
-/-- If the nonlinearity vanishes at the origin, the Lyapunov--Perron solution with zero stable
-datum is the zero solution. -/
+/-- If the nonlinearity vanishes at the origin, the Lyapunov--Perron solution with zero input
+parameter is the zero solution. -/
 @[simp]
 theorem lyapunovPerronSolution_zero (hN0 : N 0 = 0) :
     lyapunovPerronSolution A P N hs hu hα hN hsmall 0 = 0 := by
