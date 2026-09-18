@@ -18,6 +18,9 @@ gives the corresponding natural isomorphism between ordinary and relative singul
 
 This is the quotient-chain comparison for the empty subspace, following the relative singular
 chain construction in Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
+The formal infrastructure is Mathlib's relative simplicial chains: the comparison is the
+quotient natural transformation `SSetPair.chainComplexFunctorπ`, and its invertibility for a
+pair whose subcomplex is empty is Mathlib's `SSetPair.isIso_chainComplexπ`.
 -/
 
 public section
