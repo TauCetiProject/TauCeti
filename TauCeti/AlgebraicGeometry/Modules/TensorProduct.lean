@@ -51,7 +51,7 @@ noncomputable abbrev _root_.AlgebraicGeometry.Scheme.Modules.tensorProduct
 
 open CategoryTheory
 
-/-- The symmetric monoidal category structure on `𝒪ₓ`-modules: the tensor product sheafifies the
+/-- The monoidal category structure on `𝒪ₓ`-modules: the tensor product sheafifies the
 sectionwise tensor product, and the unit is the structure sheaf. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.instMonoidalCategory :
     MonoidalCategory X.Modules :=
