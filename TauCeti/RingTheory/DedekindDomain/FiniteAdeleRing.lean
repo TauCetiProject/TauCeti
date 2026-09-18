@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.Approximation
 
 /-!
 # The finite adele ring: separation, integral elements, and strong approximation
@@ -37,8 +37,6 @@ approximates `a`.
 
 * `IsDedekindDomain.FiniteAdeleRing.forall_algebraMap_mem_adicCompletionIntegers_iff`: the diagonal
   image of `x : K` is integral at every finite place if and only if `x` lies in `R`.
-* `IsDedekindDomain.HeightOneSpectrum.exists_forall_valued_sub_le`: finitely many local integers
-  are simultaneously approximated by one element of `R`.
 * `IsDedekindDomain.FiniteAdeleRing.mul_nonZeroDivisor_mem_adicCompletionIntegers`: a finite adele
   has a common denominator in `R`.
 * `IsDedekindDomain.FiniteAdeleRing.exists_forall_valued_sub_le_and_forall_valued_sub_le_one`:
@@ -87,24 +85,6 @@ open HeightOneSpectrum WithZero Topology
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] {K : Type*} [Field K] [Algebra R K]
   [IsFractionRing R K]
-
-/-- **Simultaneous approximation by elements of `R`.** Finitely many elements of the rings of
-integers `𝒪_v` of the completions of `K` are approximated by a single element of `R`, to any
-prescribed precision at each of the finitely many places. -/
-theorem HeightOneSpectrum.exists_forall_valued_sub_le (s : Finset (HeightOneSpectrum R))
-    (x : ∀ v : HeightOneSpectrum R, v.adicCompletionIntegers K) (n : HeightOneSpectrum R → ℕ) :
-    ∃ r : R, ∀ v ∈ s,
-      Valued.v ((x v : v.adicCompletion K) - algebraMap R (v.adicCompletion K) r) ≤
-        exp (-(n v : ℤ)) := by
-  choose a ha using fun v : HeightOneSpectrum R ↦ v.exists_valued_sub_le (x v) (n v)
-  obtain ⟨r, hr⟩ := exists_forall_sub_mem_ideal (s := s) (fun v ↦ v.asIdeal) n
-    (fun v _ ↦ v.prime) (fun _ _ _ _ hvw h ↦ hvw (HeightOneSpectrum.ext h)) (fun v ↦ a v)
-  refine ⟨r, fun v hv ↦ ?_⟩
-  rw [← sub_add_sub_cancel _ (algebraMap R (v.adicCompletion K) (a v))]
-  refine Valuation.map_add_le _ (ha v) ?_
-  rw [← map_sub, valuedAdicCompletion_eq_valuation, valuation_of_algebraMap,
-    Valuation.map_sub_swap, intValuation_le_pow_iff_mem]
-  exact hr v hv
 
 namespace FiniteAdeleRing
 
