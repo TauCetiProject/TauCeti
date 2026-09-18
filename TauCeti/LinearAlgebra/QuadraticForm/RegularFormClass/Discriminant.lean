@@ -97,9 +97,10 @@ theorem equivalent_presentedForm_hyperbolicPlane_of_squareClass_prod_eq_neg_one
     rw [← squareClass_eq_iff_isSquare_mul]
     simpa only [one_mul] using h
   rw [presentedForm_eq_weightedSumSquares_coe]
-  rw [show (fun i ↦ (w i : K)) = ![(w 0 : K), (w 1 : K)] by
-    funext i
-    fin_cases i <;> rfl]
+  have hweights : (fun i ↦ (w i : K)) = ![(w 0 : K), (w 1 : K)] := by
+    ext i
+    fin_cases i <;> rfl
+  rw [hweights]
   exact equivalent_weightedSumSquares_hyperbolicPlane_of_isSquare hdisc
 
 namespace RegularFormClass

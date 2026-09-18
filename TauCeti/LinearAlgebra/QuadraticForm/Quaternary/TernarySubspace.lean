@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
+public import TauCeti.LinearAlgebra.QuadraticForm.Quaternary.Basic
 
 /-!
 # Ternary subspaces of quaternary quadratic spaces
@@ -21,9 +21,6 @@ field-theoretic step used in the square-discriminant case of the quaternary Hass
 
 ## Main results
 
-* `QuadraticMap.Nondegenerate.equivalent_hyperbolicPlane_prod_self`: a regular isotropic
-  quaternary form over a field in which two is invertible and with square discriminant is the sum
-  of two hyperbolic planes.
 * `QuadraticMap.Nondegenerate.not_anisotropic_restrict_of_finrank_ge_three`: isotropy of such an
   ambient form implies isotropy of any restriction of dimension at least three.
 * `QuadraticMap.Nondegenerate.not_anisotropic_restrict_iff_of_finrank_ge_three`: isotropy of a
@@ -45,41 +42,6 @@ universe u v
 
 variable {K : Type u} [Field K] [Invertible (2 : K)]
 variable {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-
-/-- Over a field in which two is invertible, a regular isotropic quaternary form with square
-discriminant is isometric to the orthogonal sum of two hyperbolic planes. -/
-theorem _root_.QuadraticMap.Nondegenerate.equivalent_hyperbolicPlane_prod_self
-    {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) (hrank : Module.finrank K V = 4)
-    (hdiscr : RegularFormClass.discr (formClass Q hQ) = 0) (hiso : ¬ Q.Anisotropic) :
-    Q.Equivalent ((hyperbolicPlane K).prod (hyperbolicPlane K)) := by
-  obtain ⟨p, hp⟩ := exists_hyperbolicPlane_prod_equivalent Q hQ hiso
-  have hpRank : p.1 = 2 := by
-    obtain ⟨e⟩ := hp
-    have hfin := e.toLinearEquiv.finrank_eq
-    simp only [Module.finrank_prod, Module.finrank_fin_fun] at hfin
-    rw [hrank] at hfin
-    omega
-  obtain ⟨_, w⟩ := p
-  subst hpRank
-  have hprodNondegenerate :
-      ((hyperbolicPlane K).prod (presentedForm ⟨2, w⟩)).Nondegenerate :=
-    nondegenerate_hyperbolicPlane.prod (nondegenerate_presentedForm ⟨2, w⟩)
-  have hclass : formClass Q hQ =
-      hyperbolicClass K + formClass (presentedForm ⟨2, w⟩)
-        (nondegenerate_presentedForm ⟨2, w⟩) := by
-    rw [← formClass_hyperbolicPlane, ← formClass_prod]
-    exact (formClass_eq_iff Q hQ _ hprodNondegenerate).mpr hp
-  have hwDiscr : RegularFormClass.discr
-      (formClass (presentedForm ⟨2, w⟩) (nondegenerate_presentedForm ⟨2, w⟩)) =
-        squareClass (-1 : Kˣ) := by
-    have hd := congrArg RegularFormClass.discr hclass
-    rw [hdiscr, RegularFormClass.discr_add,
-      RegularFormClass.discr_hyperbolicClass] at hd
-    exact (add_eq_zero_iff_neg_eq.mp hd.symm).symm.trans (ZModModule.neg_eq_self _)
-  rw [formClass_presentedForm, RegularFormClass.discr_mk, Fin.prod_univ_two] at hwDiscr
-  have hwHyperbolic :=
-    equivalent_presentedForm_hyperbolicPlane_of_squareClass_prod_eq_neg_one w hwDiscr
-  exact hp.trans (QuadraticMap.Equivalent.prod (QuadraticMap.Equivalent.refl _) hwHyperbolic)
 
 /-- Parametrises a totally isotropic plane in `H ⊥ H` by diagonal vectors in each factor. -/
 private def hyperbolicPlaneProdIsotropicMap :
