@@ -26,10 +26,14 @@ needed for categorical kernels and images.
 
 ## Main declarations
 
+* `TauCeti.Hodge.IsHodgeBigrading.comap_subtype`: a Hodge bigrading restricts to a rational
+  subspace spanned by its intersections with the pieces.
 * `TauCeti.Hodge.MixedHodgeStructure.IsSubstructure.hodgeStructure`: the mixed Hodge structure
   induced on a rational subspace.
 * `TauCeti.Hodge.MixedHodgeStructure.IsSubstructure.inclusion`: the inclusion of the induced
   structure into the ambient mixed Hodge structure.
+* `TauCeti.Hodge.MixedHodgeStructure.IsSubstructure.hodgeStructure_deligneSplitting`: the Deligne
+  bigrading of the induced structure is the intersection with the ambient one.
 
 ## References
 
@@ -42,158 +46,130 @@ namespace TauCeti.Hodge
 
 universe u v w
 
-namespace MixedHodgeStructure.IsSubstructure
-
 variable {Vℤ : Type u} {Vℚ : Type v} {Vℂ : Type w}
 variable [AddCommGroup Vℤ] [AddCommGroup Vℚ] [Module ℚ Vℚ]
 variable [AddCommGroup Vℂ] [Module ℂ Vℂ]
 variable {ιℚ : Vℤ →ₗ[ℤ] Vℚ} {ιℂ : Vℤ →ₗ[ℤ] Vℂ}
 variable {hℚ : IsBaseChange ℚ ιℚ} {hℂ : IsBaseChange ℂ ιℂ}
-variable {mhs : MixedHodgeStructure hℚ hℂ} {U : Submodule ℚ Vℚ}
 
-private def subWeightFiltration (mhs : MixedHodgeStructure hℚ hℂ) (U : Submodule ℚ Vℚ)
-    (k : ℤ) : Submodule ℚ U :=
-  (mhs.WQ k).comap U.subtype
-
-private noncomputable def subHodgeFiltration (mhs : MixedHodgeStructure hℚ hℂ)
-    (U : Submodule ℚ Vℚ) (p : ℤ) :
-    Submodule ℂ (rationalToComplexSubmodule hℚ hℂ U) :=
-  (mhs.F p).comap (rationalToComplexSubmodule hℚ hℂ U).subtype
-
-private noncomputable def subBigrading (mhs : MixedHodgeStructure hℚ hℂ)
-    (U : Submodule ℚ Vℚ) (pq : ℤ × ℤ) :
-    Submodule ℂ (rationalToComplexSubmodule hℚ hℂ U) :=
-  (mhs.deligneSplittingFamily pq).comap
-    (rationalToComplexSubmodule hℚ hℂ U).subtype
-
-variable (hU : mhs.IsSubstructure U)
-
-/-- Complexifying an induced weight step gives the intersection of the ambient complex weight
-step with the complexification of the subspace. -/
-private theorem rationalToComplexSubmodule_subWeightFiltration (k : ℤ) :
+/-- Complexifying the trace of a rational subspace `V` on a rational subspace `U` gives the trace
+of the complexification of `V` on the complexification of `U`. -/
+private theorem rationalToComplexSubmodule_comap_subtype (U V : Submodule ℚ Vℚ) :
     rationalToComplexSubmodule (isBaseChange_integralSubmoduleToRational hℚ U)
-      (isBaseChange_integralSubmoduleToComplex hℚ hℂ U) (subWeightFiltration mhs U k) =
-      (mhs.WC k).comap (rationalToComplexSubmodule hℚ hℂ U).subtype := by
+      (isBaseChange_integralSubmoduleToComplex hℚ hℂ U) (V.comap U.subtype) =
+      (rationalToComplexSubmodule hℚ hℂ V).comap (rationalToComplexSubmodule hℚ hℂ U).subtype := by
   apply Submodule.map_injective_of_injective
     (rationalToComplexSubmodule hℚ hℂ U).subtype_injective
   conv_lhs =>
     rw [← rationalMapToComplex_subtype hℚ hℂ U, map_rationalToComplexSubmodule]
-  rw [subWeightFiltration, Submodule.map_comap_subtype, Submodule.map_comap_subtype,
-    rationalToComplexSubmodule_inf, MixedHodgeStructure.WC_def]
+  rw [Submodule.map_comap_subtype, Submodule.map_comap_subtype, rationalToComplexSubmodule_inf]
 
-/-- Conjugation exchanges the restricted bigrading pieces modulo the induced lower weight
-filtration. -/
-private theorem map_latticeConj_subBigrading_le (hU : mhs.IsSubstructure U) (pq : ℤ × ℤ) :
-    (subBigrading mhs U pq).map
-        (latticeConj (isBaseChange_integralSubmoduleToComplex hℚ hℂ U)) ≤
-      subBigrading mhs U pq.swap ⊔
-        rationalToComplexSubmodule (isBaseChange_integralSubmoduleToRational hℚ U)
-          (isBaseChange_integralSubmoduleToComplex hℚ hℂ U)
-          (subWeightFiltration mhs U (pq.1 + pq.2 - 1)) := by
-  rw [← latticeConjugation_toLinearMap,
-    latticeConjugation_integralSubmoduleToComplex,
-    subBigrading,
-    Conjugation.map_restrict_comap_subtype]
-  rw [rationalToComplexSubmodule_subWeightFiltration (mhs := mhs) (U := U)]
-  rw [← Submodule.map_le_map_iff_of_injective
-    (rationalToComplexSubmodule hℚ hℂ U).subtype_injective]
-  simp only [Submodule.map_sup, Submodule.map_comap_subtype, subBigrading]
-  simp only [MixedHodgeStructure.deligneSplittingFamily_apply, Prod.fst_swap,
-    Prod.snd_swap, latticeConjugation_toLinearMap]
-  let P : ℤ × ℤ → Prop := fun rs ↦
-    rs = pq.swap ∨ rs.1 + rs.2 ≤ pq.1 + pq.2 - 1
-  have hsup : mhs.deligneSplitting pq.2 pq.1 ⊔ mhs.WC (pq.1 + pq.2 - 1) ≤
-      ⨆ (rs : ℤ × ℤ) (_ : P rs), mhs.deligneSplitting rs.1 rs.2 := by
-    refine sup_le (le_iSup₂_of_le pq.swap (Or.inl rfl) ?_) ?_
-    · simpa only [Prod.fst_swap, Prod.snd_swap] using
-        (le_rfl : mhs.deligneSplitting pq.2 pq.1 ≤ mhs.deligneSplitting pq.2 pq.1)
-    rw [mhs.WC_eq_iSup_deligneSplitting]
-    exact iSup₂_le fun rs hrs ↦ le_iSup₂_of_le rs (Or.inr hrs) le_rfl
-  calc
-    rationalToComplexSubmodule hℚ hℂ U ⊓
-        (mhs.deligneSplitting pq.1 pq.2).map (latticeConj hℂ) ≤
-        rationalToComplexSubmodule hℚ hℂ U ⊓
-          (mhs.deligneSplitting pq.2 pq.1 ⊔ mhs.WC (pq.1 + pq.2 - 1)) :=
-      inf_le_inf_left _ <| (mhs.map_latticeConj_deligneSplitting_le_sup_WC pq.1 pq.2).trans
-        (sup_le_sup_left (mhs.WC_monotone
-          (by omega : pq.1 + pq.2 - 2 ≤ pq.1 + pq.2 - 1)) _)
-    _ ≤ rationalToComplexSubmodule hℚ hℂ U ⊓
-        ⨆ (rs : ℤ × ℤ) (_ : P rs), mhs.deligneSplitting rs.1 rs.2 :=
-      inf_le_inf_left _ hsup
-    _ = (⨆ (rs : ℤ × ℤ) (_ : P rs), mhs.deligneSplitting rs.1 rs.2) ⊓
-        rationalToComplexSubmodule hℚ hℂ U := inf_comm _ _
-    _ = ⨆ (rs : ℤ × ℤ) (_ : P rs),
-        rationalToComplexSubmodule hℚ hℂ U ⊓ mhs.deligneSplitting rs.1 rs.2 := by
-      simpa only [MixedHodgeStructure.deligneSplittingFamily_apply] using
-        hU.iSup₂_deligneSplittingFamily_inf P
-    _ ≤ (rationalToComplexSubmodule hℚ hℂ U ⊓
-          mhs.deligneSplitting pq.2 pq.1) ⊔
-        (rationalToComplexSubmodule hℚ hℂ U ⊓
-          mhs.WC (pq.1 + pq.2 - 1)) := by
-      refine iSup₂_le fun rs hrs ↦ ?_
-      rcases hrs with rfl | hrs
-      · exact le_sup_left
-      · exact le_sup_of_le_right (inf_le_inf_left _ <|
-          (mhs.deligneSplitting_le_WC rs.1 rs.2).trans (mhs.WC_monotone hrs))
+namespace IsHodgeBigrading
 
-/-- The intersections with the ambient Deligne pieces form a Hodge bigrading for the induced
-filtrations. -/
-private theorem isHodgeBigrading (hU : mhs.IsSubstructure U) :
+variable {WQ : ℤ → Submodule ℚ Vℚ} {F : ℤ → Submodule ℂ Vℂ} {I : ℤ × ℤ → Submodule ℂ Vℂ}
+
+/-- **Restricting a Hodge bigrading to a rational subspace.** If the complexification of a
+rational subspace `U` is spanned by its intersections with the pieces of a Hodge bigrading, then
+these intersections form a Hodge bigrading for the filtrations intersected with `U`. -/
+theorem comap_subtype (h : IsHodgeBigrading hℚ hℂ WQ F I) {U : Submodule ℚ Vℚ}
+    (hU : rationalToComplexSubmodule hℚ hℂ U ≤
+      ⨆ pq : ℤ × ℤ, rationalToComplexSubmodule hℚ hℂ U ⊓ I pq) :
     IsHodgeBigrading (isBaseChange_integralSubmoduleToRational hℚ U)
-      (isBaseChange_integralSubmoduleToComplex hℚ hℂ U) (subWeightFiltration mhs U)
-      (subHodgeFiltration mhs U) (subBigrading mhs U) := by
+      (isBaseChange_integralSubmoduleToComplex hℚ hℂ U) (fun k ↦ (WQ k).comap U.subtype)
+      (fun p ↦ (F p).comap (rationalToComplexSubmodule hℚ hℂ U).subtype)
+      (fun pq ↦ (I pq).comap (rationalToComplexSubmodule hℚ hℂ U).subtype) := by
+  -- A sum of pieces traces on the complexification of `U` in the sum of the traces of those
+  -- pieces.
+  have key (P : ℤ × ℤ → Prop) :
+      (⨆ (pq : ℤ × ℤ) (_ : P pq), I pq) ⊓ rationalToComplexSubmodule hℚ hℂ U =
+        ⨆ (pq : ℤ × ℤ) (_ : P pq), rationalToComplexSubmodule hℚ hℂ U ⊓ I pq := by
+    have hUC : rationalToComplexSubmodule hℚ hℂ U =
+        ⨆ pq : ℤ × ℤ, rationalToComplexSubmodule hℚ hℂ U ⊓ I pq :=
+      le_antisymm hU (iSup_le fun _ ↦ inf_le_left)
+    have := TauCeti.iSupIndep.iSup₂_inf_iSup_eq_iSup₂
+      (B := fun pq ↦ rationalToComplexSubmodule hℚ hℂ U ⊓ I pq) h.iSupIndep
+      (fun _ ↦ inf_le_right) P
+    rwa [← hUC] at this
   refine
     { iSupIndep := ?_
       rationalToComplexSubmodule_eq_iSup := fun k ↦ ?_
       F_eq_iSup := fun p ↦ ?_
-      map_latticeConj_le := map_latticeConj_subBigrading_le hU }
+      map_latticeConj_le := fun pq ↦ ?_ }
   · let e : Submodule ℂ (rationalToComplexSubmodule hℚ hℂ U) ≃o
         Set.Iic (rationalToComplexSubmodule hℚ hℂ U) :=
       (rationalToComplexSubmodule hℚ hℂ U).mapIic
     rw [← iSupIndep_map_orderIso_iff e]
-    have he : e ∘ subBigrading mhs U = fun pq ↦
-        ⟨mhs.deligneSplittingFamily pq ⊓ rationalToComplexSubmodule hℚ hℂ U,
-          Set.mem_Iic.mpr inf_le_right⟩ := by
+    have he : (e ∘ fun pq ↦ (I pq).comap (rationalToComplexSubmodule hℚ hℂ U).subtype) = fun pq ↦
+        ⟨I pq ⊓ rationalToComplexSubmodule hℚ hℂ U, Set.mem_Iic.mpr inf_le_right⟩ := by
       funext pq
       apply Subtype.ext
-      simp only [Function.comp_apply, e, Submodule.coe_mapIic_apply, subBigrading,
+      simp only [Function.comp_apply, e, Submodule.coe_mapIic_apply,
         Submodule.map_comap_subtype]
       rw [inf_comm]
     rw [he]
-    exact iSupIndep.of_coe_Iic_comp
-      (mhs.iSupIndep_deligneSplittingFamily.mono fun _ ↦ inf_le_left)
-  · rw [rationalToComplexSubmodule_subWeightFiltration (mhs := mhs) (U := U)]
+    exact iSupIndep.of_coe_Iic_comp (h.iSupIndep.mono fun _ ↦ inf_le_left)
+  · rw [rationalToComplexSubmodule_comap_subtype]
     apply Submodule.map_injective_of_injective
       (rationalToComplexSubmodule hℚ hℂ U).subtype_injective
-    simp only [Submodule.map_iSup, Submodule.map_comap_subtype, subBigrading]
-    rw [inf_comm (rationalToComplexSubmodule hℚ hℂ U),
-      hU.WC_inf_eq_iSup_inf_deligneSplitting]
-    simp only [MixedHodgeStructure.deligneSplittingFamily_apply]
+    simp only [Submodule.map_iSup, Submodule.map_comap_subtype]
+    rw [inf_comm, h.rationalToComplexSubmodule_eq_iSup, key]
   · apply Submodule.map_injective_of_injective
       (rationalToComplexSubmodule hℚ hℂ U).subtype_injective
-    simp only [Submodule.map_iSup, Submodule.map_comap_subtype, subHodgeFiltration, subBigrading]
-    rw [inf_comm (rationalToComplexSubmodule hℚ hℂ U),
-      hU.F_inf_eq_iSup_inf_deligneSplitting]
-    simp only [MixedHodgeStructure.deligneSplittingFamily_apply]
+    simp only [Submodule.map_iSup, Submodule.map_comap_subtype]
+    rw [inf_comm, h.F_eq_iSup, key]
+  · rw [← latticeConjugation_toLinearMap, latticeConjugation_integralSubmoduleToComplex,
+      Conjugation.map_restrict_comap_subtype, rationalToComplexSubmodule_comap_subtype,
+      ← Submodule.map_le_map_iff_of_injective
+        (rationalToComplexSubmodule hℚ hℂ U).subtype_injective]
+    simp only [Submodule.map_sup, Submodule.map_comap_subtype, latticeConjugation_toLinearMap]
+    let P : ℤ × ℤ → Prop := fun rs ↦ rs = pq.swap ∨ rs.1 + rs.2 ≤ pq.1 + pq.2 - 1
+    have hsup : I pq.swap ⊔ rationalToComplexSubmodule hℚ hℂ (WQ (pq.1 + pq.2 - 1)) ≤
+        ⨆ (rs : ℤ × ℤ) (_ : P rs), I rs := by
+      refine sup_le (le_iSup₂_of_le pq.swap (Or.inl rfl) le_rfl) ?_
+      rw [h.rationalToComplexSubmodule_eq_iSup]
+      exact iSup₂_le fun rs hrs ↦ le_iSup₂_of_le rs (Or.inr hrs) le_rfl
+    calc
+      rationalToComplexSubmodule hℚ hℂ U ⊓ (I pq).map (latticeConj hℂ) ≤
+          rationalToComplexSubmodule hℚ hℂ U ⊓ ⨆ (rs : ℤ × ℤ) (_ : P rs), I rs :=
+        inf_le_inf_left _ ((h.map_latticeConj_le pq).trans hsup)
+      _ = ⨆ (rs : ℤ × ℤ) (_ : P rs), rationalToComplexSubmodule hℚ hℂ U ⊓ I rs := by
+        rw [inf_comm, key]
+      _ ≤ rationalToComplexSubmodule hℚ hℂ U ⊓ I pq.swap ⊔
+          rationalToComplexSubmodule hℚ hℂ U ⊓
+            rationalToComplexSubmodule hℚ hℂ (WQ (pq.1 + pq.2 - 1)) := by
+        refine iSup₂_le fun rs hrs ↦ ?_
+        rcases hrs with rfl | hrs
+        · exact le_sup_left
+        · exact le_sup_of_le_right (inf_le_inf_left _ (h.le_rationalToComplexSubmodule hrs))
+
+end IsHodgeBigrading
+
+namespace MixedHodgeStructure.IsSubstructure
+
+variable {mhs : MixedHodgeStructure hℚ hℂ} {U : Submodule ℚ Vℚ}
 
 /-- A rational subspace satisfying the mixed-Hodge substructure criterion inherits a mixed Hodge
 structure by intersecting both filtrations with the subspace. -/
 noncomputable def hodgeStructure (hU : mhs.IsSubstructure U) :
     MixedHodgeStructure (isBaseChange_integralSubmoduleToRational hℚ U)
       (isBaseChange_integralSubmoduleToComplex hℚ hℂ U) :=
-  MixedHodgeStructure.ofIsHodgeBigrading (isHodgeBigrading hU)
+  MixedHodgeStructure.ofIsHodgeBigrading
+    (mhs.isHodgeBigrading_deligneSplittingFamily.comap_subtype
+      hU.le_iSup_inf_deligneSplittingFamily)
     (by
       obtain ⟨k, hk⟩ := mhs.WQ_top
-      exact ⟨k, by simp [subWeightFiltration, hk]⟩)
+      exact ⟨k, by simp [hk]⟩)
     (by
       obtain ⟨k, hk⟩ := mhs.WQ_bot
-      exact ⟨k, by simp [subWeightFiltration, hk]⟩)
+      exact ⟨k, by simp [hk]⟩)
     (by
       obtain ⟨p, hp⟩ := mhs.F_top
-      exact ⟨p, by simp [subHodgeFiltration, hp]⟩)
+      exact ⟨p, by simp [hp]⟩)
     (by
       obtain ⟨p, hp⟩ := mhs.F_bot
-      exact ⟨p, by simp [subHodgeFiltration, hp]⟩)
+      exact ⟨p, by simp [hp]⟩)
+
+variable (hU : mhs.IsSubstructure U)
 
 /-- The rational weight filtration of the induced mixed Hodge structure is obtained by
 intersection with the ambient weight filtration. -/
@@ -201,7 +177,6 @@ intersection with the ambient weight filtration. -/
 theorem hodgeStructure_WQ (k : ℤ) : hU.hodgeStructure.WQ k =
     (mhs.WQ k).comap U.subtype := by
   rw [hodgeStructure, MixedHodgeStructure.ofIsHodgeBigrading_WQ]
-  rfl
 
 /-- The Hodge filtration of the induced mixed Hodge structure is obtained by intersection with
 the ambient Hodge filtration. -/
@@ -209,17 +184,23 @@ the ambient Hodge filtration. -/
 theorem hodgeStructure_F (p : ℤ) : hU.hodgeStructure.F p =
     (mhs.F p).comap (rationalToComplexSubmodule hℚ hℂ U).subtype := by
   rw [hodgeStructure, MixedHodgeStructure.ofIsHodgeBigrading_F]
-  rfl
 
 /-- The complex weight filtration of the induced mixed Hodge structure is the ambient complex
 weight filtration intersected with the complexification of the subspace. -/
+@[simp]
 theorem hodgeStructure_WC (k : ℤ) : hU.hodgeStructure.WC k =
     (mhs.WC k).comap (rationalToComplexSubmodule hℚ hℂ U).subtype := by
-  rw [MixedHodgeStructure.WC_def, hodgeStructure_WQ]
-  change rationalToComplexSubmodule
-    (isBaseChange_integralSubmoduleToRational hℚ U)
-    (isBaseChange_integralSubmoduleToComplex hℚ hℂ U) (subWeightFiltration mhs U k) = _
-  exact rationalToComplexSubmodule_subWeightFiltration (mhs := mhs) (U := U) k
+  rw [MixedHodgeStructure.WC_def, hodgeStructure_WQ, rationalToComplexSubmodule_comap_subtype,
+    MixedHodgeStructure.WC_def]
+
+/-- The conjugate Hodge filtration of the induced mixed Hodge structure is the ambient conjugate
+Hodge filtration intersected with the complexification of the subspace. -/
+@[simp]
+theorem hodgeStructure_conjF (p : ℤ) : hU.hodgeStructure.conjF p =
+    (mhs.conjF p).comap (rationalToComplexSubmodule hℚ hℂ U).subtype := by
+  rw [MixedHodgeStructure.conjF_def, hodgeStructure_F, ← latticeConjugation_toLinearMap,
+    latticeConjugation_integralSubmoduleToComplex, Conjugation.map_restrict_comap_subtype,
+    latticeConjugation_toLinearMap, ← MixedHodgeStructure.conjF_def]
 
 /-- The inclusion of an induced mixed Hodge structure into its ambient mixed Hodge structure. -/
 noncomputable def inclusion : hU.hodgeStructure.Hom mhs where
@@ -244,6 +225,28 @@ theorem inclusion_toLinearMap : hU.inclusion.toLinearMap =
     (rationalToComplexSubmodule hℚ hℂ U).subtype := by
   rw [MixedHodgeStructure.Hom.toLinearMap_def, inclusion_toRatLinearMap,
     rationalMapToComplex_subtype]
+
+/-- The Deligne bigrading of the induced mixed Hodge structure is the ambient Deligne bigrading
+intersected with the complexification of the subspace. -/
+@[simp]
+theorem hodgeStructure_deligneSplittingFamily :
+    hU.hodgeStructure.deligneSplittingFamily =
+      fun pq ↦
+        (mhs.deligneSplittingFamily pq).comap (rationalToComplexSubmodule hℚ hℂ U).subtype :=
+  ((mhs.isHodgeBigrading_deligneSplittingFamily.comap_subtype
+      hU.le_iSup_inf_deligneSplittingFamily).iSupIndep.le_iff_eq_of_iSup_eq_top
+    hU.hodgeStructure.iSup_deligneSplittingFamily_eq_top).1 fun pq ↦ by
+    rw [← Submodule.map_le_iff_le_comap, ← inclusion_toLinearMap hU]
+    simpa only [deligneSplittingFamily_apply] using
+      hU.inclusion.map_deligneSplitting_le pq.1 pq.2
+
+/-- A piece of the Deligne bigrading of the induced mixed Hodge structure is the ambient piece
+intersected with the complexification of the subspace. -/
+@[simp]
+theorem hodgeStructure_deligneSplitting (p q : ℤ) :
+    hU.hodgeStructure.deligneSplitting p q =
+      (mhs.deligneSplitting p q).comap (rationalToComplexSubmodule hℚ hℂ U).subtype := by
+  simpa using congr_fun hU.hodgeStructure_deligneSplittingFamily (p, q)
 
 end MixedHodgeStructure.IsSubstructure
 
