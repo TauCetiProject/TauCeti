@@ -102,31 +102,6 @@ lemma whiskerRight_eq_mapBifunctorMap {X Y : CochainComplex (ModuleCat.{v} R) �
       (curriedTensor (ModuleCat.{v} R)) (ComplexShape.up ℤ) :=
   rfl
 
-/-- The differential of a tensor product of cochain complexes on a homogeneous summand is the
-sum of the two factor differentials, with the Koszul sign on the second term. -/
-lemma ι_tensorObj_d (X Y : CochainComplex (ModuleCat.{v} R) ℤ) (p q j : ℤ)
-    (hpq : p + q = j) :
-    HomologicalComplex.ιTensorObj X Y p q j hpq ≫ (X ⊗ Y).d j (j + 1) =
-      ((curriedTensor (ModuleCat.{v} R)).map (X.d p (p + 1))).app (Y.X q) ≫
-        HomologicalComplex.ιTensorObj X Y (p + 1) q (j + 1) (by omega) +
-      p.negOnePow •
-        ((curriedTensor (ModuleCat.{v} R)).obj (X.X p)).map (Y.d q (q + 1)) ≫
-          HomologicalComplex.ιTensorObj X Y p (q + 1) (j + 1) (by omega) := by
-  have hd : (X ⊗ Y).d j (j + 1) =
-      HomologicalComplex.mapBifunctor.D₁ X Y (curriedTensor (ModuleCat.{v} R))
-          (ComplexShape.up ℤ) j (j + 1) +
-        HomologicalComplex.mapBifunctor.D₂ X Y (curriedTensor (ModuleCat.{v} R))
-          (ComplexShape.up ℤ) j (j + 1) :=
-    HomologicalComplex.mapBifunctor.d_eq _ _ _ _ j (j + 1)
-  rw [hd, Preadditive.comp_add,
-    HomologicalComplex.mapBifunctor.ι_D₁,
-    HomologicalComplex.mapBifunctor.d₁_eq _ _ _ _
-      (ComplexShape.up_mk p (p + 1) rfl) q (j + 1) (by dsimp; omega),
-    HomologicalComplex.mapBifunctor.ι_D₂,
-    HomologicalComplex.mapBifunctor.d₂_eq _ _ _ _ p
-      (ComplexShape.up_mk q (q + 1) rfl) (j + 1) (by dsimp; omega)]
-  simp only [ComplexShape.ε₁_def, one_smul, ComplexShape.ε₂_def, ComplexShape.ε_up_ℤ]
-
 /-- The bidegree-`(p, q)` component of the Koszul braiding `X ⊗ Y ⟶ Y ⊗ X`: the braiding of
 `ModuleCat R` on the summand `X.X p ⊗ Y.X q`, carrying the Koszul sign `(-1)^{p * q}`. -/
 noncomputable def koszulBraidingSummand (X Y : CochainComplex (ModuleCat.{v} R) ℤ) (p q j : ℤ)

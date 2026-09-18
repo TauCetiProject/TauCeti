@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Module.Right.HomComplex
-public import TauCeti.Algebra.Homology.Monoidal.Braiding
+public import TauCeti.Algebra.Homology.Monoidal.TensorDifferential
 
 /-!
 # Composition in differential graded right-module Hom complexes
@@ -312,7 +312,7 @@ private theorem dgRightModuleCochainCompTensor_d (p q j : ℤ) (hpq : p + q = j)
           (dgRightModuleCochainCompTensor (hM := hM) (hN := hN) (hP := hP) · · (j + 1) ·) =
       dgRightModuleCochainCompTensor (hM := hM) (hN := hN) (hP := hP) p q j hpq ≫
         (dgRightModuleHomComplex hM hP).d j (j + 1) := by
-  rw [← Category.assoc, ι_tensorObj_d R _ _ p q j hpq]
+  rw [← Category.assoc, HomologicalComplex.ι_tensorObj_d _ _ p q j hpq]
   rw [Preadditive.add_comp, Linear.units_smul_comp]
   rw [Category.assoc, HomologicalComplex.ι_mapBifunctorDesc]
   rw [Category.assoc, HomologicalComplex.ι_mapBifunctorDesc]
