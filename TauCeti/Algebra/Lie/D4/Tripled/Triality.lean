@@ -62,6 +62,10 @@ pinned simply connected group scheme of type `D₄` is asserted here.
 * The construction follows the formal template of
   `TauCeti.Algebra.Lie.E6.DoubledMinuscule.GraphAutomorphism`, with the signed involution there
   replaced by an unsigned permutation of order three.
+* K. Morrison and Claude Code,
+  [Tau Ceti PR #6671](https://github.com/TauCetiProject/TauCeti/pull/6671), whose scheme-level
+  automorphism, point action, and order-three proofs are adapted here to the current generic
+  symmetry API.
 -/
 
 public section
