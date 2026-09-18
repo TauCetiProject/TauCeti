@@ -42,23 +42,17 @@ theorem torsion_eq_one_or_neg_one_of_isReal {w : InfinitePlace K} (hw : w.IsReal
   have hpos : nrRealPlaces K ≠ 0 := by
     have : Nonempty {w : InfinitePlace K // w.IsReal} := ⟨⟨w, hw⟩⟩
     exact Fintype.card_ne_zero
-  -- The order of `x` in `K` is its order as a unit.
-  have hord : orderOf ((x : (𝓞 K)ˣ) : K) = orderOf (x : (𝓞 K)ˣ) :=
-    orderOf_injective ((algebraMap (𝓞 K) K).toMonoidHom.comp (Units.coeHom (𝓞 K)))
-      (Units.coe_injective K) _
   by_cases! hc : 2 < orderOf (x : (𝓞 K)ˣ)
-  · rw [← hord] at hc
+  · -- The order of `x` in `K` is its order as a unit.
+    rw [← orderOf_units,
+      ← orderOf_injective (algebraMap (𝓞 K) K).toMonoidHom RingOfIntegers.coe_injective] at hc
     exact absurd (IsPrimitiveRoot.nrRealPlaces_eq_zero_of_two_lt hc (IsPrimitiveRoot.orderOf _))
       hpos
   · interval_cases hi : orderOf (x : (𝓞 K)ˣ)
     · exact absurd hi (orderOf_pos_iff.2 ((CommGroup.mem_torsion x.1).1 x.2)).ne'
     · exact Or.inl (orderOf_eq_one_iff.1 hi)
-    · -- A unit of order `2` squares to `1` in the domain `𝓞 K`, so it is `-1`.
-      have h2 : ((x : (𝓞 K)ˣ) : 𝓞 K) * ((x : (𝓞 K)ˣ) : 𝓞 K) = 1 := by
-        rw [← Units.val_mul, ← sq, ← hi, pow_orderOf_eq_one, Units.val_one]
-      rcases mul_self_eq_one_iff.mp h2 with h | h
-      · exact Or.inl (Units.ext (by rw [h, Units.val_one]))
-      · exact Or.inr (Units.ext (by rw [h, Units.val_neg, Units.val_one]))
+    · rw [← orderOf_units, CharP.orderOf_eq_two_iff 0 (by decide)] at hi
+      simp [← Units.val_inj, Units.val_neg, Units.val_one, hi]
 
 /-- In a number field with a real infinite place, the torsion order is `2`. -/
 theorem torsionOrder_eq_two_of_isReal {w : InfinitePlace K} (hw : w.IsReal) :
