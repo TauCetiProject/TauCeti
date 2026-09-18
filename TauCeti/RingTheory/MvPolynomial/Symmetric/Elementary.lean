@@ -11,6 +11,9 @@ public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 # Elementary symmetric polynomials in small finite alphabets
 
 This file gives explicit formulas for elementary symmetric polynomials in small finite alphabets.
+Such expansions support explicit computations of symmetric orbit products. In particular, the
+four-variable formula is used to express the quartic `D₄` resolvent's orbit product in elementary
+symmetric polynomials.
 
 ## Main results
 
