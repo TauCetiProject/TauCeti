@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Corestriction
 
 For a restriction of finite normal layers `K/E` inside `K/F`, this file defines restriction
 
-`Ĥʳ(Gal(K/F), A^V) ⟶ Ĥʳ(Gal(K/E), A^V)`
+`Hhatʳ(Gal(K/F), A^V) ⟶ Hhatʳ(Gal(K/E), A^V)`
 
 in every integer degree, with integral and with trivial integral coefficients. In positive degrees
 it is the ordinary cohomological restriction `LayerRestriction.cohomologyRes`; in degree zero it is
@@ -126,7 +126,7 @@ theorem tateRes_negSucc_succ (T : LayerRestriction small big) (F : Formation G) 
   (rfl)
 
 /-- **In degree zero, restriction is the ground-level inclusion.** Read through the identification
-of `Ĥ⁰` with the norm quotient `A^U / N(A^V)`, restricting the class of an element of the ground
+of `Hhat⁰` with the norm quotient `A^U / N(A^V)`, restricting the class of an element of the ground
 level `A^U` of `K/F` gives the class of the same element in the ground level `A^{U'}` of `K/E`. -/
 theorem tateHZeroEquivNormQuotient_tateRes_H0π (T : LayerRestriction small big) (F : Formation G)
     (x : (big.rep F).ρ.invariants) :
