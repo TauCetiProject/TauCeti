@@ -33,8 +33,9 @@ over an arbitrary site. This file only packages it over a scheme:
 A free rank-one trivialization of an `𝒪_X`-module `M` over an open `V` gives local coordinates:
 
 * `Scheme.Modules.trivializationCoordinate` is the linear isomorphism `Γ(M, W) ≃ Γ(X, W)` it
-  induces on every open `W ≤ V`, and `Scheme.Modules.trivializationGenerator` is the basis
-  section of `M` over `V` with coordinate one;
+  induces on every open `W ≤ V`, compatible with restriction
+  (`Scheme.Modules.trivializationCoordinate_map`), and `Scheme.Modules.trivializationGenerator`
+  is the basis section of `M` over `V` with coordinate one;
 * `Scheme.Modules.existsUnique_eq_smul_map_trivializationGenerator` writes every section over
   `W ≤ V` uniquely as a regular multiple of the restricted basis section, and
   `Scheme.Modules.existsUnique_map_trivializationGenerator_eq_smul` shows that the basis sections
@@ -151,7 +152,6 @@ variable {X : Scheme.{u}}
 
 /-- The coordinate isomorphism from a locally trivial rank-one module sheaf to the structure
 sheaf on the trivializing open subset. -/
-@[expose]
 def trivializationCoordinateIso (M : X.Modules) {U : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U) :
     M.over U ≅ SheafOfModules.unit (X.ringCatSheaf.over U) :=
@@ -159,7 +159,6 @@ def trivializationCoordinateIso (M : X.Modules) {U : X.Opens}
 
 /-- The coordinate of a free rank-one trivialization over `U`, read on an open subset `W ≤ U`:
 the linear isomorphism between sections of the module sheaf and regular functions on `W`. -/
-@[expose]
 def trivializationCoordinate (M : X.Modules) {U W : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U) (i : W ⟶ U) :
     Γ(M, W) ≃ₗ[Γ(X, W)] Γ(X, W) where
@@ -176,6 +175,47 @@ def trivializationCoordinate (M : X.Modules) {U W : X.Opens}
   right_inv r := Iso.inv_hom_id_apply ((SheafOfModules.forget _ ⋙
     PresheafOfModules.toPresheaf _).mapIso (trivializationCoordinateIso M e) |>.app
       (op (Over.mk i))) (r : Γ(X, W))
+
+/-- The coordinate isomorphism is the inverse trivialization followed by the identification of
+the free rank-one module sheaf with the unit module sheaf. -/
+theorem trivializationCoordinateIso_hom (M : X.Modules) {U : X.Opens}
+    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U) :
+    (trivializationCoordinateIso M e).hom =
+      e.inv ≫ (TauCeti.SheafOfModules.freePUnitIsoUnit (X.ringCatSheaf.over U)).hom :=
+ by
+  rfl
+
+/-- The coordinate on `W ≤ U` is the component of the coordinate isomorphism at `W`. -/
+theorem trivializationCoordinate_apply (M : X.Modules) {U W : X.Opens}
+    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U) (i : W ⟶ U)
+    (s : Γ(M, W)) :
+    trivializationCoordinate M e i s =
+      (trivializationCoordinateIso M e).hom.val.app (op (Over.mk i)) s :=
+ by
+  rfl
+
+/-- The inverse coordinate on `W ≤ U` is the component of the inverse coordinate isomorphism at
+`W`. -/
+theorem trivializationCoordinate_symm_apply (M : X.Modules) {U W : X.Opens}
+    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U) (i : W ⟶ U)
+    (r : Γ(X, W)) :
+    (trivializationCoordinate M e i).symm r =
+      (trivializationCoordinateIso M e).inv.val.app (op (Over.mk i)) r :=
+ by
+  rfl
+
+/-- The coordinate of a free rank-one trivialization commutes with restriction to a smaller open
+subset. -/
+theorem trivializationCoordinate_map (M : X.Modules) {U W W' : X.Opens}
+    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U) (i : W ⟶ U)
+    (j : W' ⟶ W) (s : Γ(M, W)) :
+    trivializationCoordinate M e (j ≫ i) (M.presheaf.map j.op s) =
+      X.presheaf.map j.op (trivializationCoordinate M e i s) :=
+  -- Restriction in `M.over U` and in the unit sheaf along `Over.homMk j` is, by definition of
+  -- the pushforward along `Over.forget U`, restriction in `M` and in `𝒪_X` along `j`.
+  ((SheafOfModules.forget _ ⋙ PresheafOfModules.toPresheaf _).map
+    (trivializationCoordinateIso M e).hom).naturality_apply
+      (Over.homMk j : Over.mk (j ≫ i) ⟶ Over.mk i).op s
 
 /-- The basis section of a line bundle over an open subset carrying a chosen rank-one
 trivialization. -/

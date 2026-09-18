@@ -30,8 +30,9 @@ line bundle is read off.
   show that, for a line bundle on an integral scheme, this morphism is injective on sections and
   hence a monomorphism.
 * `Scheme.Modules.range_rationalFunction` identifies the image of a line bundle in the rational
-  functions on a rank-one trivializing chart with the regular multiples of the rational function
-  represented by the basis section `Scheme.Modules.trivializationGenerator` of that chart, and
+  functions on any open subset of a rank-one trivializing chart with the regular multiples of the
+  rational function represented by the restricted basis section
+  `Scheme.Modules.trivializationGenerator` of that chart, and
   `Scheme.Modules.isUnit_rationalFunction_trivializationGenerator` shows that this rational
   function is a unit.
 
@@ -72,7 +73,8 @@ private lemma rationalFunction_apply (M : X.Modules) {U : X.Opens}
     (s : Γ(M, V)) :
     rationalFunction M e hU V s = X.germToFunctionField (V ⊓ U)
       (trivializationCoordinate M e (homOfLE (inf_le_right : V ⊓ U ≤ U))
-        (M.presheaf.map (homOfLE (inf_le_left : V ⊓ U ≤ V)).op s)) :=
+        (M.presheaf.map (homOfLE (inf_le_left : V ⊓ U ≤ V)).op s)) := by
+  rw [trivializationCoordinate_apply]
   rfl
 
 /-- Multiplying a module section by a regular function multiplies its rational function by the
@@ -101,24 +103,13 @@ theorem rationalFunction_map (M : X.Modules) {U V T : X.Opens}
   have : Nonempty (V ⊓ U : X.Opens) := Opens.nonempty_coeSort.mpr
     (hU.inter_open_nonempty V V.isOpen (Opens.nonempty_coeSort.mp ‹_›))
   let j : V ⊓ U ⟶ T ⊓ U := homOfLE (inf_le_inf i.le le_rfl)
-  let f : Over.mk (homOfLE (inf_le_right : V ⊓ U ≤ U)) ⟶
-      Over.mk (homOfLE (inf_le_right : T ⊓ U ≤ U)) := Over.homMk j
-  let c' : (M.over U).val.presheaf ⟶
-      (SheafOfModules.unit (X.ringCatSheaf.over U)).val.presheaf :=
-    (SheafOfModules.forget _ ⋙ PresheafOfModules.toPresheaf _).map
-      (trivializationCoordinateIso M e).hom
-  have hM : (M.over U).val.presheaf.map f.op
-      (M.presheaf.map (homOfLE (inf_le_left : T ⊓ U ≤ T)).op s) =
-        M.presheaf.map (homOfLE (inf_le_left : V ⊓ U ≤ V)).op (M.presheaf.map i.op s) := by
-    -- Restriction in `M.over U` along a morphism of `Over U` is, by definition of the
-    -- pushforward along `Over.forget U`, restriction in `M` along the underlying inclusion.
-    change M.presheaf.map j.op _ = _
+  have hM : M.presheaf.map (homOfLE (inf_le_left : V ⊓ U ≤ V)).op (M.presheaf.map i.op s) =
+      M.presheaf.map j.op (M.presheaf.map (homOfLE (inf_le_left : T ⊓ U ≤ T)).op s) := by
     simp only [← ConcreteCategory.comp_apply, ← Functor.map_comp]
     congr 2
-  have h := c'.naturality_apply f.op (M.presheaf.map (homOfLE inf_le_left).op s)
-  rw [hM] at h
-  rw [rationalFunction_apply, rationalFunction_apply]
-  refine (congrArg (X.germToFunctionField (V ⊓ U)) h).trans ?_
+  have hj : (homOfLE (inf_le_right : V ⊓ U ≤ U)) = j ≫ homOfLE inf_le_right :=
+    Subsingleton.elim _ _
+  rw [rationalFunction_apply, rationalFunction_apply, hM, hj, trivializationCoordinate_map]
   exact X.presheaf.germ_res_apply j (genericPoint X) (Scheme.genericPoint_mem _) _
 
 private def rationalApp (M : X.Modules) {U : X.Opens}
@@ -253,42 +244,44 @@ instance mono_rationalTrivializationHom [IsIntegral X] (M : X.Modules)
     (PresheafOfModules.mono_of_injective fun V ↦
       rationalTrivializationHom_app_injective M e hU V.unop)
 
-/-- On a rank-one trivializing open subset, the image of the rational-trivialization morphism
-consists exactly of the regular-function multiples of the image of the distinguished basis
-section. -/
-theorem range_rationalTrivializationHom_app (M : X.Modules) {U V : X.Opens}
+/-- On an open subset `W` of a rank-one trivializing open subset `V`, the image of the
+rational-trivialization morphism consists exactly of the regular-function multiples of the image
+of the restricted distinguished basis section. -/
+theorem range_rationalTrivializationHom_app (M : X.Modules) {U V W : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
     (hU : Dense (U : Set X))
-    (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V) :
-    Set.range (Scheme.Modules.Hom.app (rationalTrivializationHom M e hU) V) =
-      {q | ∃ r : Γ(X, V), q = r • Scheme.Modules.Hom.app
-        (rationalTrivializationHom M e hU) V (trivializationGenerator M t)} := by
+    (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V) (i : W ⟶ V) :
+    Set.range (Scheme.Modules.Hom.app (rationalTrivializationHom M e hU) W) =
+      {q | ∃ r : Γ(X, W), q = r • Scheme.Modules.Hom.app (rationalTrivializationHom M e hU) W
+        (M.presheaf.map i.op (trivializationGenerator M t))} := by
   ext q
   constructor
   · rintro ⟨s, rfl⟩
-    obtain ⟨r, rfl, -⟩ := existsUnique_eq_smul_trivializationGenerator M t s
+    obtain ⟨r, rfl, -⟩ := existsUnique_eq_smul_map_trivializationGenerator M t i s
     exact ⟨r, Scheme.Modules.Hom.app_smul _ _ _⟩
   · rintro ⟨r, rfl⟩
-    exact ⟨r • trivializationGenerator M t, Scheme.Modules.Hom.app_smul _ _ _⟩
+    exact ⟨r • M.presheaf.map i.op (trivializationGenerator M t),
+      Scheme.Modules.Hom.app_smul _ _ _⟩
 
-/-- On a nonempty rank-one trivializing open subset, the rational functions represented by
-sections are exactly the products of regular functions with the rational function represented by
-the distinguished basis section. -/
-theorem range_rationalFunction (M : X.Modules) {U V : X.Opens}
+/-- On a nonempty open subset `W` of a rank-one trivializing open subset `V`, the rational
+functions represented by sections are exactly the products of regular functions with the rational
+function represented by the restricted distinguished basis section. -/
+theorem range_rationalFunction (M : X.Modules) {U V W : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
     (hU : Dense (U : Set X))
-    (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V)
-    [Nonempty V] :
-    Set.range (rationalFunction M e hU V) =
-      {q | ∃ r : Γ(X, V), q = X.germToFunctionField V r *
-        rationalFunction M e hU V (trivializationGenerator M t)} := by
+    (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V) (i : W ⟶ V)
+    [Nonempty W] :
+    Set.range (rationalFunction M e hU W) =
+      {q | ∃ r : Γ(X, W), q = X.germToFunctionField W r *
+        rationalFunction M e hU W (M.presheaf.map i.op (trivializationGenerator M t))} := by
   ext q
   constructor
   · rintro ⟨s, rfl⟩
-    obtain ⟨r, rfl, -⟩ := existsUnique_eq_smul_trivializationGenerator M t s
-    exact ⟨r, rationalFunction_smul M e hU V r _⟩
+    obtain ⟨r, rfl, -⟩ := existsUnique_eq_smul_map_trivializationGenerator M t i s
+    exact ⟨r, rationalFunction_smul M e hU W r _⟩
   · rintro ⟨r, rfl⟩
-    exact ⟨r • trivializationGenerator M t, rationalFunction_smul M e hU V r _⟩
+    exact ⟨r • M.presheaf.map i.op (trivializationGenerator M t),
+      rationalFunction_smul M e hU W r _⟩
 
 /-- The rational function represented by the distinguished basis section on a nonempty
 rank-one trivializing open subset is a unit of the function field: on the nonempty open subset
@@ -306,16 +299,6 @@ theorem isUnit_rationalFunction_trivializationGenerator (M : X.Modules) {U V : X
   rw [rationalFunction_apply, hu, LinearEquiv.map_smul,
     trivializationCoordinate_map_trivializationGenerator, smul_eq_mul, mul_one]
   exact u.isUnit.map _
-
-/-- The rational function represented by the distinguished basis section on a nonempty
-rank-one trivializing open subset is nonzero. -/
-theorem rationalFunction_trivializationGenerator_ne_zero (M : X.Modules) {U V : X.Opens}
-    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
-    (hU : Dense (U : Set X))
-    (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V)
-    [Nonempty V] :
-    rationalFunction M e hU V (trivializationGenerator M t) ≠ 0 :=
-  (isUnit_rationalFunction_trivializationGenerator M e hU t).ne_zero
 
 /-- The rational function represented by the distinguished basis section on a nonempty
 trivializing open subset, bundled as a unit of the function field. Its regular multiples are
@@ -338,22 +321,23 @@ theorem coe_trivializationGeneratorRationalUnit (M : X.Modules) {U V : X.Opens}
       rationalFunction M e hU V (trivializationGenerator M t) :=
   IsUnit.unit_spec _
 
-/-- The rational functions represented by the basis sections of two rank-one trivializations on
-the same nonempty open subset differ by a regular unit, namely the transition unit of
-`existsUnique_map_trivializationGenerator_eq_smul`. This is the transition-unit condition needed
-to glue the local principal images of `range_rationalFunction` into Cartier-divisor data. -/
+/-- On a nonempty open subset `W` of the domains `V₁`, `V₂` of two rank-one trivializations, the
+rational functions represented by their restricted basis sections differ by a regular unit on
+`W`, namely the transition unit of `existsUnique_map_trivializationGenerator_eq_smul`. This is the
+transition-unit condition needed to glue the local principal images of `range_rationalFunction`
+over overlapping charts into Cartier-divisor data. -/
 theorem exists_rationalFunction_trivializationGenerator_eq_mul (M : X.Modules)
-    {U V : X.Opens}
+    {U V₁ V₂ W : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
     (hU : Dense (U : Set X))
-    (t₁ t₂ : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V)
-    [Nonempty V] :
-    ∃ r : Γ(X, V)ˣ,
-      rationalFunction M e hU V (trivializationGenerator M t₁) =
-        X.germToFunctionField V (r : Γ(X, V)) *
-          rationalFunction M e hU V (trivializationGenerator M t₂) := by
-  obtain ⟨r, hr, -⟩ := existsUnique_map_trivializationGenerator_eq_smul M t₁ t₂ (𝟙 V) (𝟙 V)
-  simp only [op_id, M.presheaf.map_id, ConcreteCategory.id_apply] at hr
+    (t₁ : SheafOfModules.free (R := X.ringCatSheaf.over V₁) PUnit ≅ M.over V₁)
+    (t₂ : SheafOfModules.free (R := X.ringCatSheaf.over V₂) PUnit ≅ M.over V₂)
+    (i₁ : W ⟶ V₁) (i₂ : W ⟶ V₂) [Nonempty W] :
+    ∃ r : Γ(X, W)ˣ,
+      rationalFunction M e hU W (M.presheaf.map i₁.op (trivializationGenerator M t₁)) =
+        X.germToFunctionField W (r : Γ(X, W)) *
+          rationalFunction M e hU W (M.presheaf.map i₂.op (trivializationGenerator M t₂)) := by
+  obtain ⟨r, hr, -⟩ := existsUnique_map_trivializationGenerator_eq_smul M t₁ t₂ i₁ i₂
   exact ⟨r, by rw [hr, rationalFunction_smul]⟩
 
 end AlgebraicGeometry.Scheme.Modules
