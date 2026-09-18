@@ -191,7 +191,7 @@ theorem d0 [IsTopologicalAddGroup M] [ContinuousSMul G M] (m : M) :
     abel
 
 /-- A continuous `1`-cocycle on `G` is a transgression lift of its restriction to `N`. -/
-theorem of_mem_Z1 [IsTopologicalAddGroup M] [ContinuousSMul G M] {c : G → M} (hc : c ∈ Z1 G M) :
+theorem of_mem_Z1 [IsTopologicalAddGroup M] {c : G → M} (hc : c ∈ Z1 G M) :
     IsTransgressionLift (fun n : N => c n) c where
   continuous := (mem_Z1_iff.1 hc).1
   apply_mul g n := by
@@ -368,9 +368,12 @@ theorem cocycle_sub_mem_B2 (hf : IsTransgressionLift c f) (hf' : IsTransgression
   simp only [AddSubgroup.coe_add, AddSubgroup.coe_sub, coe_quotient_smul_fixedPoints_addSubgroup,
     coe_smul_fixedPoints_addSubgroup, Quotient.liftOn'_mk'']
 
+variable [hquot : ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)]
+
+omit hquot in
 /-- If `c` and `c'` differ by a `1`-coboundary on `N`, any of their transgression lifts have
 the same class in `H²(G ⧸ N, M ^ N)`. -/
-theorem mk_cocycle_eq [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)]
+theorem mk_cocycle_eq
     (hf : IsTransgressionLift c f) (hf' : IsTransgressionLift c' f')
     (hcc' : c - c' ∈ B1 N M) :
     (hf.cocycle : H2 (G ⧸ N) (FixedPoints.addSubgroup N M)) = hf'.cocycle :=
@@ -378,8 +381,7 @@ theorem mk_cocycle_eq [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)]
 
 /-- Inflation kills the class of a descended coboundary: its inflation is the class of the
 coboundary of a continuous cochain on `G`. -/
-theorem explicitInfl2_mk_cocycle [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)]
-    (hf : IsTransgressionLift c f) :
+theorem explicitInfl2_mk_cocycle (hf : IsTransgressionLift c f) :
     explicitInfl2 G M N (hf.cocycle : H2 (G ⧸ N) (FixedPoints.addSubgroup N M)) = 0 := by
   rw [cocycle, explicitInfl2_descendZ2, H2pi_eq_zero_iff]
   exact mem_B2_iff.2 ⟨f, hf.continuous, rfl⟩
