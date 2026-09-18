@@ -61,6 +61,11 @@ def numTransitiveGroups : ℕ → ℕ
   | 4 | 5 => 5
   | _ => 0
 
+/-- There are five reference groups in degree four. -/
+@[simp]
+theorem numTransitiveGroups_four : numTransitiveGroups 4 = 5 :=
+  (rfl)
+
 /-- A zero-based index for a transitive-group label in degree `n`.
 
 An index `j` is displayed externally as `nT(j + 1)`. -/
@@ -166,6 +171,34 @@ theorem referenceSubgroup_four_two :
     referenceSubgroup 4 ⟨2, by simp [numTransitiveGroups]⟩ =
       Subgroup.closure {finRotate 4, swap 0 2} := by
   simp [referenceSubgroup, referenceSubgroup4]
+
+/-- The reference subgroup for `4T3` is the dihedral group of the square `0, 1, 2, 3`: a
+permutation lies in it exactly when it preserves the pairing `{{0, 2}, {1, 3}}` of opposite
+vertices, that is, commutes with `i ↦ i + 2`. -/
+theorem mem_referenceSubgroup_four_two_iff {σ : Perm (Fin 4)} :
+    σ ∈ referenceSubgroup 4 ⟨2, by simp [numTransitiveGroups]⟩ ↔ ∀ i, σ (i + 2) = σ i + 2 := by
+  rw [referenceSubgroup_four_two]
+  constructor
+  · intro h
+    induction h using Subgroup.closure_induction with
+    | mem τ hτ =>
+      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hτ
+      rcases hτ with rfl | rfl <;> decide
+    | one => simp
+    | mul τ ρ _ _ hτ hρ => simp [hρ, hτ]
+    | inv τ _ hτ =>
+      intro i
+      apply τ.injective
+      simp [hτ]
+  · intro h
+    -- The eight permutations commuting with `i ↦ i + 2` are the eight words `rᵃ sᵇ` in the
+    -- rotation `r` and the diagonal swap `s`.
+    have hword : ∀ σ : Perm (Fin 4), (∀ i, σ (i + 2) = σ i + 2) →
+        ∃ a : Fin 4, ∃ b : Fin 2, σ = finRotate 4 ^ (a : ℕ) * swap 0 2 ^ (b : ℕ) := by
+      decide
+    obtain ⟨a, b, rfl⟩ := hword σ h
+    exact mul_mem (pow_mem (Subgroup.subset_closure (by simp)) _)
+      (pow_mem (Subgroup.subset_closure (by simp)) _)
 
 /-- The reference subgroup for `4T4` is the alternating group. -/
 @[simp]
