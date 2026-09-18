@@ -63,11 +63,14 @@ section ConvergesToOne
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
 
-/-- A subset of a topological group **converges to one** when every open normal subgroup omits
+/-- A subset of a profinite group **converges to one** when every open normal subgroup omits
 only finitely many of its elements. This is the finiteness condition imposed on generating sets
 in the cardinal-valued topological generator rank of a profinite group. -/
-def ConvergesToOne (s : Set G) : Prop :=
+def ConvergesToOne [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
+    (s : Set G) : Prop :=
   ∀ U : OpenNormalSubgroup G, {x ∈ s | x ∉ U.toSubgroup}.Finite
+
+variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
 
 /-- A set converges to one exactly when only finitely many of its elements lie outside each open
 normal subgroup. -/
@@ -76,7 +79,7 @@ theorem convergesToOne_iff {s : Set G} :
     ConvergesToOne s ↔ ∀ U : OpenNormalSubgroup G, {x ∈ s | x ∉ U.toSubgroup}.Finite :=
   Iff.rfl
 
-/-- Every finite subset of a topological group converges to one. -/
+/-- Every finite subset of a profinite group converges to one. -/
 theorem _root_.Set.Finite.convergesToOne {s : Set G} (hs : s.Finite) : ConvergesToOne s :=
   convergesToOne_iff.mpr fun _ ↦ hs.subset fun _ hx ↦ hx.1
 
@@ -85,9 +88,11 @@ theorem ConvergesToOne.mono {s t : Set G} (hs : ConvergesToOne s) (hts : t ⊆ s
     ConvergesToOne t :=
   convergesToOne_iff.mpr fun U ↦ (hs U).subset fun _ hx ↦ ⟨hts hx.1, hx.2⟩
 
-variable {H : Type*} [Group H] [TopologicalSpace H]
+variable {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H]
+  [TotallyDisconnectedSpace H]
 
-/-- The image of a set converging to one under a continuous homomorphism also converges to one. -/
+/-- The image of a set converging to one under a continuous homomorphism of profinite groups also
+converges to one. -/
 theorem ConvergesToOne.image {s : Set G} (hs : ConvergesToOne s) (f : G →* H)
     (hf : Continuous f) : ConvergesToOne (f '' s) := by
   intro U
