@@ -8,7 +8,7 @@ module
 public import TauCeti.FieldTheory.GaloisGroups.Degree
 public import TauCeti.FieldTheory.GaloisGroups.Discriminant.Basic
 public import TauCeti.FieldTheory.GaloisGroups.Orbits
-public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel
+public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 
 /-!
 # The transitive-group label of a polynomial
