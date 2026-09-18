@@ -8,6 +8,9 @@ module
 public import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Algebra.BigOperators.Group.Finset.Powerset
 import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Algebra.Ring.Defs
+public import Mathlib.Data.Finset.Interval
+import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Set.PowersetCard
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.SetTheory.Cardinal.Finite
@@ -20,6 +23,10 @@ import Mathlib.Tactic.NoncommRing
 * `TauCeti.card_nonempty_finset` counts the nonempty finsets of a finite type.
 * `Finset.sum_powerset_neg_one_pow_mul_eq_zero` pairs subsets that differ by one element
   to cancel a signed sum.
+* `Finset.sum_Icc_neg_one_pow_card_sub_card_left` and
+  `Finset.sum_Icc_neg_one_pow_card_sub_card_right` compute the Möbius function of the Boolean
+  lattice of finsets: the signed sum over an interval `[s, t]` is `1` if `s = t` and `0`
+  otherwise.
 * `TauCeti.sum_piecewise_eq_sum_update_of_card_eq_succ` reindexes a sum of `Finset.piecewise` terms
   over the subsets of size one less than `card ι` as a sum of `Function.update` terms over `ι`. It
   is what turns a formula indexed by "all but one point" into one indexed by the omitted point, as
@@ -77,6 +84,45 @@ theorem sum_powerset_neg_one_pow_mul_eq_zero {ι R : Type*} [DecidableEq ι] [Ri
   simp only [hit, Finset.mem_insert_self, ↓reduceIte, Finset.card_insert_of_notMem hit,
     hstep i hi t ht]
   noncomm_ring
+
+/-- **The Möbius function of the Boolean lattice, measured from the bottom.** The sets between `s`
+and `t` are `s ∪ u` for `u ⊆ t \ s`, so the signed sum `∑_{s ⊆ u ⊆ t} (-1)^{|u| - |s|}` is the
+alternating sum over the subsets of `t \ s`: it is `1` if `s = t` and `0` otherwise. -/
+theorem sum_Icc_neg_one_pow_card_sub_card_left {α R : Type*} [DecidableEq α] [Ring R]
+    (s t : Finset α) :
+    ∑ u ∈ Icc s t, (-1 : R) ^ (u.card - s.card) = if s = t then 1 else 0 := by
+  by_cases hst : s ⊆ t
+  · have hdisj : ∀ u ∈ (t \ s).powerset, Disjoint s u := fun u hu =>
+      disjoint_sdiff.mono_right (mem_powerset.1 hu)
+    rw [Icc_eq_image_powerset hst, sum_image fun u hu v hv huv => by
+      rw [← union_sdiff_cancel_left (hdisj u hu), huv, union_sdiff_cancel_left (hdisj v hv)]]
+    have hsum : ∑ u ∈ (t \ s).powerset, (-1 : R) ^ u.card = if t \ s = ∅ then 1 else 0 := by
+      have := congrArg (Int.cast : ℤ → R) (sum_powerset_neg_one_pow_card (x := t \ s))
+      push_cast at this
+      exact this
+    have hcond : t \ s = ∅ ↔ s = t := by
+      rw [sdiff_eq_empty_iff_subset]
+      exact ⟨fun h => subset_antisymm hst h, fun h => h ▸ subset_rfl⟩
+    rw [sum_congr rfl fun u hu => by
+      rw [card_union_of_disjoint (hdisj u hu), Nat.add_sub_cancel_left], hsum]
+    exact if_congr hcond rfl rfl
+  · rw [Icc_eq_empty hst, sum_empty, ite_eq_right_iff.2 fun h => absurd h.le hst]
+
+/-- **The Möbius function of the Boolean lattice, measured from the top.** The signed sum
+`∑_{s ⊆ u ⊆ t} (-1)^{|t| - |u|}` is `1` if `s = t` and `0` otherwise: its terms differ from those
+of `Finset.sum_Icc_neg_one_pow_card_sub_card_left` by the common sign `(-1)^{|t| - |s|}`. -/
+theorem sum_Icc_neg_one_pow_card_sub_card_right {α R : Type*} [DecidableEq α] [Ring R]
+    (s t : Finset α) :
+    ∑ u ∈ Icc s t, (-1 : R) ^ (t.card - u.card) = if s = t then 1 else 0 := by
+  have hterm : ∀ u ∈ Icc s t, (-1 : R) ^ (t.card - u.card) =
+      (-1) ^ (t.card - s.card) * (-1) ^ (u.card - s.card) := fun u hu => by
+    obtain ⟨hsu, hut⟩ := mem_Icc.1 hu
+    have hs := card_le_card hsu
+    have ht := card_le_card hut
+    rw [show t.card - s.card = (t.card - u.card) + (u.card - s.card) by omega, pow_add,
+      mul_assoc, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, mul_one]
+  rw [sum_congr rfl hterm, ← mul_sum, sum_Icc_neg_one_pow_card_sub_card_left]
+  split_ifs with h <;> simp [h]
 
 end Finset
 
