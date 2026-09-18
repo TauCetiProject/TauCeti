@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Localization.FractionRing
 public import TauCeti.RingTheory.DedekindDomain.Ideal
 
 /-!
-# Adic valuations transport along an isomorphism of Dedekind domains
+# Adic valuations and completions transport along an isomorphism of Dedekind domains
 
 An isomorphism `e : R ≃+* R'` of Dedekind domains induces an isomorphism
 `σ = IsFractionRing.ringEquivOfRingEquiv e : K ≃+* K'` of their fraction fields, and carries a
@@ -26,11 +26,20 @@ w.valuation K' (σ f) = v.valuation K f
 for every `f : K`. Equivalently, `ord` at `w` of `σ f` is `ord` at `v` of `f`, which is the
 algebraic content of the Galois descent `div (σ f) = σ_* (div f)` for divisors on a curve.
 
+A field isomorphism `σ : K ≃+* K'` with this property is an isometry for the two adic
+valuations, so it extends by continuity to an isomorphism of adic completions
+`adicCompletionCongr v w σ hσ : K_v ≃+* K'_w`. For a Galois extension of global fields this is
+how an automorphism permuting the places above a given place acts on their completions.
+
 ## Main results
 
 * `IsDedekindDomain.HeightOneSpectrum.intValuation_ringEquiv` and
   `IsDedekindDomain.HeightOneSpectrum.valuation_ringEquivOfRingEquiv`: the integer-valued and the
   fraction-field adic valuations transport.
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletionCongr`: the induced isomorphism of adic
+  completions, with `adicCompletionCongr_algebraMap` (it extends `σ`),
+  `continuous_adicCompletionCongr`, its universal property `eq_adicCompletionCongr_of_continuous`,
+  and `valued_adicCompletionCongr` (it preserves the valuations).
 
 The ideal-level input this rests on — that `Ideal.map e` preserves divisibility and
 factorisation multiplicities, and that Mathlib's `equivOfRingEquiv` is `Ideal.map e` on
@@ -56,7 +65,9 @@ Adapted from [AINTLIB](https://github.com/CBirkbeck/AINTLIB) (Apache-2.0), commi
 `intValuation_map_ringEquiv`, `valuation_map_ringEquiv_algebraMap` and `valuation_map_ringEquiv`
 are that file's, with the vocabulary adapted to this repository's interfaces. The ideal-level
 lemmas adapted from the same source are attributed in
-`TauCeti/RingTheory/DedekindDomain/Ideal.lean`.
+`TauCeti/RingTheory/DedekindDomain/Ideal.lean`. The completion section is not from that source;
+it follows the pattern of `adicCompletionExtension` in
+`TauCeti/RingTheory/DedekindDomain/AdicCompletionExtension.lean`.
 
 ## References
 
@@ -112,5 +123,107 @@ theorem valuation_ringEquivOfRingEquiv (e : R ≃+* R') {v : HeightOneSpectrum R
     valuation_ringEquivOfRingEquiv_algebraMap e hvw b]
 
 end DedekindDomain
+
+section Completion
+
+open WithZero WithZeroTopology
+
+variable {R R' : Type*} [CommRing R] [IsDedekindDomain R] [CommRing R'] [IsDedekindDomain R']
+  {K K' : Type*} [Field K] [Field K'] [Algebra R K] [IsFractionRing R K] [Algebra R' K']
+  [IsFractionRing R' K'] (v : HeightOneSpectrum R) (w : HeightOneSpectrum R')
+
+/-- A field isomorphism carrying the `v`-adic valuation to the `w`-adic valuation is uniformly
+continuous for the two adic uniformities. -/
+theorem uniformContinuous_withValCongr (σ : K ≃+* K')
+    (hσ : ∀ x, w.valuation K' (σ x) = v.valuation K x) :
+    UniformContinuous (WithVal.congr (v.valuation K) (w.valuation K') σ) := by
+  refine uniformContinuous_of_continuousAt_zero _ ?_
+  rw [ContinuousAt, map_zero, (Valued.hasBasis_nhds_zero _ _).tendsto_right_iff]
+  intro γ _
+  -- the preimage of a valuation ball is the valuation ball of the same radius
+  have hcont : Continuous (Valued.v : Valuation (WithVal (v.valuation K)) ℤᵐ⁰) :=
+    Valued.continuous_valuation_of_surjective <| .of_comp (v.valuation_surjective K)
+  have hγ : MonoidWithZeroHom.ValueGroup₀.embedding γ.1 ≠ 0 :=
+    (map_ne_zero_iff _ MonoidWithZeroHom.ValueGroup₀.embedding_injective).mpr γ.ne_zero
+  filter_upwards [hcont.continuousAt.preimage_mem_nhds <| by
+    simpa using Iio_mem_nhds_zero hγ] with x hx
+  rw [Valuation.restrict_lt_iff_lt_embedding]
+  simpa [hσ, WithVal.apply_ofVal] using hx
+
+/-- The isomorphism of adic completions `K_v ≃+* K'_w` extending a field isomorphism
+`σ : K ≃+* K'` that carries the `v`-adic valuation to the `w`-adic valuation. -/
+noncomputable def adicCompletionCongr (σ : K ≃+* K')
+    (hσ : ∀ x, w.valuation K' (σ x) = v.valuation K x) :
+    v.adicCompletion K ≃+* w.adicCompletion K' :=
+  (adicCompletion.equiv K v).trans <|
+    (UniformSpace.Completion.mapRingEquiv (WithVal.congr (v.valuation K) (w.valuation K') σ)
+      (uniformContinuous_withValCongr v w σ hσ).continuous
+      (uniformContinuous_withValCongr w v σ.symm fun y ↦ by
+        simpa using (hσ (σ.symm y)).symm).continuous).trans
+    (adicCompletion.equiv K' w).symm
+
+variable {v w} {σ : K ≃+* K'} (hσ : ∀ x, w.valuation K' (σ x) = v.valuation K x)
+
+/-- On the underlying uniform-space completions, `adicCompletionCongr` is the completion of `σ`. -/
+@[simp]
+theorem toCompletion_adicCompletionCongr (x : v.adicCompletion K) :
+    (adicCompletionCongr v w σ hσ x).toCompletion =
+      UniformSpace.Completion.map (WithVal.congr (v.valuation K) (w.valuation K') σ)
+        x.toCompletion :=
+  (rfl)
+
+/-- `adicCompletionCongr` extends `σ`. -/
+@[simp]
+theorem adicCompletionCongr_algebraMap (x : K) :
+    adicCompletionCongr v w σ hσ (algebraMap K (v.adicCompletion K) x) =
+      algebraMap K' (w.adicCompletion K') (σ x) := by
+  apply adicCompletion.ext
+  rw [toCompletion_adicCompletionCongr]
+  simp only [algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self_apply,
+    adicCompletion.coe_toCompletion]
+  rw [UniformSpace.Completion.map_coe (uniformContinuous_withValCongr v w σ hσ)]
+  simp
+
+/-- `adicCompletionCongr` is continuous. -/
+theorem continuous_adicCompletionCongr : Continuous (adicCompletionCongr v w σ hσ) := by
+  have h : (adicCompletionCongr v w σ hσ : v.adicCompletion K → w.adicCompletion K') =
+      adicCompletion.ofCompletion ∘
+        UniformSpace.Completion.map (WithVal.congr (v.valuation K) (w.valuation K') σ) ∘
+        adicCompletion.toCompletion := by
+    funext x
+    rw [Function.comp_apply, Function.comp_apply, ← toCompletion_adicCompletionCongr hσ,
+      adicCompletion.ofCompletion_toCompletion]
+  rw [h]
+  exact (adicCompletion.continuous_ofCompletion K' w).comp
+    (UniformSpace.Completion.continuous_map.comp (adicCompletion.continuous_toCompletion K v))
+
+/-- `adicCompletionCongr` is the only continuous ring homomorphism `K_v →+* K'_w` extending `σ`. -/
+theorem eq_adicCompletionCongr_of_continuous {f : v.adicCompletion K →+* w.adicCompletion K'}
+    (hf : Continuous f)
+    (hfK : ∀ x : K, f (algebraMap K _ x) = algebraMap K' (w.adicCompletion K') (σ x)) :
+    f = (adicCompletionCongr v w σ hσ).toRingHom :=
+  DFunLike.coe_injective <| (v.denseRange_algebraMap K).equalizer hf
+    (continuous_adicCompletionCongr hσ) (funext fun x ↦ by
+      rw [Function.comp_apply, Function.comp_apply, hfK x, RingEquiv.toRingHom_eq_coe,
+        RingEquiv.coe_toRingHom, adicCompletionCongr_algebraMap])
+
+/-- The inverse of `adicCompletionCongr` is the completion of the inverse isomorphism. -/
+theorem adicCompletionCongr_symm (hσ' : ∀ y, v.valuation K (σ.symm y) = w.valuation K' y) :
+    (adicCompletionCongr v w σ hσ).symm = adicCompletionCongr w v σ.symm hσ' :=
+  (rfl)
+
+/-- `adicCompletionCongr` preserves the valuations of the completions. -/
+@[simp]
+theorem valued_adicCompletionCongr (x : v.adicCompletion K) :
+    Valued.v (adicCompletionCongr v w σ hσ x) = Valued.v x := by
+  have hK := Valued.continuous_valuation_of_surjective (valuedAdicCompletion_surjective K v)
+  have hK' := Valued.continuous_valuation_of_surjective (valuedAdicCompletion_surjective K' w)
+  refine congrFun ((v.denseRange_algebraMap K).equalizer
+    (hK'.comp (continuous_adicCompletionCongr hσ)) hK (funext fun y ↦ ?_)) x
+  rw [Function.comp_apply, Function.comp_apply, adicCompletionCongr_algebraMap]
+  simp only [algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self_apply,
+    valuedAdicCompletion_eq_valuation', hσ]
+
+end Completion
 
 end IsDedekindDomain.HeightOneSpectrum
