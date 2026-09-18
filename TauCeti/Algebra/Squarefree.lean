@@ -36,7 +36,7 @@ that Mathlib does not provide directly, used across the multiquadratic developme
   factorization monoid; the integer statement here records a nonzero square factor and puts the
   factors in the orientation used by the rational square-class argument.
 * `Nat.four_dvd_or_exists_odd_prime_and_dvd_of_squarefree`: squarefreeness of *every* prime
-  divisor of an `n > 2`, read in a commutative ring, yields the single branch that Mathlib's
+  divisor of an `n > 2`, read in any ring, yields the single branch that Mathlib's
   `Nat.four_dvd_or_exists_odd_prime_and_dvd_of_two_lt` splits into. This is the bridge from a
   uniform hypothesis, which a caller can usually establish without knowing `n`, to the sharp
   branch-dependent one that a proof consumes.
@@ -113,8 +113,15 @@ this adds is carrying the squarefreeness through it. The point of stating it is 
 hypotheses differ in usability: the uniform one can be established with no knowledge of `n` — over
 `ℤ` it is free, since every rational prime is squarefree — while the branch-dependent one is what a
 proof consumes. Anything proved from the sharp form is therefore available from the uniform form
-through this lemma. -/
-theorem four_dvd_or_exists_odd_prime_and_dvd_of_squarefree {R : Type*} [CommRing R] {n : ℕ}
+through this lemma.
+
+Nothing here multiplies two elements of `R`, so `R` need not be commutative. `Ring` is the floor
+among the bundled classes: `Squarefree` is defined at `Monoid`, so associativity is needed to
+state the conclusion at all, and the integer casts need `AddGroupWithOne`. Asking for those two
+separately is weaker still and does compile, but `Monoid` and `AddGroupWithOne` each carry their
+own `One R`, so the `1` inside `IsUnit` would not be the `1` the casts produce; `Ring` is what
+shares them. -/
+theorem four_dvd_or_exists_odd_prime_and_dvd_of_squarefree {R : Type*} [Ring R] {n : ℕ}
     (hn : 2 < n) (hsf : ∀ p : ℕ, p.Prime → p ∣ n → Squarefree ((p : ℤ) : R)) :
     (4 ∣ n ∧ Squarefree (2 : R)) ∨
       ∃ p : ℕ, p.Prime ∧ p ≠ 2 ∧ p ∣ n ∧ Squarefree ((p : ℤ) : R) := by
