@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Adjugate
 public import TauCeti.NumberTheory.ModularForms.Petersson.FiniteIndex
+import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.NumberTheory.ModularForms.Petersson.Unitary
 
 /-!
@@ -204,30 +205,6 @@ theorem peterssonInnerCosets_trace_left {𝒢 : Subgroup (GL (Fin 2) ℝ)} {Γ �
 
 /-! ### The adjoint of a double coset operator -/
 
-/-- `Γ ∩ 𝒢`, taken inside `SL(2, ℤ)`, maps onto `𝒢 ∩ Γ` inside `GL(2, ℝ)`. -/
-private lemma map_inf_comap_mapGL (Γ : Subgroup SL(2, ℤ)) (𝒢 : Subgroup (GL (Fin 2) ℝ)) :
-    (Γ ⊓ 𝒢.comap (mapGL ℝ)).map (mapGL ℝ) = 𝒢 ⊓ Γ.map (mapGL ℝ) := by
-  rw [Subgroup.map_inf_eq _ _ _ (mapGL_injective (n := Fin 2) (R := ℤ) (S := ℝ)),
-    Subgroup.map_comap_eq, ← inf_assoc, inf_eq_left.mpr (Subgroup.map_le_range _ _), inf_comm]
-
-/-- `Γ ∩ 𝒢` has finite index in `SL(2, ℤ)` when `Γ` does and `𝒢` has finite index relative to
-the image of `Γ`. -/
-private lemma finiteIndex_inf_comap_mapGL (Γ : Subgroup SL(2, ℤ)) [Γ.FiniteIndex]
-    (𝒢 : Subgroup (GL (Fin 2) ℝ)) [𝒢.IsFiniteRelIndex (Γ.map (mapGL ℝ))] :
-    (Γ ⊓ 𝒢.comap (mapGL ℝ)).FiniteIndex := by
-  refine ⟨?_⟩
-  rw [← Subgroup.relIndex_mul_index (inf_le_left : Γ ⊓ 𝒢.comap (mapGL ℝ) ≤ Γ),
-    ← Subgroup.relIndex_map_map_of_injective _ _
-      (mapGL_injective (n := Fin 2) (R := ℤ) (S := ℝ)), map_inf_comap_mapGL,
-    Subgroup.inf_relIndex_right]
-  exact mul_ne_zero Subgroup.IsFiniteRelIndex.relIndex_ne_zero Subgroup.FiniteIndex.index_ne_zero
-
-/-- A conjugate of a subgroup containing `-I` contains `-I`, which is central. -/
-private lemma neg_one_mem_conjAct_smul {H : Subgroup (GL (Fin 2) ℝ)} (c : GL (Fin 2) ℝ)
-    (h : (-1 : GL (Fin 2) ℝ) ∈ H) : (-1 : GL (Fin 2) ℝ) ∈ ConjAct.toConjAct c • H := by
-  rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem]
-  simpa [ConjAct.smul_def] using h
-
 /-- **The Petersson adjoint of a double coset operator.** Let `Γ₁`, `Γ₂` be of finite index in
 `SL₂(ℤ)`, with `-I ∈ Γ₁ ↔ -I ∈ Γ₂`, and let `α ∈ GL₂(ℝ)` have positive determinant, with
 `α⁻¹ Γ₁ α ∩ Γ₂` of finite index in `Γ₂` and `α Γ₂ α⁻¹ ∩ Γ₁` of finite index in `Γ₁`. The operator
@@ -263,22 +240,27 @@ theorem peterssonInnerCosets_trace_translate {Γ₁ Γ₂ : Subgroup SL(2, ℤ)}
   set 𝒢₁ := ConjAct.toConjAct α⁻¹ • Γ₁.map (mapGL ℝ)
   set 𝒢₂ := ConjAct.toConjAct (TauCeti.adjugateGL α)⁻¹ • Γ₂.map (mapGL ℝ)
   -- the two intermediate levels `α⁻¹ Γ₁ α ∩ Γ₂` and `Γ₁ ∩ α Γ₂ α⁻¹`, inside `SL(2, ℤ)`
-  have h₃ := map_inf_comap_mapGL Γ₂ 𝒢₁
-  have h₃' := map_inf_comap_mapGL Γ₁ 𝒢₂
-  have := finiteIndex_inf_comap_mapGL Γ₂ 𝒢₁
-  have := finiteIndex_inf_comap_mapGL Γ₁ 𝒢₂
+  have hinj := mapGL_injective (n := Fin 2) (R := ℤ) (S := ℝ)
+  have h₃ : (Γ₂ ⊓ 𝒢₁.comap (mapGL ℝ)).map (mapGL ℝ) = 𝒢₁ ⊓ Γ₂.map (mapGL ℝ) := by
+    rw [Subgroup.map_inf_comap, inf_comm]
+  have h₃' : (Γ₁ ⊓ 𝒢₂.comap (mapGL ℝ)).map (mapGL ℝ) = 𝒢₂ ⊓ Γ₁.map (mapGL ℝ) := by
+    rw [Subgroup.map_inf_comap, inf_comm]
+  have := Subgroup.finiteIndex_inf_comap_of_injective Γ₂ 𝒢₁ hinj
+  have := Subgroup.finiteIndex_inf_comap_of_injective Γ₁ 𝒢₂ hinj
+  have hc₁ : (-1 : GL (Fin 2) ℝ) ∈ Subgroup.center (GL (Fin 2) ℝ) :=
+    Subgroup.mem_center_iff.mpr fun g ↦ by rw [mul_neg_one, neg_one_mul]
   have hneg₁ : (-1 : SL(2, ℤ)) ∈ Γ₂ → (-1 : SL(2, ℤ)) ∈ Γ₂ ⊓ 𝒢₁.comap (mapGL ℝ) := by
     intro h
     have h1 : (-1 : GL (Fin 2) ℝ) ∈ Γ₁.map (mapGL ℝ) := ⟨-1, hneg.mpr h, mapGL_neg_one⟩
     refine Subgroup.mem_inf.mpr ⟨h, ?_⟩
     rw [Subgroup.mem_comap, mapGL_neg_one]
-    exact neg_one_mem_conjAct_smul _ h1
+    exact Subgroup.mem_conjAct_smul_of_mem_center hc₁ _ h1
   have hneg₂ : (-1 : SL(2, ℤ)) ∈ Γ₁ → (-1 : SL(2, ℤ)) ∈ Γ₁ ⊓ 𝒢₂.comap (mapGL ℝ) := by
     intro h
     have h2 : (-1 : GL (Fin 2) ℝ) ∈ Γ₂.map (mapGL ℝ) := ⟨-1, hneg.mp h, mapGL_neg_one⟩
     refine Subgroup.mem_inf.mpr ⟨h, ?_⟩
     rw [Subgroup.mem_comap, mapGL_neg_one]
-    exact neg_one_mem_conjAct_smul _ h2
+    exact Subgroup.mem_conjAct_smul_of_mem_center hc₁ _ h2
   -- `α` conjugates `α⁻¹ Γ₁ α ∩ Γ₂` onto `Γ₁ ∩ α Γ₂ α⁻¹`, because `α⁻¹ (α^ι)⁻¹` is a scalar
   have hconj : ConjAct.toConjAct α⁻¹ • (Γ₁ ⊓ 𝒢₂.comap (mapGL ℝ)).map (mapGL ℝ) =
       (Γ₂ ⊓ 𝒢₁.comap (mapGL ℝ)).map (mapGL ℝ) := by
