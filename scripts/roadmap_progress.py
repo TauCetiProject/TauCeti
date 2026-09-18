@@ -2,34 +2,40 @@
 """Generate the data behind the site's Progress page: where every roadmap stands.
 
 The Statistics page measures volume (lines of Lean per roadmap, pull-request throughput). This
-answers the other question, how far each roadmap is from its own specification, one row per
-roadmap and one segment per layer, beside the pull requests merged under that roadmap's label.
+answers the other question, how far each roadmap has got against its own specification: one row
+per roadmap, one segment per layer, beside the pull requests merged under that roadmap's label.
+The board describes coverage of the roadmaps that exist, not how much of mathematics is
+formalized; there is no inventory of mathematics here to measure against.
 
-Three classes of evidence go into the output, and the page keeps them visibly apart:
+Three kinds of evidence go into the output, and the page keeps them apart:
 
 * **Layers** come from the roadmap's own `README.md`: every heading (or bold bullet) that opens
-  with `Layer`, `Lane`, `Part`, `Stage`, or an `L0A`-style label. Humans wrote these and they do
-  not move when code lands, so they are the unit of progress. No percentages are computed from
-  them: layers are not equal in size.
+  with `Layer`, `Lane`, `Part`, `Stage`, or a short label such as `L0A` or `S1`. Humans wrote
+  these and they do not move when code lands, so they are the unit of progress. Nothing here turns
+  them into a percentage: layers are not equal in size, and a partial layer is not half done.
 
-* **Per-layer state** (done / partial / untouched) is a judgment about the library, and the only
-  place that judgment is made is the generated `STATUS.md` that TauCetiProgress writes for a
-  roadmap. Its prose cannot be aggregated, so this script reads a machine-readable companion,
-  a `tauceti-coverage:v1` marker beside the `tauceti-status:v1` header, when one is present.
-  Until TauCetiProgress emits that marker, `scripts/roadmap_coverage.json` carries the same
-  verdicts read by hand from the prose; an entry there is keyed to the exact `to_sha` of the
-  snapshot it was read from, so a newer snapshot silently retires it and the layer shows as
-  unassessed rather than stale. Either way the states have the standing of the prose: a model's
-  account, not security-validated, and never a kernel-checked claim.
+* **Per-layer state** (done / partial / untouched / unassessed) is an assessment of the library at
+  a particular revision, and the only place that assessment is made is the generated `STATUS.md`
+  that TauCetiProgress writes for a roadmap. Its prose cannot be aggregated, so this script reads
+  a machine-readable companion, a `tauceti-coverage:v1` marker beside the `tauceti-status:v1`
+  header, when one is present and fits. Until TauCetiProgress emits that marker,
+  `scripts/roadmap_coverage.json` carries the same verdicts transcribed by hand from the prose.
+  A transcription is bound to the exact report it was read from (its library commit and a hash of
+  the report's text) and to the exact layer ids it names, so a rewritten report or a re-layered
+  README retires it rather than letting old states attach to new requirements. The states have
+  the standing of the prose: a model's account of the library, not a certificate that a layer's
+  whole specification is met, and not something Lean checks.
 
 * **Activity** is mechanical: merged pull requests carrying exactly one `roadmap/<Area>` label,
-  the attribution the Statistics page already relies on. It reads the snapshot the Pages workflow
-  caches for the statistics charts (`--data`), so no second walk of GitHub is needed; without one
-  it pages the merged pull requests itself through `gh`.
+  the attribution the Statistics page already relies on. Pull requests with no roadmap label, or
+  more than one, are counted in the global figures and reported as unattributed rather than
+  assigned to a row. It reads the snapshot the Pages workflow caches for the statistics charts
+  (`--data`), so no second walk of GitHub is needed; without one it pages the merged pull
+  requests itself through `gh`.
 
-Roadmaps under `Completed/` are done by declaration: the maintainers judged them complete against
-their README, and their targets are discharged in place, so that is the one kernel-checked state
-on the page.
+A roadmap under `Completed/` is one the maintainers declared complete against its README. That is
+a human decision, recorded separately from any layer assessment; the two are shown side by side
+and neither is inferred from the other.
 
 Topics are a hand assignment (`scripts/roadmap_topics.json`) and are labelled as such.
 
@@ -41,6 +47,7 @@ from __future__ import annotations
 import argparse
 import collections
 import datetime as dt
+import hashlib
 import json
 import pathlib
 import re
@@ -53,7 +60,8 @@ AREA_PREFIX = "roadmap/"
 EXCLUDE = {"roadmap/none", "roadmap/Unknown"}
 WEEKS = 16
 # TauCetiProgress opens a new reporting window once this many labelled PRs have merged since the
-# last one, so this is the threshold at which a snapshot is genuinely behind rather than merely old.
+# last one, so this is the threshold at which a report is behind by its own rule. It is a
+# heuristic about when a new report is due, not a claim that nothing changed below it.
 UPDATE_DUE_PRS = 10
 
 STATUS_MARKER = "tauceti-status:v1"
@@ -63,10 +71,15 @@ _MARKER_RE = re.compile(r"<!--\s*(tauceti-[a-z-]+:v\d+)\s*(\{.*?\})\s*-->", re.S
 STATES = ("done", "partial", "untouched", "unassessed")
 _STATE_CHAR = {"d": "done", "p": "partial", "u": "untouched", "?": "unassessed"}
 
+# Why a row's layers carry the states they do. `ok` means an assessment applied; every other
+# reason leaves the layers unassessed and says which kind of gap that is.
+REASONS = ("ok", "no-layers", "no-report", "not-transcribed", "transcription-retired",
+           "invalid-marker")
+
 # A layer heading: `### Layer 3: ...`, `## Lane G: grid homology`, `### Part A — ...`,
 # `### Stage 2: ...`, or a short label such as `### L0A — sheaves of modules` or `### S1: the
 # twenty-six sporadic presentations` (a capital, digits, an optional letter, then a separator).
-# The id is the label before the first separator, which is what a coverage marker refers to.
+# The id is the label before the first separator, which is what an assessment refers to.
 _WORD_LEAD = r"(?:Layer|Lane|Part|Stage|Milestone)\b"
 _SHORT_LEAD = r"[A-Z]\d+[A-Za-z]?(?=\s*[:—–,])"
 _LAYER_LEAD = rf"(?:{_WORD_LEAD}|{_SHORT_LEAD})"
@@ -110,119 +123,222 @@ def markers(text: str) -> dict[str, dict]:
     return out
 
 
+def _paragraph_after(text: str, label: str) -> str:
+    """The Markdown paragraph that follows `label`, soft-wrapped lines joined with spaces.
+
+    Stops at a blank line, a heading, a list item or a marker, so a wrapped "At a glance"
+    paragraph comes back whole and the frontier that follows it is never swallowed.
+    """
+    i = text.find(label)
+    if i < 0:
+        return ""
+    rest = text[i + len(label):]
+    lines = []
+    for line in rest.splitlines():
+        s = line.strip()
+        if not lines and not s:
+            continue  # the label may sit on a line of its own
+        if not s or s.startswith("#") or s.startswith("- ") or s.startswith("<!--"):
+            break
+        lines.append(s)
+    return " ".join(lines).strip()
+
+
+def _frontier(text: str) -> list[dict]:
+    """The frontier bullets, each as its bold target name and the rest of the bullet's text."""
+    i = text.find("## The frontier")
+    if i < 0:
+        return []
+    items, current = [], None
+    for line in text[i:].splitlines()[1:]:
+        s = line.rstrip()
+        if s.startswith("## "):
+            break
+        m = re.match(r"^- \*\*(.+?)\*\*\s*(.*)$", s)
+        if m:
+            current = {"name": m.group(1).strip(), "text": m.group(2).strip()}
+            items.append(current)
+        elif current is not None and s.strip() and not s.startswith("- "):
+            current["text"] = (current["text"] + " " + s.strip()).strip()
+        elif not s.strip():
+            current = None
+    return items[:5]
+
+
 def parse_status(text: str) -> dict | None:
-    """The header, at-a-glance sentence, frontier bullets and coverage marker of a STATUS.md."""
+    """The header, at-a-glance paragraph, frontier and coverage marker of a STATUS.md."""
     m = markers(text)
     head = m.get(STATUS_MARKER)
-    if not head or not head.get("to_sha"):
+    if not isinstance(head, dict) or not isinstance(head.get("to_sha"), str) or not head["to_sha"]:
         return None
-    glance = re.search(r"\*\*At a glance\.\*\*\s*(.+)", text)
-    frontier_start = text.find("## The frontier")
-    frontier = re.findall(r"^- \*\*(.+?)\*\*", text[frontier_start:], re.M) if frontier_start >= 0 else []
     return {
         "to_sha": head["to_sha"],
-        "ts": head.get("ts"),
-        "glance": glance.group(1).strip() if glance else "",
-        "frontier": frontier[:5],
+        "ts": head.get("ts") if isinstance(head.get("ts"), str) else None,
+        "roadmap": head.get("roadmap") if isinstance(head.get("roadmap"), str) else None,
+        "glance": _paragraph_after(text, "**At a glance.**"),
+        "frontier": _frontier(text),
+        "report_sha": hashlib.sha256(text.encode("utf-8")).hexdigest(),
         "coverage": m.get(COVERAGE_MARKER),
     }
 
 
-def states_from_marker(marker: dict, layers: list[str], to_sha: str) -> list[str] | None:
-    """Per-layer states from a `tauceti-coverage:v1` marker, or None if it does not fit.
+def _check_ids(by_id: dict, ids: list[str]) -> str | None:
+    """Why a mapping of layer id to state does not fit the layer ids, or None if it does."""
+    if len(set(ids)) != len(ids):
+        return "the README's layer ids are not unique"
+    missing = [i for i in ids if i not in by_id]
+    extra = [i for i in by_id if i not in ids]
+    if missing or extra:
+        return ("layer ids differ from the README" + (f"; missing {missing}" if missing else "")
+                + (f"; unknown {extra}" if extra else ""))
+    bad = [i for i, s in by_id.items() if s not in STATES]
+    if bad:
+        return f"illegal state for {bad}"
+    return None
 
-    It fits when it describes the same snapshot and names every layer id exactly once with a
-    legal state; anything else is ignored whole rather than half-applied.
+
+def states_from_marker(marker, name: str, layers: list[str], to_sha: str) -> tuple[list[str] | None, str | None]:
+    """Per-layer states from a `tauceti-coverage:v1` marker, or (None, reason).
+
+    It fits when it names this roadmap and this snapshot and lists every layer id exactly once
+    with a legal state; anything else is refused whole, with a reason, rather than half-applied.
     """
-    if not marker or marker.get("to_sha") != to_sha:
-        return None
+    if not isinstance(marker, dict):
+        return None, "marker is not an object"
+    if marker.get("roadmap") != name:
+        return None, f"marker names roadmap {marker.get('roadmap')!r}, not {name!r}"
+    if marker.get("to_sha") != to_sha:
+        return None, "marker describes a different library commit than the status header"
+    entries = marker.get("layers")
+    if not isinstance(entries, list):
+        return None, "marker has no layer list"
     by_id = {}
-    for entry in marker.get("layers") or []:
-        lid, state = entry.get("id"), entry.get("state")
-        if lid in by_id or state not in STATES:
-            return None
-        by_id[lid] = state
+    for entry in entries:
+        if not isinstance(entry, dict) or not isinstance(entry.get("id"), str) or not isinstance(entry.get("state"), str):
+            return None, "marker layer entries must be objects with string id and state"
+        if entry["id"] in by_id:
+            return None, f"duplicate layer id {entry['id']!r}"
+        by_id[entry["id"]] = entry["state"]
     ids = [layer_id(t) for t in layers]
-    if sorted(by_id) != sorted(ids) or len(set(ids)) != len(ids):
-        return None
-    return [by_id[i] for i in ids]
+    problem = _check_ids(by_id, ids)
+    if problem:
+        return None, problem
+    return [by_id[i] for i in ids], None
 
 
-def states_from_transitional(entry: dict | None, layers: list[str], to_sha: str) -> list[str] | None:
-    """Per-layer states from the hand-read file, valid only for the snapshot they were read from."""
-    want = entry.get("to_sha") if entry else None
-    if not want or len(want) < 7 or not to_sha.startswith(want):
-        return None
-    chars = entry.get("states", "")
-    if len(chars) != len(layers) or any(c not in _STATE_CHAR for c in chars):
-        return None
-    return [_STATE_CHAR[c] for c in chars]
+def states_from_transitional(entry, layers: list[str], to_sha: str, report_sha: str) -> tuple[list[str] | None, str | None]:
+    """Per-layer states from the hand-read file, or (None, reason).
+
+    An entry is `{"to_sha", "report_sha", "layers": {id: char}}` and applies only to the exact
+    report it was transcribed from (both hashes must match, prefixes of at least seven and twelve
+    characters respectively) and only to the exact layer ids it names.
+    """
+    if not isinstance(entry, dict):
+        return None, "not-transcribed"
+    want_sha, want_report = entry.get("to_sha"), entry.get("report_sha")
+    if (not isinstance(want_sha, str) or len(want_sha) < 7 or not to_sha.startswith(want_sha)
+            or not isinstance(want_report, str) or len(want_report) < 12 or not report_sha.startswith(want_report)):
+        return None, "transcription-retired"
+    raw = entry.get("layers")
+    if not isinstance(raw, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in raw.items()):
+        return None, "transcription-retired"
+    by_id = {k: _STATE_CHAR.get(v, v) for k, v in raw.items()}
+    problem = _check_ids(by_id, [layer_id(t) for t in layers])
+    if problem:
+        return None, "transcription-retired"
+    return [by_id[layer_id(t)] for t in layers], None
 
 
-def read_roadmap(dirpath: pathlib.Path, completed: bool, transitional: dict,
+def read_roadmap(dirpath: pathlib.Path, base: str, transitional: dict, parent: str | None = None,
                  inherit: dict | None = None) -> dict | None:
     """One roadmap row. `inherit` is a parent's parsed STATUS.md for a sub-roadmap without its
-    own: TauCetiProgress reports an umbrella roadmap as one unit, so its snapshot is the only
-    account of the sub-roadmaps, and hand-read states for them are keyed to its commit."""
+    own: TauCetiProgress reports an umbrella roadmap as one unit, so its report is the only
+    account of the sub-roadmaps, and hand transcriptions for them are bound to that report."""
     readme = dirpath / "README.md"
     if not readme.is_file():
         return None
     text = readme.read_text(encoding="utf-8")
     title = next((l[2:].strip() for l in text.splitlines() if l.startswith("# ")), dirpath.name)
     title = re.sub(r"^Roadmap:\s*", "", title)
-    hand = transitional.get(dirpath.name) or {}
-    layers = layer_headings(text) or list(hand.get("layers") or [])
+    name = dirpath.name
+    rel = f"{base}/{parent}/{name}" if parent else f"{base}/{name}"
+    hand = transitional.get(name)
+    layers = layer_headings(text)
     row = {
-        "name": dirpath.name,
+        "id": rel,
+        "name": name,
         "title": title,
-        "completed": completed,
+        "parent": parent,
+        "completed": base == COMPLETED_DIR,
+        "readme": f"{rel}/README.md",
         "layers": layers,
         "layer_ids": [layer_id(t) for t in layers],
         "states": ["unassessed"] * len(layers),
-        "states_source": None,
+        "assessment": {"source": None, "reason": "no-layers" if not layers else "no-report", "detail": None,
+                       "notes": {}},
         "status": None,
-        "status_inherited": False,
+        "retired": None,
     }
     status_file = dirpath / "STATUS.md"
     st = parse_status(status_file.read_text(encoding="utf-8")) if status_file.is_file() else None
+    inherited = False
     if st is None and inherit:
-        st = dict(inherit, coverage=None)
-        row["status_inherited"] = True
+        st, inherited = inherit, True
     if st:
-        row["status"] = {k: st[k] for k in ("to_sha", "ts", "glance", "frontier")}
-        states = states_from_marker(st["coverage"], layers, st["to_sha"])
+        row["status"] = {
+            "to_sha": st["to_sha"], "ts": st["ts"], "glance": st["glance"], "frontier": st["frontier"],
+            "report_sha": st["report_sha"], "inherited": inherited,
+            "path": f"{base}/{parent}/STATUS.md" if inherited else f"{rel}/STATUS.md",
+            "progress_path": f"{base}/{parent}/PROGRESS.md" if inherited else f"{rel}/PROGRESS.md",
+        }
+    if not layers or not st:
+        return row
+    a = row["assessment"]
+    if st["coverage"] is not None and not inherited:
+        states, why = states_from_marker(st["coverage"], name, layers, st["to_sha"])
         if states:
-            row["states"], row["states_source"] = states, "marker"
+            row["states"], a["source"], a["reason"] = states, "marker", "ok"
         else:
-            states = states_from_transitional(hand, layers, st["to_sha"])
-            if states:
-                row["states"], row["states_source"] = states, "hand-read"
-    if completed and row["states_source"] is None:
-        row["states"], row["states_source"] = ["done"] * len(layers), "completed"
+            a["reason"], a["detail"] = "invalid-marker", why
+        return row
+    states, why = states_from_transitional(hand, layers, st["to_sha"], st["report_sha"])
+    if states:
+        row["states"], a["source"], a["reason"] = states, "hand-read", "ok"
+        notes = hand.get("notes") if isinstance(hand, dict) else None
+        a["notes"] = {k: v for k, v in notes.items() if k in row["layer_ids"]} if isinstance(notes, dict) else {}
+    else:
+        a["reason"] = why
+        if why == "transcription-retired":
+            a["detail"] = "the report or the README changed after the transcription was made"
+            # Keep the retired reading, dated, for the detail panel; never as the current state.
+            old = hand.get("layers") if isinstance(hand, dict) else None
+            if isinstance(old, dict) and set(old) == set(row["layer_ids"]):
+                row["retired"] = {"to_sha": hand.get("to_sha"),
+                                  "states": [_STATE_CHAR.get(old[i], old[i]) for i in row["layer_ids"]]}
     return row
 
 
 def read_roadmaps(roadmap_dir: pathlib.Path, transitional: dict) -> list[dict]:
     """Every roadmap, active then completed, each followed by its sub-roadmaps if it has any."""
     rows = []
-    for base, completed in ((AREAS_DIR, False), (COMPLETED_DIR, True)):
+    for base in (AREAS_DIR, COMPLETED_DIR):
         root = roadmap_dir / base
         if not root.is_dir():
             continue
         for d in sorted(p for p in root.iterdir() if p.is_dir()):
-            row = read_roadmap(d, completed, transitional)
+            row = read_roadmap(d, base, transitional)
             if row is None:
                 continue
-            row["parent"] = None
             rows.append(row)
+            parent_status = None
+            if row["status"]:
+                parent_status = parse_status((d / "STATUS.md").read_text(encoding="utf-8"))
             # A sub-roadmap is a directory that is itself a roadmap: README plus targets. That
             # keeps a `references/` folder with a README of its own out of the board.
             for sub in sorted(p for p in d.iterdir() if p.is_dir() and (p / "Suggested.lean").is_file()):
-                child = read_roadmap(sub, completed, transitional, inherit=row["status"])
-                if child is None:
-                    continue
-                child["parent"] = d.name
-                rows.append(child)
+                child = read_roadmap(sub, base, transitional, parent=d.name, inherit=parent_status)
+                if child is not None:
+                    rows.append(child)
     return rows
 
 
@@ -232,15 +348,17 @@ def load_prs(path: pathlib.Path) -> list[dict]:
     """Merged pull requests as `{number, merged_at, labels}` from any of the shapes we meet.
 
     Accepts the statistics snapshot (`{"prs": [{"merged_at", "labels": [name, ...]}]}`), the
-    output of `gh pr list --json number,mergedAt,labels`, or the raw GraphQL nodes.
+    output of `gh pr list --json number,mergedAt,labels`, or the raw GraphQL nodes. Each pull
+    request counts once, whatever the source repeats.
     """
     raw = json.loads(path.read_text(encoding="utf-8"))
     items = raw["prs"] if isinstance(raw, dict) else raw
-    out = []
+    out, seen = [], set()
     for pr in items:
         merged = pr.get("merged_at", pr.get("mergedAt"))
-        if not merged:
+        if not merged or pr["number"] in seen:
             continue
+        seen.add(pr["number"])
         labels = pr.get("labels") or []
         if isinstance(labels, dict):
             labels = labels.get("nodes") or []
@@ -278,6 +396,7 @@ def fetch_merged(repo: str) -> list[dict]:
 
 
 def area_of(pr: dict) -> str | None:
+    """The one roadmap a pull request advances, or None when it has no label or several."""
     labs = [l for l in pr["labels"] if l.startswith(AREA_PREFIX) and l not in EXCLUDE]
     return labs[0][len(AREA_PREFIX):] if len(labs) == 1 else None
 
@@ -286,46 +405,62 @@ def week_start(d: dt.date) -> dt.date:
     return d - dt.timedelta(days=d.weekday())
 
 
-def activity(prs: list[dict], today: dt.date, weeks: int = WEEKS) -> tuple[list[str], list[int], dict]:
-    """Per-area merge activity: weekly counts over the trailing window, totals, last merge."""
+def activity(prs: list[dict], today: dt.date, weeks: int = WEEKS, known: set[str] | None = None):
+    """Per-area merge activity plus the global series and the attribution accounting.
+
+    Returns `(week_labels, global, per_area)`. `global` holds the weekly counts, the 30-day count
+    and the total over the same deduplicated population, and how many pull requests were left
+    unattributed and why; a pull request is never assigned to a row by guesswork.
+    """
     week0 = week_start(today) - dt.timedelta(weeks=weeks - 1)
     labels = [(week0 + dt.timedelta(weeks=i)).isoformat() for i in range(weeks)]
-    allweekly = [0] * weeks
+    glob = {"weekly": [0] * weeks, "last30": 0, "total": 0,
+            "unattributed": {"no_label": 0, "several_labels": 0, "unknown_area": 0}}
     per = collections.defaultdict(lambda: {"weekly": [0] * weeks, "total": 0, "last30": 0, "last": None,
                                            "merged": []})
     for pr in prs:
         day = dt.date.fromisoformat(pr["merged_at"][:10])
         wi = (week_start(day) - week0).days // 7
+        recent = (today - day).days < 30
+        glob["total"] += 1
         if 0 <= wi < weeks:
-            allweekly[wi] += 1
+            glob["weekly"][wi] += 1
+        if recent:
+            glob["last30"] += 1
         area = area_of(pr)
         if area is None:
+            n = len([l for l in pr["labels"] if l.startswith(AREA_PREFIX) and l not in EXCLUDE])
+            glob["unattributed"]["several_labels" if n > 1 else "no_label"] += 1
+            continue
+        if known is not None and area not in known:
+            glob["unattributed"]["unknown_area"] += 1
             continue
         a = per[area]
         a["total"] += 1
         a["merged"].append(pr["merged_at"])
         if 0 <= wi < weeks:
             a["weekly"][wi] += 1
-        if (today - day).days < 30:
+        if recent:
             a["last30"] += 1
         if a["last"] is None or day.isoformat() > a["last"]:
             a["last"] = day.isoformat()
-    return labels, allweekly, per
+    return labels, glob, per
 
 
 # ---- assembly -------------------------------------------------------------------------------
 
 def git_head(repo_dir: pathlib.Path) -> str | None:
     try:
-        return subprocess.run(["git", "-C", str(repo_dir), "rev-parse", "--short", "HEAD"],
+        return subprocess.run(["git", "-C", str(repo_dir), "rev-parse", "HEAD"],
                               check=True, text=True, stdout=subprocess.PIPE).stdout.strip()
     except (subprocess.CalledProcessError, FileNotFoundError):
         return None
 
 
-def build(rows: list[dict], prs: list[dict], topics: dict, today: dt.date,
+def build(rows: list[dict], prs: list[dict], topics: dict, now: dt.datetime,
           roadmap_head: str | None, prs_source: str) -> dict:
-    labels, allweekly, per = activity(prs, today)
+    today = now.date()
+    labels, glob, per = activity(prs, today, known={r["name"] for r in rows if r["parent"] is None})
     topic_of = topics.get("map", {})
     for row in rows:
         row["topic"] = topic_of.get(row["parent"] or row["name"], "Unsorted")
@@ -335,19 +470,18 @@ def build(rows: list[dict], prs: list[dict], topics: dict, today: dt.date,
             if row["status"] and row["status"]["ts"]:
                 since = sum(1 for m in a["merged"] if m > row["status"]["ts"])
             row["activity"] = {"weekly": a["weekly"], "total": a["total"], "last30": a["last30"],
-                               "last": a["last"], "since_snapshot": since}
+                               "last": a["last"], "since_report": since}
         else:
             row["activity"] = None
     return {
-        "schema_version": 1,
-        "generated_at": today.isoformat(),
+        "schema_version": 2,
+        "generated_at": now.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "roadmap_head": roadmap_head,
         "prs_source": prs_source,
-        "merged_total": len(prs),
-        "first_merge": min((p["merged_at"][:10] for p in prs), default=None),
         "update_due_prs": UPDATE_DUE_PRS,
         "weeks": labels,
-        "all_weekly": allweekly,
+        "current_week": labels[-1],
+        "global": {**glob, "first_merge": min((p["merged_at"][:10] for p in prs), default=None)},
         "topics": topics.get("order", []),
         "rows": rows,
     }
@@ -364,10 +498,12 @@ def main(argv=None) -> int:
                    help="pull-request snapshot to read instead of querying gh")
     p.add_argument("--topics", type=pathlib.Path, default=here / "roadmap_topics.json")
     p.add_argument("--coverage", type=pathlib.Path, default=here / "roadmap_coverage.json",
-                   help="hand-read per-layer states, used only when no coverage marker fits")
-    p.add_argument("--today", type=dt.date.fromisoformat, default=dt.date.today())
+                   help="hand-transcribed per-layer states, used only when no coverage marker fits")
+    p.add_argument("--now", type=dt.datetime.fromisoformat,
+                   default=dt.datetime.now(dt.timezone.utc), help="ISO timestamp (UTC), for tests")
     p.add_argument("--out", type=pathlib.Path, required=True)
     args = p.parse_args(argv)
+    now = args.now if args.now.tzinfo else args.now.replace(tzinfo=dt.timezone.utc)
 
     topics = json.loads(args.topics.read_text(encoding="utf-8"))
     transitional = json.loads(args.coverage.read_text(encoding="utf-8")) if args.coverage.is_file() else {}
@@ -379,11 +515,15 @@ def main(argv=None) -> int:
         prs, source = load_prs(args.data), f"snapshot {args.data.name}"
     else:
         prs, source = fetch_merged(args.repo), "gh"
-    data = build(rows, prs, topics, args.today, git_head(args.roadmap_dir), source)
+    data = build(rows, prs, topics, now, git_head(args.roadmap_dir), source)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n",
                         encoding="utf-8")
-    assessed = sum(1 for r in rows if r["states_source"])
+    for r in rows:
+        why = r["assessment"]["reason"]
+        if why in ("transcription-retired", "invalid-marker"):
+            print(f"{r['id']}: layers unassessed ({why}): {r['assessment']['detail']}", file=sys.stderr)
+    assessed = sum(1 for r in rows if r["assessment"]["source"])
     print(f"{len(rows)} rows, {assessed} with per-layer states, {len(prs)} merged PRs ({source})")
     return 0
 

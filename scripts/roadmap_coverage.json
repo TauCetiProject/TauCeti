@@ -1,52 +1,692 @@
 {
-  "_comment": "Transitional, hand-read per-layer states for the Progress page, one character per layer in README order: d = done, p = partial, u = untouched, ? = unassessed. Each entry was read from the roadmap's STATUS.md prose at the commit named by to_sha and applies only while STATUS.md still reports that commit; a newer snapshot retires it and the layers show as unassessed until re-read. This file exists only until TauCetiProgress writes a tauceti-coverage:v1 marker beside its status header (see roadmap_progress.py); once it does, entries here are ignored for any snapshot carrying the marker. Sub-roadmaps of an umbrella roadmap are keyed to the umbrella's snapshot commit.",
-  "AdicSpaces": {"to_sha": "2f71ccd", "states": "pdpppuu"},
-  "AlgebraicCurves": {"to_sha": "8745177", "states": "ddpdppdpupuuu"},
-  "ArithmeticDirichletSeries": {"to_sha": "6bc3780", "states": "ddddddpuppp"},
-  "CFSGStatement": {"to_sha": "8745177", "states": "dpppp?ddu"},
-  "Chebotarev": {"to_sha": "94050b6", "states": "pdupuuppuupuuu"},
-  "CombinatorialHeegaardFloer": {"to_sha": "b53ed55", "states": "ppupu"},
-  "ConformalMapping": {"to_sha": "ae69ef9", "states": "ddddddp"},
-  "DGAInfinity": {"to_sha": "8745177", "states": "puupuuuuuuuu"},
-  "DenseGraphLimits": {"to_sha": "8745177", "states": "dppdupppuuuuu"},
-  "EllipticCurves": {"to_sha": "0430506", "states": "pppupuuuppuu"},
-  "Exchangeability": {"to_sha": "5b603c6", "states": "ddddddddp"},
-  "GeometricTopology": {"to_sha": "8745177", "states": "pppppuuuuup"},
-  "GlobalNumberFields": {"to_sha": "8745177", "states": "ppuuuuuuuuuu"},
-  "GrothendieckEulerForms": {"to_sha": "8745177", "states": "ddppuppp"},
-  "HeegaardFloer": {"to_sha": "6704398", "states": "ppupppu"},
-  "HodgeStructures": {"to_sha": "8745177", "states": "ddpd"},
-  "HopfRinow": {"to_sha": "8745177", "states": "ppuup"},
-  "JacobianChallenge": {"to_sha": "2c0c80a", "states": "ppuupu"},
-  "ModularForms": {"to_sha": "37aec57", "states": "pdppppppuuupu"},
-  "Multiquadratic": {"to_sha": "0ee6c02", "states": "ddpp"},
-  "NumberFieldArithmetic": {"to_sha": "8745177", "states": "ppuuuuuu"},
-  "OneParameterSemigroups": {"to_sha": "34ee8bb", "states": "ppd"},
-  "OptimalTransport": {"to_sha": "8745177", "states": "dppuuuuuuuuuuuuuu"},
-  "PDE": {"to_sha": "bc61e7b", "states": "pppduu"},
-  "PolynomialGaloisGroups": {"to_sha": "8745177", "states": "ppuuuuuu"},
-  "ProfiniteCohomology": {"to_sha": "8745177", "states": "pddpppppppuuuu"},
-  "ProfiniteProPGroups": {"to_sha": "8745177", "states": "puupuuuuuuuu"},
-  "ReductiveGroups": {"to_sha": "890ee2c", "states": "dddpdpppup"},
-  "StandardDistributions": {"to_sha": "14e3bf8", "states": "dddddpp"},
-  "UniversalCovers": {"to_sha": "f95cc2f", "states": "ddddd"},
-  "ZigzagPreprojective": {"to_sha": "8745177", "states": "dppppuuuu"},
-
-  "ContourIntegration": {"to_sha": "0672a6c", "states": "ddddd"},
-  "EffectiveBounds": {"to_sha": "8745177", "states": "dddp"},
-  "IntegralLattices": {"to_sha": "8745177", "states": "dpdpp"},
-  "OrthogonalL2Bases": {"to_sha": "11ef09d", "states": "dddd"},
-
-  "AdoIwasawa": {"to_sha": "b4da9b9", "states": "??????????"},
-  "CharacterTheory": {"to_sha": "b4da9b9", "states": "ddddddpdpp"},
-  "ClassicalGroups": {"to_sha": "b4da9b9", "states": "pp???p?"},
-  "CompactGroups": {"to_sha": "b4da9b9", "states": "ddddddu"},
-  "InductionRestriction": {"to_sha": "b4da9b9", "states": "ddduuuuduu"},
-  "LieGroups": {"to_sha": "b4da9b9", "states": "d?puuuuuuu"},
-  "LieHighestWeight": {"to_sha": "b4da9b9", "states": "ddddddupup"},
-  "QuiverRepresentations": {"to_sha": "b4da9b9", "states": "d???dup"},
-  "RootSystems": {"to_sha": "b4da9b9", "states": "dddddd"},
-  "SchurWeyl": {"to_sha": "b4da9b9", "states": "ddddddpupu"},
-  "SemisimpleAlgebras": {"to_sha": "b4da9b9", "states": "dddddddd"},
-  "SpinRepresentations": {"to_sha": "b4da9b9", "states": "ddddppddup"}
+ "_comment": "Transitional, hand-transcribed per-layer states for the Progress page, used only while TauCetiProgress writes no tauceti-coverage:v1 marker. Each entry was read from the roadmap's STATUS.md prose and is bound to that exact report: to_sha is the library commit the report describes (prefix of at least 7 characters) and report_sha is a prefix (at least 12) of the SHA-256 of the STATUS.md text; either changing retires the entry and the layers show as unassessed until re-read. layers maps the README's layer ids to d (reported done), p (reported partial), u (reported untouched) or ? (the report does not say). Sub-roadmaps of an umbrella roadmap are bound to the umbrella's report. notes may explain an individual reading.",
+ "AdicSpaces": {
+  "to_sha": "2f71ccd",
+  "report_sha": "2f99852d6ab1",
+  "layers": {
+   "Layer 0": "p",
+   "Layer 1": "d",
+   "Layer 2": "p",
+   "Layer 3": "p",
+   "Layer 4": "p",
+   "Layer 5": "u",
+   "Layer 6": "u"
+  }
+ },
+ "AlgebraicCurves": {
+  "to_sha": "8745177",
+  "report_sha": "a28fea8afaf7",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "d",
+   "Layer 2": "p",
+   "Layer 3": "d",
+   "Layer 4": "p",
+   "Layer 5": "p",
+   "Layer 6": "d",
+   "Layer 7": "p",
+   "Layer 8": "u",
+   "Layer 9": "p",
+   "Layer 10": "u",
+   "Layer 11": "u",
+   "Layer 12": "u"
+  }
+ },
+ "ArithmeticDirichletSeries": {
+  "to_sha": "6bc3780",
+  "report_sha": "45847248a507",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "d",
+   "Layer 2": "d",
+   "Layer 3": "d",
+   "Layer 4": "d",
+   "Layer 5": "d",
+   "Layer 6": "p",
+   "Layer 7": "u",
+   "Layer 8": "p",
+   "Layer 9": "p",
+   "Layer 10": "p"
+  },
+  "notes": {
+   "Layer 8": "The report's opening sentence counts Layer 8 as done, but its coverage paragraph says it still lacks the equality of the ordinary and absolute abscissae; the more specific statement is followed here."
+  }
+ },
+ "CFSGStatement": {
+  "to_sha": "8745177",
+  "report_sha": "e78a547571f5",
+  "layers": {
+   "I0": "d",
+   "L0": "p",
+   "L1": "p",
+   "L2": "p",
+   "L3": "p",
+   "L5": "?",
+   "S0": "d",
+   "S1": "d",
+   "A0": "u"
+  }
+ },
+ "Chebotarev": {
+  "to_sha": "94050b6",
+  "report_sha": "7b09221b32b6",
+  "layers": {
+   "Layer 1": "p",
+   "Layer 2": "d",
+   "Layer 3": "u",
+   "Layer 4": "p",
+   "Layer 5": "u",
+   "Layer 6": "u",
+   "Layer 7": "p",
+   "Layer 8": "p",
+   "Layer 9": "u",
+   "Layer 10": "u",
+   "Layer 11": "p",
+   "Layer 12": "u",
+   "Layer 13": "u",
+   "Layer 14": "u"
+  }
+ },
+ "CombinatorialHeegaardFloer": {
+  "to_sha": "b53ed55",
+  "report_sha": "4642193d417a",
+  "layers": {
+   "Lane G": "p",
+   "Lane ALG": "p",
+   "Lane K": "u",
+   "Lane L": "p",
+   "Lane H": "u"
+  }
+ },
+ "ConformalMapping": {
+  "to_sha": "ae69ef9",
+  "report_sha": "8c4a8795912d",
+  "layers": {
+   "L0": "d",
+   "L1": "d",
+   "L2": "d",
+   "L3": "d",
+   "L4": "d",
+   "L5": "d",
+   "L6": "p"
+  }
+ },
+ "DGAInfinity": {
+  "to_sha": "8745177",
+  "report_sha": "23cbcc27af58",
+  "layers": {
+   "Layer 0": "p",
+   "Layer 1": "u",
+   "Layer 2": "u",
+   "Layer 3": "p",
+   "Layer 4": "u",
+   "Layer 5": "u",
+   "Layer 6": "u",
+   "Layer 7": "u",
+   "Layer 8": "u",
+   "Layer 9": "u",
+   "Layer 10": "u",
+   "Layer 11": "u"
+  }
+ },
+ "DenseGraphLimits": {
+  "to_sha": "8745177",
+  "report_sha": "92235e9f7a4a",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "p",
+   "Layer 2": "p",
+   "Layer 3": "d",
+   "Layer 4": "u",
+   "Layer 5": "p",
+   "Layer 6": "p",
+   "Layer 7": "p",
+   "Layer 8a": "u",
+   "Layer 8b": "u",
+   "Layer 9a": "u",
+   "Layer 9b": "u",
+   "Layer 9c": "u"
+  }
+ },
+ "EllipticCurves": {
+  "to_sha": "0430506",
+  "report_sha": "0c09873963ed",
+  "layers": {
+   "Layer 0": "p",
+   "Layer 0.5": "p",
+   "Layer 1": "p",
+   "Layer 2": "u",
+   "Layer 3": "p",
+   "Layer 4": "u",
+   "Layer 4.5a": "u",
+   "Layer 4.5b": "u",
+   "Layer 5": "p",
+   "Layer 6": "p",
+   "Layer 7": "u",
+   "Layer 8": "u"
+  }
+ },
+ "Exchangeability": {
+  "to_sha": "5b603c6",
+  "report_sha": "17e351f01d7b",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "d",
+   "Layer 2": "d",
+   "Layer 3": "d",
+   "Layer 4": "d",
+   "Layer 5": "d",
+   "Layer 6": "d",
+   "Layer 7": "d",
+   "Layer 8": "p"
+  }
+ },
+ "GeometricTopology": {
+  "to_sha": "8745177",
+  "report_sha": "77e039bad7e9",
+  "layers": {
+   "Layer 1": "p",
+   "Layer 2": "p",
+   "Layer 3": "p",
+   "Layer 4": "p",
+   "Layer 5": "p",
+   "Layer 6": "u",
+   "Layer 7": "u",
+   "Layer 8": "u",
+   "Layer 9": "u",
+   "Layer 10": "u",
+   "Layer 11": "p"
+  }
+ },
+ "GlobalNumberFields": {
+  "to_sha": "8745177",
+  "report_sha": "4c4daa5d4906",
+  "layers": {
+   "Layer 0": "p",
+   "Layer 1": "p",
+   "Layer 2": "u",
+   "Layer 3": "u",
+   "Layer 4": "u",
+   "Layer 5": "u",
+   "Layer 6": "u",
+   "Layer 7": "u",
+   "Layer 8": "u",
+   "Layer 9": "u",
+   "Layer 10": "u",
+   "Layer 11": "u"
+  }
+ },
+ "GrothendieckEulerForms": {
+  "to_sha": "8745177",
+  "report_sha": "ac659aa1dda8",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "d",
+   "Layer 2": "p",
+   "Layer 3": "p",
+   "Layer 4": "u",
+   "Layer 5": "p",
+   "Layer 6": "p",
+   "Layer 7": "p"
+  }
+ },
+ "HeegaardFloer": {
+  "to_sha": "6704398",
+  "report_sha": "270baa6d8a3f",
+  "layers": {
+   "Lane M": "p",
+   "Lane F0": "p",
+   "Lane F1": "u",
+   "Lane F2": "p",
+   "Lane F3": "p",
+   "Lane F4": "p",
+   "Lane F5": "u"
+  }
+ },
+ "HodgeStructures": {
+  "to_sha": "8745177",
+  "report_sha": "04a24ecefe6d",
+  "layers": {
+   "L0": "d",
+   "L1": "d",
+   "L2": "p",
+   "L3": "d"
+  }
+ },
+ "HopfRinow": {
+  "to_sha": "8745177",
+  "report_sha": "86d2290cf4b3",
+  "layers": {
+   "Layer 0": "p",
+   "Layer 1": "p",
+   "Layer 2": "u",
+   "Layer 3": "u",
+   "Layer 4": "p"
+  }
+ },
+ "JacobianChallenge": {
+  "to_sha": "2c0c80a",
+  "report_sha": "597dd85bbb8c",
+  "layers": {
+   "Layer A": "p",
+   "Layer B": "p",
+   "Layer C": "u",
+   "Layer D": "u",
+   "Layer E": "p",
+   "Layer F": "u"
+  }
+ },
+ "ModularForms": {
+  "to_sha": "37aec57",
+  "report_sha": "e06968a16bfd",
+  "layers": {
+   "Layer 0": "p",
+   "Layer 1": "d",
+   "Layer 2": "p",
+   "Layer 3": "p",
+   "Layer 4": "p",
+   "Layer 5": "p",
+   "Layer 6": "p",
+   "Layer 7": "p",
+   "Layer 8": "u",
+   "Layer 8G": "u",
+   "Layer 9": "u",
+   "Layer 10": "p",
+   "Layer 11": "u"
+  }
+ },
+ "Multiquadratic": {
+  "to_sha": "0ee6c02",
+  "report_sha": "ffadfd1ae430",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "d",
+   "Layer 2": "p",
+   "Layer 3": "p"
+  }
+ },
+ "NumberFieldArithmetic": {
+  "to_sha": "8745177",
+  "report_sha": "ee514f481dc5",
+  "layers": {
+   "Layer 1": "p",
+   "Layer 2": "p",
+   "Layer 3": "u",
+   "Layer 4": "u",
+   "Layer 5": "u",
+   "Layer 6": "u",
+   "Layer 7": "u",
+   "Layer 8": "u"
+  }
+ },
+ "OneParameterSemigroups": {
+  "to_sha": "34ee8bb",
+  "report_sha": "d7f33cb11a3c",
+  "layers": {
+   "Part A": "p",
+   "Part B": "p",
+   "Part C": "d"
+  }
+ },
+ "OptimalTransport": {
+  "to_sha": "8745177",
+  "report_sha": "f536e9e5699c",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "p",
+   "Layer 2": "p",
+   "Layer 3": "u",
+   "Layer 4": "u",
+   "Layer 5": "u",
+   "Layer 6": "u",
+   "Layer 7": "u",
+   "Layer 8": "u",
+   "Layer 9": "u",
+   "Layer 10": "u",
+   "Layer 11": "u",
+   "Layer 12": "u",
+   "Layer 13": "u",
+   "Layer 14": "u",
+   "Layer 15": "u",
+   "Layer 16": "u"
+  }
+ },
+ "PDE": {
+  "to_sha": "bc61e7b",
+  "report_sha": "97673cb72cb2",
+  "layers": {
+   "Lane A": "p",
+   "Lane B": "p",
+   "Lane C": "p",
+   "Lane D": "d",
+   "Lane E": "u",
+   "Lane F": "u"
+  }
+ },
+ "PolynomialGaloisGroups": {
+  "to_sha": "8745177",
+  "report_sha": "998aea6abae5",
+  "layers": {
+   "Layer 0": "p",
+   "Layer 1": "p",
+   "Layer 2": "u",
+   "Layer 3": "u",
+   "Layer 4": "u",
+   "Layer 5": "u",
+   "Layer 6": "u",
+   "Layer 9": "u"
+  }
+ },
+ "ProfiniteCohomology": {
+  "to_sha": "8745177",
+  "report_sha": "ee671282e8bf",
+  "layers": {
+   "Layer 0": "p",
+   "Layer 1": "d",
+   "Layer 2": "d",
+   "Layer 3": "p",
+   "Layer 4": "p",
+   "Layer 5": "p",
+   "Layer 6": "p",
+   "Layer 7": "p",
+   "Layer 8": "p",
+   "Layer 9": "p",
+   "Layer 10": "u",
+   "Layer 11": "u",
+   "Layer 12": "u",
+   "Layer 13": "u"
+  }
+ },
+ "ProfiniteProPGroups": {
+  "to_sha": "8745177",
+  "report_sha": "0b8cbb83f727",
+  "layers": {
+   "Layer 0": "p",
+   "Layer 1": "u",
+   "Layer 2": "u",
+   "Layer 3": "p",
+   "Layer 4": "u",
+   "Layer 5": "u",
+   "Layer 6": "u",
+   "Layer 7": "u",
+   "Layer 8": "u",
+   "Layer 9 prerequisites": "u",
+   "Layer 9": "u",
+   "Layer 10": "u"
+  }
+ },
+ "ReductiveGroups": {
+  "to_sha": "890ee2c",
+  "report_sha": "463a99fdccd3",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "d",
+   "Layer 2": "d",
+   "Layer 3": "p",
+   "Layer 4": "d",
+   "Layer 5": "p",
+   "Layer 6": "p",
+   "Layer 7": "p",
+   "Layer 8": "u",
+   "Layer 9": "p"
+  }
+ },
+ "StandardDistributions": {
+  "to_sha": "14e3bf8",
+  "report_sha": "0e82b8ee285e",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "d",
+   "Layer 2": "d",
+   "Layer 3": "d",
+   "Layer 4": "d",
+   "Layer 5": "p",
+   "Layer 6": "p"
+  }
+ },
+ "UniversalCovers": {
+  "to_sha": "f95cc2f",
+  "report_sha": "7866369e9294",
+  "layers": {
+   "Stage 0": "d",
+   "Stage 1": "d",
+   "Stage 2": "d",
+   "Stage 3": "d",
+   "Stage 4": "d"
+  }
+ },
+ "ZigzagPreprojective": {
+  "to_sha": "8745177",
+  "report_sha": "a81ff13bb8e9",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "p",
+   "Layer 2": "p",
+   "Layer 3": "p",
+   "Layer 4": "p",
+   "Layer 5": "u",
+   "Layer 6": "u",
+   "Layer 7": "u",
+   "Layer 8": "u"
+  }
+ },
+ "ContourIntegration": {
+  "to_sha": "0672a6c",
+  "report_sha": "c1b533348566",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "d",
+   "Layer 2": "d",
+   "Layer 3": "d",
+   "Layer 4": "d"
+  }
+ },
+ "EffectiveBounds": {
+  "to_sha": "8745177",
+  "report_sha": "ffa739dcc91a",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "d",
+   "Layer 2": "d",
+   "Layer 3": "p"
+  }
+ },
+ "IntegralLattices": {
+  "to_sha": "8745177",
+  "report_sha": "f72f422757f1",
+  "layers": {
+   "Layer 1": "d",
+   "Layer 2": "p",
+   "Layer 3": "d",
+   "Layer 4": "p",
+   "Layer 5": "p"
+  }
+ },
+ "OrthogonalL2Bases": {
+  "to_sha": "11ef09d",
+  "report_sha": "53b8359fe072",
+  "layers": {
+   "Part A": "d",
+   "Part B": "d",
+   "Part C": "d",
+   "Part D": "d"
+  }
+ },
+ "AdoIwasawa": {
+  "to_sha": "b4da9b9",
+  "report_sha": "0684ee74c7a1",
+  "layers": {
+   "Layer 0": "?",
+   "Layer 1": "?",
+   "Layer 2": "?",
+   "Layer 3": "?",
+   "Layer 4": "?",
+   "Layer 5": "?",
+   "Layer 6": "?",
+   "Layer 7": "?",
+   "Layer 8": "?",
+   "Layer 9": "?"
+  }
+ },
+ "CharacterTheory": {
+  "to_sha": "b4da9b9",
+  "report_sha": "0684ee74c7a1",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "d",
+   "Layer 2": "d",
+   "Layer 3": "d",
+   "Layer 4": "d",
+   "Layer 5": "d",
+   "Layer 6": "p",
+   "Layer 7": "d",
+   "Layer 8": "p",
+   "Layer 9": "p"
+  }
+ },
+ "ClassicalGroups": {
+  "to_sha": "b4da9b9",
+  "report_sha": "0684ee74c7a1",
+  "layers": {
+   "Layer 0": "p",
+   "Layer 1": "p",
+   "Layer 2": "?",
+   "Layer 3": "?",
+   "Layer 4": "?",
+   "Layer 5": "p",
+   "Layer 6": "?"
+  }
+ },
+ "CompactGroups": {
+  "to_sha": "b4da9b9",
+  "report_sha": "0684ee74c7a1",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "d",
+   "Layer 2": "d",
+   "Layer 3": "d",
+   "Layer 4": "d",
+   "Layer 5": "d",
+   "Layer 6": "u"
+  }
+ },
+ "InductionRestriction": {
+  "to_sha": "b4da9b9",
+  "report_sha": "0684ee74c7a1",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "d",
+   "Layer 2": "d",
+   "Layer 3": "u",
+   "Layer 3a": "u",
+   "Layer 3b": "u",
+   "Layer 4": "u",
+   "Layer 5": "d",
+   "Layer 6": "u",
+   "Layer 7": "u"
+  }
+ },
+ "LieGroups": {
+  "to_sha": "b4da9b9",
+  "report_sha": "0684ee74c7a1",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "?",
+   "Layer 2": "p",
+   "Layer 3": "u",
+   "Layer 4": "u",
+   "Layer 5": "u",
+   "Layer 6": "u",
+   "Layer 7": "u",
+   "Layer 8": "u",
+   "Layer 9": "u"
+  }
+ },
+ "LieHighestWeight": {
+  "to_sha": "b4da9b9",
+  "report_sha": "0684ee74c7a1",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "d",
+   "Layer 2": "d",
+   "Layer 3": "d",
+   "Layer 4": "d",
+   "Layer 5": "d",
+   "Layer 6": "u",
+   "Layer 7": "p",
+   "Layer 8": "u",
+   "Layer 9": "p"
+  }
+ },
+ "QuiverRepresentations": {
+  "to_sha": "b4da9b9",
+  "report_sha": "0684ee74c7a1",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "?",
+   "Layer 2": "?",
+   "Layer 3": "?",
+   "Layer 4": "d",
+   "Layer 5": "u",
+   "Layer 6": "p"
+  }
+ },
+ "RootSystems": {
+  "to_sha": "b4da9b9",
+  "report_sha": "0684ee74c7a1",
+  "layers": {
+   "Layer 1": "d",
+   "Layer 2": "d",
+   "Layer 3": "d",
+   "Layer 4": "d",
+   "Layer 5": "d",
+   "Layer 6": "d"
+  }
+ },
+ "SchurWeyl": {
+  "to_sha": "b4da9b9",
+  "report_sha": "0684ee74c7a1",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "d",
+   "Layer 2": "d",
+   "Layer 3": "d",
+   "Layer 4": "d",
+   "Layer 5": "d",
+   "Layer 6": "p",
+   "Layer 7": "u",
+   "Layer 8": "p",
+   "Layer 9": "u"
+  }
+ },
+ "SemisimpleAlgebras": {
+  "to_sha": "b4da9b9",
+  "report_sha": "0684ee74c7a1",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "d",
+   "Layer 1.5": "d",
+   "Layer 2": "d",
+   "Layer 3": "d",
+   "Layer 4": "d",
+   "Layer 5": "d",
+   "Layer 6": "d"
+  }
+ },
+ "SpinRepresentations": {
+  "to_sha": "b4da9b9",
+  "report_sha": "0684ee74c7a1",
+  "layers": {
+   "Layer 0": "d",
+   "Layer 1": "d",
+   "Layer 2": "d",
+   "Layer 3": "d",
+   "Layer 4": "p",
+   "Layer 5": "p",
+   "Layer 6": "d",
+   "Layer 7": "d",
+   "Layer 8": "u",
+   "Layer 9": "p"
+  }
+ }
 }
