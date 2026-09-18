@@ -127,7 +127,6 @@ theorem qExpansion_charEisensteinSeriesMFRaise (hk : 3 ≤ k)
 
 /-- The coefficient formula for a raised character Eisenstein series:
 `a_n(G_k^{ψ,φ,t}) = a_{n/t}(G_k^{ψ,φ})` when `t ∣ n`, and is zero otherwise. -/
-@[simp]
 theorem qExpansion_charEisensteinSeriesMFRaise_coeff (hk : 3 ≤ k)
     (htuv : t * (u * v) ∣ N) (n : ℕ) :
     haveI : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
