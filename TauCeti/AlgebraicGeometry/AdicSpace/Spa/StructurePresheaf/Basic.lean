@@ -248,6 +248,10 @@ noncomputable def presentationIndexCone (Aplus : Subring A) (V : Opens ↥(spa A
       π :=
         { app := app
           naturality := fun i j f ↦ by
+            -- Unfolding the composite diagram leaves its object and map types definitionally,
+            -- but not propositionally, identified with those of `presentationFunctor`.  Its map
+            -- lemma is consequently an `HEq`, so it cannot rewrite this dependent naturality
+            -- goal; `change` exposes the common restriction-morphism normal form instead.
             change app j = app i ≫ PairOfDefinition.Presentation.restrictionHom f.le
             exact (naturality f).symm } }
 
@@ -279,6 +283,9 @@ private theorem presentationIndexCone_π_app_aux (Aplus : Subring A) (V : Opens 
         (presentationIndexCone Aplus V W app naturality).π.app i ≫
           eqToHom (presentationIndexDiagram_obj Aplus V i) = app i := by
   unfold presentationIndexCone presentationIndexDiagram
+  -- The cone-point and diagram-object equations insert `eqToHom` transports around the stored
+  -- leg.  After unfolding the wrappers these transports reduce to identities by proof
+  -- irrelevance; `change` makes that definitional reduction explicit before reflexivity.
   change app i = app i
   rfl
 
@@ -366,6 +373,9 @@ private theorem presentationIndexDiagram_obj_comp_restriction
       (presentationIndexDiagram (P := P) Aplus V).map h ≫
         eqToHom (presentationIndexDiagram_obj (P := P) Aplus V j) := by
   unfold presentationIndexDiagram
+  -- Changing the diagram objects also changes both endpoints of its map, which is why
+  -- `presentationIndexDiagram_map` is an `HEq` rather than a rewrite lemma.  Once the composite
+  -- functor is unfolded, both transported sides reduce definitionally to the restriction map.
   change PairOfDefinition.Presentation.restrictionHom h.le =
     PairOfDefinition.Presentation.restrictionHom h.le
   rfl
