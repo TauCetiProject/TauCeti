@@ -185,22 +185,18 @@ theorem W1p.gradient_restrictL (hU : U ≤ Omega) (u : W1p mu Omega p) :
 /-- Restriction keeps the same value representative on the smaller open set. -/
 theorem W1p.value_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :
     W1p.value (W1p.restrictL hU u) =ᵐ[mu.restrict U] W1p.value u := by
-  have hJ := Sobolev1JetLp.coeFn_restrictL hU (u : Sobolev1JetLp mu Omega p)
-  have hu := (W1p.value_apply_ae u).filter_mono
-    (MeasureTheory.ae_mono (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)))
-  filter_upwards [W1p.value_apply_ae (W1p.restrictL hU u), hu, hJ]
-    with x hres hu hx
-  rw [hres, hu, W1p.coe_restrictL, hx]
+  rw [W1p.value_restrictL]
+  exact Lp.coeFn_LpToLpOfMeasureLeSMul (by simp)
+    (by simpa only [one_smul] using
+      Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)) (W1p.value u)
 
 /-- Restriction keeps the same weak-gradient representative on the smaller open set. -/
 theorem W1p.gradient_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :
     W1p.gradient (W1p.restrictL hU u) =ᵐ[mu.restrict U] W1p.gradient u := by
-  have hJ := Sobolev1JetLp.coeFn_restrictL hU (u : Sobolev1JetLp mu Omega p)
-  have hu := (W1p.gradient_apply_ae u).filter_mono
-    (MeasureTheory.ae_mono (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)))
-  filter_upwards [W1p.gradient_apply_ae (W1p.restrictL hU u), hu, hJ]
-    with x hres hu hx
-  rw [hres, hu, W1p.coe_restrictL, hx]
+  rw [W1p.gradient_restrictL]
+  exact Lp.coeFn_LpToLpOfMeasureLeSMul (by simp)
+    (by simpa only [one_smul] using
+      Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)) (W1p.gradient u)
 
 /-- Restriction does not increase the Sobolev norm. -/
 theorem W1p.norm_restrictL_le (hU : U ≤ Omega) (u : W1p mu Omega p) :

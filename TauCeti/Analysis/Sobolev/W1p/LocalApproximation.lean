@@ -53,6 +53,8 @@ theorem W1p.restrictL_mem_closure_range_ofTestFunctionₗ (hp : p ≠ ∞)
         W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hclosure))
           (W1p.ofTestFunctionₗ mu Omega p phi))) := by
   let hU : U ≤ Omega := SetLike.coe_subset_coe.mp (subset_closure.trans hclosure)
+  -- The statement spells out the inclusion witness, while the proof reuses `hU`; normalize
+  -- these proof-irrelevant arguments before constructing the approximation.
   change W1p.restrictL hU u ∈ closure (Set.range (fun (phi : 𝓓(Omega, ℝ)) =>
     W1p.restrictL hU (W1p.ofTestFunctionₗ mu Omega p phi)))
   obtain ⟨chi, M, hchi, -, hchi_one_nhds, hchi_cpt, hchi_ts, hM0, hchiM_all,
