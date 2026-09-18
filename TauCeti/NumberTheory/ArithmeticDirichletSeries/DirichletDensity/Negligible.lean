@@ -95,18 +95,6 @@ theorem HasDirichletDensity.zero_of_subset (hT : T.HasDirichletDensity 0) (hST :
     S.HasDirichletDensity 0 :=
   hasDirichletDensity_of_subset_of_subset (Set.empty_subset S) hST hasDirichletDensity_empty hT
 
-/-- For `s > 1`, the sum over `S` exceeds the sum over `T` by at most the sum over the symmetric
-difference `S ∆ T`. -/
-private lemma primeIdealZetaSum_le_add_symmDiff {s : ℝ} (hs : 1 < s) :
-    S.primeIdealZetaSum s ≤ T.primeIdealZetaSum s + (S ∆ T).primeIdealZetaSum s := by
-  have hsub : S ⊆ T ∪ S ∆ T := fun 𝔭 h𝔭 ↦ by
-    by_cases h : 𝔭 ∈ T
-    · exact Or.inl h
-    · exact Or.inr (Or.inl ⟨h𝔭, h⟩)
-  exact (primeIdealZetaSum_mono_set_of_one_lt hsub hs).trans <| primeIdealZetaSum_union_le
-    (summable_absNorm_rpow_subtype_of_one_lt T hs)
-    (summable_absNorm_rpow_subtype_of_one_lt (S ∆ T) hs)
-
 /-- **Sets of density zero are negligible.** If `T` has Dirichlet density `δ` and the symmetric
 difference `S ∆ T` has Dirichlet density zero, then `S` has Dirichlet density `δ`. -/
 theorem HasDirichletDensity.of_symmDiff (hT : T.HasDirichletDensity δ)
@@ -122,12 +110,15 @@ theorem HasDirichletDensity.of_symmDiff (hT : T.HasDirichletDensity δ)
   refine hasDirichletDensity_iff.2 <| tendsto_of_tendsto_of_tendsto_of_le_of_le' hlo hhi ?_ ?_
   · filter_upwards [self_mem_nhdsWithin] with s (hs : 1 < s)
     -- `P_T ≤ P_S + P_{S ∆ T}`, since `T ∆ S = S ∆ T`.
-    have := primeIdealZetaSum_le_add_symmDiff (S := T) (T := S) hs
+    have := primeIdealZetaSum_le_add_symmDiff (S := T) (T := S)
+      (summable_absNorm_rpow_subtype_of_one_lt S hs)
+      (summable_absNorm_rpow_subtype_of_one_lt _ hs)
     rw [symmDiff_comm] at this
     exact div_le_div_of_nonneg_right (by linarith) (Set.univ.primeIdealZetaSum_nonneg s)
   · filter_upwards [self_mem_nhdsWithin] with s (hs : 1 < s)
-    exact div_le_div_of_nonneg_right (primeIdealZetaSum_le_add_symmDiff hs)
-      (Set.univ.primeIdealZetaSum_nonneg s)
+    exact div_le_div_of_nonneg_right (primeIdealZetaSum_le_add_symmDiff
+      (summable_absNorm_rpow_subtype_of_one_lt T hs)
+      (summable_absNorm_rpow_subtype_of_one_lt _ hs)) (Set.univ.primeIdealZetaSum_nonneg s)
 
 /-- Two sets of primes whose symmetric difference has Dirichlet density zero have the same
 Dirichlet densities. -/

@@ -64,17 +64,6 @@ The set `TauCeti.higherDegreePrimes` and the map `TauCeti.rationalPrimeBelow` th
 over, together with their elementary norm and inertia theory, are algebraic rather than analytic
 and live in `TauCeti.NumberTheory.NumberField.ResidueDegree`.
 
-## Roadmap role
-
-This advances Layer **5.3** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`,
-"Degree-above-one primes", which asks for "the standard convergence and density-zero statements
-for residue degree greater than one".  It delivers the convergence statements and the explicit
-counting bounds.  The Dirichlet density-zero statement is derived from them in
-`TauCeti.NumberTheory.ArithmeticDirichletSeries.DirichletDensity.Negligible`; the natural one
-still needs the prime ideal theorem.  The roadmap records
-`Chebotarev` as the consumer that needs these estimates when moving between a field and a fixed
-subfield.
-
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VII, §13.

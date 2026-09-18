@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.DirichletDensity
+import Mathlib.Algebra.Order.Group.Indicator
 
 /-!
 # Partitioning the partial Dirichlet series over a set of primes
@@ -24,6 +25,8 @@ primes deleted.
   piece, the sum over a finite pairwise disjoint union is the sum of the sums over the pieces.
 * `NumberField.Set.primeIdealZetaSum_union_le`: given summability on both sets, the sum over a
   union is at most the sum of the two sums.
+* `NumberField.Set.primeIdealZetaSum_le_add_symmDiff`: given summability over `T` and over
+  `S ∆ T`, the sum over `S` exceeds the sum over `T` by at most the sum over `S ∆ T`.
 * `NumberField.Set.primeIdealZetaSum_compl_le_univ_of_finite`: deleting a finite set of primes
   does not increase the sum.
 * `NumberField.Set.primeIdealZetaSum_univ_sub_compl_le_ncard_of_finite`: for `s ≥ 0`, deleting a
@@ -59,6 +62,7 @@ public section
 namespace NumberField.Set
 
 open IsDedekindDomain (HeightOneSpectrum)
+open scoped symmDiff
 
 -- `primeIdealZetaSum` lives in `NumberField.Set`, so dot notation on a set of primes finds it
 -- only while `NumberField` is open.
@@ -83,8 +87,7 @@ theorem primeIdealZetaSum_biUnion_of_pairwiseDisjoint {ι : Type*} (t : Finset �
     (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)) t hg fun i hi ↦ (hsum i hi).hasSum).tsum_eq
 
 /-- **The sum is subadditive along a union.** Given summability over `S` and over `T`, the sum
-over `S ∪ T` is at most the sum over `S` plus the sum over `T`; the two agree when `S` and `T`
-are disjoint. -/
+over `S ∪ T` is at most the sum over `S` plus the sum over `T`. -/
 theorem primeIdealZetaSum_union_le {S T : Set (HeightOneSpectrum (𝓞 K))} {s : ℝ}
     (hS : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s))
     (hT : Summable fun 𝔭 : T ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)) :
@@ -104,6 +107,27 @@ theorem primeIdealZetaSum_union_le {S T : Set (HeightOneSpectrum (𝓞 K))} {s :
   simp only [primeIdealZetaSum_def]
   rw [hsplit]
   exact add_le_add_right hle _
+
+/-- **Changing a set by a small symmetric difference changes the sum by little.** Given
+summability over `T` and over `S ∆ T`, the sum over `S` is at most the sum over `T` plus the sum
+over `S ∆ T`. -/
+theorem primeIdealZetaSum_le_add_symmDiff {S T : Set (HeightOneSpectrum (𝓞 K))} {s : ℝ}
+    (hT : Summable fun 𝔭 : T ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s))
+    (hST : Summable fun 𝔭 : ↥(S ∆ T) ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)) :
+    S.primeIdealZetaSum s ≤ T.primeIdealZetaSum s + (S ∆ T).primeIdealZetaSum s := by
+  set f := fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦ (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)
+  have hf : 0 ≤ f := fun _ ↦ by positivity
+  have hT' := (summable_subtype_iff_indicator (f := f)).1 hT
+  have hST' := (summable_subtype_iff_indicator (f := f)).1 hST
+  -- Pointwise, `S` is covered by `T ∪ S ∆ T`.
+  have hle : S.indicator f ≤ T.indicator f + (S ∆ T).indicator f := fun 𝔭 ↦ by
+    have : 0 ≤ f 𝔭 := hf 𝔭
+    by_cases hS : 𝔭 ∈ S <;> by_cases hT : 𝔭 ∈ T <;>
+      simp [Set.indicator_of_mem, Set.indicator_of_notMem, Set.mem_symmDiff, *]
+  rw [primeIdealZetaSum_def, primeIdealZetaSum_def, primeIdealZetaSum_def, tsum_subtype S f,
+    tsum_subtype T f, tsum_subtype (S ∆ T) f, ← hT'.tsum_add hST']
+  exact ((hT'.add hST').of_nonneg_of_le (Set.indicator_nonneg fun _ _ ↦ hf _) hle).tsum_le_tsum
+    hle (hT'.add hST')
 
 /-- **Deleting a finite set of primes does not increase the sum.** -/
 theorem primeIdealZetaSum_compl_le_univ_of_finite (hS : S.Finite) (s : ℝ) :
