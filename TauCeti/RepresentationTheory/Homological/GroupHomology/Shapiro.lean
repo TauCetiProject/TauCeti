@@ -90,7 +90,8 @@ private theorem shapiroChains :
 /-- **The inverse of Shapiro's isomorphism in homology is corestriction of the unit.** The
 inverse of the isomorphism `Hₙ(G, Ind_S^G A) ≅ Hₙ(S, A)` of `groupHomology.indIso` is the
 change-of-group map along `S ≤ G` induced by the unit `A ⟶ Res_S Ind_S^G A`, `a ↦ 1 ⊗ a`,
-of induction–restriction. -/
+of induction–restriction. The `DecidableEq G` instance is the one used by Mathlib's `indIso`;
+keeping it caller-supplied ensures that this equality rewrites the caller's isomorphism. -/
 theorem indIso_inv (n : ℕ) :
     (indIso S A n).inv = map S.subtype ((indResAdjunction k S.subtype).unit.app A) n := by
   -- The comparison, through `Tor`, of the bar resolution of `S` with the restricted bar resolution
