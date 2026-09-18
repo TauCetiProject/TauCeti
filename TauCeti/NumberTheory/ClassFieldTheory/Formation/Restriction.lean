@@ -89,6 +89,8 @@ how Tate's theorem is used downstream.
   and the homomorphisms of Galois groups compose along a tower of restrictions.
 * `TauCeti.ClassFieldTheory.LayerRestriction.cohomologyRes_trans`: restriction of cohomology is
   functorial along a tower of restrictions.
+* `TauCeti.ClassFieldTheory.LayerRestriction.groundInclusion_trans`: ground-level inclusions
+  compose along a tower of restrictions.
 * `TauCeti.ClassFieldTheory.LayerRestriction.groundLevelEquiv_cohomologyRes_zero_apply`: in degree
   zero, restriction of cohomology is the ground-level inclusion.
 * `TauCeti.ClassFieldTheory.NormalLayer.relativeDegree_subgroupLayerRestriction`: the relative
@@ -357,6 +359,22 @@ theorem groundInclusion_apply_coe (T : LayerRestriction small big) (F : Formatio
     (x : F.level big.ground) : ((T.groundInclusion F x : F.level small.ground) : F.toRep.V) =
       (x : F.toRep.V) :=
   Submodule.coe_inclusion _ x
+
+/-- The ground-level inclusion along the trivial layer restriction is the identity. -/
+@[simp]
+theorem groundInclusion_self {L : NormalLayer G} (T : LayerRestriction L L)
+    (F : Formation G) :
+    T.groundInclusion F = LinearMap.id := by
+  ext x
+  rw [groundInclusion_apply_coe, LinearMap.id_apply]
+
+/-- Ground-level inclusions compose along a tower of layer restrictions. -/
+theorem groundInclusion_trans {a b c : NormalLayer G} (T : LayerRestriction a b)
+    (T' : LayerRestriction b c) (F : Formation G) :
+    (T.trans T').groundInclusion F = (T.groundInclusion F).comp (T'.groundInclusion F) := by
+  ext x
+  rw [groundInclusion_apply_coe, LinearMap.comp_apply, groundInclusion_apply_coe,
+    groundInclusion_apply_coe]
 
 /-- **In degree zero, restriction of cohomology is the ground-level inclusion.** Read through the
 identification of `H⁰(U/V, A^V)` with the ground level `A^U`, restricting a class from the layer

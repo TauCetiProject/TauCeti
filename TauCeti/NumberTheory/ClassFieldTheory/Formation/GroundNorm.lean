@@ -34,6 +34,8 @@ norm is Tau Ceti's relative degree-zero corestriction `ContCohomology.explicitCo
   translates by coset representatives.
 * `TauCeti.ClassFieldTheory.LayerRestriction.groundNorm_groundInclusion`: the norm of an element of
   the ground level `A^U` is its multiple by the relative degree.
+* `TauCeti.ClassFieldTheory.LayerRestriction.groundNorm_trans`: ground-level norms compose along a
+  tower of restrictions.
 
 ## References
 
@@ -96,6 +98,41 @@ theorem groundNorm_groundInclusion (T : LayerRestriction small big) (F : Formati
   rw [groundNorm_apply_coe, groundInclusion_apply_coe]
   -- Every coset representative lies in `U`, so it fixes an element of the ground level `A^U`.
   simp [finsum_eq_sum_of_fintype, F.mem_level.1 x.2, Subgroup.relIndex, Subgroup.index_eq_card]
+
+/-! ### Towers -/
+
+/-- The norm along the trivial layer restriction is the identity. -/
+@[simp]
+theorem groundNorm_self {L : NormalLayer G} (T : LayerRestriction L L) (F : Formation G) :
+    T.groundNorm F = AddMonoidHom.id (F.level L.ground) := by
+  ext x
+  simpa [relativeDegree_def] using congrArg Subtype.val (T.groundNorm_groundInclusion F x)
+
+/-- Ground-level norms compose along a tower of layer restrictions. -/
+theorem groundNorm_trans {a b c : NormalLayer G} (T : LayerRestriction a b)
+    (T' : LayerRestriction b c) (F : Formation G) :
+    (T.trans T').groundNorm F = (T'.groundNorm F).comp (T.groundNorm F) := by
+  ext x
+  rw [groundNorm_apply_coe, AddMonoidHom.comp_apply, groundNorm_apply_coe,
+    groundNorm_apply_coe]
+  change
+    ∑ᶠ q : c.ground.toSubgroup ⧸ a.ground.toSubgroup.subgroupOf c.ground.toSubgroup,
+        (q.out : G) • (x : F.toRep.V) =
+      ∑ᶠ q : c.ground.toSubgroup ⧸ b.ground.toSubgroup.subgroupOf c.ground.toSubgroup,
+        (q.out : G) •
+          (∑ᶠ r : b.ground.toSubgroup ⧸
+            a.ground.toSubgroup.subgroupOf b.ground.toSubgroup,
+              (r.out : G) • (x : F.toRep.V))
+  let m : ContCohomology.H0 a.ground.toSubgroup F.toRep.V :=
+    ⟨x, (FixedPoints.mem_addSubgroup a.ground.toSubgroup F.toRep.V x).2 fun u ↦
+      F.mem_level.1 x.2 u u.2⟩
+  have h := congrArg (fun f ↦ f m)
+    (ContCohomology.explicitCor0Le_trans G F.toRep.V b.ground.toSubgroup
+      a.ground.toSubgroup T.ground_toSubgroup_le c.ground.toSubgroup
+      T'.ground_toSubgroup_le)
+  simpa only [ContCohomology.coe_explicitCor0Le, AddMonoidHom.comp_apply,
+    Subgroup.smul_def, finsum_eq_sum_of_fintype] using
+      congrArg Subtype.val h
 
 end LayerRestriction
 
