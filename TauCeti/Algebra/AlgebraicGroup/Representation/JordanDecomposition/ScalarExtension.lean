@@ -29,10 +29,9 @@ fields.
 * `TauCeti.HopfAlgebra.Point.jordanDecomposition_mapValue`: point-level Jordan decomposition
   commutes with extension between perfect value fields.
 * `TauCeti.HopfAlgebra.Point.semisimplePart_mapValue` and
-  `TauCeti.HopfAlgebra.Point.unipotentPart_mapValue`: the component formulas.
-
-This completes value-field naturality for the Jordan decomposition constructed in Layer 4 of the
-ReductiveGroups roadmap.
+  `TauCeti.HopfAlgebra.Point.unipotentPart_mapValue`: the component formulas, with
+  `jordanDecomposition_toConv_algHom_comp`, `semisimplePart_toConv_algHom_comp`, and
+  `unipotentPart_toConv_algHom_comp` as the simp-normal forms.
 
 ## References
 
@@ -98,6 +97,34 @@ theorem unipotentPart_mapValue (f : K →ₐ[k] L)
       AlgHom.mapValue (H := H) f (unipotentPart k H K g) := by
   simpa only [jordanDecomposition_snd] using
     congrArg Prod.snd (jordanDecomposition_mapValue f g)
+
+/-- Simp-normal form of `jordanDecomposition_mapValue`, with each postcomposed point written
+after normalization by `AlgHom.mapValue_apply`. -/
+@[simp]
+theorem jordanDecomposition_toConv_algHom_comp (f : K →ₐ[k] L)
+    (g : WithConv (H →ₐ[k] K)) :
+    jordanDecomposition k H L (toConv (f.comp g.ofConv)) =
+      (toConv (f.comp (semisimplePart k H K g).ofConv),
+        toConv (f.comp (unipotentPart k H K g).ofConv)) := by
+  simpa only [AlgHom.mapValue_apply] using jordanDecomposition_mapValue f g
+
+/-- Simp-normal form of `semisimplePart_mapValue`, written after normalization by
+`AlgHom.mapValue_apply`. -/
+@[simp]
+theorem semisimplePart_toConv_algHom_comp (f : K →ₐ[k] L)
+    (g : WithConv (H →ₐ[k] K)) :
+    semisimplePart k H L (toConv (f.comp g.ofConv)) =
+      toConv (f.comp (semisimplePart k H K g).ofConv) := by
+  simpa only [AlgHom.mapValue_apply] using semisimplePart_mapValue f g
+
+/-- Simp-normal form of `unipotentPart_mapValue`, written after normalization by
+`AlgHom.mapValue_apply`. -/
+@[simp]
+theorem unipotentPart_toConv_algHom_comp (f : K →ₐ[k] L)
+    (g : WithConv (H →ₐ[k] K)) :
+    unipotentPart k H L (toConv (f.comp g.ofConv)) =
+      toConv (f.comp (unipotentPart k H K g).ofConv) := by
+  simpa only [AlgHom.mapValue_apply] using unipotentPart_mapValue f g
 
 end Point
 

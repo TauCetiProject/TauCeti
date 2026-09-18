@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.JordanChevalley.Multiplicative
 /-!
 # Scalar extension of multiplicative Jordan decomposition
 
-Let `R` be a commutative semiring, let `K` and `L` be field-valued `R`-algebras, and let
+Let `R` be a commutative semiring, let `K` and `L` be `R`-algebras that are fields, and let
 `f : K →ₐ[R] L`. An automorphism of `K ⊗[R] V` extends canonically to an automorphism of
 `L ⊗[R] V`. If `K` is perfect, scalar extension preserves semisimplicity: the squarefree
 minimal polynomial of the original endomorphism maps to a squarefree annihilating polynomial over
@@ -23,12 +23,12 @@ Jordan–Chevalley decomposition identifies the extended factors.
 * `LinearMap.GeneralLinearGroup.IsSemisimple.mapValue`: scalar extension preserves semisimple
   automorphisms when the source field is perfect.
 * `LinearMap.GeneralLinearGroup.IsUnipotent.mapValue`: scalar extension preserves unipotent
-  automorphisms.
+  automorphisms, for arbitrary commutative value rings.
 * `LinearMap.GeneralLinearGroup.jordanDecomposition_mapValue`: multiplicative Jordan
   decomposition commutes with scalar extension between perfect fields.
 
-This is the linear-algebra input for value-field naturality of the geometric Jordan decomposition
-in Layer 4 of the ReductiveGroups roadmap.
+This is the linear-algebra input for value-field naturality of the Jordan decomposition of
+algebraic-group points.
 
 ## References
 
@@ -46,8 +46,31 @@ namespace LinearMap.GeneralLinearGroup
 universe u v w x
 
 variable {R : Type u} {K : Type v} {L : Type w} {V : Type x}
-variable [CommSemiring R] [Field K] [Algebra R K] [Field L] [Algebra R L]
-variable [AddCommMonoid V] [Module R V]
+variable [CommSemiring R] [AddCommMonoid V] [Module R V]
+
+section CommRing
+
+variable [CommRing K] [Algebra R K] [CommRing L] [Algebra R L]
+
+/-- Scalar extension preserves unipotence of a linear automorphism. -/
+theorem IsUnipotent.mapValue
+    {g : GeneralLinearGroup K (K ⊗[R] V)} (hg : IsUnipotent g)
+    (f : K →ₐ[R] L) :
+    IsUnipotent (Module.End.mapValueGL f g) := by
+  rw [isUnipotent_def] at hg ⊢
+  have hsub : Module.End.mapValue f ((g : Module.End K (K ⊗[R] V)) - 1) =
+      Module.End.mapValue f (g : Module.End K (K ⊗[R] V)) - 1 := by
+    simpa only [Module.End.mapValueRingHom_apply, Module.End.mapValue_one] using
+      map_sub (Module.End.mapValueRingHom (M := V) f) (g : Module.End K (K ⊗[R] V)) 1
+  rw [Module.End.mapValueGL_coe, ← hsub]
+  simpa only [Module.End.mapValueRingHom_apply] using
+    hg.map (Module.End.mapValueRingHom (M := V) f)
+
+end CommRing
+
+section Field
+
+variable [Field K] [Algebra R K] [Field L] [Algebra R L]
 
 /-- Extending scalars from a perfect field preserves semisimplicity of an automorphism of a
 scalar extension. -/
@@ -75,28 +98,6 @@ theorem IsSemisimple.mapValue [PerfectField K]
           minpoly.aeval K (g : Module.End K (K ⊗[R] V))
         rw [hmin, Module.End.mapValue_zero]
 
-/-- Scalar extension preserves unipotence of a linear automorphism. -/
-theorem IsUnipotent.mapValue
-    {g : GeneralLinearGroup K (K ⊗[R] V)} (hg : IsUnipotent g)
-    (f : K →ₐ[R] L) :
-    IsUnipotent (Module.End.mapValueGL f g) := by
-  rw [isUnipotent_def] at hg ⊢
-  rw [Module.End.mapValueGL_coe]
-  have h := hg.map (Module.End.mapValueRingHom (M := V) f)
-  have heq : Module.End.mapValue f
-      ((g : Module.End K (K ⊗[R] V)) - 1) =
-        Module.End.mapValue f (g : Module.End K (K ⊗[R] V)) -
-          Module.End.mapValue f (1 : Module.End K (K ⊗[R] V)) := by
-    apply TensorProduct.AlgebraTensorModule.ext
-    intro l v
-    simp only [Module.End.mapValue_tmul, LinearMap.sub_apply, Module.End.one_apply,
-      map_sub, LinearMap.rTensor_tmul, AlgHom.toLinearMap_apply, map_one,
-      Module.End.mapValue_one]
-    rw [smul_sub]
-    simp only [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [Module.End.mapValueRingHom_apply, heq, Module.End.mapValue_one] at h
-  exact h
-
 section PerfectFields
 
 variable [PerfectField K] [PerfectField L]
@@ -119,6 +120,7 @@ theorem jordanDecomposition_mapValue (f : K →ₐ[R] L)
 
 /-- The semisimple factor of an automorphism commutes with extension between perfect value
 fields. -/
+@[simp]
 theorem semisimplePart_mapValue (f : K →ₐ[R] L)
     (g : GeneralLinearGroup K (K ⊗[R] V)) :
     semisimplePart (Module.End.mapValueGL f g) =
@@ -128,6 +130,7 @@ theorem semisimplePart_mapValue (f : K →ₐ[R] L)
 
 /-- The unipotent factor of an automorphism commutes with extension between perfect value
 fields. -/
+@[simp]
 theorem unipotentPart_mapValue (f : K →ₐ[R] L)
     (g : GeneralLinearGroup K (K ⊗[R] V)) :
     unipotentPart (Module.End.mapValueGL f g) =
@@ -136,5 +139,7 @@ theorem unipotentPart_mapValue (f : K →ₐ[R] L)
     congrArg Prod.snd (jordanDecomposition_mapValue f g)
 
 end PerfectFields
+
+end Field
 
 end LinearMap.GeneralLinearGroup

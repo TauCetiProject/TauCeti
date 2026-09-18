@@ -187,12 +187,8 @@ theorem mapValue_algebraMap (f : A →ₐ[R] B) (a : A) :
       algebraMap B (Module.End B (B ⊗[R] M)) (f a) := by
   apply TensorProduct.AlgebraTensorModule.ext
   intro b m
-  simp only [mapValue_tmul]
-  change b • LinearMap.rTensor M f.toLinearMap (a • (1 ⊗ₜ[R] m)) =
-    f a • (b ⊗ₜ[R] m)
-  rw [rTensor_algHom_smul]
-  simp only [LinearMap.rTensor_tmul, AlgHom.toLinearMap_apply, map_one,
-    TensorProduct.smul_tmul', smul_eq_mul, one_mul, mul_comm]
+  simp only [mapValue_tmul, Module.algebraMap_end_apply, LinearMap.rTensor_tmul,
+    AlgHom.toLinearMap_apply, TensorProduct.smul_tmul', smul_eq_mul, mul_one, mul_comm]
 
 /-- Base change of endomorphisms of a scalar extension, as a ring homomorphism. -/
 noncomputable def mapValueRingHom (f : A →ₐ[R] B) :
@@ -211,6 +207,7 @@ theorem mapValueRingHom_apply (f : A →ₐ[R] B) (φ : Module.End A (A ⊗[R] M
 
 /-- Evaluating a polynomial at an endomorphism and then extending scalars is the same as mapping
 the polynomial coefficients and evaluating at the extended endomorphism. -/
+@[simp]
 theorem mapValue_aeval (f : A →ₐ[R] B) (φ : Module.End A (A ⊗[R] M)) (p : A[X]) :
     mapValue f (aeval φ p) = aeval (mapValue f φ) (p.map f.toRingHom) := by
   have hcomp :
