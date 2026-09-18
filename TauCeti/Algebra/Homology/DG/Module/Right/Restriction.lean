@@ -262,21 +262,29 @@ variable (f : DGAlgHom hA hB)
 
 /-- Restrict a morphism of right DG modules along a morphism of DG algebras. -/
 noncomputable def restrictScalars (g : DGRightModuleHom hM hN) :
-    DGRightModuleHom (hM.restrictScalars f) (hN.restrictScalars f) where
-  toLinearMap :=
+    DGRightModuleHom (hM.restrictScalars f) (hN.restrictScalars f) :=
+  let map : DGRightModule.RestrictScalars f M →ₗ[Aᵐᵒᵖ] DGRightModule.RestrictScalars f N :=
     { toFun := fun x ↦ DGRightModule.RestrictScalars.mk (g x.val)
       map_add' := fun x y ↦ by
         apply DGRightModule.RestrictScalars.ext
+        rw [DGRightModule.RestrictScalars.val_add,
+          DGRightModule.RestrictScalars.val_add]
         exact map_add g x.val y.val
       map_smul' := fun a x ↦ by
         apply DGRightModule.RestrictScalars.ext
-        exact map_smul g (op (f a.unop)) x.val }
-  map_mem' hx := by
-    rw [IsDGRightModule.mem_restrictScalarsGrading_iff] at hx ⊢
-    exact Graded.map_mem g hx
-  map_d' x := by
-    apply DGRightModule.RestrictScalars.ext
-    exact g.map_d x.val
+        rw [DGRightModule.RestrictScalars.val_smul_eq,
+          DGRightModule.RestrictScalars.val_smul_eq]
+        exact map_smul g (AlgHom.op f.toGradedAlgHom.toAlgHom a) x.val }
+  have val_map (x : DGRightModule.RestrictScalars f M) : (map x).val = g x.val := rfl
+  { toLinearMap := map
+    map_mem' hx := by
+      rw [IsDGRightModule.mem_restrictScalarsGrading_iff] at hx ⊢
+      exact Graded.map_mem g hx
+    map_d' x := by
+      apply DGRightModule.RestrictScalars.ext
+      rw [IsDGRightModule.val_restrictScalarsDifferential, val_map, val_map,
+        IsDGRightModule.val_restrictScalarsDifferential]
+      exact g.map_d x.val }
 
 @[simp]
 theorem val_restrictScalars (g : DGRightModuleHom hM hN)
