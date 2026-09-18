@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import TauCeti.FieldTheory.Galois.FixedField
 public import TauCeti.FieldTheory.GaloisGroups.Orbits
+public import TauCeti.GroupTheory.GroupAction.Transitive
 
 /-!
 # Point stabilizers of the Galois action on the roots
@@ -27,6 +28,8 @@ separable, and for irreducible `p` this follows from `p.Separable`.
 
 * `TauCeti.stabilizer_eq_fixingSubgroup_adjoin_simple`: the stabilizer of a root is the fixing
   subgroup of the field the root generates.
+* `TauCeti.isPretransitive_rootSet_of_irreducible`: in a normal extension the Galois group acts
+  transitively on the roots of an irreducible polynomial.
 * `TauCeti.index_stabilizer_eq_natDegree_minpoly`,
   `TauCeti.index_stabilizer_eq_natDegree`: the index of the stabilizer is the degree of the
   minimal polynomial of the root, so for irreducible separable `p` it is `p.natDegree`.
@@ -146,46 +149,72 @@ theorem coe_rootSet_eq_orbit_of_irreducible {q : F[X]} (hq : Irreducible q) {α 
   · rintro ⟨τ, rfl⟩
     exact smul_mem_rootSet τ hα
 
+/-- In a normal extension `M / F`, `Gal(M/F)` acts transitively on the roots in `M` of an
+irreducible polynomial over `F`. -/
+theorem isPretransitive_rootSet_of_irreducible {q : F[X]} (hq : Irreducible q) :
+    IsPretransitive (M ≃ₐ[F] M) (q.rootSet M) where
+  exists_smul_eq x y := by
+    obtain ⟨g, hg⟩ := mem_orbit_iff.mp
+      ((Set.ext_iff.mp (coe_rootSet_eq_orbit_of_irreducible hq x.2) y).mp y.2)
+    exact ⟨g, Subtype.ext hg⟩
+
+omit [Normal F M] in
+/-- The stabilizer of a root, as a point of the root set, is its stabilizer as an element of the
+field. -/
+theorem stabilizer_rootSet_mk {q : F[X]} {α : M} (hα : α ∈ q.rootSet M) :
+    stabilizer (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M) = stabilizer (M ≃ₐ[F] M) α := by
+  ext g
+  simp only [mem_stabilizer_iff, Subtype.ext_iff, rootSet.coe_smul]
+
 /-- The roots in a normal extension `M / F` of an irreducible polynomial over `F`, as the cosets
-of the stabilizer in `Gal(M/F)` of a chosen root. -/
+of the stabilizer in `Gal(M/F)` of a chosen root: the transitive-action identification
+`TauCeti.quotientStabilizerEquiv`, transported along `TauCeti.stabilizer_rootSet_mk`. -/
 noncomputable def rootSetEquivQuotientStabilizer {q : F[X]} (hq : Irreducible q) {α : M}
     (hα : α ∈ q.rootSet M) : q.rootSet M ≃ (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α :=
-  (Equiv.subtypeEquivRight fun β =>
-    Set.ext_iff.mp (coe_rootSet_eq_orbit_of_irreducible hq hα) β).trans
-    (orbitEquivQuotientStabilizer _ α)
-
-/-- The coset of `ρ` corresponds to the root `ρ • α`. -/
-@[simp]
-theorem coe_rootSetEquivQuotientStabilizer_symm_mk {q : F[X]} (hq : Irreducible q) {α : M}
-    (hα : α ∈ q.rootSet M) (ρ : M ≃ₐ[F] M) :
-    (((rootSetEquivQuotientStabilizer hq hα).symm
-      (ρ : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α) : q.rootSet M) : M) = ρ • α :=
-  orbitEquivQuotientStabilizer_symm_apply (M ≃ₐ[F] M) α ρ
+  have := isPretransitive_rootSet_of_irreducible (M := M) hq
+  (quotientStabilizerEquiv (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M)).symm.trans
+    (Subgroup.quotientEquivOfEq (stabilizer_rootSet_mk hα))
 
 /-- The root `ρ α` corresponds to the coset of `ρ`. -/
 @[simp]
-theorem rootSetEquivQuotientStabilizer_mk_apply {q : F[X]} (hq : Irreducible q) {α : M}
+theorem rootSetEquivQuotientStabilizer_apply_mk {q : F[X]} (hq : Irreducible q) {α : M}
     (hα : α ∈ q.rootSet M) (ρ : M ≃ₐ[F] M) (h : ρ α ∈ q.rootSet M) :
     rootSetEquivQuotientStabilizer hq hα ⟨ρ α, h⟩ =
-      (ρ : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α) :=
-  (Equiv.eq_symm_apply _).mp
-    (Subtype.ext (coe_rootSetEquivQuotientStabilizer_symm_mk hq hα ρ).symm)
+      (ρ : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α) := by
+  have := isPretransitive_rootSet_of_irreducible (M := M) hq
+  have h1 : (quotientStabilizerEquiv (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M)).symm ⟨ρ α, h⟩ =
+      (ρ : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M)) := by
+    rw [Equiv.symm_apply_eq, quotientStabilizerEquiv_mk]
+    rfl
+  rw [rootSetEquivQuotientStabilizer, Equiv.trans_apply, h1]
+  exact Subgroup.quotientEquivOfEq_mk _ _
+
+/-- The coset of `ρ` corresponds to the root `ρ • α`. -/
+@[simp]
+theorem coe_rootSetEquivQuotientStabilizer_symm_apply_mk {q : F[X]} (hq : Irreducible q) {α : M}
+    (hα : α ∈ q.rootSet M) (ρ : M ≃ₐ[F] M) :
+    (((rootSetEquivQuotientStabilizer hq hα).symm
+      (ρ : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α) : q.rootSet M) : M) = ρ • α := by
+  rw [(Equiv.symm_apply_eq _).mpr
+    (rootSetEquivQuotientStabilizer_apply_mk hq hα ρ (smul_mem_rootSet ρ hα)).symm]
+  rfl
 
 /-- The identification of the roots with the cosets of a stabilizer is equivariant. -/
 @[simp]
 theorem rootSetEquivQuotientStabilizer_smul {q : F[X]} (hq : Irreducible q) {α : M}
     (hα : α ∈ q.rootSet M) (g : M ≃ₐ[F] M) (x : q.rootSet M) :
     rootSetEquivQuotientStabilizer hq hα (g • x) = g • rootSetEquivQuotientStabilizer hq hα x := by
-  apply (rootSetEquivQuotientStabilizer hq hα).symm.injective
-  rw [Equiv.symm_apply_apply]
-  obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (rootSetEquivQuotientStabilizer hq hα x)
-  have hx : (x : M) = τ • α := by
-    have := congrArg (fun c => ((rootSetEquivQuotientStabilizer hq hα).symm c : M)) hτ
-    rw [Equiv.symm_apply_apply] at this
-    rw [← this, coe_rootSetEquivQuotientStabilizer_symm_mk]
-  rw [← hτ, MulAction.Quotient.smul_mk]
-  apply Subtype.ext
-  rw [coe_rootSetEquivQuotientStabilizer_symm_mk, rootSet.coe_smul, hx, smul_eq_mul, mul_smul]
+  have := isPretransitive_rootSet_of_irreducible (M := M) hq
+  obtain ⟨τ, rfl⟩ := exists_smul_eq (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M) x
+  rw [smul_smul]
+  calc rootSetEquivQuotientStabilizer hq hα ((g * τ) • ⟨α, hα⟩)
+      = ((g * τ : M ≃ₐ[F] M) : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α) :=
+        rootSetEquivQuotientStabilizer_apply_mk hq hα (g * τ) (smul_mem_rootSet (g * τ) hα)
+    _ = g • ((τ : M ≃ₐ[F] M) : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α) := by
+        rw [← smul_eq_mul, MulAction.Quotient.smul_mk]
+    _ = g • rootSetEquivQuotientStabilizer hq hα (τ • ⟨α, hα⟩) := by
+        congr 1
+        exact (rootSetEquivQuotientStabilizer_apply_mk hq hα τ (smul_mem_rootSet τ hα)).symm
 
 end Normal
 

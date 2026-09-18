@@ -185,6 +185,7 @@ theorem fixedField_stabilizer_eq_adjoin_simple [FiniteDimensional K M] [IsGalois
 
 /-- For a finite Galois extension, `x` generates the fixed field of its stabilizer as a
 `K`-algebra. -/
+@[simp]
 theorem adjoin_eq_top_of_fixedField_stabilizer [FiniteDimensional K M] [IsGalois K M] (x : M) :
     Algebra.adjoin K {(⟨x, mem_fixedField_stabilizer x⟩ :
       fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x))} = ⊤ := by

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharZero.Infinite
-public import Mathlib.FieldTheory.IntermediateField.Basic
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.Frobenius
 public import Mathlib.RingTheory.RamificationInertia.Inertia

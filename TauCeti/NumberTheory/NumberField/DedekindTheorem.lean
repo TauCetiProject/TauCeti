@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
-public import Mathlib.NumberTheory.NumberField.Ideal.KummerDedekind
 public import Mathlib.RingTheory.Frobenius
 public import TauCeti.GroupTheory.Perm.Partition
-public import TauCeti.NumberTheory.NumberField.Index.Discriminant
 public import TauCeti.NumberTheory.NumberField.Index.Exponent
 import TauCeti.GroupTheory.GroupAction.OrbitCard
 import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
@@ -133,6 +131,7 @@ theorem not_dvd_exponent_rootIntegralPrimitiveElement {p : ℕ} [Fact p.Prime]
 
 /-- The monic irreducible factors modulo `p` of the minimal polynomial of a root are those of
 `minpoly ℤ θ`. -/
+@[simp]
 theorem monicFactorsMod_rootIntegralPrimitiveElement (p : ℕ) [Fact p.Prime] :
     RingOfIntegers.monicFactorsMod (rootIntegralPrimitiveElement hβ).1 p =
       RingOfIntegers.monicFactorsMod θ p := by
@@ -168,12 +167,11 @@ include hβ in
 /-- **The residue degrees of the primes of the root field above `p` are the degrees of the
 irreducible factors of `minpoly ℤ θ` modulo `p`.** -/
 theorem map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod
-    (hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p)))) :
+    (hexp : ¬ p ∣ RingOfIntegers.exponent (rootIntegralPrimitiveElement hβ).1) :
     (Finset.univ : Finset ((Ideal.span {(p : ℤ)}).primesOver
         (𝓞 (fixedField (stabilizer (M ≃ₐ[ℚ] M) β))))).val.map (fun 𝔮 => 𝔮.1.inertiaDeg ℤ) =
       (RingOfIntegers.monicFactorsMod θ p).val.map natDegree := by
   classical
-  have hexp := not_dvd_exponent_rootIntegralPrimitiveElement hβ hsq
   set e := NumberField.Ideal.primesOverSpanEquivMonicFactorsMod hexp
   rw [← monicFactorsMod_rootIntegralPrimitiveElement hβ p]
   refine Multiset.map_eq_map_of_bij_of_nodup _ _ Finset.univ.nodup (Finset.nodup _)
@@ -277,7 +275,8 @@ theorem fullCycleType_galActionHom_restrict_eq_map_natDegree_monicFactorsMod
     ?_
   refine (Ideal.map_card_orbit_stabilizer_eq_map_ramificationIdx_mul_inertiaDeg (Q.under (𝓞 ℚ)) Q
     (stabilizer (M ≃ₐ[ℚ] M) α)).trans ?_
-  refine Eq.trans ?_ (map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod (p := p) hα hsq)
+  refine Eq.trans ?_ (map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod (p := p) hα
+    (not_dvd_exponent_rootIntegralPrimitiveElement hα hsq))
   -- Primes above `Q ∩ 𝓞 ℚ` are primes above `p`, with the same residue degree and trivial
   -- ramification.
   have hset := Ideal.primesOver_under_ringOfIntegers_rat_eq (p := p) Q
