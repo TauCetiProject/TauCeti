@@ -83,11 +83,11 @@ theorem probabilityMeasureCode_injective :
   let 𝒜 := generateSetAlgebra (countableGeneratingSet α)
   have hgen : (inferInstance : MeasurableSpace α) = generateFrom 𝒜 := by
     simp only [𝒜, generateFrom_generateSetAlgebra_eq, generateFrom_countableGeneratingSet]
-  have := P.2
+  have hP : IsProbabilityMeasure (P : Measure α) := P.2
   refine ext_of_generate_finite 𝒜 hgen
     isSetAlgebra_generateSetAlgebra.isSetRing.isSetSemiring.isPiSystem
     (fun s hs => congrFun hPQ ⟨s, hs⟩) ?_
-  simp
+  exact hP.measure_univ.trans Q.2.measure_univ.symm
 
 end MeasureTheory
 
