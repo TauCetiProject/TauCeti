@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.NumberTheory.LSeries.WienerIkehara.Chebyshev
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.SumIntegralComparisons
 import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
+import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Asymptotics.SumWindow
 
 /-!
@@ -54,7 +57,11 @@ The uniform bound and the truncation argument follow `bound_sum_log`, `bound_I1`
 directory. Here the summation by parts is the general `TauCeti.sum_range_mul_le_sum_range_mul`,
 the integral of the weight is bounded on finite intervals by the fundamental theorem of calculus
 rather than evaluated on `(0, ∞)`, and the approximation hypothesis is stated for an arbitrary
-weight `W` instead of a fixed truncation of a `W^{2,1}` function.
+weight `W` instead of a fixed truncation of a `W^{2,1}` function. For a Schwartz function `g`
+(`limiting_cor_schwartz` there) the approximants are the truncations `χ (R⁻¹ • ·) • g`, which
+converge to `g` in the Schwartz topology (`SchwartzMap.tendsto_smulLeftCLM_comp_inv_smul_atTop`);
+the weighted sup norm of a Fourier transform is bounded by two Schwartz seminorms, so it is the
+continuity of the Fourier transform on `𝓢(ℝ, ℂ)` that makes the truncation error small.
 
 ## References
 
@@ -66,7 +73,7 @@ public section
 namespace TauCeti.LSeries
 
 open Complex Filter FourierTransform Real Set
-open scoped ComplexOrder ContDiff Topology
+open scoped ComplexOrder ContDiff SchwartzMap Topology
 
 variable {a : ℕ → ℂ} {C x : ℝ}
 
@@ -372,5 +379,53 @@ theorem tendsto_tsum_term_mul_atTop_of_approx_fourier (ha : 0 ≤ a)
         (add_lt_add_of_lt_of_le hmain herr) hconst)).trans_le ?_
       rw [add_assoc]
       exact (add_le_add_right hsmall _).trans (add_halves ε).le
+
+/-! ### Schwartz test functions -/
+
+/-- **The smoothed Wiener--Ikehara asymptotic for a Schwartz test function.** Let `a` be
+nonnegative, with Dirichlet series summable on `Re s > 1` and a boundary remainder
+`G = LSeries a - A / (s - 1)` continuous on `Re s ≥ 1`. For every Schwartz function `g` on `ℝ`,
+`∑ a n / n * 𝓕 g (log (n / x) / 2π) → 2π A g 0` as `x → ∞`.
+
+This extends `TauCeti.LSeries.tendsto_tsum_term_mul_fourier_atTop_of_nonneg` from smooth
+compactly supported test functions to Schwartz functions. In particular it applies to every
+smooth compactly supported weight `W`, since `W = 𝓕 (𝓕⁻ W)` with `𝓕⁻ W` a Schwartz function. -/
+theorem tendsto_tsum_term_mul_fourier_schwartz_atTop (ha : 0 ≤ a)
+    (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
+    (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
+    (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma) (g : 𝓢(ℝ, ℂ)) :
+    Tendsto (fun x : ℝ ↦
+        ∑' n : ℕ, _root_.LSeries.term a 1 n * 𝓕 (g : ℝ → ℂ) (1 / (2 * π) * Real.log (n / x)))
+      atTop (𝓝 (2 * (π : ℂ) * A * g 0)) := by
+  refine tendsto_tsum_term_mul_atTop_of_approx_fourier ha hG hG' hsum fun ε hε ↦ ?_
+  -- Truncate `g` by a bump function rescaled by `R`; the truncations tend to `g` in `𝓢(ℝ, ℂ)`,
+  -- hence so do their Fourier transforms.
+  let b : ContDiffBump (0 : ℝ) := ⟨1, 2, one_pos, one_lt_two⟩
+  set u : ℝ → 𝓢(ℝ, ℂ) := fun R ↦ SchwartzMap.smulLeftCLM ℂ (fun y ↦ b (R⁻¹ • y)) g
+  have hbdd (i : ℕ) : ∃ B, ∀ x, ‖iteratedFDeriv ℝ i b x‖ ≤ B :=
+    (b.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
+      (b.hasCompactSupport.iteratedFDeriv i)
+  have hu : Tendsto u atTop (𝓝 g) := SchwartzMap.tendsto_smulLeftCLM_comp_inv_smul_atTop
+    b.contDiff hbdd b.eventuallyEq_one g
+  have hFu : Tendsto (fun R ↦ 𝓕 (u R)) atTop (𝓝 (𝓕 g)) :=
+    (ContinuousFourier.continuous_fourier.tendsto g).comp hu
+  rw [(schwartz_withSeminorms ℝ ℝ ℂ).tendsto_nhds] at hFu
+  obtain ⟨R, hR, h0, h2⟩ := ((eventually_gt_atTop 0).and ((hFu (0, 0) (ε / 2) (half_pos hε)).and
+    (hFu (2, 0) (ε / 2) (half_pos hε)))).exists
+  simp only [SchwartzMap.schwartzSeminormFamily_apply] at h0 h2
+  refine ⟨u R, (u R).smooth ⊤, SchwartzMap.hasCompactSupport_smulLeftCLM_comp_inv_smul
+    b.contDiff b.hasCompactSupport hR.ne' g, fun v ↦ ?_, ?_⟩
+  · -- The weighted sup norm of `𝓕 g - 𝓕 (u R)` is at most two seminorms of it.
+    have hv0 := SchwartzMap.norm_le_seminorm ℝ (𝓕 (u R) - 𝓕 g) v
+    have hv2 := SchwartzMap.norm_pow_mul_le_seminorm ℝ (𝓕 (u R) - 𝓕 g) 2 v
+    rw [sub_apply, SchwartzMap.fourier_coe, SchwartzMap.fourier_coe, norm_sub_rev] at hv0 hv2
+    rw [Real.norm_eq_abs, sq_abs] at hv2
+    rw [le_mul_inv_iff₀ (by positivity)]
+    linarith
+  · -- The truncation does not change the value at the origin.
+    rw [SchwartzMap.smulLeftCLM_comp_inv_smul_apply
+        (b.hasCompactSupport.hasTemperateGrowth b.contDiff),
+      smul_zero, b.one_of_mem_closedBall (by simp [b]), one_smul, sub_self, norm_zero]
+    exact hε.le
 
 end TauCeti.LSeries

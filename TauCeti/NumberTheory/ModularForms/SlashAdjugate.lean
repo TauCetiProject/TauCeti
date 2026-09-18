@@ -9,31 +9,31 @@ public import TauCeti.NumberTheory.ModularForms.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Adjugate
 
 /-!
-# Slashing by a scalar matrix and by the main involution
+# Slashing by the main involution
 
 The classical adjoint theory of the Hecke operators is written with the **main involution**
 `α^ι = (det α) · α⁻¹` rather than with `α⁻¹`, because `α ↦ α^ι` preserves the integral matrices
 and so acts on the Hecke cosets, which `α ↦ α⁻¹` does not. This file records what the weight-`k`
 slash does to it. On `GL(2, R)` the main involution is `Matrix.adjugate`, so
-`TauCeti.adjugateGL` is the map in question.
-
-The two statements are the scalar case and the general one:
+`TauCeti.adjugateGL` is the map in question:
 
 ```text
-f ∣[k] (u · I) = u ^ (k - 2) • f            f ∣[k] α^ι = (det α) ^ (k - 2) • (f ∣[k] α⁻¹).
+f ∣[k] α^ι = (det α) ^ (k - 2) • (f ∣[k] α⁻¹).
 ```
 
-Neither needs a determinant sign condition. The slash weights by `|det|`, and the determinant
-of `u · I` is `u ^ 2 ≥ 0`; the scalar `u ^ (k - 2)` is real, so the conjugation `σ` that the
-slash applies on the negative-determinant branch fixes it.
+The proof reduces to the scalar case `f ∣[k] (u · I) = u ^ (k - 2) • f`, which is
+`ModularForm.slash_scalar` from `TauCeti.NumberTheory.ModularForms.Basic`. No determinant sign
+condition is needed: the scalar `(det α) ^ (k - 2)` is real, so the conjugation `σ` that the slash
+applies on the negative-determinant branch fixes it.
 
 ## Main results
 
-* `ModularForm.slash_scalar`: slashing by `u · I` is multiplication by `u ^ (k - 2)`.
-* `Matrix.GeneralLinearGroup.adjugateGL_eq_scalar_mul_inv` (in `Adjugate.lean`, beside
-  `adjugateGL`): `α^ι = (det α · I) * α⁻¹`.
 * `ModularForm.slash_adjugateGL`: the slash by the main involution, in terms of the slash by
   the inverse.
+
+The factorization `α^ι = (det α · I) * α⁻¹` it uses is
+`Matrix.GeneralLinearGroup.adjugateGL_eq_scalar_mul_inv`, in `Adjugate.lean` beside
+`adjugateGL`.
 -/
 
 public section
@@ -41,9 +41,6 @@ public section
 namespace ModularForm
 
 open UpperHalfPlane Matrix TauCeti
-
--- Preserve the simp API here while sharing the declaration from Basic.
-attribute [simp] slash_scalar
 
 /-- **The slash by the main involution.** `f ∣[k] α^ι = (det α) ^ (k - 2) • (f ∣[k] α⁻¹)`: the
 involution and the inverse differ by the scalar `det α`, which slashes by `slash_scalar`.
