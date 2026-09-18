@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.CycleData
+public import TauCeti.GroupTheory.Perm.PermCongr
 
 /-!
 # Passports of permutation triples
@@ -66,25 +67,6 @@ theorem coe_smul (τ : Perm (Fin n)) (t : ConnectedTriple n) :
     ((τ • t : ConnectedTriple n) : PermutationTriple n) = τ • (t : PermutationTriple n) :=
   (rfl)
 
-/-- Isomorphism of connected triples is simultaneous relabeling. -/
-def Equivalent (t t' : ConnectedTriple n) : Prop :=
-  MulAction.orbitRel (Perm (Fin n)) (ConnectedTriple n) t t'
-
-/-- Two connected triples are isomorphic exactly when one is a relabeling of the other. -/
-theorem equivalent_iff_exists_smul_eq {t t' : ConnectedTriple n} :
-    Equivalent t t' ↔ ∃ τ : Perm (Fin n), τ • t = t' := by
-  rw [Equivalent, MulAction.orbitRel_apply, MulAction.mem_orbit_symm, MulAction.mem_orbit_iff]
-
-/-- Relabeling does not change the isomorphism class of a connected triple. -/
-theorem equivalent_smul (τ : Perm (Fin n)) (t : ConnectedTriple n) : Equivalent (τ • t) t :=
-  equivalent_iff_exists_smul_eq.mpr ⟨τ⁻¹, inv_smul_smul τ t⟩
-
-/-- Isomorphism of connected triples is decidable by searching through the finite relabeling
-group. -/
-instance : DecidableRel (@Equivalent n) :=
-  fun t t' => decidable_of_iff (∃ τ : Perm (Fin n), τ • t = t')
-    equivalent_iff_exists_smul_eq.symm
-
 end ConnectedTriple
 
 /-- Isomorphism classes of connected permutation triples of degree `n`. -/
@@ -98,12 +80,6 @@ variable {n : ℕ}
 /-- The isomorphism class of a connected triple. -/
 def mk (t : ConnectedTriple n) : ConnectedIsoClass n :=
   Quotient.mk'' t
-
-/-- Two connected triples determine the same class exactly when they are isomorphic. -/
-@[simp]
-theorem mk_eq_mk_iff {t t' : ConnectedTriple n} :
-    mk t = mk t' ↔ ConnectedTriple.Equivalent t t' := by
-  exact Quotient.eq''
 
 end ConnectedIsoClass
 
@@ -169,15 +145,6 @@ def HasPassport (t : ConnectedTriple n) (P : PassportSpec n) : Prop :=
     t.1.cycleData.2.1 = P.lam1 ∧
     t.1.cycleData.2.2 = P.laminf
 
-theorem hasPassport_iff (t : ConnectedTriple n) (P : PassportSpec n) :
-    HasPassport t P ↔
-      (∃ τ : Perm (Fin n),
-        (t.1.monodromyGroup).map (MulAut.conj τ).toMonoidHom = P.G) ∧
-      t.1.cycleData.1 = P.lam0 ∧
-      t.1.cycleData.2.1 = P.lam1 ∧
-      t.1.cycleData.2.2 = P.laminf :=
-  Iff.rfl
-
 /-- Relabeling a connected triple does not change its passport membership. -/
 @[simp]
 theorem hasPassport_smul_iff (τ : Perm (Fin n)) (t : ConnectedTriple n)
@@ -204,10 +171,10 @@ theorem hasPassport_smul_iff (τ : Perm (Fin n)) (t : ConnectedTriple n)
 
 /-- Isomorphic connected triples have exactly the same passport memberships. -/
 theorem hasPassport_iff_of_equivalent {t t' : ConnectedTriple n}
-    (h : ConnectedTriple.Equivalent t t') (P : PassportSpec n) :
+    (h : MulAction.orbitRel (Perm (Fin n)) (ConnectedTriple n) t t') (P : PassportSpec n) :
     HasPassport t P ↔ HasPassport t' P := by
-  obtain ⟨τ, rfl⟩ := ConnectedTriple.equivalent_iff_exists_smul_eq.mp h
-  exact (hasPassport_smul_iff τ t P).symm
+  obtain ⟨τ, rfl⟩ := MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp h)
+  exact hasPassport_smul_iff τ t' P
 
 /-- Replace the reference subgroup of a passport by a conjugate representative. -/
 def conjugate (P : PassportSpec n) (τ : Perm (Fin n)) : PassportSpec n where
@@ -256,14 +223,11 @@ theorem isAdmissible_of_hasPassport {t : ConnectedTriple n} {P : PassportSpec n}
     (htP : HasPassport t P) : P.IsAdmissible := by
   rcases htP with ⟨⟨τ, hG⟩, h0, h1, hinf⟩
   refine ⟨t.2.ne_zero, ?_, ?_, ?_, ?_⟩
-  · rw [← hG]
-    refine ⟨fun i j => ?_⟩
-    obtain ⟨g, hg⟩ := t.2.isPretransitive.exists_smul_eq (τ⁻¹ i) (τ⁻¹ j)
-    have hg' : (g : Perm (Fin n)) (τ⁻¹ i) = τ⁻¹ j := by
-      simpa [Subgroup.smul_def] using hg
-    refine ⟨⟨MulAut.conj τ g, ⟨g, g.2, rfl⟩⟩, ?_⟩
-    change (MulAut.conj τ (g : Perm (Fin n))) i = j
-    simpa [MulAut.conj_apply, Perm.mul_apply] using congrArg τ hg'
+  · have hconj : (MulAut.conj τ).toMonoidHom = τ.permCongrHom.toMonoidHom :=
+      MonoidHom.ext fun _ ↦ Equiv.ext fun _ ↦ by
+        simp [MulAut.conj_apply, Equiv.permCongrHom_coe]
+    rw [← hG, hconj, Equiv.isPretransitive_map_permCongrHom_iff]
+    exact t.2.isPretransitive
   · refine ⟨?_, fun _ hi ↦ ?_⟩
     · rw [← h0]
       simpa using congrArg (fun data ↦ data.1) t.1.sum_cycleData
