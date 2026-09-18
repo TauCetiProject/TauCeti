@@ -224,9 +224,11 @@ theorem ideleNorm_unitEmbedding (x : Kˣ) : ideleNorm (IdeleGroup.unitEmbedding 
       ‖(ideleFiniteCoord v (IdeleGroup.unitEmbedding (𝓞 K) K x) : v.adicCompletion K)‖ =
         normalizedAbsValue (Sum.inl v) (x : K) := by
     rw [normalizedAbsValue_inl, ← FinitePlace.norm_embedding]
-    -- Both sides are the norm of the coercion of `x` into `v.adicCompletion K`: this is how
-    -- `algebraMap` is defined there, and `FinitePlace.embedding_apply` is proved by `rfl`.
-    rfl
+    simp only [ideleFiniteCoord_unitEmbedding, Units.coe_map, RingHom.toMonoidHom_eq_coe,
+      MonoidHom.coe_coe]
+    rw [IsDedekindDomain.HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
+      FinitePlace.embedding_apply]
+    simp
   ext
   rw [coe_ideleNorm, finprod_congr hfin, finprod_normalizedAbsValue_inl x.ne_zero]
   simp only [ideleInfiniteCoord_unitEmbedding, Units.coe_map, RingHom.toMonoidHom_eq_coe,
