@@ -86,19 +86,11 @@ private theorem gradedFullyBlockedFGComplex_d (a m : ℤ) :
       FGModuleCat.ofHom (G.gradedFullyBlockedDifferential a m) := by
   simp only [gradedFullyBlockedFGComplex, ChainComplex.of_d]
 
-/-- Under `ChainComplex.cochainComplexEquivalence`, cohomological degree `i` is homological
-degree `-i`. -/
-private theorem cochainComplexEquivalence_functor_obj_X {C : Type*} [Category* C]
-    [HasZeroMorphisms C] (K : ChainComplex C ℤ) (i : ℤ) :
-    ((ChainComplex.cochainComplexEquivalence C).functor.obj K).X i = K.X (-i) := by
-  rw [ChainComplex.cochainComplexEquivalence, ComplexShape.Embedding.restrictionFunctor_obj,
-    HomologicalComplex.restriction_X, ComplexShape.embeddingUpIntDownInt_f]
-
 /-- The finite-dimensional fully blocked grid complex, reindexed so that cohomological degree is
 the negative of Maslov degree. -/
 private noncomputable def gradedFullyBlockedFGCochainComplex (a : ℤ) :
     CochainComplex (FGModuleCat (ZMod 2)) ℤ :=
-  (ChainComplex.cochainComplexEquivalence (FGModuleCat (ZMod 2))).functor.obj
+  (ComplexShape.embeddingUpIntDownInt.restrictionFunctor (FGModuleCat (ZMod 2))).obj
     (G.gradedFullyBlockedFGComplex a)
 
 /-- Cohomological degree `i` is Maslov degree `-i` in the reindexed grid complex. -/
@@ -106,7 +98,9 @@ private noncomputable def gradedFullyBlockedFGCochainComplex (a : ℤ) :
 private theorem gradedFullyBlockedFGCochainComplex_X (a i : ℤ) :
     (G.gradedFullyBlockedFGCochainComplex a).X i =
       FGModuleCat.of (ZMod 2) (G.BigradedChainPiece (ZMod 2) (-i, a)) := by
-  rw [gradedFullyBlockedFGCochainComplex, cochainComplexEquivalence_functor_obj_X]
+  rw [gradedFullyBlockedFGCochainComplex,
+    ComplexShape.Embedding.restrictionFunctor_obj, HomologicalComplex.restriction_X,
+    ComplexShape.embeddingUpIntDownInt_f]
   exact G.gradedFullyBlockedFGComplex_X a (-i)
 
 /-- The reindexed fully blocked cochain complex after forgetting the finite-dimensionality
@@ -116,20 +110,51 @@ private noncomputable abbrev gradedFullyBlockedCochainComplex (a : ℤ) :
   ((forget₂ (FGModuleCat (ZMod 2)) (ModuleCat (ZMod 2))).mapHomologicalComplex _).obj
     (G.gradedFullyBlockedFGCochainComplex a)
 
-/-- Mapping a reindexed chain complex agrees with reindexing the mapped chain complex. -/
-private noncomputable def mapCochainComplexEquivalenceIso
+/-- Mapping a restricted complex and restricting the mapped complex have the same objects.
+This is the objectwise comparison API needed because Mathlib does not currently provide a
+comparison isomorphism between these two functors. -/
+private theorem mapRestriction_obj_X
     {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
-    (F : C ⥤ D) [F.PreservesZeroMorphisms] (K : ChainComplex C ℤ) :
-    (F.mapHomologicalComplex (ComplexShape.up ℤ)).obj
-        ((ChainComplex.cochainComplexEquivalence C).functor.obj K) ≅
-      (ChainComplex.cochainComplexEquivalence D).functor.obj
-        ((F.mapHomologicalComplex (ComplexShape.down ℤ)).obj K) :=
-  HomologicalComplex.Hom.isoOfComponents (fun _ => Iso.refl _) (by
-    intro i j _
-    dsimp only [ChainComplex.cochainComplexEquivalence,
-      ComplexShape.Embedding.restrictionFunctor, HomologicalComplex.restriction,
-      Functor.mapHomologicalComplex, Iso.refl_hom]
-    simp)
+    {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
+    (F : C ⥤ D) [F.PreservesZeroMorphisms] (e : c.Embedding c') [e.IsRelIff]
+    (K : HomologicalComplex C c') (i : ι) :
+    ((F.mapHomologicalComplex c).obj ((e.restrictionFunctor C).obj K)).X i =
+      ((e.restrictionFunctor D).obj ((F.mapHomologicalComplex c').obj K)).X i := by
+  rw [Functor.mapHomologicalComplex_obj_X,
+    ComplexShape.Embedding.restrictionFunctor_obj, HomologicalComplex.restriction_X,
+    ComplexShape.Embedding.restrictionFunctor_obj, HomologicalComplex.restriction_X,
+    Functor.mapHomologicalComplex_obj_X]
+
+/-- The objectwise identifications between mapping after restriction and restriction after
+mapping intertwine the differentials. The final computation is confined here because the two
+functor composites are definitionally equal but Mathlib has no theorem stating that fact. -/
+private theorem mapRestriction_hom_d
+    {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
+    {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
+    (F : C ⥤ D) [F.PreservesZeroMorphisms] (e : c.Embedding c') [e.IsRelIff]
+    (K : HomologicalComplex C c') (i j : ι) :
+    eqToHom (mapRestriction_obj_X F e K i) ≫
+        ((e.restrictionFunctor D).obj ((F.mapHomologicalComplex c').obj K)).d i j =
+      ((F.mapHomologicalComplex c).obj ((e.restrictionFunctor C).obj K)).d i j ≫
+        eqToHom (mapRestriction_obj_X F e K j) := by
+  have hi : mapRestriction_obj_X F e K i = rfl := Subsingleton.elim _ _
+  have hj : mapRestriction_obj_X F e K j = rfl := Subsingleton.elim _ _
+  rw [hi, hj]
+  change 𝟙 _ ≫ F.map (K.d (e.f i) (e.f j)) = F.map (K.d (e.f i) (e.f j)) ≫ 𝟙 _
+  simp
+
+/-- Mapping homological complexes commutes with restriction along a shape embedding. -/
+private noncomputable def mapRestrictionIso
+    {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
+    {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
+    (F : C ⥤ D) [F.PreservesZeroMorphisms] (e : c.Embedding c') [e.IsRelIff]
+    (K : HomologicalComplex C c') :
+    (F.mapHomologicalComplex c).obj ((e.restrictionFunctor C).obj K) ≅
+      (e.restrictionFunctor D).obj ((F.mapHomologicalComplex c').obj K) :=
+  HomologicalComplex.Hom.isoOfComponents
+    (fun i => eqToIso (mapRestriction_obj_X F e K i)) (by
+      intro i j _
+      exact mapRestriction_hom_d F e K i j)
 
 /-- The objects of the forgotten finite-dimensional complex are the underlying grid-chain
 pieces. -/
@@ -138,7 +163,9 @@ private theorem mappedGradedFullyBlockedFGComplex_X (a m : ℤ) :
         (G.gradedFullyBlockedFGComplex a)).X m =
       ModuleCat.of (ZMod 2) (G.BigradedChainPiece (ZMod 2) (m, a)) := by
   rw [Functor.mapHomologicalComplex_obj_X, G.gradedFullyBlockedFGComplex_X]
-  rfl
+  change (ModuleCat.isFG (ZMod 2)).ι.obj
+      (FGModuleCat.of (ZMod 2) (G.BigradedChainPiece (ZMod 2) (m, a))) = _
+  exact ObjectProperty.ι_obj (ModuleCat.isFG (ZMod 2))
 
 /-- The differentials of the forgotten finite-dimensional complex are the public homogeneous
 grid differentials. -/
@@ -149,8 +176,20 @@ private theorem mappedGradedFullyBlockedFGComplex_d (a m : ℤ) :
         ModuleCat.ofHom (G.gradedFullyBlockedDifferential a m) ≫
           eqToHom (G.mappedGradedFullyBlockedFGComplex_X a m).symm := by
   rw [Functor.mapHomologicalComplex_obj_d, G.gradedFullyBlockedFGComplex_d]
-  ext
-  rfl
+  change (ModuleCat.isFG (ZMod 2)).ι.map
+      (FGModuleCat.ofHom (G.gradedFullyBlockedDifferential a m)) = _
+  rw [ObjectProperty.ι_map (ModuleCat.isFG (ZMod 2))]
+  change ModuleCat.ofHom (G.gradedFullyBlockedDifferential a m) = _
+  have hsource : G.mappedGradedFullyBlockedFGComplex_X a (m + 1) =
+      Eq.refl (ModuleCat.of (ZMod 2)
+        (G.BigradedChainPiece (ZMod 2) (m + 1, a))) := Subsingleton.elim _ _
+  have htarget : G.mappedGradedFullyBlockedFGComplex_X a m =
+      Eq.refl (ModuleCat.of (ZMod 2)
+        (G.BigradedChainPiece (ZMod 2) (m, a))) := Subsingleton.elim _ _
+  rw [hsource, htarget]
+  change ModuleCat.ofHom (G.gradedFullyBlockedDifferential a m) =
+    𝟙 _ ≫ ModuleCat.ofHom (G.gradedFullyBlockedDifferential a m) ≫ 𝟙 _
+  simp
 
 /-- In each Maslov degree, forgetting the finite-dimensionality witness gives the corresponding
 object of the public graded grid complex. -/
@@ -185,12 +224,13 @@ private noncomputable def gradedFullyBlockedComplexIso (a : ℤ) :
 /-- The forgetful comparison commutes with reindexing Maslov degree as cohomological degree. -/
 private noncomputable def gradedFullyBlockedCochainComplexIso (a : ℤ) :
     G.gradedFullyBlockedCochainComplex a ≅
-      (ChainComplex.cochainComplexEquivalence (ModuleCat (ZMod 2))).functor.obj
+      (ComplexShape.embeddingUpIntDownInt.restrictionFunctor (ModuleCat (ZMod 2))).obj
         (G.gradedFullyBlockedComplex a) := by
-  exact mapCochainComplexEquivalenceIso
+  exact mapRestrictionIso
       (forget₂ (FGModuleCat (ZMod 2)) (ModuleCat (ZMod 2)))
+      ComplexShape.embeddingUpIntDownInt
       (G.gradedFullyBlockedFGComplex a) ≪≫
-    (ChainComplex.cochainComplexEquivalence (ModuleCat (ZMod 2))).functor.mapIso
+    (ComplexShape.embeddingUpIntDownInt.restrictionFunctor (ModuleCat (ZMod 2))).mapIso
       (G.gradedFullyBlockedComplexIso a)
 
 /-- Reindexing the forgotten finite-dimensional complex identifies its cohomology in degree `i`
