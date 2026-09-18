@@ -22,8 +22,8 @@ simplicial sets is the coproduct of the chain complexes of the summands.
 
 ## Sources
 
-Nothing is vendored; the argument assembles three Mathlib constructions.  The simplicial chain
-complex `SSet.chainComplexFunctor` and its degreewise cofan `SSet.isColimitChainComplexXCofan`
+The argument assembles three Mathlib constructions.  The simplicial chain complex
+`SSet.chainComplexFunctor` and its degreewise cofan `SSet.isColimitChainComplexXCofan`
 are due to Joël Riou and Andrew Yang in `Mathlib/AlgebraicTopology/SimplicialSet/Homology/Basic`;
 the coproduct-of-copies functor `CategoryTheory.Limits.sigmaConst` and its colimit preservation
 are due to Joël Riou in `Mathlib/CategoryTheory/Limits/Preserves/SigmaConst`, as is the reduction

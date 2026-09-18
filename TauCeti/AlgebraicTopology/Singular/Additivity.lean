@@ -31,10 +31,9 @@ decomposition.
 ## Sources
 
 The informal source is Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
-Nothing is vendored.  The connectedness argument is Mathlib's
-`ContinuousMap.sigmaCodHomeomorph`, by Yury Kudryashov in `Mathlib/Topology/ContinuousMap/Sigma`;
-the singular simplicial set `TopCat.toSSet` and the singular chain complex
-`AlgebraicTopology.singularChainComplexFunctor` are by Andrew Yang in
+The connectedness argument is Mathlib's `ContinuousMap.sigmaCodHomeomorph`, by Yury Kudryashov in
+`Mathlib/Topology/ContinuousMap/Sigma`; the singular simplicial set `TopCat.toSSet` and the singular
+chain complex `AlgebraicTopology.singularChainComplexFunctor` are by Andrew Yang in
 `Mathlib/AlgebraicTopology/SingularHomology/Basic`, building on Joël Riou's `TopCat.toSSet`
 adjunction; and the concrete cofan `TopCat.sigmaCofanIsColimit` is by Patrick Massot, Kim
 Morrison, Mario Carneiro and Andrew Yang in `Mathlib/Topology/Category/TopCat/Limits/Products`.
