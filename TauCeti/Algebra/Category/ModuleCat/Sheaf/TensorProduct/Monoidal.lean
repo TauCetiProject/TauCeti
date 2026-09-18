@@ -37,7 +37,7 @@ the localization functor, for which sheafification is a braided monoidal functor
   `SheafOfModules.sheafificationUnitIso` (`SheafOfModules.sheafification_ε`);
 * `SheafOfModules.tensorUnderlyingIso`: the identification of `M ⊗ N` with the sheafification of
   the sectionwise tensor product of the underlying presheaves of modules, natural in `M` and `N`
-  (`TauCeti.SheafOfModules.tensorUnderlyingIso_naturality`) and compatible with the braiding and
+  (`SheafOfModules.tensorUnderlyingIso_naturality`) and compatible with the braiding and
   the unitors.
 
 The tensor object `M ⊗ N` and the sheaf `SheafOfModules.tensorProduct R M N` are both
@@ -149,8 +149,8 @@ def _root_.SheafOfModules.tensorUnderlyingIso (M N : SheafOfModules.{u} (ringCat
 /-- `tensorUnderlyingIso` is natural: under it, the tensor product of two morphisms of sheaves of
 modules is the sheafification of the sectionwise tensor product of their underlying morphisms. -/
 @[reassoc]
-theorem tensorUnderlyingIso_naturality {M M' N N' : SheafOfModules.{u} (ringCatSheaf R)}
-    (f : M ⟶ M') (g : N ⟶ N') :
+theorem _root_.SheafOfModules.tensorUnderlyingIso_naturality
+    {M M' N N' : SheafOfModules.{u} (ringCatSheaf R)} (f : M ⟶ M') (g : N ⟶ N') :
     (f ⊗ₘ g) ≫ (M'.tensorUnderlyingIso N').hom =
       (M.tensorUnderlyingIso N).hom ≫
         (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)).map (f.val ⊗ₘ g.val) := by
