@@ -11,13 +11,7 @@ public import TauCeti.RingTheory.Huber.RingOfDefinition
 /-!
 # The trivial presentation: `A⟨T/1⟩` is the completion of `A`
 
-The rational subset `R(T/1)` of `Spa (A, A⁺)` is the whole adic spectrum whenever the numerators
-are sub-unit — in particular `R({1}/1) = Spa (A, A⁺)`, which is
-`TauCeti.ValuationSpectrum.rationalSubset_singleton_one`. Its coordinate ring is therefore the
-value the adic structure presheaf takes on *global sections*. The Tau Ceti AdicSpaces roadmap's
-Layer 3.5 target identifies this value with `A` for a complete Hausdorff pair.
-
-This file proves that, at the level of the localisation construction the presheaf is built from.
+This file identifies the completed localisation `A⟨T/1⟩` with the Hausdorff completion of `A`.
 Everything rests on one computation: for numerators lying in the ring of definition, the
 localisation topology at the denominator `1` is the topology `A` already carries.
 
@@ -54,7 +48,7 @@ identification with `A` likewise does not change `P`.
   `TauCeti.Huber.PairOfDefinition.locUniformSpace_denom_one` says the same of the uniformity, so
   `A⟨T/1⟩` is the Hausdorff completion of `A`.
 * `TauCeti.Huber.PairOfDefinition.toCompletionLoc_denom_one_bijective` and
-  `TauCeti.Huber.PairOfDefinition.toCompletionLocEquivDenomOne`: **`𝒪_X(X) ≅ A`.** For `A`
+  `TauCeti.Huber.PairOfDefinition.toCompletionLocEquivDenomOne`: **`A ≃+* A⟨T/1⟩`.** For `A`
   complete and Hausdorff the structure map `A → A⟨T/1⟩` is a ring isomorphism, for every
   localisation of `A` away from `1`. Its inverse is continuous
   (`TauCeti.Huber.PairOfDefinition.continuous_toCompletionLocEquivDenomOne_symm`), and
@@ -63,8 +57,7 @@ identification with `A` likewise does not change `P`.
 
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Proposition and Definition 5.51
-  for `A⟨T/s⟩` itself, and §8.1 for the structure presheaf whose global sections this computes.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Proposition and Definition 5.51.
 -/
 
 open Filter Pointwise Topology
@@ -295,9 +288,8 @@ theorem toCompletionLoc_denom_one_bijective :
   ⟨Function.LeftInverse.injective (retraction_toCompletionLoc_denom_one P T hTpb S),
     fun x ↦ ⟨_, toCompletionLoc_retraction_denom_one P T hTpb S x⟩⟩
 
-/-- **`𝒪_X(X) ≅ A`.** For a complete Hausdorff `A` the structure map `A → A⟨T/1⟩` of the trivial
-presentation is a ring isomorphism, giving the global-sections identification targeted by Layer
-3.5 of the Tau Ceti AdicSpaces roadmap.
+/-- **`A ≃+* A⟨T/1⟩`.** For a complete Hausdorff `A` the structure map `A → A⟨T/1⟩` is a ring
+isomorphism.
 
 The proof is the universal property, not the topology computation above. `A` is itself a complete
 Hausdorff target through which the identity factors, and `A⟨T/1⟩` admits at most one continuous
@@ -332,7 +324,7 @@ theorem continuous_toCompletionLocEquivDenomOne_symm :
     Continuous (toCompletionLocEquivDenomOne P T hTpb S).symm :=
   (exists_retraction_denom_one P T hTpb S).choose_spec.1
 
-/-- **`𝒪_X(X) ≅ A` as topological rings.** The ring isomorphism of
+/-- **`A ≃ₜ A⟨T/1⟩`.** The ring isomorphism of
 `toCompletionLocEquivDenomOne` is a homeomorphism for `A`'s own topology: the structure map is
 continuous by `continuous_toCompletionLoc`, and its inverse is the retraction, which the universal
 property produced continuous. -/

@@ -36,6 +36,8 @@ the common refinement `k` of `i` and `j`, which presents `R(i) ∩ R(j) = R(j)`.
 
 ## Main definitions
 
+* `TauCeti.Huber.PairOfDefinition.Presentation.toCompletionLocObjHom` : the structure map
+  `A → A⟨p⟩` as a morphism of `CompleteSeparatedTopCommRingCat`.
 * `TauCeti.ValuationSpectrum.homOfRationalSubsetSubset` : the comparison morphism
   `A⟨T/s⟩ ⟶ A⟨T'/s'⟩` of a containment `R(T'/s') ⊆ R(T/s)`.
 * `TauCeti.ValuationSpectrum.presentationLimitRationalIso` : the isomorphism
@@ -43,6 +45,9 @@ the common refinement `k` of `i` and `j`, which presents `R(i) ∩ R(j) = R(j)`.
 
 ## Main results
 
+* `TauCeti.Huber.PairOfDefinition.Presentation.toCompletionLocObjHom_comp_completionLocObjHom`
+  and `TauCeti.Huber.PairOfDefinition.Presentation.toCompletionLocObjHom_comp_restrictionHom` :
+  comparison and restriction morphisms commute with the structure maps.
 * `TauCeti.ValuationSpectrum.restrictionHom_eq_homOfRationalSubsetSubset` : the restriction
   morphism of a refinement is the comparison morphism of the containment it induces.
 * `TauCeti.ValuationSpectrum.presentationLimitπ_eq_π_comp` : projections of the limit factor
@@ -57,14 +62,109 @@ the common refinement `k` of `i` and `j`, which presents `R(i) ∩ R(j) = R(j)`.
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), §8.1 and Proposition 8.2(1).
 -/
 
-namespace TauCeti.ValuationSpectrum
-
-open CategoryTheory CategoryTheory.Limits _root_.TopologicalSpace TauCeti.Huber
-  TauCeti.Huber.PairOfDefinition
+open CategoryTheory CategoryTheory.Limits _root_.TopologicalSpace
 
 public section
 
 universe v
+
+namespace TauCeti.Huber.PairOfDefinition
+
+variable {A : Type v} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+  [CompleteSpace A] [T0Space A] {P : PairOfDefinition A}
+
+/-! ### The structure maps as morphisms -/
+
+/-- **The structure map `A → A⟨p⟩`** of a presentation, as a morphism of
+`CompleteSeparatedTopCommRingCat` out of the complete Hausdorff ring `A`. -/
+noncomputable def Presentation.toCompletionLocObjHom
+    (p : Presentation P) : CompleteSeparatedTopCommRingCat.of A ⟶ p.completionLocObj := by
+  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  let _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  let _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  exact ObjectProperty.homMk (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A) ≫
+    (⟨toCompletionLoc P p.num p.den _ p.hasDenominatorPower,
+        continuous_toCompletionLoc P p.num p.den _ p.hasDenominatorPower⟩ :
+      TopCommRingCat.of A ⟶
+        TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den))) ≫
+    eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm)
+
+/-- The underlying morphism of `Presentation.toCompletionLocObjHom` is the structure map
+`toCompletionLoc`, transported across `CompleteSeparatedTopCommRingCat.of_obj` and
+`completionLocObj_obj`. -/
+@[simp]
+theorem Presentation.toCompletionLocObjHom_hom (p : Presentation P) :
+    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    p.toCompletionLocObjHom.hom = eqToHom (CompleteSeparatedTopCommRingCat.of_obj A) ≫
+      (⟨toCompletionLoc P p.num p.den _ p.hasDenominatorPower,
+          continuous_toCompletionLoc P p.num p.den _ p.hasDenominatorPower⟩ :
+        TopCommRingCat.of A ⟶
+          TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den))) ≫
+      eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm :=
+  (rfl)
+
+/-- **Comparison morphisms over `A` commute with the structure maps**: a continuous ring
+homomorphism `A⟨p⟩ → A⟨q⟩` compatible with the structure maps from `A`, as a morphism, carries the
+structure morphism of `p` to that of `q`. -/
+theorem Presentation.toCompletionLocObjHom_comp_completionLocObjHom
+    (p q : Presentation P) :
+    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := locUniformSpace P q.num q.den _ q.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+    ∀ (g : UniformSpace.Completion (Localization.Away p.den) →+*
+        UniformSpace.Completion (Localization.Away q.den)) (hg : Continuous g),
+      g.comp (toCompletionLoc P p.num p.den _ p.hasDenominatorPower) =
+          toCompletionLoc P q.num q.den _ q.hasDenominatorPower →
+        p.toCompletionLocObjHom ≫
+            completionLocObjHom P p.num p.den _ p.hasDenominatorPower q.num q.den _
+              q.hasDenominatorPower g hg =
+          q.toCompletionLocObjHom := by
+  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  let _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  let _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  let _ := locUniformSpace P q.num q.den _ q.hasDenominatorPower
+  let _ := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+  let _ := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+  intro g hg hgc
+  let F : TopCommRingCat.of A ⟶
+      TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den)) :=
+    ⟨_, continuous_toCompletionLoc P p.num p.den _ p.hasDenominatorPower⟩
+  let G : TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den)) ⟶
+      TopCommRingCat.of (UniformSpace.Completion (Localization.Away q.den)) := ⟨g, hg⟩
+  let H : TopCommRingCat.of A ⟶
+      TopCommRingCat.of (UniformSpace.Completion (Localization.Away q.den)) :=
+    ⟨_, continuous_toCompletionLoc P q.num q.den _ q.hasDenominatorPower⟩
+  have hH : F ≫ G = H := Subtype.ext hgc
+  apply InducedCategory.hom_ext
+  rw [ObjectProperty.FullSubcategory.comp_hom, completionLocObjHom_hom,
+    Presentation.toCompletionLocObjHom_hom, Presentation.toCompletionLocObjHom_hom]
+  -- after the two `_hom` rewrites the underlying morphisms are `F`, `G` and `H` between
+  -- transports; `change` names them so that `hH` applies
+  change (eqToHom _ ≫ F ≫ eqToHom _) ≫ eqToHom _ ≫ G ≫ eqToHom _ = eqToHom _ ≫ H ≫ eqToHom _
+  simp [reassoc_of% hH]
+
+/-- **Restriction commutes with the structure maps**: the restriction morphism
+`A⟨p⟩ → A⟨q⟩` of a refinement `p ≤ q` carries the structure morphism of `p` to that of `q`. -/
+@[reassoc (attr := simp)]
+theorem Presentation.toCompletionLocObjHom_comp_restrictionHom
+    {p q : Presentation P} (h : p ≤ q) :
+    p.toCompletionLocObjHom ≫ Presentation.restrictionHom h = q.toCompletionLocObjHom := by
+  obtain ⟨r, hr, hT⟩ := Presentation.le_def.mp h
+  rw [Presentation.restrictionHom_eq h r hr hT, restrictionObjHom_eq_completionLocObjHom]
+  exact p.toCompletionLocObjHom_comp_completionLocObjHom q _ _
+    (restrictionRingHom_comp_toCompletionLoc P _ _ _ _ _ _ _ _ r hr hT)
+
+end TauCeti.Huber.PairOfDefinition
+
+namespace TauCeti.ValuationSpectrum
+
+open CategoryTheory CategoryTheory.Limits _root_.TopologicalSpace TauCeti.Huber
+  TauCeti.Huber.PairOfDefinition
 
 variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   {P : PairOfDefinition A}
@@ -201,6 +301,6 @@ theorem presentationLimitRationalIso_inv_comp_map_comp_hom
     reassoc_of% presentationLimitRationalIso_inv_comp_π]
   exact homOfRationalSubsetSubset_comp_eqToHom hAplus (presentationIndexRestrict_obj_pres h _) _ _ _
 
-end
-
 end TauCeti.ValuationSpectrum
+
+end

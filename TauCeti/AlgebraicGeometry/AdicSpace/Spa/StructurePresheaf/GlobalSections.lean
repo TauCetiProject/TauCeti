@@ -62,99 +62,6 @@ public section
 
 universe v
 
-namespace TauCeti.Huber.PairOfDefinition
-
-variable {A : Type v} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
-  [CompleteSpace A] [T0Space A] {P : PairOfDefinition A}
-
-/-! ### The structure maps as morphisms -/
-
-/-- **The structure map `A → A⟨p⟩`** of a presentation, as a morphism of
-`CompleteSeparatedTopCommRingCat` out of the complete Hausdorff ring `A`. -/
-noncomputable def Presentation.toCompletionLocObjHom
-    (p : Presentation P) : CompleteSeparatedTopCommRingCat.of A ⟶ p.completionLocObj := by
-  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  exact ObjectProperty.homMk (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A) ≫
-    (⟨toCompletionLoc P p.num p.den _ p.hasDenominatorPower,
-        continuous_toCompletionLoc P p.num p.den _ p.hasDenominatorPower⟩ :
-      TopCommRingCat.of A ⟶
-        TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den))) ≫
-    eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm)
-
-/-- The underlying morphism of `Presentation.toCompletionLocObjHom` is the structure map
-`toCompletionLoc`, transported across `CompleteSeparatedTopCommRingCat.of_obj` and
-`completionLocObj_obj`. -/
-@[simp]
-theorem Presentation.toCompletionLocObjHom_hom (p : Presentation P) :
-    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    p.toCompletionLocObjHom.hom = eqToHom (CompleteSeparatedTopCommRingCat.of_obj A) ≫
-      (⟨toCompletionLoc P p.num p.den _ p.hasDenominatorPower,
-          continuous_toCompletionLoc P p.num p.den _ p.hasDenominatorPower⟩ :
-        TopCommRingCat.of A ⟶
-          TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den))) ≫
-      eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm :=
-  (rfl)
-
-/-- **Comparison morphisms over `A` commute with the structure maps**: a continuous ring
-homomorphism `A⟨p⟩ → A⟨q⟩` compatible with the structure maps from `A`, as a morphism, carries the
-structure morphism of `p` to that of `q`. -/
-theorem Presentation.toCompletionLocObjHom_comp_completionLocObjHom
-    (p q : Presentation P) :
-    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := locUniformSpace P q.num q.den _ q.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
-    ∀ (g : UniformSpace.Completion (Localization.Away p.den) →+*
-        UniformSpace.Completion (Localization.Away q.den)) (hg : Continuous g),
-      g.comp (toCompletionLoc P p.num p.den _ p.hasDenominatorPower) =
-          toCompletionLoc P q.num q.den _ q.hasDenominatorPower →
-        p.toCompletionLocObjHom ≫
-            completionLocObjHom P p.num p.den _ p.hasDenominatorPower q.num q.den _
-              q.hasDenominatorPower g hg =
-          q.toCompletionLocObjHom := by
-  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := locUniformSpace P q.num q.den _ q.hasDenominatorPower
-  let _ := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
-  let _ := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
-  intro g hg hgc
-  let F : TopCommRingCat.of A ⟶
-      TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den)) :=
-    ⟨_, continuous_toCompletionLoc P p.num p.den _ p.hasDenominatorPower⟩
-  let G : TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den)) ⟶
-      TopCommRingCat.of (UniformSpace.Completion (Localization.Away q.den)) := ⟨g, hg⟩
-  let H : TopCommRingCat.of A ⟶
-      TopCommRingCat.of (UniformSpace.Completion (Localization.Away q.den)) :=
-    ⟨_, continuous_toCompletionLoc P q.num q.den _ q.hasDenominatorPower⟩
-  have hH : F ≫ G = H := Subtype.ext hgc
-  apply InducedCategory.hom_ext
-  rw [ObjectProperty.FullSubcategory.comp_hom, completionLocObjHom_hom,
-    Presentation.toCompletionLocObjHom_hom, Presentation.toCompletionLocObjHom_hom]
-  -- after the two `_hom` rewrites the underlying morphisms are `F`, `G` and `H` between
-  -- transports; `change` names them so that `hH` applies
-  change (eqToHom _ ≫ F ≫ eqToHom _) ≫ eqToHom _ ≫ G ≫ eqToHom _ = eqToHom _ ≫ H ≫ eqToHom _
-  simp [reassoc_of% hH]
-
-/-- **Restriction commutes with the structure maps**: the restriction morphism
-`A⟨p⟩ → A⟨q⟩` of a refinement `p ≤ q` carries the structure morphism of `p` to that of `q`. -/
-@[reassoc (attr := simp)]
-theorem Presentation.toCompletionLocObjHom_comp_restrictionHom
-    {p q : Presentation P} (h : p ≤ q) :
-    p.toCompletionLocObjHom ≫ Presentation.restrictionHom h = q.toCompletionLocObjHom := by
-  obtain ⟨r, hr, hT⟩ := Presentation.le_def.mp h
-  rw [Presentation.restrictionHom_eq h r hr hT, restrictionObjHom_eq_completionLocObjHom]
-  exact p.toCompletionLocObjHom_comp_completionLocObjHom q _ _
-    (restrictionRingHom_comp_toCompletionLoc P _ _ _ _ _ _ _ _ r hr hT)
-
-end TauCeti.Huber.PairOfDefinition
-
 namespace TauCeti.ValuationSpectrum
 
 open TauCeti.Huber TauCeti.Huber.PairOfDefinition
@@ -241,9 +148,11 @@ private theorem isIso_toCompletionLocObjHom_one :
     apply InducedCategory.hom_ext
   -- by `Presentation.toCompletionLocObjHom_hom`, the underlying morphism of the structure
   -- morphism is `F` between transports; `change` names it so that `hFG` and `hGF` apply
-  · change (eqToHom _ ≫ F ≫ eqToHom _) ≫ eqToHom _ ≫ G ≫ eqToHom _ = 𝟙 _
+  · rw [ObjectProperty.FullSubcategory.comp_hom, Presentation.toCompletionLocObjHom_hom]
+    change (eqToHom _ ≫ F ≫ eqToHom _) ≫ eqToHom _ ≫ G ≫ eqToHom _ = 𝟙 _
     simp [reassoc_of% hFG]
-  · change (eqToHom _ ≫ G ≫ eqToHom _) ≫ eqToHom _ ≫ F ≫ eqToHom _ = 𝟙 _
+  · rw [ObjectProperty.FullSubcategory.comp_hom, Presentation.toCompletionLocObjHom_hom]
+    change (eqToHom _ ≫ G ≫ eqToHom _) ≫ eqToHom _ ≫ F ≫ eqToHom _ = 𝟙 _
     simp [reassoc_of% hGF]
 
 /-- The index of the whole spectrum given by the trivial presentation `({1}, 1)`: its rational
