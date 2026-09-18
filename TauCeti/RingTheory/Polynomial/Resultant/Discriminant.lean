@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Field.ZMod
 import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 import Mathlib.Data.Nat.Choose.Vandermonde
+import Mathlib.Tactic.NormDet
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.RingTheory.Discriminant
@@ -624,5 +625,56 @@ nose, with no normalization to monic and no sign. -/
 theorem _root_.Cubic.toPoly_discr {P : Cubic R} (ha : P.a ≠ 0) : P.toPoly.discr = P.discr := by
   rw [discr_of_degree_eq_three (P.degree_of_a_ne_zero ha), P.coeff_eq_a, P.coeff_eq_b,
     P.coeff_eq_c, P.coeff_eq_d, Cubic.discr]
+
+/-! ### The discriminant of a depressed quartic -/
+
+/-- The Sylvester matrix used by the discriminant of a quartic, after identifying its
+degree-dependent index type with `Fin 7`. -/
+private theorem Polynomial.sylvesterDeriv_of_natDegree_eq_four {f : R[X]}
+    (hf : f.natDegree = 4) :
+    f.sylvesterDeriv.reindex (finCongr (by omega)) (finCongr (by omega)) =
+      !![f.coeff 0, 0, 0, 1 * f.coeff 1, 0, 0, 0;
+         f.coeff 1, f.coeff 0, 0, 2 * f.coeff 2, 1 * f.coeff 1, 0, 0;
+         f.coeff 2, f.coeff 1, f.coeff 0, 3 * f.coeff 3, 2 * f.coeff 2, 1 * f.coeff 1, 0;
+         f.coeff 3, f.coeff 2, f.coeff 1, 4 * f.coeff 4, 3 * f.coeff 3, 2 * f.coeff 2,
+           1 * f.coeff 1;
+         f.coeff 4, f.coeff 3, f.coeff 2, 0, 4 * f.coeff 4, 3 * f.coeff 3, 2 * f.coeff 2;
+         0, f.coeff 4, f.coeff 3, 0, 0, 4 * f.coeff 4, 3 * f.coeff 3;
+         0, 0, 1, 0, 0, 0, 4] := by
+  ext ⟨i, hi⟩ ⟨j, hj⟩
+  simp only [Polynomial.sylvesterDeriv, hf, OfNat.ofNat_ne_zero, ↓reduceDIte,
+    Polynomial.sylvester, Fin.addCases, Nat.add_one_sub_one, Fin.val_castLT,
+    Fin.val_subNat, Fin.val_cast, Polynomial.coeff_derivative, eq_rec_constant, dite_eq_ite,
+    Nat.reduceMul, Nat.reduceSub, Nat.cast_ofNat, Matrix.reindex_apply, finCongr_symm,
+    Matrix.submatrix_apply, finCongr_apply, Fin.cast_mk, Matrix.updateRow_apply, Fin.mk.injEq,
+    Matrix.of_apply, one_mul, Matrix.cons_val', Matrix.cons_val_fin_one]
+  have hi' : i ∈ Finset.range 7 := Finset.mem_range.mpr hi
+  have hj' : j ∈ Finset.range 7 := Finset.mem_range.mpr hj
+  fin_cases hi' <;>
+  · simp only [Fin.isValue, Fin.mk_one, Fin.reduceFinMk, Fin.zero_eta,
+      Matrix.cons_val_one, Matrix.cons_val_zero, Matrix.cons_val,
+      Nat.reduceEqDiff, OfNat.one_ne_ofNat, ↓reduceIte]
+    fin_cases hj' <;>
+      simp [mul_comm, (by norm_num : (1 : R) + 1 = 2),
+        (by norm_num : (2 : R) + 1 = 3),
+        (by norm_num : (3 : R) + 1 = 4)]
+
+/-- The discriminant of the depressed quartic `X⁴ + pX² + qX + r`. -/
+theorem _root_.Polynomial.discr_depressedQuartic (p q r : R) :
+    (X ^ 4 + C p * X ^ 2 + C q * X + C r : R[X]).discr =
+      256 * r ^ 3 - 128 * p ^ 2 * r ^ 2 + 144 * p * q ^ 2 * r - 27 * q ^ 4 +
+        16 * p ^ 4 * r - 4 * p ^ 3 * q ^ 2 := by
+  nontriviality R
+  let f : R[X] := X ^ 4 + C p * X ^ 2 + C q * X + C r
+  have hf : f.natDegree = 4 := by
+    dsimp only [f]
+    compute_degree <;> norm_num
+  let e : Fin (f.natDegree - 1 + f.natDegree) ≃ Fin 7 := finCongr (by omega)
+  rw [Polynomial.discr, ← Matrix.det_reindex_self e,
+    Polynomial.sylvesterDeriv_of_natDegree_eq_four hf, hf]
+  norm_num
+  eval_det
+  simp [f]
+  ring
 
 end TauCeti
