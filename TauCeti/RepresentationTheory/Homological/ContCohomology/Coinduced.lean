@@ -850,7 +850,7 @@ attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 section LocallyConstant
 
 variable (R : Type u) [Semiring R]
-  (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  (G : Type v) [Group G] [TopologicalSpace G] [ContinuousMul G]
 
 /-- An algebraically coinduced function from an open subgroup is locally constant when the
 coefficient action is continuous and the coefficient space is discrete. -/
@@ -923,12 +923,6 @@ theorem discreteCoindEquivAlgebraic_symm_apply
       (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) (g : G) :
     (discreteCoindEquivAlgebraic R G U A).symm f g = f.1 g := (rfl)
 
-/-- Evaluation of Mathlib's algebraic coinduction action: `h` acts by right translation. -/
-private theorem representationCoind_apply_apply {k H K W : Type*} [Semiring k] [Monoid H]
-    [Monoid K] [AddCommMonoid W] [Module k W] (φ : H →* K) (ρ : Representation k H W) (h x : K)
-    (f : Representation.coindV φ ρ) :
-    (Representation.coind φ ρ h f).1 x = f.1 (x * h) := (rfl)
-
 /-- The locally constant/algebraic coinduction comparison intertwines the right-translation
 actions of `G`. -/
 @[simp]
@@ -940,8 +934,11 @@ theorem discreteCoindEquivAlgebraic_smul (g : G)
         (discreteCoindEquivAlgebraic R G U A f) := by
   apply Subtype.ext
   funext x
-  rw [representationCoind_apply_apply, discreteCoindEquivAlgebraic_apply,
-    discreteCoindEquivAlgebraic_apply, DiscreteCoind.coe_smul]
+  simp only [Representation.coind_apply, discreteCoindEquivAlgebraic_apply,
+    DiscreteCoind.coe_smul]
+  -- The membership proof inside Mathlib's `coind_apply` blocks `LinearMap.restrict_coe_apply`,
+  -- so the remaining right translation `f (x * g)` is closed definitionally.
+  rfl
 
 variable [CompactSpace G]
 
