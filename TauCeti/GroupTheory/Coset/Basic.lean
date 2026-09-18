@@ -92,7 +92,7 @@ def quotientSubgroupOfSubgroupOfEquiv {H K L : Subgroup α} (hKL : K ≤ L) :
 
 /-- The equivalence `Subgroup.quotientSubgroupOfSubgroupOfEquiv` sends the coset of `g` to the
 coset of the same element of `K`. -/
-@[to_additive (attr := simp)]
+@[to_additive (attr := simp), simp]
 theorem quotientSubgroupOfSubgroupOfEquiv_apply_mk {H K L : Subgroup α} (hKL : K ≤ L)
     (g : K.subgroupOf L) :
     quotientSubgroupOfSubgroupOfEquiv (H := H) hKL (g : K.subgroupOf L ⧸ _) =
