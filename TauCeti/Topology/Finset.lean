@@ -17,27 +17,27 @@ every bornological space.
 
 ## Main results
 
-* `TauCeti.compl_finset_mem_nhdsNE` — the complement of a finset is a punctured neighbourhood of
+* `Finset.compl_mem_nhdsNE` — the complement of a finset is a punctured neighbourhood of
   every point.
-* `TauCeti.compl_finset_mem_cobounded` — the complement of a finset belongs to the cobounded
+* `Finset.compl_mem_cobounded` — the complement of a finset belongs to the cobounded
   filter.
 -/
 
 public section
 
-namespace TauCeti
+namespace Finset
 
 open Bornology Filter Set Topology
 
 /-- The complement of a finite set is a punctured neighbourhood of every point in a `T1Space`. -/
-theorem compl_finset_mem_nhdsNE {α : Type*} [TopologicalSpace α] [T1Space α]
+theorem compl_mem_nhdsNE {α : Type*} [TopologicalSpace α] [T1Space α]
     (s : Finset α) (x : α) : (↑s : Set α)ᶜ ∈ 𝓝[≠] x :=
   mem_codiscrete_iff_forall_mem_nhdsNE.mp (compl_finite_mem_codiscreteWithin s.finite_toSet) x
 
 /-- The complement of a finite set belongs to the cobounded filter. -/
-theorem compl_finset_mem_cobounded {α : Type*} [Bornology α]
+theorem compl_mem_cobounded {α : Type*} [Bornology α]
     (s : Finset α) : (↑s : Set α)ᶜ ∈ cobounded α :=
   isBounded_def.mp s.finite_toSet.isBounded
 
-end TauCeti
+end Finset
 
