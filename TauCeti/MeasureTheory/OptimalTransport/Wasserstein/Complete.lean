@@ -23,7 +23,7 @@ with the quantitative estimate that its distance to the `n`-th term is at most t
 those bounds. It uses `TauCeti.Measure.chainMeasure` to realize consecutive couplings on one path
 space; the exponent-independent part of that argument, extracting a measurable pathwise limit
 coupled to every term, is `TauCeti.Measure.exists_measurable_isCoupling_map_chainMeasure`. The
-criterion `TauCeti.WassersteinComponent.completeSpace_of_exists_wassersteinEDist_le_geometric`
+criterion `TauCeti.WassersteinComponent.completeSpace_of_exists_tendsto_wassersteinEDist`
 turns such a limit
 theorem into completeness of every anchored component; finite-moment laws are then handled by their
 isometric identification with a Dirac-anchored component. The finite-exponent hypothesis is
@@ -34,8 +34,8 @@ essential to the `L^p` limit estimate; the case `p = ∞` is treated in
 
 * `TauCeti.exists_isProbabilityMeasure_wassersteinEDist_le_tsum` — a chain of laws with summable
   consecutive Wasserstein distances converges, with the tail bound on the distances to its limit;
-* `TauCeti.WassersteinComponent.completeSpace_of_exists_wassersteinEDist_le_geometric` — an
-  anchored component is complete once geometrically controlled chains have limits;
+* `TauCeti.WassersteinComponent.completeSpace_of_exists_tendsto_wassersteinEDist` — an
+  anchored component is complete once geometrically controlled chains converge;
 * `TauCeti.WassersteinComponent.completeSpace` and
   `TauCeti.WassersteinComponent.instCompleteSpace` — every anchored finite-distance component is
   complete;
@@ -159,26 +159,17 @@ section Controlled
 variable [MeasurableSpace X] [PseudoMetricSpace X] [BorelSpace X] [SecondCountableTopology X]
   [StandardBorelSpace X]
 
-/-- The geometric tails bounding the distances to the limit tend to `0`. -/
-private theorem tendsto_geometric_mul_two :
-    Tendsto (fun n : ℕ ↦ (2 : ℝ≥0∞)⁻¹ ^ n * 2) atTop (𝓝 0) := by
-  have h2 : (2 : ℝ≥0∞)⁻¹ < 1 := by
-    rw [ENNReal.inv_lt_one]
-    norm_num
-  simpa using ENNReal.Tendsto.mul_const
-    (ENNReal.tendsto_pow_atTop_nhds_zero_of_lt_one h2) (Or.inr (by simp))
-
 variable [Fact (1 ≤ p)] {μ₀ : ProbabilityMeasure X}
 
 /-- **Completeness from geometrically controlled chains.** An anchored Wasserstein component is
 complete as soon as every chain of probability laws whose consecutive distances are strictly
-below `2⁻¹ ^ n` has a limit law bounded by the corresponding geometric tail. The finite- and
+below `2⁻¹ ^ n` converges in Wasserstein distance to some probability law. The finite- and
 infinite-exponent completeness theorems both apply this criterion. -/
-theorem WassersteinComponent.completeSpace_of_exists_wassersteinEDist_le_geometric
+theorem WassersteinComponent.completeSpace_of_exists_tendsto_wassersteinEDist
     (H : ∀ (μ : ℕ → Measure X) [∀ n, IsProbabilityMeasure (μ n)],
       (∀ n, wassersteinEDist p (μ n) (μ (n + 1)) < 2⁻¹ ^ n) →
         ∃ ν : Measure X, IsProbabilityMeasure ν ∧
-          ∀ n, wassersteinEDist p (μ n) ν ≤ ∑' k, (2 : ℝ≥0∞)⁻¹ ^ (n + k)) :
+          Tendsto (fun n ↦ wassersteinEDist p (μ n) ν) atTop (𝓝 0)) :
     CompleteSpace (WassersteinComponent p μ₀) := by
   refine EMetric.complete_of_convergent_controlled_sequences (fun n ↦ 2⁻¹ ^ n)
     (fun n ↦ ENNReal.pow_pos (by simp) n) fun u hu ↦ ?_
@@ -186,25 +177,19 @@ theorem WassersteinComponent.completeSpace_of_exists_wassersteinEDist_le_geometr
       ((u (n + 1) : ProbabilityMeasure X) : Measure X) < 2⁻¹ ^ n := fun n ↦ by
     have := hu n n (n + 1) le_rfl (Nat.le_succ n)
     rwa [edist_def] at this
-  have hgeom : ∀ n : ℕ, ∑' k, (2 : ℝ≥0∞)⁻¹ ^ (n + k) = 2⁻¹ ^ n * 2 := fun n ↦ by
-    simp_rw [pow_add]
-    rw [ENNReal.tsum_mul_left, ENNReal.tsum_geometric, ENNReal.one_sub_inv_two, inv_inv]
-  obtain ⟨ν, hν, hνle'⟩ := H _ hjump
-  have hνle : ∀ n, wassersteinEDist p ((u n : ProbabilityMeasure X) : Measure X) ν
-      ≤ 2⁻¹ ^ n * 2 := fun n ↦ (hνle' n).trans (hgeom n).le
-  have hanchor : wassersteinEDist p (μ₀ : Measure X) ν ≠ ∞ := by
-    refine ne_top_of_le_ne_top
-      (ENNReal.add_ne_top.2 ⟨WassersteinComponent.wassersteinEDist_anchor_ne_top (u 0), ?_⟩)
+  obtain ⟨ν, hν, hνlim⟩ := H _ hjump
+  obtain ⟨n, hn⟩ := (hνlim.eventually (gt_mem_nhds zero_lt_one)).exists
+  have hanchor : wassersteinEDist p (μ₀ : Measure X) ν ≠ ∞ :=
+    ne_top_of_le_ne_top
+      (ENNReal.add_ne_top.2 ⟨WassersteinComponent.wassersteinEDist_anchor_ne_top (u n),
+        ne_top_of_lt (hn.trans ENNReal.one_lt_top)⟩)
       (wassersteinEDist_triangle measurable_edist Fact.out _ _ _)
-    exact ne_top_of_le_ne_top (by simp) (hνle 0)
   have hcoe : ((WassersteinComponent.mk (⟨ν, hν⟩ : ProbabilityMeasure X) hanchor :
       WassersteinComponent p μ₀) : ProbabilityMeasure X) = ⟨ν, hν⟩ :=
     WassersteinComponent.coe_mk _ _
   refine ⟨WassersteinComponent.mk ⟨ν, hν⟩ hanchor, tendsto_iff_edist_tendsto_0.2 ?_⟩
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds tendsto_geometric_mul_two
-    (fun _ ↦ zero_le) fun n ↦ ?_
-  rw [WassersteinComponent.edist_def, hcoe]
-  exact hνle n
+  simp_rw [WassersteinComponent.edist_def, hcoe]
+  exact hνlim
 
 end Controlled
 
@@ -222,9 +207,13 @@ variable {μ₀ : ProbabilityMeasure X}
 /-- Every anchored finite-distance Wasserstein component over a Polish ground space is complete
 for a finite exponent `1 ≤ p < ∞`. -/
 theorem completeSpace (hp' : p ≠ ∞) : CompleteSpace (WassersteinComponent p μ₀) :=
-  completeSpace_of_exists_wassersteinEDist_le_geometric fun _ _ hμ ↦
-    exists_isProbabilityMeasure_wassersteinEDist_le_tsum Fact.out hp'
-      (by simp [ENNReal.tsum_geometric, ENNReal.one_sub_inv_two]) hμ
+  completeSpace_of_exists_tendsto_wassersteinEDist fun _ _ hμ ↦ by
+    have hb : ∑' n, (2 : ℝ≥0∞)⁻¹ ^ n ≠ ∞ := by
+      simp [ENNReal.tsum_geometric, ENNReal.one_sub_inv_two]
+    obtain ⟨ν, hν, hle⟩ := exists_isProbabilityMeasure_wassersteinEDist_le_tsum Fact.out hp' hb hμ
+    refine ⟨ν, hν, tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_
+      (fun _ ↦ zero_le) hle⟩
+    simpa only [add_comm] using ENNReal.tendsto_sum_nat_add _ hb
 
 /-- Every anchored finite-distance Wasserstein component over a Polish ground space is complete,
 read off the exponent facts. -/

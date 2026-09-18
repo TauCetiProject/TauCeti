@@ -25,7 +25,7 @@ provides the limiting probability law and retains the same tail bound.
 
 The Cauchy argument is specific to the infinite exponent; the pathwise-limit extraction
 `TauCeti.Measure.exists_measurable_isCoupling_map_chainMeasure` and the completeness criterion
-`TauCeti.WassersteinComponent.completeSpace_of_exists_wassersteinEDist_le_geometric` are shared
+`TauCeti.WassersteinComponent.completeSpace_of_exists_tendsto_wassersteinEDist` are shared
 with the finite-exponent development in
 `TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Complete`.
 
@@ -132,9 +132,14 @@ variable [MeasurableSpace X] [MetricSpace X] [BorelSpace X] [SecondCountableTopo
 
 /-- Every anchored finite-`W_∞` component over a Polish metric space is complete. -/
 instance WassersteinComponent.instCompleteSpaceTop : CompleteSpace (WassersteinComponent ∞ μ₀) :=
-  WassersteinComponent.completeSpace_of_exists_wassersteinEDist_le_geometric fun _ _ hμ ↦
-    exists_isProbabilityMeasure_wassersteinEDist_top_le_tsum
-      (by simp [ENNReal.tsum_geometric, ENNReal.one_sub_inv_two]) fun n ↦ (hμ n).le
+  WassersteinComponent.completeSpace_of_exists_tendsto_wassersteinEDist fun _ _ hμ ↦ by
+    have hb : ∑' n, (2 : ℝ≥0∞)⁻¹ ^ n ≠ ∞ := by
+      simp [ENNReal.tsum_geometric, ENNReal.one_sub_inv_two]
+    obtain ⟨ν, hν, hle⟩ := exists_isProbabilityMeasure_wassersteinEDist_top_le_tsum hb
+      fun n ↦ (hμ n).le
+    refine ⟨ν, hν, tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_
+      (fun _ ↦ zero_le) hle⟩
+    simpa only [add_comm] using ENNReal.tendsto_sum_nat_add _ hb
 
 end Complete
 
