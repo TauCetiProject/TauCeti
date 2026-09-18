@@ -67,6 +67,18 @@ def tateRangeIso (T : LayerRestriction small big) (F : Formation G) (r : ℤ) :
     (e' := (Representation.equivOfIso (T.repIso F)).toLinearEquiv)
     (repIso_isIntertwiningRange T F) r
 
+/-- The range comparison is the change-of-group isomorphism on Tate cohomology for the inclusion
+of Galois groups, with the coefficient equivalence underlying `repIso`. -/
+theorem tateRangeIso_def (T : LayerRestriction small big) (F : Formation G) (r : ℤ) :
+    T.tateRangeIso F r =
+      TauCeti.TateCohomology.mapIso
+        (M := small.rep F)
+        (N := Rep.res T.galHom.range.subtype (big.rep F))
+        (e := MonoidHom.ofInjective T.galHom_injective)
+        (e' := (Representation.equivOfIso (T.repIso F)).toLinearEquiv)
+        ⟨fun g x ↦ Rep.hom_comm_apply (T.repIso F).hom g x⟩ r :=
+  (rfl)
+
 /-- **Corestriction between the Tate cohomology groups of finite normal layers, in every integer
 degree.** Positive degrees use ordinary cohomological corestriction, degrees zero and minus one
 use the low-degree norm descriptions, and lower degrees use group-homological corestriction. -/
