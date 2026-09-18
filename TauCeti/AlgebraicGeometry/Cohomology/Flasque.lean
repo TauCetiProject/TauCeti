@@ -36,8 +36,8 @@ which is where the dimension counts behind Riemann–Roch take place.
 * `Scheme.Modules.subsingleton_cohomology_succ_of_isFlasque` and
   `Scheme.Modules.subsingleton_cohomologyOn_succ_of_isFlasque`: a flasque sheaf of modules has
   vanishing cohomology in every positive degree, over `X` and over every open subset;
-* `Scheme.isFlasque_rationalFunctions`: the sheaf `𝒦_X` of rational functions is flasque, and
-  `Scheme.subsingleton_cohomology_rationalFunctions_succ`: hence `Hⁿ⁺¹(X, 𝒦_X) = 0`;
+* `Scheme.subsingleton_cohomology_rationalFunctions_succ`: the flasqueness of `𝒦_X` from
+  `Scheme.isFlasque_rationalFunctions` gives `Hⁿ⁺¹(X, 𝒦_X) = 0`;
 * for a short exact sequence `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` with `M₂` flasque:
   `Scheme.Modules.cohomologyδ_surjective_of_isFlasque`, the connecting map
   `Hⁿ(X, M₃) ⟶ Hⁿ⁺¹(X, M₁)` is surjective, and
@@ -131,15 +131,19 @@ on a scheme over `R` is flasque, the connecting map is an `R`-linear isomorphism
 def cohomologySuccLinearEquivOfIsFlasque (n : ℕ) :
     Cohomology S.X₃ (n + 1) ≃ₗ[R] Cohomology S.X₁ (n + 2) :=
   LinearEquiv.ofBijective (cohomologyδBaseLinear R X hS (n + 1) (n + 2) rfl) <| by
-    rw [show ⇑(cohomologyδBaseLinear R X hS (n + 1) (n + 2) rfl) =
-        cohomologyδ hS (n + 1) (n + 2) rfl from funext (cohomologyδBaseLinear_apply R X hS _ _ _)]
-    exact ⟨cohomologyδ_injective_of_isFlasque hS n,
-      cohomologyδ_surjective_of_isFlasque hS (n + 1) (n + 2) rfl⟩
+    constructor
+    · intro x y hxy
+      apply cohomologyδ_injective_of_isFlasque hS n
+      simpa only [cohomologyδBaseLinear_apply] using hxy
+    · intro y
+      obtain ⟨x, hx⟩ := cohomologyδ_surjective_of_isFlasque hS (n + 1) (n + 2) rfl y
+      exact ⟨x, by simpa only [cohomologyδBaseLinear_apply] using hx⟩
 
 @[simp]
 lemma cohomologySuccLinearEquivOfIsFlasque_apply (n : ℕ) (x : Cohomology S.X₃ (n + 1)) :
     cohomologySuccLinearEquivOfIsFlasque R hS n x = cohomologyδ hS (n + 1) (n + 2) rfl x := by
-  simp [cohomologySuccLinearEquivOfIsFlasque]
+  change cohomologyδBaseLinear R X hS (n + 1) (n + 2) rfl x = _
+  exact cohomologyδBaseLinear_apply R X hS _ _ _ x
 
 /-- If the middle term of a short exact sequence `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` of sheaves of modules
 on a scheme over `R` is flasque, the connecting map identifies `H¹(X, M₁)` with the cokernel of
@@ -157,15 +161,16 @@ def cohomologyOneLinearEquivOfIsFlasque :
       simp only [e]
       exact (exact_cohomologyMap_cohomologyδ hS 0 1 rfl x).symm)).trans
     ((cohomologyδBaseLinear R X hS 0 1 rfl).quotKerEquivOfSurjective (by
-      rw [show ⇑(cohomologyδBaseLinear R X hS 0 1 rfl) = cohomologyδ hS 0 1 rfl from
-        funext (cohomologyδBaseLinear_apply R X hS _ _ _)]
-      exact cohomologyδ_surjective_of_isFlasque hS 0 1 rfl))
+      intro y
+      obtain ⟨x, hx⟩ := cohomologyδ_surjective_of_isFlasque hS 0 1 rfl y
+      exact ⟨x, by simpa only [cohomologyδBaseLinear_apply] using hx⟩))
 
 @[simp]
 lemma cohomologyOneLinearEquivOfIsFlasque_mk (x : Cohomology S.X₃ 0) :
     cohomologyOneLinearEquivOfIsFlasque R hS (Submodule.Quotient.mk x) =
       cohomologyδ hS 0 1 rfl x := by
-  simp [cohomologyOneLinearEquivOfIsFlasque]
+  change cohomologyδBaseLinear R X hS 0 1 rfl x = _
+  exact cohomologyδBaseLinear_apply R X hS _ _ _ x
 
 end Base
 
@@ -174,20 +179,6 @@ end Scheme.Modules
 namespace Scheme
 
 variable {X : Scheme.{u}} [IrreducibleSpace X]
-
-/-- The sheaf `𝒦_X` of rational functions on an irreducible scheme is flasque: its restriction
-maps between nonempty open subsets are bijective, and its sections over the empty open subset
-vanish. -/
-instance isFlasque_rationalFunctions : (rationalFunctions X).presheaf.IsFlasque where
-  epi {U V} i := by
-    rw [AddCommGrpCat.epi_iff_surjective]
-    by_cases hV : V.unop = ⊥
-    · have := subsingleton_rationalFunctions (X := X) V.unop hV
-      exact fun t ↦ ⟨0, Subsingleton.elim _ _⟩
-    · have hV := (Opens.ne_bot_iff_nonempty _).mp hV
-      have : Nonempty V.unop := hV.to_subtype
-      have : Nonempty U.unop := (hV.mono (leOfHom i.unop)).to_subtype
-      exact (rationalFunctions_map_bijective (X := X) i.unop).surjective
 
 /-- The sheaf `𝒦_X` of rational functions on an irreducible scheme has no higher cohomology. -/
 theorem subsingleton_cohomology_rationalFunctions_succ (n : ℕ) :
