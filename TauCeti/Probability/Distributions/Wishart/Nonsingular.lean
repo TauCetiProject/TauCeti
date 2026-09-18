@@ -408,7 +408,7 @@ theorem map_symmetricFinOneEquiv_nonsingularWishartMeasure {n : ℝ} (hn : 0 < n
     {S : Matrix (Fin 1) (Fin 1) ℝ} (hS : 0 < S 0 0) :
     (nonsingularWishartMeasure n S).map symmetricFinOneEquiv =
       (Probability.chiSquaredMeasure n).map (S 0 0 * ·) := by
-  have hposDef : S.PosDef := (posDef_fin_one_iff S).2 hS
+  have hposDef : S.PosDef := (Matrix.posDef_fin_one_iff S).2 hS
   have hdet : S.det = S 0 0 := Matrix.det_fin_one S
   let e := symmetricFinOneEquiv.toHomeomorph.toMeasurableEquiv
   have he : (e : _ → ℝ) = symmetricFinOneEquiv := by
@@ -427,11 +427,11 @@ theorem map_symmetricFinOneEquiv_nonsingularWishartMeasure {n : ℝ} (hn : 0 < n
     coe_symmetricFinOneEquiv_symm_apply x
   rcases (Set.mem_compl_singleton_iff.1 hx).lt_or_gt with hx | hx
   · have hnot : ¬ (A : Matrix (Fin 1) (Fin 1) ℝ).PosDef := by
-      rw [posDef_fin_one_iff, hA]
+      rw [Matrix.posDef_fin_one_iff, hA]
       exact hx.not_gt
     rw [nonsingularWishartPDF_of_not_posDef n S hnot, ProbabilityTheory.gammaPDF_of_neg hx]
   · have hApos : (A : Matrix (Fin 1) (Fin 1) ℝ).PosDef :=
-      (posDef_fin_one_iff _).2 (by rwa [hA])
+      (Matrix.posDef_fin_one_iff _).2 (by rwa [hA])
     have htrace : Matrix.trace (S⁻¹ * (A : Matrix (Fin 1) (Fin 1) ℝ)) = x / S 0 0 := by
       simp [Matrix.trace, Matrix.mul_apply, hA, div_eq_inv_mul]
     rw [nonsingularWishartPDF_of_posDef n S hApos, ProbabilityTheory.gammaPDF_of_nonneg hx.le,
