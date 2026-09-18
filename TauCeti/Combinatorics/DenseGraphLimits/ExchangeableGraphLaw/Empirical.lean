@@ -9,7 +9,6 @@ public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Defs
 public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.HomDensity
 public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.FiniteGraph.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Closeness
 import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Unbiased
 
 /-!
@@ -21,12 +20,12 @@ take the graphon class of its step graphon. This is the *empirical mixing measur
 `empiricalMixing L n`, the pushforward of `L.law n` along `G ↦ ⟦W_G⟧`.
 
 The point of these measures is that they recover the upper masses of `L` in the limit. The
-average of `t(F, ·)` against `empiricalMixing L n` is the mean ordinary homomorphism density
-`E[t(F, G)]` of an `L`-sample `G` on `n` vertices. Its injective counterpart is exact: by
-consistency of `L`, each of the `(n)_k` vertex embeddings of a `k`-vertex pattern `F` sees the
-pattern with probability `upperMass F`, so `E[t₀(F, G)] = upperMass F` whenever `k ≤ n`. The two
-densities differ by at most the proportion `C(k, 2) / n` of non-injective vertex maps, which gives
-the **collision estimate**
+average of `t(F, ·)` against `empiricalMixing L n` is, for positive `n`, the mean ordinary
+homomorphism density `E[t(F, G)]` of an `L`-sample `G` on `n` vertices. Its injective
+counterpart is exact: by consistency of `L`, each of the `(n)_k` vertex embeddings of a `k`-vertex
+pattern `F` sees the pattern with probability `upperMass F`, so `E[t₀(F, G)] = upperMass F`
+whenever `k ≤ n`. The two densities differ by at most the proportion `C(k, 2) / n` of
+non-injective vertex maps, which gives the **collision estimate**
 `|∫ t(F, ·) d(empiricalMixing L (n + 1)) - upperMass F| ≤ C(k, 2) / (n + 1)`
 and hence convergence of the empirical hom-density averages to the upper masses. Any weak limit
 point of the empirical mixing measures is therefore a mixing measure with the upper masses of `L`,
@@ -46,7 +45,8 @@ obtained.
 * `TauCeti.DenseGraphLimits.ExchangeableGraphLaw.abs_integral_homDensityFin_law_sub_upperMass_le` —
   the mean ordinary homomorphism density of a sample is within `C(k, 2) / n` of the upper mass;
 * `TauCeti.DenseGraphLimits.integral_homDensityOnSpace_empiricalMixing` — averaging `t(F, ·)`
-  against an empirical mixing measure is taking the mean homomorphism density of a sample;
+  against an empirical mixing measure of positive sample size is taking the mean homomorphism
+  density of a sample;
 * `TauCeti.DenseGraphLimits.abs_integral_homDensityOnSpace_empiricalMixing_sub_le` — the collision
   estimate;
 * `TauCeti.DenseGraphLimits.tendsto_integral_homDensityOnSpace_empiricalMixing` — the empirical
@@ -83,32 +83,18 @@ provided the sample has at least as many vertices as the pattern: by consistency
 vertex embedding of the pattern sees it with probability equal to the upper mass. -/
 theorem integral_injHomDensity_law (F : SimpleGraph (Fin k)) (hkm : k ≤ m) :
     ∫ G, injHomDensity F G ∂L.law m = L.upperMass F := by
-  have hd : (m.descFactorial k : ℝ) ≠ 0 := by
-    exact_mod_cast (Nat.descFactorial_pos.mpr hkm).ne'
-  have hf (f : Fin k ↪ Fin m) : (L.law m).real {G | F.map f ≤ G} = L.upperMass F := by
-    rw [measureReal_def, ← upperMass_def, upperMass_map]
-  rw [integral_injHomDensity_eq_sum_div, Finset.sum_congr rfl fun f _ => hf f, Finset.sum_const,
-    nsmul_eq_mul, Finset.card_univ, Fintype.card_embedding_eq]
-  simp only [Fintype.card_fin]
-  exact mul_div_cancel_left₀ (L.upperMass F) hd
+  refine integral_injHomDensity_eq_of_forall F _ (by simpa using hkm) fun f => ?_
+  rw [measureReal_def, ← upperMass_def, upperMass_map]
 
 /-- **Near-unbiasedness of the ordinary density.** The mean ordinary homomorphism density of a
 `k`-vertex pattern in an `m`-vertex sample from an exchangeable graph law is within `C(k, 2) / m` of
-the pattern's upper mass: the ordinary and injective densities differ by at most the proportion of
-non-injective vertex maps. -/
+the pattern's upper mass. The bound holds for every positive sample size, and is informative only
+when `k ≤ m`, since `C(k, 2) / m ≥ 1` once `k > m`. -/
 theorem abs_integral_homDensityFin_law_sub_upperMass_le (F : SimpleGraph (Fin k)) (hm : 0 < m) :
     |(∫ G, homDensityFin F G ∂L.law m) - L.upperMass F| ≤ (k.choose 2 : ℝ) / m := by
   rcases le_or_gt k m with hkm | hmk
-  · rw [← L.integral_injHomDensity_law F hkm, ← integral_sub Integrable.of_finite
-      Integrable.of_finite]
-    calc
-      |∫ G, homDensityFin F G - injHomDensity F G ∂L.law m|
-          ≤ ∫ G, |homDensityFin F G - injHomDensity F G| ∂L.law m :=
-        abs_integral_le_integral_abs
-      _ ≤ ∫ _G, (k.choose 2 : ℝ) / m ∂L.law m := by
-        refine integral_mono Integrable.of_finite (integrable_const _) fun G => ?_
-        simpa only [Fintype.card_fin] using homDensityFin_sub_injHomDensity_le F G
-      _ = (k.choose 2 : ℝ) / m := by simp
+  · rw [← L.integral_injHomDensity_law F hkm]
+    simpa using abs_integral_homDensityFin_sub_integral_injHomDensity_le F (L.law m)
   · -- A pattern with more vertices than the sample: both terms lie in `[0, 1]`, and the bound is
     -- at least `1` because `m ≤ C(m + 1, 2) ≤ C(k, 2)`.
     have hchoose : m ≤ k.choose 2 := by
@@ -146,8 +132,9 @@ theorem toMeasure_empiricalMixing (n : ℕ) :
     (empiricalMixing L n : Measure GraphonSpaceI) =
       (L.law n).map fun G => SeparationQuotient.mk (finiteGraphGraphon G) := (rfl)
 
-/-- Averaging a homomorphism density against an empirical mixing measure is taking the mean
-homomorphism density of a sample from the law. -/
+/-- Averaging a homomorphism density against an empirical mixing measure of positive sample size
+is taking the mean homomorphism density of a sample from the law. Positivity of `n` is needed when
+`V` is nonempty, since the finite density of a nonempty pattern in the empty graph is `0`. -/
 theorem integral_homDensityOnSpace_empiricalMixing {V : Type*} [Fintype V] (F : SimpleGraph V)
     [DecidableRel F.Adj] {n : ℕ} (hn : 0 < n) :
     ∫ x, homDensityOnSpace F x ∂(empiricalMixing L n : Measure GraphonSpaceI) =
@@ -171,8 +158,9 @@ converges to the upper mass of `F`. -/
 theorem tendsto_integral_homDensityOnSpace_empiricalMixing {k : ℕ} (F : SimpleGraph (Fin k))
     [DecidableRel F.Adj] :
     Tendsto (fun n =>
-        ∫ x, homDensityOnSpace F x ∂(empiricalMixing L (n + 1) : Measure GraphonSpaceI))
+        ∫ x, homDensityOnSpace F x ∂(empiricalMixing L n : Measure GraphonSpaceI))
       atTop (𝓝 (L.upperMass F)) := by
+  refine (tendsto_add_atTop_iff_nat 1).1 ?_
   have hbound : Tendsto (fun n : ℕ => (k.choose 2 : ℝ) / (n + 1)) atTop (𝓝 0) := by
     simpa [div_eq_mul_inv] using
       (tendsto_one_div_add_atTop_nhds_zero_nat).const_mul (k.choose 2 : ℝ)

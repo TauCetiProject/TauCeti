@@ -69,17 +69,8 @@ private theorem abs_integral_homDensityFin_sampleGraph_sub_le {V : Type*} [Finty
     (hVn : Fintype.card V ≤ n) :
     |(∫ G, homDensityFin F G ∂sampleGraph W n) - homDensity F W| ≤
       ((Fintype.card V).choose 2 : ℝ) / n := by
-  rw [← integral_injHomDensity_sampleGraph W F hVn, ← integral_sub]
-  · calc
-      |∫ G, homDensityFin F G - injHomDensity F G ∂sampleGraph W n|
-          ≤ ∫ G, |homDensityFin F G - injHomDensity F G| ∂sampleGraph W n :=
-        abs_integral_le_integral_abs
-      _ ≤ ∫ _G, ((Fintype.card V).choose 2 : ℝ) / n ∂sampleGraph W n := by
-        refine integral_mono Integrable.of_finite (integrable_const _) fun G => ?_
-        simpa only [Fintype.card_fin] using homDensityFin_sub_injHomDensity_le F G
-      _ = ((Fintype.card V).choose 2 : ℝ) / n := by simp
-  · exact Integrable.of_finite
-  · exact Integrable.of_finite
+  rw [← integral_injHomDensity_sampleGraph W F hVn]
+  simpa using abs_integral_homDensityFin_sub_integral_injHomDensity_le F (sampleGraph W n)
 
 /-- **Exponential concentration of a sampled homomorphism density.** Let `F` have `q` vertices.
 If `2q² ≤ εn`, then under the graphon sampling law `G(n, W)`,
