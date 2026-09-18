@@ -46,8 +46,15 @@ variable {C : Type*} [Category* C] [HasZeroMorphisms C] {ι : Type*} {c : Comple
 
 /-- The map `H i X.fst ⟶ Hₚ i X` from the homology of the ambient space of a pair to the
 relative homology of the pair, induced by the pair map `(X.fst, ∅) ⟶ X`. -/
-abbrev hFstToHₚ (i : ι) (X : TopPair.{u}) : (HP.H i).obj X.fst ⟶ (HP.Hₚ i).obj X :=
+@[no_expose]
+def hFstToHₚ (i : ι) (X : TopPair.{u}) : (HP.H i).obj X.fst ⟶ (HP.Hₚ i).obj X :=
   (HP.iso i).hom.app _ ≫ (HP.Hₚ i).map X.j
+
+/-- The ambient-to-relative map is the comparison on `(X.fst, ∅)` followed by the map induced
+by the pair inclusion `(X.fst, ∅) ⟶ X`. -/
+lemma hFstToHₚ_def (i : ι) (X : TopPair.{u}) :
+    HP.hFstToHₚ i X = (HP.iso i).hom.app X.fst ≫ (HP.Hₚ i).map X.j := by
+  rw [hFstToHₚ.eq_def]
 
 /-- A homology pretheory has the long exact sequence of topological pairs
 `⋯ ⟶ H i X.snd ⟶ H i X.fst ⟶ Hₚ i X ⟶ H j X.snd ⟶ H j X.fst ⟶ ⋯` for `c.Rel i j`. -/

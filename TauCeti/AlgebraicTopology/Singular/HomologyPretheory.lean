@@ -83,7 +83,8 @@ homology of the pair is the map induced by the quotient from ambient to relative
 lemma singularHomologyPretheory_hFstToHₚ (n : ℕ) (P : TopPair.{w}) :
     (singularHomologyPretheory.{w} R).hFstToHₚ n P =
       P.singularHomologyπ R n ≫ eqToHom (singularHomologyFunctor_obj P R n).symm := by
-  dsimp only [hFstToHₚ, singularHomologyPretheory]
+  rw [HomologyPretheory.hFstToHₚ_def]
+  dsimp only [singularHomologyPretheory]
   rw [singularHomologyInclIso_hom_app, singularHomologyFunctor_map]
   -- The transports come from the comparison of `(X, ∅)` with `X`; the ones between definitionally
   -- equal homology objects have to be matched up to definitional equality.
@@ -149,6 +150,7 @@ instance : (singularHomologyPretheory.{w} R).HasPairSequence where
         rw [eqToHom_refl, Category.comp_id]
         infer_instance
       exact key _
+    rw [HomologyPretheory.hFstToHₚ_def] at this
     exact epi_of_epi (((singularHomologyPretheory.{w} R).iso 0).hom.app P.fst) _
 
 /-- Singular homology satisfies the dimension axiom: the singular homology of a point vanishes in
