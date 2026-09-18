@@ -159,9 +159,7 @@ theorem candidateGenusFieldRelativeSignPattern_frobenius_eq_genusChar
 Let q be a rational prime, let qIdeal be a degree-one prime of K = ℚ(√d) above q, and let Q be
 a prime of the candidate genus field above qIdeal.
 Every relative arithmetic Frobenius σ at Q is sent by the genus-field isomorphism to the class
-of qIdeal in the maximal elementary-2 quotient of the narrow class group. The residue-character
-calculation determines every nondivisible coordinate, and the even-parity relation recovers the
-possible divisible coordinate. -/
+of qIdeal in the maximal elementary-2 quotient of the narrow class group. -/
 theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
     {q : ℕ} [Fact q.Prime]

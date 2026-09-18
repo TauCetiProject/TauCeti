@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.GaloisGroup
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.Degree
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Relative
+public import TauCeti.Algebra.BigOperators.Finset.Erase
 
 /-!
 # The relative Galois group of the candidate genus field
@@ -108,23 +109,6 @@ noncomputable def candidateGenusFieldRelativeSignSubmodule {d : ℤ} (hd : Squar
     (v : {P // P ∈ genusPrimeDiscriminants hd} → ZMod 2) :
     v ∈ candidateGenusFieldRelativeSignSubmodule hd ↔ ∑ P, v P = 0 := by
   simp [candidateGenusFieldRelativeSignSubmodule, Fintype.linearCombination_apply]
-
-/-- Two functions on a finite type that agree away from one coordinate and have the same sum
-are equal. -/
-theorem eq_of_sum_eq_of_forall_ne {ι M : Type*} [Fintype ι] [AddCancelCommMonoid M]
-    (x y : ι → M) (hsum : ∑ R, x R = ∑ R, y R) (P : ι)
-    (h : ∀ R ≠ P, x R = y R) : x = y := by
-  classical
-  have herase : ∑ R ∈ Finset.univ.erase P, x R =
-      ∑ R ∈ Finset.univ.erase P, y R :=
-    Finset.sum_congr rfl fun R hR ↦ h R (Finset.mem_erase.mp hR).1
-  rw [← Finset.sum_erase_add _ _ (Finset.mem_univ P), herase] at hsum
-  rw [← Finset.sum_erase_add _ _ (Finset.mem_univ P)] at hsum
-  have hP : x P = y P := add_left_cancel hsum
-  funext R
-  by_cases hR : R = P
-  · simpa only [hR] using hP
-  · exact h R hR
 
 private theorem candidateGenusFieldProdRoot_ne_zero {d : ℤ} (hd : Squarefree d) :
     candidateGenusFieldProdRoot hd ≠ 0 := by
