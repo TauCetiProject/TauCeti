@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Data.Set.Card
+public import Mathlib.Order.Filter.AtTopBot.Finset
 public import Mathlib.Order.Northcott
 
 /-!
@@ -55,6 +56,12 @@ theorem Nat.card_coe_normLE (x : ℝ) :
 /-- Increasing the real cutoff can only enlarge the finite carrier. -/
 theorem normLE_mono : Monotone (normLE N) := fun _ _ hxy _ hi ↦
   mem_normLE N |>.mpr <| (mem_normLE N |>.mp hi).trans hxy
+
+/-- The finite carriers exhaust the index type as the cutoff grows: every finite set of indices
+is eventually contained in `normLE N x`. -/
+theorem tendsto_normLE_atTop : Filter.Tendsto (normLE N) Filter.atTop Filter.atTop :=
+  Filter.tendsto_atTop_finset_of_monotone (normLE_mono N) fun i ↦
+    ⟨N i, (mem_normLE N).mpr le_rfl⟩
 
 /-- Membership in a carrier with natural cutoff is the plain inequality of natural numbers. -/
 theorem mem_normLE_natCast {i : ι} {n : ℕ} : i ∈ normLE N (n : ℝ) ↔ N i ≤ n := by

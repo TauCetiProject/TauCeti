@@ -19,9 +19,12 @@ entry of `P * A * Q` is an `S`-combination of entries of `A`, so anything dividi
 those divides all of these.
 
 Nothing here needs invertibility, a square shape, or a diagonal target — only that the
-products are conformable — so the statements are at `CommSemiring` and rectangular. The
-Smith-normal-form theory consumes both, but neither has a Smith-normal-form hypothesis and
-neither should require importing that theory to reach.
+products are conformable — so the statements are at `NonUnitalCommSemiring` and rectangular.
+No multiplicative identity is involved; multiplication is used both associatively and
+commutatively.
+
+The Smith-normal-form theory consumes both, but neither has a Smith-normal-form hypothesis
+and neither should require importing that theory to reach.
 
 ## Main results
 
@@ -38,7 +41,7 @@ public section
 
 namespace Matrix
 
-variable {l m n o S : Type*} [CommSemiring S]
+variable {l m n o S : Type*} [NonUnitalCommSemiring S]
 
 /-- **A common divisor of the entries survives two-sided multiplication.** If `c` divides
 every entry of `A`, then it divides every entry of `P * A * Q`, since each entry of the

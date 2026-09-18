@@ -162,6 +162,14 @@ theorem conorm_ofPoint (P : Place k F) :
   · simp [h]
   · simp [h, WeilDivisor.coeff_ofPoint_of_ne h]
 
+/-- **The conorm along the identity extension is the identity.** Every place restricts to itself
+and the ramification index is `1`, so no coefficient moves. -/
+@[simp]
+theorem conorm_self {k F : Type*} [Field k] [Field F] [Algebra k F] (D : Divisor k F) :
+    conorm k F D = D := by
+  refine WeilDivisor.ext fun P ↦ ?_
+  rw [coeff_conorm, Place.ramificationIdx_self, Place.restrict_self, Nat.cast_one, one_mul]
+
 /-- The conorm is monotone: it multiplies coefficients by positive ramification indices. -/
 theorem conorm_mono : Monotone (conorm k' F' : Divisor k F → Divisor k' F') := by
   intro D E h

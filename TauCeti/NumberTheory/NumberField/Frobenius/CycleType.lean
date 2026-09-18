@@ -44,6 +44,8 @@ vocabulary of `Polynomial.Gal`.
 * `TauCeti.NumberField.fullCycleType_galActionHom_restrict_minpoly_eq_map_natDegree_monicFactorsMod`
   is the same statement for the minimal polynomial of an algebraic integer `θ`, with the factor
   degrees read off from `RingOfIntegers.monicFactorsMod θ p`.
+* `TauCeti.NumberField.factorizationType_eq_cycleType_isArithFrobAt`: the same statement with the
+  cycle type and the number of fixed points as separate summands.
 * `TauCeti.NumberField.exists_gal_fullCycleType_eq_factorizationType`: for monic `f` and a prime
   `p ∤ disc f`, some element of the Galois group of `f` over `ℚ` acts on the complex roots of `f`
   with full cycle type the factor degrees of `f` modulo `p`.
@@ -178,5 +180,28 @@ theorem exists_gal_fullCycleType_eq_factorizationType (f : ℤ[X]) (hf : f.Monic
   refine ⟨Gal.restrict g M σ, ?_⟩
   rw [← fullCycleType_galActionHom_restrict_eq_factorDegrees hf hsq Q hσ,
     Gal.galActionHom_eq_permCongr g M ℂ, Equiv.Perm.fullCycleType_permCongr]
+
+open scoped Classical in
+/-- **Dedekind's theorem, with the fixed points counted separately.** The multiset of degrees of
+the monic irreducible factors of `minpoly ℤ θ` modulo `p` is the cycle type of a Frobenius at a
+prime above `p` acting on the roots of `minpoly ℚ θ`, together with one part `1` for each fixed
+root. This is the form with the cycle type and the fixed points separated; the full cycle type of
+`fullCycleType_galActionHom_restrict_minpoly_eq_map_natDegree_monicFactorsMod` packages the two
+summands. -/
+theorem factorizationType_eq_cycleType_isArithFrobAt
+    {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
+    (hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p))))
+    [Fact (((minpoly ℚ (θ : K)).map (algebraMap ℚ M)).Splits)]
+    (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
+    {σ : M ≃ₐ[ℚ] M} (hσ : IsArithFrobAt ℤ σ Q) :
+    (RingOfIntegers.monicFactorsMod θ p).val.map natDegree =
+      (Gal.galActionHom (minpoly ℚ (θ : K)) M
+          (Gal.restrict (minpoly ℚ (θ : K)) M σ)).cycleType +
+        Multiset.replicate (Nat.card (Function.fixedPoints
+          (Gal.galActionHom (minpoly ℚ (θ : K)) M
+            (Gal.restrict (minpoly ℚ (θ : K)) M σ)))) 1 := by
+  rw [← fullCycleType_galActionHom_restrict_minpoly_eq_map_natDegree_monicFactorsMod hsq Q hσ,
+    Equiv.Perm.fullCycleType_def, Equiv.Perm.parts_partition, Nat.card_eq_fintype_card,
+    Equiv.Perm.card_fixedPoints, Equiv.Perm.sum_cycleType]
 
 end TauCeti.NumberField

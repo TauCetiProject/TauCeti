@@ -61,10 +61,32 @@ def numTransitiveGroups : ℕ → ℕ
   | 4 | 5 => 5
   | _ => 0
 
+@[simp] theorem numTransitiveGroups_zero : numTransitiveGroups 0 = 0 := by
+  simp [numTransitiveGroups]
+
+@[simp] theorem numTransitiveGroups_one : numTransitiveGroups 1 = 1 := by
+  simp [numTransitiveGroups]
+
+@[simp] theorem numTransitiveGroups_two : numTransitiveGroups 2 = 1 := by
+  simp [numTransitiveGroups]
+
+@[simp] theorem numTransitiveGroups_three : numTransitiveGroups 3 = 2 := by
+  simp [numTransitiveGroups]
+
 /-- There are five reference groups in degree four. -/
 @[simp]
 theorem numTransitiveGroups_four : numTransitiveGroups 4 = 5 :=
   (rfl)
+
+@[simp] theorem numTransitiveGroups_five : numTransitiveGroups 5 = 5 := by
+  simp [numTransitiveGroups]
+
+/-- There are no reference groups in degree greater than five. -/
+@[simp]
+theorem numTransitiveGroups_eq_zero_of_five_lt {n : ℕ} (hn : 5 < n) :
+    numTransitiveGroups n = 0 := by
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 6 := ⟨n - 6, by omega⟩
+  simp [numTransitiveGroups]
 
 /-- A zero-based index for a transitive-group label in degree `n`.
 

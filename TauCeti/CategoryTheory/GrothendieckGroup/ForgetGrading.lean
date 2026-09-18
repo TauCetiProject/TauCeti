@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent
+public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent.Basic
 
 /-!
 # Forgetting the grading on a Grothendieck group

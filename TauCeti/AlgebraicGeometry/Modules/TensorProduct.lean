@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Monoidal
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 
 /-!
 # The tensor product of `𝒪ₓ`-modules on a scheme
@@ -21,11 +21,10 @@ product of `𝒪ₓ`-modules is `M ⊗ N`.
 * `AlgebraicGeometry.Scheme.Modules.instMonoidalCategory` and
   `AlgebraicGeometry.Scheme.Modules.instSymmetricCategory` make `X.Modules` a symmetric monoidal
   category, with unit `𝒪ₓ`; they are the site-level structures
-  `TauCeti.SheafOfModules.monoidalCategory` and `TauCeti.SheafOfModules.symmetricCategory`.
+  `TauCeti.SheafOfModules.monoidalCategory` and `TauCeti.SheafOfModules.symmetricCategory`;
+* `AlgebraicGeometry.Scheme.Modules.instMonoidalClosed` makes tensoring an `𝒪ₓ`-module on
+  the left adjoint to its internal Hom functor.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Invertible
-sheaves on a scheme; the Picard group `Pic X` under `⊗`": the tensor product is the
-operation from which the Picard group will be built.
 -/
 
 public section
@@ -52,6 +51,12 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.instMonoidalCategory :
 instance _root_.AlgebraicGeometry.Scheme.Modules.instSymmetricCategory :
     SymmetricCategory X.Modules :=
   SheafOfModules.symmetricCategory X.sheaf
+
+/-- The closed monoidal structure on `𝒪ₓ`-modules: tensoring on the left is adjoint to the
+internal Hom functor. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.instMonoidalClosed :
+    MonoidalClosed X.Modules :=
+  SheafOfModules.monoidalClosed X.sheaf
 
 end
 

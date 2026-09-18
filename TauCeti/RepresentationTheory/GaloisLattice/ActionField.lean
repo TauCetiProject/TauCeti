@@ -78,6 +78,14 @@ noncomputable def actionFieldRestriction (M : GaloisLatticeCat k) :
   change Gal(AlgebraicClosure k / k) →* Gal(actionField M / k)
   exact AlgEquiv.restrictNormalHom (actionField M)
 
+/-- Restriction to the action field agrees with the original automorphism on its elements. -/
+@[simp]
+theorem actionFieldRestriction_apply (M : GaloisLatticeCat k)
+    (σ : Field.absoluteGaloisGroup k) (a : actionField M) :
+    (actionFieldRestriction M σ a : AlgebraicClosure k) =
+      AlgEquiv.toAlgHom σ (a : AlgebraicClosure k) := by
+  exact AlgEquiv.restrictNormalHom_apply (actionField M) σ a
+
 /-- Restriction to the action field is surjective. -/
 theorem actionFieldRestriction_surjective (M : GaloisLatticeCat k) :
     Function.Surjective (actionFieldRestriction M) := by

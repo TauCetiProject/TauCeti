@@ -98,7 +98,9 @@ theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩ : IsOpen Ω) (hΩc
     calc
       _ ≤ ∫⁻ y in closedBall x d, k x y ∂μ :=
         lintegral_mono_set fun _ hy => mem_closedBall.2 (dist_le_diam_of_mem hb hy hx)
-      _ = _ := setLIntegral_closedBall_enorm_sub_rpow_one_sub_finrank hd x
+      _ = _ := by
+        rw [setLIntegral_closedBall_enorm_sub_rpow (by linarith) hd, add_sub_cancel,
+          Real.rpow_one, div_one]
   have hcont := hu.continuousOn_fderiv_of_isOpen hΩ le_rfl
   have hschur : ∫⁻ x in Ω, V x ^ p ∂μ ≤
       ENNReal.ofReal K ^ (p - 1) * ENNReal.ofReal K * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ ^ p ∂μ :=

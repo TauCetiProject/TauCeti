@@ -23,6 +23,8 @@ to define the Riemannian exponential map by evaluation at time one.
 ## Main definitions and results
 
 * `TauCeti.Manifold.maximalGeodesic` is the chosen maximal geodesic with prescribed initial data.
+* `TauCeti.Manifold.maximalGeodesic_def` identifies it with the base projection of the maximal
+  integral curve of the geodesic spray.
 * `TauCeti.Manifold.maximalIntegralCurveInterval_geodesicSpray` identifies the two independently
   defined maximal domains.
 * `TauCeti.Manifold.isGeodesicCurveOnFrom_maximalGeodesic` gives the geodesic equation and initial
@@ -120,6 +122,14 @@ variable (I M) in
 maximal interval. -/
 def maximalGeodesic (p : M) (v : TangentSpace I p) (t : ℝ) : M :=
   (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) t).proj
+
+omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
+/-- The maximal geodesic is the base projection of the corresponding maximal integral curve of
+the geodesic spray. -/
+theorem maximalGeodesic_def (p : M) (v : TangentSpace I p) (t : ℝ) :
+    maximalGeodesic I M p v t =
+      (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) t).proj := by
+  rfl
 
 /-- The maximal geodesic has the prescribed initial data on its maximal interval. -/
 theorem isGeodesicCurveOnFrom_maximalGeodesic (p : M) (v : TangentSpace I p) :

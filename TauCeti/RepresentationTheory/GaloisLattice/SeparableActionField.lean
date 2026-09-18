@@ -112,6 +112,18 @@ noncomputable def separableActionFieldRestriction (M : GaloisLatticeCat k) :
     Field.absoluteGaloisGroup k →* Gal(separableActionField M/k) :=
   (actionFieldGalEquivSeparableActionField M).toMonoidHom.comp (actionFieldRestriction M)
 
+/-- Restriction to the separable action field agrees with the absolute Galois automorphism
+on its elements, embedded in the algebraic closure through the action field. -/
+@[simp]
+theorem separableActionFieldRestriction_apply (M : GaloisLatticeCat k)
+    (σ : Field.absoluteGaloisGroup k) (a : separableActionField M) :
+    (((separableActionFieldRestriction M σ a : separableActionField M) : actionField M) :
+        AlgebraicClosure k) = AlgEquiv.toAlgHom σ ((a : actionField M) : AlgebraicClosure k) := by
+  simp only [separableActionFieldRestriction, MonoidHom.comp_apply,
+    MulEquiv.coe_toMonoidHom, actionFieldGalEquivSeparableActionField_apply,
+    actionFieldGalToSeparableActionField, AlgEquiv.restrictNormalHom_apply,
+    actionFieldRestriction_apply]
+
 /-- Restriction from the absolute Galois group onto the separable action field is surjective. -/
 theorem separableActionFieldRestriction_surjective (M : GaloisLatticeCat k) :
     Function.Surjective (separableActionFieldRestriction M) :=

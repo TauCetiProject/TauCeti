@@ -28,7 +28,9 @@ it is used, as a valuation criterion:
 Its consequence `TauCeti.Place.valuation_trace_le_exp` is the local estimate behind the trace of
 repartitions, and so behind the divisor of the cotrace of a Weil differential: if
 `ord_{P'}(z) ≥ -(e(P' ∣ P) · n + d(P' ∣ P))` at every `P'` above `P`, then
-`ord_P (Tr_{F'/F} z) ≥ -n`.
+`ord_P (Tr_{F'/F} z) ≥ -n`.  The estimate is sharp: relaxing the bound by one at a single place
+`P'` over `P` makes every `x ∈ F` with `ord_P x ≥ -(n + 1)` a trace, which is what pins the divisor
+of the cotrace down exactly.
 
 The criterion is read off the different ideal `𝔡` of the local model, which is the inverse of
 `C_P` as a fractional ideal: `z ∈ C_P` exactly when `z · 𝔡 ⊆ 𝒪'_P`
@@ -48,11 +50,12 @@ is where the constant field `k'` has to be integral over `k`.
 * `TauCeti.Place.mem_traceDual_iff_forall_valuation_le`: **the valuation criterion for the
   complementary module** (Stichtenoth, Proposition 3.4.2 and Definition 3.4.3).
 * `TauCeti.Place.valuation_trace_le_exp`: the trace estimate at a place.
+* `TauCeti.Place.exists_forall_valuation_le_and_trace_eq`: the trace estimate is sharp.
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Definition 3.4.1, Proposition 3.4.2 and Definition 3.4.3.
+  Definition 3.4.1, Proposition 3.4.2, Definition 3.4.3 and the proof of Theorem 3.4.6.
 -/
 
 public section
@@ -218,6 +221,87 @@ theorem valuation_trace_le_exp (hF' : IsFunctionField k' F') (P : Place k F) (n 
         rw [← mul_assoc, ← WithZero.exp_add, add_neg_cancel, WithZero.exp_zero, one_mul]
     _ ≤ WithZero.exp n * 1 := by gcongr
     _ = WithZero.exp n := mul_one _
+
+/-- **The trace estimate is sharp** (Stichtenoth, proof of Theorem 3.4.6): relaxing the bound of
+`TauCeti.Place.valuation_trace_le_exp` by one at a single place `P'` over `P` relaxes the bound on
+the traces by one.  Every `x ∈ F` with `ord_P x ≥ -(n + 1)` is the trace of some `z ∈ F'` with
+`ord_{Q'} z ≥ -(e(Q' ∣ P) · n + d(Q' ∣ P))` at the places `Q' ≠ P'` over `P` and
+`ord_{P'} z ≥ -(e(P' ∣ P) · n + d(P' ∣ P) + 1)`. -/
+theorem exists_forall_valuation_le_and_trace_eq (hF' : IsFunctionField k' F')
+    (P' : Place k' F') (n : ℤ) {x : F}
+    (hx : (P'.restrict k F).valuation x ≤ WithZero.exp (n + 1)) :
+    ∃ z : F', (∀ Q' : Place k' F', Q'.restrict k F = P'.restrict k F → Q' ≠ P' →
+        Q'.valuation z ≤ WithZero.exp (ramificationIdx F Q' * n + differentExponent k F Q')) ∧
+      P'.valuation z ≤ WithZero.exp (ramificationIdx F P' * n + differentExponent k F P' + 1) ∧
+      Algebra.trace F F' z = x := by
+  classical
+  rcases eq_or_ne x 0 with rfl | hx0
+  · exact ⟨0, fun _ _ _ ↦ by simp, by simp, by simp⟩
+  set P := P'.restrict k F with hP
+  -- By the valuation criterion for `C_P`, a function `z₀` of `F'` with order exactly
+  -- `-(d(P' ∣ P) + 1)` at `P'` and at least `-d(Q' ∣ P)` at the other places over `P` lies outside
+  -- `C_P`; then some `z₀ * b` with `b ∈ 𝒪'_P` has a trace `y ∉ 𝒪_P`, and `(x / y) * z₀ * b` works.
+  obtain ⟨z₀, hz₀0, hz₀⟩ := exists_ne_zero_forall_mem_ord_eq
+    (finite_setOf_restrict_eq (k' := k') (F' := F') k F P).toFinset
+    fun Q' ↦ -((differentExponent k F Q' : ℤ) + if Q' = P' then 1 else 0)
+  have hval (Q' : Place k' F') (hQ' : Q'.restrict k F = P) :
+      Q'.valuation z₀ =
+        WithZero.exp ((differentExponent k F Q' : ℤ) + if Q' = P' then 1 else 0) := by
+    rw [Q'.valuation_eq_exp_neg_ord hz₀0, hz₀ Q' (by simpa using hQ'), neg_neg]
+  have hnot : z₀ ∉ Submodule.traceDual P.integers F
+      (1 : Submodule (integralClosure P.integers F') F') := by
+    rw [mem_traceDual_iff_forall_valuation_le k F hF' P]
+    intro h
+    have h' := h P' rfl
+    rw [hval P' rfl] at h'
+    simp only [↓reduceIte, WithZero.exp_le_exp] at h'
+    omega
+  -- so some multiple of it by an element `a` of `𝒪'_P` has a trace `y` outside `𝒪_P`
+  obtain ⟨a, ha, hy⟩ : ∃ a ∈ (1 : Submodule (integralClosure P.integers F') F'),
+      Algebra.trace F F' (z₀ * a) ∉ (algebraMap P.integers F).range := by
+    simpa [Submodule.mem_traceDual, Algebra.traceForm_apply] using hnot
+  obtain ⟨b, rfl⟩ := Submodule.mem_one.mp ha
+  set y := Algebra.trace F F' (z₀ * algebraMap _ F' b) with hydef
+  have hy1 : 1 < P.valuation y := by
+    refine lt_of_not_ge fun h ↦ hy ⟨⟨y, P.mem_integers_iff.mpr h⟩, rfl⟩
+  have hy0 : y ≠ 0 := by
+    rintro h
+    simp [h] at hy1
+  have hordy : P.ord y < 0 := by
+    rw [P.valuation_eq_exp_neg_ord hy0, ← WithZero.exp_zero, WithZero.exp_lt_exp] at hy1
+    omega
+  have hordx : -(n + 1) ≤ P.ord x := by
+    rw [P.valuation_eq_exp_neg_ord hx0, WithZero.exp_le_exp] at hx
+    omega
+  -- the multiplier `x / y` has order at least `-n` at `P`
+  have hc0 : x / y ≠ 0 := div_ne_zero hx0 hy0
+  have hc : ∀ Q' : Place k' F', Q'.restrict k F = P →
+      Q'.valuation (algebraMap F F' (x / y)) ≤ WithZero.exp (ramificationIdx F Q' * n) := by
+    intro Q' hQ'
+    rw [Q'.valuation_eq_exp_neg_ord ((map_ne_zero _).mpr hc0), ord_algebraMap_restrict k F Q', hQ',
+      P.ord_div hx0 hy0, WithZero.exp_le_exp]
+    have he : (0 : ℤ) ≤ ramificationIdx F Q' := by positivity
+    nlinarith
+  have hb (Q' : Place k' F') (hQ' : Q'.restrict k F = P) :
+      Q'.valuation (algebraMap (integralClosure P.integers F') F' b) ≤ 1 :=
+    Q'.mem_integers_iff.mp
+      ((isIntegral_iff_forall_restrict_eq_mem_integers hF' P).mp b.2 Q' hQ')
+  have hbound (Q' : Place k' F') (hQ' : Q'.restrict k F = P) :
+      Q'.valuation (algebraMap F F' (x / y) * (z₀ * algebraMap _ F' b)) ≤
+        WithZero.exp (ramificationIdx F Q' * n + differentExponent k F Q' +
+          if Q' = P' then 1 else 0) := by
+    calc Q'.valuation (algebraMap F F' (x / y) * (z₀ * algebraMap _ F' b))
+        = Q'.valuation (algebraMap F F' (x / y)) * Q'.valuation z₀ *
+            Q'.valuation (algebraMap _ F' b) := by rw [map_mul, map_mul, mul_assoc]
+      _ ≤ WithZero.exp (ramificationIdx F Q' * n) * Q'.valuation z₀ * 1 := by
+          gcongr
+          · exact hc Q' hQ'
+          · exact hb Q' hQ'
+      _ = _ := by rw [mul_one, hval Q' hQ', ← WithZero.exp_add, add_assoc]
+  refine ⟨algebraMap F F' (x / y) * (z₀ * algebraMap _ F' b), fun Q' hQ' hne ↦ ?_, ?_, ?_⟩
+  · simpa [hne] using hbound Q' hQ'
+  · simpa using hbound P' rfl
+  · rw [← Algebra.smul_def, LinearMap.map_smul, ← hydef, smul_eq_mul, div_mul_cancel₀ x hy0]
 
 end Place
 

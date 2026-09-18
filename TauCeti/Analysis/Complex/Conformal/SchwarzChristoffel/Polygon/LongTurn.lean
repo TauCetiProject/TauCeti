@@ -58,7 +58,9 @@ private lemma exponent_sum_at_eq (a e : Fin (n + 1) → ℝ) (ha : StrictMono a)
     exact ha.injective.eq_iff
   rw [hfilter, Finset.sum_singleton]
 
-private lemma im_exp_neg_mul_schwarzChristoffelVertex_succ_sub_eq
+/-- After rotating by `-θ`, the height of a bounded Schwarz--Christoffel side vector is its length
+times the sine of its edge angle measured from `θ`. -/
+theorem im_exp_neg_mul_schwarzChristoffelVertex_succ_sub_eq
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (θ : ℝ) (k : Fin n)
     (hfinite_left : -1 < ∑ l with a l = a k.castSucc, e l)

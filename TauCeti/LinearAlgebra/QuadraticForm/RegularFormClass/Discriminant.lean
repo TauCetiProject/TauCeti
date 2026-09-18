@@ -41,6 +41,8 @@ is killed by two.
 
 * `TauCeti.squareClass_prod_eq_of_equivalent`: isometric diagonal presentations have weight
   products in the same square class.
+* `TauCeti.equivalent_presentedForm_hyperbolicPlane_of_squareClass_prod_eq_neg_one`: a binary
+  presentation whose weight product has square class `[-1]` presents a hyperbolic plane.
 * `TauCeti.RegularFormClass.discr_add` and `TauCeti.RegularFormClass.discr_mul`: the discriminant
   of an orthogonal sum is the sum of the discriminants, and the discriminant of a tensor product
   of classes of ranks `m` and `n` is `d(q)^n d(r)^m`.
@@ -85,6 +87,21 @@ theorem squareClass_prod_eq_of_equivalent {p q : RegularFormPresentation K}
   obtain rfl : n = m := fst_eq_of_presentedForm_equivalent h
   rw [presentedForm_eq_weightedSumSquares, presentedForm_eq_weightedSumSquares] at h
   exact (squareClass_eq_iff_isSquare_mul _ _).mpr (isSquare_prod_mul_prod_of_equivalent h)
+
+/-- A binary regular-form presentation whose weight product has square class `[-1]` presents a
+hyperbolic plane. -/
+theorem equivalent_presentedForm_hyperbolicPlane_of_squareClass_prod_eq_neg_one
+    (w : Fin 2 → Kˣ) (h : squareClass (w 0 * w 1) = squareClass (-1 : Kˣ)) :
+    (presentedForm ⟨2, w⟩).Equivalent (hyperbolicPlane K) := by
+  have hdisc : IsSquare (w 0 * w 1 * ((1 : Kˣ) * (-1))) := by
+    rw [← squareClass_eq_iff_isSquare_mul]
+    simpa only [one_mul] using h
+  rw [presentedForm_eq_weightedSumSquares_coe]
+  have hweights : (fun i ↦ (w i : K)) = ![(w 0 : K), (w 1 : K)] := by
+    ext i
+    fin_cases i <;> rfl
+  rw [hweights]
+  exact equivalent_weightedSumSquares_hyperbolicPlane_of_isSquare hdisc
 
 namespace RegularFormClass
 

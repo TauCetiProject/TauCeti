@@ -173,4 +173,22 @@ theorem exists_isCoupling_eLpNorm_top_eq_wassersteinEDist (μ ν : Measure X) [I
   rw [eLpNorm_smul_measure_of_ne_zero hm0, ← hscale, wassersteinEDist_top_eq_iSup]
   simpa using hle
 
+/-- A bound on `W_∞` is realized by a coupling whose displacement satisfies that bound almost
+everywhere. Feasibility is explicit so the statement also holds for the bound `∞`. -/
+theorem wassersteinEDist_top_le_iff (μ ν : Measure X) [IsFiniteMeasure μ]
+    (hcoup : ∃ π, IsCoupling π μ ν) {r : ℝ≥0∞} :
+    wassersteinEDist ∞ μ ν ≤ r ↔
+      ∃ π, IsCoupling π μ ν ∧ ∀ᵐ z ∂π, edist z.1 z.2 ≤ r := by
+  constructor
+  · intro h
+    obtain ⟨π, hπ, hval⟩ := exists_isCoupling_eLpNorm_top_eq_wassersteinEDist μ ν hcoup
+    refine ⟨π, hπ, ?_⟩
+    have hbound := ae_le_eLpNormEssSup (f := fun z : X × X ↦ edist z.1 z.2) (μ := π)
+    simp only [enorm_eq_self, ← eLpNorm_exponent_top, hval] at hbound
+    exact hbound.mono fun _ hz ↦ hz.trans h
+  · rintro ⟨π, hπ, hbound⟩
+    refine (wassersteinEDist_le hπ ∞).trans ?_
+    rw [eLpNorm_exponent_top]
+    exact eLpNormEssSup_le_of_ae_enorm_bound (by simpa only [enorm_eq_self] using hbound)
+
 end TauCeti

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Spec
-public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel
+public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 
 /-!

@@ -23,6 +23,8 @@ Everything here concerns one completion. The comparison of two completions along
 
 ## Main results
 
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletion_charZero`: a completion of a field of
+  characteristic zero has characteristic zero.
 * `IsDedekindDomain.HeightOneSpectrum.under_maximalIdeal_adicCompletionIntegers`: `v` is the
   prime lying under the maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.mem_maximalIdeal_pow_iff`: membership in `𝔪 ^ n` is the
@@ -76,6 +78,12 @@ namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+
+/-- The completion of a field of characteristic zero at a height-one prime has characteristic
+zero, since the field embeds into it. -/
+instance adicCompletion_charZero [CharZero K] (v : HeightOneSpectrum R) :
+    CharZero (v.adicCompletion K) :=
+  charZero_of_injective_algebraMap (algebraMap K (v.adicCompletion K)).injective
 
 /-- The prime of `R` lying under the maximal ideal of the ring of integers of the completion of
 `K` at `v` is `v` itself. -/
