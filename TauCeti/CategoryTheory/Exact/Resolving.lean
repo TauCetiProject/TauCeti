@@ -36,6 +36,8 @@ kernel a retract of the projective middle term.
 ## Main results
 
 * `TauCeti.ExactStructure.IsResolving.prop_X₁`: closure under kernels of admissible deflations.
+* `TauCeti.ExactStructure.resolvingSubcategory_conflation_iff`: the conflations of the induced
+  exact structure are precisely the ambient conflations.
 * `TauCeti.ExactStructure.IsResolving.isConflationExact_ι` and
   `TauCeti.ExactStructure.IsResolving.reflectsConflations_ι`: the inclusion preserves and
   reflects conflations.
@@ -83,6 +85,14 @@ exact structure. Its conflations are precisely the ambient conflations whose thr
 `P`. -/
 noncomputable def resolvingSubcategory [E.IsResolving P] : ExactStructure P.FullSubcategory :=
   E.fullSubcategory P IsResolving.isExtensionClosed
+
+/-- A short complex of a resolving subcategory is a conflation of the induced exact structure
+exactly when its image in the ambient category is a conflation. -/
+@[simp]
+theorem resolvingSubcategory_conflation_iff [E.IsResolving P]
+    (S : ShortComplex P.FullSubcategory) :
+    (E.resolvingSubcategory P).Conflation S ↔ E.Conflation (S.map P.ι) :=
+  E.fullSubcategory_conflation_iff IsResolving.isExtensionClosed S
 
 /-- The inclusion of a resolving subcategory preserves conflations. -/
 theorem IsResolving.isConflationExact_ι [E.IsResolving P] :
