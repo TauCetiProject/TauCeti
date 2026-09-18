@@ -23,7 +23,7 @@ multiplication by the index `[G : S]`. This is the identity behind the normaliza
 
 ## Main results
 
-* `TauCeti.Subgroup.coindResAdjunction_counit_app_hom_apply`: the trace sums `g⁻¹ • f g` over the
+* `Subgroup.coindResAdjunction_counit_app_hom_apply`: the trace sums `g⁻¹ • f g` over the
   chosen representatives `g` of the right cosets of `S`.
 * `TauCeti.Rep.resCoindAdjunction_unit_app_comp_coindResAdjunction_counit_app`: the composite of
   the unit and the trace is `[G : S] • 𝟙 A`.
@@ -38,9 +38,9 @@ public section
 
 open CategoryTheory
 
-namespace TauCeti.Subgroup
+namespace Subgroup
 
-open _root_.Rep
+open Rep
 
 universe u
 
@@ -68,7 +68,7 @@ theorem coindResAdjunction_counit_app_hom_apply (A : Rep.{u} k G)
   conv_lhs => rw [← Quotient.out_eq q]
   rw [Quotient.liftOn_mk, hcounit]
 
-end TauCeti.Subgroup
+end Subgroup
 
 namespace TauCeti.Rep
 

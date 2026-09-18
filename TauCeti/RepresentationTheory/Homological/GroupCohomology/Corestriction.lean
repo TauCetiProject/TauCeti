@@ -169,7 +169,7 @@ private noncomputable abbrev coindComp : Rep k C :=
 `φ₁.range`. -/
 private noncomputable def evalOne : res φ₁.range.subtype (res φ₂ (coindComp φ₁ φ₂ M)) ⟶
     res φ₁.range.subtype (res φ₂ M) :=
-  (resFunctor (TauCeti.MonoidHom.rangeCompHom φ₁ φ₂)).map
+  (resFunctor (MonoidHom.rangeCompHom φ₁ φ₂)).map
     ((resCoindAdjunction k (φ₂.comp φ₁).range.subtype).counit.app
       (res (φ₂.comp φ₁).range.subtype M))
 
@@ -227,7 +227,7 @@ private theorem coindTrace_hom_apply_coe [φ₁.range.FiniteIndex] (f : coindCom
   have : ((coindTrace φ₁ φ₂ M).hom f).1 c =
       (traceRestrict φ₁ φ₂ M).hom ((coindComp φ₁ φ₂ M).ρ c f) := rfl
   rw [this, traceRestrict, Rep.hom_comp, Representation.IntertwiningMap.comp_apply,
-    TauCeti.Subgroup.coindResAdjunction_counit_app_hom_apply]
+    Subgroup.coindResAdjunction_counit_app_hom_apply]
   refine Finset.sum_congr rfl fun q _ => ?_
   rw [restrictCoind_hom_apply_coe]
   simp only [res_obj_ρ, MonoidHom.coe_comp, Function.comp_apply, map_inv]
@@ -239,21 +239,21 @@ sum over the cosets of `φ₁.range` in `B` and of `φ₂.range` in `C` is a sum
 `(φ₂.comp φ₁).range` in `C`. -/
 private theorem coindTrace_comp_counit [φ₁.range.FiniteIndex] [φ₂.range.FiniteIndex]
     (h₂ : Function.Injective φ₂) :
-    letI := TauCeti.MonoidHom.finiteIndex_range_comp φ₁ φ₂ h₂
+    letI := MonoidHom.finiteIndex_range_comp φ₁ φ₂ h₂
     coindTrace φ₁ φ₂ M ≫ (coindResAdjunction.{u, u, u} k φ₂.range).counit.app M =
       (coindResAdjunction.{u, u, u} k (φ₂.comp φ₁).range).counit.app M := by
-  let _ := TauCeti.MonoidHom.finiteIndex_range_comp φ₁ φ₂ h₂
+  let _ := MonoidHom.finiteIndex_range_comp φ₁ φ₂ h₂
   refine Rep.hom_ext (Representation.IntertwiningMap.ext (LinearMap.ext fun f => ?_))
   simp only [Representation.IntertwiningMap.toLinearMap_apply, Rep.hom_comp,
     Representation.IntertwiningMap.comp_apply]
-  rw [TauCeti.Subgroup.coindResAdjunction_counit_app_hom_apply,
-    TauCeti.Subgroup.coindResAdjunction_counit_app_hom_apply]
+  rw [Subgroup.coindResAdjunction_counit_app_hom_apply,
+    Subgroup.coindResAdjunction_counit_app_hom_apply]
   -- The summand `c ↦ c⁻¹ • f c` of the trace is constant on the cosets of `(φ₂.comp φ₁).range`.
   let F : C → M := fun c => M.ρ c⁻¹ (f.1 c)
   have hF (x : C) :
       F x = F (Quotient.mk (QuotientGroup.rightRel (φ₂.comp φ₁).range) x).out := by
     obtain ⟨_, ⟨a, rfl⟩, hs⟩ :=
-      TauCeti.Subgroup.exists_mul_out_eq (φ₂.comp φ₁).range x
+      Subgroup.exists_mul_out_eq (φ₂.comp φ₁).range x
     conv_lhs => rw [← hs]
     have := f.2 ⟨(φ₂.comp φ₁) a, MonoidHom.mem_range.2 ⟨a, rfl⟩⟩
       (Quotient.mk (QuotientGroup.rightRel (φ₂.comp φ₁).range) x).out
@@ -268,7 +268,7 @@ private theorem coindTrace_comp_counit [φ₁.range.FiniteIndex] [φ₂.range.Fi
         rw [coindTrace_hom_apply_coe, map_sum]
         refine Finset.sum_congr rfl fun q _ => ?_
         simp only [F, ← Module.End.mul_apply, ← map_mul, mul_inv_rev]
-    _ = _ := Fintype.sum_bijective _ (TauCeti.MonoidHom.bijective_mk_mul_out φ₁ φ₂ h₂)
+    _ = _ := Fintype.sum_bijective _ (MonoidHom.bijective_mk_mul_out φ₁ φ₂ h₂)
       _ _ fun _ => hF _
 
 /-- **Transitivity of corestriction.** Let `φ₁ : A →* B` and `φ₂ : B →* C` be injective with
@@ -286,7 +286,7 @@ theorem corestriction_trans {φ₁ : A →* B} {φ₂ : B →* C} {φ₃ : A →
     (h₁ : Function.Injective φ₁) (h₂ : Function.Injective φ₂) (h : φ₂.comp φ₁ = φ₃)
     [φ₁.range.FiniteIndex] [φ₂.range.FiniteIndex] (M : Rep.{u} k C)
     (n : ℕ) :
-    letI : φ₃.range.FiniteIndex := h ▸ TauCeti.MonoidHom.finiteIndex_range_comp φ₁ φ₂ h₂
+    letI : φ₃.range.FiniteIndex := h ▸ MonoidHom.finiteIndex_range_comp φ₁ φ₂ h₂
     (mapIso (B := res φ₁ (res φ₂ M)) (A := res φ₁.range.subtype (res φ₂ M))
         (MonoidHom.ofInjective h₁) (LinearEquiv.refl k M)
         (fun _ => LinearMap.ext fun _ => rfl) n).hom ≫
@@ -300,7 +300,7 @@ theorem corestriction_trans {φ₁ : A →* B} {φ₂ : B →* C} {φ₃ : A →
         (fun _ => by subst h; exact LinearMap.ext fun _ => rfl) n).hom ≫
       corestriction φ₃.range M n := by
   subst h
-  let _ := TauCeti.MonoidHom.finiteIndex_range_comp φ₁ φ₂ h₂
+  let _ := MonoidHom.finiteIndex_range_comp φ₁ φ₂ h₂
   classical
   -- Precompose with Shapiro's isomorphism for the composite, read on `A`.
   rw [← cancel_epi ((coindIso (res (φ₂.comp φ₁).range.subtype M) n).hom ≫

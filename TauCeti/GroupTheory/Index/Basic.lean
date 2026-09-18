@@ -35,9 +35,9 @@ centre gives the `Γ.withCenter` readings.
   and the index doubling, for an `N` normalised by `Γ` whose elements are `1` and `a ∉ Γ`.
 * `Subgroup.instCountableQuotient`: a coset space of a countable group is countable.
 * `Subgroup.finiteIndex_of_finiteIndex_subgroupOf`: finite index composes along `V ≤ U ≤ G`.
-* `TauCeti.MonoidHom.finiteIndex_range_comp`: finite index of ranges is preserved by composition
+* `MonoidHom.finiteIndex_range_comp`: finite index of ranges is preserved by composition
   with an injective homomorphism of finite-index range.
-* `TauCeti.MonoidHom.bijective_mk_mul_out`: right cosets of a composite range are represented by
+* `MonoidHom.bijective_mk_mul_out`: right cosets of a composite range are represented by
   products of representatives for the two successive ranges.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}`.
@@ -46,14 +46,12 @@ centre gives the `Γ.withCenter` readings.
 
 public section
 
-namespace TauCeti
-
 namespace Subgroup
 
 universe u
 
 /-- A chosen representative of the right coset `S x` differs from `x` by an element of `S`. -/
-theorem exists_mul_out_eq {G : Type u} [Group G] (S : _root_.Subgroup G) (x : G) :
+theorem exists_mul_out_eq {G : Type u} [Group G] (S : Subgroup G) (x : G) :
     ∃ s ∈ S, s * (Quotient.mk (QuotientGroup.rightRel S) x).out = x :=
   ⟨_, QuotientGroup.rightRel_apply.1
     (Quotient.exact (Quotient.out_eq (Quotient.mk (QuotientGroup.rightRel S) x))), by group⟩
@@ -80,13 +78,13 @@ theorem bijective_mk_mul_out (φ₁ : A →* B) (φ₂ : B →* C) (h₂ : Funct
       rw [← Quotient.out_eq p, ← Quotient.out_eq p']
       refine Quotient.sound (QuotientGroup.rightRel_apply.2 ⟨q'.out⁻¹ * φ₁ a * q.out, ?_⟩)
       simp only [map_mul, map_inv]
-      rw [← _root_.MonoidHom.comp_apply φ₂ φ₁, ha]
+      rw [← MonoidHom.comp_apply φ₂ φ₁, ha]
       group
     subst hp
     have hq : q = q' := by
       rw [← Quotient.out_eq q, ← Quotient.out_eq q']
       refine Quotient.sound (QuotientGroup.rightRel_apply.2 ⟨a, h₂ ?_⟩)
-      rw [← _root_.MonoidHom.comp_apply φ₂ φ₁, ha]
+      rw [← MonoidHom.comp_apply φ₂ φ₁, ha]
       simp only [map_mul, map_inv]
       group
     rw [hq]
@@ -99,7 +97,7 @@ theorem bijective_mk_mul_out (φ₁ : A →* B) (φ₂ : B →* C) (h₂ : Funct
     rw [eq_mul_inv_iff_mul_eq]
     conv_rhs => rw [← hb]
     conv_rhs => rw [← ha]
-    simp only [_root_.MonoidHom.coe_comp, Function.comp_apply, map_mul, mul_assoc]
+    simp only [MonoidHom.coe_comp, Function.comp_apply, map_mul, mul_assoc]
 
 /-- The homomorphism from the range of `φ₁` to the range of `φ₂.comp φ₁` induced by `φ₂`. -/
 abbrev rangeCompHom (φ₁ : A →* B) (φ₂ : B →* C) : φ₁.range →* (φ₂.comp φ₁).range :=
@@ -110,13 +108,11 @@ their composite has finite index. -/
 theorem finiteIndex_range_comp (φ₁ : A →* B) (φ₂ : B →* C) [φ₁.range.FiniteIndex]
     [φ₂.range.FiniteIndex] (h₂ : Function.Injective φ₂) : (φ₂.comp φ₁).range.FiniteIndex := by
   refine ⟨?_⟩
-  rw [_root_.MonoidHom.range_comp, _root_.Subgroup.index_map_of_injective φ₁.range h₂]
-  exact Nat.mul_ne_zero _root_.Subgroup.FiniteIndex.index_ne_zero
-    _root_.Subgroup.FiniteIndex.index_ne_zero
+  rw [MonoidHom.range_comp, Subgroup.index_map_of_injective φ₁.range h₂]
+  exact Nat.mul_ne_zero Subgroup.FiniteIndex.index_ne_zero
+    Subgroup.FiniteIndex.index_ne_zero
 
 end MonoidHom
-
-end TauCeti
 
 namespace Subgroup
 
