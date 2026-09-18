@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Invariants
+public import Mathlib.RepresentationTheory.Irreducible
 
 /-!
 # Invariants of group representations
@@ -31,6 +32,10 @@ linear map `ρ(g) - 1`. Mathlib states this elementwise, in
 subquotient of `M`, where each group is the homology of `ρ(g) - 1` and the norm in one order or
 the other.
 
+Finally, an irreducible representation of dimension other than one has no nonzero invariant
+vector: such a vector spans a copy of the trivial representation, which irreducibility forces to
+be everything. This is what makes the Haar integral of a nontrivial irreducible character vanish.
+
 ## Main results
 
 * `Representation.averageMap_eq_invOf_card_smul_norm`: the averaging projection is the group sum
@@ -39,6 +44,8 @@ the other.
   invariants as its range.
 * `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
   kernel of the action of a generator minus the identity.
+* `Representation.IsIrreducible.invariants_eq_bot`: an irreducible representation of dimension
+  other than one has no nonzero invariant vector.
 -/
 public section
 
@@ -66,6 +73,30 @@ theorem range_norm_eq_invariants : LinearMap.range ρ.norm = ρ.invariants := by
   rw [smul_smul, mul_invOf_self, one_smul]
 
 end Representation
+
+namespace Representation.IsIrreducible
+
+variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
+
+/-- **An irreducible representation of dimension other than one has no nonzero invariant
+vector.** A nonzero invariant vector `v` spans a copy of the trivial representation on `k`: the
+map `c ↦ c • v` is an injective intertwiner from `Representation.trivial k G k`, which is surjective
+by irreducibility, so `V` is a line. -/
+theorem invariants_eq_bot {ρ : Representation k G V} (h : ρ.IsIrreducible)
+    (hV : Module.finrank k V ≠ 1) : ρ.invariants = ⊥ := by
+  refine (Submodule.eq_bot_iff _).2 fun v hv => by_contra fun hv0 => hV ?_
+  let f : IntertwiningMap (trivial k G k) ρ :=
+    (LinearMap.toSpanSingleton k V v).intertwiningMap_of_isIntertwiningMap _ _ fun g c => by
+      rw [trivial_apply, LinearMap.toSpanSingleton_apply, map_smul]
+      exact congrArg (c • ·) (hv g).symm
+  have hinj : Function.Injective f.toLinearMap := smul_left_injective k hv0
+  have hsurj : Function.Surjective f.toLinearMap :=
+    (IsIrreducible.surjective_or_eq_zero f).resolve_right fun hf =>
+      hv0 <| by simpa [f] using congrArg (fun φ : IntertwiningMap (trivial k G k) ρ =>
+        φ.toLinearMap 1) hf
+  rw [← (LinearEquiv.ofBijective f.toLinearMap ⟨hinj, hsurj⟩).finrank_eq, Module.finrank_self]
+
+end Representation.IsIrreducible
 
 namespace Rep.FiniteCyclicGroup
 
