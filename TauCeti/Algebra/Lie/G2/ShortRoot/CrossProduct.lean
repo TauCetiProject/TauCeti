@@ -59,6 +59,8 @@ the isogeny itself appears downstream, in
 * R. W. Carter, *Simple Groups of Lie Type*, §§12.3 and 13.4.
 * S. Garibaldi and R. M. Guralnick, *Simple groups stabilizing polynomials*, Forum of Mathematics
   Pi **3** (2015), §6, for the cross product and the short-root ideal in characteristic three.
+* The coordinate cross-product and invariant-form development was adapted from the earlier closed
+  [Tau Ceti PR #6708](https://github.com/TauCetiProject/TauCeti/pull/6708).
 -/
 
 public section

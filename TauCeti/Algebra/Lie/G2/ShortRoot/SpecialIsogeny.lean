@@ -30,7 +30,8 @@ through the length-exchanging map on weights, is the special isogeny. The Lie al
 skew endomorphisms of `V` for its invariant symmetric form, so every entry of that adjoint action
 is a signed sum of `2 × 2` minors of the group element; the seven index pairs and the two
 corrections at the middle index are the resulting bookkeeping. That the formula is multiplicative
-in characteristic three, on the matrices preserving the invariant cross product, is proved in
+in characteristic three, when both matrices preserve the invariant cross product and the left
+factor also fixes the invariant dual form by congruence, is proved in
 `TauCeti.Algebra.Lie.G2.ShortRoot.IsogenyMultiplicative`.
 
 ## What is proved here
@@ -65,6 +66,8 @@ generators; this file does not construct a group containing them.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
 * S. Garibaldi and R. M. Guralnick, *Simple groups stabilizing polynomials*, Forum of Mathematics
   Pi **3** (2015), §6, for the quotient by the short-root ideal in characteristic three.
+* The explicit matrix formula and pinning computations were adapted from the earlier closed
+  [Tau Ceti PR #6703](https://github.com/TauCetiProject/TauCeti/pull/6703).
 
 The shape of the definitions follows the special isogeny of `Sp₄` in
 `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.SpecialIsogeny`.

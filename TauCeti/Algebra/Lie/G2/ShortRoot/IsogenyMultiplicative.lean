@@ -20,10 +20,9 @@ That subspace is the copy of the Lie algebra: the kernel of the contraction
 `Matrix.g2CrossMap` against the cross product, which is stable exactly because `g` preserves the
 cross product. Inside it, the kernel of the seven functionals is the short-root ideal, spanned by
 the matrices `crossBivector`, which in characteristic three is again stable, because `g` fixes the
-invariant dual form as well. The splitting is
-`TauCeti.G2ShortRoot.eq_sum_isogenySource_add_sum_crossBivector`, and it holds only in
-characteristic three: that is where the short-root vectors span an ideal and where the seven
-matrices `crossBivector` fall into the kernel of the contraction.
+invariant dual form as well. The proof splits this subspace in characteristic three: that is where
+the short-root vectors span an ideal and where the seven matrices `crossBivector` fall into the
+kernel of the contraction.
 
 Multiplicativity fails on the whole of `GL₇`, so the two preservation hypotheses cannot be
 dropped. Nothing below verifies them for any particular matrix, and no group of matrix-valued
@@ -34,13 +33,10 @@ points is formed on which the formula would restrict to an endomorphism.
 * `TauCeti.G2ShortRoot.isogenySource` and `TauCeti.G2ShortRoot.isogenyProjection`: the alternating
   matrices and the functionals through which the minor formula is read, with
   `TauCeti.G2ShortRoot.isogenySource_eq` writing the former through single unit matrices.
-* `TauCeti.G2ShortRoot.isogenyKernelCoeff`: the coordinates along the short-root matrices.
 
 ## Main results
 
 * `Matrix.g2SpecialIsogeny_apply_eq`: the minor formula as a functional of a congruence transform.
-* `TauCeti.G2ShortRoot.eq_sum_isogenySource_add_sum_crossBivector`: the splitting in
-  characteristic three.
 * `Matrix.g2SpecialIsogeny_mul`: multiplicativity of the special isogeny.
 
 ## References
@@ -49,6 +45,10 @@ points is formed on which the formula would restrict to an endomorphism.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
 * S. Garibaldi and R. M. Guralnick, *Simple groups stabilizing polynomials*, Forum of Mathematics
   Pi **3** (2015), §6, for the cross product and the short-root ideal in characteristic three.
+* The congruence setup was adapted from the earlier closed
+  [Tau Ceti PR #6703](https://github.com/TauCetiProject/TauCeti/pull/6703), and the splitting and
+  multiplicativity argument from its successor
+  [Tau Ceti PR #6708](https://github.com/TauCetiProject/TauCeti/pull/6708).
 -/
 
 public section
@@ -187,16 +187,15 @@ theorem _root_.Matrix.g2SpecialIsogeny_apply_eq (g : Matrix (Fin 7) (Fin 7) R) (
 
 /-- Seven signed entries of a matrix, one for each matrix `crossBivector`. On an alternating
 matrix killed by the cross-product contraction in characteristic three these are its coordinates
-along the matrices `crossBivector`, which is the content of
-`TauCeti.G2ShortRoot.eq_sum_isogenySource_add_sum_crossBivector`; nothing is claimed of them
-otherwise. -/
-def isogenyKernelCoeff (a : Fin 7) : Matrix (Fin 7) (Fin 7) R →ₗ[R] R where
+along the matrices `crossBivector`, which is the content of the splitting below; nothing is
+claimed of them otherwise. -/
+private def isogenyKernelCoeff (a : Fin 7) : Matrix (Fin 7) (Fin 7) R →ₗ[R] R where
   toFun W := ![-W 1 2, W 1 3, W 2 3, W 0 6, W 3 4, W 3 5, -W 4 5] a
   map_add' W V := by fin_cases a <;> simp <;> ring
   map_smul' c W := by fin_cases a <;> simp [smul_eq_mul]
 
 /-- The entrywise formula for the coordinates. -/
-theorem isogenyKernelCoeff_apply (a : Fin 7) (W : Matrix (Fin 7) (Fin 7) R) :
+private theorem isogenyKernelCoeff_apply (a : Fin 7) (W : Matrix (Fin 7) (Fin 7) R) :
     isogenyKernelCoeff a W = ![-W 1 2, W 1 3, W 2 3, W 0 6, W 3 4, W 3 5, -W 4 5] a := (rfl)
 
 /-- **The alternating matrices read by the special isogeny are alternating** over any commutative
@@ -212,7 +211,8 @@ the cross-product contraction is the sum of its `isogenySource` part, read by th
 `isogenyProjection`, and its short-root part, read by the coordinates `isogenyKernelCoeff`. So in
 characteristic three the alternating matrices killed by the contraction are spanned by the seven
 matrices `isogenySource` together with the seven matrices `crossBivector`. -/
-theorem eq_sum_isogenySource_add_sum_crossBivector [CharP R 3] {W : Matrix (Fin 7) (Fin 7) R}
+private theorem eq_sum_isogenySource_add_sum_crossBivector [CharP R 3]
+    {W : Matrix (Fin 7) (Fin 7) R}
     (hW : Wᵀ = -W) (hc : ∀ m, g2CrossMap W m = 0) :
     W = (∑ k, isogenyProjection k W • (isogenySource k).map (Int.cast : ℤ → R)) +
       ∑ a, isogenyKernelCoeff a W • (crossBivector a).map (Int.cast : ℤ → R) := by
