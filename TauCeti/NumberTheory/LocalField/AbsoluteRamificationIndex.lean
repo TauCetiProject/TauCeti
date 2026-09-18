@@ -58,12 +58,6 @@ def absoluteRamificationIndex (K : Type*) [Field K] [ValuativeRel K] [Topologica
     [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime] [Algebra ℚ_[p] K] : ℕ :=
   ramificationIndex ℚ_[p] K
 
-omit [ValuativeExtension ℚ_[p] K] in
-/-- The absolute ramification index is the ramification index over `ℚ_[p]`. -/
-theorem absoluteRamificationIndex_def :
-    absoluteRamificationIndex K p = ramificationIndex ℚ_[p] K := by
-  rw [absoluteRamificationIndex]
-
 /-- The absolute ramification index is the normalized valuation of the residue prime `p` in
 `K`. -/
 @[simp]
@@ -73,7 +67,7 @@ theorem absoluteRamificationIndex_eq_natCastValuation :
         simpa only [map_natCast] using
           (map_ne_zero_iff (algebraMap ℚ_[p] K) (algebraMap ℚ_[p] K).injective).mpr
             (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero : (p : ℚ_[p]) ≠ 0)) := by
-  rw [absoluteRamificationIndex_def]
+  rw [absoluteRamificationIndex]
   let hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
   let hpK : (p : K) ≠ 0 :=
     by simpa only [map_natCast] using
@@ -99,7 +93,7 @@ theorem absoluteRamificationIndex_tower (L : Type*) [Field L] [ValuativeRel L]
     [IsScalarTower ℚ_[p] K L] [ValuativeExtension K L] :
     absoluteRamificationIndex L p =
       ramificationIndex K L * absoluteRamificationIndex K p := by
-  simpa only [absoluteRamificationIndex_def, Nat.mul_comm] using
+  simpa only [absoluteRamificationIndex, Nat.mul_comm] using
     ramificationIndex_tower (K := ℚ_[p]) (L := K) L
 
 end TauCeti

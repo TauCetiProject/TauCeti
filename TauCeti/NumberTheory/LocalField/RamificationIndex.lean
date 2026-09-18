@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
 /-!
@@ -66,10 +67,6 @@ noncomputable section
 open ValuativeRel IsNonarchimedeanLocalField
 
 namespace TauCeti
-
-/-- A valuative ring is a valuative extension of itself. -/
-instance valuativeExtension_self (K : Type*) [CommSemiring K] [ValuativeRel K] :
-    ValuativeExtension K K := ⟨fun a b ↦ by simp⟩
 
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
