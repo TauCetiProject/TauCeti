@@ -39,7 +39,7 @@ defining `𝒪_X(D)`.
   through which the rational embedding of `L` factors (`isoSheafOfCoeffEq_hom_sheafι`);
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.toLineBundleClass_surjective` and
   `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.classGroupToLineBundleClass_bijective`;
-* `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.classGroupAddEquivLineBundleClass`, the additive
+* `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.classGroupAddEquivPicardGroup`, the additive
   equivalence `Cl(X) ≃+ Pic(X)`;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.isUnit_lineBundleClass`: every line-bundle class
   on such a curve is invertible under tensor product.
@@ -387,7 +387,7 @@ lemma toMul_picardGroupMulEquivLineBundleClass_symm_toAdditive (a : LineBundleCl
 /-- **`Cl(X) ≅ Pic(X)`.** On a Noetherian integral scheme of dimension at most one whose
 codimension-one local rings are discrete valuation rings, `D ↦ 𝒪_X(D)` identifies the divisor
 class group with the line-bundle classes under tensor product. -/
-def classGroupAddEquivLineBundleClass :
+def classGroupAddEquivPicardGroup :
     (WeilDivisor.OrderSystem.ofScheme X).ClassGroup ≃+ Additive (PicardGroup X hX) :=
   let e : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup ≃+ Additive (LineBundleClass X) :=
     AddEquiv.ofBijective (classGroupToLineBundleClassHom hX) <| by
@@ -400,12 +400,12 @@ def classGroupAddEquivLineBundleClass :
 
 /-- The equivalence `Cl(X) ≃+ Pic(X)` sends a divisor class to the class of its line bundle. -/
 @[simp]
-lemma classGroupAddEquivLineBundleClass_apply
+lemma classGroupAddEquivPicardGroup_apply
     (c : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) :
-    classGroupAddEquivLineBundleClass hX c =
+    classGroupAddEquivPicardGroup hX c =
       (picardGroupMulEquivLineBundleClass hX).symm.toAdditive
         (Additive.ofMul (classGroupToLineBundleClass hX c)) := by
-  simpa only [classGroupAddEquivLineBundleClass, AddEquiv.trans_apply,
+  simpa only [classGroupAddEquivPicardGroup, AddEquiv.trans_apply,
     AddEquiv.ofBijective_apply] using congrArg
     (picardGroupMulEquivLineBundleClass hX).symm.toAdditive
     (classGroupToLineBundleClassHom_apply hX c)
@@ -416,9 +416,9 @@ lemma classGroupToLineBundleClass_neg
     (c : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) :
     (picardGroupMulEquivLineBundleClass hX).symm (classGroupToLineBundleClass hX (-c)) =
       ((picardGroupMulEquivLineBundleClass hX).symm (classGroupToLineBundleClass hX c))⁻¹ := by
-  simpa only [classGroupAddEquivLineBundleClass_apply, toMul_ofMul, toMul_neg,
+  simpa only [classGroupAddEquivPicardGroup_apply, toMul_ofMul, toMul_neg,
     toMul_picardGroupMulEquivLineBundleClass_symm_toAdditive] using
-    congrArg Additive.toMul ((classGroupAddEquivLineBundleClass hX).map_neg c)
+    congrArg Additive.toMul ((classGroupAddEquivPicardGroup hX).map_neg c)
 
 end Picard
 
