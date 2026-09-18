@@ -17,9 +17,9 @@ the supremum of the distances of the components with positive weight. Zero weigh
 contribute, even if the corresponding component distance is infinite.
 
 These are extended-valued statements on Polish metric spaces, without moment or bounded-support
-assumptions. The mixture theorem allows countably many finite, equal-mass pairs and arbitrary
-nonnegative weights; its finite version includes probability mixtures. The estimates use optimal
-couplings supplied by `TauCeti.exists_isCoupling_eLpNorm_top_eq_wassersteinEDist`.
+assumptions. The mixture theorem allows countably many pairs and arbitrary nonnegative weights,
+requiring finite, equal-mass pairs only at positive weights; its finite version includes
+probability mixtures.
 
 ## References
 
@@ -67,37 +67,46 @@ theorem wassersteinEDist_top_prod (μ₁ ν₁ : Measure X) (μ₂ ν₂ : Measu
     · simpa using wassersteinEDist_map_le_mul (p := ∞) measurable_edist measurable_snd
         LipschitzWith.prod_snd (μ₁.prod μ₂) (ν₁.prod ν₂)
 
-/-- Mixing countably many finite equal-mass pairs with common weights bounds `W_∞` by the
-supremum of the component distances with positive weight. Neither the weights nor the total
-mass need be normalized or finite. -/
+/-- Mixing countably many pairs with common weights bounds `W_∞` by the supremum of the
+component distances with positive weight. Only positive-weight pairs must be finite and have
+equal mass. Neither the weights nor the total mass need be normalized or finite. -/
 theorem wassersteinEDist_top_sum_smul_le {ι : Type*} [Countable ι]
-    (a : ι → ℝ≥0∞) (μ ν : ι → Measure X) [∀ i, IsFiniteMeasure (μ i)]
-    (hmass : ∀ i, μ i Set.univ = ν i Set.univ) :
+    (a : ι → ℝ≥0∞) (μ ν : ι → Measure X)
+    (hfinite : ∀ i, 0 < a i → IsFiniteMeasure (μ i))
+    (hmass : ∀ i, 0 < a i → μ i Set.univ = ν i Set.univ) :
     wassersteinEDist ∞ (Measure.sum fun i ↦ a i • μ i) (Measure.sum fun i ↦ a i • ν i) ≤
       ⨆ i, ⨆ (_ : 0 < a i), wassersteinEDist ∞ (μ i) (ν i) := by
-  choose π hπ hb using fun i ↦ (wassersteinEDist_top_le_iff (μ i) (ν i)
-    (exists_isCoupling_iff.mpr (hmass i))).mp le_rfl
-  refine (wassersteinEDist_le (IsCoupling.sum fun i ↦ (hπ i).smul (a i)) ∞).trans ?_
+  have h : ∀ i, ∃ π, IsCoupling π (a i • μ i) (a i • ν i) ∧
+      ∀ᵐ z ∂π, edist z.1 z.2 ≤
+        ⨆ j, ⨆ (_ : 0 < a j), wassersteinEDist ∞ (μ j) (ν j) := by
+    intro i
+    by_cases ha : a i = 0
+    · exact ⟨0, by simp [ha], by simp⟩
+    · have hpos := pos_iff_ne_zero.mpr ha
+      have := hfinite i hpos
+      obtain ⟨π, hπ, hb⟩ := (wassersteinEDist_top_le_iff (μ i) (ν i)
+        (exists_isCoupling_iff.mpr (hmass i hpos))).mp le_rfl
+      refine ⟨a i • π, hπ.smul (a i), Measure.ae_smul_measure ?_ (a i)⟩
+      filter_upwards [hb] with z hz
+      exact hz.trans (le_iSup_of_le i (le_iSup_of_le hpos le_rfl))
+  choose π hπ hb using h
+  refine (wassersteinEDist_le (IsCoupling.sum hπ) ∞).trans ?_
   rw [eLpNorm_exponent_top]
   apply eLpNormEssSup_le_of_ae_enorm_bound
-  apply Measure.ae_sum_iff.mpr
-  intro i
-  by_cases ha : a i = 0
-  · simp [ha]
-  · apply Measure.ae_smul_measure _ (a i)
-    filter_upwards [hb i] with z hz
-    exact hz.trans (le_iSup_of_le i (le_iSup_of_le (pos_iff_ne_zero.mpr ha) le_rfl))
+  simpa only [enorm_eq_self] using Measure.ae_sum_iff.mpr hb
 
-/-- The maximum-form bound for finite mixtures. The supremum over an empty set of positive
-weights is zero, so this includes the zero mixture. -/
+/-- The maximum-form bound for finite mixtures, requiring finite, equal-mass pairs only at
+positive weights in `s`. The supremum over an empty set of positive weights is zero, so this
+includes the zero mixture. -/
 theorem wassersteinEDist_top_finset_sum_smul_le {ι : Type*} (s : Finset ι)
-    (a : ι → ℝ≥0∞) (μ ν : ι → Measure X) [∀ i, IsFiniteMeasure (μ i)]
-    (hmass : ∀ i ∈ s, μ i Set.univ = ν i Set.univ) :
+    (a : ι → ℝ≥0∞) (μ ν : ι → Measure X)
+    (hfinite : ∀ i ∈ s, 0 < a i → IsFiniteMeasure (μ i))
+    (hmass : ∀ i ∈ s, 0 < a i → μ i Set.univ = ν i Set.univ) :
     wassersteinEDist ∞ (∑ i ∈ s, a i • μ i) (∑ i ∈ s, a i • ν i) ≤
       ⨆ i ∈ s, ⨆ (_ : 0 < a i), wassersteinEDist ∞ (μ i) (ν i) := by
   simpa only [Measure.sum_fintype, Finset.sum_coe_sort s (fun i ↦ a i • μ i),
     Finset.sum_coe_sort s (fun i ↦ a i • ν i), iSup_subtype] using
     wassersteinEDist_top_sum_smul_le (fun i : s ↦ a i) (fun i : s ↦ μ i)
-      (fun i : s ↦ ν i) (fun i ↦ hmass i i.property)
+      (fun i : s ↦ ν i) (fun i ↦ hfinite i i.property) (fun i ↦ hmass i i.property)
 
 end TauCeti
