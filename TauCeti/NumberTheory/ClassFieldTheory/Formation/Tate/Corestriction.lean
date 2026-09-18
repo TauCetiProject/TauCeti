@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Corestriction
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.NegativeCorestriction
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction
 
@@ -42,30 +42,7 @@ namespace TauCeti.ClassFieldTheory.LayerRestriction
 variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   [TotallyDisconnectedSpace G] {small big : NormalLayer G}
 
-/-- The range of the inclusion between finite layer Galois groups is finite. -/
-noncomputable local instance instFintypeRange (T : LayerRestriction small big) :
-    Fintype T.galHom.range :=
-  Fintype.ofFinite _
-
-private theorem repIso_isIntertwiningRange (T : LayerRestriction small big) (F : Formation G) :
-    (small.rep F).ρ.IsIntertwiningMap
-      ((Rep.res T.galHom.range.subtype (big.rep F)).ρ.comp
-        (MonoidHom.ofInjective T.galHom_injective : small.Gal ≃* T.galHom.range))
-      (Representation.equivOfIso (T.repIso F)).toLinearEquiv := by
-  refine ⟨fun g x ↦ ?_⟩
-  exact Rep.hom_comm_apply (T.repIso F).hom g x
-
-/-- Tate cohomology of the smaller layer, identified with Tate cohomology of the image of its
-Galois group in the larger one. The coefficient identification is `repIso`. -/
-@[expose] def tateRangeIso (T : LayerRestriction small big) (F : Formation G) (r : ℤ) :
-    small.TateH F r ≅
-      tateCohomology (Rep.res T.galHom.range.subtype (big.rep F)) r :=
-  TauCeti.TateCohomology.mapIso
-    (M := small.rep F)
-    (N := Rep.res T.galHom.range.subtype (big.rep F))
-    (e := MonoidHom.ofInjective T.galHom_injective)
-    (e' := (Representation.equivOfIso (T.repIso F)).toLinearEquiv)
-    (by exact repIso_isIntertwiningRange T F) r
+attribute [local instance] instFintypeRange
 
 /-- **Corestriction between the Tate cohomology groups of finite normal layers, in every integer
 degree.** Positive degrees use ordinary cohomological corestriction, degrees zero and minus one
@@ -134,26 +111,6 @@ theorem tateCor_negSucc_succ (T : LayerRestriction small big) (F : Formation G) 
   (rfl)
 
 /-! ### Trivial coefficients -/
-
-private theorem trivial_isIntertwiningRange (T : LayerRestriction small big) :
-    Representation.IsIntertwiningMap (Rep.trivial ℤ small.Gal ℤ).ρ
-      ((Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)).ρ.comp
-        (MonoidHom.ofInjective T.galHom_injective : small.Gal ≃* T.galHom.range))
-      (LinearEquiv.refl ℤ ℤ) :=
-  ⟨fun _ _ ↦ rfl⟩
-
-/-- Tate cohomology with trivial integral coefficients on the smaller Galois group, identified
-with the restriction of the trivial representation on the larger Galois group to the image of
-the inclusion. -/
-def trivialTateRangeIso (T : LayerRestriction small big) (r : ℤ) :
-    small.TrivialTateH r ≅
-      tateCohomology (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)) r :=
-  TauCeti.TateCohomology.mapIso
-    (M := Rep.trivial ℤ small.Gal ℤ)
-    (N := Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ))
-    (e := MonoidHom.ofInjective T.galHom_injective)
-    (e' := LinearEquiv.refl ℤ ℤ)
-    (trivial_isIntertwiningRange T) r
 
 /-- **Corestriction on the Tate cohomology of finite normal layers with trivial integral
 coefficients, in every integer degree.** It uses cohomological corestriction in positive degrees,

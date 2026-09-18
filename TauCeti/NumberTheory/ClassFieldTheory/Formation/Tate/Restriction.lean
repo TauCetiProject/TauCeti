@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Corestriction
 
 /-!
@@ -24,9 +25,7 @@ Galois group is identified with the image of its inclusion into the larger one, 
 
 The comparison lemmas below identify each branch with the corresponding established map, and the
 degree-zero lemma reads restriction on norm quotients as the ground-level inclusion. Corestriction
-after restriction is multiplication by the relative degree `[E : F]` in every degree `r ≥ -1`; in
-degrees at most minus two it rests on the corresponding identity for the homological transfer and
-is not proved here.
+after restriction is multiplication by the relative degree `[E : F]` in every degree `r ≥ -1`.
 
 ## Main definitions
 
@@ -133,14 +132,12 @@ theorem tateHZeroEquivNormQuotient_tateRes_H0π (T : LayerRestriction small big)
     (x : (big.rep F).ρ.invariants) :
     small.tateHZeroEquivNormQuotient F (T.tateRes F 0 (TateCohomology.H0π (big.rep F) x)) =
       small.normQuotientMk F (T.groundInclusion F (big.groundLevelEquiv F x)) := by
-  rw [tateRes_zero, ModuleCat.comp_apply, TauCeti.TateCohomology.H0π_comp_H0Res_apply]
-  simp only [tateRangeIso]
-  rw [TauCeti.TateCohomology.mapIso_inv,
-    TauCeti.TateCohomology.H0π_comp_map_apply, NormalLayer.tateHZeroEquivNormQuotient_H0π]
+  rw [tateRes_zero, ModuleCat.comp_apply, TauCeti.TateCohomology.H0π_comp_H0Res_apply,
+    tateRangeIso_inv_H0π, NormalLayer.tateHZeroEquivNormQuotient_H0π]
   congr 1
   ext
   rw [NormalLayer.groundLevelEquiv_apply_coe, groundInclusion_apply_coe,
-    NormalLayer.groundLevelEquiv_apply_coe, TauCeti.TateCohomology.mapInvariants_apply_coe]
+    NormalLayer.groundLevelEquiv_apply_coe]
   exact T.repIso_inv_apply_coe F _
 
 /-- **Corestriction after restriction is multiplication by the relative degree** `[E : F]`, in
