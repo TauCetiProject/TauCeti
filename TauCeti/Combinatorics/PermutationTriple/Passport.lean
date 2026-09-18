@@ -28,6 +28,7 @@ positive parts summing to the degree.  The degree is also required to be nonzero
 * `TauCeti.PassportSpec`: a reference monodromy subgroup and three ordered cycle partitions.
 * `TauCeti.PassportSpec.IsAdmissible`: well-formed passport data.
 * `TauCeti.PassportSpec.HasPassport`: membership of a connected triple in a passport.
+* `TauCeti.ConnectedIsoClass.HasPassport`: the same membership, descended to isomorphism classes.
 
 ## References
 
@@ -81,6 +82,9 @@ variable {n : ℕ}
 /-- The isomorphism class of a connected triple. -/
 def mk (t : ConnectedTriple n) : ConnectedIsoClass n :=
   Quotient.mk'' t
+
+theorem mk_surjective : Function.Surjective (mk : ConnectedTriple n → ConnectedIsoClass n) :=
+  Quotient.mk''_surjective
 
 end ConnectedIsoClass
 
@@ -255,5 +259,23 @@ theorem isAdmissible_of_hasPassport {t : ConnectedTriple n} {P : PassportSpec n}
       exact t.1.σinf.partition.parts_pos hi
 
 end PassportSpec
+
+namespace ConnectedIsoClass
+
+variable {n : ℕ}
+
+/-- An isomorphism class of connected triples has passport `P` when one, equivalently every,
+representative has passport `P`. -/
+def HasPassport (c : ConnectedIsoClass n) (P : PassportSpec n) : Prop :=
+  Quotient.liftOn' c (fun t ↦ PassportSpec.HasPassport t P)
+    fun _ _ h ↦ propext (PassportSpec.hasPassport_iff_of_equivalent h P)
+
+/-- The passport membership of an isomorphism class is that of any representative. -/
+@[simp]
+theorem hasPassport_mk (t : ConnectedTriple n) (P : PassportSpec n) :
+    (mk t).HasPassport P ↔ PassportSpec.HasPassport t P :=
+  Iff.rfl
+
+end ConnectedIsoClass
 
 end TauCeti
