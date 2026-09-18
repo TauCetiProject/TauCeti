@@ -147,6 +147,11 @@ Hermitian form `(1 - ω) V + (1 - conj ω) Vᵀ`. -/
 noncomputable def tristramLevineSignature (V : Matrix ι ι ℝ) (ω : ℂ) : ℤ :=
   (isHermitian_tristramLevineForm V ω).signature
 
+/-- The Tristram--Levine signature is the Hermitian signature of its defining form. -/
+theorem tristramLevineSignature_def (V : Matrix ι ι ℝ) (ω : ℂ) :
+    tristramLevineSignature V ω = (isHermitian_tristramLevineForm V ω).signature := by
+  rw [tristramLevineSignature]
+
 /-- **The Tristram--Levine signature vanishes at `ω = 1`**, where the form itself vanishes. -/
 @[simp]
 theorem tristramLevineSignature_one (V : Matrix ι ι ℝ) : tristramLevineSignature V 1 = 0 := by
