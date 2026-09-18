@@ -202,6 +202,45 @@ theorem im_exp_neg_mul_schwarzChristoffelPrimitive_sub_pos
   rw [← g.preimage_interior, interior_setOfPred_le_im] at hmem
   simpa only [mem_preimage, hg, mem_ofPred_eq] using hmem
 
+/-- **The convex Schwarz--Christoffel polygon interior misses each bounded side.**  Here the
+polygon interior is represented by the interior of the closed convex hull of its boundary. -/
+theorem disjoint_interior_closedConvexHull_schwarzChristoffelPolygon_edgeSet_castSucc_castSucc
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
+    (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) (i : Fin n) :
+    Disjoint
+      (interior (closedConvexHull ℝ ((schwarzChristoffelPolygon a e z₀).boundary ℝ)))
+      ((schwarzChristoffelPolygon a e z₀).edgeSet ℝ i.castSucc.castSucc) := by
+  rw [schwarzChristoffelPolygon_edgeSet_castSucc_castSucc, Set.disjoint_left]
+  intro z hz hside
+  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
+    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+  set u := Complex.exp (-schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I)
+  set w := schwarzChristoffelVertex a e z₀ i.castSucc
+  let g : ℂ ≃ₜ ℂ := (Homeomorph.subRight w).trans
+    (Homeomorph.mulLeft₀ u (Complex.exp_ne_zero _))
+  have hg (x : ℂ) : g x = u * (x - w) := rfl
+  have hboundary : (schwarzChristoffelPolygon a e z₀).boundary ℝ ⊆
+      g ⁻¹' {x | 0 ≤ x.im} := fun x hx ↦ by
+    exact im_exp_neg_mul_sub_schwarzChristoffelVertex_nonneg_of_mem_boundary
+      a e z₀ ha he hsum i hx
+  have hclosed : IsClosed (g ⁻¹' {x : ℂ | 0 ≤ x.im}) :=
+    (isClosed_le continuous_const Complex.continuous_im).preimage g.continuous
+  have hconvex : Convex ℝ (g ⁻¹' {x : ℂ | 0 ≤ x.im}) := by
+    simpa only [preimage_ofPred_eq, hg] using convex_setOf_im_mul_sub_nonneg u w
+  have hhull : closedConvexHull ℝ ((schwarzChristoffelPolygon a e z₀).boundary ℝ) ⊆
+      g ⁻¹' {x | 0 ≤ x.im} := closedConvexHull_min hboundary hconvex hclosed
+  have hzpos := interior_mono hhull hz
+  rw [← g.preimage_interior, interior_setOfPred_le_im] at hzpos
+  have hend : (u * (schwarzChristoffelVertex a e z₀ i.succ - w)).im = 0 := by
+    rw [im_exp_neg_mul_schwarzChristoffelVertex_succ_sub_eq a e z₀ ha _ i (hfinite _)
+      (hfinite _), sub_self, Real.sin_zero, mul_zero]
+  have hle := (convex_setOf_im_mul_sub_nonneg (-u) w).segment_subset
+    (by simp only [mem_ofPred_eq, sub_self, mul_zero, zero_im, le_refl])
+    (by simp only [mem_ofPred_eq, neg_mul, neg_im, hend, neg_zero, le_refl]) hside
+  simp only [mem_preimage, mem_ofPred_eq, hg] at hzpos
+  simp only [mem_ofPred_eq, neg_mul, neg_im, Left.nonneg_neg_iff] at hle
+  exact hle.not_gt hzpos
+
 /-- **The Schwarz--Christoffel image misses every bounded side.**  Under the classical
 convex-polygon hypotheses, the image of the upper half-plane under the primitive is disjoint from
 the bounded side from vertex `i` to vertex `i + 1`. -/
@@ -210,20 +249,13 @@ theorem disjoint_image_schwarzChristoffelPrimitive_edgeSet_castSucc_castSucc
     (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) (i : Fin n) :
     Disjoint (schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet)
       ((schwarzChristoffelPolygon a e z₀).edgeSet ℝ i.castSucc.castSucc) := by
-  rw [schwarzChristoffelPolygon_edgeSet_castSucc_castSucc, Set.disjoint_left]
-  rintro _ ⟨z, hz, rfl⟩ hside
+  apply (disjoint_interior_closedConvexHull_schwarzChristoffelPolygon_edgeSet_castSucc_castSucc
+    a e z₀ ha he hsum i).mono_left
   have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
     simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
-  set u := Complex.exp (-schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I)
-  set w := schwarzChristoffelVertex a e z₀ i.castSucc
-  -- Both ends of the side lie on the rotated line, hence so does the whole side.
-  have hend : (u * (schwarzChristoffelVertex a e z₀ i.succ - w)).im = 0 := by
-    rw [im_exp_neg_mul_schwarzChristoffelVertex_succ_sub_eq a e z₀ ha _ i (hfinite _)
-      (hfinite _), sub_self, Real.sin_zero, mul_zero]
-  have hle := (convex_setOf_im_mul_sub_nonneg (-u) w).segment_subset
-    (by simp only [mem_ofPred_eq, sub_self, mul_zero, zero_im, le_refl])
-    (by simp only [mem_ofPred_eq, neg_mul, neg_im, hend, neg_zero, le_refl]) hside
-  simp only [mem_ofPred_eq, neg_mul, neg_im, Left.nonneg_neg_iff] at hle
-  exact hle.not_gt (im_exp_neg_mul_schwarzChristoffelPrimitive_sub_pos a e z₀ ha he hsum i hz)
+  have hinfty : ∑ k, e k < -1 := by rw [hsum]; norm_num
+  rw [← range_schwarzChristoffelCompactifiedBoundary a e z₀ ha.monotone hfinite hinfty]
+  exact image_schwarzChristoffelPrimitive_subset_interior_closedConvexHull
+    a e z₀ hfinite hinfty
 
 end TauCeti
