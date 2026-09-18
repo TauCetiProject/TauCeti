@@ -153,7 +153,8 @@ theorem isConnected_permutationTripleEquiv_iff :
 /-- Conjugating a representation by `τ` relabels the sheets of its triple by `τ`. -/
 @[simp]
 theorem permutationTripleEquiv_conj (τ : Perm (Fin n)) :
-    (permutationTripleEquiv ((MulAut.conj τ).toMonoidHom.comp ρ)).1 =
+    (permutationTripleEquiv
+      ((↑(MulAut.conj τ) : Perm (Fin n) →* Perm (Fin n)).comp ρ)).1 =
       τ • (permutationTripleEquiv ρ).1 := by
   ext1 <;> simp
 
@@ -161,7 +162,8 @@ theorem permutationTripleEquiv_conj (τ : Perm (Fin n)) :
 isomorphic triples exactly when they are conjugate by a permutation of the sheets. -/
 theorem equivalent_permutationTripleEquiv_iff (ρ' : TriangleGroup a b c →* Perm (Fin n)) :
     PermutationTriple.Equivalent (permutationTripleEquiv ρ).1 (permutationTripleEquiv ρ').1 ↔
-      ∃ τ : Perm (Fin n), (MulAut.conj τ).toMonoidHom.comp ρ = ρ' := by
+      ∃ τ : Perm (Fin n),
+        ((↑(MulAut.conj τ) : Perm (Fin n) →* Perm (Fin n)).comp ρ) = ρ' := by
   rw [PermutationTriple.equivalent_iff_exists_smul_eq]
   refine exists_congr fun τ ↦ ?_
   rw [← permutationTripleEquiv_conj, ← Subtype.ext_iff, permutationTripleEquiv.apply_eq_iff_eq]
