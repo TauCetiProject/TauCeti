@@ -150,8 +150,7 @@ section Finiteness
 variable (k : Type w) {Q : Type u} [CommRing k] [Nontrivial k] [Quiver.{v + 1} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
-/-- **A quiver whose preprojective algebra is a finite module has no oriented cycle**: the path
-algebra is a quotient of the preprojective algebra, hence finite as well. -/
+/-- **A quiver whose preprojective algebra is a finite module has no oriented cycle.** -/
 theorem isAcyclic_of_module_finite_preprojectiveAlgebra
     (h : Module.Finite k (preprojectiveAlgebra k Q)) : Quiver.IsAcyclic Q :=
   isAcyclic_of_module_finite_pathAlgebra k Q
