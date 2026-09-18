@@ -152,8 +152,7 @@ local instance tangentSpaceChartedSpace (p : M) :
 
 /-- The domain of the exponential map at `p` is the slice at time `1` of the maximal flow domain
 of the geodesic spray over the fibre `T_p M`. -/
-private theorem expDomain_eq_preimage_maximalIntegralCurveFlowDomain
-    [T2Space (TangentBundle I M)] (p : M) :
+private theorem expDomain_eq_preimage_maximalIntegralCurveFlowDomain (p : M) :
     expDomain I M p = (fun v : TangentSpace I p ↦ (TotalSpace.mk' E p v, (1 : ℝ))) ⁻¹'
       maximalIntegralCurveFlowDomain (geodesicSpray I M) := by
   ext v
