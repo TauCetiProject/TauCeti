@@ -53,11 +53,11 @@ profinite group.
   every open normal subgroup.
 * `TauCeti.ConvergesToOne.image`: a continuous map preserving `1` carries a set converging to one
   to another such set.
-* `TauCeti.exists_convergesToOne_lift_quotient`: a converging set in a quotient by a closed
-  subgroup has a converging set of representatives upstairs.
-* `TauCeti.exists_convergesToOne_lift_quotient_topologicallyGenerates`: if the set generates the
+* `Subgroup.exists_convergesToOne_lift_quotient`: a converging set in a quotient by a closed
+  normal subgroup has a converging set of representatives upstairs.
+* `Subgroup.exists_convergesToOne_lift_quotient_topologicallyGenerates`: if the set generates the
   quotient, its representatives together with the kernel generate upstairs.
-* `TauCeti.exists_convergesToOne_lift_union_topologicallyGenerates`: converging generators of a
+* `Subgroup.exists_convergesToOne_lift_union_topologicallyGenerates`: converging generators of a
   closed normal subgroup and its quotient combine to generate the ambient profinite group.
 
 ## References
@@ -309,24 +309,22 @@ section QuotientLifts
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   [TotallyDisconnectedSpace G]
 
-/-- A set converging to one in the quotient by a closed subgroup has a set of representatives
-converging to one upstairs. The representatives come from the normalized continuous section of the
-quotient map. -/
-theorem exists_convergesToOne_lift_quotient (N : Subgroup G) [N.Normal]
+/-- A set converging to one in the quotient by a closed normal subgroup has a set of
+representatives converging to one upstairs. The representatives come from the normalized
+continuous section of the quotient map. -/
+theorem _root_.Subgroup.exists_convergesToOne_lift_quotient (N : Subgroup G) [N.Normal]
     (hN : IsClosed (N : Set G))
     {s : Set (G ⧸ N)} (hs : ConvergesToOne s) :
     ∃ t : Set G, ConvergesToOne t ∧ (QuotientGroup.mk' N) '' t = s := by
   obtain ⟨f, hf, hsection, hf_one⟩ := exists_continuous_section N hN
   let f₁ : OneHom (G ⧸ N) G := ⟨f, hf_one⟩
   refine ⟨f₁ '' s, hs.image f₁ ?_, ?_⟩
-  · change Continuous f
-    exact hf
+  · simpa only [f₁, OneHom.coe_mk] using hf
   · ext q
     constructor
     · rintro ⟨_, ⟨q', hq', rfl⟩, rfl⟩
       rw [show QuotientGroup.mk' N (f₁ q') = q' by
-        change QuotientGroup.mk' N (f q') = q'
-        exact hsection q']
+        simpa only [f₁, OneHom.coe_mk, QuotientGroup.mk'_apply] using hsection q']
       exact hq'
     · intro hq
       exact ⟨f₁ q, ⟨q, hq, rfl⟩, hsection q⟩
@@ -335,12 +333,13 @@ theorem exists_convergesToOne_lift_quotient (N : Subgroup G) [N.Normal]
 converging set of representatives which, together with the kernel, topologically generates the
 ambient profinite group. This is the extension step needed when constructing converging generators
 through successively finer quotients. -/
-theorem exists_convergesToOne_lift_quotient_topologicallyGenerates (N : Subgroup G) [N.Normal]
+theorem _root_.Subgroup.exists_convergesToOne_lift_quotient_topologicallyGenerates
+    (N : Subgroup G) [N.Normal]
     (hN : IsClosed (N : Set G)) {s : Set (G ⧸ N)} (hs : ConvergesToOne s)
     (hsg : (Subgroup.closure s).topologicalClosure = ⊤) :
     ∃ t : Set G, ConvergesToOne t ∧ (QuotientGroup.mk' N) '' t = s ∧
       (Subgroup.closure (t ∪ (N : Set G))).topologicalClosure = ⊤ := by
-  obtain ⟨t, ht, ht_image⟩ := exists_convergesToOne_lift_quotient N hN hs
+  obtain ⟨t, ht, ht_image⟩ := N.exists_convergesToOne_lift_quotient hN hs
   refine ⟨t, ht, ht_image, ?_⟩
   let q : G →* G ⧸ N := QuotientGroup.mk' N
   let H : Subgroup G := (Subgroup.closure (t ∪ (N : Set G))).topologicalClosure
@@ -351,11 +350,13 @@ theorem exists_convergesToOne_lift_quotient_topologicallyGenerates (N : Subgroup
   have hmap_closed : IsClosed (H.map q : Set (G ⧸ N)) := by
     apply IsCompact.isClosed
     rw [Subgroup.coe_map]
-    change IsCompact (QuotientGroup.mk '' (H : Set G))
     have hH_closed : IsClosed (H : Set G) := by
       dsimp only [H]
       exact Subgroup.isClosed_topologicalClosure _
-    exact hH_closed.isCompact.image (QuotientGroup.continuous_mk (N := N))
+    convert hH_closed.isCompact.image (QuotientGroup.continuous_mk (N := N)) using 1
+    apply Set.image_congr
+    intro x _
+    exact QuotientGroup.mk'_apply N x
   have hmap_top : H.map q = ⊤ := by
     apply eq_top_iff.mpr
     rw [← hsg]
@@ -383,9 +384,11 @@ ambient profinite group has one obtained by lifting the quotient generators and 
 subgroup generators. The lifted set still maps exactly to the prescribed quotient set.
 
 This is the compositional form of
-`exists_convergesToOne_lift_quotient_topologicallyGenerates`: it replaces the whole kernel by a
-dense generating subset, so it can be iterated along a series of closed normal subgroups. -/
-theorem exists_convergesToOne_lift_union_topologicallyGenerates (N : Subgroup G) [N.Normal]
+`Subgroup.exists_convergesToOne_lift_quotient_topologicallyGenerates`: it replaces the whole
+kernel by a dense generating subset, so it can be iterated along a series of closed normal
+subgroups. -/
+theorem _root_.Subgroup.exists_convergesToOne_lift_union_topologicallyGenerates
+    (N : Subgroup G) [N.Normal]
     (hN : IsClosed (N : Set G)) {s : Set (G ⧸ N)} (hs : ConvergesToOne s)
     (hsg : (Subgroup.closure s).topologicalClosure = ⊤) {u : Set N} (hu : ConvergesToOne u)
     (hug : (Subgroup.closure u).topologicalClosure = ⊤) :
@@ -393,7 +396,7 @@ theorem exists_convergesToOne_lift_union_topologicallyGenerates (N : Subgroup G)
       ConvergesToOne (t ∪ N.subtype '' u) ∧
       (Subgroup.closure (t ∪ N.subtype '' u)).topologicalClosure = ⊤ := by
   obtain ⟨t, ht, ht_image, htN⟩ :=
-    exists_convergesToOne_lift_quotient_topologicallyGenerates N hN hs hsg
+    N.exists_convergesToOne_lift_quotient_topologicallyGenerates hN hs hsg
   refine ⟨t, ht_image, ht.union (hu.image N.subtype continuous_subtype_val), ?_⟩
   let K : Subgroup G := (Subgroup.closure (t ∪ N.subtype '' u)).topologicalClosure
   have hK_closed : IsClosed (K : Set G) := by
