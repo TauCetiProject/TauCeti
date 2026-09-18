@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.RepresentationTheory.FiniteIndex
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Shapiro
 
 /-!
@@ -53,22 +54,6 @@ open CategoryTheory Rep
 namespace TauCeti.groupHomology
 
 variable {R G : Type u} [CommRing R] [Group G]
-
-/-- The functor from representations to inhomogeneous group-homology chains is additive. -/
-noncomputable instance chainsFunctorAdditive :
-    (_root_.groupHomology.chainsFunctor R G).Additive where
-  map_add := by
-    intro X Y f g
-    change _root_.groupHomology.chainsMap (MonoidHom.id G) (f + g) =
-      _root_.groupHomology.chainsMap (MonoidHom.id G) f +
-        _root_.groupHomology.chainsMap (MonoidHom.id G) g
-    refine HomologicalComplex.hom_ext _ _ fun i => ModuleCat.hom_ext ?_
-    simp only [HomologicalComplex.add_f_apply, ModuleCat.hom_add,
-      _root_.groupHomology.chainsMap_id_f_hom_eq_mapRange]
-    refine Finsupp.lhom_ext fun x a => ?_
-    simp only [Rep.add_hom, Representation.IntertwiningMap.add_toLinearMap,
-      LinearMap.add_apply, Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_single,
-      Finsupp.single_add]
 
 open scoped Classical in
 /-- The transfer in group homology from a group to a finite-index subgroup. It is the map induced
