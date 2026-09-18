@@ -295,6 +295,23 @@ theorem d2_apply_eq_zero_iff {f : G × G → M} :
 
 end CocycleConditions
 
+section CocycleIdentities
+
+variable {G : Type u} [Group G] {M : Type v} [AddCommGroup M] [DistribMulAction G M]
+
+/-- Conjugating the argument of a `1`-cocycle by `k` changes its value, after the action of `k`,
+by the coboundary of `c k`. -/
+theorem smul_apply_inv_mul_mul_of_isCocycle₁ {c : G → M}
+    (hc : groupCohomology.IsCocycle₁ c) (k m : G) :
+    k • c (k⁻¹ * m * k) = m • c k - c k + c m := by
+  have hmul : k * (k⁻¹ * m * k) = m * k := by group
+  have h := hc k (k⁻¹ * m * k)
+  rw [hmul, hc m k] at h
+  rw [eq_sub_of_add_eq h.symm]
+  abel
+
+end CocycleIdentities
+
 section Complex
 
 /-! `d ∘ d = 0` and degree `0` of the complex need the action to be associative and unital; only

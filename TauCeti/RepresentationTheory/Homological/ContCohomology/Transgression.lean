@@ -86,10 +86,10 @@ continuous.
 
 ## Implementation notes
 
-Profiniteness and closedness of `N` are genuine hypotheses of the existence half: the lift is
-built through a continuous section of `G → G ⧸ N`, and such a section does not exist for an
-arbitrary topological group (the circle `ℝ ⧸ ℤ` has none). Total disconnectedness is used only
-to produce the section; the lift for a given section needs compactness of `G` alone.
+Profiniteness and closedness of `N` are genuine hypotheses for producing a section: such a section
+does not exist for an arbitrary topological group (the circle `ℝ ⧸ ℤ` has none). Total
+disconnectedness is used only to produce the section; the construction for a given section needs
+only compactness of `G` and `N`.
 
 ## References
 
@@ -505,40 +505,41 @@ variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Com
   (N : Subgroup G) [N.Normal]
 
 /-- The chosen continuous conjugation primitives for a cocycle with invariant class. -/
-private noncomputable def conjPrimitive (hN : IsClosed (N : Set G)) (c : Z1 N M)
+private noncomputable def conjPrimitive (hN : IsCompact (N : Set G)) (c : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) : G → M :=
-  (exists_continuous_smul_conj_sub_eq_d0 hN.isCompact (mem_Z1_iff.1 c.2).1
+  (exists_continuous_smul_conj_sub_eq_d0 hN (mem_Z1_iff.1 c.2).1
     (exists_smul_conj_sub_eq_d0_of_mem_H1ConjInvariants hc)).choose
 
-private theorem conjPrimitive_spec (hN : IsClosed (N : Set G)) (c : Z1 N M)
+private theorem conjPrimitive_spec (hN : IsCompact (N : Set G)) (c : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) :
     Continuous (conjPrimitive G M N hN c hc) ∧ ∀ (g : G) (n : N),
       g • (c : N → M) (inverseConjugationHom N g n) - (c : N → M) n =
         d0 N M (conjPrimitive G M N hN c hc g) n :=
-  (exists_continuous_smul_conj_sub_eq_d0 hN.isCompact (mem_Z1_iff.1 c.2).1
+  (exists_continuous_smul_conj_sub_eq_d0 hN (mem_Z1_iff.1 c.2).1
     (exists_smul_conj_sub_eq_d0_of_mem_H1ConjInvariants hc)).choose_spec
 
-private theorem isTransgressionLift_sectionLift_conjPrimitive (hN : IsClosed (N : Set G))
+private theorem isTransgressionLift_sectionLift_conjPrimitive (hN : IsCompact (N : Set G))
     (s : G ⧸ N → G) (hs_cont : Continuous s) (hs : ∀ q, (s q : G ⧸ N) = q) (c : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) :
     IsTransgressionLift (c : N → M) (sectionLift s hs (conjPrimitive G M N hN c hc) c) :=
   isTransgressionLift_sectionLift s hs hs_cont c.2 (conjPrimitive_spec G M N hN c hc).1
     (conjPrimitive_spec G M N hN c hc).2
 
-/-- **The section-dependent lift used by transgression.** Given a continuous section `s` of
-`G → G ⧸ N` and a continuous `1`-cocycle `c` on `N` whose class is conjugation-invariant, this
-is a continuous `1`-cochain on `G` extending `c` (`transgressionLift_apply_coe`) and satisfying
+/-- **The section-dependent lift used by transgression.** Given a compact normal subgroup `N`, a
+continuous section `s` of `G → G ⧸ N`, and a continuous `1`-cocycle `c` on `N` whose class is
+conjugation-invariant, this is a continuous `1`-cochain on `G` extending `c`
+(`transgressionLift_apply_coe`) and satisfying
 the identities of `TauCeti.ContCohomology.IsTransgressionLift`, so that its coboundary descends
 to `G ⧸ N`. It is `g ↦ F (s (g N)) + s (g N) • c ((s (g N))⁻¹ * g)`, normalised to vanish at
 `1`, where `F` is a continuous choice of elements trivialising the conjugates of `c`. -/
-noncomputable def transgressionLift (hN : IsClosed (N : Set G)) (s : G ⧸ N → G)
+noncomputable def transgressionLift (hN : IsCompact (N : Set G)) (s : G ⧸ N → G)
     (hs_cont : Continuous s) (hs : ∀ q, (s q : G ⧸ N) = q) (c : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) : C1 G M :=
   ⟨_, mem_C1_iff.2 (isTransgressionLift_sectionLift_conjPrimitive G M N hN s hs_cont hs c
     hc).sub_apply_one.continuous⟩
 
 /-- The section-dependent lift is a transgression lift of `c`. -/
-theorem isTransgressionLift_transgressionLift (hN : IsClosed (N : Set G)) (s : G ⧸ N → G)
+theorem isTransgressionLift_transgressionLift (hN : IsCompact (N : Set G)) (s : G ⧸ N → G)
     (hs_cont : Continuous s) (hs : ∀ q, (s q : G ⧸ N) = q) (c : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) :
     IsTransgressionLift (c : N → M) (transgressionLift G M N hN s hs_cont hs c hc) :=
@@ -546,7 +547,7 @@ theorem isTransgressionLift_transgressionLift (hN : IsClosed (N : Set G)) (s : G
 
 /-- The section-dependent lift vanishes at `1`. -/
 @[simp]
-theorem transgressionLift_apply_one (hN : IsClosed (N : Set G)) (s : G ⧸ N → G)
+theorem transgressionLift_apply_one (hN : IsCompact (N : Set G)) (s : G ⧸ N → G)
     (hs_cont : Continuous s) (hs : ∀ q, (s q : G ⧸ N) = q) (c : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) :
     (transgressionLift G M N hN s hs_cont hs c hc : G → M) 1 = 0 :=
@@ -554,7 +555,7 @@ theorem transgressionLift_apply_one (hN : IsClosed (N : Set G)) (s : G ⧸ N →
 
 /-- The section-dependent lift extends `c`. -/
 @[simp]
-theorem transgressionLift_apply_coe (hN : IsClosed (N : Set G)) (s : G ⧸ N → G)
+theorem transgressionLift_apply_coe (hN : IsCompact (N : Set G)) (s : G ⧸ N → G)
     (hs_cont : Continuous s) (hs : ∀ q, (s q : G ⧸ N) = q) (c : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) (n : N) :
     (transgressionLift G M N hN s hs_cont hs c hc : G → M) n = (c : N → M) n := by
@@ -563,7 +564,7 @@ theorem transgressionLift_apply_coe (hN : IsClosed (N : Set G)) (s : G ⧸ N →
 
 /-- **The raw transgression `2`-cochain**, obtained by differentiating `transgressionLift` and
 descending to `G ⧸ N`, with values in `M ^ N`. -/
-noncomputable def transgressionCochain (hN : IsClosed (N : Set G)) (s : G ⧸ N → G)
+noncomputable def transgressionCochain (hN : IsCompact (N : Set G)) (s : G ⧸ N → G)
     (hs_cont : Continuous s) (hs : ∀ q, (s q : G ⧸ N) = q) (c : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) :
     C2 (G ⧸ N) (FixedPoints.addSubgroup N M) :=
@@ -571,7 +572,7 @@ noncomputable def transgressionCochain (hN : IsClosed (N : Set G)) (s : G ⧸ N 
 
 /-- **The lift-and-differentiate formula.** After the inclusion `M ^ N ↪ M`, the raw
 transgression at `(q, r)` is `d¹` of the lift at the chosen representatives `(s q, s r)`. -/
-theorem transgressionCochain_apply (hN : IsClosed (N : Set G)) (s : G ⧸ N → G)
+theorem transgressionCochain_apply (hN : IsCompact (N : Set G)) (s : G ⧸ N → G)
     (hs_cont : Continuous s) (hs : ∀ q, (s q : G ⧸ N) = q) (c : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) (q r : G ⧸ N) :
     (((transgressionCochain G M N hN s hs_cont hs c hc : (G ⧸ N) × (G ⧸ N) →
@@ -581,7 +582,7 @@ theorem transgressionCochain_apply (hN : IsClosed (N : Set G)) (s : G ⧸ N → 
   exact IsTransgressionLift.coe_cocycle_apply_mk _ (s q) (s r)
 
 /-- The raw transgression is a continuous `2`-cocycle. -/
-theorem transgressionCochain_isCocycle (hN : IsClosed (N : Set G)) (s : G ⧸ N → G)
+theorem transgressionCochain_isCocycle (hN : IsCompact (N : Set G)) (s : G ⧸ N → G)
     (hs_cont : Continuous s) (hs : ∀ q, (s q : G ⧸ N) = q) (c : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) :
     (transgressionCochain G M N hN s hs_cont hs c hc : (G ⧸ N) × (G ⧸ N) →
@@ -589,14 +590,14 @@ theorem transgressionCochain_isCocycle (hN : IsClosed (N : Set G)) (s : G ⧸ N 
   (isTransgressionLift_transgressionLift G M N hN s hs_cont hs c hc).cocycle.2
 
 /-- The raw transgression bundled as a continuous `2`-cocycle. -/
-noncomputable def transgressionCocycle (hN : IsClosed (N : Set G)) (s : G ⧸ N → G)
+noncomputable def transgressionCocycle (hN : IsCompact (N : Set G)) (s : G ⧸ N → G)
     (hs_cont : Continuous s) (hs : ∀ q, (s q : G ⧸ N) = q) (c : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) :
     Z2 (G ⧸ N) (FixedPoints.addSubgroup N M) :=
   ⟨_, transgressionCochain_isCocycle G M N hN s hs_cont hs c hc⟩
 
 /-- The bundled raw transgression is the descended coboundary of the section-dependent lift. -/
-private theorem transgressionCocycle_eq_cocycle (hN : IsClosed (N : Set G)) (s : G ⧸ N → G)
+private theorem transgressionCocycle_eq_cocycle (hN : IsCompact (N : Set G)) (s : G ⧸ N → G)
     (hs_cont : Continuous s) (hs : ∀ q, (s q : G ⧸ N) = q) (c : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) :
     transgressionCocycle G M N hN s hs_cont hs c hc =
@@ -606,7 +607,7 @@ private theorem transgressionCocycle_eq_cocycle (hN : IsClosed (N : Set G)) (s :
 /-- **Change of section and of representative is an explicit coboundary.** The raw
 transgressions for two continuous sections and two cohomologous representatives differ by a
 continuous `2`-coboundary on `G ⧸ N`. -/
-theorem transgressionCochain_sub_mem_B2 (hN : IsClosed (N : Set G)) (s s' : G ⧸ N → G)
+theorem transgressionCochain_sub_mem_B2 (hN : IsCompact (N : Set G)) (s s' : G ⧸ N → G)
     (hs_cont : Continuous s) (hs'_cont : Continuous s') (hs : ∀ q, (s q : G ⧸ N) = q)
     (hs' : ∀ q, (s' q : G ⧸ N) = q) (c c' : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) (hc' : (c' : H1 N M) ∈ H1ConjInvariants G M N)
@@ -625,7 +626,7 @@ through a continuous section of `G → G ⧸ N`, differentiate, and descend to `
 depends neither on the section nor on the representative (`transgression_apply`). -/
 noncomputable def transgression (hN : IsClosed (N : Set G)) :
     H1ConjInvariants G M N →+ H2 (G ⧸ N) (FixedPoints.addSubgroup N M) where
-  toFun y := (transgressionCocycle G M N hN (exists_continuous_section N hN).choose
+  toFun y := (transgressionCocycle G M N hN.isCompact (exists_continuous_section N hN).choose
     (exists_continuous_section N hN).choose_spec.1 (exists_continuous_section N hN).choose_spec.2.1
     (QuotientAddGroup.mk_surjective (y : H1 N M)).choose
     (by rw [(QuotientAddGroup.mk_surjective (y : H1 N M)).choose_spec]; exact y.2) :
@@ -639,8 +640,8 @@ noncomputable def transgression (hN : IsClosed (N : Set G)) :
   map_add' x y := by
     simp only [transgressionCocycle_eq_cocycle]
     rw [IsTransgressionLift.mk_cocycle_eq _
-      ((isTransgressionLift_transgressionLift G M N hN _ _ _ _ _).add
-        (isTransgressionLift_transgressionLift G M N hN _ _ _ _ _)),
+      ((isTransgressionLift_transgressionLift G M N hN.isCompact _ _ _ _ _).add
+        (isTransgressionLift_transgressionLift G M N hN.isCompact _ _ _ _ _)),
       IsTransgressionLift.cocycle_add, QuotientAddGroup.mk_add]
     rw [← AddSubgroup.coe_add, ← H1pi_eq_iff, QuotientAddGroup.mk_add,
       (QuotientAddGroup.mk_surjective _).choose_spec,
@@ -653,9 +654,9 @@ theorem transgression_apply (hN : IsClosed (N : Set G)) (s : G ⧸ N → G)
     (hs_cont : Continuous s) (hs : ∀ q, (s q : G ⧸ N) = q) (y : H1ConjInvariants G M N)
     (c : Z1 N M) (hc : (c : H1 N M) = y) :
     transgression G M N hN y =
-      (transgressionCocycle G M N hN s hs_cont hs c (hc ▸ y.2) :
+      (transgressionCocycle G M N hN.isCompact s hs_cont hs c (hc ▸ y.2) :
         H2 (G ⧸ N) (FixedPoints.addSubgroup N M)) :=
-  H2pi_eq_iff.2 (transgressionCochain_sub_mem_B2 G M N hN _ s _ hs_cont _ hs _ c _ _
+  H2pi_eq_iff.2 (transgressionCochain_sub_mem_B2 G M N hN.isCompact _ s _ hs_cont _ hs _ c _ _
     ((QuotientAddGroup.mk_surjective _).choose_spec.trans hc.symm))
 
 /-- **Transgression kills restriction.** The transgression of the restriction of a class in
