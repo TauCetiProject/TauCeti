@@ -421,7 +421,7 @@ private lemma exists_sl2_mul_mul_eq_atkinLehnerEntries
     fin_cases i <;> fin_cases j <;> simp [hB, atkinLehnerEntries, hc]
   -- a common divisor of either matrix divides the upper-left entry, so is coprime to `N`, and
   -- then survives the entry swap in either direction
-  refine Matrix.exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff hA_det_pos
+  refine Matrix.exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff hA_det_pos.ne'
     (atkinLehnerEntries_det N A c hc) fun e ↦ ⟨fun he ↦ dvd_atkinLehnerEntries N A e c hc he
       (hAco'.of_isCoprime_of_dvd_left (he 0 0)), fun he i j ↦ ?_⟩
   have h := dvd_atkinLehnerEntries N B e (A 0 1) hBc he

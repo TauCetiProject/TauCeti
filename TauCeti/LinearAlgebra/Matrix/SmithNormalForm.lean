@@ -46,9 +46,9 @@ operations of determinant one:
 * `Matrix.associated_invariant_factor_zero_gcd` and `Matrix.invariant_factor_zero_eq_gcd`: hence
   the first entry is an associate of the gcd of the entries of `A`, and equals it once its sign
   is known — so it is readable off the matrix without choosing a factorisation.
-* `Matrix.exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff`: consequently a `2 × 2` integer matrix of
-  positive determinant is determined up to `SL₂(ℤ)`-equivalence by its determinant and the
-  common divisors of its entries.
+* `Matrix.exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff`: consequently a nonsingular `2 × 2`
+  integer matrix is determined up to `SL₂(ℤ)`-equivalence by its determinant and the common
+  divisors of its entries.
 
 Mathlib's `Submodule.smithNormalForm` provides basis-level diagonalization over a PID; this
 file supplies the matrix-level statement over `ℤ`, refined in three ways that the basis-level
@@ -945,13 +945,8 @@ theorem invariant_factor_zero_eq_gcd [NeZero n] (A : Matrix (Fin n) (Fin n) ℤ)
   Int.eq_of_associated_of_nonneg (associated_invariant_factor_zero_gcd A d hd0 L R h) hnonneg
     (Int.nonneg_of_normalize_eq_self Finset.normalize_gcd)
 
-/-- **The `2 × 2` elementary divisor classification.** Two integer matrices with the same
-positive determinant, whose entries have the same common divisors, are equivalent under
-`SL₂(ℤ)` on both sides: `P * A * Q = B`.
-
-At size two the invariant factors are the content `d₀` and `det / d₀`, and the hypothesis says
-exactly that the contents agree. -/
-theorem exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff {A B : Matrix (Fin 2) (Fin 2) ℤ}
+private theorem exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff_of_pos
+    {A B : Matrix (Fin 2) (Fin 2) ℤ}
     (hA : 0 < A.det) (hdet : B.det = A.det)
     (hdvd : ∀ e : ℤ, (∀ i j, e ∣ A i j) ↔ ∀ i j, e ∣ B i j) :
     ∃ P Q : SpecialLinearGroup (Fin 2) ℤ,
@@ -974,5 +969,50 @@ theorem exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff {A B : Matrix (Fin 2) (Fin 2) 
     (dvd_diag_of_dvd_entries A (dB 0) dA LA RA hA_snf ((hdvd _).mpr hdB_B) 0)
     (by rw [hprodA, hprodB, hdet])
   exact exists_SL_mul_mul_eq_of_mul_mul_eq (hA_snf.trans (by rw [hd]; exact hB_snf.symm))
+
+/-- **The `2 × 2` elementary divisor classification.** Two nonsingular integer matrices with
+the same determinant, whose entries have the same common divisors, are equivalent under
+`SL₂(ℤ)` on both sides: `P * A * Q = B`.
+
+At size two the invariant factors are the content `d₀` and `det / d₀`, and the hypothesis says
+exactly that the contents agree. For negative determinant, multiplying both matrices on the left
+by `diag(-1, 1)` reduces to the positive case. -/
+theorem exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff {A B : Matrix (Fin 2) (Fin 2) ℤ}
+    (hA : A.det ≠ 0) (hdet : B.det = A.det)
+    (hdvd : ∀ e : ℤ, (∀ i j, e ∣ A i j) ↔ ∀ i j, e ∣ B i j) :
+    ∃ P Q : SpecialLinearGroup (Fin 2) ℤ,
+      (P : Matrix (Fin 2) (Fin 2) ℤ) * A * (Q : Matrix (Fin 2) (Fin 2) ℤ) = B := by
+  by_cases hpos : 0 < A.det
+  · exact exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff_of_pos hpos hdet hdvd
+  · let J : Matrix (Fin 2) (Fin 2) ℤ := !![-1, 0; 0, 1]
+    have hneg : A.det < 0 := lt_of_le_of_ne (le_of_not_gt hpos) hA
+    have hJdet : J.det = -1 := by simp [J, Matrix.det_fin_two_of]
+    have hJJ : J * J = 1 := by
+      ext i j
+      fin_cases i <;> fin_cases j <;> simp [J, Matrix.mul_apply, Fin.sum_univ_two]
+    have hJA : 0 < (J * A).det := by
+      rw [Matrix.det_mul, hJdet]
+      omega
+    have hJBdet : (J * B).det = (J * A).det := by
+      simp [Matrix.det_mul, hdet]
+    have hdvdJ : ∀ e : ℤ, (∀ i j, e ∣ (J * A) i j) ↔ ∀ i j, e ∣ (J * B) i j := by
+      intro e
+      simpa [J, Matrix.mul_apply, Fin.sum_univ_two] using hdvd e
+    obtain ⟨P, Q, hPQ⟩ :=
+      exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff_of_pos hJA hJBdet hdvdJ
+    let P' : SpecialLinearGroup (Fin 2) ℤ :=
+      ⟨J * (P : Matrix (Fin 2) (Fin 2) ℤ) * J, by
+        rw [Matrix.det_mul, Matrix.det_mul, hJdet, P.prop]
+        norm_num⟩
+    refine ⟨P', Q, ?_⟩
+    change (J * (P : Matrix (Fin 2) (Fin 2) ℤ) * J) * A *
+      (Q : Matrix (Fin 2) (Fin 2) ℤ) = B
+    calc
+      (J * (P : Matrix (Fin 2) (Fin 2) ℤ) * J) * A *
+          (Q : Matrix (Fin 2) (Fin 2) ℤ) = J *
+            ((P : Matrix (Fin 2) (Fin 2) ℤ) * (J * A) * Q) := by
+              simp only [Matrix.mul_assoc]
+      _ = J * (J * B) := by rw [hPQ]
+      _ = B := by rw [← Matrix.mul_assoc, hJJ, Matrix.one_mul]
 
 end Matrix
