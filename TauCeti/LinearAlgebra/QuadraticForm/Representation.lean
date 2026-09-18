@@ -22,8 +22,10 @@ invariance, and gives the criterion that, for a form with trivial radical, repre
 equivalent to isotropy after adjoining the one-dimensional form with that unit as its negative
 coefficient. A nondegenerate form has trivial radical by Mathlib's `radical_eq_bot` theorem. A
 nondegenerate isotropic form over a field also contains an isotropic pair: two isotropic vectors
-whose polar pairing is one. These results provide the basic bridge from value questions to
-isotropy questions, following Lam,
+whose polar pairing is one. If an isotropic orthogonal sum has an anisotropic second summand on
+a nonzero space and a first summand with trivial radical, some nonzero value of the first summand
+is the negative of a value of the second (O'Meara, *Introduction to Quadratic Forms*, 66:1).
+These results provide the basic bridge from value questions to isotropy questions, following Lam,
 *Introduction to Quadratic Forms over Fields*, I.2.3 and I.3.5.
 -/
 
@@ -246,6 +248,27 @@ theorem _root_.QuadraticMap.represents_of_nondegenerate_of_not_anisotropic
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) (a : K) :
     Represents Q a :=
   represents_of_radical_eq_bot_of_not_anisotropic Q hQ.radical_eq_bot hiso a
+
+/-- If the orthogonal sum of a form with trivial radical and an anisotropic form on a nonzero
+space is isotropic, then some nonzero value of the first form is the negative of a value of the
+second (O'Meara, *Introduction to Quadratic Forms*, 66:1). -/
+theorem _root_.QuadraticMap.Anisotropic.exists_ne_zero_eq_neg_of_not_anisotropic_prod
+    {V' : Type*} [AddCommGroup V'] [Module K V'] [Nontrivial V']
+    {U : QuadraticForm K V} {W : QuadraticForm K V'} (hW : W.Anisotropic)
+    (hU : U.radical = ⊥) (h : ¬(U.prod W).Anisotropic) :
+    ∃ x y, U x ≠ 0 ∧ U x = -W y := by
+  -- An anisotropic `U` forces both components of an isotropic vector of the sum to be nonzero;
+  -- an isotropic `U` is universal and represents the negative of any nonzero value of `W`.
+  by_cases hUiso : U.Anisotropic
+  · obtain ⟨⟨x, y⟩, hxy, hzero⟩ := (not_anisotropic_iff_exists _).mp h
+    rw [QuadraticMap.prod_apply, add_eq_zero_iff_eq_neg] at hzero
+    refine ⟨x, y, fun hx ↦ hxy ?_, hzero⟩
+    have hx0 : x = 0 := hUiso x hx
+    have hy0 : y = 0 := hW y (by simpa [hx0] using hzero.symm)
+    simp [hx0, hy0]
+  · obtain ⟨y, hy⟩ := exists_ne (0 : V')
+    obtain ⟨x, hx⟩ := represents_of_radical_eq_bot_of_not_anisotropic U hU hUiso (-W y)
+    exact ⟨x, y, by simpa [hx] using fun h ↦ hy (hW y h), hx⟩
 
 /-- A nondegenerate isotropic quadratic form contains two isotropic vectors whose polar pairing
 is one. -/
