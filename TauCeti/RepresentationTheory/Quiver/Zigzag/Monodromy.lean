@@ -160,8 +160,8 @@ private theorem prod_transition_eq_inv_monodromy (c : SkewZigzagParameter k G) {
     ∏ i, transition c (hy i) = (monodromy c hy)⁻¹ := by
   have hshift : ∏ i : Fin n, localCoordinate c (hy (i + 1)) = ∏ i, localCoordinate c (hy i) :=
     Fintype.prod_equiv (Equiv.addRight 1) _ _ fun _ ↦ rfl
-  simp only [monodromy_def, transition, ratio_eq_localCoordinate_div c, Finset.prod_div_distrib,
-    hshift, inv_div]
+  simp only [monodromy_def, transition_def, ratio_eq_localCoordinate_div c,
+    Finset.prod_div_distrib, hshift, inv_div]
 
 /-- Cyclic indexing of the vertices of a closed walk agrees with ordinary indexing one step past
 every position. -/
@@ -187,11 +187,11 @@ private theorem walkTransition_eq_one_of_monodromy_eq_one (c : SkewZigzagParamet
       monodromy c hy = 1)
     {u : V} (q : G.Walk u u) : walkTransition c q = 1 := by
   rcases Nat.eq_zero_or_pos q.length with hq | hq
-  · rw [walkTransition, List.eq_nil_of_length_eq_zero (q.length_darts.trans hq)]
+  · rw [walkTransition_def, List.eq_nil_of_length_eq_zero (q.length_darts.trans hq)]
     rfl
   have : NeZero q.length := ⟨hq.ne'⟩
   have hprod : walkTransition c q = ∏ i, transition c (adj_getVert_add_one q i) := by
-    rw [walkTransition, ← List.ofFn_getElem_eq_map, List.prod_ofFn,
+    rw [walkTransition_def, ← List.ofFn_getElem_eq_map, List.prod_ofFn,
       ← Fin.prod_congr' _ q.length_darts]
     refine Finset.prod_congr rfl fun i _ ↦ ?_
     have hd := SimpleGraph.Walk.darts_getElem_eq_getVert (p := q) i i.isLt

@@ -72,9 +72,12 @@ noncomputable def localCoordinate (c : SkewZigzagParameter k G) {v w : V} (h : G
 
 /-- The **transition factor** across an oriented edge: the change of local edge coordinates from
 its source to its target. -/
-@[expose]
 noncomputable def transition (c : SkewZigzagParameter k G) {v w : V} (h : G.Adj v w) : kˣ :=
   localCoordinate c h / localCoordinate c h.symm
+
+/-- The transition factor is the quotient of the local coordinates at the two ends of an edge. -/
+theorem transition_def (c : SkewZigzagParameter k G) {v w : V} (h : G.Adj v w) :
+    transition c h = localCoordinate c h / localCoordinate c h.symm := (rfl)
 
 /-- **Every ratio is a quotient of local edge coordinates.** -/
 theorem ratio_eq_localCoordinate_div (c : SkewZigzagParameter k G) {i j j' : V}
@@ -92,9 +95,19 @@ theorem transition_symm (c : SkewZigzagParameter k G) {v w : V} (h : G.Adj v w) 
 /-! ### Transition factors along walks -/
 
 /-- The **transition factor of a walk**: the product of the transition factors along its darts. -/
-@[expose]
 noncomputable def walkTransition (c : SkewZigzagParameter k G) {v w : V} (q : G.Walk v w) : kˣ :=
   (q.darts.map fun d ↦ transition c d.adj).prod
+
+/-- The transition factor of a walk is the product of the transition factors along its darts. -/
+theorem walkTransition_def (c : SkewZigzagParameter k G) {v w : V} (q : G.Walk v w) :
+    walkTransition c q = (q.darts.map fun d ↦ transition c d.adj).prod := (rfl)
+
+/-- The transition factor of the empty walk is one. -/
+@[simp]
+theorem walkTransition_nil (c : SkewZigzagParameter k G) (v : V) :
+    walkTransition c (.nil : G.Walk v v) = 1 := by
+  rw [walkTransition_def]
+  rfl
 
 /-- **Extending a walk by an edge multiplies its transition factor by that of the edge.** -/
 @[simp]
