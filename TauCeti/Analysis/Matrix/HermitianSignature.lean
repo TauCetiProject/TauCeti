@@ -75,38 +75,6 @@ theorem signature_def [DecidableEq ι] (hA : A.IsHermitian) :
       ∑ i, if 0 < hA.eigenvalues i then (1 : ℤ) else if hA.eigenvalues i < 0 then -1 else 0 := by
   rw [signature, Subsingleton.elim (Classical.decEq ι) ‹DecidableEq ι›]
 
-/-- The zero matrix has signature zero: all its eigenvalues vanish. -/
-@[simp]
-theorem signature_zero :
-    (Matrix.isHermitian_zero : (0 : Matrix ι ι 𝕜).IsHermitian).signature = 0 := by
-  classical
-  rw [signature_def,
-    (Matrix.isHermitian_zero : (0 : Matrix ι ι 𝕜).IsHermitian).eigenvalues_eq_zero_iff.mpr rfl]
-  simp
-
-/-- **The signature of a real diagonal matrix** counts its positive entries against its negative
-ones: the diagonal entries are the eigenvalues, up to the order in which they are listed. -/
-@[simp]
-theorem signature_diagonal [DecidableEq ι] {d : ι → ℝ} :
-    (Matrix.isHermitian_diagonal_of_self_adjoint (fun i => (d i : 𝕜))
-      (by ext i; simp)).signature =
-      ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
-  suffices ∀ hd : (Matrix.diagonal fun i => (d i : 𝕜)).IsHermitian,
-      hd.signature = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 from this _
-  intro hd
-  -- Both lists of reals are the real parts of the roots of the characteristic polynomial.
-  have h : Multiset.map hd.eigenvalues Finset.univ.val = Multiset.map d Finset.univ.val := by
-    have hr := congrArg (Multiset.map RCLike.re) hd.roots_charpoly_eq_eigenvalues
-    rw [charpoly_diagonal, Polynomial.roots_prod _ _
-      (by simp [Finset.prod_ne_zero_iff, Polynomial.X_sub_C_ne_zero])] at hr
-    simpa [Multiset.map_map, Function.comp_def, Multiset.bind_singleton] using hr.symm
-  have hsum (e : ι → ℝ) : (∑ i, if 0 < e i then (1 : ℤ) else if e i < 0 then -1 else 0) =
-      (Multiset.map (fun x : ℝ => if 0 < x then (1 : ℤ) else if x < 0 then -1 else 0)
-        (Multiset.map e Finset.univ.val)).sum := by
-    rw [Multiset.map_map, Finset.sum_eq_multiset_sum]
-    rfl
-  rw [signature_def, hsum, h, ← hsum]
-
 /-- Reindexing both coordinates of a Hermitian matrix along an equivalence does not change its
 signature. -/
 @[simp]
@@ -193,6 +161,27 @@ theorem signature_map_ofReal {M : Matrix ι ι ℝ} (hM : (M.map ((↑) : ℝ �
   have h := hM.signature_realify
   rw [realify_map_ofReal, Matrix.signature_fromBlocks_zero] at h
   omega
+
+/-- The zero matrix has signature zero. -/
+@[simp]
+theorem signature_zero :
+    (Matrix.isHermitian_zero : (0 : Matrix ι ι 𝕜).IsHermitian).signature = 0 := by
+  have hM : ((0 : Matrix ι ι ℝ).map ((↑) : ℝ → 𝕜)).IsHermitian := by simp
+  simpa using hM.signature_map_ofReal
+
+/-- **The signature of a real diagonal matrix** counts its positive entries against its negative
+ones. -/
+@[simp]
+theorem signature_diagonal [DecidableEq ι] {d : ι → ℝ} :
+    (Matrix.isHermitian_diagonal_of_self_adjoint (fun i => (d i : 𝕜))
+      (by ext i; simp)).signature =
+      ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
+  have key : ∀ {B : Matrix ι ι 𝕜} (hB : B.IsHermitian),
+      B = (Matrix.diagonal d).map ((↑) : ℝ → 𝕜) →
+        hB.signature = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
+    rintro B hB rfl
+    exact hB.signature_map_ofReal.trans (Matrix.signature_diagonal d)
+  exact key _ (Matrix.diagonal_map (by simp)).symm
 
 /-- **The signature from an explicit diagonalising `*`-congruence.** -/
 theorem signature_eq_of_congr_diagonal [DecidableEq ι] {P : Matrix ι ι 𝕜} (hP : IsUnit P.det)
