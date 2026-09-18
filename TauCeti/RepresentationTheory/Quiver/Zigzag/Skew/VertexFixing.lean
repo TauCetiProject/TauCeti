@@ -30,9 +30,9 @@ these units gauge `c` to `c'`.
 
 ## Main results
 
-* `TauCeti.SkewZigzagParameter.existsUnique_unit_smul_of_vertexFixing_algEquiv`: a vertex-fixing
+* `AlgEquiv.existsUnique_unit_smul_of_vertexFixing`: a vertex-fixing
   isomorphism of skew-zigzag relation quotients multiplies each arrow by a unique unit.
-* `TauCeti.SkewZigzagParameter.isGaugeEquivalent_of_vertexFixing_algEquiv`: a vertex-fixing
+* `AlgEquiv.isGaugeEquivalent_of_vertexFixing`: a vertex-fixing
   isomorphism of skew-zigzag relation quotients forces the parameters to be gauge equivalent.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_iff_exists_vertexFixing_algEquiv`: two parameters
   are gauge equivalent exactly when their relation quotients are isomorphic by a vertex-fixing
@@ -96,7 +96,7 @@ private theorem skewZigzagMk_ofArrow_smul_left_injective
 /-- **A vertex-fixing isomorphism rescales arrows by units.** An algebra isomorphism between the
 relation quotients of two parameters that fixes every vertex idempotent multiplies each arrow by a
 unique unit. -/
-theorem existsUnique_unit_smul_of_vertexFixing_algEquiv
+theorem _root_.AlgEquiv.existsUnique_unit_smul_of_vertexFixing
     (φ : skewZigzagQuotient k G c ≃ₐ[k] skewZigzagQuotient k G c')
     (hφ : ∀ i : V, φ (skewZigzagMk k G c (vertexIdempotent k (vertex G i))) =
       skewZigzagMk k G c' (vertexIdempotent k (vertex G i)))
@@ -127,7 +127,7 @@ private noncomputable def arrowUnit
     (hφ : ∀ i : V, φ (skewZigzagMk k G c (vertexIdempotent k (vertex G i))) =
       skewZigzagMk k G c' (vertexIdempotent k (vertex G i)))
     ⦃x y : DoubledQuiver G⦄ (e : x ⟶ y) : kˣ :=
-  (existsUnique_unit_smul_of_vertexFixing_algEquiv φ hφ e).exists.choose
+  (φ.existsUnique_unit_smul_of_vertexFixing hφ e).exists.choose
 
 /-- A vertex-fixing isomorphism multiplies each arrow by its arrow unit. -/
 private theorem apply_skewZigzagMk_ofArrow
@@ -137,7 +137,7 @@ private theorem apply_skewZigzagMk_ofArrow
     {x y : DoubledQuiver G} (e : x ⟶ y) :
     φ (skewZigzagMk k G c (ofArrow e)) =
       (arrowUnit φ hφ e : k) • skewZigzagMk k G c' (ofArrow e) :=
-  (existsUnique_unit_smul_of_vertexFixing_algEquiv φ hφ e).exists.choose_spec
+  (φ.existsUnique_unit_smul_of_vertexFixing hφ e).exists.choose_spec
 
 /-- A vertex-fixing isomorphism multiplies each backtrack by the backtrack scale of its arrow
 units. -/
@@ -157,7 +157,7 @@ private theorem apply_skewZigzagMk_backtrackElem
 algebra isomorphism between the relation quotients of two parameters over a commutative ring fixes
 every vertex idempotent, then the parameters are gauge equivalent, a gauge being given by the units
 by which the isomorphism multiplies the arrows. -/
-theorem isGaugeEquivalent_of_vertexFixing_algEquiv
+theorem _root_.AlgEquiv.isGaugeEquivalent_of_vertexFixing
     (φ : skewZigzagQuotient k G c ≃ₐ[k] skewZigzagQuotient k G c')
     (hφ : ∀ i : V, φ (skewZigzagMk k G c (vertexIdempotent k (vertex G i))) =
       skewZigzagMk k G c' (vertexIdempotent k (vertex G i))) :
@@ -183,7 +183,7 @@ theorem isGaugeEquivalent_iff_exists_vertexFixing_algEquiv :
       ∃ φ : skewZigzagQuotient k G c ≃ₐ[k] skewZigzagQuotient k G c',
         ∀ i : V, φ (skewZigzagMk k G c (vertexIdempotent k (vertex G i))) =
           skewZigzagMk k G c' (vertexIdempotent k (vertex G i)) := by
-  refine ⟨fun h => ?_, fun ⟨φ, hφ⟩ => isGaugeEquivalent_of_vertexFixing_algEquiv φ hφ⟩
+  refine ⟨fun h => ?_, fun ⟨φ, hφ⟩ => φ.isGaugeEquivalent_of_vertexFixing hφ⟩
   obtain ⟨u, hu⟩ := isGaugeEquivalent_iff.mp h
   exact ⟨skewZigzagQuotientGaugeEquiv k G c c' u hu, fun i => by
     rw [skewZigzagQuotientGaugeEquiv_skewZigzagMk, rescale_vertexIdempotent]⟩
