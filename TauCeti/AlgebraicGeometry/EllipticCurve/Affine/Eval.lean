@@ -50,13 +50,11 @@ base-changed curve `W⁄A`, which is a Weierstrass curve over `A`; `algHom_ext` 
 `algHom_injective` needs a field, because the norm it argues with needs the rank-two basis of
 `R[W]` over `R[X]`.
 
-This supports the Nagell–Lutz route of `TauCetiRoadmap/EllipticCurves/README.md`, Layer 6, item
-"The torsion subgroup and Nagell–Lutz", whose division-polynomial identities Mathlib states in the
-coordinate ring but which are consumed at points of the curve. The converse evaluation statements
-also support Layer 0's point–place dictionary by recovering an equation solution from a residue
-degree-one ideal, and `evalAlgHom` together with `algHom_injective` is what Layer 0.5's
-translations `τ_P` are built from: the pullback of `τ_P` is evaluation at a translate of the
-generic point.
+These are what lets the division-polynomial identities, which Mathlib states in the coordinate
+ring, be consumed at points of the curve. In the converse direction they recover a solution of
+the Weierstrass equation from a residue degree-one ideal, which is the dictionary between points
+and places, and `evalAlgHom` together with `algHom_injective` is what the translations `τ_P` are
+built from: the pullback of `τ_P` is evaluation at a translate of the generic point.
 -/
 
 public section
