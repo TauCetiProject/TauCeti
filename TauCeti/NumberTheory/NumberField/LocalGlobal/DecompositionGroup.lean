@@ -97,10 +97,7 @@ def completionCongr (σ : L ≃ₐ[K] L) {w w' : HeightOneSpectrum (𝒪 L)}
         (valuation_apply_eq_of_asIdeal_eq_smul σ h)).toRingHom.comp
           (completionAlgHom v w).toRingHom)
       ((continuous_adicCompletionCongr _).comp (continuous_completionAlgHom v w)) fun x ↦ by
-        rw [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, AlgHom.commutes,
-          IsScalarTower.algebraMap_apply K L (w.adicCompletion L), RingEquiv.toRingHom_eq_coe,
-          RingEquiv.coe_toRingHom, adicCompletionCongr_algebraMap, AlgEquiv.coe_ringEquiv,
-          AlgEquiv.commutes]
+        simp [IsScalarTower.algebraMap_apply K L (w.adicCompletion L)]
     rw [algebraMap_eq_completionAlgHom, algebraMap_eq_completionAlgHom]
     exact congr($this a)
 
@@ -136,27 +133,43 @@ private theorem algEquiv_ext_of_continuous {w'' : HeightOneSpectrum (𝒪 L)}
 
 /-- `completionCongr` of the identity is the identity. -/
 @[simp]
-theorem completionCongr_one (h : w.asIdeal = (1 : L ≃ₐ[K] L) • w.asIdeal) :
-    completionCongr v (1 : L ≃ₐ[K] L) h = AlgEquiv.refl :=
-  algEquiv_ext_of_continuous (continuous_completionCongr v _ h) continuous_id fun x ↦ by simp
+theorem completionCongr_one :
+    completionCongr v (1 : L ≃ₐ[K] L)
+      (show w.asIdeal = (1 : L ≃ₐ[K] L) • w.asIdeal by simp) = AlgEquiv.refl := by
+  apply AlgEquiv.ext
+  intro x
+  change adicCompletionCongr w w (1 : L ≃+* L) _ x = x
+  exact congrArg (fun e : w.adicCompletion L ≃+* w.adicCompletion L ↦ e x)
+    (adicCompletionCongr_one (v := w) (K := L))
 
 /-- `completionCongr` is multiplicative: transporting along `σ` and then along `τ` is
 transporting along `τ * σ`. -/
 theorem completionCongr_trans {w'' : HeightOneSpectrum (𝒪 L)} [w''.asIdeal.LiesOver v.asIdeal]
-    (σ τ : L ≃ₐ[K] L) (hσ : w'.asIdeal = σ • w.asIdeal) (hτ : w''.asIdeal = τ • w'.asIdeal)
-    (hτσ : w''.asIdeal = (τ * σ) • w.asIdeal) :
-    (completionCongr v σ hσ).trans (completionCongr v τ hτ) = completionCongr v (τ * σ) hτσ :=
-  algEquiv_ext_of_continuous (v := v)
-    ((continuous_completionCongr v τ hτ).comp (continuous_completionCongr v σ hσ))
-    (continuous_completionCongr v _ hτσ) fun x ↦ by simp
+    (σ τ : L ≃ₐ[K] L) (hσ : w'.asIdeal = σ • w.asIdeal) (hτ : w''.asIdeal = τ • w'.asIdeal) :
+    (completionCongr v σ hσ).trans (completionCongr v τ hτ) =
+      completionCongr v (τ * σ) (by rw [hτ, hσ, mul_smul]) := by
+  apply AlgEquiv.ext
+  intro x
+  change ((adicCompletionCongr w w' σ.toRingEquiv _).trans
+    (adicCompletionCongr w' w'' τ.toRingEquiv _)) x =
+      adicCompletionCongr w w'' (τ * σ).toRingEquiv _ x
+  exact congrArg (fun e : w.adicCompletion L ≃+* w''.adicCompletion L ↦ e x)
+    (adicCompletionCongr_trans
+      (valuation_apply_eq_of_asIdeal_eq_smul σ hσ) w'' τ.toRingEquiv
+      (valuation_apply_eq_of_asIdeal_eq_smul τ hτ))
 
 /-- The inverse of `completionCongr v σ h` is `completionCongr` of `σ⁻¹`. -/
-theorem completionCongr_symm (σ : L ≃ₐ[K] L) (h : w'.asIdeal = σ • w.asIdeal)
-    (h' : w.asIdeal = σ⁻¹ • w'.asIdeal) :
-    (completionCongr v σ h).symm = completionCongr v σ⁻¹ h' := by
-  have hid : (completionCongr v σ⁻¹ h').trans (completionCongr v σ h) = AlgEquiv.refl :=
+theorem completionCongr_symm (σ : L ≃ₐ[K] L) (h : w'.asIdeal = σ • w.asIdeal) :
+    (completionCongr v σ h).symm =
+      completionCongr v σ⁻¹
+        (show w.asIdeal = σ⁻¹ • w'.asIdeal by rw [h, inv_smul_smul]) := by
+  have hid :
+      (completionCongr v σ⁻¹
+        (show w.asIdeal = σ⁻¹ • w'.asIdeal by rw [h, inv_smul_smul])).trans
+          (completionCongr v σ h) = AlgEquiv.refl :=
     algEquiv_ext_of_continuous (v := v)
-      ((continuous_completionCongr v σ h).comp (continuous_completionCongr v σ⁻¹ h'))
+      ((continuous_completionCongr v σ h).comp (continuous_completionCongr v σ⁻¹
+        (show w.asIdeal = σ⁻¹ • w'.asIdeal by rw [h, inv_smul_smul])))
       continuous_id fun x ↦ by simp
   refine AlgEquiv.ext fun y ↦ ?_
   rw [AlgEquiv.symm_apply_eq, ← AlgEquiv.trans_apply, hid, AlgEquiv.coe_refl, id]
@@ -171,10 +184,10 @@ def decompositionHom :
     MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal →* (w.adicCompletion L ≃ₐ[v.adicCompletion K]
       w.adicCompletion L) where
   toFun τ := completionCongr v (τ : L ≃ₐ[K] L) (MulAction.mem_stabilizer_iff.mp τ.2).symm
-  map_one' := completionCongr_one _
+  map_one' := completionCongr_one
   map_mul' σ τ := (completionCongr_trans (τ : L ≃ₐ[K] L) (σ : L ≃ₐ[K] L)
-      (MulAction.mem_stabilizer_iff.mp τ.2).symm (MulAction.mem_stabilizer_iff.mp σ.2).symm
-      (MulAction.mem_stabilizer_iff.mp (σ * τ).2).symm).symm
+      (MulAction.mem_stabilizer_iff.mp τ.2).symm
+      (MulAction.mem_stabilizer_iff.mp σ.2).symm).symm
 
 variable {v w}
 
@@ -219,11 +232,11 @@ theorem decompositionHom_conj {w' : HeightOneSpectrum (𝒪 L)} [w'.asIdeal.Lies
     decompositionHom v w' τ' =
       (completionCongr v σ h).symm.trans
         ((decompositionHom v w τ).trans (completionCongr v σ h)) := by
-  have h' : w.asIdeal = σ⁻¹ • w'.asIdeal := by rw [h, inv_smul_smul]
-  rw [completionCongr_symm σ h h']
+  rw [completionCongr_symm σ h]
   refine algEquiv_ext_of_continuous (continuous_decompositionHom v τ')
     ((continuous_completionCongr v σ h).comp ((continuous_decompositionHom v τ).comp
-      (continuous_completionCongr v σ⁻¹ h'))) fun x ↦ ?_
+      (continuous_completionCongr v σ⁻¹
+        (show w.asIdeal = σ⁻¹ • w'.asIdeal by rw [h, inv_smul_smul])))) fun x ↦ ?_
   simp [hτ]
 
 end IsDedekindDomain.HeightOneSpectrum

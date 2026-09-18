@@ -39,7 +39,8 @@ how an automorphism permuting the places above a given place acts on their compl
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionCongr`: the induced isomorphism of adic
   completions, with `adicCompletionCongr_algebraMap` (it extends `σ`),
   `continuous_adicCompletionCongr`, its universal property `eq_adicCompletionCongr_of_continuous`,
-  and `valued_adicCompletionCongr` (it preserves the valuations).
+  its identity, composition, and inverse laws, and `valued_adicCompletionCongr` (it preserves the
+  valuations).
 
 The ideal-level input this rests on — that `Ideal.map e` preserves divisibility and
 factorisation multiplicities, and that Mathlib's `equivOfRingEquiv` is `Ideal.map e` on
@@ -207,10 +208,42 @@ theorem eq_adicCompletionCongr_of_continuous {f : v.adicCompletion K →+* w.adi
       rw [Function.comp_apply, Function.comp_apply, hfK x, RingEquiv.toRingHom_eq_coe,
         RingEquiv.coe_toRingHom, adicCompletionCongr_algebraMap])
 
+/-- `adicCompletionCongr` for the identity is the identity. -/
+@[simp]
+theorem adicCompletionCongr_one :
+    adicCompletionCongr v v (1 : K ≃+* K) (fun _ ↦ rfl) =
+      RingEquiv.refl (v.adicCompletion K) := by
+  apply RingEquiv.toRingHom_injective
+  exact (eq_adicCompletionCongr_of_continuous (fun _ ↦ rfl) continuous_id fun _ ↦ rfl).symm
+
+/-- Transporting completions along two field isomorphisms is transport along their composite. -/
+theorem adicCompletionCongr_trans {R'' K'' : Type*} [CommRing R''] [IsDedekindDomain R'']
+    [Field K''] [Algebra R'' K''] [IsFractionRing R'' K''] (u : HeightOneSpectrum R'')
+    (τ : K' ≃+* K'') (hτ : ∀ y, u.valuation K'' (τ y) = w.valuation K' y) :
+    (adicCompletionCongr v w σ hσ).trans (adicCompletionCongr w u τ hτ) =
+      adicCompletionCongr v u (σ.trans τ) (fun x ↦ by
+        rw [RingEquiv.trans_apply, hτ, hσ]) := by
+  apply RingEquiv.toRingHom_injective
+  apply eq_adicCompletionCongr_of_continuous
+  · exact (continuous_adicCompletionCongr hτ).comp (continuous_adicCompletionCongr hσ)
+  · intro x
+    simp
+
 /-- The inverse of `adicCompletionCongr` is the completion of the inverse isomorphism. -/
-theorem adicCompletionCongr_symm (hσ' : ∀ y, v.valuation K (σ.symm y) = w.valuation K' y) :
-    (adicCompletionCongr v w σ hσ).symm = adicCompletionCongr w v σ.symm hσ' :=
-  (rfl)
+theorem adicCompletionCongr_symm :
+    (adicCompletionCongr v w σ hσ).symm =
+      adicCompletionCongr w v σ.symm (fun y ↦ by simpa using (hσ (σ.symm y)).symm) := by
+  have hcomp :
+      (adicCompletionCongr w v σ.symm
+        (fun y ↦ by simpa using (hσ (σ.symm y)).symm)).trans
+          (adicCompletionCongr v w σ hσ) = RingEquiv.refl (w.adicCompletion K') := by
+    rw [adicCompletionCongr_trans]
+    apply RingEquiv.toRingHom_injective
+    exact (eq_adicCompletionCongr_of_continuous (fun x ↦ by simp) continuous_id
+      fun x ↦ by simp).symm
+  apply RingEquiv.ext
+  intro y
+  rw [RingEquiv.symm_apply_eq, ← RingEquiv.trans_apply, hcomp, RingEquiv.refl_apply]
 
 /-- `adicCompletionCongr` preserves the valuations of the completions. -/
 @[simp]
