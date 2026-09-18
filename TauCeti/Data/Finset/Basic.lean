@@ -18,7 +18,7 @@ import Mathlib.Tactic.Ring
 
 * `TauCeti.product_union_eq_union_product` rearranges a union of products of finsets.
 * `TauCeti.card_nonempty_finset` counts the nonempty finsets of a finite type.
-* `TauCeti.sum_powerset_neg_one_pow_mul_eq_zero` pairs subsets that differ by one element
+* `Finset.sum_powerset_neg_one_pow_mul_eq_zero` pairs subsets that differ by one element
   to cancel a signed sum.
 * `TauCeti.sum_piecewise_eq_sum_update_of_card_eq_succ` reindexes a sum of `Finset.piecewise` terms
   over the subsets of size one less than `card ι` as a sum of `Function.update` terms over `ι`. It
@@ -52,6 +52,10 @@ theorem card_nonempty_finset {ι : Type*} [Finite ι] :
       Fintype.card_finset]
   rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, h]
 
+end TauCeti
+
+namespace Finset
+
 /-- **A telescoping signed sum over the subsets of `P` vanishes.** If, for each `i ∈ P`, the
 summand `g i` changes by `h i` when `i` is adjoined to a set not containing it, then
 `∑_{T ⊆ P} (-1)^{|T|} (∑_{i ∈ P} g i T + ∑_{i ∈ T} h i T) = 0`: for fixed `i`, the sets `T ∌ i`
@@ -73,6 +77,10 @@ theorem sum_powerset_neg_one_pow_mul_eq_zero {ι R : Type*} [DecidableEq ι] [Co
   simp only [hit, Finset.mem_insert_self, ↓reduceIte, Finset.card_insert_of_notMem hit,
     hstep i hi t ht]
   ring
+
+end Finset
+
+namespace TauCeti
 
 /-- The underlying `Finset` of `Set.powersetCard.ofSingleton a` is `{a}`. Mathlib states
 `ofSingleton` by its defining data rather than through a coercion lemma, so name the one step of

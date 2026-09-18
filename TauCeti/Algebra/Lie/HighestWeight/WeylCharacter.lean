@@ -253,7 +253,8 @@ theorem casimirScalar_eq_of_coeff_formalCharacter_mul_weylDenominator_ne_zero {c
   -- the Freudenthal string sums cancel against the root pairings, telescoping along each root
   have hB : ∑ T ∈ P.powerset, (-1 : K) ^ T.card *
       (∑ i ∈ P, str i (chi + σ T) + ∑ i ∈ T, F i T) = 0 :=
-    sum_powerset_neg_one_pow_mul_eq_zero P (fun i T ↦ str i (chi + σ T)) F fun i _ t ht ↦ by
+    Finset.sum_powerset_neg_one_pow_mul_eq_zero P (fun i T ↦ str i (chi + σ T)) F
+      fun i _ t ht ↦ by
       have hit : i ∉ t := fun h ↦ Finset.notMem_erase i P (Finset.mem_powerset.mp ht h)
       have hσ : chi + σ (insert i t) = chi + σ t + ((i : Weight K H L) : Dual K H) := by
         simp only [σ, Finset.sum_insert hit]
