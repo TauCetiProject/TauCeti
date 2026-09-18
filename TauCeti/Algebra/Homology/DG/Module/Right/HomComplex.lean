@@ -207,7 +207,6 @@ def dgRightModuleHomComplex (hM : IsDGRightModule h ℳ dM)
     (fun p ↦ ModuleCat.hom_ext <| dgRightModuleCochains.differential_comp_self p)
 
 /-- The degree-`p` term of the Hom complex is the module of degree-`p` homogeneous cochains. -/
-@[simp]
 theorem dgRightModuleHomComplex_X (hM : IsDGRightModule h ℳ dM)
     (hN : IsDGRightModule h ℳN dN) (p : ℤ) :
     (dgRightModuleHomComplex hM hN).X p = ModuleCat.of R
