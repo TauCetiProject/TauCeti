@@ -32,7 +32,8 @@ the twenty-four tripled weights triality acts by
 `wt (π x) (σ i) = wt x i`. That equivariance is the weight-level hypothesis of the
 numbered-symmetry construction on a Kostant toral-closure carrier; its remaining inputs, a linear
 automorphism of the module intertwining the Serre root generators along the permutation and
-acting monomially on the lattice basis, are not constructed here.
+acting monomially on the lattice basis, are supplied in
+`TauCeti.Algebra.Lie.D4.Tripled.Triality`, which builds the triality automorphism of the carrier.
 
 The character by which the split torus rescales a numbered root subgroup is
 `TauCeti.TypeDStd.rootGeneratorWeight`, a row of the type-`D₄` Cartan matrix, identified with the

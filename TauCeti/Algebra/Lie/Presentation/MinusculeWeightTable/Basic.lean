@@ -36,7 +36,9 @@ the reflection equation reads `wt (s_i a) j = wt a j - wt a i * CM i j`.
   `TauCeti.MinusculeWeightTable.ext` reducing equality of tables to equality of their Cartan
   matrices and their weights.
 * `TauCeti.MinusculeWeightTable.Symmetry`: compatible permutations of the simple nodes and weight
-  indices, with derived equivariance laws for reflections and Chevalley generators.
+  indices, with derived equivariance laws for reflections and Chevalley generators, and
+  `TauCeti.MinusculeWeightTable.Symmetry.rootPerm` the permutation it induces on the positive and
+  negative simple-root indices.
 * `TauCeti.MinusculeWeightTable.raisingMatrix`, `loweringMatrix` and `cartanGeneratorMatrix`: the
   integral Chevalley generators the table names.
 * `TauCeti.MinusculeWeightTable.serreRepresentation`: the representation of the Serre presentation
@@ -229,6 +231,39 @@ theorem reflection_apply (i : B) (a : ι) :
   funext j
   rw [← S.nodePerm.apply_symm_apply j, T.weight_reflection, S.weight_apply,
     S.weight_apply, S.cartanMatrix_apply, S.weight_apply, T.weight_reflection]
+
+section RootPerm
+
+variable {T}
+
+/-- The permutation of the positive and negative simple-root indices induced by a table symmetry:
+its node permutation on both copies. -/
+def rootPerm : Equiv.Perm (B ⊕ B) :=
+  Equiv.Perm.sumCongr S.nodePerm S.nodePerm
+
+@[simp]
+theorem rootPerm_inl (i : B) : S.rootPerm (.inl i) = .inl (S.nodePerm i) :=
+  (rfl)
+
+@[simp]
+theorem rootPerm_inr (i : B) : S.rootPerm (.inr i) = .inr (S.nodePerm i) :=
+  (rfl)
+
+@[simp]
+theorem rootPerm_one : (1 : T.Symmetry).rootPerm = 1 := by
+  rw [rootPerm, one_nodePerm, Equiv.Perm.sumCongr_one]
+
+@[simp]
+theorem rootPerm_mul (R : T.Symmetry) : (S * R).rootPerm = S.rootPerm * R.rootPerm := by
+  rw [rootPerm, rootPerm, rootPerm, mul_nodePerm, Equiv.Perm.sumCongr_mul]
+
+@[simp]
+theorem rootPerm_pow (m : ℕ) : (S ^ m).rootPerm = S.rootPerm ^ m := by
+  induction m with
+  | zero => rw [pow_zero, pow_zero, rootPerm_one]
+  | succ m ih => rw [pow_succ, pow_succ, rootPerm_mul, ih]
+
+end RootPerm
 
 end Symmetry
 
