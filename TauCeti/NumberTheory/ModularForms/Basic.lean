@@ -30,9 +30,10 @@ cusps of `Γ'`, so one needs to know that `Γ` has no further cusps, which
 constructions are mutually inverse: the image of `M_k(Γ) → M_k(Γ')` is exactly the
 `Γ`-invariant part of `M_k(Γ')` (`ModularForm.mem_range_ofLeₗ_iff`).
 
-Translation by an integral determinant-one matrix is packaged as the linear map
-`ModularForm.translateSLₗ`. General `GL₂(ℝ)` translation is only semilinear because it may apply
-complex conjugation, whereas an `SL₂(ℤ)` matrix acts `ℂ`-linearly.
+Translation by a positive-determinant matrix is packaged as the linear map
+`ModularForm.translateₗ`. General `GL₂(ℝ)` translation is only semilinear because a
+negative-determinant matrix applies complex conjugation, whereas a positive-determinant matrix
+acts `ℂ`-linearly.
 
 The first group of lemmas was split out of the diamond-operator development ported from the
 AINTLIB `LeanModularForms` project
@@ -44,7 +45,8 @@ AINTLIB `LeanModularForms` project
   read as a form for a subgroup `Γ' ≤ Γ`.
 * `ModularForm.ofSlashInvariant`, `CuspForm.ofSlashInvariant`: a `Γ'`-form which is slash
   invariant under a group `Γ` all of whose cusps are cusps of `Γ'`, read as a form for `Γ`.
-* `ModularForm.translateSLₗ`: translation by an element of `SL₂(ℤ)` as a `ℂ`-linear map.
+* `ModularForm.translateₗ`: translation by a positive-determinant element of `GL₂(ℝ)` as a
+  `ℂ`-linear map.
 
 ## Main results
 
@@ -269,31 +271,32 @@ theorem _root_.SlashInvariantForm.slash_action_eqn_of_det_pos {F : Type*} [FunLi
     ← zpow_neg, ← zpow_neg, neg_neg, neg_sub]
   ring
 
-/-! ### Translation by integral determinant-one matrices -/
+/-! ### Translation by positive-determinant matrices -/
 
 namespace ModularForm
 
 variable {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ}
 
-/-- Translation by `γ ∈ SL₂(ℤ)` as a linear map on modular forms. -/
-noncomputable def translateSLₗ [Γ.HasDetOne] (γ : SL(2, ℤ)) :
-    ModularForm Γ k →ₗ[ℂ] ModularForm (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ) k where
-  toFun f := translate f (mapGL ℝ γ)
-  map_add' f g := by
+/-- Translation by `g ∈ GL₂(ℝ)` with `0 < det g` as a linear map on modular forms. -/
+noncomputable def translateₗ [Γ.HasDetOne] (g : GL (Fin 2) ℝ) (hg : 0 < g.det.val) :
+    ModularForm Γ k →ₗ[ℂ] ModularForm (ConjAct.toConjAct g⁻¹ • Γ) k where
+  toFun f := translate f g
+  map_add' f f' := by
     ext z
     -- `translate` is sealed; pass to the underlying slash action, whose additivity is public.
-    change ((⇑(f + g) : ℍ → ℂ) ∣[k] γ) z =
-      (((⇑f : ℍ → ℂ) ∣[k] γ) + ((⇑g : ℍ → ℂ) ∣[k] γ)) z
+    change ((⇑(f + f') : ℍ → ℂ) ∣[k] g) z =
+      (((⇑f : ℍ → ℂ) ∣[k] g) + ((⇑f' : ℍ → ℂ) ∣[k] g)) z
     rw [FunLike.coe_add, SlashAction.add_slash]
   map_smul' c f := by
     ext z
-    -- As above, expose only the underlying slash; `SL_smul_slash` supplies `ℂ`-linearity.
-    change ((⇑(c • f) : ℍ → ℂ) ∣[k] γ) z =
-      (c • ((⇑f : ℍ → ℂ) ∣[k] γ)) z
-    rw [FunLike.coe_smul, SL_smul_slash]
+    -- As above; for `0 < det g` the automorphism `σ g` in `smul_slash` is the identity.
+    change ((⇑(c • f) : ℍ → ℂ) ∣[k] g) z = (c • ((⇑f : ℍ → ℂ) ∣[k] g)) z
+    rw [FunLike.coe_smul, smul_slash]
+    simp only [σ, hg, ↓reduceIte, ContinuousAlgEquiv.refl_apply, Pi.smul_apply]
 
-lemma translateSLₗ_apply [Γ.HasDetOne] (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
-    translateSLₗ γ f = translate f (mapGL ℝ γ) := (rfl)
+lemma translateₗ_apply [Γ.HasDetOne] (g : GL (Fin 2) ℝ) (hg : 0 < g.det.val)
+    (f : ModularForm Γ k) :
+    translateₗ g hg f = translate f g := (rfl)
 
 end ModularForm
 
