@@ -46,6 +46,8 @@ The specialization to discrete subgroups, whose point stabilizers are finite, is
   multiplication by its derivative, that is, by its rotation.
 * `Matrix.SpecialLinearGroup.isElliptic_of_smul_eq_self_of_ne_one`: a matrix fixing a point of
   `ℍ` and nontrivial in `PSL(2, ℝ)` is elliptic.
+* `Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smul_eq_self`: a nontrivial
+  element of `PSL(2, ℝ)` fixes at most one point of `ℍ`.
 
 ## References
 
@@ -126,6 +128,15 @@ theorem eq_one_of_smul_eq_self_of_smulDeriv_eq_one {q : PSL(2, ℝ)} {z : ℍ}
   refine (QuotientGroup.eq_one_iff g).mpr
     (Matrix.SpecialLinearGroup.mem_center_of_smul_eq_self_of_denom_sq_eq_one ?_ h)
   rwa [pslMk_smul] at hz
+
+/-- **A nontrivial Möbius transformation fixes at most one point of `ℍ`**: an element of
+`PSL(2, ℝ)` fixing two distinct points of the upper half-plane is the identity. -/
+theorem eq_one_of_smul_eq_self_of_smul_eq_self {q : PSL(2, ℝ)} {z w : ℍ} (hz : q • z = z)
+    (hw : q • w = w) (hwz : w ≠ z) : q = 1 := by
+  refine eq_one_of_smul_eq_self_of_smulDeriv_eq_one hz ?_
+  have h := UpperHalfPlane.discCoordinate_psl_smul_of_smul_eq_self hz w
+  rw [hw] at h
+  exact (mul_eq_right₀ (UpperHalfPlane.discCoordinate_eq_zero_iff.not.mpr hwz)).mp h.symm
 
 end Matrix.ProjectiveSpecialLinearGroup
 
