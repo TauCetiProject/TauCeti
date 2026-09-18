@@ -102,6 +102,9 @@ structure ClassFormation (F : Formation G) where
   inv_conj : ∀ (L : NormalLayer G) (g : G) (x : L.H F 2),
     inv (L.conjugate g) ((L.conjugateCohomologyIso F g 2).hom x) = inv L x
 
+attribute [simp] ClassFormation.range_inv ClassFormation.inv_restrict
+  ClassFormation.inv_infl ClassFormation.inv_conj
+
 namespace ClassFormation
 
 variable {F : Formation G}
@@ -167,11 +170,6 @@ theorem addOrderOf_fundamentalClass (cf : ClassFormation F) (L : NormalLayer G) 
 
 /-! ### Restriction, inflation and conjugation of fundamental classes -/
 
-private theorem nsmul_one_div_of_mul_eq {a b d : ℕ} (h : a * d = b) (hd : 0 < d) :
-    d • ((1 / b : ℚ) : AddCircle (1 : ℚ)) = ((1 / a : ℚ) : AddCircle (1 : ℚ)) := by
-  rw [AddCircle.nsmul_coe_period_div (1 : ℚ) (Dvd.intro_left _ h), ← h,
-    Nat.mul_div_cancel _ hd]
-
 /-- **Restriction of the fundamental class**: restricting `u_{K/F}` to an intermediate ground
 field `E` gives `u_{K/E}`. -/
 @[simp]
@@ -179,7 +177,8 @@ theorem fundamentalClass_restrict (cf : ClassFormation F)
     {small big : NormalLayer G} (T : LayerRestriction small big) :
     T.cohomologyRes F 2 (cf.fundamentalClass big) = cf.fundamentalClass small := by
   rw [eq_fundamentalClass_iff, cf.inv_restrict, inv_fundamentalClass]
-  exact nsmul_one_div_of_mul_eq T.degree_mul_relativeDegree T.relativeDegree_pos
+  exact AddCircle.nsmul_coe_period_div_of_mul_eq (1 : ℚ) T.degree_mul_relativeDegree
+    T.relativeDegree_pos
 
 /-- **Inflation of the fundamental class is scaled**: under a refinement of the top field from
 `K` to `L`, `inf u_{K/F} = [L : K] • u_{L/F}`. -/
@@ -190,7 +189,8 @@ theorem fundamentalClass_infl (cf : ClassFormation F)
       T.relativeDegree • cf.fundamentalClass new := by
   refine cf.inv_injective new ?_
   rw [cf.inv_infl, map_nsmul, inv_fundamentalClass, inv_fundamentalClass]
-  exact (nsmul_one_div_of_mul_eq T.degree_mul_relativeDegree T.relativeDegree_pos).symm
+  exact (AddCircle.nsmul_coe_period_div_of_mul_eq (1 : ℚ) T.degree_mul_relativeDegree
+    T.relativeDegree_pos).symm
 
 /-- **Conjugation of the fundamental class**: conjugation by `g` carries `u_{K/F}` to the
 fundamental class of the conjugate layer. -/
