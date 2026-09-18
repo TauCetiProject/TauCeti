@@ -72,12 +72,11 @@ theorem absoluteRamificationIndex_eq_natCastValuation (hp : (p : K) ≠ 0) :
       Units.mk0 (p : K) hpK := by
     ext
     simp
-  have h := normalizedValuation_algebraMap (K := ℚ_[p]) (L := K)
+  have h := toAdd_normalizedValuation_algebraMap (K := ℚ_[p]) (L := K)
     (Units.mk0 (p : ℚ_[p]) hp)
   rw [hmap, normalizedValuation_natCast K p hpK,
     normalizedValuation_natCast ℚ_[p] p hp, Padic.natCastValuation_self] at h
-  have := congrArg Multiplicative.toAdd h
-  simpa using this.symm
+  simpa using h.symm
 
 local instance : ValuativeExtension ℚ_[p] ℚ_[p] := ⟨fun a b ↦ by simp⟩
 
