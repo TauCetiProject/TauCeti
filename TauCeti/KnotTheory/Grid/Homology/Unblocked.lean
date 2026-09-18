@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import Mathlib.Algebra.MvPolynomial.Rename
-public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.Homology.Linear
+public import TauCeti.Algebra.MvPolynomial.AevalConstX
 public import TauCeti.KnotTheory.Grid.XHomotopy.Complex
 
 /-!
@@ -99,25 +98,6 @@ theorem smul_unblockedHomology_eq_rename_smul (f : Fin n → Fin n)
 
 namespace IsKnot
 
-variable (R) in
-/-- The evaluation `R[V₀, …, V_{n-1}] → R[U]` sending every variable to `U`. -/
-private noncomputable abbrev evalU (n : ℕ) : MvPolynomial (Fin n) R →ₐ[R] Polynomial R :=
-  MvPolynomial.aeval fun _ => Polynomial.X
-
-omit [CharP R 2] in
-/-- Renaming every variable to `V_c` is the evaluation `V_i ↦ U` followed by `U ↦ V_c`. -/
-private theorem rename_const_eq_aeval_evalU (c : Fin n) (p : MvPolynomial (Fin n) R) :
-    MvPolynomial.rename (fun _ => c) p = Polynomial.aeval (MvPolynomial.X c) (evalU R n p) := by
-  rw [← AlgHom.comp_apply]
-  congr 1
-  exact MvPolynomial.algHom_ext fun i => by simp
-
-omit [CharP R 2] in
-/-- On a nonempty set of columns the evaluation `V_i ↦ U` is surjective. -/
-private theorem evalU_surjective (c : Fin n) : Function.Surjective (evalU R n) := fun q =>
-  ⟨Polynomial.aeval (MvPolynomial.X c) q, by
-    rw [← Polynomial.aeval_algHom_apply, MvPolynomial.aeval_X, Polynomial.aeval_X_left_apply]⟩
-
 /-- On a knot grid every polynomial acts on the unblocked grid homology as its renaming with every
 variable replaced by one fixed variable `V_c`. -/
 private theorem smul_eq_rename_const_smul (hG : G.IsKnot) (c : Fin n)
@@ -135,8 +115,8 @@ theorem isTorsionBySet_unblockedHomology (hG : G.IsKnot) :
         Set (MvPolynomial (Fin n) R)) := by
   intro x ⟨p, hp⟩
   have : NeZero n := ⟨hG.ne_zero⟩
-  rw [smul_eq_rename_const_smul hG 0, rename_const_eq_aeval_evalU, (RingHom.mem_ker).mp hp,
-    map_zero, zero_smul]
+  rw [smul_eq_rename_const_smul hG 0, MvPolynomial.rename_const_eq_aeval_aeval_X,
+    (RingHom.mem_ker).mp hp, map_zero, zero_smul]
 
 variable (R) in
 /-- The `R[U]`-module structure on the unblocked grid homology of a knot grid: a polynomial `q`
@@ -145,21 +125,32 @@ acts as any `p ∈ R[V₀, …, V_{n-1}]` with `p(U, …, U) = q`, so `U` acts a
 noncomputable def unblockedHomologyModule (hG : G.IsKnot) :
     Module (Polynomial R) (G.unblockedHomology R) :=
   letI := (isTorsionBySet_unblockedHomology (R := R) hG).module
+  haveI : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hG.ne_zero⟩⟩
   Module.compHom _ (Ideal.quotientKerAlgEquivOfSurjective
-    (evalU_surjective (R := R) (n := n) ⟨0, Nat.pos_of_ne_zero hG.ne_zero⟩)).symm.toRingHom
+    (MvPolynomial.aeval_const_X_surjective (Fin n) R)).symm.toRingHom
+
+/-- The `R[U]`-action on the unblocked grid homology of a knot grid is the action of the
+quotient `R[V₀, …, V_{n-1}] ⧸ ker π` transported along `R[V₀, …, V_{n-1}] ⧸ ker π ≃ R[U]`. -/
+private theorem smul_unblockedHomology_def (hG : G.IsKnot)
+    (hπ : Function.Surjective
+      (MvPolynomial.aeval (R := R) fun _ : Fin n => (Polynomial.X : Polynomial R)))
+    (q : Polynomial R) (x : G.unblockedHomology R) :
+    letI := (isTorsionBySet_unblockedHomology (R := R) hG).module
+    letI := unblockedHomologyModule R hG
+    q • x = (Ideal.quotientKerAlgEquivOfSurjective hπ).symm q • x :=
+  rfl
 
 /-- On a knot grid, the evaluation `p(U, …, U)` of a polynomial acts on the unblocked grid
 homology as `p` does. -/
+@[simp]
 theorem aeval_smul_unblockedHomology (hG : G.IsKnot) (p : MvPolynomial (Fin n) R)
     (x : G.unblockedHomology R) :
     letI := unblockedHomologyModule R hG
     MvPolynomial.aeval (fun _ => (Polynomial.X : Polynomial R)) p • x = p • x := by
   let _ := (isTorsionBySet_unblockedHomology (R := R) hG).module
-  -- `Module.compHom` acts through the ring map by definition: `q` acts as the class `e.symm q`.
-  change (Ideal.quotientKerAlgEquivOfSurjective
-    (evalU_surjective (R := R) (n := n) ⟨0, Nat.pos_of_ne_zero hG.ne_zero⟩)).symm
-      (evalU R n p) • x = p • x
-  rw [Ideal.quotientKerAlgEquivOfSurjective_symm_apply, Module.IsTorsionBySet.mk_smul]
+  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hG.ne_zero⟩⟩
+  rw [smul_unblockedHomology_def hG (MvPolynomial.aeval_const_X_surjective (Fin n) R),
+    Ideal.quotientKerAlgEquivOfSurjective_symm_apply, Module.IsTorsionBySet.mk_smul]
 
 /-- On a knot grid, `U` acts on the unblocked grid homology as each variable `V_c`. -/
 theorem X_smul_unblockedHomology (hG : G.IsKnot) (c : Fin n) (x : G.unblockedHomology R) :
