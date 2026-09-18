@@ -13,7 +13,6 @@ import TauCeti.GroupTheory.GroupAction.OrbitCard
 import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.NumberField.Inertia
-import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.GaloisGroups.Stabilizer
 import TauCeti.NumberTheory.NumberField.Minpoly
 import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.DecompositionOrbits
