@@ -24,7 +24,8 @@ positive real number, and that sum is its real logarithm.
 
 ## Main results
 
-* `TauCeti.absNorm_rpow_neg_le_half`: `N(𝔭) ^ (-s) ≤ 1/2` for `1 ≤ s`.
+* `IsDedekindDomain.HeightOneSpectrum.absNorm_rpow_neg_le_half`: `N(𝔭) ^ (-s) ≤ 1/2`
+  for `1 ≤ s`.
 * `TauCeti.summable_neg_log_one_sub_absNorm_rpow`: `∑_𝔭 -log (1 - N(𝔭) ^ (-s))` converges for
   `1 < s`.
 * `TauCeti.dedekindZeta_ofReal_eq_exp_tsum_neg_log_one_sub`: for real `s > 1`, `ζ_K(s)` is the
@@ -48,7 +49,7 @@ public section
 
 open IsDedekindDomain NumberField
 
-namespace TauCeti
+namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {K : Type*} [Field K] [NumberField K]
 
@@ -56,12 +57,18 @@ variable {K : Type*} [Field K] [NumberField K]
 `N(𝔭) ≥ 2`. -/
 theorem absNorm_rpow_neg_le_half (P : HeightOneSpectrum (𝓞 K)) {s : ℝ} (hs : 1 ≤ s) :
     (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) ≤ 1 / 2 := by
-  have h2 := two_le_absNorm_asIdeal_real P
+  have h2 := TauCeti.two_le_absNorm_asIdeal_real P
   calc (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) ≤ (Ideal.absNorm P.asIdeal : ℝ) ^ (-1 : ℝ) :=
         Real.rpow_le_rpow_of_exponent_le (by linarith) (by linarith)
     _ ≤ 1 / 2 := by
         rw [Real.rpow_neg_one, one_div]
         exact inv_anti₀ (by norm_num) h2
+
+end IsDedekindDomain.HeightOneSpectrum
+
+namespace TauCeti
+
+variable {K : Type*} [Field K] [NumberField K]
 
 /-- For `1 < s`, the real logarithms `-log (1 - N(𝔭) ^ (-s))` of the Euler factors of the Dedekind
 zeta function are summable over the height-one primes. -/
@@ -69,11 +76,13 @@ theorem summable_neg_log_one_sub_absNorm_rpow {s : ℝ} (hs : 1 < s) :
     Summable fun P : HeightOneSpectrum (𝓞 K) ↦
       -Real.log (1 - (Ideal.absNorm P.asIdeal : ℝ) ^ (-s)) := by
   refine ((summable_absNorm_rpow_primes_of_one_lt hs).mul_left 2).of_nonneg_of_le
-    (fun P ↦ (Real.rpow_nonneg (Nat.cast_nonneg _) _).trans
-      (Real.le_neg_log_one_sub (by linarith [absNorm_rpow_neg_le_half P hs.le]))) (fun P ↦ ?_)
+    (fun P ↦ (Real.rpow_nonneg (Nat.cast_nonneg _) _).trans (by
+      have hpos : 0 < 1 - (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) := by
+        linarith [P.absNorm_rpow_neg_le_half hs.le]
+      linarith [Real.log_le_sub_one_of_pos hpos])) (fun P ↦ ?_)
   -- On `[0, 1/2]`, `x + 2 x ^ 2 ≤ 2 x`.
   have hx0 : 0 ≤ (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) := by positivity
-  have hx := absNorm_rpow_neg_le_half P hs.le
+  have hx := P.absNorm_rpow_neg_le_half hs.le
   nlinarith [Real.neg_log_one_sub_le_add_two_mul_sq hx0 hx]
 
 /-- **The real Euler product of the Dedekind zeta function in exponential form.** For real
@@ -97,7 +106,7 @@ theorem dedekindZeta_ofReal_eq_exp_tsum_neg_log_one_sub {s : ℝ} (hs : 1 < s) :
   congr 1
   refine tsum_congr fun P ↦ ?_
   have hpos : 0 ≤ 1 - (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) := by
-    linarith [absNorm_rpow_neg_le_half P hs.le]
+    linarith [P.absNorm_rpow_neg_le_half hs.le]
   rw [Complex.ofReal_neg, Complex.ofReal_log hpos, MultiplicativeIdealWeight.one_apply,
     ite_eq_right P.ne_bot]
   push_cast [Complex.ofReal_cpow (Nat.cast_nonneg _)]

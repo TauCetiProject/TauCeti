@@ -13,7 +13,6 @@ import all Mathlib.NumberTheory.NumberField.DirichletDensity
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.Analysis.SpecialFunctions.Log.OneDivSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.DedekindZeta
 import TauCeti.Topology.Algebra.Order.Field
 
@@ -86,7 +85,10 @@ theorem primeIdealZetaSum_univ_le_log_dedekindZeta_re {s : ℝ} (hs : 1 < s) :
       Real.log (dedekindZeta K s).re := by
   rw [log_dedekindZeta_re_eq_tsum_neg_log_one_sub hs, Set.primeIdealZetaSum_univ]
   exact (summable_absNorm_rpow_primes_of_one_lt hs).tsum_le_tsum
-    (fun P ↦ Real.le_neg_log_one_sub (by linarith [absNorm_rpow_neg_le_half P hs.le]))
+    (fun P ↦ by
+      have hpos : 0 < 1 - (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) := by
+        linarith [P.absNorm_rpow_neg_le_half hs.le]
+      linarith [Real.log_le_sub_one_of_pos hpos])
     (summable_neg_log_one_sub_absNorm_rpow hs)
 
 /-- **`log ζ_K(s)` exceeds the prime sum by at most `2 P(2)`.** For real `s > 1`, the real
@@ -103,13 +105,14 @@ theorem log_dedekindZeta_re_le_primeIdealZetaSum_univ_add {s : ℝ} (hs : 1 < s)
   -- Termwise, `-log (1 - x) ≤ x + 2 x ^ 2` and `x ^ 2 = N(𝔭) ^ (-2 s) ≤ N(𝔭) ^ (-2)`.
   refine (summable_neg_log_one_sub_absNorm_rpow hs).tsum_le_tsum (fun P ↦ ?_)
     (hsum.add (hsum2.mul_left 2))
-  have hN : (1 : ℝ) ≤ Ideal.absNorm P.asIdeal := by linarith [two_le_absNorm_asIdeal_real P]
+  have hN : (1 : ℝ) ≤ Ideal.absNorm P.asIdeal := by
+    exact_mod_cast Nat.one_le_iff_ne_zero.mpr ((Ideal.absNorm_ne_zero_iff _).mpr inferInstance)
   have hsq : ((Ideal.absNorm P.asIdeal : ℝ) ^ (-s)) ^ 2 ≤
       (Ideal.absNorm P.asIdeal : ℝ) ^ (-2 : ℝ) := by
     rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
     exact Real.rpow_le_rpow_of_exponent_le hN (by push_cast; linarith)
   have h :=
-    Real.neg_log_one_sub_le_add_two_mul_sq (by positivity) (absNorm_rpow_neg_le_half P hs.le)
+    Real.neg_log_one_sub_le_add_two_mul_sq (by positivity) (P.absNorm_rpow_neg_le_half hs.le)
   linarith
 
 /-! ### The residue and the logarithmic normalization -/
