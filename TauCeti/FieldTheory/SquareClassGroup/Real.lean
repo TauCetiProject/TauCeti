@@ -20,8 +20,8 @@ form.
 ## Main results
 
 * `Units.squareClass_eq_zero_iff_pos`: a real unit has trivial square class iff it is positive.
-* `TauCeti.squareClass_eq_squareClass_neg_one_of_neg`: every negative real unit has the square
-  class of `-1`.
+* `Units.squareClass_eq_squareClass_neg_one_iff_neg`: a real unit has the square class of `-1`
+  iff it is negative.
 * `TauCeti.sum_squareClass_eq_ncard_nsmul`: the square classes of a finite family of real units
   add up to the number of negative members times the class of `-1`.
 * `TauCeti.nsmul_squareClass_neg_one_eq_zero_iff_even`: `n • [-1]` vanishes in the real
@@ -39,15 +39,19 @@ theorem squareClass_eq_zero_iff_pos (u : ℝˣ) : squareClass u = 0 ↔ 0 < (u :
   rw [squareClass_eq_zero_iff, ← isSquare_units_val_iff, Real.isSquare_iff]
   exact ⟨fun h ↦ lt_of_le_of_ne h (Units.ne_zero u).symm, le_of_lt⟩
 
+/-- A real unit has the square class of `-1` exactly when it is negative. -/
+@[simp]
+theorem squareClass_eq_squareClass_neg_one_iff_neg (u : ℝˣ) :
+    squareClass u = squareClass (-1 : ℝˣ) ↔ (u : ℝ) < 0 := by
+  rw [squareClass_eq_iff_isSquare_mul, ← isSquare_units_val_iff, Real.isSquare_iff]
+  simp only [Units.val_neg, mul_neg, mul_one]
+  constructor
+  · exact fun h ↦ lt_of_le_of_ne (neg_nonneg.mp h) (Units.ne_zero u)
+  · exact fun h ↦ neg_nonneg.mpr h.le
+
 end Units
 
 namespace TauCeti
-
-/-- A negative real unit has the square class of `-1`. -/
-theorem squareClass_eq_squareClass_neg_one_of_neg {u : ℝˣ} (hu : (u : ℝ) < 0) :
-    squareClass u = squareClass (-1 : ℝˣ) := by
-  rw [squareClass_eq_iff_isSquare_mul, ← isSquare_units_val_iff, Real.isSquare_iff]
-  simpa using hu.le
 
 /-- The `n`-th multiple of the square class of `-1` in the real square-class group vanishes
 exactly when `n` is even. -/
@@ -68,7 +72,7 @@ theorem sum_squareClass_eq_ncard_nsmul {ι : Type*} [Fintype ι] (w : ι → ℝ
   have hterm : ∀ i, squareClass (w i) =
       if (w i : ℝ) < 0 then squareClass (-1 : ℝˣ) else 0 := fun i ↦ by
     split_ifs with hi
-    · exact squareClass_eq_squareClass_neg_one_of_neg hi
+    · exact (Units.squareClass_eq_squareClass_neg_one_iff_neg _).mpr hi
     · exact (Units.squareClass_eq_zero_iff_pos _).mpr
         (lt_of_le_of_ne (not_lt.mp hi) (Units.ne_zero (w i)).symm)
   rw [Finset.sum_congr rfl fun i _ ↦ hterm i, Finset.sum_ite, Finset.sum_const_zero, add_zero,
