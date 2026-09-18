@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
 public import TauCeti.GroupTheory.Index.Basic
+public import TauCeti.GroupTheory.Coset.Basic
 public import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
 public import Mathlib.Topology.Algebra.OpenSubgroup
 
@@ -326,61 +327,6 @@ end Topological
 
 /-! ### Transitivity -/
 
-private noncomputable def subgroupOfQuotientEquiv (W : Subgroup G) (hUW : U ≤ W) :
-    (U.subgroupOf W) ⧸ (V.subgroupOf W).subgroupOf (U.subgroupOf W) ≃
-      U ⧸ V.subgroupOf U :=
-  Quotient.congr (Subgroup.subgroupOfEquivOfLe hUW).toEquiv fun x y ↦ by
-    rw [QuotientGroup.leftRel_apply, QuotientGroup.leftRel_apply]
-    rfl
-
-private theorem finiteIndexSubgroupOf (W : Subgroup G) (hUW : U ≤ W)
-    [(V.subgroupOf U).FiniteIndex] :
-    ((V.subgroupOf W).subgroupOf (U.subgroupOf W)).FiniteIndex := by
-  let _ : Finite ((U.subgroupOf W) ⧸
-      (V.subgroupOf W).subgroupOf (U.subgroupOf W)) :=
-    Finite.of_equiv (U ⧸ V.subgroupOf U) (subgroupOfQuotientEquiv G U V W hUW).symm
-  exact Subgroup.finiteIndex_of_finite_quotient
-
-private theorem finiteIndexTrans (W : Subgroup G) (hUW : U ≤ W)
-    [(U.subgroupOf W).FiniteIndex] [(V.subgroupOf U).FiniteIndex] :
-    (V.subgroupOf W).FiniteIndex := by
-  let _ := finiteIndexSubgroupOf G U V W hUW
-  exact Subgroup.finiteIndex_of_finiteIndex_subgroupOf
-    (V.subgroupOf W) (U.subgroupOf W)
-
-private theorem sum_subgroupOfQuotient (W : Subgroup G) (hUW : U ≤ W)
-    [Fintype ((U.subgroupOf W) ⧸ (V.subgroupOf W).subgroupOf (U.subgroupOf W))]
-    [Fintype (U ⧸ V.subgroupOf U)] (m : M) (hm : ∀ v ∈ V, v • m = m) :
-    ∑ q : (U.subgroupOf W) ⧸ (V.subgroupOf W).subgroupOf (U.subgroupOf W),
-        ((q.out : U.subgroupOf W) : G) • m =
-      ∑ q : U ⧸ V.subgroupOf U, (q.out : G) • m := by
-  let e := subgroupOfQuotientEquiv G U V W hUW
-  rw [← e.sum_comp]
-  apply Finset.sum_congr rfl
-  intro q _
-  let eU := Subgroup.subgroupOfEquivOfLe hUW
-  have hq : QuotientGroup.mk (s := V.subgroupOf U) (eU q.out) =
-      QuotientGroup.mk (s := V.subgroupOf U) ((e q).out : U) := by
-    calc
-      QuotientGroup.mk (s := V.subgroupOf U) (eU q.out) = e q := by
-        change e (QuotientGroup.mk q.out) = e q
-        exact congrArg e (Quotient.out_eq' q)
-      _ = QuotientGroup.mk (s := V.subgroupOf U) ((e q).out : U) :=
-        (Quotient.out_eq' (e q)).symm
-  rw [QuotientGroup.eq] at hq
-  have hv : ((eU q.out : U) : G)⁻¹ * ((e q).out : G) ∈ V := hq
-  calc
-    ((q.out : U.subgroupOf W) : G) • m =
-        ((q.out : U.subgroupOf W) : G) •
-          (((eU q.out : U) : G)⁻¹ * ((e q).out : G)) • m := by
-            rw [hm _ hv]
-    _ = ((e q).out : G) • m := by
-      rw [← mul_smul]
-      congr 1
-      change ((eU q.out : U) : G) *
-        (((eU q.out : U) : G)⁻¹ * ((e q).out : G)) = _
-      simp
-
 /-- **Transitivity of degree-zero corestriction.** For subgroups `V ≤ U ≤ G` with `V` of finite
 index in `U` and `U` of finite index in `G`, `cor⁰_V^G = cor⁰_U^G ∘ cor⁰_V^U`. -/
 theorem explicitCor0_trans [U.FiniteIndex] [(V.subgroupOf U).FiniteIndex] :
@@ -402,8 +348,8 @@ theorem explicitCor0_trans [U.FiniteIndex] [(V.subgroupOf U).FiniteIndex] :
   exact sum_compositeTransversal G M U V hVU t Quotient.out_eq s (m : M)
 
 private theorem finsum_smul_quotient_trans (hVU : V ≤ U) (W : Subgroup G) (hUW : U ≤ W)
-    [Finite (W ⧸ V.subgroupOf W)] [Finite (W ⧸ U.subgroupOf W)]
-    [Finite (U ⧸ V.subgroupOf U)] (m : M) (hm : ∀ v ∈ V, v • m = m) :
+    [(U.subgroupOf W).FiniteIndex] [(V.subgroupOf U).FiniteIndex]
+    [(V.subgroupOf W).FiniteIndex] (m : M) (hm : ∀ v ∈ V, v • m = m) :
     ∑ᶠ q : W ⧸ V.subgroupOf W, (q.out : G) • m =
       ∑ᶠ q : W ⧸ U.subgroupOf W, (q.out : G) •
         (∑ᶠ r : U ⧸ V.subgroupOf U, (r.out : G) • m) := by
@@ -411,19 +357,22 @@ private theorem finsum_smul_quotient_trans (hVU : V ≤ U) (W : Subgroup G) (hUW
   let VW := V.subgroupOf W
   have hVWUW : VW ≤ UW := fun v hv ↦ hVU hv
   let mVW : H0 VW M := ⟨m, fun v ↦ hm v (Subgroup.mem_subgroupOf.mp v.2)⟩
-  let _ : Finite (UW ⧸ VW.subgroupOf UW) :=
-    Finite.of_injective (subgroupOfQuotientEquiv G U V W hUW)
-      (subgroupOfQuotientEquiv G U V W hUW).injective
-  let _ : UW.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
-  let _ : (VW.subgroupOf UW).FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
-  let _ : (V.subgroupOf W).FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
-  let _ : (U.subgroupOf W).FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
-  let _ : (V.subgroupOf U).FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  let _ : (VW.subgroupOf UW).FiniteIndex :=
+    ⟨(Subgroup.relIndex_subgroupOf hUW).trans_ne Subgroup.FiniteIndex.index_ne_zero⟩
   have h := congrArg (fun f ↦ f mVW) (explicitCor0_trans W M UW VW hVWUW)
+  -- Transport the inner sum over cosets of `VW` in `UW` to one over cosets of `V` in `U`.
+  let e := Subgroup.quotientSubgroupOfSubgroupOfEquiv (H := V) hUW
   have hsum :
       ∑ r : UW ⧸ VW.subgroupOf UW, ((r.out : UW) : G) • m =
         ∑ r : U ⧸ V.subgroupOf U, (r.out : G) • m := by
-    exact sum_subgroupOfQuotient G M U V W hUW m hm
+    rw [← e.sum_comp]
+    refine Finset.sum_congr rfl fun r _ ↦ ?_
+    -- The representative of `e r` differs from that of `r` by an element of `V`.
+    obtain ⟨v, hv⟩ := QuotientGroup.mk_out_eq_mul (V.subgroupOf U)
+      (Subgroup.subgroupOfEquivOfLe hUW r.out)
+    rw [← QuotientGroup.out_eq' r, Subgroup.quotientSubgroupOfSubgroupOfEquiv_apply_mk, hv,
+      QuotientGroup.out_eq' r, Subgroup.coe_mul, mul_smul,
+      hm _ (Subgroup.mem_subgroupOf.mp v.2), Subgroup.subgroupOfEquivOfLe_apply_coe]
   rw [finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype,
     finsum_eq_sum_of_fintype]
   calc
@@ -441,17 +390,10 @@ relative corestriction from `V` to `W` is the composite of the relative corestri
 `U`. -/
 theorem explicitCor0Le_trans (W : Subgroup G) (hUW : U ≤ W)
     [(U.subgroupOf W).FiniteIndex] [(V.subgroupOf U).FiniteIndex] :
-    haveI : (V.subgroupOf W).FiniteIndex := by
-      let _ : Finite ((U.subgroupOf W) ⧸
-          (V.subgroupOf W).subgroupOf (U.subgroupOf W)) :=
-        Finite.of_equiv (U ⧸ V.subgroupOf U) (subgroupOfQuotientEquiv G U V W hUW).symm
-      let _ : ((V.subgroupOf W).subgroupOf (U.subgroupOf W)).FiniteIndex :=
-        Subgroup.finiteIndex_of_finite_quotient
-      exact Subgroup.finiteIndex_of_finiteIndex_subgroupOf
-        (V.subgroupOf W) (U.subgroupOf W)
+    haveI := Subgroup.finiteIndex_subgroupOf_trans V U W
     explicitCor0Le G M W V (hVU.trans hUW) =
       (explicitCor0Le G M W U hUW).comp (explicitCor0Le G M U V hVU) := by
-  let _ := finiteIndexTrans G U V W hUW
+  have := Subgroup.finiteIndex_subgroupOf_trans V U W
   ext m
   simp only [coe_explicitCor0Le, AddMonoidHom.comp_apply, Subgroup.smul_def]
   simpa only [finsum_eq_sum_of_fintype] using

@@ -115,14 +115,6 @@ theorem groundNorm_trans {a b c : NormalLayer G} (T : LayerRestriction a b)
   ext x
   rw [groundNorm_apply_coe, AddMonoidHom.comp_apply, groundNorm_apply_coe,
     groundNorm_apply_coe]
-  change
-    ∑ᶠ q : c.ground.toSubgroup ⧸ a.ground.toSubgroup.subgroupOf c.ground.toSubgroup,
-        (q.out : G) • (x : F.toRep.V) =
-      ∑ᶠ q : c.ground.toSubgroup ⧸ b.ground.toSubgroup.subgroupOf c.ground.toSubgroup,
-        (q.out : G) •
-          (∑ᶠ r : b.ground.toSubgroup ⧸
-            a.ground.toSubgroup.subgroupOf b.ground.toSubgroup,
-              (r.out : G) • (x : F.toRep.V))
   let m : ContCohomology.H0 a.ground.toSubgroup F.toRep.V :=
     ⟨x, (FixedPoints.mem_addSubgroup a.ground.toSubgroup F.toRep.V x).2 fun u ↦
       F.mem_level.1 x.2 u u.2⟩
@@ -131,8 +123,8 @@ theorem groundNorm_trans {a b c : NormalLayer G} (T : LayerRestriction a b)
       a.ground.toSubgroup T.ground_toSubgroup_le c.ground.toSubgroup
       T'.ground_toSubgroup_le)
   simpa only [ContCohomology.coe_explicitCor0Le, AddMonoidHom.comp_apply,
-    Subgroup.smul_def, finsum_eq_sum_of_fintype] using
-      congrArg Subtype.val h
+    Subgroup.smul_def, finsum_eq_sum_of_fintype,
+    Representation.ofDistribMulAction_apply_apply] using congrArg Subtype.val h
 
 end LayerRestriction
 
