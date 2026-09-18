@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.Stabilizer
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Elliptic
 public import TauCeti.Topology.MetricSpace.ProperlyDiscontinuous
 

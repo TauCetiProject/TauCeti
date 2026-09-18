@@ -252,6 +252,7 @@ theorem discCoordinate_smul_eq_rotation_smul (Γ : Subgroup PSL(2, ℝ)) (z : �
 
 /-- Two points of `ℍ` lie in the same orbit of a finite stabilizer of `z` of order `m` exactly
 when their disc coordinates centred at `z` have the same `m`-th power. -/
+@[simp]
 theorem mem_orbit_stabilizer_iff_discCoordinate_pow_eq_pow (Γ : Subgroup PSL(2, ℝ)) (z : ℍ)
     [Finite (stabilizer Γ z)] {τ σ : ℍ} :
     τ ∈ orbit (stabilizer Γ z) σ ↔
