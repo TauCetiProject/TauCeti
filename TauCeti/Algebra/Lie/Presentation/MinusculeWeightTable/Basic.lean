@@ -35,6 +35,8 @@ the reflection equation reads `wt (s_i a) j = wt a j - wt a i * CM i j`.
 * `TauCeti.MinusculeWeightTable`: the weight-table data and the conditions on it, with
   `TauCeti.MinusculeWeightTable.ext` reducing equality of tables to equality of their Cartan
   matrices and their weights.
+* `TauCeti.MinusculeWeightTable.Symmetry`: compatible permutations of the simple nodes and weight
+  indices, with derived equivariance laws for reflections and Chevalley generators.
 * `TauCeti.MinusculeWeightTable.raisingMatrix`, `loweringMatrix` and `cartanGeneratorMatrix`: the
   integral Chevalley generators the table names.
 * `TauCeti.MinusculeWeightTable.serreRepresentation`: the representation of the Serre presentation
@@ -114,6 +116,121 @@ theorem ext {T₁ T₂ : MinusculeWeightTable B ι} (hcartan : T₁.cartanMatrix
   subst hweight
   subst hreflection
   rfl
+
+/-! ## Symmetries -/
+
+/-- **A symmetry of a minuscule weight table.** It consists of compatible permutations of the
+simple nodes and the weight indices which preserve the Cartan matrix and the weight coordinates.
+The reflection permutations and Chevalley-generator matrices are then equivariant automatically. -/
+structure Symmetry where
+  /-- The induced permutation of the simple nodes. -/
+  nodePerm : Equiv.Perm B
+  /-- The induced permutation of the weight indices. -/
+  indexPerm : Equiv.Perm ι
+  /-- The weight coordinates are equivariant for the two permutations. -/
+  weight_apply : ∀ a i, T.weight (indexPerm a) (nodePerm i) = T.weight a i
+  /-- The node permutation preserves the Cartan matrix. -/
+  cartanMatrix_apply :
+    ∀ i j, T.cartanMatrix (nodePerm i) (nodePerm j) = T.cartanMatrix i j
+
+namespace Symmetry
+
+/-- Two symmetries of a minuscule weight table are equal when their node and weight-index
+permutations are equal. -/
+@[ext]
+theorem ext {S R : T.Symmetry} (hnode : S.nodePerm = R.nodePerm)
+    (hindex : S.indexPerm = R.indexPerm) : S = R := by
+  cases S
+  cases R
+  cases hnode
+  cases hindex
+  rfl
+
+/-- A symmetry is determined by its pair of node and weight-index permutations. -/
+theorem permPair_injective :
+    Function.Injective (fun S : T.Symmetry => (S.nodePerm, S.indexPerm)) := by
+  intro S R h
+  exact Symmetry.ext (T := T) (congrArg Prod.fst h) (congrArg Prod.snd h)
+
+/-- The identity symmetry of a minuscule weight table. -/
+def identity : T.Symmetry where
+  nodePerm := 1
+  indexPerm := 1
+  weight_apply := by simp
+  cartanMatrix_apply := by simp
+
+/-- The composite of two symmetries of a minuscule weight table. -/
+def comp (S R : T.Symmetry) : T.Symmetry where
+  nodePerm := S.nodePerm * R.nodePerm
+  indexPerm := S.indexPerm * R.indexPerm
+  weight_apply a i := by
+    simp only [Equiv.Perm.mul_apply]
+    rw [S.weight_apply, R.weight_apply]
+  cartanMatrix_apply i j := by
+    simp only [Equiv.Perm.mul_apply]
+    rw [S.cartanMatrix_apply, R.cartanMatrix_apply]
+
+/-- The inverse of a symmetry of a minuscule weight table. -/
+def inverse (S : T.Symmetry) : T.Symmetry where
+  nodePerm := S.nodePerm⁻¹
+  indexPerm := S.indexPerm⁻¹
+  weight_apply a i := by
+    simpa only [Equiv.Perm.inv_def, Equiv.apply_symm_apply] using
+      (S.weight_apply (S.indexPerm.symm a) (S.nodePerm.symm i)).symm
+  cartanMatrix_apply i j := by
+    simpa only [Equiv.Perm.inv_def, Equiv.apply_symm_apply] using
+      (S.cartanMatrix_apply (S.nodePerm.symm i) (S.nodePerm.symm j)).symm
+
+instance instOne : One T.Symmetry := ⟨identity T⟩
+instance instMul : Mul T.Symmetry := ⟨comp T⟩
+instance instInv : Inv T.Symmetry := ⟨inverse T⟩
+
+@[simp]
+theorem one_nodePerm : (1 : T.Symmetry).nodePerm = 1 :=
+  (rfl)
+
+@[simp]
+theorem one_indexPerm : (1 : T.Symmetry).indexPerm = 1 :=
+  (rfl)
+
+@[simp]
+theorem mul_nodePerm (S R : T.Symmetry) : (S * R).nodePerm = S.nodePerm * R.nodePerm :=
+  (rfl)
+
+@[simp]
+theorem mul_indexPerm (S R : T.Symmetry) : (S * R).indexPerm = S.indexPerm * R.indexPerm :=
+  (rfl)
+
+@[simp]
+theorem inv_nodePerm (S : T.Symmetry) : S⁻¹.nodePerm = S.nodePerm⁻¹ :=
+  (rfl)
+
+@[simp]
+theorem inv_indexPerm (S : T.Symmetry) : S⁻¹.indexPerm = S.indexPerm⁻¹ :=
+  (rfl)
+
+/-- The symmetries of a minuscule weight table form a group under simultaneous composition of
+their node and weight-index permutations. -/
+instance : Group T.Symmetry where
+  mul_assoc S R U := by
+    apply permPair_injective (T := T)
+    exact Prod.ext (mul_assoc _ _ _) (mul_assoc _ _ _)
+  one_mul S := permPair_injective (T := T) (by simp)
+  mul_one S := permPair_injective (T := T) (by simp)
+  inv_mul_cancel S := permPair_injective (T := T) (by simp)
+
+variable (S : T.Symmetry)
+
+/-- A symmetry of a minuscule weight table intertwines its simple reflections. -/
+@[simp]
+theorem reflection_apply (i : B) (a : ι) :
+    T.reflection (S.nodePerm i) (S.indexPerm a) = S.indexPerm (T.reflection i a) := by
+  apply T.weight_injective
+  funext j
+  rw [← S.nodePerm.apply_symm_apply j, T.weight_reflection, S.weight_apply,
+    S.weight_apply, S.cartanMatrix_apply, S.weight_apply, T.weight_reflection]
+
+end Symmetry
 
 /-! ## The reflected weights -/
 
@@ -283,6 +400,62 @@ theorem cartanGeneratorMatrix_apply (i : B) (a b : ι) :
   · subst b
     rfl
   · rfl
+
+namespace Symmetry
+
+variable (S : T.Symmetry)
+
+/-- A table symmetry carries each raising matrix to the matrix at the image node, entrywise along
+the weight-index permutation. -/
+theorem raisingMatrix_apply (i : B) (a b : ι) :
+    T.raisingMatrix (S.nodePerm i) (S.indexPerm a) (S.indexPerm b) =
+      T.raisingMatrix i a b := by
+  simp only [T.raisingMatrix_apply, S.weight_apply, S.reflection_apply,
+    Equiv.apply_eq_iff_eq]
+
+/-- A table symmetry carries each lowering matrix to the matrix at the image node, entrywise along
+the weight-index permutation. -/
+theorem loweringMatrix_apply (i : B) (a b : ι) :
+    T.loweringMatrix (S.nodePerm i) (S.indexPerm a) (S.indexPerm b) =
+      T.loweringMatrix i a b := by
+  simp only [T.loweringMatrix_apply, S.weight_apply, S.reflection_apply,
+    Equiv.apply_eq_iff_eq]
+
+/-- A table symmetry carries each Cartan-generator matrix to the matrix at the image node,
+entrywise along the weight-index permutation. -/
+theorem cartanGeneratorMatrix_apply (i : B) (a b : ι) :
+    T.cartanGeneratorMatrix (S.nodePerm i) (S.indexPerm a) (S.indexPerm b) =
+      T.cartanGeneratorMatrix i a b := by
+  simp only [T.cartanGeneratorMatrix_apply, S.weight_apply, Equiv.apply_eq_iff_eq]
+
+/-- Reindexing a raising matrix by a table symmetry gives the raising matrix at the original
+node. -/
+@[simp]
+theorem raisingMatrix_submatrix (i : B) :
+    (T.raisingMatrix (S.nodePerm i)).submatrix S.indexPerm S.indexPerm =
+      T.raisingMatrix i := by
+  ext a b
+  exact Symmetry.raisingMatrix_apply (T := T) S i a b
+
+/-- Reindexing a lowering matrix by a table symmetry gives the lowering matrix at the original
+node. -/
+@[simp]
+theorem loweringMatrix_submatrix (i : B) :
+    (T.loweringMatrix (S.nodePerm i)).submatrix S.indexPerm S.indexPerm =
+      T.loweringMatrix i := by
+  ext a b
+  exact Symmetry.loweringMatrix_apply (T := T) S i a b
+
+/-- Reindexing a Cartan-generator matrix by a table symmetry gives the Cartan-generator matrix at
+the original node. -/
+@[simp]
+theorem cartanGeneratorMatrix_submatrix (i : B) :
+    (T.cartanGeneratorMatrix (S.nodePerm i)).submatrix S.indexPerm S.indexPerm =
+      T.cartanGeneratorMatrix i := by
+  ext a b
+  exact Symmetry.cartanGeneratorMatrix_apply (T := T) S i a b
+
+end Symmetry
 
 /-! ## The Serre relations -/
 

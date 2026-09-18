@@ -426,6 +426,19 @@ theorem continuous_trace_mul_coe {p : ℕ}
   simp only [← inner_eq_trace_mul]
   exact continuous_id.inner continuous_const
 
+/-- Reading off an entry of a symmetric matrix is continuous. -/
+theorem continuous_coe_apply {p : ℕ} (i j : Fin p) :
+    Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      (A : Matrix (Fin p) (Fin p) ℝ) i j :=
+  continuous_subtype_val.matrix_elem i j
+
+/-- Reading off an entry of a symmetric matrix is measurable. -/
+@[fun_prop]
+theorem measurable_coe_apply {p : ℕ} (i j : Fin p) :
+    Measurable fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      (A : Matrix (Fin p) (Fin p) ℝ) i j :=
+  (continuous_coe_apply i j).measurable
+
 /-- The exponential of a scalar multiple of the trace pairing is continuous. This is the
 measurability side condition of the exponential-moment computations on the symmetric
 subspace. -/

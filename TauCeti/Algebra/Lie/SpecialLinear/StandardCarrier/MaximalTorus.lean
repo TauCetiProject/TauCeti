@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.DeterminantOne
 
 import TauCeti.Data.Fin.Basic
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # The type A weight torus and its maximality on field-valued points

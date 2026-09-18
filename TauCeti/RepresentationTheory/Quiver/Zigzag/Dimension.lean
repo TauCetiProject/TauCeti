@@ -9,7 +9,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Finite
 public import Mathlib.LinearAlgebra.Basis.Prod
 public import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basis
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Decomposition
 
 /-!
 # Dimension of the componentwise zigzag algebra
@@ -19,14 +19,14 @@ component containing an edge uses the path-algebra quotient, whose vertex--arrow
 already available, while an isolated vertex uses the dual numbers.  Both cases have dimension
 twice the number of vertices plus twice the number of edges.
 
-Summing the component dimensions gives the uniform formula
+Counting the vertex–arrow–volume basis of the public algebra gives the uniform formula
 
 ```text
 dim_k Z_k(G) = 2 |V(G)| + 2 |E(G)|
 ```
 
 for every finite simple graph, including the empty graph and graphs with isolated vertices.  The
-proof counts vertices and oriented edges componentwise; this makes explicit why replacing the
+basis includes a volume at each isolated vertex; this makes explicit why replacing the
 coefficient ring by dual numbers on singleton components restores the missing volume class.
 
 ## Main results
@@ -135,24 +135,13 @@ section FiniteGraph
 
 variable [CommRing k] [Finite V]
 
-private noncomputable def zigzagAlgebraLinearEquiv :
-    (zigzagAlgebra k G).carrier ≃ₗ[k]
-      (∀ C : G.ConnectedComponent, zigzagComponentAlgebra k G C) :=
-  { toFun := fun x C => zigzagComponentProjection k G C x
-    invFun := zigzagAlgebraMk k G
-    left_inv := zigzagAlgebra.mk_projections k G
-    right_inv := fun _ => funext fun _ => zigzagComponentProjection_zigzagAlgebraMk k G _ _
-    map_add' := fun x y => funext fun C => (zigzagComponentProjection k G C).map_add x y
-    map_smul' := fun r x => funext fun C =>
-      (zigzagComponentProjection k G C).toLinearMap.map_smul r x }
-
 /-- The zigzag algebra of a finite graph is free over the coefficient ring. -/
 noncomputable instance instFreeZigzagAlgebra : Module.Free k (zigzagAlgebra k G) :=
-  Module.Free.of_equiv (zigzagAlgebraLinearEquiv k G).symm
+  Module.Free.of_equiv (zigzagAlgebraPiAlgEquiv k G).symm.toLinearEquiv
 
 /-- The zigzag algebra of a finite graph is finite over the coefficient ring. -/
 noncomputable instance instFiniteZigzagAlgebra : Module.Finite k (zigzagAlgebra k G) :=
-  Module.Finite.equiv (zigzagAlgebraLinearEquiv k G).symm
+  Module.Finite.equiv (zigzagAlgebraPiAlgEquiv k G).symm.toLinearEquiv
 
 variable [Nontrivial k] [Fintype V] [DecidableRel G.Adj]
 
@@ -163,39 +152,9 @@ volume class, while every undirected edge contributes its two orientations. -/
 theorem finrank_zigzagAlgebra :
     Module.finrank k (zigzagAlgebra k G) =
       2 * Fintype.card V + 2 * G.edgeFinset.card := by
-  classical
-  have hvertex : ∑ C : G.ConnectedComponent, Nat.card C = Nat.card V := by
-    rw [← Nat.card_sigma]
-    exact Nat.card_congr (Equiv.sigmaFiberEquiv G.connectedComponentMk)
-  let fiberEquiv (C : G.ConnectedComponent) :
-      C.toSimpleGraph.Dart ≃ {d : G.Dart // G.connectedComponentMk d.fst = C} :=
-    { toFun := fun d => ⟨⟨(d.fst.1, d.snd.1), d.adj⟩, d.fst.property⟩
-      invFun := fun d =>
-        ⟨(⟨d.1.fst, d.property⟩,
-          ⟨d.1.snd, C.mem_supp_of_adj_mem_supp d.property d.1.adj⟩), d.1.adj⟩
-      left_inv := fun d => by
-        apply Dart.ext
-        rfl
-      right_inv := fun d => by
-        apply Subtype.ext
-        apply Dart.ext
-        rfl }
-  have hdart :
-      ∑ C : G.ConnectedComponent, Nat.card C.toSimpleGraph.Dart = Nat.card G.Dart := by
-    let e : (Σ C : G.ConnectedComponent, C.toSimpleGraph.Dart) ≃ G.Dart :=
-      (Equiv.sigmaCongrRight fiberEquiv).trans (Equiv.sigmaFiberEquiv fun d : G.Dart =>
-        G.connectedComponentMk d.fst)
-    let _ (C : G.ConnectedComponent) : Finite C.toSimpleGraph.Dart :=
-      Finite.of_equiv {d : G.Dart // G.connectedComponentMk d.fst = C} (fiberEquiv C).symm
-    rw [← Nat.card_sigma]
-    exact Nat.card_congr e
-  -- `zigzagAlgebra` is opaque across the public import, so use its public projections and
-  -- reconstruction map to expose the dependent product to the standard finrank theorem.
-  change Module.finrank k (zigzagAlgebra k G).carrier = _
-  rw [(zigzagAlgebraLinearEquiv k G).finrank_eq, Module.finrank_pi_fintype]
-  simp_rw [finrank_zigzagComponentAlgebra k G]
-  rw [Finset.sum_add_distrib, ← Finset.mul_sum, hvertex, hdart, Nat.card_eq_fintype_card,
-    Nat.card_eq_fintype_card, G.dart_card_eq_twice_card_edges]
+  rw [Module.finrank_eq_card_basis (zigzagAlgebraBasis k G)]
+  simp only [ZigzagBasisIndex, Fintype.card_sum, G.dart_card_eq_twice_card_edges]
+  ring
 
 /-- The public zigzag algebra of the one-vertex graph has dimension two.  This is the dimension
 check for the `A₁` convention: its unique component is the dual numbers, not the coefficient
