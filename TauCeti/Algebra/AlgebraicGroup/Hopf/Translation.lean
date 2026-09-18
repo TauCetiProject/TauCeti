@@ -290,13 +290,12 @@ theorem height_kernel_eq_height_augmentation (g : WithConv (H →ₐ[k] k)) :
       (RingHom.ker (_root_.Bialgebra.counitAlgHom k H : H →+* k)).height := by
   have h : (RingHom.ker (_root_.Bialgebra.counitAlgHom k H : H →+* k)).comap
       (rightTranslationAlgEquiv g).toRingEquiv = RingHom.ker (g.ofConv : H →+* k) := by
-    change (RingHom.ker (_root_.Bialgebra.counitAlgHom k H).toRingHom).comap
-      (rightTranslationAlgEquiv g).toAlgHom.toRingHom = _
-    rw [rightTranslationAlgEquiv_toAlgHom, RingHom.comap_ker]
-    change RingHom.ker
-      (((_root_.Bialgebra.counitAlgHom k H).comp (rightTranslationAlgHom g)).toRingHom) = _
-    rw [counitAlgHom_comp_rightTranslationAlgHom]
-    rfl
+    rw [← Ideal.comap_coe (f := (rightTranslationAlgEquiv g).toRingEquiv)]
+    simpa only [RingHom.comap_ker, AlgHom.comp_toRingHom,
+      ← rightTranslationAlgEquiv_toAlgHom, AlgEquiv.toAlgHom_toRingHom,
+      AlgEquiv.toRingEquiv_toRingHom] using
+      congrArg (fun f : H →ₐ[k] k ↦ RingHom.ker (f : H →+* k))
+        (counitAlgHom_comp_rightTranslationAlgHom g)
   rw [← h]
   exact (rightTranslationAlgEquiv g).toRingEquiv.height_comap _
 
