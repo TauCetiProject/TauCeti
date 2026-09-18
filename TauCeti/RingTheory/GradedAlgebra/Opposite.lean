@@ -104,34 +104,50 @@ noncomputable instance instAlgebra (G : InternalGrading R A) : Algebra R (Graded
     } : GradedOpposite G ≃ Aᵐᵒᵖ).trans G.opposite.quadraticTwistEquiv.toEquiv
   Equiv.algebra R e
 
+/-- Addition in the transferred ring is inverse transport of addition in the target.  This
+isolates the definitional equality arising because the public instance must spell out the private
+transport equivalence. -/
+private theorem add_eq_transport (G : InternalGrading R A) (x y : GradedOpposite G) :
+    x + y = (transportEquiv G).symm (transportEquiv G x + transportEquiv G y) := rfl
+
+/-- Multiplication in the transferred ring is inverse transport of multiplication in the target. -/
+private theorem mul_eq_transport (G : InternalGrading R A) (x y : GradedOpposite G) :
+    x * y = (transportEquiv G).symm (transportEquiv G x * transportEquiv G y) := rfl
+
+/-- The transferred algebra map is inverse transport of the target algebra map. -/
+private theorem algebraMap_eq_transport (G : InternalGrading R A) (r : R) :
+    algebraMap R (GradedOpposite G) r =
+      (transportEquiv G).symm (algebraMap R Aᵐᵒᵖ r) := rfl
+
 /-- The transport equivalence is an algebra equivalence to the ordinary opposite. -/
 private noncomputable def transportAlgEquiv (G : InternalGrading R A) :
     GradedOpposite G ≃ₐ[R] Aᵐᵒᵖ where
   __ := transportEquiv G
   map_add' x y := by
-    change transportEquiv G ((transportEquiv G).symm
-      (transportEquiv G x + transportEquiv G y)) = _
+    rw [add_eq_transport]
     exact (transportEquiv G).apply_symm_apply _
   map_mul' x y := by
-    change transportEquiv G ((transportEquiv G).symm
-      (transportEquiv G x * transportEquiv G y)) = _
+    rw [mul_eq_transport]
     exact (transportEquiv G).apply_symm_apply _
   commutes' r := by
-    change transportEquiv G ((transportEquiv G).symm (algebraMap R Aᵐᵒᵖ r)) =
-      algebraMap R Aᵐᵒᵖ r
+    rw [algebraMap_eq_transport]
     exact (transportEquiv G).apply_symm_apply _
+
+/-- The algebra equivalence has the same underlying function as the transport equivalence. -/
+private theorem transportAlgEquiv_apply (G : InternalGrading R A) (x : GradedOpposite G) :
+    transportAlgEquiv G x = transportEquiv G x := rfl
 
 /-- The transport algebra equivalence sends a raw opposite element to its quadratic twist. -/
 @[simp]
 private theorem transportAlgEquiv_op (G : InternalGrading R A) (a : A) :
     transportAlgEquiv G (op G a) =
       G.opposite.quadraticTwist (MulOpposite.op a) := by
-  change transportEquiv G (op G a) = _
+  rw [transportAlgEquiv_apply]
   simp [transportEquiv]
 
 /-- Two elements of a graded opposite are equal if their underlying elements are equal. -/
 @[ext]
-theorem ext_unop (G : InternalGrading R A) {a b : GradedOpposite G}
+theorem ext (G : InternalGrading R A) {a b : GradedOpposite G}
     (h : unop G a = unop G b) : a = b := by
   rw [← op_unop G a, ← op_unop G b, h]
 
