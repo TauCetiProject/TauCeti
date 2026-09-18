@@ -30,9 +30,10 @@ defining `𝒪_X(D)`.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.exists_cartierDivisor_restrict_eq`: the local basis functions of a
-  rationally trivialized line bundle glue to a Cartier divisor;
-* `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.exists_coeff_eq_neg_ord`: the corresponding Weil
+* `TauCeti.AlgebraicGeometry.PicardGroup`: the group of line-bundle classes on the curve;
+* `TauCeti.AlgebraicGeometry.Scheme.Modules.exists_cartierDivisor_restrict_eq`: the local basis
+  functions of a rationally trivialized line bundle glue to a Cartier divisor;
+* `TauCeti.AlgebraicGeometry.Scheme.Modules.exists_coeff_eq_neg_ord`: the corresponding Weil
   divisor;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.isoSheafOfCoeffEq`: the isomorphism `L ≅ 𝒪_X(D)`
   through which the rational embedding of `L` factors (`isoSheafOfCoeffEq_hom_sheafι`);
@@ -59,20 +60,26 @@ universe u
 
 noncomputable section
 
+/-- The Picard group of a curve, represented by isomorphism classes of line bundles. The
+dimension bound is recorded in the type so that its group structure is canonical. -/
+@[expose] def PicardGroup (X : Scheme.{u}) (_hX : ∀ y : X, coheight y ≤ 1) :=
+  LineBundleClass X
+
 /-- Every point lies in the domain of a rank-one trivialization of a line bundle. -/
 private lemma exists_mem_trivialization {X : Scheme.{u}} (M : X.Modules)
     [SheafOfModules.isInvertible X M] (x : X) :
     ∃ (V : X.Opens) (_ : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V),
       x ∈ V := by
   let t := SheafOfModules.LocalTrivializations.ofIsInvertible M
+  have ht : ⨆ i, t.X i = ⊤ := by
+    simpa only [IsOpenCover] using (Opens.coversTop_iff (X : Type u) t.X).mp t.coversTop
   have hx : x ∈ ⨆ i, t.X i := by
-    rw [show ⨆ i, t.X i = ⊤ by
-      simpa only [IsOpenCover] using (Opens.coversTop_iff (X : Type u) t.X).mp t.coversTop]
+    rw [ht]
     exact Opens.mem_top _
   obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hx
   exact ⟨t.X i, t.iso i, hi⟩
 
-open Scheme.Modules in
+open _root_.AlgebraicGeometry.Scheme.Modules in
 /-- On a nonempty open subset `W` of the domain of a rank-one trivialization `t`, the rational
 function of a section is a regular multiple of the rational function of the basis section of
 `t`. -/
@@ -88,11 +95,13 @@ private lemma exists_rationalFunction_eq_mul {X : Scheme.{u}} [IrreducibleSpace 
   obtain ⟨r, hr⟩ := hs
   exact ⟨r, by rw [hr, rationalFunction_map, coe_trivializationGeneratorRationalUnit]⟩
 
-open Scheme.Modules in
+open _root_.AlgebraicGeometry.Scheme.Modules in
 /-- On a nonempty open subset `W` of the domains of two rank-one trivializations of a sheaf of
 modules, the rational functions of their basis sections have the same Cartier-divisor class: they
 differ by a regular unit on `W`. -/
-theorem rationalUnitClass_trivializationGeneratorRationalUnit_eq {X : Scheme.{u}}
+theorem
+    _root_.AlgebraicGeometry.Scheme.Modules.rationalUnitClass_trivializationGeneratorRationalUnit_eq
+    {X : Scheme.{u}}
     [IsIntegral X] (M : X.Modules) {U V₁ V₂ W : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
     (hU : Dense (U : Set X))
@@ -110,12 +119,13 @@ theorem rationalUnitClass_trivializationGeneratorRationalUnit_eq {X : Scheme.{u}
     Units.ext (by simpa using hr)
   rw [h, ofMul_mul, map_add, Scheme.rationalUnitClass_germToFunctionField_eq_zero, zero_add]
 
-open Scheme.Modules in
+open _root_.AlgebraicGeometry.Scheme.Modules in
 /-- **The Cartier divisor of a rationally trivialized line bundle.** Let `M` be a line bundle on
 an integral scheme, with a chosen rank-one trivialization on a dense open subset. There is a
 Cartier divisor whose restriction to the domain `V` of every nonempty rank-one trivialization `t`
 is the class of the inverse of the rational function of the basis section of `t`. -/
-theorem exists_cartierDivisor_restrict_eq {X : Scheme.{u}} [IsIntegral X] (M : X.Modules)
+theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_cartierDivisor_restrict_eq
+    {X : Scheme.{u}} [IsIntegral X] (M : X.Modules)
     [SheafOfModules.isInvertible X M] {U : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
     (hU : Dense (U : Set X)) :
@@ -150,6 +160,26 @@ theorem exists_cartierDivisor_restrict_eq {X : Scheme.{u}} [IsIntegral X] (M : X
   obtain ⟨E, hE, -⟩ := (Scheme.cartierDivisorSheaf X).existsUnique_gluing' W ⊤
     (fun _ ↦ homOfLE le_top) hcover sf hcompat
   exact ⟨E, fun V _ t ↦ hE ⟨⟨V, t⟩, inferInstance⟩⟩
+
+open _root_.AlgebraicGeometry.Scheme.Modules in
+/-- **The Weil divisor of a rationally trivialized line bundle.** On a Noetherian integral scheme,
+a line bundle `M` with a chosen rank-one trivialization on a dense open subset has a Weil divisor
+whose coefficient at every codimension-one point `y` is minus the order at `y` of the rational
+function of the basis section of any rank-one trivialization defined near `y`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_coeff_eq_neg_ord
+    {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
+    (M : X.Modules) [SheafOfModules.isInvertible X M] {U : X.Opens}
+    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
+    (hU : Dense (U : Set X)) :
+    ∃ D : SchemeWeilDivisor X, ∀ (V : X.Opens) [Nonempty V]
+      (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V)
+      (y : CodimensionOnePoint X), (y : X) ∈ V →
+      WeilDivisor.coeff D y = -X.ord (trivializationGeneratorRationalUnit M e hU t : _) y := by
+  obtain ⟨E, hE⟩ := M.exists_cartierDivisor_restrict_eq e hU
+  refine ⟨E.toWeilDivisor, fun V _ t y hy ↦ ?_⟩
+  rw [Scheme.CartierDivisor.coeff_toWeilDivisor,
+    E.orderAt_eq_of_restrict_eq_rationalUnitClass y V hy _ (hE V t), map_neg,
+    SchemeWeilDivisor.orderAt_apply, toMul_ofMul]
 
 namespace SchemeWeilDivisor
 
@@ -254,8 +284,8 @@ theorem exists_rationalTrivializationHom_app_eq
     (fun x ↦ homOfLE inf_le_left) hcover s hcompat
   refine ⟨g, TopCat.Sheaf.eq_of_locally_eq' ⟨_, (Scheme.rationalFunctions X).isSheaf⟩ W' W
     (fun x ↦ homOfLE inf_le_left) hcover _ _ fun x ↦ ?_⟩
-  change (Scheme.rationalFunctions X).presheaf.map _ _ = _
-  rw [← hnat, hg x, hs x]
+  exact (hnat (rationalTrivializationHom M e hU)
+    (homOfLE inf_le_left : W' x ⟶ W) g).symm.trans <| by rw [hg x, hs x]
 
 /-- **A line bundle is the sheaf of its divisor.** If the coefficients of `D` are minus the
 orders of the local basis sections of the line bundle `M`, then the rational embedding of `M`
@@ -292,24 +322,6 @@ section Picard
 
 variable [IsNoetherian X]
 
-open Scheme.Modules in
-/-- **The Weil divisor of a rationally trivialized line bundle.** On a Noetherian integral scheme,
-a line bundle `M` with a chosen rank-one trivialization on a dense open subset has a Weil divisor
-whose coefficient at every codimension-one point `y` is minus the order at `y` of the rational
-function of the basis section of any rank-one trivialization defined near `y`. -/
-theorem exists_coeff_eq_neg_ord (M : X.Modules) [SheafOfModules.isInvertible X M] {U : X.Opens}
-    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
-    (hU : Dense (U : Set X)) :
-    ∃ D : SchemeWeilDivisor X, ∀ (V : X.Opens) [Nonempty V]
-      (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V)
-      (y : CodimensionOnePoint X), (y : X) ∈ V →
-      WeilDivisor.coeff D y = -X.ord (trivializationGeneratorRationalUnit M e hU t : _) y := by
-  obtain ⟨E, hE⟩ := exists_cartierDivisor_restrict_eq M e hU
-  refine ⟨E.toWeilDivisor, fun V _ t y hy ↦ ?_⟩
-  rw [Scheme.CartierDivisor.coeff_toWeilDivisor,
-    E.orderAt_eq_of_restrict_eq_rationalUnitClass y V hy _ (hE V t), map_neg, orderAt_apply,
-    toMul_ofMul]
-
 variable [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
   (hX : ∀ y : X, coheight y ≤ 1)
 include hX
@@ -320,7 +332,7 @@ every invertible sheaf is isomorphic to `𝒪_X(D)` for some Weil divisor `D`. -
 theorem exists_nonempty_iso_sheaf (L : InvertibleSheaf X) :
     ∃ D : SchemeWeilDivisor X, Nonempty (L.obj ≅ sheaf D) := by
   obtain ⟨U, -, hU, ⟨e⟩⟩ := TauCeti.SheafOfModules.exists_dense_open_trivialization L.obj
-  obtain ⟨D, hD⟩ := exists_coeff_eq_neg_ord L.obj e hU
+  obtain ⟨D, hD⟩ := L.obj.exists_coeff_eq_neg_ord e hU
   exact ⟨D, ⟨isoSheafOfCoeffEq hX hD⟩⟩
 
 /-- Every line-bundle class on such a curve is the class of `𝒪_X(D)` for a Weil divisor `D`. -/
@@ -344,28 +356,69 @@ theorem classGroupToLineBundleClass_bijective :
     Function.Bijective (classGroupToLineBundleClass (X := X) hX) :=
   ⟨classGroupToLineBundleClass_injective hX, classGroupToLineBundleClass_surjective hX⟩
 
-/-- **`Cl(X) ≅ Pic(X)`.** On a Noetherian integral scheme of dimension at most one whose
-codimension-one local rings are discrete valuation rings, `D ↦ 𝒪_X(D)` identifies the divisor
-class group with the line-bundle classes under tensor product. -/
-def classGroupAddEquivLineBundleClass :
-    (WeilDivisor.OrderSystem.ofScheme X).ClassGroup ≃+ Additive (LineBundleClass X) :=
-  AddEquiv.ofBijective (classGroupToLineBundleClassHom hX) <| by
-    rw [show ⇑(classGroupToLineBundleClassHom hX) = Additive.ofMul ∘
-        classGroupToLineBundleClass hX from funext (classGroupToLineBundleClassHom_apply hX)]
-    exact Additive.ofMul.bijective.comp (classGroupToLineBundleClass_bijective hX)
-
-/-- The equivalence `Cl(X) ≃+ Pic(X)` sends a divisor class to the class of its line bundle. -/
-@[simp]
-lemma classGroupAddEquivLineBundleClass_apply
-    (c : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) :
-    classGroupAddEquivLineBundleClass hX c = Additive.ofMul (classGroupToLineBundleClass hX c) :=
-  classGroupToLineBundleClassHom_apply hX c
-
 /-- **Line bundles on a curve are invertible under tensor product.** Every line-bundle class is
 the class of some `𝒪_X(D)`, which `𝒪_X(-D)` inverts. -/
 theorem isUnit_lineBundleClass (a : LineBundleClass X) : IsUnit a := by
   obtain ⟨D, rfl⟩ := toLineBundleClass_surjective hX a
   exact isUnit_toLineBundleClass hX D
+
+/-- Tensor product makes the line-bundle classes of a Noetherian integral curve into its Picard
+group. -/
+noncomputable instance : CommGroup (PicardGroup X hX) :=
+  letI : CommGroup (LineBundleClass X) := commGroupOfIsUnit (isUnit_lineBundleClass hX)
+  (Equiv.refl (LineBundleClass X) : PicardGroup X hX ≃ LineBundleClass X).commGroup
+
+/-- The multiplicative equivalence between the Picard group and its underlying line-bundle
+classes. -/
+noncomputable def picardGroupMulEquivLineBundleClass :
+    PicardGroup X hX ≃* LineBundleClass X where
+  toEquiv := Equiv.refl (LineBundleClass X)
+  map_mul' _ _ := rfl
+
+/-- Converting a line-bundle class to the Picard group commutes with the additive and
+multiplicative type tags. -/
+@[simp]
+lemma toMul_picardGroupMulEquivLineBundleClass_symm_toAdditive (a : LineBundleClass X) :
+    Additive.toMul
+        ((picardGroupMulEquivLineBundleClass hX).symm.toAdditive (Additive.ofMul a)) =
+      (picardGroupMulEquivLineBundleClass hX).symm a :=
+  rfl
+
+/-- **`Cl(X) ≅ Pic(X)`.** On a Noetherian integral scheme of dimension at most one whose
+codimension-one local rings are discrete valuation rings, `D ↦ 𝒪_X(D)` identifies the divisor
+class group with the line-bundle classes under tensor product. -/
+def classGroupAddEquivLineBundleClass :
+    (WeilDivisor.OrderSystem.ofScheme X).ClassGroup ≃+ Additive (PicardGroup X hX) :=
+  let e : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup ≃+ Additive (LineBundleClass X) :=
+    AddEquiv.ofBijective (classGroupToLineBundleClassHom hX) <| by
+      have hfun : ⇑(classGroupToLineBundleClassHom hX) = Additive.ofMul ∘
+          classGroupToLineBundleClass hX :=
+        funext (classGroupToLineBundleClassHom_apply hX)
+      rw [hfun]
+      exact Additive.ofMul.bijective.comp (classGroupToLineBundleClass_bijective hX)
+  e.trans (picardGroupMulEquivLineBundleClass hX).symm.toAdditive
+
+/-- The equivalence `Cl(X) ≃+ Pic(X)` sends a divisor class to the class of its line bundle. -/
+@[simp]
+lemma classGroupAddEquivLineBundleClass_apply
+    (c : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) :
+    classGroupAddEquivLineBundleClass hX c =
+      (picardGroupMulEquivLineBundleClass hX).symm.toAdditive
+        (Additive.ofMul (classGroupToLineBundleClass hX c)) := by
+  simpa only [classGroupAddEquivLineBundleClass, AddEquiv.trans_apply,
+    AddEquiv.ofBijective_apply] using congrArg
+    (picardGroupMulEquivLineBundleClass hX).symm.toAdditive
+    (classGroupToLineBundleClassHom_apply hX c)
+
+/-- Negating a divisor class gives the inverse line-bundle class in the Picard group. -/
+@[simp]
+lemma classGroupToLineBundleClass_neg
+    (c : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) :
+    (picardGroupMulEquivLineBundleClass hX).symm (classGroupToLineBundleClass hX (-c)) =
+      ((picardGroupMulEquivLineBundleClass hX).symm (classGroupToLineBundleClass hX c))⁻¹ := by
+  simpa only [classGroupAddEquivLineBundleClass_apply, toMul_ofMul, toMul_neg,
+    toMul_picardGroupMulEquivLineBundleClass_symm_toAdditive] using
+    congrArg Additive.toMul ((classGroupAddEquivLineBundleClass hX).map_neg c)
 
 end Picard
 
