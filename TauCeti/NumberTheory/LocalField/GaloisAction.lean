@@ -169,6 +169,13 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
 
+/-- The residue-field action of extension automorphisms fixes the base residue field. -/
+noncomputable instance residueFieldSMulCommClass :
+    SMulCommClass (L ≃ₐ[K] L) 𝓀[K] 𝓀[L] where
+  smul_comm σ x y := by
+    rw [← AlgEquiv.residueFieldEquiv_apply]
+    rw [map_smul, AlgEquiv.residueFieldEquiv_apply]
+
 /-- Field automorphisms act on the maximal ideal by restriction of their action on the ring of
 integers. -/
 noncomputable instance maximalIdealDistribMulAction :
@@ -195,16 +202,8 @@ theorem smul_maximalIdeal_eq (σ : L ≃ₐ[K] L) (x : 𝓂[L]) :
 
 /-- The canonical homomorphism from the Galois group of a finite extension to the Galois group
 of its residue-field extension. -/
-noncomputable def residueFieldAut : (L ≃ₐ[K] L) →* (𝓀[L] ≃ₐ[𝓀[K]] 𝓀[L]) where
-  toFun := AlgEquiv.residueFieldEquiv
-  map_one' := by
-    ext x
-    obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
-    rfl
-  map_mul' σ τ := by
-    ext x
-    obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
-    rfl
+noncomputable def residueFieldAut : (L ≃ₐ[K] L) →* (𝓀[L] ≃ₐ[𝓀[K]] 𝓀[L]) :=
+  MulSemiringAction.toAlgAut (L ≃ₐ[K] L) 𝓀[K] 𝓀[L]
 
 @[simp]
 theorem residueFieldAut_apply (σ : L ≃ₐ[K] L) (x : 𝓀[L]) :
