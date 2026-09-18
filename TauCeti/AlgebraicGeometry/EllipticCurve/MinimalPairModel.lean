@@ -30,9 +30,10 @@ such a table finite.
 * `WeierstrassCurve.shortEquationHeight W`: `max (4|a₄|³) (27a₆²)` for a short equation `W`
   over `ℤ`. A property of the equation, not of the curve.
 * `WeierstrassCurve.IsMinimalPairNF W`: `W` is short and `(a₄, a₆)` is a minimal pair.
-* `WeierstrassCurve.MinimalPairModel E`: a minimal-pair equation over `ℤ` together with a change
-  of variables carrying its base change to `E`, and `WeierstrassCurve.MinimalPairModel.height`,
-  the height of its equation.
+* `WeierstrassCurve.MinimalPairModel E`: a minimal-pair equation over `ℤ` whose base change is
+  isomorphic to `E`, with a chosen change of variables
+  `WeierstrassCurve.MinimalPairModel.variableChange` realising the isomorphism, and
+  `WeierstrassCurve.MinimalPairModel.height`, the height of its equation.
 * `WeierstrassCurve.minimalPairModel E`: a chosen such model, and
   `WeierstrassCurve.naiveHeight E`, its height: the curve-level invariant.
 
@@ -41,8 +42,9 @@ such a table finite.
 * `WeierstrassCurve.exists_minimalPairModel`: every elliptic curve over `ℚ` has a minimal-pair
   model.
 * `WeierstrassCurve.minimalPairModel_unique`: any two minimal-pair models of `E` have the same
-  equation. Hence `WeierstrassCurve.naiveHeight_eq` (every model computes the curve's height) and
-  `WeierstrassCurve.naiveHeight_variableChange` (invariance under `ℚ`-isomorphism).
+  equation, so `MinimalPairModel E` is a subsingleton. Hence `WeierstrassCurve.naiveHeight_eq`
+  (every model computes the curve's height) and `WeierstrassCurve.naiveHeight_variableChange`
+  (invariance under `ℚ`-isomorphism).
 * `WeierstrassCurve.finite_shortEquations_bounded_height` and
   `WeierstrassCurve.finite_minimalPairEquations_bounded_height`: finitely many short equations
   over `ℤ`, in particular finitely many minimal-pair equations, have height at most `H`.
@@ -58,10 +60,11 @@ such a table finite.
   short equation need not be minimal in the sense of `WeierstrassCurve.IsMinimal`, and the
   globally minimal equation of a curve over `ℚ` is in general a long one. The two canonical
   equations serve different purposes, and neither replaces the other.
-* **The bundle is not canonical; the equation is.** A `MinimalPairModel` carries a
-  change-of-variables witness, and composing it with an automorphism of `E` gives another
-  witness for the same equation. `minimalPairModel_unique` says the equation, and hence the
-  height, does not depend on the witness or on the choice of bundle.
+* **The equation is the only data.** A `MinimalPairModel` records the equation and the existence
+  of an isomorphism to `E`, not a particular change of variables: that is unique only up to the
+  automorphisms of `E`, and composing it with `[-1]` gives another. `minimalPairModel_unique`
+  makes the type a subsingleton, and `MinimalPairModel.variableChange` recovers a witness when a
+  computation needs one.
 * The naïve height on *points*, `WeierstrassCurve.Affine.Point.naiveHeight`, is a different
   quantity on a different type.
 
@@ -89,16 +92,18 @@ namespace WeierstrassCurve
 /-! ### The height of an integral short equation -/
 
 /-- **The height of a short Weierstrass equation** `y² = x³ + a₄x + a₆` over `ℤ`:
-`max (4|a₄|³) (27a₆²)`. This is a function of the equation, not of the curve it defines: over
-`ℚ`, the scaling `x = u²x'`, `y = u³y'` sends `(a₄, a₆)` to `(u⁻⁴a₄, u⁻⁶a₆)` and divides the same
-expression by `|u|¹²`. It becomes an invariant of the curve once the equation is pinned to the
-minimal pair, which is `naiveHeight`. -/
-def shortEquationHeight (W : WeierstrassCurve ℤ) [_hW : W.IsShortNF] : ℕ :=
+`max (4|a₄|³) (27a₆²)`. The formula is stated for every Weierstrass equation over `ℤ`, but it is
+the height of the equation only when the equation is short, which is how it is used. It is a
+function of the equation, not of the curve it defines: over `ℚ`, the scaling `x = u²x'`,
+`y = u³y'` sends `(a₄, a₆)` to `(u⁻⁴a₄, u⁻⁶a₆)` and divides the same expression by `|u|¹²`. It
+becomes an invariant of the curve once the equation is pinned to the minimal pair, which is
+`naiveHeight`. -/
+def shortEquationHeight (W : WeierstrassCurve ℤ) : ℕ :=
   max (4 * W.a₄.natAbs ^ 3) (27 * W.a₆.natAbs ^ 2)
 
 section Height
 
-variable (W : WeierstrassCurve ℤ) [W.IsShortNF]
+variable (W : WeierstrassCurve ℤ)
 
 /-- `shortEquationHeight`, unfolded. This is the interface to
 `WeierstrassCurve.shortEquationHeight` outside its defining module. -/
@@ -204,27 +209,35 @@ end MinimalPair
 /-! ### Bundled minimal-pair models -/
 
 /-- **A minimal-pair model of an elliptic curve `E` over `ℚ`**: a minimal-pair short equation
-over `ℤ` together with a change of variables carrying its base change to `E`. The equation is
-unique (`minimalPairModel_unique`); the change-of-variables witness is not, so the bundle itself
-is not canonical, only its `model` and `height` are. -/
+over `ℤ` whose base change is isomorphic to `E` over `ℚ`. The equation is unique
+(`minimalPairModel_unique`), so the type is a subsingleton. A change of variables realising the
+isomorphism is available as `MinimalPairModel.variableChange`; it is not part of the data, since
+it is unique only up to the automorphisms of `E`. -/
 @[ext]
 structure MinimalPairModel (E : WeierstrassCurve ℚ) [E.IsElliptic] where
   /-- The integral short equation. -/
   model : WeierstrassCurve ℤ
   /-- It is short and a minimal pair. -/
   isMinimalPair : IsMinimalPairNF model
-  /-- The change of variables realising the isomorphism over `ℚ`. -/
-  variableChange : VariableChange ℚ
-  /-- It carries the base-changed model to `E`. -/
-  isomorphic : variableChange • (model.baseChange ℚ) = E
+  /-- Some change of variables carries the base-changed model to `E`. -/
+  isomorphic : ∃ C : VariableChange ℚ, C • (model.baseChange ℚ) = E
 
 namespace MinimalPairModel
 
 variable {E : WeierstrassCurve ℚ} [E.IsElliptic] (M : MinimalPairModel E)
 
+/-- A change of variables carrying the base change of the model to `E`, chosen from
+`MinimalPairModel.isomorphic`. It is not unique: composing it with an automorphism of `E` gives
+another. -/
+noncomputable def variableChange : VariableChange ℚ :=
+  M.isomorphic.choose
+
+/-- The chosen change of variables carries the base change of the model to `E`. -/
+theorem variableChange_smul_baseChange : M.variableChange • M.model.baseChange ℚ = E :=
+  M.isomorphic.choose_spec
+
 /-- **The height of a minimal-pair model**: the `shortEquationHeight` of its equation. -/
 def height : ℕ :=
-  letI : M.model.IsShortNF := M.isMinimalPair.isShortNF
   shortEquationHeight M.model
 
 /-- `MinimalPairModel.height`, unfolded. This is the interface to
@@ -306,25 +319,30 @@ equation, not merely isomorphic ones. Together with existence, this makes the he
 equation an invariant of the curve. -/
 theorem minimalPairModel_unique (E : WeierstrassCurve ℚ) [E.IsElliptic]
     (M N : MinimalPairModel E) : M.model = N.model := by
-  -- `N.variableChange⁻¹ * M.variableChange` carries `M.model` to `N.model` over `ℚ`. Between
-  -- short equations it scales `(a₄, a₆)` by `(q⁴, q⁶)` for `q = u⁻¹`, and a rational scaling
-  -- between two minimal pairs is trivial.
+  -- With `CM • M.model = E = CN • N.model` over `ℚ`, the change of variables `CN⁻¹ * CM` carries
+  -- `M.model` to `N.model`. Between short equations it scales `(a₄, a₆)` by `(q⁴, q⁶)` for
+  -- `q = u⁻¹`, and a rational scaling between two minimal pairs is trivial.
   have := M.isMinimalPair.isShortNF
   have := N.isMinimalPair.isShortNF
-  have hD : (N.variableChange⁻¹ * M.variableChange) • M.model.baseChange ℚ =
-      N.model.baseChange ℚ := by
-    rw [mul_smul, M.isomorphic]
-    exact inv_smul_eq_iff.mpr N.isomorphic.symm
-  have : ((N.variableChange⁻¹ * M.variableChange) • M.model.baseChange ℚ).IsShortNF := by
+  obtain ⟨CM, hM⟩ := M.isomorphic
+  obtain ⟨CN, hN⟩ := N.isomorphic
+  have hD : (CN⁻¹ * CM) • M.model.baseChange ℚ = N.model.baseChange ℚ := by
+    rw [mul_smul, hM]
+    exact inv_smul_eq_iff.mpr hN.symm
+  have : ((CN⁻¹ * CM) • M.model.baseChange ℚ).IsShortNF := by
     rw [hD]
     infer_instance
-  have h₄ := variableChange_a₄_of_isShortNF (M.model.baseChange ℚ)
-    (N.variableChange⁻¹ * M.variableChange)
-  have h₆ := variableChange_a₆_of_isShortNF (M.model.baseChange ℚ)
-    (N.variableChange⁻¹ * M.variableChange)
+  have h₄ := variableChange_a₄_of_isShortNF (M.model.baseChange ℚ) (CN⁻¹ * CM)
+  have h₆ := variableChange_a₆_of_isShortNF (M.model.baseChange ℚ) (CN⁻¹ * CM)
   rw [hD] at h₄ h₆
   simp only [baseChange, map_a₄, map_a₆, eq_intCast] at h₄ h₆
   exact (M.isMinimalPair.eq_of_intCast_eq_pow_mul N.isMinimalPair h₄ h₆).symm
+
+/-- Minimal-pair models of `E` form a subsingleton: their only data is the equation, and that is
+unique. -/
+instance MinimalPairModel.instSubsingleton (E : WeierstrassCurve ℚ) [E.IsElliptic] :
+    Subsingleton (MinimalPairModel E) :=
+  ⟨fun M N => MinimalPairModel.ext (minimalPairModel_unique E M N)⟩
 
 /-- **The naïve height of an elliptic curve over `ℚ`**: the height `max (4|A|³) (27B²)` of its
 minimal-pair equation `y² = x³ + Ax + B`. It can be computed from any minimal-pair model
@@ -344,7 +362,8 @@ theorem naiveHeight_variableChange (E : WeierstrassCurve ℚ) [E.IsElliptic]
   -- The chosen model of `E`, with its change of variables composed with `C`, is a model of
   -- `C • E` with the same equation.
   rw [naiveHeight_eq (E := C • E) ⟨(minimalPairModel E).model, (minimalPairModel E).isMinimalPair,
-    C * (minimalPairModel E).variableChange, by rw [mul_smul, (minimalPairModel E).isomorphic]⟩,
+    C * (minimalPairModel E).variableChange,
+    by rw [mul_smul, (minimalPairModel E).variableChange_smul_baseChange]⟩,
     naiveHeight_eq (minimalPairModel E), MinimalPairModel.height_def,
     MinimalPairModel.height_def]
 
