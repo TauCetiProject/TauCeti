@@ -15,6 +15,7 @@ public import Mathlib.Topology.MetricSpace.Contracting
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.Normed.Operator.Exponential
+import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
 /-!
 # The Lyapunov--Perron fixed point
@@ -93,10 +94,6 @@ def lyapunovPerronIntegral (A P : X →L[ℝ] X) (g : ℝ → X) (t : ℝ) : X :
     ∫ s in Ioi t, exp ((t - s) • A) (g s - P (g s))
 
 variable [CompleteSpace X]
-
-private theorem exp_smul_apply_exp_smul_apply (A : X →L[ℝ] X) (t s : ℝ) (v : X) :
-    exp (t • A) (exp (s • A) v) = exp ((t + s) • A) v := by
-  rw [TauCeti.exp_add_smul, comp_apply]
 
 variable {A P : X →L[ℝ] X} {K α : ℝ≥0} {M : ℝ} {g g₁ g₂ : ℝ → X} {t : ℝ}
 
@@ -235,6 +232,9 @@ solve the forced linear equation `y' = A y + g`. -/
 theorem hasDerivAt_lyapunovPerronIntegral (hα : 0 < α) (hg : Continuous g)
     (hgM : ∀ s, ‖g s‖ ≤ M) (t : ℝ) :
     HasDerivAt (lyapunovPerronIntegral A P g) (A (lyapunovPerronIntegral A P g t) + g t) t := by
+  have hexp_apply (u s : ℝ) (v : X) :
+      exp (u • A) (exp (s • A) v) = exp ((u + s) • A) v := by
+    rw [TauCeti.exp_add_smul, comp_apply]
   -- After pulling `exp (u A)` out of both integrals, the integrands no longer depend on `u`.
   set hp : ℝ → X := fun s ↦ exp ((-s) • A) (P (g s)) with hp_def
   set hq : ℝ → X := fun s ↦ exp ((-s) • A) (g s - P (g s)) with hq_def
@@ -247,18 +247,18 @@ theorem hasDerivAt_lyapunovPerronIntegral (hα : 0 < α) (hg : Continuous g)
   have hq_int (u : ℝ) : IntegrableOn hq (Ioi u) := by
     refine ((exp ((-u) • A)).integrable_comp (integrableOn_lyapunovPerron_unstable hu hα u
       hg.continuousOn fun s _ ↦ hgM s)).congr (ae_of_all _ fun s ↦ ?_)
-    simp only [hq_def, exp_smul_apply_exp_smul_apply]
+    simp only [hq_def, hexp_apply]
     congr 3
     ring
   have hstable (u : ℝ) : (∫ s in (0 : ℝ)..u, exp ((u - s) • A) (P (g s))) =
       exp (u • A) (∫ s in (0 : ℝ)..u, hp s) := by
     rw [← (exp (u • A)).intervalIntegral_comp_comm (hp_cont.intervalIntegrable _ _)]
-    simp only [hp_def, exp_smul_apply_exp_smul_apply, sub_eq_add_neg]
+    simp only [hp_def, hexp_apply, sub_eq_add_neg]
   have hunstable (u : ℝ) : (∫ s in Ioi u, exp ((u - s) • A) (g s - P (g s))) =
       exp (u • A) ((∫ s in Ioi 0, hq s) - ∫ s in (0 : ℝ)..u, hq s) := by
     rw [← intervalIntegral.integral_Ioi_sub_Ioi' (hq_int 0) (hq_int u), sub_sub_cancel,
       ← (exp (u • A)).integral_comp_comm (hq_int u)]
-    simp only [hq_def, exp_smul_apply_exp_smul_apply, sub_eq_add_neg]
+    simp only [hq_def, hexp_apply, sub_eq_add_neg]
   have hfun : lyapunovPerronIntegral A P g = fun u ↦
       exp (u • A) (∫ s in (0 : ℝ)..u, hp s) -
         exp (u • A) ((∫ s in Ioi 0, hq s) - ∫ s in (0 : ℝ)..u, hq s) := by
@@ -272,10 +272,10 @@ theorem hasDerivAt_lyapunovPerronIntegral (hα : 0 < α) (hg : Continuous g)
     (intervalIntegral.integral_hasDerivAt_right (hq_cont.intervalIntegrable 0 t)
       (hq_cont.stronglyMeasurableAtFilter _ _) hq_cont.continuousAt))
   have hpt : exp (t • A) (hp t) = P (g t) := by
-    simp only [hp_def, exp_smul_apply_exp_smul_apply, add_neg_cancel, zero_smul, exp_zero,
+    simp only [hp_def, hexp_apply, add_neg_cancel, zero_smul, exp_zero,
       one_apply_eq_self]
   have hqt : exp (t • A) (hq t) = g t - P (g t) := by
-    simp only [hq_def, exp_smul_apply_exp_smul_apply, add_neg_cancel, zero_smul, exp_zero,
+    simp only [hq_def, hexp_apply, add_neg_cancel, zero_smul, exp_zero,
       one_apply_eq_self]
   rw [hfun]
   refine (hP.sub hQ).congr_deriv ?_
@@ -297,22 +297,6 @@ section Contraction
 
 variable {N : X → X} {ε : ℝ≥0}
 
-omit [NormedSpace ℝ X] [CompleteSpace X] in
-/-- A globally Lipschitz map composed with a bounded continuous function on `[0, ∞)`, read as a
-function of real time, is bounded. -/
-private theorem norm_comp_toNNReal_le (hN : LipschitzWith ε N) (γ : ℝ≥0 →ᵇ X) (s : ℝ) :
-    ‖N (γ s.toNNReal)‖ ≤ ‖N 0‖ + ε * ‖γ‖ := by
-  have h := hN.dist_le_mul (γ s.toNNReal) 0
-  rw [dist_eq_norm, dist_zero_right] at h
-  have hγ := γ.norm_coe_le_norm s.toNNReal
-  have := norm_sub_norm_le (N (γ s.toNNReal)) (N 0)
-  nlinarith [ε.coe_nonneg]
-
-omit [NormedSpace ℝ X] [CompleteSpace X] in
-private theorem continuous_comp_toNNReal (hN : LipschitzWith ε N) (γ : ℝ≥0 →ᵇ X) :
-    Continuous fun s : ℝ ↦ N (γ s.toNNReal) :=
-  hN.continuous.comp (γ.continuous.comp continuous_real_toNNReal)
-
 variable
   (A P : X →L[ℝ] X) (N : X → X)
   (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
@@ -327,17 +311,23 @@ bounded continuous functions on `[0, ∞)`:
 Here `P ξ` is only the parameter in the homogeneous term. Without projection and commutation
 hypotheses on `P`, it is not identified with `P (y 0)`. -/
 def lyapunovPerronMap (ξ : X) (γ : ℝ≥0 →ᵇ X) : ℝ≥0 →ᵇ X :=
+  have hg_continuous : Continuous fun s : ℝ ↦ N (γ s.toNNReal) :=
+    ((γ.comp N hN).compContinuous
+      ⟨Real.toNNReal, continuous_real_toNNReal⟩).continuous
+  have hgM (s : ℝ) : ‖N (γ s.toNNReal)‖ ≤ ‖N 0‖ + ε * ‖γ‖ :=
+    ((γ.comp N hN).norm_coe_le_norm s.toNNReal).trans
+      (TauCeti.norm_boundedContinuousFunction_comp_le hN γ)
   BoundedContinuousFunction.ofNormedAddCommGroup
     (fun t : ℝ≥0 ↦ exp ((t : ℝ) • A) (P ξ) +
       lyapunovPerronIntegral A P (fun s ↦ N (γ s.toNNReal)) t)
     ((((differentiable_exp_smul_const ℝ A).continuous.comp NNReal.continuous_coe).clm_apply
       continuous_const).add
-      ((continuous_lyapunovPerronIntegral hu hα (continuous_comp_toNNReal hN γ)
-        (norm_comp_toNNReal_le hN γ)).comp NNReal.continuous_coe))
+      ((continuous_lyapunovPerronIntegral hu hα hg_continuous hgM).comp
+        NNReal.continuous_coe))
     (K * ‖ξ‖ + 2 * K * (‖N 0‖ + ε * ‖γ‖) / α)
     fun t ↦ by
       refine (norm_add_le _ _).trans (add_le_add ?_
-        (norm_lyapunovPerronIntegral_le hs hu hα (norm_comp_toNNReal_le hN γ) t.2))
+        (norm_lyapunovPerronIntegral_le hs hu hα hgM t.2))
       calc ‖exp ((t : ℝ) • A) (P ξ)‖ ≤ K * Real.exp (-α * t) * ‖ξ‖ := hs t t.2 ξ
         _ ≤ K * 1 * ‖ξ‖ := by
           gcongr
@@ -357,14 +347,20 @@ theorem lyapunovPerronMap_apply (ξ : X) (γ : ℝ≥0 →ᵇ X) (t : ℝ≥0) :
 theorem dist_lyapunovPerronMap_le (ξ : X) (γ η : ℝ≥0 →ᵇ X) :
     dist (lyapunovPerronMap A P N hs hu hα hN ξ γ) (lyapunovPerronMap A P N hs hu hα hN ξ η) ≤
       2 * K * ε / α * dist γ η := by
+  have hcontinuous (ζ : ℝ≥0 →ᵇ X) : Continuous fun s : ℝ ↦ N (ζ s.toNNReal) :=
+    ((ζ.comp N hN).compContinuous
+      ⟨Real.toNNReal, continuous_real_toNNReal⟩).continuous
+  have hbound (ζ : ℝ≥0 →ᵇ X) (s : ℝ) : ‖N (ζ s.toNNReal)‖ ≤ ‖N 0‖ + ε * ‖ζ‖ :=
+    ((ζ.comp N hN).norm_coe_le_norm s.toNNReal).trans
+      (TauCeti.norm_boundedContinuousFunction_comp_le hN ζ)
   refine (BoundedContinuousFunction.dist_le (by positivity)).2 fun t ↦ ?_
   have hdiff (s : ℝ) : ‖(fun s ↦ N (γ s.toNNReal)) s - (fun s ↦ N (η s.toNNReal)) s‖ ≤
       ε * dist γ η := by
     rw [← dist_eq_norm]
     exact hN.dist_le_mul_of_le (BoundedContinuousFunction.dist_coe_le_dist _)
   rw [lyapunovPerronMap_apply, lyapunovPerronMap_apply, dist_eq_norm, add_sub_add_left_eq_sub,
-    lyapunovPerronIntegral_sub hu hα (continuous_comp_toNNReal hN γ)
-      (norm_comp_toNNReal_le hN γ) (continuous_comp_toNNReal hN η) (norm_comp_toNNReal_le hN η)]
+    lyapunovPerronIntegral_sub hu hα (hcontinuous γ) (hbound γ)
+      (hcontinuous η) (hbound η)]
   calc _ ≤ 2 * K * (ε * dist γ η) / α := norm_lyapunovPerronIntegral_le hs hu hα hdiff t.2
     _ = 2 * K * ε / α * dist γ η := by ring
 
@@ -408,7 +404,7 @@ theorem lyapunovPerronSolution_apply (ξ : X) (t : ℝ≥0) :
       exp ((t : ℝ) • A) (P ξ) + lyapunovPerronIntegral A P
         (fun s ↦ N (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ s.toNNReal)) t := by
   conv_lhs => rw [← isFixedPt_lyapunovPerronSolution hs hu hα hN hsmall ξ]
-  rfl
+  exact lyapunovPerronMap_apply hs hu hα hN ξ _ t
 
 /-- The Lyapunov--Perron solution is the only bounded continuous solution of the
 Lyapunov--Perron integral equation. -/
@@ -447,14 +443,20 @@ theorem isIntegralCurveOn_lyapunovPerronSolution (ξ : X) :
   set γ := lyapunovPerronSolution A P N hs hu hα hN hsmall ξ
   set g : ℝ → X := fun s ↦ N (γ s.toNNReal)
   intro t ht
+  have hg_continuous : Continuous g := by
+    exact ((γ.comp N hN).compContinuous
+      ⟨Real.toNNReal, continuous_real_toNNReal⟩).continuous
+  have hg_bound (s : ℝ) : ‖g s‖ ≤ ‖N 0‖ + ε * ‖γ‖ := by
+    dsimp only [g]
+    exact ((γ.comp N hN).norm_coe_le_norm s.toNNReal).trans
+      (TauCeti.norm_boundedContinuousFunction_comp_le hN γ)
   have hφ := ((hasDerivAt_exp_smul_const' A t).clm_apply (hasDerivAt_const t (P ξ))).add
-    (hasDerivAt_lyapunovPerronIntegral hu hα (continuous_comp_toNNReal hN γ)
-      (norm_comp_toNNReal_le hN γ) t)
+    (hasDerivAt_lyapunovPerronIntegral hu hα hg_continuous hg_bound t)
   have heq (u : ℝ) (hu' : u ∈ Ici (0 : ℝ)) :
       γ u.toNNReal = exp (u • A) (P ξ) + lyapunovPerronIntegral A P g u := by
     rw [lyapunovPerronSolution_apply hs hu hα hN hsmall, Real.coe_toNNReal u hu']
   refine (hφ.hasDerivWithinAt.congr heq (heq t ht)).congr_deriv ?_
-  simp only [heq t ht, map_add, map_zero, add_zero, mul_apply_eq_comp]
+  simp only [g, heq t ht, map_add, map_zero, add_zero, mul_apply_eq_comp]
   abel
 
 end Contraction
