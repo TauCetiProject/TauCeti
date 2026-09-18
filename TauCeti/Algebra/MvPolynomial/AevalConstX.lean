@@ -17,15 +17,13 @@ following it by `X ↦ X_c` is the renaming that sends every variable to `X_c`.
 
 ## Main results
 
-* `TauCeti.MvPolynomial.rename_const_eq_aeval_aeval_X`: renaming every variable to `X_c` factors
+* `MvPolynomial.rename_const_eq_aeval_aeval_X`: renaming every variable to `X_c` factors
   through `R[X]`.
-* `TauCeti.MvPolynomial.aeval_const_X_surjective`: sending every variable to `X` is surjective
+* `MvPolynomial.aeval_const_X_surjective`: sending every variable to `X` is surjective
   onto `R[X]` when there is at least one variable.
 -/
 
 public section
-
-namespace TauCeti
 
 namespace MvPolynomial
 
@@ -33,25 +31,20 @@ variable {σ R : Type*} [CommSemiring R]
 
 /-- Renaming every variable to `X_c` is the map sending every variable to `X`, followed by
 `X ↦ X_c`. -/
-theorem rename_const_eq_aeval_aeval_X (c : σ) (p : _root_.MvPolynomial σ R) :
-    _root_.MvPolynomial.rename (fun _ => c) p =
-      Polynomial.aeval (_root_.MvPolynomial.X c)
-        (_root_.MvPolynomial.aeval (fun _ => (Polynomial.X : Polynomial R)) p) := by
+theorem rename_const_eq_aeval_aeval_X (c : σ) (p : MvPolynomial σ R) :
+    rename (fun _ => c) p =
+      Polynomial.aeval (X c) (aeval (fun _ => (Polynomial.X : Polynomial R)) p) := by
   rw [← AlgHom.comp_apply]
   congr 1
-  exact _root_.MvPolynomial.algHom_ext fun i => by simp
+  exact algHom_ext fun i => by simp
 
 variable (σ R) in
 /-- Sending every variable to `X` is surjective onto `R[X]` when there is at least one
 variable. -/
 theorem aeval_const_X_surjective [Nonempty σ] :
-    Function.Surjective
-      (_root_.MvPolynomial.aeval (R := R) fun _ : σ => (Polynomial.X : Polynomial R)) := fun q =>
+    Function.Surjective (aeval (R := R) fun _ : σ => (Polynomial.X : Polynomial R)) := fun q =>
   let c : σ := Classical.arbitrary σ
-  ⟨Polynomial.aeval (_root_.MvPolynomial.X c) q, by
-    rw [← Polynomial.aeval_algHom_apply, _root_.MvPolynomial.aeval_X,
-      Polynomial.aeval_X_left_apply]⟩
+  ⟨Polynomial.aeval (X c) q, by
+    rw [← Polynomial.aeval_algHom_apply, aeval_X, Polynomial.aeval_X_left_apply]⟩
 
 end MvPolynomial
-
-end TauCeti
