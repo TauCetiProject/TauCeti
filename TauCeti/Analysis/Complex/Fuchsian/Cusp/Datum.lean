@@ -75,14 +75,6 @@ private theorem discreteTopology_cuspPeriods [DiscreteTopology Γ] (σ : PSL(2, 
       continuous_const
   · exact Subtype.ext (upperRightHom_injective (by simpa using congrArg Subtype.val h))
 
-/-- If `σ` conjugates `γ` to translation by `w`, it conjugates `γ ^ n` to translation by
-`n * w`. -/
-private theorem mul_zpow_mul_inv_eq_upperRightHom {σ γ : PSL(2, ℝ)} {w : ℝ}
-    (h : σ * γ * σ⁻¹ = upperRightHom w) (n : ℤ) :
-    σ * γ ^ n * σ⁻¹ = upperRightHom (n * w) := by
-  rw [← MulAut.conj_apply, map_zpow, MulAut.conj_apply, h, ← zsmul_eq_mul,
-    AddChar.map_zsmul_eq_zpow]
-
 /-- At a cusp point `c` of a discrete group, with `σ • c = ∞`, the periods form the multiples of a
 positive width. -/
 private theorem exists_pos_zmultiples_eq_cuspPeriods [DiscreteTopology Γ] {c : OnePoint ℝ}
