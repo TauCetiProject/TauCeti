@@ -57,7 +57,7 @@ variable {n : ℕ}
 
 /-- The closing side runs from the last finite vertex through the vertex at infinity to the first
 finite vertex, horizontally and in the positive real direction. -/
-private lemma schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt (a e : Fin (n + 1) → ℝ)
+theorem schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt (a e : Fin (n + 1) → ℝ)
     (z₀ : UpperHalfPlane) (ha : StrictMono a) (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0)
     (hsum : ∑ k, e k = -2) :
     schwarzChristoffelVertex a e z₀ (Fin.last n) < schwarzChristoffelVertexAtInfinity a e z₀ ∧
