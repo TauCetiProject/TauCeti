@@ -44,6 +44,7 @@ open scoped Matrix
 namespace Matrix
 
 /-- A real `1 × 1` matrix is positive definite exactly when its single entry is positive. -/
+@[simp]
 theorem posDef_fin_one_iff (M : Matrix (Fin 1) (Fin 1) ℝ) :
     M.PosDef ↔ 0 < M 0 0 := by
   have hdiag : M = Matrix.diagonal ![M 0 0] := by
