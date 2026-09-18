@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.Polynomial.Basic
 public import TauCeti.Algebra.Homology.Linear
-public import TauCeti.Algebra.MvPolynomial.Rename
 public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked
 public import TauCeti.KnotTheory.Grid.XHomotopy.Complex
 
@@ -93,12 +92,11 @@ private theorem simplyBlockedSpecialization_apply_eq_of_single (i : Fin n)
     (c : GridChainMinus R n) :
     simplyBlockedSpecialization R i (f c) = g (simplyBlockedSpecialization R i c) := by
   induction c using Finsupp.induction with
-  | zero => rw [f.map_zero, LinearMap.map_zero, g.map_zero]
+  | zero => simp only [map_zero]
   | single_add x a c _ _ ih =>
-    rw [f.map_add, LinearMap.map_add, LinearMap.map_add, g.map_add, ih]
-    congr 1
-    rw [← Finsupp.smul_single_one x a, f.map_smul, LinearMap.map_smulₛₗ, h, LinearMap.map_smulₛₗ,
-      simplyBlockedSpecialization_single, map_one, g.map_smul]
+    rw [← Finsupp.smul_single_one x a]
+    simp only [map_add, map_smul, LinearMap.map_smulₛₗ, h, ih,
+      simplyBlockedSpecialization_single, map_one]
 
 /-- The `X`-marking homotopy `H_k` specialized at `V_i = 0`: the map of the simply blocked chain
 module counting the empty rectangles whose only covered `X`-marking is `X_k` and which avoid the
@@ -198,8 +196,8 @@ noncomputable def simplyBlockedComplexXHomotopy (i k : Fin n) :
       G.simplyBlockedDifferential_comp_simplyBlockedXHomotopy_add_simplyBlockedXHomotopy_comp R i k
     simp only [ModuleCat.hom_add, ModuleCat.hom_smul, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
       ModuleCat.hom_id]
-    rw [add_comm (G.simplyBlockedXHomotopy R i k ∘ₗ _), hid, map_add, ← add_smul, add_assoc,
-      CharTwo.add_self_eq_zero, add_zero]
+    rw [add_comm (G.simplyBlockedXHomotopy R i k ∘ₗ _), hid, ← add_smul]
+    simp [add_assoc, CharTwo.add_self_eq_zero]
 
 /-- Multiplication by the variables of two columns on the same link component, with the variable
 of the blocked column read as zero, is chain homotopic on the simply blocked complex. -/
@@ -228,8 +226,8 @@ theorem homologyMap_X_smul_simplyBlockedComplex_eq_zero_of_sameCycle {i : Fin n}
         () = 0 := by
   obtain ⟨m, hm⟩ := hc.exists_nat_pow_eq
   obtain ⟨h⟩ := G.nonempty_homotopy_killCompl_X_smul_of_pow_componentPerm_apply R i m hm
-  rw [MvPolynomial.killCompl_X_eq_zero _ (by rintro ⟨c', hc'⟩; exact c'.2 hc'),
-    MvPolynomial.killCompl_X, zero_smul] at h
+  rw [← MvPolynomial.rename_X Subtype.val c, MvPolynomial.killCompl_rename_app] at h
+  simp [MvPolynomial.killCompl] at h
   rw [h.symm.homologyMap_eq, HomologicalComplex.homologyMap_zero]
 
 namespace IsKnot
