@@ -189,7 +189,7 @@ private noncomputable def gradedFullyBlockedCochainComplexIso (a : ℤ) :
     G.gradedFullyBlockedCochainComplex a ≅
       (ComplexShape.embeddingUpIntDownInt.restrictionFunctor (ModuleCat (ZMod 2))).obj
         (G.gradedFullyBlockedComplex a) := by
-  exact TauCeti.ComplexShape.Embedding.mapRestrictionIso
+  exact ComplexShape.Embedding.mapRestrictionIso
       (forget₂ (FGModuleCat (ZMod 2)) (ModuleCat (ZMod 2)))
       ComplexShape.embeddingUpIntDownInt
       (G.gradedFullyBlockedFGComplex a) ≪≫

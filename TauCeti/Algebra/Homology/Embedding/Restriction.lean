@@ -16,7 +16,7 @@ restricting it.
 
 ## Main result
 
-* `TauCeti.ComplexShape.Embedding.mapRestrictionIso`: mapping homological complexes commutes with
+* `ComplexShape.Embedding.mapRestrictionIso`: mapping homological complexes commutes with
   restriction along a shape embedding.
 -/
 
@@ -24,7 +24,7 @@ public section
 
 open CategoryTheory CategoryTheory.Limits
 
-namespace TauCeti.ComplexShape.Embedding
+namespace ComplexShape.Embedding
 
 /-- Mapping a restricted complex and restricting the mapped complex have the same objects. -/
 private theorem mapRestriction_obj_X
@@ -35,8 +35,8 @@ private theorem mapRestriction_obj_X
     ((F.mapHomologicalComplex c).obj ((e.restrictionFunctor C).obj K)).X i =
       ((e.restrictionFunctor D).obj ((F.mapHomologicalComplex c').obj K)).X i := by
   rw [Functor.mapHomologicalComplex_obj_X,
-    _root_.ComplexShape.Embedding.restrictionFunctor_obj, HomologicalComplex.restriction_X,
-    _root_.ComplexShape.Embedding.restrictionFunctor_obj, HomologicalComplex.restriction_X,
+    ComplexShape.Embedding.restrictionFunctor_obj, HomologicalComplex.restriction_X,
+    ComplexShape.Embedding.restrictionFunctor_obj, HomologicalComplex.restriction_X,
     Functor.mapHomologicalComplex_obj_X]
 
 /-- The objectwise identifications between mapping after restriction and restriction after
@@ -71,4 +71,4 @@ noncomputable def mapRestrictionIso
       intro i j _
       exact mapRestriction_hom_d F e K i j)
 
-end TauCeti.ComplexShape.Embedding
+end ComplexShape.Embedding
