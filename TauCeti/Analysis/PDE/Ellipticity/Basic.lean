@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
-public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 
@@ -80,17 +79,11 @@ open Matrix
 
 variable {X n : Type*} [Fintype n] [DecidableEq n]
 
-/-- Mathlib's matrix quadratic form is the dot-product expression `ξᵀ A ξ`. -/
-lemma toQuadraticForm'_eq_dotProduct (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
-    A.toQuadraticForm' ξ = ξ ⬝ᵥ (A *ᵥ ξ) := by
-  rw [Matrix.toQuadraticForm',
-    LinearMap.BilinMap.toQuadraticMap_apply, Matrix.toLinearMap₂'_apply']
-
 /-- The identity matrix has quadratic form `‖ξ‖²`. -/
 @[simp]
 lemma toQuadraticForm'_one (ξ : EuclideanSpace ℝ n) :
     (1 : Matrix n n ℝ).toQuadraticForm' ξ = ‖ξ‖ ^ 2 := by
-  rw [toQuadraticForm'_eq_dotProduct, one_mulVec]
+  rw [Matrix.toQuadraticForm'_apply, one_mulVec]
   simpa [dotProduct, sq] using (EuclideanSpace.real_norm_sq_eq ξ).symm
 
 omit [DecidableEq n] in
@@ -129,8 +122,8 @@ lemma toQuadraticForm'_smul_one (c : ℝ) (ξ : EuclideanSpace ℝ n) :
 @[simp]
 lemma toQuadraticForm'_add (A B : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     (A + B).toQuadraticForm' ξ = A.toQuadraticForm' ξ + B.toQuadraticForm' ξ := by
-  rw [toQuadraticForm'_eq_dotProduct, toQuadraticForm'_eq_dotProduct,
-    toQuadraticForm'_eq_dotProduct, add_mulVec, dotProduct_add]
+  rw [Matrix.toQuadraticForm'_apply, Matrix.toQuadraticForm'_apply,
+    Matrix.toQuadraticForm'_apply, add_mulVec, dotProduct_add]
 
 omit [DecidableEq n] in
 /-- Matrix bilinear forms are linear in scalar multiplication of the coefficient matrix. -/
@@ -150,7 +143,7 @@ lemma matrixBilinearForm_add_apply (A B : Matrix n n ℝ) (η ξ : EuclideanSpac
 @[simp]
 lemma toQuadraticForm'_transpose (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     Aᵀ.toQuadraticForm' ξ = A.toQuadraticForm' ξ := by
-  rw [toQuadraticForm'_eq_dotProduct, toQuadraticForm'_eq_dotProduct,
+  rw [Matrix.toQuadraticForm'_apply, Matrix.toQuadraticForm'_apply,
     Matrix.dotProduct_transpose_mulVec]
 
 omit [DecidableEq n] in
@@ -168,7 +161,7 @@ lemma matrixBilinearForm_smul_one_apply (c : ℝ) (η ξ : EuclideanSpace ℝ n)
 /-- The quadratic part of the matrix bilinear form is the matrix quadratic form. -/
 lemma matrixBilinearForm_self (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm A ξ ξ = A.toQuadraticForm' ξ := by
-  rw [matrixBilinearForm_apply, toQuadraticForm'_eq_dotProduct]
+  rw [matrixBilinearForm_apply, Matrix.toQuadraticForm'_apply]
 
 omit [DecidableEq n] in
 /-- The principal coefficient matrix-to-bilinear-form map as a continuous linear map. -/
@@ -399,7 +392,7 @@ value by the same constant. -/
 lemma abs_toQuadraticForm'_le_of_abs_dotProduct_mulVec_le {B : Matrix n n ℝ} {Mu : ℝ}
     (hB : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (B *ᵥ ξ)| ≤ Mu * ‖η‖ * ‖ξ‖) (ξ : EuclideanSpace ℝ n) :
     |B.toQuadraticForm' ξ| ≤ Mu * ‖ξ‖ ^ 2 := by
-  rw [toQuadraticForm'_eq_dotProduct]
+  rw [Matrix.toQuadraticForm'_apply]
   have h := hB ξ ξ
   simpa [sq, mul_assoc] using h
 

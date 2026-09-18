@@ -140,7 +140,7 @@ theorem tristramLevineForm_fromBlocks_zero {κ : Type*} (V : Matrix ι ι ℝ) (
 
 section Signature
 
-variable [Fintype ι] [DecidableEq ι]
+variable [Fintype ι]
 
 /-- The Tristram--Levine signature of a Seifert matrix `V` at `ω`: the signature of the
 Hermitian form `(1 - ω) V + (1 - conj ω) Vᵀ`. -/
@@ -159,6 +159,7 @@ matrix. -/
 @[simp]
 theorem tristramLevineSignature_neg_one (V : Matrix ι ι ℝ) :
     tristramLevineSignature V (-1) = Matrix.signature V := by
+  classical
   have h : 2 * tristramLevineSignature V (-1) =
       Matrix.signature (tristramLevineForm V (-1)).realify :=
     ((isHermitian_tristramLevineForm V (-1)).signature_realify).symm
@@ -169,8 +170,9 @@ theorem tristramLevineSignature_neg_one (V : Matrix ι ι ℝ) :
 /-- **Congruence invariance of the Tristram--Levine signature.** Replacing `V` by `P * V * Pᵀ`
 for a matrix `P` with unit determinant does not change it; over `ℤ` this is a change of basis of
 the first homology of the Seifert surface. -/
-theorem tristramLevineSignature_congr {P : Matrix ι ι ℝ} (hP : IsUnit P.det) (V : Matrix ι ι ℝ)
-    (ω : ℂ) : tristramLevineSignature (P * V * Pᵀ) ω = tristramLevineSignature V ω := by
+theorem tristramLevineSignature_congr [DecidableEq ι] {P : Matrix ι ι ℝ} (hP : IsUnit P.det)
+    (V : Matrix ι ι ℝ) (ω : ℂ) :
+    tristramLevineSignature (P * V * Pᵀ) ω = tristramLevineSignature V ω := by
   -- `P.map (↑)` is `Complex.ofRealHom.mapMatrix P`, so its determinant is `↑P.det`.
   have hP' : IsUnit (P.map ((↑) : ℝ → ℂ)).det :=
     RingHom.map_det Complex.ofRealHom P ▸ hP.map Complex.ofRealHom
@@ -202,7 +204,7 @@ theorem tristramLevineSignature_neg_transpose (V : Matrix ι ι ℝ) (ω : ℂ) 
 /-- **Additivity of the Tristram--Levine signature along a block diagonal**, the Seifert matrix
 of a connected sum. -/
 @[simp]
-theorem tristramLevineSignature_fromBlocks_zero {κ : Type*} [Fintype κ] [DecidableEq κ]
+theorem tristramLevineSignature_fromBlocks_zero {κ : Type*} [Fintype κ]
     (V : Matrix ι ι ℝ) (W : Matrix κ κ ℝ) (ω : ℂ) :
     tristramLevineSignature (Matrix.fromBlocks V 0 0 W) ω =
       tristramLevineSignature V ω + tristramLevineSignature W ω := by
@@ -214,16 +216,6 @@ theorem tristramLevineSignature_fromBlocks_zero {κ : Type*} [Fintype κ] [Decid
 end Signature
 
 section Examples
-
-/-- **The trefoil has Tristram--Levine signature `-2` at `ω = -1`**, its classical signature. -/
-theorem tristramLevineSignature_trefoilSeifertMatrix_neg_one :
-    tristramLevineSignature (trefoilSeifertMatrix.map ((↑) : ℤ → ℝ)) (-1) = -2 := by
-  rw [tristramLevineSignature_neg_one, signature_trefoilSeifertMatrix]
-
-/-- **The figure-eight knot has Tristram--Levine signature `0` at `ω = -1`.** -/
-theorem tristramLevineSignature_figureEightSeifertMatrix_neg_one :
-    tristramLevineSignature (figureEightSeifertMatrix.map ((↑) : ℤ → ℝ)) (-1) = 0 := by
-  rw [tristramLevineSignature_neg_one, signature_figureEightSeifertMatrix]
 
 /-- **The Tristram--Levine signature of the trefoil is not constant on the unit circle.** The
 witness is the rational point `(3 + 4i)/5`, where the symmetrised form becomes indefinite and the
@@ -260,7 +252,7 @@ theorem exists_tristramLevineSignature_trefoilSeifertMatrix_ne :
           map_ofNat] <;> norm_num
     rw [tristramLevineSignature, (isHermitian_tristramLevineForm _ _).signature_eq_of_congr_diagonal
       hP hd, Fin.sum_univ_two,
-      tristramLevineSignature_trefoilSeifertMatrix_neg_one]
+      tristramLevineSignature_neg_one, signature_trefoilSeifertMatrix]
     norm_num
 
 end Examples
