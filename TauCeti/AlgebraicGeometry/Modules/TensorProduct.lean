@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Monoidal
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 
 /-!
@@ -23,7 +24,11 @@ product of `𝒪ₓ`-modules is `M ⊗ N`.
   category, with unit `𝒪ₓ`; they are the site-level structures
   `TauCeti.SheafOfModules.monoidalCategory` and `TauCeti.SheafOfModules.symmetricCategory`;
 * `AlgebraicGeometry.Scheme.Modules.instMonoidalClosed` makes tensoring an `𝒪ₓ`-module on
-  the left adjoint to its internal Hom functor.
+  the left adjoint to its internal Hom functor;
+* `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_tensorObj` and
+  `AlgebraicGeometry.Scheme.Modules.isMonoidal_isQuasicoherent`: tensor products of
+  quasi-coherent `𝒪ₓ`-modules are quasi-coherent, so quasi-coherence is a monoidal property of
+  `𝒪ₓ`-modules.
 
 -/
 
@@ -39,7 +44,7 @@ noncomputable section
 
 variable (X : Scheme.{v})
 
-open CategoryTheory
+open CategoryTheory MonoidalCategory
 
 /-- The monoidal category structure on `𝒪ₓ`-modules: the tensor product sheafifies the
 sectionwise tensor product, and the unit is the structure sheaf. -/
@@ -57,6 +62,18 @@ internal Hom functor. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.instMonoidalClosed :
     MonoidalClosed X.Modules :=
   SheafOfModules.monoidalClosed X.sheaf
+
+/-- The tensor product of two quasi-coherent `𝒪ₓ`-modules is quasi-coherent. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_tensorObj (M N : X.Modules)
+    [M.IsQuasicoherent] [N.IsQuasicoherent] : (M ⊗ N).IsQuasicoherent :=
+  SheafOfModules.isQuasicoherent_tensorObj (R := X.sheaf)
+
+/-- Quasi-coherence is a monoidal property of `𝒪ₓ`-modules, so quasi-coherent `𝒪ₓ`-modules form
+a monoidal full subcategory of `X.Modules`. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isMonoidal_isQuasicoherent :
+    ObjectProperty.IsMonoidal (C := X.Modules)
+      (_root_.SheafOfModules.isQuasicoherent X.ringCatSheaf) :=
+  SheafOfModules.isMonoidal_isQuasicoherent (R := X.sheaf)
 
 end
 
