@@ -36,7 +36,12 @@ open _root_.Quiver PathAlgebra
 universe u w
 
 variable (k : Type w) {V : Type u} [CommSemiring k] (G : SimpleGraph V)
-  [∀ v, Fintype (G.neighborSet v)] [∀ x : DoubledQuiver G, Fintype (Quiver.Star x)]
+  [∀ v, Fintype (G.neighborSet v)]
+
+noncomputable local instance (x : DoubledQuiver G) : Fintype (Quiver.Star x) :=
+  Fintype.ofEquiv (G.neighborSet ((DoubledQuiver.vertexEquiv G).symm x))
+    ((DoubledQuiver.starEquivNeighborSet G _).symm.trans
+      (Equiv.cast (congrArg Quiver.Star (DoubledQuiver.vertexEquiv_symm_apply G x))))
 
 /-- **The signless relator of a simple graph** at `v` is `∑_{j ∼ v} (v → j → v)`, the sum of the
 backtracks along the edges at `v`. -/
