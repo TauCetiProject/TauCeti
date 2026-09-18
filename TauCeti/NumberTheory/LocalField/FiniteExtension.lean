@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
-public import Mathlib.RingTheory.Polynomial.Subring
-public import Mathlib.RingTheory.Valuation.Integral
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import TauCeti.NumberTheory.LocalField.NormedField
+import Mathlib.RingTheory.Polynomial.Subring
+import Mathlib.RingTheory.Valuation.Integral
 
 /-!
 # Finite extensions of a nonarchimedean local field are local fields
@@ -56,7 +56,7 @@ installed locally, as in `letI := finiteExtensionValuativeRel K M`.
   is `finiteExtensionValuativeRel K M`.
 * `TauCeti.finiteExtensionNormedFieldTopology_eq`: any valuative topology for such a relation is
   the norm topology.
-* `TauCeti.valuation_algEquiv`: `K`-algebra automorphisms of `M` preserve the valuation.
+* `AlgEquiv.valuation_eq`: `K`-algebra automorphisms of `M` preserve the valuation.
 
 ## Implementation notes
 
@@ -224,6 +224,12 @@ section Uniqueness
 
 variable {K M} {Γ : Type*} [LinearOrderedCommGroupWithZero Γ]
 
+/-- Evaluating a polynomial over `M` whose coefficients lie in a subring `R`, after restricting its
+coefficients to `R`, is evaluating the original polynomial. -/
+private theorem eval₂_toSubring {R : Subring M} (p : Polynomial M) (hp : (p.coeffs : Set M) ⊆ R)
+    (x : M) : (p.toSubring R hp).eval₂ (algebraMap R M) x = p.eval x := by
+  rw [← Polynomial.eval_map, Algebra.algebraMap_ofSubring, Polynomial.map_toSubring]
+
 /-- If a valuation `w` on `M` restricts to the valuation class of `K`, every element of `M` of
 spectral norm at most `1` has `w`-valuation at most `1`: the coefficients of its minimal
 polynomial over `K` are integral, so it is integral over the valuation ring of `w`. -/
@@ -243,8 +249,7 @@ private theorem valuation_le_one_of_finiteExtensionNormedField_norm_le_one {w : 
     simpa [Valuation.mem_integer_iff] using hcoeff n
   refine (Valuation.integer.integers w).mem_of_integral
     ⟨_, (Polynomial.monic_toSubring _ _ hsub).2 (hmon.map _), ?_⟩
-  rw [← Polynomial.eval_map, Algebra.algebraMap_ofSubring, Polynomial.map_toSubring,
-    Polynomial.eval_map_algebraMap, minpoly.aeval]
+  rw [eval₂_toSubring, Polynomial.eval_map_algebraMap, minpoly.aeval]
 
 /-- If a valuation `w` on `M` restricts to the valuation class of `K`, every element of `M` of
 spectral norm less than `1` has `w`-valuation less than `1`. -/
@@ -345,12 +350,15 @@ theorem finiteExtensionNormedFieldTopology_eq [ValuativeRel M] [ValuativeExtensi
 `M` of a nonarchimedean local field `K` preserves the canonical valuation of any valuative relation
 on `M` extending that of `K`. -/
 @[simp]
-theorem valuation_algEquiv [ValuativeRel M] [ValuativeExtension K M] (σ : M ≃ₐ[K] M) (x : M) :
-    valuation M (σ x) = valuation M x := by
+theorem _root_.AlgEquiv.valuation_eq [ValuativeRel M] [ValuativeExtension K M] (σ : M ≃ₐ[K] M)
+    (x : M) : valuation M (σ x) = valuation M x := by
+  let _ := finiteExtensionNormedField K M
   let _ := normalizedNontriviallyNormedField K
-  rw [← (valuation M).veq_iff_eq, veq_def, vle_iff_finiteExtensionNormedField_norm_le K,
-    vle_iff_finiteExtensionNormedField_norm_le K, finiteExtensionNormedField_norm_def,
-    finiteExtensionNormedField_norm_def, ← spectralNorm_eq_of_equiv σ x, and_self]
+  have hw := ValuativeRel.isEquiv ((valuation M).comap (algebraMap K M)) (valuation K)
+  -- The spectral norm is invariant under `K`-algebra automorphisms.
+  have h : ‖σ x‖ = ‖x‖ := (spectralNorm_eq_of_equiv σ x).symm
+  exact le_antisymm ((finiteExtensionNormedField_norm_le_norm_iff hw _ _).1 h.le)
+    ((finiteExtensionNormedField_norm_le_norm_iff hw _ _).1 h.ge)
 
 end Uniqueness
 
