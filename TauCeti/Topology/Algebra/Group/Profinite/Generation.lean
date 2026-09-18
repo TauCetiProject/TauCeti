@@ -29,9 +29,10 @@ the minimal number of generators of its finite quotients is bounded
 each open normal `U` separately says nothing, since each such quotient is finite.
 
 A possibly infinite subset *converges to one* when only finitely many of its elements lie outside
-each open normal subgroup. This condition is inherited by subsets and carried to images by
-continuous homomorphisms. It is the finiteness condition on generating sets used to define the
-cardinal-valued generator rank of a profinite group.
+each neighborhood of `1`; in a profinite group it suffices to test open normal subgroups. This
+condition is inherited by subsets and carried to images by continuous homomorphisms. It is the
+finiteness condition on generating sets used to define the cardinal-valued generator rank of a
+profinite group.
 
 ## Main results
 
@@ -45,8 +46,10 @@ cardinal-valued generator rank of a profinite group.
   generating set bounds the rank of every quotient by an open normal subgroup.
 * `TauCeti.isTopologicallyFinitelyGenerated_iff_exists_rank_le`: topological finite generation
   is exactly a uniform bound on the ranks of the finite quotients.
-* `TauCeti.ConvergesToOne`: a set has only finitely many elements outside every open normal
-  subgroup.
+* `TauCeti.ConvergesToOne`: a set has only finitely many elements outside every neighborhood of
+  `1`.
+* `TauCeti.convergesToOne_iff_openNormalSubgroup`: in a profinite group, the same holds for
+  every open normal subgroup.
 * `TauCeti.ConvergesToOne.image`: a continuous homomorphism carries a set converging to one to
   another such set.
 
@@ -61,47 +64,55 @@ namespace TauCeti
 
 section ConvergesToOne
 
+open scoped Topology
+
 variable {G : Type*} [Group G] [TopologicalSpace G]
 
-/-- A subset of a profinite group **converges to one** when every open normal subgroup omits
-only finitely many of its elements. This is the finiteness condition imposed on generating sets
-in the cardinal-valued topological generator rank of a profinite group. -/
-def ConvergesToOne [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
-    (s : Set G) : Prop :=
-  ∀ U : OpenNormalSubgroup G, {x ∈ s | x ∉ U.toSubgroup}.Finite
+/-- A subset of a topological group **converges to one** when every neighborhood of `1` omits
+only finitely many of its elements. For a profinite group this says that every open normal
+subgroup omits only finitely many elements (`TauCeti.convergesToOne_iff_openNormalSubgroup`); it
+is the finiteness condition imposed on generating sets in the cardinal-valued topological
+generator rank of a profinite group. -/
+def ConvergesToOne (s : Set G) : Prop :=
+  ∀ U ∈ 𝓝 (1 : G), {x ∈ s | x ∉ U}.Finite
 
-variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
-
-/-- A set converges to one exactly when only finitely many of its elements lie outside each open
-normal subgroup. -/
+/-- A set converges to one exactly when only finitely many of its elements lie outside each
+neighborhood of `1`. -/
 @[simp]
 theorem convergesToOne_iff {s : Set G} :
-    ConvergesToOne s ↔ ∀ U : OpenNormalSubgroup G, {x ∈ s | x ∉ U.toSubgroup}.Finite :=
+    ConvergesToOne s ↔ ∀ U ∈ 𝓝 (1 : G), {x ∈ s | x ∉ U}.Finite :=
   Iff.rfl
 
-/-- Every finite subset of a profinite group converges to one. -/
+/-- In a profinite group, a set converges to one exactly when only finitely many of its elements
+lie outside each open normal subgroup. -/
+theorem convergesToOne_iff_openNormalSubgroup [IsTopologicalGroup G] [CompactSpace G]
+    [TotallyDisconnectedSpace G] {s : Set G} :
+    ConvergesToOne s ↔ ∀ U : OpenNormalSubgroup G, {x ∈ s | x ∉ U.toSubgroup}.Finite := by
+  refine ⟨fun hs U ↦ hs _ (U.isOpen.mem_nhds U.one_mem), fun hs U hU ↦ ?_⟩
+  obtain ⟨V, hVU, hVopen, hV1⟩ := mem_nhds_iff.mp hU
+  obtain ⟨N, hN⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hVopen hV1
+  exact (hs N).subset fun x hx ↦ ⟨hx.1, fun hxN ↦ hx.2 (hVU (hN hxN))⟩
+
+/-- Every finite subset of a topological group converges to one. -/
 theorem _root_.Set.Finite.convergesToOne {s : Set G} (hs : s.Finite) : ConvergesToOne s :=
-  convergesToOne_iff.mpr fun _ ↦ hs.subset fun _ hx ↦ hx.1
+  convergesToOne_iff.mpr fun _ _ ↦ hs.subset fun _ hx ↦ hx.1
 
 /-- Every subset of a set converging to one also converges to one. -/
 theorem ConvergesToOne.mono {s t : Set G} (hs : ConvergesToOne s) (hts : t ⊆ s) :
     ConvergesToOne t :=
-  convergesToOne_iff.mpr fun U ↦ (hs U).subset fun _ hx ↦ ⟨hts hx.1, hx.2⟩
+  convergesToOne_iff.mpr fun U hU ↦ (hs U hU).subset fun _ hx ↦ ⟨hts hx.1, hx.2⟩
 
-variable {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H]
-  [TotallyDisconnectedSpace H]
+variable {H : Type*} [Group H] [TopologicalSpace H]
 
-/-- The image of a set converging to one under a continuous homomorphism of profinite groups also
-converges to one. -/
+/-- The image of a set converging to one under a continuous homomorphism also converges to
+one. -/
 theorem ConvergesToOne.image {s : Set G} (hs : ConvergesToOne s) (f : G →* H)
     (hf : Continuous f) : ConvergesToOne (f '' s) := by
-  intro U
-  let V := OpenNormalSubgroup.comap U f hf
-  refine ((hs V).image f).subset ?_
-  rintro y ⟨hy, hyU⟩
-  obtain ⟨x, hxs, rfl⟩ := hy
-  refine ⟨x, ⟨hxs, ?_⟩, rfl⟩
-  exact fun hxV ↦ hyU (OpenNormalSubgroup.mem_comap.mp hxV)
+  intro U hU
+  have hV : f ⁻¹' U ∈ 𝓝 (1 : G) := hf.continuousAt.preimage_mem_nhds (by rwa [map_one])
+  refine ((hs _ hV).image f).subset ?_
+  rintro y ⟨⟨x, hxs, rfl⟩, hyU⟩
+  exact ⟨x, ⟨hxs, hyU⟩, rfl⟩
 
 /-- A topological group isomorphism carries a set converging to one exactly to a set converging
 to one. -/
