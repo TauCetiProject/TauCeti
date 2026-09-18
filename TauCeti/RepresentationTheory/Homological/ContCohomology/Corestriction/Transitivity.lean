@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
 public import TauCeti.GroupTheory.Index.Basic
-public import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.Algebra.Group.Subgroup.Map
 public import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
 public import Mathlib.Topology.Algebra.OpenSubgroup
 
