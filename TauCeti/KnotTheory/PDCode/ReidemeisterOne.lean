@@ -335,9 +335,17 @@ private theorem reidemeisterOne_edgePair_val :
   · funext i
     induction i using Fin.lastCases <;> simp
 
-private theorem smoothingTurn_reidemeisterOne (c : Fin (n + 1) → Bool) :
-    (D.reidemeisterOne h b).smoothingTurn c = (halfEdgeSuccEquiv n).permCongr
-      (Perm.sumCongr (D.smoothingTurn (Fin.init c)) (slotSmoothing (c (Fin.last n)))) := by
+private theorem crossingwisePerm_reidemeisterOne
+    (oldTurn : Perm (Fin (4 * n))) (newTurn : Perm (Fin (4 * (n + 1))))
+    (p : Fin (n + 1) → Perm (Fin 4))
+    (oldTurn_crossing : ∀ i slot,
+      oldTurn (D.halfEdge (crossingSlotEquiv n (i, slot))) =
+        D.crossing i (p i.castSucc slot))
+    (newTurn_crossing : ∀ i slot,
+      newTurn ((D.reidemeisterOne h b).halfEdge (crossingSlotEquiv (n + 1) (i, slot))) =
+        (D.reidemeisterOne h b).crossing i (p i slot)) :
+    newTurn = (halfEdgeSuccEquiv n).permCongr
+      (Perm.sumCongr oldTurn (p (Fin.last n))) := by
   ext x
   obtain ⟨y, rfl⟩ := (halfEdgeSuccEquiv n).surjective x
   rcases y with y | slot
@@ -346,34 +354,29 @@ private theorem smoothingTurn_reidemeisterOne (c : Fin (n + 1) → Bool) :
     have hx := D.reidemeisterOne_crossing_castSucc h b i slot
     rw [crossing_apply, ← crossingSlotEquiv_succ_castSucc] at hx
     rw [Equiv.permCongr_apply, Equiv.symm_apply_apply, Perm.sumCongr_apply, Sum.map_inl,
-      smoothingTurn_crossing, ← hx, smoothingTurn_crossing, crossing_apply,
-      crossingSlotEquiv_succ_castSucc, reidemeisterOne_crossing_castSucc, Fin.init_def]
-  · have hx : (D.reidemeisterOne h b).halfEdge
-        (crossingSlotEquiv (n + 1) (Fin.last n, slot)) = halfEdgeSuccEquiv n (.inr slot) := by
-      simpa only [crossingSlotEquiv_succ_last] using D.reidemeisterOne_crossing_last h b slot
-    rw [Equiv.permCongr_apply, Equiv.symm_apply_apply, Perm.sumCongr_apply, Sum.map_inr, ← hx,
-      smoothingTurn_crossing, crossing_apply, crossingSlotEquiv_succ_last,
-      reidemeisterOne_crossing_last]
-
-private theorem crossingTurn_reidemeisterOne :
-    (D.reidemeisterOne h b).crossingTurn = (halfEdgeSuccEquiv n).permCongr
-      (Perm.sumCongr D.crossingTurn oppositeCrossingSlot) := by
-  ext x
-  obtain ⟨y, rfl⟩ := (halfEdgeSuccEquiv n).surjective x
-  rcases y with y | slot
-  · obtain ⟨z, rfl⟩ := D.halfEdge.surjective y
-    obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective z
-    have hx := D.reidemeisterOne_crossing_castSucc h b i slot
-    rw [crossing_apply, ← crossingSlotEquiv_succ_castSucc] at hx
-    rw [Equiv.permCongr_apply, Equiv.symm_apply_apply, Perm.sumCongr_apply, Sum.map_inl,
-      crossingTurn_crossing, ← hx, crossingTurn_crossing, crossing_apply,
+      oldTurn_crossing, ← hx, newTurn_crossing, crossing_apply,
       crossingSlotEquiv_succ_castSucc, reidemeisterOne_crossing_castSucc]
   · have hx : (D.reidemeisterOne h b).halfEdge
         (crossingSlotEquiv (n + 1) (Fin.last n, slot)) = halfEdgeSuccEquiv n (.inr slot) := by
       simpa only [crossingSlotEquiv_succ_last] using D.reidemeisterOne_crossing_last h b slot
     rw [Equiv.permCongr_apply, Equiv.symm_apply_apply, Perm.sumCongr_apply, Sum.map_inr, ← hx,
-      crossingTurn_crossing, crossing_apply, crossingSlotEquiv_succ_last,
+      newTurn_crossing, crossing_apply, crossingSlotEquiv_succ_last,
       reidemeisterOne_crossing_last]
+
+private theorem smoothingTurn_reidemeisterOne (c : Fin (n + 1) → Bool) :
+    (D.reidemeisterOne h b).smoothingTurn c = (halfEdgeSuccEquiv n).permCongr
+      (Perm.sumCongr (D.smoothingTurn (Fin.init c)) (slotSmoothing (c (Fin.last n)))) := by
+  apply crossingwisePerm_reidemeisterOne D h b _ _ (fun i => slotSmoothing (c i))
+  · intro i slot
+    simpa only [Fin.init_def] using D.smoothingTurn_crossing (Fin.init c) i slot
+  · exact (D.reidemeisterOne h b).smoothingTurn_crossing c
+
+private theorem crossingTurn_reidemeisterOne :
+    (D.reidemeisterOne h b).crossingTurn = (halfEdgeSuccEquiv n).permCongr
+      (Perm.sumCongr D.crossingTurn oppositeCrossingSlot) := by
+  apply crossingwisePerm_reidemeisterOne D h b _ _ (fun _ => oppositeCrossingSlot)
+  · exact D.crossingTurn_crossing
+  · exact (D.reidemeisterOne h b).crossingTurn_crossing
 
 private theorem init_smoothingChoice_reidemeisterOne (s : Fin (n + 1) → Bool) :
     Fin.init ((D.reidemeisterOne h b).smoothingChoice s) = D.smoothingChoice (Fin.init s) := by
