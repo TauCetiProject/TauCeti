@@ -53,10 +53,7 @@ theorem toSkeleton_eq_toSkeleton_iff_nonempty_iso {C : Type u} [Category.{v} C]
   exact ⟨fun ⟨e⟩ ↦ ⟨P.ι.mapIso e⟩, fun ⟨e⟩ ↦ ⟨ObjectProperty.isoMk _ e⟩⟩
 
 /-- Descend a function on a full subcategory that is invariant under isomorphism of the underlying
-objects of the ambient category to the skeleton of the full subcategory.
-
-`Skeleton` is by definition the quotient by `isIsomorphicSetoid`, so this is `Quotient.lift`, and
-`skeletonLift_toSkeleton` holds by `rfl`. -/
+objects of the ambient category to the skeleton of the full subcategory. -/
 noncomputable def skeletonLift {C : Type u} [Category.{v} C] (P : ObjectProperty C)
     {α : Sort w} (f : P.FullSubcategory → α)
     (hf : ∀ X Y : P.FullSubcategory, Nonempty (X.obj ≅ Y.obj) → f X = f Y) :
