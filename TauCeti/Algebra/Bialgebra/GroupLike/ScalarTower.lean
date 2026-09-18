@@ -58,7 +58,10 @@ theorem val_groupLikeScalarTowerEquiv
   | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
   | tmul a b => simp [Algebra.smul_def]
 
-/-- Compatible scalar automorphisms commute with extending a character through a tower. -/
+/-- Compatible scalar automorphisms commute with extending a character through a tower.
+
+This is an explicit rewrite rule: `simp` cannot infer `σ` from the left-hand side.
+Use it with the chosen compatible automorphisms and their compatibility proof. -/
 theorem groupLikeScalarTowerEquiv_smul
     (hspan : Submodule.span L
       (Set.range (_root_.GroupLike.val (R := L) (A := L ⊗[k] A))) = ⊤)
