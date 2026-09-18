@@ -80,8 +80,9 @@ Mathlib's `MulEquiv.abelianizationCongr` applied to `NormalLayer.conjugateGalEqu
   `TauCeti.ClassFieldTheory.NormalLayer.conjugateTateIso_one` and
   `TauCeti.ClassFieldTheory.NormalLayer.conjugateTateIso_trans_conjugateTateIso`: the induced maps
   on ordinary and Tate cohomology satisfy the same action laws, up to transport along
-  `conjugate_one` and `conjugate_conjugate`; the maps on ground subgroups, coefficient modules
-  and ground levels satisfy them on underlying elements.
+  `conjugate_one` and `conjugate_conjugate`; the Galois-group and norm-quotient equivalences satisfy
+  matching transported laws, while the maps on ground subgroups, coefficient modules and ground
+  levels satisfy them on underlying elements.
 * `TauCeti.ClassFieldTheory.NormalLayer.degree_conjugate`: a conjugate layer has the same degree.
 * `TauCeti.ClassFieldTheory.NormalLayer.card_gal_conjugate`: its simp-normal form, on the orders of
   the Galois groups.
@@ -512,6 +513,92 @@ theorem conjugateGroundLevelEquiv_conjugateGroundLevelEquiv_apply_coe (x : F.lev
       (L.conjugateGroundLevelEquiv F (g * h) x : F.level (L.conjugate (g * h)).ground) := by
   rw [conjugateGroundLevelEquiv_apply_coe, conjugateGroundLevelEquiv_apply_coe,
     conjugateGroundLevelEquiv_apply_coe, map_mul, Module.End.mul_apply]
+
+private theorem conjugateGalEquiv_trans_cast_eq {L' : NormalLayer G}
+    (hL : L.conjugate g = L') (e : L.Gal ≃* L'.Gal)
+    (he : ∀ (u : L.ground) (v : L'.ground), (v : G) = g * u * g⁻¹ →
+      e (QuotientGroup.mk u) = QuotientGroup.mk v) :
+    (L.conjugateGalEquiv g).trans
+        (MulEquiv.cast (M := fun K : NormalLayer G => K.Gal) hL) = e := by
+  subst hL
+  apply MulEquiv.ext
+  intro γ
+  induction γ using QuotientGroup.induction_on with
+  | H u =>
+    rw [MulEquiv.trans_apply, conjugateGalEquiv_mk]
+    exact (he u _ (L.conjugateGroundEquiv_apply_coe g u)).symm
+
+/-- **Conjugation by `1` is the identity on the Galois group**, after transporting along
+`conjugate_one`. -/
+theorem conjugateGalEquiv_one :
+    (L.conjugateGalEquiv 1).trans
+        (MulEquiv.cast (M := fun K : NormalLayer G => K.Gal) L.conjugate_one) =
+      MulEquiv.refl L.Gal := by
+  apply L.conjugateGalEquiv_trans_cast_eq 1 L.conjugate_one
+  intro u v huv
+  exact congrArg QuotientGroup.mk (Subtype.ext (by simpa using huv.symm))
+
+/-- **Conjugation composes on the Galois group**: conjugating by `h` and then by `g` is
+conjugating by `g * h`, up to transport along `conjugate_conjugate`. -/
+theorem conjugateGalEquiv_trans_conjugateGalEquiv :
+    (L.conjugateGalEquiv h).trans ((L.conjugate h).conjugateGalEquiv g) =
+      (L.conjugateGalEquiv (g * h)).trans
+        (MulEquiv.cast (M := fun K : NormalLayer G => K.Gal)
+          (L.conjugate_conjugate g h).symm) := by
+  symm
+  apply L.conjugateGalEquiv_trans_cast_eq (g * h) (L.conjugate_conjugate g h).symm
+  intro u v huv
+  rw [MulEquiv.trans_apply, conjugateGalEquiv_mk, conjugateGalEquiv_mk]
+  exact congrArg QuotientGroup.mk <| Subtype.ext <|
+    (L.conjugateGroundEquiv_conjugateGroundEquiv_apply_coe g h u).trans
+      ((L.conjugateGroundEquiv_apply_coe (g * h) u).trans huv.symm)
+
+private theorem conjugateNormQuotientEquiv_trans_cast_eq {L' : NormalLayer G}
+    (hL : L.conjugate g = L') (e : L.NormQuotient F ≃+ L'.NormQuotient F)
+    (he : ∀ (x : F.level L.ground) (y : F.level L'.ground),
+      (y : F.toRep.V) = F.toRep.ρ g x →
+      e (L.normQuotientMk F x) = L'.normQuotientMk F y) :
+    (L.conjugateNormQuotientEquiv F g).trans
+        (AddEquiv.cast (M := fun K : NormalLayer G => K.NormQuotient F) hL) = e := by
+  subst hL
+  apply AddEquiv.ext
+  intro z
+  induction z using Submodule.Quotient.induction_on with
+  | _ x =>
+    rw [← normQuotientMk_apply, AddEquiv.trans_apply,
+      conjugateNormQuotientEquiv_normQuotientMk]
+    exact (he x _ (L.conjugateGroundLevelEquiv_apply_coe F g x)).symm
+
+/-- **Conjugation by `1` is the identity on the norm quotient**, after transporting along
+`conjugate_one`. -/
+theorem conjugateNormQuotientEquiv_one :
+    (L.conjugateNormQuotientEquiv F 1).trans
+        (AddEquiv.cast (M := fun K : NormalLayer G => K.NormQuotient F) L.conjugate_one) =
+      AddEquiv.refl (L.NormQuotient F) := by
+  apply L.conjugateNormQuotientEquiv_trans_cast_eq F 1 L.conjugate_one
+  intro x y hy
+  rw [AddEquiv.refl_apply]
+  congr 1
+  exact Subtype.ext (by simpa using hy.symm)
+
+/-- **Conjugation composes on the norm quotient**: conjugating by `h` and then by `g` is
+conjugating by `g * h`, up to transport along `conjugate_conjugate`. -/
+theorem conjugateNormQuotientEquiv_trans_conjugateNormQuotientEquiv :
+    (L.conjugateNormQuotientEquiv F h).trans
+        ((L.conjugate h).conjugateNormQuotientEquiv F g) =
+      (L.conjugateNormQuotientEquiv F (g * h)).trans
+        (AddEquiv.cast (M := fun K : NormalLayer G => K.NormQuotient F)
+          (L.conjugate_conjugate g h).symm) := by
+  symm
+  apply L.conjugateNormQuotientEquiv_trans_cast_eq F (g * h)
+    (L.conjugate_conjugate g h).symm
+  intro x y hy
+  rw [AddEquiv.trans_apply, conjugateNormQuotientEquiv_normQuotientMk,
+    conjugateNormQuotientEquiv_normQuotientMk]
+  congr 1
+  exact Subtype.ext <|
+    (L.conjugateGroundLevelEquiv_conjugateGroundLevelEquiv_apply_coe F g h x).trans
+      ((L.conjugateGroundLevelEquiv_apply_coe F (g * h) x).trans hy.symm)
 
 /-- Any change-of-group map on ordinary cohomology whose group part inverts conjugation by `g` on
 representatives and whose coefficient part acts by `g` is `conjugateCohomologyIso`, up to the
