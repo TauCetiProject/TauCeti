@@ -198,8 +198,9 @@ theorem op_smul (G : InternalGrading R A) (r : R) (a : A) : op G (r • a) = r �
 
 @[simp]
 theorem op_zsmul (G : InternalGrading R A) (n : ℤ) (a : A) :
-    op G (n • a) = n • op G a :=
-  map_zsmul (opLinearEquiv G) n a
+    op G ((n : A) * a) = n • op G a := by
+  rw [← zsmul_eq_mul]
+  exact map_zsmul (opLinearEquiv G) n a
 
 @[simp]
 theorem unop_zero (G : InternalGrading R A) : unop G (0 : GradedOpposite G) = 0 :=
@@ -227,8 +228,9 @@ theorem unop_smul (G : InternalGrading R A) (r : R) (a : GradedOpposite G) :
 
 @[simp]
 theorem unop_zsmul (G : InternalGrading R A) (n : ℤ) (a : GradedOpposite G) :
-    unop G (n • a) = n • unop G a :=
-  map_zsmul (opLinearEquiv G).symm n a
+    unop G ((n : GradedOpposite G) * a) = n • unop G a := by
+  rw [← zsmul_eq_mul]
+  exact map_zsmul (opLinearEquiv G).symm n a
 
 section Multiplication
 
@@ -281,7 +283,7 @@ theorem unop_mul {p q : ℤ} {a b : GradedOpposite G}
   have h := op_mul G ((mem_piece_iff G p a).1 ha) ((mem_piece_iff G q b).1 hb)
   rw [op_unop, op_unop] at h
   have key := congrArg (unop G) h
-  simpa only [Units.smul_def, unop_zsmul, unop_op] using key
+  simpa only [Units.smul_def, zsmul_eq_mul, unop_zsmul, unop_op] using key
 
 /-- The homogeneous pieces of a graded opposite are closed under its signed multiplication. -/
 noncomputable instance instGradedMonoid : SetLike.GradedMonoid (grading G).piece where

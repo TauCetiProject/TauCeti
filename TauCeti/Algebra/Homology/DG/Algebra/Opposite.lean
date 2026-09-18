@@ -78,7 +78,12 @@ private theorem differential_leibniz_of_mem (h : IsDGAlgebra G.piece d)
   rw [op_mul G ha hb]
   simp only [Units.smul_def, map_zsmul]
   rw [differential_op, h.leibniz hb a, op_add]
-  rw [Units.smul_def, op_zsmul]
+  have hop :
+      op G ((q.negOnePow : ℤ) • (b * d a)) =
+        (q.negOnePow : ℤ) • op G (b * d a) :=
+    by simpa only [opLinearEquiv_apply] using
+      map_zsmul (opLinearEquiv G) q.negOnePow (b * d a)
+  rw [Units.smul_def, hop]
   rw [
     differential_op, differential_op, op_mul G (h.map_mem ha) hb,
     op_mul G ha (h.map_mem hb)]
