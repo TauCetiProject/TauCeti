@@ -31,6 +31,8 @@ nested in `TauCeti` would break it.
 
 * `CategoryTheory.ObjectProperty.factorsThrough_iff`: the characterization of the predicate by
   an explicit intermediate object and two factors.
+* `CategoryTheory.ObjectProperty.factorsThrough_id_iff`: when `P` is stable under retracts, an
+  identity factors through a `P`-object exactly when its source satisfies `P`.
 * `CategoryTheory.ObjectProperty.FactorsThrough.add`: over a preadditive category with binary
   biproducts, a sum of factorizations through a product-closed `P` again factors through a
   single `P`-object.
@@ -69,6 +71,18 @@ theorem factorsThrough_iff (P : ObjectProperty C) {X Y : C} (f : X ⟶ Y) :
 theorem factorsThrough_comp (P : ObjectProperty C) {X Q Y : C} (hQ : P Q)
     (i : X ⟶ Q) (p : Q ⟶ Y) : FactorsThrough P (i ≫ p) :=
   ⟨⟨Q, i, p, rfl⟩, hQ⟩
+
+/-- If `P` is stable under retracts, the identity of `X` factors through a `P`-object exactly
+when `X` itself satisfies `P`. -/
+@[simp]
+theorem factorsThrough_id_iff (P : ObjectProperty C) [P.IsStableUnderRetracts] (X : C) :
+    FactorsThrough P (𝟙 X) ↔ P X := by
+  constructor
+  · intro h
+    obtain ⟨Q, hQ, i, p, h⟩ := (factorsThrough_iff P (𝟙 X)).1 h
+    exact P.prop_of_retract ⟨i, p, h.symm⟩ hQ
+  · intro hX
+    simpa using factorsThrough_comp P hX (𝟙 X) (𝟙 X)
 
 namespace FactorsThrough
 
