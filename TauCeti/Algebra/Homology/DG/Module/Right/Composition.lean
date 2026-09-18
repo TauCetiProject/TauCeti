@@ -181,8 +181,6 @@ omit [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece �
 theorem comp_assoc {Q : Type u} [AddCommGroup Q] [Module R Q] [Module Aᵐᵒᵖ Q]
     [IsScalarTower R Aᵐᵒᵖ Q]
     {ℳQ : ℤ → Submodule R Q}
-    [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳQ]
-    [DirectSum.Decomposition ℳQ]
     {r p q j : ℤ}
     (k : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳP) (ℳN := ℳQ) r)
     (g : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳN) (ℳN := ℳP) p)
@@ -237,8 +235,15 @@ noncomputable def dgRightModuleCochainCompTensor (p q j : ℤ) (hpq : p + q = j)
 theorem dgRightModuleCochainCompTensor_tmul (p q j : ℤ) (hpq : p + q = j)
     (g : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳN) (ℳN := ℳP) p)
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) q) :
-    ModuleCat.Hom.hom (dgRightModuleCochainCompTensor (hM := hM) (hN := hN) (hP := hP)
-      p q j hpq) (g ⊗ₜ f) = dgRightModuleCochains.comp g f hpq :=
+    ModuleCat.Hom.hom
+        (A := ModuleCat.of R
+            (dgRightModuleCochains (R := R) (A := A) (ℳ := ℳN) (ℳN := ℳP) p) ⊗
+          ModuleCat.of R
+            (dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) q))
+        (B := ModuleCat.of R
+          (dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳP) j))
+        (dgRightModuleCochainCompTensor (hM := hM) (hN := hN) (hP := hP) p q j hpq)
+        (g ⊗ₜ f) = dgRightModuleCochains.comp g f hpq :=
   (rfl)
 
 private theorem dgRightModuleCochainCompTensor_d_apply (p q j : ℤ) (hpq : p + q = j)
@@ -348,7 +353,10 @@ private theorem dgRightModuleHomComplexUnit_f_zero (hM : IsDGRightModule h ℳ d
 cochain. -/
 @[simp]
 theorem dgRightModuleHomComplexUnit_f_zero_apply (hM : IsDGRightModule h ℳ dM) (r : R) :
-    ModuleCat.Hom.hom ((dgRightModuleHomComplexUnit hM).f 0)
+    ModuleCat.Hom.hom
+        (B := ModuleCat.of R
+          (dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳ) 0))
+        ((dgRightModuleHomComplexUnit hM).f 0)
         ((HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0
           (𝟙_ (ModuleCat.{u} R))).inv r) =
       (r • dgRightModuleCochains.id (R := R) (A := A) (ℳ := ℳ) :
