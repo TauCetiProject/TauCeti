@@ -30,6 +30,8 @@ these units gauge `c` to `c'`.
 
 ## Main results
 
+* `TauCeti.SkewZigzagParameter.existsUnique_unit_smul_of_vertexFixing_algEquiv`: a vertex-fixing
+  isomorphism of skew-zigzag relation quotients multiplies each arrow by a unique unit.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_of_vertexFixing_algEquiv`: a vertex-fixing
   isomorphism of skew-zigzag relation quotients forces the parameters to be gauge equivalent.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_iff_exists_vertexFixing_algEquiv`: two parameters
@@ -91,13 +93,15 @@ private theorem skewZigzagMk_ofArrow_smul_left_injective
   beta_reduce
   rw [← ofArrow_symm_mul_ofArrow, map_mul, ← mul_smul_comm, ← mul_smul_comm, hrs]
 
-/-- A vertex-fixing isomorphism multiplies each arrow by a unit. -/
-private theorem exists_unit_smul_of_algEquiv
+/-- **A vertex-fixing isomorphism rescales arrows by units.** An algebra isomorphism between the
+relation quotients of two parameters that fixes every vertex idempotent multiplies each arrow by a
+unique unit. -/
+theorem existsUnique_unit_smul_of_vertexFixing_algEquiv
     (φ : skewZigzagQuotient k G c ≃ₐ[k] skewZigzagQuotient k G c')
     (hφ : ∀ i : V, φ (skewZigzagMk k G c (vertexIdempotent k (vertex G i))) =
       skewZigzagMk k G c' (vertexIdempotent k (vertex G i)))
     {x y : DoubledQuiver G} (e : x ⟶ y) :
-    ∃ r : kˣ, φ (skewZigzagMk k G c (ofArrow e)) = (r : k) • skewZigzagMk k G c' (ofArrow e) := by
+    ∃! r : kˣ, φ (skewZigzagMk k G c (ofArrow e)) = (r : k) • skewZigzagMk k G c' (ofArrow e) := by
   obtain ⟨r, hr⟩ := exists_smul_of_algEquiv φ hφ e
   have hφsymm : ∀ i : V, φ.symm (skewZigzagMk k G c' (vertexIdempotent k (vertex G i))) =
       skewZigzagMk k G c (vertexIdempotent k (vertex G i)) := fun i => by
@@ -114,7 +118,8 @@ private theorem exists_unit_smul_of_algEquiv
       _ = skewZigzagMk k G c (ofArrow e) := φ.symm_apply_apply _
       _ = (1 : k) • skewZigzagMk k G c (ofArrow e) := (one_smul _ _).symm
   have hrs : r * s = 1 := skewZigzagMk_ofArrow_smul_left_injective (c := c) e hrs_smul
-  exact ⟨⟨r, s, hrs, by simpa [mul_comm] using hrs⟩, hr⟩
+  refine ⟨⟨r, s, hrs, by simpa [mul_comm] using hrs⟩, hr, fun t ht => Units.ext ?_⟩
+  exact skewZigzagMk_ofArrow_smul_left_injective (c := c') e (ht.symm.trans hr)
 
 /-- The unit by which a vertex-fixing isomorphism multiplies an arrow. -/
 private noncomputable def arrowUnit
@@ -122,7 +127,7 @@ private noncomputable def arrowUnit
     (hφ : ∀ i : V, φ (skewZigzagMk k G c (vertexIdempotent k (vertex G i))) =
       skewZigzagMk k G c' (vertexIdempotent k (vertex G i)))
     ⦃x y : DoubledQuiver G⦄ (e : x ⟶ y) : kˣ :=
-  (exists_unit_smul_of_algEquiv φ hφ e).choose
+  (existsUnique_unit_smul_of_vertexFixing_algEquiv φ hφ e).exists.choose
 
 /-- A vertex-fixing isomorphism multiplies each arrow by its arrow unit. -/
 private theorem apply_skewZigzagMk_ofArrow
@@ -132,7 +137,7 @@ private theorem apply_skewZigzagMk_ofArrow
     {x y : DoubledQuiver G} (e : x ⟶ y) :
     φ (skewZigzagMk k G c (ofArrow e)) =
       (arrowUnit φ hφ e : k) • skewZigzagMk k G c' (ofArrow e) :=
-  (exists_unit_smul_of_algEquiv φ hφ e).choose_spec
+  (existsUnique_unit_smul_of_vertexFixing_algEquiv φ hφ e).exists.choose_spec
 
 /-- A vertex-fixing isomorphism multiplies each backtrack by the backtrack scale of its arrow
 units. -/
