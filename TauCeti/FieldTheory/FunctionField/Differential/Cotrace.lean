@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Differential.CanonicalDivisor
+public import TauCeti.FieldTheory.FunctionField.Differential.LocalOrder
 public import TauCeti.FieldTheory.FunctionField.Repartition.Trace
 public import TauCeti.RingTheory.Trace.Dual
 
@@ -19,10 +19,9 @@ differential `ω'` of `F' / k'` with
 `Tr_{k'/k} (ω' α) = ω (Tr_{F'/F} α)`
 
 for every repartition `α` of `F'` that is constant on the fibres over the places of `F`.  This
-`ω'` is the **cotrace** `Cotr_{F'/F} ω` (Stichtenoth, Definition 3.4.5 and Theorem 3.4.6).  It is
-bounded by `Con D + Diff(F'/F)` whenever `ω` is bounded by `D`, so that
-`Con (ω) + Diff(F'/F) ≤ (Cotr ω)`; this is the inequality half of the divisor identity
-`(Cotr ω) = Con (ω) + Diff(F'/F)` from which the Hurwitz genus formula follows.
+`ω'` is the **cotrace** `Cotr_{F'/F} ω` (Stichtenoth, Definition 3.4.5 and Theorem 3.4.6).  Its
+divisor is `(Cotr ω) = Con (ω) + Diff(F'/F)`, the identity from which the Hurwitz genus formula
+follows (`TauCeti.FieldTheory.FunctionField.Different.Hurwitz`).
 
 The construction follows Stichtenoth.  Every repartition of `F'` is a fibre-constant repartition
 modulo `A_{F'}(B')`, for any divisor `B'` of `F'`, by weak approximation on each of the finitely
@@ -32,6 +31,13 @@ many fibres where the repartition is not already bounded by `B'`
 shows that `α ↦ ω (Tr α)` is well defined on `A_{F'} ⧸ A_{F'}(B')`, which gives a `k`-linear form
 on `A_{F'}`; the trace form of `k' / k` turns it into a `k'`-linear one
 (`Module.Dual.traceCompEquiv`).
+
+This gives `Con (ω) + Diff(F'/F) ≤ (Cotr ω)`.  The reverse inequality is the sharpness of the trace
+estimate (`TauCeti.Place.exists_forall_valuation_le_and_trace_eq`): if `Cotr ω` were bounded by
+`Con (ω) + Diff(F'/F) + P'` for a place `P'` over `P`, then, as `v_P (ω)` is the largest bound the
+local component `ω_P` respects, some function `x` with `ord_P x ≥ -(v_P (ω) + 1)` and `ω_P x ≠ 0`
+would be the trace of a function of `F'` bounded by `Con (ω) + Diff(F'/F) + P'` along the fibre
+over `P`, and `Cotr ω` would have to kill the corresponding fibre-constant repartition.
 
 ## Main definitions
 
@@ -50,6 +56,8 @@ on `A_{F'}`; the trace form of `k' / k` turns it into a `k'`-linear one
   the cotrace is injective.
 * `TauCeti.conorm_add_different_le_weilDifferentialDivisor`:
   `Con (ω) + Diff(F'/F) ≤ (Cotr ω)` for a nonzero Weil differential `ω`.
+* `TauCeti.weilDifferentialDivisor_weilDifferentialCotrace`: **the divisor of the cotrace**,
+  `(Cotr ω) = Con (ω) + Diff(F'/F)` (Stichtenoth, Theorem 3.4.6).
 
 ## References
 
@@ -303,6 +311,79 @@ theorem conorm_add_different_le_weilDifferentialDivisor (hF : IsFunctionField k 
   (mem_weilDifferentialFiltration_iff_le_weilDifferentialDivisor hF' hex' _ _ _).mp <|
     weilDifferentialCotrace_mem_weilDifferentialFiltration hF hF' ω
       (isGreatest_weilDifferentialDivisor hF hex ω.2 _).1
+
+open AlgebraicGeometry in
+/-- **The divisor of the cotrace** (Stichtenoth, Theorem 3.4.6): `(Cotr ω) = Con (ω) + Diff(F'/F)`
+for every nonzero Weil differential `ω` of `F / k`. -/
+theorem weilDifferentialDivisor_weilDifferentialCotrace (hF : IsFunctionField k F)
+    (hF' : IsFunctionField k' F') (hex : IsIntegrallyClosedIn k F)
+    (hex' : IsIntegrallyClosedIn k' F') (ω : ↥(weilDifferentialSpace k F)) (hω : ω ≠ 0) :
+    weilDifferentialDivisor hF' hex' (weilDifferentialCotrace k' F' hF hF' ω).2
+        (by simpa [ZeroMemClass.coe_eq_zero] using hω) =
+      Divisor.conorm k' F' (weilDifferentialDivisor hF hex ω.2 (by simpa using hω)) +
+        Divisor.different k' F' hF := by
+  classical
+  have hω0 : (ω : Module.Dual k ↥(repartitionSpace k F)) ≠ 0 := by simpa using hω
+  have hω'0 : (weilDifferentialCotrace k' F' hF hF' ω : Module.Dual k' ↥(repartitionSpace k' F')) ≠
+      0 := by simpa [ZeroMemClass.coe_eq_zero] using hω
+  set W := weilDifferentialDivisor hF hex ω.2 hω0
+  set B' := Divisor.conorm k' F' W + Divisor.different k' F' hF with hB'
+  have hge := conorm_add_different_le_weilDifferentialDivisor hF hF' hex hex' ω hω
+  refine le_antisymm (WeilDivisor.le_iff.mpr fun P' ↦ ?_) hge
+  -- Suppose `Cotr ω` were bounded by `B' + P'` for a place `P'` over `P`.
+  by_contra hlt
+  rw [not_le] at hlt
+  set P := P'.restrict k F
+  have hbound : (weilDifferentialCotrace k' F' hF hF' ω : Module.Dual k' _) ∈
+      weilDifferentialFiltration (B' + WeilDivisor.ofPoint P') := by
+    refine (mem_weilDifferentialFiltration_iff_le_weilDifferentialDivisor hF' hex' (Subtype.prop _)
+      hω'0 _).mpr
+      (WeilDivisor.le_iff.mpr fun Q' ↦ ?_)
+    rw [WeilDivisor.coeff_add]
+    rcases eq_or_ne Q' P' with rfl | hne
+    · rw [WeilDivisor.coeff_ofPoint_self]
+      omega
+    · rw [WeilDivisor.coeff_ofPoint_of_ne hne, add_zero]
+      exact WeilDivisor.coeff_le_coeff hge Q'
+  -- Since `v_P (ω)` is the largest bound `ω_P` respects, `ω_P x ≠ 0` for some `x ∈ F` with
+  -- `ord_P x ≥ -(v_P (ω) + 1)`.
+  obtain ⟨x, hx, hωx⟩ : ∃ x : F, P.valuation x ≤ WithZero.exp (W.coeff P + 1) ∧
+      repartitionDualComponent (ω : Module.Dual k ↥(repartitionSpace k F)) P x ≠ 0 := by
+    by_contra! h
+    exact absurd ((le_weilDifferentialOrder_iff hF hex ω.2 hω0 P (W.coeff P + 1)).mpr h)
+      (not_le.mpr (by rw [← coeff_weilDifferentialDivisor]; exact lt_add_one _))
+  -- By the sharpness of the trace estimate, `x` is the trace of some `z ∈ F'` that is bounded by
+  -- `B' + P'` at every place over `P`.
+  obtain ⟨z, hzQ, hzP, htr⟩ :=
+    Place.exists_forall_valuation_le_and_trace_eq k F hF' P' (W.coeff P) hx
+  have hβ : Pi.single P z ∈ relativeRepartitionSpace k F F' :=
+    mem_relativeRepartitionSpace_iff.mpr <| Filter.eventually_cofinite.mpr <|
+      (Set.finite_singleton P).subset fun Q hQ ↦ by
+      by_contra hQP
+      exact hQ (by simp [Pi.single_eq_of_ne hQP, isIntegral_zero])
+  -- So the fibre-constant repartition that is `z` over `P` and `0` elsewhere is killed by
+  -- `Cotr ω`, although its trace `ι_P x` is not killed by `ω`.
+  have hpull : ((relativeRepartitionPullback k k' F F' ⟨_, hβ⟩ : ↥(repartitionSpace k' F')) :
+      Place k' F' → F') ∈ adeleFiltration (B' + WeilDivisor.ofPoint P') := by
+    refine mem_adeleFiltration_iff.mpr fun Q' ↦ ?_
+    simp only [relativeRepartitionPullback_apply]
+    by_cases hQ : Q'.restrict k F = P
+    · rw [hQ, Pi.single_eq_same, WeilDivisor.coeff_add, hB', WeilDivisor.coeff_add,
+        Divisor.coeff_conorm, Divisor.coeff_different, hQ]
+      rcases eq_or_ne Q' P' with rfl | hne
+      · rwa [WeilDivisor.coeff_ofPoint_self]
+      · rw [WeilDivisor.coeff_ofPoint_of_ne hne, add_zero]
+        exact hzQ Q' hQ hne
+    · simp [Pi.single_eq_of_ne hQ]
+  have htrβ : repartitionTrace k F F' hF ⟨_, hβ⟩ = singleRepartition P x :=
+    Subtype.ext <| funext fun Q ↦ by
+      simp only [repartitionTrace_apply]
+      rcases eq_or_ne Q P with rfl | hQ
+      · rw [singleRepartition_self, Pi.single_eq_same, htr]
+      · rw [singleRepartition_of_ne hQ, Pi.single_eq_of_ne hQ, map_zero]
+  apply hωx
+  rw [repartitionDualComponent_apply, ← htrβ, ← trace_weilDifferentialCotrace_apply hF hF' ω,
+    weilDifferentialFiltration_apply_eq_zero_of_mem_adeleFiltration hbound _ hpull, map_zero]
 
 end Cotrace
 
