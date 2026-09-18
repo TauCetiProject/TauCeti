@@ -71,6 +71,27 @@ private lemma schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt (a e : Fin (n
   rw [schwarzChristoffelBoundary_apply_prevertex a e z₀ _ (hfinite _)] at hr hl
   exact ⟨hr, hl⟩
 
+/-- **The vertex at infinity lies on the closing line.** Its imaginary part equals that of the
+first finite vertex. -/
+theorem im_schwarzChristoffelVertexAtInfinity_eq_im_zero
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
+    (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) :
+    (schwarzChristoffelVertexAtInfinity a e z₀).im =
+      (schwarzChristoffelVertex a e z₀ 0).im := by
+  exact (Complex.lt_def.mp
+    (schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt a e z₀ ha he hsum).2).2
+
+/-- **The first and last finite vertices lie on the same closing line.** Their imaginary parts
+agree. -/
+theorem im_schwarzChristoffelVertex_last_eq_im_zero
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
+    (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) :
+    (schwarzChristoffelVertex a e z₀ (Fin.last n)).im =
+      (schwarzChristoffelVertex a e z₀ 0).im := by
+  obtain ⟨hr, hl⟩ :=
+    schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt a e z₀ ha he hsum
+  exact (Complex.lt_def.mp hr).2.trans (Complex.lt_def.mp hl).2
+
 /-- The height increment along a bounded side is its positive length times the sine of its edge
 angle. -/
 private lemma exists_im_schwarzChristoffelVertex_succ_sub (a e : Fin (n + 1) → ℝ)
@@ -113,9 +134,8 @@ theorem im_schwarzChristoffelVertex_zero_lt (a e : Fin (n + 1) → ℝ) (z₀ : 
     schwarzChristoffelEdgeAngle_eq_zero_of_last_le a e ha.monotone le_rfl
   -- The first and last vertices have equal heights.
   have hends : (schwarzChristoffelVertex a e z₀ (Fin.last n)).im =
-      (schwarzChristoffelVertex a e z₀ 0).im := by
-    obtain ⟨hr, hl⟩ := schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt a e z₀ ha he hsum
-    exact (Complex.lt_def.mp hr).2.trans (Complex.lt_def.mp hl).2
+      (schwarzChristoffelVertex a e z₀ 0).im :=
+    im_schwarzChristoffelVertex_last_eq_im_zero a e z₀ ha he hsum
   -- Telescope the heights along the natural-number indices.
   let W : ℕ → ℝ := fun m ↦ if hm : m < n + 1 then (schwarzChristoffelVertex a e z₀ ⟨m, hm⟩).im
     else 0
@@ -169,16 +189,16 @@ theorem im_schwarzChristoffelVertex_zero_lt (a e : Fin (n + 1) → ℝ) (z₀ : 
     rw [htel, hWn] at hneg
     linarith
 
-/-- Every finite vertex lies on or above the closing line. -/
-private lemma im_schwarzChristoffelVertex_zero_le (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane)
+/-- **Every finite Schwarz--Christoffel vertex lies on or above the closing line.** The line is
+identified by the imaginary part of the first finite vertex. -/
+theorem im_schwarzChristoffelVertex_zero_le (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane)
     (ha : StrictMono a) (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2)
     (k : Fin (n + 1)) :
     (schwarzChristoffelVertex a e z₀ 0).im ≤ (schwarzChristoffelVertex a e z₀ k).im := by
   rcases eq_or_ne k 0 with rfl | hk₀
   · exact le_rfl
   rcases eq_or_ne k (Fin.last n) with rfl | hkn
-  · obtain ⟨hr, hl⟩ := schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt a e z₀ ha he hsum
-    exact ((Complex.lt_def.mp hr).2.trans (Complex.lt_def.mp hl).2).ge
+  · exact (im_schwarzChristoffelVertex_last_eq_im_zero a e z₀ ha he hsum).ge
   · exact (im_schwarzChristoffelVertex_zero_lt a e z₀ ha he hsum hk₀ hkn).le
 
 /-- A point of a bounded side lying no higher than the closing line is the endpoint `V k` of that
