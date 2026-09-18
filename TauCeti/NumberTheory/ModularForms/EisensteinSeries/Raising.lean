@@ -35,8 +35,8 @@ normalized and the spanning family is indexed without repetitions.
 
 ## Main results
 
-* `TauCeti.EisensteinSeries.charEisensteinSeriesMFRaise_mem_modFormCharSpace`: the exact
-  nebentypus at the target level.
+* `TauCeti.EisensteinSeries.charEisensteinSeriesMFRaise_mem_modFormCharSpace`: membership in the
+  target-level character space.
 * `TauCeti.EisensteinSeries.qExpansion_charEisensteinSeriesMFRaise`: level raising substitutes
   `q ↦ q^t`.
 * `TauCeti.EisensteinSeries.qExpansion_charEisensteinSeriesMFRaise_coeff`: the resulting
@@ -157,7 +157,7 @@ theorem isSupportedOnDvd_qExpansion_charEisensteinSeriesMFRaise (hk : 3 ≤ k)
     (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
 
-/-- **The nebentypus after raising.** At every target level `N` divisible by `tuv`,
+/-- **Character-space membership after raising.** At every target level `N` divisible by `tuv`,
 `G_k^{ψ,φ,t}` lies in `M_k(N, ψφ)`, with both characters raised directly to level `N`. -/
 theorem charEisensteinSeriesMFRaise_mem_modFormCharSpace (hk : 3 ≤ k)
     (htuv : t * (u * v) ∣ N) :
