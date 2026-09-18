@@ -44,7 +44,7 @@ with the geometric degree `n(F'/F) = [F' : F k']`; when `k' = k` this is `[F' : 
 * `TauCeti.hurwitz_genus_formula_ratFunc`: `2g - 2 = -2 [F : k(x)] + deg Diff(F / k(x))` for a
   finite separable extension of the rational function field (Stichtenoth, Corollary 3.4.14).
 * `TauCeti.different_ne_zero_of_one_lt_finrank`: a finite separable extension of `k(x)` of degree
-  greater than one ramifies somewhere (Stichtenoth, Corollary 3.5.8).
+  greater than one has nonzero different (Stichtenoth, Corollary 3.5.8).
 
 ## References
 
@@ -166,10 +166,10 @@ theorem hurwitz_genus_formula_ratFunc (hex : IsIntegrallyClosedIn k F) :
     geometricDegree_eq_finrank, genus_ratFunc]
   ring
 
-/-- **A separable extension of the rational function field of degree greater than one is
-ramified** (Stichtenoth, Corollary 3.5.8): if `F / k(x)` is finite separable of degree `> 1` and
-`k` is the exact constant field of `F`, the different divisor of `F / k(x)` is nonzero, so some
-place of `F` ramifies over `k(x)`. -/
+/-- **A separable extension of the rational function field of degree greater than one has nonzero
+different** (Stichtenoth, Corollary 3.5.8): if `F / k(x)` is finite separable of degree `> 1` and
+`k` is the exact constant field of `F`, some place of `F` has positive different exponent over
+`k(x)`. -/
 theorem different_ne_zero_of_one_lt_finrank (hex : IsIntegrallyClosedIn k F)
     (h : 1 < Module.finrank (RatFunc k) F) :
     Divisor.different k F (IsFunctionField.ratFunc k) ≠ 0 := by

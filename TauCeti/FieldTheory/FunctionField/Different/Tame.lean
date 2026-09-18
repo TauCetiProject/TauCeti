@@ -217,6 +217,7 @@ theorem tameDifferent_le_different : tameDifferent k' F' hF ≤ different k' F' 
 
 /-- **The different divisor is the tame different exactly when every place is tame**
 (Stichtenoth, Theorem 3.5.1(b)). -/
+@[simp]
 theorem tameDifferent_eq_different_iff :
     tameDifferent k' F' hF = different k' F' hF ↔ ∀ P' : Place k' F', Place.IsTame k F P' := by
   simp only [← coeff_different_add_one_eq_ramificationIdx_iff hF,
