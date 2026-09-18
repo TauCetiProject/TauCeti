@@ -18,11 +18,8 @@ For `Sp₂ₘ` with its paired diagonal torus, the roots
 α_i = e_i - e_(i+1),  0 ≤ i < m - 1,      α_(m-1) = 2 e_(m-1)
 ```
 
-form a base of `TauCeti.Symplectic.diagonalRootDatum`. Every root `e_a - e_b` with `a < b`
-telescopes into consecutive differences, and every root `e_a + e_b`, including the long root
-`2 e_a`, is `(e_a - e_(m-1)) + (e_b - e_(m-1)) + 2 e_(m-1)`; the coroots decompose in the same way
-over the simple coroots `e_i - e_(i+1)` and `e_(m-1)`. Partial coordinate sums detect the simple
-roots and coroots, which proves their linear independence.
+form a base of `TauCeti.Symplectic.diagonalRootDatum`, with simple coroots `e_i - e_(i+1)` and
+`e_(m-1)`.
 
 The resulting Cartan matrix is `CartanMatrix.C m`. The positive roots are exactly the positive
 long roots `2 e_i`, the positive sums `e_i + e_j`, and the differences `e_i - e_j` with `i < j`.
@@ -104,7 +101,8 @@ private abbrev cocharacter (a : Fin m) : ULift.{u} (Fin m) → ℤ :=
 private lemma character_sub_mem {a b : Fin m} (hab : a ≤ b) :
     character.{u} a - character b ∈ AddSubmonoid.closure
       ((diagonalRootDatum.{u} m).root '' (diagonalSimpleSupport m : Set _)) := by
-  refine sub_mem_of_consecutive_sub_mem_fin _ _ (fun a b h => AddSubmonoid.subset_closure ?_) hab
+  refine AddSubmonoid.sub_mem_of_consecutive_sub_mem_fin _ _
+    (fun a b h => AddSubmonoid.subset_closure ?_) hab
   refine ⟨_, diagonalSimpleRootIndex_mem a, ?_⟩
   have ha : (a : ℕ) + 1 < m := h ▸ b.isLt
   have hb : (⟨a + 1, ha⟩ : Fin m) = b := Fin.ext h
@@ -114,7 +112,7 @@ private lemma character_sub_mem {a b : Fin m} (hab : a ≤ b) :
 private lemma character_add_mem (a b : Fin m) :
     character.{u} a + character b ∈ AddSubmonoid.closure
       ((diagonalRootDatum.{u} m).root '' (diagonalSimpleSupport m : Set _)) := by
-  refine add_mem_of_consecutive_sub_mem_fin _ _ (fun a b h => ?_) (fun c hc => ?_) a b
+  refine AddSubmonoid.add_mem_of_consecutive_sub_mem_fin _ _ (fun a b h => ?_) (fun c hc => ?_) a b
   · exact character_sub_mem (Fin.le_def.2 (by omega))
   · refine AddSubmonoid.subset_closure ⟨_, diagonalSimpleRootIndex_mem c, ?_⟩
     rw [diagonalSimpleRootIndex_of_not_lt c (by omega), diagonalRootDatum_root_positiveLong,
@@ -123,7 +121,8 @@ private lemma character_add_mem (a b : Fin m) :
 private lemma cocharacter_sub_mem {a b : Fin m} (hab : a ≤ b) :
     cocharacter.{u} a - cocharacter b ∈ AddSubmonoid.closure
       ((diagonalRootDatum.{u} m).coroot '' (diagonalSimpleSupport m : Set _)) := by
-  refine sub_mem_of_consecutive_sub_mem_fin _ _ (fun a b h => AddSubmonoid.subset_closure ?_) hab
+  refine AddSubmonoid.sub_mem_of_consecutive_sub_mem_fin _ _
+    (fun a b h => AddSubmonoid.subset_closure ?_) hab
   refine ⟨_, diagonalSimpleRootIndex_mem a, ?_⟩
   have ha : (a : ℕ) + 1 < m := h ▸ b.isLt
   have hb : (⟨a + 1, ha⟩ : Fin m) = b := Fin.ext h
@@ -281,8 +280,8 @@ theorem mem_diagonalRootBase_support (p : RootSubgroupIndex m) :
 
 /-! ### The Cartan type -/
 
-private lemma dotPairing_character (a : Fin m) (y : ULift.{u} (Fin m) → ℤ) :
-    SplitTorus.dotPairing (character a) y = y (ULift.up a) := by
+private lemma dotPairing_single (a : Fin m) (n : ℤ) (y : ULift.{u} (Fin m) → ℤ) :
+    SplitTorus.dotPairing (Finsupp.single (ULift.up a) n) y = n * y (ULift.up a) := by
   simp [SplitTorus.dotPairing_apply]
 
 /-- The pairings of the simple roots of the diagonal root datum are the entries of the type-`C`
@@ -294,20 +293,12 @@ theorem diagonalRootDatum_pairing_diagonalSimpleRootIndex (i j : Fin m) :
   rw [← RootPairing.root_coroot_eq_pairing, diagonalRootDatum_toLinearMap]
   have hi := i.isLt
   have hj := j.isLt
-  by_cases h : (i : ℕ) + 1 < m <;> by_cases h' : (j : ℕ) + 1 < m
-  on_goal 1 => rw [diagonalSimpleRootIndex_of_lt i h, diagonalSimpleRootIndex_of_lt j h',
-      diagonalRootDatum_root_difference, diagonalRootDatum_coroot_difference]
-  on_goal 2 => rw [diagonalSimpleRootIndex_of_lt i h, diagonalSimpleRootIndex_of_not_lt j h',
-      diagonalRootDatum_root_difference, diagonalRootDatum_coroot_positiveLong]
-  on_goal 3 => rw [diagonalSimpleRootIndex_of_not_lt i h, diagonalSimpleRootIndex_of_lt j h',
-      diagonalRootDatum_root_positiveLong, diagonalRootDatum_coroot_difference,
-      ← one_add_one_eq_two, Finsupp.single_add]
-  on_goal 4 => rw [diagonalSimpleRootIndex_of_not_lt i h, diagonalSimpleRootIndex_of_not_lt j h',
-      diagonalRootDatum_root_positiveLong, diagonalRootDatum_coroot_positiveLong,
-      ← one_add_one_eq_two, Finsupp.single_add]
-  all_goals
-    simp only [map_sub, map_add, LinearMap.sub_apply, LinearMap.add_apply, dotPairing_character,
-      CartanMatrix.C, Matrix.of_apply, Pi.single_apply, ULift.up_inj, Fin.ext_iff]
+  by_cases h : (i : ℕ) + 1 < m <;> by_cases h' : (j : ℕ) + 1 < m <;>
+    simp only [diagonalSimpleRootIndex_of_lt, diagonalSimpleRootIndex_of_not_lt, h, h',
+      not_false_eq_true, diagonalRootDatum_root_difference, diagonalRootDatum_root_positiveLong,
+      diagonalRootDatum_coroot_difference, diagonalRootDatum_coroot_positiveLong, map_sub,
+      LinearMap.sub_apply, dotPairing_single, CartanMatrix.C, Matrix.of_apply, Pi.single_apply,
+      ULift.up_inj, Fin.ext_iff] <;>
     split_ifs <;> omega
 
 /-- **The diagonal root datum of `Sp₂ₘ`, with its Bourbaki-numbered base, has Cartan type
@@ -324,8 +315,11 @@ private lemma isPos_of_root_mem {p : RootSubgroupIndex m}
     (h : (diagonalRootDatum.{u} m).root p ∈ AddSubmonoid.closure
       ((diagonalRootDatum.{u} m).root '' (diagonalSimpleSupport m : Set _))) :
     (diagonalRootBase.{u} m).IsPos p :=
-  (mem_posRoots _ _ _).1 ((mem_posRoots_iff_root_mem_posRootCone _ _).2
-    (by rwa [posRootCone_def]))
+  (mem_posRoots _ _ _).1 ((mem_posRoots_iff_root_mem_posRootCone _ _).2 <|
+    AddSubmonoid.closure_le.2 (by
+      rintro _ ⟨q, hq, rfl⟩
+      exact root_mem_posRootCone_of_mem_posRoots _ _
+        ((mem_posRoots _ _ _).2 ((diagonalRootBase.{u} m).isPos_of_mem_support hq))) h)
 
 private lemma not_isPos_of_root_eq_neg {p q : RootSubgroupIndex m}
     (hq : (diagonalRootBase.{u} m).IsPos q)
