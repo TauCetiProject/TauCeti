@@ -26,10 +26,6 @@ as classes on a homology pretheory:
 The map `Hᵢ(X) ⟶ Hᵢ(X, A)` of the pair sequence is `HomologyPretheory.hFstToHₚ`, the comparison
 `H i ≅ incl ⋙ Hₚ i` followed by the map induced by the pair map `(X, ∅) ⟶ (X, A)`.
 
-The declarations follow the interface of J. Scharmberg's
-[mathlib4#38369](https://github.com/leanprover-community/mathlib4/pull/38369), from which the
-statements of the two classes and of `hFstToHₚ` are taken.
-
 ## References
 
 * S. Eilenberg and N. Steenrod, *Foundations of Algebraic Topology*, Chapter I.
@@ -63,8 +59,9 @@ class HasPairSequence : Prop where
   /-- Exactness of the sequence `H i X.snd ⟶ H i X.fst ⟶ Hₚ i X`. -/
   exact_fst (X : TopPair.{u}) (i : ι) :
     (ComposableArrows.mk₂ ((HP.H i).map X.map) (HP.hFstToHₚ i X)).Exact
-  /-- The map `H i X.fst ⟶ Hₚ i X` is an epimorphism when `i` has no successor in the complex
-  shape, where the long exact sequence ends. -/
+  /-- The map on relative homology induced by the pair inclusion `(X.fst, ∅) ⟶ X` is an
+  epimorphism when `i` has no successor in the complex shape, where the long exact sequence ends.
+  Composing it with `HP.iso` gives the epimorphism `HP.hFstToHₚ i X`. -/
   epi_map_of_not_rel (X : TopPair.{u}) (i : ι) (hi : ∀ j : ι, ¬ c.Rel i j) :
     Epi ((HP.Hₚ i).map X.j)
 
