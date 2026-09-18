@@ -44,9 +44,7 @@ exponent `p = ∞` is excluded: `P_∞ (X)` need not be separable.
 
 * `TauCeti.WassersteinSpace.borelSpace` — `P_p (X)` is a Borel space for `1 ≤ p < ∞`, with
   `TauCeti.WassersteinSpace.instBorelSpace` its instance form;
-* `TauCeti.WassersteinComponent.borelSpace` — a separable anchored component is a Borel space;
-* `TauCeti.WassersteinComponent.separableSpace_of_hasFiniteMoment` — the component of a
-  finite-moment anchor is separable.
+* `TauCeti.WassersteinComponent.borelSpace` — a separable anchored component is a Borel space.
 
 ## References
 
@@ -158,14 +156,6 @@ theorem borelSpace (hp : p ≠ ∞) [SeparableSpace (WassersteinComponent p μ�
   have h := @measurable_mk X p _ _ μ₀ _ (.comap toProbabilityMeasure inferInstance) _
     (comap_measurable _) wassersteinEDist_anchor_ne_top
   simpa using h hs
-
-/-- For a finite exponent `1 ≤ p < ∞`, the finite-distance component of an anchor law of finite
-`p`-moment is separable, being isometric to the separable space `P_p (X)`. -/
-theorem separableSpace_of_hasFiniteMoment (hp : p ≠ ∞) (hμ₀ : HasFiniteMoment p (μ₀ : Measure X)) :
-    SeparableSpace (WassersteinComponent p μ₀) :=
-  have := WassersteinSpace.separableSpace (X := X) hp
-  let e := WassersteinSpace.isometryEquivComponentOfFiniteMoment hμ₀
-  e.surjective.denseRange.separableSpace e.continuous
 
 end WassersteinComponent
 
