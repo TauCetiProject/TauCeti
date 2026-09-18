@@ -13,9 +13,9 @@ public import TauCeti.NumberTheory.ModularForms.Petersson.Unitary
 # The Fricke and Atkin–Lehner operators are Petersson-unitary
 
 The Fricke matrix `W_N = !![0, -1; N, 0]` normalises `Γ₁(N)`, and an Atkin–Lehner matrix `W_Q`
-for an exact divisor `Q ∥ N` normalises `Γ₀(N)`. Neither lies in `SL₂(ℤ)`: its determinant is `N`,
-respectively `Q`. Slashing both arguments of the Petersson product by such a matrix of
-determinant `D` multiplies the product by `D ^ (k - 2)`
+for an exact divisor `Q ∥ N` normalises `Γ₀(N)`. Their determinants are `N`, respectively `Q`,
+so for `N ≠ 1`, respectively `Q ≠ 1`, they do not lie in `SL₂(ℤ)`. Slashing both arguments of
+the Petersson product by such a matrix of determinant `D` multiplies the product by `D ^ (k - 2)`
 (`TauCeti.CuspForm.peterssonInnerCosets_slash_of_inv_conjAct_eq`), and the arithmetic
 normalization `𝒲_Q = (√Q) ^ (2 - k) • (· ∣[k] W_Q)` is exactly the one that cancels this factor:
 the normalizer is real and its square is `Q ^ (2 - k)`. So the normalized operators are
@@ -36,12 +36,12 @@ Atkin–Lehner sign.
 
 ## Main results
 
-* `CuspForm.peterssonInnerCosets_frickeOperatorCusp`: the raw Fricke operator scales the
+* `TauCeti.peterssonInnerCosets_frickeOperatorCusp`: the raw Fricke operator scales the
   Petersson product by `N ^ (k - 2)`.
-* `CuspForm.peterssonInnerCosets_normalizedFrickeOperatorCusp`: `𝒲_N` is unitary.
-* `CuspForm.peterssonInnerCosets_normalizedFrickeOperatorCusp_left`: its adjoint is
+* `TauCeti.peterssonInnerCosets_normalizedFrickeOperatorCusp`: `𝒲_N` is unitary.
+* `TauCeti.peterssonInnerCosets_normalizedFrickeOperatorCusp_left`: its adjoint is
   `(-1) ^ k • 𝒲_N`.
-* `CuspForm.normalizedFrickeOperatorCusp_mem_peterssonOrthogonal`: the orthogonal
+* `TauCeti.normalizedFrickeOperatorCusp_mem_peterssonOrthogonal`: the orthogonal
   complement of a `𝒲_N`-stable subspace is `𝒲_N`-stable.
 * `TauCeti.Nat.IsExactDivisor.peterssonInnerCosets_atkinLehnerOperatorCusp`: the raw
   Atkin–Lehner operator scales the Petersson product by `Q ^ (k - 2)`.
@@ -66,9 +66,11 @@ open Matrix.SpecialLinearGroup CongruenceSubgroup
 
 open scoped MatrixGroups ModularForm ComplexConjugate TauCeti.ExactDivisor
 
-namespace CuspForm
+namespace TauCeti
 
-open TauCeti TauCeti.CuspForm
+open _root_.CuspForm TauCeti.CuspForm
+
+section Fricke
 
 variable {N : ℕ} [NeZero N]
 
@@ -121,18 +123,15 @@ theorem normalizedFrickeOperatorCusp_mem_peterssonOrthogonal {k : ℤ}
     {V : Submodule ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k)}
     (hV : ∀ f ∈ V, normalizedFrickeOperatorCusp k f ∈ V)
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ peterssonOrthogonal V) :
-    normalizedFrickeOperatorCusp k f ∈ peterssonOrthogonal V := by
-  refine mem_peterssonOrthogonal_iff'.mpr fun g hg ↦ ?_
-  rw [peterssonInnerCosets_normalizedFrickeOperatorCusp_left,
-    mem_peterssonOrthogonal_iff'.mp hf _ (hV g hg), mul_zero]
+    normalizedFrickeOperatorCusp k f ∈ peterssonOrthogonal V :=
+  map_mem_peterssonOrthogonal (S := fun g ↦ (-1 : ℂ) ^ k • normalizedFrickeOperatorCusp k g)
+    (fun f g ↦ by rw [peterssonInnerCosets_normalizedFrickeOperatorCusp_left,
+      peterssonInnerCosets_smul_right])
+    (fun g hg ↦ V.smul_mem _ (hV g hg)) hf
 
-end CuspForm
+end Fricke
 
 /-! ### The Atkin–Lehner operators -/
-
-namespace TauCeti
-
-open _root_.CuspForm
 
 namespace Nat.IsExactDivisor
 
@@ -178,10 +177,9 @@ theorem normalizedAtkinLehnerOperatorCusp_mem_peterssonOrthogonal (h : Q ∥ N) 
     {V : Submodule ℂ (CuspForm ((Gamma0 N).map (mapGL ℝ)) k)}
     (hV : ∀ f ∈ V, h.normalizedAtkinLehnerOperatorCusp k f ∈ V)
     {f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k} (hf : f ∈ CuspForm.peterssonOrthogonal V) :
-    h.normalizedAtkinLehnerOperatorCusp k f ∈ CuspForm.peterssonOrthogonal V := by
-  refine CuspForm.mem_peterssonOrthogonal_iff'.mpr fun g hg ↦ ?_
-  rw [h.peterssonInnerCosets_normalizedAtkinLehnerOperatorCusp_left,
-    CuspForm.mem_peterssonOrthogonal_iff'.mp hf _ (hV g hg)]
+    h.normalizedAtkinLehnerOperatorCusp k f ∈ CuspForm.peterssonOrthogonal V :=
+  CuspForm.map_mem_peterssonOrthogonal
+    (h.peterssonInnerCosets_normalizedAtkinLehnerOperatorCusp_left k) hV hf
 
 end Nat.IsExactDivisor
 

@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
-public import TauCeti.NumberTheory.ModularForms.Petersson.Adjoint
 public import TauCeti.NumberTheory.ModularForms.Petersson.Orthogonal
 import Mathlib.Analysis.Normed.Ring.Finite
+import TauCeti.NumberTheory.ModularForms.Petersson.Adjoint
 
 /-!
 # The Petersson product is unitary under a normalising slash
@@ -24,10 +24,10 @@ The main case is `Γ = Γ₁(N)` and `α ∈ Γ₀(N)`, that is, the **diamond o
 
 The normaliser in `SL₂(ℤ)` is not the whole story: the Fricke matrix `!![0, -1; N, 0]` and the
 Atkin–Lehner matrices normalise `Γ₁(N)` or `Γ₀(N)` from inside `GL₂(ℝ)`, with determinant
-`D > 0` different from `1`. For such an `α` the coset-sum argument is unavailable — `α` does not
-act on `SL₂(ℤ)/Γ·{±I}` — and the pairing is instead read as one integral over a fundamental
-domain, which `α` carries to another fundamental domain; what survives of the slash is the
-factor `D ^ (k - 2)` of `UpperHalfPlane.peterssonInner_slash_slash_of_det_pos`.
+`D > 0`, in general different from `1`. For such an `α` the coset-sum argument is unavailable —
+`α` does not act on `SL₂(ℤ)/Γ·{±I}` — and the pairing is instead read as one integral over a
+fundamental domain, which `α` carries to another fundamental domain; what survives of the slash
+is the factor `D ^ (k - 2)` of `UpperHalfPlane.peterssonInner_slash_slash_of_det_pos`.
 
 Two consequences of the diamond case carry the newform theory forward. First, the
 Petersson-orthogonal complement of a diamond-stable subspace is again diamond-stable — the
