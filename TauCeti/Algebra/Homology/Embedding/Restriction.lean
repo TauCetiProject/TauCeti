@@ -12,7 +12,9 @@ public import Mathlib.Algebra.Homology.Embedding.Restriction
 
 This file provides the comparison between first restricting a homological complex along an
 embedding of complex shapes and then mapping it, and first mapping the complex and then
-restricting it.
+restricting it. This transports mapped or forgotten complexes through shape reindexing, allowing
+results about a restricted complex to be compared with the corresponding restriction of the
+mapped complex.
 
 ## Main result
 
@@ -62,7 +64,7 @@ private theorem mapRestriction_hom_d
 noncomputable def mapRestrictionIso
     {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
     {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
-    (F : C ⥤ D) [F.PreservesZeroMorphisms] (e : c.Embedding c') [e.IsRelIff]
+    (e : c.Embedding c') (F : C ⥤ D) [F.PreservesZeroMorphisms] [e.IsRelIff]
     (K : HomologicalComplex C c') :
     (F.mapHomologicalComplex c).obj ((e.restrictionFunctor C).obj K) ≅
       (e.restrictionFunctor D).obj ((F.mapHomologicalComplex c').obj K) :=
