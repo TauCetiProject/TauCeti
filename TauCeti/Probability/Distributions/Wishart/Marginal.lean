@@ -19,8 +19,9 @@ import TauCeti.MeasureTheory.Constructions.Pi
 Congruence `A ↦ M * A * Mᵀ` by a `q × p` matrix `M` of full row rank carries the nonsingular
 Wishart law of degree `n` and positive-definite scale `S` to the nonsingular Wishart law of the
 same degree and scale `M * S * Mᵀ`. Full row rank is what keeps the new scale positive definite,
-so that the image is again a law of the density family; congruences of smaller rank leave that
-family and belong to the Gaussian-Gram one.
+so that the image is again a law of the density family; a congruence of smaller rank makes the new
+scale singular and its image is carried by the singular matrices, where no density against
+`TauCeti.symmetricLebesgue` describes it.
 
 Selecting `q` of the `p` coordinates is the special case in which `M` deletes the last `p - q`
 rows of the identity matrix; congruence by that matrix reads off the leading principal `q × q`
@@ -160,21 +161,6 @@ private theorem map_submatrix_one_nonsingularWishartMeasure_one (hqp : q ≤ p)
 
 /-! ### Congruence by a matrix of full row rank -/
 
-/-- Congruence by an invertible matrix, in the unbundled form in which it composes with the
-congruences by rectangular matrices. -/
-private theorem map_symmetricCongruenceLinearMap_nonsingularWishartMeasure_of_det_ne_zero (n : ℝ)
-    (S : Matrix (Fin p) (Fin p) ℝ) {C : Matrix (Fin p) (Fin p) ℝ} (hC : C.det ≠ 0) :
-    (nonsingularWishartMeasure n S).map (Matrix.symmetricCongruenceLinearMap C) =
-      nonsingularWishartMeasure n (C * S * Cᵀ) := by
-  set G := Matrix.GeneralLinearGroup.mkOfDetNeZero C hC
-  have hcoe : (G : Matrix (Fin p) (Fin p) ℝ) = C := rfl
-  have hfun : ⇑(Matrix.GeneralLinearGroup.symmetricCongruence G) =
-      ⇑(Matrix.symmetricCongruenceLinearMap C) :=
-    funext fun A => Subtype.ext (by
-      rw [Matrix.GeneralLinearGroup.coe_symmetricCongruence_apply,
-        Matrix.coe_symmetricCongruenceLinearMap_apply, hcoe])
-  rw [← hfun, map_symmetricCongruence_nonsingularWishartMeasure n S G, hcoe]
-
 /-- **Congruence by a matrix of full row rank carries the nonsingular Wishart law of scale `S` to
 the one of scale `M * S * Mᵀ`.** Full row rank keeps the new scale positive definite, so the
 image stays inside the density family. -/
@@ -195,8 +181,10 @@ theorem map_symmetricCongruenceLinearMap_nonsingularWishartMeasure
   -- Absorbing the scale, `M * Rm` has Gram matrix `Tm * Tmᵀ`, so it factors as `Tm * (E * Q)`
   -- with `Q` orthogonal.
   have hMRT : Tm * Tmᵀ = M * Rm * (M * Rm)ᵀ := by
-    rw [hT, Matrix.transpose_mul,
-      show M * Rm * (Rmᵀ * Mᵀ) = M * (Rm * Rmᵀ) * Mᵀ by simp only [Matrix.mul_assoc], hR]
+    calc Tm * Tmᵀ = M * (Rm * Rmᵀ) * Mᵀ := by rw [hT, hR]
+      _ = M * Rm * (M * Rm)ᵀ := by
+          rw [Matrix.transpose_mul]
+          simp only [Matrix.mul_assoc]
   obtain ⟨Q, hQ, hQfac⟩ := Matrix.exists_mul_transpose_eq_one_and_eq_mul_submatrix_castLE (M * Rm)
     hqp (Matrix.GeneralLinearGroup.det_ne_zero T) hMRT
   have hMR : M * Rm = Tm * (E * Q) := by

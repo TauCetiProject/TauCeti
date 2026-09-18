@@ -84,16 +84,18 @@ theorem exists_mul_transpose_eq_one_and_eq_mul_submatrix_castLE (M : Matrix (Fin
     (hqp : q ≤ p) {T : Matrix (Fin q) (Fin q) ℝ} (hTdet : T.det ≠ 0) (hT : T * Tᵀ = M * Mᵀ) :
     ∃ Q : Matrix (Fin p) (Fin p) ℝ, Q * Qᵀ = 1 ∧ M = T * Q.submatrix (Fin.castLE hqp) id := by
   have hTu : IsUnit T.det := isUnit_iff_ne_zero.2 hTdet
+  have hTtu : IsUnit Tᵀ.det := by rwa [Matrix.det_transpose]
   have hVV : T⁻¹ * M * (T⁻¹ * M)ᵀ = 1 := by
-    rw [Matrix.transpose_mul,
-      show T⁻¹ * M * (Mᵀ * (T⁻¹)ᵀ) = T⁻¹ * (M * Mᵀ) * (T⁻¹)ᵀ by simp only [Matrix.mul_assoc],
-      ← hT, Matrix.transpose_nonsing_inv,
-      show T⁻¹ * (T * Tᵀ) * (Tᵀ)⁻¹ = T⁻¹ * T * (Tᵀ * (Tᵀ)⁻¹) by simp only [Matrix.mul_assoc],
-      Matrix.nonsing_inv_mul T hTu,
-      Matrix.mul_nonsing_inv Tᵀ (by rwa [Matrix.det_transpose]), Matrix.one_mul]
+    calc T⁻¹ * M * (T⁻¹ * M)ᵀ = T⁻¹ * (M * Mᵀ) * (T⁻¹)ᵀ := by
+          rw [Matrix.transpose_mul]
+          simp only [Matrix.mul_assoc]
+      _ = T⁻¹ * T * (Tᵀ * (Tᵀ)⁻¹) := by
+          rw [← hT, Matrix.transpose_nonsing_inv]
+          simp only [Matrix.mul_assoc]
+      _ = 1 := by
+          rw [Matrix.nonsing_inv_mul T hTu, Matrix.mul_nonsing_inv Tᵀ hTtu, Matrix.one_mul]
   obtain ⟨Q, hQ, hQV⟩ := exists_mul_transpose_eq_one_and_submatrix_castLE_eq (T⁻¹ * M) hqp hVV
   refine ⟨Q, hQ, ?_⟩
-  rw [hQV, show T * (T⁻¹ * M) = T * T⁻¹ * M by simp only [Matrix.mul_assoc],
-    Matrix.mul_nonsing_inv T hTu, Matrix.one_mul]
+  rw [hQV, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv T hTu, Matrix.one_mul]
 
 end Matrix
