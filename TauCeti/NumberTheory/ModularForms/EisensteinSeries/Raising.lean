@@ -75,16 +75,6 @@ def charEisensteinSeriesMFRaise (t : ℕ) (hk : 3 ≤ k) (htuv : t * (u * v) ∣
   exact ModularForm.levelRaise t (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv)
     (charEisensteinSeriesMF ψ φ hk dvd_rfl)
 
-/-- The raised character Eisenstein series is the degeneracy image `V_t G_k^{ψ,φ}`. -/
-theorem charEisensteinSeriesMFRaise_eq_levelRaise (hk : 3 ≤ k)
-    (htuv : t * (u * v) ∣ N) :
-    haveI : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
-    haveI : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
-    charEisensteinSeriesMFRaise ψ φ t hk htuv =
-      ModularForm.levelRaise t (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv)
-        (charEisensteinSeriesMF ψ φ hk dvd_rfl) := by
-  rfl
-
 /-- The raised character Eisenstein series is the base series evaluated at `t z`. -/
 @[simp]
 theorem charEisensteinSeriesMFRaise_apply (hk : 3 ≤ k) (htuv : t * (u * v) ∣ N) (z : ℍ) :
@@ -94,7 +84,7 @@ theorem charEisensteinSeriesMFRaise_apply (hk : 3 ≤ k) (htuv : t * (u * v) ∣
       charEisensteinSeriesMF ψ φ hk dvd_rfl (scaleGL t • z) := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
-  rw [charEisensteinSeriesMFRaise_eq_levelRaise, ModularForm.levelRaise_apply]
+  rw [charEisensteinSeriesMFRaise, ModularForm.levelRaise_apply]
 
 /-- The raised character Eisenstein series as a sum over integer pairs. -/
 theorem charEisensteinSeriesMFRaise_apply_eq_tsum (hk : 3 ≤ k)
@@ -115,7 +105,7 @@ theorem charEisensteinSeriesMFRaise_one (hk : 3 ≤ k) (huv : u * v ∣ N) :
     charEisensteinSeriesMFRaise ψ φ 1 hk (by simpa using huv) =
       ModularForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd huv)
         (charEisensteinSeriesMF ψ φ hk dvd_rfl) := by
-  rw [charEisensteinSeriesMFRaise_eq_levelRaise, ModularForm.levelRaise_one]
+  rw [charEisensteinSeriesMFRaise, ModularForm.levelRaise_one]
 
 /-- The `q`-expansion of `G_k^{ψ,φ,t}` is obtained from that of `G_k^{ψ,φ}` by substituting
 `q ↦ q^t`. -/
@@ -128,7 +118,7 @@ theorem qExpansion_charEisensteinSeriesMFRaise (hk : 3 ≤ k)
         (NeZero.ne t) := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
-  rw [charEisensteinSeriesMFRaise_eq_levelRaise]
+  rw [charEisensteinSeriesMFRaise]
   exact ModularForm.qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
     (TauCeti.one_mem_strictPeriods_Gamma1_map N)
@@ -146,7 +136,7 @@ theorem qExpansion_charEisensteinSeriesMFRaise_coeff (hk : 3 ≤ k)
       else 0 := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
-  rw [charEisensteinSeriesMFRaise_eq_levelRaise]
+  rw [charEisensteinSeriesMFRaise]
   exact ModularForm.qExpansion_levelRaise_coeff
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
     (TauCeti.one_mem_strictPeriods_Gamma1_map N)
@@ -160,7 +150,7 @@ theorem isSupportedOnDvd_qExpansion_charEisensteinSeriesMFRaise (hk : 3 ≤ k)
       (qExpansion 1 (charEisensteinSeriesMFRaise ψ φ t hk htuv)) := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
-  rw [charEisensteinSeriesMFRaise_eq_levelRaise]
+  rw [charEisensteinSeriesMFRaise]
   exact ModularForm.isSupportedOnDvd_qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
     (TauCeti.one_mem_strictPeriods_Gamma1_map N)
@@ -180,7 +170,7 @@ theorem charEisensteinSeriesMFRaise_mem_modFormCharSpace (hk : 3 ≤ k)
   have hbase := charEisensteinSeriesMF_mem_modFormCharSpace
     (N := u * v) ψ φ hk dvd_rfl
   have hraise := ModularForm.levelRaise_mem_modFormCharSpace_of_dvd htuv _ hbase
-  rw [charEisensteinSeriesMFRaise_eq_levelRaise]
+  rw [charEisensteinSeriesMFRaise]
   have hψ := DirichletCharacter.changeLevel_trans ψ (dvd_mul_right u v)
     ((dvd_mul_left (u * v) t).trans htuv)
   have hφ := DirichletCharacter.changeLevel_trans φ (dvd_mul_left v u)
