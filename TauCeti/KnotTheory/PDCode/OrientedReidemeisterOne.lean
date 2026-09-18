@@ -27,7 +27,6 @@ The conventions follow L. H. Kauffman, *State models and the Jones polynomial*, 
 ## Main definitions
 
 * `TauCeti.OrientedPDCode.reidemeisterOne`: insert an oriented kink.
-* `TauCeti.OrientedPDCode.normalizedKauffmanBracket`: the writhe-normalized bracket.
 
 ## Main results
 
@@ -187,28 +186,14 @@ theorem writhe_reidemeisterOne (D : OrientedPDCode n) (h : Fin (4 * n)) (b : Boo
   rw [writhe_def, writhe_def, Fin.sum_univ_castSucc]
   simp
 
-/-- The writhe-normalized Kauffman bracket.  Its correction factor is a unit, so the definition
-makes sense over every commutative ring and does not require the bracket value itself to be
-invertible. -/
-noncomputable def normalizedKauffmanBracket {R : Type*} [CommRing R]
-    (D : OrientedPDCode n) (a : Rˣ) : R :=
-  (((-a ^ 3) ^ (-D.writhe) : Rˣ) : R) * D.toPDCode.kauffmanBracket a
-
-/-- Expand the normalized bracket into its writhe correction and Kauffman bracket. -/
-theorem normalizedKauffmanBracket_def {R : Type*} [CommRing R] (D : OrientedPDCode n)
-    (a : Rˣ) :
-    D.normalizedKauffmanBracket a =
-      (((-a ^ 3) ^ (-D.writhe) : Rˣ) : R) * D.toPDCode.kauffmanBracket a :=
-  (rfl)
-
 /-- **The writhe-normalized Kauffman bracket is invariant under the oriented first Reidemeister
 move.** -/
 @[simp]
 theorem normalizedKauffmanBracket_reidemeisterOne {R : Type*} [CommRing R]
     (D : OrientedPDCode n) (h : Fin (4 * n)) (b : Bool) (a : Rˣ) :
     (D.reidemeisterOne h b).normalizedKauffmanBracket a = D.normalizedKauffmanBracket a := by
-  rw [normalizedKauffmanBracket_def, normalizedKauffmanBracket_def,
-    writhe_reidemeisterOne, reidemeisterOne_toPDCode,
+  simp only [normalizedKauffmanBracket]
+  rw [writhe_reidemeisterOne, reidemeisterOne_toPDCode,
     PDCode.kauffmanBracket_reidemeisterOne]
   have hpositive : (-((a : R) ^ 3) : R) = ((-a ^ 3 : Rˣ) : R) := by simp
   have hnegative : (-(((a⁻¹ : Rˣ) : R) ^ 3) : R) = (((-a ^ 3)⁻¹ : Rˣ) : R) := by simp

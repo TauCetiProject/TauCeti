@@ -45,6 +45,10 @@ diagrams to knots is the question of its behaviour under the Reidemeister moves,
 separate constructions on PD-codes; the first move is in
 `TauCeti/KnotTheory/PDCode/ReidemeisterOne.lean`.
 
+For an oriented PD-code, `TauCeti.OrientedPDCode.normalizedKauffmanBracket` multiplies the bracket
+by the writhe correction `(-a ^ 3) ^ (-writhe)`. This is the normalization used to obtain the
+Jones polynomial from the bracket.
+
 ## Main definitions
 
 * `TauCeti.PDCode.slotSmoothing`: the two smoothings of the four slots at a crossing.
@@ -55,6 +59,7 @@ separate constructions on PD-codes; the first move is in
 * `TauCeti.PDCode.stateWeight`: the weight `a ^ (A(s) - B(s))` of a state.
 * `TauCeti.PDCode.kauffmanBracket`: the Kauffman bracket state sum.
 * `TauCeti.PDCode.kink`: the one-crossing kink diagram.
+* `TauCeti.OrientedPDCode.normalizedKauffmanBracket`: the writhe-normalized bracket.
 
 ## Main results
 
@@ -533,5 +538,19 @@ theorem kauffmanBracket_kink (a : Rˣ) :
 end Bracket
 
 end PDCode
+
+namespace OrientedPDCode
+
+variable {n : ℕ}
+
+/-- The writhe-normalized Kauffman bracket.  Its correction factor is a unit, so the definition
+makes sense over every commutative ring and does not require the bracket value itself to be
+invertible. -/
+@[expose]
+noncomputable def normalizedKauffmanBracket {R : Type*} [CommRing R]
+    (D : OrientedPDCode n) (a : Rˣ) : R :=
+  (((-a ^ 3) ^ (-D.writhe) : Rˣ) : R) * D.toPDCode.kauffmanBracket a
+
+end OrientedPDCode
 
 end TauCeti
