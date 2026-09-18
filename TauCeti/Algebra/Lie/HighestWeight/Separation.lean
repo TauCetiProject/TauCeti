@@ -83,8 +83,9 @@ in the cone. A nonnegative rational plus a positive one is nonzero.
   action the Casimir element acts by zero.
 * `TauCeti.IsDominantIntegral.exists_nonneg_rat_invForm_of_mem_posRootCone`: a dominant integral
   weight pairs to a nonnegative rational with every member of the positive root cone.
-* `TauCeti.casimirScalar_ne_casimirScalar_of_isDominantIntegral`: **the Casimir scalar separates a
-  dominant integral weight from the dominant integral weights strictly below it.**
+* `casimirScalar_ne_of_isDominantIntegral_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne`:
+  **the Casimir scalar separates a dominant integral weight from the dominant integral weights
+  strictly below it.**
 * `TauCeti.casimirScalar_ne_casimirScalar_of_genWeightSpace_ne_bot_of_isHighestWeightVector`:
   **over an algebraically closed field, the Casimir scalar of a weight of a finite-dimensional
   highest weight module differs from that of the highest weight, except at the highest weight
@@ -288,8 +289,9 @@ below it**: if `lam` and `nu` are dominant integral, `lam - nu` lies in the posi
 In the expansion `c(lam) - c(nu) = ⟨lam + nu, lam - nu⟩ + ⟨2ρ, lam - nu⟩` the first summand is a
 nonnegative rational, `lam + nu` being dominant integral, and the second a positive one, `lam - nu`
 being a nonzero member of the cone. -/
-theorem casimirScalar_ne_casimirScalar_of_isDominantIntegral (hlam : IsDominantIntegral base lam)
-    {nu : Module.Dual K H} (hnu : IsDominantIntegral base nu)
+theorem casimirScalar_ne_of_isDominantIntegral_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne
+    (hlam : IsDominantIntegral base lam) {nu : Module.Dual K H}
+    (hnu : IsDominantIntegral base nu)
     (hle : lam - nu ∈ posRootCone (IsKilling.rootSystem H) base) (hne : nu ≠ lam) :
     casimirScalar base lam ≠ casimirScalar base nu := by
   obtain ⟨q₁, hq₁0, hq₁⟩ := (hlam.add hnu).exists_nonneg_rat_invForm_of_mem_posRootCone hle

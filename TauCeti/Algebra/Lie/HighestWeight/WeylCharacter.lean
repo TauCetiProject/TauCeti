@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.HighestWeight.Character
 public import TauCeti.Algebra.Lie.HighestWeight.Freudenthal
 public import TauCeti.Algebra.Lie.HighestWeight.Separation
+public import TauCeti.Data.Finset.Basic
 
 /-!
 # The Casimir scalar on the support of `ch M · Δ`
@@ -53,8 +54,8 @@ by `TauCeti.IsDotAlternating.eq_zero_of_forall_coeff_dominantIntegral_eq_zero`.
   the support of the Weyl denominator.
 * `TauCeti.casimirScalar_eq_of_coeff_formalCharacter_mul_weylDenominator_ne_zero`: **the Casimir
   scalar is constant, equal to `c(lam)`, on the support of `ch M · Δ`.**
-* `TauCeti.coeff_formalCharacter_mul_weylDenominator_eq_zero_of_isDominantIntegral`: **`ch M · Δ`
-  vanishes at every dominant integral weight other than `lam`.**
+* `TauCeti.coeff_formalCharacter_mul_weylDenominator_eq_zero_of_isDominantIntegral_of_ne`:
+  **`ch M · Δ` vanishes at every dominant integral weight other than `lam`.**
 
 ## References
 
@@ -188,31 +189,7 @@ private theorem sum_powerset_neg_one_pow_mul_casimirScalar_mul_eq_zero (g : Dual
 
 end Denominator
 
-/-! ### Combinatorial and bilinear preliminaries -/
-
-omit [CharZero K] [IsKilling K L] [FiniteDimensional K L] [H.IsCartanSubalgebra]
-  [IsTriangularizable K H L] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M] in
-/-- **A telescoping signed sum over the subsets of `P` vanishes.** If, for each `i ∈ P`, the
-summand `g i` changes by `h i` when `i` is adjoined to a set not containing it, then
-`∑_{T ⊆ P} (-1)^{|T|} (∑_{i ∈ P} g i T + ∑_{i ∈ T} h i T) = 0`: for fixed `i`, the sets `T ∌ i`
-and `T ∪ {i}` cancel in pairs. -/
-private theorem sum_powerset_neg_one_pow_mul_eq_zero {ι : Type*} [DecidableEq ι] (P : Finset ι)
-    (g h : ι → Finset ι → K)
-    (hstep : ∀ i ∈ P, ∀ t ∈ (P.erase i).powerset, g i t = g i (insert i t) + h i (insert i t)) :
-    ∑ T ∈ P.powerset, (-1 : K) ^ T.card * (∑ i ∈ P, g i T + ∑ i ∈ T, h i T) = 0 := by
-  have hT : ∀ T ∈ P.powerset, (-1 : K) ^ T.card * (∑ i ∈ P, g i T + ∑ i ∈ T, h i T) =
-      ∑ i ∈ P, (-1 : K) ^ T.card * (g i T + if i ∈ T then h i T else 0) := fun T hT ↦ by
-    rw [← Finset.mul_sum, Finset.sum_add_distrib, Finset.sum_ite_mem,
-      Finset.inter_eq_right.mpr (Finset.mem_powerset.mp hT)]
-  rw [Finset.sum_congr rfl hT, Finset.sum_comm]
-  refine Finset.sum_eq_zero fun i hi ↦ ?_
-  rw [← Finset.insert_erase hi, Finset.sum_powerset_insert (Finset.notMem_erase i P),
-    ← Finset.sum_add_distrib]
-  refine Finset.sum_eq_zero fun t ht ↦ ?_
-  have hit : i ∉ t := fun h ↦ Finset.notMem_erase i P (Finset.mem_powerset.mp ht h)
-  simp only [hit, Finset.mem_insert_self, ↓reduceIte, Finset.card_insert_of_notMem hit,
-    hstep i hi t ht]
-  ring
+/-! ### Bilinear preliminaries -/
 
 /-- **The Casimir scalar along a translation**:
 `c(χ + σ) - c(χ) = 2⟨χ + σ, σ⟩ - c(-σ)`. -/
@@ -223,40 +200,6 @@ private theorem casimirScalar_add_sub_casimirScalar (b : (IsKilling.rootSystem H
   have h1 := (invForm_isSymm (H := H)).eq chi sigma
   simp only [casimirScalar_def, map_add, map_neg, LinearMap.add_apply, LinearMap.neg_apply]
   linear_combination -h1
-
-omit [IsTriangularizable K H L] in
-/-- A Freudenthal string sum telescopes along its own direction: the sum above `μ` is the summand
-at `μ + β` plus the sum above `μ + β`. -/
-private theorem sum_weightString_erase_eq_add_sum {beta : Dual K H} (hbeta : beta ≠ 0)
-    (mu : Dual K H) :
-    ∑ j ∈ (weightString M hbeta mu).erase 0,
-        (finrank K (genWeightSpace M ((mu + j • beta : Dual K H) : H → K)) : K) *
-          invForm (mu + j • beta) beta =
-      (finrank K (genWeightSpace M ((mu + beta : Dual K H) : H → K)) : K) *
-          invForm (mu + beta) beta +
-        ∑ j ∈ (weightString M hbeta (mu + beta)).erase 0,
-          (finrank K (genWeightSpace M ((mu + beta + j • beta : Dual K H) : H → K)) : K) *
-            invForm (mu + beta + j • beta) beta := by
-  obtain ⟨N, hN⟩ := exists_genWeightSpace_add_nsmul_eq_bot_of_le (M := M) hbeta mu
-  have hN' : ∀ j : ℕ, N ≤ j →
-      genWeightSpace M ((mu + beta + j • beta : Dual K H) : H → K) = ⊥ := fun j hj ↦ by
-    rw [add_assoc, ← succ_nsmul']
-    exact hN (j + 1) (by omega)
-  -- both string sums are sums over initial segments, shifted to start at the first rung
-  have hshift : ∀ (f : ℕ → K) (n : ℕ),
-      ∑ j ∈ (Finset.range (n + 1)).erase 0, f j = ∑ j ∈ Finset.range n, f (j + 1) := by
-    intro f n
-    have h := Finset.sum_erase_add (Finset.range (n + 1)) f
-      (Finset.mem_range.mpr (Nat.succ_pos n))
-    rw [Finset.sum_range_succ'] at h
-    exact add_right_cancel h
-  rw [sum_weightString_erase_eq_sum_range hbeta mu (N := N + 1) fun j hj ↦ hN j (by omega),
-    sum_weightString_erase_eq_sum_range hbeta (mu + beta) hN', hshift, hshift,
-    Finset.sum_range_succ', add_comm]
-  have hrung : ∀ k : ℕ, mu + (k + 1 + 1) • beta = mu + beta + (k + 1) • beta := fun k ↦ by
-    rw [add_assoc mu beta, ← succ_nsmul']
-  rw [zero_add, one_nsmul]
-  exact congrArg _ (Finset.sum_congr rfl fun k _ ↦ by rw [hrung])
 
 /-! ### The Casimir scalar on the support of `ch M · Δ` -/
 
@@ -328,7 +271,7 @@ theorem casimirScalar_eq_of_coeff_formalCharacter_mul_weylDenominator_ne_zero {c
         simp only [σ, Finset.sum_insert hit]
         abel
       simp only [F, str, m]
-      rw [hσ, sum_weightString_erase_eq_add_sum]
+      rw [hσ, sum_weightString_erase_zero_eq_add_sum_erase_zero]
       ring
   have hkey : (casimirScalar b lam - casimirScalar b chi) *
       (((formalCharacter K H M * weylDenominator (IsKilling.rootSystem H) b).coeff chi : ℤ) :
@@ -350,13 +293,15 @@ theorem casimirScalar_eq_of_coeff_formalCharacter_mul_weylDenominator_ne_zero {c
 /-- **`ch M · Δ` vanishes at every dominant integral weight other than the highest weight.** A
 dominant integral weight in the support lies below `lam` and has the Casimir scalar of `lam`, and
 the Casimir scalar separates dominant integral weights along the root cone order. -/
-theorem coeff_formalCharacter_mul_weylDenominator_eq_zero_of_isDominantIntegral {nu : Dual K H}
-    (hnu : IsDominantIntegral b nu) (hne : nu ≠ lam) :
+theorem coeff_formalCharacter_mul_weylDenominator_eq_zero_of_isDominantIntegral_of_ne
+    {nu : Dual K H} (hnu : IsDominantIntegral b nu) (hne : nu ≠ lam) :
     (formalCharacter K H M * weylDenominator (IsKilling.rootSystem H) b).coeff nu = 0 := by
   by_contra h
-  exact casimirScalar_ne_casimirScalar_of_isDominantIntegral hv.isDominantIntegral hnu
-    (sub_mem_posRootCone_of_coeff_formalCharacter_mul_weylDenominator_ne_zero hv hgen h) hne
-    (casimirScalar_eq_of_coeff_formalCharacter_mul_weylDenominator_ne_zero hv hgen h).symm
+  exact
+    casimirScalar_ne_of_isDominantIntegral_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne
+      hv.isDominantIntegral hnu
+      (sub_mem_posRootCone_of_coeff_formalCharacter_mul_weylDenominator_ne_zero hv hgen h) hne
+      (casimirScalar_eq_of_coeff_formalCharacter_mul_weylDenominator_ne_zero hv hgen h).symm
 
 end HighestWeightModule
 
