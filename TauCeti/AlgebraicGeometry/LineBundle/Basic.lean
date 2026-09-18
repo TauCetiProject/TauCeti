@@ -33,9 +33,11 @@ over an arbitrary site. This file only packages it over a scheme:
 A free rank-one trivialization of an `𝒪_X`-module `M` over an open `V` gives local coordinates:
 
 * `Scheme.Modules.trivializationCoordinate` is the linear isomorphism `Γ(M, W) ≃ Γ(X, W)` it
-  induces on every open `W ≤ V`, compatible with restriction
-  (`Scheme.Modules.trivializationCoordinate_map`), and `Scheme.Modules.trivializationGenerator`
-  is the basis section of `M` over `V` with coordinate one;
+  induces on every open `W ≤ V`, compatible with restriction in both directions
+  (`Scheme.Modules.trivializationCoordinate_map` and
+  `Scheme.Modules.map_trivializationCoordinate_symm`), and
+  `Scheme.Modules.trivializationGenerator` is the basis section of `M` over `V` with coordinate
+  one;
 * `Scheme.Modules.existsUnique_eq_smul_map_trivializationGenerator` writes every section over
   `W ≤ V` uniquely as a regular multiple of the restricted basis section, and
   `Scheme.Modules.existsUnique_map_trivializationGenerator_eq_smul` shows that the basis sections
@@ -206,6 +208,7 @@ theorem trivializationCoordinate_symm_apply (M : X.Modules) {U W : X.Opens}
 
 /-- The coordinate of a free rank-one trivialization commutes with restriction to a smaller open
 subset. -/
+@[simp]
 theorem trivializationCoordinate_map (M : X.Modules) {U W W' : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U) (i : W ⟶ U)
     (j : W' ⟶ W) (s : Γ(M, W)) :
@@ -216,6 +219,16 @@ theorem trivializationCoordinate_map (M : X.Modules) {U W W' : X.Opens}
   ((SheafOfModules.forget _ ⋙ PresheafOfModules.toPresheaf _).map
     (trivializationCoordinateIso M e).hom).naturality_apply
       (Over.homMk j : Over.mk (j ≫ i) ⟶ Over.mk i).op s
+
+/-- The inverse coordinate of a free rank-one trivialization commutes with restriction to a
+smaller open subset. -/
+@[simp]
+theorem map_trivializationCoordinate_symm (M : X.Modules) {U W W' : X.Opens}
+    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U) (i : W ⟶ U)
+    (j : W' ⟶ W) (r : Γ(X, W)) :
+    M.presheaf.map j.op ((trivializationCoordinate M e i).symm r) =
+      (trivializationCoordinate M e (j ≫ i)).symm (X.presheaf.map j.op r) := by
+  rw [LinearEquiv.eq_symm_apply, trivializationCoordinate_map, LinearEquiv.apply_symm_apply]
 
 /-- The basis section of a line bundle over an open subset carrying a chosen rank-one
 trivialization. -/
@@ -261,15 +274,6 @@ theorem existsUnique_eq_smul_map_trivializationGenerator (M : X.Modules) {V W : 
   · exact (trivializationCoordinate M t i).injective (hcoord _).symm
   · rintro r rfl
     exact (hcoord r).symm
-
-/-- Every section on a rank-one trivializing open subset is a unique regular-function multiple of
-the distinguished basis section. -/
-theorem existsUnique_eq_smul_trivializationGenerator (M : X.Modules) {V : X.Opens}
-    (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V)
-    (s : Γ(M, V)) :
-    ∃! r : Γ(X, V), s = r • trivializationGenerator M t := by
-  simpa only [op_id, M.presheaf.map_id, ConcreteCategory.id_apply] using
-    existsUnique_eq_smul_map_trivializationGenerator M t (𝟙 V) s
 
 /-- On an open subset `W` contained in the domains of two rank-one trivializations, the
 restrictions of their basis sections differ by a unique unit of the regular functions on `W`. -/
