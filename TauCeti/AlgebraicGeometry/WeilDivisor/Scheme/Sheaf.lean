@@ -36,7 +36,8 @@ submodule.
   `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sheaf D`, the resulting sheaf `𝒪_X(D)` of
   `𝒪_X`-modules, together with its monomorphism `sheafι D : 𝒪_X(D) ⟶ 𝒦_X`, which is described on
   sections by `sheafι_app_injective`, `sheafι_app_mem` and `range_sheafι_app`, and the construction
-  `sectionMk` of a section from a rational function satisfying the order bound;
+  `sectionMk` of a section from a rational function satisfying the order bound, and
+  `sheafLift`, the factorization through `𝒪_X(D)` of a morphism to `𝒦_X` satisfying that bound;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sheafHomOfLE`, the inclusion
   `𝒪_X(D) ⟶ 𝒪_X(E)` for `D ≤ E`, with `sheafHomOfLE_app_bijective_of_coeff_eq` showing that it is
   bijective on sections wherever the divisors' coefficients agree, and
@@ -284,6 +285,31 @@ instance (D : SchemeWeilDivisor X) : Mono (sheafι D) := by
       Mono (((Scheme.Modules.toPresheaf X).map (sheafι D)).app U) := fun U ↦
     ConcreteCategory.mono_of_injective _ (sheafι_app_injective D U.unop)
   exact (Scheme.Modules.toPresheaf X).mono_of_mono_map (NatTrans.mono_of_mono_app _)
+
+/-- A morphism to `𝒦_X` whose sections all satisfy the order bound imposed by `D` factors through
+`𝒪_X(D)`. -/
+def sheafLift {M : X.Modules} (D : SchemeWeilDivisor X) (φ : M ⟶ Scheme.rationalFunctions X)
+    (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ sections D U) :
+    M ⟶ sheaf D :=
+  TauCeti.SheafOfModules.liftToSubmodule (submodule D) φ fun U s ↦ hφ U.unop s
+
+@[reassoc (attr := simp)]
+lemma sheafLift_ι {M : X.Modules} (D : SchemeWeilDivisor X) (φ : M ⟶ Scheme.rationalFunctions X)
+    (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ sections D U) :
+    sheafLift D φ hφ ≫ sheafι D = φ :=
+  TauCeti.SheafOfModules.liftToSubmodule_ι _ _ _
+
+/-- On sections, `sheafLift` followed by the inclusion into `𝒦_X` is the original morphism. -/
+@[simp]
+lemma sheafι_app_sheafLift {M : X.Modules} (D : SchemeWeilDivisor X)
+    (φ : M ⟶ Scheme.rationalFunctions X)
+    (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ sections D U)
+    (U : X.Opens) (s : Γ(M, U)) :
+    Scheme.Modules.Hom.app (sheafι D) U (Scheme.Modules.Hom.app (sheafLift D φ hφ) U s) =
+      Scheme.Modules.Hom.app φ U s := by
+  simpa only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply] using
+    ConcreteCategory.congr_hom
+      (congrArg (fun η ↦ Scheme.Modules.Hom.app η U) (sheafLift_ι D φ hφ)) s
 
 /-- A larger divisor allows more sections. -/
 lemma sections_mono {D E : SchemeWeilDivisor X} (h : D ≤ E) (U : X.Opens) :
