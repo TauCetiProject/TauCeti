@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Ideal.KummerDedekind
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Factorization
+import TauCeti.NumberTheory.NumberField.Index.Exponent
 
 /-!
 # Counting the primes above a rational prime by Kummer–Dedekind
@@ -22,7 +23,8 @@ the shape in which splitting laws are read off a generator, for instance the qua
 The first instance is the prime `2` for a generator `ω` with minimal polynomial `X² - X + c` and
 odd conductor exponent: the reduction `X² + X + c` mod `2` is `X (X + 1)` when `c` is even and the
 third cyclotomic polynomial `X² + X + 1`, irreducible over `𝔽₂`, when `c` is odd, so there are two
-primes above `2` in the first case and one in the second.
+primes above `2` in the first case and one in the second. The conductor exponent of such a
+generator is automatically odd, since `X² + X + c` is separable over `𝔽₂`.
 
 ## Main results
 
@@ -34,6 +36,8 @@ primes above `2` in the first case and one in the second.
 * `NumberField.ncard_primesOver_two_of_minpoly_eq_X_sq_sub_X_add`: for a generator with minimal
   polynomial `X² - X + c` and odd conductor exponent, the number of primes above `2` is
   `if 2 ∣ c then 2 else 1`.
+* `NumberField.not_two_dvd_exponent_of_minpoly_eq_X_sq_sub_X_add`: a generator of `K` with
+  minimal polynomial `X² - X + c` has odd conductor exponent.
 
 ## References
 
@@ -116,6 +120,24 @@ theorem card_monicFactorsMod_two_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c :
           revert this
           decide)
     rw [h2]
+
+/-- A generator of `K` with minimal polynomial `X² - X + c` over `ℤ` has odd conductor exponent:
+its minimal polynomial is separable modulo `2`. -/
+theorem not_two_dvd_exponent_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ}
+    (hmin : minpoly ℤ ω = X ^ 2 - X + C c) (hgen : Algebra.adjoin ℚ {(ω : K)} = ⊤) :
+    ¬ 2 ∣ exponent ω := by
+  have hsq : Squarefree ((minpoly ℤ ω).map (Int.castRingHom (ZMod 2))) := by
+    rw [hmin, Polynomial.map_add, Polynomial.map_sub, Polynomial.map_pow, map_X, map_C]
+    refine Separable.squarefree ((separable_def _).mpr ?_)
+    have hder : derivative (X ^ 2 - X + C ((Int.castRingHom (ZMod 2)) c) : (ZMod 2)[X]) = 1 := by
+      simp only [derivative_add, derivative_sub, derivative_X_pow, derivative_X, derivative_C,
+        add_zero, Nat.cast_ofNat, Nat.add_one_sub_one, pow_one]
+      rw [show (2 : ZMod 2) = 0 by decide, map_zero, zero_mul, zero_sub, CharTwo.neg_eq]
+    rw [hder]
+    exact isCoprime_one_right
+  exact fun h => TauCeti.NumberField.IntegralPrimitiveElement.not_dvd_index_of_squarefree_map
+    ⟨ω, hgen⟩ hsq ((TauCeti.NumberField.IntegralPrimitiveElement.dvd_index_iff_dvd_exponent
+      ⟨ω, hgen⟩).mpr h)
 
 /-- **The number of primes above `2` for a generator with minimal polynomial `X² - X + c`.** Let
 `K` be generated over `ℚ` by an algebraic integer `ω` with minimal polynomial `X² - X + c` over

@@ -12,7 +12,6 @@ public import Mathlib.RingTheory.Discriminant
 public import TauCeti.NumberTheory.NumberField.Quadratic.Basic
 public import TauCeti.NumberTheory.NumberField.SplitsCompletely.Basic
 import TauCeti.NumberTheory.NumberField.Ideal.KummerDedekind
-import TauCeti.NumberTheory.NumberField.Index.Exponent
 import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 
 /-!
@@ -42,7 +41,8 @@ minimal polynomial `X² - X + c` and odd conductor exponent
 (`NumberField.ncard_primesOver_two_of_minpoly_eq_X_sq_sub_X_add`, in
 `TauCeti.NumberTheory.NumberField.Ideal.KummerDedekind`). Such a generator always has odd
 conductor exponent, since `X² - X + c` is separable modulo `2`
-(`not_two_dvd_exponent_of_minpoly_eq_X_sq_sub_X_add`). For `c = (1 - d)/4` with `d ≡ 1 (mod 4)`,
+(`not_two_dvd_exponent_of_minpoly_eq_X_sq_sub_X_add`, in the same file). For `c = (1 - d)/4` with
+`d ≡ 1 (mod 4)`,
 the presentation of `ℚ(√d)` by `(1 + √d)/2`, `2` splits exactly when `d ≡ 1 (mod 8)` and is inert
 exactly when `d ≡ 5 (mod 8)`. For `K = ℚ(√d)` presented by `θ` with `θ² = d` and `d ≡ 1 (mod 4)`,
 the half-integer generator `(1 + θ)/2` (`halfGen`) has minimal polynomial `X² - X + (1 - d)/4`
@@ -223,24 +223,6 @@ theorem exists_isPrime_and_absNorm_eq_of_legendreSym_eq_one {θ : 𝓞 K} {d : �
     @Ideal.absNorm_eq_of_ncard_primesOver_eq_finrank K _ _ p _ 𝔮 h𝔮 hlo hsplit⟩
 
 /-! ### The prime `2` for `d ≡ 1 (mod 4)` -/
-
-/-- A generator of `K` with minimal polynomial `X² - X + c` over `ℤ` has odd conductor exponent:
-its minimal polynomial is separable modulo `2`. -/
-theorem not_two_dvd_exponent_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ}
-    (hmin : minpoly ℤ ω = X ^ 2 - X + C c) (hgen : Algebra.adjoin ℚ {(ω : K)} = ⊤) :
-    ¬ 2 ∣ exponent ω := by
-  have hsq : Squarefree ((minpoly ℤ ω).map (Int.castRingHom (ZMod 2))) := by
-    rw [hmin, Polynomial.map_add, Polynomial.map_sub, Polynomial.map_pow, map_X, map_C]
-    refine Separable.squarefree ((separable_def _).mpr ?_)
-    have hder : derivative (X ^ 2 - X + C ((Int.castRingHom (ZMod 2)) c) : (ZMod 2)[X]) = 1 := by
-      simp only [derivative_add, derivative_sub, derivative_X_pow, derivative_X, derivative_C,
-        add_zero, Nat.cast_ofNat, Nat.add_one_sub_one, pow_one]
-      rw [show (2 : ZMod 2) = 0 by decide, map_zero, zero_mul, zero_sub, CharTwo.neg_eq]
-    rw [hder]
-    exact isCoprime_one_right
-  exact fun h => TauCeti.NumberField.IntegralPrimitiveElement.not_dvd_index_of_squarefree_map
-    ⟨ω, hgen⟩ hsq ((TauCeti.NumberField.IntegralPrimitiveElement.dvd_index_iff_dvd_exponent
-      ⟨ω, hgen⟩).mpr h)
 
 /-- **The splitting law at `2` for a generator with minimal polynomial `X² - X + (1 - d)/4`.** Let
 `K` be generated over `ℚ` by an algebraic integer `ω` with minimal polynomial `X² - X + (1 - d)/4`
