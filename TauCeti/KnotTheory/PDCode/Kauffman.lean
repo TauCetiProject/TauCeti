@@ -552,7 +552,6 @@ noncomputable def normalizedKauffmanBracket {R : Type*} [CommRing R]
 
 /-- The writhe-normalized Kauffman bracket is the bracket multiplied by its writhe
 correction factor. -/
-@[simp]
 theorem normalizedKauffmanBracket_def {R : Type*} [CommRing R]
     (D : OrientedPDCode n) (a : Rˣ) :
     D.normalizedKauffmanBracket a =
