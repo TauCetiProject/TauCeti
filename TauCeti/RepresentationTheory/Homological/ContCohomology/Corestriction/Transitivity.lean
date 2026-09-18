@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
 public import TauCeti.GroupTheory.Index.Basic
-public import TauCeti.GroupTheory.Coset.Basic
+public import TauCeti.Algebra.Group.Subgroup.Map
 public import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
 public import Mathlib.Topology.Algebra.OpenSubgroup
 
@@ -361,7 +361,15 @@ private theorem finsum_smul_quotient_trans (hVU : V ≤ U) (W : Subgroup G) (hUW
     ⟨(Subgroup.relIndex_subgroupOf hUW).trans_ne Subgroup.FiniteIndex.index_ne_zero⟩
   have h := congrArg (fun f ↦ f mVW) (explicitCor0_trans W M UW VW hVWUW)
   -- Transport the inner sum over cosets of `VW` in `UW` to one over cosets of `V` in `U`.
-  let e := Subgroup.quotientSubgroupOfSubgroupOfEquiv (H := V) hUW
+  let e := QuotientGroup.congrOfMapEq (A := VW.subgroupOf UW) (B := V.subgroupOf U)
+      (Subgroup.subgroupOfEquivOfLe hUW) (by
+    ext x
+    simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf]
+    constructor
+    · rintro ⟨y, hy, rfl⟩
+      exact hy
+    · intro hx
+      exact ⟨⟨⟨x, hUW x.2⟩, x.2⟩, hx, Subtype.ext rfl⟩)
   have hsum :
       ∑ r : UW ⧸ VW.subgroupOf UW, ((r.out : UW) : G) • m =
         ∑ r : U ⧸ V.subgroupOf U, (r.out : G) • m := by
@@ -370,7 +378,7 @@ private theorem finsum_smul_quotient_trans (hVU : V ≤ U) (W : Subgroup G) (hUW
     -- The representative of `e r` differs from that of `r` by an element of `V`.
     obtain ⟨v, hv⟩ := QuotientGroup.mk_out_eq_mul (V.subgroupOf U)
       (Subgroup.subgroupOfEquivOfLe hUW r.out)
-    rw [← QuotientGroup.out_eq' r, Subgroup.quotientSubgroupOfSubgroupOfEquiv_apply_mk, hv,
+    rw [← QuotientGroup.out_eq' r, QuotientGroup.congrOfMapEq_mk, hv,
       QuotientGroup.out_eq' r, Subgroup.coe_mul, mul_smul,
       hm _ (Subgroup.mem_subgroupOf.mp v.2), Subgroup.subgroupOfEquivOfLe_apply_coe]
   rw [finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype,

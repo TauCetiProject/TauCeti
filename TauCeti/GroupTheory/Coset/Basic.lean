@@ -22,12 +22,6 @@ unfolding. This file records them:
   and `groupEquivQuotientProdSubgroup_apply_snd_coe`.
 
 The additive versions are generated for `AddSubgroup.addGroupEquivQuotientProdAddSubgroup`.
-
-For subgroups `K ≤ L`, the cosets by the subgroup induced by `H` in `K` may be formed either
-directly in `K` or after first pulling `H` and `K` back to subgroups of `L`:
-
-* `Subgroup.quotientSubgroupOfSubgroupOfEquiv`: the two coset spaces are equivalent, with value
-  `Subgroup.quotientSubgroupOfSubgroupOfEquiv_apply_mk` on a coset.
 -/
 
 public section
@@ -78,27 +72,5 @@ theorem groupEquivQuotientProdSubgroup_apply_fst (g : α) :
 theorem groupEquivQuotientProdSubgroup_apply_snd_coe (g : α) :
     ((groupEquivQuotientProdSubgroup (s := s) g).2 : α) = (g : α ⧸ s).out⁻¹ * g := by
   rw [groupEquivQuotientProdSubgroup_apply]
-
-/-- **Cosets induced by `H` in `K`, read inside an ambient `L ≥ K`.** For `K ≤ L`, pulling `H`
-back first to `L` and then to the subgroup induced by `K` gives the same cosets as pulling `H`
-back directly to `K`, along
-`Subgroup.subgroupOfEquivOfLe`. -/
-@[to_additive /-- **Cosets induced by `H` in `K`, read inside an ambient `L ≥ K`.** For `K ≤ L`,
-pulling `H` back first to `L` and then to the subgroup induced by `K` gives the same cosets as
-pulling `H` back directly to `K`, along
-`AddSubgroup.addSubgroupOfEquivOfLe`. -/]
-def quotientSubgroupOfSubgroupOfEquiv {H K L : Subgroup α} (hKL : K ≤ L) :
-    K.subgroupOf L ⧸ (H.subgroupOf L).subgroupOf (K.subgroupOf L) ≃ K ⧸ H.subgroupOf K :=
-  Quotient.congr (subgroupOfEquivOfLe hKL).toEquiv fun x y ↦ by
-    simp [QuotientGroup.leftRel_apply, mem_subgroupOf]
-
-/-- The equivalence `Subgroup.quotientSubgroupOfSubgroupOfEquiv` sends the coset of `g` to the
-coset of the same element of `K`. -/
-@[to_additive (attr := simp), simp]
-theorem quotientSubgroupOfSubgroupOfEquiv_apply_mk {H K L : Subgroup α} (hKL : K ≤ L)
-    (g : K.subgroupOf L) :
-    quotientSubgroupOfSubgroupOfEquiv (H := H) hKL (g : K.subgroupOf L ⧸ _) =
-      (subgroupOfEquivOfLe hKL g : K ⧸ H.subgroupOf K) :=
-  (rfl)
 
 end Subgroup
