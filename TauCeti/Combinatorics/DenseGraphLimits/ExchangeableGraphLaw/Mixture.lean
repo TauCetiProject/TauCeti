@@ -50,9 +50,6 @@ and the mixture of a Dirac mass at `⟦W⟧` is the sampling law of `W`.
 
 ## References
 
-* The human-authored roadmap blueprint `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`, from which
-  the interfaces of `mixtureExchangeableLaw`, `upperMass_mixtureExchangeableLaw`, and
-  `mixtureExchangeableLaw_diracProba` are adapted.
 * P. Diaconis, S. Janson, *Graph limits and exchangeable random graphs*, Rend. Mat. Appl. (7) 28
   (2008), 33--61, Section 5.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012),
