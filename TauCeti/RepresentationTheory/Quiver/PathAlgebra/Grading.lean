@@ -188,7 +188,6 @@ theorem vertexIdempotent_mem_gradeBy_iff [Nontrivial k] {m : M} (v : Q) :
     eq_comm]
 
 /-- **An arrow has degree `m` exactly when its weight is `m`.** -/
-@[simp]
 theorem ofArrow_mem_gradeBy_iff [Nontrivial k] {m : M} {a b : Q} (e : a ⟶ b) :
     (ofArrow e : pathAlgebra k Q) ∈ gradeBy k wt m ↔ wt e = m := by
   rw [ofArrow_eq_ofPath, ofPath_mem_gradeBy_iff]
