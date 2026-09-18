@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.IndexNSmul
-public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
-public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.Henselian
 public import TauCeti.RingTheory.RootsOfUnity.Basic
+import Mathlib.GroupTheory.IndexNSmul
+import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 
 /-!
 # The `n`-th power subgroup of a local field away from the residue characteristic
@@ -171,6 +172,9 @@ theorem card_powerClasses_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
   set μ := rootsOfUnity (Nat.card 𝓀[K] - 1) K
   set V := unitFiltration K 1
   have : Finite μ := .of_equiv _ (rootsOfUnityFieldEquivResidueFieldUnits K).symm.toEquiv
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    simp at hn
   -- The splitting `Kˣ ≃* ℤ × μ_{q-1}(K) × U(K,1)` attached to the uniformizer `ϖ`.
   let e : Kˣ ≃* Multiplicative ℤ × μ × V :=
     (unitsEquivIntProd K ϖ hϖ).toMulEquiv.trans
@@ -183,9 +187,19 @@ theorem card_powerClasses_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
       Nat.card (powMonoidHom n : Multiplicative ℤ × μ × V →* _).ker := by
     have hmap : (powMonoidHom n : Kˣ →* Kˣ).ker.map e.toMonoidHom =
         (powMonoidHom n : Multiplicative ℤ × μ × V →* _).ker := by
-      ext x
-      rw [Subgroup.mem_map_equiv, MonoidHom.mem_ker, MonoidHom.mem_ker, powMonoidHom_apply,
-        powMonoidHom_apply, ← map_pow, MulEquiv.map_eq_one_iff]
+      have hcomm :
+          (powMonoidHom n : Kˣ →* Kˣ).comp e.symm.toMonoidHom =
+            e.symm.toMonoidHom.comp
+              (powMonoidHom n : Multiplicative ℤ × μ × V →* _) := by
+        ext
+        simp
+      calc
+        _ = ((powMonoidHom n : Kˣ →* Kˣ).comp e.symm.toMonoidHom).ker :=
+          (MonoidHom.ker_comp_mulEquiv (powMonoidHom n : Kˣ →* Kˣ) e.symm).symm
+        _ = (e.symm.toMonoidHom.comp
+              (powMonoidHom n : Multiplicative ℤ × μ × V →* _)).ker :=
+          congrArg MonoidHom.ker hcomm
+        _ = _ := MonoidHom.ker_mulEquiv_comp _ e.symm
     rw [rootsOfUnity_eq_ker, ← hmap]
     exact Nat.card_congr (Subgroup.equivMapOfInjective _ e.toMonoidHom e.injective).toEquiv
   -- On the product, the power map is componentwise.
@@ -203,17 +217,57 @@ theorem card_powerClasses_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
     simp
   have hZker : (powMonoidHom n : Multiplicative ℤ →* _).ker = ⊥ := by
     ext
-    simp [(show n ≠ 0 by rintro rfl; simp at hn)]
+    simp [hn0]
   -- The factor `U(K,1)` contributes neither, and the finite factor `μ_{q-1}(K)` has as many power
   -- classes as `n`-torsion elements.
   obtain ⟨hVinj, hVsurj⟩ := powMonoidHom_unitFiltration_succ_bijective_of_isUnit hn 0
-  rw [← Subgroup.index_eq_card, hidx, hker, hprod, MonoidHom.range_prodMap,
-    MonoidHom.range_prodMap, Subgroup.index_prod, Subgroup.index_prod, MonoidHom.ker_prodMap,
-    MonoidHom.ker_prodMap, hZ, hZker, MonoidHom.range_eq_top.mpr hVsurj,
-    (MonoidHom.ker_eq_bot_iff _).mpr hVinj, Subgroup.index_top, Subgroup.index_range,
-    Nat.card_congr (Subgroup.prodEquiv _ _).toEquiv, Nat.card_prod,
-    Nat.card_congr (Subgroup.prodEquiv _ _).toEquiv, Nat.card_prod]
-  simp
+  have hμ : (powMonoidHom n : μ →* μ).range.index =
+      Nat.card (powMonoidHom n : μ →* μ).ker := Subgroup.index_range
+  have hVrange : (powMonoidHom n : V →* V).range = ⊤ :=
+    MonoidHom.range_eq_top.mpr hVsurj
+  have hVker : (powMonoidHom n : V →* V).ker = ⊥ :=
+    (MonoidHom.ker_eq_bot_iff _).mpr hVinj
+  have hVindex : (powMonoidHom n : V →* V).range.index = 1 := by
+    rw [hVrange, Subgroup.index_top]
+  have hZkerCard : Nat.card (powMonoidHom n : Multiplicative ℤ →* _).ker = 1 := by
+    rw [hZker]
+    simp
+  have hVkerCard : Nat.card (powMonoidHom n : V →* V).ker = 1 := by
+    rw [hVker]
+    simp
+  have hproductIndex :
+      (powMonoidHom n : Multiplicative ℤ × μ × V →* _).range.index =
+        n * Nat.card (powMonoidHom n : μ →* μ).ker := by
+    calc
+      _ = (powMonoidHom n : Multiplicative ℤ →* _).range.index *
+          ((powMonoidHom n : μ →* μ).range.index *
+            (powMonoidHom n : V →* V).range.index) := by
+        rw [hprod, MonoidHom.range_prodMap, MonoidHom.range_prodMap,
+          Subgroup.index_prod, Subgroup.index_prod]
+      _ = n * (Nat.card (powMonoidHom n : μ →* μ).ker * 1) := by
+        rw [hZ, hμ, hVindex]
+      _ = _ := by simp
+  have hproductKernel :
+      Nat.card (powMonoidHom n : Multiplicative ℤ × μ × V →* _).ker =
+        Nat.card (powMonoidHom n : μ →* μ).ker := by
+    calc
+      _ = Nat.card (powMonoidHom n : Multiplicative ℤ →* _).ker *
+          (Nat.card (powMonoidHom n : μ →* μ).ker *
+            Nat.card (powMonoidHom n : V →* V).ker) := by
+        rw [hprod, MonoidHom.ker_prodMap, MonoidHom.ker_prodMap,
+          Nat.card_congr (Subgroup.prodEquiv _ _).toEquiv, Nat.card_prod,
+          Nat.card_congr (Subgroup.prodEquiv _ _).toEquiv, Nat.card_prod]
+      _ = 1 * (Nat.card (powMonoidHom n : μ →* μ).ker * 1) := by
+        rw [hZkerCard, hVkerCard]
+      _ = _ := by simp
+  calc
+    Nat.card (Kˣ ⧸ (powMonoidHom n : Kˣ →* Kˣ).range) =
+        (powMonoidHom n : Kˣ →* Kˣ).range.index := (Subgroup.index_eq_card _).symm
+    _ = (powMonoidHom n : Multiplicative ℤ × μ × V →* _).range.index := hidx
+    _ = n * Nat.card (powMonoidHom n : μ →* μ).ker := hproductIndex
+    _ = n * Nat.card (powMonoidHom n : Multiplicative ℤ × μ × V →* _).ker :=
+      congrArg (n * ·) hproductKernel.symm
+    _ = n * Nat.card (rootsOfUnity n K) := congrArg (n * ·) hker.symm
 
 /-- For `n` invertible in `𝒪[K]`, the subgroup `(Kˣ)ⁿ` of `n`-th powers has finite index in
 `Kˣ`, as a consequence of `card_powerClasses_of_isUnit`. -/
