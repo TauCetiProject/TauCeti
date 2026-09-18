@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.CycleData
+public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.GroupTheory.Perm.PermCongr
 
 /-!
