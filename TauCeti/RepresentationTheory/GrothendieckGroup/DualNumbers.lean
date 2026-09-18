@@ -127,7 +127,6 @@ theorem isExhaustiveSimpleFamily_dualNumberResidueFG :
 
 /-- **The Cartan map of `k[ε]`** sends the class of the regular module to twice the class of the
 residue field. -/
-@[simp]
 theorem cartanMap_dualNumberFreeProj :
     cartanMap (DualNumber k) (ExactK0.of (dualNumberFreeProj k)) =
       2 • ExactK0.of (dualNumberResidueFG k) := by
@@ -150,7 +149,6 @@ theorem cartanMatrix_dualNumber :
   exact_mod_cast jordanHolderMultiplicity_dualNumber_dualNumberResidue k
 
 /-- The Cartan matrix of `k[ε]` has determinant `2`. -/
-@[simp]
 theorem det_cartanMatrix_dualNumber :
     (cartanMatrix (fun _ : Unit ↦ dualNumberFreeProj k) (fun _ : Unit ↦ dualNumberResidueFG k)
       (fun _ ↦ isIndecomposableModule_self (DualNumber k)) Subsingleton.pairwise
