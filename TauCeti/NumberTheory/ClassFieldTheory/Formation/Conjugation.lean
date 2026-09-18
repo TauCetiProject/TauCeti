@@ -83,6 +83,8 @@ Mathlib's `MulEquiv.abelianizationCongr` applied to `NormalLayer.conjugateGalEqu
   `conjugate_one` and `conjugate_conjugate`; the maps on ground subgroups, coefficient modules
   and ground levels satisfy them on underlying elements.
 * `TauCeti.ClassFieldTheory.NormalLayer.degree_conjugate`: a conjugate layer has the same degree.
+* `TauCeti.ClassFieldTheory.NormalLayer.card_gal_conjugate`: its simp-normal form, on the orders of
+  the Galois groups.
 * `TauCeti.ClassFieldTheory.NormalLayer.conjugateCoefficientEquiv_rep_apply`: the isomorphisms of
   Galois groups and of coefficient modules intertwine, restated as
   `TauCeti.ClassFieldTheory.NormalLayer.isIntertwiningMap_conjugateCoefficientEquiv`.
@@ -281,11 +283,17 @@ theorem conjugateGalEquiv_mk (u : L.ground) :
       QuotientGroup.mk (L.conjugateGroundEquiv g u) :=
   (rfl)
 
-/-- **A conjugate layer has the same degree.** -/
+/-- **A conjugate layer has a Galois group of the same order.** This is the simp-normal form of
+`degree_conjugate`: `simp` rewrites `degree` to `Fintype.card` of the Galois group via
+`degree_eq_natCard_gal`, and this lemma then identifies the two cardinalities. -/
 @[simp]
+theorem card_gal_conjugate : Fintype.card (L.conjugate g).Gal = Fintype.card L.Gal :=
+  Fintype.card_congr (L.conjugateGalEquiv g).symm.toEquiv
+
+/-- **A conjugate layer has the same degree.** Not `@[simp]`, since its left-hand side is not in
+simp-normal form; `simp` proves it through `card_gal_conjugate`. -/
 theorem degree_conjugate : (L.conjugate g).degree = L.degree := by
-  rw [degree_eq_natCard_gal, degree_eq_natCard_gal]
-  exact Nat.card_congr (L.conjugateGalEquiv g).symm.toEquiv
+  simp
 
 /-! ### Conjugation of the levels and the coefficient module of a layer -/
 
