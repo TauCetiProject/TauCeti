@@ -56,6 +56,11 @@ theorem _root_.QuadraticMap.isRepresentedBy_iff {M' : Type*}
   · rintro ⟨f, hf, hQ⟩
     exact ⟨⟨f, hQ⟩, hf⟩
 
+/-- The restriction of a quadratic map to a submodule is represented by the ambient map. -/
+theorem _root_.QuadraticMap.restrict_isRepresentedBy (Q : QuadraticMap R M N)
+    (U : Submodule R M) : (Q.restrict U).IsRepresentedBy Q :=
+  (isRepresentedBy_iff _ _).mpr ⟨U.subtype, Subtype.coe_injective, fun _ ↦ rfl⟩
+
 /-- Every quadratic map is represented by itself. -/
 @[refl]
 theorem _root_.QuadraticMap.IsRepresentedBy.refl (Q : QuadraticMap R M N) :

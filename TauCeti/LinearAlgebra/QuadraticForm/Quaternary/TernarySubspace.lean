@@ -10,10 +10,11 @@ public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
 /-!
 # Ternary subspaces of quaternary quadratic spaces
 
-This file proves that a three-dimensional subspace of a regular four-dimensional isotropic
-quadratic space with square discriminant is isotropic.  The ambient hypotheses first force the
-space to be the orthogonal sum of two hyperbolic planes.  Such a space has a two-dimensional
-totally isotropic subspace, which must meet every three-dimensional subspace nontrivially.
+This file proves that, over a field in which two is invertible, a subspace of dimension at least
+three in a regular four-dimensional isotropic quadratic space with square discriminant is
+isotropic. The ambient hypotheses first force the space to be the orthogonal sum of two
+hyperbolic planes. Such a space has a two-dimensional totally isotropic subspace, which must meet
+every subspace of dimension at least three nontrivially.
 
 The resulting equivalence between isotropy of the restricted and ambient forms is the
 field-theoretic step used in the square-discriminant case of the quaternary Hasse principle.
@@ -21,10 +22,13 @@ field-theoretic step used in the square-discriminant case of the quaternary Hass
 ## Main results
 
 * `QuadraticMap.Nondegenerate.equivalent_hyperbolicPlane_prod_self`: a regular isotropic
-  quaternary form of square discriminant is the sum of two hyperbolic planes.
-* `QuadraticMap.Nondegenerate.not_anisotropic_restrict_iff_of_finrank_eq_three`: isotropy of a
-  ternary restriction is equivalent to isotropy of its regular quaternary ambient form when the
-  latter has square discriminant.
+  quaternary form over a field in which two is invertible and with square discriminant is the sum
+  of two hyperbolic planes.
+* `QuadraticMap.Nondegenerate.not_anisotropic_restrict_of_finrank_ge_three`: isotropy of such an
+  ambient form implies isotropy of any restriction of dimension at least three.
+* `QuadraticMap.Nondegenerate.not_anisotropic_restrict_iff_of_finrank_ge_three`: isotropy of a
+  restriction of dimension at least three is equivalent to isotropy of its regular quaternary
+  ambient form when the latter has square discriminant.
 
 ## References
 
@@ -42,8 +46,8 @@ universe u v
 variable {K : Type u} [Field K] [Invertible (2 : K)]
 variable {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
-/-- A regular isotropic quaternary form with square discriminant is isometric to the orthogonal
-sum of two hyperbolic planes. -/
+/-- Over a field in which two is invertible, a regular isotropic quaternary form with square
+discriminant is isometric to the orthogonal sum of two hyperbolic planes. -/
 theorem _root_.QuadraticMap.Nondegenerate.equivalent_hyperbolicPlane_prod_self
     {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) (hrank : Module.finrank K V = 4)
     (hdiscr : RegularFormClass.discr (formClass Q hQ) = 0) (hiso : ¬ Q.Anisotropic) :
@@ -71,49 +75,13 @@ theorem _root_.QuadraticMap.Nondegenerate.equivalent_hyperbolicPlane_prod_self
     have hd := congrArg RegularFormClass.discr hclass
     rw [hdiscr, RegularFormClass.discr_add,
       RegularFormClass.discr_hyperbolicClass] at hd
-    have hsquare : squareClass (-1 : Kˣ) + squareClass (-1 : Kˣ) = 0 := by
-      rw [← squareClass_mul]
-      simp
-    let d := RegularFormClass.discr
-      (formClass (presentedForm ⟨2, w⟩) (nondegenerate_presentedForm ⟨2, w⟩))
-    calc
-      d = 0 + d := (zero_add d).symm
-      _ = (squareClass (-1 : Kˣ) + squareClass (-1 : Kˣ)) +
-          d := congrArg (fun z ↦ z + d) hsquare.symm
-      _ = squareClass (-1 : Kˣ) + (squareClass (-1 : Kˣ) + d) :=
-        add_assoc _ _ _
-      _ = squareClass (-1 : Kˣ) + 0 := congrArg (squareClass (-1 : Kˣ) + ·) hd.symm
-      _ = squareClass (-1 : Kˣ) :=
-        add_zero (squareClass (-1 : Kˣ) : SquareClassGroup K)
-  have hshape : presentedForm (⟨2, w⟩ : RegularFormPresentation K) =
-      weightedSumSquares K ![(w 0 : K), (w 1 : K)] := by
-    rw [presentedForm_eq_weightedSumSquares_coe]
-    congr 1
-    funext i
-    fin_cases i <;> rfl
-  have hwSquare : IsSquare (w 0 * w 1 * ((1 : Kˣ) * (-1))) := by
-    rw [← squareClass_eq_iff_isSquare_mul]
-    rw [formClass_presentedForm, RegularFormClass.discr_mk, Fin.prod_univ_two] at hwDiscr
-    simpa only [one_mul] using hwDiscr
-  have htargetShape : presentedForm
-      (⟨2, ![(1 : Kˣ), -1]⟩ : RegularFormPresentation K) =
-        weightedSumSquares K ![(1 : K), -1] := by
-    rw [presentedForm_eq_weightedSumSquares_coe]
-    congr 1
-    funext i
-    fin_cases i <;> rfl
-  have hwHyperbolic : (presentedForm ⟨2, w⟩).Equivalent (hyperbolicPlane K) := by
-    have htarget : w 0 ∈ unitValueSet
-        (weightedSumSquares K ![(1 : K), -1]) := by
-      rw [mem_unitValueSet]
-      have h := represents_hyperbolicPlane (R := K) (w 0 : K)
-      rw [← presentedForm_one_neg_one, htargetShape] at h
-      exact h
-    rw [hshape, ← presentedForm_one_neg_one, htargetShape]
-    exact (equivalent_binary_iff (w 0) (w 1) 1 (-1)).mpr
-      ⟨hwSquare, w 0, mem_unitValueSet_binary_left (w 0) (w 1), htarget⟩
+    exact (add_eq_zero_iff_neg_eq.mp hd.symm).symm.trans (ZModModule.neg_eq_self _)
+  rw [formClass_presentedForm, RegularFormClass.discr_mk, Fin.prod_univ_two] at hwDiscr
+  have hwHyperbolic :=
+    equivalent_presentedForm_hyperbolicPlane_of_squareClass_prod_eq_neg_one w hwDiscr
   exact hp.trans (QuadraticMap.Equivalent.prod (QuadraticMap.Equivalent.refl _) hwHyperbolic)
 
+/-- Parametrises a totally isotropic plane in `H ⊥ H` by diagonal vectors in each factor. -/
 private def hyperbolicPlaneProdIsotropicMap :
     K × K →ₗ[K] (Fin 2 → K) × (Fin 2 → K) where
   toFun x := (![x.1, x.1], ![x.2, x.2])
@@ -121,6 +89,7 @@ private def hyperbolicPlaneProdIsotropicMap :
   map_smul' a x := by ext <;> simp
 
 omit [Invertible (2 : K)] in
+/-- The parametrisation of the diagonal plane in `H ⊥ H` is injective. -/
 private theorem hyperbolicPlaneProdIsotropicMap_injective :
     Function.Injective (hyperbolicPlaneProdIsotropicMap (K := K)) := by
   intro x y hxy
@@ -130,17 +99,19 @@ private theorem hyperbolicPlaneProdIsotropicMap_injective :
   · have := congrArg (fun z ↦ z.2 0) hxy
     simpa [hyperbolicPlaneProdIsotropicMap] using this
 
+/-- Every vector in the parametrised diagonal plane in `H ⊥ H` is isotropic. -/
 private theorem hyperbolicPlane_prod_self_isotropicMap (x : K × K) :
     ((hyperbolicPlane K).prod (hyperbolicPlane K))
       (hyperbolicPlaneProdIsotropicMap x) = 0 := by
   rcases x with ⟨x, y⟩
   simp [hyperbolicPlaneProdIsotropicMap, QuadraticMap.prod_apply]
 
-/-- A ternary subspace of a regular quaternary isotropic space with square discriminant is
-isotropic.  No regularity hypothesis on the subspace is needed. -/
-theorem _root_.QuadraticMap.Nondegenerate.not_anisotropic_restrict_of_finrank_eq_three
+/-- Over a field in which two is invertible, a subspace of dimension at least three in a regular
+quaternary isotropic space with square discriminant is isotropic. No regularity hypothesis on the
+subspace is needed. -/
+theorem _root_.QuadraticMap.Nondegenerate.not_anisotropic_restrict_of_finrank_ge_three
     {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) (U : Submodule K V)
-    (hUrank : Module.finrank K U = 3) (hrank : Module.finrank K V = 4)
+    (hUrank : 3 ≤ Module.finrank K U) (hrank : Module.finrank K V = 4)
     (hdiscr : RegularFormClass.discr (formClass Q hQ) = 0) (hiso : ¬ Q.Anisotropic) :
     ¬ (Q.restrict U).Anisotropic := by
   let e := (hQ.equivalent_hyperbolicPlane_prod_self hrank hdiscr hiso).some
@@ -163,7 +134,7 @@ theorem _root_.QuadraticMap.Nondegenerate.not_anisotropic_restrict_of_finrank_eq
     have hsup : Module.finrank K (U ⊔ P : Submodule K V) ≤ 4 := by
       rw [← hrank]
       exact Submodule.finrank_le _
-    rw [hUrank, hPrank] at hdim
+    rw [hPrank] at hdim
     omega
   obtain ⟨x, hx⟩ := Module.finrank_pos_iff_exists_ne_zero.mp hinterRank
   rw [QuadraticMap.not_anisotropic_iff_exists]
@@ -171,25 +142,21 @@ theorem _root_.QuadraticMap.Nondegenerate.not_anisotropic_restrict_of_finrank_eq
   · intro hzero
     apply hx
     apply Subtype.ext
-    exact congrArg (fun z : U ↦ (z : V)) hzero
-  · exact hPzero ⟨x, x.2.2⟩
+    exact (Submodule.coe_eq_zero (p := U)).mpr hzero
+  · simpa only [QuadraticMap.restrict_apply] using hPzero ⟨x, x.2.2⟩
 
-/-- **O'Meara 42:12.** For a ternary subspace of a regular quaternary quadratic space with
-square discriminant, the restricted form is isotropic exactly when the ambient form is.
+/-- **O'Meara 42:12.** Over a field in which two is invertible, for a subspace of dimension at
+least three in a regular quaternary quadratic space with square discriminant, the restricted form
+is isotropic exactly when the ambient form is.
 
 The restriction need not be assumed regular. -/
-theorem _root_.QuadraticMap.Nondegenerate.not_anisotropic_restrict_iff_of_finrank_eq_three
+theorem _root_.QuadraticMap.Nondegenerate.not_anisotropic_restrict_iff_of_finrank_ge_three
     {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) (U : Submodule K V)
-    (hUrank : Module.finrank K U = 3) (hrank : Module.finrank K V = 4)
+    (hUrank : 3 ≤ Module.finrank K U) (hrank : Module.finrank K V = 4)
     (hdiscr : RegularFormClass.discr (formClass Q hQ) = 0) :
     ¬ (Q.restrict U).Anisotropic ↔ ¬ Q.Anisotropic := by
   constructor
-  · rw [QuadraticMap.not_anisotropic_iff_exists, QuadraticMap.not_anisotropic_iff_exists]
-    rintro ⟨x, hx, hxQ⟩
-    refine ⟨(x : V), ?_, hxQ⟩
-    intro hzero
-    apply hx
-    exact Subtype.ext hzero
-  · exact hQ.not_anisotropic_restrict_of_finrank_eq_three U hUrank hrank hdiscr
+  · exact (Q.restrict_isRepresentedBy U).not_anisotropic
+  · exact hQ.not_anisotropic_restrict_of_finrank_ge_three U hUrank hrank hdiscr
 
 end TauCeti
