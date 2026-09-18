@@ -31,4 +31,8 @@ universe u
 instance instFiniteSymmetrify (Q : Type u) [Finite Q] : Finite (Symmetrify Q) :=
   inferInstanceAs (Finite Q)
 
+/-- Typeclass search does not unfold the `Symmetrify` type synonym to reuse `DecidableEq Q`. -/
+instance instDecidableEqSymmetrify (Q : Type u) [DecidableEq Q] : DecidableEq (Symmetrify Q) :=
+  inferInstanceAs (DecidableEq Q)
+
 end TauCeti
