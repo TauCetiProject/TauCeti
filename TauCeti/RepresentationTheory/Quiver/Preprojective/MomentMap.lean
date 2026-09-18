@@ -25,8 +25,9 @@ and summed over the vertices it is the commutator expression `μ(M) = ∑_a [x_a
 relator `ρ = ∑_a (a a* - a* a)` of the path algebra acts on the module `⨁_v M_v` carried by `M` as
 `μ(M)`, and its local relator `ρ_v` acts as `μ_v(M)` on the summand `M_v`. Consequently the action
 of the doubled path algebra on `⨁_v M_v` factors through the preprojective algebra `Π_k(Q)` exactly
-when the moment map vanishes at every vertex. In other words, the representations of `Π_k(Q)`
-are the representations of `Quiver.Symmetrify Q` in the zero fibre of the moment map. The
+when the moment map vanishes at every vertex, and a representation in the zero fibre of the moment
+map therefore makes `⨁_v M_v` a module over `Π_k(Q)`. No converse construction of a doubled-quiver
+representation from a `Π_k(Q)`-module, and no equivalence of categories, is established here. The
 comparison is purely algebraic: no representation space or quotient by a group action is
 constructed.
 
@@ -220,9 +221,9 @@ theorem preprojectiveToEnd_comp_preprojectiveMk (hM : ∀ v : Q, momentMap k M v
     (preprojectiveToEnd k M hM).comp (preprojectiveMk k Q) = toEnd k (Symmetrify Q) M :=
   preprojectiveLift_comp_preprojectiveMk _ _
 
-/-- **Representations of the preprojective algebra are the zero fibre of the moment map**: the
-action of the doubled path algebra on `⨁_v M_v` factors through the quotient map onto `Π_k(Q)` if
-and only if the moment map of `M` vanishes at every vertex. -/
+/-- **The path-algebra action factors through `Π_k(Q)` exactly on the zero fibre of the moment
+map**: the action of the doubled path algebra on `⨁_v M_v` carried by `M` factors through the
+quotient map onto `Π_k(Q)` if and only if the moment map of `M` vanishes at every vertex. -/
 theorem exists_algHom_comp_preprojectiveMk_eq_toEnd_iff :
     (∃ g : preprojectiveAlgebra k Q →ₐ[k]
         Module.End k (DirectSum (Symmetrify Q) (vertexSpace k (Symmetrify Q) M)),
