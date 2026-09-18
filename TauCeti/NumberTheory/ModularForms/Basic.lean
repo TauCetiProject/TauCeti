@@ -289,10 +289,9 @@ noncomputable def translateₗ [Γ.HasDetOne] (g : GL (Fin 2) ℝ) (hg : 0 < g.d
     rw [FunLike.coe_add, SlashAction.add_slash]
   map_smul' c f := by
     ext z
-    -- As above; for `0 < det g` the automorphism `σ g` in `smul_slash` is the identity.
+    -- As above; scalars commute with the slash since `0 < det g`.
     change ((⇑(c • f) : ℍ → ℂ) ∣[k] g) z = (c • ((⇑f : ℍ → ℂ) ∣[k] g)) z
-    rw [FunLike.coe_smul, smul_slash]
-    simp only [σ, hg, ↓reduceIte, ContinuousAlgEquiv.refl_apply, Pi.smul_apply]
+    rw [FunLike.coe_smul, ModularForm.smul_slash_of_det_pos k hg]
 
 lemma translateₗ_apply [Γ.HasDetOne] (g : GL (Fin 2) ℝ) (hg : 0 < g.det.val)
     (f : ModularForm Γ k) :
