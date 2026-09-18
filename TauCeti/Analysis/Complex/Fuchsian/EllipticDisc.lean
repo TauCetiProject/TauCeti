@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Stabilizer
-public import TauCeti.Analysis.Complex.RootsOfUnityQuotient
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Elliptic
 
 /-!
 # Precisely invariant discs at points of a Fuchsian group
@@ -29,11 +29,8 @@ quotient `Γ \ ℍ` is a disc, and the orbit of `τ` has coordinate `(discCoordi
 
 ## Main declarations
 
-* `Subgroup.stabilizerBall`: the hyperbolic disc of radius `r` about `z`, as a set invariant under
-  the stabilizer of `z`.
-* `Subgroup.stabilizerBallQuotientHomeomorph`: its orbit space under a finite stabilizer of order
-  `m` is homeomorphic to the Euclidean disc of radius `tanh (r / 2) ^ m`, sending the orbit of `τ`
-  to `(discCoordinate z τ) ^ m`.
+* `Subgroup.mem_orbit_stabilizer_iff_discCoordinate_pow_eq_pow`: two points lie in the same
+  finite-stabilizer orbit exactly when their disc coordinates have the same `m`-th power.
 * `Subgroup.eventually_mem_stabilizer_of_image_smul_ball_inter_nonempty`: small discs about a
   point are precisely invariant under a properly discontinuous `Γ`.
 * `Subgroup.stabilizerBallQuotientToQuotient`: the induced map from the local orbit space to
@@ -62,25 +59,6 @@ namespace Subgroup
 
 variable (Γ : Subgroup PSL(2, ℝ)) (z : ℍ)
 
-/-- The open hyperbolic disc of radius `r` about `z`, as a set invariant under the stabilizer of
-`z` in `Γ`. -/
-def stabilizerBall (r : ℝ) : SubMulAction (stabilizer Γ z) ℍ where
-  carrier := ball z r
-  smul_mem' q τ hτ := by
-    have hq : ((q : Γ) : PSL(2, ℝ)) • z = z := q.2
-    have hdist := dist_smul ((q : Γ) : PSL(2, ℝ)) τ z
-    rw [hq] at hdist
-    rw [mem_ball, Subgroup.smul_def, Subgroup.smul_def, hdist]
-    exact hτ
-
-@[simp]
-theorem coe_stabilizerBall (r : ℝ) : (stabilizerBall Γ z r : Set ℍ) = ball z r :=
-  (rfl)
-
-@[simp]
-theorem mem_stabilizerBall {r : ℝ} {τ : ℍ} : τ ∈ stabilizerBall Γ z r ↔ dist τ z < r :=
-  Iff.rfl
-
 section LocalModel
 
 variable [Finite (stabilizer Γ z)]
@@ -95,74 +73,17 @@ theorem mem_orbit_stabilizer_iff_discCoordinate_pow_eq_pow {τ σ : ℍ} :
   rw [TauCeti.pow_eq_pow_iff_exists_rootsOfUnity_smul (NeZero.ne _)]
   constructor
   · rintro ⟨q, rfl⟩
-    refine ⟨rootsOfUnity.mkOfPowEq _ (by
-      simpa only [@MulAction.mem_stabilizer_iff] using stabilizerDeriv_pow_card Γ z q⁻¹), ?_⟩
-    rw [rootsOfUnity.smul_eq_mul, rootsOfUnity.coe_mkOfPowEq, discCoordinate_smul_stabilizer,
-      ← stabilizerDeriv_apply, ← mul_assoc, ← map_mul, inv_mul_cancel, map_one, one_mul]
+    refine ⟨stabilizerRotation Γ z q⁻¹, ?_⟩
+    rw [discCoordinate_smul_eq_rotation_smul, smul_smul, ← map_mul, inv_mul_cancel, map_one,
+      one_smul]
   · rintro ⟨ζ, hζ⟩
-    obtain ⟨q, hq⟩ : ((ζ : ℂˣ) : ℂ) ∈ Set.range (stabilizerDeriv Γ z) := by
-      rw [range_stabilizerDeriv]
-      exact (mem_rootsOfUnity' _ _).mp ζ.2
+    let q := (stabilizerRotationEquiv Γ z).symm ζ
+    have hq : stabilizerRotation Γ z q = ζ := by
+      rw [← coe_stabilizerRotationEquiv]
+      exact (stabilizerRotationEquiv Γ z).apply_symm_apply ζ
     refine ⟨q⁻¹, discCoordinate_injective z ?_⟩
-    rw [discCoordinate_smul_stabilizer, ← hζ, rootsOfUnity.smul_eq_mul, ← hq, ← mul_assoc,
-      ← map_mul, inv_mul_cancel, map_one, one_mul]
-
-/-- The disc coordinate centred at `z`, from the hyperbolic disc of radius `r` about `z` onto the
-Euclidean disc of radius `tanh (r / 2)`, as a map of sets invariant under the stabilizer and
-under the roots of unity of its order. -/
-private def stabilizerBallHomeomorph (r : ℝ) :
-    stabilizerBall Γ z r ≃ₜ
-      TauCeti.rootsOfUnityBall (Nat.card (stabilizer Γ z)) (Real.tanh (r / 2)) :=
-  (Homeomorph.setCongr (coe_stabilizerBall Γ z r)).trans ((discCoordinateBallHomeomorph z r).trans
-    (Homeomorph.setCongr (TauCeti.coe_rootsOfUnityBall _).symm))
-
-private theorem coe_stabilizerBallHomeomorph (r : ℝ) (τ : stabilizerBall Γ z r) :
-    (stabilizerBallHomeomorph Γ z r τ : ℂ) = discCoordinate z τ := by
-  rw [stabilizerBallHomeomorph, Homeomorph.trans_apply, Homeomorph.trans_apply,
-    Homeomorph.setCongr_apply, Homeomorph.setCongr_apply, coe_discCoordinateBallHomeomorph_apply]
-
-private theorem orbitRel_stabilizerBallHomeomorph_iff (r : ℝ)
-    (τ σ : stabilizerBall Γ z r) :
-    orbitRel (stabilizer Γ z) (stabilizerBall Γ z r) τ σ ↔
-      orbitRel (rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ)
-        (TauCeti.rootsOfUnityBall (Nat.card (stabilizer Γ z)) (Real.tanh (r / 2)))
-        (stabilizerBallHomeomorph Γ z r τ) (stabilizerBallHomeomorph Γ z r σ) := by
-  have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
-  rw [orbitRel_apply, orbitRel_apply, SubMulAction.mem_orbit_subMul_iff,
-    SubMulAction.mem_orbit_subMul_iff, mem_orbit_stabilizer_iff_discCoordinate_pow_eq_pow,
-    ← orbitRel_apply (G := rootsOfUnity _ ℂ), TauCeti.orbitRel_rootsOfUnity_apply (NeZero.ne _),
-    coe_stabilizerBallHomeomorph, coe_stabilizerBallHomeomorph]
-
-/-- **The local model of the quotient at a point with finite stabilizer.** If the stabilizer of
-`z` in `Γ` has order `m` and `0 ≤ r`, the orbit space of the hyperbolic disc of radius `r`
-about `z` under that stabilizer is homeomorphic to the Euclidean disc of radius
-`tanh (r / 2) ^ m`, by sending the orbit of `τ` to `(discCoordinate z τ) ^ m`. -/
-def stabilizerBallQuotientHomeomorph {r : ℝ} (hr : 0 ≤ r) :
-    orbitRel.Quotient (stabilizer Γ z) (stabilizerBall Γ z r) ≃ₜ
-      ball (0 : ℂ) (Real.tanh (r / 2) ^ Nat.card (stabilizer Γ z)) :=
-  have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
-  (Homeomorph.Quotient.congr (stabilizerBallHomeomorph Γ z r)
-      (orbitRel_stabilizerBallHomeomorph_iff Γ z r)).trans
-    (TauCeti.rootsOfUnityBallQuotientHomeomorph (by
-      rw [Real.tanh_eq_sinh_div_cosh]
-      exact div_nonneg (Real.sinh_nonneg_iff.mpr (by positivity)) (Real.cosh_pos _).le))
-
-@[simp]
-theorem coe_stabilizerBallQuotientHomeomorph_mk {r : ℝ} (hr : 0 ≤ r)
-    (τ : stabilizerBall Γ z r) :
-    (stabilizerBallQuotientHomeomorph Γ z hr (Quotient.mk _ τ) : ℂ) =
-      discCoordinate z τ ^ Nat.card (stabilizer Γ z) := by
-  have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
-  rw [stabilizerBallQuotientHomeomorph, Homeomorph.trans_apply]
-  rw [show
-    Homeomorph.Quotient.congr (stabilizerBallHomeomorph Γ z r)
-        (orbitRel_stabilizerBallHomeomorph_iff Γ z r) (Quotient.mk _ τ) =
-      Quotient.mk _ (stabilizerBallHomeomorph Γ z r τ) by
-    exact Quotient.congr_mk (stabilizerBallHomeomorph Γ z r).toEquiv
-      (orbitRel_stabilizerBallHomeomorph_iff Γ z r) τ]
-  rw [TauCeti.coe_rootsOfUnityBallQuotientHomeomorph_mk]
-  exact congrArg (fun w : ℂ ↦ w ^ Nat.card (stabilizer Γ z))
-    (coe_stabilizerBallHomeomorph Γ z r τ)
+    rw [discCoordinate_smul_eq_rotation_smul, ← hζ, ← hq, smul_smul, ← map_mul, inv_mul_cancel,
+      map_one, one_smul]
 
 end LocalModel
 
@@ -193,8 +114,11 @@ theorem isOpenMap_stabilizerBallQuotientToQuotient (r : ℝ) :
     conv_lhs => rw [← image_preimage_eq V Quotient.mk_surjective]
     simp only [image_image, stabilizerBallQuotientToQuotient_mk]
   rw [himage]
+  have hopen : IsOpen (stabilizerBall Γ z r : Set ℍ) := by
+    rw [coe_stabilizerBall]
+    exact isOpen_ball
   exact isOpenMap_quotient_mk'_mul _
-    (isOpen_ball.isOpenMap_subtype_val _ (hV.preimage continuous_quotient_mk'))
+    (hopen.isOpenMap_subtype_val _ (hV.preimage continuous_quotient_mk'))
 
 variable [ProperlyDiscontinuousSMul Γ ℍ]
 
@@ -221,7 +145,13 @@ theorem eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient :
     ?_ (isOpenMap_stabilizerBallQuotientToQuotient Γ z r)
   rintro ⟨τ⟩ ⟨σ⟩ h
   obtain ⟨g, hg⟩ := orbitRel_apply.mp (Quotient.exact h)
-  have hmem := hr g ⟨_, ⟨σ, σ.2, rfl⟩, by rw [hg]; exact τ.2⟩
+  have hσ : (σ : ℍ) ∈ ball z r := by
+    rw [← coe_stabilizerBall Γ z r]
+    exact σ.2
+  have hτ : (τ : ℍ) ∈ ball z r := by
+    rw [← coe_stabilizerBall Γ z r]
+    exact τ.2
+  have hmem := hr g ⟨_, ⟨σ, hσ, rfl⟩, by rw [hg]; exact hτ⟩
   exact Quotient.sound (orbitRel_apply.mpr
     (SubMulAction.mem_orbit_subMul_iff.mpr ⟨⟨g, hmem⟩, hg⟩))
 

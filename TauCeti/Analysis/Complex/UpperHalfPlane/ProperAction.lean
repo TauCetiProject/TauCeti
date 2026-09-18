@@ -7,15 +7,16 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Metric
 public import Mathlib.Analysis.Complex.UpperHalfPlane.ProperAction
-public import TauCeti.Analysis.Complex.UpperHalfPlane.PSLAction
+public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 public import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup
 
 /-!
 # Proper action of `PSL(2, ℝ)` on the upper half-plane
 
-The Möbius action of `PSL(2, ℝ)` on the upper half-plane is continuous, proper, and isometric
-for the hyperbolic metric. The properness and the isometry property are descended from Mathlib's
-`SL(2, ℝ)` action using the surjective quotient map `SL(2, ℝ) → PSL(2, ℝ)`.
+The Möbius action of `PSL(2, ℝ)` on the upper half-plane is continuous, transitive, isometric
+for the hyperbolic metric, and proper. Each of these is descended from the corresponding
+property of Mathlib's `SL(2, ℝ)` action using the surjective quotient map
+`SL(2, ℝ) → PSL(2, ℝ)`.
 -/
 
 public section

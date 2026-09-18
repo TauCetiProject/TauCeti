@@ -34,6 +34,8 @@ have Frobenius norm `√2`, so Frobenius volume is `2 ^ (p * (p - 1) / 4)` times
   volume.
 * `TauCeti.symmetricLebesgue_zero` — in dimension zero, `symmetricLebesgue` is the Dirac
   measure on the unique symmetric matrix.
+* `TauCeti.measurePreserving_symmetricFinOneEquiv` — in dimension one, reading the single entry
+  carries `symmetricLebesgue` to Lebesgue measure on `ℝ`.
 -/
 
 public section
@@ -205,5 +207,17 @@ Dirac measure there, so the dimension-zero Wishart laws need no special casing. 
 theorem symmetricLebesgue_zero : symmetricLebesgue 0 = Measure.dirac 0 := by
   have : IsEmpty (upperTriangle 0) := ⟨fun ij => ij.1.1.elim0⟩
   rw [symmetricLebesgue, volume_pi, Measure.pi_of_empty _ 0, Measure.map_dirac, map_zero]
+
+/-- In dimension one, reading the single entry of a symmetric matrix carries `symmetricLebesgue`
+to Lebesgue measure on `ℝ`, so the one-dimensional Wishart densities are ordinary densities on
+the real line. -/
+theorem measurePreserving_symmetricFinOneEquiv :
+    MeasurePreserving symmetricFinOneEquiv (symmetricLebesgue 1) volume := by
+  have h : (symmetricFinOneEquiv : _ → ℝ) =
+      MeasurableEquiv.funUnique (upperTriangle 1) ℝ ∘ symmetricCoordinates 1 := by
+    funext A
+    simp [symmetricCoordinates_apply, Fin.fin_one_eq_zero]
+  rw [h]
+  exact (volume_preserving_funUnique _ ℝ).comp (measurePreserving_symmetricCoordinates 1)
 
 end TauCeti

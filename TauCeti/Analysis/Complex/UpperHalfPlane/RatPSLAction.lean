@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.PSLAction
+public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 -- supplies `UpperHalfPlane.forall_smul_eq_self_iff_mem_center`, which identifies the kernel
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
