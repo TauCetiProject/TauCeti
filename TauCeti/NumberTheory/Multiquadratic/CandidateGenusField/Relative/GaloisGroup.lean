@@ -109,20 +109,18 @@ noncomputable def candidateGenusFieldRelativeSignSubmodule {d : ℤ} (hd : Squar
     v ∈ candidateGenusFieldRelativeSignSubmodule hd ↔ ∑ P, v P = 0 := by
   simp [candidateGenusFieldRelativeSignSubmodule, Fintype.linearCombination_apply]
 
-/-- Two even-parity sign patterns that agree away from one coordinate are equal. -/
-theorem candidateGenusFieldRelativeSignSubmodule_eq_of_forall_ne {d : ℤ}
-    (hd : Squarefree d) (x y : candidateGenusFieldRelativeSignSubmodule hd)
-    (P : {P // P ∈ genusPrimeDiscriminants hd})
-    (h : ∀ R ≠ P, x.val R = y.val R) : x = y := by
-  have hxsum := (mem_candidateGenusFieldRelativeSignSubmodule_iff hd x.val).mp x.property
-  have hysum := (mem_candidateGenusFieldRelativeSignSubmodule_iff hd y.val).mp y.property
-  have herase : ∑ R ∈ Finset.univ.erase P, x.val R =
-      ∑ R ∈ Finset.univ.erase P, y.val R :=
+/-- Two functions on a finite type that agree away from one coordinate and have the same sum
+are equal. -/
+theorem eq_of_sum_eq_of_forall_ne {ι M : Type*} [Fintype ι] [AddCancelCommMonoid M]
+    (x y : ι → M) (hsum : ∑ R, x R = ∑ R, y R) (P : ι)
+    (h : ∀ R ≠ P, x R = y R) : x = y := by
+  classical
+  have herase : ∑ R ∈ Finset.univ.erase P, x R =
+      ∑ R ∈ Finset.univ.erase P, y R :=
     Finset.sum_congr rfl fun R hR ↦ h R (Finset.mem_erase.mp hR).1
-  rw [← Finset.sum_erase_add _ _ (Finset.mem_univ P), herase] at hxsum
-  rw [← Finset.sum_erase_add _ _ (Finset.mem_univ P)] at hysum
-  have hP : x.val P = y.val P := add_left_cancel (hxsum.trans hysum.symm)
-  apply Subtype.ext
+  rw [← Finset.sum_erase_add _ _ (Finset.mem_univ P), herase] at hsum
+  rw [← Finset.sum_erase_add _ _ (Finset.mem_univ P)] at hsum
+  have hP : x P = y P := add_left_cancel hsum
   funext R
   by_cases hR : R = P
   · simpa only [hR] using hP
