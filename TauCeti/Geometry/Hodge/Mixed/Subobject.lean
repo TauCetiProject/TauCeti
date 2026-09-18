@@ -52,18 +52,6 @@ variable [AddCommGroup Vℂ] [Module ℂ Vℂ]
 variable {ιℚ : Vℤ →ₗ[ℤ] Vℚ} {ιℂ : Vℤ →ₗ[ℤ] Vℂ}
 variable {hℚ : IsBaseChange ℚ ιℚ} {hℂ : IsBaseChange ℂ ιℂ}
 
-/-- Complexifying the trace of a rational subspace `V` on a rational subspace `U` gives the trace
-of the complexification of `V` on the complexification of `U`. -/
-private theorem rationalToComplexSubmodule_comap_subtype (U V : Submodule ℚ Vℚ) :
-    rationalToComplexSubmodule (isBaseChange_integralSubmoduleToRational hℚ U)
-      (isBaseChange_integralSubmoduleToComplex hℚ hℂ U) (V.comap U.subtype) =
-      (rationalToComplexSubmodule hℚ hℂ V).comap (rationalToComplexSubmodule hℚ hℂ U).subtype := by
-  apply Submodule.map_injective_of_injective
-    (rationalToComplexSubmodule hℚ hℂ U).subtype_injective
-  conv_lhs =>
-    rw [← rationalMapToComplex_subtype hℚ hℂ U, map_rationalToComplexSubmodule]
-  rw [Submodule.map_comap_subtype, Submodule.map_comap_subtype, rationalToComplexSubmodule_inf]
-
 namespace IsHodgeBigrading
 
 variable {WQ : ℤ → Submodule ℚ Vℚ} {F : ℤ → Submodule ℂ Vℂ} {I : ℤ × ℤ → Submodule ℂ Vℂ}
