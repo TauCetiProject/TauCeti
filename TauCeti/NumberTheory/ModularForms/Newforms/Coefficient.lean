@@ -4,10 +4,13 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
 -/
 module
+public import Mathlib.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.ArithmeticFunction.PrimeRecurrence
+import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.CoefficientFormula
 import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Eigenvector
 import TauCeti.NumberTheory.ModularForms.Newforms.EigenFromPrimes
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Composite
+public import TauCeti.NumberTheory.ModularForms.Newforms.Eigenform
 public import TauCeti.NumberTheory.ModularForms.Newforms.RingEigenvalue
 
 /-!
@@ -51,6 +54,9 @@ coefficient characterisation in Diamond–Shurman, Proposition 5.8.5.
   coefficient identities at the good indices,
   `HeckeRing.GL2.EigenformAwayFromLevel.qExpansion_coeff_mul` and
   `HeckeRing.GL2.EigenformAwayFromLevel.qExpansion_coeff_prime_pow_add_two`.
+* `HeckeRing.GL2.Eigenform.qExpansion_coeff_mul_qExpansion_coeff_eq_sum_divisors_gcd`: the
+  Hecke relation among the coefficients of a normalised full eigenform, with its multiplicative
+  and prime-power specialisations at every index and every prime.
 
 ## Provenance
 
@@ -63,7 +69,9 @@ source states them for its `IsNormalisedEigenform_one` predicate and derives the
 divisor-sum coefficient formula; here they are statements about `EigenformAwayFromLevel` and
 `Newform`, read off the eigenvector equation through the coprime-index formula of
 `HeckeSlash/Nebentypus/Composite.lean` and the eigenvalue identities of
-`Newforms/RingEigenvalue.lean`.
+`Newforms/RingEigenvalue.lean`. The full-eigenform relation is read directly from Tau Ceti's
+divisor-sum formula
+`qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTCompositeGamma0`.
 
 ## References
 
@@ -205,5 +213,73 @@ theorem exists_toCuspForm_eq_and_χ_eq_of_qExpansion_coeff_mul_of_prime_pow_add_
       (Nat.coprime_one_right m)
 
 end EigenformAwayFromLevel
+
+namespace Eigenform
+
+variable (f : Eigenform N k)
+
+/-- **The Hecke relation among the coefficients of a normalised full eigenform.** If `a₁(f) = 1`,
+then for all `m` and `n`,
+
+`a_m a_n = ∑_{d ∣ gcd(m, n)} χ(d) d^{k-1} a_{mn/d²}`,
+
+where `χ(d)` is the zero extension `MulChar.ofUnitHom f.χ`, vanishing at every `d` sharing a
+factor with the level. -/
+theorem qExpansion_coeff_mul_qExpansion_coeff_eq_sum_divisors_gcd
+    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (m n : ℕ) :
+    (qExpansion 1 f.toCuspForm).coeff m * (qExpansion 1 f.toCuspForm).coeff n =
+      ∑ d ∈ (Nat.gcd m n).divisors,
+        (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) d * (d : ℂ) ^ (k - 1) *
+          (qExpansion 1 f.toCuspForm).coeff (m * n / d ^ 2) := by
+  have hzero : (qExpansion 1 f.toCuspForm).coeff 0 = 0 :=
+    CuspFormClass.qExpansion_coeff_zero _ one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map _)
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [hzero]
+  have hcoeff := qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTCompositeGamma0 hn
+    (⟨f.toCuspForm, f.mem_charSpace⟩ : cuspFormCharSpace k f.χ) m
+  -- `f.isEigen` indexes by `ℕ+`; at `⟨n, _⟩` its Hecke element is `T_n` by definition.
+  have heigen : heckeRingHomCuspCharSpace k f.χ (heckeTCompositeGamma0 N n)
+      ⟨f.toCuspForm, f.mem_charSpace⟩ =
+        f.eigenvalue ⟨n, Nat.pos_of_ne_zero hn⟩ • ⟨f.toCuspForm, f.mem_charSpace⟩ :=
+    f.isEigen ⟨n, Nat.pos_of_ne_zero hn⟩
+  have han := f.qExpansion_coeff_eq_eigenvalue_mul_coeff_one ⟨n, Nat.pos_of_ne_zero hn⟩
+  rw [h₁, mul_one, PNat.mk_coe] at han
+  rw [heigen, Submodule.coe_smul, FunLike.coe_smul,
+    ModularForm.qExpansion_smul one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map _),
+    PowerSeries.coeff_smul, smul_eq_mul, ← han] at hcoeff
+  rw [mul_comm, ← hcoeff]
+
+/-- **The coefficients of a normalised full eigenform are multiplicative**: `a_{mn} = a_m a_n`
+whenever `m` and `n` are coprime, with no condition relating them to the level (Diamond–Shurman
+Proposition 5.8.5 (3)). -/
+theorem qExpansion_coeff_mul (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) {m n : ℕ}
+    (hmn : m.Coprime n) :
+    (qExpansion 1 f.toCuspForm).coeff (m * n) =
+      (qExpansion 1 f.toCuspForm).coeff m * (qExpansion 1 f.toCuspForm).coeff n := by
+  rw [f.qExpansion_coeff_mul_qExpansion_coeff_eq_sum_divisors_gcd h₁, Nat.Coprime.gcd_eq_one hmn,
+    Nat.divisors_one, Finset.sum_singleton]
+  simp
+
+/-- **The prime-power recurrence of a normalised full eigenform, at every prime**:
+`a_{p^{r+2}} = a_p a_{p^{r+1}} - χ(p) p^{k-1} a_{p^r}` (Diamond–Shurman Proposition 5.8.5 (2)).
+At a prime dividing the level the zero-extended `χ(p)` vanishes and the recurrence says
+`a_{p^{r+2}} = a_p a_{p^{r+1}}`. -/
+theorem qExpansion_coeff_prime_pow_add_two (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1)
+    {p : ℕ} (hp : p.Prime) (r : ℕ) :
+    (qExpansion 1 f.toCuspForm).coeff (p ^ (r + 2)) =
+      (qExpansion 1 f.toCuspForm).coeff p * (qExpansion 1 f.toCuspForm).coeff (p ^ (r + 1)) -
+        (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ (k - 1) *
+          (qExpansion 1 f.toCuspForm).coeff (p ^ r) := by
+  have hrel := f.qExpansion_coeff_mul_qExpansion_coeff_eq_sum_divisors_gcd h₁ (p ^ (r + 1)) p
+  have hgcd : Nat.gcd (p ^ (r + 1)) p = p :=
+    Nat.gcd_eq_right (dvd_pow_self p (Nat.succ_ne_zero r))
+  have hpow : p ^ (r + 1) * p = p ^ (r + 2) := (pow_succ p (r + 1)).symm
+  have hdiv : p ^ (r + 2) / p ^ 2 = p ^ r := by
+    rw [Nat.pow_div (by omega) hp.pos, Nat.add_sub_cancel]
+  rw [hgcd, hp.divisors, Finset.sum_pair (Ne.symm hp.one_lt.ne'), hpow, hdiv] at hrel
+  simp only [Nat.cast_one, map_one, one_zpow, one_pow, Nat.div_one, one_mul] at hrel
+  linear_combination -hrel
+
+end Eigenform
 
 end HeckeRing.GL2
