@@ -156,6 +156,7 @@ theorem simplyBlockedHomologyClass_eq_iff (hG : G.IsKnot) (i : Fin n)
       (fun x => (hG.simplyBlockedHomologyIsoQuotient R i).inv x) h'
 
 /-- A cycle represents zero in simply blocked homology exactly when it is a boundary. -/
+@[simp]
 theorem simplyBlockedHomologyClass_eq_zero_iff (hG : G.IsKnot) (i : Fin n)
     (c : hG.simplyBlockedCycles R i) :
     hG.simplyBlockedHomologyClass R i c = 0 ↔ c ∈ hG.simplyBlockedBoundaries R i := by
@@ -163,6 +164,7 @@ theorem simplyBlockedHomologyClass_eq_zero_iff (hG : G.IsKnot) (i : Fin n)
     simplyBlockedHomologyClass_eq_iff (G := G) R hG i c 0
 
 /-- The kernel of the cycle-class map is exactly the submodule of boundaries. -/
+@[simp]
 theorem ker_simplyBlockedHomologyClass (hG : G.IsKnot) (i : Fin n) :
     LinearMap.ker (hG.simplyBlockedHomologyClass R i) = hG.simplyBlockedBoundaries R i := by
   ext c
