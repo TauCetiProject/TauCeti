@@ -166,7 +166,6 @@ theorem fullSubcategory_shift
 
 /-- A short complex of the subcategory is a conflation of the induced graded exact structure
 exactly when its image in the ambient category is a conflation. -/
-@[simp]
 theorem fullSubcategory_conflation_iff
     (hP : E.toExactStructure.IsExtensionClosed P)
     (hshift : P.inverseImage E.shift.functor = P) (S : ShortComplex P.FullSubcategory) :
