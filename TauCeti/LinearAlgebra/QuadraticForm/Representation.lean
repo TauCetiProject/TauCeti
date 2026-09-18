@@ -252,6 +252,13 @@ theorem _root_.QuadraticMap.represents_of_nondegenerate_of_not_anisotropic
     Represents Q a :=
   represents_of_radical_eq_bot_of_not_anisotropic Q hQ.radical_eq_bot hiso a
 
+/-- Over a field, a quadratic form representing a nonzero scalar `a` represents every `b` for
+which `b / a` is a square. -/
+theorem _root_.QuadraticMap.Represents.of_isSquare_div {Q : QuadraticForm K V} {a b : K}
+    (h : Represents Q a) (ha : a ≠ 0) (hab : IsSquare (b / a)) : Represents Q b := by
+  obtain ⟨r, hr⟩ := hab
+  simpa only [← hr, smul_eq_mul, div_mul_cancel₀ b ha] using h.smul_mul_self r
+
 /-- A nondegenerate isotropic quadratic form contains two isotropic vectors whose polar pairing
 is one. -/
 theorem _root_.QuadraticMap.Nondegenerate.exists_isotropic_pair
