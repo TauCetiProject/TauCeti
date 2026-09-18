@@ -95,41 +95,36 @@ theorem peterssonInnerCosets_sum_slash_left {Γ Γ' : Subgroup SL(2, ℤ)} [Γ.F
     peterssonInnerCosets F g =
       peterssonInnerCosets h (CuspForm.ofLe (Subgroup.map_mono hle) g) := by
   -- the cosets of `Γ'·{±I}` are the pairs of a coset `p` of `Γ·{±I}` and an index `i`, via
-  -- `(p, i) ↦ p.out * γ i`
+  -- `(p, i) ↦ p.out * γ i`: Mathlib's coset tower `G/H ≃ G/K × K/H`, with the second factor
+  -- `Γ·{±I} / Γ'·{±I}` enumerated by the `γ i`
   set Φ : (SL(2, ℤ) ⧸ Γ.withCenter) × ι → SL(2, ℤ) ⧸ Γ'.withCenter :=
     fun x ↦ QuotientGroup.mk (x.1.out * (γ x.2 : SL(2, ℤ))) with hΦ_def
   have hwc : Γ'.withCenter ≤ Γ.withCenter :=
     Subgroup.withCenter_le_iff.mpr ⟨hle.trans Γ.le_withCenter, Γ.center_le_withCenter⟩
-  have hmk : ∀ (δ : SL(2, ℤ)) (i : ι),
-      (QuotientGroup.mk (δ * (γ i : SL(2, ℤ))) : SL(2, ℤ) ⧸ Γ.withCenter) = QuotientGroup.mk δ :=
-    fun δ i ↦ QuotientGroup.eq.mpr (by simpa using Γ.le_withCenter (Γ.inv_mem (γ i).2))
-  have hΦ : Function.Bijective Φ := by
-    refine ⟨fun ⟨p, i⟩ ⟨p', j⟩ hpq ↦ ?_, fun q ↦ ?_⟩
-    · have hmem := QuotientGroup.eq.mp hpq
-      have hp : p = p' := by
-        have e : (QuotientGroup.mk (p.out * (γ i : SL(2, ℤ))) : SL(2, ℤ) ⧸ Γ.withCenter) =
-            QuotientGroup.mk (p'.out * (γ j : SL(2, ℤ))) := QuotientGroup.eq.mpr (hwc hmem)
-        rwa [hmk, hmk, QuotientGroup.out_eq', QuotientGroup.out_eq'] at e
-      subst hp
-      refine Prod.ext rfl (hγ.1 (QuotientGroup.eq.mpr ?_))
-      have hx : (γ i : SL(2, ℤ))⁻¹ * γ j ∈ Γ ⊓ Γ'.withCenter :=
-        ⟨Γ.mul_mem (Γ.inv_mem (γ i).2) (γ j).2, by simpa [mul_assoc] using hmem⟩
+  set j : ι → Γ.withCenter ⧸ Γ'.withCenter.subgroupOf Γ.withCenter :=
+    fun i ↦ QuotientGroup.mk ⟨γ i, Γ.le_withCenter (γ i).2⟩
+  have hj : Function.Bijective j := by
+    refine ⟨fun i i' hii' ↦ hγ.1 (QuotientGroup.eq.mpr ?_), fun q ↦ ?_⟩
+    · have hx : (γ i : SL(2, ℤ))⁻¹ * γ i' ∈ Γ ⊓ Γ'.withCenter :=
+        ⟨Γ.mul_mem (Γ.inv_mem (γ i).2) (γ i').2,
+          Subgroup.mem_subgroupOf.mp ((QuotientGroup.eq (s := Γ'.withCenter.subgroupOf _)).mp hii')⟩
       rwa [Subgroup.inf_withCenter_eq_of_le hle hneg] at hx
-    · set p : SL(2, ℤ) ⧸ Γ.withCenter := QuotientGroup.mk q.out
-      have hpq : p.out⁻¹ * q.out ∈ Γ.withCenter := QuotientGroup.eq.mp (QuotientGroup.out_eq' p)
-      obtain ⟨x, hx, hsign⟩ := Subgroup.mem_withCenter_iff_exists_eq_or_eq_neg.mp hpq
+    · obtain ⟨x, hx, hsign⟩ := Subgroup.mem_withCenter_iff_exists_eq_or_eq_neg.mp q.out.2
       obtain ⟨i, hi⟩ := hγ.2 (QuotientGroup.mk ⟨x, hx⟩)
       have hix : (γ i : SL(2, ℤ))⁻¹ * x ∈ Γ' := by
         have := (QuotientGroup.eq (s := Γ'.subgroupOf Γ)).mp hi
         rwa [Subgroup.mem_subgroupOf, Subgroup.coe_mul, Subgroup.coe_inv] at this
-      refine ⟨(p, i), ?_⟩
-      rw [hΦ_def, ← QuotientGroup.out_eq' q]
+      refine ⟨i, ?_⟩
+      rw [← QuotientGroup.out_eq' q]
       refine QuotientGroup.eq.mpr (Subgroup.mem_withCenter_iff_exists_eq_or_eq_neg.mpr
         ⟨_, hix, ?_⟩)
-      rw [mul_inv_rev, mul_assoc]
+      rw [Subgroup.subtype_apply, Subgroup.coe_mul, Subgroup.coe_inv]
       rcases hsign with hsign | hsign <;> rw [hsign]
       · exact Or.inl rfl
       · exact Or.inr (mul_neg _ _)
+  have hΦ : Function.Bijective Φ :=
+    (Subgroup.quotientEquivProdOfLE' hwc Quotient.out Quotient.out_eq').symm.bijective.comp
+      (Function.bijective_id.prodMap hj)
   rw [peterssonInnerCosets_def, peterssonInnerCosets_def,
     ← (Equiv.ofBijective Φ hΦ).sum_comp, Fintype.sum_prod_type]
   refine Finset.sum_congr rfl fun p _ ↦ ?_
@@ -240,13 +235,12 @@ theorem peterssonInnerCosets_trace_translate {Γ₁ Γ₂ : Subgroup SL(2, ℤ)}
   set 𝒢₁ := ConjAct.toConjAct α⁻¹ • Γ₁.map (mapGL ℝ)
   set 𝒢₂ := ConjAct.toConjAct (TauCeti.adjugateGL α)⁻¹ • Γ₂.map (mapGL ℝ)
   -- the two intermediate levels `α⁻¹ Γ₁ α ∩ Γ₂` and `Γ₁ ∩ α Γ₂ α⁻¹`, inside `SL(2, ℤ)`
-  have hinj := mapGL_injective (n := Fin 2) (R := ℤ) (S := ℝ)
   have h₃ : (Γ₂ ⊓ 𝒢₁.comap (mapGL ℝ)).map (mapGL ℝ) = 𝒢₁ ⊓ Γ₂.map (mapGL ℝ) := by
     rw [Subgroup.map_inf_comap, inf_comm]
   have h₃' : (Γ₁ ⊓ 𝒢₂.comap (mapGL ℝ)).map (mapGL ℝ) = 𝒢₂ ⊓ Γ₁.map (mapGL ℝ) := by
     rw [Subgroup.map_inf_comap, inf_comm]
-  have := Subgroup.finiteIndex_inf_comap_of_injective Γ₂ 𝒢₁ hinj
-  have := Subgroup.finiteIndex_inf_comap_of_injective Γ₁ 𝒢₂ hinj
+  have := Subgroup.finiteIndex_inf_comap Γ₂ 𝒢₁ (mapGL ℝ)
+  have := Subgroup.finiteIndex_inf_comap Γ₁ 𝒢₂ (mapGL ℝ)
   have hc₁ : (-1 : GL (Fin 2) ℝ) ∈ Subgroup.center (GL (Fin 2) ℝ) :=
     Subgroup.mem_center_iff.mpr fun g ↦ by rw [mul_neg_one, neg_one_mul]
   have hneg₁ : (-1 : SL(2, ℤ)) ∈ Γ₂ → (-1 : SL(2, ℤ)) ∈ Γ₂ ⊓ 𝒢₁.comap (mapGL ℝ) := by
