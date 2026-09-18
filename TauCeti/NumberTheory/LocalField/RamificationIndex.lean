@@ -67,6 +67,10 @@ open ValuativeRel IsNonarchimedeanLocalField
 
 namespace TauCeti
 
+/-- A valuative ring is a valuative extension of itself. -/
+instance valuativeExtension_self (K : Type*) [CommSemiring K] [ValuativeRel K] :
+    ValuativeExtension K K := ⟨fun a b ↦ by simp⟩
+
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L]
