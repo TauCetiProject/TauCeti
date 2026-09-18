@@ -79,20 +79,6 @@ private theorem exists_smul_of_algEquiv
   obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.mp hmem
   exact ⟨r, hr.symm⟩
 
-/-- Scalar multiplication of an arrow class is injective. -/
-private theorem skewZigzagMk_ofArrow_smul_left_injective
-    {x y : DoubledQuiver G} (e : x ⟶ y) :
-    Function.Injective fun r : k ↦ r • skewZigzagMk k G c (ofArrow e) := by
-  obtain ⟨i, rfl⟩ : ∃ i, x = vertex G i := ⟨_, (vertexEquiv_symm_apply G x).symm⟩
-  obtain ⟨j, rfl⟩ : ∃ j, y = vertex G j := ⟨_, (vertexEquiv_symm_apply G y).symm⟩
-  have h : G.Adj i j := by simpa using e.down
-  obtain rfl : e = arrow G h := Subsingleton.elim _ _
-  intro r s hrs
-  beta_reduce at hrs
-  apply skewZigzagMk_backtrackElem_smul_left_injective k G c h
-  beta_reduce
-  rw [← ofArrow_symm_mul_ofArrow, map_mul, ← mul_smul_comm, ← mul_smul_comm, hrs]
-
 /-- **A vertex-fixing isomorphism rescales arrows by units.** An algebra isomorphism between the
 relation quotients of two parameters that fixes every vertex idempotent multiplies each arrow by a
 unique unit. -/
@@ -117,9 +103,9 @@ theorem _root_.AlgEquiv.existsUnique_unit_smul_of_vertexFixing
       _ = φ.symm (φ (skewZigzagMk k G c (ofArrow e))) := congrArg φ.symm hr.symm
       _ = skewZigzagMk k G c (ofArrow e) := φ.symm_apply_apply _
       _ = (1 : k) • skewZigzagMk k G c (ofArrow e) := (one_smul _ _).symm
-  have hrs : r * s = 1 := skewZigzagMk_ofArrow_smul_left_injective (c := c) e hrs_smul
+  have hrs : r * s = 1 := skewZigzagMk_ofArrow_smul_left_injective k G c e hrs_smul
   refine ⟨⟨r, s, hrs, by simpa [mul_comm] using hrs⟩, hr, fun t ht => Units.ext ?_⟩
-  exact skewZigzagMk_ofArrow_smul_left_injective (c := c') e (ht.symm.trans hr)
+  exact skewZigzagMk_ofArrow_smul_left_injective k G c' e (ht.symm.trans hr)
 
 /-- The unit by which a vertex-fixing isomorphism multiplies an arrow. -/
 private noncomputable def arrowUnit

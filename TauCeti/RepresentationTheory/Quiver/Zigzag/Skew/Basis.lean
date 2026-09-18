@@ -39,6 +39,8 @@ quotient.
 * `TauCeti.skewZigzagMk_backtrackElem_ne_zero` and `TauCeti.skewZigzagVolume_ne_zero`: no backtrack
   class vanishes.
 * `TauCeti.skewZigzagMk_ofArrow_ne_zero`: no arrow class vanishes.
+* `TauCeti.skewZigzagMk_ofArrow_smul_left_injective`: scalar multiplication of an arrow class is
+  injective, so the coefficient of an element of an arrow's span is unique.
 * `TauCeti.skewZigzagMk_vertexIdempotent_mul_mul_vertexIdempotent_mem_span`: the corner between
   the endpoints of an arrow is spanned by that arrow.
 * `TauCeti.finrank_skewZigzagQuotient`: when there are no isolated vertices, the dimension is
@@ -561,6 +563,20 @@ theorem skewZigzagMk_backtrackElem_smul_left_injective {i j : V} (hij : G.Adj i 
     at hzero
   have hcoeff := zigzagVolume_smul_left_injective k G hij hzero
   exact (c.ratio hij (s i ⟨j, hij⟩).2).isUnit.mul_right_cancel hcoeff
+
+/-- **Scalar coefficients of an arrow are unique**: scalar multiplication of an arrow class of a
+skew-zigzag relation quotient is injective, even over a commutative ring with zero divisors. -/
+theorem skewZigzagMk_ofArrow_smul_left_injective {x y : DoubledQuiver G} (e : x ⟶ y) :
+    Function.Injective fun r : k ↦ r • skewZigzagMk k G c (ofArrow e) := by
+  obtain ⟨i, rfl⟩ : ∃ i, x = vertex G i := ⟨_, (vertexEquiv_symm_apply G x).symm⟩
+  obtain ⟨j, rfl⟩ : ∃ j, y = vertex G j := ⟨_, (vertexEquiv_symm_apply G y).symm⟩
+  have h : G.Adj i j := by simpa using e.down
+  obtain rfl : e = arrow G h := Subsingleton.elim _ _
+  intro r s hrs
+  beta_reduce at hrs
+  apply skewZigzagMk_backtrackElem_smul_left_injective k G c h
+  beta_reduce
+  rw [← ofArrow_symm_mul_ofArrow, map_mul, ← mul_smul_comm, ← mul_smul_comm, hrs]
 
 /-! ### The corner of an arrow -/
 
