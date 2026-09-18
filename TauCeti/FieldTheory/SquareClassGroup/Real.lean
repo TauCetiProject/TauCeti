@@ -19,6 +19,7 @@ form.
 
 ## Main results
 
+* `Units.isSquare_iff_pos`: a real unit is a square iff it is positive.
 * `Units.squareClass_eq_zero_iff_pos`: a real unit has trivial square class iff it is positive.
 * `Units.squareClass_eq_squareClass_neg_one_iff_neg`: a real unit has the square class of `-1`
   iff it is negative.
@@ -34,10 +35,18 @@ open TauCeti
 
 namespace Units
 
-/-- A real unit has trivial square class exactly when it is positive. -/
-theorem squareClass_eq_zero_iff_pos (u : ℝˣ) : squareClass u = 0 ↔ 0 < (u : ℝ) := by
-  rw [squareClass_eq_zero_iff, ← isSquare_units_val_iff, Real.isSquare_iff]
+/-- A real unit is a square exactly when it is positive. -/
+@[simp]
+theorem isSquare_iff_pos (u : ℝˣ) : IsSquare u ↔ 0 < (u : ℝ) := by
+  rw [← isSquare_units_val_iff, Real.isSquare_iff]
   exact ⟨fun h ↦ lt_of_le_of_ne h (Units.ne_zero u).symm, le_of_lt⟩
+
+/-- A real unit has trivial square class exactly when it is positive.
+
+This is not tagged `@[simp]` because `squareClass_eq_zero_iff` rewrites its left-hand side first;
+`Units.isSquare_iff_pos` supplies the resulting simp-normal rule. -/
+theorem squareClass_eq_zero_iff_pos (u : ℝˣ) : squareClass u = 0 ↔ 0 < (u : ℝ) := by
+  rw [squareClass_eq_zero_iff, isSquare_iff_pos]
 
 /-- A real unit has the square class of `-1` exactly when it is negative. -/
 @[simp]
