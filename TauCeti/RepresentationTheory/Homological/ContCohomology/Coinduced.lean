@@ -854,7 +854,7 @@ variable (R : Type u) [Semiring R]
 
 /-- An algebraically coinduced function from an open subgroup is locally constant when the
 coefficient action is continuous and the coefficient space is discrete. -/
-theorem isLocallyConstant_coindV (U : OpenSubgroup G)
+theorem isLocallyConstant_representationCoindV (U : OpenSubgroup G)
     {A : Type w} [AddCommMonoid A] [Module R A] [TopologicalSpace A] [DiscreteTopology A]
     [DistribMulAction U.toSubgroup A] [SMulCommClass U.toSubgroup R A]
     [ContinuousSMul U.toSubgroup A]
@@ -879,7 +879,7 @@ theorem isLocallyConstant_coindV (U : OpenSubgroup G)
 
 end LocallyConstant
 
-variable (R : Type u) [CommRing R] [TopologicalSpace R]
+variable (R : Type u) [Ring R] [TopologicalSpace R]
   (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (U : OpenSubgroup G)
   (A : SmoothDiscreteTopRep.{u, v, w} R U.toSubgroup)
@@ -901,7 +901,7 @@ noncomputable def discreteCoindEquivAlgebraic :
         (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) where
   toFun f := ⟨f, fun u g ↦ DiscreteCoind.apply_mul f u g⟩
   invFun f := DiscreteCoind.mk G U.toSubgroup A.obj.V f.1
-    (isLocallyConstant_coindV R G U f) fun u g ↦ by
+    (isLocallyConstant_representationCoindV R G U f) fun u g ↦ by
       simpa using f.2 u g
   left_inv f := DiscreteCoind.ext fun _ ↦ rfl
   right_inv f := Subtype.ext rfl
@@ -983,36 +983,55 @@ representation. -/
 noncomputable abbrev algebraicCoindAsSmooth : SmoothDiscreteTopRep.{u, v, max v w} R G :=
   (toSmoothDiscrete R G).obj (algebraicCoindDiscreteRep R G U A)
 
+/-- The discrete representation isomorphism underlying the topological/algebraic comparison. -/
+private noncomputable def discreteCoindIsoAlgebraic :
+    coindDiscreteRep R G U.toSubgroup ((ofSmoothDiscrete R U.toSubgroup).obj A) ≅
+      algebraicCoindDiscreteRep R G U A where
+  hom := (discreteCoindEquivAlgebraic R G U A).toLinearMap.intertwiningMap_of_isIntertwiningMap
+    _ _ fun g f ↦ discreteCoindEquivAlgebraic_smul R G U A g f
+  inv := (discreteCoindEquivAlgebraic R G U A).symm.toLinearMap
+    |>.intertwiningMap_of_isIntertwiningMap _ _ fun _ _ ↦ by
+      apply DiscreteCoind.ext
+      intro x
+      rfl
+  hom_inv_id := Representation.IntertwiningMap.ext
+    (LinearMap.ext (discreteCoindEquivAlgebraic R G U A).symm_apply_apply)
+  inv_hom_id := Representation.IntertwiningMap.ext
+    (LinearMap.ext (discreteCoindEquivAlgebraic R G U A).apply_symm_apply)
+
 /-- Locally constant topological coinduction from an open subgroup agrees with Mathlib's
 algebraic coinduction. The isomorphism is the identity on the underlying equivariant functions. -/
 noncomputable def topologicalCoindIsoAlgebraic :
     coindTopRep R G U.toSubgroup A ≅ algebraicCoindAsSmooth R G U A := by
-  apply (toSmoothDiscrete R G).mapIso
-  refine
-    { hom := (discreteCoindEquivAlgebraic R G U A).toLinearMap.intertwiningMap_of_isIntertwiningMap
-        _ _ fun g f ↦ discreteCoindEquivAlgebraic_smul R G U A g f
-      inv := (discreteCoindEquivAlgebraic R G U A).symm.toLinearMap
-        |>.intertwiningMap_of_isIntertwiningMap _ _ fun _ _ ↦ by
-          apply DiscreteCoind.ext
-          intro x
-          rfl
-      hom_inv_id := Representation.IntertwiningMap.ext
-        (LinearMap.ext (discreteCoindEquivAlgebraic R G U A).symm_apply_apply)
-      inv_hom_id := Representation.IntertwiningMap.ext
-        (LinearMap.ext (discreteCoindEquivAlgebraic R G U A).apply_symm_apply) }
+  exact (toSmoothDiscrete R G).mapIso (discreteCoindIsoAlgebraic R G U A)
+
+private theorem topologicalCoindIsoAlgebraic_hom_apply_impl
+    (f : DiscreteCoind G U.toSubgroup A.obj.V) (g : G) :
+    ((topologicalCoindIsoAlgebraic R G U A).hom.hom.hom f).1 g =
+      (discreteCoindEquivAlgebraic R G U A f).1 g := by
+  rw [topologicalCoindIsoAlgebraic, Functor.mapIso_hom]
+  have h := toSmoothDiscrete_map_hom_apply
+    (R := R) (G := G) (discreteCoindIsoAlgebraic R G U A).hom f
+  exact congrArg (fun b ↦ b.1 g) h
+
+private theorem topologicalCoindIsoAlgebraic_inv_apply_impl
+    (f : Representation.coindV U.toSubgroup.subtype
+      (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) (g : G) :
+    (show DiscreteCoind G U.toSubgroup A.obj.V from
+      (topologicalCoindIsoAlgebraic R G U A).inv.hom.hom f) g =
+        (discreteCoindEquivAlgebraic R G U A).symm f g := by
+  rw [topologicalCoindIsoAlgebraic, Functor.mapIso_inv]
+  have h := toSmoothDiscrete_map_hom_apply
+    (R := R) (G := G) (discreteCoindIsoAlgebraic R G U A).inv f
+  exact congrArg (fun b ↦ (show DiscreteCoind G U.toSubgroup A.obj.V from b) g) h
 
 /-- The forward map of the topological/algebraic comparison leaves every value unchanged. -/
 @[simp]
 theorem topologicalCoindIsoAlgebraic_hom_apply
     (f : DiscreteCoind G U.toSubgroup A.obj.V) (g : G) :
-    ((topologicalCoindIsoAlgebraic R G U A).hom.hom.hom f).1 g = f g := by
-  rw [← discreteCoindEquivAlgebraic_apply R G U A f g, topologicalCoindIsoAlgebraic,
-    Functor.mapIso_hom]
-  -- `toSmoothDiscrete` sends a morphism to its underlying linear map
-  -- (`toSmoothDiscrete_map_hom_apply`), here `discreteCoindEquivAlgebraic`. That lemma cannot be
-  -- rewritten with directly, since the carrier of `coindDiscreteRep` is `DiscreteCoind` only up
-  -- to unfolding of its instances.
-  rfl
+    ((topologicalCoindIsoAlgebraic R G U A).hom.hom.hom f).1 g = f g :=
+  (topologicalCoindIsoAlgebraic_hom_apply_impl R G U A f g).trans
+    (discreteCoindEquivAlgebraic_apply R G U A f g)
 
 /-- The inverse map of the topological/algebraic comparison leaves every value unchanged. -/
 @[simp]
@@ -1020,14 +1039,9 @@ theorem topologicalCoindIsoAlgebraic_inv_apply
     (f : Representation.coindV U.toSubgroup.subtype
       (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) (g : G) :
     (show DiscreteCoind G U.toSubgroup A.obj.V from
-      (topologicalCoindIsoAlgebraic R G U A).inv.hom.hom f) g = f.1 g := by
-  -- The `show` exposes the `DiscreteCoind` carrier of `coindTopRep` so the result can be applied
-  -- as a function; the final reduction unfolds the transported inverse map.
-  rw [← discreteCoindEquivAlgebraic_symm_apply R G U A f g, topologicalCoindIsoAlgebraic,
-    Functor.mapIso_inv]
-  -- As for `topologicalCoindIsoAlgebraic_hom_apply`, `toSmoothDiscrete` sends the inverse
-  -- morphism to its underlying linear map `(discreteCoindEquivAlgebraic R G U A).symm`.
-  rfl
+      (topologicalCoindIsoAlgebraic R G U A).inv.hom.hom f) g = f.1 g :=
+  (topologicalCoindIsoAlgebraic_inv_apply_impl R G U A f g).trans
+    (discreteCoindEquivAlgebraic_symm_apply R G U A f g)
 
 end AlgebraicComparison
 
