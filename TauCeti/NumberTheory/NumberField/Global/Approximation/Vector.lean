@@ -23,11 +23,9 @@ carries its module topology (`IsModuleTopology`), which is the topology of coord
 to any basis. The statements are therefore independent of a choice of basis, and they apply to
 `moduleTopology` as well as to the usual topology of a finite-dimensional real vector space.
 
-The proof reduces to the scalar statement. After choosing a basis `b` of `V`, the coordinates of
-`1 ⊗ x` for `b.baseChange` are the images of the coordinates of `x`, and the coordinate maps are
-homeomorphisms for the module topology. Scalar weak approximation at finite and real places is
+These results are the vector form of the scalar statement
 `GlobalNumberFields.denseRange_algebraMap_embedding_of_isReal`, Artin--Whaples weak approximation
-read through the identification of the completion at a real place with `ℝ`.
+at finite and real places, which is the case `V = K`.
 
 This is the form of weak approximation used to approximate vectors of a quadratic space, such as
 the coordinates of a vector in a binary summand in the proof of the Hasse--Minkowski theorem.

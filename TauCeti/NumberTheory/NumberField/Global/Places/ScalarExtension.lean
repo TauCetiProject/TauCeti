@@ -14,6 +14,10 @@ public import TauCeti.NumberTheory.NumberField.FinitePlace
 
 This file defines the scalar extension of a vector space over a number field to a finite
 completion, to `ℝ` through a real place, and to `ℂ` through a chosen infinite-place embedding.
+
+These are the local vector spaces `K_v ⊗[K] V` attached to a global vector space `V`. They are
+shared by the localization of quadratic forms at the places of `K` and by weak approximation of
+vectors at finite and real places, so that both speak about the same local spaces.
 -/
 
 public section
