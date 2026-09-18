@@ -59,6 +59,9 @@ the ambiguous class number formula and its narrow form.
   `2`-torsion narrow class is the narrow class of an ambiguous ideal.
 * `NumberField.NarrowClassGroup.sq_eq_one_iff_exists_map_ringOfIntegersQuadraticConj_eq_self`: the
   ambiguous narrow classes are exactly the narrow classes of ambiguous ideals.
+* `TauCeti.Multiquadratic.natCard_exists_map_ringOfIntegersQuadraticConj_eq_self_mul_natCard_ker`:
+  the number of ordinary classes of ambiguous ideals times the narrow defect is the number of
+  `2`-torsion narrow classes.
 * `NumberField.NarrowClassGroup.mk0_mem_closure_of_map_eq_self`: the narrow class of an ambiguous
   ideal is a product of narrow classes of primes above ramified rational primes.
 * `NumberField.NarrowClassGroup.mem_closure_of_sq_eq_one`: every `2`-torsion narrow class is such a
@@ -222,6 +225,63 @@ theorem sq_eq_one_iff_exists_map_ringOfIntegersQuadraticConj_eq_self
   ⟨exists_map_ringOfIntegersQuadraticConj_eq_self_of_sq_eq_one hmin hgen, by
     rintro ⟨I, hI, rfl⟩
     exact mk0_sq_eq_one_of_map_ringOfIntegersQuadraticConj_eq_self hmin hgen hI⟩
+
+end NumberField.NarrowClassGroup
+
+namespace TauCeti.Multiquadratic
+
+variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
+
+/-- **The classes of ambiguous ideals and the narrow defect.** For a quadratic field `K` of either
+signature, the number of ideal classes represented by an ideal fixed by quadratic conjugation,
+times the order of the kernel of `Cl⁺(K) → Cl(K)`, is the number of narrow classes of order
+dividing `2`.
+
+The narrow classes of ambiguous ideals are exactly the `2`-torsion narrow classes
+(`NarrowClassGroup.sq_eq_one_iff_exists_map_ringOfIntegersQuadraticConj_eq_self`), and forgetting
+positivity maps them onto the ordinary classes of ambiguous ideals. The kernel of that map consists
+of principal narrow classes, which are `2`-torsion, so every fibre has the size of the kernel. -/
+theorem natCard_exists_map_ringOfIntegersQuadraticConj_eq_self_mul_natCard_ker
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
+    Nat.card {C : ClassGroup (𝓞 K) // ∃ I : (Ideal (𝓞 K))⁰,
+      Ideal.map (ringOfIntegersQuadraticConj hmin hgen) (I : Ideal (𝓞 K)) = (I : Ideal (𝓞 K)) ∧
+        ClassGroup.mk0 I = C} * Nat.card (NarrowClassGroup.toClassGroup (K := K)).ker =
+      Nat.card {C : NarrowClassGroup K // C ^ 2 = 1} := by
+  set f := NarrowClassGroup.toClassGroup (K := K)
+  set H := (powMonoidHom 2 : NarrowClassGroup K →* NarrowClassGroup K).ker
+  have hkerH : f.ker ≤ H := by
+    rw [NarrowClassGroup.toClassGroup_ker]
+    rintro _ ⟨x, rfl⟩
+    simp [H, MonoidHom.mem_ker]
+  have hS : Nat.card {C : ClassGroup (𝓞 K) // ∃ I : (Ideal (𝓞 K))⁰,
+      Ideal.map (ringOfIntegersQuadraticConj hmin hgen) (I : Ideal (𝓞 K)) = (I : Ideal (𝓞 K)) ∧
+        ClassGroup.mk0 I = C} = Nat.card (H.map f) := by
+    refine Nat.card_congr (Equiv.subtypeEquivRight fun C => ?_)
+    simp only [Subgroup.mem_map, H, MonoidHom.mem_ker, powMonoidHom_apply]
+    constructor
+    · rintro ⟨I, hI, rfl⟩
+      exact ⟨NarrowClassGroup.mk0 I,
+        NarrowClassGroup.mk0_sq_eq_one_of_map_ringOfIntegersQuadraticConj_eq_self hmin hgen hI,
+        NarrowClassGroup.toClassGroup_mk0 I⟩
+    · rintro ⟨c, hc, rfl⟩
+      obtain ⟨I, hI, rfl⟩ :=
+        (NarrowClassGroup.sq_eq_one_iff_exists_map_ringOfIntegersQuadraticConj_eq_self hmin hgen
+          c).mp hc
+      exact ⟨I, hI, (NarrowClassGroup.toClassGroup_mk0 I).symm⟩
+  have hH : Nat.card {C : NarrowClassGroup K // C ^ 2 = 1} = Nat.card H :=
+    Nat.card_congr (Equiv.subtypeEquivRight fun C => by simp [H, MonoidHom.mem_ker])
+  have hker : Nat.card (f.domRestrict H).ker = Nat.card f.ker := by
+    rw [MonoidHom.ker_domRestrict]
+    exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe hkerH).toEquiv
+  rw [hS, hH, ← MonoidHom.domRestrict_range, ← hker, ← Subgroup.index_ker, mul_comm,
+    Subgroup.card_mul_index]
+
+end TauCeti.Multiquadratic
+
+namespace NumberField.NarrowClassGroup
+
+variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
+  {Q : ℕ → (Ideal (𝓞 K))⁰}
 
 /-- **The narrow class of an ambiguous ideal is a product of narrow classes of ramified primes.**
 Let `K` be a quadratic number field with quadratic conjugation `σ`, and let `Q p` be a prime of

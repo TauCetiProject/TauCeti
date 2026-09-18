@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.OrdinaryTwoRank
+import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.OrdinaryTwoRank
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.TwoRank
 public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Ambiguous.Narrow
 import Mathlib.NumberTheory.NumberField.ClassNumber
@@ -67,11 +67,9 @@ F. Lemmermeyer, *Reciprocity Laws: From Euler to Eisenstein*, §2.2.
   either signature has exactly `2 ^ (t - 1)` narrow ideal classes of order dividing `2`.
 * `natCard_narrowClassGroup_exists_map_ringOfIntegersQuadraticConj_eq_self_eq_two_pow` (same
   namespace) counts the same narrow classes as narrow classes of ambiguous ideals.
-* `natCard_classGroup_sq_eq_one_eq_two_pow_of_forall_pos` and
-  `natCard_classGroup_sq_eq_one_eq_two_pow_of_neg` (same namespace), with their conjugation-fixed
-  forms `natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_forall_pos` and
-  `natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_neg`: the ambiguous class
-  number of a real quadratic field.
+* `natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_forall_pos` and
+  `natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_neg` (same namespace): the
+  ambiguous class number of a real quadratic field.
 * `natCard_exists_map_ringOfIntegersQuadraticConj_eq_self_mul_natCard_ker` (same
   namespace): for either signature, the number of classes of ambiguous ideals times the order of
   the kernel of `Cl⁺(K) → Cl(K)` is the narrow ambiguous class number.
@@ -157,36 +155,6 @@ theorem natCard_narrowClassGroup_exists_map_ringOfIntegersQuadraticConj_eq_self_
 
 /-! ### The ordinary class group of a real quadratic field -/
 
-/-- **The ambiguous class number formula for a real quadratic field, all prime discriminants
-positive.** Let `K = ℚ(√d)` with `d > 0` squarefree, and let `s` be the prime-discriminant
-factorization of its discriminant. If every `P ∈ s` is positive, then `K` has exactly `2 ^ (t - 1)`
-ideal classes `C` with `C ^ 2 = 1`, where `t` is the number of rational primes ramifying in `K`. -/
-theorem natCard_classGroup_sq_eq_one_eq_two_pow_of_forall_pos {s : Finset ℤ}
-    (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
-    (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
-    (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
-    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
-    (hsf : Squarefree d) (hd : 0 < d) (hpos : ∀ P ∈ s, 0 < P) :
-    Nat.card {C : ClassGroup (𝓞 K) // C ^ 2 = 1} = 2 ^ ((ramifiedPrimes K).ncard - 1) := by
-  rw [← TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion,
-    TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
-    (twoRank_eq_ncard_ramifiedPrimes_sub_one_iff hs heven hprod hmin hgen hsf hd).mpr hpos]
-
-/-- **The ambiguous class number formula for a real quadratic field, a negative prime
-discriminant.** Let `K = ℚ(√d)` with `d > 0` squarefree, and let `s` be the prime-discriminant
-factorization of its discriminant. If some `P ∈ s` is negative, then `K` has exactly `2 ^ (t - 2)`
-ideal classes `C` with `C ^ 2 = 1`, where `t` is the number of rational primes ramifying in `K`. -/
-theorem natCard_classGroup_sq_eq_one_eq_two_pow_of_neg {s : Finset ℤ}
-    (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
-    (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
-    (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
-    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
-    (hsf : Squarefree d) (hd : 0 < d) {P : ℤ} (hP : P ∈ s) (hneg : P < 0) :
-    Nat.card {C : ClassGroup (𝓞 K) // C ^ 2 = 1} = 2 ^ ((ramifiedPrimes K).ncard - 2) := by
-  rw [← TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion,
-    TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
-    twoRank_eq_ncard_ramifiedPrimes_sub_two_of_neg hs heven hprod hmin hgen hsf hd hP hneg]
-
 /-- **The ambiguous class number formula for a real quadratic field, counted by
 conjugation-fixed classes.** For `K = ℚ(√d)` with `d > 0` squarefree whose prime discriminants are
 all positive, exactly `2 ^ (t - 1)` ideal classes are fixed by the quadratic conjugation. -/
@@ -199,10 +167,11 @@ theorem natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_foral
     Nat.card {C : ClassGroup (𝓞 K) //
       ClassGroup.mulEquiv (ringOfIntegersQuadraticConj hmin hgen) C = C} =
       2 ^ ((ramifiedPrimes K).ncard - 1) := by
-  rw [← natCard_classGroup_sq_eq_one_eq_two_pow_of_forall_pos hs heven hprod hmin hgen hsf hd
-    hpos]
-  exact Nat.card_congr (Equiv.subtypeEquivRight fun C =>
-    mulEquiv_ringOfIntegersQuadraticConj_apply_eq_self_iff hmin hgen C)
+  rw [Nat.card_congr (Equiv.subtypeEquivRight fun C =>
+      mulEquiv_ringOfIntegersQuadraticConj_apply_eq_self_iff hmin hgen C),
+    ← TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion,
+    TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
+    (twoRank_eq_ncard_ramifiedPrimes_sub_one_iff hs heven hprod hmin hgen hsf hd).mpr hpos]
 
 /-- **The ambiguous class number formula for a real quadratic field with a negative prime
 discriminant, counted by conjugation-fixed classes.** For `K = ℚ(√d)` with `d > 0` squarefree and
@@ -217,53 +186,11 @@ theorem natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_neg {
     Nat.card {C : ClassGroup (𝓞 K) //
       ClassGroup.mulEquiv (ringOfIntegersQuadraticConj hmin hgen) C = C} =
       2 ^ ((ramifiedPrimes K).ncard - 2) := by
-  rw [← natCard_classGroup_sq_eq_one_eq_two_pow_of_neg hs heven hprod hmin hgen hsf hd hP hneg]
-  exact Nat.card_congr (Equiv.subtypeEquivRight fun C =>
-    mulEquiv_ringOfIntegersQuadraticConj_apply_eq_self_iff hmin hgen C)
-
-/-- **The classes of ambiguous ideals and the narrow defect.** For a quadratic field `K` of either
-signature, the number of ideal classes represented by an ideal fixed by quadratic conjugation,
-times the order of the kernel of `Cl⁺(K) → Cl(K)`, is the number of narrow classes of order
-dividing `2`.
-
-The narrow classes of ambiguous ideals are exactly the `2`-torsion narrow classes
-(`NarrowClassGroup.sq_eq_one_iff_exists_map_ringOfIntegersQuadraticConj_eq_self`), and forgetting
-positivity maps them onto the ordinary classes of ambiguous ideals. The kernel of that map consists
-of principal narrow classes, which are `2`-torsion, so every fibre has the size of the kernel. -/
-theorem natCard_exists_map_ringOfIntegersQuadraticConj_eq_self_mul_natCard_ker
-    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    Nat.card {C : ClassGroup (𝓞 K) // ∃ I : (Ideal (𝓞 K))⁰,
-      Ideal.map (ringOfIntegersQuadraticConj hmin hgen) (I : Ideal (𝓞 K)) = (I : Ideal (𝓞 K)) ∧
-        ClassGroup.mk0 I = C} * Nat.card (NarrowClassGroup.toClassGroup (K := K)).ker =
-      Nat.card {C : NarrowClassGroup K // C ^ 2 = 1} := by
-  set f := NarrowClassGroup.toClassGroup (K := K)
-  set H := (powMonoidHom 2 : NarrowClassGroup K →* NarrowClassGroup K).ker
-  have hkerH : f.ker ≤ H := by
-    rw [NarrowClassGroup.toClassGroup_ker]
-    rintro _ ⟨x, rfl⟩
-    simp [H, MonoidHom.mem_ker]
-  have hS : Nat.card {C : ClassGroup (𝓞 K) // ∃ I : (Ideal (𝓞 K))⁰,
-      Ideal.map (ringOfIntegersQuadraticConj hmin hgen) (I : Ideal (𝓞 K)) = (I : Ideal (𝓞 K)) ∧
-        ClassGroup.mk0 I = C} = Nat.card (H.map f) := by
-    refine Nat.card_congr (Equiv.subtypeEquivRight fun C => ?_)
-    simp only [Subgroup.mem_map, H, MonoidHom.mem_ker, powMonoidHom_apply]
-    constructor
-    · rintro ⟨I, hI, rfl⟩
-      exact ⟨NarrowClassGroup.mk0 I,
-        NarrowClassGroup.mk0_sq_eq_one_of_map_ringOfIntegersQuadraticConj_eq_self hmin hgen hI,
-        NarrowClassGroup.toClassGroup_mk0 I⟩
-    · rintro ⟨c, hc, rfl⟩
-      obtain ⟨I, hI, rfl⟩ :=
-        (NarrowClassGroup.sq_eq_one_iff_exists_map_ringOfIntegersQuadraticConj_eq_self hmin hgen
-          c).mp hc
-      exact ⟨I, hI, (NarrowClassGroup.toClassGroup_mk0 I).symm⟩
-  have hH : Nat.card {C : NarrowClassGroup K // C ^ 2 = 1} = Nat.card H :=
-    Nat.card_congr (Equiv.subtypeEquivRight fun C => by simp [H, MonoidHom.mem_ker])
-  have hker : Nat.card (f.domRestrict H).ker = Nat.card f.ker := by
-    rw [MonoidHom.ker_domRestrict]
-    exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe hkerH).toEquiv
-  rw [hS, hH, ← MonoidHom.domRestrict_range, ← hker, ← Subgroup.index_ker, mul_comm,
-    Subgroup.card_mul_index]
+  rw [Nat.card_congr (Equiv.subtypeEquivRight fun C =>
+      mulEquiv_ringOfIntegersQuadraticConj_apply_eq_self_iff hmin hgen C),
+    ← TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion,
+    TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
+    twoRank_eq_ncard_ramifiedPrimes_sub_two_of_neg hs heven hprod hmin hgen hsf hd hP hneg]
 
 /-- **The strongly ambiguous class number of a quadratic field with a unit of norm `-1`.** For
 `K = ℚ(√d)` with `d` squarefree, if some unit of `𝓞 K` has norm `-1` (so `K` is real), then exactly
@@ -308,10 +235,11 @@ theorem natCard_exists_map_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_for
   -- `S * 2 = 2 ^ (t - 1)` forces `t ≥ 2`, so the factor `2` can be cancelled.
   have ht : 2 ≤ (ramifiedPrimes K).ncard := by
     by_contra h
-    rw [show (ramifiedPrimes K).ncard - 1 = 0 by omega, pow_zero] at key
+    have hsub_zero : (ramifiedPrimes K).ncard - 1 = 0 := by omega
+    rw [hsub_zero, pow_zero] at key
     omega
-  rw [show (ramifiedPrimes K).ncard - 1 = (ramifiedPrimes K).ncard - 2 + 1 by omega,
-    pow_succ] at key
+  have hsub_succ : (ramifiedPrimes K).ncard - 1 = (ramifiedPrimes K).ncard - 2 + 1 := by omega
+  rw [hsub_succ, pow_succ] at key
   exact Nat.eq_of_mul_eq_mul_right two_pos key
 
 end TauCeti.Multiquadratic
