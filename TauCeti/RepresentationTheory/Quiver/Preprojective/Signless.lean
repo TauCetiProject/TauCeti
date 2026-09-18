@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.Quiver.Covering
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Gauge
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.PathAlgebra
 
 /-!
 # The signless preprojective relation
@@ -47,8 +47,6 @@ which every arrow has its head coloured `true`, the rescaling is the identity.
 
 ## Main results
 
-* `TauCeti.signlessPreprojectiveRelator_vertex`: for a simple graph the relator is the sum of the
-  backtracks `TauCeti.DoubledQuiver.backtrackElem` over the neighbours.
 * `TauCeti.signlessPreprojectiveRelator_of`: for a symmetrified quiver it is the sum of the head
   backtracks into and the tail backtracks out of the vertex.
 * `TauCeti.gaugedPreprojectiveRelator_bipartite_eq_sum_smul`: the preprojective relator with arrows
@@ -66,6 +64,10 @@ The relator is defined for any quiver with a reversal, in particular for
 `TauCeti.DoubledQuiver G`, whose arrows live in `Type`. The comparison with `Π_k(Q)` is stated for
 `Quiver.Symmetrify Q`, with `Q` in the universe of quivers accepted by
 `TauCeti.preprojectiveAlgebra`.
+The identification of the relator of `TauCeti.DoubledQuiver G` with the sum of the backtracks at
+`v`, `TauCeti.signlessPreprojectiveRelator_vertex`, lives downstream in
+`TauCeti.RepresentationTheory.Quiver.Zigzag.Signless`, so that this file does not depend on the
+zigzag theory.
 
 ## References
 
@@ -240,29 +242,6 @@ theorem signlessPreprojectiveLift_unique (hf : ∀ v : R, f (signlessPreprojecti
   rw [signlessPreprojectiveLift_signlessPreprojectiveMk, ← hg, AlgHom.comp_apply]
 
 end Lift
-
-/-! ### Doubled quivers of simple graphs -/
-
-section DoubledQuiver
-
-variable (k : Type w) {V : Type u} [CommSemiring k] (G : SimpleGraph V)
-  [∀ v, Fintype (G.neighborSet v)] [∀ x : DoubledQuiver G, Fintype (Quiver.Star x)]
-
-/-- **The signless relator of a simple graph** at `v` is `∑_{j ∼ v} (v → j → v)`, the sum of the
-backtracks along the edges at `v`. -/
-theorem signlessPreprojectiveRelator_vertex (v : V) :
-    signlessPreprojectiveRelator k (DoubledQuiver.vertex G v) =
-      ∑ w : G.neighborSet v, DoubledQuiver.backtrackElem G k ((G.mem_neighborSet v w).1 w.2) := by
-  rw [signlessPreprojectiveRelator_def,
-    ← (DoubledQuiver.starEquivNeighborSet G v).symm.sum_comp]
-  refine Finset.sum_congr rfl fun w _ => ?_
-  rw [DoubledQuiver.starEquivNeighborSet_symm_apply, DoubledQuiver.backtrackElem_eq_ofPath,
-    DoubledQuiver.backtrackPath_eq_comp, DoubledQuiver.arrowPath_eq_toPath,
-    DoubledQuiver.arrowPath_eq_toPath]
-  -- The reverse of the arrow along `w` is the arrow of the symmetric adjacency.
-  rfl
-
-end DoubledQuiver
 
 /-! ### Symmetrified quivers -/
 
