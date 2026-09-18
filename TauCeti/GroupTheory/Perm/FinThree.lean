@@ -29,7 +29,7 @@ permutations.
 
 ## Main statements
 
-* `TauCeti.perm_fin_three_cases`: every permutation of three points is the identity, one of the
+* `Equiv.Perm.fin_three_cases`: every permutation of three points is the identity, one of the
   three transpositions, or one of the two rotations.
 * `TauCeti.mem_stabilizer_perm_fin_three_iff`: a permutation of three points fixes `a` exactly
   when it is the identity or the transposition of the other two points.
@@ -49,15 +49,19 @@ permutations.
 
 public section
 
-namespace TauCeti
+namespace Equiv.Perm
 
 /-- The six permutations of `Fin 3`: the identity, the three transpositions, and the two
 rotations. -/
-theorem perm_fin_three_cases (ρ : Equiv.Perm (Fin 3)) :
+theorem fin_three_cases (ρ : Equiv.Perm (Fin 3)) :
     ρ = 1 ∨ ρ = Equiv.swap 0 1 ∨ ρ = Equiv.swap 1 2 ∨ ρ = Equiv.swap 0 2 ∨
       ρ = finRotate 3 ∨ ρ = (finRotate 3)⁻¹ := by
   revert ρ
   decide
+
+end Equiv.Perm
+
+namespace TauCeti
 
 /-- **A permutation of three points fixing `a` is the identity or the transposition of the other
 two points.** Written with `a + 1` and `a + 2` so that the statement is uniform in `a`: those are

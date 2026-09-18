@@ -8,7 +8,6 @@ module
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 public import TauCeti.Combinatorics.PermutationTriple.GeometryType
 public import TauCeti.GroupTheory.Perm.FinThree
-public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.Tactic.FinCases
 
 /-!
@@ -556,7 +555,7 @@ theorem isConj_component_reindexBranchPoints (ρ : Perm (Fin 3)) (i : Fin 3) :
   have hl (g x : Perm (Fin n)) : IsConj (g⁻¹ * x * g) x := isConj_iff.mpr ⟨g, by group⟩
   have hr (g x : Perm (Fin n)) : IsConj (g * x * g⁻¹) x := isConj_iff.mpr ⟨g⁻¹, by group⟩
   have hneg : (-1 : Fin 3) = 2 := by decide
-  rcases perm_fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;>
+  rcases Equiv.Perm.fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;>
     fin_cases i <;>
     simp [hl, hr, IsConj.refl, -isConj_iff, swap_apply_of_ne_of_ne, finRotate_apply,
       hneg]
@@ -564,7 +563,7 @@ theorem isConj_component_reindexBranchPoints (ρ : Perm (Fin 3)) (i : Fin 3) :
 /-- Reordering the branch points commutes with relabeling the sheets. -/
 @[simp] theorem reindexBranchPoints_smul (ρ : Perm (Fin 3)) (τ : Perm (Fin n)) :
     (τ • t).reindexBranchPoints ρ = τ • t.reindexBranchPoints ρ := by
-  rcases perm_fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
+  rcases Equiv.Perm.fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
 
 /-- Reordering the branch points preserves isomorphism of triples. -/
 theorem Equivalent.reindexBranchPoints {t t' : PermutationTriple n} (h : Equivalent t t')
@@ -576,17 +575,27 @@ theorem Equivalent.reindexBranchPoints {t t' : PermutationTriple n} (h : Equival
 /-- Reordering the branch points does not change the monodromy group. -/
 @[simp] theorem monodromyGroup_reindexBranchPoints (ρ : Perm (Fin 3)) :
     (t.reindexBranchPoints ρ).monodromyGroup = t.monodromyGroup := by
-  rcases perm_fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
+  rcases Equiv.Perm.fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
 
 /-- Reordering the branch points does not change connectedness. -/
 @[simp] theorem isConnected_reindexBranchPoints_iff (ρ : Perm (Fin 3)) :
     (t.reindexBranchPoints ρ).IsConnected ↔ t.IsConnected := by
   rw [isConnected_iff, isConnected_iff, monodromyGroup_reindexBranchPoints]
 
+/-- Reordering the branch points does not change the Euler characteristic. -/
+@[simp] theorem eulerChar_reindexBranchPoints (ρ : Perm (Fin 3)) :
+    (t.reindexBranchPoints ρ).eulerChar = t.eulerChar := by
+  rcases Equiv.Perm.fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
+
 /-- Reordering the branch points does not change the genus. -/
 @[simp] theorem genus_reindexBranchPoints (ρ : Perm (Fin 3)) :
     (t.reindexBranchPoints ρ).genus = t.genus := by
-  rcases perm_fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
+  rcases Equiv.Perm.fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
+
+/-- Reordering the branch points does not change the geometry type. -/
+@[simp] theorem geometryType_reindexBranchPoints (ρ : Perm (Fin 3)) :
+    (t.reindexBranchPoints ρ).geometryType = t.geometryType := by
+  rcases Equiv.Perm.fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
 
 /-- Reordering the branch points of the isomorphism class of a triple: `MulOpposite.op ρ` sends
 the class of `t` to the class of `t.reindexBranchPoints ρ`. -/
@@ -616,9 +625,9 @@ private theorem IsoClass.op_smul_op_smul_of_mem (ρ : Perm (Fin 3))
     exact equivalent_smul _ _
   -- In each of the twelve cases, compute the product `ρ' * ρ` by `decide` and compare words in
   -- `swap01` and `swap1Inf` using `swap01_swap01`, `h11` and `hbraid`.
-  rcases perm_fin_three_cases (ρ' * ρ) with h | h | h | h | h | h <;>
+  rcases Equiv.Perm.fin_three_cases (ρ' * ρ) with h | h | h | h | h | h <;>
     rcases hρ with rfl | rfl <;>
-    rcases perm_fin_three_cases ρ' with rfl | rfl | rfl | rfl | rfl | rfl <;>
+    rcases Equiv.Perm.fin_three_cases ρ' with rfl | rfl | rfl | rfl | rfl | rfl <;>
     first
     | exact absurd h (by decide)
     | simp only [IsoClass.op_smul_mk, h, reindexBranchPoints_one,
