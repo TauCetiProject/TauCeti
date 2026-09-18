@@ -19,6 +19,8 @@ every short exact sequence of finite-dimensional modules splits.
 ## Main results
 
 * `FGModuleCat.projective`: every finite-dimensional module over a division ring is projective.
+* `FGModuleCat.projective_of_moduleProjective`: every finitely generated projective module is a
+  projective object.
 * `FGModuleCat.projective_of_free`: every finite free module is projective.
 * `FGModuleCat.moduleProjective_of_projective`: a projective object of `FGModuleCat R` is a
   projective `R`-module, provided `R` is small relative to the universe of the modules.
@@ -36,11 +38,18 @@ universe u v
 
 variable (R : Type u) [Ring R]
 
+/-- A finitely generated projective module is a projective object of `FGModuleCat R`. -/
+theorem _root_.FGModuleCat.projective_of_moduleProjective (X : FGModuleCat.{v} R)
+    [Module.Projective R X] : Projective X := by
+  apply (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).projective_of_map_projective
+  have hP : Module.Projective R X.obj := inferInstanceAs (Module.Projective R X)
+  exact @ModuleCat.projective_of_categoryTheory_projective R _ X.obj hP
+
 /-- Every finite free module is a projective object. -/
 theorem _root_.FGModuleCat.projective_of_free (X : FGModuleCat.{v} R) [Module.Free R X] :
     Projective X := by
-  apply (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).projective_of_map_projective
-  exact ModuleCat.projective_of_free (Module.Free.chooseBasis R X)
+  let _ : Module.Projective R X := Module.Projective.of_basis (Module.Free.chooseBasis R X)
+  exact FGModuleCat.projective_of_moduleProjective R X
 
 variable {R} in
 /-- A projective object among the finitely generated modules is projective as an `R`-module. The
