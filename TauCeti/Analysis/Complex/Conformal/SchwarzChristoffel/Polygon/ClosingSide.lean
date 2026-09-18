@@ -193,7 +193,7 @@ theorem im_schwarzChristoffelVertex_zero_lt (a e : Fin (n + 1) → ℝ) (z₀ : 
 
 /-- **Every finite Schwarz--Christoffel vertex lies on or above the closing line.** The line is
 identified by the imaginary part of the first finite vertex. -/
-@[grind]
+@[grind .]
 theorem im_schwarzChristoffelVertex_zero_le (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane)
     (ha : StrictMono a) (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2)
     (k : Fin (n + 1)) :
