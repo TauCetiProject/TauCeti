@@ -26,10 +26,11 @@ principal parts — the long exact sequence collapses:
 * `H¹(X, M)` is the cokernel of `H⁰(X, 𝒦_X) ⟶ H⁰(X, Q)`;
 * `Hⁿ⁺²(X, M) ≅ Hⁿ⁺¹(X, Q)` for every `n`.
 
-This is the principal-parts description of the cohomology of a divisorial sheaf on an integral
-curve: vanishing of `H²(X, 𝒪_X(D))` reduces to vanishing of `H¹` of the sheaf of principal parts,
-and `H¹(X, 𝒪_X(D))` is the space of principal parts modulo those of global rational functions,
-which is where the dimension counts behind Riemann–Roch take place.
+Once the divisorial sheaf, its principal-parts quotient, and the required short exact sequence are
+supplied, this gives the principal-parts description of its cohomology on an integral curve:
+vanishing of `H²(X, 𝒪_X(D))` reduces to vanishing of `H¹` of the sheaf of principal parts, and
+`H¹(X, 𝒪_X(D))` is the space of principal parts modulo those of global rational functions, which is
+where the dimension counts behind Riemann–Roch take place.
 
 ## Main declarations
 
@@ -101,7 +102,7 @@ variable {S : ShortComplex X.Modules} (hS : S.ShortExact) [S.X₂.presheaf.IsFla
 include hS
 
 /-- If the middle term of a short exact sequence of sheaves of modules is flasque, then every
-connecting map `Hⁿ⁰(X, M₃) ⟶ Hⁿ¹(X, M₁)` is surjective. -/
+connecting map `H^{n₀}(X, M₃) ⟶ H^{n₁}(X, M₁)` is surjective. -/
 theorem cohomologyδ_surjective_of_isFlasque (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
     Function.Surjective (cohomologyδ hS n₀ n₁ h) := by
   subst h
