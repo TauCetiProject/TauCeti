@@ -140,6 +140,7 @@ theorem g2SpecialIsogeny_map {S F : Type*} [CommRing S] [FunLike F R S] [RingHom
 /-- **The formula sends diagonal matrices to diagonal matrices**, pairing up the entries along
 the seven distinguished index pairs. The two corrections at the middle index contribute nothing,
 because the pairs they add are distinct from all seven. -/
+@[simp]
 theorem g2SpecialIsogeny_diagonal (d : Fin 7 → R) :
     g2SpecialIsogeny (Matrix.diagonal d) =
       Matrix.diagonal
