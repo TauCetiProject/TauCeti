@@ -133,7 +133,7 @@ theorem _root_.Matrix.g2CrossMap_isogenySource (j m : Fin 7) :
     g2CrossMap ((isogenySource j).map (Int.cast : ℤ → R)) m = 0 := by
   have key : ∀ j m : Fin 7,
       ∑ k, ((crossOperator k).map (Int.cast : ℤ → ℤ) * (isogenySource j)ᵀ) m k = 0 := by
-    rw [crossOperator_eq]
+    rw [crossOperator_def]
     decide +kernel
   rw [g2CrossMap_map, g2CrossMap_def, key j m, Int.cast_zero]
 
@@ -229,7 +229,7 @@ private theorem eq_sum_isogenySource_add_sum_crossBivector [CharP R 3]
   have e4 := (g2CrossMap_apply W 4).symm.trans (hc 4)
   have e5 := (g2CrossMap_apply W 5).symm.trans (hc 5)
   have e6 := (g2CrossMap_apply W 6).symm.trans (hc 6)
-  simp [Fin.sum_univ_seven, crossOperator_eq] at e0 e1 e2 e3 e4 e5 e6
+  simp [Fin.sum_univ_seven, crossOperator_def] at e0 e1 e2 e3 e4 e5 e6
   have hsum : ((∑ k, isogenyProjection k W • (isogenySource k).map (Int.cast : ℤ → R)) +
       ∑ a, isogenyKernelCoeff a W • (crossBivector a).map (Int.cast : ℤ → R))ᵀ =
       -((∑ k, isogenyProjection k W • (isogenySource k).map (Int.cast : ℤ → R)) +

@@ -133,6 +133,8 @@ theorem g2SpecialIsogeny_apply (g : Matrix (Fin 7) (Fin 7) R) (i j : Fin 7) :
 theorem g2SpecialIsogeny_map {S F : Type*} [CommRing S] [FunLike F R S] [RingHomClass F R S]
     (f : F) (g : Matrix (Fin 7) (Fin 7) R) :
     g2SpecialIsogeny (g.map f) = (g2SpecialIsogeny g).map f := by
+  -- `pairMinor_map` is stated for `R →+* S`, while this theorem accepts any `RingHomClass`.
+  -- Normalize the coercion so that rewriting can recognize the mapped minors.
   let φ : R →+* S := RingHomClass.toRingHom f
   change g2SpecialIsogeny (g.map φ) = (g2SpecialIsogeny g).map φ
   ext i j

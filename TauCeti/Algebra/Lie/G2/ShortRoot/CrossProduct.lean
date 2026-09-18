@@ -36,7 +36,7 @@ the isogeny itself appears downstream, in
 
 * `TauCeti.G2ShortRoot.crossOperator` and `TauCeti.G2ShortRoot.invariantDualForm`: the cross
   product, and the invariant symmetric form of the dual module, in the weight basis, with their
-  tables `TauCeti.G2ShortRoot.crossOperator_eq` and `TauCeti.G2ShortRoot.invariantDualForm_eq`.
+  tables `TauCeti.G2ShortRoot.crossOperator_def` and `TauCeti.G2ShortRoot.invariantDualForm_def`.
 * `TauCeti.G2ShortRoot.crossBivector`: the cross-product operators transported by the invariant
   dual form, alternating matrices that span the short-root ideal in characteristic three.
 * `Matrix.PreservesG2Cross`: multiplicativity of a matrix for the cross product.
@@ -143,7 +143,7 @@ def invariantDualForm : Matrix (Fin 7) (Fin 7) ℤ :=
 
 /-- **The table of the cross-product operators**, the defining equation of
 `TauCeti.G2ShortRoot.crossOperator`. -/
-theorem crossOperator_eq :
+theorem crossOperator_def :
     crossOperator =
     ![!![0, 0, 0, -2, 0, 0, 0;
         0, 0, 0, 0, -2, 0, 0;
@@ -197,7 +197,7 @@ theorem crossOperator_eq :
 
 /-- **The table of the invariant dual form**, the defining equation of
 `TauCeti.G2ShortRoot.invariantDualForm`. -/
-theorem invariantDualForm_eq :
+theorem invariantDualForm_def :
     invariantDualForm =
     !![0, 0, 0, 0, 0, 0, 2;
       0, 0, 0, 0, 0, -2, 0;
@@ -272,7 +272,7 @@ theorem crossBivector_eq :
 /-- Transporting a cross-product operator by the invariant dual form gives the corresponding
 alternating matrix. This is the defining equation of `TauCeti.G2ShortRoot.crossBivector`, stated
 because the module system hides the body from a consumer. -/
-theorem crossOperator_mul_invariantDualForm (a : Fin 7) :
+theorem crossBivector_def (a : Fin 7) :
     crossOperator a * invariantDualForm = crossBivector a := by
   rw [crossBivector]
 
@@ -333,7 +333,7 @@ theorem mul_crossBivector_mul_transpose {g : Matrix (Fin 7) (Fin 7) R} (hg : Pre
   have hmap : ∀ a : Fin 7, (crossBivector a).map (Int.cast : ℤ → R) =
       (crossOperator a).map (Int.cast : ℤ → R) * invariantDualForm.map (Int.cast : ℤ → R) :=
       fun a => by
-    rw [← crossOperator_mul_invariantDualForm a]
+    rw [← crossBivector_def a]
     exact Matrix.map_mul (f := (Int.castRingHom R))
   calc g * (crossBivector k).map (Int.cast : ℤ → R) * gᵀ
       = (g * (crossOperator k).map (Int.cast : ℤ → R)) *
