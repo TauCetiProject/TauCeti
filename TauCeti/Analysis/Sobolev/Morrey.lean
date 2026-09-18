@@ -23,8 +23,9 @@ derivative lies in `Lᵖ` is Hölder continuous of exponent `1 - n / p`, with
 `‖u x - u y‖ ≤ C(n, p, μ) * ‖x - y‖ ^ (1 - n / p) * ‖Du‖_{Lᵖ}`.
 
 The constant is explicit. Writing `ω = μ(B(0, 1))` and `K = n ω (p - 1) / (p - n)`, it is
-`C = 2 ^ (n + 1) / (n ω) * K ^ (1 - 1 / p) * 2 ^ (1 - n / p)`; it blows up as `p ↓ n`, as it
-must, since the embedding fails in the borderline case `p = n`.
+`C = 2 ^ (n + 1) / (n ω) * K ^ (1 - 1 / p) * 2 ^ (1 - n / p)`. For `n ≥ 2` it blows up as
+`p ↓ n`, as it must, since the embedding fails in the borderline case `p = n`. For `n = 1` one has
+`K = ω` independently of `p`, and no blow-up occurs.
 
 The proof starts from the pointwise potential estimate behind the Poincaré–Wirtinger inequality
 (`TauCeti.enorm_sub_setAverage_le_of_starConvex`), which bounds the deviation of `u x` from a mean

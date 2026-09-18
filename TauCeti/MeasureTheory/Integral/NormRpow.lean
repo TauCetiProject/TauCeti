@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 /-!
 # Integrals of a weakly singular norm power
 
-Let `E` be a nontrivial finite-dimensional real normed space of dimension `d`.  This file
+Let `E` be a finite-dimensional real normed space of dimension `d`.  This file
 computes the integral of the kernel `x ↦ ‖x‖ ^ s` on a ball centred at the origin, for every
 exponent `s > -d`.  The singularity is locally integrable because the radial Jacobian is
 `r ^ (d - 1)`.  For an additive Haar measure `μ` and `R ≥ 0`,
@@ -28,6 +28,7 @@ met in Hölder's inequality against the Riesz potential in Morrey's inequality.
 * `TauCeti.integral_norm_rpow_ball`: the exact radial integral.
 * `TauCeti.integrableOn_norm_sub_rpow_ball`: integrability after translation.
 * `TauCeti.integral_norm_sub_rpow_ball`: the exact integral with any centre.
+* `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
   closed ball.
 * `TauCeti.integral_norm_rpow_one_sub_finrank_ball`,
@@ -54,13 +55,24 @@ namespace TauCeti
 open MeasureTheory Metric Set
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [Nontrivial E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {mu : Measure E} [mu.IsAddHaarMeasure]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- In a zero-dimensional space, the kernel `x ↦ ‖x‖ ^ s` with `-dim E < s` vanishes
+identically, since then `0 < s`. -/
+private theorem norm_rpow_eq_zero_of_subsingleton [Subsingleton E] {s : ℝ}
+    (hs : -(Module.finrank ℝ E : ℝ) < s) (x : E) : ‖x‖ ^ s = 0 := by
+  rw [Module.finrank_zero_of_subsingleton, Nat.cast_zero, neg_zero] at hs
+  rw [Subsingleton.elim x 0, norm_zero, Real.zero_rpow hs.ne']
 
 /-- The kernel `x ↦ ‖x‖ ^ s` is integrable on every ball centred at the origin when
 `-dim E < s`. -/
 theorem integrableOn_norm_rpow_ball {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ) < s) {R : ℝ} :
     IntegrableOn (fun x : E => ‖x‖ ^ s) (ball 0 R) mu := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · simp only [norm_rpow_eq_zero_of_subsingleton hs]
+    exact integrableOn_zero
   refine integrableOn_ball_of_norm_le_rpow (μ := mu) Module.finrank_pos
     (C := 1) (α := -s) (by linarith) ?_ ?_
   · filter_upwards with x
@@ -75,6 +87,8 @@ theorem integral_norm_rpow_ball {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ) < 
     ∫ x in ball (0 : E) R, ‖x‖ ^ s ∂mu =
       (Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) *
         (R ^ ((Module.finrank ℝ E : ℝ) + s) / ((Module.finrank ℝ E : ℝ) + s)) := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · simp [norm_rpow_eq_zero_of_subsingleton hs, Module.finrank_zero_of_subsingleton]
   let d := Module.finrank ℝ E
   let f : ℝ → ℝ := fun r => if 0 < r ∧ r < R then r ^ s else 0
   have hconv : ∫ x in ball (0 : E) R, ‖x‖ ^ s ∂mu = ∫ x : E, f ‖x‖ ∂mu := by
@@ -140,13 +154,18 @@ theorem integrableOn_norm_sub_rpow_one_sub_finrank_ball (x : E) {R : ℝ} :
     IntegrableOn (fun y : E => ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ))) (ball x R) mu :=
   integrableOn_norm_sub_rpow_ball (by linarith) x
 
-/-- The kernel with pole `x` is locally integrable. -/
-theorem locallyIntegrable_norm_sub_rpow_one_sub_finrank (x : E) :
-    LocallyIntegrable (fun y : E => ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ))) mu := by
+/-- The kernel with pole `x` and exponent `s > -dim E` is locally integrable. -/
+theorem locallyIntegrable_norm_sub_rpow {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ) < s) (x : E) :
+    LocallyIntegrable (fun y : E => ‖x - y‖ ^ s) mu := by
   rw [locallyIntegrable_iff]
   intro K hK
   obtain ⟨R, hKR⟩ := hK.isBounded.subset_ball x
-  exact (integrableOn_norm_sub_rpow_one_sub_finrank_ball (mu := mu) x).mono_set hKR
+  exact (integrableOn_norm_sub_rpow_ball (mu := mu) hs x).mono_set hKR
+
+/-- The kernel with pole `x` is locally integrable. -/
+theorem locallyIntegrable_norm_sub_rpow_one_sub_finrank (x : E) :
+    LocallyIntegrable (fun y : E => ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ))) mu :=
+  locallyIntegrable_norm_sub_rpow (by linarith) x
 
 /-- The integral of the kernel with pole `x` and exponent `s > -dim E` over a ball centred at `x`
 does not depend on the centre and has the same exact value as the radial integral at the
@@ -212,6 +231,12 @@ theorem setLIntegral_closedBall_enorm_sub_rpow {s : ℝ} (hs : -(Module.finrank 
     ∫⁻ y in closedBall x R, ‖x - y‖ₑ ^ s ∂mu =
       ENNReal.ofReal ((Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) *
         (R ^ ((Module.finrank ℝ E : ℝ) + s) / ((Module.finrank ℝ E : ℝ) + s))) := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In dimension zero the exponent is positive, so the kernel vanishes identically.
+    have hs0 : 0 < s := by simpa [Module.finrank_zero_of_subsingleton] using hs
+    have h0 : (fun y : E => ‖x - y‖ₑ ^ s) = 0 := funext fun y => by
+      rw [Subsingleton.elim (x - y) 0, enorm_zero, ENNReal.zero_rpow_of_pos hs0, Pi.zero_apply]
+    simp [h0, lintegral_zero_fun, Module.finrank_zero_of_subsingleton]
   have hball : closedBall x R =ᵐ[mu] ball x R :=
     (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
       (Measure.addHaar_closedBall_eq_addHaar_ball mu x R).le measurableSet_ball.nullMeasurableSet
