@@ -23,7 +23,8 @@ which measures how well `a` can be approximated by squares of `K`. Its exponent 
 the greatest lower bound of the principal fractional ideals `(a - ξ²) 𝒪[K]`, and
 `TauCeti.isGLB_quadraticDefect` records that property. The infimum is attained: the approximation
 orders `v_K(a - ξ²)` of a nonsquare are bounded, because a sequence of better and better
-approximations would converge in the compact ring of integers to a square root of `a`.
+approximations would have a common point in the compact closed ball of radius
+`max 1 (valuation K a)`, giving a square root of `a`.
 Consequently the defect of a nonsquare is the principal fractional ideal `𝓂[K] ^ δ(a)`, while the
 defect of a square is `0` and its exponent is `⊤`.
 
@@ -46,7 +47,7 @@ an integral element is integral, and the defect of an element of odd valuation `
 * `TauCeti.quadraticDefect_eq_maximalIdeal_zpow`: `𝔡(a) = 𝓂[K] ^ δ(a)` for a nonsquare `a`.
 * `TauCeti.quadraticDefect_mul_sq` and `TauCeti.defectExponent_mul_sq`: behaviour under
   multiplication by a square.
-* `TauCeti.quadraticDefect_of_not_even` and `TauCeti.defectExponent_of_not_even`: the defect of
+* `TauCeti.quadraticDefect_of_odd` and `TauCeti.defectExponent_of_odd`: the defect of
   an element of odd valuation.
 
 ## References
@@ -325,20 +326,22 @@ private theorem valuation_le_valuation_sub_sq {a : Kˣ}
   · exact (Valuation.map_sub_eq_of_lt_right _ h).symm ▸ h.le
 
 /-- The defect exponent of an element of odd valuation is its valuation. -/
-theorem defectExponent_of_not_even {a : Kˣ} (ha : ¬Even (normalizedValuation K a).toAdd) :
+theorem defectExponent_of_odd {a : Kˣ} (ha : Odd (normalizedValuation K a).toAdd) :
     defectExponent a = (normalizedValuation K a).toAdd := by
-  have hsq : ¬IsSquare a := fun ⟨r, hr⟩ => ha ⟨(normalizedValuation K r).toAdd, by
+  have ha' : ¬Even (normalizedValuation K a).toAdd := Int.not_even_iff_odd.mpr ha
+  have hsq : ¬IsSquare a := fun ⟨r, hr⟩ => ha' ⟨(normalizedValuation K r).toAdd, by
     rw [hr, map_mul, toAdd_mul]⟩
   refine le_antisymm ?_ (toAdd_normalizedValuation_le_defectExponent a)
   obtain ⟨ξ, x, hx, hxd⟩ := exists_defectExponent_eq hsq
   rw [← hxd, WithTop.coe_le_coe, toAdd_normalizedValuation_le_iff_valuation_le, hx]
-  exact valuation_le_valuation_sub_sq ha ξ
+  exact valuation_le_valuation_sub_sq ha' ξ
 
 /-- The quadratic defect of an element `a` of odd valuation is `a 𝒪[K]`. -/
-theorem quadraticDefect_of_not_even {a : Kˣ} (ha : ¬Even (normalizedValuation K a).toAdd) :
+theorem quadraticDefect_of_odd {a : Kˣ} (ha : Odd (normalizedValuation K a).toAdd) :
     quadraticDefect a = FractionalIdeal.spanSingleton _ (a : K) := by
+  have ha' : ¬Even (normalizedValuation K a).toAdd := Int.not_even_iff_odd.mpr ha
   simpa using quadraticDefect_eq_spanSingleton_of_forall (a := a) (ξ₀ := 0)
-    (by simpa using valuation_le_valuation_sub_sq ha)
+    (by simpa using valuation_le_valuation_sub_sq ha')
 
 /-- The quadratic defect of a nonsquare is `𝓂[K] ^ δ(a)`, for its defect exponent `δ(a)`. -/
 theorem quadraticDefect_eq_maximalIdeal_zpow {a : Kˣ} {n : ℤ} (h : defectExponent a = n) :
