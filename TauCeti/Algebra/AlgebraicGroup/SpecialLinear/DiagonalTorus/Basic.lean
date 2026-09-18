@@ -42,6 +42,9 @@ base ring; contravariantly, the torus is a closed subgroup of `SL_{r+1}`.
   surjective.
 * `TauCeti.SpecialLinear.toGL_pointsMulEquiv_mapPointsFunctor_diagonalTorusCoordinateMap`: on
   algebra-valued points it is the diagonal matrix of the standard weight characters.
+* `TauCeti.SpecialLinear.diagonalTorusPoints` and
+  `TauCeti.SpecialLinear.toGL_pointsMulEquiv_diagonalTorusPoints`: the resulting homomorphism of
+  convolution groups of points, and its diagonal matrices.
 * `TauCeti.SpecialLinear.diagonalTorusCoordinateMap_baseChange`: compatibility with scalar
   extension.
 
@@ -163,6 +166,30 @@ theorem toGL_pointsMulEquiv_mapPointsFunctor_diagonalTorusCoordinateMap
   refine (pointsMulEquiv_toGL R (r + 1) _).symm.trans ?_
   rw [hquot, coordinateMap_comp_diagonalTorusCoordinateMap]
   exact GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap _ _ p
+
+/-- The diagonal-torus homomorphism on `A`-points: the component at `A` of the point map of
+`diagonalTorusCoordinateMap`, viewed between the convolution groups of algebra maps. -/
+noncomputable def diagonalTorusPoints (A : Type w) [CommRing A] [Algebra R A] :
+    WithConv (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) →ₐ[R] A) →*
+      WithConv (coordinateHopfAlgebra R (r + 1) →ₐ[R] A) :=
+  ((CommHopfAlgCat.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app (CommAlgCat.of R A)).hom
+
+/-- `diagonalTorusPoints` is the component of the point map of `diagonalTorusCoordinateMap`. -/
+theorem diagonalTorusPoints_apply (A : Type w) [CommRing A] [Algebra R A]
+    (p : WithConv (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) →ₐ[R] A)) :
+    diagonalTorusPoints r R A p =
+      (CommHopfAlgCat.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app
+        (CommAlgCat.of R A) p :=
+  (rfl)
+
+/-- A point of the diagonal torus of `SL_{r+1}`, read as an invertible matrix, is the diagonal
+matrix of the standard weight characters. -/
+theorem toGL_pointsMulEquiv_diagonalTorusPoints (A : Type w) [CommRing A] [Algebra R A]
+    (p : WithConv (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) →ₐ[R] A)) :
+    Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := R) (A := A) (r + 1)
+        (diagonalTorusPoints r R A p)) =
+      diagGL fun k ↦ torusCharacter (SplitTorus.pointsMulEquiv p) (diagonalTorusWeight r k) :=
+  toGL_pointsMulEquiv_mapPointsFunctor_diagonalTorusCoordinateMap r R A p
 
 /-- **The diagonal-torus coordinate morphism of `SL_{r+1}` commutes with base change.** -/
 theorem diagonalTorusCoordinateMap_baseChange (K : Type u) [CommRing K] [Algebra R K] :
