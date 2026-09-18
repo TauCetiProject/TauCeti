@@ -187,7 +187,6 @@ theorem hodgeStructure_F (p : ℤ) : hU.hodgeStructure.F p =
 
 /-- The complex weight filtration of the induced mixed Hodge structure is the ambient complex
 weight filtration intersected with the complexification of the subspace. -/
-@[simp]
 theorem hodgeStructure_WC (k : ℤ) : hU.hodgeStructure.WC k =
     (mhs.WC k).comap (rationalToComplexSubmodule hℚ hℂ U).subtype := by
   rw [MixedHodgeStructure.WC_def, hodgeStructure_WQ, rationalToComplexSubmodule_comap_subtype,
