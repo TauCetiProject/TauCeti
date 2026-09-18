@@ -18,9 +18,9 @@ generates the whole extension. This file records that consequence, for the inter
 
 ## Main results
 
-* `IntermediateField.adjoin_simple_eq_top_of_finrank_prime`: in an extension of prime degree,
-  `F⟮x⟯ = ⊤` for every `x` outside the base field.
-* `Algebra.adjoin_singleton_eq_top_of_finrank_prime`: the same conclusion for
+* `TauCeti.IntermediateField.adjoin_simple_eq_top_of_finrank_prime`: in an extension of prime
+  degree, `F⟮x⟯ = ⊤` for every `x` outside the base field.
+* `TauCeti.Algebra.adjoin_singleton_eq_top_of_finrank_prime`: the same conclusion for
   `Algebra.adjoin F {x}`.
 -/
 
@@ -32,7 +32,7 @@ variable {F E : Type*} [Field F] [Field E] [Algebra F E]
 
 /-- In an extension of prime degree, every element outside the base field generates the
 extension. -/
-theorem IntermediateField.adjoin_simple_eq_top_of_finrank_prime
+theorem TauCeti.IntermediateField.adjoin_simple_eq_top_of_finrank_prime
     (hp : Nat.Prime (Module.finrank F E)) {x : E} (hx : x ∉ (⊥ : IntermediateField F E)) :
     F⟮x⟯ = ⊤ :=
   ((IntermediateField.isSimpleOrder_of_finrank_prime F E hp).eq_bot_or_eq_top F⟮x⟯).resolve_left
@@ -40,10 +40,11 @@ theorem IntermediateField.adjoin_simple_eq_top_of_finrank_prime
 
 /-- In an extension of prime degree, every element outside the base field generates the
 extension as an algebra. -/
-theorem Algebra.adjoin_singleton_eq_top_of_finrank_prime (hp : Nat.Prime (Module.finrank F E))
+theorem TauCeti.Algebra.adjoin_singleton_eq_top_of_finrank_prime
+    (hp : Nat.Prime (Module.finrank F E))
     {x : E} (hx : x ∉ (⊥ : IntermediateField F E)) : Algebra.adjoin F {x} = ⊤ := by
   have : FiniteDimensional F E := Module.finite_of_finrank_pos hp.pos
   rw [← IntermediateField.adjoin_simple_toSubalgebra_of_isAlgebraic
     (Algebra.IsAlgebraic.isAlgebraic x),
-    IntermediateField.adjoin_simple_eq_top_of_finrank_prime hp hx,
+    TauCeti.IntermediateField.adjoin_simple_eq_top_of_finrank_prime hp hx,
     IntermediateField.top_toSubalgebra]

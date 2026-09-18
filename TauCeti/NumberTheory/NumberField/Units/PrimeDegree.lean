@@ -20,17 +20,17 @@ prime.
 
 ## Main results
 
-* `NumberField.Units.mem_torsion_of_mem_bot`: a unit with rational value is torsion.
-* `NumberField.Units.adjoin_eq_top_of_finrank_prime`: in prime degree, a unit with absolute
-  value different from `1` at an infinite place generates `K` over `ℚ`.
+* `TauCeti.NumberField.Units.mem_torsion_of_mem_bot`: a unit with rational value is torsion.
+* `TauCeti.NumberField.Units.adjoin_eq_top_of_finrank_prime`: in prime degree, a unit with
+  absolute value different from `1` at an infinite place generates `K` over `ℚ`.
 -/
 
 public section
 
-open NumberField NumberField.InfinitePlace
+open NumberField NumberField.InfinitePlace NumberField.Units
 open scoped NumberField
 
-namespace NumberField.Units
+namespace TauCeti.NumberField.Units
 
 variable {K : Type*} [Field K] [NumberField K]
 
@@ -58,7 +58,7 @@ unit whose absolute value at some infinite place is not `1` generates `K` over `
 theorem adjoin_eq_top_of_finrank_prime (hp : Nat.Prime (Module.finrank ℚ K))
     {w : InfinitePlace K} {v : (𝓞 K)ˣ} (hv : w v ≠ 1) :
     Algebra.adjoin ℚ {((v : 𝓞 K) : K)} = ⊤ :=
-  Algebra.adjoin_singleton_eq_top_of_finrank_prime hp fun h =>
+  TauCeti.Algebra.adjoin_singleton_eq_top_of_finrank_prime hp fun h =>
     hv ((mem_torsion K).mp (mem_torsion_of_mem_bot h) w)
 
-end NumberField.Units
+end TauCeti.NumberField.Units
