@@ -84,7 +84,7 @@ For finite groups `G` and `H`, a tagged fibre has weight
 `1 / (#G * #H)`.  Thus the disjoint union over `taggedElements f` has the normalized weight
 recorded here.  The definition is independent of a choice of cyclic generator of `H`; cyclicity
 is needed only for the lower bound below. -/
-noncomputable def crossingConstant {G H : Type*} [Group G] [Fintype G] [Group H] [Fintype H]
+noncomputable def crossingConstant {G H : Type*} [Fintype G] [Group H] [Fintype H]
     (f : ℕ) : ℝ :=
   (taggedElements (H := H) f).card /
     ((Fintype.card G : ℝ) * (Fintype.card H : ℝ))
@@ -96,7 +96,7 @@ auxiliary level grows.  More precisely, if `f ^ r` divides `#H`, the crossing co
 The cardinality estimate is the generic `IsCyclic.le_card_filter_dvd_orderOf` theorem.  This
 lemma only supplies the Chebotarev normalization and deliberately keeps the two group orders
 separate, as they play different roles in the crossing. -/
-theorem le_crossingConstant {G H : Type*} [Group G] [Fintype G] [Group H] [Fintype H]
+theorem le_crossingConstant {G H : Type*} [Nonempty G] [Fintype G] [Group H] [Fintype H]
     [IsCyclic H] (f r : ℕ) (hr : 1 ≤ r) (hfr : f ^ r ∣ Nat.card H) :
     (1 - (2 : ℝ)⁻¹ ^ r) ^ f.primeFactors.card / (Fintype.card G : ℝ) ≤
       crossingConstant (G := G) (H := H) f := by
