@@ -252,8 +252,14 @@ noncomputable def variableChange : VariableChange ℚ :=
   M.isomorphic.choose
 
 /-- The chosen change of variables carries the base change of the model to `E`. -/
+@[simp]
 theorem variableChange_smul_baseChange : M.variableChange • M.model.baseChange ℚ = E :=
   M.isomorphic.choose_spec
+
+/-- The base change of a minimal-pair model is an elliptic curve, being isomorphic to `E`. -/
+instance isElliptic_baseChange_model : (M.model.baseChange ℚ).IsElliptic := by
+  rw [← inv_smul_smul M.variableChange (M.model.baseChange ℚ), M.variableChange_smul_baseChange]
+  infer_instance
 
 /-- **The height of a minimal-pair model**: the `shortEquationHeight` of its equation. -/
 def height : ℕ :=
