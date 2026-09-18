@@ -82,9 +82,9 @@ theorem signature_diagonal {d : ι → ℝ} :
     (Matrix.isHermitian_diagonal_of_self_adjoint (fun i => (d i : 𝕜))
       (by ext i; simp)).signature =
       ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
-  let hd := Matrix.isHermitian_diagonal_of_self_adjoint (fun i => (d i : 𝕜))
-    (by ext i; simp)
-  change hd.signature = _
+  suffices ∀ hd : (Matrix.diagonal fun i => (d i : 𝕜)).IsHermitian,
+      hd.signature = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 from this _
+  intro hd
   -- Both lists of reals are the real parts of the roots of the characteristic polynomial.
   have h : Multiset.map hd.eigenvalues Finset.univ.val = Multiset.map d Finset.univ.val := by
     have hr := congrArg (Multiset.map RCLike.re) hd.roots_charpoly_eq_eigenvalues

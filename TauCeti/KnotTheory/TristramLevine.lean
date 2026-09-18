@@ -46,6 +46,8 @@ invariance under S-equivalence, is not proved here.
 * `TauCeti.KnotTheory.tristramLevineSignature_conj`: `ω` and `conj ω` give the same signature.
 * `TauCeti.KnotTheory.tristramLevineSignature_neg_transpose`: the mirror image, whose Seifert
   matrix is `-Vᵀ`, has the negated signature.
+* `TauCeti.KnotTheory.tristramLevineSignature_fromBlocks_zero`: additivity along a block
+  diagonal.
 * `TauCeti.KnotTheory.exists_tristramLevineSignature_trefoilSeifertMatrix_ne`: the trefoil's
   signature is not constant on the unit circle.
 
@@ -100,6 +102,7 @@ theorem tristramLevineForm_neg_one (V : Matrix ι ι ℝ) :
   ring
 
 /-- Replacing `ω` by `conj ω` conjugates the Tristram--Levine form entrywise. -/
+@[simp]
 theorem tristramLevineForm_conj (V : Matrix ι ι ℝ) (ω : ℂ) :
     tristramLevineForm V (conj ω) = (tristramLevineForm V ω).map (starRingEnd ℂ) := by
   ext i j
@@ -107,6 +110,7 @@ theorem tristramLevineForm_conj (V : Matrix ι ι ℝ) (ω : ℂ) :
 
 /-- The Seifert matrix `-Vᵀ` of the mirror image has the negated form at the conjugate
 parameter. -/
+@[simp]
 theorem tristramLevineForm_neg_transpose (V : Matrix ι ι ℝ) (ω : ℂ) :
     tristramLevineForm (-Vᵀ) ω = -tristramLevineForm V (conj ω) := by
   ext i j
@@ -126,6 +130,14 @@ theorem tristramLevineForm_congr [Fintype ι] (P V : Matrix ι ι ℝ) (ω : ℂ
     Matrix.transpose_map, Matrix.mul_add, Matrix.add_mul, Matrix.mul_smul, Matrix.smul_mul,
     Matrix.mul_assoc]
 
+/-- The Tristram--Levine form of a block-diagonal Seifert matrix, the Seifert matrix of a
+connected sum, is the block diagonal of the two forms. -/
+@[simp]
+theorem tristramLevineForm_fromBlocks_zero {κ : Type*} (V : Matrix ι ι ℝ) (W : Matrix κ κ ℝ)
+    (ω : ℂ) : tristramLevineForm (Matrix.fromBlocks V 0 0 W) ω =
+      Matrix.fromBlocks (tristramLevineForm V ω) 0 0 (tristramLevineForm W ω) := by
+  ext (i | i) (j | j) <;> simp
+
 section Signature
 
 variable [Fintype ι] [DecidableEq ι]
@@ -134,19 +146,6 @@ variable [Fintype ι] [DecidableEq ι]
 Hermitian form `(1 - ω) V + (1 - conj ω) Vᵀ`. -/
 noncomputable def tristramLevineSignature (V : Matrix ι ι ℝ) (ω : ℂ) : ℤ :=
   (isHermitian_tristramLevineForm V ω).signature
-
-/-- Twice the Tristram--Levine signature is the real signature of the realified form. This is
-the bridge to the real signature API, and is how the computations below proceed. -/
-theorem two_mul_tristramLevineSignature (V : Matrix ι ι ℝ) (ω : ℂ) :
-    2 * tristramLevineSignature V ω = Matrix.signature (tristramLevineForm V ω).realify :=
-  ((isHermitian_tristramLevineForm V ω).signature_realify).symm
-
-/-- **The Tristram--Levine signature read off an explicit diagonalising `*`-congruence.** -/
-theorem tristramLevineSignature_eq_of_congr_diagonal (V : Matrix ι ι ℝ) (ω : ℂ)
-    {P : Matrix ι ι ℂ} (hP : IsUnit P.det) {d : ι → ℝ}
-    (h : P * tristramLevineForm V ω * Pᴴ = (Matrix.diagonal d).map ((↑) : ℝ → ℂ)) :
-    tristramLevineSignature V ω = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 :=
-  (isHermitian_tristramLevineForm V ω).signature_eq_of_congr_diagonal hP h
 
 /-- **The Tristram--Levine signature vanishes at `ω = 1`**, where the form itself vanishes. -/
 @[simp]
@@ -160,7 +159,9 @@ matrix. -/
 @[simp]
 theorem tristramLevineSignature_neg_one (V : Matrix ι ι ℝ) :
     tristramLevineSignature V (-1) = Matrix.signature V := by
-  have h := two_mul_tristramLevineSignature V (-1)
+  have h : 2 * tristramLevineSignature V (-1) =
+      Matrix.signature (tristramLevineForm V (-1)).realify :=
+    ((isHermitian_tristramLevineForm V (-1)).signature_realify).symm
   rw [tristramLevineForm_neg_one, realify_map_ofReal, Matrix.signature_fromBlocks_zero,
     Matrix.signature_smul_of_pos two_pos, Matrix.signature_add_transpose] at h
   omega
@@ -197,6 +198,18 @@ theorem tristramLevineSignature_neg_transpose (V : Matrix ι ι ℝ) (ω : ℂ) 
       simpa only [tristramLevineForm_neg_transpose] using
         (isHermitian_tristramLevineForm V (conj ω)).signature_neg
     _ = -tristramLevineSignature V ω := by rw [tristramLevineSignature_conj]
+
+/-- **Additivity of the Tristram--Levine signature along a block diagonal**, the Seifert matrix
+of a connected sum. -/
+@[simp]
+theorem tristramLevineSignature_fromBlocks_zero {κ : Type*} [Fintype κ] [DecidableEq κ]
+    (V : Matrix ι ι ℝ) (W : Matrix κ κ ℝ) (ω : ℂ) :
+    tristramLevineSignature (Matrix.fromBlocks V 0 0 W) ω =
+      tristramLevineSignature V ω + tristramLevineSignature W ω := by
+  unfold tristramLevineSignature
+  simpa only [tristramLevineForm_fromBlocks_zero] using
+    (isHermitian_tristramLevineForm V ω).signature_fromBlocks_zero
+      (isHermitian_tristramLevineForm W ω)
 
 end Signature
 
@@ -245,7 +258,8 @@ theorem exists_tristramLevineSignature_trefoilSeifertMatrix_ne :
       fin_cases i <;> fin_cases j <;>
         simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.conjTranspose_apply, Complex.ext_iff,
           map_ofNat] <;> norm_num
-    rw [tristramLevineSignature_eq_of_congr_diagonal _ _ hP hd, Fin.sum_univ_two,
+    rw [tristramLevineSignature, (isHermitian_tristramLevineForm _ _).signature_eq_of_congr_diagonal
+      hP hd, Fin.sum_univ_two,
       tristramLevineSignature_trefoilSeifertMatrix_neg_one]
     norm_num
 
