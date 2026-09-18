@@ -45,10 +45,6 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
   factors, counted with multiplicity, sum to the degree.
 * `Polynomial.map_natDegree_normalizedFactors_eq_singleton_iff`: those degrees form a singleton
   exactly when the polynomial is irreducible.
-* `Polynomial.normalizedFactors_multiset_prod_of_monic_of_irreducible`: a product of monic
-  irreducible polynomials has exactly those polynomials as its normalized factors.
-* `Polynomial.squarefree_multiset_prod_iff_nodup_of_monic_of_irreducible`: such a product is
-  squarefree exactly when no factor is repeated.
 
 ## Roadmap
 
@@ -218,31 +214,6 @@ the cost of forgetting multiplicities. The lemmas below are the counterparts for
 -/
 
 variable [DecidableEq K]
-
-section MultisetProd
-
-variable {s : Multiset K[X]}
-
-/-- The normalized irreducible factors of a product of monic irreducible polynomials over a field
-are exactly those polynomials, with their multiplicities. -/
-lemma normalizedFactors_multiset_prod_of_monic_of_irreducible
-    (hmonic : ∀ p ∈ s, p.Monic) (hirr : ∀ p ∈ s, Irreducible p) :
-    normalizedFactors s.prod = s := by
-  rw [normalizedFactors_prod_eq s hirr]
-  exact (Multiset.map_congr rfl fun p hp ↦ (hmonic p hp).normalize_eq_self).trans s.map_id'
-
-omit [DecidableEq K] in
-/-- A product of monic irreducible polynomials over a field is squarefree exactly when no factor
-is repeated. -/
-lemma squarefree_multiset_prod_iff_nodup_of_monic_of_irreducible
-    (hmonic : ∀ p ∈ s, p.Monic) (hirr : ∀ p ∈ s, Irreducible p) :
-    Squarefree s.prod ↔ s.Nodup := by
-  classical
-  rw [squarefree_iff_nodup_normalizedFactors
-      (Multiset.prod_ne_zero fun h ↦ (hirr 0 h).ne_zero rfl),
-    normalizedFactors_multiset_prod_of_monic_of_irreducible hmonic hirr]
-
-end MultisetProd
 
 /-- The degrees of the normalized irreducible factors of a polynomial over a field, counted with
 multiplicity, sum to its degree. -/
