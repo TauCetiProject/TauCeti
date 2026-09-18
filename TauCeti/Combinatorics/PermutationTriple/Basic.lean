@@ -24,7 +24,8 @@ constellations, and the same data as a hypermap or a bipartite ribbon graph.
 
 This file sets up the carrier and the symmetry attached to it.
 
-* `TauCeti.PermutationTriple`: the carrier, with `TauCeti.PermutationTriple.ofTwo` building a
+* `TauCeti.PermutationTriple`: the carrier, with `TauCeti.PermutationTriple.component` accessing
+  the component at any of the three branch points, `TauCeti.PermutationTriple.ofTwo` building a
   triple from its first two components — the third is determined — and
   `TauCeti.PermutationTriple.equivPair` recording that this is a bijection.
 * `TauCeti.PermutationTriple.equivOppositeConvention`: componentwise inversion is a bijection
@@ -83,6 +84,20 @@ namespace PermutationTriple
 variable {n : ℕ}
 
 /-! ### The carrier -/
+
+/-- The component of a permutation triple over the branch point numbered `i`, where `0, 1, 2`
+number the branch points `0, 1, ∞`. -/
+def component (t : PermutationTriple n) : Fin 3 → Perm (Fin n) :=
+  fun
+  | 0 => t.σ0
+  | 1 => t.σ1
+  | 2 => t.σinf
+
+@[simp] theorem component_zero (t : PermutationTriple n) : t.component 0 = t.σ0 := (rfl)
+
+@[simp] theorem component_one (t : PermutationTriple n) : t.component 1 = t.σ1 := (rfl)
+
+@[simp] theorem component_two (t : PermutationTriple n) : t.component 2 = t.σinf := (rfl)
 
 /-- The triple with prescribed first two components, the third being forced. -/
 def ofTwo (σ0 σ1 : Perm (Fin n)) : PermutationTriple n where

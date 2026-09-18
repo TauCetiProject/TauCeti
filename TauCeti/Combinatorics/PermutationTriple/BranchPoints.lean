@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 public import TauCeti.Combinatorics.PermutationTriple.GeometryType
+public import TauCeti.GroupTheory.Perm.FinThree
 public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.Tactic.FinCases
 
@@ -501,22 +502,11 @@ type are symmetric functions of the three components' conjugacy classes. -/
 /-! ### The symmetric group on the branch points
 
 Number the branch points `0, 1, ∞` as `0, 1, 2 : Fin 3`. For `ρ : Perm (Fin 3)`,
-`TauCeti.PermutationTriple.reindexBranchPoints ρ` is the one of the six operations whose component
+`t.reindexBranchPoints ρ` is the one of the six operations whose component
 over `i` is conjugate to the old component over `ρ i`. Reindexing is contravariant, so these
 operations compose as a right action of `Perm (Fin 3)`, and only up to relabeling; the action is
 therefore stated on `TauCeti.PermutationTriple.IsoClass`, as a left action of the opposite group.
 -/
-
-/-- The component of a permutation triple over the branch point numbered `i`, where `0, 1, 2`
-number the branch points `0, 1, ∞`. -/
-def component (t : PermutationTriple n) : Fin 3 → Perm (Fin n) :=
-  ![t.σ0, t.σ1, t.σinf]
-
-@[simp] theorem component_zero : t.component 0 = t.σ0 := (rfl)
-
-@[simp] theorem component_one : t.component 1 = t.σ1 := (rfl)
-
-@[simp] theorem component_two : t.component 2 = t.σinf := (rfl)
 
 /-- The composite `swap1Inf ∘ swap01 ∘ swap1Inf` is `swap0Inf = swap01 ∘ swap1Inf ∘ swap01` up to
 relabeling by the inverse of the second component: the braid relation of the two exchanges. -/
@@ -533,7 +523,7 @@ numbering `0, 1, ∞`: the component of the result over `i` is conjugate to the 
 over `ρ i` (`TauCeti.PermutationTriple.isConj_component_reindexBranchPoints`). A permutation of
 `Fin 3` is determined by its values at `0` and `1`, and the six cases are the identity and the
 five operations `swap01`, `swap1Inf`, `swap0Inf`, `rot` and `rotInv`. -/
-def reindexBranchPoints (ρ : Perm (Fin 3)) (t : PermutationTriple n) : PermutationTriple n :=
+def reindexBranchPoints (t : PermutationTriple n) (ρ : Perm (Fin 3)) : PermutationTriple n :=
   match ρ 0, ρ 1 with
   | 1, 0 => swap01 t
   | 0, 2 => swap1Inf t
@@ -542,44 +532,38 @@ def reindexBranchPoints (ρ : Perm (Fin 3)) (t : PermutationTriple n) : Permutat
   | 2, 0 => rotInv t
   | _, _ => t
 
-@[simp] theorem reindexBranchPoints_one : reindexBranchPoints 1 t = t := (rfl)
+@[simp] theorem reindexBranchPoints_one : t.reindexBranchPoints 1 = t := (rfl)
 
 @[simp] theorem reindexBranchPoints_swap_zero_one :
-    reindexBranchPoints (Equiv.swap 0 1) t = swap01 t := (rfl)
+    t.reindexBranchPoints (Equiv.swap 0 1) = swap01 t := (rfl)
 
 @[simp] theorem reindexBranchPoints_swap_one_two :
-    reindexBranchPoints (Equiv.swap 1 2) t = swap1Inf t := (rfl)
+    t.reindexBranchPoints (Equiv.swap 1 2) = swap1Inf t := (rfl)
 
 @[simp] theorem reindexBranchPoints_swap_zero_two :
-    reindexBranchPoints (Equiv.swap 0 2) t = swap0Inf t := (rfl)
+    t.reindexBranchPoints (Equiv.swap 0 2) = swap0Inf t := (rfl)
 
-@[simp] theorem reindexBranchPoints_finRotate : reindexBranchPoints (finRotate 3) t = rot t :=
+@[simp] theorem reindexBranchPoints_finRotate : t.reindexBranchPoints (finRotate 3) = rot t :=
   (rfl)
 
 @[simp] theorem reindexBranchPoints_finRotate_inv :
-    reindexBranchPoints (finRotate 3)⁻¹ t = rotInv t := (rfl)
-
-/-- The six permutations of `Fin 3`, in the form the case analyses below consume. -/
-private theorem perm_fin_three_cases (ρ : Perm (Fin 3)) :
-    ρ = 1 ∨ ρ = Equiv.swap 0 1 ∨ ρ = Equiv.swap 1 2 ∨ ρ = Equiv.swap 0 2 ∨ ρ = finRotate 3 ∨
-      ρ = (finRotate 3)⁻¹ := by
-  revert ρ
-  decide
+    t.reindexBranchPoints (finRotate 3)⁻¹ = rotInv t := (rfl)
 
 /-- The component over `i` of the reordered triple is conjugate to the old component over `ρ i`.
-This is what names `TauCeti.PermutationTriple.reindexBranchPoints ρ` after `ρ`. -/
+This is what names `t.reindexBranchPoints ρ` after `ρ`. -/
 theorem isConj_component_reindexBranchPoints (ρ : Perm (Fin 3)) (i : Fin 3) :
-    IsConj ((reindexBranchPoints ρ t).component i) (t.component (ρ i)) := by
+    IsConj ((t.reindexBranchPoints ρ).component i) (t.component (ρ i)) := by
   have hl (g x : Perm (Fin n)) : IsConj (g⁻¹ * x * g) x := isConj_iff.mpr ⟨g, by group⟩
   have hr (g x : Perm (Fin n)) : IsConj (g * x * g⁻¹) x := isConj_iff.mpr ⟨g⁻¹, by group⟩
+  have hneg : (-1 : Fin 3) = 2 := by decide
   rcases perm_fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;>
     fin_cases i <;>
     simp [hl, hr, IsConj.refl, -isConj_iff, swap_apply_of_ne_of_ne, finRotate_apply,
-      show (-1 : Fin 3) = 2 from rfl]
+      hneg]
 
 /-- Reordering the branch points commutes with relabeling the sheets. -/
 @[simp] theorem reindexBranchPoints_smul (ρ : Perm (Fin 3)) (τ : Perm (Fin n)) :
-    reindexBranchPoints ρ (τ • t) = τ • reindexBranchPoints ρ t := by
+    (τ • t).reindexBranchPoints ρ = τ • t.reindexBranchPoints ρ := by
   rcases perm_fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
 
 /-- Reordering the branch points preserves isomorphism of triples. -/
@@ -591,27 +575,29 @@ theorem Equivalent.reindexBranchPoints {t t' : PermutationTriple n} (h : Equival
 
 /-- Reordering the branch points does not change the monodromy group. -/
 @[simp] theorem monodromyGroup_reindexBranchPoints (ρ : Perm (Fin 3)) :
-    (reindexBranchPoints ρ t).monodromyGroup = t.monodromyGroup := by
+    (t.reindexBranchPoints ρ).monodromyGroup = t.monodromyGroup := by
   rcases perm_fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
 
 /-- Reordering the branch points does not change connectedness. -/
 @[simp] theorem isConnected_reindexBranchPoints_iff (ρ : Perm (Fin 3)) :
-    (reindexBranchPoints ρ t).IsConnected ↔ t.IsConnected := by
+    (t.reindexBranchPoints ρ).IsConnected ↔ t.IsConnected := by
   rw [isConnected_iff, isConnected_iff, monodromyGroup_reindexBranchPoints]
 
 /-- Reordering the branch points does not change the genus. -/
 @[simp] theorem genus_reindexBranchPoints (ρ : Perm (Fin 3)) :
-    (reindexBranchPoints ρ t).genus = t.genus := by
+    (t.reindexBranchPoints ρ).genus = t.genus := by
   rcases perm_fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
 
 /-- Reordering the branch points of the isomorphism class of a triple: `MulOpposite.op ρ` sends
-the class of `t` to the class of `TauCeti.PermutationTriple.reindexBranchPoints ρ t`. -/
+the class of `t` to the class of `t.reindexBranchPoints ρ`. -/
 instance : SMul (Perm (Fin 3))ᵐᵒᵖ (IsoClass n) where
-  smul ρ := IsoClass.lift (fun t => IsoClass.mk (reindexBranchPoints ρ.unop t))
+  smul ρ := IsoClass.lift (fun t => IsoClass.mk (t.reindexBranchPoints ρ.unop))
     fun _ _ h => IsoClass.mk_eq_mk_iff.mpr (h.reindexBranchPoints ρ.unop)
 
+/-- Acting by `MulOpposite.op ρ` on the class represented by `t` computes by reindexing that
+representative along `ρ`. -/
 @[simp] theorem IsoClass.op_smul_mk (ρ : Perm (Fin 3)) :
-    MulOpposite.op ρ • IsoClass.mk t = IsoClass.mk (reindexBranchPoints ρ t) :=
+    MulOpposite.op ρ • IsoClass.mk t = IsoClass.mk (t.reindexBranchPoints ρ) :=
   IsoClass.lift_mk _ _ t
 
 /-- Reordering the branch points composes contravariantly: applying `ρ'` and then `ρ` is
@@ -673,8 +659,8 @@ instance : MulAction (Perm (Fin 3))ᵐᵒᵖ (IsoClass n) where
 
 /-- Reordering the branch points twice is reordering along the product, up to isomorphism. -/
 theorem equivalent_reindexBranchPoints_reindexBranchPoints (ρ ρ' : Perm (Fin 3)) :
-    Equivalent (reindexBranchPoints ρ (reindexBranchPoints ρ' t))
-      (reindexBranchPoints (ρ' * ρ) t) := by
+    Equivalent ((t.reindexBranchPoints ρ').reindexBranchPoints ρ)
+      (t.reindexBranchPoints (ρ' * ρ)) := by
   rw [← IsoClass.mk_eq_mk_iff, ← IsoClass.op_smul_mk, ← IsoClass.op_smul_mk,
     ← IsoClass.op_smul_mk, _root_.op_smul_op_smul]
 
