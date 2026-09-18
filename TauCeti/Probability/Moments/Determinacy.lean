@@ -45,12 +45,13 @@ distributions …")
 records the determinacy fact as an open gap in Mathlib; the results here complete it for finite
 measures, both via the polynomial-moment route and directly from the moment-generating function.
 
-The transform route is shorter, because Mathlib's `ProbabilityTheory.eqOn_complexMGF_of_mgf`
+The transform route is shorter, because Mathlib's `ProbabilityTheory.eqOn_complexMGF_of_mgf'`
 already performs the strip propagation from an equality of moment-generating functions.  What
 remains is to read off the imaginary axis, so this file also records the last two steps as named
-theorems: a law on `ℝ` with finite exponential moments near `0` is determined by its
-moment-generating function.  This is how a convolution or a limit is identified once its
-moment-generating function is in closed form on a neighbourhood of the origin.
+theorems: a finite measure on `ℝ` with finite exponential moments near `0` is determined by its
+moment-generating function.  Their hypothesis is an equality of the two moment-generating
+functions as functions on all of `ℝ`, not merely near the origin; see the theorem docstrings for
+what that asks of a caller who only knows a closed form on the integrability set.
 
 ## Main declarations
 
@@ -64,7 +65,7 @@ moment-generating function is in closed form on a neighbourhood of the origin.
   completeness argument consumes: the hypothesis holds for Gaussian decay and automatically for
   compactly supported measures.
 * `TauCeti.charFun_eq_of_mgf_eq` and `TauCeti.Measure.ext_of_mgf`: the same two conclusions from an
-  equality of moment-generating functions instead of an equality of moments.
+  equality of moment-generating functions on all of `ℝ` instead of an equality of moments.
 -/
 
 public section
@@ -79,29 +80,37 @@ variable {μ ν : Measure ℝ}
 /-! ### Determinacy from the moment-generating function -/
 
 /-- **Determinacy at the level of characteristic functions, from the moment-generating function.**
-Two measures on `ℝ` with the same moment-generating function, one of them a probability measure
-with finite exponential moments near `0`, have the same characteristic function.
+Two finite measures on `ℝ`, one of them with finite exponential moments near `0`, that have the
+same moment-generating function have the same characteristic function.
 
-The moment-generating functions must agree on all of `ℝ`, not only where they are finite.  In
-practice that costs nothing: a closed form is usually known on the integrability set, and
-`ProbabilityTheory.mgf_undef` gives the value `0` on its complement. -/
-theorem charFun_eq_of_mgf_eq [IsProbabilityMeasure μ]
+The hypothesis is equality of the two moment-generating functions at *every* real `t`, including
+the `t` at which they are `0` only because Mathlib totalizes a divergent integral.  A caller who
+knows a closed form on the integrability set must therefore still settle the complement, by
+proving each side non-integrable there and closing the goal with
+`ProbabilityTheory.mgf_undef` twice. -/
+theorem charFun_eq_of_mgf_eq [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ)) (hmgf : mgf id μ = mgf id ν) :
     charFun μ = charFun ν := by
+  have hzero : μ = 0 ↔ ν = 0 := by
+    have h0 : μ.real Set.univ = ν.real Set.univ := by
+      simpa only [mgf_zero'] using congrFun hmgf 0
+    rw [← Measure.measure_univ_eq_zero, ← Measure.measure_univ_eq_zero,
+      ← measureReal_eq_zero_iff, ← measureReal_eq_zero_iff, h0]
   ext t
   have hre : ((t : ℂ) * I).re ∈ interior (integrableExpSet id μ) := by
     simpa using hμ
-  have h := eqOn_complexMGF_of_mgf hmgf hre
+  have h := eqOn_complexMGF_of_mgf' hmgf hzero hre
   rwa [complexMGF_id_mul_I, complexMGF_id_mul_I] at h
 
-/-- **A law on `ℝ` with finite exponential moments near `0` is determined by its
+/-- **A finite measure on `ℝ` with finite exponential moments near `0` is determined by its
 moment-generating function.** This is the determinacy statement recorded as a `TODO` in Mathlib's
 `Mathlib/Probability/Moments/ComplexMGF.lean`.
 
-Only finiteness is assumed of the second measure: evaluating the hypothesis at `0` gives
-`ν Set.univ = 1`, so a finite `ν` with the moment-generating function of a probability measure is
-itself one. -/
-theorem Measure.ext_of_mgf [IsProbabilityMeasure μ] [IsFiniteMeasure ν]
+The strip hypothesis is asked of one measure only: evaluating the equality of moment-generating
+functions at `0` already matches the two total masses, so the second measure is zero exactly when
+the first is, which is all the strip propagation needs.  As in `charFun_eq_of_mgf_eq`, the
+moment-generating functions must agree at every real `t`, not only on the integrability set. -/
+theorem Measure.ext_of_mgf [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ)) (hmgf : mgf id μ = mgf id ν) :
     μ = ν :=
   Measure.ext_of_charFun (charFun_eq_of_mgf_eq hμ hmgf)
