@@ -10,15 +10,15 @@ import Mathlib.Tactic.LinearCombination
 import TauCeti.GroupTheory.Perm.SumCongr
 
 /-!
-# The second Reidemeister move on PD-codes
+# Algebraic clasp insertion in PD-codes
 
-The second Reidemeister move slides one strand of a diagram across another, creating two
-crossings at which the same strand is over. On a PD-code with `n` crossings,
-`TauCeti.PDCode.reidemeisterTwo D p q b hqp hqe` performs this move on two distinct arcs: the arc
-`P` ending at the half-edge `p` and the arc `Q` ending at the half-edge `q`. Both arcs are cut
-open, and the strand along `P` is pushed across the strand along `Q`. The two new crossings are
-the last two, `(Fin.last n).castSucc` (the first crossing, reached from `p` and `q`) and
-`Fin.last (n + 1)` (the second crossing, reached from the other ends of the two arcs).
+The code-level tangle replacement underlying the second Reidemeister move creates two crossings
+at which the same strand is over. On a PD-code with `n` crossings,
+`TauCeti.PDCode.insertClasp D p q b hqp hqe` performs this algebraic clasp insertion on two
+distinct arcs: the arc `P` ending at the half-edge `p` and the arc `Q` ending at the half-edge
+`q`. Both arcs are cut open and routed through the two new crossings. These are the last two,
+`(Fin.last n).castSucc` (the first crossing, reached from `p` and `q`) and `Fin.last (n + 1)`
+(the second crossing, reached from the other ends of the two arcs).
 
 With the slots of a crossing in counterclockwise order, the strand along `P` occupies slots `0`
 and `2` of the first crossing and slots `1` and `3` of the second, and the strand along `Q`
@@ -35,27 +35,29 @@ arcs. The other three all reconnect the cut ends instead, `p` to `q` and the oth
 the other end of `Q`, and one of these three also cuts off the circle through the two short arcs
 of the clasp. The first state and the circle-cutting one carry weight `1` in the Kauffman
 bracket, and the other two weights `a ^ 2` and `a⁻¹ ^ 2`; since `a ^ 2 + a⁻¹ ^ 2 + δ = 0` for the
-loop value `δ = -(a ^ 2 + a⁻¹ ^ 2)`, the reconnected terms cancel and the **Kauffman bracket is
-invariant under the second Reidemeister move**. The move also keeps the number of components.
+loop value `δ = -(a ^ 2 + a⁻¹ ^ 2)`, the reconnected terms cancel, so the clasp insertion leaves
+the **Kauffman bracket invariant**. The insertion also keeps the number of components.
 
-Like `TauCeti.PDCode` itself, the construction is combinatorial: it is the second Reidemeister
-move of a planar diagram when the two arcs border a common region, facing each other so that `p`
-and `q` are the ends on the same side; passing `D.edgePair.val q` instead of `q` joins the arcs the
-other way round. The move acts on arcs, so it applies only to codes with a crossing; as for the
-first move, a move involving a crossing-free circle is not treated here.
+This construction does **not** by itself define a Reidemeister-II relation. `TauCeti.PDCode`
+contains no planar realization or face-incidence data, so its arguments cannot assert that the
+two arcs lie on the boundary of a common local disk. Given such geometric locality data, the
+construction is the usual second Reidemeister move when the arcs face each other with `p` and `q`
+on the same side; passing `D.edgePair.val q` instead of `q` joins them the other way round. Without
+that data it is only an algebraic operation on the code. It applies only to codes with a crossing;
+an insertion involving a crossing-free circle is not treated here.
 
 ## Main definitions
 
-* `TauCeti.PDCode.reidemeisterTwo`: slide one arc of a PD-code across another.
+* `TauCeti.PDCode.insertClasp`: algebraically insert a two-crossing clasp into two arcs.
 
 ## Main results
 
-* `TauCeti.PDCode.crossingComponentCount_reidemeisterTwo`: the move keeps the number of
+* `TauCeti.PDCode.crossingComponentCount_insertClasp`: the insertion keeps the number of
   components.
-* `TauCeti.PDCode.kauffmanBracket_reidemeisterTwo`: the move leaves the Kauffman bracket
+* `TauCeti.PDCode.kauffmanBracket_insertClasp`: the insertion leaves the Kauffman bracket
   unchanged.
-* `TauCeti.PDCode.mirror_reidemeisterTwo`: mirroring the new code performs the move with the
-  other strand over on the mirror code.
+* `TauCeti.PDCode.mirror_insertClasp`: mirroring the new code inserts the clasp with the other
+  strand over into the mirror code.
 
 ## References
 
@@ -447,14 +449,16 @@ private theorem halfEdgeTwoSuccEquiv_inl_inr (slot : Fin 4) :
 private theorem halfEdgeTwoSuccEquiv_inr (slot : Fin 4) :
     halfEdgeTwoSuccEquiv n (.inr slot) = halfEdgeSuccEquiv (n + 1) (.inr slot) := (rfl)
 
-/-- **The second Reidemeister move**: slide the arc of `D` ending at the half-edge `p` across the
-distinct arc ending at `q`. The two new crossings are `(Fin.last n).castSucc`, whose slots `0`
+/-- **Algebraic clasp insertion**: route the arc of `D` ending at the half-edge `p` and the
+distinct arc ending at `q` through a two-crossing clasp. This operation carries no claim that the
+two arcs bound a common local disk; that geometric locality condition is external to `PDCode`.
+The two new crossings are `(Fin.last n).castSucc`, whose slots `0`
 and `1` are joined to `p` and `q`, and `Fin.last (n + 1)`, whose slots `3` and `2` are joined to
 the other ends `D.edgePair.val p` and `D.edgePair.val q` of the two arcs. Slot `2` of the first
 new crossing is joined to slot `1` of the second along the first strand, and slot `3` to slot `0`
 along the second. The over-pair indicators of the two new crossings are `b` and `!b`: with
 `b = false` the strand through `p` is over at both, with `b = true` the strand through `q`. -/
-def reidemeisterTwo (D : PDCode n) (p q : Fin (4 * n)) (b : Bool) (hqp : q ≠ p)
+def insertClasp (D : PDCode n) (p q : Fin (4 * n)) (b : Bool) (hqp : q ≠ p)
     (hqe : q ≠ D.edgePair.val p) : PDCode (n + 2) where
   halfEdge := (halfEdgeTwoSuccEquiv n).permCongr (Perm.sumCongr (Perm.sumCongr D.halfEdge 1) 1)
   edgePair := PerfectMatching.congr (halfEdgeTwoSuccEquiv n)
@@ -465,189 +469,189 @@ def reidemeisterTwo (D : PDCode n) (p q : Fin (4 * n)) (b : Bool) (hqp : q ≠ p
 variable (D : PDCode n) (p q : Fin (4 * n)) (b : Bool) (hqp : q ≠ p) (hqe : q ≠ D.edgePair.val p)
 
 /-- The old crossings keep their half-edges. -/
-@[simp] theorem reidemeisterTwo_crossing_castSucc_castSucc (i : Fin n) (slot : Fin 4) :
-    (D.reidemeisterTwo p q b hqp hqe).halfEdge
+@[simp] theorem insertClasp_crossing_castSucc_castSucc (i : Fin n) (slot : Fin 4) :
+    (D.insertClasp p q b hqp hqe).halfEdge
         (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n
           (.inl (crossingSlotEquiv n (i, slot)))))) =
       halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl (D.crossing i slot)))) := by
   rw [← halfEdgeTwoSuccEquiv_inl_inl, ← halfEdgeTwoSuccEquiv_inl_inl]
-  simp [reidemeisterTwo, Equiv.permCongr_apply]
+  simp [insertClasp, Equiv.permCongr_apply]
 
 /-- The slots of the first new crossing are four of the new half-edges. -/
-@[simp] theorem reidemeisterTwo_crossing_castSucc_last (slot : Fin 4) :
-    (D.reidemeisterTwo p q b hqp hqe).halfEdge
+@[simp] theorem insertClasp_crossing_castSucc_last (slot : Fin 4) :
+    (D.insertClasp p q b hqp hqe).halfEdge
         (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr slot)))) =
       halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr slot))) := by
   rw [← halfEdgeTwoSuccEquiv_inl_inr]
-  simp [reidemeisterTwo, Equiv.permCongr_apply]
+  simp [insertClasp, Equiv.permCongr_apply]
 
 /-- The slots of the second new crossing are the last four half-edges. -/
-@[simp] theorem reidemeisterTwo_crossing_last (slot : Fin 4) :
-    (D.reidemeisterTwo p q b hqp hqe).halfEdge (halfEdgeSuccEquiv (n + 1) (.inr slot)) =
+@[simp] theorem insertClasp_crossing_last (slot : Fin 4) :
+    (D.insertClasp p q b hqp hqe).halfEdge (halfEdgeSuccEquiv (n + 1) (.inr slot)) =
       halfEdgeSuccEquiv (n + 1) (.inr slot) := by
   rw [← halfEdgeTwoSuccEquiv_inr]
-  simp [reidemeisterTwo, Equiv.permCongr_apply]
+  simp [insertClasp, Equiv.permCongr_apply]
 
 /-- The old crossings keep their over-strands. -/
-@[simp] theorem reidemeisterTwo_overPair_castSucc_castSucc (i : Fin n) :
-    (D.reidemeisterTwo p q b hqp hqe).overPair i.castSucc.castSucc = D.overPair i := by
-  simp [reidemeisterTwo]
+@[simp] theorem insertClasp_overPair_castSucc_castSucc (i : Fin n) :
+    (D.insertClasp p q b hqp hqe).overPair i.castSucc.castSucc = D.overPair i := by
+  simp [insertClasp]
 
 /-- The over-pair indicator of the first new crossing is `b`. -/
-@[simp] theorem reidemeisterTwo_overPair_castSucc_last :
-    (D.reidemeisterTwo p q b hqp hqe).overPair (Fin.last n).castSucc = b := by
-  simp [reidemeisterTwo]
+@[simp] theorem insertClasp_overPair_castSucc_last :
+    (D.insertClasp p q b hqp hqe).overPair (Fin.last n).castSucc = b := by
+  simp [insertClasp]
 
 /-- The over-pair indicator of the second new crossing is `!b`, so the same strand is over at both
 new crossings. -/
-@[simp] theorem reidemeisterTwo_overPair_last :
-    (D.reidemeisterTwo p q b hqp hqe).overPair (Fin.last (n + 1)) = !b := by
-  simp [reidemeisterTwo]
+@[simp] theorem insertClasp_overPair_last :
+    (D.insertClasp p q b hqp hqe).overPair (Fin.last (n + 1)) = !b := by
+  simp [insertClasp]
 
-/-- The move keeps the crossing-free circles. -/
-@[simp] theorem reidemeisterTwo_crossinglessComponentCount :
-    (D.reidemeisterTwo p q b hqp hqe).crossinglessComponentCount =
+/-- The insertion keeps the crossing-free circles. -/
+@[simp] theorem insertClasp_crossinglessComponentCount :
+    (D.insertClasp p q b hqp hqe).crossinglessComponentCount =
       D.crossinglessComponentCount := by
-  simp [reidemeisterTwo]
+  simp [insertClasp]
 
-private theorem reidemeisterTwo_edgePair_val :
-    (D.reidemeisterTwo p q b hqp hqe).edgePair.val = (halfEdgeTwoSuccEquiv n).permCongr
+private theorem insertClasp_edgePair_val :
+    (D.insertClasp p q b hqp hqe).edgePair.val = (halfEdgeTwoSuccEquiv n).permCongr
       (claspMatching D.edgePair.val D.edgePair.prop p q hqp hqe).val := by
-  simp [reidemeisterTwo, PerfectMatching.congr_val]
+  simp [insertClasp, PerfectMatching.congr_val]
 
-private theorem reidemeisterTwo_edgePair_apply (y : (Fin (4 * n) ⊕ Fin 4) ⊕ Fin 4) :
-    (D.reidemeisterTwo p q b hqp hqe).edgePair.val (halfEdgeTwoSuccEquiv n y) =
+private theorem insertClasp_edgePair_apply (y : (Fin (4 * n) ⊕ Fin 4) ⊕ Fin 4) :
+    (D.insertClasp p q b hqp hqe).edgePair.val (halfEdgeTwoSuccEquiv n y) =
       halfEdgeTwoSuccEquiv n (claspFun D.edgePair.val p q y) := by
-  rw [reidemeisterTwo_edgePair_val, Equiv.permCongr_apply, Equiv.symm_apply_apply,
+  rw [insertClasp_edgePair_val, Equiv.permCongr_apply, Equiv.symm_apply_apply,
     claspMatching_val_apply]
 
 /-- Slot `0` of the first new crossing is joined to the half-edge `p`. -/
-@[simp] theorem reidemeisterTwo_edgePair_inl_inr_zero :
-    (D.reidemeisterTwo p q b hqp hqe).edgePair.val
+@[simp] theorem insertClasp_edgePair_inl_inr_zero :
+    (D.insertClasp p q b hqp hqe).edgePair.val
         (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr 0)))) =
       halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl p))) := by
-  rw [← halfEdgeTwoSuccEquiv_inl_inr, reidemeisterTwo_edgePair_apply]
+  rw [← halfEdgeTwoSuccEquiv_inl_inr, insertClasp_edgePair_apply]
   rfl
 
 /-- Slot `1` of the first new crossing is joined to the half-edge `q`. -/
-@[simp] theorem reidemeisterTwo_edgePair_inl_inr_one :
-    (D.reidemeisterTwo p q b hqp hqe).edgePair.val
+@[simp] theorem insertClasp_edgePair_inl_inr_one :
+    (D.insertClasp p q b hqp hqe).edgePair.val
         (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr 1)))) =
       halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl q))) := by
-  rw [← halfEdgeTwoSuccEquiv_inl_inr, reidemeisterTwo_edgePair_apply]
+  rw [← halfEdgeTwoSuccEquiv_inl_inr, insertClasp_edgePair_apply]
   rfl
 
 /-- Slot `2` of the first new crossing is joined to slot `1` of the second, along the strand
 through `p`. -/
-@[simp] theorem reidemeisterTwo_edgePair_inl_inr_two :
-    (D.reidemeisterTwo p q b hqp hqe).edgePair.val
+@[simp] theorem insertClasp_edgePair_inl_inr_two :
+    (D.insertClasp p q b hqp hqe).edgePair.val
         (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr 2)))) =
       halfEdgeSuccEquiv (n + 1) (.inr 1) := by
-  rw [← halfEdgeTwoSuccEquiv_inl_inr, reidemeisterTwo_edgePair_apply]
+  rw [← halfEdgeTwoSuccEquiv_inl_inr, insertClasp_edgePair_apply]
   rfl
 
 /-- Slot `3` of the first new crossing is joined to slot `0` of the second, along the strand
 through `q`. -/
-@[simp] theorem reidemeisterTwo_edgePair_inl_inr_three :
-    (D.reidemeisterTwo p q b hqp hqe).edgePair.val
+@[simp] theorem insertClasp_edgePair_inl_inr_three :
+    (D.insertClasp p q b hqp hqe).edgePair.val
         (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr 3)))) =
       halfEdgeSuccEquiv (n + 1) (.inr 0) := by
-  rw [← halfEdgeTwoSuccEquiv_inl_inr, reidemeisterTwo_edgePair_apply]
+  rw [← halfEdgeTwoSuccEquiv_inl_inr, insertClasp_edgePair_apply]
   rfl
 
 /-- Slot `0` of the second new crossing is joined to slot `3` of the first. -/
-@[simp] theorem reidemeisterTwo_edgePair_inr_zero :
-    (D.reidemeisterTwo p q b hqp hqe).edgePair.val (halfEdgeSuccEquiv (n + 1) (.inr 0)) =
+@[simp] theorem insertClasp_edgePair_inr_zero :
+    (D.insertClasp p q b hqp hqe).edgePair.val (halfEdgeSuccEquiv (n + 1) (.inr 0)) =
       halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr 3))) := by
-  rw [← halfEdgeTwoSuccEquiv_inr, reidemeisterTwo_edgePair_apply]
+  rw [← halfEdgeTwoSuccEquiv_inr, insertClasp_edgePair_apply]
   rfl
 
 /-- Slot `1` of the second new crossing is joined to slot `2` of the first. -/
-@[simp] theorem reidemeisterTwo_edgePair_inr_one :
-    (D.reidemeisterTwo p q b hqp hqe).edgePair.val (halfEdgeSuccEquiv (n + 1) (.inr 1)) =
+@[simp] theorem insertClasp_edgePair_inr_one :
+    (D.insertClasp p q b hqp hqe).edgePair.val (halfEdgeSuccEquiv (n + 1) (.inr 1)) =
       halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr 2))) := by
-  rw [← halfEdgeTwoSuccEquiv_inr, reidemeisterTwo_edgePair_apply]
+  rw [← halfEdgeTwoSuccEquiv_inr, insertClasp_edgePair_apply]
   rfl
 
 /-- Slot `2` of the second new crossing is joined to the other end of the arc at `q`. -/
-@[simp] theorem reidemeisterTwo_edgePair_inr_two :
-    (D.reidemeisterTwo p q b hqp hqe).edgePair.val (halfEdgeSuccEquiv (n + 1) (.inr 2)) =
+@[simp] theorem insertClasp_edgePair_inr_two :
+    (D.insertClasp p q b hqp hqe).edgePair.val (halfEdgeSuccEquiv (n + 1) (.inr 2)) =
       halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl (D.edgePair.val q)))) := by
-  rw [← halfEdgeTwoSuccEquiv_inr, reidemeisterTwo_edgePair_apply]
+  rw [← halfEdgeTwoSuccEquiv_inr, insertClasp_edgePair_apply]
   rfl
 
 /-- Slot `3` of the second new crossing is joined to the other end of the arc at `p`. -/
-@[simp] theorem reidemeisterTwo_edgePair_inr_three :
-    (D.reidemeisterTwo p q b hqp hqe).edgePair.val (halfEdgeSuccEquiv (n + 1) (.inr 3)) =
+@[simp] theorem insertClasp_edgePair_inr_three :
+    (D.insertClasp p q b hqp hqe).edgePair.val (halfEdgeSuccEquiv (n + 1) (.inr 3)) =
       halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl (D.edgePair.val p)))) := by
-  rw [← halfEdgeTwoSuccEquiv_inr, reidemeisterTwo_edgePair_apply]
+  rw [← halfEdgeTwoSuccEquiv_inr, insertClasp_edgePair_apply]
   rfl
 
 /-- The half-edge `p` is joined to slot `0` of the first new crossing. -/
-@[simp] theorem reidemeisterTwo_edgePair_inl_inl_self :
-    (D.reidemeisterTwo p q b hqp hqe).edgePair.val
+@[simp] theorem insertClasp_edgePair_inl_inl_self :
+    (D.insertClasp p q b hqp hqe).edgePair.val
         (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl p)))) =
       halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr 0))) := by
-  rw [← halfEdgeTwoSuccEquiv_inl_inl, reidemeisterTwo_edgePair_apply, claspFun_self]
+  rw [← halfEdgeTwoSuccEquiv_inl_inl, insertClasp_edgePair_apply, claspFun_self]
   rfl
 
 /-- The half-edge `q` is joined to slot `1` of the first new crossing. -/
-@[simp] theorem reidemeisterTwo_edgePair_inl_inl_right :
-    (D.reidemeisterTwo p q b hqp hqe).edgePair.val
+@[simp] theorem insertClasp_edgePair_inl_inl_right :
+    (D.insertClasp p q b hqp hqe).edgePair.val
         (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl q)))) =
       halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr 1))) := by
-  rw [← halfEdgeTwoSuccEquiv_inl_inl, reidemeisterTwo_edgePair_apply, claspFun_right hqp hqe]
+  rw [← halfEdgeTwoSuccEquiv_inl_inl, insertClasp_edgePair_apply, claspFun_right hqp hqe]
   rfl
 
 /-- The other end of the arc at `p` is joined to slot `3` of the second new crossing. -/
-@[simp] theorem reidemeisterTwo_edgePair_inl_inl_apply_self :
-    (D.reidemeisterTwo p q b hqp hqe).edgePair.val
+@[simp] theorem insertClasp_edgePair_inl_inl_apply_self :
+    (D.insertClasp p q b hqp hqe).edgePair.val
         (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl (D.edgePair.val p))))) =
       halfEdgeSuccEquiv (n + 1) (.inr 3) := by
-  rw [← halfEdgeTwoSuccEquiv_inl_inl, reidemeisterTwo_edgePair_apply,
+  rw [← halfEdgeTwoSuccEquiv_inl_inl, insertClasp_edgePair_apply,
     claspFun_apply_self D.edgePair.prop]
   rfl
 
 /-- The other end of the arc at `q` is joined to slot `2` of the second new crossing. -/
-@[simp] theorem reidemeisterTwo_edgePair_inl_inl_apply_right :
-    (D.reidemeisterTwo p q b hqp hqe).edgePair.val
+@[simp] theorem insertClasp_edgePair_inl_inl_apply_right :
+    (D.insertClasp p q b hqp hqe).edgePair.val
         (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl (D.edgePair.val q))))) =
       halfEdgeSuccEquiv (n + 1) (.inr 2) := by
-  rw [← halfEdgeTwoSuccEquiv_inl_inl, reidemeisterTwo_edgePair_apply,
+  rw [← halfEdgeTwoSuccEquiv_inl_inl, insertClasp_edgePair_apply,
     claspFun_apply_right D.edgePair.prop hqp hqe]
   rfl
 
 /-- Every half-edge off the two cut arcs keeps its old partner. -/
-@[simp] theorem reidemeisterTwo_edgePair_inl_inl_of_ne {x : Fin (4 * n)} (hxp : x ≠ p)
+@[simp] theorem insertClasp_edgePair_inl_inl_of_ne {x : Fin (4 * n)} (hxp : x ≠ p)
     (hxe : x ≠ D.edgePair.val p) (hxq : x ≠ q) (hxe' : x ≠ D.edgePair.val q) :
-    (D.reidemeisterTwo p q b hqp hqe).edgePair.val
+    (D.insertClasp p q b hqp hqe).edgePair.val
         (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl x)))) =
       halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl (D.edgePair.val x)))) := by
-  rw [← halfEdgeTwoSuccEquiv_inl_inl, reidemeisterTwo_edgePair_apply,
+  rw [← halfEdgeTwoSuccEquiv_inl_inl, insertClasp_edgePair_apply,
     claspFun_of_ne hxp hxe hxq hxe', halfEdgeTwoSuccEquiv_inl_inl]
 
-/-- Mirroring the new code performs the move with the other strand over on the mirror code. -/
-@[simp] theorem mirror_reidemeisterTwo :
-    (D.reidemeisterTwo p q b hqp hqe).mirror =
-      D.mirror.reidemeisterTwo p q (!b) hqp (by rwa [mirror_edgePair]) := by
+/-- Mirroring the new code inserts the clasp with the other strand over into the mirror code. -/
+@[simp] theorem mirror_insertClasp :
+    (D.insertClasp p q b hqp hqe).mirror =
+      D.mirror.insertClasp p q (!b) hqp (by rwa [mirror_edgePair]) := by
   apply PDCode.ext
-  · simp [reidemeisterTwo]
-  · simp [reidemeisterTwo]
-  · simp [reidemeisterTwo]
+  · simp [insertClasp]
+  · simp [insertClasp]
+  · simp [insertClasp]
   · funext i
     induction i using Fin.lastCases with
     | last => simp
     | cast i => induction i using Fin.lastCases <;> simp
 
-private theorem crossingwisePerm_reidemeisterTwo
+private theorem crossingwisePerm_insertClasp
     (oldTurn : Perm (Fin (4 * n))) (newTurn : Perm (Fin (4 * (n + 2))))
     (r : Fin (n + 2) → Perm (Fin 4))
     (oldTurn_crossing : ∀ i slot,
       oldTurn (D.halfEdge (crossingSlotEquiv n (i, slot))) =
         D.crossing i (r i.castSucc.castSucc slot))
     (newTurn_crossing : ∀ i slot,
-      newTurn ((D.reidemeisterTwo p q b hqp hqe).halfEdge (crossingSlotEquiv (n + 2) (i, slot))) =
-        (D.reidemeisterTwo p q b hqp hqe).crossing i (r i slot)) :
+      newTurn ((D.insertClasp p q b hqp hqe).halfEdge (crossingSlotEquiv (n + 2) (i, slot))) =
+        (D.insertClasp p q b hqp hqe).crossing i (r i slot)) :
     newTurn = (halfEdgeTwoSuccEquiv n).permCongr (Perm.sumCongr
       (Perm.sumCongr oldTurn (r (Fin.last n).castSucc)) (r (Fin.last (n + 1)))) := by
   refine Equiv.ext fun x => ?_
@@ -656,60 +660,60 @@ private theorem crossingwisePerm_reidemeisterTwo
   rcases y with (y | slot) | slot
   · obtain ⟨z, rfl⟩ := D.halfEdge.surjective y
     obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective z
-    have hx := D.reidemeisterTwo_crossing_castSucc_castSucc p q b hqp hqe i slot
+    have hx := D.insertClasp_crossing_castSucc_castSucc p q b hqp hqe i slot
     rw [crossing_apply, ← crossingSlotEquiv_succ_castSucc,
       ← crossingSlotEquiv_succ_castSucc] at hx
     rw [Perm.sumCongr_apply, Sum.map_inl, Perm.sumCongr_apply, Sum.map_inl, oldTurn_crossing,
       halfEdgeTwoSuccEquiv_inl_inl, halfEdgeTwoSuccEquiv_inl_inl, ← hx,
       newTurn_crossing, crossing_apply, crossingSlotEquiv_succ_castSucc,
-      crossingSlotEquiv_succ_castSucc, reidemeisterTwo_crossing_castSucc_castSucc]
-  · have hx : (D.reidemeisterTwo p q b hqp hqe).halfEdge
+      crossingSlotEquiv_succ_castSucc, insertClasp_crossing_castSucc_castSucc]
+  · have hx : (D.insertClasp p q b hqp hqe).halfEdge
         (crossingSlotEquiv (n + 2) ((Fin.last n).castSucc, slot)) =
         halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr slot))) := by
       simpa only [crossingSlotEquiv_succ_castSucc, crossingSlotEquiv_succ_last] using
-        D.reidemeisterTwo_crossing_castSucc_last p q b hqp hqe slot
+        D.insertClasp_crossing_castSucc_last p q b hqp hqe slot
     rw [Perm.sumCongr_apply, Sum.map_inl, Perm.sumCongr_apply, Sum.map_inr,
       halfEdgeTwoSuccEquiv_inl_inr, halfEdgeTwoSuccEquiv_inl_inr, ← hx,
       newTurn_crossing, crossing_apply, crossingSlotEquiv_succ_castSucc,
-      crossingSlotEquiv_succ_last, reidemeisterTwo_crossing_castSucc_last]
-  · have hx : (D.reidemeisterTwo p q b hqp hqe).halfEdge
+      crossingSlotEquiv_succ_last, insertClasp_crossing_castSucc_last]
+  · have hx : (D.insertClasp p q b hqp hqe).halfEdge
         (crossingSlotEquiv (n + 2) (Fin.last (n + 1), slot)) =
         halfEdgeSuccEquiv (n + 1) (.inr slot) := by
       simpa only [crossingSlotEquiv_succ_last] using
-        D.reidemeisterTwo_crossing_last p q b hqp hqe slot
+        D.insertClasp_crossing_last p q b hqp hqe slot
     rw [Perm.sumCongr_apply, Sum.map_inr, halfEdgeTwoSuccEquiv_inr, halfEdgeTwoSuccEquiv_inr,
       ← hx, newTurn_crossing, crossing_apply, crossingSlotEquiv_succ_last,
-      reidemeisterTwo_crossing_last]
+      insertClasp_crossing_last]
 
-private theorem smoothingTurn_reidemeisterTwo (c : Fin (n + 2) → Bool) :
-    (D.reidemeisterTwo p q b hqp hqe).smoothingTurn c = (halfEdgeTwoSuccEquiv n).permCongr
+private theorem smoothingTurn_insertClasp (c : Fin (n + 2) → Bool) :
+    (D.insertClasp p q b hqp hqe).smoothingTurn c = (halfEdgeTwoSuccEquiv n).permCongr
       (Perm.sumCongr (Perm.sumCongr (D.smoothingTurn (Fin.init (Fin.init c)))
         (slotSmoothing (c (Fin.last n).castSucc))) (slotSmoothing (c (Fin.last (n + 1))))) := by
-  apply crossingwisePerm_reidemeisterTwo D p q b hqp hqe _ _ (fun i => slotSmoothing (c i))
+  apply crossingwisePerm_insertClasp D p q b hqp hqe _ _ (fun i => slotSmoothing (c i))
   · intro i slot
     simpa only [Fin.init_def] using D.smoothingTurn_crossing (Fin.init (Fin.init c)) i slot
-  · exact (D.reidemeisterTwo p q b hqp hqe).smoothingTurn_crossing c
+  · exact (D.insertClasp p q b hqp hqe).smoothingTurn_crossing c
 
-private theorem crossingTurn_reidemeisterTwo :
-    (D.reidemeisterTwo p q b hqp hqe).crossingTurn = (halfEdgeTwoSuccEquiv n).permCongr
+private theorem crossingTurn_insertClasp :
+    (D.insertClasp p q b hqp hqe).crossingTurn = (halfEdgeTwoSuccEquiv n).permCongr
       (Perm.sumCongr (Perm.sumCongr D.crossingTurn oppositeCrossingSlot) oppositeCrossingSlot) := by
-  apply crossingwisePerm_reidemeisterTwo D p q b hqp hqe _ _ (fun _ => oppositeCrossingSlot)
+  apply crossingwisePerm_insertClasp D p q b hqp hqe _ _ (fun _ => oppositeCrossingSlot)
   · exact D.crossingTurn_crossing
-  · exact (D.reidemeisterTwo p q b hqp hqe).crossingTurn_crossing
+  · exact (D.insertClasp p q b hqp hqe).crossingTurn_crossing
 
-private theorem init_init_smoothingChoice_reidemeisterTwo (s : Fin (n + 2) → Bool) :
-    Fin.init (Fin.init ((D.reidemeisterTwo p q b hqp hqe).smoothingChoice s)) =
+private theorem init_init_smoothingChoice_insertClasp (s : Fin (n + 2) → Bool) :
+    Fin.init (Fin.init ((D.insertClasp p q b hqp hqe).smoothingChoice s)) =
       D.smoothingChoice (Fin.init (Fin.init s)) := by
   funext i
   cases hs : s i.castSucc.castSucc <;> simp [Fin.init, hs]
 
-private theorem smoothingChoice_reidemeisterTwo_castSucc_last (s : Fin (n + 2) → Bool) :
-    (D.reidemeisterTwo p q b hqp hqe).smoothingChoice s (Fin.last n).castSucc =
+private theorem smoothingChoice_insertClasp_castSucc_last (s : Fin (n + 2) → Bool) :
+    (D.insertClasp p q b hqp hqe).smoothingChoice s (Fin.last n).castSucc =
       (s (Fin.last n).castSucc == b) := by
   cases hs : s (Fin.last n).castSucc <;> cases b <;> simp [hs]
 
-private theorem smoothingChoice_reidemeisterTwo_last (s : Fin (n + 2) → Bool) :
-    (D.reidemeisterTwo p q b hqp hqe).smoothingChoice s (Fin.last (n + 1)) =
+private theorem smoothingChoice_insertClasp_last (s : Fin (n + 2) → Bool) :
+    (D.insertClasp p q b hqp hqe).smoothingChoice s (Fin.last (n + 1)) =
       (s (Fin.last (n + 1)) == !b) := by
   cases hs : s (Fin.last (n + 1)) <;> cases b <;> simp [hs]
 
@@ -732,35 +736,35 @@ private theorem one_le_claspLoopCount (s : Fin n → Bool) : 1 ≤ claspLoopCoun
   rw [claspLoopCount]
   omega
 
-/-- **Circles after the second Reidemeister move.** A state of the new code whose choices at the
+/-- **Circles after clasp insertion.** A state of the new code whose choices at the
 two new crossings smooth them back into the two cut arcs leaves as many circles as its restriction
 to the old crossings. Every other state leaves the circles of the reconnected arcs, one more when
 it also cuts off the circle through the two short arcs of the clasp. -/
-private theorem stateLoopCount_reidemeisterTwo (s : Fin (n + 2) → Bool) :
-    (D.reidemeisterTwo p q b hqp hqe).stateLoopCount s =
+private theorem stateLoopCount_insertClasp (s : Fin (n + 2) → Bool) :
+    (D.insertClasp p q b hqp hqe).stateLoopCount s =
       if (s (Fin.last n).castSucc == b) = false ∧ (s (Fin.last (n + 1)) == !b) = false then
         D.stateLoopCount (Fin.init (Fin.init s))
       else claspLoopCount D p q (Fin.init (Fin.init s)) +
         if (s (Fin.last n).castSucc == b) = true ∧ (s (Fin.last (n + 1)) == !b) = true then 1
         else 0 := by
-  rw [stateLoopCount_def, statePerm_def, smoothingTurn_reidemeisterTwo,
-    init_init_smoothingChoice_reidemeisterTwo, smoothingChoice_reidemeisterTwo_castSucc_last,
-    smoothingChoice_reidemeisterTwo_last, reidemeisterTwo_edgePair_val, ← Equiv.permCongr_mul,
+  rw [stateLoopCount_def, statePerm_def, smoothingTurn_insertClasp,
+    init_init_smoothingChoice_insertClasp, smoothingChoice_insertClasp_castSucc_last,
+    smoothingChoice_insertClasp_last, insertClasp_edgePair_val, ← Equiv.permCongr_mul,
     Equiv.orbitCount_permCongr, orbitCount_slotSmoothing_mul_claspMatching,
-    reidemeisterTwo_crossinglessComponentCount]
+    insertClasp_crossinglessComponentCount]
   split_ifs <;> simp_all [stateLoopCount_def, statePerm_def, claspLoopCount]
   omega
 
-/-- **The second Reidemeister move keeps the number of components.** -/
-@[simp] theorem crossingComponentCount_reidemeisterTwo :
-    (D.reidemeisterTwo p q b hqp hqe).crossingComponentCount = D.crossingComponentCount := by
+/-- **Algebraic clasp insertion keeps the number of components.** -/
+@[simp] theorem crossingComponentCount_insertClasp :
+    (D.insertClasp p q b hqp hqe).crossingComponentCount = D.crossingComponentCount := by
   rw [crossingComponentCount_def, crossingComponentCount_def, componentPerm_def,
-    componentPerm_def, crossingTurn_reidemeisterTwo, reidemeisterTwo_edgePair_val,
+    componentPerm_def, crossingTurn_insertClasp, insertClasp_edgePair_val,
     ← Equiv.permCongr_mul, Equiv.orbitCount_permCongr, orbitCount_opposite_mul_claspMatching]
 
-/-- **The Kauffman bracket is invariant under the second Reidemeister move.** -/
-@[simp] theorem kauffmanBracket_reidemeisterTwo {R : Type*} [CommRing R] (a : Rˣ) :
-    (D.reidemeisterTwo p q b hqp hqe).kauffmanBracket a = D.kauffmanBracket a := by
+/-- **The Kauffman bracket is invariant under algebraic clasp insertion.** -/
+@[simp] theorem kauffmanBracket_insertClasp {R : Type*} [CommRing R] (a : Rˣ) :
+    (D.insertClasp p q b hqp hqe).kauffmanBracket a = D.kauffmanBracket a := by
   -- Split each state of the new code into a state of the old code and the choices at the two
   -- new crossings, and compare the four resulting terms with one term of the old bracket.
   rw [kauffmanBracket_def, kauffmanBracket_def,
@@ -771,7 +775,7 @@ private theorem stateLoopCount_reidemeisterTwo (s : Fin (n + 2) → Bool) :
   obtain ⟨k, hk⟩ : ∃ k, claspLoopCount D p q s = k + 1 :=
     ⟨_, (Nat.succ_pred_eq_of_pos (one_le_claspLoopCount D p q s)).symm⟩
   simp only [Equiv.trans_apply, Equiv.prodCongr_apply, Equiv.refl_apply, Prod.map_apply,
-    Fin.snocEquiv, Equiv.coe_fn_mk, stateLoopCount_reidemeisterTwo, Fin.init_snoc,
+    Fin.snocEquiv, Equiv.coe_fn_mk, stateLoopCount_insertClasp, Fin.init_snoc,
     Fin.snoc_castSucc, Fin.snoc_last, stateWeight_snoc, hk]
   cases b <;> simp only [Bool.cond_true, Bool.cond_false, Bool.not_true, Bool.not_false,
     Bool.true_beq, Bool.false_beq, Bool.true_eq_false, Bool.false_eq_true, and_self, and_false,
