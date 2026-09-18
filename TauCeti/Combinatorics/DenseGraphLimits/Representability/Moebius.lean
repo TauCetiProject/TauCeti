@@ -80,40 +80,31 @@ noncomputable def graphParamMobius (f : GraphParam) : GraphParam := fun n F =>
     (-1 : ℝ) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) * f n G
 
 open Classical in
-/-- The defining formula of the Möbius transform. -/
-@[simp] theorem graphParamMobius_apply (f : GraphParam) (n : ℕ) (F : SimpleGraph (Fin n)) :
+/-- The defining formula of the Möbius transform. This is an explicit rewrite rule rather than a
+simp lemma, so simplification can recognize the outer sum in `sum_graphParamMobius_filter_le`
+before unfolding its summands. -/
+theorem graphParamMobius_apply (f : GraphParam) (n : ℕ) (F : SimpleGraph (Fin n)) :
     graphParamMobius f n F =
       ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) => F ≤ G),
         (-1 : ℝ) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) * f n G := by
   simp only [graphParamMobius]
 
 open Classical in
-private theorem sum_neg_one_pow_card_edgeSet_sub_left_fin {n : ℕ}
-    (F H : SimpleGraph (Fin n)) :
-    ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) => F ≤ G ∧ G ≤ H),
-        (-1 : ℝ) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) = if F = H then 1 else 0 := by
-  let _ : DecidableEq (Fin n) := Classical.decEq _
-  refine Eq.trans ?_ (SimpleGraph.sum_neg_one_pow_card_edgeSet_sub_left (R := ℝ) F H)
-  exact sum_congr (by ext G; simp) fun _ _ => rfl
-
-open Classical in
-private theorem sum_neg_one_pow_card_edgeSet_sub_right_fin {n : ℕ}
-    (F H : SimpleGraph (Fin n)) :
-    ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) => F ≤ G ∧ G ≤ H),
-        (-1 : ℝ) ^ (Nat.card H.edgeSet - Nat.card G.edgeSet) = if F = H then 1 else 0 := by
-  let _ : DecidableEq (Fin n) := Classical.decEq _
-  refine Eq.trans ?_ (SimpleGraph.sum_neg_one_pow_card_edgeSet_sub_right (R := ℝ) F H)
-  exact sum_congr (by ext G; simp) fun _ _ => rfl
-
-open Classical in
 /-- **Möbius inversion.** The Möbius masses of the supergraphs of `F` add up to `f(F)`: the
 signed sum over each interval `[F, H]` cancels unless `F = H`. -/
+@[simp]
 theorem sum_graphParamMobius_filter_le (f : GraphParam) {n : ℕ} (F : SimpleGraph (Fin n)) :
     ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) => F ≤ G), graphParamMobius f n G = f n F := by
   simp_rw [graphParamMobius_apply]
   rw [Finset.sum_filter_le_sum_filter_le F fun G H =>
     (-1 : ℝ) ^ (Nat.card H.edgeSet - Nat.card G.edgeSet) * f n H]
-  simp_rw [← sum_mul, sum_neg_one_pow_card_edgeSet_sub_right_fin, ite_mul, one_mul,
+  have hcancel (H : SimpleGraph (Fin n)) :
+      ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) => F ≤ G ∧ G ≤ H),
+        (-1 : ℝ) ^ (Nat.card H.edgeSet - Nat.card G.edgeSet) = if F = H then 1 else 0 := by
+    let _ : DecidableEq (Fin n) := Classical.decEq _
+    refine Eq.trans ?_ (SimpleGraph.sum_neg_one_pow_card_edgeSet_sub_right (R := ℝ) F H)
+    exact sum_congr (by ext G; simp) fun _ _ => rfl
+  simp_rw [← sum_mul, hcancel, ite_mul, one_mul,
     zero_mul, sum_ite_eq, mem_univ, ite_true]
 
 open Classical in
@@ -126,7 +117,13 @@ theorem eq_graphParamMobius_iff (f : GraphParam) {n : ℕ} (g : SimpleGraph (Fin
   simp_rw [graphParamMobius_apply, ← h, mul_sum]
   rw [Finset.sum_filter_le_sum_filter_le F fun G H =>
     (-1 : ℝ) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) * g H]
-  simp_rw [← sum_mul, sum_neg_one_pow_card_edgeSet_sub_left_fin, ite_mul, one_mul,
+  have hcancel (H : SimpleGraph (Fin n)) :
+      ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) => F ≤ G ∧ G ≤ H),
+        (-1 : ℝ) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) = if F = H then 1 else 0 := by
+    let _ : DecidableEq (Fin n) := Classical.decEq _
+    refine Eq.trans ?_ (SimpleGraph.sum_neg_one_pow_card_edgeSet_sub_left (R := ℝ) F H)
+    exact sum_congr (by ext G; simp) fun _ _ => rfl
+  simp_rw [← sum_mul, hcancel, ite_mul, one_mul,
     zero_mul, sum_ite_eq, mem_univ, ite_true]
 
 /-- **The Möbius masses sum to one.** For a multiplicative, normalized parameter the total mass at
@@ -189,7 +186,13 @@ theorem graphParamMobius_nonneg (f : GraphParam) (hiso : IsIsoInvariant f)
     by_cases hG : G ≤ H <;> by_cases hG' : G' ≤ H <;> simp [z, hG, hG']
   -- The signed indicator of `F` is the row of the inverse zeta matrix at `F`.
   have hx : ∀ H, ∑ G, x G * z G H = if F = H then 1 else 0 := fun H => by
-    rw [← sum_neg_one_pow_card_edgeSet_sub_left_fin F H, sum_filter]
+    have hcancel :
+        ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) => F ≤ G ∧ G ≤ H),
+          (-1 : ℝ) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) = if F = H then 1 else 0 := by
+      let _ : DecidableEq (Fin n) := Classical.decEq _
+      refine Eq.trans ?_ (SimpleGraph.sum_neg_one_pow_card_edgeSet_sub_left (R := ℝ) F H)
+      exact sum_congr (by ext G; simp) fun _ _ => rfl
+    rw [← hcancel, sum_filter]
     refine sum_congr rfl fun G _ => ?_
     by_cases hF : F ≤ G <;> by_cases hH : G ≤ H <;> simp [x, z, hF, hH]
   have h := (hrp.posSemidef fullyLabeled).dotProduct_mulVec_nonneg x

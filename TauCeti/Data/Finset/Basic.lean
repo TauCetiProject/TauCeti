@@ -105,6 +105,7 @@ theorem sum_powerset_neg_one_pow_mul_eq_zero {ι R : Type*} [DecidableEq ι] [Ri
 /-- **The Möbius function of the Boolean lattice, measured from the bottom.** The sets between `s`
 and `t` are `s ∪ u` for `u ⊆ t \ s`, so the signed sum `∑_{s ⊆ u ⊆ t} (-1)^{|u| - |s|}` is the
 alternating sum over the subsets of `t \ s`: it is `1` if `s = t` and `0` otherwise. -/
+@[simp]
 theorem sum_Icc_neg_one_pow_card_sub_card_left {α R : Type*} [DecidableEq α] [Ring R]
     (s t : Finset α) :
     ∑ u ∈ Icc s t, (-1 : R) ^ (u.card - s.card) = if s = t then 1 else 0 := by
@@ -128,6 +129,7 @@ theorem sum_Icc_neg_one_pow_card_sub_card_left {α R : Type*} [DecidableEq α] [
 /-- **The Möbius function of the Boolean lattice, measured from the top.** The signed sum
 `∑_{s ⊆ u ⊆ t} (-1)^{|t| - |u|}` is `1` if `s = t` and `0` otherwise: its terms differ from those
 of `Finset.sum_Icc_neg_one_pow_card_sub_card_left` by the common sign `(-1)^{|t| - |s|}`. -/
+@[simp]
 theorem sum_Icc_neg_one_pow_card_sub_card_right {α R : Type*} [DecidableEq α] [Ring R]
     (s t : Finset α) :
     ∑ u ∈ Icc s t, (-1 : R) ^ (t.card - u.card) = if s = t then 1 else 0 := by
