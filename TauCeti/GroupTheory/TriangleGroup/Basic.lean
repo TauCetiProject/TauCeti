@@ -110,45 +110,47 @@ theorem of_one_eq_y : (PresentedGroup.of 1 : TriangleGroup a b c) = y a b c := (
 @[simp]
 theorem of_two_eq_z : (PresentedGroup.of 2 : TriangleGroup a b c) = z a b c := (rfl)
 
-private theorem mk_of_zero : PresentedGroup.mk (triangleRelators a b c) (of 0) = x a b c := (rfl)
-
-private theorem mk_of_one : PresentedGroup.mk (triangleRelators a b c) (of 1) = y a b c := (rfl)
-
-private theorem mk_of_two : PresentedGroup.mk (triangleRelators a b c) (of 2) = z a b c := (rfl)
-
+/-- The first distinguished generator satisfies the first power relation. -/
 @[simp]
 theorem x_pow : x a b c ^ a = 1 := by
-  rw [← mk_of_zero, ← map_pow]
+  rw [x, PresentedGroup.of, ← map_pow]
   exact PresentedGroup.one_of_mem (by simp [triangleRelators])
 
+/-- The second distinguished generator satisfies the second power relation. -/
 @[simp]
 theorem y_pow : y a b c ^ b = 1 := by
-  rw [← mk_of_one, ← map_pow]
+  rw [y, PresentedGroup.of, ← map_pow]
   exact PresentedGroup.one_of_mem (by simp [triangleRelators])
 
+/-- The third distinguished generator satisfies the third power relation. -/
 @[simp]
 theorem z_pow : z a b c ^ c = 1 := by
-  rw [← mk_of_two, ← map_pow]
+  rw [z, PresentedGroup.of, ← map_pow]
   exact PresentedGroup.one_of_mem (by simp [triangleRelators])
 
 /-- The product relation of `Δ(a, b, c)`, in the display order of the presentation. -/
 @[simp]
 theorem z_mul_y_mul_x : z a b c * y a b c * x a b c = 1 := by
-  rw [← mk_of_zero, ← mk_of_one, ← mk_of_two, ← map_mul, ← map_mul]
+  simp only [x, y, z, PresentedGroup.of]
+  rw [← map_mul, ← map_mul]
   exact PresentedGroup.one_of_mem (by simp [triangleRelators])
 
 /-- The third generator is determined by the first two. -/
 theorem z_eq : z a b c = (y a b c * x a b c)⁻¹ :=
   eq_inv_of_mul_eq_one_left (by rw [← mul_assoc, z_mul_y_mul_x])
 
+/-- The product `y * x` has order dividing `c`. -/
 @[simp]
 theorem y_mul_x_pow : (y a b c * x a b c) ^ c = 1 := by
   rw [← inv_inj, ← inv_pow, ← z_eq, z_pow, inv_one]
 
+/-- The order of the first distinguished generator divides `a`. -/
 theorem orderOf_x_dvd : orderOf (x a b c) ∣ a := orderOf_dvd_of_pow_eq_one (x_pow a b c)
 
+/-- The order of the second distinguished generator divides `b`. -/
 theorem orderOf_y_dvd : orderOf (y a b c) ∣ b := orderOf_dvd_of_pow_eq_one (y_pow a b c)
 
+/-- The order of the third distinguished generator divides `c`. -/
 theorem orderOf_z_dvd : orderOf (z a b c) ∣ c := orderOf_dvd_of_pow_eq_one (z_pow a b c)
 
 /-- The generators `x` and `y` alone generate `Δ(a, b, c)`. -/
@@ -262,20 +264,27 @@ theorem rotate_symm_y : rotate.symm (y b c a) = z a b c := by
 theorem rotate_symm_z : rotate.symm (z b c a) = x a b c := by
   simp [rotate]
 
-private theorem twoGenerator_of_zero_pow :
+/-- The first generator in the two-generator presentation satisfies its power relation. -/
+@[simp]
+theorem twoGenerator_of_zero_pow :
     (PresentedGroup.of 0 : PresentedGroup (twoGeneratorTriangleRelators a b c)) ^ a = 1 := by
   rw [PresentedGroup.of, ← map_pow]
   exact PresentedGroup.one_of_mem (by simp [twoGeneratorTriangleRelators])
 
-private theorem twoGenerator_of_one_pow :
+/-- The second generator in the two-generator presentation satisfies its power relation. -/
+@[simp]
+theorem twoGenerator_of_one_pow :
     (PresentedGroup.of 1 : PresentedGroup (twoGeneratorTriangleRelators a b c)) ^ b = 1 := by
   rw [PresentedGroup.of, ← map_pow]
   exact PresentedGroup.one_of_mem (by simp [twoGeneratorTriangleRelators])
 
-private theorem twoGenerator_inv_pow :
+/-- The product of the second and first generators in the two-generator presentation satisfies
+its power relation. -/
+@[simp]
+theorem twoGenerator_mul_pow :
     ((PresentedGroup.of 1 : PresentedGroup (twoGeneratorTriangleRelators a b c)) *
-      PresentedGroup.of 0)⁻¹ ^ c = 1 := by
-  rw [inv_pow, inv_eq_one, PresentedGroup.of, PresentedGroup.of, ← map_mul, ← map_pow]
+      PresentedGroup.of 0) ^ c = 1 := by
+  rw [PresentedGroup.of, PresentedGroup.of, ← map_mul, ← map_pow]
   exact PresentedGroup.one_of_mem (by simp [twoGeneratorTriangleRelators])
 
 /-- The isomorphism of `Δ(a, b, c)` with the two-generator presentation
@@ -284,7 +293,8 @@ def equivTwoGenerator :
     TriangleGroup a b c ≃* PresentedGroup (twoGeneratorTriangleRelators a b c) :=
   MonoidHom.toMulEquiv
     (lift (PresentedGroup.of 0) (PresentedGroup.of 1) (PresentedGroup.of 1 * PresentedGroup.of 0)⁻¹
-      twoGenerator_of_zero_pow twoGenerator_of_one_pow twoGenerator_inv_pow
+      twoGenerator_of_zero_pow twoGenerator_of_one_pow
+      (by rw [inv_pow, inv_eq_one, twoGenerator_mul_pow])
       (by rw [mul_assoc, inv_mul_cancel]))
     (PresentedGroup.toGroup (f := ![x a b c, y a b c]) <| by
       rintro _ (rfl | rfl | rfl) <;> simp)
