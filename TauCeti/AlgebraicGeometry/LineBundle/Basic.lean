@@ -43,10 +43,8 @@ A free rank-one trivialization of an `𝒪_X`-module `M` over an open `V` gives 
   `Scheme.Modules.existsUnique_map_trivializationGenerator_eq_smul` shows that the basis sections
   of two trivializations differ by a unique regular unit on any common open subset.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Invertible sheaves on a
-scheme; the Picard group `Pic X` under `⊗`". The tensor product and Picard group require a
-monoidal structure on sheaves of modules and are left to subsequent files. No formalization is
-vendored.
+These local rank-one coordinates describe transition functions between local bases and provide
+normal forms for sections used in line-bundle constructions.
 -/
 
 public section
