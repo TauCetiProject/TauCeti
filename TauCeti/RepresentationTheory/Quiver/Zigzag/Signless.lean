@@ -36,18 +36,16 @@ open _root_.Quiver PathAlgebra
 universe u w
 
 variable (k : Type w) {V : Type u} [CommSemiring k] (G : SimpleGraph V)
-  [∀ v, Fintype (G.neighborSet v)]
 
-/-- Each star of the doubled quiver of `G` is finite, being in bijection with the corresponding
-neighbour set of `G`. -/
-noncomputable local instance (x : DoubledQuiver G) : Fintype (Quiver.Star x) :=
-  Fintype.ofEquiv (G.neighborSet ((DoubledQuiver.vertexEquiv G).symm x))
-    ((DoubledQuiver.starEquivNeighborSet G _).symm.trans
-      (Equiv.cast (congrArg Quiver.Star (DoubledQuiver.vertexEquiv_symm_apply G x))))
+/-- The star of the doubled quiver of `G` at `v` is finite, being in bijection with the neighbour
+set of `v`. -/
+noncomputable local instance (v : V) [Fintype (G.neighborSet v)] :
+    Fintype (Quiver.Star (DoubledQuiver.vertex G v)) :=
+  Fintype.ofEquiv _ (DoubledQuiver.starEquivNeighborSet G v).symm
 
 /-- **The signless relator of a simple graph** at `v` is `∑_{j ∼ v} (v → j → v)`, the sum of the
 backtracks along the edges at `v`. -/
-theorem signlessPreprojectiveRelator_vertex (v : V) :
+theorem signlessPreprojectiveRelator_vertex (v : V) [Fintype (G.neighborSet v)] :
     signlessPreprojectiveRelator k (DoubledQuiver.vertex G v) =
       ∑ w : G.neighborSet v, DoubledQuiver.backtrackElem G k ((G.mem_neighborSet v w).1 w.2) := by
   rw [signlessPreprojectiveRelator_def,
