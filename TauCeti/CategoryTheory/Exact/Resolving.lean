@@ -84,23 +84,17 @@ exact structure. Its conflations are precisely the ambient conflations whose thr
 noncomputable def resolvingSubcategory [E.IsResolving P] : ExactStructure P.FullSubcategory :=
   E.fullSubcategory P IsResolving.isExtensionClosed
 
-/-- A short complex of resolving objects is a conflation for the induced exact structure exactly
-when its image is an ambient conflation. -/
-@[simp]
-theorem resolvingSubcategory_conflation_iff [E.IsResolving P]
-    (S : ShortComplex P.FullSubcategory) :
-    (E.resolvingSubcategory P).Conflation S ↔ E.Conflation (S.map P.ι) :=
-  E.fullSubcategory_conflation_iff IsResolving.isExtensionClosed S
-
 /-- The inclusion of a resolving subcategory preserves conflations. -/
 theorem IsResolving.isConflationExact_ι [E.IsResolving P] :
     (E.resolvingSubcategory P).IsConflationExact E P.ι where
-  map_conflation hS := (E.resolvingSubcategory_conflation_iff P _).mp hS
+  map_conflation hS :=
+    (E.fullSubcategory_conflation_iff IsResolving.isExtensionClosed _).mp hS
 
 /-- The inclusion of a resolving subcategory reflects conflations. -/
 theorem IsResolving.reflectsConflations_ι [E.IsResolving P] :
     (E.resolvingSubcategory P).ReflectsConflations E P.ι where
-  reflects_conflation hS := (E.resolvingSubcategory_conflation_iff P _).mpr hS
+  reflects_conflation hS :=
+    (E.fullSubcategory_conflation_iff IsResolving.isExtensionClosed _).mpr hS
 
 /-- The property of all objects is resolving for every exact structure. -/
 instance isResolving_top : E.IsResolving (⊤ : ObjectProperty C) where
