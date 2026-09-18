@@ -20,8 +20,9 @@ Let `U ⊥ W` be a locally isotropic orthogonal sum of quadratic forms over a nu
 
 These are the local values that a global vector of `U` has to approximate in the proof of the
 Hasse–Minkowski theorem in rank at least five, where `U` is a binary summand and `W` is its
-orthogonal complement: at the places where `W` stays isotropic every nonzero scalar is already
-represented by `W`, so only the places where `W` is anisotropic impose a condition.
+(regular) orthogonal complement: at the places where the regular form `W` stays isotropic every
+nonzero scalar is already represented by `W`, so only the places where `W` is anisotropic impose
+a condition. The results of this file do not assume `W` regular.
 
 ## Main results
 
