@@ -217,7 +217,6 @@ theorem comp_assoc {Q : Type u} [AddCommGroup Q] [Module R Q] [Module Aᵐᵒᵖ
 
 /-- The differential on homogeneous right-module cochains satisfies the graded Leibniz rule for
 composition. -/
-@[simp]
 theorem differential_comp {p q : ℤ}
     (g : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳN) (ℳN := ℳP) p)
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) q) :
