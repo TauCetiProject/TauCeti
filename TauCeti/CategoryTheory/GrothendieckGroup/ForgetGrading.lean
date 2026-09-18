@@ -109,7 +109,6 @@ theorem forgetGradingMap_mk
   rw [forgetGradingMap, LaurentSpecialization.lift_mk]
 
 /-- Forgetting the grading sends the specialized class of an object to the class of its image. -/
-@[simp]
 theorem forgetGradingMap_mk_of
     (hF : E.toExactStructure.IsConflationExact E' F) (comm : E.shift.functor ⋙ F ≅ F)
     (X : C) :
