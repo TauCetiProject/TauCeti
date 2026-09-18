@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.Probability.Kernel.Condexp
+import Mathlib.Probability.Kernel.CompProdEqIff
 
 /-!
 # Invariance of conditional laws
@@ -15,7 +16,7 @@ almost every conditional law is invariant under that map. This is the invariance
 decomposing a probability law into invariant components. The conditioning σ-algebra need not be
 countably generated; standard Borelness is required only of the space carrying the conditional laws.
 
-The proof uses Mathlib's uniqueness of disintegration (`condKernel_compProd`): pushing forward
+The proof uses Mathlib's kernel uniqueness (`Kernel.ae_eq_of_compProd_eq`): pushing forward
 the second coordinate of the conditional joint law leaves its values on rectangles unchanged.
 -/
 
@@ -59,10 +60,7 @@ theorem map_condExpKernel_ae_eq_of_invariant
       (μ.trim hm) ⊗ₘ condExpKernel μ m := by
     rw [Measure.compProd_map hT.measurable, compProd_trim_condExpKernel hm, hjoint]
   have := Kernel.IsMarkovKernel.map (condExpKernel μ m) hT.measurable
-  have hleft := condKernel_compProd (μ.trim hm) ((condExpKernel μ m).map T)
-  have hright := condKernel_compProd (μ.trim hm) (condExpKernel μ m)
-  simp only [hcomp] at hleft
-  have h := ae_of_ae_trim hm (hleft.symm.trans hright)
+  have h := ae_of_ae_trim hm (Kernel.ae_eq_of_compProd_eq hcomp)
   simpa only [Kernel.map_apply _ hT.measurable] using h
 
 end TauCeti.Probability
