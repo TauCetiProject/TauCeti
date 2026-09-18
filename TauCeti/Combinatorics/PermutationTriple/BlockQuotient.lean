@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.Basic
 public import TauCeti.GroupTheory.Perm.Imprimitivity
+import TauCeti.GroupTheory.Perm.PermCongr
 
 /-!
 # Quotient triples by blocks
@@ -139,10 +140,10 @@ theorem equivalent_blockQuotient (e' : orbit t.monodromyGroup B ≃ Fin m) :
 group of `t` acts transitively on the translates of `B`. -/
 theorem isConnected_blockQuotient : (t.blockQuotient B e).IsConnected := by
   rw [blockQuotient, isConnected_mapMonodromy_iff]
-  refine ⟨fun hm ↦ (hm ▸ e ⟨B, mem_orbit_self B⟩).elim0, ⟨fun i j ↦ ?_⟩⟩
-  obtain ⟨g, hg⟩ := exists_smul_eq t.monodromyGroup (e.symm i) (e.symm j)
-  refine ⟨⟨t.blockActionHom B e g, MonoidHom.mem_range.mpr ⟨g, rfl⟩⟩, e.symm.injective ?_⟩
-  rw [Submonoid.mk_smul, Perm.smul_def, symm_blockActionHom_apply, hg]
+  refine ⟨fun hm ↦ (hm ▸ e ⟨B, mem_orbit_self B⟩).elim0, ?_⟩
+  rw [blockActionHom, MonoidHom.range_comp, Equiv.isPretransitive_map_permCongrHom_iff,
+    MulAction.isPretransitive_range_toPermHom_iff]
+  infer_instance
 
 /-! ### The quotient map on sheets -/
 
@@ -177,7 +178,7 @@ theorem blockIndex_surjective : Function.Surjective (blockIndex ht hB hBne e) :=
 
 /-- The quotient map is equivariant for the monodromy group, acting on the quotient through
 `TauCeti.PermutationTriple.blockActionHom`. -/
-theorem blockIndex_smul (g : t.monodromyGroup) (x : Fin n) :
+@[simp] theorem blockIndex_smul (g : t.monodromyGroup) (x : Fin n) :
     blockIndex ht hB hBne e (g • x) = t.blockActionHom B e g (blockIndex ht hB hBne e x) := by
   rw [blockIndex, blockIndex, hB.imprimitivityEquiv_smul_fst hBne g x]
   apply e.symm.injective
