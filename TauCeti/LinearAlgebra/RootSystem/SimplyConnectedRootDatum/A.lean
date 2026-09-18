@@ -379,6 +379,10 @@ private lemma coroot_typeASimplyConnectedRootDatum (k : Fin (n * (n + 1))) :
     (typeASimplyConnectedRootDatum n).coroot k = typeAPairCoroot ((typeAIndexEquiv n).symm k) :=
   rfl
 
+private lemma reflectionPerm_typeASimplyConnectedRootDatum (k : Fin (n * (n + 1))) :
+    (typeASimplyConnectedRootDatum n).reflectionPerm k = typeAReflectionPerm n k :=
+  rfl
+
 /-- **The root indexed by the ordered pair `(a, b)` is `e_a - e_b`.** In the fundamental-weight
 coordinates, `e_c` has `k`-th entry `⟨e_c, αₖ^∨⟩ = [c = k] - [c = k + 1]`. -/
 @[simp]
@@ -433,10 +437,8 @@ theorem typeAIndexEquiv_symm_reflectionPerm (p q : TypeAIndex n) :
     ((typeAIndexEquiv n).symm ((typeASimplyConnectedRootDatum n).reflectionPerm
         (typeAIndexEquiv n p) (typeAIndexEquiv n q))).val =
       (Equiv.swap p.val.1 p.val.2 q.val.1, Equiv.swap p.val.1 p.val.2 q.val.2) := by
-  -- The pinned reflection permutation is `typeAReflectionPerm`, by construction of the datum.
-  change ((typeAIndexEquiv n).symm (typeAReflectionPerm n _ _)).val = _
-  rw [typeAReflectionPerm_apply, Equiv.symm_apply_apply, Equiv.symm_apply_apply]
-  rfl
+  simp [reflectionPerm_typeASimplyConnectedRootDatum, typeAReflectionPerm_apply,
+    typeAPairReflection, Prod.map]
 
 /-- The `i`-th simple root of type `Aₙ` sits at root index `i`, the Bourbaki node `i + 1`. -/
 def typeASimpleIndex (n : ℕ) (i : Fin n) : Fin (n * (n + 1)) :=

@@ -136,8 +136,8 @@ theorem diagonalRootDatum_root_apply (p : SplitTorus.CoordinateRootIndex (Fin (r
     (i : ULift.{u} (Fin r)) :
     (diagonalRootDatum.{u} r).root p i =
       diagonalTorusWeight r p.1.1 i - diagonalTorusWeight r p.1.2 i := by
-  rw [diagonalRootDatum_root_eq, characterEquiv_apply, root_typeAIndexEquiv,
-    diagonalTorusWeight_apply, diagonalTorusWeight_apply, SlStd.weight_def, SlStd.weight_def]
+  simp [diagonalRootDatum_root_eq, characterEquiv_apply, diagonalTorusWeight_apply,
+    SlStd.weight_def]
 
 /-- **The coroots in simple-coroot coordinates.** The coroot indexed by `(a, b)` is `e_a - e_b`,
 whose `i`-th simple-coroot coordinate is `[a ≤ i] - [b ≤ i]`. -/
@@ -152,8 +152,8 @@ theorem diagonalRootDatum_coroot_apply (p : SplitTorus.CoordinateRootIndex (Fin 
 private lemma diagonalRootDatum_pairing_eq (p q : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     (diagonalRootDatum.{u} r).pairing p q =
       (typeASimplyConnectedRootDatum r).pairing (typeAIndexEquiv r p) (typeAIndexEquiv r q) := by
-  rw [← RootPairing.root_coroot_eq_pairing, ← RootPairing.root_coroot_eq_pairing,
-    diagonalRootDatum_toLinearMap, diagonalRootDatum_root_eq, diagonalRootDatum_coroot_eq,
+  simp only [← RootPairing.root_coroot_eq_pairing, diagonalRootDatum_toLinearMap,
+    diagonalRootDatum_root_eq, diagonalRootDatum_coroot_eq,
     dotPairing_characterEquiv_cocharacterEquiv, toLinearMap_typeASimplyConnectedRootDatum]
 
 /-- **The Cartan integers.** The pairing of the root `ε_a - ε_b` with the coroot `e_c - e_d` is
@@ -245,12 +245,12 @@ theorem diagonalTorusPoints_mul_rootSubgroupPoints_mul_inv_eq_root
               Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv c))) := by
   apply (pointsMulEquiv (R := R) (A := A) (r + 1)).injective
   apply Matrix.SpecialLinearGroup.toGL_injective
-  rw [map_mul, map_mul, map_inv, map_mul, map_mul, map_inv,
-    toGL_pointsMulEquiv_diagonalTorusPoints,
-    pointsMulEquiv_rootSubgroupPoints, pointsMulEquiv_rootSubgroupPoints,
-    toGL_transvection_eq_transvectionUnit, toGL_transvection_eq_transvectionUnit,
-    diagGL_mul_transvectionUnit_mul_inv, MulEquiv.apply_symm_apply, toAdd_ofAdd,
-    charOfPoint_ofAdd_diagonalRootDatum_root, div_eq_mul_inv, Units.val_mul, mul_right_comm]
+  simp only [map_mul, map_inv]
+  -- `simp` does not fire these point-map lemmas here, while `rw` matches them up to instances.
+  rw [toGL_pointsMulEquiv_diagonalTorusPoints, pointsMulEquiv_rootSubgroupPoints,
+    pointsMulEquiv_rootSubgroupPoints]
+  simp [toGL_transvection_eq_transvectionUnit, diagGL_mul_transvectionUnit_mul_inv,
+    charOfPoint_ofAdd_diagonalRootDatum_root, div_eq_mul_inv, mul_right_comm]
 
 end Points
 
