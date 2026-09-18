@@ -44,7 +44,8 @@ exponent `p = ∞` is excluded: `P_∞ (X)` need not be separable.
 
 * `TauCeti.WassersteinSpace.borelSpace` — `P_p (X)` is a Borel space for `1 ≤ p < ∞`, with
   `TauCeti.WassersteinSpace.instBorelSpace` its instance form;
-* `TauCeti.WassersteinComponent.borelSpace` — a separable anchored component is a Borel space.
+* `TauCeti.WassersteinComponent.borelSpace` — a separable anchored component is a Borel space, with
+  `TauCeti.WassersteinComponent.instBorelSpace` its instance form.
 
 ## References
 
@@ -156,6 +157,12 @@ theorem borelSpace (hp : p ≠ ∞) [SeparableSpace (WassersteinComponent p μ�
   have h := @measurable_mk X p _ _ μ₀ _ (.comap toProbabilityMeasure inferInstance) _
     (comap_measurable _) wassersteinEDist_anchor_ne_top
   simpa using h hs
+
+/-- A separable anchored component as a Borel space, reading the finiteness of the exponent off a
+`Fact`. -/
+instance instBorelSpace [Fact (p ≠ ∞)] [SeparableSpace (WassersteinComponent p μ₀)] :
+    BorelSpace (WassersteinComponent p μ₀) :=
+  borelSpace Fact.out
 
 end WassersteinComponent
 
