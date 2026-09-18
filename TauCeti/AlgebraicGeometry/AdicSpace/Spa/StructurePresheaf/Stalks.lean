@@ -27,7 +27,7 @@ rational neighbourhood to the stalk.
 
 ## Main result
 
-`TauCeti.ValuationSpectrum.presentationLimitRationalGerm_compat` says that these rational germ
+`TauCeti.ValuationSpectrum.presentationLimitRationalGerm_res` says that these rational germ
 maps are compatible with the comparison morphisms between rational coordinate rings. It is the
 compatibility needed to define and study the valuation on a stalk from the valuations on its
 rational neighbourhoods.
@@ -80,9 +80,8 @@ theorem presentationLimitPresheafInCommRingCat_map (P : PairOfDefinition A)
         (eqToHom (presentationLimitPresheaf_obj P Aplus V) ≫
           presentationLimitMap (P := P) (leOfHom h.unop) ≫
             eqToHom (presentationLimitPresheaf_obj P Aplus W).symm) := by
-  change (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
-    ((presentationLimitPresheaf P Aplus).map h) = _
-  rw [presentationLimitPresheaf_map]
+  unfold presentationLimitPresheafInCommRingCat
+  rw [Functor.comp_map, presentationLimitPresheaf_map]
 
 /-- `Spa(A,A⁺)` equipped with the underlying commutative-ring presentation-limit presheaf. -/
 @[expose] noncomputable def presentationLimitPresheafedSpace (P : PairOfDefinition A)
@@ -107,7 +106,7 @@ variable {P : PairOfDefinition A} {Aplus : Subring A}
 
 /-- On a rational open, the underlying ring of the presentation limit is the underlying ring of
 its rational coordinate ring. -/
-@[expose] noncomputable def presentationLimitRationalIsoInCommRingCat
+noncomputable def presentationLimitRationalIsoInCommRingCat
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p : Presentation P)
     (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
     (presentationLimitPresheafInCommRingCat P Aplus).obj
@@ -118,6 +117,18 @@ its rational coordinate ring. -/
     (eqToIso (presentationLimitPresheaf_obj P Aplus
       (Opposite.op (spaBasicOpen Aplus p.num p.den))) ≪≫
         presentationLimitRationalIso Aplus hAplus p hp)
+
+/-- The rational comparison isomorphism is the underlying ring map of the comparison
+`presentationLimitRationalIso`, after transporting along `presentationLimitPresheaf_obj`. -/
+theorem presentationLimitRationalIsoInCommRingCat_hom
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p : Presentation P)
+    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
+    (presentationLimitRationalIsoInCommRingCat hAplus p hp).hom =
+      (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
+        (eqToHom (presentationLimitPresheaf_obj P Aplus
+            (Opposite.op (spaBasicOpen Aplus p.num p.den))) ≫
+          (presentationLimitRationalIso Aplus hAplus p hp).hom) := by
+  rw [presentationLimitRationalIsoInCommRingCat, Functor.mapIso_hom, Iso.trans_hom, eqToIso.hom]
 
 /-- The rational-open comparison isomorphisms identify restriction with the comparison map of
 rational coordinate rings, after forgetting topology. -/
@@ -157,10 +168,23 @@ noncomputable def presentationLimitRationalGerm
     (presentationLimitPresheafInCommRingCat P Aplus).germ
       (spaBasicOpen Aplus p.num p.den) x hx
 
+/-- The rational germ map is the inverse comparison isomorphism followed by the presheaf germ
+map on the rational open. -/
+@[simp]
+theorem presentationLimitRationalGerm_def
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p : Presentation P)
+    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) (x : spa Aplus)
+    (hx : x ∈ spaBasicOpen Aplus p.num p.den) :
+    presentationLimitRationalGerm hAplus p hp x hx =
+      (presentationLimitRationalIsoInCommRingCat hAplus p hp).inv ≫
+        (presentationLimitPresheafInCommRingCat P Aplus).germ
+          (spaBasicOpen Aplus p.num p.den) x hx := by
+  rw [presentationLimitRationalGerm]
+
 /-- Rational germ maps commute with restriction: passing from a rational neighbourhood to a
 smaller one does not change the resulting germ in the stalk. -/
 @[reassoc]
-theorem presentationLimitRationalGerm_compat
+theorem presentationLimitRationalGerm_res
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p q : Presentation P)
     (hp : IsOpen (Ideal.span (p.num : Set A) : Set A))
     (hq : IsOpen (Ideal.span (q.num : Set A) : Set A))
@@ -171,7 +195,7 @@ theorem presentationLimitRationalGerm_compat
             (spaBasicOpen_le_spaBasicOpen_iff.mp h)) ≫
         presentationLimitRationalGerm hAplus q hq x hx =
       presentationLimitRationalGerm hAplus p hp x (h hx) := by
-  rw [presentationLimitRationalGerm, presentationLimitRationalGerm,
+  rw [presentationLimitRationalGerm_def, presentationLimitRationalGerm_def,
     ← presentationLimitRationalIsoInCommRingCat_inv_comp_map_comp_hom hAplus p q hp hq h]
   simp only [Category.assoc, Iso.hom_inv_id_assoc]
   simpa only [Category.assoc] using congrArg
