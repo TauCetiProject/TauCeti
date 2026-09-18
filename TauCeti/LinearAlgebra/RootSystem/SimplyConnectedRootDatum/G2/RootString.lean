@@ -20,10 +20,10 @@ say:
 * whenever two short roots add to a long root, their root string has bottom coefficient two.
 
 The last statement means that the corresponding Chevalley bracket coefficient is
-`2 + 1 = 3`.  Thus all three results are the integral root-datum input for proving that the span
-of the short root spaces, together with the short coroot directions, is an ideal after base change
-to characteristic three.  Constructing that Lie ideal and identifying the induced exceptional
-isogeny are later steps.
+`±(2 + 1) = ±3`, the sign depending on the choice of Chevalley basis.  Thus all three results are
+the integral root-datum input for proving that the span of the short root spaces, together with
+the short coroot directions, is an ideal after base change to characteristic three.
+Constructing that Lie ideal and identifying the induced exceptional isogeny are later steps.
 
 ## Main results
 
@@ -93,8 +93,8 @@ private theorem g2Root_add_two_smul_ne_root_of_short_add_short_eq_long (i j k l 
   decide +kernel
 
 /-- If two short roots of the pinned `G₂` datum add to a long root, the bottom coefficient of
-their root string is two.  Consequently the associated Chevalley bracket coefficient is three,
-and vanishes in characteristic three. -/
+their root string is two.  Consequently the associated Chevalley bracket coefficient is `±3`
+(the sign depending on the choice of Chevalley basis), and vanishes in characteristic three. -/
 theorem g2_chainBotCoeff_eq_two_of_short_add_short_eq_long (i j k : Fin 12)
     (hi : g2Length i = 1) (hj : g2Length j = 1) (hk : g2Length k = 3)
     (hadd : g2SimplyConnectedRootDatum.root k =
