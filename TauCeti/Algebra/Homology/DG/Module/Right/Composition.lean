@@ -202,6 +202,7 @@ omit [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece �
     [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳP]
     [DirectSum.Decomposition ℳP] in
 /-- Composition of homogeneous right-module cochains is associative. -/
+@[simp]
 theorem comp_assoc {Q : Type u} [AddCommGroup Q] [Module R Q] [Module Aᵐᵒᵖ Q]
     [IsScalarTower R Aᵐᵒᵖ Q]
     {ℳQ : ℤ → Submodule R Q}
@@ -216,6 +217,7 @@ theorem comp_assoc {Q : Type u} [AddCommGroup Q] [Module R Q] [Module Aᵐᵒᵖ
 
 /-- The differential on homogeneous right-module cochains satisfies the graded Leibniz rule for
 composition. -/
+@[simp]
 theorem differential_comp {p q : ℤ}
     (g : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳN) (ℳN := ℳP) p)
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) q) :
@@ -369,15 +371,6 @@ noncomputable def dgRightModuleHomComplexUnit (hM : IsDGRightModule h ℳ dM) :
         (r • dgRightModuleCochains.id (R := R) (A := A) (ℳ := ℳ)) = 0
       rw [map_smul, dgRightModuleCochains.differential_id, smul_zero])
 
-private theorem dgRightModuleHomComplexUnit_f_zero (hM : IsDGRightModule h ℳ dM) :
-    (dgRightModuleHomComplexUnit hM).f 0 =
-      (HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0
-        (𝟙_ (ModuleCat.{u} R))).hom ≫
-          ModuleCat.ofHom (LinearMap.toSpanSingleton R
-            (dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳ) 0)
-            (dgRightModuleCochains.id (R := R) (A := A) (ℳ := ℳ))) :=
-  HomologicalComplex.mkHomFromSingle_f _ _
-
 /-- The degree-zero component of the unit sends a scalar to that scalar multiple of the identity
 cochain. -/
 @[simp]
@@ -391,7 +384,13 @@ theorem dgRightModuleHomComplexUnit_f_zero_apply (hM : IsDGRightModule h ℳ dM)
       (r • dgRightModuleCochains.id (R := R) (A := A) (ℳ := ℳ) :
         ModuleCat.of R
           (dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳ) 0)) := by
-  rw [dgRightModuleHomComplexUnit_f_zero]
+  rw [show (dgRightModuleHomComplexUnit hM).f 0 =
+    (HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0
+      (𝟙_ (ModuleCat.{u} R))).hom ≫
+        ModuleCat.ofHom (LinearMap.toSpanSingleton R
+          (dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳ) 0)
+          (dgRightModuleCochains.id (R := R) (A := A) (ℳ := ℳ))) from
+    HomologicalComplex.mkHomFromSingle_f _ _]
   -- `ModuleCat.hom_comp` does not expose application through `ModuleCat.ofHom` in the form
   -- expected by the unit-iso and span-singleton evaluation lemmas.  Align that composite once;
   -- no implementation detail remains after the rewrites.
@@ -405,12 +404,6 @@ theorem dgRightModuleHomComplexUnit_f_zero_apply (hM : IsDGRightModule h ℳ dM)
       r • dgRightModuleCochains.id (R := R) (A := A) (ℳ := ℳ)
   rw [Iso.inv_hom_id_apply, LinearMap.toSpanSingleton_apply]
 
-private theorem dgRightModuleHomComplexComp_f (j : ℤ) :
-    (dgRightModuleHomComplexComp (hM := hM) (hN := hN) (hP := hP)).f j =
-      HomologicalComplex.mapBifunctorDesc
-        (dgRightModuleCochainCompTensor (hM := hM) (hN := hN) (hP := hP) · · j ·) :=
-  rfl
-
 /-- Restricting closed composition to a pair of homogeneous summands gives pointwise
 composition. -/
 @[reassoc (attr := simp)]
@@ -420,7 +413,13 @@ theorem ι_dgRightModuleHomComplexComp (p q j : ℤ) (hpq : p + q = j) :
           (ComplexShape.up ℤ) p q j hpq ≫
         (dgRightModuleHomComplexComp (hM := hM) (hN := hN) (hP := hP)).f j =
       dgRightModuleCochainCompTensor (hM := hM) (hN := hN) (hP := hP) p q j hpq := by
-  rw [dgRightModuleHomComplexComp_f]
+  unfold dgRightModuleHomComplexComp
+  change HomologicalComplex.ιMapBifunctor (dgRightModuleHomComplex hN hP)
+        (dgRightModuleHomComplex hM hN) (curriedTensor (ModuleCat.{u} R))
+        (ComplexShape.up ℤ) p q j hpq ≫
+      HomologicalComplex.mapBifunctorDesc
+        (dgRightModuleCochainCompTensor (hM := hM) (hN := hN) (hP := hP) · · j ·) =
+    dgRightModuleCochainCompTensor (hM := hM) (hN := hN) (hP := hP) p q j hpq
   apply HomologicalComplex.ι_mapBifunctorDesc
 
 end TauCeti
