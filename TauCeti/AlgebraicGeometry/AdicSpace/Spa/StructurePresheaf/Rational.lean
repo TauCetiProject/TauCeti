@@ -100,11 +100,11 @@ theorem presentationLimitπ_eq_π_comp (hAplus : ∀ ⦃a⦄, a ∈ Aplus → Is
     _ = presentationLimitπToPresentation Aplus V k ≫
         homOfRationalSubsetSubset Aplus hAplus hk := by
         rw [← Category.assoc, presentationLimitπ_comp_restriction (P := P)
-          (homOfLE (j.le_commonRefinement_left i))]
+          (j.le_commonRefinement_left i)]
     _ = presentationLimitπToPresentation Aplus V i ≫
         homOfRationalSubsetSubset Aplus hAplus h := by
         rw [← presentationLimitπ_comp_restriction (P := P)
-            (homOfLE (j.le_commonRefinement_right i)),
+            (j.le_commonRefinement_right i),
           Category.assoc, restrictionHom_eq_homOfRationalSubsetSubset Aplus hAplus,
           homOfRationalSubsetSubset_comp]
 

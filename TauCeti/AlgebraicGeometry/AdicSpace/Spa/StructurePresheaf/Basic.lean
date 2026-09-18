@@ -374,13 +374,13 @@ private theorem presentationIndexDiagram_obj_comp_restriction
 after transporting the diagram objects to their completed-localization descriptions. -/
 @[simp]
 theorem presentationLimitπ_comp_restriction
-    {i j : PresentationIndex (P := P) Aplus V} (h : i ⟶ j) :
+    {i j : PresentationIndex (P := P) Aplus V} (h : i ≤ j) :
     presentationLimitπToPresentation (P := P) Aplus V i ≫
-        PairOfDefinition.Presentation.restrictionHom h.le =
+        PairOfDefinition.Presentation.restrictionHom h =
       presentationLimitπToPresentation (P := P) Aplus V j := by
   unfold presentationLimitπToPresentation
-  rw [Category.assoc, presentationIndexDiagram_obj_comp_restriction, ← Category.assoc,
-    presentationLimitπ_comp_map (P := P) h]
+  rw [Category.assoc, presentationIndexDiagram_obj_comp_restriction (homOfLE h), ← Category.assoc,
+    presentationLimitπ_comp_map (P := P) (homOfLE h)]
 
 /-- **The universal property**: a cone over the diagram factors through the limit. -/
 noncomputable def presentationLimitLift (Aplus : Subring A) (V : Opens ↥(spa Aplus))
@@ -410,7 +410,6 @@ theorem presentationLimitLift_comp_πToPresentation (Aplus : Subring A)
 
 /-- The lift of a cone built from presentationwise maps has those maps as its transported
 projections. -/
-@[simp]
 theorem presentationIndexCone_lift_comp_πToPresentation (Aplus : Subring A)
     (V : Opens ↥(spa Aplus)) (W : CompleteSeparatedTopCommRingCat.{v})
     (app : ∀ i : PresentationIndex (P := P) Aplus V, W ⟶ i.pres.completionLocObj)
