@@ -1004,9 +1004,9 @@ theorem exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff {A B : Matrix (Fin 2) (Fin 2) 
       ⟨J * (P : Matrix (Fin 2) (Fin 2) ℤ) * J, by
         rw [Matrix.det_mul, Matrix.det_mul, hJdet, P.prop]
         norm_num⟩
+    have hP' : (P' : Matrix (Fin 2) (Fin 2) ℤ) = J * P * J := rfl
     refine ⟨P', Q, ?_⟩
-    change (J * (P : Matrix (Fin 2) (Fin 2) ℤ) * J) * A *
-      (Q : Matrix (Fin 2) (Fin 2) ℤ) = B
+    rw [hP']
     calc
       (J * (P : Matrix (Fin 2) (Fin 2) ℤ) * J) * A *
           (Q : Matrix (Fin 2) (Fin 2) ℤ) = J *
