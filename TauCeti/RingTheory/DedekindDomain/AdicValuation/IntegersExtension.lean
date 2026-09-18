@@ -42,8 +42,6 @@ local extension comparable with the global one along `B → 𝒪_w`.
   torsion-free `𝒪_v`-module.
 * `IsDedekindDomain.HeightOneSpectrum.maximalIdeal_adicCompletionIntegers_liesOver`: the maximal
   ideal of `𝒪_w` lies over the maximal ideal of `𝒪_v`.
-* `IsDedekindDomain.HeightOneSpectrum.adicCompletion_charZero`: a completion of a field of
-  characteristic zero has characteristic zero.
 
 ## References
 
@@ -57,19 +55,6 @@ open IsDedekindDomain
 open scoped AdicCompletionExtension
 
 namespace IsDedekindDomain.HeightOneSpectrum
-
-section CharZero
-
-variable {R : Type*} [CommRing R] [IsDedekindDomain R]
-  {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] [CharZero K]
-  (v : HeightOneSpectrum R)
-
-/-- The completion of a field of characteristic zero at a height-one prime has characteristic
-zero, since the field embeds into it. -/
-instance adicCompletion_charZero : CharZero (v.adicCompletion K) :=
-  charZero_of_injective_algebraMap (algebraMap K (v.adicCompletion K)).injective
-
-end CharZero
 
 section Extension
 
@@ -92,6 +77,7 @@ theorem adicCompletionIntegersExtension_injective :
   rw [← coe_adicCompletionIntegersExtension, ← coe_adicCompletionIntegersExtension, h]
 
 /-- The map `𝒪_v → 𝒪_w` on completed integer rings extends the global map `R → B`. -/
+@[simp]
 theorem adicCompletionIntegersExtension_algebraMap (r : R) :
     adicCompletionIntegersExtension K L v w (algebraMap R (v.adicCompletionIntegers K) r) =
       algebraMap B (w.adicCompletionIntegers L) (algebraMap R B r) := by
