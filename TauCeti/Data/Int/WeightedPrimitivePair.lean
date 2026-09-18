@@ -32,8 +32,8 @@ namespace Int
 /-- **Every pair of integers, not both zero, is a weighted power times a primitive pair**: for
 positive weights `m` and `n` there are `d ≠ 0` and `A'`, `B'` with `A = d ^ m * A'`,
 `B = d ^ n * B'`, and no prime `ℓ` with both `ℓ ^ m ∣ A'` and `ℓ ^ n ∣ B'`. -/
-theorem exists_eq_pow_mul_and_forall_prime_not_pow_dvd_of_ne_zero {m n : ℕ} (hm : m ≠ 0)
-    (hn : n ≠ 0) (A B : ℤ) (h : A ≠ 0 ∨ B ≠ 0) :
+theorem exists_eq_pow_mul_and_forall_prime_not_pow_dvd_of_ne_zero (A B : ℤ) {m n : ℕ}
+    (hm : m ≠ 0) (hn : n ≠ 0) (h : A ≠ 0 ∨ B ≠ 0) :
     ∃ d A' B' : ℤ, d ≠ 0 ∧ A = d ^ m * A' ∧ B = d ^ n * B' ∧
       ∀ ℓ : ℕ, ℓ.Prime → ¬ ((ℓ : ℤ) ^ m ∣ A' ∧ (ℓ : ℤ) ^ n ∣ B') := by
   -- Strong induction on `|A| + |B|`, stripping one prime `ℓ` with `ℓ ^ m ∣ A` and `ℓ ^ n ∣ B` at

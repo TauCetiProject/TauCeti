@@ -48,6 +48,9 @@ such a table finite.
 * `WeierstrassCurve.finite_shortEquations_bounded_height` and
   `WeierstrassCurve.finite_minimalPairEquations_bounded_height`: finitely many short equations
   over `ℤ`, in particular finitely many minimal-pair equations, have height at most `H`.
+* `WeierstrassCurve.shortEquationHeight_le_of_natAbs_le` and
+  `WeierstrassCurve.natAbs_Δ_le_mul_shortEquationHeight`: the height is monotone in `|a₄|` and
+  `|a₆|`, and bounds the discriminant, `|Δ| ≤ 32 · H`.
 
 ## Design
 
@@ -124,6 +127,22 @@ theorem natAbs_a₆_le_shortEquationHeight : W.a₆.natAbs ≤ shortEquationHeig
   rw [shortEquationHeight_def]
   omega
 
+/-- The height of a short equation is monotone in `|a₄|` and `|a₆|`. -/
+theorem shortEquationHeight_le_of_natAbs_le {W' : WeierstrassCurve ℤ}
+    (h₄ : W.a₄.natAbs ≤ W'.a₄.natAbs) (h₆ : W.a₆.natAbs ≤ W'.a₆.natAbs) :
+    shortEquationHeight W ≤ shortEquationHeight W' := by
+  rw [shortEquationHeight_def, shortEquationHeight_def]
+  gcongr
+
+/-- **The height of a short equation bounds its discriminant**: `Δ = -16(4a₄³ + 27a₆²)` has
+`|Δ| ≤ 32 · max (4|a₄|³) (27a₆²)`. -/
+theorem natAbs_Δ_le_mul_shortEquationHeight [W.IsShortNF] :
+    W.Δ.natAbs ≤ 32 * shortEquationHeight W := by
+  have h := Int.natAbs_add_le (4 * W.a₄ ^ 3) (27 * W.a₆ ^ 2)
+  rw [Δ_of_isShortNF, shortEquationHeight_def]
+  norm_num [Int.natAbs_mul, Int.natAbs_pow] at h ⊢
+  omega
+
 end Height
 
 /-! ### The minimal-pair normal form -/
@@ -186,13 +205,13 @@ theorem IsMinimalPairNF.eq_of_intCast_eq_pow_mul {W' : WeierstrassCurve ℤ}
   -- `q.num = ±1`. So `q = ±1`, `q⁴ = q⁶ = 1`, and the coefficients agree.
   have hden : q.den = 1 := by
     have h := hW.isUnit_of_pow_dvd (x := q.den)
-      (by simpa [Rat.den_pow] using Rat.den_dvd_of_intCast_eq_mul_intCast h₄)
-      (by simpa [Rat.den_pow] using Rat.den_dvd_of_intCast_eq_mul_intCast h₆)
+      (by simpa [Rat.den_pow] using (q ^ 4).den_dvd_of_intCast_eq_mul_intCast h₄)
+      (by simpa [Rat.den_pow] using (q ^ 6).den_dvd_of_intCast_eq_mul_intCast h₆)
     simpa using Int.isUnit_iff_natAbs_eq.mp h
   have hnum : q.num = 1 ∨ q.num = -1 :=
     Int.isUnit_iff.mp (hW'.isUnit_of_pow_dvd
-      (by simpa [Rat.num_pow] using Rat.num_dvd_of_intCast_eq_mul_intCast h₄)
-      (by simpa [Rat.num_pow] using Rat.num_dvd_of_intCast_eq_mul_intCast h₆))
+      (by simpa [Rat.num_pow] using (q ^ 4).num_dvd_of_intCast_eq_mul_intCast h₄)
+      (by simpa [Rat.num_pow] using (q ^ 6).num_dvd_of_intCast_eq_mul_intCast h₆))
   have hq : q = 1 ∨ q = -1 := by
     rw [← Rat.coe_int_num_of_den_eq_one hden]
     rcases hnum with h | h <;> simp [h]
@@ -288,8 +307,8 @@ theorem exists_minimalPairModel (E : WeierstrassCurve ℚ) [E.IsElliptic] :
       (mul_eq_zero.mp (hB₁.trans (by rw [h.2, Int.cast_zero]))).resolve_left (pow_ne_zero 6 hd')
     exact (C • E).isUnit_Δ.ne_zero (by rw [Δ_of_isShortNF, ha₄, ha₆]; norm_num)
   obtain ⟨e, A, B, he, hA, hB, hmin⟩ :=
-    Int.exists_eq_pow_mul_and_forall_prime_not_pow_dvd_of_ne_zero (m := 4) (n := 6) (by norm_num)
-      (by norm_num) A₂ B₂ hne
+    A₂.exists_eq_pow_mul_and_forall_prime_not_pow_dvd_of_ne_zero B₂ (m := 4) (n := 6)
+      (by norm_num) (by norm_num) hne
   have he' : (e : ℚ) ≠ 0 := Int.cast_ne_zero.mpr he
   have hA' : (A₂ : ℚ) = (e : ℚ) ^ 4 * A := by exact_mod_cast hA
   have hB' : (B₂ : ℚ) = (e : ℚ) ^ 6 * B := by exact_mod_cast hB
@@ -333,7 +352,9 @@ theorem minimalPairModel_unique (E : WeierstrassCurve ℚ) [E.IsElliptic]
     rw [hD]
     infer_instance
   have h₄ := variableChange_a₄_of_isShortNF (M.model.baseChange ℚ) (CN⁻¹ * CM)
+    (isRegular_iff_ne_zero.mpr two_ne_zero) (isRegular_iff_ne_zero.mpr three_ne_zero)
   have h₆ := variableChange_a₆_of_isShortNF (M.model.baseChange ℚ) (CN⁻¹ * CM)
+    (isRegular_iff_ne_zero.mpr two_ne_zero) (isRegular_iff_ne_zero.mpr three_ne_zero)
   rw [hD] at h₄ h₆
   simp only [baseChange, map_a₄, map_a₆, eq_intCast] at h₄ h₆
   exact (M.isMinimalPair.eq_of_intCast_eq_pow_mul N.isMinimalPair h₄ h₆).symm

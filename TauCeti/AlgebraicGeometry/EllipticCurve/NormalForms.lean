@@ -18,11 +18,11 @@ great deal from those hypotheses. This file collects three things it does not re
 **Transport.** Both conditions are preserved by `map` and `baseChange` — the coefficients of
 `W.map f` are the images of `W`'s, so a vanishing coefficient stays vanishing.
 
-**Changes of variables between short normal forms.** When `2` and `3` are invertible, a change
-of variables carrying one short equation to another is a pure scaling `(x, y) ↦ (u²x, u³y)`: its
-`r`, `s` and `t` vanish, so it acts on the coefficients by `(a₄, a₆) ↦ (u⁻⁴a₄, u⁻⁶a₆)`. This is
-the only freedom left in a short equation, and it is what a canonical short equation has to
-normalise away.
+**Changes of variables between short normal forms.** When `2` and `3` are non-zero-divisors, a
+change of variables carrying one short equation to another is a pure scaling
+`(x, y) ↦ (u²x, u³y)`: its `r`, `s` and `t` vanish, so it acts on the coefficients by
+`(a₄, a₆) ↦ (u⁻⁴a₄, u⁻⁶a₆)`. This is the only freedom left in a short equation, and it is what a
+canonical short equation has to normalise away.
 
 **Elementary consequences.** Facts that follow from `a₁ = a₃ = 0` alone, by unfolding `negY`, with
 no further machinery. `y_eq_zero_of_order_two` is the current example: negation is `(x, y) ↦
@@ -87,50 +87,54 @@ instance isShortNF_baseChange [Algebra R S] [W.IsShortNF] : (W.baseChange S).IsS
 
 /-! ### Changes of variables between short normal forms
 
-With `2` and `3` invertible, the coefficients `a₁`, `a₃` and `a₂` of `C • W` are `u⁻¹ · 2s`,
-`u⁻³ · 2t` and `u⁻² · 3r` when `W` is short, so if `C • W` is short as well then `r = s = t = 0`
-and `C` is the scaling `(x, y) ↦ (u²x, u³y)`. -/
+The coefficients `a₁`, `a₃` and `a₂` of `C • W` are `u⁻¹ · 2s`, `u⁻³ · 2t` and `u⁻² · 3r` when `W`
+is short, so if `C • W` is short as well and `2` and `3` are non-zero-divisors then
+`r = s = t = 0`, and `C` is the scaling `(x, y) ↦ (u²x, u³y)`. -/
 
 section ShortNF
 
 variable (C : VariableChange R) [W.IsShortNF] [(C • W).IsShortNF]
 include W
 
-/-- A change of variables between short normal forms has `s = 0`, when `2` is invertible. -/
-lemma VariableChange.s_eq_zero_of_isShortNF [Invertible (2 : R)] : C.s = 0 := by
+/-- A change of variables between short normal forms has `s = 0`, when `2` is a
+non-zero-divisor. -/
+lemma VariableChange.s_eq_zero_of_isShortNF (h2 : IsRegular (2 : R)) : C.s = 0 := by
   have h := (C • W).a₁_of_isShortNF
   rw [variableChange_a₁, W.a₁_of_isShortNF, C.u⁻¹.isUnit.mul_right_eq_zero] at h
-  exact (isUnit_of_invertible (2 : R)).mul_right_eq_zero.mp (by linear_combination h)
+  exact h2.left (by simp only [mul_zero]; linear_combination h)
 
-/-- A change of variables between short normal forms has `t = 0`, when `2` is invertible. -/
-lemma VariableChange.t_eq_zero_of_isShortNF [Invertible (2 : R)] : C.t = 0 := by
+/-- A change of variables between short normal forms has `t = 0`, when `2` is a
+non-zero-divisor. -/
+lemma VariableChange.t_eq_zero_of_isShortNF (h2 : IsRegular (2 : R)) : C.t = 0 := by
   have h := (C • W).a₃_of_isShortNF
   rw [variableChange_a₃, W.a₁_of_isShortNF, W.a₃_of_isShortNF,
     (C.u⁻¹.isUnit.pow 3).mul_right_eq_zero] at h
-  exact (isUnit_of_invertible (2 : R)).mul_right_eq_zero.mp (by linear_combination h)
+  exact h2.left (by simp only [mul_zero]; linear_combination h)
 
 /-- A change of variables between short normal forms has `r = 0`, when `2` and `3` are
-invertible. -/
-lemma VariableChange.r_eq_zero_of_isShortNF [Invertible (2 : R)] [Invertible (3 : R)] :
+non-zero-divisors. -/
+lemma VariableChange.r_eq_zero_of_isShortNF (h2 : IsRegular (2 : R)) (h3 : IsRegular (3 : R)) :
     C.r = 0 := by
   have h := (C • W).a₂_of_isShortNF
-  rw [variableChange_a₂, W.a₁_of_isShortNF, W.a₂_of_isShortNF, C.s_eq_zero_of_isShortNF W,
+  rw [variableChange_a₂, W.a₁_of_isShortNF, W.a₂_of_isShortNF, C.s_eq_zero_of_isShortNF W h2,
     (C.u⁻¹.isUnit.pow 2).mul_right_eq_zero] at h
-  exact (isUnit_of_invertible (3 : R)).mul_right_eq_zero.mp (by linear_combination h)
+  exact h3.left (by simp only [mul_zero]; linear_combination h)
 
-/-- Between short normal forms, a change of variables scales `a₄` by `u⁻⁴`. -/
+/-- Between short normal forms, a change of variables scales `a₄` by `u⁻⁴`, when `2` and `3` are
+non-zero-divisors. -/
 @[simp]
-lemma variableChange_a₄_of_isShortNF [Invertible (2 : R)] [Invertible (3 : R)] :
+lemma variableChange_a₄_of_isShortNF (h2 : IsRegular (2 : R)) (h3 : IsRegular (3 : R)) :
     (C • W).a₄ = C.u⁻¹ ^ 4 * W.a₄ := by
-  rw [variableChange_a₄, C.r_eq_zero_of_isShortNF W, C.s_eq_zero_of_isShortNF W,
-    C.t_eq_zero_of_isShortNF W, W.a₁_of_isShortNF, W.a₂_of_isShortNF, W.a₃_of_isShortNF]
+  rw [variableChange_a₄, C.r_eq_zero_of_isShortNF W h2 h3, C.s_eq_zero_of_isShortNF W h2,
+    C.t_eq_zero_of_isShortNF W h2, W.a₁_of_isShortNF, W.a₂_of_isShortNF, W.a₃_of_isShortNF]
   ring
 
-/-- Between short normal forms, a change of variables scales `a₆` by `u⁻⁶`. -/
+/-- Between short normal forms, a change of variables scales `a₆` by `u⁻⁶`, when `2` and `3` are
+non-zero-divisors. -/
 @[simp]
-lemma variableChange_a₆_of_isShortNF [Invertible (2 : R)] [Invertible (3 : R)] :
+lemma variableChange_a₆_of_isShortNF (h2 : IsRegular (2 : R)) (h3 : IsRegular (3 : R)) :
     (C • W).a₆ = C.u⁻¹ ^ 6 * W.a₆ := by
-  rw [variableChange_a₆, C.r_eq_zero_of_isShortNF W, C.t_eq_zero_of_isShortNF W,
+  rw [variableChange_a₆, C.r_eq_zero_of_isShortNF W h2 h3, C.t_eq_zero_of_isShortNF W h2,
     W.a₁_of_isShortNF, W.a₂_of_isShortNF, W.a₃_of_isShortNF]
   ring
 

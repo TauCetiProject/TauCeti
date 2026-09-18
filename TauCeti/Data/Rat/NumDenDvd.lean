@@ -29,17 +29,17 @@ public section
 
 namespace Rat
 
-variable {a a' : ℤ} {r : ℚ}
+variable {a a' : ℤ}
 
 /-- A rational `r` with `a' = r * a` for integers `a ≠ 0` and `a'` is the fraction `a' /. a`. -/
-private theorem eq_divInt_of_intCast_eq_mul_intCast (h : (a' : ℚ) = r * a) (ha : a ≠ 0) :
+private theorem eq_divInt_of_intCast_eq_mul_intCast {r : ℚ} (h : (a' : ℚ) = r * a) (ha : a ≠ 0) :
     r = divInt a' a := by
   rw [divInt_eq_div, eq_div_iff (Int.cast_ne_zero.mpr ha)]
   exact h.symm
 
 /-- **The denominator of a rational multiplier between integers divides the multiplicand**: if
 `a' = r * a` with `a, a'` integers, then `r.den ∣ a`. -/
-theorem den_dvd_of_intCast_eq_mul_intCast (h : (a' : ℚ) = r * a) : (r.den : ℤ) ∣ a := by
+theorem den_dvd_of_intCast_eq_mul_intCast (r : ℚ) (h : (a' : ℚ) = r * a) : (r.den : ℤ) ∣ a := by
   rcases eq_or_ne a 0 with rfl | ha
   · exact dvd_zero _
   · rw [eq_divInt_of_intCast_eq_mul_intCast h ha]
@@ -47,7 +47,7 @@ theorem den_dvd_of_intCast_eq_mul_intCast (h : (a' : ℚ) = r * a) : (r.den : �
 
 /-- **The numerator of a rational multiplier between integers divides the result**: if
 `a' = r * a` with `a, a'` integers, then `r.num ∣ a'`. -/
-theorem num_dvd_of_intCast_eq_mul_intCast (h : (a' : ℚ) = r * a) : r.num ∣ a' := by
+theorem num_dvd_of_intCast_eq_mul_intCast (r : ℚ) (h : (a' : ℚ) = r * a) : r.num ∣ a' := by
   rcases eq_or_ne a 0 with rfl | ha
   · have : a' = 0 := by simpa using h
     simp [this]
