@@ -193,6 +193,22 @@ def conjugate (P : PassportSpec n) (τ : Perm (Fin n)) : PassportSpec n where
 @[simp] theorem conjugate_laminf (P : PassportSpec n) (τ : Perm (Fin n)) :
     (P.conjugate τ).laminf = P.laminf := (rfl)
 
+/-- Conjugating the reference subgroup preserves admissibility. -/
+@[simp]
+theorem isAdmissible_conjugate_iff (P : PassportSpec n) (τ : Perm (Fin n)) :
+    (P.conjugate τ).IsAdmissible ↔ P.IsAdmissible := by
+  constructor
+  · rintro ⟨hn, hG, h0, h1, hinf⟩
+    refine ⟨hn, ?_, h0, h1, hinf⟩
+    rw [conjugate_G, Equiv.conj_eq_permCongrHom,
+      Equiv.isPretransitive_map_permCongrHom_iff] at hG
+    exact hG
+  · rintro ⟨hn, hG, h0, h1, hinf⟩
+    refine ⟨hn, ?_, h0, h1, hinf⟩
+    rw [conjugate_G, Equiv.conj_eq_permCongrHom,
+      Equiv.isPretransitive_map_permCongrHom_iff]
+    exact hG
+
 /-- Passport membership depends on the reference subgroup only through its conjugacy class. -/
 @[simp]
 theorem hasPassport_conjugate_iff (t : ConnectedTriple n) (P : PassportSpec n)
