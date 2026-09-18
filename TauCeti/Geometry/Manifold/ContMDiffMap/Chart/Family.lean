@@ -25,7 +25,7 @@ Only the forward implication is asserted, with no differentiability claimed for 
 arbitrary continuous family in the function-space topology.
 
 Use `open scoped TauCeti.ChartWeakWhitney` to select the source-chart topology when
-forming continuous maps into the smooth-map space or using `TauCeti.chartWeakWhitneyCurry`.
+forming continuous maps into the smooth-map space or using `ContMDiffMap.chartWeakWhitneyCurry`.
 For normed spaces, `modelWithCornersSelf_prod` and `chartedSpaceSelf_prod` identify the
 product manifold structure with the global chart, and
 `ContMDiffMap.chartWeakWhitneyTopology_self` identifies the resulting function-space topology
@@ -39,8 +39,6 @@ public section
 
 open Set Topology
 open scoped Manifold
-
-namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -56,7 +54,7 @@ open scoped TauCeti.ChartWeakWhitney
 
 /-- Joint `C^n` regularity gives continuity into the source-chart weak Whitney topology.
 Neither compactness nor absence of boundary is required of the parameter or source manifold. -/
-theorem continuous_chartWeakWhitney_of_contMDiff
+theorem ContMDiff.continuous_chartWeakWhitney
     {f : P → C^n⟮I, M; 𝓘(𝕜, F), F⟯}
     (hf : ContMDiff (J.prod I) 𝓘(𝕜, F) n (fun z : P × M ↦ f z.1 z.2)) :
     Continuous f := by
@@ -71,9 +69,9 @@ theorem continuous_chartWeakWhitney_of_contMDiff
       (contMDiffOn_extChartAt_symm x))
     rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod] at h
     exact h.contDiffOn
-  have hderiv := continuousOn_iteratedFDerivWithin_prod_right hcoord
+  have hderiv := hcoord.continuousOn_iteratedFDerivWithin_prod_right
     ((uniqueDiffOn_extChartAt_target p).prod (uniqueDiffOn_extChartAt_target x))
-    (uniqueDiffOn_extChartAt_target x) m hm
+    m hm
   have hjet : ContinuousOn
       (fun a : E' ↦ ContMDiffMap.chartIteratedFDeriv
         (f ((extChartAt J p).symm a)) x m hm) (extChartAt J p).target := by
@@ -94,6 +92,8 @@ theorem continuous_chartWeakWhitney_of_contMDiff
     simp only [Function.comp_apply, (extChartAt J p).left_inv hq]
   exact hlocal'.continuousAt (extChartAt_source_mem_nhds p)
 
+namespace ContMDiffMap
+
 /-- Curry a jointly `C^n` vector-valued map on two manifolds into a continuous family,
 using the source-chart weak Whitney topology on the space of `C^n` maps. -/
 noncomputable def chartWeakWhitneyCurry
@@ -101,7 +101,7 @@ noncomputable def chartWeakWhitneyCurry
     C(P, C^n⟮I, M; 𝓘(𝕜, F), F⟯) where
   toFun p := ⟨fun x ↦ f (p, x),
     f.contMDiff.comp (contMDiff_const.prodMk contMDiff_id)⟩
-  continuous_toFun := continuous_chartWeakWhitney_of_contMDiff f.contMDiff
+  continuous_toFun := f.contMDiff.continuous_chartWeakWhitney
 
 /-- Evaluating the curried family at `p` and `x` recovers `f (p, x)`. -/
 @[simp]
@@ -109,4 +109,4 @@ theorem chartWeakWhitneyCurry_apply
     (f : C^n⟮J.prod I, P × M; 𝓘(𝕜, F), F⟯) (p : P) (x : M) :
     chartWeakWhitneyCurry f p x = f (p, x) := (rfl)
 
-end TauCeti
+end ContMDiffMap

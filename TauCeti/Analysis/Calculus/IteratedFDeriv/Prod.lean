@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
 
 /-!
 # Iterated derivatives in one variable of a product
@@ -15,7 +16,7 @@ restricted to directions in the second factor. Consequently these partial deriva
 continuously in both variables when `f` is sufficiently differentiable. This gives the
 joint derivative continuity needed for smooth families in function spaces.
 
-The within-set versions require unique derivatives on the product and the second factor,
+The within-set versions require unique derivatives only on the product,
 so they also handle coordinate domains of manifolds with boundary or corners.
 -/
 
@@ -54,7 +55,7 @@ theorem continuous_iteratedFDeriv_prod_right (hf : ContDiff 𝕜 n f) (m : ℕ) 
 end ContDiff
 end _root_
 
-namespace TauCeti
+namespace ContDiffOn
 
 open Set
 
@@ -64,14 +65,19 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {n : WithTop ℕ∞} {f : P × E → F} {s : Set P} {t : Set E}
 
-/-- When the product and second factor have unique derivatives, differentiation in the second
-variable restricts the total derivative to directions with zero first component. -/
+/-- When the product has unique derivatives, differentiation in the second variable restricts
+the total derivative to directions with zero first component. -/
 theorem iteratedFDerivWithin_prod_right (hf : ContDiffOn 𝕜 n f (s ×ˢ t))
-    (hst : UniqueDiffOn 𝕜 (s ×ˢ t)) (ht : UniqueDiffOn 𝕜 t) (m : ℕ) (hm : m ≤ n)
+    (hst : UniqueDiffOn 𝕜 (s ×ˢ t)) (m : ℕ) (hm : m ≤ n)
     {p : P} (hp : p ∈ s) {x : E} (hx : x ∈ t) :
     iteratedFDerivWithin 𝕜 m (fun y ↦ f (p, y)) t x =
       (iteratedFDerivWithin 𝕜 m f (s ×ˢ t) (p, x)).compContinuousLinearMap
         (fun _ ↦ ContinuousLinearMap.inr 𝕜 P E) := by
+  have ht : UniqueDiffOn 𝕜 t := by
+    have h := hst.image (fun _ _ ↦ hasFDerivWithinAt_snd (𝕜 := 𝕜))
+      (fun _ _ ↦ (show Function.Surjective (ContinuousLinearMap.snd 𝕜 P E) from
+        fun y ↦ ⟨(p, y), rfl⟩).denseRange)
+    simpa only [snd_image_prod ⟨p, hp⟩] using h
   let g : E →ᴬ[𝕜] P × E :=
     (ContinuousAffineMap.const 𝕜 E p).prod (ContinuousAffineMap.id 𝕜 E)
   have hpre : g ⁻¹' (s ×ˢ t) = t := by ext y; simp [g, hp]
@@ -85,16 +91,16 @@ theorem iteratedFDerivWithin_prod_right (hf : ContDiffOn 𝕜 n f (s ×ˢ t))
     id_eq, Function.comp_def] using
     (h.eq_iteratedFDerivWithin_of_uniqueDiffOn le_rfl ht hx).symm
 
-/-- When the product and second factor have unique derivatives, partial iterated derivatives
+/-- When the product has unique derivatives, partial iterated derivatives
 vary jointly continuously, including at boundary points of either set. -/
 theorem continuousOn_iteratedFDerivWithin_prod_right (hf : ContDiffOn 𝕜 n f (s ×ˢ t))
-    (hst : UniqueDiffOn 𝕜 (s ×ˢ t)) (ht : UniqueDiffOn 𝕜 t) (m : ℕ) (hm : m ≤ n) :
+    (hst : UniqueDiffOn 𝕜 (s ×ˢ t)) (m : ℕ) (hm : m ≤ n) :
     ContinuousOn (fun z : P × E ↦ iteratedFDerivWithin 𝕜 m (fun y ↦ f (z.1, y)) t z.2)
       (s ×ˢ t) := by
   refine ((ContinuousMultilinearMap.compContinuousLinearMapL
     (fun _ : Fin m ↦ ContinuousLinearMap.inr 𝕜 P E)).continuous.comp_continuousOn
       (hf.continuousOn_iteratedFDerivWithin hm hst)).congr ?_
   intro z hz
-  exact iteratedFDerivWithin_prod_right hf hst ht m hm hz.1 hz.2
+  exact hf.iteratedFDerivWithin_prod_right hst m hm hz.1 hz.2
 
-end TauCeti
+end ContDiffOn
