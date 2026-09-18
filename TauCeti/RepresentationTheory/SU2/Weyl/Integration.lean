@@ -21,28 +21,13 @@ density `(2π)⁻¹ · 4 sin²θ dθ`:
 
 The Weyl factor `4 sin²θ = |e^{iθ} - e^{-iθ}|²` is the squared modulus of the Weyl denominator.
 
-## The route
+## Purpose
 
-Both sides are continuous linear functionals on `C(SU(2), ℂ)` of norm at most one: the left one is
-`TauCeti.haarAverage`, and the right one is bounded because the Weyl density has total mass one
-(`TauCeti.SU2.weyl_integration_formula_normalized`). By
-`TauCeti.SU2.mem_topologicalClosure_characterSpan_iff` the continuous class functions are the
-uniform closure of the span of the characters `χ_d` of the symmetric powers `Symᵈ(ℂ²)`, so it
-suffices to compare the two functionals on each `χ_d`, where both give `δ_{d0}`:
-
-* on the Haar side, `∫ χ_d dμ` is the dimension of the invariants of `Symᵈ(ℂ²)`
-  (`ContRepresentation.integral_character_eq_finrank_invariants`), and an irreducible
-  representation of dimension `d + 1 ≥ 2` has no nonzero invariant vector
-  (`Representation.IsIrreducible.invariants_eq_bot`);
-* on the Weyl side, pairing against `χ_0 = 1` is the case `n = 0` of the orthonormality relation
-  `TauCeti.SU2.character_symPower_orthonormal_torusExp`.
-
-The argument is not circular. The Haar side uses only the general compact-group identity between
-character integrals and invariants and the irreducibility of `Symᵈ(ℂ²)`; the density of the
-character span is Weierstrass approximation in the trace. Neither uses a Weyl integration formula.
-
-Composing the formula with the orthonormality over the Weyl chamber gives the orthonormality of
-the characters of `SU(2)` against Haar measure, `TauCeti.SU2.integral_character_symPower_mul_conj`.
+The formula applies to continuous conjugation-invariant functions and uses Haar probability
+measure on `SU(2)`. Its Weyl-chamber density has total mass one, as recorded by
+`TauCeti.SU2.weyl_integration_formula_normalized`. Specializing the formula to products of
+symmetric-power characters gives their Haar orthonormality in
+`TauCeti.SU2.integral_character_symPower_mul_conj`.
 
 ## Main results
 
@@ -182,6 +167,7 @@ theorem weyl_integration_formula {f : SU2 → ℂ} (hf : Continuous f)
 
 The Weyl integration formula `TauCeti.SU2.weyl_integration_formula` moves the integral to the
 Weyl chamber, where it is `TauCeti.SU2.character_symPower_orthonormal_torusExp`. -/
+@[simp]
 theorem integral_character_symPower_mul_conj (m n : ℕ) :
     ∫ g, (symPower m).character g * (starRingEnd ℂ) ((symPower n).character g) ∂haarProb SU2
       = if m = n then 1 else 0 := by

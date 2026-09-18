@@ -79,9 +79,8 @@ namespace Representation.IsIrreducible
 variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
 
 /-- **An irreducible representation of dimension other than one has no nonzero invariant
-vector.** A nonzero invariant vector `v` spans a copy of the trivial representation on `k`: the
-map `c ↦ c • v` is an injective intertwiner from `Representation.trivial k G k`, which is surjective
-by irreducibility, so `V` is a line. -/
+vector.** This supplies the invariant-space calculation used to make Haar integrals of irreducible
+characters of dimension other than one vanish. -/
 theorem invariants_eq_bot {ρ : Representation k G V} (h : ρ.IsIrreducible)
     (hV : Module.finrank k V ≠ 1) : ρ.invariants = ⊥ := by
   refine (Submodule.eq_bot_iff _).2 fun v hv => by_contra fun hv0 => hV ?_
@@ -89,11 +88,17 @@ theorem invariants_eq_bot {ρ : Representation k G V} (h : ρ.IsIrreducible)
     (LinearMap.toSpanSingleton k V v).intertwiningMap_of_isIntertwiningMap _ _ fun g c => by
       rw [trivial_apply, LinearMap.toSpanSingleton_apply, map_smul]
       exact congrArg (c • ·) (hv g).symm
+  have hf_one : f.toLinearMap 1 = v := by
+    change (LinearMap.toSpanSingleton k V v) 1 = v
+    exact LinearMap.toSpanSingleton_apply_one k V v
   have hinj : Function.Injective f.toLinearMap := smul_left_injective k hv0
   have hsurj : Function.Surjective f.toLinearMap :=
     (IsIrreducible.surjective_or_eq_zero f).resolve_right fun hf =>
-      hv0 <| by simpa [f] using congrArg (fun φ : IntertwiningMap (trivial k G k) ρ =>
-        φ.toLinearMap 1) hf
+      hv0 <| calc
+        v = f.toLinearMap 1 := hf_one.symm
+        _ = (0 : IntertwiningMap (trivial k G k) ρ).toLinearMap 1 :=
+          congrArg (fun φ : IntertwiningMap (trivial k G k) ρ => φ.toLinearMap 1) hf
+        _ = 0 := rfl
   rw [← (LinearEquiv.ofBijective f.toLinearMap ⟨hinj, hsurj⟩).finrank_eq, Module.finrank_self]
 
 end Representation.IsIrreducible
