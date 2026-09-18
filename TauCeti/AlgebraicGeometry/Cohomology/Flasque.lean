@@ -142,8 +142,8 @@ def cohomologySuccLinearEquivOfIsFlasque (n : ℕ) :
 @[simp]
 lemma cohomologySuccLinearEquivOfIsFlasque_apply (n : ℕ) (x : Cohomology S.X₃ (n + 1)) :
     cohomologySuccLinearEquivOfIsFlasque R hS n x = cohomologyδ hS (n + 1) (n + 2) rfl x := by
-  change cohomologyδBaseLinear R X hS (n + 1) (n + 2) rfl x = _
-  exact cohomologyδBaseLinear_apply R X hS _ _ _ x
+  exact (LinearEquiv.ofBijective_apply _ x).trans
+    (cohomologyδBaseLinear_apply R X hS _ _ _ x)
 
 /-- If the middle term of a short exact sequence `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` of sheaves of modules
 on a scheme over `R` is flasque, the connecting map identifies `H¹(X, M₁)` with the cokernel of
@@ -169,8 +169,10 @@ def cohomologyOneLinearEquivOfIsFlasque :
 lemma cohomologyOneLinearEquivOfIsFlasque_mk (x : Cohomology S.X₃ 0) :
     cohomologyOneLinearEquivOfIsFlasque R hS (Submodule.Quotient.mk x) =
       cohomologyδ hS 0 1 rfl x := by
-  change cohomologyδBaseLinear R X hS 0 1 rfl x = _
-  exact cohomologyδBaseLinear_apply R X hS _ _ _ x
+  rw [cohomologyOneLinearEquivOfIsFlasque, LinearEquiv.trans_apply,
+    Submodule.quotEquivOfEq_mk]
+  exact (LinearMap.quotKerEquivOfSurjective_apply_mk _ _ x).trans
+    (cohomologyδBaseLinear_apply R X hS _ _ _ x)
 
 end Base
 
