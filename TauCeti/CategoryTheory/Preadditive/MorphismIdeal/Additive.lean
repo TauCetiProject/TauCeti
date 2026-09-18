@@ -16,11 +16,6 @@ just as a category with additive hom groups. The quotient functor preserves thes
 by Mathlib's `Functor.preservesFiniteBiproductsOfAdditive`; its standard biproduct comparison
 isomorphisms therefore apply without a separate choice of sums in the quotient.
 
-An object becomes zero precisely when its identity belongs to the ideal. A morphism becomes
-invertible precisely when it admits a two-sided inverse modulo the ideal. These criteria are
-useful for stable categories, where zero objects and isomorphisms need not lift to zero objects
-and isomorphisms in the original category.
-
 The constructions reuse Mathlib's `Functor.hasZeroObject_of_additive`,
 `Functor.hasFiniteProducts_of_additive_of_essSurj`, and biproduct preservation API.
 

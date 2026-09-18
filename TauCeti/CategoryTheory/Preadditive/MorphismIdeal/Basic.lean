@@ -58,6 +58,10 @@ faithfulness of precomposition with the quotient functor — applies to `C/I` un
 * `TauCeti.MorphismIdeal.exists_quotientFunctor_comp_eq_iff`: an additive functor factors through
   `C/I` exactly when its kernel contains `I`.
 * `TauCeti.MorphismIdeal.smul_mem`: an ideal of an `R`-linear category is stable under scalars.
+* `TauCeti.MorphismIdeal.isZero_quotientFunctor_obj_iff`: an object becomes zero in `C/I` exactly
+  when its identity belongs to `I`.
+* `TauCeti.MorphismIdeal.isIso_quotientFunctor_map_iff`: a morphism becomes invertible in `C/I`
+  exactly when it admits a two-sided inverse modulo `I`.
 
 ## References
 
