@@ -8,20 +8,19 @@ module
 public import Mathlib.MeasureTheory.Order.Lattice
 
 /-!
-# Almost-everywhere measurability of finite lattice extrema
+# Measurability of finite lattice extrema
 
-The supremum of a nonempty finite family of almost-everywhere measurable functions into a
-semilattice with measurable join is almost everywhere measurable, and so are the coordinatewise
-supremum and infimum `x ↦ sup' (fun n => f n x)` and `x ↦ inf' (fun n => f n x)`. In a linear
-order these are the maximum and the minimum, which is what lets the two extremes of a finite
-family of random variables — and hence their range — be treated as random variables in their own
-right: their laws are pushforwards, and their distribution functions are computed from those of
-the family.
+The supremum of a nonempty finite family of measurable functions into a semilattice with
+measurable join is measurable, and so is the infimum into a semilattice with measurable meet;
+both hold almost everywhere for almost-everywhere measurable functions. In a linear order these
+are the maximum and the minimum, which is what lets the two extremes of a finite family of random
+variables — and hence their range — be treated as random variables in their own right: their
+laws are pushforwards, and their distribution functions are computed from those of the family.
 
-Mathlib proves the measurable supremum, `Finset.measurable_sup'`; this file is its
-almost-everywhere counterpart, for the supremum and the infimum, each in the function-lattice
-spelling `s.sup' hs f` and in the coordinatewise spelling `x ↦ sup' (fun n => f n x)` that
-consumers meet. Every lemma is registered with `fun_prop`.
+Mathlib proves the measurable supremum, `Finset.measurable_sup'`; this file adds the measurable
+infimum and the almost-everywhere supremum and infimum. All are registered with `fun_prop`, which
+then also discharges the coordinatewise spellings `x ↦ sup' (fun n => f n x)` and
+`x ↦ inf' (fun n => f n x)` that consumers meet.
 -/
 
 public section
@@ -32,6 +31,14 @@ open MeasureTheory
 
 variable {ι α δ : Type*} [MeasurableSpace α] [MeasurableSpace δ] {μ : Measure δ}
   {s : Finset ι} {f : ι → δ → α}
+
+/-- The infimum of a nonempty finite family of measurable functions is measurable, the infimum
+counterpart of Mathlib's `Finset.measurable_sup'`. -/
+@[fun_prop]
+theorem measurable_inf' [SemilatticeInf α] [MeasurableInf₂ α] (hs : s.Nonempty)
+    (hf : ∀ n ∈ s, Measurable (f n)) : Measurable (s.inf' hs f) :=
+  Finset.inf'_induction (p := fun g : δ → α => Measurable g) hs f (fun _ h₁ _ h₂ => h₁.inf h₂)
+    fun n hn => hf n hn
 
 /-- The supremum of a nonempty finite family of a.e.-measurable functions is a.e. measurable. -/
 @[fun_prop]
@@ -46,21 +53,5 @@ theorem aemeasurable_inf' [SemilatticeInf α] [MeasurableInf₂ α] (hs : s.None
     (hf : ∀ n ∈ s, AEMeasurable (f n) μ) : AEMeasurable (s.inf' hs f) μ :=
   Finset.inf'_induction (p := fun g : δ → α => AEMeasurable g μ) hs f (fun _ h₁ _ h₂ => h₁.inf h₂)
     fun n hn => hf n hn
-
-/-- The coordinatewise form of `Finset.aemeasurable_sup'`: the pointwise supremum
-`x ↦ sup' (fun n => f n x)` of a nonempty finite family of a.e.-measurable functions is a.e.
-measurable. -/
-@[fun_prop]
-theorem aemeasurable_fun_sup' [SemilatticeSup α] [MeasurableSup₂ α] (hs : s.Nonempty)
-    (hf : ∀ n ∈ s, AEMeasurable (f n) μ) : AEMeasurable (fun x => s.sup' hs fun n => f n x) μ :=
-  funext (Finset.sup'_apply hs f) ▸ aemeasurable_sup' hs hf
-
-/-- The coordinatewise form of `Finset.aemeasurable_inf'`: the pointwise infimum
-`x ↦ inf' (fun n => f n x)` of a nonempty finite family of a.e.-measurable functions is a.e.
-measurable. -/
-@[fun_prop]
-theorem aemeasurable_fun_inf' [SemilatticeInf α] [MeasurableInf₂ α] (hs : s.Nonempty)
-    (hf : ∀ n ∈ s, AEMeasurable (f n) μ) : AEMeasurable (fun x => s.inf' hs fun n => f n x) μ :=
-  funext (Finset.inf'_apply hs f) ▸ aemeasurable_inf' hs hf
 
 end Finset

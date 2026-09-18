@@ -412,9 +412,9 @@ theorem hasLaw_min_iid_expMeasure {Ω ι : Type*} {mΩ : MeasurableSpace Ω} [Fi
   have _ : IsProbabilityMeasure (expMeasure r) := isProbabilityMeasure_expMeasure hr
   have _ : IsProbabilityMeasure (expMeasure ((Fintype.card ι : ℝ) * r)) :=
     isProbabilityMeasure_expMeasure (mul_pos hd hr)
-  have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P :=
-    Finset.aemeasurable_fun_inf' Finset.univ_nonempty fun i _ =>
-      (hlaw i).aemeasurable
+  have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P := by
+    have hX : ∀ i, AEMeasurable (X i) P := fun i => (hlaw i).aemeasurable
+    fun_prop
   have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
   refine ⟨hmin, ?_⟩
   refine Measure.eq_of_cdf _ _ ?_

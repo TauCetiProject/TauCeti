@@ -131,9 +131,9 @@ theorem measureReal_setOf_min_le_iid [IsProbabilityMeasure μ] (hindep : iIndepF
       = {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω}ᶜ := by
     ext ω
     simp
-  have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P :=
-    Finset.aemeasurable_fun_inf' Finset.univ_nonempty fun i _ =>
-      (hlaw i).aemeasurable
+  have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P := by
+    have hX : ∀ i, AEMeasurable (X i) P := fun i => (hlaw i).aemeasurable
+    fun_prop
   have hnull : NullMeasurableSet
       {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω} P :=
     hmin.nullMeasurableSet_preimage measurableSet_Ioi
@@ -146,8 +146,9 @@ theorem cdf_max_iid [IsProbabilityMeasure μ] (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) μ P) (x : ℝ) :
     cdf (P.map fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) x
       = cdf μ x ^ Fintype.card ι := by
-  have hmax : AEMeasurable (fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) P :=
-    Finset.aemeasurable_fun_sup' Finset.univ_nonempty fun i _ => (hlaw i).aemeasurable
+  have hmax : AEMeasurable (fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) P := by
+    have hX : ∀ i, AEMeasurable (X i) P := fun i => (hlaw i).aemeasurable
+    fun_prop
   have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
   rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hmax measurableSet_Iic,
     ← measureReal_setOf_max_le_iid hindep hlaw x]
@@ -159,9 +160,9 @@ theorem cdf_min_iid [IsProbabilityMeasure μ] (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) μ P) (x : ℝ) :
     cdf (P.map fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) x
       = 1 - (1 - cdf μ x) ^ Fintype.card ι := by
-  have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P :=
-    Finset.aemeasurable_fun_inf' Finset.univ_nonempty fun i _ =>
-      (hlaw i).aemeasurable
+  have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P := by
+    have hX : ∀ i, AEMeasurable (X i) P := fun i => (hlaw i).aemeasurable
+    fun_prop
   have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
   rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hmin measurableSet_Iic,
     ← measureReal_setOf_min_le_iid hindep hlaw x]
