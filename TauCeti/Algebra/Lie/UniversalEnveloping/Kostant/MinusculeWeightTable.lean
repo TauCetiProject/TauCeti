@@ -64,6 +64,7 @@ variable {B ι : Type*} {T : MinusculeWeightTable B ι} (S : T.Symmetry)
 
 /-- The coordinate permutation of a symmetry preserves the integral coordinate lattice, in both
 directions. -/
+@[simp]
 theorem moduleEquiv_mem_coordinateLattice_iff [Finite ι] (v : ι → ℚ) :
     S.moduleEquiv v ∈ TauCeti.coordinateLattice ι ↔ v ∈ TauCeti.coordinateLattice ι := by
   simp only [TauCeti.mem_coordinateLattice_iff, moduleEquiv_apply]

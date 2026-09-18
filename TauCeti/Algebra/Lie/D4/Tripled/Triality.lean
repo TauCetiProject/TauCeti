@@ -194,6 +194,7 @@ noncomputable def trialityMatrix (A : Type v) [CommRing A] :
     trialityModuleEquiv_mem_lattice_iff A
 
 /-- The triality matrix is the permutation matrix of `d4TripledTrialityPerm`. -/
+@[simp]
 theorem coe_trialityMatrix_apply (A : Type v) [CommRing A] (i j : Fin 24) :
     (trialityMatrix A : Matrix (Fin 24) (Fin 24) A) i j =
       if i = d4TripledTrialityPerm j then 1 else 0 := by
@@ -249,6 +250,7 @@ theorem coe_trialityPoints (A : Type v) [CommRing A] (g : points A) :
 
 /-- On matrices, the inverse of triality on points is conjugation by the inverse of the triality
 matrix. -/
+@[simp]
 theorem coe_trialityPoints_symm (A : Type v) [CommRing A] (g : points A) :
     ((trialityPoints A).symm g : Matrix.GeneralLinearGroup (Fin 24) A) =
       (trialityMatrix A)⁻¹ * g * trialityMatrix A :=
