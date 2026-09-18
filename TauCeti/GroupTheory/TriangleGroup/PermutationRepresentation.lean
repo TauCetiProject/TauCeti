@@ -89,9 +89,11 @@ theorem isConnected_iff_isPretransitive_range_toPerm :
   rw [range_toPerm, PermutationTriple.isConnected_iff]
 
 /-- Relabeling the sheets of a triple by `τ` conjugates its permutation representation by `τ`. -/
-theorem toPerm_smul (τ : Perm (Fin n)) (ha' : (τ • t).σ0 ^ a = 1) (hb' : (τ • t).σ1 ^ b = 1)
-    (hc' : (τ • t).σinf ^ c = 1) :
-    toPerm (τ • t) ha' hb' hc' = (MulAut.conj τ).toMonoidHom.comp (toPerm t ha hb hc) := by
+theorem toPerm_smul (τ : Perm (Fin n)) :
+    toPerm (τ • t) (by simpa using congrArg (MulAut.conj τ) ha)
+      (by simpa using congrArg (MulAut.conj τ) hb)
+      (by simpa using congrArg (MulAut.conj τ) hc) =
+        (MulAut.conj τ).toMonoidHom.comp (toPerm t ha hb hc) := by
   ext <;> simp
 
 end toPerm
