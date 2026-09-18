@@ -106,21 +106,6 @@ open Subgroup (inverseConjugationHom inverseConjugationHom_apply)
 
 universe u v
 
-section Algebra
-
-variable {K : Type u} [Group K] {A : Type v} [AddCommGroup A] [DistribMulAction K A]
-
-/-- Conjugating the argument of a `1`-cocycle by `k` changes its value, after the action of `k`,
-by the coboundary of `c k`. -/
-theorem smul_apply_inv_mul_mul_of_isCocycle₁ {c : K → A} (hc : groupCohomology.IsCocycle₁ c)
-    (k m : K) : k • c (k⁻¹ * m * k) = m • c k - c k + c m := by
-  have h := hc k (k⁻¹ * m * k)
-  rw [show k * (k⁻¹ * m * k) = m * k by group, hc m k] at h
-  rw [eq_sub_of_add_eq h.symm]
-  abel
-
-end Algebra
-
 section Lift
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
@@ -187,7 +172,8 @@ theorem d0 [IsTopologicalAddGroup M] [ContinuousSMul G M] (m : M) :
     abel
   smul_conj_sub g n := by
     simp only [d0_apply, Subgroup.smul_def, smul_sub, inverseConjugationHom_apply, smul_smul]
-    rw [show g * (g⁻¹ * (n : G) * g) = n * g by group, mul_smul]
+    have hmul : g * (g⁻¹ * (n : G) * g) = n * g := by group
+    rw [hmul, mul_smul]
     abel
 
 /-- A continuous `1`-cocycle on `G` is a transgression lift of its restriction to `N`. -/
@@ -195,7 +181,7 @@ theorem of_mem_Z1 [IsTopologicalAddGroup M] {c : G → M} (hc : c ∈ Z1 G M) :
     IsTransgressionLift (fun n : N => c n) c where
   continuous := (mem_Z1_iff.1 hc).1
   apply_mul g n := by
-    rw [show c (g * n) = g • c n + c g from (mem_Z1_iff.1 hc).2 g n]
+    rw [(mem_Z1_iff.1 hc).2 g n]
     abel
   smul_conj_sub g n := by
     simpa only [inverseConjugationHom_apply] using
@@ -205,7 +191,8 @@ theorem of_mem_Z1 [IsTopologicalAddGroup M] {c : G → M} (hc : c ∈ Z1 G M) :
 theorem smul_apply_one (hf : IsTransgressionLift c f) (n : N) : n • f 1 = f 1 := by
   have h := hf.smul_conj_sub 1 n
   simp only [one_smul, d0_apply] at h
-  rw [show inverseConjugationHom N 1 n = n by ext; simp, sub_self] at h
+  have hn : inverseConjugationHom N 1 n = n := by ext; simp
+  rw [hn, sub_self] at h
   exact (sub_eq_zero.1 h.symm)
 
 /-- On `N`, a transgression lift is the lifted function up to the constant `f 1`. -/
@@ -265,10 +252,10 @@ theorem d1_apply_coe_left (hf : IsTransgressionLift c f) (n : N) (g : G) :
     simp [← mul_assoc]
   have hconj := hf.smul_conj_sub g n
   rw [d0_apply, Subgroup.smul_def] at hconj
-  rw [d1_apply, hmul, hf.apply_mul, hf.apply_coe,
-    show g • c (inverseConjugationHom N g n) = c n + ((n : G) • f g - f g) by
-      rw [← hconj]
-      abel]
+  have hsmul : g • c (inverseConjugationHom N g n) = c n + ((n : G) • f g - f g) := by
+    rw [← hconj]
+    abel
+  rw [d1_apply, hmul, hf.apply_mul, hf.apply_coe, hsmul]
   abel
 
 /-- The coboundary of a transgression lift takes values fixed by `N`. -/
@@ -396,7 +383,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Com
   {M : Type v} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M] {N : Subgroup G} [N.Normal]
 
-/-- **A continuous choice of conjugation primitives.** Let `N` be a closed normal subgroup of a
+/-- **A continuous choice of conjugation primitives.** Let `N` be a compact normal subgroup of a
 compact group and `c : N → M` a continuous function to a discrete module such that, for each `g`,
 the difference between the conjugate `n ↦ g • c (g⁻¹ n g)` and `c` is the coboundary of some
 element. Then those elements can be chosen to depend continuously on `g`.
@@ -404,13 +391,13 @@ element. Then those elements can be chosen to depend continuously on `g`.
 The conjugate depends on `g` only through a coset of a single open subgroup, by uniform local
 constancy of `(n, g) ↦ g • c (g⁻¹ n g)` on the compact group `N × G`; a choice made on the
 finitely many cosets is continuous. -/
-theorem exists_continuous_smul_conj_sub_eq_d0 (hN : IsClosed (N : Set G)) {c : N → M}
+theorem exists_continuous_smul_conj_sub_eq_d0 (hN : IsCompact (N : Set G)) {c : N → M}
     (hc : Continuous c)
     (h : ∀ g : G, ∃ m : M, ∀ n : N,
       g • c (inverseConjugationHom N g n) - c n = ContCohomology.d0 N M m n) :
     ∃ F : G → M, Continuous F ∧ ∀ (g : G) (n : N),
       g • c (inverseConjugationHom N g n) - c n = ContCohomology.d0 N M (F g) n := by
-  have : CompactSpace N := isCompact_iff_compactSpace.mp hN.isCompact
+  have : CompactSpace N := isCompact_iff_compactSpace.mp hN
   let ψ : N × G → M := fun p => p.2 • c (inverseConjugationHom N p.2 p.1)
   have hconj : Continuous fun p : N × G => inverseConjugationHom N p.2 p.1 :=
     continuous_induced_rng.2 <| by
@@ -476,12 +463,11 @@ private theorem smul_conj_sub_mul {c : N → M} (hc : groupCohomology.IsCocycle�
     rw [Subgroup.smul_def, smul_smul, smul_smul, inverseConjugationHom_apply]
     congr 1
     group
+  have hsmul : t • c (inverseConjugationHom N t n) = c n + ((n : G) • A - A) := by
+    rw [← hA']
+    abel
   rw [hconj, mul_smul, ← Subgroup.smul_def, smul_apply_inv_mul_mul_of_isCocycle₁ hc, smul_add,
-    smul_sub, hk,
-    show t • c (inverseConjugationHom N t n) = c n + ((n : G) • A - A) by
-      rw [← hA']
-      abel,
-    d0_apply, Subgroup.smul_def, smul_add]
+    smul_sub, hk, hsmul, d0_apply, Subgroup.smul_def, smul_add]
   abel
 
 variable (s : G ⧸ N → G) (hs : ∀ q, (s q : G ⧸ N) = q)
@@ -521,7 +507,7 @@ variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Com
 /-- The chosen continuous conjugation primitives for a cocycle with invariant class. -/
 private noncomputable def conjPrimitive (hN : IsClosed (N : Set G)) (c : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) : G → M :=
-  (exists_continuous_smul_conj_sub_eq_d0 hN (mem_Z1_iff.1 c.2).1
+  (exists_continuous_smul_conj_sub_eq_d0 hN.isCompact (mem_Z1_iff.1 c.2).1
     (exists_smul_conj_sub_eq_d0_of_mem_H1ConjInvariants hc)).choose
 
 private theorem conjPrimitive_spec (hN : IsClosed (N : Set G)) (c : Z1 N M)
@@ -529,7 +515,7 @@ private theorem conjPrimitive_spec (hN : IsClosed (N : Set G)) (c : Z1 N M)
     Continuous (conjPrimitive G M N hN c hc) ∧ ∀ (g : G) (n : N),
       g • (c : N → M) (inverseConjugationHom N g n) - (c : N → M) n =
         d0 N M (conjPrimitive G M N hN c hc g) n :=
-  (exists_continuous_smul_conj_sub_eq_d0 hN (mem_Z1_iff.1 c.2).1
+  (exists_continuous_smul_conj_sub_eq_d0 hN.isCompact (mem_Z1_iff.1 c.2).1
     (exists_smul_conj_sub_eq_d0_of_mem_H1ConjInvariants hc)).choose_spec
 
 private theorem isTransgressionLift_sectionLift_conjPrimitive (hN : IsClosed (N : Set G))

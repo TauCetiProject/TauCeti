@@ -79,6 +79,17 @@ theorem exists_smul_conj_sub_eq_d0_of_mem_H1ConjInvariants {c : Z1 N M}
   refine ⟨m, fun n => ?_⟩
   rw [d0_apply, hm n, Pi.sub_apply, cocyclesMap1_apply, DistribSMul.toAddMonoidHom_apply]
 
+/-- Conjugating the argument of a `1`-cocycle by `k` changes its value, after the action of `k`,
+by the coboundary of `c k`. -/
+theorem smul_apply_inv_mul_mul_of_isCocycle₁ {K A : Type*} [Group K] [AddCommGroup A]
+    [DistribMulAction K A] {c : K → A} (hc : groupCohomology.IsCocycle₁ c) (k m : K) :
+    k • c (k⁻¹ * m * k) = m • c k - c k + c m := by
+  have hmul : k * (k⁻¹ * m * k) = m * k := by group
+  have h := hc k (k⁻¹ * m * k)
+  rw [hmul, hc m k] at h
+  rw [eq_sub_of_add_eq h.symm]
+  abel
+
 omit [IsTopologicalGroup G] [ContinuousSMul G M] [N.Normal] in
 /-- Conjugating the restriction of a continuous `1`-cocycle changes it by the coboundary of its
 value at the conjugating element. This is the representative-level identity behind
