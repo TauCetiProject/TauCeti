@@ -29,7 +29,6 @@ open CategoryTheory CategoryTheory.Limits
 namespace ComplexShape.Embedding
 
 /-- Mapping a restricted complex and restricting the mapped complex have the same objects. -/
-@[simp]
 theorem mapRestriction_obj_X
     {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
     {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}

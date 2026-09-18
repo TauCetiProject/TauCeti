@@ -327,7 +327,6 @@ theorem alexanderHomologyEulerChar_eq_alexanderEulerChar (a : ℤ) :
 
 /-- Fully blocked grid homology has zero Euler characteristic in an Alexander degree containing
 no grid state. -/
-@[simp]
 theorem alexanderHomologyEulerChar_eq_zero_of_notMem {a : ℤ}
     (ha : a ∉ G.alexanderSupport) : G.alexanderHomologyEulerChar a = 0 := by
   rw [G.alexanderHomologyEulerChar_eq_alexanderEulerChar,
