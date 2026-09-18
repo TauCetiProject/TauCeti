@@ -70,6 +70,7 @@ def dgRightModuleCochains (p : ℤ) : Submodule R (M →ₗ[Aᵐᵒᵖ] N) where
   zero_mem' := LinearMap.isHomogeneous_zero ℳ ℳN p
   add_mem' hf hg := hf.add hg
   smul_mem' r f hf := by
+    -- Expose the restricted `R`-linear map so `IsHomogeneous` can be applied degreewise.
     change LinearMap.IsHomogeneous ((r • f).restrictScalars R) ℳ ℳN p
     rw [LinearMap.isHomogeneous_def]
     intro q x hx
@@ -207,6 +208,7 @@ def dgRightModuleHomComplex (hM : IsDGRightModule h ℳ dM)
     (fun p ↦ ModuleCat.hom_ext <| dgRightModuleCochains.differential_comp_self p)
 
 /-- The degree-`p` term of the Hom complex is the module of degree-`p` homogeneous cochains. -/
+@[simp]
 theorem dgRightModuleHomComplex_X (hM : IsDGRightModule h ℳ dM)
     (hN : IsDGRightModule h ℳN dN) (p : ℤ) :
     (dgRightModuleHomComplex hM hN).X p = ModuleCat.of R
@@ -218,8 +220,14 @@ theorem dgRightModuleHomComplex_X (hM : IsDGRightModule h ℳ dM)
 theorem dgRightModuleHomComplex_d_apply (hM : IsDGRightModule h ℳ dM)
     (hN : IsDGRightModule h ℳN dN) (p : ℤ)
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) p) :
-    ModuleCat.Hom.hom ((dgRightModuleHomComplex hM hN).d p (p + 1)) f =
+    ModuleCat.Hom.hom
+        (A := ModuleCat.of R
+          (dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) p))
+        (B := ModuleCat.of R
+          (dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) (p + 1)))
+        ((dgRightModuleHomComplex hM hN).d p (p + 1)) f =
       dgRightModuleCochains.differential (hM := hM) (hN := hN) p f := by
+  -- Identify the abstract complex differential with the map supplied to `CochainComplex.of`.
   rw [show (dgRightModuleHomComplex hM hN).d p (p + 1) =
       ModuleCat.ofHom (dgRightModuleCochains.differential (hM := hM) (hN := hN) p) by
     apply CochainComplex.of_d]
