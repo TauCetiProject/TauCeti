@@ -215,6 +215,14 @@ theorem dgRightModuleHomComplex_X (hM : IsDGRightModule h ℳ dM)
       (dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) p) :=
   rfl
 
+/-- The differential morphism of the Hom complex is induced by the graded commutator map. -/
+@[simp]
+theorem dgRightModuleHomComplex_d (hM : IsDGRightModule h ℳ dM)
+    (hN : IsDGRightModule h ℳN dN) (p : ℤ) :
+    (dgRightModuleHomComplex hM hN).d p (p + 1) =
+      ModuleCat.ofHom (dgRightModuleCochains.differential (hM := hM) (hN := hN) p) := by
+  apply CochainComplex.of_d
+
 /-- The differential of the Hom complex is the graded commutator on homogeneous cochains. -/
 @[simp]
 theorem dgRightModuleHomComplex_d_apply (hM : IsDGRightModule h ℳ dM)
@@ -228,9 +236,7 @@ theorem dgRightModuleHomComplex_d_apply (hM : IsDGRightModule h ℳ dM)
         ((dgRightModuleHomComplex hM hN).d p (p + 1)) f =
       dgRightModuleCochains.differential (hM := hM) (hN := hN) p f := by
   -- Identify the abstract complex differential with the map supplied to `CochainComplex.of`.
-  rw [show (dgRightModuleHomComplex hM hN).d p (p + 1) =
-      ModuleCat.ofHom (dgRightModuleCochains.differential (hM := hM) (hN := hN) p) by
-    apply CochainComplex.of_d]
+  rw [dgRightModuleHomComplex_d]
   rfl
 
 /-- Closed degree-zero cochains in the Hom complex are exactly morphisms of differential graded
