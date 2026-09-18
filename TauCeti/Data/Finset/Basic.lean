@@ -27,6 +27,8 @@ import Mathlib.Tactic.NoncommRing
   `Finset.sum_Icc_neg_one_pow_card_sub_card_right` compute the Möbius function of the Boolean
   lattice of finsets: the signed sum over an interval `[s, t]` is `1` if `s = t` and `0`
   otherwise.
+* `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
+  `≤` relation.
 * `TauCeti.sum_piecewise_eq_sum_update_of_card_eq_succ` reindexes a sum of `Finset.piecewise` terms
   over the subsets of size one less than `card ι` as a sum of `Function.update` terms over `ι`. It
   is what turns a formula indexed by "all but one point" into one indexed by the omitted point, as
@@ -62,6 +64,21 @@ theorem card_nonempty_finset {ι : Type*} [Finite ι] :
 end TauCeti
 
 namespace Finset
+
+open Classical in
+/-- A double sum over a chain `a ≤ b ≤ c`, summed first over `b` and then over `c`, can instead
+be summed first over `c` and then over the interval of possible `b`. -/
+theorem sum_filter_le_sum_filter_le {α M : Type*} [Fintype α] [LE α] [AddCommMonoid M]
+    (a : α) (f : α → α → M) :
+    ∑ b ∈ univ.filter (a ≤ ·), ∑ c ∈ univ.filter (b ≤ ·), f b c =
+      ∑ c, ∑ b ∈ univ.filter (fun b => a ≤ b ∧ b ≤ c), f b c := by
+  calc _ = ∑ b, ∑ c, if a ≤ b ∧ b ≤ c then f b c else 0 := by
+        rw [sum_filter]
+        refine sum_congr rfl fun b _ => ?_
+        by_cases h : a ≤ b <;> simp [h, sum_filter]
+    _ = _ := by
+        rw [sum_comm]
+        exact sum_congr rfl fun c _ => (sum_filter _ _).symm
 
 /-- **A telescoping signed sum over the subsets of `P` vanishes.** If, for each `i ∈ P`, the
 summand `g i` changes by `h i` when `i` is adjoined to a set not containing it, then
@@ -114,13 +131,18 @@ of `Finset.sum_Icc_neg_one_pow_card_sub_card_left` by the common sign `(-1)^{|t|
 theorem sum_Icc_neg_one_pow_card_sub_card_right {α R : Type*} [DecidableEq α] [Ring R]
     (s t : Finset α) :
     ∑ u ∈ Icc s t, (-1 : R) ^ (t.card - u.card) = if s = t then 1 else 0 := by
+  have hsign (a b : ℕ) :
+      (-1 : R) ^ a = (-1) ^ (a + b) * (-1) ^ b := by
+    rw [← pow_add]
+    apply neg_one_pow_congr
+    grind
   have hterm : ∀ u ∈ Icc s t, (-1 : R) ^ (t.card - u.card) =
       (-1) ^ (t.card - s.card) * (-1) ^ (u.card - s.card) := fun u hu => by
     obtain ⟨hsu, hut⟩ := mem_Icc.1 hu
     have hs := card_le_card hsu
     have ht := card_le_card hut
-    rw [show t.card - s.card = (t.card - u.card) + (u.card - s.card) by omega, pow_add,
-      mul_assoc, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, mul_one]
+    rw [← (tsub_add_tsub_cancel ht hs)]
+    exact hsign _ _
   rw [sum_congr rfl hterm, ← mul_sum, sum_Icc_neg_one_pow_card_sub_card_left]
   split_ifs with h <;> simp [h]
 

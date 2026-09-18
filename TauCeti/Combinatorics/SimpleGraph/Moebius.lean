@@ -6,7 +6,6 @@ Authors: Claude
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Finite
-public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Data.Finset.Basic
 
 /-!
@@ -33,12 +32,13 @@ public section
 
 namespace SimpleGraph
 
-variable {V R : Type*} [Fintype V] [DecidableEq V] [Ring R]
+variable {V R : Type*} [Fintype V] [Ring R]
 
 open Classical in
 /-- Summing over the graphs between `F` and `H` is summing over the edge sets between theirs, when
 the summand depends on the graph only through its number of edges. -/
-private theorem sum_filter_le_le_eq_sum_Icc (F H : SimpleGraph V) (φ : ℕ → R) :
+private theorem sum_filter_le_le_eq_sum_Icc [DecidableEq V]
+    (F H : SimpleGraph V) (φ : ℕ → R) :
     ∑ G ∈ Finset.univ.filter (fun G : SimpleGraph V => F ≤ G ∧ G ≤ H), φ (Nat.card G.edgeSet) =
       ∑ s ∈ Finset.Icc F.edgeFinset H.edgeFinset, φ s.card := by
   -- An edge set below `H.edgeFinset` carries no diagonal pair, so it is the edge set of a graph.
