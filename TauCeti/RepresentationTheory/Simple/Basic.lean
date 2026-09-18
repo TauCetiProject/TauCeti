@@ -264,7 +264,7 @@ theorem ind {motive : SimpleFDRepClasses k G → Prop}
     (h : ∀ (X : FDRep k G) (hX : Simple X), motive (@mk k G _ _ X hX))
     (c : SimpleFDRepClasses k G) :
     motive c :=
-  ObjectProperty.skeletonInd _ (fun X ↦ h X.obj X.property) c
+  Quotient.ind (fun X ↦ h X.obj X.property) c
 
 /-- Define a function on simple-object classes from an isomorphism-invariant function on simple
 objects. -/

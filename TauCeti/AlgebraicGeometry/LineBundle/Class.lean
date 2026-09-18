@@ -73,11 +73,13 @@ theorem lift_mk {α : Sort v} {f : InvertibleSheaf X → α}
   ObjectProperty.skeletonLift_toSkeleton _ L
 
 /-- To prove a property of every line-bundle class, it suffices to prove it for the class of each
-line bundle. -/
+line bundle.
+
+`Skeleton` is by definition the quotient by `isIsomorphicSetoid`, so this is `Quotient.ind`. -/
 @[elab_as_elim]
 theorem ind {motive : LineBundleClass X → Prop} (mk : ∀ L, motive (mk L))
     (a : LineBundleClass X) : motive a :=
-  (SheafOfModules.isInvertible X).skeletonInd mk a
+  Quotient.ind mk a
 
 /-- Two line bundles have the same class exactly when their underlying sheaves are isomorphic. -/
 @[simp]
