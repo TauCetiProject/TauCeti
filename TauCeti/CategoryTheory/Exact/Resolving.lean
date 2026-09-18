@@ -97,14 +97,12 @@ theorem resolvingSubcategory_conflation_iff [E.IsResolving P]
 /-- The inclusion of a resolving subcategory preserves conflations. -/
 theorem IsResolving.isConflationExact_ι [E.IsResolving P] :
     (E.resolvingSubcategory P).IsConflationExact E P.ι where
-  map_conflation hS :=
-    (E.fullSubcategory_conflation_iff IsResolving.isExtensionClosed _).mp hS
+  map_conflation hS := (E.resolvingSubcategory_conflation_iff P _).mp hS
 
 /-- The inclusion of a resolving subcategory reflects conflations. -/
 theorem IsResolving.reflectsConflations_ι [E.IsResolving P] :
     (E.resolvingSubcategory P).ReflectsConflations E P.ι where
-  reflects_conflation hS :=
-    (E.fullSubcategory_conflation_iff IsResolving.isExtensionClosed _).mpr hS
+  reflects_conflation hS := (E.resolvingSubcategory_conflation_iff P _).mpr hS
 
 /-- The property of all objects is resolving for every exact structure. -/
 instance isResolving_top : E.IsResolving (⊤ : ObjectProperty C) where
