@@ -36,7 +36,7 @@ projective modules.
 * `TauCeti.cartanMap_dualNumberFreeProj`: the Cartan map sends `[A]` to `2 • [S]`.
 * `TauCeti.cartanMatrix_dualNumber`: the Cartan matrix of `A` is `2`, with
   `TauCeti.det_cartanMatrix_dualNumber` and `TauCeti.not_isUnit_cartanMatrix_dualNumber`.
-* `TauCeti.cartanMap_dualNumber_ne_of_dualNumberResidueFG`: `[S]` is not in the image of the
+* `TauCeti.cartanMap_dualNumber_ne_dualNumberResidueFG`: `[S]` is not in the image of the
   Cartan map, so `TauCeti.not_surjective_cartanMap_dualNumber`: the Cartan map is not surjective.
 * `TauCeti.not_admitsFiniteResolution_dualNumberResidue`: `S` has no finite resolution by finitely
   generated projective modules.
@@ -56,42 +56,6 @@ namespace TauCeti
 universe u
 
 variable (k : Type u) [Field k]
-
-/-- The dual numbers over a field are an Artinian ring, being a two-dimensional algebra. -/
-instance : IsArtinianRing (DualNumber k) :=
-  have : IsScalarTower k (DualNumber k) (DualNumber k) :=
-    ⟨fun a x y ↦ by ext <;> simp [mul_add, mul_assoc]⟩
-  have : Module.Finite k (DualNumber k) := inferInstanceAs (Module.Finite k (k × k))
-  IsArtinianRing.of_finite k _
-
-/-! ### The residue field as the simple module -/
-
-/-- The kernel of the quotient map `k[ε] ↠ k[ε]/(ε)` is the maximal ideal of `k[ε]`. -/
-theorem ker_dualNumberProj :
-    LinearMap.ker (dualNumberProj k).hom = IsLocalRing.maximalIdeal (DualNumber k) := by
-  have hmax : (RingHom.ker (fstHom k k k)).IsMaximal :=
-    RingHom.ker_isMaximal_of_surjective _ fun x ↦ ⟨inl x, fst_inl k x⟩
-  rw [← IsLocalRing.eq_maximalIdeal hmax]
-  ext x
-  rw [LinearMap.mem_ker, RingHom.mem_ker, dualNumberProj_apply, fstHom_apply]
-  -- the zero of `k[ε]/(ε)` is the zero of `k` only up to unfolding the restriction of scalars
-  exact Iff.rfl
-
-/-- The quotient of `k[ε]` by its maximal ideal is the residue module `k[ε]/(ε)`. -/
-private noncomputable def quotMaximalIdealEquivDualNumberResidue :
-    (DualNumber k ⧸ IsLocalRing.maximalIdeal (DualNumber k)) ≃ₗ[DualNumber k]
-      dualNumberResidue k :=
-  (Submodule.quotEquivOfEq _ _ (ker_dualNumberProj k).symm).trans
-    ((dualNumberProj k).hom.quotKerEquivOfSurjective (dualNumberProj_surjective k))
-
-/-- The residue module `k[ε]/(ε)` is a finitely generated `k[ε]`-module. -/
-instance : Module.Finite (DualNumber k) (dualNumberResidue k) :=
-  .of_surjective _ (dualNumberProj_surjective k)
-
-/-- The residue module `k[ε]/(ε)` is a simple `k[ε]`-module. -/
-instance : IsSimpleModule (DualNumber k) (dualNumberResidue k) :=
-  isSimpleModule_iff_quot_maximal.mpr ⟨_, IsLocalRing.maximalIdeal.isMaximal _,
-    ⟨(quotMaximalIdealEquivDualNumberResidue k).symm⟩⟩
 
 /-! ### The composition factors of `k[ε]` -/
 
@@ -131,6 +95,7 @@ private theorem exact_dualNumberResidueToFree_dualNumberProj :
 
 /-- **`k[ε]` has two composition factors isomorphic to its residue field**:
 `[k[ε] : k[ε]/(ε)] = 2`, read off the short exact sequence `0 ⟶ S --ε--> A ⟶ S ⟶ 0`. -/
+@[simp]
 theorem jordanHolderMultiplicity_dualNumber_dualNumberResidue :
     jordanHolderMultiplicity (DualNumber k) (DualNumber k) (dualNumberResidue k) = 2 := by
   rw [jordanHolderMultiplicity_eq_add_of_exact _ _ (dualNumberResidueToFree_injective k)
@@ -162,6 +127,7 @@ theorem isExhaustiveSimpleFamily_dualNumberResidueFG :
 
 /-- **The Cartan map of `k[ε]`** sends the class of the regular module to twice the class of the
 residue field. -/
+@[simp]
 theorem cartanMap_dualNumberFreeProj :
     cartanMap (DualNumber k) (ExactK0.of (dualNumberFreeProj k)) =
       2 • ExactK0.of (dualNumberResidueFG k) := by
@@ -173,6 +139,7 @@ theorem cartanMap_dualNumberFreeProj :
 
 /-- **The Cartan matrix of `k[ε]` is the one-by-one matrix `2`**, in the bases given by the
 regular module and the residue field. -/
+@[simp]
 theorem cartanMatrix_dualNumber :
     cartanMatrix (fun _ : Unit ↦ dualNumberFreeProj k) (fun _ : Unit ↦ dualNumberResidueFG k)
       (fun _ ↦ isIndecomposableModule_self (DualNumber k)) Subsingleton.pairwise
@@ -183,6 +150,7 @@ theorem cartanMatrix_dualNumber :
   exact_mod_cast jordanHolderMultiplicity_dualNumber_dualNumberResidue k
 
 /-- The Cartan matrix of `k[ε]` has determinant `2`. -/
+@[simp]
 theorem det_cartanMatrix_dualNumber :
     (cartanMatrix (fun _ : Unit ↦ dualNumberFreeProj k) (fun _ : Unit ↦ dualNumberResidueFG k)
       (fun _ ↦ isIndecomposableModule_self (DualNumber k)) Subsingleton.pairwise
@@ -214,15 +182,25 @@ theorem two_dvd_jordanHolderCoordinate_cartanMap_dualNumber
   have h : ((jordanHolderCoordinate (DualNumber k) (dualNumberResidue k)).comp
       (cartanMap (DualNumber k))).toIntLinearMap = 2 • b.coord () := by
     refine b.ext fun ⟨⟩ ↦ ?_
-    rw [LinearMap.smul_apply, b.coord_apply, b.repr_self, Finsupp.single_eq_same,
-      AddMonoidHom.coe_toIntLinearMap, AddMonoidHom.comp_apply,
-      indecomposableProjectiveClassBasis_apply, cartanMap_dualNumberFreeProj, map_nsmul,
-      jordanHolderCoordinate_self]
+    have hb : b () =
+        (ExactK0.of (dualNumberFreeProj k) :
+          ExactK0.{u} (finiteProjectiveModulesExactStructure (DualNumber k))) := by
+      dsimp only [b]
+      apply indecomposableProjectiveClassBasis_apply
+    have hcoord : b.coord () (b ()) = 1 := by
+      simp only [b.coord_apply, b.repr_self, Finsupp.single_eq_same]
+    change jordanHolderCoordinate (DualNumber k) (dualNumberResidue k)
+        (cartanMap (DualNumber k) (b ())) = 2 • b.coord () (b ())
+    calc
+      _ = 2 := by
+        simp only [hb, cartanMap_dualNumberFreeProj, map_nsmul, jordanHolderCoordinate_self]
+        norm_num
+      _ = 2 • b.coord () (b ()) := by rw [hcoord]; rfl
   exact ⟨b.coord () x, by simpa using LinearMap.congr_fun h x⟩
 
 /-- **The class of the residue field is not in the image of the Cartan map of `k[ε]`**: its
 `S`-coordinate is one, which is odd. -/
-theorem cartanMap_dualNumber_ne_of_dualNumberResidueFG
+theorem cartanMap_dualNumber_ne_dualNumberResidueFG
     (x : ExactK0.{u} (finiteProjectiveModulesExactStructure (DualNumber k))) :
     cartanMap (DualNumber k) x ≠ ExactK0.of (dualNumberResidueFG k) := fun hx ↦ by
   have := two_dvd_jordanHolderCoordinate_cartanMap_dualNumber k x
@@ -232,14 +210,14 @@ theorem cartanMap_dualNumber_ne_of_dualNumberResidueFG
 /-- **The Cartan map of `k[ε]` is not surjective.** -/
 theorem not_surjective_cartanMap_dualNumber :
     ¬ Function.Surjective (cartanMap (DualNumber k)) := fun h ↦
-  (h _).elim (cartanMap_dualNumber_ne_of_dualNumberResidueFG k)
+  (h _).elim (cartanMap_dualNumber_ne_dualNumberResidueFG k)
 
 /-- **The residue field of `k[ε]` has no finite projective resolution**: the Cartan map would send
 the alternating class of such a resolution to `[S]`. -/
 theorem not_admitsFiniteResolution_dualNumberResidue :
     ¬ (ExactStructure.abelian (ModuleCat.{u} (DualNumber k))).admitsFiniteResolution
       (finiteProjectiveModules (DualNumber k)) (dualNumberResidue k) := fun h ↦ by
-  refine cartanMap_dualNumber_ne_of_dualNumberResidueFG k (moduleEulerClassOf _ h) ?_
+  refine cartanMap_dualNumber_ne_dualNumberResidueFG k (moduleEulerClassOf _ h) ?_
   rw [cartanMap_apply, ← moduleResolutionEquiv_symm_of, AddEquiv.apply_symm_apply,
     fromFiniteProjectiveResolution_of]
 

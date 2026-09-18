@@ -10,7 +10,9 @@ public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.Algebra.Homology.AlternatingConst
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.DualNumber
+public import Mathlib.RingTheory.SimpleModule.Basic
 public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
 
 /-!
@@ -194,6 +196,46 @@ private theorem range_dualNumberEpsSmul_eq_ker_proj :
 theorem dualNumberProj_surjective : Function.Surjective (dualNumberProj k).hom := fun x => by
   obtain ⟨y, hy⟩ := TrivSqZeroExt.fst_surjective (R := k) (M := k) (dualNumberResidueEquiv k x)
   exact ⟨y, (dualNumberResidueEquiv k).injective (by rw [dualNumberProj_apply]; exact hy)⟩
+
+section Field
+
+variable (F : Type u) [Field F]
+
+/-- The dual numbers over a field are an Artinian ring, being a two-dimensional algebra. -/
+instance : IsArtinianRing (DualNumber F) :=
+  have : IsScalarTower F (DualNumber F) (DualNumber F) :=
+    ⟨fun a x y ↦ by ext <;> simp [mul_add, mul_assoc]⟩
+  have : Module.Finite F (DualNumber F) := inferInstanceAs (Module.Finite F (F × F))
+  IsArtinianRing.of_finite F _
+
+/-- The kernel of the quotient map `F[ε] ↠ F[ε]/(ε)` is the maximal ideal of `F[ε]`. -/
+theorem ker_dualNumberProj :
+    LinearMap.ker (dualNumberProj F).hom = IsLocalRing.maximalIdeal (DualNumber F) := by
+  have hmax : (RingHom.ker (fstHom F F F)).IsMaximal :=
+    RingHom.ker_isMaximal_of_surjective _ fun x ↦ ⟨inl x, fst_inl F x⟩
+  rw [← IsLocalRing.eq_maximalIdeal hmax]
+  ext x
+  rw [LinearMap.mem_ker, RingHom.mem_ker, dualNumberProj_apply, fstHom_apply]
+  -- the zero of `F[ε]/(ε)` is the zero of `F` only up to unfolding the restriction of scalars
+  exact Iff.rfl
+
+/-- The quotient of `F[ε]` by its maximal ideal is the residue module `F[ε]/(ε)`. -/
+private noncomputable def quotMaximalIdealEquivDualNumberResidue :
+    (DualNumber F ⧸ IsLocalRing.maximalIdeal (DualNumber F)) ≃ₗ[DualNumber F]
+      dualNumberResidue F :=
+  (Submodule.quotEquivOfEq _ _ (ker_dualNumberProj F).symm).trans
+    ((dualNumberProj F).hom.quotKerEquivOfSurjective (dualNumberProj_surjective F))
+
+/-- The residue module `F[ε]/(ε)` is a finitely generated `F[ε]`-module. -/
+instance : Module.Finite (DualNumber F) (dualNumberResidue F) :=
+  .of_surjective _ (dualNumberProj_surjective F)
+
+/-- The residue module `F[ε]/(ε)` is a simple `F[ε]`-module. -/
+instance : IsSimpleModule (DualNumber F) (dualNumberResidue F) :=
+  isSimpleModule_iff_quot_maximal.mpr ⟨_, IsLocalRing.maximalIdeal.isMaximal _,
+    ⟨(quotMaximalIdealEquivDualNumberResidue F).symm⟩⟩
+
+end Field
 
 /-- The quotient map `k[ε] ↠ k[ε]/(ε)` is an epimorphism; this is what makes precomposition
 with it injective on `End(k[ε]/(ε))`. -/
