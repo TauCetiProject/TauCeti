@@ -29,8 +29,8 @@ congruence. This is what lets real quadratic-form theory be applied to Hermitian
 
 ## Main results
 
-* `Matrix.realify_mul`, `Matrix.realify_one`, `Matrix.realify_add`: realification is additive
-  and multiplicative.
+* `Matrix.realify_mul`, `Matrix.realify_one`, `Matrix.realify_add`, `Matrix.realify_smul`:
+  realification is real-linear and multiplicative.
 * `Matrix.realify_conjTranspose`: the conjugate transpose becomes the transpose.
 * `Matrix.IsHermitian.isSymm_realify`: a Hermitian matrix realifies to a symmetric one.
 * `Matrix.realify_map_ofReal`: a real matrix realifies to two diagonal copies of itself.
@@ -111,6 +111,14 @@ theorem realify_neg {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m n 𝕜) :
     (-A).realify = -A.realify := by
   ext p q
   rcases p with i | i <;> rcases q with j | j <;> simp
+
+/-- Realification commutes with real scalar multiplication. -/
+@[simp]
+theorem realify_smul {𝕜 : Type*} [RCLike 𝕜] (r : ℝ) (A : Matrix m n 𝕜) :
+    (r • A).realify = r • A.realify := by
+  ext p q
+  rcases p with i | i <;> rcases q with j | j <;>
+    simp [RCLike.smul_re, RCLike.smul_im]
 
 /-- A matrix with real entries realifies to two diagonal copies of itself. -/
 @[simp]
