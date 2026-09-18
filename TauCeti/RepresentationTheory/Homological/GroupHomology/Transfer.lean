@@ -86,7 +86,8 @@ theorem transfer_comp_map_subtype_id (M : Rep R G) (S : Subgroup G) [S.FiniteInd
   have hsmul : _root_.groupHomology.map (MonoidHom.id G) (S.index • 𝟙 M) n =
       (HomologicalComplex.homologyFunctor _ _ n).map
         ((_root_.groupHomology.chainsFunctor R G).map (S.index • 𝟙 M)) := by
-    rw [HomologicalComplex.homologyFunctor_map]
+    rw [_root_.groupHomology.map, HomologicalComplex.homologyFunctor_map,
+      _root_.groupHomology.chainsFunctor_map]
     rfl
   rw [← TauCeti.groupHomology.indIso_inv_comp_map_counit, transfer_comp_indIso_inv_assoc,
     _root_.groupHomology.functor_map, ← _root_.groupHomology.map_id_comp,

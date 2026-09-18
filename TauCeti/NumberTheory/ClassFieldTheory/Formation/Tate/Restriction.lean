@@ -148,7 +148,8 @@ theorem tateCor_tateRes (T : LayerRestriction small big) (F : Formation G) (r : 
   obtain ⟨n, rfl⟩ | rfl | rfl | ⟨n, rfl⟩ :
       (∃ n : ℕ, r = n + 1) ∨ r = 0 ∨ r = -1 ∨ ∃ n : ℕ, r = Int.negSucc (n + 1) := by
     rcases lt_trichotomy r 0 with h | rfl | h
-    · rcases eq_or_lt_of_le (show r ≤ -1 by omega) with rfl | h'
+    · have hr : r ≤ -1 := by omega
+      rcases eq_or_lt_of_le hr with rfl | h'
       · exact .inr (.inr (.inl rfl))
       · exact .inr (.inr (.inr ⟨(-r - 2).toNat, by omega⟩))
     · exact .inr (.inl rfl)
