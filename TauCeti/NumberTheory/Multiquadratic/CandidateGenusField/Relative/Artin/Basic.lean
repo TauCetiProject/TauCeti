@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.G
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.Ramification
 public import TauCeti.NumberTheory.NumberField.Ideal.ArtinMap
 public import TauCeti.NumberTheory.NumberField.ResidueDegree
+import TauCeti.Algebra.BigOperators.Finset.Erase
 import TauCeti.NumberTheory.NumberField.Frobenius.Tower
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.NarrowClassGroup
 import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Frobenius
@@ -25,9 +26,10 @@ extension of its embedded quadratic base \(K = \mathbb{Q}(\sqrt d)\). The isomor
 
 constructed from sign patterns and genus characters agrees with the inverse Artin map on every
 degree-one prime above a rational prime, including primes dividing the discriminant. Namely, the
-Frobenius at such a prime is sent to the elementary-2 class of that prime. The prime `2` is
-handled uniformly: Frobenius acts on `√P` through the congruence class of `P` modulo `8`, which is
-the value at `2` of the character of the prime discriminant `P`.
+Frobenius at such a prime is sent to the elementary-2 class of that prime. At the prime `2`,
+Frobenius acts on `√P` through the congruence class of `P` modulo `8` when `2 ∤ P`, which is the
+value at `2` of the character of the prime discriminant `P`; when `2 ∣ P`, the remaining coordinate
+is determined by the parity condition.
 
 This module first exposes the local compatibility between relative Frobenius elements and
 singleton genus characters: both associate to each prime discriminant the same quadratic character

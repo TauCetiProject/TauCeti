@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.GaloisGroup
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.Degree
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Relative
-public import TauCeti.Algebra.BigOperators.Finset.Erase
 
 /-!
 # The relative Galois group of the candidate genus field
