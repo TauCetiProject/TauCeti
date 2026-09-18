@@ -57,20 +57,6 @@ namespace TauCeti.Multiquadratic
 
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*} {p : ℕ} [Fact p.Prime]
 
-/-- A rescaled root of a rational radicand satisfies the integral equation that the integral
-Frobenius and splitting API consumes. -/
-private theorem sq_algebraMap_inv_mul_eq_intCast {d : ℚ} {a : ℤ} {c : ℚ} (hc : c ≠ 0)
-    (hdec : d = a * c ^ 2) {x : K} (hx : x ^ 2 = algebraMap ℚ K d) :
-    (algebraMap ℚ K c⁻¹ * x) ^ 2 = algebraMap ℤ K a := by
-  rw [sq_algebraMap_inv_mul_eq_of_eq_mul_sq hc hdec hx]
-  simp
-
-/-- The rescaled roots of rational radicands generate the same field as the original roots. -/
-private theorem adjoin_range_algebraMap_inv_mul_eq_top {c : ι → ℚ} (hc : ∀ i, c i ≠ 0)
-    {r : ι → K} (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) :
-    IntermediateField.adjoin ℚ (Set.range fun i => algebraMap ℚ K (c i)⁻¹ * r i) = ⊤ := by
-  rw [TauCeti.IntermediateField.adjoin_range_algebraMap_mul (fun i => inv_ne_zero (hc i)), htop]
-
 /-- **A Frobenius acts on the square root of a rational number by a Legendre symbol.** Let `p` be
 an odd prime and `σ ∈ Gal(K/ℚ)` an arithmetic Frobenius at an ideal `Q` of `𝓞 K` above `p`. If
 `x ∈ K` is a square root of a rational number `d = a c²` with `a ∈ ℤ`, `p ∤ a` and `c ≠ 0`, then
@@ -80,7 +66,8 @@ theorem isArithFrobAt_apply_sqrt_of_eq_mul_sq (hodd : p ≠ 2) {d : ℚ} {a : �
     (hx : x ^ 2 = algebraMap ℚ K d) (Q : Ideal (𝓞 K)) [Q.LiesOver (span {(p : ℤ)})]
     {σ : K ≃ₐ[ℚ] K} (hσ : IsArithFrobAt ℤ σ Q) :
     σ x = legendreSym p a • x := by
-  have h := isArithFrobAt_apply_sqrt hodd ha (sq_algebraMap_inv_mul_eq_intCast hc hdec hx) Q hσ
+  have h := isArithFrobAt_apply_sqrt hodd ha
+    (sq_algebraMap_inv_mul_eq_of_eq_mul_sq hc hdec hx) Q hσ
   rw [map_mul, AlgEquiv.commutes, ← mul_smul_comm] at h
   exact mul_left_cancel₀ ((map_ne_zero _).mpr (inv_ne_zero hc)) h
 
@@ -111,8 +98,9 @@ theorem isArithFrobAt_multiquadratic_eq_one_iff_of_eq_mul_sq {d : ι → ℚ} {a
     {σ : K ≃ₐ[ℚ] K} (hσ : IsArithFrobAt ℤ σ Q) :
     σ = 1 ↔ ∀ i, legendreSym p (a i) = 1 :=
   isArithFrobAt_multiquadratic_eq_one_iff a _
-    (fun i => sq_algebraMap_inv_mul_eq_intCast (hc i) (hdec i) (hr i))
-    (adjoin_range_algebraMap_inv_mul_eq_top hc htop) hodd hcop Q hσ
+    (fun i => sq_algebraMap_inv_mul_eq_of_eq_mul_sq (hc i) (hdec i) (hr i))
+    (by simpa [htop] using (TauCeti.IntermediateField.adjoin_range_algebraMap_mul
+      (fun i => inv_ne_zero (hc i)) r)) hodd hcop Q hσ
 
 /-- **The multiquadratic splitting law for rational radicands.** Let `K = ℚ(√d₁, …, √dₙ)` be
 generated over `ℚ` by square roots `r i` of rational numbers `d i = a i * c i ^ 2`, with
@@ -126,8 +114,9 @@ theorem ncard_primesOver_multiquadratic_iff_of_eq_mul_sq [Finite ι] {d : ι →
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = finrank ℚ K ↔
       ∀ i, legendreSym p (a i) = 1 :=
   ncard_primesOver_multiquadratic_iff a _
-    (fun i => sq_algebraMap_inv_mul_eq_intCast (hc i) (hdec i) (hr i))
-    (adjoin_range_algebraMap_inv_mul_eq_top hc htop) hodd hcop
+    (fun i => sq_algebraMap_inv_mul_eq_of_eq_mul_sq (hc i) (hdec i) (hr i))
+    (by simpa [htop] using (TauCeti.IntermediateField.adjoin_range_algebraMap_mul
+      (fun i => inv_ne_zero (hc i)) r)) hodd hcop
 
 /-- **The multiquadratic splitting law for rational radicands, canonical form.** Let
 `K = ℚ(√d₁, …, √dₙ)` be generated over `ℚ` by square roots `r i` of rational numbers `d i`, and
