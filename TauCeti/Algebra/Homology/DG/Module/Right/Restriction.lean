@@ -135,6 +135,7 @@ theorem val_op_smul (a : A) (x : RestrictScalars f M) :
 
 omit [Module R M] [IsScalarTower R Bᵐᵒᵖ M] in
 /-- On underlying elements, an opposite scalar acts through its image under `f`. -/
+@[simp]
 theorem val_smul_eq (a : Aᵐᵒᵖ) (x : RestrictScalars f M) :
     (a • x).val = AlgHom.op f.toGradedAlgHom.toAlgHom a • x.val := rfl
 
@@ -183,11 +184,13 @@ theorem mem_restrictScalarsGrading_iff {q : ℤ} {x : DGRightModule.RestrictScal
 
 /- The grading is by definition the transported grading `InternalGrading.map`, which already
 carries a decomposition; we read the instance off that definition. -/
+/-- The transported grading of a restricted module remains a direct-sum decomposition. -/
 noncomputable instance : DirectSum.Decomposition (restrictScalarsGrading (ℳ := ℳ) f) :=
   inferInstanceAs (DirectSum.Decomposition
     (((InternalGrading.ofDecomposition ℳ).map
       (DGRightModule.RestrictScalars.linearEquiv f M).symm).piece))
 
+/-- The restricted scalar action respects degrees because the algebra morphism is graded. -/
 noncomputable instance : SetLike.GradedSMul
     (InternalGrading.ofDecomposition 𝒜).opposite.piece
     (restrictScalarsGrading (ℳ := ℳ) f) where
