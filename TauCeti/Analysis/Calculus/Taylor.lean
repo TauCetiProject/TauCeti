@@ -16,9 +16,10 @@ import Mathlib.Analysis.Calculus.MeanValue
 Two facts about Mathlib's Taylor polynomials `taylorWithinEval f n s x₀ x`.
 
 * **Sign of the remainder.** As a function of the expansion point, the derivative of
-  `x₀ ↦ taylorWithinEval f n s x₀ x` is `(x - x₀)ⁿ / n! · f⁽ⁿ⁺¹⁾(x₀)`. If `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0` on `[x, y]`, this derivative is
-  nonnegative there, so the Taylor polynomial of order `n` expanded at `y` and evaluated at the
-  left endpoint `x` dominates `f x`: the Taylor remainder has a sign.
+  `x₀ ↦ taylorWithinEval f n s x₀ x` is `(x - x₀)ⁿ / n! · f⁽ⁿ⁺¹⁾(x₀)`. If `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0`
+  on `[x, y]`, this derivative is nonnegative there, so the Taylor polynomial of order `n`
+  expanded at `y` and evaluated at the left endpoint `x` dominates `f x`: the Taylor remainder
+  has a sign.
 * **Derivatives of `f(x) / x`.** By the Leibniz rule and `dᵐ/dxᵐ x⁻¹ = (-1)ᵐ m! x⁻ᵐ⁻¹`,
 
   `dⁿ/dtⁿ (f(t) / t) = (-1)ⁿ n! t⁻ⁿ⁻¹ · Σ_{k ≤ n} f⁽ᵏ⁾(t) (0 - t)ᵏ / k!`,
