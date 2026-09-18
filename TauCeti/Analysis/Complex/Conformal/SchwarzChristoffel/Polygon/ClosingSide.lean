@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.GlobalTurning
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.ShortTurn
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
+import Mathlib.Data.Fin.SuccPredOrder
+import Mathlib.Order.SuccPred.IntervalSucc
 
 /-!
 # Separation of Schwarz--Christoffel sides from the closing side
@@ -262,5 +264,67 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_last (a e : Fin (n + 1) → �
   · have hlt := im_schwarzChristoffelVertex_zero_lt a e z₀ ha he hsum (Fin.succ_ne_zero i) hn
     rw [← hzeq, hzim] at hlt
     exact hlt.false
+
+/-- The bounded Schwarz--Christoffel boundary arc lies strictly above the closing line,
+except at its first and last prevertices. -/
+theorem im_schwarzChristoffelBoundary_first_lt (a e : Fin (n + 1) → ℝ)
+    (z₀ : UpperHalfPlane) (ha : StrictMono a) (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0)
+    (hsum : ∑ k, e k = -2) {x : ℝ} (hx : x ∈ Ioo (a 0) (a (Fin.last n))) :
+    (schwarzChristoffelBoundary a e z₀ (a 0)).im <
+      (schwarzChristoffelBoundary a e z₀ x).im := by
+  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
+    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+  have hn : 2 ≤ n := by
+    by_contra! hn
+    interval_cases n
+    · have hsum' : e 0 = -2 := by simpa using hsum
+      linarith [(he 0).1]
+    · have hsum' : e 0 + e 1 = -2 := by simpa [Fin.sum_univ_succ] using hsum
+      linarith [(he 0).1, (he 1).1]
+  have hx' : x ∈ ⋃ j ∈ Ico 0 (Fin.last n), Ioc (a j) (a (Order.succ j)) := by
+    rw [ha.monotone.biUnion_Ico_Ioc_map_succ]
+    exact ⟨hx.1, hx.2.le⟩
+  simp only [mem_iUnion, mem_Ico] at hx'
+  obtain ⟨j, ⟨-, hj⟩, hxj⟩ := hx'
+  obtain ⟨i, rfl⟩ := Fin.exists_castSucc_eq.mpr hj.ne
+  have hxi : x ∈ Icc (a i.castSucc) (a i.succ) :=
+    Ioc_subset_Icc_self (by simpa only [Fin.orderSucc_castSucc] using hxj)
+  have hfree : ∀ k, e k ≠ 0 → a k ∉ Ioo (a i.castSucc) (a i.succ) := by
+    intro k _ hk
+    have h₁ := ha.lt_iff_lt.mp hk.1
+    have h₂ := ha.lt_iff_lt.mp hk.2
+    simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_succ] at h₁ h₂
+    omega
+  have hmem : schwarzChristoffelBoundary a e z₀ x ∈
+      segment ℝ (schwarzChristoffelVertex a e z₀ i.castSucc)
+        (schwarzChristoffelVertex a e z₀ i.succ) := by
+    rw [← schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
+      (ha.monotone i.castSucc_le_succ) hfree (hfinite _) (hfinite _)]
+    exact ⟨x, hxi, rfl⟩
+  rw [schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 (hfinite 0)]
+  by_contra! hle
+  have hinj := schwarzChristoffelBoundary_injOn_Icc a e z₀ hfree (hfinite _) (hfinite _)
+  by_cases hi : i.castSucc = 0
+  · have hisucc : i.succ ≠ Fin.last n := by
+      simp only [Fin.ext_iff, Fin.val_castSucc, Fin.val_zero] at hi
+      rw [Ne, Fin.ext_iff, Fin.val_succ, Fin.val_last]
+      omega
+    have heq := eq_of_mem_segment_schwarzChristoffelVertex_of_im_le a e z₀ ha he hsum _
+      (Fin.succ_ne_zero i) hisucc hmem hle
+    rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ _ (hfinite _)] at heq
+    have hxeq := hinj hxi ⟨le_rfl, (ha i.castSucc_lt_succ).le⟩ heq
+    rw [hi] at hxeq
+    exact hx.1.ne' hxeq
+  · have heq := eq_of_mem_segment_schwarzChristoffelVertex_of_im_le a e z₀ ha he hsum _
+      hi (Fin.castSucc_lt_last i).ne (by rwa [segment_symm] at hmem) hle
+    by_cases hiend : i.succ = Fin.last n
+    · rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ _ (hfinite _)] at heq
+      have hxeq := hinj hxi ⟨(ha i.castSucc_lt_succ).le, le_rfl⟩ heq
+      rw [hiend] at hxeq
+      exact hx.2.ne hxeq
+    · have hlt := im_schwarzChristoffelVertex_zero_lt a e z₀ ha he hsum
+        (Fin.succ_ne_zero i) hiend
+      rw [← heq] at hlt
+      exact hle.not_gt hlt
 
 end TauCeti

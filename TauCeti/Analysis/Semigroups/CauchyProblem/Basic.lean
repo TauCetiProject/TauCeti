@@ -22,9 +22,8 @@ The orbit `t ↦ S(t)x` of a strongly continuous semigroup is a mild solution fo
 vector.  When the initial vector lies in the generator domain, domain invariance and the orbit
 derivative formula upgrade it to a classical solution.
 
-This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part A, the abstract Cauchy
-problem milestone.  The definitions and proofs follow Engel--Nagel, *One-Parameter Semigroups
-for Linear Evolution Equations*, Section II.6.
+The definitions and proofs follow Engel--Nagel, *One-Parameter Semigroups for Linear
+Evolution Equations*, Section II.6.
 
 ## Main declarations
 

@@ -27,7 +27,8 @@ side both inputs they need are available: for `1 < s` each partial sum is a genu
 than the `tsum` junk value (`TauCeti.summable_absNorm_rpow_subtype_of_one_lt`), and the all-prime
 denominator is positive (`NumberField.Set.primeIdealZetaSum_univ_pos_of_one_lt`). In particular
 nothing here uses the divergence of the all-prime sum at `s = 1`. That divergence is what makes a
-finite set of primes have density zero, and those finite-error statements are not proved here.
+finite set of primes have density zero; the finite-error statements that use it are in
+`TauCeti.NumberTheory.ArithmeticDirichletSeries.DirichletDensity.Negligible`.
 
 ## Main results
 
