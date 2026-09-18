@@ -27,24 +27,12 @@ an extension field is transported down to the base, as in the proof of the Chebo
 theorem, where a relative Frobenius fibre over the fixed field of a cyclic subgroup is counted
 over the primes of the base field.
 
-The density statement passes through the logarithmic normalization of both fields
-(`NumberField.Set.hasDirichletDensity_iff_tendsto_div_log_one_div_sub_one`): each all-prime sum is
-`log (1 / (s - 1)) + O(1)`, so the two denominators, one over `E` and one over `K`, are
-asymptotically equal.
-
 ## Main results
 
 * `NumberField.Set.primeIdealZetaSum_eq_mul_of_card_fiber`: the exact identity of prime sums.
 * `NumberField.Set.hasDirichletDensity_iff_of_card_fiber`: the transfer of Dirichlet densities.
 * `NumberField.Set.hasDirichletDensity_contraction`: the transfer along contraction of primes of
   residue degree one.
-
-## Implementation notes
-
-The identity holds for every real `s`, not only for `s > 1`, because the two families are summable
-together: `primeIdealZetaSum` takes the junk value `0` on both sides at the same time. The
-hypothesis `c ≠ 0` is what makes the fibres finite; without it an infinite fibre would have
-`Nat.card` equal to `0`.
 
 ## References
 
@@ -83,6 +71,7 @@ theorem primeIdealZetaSum_eq_mul_of_card_fiber (hmaps : Set.MapsTo π T S)
           ⟨⟨𝔓.1, 𝔓.2.2⟩, Subtype.ext ((hmaps.val_restrict_apply _).trans 𝔓.2.1)⟩
         left_inv := fun _ ↦ rfl
         right_inv := fun _ ↦ rfl }
+  -- `c ≠ 0` makes the fibres finite: an infinite fibre would have `Nat.card` equal to `0`.
   have hfin (𝔭 : S) : Finite {t : T // f t = 𝔭} :=
     Nat.finite_of_card_ne_zero ((hcard 𝔭).symm ▸ hc)
   have hinner (𝔭 : S) : ∑' _ : {t : T // f t = 𝔭}, g 𝔭 = c * g 𝔭 := by
@@ -95,6 +84,7 @@ theorem primeIdealZetaSum_eq_mul_of_card_fiber (hmaps : Set.MapsTo π T S)
     refine tsum_congr fun ⟨𝔭, t, ht⟩ ↦ ?_
     subst ht
     simp only [Equiv.sigmaFiberEquiv_apply, hnorm t.1 t.2, g, f, hmaps.val_restrict_apply]
+  -- Both sides are summable together, so off summability both are the junk value `0`.
   rw [hT, primeIdealZetaSum_def]
   by_cases hsum : Summable fun x : Σ 𝔭 : S, {t : T // f t = 𝔭} ↦ g x.1
   · rw [hsum.tsum_sigma, tsum_congr hinner, tsum_mul_left]
@@ -112,6 +102,8 @@ theorem hasDirichletDensity_iff_of_card_fiber (hmaps : Set.MapsTo π T S)
     (hfiber : ∀ 𝔭 ∈ S, Nat.card {𝔓 // π 𝔓 = 𝔭 ∧ 𝔓 ∈ T} = c) {δ : ℝ} :
     T.HasDirichletDensity δ ↔ S.HasDirichletDensity (δ / c) := by
   have hc' : (c : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hc
+  -- The all-prime sums over `E` and `K` differ, so compare both through the logarithmic
+  -- normalization, where each is asymptotic to `log (1 / (s - 1))`.
   simp_rw [hasDirichletDensity_iff_tendsto_div_log_one_div_sub_one,
     primeIdealZetaSum_eq_mul_of_card_fiber hmaps hnorm hc hfiber, mul_div_assoc]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
