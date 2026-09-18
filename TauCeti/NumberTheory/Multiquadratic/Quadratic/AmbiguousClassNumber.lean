@@ -70,11 +70,11 @@ F. Lemmermeyer, *Reciprocity Laws: From Euler to Eisenstein*, §2.2.
 * `natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_forall_pos` and
   `natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_neg` (same namespace): the
   ambiguous class number of a real quadratic field.
-* `natCard_exists_map_ringOfIntegersQuadraticConj_eq_self_mul_natCard_ker` (same
-  namespace): for either signature, the number of classes of ambiguous ideals times the order of
-  the kernel of `Cl⁺(K) → Cl(K)` is the narrow ambiguous class number.
-* `natCard_exists_map_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_norm_eq_neg_one` and
-  `natCard_exists_map_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_forall_norm_ne_neg_one`
+* `NumberField.NarrowClassGroup.natCard_isStronglyAmbiguousClass_mul_natCard_ker`: for either
+  signature, the number of strongly ambiguous classes times the order of the kernel of
+  `Cl⁺(K) → Cl(K)` is the narrow ambiguous class number.
+* `natCard_isStronglyAmbiguousClass_eq_two_pow_of_norm_eq_neg_one` and
+  `natCard_isStronglyAmbiguousClass_eq_two_pow_of_forall_norm_ne_neg_one`
   (same namespace): the strongly ambiguous class number of a real quadratic field.
 -/
 
@@ -196,14 +196,12 @@ theorem natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_neg {
 `K = ℚ(√d)` with `d` squarefree, if some unit of `𝓞 K` has norm `-1` (so `K` is real), then exactly
 `2 ^ (t - 1)` ideal classes are represented by an ideal fixed by the quadratic conjugation, where
 `t` is the number of rational primes ramifying in `K`. -/
-theorem natCard_exists_map_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_norm_eq_neg_one
+theorem natCard_isStronglyAmbiguousClass_eq_two_pow_of_norm_eq_neg_one
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) {u : (𝓞 K)ˣ} (hu : Algebra.norm ℚ ((u : 𝓞 K) : K) = -1) :
-    Nat.card {C : ClassGroup (𝓞 K) // ∃ I : (Ideal (𝓞 K))⁰,
-      Ideal.map (ringOfIntegersQuadraticConj hmin hgen) (I : Ideal (𝓞 K)) = (I : Ideal (𝓞 K)) ∧
-        ClassGroup.mk0 I = C} = 2 ^ ((ramifiedPrimes K).ncard - 1) := by
-  have key := natCard_exists_map_ringOfIntegersQuadraticConj_eq_self_mul_natCard_ker
-    hmin hgen
+    Nat.card {C : ClassGroup (𝓞 K) // IsStronglyAmbiguousClass hmin hgen C} =
+      2 ^ ((ramifiedPrimes K).ncard - 1) := by
+  have key := NarrowClassGroup.natCard_isStronglyAmbiguousClass_mul_natCard_ker hmin hgen
   rw [(MonoidHom.ker_eq_bot_iff _).mpr
       (NarrowClassGroup.toClassGroup_injective_of_norm_eq_neg_one hmin hgen hu),
     Subgroup.card_bot, mul_one, natCard_narrowClassGroup_sq_eq_one_eq_two_pow hmin hgen hsf] at key
@@ -214,15 +212,13 @@ theorem natCard_exists_map_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_nor
 `2 ^ (t - 2)` ideal classes are represented by an ideal fixed by the quadratic conjugation, where
 `t` is the number of rational primes ramifying in `K`: the narrow class of `(√d)` is then
 nontrivial, and it is an ambiguous class that dies in `Cl(K)`. -/
-theorem natCard_exists_map_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_forall_norm_ne_neg_one
+theorem natCard_isStronglyAmbiguousClass_eq_two_pow_of_forall_norm_ne_neg_one
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) (hd : 0 < d)
     (hu : ∀ u : (𝓞 K)ˣ, Algebra.norm ℚ ((u : 𝓞 K) : K) ≠ -1) :
-    Nat.card {C : ClassGroup (𝓞 K) // ∃ I : (Ideal (𝓞 K))⁰,
-      Ideal.map (ringOfIntegersQuadraticConj hmin hgen) (I : Ideal (𝓞 K)) = (I : Ideal (𝓞 K)) ∧
-        ClassGroup.mk0 I = C} = 2 ^ ((ramifiedPrimes K).ncard - 2) := by
-  have key := natCard_exists_map_ringOfIntegersQuadraticConj_eq_self_mul_natCard_ker
-    hmin hgen
+    Nat.card {C : ClassGroup (𝓞 K) // IsStronglyAmbiguousClass hmin hgen C} =
+      2 ^ ((ramifiedPrimes K).ncard - 2) := by
+  have key := NarrowClassGroup.natCard_isStronglyAmbiguousClass_mul_natCard_ker hmin hgen
   -- Without a unit of norm `-1` the kernel of `Cl⁺(K) → Cl(K)` is nontrivial, of order `2`.
   have hne : (NarrowClassGroup.toClassGroup (K := K)).ker ≠ ⊥ := fun h => by
     obtain ⟨u, hu'⟩ := (NarrowClassGroup.toClassGroup_injective_iff_exists_norm_eq_neg_one hmin
