@@ -199,6 +199,19 @@ theorem eigenvalue_mul (f : Eigenform N k) {m n : ℕ+} (hmn : Nat.Coprime m n) 
   rw [← f.isEigen (m * n), PNat.mul_coe, heckeTCompositeGamma0_mul_of_coprime N hmn, map_mul,
     Module.End.mul_apply, f.isEigen n, map_smul, f.isEigen m, smul_smul, mul_comm]
 
+/-- At a bad prime, the power identity for Hecke operators acts on a full eigenform by the
+product of the eigenvalues at `p` and `p ^ (r + 1)`. -/
+private theorem heckeRingHomCuspCharSpace_prime_pow_add_two_of_not_coprime
+    (f : Eigenform N k) {p : ℕ+} (hp : (p : ℕ).Prime) (hpN : ¬Nat.Coprime p N) (r : ℕ) :
+    heckeRingHomCuspCharSpace k f.χ (heckeTCompositeGamma0 N (p ^ (r + 2)))
+        ⟨f.toCuspForm, f.mem_charSpace⟩ =
+      (f.eigenvalue p * f.eigenvalue (p ^ (r + 1))) •
+        (⟨f.toCuspForm, f.mem_charSpace⟩ : cuspFormCharSpace k f.χ) := by
+  rw [heckeTCompositeGamma0_prime_pow_of_not_coprime N hp hpN, pow_succ',
+    map_mul, Module.End.mul_apply, ← heckeTCompositeGamma0_prime_pow_of_not_coprime N hp hpN,
+    ← PNat.pow_coe, f.isEigen, map_smul, ← heckeTCompositeGamma0_prime N hp, f.isEigen,
+    smul_smul, mul_comm]
+
 /-- **The recurrence along the powers of a prime**:
 `λ_{p^{r+2}} = λ_p λ_{p^{r+1}} − χ(p) p^{k−1} λ_{p^r}`, with `χ(p)` read through Mathlib's
 zero-extension `MulChar.ofUnitHom`. At a good prime this is
@@ -219,11 +232,8 @@ theorem eigenvalue_prime_pow_add_two (f : Eigenform N k) {p : ℕ+} (hp : (p : �
       MulChar.map_nonunit _ (by rwa [ZMod.isUnit_iff_coprime])
     rw [hχ, zero_mul, zero_mul, sub_zero]
     refine f.eq_of_smul_eq ?_
-    rw [← f.isEigen (p ^ (r + 2)), PNat.pow_coe,
-      heckeTCompositeGamma0_prime_pow_of_not_coprime N hp hpN, pow_succ', map_mul,
-      Module.End.mul_apply, ← heckeTCompositeGamma0_prime_pow_of_not_coprime N hp hpN,
-      ← PNat.pow_coe, f.isEigen, map_smul, ← heckeTCompositeGamma0_prime N hp, f.isEigen,
-      smul_smul, mul_comm]
+    exact (f.isEigen (p ^ (r + 2))).symm.trans
+      (f.heckeRingHomCuspCharSpace_prime_pow_add_two_of_not_coprime hp hpN r)
 
 /-! ### The Fourier coefficients of a normalised eigenform
 

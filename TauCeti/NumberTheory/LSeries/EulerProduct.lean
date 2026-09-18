@@ -64,17 +64,19 @@ theorem term_mul_of_coprime {a : ℕ → ℂ} (s : ℂ)
 
 /-- **The local factor of a degree-two Euler product.** If `a 1 = 1` and along the powers of the
 prime `p` the coefficients satisfy `a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - d * a (p ^ r)`, then
-at any `s` where the Dirichlet series of `a` converges absolutely, the terms at the powers of `p`
-sum to `(1 - a p * p ^ (-s) + d * p ^ (-2 s))⁻¹`. -/
+if the terms at the powers of `p` are summable, they sum to
+`(1 - a p * p ^ (-s) + d * p ^ (-2 s))⁻¹`. -/
 theorem tsum_term_prime_pow_eq_inv {a : ℕ → ℂ} {d s : ℂ} {p : ℕ} (hp : p.Prime) (h₁ : a 1 = 1)
     (hrec : ∀ r : ℕ, a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - d * a (p ^ r))
-    (hs : LSeriesSummable a s) :
+    (hs : Summable fun e : ℕ ↦ term a s (p ^ e)) :
     ∑' e : ℕ, term a s (p ^ e) = (1 - a p * (p : ℂ) ^ (-s) + d * (p : ℂ) ^ (-2 * s))⁻¹ := by
   set x : ℂ := (p : ℂ) ^ (-s)
+  -- `cpow_nat_mul` expects the natural multiplier on the left of the complex exponent.
+  have h_exp : -2 * s = (2 : ℕ) * -s := by push_cast; ring
   have hx : (p : ℂ) ^ (-2 * s) = x ^ 2 := by
-    rw [show -2 * s = (2 : ℕ) * -s by push_cast; ring, cpow_nat_mul]
+    rw [h_exp, cpow_nat_mul]
   set u : ℕ → ℂ := fun e ↦ term a s (p ^ e)
-  have hu : Summable u := hs.comp_injective (Nat.pow_right_injective hp.two_le)
+  have hu : Summable u := hs
   have hu₁ : Summable fun e ↦ u (e + 1) := (summable_nat_add_iff 1).mpr hu
   -- the recurrence, read on the terms
   have hstep (e : ℕ) : u (e + 2) = a p * x * u (e + 1) - d * x ^ 2 * u e := by
@@ -109,7 +111,8 @@ theorem eulerProduct_hasProd_of_prime_pow_recurrence {a d : ℕ → ℂ} {s : �
     (term_mul_of_coprime s hmul) hs.norm (term_zero a s)
   rw [LSeries]
   convert h using 2 with p
-  exact (tsum_term_prime_pow_eq_inv p.prop h₁ (hrec p p.prop) hs).symm
+  exact (tsum_term_prime_pow_eq_inv p.prop h₁ (hrec p p.prop)
+    (hs.comp_injective (Nat.pow_right_injective p.prop.two_le))).symm
 
 /-- **The Euler product of degree two**, as a `tprod`: see
 `TauCeti.LSeries.eulerProduct_hasProd_of_prime_pow_recurrence`. -/
