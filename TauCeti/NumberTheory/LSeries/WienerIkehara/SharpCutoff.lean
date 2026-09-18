@@ -112,8 +112,8 @@ private lemma term_mul_expWeight (a : ℕ → ℂ) (hΨ0 : Ψ 0 = 0) {x : ℝ} (
 private lemma integral_expWeight :
     ∫ v, expWeight Ψ v = (2 * π : ℂ)⁻¹ * ∫ y in Ioi 0, Ψ y := by
   have h := Measure.integral_comp_mul_left (fun u ↦ Real.exp u • Ψ (Real.exp u)) (2 * π)
-  rw [show (fun v ↦ expWeight Ψ v) = fun v ↦ Real.exp (2 * π * v) • Ψ (Real.exp (2 * π * v))
-    from rfl, h, integral_comp_exp, abs_of_pos (by positivity), Complex.real_smul]
+  simp only [expWeight]
+  rw [h, integral_comp_exp, abs_of_pos (by positivity), Complex.real_smul]
   push_cast
   rfl
 
@@ -140,8 +140,10 @@ theorem tendsto_inv_mul_tsum_mul_div_atTop (ha : 0 ≤ a)
     simp [W]
   have hΨ0 : Ψ 0 = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ lt_irrefl (0 : ℝ) (hΨpos h)
   have key := tendsto_tsum_term_mul_fourier_schwartz_atTop ha hG hG' hsum (𝓕⁻ W)
-  rw [hFg, hg0, show 2 * (π : ℂ) * A * ((2 * π : ℂ)⁻¹ * ∫ y in Ioi 0, Ψ y) =
-    A * ∫ y in Ioi 0, Ψ y by field_simp] at key
+  have hscale : 2 * (π : ℂ) * A * ((2 * π : ℂ)⁻¹ * ∫ y in Ioi 0, Ψ y) =
+      A * ∫ y in Ioi 0, Ψ y := by
+    field_simp
+  rw [hFg, hg0, hscale] at key
   refine key.congr' ?_
   filter_upwards [eventually_gt_atTop 0] with x hx
   simp_rw [term_mul_expWeight a hΨ0 hx, tsum_mul_left]
@@ -192,10 +194,7 @@ private lemma tendsto_inv_mul_tsum_mul_bump (ha : 0 ≤ a)
     (fun z hz ↦ by rw [hGF z hz, (hF z hz).LSeries_eq])
     (fun σ hσ ↦ (hF σ (by simpa using hσ)).LSeriesSummable)
     (ofRealCLM.contDiff.comp φ.contDiff) (φ.hasCompactSupport.comp_left ofReal_zero)
-    (by
-      rw [tsupport, show (Function.support fun y ↦ (φ y : ℂ)) = Function.support φ from
-        Function.support_comp_eq ofReal (by simp) φ]
-      exact tsupport_bump_subset φ h)
+    ((tsupport_comp_subset ofReal_zero φ).trans (tsupport_bump_subset φ h))
   rw [integral_complex_ofReal, ← ofReal_mul] at hmain
   refine (continuous_re.tendsto _).comp hmain |>.congr fun x ↦ ?_
   simp only [Function.comp_apply, ← ofReal_inv, ← ofReal_mul, ← ofReal_tsum, ofReal_re]
