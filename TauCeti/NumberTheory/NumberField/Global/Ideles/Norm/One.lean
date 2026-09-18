@@ -86,7 +86,6 @@ theorem mem_normOne_iff {x : IdeleClassGroup (𝓞 K) K} : x ∈ normOne K ↔ i
   MonoidHom.mem_ker
 
 /-- The class of an idele lies in the norm-one subgroup exactly when the idele has norm `1`. -/
-@[simp]
 theorem mk_mem_normOne_iff {x : IdeleGroup (𝓞 K) K} :
     (x : IdeleClassGroup (𝓞 K) K) ∈ normOne K ↔ ideleNorm x = 1 := by
   rw [mem_normOne_iff, ideleClassNorm_mk]
