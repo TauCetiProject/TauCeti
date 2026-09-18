@@ -89,7 +89,6 @@ theorem absoluteRamificationIndex_eq_natCastValuation :
   simpa using h.symm
 
 /-- The absolute ramification index of `ℚ_[p]` is one. -/
-@[simp]
 theorem absoluteRamificationIndex_padic : absoluteRamificationIndex ℚ_[p] p = 1 := by
   rw [absoluteRamificationIndex_eq_natCastValuation, Padic.natCastValuation_self]
 
