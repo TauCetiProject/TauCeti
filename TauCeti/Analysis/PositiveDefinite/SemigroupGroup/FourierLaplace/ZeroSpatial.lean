@@ -134,12 +134,7 @@ theorem bcr_zero_spatial_iff_hausdorff_bernstein_widder (f : ℝ → ℝ) :
         (MeasurableEquiv.prodPUnit : ℝ≥0 × PUnit.{1} ≃ᵐ ℝ≥0).symm,
       (representsLaplaceFourier_map_prodPUnit_symm_iff _ _).mpr hμ, ?_⟩
     intro ν hν
-    have hν' : RepresentsLaplace
-        (ν.map (MeasurableEquiv.prodPUnit : ℝ≥0 × PUnit.{1} ≃ᵐ ℝ≥0)) f :=
-      (representsLaplaceFourier_zero_spatial_iff ν f).mp hν
-    rw [← MeasurableEquiv.map_symm_map
-      (μ := ν) (MeasurableEquiv.prodPUnit : ℝ≥0 × PUnit.{1} ≃ᵐ ℝ≥0),
-      hν'.unique hμ]
+    exact hν.unique ((representsLaplaceFourier_map_prodPUnit_symm_iff _ _).mpr hμ)
 
 /-- The transported Bernstein measure represents a completely monotone function in zero spatial
 dimension. -/
@@ -157,16 +152,10 @@ theorem eq_map_prodPUnit_symm_bernsteinMeasure {f : ℝ → ℝ}
     (μ : Measure (ℝ≥0 × PUnit.{1}))
     (hμ : RepresentsLaplaceFourier μ (fun x : ℝ≥0 × PUnit.{1} => (f x.1 : ℂ))) :
     μ = (bernsteinMeasure f).map
-      (MeasurableEquiv.prodPUnit : ℝ≥0 × PUnit.{1} ≃ᵐ ℝ≥0).symm :=
-  calc
-    μ = (μ.map (MeasurableEquiv.prodPUnit : ℝ≥0 × PUnit.{1} ≃ᵐ ℝ≥0)).map
-        (MeasurableEquiv.prodPUnit : ℝ≥0 × PUnit.{1} ≃ᵐ ℝ≥0).symm :=
-      (MeasurableEquiv.map_symm_map _).symm
-    _ = (bernsteinMeasure f).map
-        (MeasurableEquiv.prodPUnit : ℝ≥0 × PUnit.{1} ≃ᵐ ℝ≥0).symm :=
-      congrArg (fun ν => ν.map
-        (MeasurableEquiv.prodPUnit : ℝ≥0 × PUnit.{1} ≃ᵐ ℝ≥0).symm)
-        (eq_bernsteinMeasure _ ((representsLaplaceFourier_zero_spatial_iff μ f).mp hμ))
+      (MeasurableEquiv.prodPUnit : ℝ≥0 × PUnit.{1} ≃ᵐ ℝ≥0).symm := by
+  have hf := RepresentsLaplace.isContinuousCompletelyMonotoneOnIoi
+    ((representsLaplaceFourier_zero_spatial_iff μ f).mp hμ)
+  exact hμ.unique (representsLaplaceFourier_map_prodPUnit_symm_bernsteinMeasure hf)
 
 end TauCeti
 
