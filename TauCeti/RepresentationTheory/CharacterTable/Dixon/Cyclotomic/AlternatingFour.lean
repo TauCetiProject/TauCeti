@@ -79,7 +79,7 @@ namespace TauCeti
 
 open Matrix
 
-local instance fact_prime_seven : Fact (Nat.Prime 7) := ⟨by decide⟩
+local instance fact_prime_seven_alternatingFour : Fact (Nat.Prime 7) := ⟨by decide⟩
 
 private theorem sqrt_twelve : Nat.sqrt 12 = 3 := by
   exact ((Nat.eq_sqrt).2 (by norm_num)).symm
