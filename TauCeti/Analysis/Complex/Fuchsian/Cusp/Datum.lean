@@ -29,7 +29,7 @@ on the scaling, and the datum is unique once the cusp and the scaling are fixed.
 * `Subgroup.CuspDatum`: normalized cusp data of `Γ ≤ PSL(2, ℝ)`.
 * `Subgroup.CuspDatum.mem_stabilizer_iff_conj`: the conjugated stabilizer of the cusp is exactly
   the group of translations by `width * ℤ`.
-* `Subgroup.CuspDatum.eq_of_cusp_eq_of_scaling_eq`: a cusp datum is determined by its cusp and
+* `Subgroup.CuspDatum.ext`: a cusp datum is determined by its cusp and
   scaling.
 * `Subgroup.IsCuspPoint.exists_cuspDatum`: for a discrete `Γ`, every cusp point and every scaling
   sending it to `∞` carry a cusp datum.
@@ -159,7 +159,7 @@ full stabilizer with the translations by `width * ℤ`
 (`Subgroup.CuspDatum.mem_stabilizer_iff_conj`).
 
 The width depends on the scaling and not only on the cusp; given the cusp and the scaling, the
-datum is unique (`Subgroup.CuspDatum.eq_of_cusp_eq_of_scaling_eq`). In particular a proper power
+datum is unique (`Subgroup.CuspDatum.ext`). In particular a proper power
 of the generator, although also conjugate to a positive translation, never forms a cusp datum.
 For a discrete `Γ`, every cusp point and every scaling sending it to `∞` carry a cusp datum
 (`Subgroup.IsCuspPoint.exists_cuspDatum`). -/
@@ -234,7 +234,7 @@ theorem mem_stabilizer_iff_conj {g : Γ} :
 scaling: the width is then the positive generator of the conjugated stabilizer, and the
 generator is the corresponding element of `Γ`. -/
 @[ext]
-theorem eq_of_cusp_eq_of_scaling_eq {D D' : Γ.CuspDatum} (hc : D.cusp = D'.cusp)
+theorem ext {D D' : Γ.CuspDatum} (hc : D.cusp = D'.cusp)
     (hσ : D.scaling = D'.scaling) : D = D' := by
   obtain ⟨n, hn⟩ := D.mem_stabilizer_iff_conj.mp (hc ▸ D'.generator_mem_stabilizer)
   obtain ⟨m, hm⟩ := D'.mem_stabilizer_iff_conj.mp (hc ▸ D.generator_mem_stabilizer)
