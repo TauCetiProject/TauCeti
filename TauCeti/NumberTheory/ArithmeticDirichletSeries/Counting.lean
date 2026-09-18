@@ -51,7 +51,8 @@ Two lemmas move a summatory function between the three carriers.
 `TauCeti.idealSummatory_eq_primePowerSummatory` reads an ideal weight vanishing off the prime
 powers as a prime-power weight, and `TauCeti.idealSummatory_eq_sum_range_normFiber` regroups an
 ideal summatory function into the partial sum, over `n ≤ ⌊x⌋₊`, of the total mass on the norm
-fibre at `n`.  Together they present a sum over prime powers as a partial sum of an
+fibre at `n`; `TauCeti.idealSummatory_eq_sum_Icc_normCoeff` reads the same partial sum through
+`TauCeti.normCoeff`.  Together they present a sum over prime powers as a partial sum of an
 `ArithmeticFunction`, which is the shape a Tauberian theorem consumes.
 
 For `0 ≤ x`, a real cutoff and its floor select the same indices, so
@@ -483,6 +484,16 @@ theorem idealSummatory_eq_sum_range_normFiber {M : Type*} [AddCommMonoid M]
         (fun I hI ↦ Finset.mem_range_succ_iff.mpr (Nat.le_floor (by simpa using hI))) w]
     exact Finset.sum_congr rfl fun n hn ↦ by
       rw [idealsLE_filter_absNorm_eq K (Finset.mem_range_succ_iff.mp hn) (zero_le_one.trans hx)]
+
+/-- **An ideal summatory function as a partial sum of norm coefficients.** The inclusive sum of an
+ideal arithmetic function over the nonzero ideals of absolute norm at most `x` is the partial sum
+`∑_{1 ≤ n ≤ ⌊x⌋₊}` of its norm coefficients, the form of partial sum used by Mathlib's
+`LSeries_eq_mul_integral`. -/
+theorem idealSummatory_eq_sum_Icc_normCoeff (f : IdealArithmeticFunction K) (x : ℝ) :
+    idealSummatory K f x = ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, normCoeff K f n := by
+  rw [idealSummatory_eq_sum_range_normFiber, Finset.range_eq_Ico,
+    Finset.sum_eq_sum_Ico_succ_bot (Nat.succ_pos _), normFiber_zero, Finset.sum_empty, zero_add]
+  exact Finset.sum_congr rfl fun n _ ↦ (normCoeff_eq_sum_normFiber K f n).symm
 
 /-- **An ideal weight concentrated on the prime powers, read as a prime-power weight.** An ideal
 weight vanishing off the prime-power ideals has the same summatory function as its restriction to
