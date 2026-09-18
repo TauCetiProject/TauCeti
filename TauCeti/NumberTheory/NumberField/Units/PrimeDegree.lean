@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Units.Basic
-import TauCeti.FieldTheory.IntermediateField.Adjoin.FinrankPrime
+import TauCeti.Algebra.Algebra.Subalgebra.FinrankPrime
 import TauCeti.NumberTheory.NumberField.Units.Basic
 
 /-!
@@ -36,6 +36,7 @@ variable {K : Type*} [Field K] [NumberField K]
 non-torsion unit generates `K` over `ℚ`. -/
 theorem adjoin_eq_top_of_finrank_prime (hp : Nat.Prime (Module.finrank ℚ K)) {v : (𝓞 K)ˣ}
     (hv : v ∉ torsion K) : Algebra.adjoin ℚ {((v : 𝓞 K) : K)} = ⊤ :=
-  TauCeti.Algebra.adjoin_singleton_eq_top_of_finrank_prime hp fun h => hv (mem_torsion_of_mem_bot h)
+  TauCeti.Algebra.adjoin_singleton_eq_top_of_finrank_prime hp fun h =>
+    hv (mem_torsion_of_mem_bot (IntermediateField.mem_bot.mpr (Algebra.mem_bot.mp h)))
 
 end TauCeti.NumberField.Units

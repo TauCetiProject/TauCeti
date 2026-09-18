@@ -13,6 +13,12 @@ public import Mathlib.NumberTheory.NumberField.Units.Basic
 Basic facts about the units of the ring of integers of a number field `K`, beyond Mathlib's
 `Mathlib.NumberTheory.NumberField.Units.Basic`.
 
+The units of `ℤ` are `±1`, so a unit of `𝓞 K` whose image in `K` is rational is a root of
+unity: its absolute value is the same at every infinite place, and the product formula forces
+that value to be `1`. Read the other way, a non-torsion unit lies outside the base field `ℚ`,
+which is what field-generation and primitive-element arguments about units need, for instance
+to see that a non-torsion unit of a field of prime degree generates the field.
+
 ## Main results
 
 * `TauCeti.NumberField.Units.mem_torsion_of_mem_bot`: a unit whose image in `K` lies in the
