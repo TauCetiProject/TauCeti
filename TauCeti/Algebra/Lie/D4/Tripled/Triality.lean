@@ -62,8 +62,6 @@ pinned simply connected group scheme of type `D₄` is asserted here.
 * The construction follows the formal template of
   `TauCeti.Algebra.Lie.E6.DoubledMinuscule.GraphAutomorphism`, with the signed involution there
   replaced by an unsigned permutation of order three.
-* [Tau Ceti PR #6671](https://github.com/TauCetiProject/TauCeti/pull/6671), the earlier
-  scheme- and point-level formalization of this triality construction.
 -/
 
 public section
