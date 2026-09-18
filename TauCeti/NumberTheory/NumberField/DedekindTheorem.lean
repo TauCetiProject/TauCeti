@@ -29,26 +29,15 @@ the monic irreducible factors of `f mod p` is the cycle type of `σ` acting on t
 (`factorizationType_eq_cycleType_isArithFrobAt`); in terms of `Equiv.Perm.fullCycleType`, the
 two sides are `fullCycleType_galActionHom_restrict_eq_map_natDegree_monicFactorsMod`.
 
-The proof is a chain of identifications of multisets of natural numbers.
-
-* Every root `β` of `minpoly ℚ θ` in `M` generates a subfield `ℚ(β)`, realised as the fixed field
-  of the stabilizer of `β` in `Gal(M/ℚ)`, in which `β` is an integral primitive element with the
-  same minimal polynomial over `ℤ` as `θ` (`rootIntegralPrimitiveElement`). Since `f mod p` is
-  squarefree, `p` does not divide the conductor exponent of `β` there, so the Kummer–Dedekind
-  theorem applies in `ℚ(β)`: the primes above `p` correspond to the irreducible factors of
-  `f mod p`, unramified over `ℤ`, with residue degrees the degrees of the factors
-  (`ramificationIdx_eq_one_of_liesOver_span`,
-  `map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod`).
-* Since every root field is unramified at `p`, the inertia subgroup of `Q` fixes every root
-  (`inertia_smul_eq_self`), so the orbits of the decomposition group of `Q` on the roots are the
-  orbits of the Frobenius `σ` (`Ideal.orbit_stabilizer_eq_orbit_zpowers_of_isArithFrobAt`), whose
-  sizes form the full cycle type of `σ` (`Equiv.Perm.fullCycleType_eq_map_card_orbit`).
-* The roots are the cosets of the stabilizer of a chosen root
-  (`rootSetEquivQuotientStabilizer`), and the orbits of the decomposition group on those cosets
-  are the primes of the root field above `p`, with orbit size the local degree `e · f`
-  (`Ideal.map_card_orbit_stabilizer_eq_map_ramificationIdx_mul_inertiaDeg`); those local degrees
-  are computed over `𝓞 ℚ`, and agree with the ones over `ℤ`
-  (`Ideal.inertiaDeg_ringOfIntegers_rat_eq_int`).
+The supporting results are stated for reuse. Every root `β` of `minpoly ℚ θ` in `M` is an
+integral primitive element of the field it generates, the fixed field of its stabilizer in
+`Gal(M/ℚ)`, with the same minimal polynomial over `ℤ` as `θ` (`rootIntegralPrimitiveElement`);
+when `minpoly ℤ θ` is squarefree modulo `p`, that field is unramified above `p`
+(`ramificationIdx_eq_one_of_liesOver_span`), its primes above `p` have as residue degrees the
+degrees of the irreducible factors of `minpoly ℤ θ` modulo `p`
+(`map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod`), and the inertia subgroup of `Q`
+fixes every root (`inertia_smul_eq_self`). These are the facts a computation of a Frobenius
+cycle type, or of a splitting type from a Frobenius, consumes.
 
 No transport between `K` and the subfields of `M` is needed: `K` only enters through `θ`, whose
 minimal polynomial is shared by all the roots. In particular no hypothesis that `θ` generates
