@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
+public import Mathlib.RingTheory.Polynomial.Subring
+public import Mathlib.RingTheory.Valuation.Integral
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import TauCeti.NumberTheory.LocalField.NormedField
 
@@ -20,6 +22,13 @@ multiplicative ultrametric norm on `M` extending that absolute value, and it is 
 value on `M` that does so. This file equips `M` with the resulting normed field, its topology,
 and the valuative relation of the norm, and proves that with these structures `M` is a
 nonarchimedean local field whose valuation extends that of `K`.
+
+Completeness of `K` also makes this extension of the valuation unique: any valuation on `M`
+restricting to the valuation class of `K` induces the order of the spectral norm, since an
+element of spectral norm at most `1` has a minimal polynomial with integral coefficients. Hence
+any valuative relation on `M` extending that of `K` is the one constructed here, any compatible
+valuative topology on `M` is the norm topology, and every `K`-algebra automorphism of `M`
+preserves the valuation.
 
 All structures are named definitions rather than global instances, so that a field already
 carrying a compatible topology or valuative relation acquires no diamond. They are meant to be
@@ -40,6 +49,14 @@ installed locally, as in `letI := finiteExtensionValuativeRel K M`.
 * `TauCeti.finiteExtension_valuativeExtension`: the valuative relation on `M` extends that of `K`.
 * `TauCeti.finiteExtension_isValuativeTopology`: the norm topology is the valuative topology.
 * `TauCeti.finiteExtension_isNonarchimedeanLocalField`: `M` is a nonarchimedean local field.
+* `TauCeti.finiteExtensionNormedField_norm_le_norm_iff`: a valuation on `M` restricting to the
+  valuation class of `K` induces the order of the spectral norm.
+* `TauCeti.finiteExtensionValuation_isEquiv`: any two such valuations are equivalent.
+* `TauCeti.finiteExtensionValuativeRel_eq`: any valuative relation on `M` extending that of `K`
+  is `finiteExtensionValuativeRel K M`.
+* `TauCeti.finiteExtensionNormedFieldTopology_eq`: any valuative topology for such a relation is
+  the norm topology.
+* `TauCeti.valuation_algEquiv`: `K`-algebra automorphisms of `M` preserve the valuation.
 
 ## Implementation notes
 
@@ -200,5 +217,141 @@ theorem finiteExtension_isNonarchimedeanLocalField :
     rw [finiteExtensionNormedField_norm_algebraMap] at h'
     exact ((normalizedAbsoluteValue_lt_one_iff y).2 hy1).ne (mod_cast h')
   exact { }
+
+/-! ### Uniqueness of the extended valuation -/
+
+section Uniqueness
+
+variable {K M} {Γ : Type*} [LinearOrderedCommGroupWithZero Γ]
+
+/-- If a valuation `w` on `M` restricts to the valuation class of `K`, every element of `M` of
+spectral norm at most `1` has `w`-valuation at most `1`: the coefficients of its minimal
+polynomial over `K` are integral, so it is integral over the valuation ring of `w`. -/
+private theorem valuation_le_one_of_finiteExtensionNormedField_norm_le_one {w : Valuation M Γ}
+    (hw : (w.comap (algebraMap K M)).IsEquiv (valuation K)) {x : M}
+    (hx : letI := finiteExtensionNormedField K M; ‖x‖ ≤ 1) : w x ≤ 1 := by
+  let _ := normalizedNontriviallyNormedField K
+  have hmon : (minpoly K x).Monic := minpoly.monic (Algebra.IsIntegral.isIntegral x)
+  have hcoeff (n : ℕ) : w (algebraMap K M ((minpoly K x).coeff n)) ≤ 1 := by
+    have h : ‖(minpoly K x).coeff n‖ ≤ 1 := (spectralValue_le_one_iff hmon).1 hx n
+    have hc := (mem_integer_iff_normalizedAbsoluteValue_le_one _).2
+      (by exact_mod_cast (normalizedNormedField_norm_def ((minpoly K x).coeff n)).symm.trans_le h)
+    simpa using hw.le_one_iff_le_one.2 hc
+  have hsub : (((minpoly K x).map (algebraMap K M)).coeffs : Set M) ⊆ w.integer := by
+    intro c hc
+    obtain ⟨n, -, rfl⟩ := Polynomial.mem_coeffs_iff.1 hc
+    simpa [Valuation.mem_integer_iff] using hcoeff n
+  refine (Valuation.integer.integers w).mem_of_integral
+    ⟨_, (Polynomial.monic_toSubring _ _ hsub).2 (hmon.map _), ?_⟩
+  rw [← Polynomial.eval_map, Algebra.algebraMap_ofSubring, Polynomial.map_toSubring,
+    Polynomial.eval_map_algebraMap, minpoly.aeval]
+
+/-- If a valuation `w` on `M` restricts to the valuation class of `K`, every element of `M` of
+spectral norm less than `1` has `w`-valuation less than `1`. -/
+private theorem valuation_lt_one_of_finiteExtensionNormedField_norm_lt_one {w : Valuation M Γ}
+    (hw : (w.comap (algebraMap K M)).IsEquiv (valuation K)) {x : M}
+    (hx : letI := finiteExtensionNormedField K M; ‖x‖ < 1) : w x < 1 := by
+  let _ := finiteExtensionNormedField K M
+  -- Compare a power of `x` with an element `y` of `K` with `0 < ‖y‖ < 1`.
+  obtain ⟨y, hy0, hy1⟩ := Valuation.IsNontrivial.exists_lt_one (v := valuation K)
+  have hy0' : algebraMap K M y ≠ 0 := by simpa using hy0
+  obtain ⟨k, hk⟩ := exists_pow_lt_of_lt_one (norm_pos_iff.2 hy0') hx
+  have h : w (x ^ k / algebraMap K M y) ≤ 1 := by
+    refine valuation_le_one_of_finiteExtensionNormedField_norm_le_one hw ?_
+    rw [norm_div, norm_pow, div_le_one₀ (norm_pos_iff.2 hy0')]
+    exact hk.le
+  have hwy : w (algebraMap K M y) < 1 := by simpa using hw.lt_one_iff_lt_one.2 hy1
+  have hwy0 : w (algebraMap K M y) ≠ 0 := by simpa using hy0'
+  rw [map_div₀, map_pow, div_le_one₀ (zero_lt_iff.2 hwy0)] at h
+  by_contra hx1
+  exact ((one_le_pow₀ (not_lt.1 hx1)).trans h).not_gt hwy
+
+/-- A valuation `w` on a finite extension `M` of a nonarchimedean local field `K` which restricts
+to the valuation class of `K` has the closed unit ball of the spectral norm of `M/K` as its
+valuation ring. -/
+theorem finiteExtensionNormedField_norm_le_one_iff {w : Valuation M Γ}
+    (hw : (w.comap (algebraMap K M)).IsEquiv (valuation K)) (x : M) :
+    letI := finiteExtensionNormedField K M
+    ‖x‖ ≤ 1 ↔ w x ≤ 1 := by
+  let _ := finiteExtensionNormedField K M
+  refine ⟨valuation_le_one_of_finiteExtensionNormedField_norm_le_one hw, fun h => ?_⟩
+  by_contra hx
+  have hx0 : x ≠ 0 := by
+    rintro rfl
+    simp at hx
+  have h' := valuation_lt_one_of_finiteExtensionNormedField_norm_lt_one hw (x := x⁻¹)
+    (by rw [norm_inv]; exact inv_lt_one_of_one_lt₀ (not_le.1 hx))
+  rw [map_inv₀, inv_lt_one₀ (zero_lt_iff.2 (by simpa using hx0))] at h'
+  exact h'.not_ge h
+
+/-- A valuation `w` on a finite extension `M` of a nonarchimedean local field `K` which restricts
+to the valuation class of `K` induces the same order on `M` as the spectral norm of `M/K`. -/
+theorem finiteExtensionNormedField_norm_le_norm_iff {w : Valuation M Γ}
+    (hw : (w.comap (algebraMap K M)).IsEquiv (valuation K)) (x y : M) :
+    letI := finiteExtensionNormedField K M
+    ‖x‖ ≤ ‖y‖ ↔ w x ≤ w y := by
+  let _ := finiteExtensionNormedField K M
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp
+  have hwy : w y ≠ 0 := by simpa using hy
+  have h := finiteExtensionNormedField_norm_le_one_iff hw (x / y)
+  rwa [norm_div, div_le_one₀ (norm_pos_iff.2 hy), map_div₀, div_le_one₀ (zero_lt_iff.2 hwy)] at h
+
+/-- **Uniqueness of the extended valuation.** Any two valuations on a finite extension `M` of a
+nonarchimedean local field `K` which restrict to the valuation class of `K` are equivalent. -/
+theorem finiteExtensionValuation_isEquiv {Γ₁ Γ₂ : Type*} [LinearOrderedCommGroupWithZero Γ₁]
+    [LinearOrderedCommGroupWithZero Γ₂] {w₁ : Valuation M Γ₁} {w₂ : Valuation M Γ₂}
+    (h₁ : (w₁.comap (algebraMap K M)).IsEquiv (valuation K))
+    (h₂ : (w₂.comap (algebraMap K M)).IsEquiv (valuation K)) :
+    w₁.IsEquiv w₂ := fun x y =>
+  (finiteExtensionNormedField_norm_le_norm_iff h₁ x y).symm.trans
+    (finiteExtensionNormedField_norm_le_norm_iff h₂ x y)
+
+variable (K) in
+/-- For any valuative relation on a finite extension `M` of a nonarchimedean local field `K`
+extending that of `K`, `x ≤ᵥ y` holds exactly when the spectral norm of `x` is at most that of
+`y`. -/
+theorem vle_iff_finiteExtensionNormedField_norm_le [ValuativeRel M] [ValuativeExtension K M]
+    (x y : M) :
+    letI := finiteExtensionNormedField K M
+    x ≤ᵥ y ↔ ‖x‖ ≤ ‖y‖ := by
+  rw [(valuation M).vle_iff_le, finiteExtensionNormedField_norm_le_norm_iff
+    (ValuativeRel.isEquiv ((valuation M).comap (algebraMap K M)) (valuation K))]
+
+variable (K M) in
+/-- **Uniqueness of the extended valuative relation.** A valuative relation on a finite extension
+`M` of a nonarchimedean local field `K` which extends that of `K` is the relation
+`finiteExtensionValuativeRel K M` of the spectral norm. -/
+theorem finiteExtensionValuativeRel_eq [ValuativeRel M] [ValuativeExtension K M] :
+    finiteExtensionValuativeRel K M = ‹ValuativeRel M› := by
+  ext x y
+  exact finiteExtensionValuativeRel_vle_iff x y |>.trans
+    (vle_iff_finiteExtensionNormedField_norm_le K x y).symm
+
+variable (K M) in
+/-- The topology `finiteExtensionNormedFieldTopology K M` of the spectral norm is the topology of
+any valuative topological structure on `M` whose valuative relation extends that of `K`. -/
+theorem finiteExtensionNormedFieldTopology_eq [ValuativeRel M] [ValuativeExtension K M]
+    [TopologicalSpace M] [IsValuativeTopology M] :
+    finiteExtensionNormedFieldTopology K M = ‹TopologicalSpace M› := by
+  have h := finiteExtension_isValuativeTopology K M
+  rw [finiteExtensionValuativeRel_eq K M] at h
+  -- Both topologies are valuative for the same relation, so they have the same neighbourhoods.
+  refine TopologicalSpace.ext_nhds fun x => Filter.ext fun s => ?_
+  rw [@IsValuativeTopology.mem_nhds_iff _ _ _ (finiteExtensionNormedFieldTopology K M) h,
+    IsValuativeTopology.mem_nhds_iff]
+
+/-- **Galois invariance of the valuation.** Every `K`-algebra automorphism of a finite extension
+`M` of a nonarchimedean local field `K` preserves the canonical valuation of any valuative relation
+on `M` extending that of `K`. -/
+@[simp]
+theorem valuation_algEquiv [ValuativeRel M] [ValuativeExtension K M] (σ : M ≃ₐ[K] M) (x : M) :
+    valuation M (σ x) = valuation M x := by
+  let _ := normalizedNontriviallyNormedField K
+  rw [← (valuation M).veq_iff_eq, veq_def, vle_iff_finiteExtensionNormedField_norm_le K,
+    vle_iff_finiteExtensionNormedField_norm_le K, finiteExtensionNormedField_norm_def,
+    finiteExtensionNormedField_norm_def, ← spectralNorm_eq_of_equiv σ x, and_self]
+
+end Uniqueness
 
 end TauCeti
