@@ -28,9 +28,9 @@ applies to the local extension `𝒪_w / 𝒪_v`.
 
 ## Main results
 
-* `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_isIntegralClosure`: `𝒪_w` is the
+* `IsDedekindDomain.HeightOneSpectrum.isIntegralClosure_adicCompletionIntegers`: `𝒪_w` is the
   integral closure of `𝒪_v` in `L_w`, a scoped instance.
-* `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_moduleFinite`: `𝒪_w` is a finite
+* `IsDedekindDomain.HeightOneSpectrum.moduleFinite_adicCompletionIntegers`: `𝒪_w` is a finite
   `𝒪_v`-module when `L_w / K_v` is separable, a scoped instance.
 
 ## References
@@ -57,7 +57,7 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 variable (K L)
 
 /-- The completed integer ring `𝒪_w` is the integral closure of `𝒪_v` in `L_w`. -/
-theorem adicCompletionIntegers_isIntegralClosure :
+theorem isIntegralClosure_adicCompletionIntegers :
     IsIntegralClosure (w.adicCompletionIntegers L) (v.adicCompletionIntegers K)
       (w.adicCompletion L) where
   algebraMap_injective := Subtype.val_injective
@@ -68,16 +68,16 @@ theorem adicCompletionIntegers_isIntegralClosure :
     exact ⟨fun hx ↦ ⟨⟨x, hx⟩, rfl⟩, fun ⟨y, hy⟩ ↦ hy ▸ y.2⟩
 
 scoped[AdicCompletionExtension] attribute [instance]
-  IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_isIntegralClosure
+  IsDedekindDomain.HeightOneSpectrum.isIntegralClosure_adicCompletionIntegers
 
 /-- The completed integer ring `𝒪_w` is a finite `𝒪_v`-module when `L_w / K_v` is separable. -/
-theorem adicCompletionIntegers_moduleFinite
+theorem moduleFinite_adicCompletionIntegers
     [Algebra.IsSeparable (v.adicCompletion K) (w.adicCompletion L)] :
     Module.Finite (v.adicCompletionIntegers K) (w.adicCompletionIntegers L) :=
   IsIntegralClosure.finite (v.adicCompletionIntegers K) (v.adicCompletion K) (w.adicCompletion L)
     (w.adicCompletionIntegers L)
 
 scoped[AdicCompletionExtension] attribute [instance]
-  IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_moduleFinite
+  IsDedekindDomain.HeightOneSpectrum.moduleFinite_adicCompletionIntegers
 
 end IsDedekindDomain.HeightOneSpectrum
