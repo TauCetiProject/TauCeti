@@ -109,8 +109,9 @@ theorem finiteIndex_range_comp (φ₁ : A →* B) (φ₂ : B →* C) [φ₁.rang
     [φ₂.range.FiniteIndex] : (φ₂.comp φ₁).range.FiniteIndex := by
   refine ⟨?_⟩
   rw [MonoidHom.range_comp, Subgroup.index_map]
+  have hle : φ₁.range ≤ φ₁.range ⊔ φ₂.ker := le_sup_left
   exact Nat.mul_ne_zero
-    (Subgroup.finiteIndex_of_le (show φ₁.range ≤ φ₁.range ⊔ φ₂.ker from le_sup_left)).index_ne_zero
+    (Subgroup.finiteIndex_of_le hle).index_ne_zero
     Subgroup.FiniteIndex.index_ne_zero
 
 end MonoidHom
