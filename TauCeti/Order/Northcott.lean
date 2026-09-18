@@ -99,7 +99,7 @@ theorem summatory_add {M : Type*} [AddCommMonoid M] (w₁ w₂ : ι → M) (x : 
   simp [summatory, Finset.sum_add_distrib]
 
 /-- Summation distributes over pointwise subtraction of weights. -/
-theorem summatory_sub {M : Type*} [AddCommGroup M] (w₁ w₂ : ι → M) (x : ℝ) :
+theorem summatory_sub {M : Type*} [SubtractionCommMonoid M] (w₁ w₂ : ι → M) (x : ℝ) :
     summatory N (w₁ - w₂) x = summatory N w₁ x - summatory N w₂ x := by
   simp [summatory, Finset.sum_sub_distrib]
 

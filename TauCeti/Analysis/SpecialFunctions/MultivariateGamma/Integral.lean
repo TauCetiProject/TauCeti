@@ -56,7 +56,9 @@ scale matrix `S`, whose exponential weight is `exp (-trace (S⁻¹ * A) / 2)` an
 * `Matrix.PosDef.lintegral_det_rpow_mul_exp_neg_trace_inv_mul_div_two` and
   `Matrix.PosDef.integral_det_rpow_mul_exp_neg_trace_inv_mul_div_two` — the same statement in
   the halved form `exp (-trace (S⁻¹ * A) / 2)` used by the Wishart densities, where the factor
-  is `2 ^ (p * a) * (det S) ^ a`.
+  is `2 ^ (p * a) * (det S) ^ a`;
+* `Matrix.PosDef.integrableOn_posDef_det_rpow_mul_exp_neg_trace_mul` — integrability on the cone
+  of the integrand weighted by an arbitrary positive-definite `B`.
 
 ## References
 
@@ -183,7 +185,7 @@ end TauCeti
 
 namespace Matrix.PosDef
 
-variable {p : ℕ} {S T : Matrix (Fin p) (Fin p) ℝ}
+variable {p : ℕ} {B S T : Matrix (Fin p) (Fin p) ℝ}
 
 open TauCeti
 
@@ -359,5 +361,33 @@ theorem integral_det_rpow_mul_exp_neg_trace_inv_mul_div_two (hS : S.PosDef) (a :
   rw [← h]
   exact setIntegral_congr_fun (measurableSet_posDefMatrix p)
     fun A _ => by rw [integrand_two_smul hS a A]
+
+/-- With a positive-definite weight `B` in the exponential term, the cone integrand is still
+integrable in the classical range of the shape parameter; this is the converse of
+`TauCeti.not_integrableOn_posDef_det_rpow_mul_exp_neg_trace_mul`. Weighting by `B` amounts to the
+scale `B⁻¹`, so the integral is finite for the same reason the unweighted one is. -/
+theorem integrableOn_posDef_det_rpow_mul_exp_neg_trace_mul (hB : B.PosDef)
+    (ha : ((p : ℝ) - 1) / 2 < a) :
+    IntegrableOn (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+        (A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
+          exp (-(B * (A : Matrix (Fin p) (Fin p) ℝ)).trace))
+      {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (A : Matrix (Fin p) (Fin p) ℝ).PosDef} (symmetricLebesgue p) := by
+  refine ⟨Measurable.aestronglyMeasurable (by fun_prop), ?_⟩
+  have hscale := lintegral_det_rpow_mul_exp_neg_trace_inv_mul hB.inv a
+  rw [Matrix.nonsing_inv_nonsing_inv _ (isUnit_iff_ne_zero.2 hB.det_pos.ne'),
+    lintegral_posDef_multivariateGamma ha] at hscale
+  -- On the cone the determinant is positive, so the integrand is its own norm.
+  have henorm : ∫⁻ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+      (A : Matrix (Fin p) (Fin p) ℝ).PosDef},
+      ‖(A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
+        exp (-(B * (A : Matrix (Fin p) (Fin p) ℝ)).trace)‖ₑ ∂symmetricLebesgue p =
+      ENNReal.ofReal ((B⁻¹).det ^ a) * ENNReal.ofReal (multivariateGamma p a) := by
+    rw [← hscale]
+    refine setLIntegral_congr_fun (measurableSet_posDefMatrix p) fun A hA => ?_
+    exact Real.enorm_eq_ofReal
+      (mul_nonneg (Real.rpow_nonneg hA.det_pos.le _) (Real.exp_nonneg _))
+  rw [hasFiniteIntegral_iff_enorm, henorm]
+  exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top ENNReal.ofReal_lt_top
 
 end Matrix.PosDef

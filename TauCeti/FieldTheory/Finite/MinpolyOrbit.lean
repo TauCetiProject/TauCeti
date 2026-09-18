@@ -48,7 +48,7 @@ description of an orbit under the whole group.  The two statements that mention 
 
 ## References
 
-* [S. Lang, *Algebra*][lang2002], Chapter V, §5.
+* [S. Lang, *Algebra*][serge_lang_algebra], Chapter V, §5.
 -/
 
 public section
