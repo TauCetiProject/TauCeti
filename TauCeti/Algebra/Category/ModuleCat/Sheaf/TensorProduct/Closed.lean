@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Generator
-public import Mathlib.CategoryTheory.Abelian.Subobject
-public import Mathlib.CategoryTheory.Adjunction.AdjointFunctorTheorems
 public import Mathlib.CategoryTheory.Monoidal.Braided.Reflection
+public import TauCeti.Algebra.Category.ModuleCat.Presheaf.MonoidalClosed
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Monoidal
 
 /-!
@@ -19,16 +17,16 @@ into a closed symmetric monoidal category. Consequently, tensoring on the left h
 Hom functor as a right adjoint; Mathlib's standard `ihom.adjunction`, `ihom.ev`, and `ihom.coev`
 provide the tensor--Hom adjunction, evaluation, and coevaluation.
 
-The construction has two stages. Tensoring presheaves of modules preserves small colimits, and
-the free modules on representables form a small separating family. The special adjoint functor
-theorem therefore gives a right adjoint to tensoring by each presheaf. Day's reflection theorem
-then transports this closed structure across the reflective sheafification adjunction. Thus the
-internal Hom of sheaves is the sheafification of the presheaf internal Hom.
+Presheaves of modules form a closed monoidal category by
+`TauCeti.PresheafOfModules.monoidalClosed`. Day's reflection theorem transports this closed
+structure across the reflective sheafification adjunction. Thus the internal Hom of sheaves is
+the sheafification of the presheaf internal Hom.
 
 ## Main declarations
 
-* `TauCeti.SheafOfModules.presheafMonoidalClosed` gives the closed structure on presheaves of
-  modules over the ring presheaf underlying `R`;
+* `TauCeti.SheafOfModules.presheafMonoidalClosed` transfers the closed structure of
+  `TauCeti.PresheafOfModules.monoidalClosed` to presheaves of modules over the ring presheaf
+  underlying `R`;
 * `TauCeti.SheafOfModules.monoidalClosed` gives the closed structure on sheaves of modules;
 * `SheafOfModules.ihom_obj` identifies its internal Hom object with the sheafification of the
   presheaf internal Hom.
@@ -57,21 +55,13 @@ namespace SheafOfModules
 
 variable (R : Sheaf J CommRingCat.{u})
 
-local notation "preservesTensorLeft" =>
-  instPreservesColimitsOfSizeCompOppositeCommRingCatRingCatForget₂RingHomCarrierCarrierTensorLeft
-
-/-- The closed monoidal structure on presheaves of modules over the ring presheaf underlying `R`.
-Its internal Hom is the right adjoint supplied by the special adjoint functor theorem. -/
+/-- The closed monoidal structure on presheaves of modules over the ring presheaf underlying `R`,
+transferred from `TauCeti.PresheafOfModules.monoidalClosed` so that instance search finds it at
+`(ringCatSheaf R).obj`. -/
 instance presheafMonoidalClosed :
-    MonoidalClosed (PresheafOfModules.{u} (ringCatSheaf R).obj) where
-  closed M :=
-    letI : MonoidalCategory (PresheafOfModules.{u} (ringCatSheaf R).obj) :=
-      PresheafOfModules.monoidalCategory (R := R.obj)
-    letI : PreservesColimitsOfSize.{u, u} (tensorLeft M) := preservesTensorLeft M
-    letI := isLeftAdjoint_of_preservesColimits_of_isSeparating.{u}
-      (PresheafOfModules.freeYoneda.isSeparating (ringCatSheaf R).obj) (tensorLeft M)
-    { rightAdj := (tensorLeft M).rightAdjoint
-      adj := Adjunction.ofIsLeftAdjoint (tensorLeft M) }
+    MonoidalClosed (PresheafOfModules.{u} (ringCatSheaf R).obj) :=
+  inferInstanceAs (MonoidalClosed (PresheafOfModules.{u}
+    (R.obj ⋙ forget₂ CommRingCat RingCat.{u})))
 
 /-- The closed symmetric monoidal structure on sheaves of `R`-modules. It is obtained from the
 closed structure on presheaves of modules by Day's reflection theorem. -/
