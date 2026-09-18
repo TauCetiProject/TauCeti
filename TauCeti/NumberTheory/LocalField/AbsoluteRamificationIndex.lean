@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Padic
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
 /-!
 # The absolute ramification index of a mixed-characteristic local field

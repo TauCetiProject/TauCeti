@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
-public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
 /-!
