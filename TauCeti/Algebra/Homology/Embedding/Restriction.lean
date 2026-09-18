@@ -29,17 +29,15 @@ open CategoryTheory CategoryTheory.Limits
 namespace ComplexShape.Embedding
 
 /-- Mapping a restricted complex and restricting the mapped complex have the same objects. -/
-private theorem mapRestriction_obj_X
+@[simp]
+theorem mapRestriction_obj_X
     {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
     {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
     (F : C ⥤ D) [F.PreservesZeroMorphisms] (e : c.Embedding c') [e.IsRelIff]
     (K : HomologicalComplex C c') (i : ι) :
     ((F.mapHomologicalComplex c).obj ((e.restrictionFunctor C).obj K)).X i =
       ((e.restrictionFunctor D).obj ((F.mapHomologicalComplex c').obj K)).X i := by
-  rw [Functor.mapHomologicalComplex_obj_X,
-    ComplexShape.Embedding.restrictionFunctor_obj, HomologicalComplex.restriction_X,
-    ComplexShape.Embedding.restrictionFunctor_obj, HomologicalComplex.restriction_X,
-    Functor.mapHomologicalComplex_obj_X]
+  rfl
 
 /-- The objectwise identifications between mapping after restriction and restriction after
 mapping intertwine the differentials. The two functor composites are definitionally equal, but
@@ -72,5 +70,27 @@ noncomputable def mapRestrictionIso
     (fun i => eqToIso (mapRestriction_obj_X F e K i)) (by
       intro i j _
       exact mapRestriction_hom_d F e K i j)
+
+/-- The forward component of the comparison between mapping after restriction and restriction
+after mapping is the canonical transport along their object equality. -/
+@[simp]
+theorem mapRestrictionIso_hom_f
+    {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
+    {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
+    (e : c.Embedding c') (F : C ⥤ D) [F.PreservesZeroMorphisms] [e.IsRelIff]
+    (K : HomologicalComplex C c') (i : ι) :
+    (e.mapRestrictionIso F K).hom.f i = eqToHom (mapRestriction_obj_X F e K i) := by
+  rfl
+
+/-- The inverse component of the comparison between mapping after restriction and restriction
+after mapping is the inverse canonical transport along their object equality. -/
+@[simp]
+theorem mapRestrictionIso_inv_f
+    {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
+    {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
+    (e : c.Embedding c') (F : C ⥤ D) [F.PreservesZeroMorphisms] [e.IsRelIff]
+    (K : HomologicalComplex C c') (i : ι) :
+    (e.mapRestrictionIso F K).inv.f i = eqToHom (mapRestriction_obj_X F e K i).symm := by
+  rfl
 
 end ComplexShape.Embedding
