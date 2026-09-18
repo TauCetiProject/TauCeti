@@ -86,10 +86,11 @@ private theorem shapiroChains [DecidableEq G] :
   refine (coinvariantsTensorFreeToFinsupp_mk_tmul_single _ _ _ _ _).trans ?_
   simp [indResAdjunction, indResHomEquiv]
 
+open Classical in
 /-- **Shapiro's isomorphism in homology is corestriction of the unit.** The inverse of the
 isomorphism `Hₙ(G, Ind_S^G A) ≅ Hₙ(S, A)` of `groupHomology.indIso` is the change-of-group map along
 `S ≤ G` induced by the unit `A ⟶ Res_S Ind_S^G A`, `a ↦ 1 ⊗ a`, of induction–restriction. -/
-theorem indIso_inv [DecidableEq G] (n : ℕ) :
+theorem indIso_inv (n : ℕ) :
     (indIso S A n).inv = map S.subtype ((indResAdjunction k S.subtype).unit.app A) n := by
   -- The comparison, through `Tor`, of the bar resolution of `S` with the restricted bar resolution
   -- of `G` is the map induced on homology by the chain map between them.
@@ -128,12 +129,13 @@ theorem indIso_inv [DecidableEq G] (n : ℕ) :
     (HomologicalComplex.homologyMap_comp _ _ n).symm).trans
     (congrArg (HomologicalComplex.homologyMap · n) (shapiroChains S A))
 
+open Classical in
 /-- **Corestriction through Shapiro's lemma.** For a `G`-representation `B`, the inverse of
 Shapiro's isomorphism `Hₙ(G, Ind_S^G Res_S B) ≅ Hₙ(S, Res_S B)` followed by the map induced by the
 counit `Ind_S^G Res_S B ⟶ B` of induction–restriction is corestriction
 `Hₙ(S, Res_S B) ⟶ Hₙ(G, B)`. -/
 @[reassoc]
-theorem indIso_inv_comp_map_counit [DecidableEq G] (B : Rep.{u} k G) (n : ℕ) :
+theorem indIso_inv_comp_map_counit (B : Rep.{u} k G) (n : ℕ) :
     (indIso S (res S.subtype B) n).inv ≫
         map (MonoidHom.id G) ((indResAdjunction k S.subtype).counit.app B) n =
       map S.subtype (𝟙 (res S.subtype B)) n := by

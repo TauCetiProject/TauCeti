@@ -136,6 +136,7 @@ theorem HNegTwoRes_def :
 
 /-- Restriction followed by corestriction is multiplication by the index, in every Tate degree
 `-(n+1)` with `n > 0`. -/
+@[reassoc, elementwise]
 theorem negSuccRes_comp_negSuccCor (n : ℕ) [NeZero n] :
     negSuccRes M H n ≫ negSuccCor M H.subtype n =
       H.index • 𝟙 (tateCohomology M (Int.negSucc n)) := by

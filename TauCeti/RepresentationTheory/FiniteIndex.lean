@@ -91,6 +91,7 @@ open Classical in
 /-- **Unit followed by counit is the index, for induction.** For a finite-index subgroup `S ≤ G`,
 the unit `A ⟶ Ind_S^G(Res_S A)` of restriction–induction followed by the counit
 `Ind_S^G(Res_S A) ⟶ A` of induction–restriction is multiplication by `[G : S]`. -/
+@[reassoc]
 theorem resIndAdjunction_unit_app_comp_indResAdjunction_counit_app (A : Rep.{u} k G) :
     (resIndAdjunction.{u, u, u} k S).unit.app A ≫ (indResAdjunction k S.subtype).counit.app A =
       S.index • 𝟙 A := by
