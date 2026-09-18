@@ -198,10 +198,7 @@ theorem hasNaturalDensity_of_finite (hS : S.Finite) : HasNaturalDensity S 0 := b
 /-! ### Natural density implies Dirichlet density -/
 
 /-- If the prime summatory function of a bounded real weight `w` is eventually nonpositive, then
-the prime Dirichlet series of `w` is bounded above uniformly in `s > 1`.
-
-This is Abel summation against the decreasing function `t ↦ t ^ (-s)`: the partial sums of `w`
-are bounded above by a constant independent of `s`, and so is the twisted series. -/
+the prime Dirichlet series of `w` is bounded above uniformly in `s > 1`. -/
 private theorem exists_tsum_mul_rpow_le_of_eventually_primeSummatory_nonpos
     {w : HeightOneSpectrum (𝓞 K) → ℝ} {B : ℝ} (hB : ∀ v, |w v| ≤ B)
     (hw : ∀ᶠ x in atTop, TauCeti.primeSummatory K w x ≤ 0) :
@@ -228,11 +225,11 @@ private theorem exists_tsum_mul_rpow_le_of_eventually_primeSummatory_nonpos
         rw [norm_mul, Real.norm_of_nonneg ha, Real.norm_eq_abs]
         exact mul_le_mul_of_nonneg_right (hB v) ha
   have hbound := TauCeti.tsum_mul_le_of_summatory_le
-    (fun v : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm v.asIdeal)
-    (fun v ↦ NumberField.HeightOneSpectrum.one_lt_absNorm v) w (g := fun t ↦ t ^ (-s))
-    (fun t _ ↦ hF t)
+    (fun v : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm v.asIdeal) (a := 2) (by norm_num)
+    (fun v ↦ by exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm v) w
+    (g := fun t ↦ t ^ (-s)) (fun t _ ↦ hF t)
     (fun t ht ↦ (Real.hasDerivAt_rpow_const (Or.inl (by linarith))).differentiableAt)
-    (fun x ↦ by
+    (fun x _ ↦ by
       rw [Real.deriv_rpow_const']
       exact ContinuousOn.integrableOn_Icc <| continuousOn_const.mul <|
         continuousOn_id.rpow_const fun t ht ↦ Or.inl (by rw [id]; linarith [ht.1]))
@@ -264,25 +261,16 @@ private theorem primeSummatory_indicator_sub (S : Set (HeightOneSpectrum (𝓞 K
       TauCeti.primeCount K S x - c * TauCeti.primeCount K Set.univ x := by
   simp [TauCeti.primeSummatory_apply, TauCeti.primeCount_apply, Finset.sum_sub_distrib, mul_comm]
 
-omit [NumberField K] in
-/-- The weight `𝔭 ↦ 1_S(𝔭) - c` is bounded by `1 + |c|`. -/
-private theorem abs_indicator_sub_le (S : Set (HeightOneSpectrum (𝓞 K))) (c : ℝ)
-    (v : HeightOneSpectrum (𝓞 K)) : |S.indicator 1 v - c| ≤ 1 + |c| := by
-  have h1 : |S.indicator (1 : HeightOneSpectrum (𝓞 K) → ℝ) v| ≤ 1 := by
-    by_cases hv : v ∈ S <;> simp [hv]
-  linarith [abs_sub (S.indicator (1 : HeightOneSpectrum (𝓞 K) → ℝ) v) c]
-
 /-- **Upper natural bounds are upper Dirichlet bounds.** If eventually at most the proportion `c`
 of the primes of norm at most `x` lie in `S`, then `c` is an upper Dirichlet-density bound for
-`S`.
-
-The proof bounds `P_S(s) - c · P(s)` uniformly in `s > 1` by Abel summation and divides by the
-all-prime sum `P(s)`, which tends to infinity as `s → 1⁺`. -/
+`S`. -/
 theorem isUpperDirichletDensityBound_of_eventually_primeCount_le {c : ℝ}
     (h : ∀ᶠ x in atTop, TauCeti.primeCount K S x ≤ c * TauCeti.primeCount K Set.univ x) :
     IsUpperDirichletDensityBound S c := by
   obtain ⟨C, hC⟩ := exists_tsum_mul_rpow_le_of_eventually_primeSummatory_nonpos
-    (abs_indicator_sub_le S c) (h.mono fun x hx ↦ by
+    (w := fun v ↦ S.indicator 1 v - c) (fun v ↦ (abs_sub _ _).trans <| add_le_add_left
+      (by simpa using norm_indicator_le_norm_self (s := S) (1 : HeightOneSpectrum (𝓞 K) → ℝ) v) _)
+    (h.mono fun x hx ↦ by
       rw [primeSummatory_indicator_sub]
       linarith)
   refine isUpperDirichletDensityBound_iff.2 fun ε hε ↦ ?_
@@ -305,7 +293,10 @@ theorem isLowerDirichletDensityBound_of_eventually_le_primeCount {c : ℝ}
     IsLowerDirichletDensityBound S c := by
   obtain ⟨C, hC⟩ := exists_tsum_mul_rpow_le_of_eventually_primeSummatory_nonpos
     (w := fun v ↦ -(S.indicator 1 v - c))
-    (fun v ↦ by rw [abs_neg]; exact abs_indicator_sub_le S c v)
+    (fun v ↦ by
+      rw [abs_neg]
+      exact (abs_sub _ _).trans <| add_le_add_left
+        (by simpa using norm_indicator_le_norm_self (s := S) (1 : HeightOneSpectrum (𝓞 K) → ℝ) v) _)
     (h.mono fun x hx ↦ by
       rw [TauCeti.primeSummatory_apply, Finset.sum_neg_distrib, ← TauCeti.primeSummatory_apply,
         primeSummatory_indicator_sub]
