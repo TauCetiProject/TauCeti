@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import TauCeti.RingTheory.Polynomial.Factors
+import TauCeti.GroupTheory.Perm.PermCongr
 
 /-!
 # Galois orbits on the roots of a polynomial
@@ -41,6 +42,8 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
   separable, an orbit has as many elements as its degree.
 * `TauCeti.isPretransitive_iff_irreducible`: for separable `p` of positive degree, transitivity
   of the root action is equivalent to irreducibility of `p`.
+* `TauCeti.isPretransitive_range_galActionHom`: the Galois image of an irreducible polynomial,
+  as a group of permutations of the roots, is transitive.
 * `TauCeti.mem_orbit_iff_minpoly_eq_splittingField`,
   `TauCeti.image_val_orbit_eq_rootSet_minpoly_splittingField`,
   `TauCeti.natCard_orbit_eq_natDegree_minpoly_splittingField`: the same three descriptions of an
@@ -209,6 +212,13 @@ theorem isPretransitive_iff_irreducible (hsep : p.Separable) (hdeg : 0 < p.natDe
   rw [eq_leadingCoeff_mul_of_monic_of_dvd_of_natDegree_le (minpoly.monic hint) hdvd hdegle,
     irreducible_isUnit_mul hunit]
   exact minpoly.irreducible hint
+
+/-- The Galois image of an irreducible polynomial, as a group of permutations of its roots in a
+splitting extension, acts transitively. -/
+theorem isPretransitive_range_galActionHom (hp : Irreducible p) :
+    MulAction.IsPretransitive (Gal.galActionHom p E).range (p.rootSet E) := by
+  rw [Gal.galActionHom, MulAction.isPretransitive_range_toPermHom_iff]
+  exact Gal.galAction_isPretransitive p E hp
 
 /-! ## The action inside the splitting field -/
 
