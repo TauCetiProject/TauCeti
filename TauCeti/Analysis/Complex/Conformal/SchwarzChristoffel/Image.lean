@@ -7,7 +7,7 @@ module
 
 -- Public: the compactified boundary path and the filled hull occur in the exported statements.
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Compactification
-public import TauCeti.Topology.FilledHull
+public import TauCeti.Analysis.Normed.Module.FilledHull
 -- Non-public: analyticity of the primitive and the inverse function theorem are used only to
 -- prove that the primitive is an open map.
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
@@ -50,6 +50,8 @@ requires knowing those components and showing that the image does not meet `P`.
   boundary path outside the image.
 * `TauCeti.image_schwarzChristoffelPrimitive_subset_filledHull` -- the image lies in the filled
   hull of the boundary path.
+* `TauCeti.image_schwarzChristoffelPrimitive_subset_interior_closedConvexHull` -- the image lies
+  in the interior of the closed convex hull of the boundary path.
 * `TauCeti.connectedComponentIn_subset_image_schwarzChristoffelPrimitive` -- a complementary
   component of the boundary path meeting the image lies in the image.
 
@@ -242,6 +244,23 @@ theorem image_schwarzChristoffelPrimitive_subset_filledHull (a e : ι → ℝ) (
     (isBounded_image_schwarzChristoffelPrimitive a e z₀ hfinite hinfty) ?_
   rw [frontier_image_schwarzChristoffelPrimitive a e z₀ hfinite hinfty]
   exact sdiff_subset
+
+/-- **The image of the Schwarz--Christoffel primitive lies in the interior of the closed convex
+hull of its compactified boundary path.** The filled hull of a nonempty set lies in its closed
+convex hull. Since the primitive has open image, that containment automatically improves to
+containment in the interior. -/
+theorem image_schwarzChristoffelPrimitive_subset_interior_closedConvexHull
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hinfty : ∑ i, e i < -1) :
+    schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet ⊆
+      interior (closedConvexHull ℝ
+        (range (schwarzChristoffelCompactifiedBoundary a e z₀))) := by
+  let P := range (schwarzChristoffelCompactifiedBoundary a e z₀)
+  have hP : P.Nonempty := range_nonempty _
+  apply interior_maximal _
+    (isOpen_image_schwarzChristoffelPrimitive a e z₀ isOpen_upperHalfPlaneSet subset_rfl)
+  exact (image_schwarzChristoffelPrimitive_subset_filledHull a e z₀ hfinite hinfty).trans
+    (filledHull_subset_closedConvexHull hP)
 
 /-- **A complementary component of the boundary path that meets the image lies in the image.**
 The component is preconnected and avoids the path, which contains the frontier of the open

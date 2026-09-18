@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
-public import TauCeti.NumberTheory.NumberField.FinitePlace
+public import TauCeti.NumberTheory.NumberField.Global.Places.ScalarExtension
 
 /-!
 # Localization of quadratic forms over number fields
@@ -36,11 +35,6 @@ universe u v
 namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {K : Type u} [Field K]
-variable {V : Type v} [AddCommGroup V] [Module K V]
-
-/-- The scalar extension of `V` to the finite completion of `K` at `v`. -/
-abbrev FiniteScalarExtension [NumberField K] (v : HeightOneSpectrum (𝓞 K)) :=
-  v.adicCompletion K ⊗[K] V
 
 /-- The map from global units to units in the completion at a finite place. -/
 def unitAtFinitePlace [NumberField K] (v : HeightOneSpectrum (𝓞 K)) :
@@ -59,12 +53,6 @@ end IsDedekindDomain.HeightOneSpectrum
 namespace TauCeti
 
 variable {K : Type u} [Field K]
-variable {V : Type v} [AddCommGroup V] [Module K V]
-
-/-- The scalar extension of `V` to `ℝ` through the embedding belonging to a real place. -/
-abbrev RealScalarExtension (w : {w : InfinitePlace K // w.IsReal}) :=
-  letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  ℝ ⊗[K] V
 
 /-- The map from global units to real units induced by a real place. -/
 def unitAtRealPlace (w : {w : InfinitePlace K // w.IsReal}) : Kˣ →* ℝˣ :=
@@ -77,18 +65,6 @@ theorem unitAtRealPlace_apply (w : {w : InfinitePlace K // w.IsReal}) (a : Kˣ) 
   rfl
 
 end TauCeti
-
-namespace NumberField.InfinitePlace
-
-variable {K : Type u} [Field K]
-variable {V : Type v} [AddCommGroup V] [Module K V]
-
-/-- The scalar extension of `V` to `ℂ` through the chosen embedding of an infinite place. -/
-abbrev ComplexScalarExtension (w : InfinitePlace K) :=
-  letI : Algebra K ℂ := w.embedding.toAlgebra
-  ℂ ⊗[K] V
-
-end NumberField.InfinitePlace
 
 namespace QuadraticForm
 

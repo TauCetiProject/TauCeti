@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.LineBundle.Basic
+public import TauCeti.AlgebraicGeometry.LineBundle.Germ
 public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
 
 /-!
@@ -14,8 +14,9 @@ public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
 A sheaf of modules on an irreducible scheme that is free of rank one on a dense open subset has a
 rational trivialization. A chosen basis there maps every local section to a rational
 function and hence gives a morphism from the sheaf of modules to the sheaf of rational functions.
-For an invertible sheaf, this morphism is an ingredient in associating a Weil divisor to a line
-bundle once its injectivity is established.
+For an invertible sheaf on an integral scheme this morphism is injective, so it realizes the line
+bundle as a subsheaf of the rational functions; this is the embedding from which the divisor of a
+line bundle is read off.
 
 ## Main declarations
 
@@ -25,6 +26,9 @@ bundle once its injectivity is established.
 * `Scheme.Modules.rationalTrivializationHom` is the resulting morphism to the rational-function
   sheaf, and `Scheme.Modules.rationalFunctionsEquiv_rationalTrivializationHom_app` computes it on
   every nonempty open subset.
+* `Scheme.Modules.rationalFunction_injective` and `Scheme.Modules.mono_rationalTrivializationHom`
+  show that, for a line bundle on an integral scheme, this morphism is injective on sections and
+  hence a monomorphism.
 
 The construction follows Hartshorne, *Algebraic Geometry*, II.6. No formalization is vendored.
 -/
@@ -204,6 +208,68 @@ theorem rationalFunctionsEquiv_rationalTrivializationHom_app (M : X.Modules)
   simp only [rationalTrivializationHom, Scheme.Modules.Hom.app, dite_eq_left
     (inferInstance : Nonempty V)]
   exact (Scheme.rationalFunctionsEquiv V).apply_symm_apply _
+
+omit [IrreducibleSpace X] in
+/-- The chosen coordinate of a free rank-one trivialization is injective on sections. -/
+private lemma coordinateHom_app_injective (M : X.Modules) {U : X.Opens}
+    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U) (A : (Over U)ᵒᵖ) :
+    Function.Injective ((coordinateHom M e).val.app A) := by
+  let c := (SheafOfModules.forget _ ⋙ PresheafOfModules.toPresheaf _).mapIso
+    (e.symm ≪≫ TauCeti.SheafOfModules.freePUnitIsoUnit (X.ringCatSheaf.over U))
+  intro a b h
+  -- Isolate the definitional reduction through the two forgetful functors and `mapIso`.
+  change c.hom.app A a = c.hom.app A b at h
+  exact (ConcreteCategory.bijective_of_isIso (c.hom.app A)).injective h
+
+/-- On an integral scheme, the rational function of a local section of a line bundle determines
+the section: a line bundle embeds into the rational functions through any rational
+trivialization. -/
+theorem rationalFunction_injective [IsIntegral X] (M : X.Modules)
+    [SheafOfModules.isInvertible X M] {U : X.Opens}
+    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
+    (hU : Dense (U : Set X)) (V : X.Opens) [Nonempty V] :
+    Function.Injective (rationalFunction M e hU V) := by
+  have : Nonempty (V ⊓ U : X.Opens) := Opens.nonempty_coeSort.mpr
+    (hU.inter_open_nonempty V V.isOpen (Opens.nonempty_coeSort.mp ‹_›))
+  intro s t h
+  rw [rationalFunction_apply, rationalFunction_apply] at h
+  exact InvertibleSheaf.map_injective_of_isIntegral ⟨M, ‹_›⟩ (homOfLE inf_le_left)
+    (coordinateHom_app_injective M e _ (X.germToFunctionField_injective (V ⊓ U) h))
+
+/-- On an integral scheme, a local section of a line bundle has zero rational function exactly
+when it is zero. -/
+@[simp]
+theorem rationalFunction_eq_zero_iff [IsIntegral X] (M : X.Modules)
+    [SheafOfModules.isInvertible X M] {U : X.Opens}
+    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
+    (hU : Dense (U : Set X)) (V : X.Opens) [Nonempty V] (s : Γ(M, V)) :
+    rationalFunction M e hU V s = 0 ↔ s = 0 :=
+  (injective_iff_map_eq_zero' _).mp (rationalFunction_injective M e hU V) s
+
+/-- On an integral scheme, the morphism from a line bundle to the rational functions determined
+by a rational trivialization is injective on sections over every open subset. -/
+theorem rationalTrivializationHom_app_injective [IsIntegral X] (M : X.Modules)
+    [SheafOfModules.isInvertible X M] {U : X.Opens}
+    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
+    (hU : Dense (U : Set X)) (V : X.Opens) :
+    Function.Injective (Scheme.Modules.Hom.app (rationalTrivializationHom M e hU) V) := by
+  intro s t h
+  by_cases hV : Nonempty V
+  · apply rationalFunction_injective M e hU V
+    rw [← rationalFunctionsEquiv_rationalTrivializationHom_app,
+      ← rationalFunctionsEquiv_rationalTrivializationHom_app, h]
+  · exact TopCat.Presheaf.section_ext ⟨M.presheaf, M.isSheaf⟩ V s t
+      fun x hx ↦ (hV ⟨⟨x, hx⟩⟩).elim
+
+/-- On an integral scheme, a line bundle is a subsheaf of the sheaf of rational functions: the
+morphism determined by any rational trivialization is a monomorphism. -/
+instance mono_rationalTrivializationHom [IsIntegral X] (M : X.Modules)
+    [SheafOfModules.isInvertible X M] {U : X.Opens}
+    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
+    (hU : Dense (U : Set X)) : Mono (rationalTrivializationHom M e hU) :=
+  (SheafOfModules.forget _).mono_of_mono_map
+    (PresheafOfModules.mono_of_injective fun V ↦
+      rationalTrivializationHom_app_injective M e hU V.unop)
 
 end AlgebraicGeometry.Scheme.Modules
 

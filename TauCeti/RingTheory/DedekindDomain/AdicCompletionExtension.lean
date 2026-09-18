@@ -96,7 +96,7 @@ out as `ringChar_residueField_adicCompletionIntegers_ne_two`, which the source k
 
 The Henselian and completeness chain from that same Stoll file lives in
 `TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion`, with the single-completion
-valuation and residue-field results it rests on — among them `exists_valued_sub_lt_one` and
+valuation and residue-field results it rests on — among them
 `residueFieldEquivAdicCompletionIntegers`, which this file uses.
 
 ## Implementation notes

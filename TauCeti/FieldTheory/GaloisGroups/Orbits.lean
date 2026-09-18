@@ -31,6 +31,8 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
 
 ## Main results
 
+* `Polynomial.Gal.galActionHom_eq_permCongr`: the root permutations in two splitting extensions
+  correspond under `Polynomial.Gal.rootsEquivRoots`.
 * `TauCeti.mem_orbit_iff_minpoly_eq`: two roots of `p` are in the same Galois orbit exactly when
   their minimal polynomials agree.
 * `TauCeti.image_val_orbit_eq_rootSet_minpoly`: read inside `E`, the orbit of a root is the root
@@ -90,6 +92,18 @@ theorem minpoly_rootsEquivRoots (E' : Type w) [Field E'] [Algebra F E']
     [Fact ((p.map (algebraMap F E')).Splits)] (x : p.rootSet E) :
     minpoly F ((Gal.rootsEquivRoots p E E' x : p.rootSet E') : E') = minpoly F (x : E) :=
   (minpoly_rootsEquivRootsAux E' _).trans (minpoly_rootsEquivRootsAux_symm E x)
+
+variable (p) in
+/-- The permutation of the roots in one splitting extension induced by a Galois automorphism is
+the transport, along `Polynomial.Gal.rootsEquivRoots`, of the permutation it induces in another.
+So any invariant of permutations that is preserved by relabelling, such as the cycle type, does
+not depend on the splitting extension in which the roots are read. -/
+theorem _root_.Polynomial.Gal.galActionHom_eq_permCongr (E' : Type w) [Field E'] [Algebra F E']
+    [Fact ((p.map (algebraMap F E')).Splits)] (g : p.Gal) :
+    Gal.galActionHom p E' g = (Gal.rootsEquivRoots p E E').permCongr (Gal.galActionHom p E g) := by
+  ext x
+  simp only [Gal.galActionHom, MulAction.toPermHom_apply, MulAction.toPerm_apply,
+    Equiv.permCongr_apply, ← Gal.smul_rootsEquivRoots, Equiv.apply_symm_apply]
 
 /-- Two roots of `p` lie in the same Galois orbit exactly when their minimal polynomials over the
 base field agree. -/

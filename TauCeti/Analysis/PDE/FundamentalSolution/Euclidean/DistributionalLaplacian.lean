@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
-public import TauCeti.Analysis.Sobolev.WeakDeriv
+public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
 import TauCeti.MeasureTheory.Constructions.HaarToSphere
