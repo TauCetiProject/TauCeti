@@ -35,8 +35,8 @@ result (`Martingale/AntitoneLimit.lean`) all feed into `tendsto_ae_condExp_iInf`
   with `μ`-trivial intersection — if `B' n` is `𝔽 n`-measurable with `μ (B' n)` and `μ (A ∩ B' n)`
   independent of `n`, then `μ (A ∩ B) = μ A * μ B`.
 - `condExp_inter_ae_eq_mul_iInf`: the conditional form of this factorization, for an arbitrary
-  tail — if the conditional probabilities of `B' n` and `A ∩ B' n` given `⨅ n, 𝔽 n` do not
-  depend on `n`, then `A` and `B` are conditionally independent given `⨅ n, 𝔽 n`.
+  tail — if the tail-conditional expectations of the indicators of `B' n` and `A ∩ B' n` do not
+  depend on `n`, then the corresponding conditional expectations for `A` and `B` factorize.
 
 ## References
 
@@ -244,9 +244,10 @@ theorem measure_inter_eq_mul_of_forall_zero_or_one_iInf
   linarith
 
 /-- **Conditional factorization along a decreasing filtration.** If `B' n` is `𝔽 n`-measurable
-and, conditionally on the tail `⨅ n, 𝔽 n`, neither the probability of `B' n` nor that of
-`A ∩ B' n` depends on `n`, then `A` and `B` are conditionally independent given the tail:
-`μ⟦A ∩ B | ⨅ n, 𝔽 n⟧ = μ⟦A | ⨅ n, 𝔽 n⟧ * μ⟦B | ⨅ n, 𝔽 n⟧` almost everywhere.
+and the tail-conditional expectations of the indicators of `B' n` and `A ∩ B' n` agree with those
+of `B` and `A ∩ B`, respectively, then the following factorization identity holds almost
+everywhere:
+`μ⟦A ∩ B | ⨅ n, 𝔽 n⟧ = μ⟦A | ⨅ n, 𝔽 n⟧ * μ⟦B | ⨅ n, 𝔽 n⟧`.
 
 This is the conditional form of `measure_inter_eq_mul_of_forall_zero_or_one_iInf`, and needs no
 triviality of the tail. -/
