@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Discriminant
 public import TauCeti.NumberTheory.NumberField.Quadratic.Basic
 public import TauCeti.NumberTheory.NumberField.SplitsCompletely.Basic
 import TauCeti.NumberTheory.NumberField.Ideal.KummerDedekind
+import TauCeti.NumberTheory.NumberField.Index.Exponent
 import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 
 /-!
@@ -39,15 +40,15 @@ values of the genus characters.
 The prime `2` is handled separately, through the count of primes above `2` for a generator with
 minimal polynomial `X² - X + c` and odd conductor exponent
 (`NumberField.ncard_primesOver_two_of_minpoly_eq_X_sq_sub_X_add`, in
-`TauCeti.NumberTheory.NumberField.Ideal.KummerDedekind`): for `c = (1 - d)/4` with `d`
-squarefree and `d ≡ 1 (mod 4)`, the presentation of `ℚ(√d)` by `(1 + √d)/2`, the generator has
-conductor exponent `1` (`adjoin_eq_top_of_minpoly_eq_X_sq_sub_X_add`), and `2` splits exactly
-when `d ≡ 1 (mod 8)` and is inert exactly when `d ≡ 5 (mod 8)`. For `K = ℚ(√d)` with `d`
-squarefree and `d ≡ 1 (mod 4)`, the half-integer generator `(1 + θ)/2` (`halfGen`) has minimal
-polynomial `X² - X + (1 - d)/4` (`minpoly_halfGen`) and generates `𝓞 K` over `ℤ`
-(`adjoin_halfGen_eq_top_of_mod_four_eq_one`), so its conductor exponent is `1`, and `(1 - d)/4` is
-even exactly when `d ≡ 1 (mod 8)`; the generator `θ` with `θ² = d` is useless here, since `2`
-divides its conductor exponent.
+`TauCeti.NumberTheory.NumberField.Ideal.KummerDedekind`). Such a generator always has odd
+conductor exponent, since `X² - X + c` is separable modulo `2`
+(`not_two_dvd_exponent_of_minpoly_eq_X_sq_sub_X_add`). For `c = (1 - d)/4` with `d ≡ 1 (mod 4)`,
+the presentation of `ℚ(√d)` by `(1 + √d)/2`, `2` splits exactly when `d ≡ 1 (mod 8)` and is inert
+exactly when `d ≡ 5 (mod 8)`. For `K = ℚ(√d)` presented by `θ` with `θ² = d` and `d ≡ 1 (mod 4)`,
+the half-integer generator `(1 + θ)/2` (`halfGen`) has minimal polynomial `X² - X + (1 - d)/4`
+(`minpoly_halfGen`) and generates `K` over `ℚ` (`adjoin_rat_halfGen_eq_top`), and `(1 - d)/4` is
+even exactly when `d ≡ 1 (mod 8)`; the generator `θ` itself is useless here, since `2` divides
+its conductor exponent. No squarefreeness of `d` is needed.
 
 ## Main results
 
@@ -56,11 +57,10 @@ divides its conductor exponent.
   `legendreSym p d = 1` is the absolute norm of a prime ideal of `𝓞 K`.
 * `NumberField.ncard_primesOver_two_eq_finrank_iff_of_minpoly_eq_X_sq_sub_X_add` and
   `NumberField.ncard_primesOver_two_eq_one_iff_of_minpoly_eq_X_sq_sub_X_add`: for a generator
-  with minimal polynomial `X² - X + (1 - d)/4`, `d ≡ 1 (mod 4)`, and odd conductor exponent, `2`
-  splits iff `d ≡ 1 (mod 8)` and is inert iff `d ≡ 5 (mod 8)`; the `…_of_squarefree` variants
-  replace the conductor hypothesis by `Squarefree d`.
+  with minimal polynomial `X² - X + (1 - d)/4` and `d ≡ 1 (mod 4)`, `2` splits iff
+  `d ≡ 1 (mod 8)` and is inert iff `d ≡ 5 (mod 8)`.
 * `NumberField.ncard_primesOver_two_of_mod_four_eq_one`: the number of primes above `2` is
-  `if d % 8 = 1 then 2 else 1` for `ℚ(√d)` with `d` squarefree, `d ≡ 1 (mod 4)`, presented by
+  `if d % 8 = 1 then 2 else 1` for `ℚ(√d)` with `d ≡ 1 (mod 4)`, presented by
   `√d`, with the corollaries `NumberField.ncard_primesOver_two_eq_finrank_iff_of_mod_four_eq_one`
   (`2` splits iff `d ≡ 1 (mod 8)`) and
   `NumberField.ncard_primesOver_two_eq_one_iff_of_mod_four_eq_one` (`2` is inert iff
@@ -224,20 +224,34 @@ theorem exists_isPrime_and_absNorm_eq_of_legendreSym_eq_one {θ : 𝓞 K} {d : �
 
 /-! ### The prime `2` for `d ≡ 1 (mod 4)` -/
 
--- The half-integer presentation and the statements of this section follow the worked example
--- "The dyadic quadratic law" of the human-authored roadmap
--- `TauCetiRoadmap/NumberFieldArithmetic/README.md`.
+/-- A generator of `K` with minimal polynomial `X² - X + c` over `ℤ` has odd conductor exponent:
+its minimal polynomial is separable modulo `2`. -/
+theorem not_two_dvd_exponent_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ}
+    (hmin : minpoly ℤ ω = X ^ 2 - X + C c) (hgen : Algebra.adjoin ℚ {(ω : K)} = ⊤) :
+    ¬ 2 ∣ exponent ω := by
+  have hsq : Squarefree ((minpoly ℤ ω).map (Int.castRingHom (ZMod 2))) := by
+    rw [hmin, Polynomial.map_add, Polynomial.map_sub, Polynomial.map_pow, map_X, map_C]
+    refine Separable.squarefree ((separable_def _).mpr ?_)
+    have hder : derivative (X ^ 2 - X + C ((Int.castRingHom (ZMod 2)) c) : (ZMod 2)[X]) = 1 := by
+      simp only [derivative_add, derivative_sub, derivative_X_pow, derivative_X, derivative_C,
+        add_zero, Nat.cast_ofNat, Nat.add_one_sub_one, pow_one]
+      rw [show (2 : ZMod 2) = 0 by decide, map_zero, zero_mul, zero_sub, CharTwo.neg_eq]
+    rw [hder]
+    exact isCoprime_one_right
+  exact fun h => TauCeti.NumberField.IntegralPrimitiveElement.not_dvd_index_of_squarefree_map
+    ⟨ω, hgen⟩ hsq ((TauCeti.NumberField.IntegralPrimitiveElement.dvd_index_iff_dvd_exponent
+      ⟨ω, hgen⟩).mpr h)
 
 /-- **The splitting law at `2` for a generator with minimal polynomial `X² - X + (1 - d)/4`.** Let
 `K` be generated over `ℚ` by an algebraic integer `ω` with minimal polynomial `X² - X + (1 - d)/4`
-over `ℤ`, where `d ≡ 1 (mod 4)` — the presentation of `ℚ(√d)` by `ω = (1 + √d)/2` — and suppose
-`2` does not divide the conductor exponent of `ω`. Then `2` splits completely in `K` if and only
-if `d ≡ 1 (mod 8)`. -/
+over `ℤ`, where `d ≡ 1 (mod 4)` — the presentation of `ℚ(√d)` by `ω = (1 + √d)/2`. Then `2`
+splits completely in `K` if and only if `d ≡ 1 (mod 8)`. -/
 theorem ncard_primesOver_two_eq_finrank_iff_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {d : ℤ}
     (hmin : minpoly ℤ ω = X ^ 2 - X + C ((1 - d) / 4)) (hgen : Algebra.adjoin ℚ {(ω : K)} = ⊤)
-    (hd4 : d % 4 = 1) (hexp : ¬ 2 ∣ exponent ω) :
+    (hd4 : d % 4 = 1) :
     (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard = finrank ℚ K ↔ d % 8 = 1 := by
-  rw [ncard_primesOver_two_of_minpoly_eq_X_sq_sub_X_add hmin hexp,
+  rw [ncard_primesOver_two_of_minpoly_eq_X_sq_sub_X_add hmin
+    (not_two_dvd_exponent_of_minpoly_eq_X_sq_sub_X_add hmin hgen),
     finrank_rat_eq_two_of_minpoly_eq_X_sq_sub_X_add hmin hgen]
   -- `(1 - d)/4` is even exactly when `d ≡ 1 (mod 8)`, given `d ≡ 1 (mod 4)`.
   by_cases hc : 2 ∣ (1 - d) / 4
@@ -248,56 +262,30 @@ theorem ncard_primesOver_two_eq_finrank_iff_of_minpoly_eq_X_sq_sub_X_add {ω : �
 
 /-- **The inert case at `2` for a generator with minimal polynomial `X² - X + (1 - d)/4`.** Let
 `K` be generated over `ℚ` by an algebraic integer `ω` with minimal polynomial `X² - X + (1 - d)/4`
-over `ℤ`, where `d ≡ 1 (mod 4)`, and suppose `2` does not divide the conductor exponent of `ω`.
-Then `2` is inert in `K` (there is a single prime above it) if and only if `d ≡ 5 (mod 8)`. -/
+over `ℤ`, where `d ≡ 1 (mod 4)`. Then `2` is inert in `K` (there is a single prime above it) if
+and only if `d ≡ 5 (mod 8)`. -/
 theorem ncard_primesOver_two_eq_one_iff_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {d : ℤ}
-    (hmin : minpoly ℤ ω = X ^ 2 - X + C ((1 - d) / 4)) (hd4 : d % 4 = 1)
-    (hexp : ¬ 2 ∣ exponent ω) :
+    (hmin : minpoly ℤ ω = X ^ 2 - X + C ((1 - d) / 4)) (hgen : Algebra.adjoin ℚ {(ω : K)} = ⊤)
+    (hd4 : d % 4 = 1) :
     (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard = 1 ↔ d % 8 = 5 := by
-  rw [ncard_primesOver_two_of_minpoly_eq_X_sq_sub_X_add hmin hexp]
+  rw [ncard_primesOver_two_of_minpoly_eq_X_sq_sub_X_add hmin
+    (not_two_dvd_exponent_of_minpoly_eq_X_sq_sub_X_add hmin hgen)]
   by_cases hc : 2 ∣ (1 - d) / 4
   · rw [ite_eq_left hc]
     exact ⟨fun h => by omega, fun h => by omega⟩
   · rw [ite_eq_right hc]
     exact ⟨fun _ => by omega, fun _ => rfl⟩
 
-/-- **The splitting law at `2`, in the half-integer presentation of `ℚ(√d)`.** Let `K` be
-generated over `ℚ` by an algebraic integer `ω` with minimal polynomial `X² - X + (1 - d)/4` over
-`ℤ`, where `d` is squarefree with `d ≡ 1 (mod 4)` — the presentation of `ℚ(√d)` by
-`ω = (1 + √d)/2`. Then `2` splits completely in `K` if and only if `d ≡ 1 (mod 8)`. -/
-theorem ncard_primesOver_two_eq_finrank_iff_of_minpoly_eq_X_sq_sub_X_add_of_squarefree
-    {ω : 𝓞 K} {d : ℤ} (hmin : minpoly ℤ ω = X ^ 2 - X + C ((1 - d) / 4))
-    (hgen : Algebra.adjoin ℚ {(ω : K)} = ⊤) (hsf : Squarefree d) (hd4 : d % 4 = 1) :
-    (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard = finrank ℚ K ↔ d % 8 = 1 :=
-  ncard_primesOver_two_eq_finrank_iff_of_minpoly_eq_X_sq_sub_X_add hmin hgen hd4 (by
-    rw [exponent_eq_one_iff.mpr (adjoin_eq_top_of_minpoly_eq_X_sq_sub_X_add hmin hgen hsf hd4)]
-    norm_num)
-
-/-- **The inert case at `2`, in the half-integer presentation of `ℚ(√d)`.** Let `K` be generated
-over `ℚ` by an algebraic integer `ω` with minimal polynomial `X² - X + (1 - d)/4` over `ℤ`, where
-`d` is squarefree with `d ≡ 1 (mod 4)`. Then `2` is inert in `K` if and only if
-`d ≡ 5 (mod 8)`. -/
-theorem ncard_primesOver_two_eq_one_iff_of_minpoly_eq_X_sq_sub_X_add_of_squarefree {ω : 𝓞 K}
-    {d : ℤ} (hmin : minpoly ℤ ω = X ^ 2 - X + C ((1 - d) / 4))
-    (hgen : Algebra.adjoin ℚ {(ω : K)} = ⊤) (hsf : Squarefree d) (hd4 : d % 4 = 1) :
-    (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard = 1 ↔ d % 8 = 5 :=
-  ncard_primesOver_two_eq_one_iff_of_minpoly_eq_X_sq_sub_X_add hmin hd4 (by
-    rw [exponent_eq_one_iff.mpr (adjoin_eq_top_of_minpoly_eq_X_sq_sub_X_add hmin hgen hsf hd4)]
-    norm_num)
-
-/-- **The number of primes above `2` for `d ≡ 1 (mod 4)`.** For `K = ℚ(√d)` with `d` squarefree
-and `d ≡ 1 (mod 4)`, there are two primes of `𝓞 K` above `2` when `d ≡ 1 (mod 8)` and one when
-`d ≡ 5 (mod 8)`: the half-integer generator `(1 + √d)/2` has minimal polynomial
-`X² - X + (1 - d)/4` and conductor exponent `1`, and `(1 - d)/4` is even exactly when
-`d ≡ 1 (mod 8)`. -/
+/-- **The number of primes above `2` for `d ≡ 1 (mod 4)`.** For `K = ℚ(√d)` with `d ≡ 1 (mod 4)`,
+there are two primes of `𝓞 K` above `2` when `d ≡ 1 (mod 8)` and one when `d ≡ 5 (mod 8)`: the
+half-integer generator `(1 + √d)/2` has minimal polynomial `X² - X + (1 - d)/4` and odd conductor
+exponent, and `(1 - d)/4` is even exactly when `d ≡ 1 (mod 8)`. -/
 theorem ncard_primesOver_two_of_mod_four_eq_one {θ : 𝓞 K} {d : ℤ}
-    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
-    (hsf : Squarefree d) (hd4 : d % 4 = 1) :
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hd4 : d % 4 = 1) :
     (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard = if d % 8 = 1 then 2 else 1 := by
-  have hexp : exponent (halfGen hmin hd4) = 1 :=
-    exponent_eq_one_iff.mpr (adjoin_halfGen_eq_top_of_mod_four_eq_one hmin hgen hsf hd4)
   rw [ncard_primesOver_two_of_minpoly_eq_X_sq_sub_X_add (minpoly_halfGen hmin hd4)
-    (by rw [hexp]; norm_num)]
+    (not_two_dvd_exponent_of_minpoly_eq_X_sq_sub_X_add (minpoly_halfGen hmin hd4)
+      (adjoin_rat_halfGen_eq_top hmin hgen hd4))]
   -- `(1 - d)/4` is even exactly when `d ≡ 1 (mod 8)`, given `d ≡ 1 (mod 4)`.
   by_cases hd8 : d % 8 = 1
   · have hc : 2 ∣ (1 - d) / 4 := by omega
@@ -305,23 +293,20 @@ theorem ncard_primesOver_two_of_mod_four_eq_one {θ : 𝓞 K} {d : ℤ}
   · have hc : ¬ 2 ∣ (1 - d) / 4 := by omega
     rw [ite_eq_right hd8, ite_eq_right hc]
 
-/-- **The splitting law at `2` for `d ≡ 1 (mod 4)`.** For `K = ℚ(√d)` with `d` squarefree and
-`d ≡ 1 (mod 4)`, the prime `2` splits completely in `K` if and only if `d ≡ 1 (mod 8)`. -/
+/-- **The splitting law at `2` for `d ≡ 1 (mod 4)`.** For `K = ℚ(√d)` with `d ≡ 1 (mod 4)`, the
+prime `2` splits completely in `K` if and only if `d ≡ 1 (mod 8)`. -/
 theorem ncard_primesOver_two_eq_finrank_iff_of_mod_four_eq_one {θ : 𝓞 K} {d : ℤ}
-    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
-    (hsf : Squarefree d) (hd4 : d % 4 = 1) :
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hd4 : d % 4 = 1) :
     (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard = finrank ℚ K ↔ d % 8 = 1 := by
-  rw [ncard_primesOver_two_of_mod_four_eq_one hmin hgen hsf hd4, finrank_rat_eq_two hmin hgen]
+  rw [ncard_primesOver_two_of_mod_four_eq_one hmin hgen hd4, finrank_rat_eq_two hmin hgen]
   split_ifs with h <;> simp [h]
 
-/-- **The inert case at `2` for `d ≡ 1 (mod 4)`.** For `K = ℚ(√d)` with `d` squarefree and
-`d ≡ 1 (mod 4)`, the prime `2` is inert in `K` (there is a single prime above it) if and only if
-`d ≡ 5 (mod 8)`. -/
+/-- **The inert case at `2` for `d ≡ 1 (mod 4)`.** For `K = ℚ(√d)` with `d ≡ 1 (mod 4)`, the
+prime `2` is inert in `K` (there is a single prime above it) if and only if `d ≡ 5 (mod 8)`. -/
 theorem ncard_primesOver_two_eq_one_iff_of_mod_four_eq_one {θ : 𝓞 K} {d : ℤ}
-    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
-    (hsf : Squarefree d) (hd4 : d % 4 = 1) :
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hd4 : d % 4 = 1) :
     (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard = 1 ↔ d % 8 = 5 := by
-  rw [ncard_primesOver_two_of_mod_four_eq_one hmin hgen hsf hd4]
+  rw [ncard_primesOver_two_of_mod_four_eq_one hmin hgen hd4]
   split_ifs with h
   · simp only [OfNat.ofNat_ne_one, false_iff]; omega
   · simp only [true_iff]; omega

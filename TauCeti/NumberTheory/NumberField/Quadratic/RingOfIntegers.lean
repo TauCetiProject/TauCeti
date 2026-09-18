@@ -235,6 +235,15 @@ noncomputable def halfGen (hmin : minpoly ℤ θ = X ^ 2 - C d) (hd4 : d % 4 = 1
     (halfGen hmin hd4 : K) = (1 + (θ : K)) / 2 := by
   unfold halfGen; rfl
 
+/-- The half-integer generator `(1+θ)/2` generates `K` over `ℚ` whenever `θ` does. -/
+theorem adjoin_rat_halfGen_eq_top (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hd4 : d % 4 = 1) :
+    Algebra.adjoin ℚ {(halfGen hmin hd4 : K)} = ⊤ := by
+  rw [eq_top_iff, ← hgen, Algebra.adjoin_le_iff, Set.singleton_subset_iff]
+  have hθ : (θ : K) = 2 * (halfGen hmin hd4 : K) - 1 := by rw [coe_halfGen]; ring
+  rw [hθ]
+  exact sub_mem (mul_mem (ofNat_mem _ 2) (Algebra.subset_adjoin (Set.mem_singleton _))) (one_mem _)
+
 /-- The minimal polynomial of the half-integer generator `(1+θ)/2` over `ℤ` is
 `X² - X + (1 - d)/4`. -/
 theorem minpoly_halfGen (hmin : minpoly ℤ θ = X ^ 2 - C d) (hd4 : d % 4 = 1) :
@@ -324,9 +333,6 @@ theorem adjoin_halfGen_eq_top_of_mod_four_eq_one (hmin : minpoly ℤ θ = X ^ 2 
   rw [hkl]
   exact add_mem (zsmul_mem (one_mem _) k)
     (zsmul_mem (Algebra.subset_adjoin (Set.mem_singleton _)) l)
-
--- This is the ring-of-integers half of the worked example "The dyadic quadratic law" of the
--- human-authored roadmap `TauCetiRoadmap/NumberFieldArithmetic/README.md`.
 
 /-- **The ring of integers in the half-integer presentation.** Let `K` be generated over `ℚ` by
 an algebraic integer `ω` with minimal polynomial `X² - X + (1 - d)/4` over `ℤ`, where `d` is
