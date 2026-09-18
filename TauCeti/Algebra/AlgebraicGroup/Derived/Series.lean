@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.GroupTheory.Solvable
-public import TauCeti.Algebra.AlgebraicGroup.Derived.Closure
+public import TauCeti.Algebra.AlgebraicGroup.Derived.PointClosure
 
 /-!
 # The scheme-theoretic derived series
@@ -16,10 +16,8 @@ defining ideals in the original coordinate algebra, pulling back from each quoti
 successor step. These ideals increase, since the closed subgroups decrease.
 
 For a reduced finite-type affine group over an algebraically closed field, the `n`th ideal
-is the vanishing ideal of the `n`th abstract derived subgroup of rational points. Hence the
-scheme-theoretic derived series terminates at the identity precisely when the rational-point
-group is solvable, and it terminates at the same index. This supplies a finite induction
-for arguments about connected solvable algebraic groups.
+is the vanishing ideal of the `n`th abstract derived subgroup of rational points. The resulting
+solvability characterization is in `TauCeti.Algebra.AlgebraicGroup.Solvable.DerivedSeries`.
 
 ## References
 
@@ -46,6 +44,7 @@ def derivedSeriesDefiningIdeal : ℕ → HopfIdeal R H
   | n + 1 => (derivedDefiningIdeal (quotient H (derivedSeriesDefiningIdeal n))).comapOfSurjective
       (mkQuotient H (derivedSeriesDefiningIdeal n)).hom (mkQuotient_surjective _ _)
 
+/-- The series starts at the ambient group itself, whose defining ideal is `⊥`. -/
 @[simp] theorem derivedSeriesDefiningIdeal_zero : derivedSeriesDefiningIdeal H 0 = ⊥ := (rfl)
 
 /-- The next term is the derived subgroup of the current closed subgroup, included back
@@ -54,6 +53,13 @@ into the original group. -/
     derivedSeriesDefiningIdeal H (n + 1) =
       (derivedDefiningIdeal (quotient H (derivedSeriesDefiningIdeal H n))).comapOfSurjective
         (mkQuotient H (derivedSeriesDefiningIdeal H n)).hom (mkQuotient_surjective _ _) := (rfl)
+
+/-- The first derived-series term is the usual derived closed subgroup. -/
+theorem derivedSeriesDefiningIdeal_one :
+    derivedSeriesDefiningIdeal H 1 = derivedDefiningIdeal H := by
+  rw [derivedSeriesDefiningIdeal_succ, derivedSeriesDefiningIdeal_zero]
+  simpa only [CategoryTheory.Iso.symm_hom, quotientBotIso_inv] using
+    comapOfSurjective_derivedDefiningIdeal (quotientBotIso H).symm
 
 /-- The defining ideals increase along the derived series. -/
 theorem derivedSeriesDefiningIdeal_monotone : Monotone (derivedSeriesDefiningIdeal H) := by
@@ -78,28 +84,15 @@ variable {k : Type*} [Field k] [IsAlgClosed k] (H : _root_.CommHopfAlgCat k)
 
 /-- Each scheme-theoretic derived subgroup is the reduced closure of the corresponding
 abstract derived subgroup of rational points. -/
-theorem derivedSeriesDefiningIdeal_eq_vanishingIdeal (n : ℕ) :
+theorem derivedSeriesDefiningIdeal_eq_vanishingIdeal_derivedSeries (n : ℕ) :
     derivedSeriesDefiningIdeal H n =
       HopfIdeal.vanishingIdeal (derivedSeries (WithConv (H →ₐ[k] k)) n) := by
   induction n with
   | zero => simp
   | succ n ih =>
       rw [derivedSeriesDefiningIdeal_succ, ih,
-        comapOfSurjective_derivedDefiningIdeal_vanishingIdeal, derivedSeries_succ]
-
-/-- Scheme-theoretic and abstract derived series reach the identity at the same index. -/
-theorem derivedSeriesDefiningIdeal_eq_augmentation_iff (n : ℕ) :
-    derivedSeriesDefiningIdeal H n = HopfIdeal.augmentation k H ↔
-      derivedSeries (WithConv (H →ₐ[k] k)) n = ⊥ := by
-  rw [derivedSeriesDefiningIdeal_eq_vanishingIdeal, HopfIdeal.vanishingIdeal_eq_augmentation_iff]
-
-/-- A reduced finite-type affine group over an algebraically closed field has solvable
-rational points exactly when its scheme-theoretic derived series reaches the identity. -/
-theorem isSolvable_points_iff_exists_derivedSeriesDefiningIdeal_eq_augmentation :
-    Group.IsSolvable (WithConv (H →ₐ[k] k)) ↔
-      ∃ n, derivedSeriesDefiningIdeal H n = HopfIdeal.augmentation k H := by
-  simp only [derivedSeriesDefiningIdeal_eq_augmentation_iff]
-  exact ⟨fun h ↦ h.solvable, fun h ↦ ⟨h⟩⟩
+        comapOfSurjective_derivedDefiningIdeal_quotient_vanishingIdeal_eq_vanishingIdeal_commutator,
+        derivedSeries_succ]
 
 end
 
