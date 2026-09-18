@@ -25,7 +25,8 @@ extensional: there is no unused cyclic-order data away from the incident edges.
 The product of the two vertex rotations determines the face permutation.  Its orbits are the
 faces of the associated oriented combinatorial surface, so the Euler characteristic is
 `|B| + |W| - |E| + |F|`.  This file also provides morphisms, isomorphisms, automorphisms,
-connected components, vertex degrees, and the two incidence degree-sum formulas.
+connected components, vertex degrees, the two incidence degree-sum formulas, and the copy of a
+ribbon graph in a higher universe.
 
 ## References
 
@@ -665,6 +666,66 @@ instance : Group Γ.Aut where
 
 @[simp] theorem Aut.inv_edge {Γ : BipartiteRibbonGraph.{u}} (f : Γ.Aut) :
     f⁻¹.edge = f.edge⁻¹ := (rfl)
+
+/-! ### Universe lifting -/
+
+/-- Transporting a permutation along an equivalence transports its cycles on a set. -/
+private theorem isCycleOn_permCongr_image {α β : Type*} (e : α ≃ β) {σ : Perm α} {s : Set α}
+    (h : σ.IsCycleOn s) : (e.permCongr σ).IsCycleOn (e '' s) := by
+  refine ⟨⟨?_, (e.permCongr σ).injective.injOn, ?_⟩, ?_⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    exact ⟨σ x, h.1.mapsTo hx, by simp⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    obtain ⟨y, hy, rfl⟩ := h.1.surjOn hx
+    exact ⟨e y, ⟨y, hy, rfl⟩, by simp⟩
+  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+    exact (Perm.sameCycle_permCongr σ e).2 (h.2 hx hy)
+
+universe v
+
+/-- The copy of a ribbon graph in a higher universe, with edges and vertices of both colours
+wrapped in `ULift`. -/
+def ulift : BipartiteRibbonGraph.{max u v} where
+  E := ULift.{v} Γ.E
+  B := ULift.{v} Γ.B
+  W := ULift.{v} Γ.W
+  fintypeE := inferInstance
+  fintypeB := inferInstance
+  fintypeW := inferInstance
+  decidableEqE := inferInstance
+  decidableEqB := inferInstance
+  decidableEqW := inferInstance
+  blackEnd e := ⟨Γ.blackEnd e.down⟩
+  whiteEnd e := ⟨Γ.whiteEnd e.down⟩
+  rotB := Equiv.ulift.symm.permCongr Γ.rotB
+  rotW := Equiv.ulift.symm.permCongr Γ.rotW
+  blackEnd_surjective b := ⟨⟨(Γ.blackEnd_surjective b.down).choose⟩, by
+    simp [(Γ.blackEnd_surjective b.down).choose_spec]⟩
+  whiteEnd_surjective w := ⟨⟨(Γ.whiteEnd_surjective w.down).choose⟩, by
+    simp [(Γ.whiteEnd_surjective w.down).choose_spec]⟩
+  isCycleOn_rotB b := by
+    convert isCycleOn_permCongr_image Equiv.ulift.symm (Γ.isCycleOn_rotB b.down)
+    ext ⟨e⟩
+    simp [Equiv.ulift, ULift.ext_iff]
+  isCycleOn_rotW w := by
+    convert isCycleOn_permCongr_image Equiv.ulift.symm (Γ.isCycleOn_rotW w.down)
+    ext ⟨e⟩
+    simp [Equiv.ulift, ULift.ext_iff]
+
+/-- The number of edges is unchanged by universe lifting. -/
+theorem card_E_ulift :
+    Fintype.card (Γ.ulift : BipartiteRibbonGraph.{max u v}).E = Fintype.card Γ.E :=
+  Fintype.card_ulift _
+
+/-- A ribbon graph is isomorphic to its copy in a higher universe, by `ULift.down`. -/
+def uliftIso : (Γ.ulift : BipartiteRibbonGraph.{max u v}).Iso Γ where
+  edge := Equiv.ulift
+  black := Equiv.ulift
+  white := Equiv.ulift
+  map_blackEnd _ := rfl
+  map_whiteEnd _ := rfl
+  map_rotB _ := rfl
+  map_rotW _ := rfl
 
 end BipartiteRibbonGraph
 

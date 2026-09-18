@@ -131,12 +131,12 @@ def isoSetoid (n : ℕ) : Setoid {Γ : BipartiteRibbonGraph.{u} // Fintype.card 
 theorem isoSetoid_r {Γ Δ : {Γ : BipartiteRibbonGraph.{u} // Fintype.card Γ.E = n}} :
     (isoSetoid n).r Γ Δ ↔ Nonempty (Γ.1.Iso Δ.1) := Iff.rfl
 
-/-- Isomorphism classes of bipartite ribbon graphs with `n` edges (with edge and vertex types in
-`Type`, where the ribbon graphs of triples live) are isomorphism classes of degree-`n` permutation
-triples: a class of graphs goes to the class of the triple of any numbering of the edges, and a
-class of triples goes to the class of the ribbon graph of any representative. -/
+/-- Isomorphism classes of bipartite ribbon graphs with `n` edges are isomorphism classes of
+degree-`n` permutation triples: a class of graphs goes to the class of the triple of any numbering
+of the edges, and a class of triples goes to the class of the (universe-lifted) ribbon graph of any
+representative. -/
 noncomputable def isoClassEquiv (n : ℕ) :
-    Quotient (isoSetoid.{0} n) ≃ PermutationTriple.IsoClass n where
+    Quotient (isoSetoid.{u} n) ≃ PermutationTriple.IsoClass n where
   toFun := Quotient.lift
     (fun Γ ↦ PermutationTriple.IsoClass.mk
       (Γ.1.toPermutationTriple (Fintype.equivFinOfCardEq Γ.2)))
@@ -144,30 +144,31 @@ noncomputable def isoClassEquiv (n : ℕ) :
       obtain ⟨f⟩ := isoSetoid_r.mp h
       exact PermutationTriple.IsoClass.mk_eq_mk_iff.mpr
         (equivalent_toPermutationTriple_of_iso f _ _)
-  invFun := PermutationTriple.IsoClass.lift (fun t ↦ ⟦⟨t.ribbonGraph, t.card_E_ribbonGraph⟩⟧)
-    fun _ _ h ↦ Quotient.sound
-      (isoSetoid_r.mpr (PermutationTriple.nonempty_iso_ribbonGraph_iff.mpr h))
+  invFun := PermutationTriple.IsoClass.lift
+    (fun t ↦ ⟦⟨t.ribbonGraph.ulift, t.ribbonGraph.card_E_ulift.trans t.card_E_ribbonGraph⟩⟧)
+    fun _ _ h ↦ Quotient.sound <| isoSetoid_r.mpr <|
+      (PermutationTriple.nonempty_iso_ribbonGraph_iff.mpr h).map fun f ↦
+        (uliftIso _).trans (f.trans (uliftIso _).symm)
   left_inv := Quotient.ind fun Γ ↦ by
     rw [Quotient.lift_mk, PermutationTriple.IsoClass.lift_mk]
-    exact Quotient.sound (isoSetoid_r.mpr ⟨(Γ.1.isoRibbonGraph _).symm⟩)
+    exact Quotient.sound (isoSetoid_r.mpr ⟨(uliftIso _).trans (Γ.1.isoRibbonGraph _).symm⟩)
   right_inv c := by
     obtain ⟨t, rfl⟩ := PermutationTriple.IsoClass.mk_surjective c
     rw [PermutationTriple.IsoClass.lift_mk, Quotient.lift_mk,
       PermutationTriple.IsoClass.mk_eq_mk_iff]
-    simpa using t.ribbonGraph.equivalent_toPermutationTriple
-      (Fintype.equivFinOfCardEq t.card_E_ribbonGraph) (Equiv.refl (Fin n))
+    simpa using equivalent_toPermutationTriple_of_iso t.ribbonGraph.uliftIso _ (Equiv.refl (Fin n))
 
 /-- The class of a ribbon graph is the class of its triple along any numbering of its edges. -/
-theorem isoClassEquiv_mk (Γ : {Γ : BipartiteRibbonGraph.{0} // Fintype.card Γ.E = n})
+theorem isoClassEquiv_mk (Γ : {Γ : BipartiteRibbonGraph.{u} // Fintype.card Γ.E = n})
     (ν : Γ.1.E ≃ Fin n) :
     isoClassEquiv n ⟦Γ⟧ = PermutationTriple.IsoClass.mk (Γ.1.toPermutationTriple ν) :=
   PermutationTriple.IsoClass.mk_eq_mk_iff.mpr (Γ.1.equivalent_toPermutationTriple _ ν)
 
-/-- The class of a triple is the class of its ribbon graph. -/
+/-- The class of a triple is the class of its (universe-lifted) ribbon graph. -/
 @[simp]
 theorem isoClassEquiv_symm_mk (t : PermutationTriple n) :
-    (isoClassEquiv n).symm (PermutationTriple.IsoClass.mk t) =
-      ⟦⟨t.ribbonGraph, t.card_E_ribbonGraph⟩⟧ :=
+    (isoClassEquiv.{u} n).symm (PermutationTriple.IsoClass.mk t) =
+      ⟦⟨t.ribbonGraph.ulift, t.ribbonGraph.card_E_ulift.trans t.card_E_ribbonGraph⟩⟧ :=
   PermutationTriple.IsoClass.lift_mk _ _ t
 
 /-! ### Automorphisms -/
