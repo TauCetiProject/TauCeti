@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.Stabilizer
 public import TauCeti.Analysis.Complex.RootsOfUnityQuotient
+public import TauCeti.Analysis.Complex.UpperHalfPlane.ProperAction
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
 public import TauCeti.Topology.MetricSpace.ProperlyDiscontinuous
 
 /-!
@@ -14,10 +15,11 @@ public import TauCeti.Topology.MetricSpace.ProperlyDiscontinuous
 
 Let `Γ ≤ PSL(2, ℝ)` be a subgroup and `z` a point of the upper half-plane. The stabilizer of `z`
 in `Γ` acts by hyperbolic isometries fixing `z`, so it preserves every hyperbolic disc
-`Subgroup.stabilizerBall Γ z ε` about `z`. If `Γ` is discrete, then for small `ε` no other element
-of `Γ` moves that disc to meet itself (`TauCeti.exists_ball_disjoint_smul_of_notMem_stabilizer`).
-This separation result is the prerequisite for a later identification of a neighbourhood in the
-full orbit space with the quotient of the disc by the finite group `MulAction.stabilizer Γ z`.
+`Subgroup.stabilizerBall Γ z ε` about `z`. If the action of `Γ` is properly discontinuous — in
+particular if `Γ` is discrete — then for small `ε` no other element of `Γ` moves that disc to meet
+itself (`TauCeti.exists_ball_disjoint_smul_of_notMem_stabilizer`). This separation result is the
+prerequisite for a later identification of a neighbourhood in the full orbit space with the
+quotient of the disc by the finite group `MulAction.stabilizer Γ z`.
 
 That orbit space is computed here. In the disc coordinate centred at `z` the stabilizer acts by
 the group of `m`-th roots of unity, `m` its order
@@ -87,7 +89,13 @@ the hyperbolic disc of radius `ε` about `z` onto the Euclidean disc of radius `
 about `0`, carrying the stabilizer action to the rotation action of the `m`-th roots of unity by
 `Subgroup.stabilizerBallHomeomorph_smul`. Its underlying coordinate and explicit inverse are
 holomorphic by `UpperHalfPlane.mdifferentiable_discCoordinate` and
-`UpperHalfPlane.analyticOnNhd_discCoordinateHomeomorph_symm`. -/
+`UpperHalfPlane.analyticOnNhd_discCoordinateHomeomorph_symm`.
+
+The stabilizer is assumed finite because the codomain needs it: `TauCeti.rootsOfUnityBall m` is
+defined only for `m ≠ 0`, and for `m = 0` the group `rootsOfUnity 0 ℂ` is the whole unit group,
+which does not preserve a disc. The finiteness-free geometry is
+`UpperHalfPlane.discCoordinateHomeomorph` together with `UpperHalfPlane.image_discCoordinate_ball`,
+of which this is the packaging against the roots-of-unity model. -/
 def stabilizerBallHomeomorph [Finite (stabilizer Γ z)] :
     stabilizerBall Γ z ε ≃ₜ
       rootsOfUnityBall (Nat.card (stabilizer Γ z)) (Real.tanh (ε / 2)) where
