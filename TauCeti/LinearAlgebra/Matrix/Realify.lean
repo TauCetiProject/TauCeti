@@ -5,28 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Complex.BigOperators
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
-# The realification of a complex matrix
+# The realification of a matrix over an RCLike field
 
-A complex `m × n` matrix `A` induces an `ℝ`-linear map `ℂ^n → ℂ^m`, and splitting a complex
-vector into its real and imaginary parts identifies `ℂ^n` with `ℝ^n ⊕ ℝ^n`. In those coordinates
-that map is given by the real `(m ⊕ m) × (n ⊕ n)` matrix
+An `m × n` matrix `A` over an `RCLike` field induces an `ℝ`-linear map, and splitting its entries
+into real and imaginary parts gives the real `(m ⊕ m) × (n ⊕ n)` matrix
 
 `Matrix.realify A = !![Re A, -Im A; Im A, Re A]`,
 
 the *realification* of `A`. It is additive and multiplicative and turns the conjugate transpose
 into the transpose, so it carries Hermitian matrices to symmetric ones and `*`-congruence to
-congruence. This is what lets real quadratic-form theory be applied to Hermitian complex forms.
+congruence. This is what lets real quadratic-form theory be applied to Hermitian forms.
 
 ## Main definitions
 
 * `Matrix.realify`: the real matrix of the `ℝ`-linear map a complex matrix induces.
 * `TauCeti.realifyReflection`: the reflection of `ℝ^ι ⊕ ℝ^ι` negating the second summand, which
-  realises entrywise complex conjugation as a congruence of realifications.
+  realises entrywise conjugation as a congruence of realifications.
 
 ## Main results
 
@@ -48,8 +47,8 @@ variable {l m n ι : Type*}
 
 namespace TauCeti
 
-/-- The reflection of `ℝ^ι ⊕ ℝ^ι` negating the second summand, which realises complex
-conjugation as a congruence of realifications. -/
+/-- The reflection of `ℝ^ι ⊕ ℝ^ι` negating the second summand, which realises conjugation as a
+congruence of realifications. -/
 def realifyReflection (ι : Type*) [DecidableEq ι] : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ :=
   Matrix.fromBlocks 1 0 0 (-1)
 
@@ -73,88 +72,94 @@ namespace Matrix
 
 open TauCeti
 
-/-- The realification of a complex matrix: the real matrix of the `ℝ`-linear map it induces
-from `ℂ^n` to `ℂ^m`, read in the coordinates `ℂ^n ≃ ℝ^n ⊕ ℝ^n` given by real and imaginary
-parts. -/
-def realify (A : Matrix m n ℂ) : Matrix (m ⊕ m) (n ⊕ n) ℝ :=
-  fromBlocks (A.map Complex.re) (-(A.map Complex.im)) (A.map Complex.im) (A.map Complex.re)
+/-- The realification of a matrix over an `RCLike` field, obtained by splitting its entries into
+real and imaginary parts. -/
+def realify {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m n 𝕜) : Matrix (m ⊕ m) (n ⊕ n) ℝ :=
+  fromBlocks (A.map RCLike.re) (-(A.map RCLike.im)) (A.map RCLike.im) (A.map RCLike.re)
 
 @[simp]
-theorem realify_apply_inl_inl (A : Matrix m n ℂ) (i : m) (j : n) :
-    A.realify (Sum.inl i) (Sum.inl j) = (A i j).re := by simp [realify]
+theorem realify_apply_inl_inl {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m n 𝕜) (i : m) (j : n) :
+    A.realify (Sum.inl i) (Sum.inl j) = RCLike.re (A i j) := by simp [realify]
 
 @[simp]
-theorem realify_apply_inl_inr (A : Matrix m n ℂ) (i : m) (j : n) :
-    A.realify (Sum.inl i) (Sum.inr j) = -(A i j).im := by simp [realify]
+theorem realify_apply_inl_inr {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m n 𝕜) (i : m) (j : n) :
+    A.realify (Sum.inl i) (Sum.inr j) = -RCLike.im (A i j) := by simp [realify]
 
 @[simp]
-theorem realify_apply_inr_inl (A : Matrix m n ℂ) (i : m) (j : n) :
-    A.realify (Sum.inr i) (Sum.inl j) = (A i j).im := by simp [realify]
+theorem realify_apply_inr_inl {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m n 𝕜) (i : m) (j : n) :
+    A.realify (Sum.inr i) (Sum.inl j) = RCLike.im (A i j) := by simp [realify]
 
 @[simp]
-theorem realify_apply_inr_inr (A : Matrix m n ℂ) (i : m) (j : n) :
-    A.realify (Sum.inr i) (Sum.inr j) = (A i j).re := by simp [realify]
+theorem realify_apply_inr_inr {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m n 𝕜) (i : m) (j : n) :
+    A.realify (Sum.inr i) (Sum.inr j) = RCLike.re (A i j) := by simp [realify]
 
 @[simp]
-theorem realify_zero : (0 : Matrix m n ℂ).realify = 0 := by
+theorem realify_zero {𝕜 : Type*} [RCLike 𝕜] : (0 : Matrix m n 𝕜).realify = 0 := by
   ext p q
   rcases p with i | i <;> rcases q with j | j <;> simp
 
 /-- Realification preserves addition. -/
 @[simp]
-theorem realify_add (A B : Matrix m n ℂ) : (A + B).realify = A.realify + B.realify := by
+theorem realify_add {𝕜 : Type*} [RCLike 𝕜] (A B : Matrix m n 𝕜) :
+    (A + B).realify = A.realify + B.realify := by
   ext p q
   rcases p with i | i <;> rcases q with j | j <;> simp
   ring
 
 @[simp]
-theorem realify_neg (A : Matrix m n ℂ) : (-A).realify = -A.realify := by
+theorem realify_neg {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m n 𝕜) :
+    (-A).realify = -A.realify := by
   ext p q
   rcases p with i | i <;> rcases q with j | j <;> simp
 
 /-- A matrix with real entries realifies to two diagonal copies of itself. -/
 @[simp]
-theorem realify_map_ofReal (M : Matrix m n ℝ) :
-    (M.map ((↑) : ℝ → ℂ)).realify = fromBlocks M 0 0 M := by
+theorem realify_map_ofReal {𝕜 : Type*} [RCLike 𝕜] (M : Matrix m n ℝ) :
+    (M.map (algebraMap ℝ 𝕜)).realify = fromBlocks M 0 0 M := by
   ext p q
   rcases p with i | i <;> rcases q with j | j <;> simp
 
 /-- Realification preserves the identity matrix. -/
 @[simp]
-theorem realify_one [DecidableEq ι] : (1 : Matrix ι ι ℂ).realify = 1 := by
-  rw [← Matrix.map_one ((↑) : ℝ → ℂ) (by simp) (by simp), realify_map_ofReal, fromBlocks_one]
+theorem realify_one {𝕜 : Type*} [RCLike 𝕜] [DecidableEq ι] :
+    (1 : Matrix ι ι 𝕜).realify = 1 := by
+  rw [← Matrix.map_one (algebraMap ℝ 𝕜) (by simp) (by simp), realify_map_ofReal, fromBlocks_one]
 
 /-- Realification preserves matrix multiplication. -/
 @[simp]
-theorem realify_mul [Fintype n] (A : Matrix m n ℂ) (B : Matrix n l ℂ) :
+theorem realify_mul {𝕜 : Type*} [RCLike 𝕜] [Fintype n] (A : Matrix m n 𝕜)
+    (B : Matrix n l 𝕜) :
     (A * B).realify = A.realify * B.realify := by
   ext p q
   rcases p with i | i <;> rcases q with j | j <;>
-    simp [Matrix.mul_apply, Fintype.sum_sum_type, Complex.re_sum, Complex.im_sum,
-      Complex.mul_re, Complex.mul_im, Finset.sum_sub_distrib, Finset.sum_add_distrib] <;> ring
+    simp [Matrix.mul_apply, Fintype.sum_sum_type, RCLike.mul_re, RCLike.mul_im,
+      Finset.sum_sub_distrib, Finset.sum_add_distrib] <;> ring
 
 /-- Realification turns the conjugate transpose into the transpose. -/
 @[simp]
-theorem realify_conjTranspose (A : Matrix m n ℂ) : (Aᴴ).realify = (A.realify)ᵀ := by
+theorem realify_conjTranspose {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m n 𝕜) :
+    (Aᴴ).realify = (A.realify)ᵀ := by
   ext p q
   rcases p with i | i <;> rcases q with j | j <;> simp [conjTranspose_apply]
 
 /-- Realification carries Hermitian matrices to symmetric ones. -/
-theorem IsHermitian.isSymm_realify {A : Matrix ι ι ℂ} (hA : Matrix.IsHermitian A) :
+theorem IsHermitian.isSymm_realify {𝕜 : Type*} [RCLike 𝕜] {A : Matrix ι ι 𝕜}
+    (hA : Matrix.IsHermitian A) :
     A.realify.IsSymm := by
   rw [Matrix.IsSymm, ← realify_conjTranspose, hA.eq]
 
 /-- Realification preserves invertibility. -/
-theorem isUnit_det_realify [Fintype ι] [DecidableEq ι] {A : Matrix ι ι ℂ} (h : IsUnit A.det) :
+theorem isUnit_det_realify {𝕜 : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
+    {A : Matrix ι ι 𝕜} (h : IsUnit A.det) :
     IsUnit (A.realify).det := by
-  apply Matrix.isUnit_det_of_left_inverse
-  show (A⁻¹).realify * A.realify = 1
+  refine Matrix.isUnit_det_of_left_inverse (B := (A⁻¹).realify) ?_
   rw [← realify_mul, Matrix.nonsing_inv_mul _ h, realify_one]
 
-/-- Entrywise complex conjugation becomes congruence by the reflection negating the imaginary
+/-- Entrywise conjugation becomes congruence by the reflection negating the imaginary
 coordinates. -/
-theorem realify_map_starRingEnd [Fintype ι] [DecidableEq ι] (A : Matrix ι ι ℂ) :
-    (A.map (starRingEnd ℂ)).realify =
+theorem realify_map_starRingEnd {𝕜 : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
+    (A : Matrix ι ι 𝕜) :
+    (A.map (starRingEnd 𝕜)).realify =
       realifyReflection ι * A.realify * (realifyReflection ι)ᵀ := by
   rw [realifyReflection_transpose]
   ext p q

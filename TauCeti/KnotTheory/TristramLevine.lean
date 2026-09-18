@@ -99,7 +99,7 @@ theorem tristramLevineForm_one (V : Matrix ι ι ℝ) : tristramLevineForm V 1 =
 /-- At `ω = -1` the Tristram--Levine form is twice the symmetrised Seifert matrix. -/
 @[simp]
 theorem tristramLevineForm_neg_one (V : Matrix ι ι ℝ) :
-    tristramLevineForm V (-1) = ((2 : ℝ) • (V + Vᵀ)).map ((↑) : ℝ → ℂ) := by
+    tristramLevineForm V (-1) = ((2 : ℝ) • (V + Vᵀ)).map (algebraMap ℝ ℂ) := by
   ext i j
   simp [Matrix.transpose_apply]
   ring
@@ -135,18 +135,10 @@ theorem tristramLevineForm_congr [Fintype ι] (P V : Matrix ι ι ℝ) (ω : ℂ
     simp [Matrix.conjTranspose_apply]
   simp only [tristramLevineForm, hconj, Matrix.transpose_mul, Matrix.transpose_transpose,
     Matrix.transpose_map]
-  rw [show (P * V * Pᵀ).map ((↑) : ℝ → ℂ) =
-      (P * V).map ((↑) : ℝ → ℂ) * (Pᵀ).map ((↑) : ℝ → ℂ) from
-    Matrix.map_mul (f := Complex.ofRealHom)]
-  rw [show (P * V).map ((↑) : ℝ → ℂ) =
-      P.map ((↑) : ℝ → ℂ) * V.map ((↑) : ℝ → ℂ) from
-    Matrix.map_mul (f := Complex.ofRealHom)]
-  rw [show (P * (Vᵀ * Pᵀ)).map ((↑) : ℝ → ℂ) =
-      P.map ((↑) : ℝ → ℂ) * (Vᵀ * Pᵀ).map ((↑) : ℝ → ℂ) from
-    Matrix.map_mul (f := Complex.ofRealHom)]
-  rw [show (Vᵀ * Pᵀ).map ((↑) : ℝ → ℂ) =
-      (Vᵀ).map ((↑) : ℝ → ℂ) * (Pᵀ).map ((↑) : ℝ → ℂ) from
-    Matrix.map_mul (f := Complex.ofRealHom)]
+  have map_mul (A B : Matrix ι ι ℝ) : (A * B).map ((↑) : ℝ → ℂ) =
+      A.map ((↑) : ℝ → ℂ) * B.map ((↑) : ℝ → ℂ) :=
+    Matrix.map_mul (f := Complex.ofRealHom)
+  rw [map_mul, map_mul, map_mul, map_mul]
   noncomm_ring
 
 /-- The Tristram--Levine form of a block-diagonal Seifert matrix, the Seifert matrix of a
@@ -187,7 +179,7 @@ theorem tristramLevineSignature_neg_one (V : Matrix ι ι ℝ) :
   have h : 2 * tristramLevineSignature V (-1) =
       Matrix.signature (tristramLevineForm V (-1)).realify :=
     ((isHermitian_tristramLevineForm V (-1)).signature_realify).symm
-  rw [tristramLevineForm_neg_one, realify_map_ofReal, Matrix.signature_fromBlocks_zero,
+  rw [tristramLevineForm_neg_one, realify_map_ofReal (𝕜 := ℂ), Matrix.signature_fromBlocks_zero,
     Matrix.signature_smul_of_pos two_pos, Matrix.signature_add_transpose] at h
   omega
 

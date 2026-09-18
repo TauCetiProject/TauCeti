@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-public import Mathlib.LinearAlgebra.QuadraticForm.Basic
-public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 
 /-!
