@@ -25,14 +25,15 @@ then be certified by a finite search.
 
 ## Main results
 
-* `NumberField.Units.mem_torsion_iff_apply_eq_one_of_rank_eq_one`: at unit rank one, a unit is
-  torsion if and only if it has absolute value `1` at a given infinite place.
-* `NumberField.Units.norm_logEmbedding_eq_of_rank_eq_one`: at unit rank one,
+* `TauCeti.NumberField.Units.mem_torsion_iff_apply_eq_one_of_rank_eq_one`: at unit rank one, a
+  unit is torsion if and only if it has absolute value `1` at a given infinite place.
+* `TauCeti.NumberField.Units.norm_logEmbedding_eq_of_rank_eq_one`: at unit rank one,
   `‖logEmbedding K u‖ = mult w * |log (w u)|` for every infinite place `w`.
-* `NumberField.Units.logEmbedding_norm_lt_iff_at_place`: the comparison of the norms of the
-  logarithmic embeddings of two units reads `|log (w v)| < log (w u)` at a place `w` with
+* `TauCeti.NumberField.Units.logEmbedding_norm_lt_iff_at_place`: the comparison of the norms of
+  the logarithmic embeddings of two units reads `|log (w v)| < log (w u)` at a place `w` with
   `1 < w u`.
-* `NumberField.Units.closure_sup_torsion_eq_top_iff_of_rank_eq_one`: the rank-one criterion.
+* `TauCeti.NumberField.Units.closure_sup_torsion_eq_top_iff_of_rank_eq_one`: the rank-one
+  criterion.
 
 ## References
 
@@ -42,14 +43,18 @@ then be certified by a finite search.
 
 public section
 
-open NumberField NumberField.InfinitePlace
+open NumberField NumberField.InfinitePlace NumberField.Units NumberField.Units.dirichletUnitTheorem
 open scoped NumberField
 
-namespace NumberField.Units
-
-open dirichletUnitTheorem
-
 variable {K : Type*} [Field K] [NumberField K]
+
+omit [NumberField K] in
+/-- The absolute value of an integer power of a unit at an infinite place. -/
+@[simp] theorem NumberField.InfinitePlace.apply_coe_zpow (w : InfinitePlace K) (u : (𝓞 K)ˣ)
+    (n : ℤ) : w ((u ^ n : (𝓞 K)ˣ) : K) = w u ^ n := by
+  rw [Units.coe_zpow, map_zpow₀]
+
+namespace TauCeti.NumberField.Units
 
 /-- A number field of unit rank one has exactly two infinite places. -/
 theorem card_infinitePlace_eq_two_of_rank_eq_one (hrank : rank K = 1) :
@@ -124,12 +129,6 @@ theorem logEmbedding_norm_lt_iff_at_place (hrank : rank K = 1) (w : InfinitePlac
   have hmult : (0 : ℝ) < w.mult := by exact_mod_cast mult_pos
   exact ⟨fun h => lt_of_mul_lt_mul_left h hmult.le, fun h => mul_lt_mul_of_pos_left h hmult⟩
 
-omit [NumberField K] in
-/-- The absolute value of an integer power of a unit at an infinite place. -/
-@[simp] theorem apply_coe_zpow (w : InfinitePlace K) (u : (𝓞 K)ˣ) (n : ℤ) :
-    w ((u ^ n : (𝓞 K)ˣ) : K) = w u ^ n := by
-  rw [coe_zpow, map_zpow₀]
-
 /-- **The rank-one criterion for a fundamental unit.** Let `K` have unit rank one, let `w` be an
 infinite place and let `u` be a unit with `1 < w u` (so `u` is not torsion). Then `u` generates
 the unit group modulo torsion if and only if no unit `v` satisfies `1 < w v < w u`. -/
@@ -178,4 +177,4 @@ theorem closure_sup_torsion_eq_top_iff_of_rank_eq_one (hrank : rank K = 1)
       v * u ^ (-n), htor, ?_⟩
     rw [zpow_neg, mul_comm v, mul_inv_cancel_left]
 
-end NumberField.Units
+end TauCeti.NumberField.Units
