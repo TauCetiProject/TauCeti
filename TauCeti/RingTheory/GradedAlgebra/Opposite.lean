@@ -61,28 +61,53 @@ namespace GradedOpposite
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
 
-/-- The underlying type equivalence from the graded opposite to the ordinary opposite. -/
-def toMulOppositeEquiv (G : InternalGrading R A) : GradedOpposite G ≃ Aᵐᵒᵖ where
-  toFun := toMulOpposite
-  invFun := fun x => ⟨x⟩
-  left_inv x := by cases x; rfl
-  right_inv _ := rfl
-
 /-- The equivalence used to transport the ordinary opposite algebra structure.  It applies the
 quadratic sign twist after forgetting that the source has graded-opposite multiplication. -/
-noncomputable def transportEquiv (G : InternalGrading R A) : GradedOpposite G ≃ Aᵐᵒᵖ :=
-  (toMulOppositeEquiv G).trans G.opposite.quadraticTwistEquiv.toEquiv
+private noncomputable def transportEquiv (G : InternalGrading R A) : GradedOpposite G ≃ Aᵐᵒᵖ :=
+  ({
+    toFun := toMulOpposite
+    invFun := fun x => ⟨x⟩
+    left_inv := fun x => by cases x; rfl
+    right_inv := fun _ => rfl
+  } : GradedOpposite G ≃ Aᵐᵒᵖ).trans G.opposite.quadraticTwistEquiv.toEquiv
 
+-- Public instance bodies cannot refer to `transportEquiv`, so they spell out the same equivalence.
 noncomputable instance instRing (G : InternalGrading R A) : Ring (GradedOpposite G) :=
-  (transportEquiv G).ring
+  let e : GradedOpposite G ≃ Aᵐᵒᵖ :=
+    ({
+      toFun := toMulOpposite
+      invFun := fun x => ⟨x⟩
+      left_inv := fun x => by cases x; rfl
+      right_inv := fun _ => rfl
+    } : GradedOpposite G ≃ Aᵐᵒᵖ).trans G.opposite.quadraticTwistEquiv.toEquiv
+  e.ring
 
 noncomputable instance instAlgebra (G : InternalGrading R A) : Algebra R (GradedOpposite G) :=
-  Equiv.algebra R (transportEquiv G)
+  let e : GradedOpposite G ≃ Aᵐᵒᵖ :=
+    ({
+      toFun := toMulOpposite
+      invFun := fun x => ⟨x⟩
+      left_inv := fun x => by cases x; rfl
+      right_inv := fun _ => rfl
+    } : GradedOpposite G ≃ Aᵐᵒᵖ).trans G.opposite.quadraticTwistEquiv.toEquiv
+  Equiv.algebra R e
 
 /-- The transport equivalence is an algebra equivalence to the ordinary opposite. -/
-noncomputable def transportAlgEquiv (G : InternalGrading R A) :
-  GradedOpposite G ≃ₐ[R] Aᵐᵒᵖ :=
-  Equiv.algEquiv R (transportEquiv G)
+private noncomputable def transportAlgEquiv (G : InternalGrading R A) :
+    GradedOpposite G ≃ₐ[R] Aᵐᵒᵖ where
+  __ := transportEquiv G
+  map_add' x y := by
+    change transportEquiv G ((transportEquiv G).symm
+      (transportEquiv G x + transportEquiv G y)) = _
+    exact (transportEquiv G).apply_symm_apply _
+  map_mul' x y := by
+    change transportEquiv G ((transportEquiv G).symm
+      (transportEquiv G x * transportEquiv G y)) = _
+    exact (transportEquiv G).apply_symm_apply _
+  commutes' r := by
+    change transportEquiv G ((transportEquiv G).symm (algebraMap R Aᵐᵒᵖ r)) =
+      algebraMap R Aᵐᵒᵖ r
+    exact (transportEquiv G).apply_symm_apply _
 
 /-- Regard an element as an element of the graded opposite. -/
 def op (G : InternalGrading R A) (a : A) : GradedOpposite G := ⟨MulOpposite.op a⟩
@@ -92,11 +117,11 @@ def unop (G : InternalGrading R A) (a : GradedOpposite G) : A := a.toMulOpposite
 
 /-- The transport algebra equivalence sends a raw opposite element to its quadratic twist. -/
 @[simp]
-theorem transportAlgEquiv_op (G : InternalGrading R A) (a : A) :
+private theorem transportAlgEquiv_op (G : InternalGrading R A) (a : A) :
     transportAlgEquiv G (op G a) =
       G.opposite.quadraticTwist (MulOpposite.op a) := by
-  rw [transportAlgEquiv, Equiv.algEquiv_apply]
-  simp [transportEquiv, toMulOppositeEquiv, op]
+  change transportEquiv G (op G a) = _
+  simp [transportEquiv, op]
 
 @[simp]
 theorem unop_op (G : InternalGrading R A) (a : A) : unop G (op G a) = a := by
@@ -106,6 +131,12 @@ theorem unop_op (G : InternalGrading R A) (a : A) : unop G (op G a) = a := by
 theorem op_unop (G : InternalGrading R A) (a : GradedOpposite G) : op G (unop G a) = a := by
   cases a
   rfl
+
+/-- Two elements of a graded opposite are equal if their underlying elements are equal. -/
+@[ext]
+theorem ext_unop (G : InternalGrading R A) {a b : GradedOpposite G}
+    (h : unop G a = unop G b) : a = b := by
+  rw [← op_unop G a, ← op_unop G b, h]
 
 /-- Passage to the graded opposite is an `R`-linear equivalence. -/
 noncomputable def opLinearEquiv (G : InternalGrading R A) : A ≃ₗ[R] GradedOpposite G where
@@ -157,6 +188,14 @@ theorem op_add (G : InternalGrading R A) (a b : A) : op G (a + b) = op G a + op 
   (opLinearEquiv G).map_add a b
 
 @[simp]
+theorem op_neg (G : InternalGrading R A) (a : A) : op G (-a) = -op G a :=
+  (opLinearEquiv G).map_neg a
+
+@[simp]
+theorem op_sub (G : InternalGrading R A) (a b : A) : op G (a - b) = op G a - op G b :=
+  (opLinearEquiv G).map_sub a b
+
+@[simp]
 theorem op_smul (G : InternalGrading R A) (r : R) (a : A) : op G (r • a) = r • op G a :=
   (opLinearEquiv G).map_smul r a
 
@@ -172,6 +211,16 @@ theorem unop_zero (G : InternalGrading R A) : unop G (0 : GradedOpposite G) = 0 
 theorem unop_add (G : InternalGrading R A) (a b : GradedOpposite G) :
     unop G (a + b) = unop G a + unop G b :=
   (opLinearEquiv G).symm.map_add a b
+
+@[simp]
+theorem unop_neg (G : InternalGrading R A) (a : GradedOpposite G) :
+    unop G (-a) = -unop G a :=
+  (opLinearEquiv G).symm.map_neg a
+
+@[simp]
+theorem unop_sub (G : InternalGrading R A) (a b : GradedOpposite G) :
+    unop G (a - b) = unop G a - unop G b :=
+  (opLinearEquiv G).symm.map_sub a b
 
 @[simp]
 theorem unop_smul (G : InternalGrading R A) (r : R) (a : GradedOpposite G) :
