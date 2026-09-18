@@ -321,9 +321,11 @@ with `Γ` countable and having a fundamental domain, the covolume of `Δ` is the
 counted in `ℕ∞`, times the covolume of `Γ`. -/
 theorem covolume_eq_card_mul_covolume {G α : Type*} [Group G] [MulAction G α]
     [MeasurableSpace α] {μ : Measure α} {Γ Δ : Subgroup G} [MeasurableConstSMul Γ α]
-    [SMulInvariantMeasure Γ α μ] [MeasurableConstSMul Δ α] [SMulInvariantMeasure Δ α μ]
-    [Countable Γ] [HasFundamentalDomain Γ α μ] (h : Δ ≤ Γ) :
+    [SMulInvariantMeasure Γ α μ] [Countable Γ] [HasFundamentalDomain Γ α μ] (h : Δ ≤ Γ) :
     covolume Δ α μ = ENat.card (Γ ⧸ Δ.subgroupOf Γ) * covolume Γ α μ := by
+  have : MeasurableConstSMul Δ α := ⟨fun d ↦ measurable_const_smul (⟨d, h d.2⟩ : Γ)⟩
+  have : SMulInvariantMeasure Δ α μ :=
+    ⟨fun d ↦ SMulInvariantMeasure.measure_preimage_smul (⟨d, h d.2⟩ : Γ)⟩
   have : Countable Δ := (Subgroup.inclusion_injective h).countable
   have : Countable (Γ ⧸ Δ.subgroupOf Γ) := QuotientGroup.mk_surjective.countable
   obtain ⟨s, hs⟩ := HasFundamentalDomain.ExistsIsFundamentalDomain (G := Γ) (ν := μ)
