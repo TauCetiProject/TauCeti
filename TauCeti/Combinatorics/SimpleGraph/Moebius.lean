@@ -60,6 +60,7 @@ private theorem sum_filter_le_le_eq_sum_Icc [DecidableEq V]
 open Classical in
 /-- **The Möbius function of the lattice of graphs, measured from the bottom.** The signed sum
 `∑_{F ≤ G ≤ H} (-1)^{e(G) - e(F)}` is `1` if `F = H` and `0` otherwise. -/
+@[simp]
 theorem sum_neg_one_pow_card_edgeSet_sub_left (F H : SimpleGraph V) :
     ∑ G ∈ Finset.univ.filter (fun G : SimpleGraph V => F ≤ G ∧ G ≤ H),
         (-1 : R) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) = if F = H then 1 else 0 := by
@@ -70,6 +71,7 @@ theorem sum_neg_one_pow_card_edgeSet_sub_left (F H : SimpleGraph V) :
 open Classical in
 /-- **The Möbius function of the lattice of graphs, measured from the top.** The signed sum
 `∑_{F ≤ G ≤ H} (-1)^{e(H) - e(G)}` is `1` if `F = H` and `0` otherwise. -/
+@[simp]
 theorem sum_neg_one_pow_card_edgeSet_sub_right (F H : SimpleGraph V) :
     ∑ G ∈ Finset.univ.filter (fun G : SimpleGraph V => F ≤ G ∧ G ≤ H),
         (-1 : R) ^ (Nat.card H.edgeSet - Nat.card G.edgeSet) = if F = H then 1 else 0 := by
