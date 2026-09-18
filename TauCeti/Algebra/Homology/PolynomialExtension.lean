@@ -75,6 +75,52 @@ theorem polynomialExtensionMul_f (p : A[X]) (i : ι) :
     (K.polynomialExtensionMul p).f i = ModuleCat.ofHom (LinearMap.mulLeft A p) ▷ K.X i :=
   (rfl)
 
+/-- Multiplication by the zero polynomial is the zero chain map. -/
+@[simp]
+theorem polynomialExtensionMul_zero : K.polynomialExtensionMul 0 = 0 := by
+  ext i : 1
+  simp
+
+/-- Multiplication by the constant polynomial `1` is the identity chain map. -/
+@[simp]
+theorem polynomialExtensionMul_one : K.polynomialExtensionMul 1 = 𝟙 _ := by
+  ext i : 1
+  simp
+
+/-- Multiplication by a sum of polynomials is the sum of their multiplication chain maps. -/
+@[simp]
+theorem polynomialExtensionMul_add (p q : A[X]) :
+    K.polynomialExtensionMul (p + q) = K.polynomialExtensionMul p + K.polynomialExtensionMul q := by
+  ext i : 1
+  have h : LinearMap.mulLeft A (p + q) =
+      LinearMap.mulLeft A p + LinearMap.mulLeft A q := by
+    apply LinearMap.ext
+    intro r
+    simp only [LinearMap.add_apply, LinearMap.mulLeft_apply, add_mul]
+  simp [h]
+
+/-- Multiplication by the negative of a polynomial is the negative multiplication chain map. -/
+@[simp]
+theorem polynomialExtensionMul_neg (p : A[X]) :
+    K.polynomialExtensionMul (-p) = -K.polynomialExtensionMul p := by
+  apply eq_neg_of_add_eq_zero_left
+  rw [← K.polynomialExtensionMul_add]
+  simp
+
+/-- Composing multiplication by two polynomials is multiplication by their product. -/
+@[simp]
+theorem polynomialExtensionMul_comp (p q : A[X]) :
+    K.polynomialExtensionMul p ≫ K.polynomialExtensionMul q = K.polynomialExtensionMul (p * q) := by
+  ext i : 1
+  have h : ModuleCat.ofHom (LinearMap.mulLeft A p) ≫
+      ModuleCat.ofHom (LinearMap.mulLeft A q) =
+      ModuleCat.ofHom (LinearMap.mulLeft A (p * q)) :=
+    ModuleCat.hom_ext <| LinearMap.ext fun r ↦ by
+      simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
+        LinearMap.mulLeft_apply]
+      ac_rfl
+  simp [← comp_whiskerRight, h]
+
 /-- Evaluation at `a : A`, as the chain map `A[X] ⊗[A] K ⟶ K`. -/
 noncomputable def polynomialExtensionEval (a : A) : K.polynomialExtension ⟶ K where
   f i := ModuleCat.ofHom (Polynomial.leval a) ▷ K.X i ≫ (λ_ (K.X i)).hom
