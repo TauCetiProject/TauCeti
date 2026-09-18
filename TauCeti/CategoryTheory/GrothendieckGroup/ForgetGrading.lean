@@ -175,9 +175,9 @@ theorem forgetGradingMap_injective_iff
   have hmap : forgetGradingMap hF comm = g.comp e.symm.toLinearMap := by
     apply LaurentSpecialization.hom_ext
     intro x
-    rw [forgetGradingMap_mk]
-    simpa [g, e, LaurentSpecialization.mk_apply] using
-      (Submodule.liftQ_apply (p := p) (forgetGradingUnderlyingMap hF) x).symm
+    rw [forgetGradingMap_mk, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+      LaurentSpecialization.mk_apply, Submodule.Quotient.restrictScalarsEquiv_symm_mk]
+    exact (Submodule.liftQ_apply p (forgetGradingUnderlyingMap hF) x).symm
   have hinjective : Function.Injective (g.comp e.symm.toLinearMap) ↔
       Function.Injective g := by
     rw [LinearMap.coe_comp, LinearEquiv.coe_toLinearMap]
