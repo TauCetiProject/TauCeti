@@ -29,6 +29,8 @@ The map `Hᵢ(X) ⟶ Hᵢ(X, A)` of the pair sequence is `HomologyPretheory.hFst
 ## References
 
 * S. Eilenberg and N. Steenrod, *Foundations of Algebraic Topology*, Chapter I.
+* J. Scharmberg, [mathlib4#38369](https://github.com/leanprover-community/mathlib4/pull/38369):
+  `hFstToHₚ`, `HasPairSequence` and `HasDimensionAxiom` are adapted from this formalization.
 -/
 
 @[expose] public section
