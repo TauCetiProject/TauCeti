@@ -19,6 +19,8 @@ every short exact sequence of finite-dimensional modules splits.
 
 * `FGModuleCat.projective`: every finite-dimensional module over a division ring is projective.
 * `FGModuleCat.projective_of_free`: every finite free module is projective.
+* `FGModuleCat.moduleProjective_of_projective`: a projective object of `FGModuleCat R` is a
+  projective `R`-module.
 * `FGModuleCat.nonempty_splitting_of_shortExact`: every short exact sequence of finite-dimensional
   modules over a division ring splits.
 -/
@@ -38,6 +40,20 @@ theorem _root_.FGModuleCat.projective_of_free (X : FGModuleCat.{v} R) [Module.Fr
     Projective X := by
   apply (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).projective_of_map_projective
   exact ModuleCat.projective_of_free (Module.Free.chooseBasis R X)
+
+variable {R} in
+/-- A projective object among the finitely generated modules is projective as a module: split a
+finite free presentation in `FGModuleCat R`. -/
+theorem _root_.FGModuleCat.moduleProjective_of_projective (X : FGModuleCat.{u} R) [Projective X] :
+    Module.Projective R X := by
+  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R X
+  let p : FGModuleCat.of R (Fin n → R) ⟶ X := FGModuleCat.ofHom f
+  let _ : Epi p := ConcreteCategory.epi_of_surjective p hf
+  let s := Projective.factorThru (𝟙 X) p
+  apply Module.Projective.of_split s.hom.hom p.hom.hom
+  apply LinearMap.ext
+  intro x
+  exact congrArg (fun g : X ⟶ X ↦ g.hom.hom x) (Projective.factorThru_comp (𝟙 X) p)
 
 variable (k : Type u) [DivisionRing k]
 
