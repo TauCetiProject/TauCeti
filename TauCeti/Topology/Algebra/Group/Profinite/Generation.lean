@@ -30,8 +30,8 @@ each open normal `U` separately says nothing, since each such quotient is finite
 
 A possibly infinite subset *converges to one* when only finitely many of its elements lie outside
 each neighborhood of `1`; in a profinite group it suffices to test open normal subgroups. This
-condition is inherited by subsets and carried to images by continuous homomorphisms. It is the
-finiteness condition on generating sets used to define the cardinal-valued generator rank of a
+condition is inherited by subsets and carried to images by continuous maps preserving `1`. It is
+the finiteness condition on generating sets used to define the cardinal-valued generator rank of a
 profinite group.
 
 ## Main results
@@ -50,8 +50,8 @@ profinite group.
   `1`.
 * `TauCeti.convergesToOne_iff_openNormalSubgroup`: in a profinite group, the same holds for
   every open normal subgroup.
-* `TauCeti.ConvergesToOne.image`: a continuous homomorphism carries a set converging to one to
-  another such set.
+* `TauCeti.ConvergesToOne.image`: a continuous map preserving `1` carries a set converging to one
+  to another such set.
 
 ## References
 
@@ -64,67 +64,80 @@ namespace TauCeti
 
 section ConvergesToOne
 
+open Filter
 open scoped Topology
 
-variable {G : Type*} [Group G] [TopologicalSpace G]
+variable {G : Type*} [TopologicalSpace G]
 
-/-- A subset of a topological group **converges to one** when every neighborhood of `1` omits
-only finitely many of its elements. For a profinite group this says that every open normal
-subgroup omits only finitely many elements (`TauCeti.convergesToOne_iff_openNormalSubgroup`); it
-is the finiteness condition imposed on generating sets in the cardinal-valued topological
-generator rank of a profinite group. -/
+section One
+
+variable [One G]
+
+/-- A subset of a topological space with a distinguished point `1` **converges to one** when its
+inclusion tends to `1` along the cofinite filter, that is when every neighborhood of `1` omits only
+finitely many of its elements (`TauCeti.convergesToOne_iff`). For a profinite group this says that
+every open normal subgroup omits only finitely many elements
+(`TauCeti.convergesToOne_iff_openNormalSubgroup`); it is the finiteness condition imposed on
+generating sets in the cardinal-valued topological generator rank of a profinite group. -/
 def ConvergesToOne (s : Set G) : Prop :=
-  ∀ U ∈ 𝓝 (1 : G), {x ∈ s | x ∉ U}.Finite
+  Tendsto ((↑) : s → G) cofinite (𝓝 1)
 
 /-- A set converges to one exactly when only finitely many of its elements lie outside each
 neighborhood of `1`. -/
 @[simp]
 theorem convergesToOne_iff {s : Set G} :
-    ConvergesToOne s ↔ ∀ U ∈ 𝓝 (1 : G), {x ∈ s | x ∉ U}.Finite :=
-  Iff.rfl
+    ConvergesToOne s ↔ ∀ U ∈ 𝓝 (1 : G), {x ∈ s | x ∉ U}.Finite := by
+  refine tendsto_def.trans ?_
+  refine forall₂_congr fun U _ ↦ ?_
+  rw [mem_cofinite, ← Set.finite_image_iff Subtype.val_injective.injOn]
+  congr!
+  ext x
+  simp
+
+/-- Every finite subset converges to one. -/
+theorem _root_.Set.Finite.convergesToOne {s : Set G} (hs : s.Finite) : ConvergesToOne s := by
+  have := hs.to_subtype
+  rw [ConvergesToOne, cofinite_eq_bot]
+  exact tendsto_bot
+
+/-- Every subset of a set converging to one also converges to one. -/
+theorem ConvergesToOne.mono {s t : Set G} (hs : ConvergesToOne s) (hts : t ⊆ s) :
+    ConvergesToOne t :=
+  hs.comp (Set.inclusion_injective hts).tendsto_cofinite
+
+end One
 
 /-- In a profinite group, a set converges to one exactly when only finitely many of its elements
 lie outside each open normal subgroup. -/
-theorem convergesToOne_iff_openNormalSubgroup [IsTopologicalGroup G] [CompactSpace G]
+theorem convergesToOne_iff_openNormalSubgroup [Group G] [IsTopologicalGroup G] [CompactSpace G]
     [TotallyDisconnectedSpace G] {s : Set G} :
     ConvergesToOne s ↔ ∀ U : OpenNormalSubgroup G, {x ∈ s | x ∉ U.toSubgroup}.Finite := by
+  rw [convergesToOne_iff]
   refine ⟨fun hs U ↦ hs _ (U.isOpen.mem_nhds U.one_mem), fun hs U hU ↦ ?_⟩
   obtain ⟨V, hVU, hVopen, hV1⟩ := mem_nhds_iff.mp hU
   obtain ⟨N, hN⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hVopen hV1
   exact (hs N).subset fun x hx ↦ ⟨hx.1, fun hxN ↦ hx.2 (hVU (hN hxN))⟩
 
-/-- Every finite subset of a topological group converges to one. -/
-theorem _root_.Set.Finite.convergesToOne {s : Set G} (hs : s.Finite) : ConvergesToOne s :=
-  convergesToOne_iff.mpr fun _ _ ↦ hs.subset fun _ hx ↦ hx.1
+variable {H : Type*} [TopologicalSpace H]
 
-/-- Every subset of a set converging to one also converges to one. -/
-theorem ConvergesToOne.mono {s t : Set G} (hs : ConvergesToOne s) (hts : t ⊆ s) :
-    ConvergesToOne t :=
-  convergesToOne_iff.mpr fun U hU ↦ (hs U hU).subset fun _ hx ↦ ⟨hts hx.1, hx.2⟩
-
-variable {H : Type*} [Group H] [TopologicalSpace H]
-
-/-- The image of a set converging to one under a continuous homomorphism also converges to
+/-- The image of a set converging to one under a continuous map preserving `1` also converges to
 one. -/
-theorem ConvergesToOne.image {s : Set G} (hs : ConvergesToOne s) (f : G →* H)
-    (hf : Continuous f) : ConvergesToOne (f '' s) := by
+theorem ConvergesToOne.image [One G] [One H] {F : Type*} [FunLike F G H] [OneHomClass F G H]
+    {s : Set G} (hs : ConvergesToOne s) (f : F) (hf : Continuous f) :
+    ConvergesToOne (f '' s) := by
+  rw [convergesToOne_iff] at hs ⊢
   intro U hU
   have hV : f ⁻¹' U ∈ 𝓝 (1 : G) := hf.continuousAt.preimage_mem_nhds (by rwa [map_one])
   refine ((hs _ hV).image f).subset ?_
   rintro y ⟨⟨x, hxs, rfl⟩, hyU⟩
   exact ⟨x, ⟨hxs, hyU⟩, rfl⟩
 
-/-- A topological group isomorphism carries a set converging to one exactly to a set converging
-to one. -/
-theorem _root_.ContinuousMulEquiv.convergesToOne_image_iff (e : G ≃ₜ* H) {s : Set G} :
-    ConvergesToOne (e '' s) ↔ ConvergesToOne s := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.image (e : G →* H) e.continuous⟩
-  have h' := h.image (e.symm : H →* G) e.symm.continuous
-  have himage : ((e.symm : H →* G) : H → G) '' ((e : G → H) '' s) = s := by
-    ext x
-    simp
-  rw [himage] at h'
-  exact h'
+/-- A continuous multiplicative equivalence carries a set converging to one exactly to a set
+converging to one. -/
+theorem _root_.ContinuousMulEquiv.convergesToOne_image_iff [MulOneClass G] [MulOneClass H]
+    (e : G ≃ₜ* H) {s : Set G} : ConvergesToOne (e '' s) ↔ ConvergesToOne s := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.image e e.continuous⟩
+  simpa [Set.image_image] using h.image e.symm e.symm.continuous
 
 end ConvergesToOne
 
