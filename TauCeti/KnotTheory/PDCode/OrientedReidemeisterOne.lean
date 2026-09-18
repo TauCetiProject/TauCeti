@@ -51,18 +51,6 @@ orientation `o`.  Slots `0` and `3` point opposite to `o`; slots `1` and `2` poi
 private def kinkOrientation (o : Bool) (slot : Fin 4) : Bool :=
   if slot = 0 ∨ slot = 3 then !o else o
 
-private theorem kinkOrientation_zero (o : Bool) : kinkOrientation o 0 = !o := by
-  simp [kinkOrientation]
-
-private theorem kinkOrientation_one (o : Bool) : kinkOrientation o 1 = o := by
-  simp [kinkOrientation]
-
-private theorem kinkOrientation_two (o : Bool) : kinkOrientation o 2 = o := by
-  simp [kinkOrientation]
-
-private theorem kinkOrientation_three (o : Bool) : kinkOrientation o 3 = !o := by
-  simp [kinkOrientation]
-
 private theorem kinkOrientation_oppositeCrossingSlot (o : Bool) (slot : Fin 4) :
     kinkOrientation o (PDCode.oppositeCrossingSlot slot) = !kinkOrientation o slot := by
   have hopposite : PDCode.oppositeCrossingSlot slot = slot + 2 := by
@@ -124,21 +112,21 @@ arc. -/
 theorem reidemeisterOne_orientation_zero (D : OrientedPDCode n) (h : Fin (4 * n)) (b : Bool) :
     (D.reidemeisterOne h b).orientation (PDCode.halfEdgeSuccEquiv n (.inr 0)) =
       !D.orientation h := by
-  simp [reidemeisterOne, kinkOrientation_zero]
+  simp [reidemeisterOne, kinkOrientation]
 
 /-- Slot one of the inserted crossing has the terminal orientation of the cut arc. -/
 @[simp]
 theorem reidemeisterOne_orientation_one (D : OrientedPDCode n) (h : Fin (4 * n)) (b : Bool) :
     (D.reidemeisterOne h b).orientation (PDCode.halfEdgeSuccEquiv n (.inr 1)) =
       D.orientation h := by
-  simp [reidemeisterOne, kinkOrientation_one]
+  simp [reidemeisterOne, kinkOrientation]
 
 /-- Slot two of the inserted crossing has the terminal orientation of the cut arc. -/
 @[simp]
 theorem reidemeisterOne_orientation_two (D : OrientedPDCode n) (h : Fin (4 * n)) (b : Bool) :
     (D.reidemeisterOne h b).orientation (PDCode.halfEdgeSuccEquiv n (.inr 2)) =
       D.orientation h := by
-  simp [reidemeisterOne, kinkOrientation_two]
+  simp [reidemeisterOne, kinkOrientation]
 
 /-- Slot three of the inserted crossing points opposite to the terminal orientation of the cut
 arc. -/
@@ -146,7 +134,7 @@ arc. -/
 theorem reidemeisterOne_orientation_three (D : OrientedPDCode n) (h : Fin (4 * n)) (b : Bool) :
     (D.reidemeisterOne h b).orientation (PDCode.halfEdgeSuccEquiv n (.inr 3)) =
       !D.orientation h := by
-  simp [reidemeisterOne, kinkOrientation_three]
+  simp [reidemeisterOne, kinkOrientation]
 
 /-- The first Reidemeister move preserves the oriented crossing-free components. -/
 @[simp]
@@ -192,7 +180,7 @@ move.** -/
 theorem normalizedKauffmanBracket_reidemeisterOne {R : Type*} [CommRing R]
     (D : OrientedPDCode n) (h : Fin (4 * n)) (b : Bool) (a : Rˣ) :
     (D.reidemeisterOne h b).normalizedKauffmanBracket a = D.normalizedKauffmanBracket a := by
-  simp only [normalizedKauffmanBracket]
+  simp only [normalizedKauffmanBracket_def]
   rw [writhe_reidemeisterOne, reidemeisterOne_toPDCode,
     PDCode.kauffmanBracket_reidemeisterOne]
   have hpositive : (-((a : R) ^ 3) : R) = ((-a ^ 3 : Rˣ) : R) := by simp

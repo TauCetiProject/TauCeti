@@ -546,10 +546,20 @@ variable {n : ℕ}
 /-- The writhe-normalized Kauffman bracket.  Its correction factor is a unit, so the definition
 makes sense over every commutative ring and does not require the bracket value itself to be
 invertible. -/
-@[expose]
 noncomputable def normalizedKauffmanBracket {R : Type*} [CommRing R]
     (D : OrientedPDCode n) (a : Rˣ) : R :=
   (((-a ^ 3) ^ (-D.writhe) : Rˣ) : R) * D.toPDCode.kauffmanBracket a
+
+/-- The writhe-normalized Kauffman bracket is the bracket multiplied by its writhe
+correction factor. -/
+@[simp]
+theorem normalizedKauffmanBracket_def {R : Type*} [CommRing R]
+    (D : OrientedPDCode n) (a : Rˣ) :
+    D.normalizedKauffmanBracket a =
+      (((-a ^ 3) ^ (-D.writhe) : Rˣ) : R) * D.toPDCode.kauffmanBracket a :=
+  by
+    unfold normalizedKauffmanBracket
+    rfl
 
 end OrientedPDCode
 
