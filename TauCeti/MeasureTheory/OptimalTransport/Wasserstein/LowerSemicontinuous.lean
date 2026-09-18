@@ -26,12 +26,13 @@ convergence of `p`-moments as well. Lower semicontinuity is what the direct meth
 whenever a Wasserstein distance appears in a functional to be minimised over weakly compact sets
 of laws.
 
-For a finite exponent the distance is a continuous increasing function of the optimal transport
-cost of `edist ^ p` (`TauCeti.wassersteinEDist_rpow_eq_transportCost`), and that cost is weakly
-lower semicontinuous in the marginals by `TauCeti.lowerSemicontinuous_transportCost`; this needs
-only an extended pseudometric whose topology is Polish. The endpoint `p = ∞` follows on a Polish
-metric space from `TauCeti.wassersteinEDist_top_eq_iSup`, since a supremum of lower
-semicontinuous functions is lower semicontinuous.
+For a positive finite exponent the distance is a continuous increasing function of the optimal
+transport cost of `edist ^ p` (`TauCeti.wassersteinEDist_rpow_eq_transportCost`), and that cost is
+weakly lower semicontinuous in the marginals by `TauCeti.lowerSemicontinuous_transportCost`; at
+exponent zero the distance between probability measures vanishes. These arguments need only an
+extended pseudometric whose topology is Polish. The endpoint `p = ∞` follows on a Polish metric
+space from `TauCeti.wassersteinEDist_top_eq_iSup`, since a supremum of lower semicontinuous
+functions is lower semicontinuous.
 
 ## Main statements
 
