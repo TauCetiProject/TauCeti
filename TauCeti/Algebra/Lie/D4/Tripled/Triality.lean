@@ -62,6 +62,8 @@ pinned simply connected group scheme of type `D₄` is asserted here.
 * The construction follows the formal template of
   `TauCeti.Algebra.Lie.E6.DoubledMinuscule.GraphAutomorphism`, with the signed involution there
   replaced by an unsigned permutation of order three.
+* [Tau Ceti PR #6671](https://github.com/TauCetiProject/TauCeti/pull/6671), the earlier
+  scheme- and point-level formalization of this triality construction.
 -/
 
 public section
@@ -217,7 +219,7 @@ theorem trialityMatrix_pow_three (A : Type v) [CommRing A] : trialityMatrix A ^ 
     MinusculeWeightTable.Symmetry.moduleEquiv_one, LinearEquiv.coe_one, id_eq]
 
 /-- Conjugation by the triality matrix preserves the tripled carrier's point subgroup. -/
-theorem map_points_conj_trialityMatrix (A : Type v) [CommRing A] :
+private theorem map_points_conj_trialityMatrix (A : Type v) [CommRing A] :
     (points A).map (MulAut.conj (trialityMatrix A)).toMonoidHom = points A := by
   rw [points_def, definingIdeal_def, trialityMatrix]
   simpa only [kostantToralPointsSubgroup_def] using

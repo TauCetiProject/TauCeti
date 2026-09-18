@@ -19,6 +19,8 @@ a representation of the rational Serre algebra on the rational coordinate space 
 
 ## Main declarations
 
+* `TauCeti.MinusculeWeightTable.Symmetry.moduleEquiv`: the rational coordinate permutation
+  induced by a table symmetry.
 * `TauCeti.MinusculeWeightTable.raisingMatrixQ`, `loweringMatrixQ` and `cartanGeneratorMatrixQ`:
   the rational Chevalley generators.
 * `TauCeti.MinusculeWeightTable.rationalSerreRepresentation`: the representation of the rational
@@ -48,6 +50,50 @@ open scoped Matrix
 namespace TauCeti.MinusculeWeightTable
 
 attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-! ## The coordinate permutation of a symmetry -/
+
+namespace Symmetry
+
+variable {B ι : Type*} {T : MinusculeWeightTable B ι} (S R : T.Symmetry)
+
+/-- **The coordinate permutation of the rational module induced by a table symmetry.** It carries
+the standard basis vector at `a` to the standard basis vector at `S.indexPerm a`, so a coordinate
+vector `v` to `v ∘ S.indexPerm⁻¹`. -/
+def moduleEquiv : (ι → ℚ) ≃ₗ[ℚ] (ι → ℚ) :=
+  LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) S.indexPerm
+
+@[simp]
+theorem moduleEquiv_apply (v : ι → ℚ) (a : ι) : S.moduleEquiv v a = v (S.indexPerm.symm a) := by
+  rw [moduleEquiv, LinearEquiv.piCongrLeft'_apply]
+
+/-- The coordinate permutation of a symmetry carries each standard basis vector to the one at the
+permuted index. -/
+@[simp]
+theorem moduleEquiv_single [DecidableEq ι] (a : ι) :
+    S.moduleEquiv (Pi.single a 1) = Pi.single (S.indexPerm a) 1 := by
+  ext b
+  simp only [moduleEquiv_apply, Pi.single_apply, Equiv.symm_apply_eq]
+
+@[simp]
+theorem moduleEquiv_one : (1 : T.Symmetry).moduleEquiv = 1 := by
+  ext v a
+  simp only [moduleEquiv_apply, one_indexPerm, LinearEquiv.coe_one, id_eq]
+  rfl
+
+@[simp]
+theorem moduleEquiv_mul : (S * R).moduleEquiv = S.moduleEquiv * R.moduleEquiv := by
+  ext v a
+  rw [moduleEquiv_apply, LinearEquiv.mul_apply, moduleEquiv_apply, moduleEquiv_apply,
+    mul_indexPerm, Equiv.Perm.mul_def, Equiv.symm_trans_apply]
+
+@[simp]
+theorem moduleEquiv_pow (m : ℕ) : (S ^ m).moduleEquiv = S.moduleEquiv ^ m := by
+  induction m with
+  | zero => rw [pow_zero, pow_zero, moduleEquiv_one]
+  | succ m ih => rw [pow_succ, pow_succ, moduleEquiv_mul, ih]
+
+end Symmetry
 
 variable {B ι : Type*} [Fintype ι] [DecidableEq ι] (T : MinusculeWeightTable B ι)
 
