@@ -853,10 +853,7 @@ variable (R : Type u) [Semiring R]
   (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- An algebraically coinduced function from an open subgroup is locally constant when the
-coefficient action is continuous and the coefficient space is discrete.
-
-Indeed, around `g : G` the function is determined by the orbit map on the open coset `U * g`.
-Shrinking `U` to the open stabilizer of the value at `g` makes the function constant there. -/
+coefficient action is continuous and the coefficient space is discrete. -/
 theorem isLocallyConstant_coindV (U : OpenSubgroup G)
     {A : Type w} [AddCommMonoid A] [Module R A] [TopologicalSpace A] [DiscreteTopology A]
     [DistribMulAction U.toSubgroup A] [SMulCommClass U.toSubgroup R A]
@@ -864,6 +861,8 @@ theorem isLocallyConstant_coindV (U : OpenSubgroup G)
     (f : Representation.coindV U.toSubgroup.subtype
       (Representation.ofDistribMulAction R U.toSubgroup A)) :
     IsLocallyConstant f.1 := by
+  -- Around `g`, the function is determined by the orbit map on `U * g`; shrinking `U` to the
+  -- open stabilizer of `f g` makes it constant there.
   rw [IsLocallyConstant.iff_exists_open]
   intro g
   let V : Set U := MulAction.stabilizer U (f.1 g)
@@ -1015,15 +1014,15 @@ theorem topologicalCoindIsoAlgebraic_hom_apply
   -- to unfolding of its instances.
   rfl
 
-/-- The inverse map of the topological/algebraic comparison leaves every value unchanged. The
-`show` states the codomain as `DiscreteCoind`, the carrier of `coindTopRep` after unfolding, so
-that the result can be applied as a function. -/
+/-- The inverse map of the topological/algebraic comparison leaves every value unchanged. -/
 @[simp]
 theorem topologicalCoindIsoAlgebraic_inv_apply
     (f : Representation.coindV U.toSubgroup.subtype
       (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) (g : G) :
     (show DiscreteCoind G U.toSubgroup A.obj.V from
       (topologicalCoindIsoAlgebraic R G U A).inv.hom.hom f) g = f.1 g := by
+  -- The `show` exposes the `DiscreteCoind` carrier of `coindTopRep` so the result can be applied
+  -- as a function; the final reduction unfolds the transported inverse map.
   rw [← discreteCoindEquivAlgebraic_symm_apply R G U A f g, topologicalCoindIsoAlgebraic,
     Functor.mapIso_inv]
   -- As for `topologicalCoindIsoAlgebraic_hom_apply`, `toSmoothDiscrete` sends the inverse
