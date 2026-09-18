@@ -450,7 +450,8 @@ def typeASimpleIndex (n : ℕ) (i : Fin n) : Fin (n * (n + 1)) :=
 lemma typeASimpleIndex_injective : Injective (typeASimpleIndex n) :=
   Fin.castLE_injective (Nat.le_mul_of_pos_right n n.succ_pos)
 
-private lemma typeAIndexEquiv_symm_typeASimpleIndex (i : Fin n) :
+/-- The Bourbaki simple index corresponds to the consecutive pair of matrix indices. -/
+@[simp] lemma typeAIndexEquiv_symm_typeASimpleIndex (i : Fin n) :
     (typeAIndexEquiv n).symm (typeASimpleIndex n i) =
       ⟨(⟨i, by omega⟩, ⟨(i : ℕ) + 1, by omega⟩), by simp [Fin.ext_iff]⟩ := by
   have hlt : (i : ℕ) < n + 1 := by omega

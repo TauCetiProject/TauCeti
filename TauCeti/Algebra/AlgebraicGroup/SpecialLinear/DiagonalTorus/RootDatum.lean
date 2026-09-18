@@ -37,6 +37,8 @@ exactly the character through which the diagonal torus rescales the root subgrou
 
 * `TauCeti.SpecialLinear.diagonalRootDatum`: the type `A_r` root datum on the lattices of the
   diagonal torus of `SL_{r+1}`.
+* `TauCeti.SpecialLinear.diagonalRootDatumEquiv`: the identification with the pinned simply
+  connected type-`A_r` datum, allowing its base to be transported to these lattices.
 
 ## Main results
 
@@ -108,6 +110,39 @@ noncomputable def diagonalRootDatum (r : ℕ) :
       (ULift.{u} (Fin r) → ℤ) :=
   (typeASimplyConnectedRootDatum r).map (typeAIndexEquiv r).symm (characterEquiv r)
     (cocharacterEquiv r)
+
+/-- The identification of the pinned simply connected type-`A` datum with the root datum
+on the diagonal torus lattices of `SL_{r+1}`. -/
+noncomputable def diagonalRootDatumEquiv (r : ℕ) :
+    (typeASimplyConnectedRootDatum r).Equiv (diagonalRootDatum.{u} r) where
+  weightMap := (characterEquiv r).toLinearMap
+  coweightMap := (cocharacterEquiv r).symm.toLinearMap
+  indexEquiv := (typeAIndexEquiv r).symm
+  weight_coweight_transpose := by
+    ext y x
+    simp [diagonalRootDatum, RootPairing.map]
+  root_weightMap := by
+    ext i
+    simp [diagonalRootDatum, RootPairing.map]
+  coroot_coweightMap := by
+    ext i
+    simp [diagonalRootDatum, RootPairing.map]
+  bijective_weightMap := (characterEquiv r).bijective
+  bijective_coweightMap := (cocharacterEquiv r).symm.bijective
+
+/-- The root indices are transported by the ordered-pair enumeration. -/
+@[simp] theorem diagonalRootDatumEquiv_indexEquiv (r : ℕ) :
+    (diagonalRootDatumEquiv.{u} r).indexEquiv = (typeAIndexEquiv r).symm := (rfl)
+
+/-- The weight map writes a weight in the universe-lifted fundamental-weight coordinates. -/
+@[simp] theorem diagonalRootDatumEquiv_weightMap_apply (x : Fin r → ℤ)
+    (i : ULift.{u} (Fin r)) :
+    (diagonalRootDatumEquiv.{u} r).weightMap x i = x i.down := (rfl)
+
+/-- The contravariant coweight map removes the universe lift on simple-coroot coordinates. -/
+@[simp] theorem diagonalRootDatumEquiv_coweightMap_apply (y : ULift.{u} (Fin r) → ℤ)
+    (i : Fin r) :
+    (diagonalRootDatumEquiv.{u} r).coweightMap y i = y (ULift.up i) := (rfl)
 
 private lemma diagonalRootDatum_root_eq (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     (diagonalRootDatum.{u} r).root p =
