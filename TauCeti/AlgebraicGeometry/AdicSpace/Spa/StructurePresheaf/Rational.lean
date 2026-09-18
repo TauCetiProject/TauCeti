@@ -69,72 +69,6 @@ universe v
 variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   {P : PairOfDefinition A}
 
-/-! ### Comparison morphisms between completed rational localizations -/
-
-omit [IsTopologicalRing A] in
-/-- **A refinement of presentations shrinks the rational subset**: if `q` refines `p`, then
-`R(q) ⊆ R(p)`. -/
-theorem rationalSubset_subset_rationalSubset_of_le (Aplus : Subring A) {p q : Presentation P}
-    (h : p ≤ q) : rationalSubset Aplus q.num q.den ⊆ rationalSubset Aplus p.num p.den := by
-  obtain ⟨r, hr, hT⟩ := Presentation.le_def.mp h
-  rw [hr]
-  exact rationalSubset_mul_subset_rationalSubset Aplus hT
-
-/-- **The comparison morphism of a containment** `R(q) ⊆ R(p)`: Wedhorn's Proposition 8.2(1) map
-`A⟨p⟩ → A⟨q⟩`, the unique continuous ring homomorphism compatible with the structure maps from `A`,
-as a morphism of `CompleteSeparatedTopCommRingCat`. -/
-noncomputable def homOfRationalSubsetSubset (Aplus : Subring A)
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {p q : Presentation P}
-    (h : rationalSubset Aplus q.num q.den ⊆ rationalSubset Aplus p.num p.den) :
-    p.completionLocObj ⟶ q.completionLocObj :=
-  completionLocObjHom P p.num p.den _ p.hasDenominatorPower q.num q.den _ q.hasDenominatorPower
-    (ringHomOfRationalSubsetSubset P Aplus hAplus p.num p.den _ p.hasDenominatorPower q.num q.den _
-      q.hasDenominatorPower h)
-    (continuous_ringHomOfRationalSubsetSubset P Aplus hAplus p.num p.den _ p.hasDenominatorPower
-      q.num q.den _ q.hasDenominatorPower h)
-
-/-- The comparison morphism of `R(p) ⊆ R(p)` is the identity. -/
-@[simp]
-theorem homOfRationalSubsetSubset_self (Aplus : Subring A)
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {p : Presentation P}
-    (h : rationalSubset Aplus p.num p.den ⊆ rationalSubset Aplus p.num p.den) :
-    homOfRationalSubsetSubset Aplus hAplus h = 𝟙 p.completionLocObj :=
-  completionLocObjHom_eq_id P p.num p.den _ p.hasDenominatorPower _ _
-    (ringHomOfRationalSubsetSubset_comp_toCompletionLoc P Aplus hAplus p.num p.den _
-      p.hasDenominatorPower p.num p.den _ p.hasDenominatorPower h)
-
-/-- Comparison morphisms compose along a chain of containments. -/
-@[reassoc (attr := simp)]
-theorem homOfRationalSubsetSubset_comp (Aplus : Subring A)
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {p q w : Presentation P}
-    (h₁ : rationalSubset Aplus q.num q.den ⊆ rationalSubset Aplus p.num p.den)
-    (h₂ : rationalSubset Aplus w.num w.den ⊆ rationalSubset Aplus q.num q.den) :
-    homOfRationalSubsetSubset Aplus hAplus h₁ ≫ homOfRationalSubsetSubset Aplus hAplus h₂ =
-      homOfRationalSubsetSubset Aplus hAplus (h₂.trans h₁) :=
-  (completionLocObjHom_eq_comp P p.num p.den _ p.hasDenominatorPower q.num q.den _
-    q.hasDenominatorPower w.num w.den _ w.hasDenominatorPower _ _ _ _ _ _
-    (ringHomOfRationalSubsetSubset_comp_toCompletionLoc P Aplus hAplus _ _ _ _ _ _ _ _ h₁)
-    (ringHomOfRationalSubsetSubset_comp_toCompletionLoc P Aplus hAplus _ _ _ _ _ _ _ _ h₂)
-    (ringHomOfRationalSubsetSubset_comp_toCompletionLoc P Aplus hAplus _ _ _ _ _ _ _ _
-      (h₂.trans h₁))).symm
-
-/-- **The restriction morphism of a refinement is a comparison morphism**: both are continuous
-and compatible with the structure maps from `A`, which determines the map. -/
-theorem restrictionHom_eq_homOfRationalSubsetSubset (Aplus : Subring A)
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {p q : Presentation P} (h : p ≤ q) :
-    Presentation.restrictionHom h =
-      homOfRationalSubsetSubset Aplus hAplus
-        (rationalSubset_subset_rationalSubset_of_le Aplus h) := by
-  obtain ⟨r, hr, hT⟩ := Presentation.le_def.mp h
-  rw [Presentation.restrictionHom_eq h r hr hT, restrictionObjHom_eq_completionLocObjHom]
-  -- both are `completionLocObjHom` of a ring homomorphism; the two ring homomorphisms agree by
-  -- the uniqueness in Proposition 8.2(1)
-  unfold homOfRationalSubsetSubset
-  congr 1
-  exact eq_ringHomOfRationalSubsetSubset P Aplus hAplus _ _ _ _ _ _ _ _ _ _
-    (continuous_restrictionRingHom P _ _ _ _ _ _ _ _ r hr hT)
-    (restrictionRingHom_comp_toCompletionLoc P _ _ _ _ _ _ _ _ r hr hT)
-
 /-! ### The projections of the presentation limit -/
 
 variable {Aplus : Subring A} {V : Opens ↥(spa Aplus)}
@@ -145,8 +79,9 @@ the projection of the limit at `j` is the projection at `i` followed by the comp
 theorem presentationLimitπ_eq_π_comp (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
     (i j : PresentationIndex (P := P) Aplus V)
     (h : rationalSubset Aplus j.pres.num j.pres.den ⊆ rationalSubset Aplus i.pres.num i.pres.den) :
-    presentationLimitπ Aplus V j =
-      presentationLimitπ Aplus V i ≫ homOfRationalSubsetSubset Aplus hAplus h := by
+    presentationLimitπToPresentation Aplus V j =
+      presentationLimitπToPresentation Aplus V i ≫
+        homOfRationalSubsetSubset Aplus hAplus h := by
   -- `k` refines `j` and `i`, and presents `R(j) ∩ R(i) = R(j)`
   let k := j.commonRefinement i
   have hk : rationalSubset Aplus j.pres.num j.pres.den ⊆
@@ -158,37 +93,48 @@ theorem presentationLimitπ_eq_π_comp (hAplus : ∀ ⦃a⦄, a ∈ Aplus → Is
       homOfRationalSubsetSubset Aplus hAplus hk = 𝟙 _ := by
     rw [restrictionHom_eq_homOfRationalSubsetSubset Aplus hAplus, homOfRationalSubsetSubset_comp,
       homOfRationalSubsetSubset_self]
-  calc presentationLimitπ Aplus V j
-      = presentationLimitπ Aplus V j ≫ Presentation.restrictionHom (j.le_commonRefinement_left i) ≫
+  calc presentationLimitπToPresentation Aplus V j
+      = presentationLimitπToPresentation Aplus V j ≫
+          Presentation.restrictionHom (j.le_commonRefinement_left i) ≫
           homOfRationalSubsetSubset Aplus hAplus hk := by rw [hsplit, Category.comp_id]
-    _ = presentationLimitπ Aplus V k ≫ homOfRationalSubsetSubset Aplus hAplus hk := by
-        rw [← presentationLimitπ_comp_map (P := P) (homOfLE (j.le_commonRefinement_left i)),
-          Category.assoc, presentationIndexDiagram_map]
-    _ = presentationLimitπ Aplus V i ≫ homOfRationalSubsetSubset Aplus hAplus h := by
-        rw [← presentationLimitπ_comp_map (P := P) (homOfLE (j.le_commonRefinement_right i)),
-          Category.assoc, presentationIndexDiagram_map,
-          restrictionHom_eq_homOfRationalSubsetSubset Aplus hAplus, homOfRationalSubsetSubset_comp]
+    _ = presentationLimitπToPresentation Aplus V k ≫
+        homOfRationalSubsetSubset Aplus hAplus hk := by
+        rw [← Category.assoc, presentationLimitπ_comp_restriction (P := P)
+          (homOfLE (j.le_commonRefinement_left i))]
+    _ = presentationLimitπToPresentation Aplus V i ≫
+        homOfRationalSubsetSubset Aplus hAplus h := by
+        rw [← presentationLimitπ_comp_restriction (P := P)
+            (homOfLE (j.le_commonRefinement_right i)),
+          Category.assoc, restrictionHom_eq_homOfRationalSubsetSubset Aplus hAplus,
+          homOfRationalSubsetSubset_comp]
 
 /-- **The projection at an index whose rational subset contains `V` is an isomorphism**: then
 `R(i) = V`, and the limit over the presentations inside `V` is `A⟨i⟩`. -/
 theorem isIso_presentationLimitπ (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
     (i : PresentationIndex (P := P) Aplus V) (hV : V ≤ spaBasicOpen Aplus i.pres.num i.pres.den) :
-    IsIso (presentationLimitπ Aplus V i) := by
+    IsIso (presentationLimitπToPresentation Aplus V i) := by
   -- the comparison morphisms out of `A⟨i⟩` form a cone over the diagram of `V`
-  let c : Cone (presentationIndexDiagram (P := P) Aplus V) :=
-    { pt := (presentationIndexDiagram (P := P) Aplus V).obj i
-      π :=
-        { app j := homOfRationalSubsetSubset Aplus hAplus (j.rationalSubset_subset hV)
-          naturality j₁ j₂ f := by
-            dsimp
-            rw [Category.id_comp, restrictionHom_eq_homOfRationalSubsetSubset Aplus hAplus,
-              homOfRationalSubsetSubset_comp] } }
-  refine ⟨presentationLimitLift Aplus V c, ?_, ?_⟩
-  · refine presentationLimit_hom_ext fun j ↦ ?_
-    rw [Category.assoc, presentationLimitLift_comp_π, Category.id_comp]
+  let app (j : PresentationIndex (P := P) Aplus V) :=
+    homOfRationalSubsetSubset Aplus hAplus (j.rationalSubset_subset hV)
+  have naturality {j₁ j₂ : PresentationIndex (P := P) Aplus V} (f : j₁ ⟶ j₂) :
+      app j₁ ≫ Presentation.restrictionHom f.le = app j₂ := by
+    dsimp [app]
+    rw [restrictionHom_eq_homOfRationalSubsetSubset Aplus hAplus,
+      homOfRationalSubsetSubset_comp]
+  let c := presentationIndexCone Aplus V i.pres.completionLocObj app naturality
+  let inv := eqToHom
+      (presentationIndexCone_pt Aplus V i.pres.completionLocObj app naturality).symm ≫
+    presentationLimitLift Aplus V c
+  refine ⟨inv, ?_, ?_⟩
+  · refine presentationLimit_hom_ext_toPresentation fun j ↦ ?_
+    dsimp [inv, c]
+    simp only [Category.assoc]
+    rw [presentationIndexCone_lift_comp_πToPresentation]
     exact (presentationLimitπ_eq_π_comp hAplus i j _).symm
-  · exact (presentationLimitLift_comp_π Aplus V c i).trans
-      (homOfRationalSubsetSubset_self Aplus hAplus _)
+  · dsimp [inv, c]
+    simp only [Category.assoc]
+    rw [presentationIndexCone_lift_comp_πToPresentation]
+    exact homOfRationalSubsetSubset_self Aplus hAplus _
 
 variable (Aplus) in
 /-- **The presentation limit on a rational open is its coordinate ring**: for an admissible
@@ -200,7 +146,7 @@ noncomputable def presentationLimitRationalIso (hAplus : ∀ ⦃a⦄, a ∈ Aplu
     presentationLimit (P := P) Aplus (spaBasicOpen Aplus p.num p.den) ≅ p.completionLocObj :=
   haveI := isIso_presentationLimitπ (V := spaBasicOpen Aplus p.num p.den) hAplus ⟨p, hp, le_rfl⟩
     le_rfl
-  asIso (presentationLimitπ Aplus _ ⟨p, hp, le_rfl⟩)
+  asIso (presentationLimitπToPresentation Aplus _ ⟨p, hp, le_rfl⟩)
 
 variable (Aplus) in
 /-- The isomorphism `presentationLimitRationalIso` is the projection at the presentation itself. -/
@@ -208,7 +154,8 @@ variable (Aplus) in
 theorem presentationLimitRationalIso_hom (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
     (p : Presentation P) (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
     (presentationLimitRationalIso Aplus hAplus p hp).hom =
-      presentationLimitπ Aplus (spaBasicOpen Aplus p.num p.den) ⟨p, hp, le_rfl⟩ :=
+      presentationLimitπToPresentation Aplus (spaBasicOpen Aplus p.num p.den)
+        ⟨p, hp, le_rfl⟩ :=
   (rfl)
 
 variable (Aplus) in
@@ -219,7 +166,7 @@ theorem presentationLimitRationalIso_inv_comp_π (hAplus : ∀ ⦃a⦄, a ∈ Ap
     (p : Presentation P) (hp : IsOpen (Ideal.span (p.num : Set A) : Set A))
     (j : PresentationIndex (P := P) Aplus (spaBasicOpen Aplus p.num p.den)) :
     (presentationLimitRationalIso Aplus hAplus p hp).inv ≫
-        presentationLimitπ Aplus (spaBasicOpen Aplus p.num p.den) j =
+        presentationLimitπToPresentation Aplus (spaBasicOpen Aplus p.num p.den) j =
       homOfRationalSubsetSubset Aplus hAplus (j.rationalSubset_subset le_rfl) := by
   rw [Iso.inv_comp_eq, presentationLimitRationalIso_hom]
   exact presentationLimitπ_eq_π_comp hAplus _ j _
@@ -250,7 +197,7 @@ theorem presentationLimitRationalIso_inv_comp_map_comp_hom
         (presentationLimitRationalIso Aplus hAplus q hq).hom =
       homOfRationalSubsetSubset Aplus hAplus
         (spaBasicOpen_le_spaBasicOpen_iff.mp h) := by
-  rw [presentationLimitRationalIso_hom, presentationLimitMap_comp_π,
+  rw [presentationLimitRationalIso_hom, presentationLimitMap_comp_πToPresentation,
     reassoc_of% presentationLimitRationalIso_inv_comp_π]
   exact homOfRationalSubsetSubset_comp_eqToHom hAplus (presentationIndexRestrict_obj_pres h _) _ _ _
 

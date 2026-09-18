@@ -194,28 +194,107 @@ instance : IsDirected (PresentationIndex (P := P) Aplus V) (· ≤ ·) :=
   ⟨fun i j ↦ ⟨i.commonRefinement j, i.le_commonRefinement_left j,
     i.le_commonRefinement_right j⟩⟩
 
-/-- **The diagram the limit is taken over**: each admissible presentation refining `V` contributes
-`A⟨T/s⟩`, and a refinement contributes its restriction morphism. On objects and morphisms it is
-`presentationFunctor` applied to the underlying presentations.
+/-- Forgetting the containment is a functor to the category of all presentations. -/
+private def presentationIndexInclusion (Aplus : Subring A) (V : Opens ↥(spa Aplus)) :
+    PresentationIndex (P := P) Aplus V ⥤ P.Presentation where
+  obj i := i.pres
+  map h := homOfLE h.le
 
-It is an `abbrev` so that `(presentationIndexDiagram Aplus V).obj i` and `i.pres.completionLocObj`
-are identified reducibly. A cone over the diagram is built from maps between the objects
-`A⟨T/s⟩`, and composites such as a projection of the limit followed by such a map only
-typecheck, and rewrite, under that identification. -/
-noncomputable abbrev presentationIndexDiagram (Aplus : Subring A) (V : Opens ↥(spa Aplus)) :
-    PresentationIndex (P := P) Aplus V ⥤ CompleteSeparatedTopCommRingCat.{v} where
-  obj i := i.pres.completionLocObj
-  map f := PairOfDefinition.Presentation.restrictionHom f.le
-  map_id i := PairOfDefinition.Presentation.restrictionHom_refl i.pres
-  map_comp f g := (PairOfDefinition.Presentation.restrictionHom_comp f.le g.le).symm
+/-- **The diagram the limit is taken over**: each admissible presentation refining `V` contributes
+`A⟨T/s⟩`, and a refinement contributes its restriction morphism. -/
+noncomputable def presentationIndexDiagram (Aplus : Subring A) (V : Opens ↥(spa Aplus)) :
+    PresentationIndex (P := P) Aplus V ⥤ CompleteSeparatedTopCommRingCat.{v} :=
+  presentationIndexInclusion Aplus V ⋙ P.presentationFunctor
+
+private theorem presentationIndexDiagram_obj_eq (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    (i : PresentationIndex (P := P) Aplus V) :
+    (presentationIndexDiagram Aplus V).obj i = i.pres.completionLocObj := by
+  rw [presentationIndexDiagram]
+  exact PairOfDefinition.presentationFunctor_obj P i.pres
+
+/-- The diagram sends an index to the completed localization of its presentation. -/
+theorem presentationIndexDiagram_obj (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    (i : PresentationIndex (P := P) Aplus V) :
+    (presentationIndexDiagram Aplus V).obj i = i.pres.completionLocObj :=
+  presentationIndexDiagram_obj_eq Aplus V i
+
+private theorem presentationIndexDiagram_map_heq (Aplus : Subring A)
+    (V : Opens ↥(spa Aplus)) {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j) :
+    HEq ((presentationIndexDiagram Aplus V).map f)
+      (PairOfDefinition.Presentation.restrictionHom f.le) := by
+  rw [presentationIndexDiagram]
+  exact heq_of_eq (PairOfDefinition.presentationFunctor_map P (homOfLE f.le))
 
 /-- The diagram takes a refinement of indices to the restriction morphism of the underlying
 refinement of presentations. -/
 @[simp]
 theorem presentationIndexDiagram_map (Aplus : Subring A) (V : Opens ↥(spa Aplus))
     {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j) :
-    (presentationIndexDiagram Aplus V).map f = PairOfDefinition.Presentation.restrictionHom f.le :=
+    HEq ((presentationIndexDiagram Aplus V).map f)
+      (PairOfDefinition.Presentation.restrictionHom f.le) :=
+  presentationIndexDiagram_map_heq Aplus V f
+
+/-- Build a cone over the presentation diagram from maps to the completed localization at each
+index that commute with restriction morphisms. -/
+noncomputable def presentationIndexCone (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    (W : CompleteSeparatedTopCommRingCat.{v})
+    (app : ∀ i : PresentationIndex (P := P) Aplus V, W ⟶ i.pres.completionLocObj)
+    (naturality : ∀ {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j),
+      app i ≫ PairOfDefinition.Presentation.restrictionHom f.le = app j) :
+    Cone (presentationIndexDiagram (P := P) Aplus V) := by
+  rw [presentationIndexDiagram]
+  exact
+    { pt := W
+      π :=
+        { app := app
+          naturality := fun i j f ↦ by
+            change app j = app i ≫ PairOfDefinition.Presentation.restrictionHom f.le
+            exact (naturality f).symm } }
+
+private theorem presentationIndexCone_pt_aux (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    (W : CompleteSeparatedTopCommRingCat.{v})
+    (app : ∀ i : PresentationIndex (P := P) Aplus V, W ⟶ i.pres.completionLocObj)
+    (naturality : ∀ {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j),
+      app i ≫ PairOfDefinition.Presentation.restrictionHom f.le = app j) :
+    (presentationIndexCone Aplus V W app naturality).pt = W := by
+  unfold presentationIndexCone presentationIndexDiagram
   rfl
+
+/-- The vertex of a cone built with `presentationIndexCone` is the specified object. -/
+theorem presentationIndexCone_pt (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    (W : CompleteSeparatedTopCommRingCat.{v})
+    (app : ∀ i : PresentationIndex (P := P) Aplus V, W ⟶ i.pres.completionLocObj)
+    (naturality : ∀ {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j),
+      app i ≫ PairOfDefinition.Presentation.restrictionHom f.le = app j) :
+    (presentationIndexCone Aplus V W app naturality).pt = W :=
+  presentationIndexCone_pt_aux Aplus V W app naturality
+
+private theorem presentationIndexCone_π_app_aux (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    (W : CompleteSeparatedTopCommRingCat.{v})
+    (app : ∀ i : PresentationIndex (P := P) Aplus V, W ⟶ i.pres.completionLocObj)
+    (naturality : ∀ {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j),
+      app i ≫ PairOfDefinition.Presentation.restrictionHom f.le = app j)
+    (i : PresentationIndex (P := P) Aplus V) :
+    eqToHom (presentationIndexCone_pt Aplus V W app naturality).symm ≫
+        (presentationIndexCone Aplus V W app naturality).π.app i ≫
+          eqToHom (presentationIndexDiagram_obj Aplus V i) = app i := by
+  unfold presentationIndexCone presentationIndexDiagram
+  change app i = app i
+  rfl
+
+/-- A cone built with `presentationIndexCone` has the specified leg after transporting the diagram
+object to the completed localization of its presentation. -/
+@[simp]
+theorem presentationIndexCone_π_app (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    (W : CompleteSeparatedTopCommRingCat.{v})
+    (app : ∀ i : PresentationIndex (P := P) Aplus V, W ⟶ i.pres.completionLocObj)
+    (naturality : ∀ {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j),
+      app i ≫ PairOfDefinition.Presentation.restrictionHom f.le = app j)
+    (i : PresentationIndex (P := P) Aplus V) :
+    eqToHom (presentationIndexCone_pt Aplus V W app naturality).symm ≫
+        (presentationIndexCone Aplus V W app naturality).π.app i ≫
+          eqToHom (presentationIndexDiagram_obj Aplus V i) = app i :=
+  presentationIndexCone_π_app_aux Aplus V W app naturality i
 
 /-- **The limit over the presentations refining `V`**, `lim_{R(T/s) ⊆ V} A⟨T/s⟩` — Wedhorn §8.1's
 formula for `𝒪_X(V)`, but indexed by presentations rather than by rational subsets. The limit
@@ -262,6 +341,13 @@ noncomputable def presentationLimitπ (Aplus : Subring A) (V : Opens ↥(spa Apl
     presentationLimit (P := P) Aplus V ⟶ (presentationIndexDiagram (P := P) Aplus V).obj i :=
   limit.π _ i
 
+/-- The projection at an index, with its codomain transported to the completed localization of
+the underlying presentation. -/
+noncomputable def presentationLimitπToPresentation (Aplus : Subring A)
+    (V : Opens ↥(spa Aplus)) (i : PresentationIndex (P := P) Aplus V) :
+    presentationLimit (P := P) Aplus V ⟶ i.pres.completionLocObj :=
+  presentationLimitπ Aplus V i ≫ eqToHom (presentationIndexDiagram_obj Aplus V i)
+
 /-- **Projections are compatible with refinement**: projecting then restricting along a refinement
 is projecting at the finer index. -/
 -- These three are not restatements of Mathlib's limit API for their own sake: `presentationLimit`
@@ -272,6 +358,29 @@ theorem presentationLimitπ_comp_map {i j : PresentationIndex (P := P) Aplus V} 
     presentationLimitπ (P := P) Aplus V i ≫ (presentationIndexDiagram (P := P) Aplus V).map h =
       presentationLimitπ (P := P) Aplus V j :=
   limit.w _ h
+
+private theorem presentationIndexDiagram_obj_comp_restriction
+    {i j : PresentationIndex (P := P) Aplus V} (h : i ⟶ j) :
+    eqToHom (presentationIndexDiagram_obj (P := P) Aplus V i) ≫
+        PairOfDefinition.Presentation.restrictionHom h.le =
+      (presentationIndexDiagram (P := P) Aplus V).map h ≫
+        eqToHom (presentationIndexDiagram_obj (P := P) Aplus V j) := by
+  unfold presentationIndexDiagram
+  change PairOfDefinition.Presentation.restrictionHom h.le =
+    PairOfDefinition.Presentation.restrictionHom h.le
+  rfl
+
+/-- Projecting at a presentation and then restricting is projection at the refined presentation,
+after transporting the diagram objects to their completed-localization descriptions. -/
+@[simp]
+theorem presentationLimitπ_comp_restriction
+    {i j : PresentationIndex (P := P) Aplus V} (h : i ⟶ j) :
+    presentationLimitπToPresentation (P := P) Aplus V i ≫
+        PairOfDefinition.Presentation.restrictionHom h.le =
+      presentationLimitπToPresentation (P := P) Aplus V j := by
+  unfold presentationLimitπToPresentation
+  rw [Category.assoc, presentationIndexDiagram_obj_comp_restriction, ← Category.assoc,
+    presentationLimitπ_comp_map (P := P) h]
 
 /-- **The universal property**: a cone over the diagram factors through the limit. -/
 noncomputable def presentationLimitLift (Aplus : Subring A) (V : Opens ↥(spa Aplus))
@@ -287,6 +396,32 @@ theorem presentationLimitLift_comp_π (Aplus : Subring A) (V : Opens ↥(spa Apl
     presentationLimitLift (P := P) Aplus V s ≫ presentationLimitπ (P := P) Aplus V i = s.π.app i :=
   limit.lift_π _ _
 
+/-- The lift followed by the projection transported to the presentation object is the transported
+cone leg. -/
+@[simp]
+theorem presentationLimitLift_comp_πToPresentation (Aplus : Subring A)
+    (V : Opens ↥(spa Aplus)) (s : Cone (presentationIndexDiagram (P := P) Aplus V))
+    (i : PresentationIndex (P := P) Aplus V) :
+    presentationLimitLift (P := P) Aplus V s ≫
+        presentationLimitπToPresentation (P := P) Aplus V i =
+      s.π.app i ≫ eqToHom (presentationIndexDiagram_obj Aplus V i) := by
+  unfold presentationLimitπToPresentation
+  rw [← Category.assoc, presentationLimitLift_comp_π]
+
+/-- The lift of a cone built from presentationwise maps has those maps as its transported
+projections. -/
+@[simp]
+theorem presentationIndexCone_lift_comp_πToPresentation (Aplus : Subring A)
+    (V : Opens ↥(spa Aplus)) (W : CompleteSeparatedTopCommRingCat.{v})
+    (app : ∀ i : PresentationIndex (P := P) Aplus V, W ⟶ i.pres.completionLocObj)
+    (naturality : ∀ {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j),
+      app i ≫ PairOfDefinition.Presentation.restrictionHom f.le = app j)
+    (i : PresentationIndex (P := P) Aplus V) :
+    eqToHom (presentationIndexCone_pt Aplus V W app naturality).symm ≫
+        presentationLimitLift Aplus V (presentationIndexCone Aplus V W app naturality) ≫
+          presentationLimitπToPresentation Aplus V i = app i := by
+  rw [presentationLimitLift_comp_πToPresentation, presentationIndexCone_π_app]
+
 /-- **Extensionality**: maps into the limit agree when their projections do. -/
 -- Tagged `@[ext]` because `presentationLimit` is sealed, so `ext` cannot reach `limit.hom_ext`
 -- through it from another module.
@@ -296,6 +431,16 @@ theorem presentationLimit_hom_ext {W : CompleteSeparatedTopCommRingCat.{v}}
     (h : ∀ i, f ≫ presentationLimitπ (P := P) Aplus V i =
       g ≫ presentationLimitπ (P := P) Aplus V i) : f = g :=
   limit.hom_ext h
+
+/-- Extensionality using the projections transported to their presentation objects. -/
+theorem presentationLimit_hom_ext_toPresentation {W : CompleteSeparatedTopCommRingCat.{v}}
+    {f g : W ⟶ presentationLimit (P := P) Aplus V}
+    (h : ∀ i, f ≫ presentationLimitπToPresentation (P := P) Aplus V i =
+      g ≫ presentationLimitπToPresentation (P := P) Aplus V i) : f = g := by
+  apply presentationLimit_hom_ext
+  intro i
+  apply (cancel_mono (eqToHom (presentationIndexDiagram_obj Aplus V i))).mp
+  simpa only [presentationLimitπToPresentation, Category.assoc] using h i
 
 /-- **Restricting an index does not change what the diagram sends it to.** -/
 -- This is the object half of the reindexing characterisation, and what lets the index functors
@@ -318,6 +463,21 @@ theorem presentationLimitMap_comp_π {V W : Opens ↥(spa Aplus)} (h : W ≤ V)
       presentationLimitπ (P := P) Aplus V ((presentationIndexRestrict (P := P) h).obj i) ≫
         eqToHom (presentationIndexDiagram_obj_restrict (P := P) h i) :=
   limit.pre_π _ _ _
+
+/-- Restriction followed by a projection transported to its presentation object is the
+corresponding transported projection before restriction. -/
+@[simp]
+theorem presentationLimitMap_comp_πToPresentation {V W : Opens ↥(spa Aplus)} (h : W ≤ V)
+    (i : PresentationIndex (P := P) Aplus W) :
+    presentationLimitMap (P := P) h ≫
+        presentationLimitπToPresentation (P := P) Aplus W i =
+      presentationLimitπToPresentation (P := P) Aplus V
+          ((presentationIndexRestrict (P := P) h).obj i) ≫
+        eqToHom (congrArg PairOfDefinition.Presentation.completionLocObj
+          (presentationIndexRestrict_obj_pres h i)) := by
+  unfold presentationLimitπToPresentation
+  rw [← Category.assoc, presentationLimitMap_comp_π]
+  simp only [Category.assoc, eqToHom_trans]
 
 /-- **Restricting along `le_refl` is the identity.** -/
 @[simp]

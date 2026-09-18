@@ -8,6 +8,7 @@ module
 import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Points
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Presentation
 
 /-!
 # Rational subsets of the adic spectrum
@@ -66,6 +67,8 @@ layer deferred above.
   subset is antitone in its numerator set.
 * `TauCeti.ValuationSpectrum.rationalSubset_mul_subset_rationalSubset` : refining a
   presentation by a cofactor shrinks the rational subset.
+* `TauCeti.ValuationSpectrum.rationalSubset_subset_rationalSubset_of_le` : refinement of bundled
+  presentations shrinks the rational subset.
 * `TauCeti.ValuationSpectrum.rationalSubset_insert_of_forall_vle` : a numerator already
   dominated by the denominator throughout `R(T/s)` may be adjoined to `T` without changing the
   subset.
@@ -200,6 +203,15 @@ theorem rationalSubset_mul_subset_rationalSubset (Aplus : Subring A) {T T' : Fin
       exact ⟨ht, hv.2.2⟩
   exact ⟨hv.1, fun t ht ↦ ((mem_basicOpen_iff _ _ _).mp (h (hv.2.1 _ (hT t ht)))).1,
     ((mem_basicOpen_iff _ _ _).mp (h (v.toValuativeRel.vle_refl _))).2⟩
+
+/-- **A refinement of presentations shrinks the rational subset**: if `q` refines `p`, then
+`R(q) ⊆ R(p)`. -/
+theorem rationalSubset_subset_rationalSubset_of_le {P : TauCeti.Huber.PairOfDefinition A}
+    (Aplus : Subring A) {p q : P.Presentation} (h : p ≤ q) :
+    rationalSubset Aplus q.num q.den ⊆ rationalSubset Aplus p.num p.den := by
+  obtain ⟨r, hr, hT⟩ := TauCeti.Huber.PairOfDefinition.Presentation.le_def.mp h
+  rw [hr]
+  exact rationalSubset_mul_subset_rationalSubset Aplus hT
 
 open scoped Classical in
 /-- Inserting the denominator among the numerators changes nothing — Wedhorn's "one may
