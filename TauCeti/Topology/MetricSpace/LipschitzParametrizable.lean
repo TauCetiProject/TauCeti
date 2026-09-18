@@ -26,11 +26,12 @@ dimension.
 
 ## Main declarations
 
-* `TauCeti.GlobalNumberFields.IsLipschitzParametrizable`: finite Lipschitz parametrizability by a
+* `TauCeti.IsLipschitzParametrizable`: finite Lipschitz parametrizability by a
   unit cube;
-* `TauCeti.GlobalNumberFields.IsLipschitzParametrizable.union`: closure under binary unions;
-* `TauCeti.GlobalNumberFields.IsLipschitzParametrizable.image`: closure under Lipschitz images;
-* `TauCeti.GlobalNumberFields.IsLipschitzParametrizable.measure_zero`: a parametrized set has
+* `TauCeti.isLipschitzParametrizable_iff`: the finite-chart characterization of the predicate;
+* `TauCeti.IsLipschitzParametrizable.union`: closure under binary unions;
+* `TauCeti.IsLipschitzParametrizable.image`: closure under Lipschitz images;
+* `TauCeti.IsLipschitzParametrizable.measure_zero`: a parametrized set has
   additive Haar measure zero below the ambient dimension.
 
 The definition and its use in the lattice-point estimate follow Lang, *Algebraic Number Theory*,
@@ -43,14 +44,21 @@ open MeasureTheory Set
 
 namespace TauCeti
 
-namespace GlobalNumberFields
-
 /-- A set is Lipschitz parametrizable in dimension `d` if it is covered by finitely many
 Lipschitz images of the unit cube in `Fin d → ℝ`. -/
 def IsLipschitzParametrizable {E : Type*} [PseudoEMetricSpace E] (d : ℕ) (S : Set E) : Prop :=
   ∃ (n : ℕ) (C : NNReal) (f : Fin n → (Fin d → ℝ) → E),
     (∀ i, LipschitzOnWith C (f i) (Icc (0 : Fin d → ℝ) 1)) ∧
       S ⊆ ⋃ i, f i '' Icc (0 : Fin d → ℝ) 1
+
+/-- A set is Lipschitz parametrizable in dimension `d` if and only if finitely many unit-cube
+charts, all Lipschitz with a common constant on the unit cube, cover it. -/
+theorem isLipschitzParametrizable_iff {E : Type*} [PseudoEMetricSpace E] {d : ℕ} {S : Set E} :
+    IsLipschitzParametrizable d S ↔
+      ∃ (n : ℕ) (C : NNReal) (f : Fin n → (Fin d → ℝ) → E),
+        (∀ i, LipschitzOnWith C (f i) (Icc (0 : Fin d → ℝ) 1)) ∧
+          S ⊆ ⋃ i, f i '' Icc (0 : Fin d → ℝ) 1 :=
+  Iff.rfl
 
 namespace IsLipschitzParametrizable
 
@@ -61,17 +69,18 @@ variable {E F : Type*} [PseudoEMetricSpace E] [PseudoEMetricSpace F]
 charts. -/
 theorem mono (hT : IsLipschitzParametrizable d T) (hST : S ⊆ T) :
     IsLipschitzParametrizable d S := by
-  obtain ⟨n, C, f, hf, hT⟩ := hT
-  exact ⟨n, C, f, hf, hST.trans hT⟩
+  obtain ⟨n, C, f, hf, hT⟩ := isLipschitzParametrizable_iff.1 hT
+  exact isLipschitzParametrizable_iff.2 ⟨n, C, f, hf, hST.trans hT⟩
 
 /-- The empty set is Lipschitz parametrizable in every dimension. -/
 @[simp]
 theorem empty : IsLipschitzParametrizable d (∅ : Set E) := by
-  exact ⟨0, 0, Fin.elim0, fun i ↦ i.elim0, Set.empty_subset _⟩
+  exact isLipschitzParametrizable_iff.2 ⟨0, 0, Fin.elim0, fun i ↦ i.elim0, Set.empty_subset _⟩
 
 /-- A singleton is Lipschitz parametrizable in every dimension. -/
+@[simp]
 theorem singleton (x : E) : IsLipschitzParametrizable d ({x} : Set E) := by
-  refine ⟨1, 0, fun (_ : Fin 1) (_ : Fin d → ℝ) ↦ x,
+  refine isLipschitzParametrizable_iff.2 ⟨1, 0, fun (_ : Fin 1) (_ : Fin d → ℝ) ↦ x,
     fun _ ↦ (LipschitzWith.const (α := Fin d → ℝ) x).lipschitzOnWith, ?_⟩
   intro y hy
   have hyx : y = x := Set.mem_singleton_iff.mp hy
@@ -83,12 +92,12 @@ theorem singleton (x : E) : IsLipschitzParametrizable d ({x} : Set E) := by
 parametrizable. -/
 theorem union (hS : IsLipschitzParametrizable d S) (hT : IsLipschitzParametrizable d T) :
     IsLipschitzParametrizable d (S ∪ T) := by
-  obtain ⟨m, C, f, hf, hSf⟩ := hS
-  obtain ⟨n, D, g, hg, hTg⟩ := hT
+  obtain ⟨m, C, f, hf, hSf⟩ := isLipschitzParametrizable_iff.1 hS
+  obtain ⟨n, D, g, hg, hTg⟩ := isLipschitzParametrizable_iff.1 hT
   let e : Fin m ⊕ Fin n ≃ Fin (m + n) := finSumFinEquiv
   let charts : Fin (m + n) → (Fin d → ℝ) → E := fun i ↦
     Sum.elim f g (e.symm i)
-  refine ⟨m + n, max C D, charts, ?_, ?_⟩
+  refine isLipschitzParametrizable_iff.2 ⟨m + n, max C D, charts, ?_, ?_⟩
   · intro i
     rcases h : e.symm i with j | j
     · simpa only [charts, h, Sum.elim_inl] using (hf j).weaken (le_max_left C D)
@@ -125,8 +134,9 @@ theorem finite (hS : S.Finite) : IsLipschitzParametrizable d S := by
 parametrizable. -/
 theorem image {g : E → F} {K : NNReal} (hg : LipschitzWith K g)
     (hS : IsLipschitzParametrizable d S) : IsLipschitzParametrizable d (g '' S) := by
-  obtain ⟨n, C, f, hf, hSf⟩ := hS
-  refine ⟨n, K * C, fun i ↦ g ∘ f i, fun i ↦ hg.comp_lipschitzOnWith (hf i), ?_⟩
+  obtain ⟨n, C, f, hf, hSf⟩ := isLipschitzParametrizable_iff.1 hS
+  refine isLipschitzParametrizable_iff.2
+    ⟨n, K * C, fun i ↦ g ∘ f i, fun i ↦ hg.comp_lipschitzOnWith (hf i), ?_⟩
   rintro y ⟨x, hx, rfl⟩
   obtain ⟨i, z, hz, rfl⟩ := Set.mem_iUnion.1 (hSf hx)
   exact Set.mem_iUnion.2 ⟨i, z, hz, rfl⟩
@@ -141,7 +151,7 @@ theorem measure_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
     (μ : Measure E) [μ.IsAddHaarMeasure] {d : ℕ} {S : Set E}
     (hS : IsLipschitzParametrizable d S) (hd : d < Module.finrank ℝ E) : μ S = 0 := by
-  obtain ⟨n, C, f, hf, hSf⟩ := hS
+  obtain ⟨n, C, f, hf, hSf⟩ := isLipschitzParametrizable_iff.1 hS
   have hμ : μ ≪ μH[(Module.finrank ℝ E : ℝ)] :=
     Measure.absolutelyContinuous_isAddHaarMeasure μ _
   have hdim : dimH (Set.univ : Set (Fin d → ℝ)) = d := by
@@ -159,7 +169,5 @@ theorem measure_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     _ < Module.finrank ℝ E := by exact_mod_cast hd
 
 end IsLipschitzParametrizable
-
-end GlobalNumberFields
 
 end TauCeti
