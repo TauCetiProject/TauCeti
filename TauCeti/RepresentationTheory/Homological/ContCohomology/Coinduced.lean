@@ -923,6 +923,12 @@ theorem discreteCoindEquivAlgebraic_symm_apply
       (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) (g : G) :
     (discreteCoindEquivAlgebraic R G U A).symm f g = f.1 g := (rfl)
 
+/-- Evaluation of Mathlib's algebraic coinduction action: `h` acts by right translation. -/
+private theorem representationCoind_apply_apply {k H K W : Type*} [Semiring k] [Monoid H]
+    [Monoid K] [AddCommMonoid W] [Module k W] (φ : H →* K) (ρ : Representation k H W) (h x : K)
+    (f : Representation.coindV φ ρ) :
+    (Representation.coind φ ρ h f).1 x = f.1 (x * h) := (rfl)
+
 /-- The locally constant/algebraic coinduction comparison intertwines the right-translation
 actions of `G`. -/
 @[simp]
@@ -934,7 +940,8 @@ theorem discreteCoindEquivAlgebraic_smul (g : G)
         (discreteCoindEquivAlgebraic R G U A f) := by
   apply Subtype.ext
   funext x
-  rfl
+  rw [representationCoind_apply_apply, discreteCoindEquivAlgebraic_apply,
+    discreteCoindEquivAlgebraic_apply, DiscreteCoind.coe_smul]
 
 variable [CompactSpace G]
 
