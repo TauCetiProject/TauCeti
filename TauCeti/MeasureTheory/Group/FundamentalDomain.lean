@@ -40,6 +40,9 @@ union.
 * `MeasureTheory.IsFundamentalDomain.aedisjoint_smul_of_inv_mul_mem`: translates `g₁ • D`,
   `g₂ • D` of an `H`-fundamental domain are a.e. disjoint whenever `g₁ ≠ g₂` and
   `g₁⁻¹ * g₂ ∈ H` (needing only quasi-measure-preservation of the one translation).
+* `MeasureTheory.covolume_pos`, `MeasureTheory.covolume_conjAct_smul`,
+  `MeasureTheory.covolume_eq_card_mul_covolume`: for an invariant measure the covolume is
+  positive, invariant under conjugation, and multiplied by the index on passing to a subgroup.
 
 Ported from the
 [AINTLIB `LeanModularForms` project](https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms),
@@ -288,5 +291,48 @@ theorem IsFundamentalDomain.iUnion_mul_out_inv_smul {G α : Type*} [Group G] [Me
         exact QuotientGroup.out_eq' v
       rw [h_id]
       exact Function.bijective_id)
+
+
+/-- **Covolume is positive**: a countable group acting with a fundamental domain for a nonzero
+invariant measure has positive covolume. -/
+theorem covolume_pos {G α : Type*} [Group G] [MulAction G α] [MeasurableSpace α] [Countable G]
+    [MeasurableConstSMul G α] {μ : Measure α} [SMulInvariantMeasure G α μ]
+    [HasFundamentalDomain G α μ] (hμ : μ ≠ 0) : 0 < covolume G α μ := by
+  obtain ⟨s, hs⟩ := HasFundamentalDomain.ExistsIsFundamentalDomain (G := G) (ν := μ)
+  rw [hs.covolume_eq_volume]
+  exact pos_iff_ne_zero.mpr (hs.measure_ne_zero hμ)
+
+/-- **Covolume is a conjugacy invariant**: for an invariant measure, a countable subgroup `Γ`
+with a fundamental domain and its conjugate `g Γ g⁻¹` have the same covolume. -/
+theorem covolume_conjAct_smul {G α : Type*} [Group G] [MulAction G α] [MeasurableSpace α]
+    [MeasurableConstSMul G α] {μ : Measure α} [SMulInvariantMeasure G α μ] (Γ : Subgroup G)
+    [Countable Γ] [HasFundamentalDomain Γ α μ] (g : G) :
+    covolume (ConjAct.toConjAct g • Γ : Subgroup G) α μ = covolume Γ α μ := by
+  have : Countable (ConjAct.toConjAct g • Γ : Subgroup G) :=
+    (Subgroup.equivSMul (ConjAct.toConjAct g) Γ).symm.injective.countable
+  obtain ⟨s, hs⟩ := HasFundamentalDomain.ExistsIsFundamentalDomain (G := Γ) (ν := μ)
+  rw [hs.covolume_eq_volume, (hs.smul_of_eq_conjAct_pointwise_smul
+    (measurePreserving_smul g⁻¹ μ).quasiMeasurePreserving rfl).covolume_eq_volume,
+    measure_smul]
+
+/-- **Covolume is multiplicative in the index**: for an invariant measure and subgroups `Δ ≤ Γ`
+with `Γ` countable and having a fundamental domain, the covolume of `Δ` is the index `[Γ : Δ]`,
+counted in `ℕ∞`, times the covolume of `Γ`. -/
+theorem covolume_eq_card_mul_covolume {G α : Type*} [Group G] [MulAction G α]
+    [MeasurableSpace α] [MeasurableConstSMul G α] {μ : Measure α} [SMulInvariantMeasure G α μ]
+    {Γ Δ : Subgroup G} [Countable Γ] [HasFundamentalDomain Γ α μ] (h : Δ ≤ Γ) :
+    covolume Δ α μ = ENat.card (Γ ⧸ Δ.subgroupOf Γ) * covolume Γ α μ := by
+  have : Countable Δ := (Subgroup.inclusion_injective h).countable
+  have : Countable (Γ ⧸ Δ.subgroupOf Γ) := QuotientGroup.mk_surjective.countable
+  obtain ⟨s, hs⟩ := HasFundamentalDomain.ExistsIsFundamentalDomain (G := Γ) (ν := μ)
+  have ht := (hs.subgroup_iUnion_out_inv_smul (Δ.subgroupOf Γ)).of_subgroupOf
+  rw [inf_of_le_left h] at ht
+  rw [ht.covolume_eq_volume, hs.covolume_eq_volume, measure_iUnion₀ ?_
+    fun q ↦ hs.nullMeasurableSet_smul _]
+  · simp_rw [measure_smul]
+    exact ENNReal.tsum_const _
+  · intro q q' hqq'
+    refine hs.aedisjoint fun heq ↦ hqq' ?_
+    rw [← q.out_eq', ← q'.out_eq', inv_inj.mp heq]
 
 end MeasureTheory

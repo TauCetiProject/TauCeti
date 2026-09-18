@@ -20,8 +20,8 @@ Borel set `s` that meets every orbit of a free point exactly once, and meets no 
 
 Consequently, for any measure `μ` on `X` for which the non-free points form a null set, `s` is
 a measurable fundamental domain for `G` in the sense of `MeasureTheory.IsFundamentalDomain`
-(`TauCeti.exists_isFundamentalDomain_of_properlyDiscontinuousSMul`). Its translates are not
-merely almost everywhere disjoint but genuinely disjoint. Together with
+(`MeasureTheory.Measure.exists_isFundamentalDomain_of_properlyDiscontinuousSMul`). Its translates
+are not merely almost everywhere disjoint but genuinely disjoint. Together with
 `MeasureTheory.IsFundamentalDomain.measure_eq` this makes the covolume
 `MeasureTheory.covolume G X μ` the measure of any measurable fundamental domain.
 
@@ -43,7 +43,8 @@ namespace TauCeti
 
 variable {G X : Type*} [Group G] [MulAction G X] [TopologicalSpace X]
 
-/-- The measurable set underlying `exists_isFundamentalDomain_of_properlyDiscontinuousSMul`:
+/-- The measurable set underlying
+`MeasureTheory.Measure.exists_isFundamentalDomain_of_properlyDiscontinuousSMul`:
 from each set `V n` keep the points whose orbit misses every earlier `V k`. -/
 private def firstHitSet (V : ℕ → Set X) : Set X :=
   ⋃ n, V n \ ⋃ k < n, ⋃ g : G, g • V k
@@ -69,21 +70,28 @@ theorem exists_seq_isOpen_disjoint_smul :
   · rcases hVS n with h | h
     · simp [h]
     · exact h.2 g hg
-  · obtain ⟨U, hU, hUx⟩ := ProperlyDiscontinuousSMul.exists_nhds_image_smul_eq_self G x
+  · obtain ⟨U, hU, hUx⟩ := ProperlyDiscontinuousSMul.exists_nhds_disjoint_image G x
     obtain ⟨W, hWb, hxW, hWU⟩ := hb.mem_nhds_iff.mp hU
     have hWS : W ∈ S := by
       refine mem_insert_of_mem _ ⟨hWb, fun g hg ↦ ?_⟩
-      rw [Set.disjoint_iff_inter_eq_empty, ← not_nonempty_iff_eq_empty]
-      intro hne
-      refine hg ?_
-      have hgx : g • x = x := hUx g <| hne.mono <| inter_subset_inter
-        (by rw [← image_smul]; exact image_mono hWU) hWU
-      have hmem : g ∈ MulAction.stabilizer G x := hgx
-      rwa [(mem_freeLocus G X).mp hx, Subgroup.mem_bot] at hmem
+      have hgx : g • x ≠ x := fun hgx ↦ hg <| by
+        have hmem : g ∈ MulAction.stabilizer G x := hgx
+        rwa [(mem_freeLocus G X).mp hx, Subgroup.mem_bot] at hmem
+      rw [← image_smul]
+      exact (hUx g hgx).mono (image_mono hWU) hWU
     obtain ⟨n, hn⟩ : W ∈ range V := by rwa [← hV]
     exact ⟨n, hn ▸ hxW⟩
 
-variable [Countable G] [MeasurableSpace X] [OpensMeasurableSpace X]
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+open TauCeti
+
+variable {G X : Type*} [Group G] [MulAction G X] [TopologicalSpace X]
+  [SecondCountableTopology X] [T2Space X] [LocallyCompactSpace X]
+  [ContinuousConstSMul G X] [ProperlyDiscontinuousSMul G X]
+  [Countable G] [MeasurableSpace X] [OpensMeasurableSpace X]
 
 /-- **Existence of a measurable fundamental domain.** A countable group acting properly
 discontinuously on a second countable, locally compact Hausdorff space has a measurable
@@ -130,4 +138,4 @@ theorem exists_isFundamentalDomain_of_properlyDiscontinuousSMul (μ : Measure X)
     obtain ⟨y, hy, hyx⟩ := hmemk
     rwa [mul_smul, ← hyx, inv_smul_smul]
 
-end TauCeti
+end MeasureTheory.Measure
