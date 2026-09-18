@@ -80,6 +80,19 @@ theorem ContDiff.continuous_gradient (hpsi : ContDiff ℝ ∞ psi) : Continuous 
   rw [heq]
   exact (InnerProductSpace.toDual ℝ E).symm.continuous.comp (hpsi.continuous_fderiv (by simp))
 
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- A smooth compactly supported function and its gradient are bounded by a single constant, as
+the multiplication operator `TauCeti.W1p.contDiffSMul` requires. -/
+theorem _root_.ContDiff.exists_abs_le_and_norm_gradient_le (hpsi : ContDiff ℝ ∞ psi)
+    (hcpt : HasCompactSupport psi) : ∃ M, 0 ≤ M ∧ ∀ x, |psi x| ≤ M ∧ ‖∇ psi x‖ ≤ M := by
+  obtain ⟨C₁, hC₁⟩ := hpsi.continuous.norm.bddAbove_range_of_hasCompactSupport hcpt.norm
+  obtain ⟨C₂, hC₂⟩ := (ContDiff.continuous_gradient hpsi).norm.bddAbove_range_of_hasCompactSupport
+    ((hcpt.fderiv ℝ).comp_left (map_zero (InnerProductSpace.toDual ℝ E).symm)).norm
+  refine ⟨max 0 (max C₁ C₂), le_max_left _ _, fun x => ⟨?_, ?_⟩⟩
+  · rw [← Real.norm_eq_abs]
+    exact (hC₁ ⟨x, rfl⟩).trans ((le_max_left _ _).trans (le_max_right _ _))
+  · exact (hC₂ ⟨x, rfl⟩).trans ((le_max_right _ _).trans (le_max_right _ _))
+
 omit [FiniteDimensional ℝ E] in
 /-- The value component `ψ u` of the product is `Lᵖ`, because `ψ` is bounded. -/
 theorem W1p.memLp_smul_value (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)

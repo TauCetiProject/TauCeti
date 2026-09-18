@@ -122,22 +122,14 @@ theorem W1p.mem_w1p0Submodule_of_isCompact (hp : p ≠ (∞ : ℝ≥0∞)) {u : 
     rw [hwdef, W1p.value_mk]
     exact coeFn_extendByZeroLpₗᵢ ℝ hmeas hsub (W1p.value u)
   -- a smooth cutoff, equal to one on `K` and compactly supported inside `Ω`
-  obtain ⟨chi, hchi, hchi_range, hchi_one_nhds, hchi_cpt, hchi_ts⟩ :=
+  obtain ⟨chi, hchi, -, hchi_one_nhds, hchi_cpt, hchi_ts⟩ :=
     hK.exists_contDiff_cutoff Omega.isOpen hKO
-  have hchi_mem : ∀ x, chi x ∈ Icc (0 : ℝ) 1 := fun x => hchi_range (mem_range_self x)
   have hchi_one : ∀ x ∈ K, chi x = 1 := fun x hx => by
     have hx' : x ∈ chi ⁻¹' ({1} : Set ℝ) := interior_subset (hchi_one_nhds hx)
     exact hx'
-  obtain ⟨C, hC⟩ := (hchi.continuous_fderiv (by simp)).norm.bddAbove_range_of_hasCompactSupport
-    ((hchi_cpt.fderiv ℝ).norm)
-  set M : ℝ := max 1 C
-  have hM0 : (0 : ℝ) ≤ M := le_trans zero_le_one (le_max_left _ _)
-  have hchiM : ∀ x ∈ ((⊤ : Opens E) : Set E), |chi x| ≤ M := fun x _ => by
-    rw [abs_of_nonneg (hchi_mem x).1]
-    exact le_trans (hchi_mem x).2 (le_max_left _ _)
-  have hchigradM : ∀ x ∈ ((⊤ : Opens E) : Set E), ‖∇ chi x‖ ≤ M := fun x _ => by
-    rw [_root_.gradient, LinearIsometryEquiv.norm_map]
-    exact le_trans (hC ⟨x, rfl⟩) (le_max_right _ _)
+  obtain ⟨M, hM0, hM⟩ := hchi.exists_abs_le_and_norm_gradient_le hchi_cpt
+  have hchiM : ∀ x ∈ ((⊤ : Opens E) : Set E), |chi x| ≤ M := fun x _ => (hM x).1
+  have hchigradM : ∀ x ∈ ((⊤ : Opens E) : Set E), ‖∇ chi x‖ ≤ M := fun x _ => (hM x).2
   -- the cutoff leaves the extension unchanged
   have hLw : W1p.contDiffSMul chi hchi hM0 hchiM hchigradM w = w := by
     refine W1p.ext_value (Lp.ext ?_)
