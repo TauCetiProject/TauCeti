@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Spec
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 
 /-!
 # The quartic resolvent specification and the resolvent cubic
@@ -71,6 +72,12 @@ open MvPolynomial (renameOrbit universalResolvent)
 `{{0, 2}, {1, 3}}` of the products of paired roots. -/
 noncomputable def quarticD4Invariant : MvPolynomial (Fin 4) ℤ :=
   MvPolynomial.X 0 * MvPolynomial.X 2 + MvPolynomial.X 1 * MvPolynomial.X 3
+
+/-- The defining formula of the quartic `D₄`-invariant. -/
+theorem quarticD4Invariant_def :
+    quarticD4Invariant =
+      MvPolynomial.X 0 * MvPolynomial.X 2 + MvPolynomial.X 1 * MvPolynomial.X 3 :=
+  (rfl)
 
 /-- Renaming the variables of the `D₄`-invariant along `σ`. -/
 theorem rename_quarticD4Invariant (σ : Perm (Fin 4)) :
@@ -173,37 +180,6 @@ theorem card_renameOrbit_quarticD4Invariant : (renameOrbit quarticD4Invariant).c
   rw [renameOrbit_quarticD4Invariant, Finset.card_eq_three]
   exact ⟨_, _, _, h₁, h₂, h₃, rfl⟩
 
-/-- The elementary symmetric polynomials in four variables, written out. -/
-private theorem esymm_fin_four :
-    MvPolynomial.esymm (Fin 4) ℤ 1 =
-        MvPolynomial.X 0 + MvPolynomial.X 1 + MvPolynomial.X 2 + MvPolynomial.X 3 ∧
-      MvPolynomial.esymm (Fin 4) ℤ 2 =
-        MvPolynomial.X 0 * MvPolynomial.X 1 + MvPolynomial.X 0 * MvPolynomial.X 2 +
-          MvPolynomial.X 0 * MvPolynomial.X 3 + MvPolynomial.X 1 * MvPolynomial.X 2 +
-          MvPolynomial.X 1 * MvPolynomial.X 3 + MvPolynomial.X 2 * MvPolynomial.X 3 ∧
-      MvPolynomial.esymm (Fin 4) ℤ 3 =
-        MvPolynomial.X 0 * MvPolynomial.X 1 * MvPolynomial.X 2 +
-          MvPolynomial.X 0 * MvPolynomial.X 1 * MvPolynomial.X 3 +
-          MvPolynomial.X 0 * MvPolynomial.X 2 * MvPolynomial.X 3 +
-          MvPolynomial.X 1 * MvPolynomial.X 2 * MvPolynomial.X 3 ∧
-      MvPolynomial.esymm (Fin 4) ℤ 4 =
-        MvPolynomial.X 0 * MvPolynomial.X 1 * MvPolynomial.X 2 * MvPolynomial.X 3 := by
-  have h1 : Finset.powersetCard 1 (Finset.univ : Finset (Fin 4)) = {{0}, {1}, {2}, {3}} := by
-    decide
-  have h2 : Finset.powersetCard 2 (Finset.univ : Finset (Fin 4)) =
-      {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}} := by
-    decide
-  have h3 : Finset.powersetCard 3 (Finset.univ : Finset (Fin 4)) =
-      {{0, 1, 2}, {0, 1, 3}, {0, 2, 3}, {1, 2, 3}} := by
-    decide
-  have h4 : Finset.powersetCard 4 (Finset.univ : Finset (Fin 4)) = {{0, 1, 2, 3}} := by
-    decide
-  refine ⟨?_, ?_, ?_, ?_⟩ <;>
-    · simp (config := { decide := true }) only [MvPolynomial.esymm, h1, h2, h3, h4,
-        Finset.sum_insert, Finset.prod_insert, Finset.sum_singleton, Finset.prod_singleton,
-        Finset.mem_insert, Finset.mem_singleton]
-      ring
-
 /-- **The quartic resolvent specification**: the `D₄`-invariant `x₀x₂ + x₁x₃`, whose stabilizer
 is exactly the reference subgroup of `4T3`, with its orbit product
 `X³ - e₂ X² + (e₁e₃ - 4e₄) X - (e₁²e₄ + e₃² - 4e₂e₄)` in the elementary symmetric polynomials,
@@ -218,7 +194,7 @@ noncomputable def quarticD4Spec : ResolventSpec 4 where
       4 * MvPolynomial.X 1 * MvPolynomial.X 3)
   orbitProduct_esymm := by
     obtain ⟨h₁, h₂, h₃⟩ := pairingSums_ne
-    obtain ⟨e₁, e₂, e₃, e₄⟩ := esymm_fin_four
+    obtain ⟨e₁, e₂, e₃, e₄⟩ := esymm_fin_four (R := ℤ)
     rw [MvPolynomial.universalResolvent_def, renameOrbit_quarticD4Invariant,
       Finset.prod_insert (by simp [h₁, h₂]), Finset.prod_insert (by simp [h₃]),
       Finset.prod_singleton]
