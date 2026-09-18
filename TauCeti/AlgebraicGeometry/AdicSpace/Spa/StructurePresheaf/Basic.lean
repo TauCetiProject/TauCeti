@@ -29,6 +29,8 @@ functor along the forgetful map, and the value is its limit — which exists bec
 
 * `TauCeti.ValuationSpectrum.PresentationIndex` : the index category for an open — presentations
   whose numerator ideal is open, so that the basic open they present really is a rational subset.
+* `TauCeti.ValuationSpectrum.PresentationIndex.commonRefinement` : the common refinement of two
+  indices.
 * `TauCeti.ValuationSpectrum.presentationIndexDiagram` : the diagram it indexes.
 * `TauCeti.ValuationSpectrum.presentationLimit` : the limit itself.
 * `TauCeti.ValuationSpectrum.presentationLimitMap` : the restriction morphism of a containment.
@@ -68,10 +70,11 @@ priori on presentation data. Two results close the gap:
 * the presentation index is then cofinal in the subset index, so the two limits agree. This one is
   not yet available.
 
-Until the second is available, no result here may be read as computing `𝒪_X(V)`, and
-in particular nothing here shows the value on a rational open `U` is `A_U`. What *is* established
-is self-contained: the limit exists, restriction along a containment is reindexing, and the two
-functor laws hold.
+Nothing in this file computes `𝒪_X(V)`. What it establishes is self-contained: the limit exists,
+restriction along a containment is reindexing, and the two functor laws hold. On a rational open
+`U` the value is identified with `A_U` in
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational`, when `A⁺` consists of
+power-bounded elements.
 
 ## References
 
@@ -130,40 +133,89 @@ theorem PresentationIndex.ext {i j : PresentationIndex (P := P) Aplus V} (h : i.
   subst h
   rfl
 
-open scoped Classical Pointwise in
-/-- **The index is directed**: two admissible presentations refining `V` are both refined by their
-common refinement, which is again admissible.
+omit [IsTopologicalRing A] in
+/-- **The common refinement presents the intersection**: `R(p · q) = R(p) ∩ R(q)` for the common
+refinement of two presentations. This is `TauCeti.ValuationSpectrum.rationalSubset_inter`, whose
+presentation of an intersection the common refinement follows. -/
+theorem rationalSubset_commonRefinement (Aplus : Subring A) (p q : P.Presentation) :
+    rationalSubset Aplus (p.commonRefinement q).num (p.commonRefinement q).den =
+      rationalSubset Aplus p.num p.den ∩ rationalSubset Aplus q.num q.den := by
+  classical
+  rw [PairOfDefinition.Presentation.commonRefinement_num,
+    PairOfDefinition.Presentation.commonRefinement_den, rationalSubset_inter]
+
+omit [IsTopologicalRing A] in
+/-- The rational subset of an index of `V` lies in every rational subset containing `V`. -/
+theorem PresentationIndex.rationalSubset_subset (i : PresentationIndex (P := P) Aplus V)
+    {T : Finset A} {s : A} (hV : V ≤ spaBasicOpen Aplus T s) :
+    rationalSubset Aplus i.pres.num i.pres.den ⊆ rationalSubset Aplus T s :=
+  spaBasicOpen_le_spaBasicOpen_iff.mp (i.le_open.trans hV)
+
+/-- **The common refinement of two indices**: `Presentation.commonRefinement` of the underlying
+presentations, which is again admissible and presents the intersection of the two rational
+subsets, so it again lies in `V`.
 
 Both of the index's own fields have to be re-established, which is what
 `TauCeti.Huber.PairOfDefinition.Presentation.commonRefinement` deliberately does not do — it
-carries no openness field. The containment in `V` is the intersection identity
-`TauCeti.ValuationSpectrum.rationalSubset_inter`, and openness of the numerator span is
-`TauCeti.Huber.PairOfDefinition.isOpen_span_insert_mul_insert`, the admissibility half of Wedhorn
-Remark 7.30(5), which `TauCeti.ValuationSpectrum.inter_mem_spaRationalFamily_of_pairOfDefinition`
-also uses. -/
-instance : IsDirected (PresentationIndex (P := P) Aplus V) (· ≤ ·) := by
-  refine ⟨fun i j ↦ ⟨⟨i.pres.commonRefinement j.pres, ?_, ?_⟩,
-    i.pres.le_commonRefinement_left j.pres, i.pres.le_commonRefinement_right j.pres⟩⟩
-  · rw [PairOfDefinition.Presentation.commonRefinement_num]
+carries no openness field. The containment in `V` is `rationalSubset_commonRefinement`, and
+openness of the numerator span is `TauCeti.Huber.PairOfDefinition.isOpen_span_insert_mul_insert`,
+the admissibility half of Wedhorn Remark 7.30(5), which
+`TauCeti.ValuationSpectrum.inter_mem_spaRationalFamily_of_pairOfDefinition` also uses. -/
+noncomputable def PresentationIndex.commonRefinement (i j : PresentationIndex (P := P) Aplus V) :
+    PresentationIndex (P := P) Aplus V where
+  pres := i.pres.commonRefinement j.pres
+  isOpen_span := by
+    classical
+    rw [PairOfDefinition.Presentation.commonRefinement_num]
     exact P.isOpen_span_insert_mul_insert i.isOpen_span j.isOpen_span
-  · refine le_trans ?_ i.le_open
-    intro v hv
-    rw [mem_spaBasicOpen] at hv ⊢
-    rw [PairOfDefinition.Presentation.commonRefinement_num,
-      PairOfDefinition.Presentation.commonRefinement_den, ← rationalSubset_inter] at hv
-    exact hv.1
+  le_open := le_trans (spaBasicOpen_le_spaBasicOpen_iff.mpr <| by
+    rw [rationalSubset_commonRefinement]
+    exact Set.inter_subset_left) i.le_open
 
-/-- Forgetting the containment is a functor to the category of all presentations. -/
-private def presentationIndexInclusion (Aplus : Subring A) (V : Opens ↥(spa Aplus)) :
-    PresentationIndex (P := P) Aplus V ⥤ P.Presentation where
-  obj i := i.pres
-  map h := homOfLE h.le
+/-- The presentation of the common refinement of two indices is the common refinement of their
+presentations. -/
+@[simp]
+theorem PresentationIndex.commonRefinement_pres (i j : PresentationIndex (P := P) Aplus V) :
+    (i.commonRefinement j).pres = i.pres.commonRefinement j.pres := (rfl)
+
+/-- The common refinement of two indices refines the left one. -/
+theorem PresentationIndex.le_commonRefinement_left (i j : PresentationIndex (P := P) Aplus V) :
+    i ≤ i.commonRefinement j :=
+  i.pres.le_commonRefinement_left j.pres
+
+/-- The common refinement of two indices refines the right one. -/
+theorem PresentationIndex.le_commonRefinement_right (i j : PresentationIndex (P := P) Aplus V) :
+    j ≤ i.commonRefinement j :=
+  i.pres.le_commonRefinement_right j.pres
+
+/-- **The index is directed**: two admissible presentations refining `V` are both refined by
+their common refinement `PresentationIndex.commonRefinement`. -/
+instance : IsDirected (PresentationIndex (P := P) Aplus V) (· ≤ ·) :=
+  ⟨fun i j ↦ ⟨i.commonRefinement j, i.le_commonRefinement_left j,
+    i.le_commonRefinement_right j⟩⟩
 
 /-- **The diagram the limit is taken over**: each admissible presentation refining `V` contributes
-`A⟨T/s⟩`, and a refinement contributes its restriction morphism. -/
-noncomputable def presentationIndexDiagram (Aplus : Subring A) (V : Opens ↥(spa Aplus)) :
-    PresentationIndex (P := P) Aplus V ⥤ CompleteSeparatedTopCommRingCat.{v} :=
-  presentationIndexInclusion Aplus V ⋙ P.presentationFunctor
+`A⟨T/s⟩`, and a refinement contributes its restriction morphism. On objects and morphisms it is
+`presentationFunctor` applied to the underlying presentations.
+
+It is an `abbrev` so that `(presentationIndexDiagram Aplus V).obj i` and `i.pres.completionLocObj`
+are identified reducibly. A cone over the diagram is built from maps between the objects
+`A⟨T/s⟩`, and composites such as a projection of the limit followed by such a map only
+typecheck, and rewrite, under that identification. -/
+noncomputable abbrev presentationIndexDiagram (Aplus : Subring A) (V : Opens ↥(spa Aplus)) :
+    PresentationIndex (P := P) Aplus V ⥤ CompleteSeparatedTopCommRingCat.{v} where
+  obj i := i.pres.completionLocObj
+  map f := PairOfDefinition.Presentation.restrictionHom f.le
+  map_id i := PairOfDefinition.Presentation.restrictionHom_refl i.pres
+  map_comp f g := (PairOfDefinition.Presentation.restrictionHom_comp f.le g.le).symm
+
+/-- The diagram takes a refinement of indices to the restriction morphism of the underlying
+refinement of presentations. -/
+@[simp]
+theorem presentationIndexDiagram_map (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j) :
+    (presentationIndexDiagram Aplus V).map f = PairOfDefinition.Presentation.restrictionHom f.le :=
+  rfl
 
 /-- **The limit over the presentations refining `V`**, `lim_{R(T/s) ⊆ V} A⟨T/s⟩` — Wedhorn §8.1's
 formula for `𝒪_X(V)`, but indexed by presentations rather than by rational subsets. The limit
@@ -179,6 +231,13 @@ def presentationIndexRestrict {V W : Opens ↥(spa Aplus)} (h : W ≤ V) :
     PresentationIndex (P := P) Aplus W ⥤ PresentationIndex (P := P) Aplus V where
   obj i := ⟨i.pres, i.isOpen_span, i.le_open.trans h⟩
   map f := homOfLE f.le
+
+omit [IsTopologicalRing A] in
+/-- Restricting an index keeps its presentation. -/
+@[simp]
+theorem presentationIndexRestrict_obj_pres {V W : Opens ↥(spa Aplus)} (h : W ≤ V)
+    (i : PresentationIndex (P := P) Aplus W) :
+    ((presentationIndexRestrict (P := P) h).obj i).pres = i.pres := (rfl)
 
 /-- **The restriction morphism of a containment `W ≤ V`**: the limit over the presentations
 refining `V` maps to the limit over the smaller index, by reindexing. -/
