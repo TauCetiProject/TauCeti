@@ -17,16 +17,17 @@ public import TauCeti.InformationTheory.Coding.MinimumDistance
 For a set of words `C` on a finite coordinate type `ι` of size `n`, the *weight distribution*
 `A_w(C)` counts the words of Hamming weight `w`, and the *homogeneous weight enumerator* is
 
-  `W_C(X, Y) = ∑_w A_w(C) X^(n-w) Y^w = ∑_{c ∈ C} X^(n - wt c) Y^(wt c)`,
+  `W_C(X, Y) = ∑_w A_w(C) X^(n-w) Y^w`,
 
+which for finite `C` equals the sum over codewords `∑_{c ∈ C} X^(n - wt c) Y^(wt c)`. It is
 a homogeneous polynomial of degree `n` with integer coefficients, with the variables `0, 1` of
 `MvPolynomial (Fin 2) ℤ` playing the roles of `X, Y`. Its one-variable specialization at `X = 1`
 is the *weight polynomial* `∑_w A_w(C) Y^w`.
 
 These invariants carry the Hamming data of a finite code in the form used by the MacWilliams
 identity `#C · W_{C⊥}(X, Y) = W_C(X + (q - 1) Y, X - Y)`: they are unchanged by monomial
-equivalence, multiplicative under direct sums, and they recover the cardinality and minimum
-distance of a finite additive code.
+equivalence and recover the cardinality and minimum distance of a finite additive code, and the
+homogeneous weight enumerator is multiplicative under direct sums.
 
 ## Main definitions
 
@@ -147,6 +148,7 @@ theorem weightEnumerator_eq_sum_monomial (C : Set (∀ i, β i)) :
 
 /-- The coefficients of the weight enumerator are the weight distribution: the coefficient of
 `X^a Y^b` is `A_b(C)` when `a + b` is the length, and zero otherwise. -/
+@[simp]
 theorem coeff_weightEnumerator (C : Set (∀ i, β i)) (d : Fin 2 →₀ ℕ) :
     C.weightEnumerator.coeff d =
       if d 0 + d 1 = Fintype.card ι then (C.weightDistribution (d 1) : ℤ) else 0 := by
@@ -311,23 +313,23 @@ theorem weightEnumerator_directSum (C : Submodule R (ι → R)) (D : Submodule R
     (directSum C D : Set (ι ⊕ κ → R)).weightEnumerator =
       (C : Set (ι → R)).weightEnumerator * (D : Set (κ → R)).weightEnumerator := by
   classical
+  let _ := Fintype.ofFinite C
+  let _ := Fintype.ofFinite D
+  let _ := Fintype.ofFinite (directSum C D)
   rw [Set.weightEnumerator_eq_sum (Set.toFinite _), Set.weightEnumerator_eq_sum (Set.toFinite _),
-    Set.weightEnumerator_eq_sum (Set.toFinite _), sum_mul_sum, ← sum_product']
-  refine sum_nbij' (fun x ↦ (fun i ↦ x (.inl i), fun j ↦ x (.inr j)))
-    (fun p ↦ Sum.elim p.1 p.2) (fun x hx ↦ ?_) (fun p hp ↦ ?_) (fun x _ ↦ Sum.elim_comp_inl_inr x)
-    (fun p _ ↦ rfl) fun x _ ↦ ?_
-  · simpa using hx
-  · simpa using hp
-  · have ha : hammingNorm (fun i ↦ x (.inl i)) ≤ Fintype.card ι := hammingNorm_le_card_fintype
-    have hb : hammingNorm (fun j ↦ x (.inr j)) ≤ Fintype.card κ := hammingNorm_le_card_fintype
-    have hx : hammingNorm x =
-        hammingNorm (fun i ↦ x (.inl i)) + hammingNorm (fun j ↦ x (.inr j)) := by
-      rw [← TauCeti.hammingNorm_sumElim]
-      exact congrArg hammingNorm (Sum.elim_comp_inl_inr x).symm
-    rw [hx, Fintype.card_sum, show Fintype.card ι + Fintype.card κ -
-        (hammingNorm (fun i ↦ x (.inl i)) + hammingNorm (fun j ↦ x (.inr j))) =
-        (Fintype.card ι - hammingNorm (fun i ↦ x (.inl i))) +
-          (Fintype.card κ - hammingNorm (fun j ↦ x (.inr j))) by omega]
-    ring
+    Set.weightEnumerator_eq_sum (Set.toFinite _),
+    sum_subtype _ (p := (· ∈ directSum C D)) fun _ ↦ Set.Finite.mem_toFinset _,
+    sum_subtype _ (p := (· ∈ C)) fun _ ↦ Set.Finite.mem_toFinset _,
+    sum_subtype _ (p := (· ∈ D)) fun _ ↦ Set.Finite.mem_toFinset _, Fintype.sum_mul_sum,
+    ← Fintype.sum_prod_type',
+    ← (directSumEquivProd C D).symm.toEquiv.sum_comp]
+  refine Fintype.sum_congr _ _ fun ⟨x, y⟩ ↦ ?_
+  have ha : hammingNorm x.1 ≤ Fintype.card ι := hammingNorm_le_card_fintype
+  have hb : hammingNorm y.1 ≤ Fintype.card κ := hammingNorm_le_card_fintype
+  have hsub : Fintype.card ι + Fintype.card κ - (hammingNorm x.1 + hammingNorm y.1) =
+      (Fintype.card ι - hammingNorm x.1) + (Fintype.card κ - hammingNorm y.1) := by
+    omega
+  rw [LinearEquiv.coe_toEquiv, hammingNorm_directSumEquivProd_symm, Fintype.card_sum, hsub]
+  ring
 
 end Submodule
