@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Units.Basic
-import TauCeti.Algebra.Algebra.Subalgebra.FinrankPrime
-import TauCeti.NumberTheory.NumberField.Units.Basic
+public import TauCeti.NumberTheory.NumberField.Units.Basic
 
 /-!
 # Units of a number field of prime degree
@@ -26,6 +24,7 @@ degree is prime.
 public section
 
 open NumberField NumberField.Units
+open scoped IntermediateField
 open scoped NumberField
 
 namespace TauCeti.NumberField.Units
@@ -35,8 +34,12 @@ variable {K : Type*} [Field K] [NumberField K]
 /-- **Prime degree makes a competing unit a generator.** In a number field of prime degree, a
 non-torsion unit generates `K` over `ℚ`. -/
 theorem adjoin_eq_top_of_finrank_prime (hp : Nat.Prime (Module.finrank ℚ K)) {v : (𝓞 K)ˣ}
-    (hv : v ∉ torsion K) : Algebra.adjoin ℚ {((v : 𝓞 K) : K)} = ⊤ :=
-  TauCeti.Algebra.adjoin_singleton_eq_top_of_finrank_prime hp fun h =>
-    hv (mem_torsion_of_mem_bot (IntermediateField.mem_bot.mpr (Algebra.mem_bot.mp h)))
+    (hv : v ∉ torsion K) : Algebra.adjoin ℚ {((v : 𝓞 K) : K)} = ⊤ := by
+  -- A field of prime degree has no proper subfield, and a non-torsion unit is not rational.
+  have h : IntermediateField.adjoin ℚ {((v : 𝓞 K) : K)} = ⊤ :=
+    ((IntermediateField.isSimpleOrder_of_finrank_prime ℚ K hp).eq_bot_or_eq_top _).resolve_left
+      fun h => hv (mem_torsion_of_mem_bot (h ▸ IntermediateField.mem_adjoin_simple_self ℚ _))
+  exact (IntermediateField.adjoin_eq_top_iff_of_isAlgebraic fun x _ =>
+    IsAlgebraic.of_finite ℚ x).mp h
 
 end TauCeti.NumberField.Units
