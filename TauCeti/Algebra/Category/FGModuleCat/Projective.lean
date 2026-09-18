@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Exact.Projective
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Projective
+public import Mathlib.Algebra.Module.Shrink
 
 /-!
 # Projective finite-dimensional modules
@@ -20,7 +21,7 @@ every short exact sequence of finite-dimensional modules splits.
 * `FGModuleCat.projective`: every finite-dimensional module over a division ring is projective.
 * `FGModuleCat.projective_of_free`: every finite free module is projective.
 * `FGModuleCat.moduleProjective_of_projective`: a projective object of `FGModuleCat R` is a
-  projective `R`-module.
+  projective `R`-module, provided `R` is small relative to the universe of the modules.
 * `FGModuleCat.nonempty_splitting_of_shortExact`: every short exact sequence of finite-dimensional
   modules over a division ring splits.
 -/
@@ -42,13 +43,16 @@ theorem _root_.FGModuleCat.projective_of_free (X : FGModuleCat.{v} R) [Module.Fr
   exact ModuleCat.projective_of_free (Module.Free.chooseBasis R X)
 
 variable {R} in
-/-- A projective object among the finitely generated modules is projective as a module: split a
-finite free presentation in `FGModuleCat R`. -/
-theorem _root_.FGModuleCat.moduleProjective_of_projective (X : FGModuleCat.{u} R) [Projective X] :
-    Module.Projective R X := by
+/-- A projective object among the finitely generated modules is projective as an `R`-module. The
+smallness hypothesis holds automatically when the modules live in a universe containing `R`. -/
+theorem _root_.FGModuleCat.moduleProjective_of_projective [Small.{v} R]
+    (X : FGModuleCat.{v} R) [Projective X] : Module.Projective R X := by
   obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R X
-  let p : FGModuleCat.of R (Fin n → R) ⟶ X := FGModuleCat.ofHom f
-  let _ : Epi p := ConcreteCategory.epi_of_surjective p hf
+  let e := Shrink.linearEquiv.{v} R (Fin n → R)
+  let _ : Module.Finite R (Shrink.{v} (Fin n → R)) := Module.Finite.equiv e.symm
+  let _ : Module.Projective R (Shrink.{v} (Fin n → R)) := Module.Projective.of_equiv e.symm
+  let p : FGModuleCat.of R (Shrink.{v} (Fin n → R)) ⟶ X := FGModuleCat.ofHom (f ∘ₗ e.toLinearMap)
+  let _ : Epi p := ConcreteCategory.epi_of_surjective p (hf.comp e.surjective)
   let s := Projective.factorThru (𝟙 X) p
   apply Module.Projective.of_split s.hom.hom p.hom.hom
   apply LinearMap.ext

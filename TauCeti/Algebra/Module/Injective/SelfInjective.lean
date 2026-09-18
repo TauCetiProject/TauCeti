@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Module.Injective
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
-public import Mathlib.RingTheory.Finiteness.Cardinality
+public import Mathlib.RingTheory.Finiteness.Projective
 
 /-!
 # Self-injective algebras
@@ -28,9 +28,8 @@ namespace, which has neither. A retract of a Baer module is Baer (`Module.Baer.o
 and consequently the left ideal cut out by an idempotent is Baer over a self-injective ring
 (`Module.Baer.of_isIdempotentElem`): over a self-injective ring the principal projective modules
 are injective. More generally, every finitely generated projective module over a self-injective
-ring is injective (`Module.Injective.of_finite_projective`): choose a finite free presentation and
-split it by projectivity. The two Baer facts are stated for `Module.Baer` rather than
-`Module.Injective` because the two convert freely in one direction only,
+ring is injective (`Module.Injective.of_finite_projective`). The two Baer facts are stated for
+`Module.Baer` rather than `Module.Injective` because the two convert freely in one direction only,
 `Module.Baer.of_injective` costing a smallness hypothesis on the ring.
 
 ## Main results
@@ -101,10 +100,9 @@ variable {R : Type u} [Ring R] {P : Type v} [AddCommGroup P] [Module R P]
 /-- A finitely generated projective module over a self-injective ring is injective. -/
 theorem _root_.Module.Injective.of_finite_projective (hR : Module.Injective R R)
     [Module.Finite R P] [Module.Projective R P] : Module.Injective R P := by
-  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R P
+  obtain ⟨n, f, s, -, -, hs⟩ := Module.Finite.exists_comp_eq_id_of_projective R P
   let _ : Module.Injective R R := hR
   let _ : Module.Injective R (Fin n → R) := Module.Injective.pi R fun _ : Fin n ↦ R
-  obtain ⟨s, hs⟩ := Module.projective_lifting_property f LinearMap.id hf
   exact Module.Baer.injective <|
     (Module.Baer.of_injective (inferInstance : Module.Injective R (Fin n → R))).of_leftInverse
       s f fun x ↦ LinearMap.congr_fun hs x

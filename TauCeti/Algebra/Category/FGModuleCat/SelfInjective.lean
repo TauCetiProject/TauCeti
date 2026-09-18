@@ -16,16 +16,16 @@ This file relates module-theoretic self-injectivity to projective and injective 
 category `FGModuleCat R` of finitely generated modules.
 
 Categorical projectivity of a finitely generated module implies module-theoretic projectivity
-(`FGModuleCat.moduleProjective_of_projective`). Consequently, over a noetherian ring whose regular
-left module is injective, every projective object of `FGModuleCat R` is injective.
+(`FGModuleCat.moduleProjective_of_projective`). Consequently, over a ring whose regular left module
+is injective, every projective object of `FGModuleCat R` is injective.
 
 These results supply one direction of the projective--injective identification for the Frobenius
 exact category of finite-dimensional modules over a self-injective finite-dimensional algebra.
 
 ## Main results
 
-* `FGModuleCat.injective_of_projective_of_moduleInjective_self`: over a noetherian self-injective
-  ring, every projective object of `FGModuleCat R` is injective.
+* `FGModuleCat.injective_of_projective_of_moduleInjective_self`: over a self-injective ring, every
+  projective object of `FGModuleCat R` is injective.
 
 ## References
 
@@ -40,14 +40,15 @@ namespace TauCeti
 
 open CategoryTheory
 
-universe u
+universe u v
 
-variable {R : Type u} [Ring R] [IsNoetherianRing R]
+variable {R : Type u} [Ring R]
 
-/-- Over a noetherian self-injective ring, every projective object among the finitely generated
-modules is injective. -/
-theorem _root_.FGModuleCat.injective_of_projective_of_moduleInjective_self
-    (hR : Module.Injective R R) (X : FGModuleCat.{u} R) [Projective X] : Injective X := by
+/-- Over a self-injective ring, every projective object among the finitely generated modules is
+injective. The smallness hypothesis holds automatically when the modules live in a universe
+containing `R`. -/
+theorem _root_.FGModuleCat.injective_of_projective_of_moduleInjective_self [Small.{v} R]
+    (hR : Module.Injective R R) (X : FGModuleCat.{v} R) [Projective X] : Injective X := by
   have := FGModuleCat.moduleProjective_of_projective X
   have := Module.Injective.of_finite_projective (P := X) hR
   exact FGModuleCat.injective_of_moduleInjective X
