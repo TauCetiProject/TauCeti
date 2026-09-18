@@ -110,7 +110,6 @@ theorem covolume_pos [DiscreteTopology Γ] : 0 < covolume Γ ℍ :=
 
 /-- **Covolume is a conjugacy invariant**: a discrete subgroup of `PSL(2, ℝ)` and its conjugate
 `g Γ g⁻¹` have the same covolume. -/
-@[simp]
 theorem covolume_conjAct_smul [DiscreteTopology Γ] (g : PSL(2, ℝ)) :
     covolume (ConjAct.toConjAct g • Γ : Subgroup PSL(2, ℝ)) ℍ = covolume Γ ℍ :=
   MeasureTheory.covolume_conjAct_smul Γ g

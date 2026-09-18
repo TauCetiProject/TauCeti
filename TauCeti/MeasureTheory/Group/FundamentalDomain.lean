@@ -304,6 +304,7 @@ theorem covolume_pos {G α : Type*} [Group G] [MulAction G α] [MeasurableSpace 
 
 /-- **Covolume is a conjugacy invariant**: for an invariant measure, a countable subgroup `Γ`
 with a fundamental domain and its conjugate `g Γ g⁻¹` have the same covolume. -/
+@[simp]
 theorem covolume_conjAct_smul {G α : Type*} [Group G] [MulAction G α] [MeasurableSpace α]
     [MeasurableConstSMul G α] {μ : Measure α} [SMulInvariantMeasure G α μ] (Γ : Subgroup G)
     [Countable Γ] [HasFundamentalDomain Γ α μ] (g : G) :
@@ -315,12 +316,13 @@ theorem covolume_conjAct_smul {G α : Type*} [Group G] [MulAction G α] [Measura
     (measurePreserving_smul g⁻¹ μ).quasiMeasurePreserving rfl).covolume_eq_volume,
     measure_smul]
 
-/-- **Covolume is multiplicative in the index**: for an invariant measure and subgroups `Δ ≤ Γ`
+/-- **Covolume is multiplicative in the index**: for a measure invariant under subgroups `Δ ≤ Γ`
 with `Γ` countable and having a fundamental domain, the covolume of `Δ` is the index `[Γ : Δ]`,
 counted in `ℕ∞`, times the covolume of `Γ`. -/
 theorem covolume_eq_card_mul_covolume {G α : Type*} [Group G] [MulAction G α]
-    [MeasurableSpace α] [MeasurableConstSMul G α] {μ : Measure α} [SMulInvariantMeasure G α μ]
-    {Γ Δ : Subgroup G} [Countable Γ] [HasFundamentalDomain Γ α μ] (h : Δ ≤ Γ) :
+    [MeasurableSpace α] {μ : Measure α} {Γ Δ : Subgroup G} [MeasurableConstSMul Γ α]
+    [SMulInvariantMeasure Γ α μ] [MeasurableConstSMul Δ α] [SMulInvariantMeasure Δ α μ]
+    [Countable Γ] [HasFundamentalDomain Γ α μ] (h : Δ ≤ Γ) :
     covolume Δ α μ = ENat.card (Γ ⧸ Δ.subgroupOf Γ) * covolume Γ α μ := by
   have : Countable Δ := (Subgroup.inclusion_injective h).countable
   have : Countable (Γ ⧸ Δ.subgroupOf Γ) := QuotientGroup.mk_surjective.countable
