@@ -12,8 +12,8 @@ public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 /-!
 # The absolute ramification index of a mixed-characteristic local field
 
-Let `p` be prime and let `K` be a nonarchimedean local field carrying a `ℚ_[p]`-algebra
-structure. This file defines the absolute ramification index
+Let `p` be prime and let `K` be a nonarchimedean local field carrying the structure of a finite
+compatible extension of `ℚ_[p]`. This file defines the absolute ramification index
 
 `TauCeti.absoluteRamificationIndex K p = e(K/ℚ_[p])`.
 
@@ -26,6 +26,7 @@ The definition is confined to mixed characteristic by requiring an algebra struc
 
 ## Main definitions
 
+* `TauCeti.FinitePadicExtension`: a bundled finite compatible extension structure over `ℚ_[p]`.
 * `TauCeti.absoluteRamificationIndex`: the ramification index of `K/ℚ_[p]`.
 
 ## Main results
@@ -49,15 +50,51 @@ open ValuativeRel IsNonarchimedeanLocalField
 
 namespace TauCeti
 
+/-- A nonarchimedean local field equipped as a finite compatible extension of `ℚ_[p]`.
+
+The algebra structure is bundled so that the finiteness and compatibility conditions constrain
+the domain of `absoluteRamificationIndex` without becoming unused arguments of its definition. -/
+class FinitePadicExtension (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+    [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime] where
+  /-- The `ℚ_[p]`-algebra structure on the extension. -/
+  algebra : Algebra ℚ_[p] K
+  /-- The extension has finite degree over `ℚ_[p]`. -/
+  [toModuleFinite : letI := algebra; Module.Finite ℚ_[p] K]
+  /-- The algebra map is compatible with the valuative relations. -/
+  [toValuativeExtension : letI := algebra; ValuativeExtension ℚ_[p] K]
+
+namespace FinitePadicExtension
+
+attribute [instance] toModuleFinite toValuativeExtension
+
+@[instance_reducible]
+instance toAlgebra (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+    [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime] [h : FinitePadicExtension K p] :
+    Algebra ℚ_[p] K := h.algebra
+
+/-- Package existing finite compatible extension instances as a `FinitePadicExtension`. -/
+instance ofInstances (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+    [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime] [Algebra ℚ_[p] K]
+    [Module.Finite ℚ_[p] K] [ValuativeExtension ℚ_[p] K] : FinitePadicExtension K p where
+  algebra := inferInstance
+  toModuleFinite := inferInstance
+  toValuativeExtension := inferInstance
+
+end FinitePadicExtension
+
+instance finitePadicExtensionPadic (p : ℕ) [Fact p.Prime] :
+    FinitePadicExtension ℚ_[p] p where
+  algebra := inferInstance
+  toModuleFinite := inferInstance
+  toValuativeExtension := ⟨fun a b ↦ by simp⟩
+
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
-variable (p : ℕ) [Fact p.Prime] [Algebra ℚ_[p] K] [ValuativeExtension ℚ_[p] K]
+variable (p : ℕ) [Fact p.Prime] [FinitePadicExtension K p]
 
-/-- The absolute ramification index of a nonarchimedean local field over `ℚ_[p]`.
-
-For a finite compatible extension, this is the classical absolute ramification index. -/
+/-- The absolute ramification index of a finite compatible extension of `ℚ_[p]`. -/
 def absoluteRamificationIndex (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
-    [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime] [Algebra ℚ_[p] K] : ℕ :=
+    [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime] [FinitePadicExtension K p] : ℕ :=
   ramificationIndex ℚ_[p] K
 
 /-- The absolute ramification index is positive. -/
@@ -97,7 +134,7 @@ theorem absoluteRamificationIndex_padic : absoluteRamificationIndex ℚ_[p] p = 
 /-- In a tower `L/K/ℚ_[p]`, the absolute ramification index of `L` is the product of the
 relative ramification index of `L/K` and the absolute ramification index of `K`. -/
 theorem absoluteRamificationIndex_tower (L : Type*) [Field L] [ValuativeRel L]
-    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [Algebra ℚ_[p] L]
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [FinitePadicExtension L p] [Algebra K L]
     [IsScalarTower ℚ_[p] K L] [ValuativeExtension K L] :
     absoluteRamificationIndex L p =
       ramificationIndex K L * absoluteRamificationIndex K p := by
