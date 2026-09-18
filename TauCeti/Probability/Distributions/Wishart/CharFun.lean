@@ -8,6 +8,9 @@ module
 public import TauCeti.Probability.Distributions.Wishart.Transforms
 public import TauCeti.Probability.Moments.ComplexMGF
 
+import Mathlib.MeasureTheory.Group.Convolution
+import TauCeti.Probability.Distributions.Wishart.Congruence
+
 /-!
 # The characteristic functions of the Wishart families
 
@@ -38,6 +41,9 @@ can cross the branch cut.
   law, at every degree and every scale matrix.
 * `TauCeti.charFun_nonsingularWishartMeasure` — the characteristic function of the nonsingular
   density family, the same formula with the real degree in place of the natural one.
+* `TauCeti.nonsingularWishartMeasure_conv_nonsingularWishartMeasure` — at a fixed scale the
+  degrees of the nonsingular family add under convolution, since the exponent is linear in the
+  degree.
 
 ## References
 
@@ -145,5 +151,32 @@ theorem charFun_nonsingularWishartMeasure {n : ℝ} {S : Matrix (Fin p) (Fin p) 
       (Matrix.isHermitian_sqrt_mul_mul_sqrt S (selfAdjoint.isHermitian_coe Θ)) (n / 2)
       fun t ht => by rw [mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht, neg_div],
     hcast, neg_div]
+
+/-! ### Convolution -/
+
+/-- **At a fixed scale the degrees of the nonsingular Wishart family add under convolution.**
+No hypothesis on the scale is needed: away from positive definiteness all three laws are zero.
+
+The hypothesis on the sum of the degrees is not implied by the other two. In dimension zero the
+valid degrees are those above `-1`, and two of them can still sum to `-1` or less, where the law
+is zero by definition while the convolution of the two Dirac laws is again Dirac. In positive
+dimension the valid degrees are positive, so the hypothesis is automatic. -/
+@[simp]
+theorem nonsingularWishartMeasure_conv_nonsingularWishartMeasure {n₁ n₂ : ℝ}
+    (S : Matrix (Fin p) (Fin p) ℝ) (hn₁ : (p : ℝ) - 1 < n₁) (hn₂ : (p : ℝ) - 1 < n₂)
+    (hn : (p : ℝ) - 1 < n₁ + n₂) :
+    nonsingularWishartMeasure n₁ S ∗ nonsingularWishartMeasure n₂ S =
+      nonsingularWishartMeasure (n₁ + n₂) S := by
+  by_cases hS : S.PosDef
+  · have := isProbabilityMeasure_nonsingularWishartMeasure hS hn₁
+    have := isProbabilityMeasure_nonsingularWishartMeasure hS hn₂
+    have := isProbabilityMeasure_nonsingularWishartMeasure hS hn
+    refine Measure.ext_of_charFun (funext fun Θ => ?_)
+    rw [charFun_conv, charFun_nonsingularWishartMeasure hS hn₁,
+      charFun_nonsingularWishartMeasure hS hn₂, charFun_nonsingularWishartMeasure hS hn,
+      ← Complex.exp_add]
+    push_cast
+    ring_nf
+  · simp [nonsingularWishartMeasure_of_not_posDef _ hS]
 
 end TauCeti
