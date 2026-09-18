@@ -8,10 +8,11 @@ module
 public import Mathlib.InformationTheory.Hamming
 
 /-!
-# Hamming data on disjoint unions and under coordinate reindexing
+# Hamming data under coordinate decompositions and reindexing
 
 This file records that Hamming weight and distance on a function whose domain is a disjoint union
-split as sums over the two coordinate types. These identities let constructions assembled from
+split as sums over the two coordinate types. Weight also splits over a retained coordinate set
+and its complement. These identities let constructions assembled from
 independent coordinate blocks reduce their Hamming data to the data of the blocks.
 
 It also proves that Hamming distance and Hamming weight are invariant under relabelling a finite
@@ -61,6 +62,14 @@ theorem hammingNorm_sumElim {A : Type*} [Fintype ι] [Fintype κ] [DecidableEq A
     (x : ι → A) (y : κ → A) :
     hammingNorm (Sum.elim x y) = hammingNorm x + hammingNorm y :=
   hammingNorm_sumRec (β := fun _ ↦ A) x y
+
+/-- Hamming weight splits over a retained coordinate set and its complement. -/
+theorem hammingNorm_eq_domRestrict_add_domRestrict_compl {ι : Type*} {A : ι → Type*}
+    [Fintype ι] [∀ i, Zero (A i)] [∀ i, DecidableEq (A i)]
+    (s : Set ι) [DecidablePred (· ∈ s)] (x : ∀ i, A i) :
+    hammingNorm x = hammingNorm (s.domRestrict x) + hammingNorm (sᶜ.domRestrict x) := by
+  simp only [hammingNorm, Finset.card_filter]
+  exact (Fintype.sum_subtype_add_sum_subtype (· ∈ s) _).symm
 
 end TauCeti
 
