@@ -57,9 +57,9 @@ installed locally, as in `letI := finiteExtensionValuativeRel K M`.
 * `TauCeti.finiteExtensionNormedFieldTopology_eq`: any valuative topology for such a relation is
   the norm topology.
 * `AlgEquiv.valuation_eq`: `K`-algebra automorphisms of `M` preserve the valuation.
-* `TauCeti.isIntegral_iff_valuation_le_one`: for any valuative relation on `M` extending that of
-  `K`, an element of `M` is integral over a ring of integers of `K` exactly when its valuation is
-  at most `1`.
+* `Valuation.Integers.isIntegral_iff_valuation_le_one`: for any valuative relation on `M`
+  extending that of `K`, an element of `M` is integral over a ring of integers of `K` exactly when
+  its valuation is at most `1`.
 * `TauCeti.integerRing_eq_integralClosure`: `𝒪[M]` is the integral closure of `𝒪[K]` in `M`.
 
 ## Implementation notes
@@ -373,9 +373,10 @@ variable {K M} [ValuativeRel M] [ValuativeExtension K M]
 /-- **The integers of a finite extension are the integral elements.** Let `M` be a finite
 extension of a nonarchimedean local field `K`, with a valuative relation extending that of `K`,
 and let `O` be any ring of integers of `K`, that is, `(valuation K).Integers O`. An element of
-`M` is integral over `O` exactly when its valuation is at most `1`. -/
-theorem isIntegral_iff_valuation_le_one {O : Type*} [CommRing O] [Algebra O K] [Algebra O M]
-    [IsScalarTower O K M] (hO : (valuation K).Integers O) (x : M) :
+`M` is integral over `O` exactly when its valuation is at most `1`; see Neukirch, Chapter II,
+§4 and §6. -/
+theorem _root_.Valuation.Integers.isIntegral_iff_valuation_le_one {O : Type*} [CommRing O]
+    [Algebra O K] [Algebra O M] [IsScalarTower O K M] (hO : (valuation K).Integers O) (x : M) :
     IsIntegral O x ↔ valuation M x ≤ 1 := by
   have hw := ValuativeRel.isEquiv ((valuation M).comap (algebraMap K M)) (valuation K)
   constructor
@@ -406,7 +407,8 @@ theorem integerRing_eq_integralClosure :
     𝒪[M] = (integralClosure 𝒪[K] M).toSubring := by
   ext x
   rw [Subalgebra.mem_toSubring, mem_integralClosure_iff,
-    isIntegral_iff_valuation_le_one (Valuation.integer.integers (valuation K)),
+    Valuation.Integers.isIntegral_iff_valuation_le_one
+      (Valuation.integer.integers (valuation K)),
     Valuation.mem_integer_iff]
 
 end IntegralClosure
