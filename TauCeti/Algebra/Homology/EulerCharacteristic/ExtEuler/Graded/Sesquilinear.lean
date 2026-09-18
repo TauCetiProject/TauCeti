@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Desce
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Shift
 public import TauCeti.CategoryTheory.Exact.Graded.FullSubcategory
 public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent
+public import TauCeti.LinearAlgebra.SesquilinearForm.LaurentSpecialization
 public import Mathlib.LinearAlgebra.BilinearMap
 
 /-!
@@ -25,10 +26,12 @@ The two subcategories are allowed to differ: neither symmetry nor Hermitian symm
 The coefficient involution is Mathlib's `LaurentPolynomial.invert`, and the handedness is fixed by
 the convention `[M{1}] = q[M]` on `TauCeti.LaurentK0`.
 
-## Main definition
+## Main definitions
 
 * `TauCeti.gradedExtEulerSesquilinear`: the q-Euler form on the Laurent-module Grothendieck
   groups of `P` and `Q`.
+* `TauCeti.gradedExtEulerSpecialized`: its specialization at `q = ε` for a unit `ε : ℤˣ`, that is
+  at `q = 1` or `q = -1`, a `ℤ`-bilinear form on specialized graded Grothendieck groups.
 
 ## Main results
 
@@ -37,11 +40,13 @@ the convention `[M{1}] = q[M]` on `TauCeti.LaurentK0`.
   `TauCeti.gradedExtEulerSesquilinear_T_smul_right`: the shift normalizations in both variables.
 * `TauCeti.gradedExtEulerSesquilinear_unique`: the form is determined by its values on object
   classes.
+* `TauCeti.gradedExtEulerSpecialized_mk_of_mk_of`: the specialized form on two object classes is
+  the graded Ext-Euler characteristic evaluated at `q = ε`.
 
 ## References
 
 * Zsuzsanna Dancso and Anthony Licata, "Koszul algebras and flow lattices", *Journal of
-  Combinatorial Theory, Series A* **185** (2022), Sections 1.2 and 2.2.
+  Combinatorial Theory, Series A* **185** (2022), Sections 1.2, 2.2 and 3.1.
 -/
 
 public section
@@ -430,5 +435,38 @@ theorem gradedExtEulerSesquilinear_unique
   obtain ⟨z, rfl⟩ : ∃ z, LaurentK0.ofExactK0 EP z = x :=
     ⟨(LaurentK0.ofExactK0 EP).symm x, by simp⟩
   exact DFunLike.congr_fun houter z
+
+/-- **The q-Euler form specialized at `q = ε`**, for a unit `ε : ℤˣ`, that is at `q = 1` or
+`q = -1`.  It is the `ℤ`-bilinear form on the specializations of the Laurent-module Grothendieck
+groups of `P` and `Q` obtained from `TauCeti.gradedExtEulerSesquilinear` by evaluating at `ε`;
+since `ε⁻¹ = ε` over `ℤ`, both arguments are specialized at the same unit. -/
+noncomputable def gradedExtEulerSpecialized
+    (hP : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed P)
+    (hQ : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed Q)
+    (hPshift : P.inverseImage (GradedExactStructure.abelian C e).shift.functor = P)
+    (hQshift : Q.inverseImage (GradedExactStructure.abelian C e).shift.functor = Q)
+    (h : IsGradedEulerAdmissibleOn.{w} (k := k) (e := e) P Q) (ε : ℤˣ) :
+    LaurentSpecialization ε
+        (LaurentK0 ((GradedExactStructure.abelian C e).fullSubcategory P hP hPshift)) →ₗ[ℤ]
+      LaurentSpecialization ε
+        (LaurentK0 ((GradedExactStructure.abelian C e).fullSubcategory Q hQ hQshift)) →ₗ[ℤ] ℤ :=
+  (gradedExtEulerSesquilinear hP hQ hPshift hQshift h).laurentSpecialize (Int.units_inv_eq_self ε)
+
+/-- The specialized q-Euler form on two specialized object classes is the graded Ext-Euler
+characteristic evaluated at `q = ε`. -/
+@[simp]
+theorem gradedExtEulerSpecialized_mk_of_mk_of
+    (hP : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed P)
+    (hQ : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed Q)
+    (hPshift : P.inverseImage (GradedExactStructure.abelian C e).shift.functor = P)
+    (hQshift : Q.inverseImage (GradedExactStructure.abelian C e).shift.functor = Q)
+    (h : IsGradedEulerAdmissibleOn.{w} (k := k) (e := e) P Q) (ε : ℤˣ)
+    (X : P.FullSubcategory) (Y : Q.FullSubcategory) :
+    gradedExtEulerSpecialized hP hQ hPshift hQshift h ε
+        (LaurentSpecialization.mk ε (LaurentK0.of _ X))
+        (LaurentSpecialization.mk ε (LaurentK0.of _ Y)) =
+      laurentEval ε (gradedExtEuler k e (h.isGradedEulerAdmissible X.property Y.property)) := by
+  rw [gradedExtEulerSpecialized, LinearMap.laurentSpecialize_mk_mk,
+    gradedExtEulerSesquilinear_of_of]
 
 end TauCeti

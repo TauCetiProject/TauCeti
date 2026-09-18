@@ -63,6 +63,15 @@ lemma degree_eq_weightedDegree (D : Divisor k F) :
     degree D = WeilDivisor.weightedDegree (fun P : Place k F => (P.degree : ℤ)) D := by
   simp only [degree]
 
+/-- The degree-zero divisors are the weighted-degree-zero divisors for the residue-degree
+weights.  This is the bridge from the degree kernel to the weight-generic `WeilDivisor` API,
+and in particular to `Pic⁰`. -/
+theorem ker_degree_eq_weightedDegreeZeroSubgroup :
+    (degree (k := k) (F := F)).ker =
+      WeilDivisor.weightedDegreeZeroSubgroup (fun P : Place k F => (P.degree : ℤ)) := by
+  ext D
+  rw [AddMonoidHom.mem_ker, WeilDivisor.mem_weightedDegreeZeroSubgroup, ← degree_eq_weightedDegree]
+
 /-- The support-indexed form of the degree sum. -/
 lemma degree_eq_sum_support (D : Divisor k F) :
     degree D = ∑ P ∈ D.support, D P * P.degree := by

@@ -46,6 +46,8 @@ branch, which is why it is defined for every valid index and not only for the un
 * `TauCeti.ValidLieTypeIndex.eq_fixedField_of_natCard`: it is the only subfield with `q` elements.
 * `TauCeti.ValidLieTypeIndex.nonempty_fixedField_ringEquiv_galoisField`: it is a copy of
   `GaloisField p e`.
+* `TauCeti.ValidLieTypeIndex.galoisFieldEmbedding`: a chosen embedding of that `GaloisField`
+  into the closure, with image exactly the fixed field.
 * `TauCeti.ValidLieTypeIndex.mem_frobeniusFixedSubfield_iff_iterate_frobeniusEquiv_eq`: the `k`-th
   iterate fixes the subfield at exponent `e * k`, which for `k ≠ 0` is the field of `q ^ k`
   elements.
@@ -162,7 +164,49 @@ theorem nonempty_fixedField_ringEquiv_galoisField :
   nonempty_frobeniusFixedSubfield_ringEquiv_galoisField d.Closure d.characteristic d.fieldExponent
     d.fieldExponent_pos.ne'
 
+/-- A chosen isomorphism from Mathlib's finite field of order `d.fieldOrder` to the fixed field
+inside the closure. There is no canonical such isomorphism; this choice is used only to compare
+matrix constructions whose coefficients live in the two realizations of the same finite field. -/
+noncomputable def galoisFieldEquivFixedField :
+    GaloisField d.characteristic d.fieldExponent ≃+* d.fixedField :=
+  (Classical.choice d.nonempty_fixedField_ringEquiv_galoisField).symm
+
+/-- The embedding of Mathlib's finite field of order `d.fieldOrder` into the algebraic closure,
+obtained from a chosen isomorphism with the Frobenius-fixed field. -/
+noncomputable def galoisFieldEmbedding :
+    GaloisField d.characteristic d.fieldExponent →+* d.Closure :=
+  d.fixedField.subtype.comp d.galoisFieldEquivFixedField.toRingHom
+
+/-- The finite-field embedding is the inclusion of the chosen fixed-field representative. -/
+@[simp]
+theorem galoisFieldEmbedding_apply
+    (x : GaloisField d.characteristic d.fieldExponent) :
+    d.galoisFieldEmbedding x = d.galoisFieldEquivFixedField x :=
+  (rfl)
+
+/-- The image of the chosen finite-field embedding is exactly the Frobenius-fixed field, viewed
+as a subring of the closure. -/
+theorem range_galoisFieldEmbedding :
+    RingHom.range d.galoisFieldEmbedding = d.fixedField.toSubring := by
+  ext x
+  constructor
+  · rintro ⟨y, rfl⟩
+    exact (d.galoisFieldEquivFixedField y).property
+  · intro hx
+    obtain ⟨y, hy⟩ := d.galoisFieldEquivFixedField.surjective ⟨x, hx⟩
+    exact ⟨y, congrArg Subtype.val hy⟩
+
 variable {d}
+
+/-- An element of the closure belongs to the image of the chosen finite-field embedding exactly
+when it is fixed by the `q`-power Frobenius.
+
+This is not a `simp` lemma: `RingHom.mem_range` already unfolds the left-hand side into an
+existential, so it is not in `simp`-normal form. -/
+theorem mem_range_galoisFieldEmbedding_iff {x : d.Closure} :
+    x ∈ RingHom.range d.galoisFieldEmbedding ↔ x ^ d.fieldOrder = x := by
+  rw [d.range_galoisFieldEmbedding]
+  exact d.mem_fixedField
 
 /-- The elements fixed by the `k`-th iterate of the Frobenius are the fixed subfield at exponent
 `fieldExponent * k`, which for `k ≠ 0` is by `card_frobeniusFixedSubfield` the field of `q ^ k`

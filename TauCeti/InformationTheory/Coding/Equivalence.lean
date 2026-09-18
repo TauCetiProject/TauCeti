@@ -35,12 +35,13 @@ distributions and pairwise Hamming distances are invariants of the resulting equ
 
 * `TauCeti.hammingNorm_monomialEquiv`, `TauCeti.hammingDist_monomialEquiv`: a monomial
   equivalence preserves Hamming weight and Hamming distance.
-* `TauCeti.IsMonomialEquivalent.finrank_eq`, `TauCeti.IsMonomialEquivalent.card_eq`,
-  `TauCeti.IsMonomialEquivalent.card_weight_eq`: monomially equivalent codes have the same
-  dimension, the same number of codewords, and the same weight distribution.
-* `TauCeti.IsPermutationEquivalent.finrank_eq`, `TauCeti.IsPermutationEquivalent.card_eq`,
-  `TauCeti.IsPermutationEquivalent.card_weight_eq`: the corresponding invariants for
-  permutation-equivalent codes.
+* `TauCeti.IsMonomialEquivalent.finrank_eq`, `TauCeti.IsMonomialEquivalent.card_eq`:
+  monomially equivalent codes have the same dimension and the same number of codewords.
+* `TauCeti.IsPermutationEquivalent.finrank_eq`, `TauCeti.IsPermutationEquivalent.card_eq`: the
+  corresponding invariants for permutation-equivalent codes.
+
+Invariance of the weight distribution and weight enumerator is in
+`TauCeti.InformationTheory.Coding.WeightEnumerator`.
 
 ## References
 
@@ -144,6 +145,13 @@ one onto the other. -/
 def IsPermutationEquivalent (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) : Prop :=
   ∃ e : ι ≃ κ, C.map (LinearEquiv.funCongrLeft R R e.symm : (ι → R) →ₗ[R] (κ → R)) = D
 
+/-- Unfolds permutation equivalence to the existence of a relabelling carrying one code onto the
+other. -/
+theorem isPermutationEquivalent_iff :
+    IsPermutationEquivalent C D ↔
+      ∃ e : ι ≃ κ, C.map (LinearEquiv.funCongrLeft R R e.symm : (ι → R) →ₗ[R] (κ → R)) = D :=
+  Iff.rfl
+
 /-- A coordinate relabelling that maps one code onto another restricts to a linear equivalence
 between their codewords. -/
 def permutationCodeEquiv (e : ι ≃ κ)
@@ -200,24 +208,6 @@ theorem IsPermutationEquivalent.card_eq (h : IsPermutationEquivalent C D) :
   exact Nat.card_congr
     ((LinearEquiv.funCongrLeft R R e.symm).submoduleMap C).toEquiv
 
-/-- Permutation-equivalent codes have the same weight distribution. -/
-theorem IsPermutationEquivalent.card_weight_eq [Fintype ι] [Fintype κ] [DecidableEq R]
-    (h : IsPermutationEquivalent C D) (w : ℕ) :
-    Nat.card {x : ι → R // x ∈ C ∧ hammingNorm x = w} =
-      Nat.card {y : κ → R // y ∈ D ∧ hammingNorm y = w} := by
-  obtain ⟨e, rfl⟩ := h
-  exact Nat.card_congr
-    (Equiv.subtypeEquiv (LinearEquiv.funCongrLeft R R e.symm).toEquiv fun x ↦ by
-      simp only [LinearEquiv.coe_toEquiv, LinearEquiv.funCongrLeft_apply,
-        Submodule.mem_map_equiv, LinearEquiv.funCongrLeft_symm, Equiv.symm_symm]
-      have hinv :
-          LinearMap.funLeft R R e (LinearMap.funLeft R R e.symm x) = x := by
-        funext i
-        simp [LinearMap.funLeft_apply]
-      have hnorm : hammingNorm (LinearMap.funLeft R R e.symm x) = hammingNorm x := by
-        exact Equiv.hammingNorm_comp e.symm x
-      rw [hinv, hnorm])
-
 end PermutationEquivalence
 
 /-! ### Monomial equivalence of linear codes -/
@@ -231,6 +221,13 @@ variable [CommSemiring R] {C : Submodule R (ι → R)} {D : Submodule R (κ → 
 coordinate spaces carries one onto the other. -/
 def IsMonomialEquivalent (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) : Prop :=
   ∃ (u : ι → Rˣ) (e : ι ≃ κ), C.map (monomialEquiv u e : (ι → R) →ₗ[R] (κ → R)) = D
+
+/-- Unfolds monomial equivalence to the existence of a monomial transformation carrying one code
+onto the other. -/
+theorem isMonomialEquivalent_iff :
+    IsMonomialEquivalent C D ↔
+      ∃ (u : ι → Rˣ) (e : ι ≃ κ), C.map (monomialEquiv u e : (ι → R) →ₗ[R] (κ → R)) = D :=
+  Iff.rfl
 
 /-- A monomial transformation that maps one code onto another restricts to a linear equivalence
 between their codewords. -/
@@ -288,14 +285,6 @@ theorem IsMonomialEquivalent.card_eq (h : IsMonomialEquivalent C D) :
     Nat.card C = Nat.card D := by
   obtain ⟨u, e, rfl⟩ := h
   exact Nat.card_congr ((monomialEquiv u e).submoduleMap C).toEquiv
-
-/-- Monomially equivalent codes have the same weight distribution. -/
-theorem IsMonomialEquivalent.card_weight_eq [Fintype ι] [Fintype κ] [DecidableEq R]
-    (h : IsMonomialEquivalent C D) (w : ℕ) :
-    Nat.card {x : ι → R // x ∈ C ∧ hammingNorm x = w} =
-      Nat.card {y : κ → R // y ∈ D ∧ hammingNorm y = w} := by
-  obtain ⟨u, e, rfl⟩ := h
-  exact Nat.card_congr (Equiv.subtypeEquiv (monomialEquiv u e).toEquiv fun x ↦ by simp)
 
 end MonomialEquivalence
 
