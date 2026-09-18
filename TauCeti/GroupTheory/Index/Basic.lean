@@ -34,7 +34,6 @@ centre gives the `Γ.withCenter` readings.
   and the index doubling, for an `N` normalised by `Γ` whose elements are `1` and `a ∉ Γ`.
 * `Subgroup.instCountableQuotient`: a coset space of a countable group is countable.
 * `Subgroup.finiteIndex_of_finiteIndex_subgroupOf`: finite index composes along `V ≤ U ≤ G`.
-* `Subgroup.finiteIndex_subgroupOf_trans`: relative finite index composes along `H`, `K`, `L`.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}`.
 -/
@@ -76,19 +75,6 @@ theorem finiteIndex_of_finiteIndex_subgroupOf {G : Type*} [Group G] (H K : Subgr
   isFiniteRelIndex_top_iff.mp <|
     ((isFiniteRelIndex_iff_finiteIndex (H := H) (K := K)).mpr inferInstance).trans
       (isFiniteRelIndex_top_iff.mpr inferInstance)
-
-/-- **Relative finite index composes along a chain of subgroups.** If `H` has finite index in `K`
-and `K` has finite index in `L` -- each read through `Subgroup.subgroupOf` -- then `H` has finite
-index in `L`. Not an instance, because the intermediate subgroup `K` cannot be recovered from the
-goal. -/
-@[to_additive /-- **Relative finite index composes along a chain of additive subgroups.** If `H`
-has finite index in `K` and `K` has finite index in `L` -- each read through
-`AddSubgroup.addSubgroupOf` -- then `H` has finite index in `L`. -/]
-theorem finiteIndex_subgroupOf_trans {G : Type*} [Group G] (H K L : Subgroup G)
-    [(H.subgroupOf K).FiniteIndex] [(K.subgroupOf L).FiniteIndex] :
-    (H.subgroupOf L).FiniteIndex :=
-  ⟨relIndex_ne_zero_trans (FiniteIndex.index_ne_zero (H := H.subgroupOf K))
-    (FiniteIndex.index_ne_zero (H := K.subgroupOf L))⟩
 
 /-- `Γ` with the centre of the ambient group adjoined. For `Γ ≤ SL(2, ℤ)` the centre is
 `{±I}`, which acts trivially on `ℍ`; it is the cosets of `Γ·{±I}` — not those of `Γ` itself —

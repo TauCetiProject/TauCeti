@@ -82,7 +82,7 @@ theorem groupEquivQuotientProdSubgroup_apply_snd_coe (g : α) :
 /-- **Cosets of `H` in `K`, read inside an ambient `L ≥ K`.** For `K ≤ L`, the cosets of the copy of
 `H` in the copy of `K` inside `L` are the cosets of `H` in `K`, along
 `Subgroup.subgroupOfEquivOfLe`. -/
-@[expose, to_additive /-- **Cosets of `H` in `K`, read inside an ambient `L ≥ K`.** For `K ≤ L`, the
+@[to_additive /-- **Cosets of `H` in `K`, read inside an ambient `L ≥ K`.** For `K ≤ L`, the
 cosets of the copy of `H` in the copy of `K` inside `L` are the cosets of `H` in `K`, along
 `AddSubgroup.addSubgroupOfEquivOfLe`. -/]
 def quotientSubgroupOfSubgroupOfEquiv {H K L : Subgroup α} (hKL : K ≤ L) :
@@ -97,6 +97,6 @@ theorem quotientSubgroupOfSubgroupOfEquiv_apply_mk {H K L : Subgroup α} (hKL : 
     (g : K.subgroupOf L) :
     quotientSubgroupOfSubgroupOfEquiv (H := H) hKL (g : K.subgroupOf L ⧸ _) =
       (subgroupOfEquivOfLe hKL g : K ⧸ H.subgroupOf K) :=
-  rfl
+  (rfl)
 
 end Subgroup

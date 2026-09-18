@@ -390,10 +390,14 @@ relative corestriction from `V` to `W` is the composite of the relative corestri
 `U`. -/
 theorem explicitCor0Le_trans (W : Subgroup G) (hUW : U ≤ W)
     [(U.subgroupOf W).FiniteIndex] [(V.subgroupOf U).FiniteIndex] :
-    haveI := Subgroup.finiteIndex_subgroupOf_trans V U W
+    haveI : V.IsFiniteRelIndex W :=
+      (Subgroup.isFiniteRelIndex_iff_finiteIndex (H := V) (K := U)).mpr inferInstance |>.trans
+        ((Subgroup.isFiniteRelIndex_iff_finiteIndex (H := U) (K := W)).mpr inferInstance)
     explicitCor0Le G M W V (hVU.trans hUW) =
       (explicitCor0Le G M W U hUW).comp (explicitCor0Le G M U V hVU) := by
-  have := Subgroup.finiteIndex_subgroupOf_trans V U W
+  have : V.IsFiniteRelIndex W :=
+    (Subgroup.isFiniteRelIndex_iff_finiteIndex (H := V) (K := U)).mpr inferInstance |>.trans
+      ((Subgroup.isFiniteRelIndex_iff_finiteIndex (H := U) (K := W)).mpr inferInstance)
   ext m
   simp only [coe_explicitCor0Le, AddMonoidHom.comp_apply, Subgroup.smul_def]
   simpa only [finsum_eq_sum_of_fintype] using
