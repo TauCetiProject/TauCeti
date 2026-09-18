@@ -230,7 +230,6 @@ noncomputable def grading (G : InternalGrading R A) : InternalGrading R (GradedO
 
 /-- An element belongs to degree `p` of the graded opposite exactly when its underlying element
 belongs to degree `p` in the original algebra. -/
-@[simp]
 theorem op_mem_piece_iff (G : InternalGrading R A) (p : ℤ) (a : A) :
     op G a ∈ (grading G).piece p ↔ a ∈ G.piece p := by
   simp [grading]
@@ -253,8 +252,8 @@ theorem op_add (G : InternalGrading R A) (a b : A) : op G (a + b) = op G a + op 
 theorem op_smul (G : InternalGrading R A) (r : R) (a : A) : op G (r • a) = r • op G a :=
   (opLinearEquiv G).map_smul r a
 
-@[simp]
-theorem op_zsmul (G : InternalGrading R A) (n : ℤ) (a : A) : op G (n • a) = n • op G a :=
+theorem op_zsmul (G : InternalGrading R A) (n : ℤ) (a : A) :
+    op G (n • a) = n • op G a :=
   map_zsmul (opLinearEquiv G) n a
 
 @[simp]
@@ -271,7 +270,6 @@ theorem unop_smul (G : InternalGrading R A) (r : R) (a : GradedOpposite G) :
     unop G (r • a) = r • unop G a :=
   (opLinearEquiv G).symm.map_smul r a
 
-@[simp]
 theorem unop_zsmul (G : InternalGrading R A) (n : ℤ) (a : GradedOpposite G) :
     unop G (n • a) = n • unop G a :=
   map_zsmul (opLinearEquiv G).symm n a
