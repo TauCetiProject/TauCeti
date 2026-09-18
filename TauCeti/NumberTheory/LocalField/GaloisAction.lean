@@ -91,7 +91,6 @@ noncomputable def integerRingEquiv (σ : L ≃ₐ[K] L) : 𝒪[L] ≃+* 𝒪[L] 
   MulSemiringAction.toRingAut (L ≃ₐ[K] L) 𝒪[L] σ
 
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
-@[simp]
 theorem integerRingEquiv_apply (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
     σ.integerRingEquiv x = σ • x :=
   (rfl)
@@ -158,7 +157,6 @@ theorem residueFieldEquiv_residue (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
       IsLocalRing.residue 𝒪[L] (σ.integerRingEquiv x) :=
   (rfl)
 
-@[simp]
 theorem residueFieldEquiv_apply (σ : L ≃ₐ[K] L) (x : 𝓀[L]) :
     σ.residueFieldEquiv x = σ • x :=
   (rfl)
