@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Series
+public import TauCeti.Algebra.AlgebraicGroup.Solvable.Basic
 
 /-!
 # Solvability and termination of the derived series
@@ -43,5 +44,28 @@ theorem isSolvable_points_iff_exists_derivedSeriesDefiningIdeal_eq_augmentation 
       ∃ n, derivedSeriesDefiningIdeal H n = HopfIdeal.augmentation k H := by
   simp only [derivedSeriesDefiningIdeal_eq_augmentation_iff]
   exact ⟨fun h ↦ h.solvable, fun h ↦ ⟨h⟩⟩
+
+namespace geometricallySolvablePointsCommHopfAlgProperty
+
+/-- Over an algebraically closed field, the geometric-points solvability property of a
+reduced finite-type affine group is equivalent to termination of its derived series. -/
+theorem iff_exists_derivedSeriesDefiningIdeal_eq_augmentation :
+    geometricallySolvablePointsCommHopfAlgProperty k H ↔
+      ∃ n, derivedSeriesDefiningIdeal H n = HopfIdeal.augmentation k H := by
+  rw [← isSolvable_points_iff_exists_derivedSeriesDefiningIdeal_eq_augmentation,
+    geometricallySolvablePointsCommHopfAlgProperty_iff]
+  let e : k ≃ₐ[k] AlgebraicClosure k := AlgEquiv.ofBijective
+    (Algebra.ofId k (AlgebraicClosure k)) IsAlgClosed.algebraMap_bijective_of_isIntegral
+  constructor
+  · intro h
+    let := h
+    exact Group.isSolvable_of_isSolvable_injective
+      (f := AlgHom.mapValue e.toAlgHom) (AlgHom.mapValue_injective e.injective)
+  · intro h
+    let := h
+    exact Group.isSolvable_of_isSolvable_injective
+      (f := AlgHom.mapValue e.symm.toAlgHom) (AlgHom.mapValue_injective e.symm.injective)
+
+end geometricallySolvablePointsCommHopfAlgProperty
 
 end TauCeti
