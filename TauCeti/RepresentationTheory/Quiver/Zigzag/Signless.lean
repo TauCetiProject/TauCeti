@@ -35,7 +35,7 @@ open _root_.Quiver PathAlgebra
 
 universe u w
 
-variable (k : Type w) {V : Type u} [CommSemiring k] (G : SimpleGraph V)
+variable (k : Type w) {V : Type u} [Semiring k] (G : SimpleGraph V)
 
 /-- The star of the doubled quiver of `G` at `v` is finite, being in bijection with the neighbour
 set of `v`. -/
