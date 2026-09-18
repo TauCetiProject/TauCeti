@@ -131,7 +131,6 @@ theorem not_dvd_exponent_rootIntegralPrimitiveElement {p : ℕ} [Fact p.Prime]
 
 /-- The monic irreducible factors modulo `p` of the minimal polynomial of a root are those of
 `minpoly ℤ θ`. -/
-@[simp]
 theorem monicFactorsMod_rootIntegralPrimitiveElement (p : ℕ) [Fact p.Prime] :
     RingOfIntegers.monicFactorsMod (rootIntegralPrimitiveElement hβ).1 p =
       RingOfIntegers.monicFactorsMod θ p := by
