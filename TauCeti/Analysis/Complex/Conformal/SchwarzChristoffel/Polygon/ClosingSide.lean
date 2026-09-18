@@ -57,13 +57,13 @@ variable {n : ℕ}
 
 /-- The closing side runs from the last finite vertex through the vertex at infinity to the first
 finite vertex, horizontally and in the positive real direction. -/
-theorem schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt (a e : Fin (n + 1) → ℝ)
-    (z₀ : UpperHalfPlane) (ha : StrictMono a) (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0)
+theorem schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt_vertex_zero
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a) (he : ∀ k, -1 < e k)
     (hsum : ∑ k, e k = -2) :
     schwarzChristoffelVertex a e z₀ (Fin.last n) < schwarzChristoffelVertexAtInfinity a e z₀ ∧
       schwarzChristoffelVertexAtInfinity a e z₀ < schwarzChristoffelVertex a e z₀ 0 := by
   have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+    simpa [ha.injective.eq_iff, Finset.filter_eq'] using he k
   have hr := schwarzChristoffelBoundary_lt_vertexAtInfinity a e z₀ (hfinite (Fin.last n))
     (fun l _ ↦ ha.monotone l.le_last) (by rw [hsum]; norm_num)
   have hl := schwarzChristoffelVertexAtInfinity_lt_boundary a e z₀
@@ -80,7 +80,8 @@ theorem im_schwarzChristoffelVertexAtInfinity_eq_im_zero
     (schwarzChristoffelVertexAtInfinity a e z₀).im =
       (schwarzChristoffelVertex a e z₀ 0).im := by
   exact (Complex.lt_def.mp
-    (schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt a e z₀ ha he hsum).2).2
+    (schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt_vertex_zero a e z₀ ha
+      (fun k ↦ (he k).1) hsum).2).2
 
 /-- **The first and last finite vertices lie on the same closing line.** Their imaginary parts
 agree. -/
@@ -91,7 +92,8 @@ theorem im_schwarzChristoffelVertex_last_eq_im_zero
     (schwarzChristoffelVertex a e z₀ (Fin.last n)).im =
       (schwarzChristoffelVertex a e z₀ 0).im := by
   obtain ⟨hr, hl⟩ :=
-    schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt a e z₀ ha he hsum
+    schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt_vertex_zero a e z₀ ha
+      (fun k ↦ (he k).1) hsum
   exact (Complex.lt_def.mp hr).2.trans (Complex.lt_def.mp hl).2
 
 /-- The height increment along a bounded side is its positive length times the sine of its edge
@@ -236,7 +238,8 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_last_prevertex (a e : Fin (n 
     (hsum : ∑ k, e k = -2) (i : Fin n) (hi : i.val + 1 < n) :
     Disjoint ((schwarzChristoffelPolygon a e z₀).edgeSet ℝ i.castSucc.castSucc)
       ((schwarzChristoffelPolygon a e z₀).edgeSet ℝ (Fin.last n).castSucc) := by
-  obtain ⟨hr, hl⟩ := schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt a e z₀ ha he hsum
+  obtain ⟨hr, hl⟩ := schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt_vertex_zero a e z₀ ha
+      (fun k ↦ (he k).1) hsum
   rw [schwarzChristoffelPolygon_edgeSet_castSucc_castSucc,
     schwarzChristoffelPolygon_edgeSet_last_prevertex, Set.disjoint_left]
   intro z hzi hzc
@@ -267,7 +270,8 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_last (a e : Fin (n + 1) → �
     (hsum : ∑ k, e k = -2) (i : Fin n) (hi : 0 < i.val) :
     Disjoint ((schwarzChristoffelPolygon a e z₀).edgeSet ℝ i.castSucc.castSucc)
       ((schwarzChristoffelPolygon a e z₀).edgeSet ℝ (Fin.last (n + 1))) := by
-  obtain ⟨hr, hl⟩ := schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt a e z₀ ha he hsum
+  obtain ⟨hr, hl⟩ := schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt_vertex_zero a e z₀ ha
+      (fun k ↦ (he k).1) hsum
   rw [schwarzChristoffelPolygon_edgeSet_castSucc_castSucc,
     schwarzChristoffelPolygon_edgeSet_last, Set.disjoint_left]
   intro z hzi hzc

@@ -228,7 +228,8 @@ private lemma im_exp_neg_mul_sub_schwarzChristoffelVertex_nonneg (a e : Fin (n +
     rw [hθ, hφl, ← Complex.sub_im, ← mul_sub, sub_sub_sub_cancel_right, hl', hl'']
     exact ⟨_, norm_nonneg _, h⟩
   -- The two closing steps are horizontal and point in the positive real direction.
-  obtain ⟨hr, hl⟩ := schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt a e z₀ ha he hsum
+  obtain ⟨hr, hl⟩ := schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt_vertex_zero a e z₀ ha
+      (fun k ↦ (he k).1) hsum
   have hhoriz {x y : ℂ} (hxy : x < y) :
       ∃ r, 0 ≤ r ∧ (u * (y - w)).im - (u * (x - w)).im = r * Real.sin (-φ i) := by
     refine ⟨(y - x).re, sub_nonneg.mpr (Complex.lt_def.mp hxy).1.le, ?_⟩
