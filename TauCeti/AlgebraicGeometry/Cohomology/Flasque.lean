@@ -77,8 +77,8 @@ variable {X : Scheme.{u}}
 
 /-- A flasque sheaf of modules has vanishing cohomology over every open subset in every positive
 degree. -/
-instance subsingleton_cohomologyOn_succ_of_isFlasque (M : X.Modules)
-    [M.presheaf.IsFlasque] (n : ℕ) (U : X.Opens) :
+instance _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomologyOn_succ_of_isFlasque
+    (M : X.Modules) [M.presheaf.IsFlasque] (n : ℕ) (U : X.Opens) :
     Subsingleton (cohomologyOn M (n + 1) U) :=
   haveI : TopCat.Presheaf.IsFlasque ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M).obj :=
     ‹M.presheaf.IsFlasque›
@@ -86,8 +86,8 @@ instance subsingleton_cohomologyOn_succ_of_isFlasque (M : X.Modules)
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) n U
 
 /-- A flasque sheaf of modules has vanishing cohomology in every positive degree. -/
-instance subsingleton_cohomology_succ_of_isFlasque (M : X.Modules)
-    [M.presheaf.IsFlasque] (n : ℕ) :
+instance _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isFlasque
+    (M : X.Modules) [M.presheaf.IsFlasque] (n : ℕ) :
     Subsingleton (Cohomology M (n + 1)) :=
   haveI : TopCat.Presheaf.IsFlasque ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M).obj :=
     ‹M.presheaf.IsFlasque›
