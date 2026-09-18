@@ -30,11 +30,11 @@ line bundle is read off.
   show that, for a line bundle on an integral scheme, this morphism is injective on sections and
   hence a monomorphism.
 * `Scheme.Modules.range_rationalFunction` identifies the image of a line bundle in the rational
-  functions on any open subset of a rank-one trivializing chart with the regular multiples of the
-  rational function represented by the restricted basis section
+  functions on any nonempty open subset of a rank-one trivializing chart with the regular
+  multiples of the rational function represented by the restricted basis section
   `Scheme.Modules.trivializationGenerator` of that chart, and
   `Scheme.Modules.isUnit_rationalFunction_trivializationGenerator` shows that this rational
-  function is a unit.
+  function is a unit on every nonempty rank-one trivializing open subset.
 
 The construction follows Hartshorne, *Algebraic Geometry*, II.6. No formalization is vendored.
 -/

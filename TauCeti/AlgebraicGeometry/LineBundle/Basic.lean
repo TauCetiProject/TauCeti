@@ -178,32 +178,12 @@ def trivializationCoordinate (M : X.Modules) {U W : X.Opens}
     PresheafOfModules.toPresheaf _).mapIso (trivializationCoordinateIso M e) |>.app
       (op (Over.mk i))) (r : Γ(X, W))
 
-/-- The coordinate isomorphism is the inverse trivialization followed by the identification of
-the free rank-one module sheaf with the unit module sheaf. -/
-theorem trivializationCoordinateIso_hom (M : X.Modules) {U : X.Opens}
-    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U) :
-    (trivializationCoordinateIso M e).hom =
-      e.inv ≫ (TauCeti.SheafOfModules.freePUnitIsoUnit (X.ringCatSheaf.over U)).hom :=
- by
-  rfl
-
 /-- The coordinate on `W ≤ U` is the component of the coordinate isomorphism at `W`. -/
 theorem trivializationCoordinate_apply (M : X.Modules) {U W : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U) (i : W ⟶ U)
     (s : Γ(M, W)) :
     trivializationCoordinate M e i s =
-      (trivializationCoordinateIso M e).hom.val.app (op (Over.mk i)) s :=
- by
-  rfl
-
-/-- The inverse coordinate on `W ≤ U` is the component of the inverse coordinate isomorphism at
-`W`. -/
-theorem trivializationCoordinate_symm_apply (M : X.Modules) {U W : X.Opens}
-    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U) (i : W ⟶ U)
-    (r : Γ(X, W)) :
-    (trivializationCoordinate M e i).symm r =
-      (trivializationCoordinateIso M e).inv.val.app (op (Over.mk i)) r :=
- by
+      (trivializationCoordinateIso M e).hom.val.app (op (Over.mk i)) s := by
   rfl
 
 /-- The coordinate of a free rank-one trivialization commutes with restriction to a smaller open
@@ -259,21 +239,29 @@ theorem trivializationCoordinate_map_trivializationGenerator (M : X.Modules) {V 
     exact h.symm
   rw [h', map_one, LinearEquiv.apply_symm_apply]
 
+/-- A section is its coordinate times the restricted basis section of a rank-one
+trivialization. -/
+theorem eq_trivializationCoordinate_smul_map_trivializationGenerator (M : X.Modules)
+    {V W : X.Opens}
+    (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V) (i : W ⟶ V)
+    (s : Γ(M, W)) :
+    s = trivializationCoordinate M t i s •
+      M.presheaf.map i.op (trivializationGenerator M t) := by
+  apply (trivializationCoordinate M t i).injective
+  rw [LinearEquiv.map_smul, trivializationCoordinate_map_trivializationGenerator,
+    smul_eq_mul, mul_one]
+
 /-- On an open subset `W ≤ V`, every section is a unique regular-function multiple of the
 restriction of the basis section of a rank-one trivialization over `V`. -/
 theorem existsUnique_eq_smul_map_trivializationGenerator (M : X.Modules) {V W : X.Opens}
     (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V) (i : W ⟶ V)
     (s : Γ(M, W)) :
     ∃! r : Γ(X, W), s = r • M.presheaf.map i.op (trivializationGenerator M t) := by
-  have hcoord (r : Γ(X, W)) :
-      trivializationCoordinate M t i (r • M.presheaf.map i.op (trivializationGenerator M t)) =
-        r := by
-    rw [LinearEquiv.map_smul, trivializationCoordinate_map_trivializationGenerator,
-      smul_eq_mul, mul_one]
-  refine ⟨trivializationCoordinate M t i s, ?_, ?_⟩
-  · exact (trivializationCoordinate M t i).injective (hcoord _).symm
-  · rintro r rfl
-    exact (hcoord r).symm
+  refine ⟨trivializationCoordinate M t i s,
+    eq_trivializationCoordinate_smul_map_trivializationGenerator M t i s, ?_⟩
+  intro r hr
+  rw [hr, LinearEquiv.map_smul, trivializationCoordinate_map_trivializationGenerator,
+    smul_eq_mul, mul_one]
 
 /-- On an open subset `W` contained in the domains of two rank-one trivializations, the
 restrictions of their basis sections differ by a unique unit of the regular functions on `W`. -/
