@@ -272,10 +272,10 @@ sum over the cosets of `φ₁.range` in `B` and of `φ₂.range` in `C` is a sum
 `(φ₂.comp φ₁).range` in `C`. -/
 private theorem coindTrace_comp_counit [φ₁.range.FiniteIndex] [φ₂.range.FiniteIndex]
     (h₂ : Function.Injective φ₂) :
-    letI := MonoidHom.finiteIndex_range_comp φ₁ φ₂ h₂
+    letI := MonoidHom.finiteIndex_range_comp φ₁ φ₂
     coindTrace φ₁ φ₂ M ≫ (coindResAdjunction.{u, u, u} k φ₂.range).counit.app M =
       (coindResAdjunction.{u, u, u} k (φ₂.comp φ₁).range).counit.app M := by
-  let _ := MonoidHom.finiteIndex_range_comp φ₁ φ₂ h₂
+  let _ := MonoidHom.finiteIndex_range_comp φ₁ φ₂
   refine Rep.hom_ext (Representation.IntertwiningMap.ext (LinearMap.ext fun f => ?_))
   simp only [Representation.IntertwiningMap.toLinearMap_apply, Rep.hom_comp,
     Representation.IntertwiningMap.comp_apply]
@@ -319,7 +319,7 @@ theorem corestriction_trans {φ₁ : A →* B} {φ₂ : B →* C} {φ₃ : A →
     (h₁ : Function.Injective φ₁) (h₂ : Function.Injective φ₂) (h : φ₂.comp φ₁ = φ₃)
     [φ₁.range.FiniteIndex] [φ₂.range.FiniteIndex] (M : Rep.{u} k C)
     (n : ℕ) :
-    letI : φ₃.range.FiniteIndex := h ▸ MonoidHom.finiteIndex_range_comp φ₁ φ₂ h₂
+    letI : φ₃.range.FiniteIndex := h ▸ MonoidHom.finiteIndex_range_comp φ₁ φ₂
     (mapIso (B := res φ₁ (res φ₂ M)) (A := res φ₁.range.subtype (res φ₂ M))
         (MonoidHom.ofInjective h₁) (LinearEquiv.refl k M)
         (fun _ => LinearMap.ext fun _ => rfl) n).hom ≫
@@ -333,7 +333,7 @@ theorem corestriction_trans {φ₁ : A →* B} {φ₂ : B →* C} {φ₃ : A →
         (fun _ => by subst h; exact LinearMap.ext fun _ => rfl) n).hom ≫
       corestriction φ₃.range M n := by
   subst h
-  let _ := MonoidHom.finiteIndex_range_comp φ₁ φ₂ h₂
+  let _ := MonoidHom.finiteIndex_range_comp φ₁ φ₂
   classical
   -- Precompose with Shapiro's isomorphism for the composite, read on `A`.
   rw [← cancel_epi ((coindIso (res (φ₂.comp φ₁).range.subtype M) n).hom ≫

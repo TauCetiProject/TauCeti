@@ -36,7 +36,7 @@ centre gives the `Γ.withCenter` readings.
 * `Subgroup.instCountableQuotient`: a coset space of a countable group is countable.
 * `Subgroup.finiteIndex_of_finiteIndex_subgroupOf`: finite index composes along `V ≤ U ≤ G`.
 * `MonoidHom.finiteIndex_range_comp`: finite index of ranges is preserved by composition
-  with an injective homomorphism of finite-index range.
+  with a homomorphism of finite-index range.
 * `MonoidHom.mk_mul_out_bijective`: right cosets of a composite range are represented by
   products of representatives for the two successive ranges.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
@@ -103,13 +103,14 @@ theorem mk_mul_out_bijective (φ₁ : A →* B) (φ₂ : B →* C) (h₂ : Funct
 abbrev rangeCompHom (φ₁ : A →* B) (φ₂ : B →* C) : φ₁.range →* (φ₂.comp φ₁).range :=
   (φ₂.comp φ₁.range.subtype).codRestrict _ fun ⟨_, a, ha⟩ => ⟨a, by simp [← ha]⟩
 
-/-- If `φ₂` is injective and the ranges of `φ₁` and `φ₂` have finite index, then the range of
-their composite has finite index. -/
+/-- If the ranges of `φ₁` and `φ₂` have finite index, then the range of their composite has
+finite index. -/
 theorem finiteIndex_range_comp (φ₁ : A →* B) (φ₂ : B →* C) [φ₁.range.FiniteIndex]
-    [φ₂.range.FiniteIndex] (h₂ : Function.Injective φ₂) : (φ₂.comp φ₁).range.FiniteIndex := by
+    [φ₂.range.FiniteIndex] : (φ₂.comp φ₁).range.FiniteIndex := by
   refine ⟨?_⟩
-  rw [MonoidHom.range_comp, Subgroup.index_map_of_injective φ₁.range h₂]
-  exact Nat.mul_ne_zero Subgroup.FiniteIndex.index_ne_zero
+  rw [MonoidHom.range_comp, Subgroup.index_map]
+  exact Nat.mul_ne_zero
+    (Subgroup.finiteIndex_of_le (show φ₁.range ≤ φ₁.range ⊔ φ₂.ker from le_sup_left)).index_ne_zero
     Subgroup.FiniteIndex.index_ne_zero
 
 end MonoidHom
