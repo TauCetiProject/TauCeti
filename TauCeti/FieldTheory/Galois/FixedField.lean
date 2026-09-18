@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
+import Mathlib.FieldTheory.Galois.Infinite
 
 /-!
 # Fixed fields and fixing subgroups
@@ -177,21 +178,21 @@ theorem mem_fixedField_stabilizer (x : M) :
     x ∈ fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x) :=
   (mem_fixedField_iff _ x).mpr fun _ hσ => hσ
 
-/-- For a finite Galois extension, the fixed field of the stabilizer of `x` is `K⟮x⟯`. -/
+/-- For a Galois extension, the fixed field of the stabilizer of `x` is `K⟮x⟯`. -/
 @[simp]
-theorem fixedField_stabilizer_eq_adjoin_simple [FiniteDimensional K M] [IsGalois K M] (x : M) :
+theorem fixedField_stabilizer_eq_adjoin_simple [IsGalois K M] (x : M) :
     fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x) = K⟮x⟯ := by
-  rw [← fixingSubgroup_adjoin_simple, IsGalois.fixedField_fixingSubgroup]
+  rw [← fixingSubgroup_adjoin_simple, InfiniteGalois.fixedField_fixingSubgroup]
 
-/-- For a finite Galois extension, `x` generates the fixed field of its stabilizer as a
-`K`-algebra. -/
+/-- For a Galois extension, `x` generates the fixed field of its stabilizer as a `K`-algebra. -/
 @[simp]
-theorem adjoin_eq_top_of_fixedField_stabilizer [FiniteDimensional K M] [IsGalois K M] (x : M) :
+theorem adjoin_eq_top_of_fixedField_stabilizer [IsGalois K M] (x : M) :
     Algebra.adjoin K {(⟨x, mem_fixedField_stabilizer x⟩ :
       fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x))} = ⊤ := by
   set E := fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x) with hE
   set x' : E := ⟨x, mem_fixedField_stabilizer x⟩
-  have hx' : IsAlgebraic K x' := IsAlgebraic.of_finite K x'
+  have hx' : IsAlgebraic K x' :=
+    (isAlgebraic_algebraMap_iff (algebraMap E M).injective).mp (Algebra.IsAlgebraic.isAlgebraic x)
   have htop : K⟮x'⟯ = ⊤ := by
     apply IntermediateField.map_injective E.val
     rw [adjoin_map, Set.image_singleton, ← AlgHom.fieldRange_eq_map, fieldRange_val]

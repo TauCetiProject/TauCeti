@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.GroupAction.Quotient
 public import TauCeti.FieldTheory.Galois.FixedField
 public import TauCeti.FieldTheory.GaloisGroups.Orbits
 public import TauCeti.GroupTheory.GroupAction.Transitive
@@ -205,16 +204,19 @@ theorem rootSetEquivQuotientStabilizer_smul {q : F[X]} (hq : Irreducible q) {α 
     (hα : α ∈ q.rootSet M) (g : M ≃ₐ[F] M) (x : q.rootSet M) :
     rootSetEquivQuotientStabilizer hq hα (g • x) = g • rootSetEquivQuotientStabilizer hq hα x := by
   have := isPretransitive_rootSet_of_irreducible (M := M) hq
-  obtain ⟨τ, rfl⟩ := exists_smul_eq (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M) x
-  rw [smul_smul]
-  calc rootSetEquivQuotientStabilizer hq hα ((g * τ) • ⟨α, hα⟩)
-      = ((g * τ : M ≃ₐ[F] M) : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α) :=
-        rootSetEquivQuotientStabilizer_apply_mk hq hα (g * τ) (smul_mem_rootSet (g * τ) hα)
-    _ = g • ((τ : M ≃ₐ[F] M) : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α) := by
-        rw [← smul_eq_mul, MulAction.Quotient.smul_mk]
-    _ = g • rootSetEquivQuotientStabilizer hq hα (τ • ⟨α, hα⟩) := by
-        congr 1
-        exact (rootSetEquivQuotientStabilizer_apply_mk hq hα τ (smul_mem_rootSet τ hα)).symm
+  -- The inverse of the transitive-action identification is equivariant, and so is the transport
+  -- along the equality of stabilizers.
+  have h1 : ∀ y : q.rootSet M,
+      (quotientStabilizerEquiv (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M)).symm (g • y) =
+        g • (quotientStabilizerEquiv (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M)).symm y := fun y => by
+    rw [Equiv.symm_apply_eq, quotientStabilizerEquiv_smul, Equiv.apply_symm_apply]
+  have h2 : ∀ c, Subgroup.quotientEquivOfEq (stabilizer_rootSet_mk hα) (g • c) =
+      g • Subgroup.quotientEquivOfEq (stabilizer_rootSet_mk hα) c := fun c => by
+    induction c using QuotientGroup.induction_on with
+    | H a =>
+      rw [MulAction.Quotient.smul_mk, Subgroup.quotientEquivOfEq_mk, Subgroup.quotientEquivOfEq_mk,
+        MulAction.Quotient.smul_mk]
+  simp only [rootSetEquivQuotientStabilizer, Equiv.trans_apply, h1, h2]
 
 end Normal
 
