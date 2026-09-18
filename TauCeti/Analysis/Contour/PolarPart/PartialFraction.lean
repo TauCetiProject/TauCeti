@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Contour.PolarPart.SimplePole
 public import TauCeti.Analysis.Contour.Residue.SimplePole
 import Mathlib.Analysis.Complex.Liouville
-import TauCeti.Topology.Finset
+import Mathlib.Topology.DiscreteSubset
 
 /-!
 # Partial fractions for functions with finitely many simple poles
@@ -17,10 +17,6 @@ A function on `ℂ` that is holomorphic away from a finite set `S`, has at most 
 points of `S`, and tends to `0` at infinity is the sum of its principal parts:
 
 `f z = ∑ s ∈ S, residue f s / (z - s)` for `z ∉ S`.
-
-Indeed, by the simple-pole decomposition `exists_simplePoleDecomposition`, `f` minus this sum
-extends to an entire function; that function tends to `0` at infinity, so it vanishes by
-Liouville's theorem.
 
 The residues can be prescribed through the elementary limits `(z - s) * f z → c s`. A
 punctured limit of this kind already makes `f` meromorphic with at most a simple pole at `s`
@@ -38,7 +34,7 @@ characterization identifies it with the Schwarz--Christoffel expression
 
 ## Main results
 
-* `TauCeti.Contour.differentiableOn_sum_div_sub`, `TauCeti.Contour.tendsto_sum_div_sub_cobounded`
+* `Finset.differentiableOn_sum_div_sub`, `Finset.tendsto_sum_div_sub_cobounded`
   and `TauCeti.Contour.tendsto_sub_mul_sum_div_sub` -- the sum `z ↦ ∑ s ∈ S, c s / (z - s)` is
   holomorphic off `S`, tends to `0` at infinity and has the limit `c s` of `(z - s) * _` at `s`.
 * `TauCeti.Contour.eqOn_sum_residue_div_sub` -- a function with finitely many at most simple poles
@@ -58,11 +54,11 @@ public section
 
 noncomputable section
 
-namespace TauCeti.Contour
-
 open Bornology Filter Set Topology
 
 /-! ### The partial-fraction sum -/
+
+namespace Finset
 
 /-- The partial-fraction sum `z ↦ ∑ s ∈ S, c s / (z - s)` is holomorphic off `S`. -/
 theorem differentiableOn_sum_div_sub (S : Finset ℂ) (c : ℂ → ℂ) :
@@ -79,6 +75,10 @@ theorem tendsto_sum_div_sub_cobounded (S : Finset ℂ) (c : ℂ → ℂ) :
   have h := tendsto_finsetSum S fun s _ =>
     (tendsto_inv₀_cobounded.comp (tendsto_sub_const_cobounded s)).const_mul (c s)
   simpa [div_eq_mul_inv] using h
+
+end Finset
+
+namespace TauCeti.Contour
 
 /-- At a point `s ∈ S`, the partial-fraction sum `z ↦ ∑ t ∈ S, c t / (z - t)` has residue
 `c s` in the sense of the elementary limit: `(z - s) * ∑ t ∈ S, c t / (z - t) → c s`. -/
@@ -115,11 +115,11 @@ theorem eqOn_sum_residue_div_sub {f : ℂ → ℂ} {S : Finset ℂ}
   obtain ⟨g, hg, hfg⟩ := exists_simplePoleDecomposition isOpen_univ hf hmero horder
   -- The entire remainder `g` agrees with `f` minus the principal parts near infinity.
   have hgf : (fun z => f z - ∑ s ∈ S, residue f s / (z - s)) =ᶠ[cobounded ℂ] g := by
-    filter_upwards [S.compl_mem_cobounded] with z hz
+    filter_upwards [isBounded_def.mp S.finite_toSet.isBounded] with z hz
     rw [hfg z (by rwa [← compl_eq_univ_sdiff]), add_sub_cancel_right]
   have hg0 : Tendsto g (cocompact ℂ) (𝓝 0) := by
     rw [← Metric.cobounded_eq_cocompact]
-    simpa using (hlim.sub (tendsto_sum_div_sub_cobounded S (residue f))).congr' hgf
+    simpa using (hlim.sub (S.tendsto_sum_div_sub_cobounded (residue f))).congr' hgf
   intro z hz
   rw [hfg z hz, (differentiableOn_univ.mp hg).apply_eq_of_tendsto_cocompact z hg0, zero_add]
 
@@ -134,7 +134,8 @@ theorem eqOn_sum_div_sub_of_tendsto {f : ℂ → ℂ} {S : Finset ℂ} {c : ℂ 
   have hopen : IsOpen (↑S : Set ℂ)ᶜ := S.finite_toSet.isClosed.isOpen_compl
   have hmero (s : ℂ) (hs : s ∈ S) : MeromorphicAt f s := by
     refine meromorphicAt_of_tendsto_sub_mul ?_ (hpole s hs)
-    filter_upwards [S.compl_mem_nhdsNE s] with z hz
+    filter_upwards [mem_codiscrete_iff_forall_mem_nhdsNE.mp
+      (compl_finite_mem_codiscreteWithin S.finite_toSet) s] with z hz
     exact hf.differentiableAt (hopen.mem_nhds hz)
   intro z hz
   rw [eqOn_sum_residue_div_sub hf hmero
@@ -151,13 +152,14 @@ theorem eqOn_sum_div_sub_iff {f : ℂ → ℂ} {S : Finset ℂ} {c : ℂ → ℂ
       DifferentiableOn ℂ f (↑S)ᶜ ∧
         (∀ s ∈ S, Tendsto (fun z => (z - s) * f z) (𝓝[≠] s) (𝓝 (c s))) ∧
         Tendsto f (cobounded ℂ) (𝓝 0) := by
-  refine ⟨fun h => ⟨(differentiableOn_sum_div_sub S c).congr h, fun s hs => ?_, ?_⟩,
+  refine ⟨fun h => ⟨(S.differentiableOn_sum_div_sub c).congr h, fun s hs => ?_, ?_⟩,
     fun ⟨hf, hpole, hlim⟩ => eqOn_sum_div_sub_of_tendsto hf hpole hlim⟩
   · refine (tendsto_sub_mul_sum_div_sub c hs).congr' ?_
-    filter_upwards [S.compl_mem_nhdsNE s] with z hz
+    filter_upwards [mem_codiscrete_iff_forall_mem_nhdsNE.mp
+      (compl_finite_mem_codiscreteWithin S.finite_toSet) s] with z hz
     rw [h hz]
-  · refine (tendsto_sum_div_sub_cobounded S c).congr' ?_
-    filter_upwards [S.compl_mem_cobounded] with z hz
+  · refine (S.tendsto_sum_div_sub_cobounded c).congr' ?_
+    filter_upwards [isBounded_def.mp S.finite_toSet.isBounded] with z hz
     exact (h hz).symm
 
 end TauCeti.Contour

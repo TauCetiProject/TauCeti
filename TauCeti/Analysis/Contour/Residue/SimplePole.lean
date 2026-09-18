@@ -159,8 +159,7 @@ theorem meromorphicAt_sub_inv (z₀ : ℂ) : MeromorphicAt (fun z => (z - z₀)�
 
 /-- **A punctured limit of `(z − z₀) · f z` makes `f` meromorphic.** If `f` is holomorphic on a
 punctured neighbourhood of `z₀` and `(z − z₀) · f z` converges as `z → z₀`, then `f` is meromorphic
-at `z₀`: by the removable singularity theorem, `(z − z₀) · f z` extends analytically across `z₀`.
-With `residue_eq_of_tendsto_sub_mul`, the limit is then the residue. -/
+at `z₀`. By `residue_eq_of_tendsto_sub_mul`, the limit is then the residue. -/
 theorem meromorphicAt_of_tendsto_sub_mul {L : ℂ}
     (hd : ∀ᶠ z in 𝓝[≠] z₀, DifferentiableAt ℂ f z)
     (h : Tendsto (fun z => (z - z₀) * f z) (𝓝[≠] z₀) (𝓝 L)) :
