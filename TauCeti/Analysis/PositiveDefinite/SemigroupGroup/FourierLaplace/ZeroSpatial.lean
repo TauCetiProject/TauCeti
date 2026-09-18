@@ -75,6 +75,8 @@ theorem laplaceFourierTransform_map_prodPUnit_symm (μ : Measure ℝ≥0) (t : �
 
 /-- In zero spatial dimension, Laplace--Fourier representation of `(t, _) ↦ f t` by the
 transported measure is exactly ordinary Laplace representation of `f`. -/
+-- This is intentionally not a simp lemma: the more general zero-spatial equivalence below
+-- already proves it by simplification, so tagging both is rejected by the `simpNF` linter.
 theorem representsLaplaceFourier_map_prodPUnit_symm_iff (μ : Measure ℝ≥0) (f : ℝ → ℝ) :
     RepresentsLaplaceFourier
         (μ.map (MeasurableEquiv.prodPUnit : ℝ≥0 × PUnit.{1} ≃ᵐ ℝ≥0).symm)
