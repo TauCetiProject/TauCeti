@@ -13,14 +13,17 @@ public import Mathlib.NumberTheory.NumberField.DirichletDensity
 Let `K` be a number field. Mathlib's partial Dirichlet series `NumberField.Set.primeIdealZetaSum`
 sums `𝔑𝔭 ^ (-s)` over a set of nonzero prime ideals of `𝓞 K`, and this file cuts that sum along a
 partition of the primes. The sum is additive along a finite pairwise disjoint union, given
-summability on each piece. For a finite set `S` of primes it also compares the sum over the
-complement `Sᶜ` with the sum over all primes: deleting `S` never increases the sum, and for
-`s ≥ 0` it lowers it by at most the number of primes deleted.
+summability on each piece, and subadditive along an arbitrary union of two sets. For a finite
+set `S` of primes it also compares the sum over the complement `Sᶜ` with the sum over all primes:
+deleting `S` never increases the sum, and for `s ≥ 0` it lowers it by at most the number of
+primes deleted.
 
 ## Main results
 
 * `NumberField.Set.primeIdealZetaSum_biUnion_of_pairwiseDisjoint`: given summability on each
   piece, the sum over a finite pairwise disjoint union is the sum of the sums over the pieces.
+* `NumberField.Set.primeIdealZetaSum_union_le`: given summability on both sets, the sum over a
+  union is at most the sum of the two sums.
 * `NumberField.Set.primeIdealZetaSum_compl_le_univ_of_finite`: deleting a finite set of primes
   does not increase the sum.
 * `NumberField.Set.primeIdealZetaSum_univ_sub_compl_le_ncard_of_finite`: for `s ≥ 0`, deleting a
@@ -78,6 +81,29 @@ theorem primeIdealZetaSum_biUnion_of_pairwiseDisjoint {ι : Type*} (t : Finset �
   -- recovering `f` from `fun 𝔭 : g i ↦ f 𝔭.1` would be a higher-order unification.
   exact (hasSum_sum_disjoint (f := fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦
     (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)) t hg fun i hi ↦ (hsum i hi).hasSum).tsum_eq
+
+/-- **The sum is subadditive along a union.** Given summability over `S` and over `T`, the sum
+over `S ∪ T` is at most the sum over `S` plus the sum over `T`; the two agree when `S` and `T`
+are disjoint. -/
+theorem primeIdealZetaSum_union_le {S T : Set (HeightOneSpectrum (𝓞 K))} {s : ℝ}
+    (hS : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s))
+    (hT : Summable fun 𝔭 : T ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)) :
+    (S ∪ T).primeIdealZetaSum s ≤ S.primeIdealZetaSum s + T.primeIdealZetaSum s := by
+  have hsub : T \ S ⊆ T := Set.sdiff_subset
+  have hdiff : Summable fun 𝔭 : ↥(T \ S) ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s) := by
+    simpa only [Function.comp_def, Set.coe_inclusion] using
+      hT.comp_injective (Set.inclusion_injective hsub)
+  have hsplit := hS.tsum_union_disjoint (f := fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦
+    (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)) Set.disjoint_sdiff_right hdiff
+  have hle : ∑' 𝔭 : ↥(T \ S), (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s) ≤
+      ∑' 𝔭 : T, (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s) :=
+    hdiff.tsum_le_tsum_of_inj (Set.inclusion hsub) (Set.inclusion_injective hsub)
+      (fun _ _ ↦ by positivity) (fun _ ↦ le_rfl) hT
+  -- `S ∪ T` is the disjoint union of `S` and `T \ S`, and `T \ S` is contained in `T`.
+  rw [← Set.union_sdiff_self (s := S)]
+  simp only [primeIdealZetaSum_def]
+  rw [hsplit]
+  exact add_le_add_right hle _
 
 /-- **Deleting a finite set of primes does not increase the sum.** -/
 theorem primeIdealZetaSum_compl_le_univ_of_finite (hS : S.Finite) (s : ℝ) :
