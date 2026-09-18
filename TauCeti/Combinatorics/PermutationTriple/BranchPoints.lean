@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 public import TauCeti.Combinatorics.PermutationTriple.GeometryType
-public import TauCeti.GroupTheory.Perm.FinThree
-public import Mathlib.Tactic.FinCases
+public import Mathlib.Logic.Equiv.Fin.Rotate
+import TauCeti.GroupTheory.Perm.FinThree
+import Mathlib.Tactic.FinCases
 
 /-!
 # Permuting the branch points of a permutation triple
