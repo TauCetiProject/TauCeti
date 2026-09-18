@@ -217,6 +217,8 @@ private lemma coordinateHom_app_injective (M : X.Modules) {U : X.Opens}
   let c := (SheafOfModules.forget _ ⋙ PresheafOfModules.toPresheaf _).mapIso
     (e.symm ≪≫ TauCeti.SheafOfModules.freePUnitIsoUnit (X.ringCatSheaf.over U))
   intro a b h
+  -- Isolate the definitional reduction through the two forgetful functors and `mapIso`.
+  change c.hom.app A a = c.hom.app A b at h
   exact (ConcreteCategory.bijective_of_isIso (c.hom.app A)).injective h
 
 /-- On an integral scheme, the rational function of a local section of a line bundle determines
