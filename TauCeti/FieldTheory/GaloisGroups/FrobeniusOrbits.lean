@@ -107,14 +107,16 @@ theorem fullCycleType_eq_map_natDegree_normalizedFactors (hg : Squarefree g)
     (π : Equiv.Perm (g.rootSet E))
     (hπ : ∀ x, (π x : E) = (x : E) ^ Fintype.card F) :
     π.fullCycleType = (UniqueFactorizationMonoid.normalizedFactors g).map natDegree := by
-  classical
   have hg0 : g ≠ 0 := hg.ne_zero
   rw [Equiv.Perm.fullCycleType_eq_map_card_filter π (fun x => minpoly F (x : E))
     (sameCycle_iff_minpoly_eq E hπ)]
-  have himage : (Finset.univ.image fun x : g.rootSet E => minpoly F (x : E))
-      = (UniqueFactorizationMonoid.normalizedFactors g).toFinset := by
+  have himage :
+      @Finset.image (g.rootSet E) F[X] (fun a b => Classical.propDecidable (a = b))
+          (fun x => minpoly F (x : E)) Finset.univ
+        = (UniqueFactorizationMonoid.normalizedFactors g).toFinset := by
     ext φ
-    rw [Multiset.mem_toFinset, Polynomial.mem_normalizedFactors_iff hg0, Finset.mem_image]
+    rw [Multiset.mem_toFinset, Polynomial.mem_normalizedFactors_iff hg0,
+      @Finset.mem_image _ _ (fun a b => Classical.propDecidable (a = b))]
     refine ⟨?_, fun hφ => ?_⟩
     · rintro ⟨x, -, rfl⟩
       have hint : IsIntegral F (x : E) := (isAlgebraic_of_mem_rootSet x.2).isIntegral

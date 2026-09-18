@@ -370,10 +370,11 @@ theorem _root_.Equiv.Perm.count_one_fullCycleType (σ : Equiv.Perm α) :
   rw [fullCycleType_def]
   exact Equiv.Perm.count_one_parts_partition σ
 
+open scoped Classical in
 /-- **The full cycle type lists the sizes of the orbits.** If the fibres of `m : α → γ` are
 exactly the orbits of `σ`, then the full cycle type of `σ` is the multiset of the sizes of those
 fibres, one for each value of `m`. -/
-theorem _root_.Equiv.Perm.fullCycleType_eq_map_card_filter {γ : Type*} [DecidableEq γ]
+theorem _root_.Equiv.Perm.fullCycleType_eq_map_card_filter {γ : Type*}
     (σ : Equiv.Perm α) (m : α → γ) (hm : ∀ x y, σ.SameCycle x y ↔ m x = m y) :
     fullCycleType σ =
       (Finset.univ.image m).val.map fun c => (Finset.univ.filter fun x => m x = c).card := by
