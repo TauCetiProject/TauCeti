@@ -15,8 +15,7 @@ The roots `ε_i - ε_(i+1)` form the Bourbaki-numbered base of the diagonal root
 `ε_a - ε_b` with `a < b`. This fixes the choice of positive roots corresponding to upper
 triangular matrices, for use in the standard Borel and Weyl-group descriptions.
 
-The base is transported from `DynkinType.typeASimplyConnectedBase` using Mathlib's
-`RootPairing.Base.map`; no new linear-independence or spanning argument is needed.
+Under `diagonalRootDatumEquiv`, this base corresponds to `DynkinType.typeASimplyConnectedBase`.
 
 ## References
 

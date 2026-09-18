@@ -137,12 +137,16 @@ noncomputable def diagonalRootDatumEquiv (r : ℕ) :
 /-- The weight map writes a weight in the universe-lifted fundamental-weight coordinates. -/
 @[simp] theorem diagonalRootDatumEquiv_weightMap_apply (x : Fin r → ℤ)
     (i : ULift.{u} (Fin r)) :
-    (diagonalRootDatumEquiv.{u} r).weightMap x i = x i.down := (rfl)
+    (diagonalRootDatumEquiv.{u} r).weightMap x i = x i.down := by
+  simp only [diagonalRootDatumEquiv, LinearEquiv.coe_coe, characterEquiv_apply]
 
 /-- The contravariant coweight map removes the universe lift on simple-coroot coordinates. -/
 @[simp] theorem diagonalRootDatumEquiv_coweightMap_apply (y : ULift.{u} (Fin r) → ℤ)
     (i : Fin r) :
-    (diagonalRootDatumEquiv.{u} r).coweightMap y i = y (ULift.up i) := (rfl)
+    (diagonalRootDatumEquiv.{u} r).coweightMap y i = y (ULift.up i) := by
+  simp only [diagonalRootDatumEquiv, LinearEquiv.coe_coe]
+  simpa only [cocharacterEquiv_apply] using
+    congrFun ((cocharacterEquiv r).apply_symm_apply y) (ULift.up i)
 
 private lemma diagonalRootDatum_root_eq (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     (diagonalRootDatum.{u} r).root p =
