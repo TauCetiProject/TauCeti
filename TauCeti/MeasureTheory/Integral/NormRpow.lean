@@ -58,20 +58,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {mu : Measure E} [mu.IsAddHaarMeasure]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- In a zero-dimensional space, the kernel `x ↦ ‖x‖ ^ s` with `-dim E < s` vanishes
-identically, since then `0 < s`. -/
-private theorem norm_rpow_eq_zero_of_subsingleton [Subsingleton E] {s : ℝ}
-    (hs : -(Module.finrank ℝ E : ℝ) < s) (x : E) : ‖x‖ ^ s = 0 := by
-  rw [Module.finrank_zero_of_subsingleton, Nat.cast_zero, neg_zero] at hs
-  rw [Subsingleton.elim x 0, norm_zero, Real.zero_rpow hs.ne']
-
 /-- The kernel `x ↦ ‖x‖ ^ s` is integrable on every ball centred at the origin when
 `-dim E < s`. -/
 theorem integrableOn_norm_rpow_ball {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ) < s) {R : ℝ} :
     IntegrableOn (fun x : E => ‖x‖ ^ s) (ball 0 R) mu := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · simp only [norm_rpow_eq_zero_of_subsingleton hs]
+  · have hs0 : 0 < s := by simpa [Module.finrank_zero_of_subsingleton] using hs
+    simp only [norm_of_subsingleton, Real.zero_rpow hs0.ne']
     exact integrableOn_zero
   refine integrableOn_ball_of_norm_le_rpow (μ := mu) Module.finrank_pos
     (C := 1) (α := -s) (by linarith) ?_ ?_
@@ -88,7 +81,8 @@ theorem integral_norm_rpow_ball {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ) < 
       (Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) *
         (R ^ ((Module.finrank ℝ E : ℝ) + s) / ((Module.finrank ℝ E : ℝ) + s)) := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · simp [norm_rpow_eq_zero_of_subsingleton hs, Module.finrank_zero_of_subsingleton]
+  · have hs0 : 0 < s := by simpa [Module.finrank_zero_of_subsingleton] using hs
+    simp [norm_of_subsingleton, Real.zero_rpow hs0.ne', Module.finrank_zero_of_subsingleton]
   let d := Module.finrank ℝ E
   let f : ℝ → ℝ := fun r => if 0 < r ∧ r < R then r ^ s else 0
   have hconv : ∫ x in ball (0 : E) R, ‖x‖ ^ s ∂mu = ∫ x : E, f ‖x‖ ∂mu := by
