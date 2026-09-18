@@ -28,36 +28,9 @@ open CategoryTheory CategoryTheory.Limits
 
 namespace ComplexShape.Embedding
 
-/-- Mapping a restricted complex and restricting the mapped complex have the same objects. -/
-private theorem mapRestriction_obj_X
-    {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
-    {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
-    (F : C ⥤ D) [F.PreservesZeroMorphisms] (e : c.Embedding c') [e.IsRelIff]
-    (K : HomologicalComplex C c') (i : ι) :
-    ((F.mapHomologicalComplex c).obj ((e.restrictionFunctor C).obj K)).X i =
-      ((e.restrictionFunctor D).obj ((F.mapHomologicalComplex c').obj K)).X i := by
-  rfl
-
-/-- The objectwise identifications between mapping after restriction and restriction after
-mapping intertwine the differentials. The two functor composites are definitionally equal, but
-Mathlib does not currently provide a theorem expressing that equality. The implementation-level
-reduction is isolated in this private compatibility lemma. -/
-private theorem mapRestriction_hom_d
-    {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
-    {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
-    (F : C ⥤ D) [F.PreservesZeroMorphisms] (e : c.Embedding c') [e.IsRelIff]
-    (K : HomologicalComplex C c') (i j : ι) :
-    eqToHom (mapRestriction_obj_X F e K i) ≫
-        ((e.restrictionFunctor D).obj ((F.mapHomologicalComplex c').obj K)).d i j =
-      ((F.mapHomologicalComplex c).obj ((e.restrictionFunctor C).obj K)).d i j ≫
-        eqToHom (mapRestriction_obj_X F e K j) := by
-  have hi : mapRestriction_obj_X F e K i = rfl := Subsingleton.elim _ _
-  have hj : mapRestriction_obj_X F e K j = rfl := Subsingleton.elim _ _
-  rw [hi, hj]
-  change 𝟙 _ ≫ F.map (K.d (e.f i) (e.f j)) = F.map (K.d (e.f i) (e.f j)) ≫ 𝟙 _
-  simp
-
-/-- Mapping homological complexes commutes with restriction along a shape embedding. -/
+/-- Mapping homological complexes commutes with restriction along a shape embedding. The two
+composites have definitionally equal objects, so each component is an identity morphism. -/
+@[expose, simps!]
 noncomputable def mapRestrictionIso
     {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
     {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
@@ -65,31 +38,10 @@ noncomputable def mapRestrictionIso
     (K : HomologicalComplex C c') :
     (F.mapHomologicalComplex c).obj ((e.restrictionFunctor C).obj K) ≅
       (e.restrictionFunctor D).obj ((F.mapHomologicalComplex c').obj K) :=
-  HomologicalComplex.Hom.isoOfComponents
-    (fun i => eqToIso (mapRestriction_obj_X F e K i)) (by
-      intro i j _
-      exact mapRestriction_hom_d F e K i j)
-
-/-- The forward component of the comparison between mapping after restriction and restriction
-after mapping is the canonical transport along their object equality. -/
-@[simp]
-private theorem mapRestrictionIso_hom_f
-    {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
-    {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
-    (e : c.Embedding c') (F : C ⥤ D) [F.PreservesZeroMorphisms] [e.IsRelIff]
-    (K : HomologicalComplex C c') (i : ι) :
-    (e.mapRestrictionIso F K).hom.f i = eqToHom (mapRestriction_obj_X F e K i) := by
-  rfl
-
-/-- The inverse component of the comparison between mapping after restriction and restriction
-after mapping is the inverse canonical transport along their object equality. -/
-@[simp]
-private theorem mapRestrictionIso_inv_f
-    {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
-    {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
-    (e : c.Embedding c') (F : C ⥤ D) [F.PreservesZeroMorphisms] [e.IsRelIff]
-    (K : HomologicalComplex C c') (i : ι) :
-    (e.mapRestrictionIso F K).inv.f i = eqToHom (mapRestriction_obj_X F e K i).symm := by
-  rfl
+  HomologicalComplex.Hom.isoOfComponents (fun _ => Iso.refl _) (by
+    intro i j _
+    -- Both differentials unfold to `F.map (K.d (e.f i) (e.f j))`; Mathlib has no lemma for this.
+    change 𝟙 _ ≫ F.map (K.d (e.f i) (e.f j)) = F.map (K.d (e.f i) (e.f j)) ≫ 𝟙 _
+    simp)
 
 end ComplexShape.Embedding
