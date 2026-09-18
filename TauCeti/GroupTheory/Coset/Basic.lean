@@ -23,8 +23,8 @@ unfolding. This file records them:
 
 The additive versions are generated for `AddSubgroup.addGroupEquivQuotientProdAddSubgroup`.
 
-For subgroups `K ≤ L`, the cosets of `H` in `K` may be formed either in `K` itself or after
-passing to the copies of `H` and `K` inside `L`:
+For subgroups `K ≤ L`, the cosets by the subgroup induced by `H` in `K` may be formed either
+directly in `K` or after first pulling `H` and `K` back to subgroups of `L`:
 
 * `Subgroup.quotientSubgroupOfSubgroupOfEquiv`: the two coset spaces are equivalent, with value
   `Subgroup.quotientSubgroupOfSubgroupOfEquiv_apply_mk` on a coset.
@@ -79,11 +79,13 @@ theorem groupEquivQuotientProdSubgroup_apply_snd_coe (g : α) :
     ((groupEquivQuotientProdSubgroup (s := s) g).2 : α) = (g : α ⧸ s).out⁻¹ * g := by
   rw [groupEquivQuotientProdSubgroup_apply]
 
-/-- **Cosets of `H` in `K`, read inside an ambient `L ≥ K`.** For `K ≤ L`, the cosets of the copy of
-`H` in the copy of `K` inside `L` are the cosets of `H` in `K`, along
+/-- **Cosets induced by `H` in `K`, read inside an ambient `L ≥ K`.** For `K ≤ L`, pulling `H`
+back first to `L` and then to the subgroup induced by `K` gives the same cosets as pulling `H`
+back directly to `K`, along
 `Subgroup.subgroupOfEquivOfLe`. -/
-@[to_additive /-- **Cosets of `H` in `K`, read inside an ambient `L ≥ K`.** For `K ≤ L`, the
-cosets of the copy of `H` in the copy of `K` inside `L` are the cosets of `H` in `K`, along
+@[to_additive /-- **Cosets induced by `H` in `K`, read inside an ambient `L ≥ K`.** For `K ≤ L`,
+pulling `H` back first to `L` and then to the subgroup induced by `K` gives the same cosets as
+pulling `H` back directly to `K`, along
 `AddSubgroup.addSubgroupOfEquivOfLe`. -/]
 def quotientSubgroupOfSubgroupOfEquiv {H K L : Subgroup α} (hKL : K ≤ L) :
     K.subgroupOf L ⧸ (H.subgroupOf L).subgroupOf (K.subgroupOf L) ≃ K ⧸ H.subgroupOf K :=
