@@ -150,6 +150,16 @@ local instance tangentSpaceChartedSpace (p : M) :
     ChartedSpace (TangentSpace I p) (TangentSpace I p) :=
   chartedSpaceSelf (TangentSpace I p)
 
+/-- The domain of the exponential map at `p` is the slice at time `1` of the maximal flow domain
+of the geodesic spray over the fibre `T_p M`. -/
+private theorem expDomain_eq_preimage_maximalIntegralCurveFlowDomain
+    [T2Space (TangentBundle I M)] (p : M) :
+    expDomain I M p = (fun v : TangentSpace I p ↦ (TotalSpace.mk' E p v, (1 : ℝ))) ⁻¹'
+      maximalIntegralCurveFlowDomain (geodesicSpray I M) := by
+  ext v
+  simp only [mem_expDomain_iff, mem_preimage, mem_maximalIntegralCurveFlowDomain,
+    maximalIntegralCurveInterval_geodesicSpray]
+
 /-- The natural domain of the Riemannian exponential map is open. -/
 theorem isOpen_expDomain [T2Space (TangentBundle I M)] (p : M) :
     IsOpen (expDomain I M p) := by
@@ -166,12 +176,7 @@ theorem isOpen_expDomain [T2Space (TangentBundle I M)] (p : M) :
     hinitial.prodMk continuous_const
   have hflow : IsOpen (maximalIntegralCurveFlowDomain (geodesicSpray I M)) :=
     isOpen_maximalIntegralCurveFlowDomain hspray
-  rw [show expDomain I M p =
-      (fun v : TangentSpace I p ↦ (TotalSpace.mk' E p v, (1 : ℝ))) ⁻¹'
-        maximalIntegralCurveFlowDomain (geodesicSpray I M) by
-    ext v
-    simp only [mem_expDomain_iff, mem_preimage, mem_maximalIntegralCurveFlowDomain,
-      maximalIntegralCurveInterval_geodesicSpray]]
+  rw [expDomain_eq_preimage_maximalIntegralCurveFlowDomain]
   exact hflow.preimage hinput
 
 /-- The Riemannian exponential map is smooth on its natural domain. -/
@@ -197,12 +202,7 @@ theorem contMDiffOn_riemannianExp [T2Space (TangentBundle I M)] (p : M) :
       (fun v : TangentSpace I p ↦ maximalIntegralCurve (geodesicSpray I M)
         (TotalSpace.mk' E p v) 1) (expDomain I M p) := by
     apply hflow.comp hinput.contMDiffOn
-    intro v hv
-    change ((TotalSpace.mk' E p v : TangentBundle I M), (1 : ℝ)) ∈
-      maximalIntegralCurveFlowDomain (geodesicSpray I M)
-    rw [mem_maximalIntegralCurveFlowDomain]
-    rw [maximalIntegralCurveInterval_geodesicSpray]
-    exact mem_expDomain_iff.mp hv
+    rw [← expDomain_eq_preimage_maximalIntegralCurveFlowDomain]
   have hbase := (Bundle.contMDiff_proj
     (fun x : M ↦ TangentSpace I x) (n := ∞)).comp_contMDiffOn hstate
   exact hbase.congr fun v _ ↦ by
