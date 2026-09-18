@@ -78,6 +78,14 @@ private theorem gradedFullyBlockedFGComplex_X (a m : ℤ) :
       FGModuleCat.of (ZMod 2) (G.BigradedChainPiece (ZMod 2) (m, a)) := by
   simp only [gradedFullyBlockedFGComplex]
 
+/-- The differentials of the finite-dimensional complex are the homogeneous grid
+differentials. -/
+@[simp]
+private theorem gradedFullyBlockedFGComplex_d (a m : ℤ) :
+    (G.gradedFullyBlockedFGComplex a).d (m + 1) m =
+      FGModuleCat.ofHom (G.gradedFullyBlockedDifferential a m) := by
+  simp only [gradedFullyBlockedFGComplex, ChainComplex.of_d]
+
 /-- Under `ChainComplex.cochainComplexEquivalence`, cohomological degree `i` is homological
 degree `-i`. -/
 private theorem cochainComplexEquivalence_functor_obj_X {C : Type*} [Category* C]
@@ -116,7 +124,33 @@ private noncomputable def mapCochainComplexEquivalenceIso
         ((ChainComplex.cochainComplexEquivalence C).functor.obj K) ≅
       (ChainComplex.cochainComplexEquivalence D).functor.obj
         ((F.mapHomologicalComplex (ComplexShape.down ℤ)).obj K) :=
-  Iso.refl _
+  HomologicalComplex.Hom.isoOfComponents (fun _ => Iso.refl _) (by
+    intro i j _
+    dsimp only [ChainComplex.cochainComplexEquivalence,
+      ComplexShape.Embedding.restrictionFunctor, HomologicalComplex.restriction,
+      Functor.mapHomologicalComplex, Iso.refl_hom]
+    simp)
+
+/-- The objects of the forgotten finite-dimensional complex are the underlying grid-chain
+pieces. -/
+private theorem mappedGradedFullyBlockedFGComplex_X (a m : ℤ) :
+    (((forget₂ (FGModuleCat (ZMod 2)) (ModuleCat (ZMod 2))).mapHomologicalComplex _).obj
+        (G.gradedFullyBlockedFGComplex a)).X m =
+      ModuleCat.of (ZMod 2) (G.BigradedChainPiece (ZMod 2) (m, a)) := by
+  rw [Functor.mapHomologicalComplex_obj_X, G.gradedFullyBlockedFGComplex_X]
+  rfl
+
+/-- The differentials of the forgotten finite-dimensional complex are the public homogeneous
+grid differentials. -/
+private theorem mappedGradedFullyBlockedFGComplex_d (a m : ℤ) :
+    (((forget₂ (FGModuleCat (ZMod 2)) (ModuleCat (ZMod 2))).mapHomologicalComplex _).obj
+        (G.gradedFullyBlockedFGComplex a)).d (m + 1) m =
+      eqToHom (G.mappedGradedFullyBlockedFGComplex_X a (m + 1)) ≫
+        ModuleCat.ofHom (G.gradedFullyBlockedDifferential a m) ≫
+          eqToHom (G.mappedGradedFullyBlockedFGComplex_X a m).symm := by
+  rw [Functor.mapHomologicalComplex_obj_d, G.gradedFullyBlockedFGComplex_d]
+  ext
+  rfl
 
 /-- In each Maslov degree, forgetting the finite-dimensionality witness gives the corresponding
 object of the public graded grid complex. -/
@@ -124,8 +158,8 @@ private noncomputable def gradedFullyBlockedComplexXIso (a m : ℤ) :
     (((forget₂ (FGModuleCat (ZMod 2)) (ModuleCat (ZMod 2))).mapHomologicalComplex _).obj
         (G.gradedFullyBlockedFGComplex a)).X m ≅
       (G.gradedFullyBlockedComplex a).X m := by
-  change ModuleCat.of (ZMod 2) (G.BigradedChainPiece (ZMod 2) (m, a)) ≅ _
-  exact eqToIso (G.gradedFullyBlockedComplex_X a m).symm
+  exact eqToIso (G.mappedGradedFullyBlockedFGComplex_X a m) ≪≫
+    (eqToIso (G.gradedFullyBlockedComplex_X a m)).symm
 
 /-- The component identifications intertwine the finite-dimensional and public graded grid
 differentials. -/
@@ -135,11 +169,8 @@ private theorem gradedFullyBlockedComplexXIso_hom_d (a m : ℤ) :
       (((forget₂ (FGModuleCat (ZMod 2)) (ModuleCat (ZMod 2))).mapHomologicalComplex _).obj
           (G.gradedFullyBlockedFGComplex a)).d (m + 1) m ≫
         (G.gradedFullyBlockedComplexXIso a m).hom := by
-  rw [G.gradedFullyBlockedComplex_d]
-  ext
-  simp [gradedFullyBlockedComplexXIso, gradedFullyBlockedFGComplex,
-    Functor.mapHomologicalComplex]
-  rfl
+  rw [G.gradedFullyBlockedComplex_d, G.mappedGradedFullyBlockedFGComplex_d]
+  simp [gradedFullyBlockedComplexXIso, Category.assoc]
 
 /-- Forgetting the finite-dimensionality witnesses recovers the public graded grid complex. -/
 private noncomputable def gradedFullyBlockedComplexIso (a : ℤ) :
