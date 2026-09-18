@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Injective
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+public import Mathlib.RingTheory.Finiteness.Cardinality
 
 /-!
 # Self-injective algebras
@@ -26,9 +27,11 @@ Two general facts about Baer modules are proved along the way and stated in Math
 namespace, which has neither. A retract of a Baer module is Baer (`Module.Baer.of_leftInverse`),
 and consequently the left ideal cut out by an idempotent is Baer over a self-injective ring
 (`Module.Baer.of_isIdempotentElem`): over a self-injective ring the principal projective modules
-are injective. Everything is stated for `Module.Baer` rather than `Module.Injective` because the
-two convert freely in one direction only, `Module.Baer.of_injective` costing a smallness hypothesis
-on the ring.
+are injective. More generally, every finitely generated projective module over a self-injective
+ring is injective (`Module.Injective.of_finite_projective`): choose a finite free presentation and
+split it by projectivity. The two Baer facts are stated for `Module.Baer` rather than
+`Module.Injective` because the two convert freely in one direction only,
+`Module.Baer.of_injective` costing a smallness hypothesis on the ring.
 
 ## Main results
 
@@ -37,6 +40,8 @@ on the ring.
 * `Module.Baer.of_leftInverse`: a retract of a Baer module is Baer.
 * `Module.Baer.of_isIdempotentElem`: over a self-injective ring, a left ideal consisting of the
   elements fixed by right multiplication by an idempotent is Baer.
+* `Module.Injective.of_finite_projective`: every finitely generated projective module over a
+  self-injective ring is injective.
 
 ## References
 
@@ -86,6 +91,25 @@ theorem _root_.Module.Baer.of_isIdempotentElem (hA : Module.Baer A A) {e : A}
     fun m => Subtype.ext ((hp m).1 m.2)
 
 end Idempotent
+
+/-! ### Finite projective modules over a self-injective ring -/
+
+section FiniteProjective
+
+variable {R : Type u} [Ring R] {P : Type v} [AddCommGroup P] [Module R P]
+
+/-- A finitely generated projective module over a self-injective ring is injective. -/
+theorem _root_.Module.Injective.of_finite_projective (hR : Module.Injective R R)
+    [Module.Finite R P] [Module.Projective R P] : Module.Injective R P := by
+  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R P
+  let _ : Module.Injective R R := hR
+  let _ : Module.Injective R (Fin n → R) := Module.Injective.pi R fun _ : Fin n ↦ R
+  obtain ⟨s, hs⟩ := Module.projective_lifting_property f LinearMap.id hf
+  exact Module.Baer.injective <|
+    (Module.Baer.of_injective (inferInstance : Module.Injective R (Fin n → R))).of_leftInverse
+      s f fun x ↦ LinearMap.congr_fun hs x
+
+end FiniteProjective
 
 /-! ### Self-injectivity from an associative perfect form -/
 
