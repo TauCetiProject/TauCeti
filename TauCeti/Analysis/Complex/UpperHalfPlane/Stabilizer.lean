@@ -263,16 +263,14 @@ theorem mem_orbit_stabilizer_iff_discCoordinate_pow_eq_pow (Γ : Subgroup PSL(2,
   constructor
   · rintro ⟨q, rfl⟩
     refine ⟨stabilizerRotation Γ z q⁻¹, ?_⟩
-    rw [discCoordinate_smul_eq_rotation_smul, smul_smul, ← map_mul, inv_mul_cancel, map_one,
-      one_smul]
+    simp only [discCoordinate_smul_eq_rotation_smul, map_inv, inv_smul_smul]
   · rintro ⟨ζ, hζ⟩
     let q := (stabilizerRotationEquiv Γ z).symm ζ
     have hq : stabilizerRotation Γ z q = ζ := by
       rw [← coe_stabilizerRotationEquiv]
       exact (stabilizerRotationEquiv Γ z).apply_symm_apply ζ
     refine ⟨q⁻¹, discCoordinate_injective z ?_⟩
-    rw [discCoordinate_smul_eq_rotation_smul, ← hζ, ← hq, smul_smul, ← map_mul, inv_mul_cancel,
-      map_one, one_smul]
+    simpa only [discCoordinate_smul_eq_rotation_smul, map_inv, hq, inv_smul_eq_iff] using hζ.symm
 
 end Subgroup
 

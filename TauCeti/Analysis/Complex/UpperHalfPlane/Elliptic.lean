@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.RootsOfUnityQuotient
 public import TauCeti.Analysis.Complex.UpperHalfPlane.ProperAction
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
+public import TauCeti.Topology.MetricSpace.ProperlyDiscontinuous
 
 /-!
 # The elliptic disc of a point of the upper half-plane
@@ -17,8 +18,8 @@ in `Γ` acts by hyperbolic isometries fixing `z`, so it preserves every hyperbol
 `Subgroup.stabilizerBall Γ z ε` about `z`. If the action of `Γ` is properly discontinuous — in
 particular if `Γ` is discrete — then for small `ε` no other element of `Γ` moves that disc to meet
 itself (`TauCeti.exists_ball_disjoint_smul_of_notMem_stabilizer`). This separation result is the
-prerequisite for a later identification of a neighbourhood in the full orbit space with the
-quotient of the disc by the finite group `MulAction.stabilizer Γ z`.
+key input identifying a neighbourhood in the full orbit space with the quotient of the disc by
+the finite group `MulAction.stabilizer Γ z`.
 
 That orbit space is computed here. In the disc coordinate centred at `z` the stabilizer acts by
 the group of `m`-th roots of unity, `m` its order
@@ -39,6 +40,8 @@ multiplicity `m`; those conclusions are not established in this file.
 * `Subgroup.stabilizerBallQuotientHomeomorph`: the orbit space of the invariant disc under the
   stabilizer is the Euclidean disc of radius `tanh (ε / 2) ^ m`, with coordinate the `m`-th power
   of the disc coordinate.
+* `Subgroup.stabilizerBallQuotientToQuotient`: the induced map from the local orbit space to
+  `Γ \ ℍ`; for all sufficiently small positive radii it is an open embedding.
 
 ## References
 
@@ -54,7 +57,7 @@ public section
 
 noncomputable section
 
-open Metric MulAction UpperHalfPlane
+open Filter Matrix.ProjectiveSpecialLinearGroup Metric MulAction Set Topology UpperHalfPlane
 
 open scoped MatrixGroups Pointwise
 
@@ -175,5 +178,63 @@ theorem coe_stabilizerBallQuotientHomeomorph_mk [Finite (stabilizer Γ z)] (hε 
   rw [stabilizerBallQuotientHomeomorph, Homeomorph.trans_apply,
     Homeomorph.Quotient.congr_mk,
     coe_rootsOfUnityBallQuotientHomeomorph_mk, coe_stabilizerBallHomeomorph]
+
+/-- The map from the orbit space of the disc of radius `ε` about `z` under the stabilizer of `z`
+to the orbit space of `Γ`, sending the orbit of `τ` to its `Γ`-orbit. -/
+def stabilizerBallQuotientToQuotient :
+    orbitRel.Quotient (stabilizer Γ z) (stabilizerBall Γ z ε) → orbitRel.Quotient Γ ℍ :=
+  Quotient.map' (↑) fun _ _ h ↦ by
+    rw [orbitRel_apply, SubMulAction.mem_orbit_subMul_iff] at h
+    exact orbitRel_apply.mpr (orbit_subgroup_subset _ _ h)
+
+@[simp]
+theorem stabilizerBallQuotientToQuotient_mk (τ : stabilizerBall Γ z ε) :
+    stabilizerBallQuotientToQuotient Γ z ε (Quotient.mk _ τ) = Quotient.mk _ (τ : ℍ) :=
+  (rfl)
+
+/-- The map from the local orbit space of a disc to the orbit space of `Γ` is continuous. -/
+theorem continuous_stabilizerBallQuotientToQuotient :
+    Continuous (stabilizerBallQuotientToQuotient Γ z ε) :=
+  continuous_subtype_val.quotient_map' _
+
+/-- The map from the local orbit space of a disc to the orbit space of `Γ` is open. -/
+theorem isOpenMap_stabilizerBallQuotientToQuotient :
+    IsOpenMap (stabilizerBallQuotientToQuotient Γ z ε) := by
+  intro V hV
+  have himage : stabilizerBallQuotientToQuotient Γ z ε '' V =
+      Quotient.mk _ '' ((↑) '' (Quotient.mk _ ⁻¹' V : Set (stabilizerBall Γ z ε))) := by
+    conv_lhs => rw [← image_preimage_eq V Quotient.mk_surjective]
+    simp only [image_image, stabilizerBallQuotientToQuotient_mk]
+  rw [himage]
+  have hopen : IsOpen (stabilizerBall Γ z ε : Set ℍ) := by
+    rw [coe_stabilizerBall]
+    exact isOpen_ball
+  exact isOpenMap_quotient_mk'_mul _
+    (hopen.isOpenMap_subtype_val _ (hV.preimage continuous_quotient_mk'))
+
+variable [ProperlyDiscontinuousSMul Γ ℍ]
+
+/-- **The local orbit space of a small disc is open in `Γ \ ℍ`.** If `Γ` acts properly
+discontinuously, then for every small enough `ε > 0` the map from the orbit space of the
+hyperbolic disc of radius `ε` about `z` under the stabilizer of `z` to the orbit space of `Γ` is
+an open embedding. -/
+theorem eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient :
+    ∀ᶠ ε in 𝓝[>] (0 : ℝ), IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε) := by
+  filter_upwards [TauCeti.eventually_smul_eq_self_of_image_smul_ball_inter_nonempty Γ z] with ε hε
+  refine .of_continuous_injective_isOpenMap
+    (continuous_stabilizerBallQuotientToQuotient Γ z ε) ?_
+    (isOpenMap_stabilizerBallQuotientToQuotient Γ z ε)
+  rintro ⟨τ⟩ ⟨σ⟩ h
+  obtain ⟨g, hg⟩ := orbitRel_apply.mp (Quotient.exact h)
+  have hσ : (σ : ℍ) ∈ ball z ε := by
+    rw [← coe_stabilizerBall Γ z ε]
+    exact σ.2
+  have hτ : (τ : ℍ) ∈ ball z ε := by
+    rw [← coe_stabilizerBall Γ z ε]
+    exact τ.2
+  have hmem : g ∈ stabilizer Γ z :=
+    MulAction.mem_stabilizer_iff.mpr (hε g ⟨_, ⟨σ, hσ, rfl⟩, by rw [hg]; exact hτ⟩)
+  exact Quotient.sound (orbitRel_apply.mpr
+    (SubMulAction.mem_orbit_subMul_iff.mpr ⟨⟨g, hmem⟩, hg⟩))
 
 end Subgroup
