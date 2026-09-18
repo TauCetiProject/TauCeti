@@ -119,6 +119,7 @@ lemma VariableChange.r_eq_zero_of_isShortNF [Invertible (2 : R)] [Invertible (3 
   exact (isUnit_of_invertible (3 : R)).mul_right_eq_zero.mp (by linear_combination h)
 
 /-- Between short normal forms, a change of variables scales `a₄` by `u⁻⁴`. -/
+@[simp]
 lemma variableChange_a₄_of_isShortNF [Invertible (2 : R)] [Invertible (3 : R)] :
     (C • W).a₄ = C.u⁻¹ ^ 4 * W.a₄ := by
   rw [variableChange_a₄, C.r_eq_zero_of_isShortNF W, C.s_eq_zero_of_isShortNF W,
@@ -126,6 +127,7 @@ lemma variableChange_a₄_of_isShortNF [Invertible (2 : R)] [Invertible (3 : R)]
   ring
 
 /-- Between short normal forms, a change of variables scales `a₆` by `u⁻⁶`. -/
+@[simp]
 lemma variableChange_a₆_of_isShortNF [Invertible (2 : R)] [Invertible (3 : R)] :
     (C • W).a₆ = C.u⁻¹ ^ 6 * W.a₆ := by
   rw [variableChange_a₆, C.r_eq_zero_of_isShortNF W, C.t_eq_zero_of_isShortNF W,
