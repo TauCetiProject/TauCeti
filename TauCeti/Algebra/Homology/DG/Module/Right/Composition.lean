@@ -303,6 +303,41 @@ private theorem dgRightModuleCochainCompTensor_d_apply (p q j : ℤ) (hpq : p + 
   subst j
   exact (dgRightModuleCochains.differential_comp g' f').symm
 
+private theorem ι_dgRightModuleHomComplexTensor_d (p q j : ℤ) (hpq : p + q = j) :
+    HomologicalComplex.ιMapBifunctor (dgRightModuleHomComplex hN hP)
+          (dgRightModuleHomComplex hM hN) (curriedTensor (ModuleCat.{u} R))
+          (ComplexShape.up ℤ) p q j hpq ≫
+        (dgRightModuleHomComplex hN hP ⊗ dgRightModuleHomComplex hM hN).d j (j + 1) =
+      ((curriedTensor (ModuleCat.{u} R)).map
+          ((dgRightModuleHomComplex hN hP).d p (p + 1))).app
+          ((dgRightModuleHomComplex hM hN).X q) ≫
+        HomologicalComplex.ιMapBifunctor (dgRightModuleHomComplex hN hP)
+          (dgRightModuleHomComplex hM hN) (curriedTensor (ModuleCat.{u} R))
+          (ComplexShape.up ℤ) (p + 1) q (j + 1) (by dsimp; omega) +
+        p.negOnePow •
+          ((curriedTensor (ModuleCat.{u} R)).obj
+              ((dgRightModuleHomComplex hN hP).X p)).map
+                ((dgRightModuleHomComplex hM hN).d q (q + 1)) ≫
+            HomologicalComplex.ιMapBifunctor (dgRightModuleHomComplex hN hP)
+              (dgRightModuleHomComplex hM hN) (curriedTensor (ModuleCat.{u} R))
+              (ComplexShape.up ℤ) p (q + 1) (j + 1) (by dsimp; omega) := by
+  have hd : (dgRightModuleHomComplex hN hP ⊗ dgRightModuleHomComplex hM hN).d j (j + 1) =
+      HomologicalComplex.mapBifunctor.D₁ (dgRightModuleHomComplex hN hP)
+          (dgRightModuleHomComplex hM hN) (curriedTensor (ModuleCat.{u} R))
+          (ComplexShape.up ℤ) j (j + 1) +
+        HomologicalComplex.mapBifunctor.D₂ (dgRightModuleHomComplex hN hP)
+          (dgRightModuleHomComplex hM hN) (curriedTensor (ModuleCat.{u} R))
+          (ComplexShape.up ℤ) j (j + 1) :=
+    HomologicalComplex.mapBifunctor.d_eq _ _ _ _ j (j + 1)
+  rw [hd, Preadditive.comp_add]
+  rw [HomologicalComplex.mapBifunctor.ι_D₁]
+  rw [HomologicalComplex.mapBifunctor.d₁_eq _ _ _ _
+    (ComplexShape.up_mk p (p + 1) rfl) q (j + 1) (by dsimp; omega)]
+  rw [HomologicalComplex.mapBifunctor.ι_D₂]
+  rw [HomologicalComplex.mapBifunctor.d₂_eq _ _ _ _ p
+    (ComplexShape.up_mk q (q + 1) rfl) (j + 1) (by dsimp; omega)]
+  simp only [ComplexShape.ε₁_def, one_smul, ComplexShape.ε₂_def, ComplexShape.ε_up_ℤ]
+
 private theorem dgRightModuleCochainCompTensor_d (p q j : ℤ) (hpq : p + q = j) :
     HomologicalComplex.ιMapBifunctor (dgRightModuleHomComplex hN hP)
           (dgRightModuleHomComplex hM hN) (curriedTensor (ModuleCat.{u} R))
@@ -312,29 +347,14 @@ private theorem dgRightModuleCochainCompTensor_d (p q j : ℤ) (hpq : p + q = j)
           (dgRightModuleCochainCompTensor (hM := hM) (hN := hN) (hP := hP) · · (j + 1) ·) =
       dgRightModuleCochainCompTensor (hM := hM) (hN := hN) (hP := hP) p q j hpq ≫
         (dgRightModuleHomComplex hM hP).d j (j + 1) := by
-  have hd : (dgRightModuleHomComplex hN hP ⊗ dgRightModuleHomComplex hM hN).d j (j + 1) =
-      HomologicalComplex.mapBifunctor.D₁ (dgRightModuleHomComplex hN hP)
-          (dgRightModuleHomComplex hM hN) (curriedTensor (ModuleCat.{u} R))
-          (ComplexShape.up ℤ) j (j + 1) +
-        HomologicalComplex.mapBifunctor.D₂ (dgRightModuleHomComplex hN hP)
-          (dgRightModuleHomComplex hM hN) (curriedTensor (ModuleCat.{u} R))
-          (ComplexShape.up ℤ) j (j + 1) :=
-    HomologicalComplex.mapBifunctor.d_eq _ _ _ _ j (j + 1)
-  rw [hd, Preadditive.add_comp, Preadditive.comp_add]
-  -- Reduce the two tensor-differential summands independently before evaluating them.
-  rw [HomologicalComplex.mapBifunctor.ι_D₁_assoc]
-  rw [HomologicalComplex.mapBifunctor.d₁_eq _ _ _ _
-    (ComplexShape.up_mk p (p + 1) rfl) q (j + 1) (by dsimp; omega)]
-  rw [Linear.units_smul_comp, Category.assoc, HomologicalComplex.ι_mapBifunctorDesc]
-  rw [HomologicalComplex.mapBifunctor.ι_D₂_assoc]
-  rw [HomologicalComplex.mapBifunctor.d₂_eq _ _ _ _ p
-    (ComplexShape.up_mk q (q + 1) rfl) (j + 1) (by dsimp; omega)]
-  rw [Linear.units_smul_comp, Category.assoc, HomologicalComplex.ι_mapBifunctorDesc]
+  rw [← Category.assoc, ι_dgRightModuleHomComplexTensor_d p q j hpq]
+  rw [Preadditive.add_comp, Linear.units_smul_comp]
+  rw [Category.assoc, HomologicalComplex.ι_mapBifunctorDesc]
+  rw [Category.assoc, HomologicalComplex.ι_mapBifunctorDesc]
   apply ModuleCat.MonoidalCategory.tensor_ext
   intro g f
   simp only [curriedTensor_obj_obj, ModuleCat.hom_comp, LinearMap.coe_comp,
-    Function.comp_apply, ComplexShape.ε₁_def, curriedTensor_map_app, one_smul,
-    ComplexShape.ε₂_def, ComplexShape.ε_up_ℤ, curriedTensor_obj_map, ModuleCat.hom_add,
+    Function.comp_apply, curriedTensor_map_app, curriedTensor_obj_map, ModuleCat.hom_add,
     ModuleCat.hom_smul, LinearMap.add_apply, ModuleCat.MonoidalCategory.whiskerRight_apply,
     LinearMap.smul_apply, ModuleCat.MonoidalCategory.whiskerLeft_apply]
   exact dgRightModuleCochainCompTensor_d_apply p q j hpq g f
