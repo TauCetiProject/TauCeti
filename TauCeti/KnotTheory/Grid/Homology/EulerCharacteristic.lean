@@ -63,9 +63,8 @@ private noncomputable def gradedFullyBlockedFGComplex (a : ℤ) :
     (fun m => FGModuleCat.of (ZMod 2) (G.BigradedChainPiece (ZMod 2) (m, a)))
     (fun m => FGModuleCat.ofHom (G.gradedFullyBlockedDifferential a m))
     (fun m => by
-      apply FGModuleCat.hom_ext
-      change (G.gradedFullyBlockedDifferential a m).comp
-          (G.gradedFullyBlockedDifferential a (m + 1)) = 0
+      ext : 1
+      rw [FGModuleCat.hom_hom_comp]
       exact G.gradedFullyBlockedDifferential_comp_eq_zero a m)
 
 /-- The object in Maslov degree `m` of the finite-dimensional fully blocked grid complex. -/
@@ -73,7 +72,7 @@ private noncomputable def gradedFullyBlockedFGComplex (a : ℤ) :
 private theorem gradedFullyBlockedFGComplex_X (a m : ℤ) :
     (G.gradedFullyBlockedFGComplex a).X m =
       FGModuleCat.of (ZMod 2) (G.BigradedChainPiece (ZMod 2) (m, a)) := by
-  rfl
+  simp only [gradedFullyBlockedFGComplex]
 
 /-- The finite-dimensional fully blocked grid complex, reindexed so that cohomological degree is
 the negative of Maslov degree. -/
@@ -87,7 +86,10 @@ private noncomputable def gradedFullyBlockedFGCochainComplex (a : ℤ) :
 private theorem gradedFullyBlockedFGCochainComplex_X (a i : ℤ) :
     (G.gradedFullyBlockedFGCochainComplex a).X i =
       FGModuleCat.of (ZMod 2) (G.BigradedChainPiece (ZMod 2) (-i, a)) := by
-  rfl
+  rw [gradedFullyBlockedFGCochainComplex, ChainComplex.cochainComplexEquivalence,
+    ComplexShape.Embedding.restrictionFunctor_obj, HomologicalComplex.restriction_X,
+    ComplexShape.embeddingUpIntDownInt_f]
+  exact G.gradedFullyBlockedFGComplex_X a (-i)
 
 /-- The reindexed fully blocked cochain complex after forgetting the finite-dimensionality
 witness on each homogeneous piece. -/
@@ -172,6 +174,7 @@ noncomputable def alexanderHomologyEulerChar (a : ℤ) : ℤ :=
 
 /-- **Euler--Poincaré in one Alexander degree.** The alternating dimension of fully blocked grid
 homology equals the alternating count of grid states. -/
+@[simp]
 theorem alexanderHomologyEulerChar_eq_alexanderEulerChar (a : ℤ) :
     G.alexanderHomologyEulerChar a = G.alexanderEulerChar (ZMod 2) a := by
   obtain ⟨lo, hi, hlo, hhi⟩ :=
@@ -192,7 +195,6 @@ theorem alexanderHomologyEulerChar_eq_alexanderEulerChar (a : ℤ) :
 
 /-- Fully blocked grid homology has zero Euler characteristic in an Alexander degree containing
 no grid state. -/
-@[simp]
 theorem alexanderHomologyEulerChar_eq_zero_of_notMem {a : ℤ}
     (ha : a ∉ G.alexanderSupport) : G.alexanderHomologyEulerChar a = 0 := by
   rw [G.alexanderHomologyEulerChar_eq_alexanderEulerChar,
@@ -206,6 +208,7 @@ noncomputable def gradedHomologyEulerChar : ℤ[T;T⁻¹] :=
 
 /-- The graded Euler characteristic computed from fully blocked grid homology equals the one
 computed from grid states. -/
+@[simp]
 theorem gradedHomologyEulerChar_eq_gradedEulerChar :
     G.gradedHomologyEulerChar = G.gradedEulerChar (ZMod 2) := by
   rw [G.gradedEulerChar_eq_sum_alexanderSupport (ZMod 2)]
