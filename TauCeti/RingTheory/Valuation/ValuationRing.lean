@@ -39,7 +39,7 @@ namespace ValuationRing
 variable {R : Type*} [CommRing R] [IsDomain R] [ValuationRing R]
 
 /-- In a valuation ring in which `2 ≠ 0`, the element `1 + 4c` is a square if and only if `c`
-lies in the image of the Artin–Schreier map `t ↦ t ^ 2 + t`. -/
+lies in the image of the quadratic map `t ↦ t ^ 2 + t`. -/
 theorem isSquare_one_add_four_mul_iff (h2 : (2 : R) ≠ 0) {c : R} :
     IsSquare (1 + 4 * c) ↔ ∃ t, t ^ 2 + t = c := by
   refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun ⟨t, ht⟩ ↦ ⟨1 + 2 * t, by rw [← ht]; ring⟩⟩
