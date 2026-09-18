@@ -49,8 +49,6 @@ theorem _root_.FGModuleCat.moduleProjective_of_projective [Small.{v} R]
     (X : FGModuleCat.{v} R) [Projective X] : Module.Projective R X := by
   obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R X
   let e := Shrink.linearEquiv.{v} R (Fin n → R)
-  let _ : Module.Finite R (Shrink.{v} (Fin n → R)) := Module.Finite.equiv e.symm
-  let _ : Module.Projective R (Shrink.{v} (Fin n → R)) := Module.Projective.of_equiv e.symm
   let p : FGModuleCat.of R (Shrink.{v} (Fin n → R)) ⟶ X := FGModuleCat.ofHom (f ∘ₗ e.toLinearMap)
   let _ : Epi p := ConcreteCategory.epi_of_surjective p (hf.comp e.surjective)
   let s := Projective.factorThru (𝟙 X) p

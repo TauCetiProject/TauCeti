@@ -11,11 +11,14 @@ public import Mathlib.Algebra.Category.ModuleCat.Injective
 /-!
 # Injective finitely generated modules
 
-A finitely generated module that is injective as a module is an injective object of
-`FGModuleCat R`.
+A monomorphism of finitely generated modules is an injective linear map, so the inclusion of
+`FGModuleCat R` into `ModuleCat R` preserves monomorphisms. Consequently, a finitely generated
+module that is injective as a module is an injective object of `FGModuleCat R`.
 
 ## Main results
 
+* `FGModuleCat.forget₂_preservesMonomorphisms`: the inclusion of finitely generated modules into
+  all modules preserves monomorphisms.
 * `FGModuleCat.injective_of_moduleInjective`: an injective module that is finitely generated is an
   injective object of `FGModuleCat R`.
 -/
@@ -30,23 +33,27 @@ universe u v
 
 variable {R : Type u} [Ring R]
 
+/-- The inclusion of finitely generated modules into all modules preserves monomorphisms: a
+monomorphism of finitely generated modules is injective, as one sees by testing it on cyclic
+submodules. -/
+instance _root_.FGModuleCat.forget₂_preservesMonomorphisms :
+    (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).PreservesMonomorphisms := by
+  refine ⟨fun {A B} f _ ↦ (ModuleCat.mono_iff_injective _).mpr ?_⟩
+  rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
+  intro (a : A) ha
+  let C := FGModuleCat.of R (R ∙ a)
+  have h := (cancel_mono f).mp (show FGModuleCat.ofHom (R ∙ a).subtype ≫ f = 0 ≫ f by
+    ext ⟨x, hx⟩
+    obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hx
+    rw [Limits.zero_comp]
+    change f.hom.hom (r • a) = 0
+    rw [map_smul, show f.hom.hom a = 0 from ha, smul_zero])
+  exact congrArg (fun g : C ⟶ A ↦ g.hom.hom ⟨a, Submodule.mem_span_singleton_self a⟩) h
+
 /-- A finitely generated injective module is an injective object of `FGModuleCat R`. -/
 theorem _root_.FGModuleCat.injective_of_moduleInjective (X : FGModuleCat.{v} R)
-    [Module.Injective R X] : Injective X := by
-  -- A monomorphism of finitely generated modules is injective: test it on cyclic submodules.
-  have : (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).PreservesMonomorphisms := by
-    refine ⟨fun {A B} f _ ↦ (ModuleCat.mono_iff_injective _).mpr ?_⟩
-    rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
-    intro (a : A) ha
-    let C := FGModuleCat.of R (R ∙ a)
-    have h := (cancel_mono f).mp (show FGModuleCat.ofHom (R ∙ a).subtype ≫ f = 0 ≫ f by
-      ext ⟨x, hx⟩
-      obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hx
-      rw [Limits.zero_comp]
-      change f.hom.hom (r • a) = 0
-      rw [map_smul, show f.hom.hom a = 0 from ha, smul_zero])
-    exact congrArg (fun g : C ⟶ A ↦ g.hom.hom ⟨a, Submodule.mem_span_singleton_self a⟩) h
-  exact (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).injective_of_map_injective
+    [Module.Injective R X] : Injective X :=
+  (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).injective_of_map_injective
     ((Module.injective_iff_injective_object R X).mp inferInstance)
 
 end TauCeti
