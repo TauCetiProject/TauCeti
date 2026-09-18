@@ -11,7 +11,7 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.RelativeNorm
 
 /-!
-# Restriction in negative Tate degrees and the two low-degree maps
+# Restriction in negative Tate degrees and maps in the two low degrees
 
 Let `G` be a finite group, `H ≤ G` a subgroup and `M` a `G`-representation. In every Tate degree
 there are a restriction map `tateCohomology M n ⟶ tateCohomology (Rep.res H.subtype M) n` and a
