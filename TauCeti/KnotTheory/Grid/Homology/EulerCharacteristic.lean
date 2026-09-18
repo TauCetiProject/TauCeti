@@ -74,6 +74,15 @@ private theorem gradedFullyBlockedFGComplex_X (a m : ℤ) :
       FGModuleCat.of (ZMod 2) (G.BigradedChainPiece (ZMod 2) (m, a)) := by
   simp only [gradedFullyBlockedFGComplex]
 
+/-- Objectwise description of `ChainComplex.cochainComplexEquivalence`: cohomological degree `i`
+is homological degree `-i`. Mathlib provides no `simps` lemma for this equivalence, so this helper
+confines the unfolding through its restriction-functor implementation to one place. -/
+private theorem cochainComplexEquivalence_functor_obj_X {C : Type*} [Category* C]
+    [HasZeroMorphisms C] (K : ChainComplex C ℤ) (i : ℤ) :
+    ((ChainComplex.cochainComplexEquivalence C).functor.obj K).X i = K.X (-i) := by
+  rw [ChainComplex.cochainComplexEquivalence, ComplexShape.Embedding.restrictionFunctor_obj,
+    HomologicalComplex.restriction_X, ComplexShape.embeddingUpIntDownInt_f]
+
 /-- The finite-dimensional fully blocked grid complex, reindexed so that cohomological degree is
 the negative of Maslov degree. -/
 private noncomputable def gradedFullyBlockedFGCochainComplex (a : ℤ) :
@@ -86,9 +95,7 @@ private noncomputable def gradedFullyBlockedFGCochainComplex (a : ℤ) :
 private theorem gradedFullyBlockedFGCochainComplex_X (a i : ℤ) :
     (G.gradedFullyBlockedFGCochainComplex a).X i =
       FGModuleCat.of (ZMod 2) (G.BigradedChainPiece (ZMod 2) (-i, a)) := by
-  rw [gradedFullyBlockedFGCochainComplex, ChainComplex.cochainComplexEquivalence,
-    ComplexShape.Embedding.restrictionFunctor_obj, HomologicalComplex.restriction_X,
-    ComplexShape.embeddingUpIntDownInt_f]
+  rw [gradedFullyBlockedFGCochainComplex, cochainComplexEquivalence_functor_obj_X]
   exact G.gradedFullyBlockedFGComplex_X a (-i)
 
 /-- The reindexed fully blocked cochain complex after forgetting the finite-dimensionality
