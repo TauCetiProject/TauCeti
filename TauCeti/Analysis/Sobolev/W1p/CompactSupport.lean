@@ -51,8 +51,8 @@ density and of interior estimates.
   boundary values.
 * `TauCeti.W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport`: multiplication by a
   compactly supported cutoff lands in `W^{1,p}_0(Ω)`.
-* `TauCeti.W1p.exists_ae_eq_top_of_isCompact`: near a compact subset of `Ω`, a function in
-  `W^{1,p}(Ω)` agrees with one in `W^{1,p}(ℝⁿ)`.
+* `TauCeti.W1p.exists_top_value_gradient_ae_eq_on_of_isCompact`: near a compact subset of `Ω`,
+  a function in `W^{1,p}(Ω)` agrees in value and gradient with one in `W^{1,p}(ℝⁿ)`.
 
 ## References
 
@@ -216,8 +216,8 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (hp : p ≠ (∞
 agrees, in value and in gradient, almost everywhere on any compact `S ⊆ Ω` with some
 `w ∈ W^{1,p}(ℝⁿ)`. One may take for `w` the product of `u` with a smooth cutoff equal to one near
 `S` and compactly supported in `Ω`, extended by zero. -/
-theorem W1p.exists_ae_eq_top_of_isCompact (hp : p ≠ (∞ : ENNReal)) (u : W1p mu Omega p)
-    {S : Set E}
+theorem W1p.exists_top_value_gradient_ae_eq_on_of_isCompact (hp : p ≠ (∞ : ENNReal))
+    (u : W1p mu Omega p) {S : Set E}
     (hS : IsCompact S) (hSO : S ⊆ Omega) :
     ∃ w : W1p mu ⊤ p, (∀ᵐ x ∂mu, x ∈ S → W1p.value w x = W1p.value u x) ∧
       ∀ᵐ x ∂mu, x ∈ S → W1p.gradient w x = W1p.gradient u x := by

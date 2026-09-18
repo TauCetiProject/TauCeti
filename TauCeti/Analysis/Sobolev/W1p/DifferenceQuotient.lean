@@ -59,8 +59,12 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
-/-- The local translation estimate on `W^{1,p}(ℝⁿ)`, obtained from the smooth case by density of
-the test functions. -/
+/-- **The local translation estimate on `W^{1,p}(ℝⁿ)`.** If `T` is measurable and every segment
+`[x, x + h]` with `x ∈ K` lies in `T`, then
+
+`‖w(· + h) - w‖_{Lᵖ(K)} ≤ ‖⟪h, ∇w⟫‖_{Lᵖ(T)}`.
+
+This holds for `1 ≤ p < ∞`; neither `K` nor `T` needs to be compact. -/
 theorem W1p.eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu ⊤ p) (h : E)
     {K T : Set E} (hT : MeasurableSet T) (hKT : ∀ x ∈ K, ∀ t ∈ Icc (0 : ℝ) 1, x + t • h ∈ T) :
     eLpNorm (fun x => W1p.value w (x + h) - W1p.value w x) p (mu.restrict K)
@@ -103,6 +107,7 @@ theorem W1p.eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu �
         ≤ eLpNorm (fun x => ⟪h, W1p.gradient v x⟫_ℝ) p (mu.restrict T)} := by
     simp only [← hA, ← hB]
     exact isClosed_le A.continuous.enorm B.continuous.enorm
+  -- Pass the smooth estimate to all of `W^{1,p}(ℝⁿ)` by density of test functions.
   refine w1p0Submodule_subset_of_isClosed hclosed (fun phi => ?_) (W1p.mem_w1p0Submodule_top hp w)
   -- The estimate for a single test function is the smooth estimate.
   have hvalue : ⇑(W1p.value (W1p.ofTestFunctionₗ mu ⊤ p phi)) =ᵐ[mu] (phi : E → ℝ) := by
@@ -146,7 +151,8 @@ theorem W1p.eLpNorm_value_comp_add_sub_le (hp : p ≠ ∞) (u : W1p mu Omega p) 
   have hST : S ⊆ T := by
     rintro _ ⟨z, ⟨hx, ht⟩, rfl⟩
     exact hKT z.1 hx z.2 ht
-  obtain ⟨w, hvalue, hgrad⟩ := W1p.exists_ae_eq_top_of_isCompact hp u hS (hST.trans hTO)
+  obtain ⟨w, hvalue, hgrad⟩ :=
+    W1p.exists_top_value_gradient_ae_eq_on_of_isCompact hp u hS (hST.trans hTO)
   have hq : Tendsto (· + h) (ae mu) (ae mu) :=
     (measurePreserving_add_right mu h).quasiMeasurePreserving.tendsto_ae
   have hL : eLpNorm (fun x => W1p.value w (x + h) - W1p.value w x) p (mu.restrict K) =

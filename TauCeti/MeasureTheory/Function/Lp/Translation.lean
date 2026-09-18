@@ -187,9 +187,9 @@ section Calculus
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {u : E → F}
 
-/-- The `r`-th power of the segment estimate, in the direction of the increment. Raising to the
-power `r ≥ 1` costs nothing because the segment is parametrized by the probability space
-`Set.Icc 0 1`. -/
+/-- **The powered segment estimate in the direction of the increment.** For a `C¹` function and
+`r ≥ 1`, the `r`-th power of `‖u(x + h) - u(x)‖` is bounded by the integral along `[x, x + h]`
+of the `r`-th power of the directional derivative `Du · h`. -/
 theorem _root_.ContDiff.enorm_sub_rpow_le_lintegral_fderiv_apply (hu : ContDiff ℝ 1 u)
     {r : ℝ} (hr : 1 ≤ r) (x h : E) :
     ‖u (x + h) - u x‖ₑ ^ r ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ ^ r := by
@@ -206,6 +206,7 @@ theorem _root_.ContDiff.enorm_sub_rpow_le_lintegral_fderiv_apply (hu : ContDiff 
     (fun t _ => (hu.differentiable one_ne_zero) (x + t • h))
     (((hu.continuous_fderiv one_ne_zero).comp_continuousOn (by fun_prop)).clm_apply
       continuousOn_const)
+  -- Jensen's inequality costs no measure factor because `Icc 0 1` has volume one.
   calc ‖u (x + h) - u x‖ₑ ^ r
       ≤ (∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ) ^ r :=
         ENNReal.rpow_le_rpow hsegment hr0.le
@@ -296,14 +297,13 @@ segment `[x, x + h]` starting in `K` lies in the measurable set `T`, then
 
 `∫_K ‖u(x + h) - u(x)‖ ^ r dx ≤ ∫_T ‖Du(x) h‖ ^ r dx`.
 
-Only the directional derivative `Du · h` enters, and only on `T`. The proof is that of
-`TauCeti.lintegral_enorm_comp_add_sub_rpow_le`, with the derivative cut off to `T` before the
-order of integration is exchanged. -/
+Only the directional derivative `Du · h` enters, and only on `T`. -/
 theorem _root_.ContDiff.setLIntegral_enorm_comp_add_sub_rpow_le (hu : ContDiff ℝ 1 u) {r : ℝ}
     (hr : 1 ≤ r)
     (h : E) {K T : Set E} (hT : MeasurableSet T)
     (hKT : ∀ x ∈ K, ∀ t ∈ Icc (0 : ℝ) 1, x + t • h ∈ T) :
     ∫⁻ x in K, ‖u (x + h) - u x‖ₑ ^ r ∂mu ≤ ∫⁻ x in T, ‖fderiv ℝ u x h‖ₑ ^ r ∂mu := by
+  -- Cut the derivative off to `T` before exchanging the integrals over `x` and the segment.
   set g : E → ℝ≥0∞ := T.indicator fun y => ‖fderiv ℝ u y h‖ₑ ^ r
   have hg : Measurable g :=
     (ENNReal.continuous_rpow_const.comp (((hu.continuous_fderiv one_ne_zero).clm_apply
