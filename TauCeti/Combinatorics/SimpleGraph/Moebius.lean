@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Finite
+public import Mathlib.Data.Set.Card
 public import TauCeti.Data.Finset.Basic
 
 /-!
@@ -63,7 +64,9 @@ open Classical in
 @[simp]
 theorem sum_neg_one_pow_card_edgeSet_sub_left (F H : SimpleGraph V) :
     ∑ G ∈ Finset.univ.filter (fun G : SimpleGraph V => F ≤ G ∧ G ≤ H),
-        (-1 : R) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) = if F = H then 1 else 0 := by
+        (-1 : R) ^ (G.edgeSet.ncard - F.edgeSet.ncard) = if F = H then 1 else 0 := by
+  change ∑ G ∈ Finset.univ.filter (fun G : SimpleGraph V => F ≤ G ∧ G ≤ H),
+    (-1 : R) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) = if F = H then 1 else 0
   rw [sum_filter_le_le_eq_sum_Icc F H fun m => (-1 : R) ^ (m - Nat.card F.edgeSet),
     Nat.card_eq_fintype_card, ← edgeFinset_card, Finset.sum_Icc_neg_one_pow_card_sub_card_left]
   exact if_congr edgeFinset_inj rfl rfl
@@ -74,7 +77,9 @@ open Classical in
 @[simp]
 theorem sum_neg_one_pow_card_edgeSet_sub_right (F H : SimpleGraph V) :
     ∑ G ∈ Finset.univ.filter (fun G : SimpleGraph V => F ≤ G ∧ G ≤ H),
-        (-1 : R) ^ (Nat.card H.edgeSet - Nat.card G.edgeSet) = if F = H then 1 else 0 := by
+        (-1 : R) ^ (H.edgeSet.ncard - G.edgeSet.ncard) = if F = H then 1 else 0 := by
+  change ∑ G ∈ Finset.univ.filter (fun G : SimpleGraph V => F ≤ G ∧ G ≤ H),
+    (-1 : R) ^ (Nat.card H.edgeSet - Nat.card G.edgeSet) = if F = H then 1 else 0
   rw [sum_filter_le_le_eq_sum_Icc F H fun m => (-1 : R) ^ (Nat.card H.edgeSet - m),
     Nat.card_eq_fintype_card, ← edgeFinset_card, Finset.sum_Icc_neg_one_pow_card_sub_card_right]
   exact if_congr edgeFinset_inj rfl rfl
