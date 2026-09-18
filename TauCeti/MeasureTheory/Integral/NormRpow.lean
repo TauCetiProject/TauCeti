@@ -19,8 +19,9 @@ exponent `s > -d`.  The singularity is locally integrable because the radial Jac
 
 The weakly singular exponent `s = 1 - d` gives the value `d * μ.real (ball 0 1) * R`; this is
 the kernel bound used when the straight-segment estimate is averaged over a ball in the proof of
-the Poincaré--Wirtinger inequality.  Exponents `s = (1 - d) q` with `q < d / (d - 1)` are the ones
-met in Hölder's inequality against the Riesz potential in Morrey's inequality.
+the Poincaré--Wirtinger inequality.  When `d > 1`, the exponents `s = (1 - d) q` with
+`q < d / (d - 1)` are the ones met in Hölder's inequality against the Riesz potential in Morrey's
+inequality.  When `d = 1`, the kernel is constant and imposes no upper bound on `q`.
 
 ## Main declarations
 
@@ -31,11 +32,6 @@ met in Hölder's inequality against the Riesz potential in Morrey's inequality.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
   closed ball.
-* `TauCeti.integral_norm_rpow_one_sub_finrank_ball`,
-  `TauCeti.integral_norm_sub_rpow_one_sub_finrank_ball`,
-  `TauCeti.setLIntegral_closedBall_enorm_sub_rpow_one_sub_finrank`: the case `s = 1 - d`.
-* `TauCeti.locallyIntegrable_norm_sub_rpow_one_sub_finrank`: local integrability after
-  translation, for `s = 1 - d`.
 * `TauCeti.integral_norm_sub_rpow_one_sub_finrank_le`: the translated-ball bound, for `s = 1 - d`.
 
 ## References
@@ -108,27 +104,19 @@ theorem integral_norm_rpow_ball {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ) < 
       split_ifs with h
       · rw [← Real.rpow_natCast r (d - 1), Nat.cast_sub hd, Nat.cast_one, ← Real.rpow_add hr]
       · simp
-    rw [setIntegral_congr_fun measurableSet_Ioi heq, setIntegral_indicator measurableSet_Ioo,
-      inter_eq_right.mpr Ioo_subset_Ioi_self, ← integral_Ioc_eq_integral_Ioo,
-      ← intervalIntegral.integral_of_le hR, integral_rpow (Or.inl hds),
-      Real.zero_rpow (by linarith), sub_zero]
-    congr 1 <;> ring_nf
+    have hsupport : ∫ r in Ioi (0 : ℝ), r ^ (d - 1) • f r =
+        ∫ r in Ioo (0 : ℝ) R, r ^ ((d : ℝ) - 1 + s) := by
+      rw [setIntegral_congr_fun measurableSet_Ioi heq, setIntegral_indicator measurableSet_Ioo,
+        inter_eq_right.mpr Ioo_subset_Ioi_self]
+    have hpower : ∫ r in Ioo (0 : ℝ) R, r ^ ((d : ℝ) - 1 + s) =
+        R ^ ((d : ℝ) + s) / ((d : ℝ) + s) := by
+      rw [← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le hR,
+        integral_rpow (Or.inl hds), Real.zero_rpow (by linarith), sub_zero]
+      congr 1 <;> ring_nf
+    exact hsupport.trans hpower
   rw [hconv, hradial, hradialIntegral]
   simp only [nsmul_eq_mul, smul_eq_mul]
   simp [d, mul_assoc]
-
-/-- The kernel `x ↦ ‖x‖ ^ (1 - dim E)` is integrable on every ball centred at the origin. -/
-theorem integrableOn_norm_rpow_one_sub_finrank_ball {R : ℝ} :
-    IntegrableOn (fun x : E => ‖x‖ ^ (1 - (Module.finrank ℝ E : ℝ))) (ball 0 R) mu :=
-  integrableOn_norm_rpow_ball (by linarith)
-
-/-- The exact integral of the kernel `x ↦ ‖x‖ ^ (1 - dim E)` on a ball centred at the origin.
-The coefficient is stated using the chosen additive Haar measure, so the result applies to both
-Lebesgue volume and its scalar multiples. -/
-theorem integral_norm_rpow_one_sub_finrank_ball {R : ℝ} (hR : 0 ≤ R) :
-    ∫ x in ball (0 : E) R, ‖x‖ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu =
-      (Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) * R := by
-  rw [integral_norm_rpow_ball (by linarith) hR, add_sub_cancel, Real.rpow_one, div_one]
 
 /-- The kernel with pole `x` and exponent `s > -dim E` is integrable on every ball centred
 at `x`. -/
@@ -143,11 +131,6 @@ theorem integrableOn_norm_sub_rpow_ball {s : ℝ} (hs : -(Module.finrank ℝ E :
   exact (integrableOn_norm_rpow_ball (mu := mu) hs (R := R)).congr
     (ae_of_all _ fun z => by simp [norm_neg])
 
-/-- The kernel with pole `x` is integrable on every ball centred at `x`. -/
-theorem integrableOn_norm_sub_rpow_one_sub_finrank_ball (x : E) {R : ℝ} :
-    IntegrableOn (fun y : E => ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ))) (ball x R) mu :=
-  integrableOn_norm_sub_rpow_ball (by linarith) x
-
 /-- The kernel with pole `x` and exponent `s > -dim E` is locally integrable. -/
 theorem locallyIntegrable_norm_sub_rpow {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ) < s) (x : E) :
     LocallyIntegrable (fun y : E => ‖x - y‖ ^ s) mu := by
@@ -155,11 +138,6 @@ theorem locallyIntegrable_norm_sub_rpow {s : ℝ} (hs : -(Module.finrank ℝ E :
   intro K hK
   obtain ⟨R, hKR⟩ := hK.isBounded.subset_ball x
   exact (integrableOn_norm_sub_rpow_ball (mu := mu) hs x).mono_set hKR
-
-/-- The kernel with pole `x` is locally integrable. -/
-theorem locallyIntegrable_norm_sub_rpow_one_sub_finrank (x : E) :
-    LocallyIntegrable (fun y : E => ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ))) mu :=
-  locallyIntegrable_norm_sub_rpow (by linarith) x
 
 /-- The integral of the kernel with pole `x` and exponent `s > -dim E` over a ball centred at `x`
 does not depend on the centre and has the same exact value as the radial integral at the
@@ -180,13 +158,6 @@ theorem integral_norm_sub_rpow_ball {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ
     simp [norm_neg]
   rw [hfun, integral_norm_rpow_ball hs hR]
 
-/-- The integral of the kernel with pole `x` over a ball centred at `x` does not depend on the
-centre and has the same exact value as the radial integral at the origin. -/
-theorem integral_norm_sub_rpow_one_sub_finrank_ball {R : ℝ} (hR : 0 ≤ R) (x : E) :
-    ∫ y in ball x R, ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu =
-      (Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) * R := by
-  rw [integral_norm_sub_rpow_ball (by linarith) hR, add_sub_cancel, Real.rpow_one, div_one]
-
 /-- If `x` lies in `closedBall z R`, then the integral over `ball z R` of the kernel with pole
 `x` is bounded by the exact integral on `ball 0 (2R)`. -/
 theorem integral_norm_sub_rpow_one_sub_finrank_le {R : ℝ} (x : E) {z : E}
@@ -206,7 +177,7 @@ theorem integral_norm_sub_rpow_one_sub_finrank_le {R : ℝ} (x : E) {z : E}
   have hintegrable :
       IntegrableOn (fun y : E => ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ)))
         (ball x (2 * R)) mu :=
-    integrableOn_norm_sub_rpow_one_sub_finrank_ball x
+    integrableOn_norm_sub_rpow_ball (by linarith) x
   calc
     ∫ y in ball z R, ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu ≤
         ∫ y in ball x (2 * R), ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu := by
@@ -214,7 +185,8 @@ theorem integral_norm_sub_rpow_one_sub_finrank_le {R : ℝ} (x : E) {z : E}
       · exact ae_of_all _ fun y => Real.rpow_nonneg (norm_nonneg _) _
       · exact hsub.eventuallyLE
     _ = (Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) * (2 * R) :=
-      integral_norm_sub_rpow_one_sub_finrank_ball htwoR x
+      by rw [integral_norm_sub_rpow_ball (by linarith) htwoR, add_sub_cancel, Real.rpow_one,
+        div_one]
 
 /-- The lower integral of the kernel with pole `x` and exponent `s > -dim E` over the closed
 ball of radius `R` about `x`. Unlike its Bochner counterpart `TauCeti.integral_norm_sub_rpow_ball`,
@@ -243,15 +215,5 @@ theorem setLIntegral_closedBall_enorm_sub_rpow {s : ℝ} (hs : -(Module.finrank 
     with y hy
   have hxy : 0 < ‖x - y‖ := norm_pos_iff.mpr (sub_ne_zero.mpr fun h => hy (h ▸ rfl))
   rw [← ENNReal.ofReal_rpow_of_pos hxy, ofReal_norm]
-
-/-- The lower integral of the kernel with pole `x` over the closed ball of radius `R` about `x`.
-Unlike its Bochner counterpart `TauCeti.integral_norm_sub_rpow_one_sub_finrank_ball`, the kernel
-takes the value `∞` at the pole when the dimension is at least two; this does not change the
-integral, since the pole is a null set. -/
-theorem setLIntegral_closedBall_enorm_sub_rpow_one_sub_finrank {R : ℝ} (hR : 0 ≤ R) (x : E) :
-    ∫⁻ y in closedBall x R, ‖x - y‖ₑ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu =
-      ENNReal.ofReal ((Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) * R) := by
-  rw [setLIntegral_closedBall_enorm_sub_rpow (by linarith) hR, add_sub_cancel, Real.rpow_one,
-    div_one]
 
 end TauCeti

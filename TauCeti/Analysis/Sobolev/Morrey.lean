@@ -5,12 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Poincare.Potential
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Convex.Star
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
+public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.Topology.MetricSpace.Holder
 
 import Mathlib.Analysis.Normed.Affine.AddTorsor
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
@@ -200,6 +204,12 @@ theorem enorm_sub_le_of_mem_ball_of_finrank_lt [CompleteSpace F] {z : E} {r : �
   have hK : 0 ≤ K := div_nonneg (mul_nonneg (by positivity) (by linarith)) (by linarith)
   have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
   -- The constant: the mean-value factor `(2 r) ^ n / (n μ(ball z r))` is `2 ^ n / (n ω)`.
+  have hmeasure : μ (ball z r) = ENNReal.ofReal (r ^ n * ω) := by
+    rw [Measure.addHaar_ball_of_pos μ z hr, ← ofReal_measureReal measure_ball_lt_top.ne,
+      ← hω_def, ← ENNReal.ofReal_mul (pow_nonneg hr.le _)]
+  have hmeanFactor : ENNReal.ofReal ((2 * r) ^ n / n) / μ (ball z r) =
+      ENNReal.ofReal ((2 * r) ^ n / n / (r ^ n * ω)) := by
+    rw [hmeasure, ← ENNReal.ofReal_div_of_pos (mul_pos (pow_pos hr _) hω)]
   have hconst : ENNReal.ofReal ((2 * r) ^ n / n) / μ (ball z r) *
       ENNReal.ofReal (K ^ (1 - 1 / (p : ℝ)) * (2 * r) ^ (1 - n / (p : ℝ))) * N +
       ENNReal.ofReal ((2 * r) ^ n / n) / μ (ball z r) *
@@ -211,14 +221,18 @@ theorem enorm_sub_le_of_mem_ball_of_finrank_lt [CompleteSpace F] {z : E} {r : �
       positivity
     have hY : 0 ≤ K ^ (1 - 1 / (p : ℝ)) * (2 * r) ^ (1 - n / (p : ℝ)) :=
       mul_nonneg (Real.rpow_nonneg hK _) (Real.rpow_nonneg (by linarith) _)
-    rw [Measure.addHaar_ball_of_pos μ z hr, ← ofReal_measureReal measure_ball_lt_top.ne,
-      ← hω_def, ← ENNReal.ofReal_mul (pow_nonneg hr.le _),
-      ← ENNReal.ofReal_div_of_pos (mul_pos (pow_pos hr _) hω), ← ENNReal.ofReal_mul hX,
-      ← add_mul, ← ENNReal.ofReal_add (mul_nonneg hX hY) (mul_nonneg hX hY)]
-    congr 2
-    rw [mul_pow, pow_succ]
-    field_simp
-    ring
+    have hreal :
+        (2 * r) ^ n / n / (r ^ n * ω) *
+              (K ^ (1 - 1 / (p : ℝ)) * (2 * r) ^ (1 - n / (p : ℝ))) +
+            (2 * r) ^ n / n / (r ^ n * ω) *
+              (K ^ (1 - 1 / (p : ℝ)) * (2 * r) ^ (1 - n / (p : ℝ))) =
+          2 ^ (n + 1) / (n * ω) * K ^ (1 - 1 / (p : ℝ)) *
+            (2 * r) ^ (1 - n / (p : ℝ)) := by
+      rw [mul_pow, pow_succ]
+      field_simp
+      ring
+    rw [hmeanFactor, ← ENNReal.ofReal_mul hX, ← add_mul,
+      ← ENNReal.ofReal_add (mul_nonneg hX hY) (mul_nonneg hX hY), hreal]
   calc
     ‖u x - u y‖ₑ ≤ ‖u x - ⨍ v in ball z r, u v ∂μ‖ₑ + ‖u y - ⨍ v in ball z r, u v ∂μ‖ₑ := by
       simpa only [edist_eq_enorm_sub] using edist_triangle_right (u x) (u y) _
@@ -274,13 +288,48 @@ theorem holderWith_of_contDiff_of_finrank_lt [CompleteSpace F] (hu : ContDiff �
     have hpn : (n : ℝ) < p := by exact_mod_cast hp
     have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
     exact div_nonneg (mul_nonneg (by positivity) (by linarith)) (by linarith)
+  have hC : 0 ≤ 2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
+      (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
+        2 ^ (1 - n / (p : ℝ)) :=
+    mul_nonneg (mul_nonneg (by positivity) (Real.rpow_nonneg hK _)) (by positivity)
   intro x y
-  rw [edist_eq_enorm_sub, edist_eq_enorm_sub, hα, ENNReal.coe_mul, ENNReal.coe_toNNReal hDu,
-    ENNReal.ofNNReal_toNNReal, ← ofReal_norm (x - y),
-    ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hα0, mul_right_comm,
-    ← ENNReal.ofReal_mul (mul_nonneg (mul_nonneg (by positivity) (Real.rpow_nonneg hK _))
-      (by positivity)), mul_assoc _ (2 ^ _),
-    ← Real.mul_rpow zero_le_two (norm_nonneg _)]
-  exact enorm_sub_le_of_contDiff_of_finrank_lt hu x y hp
+  have hdist : edist x y ^ (1 - n / (p : ℝ)) =
+      ENNReal.ofReal (‖x - y‖ ^ (1 - n / (p : ℝ))) := by
+    rw [edist_eq_enorm_sub, ← ofReal_norm (x - y),
+      ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hα0]
+  have hcoefficient :
+      (↑(Real.toNNReal (2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
+          (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
+            2 ^ (1 - n / (p : ℝ))) *
+          (eLpNorm (fderiv ℝ u) p μ).toNNReal) : ℝ≥0∞) =
+        ENNReal.ofReal (2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
+          (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
+            2 ^ (1 - n / (p : ℝ))) * eLpNorm (fderiv ℝ u) p μ := by
+    rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hDu, ENNReal.ofNNReal_toNNReal]
+  have hscale :
+      (2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
+          (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
+            2 ^ (1 - n / (p : ℝ))) * ‖x - y‖ ^ (1 - n / (p : ℝ)) =
+        2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
+          (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
+            (2 * ‖x - y‖) ^ (1 - n / (p : ℝ)) := by
+    rw [mul_assoc _ (2 ^ _), ← Real.mul_rpow zero_le_two (norm_nonneg _)]
+  calc
+    edist (u x) (u y) = ‖u x - u y‖ₑ := edist_eq_enorm_sub _ _
+    _ ≤ ENNReal.ofReal (2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
+        (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
+          (2 * ‖x - y‖) ^ (1 - n / (p : ℝ))) * eLpNorm (fderiv ℝ u) p μ :=
+      enorm_sub_le_of_contDiff_of_finrank_lt hu x y hp
+    _ = ENNReal.ofReal ((2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
+          (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
+            2 ^ (1 - n / (p : ℝ))) * ‖x - y‖ ^ (1 - n / (p : ℝ))) *
+          eLpNorm (fderiv ℝ u) p μ := by rw [hscale]
+    _ = (↑(Real.toNNReal (2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
+          (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
+            2 ^ (1 - n / (p : ℝ))) *
+          (eLpNorm (fderiv ℝ u) p μ).toNNReal) : ℝ≥0∞) *
+        edist x y ^ (((1 - n / p : ℝ≥0)) : ℝ) := by
+      rw [ENNReal.ofReal_mul hC, hα, hdist, hcoefficient]
+      ac_rfl
 
 end TauCeti
