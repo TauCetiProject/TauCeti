@@ -144,6 +144,8 @@ theorem starConvex_expDomain (p : M) : StarConvex ℝ (0 : TangentSpace I p) (ex
 
 /-! ### Regularity -/
 
+/-- Each tangent space is a charted space over itself (via the identity chart), so that
+smoothness of maps out of a tangent space can be stated in the manifold API. -/
 local instance tangentSpaceChartedSpace (p : M) :
     ChartedSpace (TangentSpace I p) (TangentSpace I p) :=
   chartedSpaceSelf (TangentSpace I p)
