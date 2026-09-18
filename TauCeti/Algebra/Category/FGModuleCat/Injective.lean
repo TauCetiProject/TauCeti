@@ -41,14 +41,21 @@ instance _root_.FGModuleCat.forget₂_preservesMonomorphisms :
   refine ⟨fun {A B} f _ ↦ (ModuleCat.mono_iff_injective _).mpr ?_⟩
   rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
   intro (a : A) ha
+  have ha_zero : f.hom.hom a = 0 := ha
   let C := FGModuleCat.of R (R ∙ a)
-  have h := (cancel_mono f).mp (show FGModuleCat.ofHom (R ∙ a).subtype ≫ f = 0 ≫ f by
-    ext ⟨x, hx⟩
+  let i : C ⟶ A := FGModuleCat.ofHom (R ∙ a).subtype
+  have hi_comp : i ≫ f = 0 := by
+    apply FGModuleCat.hom_ext
+    apply LinearMap.ext
+    rintro ⟨x, hx⟩
     obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hx
-    rw [Limits.zero_comp]
-    change f.hom.hom (r • a) = 0
-    rw [map_smul, show f.hom.hom a = 0 from ha, smul_zero])
-  exact congrArg (fun g : C ⟶ A ↦ g.hom.hom ⟨a, Submodule.mem_span_singleton_self a⟩) h
+    calc
+      (i ≫ f).hom.hom ⟨r • a, hx⟩ = f.hom.hom (r • a) := rfl
+      _ = r • f.hom.hom a := map_smul f.hom.hom r a
+      _ = 0 := by rw [ha_zero, smul_zero]
+      _ = (0 : C ⟶ B).hom.hom ⟨r • a, hx⟩ := rfl
+  have hi : i = 0 := (cancel_mono f).mp (by simpa only [Limits.zero_comp] using hi_comp)
+  exact congrArg (fun g : C ⟶ A ↦ g.hom.hom ⟨a, Submodule.mem_span_singleton_self a⟩) hi
 
 /-- A finitely generated injective module is an injective object of `FGModuleCat R`. -/
 theorem _root_.FGModuleCat.injective_of_moduleInjective (X : FGModuleCat.{v} R)
