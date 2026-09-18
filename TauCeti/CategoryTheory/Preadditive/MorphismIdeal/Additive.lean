@@ -44,15 +44,16 @@ instance [HasZeroObject C] : HasZeroObject I.Quotient :=
   Functor.hasZeroObject_of_additive I.quotientFunctor
 
 /-- Finite biproducts descend to the quotient by a morphism ideal. -/
-noncomputable instance [HasFiniteBiproducts C] : HasFiniteBiproducts I.Quotient := by
+noncomputable instance [HasFiniteProducts C] : HasFiniteBiproducts I.Quotient := by
   let := Functor.hasFiniteProducts_of_additive_of_essSurj I.quotientFunctor
   exact HasFiniteBiproducts.of_hasFiniteProducts
 
 /-- Binary biproducts descend even without a zero object in the original category. -/
-noncomputable instance [HasBinaryBiproducts C] : HasBinaryBiproducts I.Quotient where
+noncomputable instance [HasBinaryProducts C] : HasBinaryBiproducts I.Quotient where
   has_binary_biproduct X Y := by
     obtain ⟨X⟩ := X
     obtain ⟨Y⟩ := Y
+    let := HasBinaryBiproducts.of_hasBinaryProducts (C := C)
     let := preservesBinaryBiproducts_of_preservesBiproducts I.quotientFunctor
     exact Functor.hasBinaryBiproduct_of_preserves I.quotientFunctor X Y
 
