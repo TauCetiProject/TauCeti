@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, Claude
 -/
 module
 
@@ -252,6 +252,24 @@ private def isoShortComplex : (tateComplex M).sc (-1) ≅ shortComplex M := by
     ShortComplex.isoMk (chainsIso₁ M) (chainsIso₀ M) (cochainsIso₀ M)
       (comp_d₁₀_eq M) hnorm
 
+private def cyclesIso : (tateComplex M).cycles (-1) ≅ (shortComplex M).cycles :=
+  ShortComplex.cyclesMapIso (isoShortComplex M)
+
+@[reassoc]
+private theorem cyclesIso_hom_comp_iCycles :
+    (cyclesIso M).hom ≫ (shortComplex M).iCycles =
+      (tateComplex M).iCycles (-1) ≫ (chainsIso₀ M).hom :=
+  ShortComplex.cyclesMap_i (isoShortComplex M).hom
+
+@[reassoc]
+private theorem cyclesIso_inv_comp_homologyπ_comp_homologyMapIso_hom :
+    (cyclesIso M).inv ≫ (tateComplex M).homologyπ (-1) ≫
+        (ShortComplex.homologyMapIso (isoShortComplex M)).hom =
+      (shortComplex M).homologyπ :=
+  (congrArg ((cyclesIso M).inv ≫ ·)
+    (ShortComplex.homologyπ_naturality (isoShortComplex M).hom)).trans
+    (Iso.inv_hom_id_assoc (ShortComplex.cyclesMapIso (isoShortComplex M)) _)
+
 end NegOne
 
 /-- Degree `-1` Tate cohomology is the kernel of the norm modulo the augmentation submodule,
@@ -330,6 +348,40 @@ theorem HNegOne_induction_on {M : Rep R G} {C : tateCohomology M (-1) → Prop}
     rw [HNegOneπ_comp_HNegOneIsoNormKernelQuotient_hom_apply]
     simpa only [Submodule.mkQ_apply] using hy
   exact hx ▸ h y
+
+/-- The cycles in degree `-1` of the Tate complex are the kernel of the norm. -/
+def HNegOneCyclesIso (M : Rep R G) :
+    (tateComplex M).cycles (-1) ≅ ModuleCat.of R (ker M.ρ.norm) :=
+  NegOne.cyclesIso M ≪≫ (NegOne.shortComplex M).moduleCatCyclesIso ≪≫ eqToIso (by rfl)
+
+/-- Under the degree `-1` identification, including a cycle into the Tate complex is the same as
+including the corresponding norm-zero element into the coefficient module. -/
+@[reassoc]
+theorem HNegOneCyclesIso_hom_comp_subtype (M : Rep R G) :
+    (HNegOneCyclesIso M).hom ≫ ModuleCat.ofHom (ker M.ρ.norm).subtype =
+      (tateComplex M).iCycles (-1) ≫ (chainsIso₀ M).hom := by
+  simp only [HNegOneCyclesIso, Iso.trans_hom, Category.assoc]
+  exact (congrArg _ (NegOne.shortComplex M).moduleCatCyclesIso_hom_i).trans
+    (NegOne.cyclesIso_hom_comp_iCycles M)
+
+/-- The representative map to degree `-1` Tate cohomology is the canonical projection from
+degree `-1` cycles to homology, after identifying those cycles with the kernel of the norm. -/
+theorem HNegOneπ_eq_cyclesIso_inv_comp_homologyπ (M : Rep R G) :
+    HNegOneπ M = (HNegOneCyclesIso M).inv ≫ (tateComplex M).homologyπ (-1) := by
+  let S := NegOne.shortComplex M
+  let e := ShortComplex.homologyMapIso (NegOne.isoShortComplex M)
+  -- The degree `-1` homology of the Tate complex is by definition the homology of its short
+  -- complex in degree `-1`; the comparisons are therefore composed as terms, since `rw` cannot
+  -- match across that unfolding.
+  have h1 : (NegOne.cyclesIso M).inv ≫ (tateComplex M).homologyπ (-1) = S.homologyπ ≫ e.inv :=
+    (Iso.eq_comp_inv e).2 ((Category.assoc _ _ _).trans
+      (NegOne.cyclesIso_inv_comp_homologyπ_comp_homologyMapIso_hom M))
+  have h2 : HNegOneπ M = S.moduleCatLeftHomologyData.π ≫ S.moduleCatHomologyIso.inv ≫ e.inv := by
+    ext x
+    rfl
+  refine h2.trans ((Category.assoc _ _ _).symm.trans ?_)
+  refine (congrArg (· ≫ e.inv) S.moduleCatCyclesIso_inv_π.symm).trans ?_
+  exact (Category.assoc _ _ _).trans (congrArg (S.moduleCatCyclesIso.inv ≫ ·) h1.symm)
 
 variable (A : Rep R G) [A.IsTrivial]
 

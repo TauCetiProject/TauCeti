@@ -45,7 +45,10 @@ noncomputable local instance instFintypeRange (T : LayerRestriction small big) :
     Fintype T.galHom.range :=
   Fintype.ofFinite _
 
-private theorem repIso_isIntertwiningRange (T : LayerRestriction small big) (F : Formation G) :
+/-- The identification of coefficient modules intertwines the Galois action of the smaller layer
+with the action of the image of its Galois group in the larger one. This is the compatible pair
+along which `tateRangeIso` transports Tate cohomology. -/
+theorem isIntertwiningMap_repIso_range (T : LayerRestriction small big) (F : Formation G) :
     (small.rep F).ρ.IsIntertwiningMap
       ((Rep.res T.galHom.range.subtype (big.rep F)).ρ.comp
         (MonoidHom.ofInjective T.galHom_injective : small.Gal ≃* T.galHom.range))
@@ -63,7 +66,14 @@ def tateRangeIso (T : LayerRestriction small big) (F : Formation G) (r : ℤ) :
     (N := Rep.res T.galHom.range.subtype (big.rep F))
     (e := MonoidHom.ofInjective T.galHom_injective)
     (e' := (Representation.equivOfIso (T.repIso F)).toLinearEquiv)
-    (repIso_isIntertwiningRange T F) r
+    (isIntertwiningMap_repIso_range T F) r
+
+/-- The range comparison is the Tate map attached to the compatible pair
+`isIntertwiningMap_repIso_range`. -/
+theorem tateRangeIso_hom (T : LayerRestriction small big) (F : Formation G) (r : ℤ) :
+    (T.tateRangeIso F r).hom =
+      TauCeti.TateCohomology.map (T.isIntertwiningMap_repIso_range F) r := by
+  rw [tateRangeIso, TauCeti.TateCohomology.mapIso_hom]
 
 /-- In degree zero, the inverse range comparison sends the class of an invariant of the image
 subgroup to the class of the same element, read through `repIso`, in the smaller layer. -/

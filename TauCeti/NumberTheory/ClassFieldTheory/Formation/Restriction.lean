@@ -216,6 +216,20 @@ theorem galHom_injective (T : LayerRestriction small big) : Function.Injective T
     rw [T.same_top_toSubgroup]
     exact hw
 
+/-- An element of `Gal(K/F)` lies in the image of `Gal(K/E)` exactly when its representatives lie
+in the ground subgroup `U'` of `K/E`. -/
+theorem mk_mem_range_galHom_iff (T : LayerRestriction small big) (u : big.ground) :
+    (u : big.Gal) ∈ T.galHom.range ↔ (u : G) ∈ small.ground := by
+  constructor
+  · rintro ⟨w, hw⟩
+    induction w using QuotientGroup.induction_on with | H w => ?_
+    rw [galHom_mk, QuotientGroup.eq, Subgroup.mem_subgroupOf] at hw
+    have hw' : ((w : G)⁻¹ * u) ∈ small.ground :=
+      small.top_le_ground (T.same_top ▸ (by simpa using hw))
+    simpa using mul_mem w.2 hw'
+  · intro hu
+    exact ⟨(⟨u, hu⟩ : small.ground), by rw [galHom_mk]; rfl⟩
+
 /-- **The coefficient module of the smaller layer of a restriction is the coefficient module of
 the bigger one**, read as a representation of the smaller Galois group along `galHom`. The two
 modules are the level `A^V` of one and the same top subgroup — a restriction does not move the top
@@ -610,19 +624,9 @@ theorem subgroupLayer_range_galHom {small : NormalLayer G} (T : LayerRestriction
   refine NormalLayer.ext (OpenSubgroup.toSubgroup_injective ?_) T.same_top.symm
   rw [ground_subgroupLayer]
   ext g
-  simp only [mem_subgroupGround, MonoidHom.mem_range]
-  constructor
-  · rintro ⟨hg, δ, hδ⟩
-    induction δ using QuotientGroup.induction_on with
-    | H w =>
-      rw [LayerRestriction.galHom_mk, QuotientGroup.eq] at hδ
-      have hw : (w : G)⁻¹ * g ∈ L.top := Subgroup.mem_subgroupOf.1 hδ
-      have hmul := mul_mem w.2 (small.top_le_ground (T.same_top ▸ hw))
-      rwa [mul_inv_cancel_left] at hmul
-  · intro hg
-    exact ⟨T.ground_toSubgroup_le hg, QuotientGroup.mk ⟨g, hg⟩, by
-      rw [LayerRestriction.galHom_mk]
-      exact congrArg QuotientGroup.mk (Subtype.ext (Subgroup.coe_inclusion _ _))⟩
+  rw [mem_subgroupGround]
+  exact ⟨fun ⟨hg, hmem⟩ ↦ (T.mk_mem_range_galHom_iff ⟨g, hg⟩).1 hmem,
+    fun hg ↦ ⟨T.ground_toSubgroup_le hg, (T.mk_mem_range_galHom_iff _).2 hg⟩⟩
 
 end NormalLayer
 
