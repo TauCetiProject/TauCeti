@@ -11,7 +11,7 @@ import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Data.Set.PowersetCard
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.SetTheory.Cardinal.Finite
-import Mathlib.Tactic.Ring
+import Mathlib.Tactic.NoncommRing
 
 /-!
 # Finite-set infrastructure
@@ -60,7 +60,7 @@ namespace Finset
 summand `g i` changes by `h i` when `i` is adjoined to a set not containing it, then
 `∑_{T ⊆ P} (-1)^{|T|} (∑_{i ∈ P} g i T + ∑_{i ∈ T} h i T) = 0`: for fixed `i`, the sets `T ∌ i`
 and `T ∪ {i}` cancel in pairs. -/
-theorem sum_powerset_neg_one_pow_mul_eq_zero {ι R : Type*} [DecidableEq ι] [CommRing R]
+theorem sum_powerset_neg_one_pow_mul_eq_zero {ι R : Type*} [DecidableEq ι] [Ring R]
     (P : Finset ι) (g h : ι → Finset ι → R)
     (hstep : ∀ i ∈ P, ∀ t ∈ (P.erase i).powerset, g i t = g i (insert i t) + h i (insert i t)) :
     ∑ T ∈ P.powerset, (-1 : R) ^ T.card * (∑ i ∈ P, g i T + ∑ i ∈ T, h i T) = 0 := by
@@ -76,7 +76,7 @@ theorem sum_powerset_neg_one_pow_mul_eq_zero {ι R : Type*} [DecidableEq ι] [Co
   have hit : i ∉ t := fun h ↦ Finset.notMem_erase i P (Finset.mem_powerset.mp ht h)
   simp only [hit, Finset.mem_insert_self, ↓reduceIte, Finset.card_insert_of_notMem hit,
     hstep i hi t ht]
-  ring
+  noncomm_ring
 
 end Finset
 
