@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Homology.ShortComplex.Abelian
 public import TauCeti.KnotTheory.Grid.EulerCharacteristic
 
 import Mathlib.Algebra.Field.ZMod
@@ -33,6 +35,8 @@ fully blocked grid homology with the existing grid-determinant expression.
 
 ## Main results
 
+* `TauCeti.OddComponentGridDiagram.alexanderHomologyEulerChar_eq_finsum_finrank`: the
+  coefficient is the alternating dimension of the homology groups of the public graded complex.
 * `TauCeti.OddComponentGridDiagram.alexanderHomologyEulerChar_eq_alexanderEulerChar`: the
   coefficientwise Euler--Poincaré identity.
 * `TauCeti.OddComponentGridDiagram.gradedHomologyEulerChar_eq_smul_T_mul_det_weightMatrix`: the
@@ -105,6 +109,49 @@ private noncomputable abbrev gradedFullyBlockedCochainComplex (a : ℤ) :
   ((forget₂ (FGModuleCat (ZMod 2)) (ModuleCat (ZMod 2))).mapHomologicalComplex _).obj
     (G.gradedFullyBlockedFGCochainComplex a)
 
+/-- Forgetting the finite-dimensionality witnesses recovers the public graded grid complex. -/
+private noncomputable def gradedFullyBlockedComplexIso (a : ℤ) :
+    ((forget₂ (FGModuleCat (ZMod 2)) (ModuleCat (ZMod 2))).mapHomologicalComplex _).obj
+        (G.gradedFullyBlockedFGComplex a) ≅
+      G.gradedFullyBlockedComplex a :=
+  HomologicalComplex.Hom.isoOfComponents (fun m => by
+    change ModuleCat.of (ZMod 2) (G.BigradedChainPiece (ZMod 2) (m, a)) ≅ _
+    exact eqToIso (G.gradedFullyBlockedComplex_X a m).symm) (by
+      intro i j hij
+      obtain rfl : i = j + 1 := hij.symm
+      rw [G.gradedFullyBlockedComplex_d]
+      ext
+      simp [gradedFullyBlockedFGComplex, Functor.mapHomologicalComplex]
+      rfl)
+
+/-- The forgetful comparison commutes with reindexing Maslov degree as cohomological degree. -/
+private noncomputable def gradedFullyBlockedCochainComplexIso (a : ℤ) :
+    G.gradedFullyBlockedCochainComplex a ≅
+      (ChainComplex.cochainComplexEquivalence (ModuleCat (ZMod 2))).functor.obj
+        (G.gradedFullyBlockedComplex a) := by
+  change (ComplexShape.embeddingUpIntDownInt.restrictionFunctor (ModuleCat (ZMod 2))).obj
+      (((forget₂ (FGModuleCat (ZMod 2)) (ModuleCat (ZMod 2))).mapHomologicalComplex _).obj
+        (G.gradedFullyBlockedFGComplex a)) ≅ _
+  exact (ComplexShape.embeddingUpIntDownInt.restrictionFunctor
+    (ModuleCat (ZMod 2))).mapIso (G.gradedFullyBlockedComplexIso a)
+
+/-- Reindexing the forgotten finite-dimensional complex identifies its cohomology in degree `i`
+with the homology of the public grid complex in Maslov degree `-i`. -/
+private theorem finrank_homology_gradedFullyBlockedCochainComplex (a i : ℤ) :
+    Module.finrank (ZMod 2) ((G.gradedFullyBlockedCochainComplex a).homology i) =
+      Module.finrank (ZMod 2)
+        ((G.gradedFullyBlockedComplex a).homology ((Equiv.neg ℤ) i)) := by
+  have hmap := (HomologicalComplex.homologyMapIso
+    (G.gradedFullyBlockedCochainComplexIso a) i).toLinearEquiv.finrank_eq
+  let e := ComplexShape.embeddingUpIntDownInt
+  have hrestriction := ((G.gradedFullyBlockedComplex a).restrictionHomologyIso e
+    (i - 1) i (i + 1) (by simp) (by simp)
+    (i' := (Equiv.neg ℤ) (i - 1)) (j' := (Equiv.neg ℤ) i)
+    (k' := (Equiv.neg ℤ) (i + 1))
+    (by simp [e]) (by simp [e]) (by simp [e])
+    (by simp; omega) (by simp; omega)).toLinearEquiv.finrank_eq
+  exact hmap.trans hrestriction
+
 /-- Reindexing by negation does not change the alternating dimension of the terms of the fully
 blocked grid complex. -/
 @[simp]
@@ -132,12 +179,14 @@ private theorem isZero_gradedFullyBlockedFGCochainComplex_X_of_forall_ne (a i : 
     (h : ∀ x : GridState n, G.1.maslovOℤ x ≠ -i) :
     IsZero ((G.gradedFullyBlockedFGCochainComplex a).X i) := by
   rw [G.gradedFullyBlockedFGCochainComplex_X]
-  have hempty : IsEmpty {x : GridState n // G.bidegree x = (-i, a)} :=
-    ⟨fun x => h x (by rw [← G.bidegree_fst x, x.property])⟩
+  have hfinrank : Module.finrank (ZMod 2) (G.BigradedChainPiece (ZMod 2) (-i, a)) = 0 := by
+    rw [G.finrank_bigradedChainPiece]
+    apply Finset.card_eq_zero.mpr
+    rw [Finset.filter_eq_empty_iff]
+    intro x _ hx
+    exact h x (by rw [← G.bidegree_fst x, hx])
   have hsub : Subsingleton (G.BigradedChainPiece (ZMod 2) (-i, a)) :=
-    ⟨fun c d => by
-      ext x
-      exact isEmptyElim x⟩
+    Module.finrank_zero_iff.mp hfinrank
   let hsubInst : Subsingleton (G.BigradedChainPiece (ZMod 2) (-i, a)) := hsub
   have hzero : IsZero
       (ModuleCat.of (ZMod 2) (G.BigradedChainPiece (ZMod 2) (-i, a))) :=
@@ -178,6 +227,22 @@ The homology is taken after forgetting the finite-dimensionality witness from th
 cochain complex whose cohomological degree is the negative Maslov degree. -/
 noncomputable def alexanderHomologyEulerChar (a : ℤ) : ℤ :=
   (G.gradedFullyBlockedCochainComplex a).homologyEulerChar
+
+/-- The Euler characteristic in Alexander degree `a` is the alternating `finsum` of the
+dimensions of the homology groups of the public Maslov-graded fully blocked complex. -/
+theorem alexanderHomologyEulerChar_eq_finsum_finrank (a : ℤ) :
+    G.alexanderHomologyEulerChar a =
+      ∑ᶠ m : ℤ, (m.negOnePow : ℤ) *
+        Module.finrank (ZMod 2) ((G.gradedFullyBlockedComplex a).homology m) := by
+  rw [alexanderHomologyEulerChar]
+  unfold HomologicalComplex.homologyEulerChar GradedObject.eulerChar
+  rw [← finsum_comp_equiv (Equiv.neg ℤ)
+    (f := fun m : ℤ => (m.negOnePow : ℤ) *
+      Module.finrank (ZMod 2) ((G.gradedFullyBlockedComplex a).homology m))]
+  apply finsum_congr
+  intro i
+  simp only [Equiv.neg_apply, ComplexShape.eulerCharSignsUpInt_χ]
+  rw [G.finrank_homology_gradedFullyBlockedCochainComplex a i, Int.negOnePow_neg]
 
 /-- **Euler--Poincaré in one Alexander degree.** The alternating dimension of fully blocked grid
 homology equals the alternating count of grid states. -/
