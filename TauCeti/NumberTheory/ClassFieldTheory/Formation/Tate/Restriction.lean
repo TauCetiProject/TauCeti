@@ -14,12 +14,13 @@ For a restriction of finite normal layers `K/E` inside `K/F`, this file defines 
 
 `Hhatʳ(Gal(K/F), A^V) ⟶ Hhatʳ(Gal(K/E), A^V)`
 
-in every integer degree, with integral and with trivial integral coefficients. In positive degrees
-it is the ordinary cohomological restriction `LayerRestriction.cohomologyRes`; in degree zero it is
-induced by the inclusion of invariants, which on ground levels is the inclusion `A^U ⊆ A^{U'}`; in
-degree minus one it is induced by the relative transfer; and in degrees at most minus two it is the
-transfer on group homology. In degrees at most zero the smaller Galois group is identified with
-the image of its inclusion into the larger one, exactly as for `LayerRestriction.tateCor`.
+in every integer degree, with formation coefficients and with trivial integral coefficients. In
+positive degrees it is the ordinary cohomological restriction `LayerRestriction.cohomologyRes`;
+in degree zero it is induced by the inclusion of invariants, which on ground levels is the
+inclusion `A^U ⊆ A^{U'}`; in degree minus one it is induced by the relative transfer; and in
+degrees at most minus two it is the transfer on group homology. In degrees at most zero the smaller
+Galois group is identified with the image of its inclusion into the larger one, exactly as for
+`LayerRestriction.tateCor`.
 
 The comparison lemmas below identify each branch with the corresponding established map, and the
 degree-zero lemma reads restriction on norm quotients as the ground-level inclusion. Corestriction
@@ -132,8 +133,9 @@ theorem tateHZeroEquivNormQuotient_tateRes_H0π (T : LayerRestriction small big)
     (x : (big.rep F).ρ.invariants) :
     small.tateHZeroEquivNormQuotient F (T.tateRes F 0 (TateCohomology.H0π (big.rep F) x)) =
       small.normQuotientMk F (T.groundInclusion F (big.groundLevelEquiv F x)) := by
-  rw [tateRes_zero, ModuleCat.comp_apply, TauCeti.TateCohomology.H0π_comp_H0Res_apply,
-    tateRangeIso_def, TauCeti.TateCohomology.mapIso_inv,
+  rw [tateRes_zero, ModuleCat.comp_apply, TauCeti.TateCohomology.H0π_comp_H0Res_apply]
+  simp only [tateRangeIso]
+  rw [TauCeti.TateCohomology.mapIso_inv,
     TauCeti.TateCohomology.H0π_comp_map_apply, NormalLayer.tateHZeroEquivNormQuotient_H0π]
   congr 1
   ext
