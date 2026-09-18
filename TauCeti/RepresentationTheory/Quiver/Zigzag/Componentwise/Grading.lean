@@ -101,6 +101,7 @@ noncomputable def zigzagAlgebraGrade (n : ℕ) : Submodule k (zigzagAlgebra k G)
   ⨅ C, (zigzagComponentGrade k G C n).comap (zigzagComponentProjection k G C).toLinearMap
 
 /-- An element is homogeneous exactly when every component has the same degree. -/
+@[simp low]
 theorem mem_zigzagAlgebraGrade {n : ℕ} {x : zigzagAlgebra k G} :
     x ∈ zigzagAlgebraGrade k G n ↔
       ∀ C, zigzagComponentProjection k G C x ∈ zigzagComponentGrade k G C n := by
