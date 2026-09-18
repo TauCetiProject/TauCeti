@@ -22,8 +22,7 @@ Consequently composition assembles into a morphism of cochain complexes
 
 The order of the tensor factors is Keller's order: the map applied second occurs first.  This is
 also the order for which the tensor-product differential gives the displayed Leibniz rule.  The
-closed composition and unit maps are the algebraic input for the DG category of right modules;
-bundling its objects and lifting the pointwise laws to the enriched-category axioms remain separate.
+closed composition and unit maps are the algebraic input for the DG category of right modules.
 
 ## Main definitions
 
@@ -78,6 +77,9 @@ def comp {p q j : ℤ}
     rw [LinearMap.isHomogeneous_def]
     intro r x hx
     have := map_mem g (map_mem f hx)
+    -- The restricted `Aᵐᵒᵖ`-linear composite coerces here to an `R`-linear map, and no
+    -- evaluation lemma rewrites through that restriction.  Align its value with the two
+    -- successive applications once; the remaining goal is only degree arithmetic.
     change g.1 (f.1 x) ∈ ℳP (r + (p + q))
     simpa only [add_assoc, add_comm q p] using this⟩
 
@@ -116,6 +118,28 @@ theorem comp_add {p q j : ℤ}
 omit [DirectSum.Decomposition ℳ] [DirectSum.Decomposition ℳN]
     [DirectSum.Decomposition ℳP] in
 @[simp]
+theorem zero_comp {p q j : ℤ}
+    (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) q)
+    (hpq : p + q = j) :
+    comp (0 : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳN) (ℳN := ℳP) p)
+      f hpq = 0 := by
+  ext x
+  simp only [comp_apply, Submodule.coe_zero, LinearMap.zero_apply]
+
+omit [DirectSum.Decomposition ℳ] [DirectSum.Decomposition ℳN]
+    [DirectSum.Decomposition ℳP] in
+@[simp]
+theorem comp_zero {p q j : ℤ}
+    (g : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳN) (ℳN := ℳP) p)
+    (hpq : p + q = j) :
+    comp g (0 : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) q)
+      hpq = 0 := by
+  ext x
+  simp only [comp_apply, Submodule.coe_zero, LinearMap.zero_apply, map_zero]
+
+omit [DirectSum.Decomposition ℳ] [DirectSum.Decomposition ℳN]
+    [DirectSum.Decomposition ℳP] in
+@[simp]
 theorem smul_comp {p q j : ℤ} (r : R)
     (g : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳN) (ℳN := ℳP) p)
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) q)
@@ -134,7 +158,7 @@ theorem comp_smul {p q j : ℤ} (r : R)
   simp only [comp_apply, Submodule.coe_smul_of_tower, LinearMap.smul_apply]
   exact g.1.map_smul_of_tower r (f.1 x)
 
-/-- The degree-zero identity cochain of a differential graded right module. -/
+/-- The degree-zero identity cochain of a graded right module. -/
 def id :
     dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳ) 0 :=
   ⟨LinearMap.id, by
@@ -264,6 +288,9 @@ private theorem dgRightModuleCochainCompTensor_d_apply (p q j : ℤ) (hpq : p + 
   rw [dgRightModuleHomComplex_d, dgRightModuleHomComplex_d, dgRightModuleHomComplex_d]
   let g' : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳN) (ℳN := ℳP) p := g
   let f' : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) q := f
+  -- The component and pure-tensor lemmas do not rewrite through the nested `ModuleCat.ofHom`
+  -- applications in this goal.  Align those wrappers once with the degreewise cochain modules;
+  -- the characteristic differential and composition lemmas then finish the proof.
   change dgRightModuleCochains.comp
         (dgRightModuleCochains.differential (hM := hN) (hN := hP) p g') f' _ +
       p.negOnePow • dgRightModuleCochains.comp g'
@@ -336,6 +363,8 @@ noncomputable def dgRightModuleHomComplexUnit (hM : IsDGRightModule h ℳ dM) :
       apply LinearMap.ext
       intro r
       rw [dgRightModuleHomComplex_d]
+      -- `mkHomFromSingle` has no evaluation lemma for its closure proof.  Unfold its
+      -- `ModuleCat.ofHom` composite once so the characteristic differential lemmas apply.
       change dgRightModuleCochains.differential (hM := hM) (hN := hM) 0
         (r • dgRightModuleCochains.id (R := R) (A := A) (ℳ := ℳ)) = 0
       rw [map_smul, dgRightModuleCochains.differential_id, smul_zero])
@@ -363,6 +392,9 @@ theorem dgRightModuleHomComplexUnit_f_zero_apply (hM : IsDGRightModule h ℳ dM)
         ModuleCat.of R
           (dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳ) 0)) := by
   rw [dgRightModuleHomComplexUnit_f_zero]
+  -- `ModuleCat.hom_comp` does not expose application through `ModuleCat.ofHom` in the form
+  -- expected by the unit-iso and span-singleton evaluation lemmas.  Align that composite once;
+  -- no implementation detail remains after the rewrites.
   change LinearMap.toSpanSingleton R
     (dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳ) 0)
     (dgRightModuleCochains.id (R := R) (A := A) (ℳ := ℳ))
