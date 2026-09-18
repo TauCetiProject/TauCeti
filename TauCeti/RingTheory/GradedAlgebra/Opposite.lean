@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.TransferInstance
+public import Mathlib.RingTheory.GradedAlgebra.AlgHom
 public import TauCeti.Algebra.Module.GradedModule.Opposite
 
 /-!
@@ -30,11 +31,13 @@ associativity follow from transport.
 * `GradedOpposite G`: the Koszul-signed opposite algebra associated to an internal grading `G`.
 * `GradedOpposite.op` and `GradedOpposite.unop`: the additive, degree-preserving passage between
   an algebra and its graded opposite.
+* `GradedOpposite.map`: the induced homomorphism of signed opposites of graded algebras.
 
 ## Main results
 
 * `GradedOpposite.op_mul`: the signed reversed-product formula on homogeneous elements.
 * `GradedOpposite.op_mem_piece_iff`: `op` preserves degree.
+* `GradedOpposite.map_id` and `GradedOpposite.map_comp`: functoriality of the signed opposite.
 
 The convention follows B. Keller, *Introduction to A-infinity algebras and modules*, Sections 3
 and 7.
@@ -322,6 +325,85 @@ noncomputable instance instGradedAlgebra : GradedAlgebra (grading G).piece :=
   (grading G).isInternal.gradedAlgebra
 
 end Multiplication
+
+section Maps
+
+variable {B C : Type*} [Ring B] [Ring C] [Algebra R B] [Algebra R C]
+  (G : InternalGrading R A) (H : InternalGrading R B) (K : InternalGrading R C)
+  [GradedAlgebra G.piece] [GradedAlgebra H.piece] [GradedAlgebra K.piece]
+
+private theorem map_mul_aux (f : G.piece →ₐᵍ[R] H.piece) :
+    ∀ x y : GradedOpposite G,
+      op H (f (unop G (x * y))) = op H (f (unop G x)) * op H (f (unop G y)) := by
+  -- Bundling the underlying linear map lets additivity handle the induction steps.
+  let F := (opLinearEquiv H).toLinearMap ∘ₗ
+    f.toAlgHom.toLinearMap ∘ₗ (opLinearEquiv G).symm.toLinearMap
+  suffices h : ∀ x y, F (x * y) = F x * F y from h
+  intro x y
+  induction x using DirectSum.Decomposition.inductionOn (ℳ := (grading G).piece) with
+  | zero => simp
+  | add x x' hx hx' => simp [add_mul, hx, hx']
+  | homogeneous x =>
+    induction y using DirectSum.Decomposition.inductionOn (ℳ := (grading G).piece) with
+    | zero => simp
+    | add y y' hy hy' => simp [mul_add, hy, hy']
+    | homogeneous y =>
+      simp only [F, LinearMap.comp_apply, LinearEquiv.coe_coe,
+        opLinearEquiv_apply, opLinearEquiv_symm_apply, AlgHom.toLinearMap_apply,
+        GradedAlgHom.coe_toAlgHom]
+      rw [unop_mul G x.property y.property, op_mul H
+        (Graded.map_mem f ((mem_piece_iff G _ _).1 x.property))
+        (Graded.map_mem f ((mem_piece_iff G _ _).1 y.property))]
+      simp only [Units.smul_def, map_zsmul, map_mul]
+      exact map_zsmul (opLinearEquiv H) _ _
+
+/-- A graded algebra homomorphism induces a homomorphism of Koszul-signed opposites. -/
+noncomputable def map (f : G.piece →ₐᵍ[R] H.piece) :
+    (grading G).piece →ₐᵍ[R] (grading H).piece where
+  toAlgHom := AlgHom.ofLinearMap
+    ((opLinearEquiv H).toLinearMap ∘ₗ
+      f.toAlgHom.toLinearMap ∘ₗ (opLinearEquiv G).symm.toLinearMap)
+    (by simp) (map_mul_aux G H f)
+  map_mem hx := (mem_piece_iff H _ _).2 <| by
+    simpa [AlgHom.ofLinearMap] using Graded.map_mem f ((mem_piece_iff G _ _).1 hx)
+
+/-- On underlying elements, the induced map is the original homomorphism. -/
+theorem map_apply (f : G.piece →ₐᵍ[R] H.piece) (x : GradedOpposite G) :
+    map G H f x = op H (f (unop G x)) := (rfl)
+
+@[simp]
+theorem map_op (f : G.piece →ₐᵍ[R] H.piece) (a : A) :
+    map G H f (op G a) = op H (f a) := by
+  rw [map_apply, unop_op]
+
+@[simp]
+theorem unop_map (f : G.piece →ₐᵍ[R] H.piece) (x : GradedOpposite G) :
+    unop H (map G H f x) = f (unop G x) := by
+  rw [map_apply, unop_op]
+
+/-- Taking the signed opposite preserves identity homomorphisms. -/
+@[simp]
+theorem map_id : map G G (GradedAlgHom.id R G.piece) =
+    GradedAlgHom.id R (grading G).piece := by
+  ext x
+  simp [map_apply]
+
+/-- Taking the signed opposite preserves composition. -/
+@[simp]
+theorem map_comp (g : H.piece →ₐᵍ[R] K.piece) (f : G.piece →ₐᵍ[R] H.piece) :
+    map G K (g.comp f) = (map H K g).comp (map G H f) := by
+  ext x
+  simp [map_apply]
+
+/-- A homomorphism is determined by its map on signed opposites. -/
+theorem map_injective : Function.Injective (map G H) := by
+  intro f g h
+  apply GradedAlgHom.ext
+  intro a
+  have := congrArg (fun k => unop H (k (op G a))) h
+  simpa using this
+
+end Maps
 
 end GradedOpposite
 
