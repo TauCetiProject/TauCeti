@@ -165,6 +165,8 @@ def id :
     apply mem_iff.mpr
     rw [LinearMap.isHomogeneous_def]
     intro p x hx
+    -- The restricted identity map coerces to an `R`-linear map here, but
+    -- `LinearMap.id_coe` does not rewrite through that restriction.
     change x ∈ ℳ (p + 0)
     simpa only [LinearMap.id_coe, id_eq, add_zero] using hx⟩
 
@@ -318,14 +320,16 @@ private theorem dgRightModuleCochainCompTensor_d (p q j : ℤ) (hpq : p + q = j)
           (dgRightModuleHomComplex hM hN) (curriedTensor (ModuleCat.{u} R))
           (ComplexShape.up ℤ) j (j + 1) :=
     HomologicalComplex.mapBifunctor.d_eq _ _ _ _ j (j + 1)
-  rw [hd, Preadditive.add_comp, Preadditive.comp_add,
-    HomologicalComplex.mapBifunctor.ι_D₁_assoc, HomologicalComplex.mapBifunctor.ι_D₂_assoc,
-    HomologicalComplex.mapBifunctor.d₁_eq _ _ _ _
-      (ComplexShape.up_mk p (p + 1) rfl) q (j + 1) (by dsimp; omega),
-    HomologicalComplex.mapBifunctor.d₂_eq _ _ _ _ p
-      (ComplexShape.up_mk q (q + 1) rfl) (j + 1) (by dsimp; omega),
-    Linear.units_smul_comp, Linear.units_smul_comp, Category.assoc, Category.assoc,
-    HomologicalComplex.ι_mapBifunctorDesc, HomologicalComplex.ι_mapBifunctorDesc]
+  rw [hd, Preadditive.add_comp, Preadditive.comp_add]
+  -- Reduce the two tensor-differential summands independently before evaluating them.
+  rw [HomologicalComplex.mapBifunctor.ι_D₁_assoc]
+  rw [HomologicalComplex.mapBifunctor.d₁_eq _ _ _ _
+    (ComplexShape.up_mk p (p + 1) rfl) q (j + 1) (by dsimp; omega)]
+  rw [Linear.units_smul_comp, Category.assoc, HomologicalComplex.ι_mapBifunctorDesc]
+  rw [HomologicalComplex.mapBifunctor.ι_D₂_assoc]
+  rw [HomologicalComplex.mapBifunctor.d₂_eq _ _ _ _ p
+    (ComplexShape.up_mk q (q + 1) rfl) (j + 1) (by dsimp; omega)]
+  rw [Linear.units_smul_comp, Category.assoc, HomologicalComplex.ι_mapBifunctorDesc]
   apply ModuleCat.MonoidalCategory.tensor_ext
   intro g f
   simp only [curriedTensor_obj_obj, ModuleCat.hom_comp, LinearMap.coe_comp,
@@ -383,6 +387,8 @@ theorem dgRightModuleHomComplexUnit_f_zero_apply (hM : IsDGRightModule h ℳ dM)
       (r • dgRightModuleCochains.id (R := R) (A := A) (ℳ := ℳ) :
         ModuleCat.of R
           (dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳ) 0)) := by
+  -- `mkHomFromSingle_f` is the only component theorem for this constructor; expose that
+  -- component inline so the following calculation can use the unit-iso evaluation lemmas.
   rw [show (dgRightModuleHomComplexUnit hM).f 0 =
     (HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0
       (𝟙_ (ModuleCat.{u} R))).hom ≫
@@ -413,6 +419,8 @@ theorem ι_dgRightModuleHomComplexComp (p q j : ℤ) (hpq : p + q = j) :
         (dgRightModuleHomComplexComp (hM := hM) (hN := hN) (hP := hP)).f j =
       dgRightModuleCochainCompTensor (hM := hM) (hN := hN) (hP := hP) p q j hpq := by
   unfold dgRightModuleHomComplexComp
+  -- Unfolding leaves the structure component projection unreduced, while
+  -- `ι_mapBifunctorDesc` is stated directly for `mapBifunctorDesc`; expose that component once.
   change HomologicalComplex.ιMapBifunctor (dgRightModuleHomComplex hN hP)
         (dgRightModuleHomComplex hM hN) (curriedTensor (ModuleCat.{u} R))
         (ComplexShape.up ℤ) p q j hpq ≫
