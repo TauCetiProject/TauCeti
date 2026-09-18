@@ -68,7 +68,7 @@ theorem isCompletelyMonotoneOnIoi_div_of_isCompletelyMonotoneOnIoi_deriv
     le_taylorWithinEval_of_neg_one_pow_mul_iteratedDerivWithin_nonneg isOpen_Ioi hε.2.le
       (fun z hz => lt_of_lt_of_le hε.1 hz.1) (hsmooth.of_le (by exact_mod_cast le_top))
       fun z hz => by
-        have hz0 : 0 < z := lt_of_lt_of_le hε.1 hz.1
+        have hz0 : 0 < z := hε.1.trans hz.1
         rw [iteratedDerivWithin_of_isOpen isOpen_Ioi hz0, iteratedDeriv_succ']
         exact hf'.neg_one_pow_mul_iteratedDeriv_nonneg n hz0
   -- Letting `ε → 0`, the Taylor polynomial at `0` is nonnegative.

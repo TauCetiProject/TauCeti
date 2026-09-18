@@ -17,7 +17,7 @@ Two facts about Mathlib's Taylor polynomials `taylorWithinEval f n s x₀ x`.
 
 * **Sign of the remainder.** As a function of the expansion point, the derivative of
   `x₀ ↦ taylorWithinEval f n s x₀ x` is `(x - x₀)ⁿ / n! · f⁽ⁿ⁺¹⁾(x₀)`. If `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0`
-  on `[x, y]`, this derivative is nonnegative there, so the Taylor polynomial of order `n`
+  on `(x, y)`, this derivative is nonnegative there, so the Taylor polynomial of order `n`
   expanded at `y` and evaluated at the left endpoint `x` dominates `f x`: the Taylor remainder
   has a sign.
 * **Derivatives of `f(x) / x`.** By the Leibniz rule and `dᵐ/dxᵐ x⁻¹ = (-1)ᵐ m! x⁻ᵐ⁻¹`,
@@ -34,7 +34,7 @@ function divided by its parameter is completely monotone.
 ## Main declarations
 
 * `TauCeti.le_taylorWithinEval_of_neg_one_pow_mul_iteratedDerivWithin_nonneg`: if
-  `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0` on `[x, y]`, then `f x` is at most the Taylor polynomial of order `n` at `y`,
+  `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0` on `(x, y)`, then `f x` is at most the Taylor polynomial of order `n` at `y`,
   evaluated at `x`.
 * `TauCeti.iteratedDeriv_div_id`: the formula for the `n`-th derivative of `t ↦ f t / t`.
 -/
@@ -47,12 +47,12 @@ open scoped ContDiff Topology Nat
 namespace TauCeti
 
 /-- **The Taylor remainder has a sign.** Let `f` be `C^(n+1)` on an open set `s` containing
-`[x, y]`, with `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0` on `[x, y]`. Then the Taylor polynomial of order `n` of `f`
+`[x, y]`, with `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0` on `(x, y)`. Then the Taylor polynomial of order `n` of `f`
 expanded at `y` and evaluated at `x` is at least `f x`. -/
 theorem le_taylorWithinEval_of_neg_one_pow_mul_iteratedDerivWithin_nonneg {f : ℝ → ℝ} {s : Set ℝ}
     {n : ℕ} {x y : ℝ} (hs : IsOpen s) (hxy : x ≤ y) (hsub : Icc x y ⊆ s)
     (hf : ContDiffOn ℝ (n + 1) f s)
-    (hsign : ∀ z ∈ Icc x y, 0 ≤ (-1) ^ n * iteratedDerivWithin (n + 1) f s z) :
+    (hsign : ∀ z ∈ Ioo x y, 0 ≤ (-1) ^ n * iteratedDerivWithin (n + 1) f s z) :
     f x ≤ taylorWithinEval f n s y x := by
   -- The Taylor polynomial is nondecreasing in its expansion point on `[x, y]`.
   have hderiv : ∀ z ∈ s, HasDerivAt (fun w => taylorWithinEval f n s w x)
@@ -64,11 +64,11 @@ theorem le_taylorWithinEval_of_neg_one_pow_mul_iteratedDerivWithin_nonneg {f : �
     refine monotoneOn_of_hasDerivWithinAt_nonneg (convex_Icc x y)
       (fun z hz => (hderiv z (hsub hz)).continuousAt.continuousWithinAt)
       (fun z hz => (hderiv z (hsub (interior_subset hz))).hasDerivWithinAt) fun z hz => ?_
-    have hz := interior_subset hz
+    have hzIoo : z ∈ Ioo x y := by simpa only [interior_Icc] using hz
     have hpow : (x - z) ^ n = (-1) ^ n * (z - x) ^ n := by rw [← mul_pow]; ring
     rw [smul_eq_mul, hpow]
-    have := hsign z hz
-    have : 0 ≤ (z - x) ^ n := pow_nonneg (sub_nonneg.mpr hz.1) n
+    have := hsign z hzIoo
+    have : 0 ≤ (z - x) ^ n := pow_nonneg (sub_nonneg.mpr hzIoo.1.le) n
     calc (0 : ℝ) ≤ (n ! : ℝ)⁻¹ * (z - x) ^ n * ((-1) ^ n * iteratedDerivWithin (n + 1) f s z) := by
           positivity
       _ = _ := by ring
