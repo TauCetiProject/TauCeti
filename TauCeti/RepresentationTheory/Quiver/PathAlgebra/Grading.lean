@@ -187,7 +187,8 @@ theorem vertexIdempotent_mem_gradeBy_iff [Nontrivial k] {m : M} (v : Q) :
   rw [vertexIdempotent_eq_ofPath, ofPath_mem_gradeBy_iff, _root_.Quiver.Path.addWeight_nil,
     eq_comm]
 
-/-- **An arrow has degree `m` exactly when its weight is `m`.** -/
+/-- **An arrow has degree `m` exactly when its weight is `m`.** Deliberately not a `simp` lemma:
+`ofArrow_eq_ofPath` and `ofPath_mem_gradeBy_iff` already normalize its left-hand side. -/
 theorem ofArrow_mem_gradeBy_iff [Nontrivial k] {m : M} {a b : Q} (e : a ⟶ b) :
     (ofArrow e : pathAlgebra k Q) ∈ gradeBy k wt m ↔ wt e = m := by
   rw [ofArrow_eq_ofPath, ofPath_mem_gradeBy_iff]
