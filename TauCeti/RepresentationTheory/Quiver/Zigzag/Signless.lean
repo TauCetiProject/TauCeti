@@ -37,12 +37,6 @@ universe u w
 
 variable (k : Type w) {V : Type u} [Semiring k] (G : SimpleGraph V)
 
-/-- The star of the doubled quiver of `G` at `v` is finite, being in bijection with the neighbour
-set of `v`. -/
-noncomputable local instance (v : V) [Fintype (G.neighborSet v)] :
-    Fintype (Quiver.Star (DoubledQuiver.vertex G v)) :=
-  Fintype.ofEquiv _ (DoubledQuiver.starEquivNeighborSet G v).symm
-
 /-- **The signless relator of a simple graph** at `v` is `∑_{j ∼ v} (v → j → v)`, the sum of the
 backtracks along the edges at `v`. -/
 theorem signlessPreprojectiveRelator_vertex (v : V) [Fintype (G.neighborSet v)] :
