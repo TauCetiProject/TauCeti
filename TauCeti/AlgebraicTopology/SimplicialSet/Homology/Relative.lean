@@ -18,11 +18,9 @@ of these short exact sequences, and deduces that the connecting morphism is natu
 forms a natural transformation `SSetPair.homologyδNatTrans`.
 
 This file records that the maps from ambient to relative simplicial homology of a pair of
-simplicial sets are natural in the pair.  Naturality is what makes the quotient-induced
-comparisons between ambient and relative homology commute with maps of simplicial-set pairs, so
-that a comparison established for one pair transports to every pair mapping to or from it.  It is
-the homological form of the naturality that Mathlib's `SSetPair.chainComplexFunctorπ` expresses on
-chains.
+simplicial sets are natural in the pair: the ambient-to-relative homology maps commute with
+morphisms of simplicial-set pairs.  This is the homological form of the naturality that Mathlib's
+`SSetPair.chainComplexFunctorπ` expresses on chains.
 
 The source is Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
