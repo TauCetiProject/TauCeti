@@ -217,17 +217,12 @@ theorem trivialTateCor_comp_isoGroupCohomology_hom (T : LayerRestriction small b
   | zero => exact (NeZero.ne 0 rfl).elim
   | succ k =>
     simp only [trivialTateCor]
-    -- Peel off the semireducible group-cohomology carrier before cancelling the comparison iso.
+    -- Peel off the semireducible group-cohomology carrier before cancelling the comparison iso;
+    -- `simp`/`rw` cannot match through that carrier, so the cancellation is applied as a term.
     rw [Category.assoc, Category.assoc]
-    congr 1
-    congr 1
-    have cancel {X Y Z : ModuleCat ℤ} (f : X ⟶ Z) (e : Y ≅ Z) :
-        (f ≫ e.inv) ≫ e.hom = f := by simp
-    exact cancel
-      (TauCeti.groupCohomology.corestriction
-        T.galHom.range (Rep.trivial ℤ big.Gal ℤ) (k + 1))
-      ((TateCohomology.isoGroupCohomology (k + 1)).app
-        (Rep.trivial ℤ big.Gal ℤ))
+    congr 2
+    exact (Category.assoc _ _ _).trans
+      ((congrArg _ (Iso.inv_hom_id_app _ _)).trans (Category.comp_id _))
 
 /-- In degree minus one, trivial-coefficient Tate corestriction is the range comparison followed
 by inclusion of norm kernels. -/
