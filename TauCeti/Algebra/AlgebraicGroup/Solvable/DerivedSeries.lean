@@ -30,7 +30,7 @@ variable {k : Type*} [Field k] [IsAlgClosed k] (H : _root_.CommHopfAlgCat k)
   [Algebra.FiniteType k H] [IsReduced H]
 
 /-- Scheme-theoretic and abstract derived series reach the identity at the same index. -/
-theorem derivedSeriesDefiningIdeal_eq_augmentation_iff (n : ℕ) :
+@[simp] theorem derivedSeriesDefiningIdeal_eq_augmentation_iff (n : ℕ) :
     derivedSeriesDefiningIdeal H n = HopfIdeal.augmentation k H ↔
       derivedSeries (WithConv (H →ₐ[k] k)) n = ⊥ := by
   rw [derivedSeriesDefiningIdeal_eq_vanishingIdeal_derivedSeries,
