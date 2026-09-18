@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
+import TauCeti.Geometry.Manifold.IntegralCurve.Flow
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # The Riemannian exponential map
@@ -20,7 +22,9 @@ every theorem about its mathematical value carries the corresponding domain hypo
 homogeneity of maximal geodesics turns into the two basic facts relating the exponential map to
 geodesics: `t` lies in the maximal interval of `v` exactly when `t • v` lies in the domain, and
 then `exp_p (t • v)` is the maximal geodesic at time `t`.  In particular the domain is star-shaped
-at `0`, and it is all of `T_p M` exactly when every geodesic leaving `p` is defined for all time.
+at `0`.  Smooth dependence of the maximal geodesic flow shows that this domain is open and that
+the exponential map is smooth there.  Finally, the domain is all of `T_p M` exactly when every
+geodesic leaving `p` is defined for all time.
 
 ## Main definitions and results
 
@@ -31,6 +35,8 @@ at `0`, and it is all of `T_p M` exactly when every geodesic leaving `p` is defi
   the set of times `t` with `t • v` in the domain.
 * `TauCeti.Manifold.riemannianExp_smul`: `exp_p (t • v)` is the maximal geodesic at time `t`.
 * `TauCeti.Manifold.starConvex_expDomain`: the domain is star-shaped at `0`.
+* `TauCeti.Manifold.isOpen_expDomain`: the natural domain is open.
+* `TauCeti.Manifold.contMDiffOn_riemannianExp`: the exponential map is smooth on its domain.
 * `TauCeti.Manifold.expDomain_eq_univ_iff`: the exponential map at `p` is defined on all of
   `T_p M` exactly when `M` is geodesically complete at `p`.
 
@@ -135,6 +141,88 @@ theorem starConvex_expDomain (p : M) : StarConvex ℝ (0 : TangentSpace I p) (ex
   have hb1 : b ≤ 1 := by linarith
   exact ordConnected_geodesicInterval.out zero_mem_geodesicInterval (mem_expDomain_iff.1 hv)
     ⟨hb, hb1⟩
+
+/-! ### Regularity -/
+
+local instance tangentSpaceChartedSpace (p : M) :
+    ChartedSpace (TangentSpace I p) (TangentSpace I p) :=
+  chartedSpaceSelf (TangentSpace I p)
+
+/-- The natural domain of the Riemannian exponential map is open. -/
+theorem isOpen_expDomain [T2Space (TangentBundle I M)] (p : M) :
+    IsOpen (expDomain I M p) := by
+  have hspray : ContMDiff I.tangent I.tangent.tangent 1
+      (fun z : TangentBundle I M ↦
+        (⟨z, geodesicSpray I M z⟩ : TangentBundle I.tangent (TangentBundle I M))) :=
+    (contMDiff_geodesicSpray (I := I) (M := M) (n := (1 : ℕ∞ω))
+      (m := ∞) (k := ∞) (by norm_num) (by norm_num)).of_le (by norm_num)
+  have hinitial : Continuous
+      (fun v : TangentSpace I p ↦ TotalSpace.mk' E p v) :=
+    FiberBundle.continuous_totalSpaceMk E (TangentSpace I) p
+  have hinput : Continuous (fun v : TangentSpace I p ↦
+      (TotalSpace.mk' E p v, (1 : ℝ))) :=
+    hinitial.prodMk continuous_const
+  have hflow : IsOpen (maximalIntegralCurveFlowDomain (geodesicSpray I M)) :=
+    isOpen_maximalIntegralCurveFlowDomain hspray
+  rw [show expDomain I M p =
+      (fun v : TangentSpace I p ↦ (TotalSpace.mk' E p v, (1 : ℝ))) ⁻¹'
+        maximalIntegralCurveFlowDomain (geodesicSpray I M) by
+    ext v
+    simp only [mem_expDomain_iff, mem_preimage, mem_maximalIntegralCurveFlowDomain,
+      maximalIntegralCurveInterval_geodesicSpray]]
+  exact hflow.preimage hinput
+
+/-- The Riemannian exponential map is smooth on its natural domain. -/
+theorem contMDiffOn_riemannianExp [T2Space (TangentBundle I M)] (p : M) :
+    ContMDiffOn 𝓘(ℝ, TangentSpace I p) I ∞
+      (riemannianExp I M p) (expDomain I M p) := by
+  have hspray : ContMDiff I.tangent I.tangent.tangent ∞
+      (fun z : TangentBundle I M ↦
+        (⟨z, geodesicSpray I M z⟩ : TangentBundle I.tangent (TangentBundle I M))) :=
+    contMDiff_geodesicSpray (I := I) (M := M) (n := ∞)
+      (m := ∞) (k := ∞) (by simp) (by simp)
+  have hinitial : ContMDiff 𝓘(ℝ, TangentSpace I p) I.tangent ∞
+      (fun v : TangentSpace I p ↦ TotalSpace.mk' E p v) :=
+    contMDiff_tangentBundle_mk_constBase (I := I) (M := M) (n := ∞)
+      ((tangentSpaceCastModel I p).toContinuousLinearMap.contMDiff (n := ∞)) p
+  have hinput : ContMDiff 𝓘(ℝ, TangentSpace I p)
+      (I.tangent.prod 𝓘(ℝ, ℝ)) ∞
+      (fun v : TangentSpace I p ↦ (TotalSpace.mk' E p v, (1 : ℝ))) :=
+    hinitial.prodMk contMDiff_const
+  have hflow := contMDiffOn_maximalIntegralCurve (I := I.tangent) (n := (⊤ : ℕ∞))
+    (by simp) hspray
+  have hstate : ContMDiffOn 𝓘(ℝ, TangentSpace I p) I.tangent ∞
+      (fun v : TangentSpace I p ↦ maximalIntegralCurve (geodesicSpray I M)
+        (TotalSpace.mk' E p v) 1) (expDomain I M p) := by
+    apply hflow.comp hinput.contMDiffOn
+    intro v hv
+    change ((TotalSpace.mk' E p v : TangentBundle I M), (1 : ℝ)) ∈
+      maximalIntegralCurveFlowDomain (geodesicSpray I M)
+    rw [mem_maximalIntegralCurveFlowDomain]
+    rw [maximalIntegralCurveInterval_geodesicSpray]
+    exact mem_expDomain_iff.mp hv
+  have hbase := (Bundle.contMDiff_proj
+    (fun x : M ↦ TangentSpace I x) (n := ∞)).comp_contMDiffOn hstate
+  exact hbase.congr fun v _ ↦ by
+    simp only [Function.comp_apply, riemannianExp_def, maximalGeodesic_def]
+
+/-- The Riemannian exponential map is continuous on its natural domain. -/
+theorem continuousOn_riemannianExp [T2Space (TangentBundle I M)] (p : M) :
+    ContinuousOn (riemannianExp I M p) (expDomain I M p) :=
+  (contMDiffOn_riemannianExp (I := I) (M := M) p).continuousOn
+
+/-- The Riemannian exponential map is smooth at every point of its natural domain. -/
+theorem contMDiffAt_riemannianExp [T2Space (TangentBundle I M)] {p : M}
+    {v : TangentSpace I p} (hv : v ∈ expDomain I M p) :
+    ContMDiffAt 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p) v :=
+  (contMDiffOn_riemannianExp (I := I) (M := M) p v hv).contMDiffAt
+    (isOpen_expDomain (I := I) (M := M) p |>.mem_nhds hv)
+
+/-- The Riemannian exponential map is continuous at every point of its natural domain. -/
+theorem continuousAt_riemannianExp [T2Space (TangentBundle I M)] {p : M}
+    {v : TangentSpace I p} (hv : v ∈ expDomain I M p) :
+    ContinuousAt (riemannianExp I M p) v :=
+  (contMDiffAt_riemannianExp (I := I) (M := M) hv).continuousAt
 
 /-! ### Completeness at a point -/
 
