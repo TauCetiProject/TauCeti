@@ -63,8 +63,8 @@ theorem integral_character_symPower (d : ℕ) :
   rcases eq_or_ne d 0 with rfl | hd
   · simp
   · simp only [hd, ↓reduceIte]
-    have hbot := Representation.IsIrreducible.invariants_eq_bot (isIrreducible_symPowerModel d)
-      (by rw [finrank_euclideanSpace_fin]; omega)
+    have hbot := Representation.IsIrreducible.invariants_eq_bot_of_finrank_ne_one
+      (isIrreducible_symPowerModel d) (by rw [finrank_euclideanSpace_fin]; omega)
     -- Mathlib's `ContRepresentation.invariants` and `Representation.invariants` of the underlying
     -- representation are distinct submodules whose memberships both unfold to `∀ g, π g v = v`.
     rw [← (ContRepresentation.integral_character_eq_zero_iff (symPowerModel d)
