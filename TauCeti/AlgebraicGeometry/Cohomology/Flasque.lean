@@ -74,19 +74,13 @@ namespace Scheme.Modules
 
 variable {X : Scheme.{u}}
 
-/-- The underlying presheaf of the abelian sheaf obtained from a sheaf of modules is
-definitionally its underlying abelian presheaf. This private lemma isolates that definitional
-bridge for the flasque-acyclicity instances below. -/
-private lemma isFlasque_toSheaf (M : X.Modules) [M.presheaf.IsFlasque] :
-    TopCat.Presheaf.IsFlasque ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M).obj :=
-  ‹M.presheaf.IsFlasque›
-
 /-- A flasque sheaf of modules has vanishing cohomology over every open subset in every positive
 degree. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomologyOn_succ_of_isFlasque
     (M : X.Modules) [M.presheaf.IsFlasque] (n : ℕ) (U : X.Opens) :
     Subsingleton (cohomologyOn M (n + 1) U) := by
-  let _ := isFlasque_toSheaf M
+  let _ : TopCat.Presheaf.IsFlasque
+      ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M).obj := ‹M.presheaf.IsFlasque›
   exact TauCeti.Topology.subsingleton_H'_succ_of_isFlasque (X := X.toTopCat)
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) n U
 
@@ -94,7 +88,8 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomologyOn_succ_
 instance _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isFlasque
     (M : X.Modules) [M.presheaf.IsFlasque] (n : ℕ) :
     Subsingleton (Cohomology M (n + 1)) := by
-  let _ := isFlasque_toSheaf M
+  let _ : TopCat.Presheaf.IsFlasque
+      ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M).obj := ‹M.presheaf.IsFlasque›
   exact TauCeti.Topology.subsingleton_H_succ_of_isFlasque (X := X.toTopCat)
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) n
 
