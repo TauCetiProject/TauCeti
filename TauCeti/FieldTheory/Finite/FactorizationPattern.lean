@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.FieldDivision
+public import Mathlib.Algebra.Squarefree.Basic
+public import Mathlib.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 public import TauCeti.FieldTheory.Finite.Irreducible
-public import TauCeti.RingTheory.Polynomial.Factors
+
+import Mathlib.Algebra.Polynomial.BigOperators
 
 /-!
 # Squarefree polynomials with prescribed factorization patterns over finite fields
@@ -27,7 +31,7 @@ Galois group over `ℚ`.
 * `TauCeti.exists_monic_squarefree_map_natDegree_normalizedFactors_eq_pair_one_sub_one`: for
   `2 ≤ n`, a monic squarefree polynomial of degree `n` whose factor degrees are `{1, n - 1}`.
 * `TauCeti.exists_monic_squarefree_count_two_map_natDegree_normalizedFactors_eq_one_and_odd`:
-  for `3 ≤ n`, a monic squarefree polynomial of degree `n` with exactly one quadratic irreducible
+  for `2 ≤ n`, a monic squarefree polynomial of degree `n` with exactly one quadratic irreducible
   factor and all other irreducible factors of odd degree.
 
 ## References
@@ -72,17 +76,20 @@ theorem exists_monic_squarefree_map_natDegree_normalizedFactors_eq_pair_one_sub_
     Multiset.sum_cons, Multiset.sum_singleton, natDegree_X, hdeg]
   omega
 
-/-- For `3 ≤ n`, a finite field has a monic squarefree polynomial of degree `n` with exactly one
+/-- For `2 ≤ n`, a finite field has a monic squarefree polynomial of degree `n` with exactly one
 irreducible factor of degree `2`, all of whose other irreducible factors have odd degree.
 
-For odd `n` the factors have degrees `2` and `n - 2`; for even `n` they have degrees `2`, `1`
-and `n - 3`. -/
+For `n = 2` the polynomial is irreducible quadratic; for odd `n` the factors have degrees `2` and
+`n - 2`; for even `n ≥ 4` they have degrees `2`, `1` and `n - 3`. -/
 theorem exists_monic_squarefree_count_two_map_natDegree_normalizedFactors_eq_one_and_odd
-    [DecidableEq k] (n : ℕ) (hn : 3 ≤ n) :
+    [DecidableEq k] (n : ℕ) (hn : 2 ≤ n) :
     ∃ g : k[X], g.Monic ∧ g.natDegree = n ∧ Squarefree g ∧
       ((normalizedFactors g).map natDegree).count 2 = 1 ∧
       ∀ d ∈ (normalizedFactors g).map natDegree, d ≠ 2 → Odd d := by
   obtain ⟨q, qmonic, qirr, qdeg⟩ := exists_monic_irreducible_natDegree_eq k 2 two_pos
+  obtain rfl | hn := hn.eq_or_lt
+  · refine ⟨q, qmonic, qdeg, qirr.squarefree, ?_, ?_⟩ <;>
+      simp [normalizedFactors_irreducible qirr, qmonic.normalize_eq_self, qdeg]
   have qX : q ≠ X := fun h ↦ by simp [h] at qdeg
   rcases Nat.even_or_odd n with ⟨m, rfl⟩ | ⟨m, rfl⟩
   · -- even degree: factors of degrees `2`, `1` and `n - 3`
