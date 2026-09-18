@@ -29,7 +29,7 @@ open CategoryTheory CategoryTheory.Limits
 namespace ComplexShape.Embedding
 
 /-- Mapping a restricted complex and restricting the mapped complex have the same objects. -/
-theorem mapRestriction_obj_X
+private theorem mapRestriction_obj_X
     {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
     {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
     (F : C ⥤ D) [F.PreservesZeroMorphisms] (e : c.Embedding c') [e.IsRelIff]
@@ -73,7 +73,7 @@ noncomputable def mapRestrictionIso
 /-- The forward component of the comparison between mapping after restriction and restriction
 after mapping is the canonical transport along their object equality. -/
 @[simp]
-theorem mapRestrictionIso_hom_f
+private theorem mapRestrictionIso_hom_f
     {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
     {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
     (e : c.Embedding c') (F : C ⥤ D) [F.PreservesZeroMorphisms] [e.IsRelIff]
@@ -84,7 +84,7 @@ theorem mapRestrictionIso_hom_f
 /-- The inverse component of the comparison between mapping after restriction and restriction
 after mapping is the inverse canonical transport along their object equality. -/
 @[simp]
-theorem mapRestrictionIso_inv_f
+private theorem mapRestrictionIso_inv_f
     {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
     {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
     (e : c.Embedding c') (F : C ⥤ D) [F.PreservesZeroMorphisms] [e.IsRelIff]
