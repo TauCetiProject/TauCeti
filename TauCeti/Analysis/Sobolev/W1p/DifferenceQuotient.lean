@@ -188,16 +188,11 @@ theorem W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le (hp : p ≠ ∞) (u : W1p
   · simp
   have hbound := W1p.eLpNorm_value_comp_add_sub_le hp u (t • v) hK hTO hKT
   simp_rw [real_inner_smul_left] at hbound
-  rw [show (fun x => t⁻¹ * (W1p.value u (x + t • v) - W1p.value u x)) =
-      t⁻¹ • fun x => W1p.value u (x + t • v) - W1p.value u x by
-        ext x
-        simp only [Pi.smul_apply, smul_eq_mul],
-    eLpNorm_const_smul]
-  rw [show (fun x => t * ⟪v, W1p.gradient u x⟫_ℝ) = t • fun x => ⟪v, W1p.gradient u x⟫_ℝ
-    by
-      ext x
-      simp only [Pi.smul_apply, smul_eq_mul],
-    eLpNorm_const_smul] at hbound
+  -- `fun x => c * f x` is definitionally `c • f`, so `eLpNorm_const_smul` pulls out scalars.
+  have hmul (c : ℝ) (f : E → ℝ) (ν : Measure E) :
+      eLpNorm (fun x => c * f x) p ν = ‖c‖ₑ * eLpNorm f p ν :=
+    eLpNorm_const_smul c f p ν
+  rw [hmul] at hbound ⊢
   calc ‖t⁻¹‖ₑ * eLpNorm (fun x => W1p.value u (x + t • v) - W1p.value u x) p (mu.restrict K)
       ≤ ‖t⁻¹‖ₑ * (‖t‖ₑ * eLpNorm (fun x => ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict T)) := by
         gcongr
