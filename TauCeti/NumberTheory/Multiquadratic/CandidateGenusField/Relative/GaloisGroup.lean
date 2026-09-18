@@ -109,6 +109,25 @@ noncomputable def candidateGenusFieldRelativeSignSubmodule {d : ℤ} (hd : Squar
     v ∈ candidateGenusFieldRelativeSignSubmodule hd ↔ ∑ P, v P = 0 := by
   simp [candidateGenusFieldRelativeSignSubmodule, Fintype.linearCombination_apply]
 
+/-- Two even-parity sign patterns that agree away from one coordinate are equal. -/
+theorem candidateGenusFieldRelativeSignSubmodule_eq_of_forall_ne {d : ℤ}
+    (hd : Squarefree d) (x y : candidateGenusFieldRelativeSignSubmodule hd)
+    (P : {P // P ∈ genusPrimeDiscriminants hd})
+    (h : ∀ R ≠ P, x.val R = y.val R) : x = y := by
+  have hxsum := (mem_candidateGenusFieldRelativeSignSubmodule_iff hd x.val).mp x.property
+  have hysum := (mem_candidateGenusFieldRelativeSignSubmodule_iff hd y.val).mp y.property
+  have herase : ∑ R ∈ Finset.univ.erase P, x.val R =
+      ∑ R ∈ Finset.univ.erase P, y.val R :=
+    Finset.sum_congr rfl fun R hR ↦ h R (Finset.mem_erase.mp hR).1
+  rw [← Finset.sum_erase_add _ _ (Finset.mem_univ P), herase] at hxsum
+  rw [← Finset.sum_erase_add _ _ (Finset.mem_univ P)] at hysum
+  have hP : x.val P = y.val P := add_left_cancel (hxsum.trans hysum.symm)
+  apply Subtype.ext
+  funext R
+  by_cases hR : R = P
+  · simpa only [hR] using hP
+  · exact h R hR
+
 private theorem candidateGenusFieldProdRoot_ne_zero {d : ℤ} (hd : Squarefree d) :
     candidateGenusFieldProdRoot hd ≠ 0 := by
   rw [candidateGenusFieldProdRoot]
