@@ -37,7 +37,7 @@ centre gives the `Γ.withCenter` readings.
 * `Subgroup.finiteIndex_of_finiteIndex_subgroupOf`: finite index composes along `V ≤ U ≤ G`.
 * `MonoidHom.finiteIndex_range_comp`: finite index of ranges is preserved by composition
   with an injective homomorphism of finite-index range.
-* `MonoidHom.bijective_mk_mul_out`: right cosets of a composite range are represented by
+* `MonoidHom.mk_mul_out_bijective`: right cosets of a composite range are represented by
   products of representatives for the two successive ranges.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}`.
@@ -67,7 +67,7 @@ variable {A : Type u} {B : Type v} {C : Type w} [Group A] [Group B] [Group C]
 /-- For an injective `φ₂`, the right cosets of `(φ₂.comp φ₁).range` are represented uniquely by
 products `φ₂ b * c`, where `b` and `c` are the chosen representatives of right cosets for the two
 successive ranges. -/
-theorem bijective_mk_mul_out (φ₁ : A →* B) (φ₂ : B →* C) (h₂ : Function.Injective φ₂) :
+theorem mk_mul_out_bijective (φ₁ : A →* B) (φ₂ : B →* C) (h₂ : Function.Injective φ₂) :
     Function.Bijective fun x : Quotient (QuotientGroup.rightRel φ₂.range) ×
         Quotient (QuotientGroup.rightRel φ₁.range) =>
       Quotient.mk (QuotientGroup.rightRel (φ₂.comp φ₁).range) (φ₂ x.2.out * x.1.out) := by
