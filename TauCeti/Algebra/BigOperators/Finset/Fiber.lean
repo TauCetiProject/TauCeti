@@ -24,12 +24,17 @@ Regrouping along the coordinate projections of a finite dependent product turns 
 summand is weighted by a sum of coordinate functions into a sum of one-coordinate sums against
 the fibrewise masses; this is the algebraic core of multi-marginal linear programming.
 
+Fibres over values the map does not take are empty, so a bound below `0` that holds for the
+fibre sums over the range holds for the fibre sum over every value of the codomain.
+
 ## Main results
 
 * `TauCeti.sum_eq_sum_image_fiber`: `∑ i, F i` is the sum, over the values `g` takes, of the sums
   of `F` over the fibres of `g`.
 * `TauCeti.sum_sum_eval_mul`: summing `(∑ i, φ i (z i)) * f z` over a finite dependent product
   regroups, coordinate by coordinate, into `∑ i, ∑ a, φ i a * ∑ z with z i = a, f z`.
+* `TauCeti.lt_sum_filter_eq_of_forall_apply`: a negative lower bound for the fibre sums of `g`
+  over its range is a lower bound for the fibre sum over every value.
 -/
 
 public section
@@ -68,5 +73,17 @@ theorem sum_sum_eval_mul {ι : Type*} {X : ι → Type*} {R : Type*} [Fintype ι
   refine sum_congr rfl fun z hz ↦ ?_
   have hz' : z i = a := (mem_filter.1 hz).2
   rw [hz']
+
+/-- **A negative lower bound on the fibre sums over the range bounds every fibre sum.** A value
+`k` outside the range of `g` has an empty fibre, so the sum over it is the empty sum `0`, which
+lies above `c` by hypothesis. -/
+theorem lt_sum_filter_eq_of_forall_apply {ι κ M : Type*} [Fintype ι] [DecidableEq κ]
+    [AddCommMonoid M] [Preorder M] {g : ι → κ} {F : ι → M} {c : M} (hc : c < 0)
+    (h : ∀ j, c < ∑ i with g i = g j, F i) (k : κ) :
+    c < ∑ i with g i = k, F i := by
+  by_cases hk : k ∈ Set.range g
+  · obtain ⟨j, rfl⟩ := hk
+    exact h j
+  · rwa [sum_eq_zero fun i hi => (hk ⟨i, (mem_filter.mp hi).2⟩).elim]
 
 end TauCeti
