@@ -10,7 +10,7 @@ public import Mathlib.RepresentationTheory.Homological.GroupHomology.Shapiro
 public import TauCeti.RepresentationTheory.Homological.Resolution
 
 /-!
-# Shapiro's isomorphism in homology is the corestriction of the unit
+# The inverse of Shapiro's isomorphism in homology is the corestriction of the unit
 
 For a subgroup `S ≤ G` and an `S`-representation `A`, Mathlib's homological Shapiro isomorphism
 `groupHomology.indIso A n : Hₙ(G, Ind_S^G A) ≅ Hₙ(S, A)` is constructed through `Tor`: it compares
@@ -53,13 +53,14 @@ open _root_.groupHomology
 
 universe u
 
-variable {k G : Type u} [CommRing k] [Group G] (S : Subgroup G) (A : Rep.{u} k S)
+variable {k G : Type u} [CommRing k] [Group G] [DecidableEq G]
+  (S : Subgroup G) (A : Rep.{u} k S)
 
 /-- The chain-level form of `indIso_inv`: going from inhomogeneous chains of `S` to the bar complex
 of `S`, along the bar resolution to the restricted bar complex of `G`, across the
 induction–coinvariants identification, and back to inhomogeneous chains of `G` sends
 `a · (s₁, …, sₙ)` to `(1 ⊗ a) · (s₁, …, sₙ)`. -/
-private theorem shapiroChains [DecidableEq G] :
+private theorem shapiroChains :
     (inhomogeneousChainsIso A).hom ≫
       (((coinvariantsTensor k S).obj A).mapHomologicalComplex _).map
         (TauCeti.Rep.barComplex.resChainMap (k := k) S.subtype) ≫
@@ -86,10 +87,10 @@ private theorem shapiroChains [DecidableEq G] :
   refine (coinvariantsTensorFreeToFinsupp_mk_tmul_single _ _ _ _ _).trans ?_
   simp [indResAdjunction, indResHomEquiv]
 
-open Classical in
-/-- **Shapiro's isomorphism in homology is corestriction of the unit.** The inverse of the
-isomorphism `Hₙ(G, Ind_S^G A) ≅ Hₙ(S, A)` of `groupHomology.indIso` is the change-of-group map along
-`S ≤ G` induced by the unit `A ⟶ Res_S Ind_S^G A`, `a ↦ 1 ⊗ a`, of induction–restriction. -/
+/-- **The inverse of Shapiro's isomorphism in homology is corestriction of the unit.** The
+inverse of the isomorphism `Hₙ(G, Ind_S^G A) ≅ Hₙ(S, A)` of `groupHomology.indIso` is the
+change-of-group map along `S ≤ G` induced by the unit `A ⟶ Res_S Ind_S^G A`, `a ↦ 1 ⊗ a`,
+of induction–restriction. -/
 theorem indIso_inv (n : ℕ) :
     (indIso S A n).inv = map S.subtype ((indResAdjunction k S.subtype).unit.app A) n := by
   -- The comparison, through `Tor`, of the bar resolution of `S` with the restricted bar resolution
@@ -105,7 +106,15 @@ theorem indIso_inv (n : ℕ) :
       ((TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π S.subtype).trans
         (Category.comp_id _).symm) ((coinvariantsTensor k S).obj A) n
     rw [CategoryTheory.Functor.map_id, Category.id_comp] at hnat
-    exact (Iso.inv_comp_eq _).2 hnat
+    have hmap :
+        (((coinvariantsTensor k S).obj A).mapHomologicalComplex _ ⋙
+          HomologicalComplex.homologyFunctor _ _ n).map
+            (TauCeti.Rep.barComplex.resChainMap S.subtype) =
+          HomologicalComplex.homologyMap
+            ((((coinvariantsTensor k S).obj A).mapHomologicalComplex _).map
+              (TauCeti.Rep.barComplex.resChainMap S.subtype)) n := by
+      rw [CategoryTheory.Functor.comp_map, HomologicalComplex.homologyFunctor_map]
+    exact (Iso.inv_comp_eq _).2 (hnat.trans (congrArg (_ ≫ ·) hmap))
   -- `indIso` is by definition the homology of the Shapiro chain isomorphism preceded by that
   -- comparison and by the identification of inhomogeneous chains with the bar complex. Mathlib's
   -- definition resolves the trivial representation of `S` both by `barResolution k S` and by the
@@ -129,7 +138,6 @@ theorem indIso_inv (n : ℕ) :
     (HomologicalComplex.homologyMap_comp _ _ n).symm).trans
     (congrArg (HomologicalComplex.homologyMap · n) (shapiroChains S A))
 
-open Classical in
 /-- **Corestriction through Shapiro's lemma.** For a `G`-representation `B`, the inverse of
 Shapiro's isomorphism `Hₙ(G, Ind_S^G Res_S B) ≅ Hₙ(S, Res_S B)` followed by the map induced by the
 counit `Ind_S^G Res_S B ⟶ B` of induction–restriction is corestriction

@@ -54,6 +54,22 @@ namespace TauCeti.groupHomology
 
 variable {R G : Type u} [CommRing R] [Group G]
 
+/-- The functor from representations to inhomogeneous group-homology chains is additive. -/
+noncomputable instance chainsFunctorAdditive :
+    (_root_.groupHomology.chainsFunctor R G).Additive where
+  map_add := by
+    intro X Y f g
+    change _root_.groupHomology.chainsMap (MonoidHom.id G) (f + g) =
+      _root_.groupHomology.chainsMap (MonoidHom.id G) f +
+        _root_.groupHomology.chainsMap (MonoidHom.id G) g
+    refine HomologicalComplex.hom_ext _ _ fun i => ModuleCat.hom_ext ?_
+    simp only [HomologicalComplex.add_f_apply, ModuleCat.hom_add,
+      _root_.groupHomology.chainsMap_id_f_hom_eq_mapRange]
+    refine Finsupp.lhom_ext fun x a => ?_
+    simp only [Rep.add_hom, Representation.IntertwiningMap.add_toLinearMap,
+      LinearMap.add_apply, Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_single,
+      Finsupp.single_add]
+
 open scoped Classical in
 /-- The transfer in group homology from a group to a finite-index subgroup. It is the map induced
 by the unit `M ⟶ Indˢᴳ Resˢᴳ M`, followed by the homological Shapiro isomorphism. -/
@@ -82,18 +98,15 @@ is `[G : S]` times the identity, in every degree `n`. -/
 theorem transfer_comp_map_subtype_id (M : Rep R G) (S : Subgroup G) [S.FiniteIndex] (n : ℕ) :
     transfer M S n ≫ _root_.groupHomology.map S.subtype (𝟙 (Rep.res S.subtype M)) n =
       S.index • 𝟙 _ := by
-  -- On inhomogeneous chains, the map induced by `[G : S] • 𝟙 M` is `[G : S]` times the identity.
-  have hchains : _root_.groupHomology.chainsMap (MonoidHom.id G) (S.index • 𝟙 M) =
-      S.index • 𝟙 (_root_.groupHomology.inhomogeneousChains M) := by
-    refine HomologicalComplex.hom_ext _ _ fun i => ModuleCat.hom_ext ?_
-    rw [_root_.groupHomology.chainsMap_id_f_hom_eq_mapRange]
-    refine Finsupp.lhom_ext fun x a => ?_
-    simp [Rep.nsmul_hom, Finsupp.smul_single, -nsmul_eq_mul]
+  have hsmul : _root_.groupHomology.map (MonoidHom.id G) (S.index • 𝟙 M) n =
+      (HomologicalComplex.homologyFunctor _ _ n).map
+        ((_root_.groupHomology.chainsFunctor R G).map (S.index • 𝟙 M)) := by
+    rw [HomologicalComplex.homologyFunctor_map]
+    rfl
   rw [← TauCeti.groupHomology.indIso_inv_comp_map_counit, transfer_comp_indIso_inv_assoc,
     _root_.groupHomology.functor_map, ← _root_.groupHomology.map_id_comp,
     TauCeti.Rep.resIndAdjunction_unit_app_comp_indResAdjunction_counit_app,
-    _root_.groupHomology.map, hchains]
-  exact (HomologicalComplex.homologyFunctor _ _ n).map_nsmul.trans
-    (congrArg (S.index • ·) ((HomologicalComplex.homologyFunctor _ _ n).map_id _))
+    hsmul, Functor.map_nsmul, Functor.map_nsmul, CategoryTheory.Functor.map_id]
+  exact congrArg (S.index • ·) (CategoryTheory.Functor.map_id _ _)
 
 end TauCeti.groupHomology
