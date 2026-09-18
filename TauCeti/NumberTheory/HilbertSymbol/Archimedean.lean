@@ -6,23 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Real.Sqrt
-public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 
 /-!
-# The Hilbert symbol over `ℝ` and over algebraically closed fields
+# The Hilbert symbol over `ℝ`
 
-This file computes the norm-equation Hilbert symbol `TauCeti.hilbertSymbol` over the
-archimedean completions of a number field.
+This file computes the norm-equation Hilbert symbol `TauCeti.hilbertSymbol` over `ℝ`.
 
 Over `ℝ` the equation `b = x² - a y²` is solvable unless both `a` and `b` are negative, because
 `x² - a y²` is then positive for every nonzero `(x, y)`. Hence `(a, b) = -1` exactly when
 `a < 0` and `b < 0`. Bimultiplicativity over `ℝ` is read off this formula, and so is the value of
 the product `∏_{i<j} (a_i, a_j)` attached to a diagonal real form: it is `(-1)^(q(q-1)/2)`,
 where `q` is the number of negative coefficients.
-
-Over an algebraically closed field, such as `ℂ`, every element is a square, so the symbol is
-always `1`.
 
 ## Main results
 
@@ -33,8 +28,6 @@ always `1`.
   `-1`.
 * `TauCeti.prod_hilbertSymbol_real`: the product of the symbols over ordered pairs of a finite
   family of real units.
-* `TauCeti.hilbertSymbol_eq_one_of_isAlgClosed`: the symbol is trivial over an algebraically closed
-  field.
 
 ## References
 
@@ -99,10 +92,12 @@ theorem hilbertSymbol_real_mul_left (a a' b : ℝˣ) :
 /-- The real Hilbert symbol is multiplicative in its second parameter. -/
 theorem hilbertSymbol_real_mul_right (a b b' : ℝˣ) :
     hilbertSymbol a (b * b') = hilbertSymbol a b * hilbertSymbol a b' := by
-  simp only [hilbertSymbol_real, Units.val_mul, mul_neg_iff]
-  have := b.ne_zero
-  have := b'.ne_zero
-  split_ifs <;> (try simp) <;> grind
+  let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
+  calc
+    hilbertSymbol a (b * b') = hilbertSymbol (b * b') a := hilbertSymbol_comm _ _
+    _ = hilbertSymbol b a * hilbertSymbol b' a := hilbertSymbol_real_mul_left _ _ _
+    _ = hilbertSymbol a b * hilbertSymbol a b' := by
+      rw [hilbertSymbol_comm b a, hilbertSymbol_comm b' a]
 
 /-- Every real nonsquare `b` has a partner `a` with `(a, b) = -1`; one may take `a = -1`. -/
 theorem exists_hilbertSymbol_real_eq_neg_one {b : ℝˣ} (hb : ¬IsSquare b) :
@@ -127,17 +122,5 @@ theorem prod_hilbertSymbol_real {ι : Type*} [Fintype ι] [LinearOrder ι] (a : 
   tauto
 
 end Real
-
-section IsAlgClosed
-
-variable {K : Type*} [Field K] [IsAlgClosed K]
-
-/-- Over an algebraically closed field, such as `ℂ`, the Hilbert symbol is always `1`. -/
-@[simp]
-theorem hilbertSymbol_eq_one_of_isAlgClosed (a b : Kˣ) : hilbertSymbol a b = 1 := by
-  obtain ⟨z, hz⟩ := IsAlgClosed.exists_eq_mul_self (b : K)
-  exact (hilbertSymbol_eq_one_iff a b).mpr ⟨z, 0, by rw [hz]; ring⟩
-
-end IsAlgClosed
 
 end TauCeti
