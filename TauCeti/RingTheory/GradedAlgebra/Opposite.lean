@@ -50,45 +50,57 @@ universe uR uA
 
 /-- The Koszul-signed opposite of the internally graded algebra `A`.
 
-Its carrier is a copy of the ordinary opposite; its multiplication below includes the Koszul
-sign. -/
-structure GradedOpposite {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
-    (_G : InternalGrading R A) where
-  /-- The underlying element in the ordinary multiplicative opposite. -/
-  toMulOpposite : Aᵐᵒᵖ
+Its carrier is a copy of `A`; its multiplication below includes the Koszul sign. -/
+inductive GradedOpposite {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A] :
+    InternalGrading R A → Type uA where
+  /-- Regard an element as an element of the graded opposite. -/
+  | op (G : InternalGrading R A) (a : A) : GradedOpposite G
 
 namespace GradedOpposite
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
 
+/-- Return an element of the graded opposite to the original algebra. -/
+def unop (G : InternalGrading R A) : GradedOpposite G → A
+  | op _ a => a
+
+@[simp]
+theorem unop_op (G : InternalGrading R A) (a : A) : unop G (op G a) = a := by
+  rfl
+
+@[simp]
+theorem op_unop (G : InternalGrading R A) (a : GradedOpposite G) : op G (unop G a) = a := by
+  cases a
+  rfl
+
 /-- The equivalence used to transport the ordinary opposite algebra structure.  It applies the
 quadratic sign twist after forgetting that the source has graded-opposite multiplication. -/
 private noncomputable def transportEquiv (G : InternalGrading R A) : GradedOpposite G ≃ Aᵐᵒᵖ :=
   ({
-    toFun := toMulOpposite
-    invFun := fun x => ⟨x⟩
-    left_inv := fun x => by cases x; rfl
-    right_inv := fun _ => rfl
+    toFun := fun x => MulOpposite.op (unop G x)
+    invFun := fun x => op G x.unop
+    left_inv := op_unop G
+    right_inv := fun x => by simp
   } : GradedOpposite G ≃ Aᵐᵒᵖ).trans G.opposite.quadraticTwistEquiv.toEquiv
 
 -- Public instance bodies cannot refer to `transportEquiv`, so they spell out the same equivalence.
 noncomputable instance instRing (G : InternalGrading R A) : Ring (GradedOpposite G) :=
   let e : GradedOpposite G ≃ Aᵐᵒᵖ :=
     ({
-      toFun := toMulOpposite
-      invFun := fun x => ⟨x⟩
-      left_inv := fun x => by cases x; rfl
-      right_inv := fun _ => rfl
+      toFun := fun x => MulOpposite.op (unop G x)
+      invFun := fun x => op G x.unop
+      left_inv := op_unop G
+      right_inv := fun x => by simp
     } : GradedOpposite G ≃ Aᵐᵒᵖ).trans G.opposite.quadraticTwistEquiv.toEquiv
   e.ring
 
 noncomputable instance instAlgebra (G : InternalGrading R A) : Algebra R (GradedOpposite G) :=
   let e : GradedOpposite G ≃ Aᵐᵒᵖ :=
     ({
-      toFun := toMulOpposite
-      invFun := fun x => ⟨x⟩
-      left_inv := fun x => by cases x; rfl
-      right_inv := fun _ => rfl
+      toFun := fun x => MulOpposite.op (unop G x)
+      invFun := fun x => op G x.unop
+      left_inv := op_unop G
+      right_inv := fun x => by simp
     } : GradedOpposite G ≃ Aᵐᵒᵖ).trans G.opposite.quadraticTwistEquiv.toEquiv
   Equiv.algebra R e
 
@@ -109,28 +121,13 @@ private noncomputable def transportAlgEquiv (G : InternalGrading R A) :
       algebraMap R Aᵐᵒᵖ r
     exact (transportEquiv G).apply_symm_apply _
 
-/-- Regard an element as an element of the graded opposite. -/
-def op (G : InternalGrading R A) (a : A) : GradedOpposite G := ⟨MulOpposite.op a⟩
-
-/-- Return an element of the graded opposite to the original algebra. -/
-def unop (G : InternalGrading R A) (a : GradedOpposite G) : A := a.toMulOpposite.unop
-
 /-- The transport algebra equivalence sends a raw opposite element to its quadratic twist. -/
 @[simp]
 private theorem transportAlgEquiv_op (G : InternalGrading R A) (a : A) :
     transportAlgEquiv G (op G a) =
       G.opposite.quadraticTwist (MulOpposite.op a) := by
   change transportEquiv G (op G a) = _
-  simp [transportEquiv, op]
-
-@[simp]
-theorem unop_op (G : InternalGrading R A) (a : A) : unop G (op G a) = a := by
-  simp [unop, op]
-
-@[simp]
-theorem op_unop (G : InternalGrading R A) (a : GradedOpposite G) : op G (unop G a) = a := by
-  cases a
-  rfl
+  simp [transportEquiv]
 
 /-- Two elements of a graded opposite are equal if their underlying elements are equal. -/
 @[ext]
@@ -199,6 +196,7 @@ theorem op_sub (G : InternalGrading R A) (a b : A) : op G (a - b) = op G a - op 
 theorem op_smul (G : InternalGrading R A) (r : R) (a : A) : op G (r • a) = r • op G a :=
   (opLinearEquiv G).map_smul r a
 
+@[simp]
 theorem op_zsmul (G : InternalGrading R A) (n : ℤ) (a : A) :
     op G (n • a) = n • op G a :=
   map_zsmul (opLinearEquiv G) n a
@@ -227,6 +225,7 @@ theorem unop_smul (G : InternalGrading R A) (r : R) (a : GradedOpposite G) :
     unop G (r • a) = r • unop G a :=
   (opLinearEquiv G).symm.map_smul r a
 
+@[simp]
 theorem unop_zsmul (G : InternalGrading R A) (n : ℤ) (a : GradedOpposite G) :
     unop G (n • a) = n • unop G a :=
   map_zsmul (opLinearEquiv G).symm n a
