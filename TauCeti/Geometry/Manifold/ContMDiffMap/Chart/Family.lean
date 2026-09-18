@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Jet
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import Mathlib.Analysis.Calculus.TangentCone.Prod
 
 /-!
 # Smooth families in the source-chart weak Whitney topology
@@ -71,7 +72,8 @@ theorem continuous_chartWeakWhitney_of_contMDiff
     rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod] at h
     exact h.contDiffOn
   have hderiv := continuousOn_iteratedFDerivWithin_prod_right hcoord
-    (uniqueDiffOn_extChartAt_target p) (uniqueDiffOn_extChartAt_target x) m hm
+    ((uniqueDiffOn_extChartAt_target p).prod (uniqueDiffOn_extChartAt_target x))
+    (uniqueDiffOn_extChartAt_target x) m hm
   have hjet : ContinuousOn
       (fun a : E' ↦ ContMDiffMap.chartIteratedFDeriv
         (f ((extChartAt J p).symm a)) x m hm) (extChartAt J p).target := by
