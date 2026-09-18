@@ -31,8 +31,7 @@ theorem norm_boundedContinuousFunction_comp_le (hN : LipschitzWith ε N) (f : T 
   rw [dist_eq_norm, dist_zero_right] at h
   have ht := f.norm_coe_le_norm t
   have := norm_sub_norm_le (N (f t)) (N 0)
-  simpa only [BoundedContinuousFunction.comp_apply] using
-    (show ‖N (f t)‖ ≤ ‖N 0‖ + ε * ‖f‖ by
-    nlinarith [ε.coe_nonneg])
+  simp only [BoundedContinuousFunction.comp_apply]
+  nlinarith [ε.coe_nonneg]
 
 end TauCeti
