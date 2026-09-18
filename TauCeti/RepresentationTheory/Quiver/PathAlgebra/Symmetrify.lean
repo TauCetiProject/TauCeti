@@ -13,25 +13,25 @@ public import TauCeti.RepresentationTheory.Quiver.Symmetrify
 
 The doubled quiver `Quiver.Symmetrify Q` contains `Q` through the prefunctor `Quiver.Symmetrify.of`,
 which is the identity on vertices, so `TauCeti.PathAlgebra.mapAlgHom` includes the path algebra
-`kQ` in the doubled path algebra `kQ̄`. This file constructs an algebra homomorphism in the other
-direction,
+`kQ` in the doubled path algebra `kQ^sym` (the path algebra of `Quiver.Symmetrify Q`). This file
+constructs an algebra homomorphism in the other direction,
 
 ```text
-kQ̄ → kQ,
+kQ^sym → kQ,
 ```
 
 which fixes the vertex idempotents and the arrows of `Q` and sends every formal reverse to zero: a
 path of the doubled quiver goes to itself when it uses only arrows of `Q`, and to zero as soon as
 it uses a formal reverse. It is a retraction of the inclusion, so `kQ` is a quotient algebra of
-`kQ̄`.
+`kQ^sym`.
 
 Its use is that it kills every product in which a formal reverse occurs, such as the two backtracks
-`a a*` and `a* a` of an arrow; this is what lets it descend to quotients of `kQ̄` by relations
+`a a*` and `a* a` of an arrow; this is what lets it descend to quotients of `kQ^sym` by relations
 built from such products, notably the preprojective algebra.
 
 ## Main definitions
 
-* `TauCeti.PathAlgebra.symmetrifyRetraction`: the algebra homomorphism `kQ̄ →ₐ[k] kQ` killing the
+* `TauCeti.PathAlgebra.symmetrifyRetraction`: the algebra homomorphism `kQ^sym →ₐ[k] kQ` killing the
   formal reverses.
 
 ## Main results
@@ -40,7 +40,7 @@ built from such products, notably the preprojective algebra.
   `TauCeti.PathAlgebra.symmetrifyRetraction_ofArrow_of` and
   `TauCeti.PathAlgebra.symmetrifyRetraction_ofArrow_reverse_of`: its values on the generators.
 * `TauCeti.PathAlgebra.symmetrifyRetraction_comp_mapAlgHom_of`: **it is a retraction** of the
-  inclusion `kQ →ₐ[k] kQ̄`, which is therefore injective
+  inclusion `kQ →ₐ[k] kQ^sym`, which is therefore injective
   (`TauCeti.PathAlgebra.mapAlgHom_of_injective`), while the retraction is surjective
   (`TauCeti.PathAlgebra.symmetrifyRetraction_surjective`).
 -/
@@ -133,8 +133,8 @@ private theorem retractPath_hone :
   refine (Finset.sum_congr rfl fun v _ => ?_).trans (one_def (k := k) (Q := Q)).symm
   rw [retractPath]
 
-/-- The algebra homomorphism `kQ̄ →ₐ[k] kQ` from the path algebra of the doubled quiver to the path
-algebra of `Q` which fixes the vertex idempotents and the arrows of `Q` and kills every formal
+/-- The algebra homomorphism `kQ^sym →ₐ[k] kQ` from the path algebra of the doubled quiver to the
+path algebra of `Q` which fixes the vertex idempotents and the arrows of `Q` and kills every formal
 reverse. A doubled path goes to itself when it uses only arrows of `Q`, and to zero otherwise. -/
 noncomputable def symmetrifyRetraction : pathAlgebra k (Symmetrify Q) →ₐ[k] pathAlgebra k Q :=
   liftAlgHom k (fun x => retractPath k x.2.2) (retractPath_hcomp k) (retractPath_hzero k)
@@ -170,7 +170,7 @@ theorem symmetrifyRetraction_ofPath_mapTotalPath_of (x : Quiver.TotalPath Q) :
   rw [symmetrifyRetraction, liftAlgHom_ofPath, Prefunctor.mapTotalPath_mk]
   exact retractPath_mapPath k p
 
-/-- **The retraction is a left inverse of the inclusion** `kQ →ₐ[k] kQ̄` induced by
+/-- **The retraction is a left inverse of the inclusion** `kQ →ₐ[k] kQ^sym` induced by
 `Quiver.Symmetrify.of`. -/
 @[simp]
 theorem symmetrifyRetraction_comp_mapAlgHom_of
@@ -180,13 +180,13 @@ theorem symmetrifyRetraction_comp_mapAlgHom_of
     rw [AlgHom.comp_apply, mapAlgHom_ofPath, symmetrifyRetraction_ofPath_mapTotalPath_of,
       AlgHom.id_apply]
 
-/-- The inclusion `kQ →ₐ[k] kQ̄` induced by `Quiver.Symmetrify.of` is injective. -/
+/-- The inclusion `kQ →ₐ[k] kQ^sym` induced by `Quiver.Symmetrify.of` is injective. -/
 theorem mapAlgHom_of_injective (h : Function.Bijective (Symmetrify.of (V := Q)).obj) :
     Function.Injective (mapAlgHom k Symmetrify.of h) :=
   Function.LeftInverse.injective (g := symmetrifyRetraction k) fun x => by
     rw [← AlgHom.comp_apply, symmetrifyRetraction_comp_mapAlgHom_of, AlgHom.id_apply]
 
-/-- The retraction `kQ̄ →ₐ[k] kQ` is surjective. -/
+/-- The retraction `kQ^sym →ₐ[k] kQ` is surjective. -/
 theorem symmetrifyRetraction_surjective : Function.Surjective (symmetrifyRetraction k (Q := Q)) :=
   Function.RightInverse.surjective (f := symmetrifyRetraction k)
     (g := mapAlgHom k Symmetrify.of symmetrify_of_obj_bijective) fun x => by
