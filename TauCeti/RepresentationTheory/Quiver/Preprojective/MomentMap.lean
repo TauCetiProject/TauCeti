@@ -12,7 +12,7 @@ public import TauCeti.RepresentationTheory.Quiver.Representation.AsModule
 /-!
 # The moment map of a representation of a doubled quiver
 
-A representation `M` of the doubled quiver `Q̄ = Quiver.Symmetrify Q` assigns to every arrow
+A representation `M` of the doubled quiver `Quiver.Symmetrify Q` assigns to every arrow
 `a : i ⟶ j` of `Q` a linear map `x_a : M_i → M_j`, and to its formal reverse a linear map
 `x_{a*} : M_j → M_i`. Its **moment map** at a vertex `v` is the endomorphism
 
@@ -26,8 +26,9 @@ relator `ρ = ∑_a (a a* - a* a)` of the path algebra acts on the module `⨁_v
 `μ(M)`, and its local relator `ρ_v` acts as `μ_v(M)` on the summand `M_v`. Consequently the action
 of the doubled path algebra on `⨁_v M_v` factors through the preprojective algebra `Π_k(Q)` exactly
 when the moment map vanishes at every vertex. In other words, the representations of `Π_k(Q)`
-are the representations of `Q̄` in the zero fibre of the moment map. The comparison is purely
-algebraic: no representation space or quotient by a group action is constructed.
+are the representations of `Quiver.Symmetrify Q` in the zero fibre of the moment map. The
+comparison is purely algebraic: no representation space or quotient by a group action is
+constructed.
 
 The products are read in Tau Ceti's later-factor-first convention, in which `a a*` is the loop at
 the head of `a` that traverses `a*` first; so the head term of `μ_v` is the composite `x_a ∘ x_{a*}`
