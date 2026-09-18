@@ -36,6 +36,8 @@ Ext-Euler characteristic descend to the graded Grothendieck groups of selected s
 * `TauCeti.GradedExactStructure.fullSubcategory`: the induced graded exact structure.
 * `TauCeti.GradedConflationExact.ι`: the graded conflation-exact inclusion into the ambient
   category.
+* `TauCeti.GradedConflationExact.ιOfLE`: the graded conflation-exact inclusion between two nested
+  shift-stable full subcategories.
 
 ## References
 
@@ -162,6 +164,16 @@ theorem fullSubcategory_shift
     (fullSubcategory E P hP hshift).shift = fullSubcategoryShift E P hshift :=
   by rw [fullSubcategory]
 
+/-- A short complex of the subcategory is a conflation of the induced graded exact structure
+exactly when its image in the ambient category is a conflation. -/
+@[simp]
+theorem fullSubcategory_conflation_iff
+    (hP : E.toExactStructure.IsExtensionClosed P)
+    (hshift : P.inverseImage E.shift.functor = P) (S : ShortComplex P.FullSubcategory) :
+    (fullSubcategory E P hP hshift).toExactStructure.Conflation S ↔
+      E.toExactStructure.Conflation (S.map P.ι) := by
+  rw [fullSubcategory_toExactStructure, ExactStructure.fullSubcategory_conflation_iff]
+
 end FullSubcategory
 
 end GradedExactStructure
@@ -197,6 +209,31 @@ theorem ι_commShift
     HEq (ι E P hP hshift).commShift
       (E.fullSubcategoryShiftFunctorCompιIso P hshift) :=
   (HEq.rfl)
+
+/-- The inclusion associated to an implication `P ≤ Q` between two shift-stable, extension-closed
+full additive subcategories is graded conflation-exact for their induced graded exact
+structures. Its commutation isomorphism is the one whose image under the inclusion of `Q` is the
+composite of the two restricted-shift comparisons with the ambient shift. -/
+noncomputable def ιOfLE {Q : ObjectProperty C} [Q.ContainsZero] [Q.IsClosedUnderBinaryProducts]
+    (hP : E.toExactStructure.IsExtensionClosed P) (hQ : E.toExactStructure.IsExtensionClosed Q)
+    (hPshift : P.inverseImage E.shift.functor = P) (hQshift : Q.inverseImage E.shift.functor = Q)
+    (h : P ≤ Q) :
+    GradedConflationExact (E.fullSubcategory P hP hPshift) (E.fullSubcategory Q hQ hQshift)
+      (ObjectProperty.ιOfLE h) where
+  isConflationExact := ⟨fun {S} hS => by
+    rw [GradedExactStructure.fullSubcategory_conflation_iff] at hS ⊢
+    exact hS⟩
+  commShift := by
+    have : Q.IsClosedUnderIsomorphisms := ObjectProperty.isClosedUnderIsomorphisms_of_containsZero Q
+    rw [GradedExactStructure.fullSubcategory_shift, GradedExactStructure.fullSubcategory_shift]
+    exact (Q.fullyFaithfulι.whiskeringRight _).preimageIso
+      (Functor.associator _ _ _ ≪≫
+        Functor.isoWhiskerLeft _ (ObjectProperty.ιOfLECompιIso h) ≪≫
+        E.fullSubcategoryShiftFunctorCompιIso P hPshift ≪≫
+        Functor.isoWhiskerRight (ObjectProperty.ιOfLECompιIso h).symm _ ≪≫
+        Functor.associator _ _ _ ≪≫
+        Functor.isoWhiskerLeft _ (E.fullSubcategoryShiftFunctorCompιIso Q hQshift).symm ≪≫
+        (Functor.associator _ _ _).symm)
 
 end GradedConflationExact
 
