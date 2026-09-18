@@ -46,7 +46,7 @@ private noncomputable def baseChangeEta (E : FiniteDVRExtension R K)
 
 /-- The canonical identification between the generic fibre of the pullback model and the scalar
 extension of the prescribed generic fibre. -/
-noncomputable def baseChangeGenericFiberIso (E : FiniteDVRExtension R K)
+private noncomputable def baseChangeGenericFiberIsoAux (E : FiniteDVRExtension R K)
     (M : Model R K C toK) :
     genericFiber E.localRing E.extensionField
         (genericFiber R E.localRing M.toBase).hom ≅
@@ -63,9 +63,6 @@ noncomputable def baseChangeGenericFiberIso (E : FiniteDVRExtension R K)
               M.genericFiberIso))))
 
 /-- Base change of a model to the chosen local ring of a finite DVR extension. -/
--- Exposure is required because the projection lemmas below compare morphisms whose domains use
--- the resulting total space.
-@[expose]
 noncomputable def baseChange (E : FiniteDVRExtension R K) (M : Model R K C toK) :
     Model E.localRing E.extensionField
       (genericFiber K E.extensionField toK).left
@@ -88,7 +85,7 @@ noncomputable def baseChange (E : FiniteDVRExtension R K) (M : Model R K C toK) 
     let _ : QuasiSeparated M.toBase := M.quasiSeparated
     rw [genericFiber_hom]
     infer_instance
-  genericFiberIso := baseChangeGenericFiberIso E M
+  genericFiberIso := baseChangeGenericFiberIsoAux E M
 
 @[simp]
 lemma baseChange_total (E : FiniteDVRExtension R K) (M : Model R K C toK) :
@@ -97,8 +94,18 @@ lemma baseChange_total (E : FiniteDVRExtension R K) (M : Model R K C toK) :
 
 @[simp]
 lemma baseChange_toBase (E : FiniteDVRExtension R K) (M : Model R K C toK) :
-    (baseChange E M).toBase = (genericFiber R E.localRing M.toBase).hom :=
+    (baseChange E M).toBase =
+      eqToHom (baseChange_total E M) ≫ (genericFiber R E.localRing M.toBase).hom :=
   (rfl)
+
+/-- The canonical identification between the generic fibre of the pullback model and the scalar
+extension of the prescribed generic fibre. -/
+noncomputable def baseChangeGenericFiberIso (E : FiniteDVRExtension R K)
+    (M : Model R K C toK) :
+    genericFiber E.localRing E.extensionField (baseChange E M).toBase ≅
+      genericFiber K E.extensionField toK := by
+  unfold baseChange
+  exact baseChangeGenericFiberIsoAux E M
 
 /-- The chosen generic-fibre identification of a base-changed model is the canonical tower
 comparison. -/
@@ -142,12 +149,16 @@ private lemma baseChangeEta_naturality (E : FiniteDVRExtension R K)
 private noncomputable def baseChangeMapHom (E : FiniteDVRExtension R K)
     {M N : Model R K C toK} (f : M ⟶ N) :
     (baseChange E M).total ⟶ (baseChange E N).total :=
-  (baseChangeOverMap E f).left
+  by
+    unfold baseChange
+    exact (baseChangeOverMap E f).left
 
 private lemma baseChangeMapHom_overBase (E : FiniteDVRExtension R K)
     {M N : Model R K C toK} (f : M ⟶ N) :
     baseChangeMapHom E f ≫ (baseChange E N).toBase = (baseChange E M).toBase :=
-  (baseChangeOverMap E f).w
+  by
+    unfold baseChangeMapHom baseChange
+    exact (baseChangeOverMap E f).w
 
 private lemma baseChangeHom_baseChangeMapHom (E : FiniteDVRExtension R K)
     {M N : Model R K C toK} (f : M ⟶ N) :
@@ -206,16 +217,16 @@ private lemma baseChangeMap_genericFiber (E : FiniteDVRExtension R K)
   have hCore :
       ((Over.pullback
           (Spec.map (CommRingCat.ofHom (algebraMap E.localRing E.extensionField)))).map
-          (baseChangeOverMap E f)) ≫ (baseChangeGenericFiberIso E N).hom =
-        (baseChangeGenericFiberIso E M).hom := by
-    rw [baseChangeGenericFiberIso, baseChangeGenericFiberIso]
+          (baseChangeOverMap E f)) ≫ (baseChangeGenericFiberIsoAux E N).hom =
+        (baseChangeGenericFiberIsoAux E M).hom := by
+    rw [baseChangeGenericFiberIsoAux, baseChangeGenericFiberIsoAux]
     simp only [Iso.trans_hom, Functor.mapIso_hom, Functor.mapIso_inv, Iso.symm_hom]
     rw [← Functor.map_comp_assoc, baseChangeEta_naturality]
     simp only [Functor.map_comp, Category.assoc]
     congr 1
     rw [reassoc_of% hNatLocal, reassoc_of% hNatField]
     simp only [← Functor.map_comp, hfOver]
-  rw [baseChange_genericFiberIso, baseChange_genericFiberIso]
+  unfold baseChange
   -- Taking `Over.Hom.left` turns the composite in `hCore` into the composite in the goal;
   -- the remaining conversions identify the chosen pullback presentations definitionally.
   convert congrArg Over.Hom.left hCore using 1 <;> rfl
@@ -230,11 +241,13 @@ noncomputable def baseChangeMap (E : FiniteDVRExtension R K)
 /-- The map on total spaces underlying base change of a model morphism is obtained by applying
 the pullback functor. -/
 @[simp]
-lemma hom_baseChangeMap (E : FiniteDVRExtension R K)
+lemma baseChangeMap_hom (E : FiniteDVRExtension R K)
     {M N : Model R K C toK} (f : M ⟶ N) :
     (baseChangeMap E f).hom =
-      ((Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R E.localRing)))).map
-        (Over.homMk f.hom f.overBase)).left :=
+      eqToHom (baseChange_total E M) ≫
+        ((Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R E.localRing)))).map
+          (Over.homMk f.hom f.overBase)).left ≫
+            eqToHom (baseChange_total E N).symm :=
   (rfl)
 
 /-- Pullback to a chosen finite DVR extension defines a functor on models. -/
@@ -247,7 +260,7 @@ noncomputable def baseChangeFunctor (E : FiniteDVRExtension R K) :
   map := baseChangeMap E
   map_id M := by
     apply Hom.ext
-    rw [hom_baseChangeMap]
+    rw [baseChangeMap_hom]
     have h := congrArg Over.Hom.left
       ((Over.pullback
         (Spec.map (CommRingCat.ofHom (algebraMap R E.localRing)))).map_id
@@ -259,7 +272,7 @@ noncomputable def baseChangeFunctor (E : FiniteDVRExtension R K) :
     all_goals rfl
   map_comp f g := by
     apply Hom.ext
-    rw [comp_hom, hom_baseChangeMap, hom_baseChangeMap, hom_baseChangeMap]
+    rw [comp_hom, baseChangeMap_hom, baseChangeMap_hom, baseChangeMap_hom]
     have h := congrArg Over.Hom.left
       ((Over.pullback
         (Spec.map (CommRingCat.ofHom (algebraMap R E.localRing)))).map_comp
