@@ -28,6 +28,9 @@ as the pattern makes this denominator nonzero.
 
 * `TauCeti.DenseGraphLimits.sum_sampleMass_supergraph_eq_homDensity` — the probability that the
   sample contains every edge of `F` is `t(F, W)`;
+* `TauCeti.DenseGraphLimits.integral_injHomDensity_eq_sum_div` — the average of the injective
+  homomorphism density against any finite measure on host graphs, as an average over vertex
+  embeddings of the mass of the hosts containing the embedded pattern;
 * `TauCeti.DenseGraphLimits.integral_injHomDensity_sampleGraph` — injective homomorphism density is
   unbiased under graphon sampling.
 
@@ -87,6 +90,27 @@ theorem sum_sampleMass_supergraph_eq_homDensity {n : ℕ} (W : Graphon Ω μ)
               (SimpleGraph.edgeFinset_mono le_top) x
     _ = homDensity F W := (homDensity_def F W).symm
 
+open Classical in
+/-- Averaging the injective homomorphism density of a fixed pattern against any finite measure on
+host graphs averages, over the vertex embeddings of the pattern, the mass of the hosts that contain
+the embedded pattern. -/
+theorem integral_injHomDensity_eq_sum_div {V W : Type*} [Fintype V] [Fintype W]
+    (F : SimpleGraph V) (ν : Measure (SimpleGraph W)) [IsFiniteMeasure ν] :
+    ∫ G, injHomDensity F G ∂ν =
+      (∑ f : V ↪ W, ν.real {G | F.map f ≤ G}) /
+        ((Fintype.card W).descFactorial (Fintype.card V) : ℝ) := by
+  rw [integral_fintype Integrable.of_finite]
+  simp_rw [injHomDensity_def, SimpleGraph.card_injective_hom_eq_sum_map_le, Nat.cast_sum,
+    Nat.cast_ite, Nat.cast_one, Nat.cast_zero, smul_eq_mul, ← mul_div_assoc, Finset.mul_sum,
+    mul_ite, mul_one, mul_zero]
+  rw [← Finset.sum_div, Finset.sum_comm]
+  congr 1
+  refine Finset.sum_congr rfl fun f _ => ?_
+  rw [← Finset.sum_filter, sum_measureReal_singleton]
+  congr 1
+  ext G
+  simp
+
 /-- The injective homomorphism density of a graphon sample is an unbiased estimator of the
 graphon's homomorphism density, provided the sample has at least as many vertices as the pattern.
 The size condition is exactly the nonvanishing condition for the falling-factorial denominator. -/
@@ -95,39 +119,20 @@ theorem integral_injHomDensity_sampleGraph (W : Graphon Ω μ) {V : Type*} [Fint
     (hkm : Fintype.card V ≤ m) :
     ∫ G, injHomDensity F G ∂sampleGraph W m = homDensity F W := by
   classical
-  rw [integral_fintype Integrable.of_finite]
-  simp_rw [Measure.real_def, sampleGraph_singleton,
-    ENNReal.toReal_ofReal (sampleMass_nonneg W _), smul_eq_mul]
-  simp_rw [injHomDensity_def, SimpleGraph.card_injective_hom_eq_sum_map_le, Nat.cast_sum,
-    Nat.cast_ite, Nat.cast_one, Nat.cast_zero]
-  simp only [Fintype.card_fin]
   have hd : (m.descFactorial (Fintype.card V) : ℝ) ≠ 0 := by
     exact_mod_cast (Nat.descFactorial_pos.mpr hkm).ne'
-  calc
-    (∑ G : SimpleGraph (Fin m), sampleMass W G *
-        ((∑ f : V ↪ Fin m, if F.map f ≤ G then 1 else 0) /
-          (m.descFactorial (Fintype.card V) : ℝ))) =
-        (∑ G : SimpleGraph (Fin m), ∑ f : V ↪ Fin m,
-          if F.map f ≤ G then sampleMass W G else 0) /
-            (m.descFactorial (Fintype.card V) : ℝ) := by
-              simp_rw [Finset.sum_div, Finset.mul_sum]
-              refine Finset.sum_congr rfl fun G _ => ?_
-              exact Finset.sum_congr rfl fun f _ => by split <;> simp [div_eq_mul_inv]
-    _ = (∑ f : V ↪ Fin m, ∑ G : SimpleGraph (Fin m),
-          if F.map f ≤ G then sampleMass W G else 0) /
-            (m.descFactorial (Fintype.card V) : ℝ) := by
-              rw [Finset.sum_comm]
-    _ = (∑ _f : V ↪ Fin m, homDensity F W) /
-            (m.descFactorial (Fintype.card V) : ℝ) := by
-              congr 1
-              refine Finset.sum_congr rfl fun f _ => ?_
-              rw [← Finset.sum_filter]
-              exact (sum_sampleMass_supergraph_eq_homDensity W (F.map f)).trans
-                (homDensity_map_embedding W F f)
-    _ = homDensity F W := by
-      rw [Finset.sum_const, nsmul_eq_mul, Finset.card_univ, Fintype.card_embedding_eq,
-        Fintype.card_fin]
-      exact mul_div_cancel_left₀ (homDensity F W) hd
+  have hf (f : V ↪ Fin m) : (sampleGraph W m).real {G | F.map f ≤ G} = homDensity F W := by
+    have hset : {G : SimpleGraph (Fin m) | F.map f ≤ G} =
+        ↑(Finset.univ.filter (F.map f ≤ ·)) := by
+      ext G
+      simp
+    rw [hset, ← sum_measureReal_singleton]
+    simp_rw [measureReal_def, sampleGraph_singleton, ENNReal.toReal_ofReal (sampleMass_nonneg W _)]
+    exact (sum_sampleMass_supergraph_eq_homDensity W (F.map f)).trans
+      (homDensity_map_embedding W F f)
+  rw [integral_injHomDensity_eq_sum_div, Finset.sum_congr rfl fun f _ => hf f, Finset.sum_const,
+    nsmul_eq_mul, Finset.card_univ, Fintype.card_embedding_eq, Fintype.card_fin]
+  exact mul_div_cancel_left₀ (homDensity F W) hd
 
 end DenseGraphLimits
 
