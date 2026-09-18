@@ -11,6 +11,7 @@ public import TauCeti.KnotTheory.Grid.EulerCharacteristic
 
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Algebra.Homology.CochainComplexOpposite
+import TauCeti.Algebra.Homology.Embedding.Restriction
 import TauCeti.Algebra.Homology.EulerCharacteristic.FiniteDimensional
 
 /-!
@@ -110,52 +111,6 @@ private noncomputable abbrev gradedFullyBlockedCochainComplex (a : ℤ) :
   ((forget₂ (FGModuleCat (ZMod 2)) (ModuleCat (ZMod 2))).mapHomologicalComplex _).obj
     (G.gradedFullyBlockedFGCochainComplex a)
 
-/-- Mapping a restricted complex and restricting the mapped complex have the same objects.
-This is the objectwise comparison API needed because Mathlib does not currently provide a
-comparison isomorphism between these two functors. -/
-private theorem mapRestriction_obj_X
-    {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
-    {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
-    (F : C ⥤ D) [F.PreservesZeroMorphisms] (e : c.Embedding c') [e.IsRelIff]
-    (K : HomologicalComplex C c') (i : ι) :
-    ((F.mapHomologicalComplex c).obj ((e.restrictionFunctor C).obj K)).X i =
-      ((e.restrictionFunctor D).obj ((F.mapHomologicalComplex c').obj K)).X i := by
-  rw [Functor.mapHomologicalComplex_obj_X,
-    ComplexShape.Embedding.restrictionFunctor_obj, HomologicalComplex.restriction_X,
-    ComplexShape.Embedding.restrictionFunctor_obj, HomologicalComplex.restriction_X,
-    Functor.mapHomologicalComplex_obj_X]
-
-/-- The objectwise identifications between mapping after restriction and restriction after
-mapping intertwine the differentials. The final computation is confined here because the two
-functor composites are definitionally equal but Mathlib has no theorem stating that fact. -/
-private theorem mapRestriction_hom_d
-    {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
-    {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
-    (F : C ⥤ D) [F.PreservesZeroMorphisms] (e : c.Embedding c') [e.IsRelIff]
-    (K : HomologicalComplex C c') (i j : ι) :
-    eqToHom (mapRestriction_obj_X F e K i) ≫
-        ((e.restrictionFunctor D).obj ((F.mapHomologicalComplex c').obj K)).d i j =
-      ((F.mapHomologicalComplex c).obj ((e.restrictionFunctor C).obj K)).d i j ≫
-        eqToHom (mapRestriction_obj_X F e K j) := by
-  have hi : mapRestriction_obj_X F e K i = rfl := Subsingleton.elim _ _
-  have hj : mapRestriction_obj_X F e K j = rfl := Subsingleton.elim _ _
-  rw [hi, hj]
-  change 𝟙 _ ≫ F.map (K.d (e.f i) (e.f j)) = F.map (K.d (e.f i) (e.f j)) ≫ 𝟙 _
-  simp
-
-/-- Mapping homological complexes commutes with restriction along a shape embedding. -/
-private noncomputable def mapRestrictionIso
-    {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
-    {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
-    (F : C ⥤ D) [F.PreservesZeroMorphisms] (e : c.Embedding c') [e.IsRelIff]
-    (K : HomologicalComplex C c') :
-    (F.mapHomologicalComplex c).obj ((e.restrictionFunctor C).obj K) ≅
-      (e.restrictionFunctor D).obj ((F.mapHomologicalComplex c').obj K) :=
-  HomologicalComplex.Hom.isoOfComponents
-    (fun i => eqToIso (mapRestriction_obj_X F e K i)) (by
-      intro i j _
-      exact mapRestriction_hom_d F e K i j)
-
 /-- The objects of the forgotten finite-dimensional complex are the underlying grid-chain
 pieces. -/
 private theorem mappedGradedFullyBlockedFGComplex_X (a m : ℤ) :
@@ -163,6 +118,8 @@ private theorem mappedGradedFullyBlockedFGComplex_X (a m : ℤ) :
         (G.gradedFullyBlockedFGComplex a)).X m =
       ModuleCat.of (ZMod 2) (G.BigradedChainPiece (ZMod 2) (m, a)) := by
   rw [Functor.mapHomologicalComplex_obj_X, G.gradedFullyBlockedFGComplex_X]
+  -- `forget₂` is a reducible `HasForget₂` wrapper around this full-subcategory inclusion;
+  -- exposing it here lets us finish with the canonical object comparison lemma.
   change (ModuleCat.isFG (ZMod 2)).ι.obj
       (FGModuleCat.of (ZMod 2) (G.BigradedChainPiece (ZMod 2) (m, a))) = _
   exact ObjectProperty.ι_obj (ModuleCat.isFG (ZMod 2))
@@ -176,9 +133,13 @@ private theorem mappedGradedFullyBlockedFGComplex_d (a m : ℤ) :
         ModuleCat.ofHom (G.gradedFullyBlockedDifferential a m) ≫
           eqToHom (G.mappedGradedFullyBlockedFGComplex_X a m).symm := by
   rw [Functor.mapHomologicalComplex_obj_d, G.gradedFullyBlockedFGComplex_d]
+  -- Expose the registered forgetful functor only long enough to apply its public map
+  -- comparison lemma.
   change (ModuleCat.isFG (ZMod 2)).ι.map
       (FGModuleCat.ofHom (G.gradedFullyBlockedDifferential a m)) = _
   rw [ObjectProperty.ι_map (ModuleCat.isFG (ZMod 2))]
+  -- `FGModuleCat.ofHom` has this underlying `ModuleCat` morphism by construction; Mathlib does
+  -- not provide a separate comparison theorem.
   change ModuleCat.ofHom (G.gradedFullyBlockedDifferential a m) = _
   have hsource : G.mappedGradedFullyBlockedFGComplex_X a (m + 1) =
       Eq.refl (ModuleCat.of (ZMod 2)
@@ -186,6 +147,8 @@ private theorem mappedGradedFullyBlockedFGComplex_d (a m : ℤ) :
   have htarget : G.mappedGradedFullyBlockedFGComplex_X a m =
       Eq.refl (ModuleCat.of (ZMod 2)
         (G.BigradedChainPiece (ZMod 2) (m, a))) := Subsingleton.elim _ _
+  -- The explicit object comparisons occur inside `eqToHom`s, so proof irrelevance is needed to
+  -- normalize their proof terms before those transports reduce to identities.
   rw [hsource, htarget]
   change ModuleCat.ofHom (G.gradedFullyBlockedDifferential a m) =
     𝟙 _ ≫ ModuleCat.ofHom (G.gradedFullyBlockedDifferential a m) ≫ 𝟙 _
@@ -226,7 +189,7 @@ private noncomputable def gradedFullyBlockedCochainComplexIso (a : ℤ) :
     G.gradedFullyBlockedCochainComplex a ≅
       (ComplexShape.embeddingUpIntDownInt.restrictionFunctor (ModuleCat (ZMod 2))).obj
         (G.gradedFullyBlockedComplex a) := by
-  exact mapRestrictionIso
+  exact TauCeti.ComplexShape.Embedding.mapRestrictionIso
       (forget₂ (FGModuleCat (ZMod 2)) (ModuleCat (ZMod 2)))
       ComplexShape.embeddingUpIntDownInt
       (G.gradedFullyBlockedFGComplex a) ≪≫
