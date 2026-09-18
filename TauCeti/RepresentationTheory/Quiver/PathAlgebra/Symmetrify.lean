@@ -173,16 +173,16 @@ theorem symmetrifyRetraction_ofPath_mapTotalPath_of (x : Quiver.TotalPath Q) :
 /-- **The retraction is a left inverse of the inclusion** `kQ →ₐ[k] kQ^sym` induced by
 `Quiver.Symmetrify.of`. -/
 @[simp]
-theorem symmetrifyRetraction_comp_mapAlgHom_of
-    (h : Function.Bijective (Symmetrify.of (V := Q)).obj) :
-    (symmetrifyRetraction k).comp (mapAlgHom k Symmetrify.of h) = AlgHom.id k (pathAlgebra k Q) :=
+theorem symmetrifyRetraction_comp_mapAlgHom_of :
+    (symmetrifyRetraction k).comp (mapAlgHom k Symmetrify.of symmetrify_of_obj_bijective) =
+      AlgHom.id k (pathAlgebra k Q) :=
   algHom_ext k fun x => by
     rw [AlgHom.comp_apply, mapAlgHom_ofPath, symmetrifyRetraction_ofPath_mapTotalPath_of,
       AlgHom.id_apply]
 
 /-- The inclusion `kQ →ₐ[k] kQ^sym` induced by `Quiver.Symmetrify.of` is injective. -/
-theorem mapAlgHom_of_injective (h : Function.Bijective (Symmetrify.of (V := Q)).obj) :
-    Function.Injective (mapAlgHom k Symmetrify.of h) :=
+theorem mapAlgHom_of_injective :
+    Function.Injective (mapAlgHom k Symmetrify.of (symmetrify_of_obj_bijective (Q := Q))) :=
   Function.LeftInverse.injective (g := symmetrifyRetraction k) fun x => by
     rw [← AlgHom.comp_apply, symmetrifyRetraction_comp_mapAlgHom_of, AlgHom.id_apply]
 
