@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Quasicoherent
 public import Mathlib.Basic.Finite.Sum
 public import Mathlib.CategoryTheory.Monoidal.Limits.Cokernels
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
-public import TauCeti.CategoryTheory.Monoidal.Closed.Preadditive
 
 /-!
 # Tensor products of presentations of sheaves of modules
@@ -28,11 +27,12 @@ give a presentation of `M ⊗ N`, with generators indexed by `σ × τ` and rela
 
 The right exactness of the tensor product comes from its closed structure, and the cokernel
 computation is Mathlib's `CategoryTheory.Limits.CokernelCofork.isColimitTensor`.
+The generator-and-relation construction is the sheaf-level analogue of
+Mathlib's `Module.Presentation.tensor` in `Mathlib.Algebra.Module.Presentation.Tensor`, by
+Joël Riou.
 
 ## Main declarations
 
-* `TauCeti.SheafOfModules.monoidalPreadditive`: the tensor product of sheaves of modules is
-  additive in each variable;
 * `TauCeti.SheafOfModules.freeTensorFreeIso`: `free I ⊗ free I' ≅ free (I × I')`;
 * `SheafOfModules.Presentation.tensor`: the presentation of `M ⊗ N` built from presentations of
   `M` and `N`; it is finite when both presentations are finite.
@@ -54,10 +54,6 @@ open _root_.SheafOfModules
 
 variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
   {R : Sheaf J CommRingCat.{u}}
-
-/-- The tensor product of sheaves of modules is additive in each variable. -/
-instance monoidalPreadditive : MonoidalPreadditive (SheafOfModules.{u} (ringCatSheaf R)) :=
-  monoidalPreadditive_of_monoidalClosed _
 
 /-- The tensor product of the free sheaves of modules on `I` and on `I'` is the free sheaf of
 modules on `I × I'`. The generator indexed by `(i, i')` corresponds to the tensor product of the
@@ -89,7 +85,7 @@ variable {M N : SheafOfModules.{u} (ringCatSheaf R)}
 /-- The tensor product of presentations of `M` and `N` is a presentation of `M ⊗ N`. Its
 generators are indexed by pairs of generators, and its relations by a relation of `M` paired
 with a generator of `N`, or a generator of `M` paired with a relation of `N`. -/
-@[expose, simps! generators_I relations_I]
+@[expose, simps! generators_I relations_I relations_s]
 def _root_.SheafOfModules.Presentation.tensor (P : M.Presentation) (Q : N.Presentation) :
     (M ⊗ N).Presentation :=
   presentationOfIsCokernelFree

@@ -51,7 +51,7 @@ variable {C : Type u₁} [Category.{v₁} C] [HasPullbacks C] {J : GrothendieckT
 the member `q.X (index i)` of the original cover by `map i`, and the presentation of
 `M.over (Y i)` is the restriction of the presentation of `M.over (q.X (index i))` along
 `map i`. -/
-@[expose, simps I X]
+@[expose, simps I X presentation]
 def _root_.SheafOfModules.QuasicoherentData.ofRefinement {M : SheafOfModules.{u} R}
     (q : M.QuasicoherentData) {I : Type w} (Y : I → C) (coversTop : J.CoversTop Y)
     (index : I → q.I) (map : ∀ i, Y i ⟶ q.X (index i)) : M.QuasicoherentData where

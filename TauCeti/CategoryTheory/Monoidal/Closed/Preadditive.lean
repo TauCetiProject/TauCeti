@@ -13,8 +13,8 @@ public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 # Closed braided preadditive categories are monoidal preadditive
 
 In a closed braided monoidal category, tensoring on either side with a fixed object is a left
-adjoint, so it preserves binary coproducts. When the category is preadditive with binary
-biproducts, a functor preserving binary coproducts is additive. Hence the tensor product of
+adjoint, so it preserves binary coproducts. In a preadditive category, binary coproducts are
+binary biproducts, and a functor preserving them is additive. Hence the tensor product of
 morphisms is additive in each variable: the category is `MonoidalPreadditive`.
 
 This applies to categories such as sheaves of modules, whose monoidal structure is constructed
@@ -31,11 +31,12 @@ open CategoryTheory Limits MonoidalCategory
 
 namespace TauCeti
 
-/-- A closed braided monoidal category which is preadditive with binary biproducts is monoidal
+/-- A closed braided monoidal category which is preadditive with binary coproducts is monoidal
 preadditive: whiskering on either side is additive. -/
 theorem monoidalPreadditive_of_monoidalClosed (D : Type*) [Category* D] [Preadditive D]
-    [HasBinaryBiproducts D] [MonoidalCategory D] [BraidedCategory D] [MonoidalClosed D] :
+    [HasBinaryCoproducts D] [MonoidalCategory D] [BraidedCategory D] [MonoidalClosed D] :
     MonoidalPreadditive D := by
+  let _ : HasBinaryBiproducts D := HasBinaryBiproducts.of_hasBinaryCoproducts
   have (X : D) : (tensorLeft X).Additive :=
     have := preservesBinaryBiproducts_of_preservesBinaryCoproducts (tensorLeft X)
     Functor.additive_of_preservesBinaryBiproducts _

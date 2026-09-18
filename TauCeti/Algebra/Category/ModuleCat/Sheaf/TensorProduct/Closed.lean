@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Colimits
 public import Mathlib.CategoryTheory.Monoidal.Braided.Reflection
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.MonoidalClosed
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Monoidal
+public import TauCeti.CategoryTheory.Monoidal.Closed.Preadditive
 
 /-!
 # The closed monoidal category of sheaves of modules
@@ -28,6 +30,7 @@ the sheafification of the presheaf internal Hom.
   `TauCeti.PresheafOfModules.monoidalClosed` to presheaves of modules over the ring presheaf
   underlying `R`;
 * `TauCeti.SheafOfModules.monoidalClosed` gives the closed structure on sheaves of modules;
+* `TauCeti.SheafOfModules.monoidalPreadditive` makes tensoring additive in each variable;
 * `SheafOfModules.ihom_obj` identifies its internal Hom object with the sheafification of the
   presheaf internal Hom.
 
@@ -69,6 +72,10 @@ instance monoidalClosed : MonoidalClosed (SheafOfModules.{u} (ringCatSheaf R)) :
   Monoidal.Reflective.monoidalClosed
     (PresheafOfModules.sheafificationAdjunction (R := ringCatSheaf R)
       (R₀ := (ringCatSheaf R).obj) (J := J) (𝟙 (ringCatSheaf R).obj))
+
+/-- The tensor product of sheaves of modules is additive in each variable. -/
+instance monoidalPreadditive : MonoidalPreadditive (SheafOfModules.{u} (ringCatSheaf R)) :=
+  monoidalPreadditive_of_monoidalClosed _
 
 variable {R}
 

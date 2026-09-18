@@ -58,6 +58,7 @@ variable {C : Type u} [SmallCategory C] [HasPullbacks C] {J : GrothendieckTopolo
 /-- Quasi-coherent data for `M ⊗ N` from quasi-coherent data for `M` and for `N`. Its cover is
 the common refinement of the two covers, and over each of its members the presentation is the
 tensor product of the restricted presentations of `M` and `N`. -/
+@[expose, simps I X presentation]
 def _root_.SheafOfModules.QuasicoherentData.tensor (qM : M.QuasicoherentData)
     (qN : N.QuasicoherentData) : (M ⊗ N).QuasicoherentData :=
   let r := GrothendieckTopology.CoversTop.commonRefinement qM.coversTop qN.coversTop
