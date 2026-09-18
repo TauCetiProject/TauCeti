@@ -47,4 +47,10 @@ instance instFintypeSymmetrifyHom (Q : Type u) [Quiver.{v} Q] [∀ i j : Q, Fint
   inferInstanceAs (Fintype (((show Q from x) ⟶ (show Q from y)) ⊕
     ((show Q from y) ⟶ (show Q from x))))
 
+/-- The inclusion `Quiver.Symmetrify.of` of a quiver in its doubled quiver is the identity on
+vertices, hence bijective on them. -/
+theorem symmetrify_of_obj_bijective {Q : Type u} [Quiver.{v} Q] :
+    Function.Bijective (Symmetrify.of (V := Q)).obj :=
+  Function.bijective_id
+
 end TauCeti
