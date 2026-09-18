@@ -54,11 +54,13 @@ noncomputable instance residueFieldAlgebra : Algebra 𝓀[K] 𝓀[L] := inferIns
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] in
+/-- Coercing the integer-ring structure map to `L` gives the field structure map. -/
 @[simp]
 theorem coe_algebraMap_integerRing (x : 𝒪[K]) :
     ((algebraMap 𝒪[K] 𝒪[L] x : 𝒪[L]) : L) = algebraMap K L (x : K) :=
   rfl
 
+/-- Reduction commutes with the structure map between the rings of integers. -/
 @[simp]
 theorem algebraMap_residueField_residue (x : 𝒪[K]) :
     algebraMap 𝓀[K] 𝓀[L] (IsLocalRing.residue 𝒪[K] x) =
@@ -72,9 +74,7 @@ nonarchimedean local field. -/
 instance integerRingIsInvariantSubring : IsInvariantSubring (L ≃ₐ[K] L) 𝒪[L] where
   smul_mem σ x hx := by
     rw [Valuation.mem_integer_iff] at hx ⊢
-    change valuation L (σ x) ≤ 1
-    rw [σ.valuation_eq]
-    exact hx
+    simpa only [AlgEquiv.smul_def, σ.valuation_eq] using hx
 
 end TauCeti
 
@@ -91,11 +91,13 @@ noncomputable def integerRingEquiv (σ : L ≃ₐ[K] L) : 𝒪[L] ≃+* 𝒪[L] 
   MulSemiringAction.toRingAut (L ≃ₐ[K] L) 𝒪[L] σ
 
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+/-- The restricted automorphism agrees with the canonical action on the integer ring. -/
 theorem integerRingEquiv_apply (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
     σ.integerRingEquiv x = σ • x :=
   (rfl)
 
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+/-- Coercing the restricted integer-ring automorphism to `L` recovers the field automorphism. -/
 @[simp]
 theorem coe_integerRingEquiv (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
     ((σ.integerRingEquiv x : 𝒪[L]) : L) = σ (x : L) :=
@@ -106,11 +108,19 @@ noncomputable def integerRingAlgEquiv (σ : L ≃ₐ[K] L) : 𝒪[L] ≃ₐ[𝒪
   __ := σ.integerRingEquiv
   commutes' x := by
     apply Subtype.ext
-    change ((σ.integerRingEquiv (algebraMap 𝒪[K] 𝒪[L] x) : 𝒪[L]) : L) =
-      ((algebraMap 𝒪[K] 𝒪[L] x : 𝒪[L]) : L)
-    rw [coe_integerRingEquiv, TauCeti.coe_algebraMap_integerRing, σ.commutes]
+    calc
+      ((σ.integerRingEquiv (algebraMap 𝒪[K] 𝒪[L] x) : 𝒪[L]) : L) =
+          σ ((algebraMap 𝒪[K] 𝒪[L] x : 𝒪[L]) : L) :=
+        coe_integerRingEquiv σ _
+      _ = σ (algebraMap K L (x : K)) := by
+        rw [TauCeti.coe_algebraMap_integerRing]
+      _ = algebraMap K L (x : K) := σ.commutes (x : K)
+      _ = ((algebraMap 𝒪[K] 𝒪[L] x : 𝒪[L]) : L) :=
+        (TauCeti.coe_algebraMap_integerRing x).symm
 
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+/-- The integer-ring algebra equivalence has the same underlying map as the restricted ring
+equivalence. -/
 @[simp]
 theorem integerRingAlgEquiv_apply (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
     σ.integerRingAlgEquiv x = σ.integerRingEquiv x :=
@@ -141,6 +151,7 @@ noncomputable def maximalIdealEquiv (σ : L ≃ₐ[K] L) : 𝓂[L] ≃+ 𝓂[L] 
     apply Subtype.ext
     simp
 
+/-- Coercing the induced maximal-ideal automorphism to `L` recovers the field automorphism. -/
 @[simp]
 theorem coe_maximalIdealEquiv (σ : L ≃ₐ[K] L) (x : 𝓂[L]) :
     ((σ.maximalIdealEquiv x : 𝒪[L]) : L) = σ (x : L) :=
@@ -151,15 +162,20 @@ field of the base extension. -/
 noncomputable def residueFieldEquiv (σ : L ≃ₐ[K] L) : 𝓀[L] ≃ₐ[𝓀[K]] 𝓀[L] :=
   IsLocalRing.ResidueField.mapAlgEquiv' σ.integerRingAlgEquiv
 
+/-- The induced residue-field automorphism commutes with reduction from the integer ring. -/
 @[simp]
 theorem residueFieldEquiv_residue (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
     σ.residueFieldEquiv (IsLocalRing.residue 𝒪[L] x) =
-      IsLocalRing.residue 𝒪[L] (σ.integerRingEquiv x) :=
-  (rfl)
+      IsLocalRing.residue 𝒪[L] (σ.integerRingEquiv x) := by
+  simpa only [residueFieldEquiv, integerRingAlgEquiv_apply] using
+    IsLocalRing.ResidueField.mapAlgEquiv'_residue σ.integerRingAlgEquiv x
 
+/-- The induced residue-field equivalence agrees with the canonical residue-field action. -/
 theorem residueFieldEquiv_apply (σ : L ≃ₐ[K] L) (x : 𝓀[L]) :
-    σ.residueFieldEquiv x = σ • x :=
-  (rfl)
+    σ.residueFieldEquiv x = σ • x := by
+  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
+  rw [residueFieldEquiv_residue, integerRingEquiv_apply,
+    IsLocalRing.ResidueField.residue_smul]
 
 end AlgEquiv
 
@@ -182,19 +198,24 @@ noncomputable instance maximalIdealDistribMulAction :
     DistribMulAction (L ≃ₐ[K] L) (𝓂[L]) where
   smul σ := σ.maximalIdealEquiv
   one_smul x := by
+    -- These laws define the same structure as `smul`, so its characterization lemma is not
+    -- available until this instance has been constructed.
     change (1 : L ≃ₐ[K] L).maximalIdealEquiv x = x
     apply Subtype.ext
     apply Subtype.ext
-    simp
+    rw [AlgEquiv.coe_maximalIdealEquiv, AlgEquiv.one_apply]
   mul_smul σ τ x := by
+    -- As above, expose the supplied `smul` field before the action instance exists.
     change (σ * τ).maximalIdealEquiv x =
       σ.maximalIdealEquiv (τ.maximalIdealEquiv x)
     apply Subtype.ext
     apply Subtype.ext
-    simp
+    rw [AlgEquiv.coe_maximalIdealEquiv, AlgEquiv.coe_maximalIdealEquiv,
+      AlgEquiv.coe_maximalIdealEquiv, AlgEquiv.mul_apply]
   smul_add σ x y := σ.maximalIdealEquiv.map_add x y
   smul_zero σ := σ.maximalIdealEquiv.map_zero
 
+/-- The maximal-ideal action is the restriction represented by `AlgEquiv.maximalIdealEquiv`. -/
 @[simp]
 theorem smul_maximalIdeal_eq (σ : L ≃ₐ[K] L) (x : 𝓂[L]) :
     σ • x = σ.maximalIdealEquiv x :=
@@ -205,9 +226,12 @@ of its residue-field extension. -/
 noncomputable def residueFieldAut : (L ≃ₐ[K] L) →* (𝓀[L] ≃ₐ[𝓀[K]] 𝓀[L]) :=
   MulSemiringAction.toAlgAut (L ≃ₐ[K] L) 𝓀[K] 𝓀[L]
 
+/-- Evaluating the residue-field automorphism homomorphism gives the induced residue-field
+equivalence. -/
 @[simp]
 theorem residueFieldAut_apply (σ : L ≃ₐ[K] L) (x : 𝓀[L]) :
-    residueFieldAut σ x = σ.residueFieldEquiv x :=
-  (rfl)
+    residueFieldAut σ x = σ.residueFieldEquiv x := by
+  simpa only [residueFieldAut, MulSemiringAction.toAlgAut_apply,
+    MulSemiringAction.toAlgEquiv_apply] using (AlgEquiv.residueFieldEquiv_apply σ x).symm
 
 end TauCeti
