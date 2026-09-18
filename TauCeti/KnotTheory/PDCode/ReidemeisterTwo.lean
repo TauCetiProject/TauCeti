@@ -466,25 +466,26 @@ variable (D : PDCode n) (p q : Fin (4 * n)) (b : Bool) (hqp : q ≠ p) (hqe : q 
 
 /-- The old crossings keep their half-edges. -/
 @[simp] theorem reidemeisterTwo_crossing_castSucc_castSucc (i : Fin n) (slot : Fin 4) :
-    (D.reidemeisterTwo p q b hqp hqe).crossing i.castSucc.castSucc slot =
+    (D.reidemeisterTwo p q b hqp hqe).halfEdge
+        (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n
+          (.inl (crossingSlotEquiv n (i, slot)))))) =
       halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl (D.crossing i slot)))) := by
-  rw [crossing_apply, crossingSlotEquiv_succ_castSucc, crossingSlotEquiv_succ_castSucc,
-    ← halfEdgeTwoSuccEquiv_inl_inl, ← halfEdgeTwoSuccEquiv_inl_inl]
+  rw [← halfEdgeTwoSuccEquiv_inl_inl, ← halfEdgeTwoSuccEquiv_inl_inl]
   simp [reidemeisterTwo, Equiv.permCongr_apply]
 
 /-- The slots of the first new crossing are four of the new half-edges. -/
 @[simp] theorem reidemeisterTwo_crossing_castSucc_last (slot : Fin 4) :
-    (D.reidemeisterTwo p q b hqp hqe).crossing (Fin.last n).castSucc slot =
+    (D.reidemeisterTwo p q b hqp hqe).halfEdge
+        (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr slot)))) =
       halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr slot))) := by
-  rw [crossing_apply, crossingSlotEquiv_succ_castSucc, crossingSlotEquiv_succ_last,
-    ← halfEdgeTwoSuccEquiv_inl_inr]
+  rw [← halfEdgeTwoSuccEquiv_inl_inr]
   simp [reidemeisterTwo, Equiv.permCongr_apply]
 
 /-- The slots of the second new crossing are the last four half-edges. -/
 @[simp] theorem reidemeisterTwo_crossing_last (slot : Fin 4) :
-    (D.reidemeisterTwo p q b hqp hqe).crossing (Fin.last (n + 1)) slot =
+    (D.reidemeisterTwo p q b hqp hqe).halfEdge (halfEdgeSuccEquiv (n + 1) (.inr slot)) =
       halfEdgeSuccEquiv (n + 1) (.inr slot) := by
-  rw [crossing_apply, crossingSlotEquiv_succ_last, ← halfEdgeTwoSuccEquiv_inr]
+  rw [← halfEdgeTwoSuccEquiv_inr]
   simp [reidemeisterTwo, Equiv.permCongr_apply]
 
 /-- The old crossings keep their over-strands. -/
@@ -615,26 +616,36 @@ private theorem crossingwisePerm_reidemeisterTwo
         (D.reidemeisterTwo p q b hqp hqe).crossing i (r i slot)) :
     newTurn = (halfEdgeTwoSuccEquiv n).permCongr (Perm.sumCongr
       (Perm.sumCongr oldTurn (r (Fin.last n).castSucc)) (r (Fin.last (n + 1)))) := by
-  have key : ∀ i slot, newTurn ((D.reidemeisterTwo p q b hqp hqe).crossing i slot) =
-      (D.reidemeisterTwo p q b hqp hqe).crossing i (r i slot) := fun i slot => by
-    rw [crossing_apply, newTurn_crossing]
   refine Equiv.ext fun x => ?_
   obtain ⟨y, rfl⟩ := (halfEdgeTwoSuccEquiv n).surjective x
   rw [Equiv.permCongr_apply, Equiv.symm_apply_apply]
   rcases y with (y | slot) | slot
   · obtain ⟨z, rfl⟩ := D.halfEdge.surjective y
     obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective z
+    have hx := D.reidemeisterTwo_crossing_castSucc_castSucc p q b hqp hqe i slot
+    rw [crossing_apply, ← crossingSlotEquiv_succ_castSucc,
+      ← crossingSlotEquiv_succ_castSucc] at hx
     rw [Perm.sumCongr_apply, Sum.map_inl, Perm.sumCongr_apply, Sum.map_inl, oldTurn_crossing,
-      halfEdgeTwoSuccEquiv_inl_inl, halfEdgeTwoSuccEquiv_inl_inl, ← crossing_apply,
-      ← reidemeisterTwo_crossing_castSucc_castSucc D p q b hqp hqe,
-      ← reidemeisterTwo_crossing_castSucc_castSucc D p q b hqp hqe, key]
-  · rw [Perm.sumCongr_apply, Sum.map_inl, Perm.sumCongr_apply, Sum.map_inr,
-      halfEdgeTwoSuccEquiv_inl_inr, halfEdgeTwoSuccEquiv_inl_inr,
-      ← reidemeisterTwo_crossing_castSucc_last D p q b hqp hqe,
-      ← reidemeisterTwo_crossing_castSucc_last D p q b hqp hqe, key]
-  · rw [Perm.sumCongr_apply, Sum.map_inr, halfEdgeTwoSuccEquiv_inr, halfEdgeTwoSuccEquiv_inr,
-      ← reidemeisterTwo_crossing_last D p q b hqp hqe,
-      ← reidemeisterTwo_crossing_last D p q b hqp hqe, key]
+      halfEdgeTwoSuccEquiv_inl_inl, halfEdgeTwoSuccEquiv_inl_inl, ← hx,
+      newTurn_crossing, crossing_apply, crossingSlotEquiv_succ_castSucc,
+      crossingSlotEquiv_succ_castSucc, reidemeisterTwo_crossing_castSucc_castSucc]
+  · have hx : (D.reidemeisterTwo p q b hqp hqe).halfEdge
+        (crossingSlotEquiv (n + 2) ((Fin.last n).castSucc, slot)) =
+        halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr slot))) := by
+      simpa only [crossingSlotEquiv_succ_castSucc, crossingSlotEquiv_succ_last] using
+        D.reidemeisterTwo_crossing_castSucc_last p q b hqp hqe slot
+    rw [Perm.sumCongr_apply, Sum.map_inl, Perm.sumCongr_apply, Sum.map_inr,
+      halfEdgeTwoSuccEquiv_inl_inr, halfEdgeTwoSuccEquiv_inl_inr, ← hx,
+      newTurn_crossing, crossing_apply, crossingSlotEquiv_succ_castSucc,
+      crossingSlotEquiv_succ_last, reidemeisterTwo_crossing_castSucc_last]
+  · have hx : (D.reidemeisterTwo p q b hqp hqe).halfEdge
+        (crossingSlotEquiv (n + 2) (Fin.last (n + 1), slot)) =
+        halfEdgeSuccEquiv (n + 1) (.inr slot) := by
+      simpa only [crossingSlotEquiv_succ_last] using
+        D.reidemeisterTwo_crossing_last p q b hqp hqe slot
+    rw [Perm.sumCongr_apply, Sum.map_inr, halfEdgeTwoSuccEquiv_inr, halfEdgeTwoSuccEquiv_inr,
+      ← hx, newTurn_crossing, crossing_apply, crossingSlotEquiv_succ_last,
+      reidemeisterTwo_crossing_last]
 
 private theorem smoothingTurn_reidemeisterTwo (c : Fin (n + 2) → Bool) :
     (D.reidemeisterTwo p q b hqp hqe).smoothingTurn c = (halfEdgeTwoSuccEquiv n).permCongr
