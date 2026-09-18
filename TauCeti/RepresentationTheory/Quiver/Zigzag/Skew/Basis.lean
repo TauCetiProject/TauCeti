@@ -548,8 +548,7 @@ theorem skewZigzagMk_backtrackElem_smul_left_injective {i j : V} (hij : G.Adj i 
   classical
   let s := defaultIncidentChoice G
   intro r r' hrr'
-  change r • skewZigzagMk k G c (backtrackElem G k hij) =
-    r' • skewZigzagMk k G c (backtrackElem G k hij) at hrr'
+  beta_reduce at hrr'
   rw [← map_smul, ← map_smul] at hrr'
   have hmem : r • backtrackElem G k hij - r' • backtrackElem G k hij ∈
       skewZigzagIdeal k G c :=

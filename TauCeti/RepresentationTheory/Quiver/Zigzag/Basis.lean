@@ -487,7 +487,7 @@ theorem zigzagVolume_ne_zero [Nontrivial k] {i j : V} (h : G.Adj i j) :
 theorem zigzagVolume_smul_left_injective {i j : V} (h : G.Adj i j) :
   Function.Injective fun r : k ↦ r • zigzagVolume k G i := by
   intro r s hrs
-  change r • zigzagVolume k G i = s • zigzagVolume k G i at hrs
+  beta_reduce at hrs
   rw [zigzagVolume_eq_zigzagMk_backtrackElem k G h, ← map_smul, ← map_smul] at hrs
   have hmem : r • backtrackElem G k h - s • backtrackElem G k h ∈ zigzagIdeal k G :=
     (zigzagMk_eq_zero_iff k G).mp (by rw [map_sub, hrs, sub_self])

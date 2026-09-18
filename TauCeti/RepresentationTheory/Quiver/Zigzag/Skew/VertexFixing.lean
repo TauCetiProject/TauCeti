@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Gauge
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.Basis
 
 /-!
-# Vertex-fixing isomorphisms of skew-zigzag algebras are gauge transforms
+# Vertex-fixing isomorphisms of skew-zigzag algebras and gauge equivalence
 
 A skew-zigzag parameter `c` of a finite simple graph `G` labels each ordered pair of incident edges
 by a unit-valued ratio, and gauge equivalent parameters present isomorphic algebras through an
@@ -20,7 +20,7 @@ commutative ring: an algebra isomorphism
 φ : Z_k(G, c) ≃ₐ[k] Z_k(G, c')
 ```
 
-fixing every vertex idempotent is a gauge transform, so `c` and `c'` are gauge equivalent. Hence
+fixing every vertex idempotent forces `c` and `c'` to be gauge equivalent. Hence
 the vertex-fixing isomorphism classes of skew-zigzag algebras of `G` are exactly the gauge classes
 of parameters. No grading hypothesis on `φ` is needed: an isomorphism fixing the idempotents
 preserves the corner `e_j Z e_i` between the endpoints of an edge, and that corner is the line
@@ -86,11 +86,9 @@ private theorem skewZigzagMk_ofArrow_smul_left_injective
   have h : G.Adj i j := by simpa using e.down
   obtain rfl : e = arrow G h := Subsingleton.elim _ _
   intro r s hrs
-  change r • skewZigzagMk k G c (ofArrow (arrow G h)) =
-    s • skewZigzagMk k G c (ofArrow (arrow G h)) at hrs
+  beta_reduce at hrs
   apply skewZigzagMk_backtrackElem_smul_left_injective k G c h
-  change r • skewZigzagMk k G c (backtrackElem G k h) =
-    s • skewZigzagMk k G c (backtrackElem G k h)
+  beta_reduce
   rw [← ofArrow_symm_mul_ofArrow, map_mul, ← mul_smul_comm, ← mul_smul_comm, hrs]
 
 /-- A vertex-fixing isomorphism multiplies each arrow by a unit. -/
@@ -115,11 +113,7 @@ private theorem exists_unit_smul_of_algEquiv
       _ = φ.symm (φ (skewZigzagMk k G c (ofArrow e))) := congrArg φ.symm hr.symm
       _ = skewZigzagMk k G c (ofArrow e) := φ.symm_apply_apply _
       _ = (1 : k) • skewZigzagMk k G c (ofArrow e) := (one_smul _ _).symm
-  have hrs : r * s = 1 := by
-    apply skewZigzagMk_ofArrow_smul_left_injective (c := c) e
-    change (r * s) • skewZigzagMk k G c (ofArrow e) =
-      1 • skewZigzagMk k G c (ofArrow e)
-    exact hrs_smul
+  have hrs : r * s = 1 := skewZigzagMk_ofArrow_smul_left_injective (c := c) e hrs_smul
   exact ⟨⟨r, s, hrs, by simpa [mul_comm] using hrs⟩, hr⟩
 
 /-- The unit by which a vertex-fixing isomorphism multiplies an arrow. -/
@@ -154,10 +148,10 @@ private theorem apply_skewZigzagMk_backtrackElem
     apply_skewZigzagMk_ofArrow φ hφ, smul_mul_smul_comm, ← map_mul, ofArrow_symm_mul_ofArrow,
     val_backtrackScale, backtrackScale_apply, mul_comm]
 
-/-- **A vertex-fixing isomorphism of skew-zigzag relation quotients is a gauge transform.** If an
+/-- **A vertex-fixing isomorphism forces gauge equivalence.** If an
 algebra isomorphism between the relation quotients of two parameters over a commutative ring fixes
-every vertex idempotent, then the parameters are gauge equivalent, the gauge being the units by
-which the isomorphism multiplies the arrows. -/
+every vertex idempotent, then the parameters are gauge equivalent, a gauge being given by the units
+by which the isomorphism multiplies the arrows. -/
 theorem isGaugeEquivalent_of_vertexFixing_algEquiv
     (φ : skewZigzagQuotient k G c ≃ₐ[k] skewZigzagQuotient k G c')
     (hφ : ∀ i : V, φ (skewZigzagMk k G c (vertexIdempotent k (vertex G i))) =
