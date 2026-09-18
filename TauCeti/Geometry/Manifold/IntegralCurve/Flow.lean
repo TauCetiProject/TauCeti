@@ -29,8 +29,8 @@ be false. The results below always carry the precise membership hypotheses.
   `φ x (t + s) = φ (φ x t) s`.
 * `maximalIntegralCurveFlowDomain`: the natural domain of the maximal flow.
 * `isOpen_maximalIntegralCurveFlowDomain`: the natural domain is open.
-* `contMDiffOn_maximalIntegralCurve`: the maximal flow of a smooth vector field is smooth on its
-  natural domain.
+* `contMDiffOn_maximalIntegralCurve`: the maximal flow of a `C^n` vector field (`1 ≤ n ≤ ∞`) is
+  `C^n` on its natural domain.
 
 ## References
 
@@ -364,22 +364,25 @@ theorem isOpen_maximalIntegralCurveFlowDomain [FiniteDimensional ℝ E]
   intro p hp
   exact (isMaximalIntegralCurveFlowPoint_of_mem (I := I) 0 hv hp).1
 
-/-- **Smoothness of the maximal flow.** The maximal flow of a smooth vector field on a
-finite-dimensional boundaryless manifold is jointly smooth in its initial point and time on its
+/-- **Smoothness of the maximal flow.** The maximal flow of a `C^n` vector field, `1 ≤ n ≤ ∞`, on
+a finite-dimensional boundaryless manifold is jointly `C^n` in its initial point and time on its
 natural domain. -/
-theorem contMDiffOn_maximalIntegralCurve [FiniteDimensional ℝ E] [IsManifold I ∞ M]
-    (hv : CMDiff ∞ (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
-    ContMDiffOn (I.prod 𝓘(ℝ, ℝ)) I ∞
+theorem contMDiffOn_maximalIntegralCurve [FiniteDimensional ℝ E] {n : ℕ∞} (hn : 1 ≤ n)
+    [IsManifold I n M] (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
+    ContMDiffOn (I.prod 𝓘(ℝ, ℝ)) I n
       (fun p : M × ℝ ↦ maximalIntegralCurve v p.1 p.2)
       (maximalIntegralCurveFlowDomain v) := by
-  rw [contMDiffOn_infty]
-  intro n
-  let _ : IsManifold I (n + 1 : ℕ) M := IsManifold.of_le (n := ∞)
-    (by exact_mod_cast le_top)
   let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
   intro p hp
-  exact (isMaximalIntegralCurveFlowPoint_of_mem (I := I) n
-    (hv.of_le (by exact_mod_cast le_top)) hp).2.contMDiffWithinAt.of_le
-    (by exact_mod_cast Nat.le_succ n)
+  rw [contMDiffWithinAt_iff_nat]
+  intro m hm
+  -- Order `m` follows from the finite-order result at an order `k + 1` with `m ≤ k + 1 ≤ n`.
+  obtain ⟨k, hmk, hkn⟩ : ∃ k : ℕ, m ≤ k + 1 ∧ ((k + 1 : ℕ) : WithTop ℕ∞) ≤ n := by
+    rcases m with _ | k
+    · exact ⟨0, by omega, by simpa using WithTop.coe_le_coe.mpr hn⟩
+    · exact ⟨k, le_rfl, by simpa using WithTop.coe_le_coe.mpr hm⟩
+  let _ : IsManifold I (k + 1 : ℕ) M := IsManifold.of_le (n := n) hkn
+  exact (isMaximalIntegralCurveFlowPoint_of_mem (I := I) k (hv.of_le hkn)
+    hp).2.contMDiffWithinAt.of_le (by exact_mod_cast hmk)
 
 end TauCeti
