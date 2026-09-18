@@ -95,13 +95,13 @@ private theorem retractPath_mul_vertexIdempotent {a b : Symmetrify Q} (p : Path 
     · rw [retractPath, Sum.elim_inr, zero_mul]
 
 /-- Concatenation of doubled paths becomes multiplication, later factor first. -/
-private theorem retractPath_comp {a b c : Symmetrify Q} (q : Path c a) (p : Path a b) :
-    retractPath k (q.comp p) = retractPath k p * retractPath k q := by
+private theorem retractPath_comp {a b c : Symmetrify Q} (p : Path a b) (q : Path c a) :
+    retractPath k p * retractPath k q = retractPath k (q.comp p) := by
   induction p with
   | nil => rw [Path.comp_nil, retractPath, vertexIdempotent_mul_retractPath]
   | cons p e ih =>
     rcases e with f | f
-    · rw [Path.comp_cons, retractPath, retractPath, Sum.elim_inl, Sum.elim_inl, ih, mul_assoc]
+    · rw [Path.comp_cons, retractPath, retractPath, Sum.elim_inl, Sum.elim_inl, mul_assoc, ih]
     · rw [Path.comp_cons, retractPath, retractPath, Sum.elim_inr, Sum.elim_inr, zero_mul]
 
 /-- A path of `Q`, viewed in the doubled quiver, goes back to itself. -/
@@ -113,10 +113,6 @@ private theorem retractPath_mapPath {a b : Q} (p : Path a b) :
     rw [Prefunctor.mapPath_cons, retractPath]
     exact (congrArg (ofArrow f * ·) ih).trans (by
       rw [ofArrow_eq_ofPath, ofPath_mul_ofPath_of_comp, Path.comp_toPath_eq_cons])
-
-private theorem retractPath_hcomp {a b c : Symmetrify Q} (p : Path a b) (q : Path c a) :
-    retractPath k p * retractPath k q = retractPath k (q.comp p) :=
-  (retractPath_comp k q p).symm
 
 variable [Finite Q]
 
@@ -137,8 +133,8 @@ private theorem retractPath_hone :
 path algebra of `Q` which fixes the vertex idempotents and the arrows of `Q` and kills every formal
 reverse. A doubled path goes to itself when it uses only arrows of `Q`, and to zero otherwise. -/
 noncomputable def symmetrifyRetraction : pathAlgebra k (Symmetrify Q) →ₐ[k] pathAlgebra k Q :=
-  liftAlgHom k (fun x => retractPath k x.2.2) (retractPath_hcomp k) (retractPath_hzero k)
-    (retractPath_hone k)
+  liftAlgHom k (fun x => retractPath k x.2.2) (retractPath_comp k)
+    (retractPath_hzero k) (retractPath_hone k)
 
 /-- The retraction fixes every vertex idempotent. -/
 @[simp]
