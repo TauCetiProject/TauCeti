@@ -83,6 +83,13 @@ variable {n : ℕ}
 def mk (t : ConnectedTriple n) : ConnectedIsoClass n :=
   Quotient.mk'' t
 
+/-- Two connected triples determine the same isomorphism class exactly when they are related by
+simultaneous relabeling. -/
+@[simp]
+theorem mk_eq_mk_iff {t t' : ConnectedTriple n} :
+    mk t = mk t' ↔ MulAction.orbitRel (Perm (Fin n)) (ConnectedTriple n) t t' :=
+  Quotient.eq''
+
 theorem mk_surjective : Function.Surjective (mk : ConnectedTriple n → ConnectedIsoClass n) :=
   Quotient.mk''_surjective
 
@@ -275,6 +282,19 @@ def HasPassport (c : ConnectedIsoClass n) (P : PassportSpec n) : Prop :=
 theorem hasPassport_mk (t : ConnectedTriple n) (P : PassportSpec n) :
     (mk t).HasPassport P ↔ PassportSpec.HasPassport t P :=
   Iff.rfl
+
+/-- A passport containing an isomorphism class of connected triples is admissible. -/
+theorem isAdmissible_of_hasPassport {c : ConnectedIsoClass n} {P : PassportSpec n}
+    (hcP : c.HasPassport P) : P.IsAdmissible := by
+  obtain ⟨t, rfl⟩ := mk_surjective c
+  exact PassportSpec.isAdmissible_of_hasPassport hcP
+
+/-- Conjugating the reference subgroup does not change membership of an isomorphism class. -/
+@[simp]
+theorem hasPassport_conjugate_iff (c : ConnectedIsoClass n) (P : PassportSpec n)
+    (τ : Perm (Fin n)) : c.HasPassport (P.conjugate τ) ↔ c.HasPassport P := by
+  obtain ⟨t, rfl⟩ := mk_surjective c
+  exact PassportSpec.hasPassport_conjugate_iff t P τ
 
 end ConnectedIsoClass
 
