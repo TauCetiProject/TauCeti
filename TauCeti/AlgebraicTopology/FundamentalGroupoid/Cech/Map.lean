@@ -78,14 +78,16 @@ def cechMapCocone : Cocone (cechDiagram U) :=
     ((cechCocone V).whisker (CechIndex.map r))
 
 @[simp]
-lemma cechMapCocone_pt : (cechMapCocone U V f r hf).pt = (cechCocone V).pt :=
-  rfl
+lemma cechMapCocone_pt : (cechMapCocone U V f r hf).pt = (cechCocone V).pt := by
+  simp only [cechMapCocone, Cocone.precompose_obj_pt, Cocone.whisker_pt]
 
 @[simp]
 lemma cechMapCocone_ι_app (s : CechIndex ι) :
     (cechMapCocone U V f r hf).ι.app s =
       (cechMapNatTrans U V f r hf).app s ≫
-        (cechCocone V).ι.app ((CechIndex.map r).obj s) := (rfl)
+        (cechCocone V).ι.app ((CechIndex.map r).obj s) := by
+  simp only [cechMapCocone, Cocone.precompose_obj_ι, Cocone.whisker_ι, NatTrans.comp_app,
+    Functor.whiskerLeft_app, Functor.const_obj_obj, Functor.comp_obj]
 
 /-- If the source canonical cocone is colimiting, then its induced map to the target canonical
 cocone is the usual map on fundamental groupoids.  This is the map-level naturality statement

@@ -59,13 +59,6 @@ def cechMap (s : CechIndex ι) :
     { toFun := fun x ↦ ⟨f x.1, mapsTo_cechIntersection U V f r hf s x.2⟩
       continuous_toFun := (f.hom.continuous.comp continuous_subtype_val).subtype_mk _ }
 
-@[simp]
-lemma cechMap_apply (s : CechIndex ι) (x : TopCat.of (cechIntersection U s)) :
-    eqToHom (cechTopDiagram_obj V ((CechIndex.map r).obj s))
-        (cechMap U V f r hf s
-          (eqToHom (cechTopDiagram_obj U s).symm x)) =
-      ⟨f x.1, mapsTo_cechIntersection U V f r hf s x.2⟩ := (rfl)
-
 /-- Maps between Cech intersections commute with their inclusions into the ambient spaces. -/
 @[reassoc]
 lemma cechMap_comp_inclusion (s : CechIndex ι) :
@@ -73,6 +66,18 @@ lemma cechMap_comp_inclusion (s : CechIndex ι) :
       cechInclusion U s ≫ f := by
   ext x
   rfl
+
+@[simp]
+lemma cechMap_apply (s : CechIndex ι) (x : TopCat.of (cechIntersection U s)) :
+    eqToHom (cechTopDiagram_obj V ((CechIndex.map r).obj s))
+        (cechMap U V f r hf s
+          (eqToHom (cechTopDiagram_obj U s).symm x)) =
+      ⟨f x.1, mapsTo_cechIntersection U V f r hf s x.2⟩ := by
+  apply Subtype.ext
+  have hinv {A B : TopCat} (h : A = B) (y : A) : eqToHom h.symm (eqToHom h y) = y := by
+    rw [← ConcreteCategory.comp_apply, eqToHom_trans, eqToHom_refl, ConcreteCategory.id_apply]
+  rw [← cechInclusion_apply V, hinv, ← ConcreteCategory.comp_apply, cechMap_comp_inclusion,
+    ConcreteCategory.comp_apply, cechInclusion_apply]
 
 /-- The intersection maps associated to a map of covered spaces form a natural transformation
 between the two Čech diagrams. -/
