@@ -129,37 +129,13 @@ theorem frickeOperatorCusp_levelRaise [NeZero M] [NeZero d] [NeZero e] [NeZero N
     (f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k) :
     frickeOperatorCusp k (CuspForm.levelRaise d hd f) =
       ((d : ℂ)⁻¹ * (e : ℂ) ^ (k - 1)) • CuspForm.levelRaise e he (frickeOperatorCusp k f) := by
-  have hd0 : (d : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne d)
-  have he0 : (e : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne e)
   refine DFunLike.coe_injective ?_
-  rw [coe_frickeOperatorCusp, CuspForm.coe_levelRaise, FunLike.coe_smul, CuspForm.coe_levelRaise,
-    coe_frickeOperatorCusp, ModularForm.smul_slash_of_det_pos k val_det_frickeGL_pos,
-    slash_scaleGL_slash_frickeGL h, smul_smul, smul_smul]
-  congr 1
-  rw [← zpow_add₀ hd0, mul_assoc, ← zpow_add₀ he0]
-  simp
-
-/-- **The normalized Fricke operator intertwines the level-raises**: for `N = d * e * M`,
-`𝒲_N (V_d f) = (√(d e)) ^ (2 - k) · d⁻¹ · e ^ (k - 1) · V_e (𝒲_M f)`. The scalar is
-`(e / d) ^ (k / 2)`; it is written through `atkinLehnerNormalizer (d * e) k`, the ratio of the
-normalizers of `𝒲_N` and `𝒲_M`. -/
-theorem normalizedFrickeOperatorCusp_levelRaise [NeZero M] [NeZero d] [NeZero e] [NeZero N]
-    (h : d * e * M = N)
-    (hd : (Gamma1 N).map (mapGL ℝ) ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • (Gamma1 M).map (mapGL ℝ))
-    (he : (Gamma1 N).map (mapGL ℝ) ≤ ConjAct.toConjAct (scaleGL e)⁻¹ • (Gamma1 M).map (mapGL ℝ))
-    (f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k) :
-    normalizedFrickeOperatorCusp k (CuspForm.levelRaise d hd f) =
-      (atkinLehnerNormalizer (d * e) k * (d : ℂ)⁻¹ * (e : ℂ) ^ (k - 1)) •
-        CuspForm.levelRaise e he (normalizedFrickeOperatorCusp k f) := by
-  rw [normalizedFrickeOperatorCusp_def, LinearMap.smul_apply, frickeOperatorCusp_levelRaise h hd he,
-    normalizedFrickeOperatorCusp_def, LinearMap.smul_apply]
-  have hα : atkinLehnerNormalizer N k =
-      atkinLehnerNormalizer (d * e) k * atkinLehnerNormalizer M k := by
-    rw [← h, atkinLehnerNormalizer_mul]
-  rw [hα]
-  ext τ
-  simp only [FunLike.coe_smul, Pi.smul_apply, CuspForm.levelRaise_apply, smul_eq_mul]
-  ring
+  have := congrArg DFunLike.coe
+    (frickeOperator_levelRaise h hd he (f : ModularForm ((Gamma1 M).map (mapGL ℝ)) k))
+  rw [coe_frickeOperator, ModularForm.coe_levelRaise, FunLike.coe_smul,
+    ModularForm.coe_levelRaise, coe_frickeOperator, ModularFormClass.coe_modularForm] at this
+  rwa [coe_frickeOperatorCusp, CuspForm.coe_levelRaise, FunLike.coe_smul, CuspForm.coe_levelRaise,
+    coe_frickeOperatorCusp]
 
 /-- **The normalized Fricke operator intertwines the level-raises on modular forms**: for
 `N = d * e * M`, `𝒲_N (V_d f) = (√(d e)) ^ (2 - k) · d⁻¹ · e ^ (k - 1) · V_e (𝒲_M f)`. -/
@@ -180,6 +156,27 @@ theorem normalizedFrickeOperator_levelRaise [NeZero M] [NeZero d] [NeZero e] [Ne
   ext τ
   simp only [FunLike.coe_smul, Pi.smul_apply, ModularForm.levelRaise_apply, smul_eq_mul]
   ring
+
+/-- **The normalized Fricke operator intertwines the level-raises**: for `N = d * e * M`,
+`𝒲_N (V_d f) = (√(d e)) ^ (2 - k) · d⁻¹ · e ^ (k - 1) · V_e (𝒲_M f)`. The scalar is
+`(e / d) ^ (k / 2)`; it is written through `atkinLehnerNormalizer (d * e) k`, the ratio of the
+normalizers of `𝒲_N` and `𝒲_M`. -/
+theorem normalizedFrickeOperatorCusp_levelRaise [NeZero M] [NeZero d] [NeZero e] [NeZero N]
+    (h : d * e * M = N)
+    (hd : (Gamma1 N).map (mapGL ℝ) ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • (Gamma1 M).map (mapGL ℝ))
+    (he : (Gamma1 N).map (mapGL ℝ) ≤ ConjAct.toConjAct (scaleGL e)⁻¹ • (Gamma1 M).map (mapGL ℝ))
+    (f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k) :
+    normalizedFrickeOperatorCusp k (CuspForm.levelRaise d hd f) =
+      (atkinLehnerNormalizer (d * e) k * (d : ℂ)⁻¹ * (e : ℂ) ^ (k - 1)) •
+        CuspForm.levelRaise e he (normalizedFrickeOperatorCusp k f) := by
+  refine DFunLike.coe_injective ?_
+  have := congrArg DFunLike.coe
+    (normalizedFrickeOperator_levelRaise h hd he (f : ModularForm ((Gamma1 M).map (mapGL ℝ)) k))
+  rw [coe_normalizedFrickeOperator, ModularForm.coe_levelRaise, FunLike.coe_smul,
+    ModularForm.coe_levelRaise, coe_normalizedFrickeOperator,
+    ModularFormClass.coe_modularForm] at this
+  rwa [coe_normalizedFrickeOperatorCusp, CuspForm.coe_levelRaise, FunLike.coe_smul,
+    CuspForm.coe_levelRaise, coe_normalizedFrickeOperatorCusp]
 
 /-! ### Stability of the old subspace -/
 
