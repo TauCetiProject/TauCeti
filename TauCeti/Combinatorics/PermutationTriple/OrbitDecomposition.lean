@@ -71,40 +71,28 @@ original action on the orbit. -/
 /-- The restriction of a permutation triple to a monodromy orbit, numbered by
 `Fin O.orbit.ncard`. -/
 noncomputable def restrictToOrbit (t : PermutationTriple n) (O : MonodromyOrbit t) :
-    PermutationTriple O.orbit.ncard where
-  σ0 := t.orbitActionHom O ⟨t.σ0, t.σ0_mem_monodromyGroup⟩
-  σ1 := t.orbitActionHom O ⟨t.σ1, t.σ1_mem_monodromyGroup⟩
-  σinf := t.orbitActionHom O ⟨t.σinf, t.σinf_mem_monodromyGroup⟩
-  product_eq_one := by
-    rw [← map_mul, ← map_mul]
-    convert map_one (t.orbitActionHom O) using 2
-    exact Subtype.ext t.product_eq_one
+    PermutationTriple O.orbit.ncard :=
+  t.mapMonodromy (t.orbitActionHom O)
 
 variable (t : PermutationTriple n) (O : MonodromyOrbit t)
 
 @[simp] theorem restrictToOrbit_σ0 : (t.restrictToOrbit O).σ0 =
-    t.orbitActionHom O ⟨t.σ0, t.σ0_mem_monodromyGroup⟩ := (rfl)
+    t.orbitActionHom O ⟨t.σ0, t.σ0_mem_monodromyGroup⟩ :=
+  t.mapMonodromy_σ0 _
 
 @[simp] theorem restrictToOrbit_σ1 : (t.restrictToOrbit O).σ1 =
-    t.orbitActionHom O ⟨t.σ1, t.σ1_mem_monodromyGroup⟩ := (rfl)
+    t.orbitActionHom O ⟨t.σ1, t.σ1_mem_monodromyGroup⟩ :=
+  t.mapMonodromy_σ1 _
 
 @[simp] theorem restrictToOrbit_σinf : (t.restrictToOrbit O).σinf =
-    t.orbitActionHom O ⟨t.σinf, t.σinf_mem_monodromyGroup⟩ := (rfl)
+    t.orbitActionHom O ⟨t.σinf, t.σinf_mem_monodromyGroup⟩ :=
+  t.mapMonodromy_σinf _
 
 /-- The monodromy group of an orbit restriction is the image of the original monodromy group on
 that orbit. -/
 theorem monodromyGroup_restrictToOrbit :
-    (t.restrictToOrbit O).monodromyGroup = (t.orbitActionHom O).range := by
-  have hgen : Subgroup.closure ({⟨t.σ0, t.σ0_mem_monodromyGroup⟩, ⟨t.σ1, t.σ1_mem_monodromyGroup⟩,
-      ⟨t.σinf, t.σinf_mem_monodromyGroup⟩} : Set t.monodromyGroup) = ⊤ := by
-    rw [← Subgroup.map_subtype_inj, MonoidHom.map_closure]
-    simp only [Set.image_insert_eq, Set.image_singleton, Subgroup.coe_subtype]
-    rw [closure_triple_eq_monodromyGroup, ← MonoidHom.range_eq_map]
-    simp
-  refine (closure_triple_eq_monodromyGroup _).symm.trans ?_
-  rw [restrictToOrbit_σ0, restrictToOrbit_σ1, restrictToOrbit_σinf]
-  simp only [← Set.image_singleton, ← Set.image_insert_eq]
-  rw [← MonoidHom.map_closure, hgen, MonoidHom.range_eq_map]
+    (t.restrictToOrbit O).monodromyGroup = (t.orbitActionHom O).range :=
+  t.monodromyGroup_mapMonodromy _
 
 /-- Every monodromy-orbit restriction is connected. -/
 theorem isConnected_restrictToOrbit : (t.restrictToOrbit O).IsConnected := by

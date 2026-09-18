@@ -40,6 +40,8 @@ This file sets up the carrier and the symmetry attached to it.
 * `TauCeti.PermutationTriple.automorphismGroup`: the stabilizer of a triple under relabeling,
   equivalently the centralizer of its monodromy group. For a connected triple it acts freely on
   the sheets, so its order divides the degree.
+* `TauCeti.PermutationTriple.mapMonodromy`: the image of a triple under a homomorphism from its
+  monodromy group to another symmetric group.
 
 ## Implementation notes
 
@@ -493,6 +495,63 @@ theorem card_automorphismGroup_dvd
   have hcard := Nat.card_congr (MulAction.selfEquivOrbitsQuotientProd hfree)
   rw [Nat.card_prod, Nat.card_eq_fintype_card, Fintype.card_fin] at hcard
   exact ⟨_, hcard.trans (mul_comm _ _)⟩
+
+/-! ### Images under representations of the monodromy group -/
+
+/-- The image of a triple under a homomorphism from its monodromy group to the permutations of
+another set of sheets: the three components are sent to their images, and the relation
+`σinf * σ1 * σ0 = 1` is preserved because `f` is multiplicative. Restricting a triple to a
+monodromy orbit and passing to its action on a system of blocks are both of this form. -/
+def mapMonodromy {m : ℕ} (t : PermutationTriple n) (f : t.monodromyGroup →* Perm (Fin m)) :
+    PermutationTriple m where
+  σ0 := f ⟨t.σ0, t.σ0_mem_monodromyGroup⟩
+  σ1 := f ⟨t.σ1, t.σ1_mem_monodromyGroup⟩
+  σinf := f ⟨t.σinf, t.σinf_mem_monodromyGroup⟩
+  product_eq_one := by
+    rw [← map_mul, ← map_mul]
+    convert map_one f using 2
+    exact Subtype.ext t.product_eq_one
+
+section mapMonodromy
+
+variable {m : ℕ} (t : PermutationTriple n) (f : t.monodromyGroup →* Perm (Fin m))
+
+@[simp] theorem mapMonodromy_σ0 :
+    (t.mapMonodromy f).σ0 = f ⟨t.σ0, t.σ0_mem_monodromyGroup⟩ := (rfl)
+
+@[simp] theorem mapMonodromy_σ1 :
+    (t.mapMonodromy f).σ1 = f ⟨t.σ1, t.σ1_mem_monodromyGroup⟩ := (rfl)
+
+@[simp] theorem mapMonodromy_σinf :
+    (t.mapMonodromy f).σinf = f ⟨t.σinf, t.σinf_mem_monodromyGroup⟩ := (rfl)
+
+/-- The image of a triple under the inclusion of its monodromy group is the triple itself. -/
+@[simp] theorem mapMonodromy_subtype : t.mapMonodromy t.monodromyGroup.subtype = t :=
+  ext_of_two rfl rfl
+
+/-- Composing the representation with conjugation by `τ` relabels the image triple by `τ`. -/
+theorem mapMonodromy_conj_comp (τ : Perm (Fin m)) :
+    t.mapMonodromy ((MulAut.conj τ).toMonoidHom.comp f) = τ • t.mapMonodromy f :=
+  ext_of_two rfl rfl
+
+/-- The monodromy group of the image triple is the image of the representation. -/
+theorem monodromyGroup_mapMonodromy : (t.mapMonodromy f).monodromyGroup = f.range := by
+  have hgen : Subgroup.closure ({⟨t.σ0, t.σ0_mem_monodromyGroup⟩,
+      ⟨t.σ1, t.σ1_mem_monodromyGroup⟩} : Set t.monodromyGroup) = ⊤ := by
+    rw [← Subgroup.map_subtype_inj, MonoidHom.map_closure]
+    simp only [Set.image_insert_eq, Set.image_singleton, Subgroup.coe_subtype]
+    rw [closure_pair_eq_monodromyGroup, ← MonoidHom.range_eq_map]
+    simp
+  rw [monodromyGroup, mapMonodromy_σ0, mapMonodromy_σ1, ← Set.image_singleton,
+    ← Set.image_insert_eq, ← MonoidHom.map_closure, hgen, MonoidHom.range_eq_map]
+
+/-- The image triple is connected exactly when it has a sheet and the image of the
+representation is transitive on its sheets. -/
+theorem isConnected_mapMonodromy_iff :
+    (t.mapMonodromy f).IsConnected ↔ m ≠ 0 ∧ MulAction.IsPretransitive f.range (Fin m) := by
+  rw [isConnected_iff, monodromyGroup_mapMonodromy]
+
+end mapMonodromy
 
 end PermutationTriple
 
