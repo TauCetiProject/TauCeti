@@ -70,6 +70,16 @@ point. -/
 theorem isPerfectMatching_iff {f : Equiv.Perm α} :
     IsPerfectMatching f ↔ (∀ a, f (f a) = a) ∧ ∀ a, f a ≠ a := Iff.rfl
 
+/-- A perfect matching is an involution. -/
+theorem IsPerfectMatching.apply_apply {f : Equiv.Perm α} (hf : IsPerfectMatching f) (a : α) :
+    f (f a) = a :=
+  hf.1 a
+
+/-- A perfect matching moves every point. -/
+theorem IsPerfectMatching.apply_ne {f : Equiv.Perm α} (hf : IsPerfectMatching f) (a : α) :
+    f a ≠ a :=
+  hf.2 a
+
 instance instDecidableIsPerfectMatching [DecidableEq α] [Fintype α] (f : Equiv.Perm α) :
     Decidable (IsPerfectMatching f) :=
   inferInstanceAs (Decidable ((∀ a, f (f a) = a) ∧ ∀ a, f a ≠ a))
