@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.NumberTheory.LSeries.WienerIkehara.Chebyshev
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.SumIntegralComparisons
 import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
@@ -401,8 +402,11 @@ theorem tendsto_tsum_term_mul_fourier_schwartz_atTop (ha : 0 ≤ a)
   -- hence so do their Fourier transforms.
   let b : ContDiffBump (0 : ℝ) := ⟨1, 2, one_pos, one_lt_two⟩
   set u : ℝ → 𝓢(ℝ, ℂ) := fun R ↦ SchwartzMap.smulLeftCLM ℂ (fun y ↦ b (R⁻¹ • y)) g
+  have hbdd (i : ℕ) : ∃ B, ∀ x, ‖iteratedFDeriv ℝ i b x‖ ≤ B :=
+    (b.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
+      (b.hasCompactSupport.iteratedFDeriv i)
   have hu : Tendsto u atTop (𝓝 g) := SchwartzMap.tendsto_smulLeftCLM_comp_inv_smul_atTop
-    b.contDiff b.hasCompactSupport b.eventuallyEq_one g
+    b.contDiff hbdd b.eventuallyEq_one g
   have hFu : Tendsto (fun R ↦ 𝓕 (u R)) atTop (𝓝 (𝓕 g)) :=
     (ContinuousFourier.continuous_fourier.tendsto g).comp hu
   rw [(schwartz_withSeminorms ℝ ℝ ℂ).tendsto_nhds] at hFu

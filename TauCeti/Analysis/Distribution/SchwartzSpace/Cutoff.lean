@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 
 /-!
@@ -37,7 +37,7 @@ Altogether the `(k, n)` seminorm of the difference is `O(R⁻¹)`.
   `𝓢(E, F)`.
 * `SchwartzMap.hasCompactSupport_smulLeftCLM_comp_inv_smul`: the truncations are compactly
   supported.
-* `SchwartzMap.dense_setOf_hasCompactSupport`: compactly supported functions are dense in
+* `SchwartzMap.dense_hasCompactSupport`: compactly supported functions are dense in
   `𝓢(E, F)` for finite-dimensional `E`.
 
 ## References
@@ -59,6 +59,7 @@ variable {χ : E → ℝ}
 
 /-- The truncation `χ (R⁻¹ • ·) • f` of a Schwartz function by a cutoff of temperate growth,
 evaluated pointwise. -/
+@[simp]
 theorem smulLeftCLM_comp_inv_smul_apply (hχ : χ.HasTemperateGrowth) (R : ℝ) (f : 𝓢(E, F))
     (x : E) : smulLeftCLM F (fun y ↦ χ (R⁻¹ • y)) f x = χ (R⁻¹ • x) • f x :=
   smulLeftCLM_apply_apply (hχ.comp (R⁻¹ • ContinuousLinearMap.id ℝ E).hasTemperateGrowth) f x
@@ -199,13 +200,13 @@ theorem seminorm_sub_smulLeftCLM_comp_inv_smul_le (hχ : ContDiff ℝ ∞ χ)
             (Nat.cast_nonneg _)
       _ = _ := by ring
 
-/-- **Truncations converge in the Schwartz topology.** If `χ` is smooth, compactly supported and
-equal to `1` near the origin, then `χ (R⁻¹ • ·) • f → f` in `𝓢(E, F)` as `R → ∞`. -/
+/-- **Truncations converge in the Schwartz topology.** If `χ` is smooth with every derivative
+bounded (for instance, if `χ` is compactly supported) and equal to `1` near the origin, then
+`χ (R⁻¹ • ·) • f → f` in `𝓢(E, F)` as `R → ∞`. -/
 theorem tendsto_smulLeftCLM_comp_inv_smul_atTop (hχ : ContDiff ℝ ∞ χ)
-    (hsupp : HasCompactSupport χ) (hχ1 : χ =ᶠ[𝓝 0] 1) (f : 𝓢(E, F)) :
+    (hbdd : ∀ i, ∃ B, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B) (hχ1 : χ =ᶠ[𝓝 0] 1) (f : 𝓢(E, F)) :
     Tendsto (fun R : ℝ ↦ smulLeftCLM F (fun y ↦ χ (R⁻¹ • y)) f) atTop (𝓝 f) := by
-  choose B hB using fun i ↦ (hχ.continuous_iteratedFDeriv (m := i) (mod_cast le_top))
-    |>.bounded_above_of_compact_support (hsupp.iteratedFDeriv i)
+  choose B hB using hbdd
   obtain ⟨r, hr, hχr⟩ := Metric.eventually_nhds_iff.1 hχ1
   have hχ1' : ∀ y, ‖y‖ < r → χ y = 1 := fun y hy ↦ hχr (by rwa [dist_zero_right])
   rw [(schwartz_withSeminorms ℝ E F).tendsto_nhds]
@@ -220,13 +221,15 @@ theorem tendsto_smulLeftCLM_comp_inv_smul_atTop (hχ : ContDiff ℝ ∞ χ)
   rwa [div_lt_iff₀ hε, mul_comm] at hKR
 
 /-- **Compactly supported functions are dense in Schwartz space.** -/
-theorem dense_setOf_hasCompactSupport [FiniteDimensional ℝ E] :
+theorem dense_hasCompactSupport [FiniteDimensional ℝ E] :
     Dense {f : 𝓢(E, F) | HasCompactSupport f} := by
   let b : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
   intro f
+  have hbdd (i : ℕ) : ∃ B, ∀ x, ‖iteratedFDeriv ℝ i b x‖ ≤ B :=
+    (b.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
+      (b.hasCompactSupport.iteratedFDeriv i)
   refine mem_closure_of_tendsto
-    (tendsto_smulLeftCLM_comp_inv_smul_atTop b.contDiff b.hasCompactSupport b.eventuallyEq_one f)
-    ?_
+    (tendsto_smulLeftCLM_comp_inv_smul_atTop b.contDiff hbdd b.eventuallyEq_one f) ?_
   filter_upwards [eventually_gt_atTop 0] with R hR
   exact hasCompactSupport_smulLeftCLM_comp_inv_smul b.contDiff b.hasCompactSupport hR.ne' f
 
