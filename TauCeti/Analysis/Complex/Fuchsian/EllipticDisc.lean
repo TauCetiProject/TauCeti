@@ -95,9 +95,10 @@ theorem mem_orbit_stabilizer_iff_discCoordinate_pow_eq_pow {τ σ : ℍ} :
   rw [TauCeti.pow_eq_pow_iff_exists_rootsOfUnity_smul (NeZero.ne _)]
   constructor
   · rintro ⟨q, rfl⟩
-    refine ⟨rootsOfUnity.mkOfPowEq _ (stabilizerDeriv_pow_card Γ z q⁻¹), ?_⟩
+    refine ⟨rootsOfUnity.mkOfPowEq _ (by
+      simpa only [@MulAction.mem_stabilizer_iff] using stabilizerDeriv_pow_card Γ z q⁻¹), ?_⟩
     rw [rootsOfUnity.smul_eq_mul, rootsOfUnity.coe_mkOfPowEq, discCoordinate_smul_stabilizer,
-      ← mul_assoc, ← map_mul, inv_mul_cancel, map_one, one_mul]
+      ← stabilizerDeriv_apply, ← mul_assoc, ← map_mul, inv_mul_cancel, map_one, one_mul]
   · rintro ⟨ζ, hζ⟩
     obtain ⟨q, hq⟩ : ((ζ : ℂˣ) : ℂ) ∈ Set.range (stabilizerDeriv Γ z) := by
       rw [range_stabilizerDeriv]
