@@ -646,7 +646,7 @@ noncomputable def ofEdge (φ : Γ.E ≃ Δ.E) (hB : Function.Semiconj φ Γ.rotB
 end Iso
 
 /-- The group of automorphisms of a bipartite ribbon graph. -/
-abbrev Aut := Γ.Iso Γ
+abbrev Aut : Type _ := Γ.Iso Γ
 
 instance : Group Γ.Aut where
   one := Iso.refl Γ
