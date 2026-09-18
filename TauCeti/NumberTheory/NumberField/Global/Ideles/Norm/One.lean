@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Group.Quotient
-public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm
+public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 
 /-!
 # The norm-one idele class group
@@ -62,7 +62,7 @@ def ideleClassNorm : IdeleClassGroup (𝓞 K) K →* ℝ≥0ˣ :=
 @[simp]
 theorem ideleClassNorm_mk (x : IdeleGroup (𝓞 K) K) :
     ideleClassNorm (x : IdeleClassGroup (𝓞 K) K) = ideleNorm x :=
-  (rfl)
+  QuotientGroup.lift_mk _ _ x
 
 /-- The idele class norm is continuous. -/
 theorem continuous_ideleClassNorm : Continuous (ideleClassNorm (K := K)) :=
@@ -81,14 +81,15 @@ def normOne : Subgroup (IdeleClassGroup (𝓞 K) K) :=
   (ideleClassNorm (K := K)).ker
 
 /-- An idele class lies in the norm-one subgroup exactly when its idele class norm is `1`. -/
+@[simp]
 theorem mem_normOne_iff {x : IdeleClassGroup (𝓞 K) K} : x ∈ normOne K ↔ ideleClassNorm x = 1 :=
   MonoidHom.mem_ker
 
 /-- The class of an idele lies in the norm-one subgroup exactly when the idele has norm `1`. -/
 @[simp]
 theorem mk_mem_normOne_iff {x : IdeleGroup (𝓞 K) K} :
-    (x : IdeleClassGroup (𝓞 K) K) ∈ normOne K ↔ ideleNorm x = 1 :=
-  MonoidHom.mem_ker
+    (x : IdeleClassGroup (𝓞 K) K) ∈ normOne K ↔ ideleNorm x = 1 := by
+  rw [mem_normOne_iff, ideleClassNorm_mk]
 
 variable (K)
 
