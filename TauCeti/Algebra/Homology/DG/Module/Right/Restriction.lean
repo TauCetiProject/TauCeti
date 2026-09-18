@@ -113,24 +113,24 @@ omit [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] in
 theorem linearEquiv_symm_apply (x : M) :
     (linearEquiv f M).symm x = RestrictScalars.mk x := rfl
 
-omit [IsScalarTower R Bᵐᵒᵖ M] in
-/-- Under the carrier equivalence, restricted scalar multiplication is multiplication by the
-image under `f`. -/
+omit [Module R M] [IsScalarTower R Bᵐᵒᵖ M] in
+/-- On underlying elements, restricted scalar multiplication is multiplication by the image
+under `f`. -/
 @[simp]
-theorem linearEquiv_op_smul (a : A) (x : RestrictScalars f M) :
-    linearEquiv f M (op a • x) = op (f a) • linearEquiv f M x := rfl
+theorem val_op_smul (a : A) (x : RestrictScalars f M) :
+    (op a • x).val = op (f a) • x.val := rfl
 
 instance : IsScalarTower R Aᵐᵒᵖ (RestrictScalars f M) :=
   IsScalarTower.of_algebraMap_smul fun r x ↦ by
     change op (algebraMap R A r) • x = r • x
-    apply (linearEquiv f M).injective
-    rw [linearEquiv_op_smul, LinearEquiv.map_smul]
+    apply RestrictScalars.ext
+    rw [val_op_smul]
+    change _ = r • x.val
     have hf : f (algebraMap R A r) = algebraMap R B r := by
       rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one,
         Algebra.algebraMap_eq_smul_one]
     rw [hf]
-    simpa only [MulOpposite.algebraMap_apply] using
-      algebraMap_smul Bᵐᵒᵖ r (linearEquiv f M x)
+    simpa only [MulOpposite.algebraMap_apply] using algebraMap_smul Bᵐᵒᵖ r x.val
 
 end RestrictScalars
 
@@ -198,11 +198,8 @@ def restrictScalarsDifferential :
 
 omit [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] in
 @[simp]
-theorem restrictScalarsDifferential_apply (x : DGRightModule.RestrictScalars f M) :
-    DGRightModule.RestrictScalars.linearEquiv f M
-        (restrictScalarsDifferential (dM := dM) f x) =
-      dM (DGRightModule.RestrictScalars.linearEquiv f M x) := by
-  simp [restrictScalarsDifferential]
+theorem val_restrictScalarsDifferential (x : DGRightModule.RestrictScalars f M) :
+    (restrictScalarsDifferential (dM := dM) f x).val = dM x.val := rfl
 
 /-- Restrict a right DG module along a morphism of DG algebras. -/
 theorem restrictScalars (hM : IsDGRightModule hB ℳ dM) :
@@ -212,20 +209,21 @@ theorem restrictScalars (hM : IsDGRightModule hB ℳ dM) :
     rw [LinearMap.isHomogeneous_def]
     intro q x hx
     rw [mem_restrictScalarsGrading_iff] at hx ⊢
-    rw [restrictScalarsDifferential_apply]
+    rw [DGRightModule.RestrictScalars.linearEquiv_apply] at hx ⊢
+    rw [val_restrictScalarsDifferential]
     exact hM.isHomogeneous.map_mem hx
   sq_zero x := by
-    apply (DGRightModule.RestrictScalars.linearEquiv f M).injective
-    rw [restrictScalarsDifferential_apply, restrictScalarsDifferential_apply, hM.sq_zero,
-      map_zero]
+    apply DGRightModule.RestrictScalars.ext
+    rw [val_restrictScalarsDifferential, val_restrictScalarsDifferential, hM.sq_zero]
+    rfl
   leibniz {q x} hx a := by
-    apply (DGRightModule.RestrictScalars.linearEquiv f M).injective
-    rw [restrictScalarsDifferential_apply, DGRightModule.RestrictScalars.linearEquiv_op_smul,
-      map_add, DGRightModule.RestrictScalars.linearEquiv_op_smul,
-      restrictScalarsDifferential_apply,
-      Units.smul_def, map_zsmul,
-      DGRightModule.RestrictScalars.linearEquiv_op_smul, ← Units.smul_def,
-      ← DGAlgHom.map_d]
+    apply DGRightModule.RestrictScalars.ext
+    rw [val_restrictScalarsDifferential, DGRightModule.RestrictScalars.val_op_smul]
+    change _ = (op a • restrictScalarsDifferential (dM := dM) f x).val +
+      (q.negOnePow • (op (dA a) • x)).val
+    rw [DGRightModule.RestrictScalars.val_op_smul, val_restrictScalarsDifferential]
+    change _ = _ + q.negOnePow • (op (dA a) • x).val
+    rw [DGRightModule.RestrictScalars.val_op_smul, ← DGAlgHom.map_d]
     exact hM.leibniz
       ((mem_restrictScalarsGrading_iff (ℳ := ℳ) (f := f)).mp hx) (f a)
 
@@ -268,10 +266,9 @@ noncomputable def restrictScalars (g : DGRightModuleHom hM hN) :
     exact g.map_d x.val
 
 @[simp]
-theorem restrictScalars_apply (g : DGRightModuleHom hM hN)
+theorem val_restrictScalars (g : DGRightModuleHom hM hN)
     (x : DGRightModule.RestrictScalars f M) :
-    DGRightModule.RestrictScalars.linearEquiv f N (g.restrictScalars f x) =
-      g (DGRightModule.RestrictScalars.linearEquiv f M x) := rfl
+    (g.restrictScalars f x).val = g x.val := rfl
 
 /-- Restriction of scalars preserves identity morphisms. -/
 @[simp]
@@ -280,8 +277,8 @@ theorem restrictScalars_id :
       DGRightModuleHom.id (hM.restrictScalars f) := by
   apply DGRightModuleHom.ext
   intro x
-  apply (DGRightModule.RestrictScalars.linearEquiv f M).injective
-  rw [restrictScalars_apply, DGRightModuleHom.id_apply, DGRightModuleHom.id_apply]
+  apply DGRightModule.RestrictScalars.ext
+  rw [val_restrictScalars, DGRightModuleHom.id_apply, DGRightModuleHom.id_apply]
 
 /-- Restriction of scalars preserves composition. -/
 @[simp]
@@ -289,9 +286,9 @@ theorem restrictScalars_comp (g : DGRightModuleHom hN hP) (k : DGRightModuleHom 
     (g.comp k).restrictScalars f = (g.restrictScalars f).comp (k.restrictScalars f) := by
   apply DGRightModuleHom.ext
   intro x
-  apply (DGRightModule.RestrictScalars.linearEquiv f P).injective
-  rw [restrictScalars_apply, DGRightModuleHom.comp_apply, DGRightModuleHom.comp_apply,
-    restrictScalars_apply, restrictScalars_apply]
+  apply DGRightModule.RestrictScalars.ext
+  rw [val_restrictScalars, DGRightModuleHom.comp_apply, DGRightModuleHom.comp_apply,
+    val_restrictScalars, val_restrictScalars]
 
 end DGRightModuleHom
 
