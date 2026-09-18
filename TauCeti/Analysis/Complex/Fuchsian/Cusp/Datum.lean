@@ -176,6 +176,8 @@ structure CuspDatum (Γ : Subgroup PSL(2, ℝ)) where
   zpowers_generator : zpowers generator = stabilizer Γ cusp
   scaling_mul_generator_mul_inv : scaling * generator * scaling⁻¹ = upperRightHom width
 
+attribute [simp] CuspDatum.scaling_mul_generator_mul_inv
+
 namespace CuspDatum
 
 variable (D : Γ.CuspDatum)
@@ -185,6 +187,7 @@ theorem generator_mem_stabilizer : D.generator ∈ stabilizer Γ D.cusp :=
   D.zpowers_generator ▸ mem_zpowers _
 
 /-- The selected generator of the stabilizer of a cusp is parabolic. -/
+@[simp]
 theorem isParabolic_generator : IsParabolic (D.generator : PSL(2, ℝ)) := by
   rw [← isParabolic_conj_iff D.scaling, D.scaling_mul_generator_mul_inv,
     isParabolic_upperRightHom_iff]
