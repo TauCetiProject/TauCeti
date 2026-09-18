@@ -315,6 +315,7 @@ theorem conorm_add_different_le_weilDifferentialDivisor (hF : IsFunctionField k 
 open AlgebraicGeometry in
 /-- **The divisor of the cotrace** (Stichtenoth, Theorem 3.4.6): `(Cotr ω) = Con (ω) + Diff(F'/F)`
 for every nonzero Weil differential `ω` of `F / k`. -/
+@[simp]
 theorem weilDifferentialDivisor_weilDifferentialCotrace (hF : IsFunctionField k F)
     (hF' : IsFunctionField k' F') (hex : IsIntegrallyClosedIn k F)
     (hex' : IsIntegrallyClosedIn k' F') (ω : ↥(weilDifferentialSpace k F)) (hω : ω ≠ 0) :

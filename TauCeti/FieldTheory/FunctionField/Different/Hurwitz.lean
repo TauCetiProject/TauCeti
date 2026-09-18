@@ -30,9 +30,10 @@ with the geometric degree `n(F'/F) = [F' : F k']`; when `k' = k` this is `[F' : 
 
 ## Main results
 
-* `TauCeti.finrank_mul_two_mul_genus_sub_two`: **the Hurwitz genus formula**, cross-multiplied
+* `TauCeti.hurwitz_genus_formula`: **the Hurwitz genus formula**, cross-multiplied
   (Stichtenoth, Theorem 3.4.13).
-* `TauCeti.two_mul_genus_sub_two_eq`: the Hurwitz genus formula through the geometric degree.
+* `TauCeti.hurwitz_genus_formula_geometricDegree`: the Hurwitz genus formula through the
+  geometric degree.
 
 ## References
 
@@ -55,7 +56,7 @@ variable [Algebra.IsSeparable F F'] [FiniteDimensional k k'] [Algebra.IsSeparabl
 /-- **The Hurwitz genus formula** (Stichtenoth, Theorem 3.4.13): for a finite separable extension
 `F' / k'` of the function field `F / k`, both with exact constants and with `k' / k` finite
 separable, `[k' : k] · (2g' - 2) = [F' : F] · (2g - 2) + [k' : k] · deg Diff(F'/F)`. -/
-theorem finrank_mul_two_mul_genus_sub_two (hF : IsFunctionField k F)
+theorem hurwitz_genus_formula (hF : IsFunctionField k F)
     (hF' : IsFunctionField k' F') (hex : IsIntegrallyClosedIn k F)
     (hex' : IsIntegrallyClosedIn k' F') :
     (Module.finrank k k' : ℤ) * (2 * genus k' F' - 2) =
@@ -69,17 +70,18 @@ theorem finrank_mul_two_mul_genus_sub_two (hF : IsFunctionField k F)
   rw [h, mul_add, Divisor.finrank_mul_degree_conorm, degree_weilDifferentialDivisor]
 
 /-- **The Hurwitz genus formula through the geometric degree** (Stichtenoth, Theorem 3.4.13): under
-the hypotheses of `TauCeti.finrank_mul_two_mul_genus_sub_two`,
+the hypotheses of `TauCeti.hurwitz_genus_formula`,
 `2g' - 2 = n(F'/F) · (2g - 2) + deg Diff(F'/F)`, where `n(F'/F) = [F' : F k']` is the geometric
 degree. -/
-theorem two_mul_genus_sub_two_eq (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
-    (hex : IsIntegrallyClosedIn k F) (hex' : IsIntegrallyClosedIn k' F') :
+theorem hurwitz_genus_formula_geometricDegree (hF : IsFunctionField k F)
+    (hF' : IsFunctionField k' F') (hex : IsIntegrallyClosedIn k F)
+    (hex' : IsIntegrallyClosedIn k' F') :
     2 * (genus k' F' : ℤ) - 2 =
       geometricDegree F k' F' * (2 * genus k F - 2) +
         Divisor.degree (Divisor.different k' F' hF) := by
   have hpos : (0 : ℤ) < Module.finrank k k' := by exact_mod_cast Module.finrank_pos
   refine mul_left_cancel₀ hpos.ne' ?_
-  rw [finrank_mul_two_mul_genus_sub_two hF hF' hex hex',
+  rw [hurwitz_genus_formula hF hF' hex hex',
     finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq F k' F'
       (finrank_constantCompositum_eq_finrank_of_isSeparable F k' F' hex)]
   push_cast
