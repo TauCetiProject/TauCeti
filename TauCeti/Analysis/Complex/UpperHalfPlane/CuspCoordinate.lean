@@ -26,8 +26,8 @@ of `2 π i / w` agrees with the local parameter used for modular-form q-expansio
 
 * `TauCeti.UpperHalfPlane.qParamPuncturedUnitDisc`: the width-`w` q-parameter with its range
   bundled.
-* `TauCeti.UpperHalfPlane.invQParamUpperHalfPlane`: its logarithmic inverse, valued in the upper
-  half-plane.
+* `TauCeti.UpperHalfPlane.invQParamUpperHalfPlane`: a chosen logarithmic lift/right inverse,
+  valued in the upper half-plane.
 * `TauCeti.UpperHalfPlane.qParamPuncturedUnitDisc_eq_iff`: two lifts have the same q-parameter
   exactly when they differ by an integral multiple of the width.
 * `TauCeti.UpperHalfPlane.cuspTranslationQuotientHomeomorph`: the resulting homeomorphism from
