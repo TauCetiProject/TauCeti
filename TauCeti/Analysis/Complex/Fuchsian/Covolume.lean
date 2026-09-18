@@ -34,19 +34,17 @@ form a countable set.
   countable `Γ` form a countable set.
 * `Subgroup.exists_isFundamentalDomain`: a discrete `Γ` has a measurable fundamental domain
   whose translates are pairwise disjoint.
-* `Subgroup.covolume_pos`: the covolume of a discrete subgroup is positive.
-* `Subgroup.covolume_conjAct_smul`: the covolume is invariant under conjugation.
-* `Subgroup.covolume_eq_card_mul_covolume`: for `Δ ≤ Γ`, the covolume of `Δ` is `[Γ : Δ]` times
-  that of `Γ`, with the index counted in `ℕ∞`.
-
-These three are the specializations to `PSL(2, ℝ)` acting on `ℍ` of `MeasureTheory.covolume_pos`,
-`MeasureTheory.covolume_conjAct_smul` and `MeasureTheory.covolume_eq_card_mul_covolume`.
 * `Subgroup.IsCofinite`: a discrete subgroup of finite covolume.
-* `Subgroup.IsCofinite.volume_ne_top`, `Subgroup.IsCofinite.of_isFundamentalDomain`: a discrete
-  subgroup is cofinite exactly when one, equivalently every, fundamental domain has finite area.
+* `Subgroup.IsCofinite.volume_ne_top`,
+  `MeasureTheory.IsFundamentalDomain.isCofinite_of_volume_ne_top`: a discrete subgroup is
+  cofinite exactly when one, equivalently every, fundamental domain has finite area.
 * `Subgroup.isCofinite_conjAct_smul_iff`: cofiniteness is invariant under conjugation.
 * `Subgroup.isCofinite_iff_isCofinite_and_finiteIndex`: a subgroup of a discrete group is
   cofinite exactly when the larger group is cofinite and the index is finite.
+
+Positivity, conjugation invariance and index multiplicativity of the covolume are the generic
+`MeasureTheory.covolume_pos`, `MeasureTheory.covolume_conjAct_smul` and
+`MeasureTheory.covolume_eq_card_mul_covolume`, which apply directly to `PSL(2, ℝ)` acting on `ℍ`.
 
 ## References
 
@@ -103,25 +101,6 @@ instance hasFundamentalDomain [DiscreteTopology Γ] : HasFundamentalDomain Γ �
   let ⟨_, _, _, hs⟩ := exists_isFundamentalDomain Γ
   hs.hasFundamentalDomain volume
 
-/-- The covolume of a discrete subgroup of `PSL(2, ℝ)` is positive. -/
-theorem covolume_pos [DiscreteTopology Γ] : 0 < covolume Γ ℍ :=
-  MeasureTheory.covolume_pos <|
-    Measure.measure_univ_pos.mp (isOpen_univ.measure_pos volume univ_nonempty)
-
-/-- **Covolume is a conjugacy invariant**: a discrete subgroup of `PSL(2, ℝ)` and its conjugate
-`g Γ g⁻¹` have the same covolume. -/
-theorem covolume_conjAct_smul [DiscreteTopology Γ] (g : PSL(2, ℝ)) :
-    covolume (ConjAct.toConjAct g • Γ : Subgroup PSL(2, ℝ)) ℍ = covolume Γ ℍ :=
-  MeasureTheory.covolume_conjAct_smul Γ g
-
-/-- **Covolume is multiplicative in the index**: for subgroups `Δ ≤ Γ` of `PSL(2, ℝ)` with `Γ`
-discrete, the covolume of `Δ` is the index `[Γ : Δ]`, counted in `ℕ∞`, times the covolume of
-`Γ`. In particular a subgroup of infinite index has infinite covolume. -/
-theorem covolume_eq_card_mul_covolume [DiscreteTopology Γ] {Δ : Subgroup PSL(2, ℝ)}
-    (h : Δ ≤ Γ) :
-    covolume Δ ℍ = ENat.card (Γ ⧸ Δ.subgroupOf Γ) * covolume Γ ℍ :=
-  MeasureTheory.covolume_eq_card_mul_covolume h
-
 /-- A subgroup `Γ ≤ PSL(2, ℝ)` is **cofinite** (a lattice) when it is discrete and the quotient
 `Γ \ ℍ` has finite hyperbolic area, that is, `Γ` has finite covolume. -/
 structure IsCofinite : Prop where
@@ -153,7 +132,7 @@ theorem isCofinite_conjAct_smul_iff (g : PSL(2, ℝ)) :
     simpa [smul_smul, ← map_mul] using h _ g⁻¹ hΓ
   intro Γ g hΓ
   have := hΓ.discreteTopology
-  rw [isCofinite_iff_covolume_ne_top, covolume_conjAct_smul]
+  rw [isCofinite_iff_covolume_ne_top, MeasureTheory.covolume_conjAct_smul]
   exact hΓ.covolume_ne_top
 
 /-- A cofinite subgroup has fundamental domains of finite area. -/
@@ -162,11 +141,6 @@ theorem IsCofinite.volume_ne_top (hΓ : Γ.IsCofinite) {s : Set ℍ}
   have := hΓ.discreteTopology
   rw [← hs.covolume_eq_volume]
   exact hΓ.covolume_ne_top
-
-/-- A discrete subgroup with a fundamental domain of finite area is cofinite. -/
-theorem IsCofinite.of_isFundamentalDomain [DiscreteTopology Γ] {s : Set ℍ}
-    (hs : IsFundamentalDomain Γ s) (h : volume s ≠ ∞) : Γ.IsCofinite := by
-  rwa [isCofinite_iff_covolume_ne_top, hs.covolume_eq_volume]
 
 /-- **Cofiniteness and finite index**: a subgroup `Δ` of a discrete subgroup `Γ ≤ PSL(2, ℝ)`
 is cofinite exactly when `Γ` is cofinite and `Δ` has finite index in `Γ`. -/
@@ -178,14 +152,26 @@ theorem isCofinite_iff_isCofinite_and_finiteIndex [DiscreteTopology Γ] {Δ : Su
   rw [finiteIndex_iff_finite_quotient, ← ENat.card_lt_top]
   constructor
   · rintro ⟨-, hne⟩
-    rw [covolume_eq_card_mul_covolume Γ h] at hne
+    rw [MeasureTheory.covolume_eq_card_mul_covolume h] at hne
     refine ⟨⟨inferInstance, fun htop ↦ hne (by rw [htop, ENNReal.mul_top hcard])⟩,
       lt_top_iff_ne_top.mpr fun htop ↦ hne ?_⟩
     rw [htop]
-    simpa using ENNReal.top_mul (covolume_pos Γ).ne'
+    simpa using ENNReal.top_mul (MeasureTheory.covolume_pos (G := Γ) (α := ℍ) <|
+      Measure.measure_univ_pos.mp (isOpen_univ.measure_pos volume univ_nonempty)).ne'
   · rintro ⟨hΓ, hfin⟩
     refine ⟨hΔ, ?_⟩
-    rw [covolume_eq_card_mul_covolume Γ h]
+    rw [MeasureTheory.covolume_eq_card_mul_covolume h]
     exact ENNReal.mul_ne_top (by simpa [lt_top_iff_ne_top] using hfin) hΓ.covolume_ne_top
 
 end Subgroup
+
+namespace MeasureTheory.IsFundamentalDomain
+
+variable {Γ : Subgroup PSL(2, ℝ)}
+
+/-- A discrete subgroup of `PSL(2, ℝ)` with a fundamental domain of finite area is cofinite. -/
+theorem isCofinite_of_volume_ne_top [DiscreteTopology Γ] {s : Set ℍ}
+    (hs : IsFundamentalDomain Γ s) (h : volume s ≠ ∞) : Γ.IsCofinite := by
+  rwa [Subgroup.isCofinite_iff_covolume_ne_top, hs.covolume_eq_volume]
+
+end MeasureTheory.IsFundamentalDomain
