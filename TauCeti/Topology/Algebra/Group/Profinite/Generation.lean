@@ -318,16 +318,17 @@ theorem _root_.Subgroup.exists_convergesToOne_lift_quotient (N : Subgroup G) [N.
     ∃ t : Set G, ConvergesToOne t ∧ (QuotientGroup.mk' N) '' t = s := by
   obtain ⟨f, hf, hsection, hf_one⟩ := exists_continuous_section N hN
   let f₁ : OneHom (G ⧸ N) G := ⟨f, hf_one⟩
+  have hsection₁ (q : G ⧸ N) : QuotientGroup.mk' N (f₁ q) = q := by
+    simpa only [f₁, OneHom.coe_mk, QuotientGroup.mk'_apply] using hsection q
   refine ⟨f₁ '' s, hs.image f₁ ?_, ?_⟩
   · simpa only [f₁, OneHom.coe_mk] using hf
   · ext q
     constructor
     · rintro ⟨_, ⟨q', hq', rfl⟩, rfl⟩
-      rw [show QuotientGroup.mk' N (f₁ q') = q' by
-        simpa only [f₁, OneHom.coe_mk, QuotientGroup.mk'_apply] using hsection q']
+      rw [hsection₁ q']
       exact hq'
     · intro hq
-      exact ⟨f₁ q, ⟨q, hq, rfl⟩, hsection q⟩
+      exact ⟨f₁ q, ⟨q, hq, rfl⟩, hsection₁ q⟩
 
 /-- If a converging set topologically generates a quotient by a closed normal subgroup, it has a
 converging set of representatives which, together with the kernel, topologically generates the
@@ -373,8 +374,9 @@ theorem _root_.Subgroup.exists_convergesToOne_lift_quotient_topologicallyGenerat
   obtain ⟨y, hyH, hyx⟩ := Subgroup.mem_map.mp hxmap
   have hyxN : y⁻¹ * x ∈ N := by
     apply (QuotientGroup.eq_one_iff (N := N) (y⁻¹ * x)).mp
-    change q (y⁻¹ * x) = 1
-    rw [map_mul, map_inv, hyx, inv_mul_cancel]
+    have hq_apply (z : G) : (z : G ⧸ N) = q z := by
+      simp only [q, QuotientGroup.mk'_apply]
+    rw [hq_apply, map_mul, map_inv, hyx, inv_mul_cancel]
   have := H.mul_mem hyH (hN_le hyxN)
   simpa using this
 
