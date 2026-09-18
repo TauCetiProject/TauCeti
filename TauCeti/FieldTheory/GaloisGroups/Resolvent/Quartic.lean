@@ -224,8 +224,8 @@ noncomputable def quarticD4Spec : ResolventSpec 4 where
       Finset.prod_singleton]
     simp only [Polynomial.map_sub, Polynomial.map_add, Polynomial.map_mul, Polynomial.map_pow,
       Polynomial.map_X, Polynomial.map_C, map_sub, map_add, map_mul, map_pow, map_ofNat,
-      Polynomial.map_ofNat, esymmSubst_X, Fin.isValue, Fin.val_zero, Fin.val_one, Fin.val_two,
-      show ((3 : Fin 4) : ℕ) = 3 from rfl, Nat.reduceAdd, e₁, e₂, e₃, e₄]
+      Polynomial.map_ofNat, esymmSubst_X, Fin.isValue, Fin.coe_ofNat_eq_mod, Nat.reduceMod,
+      Nat.reduceAdd, e₁, e₂, e₃, e₄]
     ring
 
 @[simp]
@@ -256,22 +256,26 @@ theorem quarticD4Spec_specialize (R : Type*) [CommRing R] (f : R[X]) :
   rw [ResolventSpec.specialize_def, quarticD4Spec_orbitProduct]
   simp only [Polynomial.map_sub, Polynomial.map_add, Polynomial.map_mul, Polynomial.map_pow,
     Polynomial.map_X, Polynomial.map_C, Polynomial.map_ofNat, map_sub, map_add, map_mul, map_pow,
-    map_neg, map_one, map_ofNat, vietaHom_X, Fin.isValue, Fin.val_zero, Fin.val_one, Fin.val_two,
-    show ((3 : Fin 4) : ℕ) = 3 from rfl, Nat.reduceAdd, Nat.reduceSub]
+    map_neg, map_one, map_ofNat, vietaHom_X, Fin.isValue, Fin.coe_ofNat_eq_mod, Nat.reduceMod,
+    Nat.reduceAdd, Nat.reduceSub]
   ring
 
 /-- The **resolvent cubic** `X³ - pX² - 4rX + (4pr - q²)` of the depressed quartic
-`X⁴ + pX² + qX + r`. Its roots are the three values of the pairing sums `x₀x₂ + x₁x₃`,
-`x₀x₁ + x₂x₃`, `x₀x₃ + x₁x₂` at the roots of the quartic
-(`TauCeti.quarticD4Spec_specialize_depressed`). -/
+`X⁴ + pX² + qX + r`: the specialization of the quartic resolvent specification at the
+depressed quartic (`TauCeti.quarticD4Spec_specialize_depressed`). -/
 noncomputable def resolventCubic {R : Type*} [CommRing R] (p q r : R) : R[X] :=
   X ^ 3 - C p * X ^ 2 - C (4 * r) * X + C (4 * p * r - q ^ 2)
+
+/-- The defining formula of the resolvent cubic. -/
+theorem resolventCubic_def {R : Type*} [CommRing R] (p q r : R) :
+    resolventCubic p q r = X ^ 3 - C p * X ^ 2 - C (4 * r) * X + C (4 * p * r - q ^ 2) :=
+  (rfl)
 
 /-- **The closed form of the quartic resolvent**: the specialization of the quartic specification
 at the depressed quartic `X⁴ + pX² + qX + r` is its resolvent cubic. -/
 theorem quarticD4Spec_specialize_depressed {R : Type*} [CommRing R] (p q r : R) :
     quarticD4Spec.specialize R (X ^ 4 + C p * X ^ 2 + C q * X + C r) = resolventCubic p q r := by
-  rw [quarticD4Spec_specialize, resolventCubic]
+  rw [quarticD4Spec_specialize, resolventCubic_def]
   simp only [coeff_add, coeff_X_pow, coeff_C_mul, coeff_X, coeff_C]
   norm_num
   ring
