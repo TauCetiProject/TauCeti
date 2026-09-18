@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.PermutationTriple.Examples
+public import TauCeti.Combinatorics.PermutationTriple.Basic
 public import TauCeti.GroupTheory.Perm.Imprimitivity
 
 /-!
@@ -45,9 +45,6 @@ nothing.
   intertwines the components of `t` with those of the quotient.
 * `TauCeti.PermutationTriple.ncard_mul_eq_of_isBlock`: the size of the block times the degree of
   the quotient is the degree of `t`.
-* `TauCeti.PermutationTriple.blockQuotient_torusTriple`: the quotient of the Euclidean
-  genus-one triple by the block `{0, 2}` is the degree-two triple unramified over `∞`.
-
 ## References
 
 * S. K. Lando, A. K. Zvonkin, *Graphs on Surfaces and Their Applications*, Encyclopaedia of
@@ -162,7 +159,7 @@ variable (ht : IsPretransitive t.monodromyGroup (Fin n)) (hB : IsBlock t.monodro
   (hBne : B.Nonempty)
 
 /-- The sheet `x` is sent to `i` exactly when it lies in the translate numbered `i`. -/
-theorem blockIndex_eq_iff {x : Fin n} {i : Fin m} :
+@[simp] theorem blockIndex_eq_iff {x : Fin n} {i : Fin m} :
     blockIndex ht hB hBne e x = i ↔ x ∈ (e.symm i : Set (Fin n)) := by
   rw [blockIndex, ← Equiv.eq_symm_apply, IsBlock.imprimitivityEquiv_fst_eq_iff]
 
@@ -182,23 +179,24 @@ theorem blockIndex_surjective : Function.Surjective (blockIndex ht hB hBne e) :=
 `TauCeti.PermutationTriple.blockActionHom`. -/
 theorem blockIndex_smul (g : t.monodromyGroup) (x : Fin n) :
     blockIndex ht hB hBne e (g • x) = t.blockActionHom B e g (blockIndex ht hB hBne e x) := by
-  rw [blockIndex_eq_iff, symm_blockActionHom_apply, orbit.coe_smul]
-  exact Set.smul_mem_smul_set (mem_symm_blockIndex e ht hB hBne x)
+  rw [blockIndex, blockIndex, hB.imprimitivityEquiv_smul_fst hBne g x]
+  apply e.symm.injective
+  simp
 
 /-- The quotient map intertwines the first components. -/
-theorem blockIndex_σ0 (x : Fin n) :
+@[simp] theorem blockIndex_σ0 (x : Fin n) :
     blockIndex ht hB hBne e (t.σ0 x) = (t.blockQuotient B e).σ0 (blockIndex ht hB hBne e x) := by
   rw [blockQuotient_σ0]
   exact blockIndex_smul e ht hB hBne ⟨t.σ0, t.σ0_mem_monodromyGroup⟩ x
 
 /-- The quotient map intertwines the second components. -/
-theorem blockIndex_σ1 (x : Fin n) :
+@[simp] theorem blockIndex_σ1 (x : Fin n) :
     blockIndex ht hB hBne e (t.σ1 x) = (t.blockQuotient B e).σ1 (blockIndex ht hB hBne e x) := by
   rw [blockQuotient_σ1]
   exact blockIndex_smul e ht hB hBne ⟨t.σ1, t.σ1_mem_monodromyGroup⟩ x
 
 /-- The quotient map intertwines the third components. -/
-theorem blockIndex_σinf (x : Fin n) :
+@[simp] theorem blockIndex_σinf (x : Fin n) :
     blockIndex ht hB hBne e (t.σinf x) =
       (t.blockQuotient B e).σinf (blockIndex ht hB hBne e x) := by
   rw [blockQuotient_σinf]
@@ -211,45 +209,6 @@ degree of the quotient by it. -/
 theorem ncard_mul_eq_of_isBlock (e : orbit t.monodromyGroup B ≃ Fin m) : B.ncard * m = n := by
   have h := @IsBlock.ncard_block_mul_ncard_orbit_eq _ _ _ _ ht _ hB hBne
   rwa [← Nat.card_coe_set_eq (orbit _ B), Nat.card_congr e, Nat.card_fin, Nat.card_fin] at h
-
-/-! ### An example -/
-
-/-- The block `{0, 2}` of the Euclidean genus-one triple has two translates. -/
-theorem card_orbit_torusTriple :
-    Nat.card (orbit torusTriple.monodromyGroup ({0, 2} : Set (Fin 4))) = 2 := by
-  have h := ncard_mul_eq_of_isBlock isConnected_torusTriple.isPretransitive isBlock_torusTriple
-    ⟨0, by simp⟩ (Finite.equivFin (orbit torusTriple.monodromyGroup ({0, 2} : Set (Fin 4))))
-  rw [Set.ncard_pair (by decide)] at h
-  omega
-
-/-- The quotient of the Euclidean genus-one triple `torusTriple` by its block `{0, 2}`, for any
-numbering of the two translates, is the degree-two triple with components `(0 1)`, `(0 1)`, `1`:
-the double cover of the sphere branched over `0` and `1` only. -/
-theorem blockQuotient_torusTriple
-    (e : orbit torusTriple.monodromyGroup ({0, 2} : Set (Fin 4)) ≃ Fin 2) :
-    torusTriple.blockQuotient {0, 2} e = ofTwo (swap 0 1) (swap 0 1) := by
-  have hperm : ∀ σ : Perm (Fin 2), σ ≠ 1 → σ = swap 0 1 := by decide
-  have hB : ({0, 2} : Set (Fin 4)) ∈ orbit torusTriple.monodromyGroup ({0, 2} : Set (Fin 4)) :=
-    mem_orbit_self _
-  have hrot : finRotate 4 '' ({0, 2} : Set (Fin 4)) ≠ {0, 2} := by
-    rw [Set.image_pair]
-    intro h
-    have : (1 : Fin 4) ∈ ({0, 2} : Set (Fin 4)) := h ▸ by simp [finRotate_apply]
-    simp at this
-  -- Both generating components move the translate `{0, 2}`, so neither is the identity of
-  -- `Perm (Fin 2)`.
-  have hne (σ : Perm (Fin 2))
-      (hσ : (e.symm (σ (e ⟨_, hB⟩)) : Set (Fin 4)) = finRotate 4 '' {0, 2}) : σ ≠ 1 := by
-    rintro rfl
-    simp only [Perm.one_apply, symm_apply_apply] at hσ
-    exact hrot hσ.symm
-  refine ext_of_two ?_ ?_
-  · rw [ofTwo_σ0]
-    refine hperm _ (hne _ ?_)
-    rw [coe_symm_blockQuotient_σ0, symm_apply_apply, torusTriple_σ0]
-  · rw [ofTwo_σ1]
-    refine hperm _ (hne _ ?_)
-    rw [coe_symm_blockQuotient_σ1, symm_apply_apply, torusTriple_σ1]
 
 end PermutationTriple
 

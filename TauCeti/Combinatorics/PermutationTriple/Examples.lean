@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 public import TauCeti.Combinatorics.PermutationTriple.GeometryType
+public import TauCeti.Combinatorics.PermutationTriple.BlockQuotient
 public import TauCeti.GroupTheory.GroupAction.FinRotate
 public import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 public import Mathlib.GroupTheory.Perm.Closure
@@ -32,7 +33,8 @@ characteristic, genus, orders, geometry type, monodromy group and automorphism g
 * `TauCeti.PermutationTriple.torusTriple`: a degree-four triple with cycle data `[4], [4], [2, 2]`.
   It is connected of genus one and Euclidean; its automorphism group equals its cyclic monodromy
   group of order four, so the cover is regular; and `{0, 2}` is a nontrivial block, so its
-  monodromy action is imprimitive.
+  monodromy action is imprimitive. Its quotient by this block is the degree-two triple unramified
+  over `∞`.
 * `TauCeti.PermutationTriple.s3Triple`: a degree-three genus-zero triple whose monodromy group is
   the whole symmetric group and whose automorphism group is trivial.
 
@@ -283,6 +285,43 @@ theorem not_isPreprimitive_torusTriple : ¬ IsPreprimitive torusTriple.monodromy
     revert h1
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
     decide
+
+/-- The block `{0, 2}` of the Euclidean genus-one triple has two translates. -/
+theorem card_orbit_torusTriple :
+    Nat.card (orbit torusTriple.monodromyGroup ({0, 2} : Set (Fin 4))) = 2 := by
+  have h := ncard_mul_eq_of_isBlock isConnected_torusTriple.isPretransitive isBlock_torusTriple
+    ⟨0, by simp⟩ (Finite.equivFin (orbit torusTriple.monodromyGroup ({0, 2} : Set (Fin 4))))
+  rw [Set.ncard_pair (by decide)] at h
+  omega
+
+/-- The quotient of the Euclidean genus-one triple `torusTriple` by its block `{0, 2}`, for any
+numbering of the two translates, is the degree-two triple with components `(0 1)`, `(0 1)`, `1`:
+the double cover of the sphere branched over `0` and `1` only. -/
+theorem blockQuotient_torusTriple
+    (e : orbit torusTriple.monodromyGroup ({0, 2} : Set (Fin 4)) ≃ Fin 2) :
+    torusTriple.blockQuotient {0, 2} e = ofTwo (swap 0 1) (swap 0 1) := by
+  have hperm : ∀ σ : Perm (Fin 2), σ ≠ 1 → σ = swap 0 1 := by decide
+  have hB : ({0, 2} : Set (Fin 4)) ∈ orbit torusTriple.monodromyGroup ({0, 2} : Set (Fin 4)) :=
+    mem_orbit_self _
+  have hrot : finRotate 4 '' ({0, 2} : Set (Fin 4)) ≠ {0, 2} := by
+    rw [Set.image_pair]
+    intro h
+    have : (1 : Fin 4) ∈ ({0, 2} : Set (Fin 4)) := h ▸ by simp [finRotate_apply]
+    simp at this
+  -- Both generating components move the translate `{0, 2}`, so neither is the identity of
+  -- `Perm (Fin 2)`.
+  have hne (σ : Perm (Fin 2))
+      (hσ : (e.symm (σ (e ⟨_, hB⟩)) : Set (Fin 4)) = finRotate 4 '' {0, 2}) : σ ≠ 1 := by
+    rintro rfl
+    simp only [Perm.one_apply, symm_apply_apply] at hσ
+    exact hrot hσ.symm
+  refine ext_of_two ?_ ?_
+  · rw [ofTwo_σ0]
+    refine hperm _ (hne _ ?_)
+    rw [coe_symm_blockQuotient_σ0, symm_apply_apply, torusTriple_σ0]
+  · rw [ofTwo_σ1]
+    refine hperm _ (hne _ ?_)
+    rw [coe_symm_blockQuotient_σ1, symm_apply_apply, torusTriple_σ1]
 
 /-! ### A triple with symmetric monodromy -/
 
