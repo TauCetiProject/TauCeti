@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeExtension
 
 /-!
 # Canonical maps between number-field completions
@@ -34,6 +34,13 @@ an unrelated algebra structure on `L_w` over `K_v`.
   universal property.
 * `IsDedekindDomain.HeightOneSpectrum.completionAlgHom_comp`: compatibility in a tower of number
   fields.
+* `IsDedekindDomain.HeightOneSpectrum.completionAlgHom_vle_iff_vle`: the canonical map preserves
+  and reflects the valuative relations of the completions.
+
+In the `AdicCompletionExtension` scope, `L_w` is moreover a `ValuativeExtension` of `K_v`
+(`completionValuativeExtension`), and Mathlib's finiteness instance for completions of number
+fields applies to the canonical algebra structure, so `Module.Finite K_v L_w` holds for it by
+instance search.
 
 ## References
 
@@ -167,5 +174,13 @@ theorem completionAlgHom_comp {M L : Type*} [Field M] [NumberField M] [Algebra K
     rw [v.adicCompletionExtension_coe K M u x,
       u.adicCompletionExtension_coe M L w (algebraMap K M x),
       IsScalarTower.algebraMap_apply K M L]
+
+/-- The canonical map between completions preserves and reflects the valuative relations induced
+by the adic valuations. -/
+@[simp] theorem completionAlgHom_vle_iff_vle {L : Type*} [Field L] [NumberField L] [Algebra K L]
+    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
+    [w.asIdeal.LiesOver v.asIdeal] (a b : v.adicCompletion K) :
+    completionAlgHom v w a ≤ᵥ completionAlgHom v w b ↔ a ≤ᵥ b :=
+  v.adicCompletionExtension_vle_iff_vle K L w a b
 
 end IsDedekindDomain.HeightOneSpectrum

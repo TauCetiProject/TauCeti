@@ -70,7 +70,10 @@ unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_unipotentRadicalDefiningIdea
   have hker : HopfIdeal.ker g.hom = J.comap f.hom := by
     rw [CommHopfAlgCat.hom_comp, HopfIdeal.ker_comp]
     dsimp only [q]
-    rw [CommHopfAlgCat.hom_mkQuotient, HopfIdeal.ker_mkBialgHom]
+    ext x
+    rw [← HopfIdeal.mem_toIdeal, ← HopfIdeal.mem_toIdeal,
+      HopfIdeal.comap_toIdeal, HopfIdeal.comap_toIdeal,
+      CommHopfAlgCat.hom_mkQuotient, HopfIdeal.ker_mkBialgHom]
   have himageNormal : (HopfIdeal.ker g.hom).IsNormal := by
     rw [hker]
     exact (isNormal_unipotentRadicalDefiningIdeal H).comap_of_injective

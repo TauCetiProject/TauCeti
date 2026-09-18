@@ -276,7 +276,7 @@ private theorem exists_compareFormsSq_eq_sign_smul {ε : ℝ} (hε : ε * ε = 1
     (hBnd : B.Nondegenerate) (hHinv : IsInvariantSesqForm ρ H) (hHnonneg : H.IsNonneg)
     (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) :
     ∃ t : ℝ, 0 < t ∧ ∀ x : V, compareFormsSq B H hdef x = ((ε * t : ℝ) : ℂ) • x := by
-  have : Nontrivial V := IsIrreducible.nontrivial ‹ρ.IsIrreducible›
+  have : Nontrivial V := Representation.IsIrreducible.nontrivial ‹ρ.IsIrreducible›
   have hεC : (ε : ℂ) * (ε : ℂ) = 1 := by exact_mod_cast hε
   obtain ⟨c, hc⟩ := exists_compareFormsSq_eq_smul hBinv hHinv hdef
   obtain ⟨x, hx⟩ := exists_ne (0 : V)

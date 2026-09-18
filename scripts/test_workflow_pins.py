@@ -21,6 +21,13 @@ CHECKOUT_PIN = re.compile(r"^\s+review_ref:\s+([0-9a-f]{40})\s*$", re.MULTILINE)
 
 
 class WorkflowPins(unittest.TestCase):
+    def test_status_readers_and_tests_use_the_auto_merge_policy(self):
+        merge_pin = CALL_PIN.findall(WORKFLOWS[0].read_text())[0]
+        for name, count in (("pr-labels.yml", 3), ("pages.yml", 1), ("ci.yml", 1)):
+            text = (ROOT / ".github/workflows" / name).read_text()
+            pins = re.findall(r"repository: TauCetiProject/TauCetiReview\s+ref: ([0-9a-f]{40})", text)
+            self.assertEqual(pins, [merge_pin] * count, name)
+
     def test_workflow_and_checkout_pins_match(self):
         for workflow in WORKFLOWS:
             with self.subTest(workflow=workflow.name):

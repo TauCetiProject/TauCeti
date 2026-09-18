@@ -107,7 +107,7 @@ of its underlying matrix. -/
 @[simp]
 theorem coe_map {S : Type v} [CommRing S] (phi : R →+* S) (g : SL2Borel R) :
     (map phi g : SL(2, S)) = Matrix.SpecialLinearGroup.map phi g.1 :=
-  by simp only [map, MonoidHom.codRestrict_apply, MonoidHom.domRestrict_apply]
+  by rfl
 
 /-- The `(i, j)` entry of the entrywise map of `g` is the image under `phi` of the `(i, j)`
 entry of `g`. -/
@@ -130,7 +130,7 @@ theorem map_mk {S : Type v} [CommRing S] (phi : R →+* S) (a : Rˣ) (b : R) :
 /-- Entrywise mapping along the identity ring homomorphism is the identity. -/
 @[simp]
 theorem map_id : map (RingHom.id R) = MonoidHom.id (SL2Borel R) := by
-  ext g i j
+  ext x i j
   simp only [map_apply, RingHom.id_apply, MonoidHom.id_apply]
 
 /-- Successive entrywise maps agree with mapping along the composite ring homomorphism. -/
@@ -138,10 +138,7 @@ theorem map_id : map (RingHom.id R) = MonoidHom.id (SL2Borel R) := by
 theorem map_comp {S T : Type*} [CommRing S] [CommRing T]
     (f : R →+* S) (g : S →+* T) :
     map (g.comp f) = (map g).comp (map f) := by
-  apply MonoidHom.ext
-  intro x
-  apply Subtype.ext
-  ext i j
+  ext x i j
   simp only [map_apply, RingHom.coe_comp, Function.comp_apply, MonoidHom.coe_comp]
 
 /-- Every upper-triangular determinant-one matrix modulo a nilpotent ideal lifts to an

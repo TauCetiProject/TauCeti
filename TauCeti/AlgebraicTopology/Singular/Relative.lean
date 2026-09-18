@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Topology.Category.TopCat.EpiMono
 public import Mathlib.Topology.Category.TopPair
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative
 
 /-!
 # Relative singular chains
@@ -193,6 +194,41 @@ lemma singularHomologyFunctor_map (n : ℕ) :
   rw [singularHomologyFunctor.eq_def, Functor.comp_map, singularHomologyMap.eq_def,
     SSetPair.homologyFunctor_map]
 
+/-- Relative singular homology is the relative homology of the singular simplicial-set pair. -/
+lemma singularHomologyFunctor_eq_toSSetPair_comp (n : ℕ) :
+    singularHomologyFunctor R n = toSSetPair ⋙ SSetPair.homologyFunctor R n := by
+  rw [singularHomologyFunctor.eq_def]
+
+/-- The singular homology of the subspace of a topological pair is the homology of the source of
+its singular simplicial-set pair. -/
+lemma proj₂_comp_singularHomologyFunctor_obj_eq_toSSetPair_comp (n : ℕ) :
+    proj₂ ⋙ (AlgebraicTopology.singularHomologyFunctor C n).obj R =
+      toSSetPair.{w} ⋙ (SSetPair.forget ⋙ Arrow.leftFunc) ⋙ SSet.homologyFunctor R n :=
+  rfl
+
+/-- Relative singular homology is obtained by applying homology to the relative singular chain
+complex functor. -/
+lemma singularHomologyFunctor_eq_chainComplexFunctor (n : ℕ) :
+    singularHomologyFunctor R n =
+      (singularChainComplexFunctor C).obj R ⋙
+        HomologicalComplex.homologyFunctor C (ComplexShape.down ℕ) n := by
+  apply CategoryTheory.Functor.ext
+  · intro Q Q' g
+    simp only [Functor.comp_map]
+    rw [singularChainComplexFunctor_obj_map]
+    rw [Functor.map_comp, Functor.map_comp, eqToHom_map, eqToHom_map]
+    simp only [HomologicalComplex.homologyFunctor_map]
+    rw [singularHomologyFunctor_map]
+    simp only [← Category.assoc, eqToHom_trans]
+    apply eq_of_heq
+    simp only [singularHomologyMap.eq_def, eqToHom_comp_heq_iff,
+      comp_eqToHom_heq_iff, heq_eqToHom_comp_iff, heq_comp_eqToHom_iff]
+    exact (comp_eqToHom_heq _ _).symm
+  · intro Q
+    exact (singularHomologyFunctor_obj Q R n).trans <|
+      (congrArg (fun K : ChainComplex C ℕ ↦ K.homology n)
+        (singularChainComplexFunctor_obj_obj (C := C) Q R)).symm
+
 /-- The map from ambient singular homology to relative singular homology. -/
 noncomputable abbrev singularHomologyπ (n : ℕ) :
     (toSSetPair.obj P).right.homology R n ⟶ P.singularHomology R n :=
@@ -243,6 +279,16 @@ lemma singularHomology_exact_space (n : ℕ) :
 lemma singularHomology_exact_relative (n m : ℕ) (h : m + 1 = n := by lia) :
     (ShortComplex.mk _ _ (P.singularHomologyπ_comp_singularHomologyδ R n m h)).Exact :=
   (toSSetPair.obj P).homology_exact₃ R n m h
+
+/-- The connecting morphism of the long exact sequence of a topological pair is natural: for a
+map of pairs `f : (X, A) ⟶ (X', A')`, following `Hₙ(X, A) ⟶ Hₘ(A)` by the map induced by `f` on
+`Hₘ(A)` agrees with following the map induced by `f` on `Hₙ(X, A)` by `Hₙ(X', A') ⟶ Hₘ(A')`. -/
+@[reassoc]
+lemma singularHomologyδ_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (n m : ℕ)
+    (h : m + 1 = n := by lia) :
+    P.singularHomologyδ R n m h ≫ SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R m =
+      TopPair.singularHomologyMap f R n ≫ P'.singularHomologyδ R n m h :=
+  SSetPair.homologyδ_naturality (toSSetPair.map f) R n m h
 
 /-- The map from ambient zeroth homology to relative zeroth homology is an epimorphism. -/
 instance : Epi (P.singularHomologyπ R 0) := inferInstance

@@ -32,6 +32,7 @@ block.
 ## Main results
 
 * `TauCeti.ReducedTensorWords.splice_congr`: a spliced word depends only on the letters spliced.
+* `TauCeti.ReducedTensorWords.map_splice`: mapping a spliced word maps each of its letters.
 * `TauCeti.ReducedTensorWords.deconcatenation_splice`: reduced deconcatenation of a spliced word.
 
 ## References
@@ -44,7 +45,7 @@ public section
 
 open scoped BigOperators DirectSum TensorProduct
 
-universe uR uM
+universe uR uM uN
 
 namespace TauCeti
 
@@ -130,6 +131,22 @@ theorem splice_congr {n m : ℕ} (x : Fin n → M) (y : Fin m → M) {a a' b p d
     · rfl
     · exact h (j.1 + d - 1) (by omega)
   · rw [splice, splice, dite_eq_right (by tauto), dite_eq_right (by tauto)]
+
+/-- Mapping a spliced tensor word applies the map to the untouched letters and the replacement
+letter. -/
+theorem map_splice {N : Type uN} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N)
+    {n : ℕ} (x : Fin n → M) (a b p d : ℕ) (e : M) :
+    ReducedTensorWords.map (R := R) f (splice R x a b p d e) =
+      splice R (fun i ↦ f (x i)) a b p d (f e) := by
+  by_cases h : 0 < d ∧ p + d ≤ b ∧ a + b ≤ n
+  · rw [splice_eq_of_tprod R x e h.1 h.2.1 h.2.2,
+      splice_eq_of_tprod R (fun i ↦ f (x i)) (f e) h.1 h.2.1 h.2.2,
+      map_of_tprod]
+    congr 2
+    funext i
+    split_ifs <;> rfl
+  · rw [splice_eq_zero R x e h,
+      splice_eq_zero R (fun i ↦ f (x i)) (f e) h, map_zero]
 
 
 /-- Reduced deconcatenation of a pure tensor word, cut at every nontrivial position. -/

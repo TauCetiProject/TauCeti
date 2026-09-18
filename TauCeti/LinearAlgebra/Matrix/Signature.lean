@@ -34,6 +34,7 @@ as the S-equivalence class of a Seifert matrix — offers.
 ## Main results
 
 * `Matrix.signature_congr`: invariance under congruence by a matrix with unit determinant.
+* `Matrix.signature_submatrix_equiv_self`: invariance under an equivalence of the coordinate type.
 * `Matrix.signature_fromBlocks_zero`: additivity along a block diagonal.
 * `Matrix.signature_diagonal`: the signature of a diagonal matrix as a sum of signs.
 * `Matrix.signature_hyperbolicGram`: the hyperbolic plane has signature zero.
@@ -138,6 +139,17 @@ def isometryEquivFromBlocks (A : Matrix ι ι R) (B : Matrix κ κ R) :
       toQuadraticForm'_apply, ← hx, fromBlocks_mulVec]
     simp [sumElim_dotProduct_sumElim]
 
+/-- Reindexing the rows and columns of a matrix along the same equivalence only transports the
+coordinates of its quadratic form. -/
+def isometryEquivReindex (e : ι ≃ κ) (A : Matrix ι ι R) :
+    (reindex e e A).toQuadraticForm'.IsometryEquiv A.toQuadraticForm' where
+  toLinearEquiv := LinearEquiv.funCongrLeft R R e
+  map_app' x := by
+    rw [toQuadraticForm'_apply, toQuadraticForm'_apply, reindex_apply, submatrix_mulVec_equiv,
+      ← comp_equiv_dotProduct_comp_equiv (e := e)]
+    simp only [Equiv.symm_symm, Function.comp_assoc, Equiv.symm_comp_self, Function.comp_id]
+    rfl
+
 end CommRing
 
 variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
@@ -174,6 +186,13 @@ with unit determinant does not change the signature. -/
 theorem signature_congr [DecidableEq ι] {P : Matrix ι ι 𝕜} (hP : IsUnit P.det)
     (A : Matrix ι ι 𝕜) : signature (P * A * Pᵀ) = signature A :=
   signature_eq_of_equivalent ⟨isometryEquivCongr hP A⟩
+
+/-- Reindexing both coordinates of a matrix along an equivalence does not change its signature. -/
+@[simp]
+theorem signature_submatrix_equiv_self (e : ι ≃ κ) (A : Matrix ι ι 𝕜) :
+    signature (A.submatrix e.symm e.symm) = signature A := by
+  classical
+  exact signature_eq_of_equivalent ⟨isometryEquivReindex e A⟩
 
 /-- Transposing a matrix does not change its signature. -/
 @[simp]

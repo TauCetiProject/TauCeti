@@ -29,6 +29,7 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
 
 * `TauCeti.hyperbolicPlane`: the diagonal form `⟨1, -1⟩`, over a commutative ring in which two is
   invertible.
+* `TauCeti.hyperbolicClass`: the isometry class of the hyperbolic plane.
 
 ## Main results
 
@@ -39,6 +40,8 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
   `⟨a, -a⟩`, for `a ≠ 0`, is hyperbolic.
 * `TauCeti.exists_hyperbolicPlane_prod_equivalent`: in characteristic not two, every
   finite-dimensional nondegenerate isotropic form splits off a hyperbolic plane.
+* `TauCeti.formClass_hyperbolicPlane`: the regular-form class of the hyperbolic plane is
+  `TauCeti.hyperbolicClass`.
 
 ## References
 
@@ -166,6 +169,50 @@ theorem equivalent_weightedSumSquares_self_neg_hyperbolicPlane [Invertible (2 : 
   exact equivalent_binary_of_isSquare_of_mem_unitValueSet
     (a := a) (b := -a) (c := 1) (d := -1) (e := a) hdisc hsource htarget
 
+/-! ### The hyperbolic class -/
+
+section HyperbolicClass
+
+variable [Invertible (2 : K)]
+
+/-- The diagonal presentation `⟨1, -1⟩` presents the hyperbolic plane. -/
+@[simp]
+theorem presentedForm_one_neg_one :
+    presentedForm (⟨2, ![1, -1]⟩ : RegularFormPresentation K) = hyperbolicPlane K := by
+  ext x
+  rw [presentedForm_apply, hyperbolicPlane_apply, Fin.sum_univ_two]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Units.val_one, Units.val_neg, one_mul,
+    neg_mul]
+  ring
+
+/-- The isometry class of the hyperbolic plane `⟨1, -1⟩`.
+
+As with `TauCeti.hyperbolicPlane`, the invertibility hypothesis is not used by the formula; it
+confines the definition to characteristic not two, where `⟨1, -1⟩` is the hyperbolic plane. -/
+public def hyperbolicClass (K : Type u) [Field K] [_i2 : Invertible (2 : K)] :
+    RegularFormClass K :=
+  Quotient.mk (regularFormSetoid K) ⟨2, ![1, -1]⟩
+
+/-- The defining presentation of the hyperbolic class. -/
+theorem hyperbolicClass_def :
+    hyperbolicClass K = Quotient.mk (regularFormSetoid K) ⟨2, ![1, -1]⟩ := (rfl)
+
+/-- The hyperbolic class has rank two. -/
+@[simp]
+theorem rank_hyperbolicClass : RegularFormClass.rank (hyperbolicClass K) = 2 := by
+  rw [hyperbolicClass_def, RegularFormClass.rank_mk]
+
+/-- The class of the hyperbolic plane, as a form, is the hyperbolic class. -/
+@[simp]
+theorem formClass_hyperbolicPlane :
+    formClass (hyperbolicPlane K) nondegenerate_hyperbolicPlane = hyperbolicClass K := by
+  rw [hyperbolicClass_def]
+  refine formClass_mk _ _ _ ?_
+  rw [presentedForm_one_neg_one]
+  exact QuadraticMap.Equivalent.refl _
+
+end HyperbolicClass
+
 variable {V : Type v} [AddCommGroup V] [Module K V]
 
 private def hyperbolicPairMap (x y : V) : K × K →ₗ[K] V where
@@ -224,38 +271,12 @@ theorem exists_hyperbolicPlane_prod_equivalent [FiniteDimensional K V] [Invertib
   obtain ⟨x, y, hx, hxQ, hyQ, hxy⟩ := hQ.exists_isotropic_pair hiso
   let W := LinearMap.range (hyperbolicPairMap (K := K) x y)
   let eH := hyperbolicPairIsometryEquiv Q x y hxQ hyQ hxy
-  have hWQ : (Q.restrict W).Nondegenerate := by
-    rw [QuadraticMap.nondegenerate_iff_radical_eq_bot]
-    have hr := eH.map_radical
-    rw [nondegenerate_hyperbolicPlane.radical_eq_bot, Submodule.map_bot] at hr
-    exact hr.symm
-  let B := QuadraticMap.associated Q
-  have hBW : (LinearMap.BilinForm.restrict B W).Nondegenerate := by
-    have h : (QuadraticMap.associated (Q.comp W.subtype)).Nondegenerate :=
-      QuadraticMap.nondegenerate_associated_iff.mpr hWQ
-    rwa [QuadraticMap.associated_comp] at h
-  have hcomp : IsCompl W (LinearMap.BilinForm.orthogonal B W) :=
-    LinearMap.BilinForm.isCompl_orthogonal_of_restrict_nondegenerate
-      (LinearMap.BilinForm.isSymm_iff.mpr (QuadraticForm.associated_isSymm K Q)).isRefl hBW
-  have horth : (Q.restrict (LinearMap.BilinForm.orthogonal B W)).Nondegenerate := by
-    have hB : B.Nondegenerate := QuadraticMap.nondegenerate_associated_iff.mpr hQ
-    have hBsymm :=
-      (LinearMap.BilinForm.isSymm_iff.mpr (QuadraticForm.associated_isSymm K Q)).isRefl
-    have hBorth :
-        (LinearMap.BilinForm.restrict B (LinearMap.BilinForm.orthogonal B W)).Nondegenerate := by
-      rw [LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal hBsymm,
-        LinearMap.BilinForm.orthogonal_orthogonal hB hBsymm]
-      exact hcomp.symm
-    have h : (QuadraticMap.associated
-        (Q.comp (LinearMap.BilinForm.orthogonal B W).subtype)).Nondegenerate := by
-      rw [QuadraticMap.associated_comp]
-      exact hBorth
-    exact QuadraticMap.nondegenerate_associated_iff.mp h
-  have hBpolar : LinearMap.BilinForm.orthogonal B W =
-      LinearMap.BilinForm.orthogonal Q.polarBilin W := by
-    ext v
-    simp only [LinearMap.BilinForm.mem_orthogonal_iff, B, associated_isOrtho, isOrtho_polarBilin]
-  rw [hBpolar] at hcomp horth
+  have hWQ : (Q.restrict W).Nondegenerate :=
+    eH.nondegenerate_iff.mp nondegenerate_hyperbolicPlane
+  have hcomp : IsCompl W (LinearMap.BilinForm.orthogonal Q.polarBilin W) :=
+    hWQ.isCompl_orthogonal
+  have horth : (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W)).Nondegenerate :=
+    hQ.nondegenerate_restrict_orthogonal hWQ
   obtain ⟨p, hp⟩ := exists_presentedForm_equivalent
     (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W)) horth
   have hdecomp : Q.Equivalent

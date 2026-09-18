@@ -79,7 +79,7 @@ def congr (ψ : G ≃* G') (hψ : (ψ : G →* G').comp F = F'.comp (ψ : G →*
 theorem congr_mk (ψ : G ≃* G') (hψ : (ψ : G →* G').comp F = F'.comp (ψ : G →* G'))
     (x : ↥(commutator ↥(fixedSubgroup F))) :
     FixedPointCandidate.congr ψ hψ (x : FixedPointCandidate F) =
-      (commutatorCongr (fixedSubgroupCongr ψ hψ) x : FixedPointCandidate F') := by
+      (MulEquiv.commutatorCongr (fixedSubgroupCongr ψ hψ) x : FixedPointCandidate F') := by
   simp only [FixedPointCandidate.congr, DerivedCentralQuotient.congr_mk]
 
 @[simp]

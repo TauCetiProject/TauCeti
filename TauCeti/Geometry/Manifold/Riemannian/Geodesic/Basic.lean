@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Existence
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 
 /-!
 # Geodesics of a Riemannian manifold
@@ -114,7 +115,7 @@ structure IsGeodesicCurveOn : Prop where
   /-- **The geodesic equation**: the along-curve candidate annihilates the velocity field at every
   parameter of `s`. -/
   alongCurveWithin_curveVelocityWithin_eq_zero : ∀ r ∈ s,
-    alongCurveWithin (leviCivita I M) γ (curveVelocityWithin I γ s) s r = 0
+    alongCurveWithin (leviCivitaConnection I M) γ (curveVelocityWithin I γ s) s r = 0
 
 variable (I γ) in
 /-- **A geodesic**, defined at every real parameter.  This is the `s = Set.univ` case of
@@ -181,39 +182,39 @@ theorem isGeodesicCurveOn_iff_chart (hs : UniqueDiffOn ℝ s) :
     IsGeodesicCurveOn I γ s ↔ ContMDiffOn 𝓘(ℝ, ℝ) I 2 γ s ∧ ∀ r ∈ s,
       derivWithin (derivWithin (extChartAt I (γ r) ∘ γ) s) s r +
         christoffelMap (Module.finBasis ℝ E)
-          ((leviCivita I M).isCovariantDerivativeOn
+          ((leviCivitaConnection I M).isCovariantDerivativeOn
             (s := (trivializationAt E (TangentSpace I) (γ r)).baseSet)) (γ r)
           (derivWithin (extChartAt I (γ r) ∘ γ) s r)
           (derivWithin (extChartAt I (γ r) ∘ γ) s r) = 0 := by
   constructor
   · intro h
     exact ⟨h.contMDiffOn, fun r hr ↦ (alongCurveWithin_curveVelocityWithin_eq_zero_iff
-      (leviCivita I M) γ h.uniqueDiffOn h.mdifferentiableOn hr).mp
+      (leviCivitaConnection I M) γ h.uniqueDiffOn h.mdifferentiableOn hr).mp
       (h.alongCurveWithin_curveVelocityWithin_eq_zero r hr)⟩
   · rintro ⟨hc, hchart⟩
-    exact ⟨hs, hc, fun r hr ↦ (alongCurveWithin_curveVelocityWithin_eq_zero_iff (leviCivita I M) γ
-      hs (hc.mdifferentiableOn (by norm_num)) hr).mpr (hchart r hr)⟩
+    exact ⟨hs, hc, fun r hr ↦ (alongCurveWithin_curveVelocityWithin_eq_zero_iff
+      (leviCivitaConnection I M) γ hs (hc.mdifferentiableOn (by norm_num)) hr).mpr (hchart r hr)⟩
 
 /-! ### Open parameter sets -/
 
 /-- On an open parameter set, the geodesic equation is the unrestricted one. -/
 theorem isGeodesicCurveOn_iff_of_isOpen (hs : IsOpen s) :
     IsGeodesicCurveOn I γ s ↔ ContMDiffOn 𝓘(ℝ, ℝ) I 2 γ s ∧
-      ∀ r ∈ s, alongCurve (leviCivita I M) γ (curveVelocity I γ) r = 0 := by
+      ∀ r ∈ s, alongCurve (leviCivitaConnection I M) γ (curveVelocity I γ) r = 0 := by
   constructor
   · intro h
     exact ⟨h.contMDiffOn, fun r hr ↦ by
-      rw [← alongCurveWithin_curveVelocityWithin_of_isOpen (leviCivita I M) γ hs hr]
+      rw [← alongCurveWithin_curveVelocityWithin_of_isOpen (leviCivitaConnection I M) γ hs hr]
       exact h.alongCurveWithin_curveVelocityWithin_eq_zero r hr⟩
   · rintro ⟨hc, hzero⟩
     exact ⟨hs.uniqueDiffOn, hc, fun r hr ↦ by
-      rw [alongCurveWithin_curveVelocityWithin_of_isOpen (leviCivita I M) γ hs hr]
+      rw [alongCurveWithin_curveVelocityWithin_of_isOpen (leviCivitaConnection I M) γ hs hr]
       exact hzero r hr⟩
 
 /-- The all-time geodesic equation, spelled out. -/
 theorem isGeodesicCurve_iff :
     IsGeodesicCurve I γ ↔ ContMDiff 𝓘(ℝ, ℝ) I 2 γ ∧
-      ∀ t : ℝ, alongCurve (leviCivita I M) γ (curveVelocity I γ) t = 0 := by
+      ∀ t : ℝ, alongCurve (leviCivitaConnection I M) γ (curveVelocity I γ) t = 0 := by
   rw [← isGeodesicCurveOn_univ, isGeodesicCurveOn_iff_of_isOpen isOpen_univ, contMDiffOn_univ]
   simp
 

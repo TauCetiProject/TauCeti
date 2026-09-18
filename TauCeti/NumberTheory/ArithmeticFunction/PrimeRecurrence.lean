@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Data.Nat.GCD.Basic
 public import Mathlib.Data.Nat.Prime.Basic
+import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Tactic.IntervalCases
+import Mathlib.Tactic.Ring
 
 /-!
 # Sequences with a Hecke-type recurrence at the primes
@@ -23,12 +25,21 @@ eigenform with `a₁ = 0` at the good indices, where `c` is the eigenvalue at `p
 
 * `TauCeti.eq_zero_of_forall_prime_mul_eq_of_one_eq_zero_of_ne_zero_of_coprime`: the vanishing
   at the indices coprime to `L`.
+* `TauCeti.prime_mul_eq_of_prime_pow_recurrence_of_coprime_mul_eq`: conversely, a sequence that
+  is multiplicative at coprime indices away from `L` and satisfies the recurrence **along the
+  powers of a single prime `p`** satisfies it at every index coprime to `L`. Its hypotheses are
+  the fixed-prime and `L`-restricted instances of conditions (2) and (3) of Diamond–Shurman's
+  Proposition 5.8.5, and its conclusion is the fixed-prime instance of the recurrence the first
+  lemma consumes — and, on a nebentypus space, the coefficient side of the eigen-relation
+  at `p`.
 
 ## References
 
 * [T. Miyake, *Modular forms*][miyake1989], §4.6 — the vanishing induction this lemma is the
   arithmetic core of.
-* [F. Diamond and J. Shurman, *A first course in modular forms*][diamondshurman2005], §5.8.
+* [F. Diamond and J. Shurman, *A first course in modular forms*][diamondshurman2005], §5.8 —
+  in particular Proposition 5.8.5, whose conditions (2) and (3) are the hypotheses of the second
+  lemma below.
 -/
 
 public section
@@ -67,5 +78,57 @@ theorem eq_zero_of_forall_prime_mul_eq_of_one_eq_zero_of_ne_zero_of_coprime {a :
       (Nat.div_ne_zero_iff_of_dvd hpm |>.mpr ⟨hm0, hp.ne_zero⟩)
       (Nat.Coprime.coprime_div_left hmL hpm), mul_zero, neg_zero]
   · exact neg_zero
+
+section NonUnitalRing
+
+variable {R : Type*} [NonUnitalRing R]
+
+/-- **The recurrence along the powers of `p`, plus multiplicativity, gives it at every index.**
+Let `a : ℕ → R` be multiplicative at coprime indices away from `L`, and suppose that along the
+powers of a prime `p ∤ L` it satisfies `a_{p^{r+2}} = a_p · a_{p^{r+1}} − d · a_{p^r}`. Then it
+satisfies the full Hecke recurrence `a_{pm} = a_p · a_m − d · a_{m/p}` at every `m ≠ 0` coprime
+to `L`, the last term present only when `p ∣ m`.
+
+The hypotheses are the fixed-prime and `L`-restricted instances of conditions (3) and (2) of
+Diamond–Shurman's Proposition 5.8.5, whose own statements are global; the conclusion is the
+**fixed-prime instance** of the recurrence hypothesis of
+`eq_zero_of_forall_prime_mul_eq_of_one_eq_zero_of_ne_zero_of_coprime` above, which asks for it at
+every prime coprime to `L` — and, on a nebentypus space, the coefficient side of the
+`Tₚ`-eigen-relation. -/
+theorem prime_mul_eq_of_prime_pow_recurrence_of_coprime_mul_eq {a : ℕ → R} {L p : ℕ} {d : R}
+    (hp : p.Prime) (hpL : Nat.Coprime p L)
+    (hmul : ∀ u v : ℕ, Nat.Coprime u v → Nat.Coprime u L → Nat.Coprime v L →
+      a (u * v) = a u * a v)
+    (hrec : ∀ r : ℕ, a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - d * a (p ^ r))
+    (m : ℕ) (hm0 : m ≠ 0) (hmL : Nat.Coprime m L) :
+    a (p * m) = a p * a m - if p ∣ m then d * a (m / p) else 0 := by
+  -- Split off the `p`-part, `m = p ^ w * n` with `p ∤ n`. Multiplicativity then moves each of the
+  -- three terms to `a (p ^ j) * a n`, leaving the power recurrence at `r = w - 1`; at `w = 0`
+  -- there is no `a_{m/p}` term and the claim is multiplicativity itself.
+  obtain ⟨w, n, hpn, rfl⟩ := Nat.exists_eq_pow_mul_and_not_dvd hm0 p hp.ne_one
+  have hpn' : Nat.Coprime p n := (Nat.Prime.coprime_iff_not_dvd hp).2 hpn
+  have hnL : Nat.Coprime n L := hmL.coprime_dvd_left ⟨p ^ w, mul_comm _ _⟩
+  -- Multiplicativity sends every term to `a (p ^ j) * a n`.
+  have hpow : ∀ j : ℕ, a (p ^ j * n) = a (p ^ j) * a n := fun j ↦
+    hmul _ _ (hpn'.pow_left j) (hpL.pow_left j) hnL
+  cases w with
+  | zero =>
+    -- `p ∤ m`, so there is no second term and the claim is multiplicativity itself.
+    rw [pow_zero, one_mul]
+    split_ifs
+    rw [hmul p n hpn' hpL hnL, sub_zero]
+  | succ w =>
+    have hpm : p ∣ p ^ (w + 1) * n := (dvd_pow_self p (Nat.succ_ne_zero w)).mul_right _
+    have e1 : a (p * (p ^ (w + 1) * n)) = a (p ^ (w + 2)) * a n := by
+      rw [← hpow (w + 2)]; ring_nf
+    have e3 : a (p ^ (w + 1) * n / p) = a (p ^ w) * a n := by
+      rw [← hpow w]
+      congr 1
+      rw [pow_succ, mul_comm (p ^ w) p, mul_assoc, Nat.mul_div_cancel_left _ hp.pos]
+    -- What is left is the power recurrence at `r = w`.
+    split_ifs
+    rw [e1, e3, hpow (w + 1), hrec w, sub_mul, mul_assoc, mul_assoc]
+
+end NonUnitalRing
 
 end TauCeti

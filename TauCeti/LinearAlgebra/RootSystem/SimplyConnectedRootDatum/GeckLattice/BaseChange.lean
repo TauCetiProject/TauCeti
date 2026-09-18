@@ -203,8 +203,8 @@ noncomputable def geckBaseChangePointsMulEquiv (B : CommAlgCat.{w} A) :
           (t.geckBaseChangeDefiningIdeal ht A)) B ≃*
       t.geckPoints ht B :=
   (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (t.geckBaseChangeCoordinateIso ht A) B).trans
-    (t.geckPointsMulEquiv ht
-      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B))
+    (t.geckPointsPresentation ht
+      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
 
 /-- Under `geckBaseChangePointsMulEquiv`, a quotient point has the same ambient invertible matrix
 as its composite with the quotient map over `A`. -/
@@ -220,7 +220,8 @@ theorem coe_geckBaseChangePointsMulEquiv_apply (B : CommAlgCat.{w} A)
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht))
           (t.geckBaseChangeDefiningIdeal ht A) B q) := by
-  rw [geckBaseChangePointsMulEquiv, MulEquiv.trans_apply, t.coe_geckPointsMulEquiv_apply ht]
+  rw [geckBaseChangePointsMulEquiv, MulEquiv.trans_apply,
+    GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply]
   exact GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
     (t.geckDim ht) (t.geckDefiningIdeal ht) (t.geckBaseChangeDefiningIdeal ht A)
     (t.geckBaseChangeCoordinateIso ht A)
@@ -244,9 +245,9 @@ theorem quotientPointsHom_geckBaseChangePointsMulEquiv_symm (B : CommAlgCat.{w} 
 
 /-- **The identification of the base-changed Geck carrier's points is natural in the value
 algebra.** A morphism `χ : B ⟶ C` of value `A`-algebras acts on the specialized carrier's points
-by `HopfAlgebra.mapPoints` and on the Geck points by `geckPointsMap` along the same morphism with
-its scalars restricted to `ℤ`, and the equivalence intertwines the two. A consumer can therefore
-use it functorially without unfolding its composite implementation. -/
+by `HopfAlgebra.mapPoints` and on the Geck points by the shared presentation map along the same
+morphism with its scalars restricted to `ℤ`, and the equivalence intertwines the two. A consumer
+can therefore use it functorially without unfolding its composite implementation. -/
 @[simp]
 theorem geckBaseChangePointsMulEquiv_mapPoints {B C : CommAlgCat.{w} A} (χ : B ⟶ C)
     (q : HopfAlgebra.points (R := A)
@@ -258,11 +259,14 @@ theorem geckBaseChangePointsMulEquiv_mapPoints {B C : CommAlgCat.{w} A} (χ : B 
           (H := CommHopfAlgCat.quotient
             (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht))
             (t.geckBaseChangeDefiningIdeal ht A)) χ q) =
-      t.geckPointsMap ht χ.hom
+      (t.geckPointsPresentation ht B).map (t.geckPointsPresentation ht C) χ.hom
         (t.geckBaseChangePointsMulEquiv ht A B q) := by
   simp only [geckBaseChangePointsMulEquiv, MulEquiv.trans_apply]
   rw [CommHopfAlgCat.baseChangeIsoPointsMulEquiv_mapPoints,
-    t.geckPointsMulEquiv_mapPoints ht
+    (t.geckPointsPresentation ht
+      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv_mapPoints
+      (t.geckPointsPresentation ht
+        (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) C))
       ((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map χ)]
   -- Restricting the scalars of `χ` to `ℤ` leaves its underlying ring homomorphism unchanged.
   rfl

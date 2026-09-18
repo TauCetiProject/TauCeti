@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Group.Coprime
 public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.Algebra.Group.Subgroup.Normalizer
-public import TauCeti.GroupTheory.OrderOfElement
+public import TauCeti.GroupTheory.OrderOfElement.PPart
 public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.GroupTheory.Complement
 public import Mathlib.GroupTheory.Nilpotent

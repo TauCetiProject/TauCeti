@@ -25,7 +25,7 @@ G(𝔽) ≃* G(A)^F,        𝔽 = frobeniusFixedSubring A p k,
 
 is the general one transported by `TauCeti.GeneralLinear.frobeniusFixedMulEquivOfCoeEq`, which is
 fed `TauCeti.DynkinType.geckPoints_def` and `TauCeti.DynkinType.coe_geckFrobenius`, exactly as
-`TauCeti.DynkinType.geckPointsMap` consumes
+`GeneralLinear.IntegralPointsPresentation.map` consumes
 `TauCeti.GeneralLinear.mapHopfIdealPointsSubgroup` and
 `TauCeti.DynkinType.map_subtype_fixedSubgroup_geckFrobenius_eq` consumes
 `TauCeti.GeneralLinear.map_hopfIdealPointsSubgroup_frobeniusFixedSubring`. Nothing is reproved: the
@@ -42,8 +42,8 @@ the two element types.
 
 Naturality on the pinned generating families is not restated: the isomorphism is the entrywise
 inclusion, by `TauCeti.DynkinType.coe_geckPointsMulEquivFixedSubgroupGeckFrobenius`, so
-`TauCeti.DynkinType.geckPointsMap_geckRootSubgroupPoints` and
-`TauCeti.DynkinType.geckPointsMap_geckWeightTorusPoints` at the inclusion of `𝔽` already describe
+`TauCeti.DynkinType.map_geckRootSubgroupPoints` and
+`TauCeti.DynkinType.map_geckWeightTorusPoints` at the inclusion of `𝔽` already describe
 its action on the numbered root subgroups and on the weight torus.
 
 Two limitations carry over from the file this one builds on. The Geck carrier is built from the

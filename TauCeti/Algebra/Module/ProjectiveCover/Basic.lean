@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.Finiteness.Cardinality
+public import Mathlib.RingTheory.Jacobson.Semiprimary
 public import TauCeti.Algebra.Module.Submodule.Superfluous
 
 /-!
@@ -68,6 +69,10 @@ Nothing here proves or assumes it; every statement below is conditional on a cov
   cover of a projective `P` exactly when `N` is superfluous; over a coatomic submodule lattice
   `TauCeti.isProjectiveCover_mkQ_iff_le_jacobson` reads this off the radical, so that `R ↠ R ⧸ I`
   is a projective cover exactly when `I ≤ Ring.jacobson R`.
+* `TauCeti.IsProjectiveCover.exists_comp_eq`: a map into a simple module factors through a
+  projective cover of its source, and `TauCeti.IsProjectiveCover.homEquivOfIsSimpleModule`:
+  precomposition with a projective cover `f : P →ₗ[R] M` is an isomorphism
+  `Hom_R(M, T) ≃ₗ[k] Hom_R(P, T)` for every simple `T`.
 
 ## References
 
@@ -246,6 +251,67 @@ theorem isProjectiveCover_mkQ_iff_le_jacobson [Module.Projective R P]
     [IsCoatomic (Submodule R P)] {N : Submodule R P} :
     IsProjectiveCover N.mkQ ↔ N ≤ Module.jacobson R P :=
   isProjectiveCover_mkQ_iff.trans isSuperfluous_iff_le_jacobson
+
+/-! ### A projective cover is invisible to a simple target -/
+
+section Simple
+
+variable {T : Type*} [AddCommGroup T] [Module R T] [IsSimpleModule R T]
+
+/-- Every map from the source of a projective cover into a simple module factors through the
+cover: the kernel of the cover is superfluous, hence contained in the radical of the source, which
+the map annihilates. -/
+theorem IsProjectiveCover.exists_comp_eq {f : P →ₗ[R] M} (hf : IsProjectiveCover f)
+    (φ : P →ₗ[R] T) : ∃ ψ : M →ₗ[R] T, ψ ∘ₗ f = φ := by
+  have hle : LinearMap.ker f ≤ LinearMap.ker φ :=
+    hf.ker_le_jacobson.trans (IsSemisimpleModule.jacobson_le_ker R R P T φ)
+  refine ⟨((LinearMap.ker f).liftQ φ hle) ∘ₗ
+    (f.quotKerEquivOfSurjective hf.surjective).symm.toLinearMap, ?_⟩
+  ext p
+  have hmk : (f.quotKerEquivOfSurjective hf.surjective).symm (f p) = Submodule.Quotient.mk p := by
+    rw [LinearEquiv.symm_apply_eq]
+    simp [LinearMap.quotKerEquivOfSurjective]
+  simp [hmk]
+
+variable (k : Type*) [CommSemiring k] [Algebra k R] [Module k T] [IsScalarTower k R T]
+
+/-- **A projective cover is invisible to a simple target.** Precomposition with a projective cover
+`f : P →ₗ[R] M` is a `k`-linear isomorphism from `Hom_R(M, T)` to `Hom_R(P, T)` for every simple
+`R`-module `T`: it is injective because `f` is onto, and surjective by
+`TauCeti.IsProjectiveCover.exists_comp_eq`.
+
+Compare `TauCeti.homCongrRight`, which transports a hom space along an isomorphism of its target:
+here the map on the source side is only a cover, and it is the simplicity of `T` that makes the
+induced map on hom spaces invertible. -/
+noncomputable def IsProjectiveCover.homEquivOfIsSimpleModule {f : P →ₗ[R] M}
+    (hf : IsProjectiveCover f) : (M →ₗ[R] T) ≃ₗ[k] (P →ₗ[R] T) :=
+  LinearEquiv.ofBijective
+    { toFun ψ := ψ ∘ₗ f
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl }
+    ⟨fun ψ ψ' h => LinearMap.ext fun m => by
+        obtain ⟨p, rfl⟩ := hf.surjective m
+        exact DFunLike.congr_fun h p,
+      fun φ => hf.exists_comp_eq φ⟩
+
+variable {k}
+
+@[simp]
+theorem IsProjectiveCover.homEquivOfIsSimpleModule_apply {f : P →ₗ[R] M}
+    (hf : IsProjectiveCover f) (ψ : M →ₗ[R] T) : hf.homEquivOfIsSimpleModule k ψ = ψ ∘ₗ f :=
+  (rfl)
+
+/-- The inverse of `TauCeti.IsProjectiveCover.homEquivOfIsSimpleModule` is the factorization
+through the cover. -/
+@[simp]
+theorem IsProjectiveCover.homEquivOfIsSimpleModule_symm_comp {f : P →ₗ[R] M}
+    (hf : IsProjectiveCover f) (φ : P →ₗ[R] T) :
+    ((hf.homEquivOfIsSimpleModule k).symm φ) ∘ₗ f = φ := by
+  rw [← IsProjectiveCover.homEquivOfIsSimpleModule_apply (k := k) hf
+      ((hf.homEquivOfIsSimpleModule k).symm φ),
+    LinearEquiv.apply_symm_apply]
+
+end Simple
 
 end Ring
 
