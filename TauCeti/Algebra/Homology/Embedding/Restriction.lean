@@ -30,7 +30,6 @@ namespace ComplexShape.Embedding
 
 /-- Mapping homological complexes commutes with restriction along a shape embedding. The two
 composites have definitionally equal objects, so each component is an identity morphism. -/
-@[expose, simps!]
 noncomputable def mapRestrictionIso
     {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
     {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
@@ -43,5 +42,27 @@ noncomputable def mapRestrictionIso
     -- Both differentials unfold to `F.map (K.d (e.f i) (e.f j))`; Mathlib has no lemma for this.
     change 𝟙 _ ≫ F.map (K.d (e.f i) (e.f j)) = F.map (K.d (e.f i) (e.f j)) ≫ 𝟙 _
     simp)
+
+/-- The forward component of `mapRestrictionIso` is the identity. -/
+@[simp]
+theorem mapRestrictionIso_hom_f
+    {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
+    {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
+    (e : c.Embedding c') (F : C ⥤ D) [F.PreservesZeroMorphisms] [e.IsRelIff]
+    (K : HomologicalComplex C c') (i : ι) :
+    (e.mapRestrictionIso F K).hom.f i = 𝟙 (F.obj (K.X (e.f i))) := by
+  rw [mapRestrictionIso]
+  rfl
+
+/-- The inverse component of `mapRestrictionIso` is the identity. -/
+@[simp]
+theorem mapRestrictionIso_inv_f
+    {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
+    {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
+    (e : c.Embedding c') (F : C ⥤ D) [F.PreservesZeroMorphisms] [e.IsRelIff]
+    (K : HomologicalComplex C c') (i : ι) :
+    (e.mapRestrictionIso F K).inv.f i = 𝟙 (F.obj (K.X (e.f i))) := by
+  rw [mapRestrictionIso]
+  rfl
 
 end ComplexShape.Embedding
