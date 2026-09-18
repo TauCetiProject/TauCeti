@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.Cyclic.OrderCount
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.Data.Rat.Cast.Lemmas
 
 /-!
 # Elements with a prescribed divisibility condition on their order
@@ -26,6 +28,9 @@ carrier together with its membership and divisibility API.
   shrink.
 * `TauCeti.NumberField.Chebotarev.card_taggedElements_eq_sum_totient`: the exact cyclic count,
   expressed as a sum of Euler totients over the allowed orders.
+* `TauCeti.NumberField.Chebotarev.crossingConstant`: the density contribution of the tagged fibres.
+* `TauCeti.NumberField.Chebotarev.le_crossingConstant`: the lower bound obtained by raising the
+  auxiliary cyclotomic level.
 
 ## References
 
@@ -72,5 +77,61 @@ theorem card_taggedElements_eq_sum_totient {H : Type*} [Group H] [Fintype H] [Is
       ∑ d ∈ (Fintype.card H).divisors.filter (f ∣ ·), Nat.totient d := by
   unfold taggedElements
   exact IsCyclic.card_filter_dvd_orderOf_eq_sum_totient f
+
+/-- The contribution of the tags whose orders are divisible by `f` to a cyclotomic crossing.
+
+For finite groups `G` and `H`, a tagged fibre has weight
+`1 / (#G * #H)`.  Thus the disjoint union over `taggedElements f` has the normalized weight
+recorded here.  The definition is independent of a choice of cyclic generator of `H`; cyclicity
+is needed only for the lower bound below. -/
+noncomputable def crossingConstant {G H : Type*} [Group G] [Fintype G] [Group H] [Fintype H]
+    (f : ℕ) : ℝ :=
+  (taggedElements (H := H) f).card /
+    ((Fintype.card G : ℝ) * (Fintype.card H : ℝ))
+
+/-- The tagged part of a cyclic crossing approaches the full `1 / #G` contribution as the
+auxiliary level grows.  More precisely, if `f ^ r` divides `#H`, the crossing constant is at least
+`(1 - 2⁻ʳ) ^ #f.primeFactors / #G`.
+
+The cardinality estimate is the generic `IsCyclic.le_card_filter_dvd_orderOf` theorem.  This
+lemma only supplies the Chebotarev normalization and deliberately keeps the two group orders
+separate, as they play different roles in the crossing. -/
+theorem le_crossingConstant {G H : Type*} [Group G] [Fintype G] [Group H] [Fintype H]
+    [IsCyclic H] (f r : ℕ) (hr : 1 ≤ r) (hfr : f ^ r ∣ Nat.card H) :
+    (1 - (2 : ℝ)⁻¹ ^ r) ^ f.primeFactors.card / (Fintype.card G : ℝ) ≤
+      crossingConstant (G := G) (H := H) f := by
+  have hfr' : f ^ r ∣ Fintype.card H := by simpa only [Nat.card_eq_fintype_card] using hfr
+  have hbound := IsCyclic.le_card_filter_dvd_orderOf (α := H) (f := f) hr hfr'
+  have hbound' :
+      ((1 - (2 : ℚ)⁻¹ ^ r) ^ f.primeFactors.card * Fintype.card H : ℚ) ≤
+        (taggedElements (H := H) f).card := by
+    simpa [taggedElements, Nat.card_eq_fintype_card] using hbound
+  have hbound'' :
+      ((((1 - (2 : ℚ)⁻¹ ^ r) ^ f.primeFactors.card * Fintype.card H : ℚ) : ℝ)) ≤
+        ((taggedElements (H := H) f).card : ℝ) := by
+    exact_mod_cast hbound'
+  have hcast_factor :
+      (((1 - (2 : ℚ)⁻¹ ^ r) ^ f.primeFactors.card : ℚ) : ℝ) =
+        (1 - (2 : ℝ)⁻¹ ^ r) ^ f.primeFactors.card := by
+    rw [Rat.cast_pow, Rat.cast_sub, Rat.cast_pow, Rat.cast_inv]
+    norm_num
+  have hbound''' :
+      ((1 - (2 : ℝ)⁻¹ ^ r) ^ f.primeFactors.card * (Fintype.card H : ℝ)) ≤
+        ((taggedElements (H := H) f).card : ℝ) := by
+    simpa only [Rat.cast_mul, Rat.cast_natCast, hcast_factor] using hbound''
+  have hG : (0 : ℝ) < Fintype.card G := by
+    exact_mod_cast (Fintype.card_pos : 0 < Fintype.card G)
+  have hH : (0 : ℝ) < Fintype.card H := by
+    exact_mod_cast (Fintype.card_pos : 0 < Fintype.card H)
+  rw [crossingConstant]
+  apply (div_le_div_iff₀ hG (mul_pos hG hH)).2
+  calc
+    (1 - (2 : ℝ)⁻¹ ^ r) ^ f.primeFactors.card *
+        (Fintype.card G * Fintype.card H : ℝ) =
+      Fintype.card G *
+        ((1 - (2 : ℝ)⁻¹ ^ r) ^ f.primeFactors.card * Fintype.card H) := by ring
+    _ ≤ Fintype.card G * (taggedElements (H := H) f).card :=
+        mul_le_mul_of_nonneg_left hbound''' hG.le
+    _ = (taggedElements (H := H) f).card * Fintype.card G := by ring
 
 end TauCeti.NumberField.Chebotarev
