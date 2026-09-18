@@ -84,7 +84,6 @@ def ConvergesToOne (s : Set G) : Prop :=
 
 /-- A set converges to one exactly when only finitely many of its elements lie outside each
 neighborhood of `1`. -/
-@[simp]
 theorem convergesToOne_iff {s : Set G} :
     ConvergesToOne s ↔ ∀ U ∈ 𝓝 (1 : G), {x ∈ s | x ∉ U}.Finite := by
   refine tendsto_def.trans ?_
@@ -121,7 +120,8 @@ theorem convergesToOne_iff_openNormalSubgroup [Group G] [IsTopologicalGroup G] [
 variable {H : Type*} [TopologicalSpace H]
 
 /-- The image of a set converging to one under a continuous map preserving `1` also converges to
-one. -/
+one. The map may be any `OneHomClass` morphism; `OneHomClass` only asks `f 1 = 1`, so no
+compatibility with multiplication is needed. -/
 theorem ConvergesToOne.image [One G] [One H] {F : Type*} [FunLike F G H] [OneHomClass F G H]
     {s : Set G} (hs : ConvergesToOne s) (f : F) (hf : Continuous f) :
     ConvergesToOne (f '' s) := by
@@ -134,6 +134,7 @@ theorem ConvergesToOne.image [One G] [One H] {F : Type*} [FunLike F G H] [OneHom
 
 /-- A continuous multiplicative equivalence carries a set converging to one exactly to a set
 converging to one. -/
+@[simp]
 theorem _root_.ContinuousMulEquiv.convergesToOne_image_iff [MulOneClass G] [MulOneClass H]
     (e : G ≃ₜ* H) {s : Set G} : ConvergesToOne (e '' s) ↔ ConvergesToOne s := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.image e e.continuous⟩
