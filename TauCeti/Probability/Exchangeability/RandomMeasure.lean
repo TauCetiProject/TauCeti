@@ -119,7 +119,7 @@ theorem coordinateMarginals_map_permReindex (P : ProbabilityMeasure (ℕ → α)
 injective code for probability measures on a countably generated space. -/
 def codedCoordinateMarginals [MeasurableSpace.CountablyGenerated α]
     (P : ProbabilityMeasure (ℕ → α)) :
-    ℕ → (probabilityMeasureCodeIndex α → ℝ≥0∞) :=
+    ℕ → (ProbabilityMeasureCodeIndex α → ℝ≥0∞) :=
   fun i => probabilityMeasureCode (coordinateMarginals P i)
 
 /-- Evaluation of a coded coordinate marginal. -/
@@ -224,13 +224,13 @@ theorem exists_pathLaw_codedCoordinateMarginals_eq_map_unitIntervalCoding
     (hπ : ∀ τ : Equiv.Perm ℕ,
       π.map (fun P => P.map (permReindex τ)) = π) :
     ∃ Λ : ProbabilityMeasure
-        (ProbabilityMeasure (probabilityMeasureCodeIndex α → ℝ≥0∞)),
+        (ProbabilityMeasure (ProbabilityMeasureCodeIndex α → ℝ≥0∞)),
       pathLaw π (fun i P => codedCoordinateMarginals P i) =
         ((Λ : Measure (ProbabilityMeasure
-            (probabilityMeasureCodeIndex α → ℝ≥0∞))).prod
+            (ProbabilityMeasureCodeIndex α → ℝ≥0∞))).prod
           (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).map
             fun q i => unitIntervalCoding
-              (probabilityMeasureCodeIndex α → ℝ≥0∞) q.1 (q.2 i) :=
+              (ProbabilityMeasureCodeIndex α → ℝ≥0∞) q.1 (q.2 i) :=
   exists_pathLaw_eq_map_unitIntervalCoding
     (fun _ => ((measurable_pi_apply _).comp
       measurable_codedCoordinateMarginals).aemeasurable)

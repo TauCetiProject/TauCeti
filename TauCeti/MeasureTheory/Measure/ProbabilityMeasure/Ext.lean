@@ -222,7 +222,7 @@ theorem IsZeroOneMeasure.exists_eq_dirac_probabilityMeasure [CountablyGenerated 
     rcases IsZeroOrProbabilityMeasure.measure_univ (μ := π) with (h | h)
     · simp_all
     · exact ⟨h⟩
-  let : ∀ _ : probabilityMeasureCodeIndex α, StandardBorelSpace ℝ≥0∞ :=
+  let : ∀ _ : ProbabilityMeasureCodeIndex α, StandardBorelSpace ℝ≥0∞ :=
     fun _ => standardBorel_of_polish
   obtain ⟨q, heq⟩ := IsZeroOneMeasure.exists_ae_eq_const (π := π)
     measurable_probabilityMeasureCode.aemeasurable
