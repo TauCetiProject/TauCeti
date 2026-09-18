@@ -186,6 +186,11 @@ theorem not_isKnot_of_zero (G : GridDiagram 0) : ¬G.IsKnot := by
   rw [IsKnot, componentCount_eq_zero_of_zero]
   exact Nat.zero_ne_one
 
+/-- A knot grid has at least one column. -/
+theorem IsKnot.ne_zero {G : GridDiagram n} (hG : G.IsKnot) : n ≠ 0 := by
+  rintro rfl
+  exact not_isKnot_of_zero G hG
+
 /-- Every `2 × 2` grid diagram represents a knot. Its fixed-point-free component permutation is
 the transposition of the two columns. -/
 @[simp]
