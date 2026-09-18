@@ -38,7 +38,8 @@ generates its own field.
 
 ## References
 
-* J. Neukirch, *Algebraic Number Theory*, Chapter I, §8.
+* J. Neukirch, *Algebraic Number Theory*, Chapter I, §8, Exercises 4 and 5.
+* D. A. Marcus, *Number Fields*, 2nd edition, Springer 2018, Chapter 4.
 -/
 
 public section
