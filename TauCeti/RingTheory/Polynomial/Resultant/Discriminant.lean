@@ -629,7 +629,11 @@ theorem _root_.Cubic.toPoly_discr {P : Cubic R} (ha : P.a ≠ 0) : P.toPoly.disc
 /-! ### The discriminant of a depressed quartic -/
 
 /-- The Sylvester matrix used by the discriminant of a quartic, after identifying its
-degree-dependent index type with `Fin 7`. -/
+degree-dependent index type with `Fin 7`.
+
+The statement and proof are adapted from Mathlib's private lemma
+`Polynomial.sylvesterDeriv_of_natDegree_eq_three` in
+`Mathlib/RingTheory/Polynomial/Resultant/Basic.lean`, which does the same for a cubic. -/
 private theorem Polynomial.sylvesterDeriv_of_natDegree_eq_four {f : R[X]}
     (hf : f.natDegree = 4) :
     f.sylvesterDeriv.reindex (finCongr (by omega)) (finCongr (by omega)) =
