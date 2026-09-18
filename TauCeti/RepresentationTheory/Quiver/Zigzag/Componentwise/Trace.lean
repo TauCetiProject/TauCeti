@@ -42,7 +42,9 @@ universe u w
 
 variable (k : Type w) [CommRing k] {V : Type u} [Finite V] (G : SimpleGraph V)
 
-noncomputable local instance : Fintype G.ConnectedComponent := Fintype.ofFinite _
+/-- The finite indexing type used internally for the componentwise trace. -/
+noncomputable local instance zigzagTraceConnectedComponentFintype :
+    Fintype G.ConnectedComponent := Fintype.ofFinite _
 
 /-! ### The trace of one component -/
 
