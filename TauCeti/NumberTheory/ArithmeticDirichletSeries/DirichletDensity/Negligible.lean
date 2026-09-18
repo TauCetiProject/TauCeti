@@ -174,9 +174,7 @@ theorem hasDirichletDensity_inter_compl_higherDegreePrimes_iff
     (S ∩ (higherDegreePrimes K)ᶜ).HasDirichletDensity δ ↔ S.HasDirichletDensity δ := by
   refine hasDirichletDensity_iff_of_symmDiff <|
     hasDirichletDensity_higherDegreePrimes.zero_of_subset fun 𝔭 h𝔭 ↦ ?_
-  rcases h𝔭 with ⟨⟨h, -⟩, h'⟩ | ⟨h, h'⟩
-  · exact absurd h h'
-  · by_contra hdeg
-    exact h' ⟨h, hdeg⟩
+  simp only [Set.mem_symmDiff, Set.mem_inter_iff, Set.mem_compl_iff] at h𝔭
+  tauto
 
 end TauCeti
