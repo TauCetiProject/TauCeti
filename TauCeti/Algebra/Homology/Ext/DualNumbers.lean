@@ -209,6 +209,7 @@ instance : IsArtinianRing (DualNumber F) :=
   IsArtinianRing.of_finite F _
 
 /-- The kernel of the quotient map `F[ε] ↠ F[ε]/(ε)` is the maximal ideal of `F[ε]`. -/
+@[simp]
 theorem ker_dualNumberProj :
     LinearMap.ker (dualNumberProj F).hom = IsLocalRing.maximalIdeal (DualNumber F) := by
   have hmax : (RingHom.ker (fstHom F F F)).IsMaximal :=

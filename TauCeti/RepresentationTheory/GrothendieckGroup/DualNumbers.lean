@@ -180,20 +180,10 @@ theorem two_dvd_jordanHolderCoordinate_cartanMap_dualNumber
   have h : ((jordanHolderCoordinate (DualNumber k) (dualNumberResidue k)).comp
       (cartanMap (DualNumber k))).toIntLinearMap = 2 • b.coord () := by
     refine b.ext fun ⟨⟩ ↦ ?_
-    have hb : b () =
-        (ExactK0.of (dualNumberFreeProj k) :
-          ExactK0.{u} (finiteProjectiveModulesExactStructure (DualNumber k))) := by
-      dsimp only [b]
-      apply indecomposableProjectiveClassBasis_apply
-    have hcoord : b.coord () (b ()) = 1 := by
-      simp only [b.coord_apply, b.repr_self, Finsupp.single_eq_same]
-    change jordanHolderCoordinate (DualNumber k) (dualNumberResidue k)
-        (cartanMap (DualNumber k) (b ())) = 2 • b.coord () (b ())
-    calc
-      _ = 2 := by
-        simp only [hb, cartanMap_dualNumberFreeProj, map_nsmul, jordanHolderCoordinate_self]
-        norm_num
-      _ = 2 • b.coord () (b ()) := by rw [hcoord]; rfl
+    rw [LinearMap.smul_apply, b.coord_apply, b.repr_self, Finsupp.single_eq_same,
+      AddMonoidHom.coe_toIntLinearMap, AddMonoidHom.comp_apply,
+      indecomposableProjectiveClassBasis_apply, cartanMap_dualNumberFreeProj, map_nsmul,
+      jordanHolderCoordinate_self]
   exact ⟨b.coord () x, by simpa using LinearMap.congr_fun h x⟩
 
 /-- **The class of the residue field is not in the image of the Cartan map of `k[ε]`**: its
