@@ -82,10 +82,7 @@ theorem _root_.IsCoveringMap.mapOfEq_injective
   (CategoryTheory.eqToIso (congrArg FundamentalGroupoid.mk he)).conj.injective.comp
     (IsCoveringMap.map_injective hp e)
 
-/-- **A covering map from a path-connected space to a simply connected space is injective.**
-A path between two points of one fibre projects to a loop; the loop is homotopic to the constant
-loop, so by the homotopy lifting property its lift, which is the original path, ends where it
-started. -/
+/-- **A covering map from a path-connected space to a simply connected space is injective.** -/
 theorem _root_.IsCoveringMap.injective [PathConnectedSpace E] [SimplyConnectedSpace X]
     (hp : IsCoveringMap p) : Function.Injective p := by
   intro e₀ e₁ h

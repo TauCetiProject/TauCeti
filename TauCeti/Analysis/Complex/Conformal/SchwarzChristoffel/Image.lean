@@ -269,9 +269,7 @@ theorem connectedComponentIn_subset_image_schwarzChristoffelPrimitive (a e : ι 
   exact hz.resolve_right (connectedComponentIn_subset _ _ hzC)
 
 
-/-- **A preconnected set avoiding the boundary path and containing the image is the image.**
-The image is open, and within such a set it is also closed, since its closure adds only points of
-the boundary path. -/
+/-- **A preconnected set avoiding the boundary path and containing the image is the image.** -/
 theorem image_schwarzChristoffelPrimitive_eq_of_subset (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hinfty : ∑ i, e i < -1) {W : Set ℂ}
     (hW : IsPreconnected W)
@@ -288,9 +286,7 @@ theorem image_schwarzChristoffelPrimitive_eq_of_subset (a e : ι → ℝ) (z₀ 
 
 /-- **The Schwarz--Christoffel primitive is proper over the complement of its boundary path.**
 The points of the upper half-plane that the primitive sends into a closed set `K` avoiding the
-compactified boundary path form a compact set: near infinity the primitive is close to the vertex
-at infinity, and near a real point it is close to the boundary value there, and neither lies in
-`K`. -/
+compactified boundary path form a compact set. -/
 theorem isCompact_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i)
     (hinfty : ∑ i, e i < -1) {K : Set ℂ} (hK : IsClosed K)

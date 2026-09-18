@@ -66,8 +66,7 @@ namespace TauCeti
 variable {ι : Type*} [Fintype ι]
 
 /-- **The Schwarz--Christoffel primitive is a local homeomorphism on the upper half-plane.**
-Its derivative is the integrand, which does not vanish there, so the inverse function theorem
-applies at every point. -/
+Its derivative is nonzero throughout this domain. -/
 theorem isLocalHomeomorphOn_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : UpperHalfPlane) :
     IsLocalHomeomorphOn (schwarzChristoffelPrimitive a e z₀) upperHalfPlaneSet := by
   refine IsLocalHomeomorphOn.mk _ _ fun z hz => ?_
@@ -95,7 +94,8 @@ theorem isCoveringMapOn_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : U
     isLocalHomeomorph_iff_isLocalHomeomorphOn_univ.mpr <|
       (isLocalHomeomorphOn_schwarzChristoffelPrimitive a e z₀).comp
         isOpenEmbedding_coe.isLocalHomeomorph.isLocalHomeomorphOn fun τ _ => τ.im_pos
-  refine IsCoveringMapOn.of_isLocalHomeomorph_of_isCompact_preimage hP.isOpen_compl hloc
+  refine IsCoveringMapOn.of_isLocalHomeomorph_of_isCompact_preimage hP.isOpen_compl
+    hloc.isLocalHomeomorphOn
     fun K hKP hK => ?_
   rw [isOpenEmbedding_coe.isEmbedding.isCompact_iff]
   have himage : ((↑) : ℍ → ℂ) '' ((fun τ : ℍ => F τ) ⁻¹' K) = upperHalfPlaneSet ∩ F ⁻¹' K := by
@@ -110,9 +110,7 @@ theorem isCoveringMapOn_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : U
 /-- **The Schwarz--Christoffel primitive is a bijection onto a simply connected region avoiding
 its boundary path.**  If the image of the upper half-plane lies in a simply connected set `W`
 disjoint from the compactified boundary path, then the primitive maps the upper half-plane
-bijectively onto `W`.  Over `W` the primitive is a covering map whose total space, the upper
-half-plane, is path-connected; since `W` is simply connected, the covering map is injective.
-Surjectivity follows because the image is open and closed in the connected set `W`. -/
+bijectively onto `W`. -/
 theorem bijOn_schwarzChristoffelPrimitive_of_subset (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hinfty : ∑ i, e i < -1) {W : Set ℂ}
     [SimplyConnectedSpace W]
