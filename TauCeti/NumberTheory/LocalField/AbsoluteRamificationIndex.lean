@@ -11,14 +11,14 @@ public import TauCeti.NumberTheory.LocalField.RamificationIndex
 /-!
 # The absolute ramification index of a mixed-characteristic local field
 
-Let `p` be prime and let `K` be a finite extension of `ℚ_[p]` carrying a compatible
-nonarchimedean local-field valuation. This file defines the absolute ramification index
+Let `p` be prime and let `K` be a nonarchimedean local field carrying a `ℚ_[p]`-algebra
+structure. This file defines the absolute ramification index
 
 `TauCeti.absoluteRamificationIndex K p = e(K/ℚ_[p])`.
 
-Its characteristic calculation identifies it with the normalized valuation of `p` in `K`.
-Consequently the index of `ℚ_[p]` itself is one, and in a tower over `ℚ_[p]` the absolute index
-is multiplied by the relative ramification index.
+For a compatible extension, its characteristic calculation identifies it with the normalized
+valuation of `p` in `K`. Consequently the index of `ℚ_[p]` itself is one, and in a tower over
+`ℚ_[p]` the absolute index is multiplied by the relative ramification index.
 
 The definition is confined to mixed characteristic by requiring an algebra structure over
 `ℚ_[p]`; there is no artificial value for equal-characteristic local fields.
@@ -50,12 +50,12 @@ namespace TauCeti
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 variable (p : ℕ) [Fact p.Prime] [Algebra ℚ_[p] K] [ValuativeExtension ℚ_[p] K]
-  [Module.Finite ℚ_[p] K]
 
-/-- The absolute ramification index of a finite extension `K/ℚ_[p]`. -/
+/-- The absolute ramification index of a nonarchimedean local field over `ℚ_[p]`.
+
+For a finite compatible extension, this is the classical absolute ramification index. -/
 def absoluteRamificationIndex (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
-    [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime] [Algebra ℚ_[p] K]
-    [ValuativeExtension ℚ_[p] K] [Module.Finite ℚ_[p] K] : ℕ :=
+    [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime] [Algebra ℚ_[p] K] : ℕ :=
   ramificationIndex ℚ_[p] K
 
 /-- The absolute ramification index is the normalized valuation of the residue prime `p` in
@@ -91,8 +91,7 @@ theorem absoluteRamificationIndex_padic : absoluteRamificationIndex ℚ_[p] p = 
 relative ramification index of `L/K` and the absolute ramification index of `K`. -/
 theorem absoluteRamificationIndex_tower (L : Type*) [Field L] [ValuativeRel L]
     [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [Algebra ℚ_[p] L]
-    [IsScalarTower ℚ_[p] K L] [ValuativeExtension K L] [ValuativeExtension ℚ_[p] L]
-    [Module.Finite K L] [Module.Finite ℚ_[p] L] :
+    [IsScalarTower ℚ_[p] K L] [ValuativeExtension K L] :
     absoluteRamificationIndex L p =
       ramificationIndex K L * absoluteRamificationIndex K p := by
   simpa only [absoluteRamificationIndex, Nat.mul_comm] using
