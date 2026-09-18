@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 public import TauCeti.Topology.Compactness.Compact
+import TauCeti.Topology.Algebra.Group.Profinite.Section
 
 /-!
 # Topological generation of profinite groups
@@ -52,6 +53,12 @@ profinite group.
   every open normal subgroup.
 * `TauCeti.ConvergesToOne.image`: a continuous map preserving `1` carries a set converging to one
   to another such set.
+* `TauCeti.exists_convergesToOne_lift_quotient`: a converging set in a quotient by a closed
+  subgroup has a converging set of representatives upstairs.
+* `TauCeti.exists_convergesToOne_lift_quotient_topologicallyGenerates`: if the set generates the
+  quotient, its representatives together with the kernel generate upstairs.
+* `TauCeti.exists_convergesToOne_lift_union_topologicallyGenerates`: converging generators of a
+  closed normal subgroup and its quotient combine to generate the ambient profinite group.
 
 ## References
 
@@ -103,6 +110,18 @@ theorem _root_.Set.Finite.convergesToOne {s : Set G} (hs : s.Finite) : Converges
 theorem ConvergesToOne.mono {s t : Set G} (hs : ConvergesToOne s) (hts : t ⊆ s) :
     ConvergesToOne t :=
   hs.comp (Set.inclusion_injective hts).tendsto_cofinite
+
+/-- The union of two sets converging to one again converges to one. -/
+theorem ConvergesToOne.union {s t : Set G} (hs : ConvergesToOne s) (ht : ConvergesToOne t) :
+    ConvergesToOne (s ∪ t) := by
+  rw [convergesToOne_iff] at hs ht ⊢
+  intro U hU
+  apply ((hs U hU).union (ht U hU)).subset
+  intro x hx
+  simp only [Set.mem_ofPred_eq, Set.mem_union] at hx ⊢
+  rcases hx.1 with hxs | hxt
+  · exact Or.inl ⟨hxs, hx.2⟩
+  · exact Or.inr ⟨hxt, hx.2⟩
 
 end One
 
@@ -284,5 +303,126 @@ theorem isTopologicallyFinitelyGenerated_iff_exists_rank_le :
   exact ⟨s, hs⟩
 
 end FiniteQuotients
+
+section QuotientLifts
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  [TotallyDisconnectedSpace G]
+
+/-- A set converging to one in the quotient by a closed subgroup has a set of representatives
+converging to one upstairs. The representatives come from the normalized continuous section of the
+quotient map. -/
+theorem exists_convergesToOne_lift_quotient (N : Subgroup G) [N.Normal]
+    (hN : IsClosed (N : Set G))
+    {s : Set (G ⧸ N)} (hs : ConvergesToOne s) :
+    ∃ t : Set G, ConvergesToOne t ∧ (QuotientGroup.mk' N) '' t = s := by
+  obtain ⟨f, hf, hsection, hf_one⟩ := exists_continuous_section N hN
+  let f₁ : OneHom (G ⧸ N) G := ⟨f, hf_one⟩
+  refine ⟨f₁ '' s, hs.image f₁ ?_, ?_⟩
+  · change Continuous f
+    exact hf
+  · ext q
+    constructor
+    · rintro ⟨_, ⟨q', hq', rfl⟩, rfl⟩
+      rw [show QuotientGroup.mk' N (f₁ q') = q' by
+        change QuotientGroup.mk' N (f q') = q'
+        exact hsection q']
+      exact hq'
+    · intro hq
+      exact ⟨f₁ q, ⟨q, hq, rfl⟩, hsection q⟩
+
+/-- If a converging set topologically generates a quotient by a closed normal subgroup, it has a
+converging set of representatives which, together with the kernel, topologically generates the
+ambient profinite group. This is the extension step needed when constructing converging generators
+through successively finer quotients. -/
+theorem exists_convergesToOne_lift_quotient_topologicallyGenerates (N : Subgroup G) [N.Normal]
+    (hN : IsClosed (N : Set G)) {s : Set (G ⧸ N)} (hs : ConvergesToOne s)
+    (hsg : (Subgroup.closure s).topologicalClosure = ⊤) :
+    ∃ t : Set G, ConvergesToOne t ∧ (QuotientGroup.mk' N) '' t = s ∧
+      (Subgroup.closure (t ∪ (N : Set G))).topologicalClosure = ⊤ := by
+  obtain ⟨t, ht, ht_image⟩ := exists_convergesToOne_lift_quotient N hN hs
+  refine ⟨t, ht, ht_image, ?_⟩
+  let q : G →* G ⧸ N := QuotientGroup.mk' N
+  let H : Subgroup G := (Subgroup.closure (t ∪ (N : Set G))).topologicalClosure
+  have hN_le : N ≤ H := fun x hx ↦
+    Subgroup.le_topologicalClosure _ (Subgroup.subset_closure (Or.inr hx))
+  have ht_le : t ⊆ H := fun x hx ↦
+    Subgroup.le_topologicalClosure _ (Subgroup.subset_closure (Or.inl hx))
+  have hmap_closed : IsClosed (H.map q : Set (G ⧸ N)) := by
+    apply IsCompact.isClosed
+    rw [Subgroup.coe_map]
+    change IsCompact (QuotientGroup.mk '' (H : Set G))
+    have hH_closed : IsClosed (H : Set G) := by
+      dsimp only [H]
+      exact Subgroup.isClosed_topologicalClosure _
+    exact hH_closed.isCompact.image (QuotientGroup.continuous_mk (N := N))
+  have hmap_top : H.map q = ⊤ := by
+    apply eq_top_iff.mpr
+    rw [← hsg]
+    apply Subgroup.topologicalClosure_minimal
+    · apply (Subgroup.closure_le _).mpr
+      intro y hy
+      rw [← ht_image] at hy
+      obtain ⟨x, hx, rfl⟩ := hy
+      exact Subgroup.mem_map.mpr ⟨x, ht_le hx, rfl⟩
+    · exact hmap_closed
+  apply eq_top_iff.mpr
+  intro x _
+  have hxmap : q x ∈ H.map q := hmap_top.symm ▸ Subgroup.mem_top (q x)
+  obtain ⟨y, hyH, hyx⟩ := Subgroup.mem_map.mp hxmap
+  have hyxN : y⁻¹ * x ∈ N := by
+    apply (QuotientGroup.eq_one_iff (N := N) (y⁻¹ * x)).mp
+    change q (y⁻¹ * x) = 1
+    rw [map_mul, map_inv, hyx, inv_mul_cancel]
+  have := H.mul_mem hyH (hN_le hyxN)
+  simpa using this
+
+/-- **Converging generators combine across a closed normal subgroup.** If both a closed normal
+subgroup and the corresponding quotient have converging topological generating sets, then the
+ambient profinite group has one obtained by lifting the quotient generators and adjoining the
+subgroup generators. The lifted set still maps exactly to the prescribed quotient set.
+
+This is the compositional form of
+`exists_convergesToOne_lift_quotient_topologicallyGenerates`: it replaces the whole kernel by a
+dense generating subset, so it can be iterated along a series of closed normal subgroups. -/
+theorem exists_convergesToOne_lift_union_topologicallyGenerates (N : Subgroup G) [N.Normal]
+    (hN : IsClosed (N : Set G)) {s : Set (G ⧸ N)} (hs : ConvergesToOne s)
+    (hsg : (Subgroup.closure s).topologicalClosure = ⊤) {u : Set N} (hu : ConvergesToOne u)
+    (hug : (Subgroup.closure u).topologicalClosure = ⊤) :
+    ∃ t : Set G, (QuotientGroup.mk' N) '' t = s ∧
+      ConvergesToOne (t ∪ N.subtype '' u) ∧
+      (Subgroup.closure (t ∪ N.subtype '' u)).topologicalClosure = ⊤ := by
+  obtain ⟨t, ht, ht_image, htN⟩ :=
+    exists_convergesToOne_lift_quotient_topologicallyGenerates N hN hs hsg
+  refine ⟨t, ht_image, ht.union (hu.image N.subtype continuous_subtype_val), ?_⟩
+  let K : Subgroup G := (Subgroup.closure (t ∪ N.subtype '' u)).topologicalClosure
+  have hK_closed : IsClosed (K : Set G) := by
+    dsimp only [K]
+    exact Subgroup.isClosed_topologicalClosure _
+  have ht_le : t ⊆ K := fun x hx ↦
+    Subgroup.le_topologicalClosure _ (Subgroup.subset_closure (Or.inl hx))
+  have hu_le : u ⊆ K.comap N.subtype := by
+    intro x hx
+    exact Subgroup.le_topologicalClosure _
+      (Subgroup.subset_closure (Or.inr ⟨x, hx, rfl⟩))
+  have hcomap_closed : IsClosed (K.comap N.subtype : Set N) :=
+    hK_closed.preimage continuous_subtype_val
+  have hcomap_top : K.comap N.subtype = ⊤ := by
+    apply eq_top_iff.mpr
+    rw [← hug]
+    exact Subgroup.topologicalClosure_minimal _
+      ((Subgroup.closure_le _).mpr hu_le) hcomap_closed
+  have hN_le : N ≤ K := by
+    intro x hx
+    have : (⟨x, hx⟩ : N) ∈ K.comap N.subtype :=
+      hcomap_top.symm ▸ Subgroup.mem_top (⟨x, hx⟩ : N)
+    exact this
+  have hlarge_le : (Subgroup.closure (t ∪ (N : Set G))).topologicalClosure ≤ K := by
+    apply Subgroup.topologicalClosure_minimal
+    · exact (Subgroup.closure_le _).mpr (Set.union_subset ht_le hN_le)
+    · exact hK_closed
+  exact eq_top_iff.mpr (htN.ge.trans hlarge_le)
+
+end QuotientLifts
 
 end TauCeti
