@@ -393,6 +393,8 @@ a.pb-chip:hover { text-decoration: none; border-color: var(--teal); }
 .pb-covtext, .pb-num, .pb-age { font-size: 0.85rem; line-height: 1.35; font-variant-numeric: tabular-nums; }
 .pb-covtext { color: var(--muted); }
 .pb-age.stale { color: var(--pb-warn); }
+.pb-open { color: var(--teal); }
+.pb-detail h4 .pb-ev { display: inline; margin-left: 0.4rem; }
 .pb-row .pb-bars { height: 28px; margin: 0; }
 
 .pb-topic td { padding: 0.8rem 0.6rem 0.4rem; border-bottom: 1px solid var(--pb-line-strong); background: var(--pb-panel-2); }

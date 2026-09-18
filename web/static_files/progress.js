@@ -58,7 +58,7 @@
     if (!Array.isArray(data.topics) || !data.topics.every(function (t) { return typeof t === "string"; })) return "malformed topic list";
     var g = data.global;
     if (!Array.isArray(g.weekly) || g.weekly.length !== data.weeks.length || !g.weekly.every(isCount)) return "malformed global weekly counts";
-    if (!isCount(g.recent) || !isCount(g.total)) return "malformed global counts";
+    if (!isCount(g.recent) || !isCount(g.total) || !isCount(g.open)) return "malformed global counts";
     if (g.first_merge !== null && !isTs(g.first_merge)) return "malformed first merge date";
     if (!g.unattributed || !isCount(g.unattributed.no_label) || !isCount(g.unattributed.several_labels) || !isCount(g.unattributed.unknown_area)) return "malformed attribution counts";
     var ids = {};
@@ -68,7 +68,9 @@
       if (ids[r.id]) return "duplicate roadmap id " + r.id;
       ids[r.id] = true;
       if (r.parent_id !== null && typeof r.parent_id !== "string") return "malformed parent in " + r.id;
-      if (!Array.isArray(r.layers) || !Array.isArray(r.states) || !Array.isArray(r.layer_ids) || r.layers.length !== r.states.length || r.layer_ids.length !== r.layers.length) return "layers, ids and states do not align in " + r.id;
+      if (!Array.isArray(r.layers) || !Array.isArray(r.states) || !Array.isArray(r.layer_ids) || !Array.isArray(r.layer_lines) || r.layers.length !== r.states.length || r.layer_ids.length !== r.layers.length || r.layer_lines.length !== r.layers.length) return "layers, ids, lines and states do not align in " + r.id;
+      if (!r.layer_lines.every(function (n) { return isCount(n) && n > 0; })) return "malformed layer lines in " + r.id;
+      if (!Array.isArray(r.links) || !r.links.every(function (l) { return l && typeof l.label === "string" && typeof l.url === "string" && /^https:\/\//.test(l.url); })) return "malformed links in " + r.id;
       if (!r.layers.every(function (l) { return typeof l === "string"; }) || !r.layer_ids.every(function (l) { return typeof l === "string"; })) return "malformed layer titles in " + r.id;
       for (var j = 0; j < r.states.length; j++) if (STATES.indexOf(r.states[j]) < 0) return "unknown layer state in " + r.id;
       if (!r.assessment || typeof r.assessment.reason !== "string") return "missing assessment in " + r.id;
@@ -79,7 +81,7 @@
       }
       if (r.activity !== null) {
         var a = r.activity;
-        if (!a || !Array.isArray(a.weekly) || a.weekly.length !== data.weeks.length || !a.weekly.every(isCount) || !isCount(a.total) || !isCount(a.recent)) return "malformed activity in " + r.id;
+        if (!a || !Array.isArray(a.weekly) || a.weekly.length !== data.weeks.length || !a.weekly.every(isCount) || !isCount(a.total) || !isCount(a.recent) || !isCount(a.open)) return "malformed activity in " + r.id;
         if (a.last !== null && !isTs(a.last)) return "malformed last-merge date in " + r.id;
         if (a.since_report !== null && !isCount(a.since_report)) return "malformed since-report count in " + r.id;
       }
@@ -198,7 +200,7 @@
           '<div class="pb-legend">' + STATES.map(function (s) { return '<span><span class="pb-sw ' + STATE_CLASS[s] + '"></span><b>' + tot[s] + "</b> " + s + "</span>"; }).join("") + "</div></div>" +
         '<div class="pb-tile pb-tile-more"><div class="pb-label">Merged pull requests</div><div class="pb-big">' + g.recent + "<small>in " + data.recent_days + " days, all of Tau Ceti</small></div>" +
           bars(g.weekly, 200, 34, gmax, "All merged pull requests per week, " + data.weeks.length + " weeks") +
-          '<div class="pb-sub"><b>' + g.total + "</b> merged up to the cutoff" + (g.first_merge ? ", since " + esc(g.first_merge.slice(0, 10)) : "") + (unN ? " · <b>" + unN + "</b> with no single roadmap label" : "") + "</div></div>" +
+          '<div class="pb-sub"><b>' + g.total + "</b> merged up to the cutoff" + (g.first_merge ? ", since " + esc(g.first_merge.slice(0, 10)) : "") + " · <b>" + g.open + "</b> open" + (unN ? " · <b>" + unN + "</b> merged with no single roadmap label" : "") + "</div></div>" +
         '<div class="pb-tile pb-tile-more"><div class="pb-label">Reports</div><div class="pb-big">' + reported.length + "<small>of " + tops.length + " roadmaps</small></div>" +
           '<div class="pb-sub">' + (ages.length ? "oldest <b>" + ages[ages.length - 1] + "</b> days before the cutoff · " : "") + "<b>" + dueN + "</b> due an update (" + data.update_due_prs + "+ PRs since)</div></div>" +
         '<button type="button" class="pb-more" aria-expanded="false">More figures</button>' +
@@ -259,8 +261,11 @@
       return bars(r.activity.weekly, 128, 28, rowMax, "Merged pull requests per week, common scale, most recent " + data.weeks.length + " weeks");
     }
     function lastCell(r) {
-      if (!r.activity || !r.activity.last) return '<div class="pb-num"><span class="pb-sub">' + (r.parent_id ? "" : "—") + "</span></div>";
-      return '<div class="pb-num">' + esc(r.activity.last.slice(0, 10)) + '<span class="pb-sub">' + esc(beforeText(r.activity.last)) + " · " + r.activity.total + " merged</span></div>";
+      var a = r.activity;
+      if (!a) return '<div class="pb-num"><span class="pb-sub">' + (r.parent_id ? "" : "\u2014") + "</span></div>";
+      var openText = a.open ? '<span class="pb-sub pb-open">' + plural(a.open, "open PR") + "</span>" : "";
+      if (!a.last) return '<div class="pb-num"><span class="pb-sub">none merged</span>' + openText + "</div>";
+      return '<div class="pb-num">' + esc(a.last.slice(0, 10)) + '<span class="pb-sub">' + esc(beforeText(a.last)) + " \u00b7 " + a.total + " merged</span>" + openText + "</div>";
     }
     function reportCell(r) {
       if (!r.status) return '<div class="pb-age"><span class="pb-none">none</span></div>';
@@ -316,6 +321,7 @@
       }
       if (!r.parent_id) sources.push('<a href="' + GH_PRS + encodeURIComponent(r.name) + '">merged pull requests with this label</a>');
       if (r.completed) sources.push('<a href="' + ROADMAP_REPO + '/blob/main/Completed/README.md">completion decision</a>');
+      r.links.forEach(function (l) { sources.push('<a href="' + esc(l.url) + '" rel="noopener">' + esc(l.label) + " \u2197</a>"); });
       left += '<div class="pb-links">' + sources.join("") + '<button type="button" class="pb-copy" data-copy="' + esc(r.id) + '">Copy link to this roadmap</button></div>';
       var evid = "Topic: " + esc(r.topic) + " (a hand assignment). ";
       if (a.reason === "ok") evid += "Layer states come from " + (a.source === "marker" ? "the coverage marker in the report" : "a hand transcription of the report’s prose, bound to that exact report and README") + "; they are the report’s assessment at library commit " + esc(s.to_sha.slice(0, 7)) + ", not a certificate that each layer’s specification is fully met. ";
@@ -325,14 +331,18 @@
       left += '<div class="pb-evid">' + evid + "</div>";
       if (r.layers.length) {
         var notes = a.notes && typeof a.notes === "object" ? a.notes : {};
-        right += '<h4>Layers</h4><ul class="pb-layers">' + r.layers.map(function (l, i) {
-          var note = notes[r.layer_ids[i]];
-          return '<li><span class="pb-dot ' + STATE_CLASS[r.states[i]] + '"></span><span>' + esc(l) + ' <span class="pb-faint">· ' + STATE_WORD[r.states[i]] + "</span>" + (typeof note === "string" ? '<div class="pb-note">' + esc(note) + "</div>" : "") + "</span></li>";
+        var remaining = a.remaining && typeof a.remaining === "object" ? a.remaining : {};
+        right += '<h4>Layers <span class="pb-ev">each linked to its heading in the README used</span></h4><ul class="pb-layers">' + r.layers.map(function (l, i) {
+          var note = notes[r.layer_ids[i]], rem = remaining[r.layer_ids[i]];
+          return '<li><span class="pb-dot ' + STATE_CLASS[r.states[i]] + '"></span><span><a href="' + pinned(r.readme) + "#L" + r.layer_lines[i] + '">' + esc(l) + '</a> <span class="pb-faint">\u00b7 ' + STATE_WORD[r.states[i]] + "</span>" +
+            (typeof rem === "string" ? '<div class="pb-note"><b>Remaining:</b> ' + inline(rem) + "</div>" : "") +
+            (typeof note === "string" ? '<div class="pb-note">' + esc(note) + "</div>" : "") + "</span></li>";
         }).join("") + "</ul>";
         if (r.retired) right += '<div class="pb-note">A retired transcription' + (typeof r.retired.to_sha === "string" ? ", made against library commit " + esc(r.retired.to_sha) : "") + ", read: " + esc(r.layers.map(function (l, i) { return l + ": " + r.retired.states[i]; }).join("; ")) + ". It is not the current report.</div>";
       }
       if (r.activity) right += "<h4>Activity</h4>" + weeklyTable(r.activity.weekly);
       else if (r.parent_id) right += '<h4>Activity</h4><p class="pb-faint">Pull requests are labelled with the parent roadmap, so activity cannot be split by sub-roadmap.</p>';
+      if (r.activity && r.activity.open) right += '<p class="pb-faint">' + plural(r.activity.open, "pull request") + " open with this label at the snapshot: work in flight that no report describes yet.</p>";
       return '<div class="pb-detail-inner"><div>' + left + "</div><div>" + right + "</div></div>";
     }
     // Totals over the rows that actually match: a top-level match counts itself (or, for an
@@ -410,7 +420,7 @@
         '<div class="pb-count"></div></div>' +
       '<table class="pb-table"><thead><tr class="pb-hdr">' +
         '<th scope="col">Roadmap</th><th scope="col">Layers <span class="pb-ev">from the report · model-judged</span></th><th scope="col">Coverage</th>' +
-        '<th scope="col">Merged PRs, ' + data.weeks.length + ' weeks <span class="pb-ev">from labels · mechanical</span></th><th scope="col">Last merged</th><th scope="col">Report</th></tr></thead>' +
+        '<th scope="col">Merged PRs, ' + data.weeks.length + ' weeks <span class="pb-ev">from labels · mechanical</span></th><th scope="col">Pull requests <span class="pb-ev">last merged · open</span></th><th scope="col">Report</th></tr></thead>' +
         '<tbody class="pb-rows"></tbody></table>';
     renderRows();
 

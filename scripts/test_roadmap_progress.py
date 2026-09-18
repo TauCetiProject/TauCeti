@@ -75,6 +75,12 @@ class Headings(unittest.TestCase):
         self.assertEqual(rp.layer_id("L0A — sheaves of modules"), "L0A")
         self.assertEqual(rp.layer_id("S1: the twenty-six sporadic presentations"), "S1")
 
+    def test_headings_carry_their_line_numbers(self):
+        self.assertEqual(rp.layer_headings_with_lines(README),
+                         [("Layer 0: the widget", 7), ("Layer 1: gadgets", 9), ("Layer 2.5: gizmos — and more", 10)])
+        bullets = "## Layers\n\n- **L0 — the engine** (x). Stuff.\n- **L1 — Montel.** More.\n"
+        self.assertEqual([l for _, l in rp.layer_headings_with_lines(bullets)], [3, 4])
+
     def test_short_labels_need_a_separator(self):
         # `K3 surfaces` is a heading about a subject, not a layer label.
         self.assertEqual(rp.layer_headings("### K3 surfaces\n### L0: sheaves\n"), ["L0: sheaves"])
@@ -148,6 +154,14 @@ class Status(unittest.TestCase):
         self.assertIn("objects", refused(dict(m, layers=["Layer 0"])))
         self.assertIn("no layer list", refused(dict(m, layers="Layer 0")))
         self.assertIn("not an object", refused(["Layer 0"]))
+
+    def test_remaining_notes_come_from_marker_entries_or_a_transcription_map(self):
+        ids = ["Layer 0", "Layer 1"]
+        entries = [{"id": "Layer 0", "state": "partial", "remaining": " the converse "}, {"id": "Layer 1", "state": "done", "remaining": 7},
+                   {"id": "Layer 9", "state": "done", "remaining": "not a layer"}, "junk"]
+        self.assertEqual(rp.remaining_notes(entries, ids), {"Layer 0": "the converse"})
+        self.assertEqual(rp.remaining_notes({"Layer 1": "duality", "Layer 5": "x", "Layer 0": ""}, ids), {"Layer 1": "duality"})
+        self.assertEqual(rp.remaining_notes("duality", ids), {})
 
     def test_present_but_broken_marker_is_not_the_same_as_none(self):
         broken = '<!--tauceti-coverage:v1 {"roadmap":"Widgets", "layers": [}-->\n' + STATUS
@@ -252,6 +266,20 @@ class Tree(unittest.TestCase):
         self.assertEqual(done["assessment"]["reason"], "transcription-retired")
         self.assertEqual(done["retired"], {"to_sha": SHA[:7], "states": ["done", "partial"]})
 
+    def test_lines_links_and_remaining_reach_the_row(self):
+        hand = {"TauCetiRoadmap/Widgets": dict(entry(), remaining={"Layer 1": "the other half", "Layer 7": "x"})}
+        links = {"TauCetiRoadmap/Widgets": [{"label": "route map", "url": "https://example.org/map"},
+                                            {"label": "bad", "url": "javascript:alert(1)"}, "junk"]}
+        widgets = rp.read_roadmaps(self.root, hand, links)[2]
+        self.assertEqual(widgets["layer_lines"], [7, 9, 10])
+        self.assertEqual(widgets["links"], [{"label": "route map", "url": "https://example.org/map"}])
+        self.assertEqual(widgets["assessment"]["remaining"], {"Layer 1": "the other half"})
+        marker = MARKER.replace('"state":"partial"', '"state":"partial","remaining":"the other half"')
+        (self.root / rp.AREAS_DIR / "Widgets" / "STATUS.md").write_text(marker + STATUS)
+        widgets = rp.read_roadmaps(self.root, {}, links)[2]
+        self.assertEqual(widgets["assessment"]["source"], "marker")
+        self.assertEqual(widgets["assessment"]["remaining"], {"Layer 1": "the other half"})
+
     def test_a_malformed_old_transcription_is_dropped_not_fatal(self):
         hand = {"Completed/Done": {"to_sha": SHA[:7], "report_sha": "ffffffffffff", "readme_sha": "ffffffffffff",
                                    "layers": {"Part A": ["d"], "Part B": "p"}}}
@@ -296,8 +324,13 @@ class Activity(unittest.TestCase):
             {"number": 6, "merged_at": "2026-09-17T12:00:01Z", "labels": ["roadmap/PDE"]},  # after the cutoff
             {"number": 7, "merged_at": "2026-08-18T12:00:00Z", "labels": ["roadmap/PDE"]},  # exactly 30 days before
             {"number": 8, "merged_at": "2026-08-18T12:00:01Z", "labels": ["roadmap/PDE"]},  # just inside
+            {"number": 9, "merged_at": None, "open": True, "labels": ["roadmap/PDE"]},
+            {"number": 10, "merged_at": None, "open": True, "labels": ["roadmap/PDE", "roadmap/Gone"]},
+            {"number": 11, "merged_at": None, "open": True, "labels": []},
         ]
         weeks, glob, per = rp.activity(prs, cutoff, weeks=4, known={"PDE"})
+        self.assertEqual(glob["open"], 3)
+        self.assertEqual(per["PDE"]["open"], 1)
         self.assertEqual(weeks, ["2026-08-24", "2026-08-31", "2026-09-07", "2026-09-14"])
         # Every merged PR up to the cutoff counts once globally, whatever its labels.
         self.assertEqual(glob["total"], 7)
@@ -316,14 +349,17 @@ class Activity(unittest.TestCase):
             p.write_text(json.dumps({"schema_version": 2, "fetched_at": "2026-09-17T03:00:00Z", "prs": [
                 {"number": 1, "merged_at": "2026-09-01T00:00:00Z", "labels": ["roadmap/PDE"]},
                 {"number": 1, "merged_at": "2026-09-01T00:00:00Z", "labels": ["roadmap/PDE"]},
-                {"number": 2, "merged_at": None, "labels": []},
-                {"number": 9, "merged_at": "not a date", "labels": []}]}))
+                {"number": 2, "merged_at": None, "closed_at": "2026-09-02T00:00:00Z", "state": "CLOSED", "labels": []},
+                {"number": 5, "merged_at": None, "closed_at": None, "state": "OPEN", "labels": ["roadmap/PDE"]},
+                {"number": 9, "merged_at": "not a date", "state": "CLOSED", "labels": []}]}))
             prs, collected = rp.load_prs(p)
-            self.assertEqual(prs, [{"number": 1, "merged_at": "2026-09-01T00:00:00Z", "labels": ["roadmap/PDE"]}])
+            self.assertEqual(prs, [{"number": 1, "merged_at": "2026-09-01T00:00:00Z", "open": False, "labels": ["roadmap/PDE"]},
+                                   {"number": 5, "merged_at": None, "open": True, "labels": ["roadmap/PDE"]}])
             self.assertEqual(collected, "2026-09-17T03:00:00Z")
-            p.write_text(json.dumps([{"number": 3, "mergedAt": "2026-09-02T00:00:00Z", "labels": [{"name": "roadmap/PDE"}]}]))
+            p.write_text(json.dumps([{"number": 3, "mergedAt": "2026-09-02T00:00:00Z", "labels": [{"name": "roadmap/PDE"}]},
+                                     {"number": 4, "mergedAt": None, "state": "OPEN", "labels": []}]))
             prs, collected = rp.load_prs(p)
-            self.assertEqual(prs[0]["labels"], ["roadmap/PDE"])
+            self.assertEqual([(q["number"], q["open"]) for q in prs], [(3, False), (4, True)])
             self.assertIsNone(collected)
 
     def test_build_stamps_three_times_and_counts_prs_since_the_report(self):
@@ -334,7 +370,8 @@ class Activity(unittest.TestCase):
         prs = [{"number": 1, "merged_at": "2026-09-02T00:00:00Z", "labels": ["roadmap/Widgets"]},
                {"number": 2, "merged_at": "2026-08-30T00:00:00Z", "labels": ["roadmap/Widgets"]},
                {"number": 3, "merged_at": "2026-09-03T00:00:00Z", "labels": []},
-               {"number": 4, "merged_at": "2026-09-20T00:00:00Z", "labels": ["roadmap/Widgets"]}]
+               {"number": 4, "merged_at": "2026-09-20T00:00:00Z", "labels": ["roadmap/Widgets"]},
+               {"number": 5, "merged_at": None, "open": True, "labels": ["roadmap/Widgets"]}]
         exported = dt.datetime(2026, 9, 18, 12, 30, tzinfo=UTC)
         cutoff = dt.datetime(2026, 9, 17, 3, 0, tzinfo=UTC)
         data = rp.build(rows, prs, {"order": ["T"], "map": {"Widgets": "T"}}, exported, cutoff,
@@ -344,6 +381,8 @@ class Activity(unittest.TestCase):
         self.assertEqual(data["cutoff"], "2026-09-17T03:00:00Z")
         self.assertEqual(data["rows"][0]["activity"]["since_report"], 1)  # #4 is after the cutoff
         self.assertEqual(data["rows"][0]["activity"]["total"], 2)
+        self.assertEqual(data["rows"][0]["activity"]["open"], 1)
+        self.assertEqual(data["global"]["open"], 1)
         self.assertEqual(data["rows"][0]["topic"], "T")
         self.assertEqual(data["global"]["first_merge"], "2026-08-30T00:00:00Z")
         self.assertEqual(data["global"]["total"], 3)

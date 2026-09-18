@@ -46,6 +46,7 @@ on:
       - 'scripts/roadmap_progress.py'
       - 'scripts/roadmap_topics.json'
       - 'scripts/roadmap_coverage.json'
+      - 'scripts/roadmap_links.json'
       - '.github/workflows/pages.yml'
   schedule:
     - cron: "23 */3 * * *"   # Every three hours (UTC): refresh the charts and API docs
