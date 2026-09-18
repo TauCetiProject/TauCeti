@@ -48,7 +48,10 @@ graph model whose upper masses `P(F ≤ ·)` are the values of `f`.
   multiplicative, normalized parameter.
 
 The section `Examples` computes the transforms of the homomorphism densities of the constant
-graphons `1` and `0`: point masses at the complete and at the edgeless graph.
+graphons `1` and `0`: point masses at the complete and at the edgeless graph.  It also checks the
+injection-wise Möbius consistency `f†(G) = ∑_{H.comap e = G} f†(H)` in finite cases: for these two
+parameters along every injection `e`, and for every multiplicative, normalized parameter along the
+empty injection.
 
 ## Implementation
 
@@ -238,6 +241,53 @@ private theorem graphParamMobius_ite_eq_bot (n : ℕ) (F : SimpleGraph (Fin n)) 
     fun G : SimpleGraph (Fin n) => if G = ⊥ then 1 else 0).2 fun F => by
       simp [sum_ite_eq', le_bot_iff]
   exact (congrFun h F).symm
+
+/-! ### Finite-case validation of Möbius consistency
+
+The Möbius consistency calculus says that for every label injection `e : Fin k ↪ Fin n`, the mass
+`f†(G)` at level `k` is the total level-`n` mass of the graphs `H` with `H.comap e = G`.  The
+checks below confirm it in the finite cases available here: for the two constant graphons at every
+injection, and for every multiplicative, normalized parameter along the empty injection. -/
+
+open Classical in
+/-- Möbius consistency for the parameter constantly `1`: the point masses at the complete graphs
+are consistent along every injection. -/
+private theorem graphParamMobius_one_sum_comap {k n : ℕ} (e : Fin k ↪ Fin n)
+    (G : SimpleGraph (Fin k)) :
+    graphParamMobius (fun _ _ => 1) k G =
+      ∑ H ∈ univ.filter (fun H : SimpleGraph (Fin n) => H.comap ⇑e = G),
+        graphParamMobius (fun _ _ => 1) n H := by
+  simp_rw [graphParamMobius_one, sum_ite_eq', mem_filter, mem_univ, true_and]
+  have : (⊤ : SimpleGraph (Fin n)).comap ⇑e = ⊤ := by
+    ext a b; simp [e.injective.ne_iff]
+  rw [this]
+  exact if_congr eq_comm rfl rfl
+
+open Classical in
+/-- Möbius consistency for the indicator of the edgeless graphs: the point masses at the edgeless
+graphs are consistent along every injection. -/
+private theorem graphParamMobius_ite_eq_bot_sum_comap {k n : ℕ} (e : Fin k ↪ Fin n)
+    (G : SimpleGraph (Fin k)) :
+    graphParamMobius (fun _ G => if G = ⊥ then 1 else 0) k G =
+      ∑ H ∈ univ.filter (fun H : SimpleGraph (Fin n) => H.comap ⇑e = G),
+        graphParamMobius (fun _ G => if G = ⊥ then 1 else 0) n H := by
+  simp_rw [graphParamMobius_ite_eq_bot, sum_ite_eq', mem_filter, mem_univ, true_and]
+  have : (⊥ : SimpleGraph (Fin n)).comap ⇑e = ⊥ := by
+    ext a b; simp
+  rw [this]
+  exact if_congr eq_comm rfl rfl
+
+open Classical in
+/-- Möbius consistency along the empty injection: for a multiplicative, normalized parameter the
+single level-`0` mass is the total level-`n` mass. -/
+private theorem graphParamMobius_sum_comap_of_level_zero (f : GraphParam)
+    (hmul : IsMultiplicative f) (hnorm : IsNormalized f) {n : ℕ} (e : Fin 0 ↪ Fin n)
+    (G : SimpleGraph (Fin 0)) :
+    graphParamMobius f 0 G =
+      ∑ H ∈ univ.filter (fun H : SimpleGraph (Fin n) => H.comap ⇑e = G),
+        graphParamMobius f n H := by
+  rw [filter_true_of_mem fun H _ => Subsingleton.elim _ _, graphParamMobius_sum_eq_one f hmul hnorm,
+    ← graphParamMobius_sum_eq_one f hmul hnorm 0, Fintype.sum_subsingleton _ G]
 
 end Examples
 
