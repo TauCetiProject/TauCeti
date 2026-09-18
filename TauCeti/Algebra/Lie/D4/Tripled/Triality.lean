@@ -250,7 +250,6 @@ theorem coe_trialityPoints (A : Type v) [CommRing A] (g : points A) :
 
 /-- On matrices, the inverse of triality on points is conjugation by the inverse of the triality
 matrix. -/
-@[simp]
 theorem coe_trialityPoints_symm (A : Type v) [CommRing A] (g : points A) :
     ((trialityPoints A).symm g : Matrix.GeneralLinearGroup (Fin 24) A) =
       (trialityMatrix A)⁻¹ * g * trialityMatrix A :=
