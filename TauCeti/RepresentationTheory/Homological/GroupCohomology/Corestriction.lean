@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.RepresentationTheory.FiniteIndex
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Shapiro
 
@@ -54,13 +55,6 @@ restrictions.
   multiplication by `[G : S]`.
 * `TauCeti.groupCohomology.corestriction_trans`: corestriction from `A` to `B` followed by
   corestriction from `B` to `C` is corestriction from `A` to `C`.
-
-## Implementation notes
-
-Transitivity is proved through Shapiro's lemma. Precomposed with Shapiro's isomorphism for `A`
-in `C`, both sides become maps induced by morphisms of coefficients out of `Coind_A^C Res_A M`,
-and the two morphisms agree because the right cosets of `A` in `C` are the products of the right
-cosets of `A` in `B` with those of `B` in `C`.
 
 ## References
 
@@ -167,51 +161,6 @@ variable {A B C : Type u} [Group A] [Group B] [Group C] (φ₁ : A →* B) (φ�
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
-/-- A chosen representative of the right coset `S x` differs from `x` by an element of `S`. -/
-private theorem exists_mul_out_eq {G : Type u} [Group G] (S : Subgroup G) (x : G) :
-    ∃ s ∈ S, s * (Quotient.mk (QuotientGroup.rightRel S) x).out = x :=
-  ⟨_, QuotientGroup.rightRel_apply.1
-    (Quotient.exact (Quotient.out_eq (Quotient.mk (QuotientGroup.rightRel S) x))), by group⟩
-
-/-- For an injective `φ₂`, the right cosets of `(φ₂.comp φ₁).range` in `C` are the products
-`φ₂ b * c` of representatives `b` of the right cosets of `φ₁.range` in `B` and `c` of the right
-cosets of `φ₂.range` in `C`. -/
-private theorem bijective_mk_mul_out (h₂ : Function.Injective φ₂) :
-    Function.Bijective fun x : Quotient (QuotientGroup.rightRel φ₂.range) ×
-        Quotient (QuotientGroup.rightRel φ₁.range) =>
-      Quotient.mk (QuotientGroup.rightRel (φ₂.comp φ₁).range) (φ₂ x.2.out * x.1.out) := by
-  constructor
-  · rintro ⟨p, q⟩ ⟨p', q'⟩ h
-    obtain ⟨a, ha⟩ := QuotientGroup.rightRel_apply.1 (Quotient.exact h)
-    have hp : p = p' := by
-      rw [← Quotient.out_eq p, ← Quotient.out_eq p']
-      refine Quotient.sound (QuotientGroup.rightRel_apply.2 ⟨q'.out⁻¹ * φ₁ a * q.out, ?_⟩)
-      simp only [map_mul, map_inv]
-      rw [← MonoidHom.comp_apply φ₂ φ₁, ha]
-      group
-    subst hp
-    have hq : q = q' := by
-      rw [← Quotient.out_eq q, ← Quotient.out_eq q']
-      refine Quotient.sound (QuotientGroup.rightRel_apply.2 ⟨a, h₂ ?_⟩)
-      rw [← MonoidHom.comp_apply φ₂ φ₁, ha]
-      simp only [map_mul, map_inv]
-      group
-    rw [hq]
-  · intro t
-    induction t using Quotient.inductionOn with | h x =>
-    obtain ⟨_, ⟨b, rfl⟩, hb⟩ := exists_mul_out_eq φ₂.range x
-    obtain ⟨_, ⟨a, rfl⟩, ha⟩ := exists_mul_out_eq φ₁.range b
-    refine ⟨(Quotient.mk _ x, Quotient.mk _ b), Quotient.sound
-      (QuotientGroup.rightRel_apply.2 ⟨a, ?_⟩)⟩
-    rw [eq_mul_inv_iff_mul_eq]
-    conv_rhs => rw [← hb]
-    conv_rhs => rw [← ha]
-    simp only [MonoidHom.coe_comp, Function.comp_apply, map_mul, mul_assoc]
-
-/-- `φ₂` maps `φ₁.range` into `(φ₂.comp φ₁).range`. -/
-private def rangeHom : φ₁.range →* (φ₂.comp φ₁).range :=
-  (φ₂.comp φ₁.range.subtype).codRestrict _ fun ⟨_, a, ha⟩ => ⟨a, by simp [← ha]⟩
-
 /-- The `C`-representation `Coind_{A}^{C} Res_{A} M` along `φ₂.comp φ₁`, realized on the range. -/
 private noncomputable abbrev coindComp : Rep k C :=
   coind (φ₂.comp φ₁).range.subtype (res (φ₂.comp φ₁).range.subtype M)
@@ -220,8 +169,9 @@ private noncomputable abbrev coindComp : Rep k C :=
 `φ₁.range`. -/
 private noncomputable def evalOne : res φ₁.range.subtype (res φ₂ (coindComp φ₁ φ₂ M)) ⟶
     res φ₁.range.subtype (res φ₂ M) :=
-  (resFunctor (rangeHom φ₁ φ₂)).map ((resCoindAdjunction k (φ₂.comp φ₁).range.subtype).counit.app
-    (res (φ₂.comp φ₁).range.subtype M))
+  (resFunctor (TauCeti.MonoidHom.rangeCompHom φ₁ φ₂)).map
+    ((resCoindAdjunction k (φ₂.comp φ₁).range.subtype).counit.app
+      (res (φ₂.comp φ₁).range.subtype M))
 
 /-- Restriction of functions along `φ₂`, `Res_B Coind_A^C ⟶ Coind_A^B`. -/
 private noncomputable def restrictCoind : res φ₂ (coindComp φ₁ φ₂ M) ⟶
@@ -277,7 +227,7 @@ private theorem coindTrace_hom_apply_coe [φ₁.range.FiniteIndex] (f : coindCom
   have : ((coindTrace φ₁ φ₂ M).hom f).1 c =
       (traceRestrict φ₁ φ₂ M).hom ((coindComp φ₁ φ₂ M).ρ c f) := rfl
   rw [this, traceRestrict, Rep.hom_comp, Representation.IntertwiningMap.comp_apply,
-    TauCeti.Rep.coindResAdjunction_counit_app_hom_apply]
+    TauCeti.Subgroup.coindResAdjunction_counit_app_hom_apply]
   refine Finset.sum_congr rfl fun q _ => ?_
   rw [restrictCoind_hom_apply_coe]
   simp only [res_obj_ρ, MonoidHom.coe_comp, Function.comp_apply, map_inv]
@@ -288,19 +238,22 @@ open scoped Classical in
 sum over the cosets of `φ₁.range` in `B` and of `φ₂.range` in `C` is a sum over the cosets of
 `(φ₂.comp φ₁).range` in `C`. -/
 private theorem coindTrace_comp_counit [φ₁.range.FiniteIndex] [φ₂.range.FiniteIndex]
-    [(φ₂.comp φ₁).range.FiniteIndex] (h₂ : Function.Injective φ₂) :
+    (h₂ : Function.Injective φ₂) :
+    letI := TauCeti.MonoidHom.finiteIndex_range_comp φ₁ φ₂ h₂
     coindTrace φ₁ φ₂ M ≫ (coindResAdjunction.{u, u, u} k φ₂.range).counit.app M =
       (coindResAdjunction.{u, u, u} k (φ₂.comp φ₁).range).counit.app M := by
+  let _ := TauCeti.MonoidHom.finiteIndex_range_comp φ₁ φ₂ h₂
   refine Rep.hom_ext (Representation.IntertwiningMap.ext (LinearMap.ext fun f => ?_))
   simp only [Representation.IntertwiningMap.toLinearMap_apply, Rep.hom_comp,
     Representation.IntertwiningMap.comp_apply]
-  rw [TauCeti.Rep.coindResAdjunction_counit_app_hom_apply,
-    TauCeti.Rep.coindResAdjunction_counit_app_hom_apply]
+  rw [TauCeti.Subgroup.coindResAdjunction_counit_app_hom_apply,
+    TauCeti.Subgroup.coindResAdjunction_counit_app_hom_apply]
   -- The summand `c ↦ c⁻¹ • f c` of the trace is constant on the cosets of `(φ₂.comp φ₁).range`.
   let F : C → M := fun c => M.ρ c⁻¹ (f.1 c)
   have hF (x : C) :
       F x = F (Quotient.mk (QuotientGroup.rightRel (φ₂.comp φ₁).range) x).out := by
-    obtain ⟨_, ⟨a, rfl⟩, hs⟩ := exists_mul_out_eq (φ₂.comp φ₁).range x
+    obtain ⟨_, ⟨a, rfl⟩, hs⟩ :=
+      TauCeti.Subgroup.exists_mul_out_eq (φ₂.comp φ₁).range x
     conv_lhs => rw [← hs]
     have := f.2 ⟨(φ₂.comp φ₁) a, MonoidHom.mem_range.2 ⟨a, rfl⟩⟩
       (Quotient.mk (QuotientGroup.rightRel (φ₂.comp φ₁).range) x).out
@@ -315,7 +268,8 @@ private theorem coindTrace_comp_counit [φ₁.range.FiniteIndex] [φ₂.range.Fi
         rw [coindTrace_hom_apply_coe, map_sum]
         refine Finset.sum_congr rfl fun q _ => ?_
         simp only [F, ← Module.End.mul_apply, ← map_mul, mul_inv_rev]
-    _ = _ := Fintype.sum_bijective _ (bijective_mk_mul_out φ₁ φ₂ h₂) _ _ fun _ => hF _
+    _ = _ := Fintype.sum_bijective _ (TauCeti.MonoidHom.bijective_mk_mul_out φ₁ φ₂ h₂)
+      _ _ fun _ => hF _
 
 /-- **Transitivity of corestriction.** Let `φ₁ : A →* B` and `φ₂ : B →* C` be injective with
 images of finite index, and let `φ₃ = φ₂.comp φ₁`. Identify each group with its image through
@@ -325,11 +279,14 @@ to `C`, is corestriction from `A` to `C`:
 `Hⁿ(A, M) ⟶ Hⁿ(B, M) ⟶ Hⁿ(C, M)` equals `Hⁿ(A, M) ⟶ Hⁿ(C, M)`.
 
 The composite `φ₃` is a separate argument, related to `φ₂.comp φ₁` by the equation `h`, so the
-statement applies when the composite is only propositionally equal to a given homomorphism. -/
+statement applies when the composite is only propositionally equal to a given homomorphism. This
+is the transitivity result described in Brown, Chapter III, §9, and Neukirch--Schmidt--Wingberg,
+Chapter I, §5. -/
 theorem corestriction_trans {φ₁ : A →* B} {φ₂ : B →* C} {φ₃ : A →* C}
     (h₁ : Function.Injective φ₁) (h₂ : Function.Injective φ₂) (h : φ₂.comp φ₁ = φ₃)
-    [φ₁.range.FiniteIndex] [φ₂.range.FiniteIndex] [φ₃.range.FiniteIndex] (M : Rep.{u} k C)
+    [φ₁.range.FiniteIndex] [φ₂.range.FiniteIndex] (M : Rep.{u} k C)
     (n : ℕ) :
+    letI : φ₃.range.FiniteIndex := h ▸ TauCeti.MonoidHom.finiteIndex_range_comp φ₁ φ₂ h₂
     (mapIso (B := res φ₁ (res φ₂ M)) (A := res φ₁.range.subtype (res φ₂ M))
         (MonoidHom.ofInjective h₁) (LinearEquiv.refl k M)
         (fun _ => LinearMap.ext fun _ => rfl) n).hom ≫
@@ -343,6 +300,7 @@ theorem corestriction_trans {φ₁ : A →* B} {φ₂ : B →* C} {φ₃ : A →
         (fun _ => by subst h; exact LinearMap.ext fun _ => rfl) n).hom ≫
       corestriction φ₃.range M n := by
   subst h
+  let _ := TauCeti.MonoidHom.finiteIndex_range_comp φ₁ φ₂ h₂
   classical
   -- Precompose with Shapiro's isomorphism for the composite, read on `A`.
   rw [← cancel_epi ((coindIso (res (φ₂.comp φ₁).range.subtype M) n).hom ≫
