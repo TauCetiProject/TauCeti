@@ -32,9 +32,11 @@ value at `2` of the character of the prime discriminant `P`; when `2 ∣ P`, the
 is determined by the parity condition.
 
 This module first exposes the local compatibility between relative Frobenius elements and
-singleton genus characters: both associate to each prime discriminant the same quadratic character
-value. Consequently, the sign-pattern isomorphism identifies Frobenius and Artin elements with the
-elementary-2 narrow ideal classes of the primes below them.
+singleton genus characters: the corresponding quadratic character value agrees on every
+nondivisible prime discriminant. When one prime discriminant is divisible by the rational prime,
+its coordinate is instead recovered from the parity relation. Consequently, the sign-pattern
+isomorphism identifies Frobenius and Artin elements with the elementary-2 narrow ideal classes of
+the primes below them.
 
 That local statement is then extended over every prime and multiplied out along the factorization
 of an ideal, which gives the global identity
@@ -433,9 +435,9 @@ theorem artinHomAway_candidateGenusField_eq_one_iff
 /-! ### The canonical excluded set -/
 
 /-- **The primes excluded from the genus-field Artin map**: the primes of the embedded quadratic
-base `K = ℚ(√d)` whose residue characteristic divides the discriminant of `K`. Away from
-them every prime of `K` is unramified over `ℚ`, and of residue degree one or two, which is
-what the local Frobenius comparison needs. -/
+base `K = ℚ(√d)` whose residue characteristic divides the discriminant of `K`. This is the
+canonical discriminant-excluded set used by the later Artin-map specialization; the local
+Frobenius comparison itself holds at every prime. -/
 noncomputable def genusFieldArtinExcludedPrimes (hd : Squarefree d) :
     Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))) :=
   TauCeti.primesDividing (candidateGenusFieldBase hd) (fundamentalDiscriminant d)
