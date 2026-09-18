@@ -525,6 +525,7 @@ kernel of `P`. -/
 
 /-- When `P` is idempotent, the Lyapunov--Perron solution depends only on the `P`-component of
 its input parameter. -/
+@[simp]
 theorem lyapunovPerronSolution_map (hP : IsIdempotentElem P) (ξ : X) :
     lyapunovPerronSolution A P N hs hu hα hN hsmall (P ξ) =
       lyapunovPerronSolution A P N hs hu hα hN hsmall ξ := by
@@ -533,6 +534,7 @@ theorem lyapunovPerronSolution_map (hP : IsIdempotentElem P) (ξ : X) :
 
 /-- When `P` is idempotent and commutes with `A`, the `P`-component of the initial value of a
 Lyapunov--Perron solution is the `P`-component of its input parameter. -/
+@[simp]
 theorem apply_lyapunovPerronSolution_zero (hP : IsIdempotentElem P) (hAP : Commute A P)
     (ξ : X) : P (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ 0) = P ξ := by
   set γ := lyapunovPerronSolution A P N hs hu hα hN hsmall ξ
@@ -550,6 +552,7 @@ theorem apply_lyapunovPerronSolution_zero (hP : IsIdempotentElem P) (hAP : Commu
 own initial value reproduces it. Hence every initial value `lyapunovPerronSolution ξ 0` is a fixed
 point of `x ↦ lyapunovPerronSolution x 0`, and the `P`-component `P ξ` can be prescribed
 arbitrarily. -/
+@[simp]
 theorem lyapunovPerronSolution_lyapunovPerronSolution_zero (hP : IsIdempotentElem P)
     (hAP : Commute A P) (ξ : X) :
     lyapunovPerronSolution A P N hs hu hα hN hsmall
@@ -629,10 +632,10 @@ theorem eqOn_lyapunovPerronSolution_of_isIntegralCurveOn (hP : IsIdempotentElem 
   rw [← hsol]
   exact (hγ t ht).symm
 
-/-- **The Lyapunov--Perron description of the stable set.** When `P` is idempotent and commutes
-with `A`, a point is the initial value of a solution of `y' = A y + N y` that stays bounded on
-`[0, ∞)` exactly when it is the initial value of the Lyapunov--Perron solution with itself as
-input parameter. -/
+/-- **The Lyapunov--Perron description of bounded forward solutions.** When `P` is idempotent and
+commutes with `A`, a point is the initial value of a solution of `y' = A y + N y` that stays
+bounded on `[0, ∞)` exactly when it is the initial value of the Lyapunov--Perron solution with
+itself as input parameter. -/
 theorem exists_isIntegralCurveOn_bounded_iff (hP : IsIdempotentElem P) (hAP : Commute A P)
     (x : X) :
     (∃ y : ℝ → X, IsIntegralCurveOn y (fun _ y ↦ A y + N y) (Ici 0) ∧ y 0 = x ∧
