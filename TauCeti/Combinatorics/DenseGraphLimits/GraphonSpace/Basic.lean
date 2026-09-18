@@ -84,6 +84,8 @@ theorem graphonSpace_mk_eq_mk_iff (U W : Graphon Ω μ) :
 graphon space — mixing measures over graphon classes — are measures for its topology. -/
 instance : MeasurableSpace (GraphonSpace Ω μ) := borel _
 
+/-- The chosen measurable space on graphon space is exactly the Borel σ-algebra of the cut-metric
+topology. -/
 instance : BorelSpace (GraphonSpace Ω μ) := ⟨rfl⟩
 
 /-- The canonical graphon space over the unit interval with Lebesgue measure. -/

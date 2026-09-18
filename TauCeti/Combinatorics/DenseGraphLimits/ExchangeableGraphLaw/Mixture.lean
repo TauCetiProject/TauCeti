@@ -159,6 +159,7 @@ theorem mixtureExchangeableLaw_law (P : ProbabilityMeasure (GraphonSpace Ω μ))
 /-- **The coordinate law of a mixture.** The upper mass of a pattern under the mixture law of `P`
 is the `P`-average of the pattern's descended homomorphism density:
 `upperMass F = ∫ t(F, ·) dP`. -/
+@[simp]
 theorem upperMass_mixtureExchangeableLaw (P : ProbabilityMeasure (GraphonSpace Ω μ)) {k : ℕ}
     (F : SimpleGraph (Fin k)) [DecidableRel F.Adj] :
     (mixtureExchangeableLaw P).upperMass F =
