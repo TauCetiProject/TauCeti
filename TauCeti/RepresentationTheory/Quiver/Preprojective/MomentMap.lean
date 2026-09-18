@@ -82,15 +82,6 @@ section Backtrack
 
 variable [Finite Q] [DecidableEq Q]
 
-/-- A loop of the doubled quiver at `v` acts on `⨁_u M_u` through the summand `M_v` only. -/
-private theorem toEnd_ofPath_loop {v : Symmetrify Q} (p : Path v v) :
-    toEnd k (Symmetrify Q) M (ofPath ⟨v, v, p⟩) =
-      DirectSum.lof k (Symmetrify Q) (vertexSpace k (Symmetrify Q) M) v ∘ₗ
-        mapₗ k (Symmetrify Q) M p ∘ₗ
-          DirectSum.component k (Symmetrify Q) (vertexSpace k (Symmetrify Q) M) v := by
-  rw [toEnd_ofPath]
-  exact LinearMap.ext fun z => pathEnd_mk_apply k (Symmetrify Q) M p z
-
 /-- The head backtrack `a a*` of an arrow `a : i ⟶ j` acts on the summand `M_j` as `x_a x_{a*}`. -/
 private theorem toEnd_headBacktrackElem {i j : Q} (a : i ⟶ j) :
     toEnd k (Symmetrify Q) M (headBacktrackElem k a) =
