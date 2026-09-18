@@ -63,7 +63,6 @@ noncomputable def unramifiedArtinHom :
 
 /-- The unrestricted Artin map is the Artin map away from the empty set under the canonical
 equivalence of their domains. -/
-@[simp]
 theorem unramifiedArtinHom_apply (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     unramifiedArtinHom (L := L) hab hur I =
       artinHomAway (L := L) hab ∅ (fun v _ Q _ _ ↦ hur v Q)
