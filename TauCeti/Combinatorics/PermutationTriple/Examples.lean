@@ -128,11 +128,6 @@ theorem orderTriple_cyclicTriple (hn : n ≠ 0) : (cyclicTriple n).orderTriple =
 
 /-! ### A disconnected triple, and an isomorphic pair -/
 
-/-- The disjoint sum of two cyclic triples of positive degree is disconnected. -/
-theorem not_isConnected_disjointSum_cyclicTriple (hm : m ≠ 0) (hn : n ≠ 0) :
-    ¬ ((cyclicTriple m).disjointSum (cyclicTriple n)).IsConnected :=
-  not_isConnected_disjointSum _ _ hm hn
-
 /-- The disjoint sum of two cyclic triples of positive degree covers two spheres, so its Euler
 characteristic is `4`. -/
 theorem eulerChar_disjointSum_cyclicTriple (hm : m ≠ 0) (hn : n ≠ 0) :
@@ -148,12 +143,6 @@ theorem swap_smul_cyclicTriple_four_ne :
   rw [smul_σ0, cyclicTriple_σ0] at h0
   revert h0
   decide
-
-/-- Relabeling the sheets of `cyclicTriple 4` by a transposition gives an isomorphic triple, which
-therefore has the same cycle data. -/
-theorem equivalent_swap_smul_cyclicTriple_four :
-    Equivalent ((swap 0 1 : Perm (Fin 4)) • cyclicTriple 4) (cyclicTriple 4) :=
-  equivalent_smul _ _
 
 /-! ### A triple unramified over `0` -/
 
