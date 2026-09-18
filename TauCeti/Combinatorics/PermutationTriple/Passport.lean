@@ -152,18 +152,16 @@ theorem hasPassport_smul_iff (τ : Perm (Fin n)) (t : ConnectedTriple n)
   constructor
   · rintro ⟨⟨ρ, hρ⟩, h0, h1, hinf⟩
     refine ⟨⟨ρ * τ, ?_⟩, ?_, ?_, ?_⟩
-    · simp only [ConnectedTriple.coe_smul, PermutationTriple.monodromyGroup_smul,
-        Subgroup.map_map, MulEquiv.toMonoidHom_eq_coe, ← MulEquiv.coe_monoidHom_trans,
-        ← MulAut.mul_def, ← map_mul] at hρ ⊢
-      simpa [mul_assoc] using hρ
+    · rw [ConnectedTriple.coe_smul, PermutationTriple.monodromyGroup_smul,
+        Subgroup.map_conj_map_conj] at hρ
+      exact hρ
     · simpa using h0
     · simpa using h1
     · simpa using hinf
   · rintro ⟨⟨ρ, hρ⟩, h0, h1, hinf⟩
     refine ⟨⟨ρ * τ⁻¹, ?_⟩, ?_, ?_, ?_⟩
-    · simp only [ConnectedTriple.coe_smul, PermutationTriple.monodromyGroup_smul,
-        Subgroup.map_map, MulEquiv.toMonoidHom_eq_coe, ← MulEquiv.coe_monoidHom_trans,
-        ← MulAut.mul_def, ← map_mul]
+    · rw [ConnectedTriple.coe_smul, PermutationTriple.monodromyGroup_smul,
+        Subgroup.map_conj_map_conj]
       simpa [mul_assoc] using hρ
     · simpa using h0
     · simpa using h1
@@ -204,8 +202,7 @@ theorem hasPassport_conjugate_iff (t : ConnectedTriple n) (P : PassportSpec n)
     refine ⟨⟨τ⁻¹ * ρ, ?_⟩, h0, h1, hinf⟩
     refine Subgroup.map_injective (f := (MulAut.conj τ).toMonoidHom)
       (MulAut.conj τ).injective ?_
-    simp only [Subgroup.map_map, MulEquiv.toMonoidHom_eq_coe,
-      ← MulEquiv.coe_monoidHom_trans, ← MulAut.mul_def, ← map_mul]
+    rw [Subgroup.map_conj_map_conj]
     simpa [mul_assoc] using hρ
   · rintro ⟨⟨ρ, hρ⟩, h0, h1, hinf⟩
     refine ⟨⟨τ * ρ, ?_⟩, h0, h1, hinf⟩
@@ -213,8 +210,7 @@ theorem hasPassport_conjugate_iff (t : ConnectedTriple n) (P : PassportSpec n)
       t.1.monodromyGroup.map (MulAut.conj (τ * ρ)).toMonoidHom =
           (t.1.monodromyGroup.map (MulAut.conj ρ).toMonoidHom).map
             (MulAut.conj τ).toMonoidHom := by
-        simp only [Subgroup.map_map, MulEquiv.toMonoidHom_eq_coe,
-          ← MulEquiv.coe_monoidHom_trans, ← MulAut.mul_def, ← map_mul]
+        rw [Subgroup.map_conj_map_conj]
       _ = P.G.map (MulAut.conj τ).toMonoidHom := congrArg _ hρ
       _ = (P.conjugate τ).G := rfl
 
@@ -223,10 +219,7 @@ theorem isAdmissible_of_hasPassport {t : ConnectedTriple n} {P : PassportSpec n}
     (htP : HasPassport t P) : P.IsAdmissible := by
   rcases htP with ⟨⟨τ, hG⟩, h0, h1, hinf⟩
   refine ⟨t.2.ne_zero, ?_, ?_, ?_, ?_⟩
-  · have hconj : (MulAut.conj τ).toMonoidHom = τ.permCongrHom.toMonoidHom :=
-      MonoidHom.ext fun _ ↦ Equiv.ext fun _ ↦ by
-        simp [MulAut.conj_apply, Equiv.permCongrHom_coe]
-    rw [← hG, hconj, Equiv.isPretransitive_map_permCongrHom_iff]
+  · rw [← hG, Equiv.conj_eq_permCongrHom, Equiv.isPretransitive_map_permCongrHom_iff]
     exact t.2.isPretransitive
   · refine ⟨?_, fun _ hi ↦ ?_⟩
     · rw [← h0]
