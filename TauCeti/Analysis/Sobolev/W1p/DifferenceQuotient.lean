@@ -139,11 +139,10 @@ theorem W1p.exists_ae_eq_top_of_isCompact (hp : p ≠ ∞) (u : W1p mu Omega p) 
     ∃ w : W1p mu ⊤ p, (∀ᵐ x ∂mu, x ∈ S → W1p.value w x = W1p.value u x) ∧
       ∀ᵐ x ∂mu, x ∈ S → W1p.gradient w x = W1p.gradient u x := by
   -- A smooth cutoff, equal to one near `S` and compactly supported in `Ω`.
-  obtain ⟨chi, hchi, -, hchi_one, hchi_cpt, hchi_ts⟩ :=
-    hS.exists_contDiff_cutoff Omega.isOpen hSO
-  obtain ⟨M, hM0, hM⟩ := hchi.exists_abs_le_and_norm_gradient_le hchi_cpt
-  have hchiM : ∀ x ∈ (Omega : Set E), |chi x| ≤ M := fun x _ => (hM x).1
-  have hchigradM : ∀ x ∈ (Omega : Set E), ‖∇ chi x‖ ≤ M := fun x _ => (hM x).2
+  obtain ⟨chi, M, hchi, -, hchi_one, hchi_cpt, hchi_ts, hM0, hchiM_all, hchigradM_all⟩ :=
+    hS.exists_contDiff_cutoff_with_bounds Omega.isOpen hSO
+  have hchiM : ∀ x ∈ (Omega : Set E), |chi x| ≤ M := fun x _ => hchiM_all x
+  have hchigradM : ∀ x ∈ (Omega : Set E), ‖∇ chi x‖ ≤ M := fun x _ => hchigradM_all x
   -- Near `S` the cutoff is one and its gradient vanishes.
   have hchi_S : ∀ x ∈ S, chi x = 1 ∧ ∇ chi x = 0 := fun x hx => by
     have hev : chi =ᶠ[𝓝 x] fun _ => (1 : ℝ) :=

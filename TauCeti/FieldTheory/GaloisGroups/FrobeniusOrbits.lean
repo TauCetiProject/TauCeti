@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Finite.MinpolyOrbit
 public import TauCeti.FieldTheory.GaloisGroups.Orbits
+public import TauCeti.GroupTheory.Perm.Partition
 
 /-!
 # Factor degrees over a finite field are Frobenius orbit sizes
@@ -21,7 +22,8 @@ field the two agree, because both orbits of a root are the root set of its minim
 Consequently the monic irreducible factors of `g` correspond to the orbits of the `q`-th power
 map on the roots of `g`, the degree of a factor being the number of elements of the matching
 orbit.  This is the form in which the factorization of a polynomial over a finite field is
-compared with the cycle type of a permutation of the roots.
+compared with the cycle type of a permutation of the roots; for a squarefree polynomial the
+comparison is an equality between the full cycle type and the multiset of factor degrees.
 
 ## Main results
 
@@ -32,6 +34,9 @@ compared with the cycle type of a permutation of the roots.
 * `TauCeti.FiniteField.exists_orbit_eq_rootSet_factor`: every monic irreducible factor of `g` is
   the minimal polynomial of a root, its root set is a single Frobenius orbit, and that orbit has
   as many elements as the degree of the factor.
+* `TauCeti.FiniteField.fullCycleType_eq_map_natDegree_normalizedFactors`: for squarefree `g`, a
+  permutation of the roots acting as the `q`-th power map has full cycle type the multiset of
+  degrees of the monic irreducible factors of `g`.
 
 ## References
 
@@ -76,6 +81,61 @@ theorem exists_orbit_eq_rootSet_factor (hg : g ≠ 0) (q : g.Factors) :
           (x : E)) = (q : F[X]).natDegree := by
   obtain ⟨x, hx⟩ := exists_mem_rootSet_minpoly_eq E hg q
   exact ⟨x, by rw [orbit_eq_rootSet_minpoly, hx], by rw [natCard_orbit_eq_natDegree_minpoly, hx]⟩
+
+omit [Fact ((g.map (algebraMap F E)).Splits)] in
+/-- The orbits of a permutation of the roots of `g` that acts as the `q`-th power map are the
+fibres of the minimal polynomial. -/
+private theorem sameCycle_iff_minpoly_eq {π : Equiv.Perm (g.rootSet E)}
+    (hπ : ∀ x, (π x : E) = (x : E) ^ Fintype.card F) (x y : g.rootSet E) :
+    π.SameCycle x y ↔ minpoly F (x : E) = minpoly F (y : E) := by
+  have hpow (n : ℕ) (z : g.rootSet E) : ((π ^ n) z : E) = (z : E) ^ (Fintype.card F ^ n) := by
+    induction n generalizing z with
+    | zero => simp
+    | succ n ih => rw [pow_succ', Equiv.Perm.mul_apply, hπ, ih, ← pow_mul, pow_succ', mul_comm]
+  rw [eq_comm, ← mem_orbit_iff_minpoly_eq F, mem_orbit_iff_exists_pow_card_pow]
+  refine ⟨fun h => ?_, fun ⟨n, hn⟩ => ⟨n, Subtype.ext (by simpa [hpow] using hn)⟩⟩
+  obtain ⟨n, rfl⟩ := h.exists_nat_pow_eq
+  exact ⟨n, (hpow n x).symm⟩
+
+open scoped Classical in
+/-- **The cycle type of the Frobenius on the roots of a squarefree polynomial is its
+factorization type.** Let `g` be a squarefree polynomial over a finite field `F` with `q`
+elements, split in an algebraic extension `E`. A permutation of the roots of `g` in `E` that acts
+as the `q`-th power map has, counting fixed points, cycle lengths the degrees of the monic
+irreducible factors of `g`. -/
+theorem fullCycleType_eq_map_natDegree_normalizedFactors (hg : Squarefree g)
+    (π : Equiv.Perm (g.rootSet E))
+    (hπ : ∀ x, (π x : E) = (x : E) ^ Fintype.card F) :
+    π.fullCycleType = (UniqueFactorizationMonoid.normalizedFactors g).map natDegree := by
+  have hg0 : g ≠ 0 := hg.ne_zero
+  rw [Equiv.Perm.fullCycleType_eq_map_card_filter π (fun x => minpoly F (x : E))
+    (sameCycle_iff_minpoly_eq E hπ)]
+  have himage :
+      @Finset.image (g.rootSet E) F[X] (fun a b => Classical.propDecidable (a = b))
+          (fun x => minpoly F (x : E)) Finset.univ
+        = (UniqueFactorizationMonoid.normalizedFactors g).toFinset := by
+    ext φ
+    rw [Multiset.mem_toFinset, Polynomial.mem_normalizedFactors_iff hg0,
+      @Finset.mem_image _ _ (fun a b => Classical.propDecidable (a = b))]
+    refine ⟨?_, fun hφ => ?_⟩
+    · rintro ⟨x, -, rfl⟩
+      have hint : IsIntegral F (x : E) := (isAlgebraic_of_mem_rootSet x.2).isIntegral
+      exact ⟨minpoly.irreducible hint, minpoly.monic hint,
+        minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.2)⟩
+    · obtain ⟨x, hx⟩ := exists_mem_rootSet_minpoly_eq E hg0 ⟨φ, hφ⟩
+      exact ⟨x, Finset.mem_univ _, hx⟩
+  rw [himage, Multiset.toFinset_val,
+    ((UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors hg0).mp hg).dedup]
+  refine Multiset.map_congr rfl fun φ hφ => ?_
+  obtain ⟨x, hx⟩ := exists_mem_rootSet_minpoly_eq E hg0
+    ⟨φ, (Polynomial.mem_normalizedFactors_iff hg0).mp hφ⟩
+  replace hx : minpoly F (x : E) = φ := hx
+  have hint : IsIntegral F (x : E) := (isAlgebraic_of_mem_rootSet x.2).isIntegral
+  have hsep : (minpoly F (x : E)).Separable :=
+    PerfectField.separable_of_irreducible (minpoly.irreducible hint)
+  rw [← hx, ← TauCeti.natCard_orbit_eq_natDegree_minpoly E x hsep, ← Fintype.card_subtype,
+    ← Nat.card_eq_fintype_card]
+  exact Nat.card_congr (Equiv.subtypeEquivRight fun y => (TauCeti.mem_orbit_iff_minpoly_eq E).symm)
 
 end FiniteField
 

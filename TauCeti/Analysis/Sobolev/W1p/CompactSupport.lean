@@ -122,14 +122,14 @@ theorem W1p.mem_w1p0Submodule_of_isCompact (hp : p ≠ (∞ : ℝ≥0∞)) {u : 
     rw [hwdef, W1p.value_mk]
     exact coeFn_extendByZeroLpₗᵢ ℝ hmeas hsub (W1p.value u)
   -- a smooth cutoff, equal to one on `K` and compactly supported inside `Ω`
-  obtain ⟨chi, hchi, -, hchi_one_nhds, hchi_cpt, hchi_ts⟩ :=
-    hK.exists_contDiff_cutoff Omega.isOpen hKO
+  obtain ⟨chi, M, hchi, -, hchi_one_nhds, hchi_cpt, hchi_ts, hM0, hchiM_all,
+    hchigradM_all⟩ := hK.exists_contDiff_cutoff_with_bounds Omega.isOpen hKO
   have hchi_one : ∀ x ∈ K, chi x = 1 := fun x hx => by
     have hx' : x ∈ chi ⁻¹' ({1} : Set ℝ) := interior_subset (hchi_one_nhds hx)
     exact hx'
-  obtain ⟨M, hM0, hM⟩ := hchi.exists_abs_le_and_norm_gradient_le hchi_cpt
-  have hchiM : ∀ x ∈ ((⊤ : Opens E) : Set E), |chi x| ≤ M := fun x _ => (hM x).1
-  have hchigradM : ∀ x ∈ ((⊤ : Opens E) : Set E), ‖∇ chi x‖ ≤ M := fun x _ => (hM x).2
+  have hchiM : ∀ x ∈ ((⊤ : Opens E) : Set E), |chi x| ≤ M := fun x _ => hchiM_all x
+  have hchigradM : ∀ x ∈ ((⊤ : Opens E) : Set E), ‖∇ chi x‖ ≤ M :=
+    fun x _ => hchigradM_all x
   -- the cutoff leaves the extension unchanged
   have hLw : W1p.contDiffSMul chi hchi hM0 hchiM hchigradM w = w := by
     refine W1p.ext_value (Lp.ext ?_)

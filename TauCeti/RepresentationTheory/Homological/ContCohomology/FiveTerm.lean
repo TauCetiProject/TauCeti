@@ -65,6 +65,20 @@ theorem mem_H1ConjInvariants_iff {x : H1 N M} :
     x ∈ H1ConjInvariants G M N ↔ ∀ g : G, explicitConj1 N g x = x :=
   Iff.rfl
 
+variable {G M N} in
+/-- A conjugation-invariant class in `H¹(N, M)` is represented by cocycles whose conjugates are
+cohomologous to them: for each `g`, conjugating by `g` changes a representative by a
+coboundary. -/
+theorem exists_smul_conj_sub_eq_d0_of_mem_H1ConjInvariants {c : Z1 N M}
+    (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) (g : G) :
+    ∃ m : M, ∀ n : N,
+      g • (c : N → M) (N.inverseConjugationHom g n) - (c : N → M) n = d0 N M m n := by
+  have h := (mem_H1ConjInvariants_iff G M N).1 hc g
+  rw [explicitConj1_apply_eq_smul, smul_mk, H1pi_eq_iff, mem_B1_iff] at h
+  obtain ⟨m, hm⟩ := h
+  refine ⟨m, fun n => ?_⟩
+  rw [d0_apply, hm n, Pi.sub_apply, cocyclesMap1_apply, DistribSMul.toAddMonoidHom_apply]
+
 omit [IsTopologicalGroup G] [ContinuousSMul G M] [N.Normal] in
 /-- Conjugating the restriction of a continuous `1`-cocycle changes it by the coboundary of its
 value at the conjugating element. This is the representative-level identity behind

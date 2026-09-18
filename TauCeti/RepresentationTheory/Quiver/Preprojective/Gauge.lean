@@ -91,7 +91,7 @@ universe u v w
 
 section Relator
 
-variable (k : Type w) {Q : Type u} [Ring k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [Ring k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- **The gauged relator is a sum over the oriented edges of the doubled quiver.** For a labelling
@@ -114,7 +114,7 @@ end Relator
 
 section Gauge
 
-variable (k : Type w) {Q : Type u} [Quiver.{v + 1} Q]
+variable (k : Type w) {Q : Type u} [Quiver.{v} Q]
 
 section Labelling
 
@@ -234,7 +234,7 @@ end Gauge
 
 section Independence
 
-variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- **Gauge independence of the preprojective algebra.** Two labellings of the arrows of `Q` which

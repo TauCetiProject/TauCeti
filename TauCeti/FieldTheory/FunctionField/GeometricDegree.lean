@@ -44,6 +44,10 @@ Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree 
 * `TauCeti.finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq`:
   `[F' : F] = n(F'/F) · [k' : k]` when adjoining the constants to `F` costs `[k' : k]`, and
   `TauCeti.finrank_dvd_finrank_of_finrank_constantCompositum_eq` for the divisibility it contains.
+* `TauCeti.geometricDegree_eq_finrank_of_constantCompositum_eq_bot`: the geometric degree is
+  the whole degree as soon as the compositum is trivial, however that is established.
+* `TauCeti.geometricDegree_eq_finrank`: the geometric degree is the whole degree when the
+  constants of `F'` already lie in `F`.
 * `TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`: that degree equality holds for a
   separable constant field extension over an exact constant field.
 * `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn` and
@@ -158,6 +162,38 @@ theorem geometricDegree_pos [FiniteDimensional F F'] : 0 < geometricDegree F k' 
     FiniteDimensional.right F (constantCompositum F k' F') F'
   rw [geometricDegree_def]
   exact Module.finrank_pos
+
+/-- **The geometric degree is the whole degree as soon as the compositum is trivial.**  This is
+the general form: it asks only that adjoining the constants to `F` adds nothing, however that is
+established.  `geometricDegree_eq_finrank` is the case where the constants lie in `F` to begin
+with, which is one way of meeting the hypothesis but not the only one. -/
+theorem geometricDegree_eq_finrank_of_constantCompositum_eq_bot
+    (h : constantCompositum F k' F' = ⊥) :
+    geometricDegree F k' F' = Module.finrank F F' := by
+  rw [geometricDegree_def, h, IntermediateField.finrank_bot']
+
+/-! ### When the constants of `F'` already lie in `F` -/
+
+section ConstantsInBase
+
+variable [Algebra k' F] [IsScalarTower k' F F']
+
+/-- **The compositum is `F` itself when the constants of `F'` already lie in `F`**: there is
+nothing to adjoin. -/
+@[simp]
+theorem constantCompositum_eq_bot : constantCompositum F k' F' = ⊥ :=
+  le_antisymm ((constantCompositum_le_iff F k' F').2 fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply k' F F']
+    exact IntermediateField.algebraMap_mem _ _) bot_le
+
+/-- **The geometric degree is the whole degree** when the constants of `F'` already lie in `F`:
+`n(F'/F) = [F' : F]`. -/
+@[simp]
+theorem geometricDegree_eq_finrank : geometricDegree F k' F' = Module.finrank F F' :=
+  geometricDegree_eq_finrank_of_constantCompositum_eq_bot F k' F'
+    (constantCompositum_eq_bot F k' F')
+
+end ConstantsInBase
 
 end Compositum
 
