@@ -12,8 +12,8 @@ public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Closeness
 # Expected homomorphism densities in graphon samples
 
 For a fixed finite graph `F`, the expected ordinary homomorphism density of `F` in a graphon
-sample `G(n, W)` converges to the graphon homomorphism density `t(F, W)`. At finite `n`, the
-difference is at most `|V(F)|.choose 2 / n`.
+sample `G(n, W)` converges to the graphon homomorphism density `t(F, W)`. At every finite
+sample size `n ≥ |V(F)|`, the difference is at most `|V(F)|.choose 2 / n`.
 
 The proof compares the ordinary homomorphism density with the injective density. The injective
 density is exactly unbiased under graphon sampling, while the two finite densities differ only
@@ -21,9 +21,9 @@ when a sampled vertex map has a collision.
 
 ## Main results
 
-* `TauCeti.DenseGraphLimits.abs_integral_homDensityFin_sampleGraph_sub_le` bounds the finite-sample
-  bias of the ordinary homomorphism density;
-* `TauCeti.DenseGraphLimits.tendsto_integral_homDensityFin_sampleGraph` gives convergence of its
+* `SimpleGraph.abs_integral_homDensityFin_sampleGraph_sub_le` bounds the finite-sample bias of
+  the ordinary homomorphism density for samples with at least `|V(F)|` vertices;
+* `SimpleGraph.tendsto_integral_homDensityFin_sampleGraph` gives convergence of its
   expectation to the graphon homomorphism density.
 
 ## References
@@ -38,9 +38,9 @@ noncomputable section
 
 open MeasureTheory
 
-namespace TauCeti
+namespace SimpleGraph
 
-namespace DenseGraphLimits
+open TauCeti.DenseGraphLimits
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
 
@@ -72,17 +72,10 @@ theorem tendsto_integral_homDensityFin_sampleGraph {V : Type*} [Fintype V]
   have hbound : Filter.Tendsto
       (fun n : ℕ => ((Fintype.card V).choose 2 : ℝ) / n) Filter.atTop (nhds 0) :=
     tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop (R := ℝ))
-  rw [Metric.tendsto_atTop]
-  intro ε hε
-  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.mp hbound ε hε
-  refine ⟨max (Fintype.card V) N, fun n hn => ?_⟩
-  have hVn : Fintype.card V ≤ n := (le_max_left _ _).trans hn
-  have hboundn := hN n ((le_max_right _ _).trans hn)
+  rw [tendsto_iff_dist_tendsto_zero]
+  refine squeeze_zero' (Filter.Eventually.of_forall fun _ => dist_nonneg) ?_ hbound
+  filter_upwards [Filter.eventually_ge_atTop (Fintype.card V)] with n hVn
   rw [Real.dist_eq]
-  refine (abs_integral_homDensityFin_sampleGraph_sub_le F W hVn).trans_lt ?_
-  simpa [Real.dist_eq, abs_of_nonneg (by positivity :
-    0 ≤ ((Fintype.card V).choose 2 : ℝ) / n)] using hboundn
+  exact abs_integral_homDensityFin_sampleGraph_sub_le F W hVn
 
-end DenseGraphLimits
-
-end TauCeti
+end SimpleGraph

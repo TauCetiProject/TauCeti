@@ -142,7 +142,7 @@ theorem sampleGraph_homDensityFin_concentration {V : Type*} [Fintype V]
         calc
           |(∫ G, homDensityFin F G ∂sampleGraph W n) - homDensity F W|
               ≤ (q.choose 2 : ℝ) / n := by
-            simpa [q] using abs_integral_homDensityFin_sampleGraph_sub_le F W hVn
+            simpa [q] using F.abs_integral_homDensityFin_sampleGraph_sub_le W hVn
           _ ≤ (q : ℝ) ^ 2 / n := by gcongr
           _ ≤ ε / 2 := (div_le_iff₀ hnR).2 (by nlinarith [hn])
       rw [← map_exposedSample W n,
