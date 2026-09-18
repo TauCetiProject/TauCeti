@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 public import Mathlib.GroupTheory.Sylow
+public import TauCeti.GroupTheory.GroupAction.Transitive
 
 /-!
 # Transitive subgroups of `S₃` and `S₄`
@@ -70,14 +71,12 @@ private theorem transitiveGroupLabel_of_eq {n : ℕ} {j : TransitiveGroupIndex n
     {G : Subgroup (Perm (Fin n))} (h : G = referenceSubgroup n j) : TransitiveGroupLabel j G :=
   h ▸ transitiveGroupLabel_referenceSubgroup n j
 
-/-- The order of a transitive subgroup of `Equiv.Perm (Fin n)` is a multiple of `n` and a divisor
-of `n !`. -/
+/-- The order of a transitive subgroup of `Equiv.Perm (Fin n)` is a multiple of `n`, by
+`TauCeti.natCard_dvd_natCard_of_isPretransitive`, and a divisor of `n !`. -/
 private theorem dvd_natCard_and_natCard_dvd {n : ℕ} (G : Subgroup (Perm (Fin n)))
-    [IsPretransitive G (Fin n)] (x : Fin n) : n ∣ Nat.card G ∧ Nat.card G ∣ n.factorial := by
-  refine ⟨?_, ?_⟩
-  · simpa [index_stabilizer_of_transitive G x] using (stabilizer G x).index_dvd_card
-  · have h := Subgroup.card_subgroup_dvd_card G
-    rwa [Nat.card_perm, Nat.card_fin] at h
+    [IsPretransitive G (Fin n)] [NeZero n] : n ∣ Nat.card G ∧ Nat.card G ∣ n.factorial := by
+  refine ⟨by simpa using natCard_dvd_natCard_of_isPretransitive G (X := Fin n), ?_⟩
+  simpa [Fintype.card_perm] using Subgroup.card_subgroup_dvd_card G
 
 /-! ### Degree three -/
 
@@ -108,8 +107,8 @@ theorem natCard_referenceSubgroup_three_one :
 /-- Every transitive subgroup of the symmetric group on three points carries a label. -/
 theorem exists_transitiveGroupLabel_three (G : Subgroup (Perm (Fin 3)))
     [IsPretransitive G (Fin 3)] : ∃ j, TransitiveGroupLabel j G := by
-  obtain ⟨⟨k, hk⟩, h6⟩ := dvd_natCard_and_natCard_dvd G 0
-  rw [hk, show Nat.factorial 3 = 3 * 2 by decide] at h6
+  obtain ⟨⟨k, hk⟩, h6⟩ := dvd_natCard_and_natCard_dvd G
+  have h6 : 3 * k ∣ 3 * 2 := by simpa [hk, Nat.factorial] using h6
   rcases (Nat.dvd_prime Nat.prime_two).1 (Nat.dvd_of_mul_dvd_mul_left (by decide) h6) with
     rfl | rfl
   · refine ⟨⟨0, by simp⟩, transitiveGroupLabel_of_eq ?_⟩
@@ -286,11 +285,11 @@ private theorem exists_transitiveGroupLabel_four_of_natCard_eq_four (G : Subgrou
 /-- Every transitive subgroup of the symmetric group on four points carries a label. -/
 theorem exists_transitiveGroupLabel_four (G : Subgroup (Perm (Fin 4)))
     [IsPretransitive G (Fin 4)] : ∃ j, TransitiveGroupLabel j G := by
-  obtain ⟨⟨k, hk⟩, h24⟩ := dvd_natCard_and_natCard_dvd G 0
-  rw [hk, show Nat.factorial 4 = 4 * 6 by decide] at h24
+  obtain ⟨⟨k, hk⟩, h24⟩ := dvd_natCard_and_natCard_dvd G
+  have h24 : 4 * k ∣ 4 * 6 := by simpa [hk, Nat.factorial] using h24
   have hk6 : k ∣ 6 := Nat.dvd_of_mul_dvd_mul_left (by decide) h24
-  have hmul := G.index_mul_card
-  rw [hk, Nat.card_perm, Nat.card_fin, show Nat.factorial 4 = 24 by decide] at hmul
+  have hmul : G.index * (4 * k) = 24 := by
+    simpa [hk, Fintype.card_perm, Nat.factorial] using G.index_mul_card
   have hk' : k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 6 := by
     have := Nat.le_of_dvd (by decide) hk6
     interval_cases k <;> simp_all

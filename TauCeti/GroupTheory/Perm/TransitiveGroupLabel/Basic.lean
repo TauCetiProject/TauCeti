@@ -82,6 +82,7 @@ theorem numTransitiveGroups_four : numTransitiveGroups 4 = 5 :=
   simp [numTransitiveGroups]
 
 /-- There are no reference groups in degree greater than five. -/
+@[simp]
 theorem numTransitiveGroups_eq_zero_of_five_lt {n : ℕ} (hn : 5 < n) :
     numTransitiveGroups n = 0 := by
   obtain ⟨k, rfl⟩ : ∃ k, n = k + 6 := ⟨n - 6, by omega⟩
