@@ -211,9 +211,8 @@ theorem cohomologyRes_surjective (cf : ClassFormation F)
   obtain ⟨m, rfl⟩ := cf.fundamentalClass_generates small x
   exact ⟨m • cf.fundamentalClass big, by rw [map_zsmul, fundamentalClass_restrict]⟩
 
-/-- **Corestriction preserves invariants.** This is not an axiom of a class formation: it follows
-from `inv_restrict`, from the surjectivity of restriction on `H²`, and from the normalization
-`cor ∘ res = [E : F]`. -/
+/-- **Corestriction preserves invariants**: `inv_{K/F} (cor x) = inv_{K/E} x` for an intermediate
+ground field `E`. -/
 @[simp]
 theorem inv_cor (cf : ClassFormation F)
     {small big : NormalLayer G} (T : LayerRestriction small big) (x : small.H F 2) :
