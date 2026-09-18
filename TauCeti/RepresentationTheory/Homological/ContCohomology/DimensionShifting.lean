@@ -51,8 +51,6 @@ sequence of discrete modules whose middle term has vanishing `H¹` and `H²`
 
 ## Main statements
 
-* `TauCeti.ContCohomology.subsingleton_H1_of_subsingleton` and
-  `subsingleton_H2_of_subsingleton`: a trivial group has vanishing `H¹` and `H²`.
 * `TauCeti.ContCohomology.subsingleton_H1_discreteCoind_bot` and
   `subsingleton_H2_discreteCoind_bot`: **acyclicity of `Coind_1^G A`** in degrees one and two,
   for profinite `G`.
@@ -66,10 +64,11 @@ of `M` because the embedding is equivariant (`TauCeti.ContCohomology.coindBotEmb
 it is continuous because the stabilizer of a class contains the open stabilizer of any
 representative.
 
-Compactness of `G` makes the right-translation action on `Coind_1^G M` continuous, and total
-disconnectedness makes `G` a `T1` space, so that the trivial subgroup is closed, which is what
-Shapiro's lemma asks of it. The embedding and the quotient need neither; only the acyclicity and
-the two shifts use them.
+Compactness of `G` makes the right-translation action on `Coind_1^G M` continuous. The underlying
+quotient and its algebraic action do not require compactness, but its `ContinuousSMul` instance
+does. Total disconnectedness supplies the `T1` property making the trivial subgroup closed, as
+required by the available Shapiro isomorphisms; the acyclicity and the two shifts use both
+profinite hypotheses.
 
 ## References
 
@@ -84,45 +83,6 @@ public section
 namespace TauCeti.ContCohomology
 
 universe u v
-
-/-! ### The cohomology of a trivial group -/
-
-section TrivialGroup
-
-variable (H : Type u) [Monoid H] [TopologicalSpace H] [Subsingleton H]
-  (A : Type v) [AddCommGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
-  [DistribMulAction H A] [ContinuousSMul H A]
-
-/-- **A trivial group has vanishing `H¹`**: a `1`-cocycle satisfies `f 1 = 1 • f 1 + f 1`, so it
-vanishes at the only element. -/
-instance subsingleton_H1_of_subsingleton : Subsingleton (H1 H A) := by
-  have hzero : ∀ f : Z1 H A, (f : H → A) = 0 := fun f => funext fun g => by
-    have h := (mem_Z1_iff.1 f.2).2 1 1
-    rw [Subsingleton.elim g 1]
-    rw [mul_one, one_smul] at h
-    simpa using h
-  refine ⟨fun x y => ?_⟩
-  induction x using QuotientAddGroup.induction_on with
-  | _ f =>
-    induction y using QuotientAddGroup.induction_on with
-    | _ f' =>
-      refine H1pi_eq_iff.2 ?_
-      rw [hzero f, hzero f', sub_zero]
-      exact zero_mem _
-
-/-- **A trivial group has vanishing `H²`**: a `2`-cochain `f` is the coboundary of the constant
-`1`-cochain at `f (1, 1)`. -/
-instance subsingleton_H2_of_subsingleton [ContinuousMul H] : Subsingleton (H2 H A) := by
-  have hB : ∀ f : H × H → A, f ∈ B2 H A := fun f => mem_B2_iff'.2
-    ⟨fun _ => f (1, 1), continuous_const, fun g h => by
-      rw [Subsingleton.elim g 1, Subsingleton.elim h 1, one_smul, sub_add_cancel]⟩
-  refine ⟨fun x y => ?_⟩
-  induction x using QuotientAddGroup.induction_on with
-  | _ f =>
-    induction y using QuotientAddGroup.induction_on with
-    | _ f' => exact H2pi_eq_iff.2 (hB _)
-
-end TrivialGroup
 
 /-! ### Acyclicity of `Coind_1^G A` -/
 
@@ -294,7 +254,12 @@ noncomputable def explicitDimensionShift0 :
 
 @[simp]
 theorem explicitDimensionShift0_mk (x : H0 G (DimensionShiftQuotient G M)) :
-    explicitDimensionShift0 G M x = (coindBotShortExact G M).explicitDelta0 x := (rfl)
+    explicitDimensionShift0 G M x = (coindBotShortExact G M).explicitDelta0 x := by
+  rw [explicitDimensionShift0, AddEquiv.trans_apply,
+    QuotientAddGroup.quotientAddEquivOfEq_mk,
+    QuotientAddGroup.quotientKerEquivOfSurjective,
+    QuotientAddGroup.quotientKerEquivOfRightInverse_apply,
+    QuotientAddGroup.kerLift_mk]
 
 end DimensionShift
 

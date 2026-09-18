@@ -48,6 +48,8 @@ H⁰(G, M) = M^G,   H¹(G, M) = Z¹/B¹,   H²(G, M) = Z²/B².
 * `TauCeti.ContCohomology.d1_comp_d0` and `TauCeti.ContCohomology.d2_comp_d1`: `d ∘ d = 0`.
 * `TauCeti.ContCohomology.B1_le_Z1` and `TauCeti.ContCohomology.B2_le_Z2`: the form of `d ∘ d = 0`
   that the two quotients need, coboundaries being continuous.
+* `TauCeti.ContCohomology.subsingleton_H1_of_subsingleton` and
+  `subsingleton_H2_of_subsingleton`: a trivial group has vanishing `H¹` and `H²`.
 * `TauCeti.ContCohomology.H1EquivOfSmulEqSelf`: for a trivial action, `H¹(G, M)` is the group of
   continuous homomorphisms `G →ₜ* Multiplicative M`. This is the statement that makes `H¹` of a
   profinite group computable, and it is false without continuity.
@@ -765,6 +767,43 @@ theorem H2pi_eq_iff {f f' : Z2 G M} :
   rw [QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_addSubgroupOf, AddSubgroup.coe_sub]
 
 end CohomologyDegree2
+
+section TrivialGroup
+
+variable (G : Type u) [Monoid G] [TopologicalSpace G] [Subsingleton G]
+  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+
+/-- **A trivial group has vanishing `H¹`**: a `1`-cocycle satisfies `f 1 = 1 • f 1 + f 1`, so it
+vanishes at the only element. -/
+instance subsingleton_H1_of_subsingleton : Subsingleton (H1 G M) := by
+  have hzero : ∀ f : Z1 G M, (f : G → M) = 0 := fun f => funext fun g => by
+    have h := (mem_Z1_iff.1 f.2).2 1 1
+    rw [Subsingleton.elim g 1]
+    rw [mul_one, one_smul] at h
+    simpa using h
+  refine ⟨fun x y => ?_⟩
+  induction x using QuotientAddGroup.induction_on with
+  | _ f =>
+    induction y using QuotientAddGroup.induction_on with
+    | _ f' =>
+      refine H1pi_eq_iff.2 ?_
+      rw [hzero f, hzero f', sub_zero]
+      exact zero_mem _
+
+/-- **A trivial group has vanishing `H²`**: a `2`-cochain `f` is the coboundary of the constant
+`1`-cochain at `f (1, 1)`. -/
+instance subsingleton_H2_of_subsingleton [ContinuousMul G] : Subsingleton (H2 G M) := by
+  have hB : ∀ f : G × G → M, f ∈ B2 G M := fun f => mem_B2_iff'.2
+    ⟨fun _ => f (1, 1), continuous_const, fun g h => by
+      rw [Subsingleton.elim g 1, Subsingleton.elim h 1, one_smul, sub_add_cancel]⟩
+  refine ⟨fun x y => ?_⟩
+  induction x using QuotientAddGroup.induction_on with
+  | _ f =>
+    induction y using QuotientAddGroup.induction_on with
+    | _ f' => exact H2pi_eq_iff.2 (hB _)
+
+end TrivialGroup
 
 section TrivialAction
 
