@@ -352,7 +352,7 @@ theorem quadraticDefect_eq_maximalIdeal_zpow {a : Kˣ} {n : ℤ} (h : defectExpo
   obtain ⟨ξ, x, hx, hxd⟩ := exists_defectExponent_eq ha
   have hle := valuation_le_valuation_sub_sq_of_eq ha hxd
   rw [h, WithTop.coe_inj] at hxd
-  rw [← hxd, ← spanSingleton_eq_maximalIdeal_zpow, hx]
+  rw [← hxd, ← Units.spanSingleton_eq_maximalIdeal_zpow, hx]
   exact quadraticDefect_eq_spanSingleton_of_forall (hx ▸ hle)
 
 end TauCeti

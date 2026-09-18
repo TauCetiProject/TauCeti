@@ -21,7 +21,7 @@ normalized valuation `v_K`.
 
 * `TauCeti.spanSingleton_le_spanSingleton_iff_valuation_le`: inclusion of principal fractional
   ideals is the order of the valuation.
-* `TauCeti.spanSingleton_eq_maximalIdeal_zpow`: `x 𝒪[K] = 𝓂[K] ^ v_K(x)`.
+* `Units.spanSingleton_eq_maximalIdeal_zpow`: `x 𝒪[K] = 𝓂[K] ^ v_K(x)`.
 -/
 
 public section
@@ -55,6 +55,12 @@ theorem spanSingleton_le_spanSingleton_iff_valuation_le {x y : K} :
 
 end Valuation
 
+end TauCeti
+
+namespace Units
+
+open TauCeti
+
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
@@ -67,7 +73,7 @@ theorem spanSingleton_eq_maximalIdeal_zpow (x : Kˣ) :
   have hπ0 : (π : K) ≠ 0 := fun h => hπ.ne_zero (Subtype.ext h)
   set n := (normalizedValuation K x).toAdd
   have hπn : normalizedValuation K (Units.mk0 (π : K) hπ0 ^ n) = normalizedValuation K x := by
-    rw [map_zpow, normalizedValuation_irreducible hπ, ← ofAdd_zsmul, smul_eq_mul, mul_one,
+    rw [map_zpow, normalizedValuation_irreducible hπ, ← ofAdd_zsmul, _root_.smul_eq_mul, mul_one,
       ofAdd_toAdd]
   have hv : valuation K (x : K) = valuation K ((π : K) ^ n) := by
     have h₁ := (toAdd_normalizedValuation_le_iff_valuation_le (Units.mk0 (π : K) hπ0 ^ n) x).mp
@@ -88,4 +94,4 @@ theorem spanSingleton_eq_maximalIdeal_zpow (x : Kˣ) :
   · rw [zpow_neg, zpow_neg, zpow_natCast, zpow_natCast, FractionalIdeal.spanSingleton_pow,
       FractionalIdeal.spanSingleton_inv]
 
-end TauCeti
+end Units
