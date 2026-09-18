@@ -74,14 +74,6 @@ noncomputable def diagonalTorusDefiningIdeal :
   HopfIdeal.kerOfSurjective (diagonalTorusCoordinateMap (R := k) (N := n)).hom
     (diagonalTorusCoordinateMap_surjective k n)
 
-private theorem comapOfSurjective_bot_diagonalTorusCoordinateMap :
-    (⊥ : HopfIdeal k _).comapOfSurjective
-        (diagonalTorusCoordinateMap (R := k) (N := n)).hom
-        (diagonalTorusCoordinateMap_surjective k n) =
-      diagonalTorusDefiningIdeal k n := by
-  rw [diagonalTorusDefiningIdeal]
-  exact HopfIdeal.comapOfSurjective_bot _ _
-
 /-- The quotient by the diagonal-torus defining ideal is its Laurent coordinate Hopf algebra. -/
 noncomputable def diagonalTorusCoordinateIso :
     FiniteTypeCommHopfAlgCat.quotient
@@ -91,12 +83,8 @@ noncomputable def diagonalTorusCoordinateIso :
       DiagonalizableGroup.coordinateRing k
         (SplitTorus.characterGroup (ULift.{u} (Fin n))) :=
   ObjectProperty.isoMk _ <|
-    eqToIso (congrArg (CommHopfAlgCat.quotient (coordinateHopfAlgebra k n))
-      (comapOfSurjective_bot_diagonalTorusCoordinateMap k n).symm) ≪≫
-    CommHopfAlgCat.quotientIsoOfSurjective
-      (diagonalTorusCoordinateMap (R := k) (N := n))
-      (diagonalTorusCoordinateMap_surjective k n) ⊥ ≪≫
-    CommHopfAlgCat.quotientBotIso _
+    CommHopfAlgCat.quotientKerOfSurjectiveIso (diagonalTorusCoordinateMap (R := k) (N := n))
+      (diagonalTorusCoordinateMap_surjective k n)
 
 /-- The diagonal-torus quotient isomorphism identifies the quotient morphism with the canonical
 restriction to diagonal coordinates. -/
@@ -107,35 +95,8 @@ theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom :
             (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
           (diagonalTorusDefiningIdeal k n) ≫
         (diagonalTorusCoordinateIso k n).hom =
-      ObjectProperty.homMk (diagonalTorusCoordinateMap (R := k) (N := n)) := by
-  apply ObjectProperty.hom_ext
-  simp only [ObjectProperty.FullSubcategory.comp_hom, diagonalTorusCoordinateIso,
-    ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom, Iso.trans_hom, eqToIso.hom]
-  rw [← Category.assoc, CommHopfAlgCat.mkQuotient_comp_eqToHom
-      (comapOfSurjective_bot_diagonalTorusCoordinateMap k n),
-    ← Category.assoc, CommHopfAlgCat.mkQuotient_comp_quotientIsoOfSurjective_hom,
-    ← CommHopfAlgCat.quotientBotIso_inv]
-  rw [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-
-private theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom_commHopfAlgCat :
-    CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra k n) (diagonalTorusDefiningIdeal k n) ≫
-        ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} k)
-          (_root_.CommHopfAlgCat.{u} k)).mapIso (diagonalTorusCoordinateIso k n)).hom =
-      diagonalTorusCoordinateMap (R := k) (N := n) := by
-  have h := congrArg
-    (fun f ↦ (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} k)
-      (_root_.CommHopfAlgCat.{u} k)).map f)
-    (mkQuotient_comp_diagonalTorusCoordinateIso_hom k n)
-  rw [Functor.map_comp] at h
-  -- A morphism in an `ObjectProperty.FullSubcategory` is definitionally its underlying
-  -- morphism, so applying the forgetful functor changes only the wrapper. There is no
-  -- propositional rewrite lemma for this reducible coercion.
-  change CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra k n)
-      (diagonalTorusDefiningIdeal k n) ≫
-        ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} k)
-          (_root_.CommHopfAlgCat.{u} k)).mapIso (diagonalTorusCoordinateIso k n)).hom =
-      diagonalTorusCoordinateMap (R := k) (N := n) at h
-  exact h
+      ObjectProperty.homMk (diagonalTorusCoordinateMap (R := k) (N := n)) :=
+  ObjectProperty.hom_ext _ (CommHopfAlgCat.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
 
 /-- The base-change isomorphism of `GL_n` coordinate Hopf algebras carries the base-changed
 diagonal-torus ideal onto the diagonal-torus ideal over the extended base. -/
@@ -145,16 +106,12 @@ theorem map_baseChangeHopfIdeal_diagonalTorusDefiningIdeal
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (diagonalTorusDefiningIdeal k n)).map
         (coordinateHopfAlgebraBaseChangeIso k K n).hom.hom =
       diagonalTorusDefiningIdeal K n :=
-  CommHopfAlgCat.map_baseChangeHopfIdeal_of_quotientIso
-    (diagonalTorusDefiningIdeal k n) (diagonalTorusDefiningIdeal K n)
+  CommHopfAlgCat.map_baseChangeHopfIdeal_kerOfSurjective
     (coordinateHopfAlgebraBaseChangeIso k K n)
     (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso k K
       (SplitTorus.characterGroup (ULift.{u} (Fin n))))
-    ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} k)
-      (_root_.CommHopfAlgCat.{u} k)).mapIso (diagonalTorusCoordinateIso k n))
-    (mkQuotient_comp_diagonalTorusCoordinateIso_hom_commHopfAlgCat k n)
+    (diagonalTorusCoordinateMap_surjective k n) (diagonalTorusCoordinateMap_surjective K n)
     (diagonalTorusCoordinateMap_baseChange (N := n) k K)
-    (fun _ ↦ HopfIdeal.mem_kerOfSurjective _ _)
 
 /-- The quotient coordinate Hopf algebra of the diagonal torus is a split torus of rank `n`. -/
 theorem splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal :
@@ -186,15 +143,8 @@ theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} k)
     CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra k n)
         (diagonalTorusDefiningIdeal k n) A =
       ((CommHopfAlgCat.mapPointsFunctor
-        (diagonalTorusCoordinateMap (R := k) (N := n))).app A).hom.range := by
-  rw [diagonalTorusDefiningIdeal,
-    HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range]
-  apply congrArg MonoidHom.range
-  apply MonoidHom.ext
-  intro q
-  rw [AlgHom.mapDomain_apply]
-  exact (CommHopfAlgCat.mapPointsFunctor_app_apply
-    (diagonalTorusCoordinateMap (R := k) (N := n)) A q).symm
+        (diagonalTorusCoordinateMap (R := k) (N := n))).app A).hom.range :=
+  HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor _ _ A
 
 variable [IsAlgClosed k]
 
@@ -211,15 +161,6 @@ private instance instNontrivialUnitsOfInfiniteField {F : Type*} [Field F] [Infin
   apply hxy
   apply Subtype.ext
   exact congrArg Units.val h
-
-omit [IsAlgClosed k] in
-private theorem isReduced_quotient_diagonalTorusDefiningIdeal :
-    IsReduced (CommHopfAlgCat.quotient (coordinateHopfAlgebra k n)
-      (diagonalTorusDefiningIdeal k n)) := by
-  let f := (diagonalTorusCoordinateMap (R := k) (N := n)).hom
-  let hf : Function.Surjective f := diagonalTorusCoordinateMap_surjective k n
-  let e := HopfIdeal.kerLiftBialgEquiv f hf
-  exact isReduced_of_injective e.toAlgEquiv.toRingEquiv.toRingHom e.injective
 
 omit [IsAlgClosed k] in
 private theorem pointsMulEquiv_diagonalTorusPoints_symm (t : Fin n → kˣ) :
@@ -301,7 +242,7 @@ theorem eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm
       exact hdiag.trans ht
     · exact hDG
   let _ : IsReduced (CommHopfAlgCat.quotient H D) :=
-    isReduced_quotient_diagonalTorusDefiningIdeal k n
+    HopfIdeal.isReduced_quotient_kerOfSurjective _ (diagonalTorusCoordinateMap_surjective k n)
   exact HopfIdeal.eq_of_quotientPointsSubgroup_eq hpoints
 
 /-- **The diagonal torus of `GL_n` is a maximal torus.** This packages the stronger result that

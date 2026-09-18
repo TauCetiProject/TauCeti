@@ -79,20 +79,6 @@ variable {ι : Type u} [Finite ι] {L : Type v} [Field L] [NumberField L]
 
 section RamifiedPrimes
 
-/-- If `d ≡ 1 (mod 4)` and `x² = d`, then `(1 + x) / 2` is an algebraic integer. -/
-private theorem isIntegral_one_add_sqrt_div_two {x : L} {d : ℤ}
-    (hx : x ^ 2 = algebraMap ℤ L d) (hd4 : d % 4 = 1) :
-    IsIntegral ℤ ((1 + x) / 2) := by
-  obtain ⟨e, he⟩ : ∃ e : ℤ, d = 4 * e + 1 := ⟨d / 4, by omega⟩
-  have hde : algebraMap ℤ L d = 4 * algebraMap ℤ L e + 1 := by
-    rw [he]
-    simp only [map_add, map_mul, map_ofNat, map_one]
-  refine ⟨X ^ 2 - X - C e, ?_, ?_⟩
-  · monicity!
-  · simp only [eval₂_sub, eval₂_pow, eval₂_X, eval₂_C]
-    field_simp
-    linear_combination hx + hde
-
 /-- **A negated square root pins down the prime.** Let `P` be a prime of `𝓞 M` above the rational
 prime `p`, and let `σ` be an automorphism of `M` that acts trivially modulo `P`. If `σ` negates a
 square root `x` of the radicand of a prime discriminant `D`, then `p` is the prime belonging to
@@ -115,7 +101,7 @@ private theorem eq_primeDiscriminantPrime_of_apply_eq_neg {M : Type v} [Field M]
       hne (primeDiscriminantPrime_of_isEvenPrimeDiscriminant heven).symm
     have hd4 : primeDiscriminantRadicand D % 4 = 1 :=
       (isEvenPrimeDiscriminant_or_primeDiscriminantRadicand_mod_four_eq_one hD).resolve_left hoddD
-    let W : 𝓞 M := ⟨(1 + x) / 2, isIntegral_one_add_sqrt_div_two hx hd4⟩
+    let W : 𝓞 M := ⟨(1 + x) / 2, TauCeti.isIntegral_one_add_div_two_of_sq_eq hx hd4⟩
     have hW : σ • W - W ∈ P := hσ W
     -- `W` is given by its value, so its image in `M` is that value definitionally.
     have hWval : algebraMap (𝓞 M) M W = (1 + x) / 2 := rfl
@@ -127,7 +113,7 @@ private theorem eq_primeDiscriminantPrime_of_apply_eq_neg {M : Type v} [Field M]
       rw [map_pow, hWcoe, neg_sq, ← IsScalarTower.algebraMap_apply ℤ (𝓞 M) M]
       exact hx
     have hdvd : (2 : ℤ) ∣ primeDiscriminantRadicand D :=
-      (TauCeti.algebraMap_int_mem_iff_dvd_of_liesOver P _).mp
+      (Ideal.algebraMap_int_mem_iff_dvd_of_liesOver P _).mp
         (hWsq ▸ P.pow_mem_of_mem hW 2 (by norm_num))
     omega
   · let R : 𝓞 M := NumberField.integralSqrt hx
@@ -145,7 +131,7 @@ private theorem eq_primeDiscriminantPrime_of_apply_eq_neg {M : Type v} [Field M]
       rw [mul_pow, NumberField.integralSqrt_sq, map_mul]
       norm_num
     have hdvd : (p : ℤ) ∣ 4 * primeDiscriminantRadicand D :=
-      (TauCeti.algebraMap_int_mem_iff_dvd_of_liesOver P _).mp
+      (Ideal.algebraMap_int_mem_iff_dvd_of_liesOver P _).mp
         (hsq ▸ P.pow_mem_of_mem htwoR 2 (by norm_num))
     have hpnot4 : ¬ (p : ℤ) ∣ 4 := by
       intro hp4

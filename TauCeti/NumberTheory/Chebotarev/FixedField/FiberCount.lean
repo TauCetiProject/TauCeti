@@ -29,6 +29,9 @@ sums and densities between `E` and `K`.
 
 * `NumberField.Chebotarev.fixedField_frobenius_fiber_eq_image`: contraction identifies the
   relative fiber with the image of the corresponding absolute Frobenius fiber.
+* `NumberField.Chebotarev.inertiaDeg_eq_one_iff_under_mem_frobeniusPrimeSet`: away from the
+  ramified primes, a prime of the relative fiber has residue degree one over `K` exactly when the
+  prime below it lies in the Frobenius fiber of `sigma`.
 * `NumberField.Chebotarev.fixedField_frobenius_fiber_card`: the exact cardinality of the relative
   Frobenius fiber over one prime of `K`.
 
@@ -162,6 +165,50 @@ theorem fixedField_frobenius_fiber_eq_image
     apply HeightOneSpectrum.ext
     simpa only [HeightOneSpectrum.under_asIdeal, Ideal.under_under] using
       congrArg HeightOneSpectrum.asIdeal hQp
+
+/-- **Residue degree one detects the absolute Frobenius class below a relative fiber.** Let `P`
+be a prime of `L ^ <sigma>` whose relative Artin class in `L / L ^ <sigma>` is represented by
+`sigma.toFixedFieldAlgEquiv`, and suppose that the prime of `K` below `P` is unramified in `L`.
+Then `P` has residue degree one over `K` exactly when the prime below it has Artin class `[sigma]`.
+
+Membership of `P` in the relative fiber does not by itself fix the class below.  If `L / K` is
+cyclic of degree four with generator `g` and `sigma = g ^ 2`, a prime of `K` with Frobenius `g` is
+inert in `L ^ <g ^ 2>`, and the prime above it has relative Frobenius `g ^ 2`.
+
+The unramifiedness hypothesis cannot be dropped.  For `K = ℚ`, `L = ℚ(∛2, ζ₃)` and `sigma` a
+transposition, the prime `𝔓` of `ℚ(∛2)` above `2` has residue degree one and relative Frobenius
+`sigma`, although `2` ramifies in `L` and so has no Artin class.
+
+Conversely, a prime of `K` in the class of `sigma` can have primes of residue degree one above it
+whose relative Frobenius is another generator of `<sigma>`; `fixedField_frobenius_fiber_card`
+counts those whose relative Frobenius is `sigma`. -/
+theorem inertiaDeg_eq_one_iff_under_mem_frobeniusPrimeSet (sigma : L ≃ₐ[K] L)
+    {P : HeightOneSpectrum (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))}
+    (hP : P ∈ frobeniusPrimeSet ↥(fixedField (Subgroup.zpowers sigma)) L
+      (ConjClasses.mk sigma.toFixedFieldAlgEquiv))
+    (hram : P.under (𝓞 K) ∉ ramifiedPrimes K L) :
+    P.asIdeal.inertiaDeg (𝓞 K) = 1 ↔
+      P.under (𝓞 K) ∈ frobeniusPrimeSet K L (ConjClasses.mk sigma) := by
+  obtain ⟨Q, hQ⟩ := exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk hP
+  have hQE : Q.1.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma))) = P.asIdeal :=
+    Q.2.2.over.symm
+  have hQK : Q.1.under (𝓞 K) = (P.under (𝓞 K)).asIdeal := by
+    rw [HeightOneSpectrum.under_asIdeal]
+    exact (Ideal.under_under (B := 𝓞 ↥(fixedField (Subgroup.zpowers sigma))) Q.1).symm.trans
+      (congrArg (Ideal.under (𝓞 K)) hQE)
+  have : Q.1.LiesOver (P.under (𝓞 K)).asIdeal := ⟨hQK.symm⟩
+  constructor
+  · intro hdeg
+    rw [mem_ramifiedPrimes_iff, not_not] at hram
+    have habs := NumberField.isArithFrobAt_restrictScalars_of_inertiaDeg_eq_one hQ
+      (hQE ▸ hdeg)
+    rw [AlgEquiv.restrictScalars_toFixedFieldAlgEquiv] at habs
+    exact mem_frobeniusPrimeSet_mk_of_isArithFrobAt hram Q.1 habs
+  · intro hp
+    let _ : Algebra.IsUnramifiedAt (𝓞 K) Q.1 := isUnramifiedAt_of_mem_frobeniusPrimeSet hp Q.1
+    have habs := isArithFrobAt_of_fixedField_isArithFrobAt sigma _ hp Q.1 hQK hQ
+    rw [← hQE]
+    exact Ideal.inertiaDeg_under_fixedField_eq_one_of_isArithFrobAt Q.1 habs.ne_bot habs
 
 omit [IsGalois K L] in
 private theorem under_fixedField_injOn_frobenius

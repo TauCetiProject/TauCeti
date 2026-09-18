@@ -55,6 +55,9 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
 * `TauCeti.normalizedAbsoluteValue_apply_ne_zero`: the formula `|x|_K = q ^ (-v_K(x))`.
 * `TauCeti.isNonarchimedean_normalizedAbsoluteValue`: the normalized absolute value satisfies the
   strong triangle inequality.
+* `TauCeti.normalizedAbsoluteValue_le_normalizedAbsoluteValue_iff` and
+  `TauCeti.normalizedAbsoluteValue_lt_normalizedAbsoluteValue_iff`: the normalized absolute value
+  orders the elements of `K` as `ValuativeRel.valuation` does.
 * `TauCeti.eq_normalizedValuation`: the kernel condition together with the uniformizer equation
   characterizes the normalized valuation among homomorphisms `Kˣ →* Multiplicative ℤ`.
 * `TauCeti.isUnit_iff_normalizedValuationWithZero_eq_one`,
@@ -385,6 +388,29 @@ theorem normalizedAbsoluteValue_irreducible {π : 𝒪[K]} (hπ : Irreducible π
 theorem isNonarchimedean_normalizedAbsoluteValue :
     IsNonarchimedean (normalizedAbsoluteValue K) := by
   apply Valuation.isNonarchimedean_toAbsoluteValue
+
+/-- The normalized absolute value induces the order of Mathlib's valuation. -/
+@[simp]
+theorem normalizedAbsoluteValue_le_normalizedAbsoluteValue_iff (x y : K) :
+    normalizedAbsoluteValue K x ≤ normalizedAbsoluteValue K y ↔
+      valuation K x ≤ valuation K y := by
+  rw [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply, Valuation.toAbsoluteValue_apply,
+    (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).le_iff_le]
+  exact OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K)
+
+/-- The normalized absolute value induces the strict order of Mathlib's valuation. -/
+@[simp]
+theorem normalizedAbsoluteValue_lt_normalizedAbsoluteValue_iff (x y : K) :
+    normalizedAbsoluteValue K x < normalizedAbsoluteValue K y ↔
+      valuation K x < valuation K y := by
+  simp only [lt_iff_not_ge, normalizedAbsoluteValue_le_normalizedAbsoluteValue_iff]
+
+/-- The normalized absolute value is less than one exactly on the elements of valuation less than
+one, that is, on the maximal ideal of the ring of integers. -/
+@[simp]
+theorem normalizedAbsoluteValue_lt_one_iff (x : K) :
+    normalizedAbsoluteValue K x < 1 ↔ valuation K x < 1 := by
+  simpa using normalizedAbsoluteValue_lt_normalizedAbsoluteValue_iff x 1
 
 /-- The normalized absolute value takes the value one exactly on the elements of valuation one,
 that is, on the units of the ring of integers. -/
