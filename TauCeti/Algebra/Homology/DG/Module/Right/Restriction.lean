@@ -129,7 +129,6 @@ theorem linearEquiv_symm_apply (x : M) :
 omit [Module R M] [IsScalarTower R Bᵐᵒᵖ M] in
 /-- On underlying elements, restricted scalar multiplication is multiplication by the image
 under `f`. -/
-@[simp]
 theorem val_op_smul (a : A) (x : RestrictScalars f M) :
     (op a • x).val = op (f a) • x.val := rfl
 
