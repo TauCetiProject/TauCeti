@@ -9,8 +9,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import TauCeti.NumberTheory.LocalField.NormedField
-import Mathlib.RingTheory.Polynomial.Subring
-import Mathlib.RingTheory.Valuation.Integral
+import TauCeti.RingTheory.Valuation.RootMonic
 
 /-!
 # Finite extensions of a nonarchimedean local field are local fields
@@ -224,12 +223,6 @@ section Uniqueness
 
 variable {K M} {Γ : Type*} [LinearOrderedCommGroupWithZero Γ]
 
-/-- Evaluating a polynomial over `M` whose coefficients lie in a subring `R`, after restricting its
-coefficients to `R`, is evaluating the original polynomial. -/
-private theorem eval₂_toSubring {R : Subring M} (p : Polynomial M) (hp : (p.coeffs : Set M) ⊆ R)
-    (x : M) : (p.toSubring R hp).eval₂ (algebraMap R M) x = p.eval x := by
-  rw [← Polynomial.eval_map, Algebra.algebraMap_ofSubring, Polynomial.map_toSubring]
-
 /-- If a valuation `w` on `M` restricts to the valuation class of `K`, every element of `M` of
 spectral norm at most `1` has `w`-valuation at most `1`: the coefficients of its minimal
 polynomial over `K` are integral, so it is integral over the valuation ring of `w`. -/
@@ -243,13 +236,9 @@ private theorem valuation_le_one_of_finiteExtensionNormedField_norm_le_one {w : 
     have hc := (mem_integer_iff_normalizedAbsoluteValue_le_one _).2
       (by exact_mod_cast (normalizedNormedField_norm_def ((minpoly K x).coeff n)).symm.trans_le h)
     simpa using hw.le_one_iff_le_one.2 hc
-  have hsub : (((minpoly K x).map (algebraMap K M)).coeffs : Set M) ⊆ w.integer := by
-    intro c hc
-    obtain ⟨n, -, rfl⟩ := Polynomial.mem_coeffs_iff.1 hc
-    simpa [Valuation.mem_integer_iff] using hcoeff n
-  refine (Valuation.integer.integers w).mem_of_integral
-    ⟨_, (Polynomial.monic_toSubring _ _ hsub).2 (hmon.map _), ?_⟩
-  rw [eval₂_toSubring, Polynomial.eval_map_algebraMap, minpoly.aeval]
+  refine w.le_one_of_root_monic (hmon.map (algebraMap K M)) (fun n _ => ?_) ?_
+  · simpa using hcoeff n
+  · rw [Polynomial.eval_map_algebraMap, minpoly.aeval]
 
 /-- If a valuation `w` on `M` restricts to the valuation class of `K`, every element of `M` of
 spectral norm less than `1` has `w`-valuation less than `1`. -/
