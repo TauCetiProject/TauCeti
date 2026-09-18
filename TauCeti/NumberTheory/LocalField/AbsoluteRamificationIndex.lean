@@ -30,6 +30,7 @@ The definition is confined to mixed characteristic by requiring an algebra struc
 
 ## Main results
 
+* `TauCeti.absoluteRamificationIndex_pos`: the absolute ramification index is positive.
 * `TauCeti.absoluteRamificationIndex_eq_natCastValuation`: the absolute ramification index is
   the normalized valuation of `p` in `K`.
 * `TauCeti.absoluteRamificationIndex_padic`: the absolute ramification index of `ℚ_[p]` is one.
@@ -58,6 +59,10 @@ For a finite compatible extension, this is the classical absolute ramification i
 def absoluteRamificationIndex (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
     [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime] [Algebra ℚ_[p] K] : ℕ :=
   ramificationIndex ℚ_[p] K
+
+/-- The absolute ramification index is positive. -/
+theorem absoluteRamificationIndex_pos : 0 < absoluteRamificationIndex K p := by
+  exact ramificationIndex_pos (K := ℚ_[p]) (L := K)
 
 /-- The absolute ramification index is the normalized valuation of the residue prime `p` in
 `K`. -/
