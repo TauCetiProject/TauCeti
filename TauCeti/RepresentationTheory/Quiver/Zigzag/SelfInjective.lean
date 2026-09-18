@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Algebra.Module.Injective.SelfInjective
 public import TauCeti.Algebra.DualNumber.Trace
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Trace
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Dimension
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Basic
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Trace
 
 /-!
 # The zigzag algebra is self-injective
@@ -35,6 +35,8 @@ projectivity is `TauCeti.zigzagProjective_projective`, and their indecomposabili
 
 * `TauCeti.zigzagAlgebraPairing`: the symmetric perfect associative pairing on the public zigzag
   algebra.
+* `TauCeti.zigzagAlgebraPairing_apply_eq_trace`: this pairing is `(x, y) ↦ tr (x * y)` for the
+  componentwise public trace.
 * `TauCeti.zigzagAlgebraPairing_single_nontrivial` and
   `TauCeti.zigzagAlgebraPairing_single_subsingleton`: on the factor of one connected component that
   pairing is `TauCeti.zigzagTracePairing` respectively `TauCeti.dualNumberTracePairing`.
@@ -247,6 +249,41 @@ theorem zigzagAlgebraPairing_apply (x y : zigzagAlgebra k G) :
   intro C _
   rw [zigzagAlgebraPairing_single_left, zigzagComponentProjection_zigzagAlgebraMk]
   simp
+
+/-- The componentwise Frobenius pairing is the pairing induced by the public trace. -/
+theorem zigzagAlgebraPairing_apply_eq_trace (x y : zigzagAlgebra k G) :
+    zigzagAlgebraPairing k G x y = zigzagAlgebraTrace k G (x * y) := by
+  classical
+  rw [zigzagAlgebraPairing_apply_components, zigzagAlgebraTrace_apply]
+  apply Finset.sum_congr rfl
+  intro C _
+  rw [map_mul]
+  by_cases hC : Nontrivial C
+  · let _ : Nontrivial C := hC
+    let hns : ∀ i : C, ∃ j, C.toSimpleGraph.Adj i j := fun i ↦
+      exists_adj_iff_not_isIsolated.mpr
+        (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
+    rw [zigzagComponentPairing_apply_nontrivial k G C hns,
+      zigzagComponentTrace_apply_nontrivial k G C, zigzagTracePairing_apply]
+    let e := zigzagComponentAlgebraEquivNonisolated k G C
+    -- The typed equality bridges the `toMulEquiv` coercion in `map_mul` with the algebra-map
+    -- coercion under the trace.
+    rw [show e (zigzagComponentProjection k G C x * zigzagComponentProjection k G C y) =
+      e (zigzagComponentProjection k G C x) * e (zigzagComponentProjection k G C y) from
+        e.map_mul _ _]
+  · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
+    rw [zigzagComponentPairing_apply_subsingleton k G C,
+      zigzagComponentTrace_apply_subsingleton k G C]
+    let e := (zigzagComponentAlgebraEquivULiftDualNumber k G C).trans
+      (ULift.algEquiv (R := k) (A := DualNumber k))
+    -- This exposes the dual-number presentation hidden behind the component and `ULift` wrappers.
+    change dualNumberTracePairing k (e (zigzagComponentProjection k G C x))
+      (e (zigzagComponentProjection k G C y)) =
+        (e (zigzagComponentProjection k G C x * zigzagComponentProjection k G C y)).snd
+    -- The typed equality supplies the same multiplication-coercion bridge in this branch.
+    rw [show e (zigzagComponentProjection k G C x * zigzagComponentProjection k G C y) =
+      e (zigzagComponentProjection k G C x) * e (zigzagComponentProjection k G C y) from
+        e.map_mul _ _, dualNumberTracePairing_apply, DualNumber.snd_mul]
 
 open Classical in
 /-- On a nontrivial component the direct-sum pairing restricted to the embedded factor is the
