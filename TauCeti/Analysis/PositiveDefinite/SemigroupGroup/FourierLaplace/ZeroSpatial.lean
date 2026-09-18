@@ -136,8 +136,8 @@ theorem bcr_zero_spatial_iff_hausdorff_bernstein_widder (f : ℝ → ℝ) :
     intro ν hν
     exact hν.unique ((representsLaplaceFourier_map_prodPUnit_symm_iff _ _).mpr hμ)
 
-/-- The transported Bernstein measure represents a completely monotone function in zero spatial
-dimension. -/
+/-- In zero spatial dimension, the transported Bernstein measure represents a function that is
+continuous on `[0, ∞)` and completely monotone on `(0, ∞)`. -/
 theorem representsLaplaceFourier_map_prodPUnit_symm_bernsteinMeasure {f : ℝ → ℝ}
     (hf : IsContinuousCompletelyMonotoneOnIoi f) :
     RepresentsLaplaceFourier
