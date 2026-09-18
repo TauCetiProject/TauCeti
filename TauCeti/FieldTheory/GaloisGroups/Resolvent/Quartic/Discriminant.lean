@@ -9,9 +9,14 @@ public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Quartic.Basic
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
-# The discriminant of the quartic resolvent cubic
+# Discriminants of quartics and their resolvent cubics
 
-The depressed quartic
+A monic quartic of degree four and the cubic obtained by specializing `quarticD4Spec` have the
+same discriminant. Consequently, the specialized resolvent is separable exactly when the quartic
+is separable, so downstream quartic Galois-group criteria require no additional separation
+hypothesis.
+
+For the depressed quartic
 
 `X⁴ + pX² + qX + r`
 
@@ -19,17 +24,18 @@ and its cubic resolvent
 
 `X³ - pX² - 4rX + (4pr - q²)`
 
-have the same discriminant. Consequently the resolvent cubic is separable exactly when the
-quartic is separable. In particular, resolvents of separable quartics require no additional
-separation hypothesis.
-
-The discriminant calculation is valid over an arbitrary commutative ring. The proof evaluates
-the Sylvester determinant of the quartic and compares the resulting formula with Mathlib's
-`Cubic.discr` formula for the resolvent.
+the specialized resolvent is `TauCeti.resolventCubic p q r`, giving the corresponding closed-form
+identity and separability results. All these statements hold over an arbitrary commutative ring.
 
 ## Main results
 
-* `Polynomial.discr_depressedQuartic`: the explicit discriminant of a depressed quartic.
+* `Polynomial.Monic.discr_of_natDegree_eq_four`: the coefficient formula for the discriminant of
+  a monic quartic.
+* `TauCeti.discr_depressedQuartic`: the explicit discriminant of a depressed quartic.
+* `TauCeti.discr_quarticD4Spec_specialize`: a monic quartic of degree four and its specialized
+  resolvent have equal discriminants.
+* `TauCeti.separable_quarticD4Spec_specialize_iff`: the quartic is separable exactly when its
+  specialized resolvent is.
 * `TauCeti.discr_resolventCubic`: a depressed quartic and its resolvent cubic have equal
   discriminants.
 * `TauCeti.separable_resolventCubic_iff`: the quartic is separable exactly when its resolvent is.
@@ -48,17 +54,47 @@ namespace TauCeti
 
 variable {R : Type*} [CommRing R]
 
+/-- A monic quartic of degree four and the specialization of the quartic `D₄` resolvent have the
+same discriminant. -/
+theorem discr_quarticD4Spec_specialize {f : R[X]} (hmonic : f.Monic)
+    (hf : f.natDegree = 4) :
+    f.discr = (quarticD4Spec.specialize R f).discr := by
+  nontriviality R
+  have hres : quarticD4Spec.specialize R f =
+      (Cubic.toPoly
+        ⟨1, -f.coeff 2, f.coeff 3 * f.coeff 1 - 4 * f.coeff 0,
+          -(f.coeff 3 ^ 2 * f.coeff 0 + f.coeff 1 ^ 2 -
+            4 * f.coeff 2 * f.coeff 0)⟩ : R[X]) := by
+    rw [quarticD4Spec_specialize]
+    simp [Cubic.toPoly]
+    ring
+  rw [hres, Cubic.toPoly_discr one_ne_zero, Cubic.discr,
+    hmonic.discr_of_natDegree_eq_four hf]
+  ring
+
+/-- The specialization of the quartic `D₄` resolvent is separable exactly when the monic
+quartic of degree four is separable. -/
+theorem separable_quarticD4Spec_specialize_iff {f : R[X]} (hmonic : f.Monic)
+    (hf : f.natDegree = 4) :
+    (quarticD4Spec.specialize R f).Separable ↔ f.Separable := by
+  nontriviality R
+  rw [← (quarticD4Spec.monic_specialize R f).isUnit_discr_iff,
+    ← hmonic.isUnit_discr_iff, discr_quarticD4Spec_specialize hmonic hf]
+
 /-- A depressed quartic and its resolvent cubic have the same discriminant. -/
 theorem discr_resolventCubic (p q r : R) :
     (X ^ 4 + C p * X ^ 2 + C q * X + C r : R[X]).discr =
       (resolventCubic p q r).discr := by
   nontriviality R
-  have hres : resolventCubic p q r =
-      (Cubic.toPoly ⟨1, -p, -(4 * r), 4 * p * r - q ^ 2⟩ : R[X]) := by
-    simp [resolventCubic_def, Cubic.toPoly]
-    ring
-  rw [hres, Cubic.toPoly_discr one_ne_zero, Cubic.discr, Polynomial.discr_depressedQuartic]
-  ring
+  have hquartic : (X ^ 4 + C p * X ^ 2 + C q * X + C r : R[X]).Monic := by
+    have hdeg : degree (C p * X ^ 2 + C q * X + C r : R[X]) < 4 := by
+      compute_degree
+      norm_num
+    simpa only [add_assoc] using monic_X_pow_add hdeg
+  have hdegree : (X ^ 4 + C p * X ^ 2 + C q * X + C r : R[X]).natDegree = 4 := by
+    compute_degree <;> norm_num
+  rw [← quarticD4Spec_specialize_depressed]
+  exact discr_quarticD4Spec_specialize hquartic hdegree
 
 /-- The resolvent cubic of a depressed quartic is separable exactly when the quartic is
 separable. This holds over every commutative ring, where separability of a monic polynomial is
@@ -73,8 +109,10 @@ theorem separable_resolventCubic_iff (p q r : R) :
       compute_degree
       norm_num
     simpa only [add_assoc] using monic_X_pow_add hdeg
-  rw [← (monic_resolventCubic p q r).isUnit_discr_iff,
-    ← hquartic.isUnit_discr_iff, discr_resolventCubic]
+  have hdegree : (X ^ 4 + C p * X ^ 2 + C q * X + C r : R[X]).natDegree = 4 := by
+    compute_degree <;> norm_num
+  rw [← quarticD4Spec_specialize_depressed]
+  exact separable_quarticD4Spec_specialize_iff hquartic hdegree
 
 /-- The resolvent cubic of a separable depressed quartic is separable. -/
 theorem separable_resolventCubic (p q r : R)

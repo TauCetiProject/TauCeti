@@ -32,7 +32,8 @@ measures. This file proves the classical root-product formula
 
 for a family of roots `r : Fin n → R` over an arbitrary commutative ring, together with the
 consequences that read the formula: base change, and the criterion for a monic polynomial to be
-separable.
+separable. It also gives the coefficient formula for the discriminant of a monic quartic. The
+depressed specialization of that formula is used to compare a quartic with its cubic resolvent.
 
 ## Main results
 
@@ -63,6 +64,9 @@ separable.
   a prime.
 * `Cubic.toPoly_discr`: the two discriminants of a cubic with nonzero leading coefficient agree,
   so that `Cubic.discr` and `Polynomial.discr` may be used interchangeably in degree three.
+* `Polynomial.Monic.discr_of_natDegree_eq_four`, `TauCeti.discr_depressedQuartic`: the
+  coefficient formula for a monic quartic and its depressed specialization, used to compare
+  quartic and resolvent discriminants.
 * `Algebra.discr_powerBasis_eq_minpoly_discr`: the algebra discriminant of a power basis agrees
   with the polynomial discriminant of the minimal polynomial of its generator.
 ## Implementation notes
@@ -626,7 +630,7 @@ theorem _root_.Cubic.toPoly_discr {P : Cubic R} (ha : P.a ≠ 0) : P.toPoly.disc
   rw [discr_of_degree_eq_three (P.degree_of_a_ne_zero ha), P.coeff_eq_a, P.coeff_eq_b,
     P.coeff_eq_c, P.coeff_eq_d, Cubic.discr]
 
-/-! ### The discriminant of a depressed quartic -/
+/-! ### The discriminant of a monic quartic -/
 
 /-- The Sylvester matrix used by the discriminant of a quartic, after identifying its
 degree-dependent index type with `Fin 7`.
@@ -663,8 +667,34 @@ private theorem Polynomial.sylvesterDeriv_of_natDegree_eq_four {f : R[X]}
         (by norm_num : (2 : R) + 1 = 3),
         (by norm_num : (3 : R) + 1 = 4)]
 
+/-- The discriminant of a monic quartic, expressed in terms of its coefficients. -/
+theorem _root_.Polynomial.Monic.discr_of_natDegree_eq_four {f : R[X]} (hmonic : f.Monic)
+    (hf : f.natDegree = 4) :
+    f.discr =
+      256 * f.coeff 0 ^ 3 - 192 * f.coeff 3 * f.coeff 1 * f.coeff 0 ^ 2 -
+        128 * f.coeff 2 ^ 2 * f.coeff 0 ^ 2 + 144 * f.coeff 2 * f.coeff 1 ^ 2 * f.coeff 0 -
+        27 * f.coeff 1 ^ 4 + 144 * f.coeff 3 ^ 2 * f.coeff 2 * f.coeff 0 ^ 2 -
+        6 * f.coeff 3 ^ 2 * f.coeff 1 ^ 2 * f.coeff 0 -
+        80 * f.coeff 3 * f.coeff 2 ^ 2 * f.coeff 1 * f.coeff 0 +
+        18 * f.coeff 3 * f.coeff 2 * f.coeff 1 ^ 3 + 16 * f.coeff 2 ^ 4 * f.coeff 0 -
+        4 * f.coeff 2 ^ 3 * f.coeff 1 ^ 2 - 27 * f.coeff 3 ^ 4 * f.coeff 0 ^ 2 +
+        18 * f.coeff 3 ^ 3 * f.coeff 2 * f.coeff 1 * f.coeff 0 -
+        4 * f.coeff 3 ^ 3 * f.coeff 1 ^ 3 -
+        4 * f.coeff 3 ^ 2 * f.coeff 2 ^ 3 * f.coeff 0 +
+        f.coeff 3 ^ 2 * f.coeff 2 ^ 2 * f.coeff 1 ^ 2 := by
+  nontriviality R
+  let e : Fin (f.natDegree - 1 + f.natDegree) ≃ Fin 7 := finCongr (by omega)
+  rw [Polynomial.discr, ← Matrix.det_reindex_self e,
+    Polynomial.sylvesterDeriv_of_natDegree_eq_four hf, hf]
+  norm_num
+  have hc4 : f.coeff 4 = 1 := by
+    rw [← hf, hmonic.coeff_natDegree]
+  eval_det
+  rw [hc4]
+  ring
+
 /-- The discriminant of the depressed quartic `X⁴ + pX² + qX + r`. -/
-theorem _root_.Polynomial.discr_depressedQuartic (p q r : R) :
+theorem discr_depressedQuartic (p q r : R) :
     (X ^ 4 + C p * X ^ 2 + C q * X + C r : R[X]).discr =
       256 * r ^ 3 - 128 * p ^ 2 * r ^ 2 + 144 * p * q ^ 2 * r - 27 * q ^ 4 +
         16 * p ^ 4 * r - 4 * p ^ 3 * q ^ 2 := by
@@ -673,12 +703,13 @@ theorem _root_.Polynomial.discr_depressedQuartic (p q r : R) :
   have hf : f.natDegree = 4 := by
     dsimp only [f]
     compute_degree <;> norm_num
-  let e : Fin (f.natDegree - 1 + f.natDegree) ≃ Fin 7 := finCongr (by omega)
-  rw [Polynomial.discr, ← Matrix.det_reindex_self e,
-    Polynomial.sylvesterDeriv_of_natDegree_eq_four hf, hf]
-  norm_num
-  eval_det
+  have hmonic : f.Monic := by
+    dsimp only [f]
+    have hdeg : degree (C p * X ^ 2 + C q * X + C r : R[X]) < 4 := by
+      compute_degree
+      norm_num
+    simpa only [add_assoc] using monic_X_pow_add hdeg
+  rw [hmonic.discr_of_natDegree_eq_four hf]
   simp [f]
-  ring
 
 end TauCeti
