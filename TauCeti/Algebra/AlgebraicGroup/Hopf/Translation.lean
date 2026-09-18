@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
 public import TauCeti.Algebra.HopfAlgebra.Augmentation
+public import Mathlib.RingTheory.Ideal.Height
 
 /-!
 # Translations of an affine group
@@ -34,6 +35,8 @@ action laws, and identifies its action on the prime spectrum.
 * `TauCeti.HopfAlgebra.comap_rightTranslationAlgEquiv_augmentationPoint`: the translated counit
   point is the given point.
 * `TauCeti.HopfAlgebra.rightTranslationHomeomorph`: right translation on the prime spectrum.
+* `TauCeti.HopfAlgebra.height_kernel_eq_height_augmentation`: translation preserves the height
+  of the augmentation ideal.
 
 ## References
 
@@ -279,6 +282,23 @@ theorem counitAlgHom_comp_rightTranslationAlgHom (g : WithConv (H →ₐ[k] k)) 
   -- `WithConv.ofConv` is the wrapper field, so expose it once to use the point-group identity.
   change (1 * g).ofConv = g.ofConv
   rw [one_mul]
+
+/-- Translation identifies the height of the ideal of any rational point with the height of
+the augmentation ideal. -/
+theorem height_kernel_eq_height_augmentation (g : WithConv (H →ₐ[k] k)) :
+    (RingHom.ker (g.ofConv : H →+* k)).height =
+      (RingHom.ker (_root_.Bialgebra.counitAlgHom k H : H →+* k)).height := by
+  have h : (RingHom.ker (_root_.Bialgebra.counitAlgHom k H : H →+* k)).comap
+      (rightTranslationAlgEquiv g).toRingEquiv = RingHom.ker (g.ofConv : H →+* k) := by
+    change (RingHom.ker (_root_.Bialgebra.counitAlgHom k H).toRingHom).comap
+      (rightTranslationAlgEquiv g).toAlgHom.toRingHom = _
+    rw [rightTranslationAlgEquiv_toAlgHom, RingHom.comap_ker]
+    change RingHom.ker
+      (((_root_.Bialgebra.counitAlgHom k H).comp (rightTranslationAlgHom g)).toRingHom) = _
+    rw [counitAlgHom_comp_rightTranslationAlgHom]
+    rfl
+  rw [← h]
+  exact (rightTranslationAlgEquiv g).toRingEquiv.height_comap _
 
 /-- Right translation on the prime spectrum. The inverse algebra equivalence occurs because
 `Spec` is contravariant. -/
