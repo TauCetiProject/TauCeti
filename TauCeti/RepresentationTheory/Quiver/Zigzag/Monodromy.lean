@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Combinatorics.SimpleGraph.Acyclic
-
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Gauge
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Potential
 
 /-!
 # The monodromy of a skew-zigzag parameter around a closed edge cycle
@@ -148,97 +146,11 @@ theorem monodromy_eq_one_of_isGaugeEquivalent_one {c : SkewZigzagParameter k G}
     (hx : ∀ i : Fin m, G.Adj (x i) (x (i + 1))) : monodromy c hx = 1 := by
   rw [← monodromy_eq_of_isGaugeEquivalent hc hx, monodromy_one]
 
-/-! ### Integrating transition factors -/
-
-variable (G) in
-/-- A distinguished incident edge at a vertex having at least one. -/
-private noncomputable def reference (v : V) (hv : (G.neighborSet v).Nonempty) :
-    G.neighborSet v :=
-  Classical.choice hv.to_subtype
-
-/-- The local coordinate of an incident edge relative to the distinguished edge at its source. -/
-private noncomputable def localCoordinate (c : SkewZigzagParameter k G) {v w : V}
-    (h : G.Adj v w) : kˣ :=
-  c.ratio h (reference G v ⟨w, h⟩).property
-
-/-- The change of local edge coordinates across an oriented edge. -/
-private noncomputable def transition (c : SkewZigzagParameter k G) {v w : V} (h : G.Adj v w) :
-    kˣ :=
-  localCoordinate c h / localCoordinate c h.symm
-
-private theorem ratio_eq_localCoordinate_div (c : SkewZigzagParameter k G) {i j j' : V}
-    (h : G.Adj i j) (h' : G.Adj i j') :
-    c.ratio h h' = localCoordinate c h / localCoordinate c h' := by
-  rw [eq_div_iff_mul_eq']
-  exact ratio_mul_ratio c h h' (reference G i ⟨j, h⟩).property
-
-@[simp]
-private theorem transition_symm (c : SkewZigzagParameter k G) {v w : V} (h : G.Adj v w) :
-    transition c h.symm = (transition c h)⁻¹ := by
-  rw [transition, transition, inv_div]
-
 /-- A transition factor depends only on the endpoints of its edge. -/
 private theorem transition_congr (c : SkewZigzagParameter k G) {v w v' w' : V} (h : G.Adj v w)
     (h' : G.Adj v' w') (hv : v = v') (hw : w = w') : transition c h = transition c h' := by
   subst hv hw
   rfl
-
-/-- The product of the transition factors along the darts of a walk. -/
-private noncomputable def walkTransition (c : SkewZigzagParameter k G) {v w : V}
-    (q : G.Walk v w) : kˣ :=
-  (q.darts.map fun d ↦ transition c d.adj).prod
-
-private theorem walkTransition_concat (c : SkewZigzagParameter k G) {r v w : V} (q : G.Walk r v)
-    (h : G.Adj v w) : walkTransition c (q.concat h) = walkTransition c q * transition c h := by
-  simp [walkTransition]
-
-private theorem walkTransition_append (c : SkewZigzagParameter k G) {u v w : V}
-    (p : G.Walk u v) (q : G.Walk v w) :
-    walkTransition c (p.append q) = walkTransition c p * walkTransition c q := by
-  simp [walkTransition]
-
-private theorem walkTransition_reverse (c : SkewZigzagParameter k G) {u v : V}
-    (p : G.Walk u v) : walkTransition c p.reverse = (walkTransition c p)⁻¹ := by
-  simp [walkTransition, Function.comp_def, List.prod_inv]
-
-/-- The unoriented edge scale obtained from a vertex potential and the local edge coordinates. -/
-private noncomputable def edgeScale (c : SkewZigzagParameter k G) (a : V → kˣ) {v w : V}
-    (h : G.Adj v w) : kˣ :=
-  a v * localCoordinate c h
-
-/-- A vertex potential for the transition factors trivializes the parameter. -/
-private theorem isGaugeEquivalent_one_of_potential (c : SkewZigzagParameter k G) (a : V → kˣ)
-    (ha : ∀ ⦃v w : V⦄ (h : G.Adj v w), a w = a v * transition c h) :
-    IsGaugeEquivalent (1 : SkewZigzagParameter k G) c := by
-  refine isGaugeEquivalent_one_iff_exists_ratio_eq_div.mpr
-    ⟨fun _ _ h ↦ edgeScale c a h, fun _ _ h ↦ ?_, fun _ _ _ h h' ↦ ?_⟩
-  · dsimp only
-    rw [edgeScale, edgeScale, ha h, transition, mul_assoc, div_mul_cancel]
-  · dsimp only
-    rw [ratio_eq_localCoordinate_div c h h', edgeScale, edgeScale, mul_div_mul_left_eq_div]
-
-variable (G) in
-/-- The chosen root of the connected component of a vertex. -/
-private noncomputable def root (v : V) : V :=
-  (G.connectedComponentMk v).nonempty_supp.some
-
-private theorem reachable_root (v : V) : G.Reachable (root G v) v :=
-  SimpleGraph.ConnectedComponent.exact
-    ((G.connectedComponentMk v).nonempty_supp.some_mem)
-
-private theorem root_eq_of_adj {v w : V} (h : G.Adj v w) : root G w = root G v :=
-  congrArg (fun C : G.ConnectedComponent => C.nonempty_supp.some)
-    (SimpleGraph.ConnectedComponent.sound h.symm.reachable)
-
-variable (G) in
-/-- A shortest path from the chosen root of a connected component to one of its vertices. -/
-private noncomputable def rootPath (v : V) : G.Walk (root G v) v :=
-  (reachable_root v).exists_path_of_dist.choose
-
-/-- The potential obtained by multiplying transition factors along a chosen path from the root of
-the component of a vertex. -/
-private noncomputable def potential (c : SkewZigzagParameter k G) (v : V) : kˣ :=
-  walkTransition c (rootPath G v)
 
 /-! ### Trivial monodromy -/
 
@@ -297,12 +209,7 @@ theorem isGaugeEquivalent_one_iff_monodromy_eq_one {c : SkewZigzagParameter k G}
   have hwalk {r v : V} (p q : G.Walk r v) : walkTransition c p = walkTransition c q := by
     have h := walkTransition_eq_one_of_monodromy_eq_one c hc (p.append q.reverse)
     rwa [walkTransition_append, walkTransition_reverse, mul_inv_eq_one] at h
-  have hroot {r w : V} (hr : root G w = r) (q : G.Walk r w) :
-      potential c w = walkTransition c q := by
-    subst hr
-    exact hwalk _ _
-  refine isGaugeEquivalent_one_of_potential c (potential c) fun v w h ↦ ?_
-  rw [hroot (root_eq_of_adj h) ((rootPath G v).concat h), walkTransition_concat, potential]
+  exact isGaugeEquivalent_one_of_walkTransition_eq c fun _ _ p q _ _ ↦ hwalk p q
 
 /-- The parameter whose ratios are those of `c'` divided by those of `c`. -/
 private def ratioDiv (c c' : SkewZigzagParameter k G) : SkewZigzagParameter k G where
