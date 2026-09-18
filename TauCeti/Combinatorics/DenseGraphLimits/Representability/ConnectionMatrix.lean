@@ -43,7 +43,9 @@ of the Lovász–Szegedy representability theorem.
 * `TauCeti.DenseGraphLimits.IsReflectionPositive.nonneg_glue_self` is the diagonal consequence
   `0 ≤ f` on a self-gluing;
 * `TauCeti.DenseGraphLimits.IsMultiplicative.apply_sum_bot` says adjoining any finite edgeless
-  graph does not change a multiplicative, normalized parameter.
+  graph does not change a multiplicative, normalized parameter, and
+  `TauCeti.DenseGraphLimits.IsMultiplicative.apply_map` that neither does relabeling a graph into a
+  larger vertex set along an injection, when the parameter is also isomorphism invariant.
 
 The section `Examples` records that the four conditions are simultaneously satisfiable — the
 parameter constantly `1`, which is the homomorphism density of the constant graphon `W ≡ 1` — and
@@ -211,6 +213,27 @@ theorem IsMultiplicative.apply_sum_bot {f : GraphParam} (hmul : IsMultiplicative
     (hnorm : IsNormalized f) (n m : ℕ) (F : SimpleGraph (Fin n)) :
     f (n + m) ((F ⊕g (⊥ : SimpleGraph (Fin m))).map finSumFinEquiv.toEmbedding) = f n F := by
   rw [hmul n m F ⊥, hmul.apply_bot hnorm m, mul_one]
+
+/-- An isomorphism-invariant, multiplicative, normalized parameter is unchanged by relabeling a
+graph into a larger vertex set along an injection: the relabeled graph is the disjoint union of the
+original with the edgeless graph on the vertices outside the image. -/
+theorem IsMultiplicative.apply_map {f : GraphParam} (hmul : IsMultiplicative f)
+    (hiso : IsIsoInvariant f) (hnorm : IsNormalized f) {k n : ℕ} (e : Fin k ↪ Fin n)
+    (F : SimpleGraph (Fin k)) : f n (F.map e) = f k F := by
+  -- Extend `e` to an equivalence from `Fin k` plus an enumeration of the complement of its range.
+  let φ : Fin k ⊕ Fin (Nat.card {x // x ∉ Set.range e}) ≃ Fin n :=
+    (Equiv.sumCongr (Equiv.ofInjective e e.injective) (Finite.equivFin _).symm).trans
+      (Equiv.sumCompl (· ∈ Set.range e))
+  have hφ : (F ⊕g (⊥ : SimpleGraph (Fin (Nat.card {x // x ∉ Set.range e})))).map φ.toEmbedding =
+      F.map e := by
+    ext x y
+    simp only [SimpleGraph.map_adj]
+    constructor
+    · rintro ⟨a | a, b | b, h, rfl, rfl⟩ <;> simp_all [φ]
+    · rintro ⟨a, b, h, rfl, rfl⟩
+      exact ⟨.inl a, .inl b, by simpa using h, by simp [φ], by simp [φ]⟩
+  rw [← hφ, ← hmul.apply_sum_bot hnorm k _ F]
+  exact hiso.eq_of_iso ((SimpleGraph.Iso.map φ _).symm.trans (SimpleGraph.Iso.map _ _))
 
 section Examples
 
