@@ -11,15 +11,15 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.PathAlgebra
 /-!
 # The signless relator of a simple graph
 
-For the doubled quiver `TauCeti.DoubledQuiver G` of a simple graph `G`, the signless preprojective
-relator `TauCeti.signlessPreprojectiveRelator` at a vertex `v` is `∑_{j ∼ v} (v → j → v)`, the sum
-of the backtracks along the edges at `v`. This is the relation which Huerfano and Khovanov find in
-the quadratic dual of the zigzag algebra of `G`.
+For the doubled quiver `TauCeti.DoubledQuiver G` of a simple graph `G`, at any vertex `v` with
+finite neighbourhood the signless preprojective relator `TauCeti.signlessPreprojectiveRelator` is
+`∑_{j ∼ v} (v → j → v)`, the sum of the backtracks along the edges at `v`. This is the relation
+which Huerfano and Khovanov find in the quadratic dual of the zigzag algebra of `G`.
 
 ## Main results
 
-* `TauCeti.signlessPreprojectiveRelator_vertex`: for a simple graph the relator is the sum of the
-  backtracks `TauCeti.DoubledQuiver.backtrackElem` over the neighbours.
+* `TauCeti.signlessPreprojectiveRelator_vertex`: at a vertex with finite neighbourhood, the
+  relator is the sum of the backtracks `TauCeti.DoubledQuiver.backtrackElem` over the neighbours.
 
 ## References
 
