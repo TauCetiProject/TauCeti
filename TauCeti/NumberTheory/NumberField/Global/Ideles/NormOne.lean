@@ -100,12 +100,6 @@ theorem comap_normOne :
   ext x
   simp
 
-/-- The norm-one idele class group is the image of the norm-one ideles under the quotient map. -/
-theorem map_ker_ideleNorm :
-    (ideleNorm (K := K)).ker.map (QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K)) =
-      normOne K := by
-  rw [← comap_normOne, Subgroup.map_comap_eq_self_of_surjective (QuotientGroup.mk'_surjective _)]
-
 /-- The norm-one idele class group is closed in the idele class group. -/
 theorem isClosed_normOne : IsClosed (normOne K : Set (IdeleClassGroup (𝓞 K) K)) :=
   isClosed_singleton.preimage continuous_ideleClassNorm
