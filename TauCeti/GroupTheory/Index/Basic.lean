@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Index
+public import TauCeti.Algebra.Group.Subgroup.Map
 import Mathlib.Tactic.Group
 
 /-!
@@ -155,14 +156,6 @@ theorem finiteIndex_of_finiteIndex_subgroupOf {G : Type*} [Group G] (H K : Subgr
   isFiniteRelIndex_top_iff.mp <|
     ((isFiniteRelIndex_iff_finiteIndex (H := H) (K := K)).mpr inferInstance).trans
       (isFiniteRelIndex_top_iff.mpr inferInstance)
-
-/-- The image of `H ⊓ f⁻¹(K)` under `f` is the part of `K` inside `f(H)`. -/
-theorem map_inf_comap {G N : Type*} [Group G] [Group N] (H : Subgroup G) (K : Subgroup N)
-    (f : G →* N) : (H ⊓ K.comap f).map f = H.map f ⊓ K := by
-  ext y
-  simp only [mem_map, mem_inf, mem_comap]
-  exact ⟨fun ⟨x, ⟨hx, hxK⟩, hxy⟩ ↦ ⟨⟨x, hx, hxy⟩, hxy ▸ hxK⟩,
-    fun ⟨⟨x, hx, hxy⟩, hy⟩ ↦ ⟨x, ⟨hx, hxy ▸ hy⟩, hxy⟩⟩
 
 /-- **Pulling back a subgroup of finite relative index along an injective homomorphism.** If `H`
 has finite index in `G` and `K` has finite index relative to `f(H)`, then `H ⊓ f⁻¹(K)` has
