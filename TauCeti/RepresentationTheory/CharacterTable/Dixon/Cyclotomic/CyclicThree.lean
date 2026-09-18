@@ -7,8 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Cyclic
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.CentralCharacterCount
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Checker
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Lift
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Solver
 
 /-!
 # The cyclotomic Dixon computation for the cyclic group of order three
@@ -50,6 +49,8 @@ with the complex character table up to row order.
   reductions of the displayed rows.
 * `TauCeti.cyclicGroupThreeExactCharacterTable_lift_conjugateResidues`: the structured lift
   recovers every exact entry from its two conjugate residues.
+* `TauCeti.isSome_dixonCyclotomicCharacterTable_cyclicGroupThree`: the assembled exact solver
+  succeeds on the certified data.
 * `TauCeti.isCharacterTableSpec_cyclicGroupThree`: the embedded exact table satisfies the complex
   character-table specification.
 
@@ -77,7 +78,7 @@ namespace TauCeti
 
 open Matrix
 
-local instance fact_prime_seven : Fact (Nat.Prime 7) := ⟨by decide⟩
+local instance fact_prime_seven_cyclicThree : Fact (Nat.Prime 7) := ⟨by decide⟩
 
 private theorem exponent_cyclicGroup_three :
     Monoid.exponent (Multiplicative (ZMod 3)) = 3 := by
@@ -251,6 +252,39 @@ theorem cyclicGroupThreeExactCharacterTable_lift_conjugateResidues
   -- Rewrite the group exponent first so that the dependent cyclotomic coefficient type is `3`.
   rw [exponent_cyclicGroup_three] at hLift
   exact hLift (cyclicGroupThreeExactCharacterTable_natAbs_coeff_le_sqrt i j)
+
+/-- **The assembled cyclotomic Dixon--Schneider solver succeeds on the certified `C₃` data.** -/
+theorem isSome_dixonCyclotomicCharacterTable_cyclicGroupThree :
+    ((cyclicClassData 3).dixonCyclotomicCharacterTable? 3 (by simp)
+      cyclicGroupThreeDixonPrimeData).isSome = true := by
+  apply (cyclicClassData 3).isSome_dixonCyclotomicCharacterTable_of_spec 3 (by simp)
+    cyclicGroupThreeDixonPrimeData cyclicGroupThreeExactCharacterTable
+    cyclicGroupThreeExactCharacterTable (fun _ ↦ 1)
+    isCyclotomicCharacterTableSpec_cyclicGroupThree
+  · intro i j k
+    have h := cyclicGroupThreeExactCharacterTable_natAbs_coeff_le_sqrt i j k
+    exact cyclicGroupThreeDixonPrimeData.isGoodDixonPrime
+      |>.two_mul_natAbs_lt_of_natAbs_le_sqrt h
+  · intro j i i' h
+    let k : CyclicGroupThreeClassIndex := ⟨1, by decide⟩
+    have hk : Cyclotomic.conjugateResidues cyclicGroupThreeDixonPrimeData.root
+        (cyclicGroupThreeExactCharacterTable i k) j =
+      Cyclotomic.conjugateResidues cyclicGroupThreeDixonPrimeData.root
+        (cyclicGroupThreeExactCharacterTable i' k) j := congrFun h k
+    rw [cyclicGroupThreeExactCharacterTable_apply,
+      cyclicGroupThreeExactCharacterTable_apply] at hk
+    have hbase : IsPrimitiveRoot cyclicGroupThreeDixonPrimeData.root 3 := by
+      simpa using cyclicGroupThreeDixonPrimeData.isPrimitiveRoot_root
+    have hroot := Cyclotomic.isPrimitiveRoot_conjugateRoot hbase j
+    have hpows :
+        Cyclotomic.conjugateRoot 3 cyclicGroupThreeDixonPrimeData.root j ^ (i : ℕ) =
+          Cyclotomic.conjugateRoot 3 cyclicGroupThreeDixonPrimeData.root j ^ (i' : ℕ) := by
+      simp only [k, Nat.mul_one, Cyclotomic.conjugateResidues_apply] at hk
+      rw [← Cyclotomic.reduceRingHom_apply cyclicGroupThreeDixonPrimeData.p _ hroot,
+        ← Cyclotomic.reduceRingHom_apply cyclicGroupThreeDixonPrimeData.p _ hroot] at hk
+      simpa only [map_pow, Cyclotomic.reduceRingHom_apply,
+        Cyclotomic.reduce_zeta cyclicGroupThreeDixonPrimeData.p _ hroot] using hk
+    exact Fin.ext (hroot.pow_inj (by simpa using i.isLt) (by simpa using i'.isLt) hpows)
 
 /-- The displayed exact table, embedded in `ℂ` and reindexed by actual conjugacy classes. -/
 noncomputable def cyclicGroupThreeComplexCharacterTable :

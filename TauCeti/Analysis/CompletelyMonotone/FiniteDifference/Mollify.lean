@@ -138,7 +138,6 @@ theorem IsDifferenceCompletelyMonotone.exists_isCompletelyMonotone_between_shift
   have hψc : HasCompactSupport ψ := φ.hasCompactSupport_normed
   have hψ0 : ∀ s, 0 ≤ ψ s := fun s => φ.nonneg_normed s
   have hψint : ∫ s, ψ s = 1 := φ.integral_normed
-  have hψi : Integrable ψ volume := hψcont.integrable_of_hasCompactSupport hψc
   have hsupp : ∀ s : ℝ, ψ s ≠ 0 → -ε < s ∧ s < 0 := by
     intro s hs
     have hmem : s ∈ Function.support ψ := hs
@@ -155,10 +154,8 @@ theorem IsDifferenceCompletelyMonotone.exists_isCompletelyMonotone_between_shift
     exact (isDifferenceCompletelyMonotone_integral_kernel hψcont hψc hψ0
       (fun s hs => (hsupp s hs).2) hFloc hFcm).isCompletelyMonotone hsmooth.contDiffOn
   · -- The two-sided bound, from monotonicity of `F` and the normalization of `ψ`.
-    have hintF : Integrable (fun s => ψ s * F (t - s)) volume :=
-      hψc.convolutionExists_left (ContinuousLinearMap.mul ℝ ℝ) hψcont hFloc t
     rw [← hFeq _ (by linarith : (0 : ℝ) ≤ t + ε), ← hFeq t ht]
-    exact mem_Icc.mp (MeasureTheory.integral_kernel_mem_Icc_of_antitoneOn hε.le
-      (hFanti.antitoneOn _) hψ0 hψint hψi hintF fun s hs => ⟨(hsupp s hs).1.le, (hsupp s hs).2.le⟩)
+    exact mem_Icc.mp (MeasureTheory.integral_kernel_mem_Icc_of_antitoneOn
+      (hFanti.antitoneOn _) hψ0 hψint fun s hs => ⟨(hsupp s hs).1.le, (hsupp s hs).2.le⟩)
 
 end TauCeti

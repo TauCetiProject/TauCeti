@@ -151,7 +151,7 @@ theorem sum_pointSet {M : Type*} [AddCommMonoid M] (x : GridState n)
   exact (Prod.ext_iff.mp hc).1
 
 /-- A grid state meets a set of columns in as many occupied squares as there are columns. -/
-theorem sum_ite_mem_columns {R : Type*} [Semiring R] (x : GridState n)
+theorem sum_ite_mem_columns {R : Type*} [AddCommMonoidWithOne R] (x : GridState n)
     (C : Finset (Fin n)) :
     ∑ p ∈ x.pointSet, (if p.1 ∈ C then (1 : R) else 0) = (C.card : R) := by
   classical
@@ -159,7 +159,7 @@ theorem sum_ite_mem_columns {R : Type*} [Semiring R] (x : GridState n)
   simp
 
 /-- A grid state meets a set of rows in as many occupied squares as there are rows. -/
-theorem sum_ite_mem_rows {R : Type*} [Semiring R] (x : GridState n)
+theorem sum_ite_mem_rows {R : Type*} [AddCommMonoidWithOne R] (x : GridState n)
     (D : Finset (Fin n)) :
     ∑ p ∈ x.pointSet, (if p.2 ∈ D then (1 : R) else 0) = (D.card : R) := by
   classical
@@ -191,6 +191,10 @@ theorem apply_columnOfRow (x : GridState n) (r : Fin n) : x (x.columnOfRow r) = 
 /-- The column containing the point in row `x c` is `c`. -/
 theorem columnOfRow_apply (x : GridState n) (c : Fin n) : x.columnOfRow (x c) = c := by
   simp [columnOfRow]
+
+/-- Distinct rows are occupied in distinct columns. -/
+theorem columnOfRow_injective (x : GridState n) : Function.Injective x.columnOfRow :=
+  x.toPerm.symm.injective
 
 /-- A grid state occupies a square in every column, so it meets every nonempty vertical band of
 squares. -/
