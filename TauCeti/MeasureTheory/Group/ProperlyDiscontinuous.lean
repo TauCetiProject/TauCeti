@@ -53,7 +53,7 @@ variable [SecondCountableTopology X] [T2Space X] [LocallyCompactSpace X]
 
 /-- In a second countable space with a properly discontinuous action there is a sequence of
 open sets, each disjoint from its nontrivial translates, that covers the free locus. -/
-private theorem exists_seq_isOpen_disjoint_smul :
+theorem exists_seq_isOpen_disjoint_smul :
     ∃ V : ℕ → Set X, (∀ n, IsOpen (V n)) ∧
       (∀ n (g : G), g ≠ 1 → Disjoint (g • V n) (V n)) ∧
       ∀ x ∈ (freeLocus G X : Set X), ∃ n, x ∈ V n := by
