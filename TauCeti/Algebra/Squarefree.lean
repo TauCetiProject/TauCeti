@@ -115,9 +115,9 @@ hypotheses differ in usability: the uniform one can be established with no knowl
 proof consumes. Anything proved from the sharp form is therefore available from the uniform form
 through this lemma.
 
-Nothing here multiplies two elements of `R`, so `R` need not be commutative. `Squarefree` is a
-`Monoid` notion and the integer casts need `AddGroupWithOne`; `Ring` is the bundled class
-supplying both with a single `1`, which is the unit `IsUnit` refers to inside `Squarefree`. -/
+The ambient ring may be noncommutative. `Squarefree` is a `Monoid` notion and the integer casts
+need `AddGroupWithOne`; `Ring` is the bundled class supplying both with a single `1`, which is
+the unit `IsUnit` refers to inside `Squarefree`. -/
 theorem four_dvd_or_exists_odd_prime_and_dvd_of_squarefree {R : Type*} [Ring R] {n : ℕ}
     (hn : 2 < n) (hsf : ∀ p : ℕ, p.Prime → p ∣ n → Squarefree ((p : ℤ) : R)) :
     (4 ∣ n ∧ Squarefree (2 : R)) ∨
