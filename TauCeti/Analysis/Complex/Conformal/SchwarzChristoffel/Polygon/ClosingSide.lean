@@ -73,6 +73,7 @@ private lemma schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt (a e : Fin (n
 
 /-- **The vertex at infinity lies on the closing line.** Its imaginary part equals that of the
 first finite vertex. -/
+@[simp]
 theorem im_schwarzChristoffelVertexAtInfinity_eq_im_zero
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) :
@@ -83,6 +84,7 @@ theorem im_schwarzChristoffelVertexAtInfinity_eq_im_zero
 
 /-- **The first and last finite vertices lie on the same closing line.** Their imaginary parts
 agree. -/
+@[simp]
 theorem im_schwarzChristoffelVertex_last_eq_im_zero
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) :
@@ -191,6 +193,7 @@ theorem im_schwarzChristoffelVertex_zero_lt (a e : Fin (n + 1) → ℝ) (z₀ : 
 
 /-- **Every finite Schwarz--Christoffel vertex lies on or above the closing line.** The line is
 identified by the imaginary part of the first finite vertex. -/
+@[grind]
 theorem im_schwarzChristoffelVertex_zero_le (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane)
     (ha : StrictMono a) (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2)
     (k : Fin (n + 1)) :
