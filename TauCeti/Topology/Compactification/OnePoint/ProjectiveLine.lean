@@ -215,9 +215,8 @@ private theorem mk_mul_upperRightHom_mul_inv (a : SL(2, K)) (ha : a 1 0 = 0) (x 
     simp [SpecialLinearGroup.transvection_coe, Matrix.mul_apply, Fin.sum_univ_two, ha]
   linear_combination -(a 0 0 * x) * hdet
 
-/-- **Conjugating translations by an element fixing `∞`.** An element `g` of `PSL(2, K)` fixing
-`∞` acts on `K` by an affine map `k ↦ t ^ 2 * k + s` with `t ≠ 0`; conjugation by `g` therefore
-rescales every translation by the same factor `t ^ 2`. -/
+/-- **Conjugating translations by an element fixing `∞`.** Conjugation by an element `g` of
+`PSL(2, K)` fixing `∞` rescales every translation by the same nonzero square. -/
 theorem exists_conj_upperRightHom_of_smul_infty {g : PSL(2, K)}
     (hg : g • (∞ : OnePoint K) = ∞) :
     ∃ t : K, t ≠ 0 ∧ ∀ x, g * upperRightHom x * g⁻¹ = upperRightHom (t ^ 2 * x) := by

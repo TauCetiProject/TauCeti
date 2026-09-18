@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.Cusp
+public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Basic
 public import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup
 import Mathlib.Algebra.Order.Group.Cyclic
 import Mathlib.Topology.Algebra.Order.ArchimedeanDiscrete
@@ -17,13 +17,6 @@ Let `Γ ≤ PSL(2, ℝ)` be a discrete subgroup and `c ∈ OnePoint ℝ` a cusp 
 point fixed by a parabolic element of `Γ`. Choose `σ ∈ PSL(2, ℝ)` with `σ • c = ∞`. Then the
 stabilizer of `c` in `Γ` is infinite cyclic, and `σ` conjugates it onto the group of translations
 `z ↦ z + n * w`, `n ∈ ℤ`, for a unique `w > 0`, the *width* of the cusp relative to `σ`.
-
-The proof moves the cusp to `∞`. The `x : ℝ` for which `Γ` contains the conjugate of the
-translation by `x` form a discrete, hence cyclic, subgroup of `ℝ`, nonzero because `c` is a cusp;
-let `w > 0` generate it. An element `g` of `Γ` fixing `c` is conjugated to an affine map
-`z ↦ t ^ 2 * z + s`, and conjugation by `g` multiplies the periods by `t ^ 2`. As the periods are
-`w * ℤ`, both `t ^ 2` and `t ^ (-2)` are positive integers, so `t ^ 2 = 1` and `g` is conjugate to a
-translation, necessarily by a multiple of `w`.
 
 The result is packaged as a *normalized cusp datum* `Subgroup.CuspDatum`: a cusp, a scaling, a
 generator of the full stabilizer, and a positive width with the conjugation formula. Such a datum
@@ -71,6 +64,8 @@ private theorem mem_cuspPeriods {σ : PSL(2, ℝ)} {x : ℝ} :
     x ∈ cuspPeriods Γ σ ↔ σ⁻¹ * upperRightHom x * σ ∈ Γ := by
   simp [cuspPeriods]
 
+/-- The discreteness transfer follows the proof pattern of David Loeffler's
+`Subgroup.instDiscreteTopStrictPeriods` in `Mathlib/NumberTheory/ModularForms/Cusps.lean`. -/
 private theorem discreteTopology_cuspPeriods [DiscreteTopology Γ] (σ : PSL(2, ℝ)) :
     DiscreteTopology (cuspPeriods Γ σ) := by
   refine DiscreteTopology.of_continuous_injective
@@ -243,6 +238,7 @@ theorem mem_stabilizer_iff_conj {g : Γ} :
 /-- **Uniqueness of normalized cusp data.** A cusp datum is determined by its cusp and its
 scaling: the width is then the positive generator of the conjugated stabilizer, and the
 generator is the corresponding element of `Γ`. -/
+@[ext]
 theorem eq_of_cusp_eq_of_scaling_eq {D D' : Γ.CuspDatum} (hc : D.cusp = D'.cusp)
     (hσ : D.scaling = D'.scaling) : D = D' := by
   obtain ⟨n, hn⟩ := D.mem_stabilizer_iff_conj.mp (hc ▸ D'.generator_mem_stabilizer)
