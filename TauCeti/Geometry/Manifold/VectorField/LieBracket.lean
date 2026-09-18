@@ -22,7 +22,7 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
 
 ## Main result
 
-* `TauCeti.mlieBracket_const_modelSpace`: constant model-space vector fields have zero
+* `TauCeti.mlieBracket_const_model_space`: constant model-space vector fields have zero
   manifold Lie bracket.
 * `mvfderiv_mlieBracket`: a differential sends the manifold bracket to the commutator of
   directional derivatives.
@@ -52,7 +52,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
 namespace TauCeti
 
 /-- Constant vector fields on a normed vector space have zero manifold Lie bracket. -/
-theorem mlieBracket_const_modelSpace (a b x : F) :
+@[simp]
+theorem mlieBracket_const_model_space (a b x : F) :
     VectorField.mlieBracket 𝓘(𝕜, F) (fun _ : F ↦ a) (fun _ : F ↦ b) x = 0 := by
   let A : ∀ y : F, TangentSpace 𝓘(𝕜, F) y := fun _ ↦ a
   let B : ∀ y : F, TangentSpace 𝓘(𝕜, F) y := fun _ ↦ b

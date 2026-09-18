@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
-public import TauCeti.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
 # Geodesics in inner-product spaces
@@ -22,14 +22,14 @@ domain and value of the Riemannian exponential map can be checked.
 
 ## Main results
 
-* `TauCeti.Manifold.christoffelMap_leviCivita_modelSpace`: the Christoffel map of the standard
+* `TauCeti.Manifold.christoffelMap_leviCivita_model_space`: the Christoffel map of the standard
   Riemannian metric vanishes.
 * `TauCeti.Manifold.isGeodesicCurve_add_smul`: an affine line is an all-time geodesic.
 * `TauCeti.Manifold.isGeodesicCurve_iff_exists_eq_add_smul`: the geodesics are exactly the
   affine lines.
-* `TauCeti.Manifold.geodesicInterval_modelSpace`: every affine initial condition exists for all
+* `TauCeti.Manifold.geodesicInterval_model_space`: every affine initial condition exists for all
   time.
-* `TauCeti.Manifold.maximalGeodesic_modelSpace`: the chosen maximal geodesic is the affine line.
+* `TauCeti.Manifold.maximalGeodesic_model_space`: the chosen maximal geodesic is the affine line.
 
 ## References
 
@@ -65,7 +65,7 @@ private theorem leviCivitaConnection_const_apply (u v : F) (x : F) :
   have hbracket (a b c : F) :
       inner ℝ (C a x) (VectorField.mlieBracket 𝓘(ℝ, F) (C b) (C c) x) = 0 := by
     have h : VectorField.mlieBracket 𝓘(ℝ, F) (C b) (C c) x = 0 := by
-      simpa only [C] using TauCeti.mlieBracket_const_modelSpace b c x
+      simpa only [C] using TauCeti.mlieBracket_const_model_space b c x
     rw [h]
     exact inner_zero_right (𝕜 := ℝ) (C a x)
   let w : F := leviCivitaConnection 𝓘(ℝ, F) F (C v) x (C u x)
@@ -81,7 +81,7 @@ private theorem leviCivitaConnection_const_apply (u v : F) (x : F) :
 /-- The Levi-Civita connection of the standard Riemannian metric differentiates a constant vector
 field to zero. -/
 @[simp]
-theorem leviCivitaConnection_const_modelSpace (v : F) (x : F) :
+theorem leviCivitaConnection_const_model_space (v : F) (x : F) :
     leviCivitaConnection 𝓘(ℝ, F) F (fun _ : F ↦ v) x = 0 := by
   ext u
   simpa using leviCivitaConnection_const_apply (F := F) u v x
@@ -89,7 +89,7 @@ theorem leviCivitaConnection_const_modelSpace (v : F) (x : F) :
 /-- The Christoffel map of the standard Riemannian metric on an inner-product space vanishes in
 its canonical coordinates. -/
 @[simp]
-theorem christoffelMap_leviCivita_modelSpace (x : F) :
+theorem christoffelMap_leviCivita_model_space (x : F) :
     christoffelMap (Module.finBasis ℝ F)
       ((leviCivitaConnection 𝓘(ℝ, F) F).isCovariantDerivativeOn
         (s := (trivializationAt F (TangentSpace 𝓘(ℝ, F)) x).baseSet)) x = 0 := by
@@ -127,7 +127,7 @@ theorem christoffelMap_leviCivita_modelSpace (x : F) :
   have hz : (0 : TangentSpace 𝓘(ℝ, F) x →L[ℝ] TangentSpace 𝓘(ℝ, F) x) (b j) = 0 :=
     rfl
   rw [christoffelMap_apply_basis b _ hx j i]
-  simp only [christoffelSymbol_apply, hframe, leviCivitaConnection_const_modelSpace,
+  simp only [christoffelSymbol_apply, hframe, leviCivitaConnection_const_model_space,
     hz, map_zero, zero_smul, Finset.sum_const_zero]
 
 /-- Every affine line in a finite-dimensional real inner-product space is a geodesic for the
@@ -144,7 +144,7 @@ theorem isGeodesicCurveOnFrom_add_smul (p v : F) :
     · rw [contMDiffOn_univ, contMDiff_iff_contDiff]
       fun_prop
     · simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, id_comp, derivWithin_univ,
-        hderiv, deriv_const', christoffelMap_leviCivita_modelSpace, zero_apply, add_zero]
+        hderiv, deriv_const', christoffelMap_leviCivita_model_space, zero_apply, add_zero]
   · apply TotalSpace.ext
     · simp
     · refine heq_of_eq ?_
@@ -160,7 +160,7 @@ theorem isGeodesicCurve_add_smul (p v : F) :
 
 /-- Geodesics in a finite-dimensional inner-product space exist for every real parameter. -/
 @[simp]
-theorem geodesicInterval_modelSpace (p v : F) :
+theorem geodesicInterval_model_space (p v : F) :
     geodesicInterval 𝓘(ℝ, F) F p v = univ := by
   apply eq_univ_of_forall
   intro t
@@ -177,26 +177,13 @@ theorem geodesicInterval_modelSpace (p v : F) :
   exact (mem_geodesicInterval_iff (I := 𝓘(ℝ, F)) (M := F)).2
     ⟨fun s : ℝ ↦ p + s • v, a, b, hline, ht⟩
 
-private theorem IsGeodesicCurveOnFrom.eq_maximalGeodesic_of_univ
-    {p v : F} {γ : ℝ → F} (hγ : IsGeodesicCurveOnFrom 𝓘(ℝ, F) γ univ p v) (t : ℝ) :
-    maximalGeodesic 𝓘(ℝ, F) F p v t = γ t := by
+/-- The chosen maximal geodesic in an inner-product space is its affine line. -/
+@[simp]
+theorem maximalGeodesic_model_space (p v : F) (t : ℝ) :
+    maximalGeodesic 𝓘(ℝ, F) F p v t = p + t • v := by
   let _ : T2Space (ModelProd F F) := Prod.t2Space
   let _ : T2Space (TangentBundle 𝓘(ℝ, F) F) :=
     (tangentBundleModelSpaceHomeomorph 𝓘(ℝ, F)).symm.t2Space
-  let a := -(|t| + 1)
-  let b := |t| + 1
-  have h0 : (0 : ℝ) ∈ Ioo a b := by
-    simp only [a, b, mem_Ioo]
-    constructor <;> linarith [abs_nonneg t]
-  have ht : t ∈ Ioo a b := by
-    simp only [a, b, mem_Ioo]
-    constructor <;> linarith [neg_abs_le t, le_abs_self t]
-  exact (hγ.mono (uniqueDiffOn_Ioo a b) (subset_univ _) h0).eqOn_maximalGeodesic ht
-
-/-- The chosen maximal geodesic in an inner-product space is its affine line. -/
-@[simp]
-theorem maximalGeodesic_modelSpace (p v : F) (t : ℝ) :
-    maximalGeodesic 𝓘(ℝ, F) F p v t = p + t • v := by
   exact (isGeodesicCurveOnFrom_add_smul p v).eq_maximalGeodesic_of_univ t
 
 /-- The geodesics in a finite-dimensional real inner-product space are exactly the affine
@@ -211,8 +198,11 @@ theorem isGeodesicCurve_iff_exists_eq_add_smul {γ : ℝ → F} :
     have hfrom : IsGeodesicCurveOnFrom 𝓘(ℝ, F) γ univ p v :=
       ((isGeodesicCurveOn_univ (I := 𝓘(ℝ, F))).2 hγ).isGeodesicCurveOnFrom
         (mem_univ 0)
+    let _ : T2Space (ModelProd F F) := Prod.t2Space
+    let _ : T2Space (TangentBundle 𝓘(ℝ, F) F) :=
+      (tangentBundleModelSpaceHomeomorph 𝓘(ℝ, F)).symm.t2Space
     have heq := hfrom.eq_maximalGeodesic_of_univ t
-    rw [maximalGeodesic_modelSpace] at heq
+    rw [maximalGeodesic_model_space] at heq
     exact heq.symm
   · rintro ⟨p, v, rfl⟩
     exact isGeodesicCurve_add_smul p v
