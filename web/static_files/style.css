@@ -321,6 +321,13 @@ a.card:hover { transform: translateY(-3px); border-color: var(--teal); text-deco
 .pb-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.84rem; color: var(--muted); font-variant-numeric: tabular-nums; align-items: center; }
 .pb-legend-main { margin: 0.2rem 0 0.4rem; }
 .pb-legend-note { color: var(--muted); font-style: italic; }
+.pb-jump { margin-left: auto; font-family: var(--display); font-size: 0.8rem; }
+.pb-more { display: none; }
+.pb-methods { margin: 1.5rem 0 0; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); padding: 0.2rem 1.1rem 0.4rem; }
+.pb-methods summary { cursor: pointer; font-family: var(--display); font-weight: 600; font-size: 1.1rem; padding: 0.6rem 0; color: var(--text); }
+.pb-methods summary:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.pb-methods p, .pb-methods li { color: var(--text); }
+.pb-methods ul { padding-left: 1.2rem; }
 .pb-sw, .pb-dot { display: inline-block; width: 11px; height: 11px; border-radius: 2px; vertical-align: -1px; margin-right: 0.35rem; }
 .pb-stack .d, .pb-strip .d, .pb-sw.d, .pb-dot.d { background: var(--pb-done); }
 .pb-stack .p, .pb-strip .p, .pb-sw.p, .pb-dot.p { background: var(--pb-partial); }
@@ -359,6 +366,7 @@ a.card:hover { transform: translateY(-3px); border-color: var(--teal); text-deco
 .pb-ev { display: block; font-family: ui-sans-serif, system-ui, sans-serif; text-transform: none; letter-spacing: 0; font-size: 0.72rem; color: var(--muted); font-weight: 400; margin-top: 0.1rem; }
 .pb-row td { padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
 .pb-row:hover td { background: var(--pb-panel-2); }
+.pb-row.context .pb-c-strip, .pb-row.context .pb-c-cov, .pb-row.context .pb-c-act, .pb-row.context .pb-c-last, .pb-row.context .pb-c-rep { opacity: 0.6; }
 .pb-c-name { width: 28%; }
 .pb-c-strip { width: 24%; }
 .pb-c-cov { width: 15%; }
@@ -415,6 +423,10 @@ a.pb-chip:hover { text-decoration: none; border-color: var(--teal); }
   .pb-tile { padding: 0.6rem 0.7rem; }
   .pb-big { font-size: 1.4rem; }
   .pb-tile .pb-bars { display: none; }
+  /* Two tiles up front; the pull-request and report figures sit behind a control. */
+  .pb-tiles:not(.expanded) .pb-tile-more { display: none; }
+  .pb-more { display: inline-block; grid-column: 1 / -1; justify-self: start; font: inherit; font-size: 0.8rem; color: var(--teal); background: transparent; border: 1px solid var(--pb-line-strong); border-radius: 999px; padding: 0.15rem 0.7rem; cursor: pointer; }
+  .pb-jump { margin-left: 0; }
   .pb-table, .pb-table tbody, .pb-table tr, .pb-table td { display: block; }
   .pb-table thead { display: none; }
   .pb-row { padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--line); }

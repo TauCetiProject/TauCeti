@@ -21,17 +21,21 @@ Three kinds of evidence go into the output, and the page keeps them apart:
   header, when one is present and fits. Until TauCetiProgress emits that marker,
   `scripts/roadmap_coverage.json` carries the same verdicts transcribed by hand from the prose.
   A transcription is bound to the exact report it was read from (its library commit and a hash of
-  the report's text) and to the exact layer ids it names, so a rewritten report or a re-layered
-  README retires it rather than letting old states attach to new requirements. The states have
-  the standing of the prose: a model's account of the library, not a certificate that a layer's
-  whole specification is met, and not something Lean checks.
+  the report's text), to the exact specification it was read against (a hash of the README), and
+  to the exact layer ids it names; a rewritten report, an edited README or a re-layered one
+  retires it, each with its own reason, rather than letting old states attach to new
+  requirements. The states have the standing of the prose: a model's account of the library, not
+  a certificate that a layer's whole specification is met, and not something Lean checks.
 
 * **Activity** is mechanical: merged pull requests carrying exactly one `roadmap/<Area>` label,
   the attribution the Statistics page already relies on. Pull requests with no roadmap label, or
   more than one, are counted in the global figures and reported as unattributed rather than
   assigned to a row. It reads the snapshot the Pages workflow caches for the statistics charts
   (`--data`), so no second walk of GitHub is needed; without one it pages the merged pull
-  requests itself through `gh`.
+  requests itself through `gh`. Three times are kept apart: when the pull requests were fetched
+  (`collected_at`, unknown for a snapshot that does not say), the cutoff up to which they count
+  (`cutoff`, which is what "in the last 30 days" is measured from), and when this file was
+  written (`exported_at`).
 
 A roadmap under `Completed/` is one the maintainers declared complete against its README. That is
 a human decision, recorded separately from any layer assessment; the two are shown side by side
@@ -59,6 +63,7 @@ COMPLETED_DIR = "Completed"
 AREA_PREFIX = "roadmap/"
 EXCLUDE = {"roadmap/none", "roadmap/Unknown"}
 WEEKS = 16
+RECENT_DAYS = 30
 # TauCetiProgress opens a new reporting window once this many labelled PRs have merged since the
 # last one, so this is the threshold at which a report is behind by its own rule. It is a
 # heuristic about when a new report is due, not a claim that nothing changed below it.
@@ -67,6 +72,7 @@ UPDATE_DUE_PRS = 10
 STATUS_MARKER = "tauceti-status:v1"
 COVERAGE_MARKER = "tauceti-coverage:v1"
 _MARKER_RE = re.compile(r"<!--\s*(tauceti-[a-z-]+:v\d+)\s*(\{.*?\})\s*-->", re.S)
+MALFORMED = "malformed"  # a marker that is present but whose JSON does not parse
 
 STATES = ("done", "partial", "untouched", "unassessed")
 _STATE_CHAR = {"d": "done", "p": "partial", "u": "untouched", "?": "unassessed"}
@@ -74,7 +80,7 @@ _STATE_CHAR = {"d": "done", "p": "partial", "u": "untouched", "?": "unassessed"}
 # Why a row's layers carry the states they do. `ok` means an assessment applied; every other
 # reason leaves the layers unassessed and says which kind of gap that is.
 REASONS = ("ok", "no-layers", "no-report", "not-transcribed", "transcription-retired",
-           "invalid-marker")
+           "specification-changed", "invalid-marker")
 
 # A layer heading: `### Layer 3: ...`, `## Lane G: grid homology`, `### Part A — ...`,
 # `### Stage 2: ...`, or a short label such as `### L0A — sheaves of modules` or `### S1: the
@@ -87,6 +93,10 @@ _WORD_HEADING_RE = re.compile(rf"^#{{2,4}}\s+({_WORD_LEAD}.*?)\s*$", re.M)
 _SHORT_HEADING_RE = re.compile(rf"^#{{2,4}}\s+({_SHORT_LEAD}.*?)\s*$", re.M)
 _BULLET_RE = re.compile(rf"^- \*\*({_LAYER_LEAD}[^*]*?)\*\*", re.M)
 _ID_RE = re.compile(rf"^({_LAYER_LEAD}[^:—–,(]*?)\s*(?:[:—–,(]|$)")
+
+
+def sha256(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def layer_headings(readme: str) -> list[str]:
@@ -111,15 +121,20 @@ def layer_id(title: str) -> str:
     return (m.group(1) if m else title).strip()
 
 
-def markers(text: str) -> dict[str, dict]:
-    """Every `<!--tauceti-*:vN {json}-->` marker in a generated file, by name (first wins)."""
+def markers(text: str) -> dict:
+    """Every `<!--tauceti-*:vN {json}-->` marker in a generated file, by name (first wins).
+
+    A marker whose JSON does not parse is recorded as `MALFORMED` rather than dropped, so a
+    present-but-broken marker is reported as such instead of looking absent.
+    """
     out = {}
     for name, body in _MARKER_RE.findall(text):
-        if name not in out:
-            try:
-                out[name] = json.loads(body)
-            except json.JSONDecodeError:
-                continue
+        if name in out:
+            continue
+        try:
+            out[name] = json.loads(body)
+        except json.JSONDecodeError:
+            out[name] = MALFORMED
     return out
 
 
@@ -165,19 +180,37 @@ def _frontier(text: str) -> list[dict]:
     return items[:5]
 
 
+_TS_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$")
+
+
+def parse_ts(value) -> dt.datetime | None:
+    """An ISO-8601 timestamp with an explicit zone, as an aware UTC datetime, or None."""
+    if not isinstance(value, str) or not _TS_RE.match(value):
+        return None
+    try:
+        return dt.datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(dt.timezone.utc)
+    except ValueError:
+        return None
+
+
+def iso_z(when: dt.datetime) -> str:
+    return when.astimezone(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
 def parse_status(text: str) -> dict | None:
     """The header, at-a-glance paragraph, frontier and coverage marker of a STATUS.md."""
     m = markers(text)
     head = m.get(STATUS_MARKER)
     if not isinstance(head, dict) or not isinstance(head.get("to_sha"), str) or not head["to_sha"]:
         return None
+    ts = head.get("ts")
     return {
         "to_sha": head["to_sha"],
-        "ts": head.get("ts") if isinstance(head.get("ts"), str) else None,
+        "ts": iso_z(parse_ts(ts)) if parse_ts(ts) else None,
         "roadmap": head.get("roadmap") if isinstance(head.get("roadmap"), str) else None,
         "glance": _paragraph_after(text, "**At a glance.**"),
         "frontier": _frontier(text),
-        "report_sha": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        "report_sha": sha256(text),
         "coverage": m.get(COVERAGE_MARKER),
     }
 
@@ -202,7 +235,11 @@ def states_from_marker(marker, name: str, layers: list[str], to_sha: str) -> tup
 
     It fits when it names this roadmap and this snapshot and lists every layer id exactly once
     with a legal state; anything else is refused whole, with a reason, rather than half-applied.
+    The marker's shape is TauCetiProgress's contract and is read as it is; specification identity
+    is recorded beside it (`readme_sha` on the row), not written into it.
     """
+    if marker == MALFORMED:
+        return None, "marker JSON does not parse"
     if not isinstance(marker, dict):
         return None, "marker is not an object"
     if marker.get("roadmap") != name:
@@ -226,27 +263,38 @@ def states_from_marker(marker, name: str, layers: list[str], to_sha: str) -> tup
     return [by_id[i] for i in ids], None
 
 
-def states_from_transitional(entry, layers: list[str], to_sha: str, report_sha: str) -> tuple[list[str] | None, str | None]:
-    """Per-layer states from the hand-read file, or (None, reason).
+def _prefix_ok(want, full: str, minimum: int) -> bool:
+    return isinstance(want, str) and len(want) >= minimum and full.startswith(want)
 
-    An entry is `{"to_sha", "report_sha", "layers": {id: char}}` and applies only to the exact
-    report it was transcribed from (both hashes must match, prefixes of at least seven and twelve
-    characters respectively) and only to the exact layer ids it names.
+
+def _layer_map(raw, ids: list[str]) -> dict | None:
+    """A validated `{layer id: state}` from a transcription's `layers`, or None."""
+    if not isinstance(raw, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in raw.items()):
+        return None
+    by_id = {k: _STATE_CHAR.get(v, v) for k, v in raw.items()}
+    return None if _check_ids(by_id, ids) else by_id
+
+
+def states_from_transitional(entry, layers: list[str], to_sha: str, report_sha: str,
+                             readme_sha: str) -> tuple[list[str] | None, str | None]:
+    """Per-layer states from the hand-transcribed file, or (None, reason).
+
+    An entry is `{"to_sha", "report_sha", "readme_sha", "layers": {id: char}}` and applies only
+    to the exact report it was transcribed from (library commit and report hash), the exact
+    README it was read against, and the exact layer ids it names. Prefixes are accepted: seven
+    characters of a commit, twelve of a content hash.
     """
     if not isinstance(entry, dict):
         return None, "not-transcribed"
-    want_sha, want_report = entry.get("to_sha"), entry.get("report_sha")
-    if (not isinstance(want_sha, str) or len(want_sha) < 7 or not to_sha.startswith(want_sha)
-            or not isinstance(want_report, str) or len(want_report) < 12 or not report_sha.startswith(want_report)):
+    if not _prefix_ok(entry.get("to_sha"), to_sha, 7) or not _prefix_ok(entry.get("report_sha"), report_sha, 12):
         return None, "transcription-retired"
-    raw = entry.get("layers")
-    if not isinstance(raw, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in raw.items()):
-        return None, "transcription-retired"
-    by_id = {k: _STATE_CHAR.get(v, v) for k, v in raw.items()}
-    problem = _check_ids(by_id, [layer_id(t) for t in layers])
-    if problem:
-        return None, "transcription-retired"
-    return [by_id[layer_id(t)] for t in layers], None
+    if not _prefix_ok(entry.get("readme_sha"), readme_sha, 12):
+        return None, "specification-changed"
+    ids = [layer_id(t) for t in layers]
+    by_id = _layer_map(entry.get("layers"), ids)
+    if by_id is None:
+        return None, "specification-changed"
+    return [by_id[i] for i in ids], None
 
 
 def read_roadmap(dirpath: pathlib.Path, base: str, transitional: dict, parent: str | None = None,
@@ -261,16 +309,19 @@ def read_roadmap(dirpath: pathlib.Path, base: str, transitional: dict, parent: s
     title = next((l[2:].strip() for l in text.splitlines() if l.startswith("# ")), dirpath.name)
     title = re.sub(r"^Roadmap:\s*", "", title)
     name = dirpath.name
-    rel = f"{base}/{parent}/{name}" if parent else f"{base}/{name}"
-    hand = transitional.get(name)
+    parent_id = f"{base}/{parent}" if parent else None
+    rel = f"{parent_id}/{name}" if parent else f"{base}/{name}"
+    hand = transitional.get(rel)
     layers = layer_headings(text)
     row = {
         "id": rel,
         "name": name,
         "title": title,
         "parent": parent,
+        "parent_id": parent_id,
         "completed": base == COMPLETED_DIR,
         "readme": f"{rel}/README.md",
+        "readme_sha": sha256(text),
         "layers": layers,
         "layer_ids": [layer_id(t) for t in layers],
         "states": ["unassessed"] * len(layers),
@@ -288,8 +339,8 @@ def read_roadmap(dirpath: pathlib.Path, base: str, transitional: dict, parent: s
         row["status"] = {
             "to_sha": st["to_sha"], "ts": st["ts"], "glance": st["glance"], "frontier": st["frontier"],
             "report_sha": st["report_sha"], "inherited": inherited,
-            "path": f"{base}/{parent}/STATUS.md" if inherited else f"{rel}/STATUS.md",
-            "progress_path": f"{base}/{parent}/PROGRESS.md" if inherited else f"{rel}/PROGRESS.md",
+            "path": f"{parent_id}/STATUS.md" if inherited else f"{rel}/STATUS.md",
+            "progress_path": f"{parent_id}/PROGRESS.md" if inherited else f"{rel}/PROGRESS.md",
         }
     if not layers or not st:
         return row
@@ -301,20 +352,26 @@ def read_roadmap(dirpath: pathlib.Path, base: str, transitional: dict, parent: s
         else:
             a["reason"], a["detail"] = "invalid-marker", why
         return row
-    states, why = states_from_transitional(hand, layers, st["to_sha"], st["report_sha"])
+    states, why = states_from_transitional(hand, layers, st["to_sha"], st["report_sha"], row["readme_sha"])
     if states:
         row["states"], a["source"], a["reason"] = states, "hand-read", "ok"
-        notes = hand.get("notes") if isinstance(hand, dict) else None
-        a["notes"] = {k: v for k, v in notes.items() if k in row["layer_ids"]} if isinstance(notes, dict) else {}
-    else:
-        a["reason"] = why
-        if why == "transcription-retired":
-            a["detail"] = "the report or the README changed after the transcription was made"
-            # Keep the retired reading, dated, for the detail panel; never as the current state.
-            old = hand.get("layers") if isinstance(hand, dict) else None
-            if isinstance(old, dict) and set(old) == set(row["layer_ids"]):
-                row["retired"] = {"to_sha": hand.get("to_sha"),
-                                  "states": [_STATE_CHAR.get(old[i], old[i]) for i in row["layer_ids"]]}
+        notes = hand.get("notes")
+        a["notes"] = {k: v for k, v in notes.items() if k in row["layer_ids"] and isinstance(v, str)} if isinstance(notes, dict) else {}
+        return row
+    a["reason"] = why
+    if why == "transcription-retired":
+        a["detail"] = "the report changed after the transcription was made"
+    elif why == "specification-changed":
+        a["detail"] = "the README changed after the transcription was made"
+    if why in ("transcription-retired", "specification-changed"):
+        # Keep the retired reading, dated, for the detail panel, but only if its shape is sound;
+        # a malformed old entry is left out with a diagnostic rather than aborting the build.
+        old = _layer_map(hand.get("layers"), row["layer_ids"])
+        if old is not None:
+            row["retired"] = {"to_sha": hand.get("to_sha") if isinstance(hand.get("to_sha"), str) else None,
+                              "states": [old[i] for i in row["layer_ids"]]}
+        else:
+            a["detail"] += "; the old transcription is malformed and was not kept"
     return row
 
 
@@ -344,27 +401,35 @@ def read_roadmaps(roadmap_dir: pathlib.Path, transitional: dict) -> list[dict]:
 
 # ---- activity -------------------------------------------------------------------------------
 
-def load_prs(path: pathlib.Path) -> list[dict]:
-    """Merged pull requests as `{number, merged_at, labels}` from any of the shapes we meet.
-
-    Accepts the statistics snapshot (`{"prs": [{"merged_at", "labels": [name, ...]}]}`), the
-    output of `gh pr list --json number,mergedAt,labels`, or the raw GraphQL nodes. Each pull
-    request counts once, whatever the source repeats.
-    """
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    items = raw["prs"] if isinstance(raw, dict) else raw
+def _normalize(items) -> list[dict]:
+    """`{number, merged_at, labels}` records, one per pull request, from any shape we meet."""
     out, seen = [], set()
     for pr in items:
-        merged = pr.get("merged_at", pr.get("mergedAt"))
-        if not merged or pr["number"] in seen:
+        merged = parse_ts(pr.get("merged_at", pr.get("mergedAt")))
+        number = pr.get("number")
+        if merged is None or not isinstance(number, int) or number in seen:
             continue
-        seen.add(pr["number"])
+        seen.add(number)
         labels = pr.get("labels") or []
         if isinstance(labels, dict):
             labels = labels.get("nodes") or []
         names = [l["name"] if isinstance(l, dict) else l for l in labels]
-        out.append({"number": pr["number"], "merged_at": merged, "labels": names})
+        out.append({"number": number, "merged_at": iso_z(merged), "labels": [n for n in names if isinstance(n, str)]})
     return out
+
+
+def load_prs(path: pathlib.Path) -> tuple[list[dict], str | None]:
+    """Merged pull requests and, when the snapshot records it, when they were fetched.
+
+    Accepts the statistics snapshot (`{"fetched_at", "prs": [{"merged_at", "labels": [...]}]}`),
+    the output of `gh pr list --json number,mergedAt,labels`, or the raw GraphQL nodes. A bare
+    list carries no collection time, and none is invented for it.
+    """
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(raw, dict):
+        fetched = parse_ts(raw.get("fetched_at"))
+        return _normalize(raw.get("prs") or []), iso_z(fetched) if fetched else None
+    return _normalize(raw), None
 
 
 _PAGE_QUERY = """
@@ -378,7 +443,7 @@ query($owner:String!,$name:String!,$cursor:String){
 
 def fetch_merged(repo: str) -> list[dict]:
     owner, name = repo.split("/", 1)
-    cursor, out = None, []
+    cursor, raw = None, []
     while True:
         args = ["gh", "api", "graphql", "-f", f"query={_PAGE_QUERY}", "-f", f"owner={owner}",
                 "-f", f"name={name}"]
@@ -386,13 +451,11 @@ def fetch_merged(repo: str) -> list[dict]:
             args += ["-f", f"cursor={cursor}"]
         data = json.loads(subprocess.run(args, check=True, text=True, stdout=subprocess.PIPE).stdout)
         conn = data["data"]["repository"]["pullRequests"]
-        for pr in conn["nodes"]:
-            out.append({"number": pr["number"], "merged_at": pr["mergedAt"],
-                        "labels": [l["name"] for l in pr["labels"]["nodes"]]})
+        raw.extend(conn["nodes"])
         if not conn["pageInfo"]["hasNextPage"]:
             break
         cursor = conn["pageInfo"]["endCursor"]
-    return out
+    return _normalize(raw)
 
 
 def area_of(pr: dict) -> str | None:
@@ -405,28 +468,35 @@ def week_start(d: dt.date) -> dt.date:
     return d - dt.timedelta(days=d.weekday())
 
 
-def activity(prs: list[dict], today: dt.date, weeks: int = WEEKS, known: set[str] | None = None):
+def activity(prs: list[dict], cutoff: dt.datetime, weeks: int = WEEKS, known: set[str] | None = None):
     """Per-area merge activity plus the global series and the attribution accounting.
 
-    Returns `(week_labels, global, per_area)`. `global` holds the weekly counts, the 30-day count
-    and the total over the same deduplicated population, and how many pull requests were left
-    unattributed and why; a pull request is never assigned to a row by guesswork.
+    Only pull requests merged at or before `cutoff` count; "recent" means within `RECENT_DAYS`
+    before the cutoff; weekly bins are UTC weeks starting Monday, the last containing the cutoff.
+    Returns `(week_labels, global, per_area)`. `global` holds the weekly counts, the recent count
+    and the total over the same population, and how many pull requests were left unattributed
+    and why; a pull request is never assigned to a row by guesswork.
     """
+    cutoff = cutoff.astimezone(dt.timezone.utc)
+    today = cutoff.date()
+    recent_from = cutoff - dt.timedelta(days=RECENT_DAYS)
     week0 = week_start(today) - dt.timedelta(weeks=weeks - 1)
     labels = [(week0 + dt.timedelta(weeks=i)).isoformat() for i in range(weeks)]
-    glob = {"weekly": [0] * weeks, "last30": 0, "total": 0,
+    glob = {"weekly": [0] * weeks, "recent": 0, "total": 0,
             "unattributed": {"no_label": 0, "several_labels": 0, "unknown_area": 0}}
-    per = collections.defaultdict(lambda: {"weekly": [0] * weeks, "total": 0, "last30": 0, "last": None,
+    per = collections.defaultdict(lambda: {"weekly": [0] * weeks, "total": 0, "recent": 0, "last": None,
                                            "merged": []})
     for pr in prs:
-        day = dt.date.fromisoformat(pr["merged_at"][:10])
-        wi = (week_start(day) - week0).days // 7
-        recent = (today - day).days < 30
+        when = parse_ts(pr["merged_at"])
+        if when is None or when > cutoff:
+            continue
+        wi = (week_start(when.date()) - week0).days // 7
+        recent = when > recent_from
         glob["total"] += 1
         if 0 <= wi < weeks:
             glob["weekly"][wi] += 1
         if recent:
-            glob["last30"] += 1
+            glob["recent"] += 1
         area = area_of(pr)
         if area is None:
             n = len([l for l in pr["labels"] if l.startswith(AREA_PREFIX) and l not in EXCLUDE])
@@ -441,9 +511,9 @@ def activity(prs: list[dict], today: dt.date, weeks: int = WEEKS, known: set[str
         if 0 <= wi < weeks:
             a["weekly"][wi] += 1
         if recent:
-            a["last30"] += 1
-        if a["last"] is None or day.isoformat() > a["last"]:
-            a["last"] = day.isoformat()
+            a["recent"] += 1
+        if a["last"] is None or pr["merged_at"] > a["last"]:
+            a["last"] = pr["merged_at"]
     return labels, glob, per
 
 
@@ -457,10 +527,9 @@ def git_head(repo_dir: pathlib.Path) -> str | None:
         return None
 
 
-def build(rows: list[dict], prs: list[dict], topics: dict, now: dt.datetime,
-          roadmap_head: str | None, prs_source: str) -> dict:
-    today = now.date()
-    labels, glob, per = activity(prs, today, known={r["name"] for r in rows if r["parent"] is None})
+def build(rows: list[dict], prs: list[dict], topics: dict, exported_at: dt.datetime,
+          cutoff: dt.datetime, collected_at: str | None, roadmap_head: str | None, prs_source: str) -> dict:
+    labels, glob, per = activity(prs, cutoff, known={r["name"] for r in rows if r["parent"] is None})
     topic_of = topics.get("map", {})
     for row in rows:
         row["topic"] = topic_of.get(row["parent"] or row["name"], "Unsorted")
@@ -469,19 +538,21 @@ def build(rows: list[dict], prs: list[dict], topics: dict, now: dt.datetime,
             since = None
             if row["status"] and row["status"]["ts"]:
                 since = sum(1 for m in a["merged"] if m > row["status"]["ts"])
-            row["activity"] = {"weekly": a["weekly"], "total": a["total"], "last30": a["last30"],
+            row["activity"] = {"weekly": a["weekly"], "total": a["total"], "recent": a["recent"],
                                "last": a["last"], "since_report": since}
         else:
             row["activity"] = None
     return {
-        "schema_version": 2,
-        "generated_at": now.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "schema_version": 3,
+        "exported_at": iso_z(exported_at),
+        "collected_at": collected_at,
+        "cutoff": iso_z(cutoff),
+        "recent_days": RECENT_DAYS,
         "roadmap_head": roadmap_head,
         "prs_source": prs_source,
         "update_due_prs": UPDATE_DUE_PRS,
         "weeks": labels,
-        "current_week": labels[-1],
-        "global": {**glob, "first_merge": min((p["merged_at"][:10] for p in prs), default=None)},
+        "global": {**glob, "first_merge": min((p["merged_at"] for p in prs if parse_ts(p["merged_at"]) and parse_ts(p["merged_at"]) <= cutoff), default=None)},
         "topics": topics.get("order", []),
         "rows": rows,
     }
@@ -499,11 +570,12 @@ def main(argv=None) -> int:
     p.add_argument("--topics", type=pathlib.Path, default=here / "roadmap_topics.json")
     p.add_argument("--coverage", type=pathlib.Path, default=here / "roadmap_coverage.json",
                    help="hand-transcribed per-layer states, used only when no coverage marker fits")
-    p.add_argument("--now", type=dt.datetime.fromisoformat,
-                   default=dt.datetime.now(dt.timezone.utc), help="ISO timestamp (UTC), for tests")
+    p.add_argument("--cutoff", type=parse_ts, default=None,
+                   help="count pull requests merged up to this ISO-8601 UTC time (default: the "
+                        "snapshot's collection time when it records one, else now)")
     p.add_argument("--out", type=pathlib.Path, required=True)
     args = p.parse_args(argv)
-    now = args.now if args.now.tzinfo else args.now.replace(tzinfo=dt.timezone.utc)
+    now = dt.datetime.now(dt.timezone.utc)
 
     topics = json.loads(args.topics.read_text(encoding="utf-8"))
     transitional = json.loads(args.coverage.read_text(encoding="utf-8")) if args.coverage.is_file() else {}
@@ -512,19 +584,21 @@ def main(argv=None) -> int:
         print(f"no roadmaps found under {args.roadmap_dir}", file=sys.stderr)
         return 1
     if args.data and args.data.is_file():
-        prs, source = load_prs(args.data), f"snapshot {args.data.name}"
+        (prs, collected_at), source = load_prs(args.data), f"snapshot {args.data.name}"
     else:
-        prs, source = fetch_merged(args.repo), "gh"
-    data = build(rows, prs, topics, now, git_head(args.roadmap_dir), source)
+        prs, collected_at, source = fetch_merged(args.repo), iso_z(now), "gh"
+    cutoff = args.cutoff or parse_ts(collected_at) or now
+    data = build(rows, prs, topics, now, cutoff, collected_at, git_head(args.roadmap_dir), source)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n",
                         encoding="utf-8")
     for r in rows:
         why = r["assessment"]["reason"]
-        if why in ("transcription-retired", "invalid-marker"):
+        if why in ("transcription-retired", "specification-changed", "invalid-marker"):
             print(f"{r['id']}: layers unassessed ({why}): {r['assessment']['detail']}", file=sys.stderr)
     assessed = sum(1 for r in rows if r["assessment"]["source"])
-    print(f"{len(rows)} rows, {assessed} with per-layer states, {len(prs)} merged PRs ({source})")
+    print(f"{len(rows)} rows, {assessed} with per-layer states, {len(prs)} merged PRs ({source}), "
+          f"cutoff {iso_z(cutoff)}")
     return 0
 
 

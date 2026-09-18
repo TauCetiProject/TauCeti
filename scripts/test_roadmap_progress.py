@@ -5,7 +5,6 @@ Run with: PYTHONPATH=scripts python3 scripts/test_roadmap_progress.py
 """
 
 import datetime as dt
-import hashlib
 import json
 import pathlib
 import tempfile
@@ -53,9 +52,14 @@ MARKER = (f'<!--tauceti-coverage:v1 {{"roadmap":"Widgets","to_sha":"{SHA}",'
           '"layers":[{"id":"Layer 0","state":"done"},{"id":"Layer 1","state":"partial"},'
           '{"id":"Layer 2.5","state":"untouched"}]}-->\n')
 
+UTC = dt.timezone.utc
 
-def report_sha(text):
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+def entry(**over):
+    e = {"to_sha": SHA[:7], "report_sha": rp.sha256(STATUS)[:12], "readme_sha": rp.sha256(README)[:12],
+         "layers": {"Layer 0": "d", "Layer 1": "p", "Layer 2.5": "u"}}
+    e.update(over)
+    return e
 
 
 class Headings(unittest.TestCase):
@@ -97,7 +101,7 @@ class Status(unittest.TestCase):
 
     def test_glance_stops_at_a_block_boundary(self):
         text = STATUS.replace("Nothing else has begun.\n\n### Named", "Nothing else has begun.\n### Named")
-        self.assertEqual(rp.parse_status(text)["glance"].endswith("has begun."), True)
+        self.assertTrue(rp.parse_status(text)["glance"].endswith("has begun."))
         self.assertNotIn("widget theorem", rp.parse_status(text)["glance"])
         self.assertEqual(rp.parse_status(STATUS.replace("**At a glance.**", "**Summary.**"))["glance"], "")
 
@@ -106,13 +110,19 @@ class Status(unittest.TestCase):
         self.assertEqual(st["frontier"], [{"name": "Gadgets.", "text": "Build the other half."},
                                           {"name": "Gizmos.", "text": "Later."}])
         self.assertEqual(st["to_sha"], SHA)
-        self.assertEqual(st["report_sha"], report_sha(STATUS))
+        self.assertEqual(st["ts"], "2026-09-01T00:00:00Z")
+        self.assertEqual(st["report_sha"], rp.sha256(STATUS))
         self.assertIsNone(st["coverage"])
 
-    def test_missing_or_malformed_header_is_no_status(self):
+    def test_missing_or_malformed_header_is_no_status_and_bad_dates_are_dropped(self):
         self.assertIsNone(rp.parse_status("# Status\n\nprose only\n"))
         self.assertIsNone(rp.parse_status('<!--tauceti-status:v1 {"roadmap":"W","to_sha":7}-->\n'))
         self.assertIsNone(rp.parse_status('<!--tauceti-status:v1 {"roadmap":"W"}-->\n'))
+        self.assertIsNone(rp.parse_status('<!--tauceti-status:v1 {"roadmap":"W" "to_sha":"x"}-->\n'))
+        bad_ts = rp.parse_status(STATUS.replace("2026-09-01T00:00:00Z", "yesterday"))
+        self.assertIsNone(bad_ts["ts"])
+        offset = rp.parse_status(STATUS.replace("2026-09-01T00:00:00Z", "2026-09-07T11:04:50+10:00"))
+        self.assertEqual(offset["ts"], "2026-09-07T01:04:50Z")
 
     def test_marker_applies_when_it_names_the_roadmap_and_every_layer_once(self):
         st = rp.parse_status(MARKER + STATUS)
@@ -139,21 +149,40 @@ class Status(unittest.TestCase):
         self.assertIn("no layer list", refused(dict(m, layers="Layer 0")))
         self.assertIn("not an object", refused(["Layer 0"]))
 
-    def test_hand_transcription_is_bound_to_the_report_and_the_layer_ids(self):
+    def test_present_but_broken_marker_is_not_the_same_as_none(self):
+        broken = '<!--tauceti-coverage:v1 {"roadmap":"Widgets", "layers": [}-->\n' + STATUS
+        st = rp.parse_status(broken)
+        self.assertEqual(st["coverage"], rp.MALFORMED)
+        self.assertEqual(rp.states_from_marker(st["coverage"], "Widgets", rp.layer_headings(README), SHA)[1],
+                         "marker JSON does not parse")
+
+    def test_hand_transcription_is_bound_to_report_readme_and_layer_ids(self):
         layers = rp.layer_headings(README)
-        rs = report_sha(STATUS)
-        good = {"to_sha": SHA[:7], "report_sha": rs[:12], "layers": {"Layer 0": "d", "Layer 1": "p", "Layer 2.5": "u"}}
-        self.assertEqual(rp.states_from_transitional(good, layers, SHA, rs), (["done", "partial", "untouched"], None))
-        retired = "transcription-retired"
-        self.assertEqual(rp.states_from_transitional(dict(good, to_sha="fffffff"), layers, SHA, rs)[1], retired)
-        self.assertEqual(rp.states_from_transitional(dict(good, report_sha="ffffffffffff"), layers, SHA, rs)[1], retired)
-        self.assertEqual(rp.states_from_transitional(dict(good, to_sha="012"), layers, SHA, rs)[1], retired)
+        rs, ms = rp.sha256(STATUS), rp.sha256(README)
+
+        def result(e):
+            return rp.states_from_transitional(e, layers, SHA, rs, ms)
+
+        self.assertEqual(result(entry()), (["done", "partial", "untouched"], None))
+        self.assertEqual(result(entry(to_sha="fffffff"))[1], "transcription-retired")
+        self.assertEqual(result(entry(report_sha="ffffffffffff"))[1], "transcription-retired")
+        self.assertEqual(result(entry(to_sha="012"))[1], "transcription-retired")
+        # Same ids, changed requirements: the README hash retires it with its own reason.
+        self.assertEqual(result(entry(readme_sha="ffffffffffff"))[1], "specification-changed")
+        self.assertEqual(result(entry(readme_sha=None))[1], "specification-changed")
         # Same number of layers, different ids: never realigned positionally.
-        renamed = dict(good, layers={"Layer 0": "d", "Layer 1": "p", "Layer 3": "u"})
-        self.assertEqual(rp.states_from_transitional(renamed, layers, SHA, rs)[1], retired)
-        self.assertEqual(rp.states_from_transitional(dict(good, layers={"Layer 0": "x", "Layer 1": "p", "Layer 2.5": "u"}), layers, SHA, rs)[1], retired)
-        self.assertEqual(rp.states_from_transitional(dict(good, layers="dpu"), layers, SHA, rs)[1], retired)
-        self.assertEqual(rp.states_from_transitional(None, layers, SHA, rs)[1], "not-transcribed")
+        self.assertEqual(result(entry(layers={"Layer 0": "d", "Layer 1": "p", "Layer 3": "u"}))[1], "specification-changed")
+        self.assertEqual(result(entry(layers={"Layer 0": "x", "Layer 1": "p", "Layer 2.5": "u"}))[1], "specification-changed")
+        self.assertEqual(result(entry(layers="dpu"))[1], "specification-changed")
+        self.assertEqual(result(entry(layers={"Layer 0": ["d"], "Layer 1": "p", "Layer 2.5": "u"}))[1], "specification-changed")
+        self.assertEqual(result(None)[1], "not-transcribed")
+
+    def test_edited_requirements_under_unchanged_headings_retire_the_transcription(self):
+        layers = rp.layer_headings(README)
+        edited = README.replace("text\n", "completely different requirements\n")
+        self.assertEqual(rp.layer_headings(edited), layers)
+        self.assertEqual(rp.states_from_transitional(entry(), layers, SHA, rp.sha256(STATUS), rp.sha256(edited))[1],
+                         "specification-changed")
 
 
 class Tree(unittest.TestCase):
@@ -167,121 +196,164 @@ class Tree(unittest.TestCase):
         (w / "Suggested.lean").write_text("theorem t : True := by sorry\n")
         (w / "references").mkdir()
         (w / "references" / "README.md").write_text("# refs\n### Layer 9: not a roadmap\n")
-        sub = w / "Sub"
-        sub.mkdir()
-        (sub / "README.md").write_text("# Roadmap: sub\n### Layer 0: a\n### Layer 1: b\n")
-        (sub / "Suggested.lean").write_text("")
+        for sub in ("Sub", "Twin"):
+            (w / sub).mkdir()
+            (w / sub / "README.md").write_text("# Roadmap: sub\n### Layer 0: a\n### Layer 1: b\n")
+            (w / sub / "Suggested.lean").write_text("")
+        # A second umbrella with a child of the same display name as Widgets' child.
+        g = root / rp.AREAS_DIR / "Gadgets"
+        (g / "Twin").mkdir(parents=True)
+        (g / "README.md").write_text("# Roadmap: gadgets\n### Layer 0: x\n")
+        (g / "STATUS.md").write_text(STATUS.replace("Widgets", "Gadgets"))
+        (g / "Twin" / "README.md").write_text("# Roadmap: other twin\n### Layer 0: y\n")
+        (g / "Twin" / "Suggested.lean").write_text("")
         c = root / rp.COMPLETED_DIR / "Done"
         c.mkdir(parents=True)
         (c / "README.md").write_text("# Done\n### Part A — x\n### Part B — y\n")
         (c / "STATUS.md").write_text(STATUS.replace("Widgets", "Done"))
         self.root = root
-        self.rs = report_sha(STATUS)
+        self.sub_readme = rp.sha256("# Roadmap: sub\n### Layer 0: a\n### Layer 1: b\n")[:12]
 
     def tearDown(self):
         self.tmp.cleanup()
 
     def test_rows_children_completed_and_reasons(self):
         hand = {
-            "Sub": {"to_sha": SHA[:7], "report_sha": self.rs[:12], "layers": {"Layer 0": "d", "Layer 1": "p"}},
-            "Done": {"to_sha": SHA[:7], "report_sha": "ffffffffffff", "layers": {"Part A": "d", "Part B": "p"}},
+            "TauCetiRoadmap/Widgets/Sub": {"to_sha": SHA[:7], "report_sha": rp.sha256(STATUS)[:12],
+                                           "readme_sha": self.sub_readme, "layers": {"Layer 0": "d", "Layer 1": "p"}},
+            "Completed/Done": {"to_sha": SHA[:7], "report_sha": "ffffffffffff", "readme_sha": "ffffffffffff",
+                               "layers": {"Part A": "d", "Part B": "p"}},
         }
         rows = rp.read_roadmaps(self.root, hand)
-        self.assertEqual([(r["id"], r["parent"]) for r in rows],
-                         [("TauCetiRoadmap/Widgets", None), ("TauCetiRoadmap/Widgets/Sub", "Widgets"),
-                          ("Completed/Done", None)])
-        widgets, sub, done = rows
+        self.assertEqual([r["id"] for r in rows],
+                         ["TauCetiRoadmap/Gadgets", "TauCetiRoadmap/Gadgets/Twin", "TauCetiRoadmap/Widgets",
+                          "TauCetiRoadmap/Widgets/Sub", "TauCetiRoadmap/Widgets/Twin", "Completed/Done"])
+        gadgets, gtwin, widgets, sub, wtwin, done = rows
         self.assertEqual(widgets["title"], "widgets")
         self.assertEqual(widgets["states"], ["unassessed"] * 3)
         self.assertEqual(widgets["assessment"]["reason"], "not-transcribed")
         self.assertFalse(widgets["status"]["inherited"])
+        self.assertEqual(len(widgets["readme_sha"]), 64)
         # The sub-roadmap inherits the umbrella report, links to it, and its transcription is
-        # bound to that report.
+        # bound to that report and keyed by its full path.
         self.assertTrue(sub["status"]["inherited"])
+        self.assertEqual(sub["parent_id"], "TauCetiRoadmap/Widgets")
         self.assertEqual(sub["status"]["path"], "TauCetiRoadmap/Widgets/STATUS.md")
         self.assertEqual(sub["readme"], "TauCetiRoadmap/Widgets/Sub/README.md")
         self.assertEqual(sub["states"], ["done", "partial"])
         self.assertEqual(sub["assessment"]["source"], "hand-read")
+        # Two children called Twin under different parents stay apart.
+        self.assertNotEqual(gtwin["id"], wtwin["id"])
+        self.assertEqual(gtwin["parent_id"], "TauCetiRoadmap/Gadgets")
+        self.assertEqual(wtwin["assessment"]["reason"], "not-transcribed")
         # A completed roadmap is a maintainer decision; its layers are not painted done for it.
         self.assertTrue(done["completed"])
         self.assertEqual(done["states"], ["unassessed", "unassessed"])
         self.assertEqual(done["assessment"]["reason"], "transcription-retired")
         self.assertEqual(done["retired"], {"to_sha": SHA[:7], "states": ["done", "partial"]})
 
+    def test_a_malformed_old_transcription_is_dropped_not_fatal(self):
+        hand = {"Completed/Done": {"to_sha": SHA[:7], "report_sha": "ffffffffffff", "readme_sha": "ffffffffffff",
+                                   "layers": {"Part A": ["d"], "Part B": "p"}}}
+        done = rp.read_roadmaps(self.root, hand)[-1]
+        self.assertEqual(done["assessment"]["reason"], "transcription-retired")
+        self.assertIsNone(done["retired"])
+        self.assertIn("malformed", done["assessment"]["detail"])
+
     def test_marker_beats_transcription_and_invalid_marker_is_reported(self):
-        (self.root / rp.AREAS_DIR / "Widgets" / "STATUS.md").write_text(MARKER + STATUS)
-        rows = rp.read_roadmaps(self.root, {})
-        self.assertEqual(rows[0]["states"], ["done", "partial", "untouched"])
-        self.assertEqual(rows[0]["assessment"]["source"], "marker")
-        bad = MARKER.replace('"roadmap":"Widgets"', '"roadmap":"Gadgets"')
-        (self.root / rp.AREAS_DIR / "Widgets" / "STATUS.md").write_text(bad + STATUS)
-        rows = rp.read_roadmaps(self.root, {})
-        self.assertEqual(rows[0]["assessment"]["reason"], "invalid-marker")
-        self.assertIn("Gadgets", rows[0]["assessment"]["detail"])
-        self.assertEqual(rows[0]["states"], ["unassessed"] * 3)
+        status = self.root / rp.AREAS_DIR / "Widgets" / "STATUS.md"
+        status.write_text(MARKER + STATUS)
+        widgets = rp.read_roadmaps(self.root, {})[2]
+        self.assertEqual(widgets["states"], ["done", "partial", "untouched"])
+        self.assertEqual(widgets["assessment"]["source"], "marker")
+        status.write_text(MARKER.replace('"roadmap":"Widgets"', '"roadmap":"Gadgets"') + STATUS)
+        widgets = rp.read_roadmaps(self.root, {})[2]
+        self.assertEqual(widgets["assessment"]["reason"], "invalid-marker")
+        self.assertIn("Gadgets", widgets["assessment"]["detail"])
+        self.assertEqual(widgets["states"], ["unassessed"] * 3)
+        status.write_text('<!--tauceti-coverage:v1 {"roadmap":"Widgets",}-->\n' + STATUS)
+        widgets = rp.read_roadmaps(self.root, {})[2]
+        self.assertEqual(widgets["assessment"]["reason"], "invalid-marker")
+        self.assertIn("does not parse", widgets["assessment"]["detail"])
 
     def test_no_layers_and_no_report_are_distinct_reasons(self):
         (self.root / rp.AREAS_DIR / "Widgets" / "README.md").write_text("# Roadmap: widgets\n\nprose\n")
         (self.root / rp.AREAS_DIR / "Widgets" / "STATUS.md").unlink()
         rows = rp.read_roadmaps(self.root, {})
-        self.assertEqual(rows[0]["assessment"]["reason"], "no-layers")
-        self.assertEqual(rows[1]["assessment"]["reason"], "no-report")
+        self.assertEqual(rows[2]["assessment"]["reason"], "no-layers")
+        self.assertEqual(rows[3]["assessment"]["reason"], "no-report")
 
 
 class Activity(unittest.TestCase):
-    def test_weekly_bins_and_attribution(self):
-        today = dt.date(2026, 9, 17)  # a Thursday; the current week starts Monday 14th
+    def test_weekly_bins_attribution_and_cutoff(self):
+        cutoff = dt.datetime(2026, 9, 17, 12, 0, tzinfo=UTC)  # a Thursday; the week starts Monday 14th
         prs = [
             {"number": 1, "merged_at": "2026-09-15T10:00:00Z", "labels": ["roadmap/PDE"]},
             {"number": 2, "merged_at": "2026-09-08T10:00:00Z", "labels": ["roadmap/PDE", "roadmap/HopfRinow"]},
             {"number": 3, "merged_at": "2026-09-08T10:00:00Z", "labels": ["roadmap/none"]},
             {"number": 4, "merged_at": "2026-01-01T10:00:00Z", "labels": ["roadmap/PDE"]},
             {"number": 5, "merged_at": "2026-09-09T10:00:00Z", "labels": ["roadmap/Gone"]},
+            {"number": 6, "merged_at": "2026-09-17T12:00:01Z", "labels": ["roadmap/PDE"]},  # after the cutoff
+            {"number": 7, "merged_at": "2026-08-18T12:00:00Z", "labels": ["roadmap/PDE"]},  # exactly 30 days before
+            {"number": 8, "merged_at": "2026-08-18T12:00:01Z", "labels": ["roadmap/PDE"]},  # just inside
         ]
-        weeks, glob, per = rp.activity(prs, today, weeks=4, known={"PDE"})
+        weeks, glob, per = rp.activity(prs, cutoff, weeks=4, known={"PDE"})
         self.assertEqual(weeks, ["2026-08-24", "2026-08-31", "2026-09-07", "2026-09-14"])
-        # Every merged PR counts once globally, whatever its labels.
+        # Every merged PR up to the cutoff counts once globally, whatever its labels.
+        self.assertEqual(glob["total"], 7)
         self.assertEqual(glob["weekly"], [0, 0, 3, 1])
-        self.assertEqual(glob["total"], 5)
-        self.assertEqual(glob["last30"], 4)
+        self.assertEqual(glob["recent"], 5)
         self.assertEqual(glob["unattributed"], {"no_label": 1, "several_labels": 1, "unknown_area": 1})
         self.assertEqual(set(per), {"PDE"})
         self.assertEqual(per["PDE"]["weekly"], [0, 0, 0, 1])
-        self.assertEqual(per["PDE"]["total"], 2)
-        self.assertEqual(per["PDE"]["last30"], 1)
-        self.assertEqual(per["PDE"]["last"], "2026-09-15")
+        self.assertEqual(per["PDE"]["total"], 4)
+        self.assertEqual(per["PDE"]["recent"], 2)
+        self.assertEqual(per["PDE"]["last"], "2026-09-15T10:00:00Z")
 
-    def test_load_prs_accepts_the_statistics_snapshot_and_gh_output_and_deduplicates(self):
+    def test_load_prs_accepts_every_shape_deduplicates_and_keeps_the_collection_time(self):
         with tempfile.TemporaryDirectory() as d:
             p = pathlib.Path(d) / "a.json"
-            p.write_text(json.dumps({"schema_version": 2, "prs": [
+            p.write_text(json.dumps({"schema_version": 2, "fetched_at": "2026-09-17T03:00:00Z", "prs": [
                 {"number": 1, "merged_at": "2026-09-01T00:00:00Z", "labels": ["roadmap/PDE"]},
                 {"number": 1, "merged_at": "2026-09-01T00:00:00Z", "labels": ["roadmap/PDE"]},
-                {"number": 2, "merged_at": None, "labels": []}]}))
-            self.assertEqual(rp.load_prs(p), [{"number": 1, "merged_at": "2026-09-01T00:00:00Z", "labels": ["roadmap/PDE"]}])
+                {"number": 2, "merged_at": None, "labels": []},
+                {"number": 9, "merged_at": "not a date", "labels": []}]}))
+            prs, collected = rp.load_prs(p)
+            self.assertEqual(prs, [{"number": 1, "merged_at": "2026-09-01T00:00:00Z", "labels": ["roadmap/PDE"]}])
+            self.assertEqual(collected, "2026-09-17T03:00:00Z")
             p.write_text(json.dumps([{"number": 3, "mergedAt": "2026-09-02T00:00:00Z", "labels": [{"name": "roadmap/PDE"}]}]))
-            self.assertEqual(rp.load_prs(p)[0]["labels"], ["roadmap/PDE"])
+            prs, collected = rp.load_prs(p)
+            self.assertEqual(prs[0]["labels"], ["roadmap/PDE"])
+            self.assertIsNone(collected)
 
-    def test_build_counts_prs_since_the_report_and_stamps_the_generation_time(self):
+    def test_build_stamps_three_times_and_counts_prs_since_the_report(self):
         rows = [{"id": "TauCetiRoadmap/Widgets", "name": "Widgets", "parent": None, "completed": False,
                  "layers": ["Layer 0"], "layer_ids": ["Layer 0"], "states": ["done"],
                  "assessment": {"source": "hand-read", "reason": "ok", "detail": None, "notes": {}},
                  "status": {"to_sha": "x", "ts": "2026-09-01T00:00:00Z", "glance": "", "frontier": []}}]
         prs = [{"number": 1, "merged_at": "2026-09-02T00:00:00Z", "labels": ["roadmap/Widgets"]},
                {"number": 2, "merged_at": "2026-08-30T00:00:00Z", "labels": ["roadmap/Widgets"]},
-               {"number": 3, "merged_at": "2026-09-03T00:00:00Z", "labels": []}]
-        now = dt.datetime(2026, 9, 17, 12, 30, tzinfo=dt.timezone.utc)
-        data = rp.build(rows, prs, {"order": ["T"], "map": {"Widgets": "T"}}, now, "abc1234", "test")
-        self.assertEqual(data["rows"][0]["activity"]["since_report"], 1)
+               {"number": 3, "merged_at": "2026-09-03T00:00:00Z", "labels": []},
+               {"number": 4, "merged_at": "2026-09-20T00:00:00Z", "labels": ["roadmap/Widgets"]}]
+        exported = dt.datetime(2026, 9, 18, 12, 30, tzinfo=UTC)
+        cutoff = dt.datetime(2026, 9, 17, 3, 0, tzinfo=UTC)
+        data = rp.build(rows, prs, {"order": ["T"], "map": {"Widgets": "T"}}, exported, cutoff,
+                        "2026-09-17T03:00:00Z", "abc1234", "test")
+        self.assertEqual(data["exported_at"], "2026-09-18T12:30:00Z")
+        self.assertEqual(data["collected_at"], "2026-09-17T03:00:00Z")
+        self.assertEqual(data["cutoff"], "2026-09-17T03:00:00Z")
+        self.assertEqual(data["rows"][0]["activity"]["since_report"], 1)  # #4 is after the cutoff
+        self.assertEqual(data["rows"][0]["activity"]["total"], 2)
         self.assertEqual(data["rows"][0]["topic"], "T")
-        self.assertEqual(data["generated_at"], "2026-09-17T12:30:00Z")
-        self.assertEqual(data["global"]["first_merge"], "2026-08-30")
+        self.assertEqual(data["global"]["first_merge"], "2026-08-30T00:00:00Z")
         self.assertEqual(data["global"]["total"], 3)
         self.assertEqual(data["global"]["unattributed"]["no_label"], 1)
 
-    def test_build_with_no_rows_or_prs_is_well_formed(self):
-        data = rp.build([], [], {}, dt.datetime(2026, 9, 17, tzinfo=dt.timezone.utc), None, "test")
+    def test_build_with_no_rows_or_prs_is_well_formed_and_unknown_collection_stays_unknown(self):
+        now = dt.datetime(2026, 9, 17, tzinfo=UTC)
+        data = rp.build([], [], {}, now, now, None, None, "test")
         self.assertIsNone(data["global"]["first_merge"])
+        self.assertIsNone(data["collected_at"])
         self.assertEqual(data["global"]["total"], 0)
 
 
