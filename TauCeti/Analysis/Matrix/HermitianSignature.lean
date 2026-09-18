@@ -81,11 +81,9 @@ theorem signature_def [DecidableEq ι] (hA : A.IsHermitian) :
 theorem signature_zero :
     (Matrix.isHermitian_zero : (0 : Matrix ι ι 𝕜).IsHermitian).signature = 0 := by
   classical
-  have h : (Matrix.isHermitian_zero : (0 : Matrix ι ι 𝕜).IsHermitian).eigenvalues = 0 := by
-    funext i
-    rw [Matrix.IsHermitian.eigenvalues_eq]
-    simp
-  simp [signature_def, h]
+  rw [signature_def,
+    (Matrix.isHermitian_zero : (0 : Matrix ι ι 𝕜).IsHermitian).eigenvalues_eq_zero_iff.mpr rfl]
+  simp
 
 /-- **The signature of a real diagonal matrix** counts its positive entries against its negative
 ones: the diagonal entries are the eigenvalues, up to the order in which they are listed. -/
@@ -110,6 +108,40 @@ theorem signature_diagonal [DecidableEq ι] {d : ι → ℝ} :
     rfl
   rw [signature_def, hsum, h, ← hsum]
 
+/-- Reindexing both coordinates of a Hermitian matrix along an equivalence does not change its
+signature. -/
+@[simp]
+theorem signature_submatrix_equiv_self (e : ι ≃ κ) (hA : A.IsHermitian) :
+    (hA.submatrix e.symm).signature = hA.signature := by
+  classical
+  let hB : (A.submatrix e.symm e.symm).IsHermitian := hA.submatrix e.symm
+  change hB.signature = hA.signature
+  have hroots : Multiset.map hB.eigenvalues Finset.univ.val =
+      Multiset.map hA.eigenvalues Finset.univ.val := by
+    calc
+      Multiset.map hB.eigenvalues Finset.univ.val =
+          Multiset.map RCLike.re (A.submatrix e.symm e.symm).charpoly.roots := by
+        rw [hB.roots_charpoly_eq_eigenvalues]
+        simp [Multiset.map_map]
+      _ = Multiset.map RCLike.re A.charpoly.roots := by
+        rw [← Matrix.reindex_apply e e A, Matrix.charpoly_reindex]
+      _ = Multiset.map hA.eigenvalues Finset.univ.val := by
+        rw [hA.roots_charpoly_eq_eigenvalues]
+        simp [Multiset.map_map]
+  rw [signature_def, signature_def]
+  calc
+    (∑ i, if 0 < hB.eigenvalues i then (1 : ℤ) else if hB.eigenvalues i < 0 then -1 else 0) =
+        (Multiset.map (fun x : ℝ => if 0 < x then (1 : ℤ) else if x < 0 then -1 else 0)
+          (Multiset.map hB.eigenvalues Finset.univ.val)).sum := by
+      rw [Multiset.map_map, Finset.sum_eq_multiset_sum]
+      rfl
+    _ = (Multiset.map (fun x : ℝ => if 0 < x then (1 : ℤ) else if x < 0 then -1 else 0)
+          (Multiset.map hA.eigenvalues Finset.univ.val)).sum := by rw [hroots]
+    _ = ∑ i, if 0 < hA.eigenvalues i then (1 : ℤ) else if hA.eigenvalues i < 0 then -1 else 0 :=
+      by
+        rw [Multiset.map_map, Finset.sum_eq_multiset_sum]
+        simp
+
 end RCLike
 
 section Complex
@@ -129,12 +161,8 @@ theorem signature_realify (hA : A.IsHermitian) :
       Matrix.diagonal_map (by simp)]
     simp [Function.comp_def]
   have hU : IsUnit ((hA.eigenvectorUnitary : Matrix ι ι ℂ)).det := by
-    refine (Matrix.isUnit_iff_isUnit_det _).mp ⟨⟨_, ((hA.eigenvectorUnitary : Matrix ι ι ℂ))ᴴ,
-      ?_, ?_⟩, rfl⟩
-    · simpa [Matrix.star_eq_conjTranspose] using
-        Unitary.coe_mul_star_self hA.eigenvectorUnitary
-    · simpa [Matrix.star_eq_conjTranspose] using
-        Unitary.coe_star_mul_self hA.eigenvectorUnitary
+    exact (Matrix.isUnit_iff_isUnit_det
+      (hA.eigenvectorUnitary : Matrix ι ι ℂ)).mp Unitary.isUnit_coe
   have key : Matrix.signature A.realify =
       Matrix.signature (Matrix.diagonal hA.eigenvalues) +
         Matrix.signature (Matrix.diagonal hA.eigenvalues) := by

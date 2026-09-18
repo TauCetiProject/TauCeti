@@ -65,9 +65,7 @@ theorem realifyReflection_mul_self [Fintype ι] [DecidableEq ι] :
 
 theorem isUnit_det_realifyReflection [Fintype ι] [DecidableEq ι] :
     IsUnit (realifyReflection ι).det :=
-  (Matrix.isUnit_iff_isUnit_det _).mp
-    ⟨⟨realifyReflection ι, realifyReflection ι, realifyReflection_mul_self,
-      realifyReflection_mul_self⟩, rfl⟩
+  Matrix.isUnit_det_of_left_inverse realifyReflection_mul_self
 
 end TauCeti
 
@@ -149,11 +147,9 @@ theorem IsHermitian.isSymm_realify {A : Matrix ι ι ℂ} (hA : Matrix.IsHermiti
 /-- Realification preserves invertibility. -/
 theorem isUnit_det_realify [Fintype ι] [DecidableEq ι] {A : Matrix ι ι ℂ} (h : IsUnit A.det) :
     IsUnit (A.realify).det := by
-  have h₁ : A.realify * (A⁻¹).realify = 1 := by
-    rw [← realify_mul, Matrix.mul_nonsing_inv _ h, realify_one]
-  have h₂ : (A⁻¹).realify * A.realify = 1 := by
-    rw [← realify_mul, Matrix.nonsing_inv_mul _ h, realify_one]
-  exact (Matrix.isUnit_iff_isUnit_det _).mp ⟨⟨A.realify, (A⁻¹).realify, h₁, h₂⟩, rfl⟩
+  apply Matrix.isUnit_det_of_left_inverse
+  show (A⁻¹).realify * A.realify = 1
+  rw [← realify_mul, Matrix.nonsing_inv_mul _ h, realify_one]
 
 /-- Entrywise complex conjugation becomes congruence by the reflection negating the imaginary
 coordinates. -/

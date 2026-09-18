@@ -84,9 +84,12 @@ theorem tristramLevineForm_apply (V : Matrix ι ι ℝ) (ω : ℂ) (i j : ι) :
 the roles of `ω` and `conj ω`, which is what transposing `V` does. -/
 theorem isHermitian_tristramLevineForm (V : Matrix ι ι ℝ) (ω : ℂ) :
     (tristramLevineForm V ω).IsHermitian := by
-  ext i j
-  simp [Matrix.conjTranspose_apply]
-  ring
+  have h : tristramLevineForm V ω =
+      (1 - ω) • V.map ((↑) : ℝ → ℂ) + ((1 - ω) • V.map ((↑) : ℝ → ℂ))ᴴ := by
+    ext i j
+    simp [tristramLevineForm, Matrix.conjTranspose_apply]
+  rw [h]
+  exact Matrix.isHermitian_add_transpose_self _
 
 /-- The Tristram--Levine form vanishes at `ω = 1`. -/
 @[simp]
@@ -116,6 +119,13 @@ theorem tristramLevineForm_neg_transpose (V : Matrix ι ι ℝ) (ω : ℂ) :
   ext i j
   simp [Matrix.transpose_apply]
 
+/-- Taking the same submatrix in both coordinates commutes with the Tristram--Levine form. -/
+@[simp]
+theorem tristramLevineForm_submatrix {κ : Type*} (f : κ → ι) (V : Matrix ι ι ℝ) (ω : ℂ) :
+    tristramLevineForm (V.submatrix f f) ω = (tristramLevineForm V ω).submatrix f f := by
+  ext i j
+  simp
+
 /-- Congruence of Seifert matrices becomes `*`-congruence of Tristram--Levine forms. -/
 theorem tristramLevineForm_congr [Fintype ι] (P V : Matrix ι ι ℝ) (ω : ℂ) :
     tristramLevineForm (P * V * Pᵀ) ω =
@@ -123,12 +133,21 @@ theorem tristramLevineForm_congr [Fintype ι] (P V : Matrix ι ι ℝ) (ω : ℂ
   have hconj : (P.map ((↑) : ℝ → ℂ))ᴴ = (Pᵀ).map ((↑) : ℝ → ℂ) := by
     ext i j
     simp [Matrix.conjTranspose_apply]
-  have hmap : ∀ A B : Matrix ι ι ℝ, (A * B).map ((↑) : ℝ → ℂ)
-      = A.map ((↑) : ℝ → ℂ) * B.map ((↑) : ℝ → ℂ) := fun A B =>
-    Matrix.map_mul (f := Complex.ofRealHom)
-  simp only [tristramLevineForm, hconj, Matrix.transpose_mul, Matrix.transpose_transpose, hmap,
-    Matrix.transpose_map, Matrix.mul_add, Matrix.add_mul, Matrix.mul_smul, Matrix.smul_mul,
-    Matrix.mul_assoc]
+  simp only [tristramLevineForm, hconj, Matrix.transpose_mul, Matrix.transpose_transpose,
+    Matrix.transpose_map]
+  rw [show (P * V * Pᵀ).map ((↑) : ℝ → ℂ) =
+      (P * V).map ((↑) : ℝ → ℂ) * (Pᵀ).map ((↑) : ℝ → ℂ) from
+    Matrix.map_mul (f := Complex.ofRealHom)]
+  rw [show (P * V).map ((↑) : ℝ → ℂ) =
+      P.map ((↑) : ℝ → ℂ) * V.map ((↑) : ℝ → ℂ) from
+    Matrix.map_mul (f := Complex.ofRealHom)]
+  rw [show (P * (Vᵀ * Pᵀ)).map ((↑) : ℝ → ℂ) =
+      P.map ((↑) : ℝ → ℂ) * (Vᵀ * Pᵀ).map ((↑) : ℝ → ℂ) from
+    Matrix.map_mul (f := Complex.ofRealHom)]
+  rw [show (Vᵀ * Pᵀ).map ((↑) : ℝ → ℂ) =
+      (Vᵀ).map ((↑) : ℝ → ℂ) * (Pᵀ).map ((↑) : ℝ → ℂ) from
+    Matrix.map_mul (f := Complex.ofRealHom)]
+  noncomm_ring
 
 /-- The Tristram--Levine form of a block-diagonal Seifert matrix, the Seifert matrix of a
 connected sum, is the block diagonal of the two forms. -/
@@ -217,6 +236,17 @@ theorem tristramLevineSignature_fromBlocks_zero {κ : Type*} [Fintype κ]
   simpa only [tristramLevineForm_fromBlocks_zero] using
     (isHermitian_tristramLevineForm V ω).signature_fromBlocks_zero
       (isHermitian_tristramLevineForm W ω)
+
+/-- Reindexing a Seifert matrix along an equivalence does not change its Tristram--Levine
+signature. -/
+@[simp]
+theorem tristramLevineSignature_submatrix_equiv_self {κ : Type*} [Fintype κ] (e : ι ≃ κ)
+    (V : Matrix ι ι ℝ) (ω : ℂ) :
+    tristramLevineSignature (V.submatrix e.symm e.symm) ω =
+      tristramLevineSignature V ω := by
+  unfold tristramLevineSignature
+  simpa only [tristramLevineForm_submatrix] using
+    (isHermitian_tristramLevineForm V ω).signature_submatrix_equiv_self e
 
 end Signature
 
