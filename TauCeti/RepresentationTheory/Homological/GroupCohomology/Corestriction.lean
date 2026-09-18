@@ -51,6 +51,8 @@ restrictions.
 * `TauCeti.groupCohomology.map_comp_corestriction`: corestriction is natural in the coefficients.
 * `TauCeti.groupCohomology.map_subtype_id_comp_corestriction`: corestriction after restriction is
   multiplication by `[G : S]`.
+* `TauCeti.groupCohomology.index_nsmul_eq_zero_of_map_eq_zero`: a class whose restriction to `S`
+  vanishes is killed by `[G : S]`.
 
 ## References
 
@@ -147,5 +149,11 @@ theorem map_subtype_id_comp_corestriction (A : Rep.{u} k G) (n : ℕ) :
     TauCeti.Rep.resCoindAdjunction_unit_app_comp_coindResAdjunction_counit_app, hsmul,
     Functor.map_nsmul, Functor.map_nsmul, CategoryTheory.Functor.map_id]
   exact congrArg (S.index • ·) (CategoryTheory.Functor.map_id _ _)
+
+/-- A class in `Hⁿ(G, A)` whose restriction to the finite-index subgroup `S` vanishes is killed by
+the index of `S`. -/
+theorem index_nsmul_eq_zero_of_map_eq_zero {A : Rep.{u} k G} {n : ℕ} {x : groupCohomology A n}
+    (h : map S.subtype (𝟙 (res S.subtype A)) n x = 0) : S.index • x = 0 := by
+  rw [← map_subtype_id_comp_corestriction_apply S A n x, h, map_zero]
 
 end TauCeti.groupCohomology
