@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Index
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
+public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 import Mathlib.Algebra.Field.ZMod
@@ -88,6 +89,8 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.neg_one_mem_Gamma0` and
   `CongruenceSubgroup.Gamma0Map_toHomUnits_negOne`: `-I ∈ Γ₀(N)`, with lower-right entry the
   unit `-1`; `CongruenceSubgroup.neg_one_mem_Gamma1_iff`: `-I ∈ Γ₁(N) ↔ N ∣ 2`.
+* `CongruenceSubgroup.withCenter_le_Gamma0`: adjoining the centre of `SL₂(ℤ)` to a subgroup of
+  `Γ₀(N)` keeps it inside `Γ₀(N)`, since `Γ₀(N)` already contains `-I`.
 * `CongruenceSubgroup.Gamma0_prime_index`: `[SL₂(ℤ) : Γ₀(p)] = p + 1` for prime `p`.
 * `CongruenceSubgroup.Gamma0_relIndex_pow_succ`: `[Γ₀(pᵏ) : Γ₀(p^(k+1))] = p` for `0 < p`
   and `0 < k`.
@@ -172,6 +175,17 @@ theorem mem_Gamma1_iff {γ : SL(2, ℤ)} :
     γ ∈ Gamma1 N ↔ γ ∈ Gamma0 N ∧ ((γ 1 1 : ℤ) : ZMod N) = 1 :=
   ⟨fun h ↦ ⟨Gamma1_in_Gamma0 N h, (Gamma1_mem N γ).mp h |>.2.1⟩,
     fun ⟨h₀, h₁⟩ ↦ (Gamma1_mem N γ).mpr ((Gamma1_to_Gamma0_mem ⟨γ, h₀⟩).mp h₁)⟩
+
+/-- **`Γ₁(N)` membership from two divisibilities on the lower row.** The congruence `a ≡ 1`
+that `Gamma1_mem` also asks for is forced by the determinant, so `mem_Gamma1_iff` leaves only
+these two to check — and a construction that produces an explicit matrix has them as integer
+divisibilities rather than as `ZMod N` congruences. -/
+theorem mem_Gamma1_of_dvd_lowerRow {N : ℕ} {M : SL(2, ℤ)} (h10 : (N : ℤ) ∣ M 1 0)
+    (h11 : (N : ℤ) ∣ M 1 1 - 1) : M ∈ Gamma1 N := by
+  refine mem_Gamma1_iff.mpr ⟨Gamma0_mem.mpr ((ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mpr h10), ?_⟩
+  have := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mpr h11
+  push_cast at this ⊢
+  linear_combination this
 
 /-- **The diagonal entries of a `Γ₀(M)` matrix are mutually inverse modulo `M`**: the determinant
 identity `ad - bc = 1` with the `bc` term killed by `M ∣ c`. It refines
@@ -384,6 +398,19 @@ is what an argument comparing the entries of two lifts needs. -/
 theorem neg_one_mem_Gamma0 : (-1 : SL(2, ℤ)) ∈ Gamma0 N := by
   simp
 
+/-- **Adjoining the centre keeps a subgroup of `Γ₀(N)` inside `Γ₀(N)`.** The central factor is
+absorbed: the centre of `SL₂(ℤ)` is `{±I}`, and `-I` already lies in `Γ₀(N)`.
+
+`Γ.withCenter` is the enlargement that makes "this subgroup contains `-I`" true, which matters
+because `Γ₁(N)` does not contain `-I` once `N ∤ 2`; this lemma says the enlargement is free as
+far as `Γ₀(N)` is concerned. -/
+theorem withCenter_le_Gamma0 {H : Subgroup SL(2, ℤ)} (hH : H ≤ Gamma0 N) :
+    H.withCenter ≤ Gamma0 N :=
+  Subgroup.withCenter_le_iff.mpr ⟨hH, fun _ hγ ↦ by
+    rcases mem_center_iff_eq_one_or_eq_neg_one.mp hγ with rfl | rfl
+    · exact one_mem _
+    · exact neg_one_mem_Gamma0⟩
+
 /-- `-I ∈ Γ₀(N)`, packaged as an element of the subgroup. It is the representative through
 which the diamond operator at `-1` is computed. -/
 def Gamma0.negOne (N : ℕ) : ↥(Gamma0 N) := ⟨-1, neg_one_mem_Gamma0⟩
@@ -557,17 +584,16 @@ private lemma Gamma0_relindex_step_surj (k : ℕ) (hk : 0 < k) :
   intro x
   obtain ⟨⟨σ, hσ_K⟩, rfl⟩ := QuotientGroup.mk_surjective x
   obtain ⟨q, hq⟩ : (↑(p ^ k) : ℤ) ∣ σ.1 1 0 := by
-    rwa [← ZMod.intCast_zmod_eq_zero_iff_dvd, ← Gamma0_mem]
+    rwa [← mem_Gamma0_iff_dvd]
   push_cast at hq
   have h00_unit : IsUnit ((σ.1 0 0 : ℤ) : ZMod p) :=
-    isUnit_intCast_apply_zero_zero_of_mem_Gamma0 (Gamma0_mem.mpr (by
-      rw [ZMod.intCast_zmod_eq_zero_iff_dvd]
-      exact hq ▸ dvd_mul_of_dvd_left (dvd_pow_self _ hk.ne') q))
+    isUnit_intCast_apply_zero_zero_of_mem_Gamma0
+      (mem_Gamma0_iff_dvd.mpr (hq ▸ dvd_mul_of_dvd_left (dvd_pow_self _ hk.ne') q))
   obtain ⟨c₀, hc₀⟩ := ZMod.exists_dvd_sub_val_mul p q (σ.1 0 0) h00_unit
   refine ⟨⟨c₀.val, ZMod.val_lt c₀⟩, ?_⟩
   rw [QuotientGroup.eq, Subgroup.mem_subgroupOf]
   simp only [relindexRep, InvMemClass.coe_inv, MulMemClass.coe_mul]
-  rw [Gamma0_mem, lowerTriRep_inv_mul_10, hq, ZMod.intCast_zmod_eq_zero_iff_dvd, pow_succ]
+  rw [mem_Gamma0_iff_dvd, lowerTriRep_inv_mul_10, hq, pow_succ]
   push_cast
   calc (p : ℤ) ^ k * (p : ℤ)
       ∣ (p : ℤ) ^ k * (q - ↑c₀.val * σ.1 0 0) := mul_dvd_mul_left _ hc₀
@@ -768,7 +794,7 @@ theorem intCast_mul_apply_one_zero_eq_zero_of_mem_Gamma0_div {p N : ℕ} (hpN : 
   have hpNp : (N : ℤ) = (p : ℤ) * ((N / p : ℕ) : ℤ) := by
     exact_mod_cast (Nat.mul_div_cancel' hpN).symm
   rw [hpNp]
-  exact mul_dvd_mul_left _ ((ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma0_mem.mp hδ))
+  exact mul_dvd_mul_left _ (mem_Gamma0_iff_dvd.mp hδ)
 
 /-- **The entry equation reads as a congruence at any level where `c` vanishes.** If a
 factorisation gives `α 1 1 = δ 1 1 - δ 1 0 * k`, then modulo a level `M` with `δ ∈ Γ₀(M)` the

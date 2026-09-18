@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Trace.Basic
 public import TauCeti.FieldTheory.FunctionField.Different.Complementary
 public import TauCeti.FieldTheory.FunctionField.Different.Divisor
 public import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
+public import TauCeti.FieldTheory.FunctionField.Place.Approximation
 public import TauCeti.FieldTheory.FunctionField.Repartition.Basic
 
 /-!
@@ -52,7 +53,11 @@ with multiplication by functions of `F`.
 * `TauCeti.relativeRepartitionPullback_injective`: pullback faithfully identifies relative
   repartitions with its range.
 * `TauCeti.mem_range_relativeRepartitionPullback_iff`: the range of pullback is exactly the
-  fibre-constant repartitions.
+  fibre-constant repartitions; they form a `k'`-subspace containing the constants
+  (`TauCeti.smul_mem_range_relativeRepartitionPullback`,
+  `TauCeti.const_mem_range_relativeRepartitionPullback`).
+* `TauCeti.exists_sub_relativeRepartitionPullback_mem_adeleFiltration`: every repartition of `F'`
+  is fibre-constant modulo `A_{F'}(B')`, for any divisor `B'` of `F'`.
 * `TauCeti.repartitionTrace_mem_adeleFiltration`: **the trace estimate**
   `Tr (A_{F'/F} ∩ A_{F'}(Con D + Diff(F'/F))) ⊆ A_F(D)`.
 * `TauCeti.repartitionTrace_const` and `TauCeti.repartitionTrace_smul`: the trace of a diagonal
@@ -218,6 +223,73 @@ theorem mem_range_relativeRepartitionPullback_iff [Algebra.IsIntegral k k']
     have hβ : β ∈ relativeRepartitionSpace k F F' :=
       (comp_restrict_mem_repartitionSpace_iff hF').mp (hpull ▸ a.2)
     exact ⟨⟨β, hβ⟩, Subtype.ext hpull⟩
+
+/-- **Every repartition of `F'` is fibre-constant modulo `A_{F'}(B')`** (Stichtenoth, proof of
+Theorem 3.4.6): for a repartition `a` of `F' / k'` and a divisor `B'` of `F'`, some relative
+repartition `β` of `F' / F` has `a - β ∘ restrict ∈ A_{F'}(B')`.
+
+Only finitely many fibres contain a place where `a` is not bounded by `B'`; on each of them weak
+approximation provides one function of `F'` close enough to `a` at all the places of the fibre. -/
+theorem exists_sub_relativeRepartitionPullback_mem_adeleFiltration
+    (a : ↥(repartitionSpace k' F')) (B' : Divisor k' F') :
+    ∃ β : ↥(relativeRepartitionSpace k F F'),
+      (a : Place k' F' → F') -
+          ((relativeRepartitionPullback k k' F F' β : ↥(repartitionSpace k' F')) :
+            Place k' F' → F') ∈ adeleFiltration B' := by
+  classical
+  -- the places where `a` is not bounded by `B'`, and the places of `F` below them
+  set T : Set (Place k' F') :=
+    {P' | ¬ P'.valuation ((a : Place k' F' → F') P') ≤ WithZero.exp (B'.coeff P')} with hT
+  have hTfin : T.Finite := by
+    refine ((mem_repartitionSpace_iff_finite.mp a.2).union B'.support.finite_toSet).subset
+      fun P' hP' ↦ ?_
+    by_contra hnot
+    simp only [Set.mem_union, Set.mem_ofPred_eq, Finset.mem_coe,
+      AlgebraicGeometry.WeilDivisor.mem_support_iff, not_or, not_not] at hnot
+    exact hP' (by rw [hnot.2, WithZero.exp_zero]; exact hnot.1)
+  set S : Set (Place k F) := (fun P' : Place k' F' ↦ P'.restrict k F) '' T with hS
+  have hSfin : S.Finite := hTfin.image _
+  -- on the fibre over each place of `F`, one function of `F'` approximates `a`
+  have happrox (P : Place k F) : ∃ z : F', ∀ P' ∈ (Place.finite_setOf_restrict_eq
+      (k' := k') (F' := F') k F P).toFinset,
+      P'.valuation (z - (a : Place k' F' → F') P') ≤ WithZero.exp (B'.coeff P') :=
+    Place.exists_forall_mem_valuation_sub_le _ _ _
+  choose z hz using happrox
+  let β : Place k F → F' := fun P ↦ if P ∈ S then z P else 0
+  have hβ : β ∈ relativeRepartitionSpace k F F' := by
+    refine mem_relativeRepartitionSpace_iff.mpr <|
+      Filter.eventually_cofinite.mpr (hSfin.subset fun P hP ↦ ?_)
+    by_contra hPS
+    exact hP (by simp [β, hPS, isIntegral_zero])
+  refine ⟨⟨β, hβ⟩, mem_adeleFiltration_iff.mpr fun P' ↦ ?_⟩
+  rw [Pi.sub_apply, relativeRepartitionPullback_apply]
+  by_cases hP' : P'.restrict k F ∈ S
+  · simp only [β, hP', ite_true]
+    rw [Valuation.map_sub_swap]
+    exact hz _ P' (by simp)
+  · have hPT : P' ∉ T := fun h ↦ hP' ⟨P', h, rfl⟩
+    simp only [β, hP', ite_false, sub_zero]
+    simpa [hT] using hPT
+
+/-- The fibre-constant repartitions of `F'` form a `k'`-subspace: multiplying a fibre-constant
+repartition by a constant of `F'` keeps it fibre-constant. -/
+theorem smul_mem_range_relativeRepartitionPullback [Algebra.IsIntegral k k']
+    (hF' : IsFunctionField k' F') (c : k') {a : ↥(repartitionSpace k' F')}
+    (ha : a ∈ LinearMap.range (relativeRepartitionPullback k k' F F')) :
+    c • a ∈ LinearMap.range (relativeRepartitionPullback k k' F F') := by
+  rw [mem_range_relativeRepartitionPullback_iff hF'] at ha ⊢
+  intro P' Q' h
+  simp [ha P' Q' h]
+
+/-- The constant repartitions of `F'` are fibre-constant. -/
+theorem const_mem_range_relativeRepartitionPullback [Algebra.IsIntegral k k']
+    (hF' : IsFunctionField k' F') {a : ↥(repartitionSpace k' F')}
+    (ha : (a : Place k' F' → F') ∈ diagonalRepartitions k' F') :
+    a ∈ LinearMap.range (relativeRepartitionPullback k k' F F') := by
+  obtain ⟨x, hx⟩ := mem_diagonalRepartitions_iff.mp ha
+  rw [mem_range_relativeRepartitionPullback_iff hF']
+  intro P' Q' _
+  simp [← hx]
 
 end Pullback
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.RingTheory.HopkinsLevitzki
 public import Mathlib.RingTheory.Length
+public import Mathlib.RingTheory.LocalRing.Module
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap
 public import TauCeti.RingTheory.KrullSchmidt.Multiplicity
 
@@ -45,6 +46,9 @@ the Cartan map `TauCeti.cartanMap` as a matrix; the simple side is
   are linearly independent.
 * `TauCeti.span_range_exactK0_of_eq_top`: an exhaustive family of indecomposable projective classes
   spans.
+* `TauCeti.isExhaustiveIndecomposableProjectiveFamily_of_isLocalRing`: over a commutative local
+  ring the ring itself is, up to isomorphism, the only indecomposable finitely generated
+  projective module.
 
 ## References
 
@@ -312,5 +316,24 @@ theorem indecomposableProjectiveClassBasis_repr_apply
   exact_mod_cast indecomposableMultiplicity_eq_ite (P := fun i ↦ ↥(P i).obj) hind hnoniso k j
 
 end Family
+
+/-! ### Commutative local rings -/
+
+section IsLocalRing
+
+variable {A : Type u} [CommRing A] [IsLocalRing A]
+
+/-- **Over a commutative local ring, one projective module isomorphic to the ring is an exhaustive
+family**: a finitely generated projective module over such a ring is free, and an indecomposable
+free module is isomorphic to the ring. -/
+theorem isExhaustiveIndecomposableProjectiveFamily_of_isLocalRing
+    (X : (finiteProjectiveModules A).FullSubcategory) (e : X.obj ≃ₗ[A] A) :
+    IsExhaustiveIndecomposableProjectiveFamily fun _ : Unit ↦ X := by
+  refine (isExhaustiveIndecomposableProjectiveFamily_iff _).2 fun Y hY ↦ ⟨(), ?_⟩
+  have : Module.Free A Y.obj := Module.free_of_flat_of_isLocalRing
+  obtain ⟨e'⟩ := hY.nonempty_linearEquiv_of_free
+  exact ⟨e'.trans e.symm⟩
+
+end IsLocalRing
 
 end TauCeti

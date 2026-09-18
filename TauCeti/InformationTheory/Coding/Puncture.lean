@@ -82,6 +82,22 @@ theorem mem_shorten {C : LinearCode F ι} {s : Set ι} {y : s → F} :
     ext j
     simpa [LinearMap.funLeft_apply] using hxy j
 
+/-- A word on the retained coordinates belongs to the shortened code exactly when its extension
+by zero belongs to the original code. -/
+theorem mem_shorten_iff_extend_mem {C : LinearCode F ι} {s : Set ι} {y : s → F} :
+    y ∈ shorten C s ↔ Subtype.val.extend y 0 ∈ C := by
+  rw [mem_shorten]
+  constructor
+  · rintro ⟨x, hxC, hx0, hxy⟩
+    convert hxC using 1
+    funext i
+    by_cases hi : i ∈ s
+    · exact (Subtype.val_injective.extend_apply y 0 ⟨i, hi⟩).trans (hxy ⟨i, hi⟩).symm
+    · rw [hx0 i hi, Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ hi (hj ▸ j.2), Pi.zero_apply]
+  · intro h
+    refine ⟨_, h, fun i hi ↦ ?_, fun j ↦ Subtype.val_injective.extend_apply y 0 j⟩
+    rw [Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ hi (hj ▸ j.2), Pi.zero_apply]
+
 /-- Membership in a puncture retaining one coordinate is determined by that coordinate. -/
 theorem mem_puncture_singleton {C : LinearCode F ι} {i : ι} {y : ({i} : Set ι) → F} :
     y ∈ puncture C {i} ↔ ∃ x ∈ C, x i = y ⟨i, Set.mem_singleton i⟩ := by

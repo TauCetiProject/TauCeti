@@ -56,6 +56,8 @@ Two bridges keep this from being a parallel universe.
 
 * `TauCeti.LinearPMap.IsResolventAt.unique`: the inverse is unique, so the resolvent
   is well defined.
+* `TauCeti.LinearPMap.isResolventAt_iff_forall_mem_graph`: the inverse condition read on the
+  graph of `A`.
 * `TauCeti.LinearPMap.resolvent_sub_resolvent`: the resolvent identity
   `R(lambda) - R(mu) = (mu - lambda) R(lambda) R(mu)`, and
   `TauCeti.LinearPMap.resolvent_comm`.
@@ -132,6 +134,32 @@ theorem IsResolventAt.smul_sub_surjective (h : IsResolventAt A lambda R) :
 theorem IsResolventAt.smul_sub_bijective (h : IsResolventAt A lambda R) :
     Function.Bijective fun x : A.domain => lambda • (x : X) - A x :=
   ⟨h.smul_sub_injective, h.smul_sub_surjective⟩
+
+/-- The graph form of `IsResolventAt`: `R` inverts `lambda • I - A` exactly when every
+`(R y, lambda • R y - y)` lies on the graph of `A`, and `R (lambda • x - w) = x` for every point
+`(x, w)` of that graph. This form transfers along any construction described by its graph. -/
+theorem isResolventAt_iff_forall_mem_graph :
+    IsResolventAt A lambda R ↔
+      (∀ y : X, (R y, lambda • R y - y) ∈ A.graph) ∧
+        ∀ p ∈ A.graph, R (lambda • p.1 - p.2) = p.1 := by
+  constructor
+  · intro h
+    refine ⟨fun y => (A.mem_graph_iff).mpr ⟨⟨R y, h.mem_domain y⟩, rfl, ?_⟩, fun p hp => ?_⟩
+    · exact eq_sub_of_add_eq (sub_eq_iff_eq_add'.mp (h.smul_sub_apply y)).symm
+    · obtain ⟨u, hu, hAu⟩ := (A.mem_graph_iff).mp hp
+      rw [← hu, ← hAu]
+      exact h.apply_smul_sub u
+  · rintro ⟨hgraph, hleft⟩
+    have hmem (y : X) : R y ∈ A.domain := by
+      obtain ⟨⟨v, hv⟩, hu, -⟩ := (A.mem_graph_iff).mp (hgraph y)
+      simp only at hu
+      exact hu ▸ hv
+    refine ⟨hmem, fun y => ?_, fun x => hleft _ (A.mem_graph x)⟩
+    obtain ⟨u, hu, hAu⟩ := (A.mem_graph_iff).mp (hgraph y)
+    have huR : u = ⟨R y, hmem y⟩ := Subtype.ext hu
+    subst huR
+    simp only at hAu
+    rw [hAu, sub_sub_cancel]
 
 /-! ## The resolvent set and the resolvent -/
 

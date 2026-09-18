@@ -38,6 +38,10 @@ the projective/simple coordinates used to express the Cartan map as a matrix.
 * `TauCeti.linearIndependent_exactK0OfFamily`: pairwise nonisomorphic simple classes are
   linearly independent.
 * `TauCeti.span_range_exactK0OfFamily_eq_top`: an exhaustive family of simple classes spans.
+* `TauCeti.IsSimpleModule.nonempty_linearEquiv_quot_maximalIdeal`: a simple module over a
+  commutative local ring is isomorphic to its residue field.
+* `TauCeti.isExhaustiveSimpleFamily_of_isLocalRing`: over a commutative local ring a single simple
+  module is an exhaustive family.
 
 ## References
 
@@ -290,5 +294,29 @@ theorem simpleClassBasis_repr_apply (hexhaustive : IsExhaustiveSimpleFamily S)
   exact jordanHolderCoordinate_exactK0OfFamily S hnoniso k j
 
 end SimpleFamily
+
+/-! ### Commutative local rings -/
+
+section IsLocalRing
+
+variable {A : Type u} [CommRing A] [IsLocalRing A]
+
+/-- **Every simple module over a commutative local ring is isomorphic to its residue field.** -/
+theorem IsSimpleModule.nonempty_linearEquiv_quot_maximalIdeal
+    (M : Type u) [AddCommGroup M] [Module A M] [IsSimpleModule A M] :
+    Nonempty (M ≃ₗ[A] A ⧸ IsLocalRing.maximalIdeal A) := by
+  obtain ⟨I, hI, e⟩ := isSimpleModule_iff_quot_maximal.mp ‹IsSimpleModule A M›
+  rwa [← IsLocalRing.eq_maximalIdeal hI]
+
+/-- **Over a commutative local ring any one simple module is an exhaustive family**: every simple
+module is isomorphic to the quotient by the maximal ideal. -/
+theorem isExhaustiveSimpleFamily_of_isLocalRing (T : FGModuleCat.{u} A) [IsSimpleModule A T] :
+    IsExhaustiveSimpleFamily fun _ : Unit ↦ T := by
+  refine (isExhaustiveSimpleFamily_iff _).2 fun M _ ↦ ⟨(), ?_⟩
+  obtain ⟨e⟩ := IsSimpleModule.nonempty_linearEquiv_quot_maximalIdeal (A := A) M
+  obtain ⟨e'⟩ := IsSimpleModule.nonempty_linearEquiv_quot_maximalIdeal (A := A) T
+  exact ⟨e.trans e'.symm⟩
+
+end IsLocalRing
 
 end TauCeti
