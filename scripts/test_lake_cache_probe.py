@@ -123,7 +123,10 @@ class MainWorkflowFallback(unittest.TestCase):
         self.assertIn("steps.cachecfg.outputs.enabled == 'true'", block)
         self.assertIn("steps.exact_cache.outputs.exists != 'true'", block)
         self.assertIn('echo "staged=true"', block)
-        self.assertIn("if: ${{ needs.build.outputs.staged == 'true' }}", self.workflow)
+        self.assertIn(
+            "if: ${{ needs.build.result == 'success' && "
+            "needs['duplicate-audit-tests'].result == 'success' && "
+            "needs.build.outputs.staged == 'true' }}", self.workflow)
 
 
 class SharedPublicationContract(unittest.TestCase):

@@ -8,8 +8,11 @@ module
 public import TauCeti.Probability.Distributions.Wishart.Transforms
 public import TauCeti.Probability.Moments.ComplexMGF
 
+import Mathlib.MeasureTheory.Group.Convolution
+import TauCeti.Probability.Distributions.Wishart.Congruence
+
 /-!
-# The characteristic function of the Gaussian-Gram Wishart family
+# The characteristic functions of the Wishart families
 
 A symmetric matrix `Θ` pairs with a symmetric matrix `A` through the trace statistic
 `A ↦ trace (Θ * A)`, which by `selfAdjoint.inner_eq_trace_mul` is the Frobenius inner product of
@@ -36,6 +39,11 @@ can cross the branch cut.
   Hermitian pencil determinant.
 * `TauCeti.charFun_wishartGramMeasure` — the characteristic function of the Gaussian-Gram Wishart
   law, at every degree and every scale matrix.
+* `TauCeti.charFun_nonsingularWishartMeasure` — the characteristic function of the nonsingular
+  density family, the same formula with the real degree in place of the natural one.
+* `TauCeti.nonsingularWishartMeasure_conv_nonsingularWishartMeasure` — at a fixed scale the
+  degrees of the nonsingular family add under convolution, since the exponent is linear in the
+  degree.
 
 ## References
 
@@ -122,5 +130,53 @@ theorem charFun_wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ)
       (Matrix.isHermitian_sqrt_mul_mul_sqrt S (selfAdjoint.isHermitian_coe Θ)) ((ν : ℝ) / 2)
       fun t ht => by rw [mgf_trace_mul_wishartGramMeasure_sqrt ν S ht, neg_div],
     hcast, neg_div]
+
+/-- **The characteristic function of the nonsingular Wishart law.** At the symmetric matrix `Θ`
+it is the exponential of `-n / 2` times the sum of the principal logarithms of `1 - 2 * I * λ`
+over the eigenvalues `λ` of the Hermitian sandwich `√S * Θ * √S`.
+
+This is the Gaussian-Gram formula of `TauCeti.charFun_wishartGramMeasure` with the natural degree
+`ν` replaced by the real degree `n`. Agreeing on characteristic functions is one ingredient of an
+identification of the two families where both are defined; that identification is not proved
+here. -/
+theorem charFun_nonsingularWishartMeasure {n : ℝ} {S : Matrix (Fin p) (Fin p) ℝ}
+    (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    charFun (nonsingularWishartMeasure n S) Θ =
+      cexp (-(n : ℂ) / 2 * ∑ j, Complex.log (1 - 2 * Complex.I *
+        ((Matrix.isHermitian_sqrt_mul_mul_sqrt S
+          (selfAdjoint.isHermitian_coe Θ)).eigenvalues j : ℂ))) := by
+  have hcast : ((n / 2 : ℝ) : ℂ) = (n : ℂ) / 2 := by push_cast; ring
+  rw [charFun_eq_exp_of_mgf_trace_mul_eq_det_rpow
+      (Matrix.isHermitian_sqrt_mul_mul_sqrt S (selfAdjoint.isHermitian_coe Θ)) (n / 2)
+      fun t ht => by rw [mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht, neg_div],
+    hcast, neg_div]
+
+/-! ### Convolution -/
+
+/-- **At a fixed scale the degrees of the nonsingular Wishart family add under convolution.**
+No hypothesis on the scale is needed: away from positive definiteness all three laws are zero.
+
+The hypothesis on the sum of the degrees is not implied by the other two. In dimension zero the
+valid degrees are those above `-1`, and two of them can still sum to `-1` or less, where the law
+is zero by definition while the convolution of the two Dirac laws is again Dirac. In positive
+dimension the valid degrees are positive, so the hypothesis is automatic. -/
+@[simp]
+theorem nonsingularWishartMeasure_conv_nonsingularWishartMeasure {n₁ n₂ : ℝ}
+    (S : Matrix (Fin p) (Fin p) ℝ) (hn₁ : (p : ℝ) - 1 < n₁) (hn₂ : (p : ℝ) - 1 < n₂)
+    (hn : (p : ℝ) - 1 < n₁ + n₂) :
+    nonsingularWishartMeasure n₁ S ∗ nonsingularWishartMeasure n₂ S =
+      nonsingularWishartMeasure (n₁ + n₂) S := by
+  by_cases hS : S.PosDef
+  · have := isProbabilityMeasure_nonsingularWishartMeasure hS hn₁
+    have := isProbabilityMeasure_nonsingularWishartMeasure hS hn₂
+    have := isProbabilityMeasure_nonsingularWishartMeasure hS hn
+    refine Measure.ext_of_charFun (funext fun Θ => ?_)
+    rw [charFun_conv, charFun_nonsingularWishartMeasure hS hn₁,
+      charFun_nonsingularWishartMeasure hS hn₂, charFun_nonsingularWishartMeasure hS hn,
+      ← Complex.exp_add]
+    push_cast
+    ring_nf
+  · simp [nonsingularWishartMeasure_of_not_posDef _ hS]
 
 end TauCeti

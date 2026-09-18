@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.GroupTheory.Index
+public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 
 /-!
 # The unit filtration of a nonarchimedean local field
@@ -32,11 +33,17 @@ action on a finite extension, and its behaviour under a field embedding.
 
 * `TauCeti.unitFiltration`: the unit filtration `U(K,i)` of a nonarchimedean local field, as a
   subgroup of `Kˣ`.
+* `TauCeti.unitFiltrationZeroEquivIntegerUnits`: the depth-zero step `U(K,0)` is the unit group
+  of `𝒪[K]`.
+* `TauCeti.unitFiltrationToIntegerUnits`: a unit of `K` lying in `U(K,i)`, read as a unit of
+  `𝒪[K]`.
 
 ## Main results
 
 * `TauCeti.mem_unitFiltration_iff_exists` and `TauCeti.mem_unitFiltration_succ_congr`: the
   congruence form of membership, `x ≡ 1 mod 𝓂[K] ^ i` inside `𝒪[K]`.
+* `TauCeti.mem_unitFiltration_one_iff_residue_eq_one`: a unit of `𝒪[K]` lies in `U(K,1)`
+  exactly when it reduces to `1`.
 * `TauCeti.mem_unitFiltration_iff_valuation_le` and
   `TauCeti.mem_unitFiltration_succ_valuation`: the valuation form of membership, an
   inequality on `x - 1` measured against a uniformizer. At positive depth the inequality alone
@@ -70,7 +77,7 @@ what lets `1` belong to every step.
 public section
 noncomputable section
 
-open Filter Topology ValuativeRel IsNonarchimedeanLocalField
+open Filter Topology ValuativeRel IsLocalRing IsNonarchimedeanLocalField
 
 namespace TauCeti
 
@@ -293,6 +300,74 @@ theorem iInf_unitFiltration : ⨅ i, unitFiltration K i = ⊥ := by
   obtain ⟨i, hi⟩ := exists_pow_lt₀ (Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ)
       (Units.mk0 (valuation K ((x : K) - 1)) (by simpa using h))
   exact absurd ((mem_unitFiltration_iff_valuation_le hπ).mp (hx i)).2 hi.not_ge
+
+/-! ### The filtration inside the units of `𝒪[K]`
+
+Every step of the filtration consists of units of `𝒪[K]`, and at depth zero the step is exactly
+the unit group of `𝒪[K]`. -/
+
+-- Provenance: the identification of the depth-zero step with `𝒪[K]ˣ` is Mathlib's
+-- `ValuationSubring.unitGroupMulEquiv`.
+/-- The depth-zero step `U(K,0)` of the unit filtration, as the unit group of `𝒪[K]`. -/
+def unitFiltrationZeroEquivIntegerUnits : unitFiltration K 0 ≃* 𝒪[K]ˣ :=
+  (MulEquiv.subgroupCongr unitFiltration_zero).trans
+    (valuation K).valuationSubring.unitGroupMulEquiv
+
+/-- The identification of `U(K,0)` with `𝒪[K]ˣ` does not move the underlying element of `K`. -/
+@[simp]
+theorem coe_unitFiltrationZeroEquivIntegerUnits (x : unitFiltration K 0) :
+    ((unitFiltrationZeroEquivIntegerUnits x : 𝒪[K]ˣ) : K) = ((x : Kˣ) : K) := (rfl)
+
+/-- The inverse identification of `𝒪[K]ˣ` with `U(K,0)` does not move the underlying element of
+`K`. -/
+@[simp]
+theorem coe_unitFiltrationZeroEquivIntegerUnits_symm (u : 𝒪[K]ˣ) :
+    (((unitFiltrationZeroEquivIntegerUnits.symm u : unitFiltration K 0) : Kˣ) : K) =
+      ((u : 𝒪[K]) : K) := (rfl)
+
+/-- Every step of the unit filtration consists of units of `𝒪[K]`; this is the resulting
+homomorphism `U(K,i) →* 𝒪[K]ˣ`. -/
+def unitFiltrationToIntegerUnits (i : ℕ) : unitFiltration K i →* 𝒪[K]ˣ :=
+  unitFiltrationZeroEquivIntegerUnits.toMonoidHom.comp
+    (Subgroup.inclusion (unitFiltration_antitone (Nat.zero_le i)))
+
+/-- Reading a step of the unit filtration in `𝒪[K]ˣ` does not move the underlying element of
+`K`. -/
+@[simp]
+theorem coe_unitFiltrationToIntegerUnits (i : ℕ) (x : unitFiltration K i) :
+    (((unitFiltrationToIntegerUnits i x : 𝒪[K]ˣ) : 𝒪[K]) : K) = ((x : Kˣ) : K) := (rfl)
+
+/-- Reading a step of the unit filtration in `𝒪[K]ˣ` and back into `Kˣ` is the identity. -/
+@[simp]
+theorem unitsMap_subtype_unitFiltrationToIntegerUnits (i : ℕ) (x : unitFiltration K i) :
+    Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) (unitFiltrationToIntegerUnits i x) =
+      (x : Kˣ) := Units.ext (rfl)
+
+/-- Reading a step of the unit filtration in `𝒪[K]ˣ` is injective. -/
+theorem unitFiltrationToIntegerUnits_injective (i : ℕ) :
+    Function.Injective (unitFiltrationToIntegerUnits (K := K) i) :=
+  unitFiltrationZeroEquivIntegerUnits.injective.comp (Subgroup.inclusion_injective _)
+
+/-- A unit of `𝒪[K]` lies in the depth-one step `U(K,1)` of the unit filtration exactly when it
+reduces to `1`: the principal units are the kernel of reduction. -/
+theorem mem_unitFiltration_one_iff_residue_eq_one (u : 𝒪[K]ˣ) :
+    Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u ∈ unitFiltration K 1 ↔
+      residue 𝒪[K] (u : 𝒪[K]) = 1 := by
+  -- `mem_unitFiltration_succ_congr` spells the inclusion `𝒪[K]ˣ →* Kˣ` through
+  -- `RingHom.toMonoidHom`, which is not the simp-normal form used in the statement above.
+  rw [show (1 : ℕ) = 0 + 1 from rfl, ← RingHom.toMonoidHom_eq_coe (Subring.subtype 𝒪[K]),
+    mem_unitFiltration_succ_congr, zero_add, pow_one,
+    ← Ideal.Quotient.eq_zero_iff_mem (I := 𝓂[K]), map_sub, map_one, sub_eq_zero]
+  rfl
+
+/-- A principal unit reduces to `1`. -/
+@[simp]
+theorem unitsMap_residue_unitFiltrationToIntegerUnits_one (y : unitFiltration K 1) :
+    Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) (unitFiltrationToIntegerUnits 1 y) = 1 := by
+  refine Units.ext ?_
+  rw [Units.coe_map]
+  exact (mem_unitFiltration_one_iff_residue_eq_one _).mp
+    (by rw [unitsMap_subtype_unitFiltrationToIntegerUnits]; exact y.2)
 
 section Topology
 

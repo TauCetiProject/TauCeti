@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.LinearDisjoint
-public import Mathlib.FieldTheory.PrimitiveElement
 public import TauCeti.FieldTheory.Minpoly.IsIntegrallyClosedIn
 
 /-!
@@ -28,9 +26,9 @@ degree identity `[k' : k] · deg (Con D) = [F' : F] · deg D` for the conorm int
 `deg (Con D) = n(F'/F) · deg D`.
 
 Linear disjointness is not automatic; it is what an inseparable constant field extension can
-destroy.  It does hold whenever `k' / k` is finite separable and `k` is the exact constant field
-of `F`, and that is proved here from
-`TauCeti.IntermediateField.finrank_adjoin_simple_eq_finrank_adjoin_simple_of_isIntegrallyClosedIn`.
+destroy.  It does hold whenever `k' / k` is separable and `k` is the exact constant field of `F`;
+that is `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn`, from which the degree
+equality is derived here.
 Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree equality, through
 `TauCeti.finrank_constantCompositum_eq_finrank_of_linearDisjoint`.
 
@@ -47,7 +45,11 @@ Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree 
   `[F' : F] = n(F'/F) · [k' : k]` when adjoining the constants to `F` costs `[k' : k]`, and
   `TauCeti.finrank_dvd_finrank_of_finrank_constantCompositum_eq` for the divisibility it contains.
 * `TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`: that degree equality holds for a
-  finite separable constant field extension over an exact constant field.
+  separable constant field extension over an exact constant field.
+* `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn` and
+  `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`: the stronger
+  linear-disjointness and persistence-of-linear-independence statements from which that degree
+  equality follows.
 * `TauCeti.finrank_constantCompositum_eq_finrank_of_linearDisjoint`: it also follows from
   `IntermediateField.LinearDisjoint`.
 
@@ -55,8 +57,9 @@ Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree 
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Section III.6: the degree form `[F·k' : F] = [k' : k]` extracted from Proposition 3.6.1(b) (whose
-  own statement, the persistence over `k'` of linear independence over `k`, is not formalized here)
-  is `TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`, the geometric degree
+  own statement, the persistence over `k'` of linear independence over `k`, is
+  `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`) is
+  `TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`, the geometric degree
   `[F' : F·k']` is the factor appearing in Corollary 3.6.4, and the splitting
   `[F' : F] = n(F'/F) · [k' : k]` is the companion of Proposition 3.6.6.  Section III.1
   (Corollary 3.1.14) is the cross-multiplied conorm identity this feeds, in
@@ -234,42 +237,25 @@ theorem finrank_constantCompositum_eq_finrank_of_linearDisjoint [Algebra.IsAlgeb
     e.toLinearEquiv.finrank_eq]
   exact congrArg Cardinal.toNat hrank
 
-/-- **Adjoining a finite separable constant field extension to the lower function field costs
-exactly its degree**, provided the constant field downstairs is exact: `[F·k' : F] = [k' : k]`,
-which is the degree form of linear disjointness of `F` and `k'` over `k`.
+/-- **Adjoining a separable constant field extension to the lower function field preserves
+finrank**, provided the constant field downstairs is exact: `[F·k' : F] = [k' : k]`, which for
+finite `k' / k` is the degree form of linear disjointness of `F` and `k'` over `k`.
 
 This is the degree consequence of Stichtenoth's Proposition 3.6.1(b); that proposition's own
-statement — the persistence over `k'` of linear independence over `k` — is stronger and is not
-formalized here.
+statement — the persistence over `k'` of linear independence over `k` — is
+`TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`.
 
 This is the statement in which that condition has content, and it is stated over the full
 compatible tower: `k` embeds in `F` and in `k'`, and the two routes `k → F → F'` and `k → k' → F'`
 agree.  Both hypotheses are used: exactness of `k` in `F` keeps the minimal polynomial of a
-constant irreducible over `F` (`TauCeti.minpoly.map_algebraMap_of_isIntegrallyClosedIn`), and
-separability makes `k' / k` simple, so that a single such minimal polynomial computes the whole
-degree. -/
+constant irreducible over `F` (`TauCeti.minpoly.map_algebraMap_of_isIntegrallyClosedIn`), while
+separability lets the linear-disjointness proof reduce each finite family in `k'` to a finite
+separable subextension. -/
 theorem finrank_constantCompositum_eq_finrank_of_isSeparable (hex : IsIntegrallyClosedIn k F)
-    [FiniteDimensional k k'] [Algebra.IsSeparable k k'] :
-    Module.finrank F (constantCompositum F k' F') = Module.finrank k k' := by
-  -- separability makes `k' / k` simple: let `β` generate it, and work with its image in `F'`
-  obtain ⟨β, hβ⟩ := Field.exists_primitive_element k k'
-  have hβint : IsIntegral k β := Algebra.IsIntegral.isIntegral β
-  have hαint : IsIntegral k (algebraMap k' F' β) := hβint.map (IsScalarTower.toAlgHom k k' F')
-  have hminpoly : minpoly k (algebraMap k' F' β) = minpoly k β :=
-    minpoly.algebraMap_eq (algebraMap k' F').injective β
-  calc Module.finrank F (constantCompositum F k' F')
-      -- the compositum is `F` with the image of the generator adjoined
-      = Module.finrank F F⟮algebraMap k' F' β⟯ := by
-        rw [constantCompositum_eq_adjoin_simple F k' F' hβ]
-      -- exactness of `k` in `F`: adjoining a constant costs the same over `F` as over `k`
-    _ = Module.finrank k k⟮algebraMap k' F' β⟯ :=
-        finrank_adjoin_simple_eq_finrank_adjoin_simple_of_isIntegrallyClosedIn hex hαint
-      -- both degrees are the degree of the minimal polynomial of the generator, which the
-      -- embedding `k' → F'` does not change
-    _ = (minpoly k β).natDegree := by rw [adjoin.finrank hαint, hminpoly]
-    _ = Module.finrank k k⟮β⟯ := (adjoin.finrank hβint).symm
-      -- and `β` generates `k'`
-    _ = Module.finrank k k' := by rw [hβ, IntermediateField.finrank_top']
+    [Algebra.IsSeparable k k'] :
+    Module.finrank F (constantCompositum F k' F') = Module.finrank k k' :=
+  finrank_constantCompositum_eq_finrank_of_linearDisjoint F k' F'
+    (linearDisjoint_fieldRange_of_isIntegrallyClosedIn hex)
 
 end LinearDisjoint
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Fintype.Sum
 public import Mathlib.Data.Nat.Factorial.DoubleFactorial
+public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 
 /-!
 # Perfect matchings of a finite type
@@ -17,7 +18,9 @@ fixed points; equivalently, it partitions `α` into the unordered pairs `{a, f a
 defines perfect matchings, transports them along an equivalence of the underlying types, shows
 that a perfect matching restricted to the complement of one of its arcs is again a perfect
 matching, and counts the perfect matchings of a finite type: a type of cardinality `2 * m` has
-`(2 * m - 1)‼` of them, and a type of odd cardinality has none.
+`(2 * m - 1)‼` of them, and a type of odd cardinality has none. Finally it records the parity
+consequences of being a product of `m` disjoint transpositions: the sign of a perfect matching,
+and the evenness of the number of orbits of a product of two perfect matchings.
 
 The counting theorem is the combinatorial content behind the dimension of the Brauer algebra;
 see `TauCeti/Combinatorics/Brauer/Diagram.lean`.
@@ -36,6 +39,10 @@ see `TauCeti/Combinatorics/Brauer/Diagram.lean`.
 * `TauCeti.even_card_of_nonempty_perfectMatching`: a matched type has even cardinality.
 * `TauCeti.card_perfectMatching`: a type of cardinality `2 * m` has `(2 * m - 1)‼` perfect
   matchings.
+* `TauCeti.IsPerfectMatching.sign_eq`: a perfect matching of a type of cardinality `2 * m` has
+  sign `(-1) ^ m`.
+* `TauCeti.IsPerfectMatching.even_orbitCount_mul`: the product of two perfect matchings has an even
+  number of orbits.
 
 ## References
 
@@ -394,5 +401,37 @@ exactly `(2 * m - 1)‼ = 1 · 3 · 5 ⋯ (2 * m - 1)` perfect matchings. -/
 theorem card_perfectMatching (α : Type u) [Fintype α] [DecidableEq α] {m : ℕ}
     (hcard : Fintype.card α = 2 * m) : Fintype.card (PerfectMatching α) = (2 * m - 1)‼ :=
   card_perfectMatching_aux m hcard
+
+section Parity
+
+/-- **The sign of a perfect matching.** A perfect matching of a finite type is a product of half
+as many disjoint transpositions as the type has elements. -/
+theorem IsPerfectMatching.sign_eq [Fintype α] [DecidableEq α] {f : Equiv.Perm α}
+    (hf : IsPerfectMatching f) :
+    Equiv.Perm.sign f = (-1 : ℤˣ) ^ (Fintype.card α / 2) := by
+  have hsq : f ^ 2 = 1 := Equiv.ext fun a => by simp [sq, hf.1 a]
+  have hfix : Fintype.card (Function.fixedPoints f) = 0 :=
+    Fintype.card_eq_zero_iff.mpr ⟨fun a => hf.2 a a.2⟩
+  rw [Equiv.Perm.sign_of_pow_two_eq_one hsq, hfix, Nat.sub_zero]
+
+/-- **A product of two perfect matchings has an even number of orbits.** Both factors have the
+same sign, so the product is even, while the type has even cardinality; the sign of a permutation
+is the parity of the number of points minus the number of orbits. -/
+theorem IsPerfectMatching.even_orbitCount_mul [Finite α] {f g : Equiv.Perm α}
+    (hf : IsPerfectMatching f) (hg : IsPerfectMatching g) : Even (orbitCount (f * g)) := by
+  classical
+  have := Fintype.ofFinite α
+  have hs := Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount (f * g)
+  rw [map_mul, hf.sign_eq, hg.sign_eq, ← pow_add, ← two_mul, pow_mul, Int.units_sq, one_pow,
+    Int.units_pow_eq_pow_mod_two] at hs
+  have hle := (f * g).orbitCount_le_card.trans_eq Nat.card_eq_fintype_card
+  obtain ⟨m, hm⟩ := even_card_of_nonempty_perfectMatching α ⟨⟨f, hf⟩⟩
+  by_contra hodd
+  obtain ⟨j, hj⟩ := Nat.not_even_iff_odd.mp hodd
+  have hparity : (Fintype.card α - orbitCount (f * g)) % 2 = 1 := by omega
+  rw [hparity, pow_one] at hs
+  exact absurd hs (by decide)
+
+end Parity
 
 end TauCeti
