@@ -415,8 +415,9 @@ of integers of `K_v`.
 
 Stated with `Ideal.comap` of the explicit ring homomorphism, not `Ideal.under`: `Ideal.under A` is
 `Ideal.comap (algebraMap A B)` and so needs an `Algebra (v.adicCompletionIntegers K)
-(w.adicCompletionIntegers L)` instance, which does not exist — the extension is a bare `RingHom`.
-Naming it `under_` would assert a contraction along an `algebraMap` that is not there. -/
+(w.adicCompletionIntegers L)` instance, which is only installed in the `AdicCompletionExtension`
+scope. The `Ideal.LiesOver` form for that scoped algebra is
+`maximalIdeal_adicCompletionIntegers_liesOver`. -/
 @[simp]
 lemma comap_maximalIdeal_adicCompletionIntegersExtension :
     (IsLocalRing.maximalIdeal (w.adicCompletionIntegers L)).comap
