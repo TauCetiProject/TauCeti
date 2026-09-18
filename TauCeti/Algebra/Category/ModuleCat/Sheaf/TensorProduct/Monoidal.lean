@@ -37,8 +37,8 @@ the localization functor, for which sheafification is a braided monoidal functor
   `SheafOfModules.sheafificationUnitIso` (`SheafOfModules.sheafification_ε`);
 * `SheafOfModules.tensorUnderlyingIso`: the identification of `M ⊗ N` with the sheafification of
   the sectionwise tensor product of the underlying presheaves of modules, natural in `M` and `N`
-  (`SheafOfModules.tensorUnderlyingIso_naturality`) and compatible with the braiding and the
-  unitors.
+  (`TauCeti.SheafOfModules.tensorUnderlyingIso_naturality`) and compatible with the braiding and
+  the unitors.
 
 The tensor object `M ⊗ N` and the sheaf `SheafOfModules.tensorProduct R M N` are both
 sheafifications of `M.val ⊗ N.val`, through `tensorUnderlyingIso` and `tensorProductIso`
@@ -99,6 +99,7 @@ instance symmetricCategory : SymmetricCategory (SheafOfModules.{u} (ringCatSheaf
       (PresheafOfModules.toPresheaf.{u} (ringCatSheaf R).obj)) (sheafificationUnitIso R)))
 
 /-- The unit of the monoidal structure on sheaves of `R`-modules is `R` itself. -/
+@[simp]
 theorem tensorUnit_eq :
     𝟙_ (SheafOfModules.{u} (ringCatSheaf R)) = _root_.SheafOfModules.unit (ringCatSheaf R) :=
   rfl
@@ -139,7 +140,7 @@ variable {R}
 
 /-- The tensor product of two sheaves of `R`-modules is the sheafification of the sectionwise
 tensor product of their underlying presheaves of modules. -/
-def tensorUnderlyingIso (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+def _root_.SheafOfModules.tensorUnderlyingIso (M N : SheafOfModules.{u} (ringCatSheaf R)) :
     M ⊗ N ≅ (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)).obj
       (M.val ⊗ N.val) :=
   ((sheafificationIso _ M).symm ⊗ᵢ (sheafificationIso _ N).symm) ≪≫
@@ -150,10 +151,10 @@ modules is the sheafification of the sectionwise tensor product of their underly
 @[reassoc]
 theorem tensorUnderlyingIso_naturality {M M' N N' : SheafOfModules.{u} (ringCatSheaf R)}
     (f : M ⟶ M') (g : N ⟶ N') :
-    (f ⊗ₘ g) ≫ (tensorUnderlyingIso M' N').hom =
-      (tensorUnderlyingIso M N).hom ≫
+    (f ⊗ₘ g) ≫ (M'.tensorUnderlyingIso N').hom =
+      (M.tensorUnderlyingIso N).hom ≫
         (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)).map (f.val ⊗ₘ g.val) := by
-  simp only [tensorUnderlyingIso, Iso.trans_hom, tensorIso_hom, Iso.symm_hom,
+  simp only [SheafOfModules.tensorUnderlyingIso, Iso.trans_hom, tensorIso_hom, Iso.symm_hom,
     Functor.Monoidal.μIso_hom, assoc]
   rw [tensorHom_comp_tensorHom_assoc, sheafificationIso_inv_naturality,
     sheafificationIso_inv_naturality, ← tensorHom_comp_tensorHom_assoc,
@@ -162,18 +163,19 @@ theorem tensorUnderlyingIso_naturality {M M' N N' : SheafOfModules.{u} (ringCatS
 /-- Under `tensorUnderlyingIso`, the braiding of sheaves of modules is the sheafification of the
 braiding of the sectionwise tensor product. -/
 @[reassoc]
-theorem braiding_hom_tensorUnderlyingIso_hom (M N : SheafOfModules.{u} (ringCatSheaf R)) :
-    (β_ M N).hom ≫ (tensorUnderlyingIso N M).hom =
-      (tensorUnderlyingIso M N).hom ≫
+theorem _root_.SheafOfModules.braiding_hom_tensorUnderlyingIso_hom
+    (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    (β_ M N).hom ≫ (N.tensorUnderlyingIso M).hom =
+      (M.tensorUnderlyingIso N).hom ≫
         (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)).map
           (β_ M.val N.val).hom := by
-  simp only [tensorUnderlyingIso, Iso.trans_hom, tensorIso_hom, Iso.symm_hom,
+  simp only [SheafOfModules.tensorUnderlyingIso, Iso.trans_hom, tensorIso_hom, Iso.symm_hom,
     Functor.Monoidal.μIso_hom, BraidedCategory.braiding_naturality_assoc,
     Functor.Braided.braided, assoc]
 
 /-- The left unitor of sheaves of modules is the sheafification of the left unitor of the
 sectionwise tensor product, read through the unit comparison `sheafificationUnitIso`. -/
-theorem leftUnitor_hom_eq (M : SheafOfModules.{u} (ringCatSheaf R)) :
+theorem _root_.SheafOfModules.leftUnitor_hom_eq (M : SheafOfModules.{u} (ringCatSheaf R)) :
     (λ_ M).hom = ((sheafificationUnitIso R).inv ⊗ₘ (sheafificationIso _ M).inv) ≫
       Functor.LaxMonoidal.μ (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj))
         (𝟙_ _) M.val ≫
@@ -187,7 +189,7 @@ theorem leftUnitor_hom_eq (M : SheafOfModules.{u} (ringCatSheaf R)) :
 
 /-- The right unitor of sheaves of modules is the sheafification of the right unitor of the
 sectionwise tensor product, read through the unit comparison `sheafificationUnitIso`. -/
-theorem rightUnitor_hom_eq (M : SheafOfModules.{u} (ringCatSheaf R)) :
+theorem _root_.SheafOfModules.rightUnitor_hom_eq (M : SheafOfModules.{u} (ringCatSheaf R)) :
     (ρ_ M).hom = ((sheafificationIso _ M).inv ⊗ₘ (sheafificationUnitIso R).inv) ≫
       Functor.LaxMonoidal.μ (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj))
         M.val (𝟙_ _) ≫
