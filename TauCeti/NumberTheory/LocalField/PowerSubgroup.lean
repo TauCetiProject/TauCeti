@@ -150,8 +150,7 @@ theorem disjoint_rootsOfUnity_unitFiltration_one_of_isUnit {n : ℕ} (hn : IsUni
   simp [← hux, hu]
 
 /-- For `n` invertible in `𝒪[K]`, the `n`-th power map is a bijection of each positive-depth step
-`U(K,i+1)` of the unit filtration: it is onto by Hensel's lemma, and one-to-one because `U(K,1)`
-contains no nontrivial `n`-th root of unity. -/
+`U(K,i+1)` of the unit filtration. -/
 theorem powMonoidHom_unitFiltration_succ_bijective_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K]))
     (i : ℕ) :
     Function.Bijective (powMonoidHom n : unitFiltration K (i + 1) →* unitFiltration K (i + 1)) := by
@@ -270,7 +269,7 @@ theorem card_powerClasses_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
     _ = n * Nat.card (rootsOfUnity n K) := congrArg (n * ·) hker.symm
 
 /-- For `n` invertible in `𝒪[K]`, the subgroup `(Kˣ)ⁿ` of `n`-th powers has finite index in
-`Kˣ`, as a consequence of `card_powerClasses_of_isUnit`. -/
+`Kˣ`. -/
 theorem finiteIndex_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
     (powMonoidHom n : Kˣ →* Kˣ).range.FiniteIndex := by
   have hn0 : n ≠ 0 := by
