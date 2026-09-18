@@ -225,9 +225,9 @@ theorem mem_stabilizer_iff {g : Γ} : g ∈ stabilizer Γ D.cusp ↔ ∃ n : ℤ
 `n * width`. -/
 @[simp]
 theorem scaling_mul_generator_zpow_mul_inv (n : ℤ) :
-    D.scaling * ((D.generator ^ n : Γ) : PSL(2, ℝ)) * D.scaling⁻¹ =
+    D.scaling * (D.generator : PSL(2, ℝ)) ^ n * D.scaling⁻¹ =
       upperRightHom (n * D.width) := by
-  rw [Subgroup.coe_zpow, mul_zpow_mul_inv_eq_upperRightHom D.scaling_mul_generator_mul_inv]
+  rw [mul_zpow_mul_inv_eq_upperRightHom D.scaling_mul_generator_mul_inv]
 
 /-- **The conjugated cusp stabilizer is `width * ℤ`.** An element of `Γ` fixes the cusp exactly
 when its conjugate by the scaling is translation by an integer multiple of the width. -/
@@ -237,7 +237,8 @@ theorem mem_stabilizer_iff_conj {g : Γ} :
   rw [D.mem_stabilizer_iff]
   refine ⟨fun ⟨n, hn⟩ ↦ ⟨n, hn ▸ D.scaling_mul_generator_zpow_mul_inv n⟩, fun ⟨n, hn⟩ ↦
     ⟨n, Subtype.ext ((MulAut.conj D.scaling).injective ?_)⟩⟩
-  rw [MulAut.conj_apply, MulAut.conj_apply, D.scaling_mul_generator_zpow_mul_inv, hn]
+  rw [MulAut.conj_apply, MulAut.conj_apply, Subgroup.coe_zpow,
+    D.scaling_mul_generator_zpow_mul_inv, hn]
 
 /-- **Uniqueness of normalized cusp data.** A cusp datum is determined by its cusp and its
 scaling: the width is then the positive generator of the conjugated stabilizer, and the
