@@ -19,8 +19,8 @@ of a fundamental unit a finite search.
 
 ## Main results
 
-* `NumberField.Units.finite_setOf_forall_apply_le`: the set of units with absolute value at most
-  `B` at every infinite place is finite.
+* `TauCeti.NumberField.Units.finite_setOf_forall_apply_le`: the set of units with absolute value at
+  most `B` at every infinite place is finite.
 -/
 
 public section
@@ -28,7 +28,7 @@ public section
 open NumberField NumberField.InfinitePlace
 open scoped NumberField
 
-namespace NumberField.Units
+namespace TauCeti.NumberField.Units
 
 variable {K : Type*} [Field K] [NumberField K]
 
@@ -36,7 +36,7 @@ variable {K : Type*} [Field K] [NumberField K]
 every infinite place. -/
 theorem finite_setOf_forall_apply_le (B : ℝ) :
     {u : (𝓞 K)ˣ | ∀ w : InfinitePlace K, w u ≤ B}.Finite := by
-  refine ((Embeddings.finite_of_norm_le K ℂ B).preimage (coe_injective K).injOn).subset
-    fun u hu => ⟨RingOfIntegers.isIntegral_coe (u : 𝓞 K), fun φ => hu (InfinitePlace.mk φ)⟩
+  refine ((Embeddings.finite_of_norm_le K ℂ B).preimage (Units.coe_injective K).injOn).subset
+    fun u hu => ⟨RingOfIntegers.isIntegral_coe (u : 𝓞 K), (InfinitePlace.le_iff_le (u : K) B).mp hu⟩
 
-end NumberField.Units
+end TauCeti.NumberField.Units
