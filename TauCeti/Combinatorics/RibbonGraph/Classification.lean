@@ -164,6 +164,15 @@ theorem isoClassEquiv_mk (Γ : {Γ : BipartiteRibbonGraph.{u} // Fintype.card Γ
     isoClassEquiv n ⟦Γ⟧ = PermutationTriple.IsoClass.mk (Γ.1.toPermutationTriple ν) :=
   PermutationTriple.IsoClass.mk_eq_mk_iff.mpr (Γ.1.equivalent_toPermutationTriple _ ν)
 
+/-- The class of a ribbon graph is the class of its triple along the canonical numbering
+`Fintype.equivFinOfCardEq` of its edges; see `isoClassEquiv_mk` for an arbitrary numbering. -/
+@[simp]
+theorem isoClassEquiv_mk_equivFinOfCardEq
+    (Γ : {Γ : BipartiteRibbonGraph.{u} // Fintype.card Γ.E = n}) :
+    isoClassEquiv n ⟦Γ⟧ =
+      PermutationTriple.IsoClass.mk (Γ.1.toPermutationTriple (Fintype.equivFinOfCardEq Γ.2)) :=
+  isoClassEquiv_mk Γ _
+
 /-- The class of a triple is the class of its (universe-lifted) ribbon graph. -/
 @[simp]
 theorem isoClassEquiv_symm_mk (t : PermutationTriple n) :
