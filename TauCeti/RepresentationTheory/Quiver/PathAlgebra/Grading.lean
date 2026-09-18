@@ -27,9 +27,11 @@ arrows. Each piece is free on the paths of that length, and each sits inside the
 `TauCeti.pathSpan k Q n` of the length filtration of
 `TauCeti.RepresentationTheory.Quiver.Radical`, which spans the paths of length *at least* `n`.
 
-Other weights give the gradings of DG path algebras: a Ginzburg DG algebra is the path algebra of
-a quiver whose added loops sit in a negative cohomological degree, and its Adams grading is a
-second, independent weight on the same arrows (Etgü--Lekili; Keller).
+Other weights give the underlying gradings of DG path algebras. The (uncompleted) Ginzburg DG
+algebra has as underlying graded algebra the path algebra of a quiver whose added loops sit in a
+negative cohomological degree, and its Adams grading is a second, independent weight on the same
+arrows (Etgü--Lekili; Keller); the standard construction further completes this graded path
+algebra and equips it with a differential, neither of which is part of `gradeBy`.
 
 ## Main definitions
 
@@ -51,7 +53,10 @@ second, independent weight on the same arrows (Etgü--Lekili; Keller).
   pieces with `kQ` itself.
 * `TauCeti.PathAlgebra.mem_gradeBy_iff`: an element is homogeneous of weight `m` exactly when its
   path coordinates are supported on the paths of weight `m`.
-* `TauCeti.PathAlgebra.ofArrow_mem_gradeBy`: an arrow is homogeneous of its own weight.
+* `TauCeti.PathAlgebra.ofArrow_mem_gradeBy`: an arrow is homogeneous of its own weight, and
+  `TauCeti.PathAlgebra.ofArrow_mem_gradeBy_iff` and
+  `TauCeti.PathAlgebra.vertexIdempotent_mem_gradeBy_iff` read off the degree of an arrow and of a
+  vertex idempotent.
 * `TauCeti.PathAlgebra.gradedAlgebra`: **the path-length grading**, the `GradedAlgebra` instance
   on `TauCeti.PathAlgebra.grade`, with `TauCeti.PathAlgebra.grade_mul_grade_le` and
   `TauCeti.PathAlgebra.isInternal_grade` its two halves.
@@ -173,7 +178,21 @@ variable (wt) in
 theorem ofArrow_mem_gradeBy {a b : Q} (e : a ⟶ b) :
     (ofArrow e : pathAlgebra k Q) ∈ gradeBy k wt (wt e) := by
   rw [ofArrow_eq_ofPath]
-  exact ofPath_mem_gradeBy_of_addWeight (_root_.Quiver.Path.addWeight_toPath wt e)
+  exact ofPath_mem_gradeBy_of_addWeight (by simp [Quiver.Hom.toPath])
+
+/-- **A vertex idempotent has degree `m` exactly when `m = 0`.** -/
+@[simp]
+theorem vertexIdempotent_mem_gradeBy_iff [Nontrivial k] {m : M} (v : Q) :
+    (vertexIdempotent k v : pathAlgebra k Q) ∈ gradeBy k wt m ↔ m = 0 := by
+  rw [vertexIdempotent_eq_ofPath, ofPath_mem_gradeBy_iff, _root_.Quiver.Path.addWeight_nil,
+    eq_comm]
+
+/-- **An arrow has degree `m` exactly when its weight is `m`.** -/
+@[simp]
+theorem ofArrow_mem_gradeBy_iff [Nontrivial k] {m : M} {a b : Q} (e : a ⟶ b) :
+    (ofArrow e : pathAlgebra k Q) ∈ gradeBy k wt m ↔ wt e = m := by
+  rw [ofArrow_eq_ofPath, ofPath_mem_gradeBy_iff]
+  simp [Quiver.Hom.toPath]
 
 variable (k wt)
 
