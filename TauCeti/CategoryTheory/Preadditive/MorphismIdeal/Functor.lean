@@ -23,11 +23,13 @@ a functor between stable categories.
 
 * `TauCeti.MorphismIdeal.comap`: the inverse image of a morphism ideal under an additive functor.
 * `TauCeti.MorphismIdeal.map`: the functor induced between quotient categories.
-* `TauCeti.MorphismIdeal.mapNatTrans`: the natural transformation induced between quotient
-  functors.
+* `TauCeti.MorphismIdeal.mapNatTrans` and `TauCeti.MorphismIdeal.mapNatIso`: the natural
+  transformation and natural isomorphism induced between quotient functors.
 
 ## Main results
 
+* `TauCeti.MorphismIdeal.comap_eq_of_iso`: naturally isomorphic functors pull back an ideal to the
+  same ideal.
 * `TauCeti.MorphismIdeal.map_id` and `TauCeti.MorphismIdeal.map_comp`: quotient functors preserve
   identities and composition.
 * `TauCeti.MorphismIdeal.mapNatTrans_id` and
@@ -97,6 +99,17 @@ theorem comap_comp (K : MorphismIdeal E) (F : C ⥤ D) (G : D ⥤ E)
     [F.Additive] [G.Additive] : K.comap (F ⋙ G) = (K.comap G).comap F := by
   ext
   simp
+
+/-- Pullback of ideals only depends on the functor up to natural isomorphism. -/
+theorem comap_eq_of_iso (J : MorphismIdeal D) {F G : C ⥤ D} [F.Additive] [G.Additive]
+    (α : F ≅ G) : J.comap F = J.comap G := by
+  ext X Y f
+  simp only [mem_comap_hom]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [← NatIso.naturality_1 α f]
+    exact J.comp_mem_left _ (J.comp_mem_right _ h)
+  · rw [← NatIso.naturality_2 α f]
+    exact J.comp_mem_left _ (J.comp_mem_right _ h)
 
 /-- If `F` carries `I` into `J` and `G` carries `J` into `K`, then `F ⋙ G` carries `I` into
 `K`. -/
@@ -232,6 +245,30 @@ theorem comp_mapNatTrans (I : MorphismIdeal C) (J : MorphismIdeal D) {F G H : C 
   unfold mapNatTrans
   rw [CategoryTheory.Quotient.comp_natTransLift]
   simp
+
+/-- A natural isomorphism between ideal-preserving functors descends to a natural isomorphism
+between their induced functors on the quotients. -/
+noncomputable def mapNatIso (I : MorphismIdeal C) (J : MorphismIdeal D) {F G : C ⥤ D}
+    [F.Additive] [G.Additive] (hF : I ≤ J.comap F) (hG : I ≤ J.comap G) (α : F ≅ G) :
+    I.map J F hF ≅ I.map J G hG where
+  hom := I.mapNatTrans J hF hG α.hom
+  inv := I.mapNatTrans J hG hF α.inv
+  hom_inv_id := by rw [comp_mapNatTrans, α.hom_inv_id, mapNatTrans_id]
+  inv_hom_id := by rw [comp_mapNatTrans, α.inv_hom_id, mapNatTrans_id]
+
+/-- The forward component of a descended natural isomorphism is the descended transformation. -/
+@[simp]
+theorem mapNatIso_hom (I : MorphismIdeal C) (J : MorphismIdeal D) {F G : C ⥤ D}
+    [F.Additive] [G.Additive] (hF : I ≤ J.comap F) (hG : I ≤ J.comap G) (α : F ≅ G) :
+    (I.mapNatIso J hF hG α).hom = I.mapNatTrans J hF hG α.hom :=
+  (rfl)
+
+/-- The inverse component of a descended natural isomorphism is the descended inverse. -/
+@[simp]
+theorem mapNatIso_inv (I : MorphismIdeal C) (J : MorphismIdeal D) {F G : C ⥤ D}
+    [F.Additive] [G.Additive] (hF : I ≤ J.comap F) (hG : I ≤ J.comap G) (α : F ≅ G) :
+    (I.mapNatIso J hF hG α).inv = I.mapNatTrans J hG hF α.inv :=
+  (rfl)
 
 end MorphismIdeal
 

@@ -9,7 +9,7 @@ public import TauCeti.Probability.Distributions.Wishart.Transforms
 public import TauCeti.Probability.Moments.ComplexMGF
 
 /-!
-# The characteristic function of the Gaussian-Gram Wishart family
+# The characteristic functions of the Wishart families
 
 A symmetric matrix `Θ` pairs with a symmetric matrix `A` through the trace statistic
 `A ↦ trace (Θ * A)`, which by `selfAdjoint.inner_eq_trace_mul` is the Frobenius inner product of
@@ -36,6 +36,8 @@ can cross the branch cut.
   Hermitian pencil determinant.
 * `TauCeti.charFun_wishartGramMeasure` — the characteristic function of the Gaussian-Gram Wishart
   law, at every degree and every scale matrix.
+* `TauCeti.charFun_nonsingularWishartMeasure` — the characteristic function of the nonsingular
+  density family, the same formula with the real degree in place of the natural one.
 
 ## References
 
@@ -121,6 +123,27 @@ theorem charFun_wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ)
   rw [charFun_eq_exp_of_mgf_trace_mul_eq_det_rpow
       (Matrix.isHermitian_sqrt_mul_mul_sqrt S (selfAdjoint.isHermitian_coe Θ)) ((ν : ℝ) / 2)
       fun t ht => by rw [mgf_trace_mul_wishartGramMeasure_sqrt ν S ht, neg_div],
+    hcast, neg_div]
+
+/-- **The characteristic function of the nonsingular Wishart law.** At the symmetric matrix `Θ`
+it is the exponential of `-n / 2` times the sum of the principal logarithms of `1 - 2 * I * λ`
+over the eigenvalues `λ` of the Hermitian sandwich `√S * Θ * √S`.
+
+This is the Gaussian-Gram formula of `TauCeti.charFun_wishartGramMeasure` with the natural degree
+`ν` replaced by the real degree `n`. Agreeing on characteristic functions is one ingredient of an
+identification of the two families where both are defined; that identification is not proved
+here. -/
+theorem charFun_nonsingularWishartMeasure {n : ℝ} {S : Matrix (Fin p) (Fin p) ℝ}
+    (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    charFun (nonsingularWishartMeasure n S) Θ =
+      cexp (-(n : ℂ) / 2 * ∑ j, Complex.log (1 - 2 * Complex.I *
+        ((Matrix.isHermitian_sqrt_mul_mul_sqrt S
+          (selfAdjoint.isHermitian_coe Θ)).eigenvalues j : ℂ))) := by
+  have hcast : ((n / 2 : ℝ) : ℂ) = (n : ℂ) / 2 := by push_cast; ring
+  rw [charFun_eq_exp_of_mgf_trace_mul_eq_det_rpow
+      (Matrix.isHermitian_sqrt_mul_mul_sqrt S (selfAdjoint.isHermitian_coe Θ)) (n / 2)
+      fun t ht => by rw [mgf_trace_mul_nonsingularWishartMeasure_sqrt hS hn ht, neg_div],
     hcast, neg_div]
 
 end TauCeti

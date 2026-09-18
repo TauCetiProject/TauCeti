@@ -62,6 +62,8 @@ the finite-type coordinate-Hopf-algebra category.
 * `TauCeti.CommHopfAlgCat.quotientIsoOfSurjective`: a surjective ambient morphism identifies
   the source quotient by an inverse-image Hopf ideal with the target quotient.
 * `TauCeti.CommHopfAlgCat.quotientIsoOfIso`: the specialization to an ambient isomorphism.
+* `TauCeti.CommHopfAlgCat.quotientKerOfSurjectiveIso`: the quotient by the kernel of a surjective
+  morphism is its target.
 * `TauCeti.CommHopfAlgCat.quotientIsoOfComapEq`: an ideal-preserving ambient automorphism induces
   an automorphism of the quotient.
 * `TauCeti.HopfIdeal.comapOfSurjective_eq_of_hom_le_of_inv_le`: two inverse containments under an
@@ -425,6 +427,25 @@ lemma quotientBotIso_hom (H : _root_.CommHopfAlgCat.{v} R) :
 lemma quotientBotIso_inv (H : _root_.CommHopfAlgCat.{v} R) :
     (quotientBotIso H).inv = mkQuotient H (⊥ : HopfIdeal R H) :=
   by rw [quotientBotIso]
+
+/-- A surjective morphism of commutative Hopf algebras identifies the quotient by its Hopf-ideal
+kernel with its target. -/
+noncomputable def quotientKerOfSurjectiveIso (f : H ⟶ K) (hf : Function.Surjective f.hom) :
+    quotient H (HopfIdeal.kerOfSurjective f.hom hf) ≅ K :=
+  eqToIso (congrArg (quotient H) (HopfIdeal.comapOfSurjective_bot f.hom hf).symm) ≪≫
+    quotientIsoOfSurjective f hf ⊥ ≪≫ quotientBotIso K
+
+/-- The kernel quotient isomorphism identifies the quotient morphism with the original
+surjective morphism. -/
+@[simp]
+lemma mkQuotient_comp_quotientKerOfSurjectiveIso_hom (f : H ⟶ K)
+    (hf : Function.Surjective f.hom) :
+    mkQuotient H (HopfIdeal.kerOfSurjective f.hom hf) ≫ (quotientKerOfSurjectiveIso f hf).hom =
+      f := by
+  rw [quotientKerOfSurjectiveIso, Iso.trans_hom, Iso.trans_hom, eqToIso.hom, ← Category.assoc,
+    mkQuotient_comp_eqToHom (HopfIdeal.comapOfSurjective_bot f.hom hf), ← Category.assoc,
+    mkQuotient_comp_quotientIsoOfSurjective_hom, ← quotientBotIso_inv, Category.assoc,
+    Iso.inv_hom_id, Category.comp_id]
 
 /-- If `I ≤ J`, then the quotient map by `J` kills every element of `I`. -/
 lemma toIdeal_le_ker_mkQuotient_of_le

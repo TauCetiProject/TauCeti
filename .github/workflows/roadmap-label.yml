@@ -36,12 +36,16 @@ jobs:
     steps:
       # A GitHub App token, as elsewhere in this repo: it can write labels and comments on
       # a fork PR (the default GITHUB_TOKEN is read-only for fork pull_request_target).
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
         id: app-token
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: TauCetiProject
+          repositories: TauCeti
+          permission-contents: read
+          permission-issues: write
+          permission-pull-requests: write  # also posts the unknown-roadmap nudge
 
       # The base checkout (trusted): the classifier that runs is the one on the target
       # branch, not the version proposed by the PR.

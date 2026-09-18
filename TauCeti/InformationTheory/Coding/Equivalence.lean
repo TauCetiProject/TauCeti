@@ -144,6 +144,13 @@ one onto the other. -/
 def IsPermutationEquivalent (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) : Prop :=
   ∃ e : ι ≃ κ, C.map (LinearEquiv.funCongrLeft R R e.symm : (ι → R) →ₗ[R] (κ → R)) = D
 
+/-- Unfolds permutation equivalence to the existence of a relabelling carrying one code onto the
+other. -/
+theorem isPermutationEquivalent_iff :
+    IsPermutationEquivalent C D ↔
+      ∃ e : ι ≃ κ, C.map (LinearEquiv.funCongrLeft R R e.symm : (ι → R) →ₗ[R] (κ → R)) = D :=
+  Iff.rfl
+
 /-- A coordinate relabelling that maps one code onto another restricts to a linear equivalence
 between their codewords. -/
 def permutationCodeEquiv (e : ι ≃ κ)
@@ -231,6 +238,13 @@ variable [CommSemiring R] {C : Submodule R (ι → R)} {D : Submodule R (κ → 
 coordinate spaces carries one onto the other. -/
 def IsMonomialEquivalent (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) : Prop :=
   ∃ (u : ι → Rˣ) (e : ι ≃ κ), C.map (monomialEquiv u e : (ι → R) →ₗ[R] (κ → R)) = D
+
+/-- Unfolds monomial equivalence to the existence of a monomial transformation carrying one code
+onto the other. -/
+theorem isMonomialEquivalent_iff :
+    IsMonomialEquivalent C D ↔
+      ∃ (u : ι → Rˣ) (e : ι ≃ κ), C.map (monomialEquiv u e : (ι → R) →ₗ[R] (κ → R)) = D :=
+  Iff.rfl
 
 /-- A monomial transformation that maps one code onto another restricts to a linear equivalence
 between their codewords. -/
