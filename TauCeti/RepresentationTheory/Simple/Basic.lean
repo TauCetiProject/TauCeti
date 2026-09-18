@@ -264,21 +264,20 @@ theorem ind {motive : SimpleFDRepClasses k G → Prop}
     (h : ∀ (X : FDRep k G) (hX : Simple X), motive (@mk k G _ _ X hX))
     (c : SimpleFDRepClasses k G) :
     motive c :=
-  Quotient.ind (fun X ↦ h X.obj X.property) c
+  ObjectProperty.skeletonInd _ (fun X ↦ h X.obj X.property) c
 
 /-- Define a function on simple-object classes from an isomorphism-invariant function on simple
 objects. -/
 noncomputable def lift {α : Sort*} (f : ∀ (X : FDRep k G) [Simple X], α)
     (h : ∀ (X Y : FDRep k G) [Simple X] [Simple Y], Nonempty (X ≅ Y) → f X = f Y) :
     SimpleFDRepClasses k G → α :=
-  Quotient.lift
-    (fun X ↦ @f X.obj X.property)
-    fun X Y e ↦ @h X.obj Y.obj X.property Y.property
-      ⟨(ObjectProperty.ι (Simple : ObjectProperty (FDRep k G))).mapIso e.some⟩
+  ObjectProperty.skeletonLift _ (fun X ↦ @f X.obj X.property)
+    fun X Y e ↦ @h X.obj Y.obj X.property Y.property e
 
 @[simp]
 theorem lift_mk {α : Sort*} {f : ∀ (X : FDRep k G) [Simple X], α} {h}
-    (X : FDRep k G) [Simple X] : lift f h (mk X) = f X := (rfl)
+    (X : FDRep k G) [Simple X] : lift f h (mk X) = f X :=
+  ObjectProperty.skeletonLift_toSkeleton _ _
 
 end SimpleFDRepClasses
 

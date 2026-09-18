@@ -63,21 +63,21 @@ def mk (L : InvertibleSheaf X) : LineBundleClass X :=
 classes. -/
 noncomputable def lift {α : Sort v} (f : InvertibleSheaf X → α)
     (hf : ∀ L M, Nonempty (L.obj ≅ M.obj) → f L = f M) : LineBundleClass X → α :=
-  Quotient.lift f fun L M e ↦
-    hf L M ⟨(SheafOfModules.isInvertible X).ι.mapIso e.some⟩
+  (SheafOfModules.isInvertible X).skeletonLift f hf
 
 /-- Applying `lift` to the class represented by `L` recovers the original function at `L`. -/
 @[simp]
 theorem lift_mk {α : Sort v} {f : InvertibleSheaf X → α}
     {hf : ∀ L M, Nonempty (L.obj ≅ M.obj) → f L = f M} (L : InvertibleSheaf X) :
     lift f hf (mk L) = f L :=
-  (rfl)
+  ObjectProperty.skeletonLift_toSkeleton _ L
 
 /-- To prove a property of every line-bundle class, it suffices to prove it for the class of each
 line bundle. -/
 @[elab_as_elim]
-theorem ind {p : LineBundleClass X → Prop} (h : ∀ L, p (mk L)) (a : LineBundleClass X) : p a :=
-  Quotient.ind h a
+theorem ind {motive : LineBundleClass X → Prop} (mk : ∀ L, motive (mk L))
+    (a : LineBundleClass X) : motive a :=
+  (SheafOfModules.isInvertible X).skeletonInd mk a
 
 /-- Two line bundles have the same class exactly when their underlying sheaves are isomorphic. -/
 @[simp]
@@ -113,26 +113,26 @@ lemma mk_trivial : mk (InvertibleSheaf.trivial X) = (1 : LineBundleClass X) :=
 noncomputable instance : CommMonoid (LineBundleClass X) := by
   let mulComm : ∀ a b : LineBundleClass X, a * b = b * a := by
     intro a b
-    induction a using Quotient.inductionOn with
-    | _ L =>
-      induction b using Quotient.inductionOn with
-      | _ K => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorProductComm L K)
+    induction a using ind with
+    | mk L =>
+      induction b using ind with
+      | mk K => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorProductComm L K)
   let mulAssoc : ∀ a b c : LineBundleClass X, a * b * c = a * (b * c) := by
     intro a b c
-    induction a using Quotient.inductionOn with
-    | _ L =>
-      induction b using Quotient.inductionOn with
-      | _ K =>
-        induction c using Quotient.inductionOn with
-        | _ M => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorProductAssoc L K M)
+    induction a using ind with
+    | mk L =>
+      induction b using ind with
+      | mk K =>
+        induction c using ind with
+        | mk M => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorProductAssoc L K M)
   let oneMul : ∀ a : LineBundleClass X, 1 * a = a := by
     intro a
-    induction a using Quotient.inductionOn with
-    | _ L => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorTrivialLeftIso L)
+    induction a using ind with
+    | mk L => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorTrivialLeftIso L)
   let mulOne : ∀ a : LineBundleClass X, a * 1 = a := by
     intro a
-    induction a using Quotient.inductionOn with
-    | _ L => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorTrivialRightIso L)
+    induction a using ind with
+    | mk L => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorTrivialRightIso L)
   exact
     { mul_assoc := mulAssoc
       one_mul := oneMul

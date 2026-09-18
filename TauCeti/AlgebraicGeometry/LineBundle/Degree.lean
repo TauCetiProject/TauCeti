@@ -31,7 +31,9 @@ of a divisor require the coherent-cohomology and Riemann--Roch theory.
 
 * `InvertibleSheaf.eulerDegree` is `χ(L) - χ(𝒪_X)` for an invertible sheaf;
 * `InvertibleSheaf.eulerDegree_def` is its defining formula;
-* `InvertibleSheaf.eulerDegree_eq_finrank` expands it as the difference of the dimensions of
+* `InvertibleSheaf.eulerDegree_eq_sub_unit` states it with the structure sheaf `𝒪_X` in place
+  of the trivial line bundle;
+* `InvertibleSheaf.eulerDegree_eq_finrank_sub` expands it as the difference of the dimensions of
   `H⁰` and `H¹`;
 * `LineBundleClass.eulerDegree` descends the invariant to isomorphism classes of line bundles;
 * `LineBundleClass.eulerDegree_mk` and `LineBundleClass.eulerDegree_one` are its representative
@@ -76,28 +78,39 @@ lemma eulerDegree_def (L : InvertibleSheaf X) :
         Scheme.Modules.eulerCharBelow k X (trivial X).obj 2 :=
   (rfl)
 
+/-- The Euler-characteristic degree is `χ(L) - χ(𝒪_X)` with `𝒪_X` the structure sheaf. -/
+lemma eulerDegree_eq_sub_unit (L : InvertibleSheaf X) :
+    L.eulerDegree k =
+      Scheme.Modules.eulerCharBelow k X L.obj 2 -
+        Scheme.Modules.eulerCharBelow k X (SheafOfModules.unit X.ringCatSheaf) 2 := by
+  rw [eulerDegree_def]
+  congr 1
+  rw [trivial_obj]
+  exact Scheme.Modules.eulerCharBelow_congr (X := X) k
+    (TauCeti.SheafOfModules.freePUnitIsoUnit _) 2
+
 /-- The Euler-characteristic degree is the difference of `dim H⁰ - dim H¹` for the line bundle
 and the trivial line bundle. -/
-lemma eulerDegree_eq_finrank (L : InvertibleSheaf X) :
+lemma eulerDegree_eq_finrank_sub (L : InvertibleSheaf X) :
     L.eulerDegree k =
       ((finrank k (Scheme.Modules.Cohomology L.obj 0) : ℤ) -
           (finrank k (Scheme.Modules.Cohomology L.obj 1) : ℤ)) -
         ((finrank k (Scheme.Modules.Cohomology (trivial X).obj 0) : ℤ) -
           (finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) : ℤ)) := by
-  rw [eulerDegree, Scheme.Modules.eulerCharBelow_two,
+  rw [eulerDegree_def, Scheme.Modules.eulerCharBelow_two,
     Scheme.Modules.eulerCharBelow_two]
 
 /-- Isomorphic invertible sheaves have the same Euler-characteristic degree. -/
 lemma eulerDegree_congr {L M : InvertibleSheaf X} (e : L.obj ≅ M.obj) :
     L.eulerDegree k = M.eulerDegree k := by
-  rw [eulerDegree, eulerDegree]
+  rw [eulerDegree_def, eulerDegree_def]
   congr 1
   exact Scheme.Modules.eulerCharBelow_congr k e 2
 
 /-- The trivial line bundle has Euler-characteristic degree zero. -/
 @[simp]
 lemma eulerDegree_trivial : (trivial X).eulerDegree k = 0 := by
-  rw [eulerDegree, sub_self]
+  rw [eulerDegree_def, sub_self]
 
 end InvertibleSheaf
 
