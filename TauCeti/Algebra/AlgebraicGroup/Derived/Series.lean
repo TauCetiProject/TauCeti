@@ -56,7 +56,7 @@ into the original group. -/
         (mkQuotient H (derivedSeriesDefiningIdeal H n)).hom (mkQuotient_surjective _ _) := (rfl)
 
 /-- The defining ideals increase along the derived series. -/
-theorem derivedSeriesDefiningIdeal_mono : Monotone (derivedSeriesDefiningIdeal H) := by
+theorem derivedSeriesDefiningIdeal_monotone : Monotone (derivedSeriesDefiningIdeal H) := by
   apply monotone_nat_of_le_succ
   intro n x hx
   rw [derivedSeriesDefiningIdeal_succ, HopfIdeal.mem_comapOfSurjective,
@@ -69,7 +69,7 @@ theorem derivedSeriesDefiningIdeal_eq_augmentation_of_le {m n : ℕ} (hmn : m �
     derivedSeriesDefiningIdeal H n = HopfIdeal.augmentation R H := by
   apply le_antisymm (HopfIdeal.le_augmentation R H _)
   rw [← hm]
-  exact derivedSeriesDefiningIdeal_mono H hmn
+  exact derivedSeriesDefiningIdeal_monotone H hmn
 
 end CommRing
 
