@@ -27,8 +27,6 @@ separable, and for irreducible `p` this follows from `p.Separable`.
 
 * `TauCeti.stabilizer_eq_fixingSubgroup_adjoin_simple`: the stabilizer of a root is the fixing
   subgroup of the field the root generates.
-* `TauCeti.fixedField_stabilizer`: for a Galois splitting field, the field the stabilizer fixes
-  is that same field.
 * `TauCeti.index_stabilizer_eq_natDegree_minpoly`,
   `TauCeti.index_stabilizer_eq_natDegree`: the index of the stabilizer is the degree of the
   minimal polynomial of the root, so for irreducible separable `p` it is `p.natDegree`.
@@ -76,12 +74,6 @@ theorem stabilizer_eq_fixingSubgroup_adjoin_simple (x : p.rootSet p.SplittingFie
     IntermediateField.fixingSubgroup_adjoin_simple]
   exact Iff.rfl
 
-/-- **The field a root generates is recovered from its stabilizer.** When the splitting field is
-Galois over `F` the fixed field of the stabilizer of `x` is `F⟮x⟯`. -/
-theorem fixedField_stabilizer [IsGalois F p.SplittingField] (x : p.rootSet p.SplittingField) :
-    IntermediateField.fixedField (stabilizer p.Gal x) = F⟮(x : p.SplittingField)⟯ := by
-  rw [stabilizer_eq_fixingSubgroup_adjoin_simple, IsGalois.fixedField_fixingSubgroup]
-
 /-! ### The index of a point stabilizer -/
 
 /-- **The index of a point stabilizer is the degree of the minimal polynomial of the point.** The
@@ -115,7 +107,9 @@ theorem stabilizer_eq_bot_iff_adjoin_simple_eq_top [IsGalois F p.SplittingField]
     (x : p.rootSet p.SplittingField) :
     stabilizer p.Gal x = ⊥ ↔ F⟮(x : p.SplittingField)⟯ = ⊤ := by
   refine ⟨fun h => ?_, fun h => ?_⟩
-  · rw [← fixedField_stabilizer x, h]
+  · rw [stabilizer_eq_fixingSubgroup_adjoin_simple, IntermediateField.fixingSubgroup_adjoin_simple]
+      at h
+    rw [← IntermediateField.fixedField_stabilizer_eq_adjoin_simple (x : p.SplittingField), h]
     exact IntermediateField.fixedField_bot
   · rw [stabilizer_eq_fixingSubgroup_adjoin_simple, h]
     exact IntermediateField.fixingSubgroup_top
@@ -127,7 +121,9 @@ theorem stabilizer_eq_top_iff_adjoin_simple_eq_bot [IsGalois F p.SplittingField]
     (x : p.rootSet p.SplittingField) :
     stabilizer p.Gal x = ⊤ ↔ F⟮(x : p.SplittingField)⟯ = ⊥ := by
   refine ⟨fun h => ?_, fun h => ?_⟩
-  · rw [← fixedField_stabilizer x, h]
+  · rw [stabilizer_eq_fixingSubgroup_adjoin_simple, IntermediateField.fixingSubgroup_adjoin_simple]
+      at h
+    rw [← IntermediateField.fixedField_stabilizer_eq_adjoin_simple (x : p.SplittingField), h]
     exact IsGalois.fixedField_top
   · rw [stabilizer_eq_fixingSubgroup_adjoin_simple, h]
     exact IntermediateField.fixingSubgroup_bot
