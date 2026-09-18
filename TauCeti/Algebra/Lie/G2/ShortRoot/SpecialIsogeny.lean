@@ -133,9 +133,11 @@ theorem g2SpecialIsogeny_apply (g : Matrix (Fin 7) (Fin 7) R) (i j : Fin 7) :
 theorem g2SpecialIsogeny_map {S F : Type*} [CommRing S] [FunLike F R S] [RingHomClass F R S]
     (f : F) (g : Matrix (Fin 7) (Fin 7) R) :
     g2SpecialIsogeny (g.map f) = (g2SpecialIsogeny g).map f := by
+  let φ : R →+* S := RingHomClass.toRingHom f
+  change g2SpecialIsogeny (g.map φ) = (g2SpecialIsogeny g).map φ
   ext i j
-  simp only [Matrix.map_apply, g2SpecialIsogeny_apply, g2SpecialIsogenyColumn_def, pairMinor_eq,
-    apply_ite f, map_zero, map_add, map_sub, map_mul]
+  simp only [Matrix.map_apply, g2SpecialIsogeny_apply, g2SpecialIsogenyColumn_def,
+    pairMinor_map, apply_ite φ, map_zero, map_add, map_sub]
 
 /-- **The formula sends diagonal matrices to diagonal matrices**, pairing up the entries along
 the seven distinguished index pairs. The two corrections at the middle index contribute nothing,
@@ -152,9 +154,10 @@ theorem g2SpecialIsogeny_diagonal (d : Fin 7 → R) :
 /-- The formula fixes the identity matrix. -/
 @[simp]
 theorem g2SpecialIsogeny_one : g2SpecialIsogeny (1 : Matrix (Fin 7) (Fin 7) R) = 1 := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [g2SpecialIsogeny_apply, g2SpecialIsogenyColumn_def, pairMinor_eq]
+  rw [← Matrix.diagonal_one, g2SpecialIsogeny_diagonal]
+  apply congrArg Matrix.diagonal
+  funext i
+  fin_cases i <;> simp
 
 end Matrix
 

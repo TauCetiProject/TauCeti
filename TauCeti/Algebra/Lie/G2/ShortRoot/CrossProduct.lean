@@ -367,8 +367,11 @@ theorem _root_.Matrix.g2CrossMap_map (W : Matrix (Fin 7) (Fin 7) ℤ) (m : Fin 7
   have key : ∀ k : Fin 7,
       (crossOperator k).map (Int.cast : ℤ → R) * (W.map (Int.cast : ℤ → R))ᵀ =
         ((crossOperator k).map (Int.cast : ℤ → ℤ) * Wᵀ).map (Int.cast : ℤ → R) := fun k => by
-    ext a b
-    simp [Matrix.mul_apply, Matrix.map_apply, Matrix.transpose_apply, Int.cast_sum]
+    have hcast : (crossOperator k).map (Int.cast : ℤ → ℤ) = crossOperator k := by
+      ext a b
+      simp
+    rw [hcast, ← Matrix.transpose_map]
+    exact (Matrix.map_mul (L := crossOperator k) (M := Wᵀ) (f := Int.castRingHom R)).symm
   rw [g2CrossMap_def, g2CrossMap_def, Int.cast_sum]
   exact Finset.sum_congr rfl fun k _ => by rw [key k, Matrix.map_apply]
 
