@@ -292,7 +292,6 @@ noncomputable def translateSLₗ [Γ.HasDetOne] (γ : SL(2, ℤ)) :
       (c • ((⇑f : ℍ → ℂ) ∣[k] γ)) z
     rw [FunLike.coe_smul, SL_smul_slash]
 
-@[simp]
 lemma translateSLₗ_apply [Γ.HasDetOne] (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
     translateSLₗ γ f = translate f (mapGL ℝ γ) := (rfl)
 
