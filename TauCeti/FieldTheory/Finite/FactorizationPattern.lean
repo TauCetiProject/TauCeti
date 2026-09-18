@@ -57,12 +57,9 @@ theorem exists_monic_squarefree_map_natDegree_normalizedFactors_eq_pair_one_sub_
   let s : Multiset k[X] := {X, h}
   have smonic : ∀ p ∈ s, p.Monic := by simp [s, monic_X, hmonic]
   have sirr : ∀ p ∈ s, Irreducible p := by simp [s, irreducible_X, hirr]
-  have hfac : normalizedFactors s.prod = s := by
-    rw [normalizedFactors_prod_eq s sirr]
-    exact (Multiset.map_congr rfl fun p hp ↦ (smonic p hp).normalize_eq_self).trans s.map_id'
+  have hfac := normalizedFactors_multiset_prod_of_monic_of_irreducible smonic sirr
   have gsq : Squarefree s.prod := by
-    rw [squarefree_iff_nodup_normalizedFactors
-        (Multiset.prod_ne_zero fun hp ↦ (sirr 0 hp).ne_zero rfl), hfac]
+    rw [squarefree_multiset_prod_iff_nodup_of_monic_of_irreducible smonic sirr]
     simp [s, Ne.symm hX]
   have gfac : (normalizedFactors s.prod).map natDegree = s.map natDegree := by rw [hfac]
   refine ⟨s.prod, by simpa using monic_multiset_prod_of_monic s id smonic, ?_, gsq,
@@ -92,12 +89,9 @@ theorem exists_monic_squarefree_count_two_map_natDegree_normalizedFactors_eq_one
     let s : Multiset k[X] := {q, X, h}
     have smonic : ∀ p ∈ s, p.Monic := by simp [s, monic_X, qmonic, hmonic]
     have sirr : ∀ p ∈ s, Irreducible p := by simp [s, irreducible_X, qirr, hirr]
-    have hfac : normalizedFactors s.prod = s := by
-      rw [normalizedFactors_prod_eq s sirr]
-      exact (Multiset.map_congr rfl fun p hp ↦ (smonic p hp).normalize_eq_self).trans s.map_id'
+    have hfac := normalizedFactors_multiset_prod_of_monic_of_irreducible smonic sirr
     have gsq : Squarefree s.prod := by
-      rw [squarefree_iff_nodup_normalizedFactors
-          (Multiset.prod_ne_zero fun hp ↦ (sirr 0 hp).ne_zero rfl), hfac]
+      rw [squarefree_multiset_prod_iff_nodup_of_monic_of_irreducible smonic sirr]
       simp [s, qX, Ne.symm hq, Ne.symm hX]
     have gfac : (normalizedFactors s.prod).map natDegree = s.map natDegree := by rw [hfac]
     refine ⟨s.prod, by simpa using monic_multiset_prod_of_monic s id smonic, ?_, gsq, ?_, ?_⟩
@@ -122,12 +116,9 @@ theorem exists_monic_squarefree_count_two_map_natDegree_normalizedFactors_eq_one
     let s : Multiset k[X] := {q, h}
     have smonic : ∀ p ∈ s, p.Monic := by simp [s, qmonic, hmonic]
     have sirr : ∀ p ∈ s, Irreducible p := by simp [s, qirr, hirr]
-    have hfac : normalizedFactors s.prod = s := by
-      rw [normalizedFactors_prod_eq s sirr]
-      exact (Multiset.map_congr rfl fun p hp ↦ (smonic p hp).normalize_eq_self).trans s.map_id'
+    have hfac := normalizedFactors_multiset_prod_of_monic_of_irreducible smonic sirr
     have gsq : Squarefree s.prod := by
-      rw [squarefree_iff_nodup_normalizedFactors
-          (Multiset.prod_ne_zero fun hp ↦ (sirr 0 hp).ne_zero rfl), hfac]
+      rw [squarefree_multiset_prod_iff_nodup_of_monic_of_irreducible smonic sirr]
       simp [s, Ne.symm hq]
     have gfac : (normalizedFactors s.prod).map natDegree = s.map natDegree := by rw [hfac]
     refine ⟨s.prod, by simpa using monic_multiset_prod_of_monic s id smonic, ?_, gsq, ?_, ?_⟩

@@ -42,7 +42,8 @@ statements can hold.
   of Geck weights, so the two spanning conditions agree
   (`TauCeti.DynkinType.span_range_geckWeightFin_eq_top_iff`).
 * `TauCeti.DynkinType.isClosedImmersion_geckWeightTorus_E8`, and the analogous `F4` and `G2`
-  results: the weight torus is a closed subgroup scheme of the carrier.
+  instances, imported from `GeckLattice.Torus`: the weight torus is a closed subgroup scheme
+  of the carrier.
 * `TauCeti.DynkinType.geckTorusPoints_E8_injective`, and the analogous `F4` and `G2` results: the
   weight torus is injective on points.
 
