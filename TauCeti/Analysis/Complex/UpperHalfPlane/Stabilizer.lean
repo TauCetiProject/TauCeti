@@ -44,6 +44,9 @@ The specialization to discrete subgroups, whose point stabilizers are finite, is
 * `Subgroup.discCoordinate_stabilizer_smul` and `Subgroup.discCoordinate_smul_eq_rotation_smul`:
   in the disc coordinate centred at the fixed point, an element of the stabilizer acts by
   multiplication by its derivative, that is, by its rotation.
+* `Subgroup.mem_orbit_stabilizer_iff_discCoordinate_pow_eq_pow`: two points lie in the same
+  orbit of a finite stabilizer of order `m` exactly when their disc coordinates have the same
+  `m`-th power.
 * `Matrix.SpecialLinearGroup.isElliptic_of_smul_eq_self_of_ne_one`: a matrix fixing a point of
   `ℍ` and nontrivial in `PSL(2, ℝ)` is elliptic.
 
@@ -246,6 +249,29 @@ theorem discCoordinate_smul_eq_rotation_smul (Γ : Subgroup PSL(2, ℝ)) (z : �
     (q : stabilizer Γ z) (τ : ℍ) :
     discCoordinate z (q • τ) = stabilizerRotation Γ z q • discCoordinate z τ := by
   rw [rootsOfUnity.smul_eq_mul, coe_stabilizerRotation, discCoordinate_stabilizer_smul]
+
+/-- Two points of `ℍ` lie in the same orbit of a finite stabilizer of `z` of order `m` exactly
+when their disc coordinates centred at `z` have the same `m`-th power. -/
+theorem mem_orbit_stabilizer_iff_discCoordinate_pow_eq_pow (Γ : Subgroup PSL(2, ℝ)) (z : ℍ)
+    [Finite (stabilizer Γ z)] {τ σ : ℍ} :
+    τ ∈ orbit (stabilizer Γ z) σ ↔
+      discCoordinate z τ ^ Nat.card (stabilizer Γ z) =
+        discCoordinate z σ ^ Nat.card (stabilizer Γ z) := by
+  have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
+  rw [TauCeti.pow_eq_pow_iff_exists_rootsOfUnity_smul (NeZero.ne _)]
+  constructor
+  · rintro ⟨q, rfl⟩
+    refine ⟨stabilizerRotation Γ z q⁻¹, ?_⟩
+    rw [discCoordinate_smul_eq_rotation_smul, smul_smul, ← map_mul, inv_mul_cancel, map_one,
+      one_smul]
+  · rintro ⟨ζ, hζ⟩
+    let q := (stabilizerRotationEquiv Γ z).symm ζ
+    have hq : stabilizerRotation Γ z q = ζ := by
+      rw [← coe_stabilizerRotationEquiv]
+      exact (stabilizerRotationEquiv Γ z).apply_symm_apply ζ
+    refine ⟨q⁻¹, discCoordinate_injective z ?_⟩
+    rw [discCoordinate_smul_eq_rotation_smul, ← hζ, ← hq, smul_smul, ← map_mul, inv_mul_cancel,
+      map_one, one_smul]
 
 end Subgroup
 

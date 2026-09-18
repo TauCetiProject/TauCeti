@@ -46,8 +46,6 @@ hyperbolic discs about `z` are precisely the preimages of the Euclidean discs ab
 * `UpperHalfPlane.mem_ball_iff_norm_discCoordinate_lt` and
   `UpperHalfPlane.image_discCoordinate_ball`: the hyperbolic disc of radius `ε` about `z` is
   carried onto the Euclidean disc of radius `tanh (ε / 2)` about `0`.
-* `UpperHalfPlane.discCoordinateBallHomeomorph`: the disc coordinate maps the hyperbolic disc of
-  radius `r` about `z` homeomorphically onto the Euclidean disc of radius `tanh (r / 2)`.
 * `UpperHalfPlane.discCoordinate_smul_of_smul_eq_self`: a matrix of positive determinant
   fixing `z` acts in the disc coordinate by multiplication by `conj (denom g z) / denom g z`,
   with the `SL(2, ℝ)` specialization
@@ -235,41 +233,6 @@ theorem image_discCoordinate_ball (z : ℍ) (ε : ℝ) :
       rw [range_discCoordinate]
       exact mem_ball_zero_iff.mpr (hu.trans (Real.tanh_lt_one _))
     exact ⟨τ, mem_ball_iff_norm_discCoordinate_lt.mpr hu, rfl⟩
-
-/-- The disc coordinate centred at `z` maps the hyperbolic disc of radius `r` about `z`
-homeomorphically onto the Euclidean disc of radius `tanh (r / 2)` about `0`. -/
-def discCoordinateBallHomeomorph (z : ℍ) (r : ℝ) :
-    Metric.ball z r ≃ₜ Metric.ball (0 : ℂ) (Real.tanh (r / 2)) where
-  toFun τ := ⟨discCoordinate z τ,
-    mem_ball_zero_iff.mpr (mem_ball_iff_norm_discCoordinate_lt.mp τ.2)⟩
-  invFun w := ⟨(discCoordinateHomeomorph z).symm (.mk w
-      ((mem_ball_zero_iff.mp w.2).trans (Real.tanh_lt_one _))), by
-    rw [mem_ball_iff_norm_discCoordinate_lt, ← coe_discCoordinateHomeomorph_apply,
-      Homeomorph.apply_symm_apply, Complex.UnitDisc.coe_mk]
-    exact mem_ball_zero_iff.mp w.2⟩
-  left_inv τ := Subtype.ext ((discCoordinateHomeomorph z).symm_apply_apply τ)
-  right_inv w := Subtype.ext <| by
-    simp only [← coe_discCoordinateHomeomorph_apply, Homeomorph.apply_symm_apply,
-      Complex.UnitDisc.coe_mk]
-  continuous_toFun := by fun_prop
-  continuous_invFun := by
-    refine ((discCoordinateHomeomorph z).symm.continuous.comp ?_).subtype_mk _
-    simp only [Complex.UnitDisc.isEmbedding_coe.continuous_iff, Function.comp_def,
-      Complex.UnitDisc.coe_mk]
-    fun_prop
-
-@[simp]
-theorem coe_discCoordinateBallHomeomorph_apply (z : ℍ) (r : ℝ) (τ : Metric.ball z r) :
-    (discCoordinateBallHomeomorph z r τ : ℂ) = discCoordinate z τ :=
-  (rfl)
-
-/-- The inverse of `discCoordinateBallHomeomorph` is the inverse disc-coordinate formula. -/
-@[simp]
-theorem coe_discCoordinateBallHomeomorph_symm_apply (z : ℍ) (r : ℝ)
-    (w : Metric.ball (0 : ℂ) (Real.tanh (r / 2))) :
-    ((discCoordinateBallHomeomorph z r).symm w : ℂ) =
-      ((z : ℂ) - conj (z : ℂ) * w) / (1 - w) :=
-  (rfl)
 
 /-- **A matrix of positive determinant fixing `z` is a rotation in the disc coordinate centred
 at `z`**, by the unimodular multiplier `conj (denom g z) / denom g z`.
