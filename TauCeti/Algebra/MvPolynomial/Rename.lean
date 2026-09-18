@@ -9,7 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.Rename
 public import Mathlib.Algebra.Ring.CompTypeclasses
 
 /-!
-# Renaming variables along an equivalence as a ring-homomorphism inverse pair
+# Renaming variables: inverse pairs and killing a complement
 
 Renaming the variables of a multivariable polynomial along an equivalence `e : σ ≃ τ` is a
 ring equivalence. Mathlib's `RingHomInvPair.of_ringEquiv` and
@@ -17,10 +17,19 @@ ring equivalence. Mathlib's `RingHomInvPair.of_ringEquiv` and
 for `MvPolynomial.renameEquiv`. This lets semilinear equivalences over variable renaming be used
 and inverted without requiring downstream local instances.
 
+For an injective map of variables `f : σ → τ`, Mathlib's `MvPolynomial.killCompl` is the left
+inverse of `rename f` sending the variables outside the range of `f` to zero. This file records its
+values on single variables, as Mathlib already does for `MvPowerSeries.killCompl`.
+
 ## Main definitions
 
 * `TauCeti.renameRingHomInvPair`: variable renaming and its inverse form a `RingHomInvPair`.
 * `TauCeti.renameRingHomInvPairSymm`: the same inverse pair in the reverse direction.
+
+## Main results
+
+* `MvPolynomial.killCompl_X`: `killCompl` sends the variable `X (f i)` to `X i`.
+* `MvPolynomial.killCompl_X_eq_zero`: `killCompl` kills the variables outside the range of `f`.
 -/
 
 public section
@@ -50,3 +59,20 @@ noncomputable instance renameRingHomInvPairSymm (e : σ ≃ τ) :
   RingHomInvPair.of_ringEquiv_symm (MvPolynomial.renameEquiv R e).toRingEquiv
 
 end TauCeti
+
+namespace MvPolynomial
+
+variable {σ τ R : Type*} [CommSemiring R] {f : σ → τ} (hf : Function.Injective f)
+
+/-- Killing the complement of the range of an injective `f` sends the variable `X (f i)` to
+`X i`. -/
+@[simp]
+theorem killCompl_X (i : σ) : killCompl (R := R) hf (X (f i)) = X i := by
+  rw [← rename_X, killCompl_rename_app]
+
+/-- Killing the complement of the range of `f` sends every variable outside that range to
+zero. -/
+theorem killCompl_X_eq_zero {t : τ} (h : t ∉ Set.range f) : killCompl (R := R) hf (X t) = 0 := by
+  simp [killCompl, h]
+
+end MvPolynomial
