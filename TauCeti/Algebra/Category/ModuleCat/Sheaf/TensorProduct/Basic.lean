@@ -33,8 +33,8 @@ that structure is transported to presheaves of modules over the sheaf of rings u
 * `SheafOfModules.tensorProductUnitIsoLeft/right` identify `R ⊗ M` and `M ⊗ R` with `M`;
 * `SheafOfModules.tensorProductComm` provides symmetry.
 
-The scheme-level specialization to `𝒪ₓ`-modules on a scheme `X`
-(`AlgebraicGeometry.Scheme.Modules.tensorProduct`) is in
+On a scheme `X`, the tensor product of `𝒪ₓ`-modules is `SheafOfModules.tensorProduct X.sheaf`;
+the symmetric monoidal structure on `X.Modules` is in
 `TauCeti/AlgebraicGeometry/Modules/TensorProduct.lean`.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Invertible

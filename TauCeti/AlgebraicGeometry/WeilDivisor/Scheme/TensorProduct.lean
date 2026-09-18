@@ -359,7 +359,7 @@ theorem isIso_sheafification_map_tensorPresheafHom :
 whose codimension-one local rings are discrete valuation rings, multiplication inside `𝒦_X`
 identifies `𝒪_X(D) ⊗ 𝒪_X(E)` with `𝒪_X(D + E)`. -/
 def tensorProductSheafIso :
-    Scheme.Modules.tensorProduct X (sheaf D) (sheaf E) ≅ sheaf (D + E) :=
+    TauCeti.SheafOfModules.tensorProduct X.sheaf (sheaf D) (sheaf E) ≅ sheaf (D + E) :=
   -- The instance argument of `asIso` is supplied by hand: the tensor product is presented here
   -- through `SheafOfModules.tensorProduct`, so instance search does not see the sheafified
   -- multiplication morphism in the shape of `isIso_sheafification_map_tensorPresheafHom`.
@@ -390,8 +390,8 @@ theorem toLineBundleClass_add :
       (L := toInvertibleSheaf hX E)).2 ⟨Iso.refl _⟩,
     ← LineBundleClass.mk_tensorProduct, toLineBundleClass_eq_mk_iff]
   refine ⟨?_⟩
-  simpa only [toInvertibleSheaf_obj, InvertibleSheaf.tensorProduct_obj] using
-    (tensorProductSheafIso hX D E).symm
+  simp only [toInvertibleSheaf_obj, InvertibleSheaf.tensorProduct_obj]
+  exact (tensorProductSheafIso hX D E).symm
 
 /-- Every divisorial line-bundle class is invertible, `𝒪_X(-D)` inverting `𝒪_X(D)`. -/
 theorem isUnit_toLineBundleClass : IsUnit (toLineBundleClass hX D) :=

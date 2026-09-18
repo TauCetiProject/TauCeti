@@ -11,15 +11,13 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Monoidal
 /-!
 # The tensor product of `𝒪ₓ`-modules on a scheme
 
-The site-level sheafified tensor product of sheaves of modules
-(`TauCeti/Algebra/Category/ModuleCat/Sheaf/TensorProduct/Basic.lean`) specializes to a scheme
-`X` by taking the sheaf of commutative rings to be the structure sheaf of `X`.
+The site-level symmetric monoidal structure on sheaves of modules
+(`TauCeti/Algebra/Category/ModuleCat/Sheaf/TensorProduct/Monoidal.lean`) specializes to a scheme
+`X` by taking the sheaf of commutative rings to be the structure sheaf of `X`, so the tensor
+product of `𝒪ₓ`-modules is `M ⊗ N`.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Modules.tensorProduct` is the tensor product of two
-  `𝒪ₓ`-modules on a scheme; its congruence, unit, and symmetry isomorphisms are the
-  site-level ones of `TauCeti.SheafOfModules`.
 * `AlgebraicGeometry.Scheme.Modules.instMonoidalCategory` and
   `AlgebraicGeometry.Scheme.Modules.instSymmetricCategory` make `X.Modules` a symmetric monoidal
   category, with unit `𝒪ₓ`; they are the site-level structures
@@ -41,13 +39,6 @@ universe v
 noncomputable section
 
 variable (X : Scheme.{v})
-
-/-- The tensor product of two `𝒪ₓ`-modules, obtained from the site-level sheafified tensor
-product of `TauCeti.SheafOfModules` by taking the sheaf of commutative rings to be the
-structure sheaf of `X`. -/
-noncomputable abbrev _root_.AlgebraicGeometry.Scheme.Modules.tensorProduct
-    (M N : X.Modules) : X.Modules :=
-  SheafOfModules.tensorProduct X.sheaf M N
 
 open CategoryTheory
 
