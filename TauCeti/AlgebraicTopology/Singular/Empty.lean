@@ -136,6 +136,23 @@ lemma singularHomologyInclIso_hom (n : ℕ) :
   ext X
   rfl
 
+/-- The component at `X` of the comparison from ordinary singular homology to relative singular
+homology of `(X, ∅)` is the map induced by the quotient from ambient to relative chains. -/
+lemma singularHomologyInclIso_hom_app (n : ℕ) (X : TopCat.{w}) :
+    (singularHomologyInclIso C R n).hom.app X =
+      (incl.obj X).singularHomologyπ R n ≫
+        eqToHom (singularHomologyFunctor_obj (incl.obj X) R n).symm := by
+  rw [singularHomologyInclIso_hom, NatTrans.comp_app, Functor.whiskerRight_app,
+    singularChainComplexInclComparison_app]
+  simp only [Functor.map_comp, eqToHom_map, eqToHom_app, Category.assoc]
+  -- The remaining transports are between chain complexes and homology objects that agree only up
+  -- to unfolding `singularChainComplexFunctor` and `TopCat.toSSet`, so `eqToHom_refl` has to be
+  -- matched up to definitional equality; after that both sides are the homology of the quotient
+  -- map followed by transports along proofs of the same equality.
+  erw [eqToHom_refl, Category.id_comp, Functor.map_comp, eqToHom_map, Category.assoc,
+    eqToHom_trans]
+  rfl
+
 end Homology
 
 end TopPair
