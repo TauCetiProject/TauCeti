@@ -199,7 +199,7 @@ end Algebra
 section Lift
 
 variable {k : Type w} {R : Type u} {B : Type*} [CommRing k] [Quiver.{v} R] [HasReverse R]
-  [Finite R] [∀ x : R, Fintype (Quiver.Star x)] [Ring B] [Algebra k B]
+  [Finite R] [∀ x : R, Fintype (Quiver.Star x)] [Semiring B] [Algebra k B]
   (f : pathAlgebra k R →ₐ[k] B)
 
 /-- An algebra map out of the path algebra which kills every signless relator kills the signless
