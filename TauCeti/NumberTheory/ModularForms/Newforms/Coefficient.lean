@@ -235,19 +235,23 @@ theorem qExpansion_coeff_mul_qExpansion_coeff_eq_sum_divisors_gcd
     CuspFormClass.qExpansion_coeff_zero _ one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map _)
   rcases eq_or_ne n 0 with rfl | hn
   · simp [hzero]
-  have hcoeff := qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTCompositeGamma0 hn
-    (⟨f.toCuspForm, f.mem_charSpace⟩ : cuspFormCharSpace k f.χ) m
-  -- `f.isEigen` indexes by `ℕ+`; at `⟨n, _⟩` its Hecke element is `T_n` by definition.
-  have heigen : heckeRingHomCuspCharSpace k f.χ (heckeTCompositeGamma0 N n)
-      ⟨f.toCuspForm, f.mem_charSpace⟩ =
-        f.eigenvalue ⟨n, Nat.pos_of_ne_zero hn⟩ • ⟨f.toCuspForm, f.mem_charSpace⟩ :=
-    f.isEigen ⟨n, Nat.pos_of_ne_zero hn⟩
-  have han := f.qExpansion_coeff_eq_eigenvalue_mul_coeff_one ⟨n, Nat.pos_of_ne_zero hn⟩
+  have hn' : 0 < n := Nat.pos_of_ne_zero hn
+  -- The eigenvector equation `T_n f = λ_n f`, read on the `m`-th coefficient.
+  -- (`f.isEigen` indexes by `ℕ+`; at `⟨n, _⟩` its Hecke element is `T_n` by definition.)
+  have hT : (qExpansion 1 (heckeRingHomCuspCharSpace k f.χ (heckeTCompositeGamma0 N n)
+      ⟨f.toCuspForm, f.mem_charSpace⟩ : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff m =
+        f.eigenvalue ⟨n, hn'⟩ * (qExpansion 1 f.toCuspForm).coeff m := by
+    have heigen : heckeRingHomCuspCharSpace k f.χ (heckeTCompositeGamma0 N n)
+        ⟨f.toCuspForm, f.mem_charSpace⟩ = f.eigenvalue ⟨n, hn'⟩ • ⟨f.toCuspForm, f.mem_charSpace⟩ :=
+      f.isEigen ⟨n, hn'⟩
+    rw [heigen]
+    simp only [SetLike.mk_smul_mk, FunLike.coe_smul,
+      ModularForm.qExpansion_smul one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map _), map_smul,
+      smul_eq_mul]
+  have han := f.qExpansion_coeff_eq_eigenvalue_mul_coeff_one ⟨n, hn'⟩
   rw [h₁, mul_one, PNat.mk_coe] at han
-  rw [heigen, Submodule.coe_smul, FunLike.coe_smul,
-    ModularForm.qExpansion_smul one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map _),
-    PowerSeries.coeff_smul, smul_eq_mul, ← han] at hcoeff
-  rw [mul_comm, ← hcoeff]
+  rw [han, mul_comm, ← hT]
+  exact qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTCompositeGamma0 hn _ m
 
 /-- **The coefficients of a normalised full eigenform are multiplicative**: `a_{mn} = a_m a_n`
 whenever `m` and `n` are coprime, with no condition relating them to the level (Diamond–Shurman
