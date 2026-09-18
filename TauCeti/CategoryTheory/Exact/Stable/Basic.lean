@@ -141,7 +141,7 @@ theorem IsFrobenius.stableIdeal_eq_factorIdeal {E : ExactStructure C} (hE : E.Is
 
 /-- A morphism becomes zero in the stable category exactly when it factors through a relative
 projective. -/
-@[simp]
+@[simp high]
 theorem stableFunctor_map_eq_zero_iff {X Y : C} {f : X ⟶ Y} :
     E.stableFunctor.map f = 0 ↔ E.isProjective.FactorsThrough f := by
   rw [MorphismIdeal.quotientFunctor_map_eq_zero_iff, mem_stableIdeal_iff]
@@ -155,7 +155,7 @@ theorem IsFrobenius.stableFunctor_map_eq_zero_iff {E : ExactStructure C}
     hE.projectiveInjective_eq_isProjective]
 
 /-- An object becomes zero in the stable category exactly when it is relatively projective. -/
-@[simp]
+@[simp high]
 theorem isZero_stableFunctor_obj_iff (X : C) :
     IsZero (E.stableFunctor.obj X) ↔ E.isProjective X := by
   rw [MorphismIdeal.isZero_quotientFunctor_obj_iff, mem_stableIdeal_iff,

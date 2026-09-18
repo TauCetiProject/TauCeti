@@ -74,7 +74,7 @@ theorem factorsThrough_comp (P : ObjectProperty C) {X Q Y : C} (hQ : P Q)
 
 /-- If `P` is stable under retracts, the identity of `X` factors through a `P`-object exactly
 when `X` itself satisfies `P`. -/
-@[simp]
+@[simp high]
 theorem factorsThrough_id_iff (P : ObjectProperty C) [P.IsStableUnderRetracts] (X : C) :
     FactorsThrough P (𝟙 X) ↔ P X := by
   constructor
