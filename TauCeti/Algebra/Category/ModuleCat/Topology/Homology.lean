@@ -74,6 +74,8 @@ theorem homologyπ_surjective : Function.Surjective S.homologyπ.hom := by
   refine ⟨y, ?_⟩
   have h := ConcreteCategory.congr_hom (cokerπ_comp_homologyIsoCoker_inv S) y
   simp only [ConcreteCategory.comp_apply] at h
+  -- The categorical equality still displays bundled morphism coercions; expose its equality of
+  -- underlying values so that the chosen preimage can be substituted.
   change S.homologyπ y = x
   rw [← h, hy, Iso.hom_inv_id_apply]
 
@@ -84,6 +86,8 @@ theorem homologyπ_eq_zero_iff {x : S.cycles} :
   rw [← (homologyIsoCoker S).toContinuousLinearEquiv.map_eq_zero_iff]
   have h := ConcreteCategory.congr_hom (homologyπ_comp_homologyIsoCoker_hom S) x
   simp only [ConcreteCategory.comp_apply] at h
+  -- Normalize the bundled composite to its underlying function before using the concrete
+  -- quotient's zero criterion.
   change (homologyIsoCoker S).hom (S.homologyπ x) = 0 ↔ _
   rw [h, TopModuleCat.hom_cokerπ, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
   exact LinearMap.mem_range
