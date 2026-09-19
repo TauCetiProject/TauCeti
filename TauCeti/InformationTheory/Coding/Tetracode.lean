@@ -73,6 +73,8 @@ theorem mem_tetracode_iff (x : Fin 4 → ZMod 3) :
     fin_cases i <;> simp [h₂, h₃]
 
 /-- The generator matrix also checks the tetracode. -/
+-- Use this as an explicit rewrite: `Matrix.checkedBy_eq_euclideanDual_generatedBy` already
+-- simplifies its left-hand side, so a `simp` annotation here would violate `simpNF`.
 theorem checkedBy_tetracodeGenerator : tetracodeGenerator.checkedBy = tetracode := by
   ext x
   rw [Matrix.mem_checkedBy_iff, mem_tetracode_iff]
