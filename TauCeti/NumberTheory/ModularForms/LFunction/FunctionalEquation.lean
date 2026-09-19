@@ -173,13 +173,13 @@ namespace CuspForm
 variable {N : ℕ} [NeZero N] {k : ℤ}
 variable {Γ : Subgroup (GL (Fin 2) ℝ)}
 
-/-- The level-`N` completed L-function of a cusp form, defined as the Mellin transform of its
-restriction to the rescaled imaginary axis `t ↦ i t / √N`. -/
-noncomputable def frickeCompletedL (f : CuspForm Γ k) (N : ℕ) (s : ℂ) : ℂ :=
+/-- The level-`N` completed L-function of a cusp form, for a positive level `N`, defined as the
+Mellin transform of its restriction to the rescaled imaginary axis `t ↦ i t / √N`. -/
+noncomputable def frickeCompletedL (f : CuspForm Γ k) (N : ℕ) [NeZero N] (s : ℂ) : ℂ :=
   mellin (fun t : ℝ ↦ resToImagAxis (f : ℍ → ℂ) (t / Real.sqrt N)) s
 
 /-- The defining equation for the level-`N` completed L-function. -/
-lemma frickeCompletedL_apply (f : CuspForm Γ k) (N : ℕ) (s : ℂ) :
+lemma frickeCompletedL_apply (f : CuspForm Γ k) (N : ℕ) [NeZero N] (s : ℂ) :
     frickeCompletedL f N s =
       mellin (fun t : ℝ ↦ resToImagAxis (f : ℍ → ℂ) (t / Real.sqrt N)) s :=
   (rfl)
