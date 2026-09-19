@@ -203,6 +203,20 @@ theorem coe_baseChangePointsMulEquiv_apply (B : CommAlgCat.{w} A)
     ((n + 1) + (n + 1)) (definingIdeal n) (baseChangeDefiningIdeal n A)
     (baseChangeCoordinateIso n A) (mkQuotient_comp_baseChangeCoordinateIso_hom n A) B q
 
+/-- A point over any value algebra satisfies the transported defining equations of the
+type `C_(n+1)` carrier exactly when its underlying matrix is an integral carrier point. -/
+@[simp]
+theorem mem_baseChangeDefiningPointsSubgroup_iff_mem_points (B : CommAlgCat.{w} A)
+    (g : HopfAlgebra.points (R := A)
+      (H := GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1))) B) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup
+        (GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1)))
+        (baseChangeDefiningIdeal n A) B ↔
+      GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1)) g ∈ points n B := by
+  exact GeneralLinear.mem_quotientPointsSubgroup_iff_mem_of_pointsMulEquiv
+    ((n + 1) + (n + 1)) (baseChangeDefiningIdeal n A) B (points n B)
+      (baseChangePointsMulEquiv n A B) (coe_baseChangePointsMulEquiv_apply n A B) g
+
 /-! ## The transported root subgroups -/
 
 /-- The integral `k`th root-subgroup coordinate map, with source expressed using the named
