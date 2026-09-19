@@ -263,9 +263,16 @@ theorem trace_translate_adjugateGL_natDiagGL_eq_diamondOpCusp_heckeTCuspNat
         (CuspForm.translate f (adjugateGL (φ (natDiagGL 2 ![1, n])))) =
       diamondOpCusp k (ZMod.unitOfCoprime n hn)⁻¹ (heckeTCuspNat k n f) := by
   let _ := isFiniteRelIndex_adjugateGL_natDiagGL hn
+  -- Translating `f` as a cusp form and as the modular form it coerces to give the same
+  -- modular form; stating this explicitly avoids an expensive unfolding of the coercion.
+  have hcoe : ModularForm.translate (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)
+      (adjugateGL (φ (natDiagGL 2 ![1, n]))) =
+      ModularForm.translate f (adjugateGL (φ (natDiagGL 2 ![1, n]))) :=
+    DFunLike.coe_injective <| by
+      rw [ModularForm.coe_translate, ModularForm.coe_translate, ModularFormClass.coe_modularForm]
   apply CuspForm.toModularFormₗ_injective
   rw [CuspForm.toModularFormₗ_eq_coe, CuspForm.toModularFormₗ_eq_coe,
-    TauCeti.trace_translate_coe_cuspForm, ← diamondOp_coe_cuspForm,
+    TauCeti.trace_translate_coe_cuspForm, ← hcoe, ← diamondOp_coe_cuspForm,
     ← heckeTNat_coe_cuspForm]
   exact trace_translate_adjugateGL_natDiagGL_eq_diamondOp_heckeTNat k hn _
 

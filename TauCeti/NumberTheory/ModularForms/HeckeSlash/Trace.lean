@@ -112,18 +112,18 @@ theorem coe_trace_translate_mul_of_mem_normalizer {k : ℤ} {𝒢 ℋ : Subgroup
 end SlashInvariantForm
 
 /-- Coercing the cusp-form trace of a translate agrees with tracing the corresponding
-translated modular form. -/
+translated modular form. Like `trace_coe_cuspForm`, this is class-polymorphic in the source
+form. -/
 @[simp] theorem trace_translate_coe_cuspForm {k : ℤ} {𝒢 ℋ : Subgroup (GL (Fin 2) ℝ)}
-    (f : CuspForm 𝒢 k) (x : GL (Fin 2) ℝ)
+    {F : Type*} [FunLike F ℍ ℂ] [CuspFormClass F 𝒢 k] (f : F) (x : GL (Fin 2) ℝ)
     [(ConjAct.toConjAct x⁻¹ • 𝒢).IsFiniteRelIndex ℋ] :
     (CuspForm.trace ℋ (CuspForm.translate f x) : ModularForm ℋ k) =
-      ModularForm.trace ℋ (ModularForm.translate (f : ModularForm 𝒢 k) x) := by
+      ModularForm.trace ℋ (ModularForm.translate f x) := by
   rw [trace_coe_cuspForm]
   apply DFunLike.coe_injective
   rw [ModularForm.coe_trace, ModularForm.coe_trace]
   exact congrArg DFunLike.coe (SlashInvariantForm.trace_eq_of_eq_of_coe_eq rfl (by
-    rw [CuspForm.coe_translate_gl, ModularForm.coe_translate,
-      ModularFormClass.coe_modularForm]))
+    rw [CuspForm.coe_translate_gl, ModularForm.coe_translate]))
 
 variable {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℚ)} {δ : GL (Fin 2) ℚ}
 
