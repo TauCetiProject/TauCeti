@@ -76,9 +76,17 @@ variable {c₁ c₂ c₃ d₁ d₂ d₃ : R}
 `x + star x = 2 x.re + c₂ x.imI`. -/
 theorem trace_mulLeft (x : ℍ[R,c₁,c₂,c₃]) :
     LinearMap.trace R _ (LinearMap.mulLeft R x) = 2 * (2 * x.re + c₂ * x.imI) := by
+  have basis_apply (i : Fin 4) :
+      (basisOneIJK c₁ c₂ c₃) i =
+        ⟨![1, 0, 0, 0] i, ![0, 1, 0, 0] i, ![0, 0, 1, 0] i, ![0, 0, 0, 1] i⟩ := by
+    apply (basisOneIJK c₁ c₂ c₃).repr.injective
+    ext j
+    rw [(basisOneIJK c₁ c₂ c₃).repr_self_apply, coe_basisOneIJK_repr]
+    fin_cases i <;> fin_cases j <;> simp
   rw [LinearMap.trace_eq_matrix_trace R (basisOneIJK c₁ c₂ c₃), Matrix.trace, Fin.sum_univ_four]
   simp only [Matrix.diag, LinearMap.toMatrix_apply, coe_basisOneIJK_repr]
-  simp [basisOneIJK, Module.Basis.coe_ofEquivFun]
+  simp_rw [basis_apply]
+  simp
   ring
 
 /-- An algebra equivalence of quaternion algebras preserves the reduced trace, in coordinates. -/
