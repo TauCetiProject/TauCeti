@@ -193,16 +193,14 @@ private theorem dimension_shift_aux (n : ℕ) :
       E.hasPullbacks_deflations.hasPullback p₀ (E.isDeflation_g hS)
     have sq : IsPullback (pullback.fst S.g p₀) (pullback.snd S.g p₀) S.g p₀ :=
       IsPullback.of_hasPullback _ _
-    have hY₁ := E.conflation_baseChange hS sq
-    rw [baseChange_def] at hY₁
     let T₁ := ShortComplex.mk (baseChangeι S sq) (pullback.snd S.g p₀)
       (baseChangeι_snd S sq)
-    change E.Conflation T₁ at hY₁
-    have hY₂ := E.conflation_baseChange hc₀ sq.flip
-    rw [baseChange_def] at hY₂
+    have hY₁ : E.Conflation T₁ := by
+      simpa only [T₁, baseChange_def] using E.conflation_baseChange hS sq
     let T₂ := ShortComplex.mk (baseChangeι (ShortComplex.mk i₀ p₀ h₀) sq.flip)
       (pullback.fst S.g p₀) (baseChangeι_snd (ShortComplex.mk i₀ p₀ h₀) sq.flip)
-    change E.Conflation T₂ at hY₂
+    have hY₂ : E.Conflation T₂ := by
+      simpa only [T₂, baseChange_def] using E.conflation_baseChange hc₀ sq.flip
     exact IsResolving.exists_finiteResolution_X₁_length_le_of_prop_X₃
       (S := T₁) hY₁ hQ₀ (ext (S := T₂) hY₂ h₂ hK₀)
   induction n with

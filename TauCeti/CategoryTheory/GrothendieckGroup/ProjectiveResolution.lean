@@ -233,7 +233,8 @@ include hproj in
 theorem eulerClassOf_eq {X : C} (hX : E.admitsFiniteResolution P X)
     (r : E.FiniteResolution P X) :
     E.eulerClassOf hP hX = r.eulerClassFullSubcategory hP :=
-  FiniteResolution.eulerClassFullSubcategory_eq_eulerClassFullSubcategory hproj _ r
+  E.eulerClassOf_eq_of hP hX r
+    (FiniteResolution.eulerClassFullSubcategory_eq_eulerClassFullSubcategory hproj)
 
 include hproj in
 /-- On an object satisfying `P` the Euler class is the class of that object. -/
