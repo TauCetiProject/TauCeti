@@ -80,7 +80,7 @@ theorem exists_conjugate_diagonalTorusDefiningIdeal_le
     πS.comp (coordinateMap k (r + 1)).hom
   obtain ⟨P₀, t, hmat₀⟩ := GeneralLinear.exists_mul_map_eq_map_mul_diagGL (n := r + 1) (Q := Q)
     ((DiagonalizableGroup.groupLikeSpannedProperty_iff k _).mp hI) π
-  obtain ⟨P, hdet, hmat⟩ := exists_det_eq_one_mul_map_eq_map_mul_diagGL 0 (algebraMap k Q)
+  obtain ⟨P, hdet, hmat⟩ := exists_det_eq_one_mul_map_eq_map_mul_diagGL (algebraMap k Q)
     _ P₀ t hmat₀
   let s : Matrix.SpecialLinearGroup (Fin (r + 1)) k :=
     ⟨P, by rw [← Matrix.GeneralLinearGroup.val_det_apply, hdet, Units.val_one]⟩

@@ -369,16 +369,22 @@ theorem map_diagGL {S : Type*} [CommRing S] {ι : Type*} [Fintype ι] [Decidable
   simp only [Matrix.GeneralLinearGroup.map_apply, diagGL_apply, Units.coe_map, MonoidHom.coe_coe]
   split_ifs <;> simp
 
-/-- If `P` intertwines `M` with a diagonal matrix, rescaling one of its columns gives an
-intertwining matrix of determinant one. -/
+/-- If `P` intertwines `M` with a diagonal matrix, there is an intertwining matrix of determinant
+one, obtained in the nonempty case by rescaling one of the columns of `P`. -/
 theorem exists_det_eq_one_mul_map_eq_map_mul_diagGL {Q ι : Type*} [CommRing Q]
-    [Fintype ι] [DecidableEq ι] (i : ι) (f : k →+* Q) (M : GL ι Q) (P : GL ι k)
+    [Fintype ι] [DecidableEq ι] (f : k →+* Q) (M : GL ι Q) (P : GL ι k)
     (t : ι → Qˣ)
     (h : M * Matrix.GeneralLinearGroup.map f P =
       Matrix.GeneralLinearGroup.map f P * diagGL t) :
     ∃ P' : GL ι k, Matrix.GeneralLinearGroup.det P' = 1 ∧
       M * Matrix.GeneralLinearGroup.map f P' =
         Matrix.GeneralLinearGroup.map f P' * diagGL t := by
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
+  · let _ := hι
+    refine ⟨P, ?_, h⟩
+    apply Units.ext
+    rw [Matrix.GeneralLinearGroup.val_det_apply, Matrix.det_isEmpty]
+    rfl
   let u : ι → kˣ := Pi.mulSingle i (Matrix.GeneralLinearGroup.det P)⁻¹
   refine ⟨P * diagGL u, ?_, ?_⟩
   · rw [map_mul, det_diagGL, Fintype.prod_pi_mulSingle' i, mul_inv_cancel]
