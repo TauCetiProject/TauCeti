@@ -39,13 +39,14 @@ which is not symmetric in general, so the transpose is part of the statement.
 
 ## Main results
 
-* `TauCeti.transpose_cartanMatrix_mul_extEulerMatrix_eq_diagonal`:
+* `TauCeti.cartanMatrix_transpose_mul_extEulerMatrix_eq_diagonal`:
   `Cᵀ * E = diagonal (fun i ↦ dim_k End_A(S i))` over a general field.
-* `TauCeti.transpose_cartanMatrix_mul_extEuler`: `Cᵀ * E = 1` for absolutely simple simples.
-* `TauCeti.extEulerMatrix_eq_transpose_inverseCartanMatrix_mul_diagonal` and
+* `TauCeti.cartanMatrix_transpose_mul_extEulerMatrix_eq_one`: `Cᵀ * E = 1` for absolutely
+  simple simples.
+* `TauCeti.extEulerMatrix_eq_inverseCartanMatrix_transpose_mul_diagonal` and
   `TauCeti.extEuler_eq_inverseCartanMatrix_mul_finrank`: under finite projective resolutions,
   `E = (C⁻¹)ᵀ * diagonal (fun i ↦ dim_k End_A(S i))` over a general field.
-* `TauCeti.extEulerMatrix_eq_transpose_inverseCartanMatrix` and
+* `TauCeti.extEulerMatrix_eq_inverseCartanMatrix_transpose` and
   `TauCeti.extEuler_eq_inverseCartanMatrix`: for absolutely simple simples under finite projective
   resolutions, `E = (C⁻¹)ᵀ`, so `χ(S i, S j)` is the `(j, i)` entry of the inverse Cartan matrix.
 
@@ -84,39 +85,51 @@ include hSnoniso hSexhaustive in
 simple modules. If every pair of finitely generated modules is Euler-admissible, then
 `Cᵀ * E = diagonal (fun i ↦ dim_k End_A(S i))`, where `C i j = [P j : S i]` is the Cartan
 matrix and `E` is the Ext-Euler matrix in the simple-class basis. -/
-theorem transpose_cartanMatrix_mul_extEulerMatrix_eq_diagonal
+theorem cartanMatrix_transpose_mul_extEulerMatrix_eq_diagonal
     {f : ∀ i, (P i).obj →ₗ[A] (S i).obj} (hf : ∀ i, IsProjectiveCover (f i))
     (hadm : IsEulerAdmissibleOn.{u} k (ModuleCat.isFG A) (ModuleCat.isFG A)) :
     (cartanMatrix P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive)ᵀ *
       extEulerMatrix (ModuleCat.isFG A) (ModuleCat.isFG A)
         (isExtensionClosed_finiteModules A) (isExtensionClosed_finiteModules A) hadm
-        (simpleClassBasis S hSnoniso hSexhaustive)
-        (simpleClassBasis S hSnoniso hSexhaustive) =
+        ((simpleClassBasis S hSnoniso hSexhaustive).map
+          (finiteModulesExactK0Equiv A).toIntLinearEquiv)
+        ((simpleClassBasis S hSnoniso hSexhaustive).map
+          (finiteModulesExactK0Equiv A).toIntLinearEquiv) =
       Matrix.diagonal fun i ↦ (Module.finrank k (Module.End A (S i).obj) : ℤ) := by
   -- `Φ` is the Ext-Euler pairing, typed on the Grothendieck group of `cartanMap` and
-  -- `simpleClassBasis`; this is definitionally the domain of `extEulerMatrix`.
-  let Φ : ExactK0 (finiteModulesExactStructure A) →+ ExactK0 (finiteModulesExactStructure A) →+ ℤ :=
+  -- the transported `simpleClassBasis`.
+  let Φ : ExactK0 ((ExactStructure.abelian (ModuleCat.{u} A)).fullSubcategory
+      (ModuleCat.isFG A) (isExtensionClosed_finiteModules A)) →+
+      ExactK0 ((ExactStructure.abelian (ModuleCat.{u} A)).fullSubcategory
+        (ModuleCat.isFG A) (isExtensionClosed_finiteModules A)) →+ ℤ :=
     extEulerPairing (isExtensionClosed_finiteModules A) (isExtensionClosed_finiteModules A) hadm
   have hΦ (X Y : FGModuleCat.{u} A) :
       Φ (ExactK0.of X) (ExactK0.of Y) = extEuler.{u} k (hadm.isEulerAdmissible X.2 Y.2) :=
     extEulerPairing_of_of _ _ hadm X Y
+  have hb (x : I) :
+      (simpleClassBasis S hSnoniso hSexhaustive).map
+          (finiteModulesExactK0Equiv A).toIntLinearEquiv x = ExactK0.of (S x) := by
+    simp
   ext i j
   -- The `(i, j)` entry is `χ` of the Cartan image of `[P i]` against `[S j]`.
   have hentry : ((cartanMatrix P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive)ᵀ *
       extEulerMatrix (ModuleCat.isFG A) (ModuleCat.isFG A)
         (isExtensionClosed_finiteModules A) (isExtensionClosed_finiteModules A) hadm
-        (simpleClassBasis S hSnoniso hSexhaustive)
-        (simpleClassBasis S hSnoniso hSexhaustive)) i j =
-      Φ (cartanMap A (ExactK0.of (P i))) (ExactK0.of (S j)) := by
+        ((simpleClassBasis S hSnoniso hSexhaustive).map
+          (finiteModulesExactK0Equiv A).toIntLinearEquiv)
+        ((simpleClassBasis S hSnoniso hSexhaustive).map
+          (finiteModulesExactK0Equiv A).toIntLinearEquiv)) i j =
+      Φ (finiteModulesExactK0Equiv A (cartanMap A (ExactK0.of (P i))))
+        (ExactK0.of (S j)) := by
     rw [cartanMap_of_eq_sum P S hSnoniso hSexhaustive i]
     simp only [map_sum, AddMonoidHom.finsetSum_apply, Matrix.mul_apply,
       Matrix.transpose_apply, cartanMatrix_apply, map_zsmul, AddMonoidHom.zsmul_apply,
-      smul_eq_mul, hΦ]
+      smul_eq_mul, finiteModulesExactK0Equiv_of, hΦ]
     refine Finset.sum_congr rfl fun x _ ↦ congrArg _ ?_
     exact extEulerMatrix_of_of (h := hadm) (X := S x) (Y := S j)
-      (hi := simpleClassBasis_apply S hSnoniso hSexhaustive x)
-      (hj := simpleClassBasis_apply S hSnoniso hSexhaustive j)
-  rw [hentry, cartanMap_of A (P i).property, Matrix.diagonal_apply, hΦ]
+      (hi := hb x) (hj := hb j)
+  rw [hentry, cartanMap_of A (P i).property, finiteModulesExactK0Equiv_of,
+    Matrix.diagonal_apply, hΦ]
   have : IsSimpleModule A (S j).obj := hS j
   have : IsSimpleModule A (S i).obj := hS i
   split_ifs with hij
@@ -129,16 +142,18 @@ include hSnoniso hSexhaustive in
 be projective covers of absolutely simple modules. If every pair of finitely generated modules is
 Euler-admissible, then `Cᵀ * E = 1`, where `C i j = [P j : S i]` is the Cartan matrix and `E` is
 the Ext-Euler matrix in the simple-class basis. -/
-theorem transpose_cartanMatrix_mul_extEuler
+theorem cartanMatrix_transpose_mul_extEulerMatrix_eq_one
     {f : ∀ i, (P i).obj →ₗ[A] (S i).obj} (hf : ∀ i, IsProjectiveCover (f i))
     (hend : ∀ i, Module.finrank k (Module.End A (S i).obj) = 1)
     (hadm : IsEulerAdmissibleOn.{u} k (ModuleCat.isFG A) (ModuleCat.isFG A)) :
     (cartanMatrix P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive)ᵀ *
       extEulerMatrix (ModuleCat.isFG A) (ModuleCat.isFG A)
         (isExtensionClosed_finiteModules A) (isExtensionClosed_finiteModules A) hadm
-        (simpleClassBasis S hSnoniso hSexhaustive)
-        (simpleClassBasis S hSnoniso hSexhaustive) = 1 := by
-  rw [transpose_cartanMatrix_mul_extEulerMatrix_eq_diagonal P S hind hPnoniso hPexhaustive
+        ((simpleClassBasis S hSnoniso hSexhaustive).map
+          (finiteModulesExactK0Equiv A).toIntLinearEquiv)
+        ((simpleClassBasis S hSnoniso hSexhaustive).map
+          (finiteModulesExactK0Equiv A).toIntLinearEquiv) = 1 := by
+  rw [cartanMatrix_transpose_mul_extEulerMatrix_eq_diagonal P S hind hPnoniso hPexhaustive
     hSnoniso hSexhaustive hf]
   ext i j
   simp [hend]
@@ -149,7 +164,7 @@ be projective covers of simple modules over a finite-dimensional algebra. If eve
 generated module has a finite resolution by finitely generated projectives, then
 `E = (C⁻¹)ᵀ * diagonal (fun i ↦ dim_k End_A(S i))`, where `C i j = [P j : S i]` is the Cartan
 matrix and `E` is the Ext-Euler matrix in the simple-class basis. -/
-theorem extEulerMatrix_eq_transpose_inverseCartanMatrix_mul_diagonal [FiniteDimensional k A]
+theorem extEulerMatrix_eq_inverseCartanMatrix_transpose_mul_diagonal [FiniteDimensional k A]
     {f : ∀ i, (P i).obj →ₗ[A] (S i).obj} (hf : ∀ i, IsProjectiveCover (f i))
     (h : ModuleCat.isFG A ≤
       (ExactStructure.abelian (ModuleCat.{u} A)).admitsFiniteResolution
@@ -157,15 +172,17 @@ theorem extEulerMatrix_eq_transpose_inverseCartanMatrix_mul_diagonal [FiniteDime
     extEulerMatrix (ModuleCat.isFG A) (ModuleCat.isFG A)
         (isExtensionClosed_finiteModules A) (isExtensionClosed_finiteModules A)
         (isEulerAdmissibleOn_isFG k h)
-        (simpleClassBasis S hSnoniso hSexhaustive)
-        (simpleClassBasis S hSnoniso hSexhaustive) =
+        ((simpleClassBasis S hSnoniso hSexhaustive).map
+          (finiteModulesExactK0Equiv A).toIntLinearEquiv)
+        ((simpleClassBasis S hSnoniso hSexhaustive).map
+          (finiteModulesExactK0Equiv A).toIntLinearEquiv) =
       (inverseCartanMatrix P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive h)ᵀ *
         Matrix.diagonal fun i ↦ (Module.finrank k (Module.End A (S i).obj) : ℤ) := by
   have hC := congrArg Matrix.transpose
     (cartanMatrix_mul_inverseCartanMatrix P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive h)
   rw [Matrix.transpose_mul, Matrix.transpose_one] at hC
   -- Multiply `Cᵀ * E = diagonal d` on the left by the left inverse `(C⁻¹)ᵀ` of `Cᵀ`.
-  rw [← transpose_cartanMatrix_mul_extEulerMatrix_eq_diagonal P S hind hPnoniso hPexhaustive
+  rw [← cartanMatrix_transpose_mul_extEulerMatrix_eq_diagonal P S hind hPnoniso hPexhaustive
     hSnoniso hSexhaustive hf, ← Matrix.mul_assoc, hC, Matrix.one_mul]
 
 include hSnoniso hSexhaustive in
@@ -174,7 +191,7 @@ projective covers of absolutely simple modules over a finite-dimensional algebra
 generated module has a finite resolution by finitely generated projectives, then `E = (C⁻¹)ᵀ`,
 where `C i j = [P j : S i]` is the Cartan matrix and `E` is the Ext-Euler matrix in the
 simple-class basis. -/
-theorem extEulerMatrix_eq_transpose_inverseCartanMatrix [FiniteDimensional k A]
+theorem extEulerMatrix_eq_inverseCartanMatrix_transpose [FiniteDimensional k A]
     {f : ∀ i, (P i).obj →ₗ[A] (S i).obj} (hf : ∀ i, IsProjectiveCover (f i))
     (hend : ∀ i, Module.finrank k (Module.End A (S i).obj) = 1)
     (h : ModuleCat.isFG A ≤
@@ -183,10 +200,12 @@ theorem extEulerMatrix_eq_transpose_inverseCartanMatrix [FiniteDimensional k A]
     extEulerMatrix (ModuleCat.isFG A) (ModuleCat.isFG A)
         (isExtensionClosed_finiteModules A) (isExtensionClosed_finiteModules A)
         (isEulerAdmissibleOn_isFG k h)
-        (simpleClassBasis S hSnoniso hSexhaustive)
-        (simpleClassBasis S hSnoniso hSexhaustive) =
+        ((simpleClassBasis S hSnoniso hSexhaustive).map
+          (finiteModulesExactK0Equiv A).toIntLinearEquiv)
+        ((simpleClassBasis S hSnoniso hSexhaustive).map
+          (finiteModulesExactK0Equiv A).toIntLinearEquiv) =
       (inverseCartanMatrix P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive h)ᵀ := by
-  rw [extEulerMatrix_eq_transpose_inverseCartanMatrix_mul_diagonal P S hind hPnoniso
+  rw [extEulerMatrix_eq_inverseCartanMatrix_transpose_mul_diagonal P S hind hPnoniso
     hPexhaustive hSnoniso hSexhaustive hf h]
   simp [hend]
 
@@ -205,11 +224,10 @@ theorem extEuler_eq_inverseCartanMatrix_mul_finrank [FiniteDimensional k A]
     extEuler.{u} k hadm =
       inverseCartanMatrix P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive h j i *
         Module.finrank k (Module.End A (S j).obj) := by
-  have hij := congrFun₂ (extEulerMatrix_eq_transpose_inverseCartanMatrix_mul_diagonal (k := k) P S
+  have hij := congrFun₂ (extEulerMatrix_eq_inverseCartanMatrix_transpose_mul_diagonal (k := k) P S
     hind hPnoniso hPexhaustive hSnoniso hSexhaustive hf h) i j
   rw [extEulerMatrix_of_of (X := S i) (Y := S j)
-      (hi := simpleClassBasis_apply S hSnoniso hSexhaustive i)
-      (hj := simpleClassBasis_apply S hSnoniso hSexhaustive j),
+      (hi := by simp) (hj := by simp),
     Matrix.mul_diagonal, Matrix.transpose_apply] at hij
   exact hij
 

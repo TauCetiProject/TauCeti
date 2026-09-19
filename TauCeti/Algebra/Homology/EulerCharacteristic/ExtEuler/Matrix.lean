@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
-public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Descent
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Numerical
 public import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
 public import TauCeti.LinearAlgebra.SesquilinearForm.NumericalQuotient.Basic
 
@@ -56,7 +56,7 @@ noncomputable def extEulerMatrix
     (bP : Module.Basis I ℤ (ExactK0 ((ExactStructure.abelian C).fullSubcategory P hP)))
     (bQ : Module.Basis J ℤ (ExactK0 ((ExactStructure.abelian C).fullSubcategory Q hQ))) :
     Matrix I J ℤ :=
-  LinearMap.toMatrix₂Aux ℤ bP bQ (biadditiveToIntBilinear (extEulerPairing hP hQ h))
+  LinearMap.toMatrix₂Aux ℤ bP bQ (extEulerBilinear hP hQ h)
 
 /-- An entry of the Ext-Euler matrix is the pairing of the corresponding basis vectors. -/
 @[simp]
@@ -68,7 +68,7 @@ theorem extEulerMatrix_apply
     (bQ : Module.Basis J ℤ (ExactK0 ((ExactStructure.abelian C).fullSubcategory Q hQ)))
     (i : I) (j : J) :
     extEulerMatrix P Q hP hQ h bP bQ i j = extEulerPairing hP hQ h (bP i) (bQ j) := by
-  rw [extEulerMatrix, LinearMap.toMatrix₂Aux_apply, biadditiveToIntBilinear_apply]
+  rw [extEulerMatrix, LinearMap.toMatrix₂Aux_apply, extEulerBilinear_apply]
 
 /-- If two basis vectors are classes of objects, their Ext-Euler matrix entry is the object-level
 Ext-Euler characteristic. -/
@@ -98,6 +98,6 @@ theorem extEulerMatrix_basis_change
     (bP.toMatrix cP)ᵀ * extEulerMatrix P Q hP hQ h bP bQ * bQ.toMatrix cQ =
       extEulerMatrix P Q hP hQ h cP cQ := by
   simpa [extEulerMatrix] using LinearMap.toMatrix₂Aux_mul_map_basis_toMatrix
-    (biadditiveToIntBilinear (extEulerPairing hP hQ h)) bP bQ cP cQ
+    (extEulerBilinear hP hQ h) bP bQ cP cQ
 
 end TauCeti
