@@ -74,6 +74,10 @@ theorem parityExtend_comp_some {x : Option ι → F} (hx : ∑ j, x j = 0) :
 def parityExtension (C : Submodule F (ι → F)) : Submodule F (Option ι → F) :=
   C.map parityExtend
 
+/-- Parity extension is the image of the code under the parity-extension linear map. -/
+theorem parityExtension_def (C : Submodule F (ι → F)) :
+    parityExtension C = C.map parityExtend := (rfl)
+
 /-- Parity extension is monotone in the code. -/
 theorem parityExtension_mono : Monotone (parityExtension :
     Submodule F (ι → F) → Submodule F (Option ι → F)) :=
@@ -107,7 +111,7 @@ zero-sum parity condition. -/
 @[simp]
 theorem mem_parityExtension {C : Submodule F (ι → F)} {x : Option ι → F} :
     x ∈ parityExtension C ↔ x ∘ some ∈ C ∧ ∑ j, x j = 0 := by
-  rw [parityExtension, Submodule.mem_map]
+  rw [parityExtension_def, Submodule.mem_map]
   constructor
   · rintro ⟨y, hy, rfl⟩
     exact ⟨by simpa only [Function.comp_def, parityExtend_some] using hy, sum_parityExtend y⟩
@@ -135,7 +139,7 @@ theorem map_some_parityExtension (C : Submodule F (ι → F)) :
       (parityExtend : (ι → F) →ₗ[F] (Option ι → F)) = LinearMap.id := by
     ext x i
     simp
-  rw [parityExtension, ← Submodule.map_comp, h, Submodule.map_id]
+  rw [parityExtension_def, ← Submodule.map_comp, h, Submodule.map_id]
 
 /-- Encoding by parity extension gives a linear equivalence of codeword spaces. -/
 noncomputable def parityExtensionEquiv (C : Submodule F (ι → F)) : C ≃ₗ[F] parityExtension C :=
