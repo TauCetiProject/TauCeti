@@ -33,6 +33,8 @@ vanishing on the Hopf ideal and is functorial in the value algebra.
   value algebra.
 * `TauCeti.GeneralLinear.mapHopfIdealPointsSubgroup_injective`: an injective homomorphism of
   value algebras induces an injective map of point subgroups.
+* `TauCeti.GeneralLinear.map_hopfIdealPointsSubgroup_subalgebra`: the points valued in a
+  subalgebra are the ambient points that descend to it.
 * `TauCeti.GeneralLinear.mapHopfIdealPointsSubgroupCongr`: that functoriality read through
   presentations of two subgroups as point subgroups, so that a carrier defined by a Hopf ideal
   states its induced map in its own named API.
@@ -199,6 +201,27 @@ theorem mapHopfIdealPointsSubgroup_injective
   refine Subtype.ext
     (Matrix.GeneralLinearGroup.map_injective (n := Fin n) (f := (φ : A →+* B)) hφ ?_)
   rw [← coe_mapHopfIdealPointsSubgroup, ← coe_mapHopfIdealPointsSubgroup, h]
+
+/-- **The matrix points valued in a subalgebra, read in the ambient general linear group.** They
+are exactly the `A`-valued points that are entrywise images of invertible matrices over the
+subalgebra: such a matrix kills the Hopf ideal over the subalgebra as soon as its image does over
+`A`, because the inclusion is injective. -/
+theorem map_hopfIdealPointsSubgroup_subalgebra
+    (I : HopfIdeal R (coordinateHopfAlgebra R n)) (S : Subalgebra R A) :
+    (hopfIdealPointsSubgroup n I ↥S).map
+        (Matrix.GeneralLinearGroup.map (S.val : ↥S →+* A)) =
+      hopfIdealPointsSubgroup n I A ⊓
+        (Matrix.GeneralLinearGroup.map (n := Fin n) (S.val : ↥S →+* A)).range := by
+  refine le_antisymm ?_ ?_
+  · rintro _ ⟨g, hg, rfl⟩
+    exact Subgroup.mem_inf.mpr ⟨map_mem_hopfIdealPointsSubgroup n I S.val hg, ⟨g, rfl⟩⟩
+  · rintro g hg
+    obtain ⟨hgI, g₀, rfl⟩ := Subgroup.mem_inf.mp hg
+    refine ⟨g₀, (mem_hopfIdealPointsSubgroup_iff n I ↥S g₀).mpr fun x hx => ?_, rfl⟩
+    have h0 := (mem_hopfIdealPointsSubgroup_iff n I A _).mp hgI x hx
+    rw [← mapValue_pointsMulEquiv_symm_apply, AlgHom.mapValue_apply, ofConv_toConv,
+      AlgHom.comp_apply] at h0
+    exact Subtype.ext h0
 
 /-! ### Transport along a presentation of the point subgroup
 
