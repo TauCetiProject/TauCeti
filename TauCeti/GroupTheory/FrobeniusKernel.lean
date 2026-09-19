@@ -60,7 +60,8 @@ nonidentity kernel elements gives
 `|H| ∣ |G : H| - 1`
 
 (`TauCeti.IsTISubgroup.card_dvd_index_sub_one`), whence also `|H|` and `|G : H|` are coprime
-(`TauCeti.IsTISubgroup.coprime_card_index`).  When Frobenius's theorem supplies the kernel as a
+(`TauCeti.IsTISubgroup.coprime_card_index`) and, for a proper `H`, `|H| < |G : H|`
+(`TauCeti.IsTISubgroup.card_lt_index`).  When Frobenius's theorem supplies the kernel as a
 subgroup `N` of order `|G : H|`, these are the classical statements that `|H|` divides `|N| - 1`
 and that a Frobenius complement and a Frobenius kernel have coprime orders.  Freeness has a second
 reading, bounding the centralizers the other way round: the centralizer of a nonidentity element
@@ -101,7 +102,8 @@ everything and `⊥` has index `|G|`.
   `TauCeti.IsTISubgroup.centralizer_singleton_subset_frobeniusKernel`: the centralizer of a
   nonidentity element of the kernel is contained in the kernel.
 * `TauCeti.IsTISubgroup.card_dvd_index_sub_one`: **`|H| ∣ |G : H| - 1`** for a finite `G`, with
-  `TauCeti.IsTISubgroup.coprime_card_index` the coprimality it implies.
+  `TauCeti.IsTISubgroup.coprime_card_index` the coprimality and
+  `TauCeti.IsTISubgroup.card_lt_index` the strict inequality `|H| < |G : H|` it implies.
 
 ## References
 
@@ -438,5 +440,17 @@ theorem IsTISubgroup.coprime_card_index [Finite G] (hH : IsTISubgroup H) :
     omega
   rw [hsplit]
   exact (Nat.coprime_add_iff_left hH.card_dvd_index_sub_one).2 (Nat.coprime_one_right _)
+
+/-- **A proper trivial-intersection subgroup of a finite group is smaller than its index**,
+`|H| < |G : H|`, another immediate consequence of
+`TauCeti.IsTISubgroup.card_dvd_index_sub_one`.  Properness is needed: for `H = ⊤` the index is `1`
+and the inequality reverses.  For a Frobenius group it says that the complement is smaller than
+the kernel (`TauCeti.card_lt_card_frobeniusKernelSubgroup`). -/
+theorem IsTISubgroup.card_lt_index [Finite G] (hH : IsTISubgroup H) (hne : H ≠ ⊤) :
+    Nat.card H < H.index := by
+  have hne1 : H.index ≠ 1 := fun h => hne (Subgroup.index_eq_one.mp h)
+  have hpos : 0 < H.index := Nat.pos_of_ne_zero H.index_ne_zero_of_finite
+  have hle := Nat.le_of_dvd (by omega) hH.card_dvd_index_sub_one
+  omega
 
 end TauCeti

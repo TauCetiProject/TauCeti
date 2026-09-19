@@ -298,14 +298,12 @@ theorem coprime_card_card_frobeniusKernelSubgroup (hH : IsTISubgroup H) :
   rw [card_frobeniusKernelSubgroup hH]
   exact hH.coprime_card_index
 
-/-- **A proper trivial-intersection subgroup is smaller than its Frobenius kernel**, `|H| < |N|`.
-Properness is needed: for `H = ⊤` the kernel is trivial and the inequality reverses. -/
+/-- **A proper trivial-intersection subgroup is smaller than its Frobenius kernel**, `|H| < |N|`,
+the bundled form of `TauCeti.IsTISubgroup.card_lt_index`.  Properness is needed: for `H = ⊤` the
+kernel is trivial and the inequality reverses. -/
 theorem card_lt_card_frobeniusKernelSubgroup (hH : IsTISubgroup H) (hne : H ≠ ⊤) :
     Nat.card H < Nat.card (frobeniusKernelSubgroup hH) := by
-  have hne1 : H.index ≠ 1 := fun h => hne (Subgroup.index_eq_one.mp h)
-  have hpos : 0 < H.index := Nat.pos_of_ne_zero H.index_ne_zero_of_finite
-  have hcard := card_frobeniusKernelSubgroup hH
-  have hle := Nat.le_of_dvd (by omega) (card_dvd_card_frobeniusKernelSubgroup_sub_one hH)
-  omega
+  rw [card_frobeniusKernelSubgroup hH]
+  exact hH.card_lt_index hne
 
 end TauCeti
