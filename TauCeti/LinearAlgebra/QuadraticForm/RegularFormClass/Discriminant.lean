@@ -58,6 +58,8 @@ is killed by two.
   is the class of `-1`, and its signed discriminant is trivial.
 * `TauCeti.RegularFormClass.signedDiscr_add_hyperbolicClass`: adding a hyperbolic plane leaves the
   signed discriminant unchanged.
+* `TauCeti.RegularFormClass.eq_hyperbolicClass_of_rank_eq_two_of_discr`: a binary class of
+  discriminant `[-1]` is the hyperbolic class.
 
 ## References
 
@@ -267,6 +269,22 @@ theorem RegularFormClass.discr_hyperbolicClass :
     discr_formClass _ _ (⟨2, ![1, -1]⟩ : RegularFormPresentation K)
       (by rw [presentedForm_one_neg_one]; exact QuadraticMap.Equivalent.refl _)]
   simp [Fin.prod_univ_two]
+
+/-- A class of rank two whose discriminant is the class of `-1` is the hyperbolic class: in rank
+two the discriminant is a complete invariant of hyperbolicity. -/
+theorem RegularFormClass.eq_hyperbolicClass_of_rank_eq_two_of_discr {x : RegularFormClass K}
+    (hrank : RegularFormClass.rank x = 2)
+    (hdiscr : RegularFormClass.discr x = squareClass (-1 : Kˣ)) : x = hyperbolicClass K := by
+  induction x using Quotient.inductionOn with
+  | h p =>
+    obtain ⟨n, w⟩ := p
+    rw [RegularFormClass.rank_mk] at hrank
+    subst hrank
+    rw [RegularFormClass.discr_mk, Fin.prod_univ_two] at hdiscr
+    rw [hyperbolicClass_def, RegularFormClass.mk_eq_mk_iff]
+    refine (equivalent_presentedForm_hyperbolicPlane_of_squareClass_prod_eq_neg_one w hdiscr).trans
+      (equivalent_presentedForm_hyperbolicPlane_of_squareClass_prod_eq_neg_one
+        ![1, -1] (by simp)).symm
 
 /-- **The signed discriminant of the hyperbolic class is trivial.** The unsigned discriminant is
 the class of `-1`, which is nontrivial precisely when `-1` is not a square. -/

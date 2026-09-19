@@ -53,6 +53,7 @@ rank is additive.
 * `TauCeti.presentedFormConsIsometryEquiv`: peeling the first weight off presents the form as a
   line orthogonal to the presentation of the remaining weights.
 * `TauCeti.formClass_prod`: the class of an orthogonal product is the sum of the classes.
+* `TauCeti.RegularFormClass.induction_on_rankOne`: every class is a sum of rank-one classes.
 
 ## References
 
@@ -440,6 +441,40 @@ theorem RegularFormClass.rank_add (x y : RegularFormClass K) :
 @[simp]
 theorem RegularFormClass.rank_zero : RegularFormClass.rank (0 : RegularFormClass K) = 0 := by
   rw [RegularFormClass.zero_def, RegularFormClass.rank_mk]
+
+/-! ### Induction on the rank -/
+
+/-- Peeling the last weight off a presentation of positive rank splits its class as the
+orthogonal sum of the class of the remaining weights and a rank-one class. -/
+theorem RegularFormClass.mk_succ {n : ℕ} (w : Fin (n + 1) → Kˣ) :
+    Quotient.mk (regularFormSetoid K) ⟨n + 1, w⟩ =
+      Quotient.mk (regularFormSetoid K) ⟨n, Fin.init w⟩ +
+        Quotient.mk (regularFormSetoid K) ⟨1, fun _ => w (Fin.last n)⟩ := by
+  have hw : Fin.append (Fin.init w) (fun _ : Fin 1 => w (Fin.last n)) = w :=
+    (Fin.append_right_eq_snoc _ _).trans (Fin.snoc_init_self w)
+  rw [RegularFormClass.mk_add_mk]
+  exact congrArg (Quotient.mk (regularFormSetoid K)) (congrArg (Sigma.mk (n + 1)) hw.symm)
+
+/-- Every isometry class of regular forms is built from the zero class by adjoining rank-one
+classes one at a time. This is the induction principle behind every statement proved by
+diagonalizing and working one weight at a time. -/
+@[elab_as_elim]
+theorem RegularFormClass.induction_on_rankOne {motive : RegularFormClass K → Prop}
+    (x : RegularFormClass K) (zero : motive 0)
+    (add_rankOne : ∀ (y : RegularFormClass K) (a : Kˣ),
+      motive y → motive (y + Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩)) :
+    motive x := by
+  induction x using Quotient.inductionOn with
+  | h p =>
+    obtain ⟨n, w⟩ := p
+    induction n with
+    | zero =>
+      have hw : (⟨0, w⟩ : RegularFormPresentation K) = ⟨0, Fin.elim0⟩ :=
+        congrArg (fun f : Fin 0 → Kˣ => (⟨0, f⟩ : RegularFormPresentation K))
+          (Subsingleton.elim w Fin.elim0)
+      rw [hw, ← RegularFormClass.zero_def]
+      exact zero
+    | succ n ih => exact RegularFormClass.mk_succ w ▸ add_rankOne _ _ (ih (Fin.init w))
 
 /-! ### The class of a regular form -/
 
