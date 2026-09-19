@@ -141,10 +141,8 @@ theorem cycleData_eq_of_hasPassport {P : PassportSpec n} {t t' : ConnectedTriple
 /-- Two connected triples in the same passport have equal Euler characteristic. -/
 theorem eulerChar_eq_of_hasPassport {P : PassportSpec n} {t t' : ConnectedTriple n}
     (ht : HasPassport t P) (ht' : HasPassport t' P) : t.1.eulerChar = t'.1.eulerChar := by
-  rw [PermutationTriple.eulerChar_eq_cycleCounts, PermutationTriple.eulerChar_eq_cycleCounts,
-    PermutationTriple.cycleCounts_eq_card_cycleData,
-    PermutationTriple.cycleCounts_eq_card_cycleData,
-    cycleData_eq_of_hasPassport ht ht']
+  simp only [PermutationTriple.eulerChar_eq_cycleCounts,
+    PermutationTriple.cycleCounts_eq_card_cycleData, cycleData_eq_of_hasPassport ht ht']
 
 /-- Two connected triples in the same passport have equal genus. -/
 theorem genus_eq_of_hasPassport {P : PassportSpec n} {t t' : ConnectedTriple n}
