@@ -55,6 +55,7 @@ variable {X Y : MixedHodgeStructureCat.{u}} (f : X ⟶ Y)
 
 /-- The kernel fork of a morphism of mixed Hodge structures: the inclusion of the mixed Hodge
 structure induced on the kernel of its rational map. -/
+-- Exposure is required for the dependent point and structure-map lemmas below to elaborate.
 @[expose]
 noncomputable def kernelCone : KernelFork f :=
   KernelFork.ofι (Z := .of _ _ (MixedHodgeStructure.Hom.isSubstructure_ker f).hodgeStructure)
@@ -86,6 +87,7 @@ noncomputable def kernelIsLimit : IsLimit (kernelCone f) :=
 
 /-- The cokernel cofork of a morphism of mixed Hodge structures: the projection onto the quotient
 of the target by the image of its rational map. -/
+-- Exposure is required for the dependent point and structure-map lemmas below to elaborate.
 @[expose]
 noncomputable def cokernelCocone : CokernelCofork f :=
   CokernelCofork.ofπ (Z := .of _ _ (MixedHodgeStructure.Hom.isSubstructure_range f).quotient)
