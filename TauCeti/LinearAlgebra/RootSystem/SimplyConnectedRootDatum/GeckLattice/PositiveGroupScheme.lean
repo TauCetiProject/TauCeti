@@ -182,27 +182,27 @@ theorem geckTorusPositiveInclusion_comp_geckGroupSchemeι :
 /-- The positive Geck carrier is a closed subgroup scheme of the full carrier. -/
 instance isClosedImmersion_geckTorusPositiveInclusion :
     IsClosedImmersion (t.geckTorusPositiveInclusion ht).hom.hom.left := by
-  have hcomp : IsClosedImmersion
-      ((t.geckTorusPositiveInclusion ht ≫ t.geckGroupSchemeι ht).hom.hom.left) := by
-    let E := (Grp.forget (Over (Spec (CommRingCat.of ℤ))) ⋙
-      Over.forget (Spec (CommRingCat.of ℤ))).mapIso
-        (eqToIso (t.geckTorusPositiveGroupScheme_def ht))
-    let e := E.hom
-    let c := (UniversalEnvelopingAlgebra.kostantTorusSubsystemGroupSchemeι
-      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-      (t.geckCoordinateLattice ht).toAddSubgroup
-      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-      (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1)).hom.hom.left
-    have hc : IsClosedImmersion c := by dsimp only [c]; infer_instance
-    have hec : IsClosedImmersion (e ≫ c) :=
-      (MorphismProperty.cancel_left_of_respectsIso _ e c).2 hc
-    rw [geckTorusPositiveInclusion_comp_geckGroupSchemeι]
-    simp only [Grp.comp', Mon.comp_hom', Over.comp_left]
-    exact hec
-  exact @IsClosedImmersion.of_comp _ _ _
-    (t.geckTorusPositiveInclusion ht).hom.hom.left
-    (t.geckGroupSchemeι ht).hom.hom.left hcomp inferInstance
+  let F := Grp.forget (Over (Spec (CommRingCat.of ℤ))) ⋙
+    Over.forget (Spec (CommRingCat.of ℤ))
+  let e₁ := (F.mapIso (eqToIso (t.geckTorusPositiveGroupScheme_def ht))).hom
+  let c := (UniversalEnvelopingAlgebra.kostantTorusSubsystemToToral
+    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+    (t.geckCoordinateLattice ht).toAddSubgroup
+    (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+    (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)
+    (t.isNilpotent_geckRepresentation_rootGenerator ht) (Set.range Sum.inl)).hom.hom.left
+  have hc : IsClosedImmersion c := by dsimp only [c]; infer_instance
+  have he₁c : IsClosedImmersion (e₁ ≫ c) :=
+    (MorphismProperty.cancel_left_of_respectsIso _ e₁ c).2 hc
+  have he₁ce₂ : IsClosedImmersion
+      ((e₁ ≫ c) ≫ (F.mapIso (eqToIso (t.geckGroupScheme_def ht).symm)).hom) :=
+    by
+      exact (@MorphismProperty.cancel_right_of_respectsIso _ _ _ _ _ _ _ (e₁ ≫ c)
+        (F.mapIso (eqToIso (t.geckGroupScheme_def ht).symm)).hom
+        (F.mapIso (eqToIso (t.geckGroupScheme_def ht).symm)).isIso_hom).2 he₁c
+  rw [geckTorusPositiveInclusion]
+  simp only [Grp.comp', Mon.comp_hom', Over.comp_left]
+  exact he₁ce₂
 
 /-- The positive Geck carrier bundled as a closed subgroup scheme of the full carrier. -/
 def geckTorusPositiveClosedSubgroup : ClosedSubgroupScheme (t.geckGroupScheme ht) :=
@@ -307,14 +307,169 @@ carrier. -/
 theorem isClosedImmersion_geckWeightTorusToTorusPositive
     (hwt : Submodule.span ℤ (Set.range (t.geckWeightFin ht)) = ⊤) :
     IsClosedImmersion (t.geckWeightTorusToTorusPositive ht).hom.hom.left := by
-  have hcomp : IsClosedImmersion
-      ((t.geckWeightTorusToTorusPositive ht ≫
-        t.geckTorusPositiveInclusion ht).hom.hom.left) := by
-    rw [geckWeightTorusToTorusPositive_comp_geckTorusPositiveInclusion]
-    exact t.isClosedImmersion_geckWeightTorus ht hwt
-  exact @IsClosedImmersion.of_comp _ _ _
-    (t.geckWeightTorusToTorusPositive ht).hom.hom.left
-    (t.geckTorusPositiveInclusion ht).hom.hom.left hcomp inferInstance
+  let c := (UniversalEnvelopingAlgebra.kostantWeightTorusToTorusSubsystem
+    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+    (t.geckCoordinateLattice ht).toAddSubgroup
+    (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+    (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
+    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1)).hom.hom.left
+  let F := Grp.forget (Over (Spec (CommRingCat.of ℤ))) ⋙
+    Over.forget (Spec (CommRingCat.of ℤ))
+  have hc : IsClosedImmersion c :=
+    UniversalEnvelopingAlgebra.isClosedImmersion_kostantWeightTorusToTorusSubsystem
+      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+      (t.geckCoordinateLattice ht).toAddSubgroup
+      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
+      (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) hwt
+  have hce : IsClosedImmersion
+      (c ≫ (F.mapIso (eqToIso (t.geckTorusPositiveGroupScheme_def ht).symm)).hom) :=
+    by
+      exact (@MorphismProperty.cancel_right_of_respectsIso _ _ _ _ _ _ _ c
+        (F.mapIso (eqToIso (t.geckTorusPositiveGroupScheme_def ht).symm)).hom
+        (F.mapIso
+          (eqToIso (t.geckTorusPositiveGroupScheme_def ht).symm)).isIso_hom).2 hc
+  rw [geckWeightTorusToTorusPositive]
+  simp only [Grp.comp', Mon.comp_hom', Over.comp_left]
+  exact hce
+
+/-- **Universal property of the positive Geck carrier.** It is the smallest closed subgroup
+scheme of the full Geck carrier through which every positive simple-root subgroup and the weight
+torus factor. -/
+theorem geckTorusPositiveClosedSubgroup_le_iff
+    (P : ClosedSubgroupScheme (t.geckGroupScheme ht)) :
+    t.geckTorusPositiveClosedSubgroup ht ≤ P ↔
+      (∀ i : Fin t.rank, ∃! f : AdditiveGroup.groupScheme ℤ ⟶
+        (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))),
+          f ≫ P.1.arrow =
+            t.geckPositiveRootSubgroup ht i ≫ t.geckTorusPositiveInclusion ht) ∧
+      ∃! f : SplitTorus.groupScheme ℤ (Fin t.rank) ⟶
+        (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))),
+          f ≫ P.1.arrow =
+            t.geckWeightTorusToTorusPositive ht ≫ t.geckTorusPositiveInclusion ht := by
+  let eB := eqToIso (t.geckTorusPositiveGroupScheme_def ht)
+  let eG := eqToIso (t.geckGroupScheme_def ht)
+  let c := UniversalEnvelopingAlgebra.kostantTorusSubsystemToToral
+    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+    (t.geckCoordinateLattice ht).toAddSubgroup
+    (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+    (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)
+    (t.isNilpotent_geckRepresentation_rootGenerator ht) (Set.range Sum.inl)
+  have hinc : t.geckTorusPositiveInclusion ht = eB.hom ≫ c ≫ eG.inv := by
+    rfl
+  let j := P.1.arrow ≫ eG.hom
+  let F := Grp.forget (Over (Spec (CommRingCat.of ℤ))) ⋙
+    Over.forget (Spec (CommRingCat.of ℤ))
+  have hj : IsClosedImmersion j.hom.hom.left := by
+    have hP : IsClosedImmersion P.1.arrow.hom.hom.left :=
+      (closedSubgroupMorphismProperty_iff _ _).mp P.2
+    have hcomp : IsClosedImmersion (P.1.arrow.hom.hom.left ≫ (F.mapIso eG).hom) :=
+      (MorphismProperty.cancel_right_of_respectsIso _ _ (F.mapIso eG).hom).2 hP
+    dsimp only [j]
+    simp only [Grp.comp', Mon.comp_hom', Over.comp_left]
+    exact hcomp
+  let _ : IsClosedImmersion j.hom.hom.left := hj
+  let Q := ClosedSubgroupScheme.mk j
+  have horder : t.geckTorusPositiveClosedSubgroup ht ≤ P ↔
+      UniversalEnvelopingAlgebra.kostantTorusSubsystemClosedSubgroup
+        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+        (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht) (Set.range Sum.inl) ≤ Q := by
+    change (t.geckTorusPositiveClosedSubgroup ht).1 ≤ P.1 ↔
+      (UniversalEnvelopingAlgebra.kostantTorusSubsystemClosedSubgroup
+        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+        (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht) (Set.range Sum.inl)).1 ≤ Q.1
+    rw [coe_geckTorusPositiveClosedSubgroup,
+      UniversalEnvelopingAlgebra.coe_kostantTorusSubsystemClosedSubgroup,
+      show Q.1 = Subobject.mk j from ClosedSubgroupScheme.coe_mk j]
+    constructor
+    · intro hle
+      let a := Subobject.ofMkLE (t.geckTorusPositiveInclusion ht) P.1 hle
+      have ha : a ≫ P.1.arrow = t.geckTorusPositiveInclusion ht :=
+        Subobject.ofMkLE_arrow _
+      apply Subobject.mk_le_mk_of_comm (eB.inv ≫ a)
+      dsimp only [j]
+      slice_lhs 2 3 => rw [ha]
+      rw [hinc]
+      simp
+      rfl
+    · intro hle
+      let a := Subobject.ofMkLEMk c j hle
+      have ha : a ≫ j = c :=
+        Subobject.ofMkLEMk_comp _
+      apply Subobject.mk_le_of_comm (eB.hom ≫ a)
+      apply (cancel_mono eG.hom).mp
+      change eB.hom ≫ (a ≫ j) = t.geckTorusPositiveInclusion ht ≫ eG.hom
+      rw [ha, hinc]
+      simp
+  have hfactor {X : Grp (Over (Spec (CommRingCat.of ℤ)))}
+      (g : X ⟶ UniversalEnvelopingAlgebra.kostantToralGroupScheme
+        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+        (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht)
+        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)) :
+      (∃! f : X ⟶ (Q.1 : Grp (Over (Spec (CommRingCat.of ℤ)))),
+        f ≫ Q.1.arrow = g) ↔
+      ∃! f : X ⟶ (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))),
+        f ≫ P.1.arrow = g ≫ eqToHom (t.geckGroupScheme_def ht).symm := by
+    let qIso := ClosedSubgroupScheme.mkIso j
+    have hqIsoInv : qIso.inv ≫ Q.1.arrow = j := by
+      dsimp only [qIso, Q]
+      exact ClosedSubgroupScheme.mkIso_inv_comp_arrow j
+    have hqIso : qIso.hom ≫ j = Q.1.arrow := by
+      apply (cancel_epi qIso.inv).mp
+      simpa only [Iso.inv_hom_id_assoc] using hqIsoInv.symm
+    constructor
+    · rintro ⟨f, hf, -⟩
+      have hmap : (f ≫ qIso.hom) ≫ P.1.arrow =
+          g ≫ eqToHom (t.geckGroupScheme_def ht).symm := by
+        apply (cancel_mono eG.hom).mp
+        change f ≫ qIso.hom ≫ j =
+          (g ≫ eqToHom (t.geckGroupScheme_def ht).symm) ≫ eG.hom
+        rw [Category.assoc, hqIso, hf]
+        dsimp only [eG]
+        simp
+      refine ⟨f ≫ qIso.hom, hmap, ?_⟩
+      intro f' hf'
+      apply (cancel_mono P.1.arrow).mp
+      rw [hf', hmap]
+    · rintro ⟨f, hf, -⟩
+      have hmap : (f ≫ qIso.inv) ≫ Q.1.arrow = g := by
+        rw [Category.assoc, hqIsoInv]
+        dsimp only [j]
+        rw [← Category.assoc, hf]
+        dsimp only [eG]
+        simp
+      refine ⟨f ≫ qIso.inv, hmap, ?_⟩
+      intro f' hf'
+      apply (cancel_mono Q.1.arrow).mp
+      rw [hf', hmap]
+  rw [horder, UniversalEnvelopingAlgebra.kostantTorusSubsystemClosedSubgroup_le_iff]
+  constructor
+  · rintro ⟨hroot, htorus⟩
+    constructor
+    · intro i
+      simpa only [geckPositiveRootSubgroup_comp_geckTorusPositiveInclusion,
+        geckRootSubgroup_def] using
+        (hfactor _).mp (hroot (.inl i) (Set.mem_range_self i))
+    · simpa only [geckWeightTorusToTorusPositive_comp_geckTorusPositiveInclusion,
+        geckWeightTorus_def] using (hfactor _).mp htorus
+  · rintro ⟨hroot, htorus⟩
+    constructor
+    · intro i hi
+      obtain ⟨j, rfl⟩ := hi
+      exact (hfactor _).mpr (by
+        simpa only [geckPositiveRootSubgroup_comp_geckTorusPositiveInclusion,
+          geckRootSubgroup_def] using hroot j)
+    · exact (hfactor _).mpr (by
+        simpa only [geckWeightTorusToTorusPositive_comp_geckTorusPositiveInclusion,
+          geckWeightTorus_def] using htorus)
 
 /-! ## Rigidity -/
 
