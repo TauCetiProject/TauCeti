@@ -89,7 +89,7 @@ theorem LSeriesConverges.congr {g : ℕ → ℂ}
   simp_rw [h]
 
 /-- An absolutely convergent Dirichlet series converges. -/
-theorem LSeriesSummable.lSeriesConverges (h : LSeriesSummable f s) : LSeriesConverges f s :=
+theorem lSeriesConverges_of_lSeriesSummable (h : LSeriesSummable f s) : LSeriesConverges f s :=
   ⟨_, h.hasSum.tendsto_sum_nat⟩
 
 /-- Ordinary convergence depends only on the terms, so replacing the meaningless value `f 0` by
@@ -258,6 +258,14 @@ noncomputable def LSeries.abscissaOfConv (f : ℕ → ℂ) : EReal :=
 
 namespace LSeries
 
+/-- The abscissa of ordinary convergence depends only on the coefficients away from zero. -/
+theorem abscissaOfConv_congr {g : ℕ → ℂ} (h : ∀ {n}, n ≠ 0 → f n = g n) :
+    abscissaOfConv f = abscissaOfConv g :=
+  congrArg sInf <| congrArg _ <| Set.ext fun _ ↦ LSeriesConverges.congr fun n ↦ by
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp
+    · simp only [LSeries.term_of_ne_zero hn, h hn]
+
 /-- If the series converges at every real point above `x`, its abscissa of ordinary convergence is
 at most `x`. -/
 theorem abscissaOfConv_le_of_forall_lt_LSeriesConverges {x : ℝ}
@@ -273,7 +281,7 @@ theorem abscissaOfConv_le_of_forall_lt_LSeriesConverges {x : ℝ}
 /-- **The ordinary abscissa lies to the left of the absolute one.** -/
 theorem abscissaOfConv_le_abscissaOfAbsConv (f : ℕ → ℂ) :
     abscissaOfConv f ≤ _root_.LSeries.abscissaOfAbsConv f :=
-  sInf_le_sInf <| Set.image_mono fun _ hx ↦ LSeriesSummable.lSeriesConverges hx
+  sInf_le_sInf <| Set.image_mono fun _ hx ↦ lSeriesConverges_of_lSeriesSummable hx
 
 /-- Partial sums of the coefficients that are `O(n ^ r)` bound the abscissa of ordinary
 convergence by `r`. -/
@@ -395,7 +403,7 @@ they are bounded. -/
 theorem lSeriesConverges_iff_lSeriesSummable_of_nonneg
     (ha : ∀ n, n ≠ 0 → 0 ≤ f n) (x : ℝ) :
     LSeriesConverges f (x : ℂ) ↔ LSeriesSummable f (x : ℂ) := by
-  refine ⟨fun ⟨L, hL⟩ ↦ ?_, LSeriesSummable.lSeriesConverges⟩
+  refine ⟨fun ⟨L, hL⟩ ↦ ?_, lSeriesConverges_of_lSeriesSummable⟩
   set r : ℕ → ℝ := fun n ↦ ‖LSeries.term f (x : ℂ) n‖
   have hterm : ∀ n, ((r n : ℝ) : ℂ) = LSeries.term f (x : ℂ) n := fun n ↦ by
     rcases eq_or_ne n 0 with rfl | hn
