@@ -34,8 +34,8 @@ the elementary groups include the cyclic ones is the content of
 prime `p`, by splitting it as the product of its `p`-part and its `p'`-part.
 
 The second half of the file builds the `p`-elementary subgroups that carry arithmetic information.
-For an element `x` and a prime `p`, a suitable Sylow `p`-subgroup of the centraliser of the
-`p`-free part `s` of `x` yields a join with `⟨s⟩` that contains `x`. Every such join is
+For a finite-order element `x` and a prime `p`, a suitable Sylow `p`-subgroup of the centraliser
+of the `p`-free part `s` of `x` yields a join with `⟨s⟩` that contains `x`. Every such join is
 `p`-elementary and has index prime to `p` in that centraliser. The cyclic subgroups are already
 elementary, so it is this larger subgroup, not `⟨x⟩`, that carries content.
 
@@ -69,7 +69,7 @@ Each of the four predicates is restated as an `Iff` by `TauCeti.isPElementary_de
 * `TauCeti.isPElementary_pElementaryOfSylow` and
   `TauCeti.not_dvd_relIndex_pElementaryOfSylow`: `TauCeti.pElementaryOfSylow s P` is
   `p`-elementary, and its index in the centraliser of `s` is prime to `p`.
-* `TauCeti.exists_mem_pElementaryOfSylow`: every element `x` of a finite group lies in
+* `TauCeti.exists_mem_pElementaryOfSylow`: every finite-order element `x` lies in
   `TauCeti.pElementaryOfSylow` of its `p`-free part, for a suitable Sylow `p`-subgroup.
 
 ## Implementation notes
@@ -502,7 +502,7 @@ theorem isPElementary_pElementaryOfSylow [Fact p.Prime] (hs : ¬ p ∣ orderOf s
 /-- The subgroup attached to a `p`-regular element `s` and a Sylow `p`-subgroup of its centraliser
 has index prime to `p` inside that centraliser: it contains a full Sylow `p`-subgroup. -/
 theorem not_dvd_relIndex_pElementaryOfSylow [Fact p.Prime]
-    [Finite (centralizer ({s} : Set G))] :
+    [(P : Subgroup (centralizer ({s} : Set G))).FiniteIndex] :
     ¬ p ∣ (pElementaryOfSylow s P).relIndex (centralizer ({s} : Set G)) := by
   have hle : (P : Subgroup (centralizer ({s} : Set G))) ≤
       (pElementaryOfSylow s P).subgroupOf (centralizer ({s} : Set G)) := fun y hy =>
@@ -511,17 +511,17 @@ theorem not_dvd_relIndex_pElementaryOfSylow [Fact p.Prime]
 
 end OfSylow
 
-/-! ### Elements of a finite group
+/-! ### Finite-order elements
 
-Every element of a finite group lies in the `p`-elementary subgroup built from its `p`-free part.
+Every finite-order element lies in the `p`-elementary subgroup built from its `p`-free part.
 -/
 
-/-- For every prime `p` and every element `x` of a finite group, some Sylow `p`-subgroup of the
+/-- For every prime `p` and every finite-order element `x`, some Sylow `p`-subgroup of the
 centraliser of the `p`-free part of `x` produces, by
 `TauCeti.pElementaryOfSylow`, a subgroup containing `x`. Together with
 `TauCeti.isPElementary_pElementaryOfSylow` and `TauCeti.not_dvd_relIndex_pElementaryOfSylow` this
 places `x` in a `p`-elementary subgroup whose index in that centraliser is prime to `p`. -/
-theorem exists_mem_pElementaryOfSylow [Finite G] [Fact p.Prime] (x : G) :
+theorem exists_mem_pElementaryOfSylow [Fact p.Prime] (x : G) (hx : orderOf x ≠ 0) :
     ∃ P : Sylow p (centralizer ({pFreePart p x} : Set G)),
       x ∈ pElementaryOfSylow (pFreePart p x) P := by
   have hu : pPart p x ∈ centralizer ({pFreePart p x} : Set G) :=
@@ -529,7 +529,7 @@ theorem exists_mem_pElementaryOfSylow [Finite G] [Fact p.Prime] (x : G) :
   have hQ : IsPGroup p (zpowers (⟨pPart p x, hu⟩ :
       centralizer ({pFreePart p x} : Set G))) := by
     refine IsPGroup.of_card_dvd_pow (n := (orderOf x).factorization p) ?_
-    rw [Nat.card_zpowers, orderOf_mk, orderOf_pPart Fact.out (orderOf_pos x).ne']
+    rw [Nat.card_zpowers, orderOf_mk, orderOf_pPart Fact.out hx]
   obtain ⟨P, hP⟩ := hQ.exists_le_sylow
   refine ⟨P, ?_⟩
   have hmem : pFreePart p x * pPart p x ∈ pElementaryOfSylow (pFreePart p x) P :=
