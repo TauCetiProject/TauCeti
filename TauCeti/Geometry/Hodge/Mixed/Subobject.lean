@@ -224,6 +224,16 @@ variable {ι'ℚ : V'ℤ →ₗ[ℤ] V'ℚ} {ι'ℂ : V'ℤ →ₗ[ℤ] V'ℂ}
 variable {h'ℚ : IsBaseChange ℚ ι'ℚ} {h'ℂ : IsBaseChange ℂ ι'ℂ}
 variable {source : MixedHodgeStructure h'ℚ h'ℂ}
 
+private theorem subtype_comp_rationalMapToComplex_codRestrict
+    (f : source.Hom mhs) (hf : ∀ x, f.toRatLinearMap x ∈ U) :
+    (rationalToComplexSubmodule hℚ hℂ U).subtype ∘ₗ
+        rationalMapToComplex h'ℚ h'ℂ (isBaseChange_integralSubmoduleToRational hℚ U)
+          (isBaseChange_integralSubmoduleToComplex hℚ hℂ U)
+          (f.toRatLinearMap.codRestrict U hf) =
+      rationalMapToComplex h'ℚ h'ℂ hℚ hℂ f.toRatLinearMap := by
+  rw [← rationalMapToComplex_subtype hℚ hℂ U, ← rationalMapToComplex_comp,
+    LinearMap.subtype_comp_codRestrict]
+
 /-- A morphism whose rational map takes values in a sub-mixed Hodge structure factors through
 the induced mixed Hodge structure. -/
 noncomputable def codRestrict (f : source.Hom mhs) (hf : ∀ x, f.toRatLinearMap x ∈ U) :
@@ -233,9 +243,9 @@ noncomputable def codRestrict (f : source.Hom mhs) (hf : ∀ x, f.toRatLinearMap
     rw [hodgeStructure_WQ]
     exact f.map_mem_WQ k x hx
   map_mem_F p x hx := by
-    rw [hodgeStructure_F, Submodule.mem_comap, ← rationalMapToComplex_subtype hℚ hℂ U,
-      ← LinearMap.comp_apply, ← rationalMapToComplex_comp, LinearMap.subtype_comp_codRestrict]
-    exact f.map_mem_F p x hx
+    rw [hodgeStructure_F, Submodule.mem_comap]
+    simpa only [← LinearMap.comp_apply, subtype_comp_rationalMapToComplex_codRestrict] using
+      f.map_mem_F p x hx
 
 /-- The rational map underlying a corestricted morphism is the corestricted rational map. -/
 @[simp]
