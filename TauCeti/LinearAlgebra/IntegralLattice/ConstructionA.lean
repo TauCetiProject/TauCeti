@@ -222,7 +222,7 @@ instance integralLattice_isNondegenerate (C : AddSubgroup (ι → ZMod m))
   nondegenerate := by rw [integralLattice_form]; exact form_nondegenerate m
 
 /-- An integral Construction A lattice is unimodular exactly when its code is self-dual. -/
-theorem integralLattice_isUnimodular_iff (C : AddSubgroup (ι → ZMod m))
+theorem isUnimodular_integralLattice_iff (C : AddSubgroup (ι → ZMod m))
     (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
     (integralLattice m C hC).IsUnimodular ↔
       AddSubgroup.toZModSubmodule m C = (AddSubgroup.toZModSubmodule m C).euclideanDual := by
