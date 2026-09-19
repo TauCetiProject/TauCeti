@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Serre
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.SpinWeight
-public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.SerreRelations
+public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Serre.Relations
 
 import TauCeti.LinearAlgebra.Eigenspace.Binomial
 import TauCeti.RingTheory.DividedPowers.Associative

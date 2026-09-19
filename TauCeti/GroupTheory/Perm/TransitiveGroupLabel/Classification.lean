@@ -43,6 +43,8 @@ centralizer of the double transposition `finRotate 4 ^ 2`.
 
 * `TauCeti.natCard_referenceSubgroup_three_zero`, …, `TauCeti.natCard_referenceSubgroup_four_four`:
   the orders `3, 6` and `4, 4, 8, 12, 24` of the reference subgroups in degrees three and four.
+* `TauCeti.referenceSubgroup_three_zero_le_alternatingGroup`,
+  `TauCeti.not_referenceSubgroup_three_one_le_alternatingGroup`: the parities of `3T1` and `3T2`.
 * `TauCeti.TransitiveGroupLabel.eq_of_three`, `TauCeti.TransitiveGroupLabel.eq_of_four`: in
   degrees three and four a subgroup carries at most one label.
 * `TauCeti.existsUnique_transitiveGroupLabel_three`,
@@ -96,6 +98,18 @@ theorem natCard_referenceSubgroup_three_one :
     Nat.card (referenceSubgroup 3 ⟨1, by simp⟩) = 6 := by
   rw [referenceSubgroup_three_one, Subgroup.card_top, Nat.card_perm]
   simp [Nat.factorial]
+
+/-- The reference subgroup of `3T1` consists of even permutations. -/
+theorem referenceSubgroup_three_zero_le_alternatingGroup :
+    referenceSubgroup 3 ⟨0, by simp⟩ ≤ alternatingGroup (Fin 3) := by
+  rw [referenceSubgroup_three_zero, closure_finRotate_three_eq_alternatingGroup]
+
+/-- The reference subgroup of `3T2` is not contained in the alternating group: it contains the
+odd permutation `swap 0 1`. -/
+theorem not_referenceSubgroup_three_one_le_alternatingGroup :
+    ¬ referenceSubgroup 3 ⟨1, by simp⟩ ≤ alternatingGroup (Fin 3) := by
+  rw [referenceSubgroup_three_one]
+  exact fun h => by simpa [mem_alternatingGroup] using h (Subgroup.mem_top (swap 0 1))
 
 /-- Every transitive subgroup of the symmetric group on three points carries a label. -/
 theorem exists_transitiveGroupLabel_three (G : Subgroup (Perm (Fin 3)))

@@ -19,7 +19,7 @@ field of characteristic zero and let `F` be an intermediate field of `L / ℚ`.
 * if `F` contains a primitive `p`-th root of unity for an odd prime `p`, it contains a square root
   of the odd prime discriminant `p* = (-1)^((p-1)/2) p`;
 * if `F` contains a primitive fourth root of unity, it contains a square root of `-1`;
-* if `F` contains a primitive eighth root of unity, it contains a square root of `2`.
+* if `F` contains a primitive eighth root of unity, it contains square roots of `2` and `-2`.
 
 Up to rational squares these are all the prime discriminants, since `-4 = -1 · 2²` and
 `±8 = ±2 · 2²`, and they are the arithmetic input to the containment of a multiquadratic field in a
@@ -35,9 +35,9 @@ character of `ZMod p` pushed into `L` and `ψ` to the additive character attache
 produces the quadratic reciprocity law; here the target is characteristic zero, where it produces
 a square root.
 
-The two even cases are direct computations: a primitive fourth root of unity squares to `-1`
+The even cases are direct computations: a primitive fourth root of unity squares to `-1`
 (its square is a primitive square root of unity), and for a primitive eighth root of unity `ζ`
-the element `ζ + ζ⁷` squares to `2`, because `ζ⁴ = -1`.
+the elements `ζ + ζ⁷` and `ζ + ζ³` square to `2` and `-2`, because `ζ⁴ = -1`.
 
 For the classical account of the quadratic Gauss sum see K. Ireland and M. Rosen, *A Classical
 Introduction to Modern Number Theory*, Chapter 6.
@@ -50,6 +50,8 @@ Introduction to Modern Number Theory*, Chapter 6.
   root of `-1`.
 * `TauCeti.Multiquadratic.exists_mem_sq_eq_two`: a primitive eighth root of unity carries a square
   root of `2`.
+* `TauCeti.Multiquadratic.exists_mem_sq_eq_neg_two`: a primitive eighth root of unity carries a
+  square root of `-2`.
 -/
 
 public section
@@ -114,6 +116,16 @@ theorem exists_mem_sq_eq_two (hζ : IsPrimitiveRoot ζ 8) (hmem : ζ ∈ F) :
   refine ⟨ζ + ζ ^ 7, add_mem hmem (pow_mem hmem 7), ?_⟩
   have expand : (ζ + ζ ^ 7) ^ 2 = ζ ^ 2 + 2 * ζ ^ 8 + ζ ^ 8 * (ζ ^ 4 * ζ ^ 2) := by ring
   rw [expand, h8, h4]
+  ring
+
+/-- **A primitive eighth root of unity carries a square root of `-2`.** The witness is `ζ + ζ³`,
+whose square is `ζ² + 2ζ⁴ + ζ⁶`, and `ζ⁶ = -ζ²` because `ζ⁴ = -1`. -/
+theorem exists_mem_sq_eq_neg_two (hζ : IsPrimitiveRoot ζ 8) (hmem : ζ ∈ F) :
+    ∃ x ∈ F, x ^ 2 = (-2 : L) := by
+  have h4 : ζ ^ 4 = -1 := (hζ.pow (by norm_num) (by norm_num : 8 = 4 * 2)).eq_neg_one_of_two_right
+  refine ⟨ζ + ζ ^ 3, add_mem hmem (pow_mem hmem 3), ?_⟩
+  have expand : (ζ + ζ ^ 3) ^ 2 = ζ ^ 2 + 2 * ζ ^ 4 + ζ ^ 4 * ζ ^ 2 := by ring
+  rw [expand, h4]
   ring
 
 end TauCeti.Multiquadratic

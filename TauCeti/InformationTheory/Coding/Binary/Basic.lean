@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.Coding.Basic
-public import TauCeti.InformationTheory.Coding.EuclideanDual
+public import TauCeti.InformationTheory.Coding.Elementary.Basic
 public import TauCeti.InformationTheory.Coding.WeightEnumerator
 public import Mathlib.InformationTheory.Hamming
 public import Mathlib.Algebra.Field.ZMod
@@ -123,6 +123,15 @@ theorem IsDoublyEven.mono (hD : IsDoublyEven D) (hCD : C ≤ D) : IsDoublyEven C
 theorem isEven_iff_one_mem_euclideanDual :
     IsEven C ↔ (1 : ι → ZMod 2) ∈ C.euclideanDual := by
   simp [IsEven, Submodule.mem_euclideanDual, ZMod.natCast_eq_zero_iff_even]
+
+/-- For binary codes, evenness is exactly containment in the single-parity-check code. -/
+theorem isEven_iff_le_singleParityCheckCode :
+    IsEven C ↔ C ≤ singleParityCheckCode (ZMod 2) ι := by
+  rw [isEven_iff]
+  simp only [SetLike.le_def, mem_singleParityCheckCode]
+  have hsum (x : ι → ZMod 2) : ∑ i, x i = (hammingNorm x : ZMod 2) := by
+    simpa [dotProduct] using dotProduct_one_eq_hammingNorm x
+  simp only [hsum, ZMod.natCast_eq_zero_iff_even]
 
 /-- Every self-orthogonal binary code is even. -/
 theorem isEven_of_le_euclideanDual (hC : C ≤ C.euclideanDual) : IsEven C := by

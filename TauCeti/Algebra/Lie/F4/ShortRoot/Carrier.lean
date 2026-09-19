@@ -368,40 +368,32 @@ theorem coe_rootSubgroupPoints (k : Fin 4 ⊕ Fin 4) (A : Type v) [CommRing A]
 
 private theorem nilpotencyClass_rep_rootGenerator_le_three (k : Fin 4 ⊕ Fin 4) :
     nilpotencyClass (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGen k))) ≤ 3 := by
-  rw [nilpotencyClass]
-  exact Nat.sInf_le (pow_three_rep_serreRootGenerator_eq_zero k)
+  exact nilpotencyClass_le_of_pow_eq_zero (pow_three_rep_serreRootGenerator_eq_zero k)
 
 private theorem rep_rootGenerator_latticeBasis_eq_sum (k : Fin 4 ⊕ Fin 4) (s : Fin 26) :
     rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGen k))
         ((latticeBasis s : lattice) : Fin 26 → ℚ) =
       ∑ r, rootMatrix k r s • ((latticeBasis r : lattice) : Fin 26 → ℚ) := by
-  rw [rep_ι_apply, rationalSerreRepresentation_serreRootGenerator, coe_latticeBasis,
-    Matrix.mulVec_single_one]
-  ext a
-  simp only [Matrix.col_apply, Finset.sum_apply, Pi.smul_apply, coe_latticeBasis,
-    Pi.single_apply]
-  rw [Finset.sum_eq_single a]
-  · simp [rootMatrixRat_apply]
-  · intro b _ hba
-    simp [Ne.symm hba]
-  · simp
+  have hmatrix : rootMatrixRat k = (rootMatrix k).map (Int.castRingHom ℚ) := by
+    ext a b
+    exact rootMatrixRat_apply k a b
+  rw [rep_ι_apply, rationalSerreRepresentation_serreRootGenerator, hmatrix]
+  simpa only [coe_latticeBasis, TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply] using
+    (Matrix.intCast_mulVec_coordinateLatticeBasis_eq_sum (rootMatrix k) s)
 
 private theorem dividedPower_two_rep_rootGenerator_latticeBasis_eq_sum (k : Fin 4 ⊕ Fin 4)
     (s : Fin 26) :
     Associative.dividedPower 2 (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGen k)))
         ((latticeBasis s : lattice) : Fin 26 → ℚ) =
       ∑ r, rootDividedSquareMatrix k r s • ((latticeBasis r : lattice) : Fin 26 → ℚ) := by
+  have hmatrix : (rootDividedSquareMatrix k).map (Int.cast : ℤ → ℚ) =
+      (rootDividedSquareMatrix k).map (Int.castRingHom ℚ) := by
+    ext a b
+    simp only [Matrix.map_apply, Int.coe_castRingHom]
   rw [← Associative.map_dividedPower, rep_dividedPower_ι_apply,
-    rationalSerreRepresentation_serreRootGenerator, dividedPower_two_rootMatrixRat,
-    coe_latticeBasis, Matrix.mulVec_single_one]
-  ext a
-  simp only [Matrix.col_apply, Matrix.map_apply, Finset.sum_apply, Pi.smul_apply,
-    coe_latticeBasis, Pi.single_apply]
-  rw [Finset.sum_eq_single a]
-  · simp
-  · intro b _ hba
-    simp [Ne.symm hba]
-  · simp
+    rationalSerreRepresentation_serreRootGenerator, dividedPower_two_rootMatrixRat, hmatrix]
+  simpa only [coe_latticeBasis, TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply] using
+    (Matrix.intCast_mulVec_coordinateLatticeBasis_eq_sum (rootDividedSquareMatrix k) s)
 
 /-- **The matrix of a numbered simple-root point is `1 + u X + u² X⁽²⁾`**, with `X` the
 integral matrix of the generator and `X⁽²⁾` its integral divided square. -/

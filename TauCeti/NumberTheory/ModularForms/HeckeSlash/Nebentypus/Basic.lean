@@ -49,6 +49,8 @@ is only the definition and its linearity in `f`; every statement here holds for 
   `HeckeRing.GL2.twistedHeckeSlashSum_smul`: the twisted sum is `ℂ`-linear in `f`. Unlike the
   unweighted sum, homogeneity needs no positivity hypothesis from the caller: the
   representatives lie in `Δ₀(N)`, whose determinants are positive.
+* `HeckeRing.GL2.twistedHeckeSlashSum_eq_heckeSlashSum`: at the trivial character the twisted
+  sum is the unweighted `heckeSlashSum`.
 
 ## References
 
@@ -134,6 +136,13 @@ lemma twistedHeckeSlashSum_apply (f : ℍ → ℂ) (τ : ℍ) : twistedHeckeSlas
     ∑ v : DecompQuotient ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ))
       (D.out : GL (Fin 2) ℚ)⁻¹, (nebentypusWeight χ D v : ℂ) • (f ∣[k] rightCosetRep D v) τ := by
   simp [twistedHeckeSlashSum]
+
+/-- **At the trivial character the twisted slash sum is the unweighted one**: every weight
+`nebentypusWeight 1 D v` is `1`, so the sum is `heckeSlashSum` over the same representatives. -/
+@[simp]
+lemma twistedHeckeSlashSum_eq_heckeSlashSum (f : ℍ → ℂ) :
+    twistedHeckeSlashSum k (1 : (ZMod N)ˣ →* ℂˣ) D f = heckeSlashSum k D f := by
+  simp [twistedHeckeSlashSum_def, heckeSlashSum_def, nebentypusWeight_def]
 
 /-- The twisted slash sum is additive in `f`. -/
 @[simp]

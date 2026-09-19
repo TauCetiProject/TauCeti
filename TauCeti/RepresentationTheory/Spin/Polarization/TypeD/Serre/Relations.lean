@@ -33,8 +33,6 @@ quadratic Lie subalgebra and are packaged there as a second Serre system.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate IV.
 * J.-P. Serre, *Complex Semisimple Lie Algebras*, Chapter VI, Appendix.
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II.
-
-This advances the Chevalley--Demazure construction in Layer 9 of the ReductiveGroups roadmap.
 -/
 
 public section
