@@ -107,6 +107,7 @@ theorem stieltjesInversion_singleton_zero : stieltjesInversion μ {0} = 0 := by
   simp
 
 /-- Applying `stieltjesInversion` twice removes exactly the atom at `0`. -/
+@[simp]
 theorem stieltjesInversion_stieltjesInversion_eq_restrict :
     stieltjesInversion (stieltjesInversion μ) = μ.restrict {0}ᶜ := by
   refine (Measure.ext_of_lintegral (μ.restrict {0}ᶜ) fun g hg => ?_)
@@ -121,7 +122,6 @@ theorem stieltjesInversion_stieltjesInversion_eq_restrict :
   rw [← mul_assoc, ← ENNReal.coe_mul, inv_mul_cancel₀ hx, ENNReal.coe_one, one_mul]
 
 /-- `stieltjesInversion` is an involution on measures without an atom at `0`. -/
-@[simp]
 theorem stieltjesInversion_stieltjesInversion (hμ : μ {0} = 0) :
     stieltjesInversion (stieltjesInversion μ) = μ := by
   rw [stieltjesInversion_stieltjesInversion_eq_restrict,
