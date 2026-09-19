@@ -57,7 +57,7 @@ theorem HasFullSymmetricGaloisGroup.surjective_galActionHom
 
 /-- Among separable polynomials, full symmetric Galois group is equivalent to the Galois
 group having order equal to the factorial of the degree. -/
-theorem hasFullSymmetricGaloisGroup_iff_natCard (hsep : f.Separable) :
+theorem hasFullSymmetricGaloisGroup_iff_natCard_gal_eq_factorial_natDegree (hsep : f.Separable) :
     HasFullSymmetricGaloisGroup f ↔ Nat.card f.Gal = f.natDegree.factorial := by
   have hcard : Nat.card (Equiv.Perm (f.rootSet f.SplittingField)) =
       f.natDegree.factorial := by
@@ -73,7 +73,8 @@ theorem hasFullSymmetricGaloisGroup_iff_of_splits (E : Type*) [Field E] [Algebra
     HasFullSymmetricGaloisGroup f ↔
       f.Separable ∧ Function.Surjective (Gal.galActionHom f E) := by
   by_cases hsep : f.Separable
-  · rw [hasFullSymmetricGaloisGroup_iff_natCard hsep, and_iff_right hsep]
+  · rw [hasFullSymmetricGaloisGroup_iff_natCard_gal_eq_factorial_natDegree hsep,
+      and_iff_right hsep]
     have hcard : Nat.card (Equiv.Perm (f.rootSet E)) = f.natDegree.factorial := by
       rw [Nat.card_perm, Nat.card_eq_fintype_card, card_rootSet_eq_natDegree hsep hsplit.out]
     rw [← hcard]
@@ -89,13 +90,19 @@ theorem HasFullSymmetricGaloisGroup.nonempty_mulEquiv (hf : HasFullSymmetricGalo
   exact ⟨(MulEquiv.ofBijective (Gal.galActionHom f f.SplittingField)
     ⟨Gal.galActionHom_injective f _, hf.surjective_galActionHom⟩).trans (Equiv.permCongrHom e)⟩
 
+/-- A power of a nonunit polynomial with exponent at least two cannot have full symmetric
+Galois group. -/
+theorem not_hasFullSymmetricGaloisGroup_pow (hf : ¬ IsUnit f) (n : ℕ) (hn : 2 ≤ n) :
+    ¬ HasFullSymmetricGaloisGroup (f ^ n) := by
+  intro h
+  have := h.separable.squarefree.eq_zero_or_one_of_pow_of_not_isUnit hf
+  omega
+
 /-- Repeated roots rule out full symmetric Galois group, even when the action on the
 distinct roots is surjective: in particular `X ^ n` is excluded for `2 ≤ n`. -/
 @[simp]
 theorem not_hasFullSymmetricGaloisGroup_X_pow (n : ℕ) (hn : 2 ≤ n) :
-    ¬ HasFullSymmetricGaloisGroup (X ^ n : F[X]) := by
-  intro h
-  have := h.separable.squarefree.eq_zero_or_one_of_pow_of_not_isUnit (not_isUnit_X (R := F))
-  omega
+    ¬ HasFullSymmetricGaloisGroup (X ^ n : F[X]) :=
+  not_hasFullSymmetricGaloisGroup_pow not_isUnit_X n hn
 
 end TauCeti.Polynomial

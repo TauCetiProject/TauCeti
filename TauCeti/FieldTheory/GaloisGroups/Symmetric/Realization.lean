@@ -47,7 +47,7 @@ theorem exists_monic_int_polynomial_hasFullSymmetricGaloisGroup (n : ℕ) (hn : 
       HasFullSymmetricGaloisGroup (f.map (Int.castRingHom ℚ)) := by
   obtain rfl | hn := hn.eq_or_lt
   · refine ⟨X, monic_X, natDegree_X, by simpa using (irreducible_X (R := ℚ)), ?_⟩
-    simpa using (hasFullSymmetricGaloisGroup_iff_natCard
+    simpa using (hasFullSymmetricGaloisGroup_iff_natCard_gal_eq_factorial_natDegree
       (separable_X (R := ℚ))).mpr (by simp [Nat.card_eq_fintype_card])
   · have : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
     obtain ⟨g2, hm2, hi2, hd2⟩ := exists_monic_irreducible_natDegree_eq (ZMod 2) n (by omega)
