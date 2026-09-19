@@ -395,8 +395,6 @@ noncomputable def periodicFunctor (g : G) : Rep R G ⥤ ChainComplex (ModuleCat 
 theorem periodicFunctor_map_f (f : M ⟶ N) (i : ℕ) :
     ((periodicFunctor R g).map f).f i = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
 
-set_option backward.defeqAttrib.useBackward true in
-set_option backward.isDefEq.respectTransparency false in
 /-- The value of `periodicFunctor` is the underlying-module periodic chain complex. -/
 noncomputable def periodicFunctorObjIso (M : Rep R G) :
     (periodicFunctor R g).obj M ≅ moduleCatChainComplex M g :=
@@ -405,7 +403,9 @@ noncomputable def periodicFunctorObjIso (M : Rep R G) :
     simp only [periodicFunctor, Functor.comp_obj, Functor.mapHomologicalComplex_obj_X,
       Functor.mapHomologicalComplex_obj_d, Iso.refl_hom]
     by_cases hj : Even (j + 1) <;>
-      simp [chainComplexFunctor, moduleCatChainComplex, hj])
+      simp only [chainComplexFunctor, forget₂_moduleCat_obj, moduleCatChainComplex,
+        HomologicalComplex.alternatingConst_d, ComplexShape.down_Rel, ↓reduceIte, hj] <;>
+      ext <;> rfl)
 
 instance : (periodicFunctor R g).PreservesZeroMorphisms where
   map_zero X Y := by
