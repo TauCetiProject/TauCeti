@@ -6,21 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fintype.Pi
+public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Data.Int.Interval
 
 /-!
-# Vectors of bounded value for a positive definite integral quadratic form
+# Positive-definite quadratic forms
 
-A positive definite quadratic form on a finitely generated free `ℤ`-module takes each of its values
-only finitely often: the sets `{x | q x ≤ n}` and `{x | q x = n}` are finite. This is the
-finiteness that makes "the vectors of norm `n`" of a positive definite lattice a finite list, and
-the one that turns an orbit lying in a level set into a periodic orbit.
+Over `ℝ`, a nonzero vector for a positive-definite quadratic form can be normalized to quadratic
+value one by scaling it with the inverse square root of its value. Over `ℤ`, a positive-definite
+quadratic form on a finitely generated free module takes each of its values only finitely often:
+the sets `{x | q x ≤ n}` and `{x | q x = n}` are finite. This is the finiteness that makes "the
+vectors of norm `n`" of a positive-definite lattice a finite list, and the one that turns an orbit
+lying in a level set into a periodic orbit.
 
 ## Main results
 
+* `QuadraticMap.PosDef.inv_sqrt_smul_apply`: inverse-square-root normalization of a nonzero vector
+  has quadratic value one.
 * `QuadraticMap.PosDef.finite_setOf_apply_le`: a positive definite quadratic form on a
   finitely generated free `ℤ`-module has only finitely many vectors of value at most `n`.
 * `QuadraticMap.PosDef.finite_setOf_apply_eq`: consequently only finitely many vectors of
@@ -65,6 +70,31 @@ private theorem abs_le_of_sq_le {y c : ℤ} (h : y ^ 2 ≤ c) : |y| ≤ c := by
 end TauCeti
 
 namespace QuadraticMap.PosDef
+
+section Real
+
+variable {M : Type*} [AddCommGroup M] [Module ℝ M]
+
+/-- Scaling a nonzero vector by the inverse square root of its value under a positive-definite
+real quadratic form gives a vector of quadratic value one. -/
+@[simp]
+theorem inv_sqrt_smul_apply {Q : QuadraticForm ℝ M} (hQ : Q.PosDef) (v : M) (hv : v ≠ 0) :
+    Q ((Real.sqrt (Q v))⁻¹ • v) = 1 := by
+  have hpos : 0 < Q v := hQ v hv
+  have hsqrt : Real.sqrt (Q v) ≠ 0 := Real.sqrt_ne_zero'.mpr hpos
+  calc
+    Q ((Real.sqrt (Q v))⁻¹ • v) =
+        (Real.sqrt (Q v))⁻¹ * (Real.sqrt (Q v))⁻¹ * Q v := by
+      rw [QuadraticMap.map_smul]
+      rfl
+    _ = (Real.sqrt (Q v))⁻¹ * (Real.sqrt (Q v))⁻¹ *
+        (Real.sqrt (Q v) * Real.sqrt (Q v)) := by
+      rw [Real.mul_self_sqrt hpos.le]
+    _ = ((Real.sqrt (Q v))⁻¹ * Real.sqrt (Q v)) *
+        ((Real.sqrt (Q v))⁻¹ * Real.sqrt (Q v)) := by ring
+    _ = 1 := by rw [inv_mul_cancel₀ hsqrt, one_mul]
+
+end Real
 
 variable {M : Type*} [AddCommGroup M] [Module.Free ℤ M] [Module.Finite ℤ M]
 
