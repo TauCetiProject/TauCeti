@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Convex.Cone.Face.Exposed
 public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Basic
+public import TauCeti.Geometry.Toric.Algebraic.Ray.Generation
 
 /-!
 # Dual semigroups of faces of toric cones
@@ -17,6 +18,12 @@ A character `m` in the dual semigroup of a cone `σ` cuts out the face `σ ⊓ k
 adding a multiple of `m`. This is the semigroup form of the statement that the affine chart of the
 face is the localization of the chart of `σ` away from the monomial of `m`.
 
+Every face of a regular cone is of this form. The primitive ray generators of a regular cone are
+part of an integral basis, so there is an integral character taking the value `0` on the
+generators lying in a given face and the value `1` on the others; it is nonnegative on the cone
+and cuts out exactly that face. The dual semigroup of every face of a regular cone is therefore
+obtained from that of the cone by adjoining the negative of a single character.
+
 ## Main declarations
 
 * `TauCeti.Toric.exists_add_nsmul_mem_dualSemigroup` and
@@ -25,7 +32,7 @@ face is the localization of the chart of `σ` away from the monomial of `m`.
 
 ## References
 
-The description of the dual semigroup of a face follows §1.3 of W. Fulton, *Introduction to
+The description of the dual semigroup of a face follows §§1.2–1.3 of W. Fulton, *Introduction to
 Toric Varieties*, and §1.3 of D. Cox, J. Little and H. Schenck, *Toric Varieties*.
 -/
 
@@ -72,5 +79,39 @@ theorem dualSemigroup_inf_ker_eq_sup (hi : IsIntegralLattice i) (hσ : σ.FG)
     rw [smul_neg, add_neg_cancel_right]
   · rw [AddSubmonoid.closure_le, Set.singleton_subset_iff]
     exact neg_mem_dualSemigroup_inf_ker hi σ m
+
+/-- Every face `τ` of a regular cone `σ` is cut out by a character in the dual semigroup of `σ`:
+there is `m` with `σ ⊓ ker m = τ`. Such a character takes the value `1` on the primitive ray
+generators outside `τ` and the value `0` on those in `τ`. -/
+theorem IsRegularCone.exists_mem_dualSemigroup_inf_ker_eq (hi : IsIntegralLattice i)
+    (hσ : IsRegularCone i σ) {τ : PointedCone ℝ V} (hτ : τ.IsFaceOf σ) :
+    ∃ m ∈ dualSemigroup hi σ,
+      σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m)) = τ := by
+  classical
+  obtain ⟨n, b, r, hb⟩ := hσ.exists_basis
+  let m : N →+ ℤ :=
+    (b.constr ℤ fun j ↦ if j ∈ Set.range r ∧ i (b j) ∉ τ then 1 else 0).toAddMonoidHom
+  have hm : ∀ ρ, m (b (r ρ)) = if i (b (r ρ)) ∈ τ then 0 else 1 := fun ρ ↦ by
+    simp only [m, LinearMap.toAddMonoidHom_coe, Module.Basis.constr_basis, Set.mem_range_self,
+      true_and]
+    by_cases h : i (b (r ρ)) ∈ τ <;> simp [h]
+  -- The regular cone is the cone hull of the ray vectors of the extending basis.
+  have hgen : σ = PointedCone.hull ℝ (Set.range fun ρ ↦ i (b (r ρ))) := by
+    refine (hσ.toIsToricCone.hull_primitiveGenerator hi).symm.trans ?_
+    rw [← Set.range_comp]
+    congr 2
+    funext ρ
+    simp [(hb.isPrimitiveGenerator_apply ρ).eq_primitiveGenerator hi hσ.toIsToricCone]
+  refine ⟨m, (mem_dualSemigroup_iff_of_isPrimitiveGenerator hi hσ.toIsToricCone
+    hb.isPrimitiveGenerator_apply m).2 fun ρ ↦ ?_, ?_⟩
+  · rw [hm]
+    split_ifs <;> simp
+  refine PointedCone.inf_ker_eq_of_eq_hull hgen hτ ?_ ?_
+  · rintro _ ⟨ρ, rfl⟩
+    rw [hi.realCharacter_apply, hm]
+    split_ifs <;> simp
+  · rintro _ ⟨ρ, rfl⟩
+    rw [hi.realCharacter_apply, hm]
+    split_ifs with h <;> simp [h]
 
 end TauCeti.Toric
