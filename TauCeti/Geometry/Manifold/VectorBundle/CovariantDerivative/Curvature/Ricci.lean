@@ -64,6 +64,7 @@ def ricciTensor (x : M) : TangentSpace I x →ₗ[ℝ] TangentSpace I x →ₗ[�
 
 /-- The defining trace formula for Ricci curvature. The two flips leave the first
 curvature argument free, so it is this argument that is traced against the output. -/
+@[simp]
 theorem ricciTensor_apply (x : M) (u v : TangentSpace I x) :
     cov.ricciTensor x u v =
       LinearMap.trace ℝ (TangentSpace I x) (((curvature x).flip u).flip v) :=
