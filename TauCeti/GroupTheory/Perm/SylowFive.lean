@@ -34,7 +34,6 @@ classification of the transitive subgroups of `S₅`: the transitive subgroups o
   or six Sylow `5`-subgroups.
 * `TauCeti.exists_sylow_le_le_normalizer_of_card_sylow_five_eq_one`: if it has one, it lies
   between a Sylow `5`-subgroup of `S₅` and its normalizer.
-* `TauCeti.natCard_subgroup_perm_ne_thirty`: `S₅` has no subgroup of order `30`.
 * `TauCeti.eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard`: a subgroup of `S₅` of order
   divisible by `30` is `A₅` or `S₅`.
 * `TauCeti.exists_sylow_le_le_normalizer_or_alternatingGroup_le`: a subgroup of `S₅` of order
@@ -180,22 +179,6 @@ theorem eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard (hα : Nat.card α =
     rw [h] at hGi
     omega
 
-/-- The symmetric group on five points has no subgroup of order `30`. -/
-theorem natCard_subgroup_perm_ne_thirty (hα : Nat.card α = 5) (G : Subgroup (Perm α)) :
-    Nat.card G ≠ 30 := by
-  let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
-  classical
-  let _ : Fintype α := Fintype.ofFinite α
-  intro h
-  have : Nontrivial α := Finite.one_lt_card_iff_nontrivial.mp (by omega)
-  rcases eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard hα G (h ▸ dvd_rfl) with hG | hG
-  · have hcard := congrArg (fun H : Subgroup (Perm α) ↦ Nat.card H) hG
-    rw [h, nat_card_alternatingGroup, hα] at hcard
-    norm_num [Nat.factorial] at hcard
-  · have hcard := congrArg (fun H : Subgroup (Perm α) ↦ Nat.card H) hG
-    rw [h, card_top, natCard_perm_eq_120 hα] at hcard
-    norm_num at hcard
-
 /-- A subgroup `G` of the symmetric group on five points whose order is divisible by `5` either
 lies between a Sylow `5`-subgroup of the symmetric group and its normalizer, or contains the
 alternating group. -/
@@ -212,8 +195,11 @@ theorem exists_sylow_le_le_normalizer_or_alternatingGroup_le (hα : Nat.card α 
   rcases card_sylow_five_eq_one_or_six hα G h5 with h1 | h6
   · exact Or.inl (exists_sylow_le_le_normalizer_of_card_sylow_five_eq_one hα G h5 h1)
   · right
-    rcases eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard hα G
-      (thirty_dvd_natCard_of_card_sylow_five_eq_six h5 h6) with hG | hG
+    -- Six Sylow `5`-subgroups of `G`, each of order `5`, force `30` to divide the order of `G`.
+    have h30 : 30 ∣ Nat.card G := by
+      have h := Sylow.mul_card_sylow_dvd_card (p := 5) h5
+      rwa [h6] at h
+    rcases eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard hα G h30 with hG | hG
     · simpa only using hG.symm.le
     · exact hG ▸ le_top
 
