@@ -22,9 +22,9 @@ connecting morphism of Happel's standard triangle
 This file constructs the connecting morphism, shows that it is independent of choices in the
 stable category, that the consecutive composites `Y ⟶ Z ⟶ ΣX` and `Z ⟶ ΣX ⟶ ΣY` vanish there,
 and that it is natural in morphisms of conflations. The last fact is packaged as a natural
-transformation between functors on the category of conflations. For the chosen suspension
-presentation itself the connecting morphism is the identity of `ΣX`, and for a split conflation it
-is zero.
+transformation between functors on the category of conflations. In the stable category, the
+connecting morphism of the chosen suspension presentation itself is the identity of `ΣX`, and that
+of a split conflation is zero.
 
 ## Main definitions
 
@@ -175,13 +175,13 @@ theorem projectiveStableFunctor_map_connectingMap_suspensionPresentation (X : C)
   rw [hE.projectiveStableFunctor_map_connectingMap_eq _ (𝟙 _) (𝟙 _) (Category.comp_id _)
     (by simp), CategoryTheory.Functor.map_id]
 
-/-- The connecting map of a split conflation is zero in the stable category. -/
-theorem projectiveStableFunctor_map_connectingMap_eq_zero_of_splitting (s : S.Splitting) :
+/-- The connecting map of a conflation whose deflation is a split epimorphism, in particular of
+a split conflation, is zero in the stable category. -/
+theorem projectiveStableFunctor_map_connectingMap_eq_zero_of_isSplitEpi [IsSplitEpi S.g] :
     E.projectiveStableFunctor.map (hE.connectingMap hS) = 0 := by
-  rw [hE.projectiveStableFunctor_map_connectingMap_eq hS (s.r ≫ hE.suspensionInflation S.X₁) 0
-    (by rw [s.f_r_assoc]) (by
-      rw [comp_zero, Category.assoc, (hE.suspensionPresentation S.X₁).zero, comp_zero]),
-    Functor.map_zero]
+  rw [← Category.id_comp (hE.connectingMap hS), ← IsSplitEpi.id S.g, Category.assoc,
+    Functor.map_comp, Functor.map_comp, projectiveStableFunctor_map_g_comp_connectingMap,
+    comp_zero]
 
 /-- The connecting maps of all conflations, as a natural transformation from the third term to
 the suspension of the first term, both taken in the stable category. -/
