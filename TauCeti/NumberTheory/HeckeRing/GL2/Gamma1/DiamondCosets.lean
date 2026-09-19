@@ -153,9 +153,9 @@ variable [NeZero N] (g₁ g₂ : ↥(Gamma0 N))
 /-- **The diamond basis elements multiply**: `[Γ₁(N) γ₁ Γ₁(N)] · [Γ₁(N) γ₂ Γ₁(N)] =
 [Γ₁(N) γ₁γ₂ Γ₁(N)]` in the Hecke ring, over any coefficient semiring.
 
-This is `HeckeCosetModule.single_mul_single_of_mem_normalizer` at the two `Γ₀(N)` matrices,
-which normalize `Γ₁(N)`; only the identification of the two products of monoid elements is left
-to do here. -/
+This is `HeckeCosetModule.single_mul_single_of_mem_normalizer` at the left `Γ₀(N)` matrix,
+which normalizes `Γ₁(N)`; that lemma asks nothing of the right factor, so only the
+identification of the two products of monoid elements is left to do here. -/
 @[simp] theorem single_diamondCosetGamma1_mul_single_diamondCosetGamma1 (R : Type*)
     [Semiring R] :
     HeckeCosetModule.single R (diamondCosetGamma1 N g₁) 1 *
@@ -170,7 +170,7 @@ to do here. -/
     congrArg (HeckeCoset.mk _ _) (Subtype.ext hprod)
   rw [← hcoset]
   exact HeckeCosetModule.single_mul_single_of_mem_normalizer R
-    (mapGL_mem_normalizer_Gamma1_map ℚ g₁) (mapGL_mem_normalizer_Gamma1_map ℚ g₂)
+    (mapGL_mem_normalizer_Gamma1_map ℚ g₁)
 
 end Product
 

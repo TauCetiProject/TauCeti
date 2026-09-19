@@ -76,26 +76,6 @@ instance congruenceSubgroup_finiteIndex (𝔪 : Modulus K) :
     rw [← coe_residueHom 𝔪 ⟨x, hx⟩, MonoidHom.mem_ker.mp h1, Units.val_one]
   exact Subgroup.finiteIndex_of_le hle
 
-/-- The image of an integer unit is a unit at every finite place, hence lies in
-`primeToSubgroup 𝔪`. -/
-private theorem unitsMap_mem_primeToSubgroup (𝔪 : Modulus K) (u : (𝓞 K)ˣ) :
-    Units.map (algebraMap (𝓞 K) K).toMonoidHom u ∈ primeToSubgroup 𝔪 := by
-  refine mem_primeToSubgroup.mpr fun v _ ↦ ?_
-  rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, valuation_of_algebraMap]
-  refine intValuation_eq_one_iff.mpr fun hu ↦ v.isPrime.ne_top ?_
-  exact Ideal.eq_top_of_isUnit_mem _ hu u.isUnit
-
-/-- The inclusion of the integer units into the elements that are units at the finite part. -/
-private noncomputable def unitsToPrimeToSubgroup (𝔪 : Modulus K) :
-    (𝓞 K)ˣ →* primeToSubgroup 𝔪 :=
-  MonoidHom.codRestrict (Units.map (algebraMap (𝓞 K) K).toMonoidHom) _
-    (unitsMap_mem_primeToSubgroup 𝔪)
-
-@[simp] private theorem coe_unitsToPrimeToSubgroup (𝔪 : Modulus K) (u : (𝓞 K)ˣ) :
-    ((unitsToPrimeToSubgroup 𝔪 u : primeToSubgroup 𝔪) : Kˣ) =
-      Units.map (algebraMap (𝓞 K) K).toMonoidHom u := by
-  rw [unitsToPrimeToSubgroup, MonoidHom.codRestrict_apply]
-
 /-- **The units congruent to one modulo `𝔪` have finite index in `(𝓞 K)ˣ`.**  This is the unit
 correction in the ray class number formula, and the input that makes the implied constants of the
 ray-class ideal count uniform in the class. -/

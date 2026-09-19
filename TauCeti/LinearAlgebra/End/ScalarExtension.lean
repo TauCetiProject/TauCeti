@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.TensorProduct.Basic
@@ -36,6 +37,8 @@ morphism of value algebras; the two are compatible in
 * `Module.End.mapValue`: the transported endomorphism.
 * `Module.End.mapValue_comp_rTensor`: the defining transport square.
 * `Module.End.eq_mapValue`: the transport square characterizes the transport.
+* `Module.End.mapValue_algebraMap`: transport preserves scalar endomorphisms.
+* `Module.End.mapValue_aeval`: polynomial evaluation commutes with transport.
 * `Module.End.mapValueRingHom`: the transport as a ring homomorphism.
 * `Module.End.mapValueGL`: the transport on general linear groups.
 * `Module.End.baseChange_comp_mapValue`: transport preserves naturality in the module.
@@ -90,6 +93,7 @@ end TauCeti
 namespace Module.End
 
 open TauCeti
+open Polynomial
 
 variable {R A B C M N : Type*} [CommSemiring R]
 variable [CommSemiring A] [Algebra R A] [CommSemiring B] [Algebra R B]
@@ -176,6 +180,16 @@ theorem mapValue_add (f : A →ₐ[R] B) (φ ψ : Module.End A (A ⊗[R] M)) :
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
     LinearMap.add_apply, mapValue_rTensor_apply, map_add]
 
+/-- Scalar extension carries scalar endomorphisms to the corresponding scalar endomorphisms. -/
+@[simp]
+theorem mapValue_algebraMap (f : A →ₐ[R] B) (a : A) :
+    mapValue f (algebraMap A (Module.End A (A ⊗[R] M)) a) =
+      algebraMap B (Module.End B (B ⊗[R] M)) (f a) := by
+  apply TensorProduct.AlgebraTensorModule.ext
+  intro b m
+  simp only [mapValue_tmul, Module.algebraMap_end_apply, LinearMap.rTensor_tmul,
+    AlgHom.toLinearMap_apply, TensorProduct.smul_tmul', smul_eq_mul, mul_one, mul_comm]
+
 /-- Base change of endomorphisms of a scalar extension, as a ring homomorphism. -/
 noncomputable def mapValueRingHom (f : A →ₐ[R] B) :
     Module.End A (A ⊗[R] M) →+* Module.End B (B ⊗[R] M) where
@@ -190,6 +204,20 @@ noncomputable def mapValueRingHom (f : A →ₐ[R] B) :
 theorem mapValueRingHom_apply (f : A →ₐ[R] B) (φ : Module.End A (A ⊗[R] M)) :
     mapValueRingHom f φ = mapValue f φ := by
   simp [mapValueRingHom]
+
+/-- Evaluating a polynomial at an endomorphism and then extending scalars is the same as mapping
+the polynomial coefficients and evaluating at the extended endomorphism. -/
+@[simp]
+theorem mapValue_aeval (f : A →ₐ[R] B) (φ : Module.End A (A ⊗[R] M)) (p : A[X]) :
+    mapValue f (aeval φ p) = aeval (mapValue f φ) (p.map f.toRingHom) := by
+  have hcomp :
+      (algebraMap B (Module.End B (B ⊗[R] M))).comp f.toRingHom =
+        (mapValueRingHom f).comp
+          (algebraMap A (Module.End A (A ⊗[R] M))) := by
+    ext a
+    simp
+  simpa only [mapValueRingHom_apply] using
+    Polynomial.map_aeval_eq_aeval_map hcomp p φ
 
 /-- Base change of automorphisms of a scalar extension, as a group homomorphism. -/
 noncomputable def mapValueGL (f : A →ₐ[R] B) :

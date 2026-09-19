@@ -88,19 +88,32 @@ section ModuleEnd
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 
-/-- Every divided power of a square-zero endomorphism preserves an integral submodule once the
+/-- Divided powers of a nilpotent endomorphism preserve a set containing zero if all terms below
+the nilpotency bound preserve it. -/
+theorem dividedPower_apply_mem_of_pow_eq_zero
+    (f : Module.End ℚ V) (N : Set V) (hzero : 0 ∈ N) (d : ℕ) (hf : f ^ d = 0)
+    (hN : ∀ k < d, ∀ {v : V}, v ∈ N → dividedPower k f v ∈ N)
+    (n : ℕ) {v : V} (hv : v ∈ N) : dividedPower n f v ∈ N := by
+  by_cases hn : n < d
+  · exact hN n hn hv
+  · rw [dividedPower_def, pow_eq_zero_of_le (Nat.le_of_not_gt hn) hf, smul_zero,
+      LinearMap.zero_apply]
+    exact hzero
+
+/-- Every divided power of a square-zero endomorphism preserves an additive subgroup once the
 endomorphism itself does. -/
 theorem dividedPower_apply_mem_of_pow_two_eq_zero
-    (f : Module.End ℚ V) (N : Submodule ℤ V) (hf : f ^ 2 = 0)
+    (f : Module.End ℚ V) (N : AddSubgroup V) (hf : f ^ 2 = 0)
     (hN : ∀ {v : V}, v ∈ N → f v ∈ N) (n : ℕ) {v : V} (hv : v ∈ N) :
     dividedPower n f v ∈ N := by
-  match n with
-  | 0 => rwa [dividedPower_zero, Module.End.one_apply]
-  | 1 => rw [dividedPower_one]; exact hN hv
-  | n + 2 =>
-      rw [dividedPower_def, pow_eq_zero_of_le (m := 2) (by omega) hf, smul_zero,
-        LinearMap.zero_apply]
-      exact zero_mem _
+  apply dividedPower_apply_mem_of_pow_eq_zero f N (zero_mem N) 2 hf _ n hv
+  intro k hk
+  have hk' : k = 0 ∨ k = 1 := by omega
+  rcases hk' with rfl | rfl
+  · intro v hv
+    simpa using hv
+  · intro v hv
+    simpa using hN hv
 
 end ModuleEnd
 

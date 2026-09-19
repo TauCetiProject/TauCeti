@@ -11,7 +11,14 @@ import Mathlib.NumberTheory.RamificationInertia.Galois
 import TauCeti.NumberTheory.NumberField.AutomorphismAction
 
 /-!
-# Ideals over the field fixed by an automorphism
+# Ideals over a fixed field
+
+Let `H` be a subgroup of `Gal(L/K)` and `E = L ^ H`.  The Galois correspondence identifies `H` with
+`Gal(L/E)` without moving points, hence without moving ideals: an element of `H` and its image in
+`Gal(L/E)` act alike on the ideals of `𝓞 L`.  The stabilizer of an ideal `Q` in `Gal(L/E)`
+therefore corresponds to `H ⊓ D(Q)`, with `D(Q)` the stabilizer of `Q` in `Gal(L/K)`; in
+particular the two have the same number of elements.  The same holds for the inertia group
+`I(Q)`, because the two bundlings of an element of `H` act alike on `𝓞 L` itself.
 
 Let `σ` be an automorphism of `L` over `K` of finite order fixing an ideal `Q` of `𝓞 L`.  Then
 every automorphism of `L` over the fixed field `L ^ ⟨σ⟩` fixes `Q`, because `Gal(L / L ^ ⟨σ⟩)` is
@@ -29,6 +36,13 @@ Uniqueness is not inertness — it excludes splitting, not ramification.
 ## Main results
 
 * `AlgEquiv.toFixedFieldAlgEquiv_smul_ideal`: the two bundlings of `σ` act alike on ideals.
+* `Subgroup.subgroupEquivAlgEquiv_smul_ideal`: the Galois correspondence `H ≃* Gal(L / L ^ H)`
+  does not change how an element acts on ideals.
+* `Ideal.comap_stabilizer_fixedField_eq_subgroupOf`: under that correspondence the stabilizer of
+  `Q` in `Gal(L / L ^ H)` corresponds to `H ⊓ D(Q)`.
+* `Ideal.card_stabilizer_fixedField_eq_card_inf`: so the two have the same number of elements.
+* `Ideal.comap_inertia_fixedField_eq_subgroupOf`, `Ideal.card_inertia_fixedField_eq_card_inf`: the
+  same two statements for the inertia group of `Q` in place of its stabilizer.
 * `NumberField.stabilizer_fixedField_zpowers_eq_top`: over `L ^ ⟨σ⟩`, every automorphism fixes `Q`.
 * `Ideal.eq_of_smul_eq_of_liesOver_under_fixedField`: `Q` is the only prime of `𝓞 L` lying over
   its contraction to `𝓞 (L ^ ⟨σ⟩)`.
@@ -67,6 +81,29 @@ theorem toFixedFieldAlgEquiv_smul_ideal (σ : L ≃ₐ[K] L) (Q : Ideal (𝓞 L)
     toFixedFieldAlgEquiv_apply]
 
 end AlgEquiv
+
+namespace Subgroup
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L]
+
+/-- **The Galois correspondence does not move points.**  For a subgroup `H` of `Gal(L/K)`, the
+automorphism of `L` over `L ^ H` attached to `τ ∈ H` is `τ` itself on elements. -/
+@[simp]
+theorem coe_subgroupEquivAlgEquiv (H : Subgroup (L ≃ₐ[K] L)) (τ : ↥H) (x : L) :
+    subgroupEquivAlgEquiv H τ x = (τ : L ≃ₐ[K] L) x :=
+  rfl
+
+/-- **The Galois correspondence does not move ideals.**  For a subgroup `H` of `Gal(L/K)`, the
+automorphism of `L` over `L ^ H` attached to `τ ∈ H` acts on the ideals of `𝓞 L` exactly as `τ`
+acts over `K`. -/
+@[simp]
+theorem subgroupEquivAlgEquiv_smul_ideal (H : Subgroup (L ≃ₐ[K] L)) (τ : ↥H) (Q : Ideal (𝓞 L)) :
+    subgroupEquivAlgEquiv H τ • Q = (τ : L ≃ₐ[K] L) • Q := by
+  rw [Ideal.pointwise_smul_def, Ideal.pointwise_smul_def]
+  refine congrArg (Ideal.map · Q) (RingHom.ext fun y ↦ NumberField.RingOfIntegers.ext ?_)
+  exact coe_subgroupEquivAlgEquiv H τ (y : L)
+
+end Subgroup
 
 namespace NumberField
 
@@ -118,5 +155,71 @@ theorem eq_of_smul_eq_of_liesOver_under_fixedField {σ : L ≃ₐ[K] L} {Q : Ide
   rw [← hτ]
   exact MulAction.mem_stabilizer_iff.mp
     (NumberField.stabilizer_fixedField_zpowers_eq_top hQ ▸ Subgroup.mem_top τ)
+
+section FixedFieldSubgroups
+
+omit [NumberField K] [NumberField L]
+variable [FiniteDimensional K L]
+
+/-- **The decomposition group over a fixed field corresponds to the intersection.**  For a subgroup
+`H` of `Gal(L/K)` and `E = L ^ H`, the Galois correspondence `H ≃* Gal(L/E)` pulls the stabilizer
+of `Q` in `Gal(L/E)` back to the intersection of `H` with the stabilizer of `Q` in `Gal(L/K)`,
+read inside `H`. -/
+@[simp]
+theorem comap_stabilizer_fixedField_eq_subgroupOf (Q : Ideal (𝓞 L)) (H : Subgroup (L ≃ₐ[K] L)) :
+    (MulAction.stabilizer (L ≃ₐ[↥(fixedField H)] L) Q).comap
+        (subgroupEquivAlgEquiv H : ↥H →* (L ≃ₐ[↥(fixedField H)] L))
+      = (MulAction.stabilizer (L ≃ₐ[K] L) Q).subgroupOf H := by
+  ext τ
+  simp only [Subgroup.mem_comap, MulAction.mem_stabilizer_iff, Subgroup.mem_subgroupOf]
+  exact Eq.congr_left (H.subgroupEquivAlgEquiv_smul_ideal τ Q)
+
+/-- A subgroup of `Gal(L / L ^ H)` whose pullback to `H` is `B.subgroupOf H` has as many elements as
+`B ⊓ H`. -/
+private theorem card_eq_card_inf_of_comap_eq (H : Subgroup (L ≃ₐ[K] L))
+    {A : Subgroup (L ≃ₐ[↥(fixedField H)] L)} {B : Subgroup (L ≃ₐ[K] L)}
+    (h : A.comap (subgroupEquivAlgEquiv H : ↥H →* (L ≃ₐ[↥(fixedField H)] L)) = B.subgroupOf H) :
+    Nat.card A = Nat.card (B ⊓ H : Subgroup (L ≃ₐ[K] L)) := by
+  rw [← Nat.card_congr (Subgroup.subgroupOfEquivOfLe (inf_le_right : B ⊓ H ≤ H)).toEquiv,
+    Subgroup.inf_subgroupOf_right, ← h, Subgroup.comap_equiv_eq_map_symm]
+  exact Nat.card_congr
+    (Subgroup.equivMapOfInjective _ _ (subgroupEquivAlgEquiv H).symm.injective).toEquiv
+
+/-- **The decomposition group over a fixed field has the size of the intersection.**  For a
+subgroup `H` of `Gal(L/K)` and `E = L ^ H`, the stabilizer of `Q` in `Gal(L/E)` has as many
+elements as the intersection of `H` with the stabilizer of `Q` in `Gal(L/K)`. -/
+-- Deliberately not `@[simp]`: `MulAction.mem_stabilizer_iff` and `Nat.card_eq_fintype_card`
+-- rewrite this left-hand side further, so it is not in `simp`-normal form and the rule would
+-- never fire. The simp-NF linter rejects the attribute.
+theorem card_stabilizer_fixedField_eq_card_inf (Q : Ideal (𝓞 L)) (H : Subgroup (L ≃ₐ[K] L)) :
+    Nat.card (MulAction.stabilizer (L ≃ₐ[↥(fixedField H)] L) Q)
+      = Nat.card ((MulAction.stabilizer (L ≃ₐ[K] L) Q ⊓ H : Subgroup (L ≃ₐ[K] L))) :=
+  card_eq_card_inf_of_comap_eq H (comap_stabilizer_fixedField_eq_subgroupOf Q H)
+
+/-- **The inertia group over a fixed field corresponds to the intersection.**  For a subgroup `H`
+of `Gal(L/K)` and `E = L ^ H`, the Galois correspondence `H ≃* Gal(L/E)` pulls the inertia group
+of `Q` in `Gal(L/E)` back to the intersection of `H` with the inertia group of `Q` in `Gal(L/K)`,
+read inside `H`. -/
+@[simp]
+theorem comap_inertia_fixedField_eq_subgroupOf (Q : Ideal (𝓞 L)) (H : Subgroup (L ≃ₐ[K] L)) :
+    (Q.inertia (L ≃ₐ[↥(fixedField H)] L)).comap
+        (subgroupEquivAlgEquiv H : ↥H →* (L ≃ₐ[↥(fixedField H)] L))
+      = (Q.inertia (L ≃ₐ[K] L)).subgroupOf H := by
+  ext τ
+  simp only [Subgroup.mem_comap, Ideal.mem_inertia, Subgroup.mem_subgroupOf]
+  -- the two bundlings of `τ` act alike on `𝓞 L`, so they satisfy the same congruences mod `Q`
+  have (x : 𝓞 L) : subgroupEquivAlgEquiv H τ • x = (τ : L ≃ₐ[K] L) • x :=
+    NumberField.RingOfIntegers.ext (by simp)
+  simp [this]
+
+/-- **The inertia group over a fixed field has the size of the intersection.**  For a subgroup
+`H` of `Gal(L/K)` and `E = L ^ H`, the inertia group of `Q` in `Gal(L/E)` has as many elements as
+the intersection of `H` with the inertia group of `Q` in `Gal(L/K)`. -/
+theorem card_inertia_fixedField_eq_card_inf (Q : Ideal (𝓞 L)) (H : Subgroup (L ≃ₐ[K] L)) :
+    Nat.card (Q.inertia (L ≃ₐ[↥(fixedField H)] L))
+      = Nat.card ((Q.inertia (L ≃ₐ[K] L) ⊓ H : Subgroup (L ≃ₐ[K] L))) :=
+  card_eq_card_inf_of_comap_eq H (comap_inertia_fixedField_eq_subgroupOf Q H)
+
+end FixedFieldSubgroups
 
 end Ideal

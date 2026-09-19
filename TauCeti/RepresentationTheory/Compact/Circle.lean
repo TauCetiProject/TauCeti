@@ -56,6 +56,8 @@ theory's normalization, not new API, and naming them would duplicate
 
 * `TauCeti.haarProb_eq_haarAddCircle`: the normalized Haar measure of the circle group is Mathlib's
   `AddCircle.haarAddCircle`.
+* `TauCeti.measurePreserving_ofAdd_haarAddCircle`: `Multiplicative.ofAdd` carries
+  `AddCircle.haarAddCircle` to that normalized Haar measure.
 * `TauCeti.isUnitary_fourierRep`, `TauCeti.isIrreducible_fourierRep`: each `fourierRep T n` is a
   unitary irreducible representation.
 * `TauCeti.character_fourierRep`: the character of `fourierRep T n` is `fourier n`.
@@ -250,6 +252,14 @@ theorem haarProb_eq_haarAddCircle :
     haarProb (Multiplicative (AddCircle T)) = haarAddCircle :=
   (eq_haarProb_of_isHaarMeasure_of_isProbabilityMeasure
     (G := Multiplicative (AddCircle T)) haarAddCircle).symm
+
+/-- `Multiplicative.ofAdd` carries Mathlib's Haar measure on `AddCircle T` to the normalized Haar
+measure of the circle group, so it transports `L²` of the circle group to `L²(AddCircle T)`. -/
+theorem measurePreserving_ofAdd_haarAddCircle :
+    MeasurePreserving (Multiplicative.ofAdd : AddCircle T → Multiplicative (AddCircle T))
+      haarAddCircle (haarProb (Multiplicative (AddCircle T))) := by
+  rw [haarProb_eq_haarAddCircle]
+  exact MeasurePreserving.id _
 
 /-- **The `L²` inner product of two Fourier characters is Mathlib's Fourier orthonormality.** Both
 sides are the Haar integral of `fourier n · conj (fourier m)`; the left is that integral written

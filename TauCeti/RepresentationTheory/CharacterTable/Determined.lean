@@ -14,8 +14,8 @@ import TauCeti.RingTheory.Semisimple.Multiplicity
 /-!
 # Finite-group representations are determined by their characters
 
-For a finite group over an algebraically closed field of characteristic zero, two
-finite-dimensional representations with the same character are equivalent. Maschke's theorem
+For a finite group over a field of characteristic zero, two finite-dimensional representations
+with the same character are equivalent. Maschke's theorem
 makes their group-algebra modules semisimple, while the character pairing identifies the
 dimension of every intertwiner space. The reconstruction theorem in
 `TauCeti/RingTheory/Semisimple/Multiplicity.lean` then shows that the modules are equivalent.
@@ -63,11 +63,11 @@ private def linearMapCongrLeft {k A S T N : Type*} [CommSemiring k] [Semiring A]
 
 namespace Representation
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k] [CharZero k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [CharZero k]
 variable {V W : Type w} [AddCommGroup V] [Module k V] [FiniteDimensional k V]
   [AddCommGroup W] [Module k W] [FiniteDimensional k W]
 
-/-- **For a finite group over an algebraically closed field of characteristic zero,
+/-- **For a finite group over a field of characteristic zero,
 finite-dimensional representations are determined by their characters.** -/
 theorem _root_.Representation.nonempty_equiv_of_character_eq (ρ : Representation k G V)
     (σ : Representation k G W) (hchar : ρ.character = σ.character) :
@@ -110,10 +110,10 @@ theorem _root_.Representation.nonempty_equiv_of_character_eq (ρ : Representatio
 
 end Representation
 
-/-- **For a finite group over an algebraically closed field of characteristic zero, objects of
+/-- **For a finite group over a field of characteristic zero, objects of
 `FDRep` are determined by their characters.** -/
 theorem _root_.FDRep.nonempty_iso_of_character_eq {k : Type u} {G : Type v}
-    [Field k] [Group G] [Finite G] [IsAlgClosed k] [CharZero k] (X Y : FDRep k G)
+    [Field k] [Group G] [Finite G] [CharZero k] (X Y : FDRep k G)
     (hchar : X.character = Y.character) : Nonempty (X ≅ Y) :=
   nonempty_fdRepIso_iff.mpr
     (Representation.nonempty_equiv_of_character_eq X.ρ Y.ρ hchar)

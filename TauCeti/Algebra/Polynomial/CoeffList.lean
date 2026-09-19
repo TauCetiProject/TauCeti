@@ -270,6 +270,16 @@ theorem X_pow_add_ofCoeffList_tail {l : List R} (hhead : l.headD 0 ≠ 0)
     rw [← leadingCoeff_ofCoeffList (Or.inr hhead), hmonic.leadingCoeff]
   rw [ofCoeffList_eq_headD_add_tail hl, ha, map_one, one_mul]
 
+/-- Scaling every coefficient on the left scales the polynomial. -/
+@[simp]
+theorem ofCoeffList_map_mul_left (c : R) (l : List R) :
+    ofCoeffList (l.map (c * ·)) = C c * ofCoeffList l := by
+  induction l using List.reverseRecOn with
+  | nil => simp
+  | append_singleton l a ih =>
+    rw [List.map_append, List.map_cons, List.map_nil, ofCoeffList_concat, ofCoeffList_concat, ih,
+      C_mul, mul_add, mul_assoc]
+
 end Semiring
 
 section Ring

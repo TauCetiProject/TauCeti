@@ -132,7 +132,7 @@ theorem fiberActionFunctor_obj_mulAction (p : CoveringSpace X) :
 @[simp]
 theorem fiberActionFunctor_map_hom {p q : CoveringSpace X} (f : p ⟶ q) :
     ((fiberActionFunctor x₀).map f).hom =
-      ↾(IsCoveringMap.fiberMap f.hom.left.hom (proj_hom_comp_hom_left_hom f) x₀) :=
+      ↾(Function.fiberMap f.hom.left.hom (proj_hom_comp_hom_left_hom f) x₀) :=
   IsCoveringMap.monodromyNatTrans_app p.isCoveringMap_proj q.isCoveringMap_proj
     f.hom.left.hom (proj_hom_comp_hom_left_hom f) x₀
 

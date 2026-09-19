@@ -37,6 +37,8 @@ theory feeds Deligne's bigrading and the strictness theorem.
   Hodge filtration.
 * `TauCeti.Hodge.MixedHodgeStructure.Hom.commutes_conj`: the complex action commutes with lattice
   conjugation.
+* `TauCeti.Hodge.MixedHodgeStructure.Hom.ker_toLinearMap` and `…range_toLinearMap`: the kernel and
+  the range of the complex action are the complexifications of the rational kernel and range.
 * `TauCeti.Hodge.MixedHodgeStructure.Hom.gradedMap`: the induced map on the rational graded piece
   `grᵂ_k`.
 * `TauCeti.Hodge.MixedHodgeStructure.Hom.gradedHom`: that induced map as a morphism of the pure
@@ -171,6 +173,25 @@ theorem map_conjF_le (f : Hom source target) (p : ℤ) :
 theorem map_mem_conjF (f : Hom source target) (p : ℤ) {x : Vℂ}
     (hx : x ∈ source.conjF p) : f x ∈ target.conjF p :=
   f.map_conjF_le p ⟨x, hx, rfl⟩
+
+/-- The kernel of the complex action of a morphism of mixed Hodge structures is the
+complexification of the kernel of its rational map. -/
+@[simp]
+theorem ker_toLinearMap (f : Hom source target) :
+    LinearMap.ker f.toLinearMap =
+      rationalToComplexSubmodule hℚ hℂ (LinearMap.ker f.toRatLinearMap) := by
+  rw [toLinearMap_def, ker_rationalMapToComplex]
+
+/-- The range of the complex action of a morphism of mixed Hodge structures is the
+complexification of the range of its rational map.
+
+Not `@[simp]`: it fires inside the left-hand sides of the strictness theorems
+`range_inf_F_eq_map_F` and `range_inf_WC_eq_map_WC`, leaving those statements out of simp normal
+form. -/
+theorem range_toLinearMap (f : Hom source target) :
+    LinearMap.range f.toLinearMap =
+      rationalToComplexSubmodule h'ℚ h'ℂ (LinearMap.range f.toRatLinearMap) := by
+  rw [toLinearMap_def, range_rationalMapToComplex]
 
 /-- The identity morphism of a mixed Hodge structure. -/
 noncomputable def id (source : MixedHodgeStructure hℚ hℂ) : Hom source source where

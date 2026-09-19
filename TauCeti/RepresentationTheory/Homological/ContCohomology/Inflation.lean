@@ -14,8 +14,8 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Invariants
 Inflation is the third named instance of the compatible-pair pullback on the explicit low-degree
 complex: for a normal subgroup `N` of a topological group `G` it is the pullback along the
 quotient homomorphism `G → G ⧸ N` paired with the inclusion `M ^ N ↪ M` of the invariants, which
-is equivariant along that homomorphism. This file defines inflation in degrees `1` and `2` and
-proves the exactness of
+is equivariant along that homomorphism. This file defines inflation in degrees `0`, `1`, and `2`.
+In degree one it proves the exactness of
 
 ```text
 0 → H¹(G ⧸ N, M ^ N) → H¹(G, M) → H¹(N, M)
@@ -27,11 +27,14 @@ at its two nodes.
 
 * `TauCeti.ContCohomology.explicitInfl0`, `explicitInfl1`, and `explicitInfl2`: inflation on the
   explicit model in degrees `0`, `1`, and `2`.
-* `TauCeti.ContCohomology.descendZ1`: the descent to `G ⧸ N` of a continuous `1`-cocycle vanishing
-  on `N`.
+* `TauCeti.ContCohomology.explicitInfl0Equiv`: the additive equivalence between degree-zero
+  cohomology before and after inflation.
+* `TauCeti.ContCohomology.descendZ1` and `descendZ2`: descent of continuous cocycles to `G ⧸ N`.
 
 ## Main statements
 
+* `TauCeti.ContCohomology.explicitInfl0_injective` and `explicitInfl0_surjective`: inflation in
+  degree zero is bijective.
 * `TauCeti.ContCohomology.explicitRes1_comp_explicitInfl1` and
   `TauCeti.ContCohomology.explicitRes2_comp_explicitInfl2`: restricting an inflated class back to
   `N` gives zero.
@@ -41,10 +44,10 @@ at its two nodes.
 * `TauCeti.ContCohomology.explicitInfl1_injective`: inflation is injective in degree `1`.
 * `TauCeti.ContCohomology.explicitInfRes_exact`: the image of inflation is exactly the kernel of
   restriction in degree `1`.
-* `TauCeti.ContCohomology.coe_descendZ1_apply_mk`: the descent of a cocycle takes on the coset of
-  `g` the value the cocycle takes at `g`.
-* `TauCeti.ContCohomology.explicitInfl1_descendZ1`: a cocycle vanishing on `N` is the inflation of
-  its descent.
+* `TauCeti.ContCohomology.coe_descendZ1_apply_mk` and `coe_descendZ2_apply_mk`: the descents agree
+  with the original cocycles on quotient representatives.
+* `TauCeti.ContCohomology.explicitInfl1_descendZ1` and `explicitInfl2_descendZ2`: inflating the
+  descended cocycles returns their original classes.
 
 ## Implementation notes
 
@@ -140,6 +143,43 @@ def explicitInfl0 : H0 (G ⧸ N) (FixedPoints.addSubgroup N M) →+ H0 G M :=
 theorem coe_explicitInfl0 (m : H0 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
     (explicitInfl0 G M N m : M) = (m : M) :=
   coe_explicitMap0 _ _ _ _ _ m
+
+/-- Degree-zero inflation is injective. In fact it is an equivalence, as packaged by
+`TauCeti.ContCohomology.explicitInfl0Equiv`. -/
+theorem explicitInfl0_injective : Function.Injective (explicitInfl0 G M N) := by
+  intro x y h
+  apply Subtype.ext
+  apply Subtype.ext
+  simpa only [coe_explicitInfl0] using congrArg Subtype.val h
+
+/-- Degree-zero inflation is surjective: a `G`-invariant element belongs to `M^N`, and remains
+fixed under the quotient action. -/
+theorem explicitInfl0_surjective : Function.Surjective (explicitInfl0 G M N) := by
+  intro m
+  have hm : ∀ g : G, g • (m : M) = m :=
+    (FixedPoints.mem_addSubgroup G M (m : M)).1 m.2
+  let n : FixedPoints.addSubgroup N M :=
+    ⟨m, (FixedPoints.mem_addSubgroup N M (m : M)).2 fun g ↦ hm g⟩
+  have hn : n ∈ H0 (G ⧸ N) (FixedPoints.addSubgroup N M) :=
+    (FixedPoints.mem_addSubgroup (G ⧸ N) (FixedPoints.addSubgroup N M) n).2 fun q ↦ by
+      apply Subtype.ext
+      induction q using QuotientGroup.induction_on with
+      | H g => exact hm g
+  refine ⟨⟨n, hn⟩, Subtype.ext ?_⟩
+  exact coe_explicitInfl0 G M N ⟨n, hn⟩
+
+/-- Inflation identifies `H⁰(G ⧸ N, M^N)` with `H⁰(G, M)`. This is the degree-zero
+edge case of inflation: invariance under the quotient action is exactly invariance under `G`. -/
+noncomputable def explicitInfl0Equiv :
+    H0 (G ⧸ N) (FixedPoints.addSubgroup N M) ≃+ H0 G M :=
+  AddEquiv.ofBijective (explicitInfl0 G M N)
+    ⟨explicitInfl0_injective G M N, explicitInfl0_surjective G M N⟩
+
+/-- The additive equivalence in degree zero has forward map `explicitInfl0`. -/
+@[simp]
+theorem explicitInfl0Equiv_toAddMonoidHom :
+    (explicitInfl0Equiv G M N :
+      H0 (G ⧸ N) (FixedPoints.addSubgroup N M) →+ H0 G M) = explicitInfl0 G M N := (rfl)
 
 end DegreeZero
 
@@ -375,6 +415,74 @@ theorem explicitRes2_comp_explicitInfl2 :
     simp only [ContinuousMonoidHom.subgroupSubtype_apply, ContinuousMonoidHom.quotientMk_apply,
       quotientMk_coe_eq_one, AddMonoidHom.id_apply, AddSubgroup.coe_subtype, ← hm₀, hfix]
     abel
+
+variable {G M N}
+
+omit [ContinuousSMul G M] [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
+/-- Descend a continuous `2`-cocycle which is constant on right `N`-cosets in both variables and
+whose values are fixed by `N` to a cocycle on `G ⧸ N` with values in `M ^ N`. -/
+def descendZ2 (z : Z2 G M)
+    (hright : ∀ (g h : G) (n n' : N),
+      (z : G × G → M) (g * n, h * n') = (z : G × G → M) (g, h))
+    (hfixed : ∀ (n : N) (g h : G),
+      n • (z : G × G → M) (g, h) = (z : G × G → M) (g, h)) :
+    Z2 (G ⧸ N) (FixedPoints.addSubgroup N M) :=
+  ⟨fun q => Quotient.liftOn₂' q.1 q.2
+      (fun g h => (⟨(z : G × G → M) (g, h),
+        (FixedPoints.mem_addSubgroup N M _).2 fun n => hfixed n g h⟩ :
+          FixedPoints.addSubgroup N M))
+      fun a b a' b' ha hb => Subtype.ext <| by
+        simpa using (hright a b
+          ⟨a⁻¹ * a', QuotientGroup.leftRel_apply.1 ha⟩
+          ⟨b⁻¹ * b', QuotientGroup.leftRel_apply.1 hb⟩).symm,
+    mem_Z2_iff.2 ⟨
+      ((QuotientGroup.isOpenQuotientMap_mk.prodMap
+          QuotientGroup.isOpenQuotientMap_mk).isQuotientMap.continuous_iff.2 <| by
+        simpa [Function.comp_def] using ((mem_Z2_iff.1 z.2).1).subtype_mk
+          (fun p => (FixedPoints.mem_addSubgroup N M _).2 fun n => hfixed n p.1 p.2)),
+      fun q q' q'' => by
+        induction q using QuotientGroup.induction_on with
+        | H g =>
+          induction q' using QuotientGroup.induction_on with
+          | H h =>
+            induction q'' using QuotientGroup.induction_on with
+            | H j =>
+              refine Subtype.ext ?_
+              simp only [AddSubgroup.coe_add, coe_quotient_smul_fixedPoints_addSubgroup,
+                coe_smul_fixedPoints_addSubgroup, Quotient.liftOn₂'_mk'']
+              exact (mem_Z2_iff.1 z.2).2 g h j⟩⟩
+
+omit [ContinuousSMul G M] [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
+/-- The descended cocycle evaluates on quotient representatives as the original cocycle. -/
+@[simp]
+theorem coe_descendZ2_apply_mk (z : Z2 G M)
+    (hright : ∀ (g h : G) (n n' : N),
+      (z : G × G → M) (g * n, h * n') = (z : G × G → M) (g, h))
+    (hfixed : ∀ (n : N) (g h : G),
+      n • (z : G × G → M) (g, h) = (z : G × G → M) (g, h))
+    (g h : G) :
+    ((descendZ2 z hright hfixed :
+      (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (g, h) : M) =
+      (z : G × G → M) (g, h) := by
+  simp only [descendZ2, Quotient.liftOn₂'_mk'']
+
+/-- Inflating the descent of a continuous `2`-cocycle returns the original class. -/
+theorem explicitInfl2_descendZ2 (z : Z2 G M)
+    (hright : ∀ (g h : G) (n n' : N),
+      (z : G × G → M) (g * n, h * n') = (z : G × G → M) (g, h))
+    (hfixed : ∀ (n : N) (g h : G),
+      n • (z : G × G → M) (g, h) = (z : G × G → M) (g, h)) :
+    explicitInfl2 G M N
+        (descendZ2 z hright hfixed : H2 (G ⧸ N) (FixedPoints.addSubgroup N M)) =
+      (z : H2 G M) := by
+  rw [explicitInfl2_mk]
+  refine congrArg (fun w : Z2 G M => (w : H2 G M)) (Subtype.ext (funext fun p => ?_))
+  rw [cocyclesMap2_apply, ContinuousMonoidHom.quotientMk_apply, AddSubgroup.coe_subtype]
+  -- The preceding rewrite leaves quotient representatives under the fixed-point subtype
+  -- coercion; expose that evaluation so the representative computation lemma applies.
+  change ((descendZ2 z hright hfixed :
+    (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (p.1, p.2) : M) = _
+  exact coe_descendZ2_apply_mk z hright hfixed p.1 p.2
 
 end DegreeTwo
 

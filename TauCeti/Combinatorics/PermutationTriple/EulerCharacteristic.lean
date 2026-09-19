@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.DisjointSum
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import TauCeti.GroupTheory.Perm.SwapFactors
 import Mathlib.Logic.Equiv.Fin.Rotate
 
 /-!
@@ -28,6 +30,12 @@ component contributes a cycle of its own.
 * `TauCeti.PermutationTriple.eulerChar_disjointSum`: the Euler characteristic is additive over
   `TauCeti.PermutationTriple.disjointSum`, as an Euler characteristic of a disjoint union should
   be.
+* `TauCeti.PermutationTriple.eulerChar_le_two_mul_card_monodromyOrbits`: the Euler characteristic
+  is at most twice the number of monodromy orbits.
+* `TauCeti.PermutationTriple.IsConnected.eulerChar_le_two`: a connected triple has Euler
+  characteristic at most two, proved combinatorially from transposition factorizations.
+* `TauCeti.PermutationTriple.genus`: the genus derived from the Euler characteristic, with its
+  integer characterizations for connected triples.
 * `TauCeti.PermutationTriple.eulerChar_smul`,
   `TauCeti.PermutationTriple.eulerChar_eq_of_equivalent`: it is an invariant of the isomorphism
   class of a triple, and `TauCeti.PermutationTriple.eulerChar_transport` says it does not depend
@@ -117,6 +125,144 @@ divisibility needed to define the genus. -/
 theorem two_dvd_two_sub_eulerChar (t : PermutationTriple n) : (2 : ℤ) ∣ 2 - t.eulerChar := by
   obtain ⟨k, hk⟩ := even_eulerChar t
   exact ⟨1 - k, by omega⟩
+
+/-! ### The Euler bound and genus -/
+
+-- Source: Layer 0.6 of the Tau Ceti `BelyiMaps` roadmap, step 4 ("the general bound"). The proof
+-- follows that roadmap's combinatorial transposition route, applied componentwise through
+-- `TauCeti.card_add_orbitCount_le_length_add_two_mul_card_orbits`.
+/-- The Euler characteristic of a permutation triple is at most twice the number of orbits of
+its monodromy group. For a connected triple the orbit quotient has one element, recovering
+`TauCeti.PermutationTriple.IsConnected.eulerChar_le_two`. -/
+theorem eulerChar_le_two_mul_card_monodromyOrbits (t : PermutationTriple n) :
+    t.eulerChar ≤
+      2 * Nat.card (MulAction.orbitRel.Quotient t.monodromyGroup (Fin n)) := by
+  obtain ⟨L0, hswap0, hprod0, hlen0⟩ :=
+    t.σ0.exists_isSwap_list_prod_eq_and_orbitCount_add_length_eq_card
+  obtain ⟨L1, hswap1, hprod1, hlen1⟩ :=
+    t.σ1.exists_isSwap_list_prod_eq_and_orbitCount_add_length_eq_card
+  let L := L1 ++ L0
+  let H := Subgroup.closure {g : Perm (Fin n) | g ∈ L}
+  have hL : ∀ g ∈ L, g.IsSwap := by
+    intro g hg
+    rcases List.mem_append.mp hg with hg | hg
+    · exact hswap1 g hg
+    · exact hswap0 g hg
+  have hσ0 : t.σ0 ∈ H := by
+    rw [← hprod0]
+    exact H.list_prod_mem fun g hg => Subgroup.subset_closure
+      (List.mem_append_right L1 hg)
+  have hσ1 : t.σ1 ∈ H := by
+    rw [← hprod1]
+    exact H.list_prod_mem fun g hg => Subgroup.subset_closure
+      (List.mem_append_left L0 hg)
+  have hmonodromy : t.monodromyGroup ≤ H := by
+    rw [← t.closure_triple_eq_monodromyGroup, Subgroup.closure_le]
+    rintro g (rfl | rfl | rfl)
+    · exact hσ0
+    · exact hσ1
+    · rw [t.σinf_eq_inv]
+      exact inv_mem (mul_mem hσ1 hσ0)
+  have hcomponent : Nat.card (MulAction.orbitRel.Quotient H (Fin n)) ≤
+      Nat.card (MulAction.orbitRel.Quotient t.monodromyGroup (Fin n)) :=
+    MulAction.card_orbitRelQuotient_anti hmonodromy
+  have hbound := card_add_orbitCount_le_length_add_two_mul_card_orbits hL
+  have hprod : L.prod = t.σinf⁻¹ := by
+    dsimp only [L]
+    rw [List.prod_append, hprod1, hprod0, t.σ1_mul_σ0_eq_σinf_inv]
+  have hn : Nat.card (Fin n) = n := by simp
+  rw [hprod, orbitCount_inv] at hbound
+  dsimp only [L, H] at hbound hcomponent
+  rw [List.length_append, hn] at hbound
+  rw [hn] at hlen0 hlen1
+  rw [eulerChar_def]
+  omega
+
+/-- The Euler characteristic of a connected permutation triple is at most two. This is the
+combinatorial Euler bound; it is what makes the genus
+`TauCeti.PermutationTriple.genus` of a connected triple a genuine natural number. -/
+theorem IsConnected.eulerChar_le_two {t : PermutationTriple n} (ht : t.IsConnected) :
+    t.eulerChar ≤ 2 := by
+  let _ : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero ht.ne_zero)
+  have := ht.isPretransitive
+  have horbit : Nat.card (MulAction.orbitRel.Quotient t.monodromyGroup (Fin n)) = 1 :=
+    MulAction.card_orbitRelQuotient_eq_one
+  have hbound := eulerChar_le_two_mul_card_monodromyOrbits t
+  rw [horbit] at hbound
+  omega
+
+/-- The genus of a permutation triple, defined by the Euler-characteristic formula. For a
+connected triple, `TauCeti.PermutationTriple.IsConnected.natCast_genus` identifies this natural
+number with the integer quotient `(2 - χ) / 2`, and
+`TauCeti.PermutationTriple.IsConnected.two_sub_two_mul_genus` makes the `Int.toNat` junk-free.
+
+Connectedness is what gives the number its geometric meaning: the surface of a triple with `c`
+monodromy orbits has total genus `c - χ / 2`, which this formula computes only when `c = 1`, so
+on a disconnected triple the truncation returns a junk value and not a genus. Accordingly every
+statement below that reads the genus geometrically assumes
+`TauCeti.PermutationTriple.IsConnected`. -/
+noncomputable def genus (t : PermutationTriple n) : ℕ := ((2 - t.eulerChar) / 2).toNat
+
+/-- The defining formula for the genus. -/
+theorem genus_def (t : PermutationTriple n) :
+    t.genus = ((2 - t.eulerChar) / 2).toNat := (rfl)
+
+/-- Relabeling the sheets does not change the genus. -/
+@[simp]
+theorem genus_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
+    (τ • t).genus = t.genus := by
+  rw [genus_def, genus_def, eulerChar_smul]
+
+/-- Isomorphic permutation triples have the same genus. -/
+theorem genus_eq_of_equivalent {t t' : PermutationTriple n} (h : Equivalent t t') :
+    t.genus = t'.genus := by
+  obtain ⟨τ, rfl⟩ := equivalent_iff_exists_smul_eq.mp h
+  exact (genus_smul τ t).symm
+
+/-- Renumbering the sheets does not change the genus. -/
+@[simp]
+theorem genus_transport (e : Fin n ≃ Fin m) (t : PermutationTriple n) :
+    (transport e t).genus = t.genus := by
+  rw [genus_def, genus_def, eulerChar_transport]
+
+/-- A triple of degree one has genus zero. -/
+theorem genus_of_degree_one (t : PermutationTriple 1) : t.genus = 0 := by
+  rw [Subsingleton.elim t 1, genus_def, eulerChar_one]
+  norm_num
+
+/-- For a connected triple, coercing its genus back to the integers recovers the exact quotient
+`(2 - χ) / 2`; the connected Euler bound supplies its nonnegativity. -/
+theorem IsConnected.natCast_genus {t : PermutationTriple n} (ht : t.IsConnected) :
+    (t.genus : ℤ) = (2 - t.eulerChar) / 2 := by
+  rw [genus_def, Int.natCast_toNat_eq_self]
+  have hle := ht.eulerChar_le_two
+  have hnonneg : 0 ≤ 2 - t.eulerChar := by omega
+  exact Int.ediv_nonneg hnonneg (by norm_num)
+
+/-- The Euler characteristic of a connected permutation triple is `2 - 2g`. -/
+theorem IsConnected.two_sub_two_mul_genus {t : PermutationTriple n} (ht : t.IsConnected) :
+    2 - 2 * (t.genus : ℤ) = t.eulerChar := by
+  have hdiv := Int.ediv_mul_cancel (two_dvd_two_sub_eulerChar t)
+  rw [ht.natCast_genus]
+  omega
+
+/-- The cycle-count display formula for the genus of a connected permutation triple, written in
+the integers so that no truncated subtraction occurs. -/
+theorem IsConnected.natCast_genus_eq_one_add {t : PermutationTriple n} (ht : t.IsConnected) :
+    (t.genus : ℤ) =
+      1 + ((n : ℤ) - orbitCount t.σ0 - orbitCount t.σ1 - orbitCount t.σinf) / 2 := by
+  rw [ht.natCast_genus, eulerChar_def]
+  calc
+    (2 - ((orbitCount t.σ0 : ℤ) + orbitCount t.σ1 + orbitCount t.σinf - n)) / 2 =
+        (2 + ((n : ℤ) - orbitCount t.σ0 - orbitCount t.σ1 - orbitCount t.σinf)) / 2 := by
+      congr 1
+      ring
+    _ = 2 / 2 +
+        ((n : ℤ) - orbitCount t.σ0 - orbitCount t.σ1 - orbitCount t.σinf) / 2 :=
+      Int.add_ediv_of_dvd_left (by norm_num)
+    _ = 1 +
+        ((n : ℤ) - orbitCount t.σ0 - orbitCount t.σ1 - orbitCount t.σinf) / 2 := by
+      norm_num
 
 /-! ### Disjoint sums -/
 

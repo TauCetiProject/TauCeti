@@ -77,7 +77,7 @@ reductivity, maximality of the weight torus, or any finiteness or simplicity sta
   `TauCeti.DynkinType.geckGraphAutPoints_geckTorusMatrix`: the two pinning equations on points.
 * `TauCeti.DynkinType.geckGraphAutPoints_geckWeightTorusPoints`: the second of those equations
   read on the represented weight torus, which is the form a consumer of that homomorphism uses.
-* `TauCeti.DynkinType.geckPointsMap_comp_geckGraphAutPoints`: the automorphism on points is natural
+* `TauCeti.DynkinType.map_comp_geckGraphAutPoints`: the automorphism on points is natural
   in the value ring.
 * `TauCeti.DynkinType.geckGraphAutPoints_pow_eq_one` and
   `TauCeti.DynkinType.geckGraphAutPoints_one`: the order relation on points, and the identity
@@ -487,17 +487,20 @@ theorem geckGraphAutPoints_geckWeightTorusPoints (hsigma : sigma ∈ t.diagramSy
 
 /-- **The graph automorphism on points is natural in the value ring.** In particular it commutes
 with the Frobenius endomorphism of the points of the carrier. -/
-theorem geckPointsMap_comp_geckGraphAutPoints (hsigma : sigma ∈ t.diagramSymmetry)
+theorem map_comp_geckGraphAutPoints (hsigma : sigma ∈ t.diagramSymmetry)
     {A : Type v} {B : Type v'} [CommRing A] [CommRing B] (f : A →+* B) :
-    (t.geckPointsMap ht f).comp (t.geckGraphAutPoints ht hsigma A).toMonoidHom =
-      (t.geckGraphAutPoints ht hsigma B).toMonoidHom.comp (t.geckPointsMap ht f) :=
+    ((t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht B) f).comp
+        (t.geckGraphAutPoints ht hsigma A).toMonoidHom =
+      (t.geckGraphAutPoints ht hsigma B).toMonoidHom.comp
+        ((t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht B) f) :=
   TauCeti.UniversalEnvelopingAlgebra.comp_kostantNumberedSymmetryPoints
     (t.geckCoordinateLattice ht).toAddSubgroup (t.geckCoordinateBasisFin ht)
     (t.geckDiagramModuleEquiv ht hsigma)
     (t.geckDiagramModuleEquiv_mem_geckCoordinateLattice_iff ht hsigma)
     (t.geckPoints ht A) (t.map_geckPoints_conj_geckGraphAutMatrix ht hsigma A)
     (t.geckPoints ht B) (t.map_geckPoints_conj_geckGraphAutMatrix ht hsigma B) f
-    (t.geckPointsMap ht f) (t.coe_geckPointsMap ht f)
+    ((t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht B) f)
+    ((t.geckPointsPresentation ht A).coe_map (t.geckPointsPresentation ht B) f)
 
 /-- **The order of the graph automorphism on points divides that of the diagram symmetry.** An
 involution of the numbered diagram therefore gives `γ ^ 2 = 1` on points, and the triality of `D₄`
