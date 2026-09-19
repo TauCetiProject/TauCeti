@@ -48,16 +48,6 @@ private def linearHomSubfunctor : Subfunctor (presheafHom M.val.presheaf N.val.p
       (r • · : N.val.obj (op V.left) → N.val.obj (op V.left)) (φ.app (op V) m)}
   map f _ h V r m := h ((Over.map f.unop).obj V) r m
 
-/-- Membership in the local linear-morphism presheaf means linearity at every object of the
-slice site. -/
-@[simp]
-private theorem mem_linearHomSubfunctor {U : Cᵒᵖ}
-    (φ : (presheafHom M.val.presheaf N.val.presheaf).obj U) :
-    φ ∈ (linearHomSubfunctor M N).obj U ↔
-      ∀ (V : Over U.unop) (r : R.obj.obj (op V.left)) (m : M.val.obj (op V.left)),
-        φ.app (op V) (r • m) =
-          (r • · : N.val.obj (op V.left) → N.val.obj (op V.left)) (φ.app (op V) m) := Iff.rfl
-
 /-- Linearity of a local additive morphism can be checked on a covering sieve. -/
 private theorem mem_linearHomSubfunctor_of_cover {U : Cᵒᵖ}
     (φ : (presheafHom M.val.presheaf N.val.presheaf).obj U)
@@ -177,12 +167,5 @@ theorem linearHomSectionsEquiv_app (s : (linearHom M N).obj.sections) (U : Cᵒ�
     ((linearHomSectionsEquiv M N s).val.app U) m =
       ((linearHomObjEquiv M N U.unop (s.val U)).val.app
         (op (Over.mk (𝟙 U.unop)))) m := by rfl
-
-/-- The global Hom section defined by a morphism restricts to that morphism on each slice. -/
-@[simp]
-theorem linearHomObjEquiv_sectionsEquiv_symm (φ : M ⟶ N) (U : C) :
-    linearHomObjEquiv M N U (((linearHomSectionsEquiv M N).symm φ).val (op U)) =
-      φ.over U :=
-  (linearHomObjEquiv M N U).apply_symm_apply (φ.over U)
 
 end TauCeti.SheafOfModules
