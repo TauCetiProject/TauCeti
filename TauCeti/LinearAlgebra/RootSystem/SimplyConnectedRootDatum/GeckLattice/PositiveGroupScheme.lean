@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Subsystem.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.ClosedRootSubgroup
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Torus
 
 /-!
 # The positive subgroup scheme of the pinned Geck carrier
@@ -305,33 +306,28 @@ theorem geckWeightTorusToTorusPositive_comp_geckTorusPositiveInclusion :
 /-- Spanning Geck weights embed the represented weight torus as a closed subgroup of the positive
 carrier. -/
 theorem isClosedImmersion_geckWeightTorusToTorusPositive
-    (hwt : Submodule.span ℤ (Set.range (t.geckWeightFin ht)) = ⊤) :
+    (hwt : Submodule.span ℤ (Set.range (t.geckWeight ht)) = ⊤) :
     IsClosedImmersion (t.geckWeightTorusToTorusPositive ht).hom.hom.left := by
-  let c := (UniversalEnvelopingAlgebra.kostantWeightTorusToTorusSubsystem
-    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-    (t.geckCoordinateLattice ht).toAddSubgroup
-    (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-    (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1)).hom.hom.left
-  let F := Grp.forget (Over (Spec (CommRingCat.of ℤ))) ⋙
-    Over.forget (Spec (CommRingCat.of ℤ))
-  have hc : IsClosedImmersion c :=
-    UniversalEnvelopingAlgebra.isClosedImmersion_kostantWeightTorusToTorusSubsystem
-      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-      (t.geckCoordinateLattice ht).toAddSubgroup
-      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-      (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) hwt
-  have hce : IsClosedImmersion
-      (c ≫ (F.mapIso (eqToIso (t.geckTorusPositiveGroupScheme_def ht).symm)).hom) :=
-    by
-      exact (@MorphismProperty.cancel_right_of_respectsIso _ _ _ _ _ _ _ c
-        (F.mapIso (eqToIso (t.geckTorusPositiveGroupScheme_def ht).symm)).hom
-        (F.mapIso
-          (eqToIso (t.geckTorusPositiveGroupScheme_def ht).symm)).isIso_hom).2 hc
-  rw [geckWeightTorusToTorusPositive]
-  simp only [Grp.comp', Mon.comp_hom', Over.comp_left]
-  exact hce
+  have hcomp : IsClosedImmersion
+      ((t.geckWeightTorusToTorusPositive ht ≫
+        t.geckTorusPositiveInclusion ht).hom.hom.left) := by
+    rw [geckWeightTorusToTorusPositive_comp_geckTorusPositiveInclusion]
+    exact t.isClosedImmersion_geckWeightTorus_of_span_eq_top ht hwt
+  exact @IsClosedImmersion.of_comp _ _ _
+    (t.geckWeightTorusToTorusPositive ht).hom.hom.left
+    (t.geckTorusPositiveInclusion ht).hom.hom.left hcomp inferInstance
+
+/-- The closed Geck weight torus lies in the positive closed subgroup. -/
+theorem geckWeightTorusClosedSubgroup_le_geckTorusPositiveClosedSubgroup
+    (hwt : Submodule.span ℤ (Set.range (t.geckWeight ht)) = ⊤) :
+    t.geckWeightTorusClosedSubgroup ht hwt ≤
+      t.geckTorusPositiveClosedSubgroup ht := by
+  have _ := t.isClosedImmersion_geckWeightTorus_of_span_eq_top ht hwt
+  have _ := t.isClosedImmersion_geckWeightTorusToTorusPositive ht hwt
+  rw [← Subtype.coe_le_coe, coe_geckWeightTorusClosedSubgroup,
+    coe_geckTorusPositiveClosedSubgroup]
+  exact Subobject.mk_le_mk_of_comm (t.geckWeightTorusToTorusPositive ht)
+    (t.geckWeightTorusToTorusPositive_comp_geckTorusPositiveInclusion ht)
 
 /-- **Universal property of the positive Geck carrier.** It is the smallest closed subgroup
 scheme of the full Geck carrier through which every positive simple-root subgroup and the weight
