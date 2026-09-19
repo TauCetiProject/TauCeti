@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Bochner.CharFun.PosDef
-public import TauCeti.Analysis.PositiveDefinite.Basic
+public import TauCeti.Analysis.PositiveDefinite.AddGroup
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.TaylorExpansion
 
 /-!
@@ -27,6 +27,8 @@ the `OneParameterSemigroups` roadmap, before the harder converse direction of Bo
   explicit `star = -` involution.
 * `TauCeti.continuous_charFun_and_isPositiveDefinite_of_star_eq_neg`: the paired continuity and
   positive-definiteness package.
+* `TauCeti.isPositiveDefiniteSub_charFun`: `charFun μ` is positive definite in the
+  subtraction form `TauCeti.IsPositiveDefiniteSub`, with no choice of involution.
 -/
 
 public section
@@ -53,6 +55,12 @@ theorem charFun_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E] (hstar : ∀
   refine le_of_le_of_eq h ?_
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   simp [hstar, sub_eq_add_neg]
+
+/-- The characteristic function of a finite measure is positive definite in the subtraction form:
+`∑ i, ∑ j, c i * conj (c j) * charFun μ (v i - v j)` is nonnegative. This is
+`posSemidef_charFun` read through `TauCeti.isPositiveDefiniteSub_iff_posSemidef`. -/
+theorem isPositiveDefiniteSub_charFun : IsPositiveDefiniteSub (MeasureTheory.charFun μ) :=
+  isPositiveDefiniteSub_iff_posSemidef.mpr posSemidef_charFun
 
 end Seminormed
 
