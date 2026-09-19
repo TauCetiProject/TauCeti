@@ -207,6 +207,7 @@ namespace RepresentsStieltjes
 
 /-- The complex Stieltjes transform of a Stieltjes representation of `f` extends `f`: it agrees
 with `f` on `(0, ∞)`. -/
+-- This is not a simp lemma: `f` does not occur on the left-hand side, so simp cannot infer it.
 theorem stieltjesExtension_ofReal (h : RepresentsStieltjes μ a b f) {t : ℝ} (ht : 0 < t) :
     stieltjesExtension μ a b t = f t := by
   rw [h.eq_div_add_add_integral_inv_add ht, stieltjesExtension]
@@ -250,6 +251,7 @@ theorem IsStieltjesFunction.exists_analyticOnNhd_slitPlane (hf : IsStieltjesFunc
 
 /-- On `(0, ∞)` a complete Bernstein function is `t` times the complex Stieltjes transform of its
 representing data. -/
+-- This is not a simp lemma: `f` does not occur on the left-hand side, so simp cannot infer it.
 theorem RepresentsCompleteBernstein.ofReal_mul_stieltjesExtension
     (h : RepresentsCompleteBernstein μ a b f) {t : ℝ} (ht : 0 < t) :
     (t : ℂ) * stieltjesExtension μ a b t = f t := by
