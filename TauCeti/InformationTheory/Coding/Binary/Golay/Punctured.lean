@@ -55,29 +55,9 @@ theorem natCard_punctureAt_code : Nat.card (punctureAt code i) = 4096 := by
 theorem hammingMinDist_punctureAt_code :
     Set.hammingMinDist (punctureAt code i : Set (({i}ᶜ : Set (Fin 24)) → ZMod 2)) = 7 := by
   obtain ⟨x, hx, hxw, hxi⟩ := exists_mem_code_hammingNorm_eq_eight_and_apply_ne_zero i
-  -- Split the octad into its retained part `y` and the single deleted coordinate `z`.
-  set y := ({i}ᶜ : Set (Fin 24)).domRestrict x with hy
-  set z := (({i}ᶜ : Set (Fin 24))ᶜ).domRestrict x with hz
-  have hyC : y ∈ punctureAt code i := by
-    rw [punctureAt_def]
-    exact mem_puncture.mpr ⟨x, hx, fun _ ↦ rfl⟩
-  have hzw : hammingNorm z = 1 := by
-    have hle : hammingNorm z ≤ 1 := by
-      simpa only [hz, compl_compl, Fintype.card_unique] using
-        hammingNorm_le_card_fintype (x := z)
-    have hne : z ≠ 0 := fun h ↦ hxi (congrFun h ⟨i, by simp⟩)
-    have := (hammingNorm_eq_zero (x := z)).not.mpr hne
-    omega
-  have hyw : hammingNorm y = 7 := by
-    have hsplit := hammingNorm_eq_domRestrict_add_domRestrict_compl ({i}ᶜ : Set (Fin 24)) x
-    rw [hxw, ← hy, ← hz, hzw] at hsplit
-    omega
-  have hy0 : y ≠ 0 := fun h ↦ by simp [h] at hyw
-  have hupper := Set.hammingMinDist_le_hammingNorm (E := (punctureAt code i).toAddSubgroup)
-    hyC hy0
-  rw [Submodule.coe_toAddSubgroup, hyw] at hupper
-  have hlower := hammingMinDist_le_hammingMinDist_punctureAt_add_one code i
-  rw [hammingMinDist_code] at hlower
+  have h := hammingMinDist_punctureAt_add_one_eq code i
+    (by rw [hammingMinDist_code]; norm_num) hx (by simpa [hammingMinDist_code] using hxw) hxi
+  rw [hammingMinDist_code] at h
   omega
 
 /-- Restoring the parity coordinate to a punctured binary Golay code gives back the extended
