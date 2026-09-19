@@ -333,6 +333,7 @@ lemma adicCompletionExtension_coe (x : K) :
   rfl
 
 /-- The square with sides `R → K_v → L_w` and `R → B → L_w` commutes. -/
+@[simp]
 lemma adicCompletionExtension_algebraMap (a : R) :
     adicCompletionExtension K L v w (algebraMap R (v.adicCompletion K) a) =
       algebraMap B (w.adicCompletion L) (algebraMap R B a) := by
