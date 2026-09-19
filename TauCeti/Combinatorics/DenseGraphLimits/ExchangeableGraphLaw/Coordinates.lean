@@ -6,10 +6,12 @@ Authors: Codex, Claude
 module
 
 public import Mathlib.Data.Set.BoolIndicator
-public import Mathlib.MeasureTheory.Constructions.Projective
+public import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
+public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
 import Mathlib.Data.Finset.Sym
 import Mathlib.Data.Sym.Sym2.Order
+import Mathlib.MeasureTheory.Constructions.Projective
 
 /-!
 # Edge coordinates of an infinite simple graph
@@ -158,6 +160,7 @@ def edgeWindow (n : ℕ) : Finset EdgeIndex :=
   (Finset.range n).sym2.subtype fun e => ¬ e.IsDiag
 
 /-- Membership in `edgeWindow n` means that both endpoints are below `n`. -/
+@[simp]
 theorem mem_edgeWindow {n : ℕ} {e : EdgeIndex} :
     e ∈ edgeWindow n ↔ ∀ a ∈ e.1, a < n := by
   simp [edgeWindow, Finset.mem_sym2_iff]

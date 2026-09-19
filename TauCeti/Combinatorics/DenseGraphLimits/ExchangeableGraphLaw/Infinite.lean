@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Coordinates
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Defs
-public import TauCeti.MeasureTheory.Measure.ProjectiveLimit.Countable
 import Mathlib.Logic.Equiv.Fintype
+import TauCeti.MeasureTheory.Measure.ProjectiveLimit.Countable
 
 /-!
 # Exchangeable laws on infinite graphs
