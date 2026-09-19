@@ -75,13 +75,6 @@ theorem mem_classSet {P : PassportSpec n} {c : ConnectedIsoClass n} :
   classical
   simp [classSet]
 
-/-- The class of a connected triple belongs to `P.classSet` precisely when the triple has
-passport `P`. -/
-@[simp]
-theorem mk_mem_classSet {P : PassportSpec n} {t : ConnectedTriple n} :
-    ConnectedIsoClass.mk t ∈ P.classSet ↔ HasPassport t P := by
-  simp
-
 /-- The size of a passport is the number of isomorphism classes of connected triples in it. -/
 noncomputable def passportSize (P : PassportSpec n) : ℕ := P.classSet.card
 
