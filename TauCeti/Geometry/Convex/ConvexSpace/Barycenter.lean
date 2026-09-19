@@ -25,8 +25,16 @@ namespace Convexity.StdSimplex
 
 variable {K M N : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
 
+/-- Replacing the finite set in a face barycenter by an equal set does not change the
+barycenter. -/
+lemma subBarycenter_congr {S T : Finset M} (h : S = T) (hS : S.Nonempty) :
+    subBarycenter (K := K) S hS = subBarycenter T (h ▸ hS) := by
+  subst h
+  rfl
+
 /-- An injective map of vertices sends the barycenter of the face spanned by `S` to the
 barycenter of the face spanned by the image of `S`. -/
+@[simp]
 lemma map_subBarycenter (f : M ↪ N) (S : Finset M) (hS : S.Nonempty) :
     (subBarycenter (K := K) S hS).map f = subBarycenter (S.map f) (hS.map) := by
   ext n

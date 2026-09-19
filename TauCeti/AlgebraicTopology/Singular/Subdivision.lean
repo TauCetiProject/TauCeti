@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.Geometry.Convex.ConvexSpace.Barycenter
-public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 
 /-!
@@ -65,18 +64,13 @@ indexed by the permutation `π`: the barycenter of the face spanned by `π k, �
 def vertex (π : Perm (Fin (n + 1))) (k : Fin (n + 1)) : StdSimplex ℝ (Fin (n + 1)) :=
   StdSimplex.subBarycenter ((Finset.Ici k).map π.toEmbedding) Finset.nonempty_Ici.map
 
-private lemma subBarycenter_congr {S T : Finset (Fin (n + 1))} (h : S = T) (hS : S.Nonempty) :
-    StdSimplex.subBarycenter (K := ℝ) S hS = StdSimplex.subBarycenter T (h ▸ hS) := by
-  subst h
-  rfl
-
 /-- The vertices of a subdivision simplex other than the barycenter of the simplex are the
 vertices of the subdivision simplex of a facet, pushed forward along the facet inclusion. -/
 lemma vertex_decomposeFin'Symm_succ (j : Fin (n + 2)) (π : Perm (Fin (n + 1)))
     (k : Fin (n + 1)) :
     vertex (Perm.decomposeFin'Symm j π) k.succ = (vertex π k).map j.succAbove := by
   rw [vertex, vertex, ← Fin.coe_succAboveEmb, StdSimplex.map_subBarycenter]
-  apply subBarycenter_congr
+  apply StdSimplex.subBarycenter_congr
   rw [← Fin.map_succEmb_Ici, Finset.map_map, Finset.map_map]
   congr 1
 
@@ -86,7 +80,7 @@ lemma vertex_mul_swap (π : Perm (Fin (n + 2))) (k : Fin (n + 1)) {t : Fin (n + 
     (ht : t ≠ k.succ) :
     vertex (π * swap k.castSucc k.succ) t = vertex π t := by
   rw [vertex, vertex]
-  apply subBarycenter_congr
+  apply StdSimplex.subBarycenter_congr
   rw [Perm.mul_def, Equiv.trans_toEmbedding, ← Finset.map_map]
   congr 1
   ext i

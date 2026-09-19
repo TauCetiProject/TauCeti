@@ -31,6 +31,7 @@ variable [Semiring R] [IsStrictOrderedRing R]
 
 /-- The weights of the affine map with vertices `v`, evaluated at a point with finitely many
 vertices, are the corresponding convex combinations of the weights of the vertices. -/
+@[simp]
 lemma weights_affineMapMk_apply [Fintype M] (v : M → StdSimplex R N) (w : StdSimplex R M)
     (n : N) :
     (affineMapMk v w).weights n = ∑ m, w.weights m * (v m).weights n := by
