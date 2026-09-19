@@ -39,9 +39,9 @@ result is transported to Mathlib's `continuousCohomology 2` through the comparis
 `TauCeti.ContCohomology.explicitH2AddEquivContinuousCohomology` and its naturality in coefficient
 maps, `TauCeti.ContCohomology.explicitH2AddEquivContinuousCohomology_coeffMap`.
 
-This is how the degree-`n` part of the Brauer group is seen cohomologically: for a local field the
-local invariant identifies the `n`-torsion of `H²(G_K, (Kˢ)ˣ)` with `(1/n)ℤ/ℤ`, and composing with
-the injection here gives `H²(G_K, μₙ) ≃ ℤ/n`.
+This is how the `n`-torsion subgroup of the Brauer group is seen cohomologically: for a local field
+the local invariant identifies the `n`-torsion of `H²(G_K, (Kˢ)ˣ)` with `(1/n)ℤ/ℤ`, and composing
+with the injection here gives `H²(G_K, μₙ) ≃ ℤ/n`.
 
 ## Main definitions
 
@@ -137,20 +137,13 @@ theorem kummerCoeffToUnits_hom_apply (x : KummerCoeff K n) :
   (rfl)
 
 /-- **The map `H²(G_K, μₙ) → H²(G_K, (Kˢ)ˣ)`** induced by the inclusion `μₙ ⊆ (Kˢ)ˣ`, on Mathlib's
-continuous cohomology. It is how the mod-`n` part of `H²` sits inside the cohomological Brauer
-group: injective (`TauCeti.h2KummerToUnits_injective`) with image the `n`-torsion
+continuous cohomology. It is how the `n`-torsion subgroup of `H²` sits inside the cohomological
+Brauer group: injective (`TauCeti.h2KummerToUnits_injective`) with image the `n`-torsion
 (`TauCeti.h2KummerToUnits_range`) when `n` is invertible in `K`. -/
 def h2KummerToUnits :
     continuousCohomology 2 (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K n)) ⟶
       continuousCohomology 2 (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K)) :=
   ContinuousCohomology.coeffMap (kummerCoeffToUnits K n) 2
-
--- Not `@[simp]`: `h2KummerToUnits` is the intended normal form, and this lemma unfolds it.
-/-- The defining equation of `h2KummerToUnits`: it is the canonical coefficient map of
-`kummerCoeffToUnits` in degree two. -/
-theorem h2KummerToUnits_def :
-    h2KummerToUnits K n = ContinuousCohomology.coeffMap (kummerCoeffToUnits K n) 2 :=
-  (rfl)
 
 variable {K n}
 
@@ -170,7 +163,7 @@ theorem h2KummerToUnits_explicitH2AddEquivContinuousCohomology (hn : IsUnit (n :
     congr 1
     ext m
     simp [DiscreteShortExact.inclDistribMulActionHom_apply]
-  rw [h2KummerToUnits_def, hmap]
+  rw [h2KummerToUnits, hmap]
   exact explicitH2AddEquivContinuousCohomology_coeffMap _ _ _
     (kummerShortExact K n hn).inclDistribMulActionHom x
 
