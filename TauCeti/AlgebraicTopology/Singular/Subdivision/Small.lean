@@ -33,7 +33,7 @@ simplex becomes subordinate to `U` after sufficiently many barycentric subdivisi
 
 * `TauCeti.BarycentricSubdivision.dist_weights_affineMapMk_vertex_le`: subdivision shrinks the
   distances between the vertices of an affine simplex by the factor `k / (k + 1)`.
-* `TauCeti.AffineChain.dist_weights_of_mem_support_subdivision_iterate`: the vertex tuples of the
+* `TauCeti.AffineChain.dist_weights_le_of_mem_support_subdivision_iterate`: the vertex tuples of the
   `n`-fold subdivision of an affine `k`-chain are pairwise at distance at most `(k / (k + 1)) ^ n`.
 * `ContinuousMap.exists_pos_forall_range_subset_of_dist_weights_lt`: a Lebesgue number for an
   open cover pulled back along a singular simplex, bounding the distances between vertices.
@@ -94,7 +94,7 @@ namespace AffineChain
 /-- If the vertex tuples in the support of an affine `k`-chain are pairwise at distance at most
 `d`, then those of its barycentric subdivision are pairwise at distance at most
 `k / (k + 1) * d`. -/
-theorem dist_weights_of_mem_support_subdivision {k : ℕ}
+theorem dist_weights_le_of_mem_support_subdivision {k : ℕ}
     {c : (Fin (k + 1) → StdSimplex ℝ N) →₀ ℤ} {d : ℝ}
     (hc : ∀ v ∈ c.support, ∀ i j, dist ⇑(v i).weights ⇑(v j).weights ≤ d)
     {u : Fin (k + 1) → StdSimplex ℝ N} (hu : u ∈ (subdivision _ k c).support) (i j : Fin (k + 1)) :
@@ -109,7 +109,7 @@ theorem dist_weights_of_mem_support_subdivision {k : ℕ}
 
 /-- The vertex tuples of the `n`-fold barycentric subdivision of an affine `k`-chain in a standard
 simplex are pairwise at distance at most `(k / (k + 1)) ^ n`. -/
-theorem dist_weights_of_mem_support_subdivision_iterate {k n : ℕ}
+theorem dist_weights_le_of_mem_support_subdivision_iterate {k n : ℕ}
     {c : (Fin (k + 1) → StdSimplex ℝ N) →₀ ℤ} {u : Fin (k + 1) → StdSimplex ℝ N}
     (hu : u ∈ ((subdivision _ k)^[n] c).support) (i j : Fin (k + 1)) :
     dist ⇑(u i).weights ⇑(u j).weights ≤ ((k : ℝ) / (k + 1)) ^ n := by
@@ -121,7 +121,7 @@ theorem dist_weights_of_mem_support_subdivision_iterate {k n : ℕ}
   | succ n ih =>
     rw [Function.iterate_succ_apply'] at hu
     rw [pow_succ']
-    exact dist_weights_of_mem_support_subdivision (fun v hv ↦ ih hv) hu i j
+    exact dist_weights_le_of_mem_support_subdivision (fun v hv ↦ ih hv) hu i j
 
 end AffineChain
 
@@ -187,7 +187,7 @@ theorem exists_forall_mem_support_subdivision_iterate_range_subset (σ : C(StdSi
   have hq₁ : (k : ℝ) / (k + 1) < 1 := (div_lt_one (by positivity)).2 (lt_add_one _)
   obtain ⟨n₀, hn₀⟩ := exists_pow_lt_of_lt_one hδ hq₁
   refine ⟨n₀, fun n hn c u hu ↦ hsmall u fun i j ↦ ?_⟩
-  exact ((dist_weights_of_mem_support_subdivision_iterate hu i j).trans
+  exact ((dist_weights_le_of_mem_support_subdivision_iterate hu i j).trans
     (pow_le_pow_of_le_one hq₀ hq₁.le hn)).trans_lt hn₀
 
 end ContinuousMap

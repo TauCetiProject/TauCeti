@@ -81,12 +81,13 @@ theorem dist_centroid_apply_le {d : ℝ} {j : ι} (hd : ∀ i ∈ s, dist (p i) 
     _ = (1 - (#s : ℝ)⁻¹) * d := by
         field_simp
 
-/-- If the points `p i`, `i ∈ s`, are pairwise at distance at most `d`, then the centroid of a
-nonempty subfamily lies within `(1 - 1 / #s) * d` of the centroid of the whole family. -/
+/-- If every point `p i`, `i ∈ s`, is at distance at most `d` from every point `p j`, `j ∈ t`,
+then the centroid of the nonempty subfamily `t` lies within `(1 - 1 / #s) * d` of the centroid of
+the whole family. -/
 theorem dist_centroid_centroid_le_of_subset {d : ℝ}
-    (hd : ∀ i ∈ s, ∀ j ∈ s, dist (p i) (p j) ≤ d) (hts : t ⊆ s) (ht : t.Nonempty) :
+    (hd : ∀ i ∈ s, ∀ j ∈ t, dist (p i) (p j) ≤ d) (hts : t ⊆ s) (ht : t.Nonempty) :
     dist (t.centroid ℝ p) (s.centroid ℝ p) ≤ (1 - (#s : ℝ)⁻¹) * d :=
   dist_centroid_le ht fun i hi ↦ dist_comm (p i) _ ▸
-    dist_centroid_apply_le (fun j hj ↦ hd j hj i (hts hi)) (hts hi)
+    dist_centroid_apply_le (fun j hj ↦ hd j hj i hi) (hts hi)
 
 end Finset
