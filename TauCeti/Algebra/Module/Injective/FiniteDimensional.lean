@@ -180,7 +180,8 @@ theorem _root_.Module.Finite.exists_injective_linearMap_pi [FiniteDimensional k 
     (dualRightAction_apply_apply k A a φ x).trans (by rw [op_smul_eq_mul])
   have : IsScalarTower k A (Module.Dual k A) := IsScalarTower.of_algebraMap_smul fun c φ ↦ by
     ext x
-    rw [hsmul, ← Algebra.commutes, ← Algebra.smul_def, map_smul, LinearMap.smul_apply]
+    simp only [hsmul, ← Algebra.commutes, ← Algebra.smul_def, map_smul,
+      LinearMap.smul_apply]
   have : Module.Finite A (Module.Dual k A) := .of_restrictScalars_finite k A _
   have : Module.Projective A (Module.Dual k A) :=
     .of_linearEquiv_dual hA (LinearEquiv.refl k _) hsmul
