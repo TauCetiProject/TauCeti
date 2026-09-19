@@ -20,6 +20,7 @@ We use Mathlib's `presheafHom` of the underlying additive presheaves and cut out
 subpresheaf of linear morphisms. Linearity is local because equality of sections of the
 target sheaf can be checked on a covering sieve. Thus Mathlib's sheaf theorem for
 `presheafHom` supplies the gluing, without reconstructing additive morphisms sectionwise.
+Mathlib's `presheafHomSectionsEquiv` supplies the underlying global-sections identification.
 
 The equivalences `linearHomObjEquiv` and `linearHomSectionsEquiv` identify local and global
 sections with module-sheaf morphisms, and `linearHomObjEquiv_map_app` describes restriction.
@@ -160,7 +161,10 @@ def linearHomSectionsEquiv : (linearHom M N).obj.sections ≃ (M ⟶ N) where
       ((presheafHomSectionsEquiv M.val.presheaf N.val.presheaf).left_inv t)
   right_inv φ := by
     ext U m
-    rfl
+    -- Forget the module structure and use the inverse law for additive presheaf morphisms.
+    exact congrArg (fun ψ => ψ.app U m)
+      ((presheafHomSectionsEquiv M.val.presheaf N.val.presheaf).right_inv
+        ((PresheafOfModules.toPresheaf _).map φ.val))
 
 /-- The morphism associated to a global Hom section is read at the identity of each slice. -/
 @[simp]
