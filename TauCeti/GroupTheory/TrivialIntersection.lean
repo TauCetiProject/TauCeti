@@ -44,13 +44,14 @@ exceptional-character argument for Frobenius's theorem.  That induction statemen
 
 A concrete Frobenius group is normally presented the other way round, as a semidirect product
 `G = N ⋊ H` with `H` acting on `N` without nonidentity fixed points, and that presentation is
-enough: `TauCeti.isTISubgroup_of_isComplement'` reads the trivial-intersection condition off it.
+enough: `TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree` reads the trivial-intersection
+condition off it.
 Conjugation by an element `g = n · t` outside `H` is conjugation by its `H`-part `t`, which stays
 inside `H`, followed by conjugation by its `N`-part `n`; so an element of `H` conjugated back into
 `H` commutes with `n`, and the fixed-point hypothesis leaves only the identity.  That is the
-recognition criterion the worked examples of the roadmap's Layer 8 are checked with, and
-`TauCeti.coe_eq_frobeniusKernel_of_isComplement'` completes it by identifying `N` with the
-Frobenius kernel.
+recognition criterion a concrete Frobenius group is checked with, and
+`TauCeti.IsTISubgroup.coe_eq_frobeniusKernel_of_isComplement'` completes it by identifying `N`
+with the Frobenius kernel.
 
 ## Main definitions
 
@@ -73,14 +74,15 @@ Frobenius kernel.
 * `TauCeti.IsTISet.ncard_conjugatesOfSet`: the `Set.ncard` identity
   `(Group.conjugatesOfSet S).ncard = |G : H| · |S|`, an actual count of the elements the conjugates
   of a trivial-intersection set cover when `H` has finite index and `S` is finite.
-* `TauCeti.isTISubgroup_of_isComplement'`: **a complement to a normal subgroup on which it acts
-  without nonidentity fixed points is a trivial-intersection subgroup**, with
-  `TauCeti.isFrobeniusComplement_of_isComplement'` its bundled form for a proper nontrivial `H`.
+* `TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree`: **a complement to a normal subgroup
+  on which it acts without nonidentity fixed points is a trivial-intersection subgroup**, with
+  `TauCeti.isFrobeniusComplement_of_isComplement'_of_fixedPointFree` its bundled form for a proper
+  nontrivial `H`.
 
 ## Implementation notes
 
-The fixed-point hypothesis of `TauCeti.isTISubgroup_of_isComplement'` is written with ambient
-elements, `∀ h ∈ H, h ≠ 1 → ∀ n ∈ N, n ≠ 1 → h * n * h⁻¹ ≠ n`, rather than as
+The fixed-point hypothesis of `TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree` is written
+with ambient elements, `∀ h ∈ H, h ≠ 1 → ∀ n ∈ N, n ≠ 1 → h * n * h⁻¹ ≠ n`, rather than as
 `MonoidHom.FixedPointFree` of the automorphism `MulAut.conjNormal h` of `N` that it is equivalent
 to.  The two say the same thing, but every caller -- and the proof itself -- works with elements of
 `G`, so the bundled spelling would only insert a `Subtype.ext` at each use.
@@ -368,9 +370,9 @@ its action.
 The proof is the decomposition `g = n · t` of an element outside `H` into its `N`- and `H`-parts.
 Conjugation by `g` is conjugation by `t`, which stays inside `H`, followed by conjugation by `n`;
 so if `x ∈ H` is conjugated back into `H`, the commutator of `n` with `y = t x t⁻¹` lies in `N`
-(by normality) and in `H` (by construction), hence is trivial.  That makes `y` a fixed point of
-`n` under conjugation, and the hypothesis leaves only `y = 1`. -/
-theorem isTISubgroup_of_isComplement' [N.Normal] (hNH : N.IsComplement' H)
+(by normality) and in `H` (by construction), hence is trivial.  That makes `n` a fixed point of
+conjugation by `y = t x t⁻¹`, and the hypothesis leaves only `y = 1`. -/
+theorem isTISubgroup_of_isComplement'_of_fixedPointFree [N.Normal] (hNH : N.IsComplement' H)
     (hfpf : ∀ h ∈ H, h ≠ 1 → ∀ n ∈ N, n ≠ 1 → h * n * h⁻¹ ≠ n) :
     IsTISubgroup H := by
   have hdisj : ∀ {y : G}, y ∈ N → y ∈ H → y = 1 := Subgroup.disjoint_def.mp hNH.disjoint
@@ -408,14 +410,15 @@ theorem isTISubgroup_of_isComplement' [N.Normal] (hNH : N.IsComplement' H)
   exact mul_left_cancel h2
 
 /-- **A proper nontrivial fixed-point-free complement is a Frobenius complement.**  The
-trivial-intersection condition is `TauCeti.isTISubgroup_of_isComplement'`; properness and
-nontriviality are exactly what the bundled predicate adds. -/
-theorem isFrobeniusComplement_of_isComplement' [N.Normal] (hNH : N.IsComplement' H) (hbot : H ≠ ⊥)
-    (htop : H ≠ ⊤) (hfpf : ∀ h ∈ H, h ≠ 1 → ∀ n ∈ N, n ≠ 1 → h * n * h⁻¹ ≠ n) :
+trivial-intersection condition is `TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree`;
+properness and nontriviality are exactly what the bundled predicate adds. -/
+theorem isFrobeniusComplement_of_isComplement'_of_fixedPointFree [N.Normal]
+    (hNH : N.IsComplement' H) (hbot : H ≠ ⊥) (htop : H ≠ ⊤)
+    (hfpf : ∀ h ∈ H, h ≠ 1 → ∀ n ∈ N, n ≠ 1 → h * n * h⁻¹ ≠ n) :
     IsFrobeniusComplement H where
   ne_bot := hbot
   ne_top := htop
-  isTISubgroup := isTISubgroup_of_isComplement' hNH hfpf
+  isTISubgroup := isTISubgroup_of_isComplement'_of_fixedPointFree hNH hfpf
 
 end Semidirect
 

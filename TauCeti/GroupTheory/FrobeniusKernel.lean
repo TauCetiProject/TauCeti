@@ -70,8 +70,9 @@ of the kernel is contained in the kernel
 
 The last section runs the recognition in the other direction.  A semidirect decomposition
 `G = N ⋊ H` in which `H` acts on `N` with no nonidentity fixed points forces `H` to be a
-trivial-intersection subgroup (`TauCeti.isTISubgroup_of_isComplement'`), and then the given `N` is
-already the Frobenius kernel (`TauCeti.coe_eq_frobeniusKernel_of_isComplement'`) -- the inclusion
+trivial-intersection subgroup (`TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree`), and
+then the given `N` is already the Frobenius kernel
+(`TauCeti.IsTISubgroup.coe_eq_frobeniusKernel_of_isComplement'`) -- the inclusion
 `N ⊆ frobeniusKernel H` needs only normality and disjointness, and the count above turns it into
 an equality.  Nothing there is character theory: it is what a concrete Frobenius group is checked
 against once Frobenius's theorem has produced its kernel abstractly.
@@ -112,13 +113,14 @@ everything and `⊥` has index `|G|`.
 * `TauCeti.IsTISubgroup.card_dvd_index_sub_one`: **`|H| ∣ |G : H| - 1`** for a finite `G`, with
   `TauCeti.IsTISubgroup.coprime_card_index` the coprimality and
   `TauCeti.IsTISubgroup.card_lt_index` the strict inequality `|H| < |G : H|` it implies.
-* `TauCeti.isTISubgroup_of_isComplement'`: **a complement to a normal subgroup on which it acts
-  without nonidentity fixed points is a trivial-intersection subgroup**, with
-  `TauCeti.isFrobeniusComplement_of_isComplement'` its bundled form for a proper nontrivial `H`.
+* `TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree`: **a complement to a normal subgroup
+  on which it acts without nonidentity fixed points is a trivial-intersection subgroup**, with
+  `TauCeti.isFrobeniusComplement_of_isComplement'_of_fixedPointFree` its bundled form for a proper
+  nontrivial `H`.
 * `TauCeti.coe_subset_frobeniusKernel` and
-  `TauCeti.coe_eq_frobeniusKernel_of_isComplement'`: **a normal complement meeting `H` trivially
-  lies in the Frobenius kernel, and for a finite `G` it *is* the Frobenius kernel** when its
-  action is fixed-point free.
+  `TauCeti.IsTISubgroup.coe_eq_frobeniusKernel_of_isComplement'`: **a normal complement meeting
+  `H` trivially lies in the Frobenius kernel, and for a finite `G` it *is* the Frobenius
+  kernel** when `H` is a trivial-intersection subgroup.
 
 ## References
 
@@ -477,7 +479,7 @@ variable {N : Subgroup G}
 /-- **A normal subgroup meeting `H` trivially lies in the Frobenius kernel of `H`.**  Every
 conjugate of such a subgroup is itself, so a nonidentity element of it is conjugated into `H` by
 nothing at all.  No finiteness and no complement hypothesis: this inclusion is the easy half of
-`TauCeti.coe_eq_frobeniusKernel_of_isComplement'`. -/
+`TauCeti.IsTISubgroup.coe_eq_frobeniusKernel_of_isComplement'`. -/
 theorem coe_subset_frobeniusKernel [N.Normal] (hdisj : Disjoint N H) :
     (N : Set G) ⊆ frobeniusKernel H := by
   intro y hy
@@ -494,20 +496,23 @@ theorem coe_subset_frobeniusKernel [N.Normal] (hdisj : Disjoint N H) :
   calc y = x * (x⁻¹ * y * x) * x⁻¹ := by group
     _ = 1 := by rw [hone, mul_one, mul_inv_cancel]
 
-/-- **The Frobenius kernel of a fixed-point-free complement is the normal complement itself.**
-The inclusion `N ⊆ frobeniusKernel H` is `TauCeti.coe_subset_frobeniusKernel`, and the two sides
-have the same number of elements: `|N| = |G : H|` because `N` is a complement, and the kernel has
-`|G : H|` elements by `TauCeti.IsTISubgroup.ncard_frobeniusKernel`.
+/-- **The Frobenius kernel of a normal complement to a trivial-intersection subgroup is that
+complement itself.**  The inclusion `N ⊆ frobeniusKernel H` is
+`TauCeti.coe_subset_frobeniusKernel`, and the two sides have the same number of elements:
+`|N| = |G : H|` because `N` is a complement, and the kernel has `|G : H|` elements by
+`TauCeti.IsTISubgroup.ncard_frobeniusKernel`.
 
 This is what identifies the kernel that Frobenius's theorem constructs from the character theory
-of `G` with the normal complement a semidirect decomposition `G = N ⋊ H` hands over directly; the
-subgroup-level statement is `TauCeti.frobeniusKernelSubgroup_eq_of_isComplement'`. -/
-theorem coe_eq_frobeniusKernel_of_isComplement' [Finite G] [N.Normal] (hNH : N.IsComplement' H)
-    (hfpf : ∀ h ∈ H, h ≠ 1 → ∀ n ∈ N, n ≠ 1 → h * n * h⁻¹ ≠ n) :
+of `G` with the normal complement a semidirect decomposition `G = N ⋊ H` hands over directly; a
+fixed-point-free action of `H` on `N` supplies the trivial-intersection hypothesis through
+`TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree`, and the subgroup-level statement is
+`TauCeti.frobeniusKernelSubgroup_eq_of_isComplement'`. -/
+theorem IsTISubgroup.coe_eq_frobeniusKernel_of_isComplement' [Finite G] [N.Normal]
+    (hH : IsTISubgroup H) (hNH : N.IsComplement' H) :
     (N : Set G) = frobeniusKernel H := by
   have hcoe : (N : Set G).ncard = Nat.card N := (Nat.card_coe_set_eq (N : Set G)).symm
   refine Set.eq_of_subset_of_ncard_le (coe_subset_frobeniusKernel hNH.disjoint) ?_ (Set.toFinite _)
-  rw [(isTISubgroup_of_isComplement' hNH hfpf).ncard_frobeniusKernel, hcoe, hNH.index_eq_card]
+  rw [hH.ncard_frobeniusKernel, hcoe, hNH.index_eq_card]
 
 end Semidirect
 
