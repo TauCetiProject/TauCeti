@@ -151,10 +151,19 @@ lemma isMinimal_of_card_eq_one (h : Fintype.card T.Component = 1) : T.IsMinimal 
   have := hi.2.symm.trans (T.intersection_eq_zero_of_card_eq_one h i i)
   linarith
 
+/-- A numerical type with a component of nonzero self-intersection has more than one component. -/
+lemma one_lt_card_of_intersection_self_ne_zero {i : T.Component}
+    (h : T.intersection i i ≠ 0) : 1 < Fintype.card T.Component :=
+  lt_of_le_of_ne Fintype.card_pos fun h1 ↦
+    h (T.intersection_eq_zero_of_card_eq_one h1.symm i i)
+
 /-- A numerical type with a `(-1)`-index has more than one component. -/
 lemma IsMinusOneIndex.one_lt_card {i : T.Component} (h : T.IsMinusOneIndex i) :
     1 < Fintype.card T.Component :=
-  lt_of_le_of_ne Fintype.card_pos fun h1 ↦ T.isMinimal_of_card_eq_one h1.symm i h
+  T.one_lt_card_of_intersection_self_ne_zero <| by
+    rw [(T.isMinusOneIndex_iff.mp h).2]
+    have hw : (0 : ℤ) < T.weight i := Int.natCast_pos.mpr (T.weight i).pos
+    omega
 
 /-! ### Genus contributions -/
 

@@ -78,15 +78,15 @@ private lemma weight_dvd_intersection_left (i : T.Component) :
 
 /-- The condition under which contracting the `(-1)`-index `e` halves the weight of the
 component `i`: `aᵢₑ / wₑ` is even and `aᵢₑ / wᵢ` is odd. -/
-def ContractHalvesWeight (e i : T.Component) : Prop :=
+def ContractHalvesWeight (e : T.Component) (i : {i // i ≠ e}) : Prop :=
   2 * (T.weight e : ℤ) ∣ T.intersection i e ∧ ¬ 2 * (T.weight i : ℤ) ∣ T.intersection i e
 
-instance (e i : T.Component) : Decidable (T.ContractHalvesWeight e i) :=
+instance (e : T.Component) (i : {i // i ≠ e}) : Decidable (T.ContractHalvesWeight e i) :=
   inferInstanceAs (Decidable (2 * (T.weight e : ℤ) ∣ T.intersection i e ∧
     ¬ 2 * (T.weight i : ℤ) ∣ T.intersection i e))
 
 /-- The weight of a component whose weight is halved by the contraction is even. -/
-lemma ContractHalvesWeight.two_dvd_weight {i : T.Component} (h : T.ContractHalvesWeight e i) :
+lemma ContractHalvesWeight.two_dvd_weight {i : {i // i ≠ e}} (h : T.ContractHalvesWeight e i) :
     2 ∣ (T.weight i : ℕ) := by
   obtain ⟨d, hd⟩ := T.weight_dvd i e
   have hodd : ¬ 2 ∣ d := fun ⟨k, hk⟩ ↦ h.2 ⟨k, by rw [hd, hk]; ring⟩
@@ -96,40 +96,40 @@ lemma ContractHalvesWeight.two_dvd_weight {i : T.Component} (h : T.ContractHalve
     fun h ↦ hodd (even_iff_two_dvd.mp h)
 
 /-- The weight `w'ᵢ` of a component `i` after contracting the `(-1)`-index `e`. -/
-def contractWeight (e i : T.Component) : ℕ+ :=
+def contractWeight (e : T.Component) (i : {i // i ≠ e}) : ℕ+ :=
   if h : T.ContractHalvesWeight e i then
     (⟨(T.weight i : ℕ) / 2, Nat.div_pos (Nat.le_of_dvd (T.weight i).pos h.two_dvd_weight)
       two_pos⟩ : ℕ+)
   else T.weight i
 
 /-- A halved weight is half of the original weight. -/
-lemma two_mul_contractWeight {i : T.Component} (h : T.ContractHalvesWeight e i) :
+lemma two_mul_contractWeight {i : {i // i ≠ e}} (h : T.ContractHalvesWeight e i) :
     2 * (T.contractWeight e i : ℤ) = T.weight i := by
   simp only [contractWeight, h, ↓reduceDIte, PNat.mk_coe]
   exact_mod_cast Nat.mul_div_cancel' h.two_dvd_weight
 
 /-- A weight that is not halved is unchanged. -/
-lemma contractWeight_of_not {i : T.Component} (h : ¬ T.ContractHalvesWeight e i) :
+lemma contractWeight_of_not {i : {i // i ≠ e}} (h : ¬ T.ContractHalvesWeight e i) :
     T.contractWeight e i = T.weight i := by
   simp only [contractWeight, h, ↓reduceDIte]
 
 /-- The contracted weight divides the original weight. -/
-lemma contractWeight_dvd_weight (i : T.Component) :
+lemma contractWeight_dvd_weight (i : {i // i ≠ e}) :
     (T.contractWeight e i : ℤ) ∣ T.weight i := by
   by_cases h : T.ContractHalvesWeight e i
   · exact ⟨2, by rw [← two_mul_contractWeight h, mul_comm]⟩
   · rw [contractWeight_of_not h]
 
 /-- The numerator `2wᵢ(gᵢ - 1) + aᵢₑ(aᵢₑ / wₑ - 1)` of `g'ᵢ - 1`, whose denominator is `2w'ᵢ`. -/
-private def contractGenusNumerator (e i : T.Component) : ℤ :=
+private def contractGenusNumerator (e : T.Component) (i : {i // i ≠ e}) : ℤ :=
   2 * T.weight i * ((T.genus i : ℤ) - 1) +
     T.intersection i e * (T.intersection i e / T.weight e - 1)
 
 /-- The genus numerator is divisible by `2w'ᵢ`, with quotient at least `-1`. This is the choice
 of `w'ᵢ` at work. -/
 private lemma contractGenusNumerator_spec {i : T.Component} (hi : i ≠ e) :
-    2 * (T.contractWeight e i : ℤ) ∣ T.contractGenusNumerator e i ∧
-      -(2 * (T.contractWeight e i : ℤ)) ≤ T.contractGenusNumerator e i := by
+    2 * (T.contractWeight e ⟨i, hi⟩ : ℤ) ∣ T.contractGenusNumerator e ⟨i, hi⟩ ∧
+      -(2 * (T.contractWeight e ⟨i, hi⟩ : ℤ)) ≤ T.contractGenusNumerator e ⟨i, hi⟩ := by
   -- Write `aᵢₑ = wₑc = wᵢd`, so that the numerator is `2wᵢ(gᵢ - 1) + wᵢd(c - 1)`. In both
   -- cases below it is `2w'ᵢ` times an integer that is at least `-1`.
   have hb := intersection_nonneg_of_ne hi
@@ -151,11 +151,11 @@ private lemma contractGenusNumerator_spec {i : T.Component} (hi : i ≠ e) :
     · exact mul_nonneg hd0 (by omega)
   unfold contractGenusNumerator
   rw [hcb]
-  by_cases h : T.ContractHalvesWeight e i
+  by_cases h : T.ContractHalvesWeight e ⟨i, hi⟩
   · -- Halved weight, `wᵢ = 2w'ᵢ`: here `c` is even and `d` odd, so `c ≥ 2`, `d ≥ 1`, and the
     -- quotient `2(gᵢ - 1) + d(c - 1)` is at least `-1`.
     have hw := two_mul_contractWeight h
-    set w' := (T.contractWeight e i : ℤ)
+    set w' := (T.contractWeight e ⟨i, hi⟩ : ℤ)
     have hdodd : ¬ 2 ∣ d := fun ⟨k, hk⟩ ↦ h.2 ⟨k, by rw [hd, hk]; ring⟩
     have hceven : 2 ∣ c := by
       obtain ⟨k, hk⟩ := h.1
@@ -198,15 +198,15 @@ private lemma contractGenusNumerator_spec {i : T.Component} (hi : i ≠ e) :
     nlinarith [T.genus i]
 
 /-- The genus `g'ᵢ` of a component `i` after contracting the `(-1)`-index `e`. -/
-def contractGenus (e i : T.Component) : ℕ :=
+def contractGenus (e : T.Component) (i : {i // i ≠ e}) : ℕ :=
   (T.contractGenusNumerator e i / (2 * T.contractWeight e i) + 1).toNat
 
 /-- The genus formula for the contraction with its denominator cleared:
 `2w'ᵢ(g'ᵢ - 1) = 2wᵢ(gᵢ - 1) + aᵢₑ(aᵢₑ / wₑ - 1)`. -/
-private lemma two_mul_contractWeight_mul_contractGenus_sub_one {i : T.Component} (hi : i ≠ e) :
+private lemma two_mul_contractWeight_mul_contractGenus_sub_one {i : {i // i ≠ e}} :
     2 * (T.contractWeight e i : ℤ) * ((T.contractGenus e i : ℤ) - 1) =
       T.contractGenusNumerator e i := by
-  obtain ⟨hdvd, hle⟩ := contractGenusNumerator_spec hi
+  obtain ⟨hdvd, hle⟩ := contractGenusNumerator_spec i.2
   have hpos : (0 : ℤ) < 2 * T.contractWeight e i := by positivity
   have hq : -1 ≤ T.contractGenusNumerator e i / (2 * T.contractWeight e i) := by
     rw [Int.le_ediv_iff_mul_le hpos]
@@ -217,13 +217,13 @@ private lemma two_mul_contractWeight_mul_contractGenus_sub_one {i : T.Component}
 /-- The genus of a component other than `e` after contracting `e`, in the form of
 [Stacks, Lemma 55.3.9](https://stacks.math.columbia.edu/tag/0C77):
 `g'ᵢ = (wᵢ / w'ᵢ) (gᵢ - 1) + 1 + (aᵢₑ² - wₑaᵢₑ) / (2w'ᵢwₑ)`. -/
-lemma contractGenus_eq {i : T.Component} (hi : i ≠ e) :
+lemma contractGenus_eq {i : {i // i ≠ e}} :
     (T.contractGenus e i : ℚ) =
       (T.weight i / T.contractWeight e i : ℚ) * ((T.genus i : ℚ) - 1) + 1 +
         ((T.intersection i e : ℚ) ^ 2 - T.weight e * T.intersection i e) /
           (2 * T.contractWeight e i * T.weight e) := by
-  have h := two_mul_contractWeight_mul_contractGenus_sub_one hi
-  obtain ⟨c, hc⟩ := weight_dvd_intersection_left (e := e) i
+  have h := two_mul_contractWeight_mul_contractGenus_sub_one (T := T) (e := e) (i := i)
+  obtain ⟨c, hc⟩ := weight_dvd_intersection_left (e := e) i.1
   rw [contractGenusNumerator, hc, Int.mul_ediv_cancel_left _ (weight_pos e).ne'] at h
   have h' := congrArg (Int.cast : ℤ → ℚ) h
   push_cast at h'
@@ -316,7 +316,8 @@ lemma exists_contractIntersection_pos (s : Set {i // i ≠ e}) (hne : s.Nonempty
   · exact hsurvive hx's hy's hy'e hxy'
 
 /-- The contracted intersection matrix kills the multiplicity vector: the fibre relation. -/
-lemma sum_multiplicity_mul_contractIntersection (he : T.IsMinusOneIndex e) (i : {i // i ≠ e}) :
+lemma sum_multiplicity_mul_contractIntersection
+    (he : T.intersection e e = -(T.weight e : ℤ)) (i : {i // i ≠ e}) :
     ∑ j : {i // i ≠ e}, (T.multiplicity j : ℤ) * T.contractIntersection e i j = 0 := by
   refine mul_left_cancel₀ (weight_pos e).ne' ?_
   rw [mul_zero, Finset.mul_sum]
@@ -333,7 +334,7 @@ lemma sum_multiplicity_mul_contractIntersection (he : T.IsMinusOneIndex e) (i : 
   have hi := T.fiber_relation i
   have he' := T.fiber_relation e
   rw [← Finset.add_sum_erase _ _ (mem_univ e)] at hi he'
-  simp_rw [T.intersection_comm e, (T.isMinusOneIndex_iff.mp he).2] at he'
+  simp_rw [T.intersection_comm e, he] at he'
   linear_combination (T.weight e : ℤ) * hi + T.intersection i e * he'
 
 /-! ### The contracted numerical type -/
@@ -361,7 +362,7 @@ def contract (T : NumericalType.{u}) {e : T.Component} (he : T.IsMinusOneIndex e
     (T.offDiagonal_nonneg i j fun h ↦ hij (Subtype.ext h)).trans
       (intersection_le_contractIntersection i j)
   connected := (Relation.forall_reflTransGen_iff _).2 exists_contractIntersection_pos
-  fiber_relation := sum_multiplicity_mul_contractIntersection he
+  fiber_relation := sum_multiplicity_mul_contractIntersection (T.isMinusOneIndex_iff.mp he).2
   weight_dvd i j := by
     refine (contractWeight_dvd_weight (e := e) i).trans ?_
     rw [contractIntersection_apply,
@@ -394,7 +395,7 @@ lemma contract_genus (i : {i // i ≠ e}) : (T.contract he).genus i = T.contract
 lemma genusContribution_contract (i : {i // i ≠ e}) :
     (T.contract he).genusContribution i =
       T.genusContribution i - T.multiplicity i * T.intersection i e / 2 := by
-  have h := two_mul_contractWeight_mul_contractGenus_sub_one i.2
+  have h := two_mul_contractWeight_mul_contractGenus_sub_one (T := T) (e := e) (i := i)
   obtain ⟨c, hc⟩ := weight_dvd_intersection_left (e := e) i.1
   have hwe := (weight_pos e).ne'
   rw [contractGenusNumerator, hc, Int.mul_ediv_cancel_left _ hwe] at h
@@ -464,11 +465,11 @@ example : halvingExample.arithmeticGenus = 2 := by
   rw [arithmeticGenus_def]
   decide
 
-example : halvingExample.contractWeight 0 1 = 1 := by decide
+example : halvingExample.contractWeight 0 ⟨1, by decide⟩ = 1 := by decide
 
 example : halvingExample.contractIntersection 0 ⟨1, by decide⟩ ⟨1, by decide⟩ = 0 := by decide
 
-example : halvingExample.contractGenus 0 1 = 2 := by decide
+example : halvingExample.contractGenus 0 ⟨1, by decide⟩ = 2 := by decide
 
 /-- The contraction of `halvingExample` is a single component of multiplicity one, weight one and
 genus two, so its signed genus `1 + 1 · 1 · (2 - 1) = 2` is that of `halvingExample`. -/
