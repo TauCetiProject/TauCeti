@@ -5,19 +5,23 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.WeightEnumerator
+public import TauCeti.InformationTheory.Coding.Equivalence
+public import TauCeti.InformationTheory.Coding.MinimumDistance
 
 /-!
 # Semilinear equivalence of codes
 
 A semilinear monomial transformation applies one automorphism of the alphabet to every
 coordinate, rescales by coordinate units, and permutes coordinates. Its induced equivalence
-of codes preserves dimension, cardinality, Hamming data, and weight enumerators. This
+of codes preserves dimension, cardinality, and Hamming data. This
 allows conjugate codes over a finite field to be compared without treating field
 conjugation as a linear map over that field.
 
 Use `TauCeti.semilinearMonomialEquiv σ u e` for the word transformation and
 `TauCeti.IsSemilinearEquivalent C D` for the induced relation on codes.
+The restriction to codewords is `TauCeti.semilinearCodeEquiv σ u e h`. Invariance of
+weight distributions and enumerators is in
+`TauCeti.InformationTheory.Coding.Semilinear.WeightEnumerator`.
 
 The conventions extend `TauCeti.monomialEquiv`: the units are applied after the alphabet
 automorphism and before relabelling. Codes remain ordinary submodules, and their images
@@ -68,7 +72,7 @@ theorem semilinearMonomialEquiv_refl (u : ι → Rˣ) (e : ι ≃ κ) :
   exact (monomialEquiv_apply u e x j).symm
 
 /-- The inverse uses the inverse alphabet automorphism and its images of the inverse units. -/
-theorem semilinearMonomialEquiv_symm (σ : R ≃+* R) (u : ι → Rˣ) (e : ι ≃ κ)
+theorem semilinearMonomialEquiv_symm_apply_eq_apply (σ : R ≃+* R) (u : ι → Rˣ) (e : ι ≃ κ)
     (y : κ → R) :
     (semilinearMonomialEquiv σ u e).symm y =
       semilinearMonomialEquiv σ.symm
@@ -80,7 +84,7 @@ theorem semilinearMonomialEquiv_symm (σ : R ≃+* R) (u : ι → Rˣ) (e : ι �
 
 /-- Composition conjugates the first scaling by the second alphabet automorphism. -/
 @[simp]
-theorem semilinearMonomialEquiv_trans (σ τ : R ≃+* R) (u : ι → Rˣ) (v : κ → Rˣ)
+theorem semilinearMonomialEquiv_trans_apply (σ τ : R ≃+* R) (u : ι → Rˣ) (v : κ → Rˣ)
     (e : ι ≃ κ) (f : κ ≃ μ) (x : ι → R) :
     semilinearMonomialEquiv τ v f (semilinearMonomialEquiv σ u e x) =
       semilinearMonomialEquiv (σ.trans τ)
@@ -142,6 +146,28 @@ theorem isSemilinearEquivalent_iff : IsSemilinearEquivalent C D ↔
     ∃ (σ : R ≃+* R) (u : ι → Rˣ) (e : ι ≃ κ),
       C.map (semilinearMonomialEquiv σ u e).toLinearMap = D := Iff.rfl
 
+/-- A semilinear monomial transformation mapping one code onto another restricts to a
+semilinear equivalence between their codewords. -/
+def semilinearCodeEquiv (σ : R ≃+* R) (u : ι → Rˣ) (e : ι ≃ κ)
+    (h : C.map (semilinearMonomialEquiv σ u e).toLinearMap = D) :
+    C ≃ₛₗ[(σ : R →+* R)] D :=
+  (semilinearMonomialEquiv σ u e).ofSubmodules C D h
+
+/-- The induced code equivalence acts by the ambient semilinear monomial transformation. -/
+@[simp]
+theorem coe_semilinearCodeEquiv_apply (σ : R ≃+* R) (u : ι → Rˣ) (e : ι ≃ κ)
+    (h : C.map (semilinearMonomialEquiv σ u e).toLinearMap = D) (x : C) :
+    (semilinearCodeEquiv σ u e h x : κ → R) = semilinearMonomialEquiv σ u e x := by
+  simp only [semilinearCodeEquiv, LinearEquiv.ofSubmodules_apply]
+
+/-- The inverse code equivalence acts by the inverse ambient semilinear transformation. -/
+@[simp]
+theorem coe_semilinearCodeEquiv_symm_apply (σ : R ≃+* R) (u : ι → Rˣ) (e : ι ≃ κ)
+    (h : C.map (semilinearMonomialEquiv σ u e).toLinearMap = D) (y : D) :
+    ((semilinearCodeEquiv σ u e h).symm y : ι → R) =
+      (semilinearMonomialEquiv σ u e).symm y := by
+  simp only [semilinearCodeEquiv, LinearEquiv.ofSubmodules_symm_apply]
+
 /-- Monomial equivalence is semilinear equivalence with the identity alphabet automorphism. -/
 theorem IsMonomialEquivalent.isSemilinearEquivalent (h : IsMonomialEquivalent C D) :
     IsSemilinearEquivalent C D := by
@@ -162,7 +188,7 @@ theorem IsSemilinearEquivalent.symm (h : IsSemilinearEquivalent C D) :
   have hinv := (Submodule.map_symm_eq_iff (semilinearMonomialEquiv σ u e)).2 he
   convert hinv using 1
   ext x
-  simp only [Submodule.mem_map, LinearEquiv.coe_coe, semilinearMonomialEquiv_symm]
+  simp only [Submodule.mem_map, LinearEquiv.coe_coe, semilinearMonomialEquiv_symm_apply_eq_apply]
 
 /-- Semilinear equivalence of codes is transitive. -/
 @[trans]
@@ -175,9 +201,9 @@ theorem IsSemilinearEquivalent.trans (h : IsSemilinearEquivalent C D)
   simp only [Submodule.mem_map, LinearEquiv.coe_coe]
   constructor
   · rintro ⟨x, hx, rfl⟩
-    exact ⟨_, ⟨x, hx, rfl⟩, semilinearMonomialEquiv_trans σ τ u v e f x⟩
+    exact ⟨_, ⟨x, hx, rfl⟩, semilinearMonomialEquiv_trans_apply σ τ u v e f x⟩
   · rintro ⟨_, ⟨x, hx, rfl⟩, hz⟩
-    exact ⟨x, hx, (semilinearMonomialEquiv_trans σ τ u v e f x).symm.trans hz⟩
+    exact ⟨x, hx, (semilinearMonomialEquiv_trans_apply σ τ u v e f x).symm.trans hz⟩
 
 /-- Semilinearly equivalent codes have the same cardinality. -/
 theorem IsSemilinearEquivalent.card_eq (h : IsSemilinearEquivalent C D) :
@@ -203,28 +229,6 @@ theorem IsSemilinearEquivalent.hammingMinDist_eq (h : IsSemilinearEquivalent C D
   obtain ⟨σ, u, e, rfl⟩ := h
   exact (Set.hammingMinDist_image _
     (fun x _ y _ _ ↦ hammingDist_semilinearMonomialEquiv σ u e x y)).symm
-
-/-- Semilinearly equivalent codes have the same weight distribution. -/
-theorem IsSemilinearEquivalent.weightDistribution_eq (h : IsSemilinearEquivalent C D)
-    (w : ℕ) :
-    (C : Set (ι → R)).weightDistribution w = (D : Set (κ → R)).weightDistribution w := by
-  obtain ⟨σ, u, e, rfl⟩ := h
-  rw [Set.weightDistribution_def, Set.weightDistribution_def]
-  exact Nat.card_congr
-    (Equiv.subtypeEquiv (semilinearMonomialEquiv σ u e).toEquiv fun x ↦ by simp)
-
-/-- Semilinearly equivalent codes have the same homogeneous weight enumerator. -/
-theorem IsSemilinearEquivalent.weightEnumerator_eq (h : IsSemilinearEquivalent C D) :
-    (C : Set (ι → R)).weightEnumerator = (D : Set (κ → R)).weightEnumerator := by
-  have hcard : Fintype.card ι = Fintype.card κ := by
-    obtain ⟨_, _, e, _⟩ := h
-    exact Fintype.card_congr e
-  simp_rw [Set.weightEnumerator_def, hcard, h.weightDistribution_eq]
-
-/-- Semilinearly equivalent codes have the same one-variable weight polynomial. -/
-theorem IsSemilinearEquivalent.weightPolynomial_eq (h : IsSemilinearEquivalent C D) :
-    (C : Set (ι → R)).weightPolynomial = (D : Set (κ → R)).weightPolynomial := by
-  rw [← Set.aeval_weightEnumerator, ← Set.aeval_weightEnumerator, h.weightEnumerator_eq]
 
 end Invariants
 
