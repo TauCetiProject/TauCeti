@@ -555,8 +555,11 @@ private theorem exists_transitiveGroupLabel_five_of_le_of_le {H : Subgroup (Perm
       rw [natCard_referenceSubgroup_five_two, natCard_perm_eq_120 (by simp)] at hFi
       rw [hH, natCard_perm_eq_120 (by simp)] at hHi
       rw [Subgroup.relIndex] at h
-      rw [show (referenceSubgroup 5 ⟨2, by simp⟩).index = 6 by omega,
-        show H.index = 12 by omega] at h
+      -- `h` is a product of two indices, so the numerical values of both have to be substituted
+      -- before the remaining equation is linear.
+      have hFindex : (referenceSubgroup 5 ⟨2, by simp⟩).index = 6 := by omega
+      have hHindex : H.index = 12 := by omega
+      rw [hFindex, hHindex] at h
       omega
     have hf : ([0, 1, 3, 2].formPerm : Perm (Fin 5)) ∈ referenceSubgroup 5 ⟨2, by simp⟩ := by
       rw [referenceSubgroup_five_two]
