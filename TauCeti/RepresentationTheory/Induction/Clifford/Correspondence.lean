@@ -81,26 +81,28 @@ private theorem exists_linearEquiv_of_mem_inertia {V : FDRep k N} {t : G} (ht : 
     ∃ ε : V ≃ₗ[k] V, ∀ (n : N) (v : V),
       ε (V.ρ n v) = V.ρ (MulAut.conjNormal t⁻¹ n) (ε v) := by
   obtain ⟨e⟩ := mem_inertia_iff.1 ht
-  -- `{}^t V` and `V` have the same underlying module (`conjNormalFDRep_V`), so the components of
-  -- `e` are linear endomorphisms of `V`, and the identities below hold by unfolding the
-  -- composition of `FDRep` morphisms.
-  let ε : V →ₗ[k] V := e.inv.hom.hom.hom
-  let ε' : V →ₗ[k] V := ModuleCat.Hom.hom e.hom.hom.hom
-  refine ⟨LinearEquiv.ofLinearMap ε ε' ?_ ?_, fun n v => ?_⟩
-  · ext v
-    exact congrArg
-      (fun φ : conjNormalFDRep t V ⟶ conjNormalFDRep t V => φ.hom.hom.hom v) e.hom_inv_id
-  · ext v
-    exact congrArg (fun φ : V ⟶ V => φ.hom.hom.hom v) e.inv_hom_id
-  · have h := congrArg (fun φ => φ.hom.hom v) (e.inv.comm n)
-    simp only [FGModuleCat.obj_carrier, ObjectProperty.FullSubcategory.comp_hom,
-      ModuleCat.hom_comp, FDRep.hom_hom_action_ρ, LinearMap.coe_comp, Function.comp_apply,
-      conjNormalFDRep_ρ, map_inv, MulAut.inv_apply] at h
-    exact h
+  let hV : (conjNormalFDRep t V).V = V.V := conjNormalFDRep_V t V
+  let c : (conjNormalFDRep t V).V ≅ V.V := eqToIso hV
+  let cLinear := FGModuleCat.isoToLinearEquiv c
+  let ε : V ≃ₗ[k] V :=
+    (isoToLinearEquiv e.symm).trans cLinear
+  refine ⟨ε, fun n v => ?_⟩
+  have h := DFunLike.congr_fun (FDRep.Iso.conj_ρ e.symm n) (isoToLinearEquiv e.symm v)
+  have hv := congrArg (fun w => isoToLinearEquiv e.symm (V.ρ n w))
+    ((isoToLinearEquiv e.symm).symm_apply_apply v)
+  have hc (w : conjNormalFDRep t V) :
+      cLinear ((conjNormalFDRep t V).ρ n w) =
+        V.ρ (MulAut.conjNormal t⁻¹ n) (cLinear w) := by
+    rw [conjNormalFDRep_ρ]
+    subst hV
+    rfl
+  have heq := congrArg cLinear (h.trans hv).symm
+  rw [hc] at heq
+  exact heq
 
-/-- **The copies of `V` span a representation of the inertia group lying over `V`.**  If `U` is an
-irreducible representation of the inertia group of `V` and some intertwiner `V → Res_N U` is
-nonzero, then the images of all such intertwiners span `U`. -/
+/-- **The images of intertwiners from `V` span a representation of the inertia group lying over
+`V`.**  If `U` is an irreducible representation of the inertia group of `V` and some intertwiner
+`V → Res_N U` is nonzero, then the images of all such intertwiners span `U`. -/
 theorem iSup_range_intertwiningMap_inertia_eq_top (V : FDRep k N) (U : FDRep k (inertia V))
     [Simple U] (f : IntertwiningMap V.ρ (U.ρ.comp (Subgroup.inclusion (le_inertia V))))
     (hf : f ≠ 0) :
@@ -233,8 +235,10 @@ theorem simple_indFDRep_of_inertia (V : FDRep k N) [Simple V] (U : FDRep k (iner
       IntertwiningMap.id_apply] at this
     exact hv this
   -- `p ∘ g₂` is a nonzero intertwiner from `V` to `{}^{s⁻¹} V`, hence an isomorphism by Schur.
+  let qLinear : V →ₗ[k] V := p.toLinearMap ∘ₗ g₂.toLinearMap
+  have qLinear_apply (v : V) : qLinear v = p (g₂ v) := rfl
   let q : IntertwiningMap V.ρ (conjNormalFDRep s⁻¹ V).ρ :=
-    LinearMap.intertwiningMap_of_isIntertwiningMap _ _ (p.toLinearMap ∘ₗ g₂.toLinearMap)
+    LinearMap.intertwiningMap_of_isIntertwiningMap _ _ qLinear
       fun n v => by
         have hp' := IntertwiningMap.isIntertwining _ _ p (MulAut.conjNormal s n) (g₂ v)
         simp only [MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom, Function.comp_apply,
@@ -242,8 +246,10 @@ theorem simple_indFDRep_of_inertia (V : FDRep k N) [Simple V] (U : FDRep k (iner
         have hc : (conjNormalFDRep s⁻¹ V).ρ n = V.ρ (MulAut.conjNormal s n) := by
           rw [conjNormalFDRep_ρ, inv_inv]
         refine ((congrArg p (IntertwiningMap.isIntertwining _ _ g₂ n v)).trans hp').trans ?_
+        change V.ρ (MulAut.conjNormal s n) (p (g₂ v)) =
+          (conjNormalFDRep s⁻¹ V).ρ n (qLinear v)
         rw [hc]
-        rfl
+        exact congrArg (V.ρ (MulAut.conjNormal s n)) (qLinear_apply v).symm
   have hq : q ≠ 0 := fun h0 => hg₂ (LinearMap.ext fun v => DFunLike.congr_fun h0 v)
   exact hs (by simpa using (inertia V).inv_mem (q.mem_inertia hq))
 

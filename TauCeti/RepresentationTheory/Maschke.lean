@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.RepresentationTheory.Maschke
+import TauCeti.RepresentationTheory.AsModule
 
 /-!
 # Maschke's theorem for intertwining maps
@@ -45,7 +46,21 @@ theorem exists_comp_eq_id_of_injective (f : IntertwiningMap ρ σ) (hf : Functio
   let e := IntertwiningMap.equivLinearMapAsModule ρ σ
   obtain ⟨q, hq⟩ := MonoidAlgebra.exists_leftInverse_of_injective (e f)
     (LinearMap.ker_eq_bot.mpr hf)
-  refine ⟨(IntertwiningMap.equivLinearMapAsModule σ ρ).symm q, IntertwiningMap.ext ?_⟩
-  exact LinearMap.ext fun v => congrArg (fun l => ρ.asModuleEquiv (l (ρ.asModuleEquiv.symm v))) hq
+  let e' := IntertwiningMap.equivLinearMapAsModule σ ρ
+  let p := e'.symm q
+  refine ⟨p, IntertwiningMap.ext (LinearMap.ext fun v => ?_)⟩
+  change p (f v) = v
+  have hef : e f (ρ.asModuleEquiv.symm v) = σ.asModuleEquiv.symm (f v) := by
+    apply σ.asModuleEquiv.eq_symm_apply.mpr
+    rw [IntertwiningMap.equivLinearMapAsModule_apply,
+      Representation.asModuleEquiv_symm_apply]
+    exact Representation.asModuleEquiv_apply (show σ.asModule from f v)
+  have hqv := congrArg (fun l => ρ.asModuleEquiv (l (ρ.asModuleEquiv.symm v))) hq
+  rw [LinearMap.comp_apply, hef, LinearMap.id_apply, LinearEquiv.apply_symm_apply] at hqv
+  calc
+    p (f v) = ρ.asModuleEquiv (q (σ.asModuleEquiv.symm (f v))) := by
+      simpa only [p, e'] using
+        (IntertwiningMap.equivLinearMapAsModule_symm_apply q (f v))
+    _ = v := hqv
 
 end Representation.IntertwiningMap
