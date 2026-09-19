@@ -387,7 +387,7 @@ def mulEquivPresentedGroupCoxeterAppend :
   apply GroupPresentation.mulEquivPresentedGroupCoxeterAppend
   -- The cast in `h` transports along an equality of a type with itself, so it is the identity and
   -- the two relator lists are literally the same list.
-  exact congrArg Relator.relatorSet h
+  exact congrArg Subgroup.normalClosure (congrArg Relator.relatorSet h)
 
 /-- The Coxeter equivalence sends each canonical generator to the corresponding canonical
 generator. -/

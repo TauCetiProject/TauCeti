@@ -100,7 +100,7 @@ additional relations from the source.
   words.
 * `TauCeti.Sporadic.fi23Edges` and `TauCeti.Sporadic.fi23CoxeterMatrix`: the graph the source's two
   paths encode, and its Coxeter matrix.
-* `TauCeti.Sporadic.fi23Presentation_map_toWord_mem_iff`: the transcribed relations are the ones
+* `TauCeti.Sporadic.fi23Presentation_mem_map_toWord_iff`: the transcribed relations are the ones
   that matrix generates, together with the two appended words.
 * `TauCeti.Sporadic.fi23MulEquivPresentedGroupCoxeterAppend`: the row presents the Coxeter group of
   the graph cut down by those two words.
@@ -488,7 +488,7 @@ theorem fi23Presentation_relatorsCyclicallyReduced :
 -- the same type by definition and this cast transports along an equality of a type with itself;
 -- the transcribed field is `fi23RelatorList` by definition as well. Both sides are therefore the
 -- same list, which is what `rfl` checks. Transporting once here keeps the rewrites in
--- `fi23Presentation_map_toWord_mem_iff` at the literal index type.
+-- `fi23Presentation_mem_map_toWord_iff` at the literal index type.
 private theorem fi23Presentation_transcribed_cast :
     (cast (by simp [fi23Presentation_generatorNames]) fi23Presentation.transcribed :
       List (Relator (Fin 10))) = fi23RelatorList := by
@@ -504,7 +504,7 @@ checked against the graph rather than only read against it. The comparison is of
 membership rather than expressions or multiplicities, because the row writes an involution
 relation as `sᵢ ^ 2` where the generated list writes `(sᵢ sᵢ) ^ 1` and groups its relations by
 kind. -/
-theorem fi23Presentation_map_toWord_mem_iff (w : PresentationWord (Fin 10)) :
+theorem fi23Presentation_mem_map_toWord_iff (w : PresentationWord (Fin 10)) :
     w ∈ (cast (by simp [fi23Presentation_generatorNames]) fi23Presentation.transcribed :
         List (Relator (Fin 10))).map Relator.toWord ↔
       w ∈ (coxeterRelators fi23CoxeterMatrix ++ fi23AdditionalRelators).map Relator.toWord := by
@@ -540,7 +540,8 @@ def fi23MulEquivPresentedGroupCoxeterAppend :
   -- because the row is sealed, so the row is unfolded here to make the two index types meet.
   unfold fi23Presentation
   apply GroupPresentation.mulEquivPresentedGroupCoxeterAppend
-  exact Relator.relatorSet_eq_of_map_toWord_mem_iff fi23Presentation_map_toWord_mem_iff
+  exact congrArg Subgroup.normalClosure <|
+    Relator.relatorSet_eq_of_mem_map_toWord_iff fi23Presentation_mem_map_toWord_iff
 
 /-- The Coxeter equivalence sends each canonical generator to the corresponding canonical
 generator. -/

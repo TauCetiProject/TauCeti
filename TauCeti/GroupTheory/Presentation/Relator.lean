@@ -41,7 +41,7 @@ from Mathlib.
 
 * `TauCeti.Relator.toWord_toFreeGroup`: compilation preserves the free-group element denoted by an
   expression.
-* `TauCeti.Relator.relatorSet_eq_of_map_toWord_mem_iff`: relator lists with the same compiled-word
+* `TauCeti.Relator.relatorSet_eq_of_mem_map_toWord_iff`: relator lists with the same compiled-word
   membership denote the same relations.
 
 ## References
@@ -337,7 +337,7 @@ difference reaches the presented group, because the relations are the free-group
 compiled words and these agree. A transcription can therefore be compared with a generated relator
 list letter by letter, which is decidable, rather than expression by expression, which would see
 both differences. Multiplicity is irrelevant because `relatorSet` is a set. -/
-theorem relatorSet_eq_of_map_toWord_mem_iff {α : Type*} {l l' : List (Relator α)}
+theorem relatorSet_eq_of_mem_map_toWord_iff {α : Type*} {l l' : List (Relator α)}
     (h : ∀ w, w ∈ l.map toWord ↔ w ∈ l'.map toWord) : relatorSet l = relatorSet l' := by
   have key : ∀ {m m' : List (Relator α)},
       (∀ w, w ∈ m.map toWord → w ∈ m'.map toWord) → relatorSet m ⊆ relatorSet m' := by
