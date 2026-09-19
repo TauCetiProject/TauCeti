@@ -133,6 +133,39 @@ noncomputable def affineToricChartι (hΦ : Φ.IsRegular) (σ : Φ.cones) :
   haveI := isLocallyDirected_affineToricDiagram hΦ
   colimit.ι Φ.affineToricDiagram σ
 
+/-- The colimit cocone from the affine toric charts to the toric scheme of a regular fan. -/
+@[expose] noncomputable def affineToricCocone (hΦ : Φ.IsRegular) :
+    Cocone Φ.affineToricDiagram :=
+  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦ isOpenImmersion_affineToricDiagram_map hΦ f
+  haveI := isLocallyDirected_affineToricDiagram hΦ
+  { pt := Φ.algebraicRealization hΦ
+    ι :=
+      { app := Φ.affineToricChartι hΦ
+        naturality := fun _ _ f ↦ by
+          dsimp
+          exact colimit.w Φ.affineToricDiagram f } }
+
+/-- The point of the affine toric cocone is the toric scheme. -/
+@[simp]
+theorem affineToricCocone_pt (hΦ : Φ.IsRegular) :
+    (Φ.affineToricCocone hΦ).pt = Φ.algebraicRealization hΦ :=
+  by rw [affineToricCocone]
+
+/-- The legs of the affine toric cocone are the affine chart inclusions. -/
+@[simp]
+theorem affineToricCocone_ι_app (hΦ : Φ.IsRegular) (σ : Φ.cones) :
+    (Φ.affineToricCocone hΦ).ι.app σ = Φ.affineToricChartι hΦ σ :=
+  rfl
+
+/-- The affine toric cocone is a colimit cocone. -/
+noncomputable def isColimitAffineToricCocone (hΦ : Φ.IsRegular) :
+    IsColimit (Φ.affineToricCocone hΦ) :=
+  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦ isOpenImmersion_affineToricDiagram_map hΦ f
+  haveI := isLocallyDirected_affineToricDiagram hΦ
+  by
+    unfold affineToricCocone algebraicRealization affineToricChartι
+    exact colimit.isColimit Φ.affineToricDiagram
+
 variable {Φ}
 
 /-- Each affine toric chart is an open subscheme of the toric scheme of a regular fan. -/
