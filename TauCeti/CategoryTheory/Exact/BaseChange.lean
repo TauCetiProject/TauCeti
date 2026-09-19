@@ -41,6 +41,8 @@ extension-closed subcategories inherit axiom E1.
   inflations, and the kernel of a composite of deflations, computed as a pushout resp. pullback.
 * `TauCeti.ExactStructure.exists_conflation_comp`: the Noether package for a composite of two
   inflations.
+* `TauCeti.ExactStructure.exists_conflations_pullback`: the pullback of two deflations with a
+  common target is an extension in two ways.
 
 ## References
 
@@ -271,6 +273,22 @@ theorem exists_conflation_comp' {X Y Z W V : C} {i : X ⟶ Y} {p : Y ⟶ Z} {hip
     baseChangeι_snd (ShortComplex.mk v q hvq) sq,
     E.conflation_comp_of_isPullback h₁ h₂ sq, E.conflation_baseChange h₂ sq, sq.w,
     baseChangeι_fst (ShortComplex.mk v q hvq) sq⟩
+
+/-- **Pulling back two deflations with a common target.** Given conflations `X₁ ⟶ X₂ ⟶ X₃` and
+`K ⟶ Q ⟶ X₃`, the pullback `Y` of the two deflations onto `X₃` is the middle term of conflations
+`X₁ ⟶ Y ⟶ Q` and `K ⟶ Y ⟶ X₂`: each deflation, pulled back along the other, keeps its kernel. -/
+theorem exists_conflations_pullback {S : ShortComplex C} (hS : E.Conflation S)
+    {K Q : C} {i : K ⟶ Q} {p : Q ⟶ S.X₃} {hip : i ≫ p = 0}
+    (hc : E.Conflation (ShortComplex.mk i p hip)) :
+    ∃ (Y : C) (a : S.X₁ ⟶ Y) (b : Y ⟶ Q) (hab : a ≫ b = 0) (a' : K ⟶ Y) (b' : Y ⟶ S.X₂)
+      (hab' : a' ≫ b' = 0),
+      E.Conflation (ShortComplex.mk a b hab) ∧ E.Conflation (ShortComplex.mk a' b' hab') := by
+  have : HasPullback S.g p := E.hasPullbacks_deflations.hasPullback p (E.isDeflation_g hS)
+  have sq := IsPullback.of_hasPullback S.g p
+  have h₁ := E.conflation_baseChange hS sq
+  have h₂ := E.conflation_baseChange hc sq.flip
+  rw [baseChange_def] at h₁ h₂
+  exact ⟨_, _, _, _, _, _, _, h₁, h₂⟩
 
 end ExactStructure
 

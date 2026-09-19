@@ -28,8 +28,9 @@ those classes generate exact `K₀` as soon as every object admits a finite `P`-
 For a property consisting of projectives, the second half — injectivity of the comparison map from
 the exact `K₀` of the full subcategory on `P` — is proved by Schanuel's and the horseshoe lemmas
 in `TauCeti/CategoryTheory/GrothendieckGroup/ProjectiveResolution.lean`; see
-`TauCeti.ExactStructure.resolutionEquiv`. The general resolving-subcategory case needs the packaged
-resolving hypotheses and Weibel's common-refinement argument, and is not proved here.
+`TauCeti.ExactStructure.resolutionEquiv`. For a resolving subcategory it is proved with pullbacks
+of deflations and dimension shifting in `TauCeti/CategoryTheory/GrothendieckGroup/Resolving.lean`;
+see `TauCeti.ExactStructure.IsResolving.resolutionEquiv`.
 
 ## Main definitions
 

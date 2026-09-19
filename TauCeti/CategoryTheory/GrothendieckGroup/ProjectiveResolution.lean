@@ -62,12 +62,12 @@ theorem** in the projective case.
 The well-definedness, conflation-additivity, and resolution-theorem results here carry
 `P ≤ E.isProjective` as an explicit hypothesis. On top of `ContainsZero` and
 `IsClosedUnderBinaryProducts`, which are assumed throughout, the underlying Euler-class definitions
-and formal computation lemmas need only extension closure. None of the substantive results is
-asserted for a general resolving subcategory. The resolution theorem is true in that generality —
-for a replete, additive, extension-closed `P` closed under kernels of deflations between its own
-objects — but its proof replaces Schanuel's lemma and the horseshoe by Weibel's common-refinement
-argument, and is not carried out here. The projective case is the one that Layer 4's Cartan
-comparison consumes.
+and formal computation lemmas need only extension closure. The resolution theorem for a resolving
+subcategory, where every object of the ambient category has a finite resolution and Schanuel's
+lemma and the horseshoe are replaced by pullbacks of deflations and dimension shifting, is
+`TauCeti.ExactStructure.IsResolving.resolutionEquiv` in
+`TauCeti/CategoryTheory/GrothendieckGroup/Resolving.lean`. The projective case proved here needs
+no kernel closure and resolves only the objects of finite `P`-dimension.
 
 The class of an object, as opposed to that of a resolution, is defined by choosing a resolution
 with `Nonempty.some`; `TauCeti.ExactStructure.eulerClassOf_eq` immediately removes the choice, so
@@ -207,10 +207,18 @@ variable (hP : E.IsExtensionClosed P)
 
 /-- **The Euler class of an object of finite `P`-dimension**, in the exact `K₀` of the structure
 induced on the full subcategory on `P`: the alternating class of some, hence when `P` consists of
-`E`-projectives, by `TauCeti.ExactStructure.eulerClassOf_eq` of any, finite `P`-resolution of it. -/
+`E`-projectives, by `TauCeti.ExactStructure.eulerClassOf_eq`, or when `P` is resolving, by
+`TauCeti.ExactStructure.IsResolving.eulerClassOf_eq`, of any, finite `P`-resolution of it. -/
 noncomputable def eulerClassOf {X : C} (hX : E.admitsFiniteResolution P X) :
     ExactK0 (E.fullSubcategory P hP) :=
   ((E.admitsFiniteResolution_iff P).mp hX).some.eulerClassFullSubcategory hP
+
+/-- The defining equation of `TauCeti.ExactStructure.eulerClassOf`: the alternating class of the
+chosen resolution. -/
+theorem eulerClassOf_def {X : C} (hX : E.admitsFiniteResolution P X) :
+    E.eulerClassOf hP hX =
+      ((E.admitsFiniteResolution_iff P).mp hX).some.eulerClassFullSubcategory hP :=
+  (rfl)
 
 end General
 
