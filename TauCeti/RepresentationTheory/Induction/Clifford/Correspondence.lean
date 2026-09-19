@@ -39,7 +39,8 @@ about the restriction of `U` to `N` do the work.
   nonzero intertwiner from `V` to `{}^{s⁻¹} V`, so Schur's lemma puts `s⁻¹`, hence `s`, in `T`
   (`Representation.IntertwiningMap.mem_inertia`).
 
-The first step uses that `T` is contained in the inertia group, the second that it contains it.
+The spanning argument uses `le_inertia V`, while the Mackey argument derives membership in
+`inertia V` from a nonzero intertwiner and contradicts `s ∉ inertia V`.
 Before this gives the Clifford-correspondence map, one must also prove that the induced
 representation lies over `V`.  Surjectivity and uniqueness—that every irreducible representation of
 `G` lying over `V` arises this way from exactly one `U` up to isomorphism—are separate statements.
