@@ -66,6 +66,9 @@ group scheme of type `D₄`.
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 12.2.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * B. Conrad, *Reductive Group Schemes*, §1.
+* The declarations and the points-level proofs are adapted from
+  `TauCeti.Algebra.Lie.E6.DoubledMinuscule.BaseChange` and
+  `TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.BaseChange`.
 -/
 
 public section
@@ -98,17 +101,6 @@ noncomputable def baseChangeDefiningIdeal :
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     d4TripledWeight A
-
-/-- The transported defining ideal is the one supplied by the generic Kostant toral-closure base
-change. -/
-theorem baseChangeDefiningIdeal_def :
-    baseChangeDefiningIdeal A =
-      kostantToralBaseChangePresentationIdeal
-        (TauCeti.serreRootGenerator weightTable.cartanMatrix)
-        (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
-        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
-        d4TripledWeight A := by
-  rw [baseChangeDefiningIdeal]
 
 /-- Membership in the transported defining ideal is membership of the corresponding element in the
 base change of the named integral defining ideal. -/
