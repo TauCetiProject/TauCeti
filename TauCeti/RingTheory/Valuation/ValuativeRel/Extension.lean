@@ -67,11 +67,4 @@ theorem coe_algebraMap_integerRing (x : 𝒪ᵥ[K]) :
     ((algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] x : 𝒪ᵥ[L]) : L) = algebraMap K L (x : K) :=
   Valuation.HasExtension.coe_algebraMap_valuationSubring_eq (valuation K) (valuation L) x
 
-/-- Reduction commutes with the structure map between the rings of integers. -/
-@[simp]
-theorem algebraMap_residueField_residue (x : 𝒪ᵥ[K]) :
-    algebraMap 𝓀ᵥ[K] 𝓀ᵥ[L] (IsLocalRing.residue 𝒪ᵥ[K] x) =
-      IsLocalRing.residue 𝒪ᵥ[L] (algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] x) :=
-  Valuation.HasExtension.algebraMap_residue_eq_residue_algebraMap (valuation K) (valuation L) x
-
 end TauCeti

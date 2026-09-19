@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Ring.Action.Invariant
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.NumberTheory.LocalField.FiniteExtension
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
 # Automorphisms of finite extensions acting on integral and residue data
@@ -126,19 +127,13 @@ field of the base extension. -/
 noncomputable def residueFieldEquiv (σ : L ≃ₐ[K] L) : 𝓀[L] ≃ₐ[𝓀[K]] 𝓀[L] :=
   IsLocalRing.ResidueField.mapAlgEquiv' σ.integerRingAlgEquiv
 
-/-- The induced residue-field automorphism commutes with reduction from the integer ring. -/
-theorem residueFieldEquiv_residue (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
-    σ.residueFieldEquiv (IsLocalRing.residue 𝒪[L] x) =
-      IsLocalRing.residue 𝒪[L] (σ • x) := by
-  simpa only [residueFieldEquiv, integerRingAlgEquiv_apply] using
-    IsLocalRing.ResidueField.mapAlgEquiv'_residue σ.integerRingAlgEquiv x
-
 /-- The induced residue-field equivalence agrees with the canonical residue-field action. -/
 @[simp]
 theorem residueFieldEquiv_apply (σ : L ≃ₐ[K] L) (x : 𝓀[L]) :
     σ.residueFieldEquiv x = σ • x := by
   obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
-  rw [residueFieldEquiv_residue, IsLocalRing.ResidueField.residue_smul]
+  rw [residueFieldEquiv, IsLocalRing.ResidueField.mapAlgEquiv'_residue, integerRingAlgEquiv_apply,
+    IsLocalRing.ResidueField.residue_smul]
 
 end AlgEquiv
 
