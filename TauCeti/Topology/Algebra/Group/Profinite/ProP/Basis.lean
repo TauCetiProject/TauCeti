@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Burnside
 public import Mathlib.LinearAlgebra.Basis.Basic
 import TauCeti.Algebra.Module.ZMod.Span
+import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
 # Bases of the Frattini quotient and topological generation
@@ -46,8 +47,8 @@ theorem topologicallyGenerates_iff_frattiniQuotient_span_topologicalClosure_eq_t
     simpa only [t, Set.image_image, Function.comp_def, Additive.ofMul_symm_eq] using
       (Additive.ofMul.image_eq_preimage_symm t)
   rw [himage, span_zmod_eq_addSubgroupClosure, ← Subgroup.toAddSubgroup_closure]
-  -- `Additive` inherits the topology, so the two subgroup closures agree definitionally.
-  exact Subgroup.toAddSubgroup.injective.eq_iff.symm
+  rw [← toAddSubgroup_topologicalClosure, ← Subgroup.toAddSubgroup.map_top,
+    Subgroup.toAddSubgroup.injective.eq_iff]
 
 /-- **Burnside's basis theorem, spanning form.** If the Frattini quotient is finite, a set
 topologically generates a profinite pro-`p` group exactly when its images span that quotient
