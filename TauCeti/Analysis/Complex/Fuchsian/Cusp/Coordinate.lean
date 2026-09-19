@@ -219,13 +219,12 @@ theorem isOpenQuotientMap_qCoordinate : IsOpenQuotientMap (qCoordinate D) := by
     exact (Homeomorph.smul D.scaling).isOpenQuotientMap
   exact (isOpenQuotientMap_qParamPuncturedUnitDisc D.width D.width_pos).comp hsmul
 
-/-- The complex-valued q-coordinate is holomorphic on the upper half-plane. -/
+/-- The normalized q-coordinate is holomorphic as a map into the punctured unit disc. -/
 theorem mdifferentiable_qCoordinate :
-    MDiff (fun z : ℍ ↦ ((qCoordinate D z : 𝔻) : ℂ)) := by
-  simp only [qCoordinate_eq]
-  simpa only [Function.comp_def] using
-    (mdifferentiable_qParamPuncturedUnitDisc D.width D.width_pos).comp
-      ((contMDiff_const_smul (I := 𝓘(ℂ, ℂ)) (n := ∞) D.scaling).mdifferentiable (by simp))
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (qCoordinate D) := by
+  rw [qCoordinate_eq_comp]
+  exact (mdifferentiable_qParamPuncturedUnitDisc D.width D.width_pos).comp
+    ((contMDiff_const_smul (I := 𝓘(ℂ, ℂ)) (n := ∞) D.scaling).mdifferentiable (by simp))
 
 /-- A scaled horodisc is exactly the inverse image of a punctured disc under the
 q-coordinate. -/
