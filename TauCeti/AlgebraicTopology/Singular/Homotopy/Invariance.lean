@@ -48,14 +48,11 @@ def singularChainComplexMap :
     _root_.Homotopy (P.singularChainComplexMap f R) (P.singularChainComplexMap g R) :=
   H.toSSetPair.chainComplexMap R
 
-lemma singularChainComplexMap_def :
-    H.singularChainComplexMap R = H.toSSetPair.chainComplexMap R := (rfl)
-
 @[reassoc (attr := simp)]
 lemma singularChainComplexMap_hom (p q : ℕ) :
     (P.singularChainComplexπ R).f p ≫ (H.singularChainComplexMap R).hom p q =
       (H.fst.toSSet.chainComplexMap R).hom p q ≫ (P'.singularChainComplexπ R).f q := by
-  rw [singularChainComplexMap_def, ← H.toSSetPair_right]
+  rw [← H.toSSetPair_right]
   exact H.toSSetPair.chainComplexMap_hom R p q
 
 include H in

@@ -62,24 +62,18 @@ lemma singularChainComplexπ_comp_totalToOuter :
         TopPair.singularChainComplexMap (totalToOuter.app T) R =
       (outerPair.obj T).singularChainComplexπ R := by
   -- The map of pairs `(X, B) ⟶ (X, A)` is the identity on the ambient space `X`, so the map
-  -- it induces on the chains of that ambient space is the identity.
-  have key :
-      SSet.chainComplexMap (TopPair.toSSetPair.map (totalToOuter.app T)).right R = 𝟙 _ := by
+  -- it induces on the chains of that ambient space is the identity.  The two pairs share that
+  -- ambient space only definitionally, so the identity is taken at the outer pair, which is the
+  -- form the rewrite below needs.
+  have key : SSet.chainComplexMap (TopPair.toSSetPair.map (totalToOuter.app T)).right R =
+      𝟙 ((TopPair.toSSetPair.obj (outerPair.obj T)).right.chainComplex R) := by
     have h : TopCat.toSSet.map (TopPair.Hom.fst (totalToOuter.app T)) = 𝟙 _ := by
       rw [totalToOuter_app_fst, TopCat.toSSet.map_id]
     exact (congrArg (((SSet.chainComplexFunctor C).obj R).map) h).trans
       (((SSet.chainComplexFunctor C).obj R).map_id _)
-  have h := (((SSetPair.chainComplexFunctorπ C).app R).naturality
+  conv_rhs => rw [← Category.id_comp ((outerPair.obj T).singularChainComplexπ R), ← key]
+  exact (((SSetPair.chainComplexFunctorπ C).app R).naturality
     (TopPair.toSSetPair.map (totalToOuter.app T))).symm
-  change (totalPair.obj T).singularChainComplexπ R ≫
-      TopPair.singularChainComplexMap (totalToOuter.app T) R =
-    SSet.chainComplexMap (TopPair.toSSetPair.map (totalToOuter.app T)).right R ≫
-      (outerPair.obj T).singularChainComplexπ R at h
-  refine h.trans ?_
-  rw [key]
-  -- `Category.id_comp` is applied as a term because the two ambient simplicial sets it
-  -- identifies are definitionally, but not syntactically, equal.
-  exact Category.id_comp _
 
 lemma singularChainComplexMap_innerToTotal_comp_totalToOuter :
     TopPair.singularChainComplexMap (innerToTotal.app T) R ≫
