@@ -63,8 +63,8 @@ through the periodic-resolution calculations `Rep.FiniteCyclicGroup.groupCohomol
   short exact sequence of representations induce one of complexes, hence a long exact sequence of
   these homology groups; splicing it against the two-periodicity above is the exact hexagon that
   computes Herbrand quotients.
-* `Rep.FiniteCyclicGroup.normHomCompSubMap`: functoriality of the short complex
-  `M --N--> M --(ρ(g) - 𝟙)--> M`.
+* `Rep.FiniteCyclicGroup.normHomCompSubMap` and `subCompNormHomMap`: functoriality of the two
+  short complexes obtained by alternating the norm and `ρ(g) - 𝟙`.
 
 ## Main results
 
@@ -72,9 +72,9 @@ through the periodic-resolution calculations `Rep.FiniteCyclicGroup.groupCohomol
   have the same cardinality. This is the form the Herbrand quotient is computed with.
 * `Rep.FiniteCyclicGroup.shortExact_map_periodicFunctor`: a short exact sequence of
   representations induces a short exact sequence of periodic chain complexes.
-* `Rep.FiniteCyclicGroup.homologyMap_comp_periodicHomologyIsoOdd`: the odd-degree identification
-  of the homology of the periodic complex is natural in the coefficients, so the maps it induces
-  do not depend on the odd degree chosen.
+* `Rep.FiniteCyclicGroup.homologyMap_comp_periodicHomologyIsoOdd` and
+  `homologyMap_comp_periodicHomologyIsoEven`: the odd- and nonzero-even-degree identifications of
+  the homology of the periodic complex are natural in the coefficients.
 * `Rep.FiniteCyclicGroup.natCard_periodicHomology_odd` and `natCard_periodicHomology_even`: the
   homology of the periodic complex in an odd, respectively a nonzero even, degree has the
   cardinality of Tate cohomology in degree `0`, respectively `-1`.
@@ -374,58 +374,38 @@ section PeriodicComplex
 
 variable {R G : Type u} [CommRing R] [CommGroup G] [Fintype G] (M : Rep R G) (g : G)
 
-/-- Out of an even degree, the differential of the periodic chain complex is the norm map. -/
-theorem moduleCatChainComplex_d_of_even {j : ℕ} (hj : Even (j + 1)) :
-    (moduleCatChainComplex M g).d (j + 1) j = ModuleCat.ofHom (Hom.hom M.norm).toLinearMap := by
-  simp [moduleCatChainComplex, HomologicalComplex.alternatingConst, hj]
-
-/-- Out of an odd degree, the differential of the periodic chain complex is `ρ(g) - 𝟙`. -/
-theorem moduleCatChainComplex_d_of_odd {j : ℕ} (hj : ¬ Even (j + 1)) :
-    (moduleCatChainComplex M g).d (j + 1) j =
-      ModuleCat.ofHom (Hom.hom (applyAsHom M g - 𝟙 M)).toLinearMap := by
-  simp [moduleCatChainComplex, HomologicalComplex.alternatingConst, hj]
-
 variable {M} {N : Rep R G}
-
-/-- A morphism of representations commutes with the differentials of the periodic chain
-complexes, in every degree: this is what makes it a chain map. -/
-theorem moduleCatChainComplex_comm (f : M ⟶ N) {i j : ℕ}
-    (hij : (ComplexShape.down ℕ).Rel i j) :
-    ModuleCat.ofHom (Hom.hom f).toLinearMap ≫ (moduleCatChainComplex N g).d i j =
-      (moduleCatChainComplex M g).d i j ≫ ModuleCat.ofHom (Hom.hom f).toLinearMap := by
-  have key : ∀ (φ : N ⟶ N) (ψ : M ⟶ M), f ≫ φ = ψ ≫ f →
-      ModuleCat.ofHom (Hom.hom f).toLinearMap ≫ ModuleCat.ofHom (Hom.hom φ).toLinearMap =
-        ModuleCat.ofHom (Hom.hom ψ).toLinearMap ≫ ModuleCat.ofHom (Hom.hom f).toLinearMap :=
-    fun _ _ h ↦ by simpa using congrArg (forget₂ (Rep R G) (ModuleCat R)).map h
-  obtain ⟨rfl⟩ := hij
-  by_cases hj : Even (j + 1)
-  · rw [moduleCatChainComplex_d_of_even _ _ hj, moduleCatChainComplex_d_of_even _ _ hj]
-    exact key _ _ (Rep.norm_comm f)
-  · rw [moduleCatChainComplex_d_of_odd _ _ hj, moduleCatChainComplex_d_of_odd _ _ hj]
-    exact key _ _ (by simp [Preadditive.comp_sub, Preadditive.sub_comp, applyAsHom_comm])
 
 variable (R) in
 /-- The periodic chain complex `... ⟶ M --N--> M --(ρ(g) - 𝟙)--> M ⟶ 0` of underlying modules,
-as a functor of the coefficient representation. A morphism of representations acts by the
-underlying linear map in every degree. This is the `ModuleCat`-valued analogue of Mathlib's
-`Rep.FiniteCyclicGroup.chainComplexFunctor`, whose values are complexes of representations; the
-underlying-module form is the one whose homology Mathlib's
-`Rep.FiniteCyclicGroup.moduleCatChainComplex` computes.
+as a functor of the coefficient representation. It is obtained from Mathlib's
+`Rep.FiniteCyclicGroup.chainComplexFunctor` by applying the forgetful functor from representations
+to modules degreewise. A morphism of representations therefore acts by its underlying linear map
+in every degree.
 
 The body is exposed because consumers identify the value of the functor with
 `Rep.FiniteCyclicGroup.moduleCatChainComplex` and its action on a morphism with the underlying
 linear map. -/
 @[expose]
-noncomputable def periodicFunctor (g : G) : Rep R G ⥤ ChainComplex (ModuleCat R) ℕ where
-  obj M := moduleCatChainComplex M g
-  map f := { f _ := ModuleCat.ofHom (Hom.hom f).toLinearMap
-             comm' _ _ h := moduleCatChainComplex_comm g f h }
-  map_id _ := rfl
-  map_comp _ _ := rfl
+noncomputable def periodicFunctor (g : G) : Rep R G ⥤ ChainComplex (ModuleCat R) ℕ :=
+  chainComplexFunctor R g ⋙
+    (forget₂ (Rep R G) (ModuleCat R)).mapHomologicalComplex (ComplexShape.down ℕ)
 
 @[simp]
 theorem periodicFunctor_map_f (f : M ⟶ N) (i : ℕ) :
     ((periodicFunctor R g).map f).f i = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
+
+set_option backward.defeqAttrib.useBackward true in
+set_option backward.isDefEq.respectTransparency false in
+/-- The value of `periodicFunctor` is the underlying-module periodic chain complex. -/
+noncomputable def periodicFunctorObjIso (M : Rep R G) :
+    (periodicFunctor R g).obj M ≅ moduleCatChainComplex M g :=
+  HomologicalComplex.Hom.isoOfComponents (fun _ ↦ Iso.refl _) (by
+    rintro _ j ⟨rfl⟩
+    simp only [periodicFunctor, Functor.comp_obj, Functor.mapHomologicalComplex_obj_X,
+      Functor.mapHomologicalComplex_obj_d, Iso.refl_hom]
+    by_cases hj : Even (j + 1) <;>
+      simp [chainComplexFunctor, moduleCatChainComplex, hj])
 
 instance : (periodicFunctor R g).PreservesZeroMorphisms where
   map_zero X Y := by
@@ -463,7 +443,9 @@ variable (M)
 `M --N--> M --(ρ(g) - 𝟙)--> M`. -/
 noncomputable def periodicScIsoOdd {j : ℕ} (hj : Odd j) :
     ((periodicFunctor R g).obj M).sc j ≅ normHomCompSub M g :=
-  HomologicalComplex.alternatingConstScIsoOdd (ModuleCat.of R M.V)
+  (HomologicalComplex.shortComplexFunctor (ModuleCat R) (ComplexShape.down ℕ) j).mapIso
+      (periodicFunctorObjIso (R := R) (G := G) (g := g) M) ≪≫
+    HomologicalComplex.alternatingConstScIsoOdd (ModuleCat.of R M.V)
     (by ext; simp [sub_hom, applyAsHom, norm]) (by ext; simp [sub_hom, applyAsHom, norm])
     (fun _ _ => ComplexShape.down_nat_odd_add) down_rel_prev
     (down_rel_next (by rintro rfl; simp at hj)) hj
@@ -472,7 +454,9 @@ noncomputable def periodicScIsoOdd {j : ℕ} (hj : Odd j) :
 complex is `M --(ρ(g) - 𝟙)--> M --N--> M`. -/
 noncomputable def periodicScIsoEven {j : ℕ} (hj : Even j) (hj0 : j ≠ 0) :
     ((periodicFunctor R g).obj M).sc j ≅ subCompNormHom M g :=
-  HomologicalComplex.alternatingConstScIsoEven (ModuleCat.of R M.V)
+  (HomologicalComplex.shortComplexFunctor (ModuleCat R) (ComplexShape.down ℕ) j).mapIso
+      (periodicFunctorObjIso (R := R) (G := G) (g := g) M) ≪≫
+    HomologicalComplex.alternatingConstScIsoEven (ModuleCat.of R M.V)
     (by ext; simp [sub_hom, applyAsHom, norm]) (by ext; simp [sub_hom, applyAsHom, norm])
     (fun _ _ => ComplexShape.down_nat_odd_add) down_rel_prev (down_rel_next hj0) hj
 
@@ -487,6 +471,18 @@ theorem periodicScIsoOdd_hom_τ₂ {j : ℕ} (hj : Odd j) :
 @[simp]
 theorem periodicScIsoOdd_hom_τ₃ {j : ℕ} (hj : Odd j) :
     (periodicScIsoOdd M g hj).hom.τ₃ = 𝟙 _ := (rfl)
+
+@[simp]
+theorem periodicScIsoEven_hom_τ₁ {j : ℕ} (hj : Even j) (hj0 : j ≠ 0) :
+    (periodicScIsoEven M g hj hj0).hom.τ₁ = 𝟙 _ := (rfl)
+
+@[simp]
+theorem periodicScIsoEven_hom_τ₂ {j : ℕ} (hj : Even j) (hj0 : j ≠ 0) :
+    (periodicScIsoEven M g hj hj0).hom.τ₂ = 𝟙 _ := (rfl)
+
+@[simp]
+theorem periodicScIsoEven_hom_τ₃ {j : ℕ} (hj : Even j) (hj0 : j ≠ 0) :
+    (periodicScIsoEven M g hj hj0).hom.τ₃ = 𝟙 _ := (rfl)
 
 /-- In an odd degree the periodic chain complex computes the homology of
 `M --N--> M --(ρ(g) - 𝟙)--> M`, the model of degree-zero Tate cohomology. -/
@@ -503,6 +499,12 @@ noncomputable def periodicHomologyIsoEven {j : ℕ} (hj : Even j) (hj0 : j ≠ 0
 @[simp]
 theorem periodicHomologyIsoOdd_hom {j : ℕ} (hj : Odd j) :
     (periodicHomologyIsoOdd M g hj).hom = ShortComplex.homologyMap (periodicScIsoOdd M g hj).hom :=
+  (rfl)
+
+@[simp]
+theorem periodicHomologyIsoEven_hom {j : ℕ} (hj : Even j) (hj0 : j ≠ 0) :
+    (periodicHomologyIsoEven M g hj hj0).hom =
+      ShortComplex.homologyMap (periodicScIsoEven M g hj hj0).hom :=
   (rfl)
 
 variable {M}
@@ -527,6 +529,27 @@ theorem normHomCompSubMap_τ₂ (f : M ⟶ N) :
 @[simp]
 theorem normHomCompSubMap_τ₃ (f : M ⟶ N) :
     (normHomCompSubMap g f).τ₃ = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
+
+/-- The short complex `M --(ρ(g) - 𝟙)--> M --N--> M` is functorial in `M`: a morphism of
+representations acts by its underlying linear map in each of the three spots. -/
+noncomputable def subCompNormHomMap (f : M ⟶ N) : subCompNormHom M g ⟶ subCompNormHom N g where
+  τ₁ := ModuleCat.ofHom (Hom.hom f).toLinearMap
+  τ₂ := ModuleCat.ofHom (Hom.hom f).toLinearMap
+  τ₃ := ModuleCat.ofHom (Hom.hom f).toLinearMap
+  comm₁₂ := by ext x; simp [sub_hom, applyAsHom, hom_comm_apply]
+  comm₂₃ := by ext x; simp [norm_apply, Representation.norm, map_sum, hom_comm_apply]
+
+@[simp]
+theorem subCompNormHomMap_τ₁ (f : M ⟶ N) :
+    (subCompNormHomMap g f).τ₁ = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
+
+@[simp]
+theorem subCompNormHomMap_τ₂ (f : M ⟶ N) :
+    (subCompNormHomMap g f).τ₂ = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
+
+@[simp]
+theorem subCompNormHomMap_τ₃ (f : M ⟶ N) :
+    (subCompNormHomMap g f).τ₃ = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
 
 /-- The odd-degree identification of the short complexes is natural in the coefficients. -/
 theorem sc_map_comp_periodicScIsoOdd (f : M ⟶ N) {j : ℕ} (hj : Odd j) :
@@ -553,6 +576,36 @@ theorem homologyMap_comp_periodicHomologyIsoOdd (f : M ⟶ N) {j : ℕ} (hj : Od
           (periodicScIsoOdd N g hj).hom) =
       ShortComplex.homologyMap ((periodicScIsoOdd M g hj).hom ≫ normHomCompSubMap g f) := by
     rw [sc_map_comp_periodicScIsoOdd]
+  exact (ShortComplex.homologyMap_comp _ _).symm.trans
+    (h.trans (ShortComplex.homologyMap_comp _ _))
+
+/-- The even-degree identification of the short complexes is natural in the coefficients. -/
+theorem sc_map_comp_periodicScIsoEven (f : M ⟶ N) {j : ℕ} (hj : Even j) (hj0 : j ≠ 0) :
+    (HomologicalComplex.shortComplexFunctor (ModuleCat R) (ComplexShape.down ℕ) j).map
+        ((periodicFunctor R g).map f) ≫ (periodicScIsoEven N g hj hj0).hom =
+      (periodicScIsoEven M g hj hj0).hom ≫ subCompNormHomMap g f := by
+  refine ShortComplex.hom_ext _ _ ?_ ?_ ?_
+  all_goals
+    simp only [ShortComplex.comp_τ₁, ShortComplex.comp_τ₂, ShortComplex.comp_τ₃,
+      periodicScIsoEven_hom_τ₁, periodicScIsoEven_hom_τ₂, periodicScIsoEven_hom_τ₃,
+      subCompNormHomMap_τ₁, subCompNormHomMap_τ₂, subCompNormHomMap_τ₃]
+    rfl
+
+/-- **Naturality of the even-degree periodicity.** The homology of the periodic chain complex in
+a nonzero even degree is identified with the homology of `M --(ρ(g) - 𝟙)--> M --N--> M`
+compatibly with morphisms of representations. -/
+theorem homologyMap_comp_periodicHomologyIsoEven (f : M ⟶ N) {j : ℕ} (hj : Even j)
+    (hj0 : j ≠ 0) :
+    HomologicalComplex.homologyMap ((periodicFunctor R g).map f) j ≫
+        (periodicHomologyIsoEven N g hj hj0).hom =
+      (periodicHomologyIsoEven M g hj hj0).hom ≫
+        ShortComplex.homologyMap (subCompNormHomMap g f) := by
+  have h : ShortComplex.homologyMap ((HomologicalComplex.shortComplexFunctor (ModuleCat R)
+        (ComplexShape.down ℕ) j).map ((periodicFunctor R g).map f) ≫
+          (periodicScIsoEven N g hj hj0).hom) =
+      ShortComplex.homologyMap ((periodicScIsoEven M g hj hj0).hom ≫
+        subCompNormHomMap g f) := by
+    rw [sc_map_comp_periodicScIsoEven]
   exact (ShortComplex.homologyMap_comp _ _).symm.trans
     (h.trans (ShortComplex.homologyMap_comp _ _))
 
