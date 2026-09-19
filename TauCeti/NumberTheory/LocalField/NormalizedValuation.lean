@@ -177,20 +177,6 @@ theorem normalizedValuationWithZero_eq_ordFrac :
   rw [Ring.ordFrac_eq_valuation_inv, ← intValuation_eq_maximalIdeal_valuation]
   simp [normalizedValuationWithZero, intValuation, invMonoidWithZeroHom]
 
-/-- A surjective `ℤᵐ⁰`-valued valuation compatible with the valuative relation of `K` is
-`ValuativeRel.valuation K` transported along `valueGroupWithZeroIsoInt`: two equivalent
-valuations onto `ℤᵐ⁰` are equal. -/
-theorem _root_.Valuation.valueGroupWithZeroIsoInt_eq_of_surjective
-    (v : Valuation K ℤᵐ⁰) [v.Compatible]
-    (hv : Function.Surjective v) (x : K) :
-    valueGroupWithZeroIsoInt K (valuation K x) = v x := by
-  have h : intValuation (K := K) x = v x :=
-    DFunLike.congr_fun (Valuation.eq_of_isEquiv_of_surjective intValuation_surjective hv
-      ((Valuation.isEquiv_map_self_of_strictMono _ (valueGroupWithZeroIsoInt K).strictMono).trans
-        (ValuativeRel.isEquiv _ _))) x
-  change valueGroupWithZeroIsoInt K (valuation K x) = v x at h
-  exact h
-
 /-- The zero-preserving normalized valuation is the inverse of any surjective `ℤᵐ⁰`-valued
 valuation compatible with the valuative relation of `K`. This is how a concrete discrete
 valuation, such as the adic valuation of a completion, is read as the normalized one. -/
@@ -198,8 +184,12 @@ theorem _root_.Valuation.normalizedValuationWithZero_eq_inv_of_surjective
     (v : Valuation K ℤᵐ⁰) [v.Compatible]
     (hv : Function.Surjective v) (x : K) :
     normalizedValuationWithZero K x = (v x)⁻¹ := by
-  rw [← v.valueGroupWithZeroIsoInt_eq_of_surjective hv]
-  simp [normalizedValuationWithZero, invMonoidWithZeroHom]
+  have h : intValuation (K := K) x = v x :=
+    DFunLike.congr_fun (Valuation.eq_of_isEquiv_of_surjective intValuation_surjective hv
+      ((Valuation.isEquiv_map_self_of_strictMono _ (valueGroupWithZeroIsoInt K).strictMono).trans
+        (ValuativeRel.isEquiv _ _))) x
+  rw [← h]
+  simp [normalizedValuationWithZero, intValuation, invMonoidWithZeroHom]
 
 /-- The translation between Mathlib's multiplicative valuation and the additive normalization:
 the normalized valuation is minus the logarithm of `ValuativeRel.valuation`, transported to

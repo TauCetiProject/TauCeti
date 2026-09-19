@@ -70,6 +70,16 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   (v : HeightOneSpectrum R) (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal]
   [Finite (R ⧸ v.asIdeal)] [Finite (B ⧸ w.asIdeal)]
 
+private theorem normalizedValuationWithZero_adicCompletion_algebraMap
+    (x : v.adicCompletion K) :
+    TauCeti.normalizedValuationWithZero (w.adicCompletion L)
+        (algebraMap (v.adicCompletion K) (w.adicCompletion L) x) =
+      TauCeti.normalizedValuationWithZero (v.adicCompletion K) x ^
+        v.asIdeal.ramificationIdx' w.asIdeal := by
+  rw [normalizedValuationWithZero_adicCompletion,
+    normalizedValuationWithZero_adicCompletion, algebraMap_adicCompletionExtensionAlgebra,
+    valued_adicCompletionExtension, inv_pow]
+
 /-- **The local ramification index is the global one.** For `w` a height-one prime of `B` over the
 height-one prime `v` of `R`, with finite residue fields, the ramification index of the extension
 of local fields `L_w / K_v`, for the canonical algebra structure of `adicCompletionExtension`, is
@@ -81,11 +91,9 @@ theorem ramificationIndex_adicCompletion :
   have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
   rw [← Ideal.ramificationIdx'_eq_ramificationIdx v.asIdeal w.asIdeal v.ne_bot]
   refine TauCeti.ramificationIndex_eq_iff.2 fun x ↦ WithZero.coe_injective ?_
-  rw [WithZero.coe_pow, ← TauCeti.normalizedValuationWithZero_coe,
-    ← TauCeti.normalizedValuationWithZero_coe,
-    Units.coe_map, MonoidHom.coe_coe, normalizedValuationWithZero_adicCompletion,
-    normalizedValuationWithZero_adicCompletion, algebraMap_adicCompletionExtensionAlgebra,
-    valued_adicCompletionExtension, inv_pow]
+  simpa only [WithZero.coe_pow, ← TauCeti.normalizedValuationWithZero_coe,
+    Units.coe_map, MonoidHom.coe_coe] using
+      normalizedValuationWithZero_adicCompletion_algebraMap v w (x : v.adicCompletion K)
 
 end Extension
 
