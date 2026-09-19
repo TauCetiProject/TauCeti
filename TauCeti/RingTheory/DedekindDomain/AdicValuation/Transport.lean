@@ -217,6 +217,7 @@ theorem adicCompletionCongr_one :
   exact (eq_adicCompletionCongr_of_continuous (fun _ ↦ rfl) continuous_id fun _ ↦ rfl).symm
 
 /-- Transporting completions along two field isomorphisms is transport along their composite. -/
+@[simp]
 theorem adicCompletionCongr_trans {R'' K'' : Type*} [CommRing R''] [IsDedekindDomain R'']
     [Field K''] [Algebra R'' K''] [IsFractionRing R'' K''] (u : HeightOneSpectrum R'')
     (τ : K' ≃+* K'') (hτ : ∀ y, u.valuation K'' (τ y) = w.valuation K' y) :
@@ -230,6 +231,7 @@ theorem adicCompletionCongr_trans {R'' K'' : Type*} [CommRing R''] [IsDedekindDo
     simp
 
 /-- The inverse of `adicCompletionCongr` is the completion of the inverse isomorphism. -/
+@[simp]
 theorem adicCompletionCongr_symm :
     (adicCompletionCongr v w σ hσ).symm =
       adicCompletionCongr w v σ.symm (fun y ↦ by simpa using (hσ (σ.symm y)).symm) := by
