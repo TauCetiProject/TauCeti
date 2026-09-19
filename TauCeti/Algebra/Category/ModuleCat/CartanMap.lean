@@ -195,7 +195,7 @@ instance : (finiteProjectiveModules R).IsClosedUnderBinaryProducts := by
 
 /-- **The exact structure of the finitely generated modules**: the short exact sequences of
 `R`-modules all of whose terms are finitely generated. -/
-noncomputable def finiteModulesExactStructure :
+noncomputable abbrev finiteModulesExactStructure :
     ExactStructure (FGModuleCat.{u} R) :=
   (ExactStructure.abelian (ModuleCat.{u} R)).fullSubcategory _ (isExtensionClosed_finiteModules R)
 
