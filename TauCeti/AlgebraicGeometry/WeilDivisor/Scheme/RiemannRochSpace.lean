@@ -32,6 +32,8 @@ map `L(D + y) ⟶ κ(y)` whose kernel is exactly `L(D)`. Starting from `L(0) = �
 
 ## Main declarations
 
+* `SchemeWeilDivisor.residueMap` and `SchemeWeilDivisor.residueMap_eq_zero_iff`: the residue
+  linear map from `L(D + y)` to `κ(y)` and the characterization of its kernel as `L(D)`;
 * `SchemeWeilDivisor.fg_sections_add_ofPoint`: if `L(D)` is finitely generated over `Γ(X, ⊤)` and
   `κ(y)` is finite over `Γ(X, ⊤)`, then `L(D + y)` is finitely generated;
 * `SchemeWeilDivisor.fg_sections_of_le`: over a Noetherian ring of global functions, `L(D)` is
@@ -124,7 +126,7 @@ private lemma mem_sections_iff_mem_maximalIdeal {g : X.functionField} (hg0 : g �
 variable (D y) in
 /-- The residue at `y` of `g s`, for a global section `s` of `𝒪_X(D + y)` and a rational function
 `g` of order `D(y) + 1` at `y`, as a `Γ(X, ⊤)`-linear map to `κ(y)`. -/
-private def residueMap {g : X.functionField} (hg0 : g ≠ 0)
+def residueMap {g : X.functionField} (hg0 : g ≠ 0)
     (hg : X.ord g y = WeilDivisor.coeff D y + 1) :
     letI := (X.Γevaluation y).hom.toAlgebra
     sections (D + WeilDivisor.ofPoint y) ⊤ →ₗ[Γ(X, ⊤)] X.residueField y :=
@@ -153,7 +155,9 @@ private def residueMap {g : X.functionField} (hg0 : g ≠ 0)
       -- `X.Γevaluation y` is by definition the germ at `y` followed by the residue map.
       rfl }
 
-private lemma residueMap_eq_zero_iff {g : X.functionField} (hg0 : g ≠ 0)
+/-- The kernel of `residueMap D y hg0 hg` consists exactly of the sections of `𝒪_X(D)` inside
+the sections of `𝒪_X(D + y)`. -/
+lemma residueMap_eq_zero_iff {g : X.functionField} (hg0 : g ≠ 0)
     (hg : X.ord g y = WeilDivisor.coeff D y + 1) (s : sections (D + WeilDivisor.ofPoint y) ⊤) :
     residueMap D y hg0 hg s = 0 ↔ (s : Γ(Scheme.rationalFunctions X, ⊤)) ∈ sections D ⊤ := by
   rw [mem_sections_iff_mem_maximalIdeal hg0 hg s.2
