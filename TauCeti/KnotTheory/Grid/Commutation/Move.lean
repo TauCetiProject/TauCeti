@@ -116,6 +116,22 @@ namespace ColumnCommutationData
 
 variable {G : GridDiagram n}
 
+/-- Two validated column commutations are equal when their geometric data agree. -/
+@[ext]
+theorem ext {C D : ColumnCommutationData G} (hcolumn : C.column = D.column)
+    (hturnRow : C.turnRow = D.turnRow)
+    (hoppositeTurnRow : C.oppositeTurnRow = D.oppositeTurnRow) : C = D := by
+  cases C
+  cases D
+  simp_all
+
+private theorem hext {G H : GridDiagram n} {C : ColumnCommutationData G}
+    {D : ColumnCommutationData H} (hdiagram : G = H) (hcolumn : C.column = D.column)
+    (hturnRow : C.turnRow = D.turnRow)
+    (hoppositeTurnRow : C.oppositeTurnRow = D.oppositeTurnRow) : HEq C D := by
+  subst H
+  exact heq_of_eq (ext hcolumn hturnRow hoppositeTurnRow)
+
 /-- Validated column-commutation data determines an elementary column commutation. -/
 theorem isColumnCommutation (C : ColumnCommutationData G) :
     IsColumnCommutation G (G.swapColumns C.column (finRotate n C.column)) :=
@@ -155,6 +171,14 @@ theorem reverse_turnRow (C : ColumnCommutationData G) : C.reverse.turnRow = C.op
 theorem reverse_oppositeTurnRow (C : ColumnCommutationData G) :
     C.reverse.oppositeTurnRow = C.turnRow :=
   (rfl)
+
+/-- Reversing validated commutation data twice recovers the original data. -/
+@[simp]
+theorem reverse_reverse (C : ColumnCommutationData G) :
+    cast (congrArg ColumnCommutationData (by simp)) C.reverse.reverse = C := by
+  rw [eq_comm, eq_cast_iff_heq]
+  apply HEq.symm
+  apply hext (by simp) <;> simp
 
 /-- Validated commutation data for every adjacent non-interleaving pair of columns.
 
