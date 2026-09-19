@@ -74,6 +74,7 @@ installed locally, as in `letI := finiteExtensionValuativeRel K M`.
   structure map of a compatible finite extension is continuous, and the topology of `M` is the
   module topology over `K`.
 * `TauCeti.integerRingModuleFinite`: `𝒪[M]` is a finite `𝒪[K]`-module.
+* `TauCeti.integerRingModuleFree`: it is a free `𝒪[K]`-module.
 * `TauCeti.finrank_integerRing`: its rank is `[M : K]`.
 
 ## Implementation notes
@@ -557,9 +558,8 @@ private def integerCoord {ι : Type*} (b : Module.Basis ι K M) (c : K)
 
 /-- **The integer ring of a finite extension is a finite module over the base.** Let `M` be a
 finite extension of a nonarchimedean local field `K`, with a compatible valuative topology. Then
-`𝒪[M]` is a finite `𝒪[K]`-module. Together with `Module.Free 𝒪[K] 𝒪[M]`, which instance search
-supplies because `𝒪[K]` is a discrete valuation ring, this gives the integral bases used by the
-theory of ramification. -/
+`𝒪[M]` is a finite `𝒪[K]`-module. Together with `TauCeti.integerRingModuleFree`, this gives the
+integral bases used by the theory of ramification. -/
 instance integerRingModuleFinite : Module.Finite 𝒪[K] 𝒪[M] := by
   classical
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
@@ -569,6 +569,13 @@ instance integerRingModuleFinite : Module.Finite 𝒪[K] 𝒪[M] := by
   have hc : (π : K) ^ n ≠ 0 := pow_ne_zero _ fun h => hπ.ne_zero (Subtype.ext h)
   refine Subtype.ext ((Module.finBasis K M).ext_elem fun i => ?_)
   exact mul_left_cancel₀ hc (congrArg Subtype.val (congrFun hxy i))
+
+variable (K M) in
+/-- **The integer ring of a finite extension is a free module over the base.** Once `𝒪[M]` is a
+finite `𝒪[K]`-module it is automatically free, since a finite torsion-free module over the
+discrete valuation ring `𝒪[K]` is free; this records that consequence under the name the theory
+of ramification refers to. -/
+theorem integerRingModuleFree : Module.Free 𝒪[K] 𝒪[M] := inferInstance
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Module.Finite K M] [TopologicalSpace M]
   [IsNonarchimedeanLocalField M] in
