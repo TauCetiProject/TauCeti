@@ -55,6 +55,8 @@ concentric spheres cobound the closed annulus `{r ≤ ‖x‖ ≤ R}`
 ## Main results
 
 * `TauCeti.coboundAnnulus_iff`, `TauCeti.annulusConjecture_iff`: the defining characterizations.
+* `TauCeti.AnnulusConjecture.coboundAnnulus`: granting the conjecture, nested locally flat
+  spheres cobound an annulus.
 * `TauCeti.isLocallyFlat_smul_coe_sphere`: a rescaled unit sphere is locally flat, with
   one-dimensional complementary model.
 * `TauCeti.range_smul_coe_sphere_subset_filledHull_sdiff`: a smaller concentric sphere lies inside
@@ -113,6 +115,19 @@ def AnnulusConjecture (n : ℕ) : Prop :=
     IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f → IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ g →
       range g ⊆ filledHull (range f) \ range f → CoboundAnnulus f g
 
+namespace AnnulusConjecture
+
+/-- A proof of the annulus conjecture makes any two nested locally flat `n`-spheres in `ℝⁿ⁺¹`
+cobound an annulus. -/
+theorem coboundAnnulus {n : ℕ} (h : AnnulusConjecture n)
+    (f g : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 → EuclideanSpace ℝ (Fin (n + 1)))
+    (hf : IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f)
+    (hg : IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ g)
+    (hgf : range g ⊆ filledHull (range f) \ range f) : CoboundAnnulus f g :=
+  h f g hf hg hgf
+
+end AnnulusConjecture
+
 /-- The annulus conjecture for `n`-spheres in `ℝⁿ⁺¹` spelled out. -/
 @[simp]
 theorem annulusConjecture_iff {n : ℕ} :
@@ -121,7 +136,11 @@ theorem annulusConjecture_iff {n : ℕ} :
         IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f →
           IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ g →
             range g ⊆ filledHull (range f) \ range f → CoboundAnnulus f g :=
-  Iff.rfl
+  by
+    constructor
+    · intro h
+      exact h.coboundAnnulus
+    · exact fun h ↦ h
 
 /-! ### Concentric round spheres -/
 
