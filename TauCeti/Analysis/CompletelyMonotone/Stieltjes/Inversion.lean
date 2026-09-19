@@ -21,12 +21,13 @@ measure transformation
 because for `x > 0` the kernels satisfy `(t⁻¹ + x)⁻¹ / t = x⁻¹ (t + x⁻¹)⁻¹`.  This measure
 transformation, `MeasureTheory.Measure.stieltjesInversion`, preserves the Stieltjes weight
 condition, never charges `0`, and is an involution on measures without an atom at `0`.
-Consequently the substitution is an involution of the Stieltjes class.
+Consequently the substitution is an involution of the Stieltjes class modulo equality on
+`(0, ∞)`.
 
 Combined with the correspondence `f ↦ t f(t)` between Stieltjes and complete Bernstein functions,
 this yields two further standard dualities: `f` is Stieltjes exactly when `t ↦ f(t⁻¹)` on
-`(0, ∞)` extends to a complete Bernstein function, and a complete Bernstein function `f` has the
-complete Bernstein dual `t ↦ t f(t⁻¹)`.
+`(0, ∞)` extends to a complete Bernstein function, and for a complete Bernstein function `f`, the
+function `t ↦ t f(t⁻¹)` on `(0, ∞)` extends to a complete Bernstein function.
 
 ## Main declarations
 
@@ -47,7 +48,8 @@ complete Bernstein dual `t ↦ t f(t⁻¹)`.
 * `TauCeti.isStieltjesFunction_iff_exists_isCompleteBernsteinFunction_eqOn_comp_inv`: `f` is
   Stieltjes exactly when `t ↦ f(t⁻¹)` has a complete Bernstein extension.
 * `TauCeti.IsCompleteBernsteinFunction.exists_isCompleteBernsteinFunction_eqOn_mul_comp_inv`:
-  the dual `t ↦ t f(t⁻¹)` of a complete Bernstein function is complete Bernstein.
+  for a complete Bernstein function `f`, the function `t ↦ t f(t⁻¹)` on `(0, ∞)` has a complete
+  Bernstein extension.
 
 ## References
 
