@@ -42,17 +42,12 @@ For a nontrivial nebentypus `χ` the operator `𝒲_N` carries `S_k(N, χ)` to `
 newform goes to a multiple of its conjugate form, not of itself. So the sign statement is
 specific to trivial nebentypus.
 
-## Main definitions
-
-* `TauCeti.normalizedFrickeCharCuspOneEnd`: `𝒲_N` as a `ℂ`-linear endomorphism of the
-  trivial-nebentypus space `S_k(N, 1)`.
-
 ## Main results
 
 * `TauCeti.normalizedFrickeOperatorCusp_mem_cuspFormsNew`,
   `TauCeti.cuspFormsNew_map_normalizedFrickeOperatorCusp`: `𝒲_N` maps the new subspace onto
   itself.
-* `TauCeti.commute_normalizedFrickeCharCuspOneEnd_heckeRingHomCuspCharSpace`: on `S_k(N, 1)`,
+* `TauCeti.commute_normalizedFrickeCharCuspRestrict_one_heckeRingHomCuspCharSpace`: on `S_k(N, 1)`,
   `𝒲_N` commutes with `Tₙ` for every `n` prime to `N`.
 * `TauCeti.exists_normalizedFrickeOperatorCusp_eq_smul_of_mem_cuspFormsNew`: a nonzero
   form in the new part of `S_k(N, 1)` that is an eigenvector of every good `Tₚ` satisfies
@@ -104,23 +99,6 @@ theorem cuspFormsNew_map_normalizedFrickeOperatorCusp (N : ℕ) [NeZero N] (k : 
 
 open HeckeRing.GL2
 
-/-- **The normalized Fricke operator on the trivial-nebentypus space** `S_k(N, 1)`: `𝒲_N`
-carries the `χ`-space to the `χ⁻¹`-space, so it maps `S_k(N, 1)` to itself. This is
-`normalizedFrickeCharCuspRestrict k 1` with its target `S_k(N, 1⁻¹)` read as `S_k(N, 1)`, which
-is what lets it be composed with the Hecke action on `S_k(N, 1)`. -/
-noncomputable def normalizedFrickeCharCuspOneEnd (k : ℤ) :
-    Module.End ℂ (cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)) :=
-  (normalizedFrickeOperatorCusp k).restrict fun f hf ↦ by
-    simpa using normalizedFrickeOperatorCusp_mem_cuspFormCharSpace k 1 hf
-
-/-- On underlying cusp forms, `normalizedFrickeCharCuspOneEnd` is `normalizedFrickeOperatorCusp`. -/
-@[simp]
-theorem coe_normalizedFrickeCharCuspOneEnd_apply (f : cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)) :
-    ((normalizedFrickeCharCuspOneEnd k f : cuspFormCharSpace k 1) :
-        CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
-      normalizedFrickeOperatorCusp k (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :=
-  (rfl)
-
 /-- The slash sum of a double coset of determinant prime to `N` commutes with the Fricke slash
 on a form of trivial nebentypus. This is the `Γ₀(N)` commutation read through the identification
 `S_k(N, 1) ≃ S_k(Γ₀(N))`. -/
@@ -136,37 +114,51 @@ private lemma heckeSlashSum_slash_frickeGL
 
 /-- `𝒲_N` commutes with the Hecke action of a single double coset of determinant prime to
 `N`. -/
-private lemma commute_normalizedFrickeCharCuspOneEnd_single
+private lemma commute_normalizedFrickeCharCuspRestrict_one_single
     {D : HeckeCoset (Delta0 N) ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ))}
     (hD : CoprimeDetCoset N N D) (c : ℤ) :
-    Commute (normalizedFrickeCharCuspOneEnd k)
+    Commute
+      (show Module.End ℂ (cuspFormCharSpace k 1) from
+        normalizedFrickeCharCuspRestrict k (1 : (ZMod N)ˣ →* ℂˣ))
       (heckeRingHomCuspCharSpace k 1 (HeckeCosetModule.single ℤ D c)) := by
+  let W : Module.End ℂ (cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)) :=
+    normalizedFrickeCharCuspRestrict k 1
+  change Commute W _
   refine LinearMap.ext fun f ↦ ?_
-  have key : normalizedFrickeCharCuspOneEnd k (twistedHeckeSlashCuspFormCharEnd k 1 D f) =
-      twistedHeckeSlashCuspFormCharEnd k 1 D (normalizedFrickeCharCuspOneEnd k f) := by
+  have coe_W (g : cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)) :
+      ((W g : cuspFormCharSpace k 1) : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
+        normalizedFrickeOperatorCusp k
+          (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :=
+    coe_normalizedFrickeCharCuspRestrict_apply k 1 g
+  have key : W (twistedHeckeSlashCuspFormCharEnd k 1 D f) =
+      twistedHeckeSlashCuspFormCharEnd k 1 D (W f) := by
     refine Subtype.ext (DFunLike.coe_injective ?_)
-    simp only [coe_normalizedFrickeCharCuspOneEnd_apply, coe_normalizedFrickeOperatorCusp,
-      coe_twistedHeckeSlashCuspFormCharEnd, twistedHeckeSlashSum_eq_heckeSlashSum]
+    simp only [coe_W, coe_normalizedFrickeOperatorCusp, coe_twistedHeckeSlashCuspFormCharEnd,
+      twistedHeckeSlashSum_eq_heckeSlashSum]
     rw [heckeSlashSum_smul k D (det_rightCosetRep_pos_of_delta0 D),
       heckeSlashSum_slash_frickeGL hD f]
   simp [key]
 
 /-- **The normalized Fricke operator commutes with the good Hecke operators on `S_k(N, 1)`**:
 for `n` prime to `N`, `𝒲_N Tₙ = Tₙ 𝒲_N`. -/
-theorem commute_normalizedFrickeCharCuspOneEnd_heckeRingHomCuspCharSpace {n : ℕ}
+theorem commute_normalizedFrickeCharCuspRestrict_one_heckeRingHomCuspCharSpace {n : ℕ}
     (hn : Nat.Coprime n N) :
-    Commute (normalizedFrickeCharCuspOneEnd k)
+    Commute
+      (show Module.End ℂ (cuspFormCharSpace k 1) from
+        normalizedFrickeCharCuspRestrict k (1 : (ZMod N)ˣ →* ℂˣ))
       (heckeRingHomCuspCharSpace k 1 (heckeTCompositeGamma0 N n)) := by
+  let W : Module.End ℂ (cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)) :=
+    normalizedFrickeCharCuspRestrict k 1
+  change Commute W _
   -- the Hecke ring elements whose action commutes with `𝒲_N` form a subring
-  let S := (Subring.centralizer {normalizedFrickeCharCuspOneEnd (N := N) k}).comap
-    (heckeRingHomCuspCharSpace k 1)
+  let S := (Subring.centralizer {W}).comap (heckeRingHomCuspCharSpace k 1)
   have hS : ∀ T, T ∈ S ↔
-      Commute (normalizedFrickeCharCuspOneEnd k) (heckeRingHomCuspCharSpace k 1 T) := fun T ↦ by
+      Commute W (heckeRingHomCuspCharSpace k 1 T) := fun T ↦ by
     simp [S, Subring.mem_centralizer_iff, Commute, SemiconjBy]
   -- it contains every diagonal double coset of determinant prime to `N`
   have hdiag {a : Fin 2 → ℕ} (ha : ∀ i, 0 < a i) (h : Nat.Coprime (a 0 * a 1) N) hgcd :
       HeckeCosetModule.single ℤ (diagCosetGamma0 N a hgcd) 1 ∈ S :=
-    (hS _).2 <| commute_normalizedFrickeCharCuspOneEnd_single
+    (hS _).2 <| commute_normalizedFrickeCharCuspRestrict_one_single
       (coprimeDetCoset_diagCosetGamma0 N ha h hgcd) 1
   -- hence every `T_{p^v}` at a good prime, by the recurrence
   have hrec {p : ℕ} (hp : 0 < p) (hpN : Nat.Coprime p N) (v : ℕ) :
@@ -216,24 +208,33 @@ theorem exists_normalizedFrickeOperatorCusp_eq_smul_of_mem_cuspFormsNew
     ∃ ε : ℂ, (ε = 1 ∨ ε = -1) ∧
       normalizedFrickeOperatorCusp k (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
         ε • (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := by
+  let W : Module.End ℂ (cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)) :=
+    normalizedFrickeCharCuspRestrict k 1
+  have coe_W (g : cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)) :
+      ((W g : cuspFormCharSpace k 1) : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
+        normalizedFrickeOperatorCusp k
+          (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :=
+    coe_normalizedFrickeCharCuspRestrict_apply k 1 g
   -- `𝒲_N f` has the good Hecke eigenvalues of `f`, and lies in the new part
   have heig (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N) : ∃ c : ℂ,
       heckeRingHomCuspCharSpace k 1 (heckeTCompositeGamma0 N p) f = c • f ∧
-        heckeRingHomCuspCharSpace k 1 (heckeTCompositeGamma0 N p)
-          (normalizedFrickeCharCuspOneEnd k f) = c • normalizedFrickeCharCuspOneEnd k f := by
+        heckeRingHomCuspCharSpace k 1 (heckeTCompositeGamma0 N p) (W f) = c • W f := by
     obtain ⟨c, hc⟩ := ha p hp hpN
     refine ⟨c, hc, ?_⟩
+    have hcomm : Commute W
+        (heckeRingHomCuspCharSpace k 1 (heckeTCompositeGamma0 N p)) := by
+      simpa only [W] using
+        commute_normalizedFrickeCharCuspRestrict_one_heckeRingHomCuspCharSpace hpN
     rw [← Module.End.mul_apply,
-      ← (commute_normalizedFrickeCharCuspOneEnd_heckeRingHomCuspCharSpace hpN).eq,
-      Module.End.mul_apply, hc, map_smul]
-  have hnew : ((normalizedFrickeCharCuspOneEnd k f : cuspFormCharSpace k 1) :
+      ← hcomm.eq, Module.End.mul_apply, hc, map_smul]
+  have hnew : ((W f : cuspFormCharSpace k 1) :
       CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsNew N k := by
-    rw [coe_normalizedFrickeCharCuspOneEnd_apply]
+    rw [coe_W]
     exact normalizedFrickeOperatorCusp_mem_cuspFormsNew hf
   -- so multiplicity one makes it a multiple of `f`
   obtain ⟨ε, hε⟩ :=
     exists_eq_smul_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew heig hf hnew hf0
-  rw [coe_normalizedFrickeCharCuspOneEnd_apply] at hε
+  rw [coe_W] at hε
   refine ⟨ε, ?_, hε⟩
   -- and `𝒲_N ∘ 𝒲_N = (-1) ^ k = 1` forces `ε * ε = 1`
   have hk : (-1 : ℂ) ^ k = 1 := by
