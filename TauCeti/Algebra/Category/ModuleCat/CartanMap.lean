@@ -195,7 +195,7 @@ instance : (finiteProjectiveModules R).IsClosedUnderBinaryProducts := by
 
 /-- **The exact structure of the finitely generated modules**: the short exact sequences of
 `R`-modules all of whose terms are finitely generated. -/
-noncomputable abbrev finiteModulesExactStructure :
+@[expose] noncomputable def finiteModulesExactStructure :
     ExactStructure (FGModuleCat.{u} R) :=
   (ExactStructure.abelian (ModuleCat.{u} R)).fullSubcategory _ (isExtensionClosed_finiteModules R)
 
@@ -218,7 +218,7 @@ theorem finiteProjectiveModulesExactStructure_eq_split :
 
 /-- The conflations of finitely generated modules are the short exact sequences of `R`-modules
 whose three terms are finitely generated. -/
-theorem finiteModulesExactStructure_conflation_iff
+@[simp] theorem finiteModulesExactStructure_conflation_iff
     (S : ShortComplex (FGModuleCat.{u} R)) :
     (finiteModulesExactStructure R).Conflation S ↔ (S.map (ModuleCat.isFG R).ι).ShortExact :=
   (ExactStructure.fullSubcategory_conflation_iff (E := ExactStructure.abelian (ModuleCat.{u} R))
