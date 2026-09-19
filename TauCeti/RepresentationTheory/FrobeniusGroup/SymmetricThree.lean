@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Perm.FinThree
-public import TauCeti.RepresentationTheory.FrobeniusGroup
+public import TauCeti.RepresentationTheory.FrobeniusGroup.Basic
 
 /-!
 # A Frobenius group: `S₃` with complement a point stabilizer
@@ -17,7 +17,7 @@ the complement acts on the kernel without nonidentity fixed points because a tra
 inverts each of the two three-cycles, and a three-cycle is not its own inverse.
 
 That makes `S₃` a place to run the character-theoretic construction of
-`TauCeti/RepresentationTheory/FrobeniusGroup.lean` against a group whose normal complement is
+`TauCeti/RepresentationTheory/FrobeniusGroup/Basic.lean` against a group whose normal complement is
 already known.  The Frobenius kernel is built as the common kernel of representations affording
 the extended irreducible characters of the two-element subgroup `⟨(a+1 a+2)⟩`, with no reference
 to `A₃` anywhere in the construction, and it comes out equal to `A₃`
