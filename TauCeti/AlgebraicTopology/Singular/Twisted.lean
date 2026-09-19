@@ -284,7 +284,7 @@ lemma twistedChainsCoefficientMap_id (L : LocalCoefficientSystem.{u, v, max v w}
 
 /-- A composite of morphisms of coefficient systems induces the composite of the two induced
 morphisms of twisted chains. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma twistedChainsCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) :
     twistedChainsCoefficientMap (η ≫ θ) =
       twistedChainsCoefficientMap η ≫ twistedChainsCoefficientMap θ :=
@@ -305,7 +305,7 @@ lemma twistedChainComplexCoefficientMap_id (L : LocalCoefficientSystem.{u, v, ma
 
 /-- A composite of morphisms of coefficient systems induces the composite of the two induced
 morphisms of twisted chain complexes. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma twistedChainComplexCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) :
     twistedChainComplexCoefficientMap (η ≫ θ) =
       twistedChainComplexCoefficientMap η ≫ twistedChainComplexCoefficientMap θ :=
@@ -326,7 +326,7 @@ lemma twistedHomologyCoefficientMap_id (L : LocalCoefficientSystem.{u, v, max v 
 
 /-- A composite of morphisms of coefficient systems induces the composite of the two induced maps
 of twisted homology. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma twistedHomologyCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) (k : ℕ) :
     twistedHomologyCoefficientMap (η ≫ θ) k =
       twistedHomologyCoefficientMap η k ≫ twistedHomologyCoefficientMap θ k :=
