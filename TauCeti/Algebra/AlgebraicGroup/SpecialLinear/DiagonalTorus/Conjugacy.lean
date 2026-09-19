@@ -61,22 +61,6 @@ noncomputable section
 
 variable {k : Type u} [Field k] {r : ℕ}
 
-/-- **Diagonalization by a determinant-one matrix.** If a rational matrix `P` satisfies
-`M P = P diag(t)`, rescaling its first column gives a determinant-one rational matrix with the
-same property. -/
-private theorem exists_det_eq_one_mul_map_eq_map_mul_diagGL {Q : Type u} [CommRing Q]
-    [Algebra k Q] (M : GL (Fin (r + 1)) Q) (P : GL (Fin (r + 1)) k) (t : Fin (r + 1) → Qˣ)
-    (h : M * Matrix.GeneralLinearGroup.map (algebraMap k Q) P =
-      Matrix.GeneralLinearGroup.map (algebraMap k Q) P * diagGL t) :
-    ∃ P' : GL (Fin (r + 1)) k, Matrix.GeneralLinearGroup.det P' = 1 ∧
-      M * Matrix.GeneralLinearGroup.map (algebraMap k Q) P' =
-        Matrix.GeneralLinearGroup.map (algebraMap k Q) P' * diagGL t := by
-  let u : Fin (r + 1) → kˣ := Pi.mulSingle 0 (Matrix.GeneralLinearGroup.det P)⁻¹
-  refine ⟨P * diagGL u, ?_, ?_⟩
-  · rw [map_mul, det_diagGL, Fintype.prod_pi_mulSingle' (0 : Fin (r + 1)), mul_inv_cancel]
-  · rw [map_mul, map_diagGL, ← mul_assoc, h, mul_assoc, mul_assoc, ← map_mul, ← map_mul,
-      mul_comm]
-
 /-- **A diagonalizable closed subgroup of `SL_{r+1}` is conjugate into the diagonal torus.**
 
 If the quotient coordinate Hopf algebra of `I` is spanned by its group-like elements, then some

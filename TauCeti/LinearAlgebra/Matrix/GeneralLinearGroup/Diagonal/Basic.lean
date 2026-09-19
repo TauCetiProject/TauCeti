@@ -94,6 +94,8 @@ The action of the torus on the coordinate lines of the standard representation i
 
 * `TauCeti.isUnit_apply_of_isDiag`: the diagonal entries of an invertible diagonal matrix are
   units.
+* `TauCeti.exists_det_eq_one_mul_map_eq_map_mul_diagGL`: a matrix intertwining another matrix with
+  a diagonal matrix can be normalized to have determinant one while preserving the equation.
 * `TauCeti.mem_diagonalTorus_iff`: membership in the torus is diagonality of the matrix.
 * `TauCeti.mul_diagGL_of_coe_eq_permMatrix`: a permutation matrix moves past a diagonal by
   relabelling its entries.
@@ -366,6 +368,22 @@ theorem map_diagGL {S : Type*} [CommRing S] {ι : Type*} [Fintype ι] [Decidable
   ext i j
   simp only [Matrix.GeneralLinearGroup.map_apply, diagGL_apply, Units.coe_map, MonoidHom.coe_coe]
   split_ifs <;> simp
+
+/-- If `P` intertwines `M` with a diagonal matrix, rescaling its first column gives an
+intertwining matrix of determinant one. -/
+theorem exists_det_eq_one_mul_map_eq_map_mul_diagGL {Q : Type u} [CommRing Q] [Algebra k Q]
+    {r : ℕ} (M : GL (Fin (r + 1)) Q) (P : GL (Fin (r + 1)) k)
+    (t : Fin (r + 1) → Qˣ)
+    (h : M * Matrix.GeneralLinearGroup.map (algebraMap k Q) P =
+      Matrix.GeneralLinearGroup.map (algebraMap k Q) P * diagGL t) :
+    ∃ P' : GL (Fin (r + 1)) k, Matrix.GeneralLinearGroup.det P' = 1 ∧
+      M * Matrix.GeneralLinearGroup.map (algebraMap k Q) P' =
+        Matrix.GeneralLinearGroup.map (algebraMap k Q) P' * diagGL t := by
+  let u : Fin (r + 1) → kˣ := Pi.mulSingle 0 (Matrix.GeneralLinearGroup.det P)⁻¹
+  refine ⟨P * diagGL u, ?_, ?_⟩
+  · rw [map_mul, det_diagGL, Fintype.prod_pi_mulSingle' (0 : Fin (r + 1)), mul_inv_cancel]
+  · rw [map_mul, map_diagGL, ← mul_assoc, h, mul_assoc, mul_assoc, ← map_mul, ← map_mul,
+      mul_comm]
 
 /-- The determinant of an element of the diagonal torus is the product of its diagonal entries. -/
 theorem det_of_mem_diagonalTorus {g : GL (Fin n) k} (hg : g ∈ diagonalTorus k n) :
