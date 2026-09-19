@@ -285,10 +285,9 @@ private lemma charEisensteinSeriesMF_apply_eq_add_tsum_pnat (hk : 3 ≤ (k : ℤ
     add_right_inj]
   ring
 
-/-- The simp-normal coefficient formula for the weighted series underlying the Eisenstein series
-with character. -/
-@[simp]
-theorem qExpansion_charWeight_coeff (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N)
+/-- The coefficient formula for the weighted series underlying the Eisenstein series with
+character; the public statement is `qExpansion_charEisensteinSeriesMF_coeff`. -/
+private theorem qExpansion_charWeight_coeff (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N)
     (hpar : ψ (-1) * φ (-1) = (-1) ^ k) (n : ℕ) :
     (qExpansion 1 (weightedEisensteinSeries (charWeight N ψ φ) k)).coeff n =
       if n = 0 then ψ 0 * ∑' d : ℤ, φ⁻¹ d * (d : ℂ) ^ (-(k : ℤ))
