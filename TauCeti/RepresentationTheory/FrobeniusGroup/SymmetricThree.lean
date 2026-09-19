@@ -49,7 +49,7 @@ theorem isTISubgroup_stabilizer_perm_fin_three (a : Fin 3) :
     IsTISubgroup (MulAction.stabilizer (Equiv.Perm (Fin 3)) a) :=
   isTISubgroup_of_isComplement'_of_fixedPointFree
     (isComplement'_alternatingGroup_stabilizer_perm_fin_three a)
-    (conj_ne_self_of_mem_alternatingGroup_fin_three a)
+    (fixedPointFree_conjNormal_alternatingGroup_fin_three a)
 
 /-- **`S₃` is a Frobenius group with complement a point stabilizer.**  Properness and
 nontriviality come from the stabilizer not being normal, which `⊥` and `⊤` both are. -/
@@ -57,7 +57,7 @@ theorem isFrobeniusComplement_stabilizer_perm_fin_three (a : Fin 3) :
     IsFrobeniusComplement (MulAction.stabilizer (Equiv.Perm (Fin 3)) a) := by
   refine isFrobeniusComplement_of_isComplement'_of_fixedPointFree
     (isComplement'_alternatingGroup_stabilizer_perm_fin_three a) ?_ ?_
-    (conj_ne_self_of_mem_alternatingGroup_fin_three a)
+    (fixedPointFree_conjNormal_alternatingGroup_fin_three a)
   · intro hbot
     refine not_normal_stabilizer_perm_fin_three a ?_
     rw [hbot]
@@ -72,6 +72,7 @@ kernel that the exceptional-character correspondence constructs -- as the common
 representations affording the extended irreducible characters of the two-element subgroup
 `⟨(a+1 a+2)⟩`, with no reference to `A₃` at all -- is the alternating subgroup that the semidirect
 decomposition `S₃ = A₃ ⋊ ⟨(a+1 a+2)⟩` supplies directly. -/
+@[simp]
 theorem frobeniusKernelSubgroup_stabilizer_perm_fin_three (a : Fin 3) :
     frobeniusKernelSubgroup (isTISubgroup_stabilizer_perm_fin_three a)
       = alternatingGroup (Fin 3) :=

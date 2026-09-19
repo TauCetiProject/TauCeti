@@ -324,15 +324,12 @@ variable {N : Subgroup G}
 
 /-- **Frobenius's theorem returns the normal complement it was handed.**  If `G = N ⋊ H` with `N`
 normal and `H` a trivial-intersection subgroup, then the subgroup that the exceptional-character
-argument above constructs is `N` itself.
+argument above constructs -- out of the irreducible characters of `H`, with no reference to `N` --
+is `N` itself.
 
 This is what makes the abstract construction checkable on a concrete Frobenius group, which comes
 presented as such a decomposition with `H` acting on `N` without nonidentity fixed points
-(`TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree`): the kernel is produced from the
-irreducible characters of `H`, with no reference to `N`, and comes out equal to the normal
-complement one started from.  The carriers agree by
-`TauCeti.IsTISubgroup.coe_eq_frobeniusKernel_of_isComplement'`, which is a count, and a subgroup is
-determined by its carrier. -/
+(`TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree`). -/
 theorem frobeniusKernelSubgroup_eq_of_isComplement' [N.Normal] (hH : IsTISubgroup H)
     (hNH : N.IsComplement' H) :
     frobeniusKernelSubgroup hH = N :=

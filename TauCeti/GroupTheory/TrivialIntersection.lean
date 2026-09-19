@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.Complement
+public import Mathlib.GroupTheory.FixedPointFree
+public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 public import Mathlib.Tactic.Group
@@ -80,12 +82,6 @@ with the Frobenius kernel.
   nontrivial `H`.
 
 ## Implementation notes
-
-The fixed-point hypothesis of `TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree` is written
-with ambient elements, `∀ h ∈ H, h ≠ 1 → ∀ n ∈ N, n ≠ 1 → h * n * h⁻¹ ≠ n`, rather than as
-`MonoidHom.FixedPointFree` of the automorphism `MulAut.conjNormal h` of `N` that it is equivalent
-to.  The two say the same thing, but every caller -- and the proof itself -- works with elements of
-`G`, so the bundled spelling would only insert a `Subtype.ext` at each use.
 
 The count `TauCeti.IsTISet.ncard_conjugatesOfSet` is proved through a map *into* `G` out of
 `(G ⧸ H) × S`, rather than through an `Equiv` onto `Group.conjugatesOfSet S`, because the two facts
@@ -365,18 +361,15 @@ variable {N : Subgroup G}
 trivial-intersection subgroup.**  This is the elementary converse direction of Frobenius's
 theorem: where Frobenius's theorem *produces* a normal complement out of the trivial-intersection
 condition, here a normal complement is given and the trivial-intersection condition is read off
-its action.
-
-The proof is the decomposition `g = n · t` of an element outside `H` into its `N`- and `H`-parts.
-Conjugation by `g` is conjugation by `t`, which stays inside `H`, followed by conjugation by `n`;
-so if `x ∈ H` is conjugated back into `H`, the commutator of `n` with `y = t x t⁻¹` lies in `N`
-(by normality) and in `H` (by construction), hence is trivial.  That makes `n` a fixed point of
-conjugation by `y = t x t⁻¹`, and the hypothesis leaves only `y = 1`. -/
+its action.  It is the criterion a concrete Frobenius group, presented as a semidirect product
+`G = N ⋊ H`, is recognized by; `TauCeti.IsTISubgroup.coe_eq_frobeniusKernel_of_isComplement'`
+then identifies `N` as the Frobenius kernel. -/
 theorem isTISubgroup_of_isComplement'_of_fixedPointFree [N.Normal] (hNH : N.IsComplement' H)
-    (hfpf : ∀ h ∈ H, h ≠ 1 → ∀ n ∈ N, n ≠ 1 → h * n * h⁻¹ ≠ n) :
+    (hfpf : ∀ h : H, h ≠ 1 → MonoidHom.FixedPointFree (MulAut.conjNormal (h : G) : MulAut N)) :
     IsTISubgroup H := by
   have hdisj : ∀ {y : G}, y ∈ N → y ∈ H → y = 1 := Subgroup.disjoint_def.mp hNH.disjoint
   intro g x hg hx hgx
+  -- split `g` into its `N`-part `n` and its `H`-part `t`
   obtain ⟨n, hn, t, ht, rfl⟩ :=
     Set.mem_mul.mp (Set.eq_univ_iff_forall.mp (Subgroup.isComplement'_def.mp hNH).mul_eq g)
   rw [SetLike.mem_coe] at hn ht
@@ -397,13 +390,16 @@ theorem isTISubgroup_of_isComplement'_of_fixedPointFree [N.Normal] (hNH : N.IsCo
   -- so `n` is a fixed point of conjugation by `t x t⁻¹`, which the hypothesis forbids
   have hy1 : t * x * t⁻¹ = 1 := by
     by_contra hne
-    refine hfpf _ hyH hne n hn hn1 ?_
-    have h0 : n * (t * x * t⁻¹) * n⁻¹ = t * x * t⁻¹ := mul_inv_eq_one.mp hcomm
-    have h1 : n * (t * x * t⁻¹) = t * x * t⁻¹ * n :=
-      calc n * (t * x * t⁻¹) = n * (t * x * t⁻¹) * n⁻¹ * n := by group
-        _ = t * x * t⁻¹ * n := by rw [h0]
-    rw [← h1]
-    group
+    have hfix : t * x * t⁻¹ * n * (t * x * t⁻¹)⁻¹ = n := by
+      have h0 : n * (t * x * t⁻¹) * n⁻¹ = t * x * t⁻¹ := mul_inv_eq_one.mp hcomm
+      have h1 : n * (t * x * t⁻¹) = t * x * t⁻¹ * n :=
+        calc n * (t * x * t⁻¹) = n * (t * x * t⁻¹) * n⁻¹ * n := by group
+          _ = t * x * t⁻¹ * n := by rw [h0]
+      rw [← h1]
+      group
+    refine hn1 (congrArg Subtype.val (hfpf ⟨t * x * t⁻¹, hyH⟩ ?_ ⟨n, hn⟩ ?_))
+    · exact fun hone => hne (congrArg Subtype.val hone)
+    · exact Subtype.ext (by rw [MulAut.conjNormal_apply]; exact hfix)
   have h2 : t * x = t * 1 := by
     rw [mul_one]
     exact mul_inv_eq_one.mp hy1
@@ -414,7 +410,7 @@ trivial-intersection condition is `TauCeti.isTISubgroup_of_isComplement'_of_fixe
 properness and nontriviality are exactly what the bundled predicate adds. -/
 theorem isFrobeniusComplement_of_isComplement'_of_fixedPointFree [N.Normal]
     (hNH : N.IsComplement' H) (hbot : H ≠ ⊥) (htop : H ≠ ⊤)
-    (hfpf : ∀ h ∈ H, h ≠ 1 → ∀ n ∈ N, n ≠ 1 → h * n * h⁻¹ ≠ n) :
+    (hfpf : ∀ h : H, h ≠ 1 → MonoidHom.FixedPointFree (MulAut.conjNormal (h : G) : MulAut N)) :
     IsFrobeniusComplement H where
   ne_bot := hbot
   ne_top := htop

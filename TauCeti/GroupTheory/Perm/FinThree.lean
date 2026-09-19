@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Set.Card
 public import Mathlib.GroupTheory.Complement
+public import Mathlib.GroupTheory.FixedPointFree
+public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.GroupTheory.SpecificGroups.Alternating
 
@@ -46,7 +48,7 @@ permutations.
 * `TauCeti.card_alternatingGroup_fin_three`: the alternating subgroup has order three.
 * `TauCeti.centralizer_alternatingGroup_fin_three_le`: only the alternating subgroup centralizes
   the alternating subgroup.
-* `TauCeti.conj_ne_self_of_mem_alternatingGroup_fin_three`: a point stabilizer acts on the
+* `TauCeti.fixedPointFree_conjNormal_alternatingGroup_fin_three`: a point stabilizer acts on the
   alternating subgroup by conjugation without nonidentity fixed points, a transposition inverting
   each of the two rotations.
 * `TauCeti.isComplement'_alternatingGroup_stabilizer_perm_fin_three`: the two subgroups are
@@ -173,23 +175,27 @@ theorem centralizer_alternatingGroup_fin_three_le :
   simp only [SetLike.mem_coe, Equiv.Perm.mem_alternatingGroup]
   decide
 
-/-- **A point stabilizer of `S₃` acts on `A₃` without nonidentity fixed points.**  The stabilizer
-of `a` is `{1, (a+1 a+2)}` (`TauCeti.mem_stabilizer_perm_fin_three_iff`), and conjugating a
-nonidentity even permutation of three points by that transposition inverts it, which for a
-three-cycle is a different permutation. -/
-theorem conj_ne_self_of_mem_alternatingGroup_fin_three (a : Fin 3) :
-    ∀ h ∈ MulAction.stabilizer (Equiv.Perm (Fin 3)) a, h ≠ 1 →
-      ∀ n ∈ alternatingGroup (Fin 3), n ≠ 1 → h * n * h⁻¹ ≠ n := by
-  intro h hh hh1 n hn hn1
-  rw [mem_stabilizer_perm_fin_three_iff] at hh
-  rw [Equiv.Perm.mem_alternatingGroup] at hn
-  rcases hh with rfl | rfl
-  · exact absurd rfl hh1
-  · clear hh1
-    revert hn hn1
-    revert n
-    revert a
-    decide
+/-- **A point stabilizer of `S₃` acts on `A₃` without nonidentity fixed points**: conjugation by
+a nonidentity element of the stabilizer of `a` fixes no nonidentity element of the alternating
+subgroup.  This is the fixed-point hypothesis of
+`TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree`. -/
+theorem fixedPointFree_conjNormal_alternatingGroup_fin_three (a : Fin 3) :
+    ∀ h : MulAction.stabilizer (Equiv.Perm (Fin 3)) a, h ≠ 1 →
+      MonoidHom.FixedPointFree
+        (MulAut.conjNormal (h : Equiv.Perm (Fin 3)) : MulAut (alternatingGroup (Fin 3))) := by
+  -- the stabilizer of `a` is `{1, (a+1 a+2)}`, and that transposition inverts each of the two
+  -- rotations, neither of which is its own inverse
+  have key : ∀ b : Fin 3, ∀ m : Equiv.Perm (Fin 3), Equiv.Perm.sign m = 1 →
+      Equiv.swap (b + 1) (b + 2) * m * (Equiv.swap (b + 1) (b + 2))⁻¹ = m → m = 1 := by decide
+  intro h hh1 n hfix
+  have hfix' : (h : Equiv.Perm (Fin 3)) * (n : Equiv.Perm (Fin 3)) * (h : Equiv.Perm (Fin 3))⁻¹
+      = (n : Equiv.Perm (Fin 3)) :=
+    (MulAut.conjNormal_apply _ _).symm.trans (congrArg Subtype.val hfix)
+  refine Subtype.ext ?_
+  rcases (mem_stabilizer_perm_fin_three_iff a _).mp h.2 with h1 | h1
+  · exact absurd (Subtype.ext h1 : h = 1) hh1
+  · rw [h1] at hfix'
+    exact key a n (Equiv.Perm.mem_alternatingGroup.mp n.2) hfix'
 
 /-- **`A₃` is a normal complement to a point stabilizer in `S₃`**: the two have orders `3` and `2`,
 which are coprime and multiply to `3! = 6`. -/
