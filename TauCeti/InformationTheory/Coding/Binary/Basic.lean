@@ -24,6 +24,10 @@ An even code is characterized by membership of the all-ones word in its dual. In
 a binary self-dual code is even and contains the all-ones word. These facts supply the elementary
 parity constraints used in the study of doubly-even self-dual codes.
 
+`IsDoublyEven.aeval_weightEnumerator_mul` shows that the weight enumerator of a doubly-even
+code is invariant under multiplying its second argument by a fourth root of unity. This supplies
+the fourth-root symmetry used for Type II codes.
+
 The conventions and weight-intersection argument follow Huffman and Pless,
 *Fundamentals of Error-Correcting Codes*, Chapters 1 and 9.
 -/
