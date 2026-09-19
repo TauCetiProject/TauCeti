@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.TriangleGroup.PermutationRepresentation
 public import TauCeti.Combinatorics.PermutationTriple.Regular
+public import TauCeti.Algebra.GroupAction.FixingSubgroup
 
 /-!
 # Regular triples and normal subgroups of triangle groups
@@ -49,64 +50,23 @@ namespace TriangleGroup
 variable {a b c n : ℕ} (t : PermutationTriple n) (ha : t.σ0 ^ a = 1) (hb : t.σ1 ^ b = 1)
   (hc : t.σinf ^ c = 1)
 
-/-- The representation of a connected triple is transitive on the sheets. -/
-private theorem exists_toPerm_apply_eq (ht : t.IsConnected) (i k : Fin n) :
-    ∃ κ : TriangleGroup a b c, toPerm t ha hb hc κ i = k := by
-  obtain ⟨g, hg⟩ := ht.isPretransitive.exists_smul_eq i k
-  obtain ⟨κ, hκ⟩ : (g : Perm (Fin n)) ∈ (toPerm t ha hb hc).range :=
-    (range_toPerm t ha hb hc).symm ▸ g.2
-  exact ⟨κ, hκ ▸ hg⟩
-
 /-- If a sheet has trivial monodromy stabilizer, its point stabilizer under the representation of
 the triangle group is the kernel of the representation. -/
 theorem comap_stabilizer_toPerm_eq_ker (i : Fin n)
     (hi : MulAction.stabilizer t.monodromyGroup i = ⊥) :
     (MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t ha hb hc) =
-      (toPerm t ha hb hc).ker := by
-  ext δ
-  rw [Subgroup.mem_comap, MulAction.mem_stabilizer_iff, MonoidHom.mem_ker]
-  refine ⟨fun hδ => ?_, fun hδ => by rw [hδ, one_smul]⟩
-  have hmem : toPerm t ha hb hc δ ∈ t.monodromyGroup :=
-    range_toPerm t ha hb hc ▸ MonoidHom.mem_range.mpr ⟨δ, rfl⟩
-  let g : t.monodromyGroup := ⟨toPerm t ha hb hc δ, hmem⟩
-  have hg : g = 1 := by
-    rw [← Subgroup.mem_bot, ← hi, MulAction.mem_stabilizer_iff]
-    exact hδ
-  exact congrArg Subtype.val hg
+      (toPerm t ha hb hc).ker :=
+  comap_stabilizer_eq_ker (toPerm t ha hb hc) i (by
+    rw [range_toPerm]
+    exact hi)
 
 /-- **The normality criterion.** For a connected triple, the point stabilizer of a sheet under the
 representation of the triangle group is a normal subgroup exactly when the triple is regular. -/
 theorem normal_comap_stabilizer_toPerm_iff (ht : t.IsConnected) (i : Fin n) :
     ((MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t ha hb hc)).Normal ↔ t.IsRegular := by
-  refine ⟨fun hN => ?_, fun hreg => ?_⟩
-  · set K := (MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t ha hb hc)
-    -- All point stabilizers are conjugate to `K`, hence equal to it.
-    have hK : ∀ (δ : TriangleGroup a b c) (k : Fin n), toPerm t ha hb hc δ k = k ↔ δ ∈ K := by
-      intro δ k
-      obtain ⟨κ, hκ⟩ := exists_toPerm_apply_eq t ha hb hc ht i k
-      have hconj : κ⁻¹ * δ * κ ∈ K ↔ toPerm t ha hb hc δ k = k := by
-        rw [Subgroup.mem_comap, MulAction.mem_stabilizer_iff]
-        simp only [map_mul, map_inv, Perm.smul_def, Perm.mul_apply]
-        calc
-          (toPerm t ha hb hc κ)⁻¹ (toPerm t ha hb hc δ (toPerm t ha hb hc κ i)) = i ↔
-              toPerm t ha hb hc δ (toPerm t ha hb hc κ i) = toPerm t ha hb hc κ i := by
-                rw [Perm.inv_eq_iff_eq]
-          _ ↔ toPerm t ha hb hc δ k = k := by rw [hκ]
-      rw [← hconj]
-      exact ⟨fun h => by simpa [mul_assoc] using hN.conj_mem _ h κ,
-        fun h => by simpa using hN.conj_mem _ h κ⁻¹⟩
-    have : IsCancelSMul t.monodromyGroup (Fin n) := by
-      refine isCancelSMul_iff_stabilizer_eq_bot.mpr fun j => ?_
-      refine (Subgroup.eq_bot_iff_forall _).mpr fun g hg => ?_
-      obtain ⟨δ, hδ⟩ : (g : Perm (Fin n)) ∈ (toPerm t ha hb hc).range :=
-        (range_toPerm t ha hb hc).symm ▸ g.2
-      have hδj : toPerm t ha hb hc δ j = j := hδ ▸ hg
-      refine Subtype.ext <| hδ ▸ Equiv.ext fun k => ?_
-      exact (hK δ k).mpr ((hK δ j).mp hδj)
-    exact ht.isRegular
-  · have := hreg.isCancelSMul
-    rw [comap_stabilizer_toPerm_eq_ker t ha hb hc i (IsCancelSMul.stabilizer_eq_bot i)]
-    infer_instance
+  rw [normal_comap_stabilizer_iff_isCancelSMul (toPerm t ha hb hc)
+      (by rw [range_toPerm]; exact ht.isPretransitive) i,
+    range_toPerm, PermutationTriple.isRegular_iff_isCancelSMul, and_iff_right ht]
 
 /-- The kernel of the representation of a triple has index the order of its monodromy group, the
 image of the representation. -/
