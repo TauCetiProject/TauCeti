@@ -32,7 +32,9 @@ column-`b` markings.
 
 The combined diagram is recorded by `GridDiagram.ColumnCommutationData`. Besides the adjacent
 non-interleaving columns, it records the rows of the two intersections and certifies that the
-markings lie in the appropriate two bigons. The combinatorics of a pentagon is then recorded
+markings lie in the appropriate two bigons. Every elementary column commutation admits such data
+(`GridDiagram.isColumnCommutation_iff_exists_columnCommutationData`), so the map below is
+available for each of them. The combinatorics of a pentagon is then recorded
 with no curve in sight. Its corners are those of the oriented rectangle from `x` to `y` whose
 terminal side is the line `b` (`GridPentagonBetween`, which extends `GridRectangleBetween`); the
 turn row must lie in the rows spanned by the terminal side. The lattice points strictly inside

@@ -35,6 +35,9 @@ is an involution and preserves non-interleaving of the swapped pair.
   `TauCeti.GridDiagram.isRowCommutation_comm`: elementary moves are reversible.
 * `TauCeti.GridDiagram.ColumnCommutationData.reverse`: the validated data for the reverse
   column commutation.
+* `TauCeti.GridDiagram.ColumnCommutationData.ofNoninterleaving`,
+  `TauCeti.GridDiagram.isColumnCommutation_iff_exists_columnCommutationData`: every elementary
+  column commutation admits validated commutation data.
 * `TauCeti.GridDiagram.isRowCommutation_transpose` and
   `TauCeti.GridDiagram.isColumnCommutation_transpose`: diagonal reflection exchanges the two
   kinds of commutation.
@@ -153,7 +156,75 @@ theorem reverse_oppositeTurnRow (C : ColumnCommutationData G) :
     C.reverse.oppositeTurnRow = C.turnRow :=
   (rfl)
 
+/-- A row off the open arc from `u` to `v` lies in the closed complementary arc from `v` to `u`. -/
+private theorem mem_insert_cIco_of_notMem_cIoo {u v r : Fin n} (huv : u ≠ v)
+    (hr : r ∉ Grid.cIoo u v) : r ∈ insert u (Grid.cIco v u) := by
+  rcases (Grid.not_mem_cIoo_iff huv).mp hr with rfl | rfl | hr
+  · exact Finset.mem_insert_self _ _
+  · exact Finset.mem_insert_of_mem (Grid.left_mem_cIco huv.symm)
+  · exact Finset.mem_insert_of_mem (Grid.cIoo_subset_cIco _ _ hr)
+
+/-- A row on the open arc from `u` to `v` lies in the closed arc from `u` to `v`. -/
+private theorem mem_insert_cIco_of_mem_cIoo {u v r : Fin n} (hr : r ∈ Grid.cIoo u v) :
+    r ∈ insert v (Grid.cIco u v) :=
+  Finset.mem_insert_of_mem (Grid.cIoo_subset_cIco _ _ hr)
+
+/-- Both endpoints of a nondegenerate arc lie in its closed version. -/
+private theorem mem_insert_cIco_left {u v : Fin n} (huv : u ≠ v) :
+    u ∈ insert v (Grid.cIco u v) :=
+  Finset.mem_insert_of_mem (Grid.left_mem_cIco huv)
+
+/-- Validated commutation data for every adjacent non-interleaving pair of columns.
+
+The two rows of the markings of `a` serve as the turn rows. Non-interleaving puts both markings
+of the successor column on one side of them, which fixes which of the two rows is the
+distinguished turn. -/
+noncomputable def ofNoninterleaving (a : Fin n) (ha : a ≠ finRotate n a)
+    (hG : ColumnsNoninterleaving G a (finRotate n a)) : ColumnCommutationData G := by
+  classical
+  have hOX := G.disjoint a
+  have hb := ((columnsNoninterleaving_iff G _ _).mp hG).2
+  simp only [mem_columnArc] at hb
+  exact if h : G.O (finRotate n a) ∈ Grid.cIoo (G.O a) (G.X a) then
+    { column := a
+      turnRow := G.O a
+      oppositeTurnRow := G.X a
+      column_ne_next := ha
+      noninterleaving := hG
+      O_column_below := Finset.mem_insert_self _ _
+      X_column_below := mem_insert_cIco_left hOX.symm
+      O_next_above := mem_insert_cIco_of_mem_cIoo h
+      X_next_above := mem_insert_cIco_of_mem_cIoo (hb.mp h) }
+  else
+    { column := a
+      turnRow := G.X a
+      oppositeTurnRow := G.O a
+      column_ne_next := ha
+      noninterleaving := hG
+      O_column_below := mem_insert_cIco_left hOX
+      X_column_below := Finset.mem_insert_self _ _
+      O_next_above := mem_insert_cIco_of_notMem_cIoo hOX h
+      X_next_above := mem_insert_cIco_of_notMem_cIoo hOX (mt hb.mpr h) }
+
+/-- The data built from a non-interleaving pair commutes the given column. -/
+@[simp]
+theorem ofNoninterleaving_column (a : Fin n) (ha : a ≠ finRotate n a)
+    (hG : ColumnsNoninterleaving G a (finRotate n a)) :
+    (ofNoninterleaving a ha hG).column = a := by
+  unfold ofNoninterleaving
+  split_ifs <;> rfl
+
 end ColumnCommutationData
+
+/-- Every elementary column commutation is realised by validated column-commutation data. -/
+theorem isColumnCommutation_iff_exists_columnCommutationData {G G' : GridDiagram n} :
+    IsColumnCommutation G G' ↔
+      ∃ C : ColumnCommutationData G, G' = G.swapColumns C.column (finRotate n C.column) := by
+  constructor
+  · rintro ⟨a, ha, hG, rfl⟩
+    exact ⟨.ofNoninterleaving a ha hG, by rw [ColumnCommutationData.ofNoninterleaving_column]⟩
+  · rintro ⟨C, rfl⟩
+    exact C.isColumnCommutation
 
 /-- An elementary column commutation is reversible. -/
 theorem isColumnCommutation_comm {G G' : GridDiagram n} :
