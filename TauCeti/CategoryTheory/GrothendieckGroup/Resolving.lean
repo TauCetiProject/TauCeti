@@ -136,8 +136,8 @@ private theorem eulerClassFullSubcategory_eq_aux (n : ℕ) :
               have hY₂ := E.conflation_baseChange hp' sq.flip
               rw [baseChange_def] at hY₂
               obtain ⟨K'', Q'', i'', p'', h'', hQ'', hc'', hK''⟩ :=
-                IsResolving.exists_conflation_prop_X₂_admitsFiniteResolution_X₁
-                  (E := E) (P := P) (pullback p p') (IsResolving.finiteResolution _)
+                E.exists_conflation_prop_X₂_admitsFiniteResolution_X₁
+                  (P := P) (pullback p p') (IsResolving.finiteResolution _)
               let t := ((E.admitsFiniteResolution_iff P).mp hK'').some
               obtain ⟨L, c, α, β, hc, hβ, hLc, hKL, -, -⟩ := E.exists_conflation_comp' hY₁ hc''
               obtain ⟨L', c', α', β', hc', hβ', hLc', hKL', -, -⟩ :=
@@ -206,7 +206,7 @@ private theorem eulerClassOf_eq_add_of_prop_X₃ {S : ShortComplex C} (hS : E.Co
   -- Cover the middle term by a resolving object; the Noether conflation for its composite with
   -- the quotient expresses the two sides using the same kernel.
   obtain ⟨K, Q, i, a, hia, hQ, hc, hK⟩ :=
-    IsResolving.exists_conflation_prop_X₂_admitsFiniteResolution_X₁ (E := E) (P := P) S.X₂ a₂
+    E.exists_conflation_prop_X₂_admitsFiniteResolution_X₁ (P := P) S.X₂ a₂
   obtain ⟨M, c, α, β, hc', hβ, hMc, hKM, -, -⟩ := E.exists_conflation_comp' hS hc
   have hM : P M := IsResolving.prop_X₁ (S := ShortComplex.mk _ _ hc') hMc hQ h₃
   have key : (ExactK0.of ⟨Q, hQ⟩ : ExactK0 (E.fullSubcategory P hP)) =
@@ -244,8 +244,8 @@ private theorem eulerClassOf_add_aux (n : ℕ) :
       have hY₂ := E.conflation_baseChange hcZ sq.flip
       rw [baseChange_def] at hY₂
       obtain ⟨K', Q', i', p', h', hQ', hc', hK'⟩ :=
-        IsResolving.exists_conflation_prop_X₂_admitsFiniteResolution_X₁
-          (E := E) (P := P) (pullback S.g pZ) (IsResolving.finiteResolution _)
+        E.exists_conflation_prop_X₂_admitsFiniteResolution_X₁
+          (P := P) (pullback S.g pZ) (IsResolving.finiteResolution _)
       obtain ⟨M, c, α, β, hMc', hβ, hMc, hK'M, -, -⟩ := E.exists_conflation_comp' hY₂ hc'
       have aY := IsResolving.finiteResolution (E := E) (P := P) (pullback S.g pZ)
       have aKZ := IsResolving.finiteResolution (E := E) (P := P) KZ
