@@ -38,7 +38,11 @@ available in the `AdicCompletionExtension` scope.
 
 * `IsDedekindDomain.HeightOneSpectrum.valuation_apply_eq_of_asIdeal_eq_smul`: `σ` carries the
   `w`-adic valuation to the `σ • w`-adic valuation.
-* `IsDedekindDomain.HeightOneSpectrum.completionCongr_algebraMap`: `completionCongr` extends `σ`.
+* `IsDedekindDomain.HeightOneSpectrum.completionCongr_algebraMap` and
+  `IsDedekindDomain.HeightOneSpectrum.eq_completionCongr_of_continuous`: `completionCongr`
+  extends `σ`, uniquely among continuous ring homomorphisms.
+* `IsDedekindDomain.HeightOneSpectrum.valued_completionCongr`: `completionCongr` preserves the
+  completion valuations.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom_algebraMap`: the defining property
   `decompositionHom v w τ x = τ x` for `x ∈ L`.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom_injective`: the decomposition group
@@ -121,6 +125,23 @@ variable (v) in
 theorem continuous_completionCongr (σ : L ≃ₐ[K] L) (h : w'.asIdeal = σ • w.asIdeal) :
     Continuous (completionCongr v σ h) :=
   continuous_adicCompletionCongr _
+
+/-- `completionCongr` is the only continuous ring homomorphism `L_w →+* L_{w'}` extending `σ`. -/
+theorem eq_completionCongr_of_continuous (σ : L ≃ₐ[K] L)
+    (h : w'.asIdeal = σ • w.asIdeal) {f : w.adicCompletion L →+* w'.adicCompletion L}
+    (hf : Continuous f)
+    (hfL : ∀ x : L, f (algebraMap L _ x) = algebraMap L (w'.adicCompletion L) (σ x)) :
+    f = (completionCongr v σ h).toRingEquiv.toRingHom := by
+  apply eq_adicCompletionCongr_of_continuous
+  · exact hf
+  · exact hfL
+
+/-- `completionCongr` preserves the valuations of the completions. -/
+@[simp]
+theorem valued_completionCongr (σ : L ≃ₐ[K] L) (h : w'.asIdeal = σ • w.asIdeal)
+    (x : w.adicCompletion L) :
+    Valued.v (completionCongr v σ h x) = Valued.v x :=
+  valued_adicCompletionCongr _ x
 
 /-- Two continuous maps out of `L_w` that agree on `L` are equal. -/
 private theorem algEquiv_ext_of_continuous {w'' : HeightOneSpectrum (𝒪 L)}
