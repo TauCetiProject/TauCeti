@@ -23,11 +23,12 @@ so that the image is again a law of the density family; a congruence of smaller 
 scale singular and its image is carried by the singular matrices, where no density against
 `TauCeti.symmetricLebesgue` describes it.
 
-Selecting `q` of the `p` coordinates is the special case in which `M` deletes the last `p - q`
-rows of the identity matrix; congruence by that matrix reads off the leading principal `q × q`
-submatrix, by `Matrix.submatrix_one_mul_mul_submatrix_one`. So the leading principal `q × q`
-submatrix of a Wishart matrix is again Wishart, of the same degree and with the corresponding
-submatrix of `S` as its scale: the Wishart family is closed under marginalisation.
+Selecting `q` of the `p` coordinates along an injective `f : Fin q → Fin p` is the special case
+in which `M` keeps only the rows of the identity matrix named by `f`; congruence by that matrix
+reads off the principal `q × q` submatrix at those coordinates, by
+`Matrix.submatrix_one_mul_mul_submatrix_one`. So every principal `q × q` submatrix of a Wishart
+matrix is again Wishart, of the same degree and with the corresponding submatrix of `S` as its
+scale: the Wishart family is closed under marginalisation.
 
 The two statements are proved together, by reducing an arbitrary full-row-rank congruence to a
 coordinate selection at the standard scale. Write `S = R * Rᵀ` and `M * S * Mᵀ = T * Tᵀ` with `R`
@@ -44,9 +45,9 @@ positions.
 
 * `TauCeti.map_symmetricCongruenceLinearMap_nonsingularWishartMeasure` — congruence by a matrix
   of full row rank carries the law of scale `S` to the law of scale `M * S * Mᵀ`;
-* `TauCeti.map_symmetricCongruenceLinearMap_submatrix_one_nonsingularWishartMeasure` — the
-  leading principal `q × q` submatrix of a nonsingular Wishart matrix has the nonsingular Wishart
-  law of the corresponding submatrix of the scale.
+* `TauCeti.map_symmetricCongruenceLinearMap_submatrix_one_nonsingularWishartMeasure` — a
+  principal `q × q` submatrix of a nonsingular Wishart matrix has the nonsingular Wishart law of
+  the corresponding submatrix of the scale.
 
 ## References
 
@@ -232,29 +233,26 @@ theorem map_symmetricCongruenceLinearMap_nonsingularWishartMeasure
 
 /-! ### Principal submatrices -/
 
-/-- **The leading principal submatrices of a nonsingular Wishart matrix are Wishart.** Reading the
-first `q` coordinates of a Wishart matrix of degree `n` and positive-definite scale `S` gives the
-Wishart law of the same degree with the corresponding submatrix of `S` as its scale. The
-congruence matrix here is the identity with its last `p - q` rows deleted, so congruence by it is
-the leading principal submatrix (`Matrix.submatrix_one_mul_mul_submatrix_one`). -/
-theorem map_symmetricCongruenceLinearMap_submatrix_one_nonsingularWishartMeasure (hqp : q ≤ p)
-    (hS : S.PosDef) (hn : (p : ℝ) - 1 < n) :
+/-- **The principal submatrices of a nonsingular Wishart matrix are Wishart.** Reading the `q`
+coordinates named by an injective `f` of a Wishart matrix of degree `n` and positive-definite
+scale `S` gives the Wishart law of the same degree with the corresponding submatrix of `S` as its
+scale. The congruence matrix here is the identity with only the rows named by `f` kept, so
+congruence by it is that principal submatrix (`Matrix.submatrix_one_mul_mul_submatrix_one`). -/
+theorem map_symmetricCongruenceLinearMap_submatrix_one_nonsingularWishartMeasure
+    (f : Fin q → Fin p) (hf : Function.Injective f) (hS : S.PosDef) (hn : (p : ℝ) - 1 < n) :
     (nonsingularWishartMeasure n S).map
         (Matrix.symmetricCongruenceLinearMap
-          ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix (Fin.castLE hqp) id)) =
-      nonsingularWishartMeasure n (S.submatrix (Fin.castLE hqp) (Fin.castLE hqp)) := by
-  have hEE : (1 : Matrix (Fin p) (Fin p) ℝ).submatrix (Fin.castLE hqp) id *
-      ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix (Fin.castLE hqp) id)ᵀ =
-      (1 : Matrix (Fin q) (Fin q) ℝ) := by
-    have h := Matrix.submatrix_one_mul_mul_submatrix_one (Fin.castLE hqp)
-      (1 : Matrix (Fin p) (Fin p) ℝ)
+          ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix f id)) =
+      nonsingularWishartMeasure n (S.submatrix f f) := by
+  have hEE : (1 : Matrix (Fin p) (Fin p) ℝ).submatrix f id *
+      ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix f id)ᵀ = (1 : Matrix (Fin q) (Fin q) ℝ) := by
+    have h := Matrix.submatrix_one_mul_mul_submatrix_one f (1 : Matrix (Fin p) (Fin p) ℝ)
     rw [Matrix.mul_one] at h
-    rw [Matrix.transpose_submatrix, Matrix.transpose_one, h,
-      Matrix.submatrix_one _ (Fin.castLE_injective hqp)]
-  have hrank : ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix (Fin.castLE hqp) id).rank = q := by
+    rw [Matrix.transpose_submatrix, Matrix.transpose_one, h, Matrix.submatrix_one _ hf]
+  have hrank : ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix f id).rank = q := by
     refine le_antisymm (Matrix.rank_le_height _) ?_
-    calc q = ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix (Fin.castLE hqp) id *
-                ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix (Fin.castLE hqp) id)ᵀ).rank := by
+    calc q = ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix f id *
+                ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix f id)ᵀ).rank := by
           rw [hEE, Matrix.rank_one, Fintype.card_fin]
       _ ≤ _ := Matrix.rank_mul_le_left _ _
   rw [map_symmetricCongruenceLinearMap_nonsingularWishartMeasure _ hrank hS hn,
