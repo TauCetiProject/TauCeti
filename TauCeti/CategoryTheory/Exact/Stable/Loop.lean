@@ -79,7 +79,7 @@ theorem loopInflation_comp_loopDeflation (X : C) :
   (hE.projectivePresentation X).zero
 
 /-- The chosen loop presentation is a conflation of `E`. -/
-theorem loopPresentation_conflation (X : C) :
+theorem conflation_loopInflation_loopDeflation (X : C) :
     E.Conflation (ShortComplex.mk (hE.loopInflation X) (hE.loopDeflation X)
       (hE.loopInflation_comp_loopDeflation X)) :=
   (hE.projectivePresentation X).conflation
