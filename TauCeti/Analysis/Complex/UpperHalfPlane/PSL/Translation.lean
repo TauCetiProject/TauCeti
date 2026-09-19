@@ -27,7 +27,6 @@ theorem upperRightHom_smul (x : ℝ) (z : ℍ) : upperRightHom x • z = x +ᵥ 
   rw [upperRightHom_apply, pslMk_smul]
   apply UpperHalfPlane.coe_injective
   rw [coe_specialLinearGroup_apply]
-  simp [Matrix.SpecialLinearGroup.transvection, coe_vadd,
-    Matrix.transvection, add_comm]
+  simp [Matrix.SpecialLinearGroup.transvection_coe, coe_vadd, add_comm]
 
 end TauCeti.UpperHalfPlane

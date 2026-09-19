@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Exp
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
+public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
 public import Mathlib.Topology.Maps.Strict.Basic
 
@@ -41,8 +42,8 @@ of `2 π i / w` agrees with the local parameter used for modular-form q-expansio
 
 public noncomputable section
 
-open Complex Function MulAction UpperHalfPlane
-open scoped Complex.UnitDisc Real
+open Complex Filter Function MulAction UpperHalfPlane
+open scoped Complex.UnitDisc Manifold Real Topology
 
 namespace TauCeti.UpperHalfPlane
 
@@ -85,6 +86,40 @@ theorem qParamPuncturedUnitDisc_invQParamUpperHalfPlane (w : ℝ) (hw : 0 < w)
 theorem qParamPuncturedUnitDisc_surjective (w : ℝ) (hw : 0 < w) :
     Function.Surjective (qParamPuncturedUnitDisc w hw) := fun q ↦
   ⟨invQParamUpperHalfPlane w hw q, qParamPuncturedUnitDisc_invQParamUpperHalfPlane w hw q⟩
+
+/-- The complex-valued q-parameter is holomorphic on the upper half-plane. -/
+theorem mdifferentiable_qParamPuncturedUnitDisc (w : ℝ) (hw : 0 < w) :
+    MDiff (fun z : ℍ ↦ ((qParamPuncturedUnitDisc w hw z : 𝔻) : ℂ)) := by
+  simp only [coe_qParamPuncturedUnitDisc]
+  exact Function.Periodic.differentiable_qParam.mdifferentiable.comp
+    UpperHalfPlane.mdifferentiable_coe
+
+/-- A horodisc is the inverse image of the punctured disc of the corresponding radius. -/
+theorem norm_qParamPuncturedUnitDisc_lt_iff (w : ℝ) (hw : 0 < w) (A : ℝ) (z : ℍ) :
+    ‖((qParamPuncturedUnitDisc w hw z : 𝔻) : ℂ)‖ < Real.exp (-2 * Real.pi * A / w) ↔
+      A < z.im := by
+  rw [coe_qParamPuncturedUnitDisc]
+  exact Function.Periodic.norm_qParam_lt_iff hw A z
+
+/-- The image of a horodisc is the punctured disc of the corresponding exponential radius. -/
+theorem image_qParamPuncturedUnitDisc_setOf_lt_im (w : ℝ) (hw : 0 < w) (A : ℝ) :
+    qParamPuncturedUnitDisc w hw '' {z : ℍ | A < z.im} =
+      {q : {q : 𝔻 // q ≠ 0} | ‖((q : 𝔻) : ℂ)‖ < Real.exp (-2 * Real.pi * A / w)} := by
+  ext q
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    exact (norm_qParamPuncturedUnitDisc_lt_iff w hw A z).mpr hz
+  · intro hq
+    obtain ⟨z, rfl⟩ := qParamPuncturedUnitDisc_surjective w hw q
+    exact ⟨z, (norm_qParamPuncturedUnitDisc_lt_iff w hw A z).mp hq, rfl⟩
+
+/-- The q-parameter tends to zero through nonzero values as the height tends to infinity. -/
+theorem tendsto_qParamPuncturedUnitDisc (w : ℝ) (hw : 0 < w) :
+    Tendsto (fun z : ℍ ↦ ((qParamPuncturedUnitDisc w hw z : 𝔻) : ℂ))
+      (atTop.comap UpperHalfPlane.im) (𝓝[≠] 0) := by
+  simp only [coe_qParamPuncturedUnitDisc]
+  exact (Function.Periodic.qParam_tendsto hw).comp
+    (tendsto_comap_iff.mpr tendsto_comap)
 
 /-- Two points of the upper half-plane have the same width-`w` q-parameter exactly when one is
 an integral-width translate of the other. -/

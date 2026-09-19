@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Datum
 public import TauCeti.Analysis.Complex.UpperHalfPlane.CuspCoordinate
 public import TauCeti.Analysis.Complex.UpperHalfPlane.ProperAction
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Manifold
-public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
+import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
 import TauCeti.Topology.Homeomorph.Quotient
 
 /-!
@@ -83,6 +83,23 @@ theorem qCoordinate_smul (g : stabilizer Γ D.cusp) (z : ℍ) :
     qCoordinate D (g • z) = qCoordinate D z :=
   (orbitRel_iff_qCoordinate_eq D _ _).mp (orbitRel_apply.mpr ⟨g, rfl⟩)
 
+/-- The q-coordinate is invariant under any group element fixing the cusp. -/
+theorem qCoordinate_smul_of_mem {g : Γ} (hg : g ∈ stabilizer Γ D.cusp) (z : ℍ) :
+    qCoordinate D (g • z) = qCoordinate D z :=
+  qCoordinate_smul D ⟨g, hg⟩ z
+
+/-- Integral powers of the selected generator preserve the q-coordinate. -/
+@[simp]
+theorem qCoordinate_generator_zpow_smul (n : ℤ) (z : ℍ) :
+    qCoordinate D ((D.generator ^ n : Γ) • z) = qCoordinate D z :=
+  qCoordinate_smul_of_mem D (D.mem_stabilizer_iff.mpr ⟨n, rfl⟩) z
+
+/-- The scaled logarithmic lift is a right inverse of the q-coordinate. -/
+@[simp]
+theorem qCoordinate_invQParam (q : {q : 𝔻 // q ≠ 0}) :
+    qCoordinate D (D.scaling⁻¹ • invQParamUpperHalfPlane D.width D.width_pos q) = q := by
+  simp [qCoordinate]
+
 /-- Scaling carries the cusp-stabilizer orbit relation to the integral-width translation
 relation. -/
 private theorem orbitRel_iff_cuspTranslationOrbitRel (z z' : ℍ) :
@@ -91,7 +108,7 @@ private theorem orbitRel_iff_cuspTranslationOrbitRel (z z' : ℍ) :
         (D.scaling • z) (D.scaling • z') := by
   rw [orbitRel_iff_qCoordinate_eq,
     cuspTranslationOrbitRel_iff_qParam_eq D.width D.width_pos]
-  rfl
+  simp only [qCoordinate]
 
 /-- The q-coordinate identifies the quotient by the full cusp stabilizer with the punctured
 unit disc. -/
@@ -107,14 +124,14 @@ theorem quotientHomeomorph_mk (z : ℍ) :
     quotientHomeomorph D (Quotient.mk'' z) = qCoordinate D z := by
   rw [quotientHomeomorph, Homeomorph.trans_apply, Quotient.mk''_eq_mk,
     Homeomorph.Quotient.congr_mk, cuspTranslationQuotientHomeomorph_mk]
-  rfl
+  simp only [Homeomorph.smul_apply, qCoordinate]
 
 @[simp]
 theorem quotientHomeomorph_symm_apply (q : {q : 𝔻 // q ≠ 0}) :
     (quotientHomeomorph D).symm q =
       Quotient.mk'' (D.scaling⁻¹ • invQParamUpperHalfPlane D.width D.width_pos q) := by
   apply (quotientHomeomorph D).injective
-  simp [quotientHomeomorph_mk, qCoordinate]
+  simp only [Homeomorph.apply_symm_apply, quotientHomeomorph_mk, qCoordinate_invQParam]
 
 /-- The normalized q-coordinate is an open quotient map. -/
 theorem isOpenQuotientMap_qCoordinate : IsOpenQuotientMap (qCoordinate D) :=
@@ -124,40 +141,35 @@ theorem isOpenQuotientMap_qCoordinate : IsOpenQuotientMap (qCoordinate D) :=
 /-- The complex-valued q-coordinate is holomorphic on the upper half-plane. -/
 theorem mdifferentiable_qCoordinate :
     MDiff (fun z : ℍ ↦ ((qCoordinate D z : 𝔻) : ℂ)) := by
-  simp only [coe_qCoordinate]
-  exact Function.Periodic.differentiable_qParam.mdifferentiable.comp
-    (UpperHalfPlane.mdifferentiable_coe.comp
-      ((contMDiff_const_smul (I := 𝓘(ℂ, ℂ)) (n := ∞) D.scaling).mdifferentiable (by simp)))
+  exact (mdifferentiable_qParamPuncturedUnitDisc D.width D.width_pos).comp
+    ((contMDiff_const_smul (I := 𝓘(ℂ, ℂ)) (n := ∞) D.scaling).mdifferentiable (by simp))
 
 /-- A scaled horodisc is exactly the inverse image of a punctured disc under the
 q-coordinate. -/
 theorem norm_qCoordinate_lt_iff (A : ℝ) (z : ℍ) :
     ‖((qCoordinate D z : 𝔻) : ℂ)‖ < Real.exp (-2 * Real.pi * A / D.width) ↔
-      A < (D.scaling • z).im := by
-  rw [coe_qCoordinate]
-  exact Function.Periodic.norm_qParam_lt_iff D.width_pos A (D.scaling • z : ℍ)
+      A < (D.scaling • z).im :=
+  norm_qParamPuncturedUnitDisc_lt_iff D.width D.width_pos A (D.scaling • z)
 
 /-- The image of a scaled horodisc is the punctured disc of the corresponding exponential
 radius. -/
-theorem image_qCoordinate_horodisc (A : ℝ) :
+theorem image_qCoordinate_setOf_lt_im (A : ℝ) :
     qCoordinate D '' {z : ℍ | A < (D.scaling • z).im} =
       {q : {q : 𝔻 // q ≠ 0} | ‖((q : 𝔻) : ℂ)‖ <
         Real.exp (-2 * Real.pi * A / D.width)} := by
-  ext q
-  constructor
-  · rintro ⟨z, hz, rfl⟩
-    exact (norm_qCoordinate_lt_iff D A z).mpr hz
-  · intro hq
-    obtain ⟨z, rfl⟩ := (isOpenQuotientMap_qCoordinate D).surjective q
-    exact ⟨z, (norm_qCoordinate_lt_iff D A z).mp hq, rfl⟩
+  -- Present the defining composition and its height preimage explicitly so the set-image
+  -- lemmas can eliminate the surjective scaling map.
+  change (qParamPuncturedUnitDisc D.width D.width_pos ∘ (D.scaling • ·)) ''
+    ((D.scaling • ·) ⁻¹' {z : ℍ | A < z.im}) = _
+  rw [Set.image_comp, Set.image_preimage_eq _ (MulAction.surjective D.scaling),
+    image_qParamPuncturedUnitDisc_setOf_lt_im]
 
 /-- The q-coordinate tends to zero whenever the height in the scaling coordinate tends to
 infinity. The limit is through nonzero values, as required for a punctured cusp chart. -/
 theorem tendsto_qCoordinate {α : Type*} {l : Filter α} {f : α → ℍ}
     (h : Tendsto (fun a ↦ (D.scaling • f a).im) l atTop) :
     Tendsto (fun a ↦ ((qCoordinate D (f a) : 𝔻) : ℂ)) l (𝓝[≠] 0) := by
-  simp only [coe_qCoordinate]
-  exact (Function.Periodic.qParam_tendsto D.width_pos).comp
+  exact (tendsto_qParamPuncturedUnitDisc D.width D.width_pos).comp
     (tendsto_comap_iff.mpr h)
 
 end TauCeti.Subgroup.CuspDatum
