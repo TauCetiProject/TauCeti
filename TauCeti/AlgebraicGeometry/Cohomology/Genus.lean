@@ -95,15 +95,27 @@ theorem finrank_cohomology_zero_trivial_eq_one [IsIntegral X]
   refine (Scheme.Modules.finrank_cohomology_congr (X := X) k
     (TauCeti.SheafOfModules.freePUnitIsoUnit _) 0).trans ?_
   refine (Scheme.Modules.finrank_cohomology_zero_eq_finrank_globalSections k M).trans ?_
-  -- Global sections of the unit sheaf are, by definition, the ring `Γ(X, ⊤)` acting on itself by
-  -- multiplication; the ascriptions below use that identification, for which Mathlib records no
-  -- lemma. Every global section is then a `k`-multiple of the section `1`.
-  let v : Γ(M, ⊤) := (1 : Γ(X, ⊤))
-  refine (finrank_eq_one_iff_of_nonzero' v (one_ne_zero (α := Γ(X, ⊤)))).mpr fun w ↦ ?_
-  obtain ⟨c, hc⟩ := hφ w
+  -- Isolate the definitional identification of sections of the unit sheaf with `Γ(X, ⊤)` in
+  -- one linear equivalence, and transport the dimension argument through it.
+  let _ : Module k Γ(X, ⊤) := Scheme.Modules.globalSectionsBaseModule k X M
+  let e : Γ(M, ⊤) ≃ₗ[k] Γ(X, ⊤) := LinearEquiv.refl k Γ(X, ⊤)
+  let v : Γ(M, ⊤) := e.symm 1
+  have hv : v ≠ 0 := by
+    intro hv
+    apply one_ne_zero (α := Γ(X, ⊤))
+    calc
+      1 = e v := by simp [v]
+      _ = e 0 := congrArg e hv
+      _ = 0 := e.map_zero
+  refine (finrank_eq_one_iff_of_nonzero' v hv).mpr fun w ↦ ?_
+  obtain ⟨c, hc⟩ := hφ (e w)
   refine ⟨c, ?_⟩
-  rw [Scheme.Modules.base_smul_globalSections]
-  exact (mul_one (M := Γ(X, ⊤)) _).trans hc
+  apply e.injective
+  rw [e.map_smul, e.apply_symm_apply]
+  calc
+    c • (1 : Γ(X, ⊤)) = Scheme.Modules.baseRingToGlobalSections k X c * 1 := rfl
+    _ = Scheme.Modules.baseRingToGlobalSections k X c := mul_one _
+    _ = e w := hc
 
 /-- **The Euler characteristic of the structure sheaf.** On an integral scheme that is universally
 closed over a field `k` and has a `k`-rational point, `χ(𝒪_X) = 1 - g`, where `χ` is the

@@ -243,8 +243,10 @@ theorem appTop_bijective_of_section [IsIntegral X] [UniversallyClosed f]
   -- Evaluation at the point is left inverse to `f.appTop`, and injective since `Γ(X, ⊤)` is a
   -- field.
   have hsf (a : Γ(Spec (.of K), ⊤)) : s.appTop (f.appTop a) = a := by
-    rw [← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, hs, Scheme.Hom.id_appTop,
-      CommRingCat.id_apply]
+    simpa only [Scheme.Hom.comp_appTop, Scheme.Hom.id_appTop, CommRingCat.comp_apply,
+      CommRingCat.id_apply] using
+      ConcreteCategory.congr_hom (congrArg (fun g : Spec (.of K) ⟶ Spec (.of K) ↦
+        g.appTop) hs) a
   let := (isField_of_universallyClosed K f).toField
   have hinj : Function.Injective s.appTop := s.appTop.hom.injective
   exact ⟨Function.LeftInverse.injective hsf, fun a ↦ ⟨s.appTop a, hinj (hsf _)⟩⟩
