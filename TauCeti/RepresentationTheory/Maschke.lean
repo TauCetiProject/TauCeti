@@ -49,11 +49,13 @@ theorem exists_comp_eq_id_of_injective (f : IntertwiningMap ρ σ) (hf : Functio
   let e' := IntertwiningMap.equivLinearMapAsModule σ ρ
   let p := e'.symm q
   refine ⟨p, IntertwiningMap.ext (LinearMap.ext fun v => ?_)⟩
-  change p (f v) = v
+  rw [IntertwiningMap.coe_toLinearMap, IntertwiningMap.comp_apply,
+    IntertwiningMap.coe_toLinearMap, IntertwiningMap.id_apply]
   have hef : e f (ρ.asModuleEquiv.symm v) = σ.asModuleEquiv.symm (f v) := by
     apply σ.asModuleEquiv.eq_symm_apply.mpr
     rw [IntertwiningMap.equivLinearMapAsModule_apply,
       Representation.asModuleEquiv_symm_apply]
+    -- `f v` is read as an element of `σ.asModule`, where `asModuleEquiv` evaluates.
     exact Representation.asModuleEquiv_apply (show σ.asModule from f v)
   have hqv := congrArg (fun l => ρ.asModuleEquiv (l (ρ.asModuleEquiv.symm v))) hq
   rw [LinearMap.comp_apply, hef, LinearMap.id_apply, LinearEquiv.apply_symm_apply] at hqv

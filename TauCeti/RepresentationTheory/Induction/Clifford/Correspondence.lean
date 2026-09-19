@@ -81,24 +81,15 @@ private theorem exists_linearEquiv_of_mem_inertia {V : FDRep k N} {t : G} (ht : 
     ∃ ε : V ≃ₗ[k] V, ∀ (n : N) (v : V),
       ε (V.ρ n v) = V.ρ (MulAut.conjNormal t⁻¹ n) (ε v) := by
   obtain ⟨e⟩ := mem_inertia_iff.1 ht
-  let hV : (conjNormalFDRep t V).V = V.V := conjNormalFDRep_V t V
-  let c : (conjNormalFDRep t V).V ≅ V.V := eqToIso hV
-  let cLinear := FGModuleCat.isoToLinearEquiv c
-  let ε : V ≃ₗ[k] V :=
-    (isoToLinearEquiv e.symm).trans cLinear
+  -- `{}^t V` has the same underlying space as `V` (`conjNormalFDRep_V`), so `e⁻¹` is itself a
+  -- linear automorphism of `V`.
+  let ε : V ≃ₗ[k] conjNormalFDRep t V := isoToLinearEquiv e.symm
   refine ⟨ε, fun n v => ?_⟩
   have h := DFunLike.congr_fun (FDRep.Iso.conj_ρ e.symm n) (isoToLinearEquiv e.symm v)
   have hv := congrArg (fun w => isoToLinearEquiv e.symm (V.ρ n w))
     ((isoToLinearEquiv e.symm).symm_apply_apply v)
-  have hc (w : conjNormalFDRep t V) :
-      cLinear ((conjNormalFDRep t V).ρ n w) =
-        V.ρ (MulAut.conjNormal t⁻¹ n) (cLinear w) := by
-    rw [conjNormalFDRep_ρ]
-    subst hV
-    rfl
-  have heq := congrArg cLinear (h.trans hv).symm
-  rw [hc] at heq
-  exact heq
+  rw [← conjNormalFDRep_ρ]
+  exact (h.trans hv).symm
 
 /-- **The images of intertwiners from `V` span a representation of the inertia group lying over
 `V`.**  If `U` is an irreducible representation of the inertia group of `V` and some intertwiner
@@ -245,9 +236,8 @@ theorem simple_indFDRep_of_inertia (V : FDRep k N) [Simple V] (U : FDRep k (iner
           map_inv, MulAut.inv_apply, MulEquiv.symm_apply_apply] at hp'
         have hc : (conjNormalFDRep s⁻¹ V).ρ n = V.ρ (MulAut.conjNormal s n) := by
           rw [conjNormalFDRep_ρ, inv_inv]
-        refine ((congrArg p (IntertwiningMap.isIntertwining _ _ g₂ n v)).trans hp').trans ?_
-        change V.ρ (MulAut.conjNormal s n) (p (g₂ v)) =
-          (conjNormalFDRep s⁻¹ V).ρ n (qLinear v)
+        refine (qLinear_apply _).trans <|
+          ((congrArg p (IntertwiningMap.isIntertwining _ _ g₂ n v)).trans hp').trans ?_
         rw [hc]
         exact congrArg (V.ρ (MulAut.conjNormal s n)) (qLinear_apply v).symm
   have hq : q ≠ 0 := fun h0 => hg₂ (LinearMap.ext fun v => DFunLike.congr_fun h0 v)
