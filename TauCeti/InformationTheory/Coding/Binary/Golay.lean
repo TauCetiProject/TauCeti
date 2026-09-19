@@ -584,8 +584,12 @@ theorem weightDistribution_code (w : ℕ) :
   · rw [weightDistribution_eq_card]
     exact weightTable_counts ⟨w, hw⟩
   · rw [Set.weightDistribution_eq_zero_of_card_lt (by simpa using (by omega : 24 < w))]
-    simp only [show w ≠ 0 by omega, show w ≠ 24 by omega, show w ≠ 8 by omega,
-      show w ≠ 16 by omega, show w ≠ 12 by omega, or_self, ite_false]
+    have h0 : w ≠ 0 := by omega
+    have h24 : w ≠ 24 := by omega
+    have h8 : w ≠ 8 := by omega
+    have h16 : w ≠ 16 := by omega
+    have h12 : w ≠ 12 := by omega
+    simp only [h0, h24, h8, h16, h12, or_self, ite_false]
 
 /-- The homogeneous weight enumerator is
 `X²⁴ + 759 X¹⁶Y⁸ + 2576 X¹²Y¹² + 759 X⁸Y¹⁶ + Y²⁴`. -/
