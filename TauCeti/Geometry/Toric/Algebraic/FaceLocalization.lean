@@ -273,6 +273,20 @@ noncomputable def affineToricOverlapRight (σ τ : Φ.cones) :
   faceAffineToricSchemeMap Φ.lattice
     (Φ.inf_isFaceOf_right σ.property τ.property)
 
+/-- The left overlap leg is the face map of the inclusion `σ ⊓ τ ≼ σ`. -/
+@[simp]
+theorem affineToricOverlapLeft_def (σ τ : Φ.cones) :
+    Φ.affineToricOverlapLeft σ τ =
+      faceAffineToricSchemeMap Φ.lattice (Φ.inf_isFaceOf_left σ.property τ.property) := by
+  rw [affineToricOverlapLeft]
+
+/-- The right overlap leg is the face map of the inclusion `σ ⊓ τ ≼ τ`. -/
+@[simp]
+theorem affineToricOverlapRight_def (σ τ : Φ.cones) :
+    Φ.affineToricOverlapRight σ τ =
+      faceAffineToricSchemeMap Φ.lattice (Φ.inf_isFaceOf_right σ.property τ.property) := by
+  rw [affineToricOverlapRight]
+
 /-- If the left target cone is regular, the map from a pairwise overlap into its left chart is an
 open immersion. -/
 theorem isOpenImmersion_affineToricOverlapLeft (σ τ : Φ.cones)
