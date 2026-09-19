@@ -79,6 +79,7 @@ def contractMultidegree : (T.Component → ℤ) →ₗ[ℤ] (T.contract he).Comp
       (T.intersection e j / T.contractWeight e j) • LinearMap.proj (R := ℤ) e
 
 /-- The coordinates of `TauCeti.NumericalType.contractMultidegree`. -/
+@[simp]
 lemma contractMultidegree_apply (d : T.Component → ℤ) (j : {i // i ≠ e}) :
     T.contractMultidegree he d j = (T.weight j : ℤ) / T.contractWeight e j * d j +
       T.intersection e j / T.contractWeight e j * d e :=
@@ -104,6 +105,7 @@ private lemma eq_of_mul_contractWeight {x y : {i // i ≠ e} → ℤ}
 
 /-- The map of multidegrees sends the multidegree of a component `i ≠ e` to the multidegree of
 `i` in the contraction. -/
+@[simp]
 lemma contractMultidegree_row (i : {i // i ≠ e}) :
     T.contractMultidegree he (T.weightedIntersection i) = (T.contract he).weightedIntersection i :=
   eq_of_mul_contractWeight fun j ↦ by
@@ -118,6 +120,7 @@ lemma contractMultidegree_row (i : {i // i ≠ e}) :
     linear_combination (T.intersection j e) * hie - hcontract
 
 /-- The map of multidegrees kills the multidegree of the contracted component `e`. -/
+@[simp]
 lemma contractMultidegree_row_self :
     T.contractMultidegree he (T.weightedIntersection e) = 0 :=
   eq_of_mul_contractWeight fun j ↦ by
@@ -132,6 +135,7 @@ lemma contractMultidegree_row_self :
 /-- The map of multidegrees intertwines the weighted intersection matrices: the image of a
 combination `v` of the multidegrees of the components of `T` is the same combination, with the
 coefficient of `e` dropped, of the multidegrees of the components of the contraction. -/
+@[simp]
 lemma contractMultidegree_vecMul_weightedIntersection (v : T.Component → ℤ) :
     T.contractMultidegree he (v ᵥ* T.weightedIntersection) =
       (fun i : {i // i ≠ e} ↦ v i) ᵥ* (T.contract he).weightedIntersection := by
