@@ -35,6 +35,8 @@ conjugates of the diagonal torus, and any two maximal tori are conjugate.
 
 ## Main declarations
 
+* `TauCeti.GeneralLinear.exists_mul_map_eq_map_mul_diagGL`: a point of `GLₙ` with values in a
+  Hopf algebra spanned by its group-like elements is diagonalized by a rational matrix.
 * `TauCeti.GeneralLinear.exists_conjugate_diagonalTorusDefiningIdeal_le`: a diagonalizable closed
   subgroup of `GLₙ` is contained in a conjugate of the diagonal torus.
 * `TauCeti.GeneralLinear.exists_eq_conjugate_diagonalTorusDefiningIdeal_of_isMaximalTorus`: a
@@ -122,6 +124,34 @@ private theorem exists_basis_coact_eq_tmul {Q : Type u} [AddCommGroup Q] [Module
   have h := _root_.GroupLike.mem_weightSpace.mp (hχ j)
   rwa [Comodule.corestrict_coact_apply, standardComodule_coact, CoalgHom.toLinearMap_eq_coe] at h
 
+/-- **Simultaneous diagonalization over a diagonalizable Hopf algebra.**
+
+If the group-like elements of `Q` span it, then for every bialgebra morphism
+`π : O(GLₙ) → Q` some rational matrix `P` diagonalizes the `Q`-valued point `π`:
+`π P = P diag(t)`. The columns of `P` are weight vectors of the standard comodule corestricted
+along `π`, and the entries of `t` are their weights. -/
+theorem exists_mul_map_eq_map_mul_diagGL {Q : Type u} [CommRing Q] [HopfAlgebra k Q]
+    (hQ : Subcoalgebra.groupLikeSetSpan (R := k) (C := Q) Set.univ = ⊤)
+    (π : coordinateHopfAlgebra k n →ₐc[k] Q) :
+    ∃ (P : GL (Fin n) k) (t : Fin n → Qˣ),
+      pointsMulEquiv n (toConv (π : coordinateHopfAlgebra k n →ₐ[k] Q)) *
+          Matrix.GeneralLinearGroup.map (algebraMap k Q) P =
+        Matrix.GeneralLinearGroup.map (algebraMap k Q) P * diagGL t := by
+  obtain ⟨w, χ, hw⟩ := exists_basis_coact_eq_tmul (n := n) (Q := Q) hQ
+    (π : coordinateHopfAlgebra k n →ₗc[k] Q)
+  let _ := (Pi.basisFun k (Fin n)).invertibleToMatrix w
+  refine ⟨unitOfInvertible ((Pi.basisFun k (Fin n)).toMatrix w),
+    fun j ↦ GroupLike.toUnits k (χ j), ?_⟩
+  ext i j
+  rw [Matrix.GeneralLinearGroup.coe_mul, Matrix.GeneralLinearGroup.coe_mul, diagGL_coe,
+    Matrix.mul_diagonal, Matrix.mul_apply]
+  simp only [Matrix.GeneralLinearGroup.map_apply, pointsMulEquiv_apply,
+    pointToGeneralLinear_apply, val_unitOfInvertible, Module.Basis.toMatrix_apply,
+    Pi.basisFun_repr, BialgHom.coe_toAlgHom, ← genericMatrix_apply]
+  have h := sum_mul_algebraMap_eq_of_coact_eq (π : coordinateHopfAlgebra k n →ₗc[k] Q)
+    (w j) (χ j) (hw j) i
+  rwa [BialgHom.coe_toCoalgHom] at h
+
 /-- **A diagonalizable closed subgroup of `GLₙ` is conjugate into the diagonal torus.**
 
 If the quotient coordinate Hopf algebra of `I` is spanned by its group-like elements, then some
@@ -136,28 +166,12 @@ theorem exists_conjugate_diagonalTorusDefiningIdeal_le
       (diagonalTorusDefiningIdeal k n).conjugate g ≤ I := by
   let Q := CommHopfAlgCat.quotient (coordinateHopfAlgebra k n) I
   let π : coordinateHopfAlgebra k n →ₐc[k] Q := (CommHopfAlgCat.mkQuotient _ I).hom
-  obtain ⟨w, χ, hw⟩ := exists_basis_coact_eq_tmul (n := n) (Q := Q)
-    ((DiagonalizableGroup.groupLikeSpannedProperty_iff k _).mp hI)
-    (π : coordinateHopfAlgebra k n →ₗc[k] Q)
-  let _ := (Pi.basisFun k (Fin n)).invertibleToMatrix w
-  let P : GL (Fin n) k := unitOfInvertible ((Pi.basisFun k (Fin n)).toMatrix w)
-  let t : Fin n → Qˣ := fun j ↦ GroupLike.toUnits k (χ j)
+  obtain ⟨P, t, hmat⟩ := exists_mul_map_eq_map_mul_diagGL (n := n) (Q := Q)
+    ((DiagonalizableGroup.groupLikeSpannedProperty_iff k _).mp hI) π
   let τ : WithConv (MonoidAlgebra k (Multiplicative (ULift.{u} (Fin n) →₀ ℤ)) →ₐ[k] Q) :=
     (SplitTorus.pointsMulEquiv (R := k) (A := Q)).symm fun i ↦ t i.down
   let g : WithConv (coordinateHopfAlgebra k n →ₐ[k] k) :=
     (pointsMulEquiv (R := k) (A := k) n).symm P⁻¹
-  let φ : k →+* Q := (Algebra.ofId k Q : k →+* Q)
-  have hmat : pointsMulEquiv n (toConv (π : coordinateHopfAlgebra k n →ₐ[k] Q)) *
-      Matrix.GeneralLinearGroup.map φ P = Matrix.GeneralLinearGroup.map φ P * diagGL t := by
-    ext i j
-    rw [Matrix.GeneralLinearGroup.coe_mul, Matrix.GeneralLinearGroup.coe_mul, diagGL_coe,
-      Matrix.mul_diagonal, Matrix.mul_apply]
-    simp only [Matrix.GeneralLinearGroup.map_apply, pointsMulEquiv_apply,
-      pointToGeneralLinear_apply, P, val_unitOfInvertible, Module.Basis.toMatrix_apply,
-      Pi.basisFun_repr, BialgHom.coe_toAlgHom, ← genericMatrix_apply]
-    have h := sum_mul_algebraMap_eq_of_coact_eq (π : coordinateHopfAlgebra k n →ₗc[k] Q)
-      (w j) (χ j) (hw j) i
-    rwa [BialgHom.coe_toCoalgHom] at h
   have hkey : toConv ((π : coordinateHopfAlgebra k n →ₐ[k] Q).comp
       (HopfAlgebra.pointConjugationAlgHom g)) = diagonalTorusPoints τ := by
     apply (pointsMulEquiv (R := k) (A := Q) n).injective

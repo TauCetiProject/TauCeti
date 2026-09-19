@@ -210,12 +210,7 @@ theorem map_diagonal {S : Type*} [CommRing S] (f : R →+* S) (t : Fin m → Rˣ
       diagonal (fun i ↦ Units.map f (t i)) := by
   rw [diagonal, diagonal, MonoidHom.comp_apply, MonoidHom.comp_apply, map_leviHom]
   congr 1
-  apply Matrix.GeneralLinearGroup.ext
-  intro i j
-  by_cases hij : i = j
-  · subst j
-    simp [Matrix.GeneralLinearGroup.map_apply, diagGL_apply]
-  · simp [Matrix.GeneralLinearGroup.map_apply, diagGL_apply, hij]
+  exact map_diagGL f t
 
 end Matrix
 

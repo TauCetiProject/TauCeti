@@ -357,6 +357,16 @@ theorem det_diagGL (t : Fin n → kˣ) :
   apply Units.ext
   simp [Matrix.GeneralLinearGroup.val_det_apply, diagGL_coe, Matrix.det_diagonal]
 
+/-- Mapping the entries of `diagGL t` along a ring homomorphism gives the diagonal matrix of the
+mapped units. -/
+@[simp]
+theorem map_diagGL {S : Type*} [CommRing S] {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (f : k →+* S) (t : ι → kˣ) :
+    Matrix.GeneralLinearGroup.map f (diagGL t) = diagGL fun i ↦ Units.map (f : k →* S) (t i) := by
+  ext i j
+  simp only [Matrix.GeneralLinearGroup.map_apply, diagGL_apply, Units.coe_map, MonoidHom.coe_coe]
+  split_ifs <;> simp
+
 /-- The determinant of an element of the diagonal torus is the product of its diagonal entries. -/
 theorem det_of_mem_diagonalTorus {g : GL (Fin n) k} (hg : g ∈ diagonalTorus k n) :
     (Matrix.GeneralLinearGroup.det g : k) = ∏ i, (g : Matrix (Fin n) (Fin n) k) i i := by
