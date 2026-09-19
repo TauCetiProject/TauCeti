@@ -30,7 +30,7 @@ The correction factor does not vanish on `Re s > 0`, because
 `∏ 𝔭 ∈ S, (1 - N(𝔭)⁻¹)`. The logarithmic derivative of `L_S` differs from that of `ζ_K` by the
 finite sum `∑ 𝔭 ∈ S, log N(𝔭) / (N(𝔭) ^ s - 1)`, which is holomorphic on `Re s > 0` and in
 particular across the line `Re s = 1`. This is the form in which Dirichlet series whose Euler
-products omit the ramified primes, such as the series of a Galois character, are compared with
+products omit the ramified primes, such as the trivial Galois-character series, are compared with
 `ζ_K`.
 
 ## Main results
