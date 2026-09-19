@@ -45,6 +45,8 @@ the `IsDedekindDomain.HeightOneSpectrum.valuation` of a varying prime, which can
   strictly dominates.
 * `WeierstrassCurve.Affine.valuation_y_sq_eq_valuation_x_cube`: at a pole of `x`, the two
   coordinates have poles in ratio two to three, over any value group.
+* `WeierstrassCurve.Affine.valuation_y_le_one_of_valuation_x_le_one`: an integral `x`-coordinate
+  forces an integral `y`-coordinate, over any value group.
 * `WeierstrassCurve.Affine.valuation_x_le_one_and_valuation_y_le_one_of_valuation_x_lt_exp_two`:
   an affine point whose `x`-coordinate has a pole of order less than two has both coordinates
   integral.
@@ -251,6 +253,19 @@ theorem valuation_y_sq_eq_valuation_x_cube {x y : F} (hxy : W.Equation x y) (hx 
   rw [← valuation_lhs_eq (W := W) v hlt (hx.trans hlt), valuation_lhs_eq_rhs v hxy,
     valuation_rhs_eq (W := W) v hx]
 
+/-- **An integral `x`-coordinate forces an integral `y`-coordinate**, over any value group. The
+curve equation makes `y` integral over `O` once `x` is
+(`isIntegral_y_of_equation_of_isIntegral_x`), and `O` is integrally closed in `F`. -/
+theorem valuation_y_le_one_of_valuation_x_le_one {x y : F} (hxy : W.Equation x y)
+    (hx : v x ≤ 1) : v y ≤ 1 := by
+  have hxy' : ((integralModel v.valuationSubring W).baseChange F).toAffine.Equation x y := by
+    rw [baseChange_integralModel_eq]; exact hxy
+  have hy : _root_.IsIntegral v.valuationSubring y :=
+    _root_.WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x _ hxy'
+      (isIntegral_algebraMap
+        (x := (⟨x, (Valuation.mem_valuationSubring_iff v x).mpr hx⟩ : v.valuationSubring)))
+  exact (Valuation.valuationSubring.integers v).isIntegral_iff_v_le_one.mp hy
+
 end Integral
 
 end Coefficients
@@ -324,16 +339,7 @@ two, and in the former case the `y`-coordinate is integral too. -/
 theorem valuation_x_le_one_and_valuation_y_le_one_of_valuation_x_lt_exp_two {x y : F}
     (hxy : W.Equation x y) (hx : v x < exp (2 : ℤ)) : v x ≤ 1 ∧ v y ≤ 1 := by
   have hA1 := valuation_x_le_one_of_lt_exp_two v hxy hx
-  refine ⟨hA1, ?_⟩
-  -- `x` is integral, so the curve equation makes `y` integral over `O`
-  -- (`isIntegral_y_of_equation_of_isIntegral_x`), and `O` is integrally closed in `F`.
-  have hxy' : ((integralModel v.valuationSubring W).baseChange F).toAffine.Equation x y := by
-    rw [baseChange_integralModel_eq]; exact hxy
-  have hy : _root_.IsIntegral v.valuationSubring y :=
-    _root_.WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x _ hxy'
-      (isIntegral_algebraMap
-        (x := (⟨x, (Valuation.mem_valuationSubring_iff v x).mpr hA1⟩ : v.valuationSubring)))
-  exact (Valuation.valuationSubring.integers v).isIntegral_iff_v_le_one.mp hy
+  exact ⟨hA1, valuation_y_le_one_of_valuation_x_le_one v hxy hA1⟩
 
 end Integral
 
