@@ -35,18 +35,25 @@ argument.
 
 Nothing here needs a field, a nondegeneracy hypothesis, a finite dimension, or a polarization
 without a line summand: the parity grading of `⋀·W` and the diagonalization are both available
-over the commutative ring the polarization data lives over. Even nontriviality of the ring is
-needed only where a parity is *read off* a basis vector, that vector having to be nonzero for its
-parity to be well defined; the inclusions and the identification of the two summands hold over any
-commutative ring.
+over the commutative ring the polarization data lives over. The parity statements of the first
+section hold over any commutative ring, nontriviality being needed only where a parity is *read
+off* a basis vector, that vector having to be nonzero for its parity to be well defined. The
+weight-space statements inherit from `TauCeti/RepresentationTheory/Spin/Weight.lean` the standing
+hypothesis that `2` be invertible — without it the sign vector `TauCeti.spinWeight` is not even
+defined — and that is the only extra hypothesis the inclusions and the identification of the two
+summands carry; the two counts of weights ask in addition that `K` have no zero divisors, since
+they read off which weight spaces are nonzero.
 
 As in `TauCeti/RepresentationTheory/Spin/Weight.lean`, "weight" means a tuple of simultaneous
 eigenvalues for the family `H`, no Cartan subalgebra being exhibited; and no weight is called
 highest, since no ordering of the coordinates is used to single out a Borel. What the parity
-statements do supply for the type-`Dₗ` fork is that the two candidate highest-weight vectors of
-`TauCeti/RepresentationTheory/Spin/Polarization/TypeD/ForkWeights.lean` — the basis vector with
-every coordinate occupied and the one obtained from it by erasing a coordinate — lie in *different*
-half-spin summands, which is `TauCeti.basis_univ_mem_spinPlus_iff_basis_univ_erase_mem_spinMinus`.
+statements do supply for the type-`Dₗ` fork is the parity flip between the two candidate
+highest-weight vectors of `TauCeti/RepresentationTheory/Spin/Polarization/TypeD/ForkWeights.lean`:
+by `TauCeti.basis_univ_mem_spinPlus_iff_basis_univ_erase_mem_spinMinus` the basis vector with every
+coordinate occupied lies in `S⁺` exactly when the one obtained from it by erasing a coordinate lies
+in `S⁻`. That equivalence between two memberships is all it says; which summand each of the two
+vectors actually lies in is read off `TauCeti.basis_mem_spinPlus_iff` and
+`TauCeti.basis_mem_spinMinus_iff`, from the parity of the number of coordinates.
 
 ## Main results
 
@@ -63,7 +70,8 @@ half-spin summands, which is `TauCeti.basis_univ_mem_spinPlus_iff_basis_univ_era
   `TauCeti.ncard_spinWeightSpace_le_spinPlus` and `TauCeti.ncard_spinWeightSpace_le_spinMinus`
   count them, `2 ^ (l - 1)` each.
 * `TauCeti.basis_univ_mem_spinPlus_iff_basis_univ_erase_mem_spinMinus`: **the two type-`Dₗ` fork
-  vectors lie in different half-spin summands.**
+  vectors flip parity**, the basis vector with every coordinate occupied lying in `S⁺` exactly when
+  the one obtained from it by erasing a coordinate lies in `S⁻`.
 
 ## References
 
@@ -100,9 +108,12 @@ theorem basis_mem_spinMinus_iff (s : Finset ι) :
   rw [mem_spinMinus, b.exteriorAlgebra_mem_evenOdd_iff s 1, ZMod.natCast_eq_one_iff_odd]
 
 omit [Nontrivial K] in
-/-- **The two type-`Dₗ` fork vectors lie in different half-spin summands.** The vector with every
-coordinate occupied and the vector obtained from it by erasing one coordinate differ in parity, so
-whenever the first is even the second is odd and conversely. These are the two vectors that
+/-- **The two type-`Dₗ` fork vectors flip parity.** The vector with every coordinate occupied lies
+in `S⁺` exactly when the vector obtained from it by erasing one coordinate lies in `S⁻`, erasing a
+coordinate changing the parity of the number of coordinates. This is the equivalence of the two
+memberships only: which of the two summands each vector actually lies in depends on the parity of
+the number of coordinates, and is `TauCeti.basis_mem_spinPlus_iff` together with
+`TauCeti.basis_mem_spinMinus_iff`. These are the two vectors that
 `TauCeti/RepresentationTheory/Spin/Polarization/TypeD/ForkWeights.lean` shows to be annihilated by
 every positive simple generator, with the fork fundamental weights. -/
 theorem basis_univ_mem_spinPlus_iff_basis_univ_erase_mem_spinMinus [Fintype ι] (i : ι) :
