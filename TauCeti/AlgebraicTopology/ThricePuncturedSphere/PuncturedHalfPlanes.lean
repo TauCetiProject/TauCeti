@@ -127,7 +127,7 @@ private def leftOpenHomeomorph : leftOpen ≃ₜ ↥({z : ℂ | z.re < 1} \ {0})
   continuous_invFun := by fun_prop
 
 /-- The basepoint of `A` corresponds to the point `1/2 = 0 + 1/2` of the circle `sphere 0 (1/2)`
-at which `sphereLoop` is based. -/
+at which `Complex.sphereLoop` is based. -/
 private theorem leftOpenHomeomorph_basePt :
     leftOpenHomeomorph ⟨basePt, basePt_mem_leftOpen⟩ =
       starConvex_halfPlane.sphereHomotopyEquiv one_half_pos sphere_subset_halfPlane
@@ -204,13 +204,13 @@ theorem rightOpenFundamentalGroupMulEquivInt_periph1Right :
 /-- The class of `γ0` generates `π₁(A, 1/2)`. -/
 @[simp]
 theorem zpowers_periph0Left : Subgroup.zpowers periph0Left = ⊤ :=
-  TauCeti.zpowers_eq_top_of_mulEquivInt leftOpenFundamentalGroupMulEquivInt
+  leftOpenFundamentalGroupMulEquivInt.zpowers_eq_top_of_apply_eq_ofAdd_one
     leftOpenFundamentalGroupMulEquivInt_periph0Left
 
 /-- The class of `γ1` generates `π₁(B, 1/2)`. -/
 @[simp]
 theorem zpowers_periph1Right : Subgroup.zpowers periph1Right = ⊤ :=
-  TauCeti.zpowers_eq_top_of_mulEquivInt rightOpenFundamentalGroupMulEquivInt
+  rightOpenFundamentalGroupMulEquivInt.zpowers_eq_top_of_apply_eq_ofAdd_one
     rightOpenFundamentalGroupMulEquivInt_periph1Right
 
 end ThricePuncturedSphere

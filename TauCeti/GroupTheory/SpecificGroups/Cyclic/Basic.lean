@@ -22,7 +22,7 @@ It also records that an element corresponding to `1` under an equivalence with
 ## Main results
 
 * `TauCeti.mem_cyclicElements`: the enumeration exhausts the group when `n ≠ 0`.
-* `TauCeti.zpowers_eq_top_of_mulEquivInt`: an element sent to `1` by an equivalence with
+* `MulEquiv.zpowers_eq_top_of_apply_eq_ofAdd_one`: an element sent to `1` by an equivalence with
   `Multiplicative ℤ` generates its group.
 
 ## References
@@ -49,7 +49,7 @@ theorem mem_cyclicElements (n : ℕ) [NeZero n] (g : Multiplicative (ZMod n)) :
 
 /-- An element sent to `1` by a group equivalence with `Multiplicative ℤ` generates its
 group. -/
-theorem zpowers_eq_top_of_mulEquivInt {G : Type*} [Group G] {g : G}
+theorem _root_.MulEquiv.zpowers_eq_top_of_apply_eq_ofAdd_one {G : Type*} [Group G] {g : G}
     (e : G ≃* Multiplicative ℤ) (hg : e g = Multiplicative.ofAdd 1) :
     Subgroup.zpowers g = ⊤ :=
   (Subgroup.eq_top_iff' _).mpr fun y => ⟨(e y).toAdd,
