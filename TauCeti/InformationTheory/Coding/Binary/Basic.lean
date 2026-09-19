@@ -7,6 +7,7 @@ module
 
 public import TauCeti.InformationTheory.Coding.Basic
 public import TauCeti.InformationTheory.Coding.EuclideanDual
+public import TauCeti.InformationTheory.Coding.WeightEnumerator
 public import Mathlib.InformationTheory.Hamming
 public import Mathlib.Algebra.Field.ZMod
 
@@ -31,7 +32,7 @@ public section
 
 namespace TauCeti
 
-open Matrix
+open Matrix MvPolynomial
 
 variable {ι : Type*} [Fintype ι]
 
@@ -140,6 +141,21 @@ theorem natCard_of_eq_euclideanDual (hC : C = C.euclideanDual) :
   simp only [Nat.card_eq_fintype_card, ZMod.card]
   congr 1
   omega
+
+/-- The weight enumerator of a doubly-even code is unchanged when its second argument is
+multiplied by a fourth root of unity. Taking `R = ℂ[X,Y]` gives the polynomial symmetry. -/
+@[simp]
+theorem IsDoublyEven.aeval_weightEnumerator_mul {R : Type*} [CommRing R]
+    (hC : IsDoublyEven C) {ζ : R} (hζ : ζ ^ 4 = 1) (x y : R) :
+    aeval ![x, ζ * y] (C : Set (ι → ZMod 2)).weightEnumerator =
+      aeval ![x, y] (C : Set (ι → ZMod 2)).weightEnumerator := by
+  classical
+  rw [Set.weightEnumerator_eq_sum (Set.toFinite _)]
+  simp only [map_sum]
+  apply Finset.sum_congr rfl
+  intro c hc
+  obtain ⟨k, hk⟩ := isDoublyEven_iff.mp hC c (by simpa using hc)
+  simp [hk, mul_pow, pow_mul, hζ]
 
 end BinaryCode
 

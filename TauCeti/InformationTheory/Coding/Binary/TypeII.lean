@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.Binary.Basic
 public import TauCeti.InformationTheory.Coding.MacWilliams
 
 import Mathlib.RingTheory.RootsOfUnity.Complex
@@ -35,10 +34,6 @@ variable {ι : Type*} [Fintype ι] {C : LinearCode (ZMod 2) ι}
 def IsTypeII (C : LinearCode (ZMod 2) ι) : Prop :=
   IsDoublyEven C ∧ C = C.euclideanDual
 
-/-- The two defining conditions of a Type II binary code. -/
-theorem isTypeII_iff : IsTypeII C ↔ IsDoublyEven C ∧ C = C.euclideanDual :=
-  Iff.rfl
-
 /-- Every Type II code is doubly even. -/
 theorem IsTypeII.isDoublyEven (hC : IsTypeII C) : IsDoublyEven C :=
   hC.1
@@ -46,31 +41,6 @@ theorem IsTypeII.isDoublyEven (hC : IsTypeII C) : IsDoublyEven C :=
 /-- Every Type II code is Euclidean self-dual. -/
 theorem IsTypeII.eq_euclideanDual (hC : IsTypeII C) : C = C.euclideanDual :=
   hC.2
-
-/-- The weight enumerator of a doubly-even code is unchanged when its second argument is
-multiplied by a fourth root of unity. Taking `R = ℂ[X,Y]` gives the polynomial symmetry. -/
-@[simp]
-theorem IsDoublyEven.aeval_weightEnumerator_mul {R : Type*} [CommRing R]
-    (hC : IsDoublyEven C) {ζ : R} (hζ : ζ ^ 4 = 1) (x y : R) :
-    aeval ![x, ζ * y] (C : Set (ι → ZMod 2)).weightEnumerator =
-      aeval ![x, y] (C : Set (ι → ZMod 2)).weightEnumerator := by
-  classical
-  rw [Set.weightEnumerator_eq_sum (Set.toFinite _)]
-  simp only [map_sum]
-  apply Finset.sum_congr rfl
-  intro c hc
-  obtain ⟨k, hk⟩ := isDoublyEven_iff.mp hC c (by simpa using hc)
-  simp [hk, mul_pow, pow_mul, hζ]
-
-/-- The integral MacWilliams symmetry of a self-dual binary code. -/
-theorem aeval_weightEnumerator_of_eq_euclideanDual (hC : C = C.euclideanDual) :
-    aeval ![X 0 + X 1, X 0 - X 1] (C : Set (ι → ZMod 2)).weightEnumerator =
-      (2 : MvPolynomial (Fin 2) ℤ) ^ (Fintype.card ι / 2) *
-        (C : Set (ι → ZMod 2)).weightEnumerator := by
-  have h := Submodule.natCard_mul_weightEnumerator_euclideanDual C
-  rw [← hC, natCard_of_eq_euclideanDual hC] at h
-  norm_num [Nat.card_eq_fintype_card] at h ⊢
-  exact h.symm
 
 /-- A Type II binary code has length divisible by eight. -/
 theorem IsTypeII.eight_dvd_card (hC : IsTypeII C) : 8 ∣ Fintype.card ι := by

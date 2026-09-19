@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.InformationTheory.Coding.Binary.Basic
 public import TauCeti.InformationTheory.Coding.CharacterSum
-public import TauCeti.InformationTheory.Coding.WeightEnumerator
 public import TauCeti.InformationTheory.Hamming
 
 /-!
@@ -118,3 +118,19 @@ theorem natCard_mul_weightEnumerator_euclideanDual {F : Type*} [Field F] [Finite
       (by simpa [ringChar.eq_zero] using (CharP.ringChar_ne_zero_of_finite F).symm)).prim C
 
 end Submodule
+
+namespace TauCeti.BinaryCode
+
+variable {ι : Type*} [Fintype ι] {C : LinearCode (ZMod 2) ι}
+
+/-- The integral MacWilliams symmetry of a self-dual binary code. -/
+theorem aeval_weightEnumerator_of_eq_euclideanDual (hC : C = C.euclideanDual) :
+    aeval ![X 0 + X 1, X 0 - X 1] (C : Set (ι → ZMod 2)).weightEnumerator =
+      (2 : MvPolynomial (Fin 2) ℤ) ^ (Fintype.card ι / 2) *
+        (C : Set (ι → ZMod 2)).weightEnumerator := by
+  have h := Submodule.natCard_mul_weightEnumerator_euclideanDual C
+  rw [← hC, natCard_of_eq_euclideanDual hC] at h
+  norm_num [Nat.card_eq_fintype_card] at h ⊢
+  exact h.symm
+
+end TauCeti.BinaryCode
