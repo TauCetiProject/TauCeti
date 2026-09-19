@@ -66,6 +66,7 @@ theorem _root_.Representation.asModuleEquiv_apply (x : ρ.asModule) :
   (rfl)
 
 /-- **Evaluation of the inverse identification of `ρ.asModule` with `V`.** -/
+@[simp]
 theorem _root_.Representation.asModuleEquiv_symm_apply (x : V) :
     ρ.asModuleEquiv.symm x = x :=
   (rfl)
@@ -120,7 +121,8 @@ theorem asModuleLinearEquivOfEquiv_apply (φ : ρ.Equiv σ) (x : ρ.asModule) :
 theorem equivOfAsModuleLinearEquiv_asModuleLinearEquivOfEquiv (φ : ρ.Equiv σ) :
     equivOfAsModuleLinearEquiv (asModuleLinearEquivOfEquiv φ) = φ := by
   ext v
-  simp
+  rw [equivOfAsModuleLinearEquiv_apply, asModuleLinearEquivOfEquiv_apply,
+    LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
 
 @[simp]
 theorem asModuleLinearEquivOfEquiv_equivOfAsModuleLinearEquiv

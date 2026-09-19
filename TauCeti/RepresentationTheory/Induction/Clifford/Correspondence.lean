@@ -19,10 +19,8 @@ Let `N` be a normal subgroup of a finite group `G`, let `V` be an irreducible re
 `N`, and let `T = inertia V` be its inertia group.  An irreducible representation `U` of `T`
 **lies over** `V` when `V` occurs in the restriction of `U` to `N`, that is, when there is a
 nonzero intertwiner `V ⟶ Res_N U`.  This file proves the Clifford correspondence's
-irreducibility step: for such a `U` the induced representation `Ind_T^G U` is
-irreducible (`FDRep.simple_indFDRep_of_inertia`).  Showing that the induced representation lies
-over `V`, and hence defining the map between the corresponding irreducible classes, remains
-separate.
+irreducibility theorem: for such a `U` the induced representation `Ind_T^G U` is
+irreducible (`FDRep.simple_indFDRep_of_inertia`).
 
 The proof reads the Mackey irreducibility criterion `TauCeti.simple_indFDRep_iff`.  Two facts
 about the restriction of `U` to `N` do the work.
@@ -34,16 +32,13 @@ about the restriction of `U` to `N` do the work.
 * A Mackey intertwiner `ψ` at `s ∉ T` intertwines, on `N`, the restriction `Res_N U` with its
   conjugate by `s`.  If `ψ ≠ 0` it is nonzero on some copy of `V`, which it therefore embeds in
   that conjugate.  Maschke's theorem
-  (`Representation.IntertwiningMap.exists_comp_eq_id_of_injective`) retracts the embedding, and
+  (`Representation.IntertwiningMap.exists_leftInverse_of_injective`) retracts the embedding, and
   as the copies of `V` span `U` the retraction is nonzero on some copy of `V`.  The composite is a
   nonzero intertwiner from `V` to `{}^{s⁻¹} V`, so Schur's lemma puts `s⁻¹`, hence `s`, in `T`
   (`Representation.IntertwiningMap.mem_inertia`).
 
 The spanning argument uses `le_inertia V`, while the Mackey argument derives membership in
 `inertia V` from a nonzero intertwiner and contradicts `s ∉ inertia V`.
-Before this gives the Clifford-correspondence map, one must also prove that the induced
-representation lies over `V`.  Surjectivity and uniqueness—that every irreducible representation of
-`G` lying over `V` arises this way from exactly one `U` up to isomorphism—are separate statements.
 
 ## Main statements
 
@@ -169,10 +164,7 @@ representation of a normal subgroup `N` of a finite group `G`, over an algebraic
 of characteristic zero, and let `U` be an irreducible representation of the inertia group of `V`
 lying over `V`, that is, with a nonzero intertwiner from `V` to the restriction of `U` to `N`.
 Then the representation of `G` induced from `U` is irreducible.
-
-This is the irreducibility step toward the Clifford correspondence.  One must additionally prove
-that the induced representation lies over `V` before induction defines a map
-`Irr(inertia V ∣ V) → Irr(G ∣ V)`. -/
+-/
 theorem simple_indFDRep_of_inertia (V : FDRep k N) [Simple V] (U : FDRep k (inertia V))
     [Simple U] (f : V ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia V))).obj U)
     (hf : f ≠ 0) :
@@ -216,7 +208,7 @@ theorem simple_indFDRep_of_inertia (V : FDRep k N) [Simple V] (U : FDRep k (iner
   have hh : Function.Injective h :=
     (_root_.Representation.IsIrreducible.injective_or_eq_zero h).resolve_right fun h0 =>
       hg (LinearMap.ext fun v => DFunLike.congr_fun h0 v)
-  obtain ⟨p, hp⟩ := IntertwiningMap.exists_comp_eq_id_of_injective h hh
+  obtain ⟨p, hp⟩ := IntertwiningMap.exists_leftInverse_of_injective h hh
   -- The retraction does not kill every copy of `V`, since it is nonzero.
   obtain ⟨g₂, hg₂⟩ : ∃ g₂ : IntertwiningMap V.ρ ρN, p.toLinearMap ∘ₗ g₂.toLinearMap ≠ 0 := by
     by_contra! h2

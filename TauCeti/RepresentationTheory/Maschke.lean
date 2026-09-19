@@ -24,7 +24,7 @@ irreducible `σ` that embeds in `ρ` is also a quotient of `ρ`, because the emb
 
 ## Main statements
 
-* `Representation.IntertwiningMap.exists_comp_eq_id_of_injective`: an injective intertwining map
+* `Representation.IntertwiningMap.exists_leftInverse_of_injective`: an injective intertwining map
   has an intertwining left inverse.
 -/
 
@@ -41,7 +41,7 @@ variable {k G V W : Type*} [Field k] [Group G] [Finite G] [NeZero (Nat.card G : 
 /-- **Maschke's theorem for intertwining maps.**  Over a field in which the order of the finite
 group `G` is invertible, an injective intertwining map `f : ρ → σ` has an intertwining left
 inverse `p : σ → ρ`, that is, `p ∘ f = id`. -/
-theorem exists_comp_eq_id_of_injective (f : IntertwiningMap ρ σ) (hf : Function.Injective f) :
+theorem exists_leftInverse_of_injective (f : IntertwiningMap ρ σ) (hf : Function.Injective f) :
     ∃ p : IntertwiningMap σ ρ, p.comp f = IntertwiningMap.id ρ := by
   let e := IntertwiningMap.equivLinearMapAsModule ρ σ
   obtain ⟨q, hq⟩ := MonoidAlgebra.exists_leftInverse_of_injective (e f)
