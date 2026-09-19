@@ -170,6 +170,7 @@ theorem unblockedCoefficient_stabilizeX_insertPoint (x y : GridState n) :
 has no matrix coefficient from a grid state not containing the centre
 `c = (s.succ, (G.X s).succ)` of the new block to one containing it: such a rectangle has `c` as
 a corner and covers one of the two `X`-marked squares of the block. -/
+@[simp]
 theorem unblockedCoefficient_stabilizeX_eq_zero {y z : GridState (n + 1)}
     (hy : y s.succ ≠ (G.X s).succ) (hz : z s.succ = (G.X s).succ) :
     (G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedCoefficient R y z = 0 := by
