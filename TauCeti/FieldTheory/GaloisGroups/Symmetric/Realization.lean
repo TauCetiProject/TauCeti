@@ -47,8 +47,10 @@ theorem exists_monic_int_polynomial_hasFullSymmetricGaloisGroup (n : ℕ) (hn : 
       HasFullSymmetricGaloisGroup (f.map (Int.castRingHom ℚ)) := by
   obtain rfl | hn := hn.eq_or_lt
   · refine ⟨X, monic_X, natDegree_X, by simpa using (irreducible_X (R := ℚ)), ?_⟩
-    simpa using (hasFullSymmetricGaloisGroup_iff_natCard_gal_eq_factorial_natDegree
-      (separable_X (R := ℚ))).mpr (by simp [Nat.card_eq_fintype_card])
+    rw [map_X, hasFullSymmetricGaloisGroup_iff_natCard_gal_eq_factorial_natDegree separable_X]
+    -- Since X splits over ℚ, Mathlib's `uniqueGalX` makes its Galois group a singleton.
+    simpa only [natDegree_X, Nat.factorial_one] using
+      (Nat.card_unique (α := (X : ℚ[X]).Gal))
   · have : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
     obtain ⟨g2, hm2, hi2, hd2⟩ := exists_monic_irreducible_natDegree_eq (ZMod 2) n (by omega)
     obtain ⟨g3, hm3, hd3, -, ht3⟩ :=
