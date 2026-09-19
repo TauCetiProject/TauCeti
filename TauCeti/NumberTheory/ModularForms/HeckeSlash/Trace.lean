@@ -127,13 +127,6 @@ translated modular form. -/
 
 variable {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℚ)} {δ : GL (Fin 2) ℚ}
 
-/-- Extending an integral subgroup first to `ℚ` and then to `ℝ` agrees with extending it
-directly to `ℝ`. -/
-theorem map_map_mapGL (G : Subgroup SL(2, ℤ)) :
-    (G.map (mapGL ℚ)).map φ = G.map (mapGL ℝ) := by
-  rw [Subgroup.map_map]
-  exact congrArg (Subgroup.map · G) (MonoidHom.ext fun g ↦ map_mapGL g)
-
 /-- A finite rational double-coset decomposition gives the finite relative index needed to
 trace a translate after extension of scalars to `ℝ`. -/
 theorem isFiniteRelIndex_ratCast_conj

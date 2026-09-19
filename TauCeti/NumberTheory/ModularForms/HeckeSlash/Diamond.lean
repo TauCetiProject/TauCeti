@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.CuspRing
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Ring
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Trace
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 /-!
 # The diamond operators are the Hecke operators of the `Γ₀(N)`-cosets
