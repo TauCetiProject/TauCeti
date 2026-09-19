@@ -37,6 +37,8 @@ trivializes the parameter.
 
 * `TauCeti.SkewZigzagParameter.ratio_eq_localCoordinate_div`: every ratio is a quotient of local
   edge coordinates.
+* `TauCeti.SkewZigzagParameter.isGaugeEquivalent_one_of_potential`: a vertex potential for the
+  transition factors trivializes the parameter.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_one_of_walkTransition_eq`: a parameter whose
   transition factor along a path depends only on its endpoints is gauge trivial.
 
@@ -138,7 +140,7 @@ private noncomputable def edgeScale (c : SkewZigzagParameter k G) (a : V → kˣ
 /-- A **vertex potential** for the transition factors, a unit at every vertex changing by the
 transition factor across every edge, trivializes the parameter: the resulting edge scales are
 symmetric and the ratios are their quotients. -/
-private theorem isGaugeEquivalent_one_of_potential (c : SkewZigzagParameter k G) (a : V → kˣ)
+theorem isGaugeEquivalent_one_of_potential (c : SkewZigzagParameter k G) (a : V → kˣ)
     (ha : ∀ ⦃v w : V⦄ (h : G.Adj v w), a w = a v * transition c h) :
     IsGaugeEquivalent (1 : SkewZigzagParameter k G) c := by
   refine isGaugeEquivalent_one_iff_exists_ratio_eq_div.mpr
