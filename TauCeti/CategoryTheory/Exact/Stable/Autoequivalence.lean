@@ -63,7 +63,7 @@ variable {E : ExactStructure C} (hE : E.IsFrobenius)
 
 /-- A chosen extension `I(ΩX) ⟶ P(X)` of the loop inflation `ΩX ⟶ P(X)` along the suspension
 inflation `ΩX ⟶ I(ΩX)`. -/
-noncomputable def suspensionLoopMiddleMap (X : C) :
+private noncomputable def suspensionLoopMiddleMap (X : C) :
     hE.suspensionInjective (hE.enoughProjectives.loopObj X) ⟶
       hE.enoughProjectives.loopProjective X :=
   (hE.isInjective_loopProjective X).factorThru
@@ -90,7 +90,7 @@ noncomputable def fromSuspensionLoop (X : C) :
 
 /-- The comparison `ΣΩX ⟶ X` makes the square on the two deflations commute. -/
 @[reassoc (attr := simp)]
-theorem suspensionDeflation_comp_fromSuspensionLoop (X : C) :
+private theorem suspensionDeflation_comp_fromSuspensionLoop (X : C) :
     hE.suspensionDeflation (hE.enoughProjectives.loopObj X) ≫ hE.fromSuspensionLoop X =
       suspensionLoopMiddleMap hE X ≫ hE.enoughProjectives.loopDeflation X :=
   (E.isKernelCokernelPair _ (hE.suspensionPresentation _).conflation).g_desc _ _
@@ -169,7 +169,7 @@ theorem projectiveStableFunctor_map_fromSuspensionLoop_naturality {X Y : C} (f :
 
 /-- A chosen lift `I(X) ⟶ P(ΣX)` of the suspension deflation `I(X) ⟶ ΣX` along the loop
 deflation `P(ΣX) ⟶ ΣX`. -/
-noncomputable def loopSuspensionMiddleMap (X : C) :
+private noncomputable def loopSuspensionMiddleMap (X : C) :
     hE.suspensionInjective X ⟶ hE.enoughProjectives.loopProjective (hE.suspensionObj X) :=
   (hE.isProjective_suspensionInjective X).factorThru
     (E.isDeflation_g (hE.enoughProjectives.conflation_loopInflation_loopDeflation _))
@@ -196,7 +196,7 @@ noncomputable def toLoopSuspension (X : C) :
 
 /-- The comparison `X ⟶ ΩΣX` makes the square on the two inflations commute. -/
 @[reassoc (attr := simp)]
-theorem toLoopSuspension_comp_loopInflation (X : C) :
+private theorem toLoopSuspension_comp_loopInflation (X : C) :
     hE.toLoopSuspension X ≫ hE.enoughProjectives.loopInflation (hE.suspensionObj X) =
       hE.suspensionInflation X ≫ loopSuspensionMiddleMap hE X :=
   (E.isKernelCokernelPair _
@@ -204,7 +204,7 @@ theorem toLoopSuspension_comp_loopInflation (X : C) :
 
 /-- A chosen lift `P(ΣX) ⟶ I(X)` of the loop deflation `P(ΣX) ⟶ ΣX` along the suspension
 deflation `I(X) ⟶ ΣX`. -/
-noncomputable def loopSuspensionInvMiddleMap (X : C) :
+private noncomputable def loopSuspensionInvMiddleMap (X : C) :
     hE.enoughProjectives.loopProjective (hE.suspensionObj X) ⟶ hE.suspensionInjective X :=
   (hE.enoughProjectives.isProjective_loopProjective _).factorThru
     (E.isDeflation_g (hE.suspensionPresentation X).conflation)
@@ -230,7 +230,7 @@ noncomputable def fromLoopSuspension (X : C) :
 
 /-- The comparison `ΩΣX ⟶ X` makes the square on the two inflations commute. -/
 @[reassoc (attr := simp)]
-theorem fromLoopSuspension_comp_suspensionInflation (X : C) :
+private theorem fromLoopSuspension_comp_suspensionInflation (X : C) :
     hE.fromLoopSuspension X ≫ hE.suspensionInflation X =
       hE.enoughProjectives.loopInflation (hE.suspensionObj X) ≫
         loopSuspensionInvMiddleMap hE X :=
