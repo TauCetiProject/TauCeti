@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
+public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 
 /-!
 # Naturality of singular simplices
 
 The identification of singular simplices with continuous maps from standard simplices commutes
 with continuous maps, which act by postcomposition; in particular, so does the identification of
-points with singular zero-simplices.
+points with singular zero-simplices. Faces of singular simplices obtained by precomposition with
+affine simplices are also expressed in terms of their vertex maps.
 This transfers naturality of simplicial vertex classes to singular homology, giving naturality
 of the basepoint section of the augmentation in `TauCeti.singularHomology₀Section_naturality`.
 -/
@@ -46,5 +48,37 @@ lemma toSSet_map_app_toSSetObjEquiv_symm {X Y : TopCat.{u}} (f : X ⟶ Y) {n : S
     (g : C(StdSimplex ℝ (Fin (n.unop.len + 1)), X)) :
     (TopCat.toSSet.map f).app n ((X.toSSetObjEquiv n).symm g) =
       (Y.toSSetObjEquiv n).symm ((ConcreteCategory.hom f).comp g) := rfl
+
+/-- Precomposing a singular simplex with the affine simplex with vertices `v`, and then with
+the inclusion of a facet, is precomposing it with the affine simplex with the restricted vertices.
+-/
+@[simp]
+lemma δ_toSSetObjEquiv_symm_comp_affineMapMk {X : TopCat.{u}} {m n : ℕ}
+    (σ : C(StdSimplex ℝ (Fin (m + 1)), X)) (v : Fin (n + 2) → StdSimplex ℝ (Fin (m + 1)))
+    (k : Fin (n + 2)) :
+    (TopCat.toSSet.obj X).δ k ((X.toSSetObjEquiv _).symm
+        (σ.comp (StdSimplex.continuousAffineMapMk v))) =
+      (X.toSSetObjEquiv _).symm (σ.comp
+        (StdSimplex.continuousAffineMapMk (v ∘ k.succAbove))) := by
+  apply (X.toSSetObjEquiv _).injective
+  ext z
+  simp [StdSimplex.affineMapMk_apply]
+
+/-- Precomposing a facet of a singular simplex with the affine simplex with vertices `v` is
+precomposing the singular simplex with the affine simplex with the pushed-forward vertices. -/
+@[simp]
+lemma toSSetObjEquiv_symm_comp_affineMapMk_δ {X : TopCat.{u}} {m n : ℕ}
+    (σ : TopCat.toSSet.obj X _⦋m + 1⦌)
+    (v : Fin (n + 1) → StdSimplex ℝ (Fin (m + 1))) (j : Fin (m + 2)) :
+    (X.toSSetObjEquiv (.op ⦋n⦌)).symm ((X.toSSetObjEquiv _ ((TopCat.toSSet.obj X).δ j σ)).comp
+        (StdSimplex.continuousAffineMapMk v)) =
+      (X.toSSetObjEquiv (.op ⦋n⦌)).symm ((X.toSSetObjEquiv _ σ).comp
+        (StdSimplex.continuousAffineMapMk (StdSimplex.map j.succAbove ∘ v))) := by
+  apply (X.toSSetObjEquiv _).injective
+  ext z
+  have h := congr($(StdSimplex.comp_affineMapMk (R := ℝ) (StdSimplex.affineMap j.succAbove) v) z)
+  simp only [ConvexSpace.AffineMap.coe_comp, Function.comp_apply,
+    StdSimplex.coe_affineMap] at h
+  simp [h]
 
 end TauCeti.TopCat

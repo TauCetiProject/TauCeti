@@ -23,7 +23,7 @@ public section
 
 namespace Convexity.StdSimplex
 
-variable {K M N : Type*} [Field K] [CharZero K] [LinearOrder K] [IsStrictOrderedRing K]
+variable {K M N : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
 
 /-- An injective map of vertices sends the barycenter of the face spanned by `S` to the
 barycenter of the face spanned by the image of `S`. -/

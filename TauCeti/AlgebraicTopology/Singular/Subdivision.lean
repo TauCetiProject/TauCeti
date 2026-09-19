@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
-public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.Geometry.Convex.ConvexSpace.Barycenter
 public import TauCeti.Geometry.Convex.ConvexSpace.Topology
@@ -166,40 +165,6 @@ open BarycentricSubdivision
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
 
-section
-
-variable {X : TopCat.{w}}
-
-/-- Precomposing a singular simplex with the affine simplex with vertices `v`, and then with
-the inclusion of a facet, is precomposing it with the affine simplex with the restricted vertices.
--/
-private lemma δ_toSSetObjEquiv_symm_comp_affineMapMk {m n : ℕ}
-    (σ : C(StdSimplex ℝ (Fin (m + 1)), X)) (v : Fin (n + 2) → StdSimplex ℝ (Fin (m + 1)))
-    (k : Fin (n + 2)) :
-    (TopCat.toSSet.obj X).δ k ((X.toSSetObjEquiv _).symm
-        (σ.comp (StdSimplex.continuousAffineMapMk v))) =
-      (X.toSSetObjEquiv _).symm (σ.comp (StdSimplex.continuousAffineMapMk (v ∘ k.succAbove))) := by
-  apply (X.toSSetObjEquiv _).injective
-  ext z
-  simp [StdSimplex.affineMapMk_apply]
-
-/-- Precomposing a facet of a singular simplex with the affine simplex with vertices `v` is
-precomposing the singular simplex with the affine simplex with the pushed-forward vertices. -/
-private lemma toSSetObjEquiv_symm_comp_affineMapMk_δ {m n : ℕ} (σ : TopCat.toSSet.obj X _⦋m + 1⦌)
-    (v : Fin (n + 1) → StdSimplex ℝ (Fin (m + 1))) (j : Fin (m + 2)) :
-    (X.toSSetObjEquiv (.op ⦋n⦌)).symm ((X.toSSetObjEquiv _ ((TopCat.toSSet.obj X).δ j σ)).comp
-        (StdSimplex.continuousAffineMapMk v)) =
-      (X.toSSetObjEquiv (.op ⦋n⦌)).symm ((X.toSSetObjEquiv _ σ).comp
-        (StdSimplex.continuousAffineMapMk (StdSimplex.map j.succAbove ∘ v))) := by
-  apply (X.toSSetObjEquiv _).injective
-  ext z
-  have h := congr($(StdSimplex.comp_affineMapMk (R := ℝ) (StdSimplex.affineMap j.succAbove) v) z)
-  simp only [ConvexSpace.AffineMap.coe_comp, Function.comp_apply,
-    StdSimplex.coe_affineMap] at h
-  simp [h]
-
-end
-
 variable (R : C) (X : TopCat.{w})
 
 /-- The barycentric subdivision of singular `n`-chains of `X` with coefficients in `R`: the
@@ -246,8 +211,8 @@ def singularSubdivisionChainMap :
     ext σ
     simp only [ιChainComplex_singularSubdivisionX_assoc, SSet.ιChainComplex_d_assoc,
       SSet.ιChainComplex_d, Preadditive.sum_comp, Units.smul_def, Preadditive.zsmul_comp,
-      ιChainComplex_singularSubdivisionX, δ_toSSetObjEquiv_symm_comp_affineMapMk,
-      toSSetObjEquiv_symm_comp_affineMapMk_δ]
+      ιChainComplex_singularSubdivisionX, TopCat.δ_toSSetObjEquiv_symm_comp_affineMapMk,
+      TopCat.toSSetObjEquiv_symm_comp_affineMapMk_δ]
     simp only [← Units.smul_def]
     exact sum_sign_boundary fun v ↦ (TopCat.toSSet.obj X).ιChainComplex
       ((X.toSSetObjEquiv _).symm
