@@ -51,6 +51,8 @@ it; the subspace form here needs no such comparison.)
   inclusion into `Cont A` is `spa_def ▸ Set.inter_subset_left`.
 * `TauCeti.ValuationSpectrum.spa_integralClosure` : replacing the plus ring by its integral
   closure leaves `Spa` unchanged.
+* `TauCeti.ValuationSpectrum.spa_topologicalClosure` : over a semitopological ring, replacing the
+  plus ring by its topological closure leaves `Spa` unchanged.
 * `TauCeti.ValuationSpectrum.spa_eq_empty_of_one_mem_closure_zero` : if `1 ∈ closure {0}` in a
   commutative ring `A` with separately continuous addition, then `Spa(A, A⁺) = ∅` for any plus
   ring `A⁺` (the `1 ∈ closure {0} → Spa(A, A⁺) = ∅` half of Wedhorn Proposition 7.49(1)).
@@ -134,6 +136,20 @@ theorem spa_integralClosure (R : Subring A) :
     have hxint := (Valuation.integer.integers v.valuation).mem_of_integral hint
     rw [Valuation.mem_integer_iff, ← map_one v.valuation, valuation_le_iff] at hxint
     exact hxint
+
+/-- Replacing a subring by its topological closure does not change the adic spectrum: every point
+of `Spa (A, A⁺)` is already sub-unit on the closure of `A⁺`. This is the topological counterpart of
+`spa_integralClosure`. -/
+@[simp]
+theorem spa_topologicalClosure [IsSemitopologicalRing A] (S : Subring A) :
+    spa S.topologicalClosure = spa S := by
+  refine (spa_antitone S.le_topologicalClosure).antisymm fun v hv ↦ ?_
+  simp only [mem_spa_iff, isContinuous_def, ← valuation_le_iff, map_one] at hv ⊢
+  -- the integer ring of a continuous valuation is an open additive subgroup, hence closed
+  have hclosed : IsClosed (v.valuation.integer : Set A) :=
+    AddSubgroup.isClosed_of_isOpen v.valuation.integer.toAddSubgroup <| by
+      simpa [Valuation.integer] using hv.1.isOpen_le (b := 1)
+  exact ⟨hv.1, S.topologicalClosure_minimal hv.2 hclosed⟩
 
 /-- The trivial valuation of a prime `p` is a point of the adic spectrum exactly when `p` is open,
 for any plus ring `A⁺`: the sub-unit condition holds at every element of `A`, since a trivial

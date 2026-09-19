@@ -331,6 +331,16 @@ lemma isEquiv_valuation_ofValuation {Γ₀ : Type*} [LinearOrderedCommGroupWithZ
   intro x y
   rw [valuation_le_iff, vle_ofValuation]
 
+/-- Every element of the value group of a point `v : Spv A` is a ratio `v(a) / v(b)` of values of
+its canonical valuation with `v(b) ≠ 0`; unlike `ValuativeRel.exists_valuation_div_valuation_eq`,
+the denominator `b` is an element of `A` rather than of `ValuativeRel.posSubmonoid`. -/
+theorem exists_valuation_div_valuation_eq (v : Spv A)
+    (γ : @ValuativeRel.ValueGroupWithZero A _ v.toValuativeRel) :
+    ∃ a b : A, v.valuation b ≠ 0 ∧ v.valuation a / v.valuation b = γ := by
+  let := v.toValuativeRel
+  obtain ⟨a, b, h⟩ := ValuativeRel.exists_valuation_div_valuation_eq γ
+  exact ⟨a, b, ValuativeRel.valuation_posSubmonoid_ne_zero b, h⟩
+
 section Quotient
 
 variable (𝔞 : Ideal A)
