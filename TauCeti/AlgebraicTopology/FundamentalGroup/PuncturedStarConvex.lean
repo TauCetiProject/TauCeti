@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 public import TauCeti.AlgebraicTopology.NotSimplyConnected
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
@@ -32,6 +33,9 @@ puncture.
   `π₁(sphere p r, x) ≃* π₁(V \ {p}, x)` induced by the inclusion.
 * `StarConvex.fundamentalGroupMulEquivInt`: for `V ⊆ ℂ`, `π₁(V \ {p}, x) ≃* ℤ` at a point `x` of
   the circle `sphere p r`.
+* `TauCeti.sphereLoop` and `StarConvex.fundamentalGroupMulEquivInt_sphereLoop`: the loop going once
+  counterclockwise around `sphere p r` from `p + r` is sent to the generator `ofAdd 1`, so its
+  class generates `π₁(V \ {p}, p + r)`.
 
 ## References
 
@@ -97,6 +101,42 @@ theorem _root_.StarConvex.fundamentalGroupMulEquivInt_def (hV : StarConvex ℝ p
         ((FundamentalGroup.homeomorphMulEquiv (sphereCircleHomeomorph p hr) x).trans
           (Circle.fundamentalGroupMulEquiv _)) :=
   (rfl)
+
+/-- The loop `t ↦ p + r·exp(2πit)` going once counterclockwise around the circle `sphere p r`,
+based at `p + r`. It is the image of `Circle.expLoop` under the parametrization of the circle by
+`Circle`. -/
+def sphereLoop (p : ℂ) (hr : 0 < r) :
+    Path ((sphereCircleHomeomorph p hr).symm 1) ((sphereCircleHomeomorph p hr).symm 1) :=
+  Circle.expLoop.map (sphereCircleHomeomorph p hr).symm.continuous
+
+@[simp]
+theorem coe_sphereLoop_apply (p : ℂ) (hr : 0 < r) (t : unitInterval) :
+    (sphereLoop p hr t : ℂ) = circleMap p r (2 * Real.pi * t) := by
+  simp [sphereLoop, circleMap, mul_comm]
+
+/-- **The counterclockwise circle generates the fundamental group of a punctured star-convex
+set.** Under `StarConvex.fundamentalGroupMulEquivInt`, the class in `V \ {p}` of the loop going
+once counterclockwise around `sphere p r` is `ofAdd 1`. -/
+theorem _root_.StarConvex.fundamentalGroupMulEquivInt_sphereLoop (hV : StarConvex ℝ p V)
+    (hr : 0 < r) (hS : sphere p r ⊆ V) :
+    hV.fundamentalGroupMulEquivInt hr hS _
+      (FundamentalGroup.map (hV.sphereHomotopyEquiv hr hS).toFun _
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (sphereLoop p hr)))) =
+      Multiplicative.ofAdd 1 := by
+  rw [StarConvex.fundamentalGroupMulEquivInt_def, MulEquiv.trans_apply,
+    ← StarConvex.sphereFundamentalGroupMulEquiv_apply, MulEquiv.symm_apply_apply,
+    MulEquiv.trans_apply, TauCeti.FundamentalGroup.homeomorphMulEquiv_apply,
+    FundamentalGroup.mapOfEq_apply, ← Path.Homotopic.Quotient.mk_map,
+    ← Path.Homotopic.Quotient.mk_cast]
+  -- Transported to `Circle`, the loop is `Circle.expLoop`, up to the basepoint equation
+  -- `sphereCircleHomeomorph p hr ((sphereCircleHomeomorph p hr).symm 1) = 1`.
+  have key : ∀ (y : Circle) (hy : y = 1) (γ : Path y y), (∀ t, γ t = Circle.expLoop t) →
+      Circle.fundamentalGroupMulEquiv y
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) = Multiplicative.ofAdd 1 := by
+    rintro y rfl γ hγ
+    obtain rfl : γ = Circle.expLoop := Path.ext (funext hγ)
+    exact Circle.fundamentalGroupMulEquiv_expLoop
+  exact key _ ((sphereCircleHomeomorph p hr).apply_symm_apply 1) _ fun t => by simp [sphereLoop]
 
 /-- A punctured star-convex subset of `ℂ` containing a circle about the puncture is not simply
 connected. -/
