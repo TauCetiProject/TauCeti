@@ -7,16 +7,17 @@ module
 
 public import TauCeti.InformationTheory.Coding.GeneratorParityCheck
 public import TauCeti.InformationTheory.Coding.WeightEnumerator
+public import TauCeti.LinearAlgebra.Matrix.Rank
 public import Mathlib.Algebra.Field.ZMod
 
 /-!
 # The extended ternary Golay code
 
 The extended ternary Golay code is the row space of the systematic matrix `[I₆ | A]`
-over `ZMod 3` displayed below. Its first six coordinates recover the message. We verify
-self-duality independently through the generator/parity-check interface, and compute its
-weight distribution by finite enumeration. These give parameters `[12,6,6]`, divisibility
-of every weight by three, and the homogeneous enumerator
+over `ZMod 3` displayed below. Its first six coordinates recover the message, and the same
+matrix is a parity-check matrix. The code is Euclidean self-dual with parameters `[12,6,6]`.
+Its weight distribution is 1, 264, 440, and 24 at weights 0, 6, 9, and 12, respectively.
+Every weight is divisible by three, and its homogeneous enumerator is
 `X^12 + 264 X^6 Y^6 + 440 X^3 Y^9 + 24 Y^12`.
 
 The matrix convention and code are those of Huffman and Pless,
@@ -55,6 +56,7 @@ noncomputable def code : Submodule (ZMod 3) (Fin 12 → ZMod 3) := generator.gen
 /-- The code is the row space of its displayed generator. -/
 theorem code_def : code = generator.generatedBy := (rfl)
 
+/-- A word belongs to the code exactly when it is the encoding of a message. -/
 @[simp]
 theorem mem_code {x : Fin 12 → ZMod 3} :
     x ∈ code ↔ ∃ a : Fin 6 → ZMod 3, a ᵥ* generator = x := by
@@ -89,9 +91,7 @@ theorem vecMul_generator_injective : Function.Injective (fun a ↦ a ᵥ* genera
 /-- The generator has rank six. -/
 @[simp]
 theorem rank_generator : generator.rank = 6 := by
-  rw [← Matrix.finrank_generatedBy, Matrix.generatedBy_def]
-  exact (LinearMap.finrank_range_of_inj vecMul_generator_injective).trans
-    (Module.finrank_fintype_fun_eq_card (R := ZMod 3))
+  exact (Matrix.rank_eq_card_iff_vecMul_injective generator).2 vecMul_generator_injective
 
 /-- The code has dimension six. -/
 @[simp]
@@ -106,10 +106,12 @@ noncomputable def encodeEquiv : (Fin 6 → ZMod 3) ≃ₗ[ZMod 3] code :=
       obtain ⟨a, ha⟩ := mem_code.mp x.property
       exact ⟨a, Subtype.ext ha⟩⟩
 
+/-- The encoding equivalence sends each message to its product with the generator. -/
 @[simp]
 theorem coe_encodeEquiv_apply (a : Fin 6 → ZMod 3) : (encodeEquiv a : Fin 12 → ZMod 3) =
     a ᵥ* generator := (rfl)
 
+/-- The inverse encoding equivalence reads the first six coordinates of a codeword. -/
 @[simp]
 theorem encodeEquiv_symm_apply (x : code) (i : Fin 6) :
     encodeEquiv.symm x i = x.1 (i.castAdd 6) := by
@@ -118,29 +120,28 @@ theorem encodeEquiv_symm_apply (x : code) (i : Fin 6) :
 
 /-- The code has 729 words. -/
 @[simp↓]
-theorem card_code : Nat.card code = 729 := by
-  rw [← Nat.card_congr encodeEquiv.toEquiv]
-  simp [Nat.card_eq_fintype_card]
+theorem natCard_code : Nat.card code = 729 := by
+  rw [Module.natCard_eq_pow_finrank (K := ZMod 3), finrank_code, Nat.card_zmod]
+  norm_num
 
 /-- The generator rows are mutually orthogonal. -/
 @[simp]
 theorem generator_mul_transpose : generator * generatorᵀ = 0 := by decide
 
-/-- The generator is also a parity-check matrix of the same code. -/
-@[simp↓]
-theorem checkedBy_generator : generator.checkedBy = code := by
-  symm
-  apply Submodule.eq_of_le_of_finrank_eq
-  · rw [code_def, Matrix.generatedBy_le_checkedBy_iff]
-    exact generator_mul_transpose
-  · rw [Matrix.finrank_checkedBy, rank_generator, finrank_code]
-    decide
-
 /-- The extended ternary Golay code is Euclidean self-dual. -/
 @[simp]
 theorem euclideanDual_code : code.euclideanDual = code := by
-  rw [code_def, ← Matrix.checkedBy_eq_euclideanDual_generatedBy]
-  exact checkedBy_generator
+  symm
+  apply Submodule.eq_euclideanDual_of_le_of_card_le_two_mul_finrank
+  · rw [code_def, ← Matrix.checkedBy_eq_euclideanDual_generatedBy,
+      Matrix.generatedBy_le_checkedBy_iff]
+    exact generator_mul_transpose
+  · simp
+
+/-- The generator is also a parity-check matrix of the same code. -/
+@[simp↓]
+theorem checkedBy_generator : generator.checkedBy = code := by
+  rw [Matrix.checkedBy_eq_euclideanDual_generatedBy, ← code_def, euclideanDual_code]
 
 /-- Every word has weight zero, six, nine, or twelve. -/
 theorem hammingNorm_mem {x : Fin 12 → ZMod 3} (hx : x ∈ code) :
@@ -205,27 +206,18 @@ theorem three_dvd_hammingNorm {x : Fin 12 → ZMod 3} (hx : x ∈ code) :
 /-- The minimum distance of the extended ternary Golay code is six. -/
 @[simp]
 theorem hammingMinDist_code : (code : Set (Fin 12 → ZMod 3)).hammingMinDist = 6 := by
-  have h6 : ∃ x ∈ code, hammingNorm x = 6 := by
-    apply (Set.weightDistribution_ne_zero_iff (Set.toFinite (code : Set (Fin 12 → ZMod 3)))).1
-    simp
-  obtain ⟨x, hx, hw⟩ := h6
-  have hx0 : x ≠ 0 := by
-    intro h
-    simp [h] at hw
-  have hbot : code.toAddSubgroup ≠ ⊥ := by
-    intro h
-    have : x ∈ (⊥ : AddSubgroup (Fin 12 → ZMod 3)) := h ▸ hx
-    exact hx0 this
-  apply le_antisymm
-  · exact hw ▸ Set.hammingMinDist_le_hammingNorm (E := code.toAddSubgroup) hx hx0
-  · apply (Set.le_hammingMinDist_iff_hammingNorm hbot).2
-    intro y hy hy0
-    have h := hammingNorm_mem hy
-    have : hammingNorm y ≠ 0 := by simpa using hy0
-    simp only [Finset.mem_insert, Finset.mem_singleton] at h
-    omega
+  rw [← Submodule.coe_toAddSubgroup,
+    Set.hammingMinDist_eq_sInf_weightDistribution (Set.toFinite _), Submodule.coe_toAddSubgroup]
+  have hs : {w | 0 < w ∧ (code : Set (Fin 12 → ZMod 3)).weightDistribution w ≠ 0} =
+      ({6, 9, 12} : Set ℕ) := by
+    ext w
+    simp only [weightDistribution_code, Set.mem_ofPred_eq, Set.mem_insert_iff,
+      Set.mem_singleton_iff]
+    split_ifs <;> omega
+  rw [hs]
+  norm_num
 
-/-- The homogeneous weight enumerator, computed by enumerating all messages. -/
+/-- The homogeneous weight enumerator of the extended ternary Golay code. -/
 @[simp]
 theorem weightEnumerator_code :
     (code : Set (Fin 12 → ZMod 3)).weightEnumerator =
