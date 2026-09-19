@@ -45,8 +45,7 @@ private theorem hammingNorm_encoding_labels (a b c : Fin 4) :
     hammingNorm (encodingEquiv ω ![finFourEquiv hF hω a,
       finFourEquiv hF hω b, finFourEquiv hF hω c] : Fin 6 → F) = messageWeight a b c := by
   classical
-  let : CharP F 2 := ringChar.of_eq
-    ((FiniteField.even_card_iff_char_two (F := F)).mpr (by omega))
+  let := charP_two_of_card_eq_four hF
   have htwo : (2 : F) = 0 := CharTwo.two_eq_zero
   have h0 : ω ≠ 0 := by rintro rfl; simp at hω
   have h1 : ω ≠ 1 := by intro h; grind
@@ -103,7 +102,7 @@ theorem hammingNorm_eq_zero_or_eq_four_or_eq_six_of_mem_code
   rw [weightDistribution_code hF hω] at h
   split_ifs at h <;> simp_all
 
-/-- The homogeneous hexacode enumerator, obtained by counting all messages. -/
+/-- The homogeneous weight enumerator of the hexacode. -/
 @[simp]
 theorem weightEnumerator_code :
     (code ω : Set (Fin 6 → F)).weightEnumerator =
@@ -111,7 +110,7 @@ theorem weightEnumerator_code :
         18 * MvPolynomial.X 1 ^ 6 := by
   simp [Set.weightEnumerator_def, weightDistribution_code hF hω, Finset.sum_range_succ]
 
-/-- The one-variable hexacode enumerator, obtained by setting the first variable to one. -/
+/-- The one-variable weight enumerator of the hexacode. -/
 @[simp]
 theorem weightPolynomial_code :
     (code ω : Set (Fin 6 → F)).weightPolynomial =
@@ -138,49 +137,49 @@ theorem hammingMinDist_code : (code ω : Set (Fin 6 → F)).hammingMinDist = 4 :
 omit hF hω in
 /-- The named hexacode has one word of weight zero, 45 of weight four, and 18 of weight six. -/
 @[simp]
-theorem weightDistribution_canonicalCode [DecidableEq (GaloisField 2 2)] (w : ℕ) :
-    (canonicalCode : Set (Fin 6 → GaloisField 2 2)).weightDistribution w =
+theorem weightDistribution_galoisFieldCode [DecidableEq (GaloisField 2 2)] (w : ℕ) :
+    (galoisFieldCode : Set (Fin 6 → GaloisField 2 2)).weightDistribution w =
       if w = 0 then 1 else if w = 4 then 45 else if w = 6 then 18 else 0 := by
   let := Fintype.ofFinite (GaloisField 2 2)
-  rw [canonicalCode_def]
+  rw [galoisFieldCode_def]
   exact weightDistribution_code
-    (by rw [← Nat.card_eq_fintype_card, GaloisField.card 2 2 (by decide)]; decide)
+    card_galoisField_two_two
     omega_sq_add_omega_add_one w
 
 omit hF hω in
 /-- The homogeneous weight enumerator of the named hexacode. -/
 @[simp]
-theorem weightEnumerator_canonicalCode [DecidableEq (GaloisField 2 2)] :
-    (canonicalCode : Set (Fin 6 → GaloisField 2 2)).weightEnumerator =
+theorem weightEnumerator_galoisFieldCode [DecidableEq (GaloisField 2 2)] :
+    (galoisFieldCode : Set (Fin 6 → GaloisField 2 2)).weightEnumerator =
       MvPolynomial.X 0 ^ 6 + 45 * MvPolynomial.X 0 ^ 2 * MvPolynomial.X 1 ^ 4 +
         18 * MvPolynomial.X 1 ^ 6 := by
   let := Fintype.ofFinite (GaloisField 2 2)
-  rw [canonicalCode_def]
+  rw [galoisFieldCode_def]
   exact weightEnumerator_code
-    (by rw [← Nat.card_eq_fintype_card, GaloisField.card 2 2 (by decide)]; decide)
+    card_galoisField_two_two
     omega_sq_add_omega_add_one
 
 omit hF hω in
 /-- The one-variable weight enumerator of the named hexacode. -/
 @[simp]
-theorem weightPolynomial_canonicalCode [DecidableEq (GaloisField 2 2)] :
-    (canonicalCode : Set (Fin 6 → GaloisField 2 2)).weightPolynomial =
+theorem weightPolynomial_galoisFieldCode [DecidableEq (GaloisField 2 2)] :
+    (galoisFieldCode : Set (Fin 6 → GaloisField 2 2)).weightPolynomial =
       1 + 45 * Polynomial.X ^ 4 + 18 * Polynomial.X ^ 6 := by
   let := Fintype.ofFinite (GaloisField 2 2)
-  rw [canonicalCode_def]
+  rw [galoisFieldCode_def]
   exact weightPolynomial_code
-    (by rw [← Nat.card_eq_fintype_card, GaloisField.card 2 2 (by decide)]; decide)
+    card_galoisField_two_two
     omega_sq_add_omega_add_one
 
 omit hF hω in
 /-- The named hexacode has minimum Hamming distance four. -/
 @[simp]
-theorem hammingMinDist_canonicalCode [DecidableEq (GaloisField 2 2)] :
-    (canonicalCode : Set (Fin 6 → GaloisField 2 2)).hammingMinDist = 4 := by
+theorem hammingMinDist_galoisFieldCode [DecidableEq (GaloisField 2 2)] :
+    (galoisFieldCode : Set (Fin 6 → GaloisField 2 2)).hammingMinDist = 4 := by
   let := Fintype.ofFinite (GaloisField 2 2)
-  rw [canonicalCode_def]
+  rw [galoisFieldCode_def]
   exact hammingMinDist_code
-    (by rw [← Nat.card_eq_fintype_card, GaloisField.card 2 2 (by decide)]; decide)
+    card_galoisField_two_two
     omega_sq_add_omega_add_one
 
 end TauCeti.Hexacode

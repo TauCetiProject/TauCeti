@@ -16,7 +16,7 @@ import Mathlib.Tactic.LinearCombination
 
 A root `ω` of `X² + X + 1` labels the four elements as `0, 1, ω, ω²`.
 The explicit enumeration supports finite calculations over this alphabet without choosing
-another model of the field. Frobenius is an involution on this alphabet.
+another model of the field. Squaring exchanges the two roots in characteristic two.
 -/
 
 public section
@@ -25,6 +25,25 @@ namespace TauCeti
 
 variable {F : Type*} [Field F] [Fintype F]
 
+/-- Every element other than zero and one in a field of order four is a root of
+`X² + X + 1`. -/
+theorem sq_add_self_add_one_eq_zero (hF : Fintype.card F = 4) {ω : F}
+    (h0 : ω ≠ 0) (h1 : ω ≠ 1) : ω ^ 2 + ω + 1 = 0 := by
+  have hpow : ω ^ 3 = 1 := by simpa [hF] using FiniteField.pow_card_sub_one_eq_one ω h0
+  have hmul : (ω - 1) * (ω ^ 2 + ω + 1) = 0 := by
+    linear_combination hpow
+  exact (mul_eq_zero.mp hmul).resolve_left (sub_ne_zero.mpr h1)
+
+/-- Squaring preserves roots of `X² + X + 1` in characteristic two. -/
+theorem sq_sq_add_sq_add_one_eq_zero {R : Type*} [CommSemiring R] [CharP R 2]
+    {ω : R} (hω : ω ^ 2 + ω + 1 = 0) : (ω ^ 2) ^ 2 + ω ^ 2 + 1 = 0 := by
+  simpa only [map_add, map_pow, map_one, map_zero, frobenius_def] using
+    congrArg (frobenius R 2) hω
+
+/-- A field of order four has characteristic two. -/
+theorem charP_two_of_card_eq_four (hF : Fintype.card F = 4) : CharP F 2 :=
+  ringChar.of_eq ((FiniteField.even_card_iff_char_two (F := F)).mpr (by omega))
+
 /-- Every field of order four contains a root of `X² + X + 1`. -/
 theorem exists_sq_add_self_add_one_eq_zero_of_card_eq_four (hF : Fintype.card F = 4) :
     ∃ ω : F, ω ^ 2 + ω + 1 = 0 := by
@@ -32,16 +51,13 @@ theorem exists_sq_add_self_add_one_eq_zero_of_card_eq_four (hF : Fintype.card F 
   obtain ⟨ω, _, hω⟩ := Finset.exists_mem_notMem_of_card_lt_card
     (s := ({0, 1} : Finset F)) (t := Finset.univ) (by simp [hF])
   simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hω
-  have hpow : ω ^ 3 = 1 := by simpa [hF] using FiniteField.pow_card_sub_one_eq_one ω hω.1
-  have hmul : (ω - 1) * (ω ^ 2 + ω + 1) = 0 := by
-    linear_combination hpow
-  exact ⟨ω, (mul_eq_zero.mp hmul).resolve_left (sub_ne_zero.mpr hω.2)⟩
+  exact ⟨ω, sq_add_self_add_one_eq_zero hF hω.1 hω.2⟩
 
 /-- The four elements of a field of order four, labelled by a root of `X² + X + 1`. -/
 theorem univ_eq_zero_one_root_sq [DecidableEq F] (hF : Fintype.card F = 4) {ω : F}
     (hω : ω ^ 2 + ω + 1 = 0) : Finset.univ = {0, 1, ω, ω ^ 2} := by
   classical
-  let : CharP F 2 := ringChar.of_eq ((FiniteField.even_card_iff_char_two (F := F)).mpr (by omega))
+  let := charP_two_of_card_eq_four hF
   have h0 : ω ≠ 0 := by rintro rfl; simp at hω
   have h1 : ω ≠ 1 := by rintro rfl; simp [CharTwo.add_self_eq_zero] at hω
   have hs0 : ω ^ 2 ≠ 0 := pow_ne_zero _ h0
@@ -55,12 +71,6 @@ theorem univ_eq_zero_one_root_sq [DecidableEq F] (hF : Fintype.card F = 4) {ω :
   apply (Finset.eq_of_subset_of_card_le (Finset.subset_univ _) ?_).symm
   simp [hF, Ne.symm hself, Ne.symm h0, Ne.symm h1,
     Ne.symm hs0, Ne.symm hs1]
-
-/-- Frobenius is an involution on a field of order four. -/
-theorem frobeniusEquiv_involutive_of_card_eq_four [CharP F 2]
-    (hF : Fintype.card F = 4) : Function.Involutive (frobeniusEquiv F 2) := by
-  intro x
-  simpa only [frobeniusEquiv_def, ← pow_mul, hF] using FiniteField.pow_card x
 
 /-- Label a field of four elements by `0, 1, ω, ω²`, in that order. -/
 noncomputable def finFourEquiv (hF : Fintype.card F = 4) {ω : F}
