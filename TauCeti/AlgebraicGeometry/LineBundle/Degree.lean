@@ -23,9 +23,10 @@ bundle makes its degree zero by construction.
 
 The definition makes sense for any scheme over a field. As with `Scheme.Modules.eulerCharBelow`,
 it is the difference of the usual Euler characteristics when the relevant cohomology groups are
-finite-dimensional and cohomology above degree one vanishes. Proving those facts for proper
-curves, proving additivity, and identifying this invariant with the residue-degree-weighted degree
-of a divisor require the coherent-cohomology and Riemann--Roch theory.
+finite-dimensional and cohomology above degree one vanishes. On a proper curve with
+`H¹(X, 𝒪_X)` finite-dimensional, `TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic`
+identifies this invariant with the residue-degree-weighted degree of a divisor of `L` and proves
+that it is additive.
 
 ## Main declarations
 

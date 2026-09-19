@@ -131,15 +131,26 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.finrank_cohomology_zero_eq_finrank
     finrank k (Cohomology M 0) = finrank k Γ(M, ⊤) :=
   (cohomologyZeroBaseLinearEquiv k X M).finrank_eq
 
+/-- An isomorphism of sheaves of modules induces a `k`-linear equivalence on cohomology. -/
+private def cohomologyBaseLinearEquivOfIso {M N : X.Modules} (e : M ≅ N) (i : ℕ) :
+    Cohomology M i ≃ₗ[k] Cohomology N i :=
+  LinearEquiv.ofLinearMap (cohomologyMapBaseLinear k X e.hom i)
+    (cohomologyMapBaseLinear k X e.inv i)
+    (by rw [← cohomologyMapBaseLinear_comp, e.inv_hom_id, cohomologyMapBaseLinear_id])
+    (by rw [← cohomologyMapBaseLinear_comp, e.hom_inv_id, cohomologyMapBaseLinear_id])
+
 /-- Isomorphic sheaves of modules have the same cohomology dimensions. -/
 lemma _root_.AlgebraicGeometry.Scheme.Modules.finrank_cohomology_congr {M N : X.Modules}
     (e : M ≅ N) (i : ℕ) :
     finrank k (Cohomology M i) = finrank k (Cohomology N i) :=
-  LinearEquiv.finrank_eq <|
-    LinearEquiv.ofLinearMap (cohomologyMapBaseLinear k X e.hom i)
-      (cohomologyMapBaseLinear k X e.inv i)
-      (by rw [← cohomologyMapBaseLinear_comp, e.inv_hom_id, cohomologyMapBaseLinear_id])
-      (by rw [← cohomologyMapBaseLinear_comp, e.hom_inv_id, cohomologyMapBaseLinear_id])
+  (cohomologyBaseLinearEquivOfIso k e i).finrank_eq
+
+/-- Isomorphic sheaves of modules have finite-dimensional cohomology in the same degrees. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_congr
+    {M N : X.Modules} (e : M ≅ N) (i : ℕ) :
+    FiniteDimensional k (Cohomology M i) ↔ FiniteDimensional k (Cohomology N i) :=
+  ⟨fun _ ↦ Module.Finite.equiv (cohomologyBaseLinearEquivOfIso k e i),
+    fun _ ↦ Module.Finite.equiv (cohomologyBaseLinearEquivOfIso k e i).symm⟩
 
 /-- The truncated Euler characteristic only depends on the isomorphism class of the sheaf. This
 is what makes an invariant such as the degree `χ(L) - χ(𝒪_X)` of a line bundle well defined on
