@@ -89,7 +89,12 @@ theorem periph1Right_def :
 `periph0`. -/
 @[simp]
 theorem map_val_periph0Left :
-    FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ _ periph0Left = periph0 := by
+    @DFunLike.coe
+      (FundamentalGroup leftOpen ⟨basePt, basePt_mem_leftOpen⟩ →*
+        FundamentalGroup ThricePuncturedSphere basePt)
+      (FundamentalGroup leftOpen ⟨basePt, basePt_mem_leftOpen⟩)
+      (fun _ => FundamentalGroup ThricePuncturedSphere basePt) MonoidHom.instFunLike
+      (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ _) periph0Left = periph0 := by
   rw [periph0Left_def, periph0_def, FundamentalGroup.map_apply,
     ← Path.Homotopic.Quotient.mk_map, Path.map_codRestrict]
   -- `⟦γ0⟧` is notation for `Path.Homotopic.Quotient.mk γ0`.
@@ -99,7 +104,12 @@ theorem map_val_periph0Left :
 `periph1`. -/
 @[simp]
 theorem map_val_periph1Right :
-    FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ _ periph1Right = periph1 := by
+    @DFunLike.coe
+      (FundamentalGroup rightOpen ⟨basePt, basePt_mem_rightOpen⟩ →*
+        FundamentalGroup ThricePuncturedSphere basePt)
+      (FundamentalGroup rightOpen ⟨basePt, basePt_mem_rightOpen⟩)
+      (fun _ => FundamentalGroup ThricePuncturedSphere basePt) MonoidHom.instFunLike
+      (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ _) periph1Right = periph1 := by
   rw [periph1Right_def, periph1_def, FundamentalGroup.map_apply,
     ← Path.Homotopic.Quotient.mk_map, Path.map_codRestrict]
   -- `⟦γ1⟧` is notation for `Path.Homotopic.Quotient.mk γ1`.
