@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Complement
+public import Mathlib.GroupTheory.GroupAction.Quotient
 public import TauCeti.GroupTheory.TrivialIntersection
 
 /-!
-# The Frobenius kernel and its size
+# The Frobenius kernel, its size, and the free action of the complement on it
 
 The **Frobenius kernel** of a subgroup `H` of `G` is the identity together with the elements of `G`
 lying in no conjugate of `H`,
@@ -25,8 +26,8 @@ nontrivial, and meeting each of its distinct conjugates trivially
 known proofs go through the character theory of `G`. What *is* elementary, and is what this file
 proves, is everything about the kernel except its closure under multiplication: it contains the
 identity, it is closed under inversion and under conjugation, it meets every conjugate of `H` only
-in the identity, and — the counting statement the roadmap records — for a finite `G` it has exactly
-`|G : H|` elements.
+in the identity, and — the counting statement the divisibility results below rest on — for a
+finite `G` it has exactly `|G : H|` elements.
 
 The count is the inclusion-exclusion that gives Frobenius's theorem its shape, and it is really a
 statement about a trivial-intersection *set* `S` for `H` (`TauCeti.IsTISet`): the conjugates
@@ -50,6 +51,22 @@ Together with normality the count is exactly what makes the kernel a *complement
 subgroup whose carrier is the Frobenius kernel is automatically a complement to `H`, so once
 Frobenius's theorem supplies the subgroup, the semidirect decomposition `G = N ⋊ H` is free.
 Nothing here asserts that a subgroup with that carrier exists.
+
+The count has an arithmetic refinement, proved here as well: the conjugation action of `H` on the
+nonidentity part of the kernel is **free** (`TauCeti.IsTISubgroup.stabilizer_eq_bot`, with
+`TauCeti.IsTISubgroup.isCancelSMul` its typeclass form), and freeness against the `|G : H| - 1`
+nonidentity kernel elements gives
+
+`|H| ∣ |G : H| - 1`
+
+(`TauCeti.IsTISubgroup.card_dvd_index_sub_one`), whence also `|H|` and `|G : H|` are coprime
+(`TauCeti.IsTISubgroup.coprime_card_index`) and, for a proper `H`, `|H| < |G : H|`
+(`TauCeti.IsTISubgroup.card_lt_index`).  When Frobenius's theorem supplies the kernel as a
+subgroup `N` of order `|G : H|`, these are the classical statements that `|H|` divides `|N| - 1`
+and that a Frobenius complement and a Frobenius kernel have coprime orders.  Freeness has a second
+reading, bounding the centralizers the other way round: the centralizer of a nonidentity element
+of the kernel is contained in the kernel
+(`TauCeti.IsTISubgroup.centralizer_singleton_subset_frobeniusKernel`).
 
 The last section runs the recognition in the other direction.  A semidirect decomposition
 `G = N ⋊ H` in which `H` acts on `N` with no nonidentity fixed points forces `H` to be a
@@ -85,6 +102,16 @@ everything and `⊥` has index `|G|`.
   elements.**
 * `TauCeti.IsTISubgroup.isComplement'_of_coe_eq_frobeniusKernel`: for a finite `G`, a subgroup
   whose carrier is the kernel is a complement to `H`.
+* `TauCeti.IsTISubgroup.conj_ne_self_of_mem_frobeniusKernel`,
+  `TauCeti.IsTISubgroup.stabilizer_eq_bot` and `TauCeti.IsTISubgroup.isCancelSMul`: a nonidentity
+  element of `H` commutes with no nonidentity element of the kernel, so the conjugation action of
+  `H` on the nonidentity part of the kernel is **free**.
+* `TauCeti.IsTISubgroup.mem_frobeniusKernel_of_conj_eq_self` and
+  `TauCeti.IsTISubgroup.centralizer_singleton_subset_frobeniusKernel`: the centralizer of a
+  nonidentity element of the kernel is contained in the kernel.
+* `TauCeti.IsTISubgroup.card_dvd_index_sub_one`: **`|H| ∣ |G : H| - 1`** for a finite `G`, with
+  `TauCeti.IsTISubgroup.coprime_card_index` the coprimality and
+  `TauCeti.IsTISubgroup.card_lt_index` the strict inequality `|H| < |G : H|` it implies.
 * `TauCeti.isTISubgroup_of_isComplement'`: **a complement to a normal subgroup on which it acts
   without nonidentity fixed points is a trivial-intersection subgroup**, with
   `TauCeti.isFrobeniusComplement_of_isComplement'` its bundled form for a proper nontrivial `H`.
@@ -291,6 +318,155 @@ theorem IsTISubgroup.isComplement'_of_coe_eq_frobeniusKernel [Finite G] (hH : Is
   have hmem : y ∈ frobeniusKernel H ∩ (H : Set G) :=
     ⟨hN ▸ SetLike.mem_coe.2 hyN, SetLike.mem_coe.2 hyH⟩
   rwa [frobeniusKernel_inter_eq_singleton, Set.mem_singleton_iff] at hmem
+
+/-! ### The free conjugation action on the nonidentity part of the kernel -/
+
+/-- Conjugation carries a nonidentity element of the Frobenius kernel to another one: the kernel
+is conjugation-invariant, and only the identity is conjugate to the identity. -/
+theorem conj_mem_frobeniusKernel_sdiff_singleton (g : G) {y : G}
+    (hy : y ∈ frobeniusKernel H \ {1}) : g * y * g⁻¹ ∈ frobeniusKernel H \ {1} := by
+  refine ⟨conj_mem_frobeniusKernel_iff.2 hy.1, fun h => hy.2 ?_⟩
+  rw [Set.mem_singleton_iff] at h ⊢
+  exact conj_eq_one_iff.1 h
+
+/-- **Conjugation by an element of `H`, as a scalar action on the nonidentity part of the
+Frobenius kernel.**  This instance records only the underlying map; that it is an action is the
+`MulAction` instance below. -/
+instance : SMul H ↥(frobeniusKernel H \ {1}) where
+  smul h y := ⟨(h : G) * y * (h : G)⁻¹, conj_mem_frobeniusKernel_sdiff_singleton (h : G) y.2⟩
+
+@[simp]
+theorem coe_smul_frobeniusKernel_sdiff_singleton (h : H) (y : ↥(frobeniusKernel H \ {1})) :
+    ((h • y : ↥(frobeniusKernel H \ {1})) : G) = (h : G) * (y : G) * (h : G)⁻¹ :=
+  (rfl)
+
+/-- **`H` acts on the nonidentity part of its Frobenius kernel by conjugation.**  Freeness of this
+action is `TauCeti.IsTISubgroup.stabilizer_eq_bot`, and it is what forces `|H|` to divide
+`|G : H| - 1`. -/
+instance : MulAction H ↥(frobeniusKernel H \ {1}) where
+  one_smul y := Subtype.ext (by simp)
+  mul_smul h₁ h₂ y := Subtype.ext (by
+    simp only [coe_smul_frobeniusKernel_sdiff_singleton, Subgroup.coe_mul, mul_inv_rev]
+    group)
+
+/-- **A nonidentity element of a trivial-intersection subgroup commutes with no nonidentity
+element of its Frobenius kernel**, in conjugation form.  Both the freeness of the conjugation
+action (`TauCeti.IsTISubgroup.stabilizer_eq_bot`) and the centralizer bound on the kernel side
+(`TauCeti.IsTISubgroup.centralizer_singleton_subset_frobeniusKernel`) are readings of it. -/
+theorem IsTISubgroup.conj_ne_self_of_mem_frobeniusKernel (hH : IsTISubgroup H) {h y : G}
+    (hh : h ∈ H) (hh1 : h ≠ 1) (hy : y ∈ frobeniusKernel H) (hy1 : y ≠ 1) :
+    h * y * h⁻¹ ≠ y := by
+  intro hconj
+  have hyh : h * y = y * h := by
+    calc h * y = h * y * h⁻¹ * h := by group
+      _ = y * h := by rw [hconj]
+  have hcomm : y * h * y⁻¹ = h := by
+    rw [← hyh]
+    group
+  have hmem : y ∈ frobeniusKernel H ∩ (H : Set G) :=
+    ⟨hy, hH.mem_of_conj_eq_self hh hh1 hcomm⟩
+  rw [frobeniusKernel_inter_eq_singleton, Set.mem_singleton_iff] at hmem
+  exact hy1 hmem
+
+/-- **The conjugation action of a trivial-intersection subgroup on the nonidentity part of its
+Frobenius kernel is free**: every stabilizer is trivial.  This is the hypothesis the orbit
+counting in `TauCeti.IsTISubgroup.card_dvd_index_sub_one` consumes. -/
+theorem IsTISubgroup.stabilizer_eq_bot (hH : IsTISubgroup H)
+    (y : ↥(frobeniusKernel H \ {1})) : MulAction.stabilizer H y = ⊥ := by
+  refine eq_bot_iff.2 fun h hh => ?_
+  rw [MulAction.mem_stabilizer_iff] at hh
+  rw [Subgroup.mem_bot]
+  by_contra hh1
+  have hconj : (h : G) * (y : G) * (h : G)⁻¹ = (y : G) := by
+    rw [← coe_smul_frobeniusKernel_sdiff_singleton, hh]
+  refine hH.conj_ne_self_of_mem_frobeniusKernel h.2 ?_ y.2.1 ?_ hconj
+  · simpa using hh1
+  · simpa using y.2.2
+
+/-- **The conjugation action of a trivial-intersection subgroup on the nonidentity part of its
+Frobenius kernel is cancellative**, the typeclass form of
+`TauCeti.IsTISubgroup.stabilizer_eq_bot`, for the generic results that take freeness as an
+instance.  It cannot itself be an instance, since freeness holds only under the hypothesis
+`hH`. -/
+theorem IsTISubgroup.isCancelSMul (hH : IsTISubgroup H) :
+    IsCancelSMul H ↥(frobeniusKernel H \ {1}) :=
+  isCancelSMul_iff_stabilizer_eq_bot.2 hH.stabilizer_eq_bot
+
+/-- **An element commuting with a nonidentity element of the Frobenius kernel lies in the
+kernel**, the mirror on the kernel side of `TauCeti.IsTISubgroup.mem_of_conj_eq_self`.  Its
+inclusion form is `TauCeti.IsTISubgroup.centralizer_singleton_subset_frobeniusKernel`. -/
+theorem IsTISubgroup.mem_frobeniusKernel_of_conj_eq_self (hH : IsTISubgroup H) {g y : G}
+    (hy : y ∈ frobeniusKernel H) (hy1 : y ≠ 1) (hgy : g * y * g⁻¹ = y) :
+    g ∈ frobeniusKernel H := by
+  by_contra hg
+  rw [notMem_frobeniusKernel_iff] at hg
+  obtain ⟨hg1, x, hx⟩ := hg
+  -- `conj_mem_frobeniusKernel_iff` and `conj_eq_one_iff` are stated for `a * z * a⁻¹`, so the
+  -- conjugator `x⁻¹` has to be exhibited as an inverse.
+  have hinv : ∀ z : G, x⁻¹ * z * x = x⁻¹ * z * (x⁻¹)⁻¹ := fun z => by group
+  have hz : x⁻¹ * y * x ∈ frobeniusKernel H := by
+    rw [hinv]
+    exact conj_mem_frobeniusKernel_iff.2 hy
+  have hz1 : x⁻¹ * y * x ≠ 1 := fun h0 =>
+    hy1 (conj_eq_one_iff.1 ((hinv y).symm.trans h0))
+  have hx1 : x⁻¹ * g * x ≠ 1 := fun h0 =>
+    hg1 (conj_eq_one_iff.1 ((hinv g).symm.trans h0))
+  refine hH.conj_ne_self_of_mem_frobeniusKernel hx hx1 hz hz1 ?_
+  calc x⁻¹ * g * x * (x⁻¹ * y * x) * (x⁻¹ * g * x)⁻¹
+      = x⁻¹ * (g * y * g⁻¹) * x := by group
+    _ = x⁻¹ * y * x := by rw [hgy]
+
+/-- **The centralizer of a nonidentity element of the Frobenius kernel is contained in the
+kernel**, the inclusion form of `TauCeti.IsTISubgroup.mem_frobeniusKernel_of_conj_eq_self`. -/
+theorem IsTISubgroup.centralizer_singleton_subset_frobeniusKernel (hH : IsTISubgroup H) {y : G}
+    (hy : y ∈ frobeniusKernel H) (hy1 : y ≠ 1) :
+    (Subgroup.centralizer {y} : Set G) ⊆ frobeniusKernel H := by
+  intro g hg
+  rw [SetLike.mem_coe, Subgroup.mem_centralizer_singleton_iff] at hg
+  refine hH.mem_frobeniusKernel_of_conj_eq_self hy hy1 ?_
+  rw [hg]
+  group
+
+/-! ### The order of the complement divides the size of the kernel minus one -/
+
+/-- **The order of a trivial-intersection subgroup of a finite group divides `|G : H| - 1`.**  For
+a Frobenius complement `H`, Frobenius's theorem makes the kernel a subgroup `N` of order `|G : H|`,
+so this is the classical `|H| ∣ |N| - 1`
+(`TauCeti.card_dvd_card_frobeniusKernelSubgroup_sub_one`). -/
+theorem IsTISubgroup.card_dvd_index_sub_one [Finite G] (hH : IsTISubgroup H) :
+    Nat.card H ∣ H.index - 1 := by
+  have hcard : Nat.card ↥(frobeniusKernel H \ {1}) = H.index - 1 := by
+    rw [Nat.card_coe_set_eq, Set.ncard_sdiff_singleton_of_mem one_mem_frobeniusKernel,
+      hH.ncard_frobeniusKernel]
+  obtain ⟨q, hq⟩ : ∃ q : ℕ, Nat.card ↥(frobeniusKernel H \ {1}) = q * Nat.card H :=
+    ⟨_, (Nat.card_congr (MulAction.selfEquivOrbitsQuotientProd hH.stabilizer_eq_bot)).trans
+      (Nat.card_prod _ _)⟩
+  rw [← hcard, hq]
+  exact dvd_mul_left _ _
+
+/-- **The order of a trivial-intersection subgroup of a finite group is coprime to its index**, an
+immediate consequence of `TauCeti.IsTISubgroup.card_dvd_index_sub_one`.  For a Frobenius group it
+says that the complement and the kernel have coprime orders
+(`TauCeti.coprime_card_card_frobeniusKernelSubgroup`). -/
+theorem IsTISubgroup.coprime_card_index [Finite G] (hH : IsTISubgroup H) :
+    Nat.Coprime (Nat.card H) H.index := by
+  have hsplit : H.index = 1 + (H.index - 1) := by
+    have : 0 < H.index := Nat.pos_of_ne_zero H.index_ne_zero_of_finite
+    omega
+  rw [hsplit]
+  exact (Nat.coprime_add_iff_left hH.card_dvd_index_sub_one).2 (Nat.coprime_one_right _)
+
+/-- **A proper trivial-intersection subgroup of a finite group is smaller than its index**,
+`|H| < |G : H|`, another immediate consequence of
+`TauCeti.IsTISubgroup.card_dvd_index_sub_one`.  Properness is needed: for `H = ⊤` the index is `1`
+and the inequality reverses.  For a Frobenius group it says that the complement is smaller than
+the kernel (`TauCeti.card_lt_card_frobeniusKernelSubgroup`). -/
+theorem IsTISubgroup.card_lt_index [Finite G] (hH : IsTISubgroup H) (hne : H ≠ ⊤) :
+    Nat.card H < H.index := by
+  have hne1 : H.index ≠ 1 := fun h => hne (Subgroup.index_eq_one.mp h)
+  have hpos : 0 < H.index := Nat.pos_of_ne_zero H.index_ne_zero_of_finite
+  have hle := Nat.le_of_dvd (by omega) hH.card_dvd_index_sub_one
+  omega
 
 /-! ### Recognizing the kernel from a semidirect decomposition -/
 

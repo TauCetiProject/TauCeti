@@ -128,6 +128,16 @@ theorem dualSemigroupMap_apply (hi : IsIntegralLattice i) (hi' : IsIntegralLatti
     (dualSemigroupMap hi hi' f g hfg hστ m : N →+ ℤ) n = (m : N' →+ ℤ) (f n) :=
   by simp [dualSemigroupMap, AddMonoidHom.restrict]
 
+/-- Along the identity of a lattice, a cone inclusion `σ ≤ σ'` induces the inclusion of dual
+semigroups: the image of a character is the same character. -/
+@[simp]
+theorem coe_dualSemigroupMap_id (hi : IsIntegralLattice i) {σ' : PointedCone ℝ V}
+    (hσσ' : Set.MapsTo (LinearMap.id : V →ₗ[ℝ] V) σ σ') (m : dualSemigroup hi σ') :
+    (dualSemigroupMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl) hσσ' m : N →+ ℤ) =
+      m := by
+  ext n
+  simp
+
 /-- The identity map of a lattice induces the identity map of its dual semigroup. -/
 @[simp]
 theorem dualSemigroupMap_id (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :

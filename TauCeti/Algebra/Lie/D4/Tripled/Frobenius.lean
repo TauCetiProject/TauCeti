@@ -37,6 +37,8 @@ with the pinned simply connected group scheme of type `D₄`.
 ## Main declarations
 
 * `TauCeti.D4Tripled.frobenius`: the `p ^ k`-power Frobenius on the carrier's points.
+* `TauCeti.D4Tripled.frobenius_eq_pointsMap`: it is the map on points induced by the iterated
+  Frobenius of the value ring.
 * `TauCeti.D4Tripled.coe_frobenius` and `coe_frobenius_apply`: its matrix and entrywise actions.
 * `TauCeti.D4Tripled.frobenius_rootSubgroupPoints`: its action on every numbered simple-root
   subgroup.
@@ -73,6 +75,12 @@ variable (p k : ℕ) (A : Type v) [CommRing A] [ExpChar A p]
 map on points induced by the iterated Frobenius endomorphism of the value ring. -/
 def frobenius : points A →* points A :=
   pointsMap (iterateFrobenius A p k)
+
+/-- The Frobenius endomorphism of the tripled carrier is the map on points induced by the iterated
+Frobenius of the value ring. This is its unfolding lemma, through which the naturality of a
+symmetry of the carrier, such as triality, yields its commutation with the Frobenius. -/
+theorem frobenius_eq_pointsMap : frobenius p k A = pointsMap (iterateFrobenius A p k) :=
+  (rfl)
 
 /-- The Frobenius endomorphism of the tripled carrier acts by entrywise Frobenius. -/
 theorem coe_frobenius (g : points A) :

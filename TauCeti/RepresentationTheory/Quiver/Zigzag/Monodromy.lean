@@ -213,35 +213,15 @@ theorem isGaugeEquivalent_one_iff_monodromy_eq_one {c : SkewZigzagParameter k G}
     rwa [walkTransition_append, walkTransition_reverse, mul_inv_eq_one] at h
   exact isGaugeEquivalent_one_of_walkTransition_eq c fun _ _ p q _ _ ↦ hwalk p q
 
-/-- The parameter whose ratios are those of `c'` divided by those of `c`. -/
-private def ratioDiv (c c' : SkewZigzagParameter k G) : SkewZigzagParameter k G where
-  ratio _ _ _ h h' := c'.ratio h h' / c.ratio h h'
-  ratio_self _ _ h := by simp
-  ratio_inv _ _ _ h h' := by rw [div_mul_div_comm, c'.ratio_inv, c.ratio_inv, div_one]
-  ratio_cocycle _ _ _ _ h h' h'' := by
-    rw [div_mul_div_comm, div_mul_div_comm, c'.ratio_cocycle, c.ratio_cocycle, div_one]
-
-private theorem ratioDiv_ratio (c c' : SkewZigzagParameter k G) {i j j' : V} (h : G.Adj i j)
-    (h' : G.Adj i j') : (ratioDiv c c').ratio h h' = c'.ratio h h' / c.ratio h h' := (rfl)
-
-private theorem isGaugeEquivalent_iff_isGaugeEquivalent_one_ratioDiv
-    {c c' : SkewZigzagParameter k G} :
-    c.IsGaugeEquivalent c' ↔ IsGaugeEquivalent 1 (ratioDiv c c') := by
-  rw [isGaugeEquivalent_iff, isGaugeEquivalent_iff]
-  refine exists_congr fun u ↦ ?_
-  simp only [SkewZigzagParameter.ext_iff, funext_iff, gauge_ratio, one_ratio, one_mul,
-    ratioDiv_ratio, div_eq_iff_eq_mul']
-
 /-- **The monodromy is a complete gauge invariant**: two skew-zigzag parameters are gauge
 equivalent exactly when they have the same monodromy around every closed edge cycle. -/
 theorem isGaugeEquivalent_iff_monodromy_eq {c c' : SkewZigzagParameter k G} :
     c.IsGaugeEquivalent c' ↔
       ∀ (n : ℕ) [NeZero n] (y : Fin n → V) (hy : ∀ i : Fin n, G.Adj (y i) (y (i + 1))),
         monodromy c hy = monodromy c' hy := by
-  rw [isGaugeEquivalent_iff_isGaugeEquivalent_one_ratioDiv,
-    isGaugeEquivalent_one_iff_monodromy_eq_one]
+  rw [isGaugeEquivalent_iff_isGaugeEquivalent_one_div, isGaugeEquivalent_one_iff_monodromy_eq_one]
   refine forall_congr' fun _ ↦ forall_congr' fun _ ↦ forall_congr' fun _ ↦ forall_congr' fun hy ↦ ?_
-  simp only [monodromy_def, ratioDiv_ratio, Finset.prod_div_distrib]
+  simp only [monodromy_def, div_ratio, Finset.prod_div_distrib]
   rw [div_eq_one, eq_comm]
 
 end SkewZigzagParameter

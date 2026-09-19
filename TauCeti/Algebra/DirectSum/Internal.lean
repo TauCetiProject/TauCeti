@@ -309,4 +309,50 @@ theorem _root_.LinearMap.ker_eq_iSup_inf_of_map_le {R ι M N : Type*} [Ring R] [
   exact Submodule.sum_mem _ fun i hi ↦
     Submodule.mem_iSup_of_mem i ⟨LinearMap.mem_ker.2 (hzero i hi), hc i⟩
 
+/-- **A homogeneous submodule can be quotiented componentwise.** If `A` is an independent
+family and the part of `U` in the span of `A` is contained in the sum of its intersections with
+the members of `A`, then the members of `A` in `M ⧸ U` are again independent. -/
+theorem iSupIndep_map_mkQ {R ι M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    {A : ι → Submodule R M} (hA : iSupIndep A) {U : Submodule R M}
+    (hU : U ⊓ (⨆ i, A i) ≤ ⨆ i, U ⊓ A i) : iSupIndep fun i ↦ (A i).map U.mkQ := by
+  rw [iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero]
+  classical
+  intro s v hv hv0 j hj
+  have hall : ∀ i : ι, ∃ y, y ∈ A i ∧ (i ∈ s → U.mkQ y = v i) ∧ (i ∉ s → y = 0) := by
+    intro i
+    by_cases hi : i ∈ s
+    · obtain ⟨y, hy, hq⟩ := Submodule.mem_map.1 (hv i hi)
+      exact ⟨y, hy, fun _ ↦ hq, fun h ↦ absurd hi h⟩
+    · exact ⟨0, Submodule.zero_mem _, fun h ↦ absurd h hi, fun _ ↦ rfl⟩
+  choose a haA haQ ha0 using hall
+  have hasum : ∑ i ∈ s, a i ∈ U := by
+    apply (Submodule.Quotient.mk_eq_zero (p := U)).mp
+    calc
+      Submodule.Quotient.mk (∑ i ∈ s, a i) = ∑ i ∈ s, U.mkQ (a i) := by
+        rw [← Submodule.mkQ_apply]
+        rw [map_sum]
+      _ = ∑ i ∈ s, v i := Finset.sum_congr rfl fun i hi ↦ haQ i hi
+      _ = 0 := hv0
+  have hasumA : ∑ i ∈ s, a i ∈ ⨆ i, A i :=
+    Submodule.sum_mem _ fun i _ ↦ Submodule.mem_iSup_of_mem i (haA i)
+  have hasum' : ∑ i ∈ s, a i ∈ ⨆ i, U ⊓ A i := by
+    exact hU ⟨hasum, hasumA⟩
+  obtain ⟨c, hc, hca⟩ := (Submodule.mem_iSup_iff_exists_finsupp _ _).1 hasum'
+  have haj : a j = c j := by
+    refine (iSupIndep_iff_finsetSum_eq_imp_eq A).1 hA (s ∪ c.support) a c
+      (fun i _ ↦ ⟨haA i, (hc i).2⟩) ?_ j (Finset.mem_union_left _ hj)
+    calc
+        ∑ i ∈ s ∪ c.support, a i = ∑ i ∈ s, a i := by
+          symm
+          apply Finset.sum_subset (Finset.subset_union_left)
+          intro i _ hi
+          exact ha0 i hi
+        _ = ∑ i ∈ c.support, c i := hca.symm
+        _ = ∑ i ∈ s ∪ c.support, c i := by
+          apply Finset.sum_subset (Finset.subset_union_right)
+          simp
+  rw [← haQ j hj, haj]
+  rw [Submodule.mkQ_apply]
+  exact (Submodule.Quotient.mk_eq_zero (p := U)).mpr (hc j).1
+
 end TauCeti

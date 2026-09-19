@@ -49,6 +49,10 @@ quotient, a gauge-trivial parameter presents the ordinary zigzag algebra.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_iff`: gauge equivalence in existential form.
 * `TauCeti.SkewZigzagParameter.IsGaugeEquivalent.equivalence`: gauge equivalence is an equivalence
   relation.
+* `TauCeti.SkewZigzagParameter.gauge_eq_mul_gauge_one`: a gauge transform multiplies a parameter
+  by the gauge transform of the constant parameter.
+* `TauCeti.SkewZigzagParameter.isGaugeEquivalent_iff_isGaugeEquivalent_one_div`: two parameters are
+  gauge equivalent exactly when their quotient is gauge trivial.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_one_iff_exists_ratio_eq_div`: a parameter is
   gauge trivial exactly when its ratios are quotients of a symmetric edge scale.
 * `TauCeti.skewZigzagQuotientGaugeEquiv`: **gauge independence**, a gauge transform of a parameter
@@ -264,6 +268,20 @@ theorem IsGaugeEquivalent.trans {c c' c'' : SkewZigzagParameter k G}
 theorem IsGaugeEquivalent.equivalence :
     Equivalence (IsGaugeEquivalent (k := k) (G := G)) :=
   ⟨IsGaugeEquivalent.refl, IsGaugeEquivalent.symm, IsGaugeEquivalent.trans⟩
+
+/-- **A gauge transform multiplies a parameter by the gauge transform of the constant
+parameter.** -/
+theorem gauge_eq_mul_gauge_one (c : SkewZigzagParameter k G)
+    (u : ∀ ⦃x y : DoubledQuiver G⦄, (x ⟶ y) → kˣ) :
+    c.gauge u = c * (1 : SkewZigzagParameter k G).gauge u := by
+  ext i j j' h h'
+  simp only [gauge_ratio, mul_ratio, one_ratio, one_mul]
+
+/-- **Two parameters are gauge equivalent exactly when their quotient is gauge trivial.** -/
+theorem isGaugeEquivalent_iff_isGaugeEquivalent_one_div {c c' : SkewZigzagParameter k G} :
+    c.IsGaugeEquivalent c' ↔ IsGaugeEquivalent 1 (c' / c) := by
+  rw [isGaugeEquivalent_iff, isGaugeEquivalent_iff]
+  exact exists_congr fun u ↦ by rw [gauge_eq_mul_gauge_one, div_eq_iff_eq_mul']
 
 /-! ### Gauge triviality through edge scales -/
 
