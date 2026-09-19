@@ -56,13 +56,13 @@ theorem IsTypeII.eight_dvd_card (hC : IsTypeII C) : 8 ∣ Fintype.card ι := by
     rw [natCard_of_eq_euclideanDual hC.eq_euclideanDual, Nat.cast_pow, Nat.cast_ofNat]
   have hI : aeval ![1, I] (C : Set (ι → ZMod 2)).weightEnumerator = (Nat.card C : ℂ) := by
     have h := hC.isDoublyEven.aeval_weightEnumerator_mul_second I_pow_four (1 : ℂ) 1
-    simpa [Set.aeval_weightEnumerator_diag _ _ (Set.toFinite _)] using h
+    simpa [aeval_weightEnumerator_diag _ _ (Set.toFinite _)] using h
   have htransform : aeval ![1 + I, 1 - I] (C : Set (ι → ZMod 2)).weightEnumerator =
       (Nat.card C : ℂ) * (1 + I) ^ Fintype.card ι := by
     have h := hC.isDoublyEven.aeval_weightEnumerator_mul_second
       isPrimitiveRoot_neg_I.pow_eq_one (1 + I) (1 + I)
     have heq : -I * (1 + I) = 1 - I := by linear_combination -I_sq
-    simpa only [heq, Set.aeval_weightEnumerator_diag _ _ (Set.toFinite _),
+    simpa only [heq, aeval_weightEnumerator_diag _ _ (Set.toFinite _),
       SetLike.coe_sort_coe] using h
   -- Evaluate MacWilliams at (1, I), then cancel the nonzero cardinality.
   have hmac := congrArg (aeval ![1, I] : MvPolynomial (Fin 2) ℤ →ₐ[ℤ] ℂ)
