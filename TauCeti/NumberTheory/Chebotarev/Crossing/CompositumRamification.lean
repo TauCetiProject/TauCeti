@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Chebotarev.RamifiedPrimes
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
-import TauCeti.NumberTheory.RamificationInertia.Tower
 
 /-!
 # The ramified primes of a cyclotomic compositum
@@ -26,24 +25,14 @@ above `m` and form a finite set.
 
 ## Main results
 
-* `NumberField.Chebotarev.ramifiedPrimes_subset_ramifiedPrimes`: for `K ⊆ L ⊆ M`, a prime of `K`
-  ramifying in `L` ramifies in `M`.
 * `NumberField.Chebotarev.mem_ramifiedPrimes_of_mem_ramifiedPrimes_of_natCast_notMem`: for
   `M = L(μ_m)`, a prime of `K` ramifying in `M` and not dividing `m` ramifies in `L`.
-* `NumberField.Chebotarev.ramifiedPrimes_subset_union`: the same statement as an inclusion of
-  sets, `ramifiedPrimes K M ⊆ ramifiedPrimes K L ∪ {𝔭 | (m : 𝓞 K) ∈ 𝔭}`.
+* `NumberField.Chebotarev.ramifiedPrimes_subset_ramifiedPrimes_union_natCast_mem`: the same
+  statement as an inclusion of sets,
+  `ramifiedPrimes K M ⊆ ramifiedPrimes K L ∪ {𝔭 | (m : 𝓞 K) ∈ 𝔭}`.
 * `NumberField.Chebotarev.mem_ramifiedPrimes_iff_of_natCast_notMem` and
   `NumberField.Chebotarev.notMem_ramifiedPrimes_iff_of_natCast_notMem`: away from `m`, ramifying in
   `M` and ramifying in `L` are equivalent.
-
-## Implementation notes
-
-The proof is by the transitivity of the different ideal,
-`differentIdeal_eq_differentIdeal_mul_differentIdeal`: a prime `Q` of `𝓞 M` ramified over `𝓞 K`
-divides `𝔡(M/L) * 𝔡(L/K)𝓞 M`, hence divides one of the two factors. If `Q ∣ 𝔡(M/L)`, then
-`m ∈ Q`, because `m` lies in the different of a cyclotomic extension
-(`IsCyclotomicExtension.natCast_mem_differentIdeal`). If `Q ∣ 𝔡(L/K)𝓞 M`, then the prime of `𝓞 L`
-below `Q` divides `𝔡(L/K)` and so is ramified over `K`.
 
 ## References
 
@@ -61,16 +50,6 @@ namespace NumberField.Chebotarev
 
 variable {K L M : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Field M]
   [NumberField M] [Algebra K L] [Algebra K M] [Algebra L M] [IsScalarTower K L M]
-
-/-- **Ramification ascends a tower.** For number fields `K ⊆ L ⊆ M`, a prime of `K` that ramifies
-in `L` also ramifies in `M`. Equivalently, a prime unramified in `M` is unramified in every
-intermediate field. -/
-theorem ramifiedPrimes_subset_ramifiedPrimes : ramifiedPrimes K L ⊆ ramifiedPrimes K M := by
-  intro 𝔭
-  contrapose
-  rw [mem_ramifiedPrimes_iff, mem_ramifiedPrimes_iff, not_not, not_not]
-  intro hur P _ _
-  exact TauCeti.RamificationInertia.isUnramifiedAt_of_isUnramifiedIn (S := 𝓞 M) hur P
 
 variable (m : ℕ) [IsCyclotomicExtension {m} L M]
 
@@ -104,7 +83,7 @@ theorem mem_ramifiedPrimes_of_mem_ramifiedPrimes_of_natCast_notMem {𝔭 : Heigh
 
 /-- **The ramified primes of a cyclotomic compositum.** For `M = L(μ_m)` over a tower
 `K ⊆ L ⊆ M` of number fields, a prime of `K` ramifying in `M` ramifies in `L` or divides `m`. -/
-theorem ramifiedPrimes_subset_union :
+theorem ramifiedPrimes_subset_ramifiedPrimes_union_natCast_mem :
     (ramifiedPrimes K M : Set (HeightOneSpectrum (𝓞 K))) ⊆
       ramifiedPrimes K L ∪ {𝔭 | (m : 𝓞 K) ∈ 𝔭.asIdeal} := by
   intro 𝔭 h𝔭
