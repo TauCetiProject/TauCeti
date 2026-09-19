@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.EssentialImage
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Maximal
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
-public import TauCeti.Algebra.AlgebraicGroup.Torus.AlgebraicallyClosed
+public import TauCeti.Algebra.AlgebraicGroup.Torus.Conjugation
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
-import TauCeti.Algebra.AlgebraicGroup.Torus.Conjugation
 import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 import TauCeti.Algebra.Coalgebra.Comodule.Weight.Decomposition
 
@@ -204,17 +201,9 @@ theorem exists_eq_conjugate_diagonalTorusDefiningIdeal_of_isMaximalTorus
         ⟨coordinateHopfAlgebra k n, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩ I)) :
     ∃ g : WithConv (coordinateHopfAlgebra k n →ₐ[k] k),
       I = (diagonalTorusDefiningIdeal k n).conjugate g := by
-  obtain ⟨m, ⟨e⟩⟩ := (splitTorusCommHopfAlgProperty_iff k _).mp hsplit
-  have hspan : DiagonalizableGroup.groupLikeSpannedProperty k
-      (FiniteTypeCommHopfAlgCat.quotient
-        ⟨coordinateHopfAlgebra k n, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩ I) :=
-    (DiagonalizableGroup.groupLikeSpannedProperty k).prop_of_iso e
-      ((DiagonalizableGroup.groupLikeSpannedProperty_iff k _).mpr
-        (MonoidAlgebra.groupLikeSetSpan_eq_top (R := k) _))
-  obtain ⟨g, hg⟩ := exists_conjugate_diagonalTorusDefiningIdeal_le I hspan
-  have hD := (HopfIdeal.isMaximalTorus_iff k _ _).mp
-    ((isMaximalTorus_diagonalTorusDefiningIdeal k n).conjugate g)
-  exact ⟨g, le_antisymm (((HopfIdeal.isMaximalTorus_iff k _ _).mp hI).2 _ hD.1 hg) hg⟩
+  exact HopfIdeal.exists_eq_conjugate_of_isMaximalTorus_of_split
+    (diagonalTorusDefiningIdeal k n) (isMaximalTorus_diagonalTorusDefiningIdeal k n)
+    exists_conjugate_diagonalTorusDefiningIdeal_le hI hsplit
 
 /-- **Any two split maximal tori of `GLₙ` over a field are conjugate** by a rational point
 of `GLₙ`. -/
@@ -229,11 +218,9 @@ theorem exists_conjugate_eq_of_isMaximalTorus_of_split
       (FiniteTypeCommHopfAlgCat.quotient
         ⟨coordinateHopfAlgebra k n, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩ J)) :
     ∃ g : WithConv (coordinateHopfAlgebra k n →ₐ[k] k), I.conjugate g = J := by
-  obtain ⟨g, rfl⟩ :=
-    exists_eq_conjugate_diagonalTorusDefiningIdeal_of_isMaximalTorus hI hsplitI
-  obtain ⟨h, rfl⟩ :=
-    exists_eq_conjugate_diagonalTorusDefiningIdeal_of_isMaximalTorus hJ hsplitJ
-  exact ⟨h * g⁻¹, by simp [HopfIdeal.conjugate_mul]⟩
+  exact HopfIdeal.exists_conjugate_eq_of_isMaximalTorus_of_split
+    (diagonalTorusDefiningIdeal k n) (isMaximalTorus_diagonalTorusDefiningIdeal k n)
+    exists_conjugate_diagonalTorusDefiningIdeal_le hI hJ hsplitI hsplitJ
 
 /-- **Maximal tori of `GLₙ` over an algebraically closed field are exactly the conjugates of the
 diagonal torus.** The equality is an equality of defining Hopf ideals, hence of closed subgroup
@@ -243,12 +230,9 @@ theorem isMaximalTorus_iff_exists_eq_conjugate_diagonalTorusDefiningIdeal [IsAlg
     HopfIdeal.IsMaximalTorus k (coordinateHopfAlgebra k n) I ↔
       ∃ g : WithConv (coordinateHopfAlgebra k n →ₐ[k] k),
         I = (diagonalTorusDefiningIdeal k n).conjugate g := by
-  constructor
-  · intro hI
-    exact exists_eq_conjugate_diagonalTorusDefiningIdeal_of_isMaximalTorus hI
-      (torusCommHopfAlgProperty.split k _ ((HopfIdeal.isMaximalTorus_iff k _ I).mp hI).1)
-  · rintro ⟨g, rfl⟩
-    exact (isMaximalTorus_diagonalTorusDefiningIdeal k n).conjugate g
+  exact HopfIdeal.isMaximalTorus_iff_exists_eq_conjugate
+    (diagonalTorusDefiningIdeal k n) (isMaximalTorus_diagonalTorusDefiningIdeal k n)
+    exists_conjugate_diagonalTorusDefiningIdeal_le I
 
 /-- **Any two maximal tori of `GLₙ` over an algebraically closed field are conjugate** by a
 rational point of `GLₙ`. -/
@@ -257,9 +241,9 @@ theorem exists_conjugate_eq_of_isMaximalTorus [IsAlgClosed k]
     (hI : HopfIdeal.IsMaximalTorus k (coordinateHopfAlgebra k n) I)
     (hJ : HopfIdeal.IsMaximalTorus k (coordinateHopfAlgebra k n) J) :
     ∃ g : WithConv (coordinateHopfAlgebra k n →ₐ[k] k), I.conjugate g = J := by
-  exact exists_conjugate_eq_of_isMaximalTorus_of_split hI hJ
-    (torusCommHopfAlgProperty.split k _ ((HopfIdeal.isMaximalTorus_iff k _ I).mp hI).1)
-    (torusCommHopfAlgProperty.split k _ ((HopfIdeal.isMaximalTorus_iff k _ J).mp hJ).1)
+  exact HopfIdeal.exists_conjugate_eq_of_isMaximalTorus
+    (diagonalTorusDefiningIdeal k n) (isMaximalTorus_diagonalTorusDefiningIdeal k n)
+    exists_conjugate_diagonalTorusDefiningIdeal_le hI hJ
 
 end
 
