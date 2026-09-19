@@ -67,7 +67,7 @@ theorem hammingNorm_sumElim {A : Type*} [Fintype ι] [Fintype κ] [DecidableEq A
 /-- A product over the coordinates which takes the value `a` at the zero coordinates of a word
 and `b` elsewhere is `a ^ (n - wt x) * b ^ (wt x)`, where `n` is the length and `wt` is the
 Hamming weight. -/
-theorem prod_ite_eq_zero_eq_pow_mul_pow_hammingNorm {M : Type*} {β : ι → Type*} [Fintype ι]
+@[simp] theorem prod_ite_eq_zero_eq_pow_mul_pow_hammingNorm {M : Type*} {β : ι → Type*} [Fintype ι]
     [∀ i, Zero (β i)] [∀ i, DecidableEq (β i)] [CommMonoid M] (x : ∀ i, β i) (a b : M) :
     ∏ i, (if x i = 0 then a else b) = a ^ (Fintype.card ι - hammingNorm x) * b ^ hammingNorm x := by
   have h := Finset.card_filter_add_card_filter_not (s := Finset.univ) (fun i ↦ x i = 0)
