@@ -95,10 +95,20 @@ theorem finrank_cohomology_zero_trivial_eq_one [IsIntegral X]
   refine (Scheme.Modules.finrank_cohomology_congr (X := X) k
     (TauCeti.SheafOfModules.freePUnitIsoUnit _) 0).trans ?_
   refine (Scheme.Modules.finrank_cohomology_zero_eq_finrank_globalSections k M).trans ?_
-  -- Isolate the definitional identification of sections of the unit sheaf with `Γ(X, ⊤)` in
-  -- one linear equivalence, and transport the dimension argument through it.
   let _ : Module k Γ(X, ⊤) := Scheme.Modules.globalSectionsBaseModule k X M
-  let e : Γ(M, ⊤) ≃ₗ[k] Γ(X, ⊤) := LinearEquiv.refl k Γ(X, ⊤)
+  -- Package the canonical comparison between sections of the unit module sheaf and structure
+  -- sheaf sections explicitly, rather than asking later steps to identify the two interfaces.
+  let e : Γ(M, ⊤) ≃ₗ[k] Γ(X, ⊤) :=
+    { toFun := fun x ↦ x
+      invFun := fun x ↦ x
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl }
+  have e_smul_one (c : k) : e (c • e.symm 1) =
+      Scheme.Modules.baseRingToGlobalSections k X c := by
+    change Scheme.Modules.baseRingToGlobalSections k X c * 1 = _
+    rw [mul_one]
   let v : Γ(M, ⊤) := e.symm 1
   have hv : v ≠ 0 := by
     intro hv
@@ -111,11 +121,9 @@ theorem finrank_cohomology_zero_trivial_eq_one [IsIntegral X]
   obtain ⟨c, hc⟩ := hφ (e w)
   refine ⟨c, ?_⟩
   apply e.injective
-  rw [e.map_smul, e.apply_symm_apply]
+  rw [e_smul_one]
   calc
-    c • (1 : Γ(X, ⊤)) = Scheme.Modules.baseRingToGlobalSections k X c * 1 := rfl
-    _ = Scheme.Modules.baseRingToGlobalSections k X c := mul_one _
-    _ = e w := hc
+    Scheme.Modules.baseRingToGlobalSections k X c = e w := hc
 
 /-- **The Euler characteristic of the structure sheaf.** On an integral scheme that is universally
 closed over a field `k` and has a `k`-rational point, `χ(𝒪_X) = 1 - g`, where `χ` is the
