@@ -59,17 +59,20 @@ noncomputable section
 variable (k : Type u) [Field k]
 
 /-- The genus `dim_k H¹(X, 𝒪_X)` of a scheme `X` over a field `k`, assuming this cohomology
-group is finite-dimensional. -/
+group is finite-dimensional. The finite-dimensionality instance `_fd` does not occur in the
+value — it guards the definition, so that `finrank` is never read as a genus `0` coming from
+its junk value on an infinite-dimensional space. -/
 def _root_.AlgebraicGeometry.Scheme.genus (X : Scheme.{u}) [X.Over (Spec (.of k))]
-    [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)] : ℕ :=
-  Fintype.card (Module.Free.ChooseBasisIndex k
-    (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1))
+    [_fd : FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)] :
+    ℕ :=
+  finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)
 
 /-- The genus is the dimension of the first cohomology of the structure sheaf. -/
+@[simp]
 lemma _root_.AlgebraicGeometry.Scheme.genus_def (X : Scheme.{u}) [X.Over (Spec (.of k))]
     [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)] :
     X.genus k = finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) :=
-  (Module.finrank_eq_card_chooseBasisIndex k _).symm
+  Scheme.genus.eq_def k X
 
 variable {X : Scheme.{u}} [X.Over (Spec (.of k))]
 
