@@ -122,7 +122,7 @@ lemma coe_natDiagGL_one (hp : 0 < p) :
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
-/-- The real matrix obtained by mapping `diag(1, p)` from `GL₂(ℚ)`, for `0 < p`. -/
+/-- The real matrix obtained by mapping `diag(1, p)` from `GL₂(ℚ)`, for nonzero `p`. -/
 lemma coe_map_natDiagGL_one [NeZero p] :
     (((Matrix.GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ ℝ))
         (natDiagGL 2 ![1, p]) : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =

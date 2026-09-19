@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Diamond
 public import TauCeti.NumberTheory.ModularForms.Petersson.Trace
 
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+
 /-!
 # The Petersson adjoint of the Hecke operators `Tₙ` at indices prime to the level
 
@@ -28,10 +30,10 @@ Petersson trace adjunction and specializes the result to a character space.
 
 ## Main results
 
-* `HeckeRing.GL2.peterssonInnerCosets_heckeTCuspNat`: the adjoint formula on
+* `HeckeRing.GL2.peterssonInnerCosets_heckeTCuspNat_left`: the adjoint formula on
   `S_k(Γ₁(N))`.
-* `HeckeRing.GL2.peterssonInnerCosets_heckeTCuspNat_of_mem_cuspFormCharSpace`: the formula when
-  the second argument has nebentypus `χ`.
+* `HeckeRing.GL2.peterssonInnerCosets_heckeTCuspNat_left_of_mem_cuspFormCharSpace`: the formula
+  when the second argument has nebentypus `χ`.
 
 ## References
 
@@ -58,7 +60,7 @@ variable {N n : ℕ} [NeZero N] [NeZero n] (k : ℤ)
 level `N` and cusp forms `f`, `g` on `Γ₁(N)`,
 
 `⟪Tₙ f, g⟫ = ⟪f, ⟨n⟩⁻¹ (Tₙ g)⟫`. -/
-theorem peterssonInnerCosets_heckeTCuspNat (hn : n.Coprime N)
+theorem peterssonInnerCosets_heckeTCuspNat_left (hn : n.Coprime N)
     (f g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
     CuspForm.peterssonInnerCosets (heckeTCuspNat k n f) g =
       CuspForm.peterssonInnerCosets f
@@ -66,21 +68,25 @@ theorem peterssonInnerCosets_heckeTCuspNat (hn : n.Coprime N)
   have := isFiniteRelIndex_adjugateGL_natDiagGL hn
   have hdet : 0 < ((φ (natDiagGL 2 ![1, n]) : GL (Fin 2) ℝ) :
       Matrix (Fin 2) (Fin 2) ℝ).det := by
-    rw [coe_map_natDiagGL_one, Matrix.det_fin_two_of]
-    simpa using Nat.pos_of_neZero n
+    have h : φ (natDiagGL 2 ![1, n]) ∈ Matrix.GLPos (Fin 2) ℝ :=
+      Matrix.GeneralLinearGroup.map_mem_glpos (f := algebraMap ℚ ℝ) Rat.cast_strictMono
+        (posDetInt_le_glpos 2 (natDiagGL_mem_posDetInt 2 ![1, n]))
+    rwa [Matrix.mem_glpos] at h
   rw [TauCeti.heckeTCuspNat_eq_trace_translate,
     CuspForm.peterssonInnerCosets_trace_translate hdet Iff.rfl,
-    trace_translate_adjugateGL_natDiagGL_eq_diamond_heckeT k hn]
+    trace_translate_adjugateGL_natDiagGL_eq_diamondOpCusp_heckeTCuspNat k hn]
 
 /-- For `g` of nebentypus `χ`, the adjoint formula simplifies to
 `⟪Tₙ f, g⟫ = ⟪f, χ(n)⁻¹ Tₙ g⟫`. -/
-theorem peterssonInnerCosets_heckeTCuspNat_of_mem_cuspFormCharSpace
+theorem peterssonInnerCosets_heckeTCuspNat_left_of_mem_cuspFormCharSpace
     {χ : (ZMod N)ˣ →* ℂˣ} (hn : n.Coprime N) (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)
     {g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hg : g ∈ cuspFormCharSpace k χ) :
     CuspForm.peterssonInnerCosets (heckeTCuspNat k n f) g =
       CuspForm.peterssonInnerCosets f
         ((χ (ZMod.unitOfCoprime n hn) : ℂ)⁻¹ • heckeTCuspNat k n g) := by
-  rw [peterssonInnerCosets_heckeTCuspNat k hn, ← heckeTCuspNat_diamondOpCusp_inv k hn,
+  have hcomm := DFunLike.congr_fun (commute_heckeTCuspNat_diamondOpCusp_inv k hn).eq g
+  simp only [Module.End.mul_apply] at hcomm
+  rw [peterssonInnerCosets_heckeTCuspNat_left k hn, ← hcomm,
     diamondOpCusp_apply_of_mem_cuspFormCharSpace k χ _ hg, map_smul, map_inv,
     Units.val_inv_eq_inv_val]
 

@@ -22,13 +22,13 @@ This comparison allows the Petersson adjunction for traces of translates to be a
 Hecke operators already constructed from rational double cosets.
 
 The trace of a form depends only on its underlying function and its level, not on the type the
-form is packaged in (`TauCeti.SlashInvariantForm.trace_eq_of_coe_eq`). This is what lets a trace
-of a translate be compared with another one whose level is equal but not syntactically so, as
+form is packaged in (`TauCeti.SlashInvariantForm.trace_eq_of_eq_of_coe_eq`). This is what lets a
+trace of a translate be compared with another one whose level is equal but not syntactically so, as
 happens when the translating matrix is changed by an element normalizing the level. When that
 element multiplies on the right, it comes out of the trace as a slash
 (`TauCeti.SlashInvariantForm.coe_trace_translate_mul_of_mem_normalizer`). The lemma
-`CuspForm.coe_trace_translate` records the compatibility of the cusp-form and
-modular-form trace constructions.
+`TauCeti.trace_coe_cuspForm` records the compatibility of the cusp-form and modular-form trace
+constructions.
 
 ## References
 
@@ -42,20 +42,15 @@ public section
 open Matrix Matrix.SpecialLinearGroup UpperHalfPlane DoubleCoset HeckeRing.GL2
 open scoped MatrixGroups ModularForm Pointwise
 
-namespace CuspForm
-
-/-- Coercing the cusp-form trace of a translate to a modular form agrees with tracing the
-corresponding translated modular form. -/
-@[simp] theorem coe_trace_translate {k : ℤ} {𝒢 ℋ : Subgroup (GL (Fin 2) ℝ)}
-    (f : CuspForm 𝒢 k) (x : GL (Fin 2) ℝ)
-    [(ConjAct.toConjAct x⁻¹ • 𝒢).IsFiniteRelIndex ℋ] :
-    (CuspForm.trace ℋ (CuspForm.translate f x) : ModularForm ℋ k) =
-      ModularForm.trace ℋ (ModularForm.translate (f : ModularForm 𝒢 k) x) := by
-  rfl
-
-end CuspForm
-
 namespace TauCeti
+
+/-- Coercing a cusp-form trace to a modular form agrees with the modular-form trace. This is
+class-polymorphic in the source form, just as Mathlib's two trace constructions are. -/
+@[simp] theorem trace_coe_cuspForm {k : ℤ} {𝒢 ℋ : Subgroup (GL (Fin 2) ℝ)} {F : Type*}
+    [FunLike F ℍ ℂ] [CuspFormClass F 𝒢 k] [𝒢.IsFiniteRelIndex ℋ] (f : F) :
+    (CuspForm.trace ℋ f : ModularForm ℋ k) = ModularForm.trace ℋ f := by
+  apply DFunLike.coe_injective
+  rw [ModularFormClass.coe_modularForm, CuspForm.coe_trace, ModularForm.coe_trace]
 
 local notation "φ" => Matrix.GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ ℝ)
 
@@ -64,7 +59,7 @@ namespace SlashInvariantForm
 /-- **The trace sees only the underlying function and the level.** Two slash-invariant forms
 with the same underlying function, for levels that are equal (though perhaps not
 syntactically), have the same trace. -/
-theorem trace_eq_of_coe_eq {k : ℤ} {𝒢₁ 𝒢₂ ℋ : Subgroup (GL (Fin 2) ℝ)} (h : 𝒢₁ = 𝒢₂)
+theorem trace_eq_of_eq_of_coe_eq {k : ℤ} {𝒢₁ 𝒢₂ ℋ : Subgroup (GL (Fin 2) ℝ)} (h : 𝒢₁ = 𝒢₂)
     [𝒢₁.IsFiniteRelIndex ℋ] [𝒢₂.IsFiniteRelIndex ℋ] {F₁ F₂ : Type*} [FunLike F₁ ℍ ℂ]
     [SlashInvariantFormClass F₁ 𝒢₁ k] [FunLike F₂ ℍ ℂ] [SlashInvariantFormClass F₂ 𝒢₂ k]
     {f₁ : F₁} {f₂ : F₂} (hf : ⇑f₁ = ⇑f₂) :
@@ -104,6 +99,8 @@ theorem coe_trace_translate_mul_of_mem_normalizer {k : ℤ} {𝒢 ℋ : Subgroup
       dsimp only [e]
       rw [Equiv.trans_apply, Subgroup.quotientEquivOfEq_mk,
         decompQuotientEquivMulLeft_mk]
+      -- The quotient representatives agree definitionally after `inv_inv` simplifies the
+      -- inverse of the unit `a⁻¹` used by `decompQuotientEquivMulLeft`.
       rfl
     rw [he]
     rw [SlashInvariantForm.quotientFunc_mk, SlashInvariantForm.quotientFunc_mk,
@@ -114,7 +111,28 @@ theorem coe_trace_translate_mul_of_mem_normalizer {k : ℤ} {𝒢 ℋ : Subgroup
 
 end SlashInvariantForm
 
+/-- Coercing the cusp-form trace of a translate agrees with tracing the corresponding
+translated modular form. -/
+@[simp] theorem trace_translate_coe_cuspForm {k : ℤ} {𝒢 ℋ : Subgroup (GL (Fin 2) ℝ)}
+    (f : CuspForm 𝒢 k) (x : GL (Fin 2) ℝ)
+    [(ConjAct.toConjAct x⁻¹ • 𝒢).IsFiniteRelIndex ℋ] :
+    (CuspForm.trace ℋ (CuspForm.translate f x) : ModularForm ℋ k) =
+      ModularForm.trace ℋ (ModularForm.translate (f : ModularForm 𝒢 k) x) := by
+  rw [trace_coe_cuspForm]
+  apply DFunLike.coe_injective
+  rw [ModularForm.coe_trace, ModularForm.coe_trace]
+  exact congrArg DFunLike.coe (SlashInvariantForm.trace_eq_of_eq_of_coe_eq rfl (by
+    rw [CuspForm.coe_translate_gl, ModularForm.coe_translate,
+      ModularFormClass.coe_modularForm]))
+
 variable {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℚ)} {δ : GL (Fin 2) ℚ}
+
+/-- Extending an integral subgroup first to `ℚ` and then to `ℝ` agrees with extending it
+directly to `ℝ`. -/
+theorem map_map_mapGL (G : Subgroup SL(2, ℤ)) :
+    (G.map (mapGL ℚ)).map φ = G.map (mapGL ℝ) := by
+  rw [Subgroup.map_map]
+  exact congrArg (Subgroup.map · G) (MonoidHom.ext fun g ↦ map_mapGL g)
 
 /-- A finite rational double-coset decomposition gives the finite relative index needed to
 trace a translate after extension of scalars to `ℝ`. -/
@@ -178,9 +196,7 @@ right-coset decomposition is finite. This supplies the instance required by Math
 instance isFiniteRelIndex_conj_mapGL {G H : Subgroup SL(2, ℤ)}
     [Finite (DecompQuotient (H.map (mapGL ℚ)) (G.map (mapGL ℚ)) δ⁻¹)] :
     (ConjAct.toConjAct (φ δ)⁻¹ • G.map (mapGL ℝ)).IsFiniteRelIndex (H.map (mapGL ℝ)) := by
-  have hφ : (φ).comp (mapGL ℚ : SL(2, ℤ) →* GL (Fin 2) ℚ) = mapGL ℝ :=
-    MonoidHom.ext fun g ↦ map_mapGL g
-  simpa only [Subgroup.map_map, hφ] using
+  simpa only [map_map_mapGL] using
     (isFiniteRelIndex_ratCast_conj (Γ₁ := G.map (mapGL ℚ))
       (Γ₂ := H.map (mapGL ℚ)) (δ := δ))
 
@@ -200,11 +216,7 @@ theorem heckeSlashCuspFormEnd_eq_trace_translate {G : Subgroup SL(2, ℤ)}
   let := finite_decompQuotient_inv_of_mem_doubleCoset hδ
   apply DFunLike.coe_injective
   rw [coe_heckeSlashCuspFormEnd]
-  have hφ : (φ).comp (mapGL ℚ : SL(2, ℤ) →* GL (Fin 2) ℚ) = mapGL ℝ :=
-    MonoidHom.ext fun g ↦ map_mapGL g
-  have hG : (G.map (mapGL ℚ)).map φ = G.map (mapGL ℝ) := by
-    rw [Subgroup.map_map, hφ]
-  exact heckeSlashSum_eq_coe_trace_translate k D hδ hG hG f
+  exact heckeSlashSum_eq_coe_trace_translate k D hδ (map_map_mapGL G) (map_map_mapGL G) f
 
 open CongruenceSubgroup HeckeRing.GLn
 
@@ -217,11 +229,8 @@ theorem heckeTCuspNat_eq_trace_translate (N : ℕ) [NeZero N] (k : ℤ) (n : ℕ
       (CuspForm.translate f (φ (natDiagGL 2 ![1, n]))) := by
   apply DFunLike.coe_injective
   rw [coe_heckeTCuspNat]
-  have hφ : (φ).comp (mapGL ℚ : SL(2, ℤ) →* GL (Fin 2) ℚ) = mapGL ℝ :=
-    MonoidHom.ext fun g ↦ map_mapGL g
-  have hG : ((Gamma1 N).map (mapGL ℚ)).map φ = (Gamma1 N).map (mapGL ℝ) := by
-    rw [Subgroup.map_map, hφ]
-  apply heckeSlashSum_eq_coe_trace_translate k (diagCosetGamma1 N n) _ hG hG f
+  apply heckeSlashSum_eq_coe_trace_translate k (diagCosetGamma1 N n) _
+    (map_map_mapGL (Gamma1 N)) (map_map_mapGL (Gamma1 N)) f
   rw [doubleCoset_out_diagCosetGamma1_eq_doubleCoset_natDiagGL]
   exact mem_doubleCoset_self _ _ _
 
