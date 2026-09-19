@@ -28,7 +28,9 @@ condition and the `𝒪_X`-module structure automatic.
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.Scheme.genericPoint_mem`, the elementary fact that every nonempty open
-  subset of an irreducible scheme contains the generic point;
+  subset of an irreducible scheme contains the generic point, and
+  `TauCeti.AlgebraicGeometry.Scheme.germ_smul_functionField`, which says that a function on such
+  a subset acts on the function field through its germ at any of its points;
 * `TauCeti.AlgebraicGeometry.Scheme.fromSpecFunctionField`, the canonical morphism
   `Spec K(X) ⟶ X` from the spectrum of the function field, and
   `TauCeti.AlgebraicGeometry.Scheme.fromSpecFunctionField_preimage`: it pulls a nonempty open
@@ -110,6 +112,13 @@ variable {X}
 /-- The generic point of an irreducible scheme lies in every nonempty open subset. -/
 theorem genericPoint_mem (U : X.Opens) [Nonempty U] : genericPoint X ∈ U :=
   ((genericPoint_spec X).mem_open_set_iff U.isOpen).mpr (by simpa using ‹Nonempty U›)
+
+/-- A function on a nonempty open subset `U` acts on the function field through its germ at any
+point of `U`. -/
+theorem germ_smul_functionField {U : X.Opens} [Nonempty U] {x : X} (hx : x ∈ U) (r : Γ(X, U))
+    (f : X.functionField) : X.presheaf.germ U x hx r • f = r • f := by
+  rw [Algebra.smul_def, Algebra.smul_def, Scheme.algebraMap_germ_eq_germToFunctionField,
+    RingHom.algebraMap_toAlgebra]
 
 instance instUniqueSpecFunctionField (X : Scheme.{u}) [IrreducibleSpace X] :
     Unique (Spec X.functionField) where
