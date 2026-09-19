@@ -177,6 +177,7 @@ theorem projectiveStableFunctor_map_connectingMap_suspensionPresentation (X : C)
 
 /-- The connecting map of a conflation whose deflation is a split epimorphism, in particular of
 a split conflation, is zero in the stable category. -/
+@[simp]
 theorem projectiveStableFunctor_map_connectingMap_eq_zero_of_isSplitEpi [IsSplitEpi S.g] :
     E.projectiveStableFunctor.map (hE.connectingMap hS) = 0 := by
   rw [← Category.id_comp (hE.connectingMap hS), ← IsSplitEpi.id S.g, Category.assoc,
