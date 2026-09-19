@@ -242,11 +242,6 @@ section OnePlace
 
 variable {D : Divisor k F} {P : Place k F} {t : F}
 
-private lemma le_add_ofPoint (D : Divisor k F) (P : Place k F) :
-    D ≤ D + WeilDivisor.ofPoint P :=
-  le_add_of_nonneg_right
-    (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P))
-
 /-- `L(D)` bounds the pole at any single place: it sits inside the step `𝔪_P^(-D P)` of the
 order filtration at `P`. -/
 private lemma riemannRochSpace_le_filtration (D : Divisor k F) (P : Place k F) :
@@ -310,7 +305,7 @@ private lemma finiteDimensional_and_finrank_add_ofPoint_le (hF : IsFunctionField
   have : FiniteDimensional k P.ResidueField := Place.finiteDimensional_residueField P hF
   obtain ⟨t, ht0, ht⟩ := P.exists_ne_zero_ord_eq (D.coeff P + 1)
   have hle : riemannRochSpace D ≤ riemannRochSpace (D + WeilDivisor.ofPoint P) :=
-    riemannRochSpace_mono (le_add_ofPoint D P)
+    riemannRochSpace_mono (WeilDivisor.le_add_ofPoint D P)
   have hkerfin : FiniteDimensional k (LinearMap.ker (residueEval D P ht)) := by
     rw [ker_residueEval ht ht0]
     exact Module.Finite.equiv (Submodule.comapSubtypeEquivOfLe hle).symm

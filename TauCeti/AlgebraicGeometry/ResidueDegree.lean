@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.ResidueField
 public import Mathlib.LinearAlgebra.Dimension.FreeAndStrongRankCondition
+public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 
 /-!
 # Residue degrees of scheme morphisms
@@ -18,8 +19,10 @@ infinite.
 
 The main result is the tower law `residueDegree_comp`. It identifies the residue degree of a
 composite with the product of the two successive residue degrees. We also characterize when a
-residue degree is positive and when it is one. These facts supply the residue-field weights used
-in the degree and pushforward parts of Layer A of the Jacobian challenge roadmap.
+residue degree is positive and when it is one. Over the spectrum of a field `k` the residue field
+at the unique point is `k` itself (`bijective_Γevaluation_comp_ΓSpecIso_inv`), which identifies
+residue degrees over `Spec k` with dimensions over `k`. These facts supply the residue-field
+weights used in the degree and pushforward parts of Layer A of the Jacobian challenge roadmap.
 
 The construction follows the residue-degree convention for pushforward of cycles in the
 [Stacks Project, Tag 02R4](https://stacks.math.columbia.edu/tag/02R4). The proofs reuse
@@ -90,6 +93,25 @@ theorem residueDegree_eq_one_iff (f : X ⟶ Y) (x : X) :
 theorem residueDegree_eq_one_of_isIso (f : X ⟶ Y) [IsIso f] (x : X) :
     f.residueDegree x = 1 :=
   (residueDegree_eq_one_iff f x).mpr (ConcreteCategory.bijective_of_isIso _)
+
+/-- The residue field of the spectrum of a field `k` at its unique point is `k` itself:
+evaluating the global function corresponding to an element of `k` at that point is bijective.
+This identifies residue degrees over `Spec k` with dimensions over `k`. -/
+theorem bijective_Γevaluation_comp_ΓSpecIso_inv (k : Type u) [Field k] (p : Spec (.of k)) :
+    Function.Bijective ((Spec (.of k)).Γevaluation p ∘ (Scheme.ΓSpecIso (.of k)).inv) := by
+  have : p.asIdeal.IsPrime := p.isPrime
+  have : p.asIdeal.IsMaximal := by
+    rw [Ideal.eq_bot_of_prime p.asIdeal]
+    exact Ideal.bot_isMaximal
+  have h : (Spec (.of k)).Γevaluation p ∘ (Scheme.ΓSpecIso (.of k)).inv =
+      (Scheme.Spec.residueFieldIso (.of k) p).inv ∘ algebraMap k p.asIdeal.ResidueField := by
+    funext c
+    exact (ConcreteCategory.congr_hom (Scheme.Spec.algebraMap_residueFieldIso_inv (.of k) p) c).symm
+  rw [h, IsScalarTower.algebraMap_eq k (k ⧸ p.asIdeal) p.asIdeal.ResidueField,
+    RingHom.coe_comp]
+  exact (ConcreteCategory.bijective_of_isIso _).comp
+    ((p.asIdeal.bijective_algebraMap_quotient_residueField).comp
+      ⟨(algebraMap k (k ⧸ p.asIdeal)).injective, Ideal.Quotient.mk_surjective⟩)
 
 end AlgebraicGeometry
 

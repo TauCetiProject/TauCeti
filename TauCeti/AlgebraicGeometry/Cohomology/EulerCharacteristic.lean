@@ -32,6 +32,8 @@ sequences as soon as the truncation degree is one past the last nonvanishing deg
 * `Scheme.Modules.finrank_cohomology_zero_sub_one_eq_add`, the shape of the additivity on a
   curve, where cohomology vanishes above degree one so that
   `χ(X, M) = dim H⁰(X, M) - dim H¹(X, M)`;
+* `Scheme.Modules.finiteDimensional_cohomology_X₂`: in a short exact sequence, `Hⁱ(X, M₂)` is
+  finite-dimensional when `Hⁱ(X, M₁)` and `Hⁱ(X, M₃)` are;
 * `Scheme.Modules.eulerCharBelow_congr`, the invariance of the truncated Euler characteristic
   under isomorphism, and
   `Scheme.Modules.finrank_cohomology_zero_eq_finrank_globalSections`, the identification of
@@ -185,6 +187,17 @@ private lemma finiteDimensional_X₃ (i : ℕ) [FiniteDimensional k (Cohomology 
       (cohomologyδBaseLinear k X hS i (i + 1) rfl).rangeRestrict := by
     rw [LinearMap.exact_iff, LinearMap.ker_rangeRestrict, ← LinearMap.exact_iff]
     exact exact_cohomologyMapBaseLinear_cohomologyδBaseLinear k hS i
+  exact Module.Finite.of_exact hex (LinearMap.surjective_rangeRestrict _)
+
+/-- `Hⁱ(X, M₂)` is squeezed by the exact sequence between `Hⁱ(X, M₁)` and `Hⁱ(X, M₃)`, so it is
+finite-dimensional as soon as those two are. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X₂ (i : ℕ)
+    [FiniteDimensional k (Cohomology S.X₁ i)] [FiniteDimensional k (Cohomology S.X₃ i)] :
+    FiniteDimensional k (Cohomology S.X₂ i) := by
+  have hex : Function.Exact (cohomologyMapBaseLinear k X S.f i)
+      (cohomologyMapBaseLinear k X S.g i).rangeRestrict := by
+    rw [LinearMap.exact_iff, LinearMap.ker_rangeRestrict, ← LinearMap.exact_iff]
+    simpa only [coe_cohomologyMapBaseLinear] using exact_cohomologyMap_cohomologyMap hS i
   exact Module.Finite.of_exact hex (LinearMap.surjective_rangeRestrict _)
 
 /-- When the connecting map out of `Hⁿ(X, M₃)` vanishes, `Hⁿ(X, M₂) → Hⁿ(X, M₃)` is onto, so
