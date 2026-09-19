@@ -215,10 +215,7 @@ theorem isOpenImmersion_affineToricSchemeMap_inf_ker {N : Type u} [AddCommGroup 
   convert h using 1
   exact affineToricSchemeMap_def ..
 
-/-- If a character `m` in the dual semigroup of a finitely generated cone `σ` cuts out the face
-`τ = σ ⊓ ker m`, the image of the affine toric scheme of `τ` in that of `σ` is the basic open set
-where the monomial of `m` does not vanish. -/
-theorem range_faceAffineToricSchemeMap (hi : IsIntegralLattice i) (hσ : σ.FG)
+private theorem range_faceAffineToricSchemeMap_of_eq (hi : IsIntegralLattice i) (hσ : σ.FG)
     (hτσ : τ.IsFaceOf σ) (m : dualSemigroup hi σ)
     (hm : σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m)) = τ) :
     Set.range (faceAffineToricSchemeMap hi hτσ) =
@@ -232,6 +229,17 @@ theorem range_faceAffineToricSchemeMap (hi : IsIntegralLattice i) (hσ : σ.FG)
     isLocalization_away_affineCoordinateRingMap_inf_ker hi hσ m
   rw [faceAffineToricSchemeMap_def]
   exact PrimeSpectrum.localization_away_comap_range _ _
+
+/-- For a character `m` in the dual semigroup of a finitely generated cone `σ`, the image of the
+affine toric scheme of the face `σ ⊓ ker m` in that of `σ` is the basic open set where the
+monomial of `m` does not vanish. -/
+theorem range_faceAffineToricSchemeMap (hi : IsIntegralLattice i) (hσ : σ.FG)
+    (m : dualSemigroup hi σ) :
+    Set.range (faceAffineToricSchemeMap hi
+      (PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup hi m).1 m.2))) =
+      (PrimeSpectrum.basicOpen (MonoidAlgebra.single (ofAdd m) (1 : ℂ)) :
+        Set (PrimeSpectrum (affineCoordinateRing hi σ))) :=
+  range_faceAffineToricSchemeMap_of_eq hi hσ _ m rfl
 
 namespace IsRegularCone
 
@@ -279,9 +287,9 @@ theorem range_faceAffineToricSchemeMap_inf (hi : IsIntegralLattice i)
   have hmul : MonoidAlgebra.single (ofAdd (⟨m₁, hm₁⟩ + ⟨m₂, hm₂⟩ : dualSemigroup hi σ)) (1 : ℂ) =
       MonoidAlgebra.single (ofAdd ⟨m₁, hm₁⟩) 1 * MonoidAlgebra.single (ofAdd ⟨m₂, hm₂⟩) 1 := by
     rw [MonoidAlgebra.single_mul_single, ofAdd_add, mul_one]
-  rw [range_faceAffineToricSchemeMap hi hσ.fg hτ ⟨m₁, hm₁⟩ h₁,
-    range_faceAffineToricSchemeMap hi hσ.fg hυ ⟨m₂, hm₂⟩ h₂,
-    range_faceAffineToricSchemeMap hi hσ.fg _ (⟨m₁, hm₁⟩ + ⟨m₂, hm₂⟩)
+  rw [range_faceAffineToricSchemeMap_of_eq hi hσ.fg hτ ⟨m₁, hm₁⟩ h₁,
+    range_faceAffineToricSchemeMap_of_eq hi hσ.fg hυ ⟨m₂, hm₂⟩ h₂,
+    range_faceAffineToricSchemeMap_of_eq hi hσ.fg _ (⟨m₁, hm₁⟩ + ⟨m₂, hm₂⟩)
       (by rw [AddSubmonoid.coe_add, map_add, PointedCone.inf_ker_add
         ((mem_dualSemigroup hi m₁).1 hm₁) ((mem_dualSemigroup hi m₂).1 hm₂), h₁, h₂]),
     hmul, PrimeSpectrum.basicOpen_mul]
