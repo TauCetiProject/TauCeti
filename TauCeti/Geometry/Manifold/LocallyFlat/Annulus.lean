@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.UnitInterval
+public import TauCeti.Analysis.Normed.Module.Ball
 public import TauCeti.Analysis.Normed.Module.FilledHull
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
@@ -54,9 +55,6 @@ concentric spheres cobound the closed annulus `{r ≤ ‖x‖ ≤ R}`
 
 ## Main results
 
-* `TauCeti.coboundAnnulus_iff`, `TauCeti.annulusConjecture_iff`: the defining characterizations.
-* `TauCeti.AnnulusConjecture.coboundAnnulus`: granting the conjecture, nested locally flat
-  spheres cobound an annulus.
 * `TauCeti.isLocallyFlat_smul_coe_sphere`: a rescaled unit sphere is locally flat, with
   one-dimensional complementary model.
 * `TauCeti.range_smul_coe_sphere_subset_filledHull_sdiff`: a smaller concentric sphere lies inside
@@ -95,12 +93,6 @@ def CoboundAnnulus (f g : X → E) : Prop :=
     range h = filledHull (range f) \ (filledHull (range g) \ range g) ∧
     h '' (univ ×ˢ {0}) = range f ∧ h '' (univ ×ˢ {1}) = range g
 
-theorem coboundAnnulus_iff {f g : X → E} :
-    CoboundAnnulus f g ↔ ∃ h : X × I → E, IsEmbedding h ∧
-      range h = filledHull (range f) \ (filledHull (range g) \ range g) ∧
-      h '' (univ ×ˢ {0}) = range f ∧ h '' (univ ×ˢ {1}) = range g :=
-  Iff.rfl
-
 end CoboundAnnulus
 
 /-- **The annulus conjecture for `n`-spheres in `ℝⁿ⁺¹`:** if `f` and `g` are locally flat
@@ -115,49 +107,14 @@ def AnnulusConjecture (n : ℕ) : Prop :=
     IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f → IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ g →
       range g ⊆ filledHull (range f) \ range f → CoboundAnnulus f g
 
-namespace AnnulusConjecture
-
-/-- A proof of the annulus conjecture makes any two nested locally flat `n`-spheres in `ℝⁿ⁺¹`
-cobound an annulus. -/
-theorem coboundAnnulus {n : ℕ} (h : AnnulusConjecture n)
-    (f g : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 → EuclideanSpace ℝ (Fin (n + 1)))
-    (hf : IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f)
-    (hg : IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ g)
-    (hgf : range g ⊆ filledHull (range f) \ range f) : CoboundAnnulus f g :=
-  h f g hf hg hgf
-
-end AnnulusConjecture
-
-/-- The annulus conjecture for `n`-spheres in `ℝⁿ⁺¹` spelled out. -/
-@[simp]
-theorem annulusConjecture_iff {n : ℕ} :
-    AnnulusConjecture n ↔
-      ∀ f g : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 → EuclideanSpace ℝ (Fin (n + 1)),
-        IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f →
-          IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ g →
-            range g ⊆ filledHull (range f) \ range f → CoboundAnnulus f g :=
-  by
-    constructor
-    · intro h
-      exact h.coboundAnnulus
-    · exact fun h ↦ h
-
 /-! ### Concentric round spheres -/
 
 section Round
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- The image of the unit sphere under scaling by `c > 0` is the sphere of radius `c`. -/
-private theorem range_smul_coe_sphere {c : ℝ} (hc : 0 < c) :
-    range (fun u : sphere (0 : E) 1 => c • (u : E)) = sphere 0 c := by
-  rw [range_comp' (c • ·) Subtype.val, Subtype.range_coe, image_smul,
-    smul_sphere' hc.ne', smul_zero, Real.norm_of_nonneg hc.le, mul_one]
-
 /-- **A rescaled unit sphere is locally flat**, with one-dimensional complementary model, for any
-charted-space structure on the sphere. Polar coordinates identify the complement of the origin
-with the product of the unit sphere and the real line, radius `exp s` corresponding to `s`, and the
-unit sphere with the slice `s = 0`. -/
+charted-space structure on the sphere and every nonzero scale. -/
 theorem isLocallyFlat_smul_coe_sphere {F : Type*} [TopologicalSpace F]
     [ChartedSpace F (sphere (0 : E) 1)] {c : ℝ} (hc : c ≠ 0) :
     IsLocallyFlat F ℝ (fun u : sphere (0 : E) 1 => c • (u : E)) := by

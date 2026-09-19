@@ -142,12 +142,9 @@ theorem filledHull_empty [Nontrivial E] : filledHull (∅ : Set E) = ∅ := by
   · rw [compl_empty]
     exact NormedSpace.unbounded_univ ℝ E
 
-/-- **The filled hull of a sphere is the closed ball**, for a sphere of nonnegative radius. The
-open ball is bounded with frontier inside the sphere, so it is filled in; a point `y` outside the
-closed ball lies on the ray `t ↦ x + t • (y - x)`, `t ≥ 1`, which is connected, unbounded, and
-stays outside the closed ball, so the component of `y` in the complement of the sphere is
-unbounded. For a negative radius the sphere and the closed ball are empty, and the statement
-fails in the zero space, where `filledHull ∅` is everything. -/
+/-- **The filled hull of a sphere is the closed ball**, for a sphere of nonnegative radius. This
+identifies the region enclosed by a sphere without choosing a component of its complement. The
+statement fails in the zero space, where `filledHull ∅` is everything. -/
 theorem filledHull_sphere (x : E) {r : ℝ} (hr : 0 ≤ r) :
     filledHull (sphere x r) = closedBall x r := by
   refine Subset.antisymm (fun y hy => ?_) fun y hy => ?_
