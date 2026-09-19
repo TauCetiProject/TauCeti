@@ -13,7 +13,7 @@ import TauCeti.Algebra.Group.Subgroup.Pointwise
 import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
-# Cardinality of stabilisers under the two standard transports
+# Point stabilisers: their cardinality, and when they are normal
 
 A count defined through a point stabiliser is useful only alongside the rules for moving it.
 Two such rules are recorded here, both consequences of Mathlib machinery rather than new
@@ -28,6 +28,11 @@ stabilisers, by `MulAction.stabilizerEquivStabilizerOfOrbitRel`.
 in question, then the `G`-order of that point's stabiliser is `Nat.card f.ker` times its
 `H`-order. Taking `f` to be a quotient map gives the projective case, where the divisor is the
 subgroup quotiented out.
+
+A point stabiliser of a permutation representation `ρ : G →* Equiv.Perm α` is a subgroup of the
+source, namely the comap of the stabiliser in `Equiv.Perm α`. The last two results say when that
+subgroup is the kernel — so in particular normal — and, for a transitive representation, that
+normality of it is equivalent to freeness of the action of the image.
 
 ## Main results
 
@@ -46,6 +51,11 @@ subgroup quotiented out.
 * `TauCeti.card_stabilizer_coset_eq_card_stabilizer_inv_smul`: the class of `g` in `G ⧸ H` has,
   inside `stabilizer G p`, a stabiliser of the same order as `g⁻¹ • p` has inside `H` —
   conjugation by `g` is the bijection.
+* `MonoidHom.comap_stabilizer_eq_ker`: the point stabiliser of a permutation representation is
+  its kernel as soon as the image has trivial stabiliser at that point, and
+  `MonoidHom.normal_comap_stabilizer_iff_isCancelSMul`: for a transitive representation that
+  happens exactly when the image acts freely, which is exactly when the point stabiliser is
+  normal.
 -/
 
 public section
@@ -227,5 +237,58 @@ theorem card_stabilizer_coset_eq_card_stabilizer_inv_smul (H : Subgroup G) (p : 
   · exact Subtype.ext (Subtype.ext (by simp [mul_assoc]))
 
 end TauCeti
+
+namespace MonoidHom
+
+open Equiv
+
+variable {G α : Type*} [Group G]
+
+/-- If a point has trivial stabiliser under the image of a permutation representation, then its
+stabiliser in the source is the kernel of the representation. -/
+theorem comap_stabilizer_eq_ker (ρ : G →* Perm α) (i : α)
+    (hi : MulAction.stabilizer ρ.range i = ⊥) :
+    (MulAction.stabilizer (Perm α) i).comap ρ = ρ.ker := by
+  ext g
+  rw [Subgroup.mem_comap, MulAction.mem_stabilizer_iff, MonoidHom.mem_ker]
+  refine ⟨fun hg => ?_, fun hg => by rw [hg, one_smul]⟩
+  let h : ρ.range := ⟨ρ g, MonoidHom.mem_range.mpr ⟨g, rfl⟩⟩
+  have hh : h = 1 := by
+    rw [← Subgroup.mem_bot, ← hi, MulAction.mem_stabilizer_iff]
+    exact hg
+  exact congrArg Subtype.val hh
+
+/-- For a transitive permutation representation, a point stabiliser is normal in the source
+exactly when the image acts freely. -/
+theorem normal_comap_stabilizer_iff_isCancelSMul (ρ : G →* Perm α)
+    (hρ : MulAction.IsPretransitive ρ.range α) (i : α) :
+    ((MulAction.stabilizer (Perm α) i).comap ρ).Normal ↔ IsCancelSMul ρ.range α := by
+  refine ⟨fun hN => ?_, fun hfree => ?_⟩
+  · set K := (MulAction.stabilizer (Perm α) i).comap ρ
+    have hK : ∀ (g : G) (j : α), ρ g j = j ↔ g ∈ K := by
+      intro g j
+      obtain ⟨h, hh⟩ := hρ.exists_smul_eq i j
+      obtain ⟨k, hk⟩ : (h : Perm α) ∈ ρ.range := h.2
+      have hki : ρ k i = j := hk ▸ hh
+      have hconj : k⁻¹ * g * k ∈ K ↔ ρ g j = j := by
+        rw [Subgroup.mem_comap, MulAction.mem_stabilizer_iff]
+        simp only [map_mul, map_inv, Perm.smul_def, Perm.mul_apply]
+        calc
+          (ρ k)⁻¹ (ρ g (ρ k i)) = i ↔ ρ g (ρ k i) = ρ k i := by
+            rw [Perm.inv_eq_iff_eq]
+          _ ↔ ρ g j = j := by rw [hki]
+      rw [← hconj]
+      exact ⟨fun hg => by simpa [mul_assoc] using hN.conj_mem _ hg k,
+        fun hg => by simpa using hN.conj_mem _ hg k⁻¹⟩
+    refine isCancelSMul_iff_stabilizer_eq_bot.mpr fun j => ?_
+    refine (Subgroup.eq_bot_iff_forall _).mpr fun h hh => ?_
+    obtain ⟨g, hg⟩ : (h : Perm α) ∈ ρ.range := h.2
+    have hgj : ρ g j = j := hg ▸ hh
+    refine Subtype.ext <| hg ▸ Equiv.ext fun k => ?_
+    exact (hK g k).mpr ((hK g j).mp hgj)
+  · rw [comap_stabilizer_eq_ker ρ i (IsCancelSMul.stabilizer_eq_bot i)]
+    infer_instance
+
+end MonoidHom
 
 end

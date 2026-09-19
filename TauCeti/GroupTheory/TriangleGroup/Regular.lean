@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.TriangleGroup.PermutationRepresentation
 public import TauCeti.Combinatorics.PermutationTriple.Regular
-public import TauCeti.Algebra.GroupAction.FixingSubgroup
+public import TauCeti.GroupTheory.GroupAction.Stabilizer
 
 /-!
 # Regular triples and normal subgroups of triangle groups
@@ -56,7 +56,7 @@ theorem comap_stabilizer_toPerm_eq_ker (i : Fin n)
     (hi : MulAction.stabilizer t.monodromyGroup i = ⊥) :
     (MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t ha hb hc) =
       (toPerm t ha hb hc).ker :=
-  comap_stabilizer_eq_ker (toPerm t ha hb hc) i (by
+  (toPerm t ha hb hc).comap_stabilizer_eq_ker i (by
     rw [range_toPerm]
     exact hi)
 
@@ -64,7 +64,7 @@ theorem comap_stabilizer_toPerm_eq_ker (i : Fin n)
 representation of the triangle group is a normal subgroup exactly when the triple is regular. -/
 theorem normal_comap_stabilizer_toPerm_iff (ht : t.IsConnected) (i : Fin n) :
     ((MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t ha hb hc)).Normal ↔ t.IsRegular := by
-  rw [normal_comap_stabilizer_iff_isCancelSMul (toPerm t ha hb hc)
+  rw [(toPerm t ha hb hc).normal_comap_stabilizer_iff_isCancelSMul
       (by rw [range_toPerm]; exact ht.isPretransitive) i,
     range_toPerm, PermutationTriple.isRegular_iff_isCancelSMul, and_iff_right ht]
 
