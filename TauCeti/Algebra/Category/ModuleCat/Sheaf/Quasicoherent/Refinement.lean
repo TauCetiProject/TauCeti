@@ -128,8 +128,8 @@ instance _root_.SheafOfModules.GeneratingSections.isIso_equivOfIso_π (e : M ≅
 /-- Transporting generating sections along an isomorphism preserves finiteness. -/
 instance _root_.SheafOfModules.GeneratingSections.isFiniteType_equivOfIso (e : M ≅ N)
     (σ : M.GeneratingSections) [hσ : σ.IsFiniteType] :
-    (GeneratingSections.equivOfIso e σ).IsFiniteType :=
-  inferInstanceAs (σ.ofEpi e.hom).IsFiniteType
+    (GeneratingSections.equivOfIso e σ).IsFiniteType where
+  finite := hσ.finite
 
 end GeneratingSections
 
@@ -156,6 +156,7 @@ def _root_.SheafOfModules.QuasicoherentData.ofRefinement {M : SheafOfModules.{u}
 /-- Generating sections of `M.over X` restricted along `f : Y ⟶ X` to generating sections of
 `M.over Y`: they are mapped by the restriction functor `overMap R f`, which is identified with
 restriction to `Y` by `overFunctorMap`. -/
+@[expose]
 def _root_.SheafOfModules.GeneratingSections.restrict {M : SheafOfModules.{u} R} {X Y : C}
     (G : (M.over X).GeneratingSections) (f : Y ⟶ X) : (M.over Y).GeneratingSections :=
   GeneratingSections.equivOfIso ((overFunctorMap R f).app M)
@@ -166,6 +167,19 @@ def _root_.SheafOfModules.GeneratingSections.restrict {M : SheafOfModules.{u} R}
 theorem _root_.SheafOfModules.GeneratingSections.restrict_I {M : SheafOfModules.{u} R} {X Y : C}
     (G : (M.over X).GeneratingSections) (f : Y ⟶ X) : (G.restrict f).I = G.I :=
   (rfl)
+
+/-- The generating morphism of restricted generating sections is obtained by mapping the original
+generating morphism and then applying the comparison with restriction to `Y`. -/
+@[simp]
+theorem _root_.SheafOfModules.GeneratingSections.restrict_π {M : SheafOfModules.{u} R} {X Y : C}
+    (G : (M.over X).GeneratingSections) (f : Y ⟶ X) :
+    (G.restrict f).π =
+      ((mapFreeIso (overMap R f) G.I (overMapUnitIso f).symm).hom ≫
+        (overMap R f).map G.π) ≫ ((overFunctorMap R f).app M).hom := by
+  change (GeneratingSections.equivOfIso ((overFunctorMap R f).app M)
+    (G.map (overMap R f) (overMapUnitIso f).symm)).π = _
+  rw [GeneratingSections.equivOfIso_apply_π, GeneratingSections.map_π_eq]
+  rfl
 
 /-- Restricting generating sections preserves an invertible generating morphism. -/
 instance _root_.SheafOfModules.GeneratingSections.isIso_restrict_π {M : SheafOfModules.{u} R}
