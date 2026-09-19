@@ -39,9 +39,12 @@ of every integer of `M` at once. Hence `𝒪[M]` embeds into a finite free `𝒪
 finite `𝒪[K]`-module of rank `[M : K]`. Freeness is then automatic, since a finite torsion-free
 module over the discrete valuation ring `𝒪[K]` is free.
 
-All structures are named definitions rather than global instances, so that a field already
-carrying a compatible topology or valuative relation acquires no diamond. They are meant to be
-installed locally, as in `letI := finiteExtensionValuativeRel K M`.
+The normed field, topology and valuative relation constructed on `M` are named definitions
+rather than global instances, so that a field already carrying a compatible topology or valuative
+relation acquires no diamond. They are meant to be installed locally, as in
+`letI := finiteExtensionValuativeRel K M`. By contrast, the facts `continuousSMul`,
+`isModuleTopology` and `integerRingModuleFinite` about an `M` already carrying such structures are
+global instances: they are `Prop`-valued, so they create no diamonds.
 
 ## Main definitions
 
@@ -535,7 +538,8 @@ private def integerCoord {ι : Type*} (b : Module.Basis ι K M) (c : K)
 /-- **The integer ring of a finite extension is a finite module over the base.** Let `M` be a
 finite extension of a nonarchimedean local field `K`, with a compatible valuative topology. Then
 `𝒪[M]` is a finite `𝒪[K]`-module. Together with `TauCeti.integerRingModuleFree`, this gives the
-integral bases used by the theory of ramification. -/
+integral bases used by the theory of ramification. See Serre, *Local Fields*, Chapter II, §2, and
+Neukirch, *Algebraic Number Theory*, Chapter II, §6. -/
 instance integerRingModuleFinite : Module.Finite 𝒪[K] 𝒪[M] := by
   classical
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
