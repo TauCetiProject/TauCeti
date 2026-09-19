@@ -12,10 +12,8 @@ public import Mathlib.CategoryTheory.Preadditive.Biproducts
 # Finite biproducts of sheaves of modules
 
 Sheaves of modules over a sheaf of rings form a preadditive category with finite coproducts, so
-they have finite biproducts. Mathlib obtains this from the abelian structure, which requires
-`HasSheafify`; this file records it under the weaker assumptions (`HasWeakSheafify` and
-`WEqualsLocallyBijective`) used by the monoidal structure on sheaves of modules, so that finite
-direct sums `⨁ f` can be formed there.
+they have finite biproducts. These biproducts provide the finite direct sums used to construct
+finite free sheaves and their monoidal duality.
 
 ## Main declaration
 

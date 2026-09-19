@@ -106,58 +106,63 @@ theorem unit_coevaluation : η_ (𝟙_ C) (𝟙_ C) = (ρ_ (𝟙_ C)).inv :=
 
 end ExactPairing
 
-variable [Preadditive C] [MonoidalPreadditive C] {ι : Type w} [Fintype ι]
+variable [Preadditive C] [MonoidalPreadditive C] {ι : Type w} [Finite ι]
   (X Y : ι → C) [HasBiproduct X] [HasBiproduct Y] [∀ i, ExactPairing (X i) (Y i)]
 
 /-- Exact pairings are closed under finite biproducts: if `Y i` is a right dual of `X i` for each
 `i`, then `⨁ Y` is a right dual of `⨁ X`, with coevaluation and evaluation the sums of those of
 the summands. -/
-noncomputable instance ExactPairing.biproduct : ExactPairing (⨁ X) (⨁ Y) where
-  coevaluation' := ∑ i, η_ (X i) (Y i) ≫ (biproduct.ι X i ⊗ₘ biproduct.ι Y i)
-  evaluation' := ∑ i, (biproduct.π Y i ⊗ₘ biproduct.π X i) ≫ ε_ (X i) (Y i)
-  coevaluation_evaluation' := by
-    classical
-    -- Expand into a double sum over the coevaluation index `k` and the evaluation index `i`;
-    -- only the diagonal terms survive, and they are the zigzags of the summands.
-    simp only [whiskerLeft_sum, sum_whiskerRight, Preadditive.sum_comp, Preadditive.comp_sum,
-      MonoidalCategory.whiskerLeft_comp, comp_whiskerRight, Category.assoc,
-      whiskerLeft_tensorHom_associator_inv_tensorHom_whiskerRight_assoc]
-    rw [← Category.id_comp (λ_ (⨁ Y)).inv, ← IsBilimit.total (biproduct.isBilimit Y),
-      Preadditive.sum_comp, Preadditive.comp_sum]
-    simp only [biproduct.bicone_π, biproduct.bicone_ι]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [Finset.sum_eq_single i (fun k _ hk ↦ by
-        rw [biproduct.ι_π_ne _ hk, MonoidalPreadditive.tensor_zero,
-          MonoidalPreadditive.zero_tensor, Limits.zero_comp, Limits.comp_zero,
-          Limits.comp_zero]) (by simp),
-      biproduct.ι_π_self, coevaluation_evaluation_tensorHom, Category.assoc]
-  evaluation_coevaluation' := by
-    classical
-    -- As above, only the diagonal terms of the double sum survive.
-    simp only [whiskerLeft_sum, sum_whiskerRight, Preadditive.sum_comp, Preadditive.comp_sum,
-      MonoidalCategory.whiskerLeft_comp, comp_whiskerRight, Category.assoc,
-      tensorHom_whiskerRight_associator_hom_whiskerLeft_tensorHom_assoc]
-    rw [← Category.id_comp (ρ_ (⨁ X)).inv, ← IsBilimit.total (biproduct.isBilimit X),
-      Preadditive.sum_comp, Preadditive.comp_sum]
-    simp only [biproduct.bicone_π, biproduct.bicone_ι]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [Finset.sum_eq_single i (fun k _ hk ↦ by
-        rw [biproduct.ι_π_ne _ hk, MonoidalPreadditive.zero_tensor,
-          MonoidalPreadditive.tensor_zero, Limits.zero_comp, Limits.comp_zero,
-          Limits.comp_zero]) (by simp),
-      biproduct.ι_π_self, evaluation_coevaluation_tensorHom, Category.assoc]
+noncomputable instance ExactPairing.biproduct : ExactPairing (⨁ X) (⨁ Y) :=
+  let _ : Fintype ι := Fintype.ofFinite ι
+  { coevaluation' := ∑ i, η_ (X i) (Y i) ≫ (biproduct.ι X i ⊗ₘ biproduct.ι Y i)
+    evaluation' := ∑ i, (biproduct.π Y i ⊗ₘ biproduct.π X i) ≫ ε_ (X i) (Y i)
+    coevaluation_evaluation' := by
+      classical
+      -- Expand into a double sum over the coevaluation index `k` and the evaluation index `i`;
+      -- only the diagonal terms survive, and they are the zigzags of the summands.
+      simp only [whiskerLeft_sum, sum_whiskerRight, Preadditive.sum_comp, Preadditive.comp_sum,
+        MonoidalCategory.whiskerLeft_comp, comp_whiskerRight, Category.assoc,
+        whiskerLeft_tensorHom_associator_inv_tensorHom_whiskerRight_assoc]
+      rw [← Category.id_comp (λ_ (⨁ Y)).inv, ← IsBilimit.total (biproduct.isBilimit Y),
+        Preadditive.sum_comp, Preadditive.comp_sum]
+      simp only [biproduct.bicone_π, biproduct.bicone_ι]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [Finset.sum_eq_single i (fun k _ hk ↦ by
+          rw [biproduct.ι_π_ne _ hk, MonoidalPreadditive.tensor_zero,
+            MonoidalPreadditive.zero_tensor, Limits.zero_comp, Limits.comp_zero,
+            Limits.comp_zero]) (by simp),
+        biproduct.ι_π_self, coevaluation_evaluation_tensorHom, Category.assoc]
+    evaluation_coevaluation' := by
+      classical
+      -- As above, only the diagonal terms of the double sum survive.
+      simp only [whiskerLeft_sum, sum_whiskerRight, Preadditive.sum_comp, Preadditive.comp_sum,
+        MonoidalCategory.whiskerLeft_comp, comp_whiskerRight, Category.assoc,
+        tensorHom_whiskerRight_associator_hom_whiskerLeft_tensorHom_assoc]
+      rw [← Category.id_comp (ρ_ (⨁ X)).inv, ← IsBilimit.total (biproduct.isBilimit X),
+        Preadditive.sum_comp, Preadditive.comp_sum]
+      simp only [biproduct.bicone_π, biproduct.bicone_ι]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [Finset.sum_eq_single i (fun k _ hk ↦ by
+          rw [biproduct.ι_π_ne _ hk, MonoidalPreadditive.zero_tensor,
+            MonoidalPreadditive.tensor_zero, Limits.zero_comp, Limits.comp_zero,
+            Limits.comp_zero]) (by simp),
+        biproduct.ι_π_self, evaluation_coevaluation_tensorHom, Category.assoc] }
 
 namespace ExactPairing
 
 /-- The coevaluation of the biproduct pairing is the sum of the coevaluations of the summands. -/
-theorem biproduct_coevaluation :
+theorem biproduct_coevaluation [Fintype ι] :
     η_ (⨁ X) (⨁ Y) = ∑ i, η_ (X i) (Y i) ≫ (biproduct.ι X i ⊗ₘ biproduct.ι Y i) :=
-  (rfl)
+  by
+    obtain rfl : ‹Fintype ι› = Fintype.ofFinite ι := Subsingleton.elim _ _
+    rfl
 
 /-- The evaluation of the biproduct pairing is the sum of the evaluations of the summands. -/
-theorem biproduct_evaluation :
+theorem biproduct_evaluation [Fintype ι] :
     ε_ (⨁ X) (⨁ Y) = ∑ i, (biproduct.π Y i ⊗ₘ biproduct.π X i) ≫ ε_ (X i) (Y i) :=
-  (rfl)
+  by
+    obtain rfl : ‹Fintype ι› = Fintype.ofFinite ι := Subsingleton.elim _ _
+    rfl
 
 variable {X Y}
 
@@ -166,6 +171,7 @@ variable {X Y}
 @[reassoc (attr := simp)]
 theorem biproduct_ι_tensorHom_biproduct_ι_evaluation (i : ι) :
     (biproduct.ι Y i ⊗ₘ biproduct.ι X i) ≫ ε_ (⨁ X) (⨁ Y) = ε_ (X i) (Y i) := by
+  let _ : Fintype ι := Fintype.ofFinite ι
   rw [biproduct_evaluation, Preadditive.comp_sum,
     Finset.sum_eq_single i (fun k _ hk ↦ by
       rw [← Category.assoc, tensorHom_comp_tensorHom, biproduct.ι_π_ne _ hk.symm,
@@ -177,6 +183,7 @@ theorem biproduct_ι_tensorHom_biproduct_ι_evaluation (i : ι) :
 @[reassoc (attr := simp)]
 theorem biproduct_ι_tensorHom_biproduct_ι_evaluation_of_ne {i j : ι} (h : i ≠ j) :
     (biproduct.ι Y i ⊗ₘ biproduct.ι X j) ≫ ε_ (⨁ X) (⨁ Y) = 0 := by
+  let _ : Fintype ι := Fintype.ofFinite ι
   rw [biproduct_evaluation, Preadditive.comp_sum]
   refine Finset.sum_eq_zero fun k _ ↦ ?_
   rw [← Category.assoc, tensorHom_comp_tensorHom]
@@ -189,6 +196,7 @@ the `i`-th summand. -/
 @[reassoc (attr := simp)]
 theorem coevaluation_biproduct_π_tensorHom_biproduct_π (i : ι) :
     η_ (⨁ X) (⨁ Y) ≫ (biproduct.π X i ⊗ₘ biproduct.π Y i) = η_ (X i) (Y i) := by
+  let _ : Fintype ι := Fintype.ofFinite ι
   rw [biproduct_coevaluation, Preadditive.sum_comp,
     Finset.sum_eq_single i (fun k _ hk ↦ by
       rw [Category.assoc, tensorHom_comp_tensorHom, biproduct.ι_π_ne _ hk,
@@ -200,6 +208,7 @@ theorem coevaluation_biproduct_π_tensorHom_biproduct_π (i : ι) :
 @[reassoc (attr := simp)]
 theorem coevaluation_biproduct_π_tensorHom_biproduct_π_of_ne {i j : ι} (h : i ≠ j) :
     η_ (⨁ X) (⨁ Y) ≫ (biproduct.π X i ⊗ₘ biproduct.π Y j) = 0 := by
+  let _ : Fintype ι := Fintype.ofFinite ι
   rw [biproduct_coevaluation, Preadditive.sum_comp]
   refine Finset.sum_eq_zero fun k _ ↦ ?_
   rw [Category.assoc, tensorHom_comp_tensorHom]

@@ -86,11 +86,10 @@ instance exactPairingFree :
 
 /-- The evaluation of `free I` is the evaluation of the biproduct of copies of the unit,
 transported along `biproductIsoFree`. -/
-private theorem evaluation_free_eq [Fintype I] :
+private theorem evaluation_free_eq :
     ε_ (free (R := ringCatSheaf R) I) (free I) =
       ((biproductIsoFree I).inv ⊗ₘ (biproductIsoFree I).inv) ≫
         ε_ (⨁ fun _ : I ↦ 𝟙_ (SheafOfModules.{u} (ringCatSheaf R))) (⨁ fun _ ↦ 𝟙_ _) := by
-  obtain rfl : ‹Fintype I› = Fintype.ofFinite I := Subsingleton.elim _ _
   -- The evaluation of `exactPairingCongr` whiskers the evaluation of the biproduct pairing by
   -- the two isomorphisms, one on each side.
   rw [tensorHom_def', Category.assoc]
@@ -98,11 +97,10 @@ private theorem evaluation_free_eq [Fintype I] :
 
 /-- The coevaluation of `free I` is the coevaluation of the biproduct of copies of the unit,
 transported along `biproductIsoFree`. -/
-private theorem coevaluation_free_eq [Fintype I] :
+private theorem coevaluation_free_eq :
     η_ (free (R := ringCatSheaf R) I) (free I) =
       η_ (⨁ fun _ : I ↦ 𝟙_ (SheafOfModules.{u} (ringCatSheaf R))) (⨁ fun _ ↦ 𝟙_ _) ≫
         ((biproductIsoFree I).hom ⊗ₘ (biproductIsoFree I).hom) := by
-  obtain rfl : ‹Fintype I› = Fintype.ofFinite I := Subsingleton.elim _ _
   -- The coevaluation of `exactPairingCongr` whiskers the coevaluation of the biproduct pairing
   -- by the inverses of the two isomorphisms.
   rw [tensorHom_def', ← Category.assoc]
@@ -114,7 +112,6 @@ private theorem coevaluation_free_eq [Fintype I] :
 theorem ιFree_tensorHom_ιFree_evaluation (i : I) :
     (ιFree i ⊗ₘ ιFree i) ≫ ε_ (free (R := ringCatSheaf R) I) (free I) =
       (ρ_ (𝟙_ (SheafOfModules.{u} (ringCatSheaf R)))).hom := by
-  have := Fintype.ofFinite I
   rw [evaluation_free_eq, tensorHom_comp_tensorHom_assoc, ιFree_biproductIsoFree_inv,
     ExactPairing.biproduct_ι_tensorHom_biproduct_ι_evaluation, ExactPairing.unit_evaluation]
 
@@ -122,7 +119,6 @@ theorem ιFree_tensorHom_ιFree_evaluation (i : I) :
 @[reassoc (attr := simp)]
 theorem ιFree_tensorHom_ιFree_evaluation_of_ne {i j : I} (h : i ≠ j) :
     (ιFree i ⊗ₘ ιFree j) ≫ ε_ (free (R := ringCatSheaf R) I) (free I) = 0 := by
-  have := Fintype.ofFinite I
   rw [evaluation_free_eq, tensorHom_comp_tensorHom_assoc, ιFree_biproductIsoFree_inv,
     ιFree_biproductIsoFree_inv, ExactPairing.biproduct_ι_tensorHom_biproduct_ι_evaluation_of_ne h]
 
