@@ -5,20 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MonoidAlgebra.Grading
 public import Mathlib.Algebra.Polynomial.RingDivision
 public import Mathlib.Data.Int.ConditionallyCompleteOrder
-public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.Algebra.Module.GradedModule.Polynomial
 public import TauCeti.Algebra.Module.Torsion.Basic
 
 /-!
-# The top degree of the free part of a graded `k[X]`-module
+# Maximal non-torsion degree of a graded `k[X]`-module
 
 Let `M` be a `ℤ`-graded module over a polynomial ring `k[X]` in which `X` lowers degree by a fixed
 `d`. The degrees of the homogeneous elements of `M` that are not torsion form a set
-`G.nonTorsionDegrees`, and its supremum `G.maxNonTorsionDegree` is the degree of the top of the
-free part of `M` (for instance, it is `s` for `M` the tower `k[X]` shifted so that `1` sits in
-degree `s`, direct sum a torsion module). This is the algebraic invariant through which the
+`G.nonTorsionDegrees`, and its supremum `G.maxNonTorsionDegree` is its maximal non-torsion degree
+(for instance, it is `s` for `M` the tower `k[X]` shifted so that `1` sits in degree `s`, direct
+sum a torsion module). This is the algebraic invariant through which the
 concordance invariant `τ` of a knot is defined: `τ(K)` is minus the maximal Alexander grading of a
 homogeneous non-torsion element of the unblocked grid homology `GH⁻(K)`, a finitely generated
 graded module over `𝔽[U]` on which `U` lowers the Alexander grading by one.
@@ -68,26 +67,27 @@ namespace InternalGrading
 
 section Defs
 
-variable {k M : Type*} [CommRing k] [AddCommGroup M] [Module k M] [Module k[X] M]
+variable {k M : Type*} [CommSemiring k] [AddCommMonoid M] [Module k M] [Module k[X] M]
 
 /-- The degrees in which a graded `k[X]`-module has a homogeneous element that is not torsion. -/
 def nonTorsionDegrees (G : InternalGrading k M) : Set ℤ :=
   {p | ∃ x ∈ G.piece p, x ∉ Submodule.torsion k[X] M}
 
-/-- The top degree of the free part of a graded `k[X]`-module: the supremum of the degrees of its
+/-- The maximal non-torsion degree of a graded `k[X]`-module: the supremum of the degrees of its
 homogeneous non-torsion elements. It is only meaningful when that set is nonempty and bounded
 above, which holds for a finitely generated module that is not torsion
 (`InternalGrading.isGreatest_maxNonTorsionDegree`). -/
 noncomputable def maxNonTorsionDegree (G : InternalGrading k M) : ℤ :=
   sSup G.nonTorsionDegrees
 
-/-- The top degree of the free part is the supremum of the degrees of homogeneous non-torsion
+/-- The maximal non-torsion degree is the supremum of the degrees of homogeneous non-torsion
 elements. -/
 theorem maxNonTorsionDegree_def (G : InternalGrading k M) :
     G.maxNonTorsionDegree = sSup G.nonTorsionDegrees :=
   (rfl)
 
 /-- Membership in `G.nonTorsionDegrees`. -/
+@[simp]
 theorem mem_nonTorsionDegrees {G : InternalGrading k M} {p : ℤ} :
     p ∈ G.nonTorsionDegrees ↔ ∃ x ∈ G.piece p, x ∉ Submodule.torsion k[X] M :=
   Iff.rfl
@@ -113,9 +113,9 @@ end Defs
 
 section Degree
 
-variable {k M N : Type*} [CommRing k]
-  [AddCommGroup M] [Module k M] [Module k[X] M] [IsScalarTower k k[X] M]
-  [AddCommGroup N] [Module k N] [Module k[X] N] [IsScalarTower k k[X] N]
+variable {k M N : Type*} [CommSemiring k]
+  [AddCommMonoid M] [Module k M] [Module k[X] M] [IsScalarTower k k[X] M]
+  [AddCommMonoid N] [Module k N] [Module k[X] N] [IsScalarTower k k[X] N]
   {G : InternalGrading k M} {H : InternalGrading k N} {d : ℕ}
 
 omit [IsScalarTower k k[X] M] in
@@ -182,12 +182,13 @@ homogeneous non-torsion elements are bounded above. -/
 theorem bddAbove_nonTorsionDegrees [Module.Finite k[X] M]
     (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d)) :
     BddAbove G.nonTorsionDegrees := by
-  refine BddAbove.mono (fun p ⟨x, hx, hxt⟩ ↦ show G.piece p ≠ ⊥ from fun hp ↦ hxt ?_)
-    (bddAbove_setOf_piece_ne_bot hX)
+  refine BddAbove.mono ?_ (bddAbove_setOf_piece_ne_bot hX)
+  rintro p ⟨x, hx, hxt⟩ hp
+  apply hxt
   rw [hp, Submodule.mem_bot] at hx
   exact hx ▸ Submodule.zero_mem _
 
-/-- The top degree of the free part of a finitely generated graded `k[X]`-module that is not
+/-- The maximal non-torsion degree of a finitely generated graded `k[X]`-module that is not
 torsion is attained: it is the largest degree of a homogeneous non-torsion element. -/
 theorem isGreatest_maxNonTorsionDegree [Module.Finite k[X] M]
     (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d))
@@ -196,8 +197,7 @@ theorem isGreatest_maxNonTorsionDegree [Module.Finite k[X] M]
   ⟨Int.csSup_mem (G.nonTorsionDegrees_nonempty_iff.mpr hM) (bddAbove_nonTorsionDegrees hX),
     fun _ hp ↦ le_csSup (bddAbove_nonTorsionDegrees hX) hp⟩
 
-/-- Every degree of a homogeneous non-torsion element is at most the top degree of the free
-part. -/
+/-- Every degree of a homogeneous non-torsion element is at most the maximal non-torsion degree. -/
 theorem le_maxNonTorsionDegree [Module.Finite k[X] M]
     (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d)) {p : ℤ}
     (hp : p ∈ G.nonTorsionDegrees) : p ≤ G.maxNonTorsionDegree :=
@@ -214,7 +214,7 @@ theorem add_mem_nonTorsionDegrees {f : M →ₗ[k[X]] N} {δ : ℤ}
   exact ⟨f x, hf.map_mem hx, fun h ↦ hxt (hft h)⟩
 
 /-- A homogeneous map of degree `δ` between finitely generated graded `k[X]`-modules that reflects
-torsion raises the top degree of the free part by at least `δ`. By
+torsion raises the maximal non-torsion degree by at least `δ`. By
 `Submodule.comap_torsion_le_of_comp_eq_smul`, torsion is reflected as soon as the map has a left
 inverse up to multiplication by a power of `X`. -/
 theorem maxNonTorsionDegree_add_le [Module.Finite k[X] M] [Module.Finite k[X] N]
@@ -227,8 +227,8 @@ theorem maxNonTorsionDegree_add_le [Module.Finite k[X] M] [Module.Finite k[X] N]
   le_maxNonTorsionDegree hXN
     (add_mem_nonTorsionDegrees hf hft (isGreatest_maxNonTorsionDegree hXM hM).1)
 
-/-- A graded isomorphism of finitely generated graded `k[X]`-modules preserves the top degree of
-the free part. -/
+/-- A graded isomorphism of finitely generated graded `k[X]`-modules preserves the maximal
+non-torsion degree. -/
 theorem maxNonTorsionDegree_eq_of_linearEquiv [Module.Finite k[X] M]
     (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d))
     (hM : ¬Module.IsTorsion k[X] M) (e : M ≃ₗ[k[X]] N)
@@ -238,8 +238,9 @@ theorem maxNonTorsionDegree_eq_of_linearEquiv [Module.Finite k[X] M]
   have : Module.Finite k[X] N := Module.Finite.equiv e
   have hXN : ∀ ⦃p : ℤ⦄ ⦃y : N⦄, y ∈ H.piece p → (X : k[X]) • y ∈ H.piece (p - d) := by
     intro p y hy
-    have := he.map_mem (hX (by simpa using he'.map_mem hy))
-    rwa [add_zero, LinearEquiv.coe_coe, map_smul, LinearEquiv.apply_symm_apply] at this
+    have := he.map_mem (hX (by simpa only [add_zero] using he'.map_mem hy))
+    rw [← e.apply_symm_apply y]
+    simpa only [add_zero, LinearEquiv.coe_coe, map_smul] using this
   have hN : ¬Module.IsTorsion k[X] N := fun hN ↦ hM fun ⦃x⦄ ↦ by
     obtain ⟨a, ha⟩ := @hN (e x)
     exact ⟨a, e.injective (by
@@ -316,50 +317,7 @@ end InternalGrading
 
 namespace Polynomial
 
-variable (k : Type*) [CommRing k]
-
-/-- The grading of the polynomial ring `k[X]` placing the monomial `X ^ n` in degree `-n`, so that
-multiplication by `X` lowers degree by one. It is the grading of the `U`-tower `𝔽[U]` in which the
-top of the tower sits in degree `0`. -/
-noncomputable def negDegreeGrading : InternalGrading k k[X] :=
-  InternalGrading.map
-    ⟨AddMonoidAlgebra.gradeBy k ⇑(-Nat.castAddMonoidHom ℤ), AddMonoidAlgebra.gradeBy.isInternal _⟩
-    (toFinsuppIsoLinear k).symm
-
-variable {k}
-
-/-- A polynomial has degree `p` in `negDegreeGrading` exactly when each of its monomials `X ^ n`
-has `-n = p`. -/
-theorem mem_negDegreeGrading_piece {p : ℤ} {x : k[X]} :
-    x ∈ (negDegreeGrading k).piece p ↔ ∀ n, x.coeff n ≠ 0 → -(n : ℤ) = p := by
-  rw [negDegreeGrading, InternalGrading.mem_map_piece_iff]
-  simp [AddMonoidAlgebra.mem_gradeBy_iff, Set.subset_def, toFinsupp_apply]
-
-/-- Multiplication by `X` lowers the degree of `negDegreeGrading` by one. -/
-theorem X_smul_mem_negDegreeGrading_piece {p : ℤ} {x : k[X]}
-    (hx : x ∈ (negDegreeGrading k).piece p) :
-    (X : k[X]) • x ∈ (negDegreeGrading k).piece (p - 1) := by
-  rw [mem_negDegreeGrading_piece] at hx ⊢
-  intro n hn
-  rw [smul_eq_mul] at hn
-  cases n with
-  | zero => simp at hn
-  | succ n =>
-    have := hx n (by rwa [coeff_X_mul] at hn)
-    push_cast
-    omega
-
-/-- The monomial `X ^ n` has degree `-n` in `negDegreeGrading`. -/
-theorem X_pow_mem_negDegreeGrading_piece (n : ℕ) :
-    (X ^ n : k[X]) ∈ (negDegreeGrading k).piece (-n) := by
-  rw [mem_negDegreeGrading_piece]
-  intro m hm
-  rw [coeff_X_pow] at hm
-  split_ifs at hm with h
-  · rw [h]
-  · exact absurd rfl hm
-
-variable [IsDomain k]
+variable {k : Type*} [CommSemiring k] [IsDomain k]
 
 /-- The degrees of the homogeneous non-torsion elements of `k[X]`, graded by `negDegreeGrading`,
 are the nonpositive integers: every nonzero homogeneous element is a nonzero multiple of a
@@ -380,8 +338,7 @@ theorem nonTorsionDegrees_negDegreeGrading :
     exact Submodule.zero_mem _
   · intro hp
     refine ⟨X ^ (-p).toNat, ?_, fun h ↦ ?_⟩
-    · simpa [Int.toNat_of_nonneg (neg_nonneg.mpr hp)] using
-        X_pow_mem_negDegreeGrading_piece (k := k) (-p).toNat
+    · simp [Int.toNat_of_nonneg (neg_nonneg.mpr hp)]
     · obtain ⟨⟨a, ha⟩, h⟩ := (Submodule.mem_torsion_iff _).mp h
       rw [Submonoid.smul_def, smul_eq_mul] at h
       exact pow_ne_zero _ X_ne_zero ((mul_eq_zero.mp h).resolve_left (nonZeroDivisors.ne_zero ha))
