@@ -229,10 +229,12 @@ theorem isPathConnected_leftOpen_inter_rightOpen :
     IsPathConnected (leftOpen ∩ rightOpen) :=
   isSimplyConnected_leftOpen_inter_rightOpen.isPathConnected
 
+@[simp]
 theorem basePt_mem_leftOpen : basePt ∈ leftOpen := by
   simp only [mem_leftOpen, coe_basePt]
   norm_num
 
+@[simp]
 theorem basePt_mem_rightOpen : basePt ∈ rightOpen := by
   simp only [mem_rightOpen, coe_basePt]
   norm_num
