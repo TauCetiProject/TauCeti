@@ -79,10 +79,12 @@ theorem omega_sq_add_omega_add_one : omega ^ 2 + omega + 1 = 0 := by
       rw [← Nat.card_eq_fintype_card]
       exact GaloisField.card 2 2 (by decide)))
 
-/-- The hexacode over `GaloisField 2 2`, with the fixed root `omega`.
-The generic `code` API applies directly to this specialization. -/
-noncomputable abbrev canonicalCode : Submodule (GaloisField 2 2) (Fin 6 → GaloisField 2 2) :=
+/-- The hexacode over `GaloisField 2 2`, with the fixed root `omega`. -/
+noncomputable def canonicalCode : Submodule (GaloisField 2 2) (Fin 6 → GaloisField 2 2) :=
   code omega
+
+/-- The named hexacode is the generic hexacode at the chosen root. -/
+theorem canonicalCode_def : canonicalCode = code omega := (rfl)
 
 /-- Encoding leaves the first three coordinates equal to the message. -/
 theorem vecMul_generatorMatrix (ω : F) (a : Fin 3 → F) :
@@ -207,7 +209,7 @@ theorem galoisDual_code [Fintype F] (hF : Fintype.card F = 4) :
     (frobeniusEquiv F 2).galoisDual (code ω) = code ω := by
   rw [code_def, Matrix.generatedBy_def,
     RingEquiv.galoisDual_range_vecMulLinear_of_involutive _
-      (involutive_frobeniusEquiv_of_card_eq_four hF)]
+      (frobeniusEquiv_involutive_of_card_eq_four hF)]
   simpa only [Matrix.checkedBy_def, code_def, Matrix.generatedBy_def, coe_frobeniusEquiv]
     using checkedBy_frobenius_generatorMatrix hω
 
@@ -287,5 +289,60 @@ theorem code_ne_code_sq [CharP F 2] {ω : F} (hω : ω ^ 2 + ω + 1 = 0) :
     simp [mem_code]
   have h10 := (mem_code_inf_code_sq hω _).mp hx 1
   simp at h10
+
+/-- Membership in the named hexacode is given by its three parity equations. -/
+@[simp]
+theorem mem_canonicalCode (x : Fin 6 → GaloisField 2 2) :
+    x ∈ canonicalCode ↔ x 3 = x 0 + omega * x 1 + omega * x 2 ∧
+      x 4 = omega * x 0 + x 1 + omega * x 2 ∧
+      x 5 = omega * x 0 + omega * x 1 + x 2 := by
+  rw [canonicalCode_def, mem_code]
+
+/-- The named hexacode has dimension three over its alphabet. -/
+@[simp]
+theorem finrank_canonicalCode : Module.finrank (GaloisField 2 2) canonicalCode = 3 := by
+  rw [canonicalCode_def, finrank_code]
+
+/-- The named hexacode contains 64 words. -/
+@[simp↓]
+theorem natCard_canonicalCode : Nat.card canonicalCode = 64 := by
+  rw [canonicalCode_def, natCard_code, GaloisField.card 2 2 (by decide)]
+  decide
+
+/-- The named hexacode is Hermitian self-dual for Frobenius. -/
+@[simp]
+theorem galoisDual_canonicalCode :
+    (frobeniusEquiv (GaloisField 2 2) 2).galoisDual canonicalCode = canonicalCode := by
+  let := Fintype.ofFinite (GaloisField 2 2)
+  rw [canonicalCode_def]
+  exact galoisDual_code omega_sq_add_omega_add_one
+    (by rw [← Nat.card_eq_fintype_card, GaloisField.card 2 2 (by decide)]; decide)
+
+/-- The specified coordinate ordering carries the conjugate back to the named hexacode. -/
+theorem map_code_omega_sq_conjugatePerm :
+    (code (omega ^ 2)).map
+      (LinearEquiv.funCongrLeft (GaloisField 2 2) (GaloisField 2 2) conjugatePerm).toLinearMap =
+        canonicalCode := by
+  rw [canonicalCode_def]
+  exact map_code_sq_conjugatePerm omega_sq_add_omega_add_one
+
+/-- The conjugate of the named hexacode is permutation-equivalent to it. -/
+theorem isPermutationEquivalent_code_omega_sq :
+    IsPermutationEquivalent (code (omega ^ 2)) canonicalCode := by
+  rw [canonicalCode_def]
+  exact isPermutationEquivalent_code_sq omega_sq_add_omega_add_one
+
+/-- The named hexacode and its conjugate meet in exactly four words. -/
+@[simp↓]
+theorem natCard_canonicalCode_inf_code_omega_sq :
+    Nat.card ↥(canonicalCode ⊓ code (omega ^ 2)) = 4 := by
+  rw [canonicalCode_def, natCard_code_inf_code_sq omega_sq_add_omega_add_one,
+    GaloisField.card 2 2 (by decide)]
+  decide
+
+/-- The conjugate differs from the named hexacode in the fixed coordinate order. -/
+theorem canonicalCode_ne_code_omega_sq : canonicalCode ≠ code (omega ^ 2) := by
+  rw [canonicalCode_def]
+  exact code_ne_code_sq omega_sq_add_omega_add_one
 
 end TauCeti.Hexacode

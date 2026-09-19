@@ -57,7 +57,7 @@ theorem univ_eq_zero_one_root_sq [DecidableEq F] (hF : Fintype.card F = 4) {ω :
     Ne.symm hs0, Ne.symm hs1]
 
 /-- Frobenius is an involution on a field of order four. -/
-theorem involutive_frobeniusEquiv_of_card_eq_four [CharP F 2]
+theorem frobeniusEquiv_involutive_of_card_eq_four [CharP F 2]
     (hF : Fintype.card F = 4) : Function.Involutive (frobeniusEquiv F 2) := by
   intro x
   simpa only [frobeniusEquiv_def, ← pow_mul, hF] using FiniteField.pow_card x
