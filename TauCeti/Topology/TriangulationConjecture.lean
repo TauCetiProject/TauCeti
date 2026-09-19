@@ -25,9 +25,10 @@ refute the conjecture for a trivial reason.
 The conclusion uses the general predicate `TauCeti.IsTriangulable`, which imposes no link
 condition on the triangulating complex. This is the form relevant to Manolescu's theorem:
 for every `n ≥ 5` there is a closed topological `n`-manifold admitting no triangulation at all,
-that is `∀ n, 5 ≤ n → ¬ TauCeti.TriangulationConjecture n`. The existence of non-triangulable
-manifolds in the weaker, combinatorial sense (`TauCeti.IsCombinatoriallyTriangulable`) is the
-older Kirby–Siebenmann result and is a different statement.
+that is `∀ n, 5 ≤ n → ¬ TauCeti.TriangulationConjecture n`. The older Kirby–Siebenmann result
+instead gives the weaker conclusion that some manifolds admit no combinatorial triangulation;
+combinatorial triangulability (`TauCeti.IsCombinatoriallyTriangulable`) is itself the stronger
+notion because it imposes an additional link condition.
 
 The conjecture is stated, not proved. It holds in dimension zero, where every such space is
 discrete (`TauCeti.triangulationConjecture_zero`); it is also known in dimensions at most three
@@ -92,6 +93,7 @@ theorem isTriangulable_of_chartedSpace_zero (M : Type u) [TopologicalSpace M]
 
 /-- The triangulation conjecture holds in dimension zero: a space locally homeomorphic to the
 one-point space `ℝ⁰` is discrete, hence triangulated by its points. -/
+@[simp]
 theorem triangulationConjecture_zero : TriangulationConjecture.{u} 0 := by
   intro M _ _ _ _
   exact isTriangulable_of_chartedSpace_zero M
