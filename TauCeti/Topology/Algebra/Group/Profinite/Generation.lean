@@ -59,7 +59,7 @@ profinite group.
   quotient, its representatives together with the kernel generate upstairs.
 * `Subgroup.exists_convergesToOne_lift_union_topologicallyGenerates`: converging generators of a
   closed normal subgroup and its quotient combine to generate the ambient profinite group.
-* `TauCeti.exists_convergesToOne_topologicalClosure_closure_eq_top`: every profinite group has a
+* `TauCeti.exists_convergesToOne_topologicallyGenerates`: every profinite group has a
   topological generating set converging to one.
 
 ## References
@@ -834,7 +834,7 @@ variable [CompactSpace G] [TotallyDisconnectedSpace G]
 Proposition 2.6.2). Such a set has only finitely many elements outside each open normal subgroup
 and generates a dense subgroup, so the least cardinality of a topological generating set converging
 to one is an infimum over a nonempty family. -/
-theorem exists_convergesToOne_topologicalClosure_closure_eq_top :
+theorem exists_convergesToOne_topologicallyGenerates :
     ∃ s : Set G, ConvergesToOne s ∧ (Subgroup.closure s).topologicalClosure = ⊤ := by
   obtain ⟨m, hm⟩ := exists_maximal_of_chains_bounded (r := ConvergingGenData.Le (G := G))
     (fun _ hc ↦ ConvergingGenData.exists_upperBound hc) ConvergingGenData.le_trans
