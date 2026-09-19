@@ -125,7 +125,6 @@ variable {s} in
 /-- Transporting along the insertion of the centre `c = (s.succ, (G.X s).succ)` identifies the
 rectangles counted by the unblocked differential of `G` with those counted by the unblocked
 differential of the stabilization between states containing `c`. -/
-@[simp]
 theorem insertPoint_mem_unblockedRectangles_stabilizeX_iff {x y : GridState n}
     (r : GridRectangleBetween x y) :
     r.insertPoint s.succ (G.X s).succ ∈
