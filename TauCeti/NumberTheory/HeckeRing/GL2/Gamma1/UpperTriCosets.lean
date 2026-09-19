@@ -61,8 +61,9 @@ every power of `T = !![1, 1; 0, 1]` lies in `Γ₁(N)`.
 
 ## Main results
 
-* `HeckeRing.GL2.natDiagGL_one_mem_Delta0`, `HeckeRing.GL2.coe_natDiagGL_one`: `diag(1, p)` lies
-  in `Δ₀(N)` at every level, and its matrix.
+* `HeckeRing.GL2.natDiagGL_one_mem_Delta0`, `HeckeRing.GL2.coe_natDiagGL_one`, and
+  `HeckeRing.GL2.coe_map_natDiagGL_one`: `diag(1, p)` lies in `Δ₀(N)` at every level, and its
+  matrix over `ℚ` and `ℝ`.
 * `HeckeRing.GL2.natDiagGL_mul_mapGL_T_zpow`: `diag(1, p) · Tᵇ = !![1, b; 0, p]`, the
   reverse inclusion in one line.
 * `HeckeRing.GL2.exists_mem_Gamma1_natDiagGL_mul_of_dvd`: the factorisation
@@ -119,6 +120,15 @@ lemma coe_natDiagGL_one (hp : 0 < p) :
     (↑(natDiagGL 2 ![1, p]) : Matrix (Fin 2) (Fin 2) ℚ) = !![1, 0; 0, (p : ℚ)] := by
   rw [natDiagGL_coe 2 ![1, p] fun i ↦ by fin_cases i <;> simp [hp]]
   ext i j
+  fin_cases i <;> fin_cases j <;> simp
+
+/-- The real matrix obtained by mapping `diag(1, p)` from `GL₂(ℚ)`, for `0 < p`. -/
+lemma coe_map_natDiagGL_one [NeZero p] :
+    (((Matrix.GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ ℝ))
+        (natDiagGL 2 ![1, p]) : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
+      !![1, 0; 0, (p : ℝ)] := by
+  ext i j
+  rw [Matrix.GeneralLinearGroup.map_apply, coe_natDiagGL_one (Nat.pos_of_neZero p)]
   fin_cases i <;> fin_cases j <;> simp
 
 /-- **The Hecke double coset of `diag(1, p)` at level `Γ₁(N)`.** For `p ∣ N` this is the coset
