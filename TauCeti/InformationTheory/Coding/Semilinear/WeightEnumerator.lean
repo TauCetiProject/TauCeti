@@ -34,7 +34,7 @@ theorem IsSemilinearEquivalent.weightDistribution_eq (h : IsSemilinearEquivalent
   obtain ⟨σ, u, e, rfl⟩ := isSemilinearEquivalent_iff.mp h
   rw [Set.weightDistribution_def, Set.weightDistribution_def]
   exact Nat.card_congr
-    (Equiv.subtypeEquiv (semilinearMonomialEquiv σ u e).toEquiv fun x ↦ by simp)
+    (Equiv.subtypeEquiv (semilinearMonomialEquiv u e σ).toEquiv fun x ↦ by simp)
 
 /-- Semilinearly equivalent codes have the same homogeneous weight enumerator. -/
 theorem IsSemilinearEquivalent.weightEnumerator_eq (h : IsSemilinearEquivalent C D) :
