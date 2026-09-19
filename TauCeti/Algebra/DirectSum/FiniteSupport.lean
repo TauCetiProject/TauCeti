@@ -79,6 +79,15 @@ theorem DirectSum.restrictLinearEquiv_lof (s : Finset ι) (hs : ∀ i ∉ s, Sub
     if h : i ∈ s then DirectSum.lof R s (fun j : s ↦ M j) ⟨i, h⟩ else 0) R i x).trans ?_
   simp [hi]
 
+/-- The restriction equivalence sends a summand outside `s` to zero. -/
+@[simp]
+theorem DirectSum.restrictLinearEquiv_lof_of_notMem (s : Finset ι)
+    (hs : ∀ i ∉ s, Subsingleton (M i)) {i : ι} (hi : i ∉ s) (x : M i) :
+    DirectSum.restrictLinearEquiv (R := R) M s hs (DirectSum.lof R ι M i x) = 0 := by
+  refine (DirectSum.toModule_lof (φ := fun i ↦
+    if h : i ∈ s then DirectSum.lof R s (fun j : s ↦ M j) ⟨i, h⟩ else 0) R i x).trans ?_
+  simp [hi]
+
 /-- The restriction equivalence is inverse to the evident inclusion of the summands indexed by
 `s`. -/
 @[simp]
