@@ -75,16 +75,33 @@ noncomputable abbrev simplyBlockedHomology (hG : G.IsKnot) (i : Fin n) :
 /-- The cycles of the simply blocked differential, as an explicit submodule of the chain module. -/
 noncomputable abbrev simplyBlockedCycles (hG : G.IsKnot) (i : Fin n) :
     Submodule (MvPolynomial {c : Fin n // c ≠ i} R)
-      ((G.simplyBlockedComplex R i).sc' () () ()).X₂ :=
-  (fun _ : G.IsKnot => LinearMap.ker ((G.simplyBlockedComplex R i).sc' () () ()).g.hom) hG
+      ((G.simplyBlockedComplex R i).X ()) :=
+  (fun _ : G.IsKnot => LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom) hG
 
 /-- The boundary map into the cycles of the simply blocked complex.  Its image is contained in the
 cycles because the differential squares to zero. -/
 noncomputable abbrev simplyBlockedBoundaryMap (hG : G.IsKnot) (i : Fin n) :
-      ((G.simplyBlockedComplex R i).sc' () () ()).X₁
+      (G.simplyBlockedComplex R i).X ()
       →ₗ[MvPolynomial {c : Fin n // c ≠ i} R]
       hG.simplyBlockedCycles R i :=
   ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatToCycles
+
+/-- Membership in the cycle module means that the explicit differential vanishes. -/
+theorem mem_simplyBlockedCycles (hG : G.IsKnot) (i : Fin n)
+    (c : (G.simplyBlockedComplex R i).X ()) :
+    c ∈ hG.simplyBlockedCycles R i ↔
+      G.simplyBlockedDifferential R i (G.simplyBlockedChainEquiv R i c) = 0 := by
+  rw [← G.simplyBlockedChainEquiv_d, ← map_zero (G.simplyBlockedChainEquiv R i),
+    (G.simplyBlockedChainEquiv R i).injective.eq_iff]
+  rfl
+
+/-- The boundary map is the specialized differential in explicit chain coordinates. -/
+@[simp]
+theorem simplyBlockedChainEquiv_boundaryMap (hG : G.IsKnot) (i : Fin n)
+    (c : (G.simplyBlockedComplex R i).X ()) :
+    G.simplyBlockedChainEquiv R i (hG.simplyBlockedBoundaryMap R i c).val =
+      G.simplyBlockedDifferential R i (G.simplyBlockedChainEquiv R i c) :=
+  G.simplyBlockedChainEquiv_d R i c
 
 /-- The boundaries of the simply blocked complex, regarded as a submodule of its cycles. -/
 noncomputable abbrev simplyBlockedBoundaries (hG : G.IsKnot) (i : Fin n) :
