@@ -205,6 +205,30 @@ theorem parityCheckMatrix_reindex {κ : Type*} (e : κ ≃ ι) :
 
 variable [Fintype ι]
 
+open Classical in
+/-- A matrix that annihilates the code and has identity complementary columns is the
+systematic parity-check matrix. -/
+theorem parityCheckMatrix_eq_of_le_checkedBy_of_submatrix_eq_one
+    {H : Matrix ↥(sᶜ) ι F} (hH : C ≤ H.checkedBy)
+    (hI : H.submatrix id (Subtype.val : ↥(sᶜ) → ι) = 1) :
+    h.parityCheckMatrix = H := by
+  classical
+  have hcomp (r j : ↥(sᶜ)) : H r j = (1 : Matrix ↥(sᶜ) ↥(sᶜ) F) r j :=
+    congrFun (congrFun hI r) j
+  ext r i
+  by_cases hi : i ∈ s
+  · let j : s := ⟨i, hi⟩
+    have hzero := congrFun (mem_checkedBy_iff.mp
+      (hH (h.equiv.symm (Pi.single j 1)).property)) r
+    have hsplit := Fintype.sum_subtype_add_sum_subtype (· ∈ s)
+      (fun k ↦ H r k * (h.equiv.symm (Pi.single j 1) : ι → F) k)
+    have hentry : H r j + h.generatorMatrix j r = 0 := by
+      simpa [Matrix.mulVec, dotProduct, ← hsplit, hcomp, Matrix.one_apply,
+        Pi.single_apply] using hzero
+    rw [h.parityCheckMatrix_apply_of_mem r j]
+    exact (eq_neg_of_add_eq_zero_left hentry).symm
+  · exact (h.parityCheckMatrix_apply_of_notMem r ⟨i, hi⟩).trans (hcomp r ⟨i, hi⟩).symm
+
 /-- The systematic check matrix cuts out exactly the original code. -/
 @[simp↓]
 theorem checkedBy_parityCheckMatrix : h.parityCheckMatrix.checkedBy = C := by
