@@ -243,6 +243,7 @@ abbrev twoByTwo : OddComponentGridDiagram 2 :=
     exact odd_one⟩
 
 /-- The transposition generator in the standard two-by-two diagram has bidegree `(0, 0)`. -/
+@[simp]
 theorem bidegree_twoByTwo_twoByTwoSwap :
     twoByTwo.bidegree GridState.twoByTwoSwap = (0, 0) := by
   apply Prod.ext
