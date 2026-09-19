@@ -22,7 +22,7 @@ are formed with Mathlib's semilinear `Submodule.map`. When using the semilinear
 map projections, make `RingHomInvPair.of_ringEquiv` and
 `RingHomInvPair.of_ringEquiv_symm` local instances, as in this file.
 
-The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*, §1.6.
+The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*, §1.7.
 -/
 
 public section
@@ -76,6 +76,7 @@ theorem semilinearMonomialEquiv_symm (σ : R ≃+* R) (u : ι → Rˣ) (e : ι �
   simp
 
 /-- Composition conjugates the first scaling by the second alphabet automorphism. -/
+@[simp]
 theorem semilinearMonomialEquiv_trans (σ τ : R ≃+* R) (u : ι → Rˣ) (v : κ → Rˣ)
     (e : ι ≃ κ) (f : κ ≃ μ) (x : ι → R) :
     semilinearMonomialEquiv τ v f (semilinearMonomialEquiv σ u e x) =
