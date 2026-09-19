@@ -638,7 +638,7 @@ private theorem octadMessage_spec : ∀ i : Fin 24,
 
 /-- Every coordinate of the extended binary Golay code is met by an *octad*, a codeword of
 weight eight. -/
-theorem exists_mem_code_hammingNorm_eq_eight (i : Fin 24) :
+theorem exists_mem_code_hammingNorm_eq_eight_and_apply_ne_zero (i : Fin 24) :
     ∃ x ∈ code, hammingNorm x = 8 ∧ x i ≠ 0 :=
   ⟨octadMessage i ᵥ* generator, code_def ▸ Matrix.mem_generatedBy_iff.mpr ⟨_, rfl⟩,
     octadMessage_spec i⟩

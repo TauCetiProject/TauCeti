@@ -54,7 +54,7 @@ theorem natCard_punctureAt_code : Nat.card (punctureAt code i) = 4096 := by
 @[simp]
 theorem hammingMinDist_punctureAt_code :
     Set.hammingMinDist (punctureAt code i : Set (({i}ᶜ : Set (Fin 24)) → ZMod 2)) = 7 := by
-  obtain ⟨x, hx, hxw, hxi⟩ := exists_mem_code_hammingNorm_eq_eight i
+  obtain ⟨x, hx, hxw, hxi⟩ := exists_mem_code_hammingNorm_eq_eight_and_apply_ne_zero i
   -- Split the octad into its retained part `y` and the single deleted coordinate `z`.
   set y := ({i}ᶜ : Set (Fin 24)).domRestrict x with hy
   set z := (({i}ᶜ : Set (Fin 24))ᶜ).domRestrict x with hz
@@ -82,6 +82,7 @@ theorem hammingMinDist_punctureAt_code :
 
 /-- Restoring the parity coordinate to a punctured binary Golay code gives back the extended
 binary Golay code, with the deleted coordinate reinstated at `none`. -/
+@[simp]
 theorem parityExtension_punctureAt_code :
     parityExtension (punctureAt code i) = reindex code (Equiv.optionSubtypeNe i) :=
   parityExtension_punctureAt code i code_le_singleParityCheckCode
