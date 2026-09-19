@@ -17,3 +17,6 @@ __pycache__/
 # Mathlib bump touches only the root pins. See that script and web/examples/lakefile.lean.
 web/examples/lake-manifest.json
 web/examples/lean-toolchain
+
+# Pinned read-only merge policy used by status tooling and CI
+.tauceti-review/

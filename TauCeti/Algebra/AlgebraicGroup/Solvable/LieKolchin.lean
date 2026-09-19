@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.Commutator
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Trigonalizable
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Basic
 public import TauCeti.RepresentationTheory.Unipotent.DerivedEigenvector
 import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Naturality
 import TauCeti.Algebra.Coalgebra.Comodule.Transport
+import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
 
 /-!
 # Lie--Kolchin reduction to the derived subgroup
@@ -31,7 +33,14 @@ separation promotes the resulting point-stable eigenline to a one-dimensional su
 The remaining geometric step in the general Lie--Kolchin theorem is to prove that the derived
 subgroup of a connected solvable affine group is unipotent.
 
+For a connected group, a nonzero joint weight of the abstract commutator subgroup also
+supplies an ambient weight vector: the joint weight is trivial, so the action on its weight
+space factors through a commutative quotient.
+
 ## Main declarations
+
+* `TauCeti.Comodule.hasNonzeroWeightVector_of_nonzeroJointWeight_commutator`: a commutator
+  joint weight supplies an ambient weight vector for a connected group.
 
 * `TauCeti.Comodule.hasNonzeroWeightVector_of_forall_isUnipotentPoint_derived`: unipotence of the
   derived subgroup supplies a weight vector in every nonzero finite-dimensional comodule.
@@ -50,11 +59,12 @@ derived subgroup.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Theorem 6.3.1.
 * A. Borel, *Linear Algebraic Groups*, Section 10.5.
+* J. E. Humphreys, *Linear Algebraic Groups*, Section 17.6.
 -/
 
 public section
 
-open scoped TensorProduct
+open scoped TensorProduct commutatorElement
 
 namespace TauCeti
 
@@ -70,6 +80,50 @@ variable {k : Type u} {H : Type v} {M : Type w}
 variable [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k H]
 variable [Algebra.FiniteType k H] [IsReduced H]
 variable [AddCommGroup M] [Module k M] [Comodule k H M]
+
+/-- A nonzero joint weight for the commutator subgroup supplies a weight vector for the whole
+reduced connected affine group. This is the induction step from a commutator eigenvector to an
+ambient eigenline in Lie--Kolchin. -/
+theorem hasNonzeroWeightVector_of_nonzeroJointWeight_commutator
+    [FiniteDimensional k M] [ConnectedSpace (PrimeSpectrum H)]
+    (χ : NonzeroJointWeight (commutator (WithConv (H →ₐ[k] k)))
+      (basePointsRepresentation (R := k) (H := H) M)) :
+    HasNonzeroWeightVector k H M := by
+  let ρ : _root_.Representation k (WithConv (H →ₐ[k] k)) M :=
+    basePointsRepresentation (R := k) (H := H) M
+  let W := normalWeightSubcomodule _ χ
+  let σ := ρ.subrepresentation W.toSubmodule
+    (fun x _ hv ↦ basePointsRepresentation_mem W x hv)
+  have hW : W.toSubmodule ≠ ⊥ := by
+    rw [ne_eq, Subcomodule.toSubmodule_eq_bot]
+    exact normalWeightSubcomodule_ne_bot _ χ
+  let _ : Nontrivial W.toSubmodule := Submodule.nontrivial_iff_ne_bot.mpr hW
+  have hfixed (n : commutator (WithConv (H →ₐ[k] k))) : σ n = 1 := by
+    ext v
+    have hv := (mem_normalWeightSubcomodule _ χ v).mp v.2 n
+    simp only [nonzeroJointWeight_commutator_eq_one χ, MonoidHom.one_apply,
+      Units.val_one, one_smul] at hv
+    exact hv
+  -- The restricted operators commute because their group homomorphism kills every commutator.
+  have hcomm : Pairwise fun g h ↦ Commute (σ g) (σ h) := by
+    intro g h _
+    have heq : σ.asGroupHom ⁅g, h⁆ = 1 := by
+      apply Units.ext
+      exact hfixed ⟨⁅g, h⁆, Subgroup.commutator_mem_commutator
+        (Subgroup.mem_top g) (Subgroup.mem_top h)⟩
+    rw [map_commutatorElement, commutatorElement_eq_one_iff_mul_comm] at heq
+    exact congrArg Units.val heq
+  obtain ⟨ψ, v, hv, heigen⟩ :=
+    exists_unitHom_jointEigenvector_of_pairwise_commute_of_isAlgClosed σ hcomm
+  have hv0 : (v : M) ≠ 0 := Submodule.coe_eq_zero.not.mpr hv
+  have heigen' (g : WithConv (H →ₐ[k] k)) : ρ g v = (ψ g : k) • (v : M) :=
+    congrArg Subtype.val (heigen g)
+  apply hasNonzeroWeightVector_of_basePointsRepresentation_stable (k ∙ (v : M)) v hv0 rfl
+  intro g m hm
+  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hm
+  rw [map_smul, heigen' g]
+  exact Submodule.smul_mem _ _
+    (Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self (v : M)))
 
 private theorem hasNonzeroWeightVector_of_forall_isUnipotentPoint_of_le_derivedDefiningIdeal_aux
     {V : Type u} [AddCommGroup V] [Module k V] [Comodule k H V]

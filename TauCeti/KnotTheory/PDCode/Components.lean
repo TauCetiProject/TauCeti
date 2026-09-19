@@ -38,6 +38,10 @@ def crossingTurn (D : PDCode n) : Equiv.Perm (Fin (4 * n)) :=
 def componentPerm (D : PDCode n) : Equiv.Perm (Fin (4 * n)) :=
   D.crossingTurn * D.edgePair.val
 
+/-- The defining equation of component traversal. -/
+theorem componentPerm_def (D : PDCode n) : D.componentPerm = D.crossingTurn * D.edgePair.val :=
+  (rfl)
+
 /-- Traversal pairs the arc first, then takes the opposite crossing slot. -/
 @[simp] theorem componentPerm_apply (D : PDCode n) (h : Fin (4 * n)) :
     D.componentPerm h = D.crossingTurn (D.edgePair.val h) := by
@@ -91,6 +95,10 @@ The outgoing restriction records the directed traversal on the positively orient
 half-edges. -/
 noncomputable def crossingComponentCount (D : PDCode n) : ℕ :=
   orbitCount D.componentPerm / 2
+
+/-- The number of crossing-bearing components is half the number of directed traversal orbits. -/
+theorem crossingComponentCount_def (D : PDCode n) :
+    D.crossingComponentCount = orbitCount D.componentPerm / 2 := (rfl)
 
 /-- A code with no crossing visits has no crossing-bearing components. -/
 @[simp] theorem crossingComponentCount_eq_zero (D : PDCode 0) :

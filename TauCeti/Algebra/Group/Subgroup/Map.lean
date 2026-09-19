@@ -40,14 +40,15 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 
 * `TauCeti.MonoidHom.subgroupComap_injective_of_injective`: `f.subgroupComap K` is injective when
   `f` is.
-* `TauCeti.Subgroup.map_center_le`: a surjective homomorphism carries central elements to central
-  elements.
 * `QuotientGroup.congrOfSurjectiveOfKerLe`: coset spaces transport along a surjection whose
   kernel lies in the subgroup.
 * `MonoidHom.center_le_ker`: the centre lies in the kernel of a surjection onto a
   centreless group.
 * `TauCeti.Subgroup.map_commutator_eq_commutator`: a surjective homomorphism carries the derived
   subgroup onto the derived subgroup.
+* `Subgroup.map_inf_comap`: the image of `H ⊓ f⁻¹(K)` is `f(H) ⊓ K`.
+* `Subgroup.map_conj_map_conj`: successive conjugations of a subgroup compose to one
+  conjugation.
 * `Subgroup.map_map_conj`: the image of a conjugate subgroup is the conjugate of the image.
 * `Subgroup.map_quotientGroupMap_map_mk'`: taking images in quotients commutes with the maps
   induced on quotients.
@@ -68,30 +69,13 @@ theorem MonoidHom.subgroupComap_injective_of_injective {f : H →* G} (hf : Func
     (K : Subgroup G) : Function.Injective (f.subgroupComap K) :=
   fun _ _ hxy => Subtype.ext (hf (congrArg Subtype.val hxy))
 
-/-- A surjective homomorphism carries central elements to central elements. -/
-theorem Subgroup.map_center_le (f : G →* H) (hf : Function.Surjective f) :
-    (Subgroup.center G).map f ≤ Subgroup.center H := by
-  rintro _ ⟨x, hx, rfl⟩
-  rw [Subgroup.mem_center_iff]
-  intro y
-  obtain ⟨z, rfl⟩ := hf y
-  rw [← map_mul, ← map_mul, Subgroup.mem_center_iff.mp hx z]
+/-- The centre of a group lies in the kernel of every surjection onto a centreless group.
 
-/-- An isomorphism of groups carries the centre onto the centre. -/
-theorem Subgroup.map_center_eq_center (e : G ≃* H) :
-    (Subgroup.center G).map (e : G →* H) = Subgroup.center H := by
-  apply le_antisymm (Subgroup.map_center_le _ e.surjective)
-  intro y hy
-  refine ⟨e.symm y, ?_, e.apply_symm_apply y⟩
-  exact Subgroup.map_center_le (e.symm : H →* G) e.symm.surjective ⟨y, hy, rfl⟩
-
-/-- The centre of a group lies in the kernel of every surjection onto a centreless group. -/
+Mathlib's `Subgroup.map_center_le_center` bounds the image of the centre under any surjection by
+`Subgroup.center H`; this lemma is the special case where that bound is `⊥`. -/
 theorem _root_.MonoidHom.center_le_ker (f : G →* H) (hf : Function.Surjective f)
-    (hH : Subgroup.center H = ⊥) : Subgroup.center G ≤ f.ker := by
-  intro x hx
-  have hfx := Subgroup.map_center_le f hf ⟨x, hx, rfl⟩
-  rw [hH, Subgroup.mem_bot] at hfx
-  exact hfx
+    (hH : Subgroup.center H = ⊥) : Subgroup.center G ≤ f.ker :=
+  (Subgroup.map_eq_bot_iff _).mp <| le_bot_iff.mp <| hH ▸ Subgroup.map_center_le_center hf
 
 /-! ## Restricting an isomorphism to a subgroup -/
 
@@ -300,6 +284,15 @@ theorem _root_.MulEquiv.commutatorCongr_symm (e : G ≃* H) :
     (MulEquiv.commutatorCongr e).symm = MulEquiv.commutatorCongr e.symm :=
   Subgroup.congrOfMapEq_symm e _
 
+/-- The image of `H ⊓ f⁻¹(K)` under `f` is the part of `K` inside `f(H)`. -/
+theorem _root_.Subgroup.map_inf_comap {G N : Type*} [Group G] [Group N]
+    (H : Subgroup G) (K : Subgroup N) (f : G →* N) :
+    (H ⊓ K.comap f).map f = H.map f ⊓ K := by
+  ext y
+  simp only [Subgroup.mem_map, Subgroup.mem_inf, Subgroup.mem_comap]
+  exact ⟨fun ⟨x, ⟨hx, hxK⟩, hxy⟩ ↦ ⟨⟨x, hx, hxy⟩, hxy ▸ hxK⟩,
+    fun ⟨⟨x, hx, hxy⟩, hy⟩ ↦ ⟨x, ⟨hx, hxy ▸ hy⟩, hxy⟩⟩
+
 /-- The image of a conjugate subgroup `gRg⁻¹` under a homomorphism `f` is the conjugate of `f(R)`
 by `f g`.
 
@@ -313,6 +306,13 @@ theorem _root_.Subgroup.map_map_conj (R : Subgroup G) (f : G →* H) (g : G) :
   rw [Subgroup.map_map, Subgroup.map_map]
   -- conjugation is natural: `f ∘ conj g` and `conj (f g) ∘ f` agree pointwise
   exact congrArg (Subgroup.map · R) (MonoidHom.ext fun x ↦ by simp)
+
+/-- Conjugating a subgroup first by `g` and then by `h` is conjugation by `h * g`. -/
+theorem _root_.Subgroup.map_conj_map_conj (R : Subgroup G) (g h : G) :
+    (R.map (MulAut.conj g).toMonoidHom).map (MulAut.conj h).toMonoidHom =
+      R.map (MulAut.conj (h * g)).toMonoidHom := by
+  simp only [Subgroup.map_map, MulEquiv.toMonoidHom_eq_coe,
+    ← MulEquiv.coe_monoidHom_trans, ← MulAut.mul_def, ← map_mul]
 
 /-- The image of a subgroup in `G ⧸ N`, pushed forward along the map `G ⧸ N →* H ⧸ M` induced by
 `f`, is the image in `H ⧸ M` of the image of the subgroup under `f`.

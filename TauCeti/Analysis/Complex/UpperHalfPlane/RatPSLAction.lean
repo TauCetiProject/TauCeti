@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.PSLAction
+public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 -- supplies `UpperHalfPlane.forall_smul_eq_self_iff_mem_center`, which identifies the kernel
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
@@ -37,8 +37,9 @@ needed by any consumer and is not claimed.)
 * `UpperHalfPlane.ratPosToPSL2R_smul`: `ratPosToPSL2R g` acts on `ℍ` as the real matrix does.
 * `TauCeti.eq_one_or_neg_one_of_mem_ratPosToPSL2R_ker_of_det_eq_one`: an element of
   `ker ratPosToPSL2R` with determinant one is `±1` — a containment, not an identification.
-  Hence `ker ratPosToPSL2R ⊓ SL ≤ Γ` for any `Γ` containing `±1` — every `Γ₀(N)`, in particular,
-  which is the direction every consumer needs.
+* `TauCeti.ratPosToPSL2R_ker_inf_le`: the consequence consumers apply —
+  `ker ratPosToPSL2R ⊓ H ≤ Γ` whenever `H` lies in the determinant-one locus and `-1 ∈ Γ`, which
+  holds of every `Γ₀(N)`.
 
 ## References
 
@@ -124,5 +125,34 @@ theorem eq_one_or_neg_one_of_mem_ratPosToPSL2R_ker_of_det_eq_one {g : GL(2, ℚ)
   refine hc2.imp ?_ ?_ <;> rintro rfl <;>
     exact Matrix.GeneralLinearGroup.map_injective (algebraMap ℚ ℝ).injective <| by
       simpa [Units.ext_iff, ← RingHom.mapMatrix_apply, -Matrix.scalar_apply] using hcs.symm
+
+/-- **The kernel meets the determinant-one locus inside any `Γ` containing `-1`.**
+
+This is the consequence of `eq_one_or_neg_one_of_mem_ratPosToPSL2R_ker_of_det_eq_one` that
+consumers actually apply: it is the `hker` hypothesis of the Hecke-coset tiling
+`HeckeRing.GL2.isFundamentalDomain_iUnion_rightCosetRep_smul`, and without it every call site
+repeats the same two-case split.
+
+Only `-1 ∈ Γ` is asked for; the `1` branch is discharged internally by `Γ.one_mem`. Every
+`Γ₀(N)` contains `-1`, whose lower-left entry is zero. **`Γ₁(N)` does not**, except at `N ∣ 2`:
+`-1` has diagonal `(-1, -1)` and `Γ₁(N)` asks for `≡ (1, 1)`. A consumer whose `Γ` is a `Γ₁(N)`
+therefore cannot use this lemma at `N ≥ 3`, and indeed `ker ratPosToPSL2R ⊓ H ≤ Γ₁(N)` is false
+there, since `-1` lies in the kernel.
+
+The form a consumer actually wants is `Γ.withCenter`, which adjoins the centre and so contains
+`-1` for every `Γ`. That is the shape the Petersson layer works in — `peterssonInnerCosets` sums
+over `SL(2, ℤ) ⧸ Γ.withCenter` — so the hypothesis is satisfiable exactly where it is needed.
+
+`hH` is stated on the underlying matrix because that is the form in which the determinant
+condition defining the locus arrives. -/
+theorem ratPosToPSL2R_ker_inf_le {H Γ : Subgroup GL(2, ℚ)⁺}
+    (hH : ∀ g ∈ H, ((g : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det = 1)
+    (hneg : (-1 : GL(2, ℚ)⁺) ∈ Γ) :
+    ratPosToPSL2R.ker ⊓ H ≤ Γ := by
+  rintro g ⟨hk, hm⟩
+  rcases eq_one_or_neg_one_of_mem_ratPosToPSL2R_ker_of_det_eq_one hk (hH g hm) with h | h
+  · exact (Subtype.ext h : g = 1) ▸ Γ.one_mem
+  · exact (Subtype.ext h : g = -1) ▸ hneg
+
 
 end TauCeti

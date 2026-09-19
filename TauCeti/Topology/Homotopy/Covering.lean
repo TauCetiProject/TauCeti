@@ -18,7 +18,9 @@ loop class to its monodromy translate of `e`.
 
 It also records that a covering map is injective on fundamental groups — the
 fundamental-group form of Mathlib's `IsCoveringMap.injective_path_homotopic_map`, which states
-the same injectivity for the Hom-sets of the fundamental groupoid.
+the same injectivity for the Hom-sets of the fundamental groupoid. Dually, a covering map of a
+path-connected space onto a simply connected space is injective: a path joining two points of a
+fibre projects to a loop, which is null-homotopic, so its lift is a loop as well.
 
 It also records the lifting criterion in a subgroup form used by the universal-covers
 roadmap. Mathlib already proves the fundamental result
@@ -32,6 +34,8 @@ separately identifies `H` as a subgroup of the image of `p_*`.
 
 * `IsCoveringMap.map_injective` and `IsCoveringMap.mapOfEq_injective`: a
   covering map is injective on fundamental groups.
+* `IsCoveringMap.injective`: a covering map from a path-connected space to a simply connected
+  space is injective.
 * `IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le_subgroup`: lift when
   `f_* π₁(A, a₀) ≤ H ≤ p_* π₁(E, e₀)`.
 * `IsCoveringMap.existsUnique_continuousMap_lifts_of_subsingleton_fundamentalGroup`: lift when
@@ -77,6 +81,22 @@ theorem _root_.IsCoveringMap.mapOfEq_injective
     Function.Injective (_root_.FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ he) :=
   (CategoryTheory.eqToIso (congrArg FundamentalGroupoid.mk he)).conj.injective.comp
     (IsCoveringMap.map_injective hp e)
+
+/-- **A covering map from a path-connected space to a simply connected space is injective.** -/
+theorem _root_.IsCoveringMap.injective [PathConnectedSpace E] [SimplyConnectedSpace X]
+    (hp : IsCoveringMap p) : Function.Injective p := by
+  intro e₀ e₁ h
+  let γ := PathConnectedSpace.somePath e₀ e₁
+  let δ : Path (p e₀) (p e₀) := (γ.map hp.continuous).cast rfl h
+  have hδ : hp.liftPath δ.toContinuousMap e₀ δ.source = γ.toContinuousMap :=
+    ((hp.eq_liftPath_iff' _).mpr ⟨rfl, γ.source⟩).symm
+  have hrefl : hp.liftPath (Path.refl (p e₀)).toContinuousMap e₀ rfl =
+      ContinuousMap.const _ e₀ :=
+    hp.liftPath_const rfl
+  have key := hp.liftPath_apply_one_eq_of_homotopicRel
+    (SimplyConnectedSpace.paths_homotopic δ (Path.refl (p e₀))) e₀ δ.source rfl
+  rw [hδ, hrefl] at key
+  simpa [γ] using key.symm
 
 /-- The lifting criterion for a covering map, with the subgroup inclusion factored through an
 intermediate subgroup `H ≤ π₁(X, f a₀)`.

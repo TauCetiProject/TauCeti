@@ -51,6 +51,8 @@ density and of interior estimates.
   boundary values.
 * `TauCeti.W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport`: multiplication by a
   compactly supported cutoff lands in `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.exists_top_value_gradient_ae_eq_on_of_isCompact`: near a compact subset of `Ω`,
+  a function in `W^{1,p}(Ω)` agrees in value and gradient with one in `W^{1,p}(ℝⁿ)`.
 
 ## References
 
@@ -62,7 +64,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set TopologicalSpace
+open MeasureTheory Set TopologicalSpace Filter Topology
 
 open scoped ContDiff Distributions ENNReal Gradient InnerProductSpace
 
@@ -122,22 +124,14 @@ theorem W1p.mem_w1p0Submodule_of_isCompact (hp : p ≠ (∞ : ℝ≥0∞)) {u : 
     rw [hwdef, W1p.value_mk]
     exact coeFn_extendByZeroLpₗᵢ ℝ hmeas hsub (W1p.value u)
   -- a smooth cutoff, equal to one on `K` and compactly supported inside `Ω`
-  obtain ⟨chi, hchi, hchi_range, hchi_one_nhds, hchi_cpt, hchi_ts⟩ :=
-    hK.exists_contDiff_cutoff Omega.isOpen hKO
-  have hchi_mem : ∀ x, chi x ∈ Icc (0 : ℝ) 1 := fun x => hchi_range (mem_range_self x)
+  obtain ⟨chi, M, hchi, -, hchi_one_nhds, hchi_cpt, hchi_ts, hM0, hchiM_all,
+    hchigradM_all⟩ := hK.exists_contDiff_cutoff_with_bounds Omega.isOpen hKO
   have hchi_one : ∀ x ∈ K, chi x = 1 := fun x hx => by
     have hx' : x ∈ chi ⁻¹' ({1} : Set ℝ) := interior_subset (hchi_one_nhds hx)
     exact hx'
-  obtain ⟨C, hC⟩ := (hchi.continuous_fderiv (by simp)).norm.bddAbove_range_of_hasCompactSupport
-    ((hchi_cpt.fderiv ℝ).norm)
-  set M : ℝ := max 1 C
-  have hM0 : (0 : ℝ) ≤ M := le_trans zero_le_one (le_max_left _ _)
-  have hchiM : ∀ x ∈ ((⊤ : Opens E) : Set E), |chi x| ≤ M := fun x _ => by
-    rw [abs_of_nonneg (hchi_mem x).1]
-    exact le_trans (hchi_mem x).2 (le_max_left _ _)
-  have hchigradM : ∀ x ∈ ((⊤ : Opens E) : Set E), ‖∇ chi x‖ ≤ M := fun x _ => by
-    rw [_root_.gradient, LinearIsometryEquiv.norm_map]
-    exact le_trans (hC ⟨x, rfl⟩) (le_max_right _ _)
+  have hchiM : ∀ x ∈ ((⊤ : Opens E) : Set E), |chi x| ≤ M := fun x _ => hchiM_all x
+  have hchigradM : ∀ x ∈ ((⊤ : Opens E) : Set E), ‖∇ chi x‖ ≤ M :=
+    fun x _ => hchigradM_all x
   -- the cutoff leaves the extension unchanged
   have hLw : W1p.contDiffSMul chi hchi hM0 hchiM hchigradM w = w := by
     refine W1p.ext_value (Lp.ext ?_)
@@ -215,5 +209,54 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (hp : p ≠ (∞
   refine W1p.mem_w1p0Submodule_of_isCompact hp hcpt hts ?_
   filter_upwards [W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u] with x hx hxK
   rw [hx, image_eq_zero_of_notMem_tsupport hxK, zero_smul]
+
+/-! ### Localisation to the whole space -/
+
+/-- **Localisation to the whole space.** For `1 ≤ p < ∞`, a Sobolev function `u ∈ W^{1,p}(Ω)`
+agrees, in value and in gradient, almost everywhere on any compact `S ⊆ Ω` with some
+`w ∈ W^{1,p}(ℝⁿ)`. One may take for `w` the product of `u` with a smooth cutoff equal to one near
+`S` and compactly supported in `Ω`, extended by zero. -/
+theorem W1p.exists_top_value_gradient_ae_eq_on_of_isCompact (hp : p ≠ (∞ : ENNReal))
+    (u : W1p mu Omega p) {S : Set E}
+    (hS : IsCompact S) (hSO : S ⊆ Omega) :
+    ∃ w : W1p mu ⊤ p, (∀ᵐ x ∂mu, x ∈ S → W1p.value w x = W1p.value u x) ∧
+      ∀ᵐ x ∂mu, x ∈ S → W1p.gradient w x = W1p.gradient u x := by
+  -- A smooth cutoff, equal to one near `S` and compactly supported in `Ω`.
+  obtain ⟨chi, M, hchi, -, hchi_one, hchi_cpt, hchi_ts, hM0, hchiM_all, hchigradM_all⟩ :=
+    hS.exists_contDiff_cutoff_with_bounds Omega.isOpen hSO
+  have hchiM : ∀ x ∈ (Omega : Set E), |chi x| ≤ M := fun x _ => hchiM_all x
+  have hchigradM : ∀ x ∈ (Omega : Set E), ‖∇ chi x‖ ≤ M := fun x _ => hchigradM_all x
+  -- Near `S` the cutoff is one and its gradient vanishes.
+  have hchi_S : ∀ x ∈ S, chi x = 1 ∧ ∇ chi x = 0 := fun x hx => by
+    have hev : chi =ᶠ[𝓝 x] fun _ => (1 : ℝ) :=
+      Filter.mem_of_superset (mem_interior_iff_mem_nhds.1 (hchi_one hx)) fun y hy => hy
+    refine ⟨hev.eq_of_nhds, ?_⟩
+    rw [_root_.gradient, hev.fderiv_eq, fderiv_const_apply, map_zero]
+  -- The cutoff product lies in `W^{1,p}_0(Ω)`, so it extends by zero to the whole space.
+  set w0 := W1p.contDiffSMul chi hchi hM0 hchiM hchigradM u
+  have hw0 : w0 ∈ w1p0Submodule mu Omega p :=
+    W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport hp hchi hM0 hchiM hchigradM hchi_cpt
+      hchi_ts u
+  have hOmega := Omega.isOpen.measurableSet
+  have htop : mu.restrict ((⊤ : Opens E) : Set E) = mu := by
+    rw [Opens.coe_top, Measure.restrict_univ]
+  refine ⟨(W1p0.extendByZeroL (p := p) (Omega := Omega) le_top ⟨w0, hw0⟩).1, ?_, ?_⟩
+  · have h2 := coeFn_extendByZeroLpₗᵢ ℝ (μ := mu) hOmega
+      (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤)) (W1p.value w0) |>.filter_mono
+      (ae_mono htop.ge)
+    have h3 := (ae_restrict_iff' hOmega).1 (W1p.value_contDiffSMul_ae hchi hM0 hchiM hchigradM u)
+    filter_upwards [h2, h3] with x hx2 hx3 hxS
+    have hxO : x ∈ (Omega : Set E) := hSO hxS
+    rw [W1p0.value_extendByZeroL, hx2, indicator_of_mem hxO, hx3 hxO, (hchi_S x hxS).1,
+      one_smul]
+  · have h2 := coeFn_extendByZeroLpₗᵢ ℝ (μ := mu) hOmega
+      (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤)) (W1p.gradient w0) |>.filter_mono
+      (ae_mono htop.ge)
+    have h3 := (ae_restrict_iff' hOmega).1
+      (W1p.gradient_contDiffSMul_ae hchi hM0 hchiM hchigradM u)
+    filter_upwards [h2, h3] with x hx2 hx3 hxS
+    have hxO : x ∈ (Omega : Set E) := hSO hxS
+    rw [W1p0.gradient_extendByZeroL, hx2, indicator_of_mem hxO, hx3 hxO, (hchi_S x hxS).1,
+      (hchi_S x hxS).2, one_smul, smul_zero, add_zero]
 
 end TauCeti

@@ -19,9 +19,8 @@ lightweight predicate-style API: over a general commutative semiring, the map
 `N ⊗ C → M ⊗ C` need not be known injective, so the induced comodule structure on `N` is
 not registered here.
 
-This is a Layer 1 prerequisite for the reductive-groups roadmap target on finite-dimensional
-subcomodules and the fundamental theorem of comodules. Later work can use
-`Module.Finite R N.toSubmodule` to state finitely generated subcomodules.
+Finite generation of a subcomodule is expressed by `Module.Finite R N.toSubmodule`;
+images under comodule morphisms preserve this property.
 
 ## Main definitions
 
@@ -276,16 +275,6 @@ theorem isSimpleOrder_of_transitive {G : Type x} (v₀ : M) (hv₀ : v₀ ≠ 0)
 
 variable {N : Type x} [AddCommMonoid N] [Module R N] [Comodule R C N]
 
-private theorem image_tensor_apply (f : Comodule.Hom R C M N) (A : Subcomodule R C M)
-    (t : A.carrier ⊗[R] C) :
-    TensorProduct.map (A.carrier.map f.toLinearMap).subtype (LinearMap.id : C →ₗ[R] C)
-        (TensorProduct.map (f.toLinearMap.submoduleMap A.carrier) (LinearMap.id : C →ₗ[R] C) t) =
-      TensorProduct.map f.toLinearMap (LinearMap.id : C →ₗ[R] C)
-        (TensorProduct.map A.carrier.subtype (LinearMap.id : C →ₗ[R] C) t) := by
-  have h : (A.carrier.map f.toLinearMap).subtype ∘ₗ f.toLinearMap.submoduleMap A.carrier =
-      f.toLinearMap ∘ₗ A.carrier.subtype := by ext a; simp
-  rw [TensorProduct.map_map, TensorProduct.map_map, h]
-
 /-- The image of a subcomodule under a comodule morphism. -/
 @[expose] def map (A : Subcomodule R C M) (f : Comodule.Hom R C M N) : Subcomodule R C N where
   carrier := A.carrier.map f.toLinearMap
@@ -295,7 +284,12 @@ private theorem image_tensor_apply (f : Comodule.Hom R C M N) (A : Subcomodule R
     rcases A.coact_mem hm with ⟨t, ht⟩
     refine ⟨TensorProduct.map (f.toLinearMap.submoduleMap A.carrier)
       (LinearMap.id : C →ₗ[R] C) t, ?_⟩
-    rw [image_tensor_apply, ht]
+    have hcomp : (A.carrier.map f.toLinearMap).subtype ∘ₗ
+        f.toLinearMap.submoduleMap A.carrier = f.toLinearMap ∘ₗ A.carrier.subtype := by
+      ext x
+      simp only [LinearMap.comp_apply, Submodule.subtype_apply,
+        LinearMap.submoduleMap_coe_apply]
+    rw [TensorProduct.map_map, hcomp, ← TensorProduct.map_map, ht]
     exact Comodule.Hom.map_coact_apply f m
 
 /-- The underlying submodule of the image subcomodule is the image of the underlying
@@ -326,34 +320,20 @@ theorem mem_map_of_mem (f : Comodule.Hom R C M N) {A : Subcomodule R C M} {m : M
 source subcomodule belongs to `B`. -/
 theorem map_le_iff {A : Subcomodule R C M} {f : Comodule.Hom R C M N} {B : Subcomodule R C N} :
     A.map f ≤ B ↔ ∀ ⦃m⦄, m ∈ A → f m ∈ B := by
-  constructor
-  · intro h m hm
-    exact h (mem_map_of_mem f hm)
-  · intro h n hn
-    rcases (mem_map (A := A) (f := f)).1 hn with ⟨m, hm, rfl⟩
-    exact h hm
+  rw [← toSubmodule_le_toSubmodule, map_toSubmodule, Submodule.map_le_iff_le_comap]
+  simp only [SetLike.le_def, Submodule.mem_comap, mem_toSubmodule, Comodule.Hom.coe_toLinearMap]
 
 /-- The image construction is monotone in the source subcomodule. -/
 theorem map_mono (f : Comodule.Hom R C M N) {A B : Subcomodule R C M} (hAB : A ≤ B) :
     A.map f ≤ B.map f := by
-  intro n hn
-  rcases (mem_map (A := A) (f := f)).1 hn with ⟨m, hm, rfl⟩
-  exact mem_map_of_mem f (hAB hm)
+  rw [← toSubmodule_le_toSubmodule, map_toSubmodule, map_toSubmodule]
+  exact Submodule.map_mono (toSubmodule_le_toSubmodule.mpr hAB)
 
 /-- The image of the bottom subcomodule is bottom. -/
 @[simp]
 theorem map_bot (f : Comodule.Hom R C M N) : (⊥ : Subcomodule R C M).map f = ⊥ := by
   ext n
-  rw [mem_map, mem_bot]
-  constructor
-  · rintro ⟨m, hm, rfl⟩
-    rw [mem_bot] at hm
-    rw [hm]
-    exact f.toLinearMap.map_zero
-  · intro hn
-    refine ⟨0, by rw [mem_bot], ?_⟩
-    rw [hn]
-    exact f.toLinearMap.map_zero
+  simp only [← mem_toSubmodule, map_toSubmodule, bot_toSubmodule, Submodule.map_bot]
 
 /-- The image of the top subcomodule is the range of the comodule morphism as a submodule. -/
 @[simp]
@@ -364,13 +344,9 @@ theorem map_top_toSubmodule (f : Comodule.Hom R C M N) :
 /-- The identity comodule morphism leaves a subcomodule unchanged. -/
 @[simp]
 theorem map_id (A : Subcomodule R C M) : A.map (Comodule.Hom.id R C M) = A := by
-  ext m
-  rw [mem_map]
-  constructor
-  · rintro ⟨m', hm', h⟩
-    exact h ▸ hm'
-  · intro hm
-    exact ⟨m, hm, rfl⟩
+  ext n
+  simp only [← mem_toSubmodule, map_toSubmodule, Comodule.Hom.id_toLinearMap,
+    Submodule.map_id]
 
 variable {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
 
@@ -378,18 +354,9 @@ variable {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
 @[simp]
 theorem map_map (A : Subcomodule R C M) (f : Comodule.Hom R C M N)
     (g : Comodule.Hom R C N P) : (A.map f).map g = A.map (g.comp f) := by
-  ext p
-  constructor
-  · rw [mem_map, mem_map]
-    rintro ⟨n, ⟨m, hm, hmn⟩, hnp⟩
-    refine ⟨m, hm, ?_⟩
-    calc
-      (g.comp f) m = g (f m) := by simp only [Comodule.Hom.comp_apply]
-      _ = g n := congrArg g hmn
-      _ = p := hnp
-  · rw [mem_map]
-    rintro ⟨m, hm, rfl⟩
-    exact mem_map_of_mem g (mem_map_of_mem f hm)
+  ext n
+  simp only [← mem_toSubmodule, map_toSubmodule, Comodule.Hom.comp_toLinearMap,
+    Submodule.map_comp]
 
 end Subcomodule
 

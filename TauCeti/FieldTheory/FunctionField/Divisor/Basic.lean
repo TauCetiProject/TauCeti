@@ -57,6 +57,21 @@ lemma degree_apply (D : Divisor k F) :
   simpa only [degree] using
     WeilDivisor.weightedDegree_apply (fun P : Place k F => (P.degree : ℤ)) D
 
+/-- The degree of a function-field divisor is the formal weighted degree against the residue
+degrees; this is the bridge to the weight-generic `TauCeti.AlgebraicGeometry.WeilDivisor` API. -/
+lemma degree_eq_weightedDegree (D : Divisor k F) :
+    degree D = WeilDivisor.weightedDegree (fun P : Place k F => (P.degree : ℤ)) D := by
+  simp only [degree]
+
+/-- The degree-zero divisors are the weighted-degree-zero divisors for the residue-degree
+weights.  This is the bridge from the degree kernel to the weight-generic `WeilDivisor` API,
+and in particular to `Pic⁰`. -/
+theorem ker_degree_eq_weightedDegreeZeroSubgroup :
+    (degree (k := k) (F := F)).ker =
+      WeilDivisor.weightedDegreeZeroSubgroup (fun P : Place k F => (P.degree : ℤ)) := by
+  ext D
+  rw [AddMonoidHom.mem_ker, WeilDivisor.mem_weightedDegreeZeroSubgroup, ← degree_eq_weightedDegree]
+
 /-- The support-indexed form of the degree sum. -/
 lemma degree_eq_sum_support (D : Divisor k F) :
     degree D = ∑ P ∈ D.support, D P * P.degree := by
@@ -202,6 +217,17 @@ lemma eq_of_le_of_degree_eq (hF : IsFunctionField k F) {D E : Divisor k F} (hDE 
   apply WeilDivisor.eq_of_le_of_weightedDegree_eq_of_pos
     (degree_pos_of_isFunctionField hF) hDE
   simpa only [degree] using hdeg
+
+/-- **An effective divisor of degree one is a place of degree one**: since every place of an
+algebraic function field has degree at least one, an effective divisor of degree one is the
+prime divisor of a single place, and that place has degree one. -/
+lemma exists_eq_ofPoint_of_degree_eq_one (hF : IsFunctionField k F) {D : Divisor k F}
+    (hD : 0 ≤ D) (hdeg : degree D = 1) :
+    ∃ P : Place k F, P.degree = 1 ∧ D = WeilDivisor.ofPoint P := by
+  obtain ⟨P, hP, hDP⟩ := (WeilDivisor.isEffective_iff_zero_le.mpr
+    hD).exists_eq_ofPoint_of_weightedDegree_eq_one
+    (fun P _ ↦ degree_pos_of_isFunctionField hF P) (by simpa only [degree] using hdeg)
+  exact ⟨P, by exact_mod_cast hP, hDP⟩
 
 /-- Degree is strictly monotone on divisors of an algebraic function field. -/
 lemma strictMono_degree (hF : IsFunctionField k F) :

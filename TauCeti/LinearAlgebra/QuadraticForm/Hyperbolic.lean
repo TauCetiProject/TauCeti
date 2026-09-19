@@ -36,6 +36,8 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
 * `TauCeti.represents_hyperbolicPlane`: the hyperbolic plane represents every scalar.
 * `TauCeti.equivalent_hyperbolicPlane_dualProd`: the hyperbolic plane is isometric to the
   `xy`-form `QuadraticForm.dualProd`.
+* `TauCeti.equivalent_weightedSumSquares_hyperbolicPlane_of_isSquare`: a binary diagonal form
+  whose discriminant differs from that of the hyperbolic plane by a square is hyperbolic.
 * `TauCeti.equivalent_weightedSumSquares_self_neg_hyperbolicPlane`: in characteristic not two, every
   `⟨a, -a⟩`, for `a ≠ 0`, is hyperbolic.
 * `TauCeti.exists_hyperbolicPlane_prod_equivalent`: in characteristic not two, every
@@ -153,6 +155,19 @@ end CommRing
 
 variable {K : Type u} [Field K]
 
+/-- Over a field in which two is invertible, a binary diagonal form whose discriminant differs
+from that of the hyperbolic plane by a square is isometric to the hyperbolic plane. -/
+theorem equivalent_weightedSumSquares_hyperbolicPlane_of_isSquare [Invertible (2 : K)]
+    {a b : Kˣ} (hdisc : IsSquare (a * b * ((1 : Kˣ) * (-1)))) :
+    (weightedSumSquares K ![(a : K), (b : K)]).Equivalent (hyperbolicPlane K) := by
+  have hsource : a ∈ unitValueSet (weightedSumSquares K ![(a : K), (b : K)]) :=
+    mem_unitValueSet_binary_left a b
+  have htarget : a ∈ unitValueSet (hyperbolicPlane K) := by
+    rw [mem_unitValueSet]
+    exact represents_hyperbolicPlane (a : K)
+  exact equivalent_binary_of_isSquare_of_mem_unitValueSet
+    (a := a) (b := b) (c := 1) (d := -1) (e := a) hdisc hsource htarget
+
 /-- Over a field in which two is invertible, every diagonal plane `⟨a, -a⟩` with `a` a unit is
 isometric to the hyperbolic plane. -/
 theorem equivalent_weightedSumSquares_self_neg_hyperbolicPlane [Invertible (2 : K)] (a : Kˣ) :
@@ -160,14 +175,8 @@ theorem equivalent_weightedSumSquares_self_neg_hyperbolicPlane [Invertible (2 : 
   have hdisc : IsSquare (a * (-a) * ((1 : Kˣ) * (-1))) := by
     refine ⟨a, ?_⟩
     simp
-  have hsource : a ∈ unitValueSet
-      (weightedSumSquares K ![(a : K), -(a : K)]) :=
-    mem_unitValueSet_binary_left a (-(a : K))
-  have htarget : a ∈ unitValueSet (hyperbolicPlane K) := by
-    rw [mem_unitValueSet]
-    exact represents_hyperbolicPlane (a : K)
-  exact equivalent_binary_of_isSquare_of_mem_unitValueSet
-    (a := a) (b := -a) (c := 1) (d := -1) (e := a) hdisc hsource htarget
+  exact equivalent_weightedSumSquares_hyperbolicPlane_of_isSquare
+    (a := a) (b := -a) hdisc
 
 /-! ### The hyperbolic class -/
 

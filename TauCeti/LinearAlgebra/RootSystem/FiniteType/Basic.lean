@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.LinearAlgebra.Determinant
-public import TauCeti.LinearAlgebra.Matrix.PosDef
+public import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
 
 /-!

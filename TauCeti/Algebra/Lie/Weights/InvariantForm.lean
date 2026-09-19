@@ -48,6 +48,7 @@ that can be stated.
 * `TauCeti.invForm_isSymm` and `TauCeti.invForm_nondegenerate`: the form is symmetric and
   non-degenerate.
 * `TauCeti.invForm_apply_apply_eq_traceForm`: the form is the transport of the Killing form.
+* `TauCeti.invForm_self_sub_invForm_self`: `⟨a, a⟩ - ⟨b, b⟩ = ⟨a + b, a - b⟩`.
 * `TauCeti.invForm_cartanEquivDual_right` and `TauCeti.invForm_cartanEquivDual_left`: pairing a
   weight against one of the shape `cartanEquivDual H x` evaluates the other weight at `x`.
 * `TauCeti.cartanEquivDual_coroot`: the coroot `α^∨` is the weight `2α / ⟨α, α⟩`, read through
@@ -147,6 +148,14 @@ theorem invForm_isSymm : (invForm (H := H)).IsSymm := by
   intro a b
   rw [invForm_apply_apply_eq_traceForm, invForm_apply_apply_eq_traceForm]
   exact ((traceForm_isSymm K H L).eq _ _).symm
+
+/-- **A difference of squared lengths** factors as `⟨a, a⟩ - ⟨b, b⟩ = ⟨a + b, a - b⟩`, by the
+symmetry of the form. -/
+theorem invForm_self_sub_invForm_self (a b : Module.Dual K H) :
+    invForm a a - invForm b b = invForm (a + b) (a - b) := by
+  simp only [map_add, map_sub, LinearMap.add_apply]
+  rw [(invForm_isSymm (H := H)).eq b a]
+  ring
 
 /-- Pairing a weight of the shape `cartanEquivDual H x` on the left evaluates the other weight at
 `x`; the left-hand companion of `TauCeti.invForm_cartanEquivDual_right`. -/

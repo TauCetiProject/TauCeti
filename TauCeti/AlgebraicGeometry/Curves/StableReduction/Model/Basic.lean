@@ -79,6 +79,14 @@ def baseChangeHom (M : Model R K C toK) {N : Model R K C toK} (f : M.total ⟶ N
   ((Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).map
     (Over.homMk f overBase)).left
 
+/-- The generic-fibre map is the underlying map obtained by applying the pullback functor. -/
+lemma baseChangeHom_def (M : Model R K C toK) {N : Model R K C toK}
+    (f : M.total ⟶ N.total) (overBase : f ≫ N.toBase = M.toBase) :
+    M.baseChangeHom f overBase =
+      ((Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).map
+        (Over.homMk f overBase)).left :=
+  (rfl)
+
 /-- The induced generic-fibre morphism commutes with the projections to the total spaces. -/
 @[reassoc (attr := simp)]
 lemma baseChangeHom_genericFiberι (M : Model R K C toK) {N : Model R K C toK}

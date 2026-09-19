@@ -54,7 +54,7 @@ namespace SplitTorus
 universe u v w
 
 variable {R : Type u} {A : Type v} {σ : Type w}
-variable [CommRing R] [CommRing A] [Algebra R A] [Fintype σ]
+variable [CommSemiring R] [CommRing A] [Algebra R A] [Fintype σ]
 
 /-- The character of the rank-`σ` split torus with exponent vector `μ`, that is, the Laurent
 monomial `∏ j, x_j ^ μ j`. -/

@@ -741,7 +741,7 @@ theorem mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift
   have key := integral_mul_norm_snd_sq_le_energyFormIntegral_zero_drift_self
     (μ := mu.restrict Omega) (a := a) (c := c) (U := jetField u)
     (hmem.mono fun x hx xi => by
-      simpa [toQuadraticForm'_eq_dotProduct] using h.lower_bound hx xi)
+      simpa [Matrix.toQuadraticForm'_apply] using h.lower_bound hx xi)
     (hmem.mono hc_nonneg) ((integrable_norm_jetField_snd_sq u).const_mul lam) henergy_zero
   rw [← integral_norm_jetField_snd_sq_eq_norm_gradient_sq u, ← integral_const_mul,
     energyFormH1_def]

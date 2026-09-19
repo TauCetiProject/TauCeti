@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.BaseChange
 -- Proof-only: an integral element of an extension of an algebraically closed field lies in it.
 import Mathlib.RingTheory.Adjoin.Field
 -- Proof-only: the canonical integrality lemma for the `y`-coordinate.
@@ -25,8 +24,9 @@ involved, which is why it lives here rather than with any consumer.
 
 * `WeierstrassCurve.Affine.exists_point_on_curve`: over an algebraically closed field
   every element is the `x`-coordinate of a solution of `W.Equation`.
-* `WeierstrassCurve.mem_range_y_of_equation_of_mem_range_x`: hence, over an algebraically closed
-  one, the `y`-coordinate is in the base field too.
+* `WeierstrassCurve.mem_range_y_of_equation_of_mem_range_x`: over an algebraically closed field, a
+  solution of `W.Equation` whose `x`-coordinate lies in the image of `F` has its `y`-coordinate
+  there too.
 
 Stated for an arbitrary affine Weierstrass curve over an algebraically closed field. It yields a
 solution of the *equation*, not an element of `W.Point`; a caller wanting a point pairs it with

@@ -32,6 +32,8 @@ discriminant of the minimal polynomial does not divide the conductor exponent.
   index exactly when it divides the conductor exponent.
 * `TauCeti.NumberField.IntegralPrimitiveElement.not_dvd_exponent_of_not_dvd_discr_minpoly`: a
   natural number not dividing `disc (minpoly ℤ θ)` does not divide the conductor exponent.
+* `TauCeti.NumberField.IntegralPrimitiveElement.not_dvd_index_of_conductor_sup_span_eq_top`: an
+  integer `p ≠ 1` comaximal with the conductor of `ℤ[θ]` does not divide the index.
 
 ## References
 
@@ -87,6 +89,43 @@ theorem dvd_exponent_of_dvd_index (θ : IntegralPrimitiveElement K) {p : ℕ} [F
 theorem dvd_index_iff_dvd_exponent (θ : IntegralPrimitiveElement K) {p : ℕ} [Fact p.Prime] :
     p ∣ θ.index ↔ p ∣ exponent θ.1 :=
   ⟨θ.dvd_exponent_of_dvd_index, fun h => h.trans θ.exponent_dvd_index⟩
+
+/-- The prime case of `not_dvd_index_of_conductor_sup_span_eq_top`. -/
+private theorem not_dvd_index_of_conductor_sup_span_eq_top_of_prime
+    (θ : IntegralPrimitiveElement K) {p : ℕ} [Fact p.Prime]
+    (h : conductor ℤ θ.1 ⊔ Ideal.span {(p : 𝓞 K)} = ⊤) : ¬ p ∣ θ.index := by
+  intro hp
+  obtain ⟨e', he'⟩ := θ.dvd_exponent_of_dvd_index hp
+  have h1 : (1 : 𝓞 K) ∈ conductor ℤ θ.1 ⊔ Ideal.span {(p : 𝓞 K)} := h ▸ Submodule.mem_top
+  obtain ⟨c, hc, m, hm, hcm⟩ := Submodule.mem_sup.mp h1
+  obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton'.mp hm
+  -- `e' = c e' + a · exponent θ` lies in the conductor, so the exponent divides `e'`.
+  have hmem : (e' : 𝓞 K) ∈ conductor ℤ θ.1 := by
+    have : (e' : 𝓞 K) = c * e' + a * (exponent θ.1 : 𝓞 K) := by
+      rw [he', Nat.cast_mul]
+      linear_combination -(e' : 𝓞 K) * hcm
+    rw [this]
+    exact (conductor ℤ θ.1).add_mem ((conductor ℤ θ.1).mul_mem_right _ hc)
+      ((conductor ℤ θ.1).mul_mem_left _ ((exponent_dvd_iff θ.1).mp dvd_rfl))
+  have hdvd : exponent θ.1 ∣ e' := (exponent_dvd_iff θ.1).mpr hmem
+  have he0 : e' ≠ 0 := by
+    rintro rfl
+    rw [mul_zero] at he'
+    exact θ.index_pos.ne' (zero_dvd_iff.mp (he' ▸ θ.exponent_dvd_index))
+  have hle := Nat.le_of_dvd (Nat.pos_of_ne_zero he0) (he' ▸ hdvd)
+  have := (Fact.out : p.Prime).two_le
+  linarith [Nat.pos_of_ne_zero he0, Nat.mul_le_mul_right e' this]
+
+/-- If the conductor of `ℤ[θ]` in `𝓞 K` is comaximal with `p ≠ 1`, then `p` does not divide the
+index `[𝓞 K : ℤ[θ]]`. -/
+theorem not_dvd_index_of_conductor_sup_span_eq_top (θ : IntegralPrimitiveElement K) {p : ℕ}
+    (hp : p ≠ 1) (h : conductor ℤ θ.1 ⊔ Ideal.span {(p : 𝓞 K)} = ⊤) : ¬ p ∣ θ.index := by
+  intro hdvd
+  obtain ⟨q, hq, hqp⟩ := Nat.exists_prime_and_dvd hp
+  have : Fact q.Prime := ⟨hq⟩
+  refine θ.not_dvd_index_of_conductor_sup_span_eq_top_of_prime (p := q) ?_ (hqp.trans hdvd)
+  rw [eq_top_iff, ← h]
+  exact sup_le_sup_left (Ideal.span_singleton_le_span_singleton.mpr (Nat.cast_dvd_cast hqp)) _
 
 /-- **The checkable Kummer–Dedekind hypothesis.** A natural number not dividing the discriminant
 of `minpoly ℤ θ` does not divide the conductor exponent of `θ`. -/

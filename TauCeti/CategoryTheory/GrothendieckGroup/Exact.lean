@@ -50,7 +50,8 @@ and both are natural in conflation-exact functors.
   instance of the latter for a transported exact structure.
 * `TauCeti.ExactK0.ofLE` and `TauCeti.ExactK0.fromSplit`: the comparison induced by the identity
   functor towards an exact structure with more conflations, and its instance out of the split
-  Grothendieck group.
+  Grothendieck group; `TauCeti.ExactK0.ofLEEquiv` is the comparison isomorphism between exact
+  structures with the same conflations.
 
 ## Main results
 
@@ -510,6 +511,23 @@ noncomputable def ofLE (h : ∀ S : ShortComplex C, E.Conflation S → E''.Confl
 lemma ofLE_of (h : ∀ S : ShortComplex C, E.Conflation S → E''.Conflation S) (X : C) :
     ofLE h (of X) = (of X : ExactK0 E'') :=
   PresentedK0.ofLE_of _ X
+
+/-- **The comparison isomorphism** between two exact structures with the same conflations: the
+comparison maps `TauCeti.ExactK0.ofLE` in both directions are mutually inverse. -/
+noncomputable def ofLEEquiv (h : ∀ S : ShortComplex C, E.Conflation S ↔ E''.Conflation S) :
+    ExactK0 E ≃+ ExactK0 E'' :=
+  AddMonoidHom.toAddEquiv (ofLE fun S => (h S).mp) (ofLE fun S => (h S).mpr)
+    (hom_ext fun X => by simp) (hom_ext fun X => by simp)
+
+@[simp]
+lemma ofLEEquiv_of (h : ∀ S : ShortComplex C, E.Conflation S ↔ E''.Conflation S) (X : C) :
+    ofLEEquiv h (of X) = (of X : ExactK0 E'') :=
+  ofLE_of _ X
+
+@[simp]
+lemma ofLEEquiv_symm_of (h : ∀ S : ShortComplex C, E.Conflation S ↔ E''.Conflation S) (X : C) :
+    (ofLEEquiv h).symm (of X) = (of X : ExactK0 E) :=
+  ofLE_of _ X
 
 /-- **The universal characterization of the comparison map**: it is the unique homomorphism
 preserving the classes of objects. -/

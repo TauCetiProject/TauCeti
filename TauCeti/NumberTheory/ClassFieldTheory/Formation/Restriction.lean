@@ -89,6 +89,8 @@ how Tate's theorem is used downstream.
   and the homomorphisms of Galois groups compose along a tower of restrictions.
 * `TauCeti.ClassFieldTheory.LayerRestriction.cohomologyRes_trans`: restriction of cohomology is
   functorial along a tower of restrictions.
+* `TauCeti.ClassFieldTheory.LayerRestriction.groundInclusion_trans`: ground-level inclusions
+  compose along a tower of restrictions.
 * `TauCeti.ClassFieldTheory.LayerRestriction.groundLevelEquiv_cohomologyRes_zero_apply`: in degree
   zero, restriction of cohomology is the ground-level inclusion.
 * `TauCeti.ClassFieldTheory.NormalLayer.relativeDegree_subgroupLayerRestriction`: the relative
@@ -214,6 +216,20 @@ theorem galHom_injective (T : LayerRestriction small big) : Function.Injective T
     rw [T.same_top_toSubgroup]
     exact hw
 
+/-- An element of `Gal(K/F)` lies in the image of `Gal(K/E)` exactly when its representatives lie
+in the ground subgroup `U'` of `K/E`. -/
+theorem mk_mem_range_galHom_iff (T : LayerRestriction small big) (u : big.ground) :
+    (u : big.Gal) ∈ T.galHom.range ↔ (u : G) ∈ small.ground := by
+  constructor
+  · rintro ⟨w, hw⟩
+    induction w using QuotientGroup.induction_on with | H w => ?_
+    rw [galHom_mk, QuotientGroup.eq, Subgroup.mem_subgroupOf] at hw
+    have hw' : ((w : G)⁻¹ * u) ∈ small.ground :=
+      small.top_le_ground (T.same_top ▸ (by simpa using hw))
+    simpa using mul_mem w.2 hw'
+  · intro hu
+    exact ⟨(⟨u, hu⟩ : small.ground), by rw [galHom_mk]; rfl⟩
+
 /-- **The coefficient module of the smaller layer of a restriction is the coefficient module of
 the bigger one**, read as a representation of the smaller Galois group along `galHom`. The two
 modules are the level `A^V` of one and the same top subgroup — a restriction does not move the top
@@ -321,6 +337,11 @@ def cohomologyRes (T : LayerRestriction small big) (F : Formation G) (n : ℕ) :
     big.H F n ⟶ small.H F n :=
   groupCohomology.map T.galHom (T.repIso F).inv n
 
+/-- Layer restriction is the group-cohomology map for the inclusion of Galois groups,
+with the canonical identification of coefficients. -/
+theorem cohomologyRes_def (T : LayerRestriction small big) (F : Formation G) (n : ℕ) :
+    T.cohomologyRes F n = groupCohomology.map T.galHom (T.repIso F).inv n := (rfl)
+
 /-- **Restricting along the trivial restriction does nothing.** -/
 @[simp]
 theorem cohomologyRes_self {L : NormalLayer G} (T : LayerRestriction L L) (F : Formation G)
@@ -352,6 +373,22 @@ theorem groundInclusion_apply_coe (T : LayerRestriction small big) (F : Formatio
     (x : F.level big.ground) : ((T.groundInclusion F x : F.level small.ground) : F.toRep.V) =
       (x : F.toRep.V) :=
   Submodule.coe_inclusion _ x
+
+/-- The ground-level inclusion along the trivial layer restriction is the identity. -/
+@[simp]
+theorem groundInclusion_self {L : NormalLayer G} (T : LayerRestriction L L)
+    (F : Formation G) :
+    T.groundInclusion F = LinearMap.id := by
+  ext x
+  rw [groundInclusion_apply_coe, LinearMap.id_apply]
+
+/-- Ground-level inclusions compose along a tower of layer restrictions. -/
+theorem groundInclusion_trans {a b c : NormalLayer G} (T : LayerRestriction a b)
+    (T' : LayerRestriction b c) (F : Formation G) :
+    (T.trans T').groundInclusion F = (T.groundInclusion F).comp (T'.groundInclusion F) := by
+  ext x
+  rw [groundInclusion_apply_coe, LinearMap.comp_apply, groundInclusion_apply_coe,
+    groundInclusion_apply_coe]
 
 /-- **In degree zero, restriction of cohomology is the ground-level inclusion.** Read through the
 identification of `H⁰(U/V, A^V)` with the ground level `A^U`, restricting a class from the layer
@@ -587,19 +624,9 @@ theorem subgroupLayer_range_galHom {small : NormalLayer G} (T : LayerRestriction
   refine NormalLayer.ext (OpenSubgroup.toSubgroup_injective ?_) T.same_top.symm
   rw [ground_subgroupLayer]
   ext g
-  simp only [mem_subgroupGround, MonoidHom.mem_range]
-  constructor
-  · rintro ⟨hg, δ, hδ⟩
-    induction δ using QuotientGroup.induction_on with
-    | H w =>
-      rw [LayerRestriction.galHom_mk, QuotientGroup.eq] at hδ
-      have hw : (w : G)⁻¹ * g ∈ L.top := Subgroup.mem_subgroupOf.1 hδ
-      have hmul := mul_mem w.2 (small.top_le_ground (T.same_top ▸ hw))
-      rwa [mul_inv_cancel_left] at hmul
-  · intro hg
-    exact ⟨T.ground_toSubgroup_le hg, QuotientGroup.mk ⟨g, hg⟩, by
-      rw [LayerRestriction.galHom_mk]
-      exact congrArg QuotientGroup.mk (Subtype.ext (Subgroup.coe_inclusion _ _))⟩
+  rw [mem_subgroupGround]
+  exact ⟨fun ⟨hg, hmem⟩ ↦ (T.mk_mem_range_galHom_iff ⟨g, hg⟩).1 hmem,
+    fun hg ↦ ⟨T.ground_toSubgroup_le hg, (T.mk_mem_range_galHom_iff _).2 hg⟩⟩
 
 end NormalLayer
 
