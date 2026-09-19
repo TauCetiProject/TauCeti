@@ -208,23 +208,36 @@ lemma ιTwistedChains_map (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
   Sigma.ι_desc _ _
 
 /-- The chain complex of singular chains of `X` twisted by the local coefficient system `L`. -/
--- The body must stay exposed: without it the degree-`k` term of the complex is opaque, so the
--- boundary formula `ιTwistedChains_twistedChainComplex_d` cannot even be stated.
-@[expose]
 def twistedChainComplex : ChainComplex (ModuleCat.{max v w} R) ℕ :=
   (AlgebraicTopology.alternatingFaceMapComplex _).obj (twistedChains L)
+
+/-- The inclusion into the degree-`k` term of the twisted chain complex of the coefficient module
+attached to a singular `k`-simplex. -/
+def ιTwistedChainComplex (k : ℕ) (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    L.obj (initialVertex σ) ⟶ (twistedChainComplex L).X k :=
+  ιTwistedChains L σ
+
+/-- Two maps out of a degree of the twisted chain complex agree as soon as they agree on every
+summand. -/
+@[ext]
+lemma twistedChainComplex_hom_ext {k : ℕ} {A : ModuleCat.{max v w} R}
+    {f g : (twistedChainComplex L).X k ⟶ A}
+    (h : ∀ σ, ιTwistedChainComplex L k σ ≫ f = ιTwistedChainComplex L k σ ≫ g) : f = g :=
+  twistedChains_hom_ext L h
 
 /-- The boundary of the twisted chain complex sends the summand of a singular `(k + 1)`-simplex
 `σ` to the alternating sum of the summands of the faces of `σ`, the coefficients being transported
 from the initial vertex of `σ` to the initial vertex of each face. -/
-@[reassoc]
-lemma ιTwistedChains_twistedChainComplex_d (k : ℕ)
-    (σ : (TopCat.toSSet.obj X) _⦋k + 1⦌) :
-    ιTwistedChains L σ ≫ (twistedChainComplex L).d (k + 1) k =
+@[reassoc (attr := simp)]
+lemma ιTwistedChainComplex_d (k : ℕ) (σ : (TopCat.toSSet.obj X) _⦋k + 1⦌) :
+    ιTwistedChainComplex L (k + 1) σ ≫ (twistedChainComplex L).d (k + 1) k =
       ∑ i : Fin (k + 2), (-1 : ℤ) ^ (i : ℕ) •
         (L.map (vertexTransport (SimplexCategory.δ i).op σ) ≫
-          ιTwistedChains L ((TopCat.toSSet.obj X).map (SimplexCategory.δ i).op σ)) := by
-  simp [twistedChainComplex, SimplicialObject.δ, Preadditive.comp_sum]
+          ιTwistedChainComplex L k ((TopCat.toSSet.obj X).map (SimplexCategory.δ i).op σ)) := by
+  simp [twistedChainComplex, ιTwistedChainComplex, SimplicialObject.δ, Preadditive.comp_sum]
+  -- Both sides are now the same alternating sum, written once over the degree-`k` term of the
+  -- complex and once over the module of twisted `k`-chains it is built from.
+  rfl
 
 /-- Singular homology of `X` with coefficients in the local coefficient system `L`. -/
 def twistedHomology (k : ℕ) : ModuleCat.{max v w} R := (twistedChainComplex L).homology k
@@ -294,6 +307,15 @@ lemma twistedChainsCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) :
 def twistedChainComplexCoefficientMap (η : L ⟶ K) :
     twistedChainComplex L ⟶ twistedChainComplex K :=
   (AlgebraicTopology.alternatingFaceMapComplex _).map (twistedChainsCoefficientMap η)
+
+/-- In each degree, a morphism of local coefficient systems acts on the summand of a simplex `σ`
+through its component at the initial vertex of `σ`. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChainComplex_twistedChainComplexCoefficientMap (η : L ⟶ K) (k : ℕ)
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChainComplex L k σ ≫ (twistedChainComplexCoefficientMap η).f k =
+      η.app (initialVertex σ) ≫ ιTwistedChainComplex K k σ :=
+  ιTwistedChains_twistedChainsCoefficientApp η _ σ
 
 /-- The identity morphism of a coefficient system induces the identity of twisted chain
 complexes. -/
@@ -373,6 +395,19 @@ def twistedChainComplexConstantIso (M : ModuleCat.{max v w} R) :
     twistedChainComplex ((constantFunctor X).obj M) ≅
       ((AlgebraicTopology.singularChainComplexFunctor (ModuleCat.{max v w} R)).obj M).obj X :=
   (AlgebraicTopology.alternatingFaceMapComplex _).mapIso (twistedChainsConstantIso X M)
+
+variable (X) in
+/-- In each degree, the comparison of the twisted chain complex with the ordinary singular chain
+complex carries the summand of a simplex `σ` onto the summand of `σ`. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChainComplex_twistedChainComplexConstantIso_hom (M : ModuleCat.{max v w} R) (k : ℕ)
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChainComplex ((constantFunctor X).obj M) k σ ≫
+        (twistedChainComplexConstantIso X M).hom.f k =
+      Sigma.ι (fun _ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ M) σ := by
+  -- The comparison is the identity in every degree, and a constant system attaches the same
+  -- module `M` to every simplex, so the two inclusions are the same map.
+  rfl
 
 variable (X) in
 /-- The comparison of the twisted chain complex with the ordinary singular chain complex is
@@ -455,6 +490,15 @@ lemma twistedChainsMap_app (n : SimplexCategoryᵒᵖ) :
 def twistedChainComplexMap :
     twistedChainComplex ((pullback f.hom).obj L) ⟶ twistedChainComplex L :=
   (AlgebraicTopology.alternatingFaceMapComplex _).map (twistedChainsMap f L)
+
+/-- In each degree, a continuous map sends the summand of a simplex `σ` of `X` identically onto
+the summand of its image simplex in `Y`. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChainComplex_twistedChainComplexMap (k : ℕ)
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChainComplex ((pullback f.hom).obj L) k σ ≫ (twistedChainComplexMap f L).f k =
+      ιTwistedChainComplex L k ((TopCat.toSSet.map f).app _ σ) :=
+  ιTwistedChains_twistedChainsMapApp f L _ σ
 
 /-- The map on twisted homology induced by a continuous map, from the homology of `X` twisted by
 the pullback system to the homology of `Y` twisted by `L`. -/
