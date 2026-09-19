@@ -35,8 +35,8 @@ inserted point, and compares emptiness before and after transport.
 
 ## References
 
-The rectangle-transport organization adapts the formalization pattern used in
-`TauCeti/KnotTheory/Grid/Differential/CyclicPermutation.lean` to point insertion.
+For the analogous rectangle correspondence under cyclic permutation of a grid diagram, see
+`TauCeti/KnotTheory/Grid/Differential/CyclicPermutation.lean`.
 -/
 
 public section
@@ -134,6 +134,7 @@ theorem exists_insertPoint_eq
 
 /-- A transported rectangle covers the embedded image of a square exactly when the original
 rectangle covers that square. -/
+@[simp]
 theorem succAbove_mem_coveredSquares_insertPoint (c r : Fin n) :
     (p.succAbove c, q.succAbove r) ∈ (R.insertPoint p q).toGridRectangle.coveredSquares ↔
       (c, r) ∈ R.toGridRectangle.coveredSquares := by
@@ -145,6 +146,7 @@ theorem succAbove_mem_coveredSquares_insertPoint (c r : Fin n) :
 /-- When the point is inserted immediately after the column `i` and the row `j`, a square of
 the larger grid is covered by a transported rectangle exactly when its collapse under
 `Fin.predAbove` is covered by the original rectangle. -/
+@[simp]
 theorem mem_coveredSquares_insertPoint_succ_succ (i j : Fin n) (a : Fin (n + 1) × Fin (n + 1)) :
     a ∈ (R.insertPoint i.succ j.succ).toGridRectangle.coveredSquares ↔
       (i.predAbove a.1, j.predAbove a.2) ∈ R.toGridRectangle.coveredSquares := by

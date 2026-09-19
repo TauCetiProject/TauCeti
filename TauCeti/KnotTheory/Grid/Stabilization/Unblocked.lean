@@ -47,12 +47,9 @@ with `GC⁻(G)`.
 
 ## References
 
-This is the first step of the proof of stabilization invariance in Ozsváth--Stipsicz--Szabó,
-*Grid Homology for Knots and Links*, Section 5.2, which identifies the complex of the stabilized
-diagram with a mapping cone built from the complex of `G`.
-
-The rectangle transport used here adapts the formalization pattern in
-`TauCeti/KnotTheory/Grid/Differential/CyclicPermutation.lean`.
+These coefficient identities are part of the stabilization-invariance argument in
+Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.2, where the complex of
+the stabilized diagram is identified with a mapping cone built from the complex of `G`.
 -/
 
 public section
