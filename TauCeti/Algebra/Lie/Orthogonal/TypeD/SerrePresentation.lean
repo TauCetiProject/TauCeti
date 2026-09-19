@@ -45,8 +45,9 @@ variable {K : Type*} [CommRing K] (n : ℕ) (hn : 4 ≤ n)
 private theorem neg_typeDCartan_toNat_of_ne_zero_of_ne (i j : Fin n)
     (hzero : CartanMatrix.D n i j ≠ 0) (hij : i ≠ j) :
     (-CartanMatrix.D n i j).toNat = 1 := by
-  simp only [CartanMatrix.D, Matrix.of_apply] at hzero ⊢
-  split_ifs <;> omega
+  rcases CartanMatrix.isSimplyLaced_D n hij with h | h
+  · exact (hzero h).elim
+  · simp [h]
 
 /-- The higher Serre relation for the positive simple-root generators of the standard split
 type-`D` Lie algebra. -/
