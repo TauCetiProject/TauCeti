@@ -52,9 +52,8 @@ depressed specialization of that formula is used to compare a quartic with its c
   discriminant of a minimal polynomial is a norm.
 * `Polynomial.Monic.discr_mul`: the product formula for discriminants, with the square of the
   resultant as its cross term.
-* `TauCeti.discr_C_mul_of_natDegree_eq_three`,
-  `TauCeti.isSquare_discr_iff_mem_range_three`: the scaling law and square-root criterion for a
-  not-necessarily-monic cubic.
+* `TauCeti.discr_C_mul`, `TauCeti.isSquare_discr_iff_mem_range`: the scaling law and
+  square-root criterion for a not-necessarily-monic polynomial over a field.
 * `Polynomial.discr_map_of_natDegree_eq`, `Polynomial.Monic.discr_map`: base change whenever the
   degree is preserved, with monicity as a convenient sufficient condition.
 * `Polynomial.Monic.isUnit_discr_iff`, `Polynomial.Monic.discr_ne_zero_iff`,
@@ -468,74 +467,114 @@ theorem _root_.Polynomial.Monic.isSquare_discr_iff_mem_range (hf : f.Monic) (hse
 
 end Field
 
-section Cubic
+section Nonmonic
 
 variable {F : Type*} [Field F] {f : F[X]}
 
-/-- Scaling a cubic by a nonzero constant scales its discriminant by the fourth power of that
-constant. -/
-theorem discr_C_mul_of_natDegree_eq_three (a : F) (ha : a ≠ 0)
-    (hdeg : f.natDegree = 3) : (C a * f).discr = a ^ 4 * f.discr := by
-  have hfdeg : f.degree = 3 :=
-    (degree_eq_iff_natDegree_eq_of_pos (n := 3) (by omega)).mpr hdeg
-  have hscaled : (C a * f).degree = 3 := by rw [degree_C_mul ha, hfdeg]
-  rw [discr_of_degree_eq_three hscaled, discr_of_degree_eq_three hfdeg]
-  simp only [coeff_C_mul]
-  ring
+/-- Scaling a polynomial of degree `n` by a nonzero constant `a` scales its discriminant by
+`a ^ (2 * n - 2)`. -/
+theorem discr_C_mul (a : F) (ha : a ≠ 0) :
+    (C a * f).discr = a ^ (2 * f.natDegree - 2) * f.discr := by
+  by_cases hdeg : f.natDegree = 0
+  · rw [eq_C_of_natDegree_eq_zero hdeg]
+    rw [← C_mul, discr_C]
+    simp
+  have hf0 : f ≠ 0 := by
+    rintro rfl
+    simp at hdeg
+  have hpos : 0 < f.degree :=
+    natDegree_pos_iff_degree_pos.mp (Nat.pos_of_ne_zero hdeg)
+  have hscaleddeg : (C a * f).natDegree = f.natDegree := natDegree_C_mul ha
+  have hscaledpos : 0 < (C a * f).degree := by
+    rw [degree_C_mul ha]
+    exact hpos
+  have hfres := resultant_deriv hpos
+  have hscaledres := resultant_deriv hscaledpos
+  rw [derivative_C_mul, resultant_C_mul_left, resultant_C_mul_right,
+    hscaleddeg, hfres, leadingCoeff_mul, leadingCoeff_C] at hscaledres
+  apply mul_left_cancel₀ (a := a * f.leadingCoeff)
+    (mul_ne_zero ha (leadingCoeff_ne_zero.mpr hf0))
+  calc
+    a * f.leadingCoeff * (C a * f).discr =
+        a ^ (f.natDegree - 1) * a ^ f.natDegree *
+          (f.leadingCoeff * f.discr) := by
+            apply mul_left_cancel₀ (a := (-1 : F) ^ (f.natDegree * (f.natDegree - 1) / 2))
+              (pow_ne_zero _ (by simp))
+            simpa only [mul_assoc, mul_left_comm, mul_comm] using hscaledres.symm
+    _ = a * f.leadingCoeff *
+        (a ^ (2 * f.natDegree - 2) * f.discr) := by
+          rw [← pow_add]
+          have hn : f.natDegree - 1 + f.natDegree = 1 + (2 * f.natDegree - 2) := by omega
+          rw [hn, pow_add, pow_one]
+          ring
 
-/-- For a separable cubic, the discriminant is a square in the base field exactly when the
-product of the root differences comes from the base field. This is the nonmonic cubic analogue
-of `Polynomial.Monic.isSquare_discr_iff_mem_range`. -/
-theorem isSquare_discr_iff_mem_range_three {E : Type*} [Field E] [Algebra F E]
-    (hsep : f.Separable) (hdeg : f.natDegree = 3)
-    (e : Fin f.natDegree ≃ f.rootSet E) :
+/-- For a separable polynomial, the discriminant is a square in the base field exactly when the
+product of the root differences comes from the base field. This is the nonmonic analogue of
+`Polynomial.Monic.isSquare_discr_iff_mem_range`. -/
+theorem isSquare_discr_iff_mem_range {E : Type*} [Field E] [Algebra F E]
+    (hsep : f.Separable) (e : Fin f.natDegree ≃ f.rootSet E) :
     IsSquare f.discr ↔ discrSqrt e ∈ Set.range (algebraMap F E) := by
-  have hf0 : f ≠ 0 := by rintro rfl; simp at hdeg
+  have hf0 : f ≠ 0 := hsep.ne_zero
   have hlc : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hf0
+  have hlcE : algebraMap F E f.leadingCoeff ≠ 0 :=
+    (map_eq_zero_iff _ (algebraMap F E).injective).not.mpr hlc
   let p : E[X] := ∏ i, (X - C (e i : E))
-  have hfmapdeg : (f.map (algebraMap F E)).natDegree = 3 := by
-    rw [natDegree_map_eq_of_injective (algebraMap F E).injective, hdeg]
-  have hsplits : (f.map (algebraMap F E)).Splits := by
-    rw [splits_iff_card_roots, hsep.roots_map_eq_map_numbering e]
-    simpa [hfmapdeg] using hdeg
+  have hfmapdeg : (f.map (algebraMap F E)).natDegree = f.natDegree :=
+    natDegree_map_eq_of_injective (algebraMap F E).injective f
+  have hroots := hsep.roots_map_eq_map_numbering e
+  have hrootsCard : (f.map (algebraMap F E)).roots.card =
+      (f.map (algebraMap F E)).natDegree := by
+    rw [hroots, hfmapdeg]
+    simp
+  have hsplits : (f.map (algebraMap F E)).Splits :=
+    splits_iff_card_roots.mpr hrootsCard
   have hfac : f.map (algebraMap F E) = C (algebraMap F E f.leadingCoeff) * p := by
-    have hprod := hsplits.eq_prod_roots
-    rw [hsep.roots_map_eq_map_numbering e] at hprod
-    simpa [p, ← List.prod_ofFn, Function.comp_def] using hprod
-  have hpdeg : p.natDegree = 3 := by
-    rw [← hfmapdeg, hfac, natDegree_C_mul
-      ((map_eq_zero_iff _ (algebraMap F E).injective).not.mpr hlc)]
+    calc
+      f.map (algebraMap F E) = C (f.map (algebraMap F E)).leadingCoeff *
+          ((f.map (algebraMap F E)).roots.map (X - C ·)).prod := hsplits.eq_prod_roots
+      _ = C (algebraMap F E f.leadingCoeff) *
+          ((univ.val.map fun i ↦ (e i : E)).map (X - C ·)).prod := by
+            rw [leadingCoeff_map_of_injective (algebraMap F E).injective, hroots]
+      _ = C (algebraMap F E f.leadingCoeff) * ∏ i, (X - C (e i : E)) := by
+            rw [Multiset.map_map, ← Finset.prod_eq_multiset_prod]
+            rfl
+      _ = C (algebraMap F E f.leadingCoeff) * p := rfl
+  have hpdeg : p.natDegree = f.natDegree := by
+    rw [← hfmapdeg, hfac, natDegree_C_mul hlcE]
   have hdiscr : algebraMap F E f.discr =
-      (algebraMap F E f.leadingCoeff) ^ 4 * discrSqrt e ^ 2 := by
-    rw [← discr_map_of_natDegree_eq (algebraMap F E)
-      (natDegree_map_eq_of_injective (algebraMap F E).injective f), hfac,
-      discr_C_mul_of_natDegree_eq_three _
-        ((map_eq_zero_iff _ (algebraMap F E).injective).not.mpr hlc) hpdeg,
-      discr_prod_X_sub_C_eq_sq]
-    rw [discrSqrt_def]
+      (algebraMap F E f.leadingCoeff) ^ (2 * f.natDegree - 2) * discrSqrt e ^ 2 := by
+    rw [← discr_map_of_natDegree_eq (algebraMap F E) hfmapdeg, hfac,
+      discr_C_mul _ hlcE, hpdeg, discr_prod_X_sub_C_eq_sq, discrSqrt_def]
+  have hexp : 2 * f.natDegree - 2 = 2 * (f.natDegree - 1) := by omega
+  rw [hexp, mul_comm 2, pow_mul] at hdiscr
+  let d : E := algebraMap F E f.leadingCoeff ^ (f.natDegree - 1)
+  change algebraMap F E f.discr = d ^ 2 * discrSqrt e ^ 2 at hdiscr
+  have hd : d ≠ 0 := pow_ne_zero _ hlcE
   constructor
   · rintro ⟨c, hc⟩
     have hs : discrSqrt e * discrSqrt e =
-        algebraMap F E (f.leadingCoeff⁻¹ ^ 2 * c) *
-          algebraMap F E (f.leadingCoeff⁻¹ ^ 2 * c) := by
+        algebraMap F E (f.leadingCoeff⁻¹ ^ (f.natDegree - 1) * c) *
+          algebraMap F E (f.leadingCoeff⁻¹ ^ (f.natDegree - 1) * c) := by
       have h := hdiscr
       rw [hc, map_mul] at h
       simp only [map_inv₀, map_pow, map_mul]
-      have hlcE : algebraMap F E f.leadingCoeff ≠ 0 :=
-        (map_eq_zero_iff _ (algebraMap F E).injective).not.mpr hlc
-      field_simp [hlcE] at h ⊢
+      rw [inv_pow]
+      change discrSqrt e * discrSqrt e = d⁻¹ * algebraMap F E c *
+        (d⁻¹ * algebraMap F E c)
+      field_simp [hd] at h ⊢
       ring_nf at h ⊢
       exact h.symm
     rcases mul_self_eq_mul_self_iff.mp hs with hs | hs
     · exact ⟨_, hs.symm⟩
     · exact ⟨-_, by rw [map_neg, ← hs]⟩
   · rintro ⟨c, hc⟩
-    refine ⟨f.leadingCoeff ^ 2 * c, (algebraMap F E).injective ?_⟩
+    refine ⟨f.leadingCoeff ^ (f.natDegree - 1) * c, (algebraMap F E).injective ?_⟩
     simp only [map_mul, map_pow]
+    change algebraMap F E f.discr = d * algebraMap F E c * (d * algebraMap F E c)
     rw [hc, hdiscr]
     ring
 
-end Cubic
+end Nonmonic
 
 end DiscrSqrt
 

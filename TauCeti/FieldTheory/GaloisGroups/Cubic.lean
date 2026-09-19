@@ -76,7 +76,7 @@ private theorem HasGaloisLabel.isSquare_discr_iff_three {j : TransitiveGroupInde
   have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
   let _ : Fact ((f.map (algebraMap F f.SplittingField)).Splits) := ⟨SplittingField.splits f⟩
   obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
-  exact (isSquare_discr_iff_mem_range_three h.separable h.natDegree_eq e.symm).trans <|
+  exact (isSquare_discr_iff_mem_range h.separable e.symm).trans <|
     (discrSqrt_mem_range_iff hchar e.symm).trans h.range_le_alternatingGroup_iff
 
 variable (hchar : ringChar F ≠ 2)
@@ -111,8 +111,8 @@ theorem hasGaloisLabel_three_one_iff :
   have hlc : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hf0
   have hdiscr : f.discr ≠ 0 := fun hzero => hsq ⟨0, by simp [hzero]⟩
   have hscaleddiscr : (C f.leadingCoeff⁻¹ * f).discr ≠ 0 := by
-    rw [discr_C_mul_of_natDegree_eq_three _ (inv_ne_zero hlc) hdeg]
-    exact mul_ne_zero (pow_ne_zero 4 (inv_ne_zero hlc)) hdiscr
+    rw [discr_C_mul _ (inv_ne_zero hlc)]
+    exact mul_ne_zero (pow_ne_zero _ (inv_ne_zero hlc)) hdiscr
   have hscaledmonic : (C f.leadingCoeff⁻¹ * f).Monic := by
     rw [mul_comm]
     exact monic_mul_leadingCoeff_inv hf0
