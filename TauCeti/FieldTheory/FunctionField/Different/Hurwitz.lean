@@ -80,7 +80,7 @@ theorem hurwitz_genus_formula (hF : IsFunctionField k F)
   have h := congrArg Divisor.degree
     (weilDifferentialDivisor_weilDifferentialCotrace hF hF' hex hex' _ hω)
   rw [degree_weilDifferentialDivisor, map_add] at h
-  rw [h, mul_add, Divisor.finrank_mul_degree_conorm, degree_weilDifferentialDivisor]
+  rw [h, mul_add, Divisor.finrank_mul_degree_conorm _ _ hF, degree_weilDifferentialDivisor]
 
 /-- **The Hurwitz genus formula through the geometric degree** (Stichtenoth, Theorem 3.4.13): under
 the hypotheses of `TauCeti.hurwitz_genus_formula`,
