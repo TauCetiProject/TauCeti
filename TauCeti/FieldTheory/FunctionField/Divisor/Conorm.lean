@@ -351,7 +351,7 @@ theorem degree_conorm_of_finrank_eq_one (hF : IsFunctionField k F)
 /-- **The conorm multiplies degrees by `[F' : F]` for a separable extension with unchanged
 constants**, without requiring a function-field hypothesis on `F / k`. -/
 @[simp]
-theorem degree_conorm_of_finrank_eq_one_of_isSeparable [Algebra.IsSeparable F F']
+theorem degree_conorm_of_isSeparable_of_finrank_eq_one [Algebra.IsSeparable F F']
     (h : Module.finrank k k' = 1) (D : Divisor k F) :
     degree (conorm k' F' D) = Module.finrank F F' * degree D :=
   degree_conorm_of_finrank_eq_one_of_cross_mul k' F' h D
