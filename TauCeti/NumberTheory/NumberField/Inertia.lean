@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Spectrum.Maximal.Defs
 public import TauCeti.FieldTheory.Galois.IsGaloisGroup
 public import TauCeti.NumberTheory.NumberField.RamifiedPrimes
 public import TauCeti.NumberTheory.RamificationInertia.Galois
+import Mathlib.FieldTheory.AlgebraicClosure
 
 /-!
 # The inertia subgroups generate the Galois group of a number field
@@ -68,8 +69,8 @@ fields is Kummer theory over `ℚ` and is not formalised here.
   `TauCeti/FieldTheory/Galois/IsGaloisGroup.lean`).
 * `NumberField.aut_exponent_dvd_finrank_of_isUnramifiedIn`: the resulting degree bound for the
   automorphism group of an abelian number-field extension and an arbitrary intermediate field.
-* `NumberField.ramifiedPrimes_iSup`: in a number field Galois over `ℚ`, a compositum of
-  intermediate fields ramifies exactly at the primes ramifying in one of them.
+* `NumberField.ramifiedPrimes_iSup`: a compositum of intermediate fields of a number field
+  ramifies exactly at the primes ramifying in one of them.
 
 ## References
 
@@ -331,16 +332,9 @@ end NumberField
 
 namespace NumberField
 
-variable {K : Type*} [Field K] [NumberField K] [IsGalois ℚ K]
-
-/-- **The ramified primes of a compositum.** Let `K` be a number field Galois over `ℚ` and let
-`E i` be intermediate fields of `K`. A rational prime ramifies in the compositum `⨆ i, E i`
-exactly when it ramifies in one of the `E i`.
-
-By `NumberField.notMem_ramifiedPrimes_iff_forall_inertia_le`, a prime `p` is unramified in an
-intermediate field exactly when that field lies in the fixed field of the inertia subgroup of
-every prime above `p`; and a compositum lies in a field exactly when each factor does. -/
-@[simp] theorem ramifiedPrimes_iSup {ι : Sort*} (E : ι → IntermediateField ℚ K) :
+private theorem ramifiedPrimes_iSup_of_isGalois
+    {K : Type*} [Field K] [NumberField K] [IsGalois ℚ K]
+    {ι : Sort*} (E : ι → IntermediateField ℚ K) :
     ramifiedPrimes (⨆ i, E i : IntermediateField ℚ K) = ⋃ i, ramifiedPrimes (E i) := by
   ext p
   rw [Set.mem_iUnion, ← not_iff_not, not_exists]
@@ -354,5 +348,37 @@ every prime above `p`; and a compositum lies in a field exactly when each factor
     simp only [key, iSup_le_iff]
     exact ⟨fun h i P hP hPp => h P hP hPp i, fun h P hP hPp i => h i P hP hPp⟩
   · simp [mem_ramifiedPrimes_iff, hp]
+
+/-- **The ramified primes of a compositum.** Let `K` be a number field and let `E i` be
+intermediate fields of `K`. A rational prime ramifies in the compositum `⨆ i, E i` exactly when
+it ramifies in one of the `E i`.
+
+Embed `K` in a finite normal closure. There the result follows from
+`NumberField.notMem_ramifiedPrimes_iff_forall_inertia_le`, since a compositum lies in a fixed
+field exactly when each factor does; invariance under algebra equivalence transfers the result
+back to `K`. -/
+@[simp] theorem ramifiedPrimes_iSup {K : Type*} [Field K] [NumberField K]
+    {ι : Sort*} (E : ι → IntermediateField ℚ K) :
+    ramifiedPrimes (⨆ i, E i : IntermediateField ℚ K) = ⋃ i, ramifiedPrimes (E i) := by
+  classical
+  let A := AlgebraicClosure ℚ
+  let f : K →ₐ[ℚ] A := IsAlgClosed.lift
+  let N : IntermediateField ℚ A := IntermediateField.normalClosure ℚ K A
+  let _ : NumberField N := NumberField.of_module_finite ℚ N
+  let g : K →ₐ[ℚ] N := f.codRestrict N.toSubalgebra fun x =>
+    f.fieldRange_le_normalClosure ⟨x, rfl⟩
+  have hmap : (⨆ i, E i).map g = (⨆ i, (E i).map g : IntermediateField ℚ N) :=
+    IntermediateField.map_iSup g E
+  calc
+    ramifiedPrimes (⨆ i, E i : IntermediateField ℚ K) =
+        ramifiedPrimes ((⨆ i, E i).map g) :=
+      ramifiedPrimes_eq_of_algEquiv ((⨆ i, E i).equivMap g)
+    _ = ramifiedPrimes (⨆ i, (E i).map g : IntermediateField ℚ N) :=
+      congrArg (fun F : IntermediateField ℚ N => ramifiedPrimes F) hmap
+    _ = ⋃ i, ramifiedPrimes ((E i).map g) := ramifiedPrimes_iSup_of_isGalois _
+    _ = ⋃ i, ramifiedPrimes (E i) := by
+      congr 1
+      funext i
+      exact (ramifiedPrimes_eq_of_algEquiv ((E i).equivMap g)).symm
 
 end NumberField
