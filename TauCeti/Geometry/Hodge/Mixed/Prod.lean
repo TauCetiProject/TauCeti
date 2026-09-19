@@ -76,10 +76,12 @@ noncomputable def prod : MixedHodgeStructure (IsBaseChange.prodMap ιℚ ι'ℚ 
         rw [eq_bot_mono (X.F_antitone (le_max_left _ _)) hi,
           eq_bot_mono (Y.F_antitone (le_max_right _ _)) hj, Submodule.prod_bot]⟩)
 
+/-- The weight filtration of the product is the product of the weight filtrations. -/
 @[simp]
 theorem prod_WQ (k : ℤ) : (X.prod Y).WQ k = (X.WQ k).prod (Y.WQ k) := by
   simp [prod]
 
+/-- The Hodge filtration of the product is the product of the Hodge filtrations. -/
 @[simp]
 theorem prod_F (p : ℤ) : (X.prod Y).F p = (X.F p).prod (Y.F p) := by
   simp [prod]
@@ -114,30 +116,38 @@ noncomputable def inr : Hom Y (X.prod Y) where
   map_mem_F _ _ hx := by
     simpa [rationalMapToComplex_inr hℚ hℂ h'ℚ h'ℂ] using hx
 
+/-- The rational map of the first projection is the usual first projection of vector spaces. -/
 @[simp]
 theorem fst_toRatLinearMap : (X.fst Y).toRatLinearMap = LinearMap.fst ℚ Vℚ V'ℚ := (rfl)
 
+/-- The rational map of the second projection is the usual second projection of vector spaces. -/
 @[simp]
 theorem snd_toRatLinearMap : (X.snd Y).toRatLinearMap = LinearMap.snd ℚ Vℚ V'ℚ := (rfl)
 
+/-- The rational map of the first inclusion is the usual first inclusion of vector spaces. -/
 @[simp]
 theorem inl_toRatLinearMap : (X.inl Y).toRatLinearMap = LinearMap.inl ℚ Vℚ V'ℚ := (rfl)
 
+/-- The rational map of the second inclusion is the usual second inclusion of vector spaces. -/
 @[simp]
 theorem inr_toRatLinearMap : (X.inr Y).toRatLinearMap = LinearMap.inr ℚ Vℚ V'ℚ := (rfl)
 
+/-- The complex map of the first projection is the usual first projection of vector spaces. -/
 @[simp]
 theorem fst_toLinearMap : (X.fst Y).toLinearMap = LinearMap.fst ℂ Vℂ V'ℂ := by
   simp [Hom.toLinearMap_def, rationalMapToComplex_fst hℚ hℂ h'ℚ h'ℂ]
 
+/-- The complex map of the second projection is the usual second projection of vector spaces. -/
 @[simp]
 theorem snd_toLinearMap : (X.snd Y).toLinearMap = LinearMap.snd ℂ Vℂ V'ℂ := by
   simp [Hom.toLinearMap_def, rationalMapToComplex_snd hℚ hℂ h'ℚ h'ℂ]
 
+/-- The complex map of the first inclusion is the usual first inclusion of vector spaces. -/
 @[simp]
 theorem inl_toLinearMap : (X.inl Y).toLinearMap = LinearMap.inl ℂ Vℂ V'ℂ := by
   simp [Hom.toLinearMap_def, rationalMapToComplex_inl hℚ hℂ h'ℚ h'ℂ]
 
+/-- The complex map of the second inclusion is the usual second inclusion of vector spaces. -/
 @[simp]
 theorem inr_toLinearMap : (X.inr Y).toLinearMap = LinearMap.inr ℂ Vℂ V'ℂ := by
   simp [Hom.toLinearMap_def, rationalMapToComplex_inr hℚ hℂ h'ℚ h'ℂ]
@@ -153,7 +163,7 @@ open CategoryTheory Limits
 universe u
 
 /-- The binary direct-sum bicone, with product carriers and componentwise filtrations. -/
-noncomputable def binaryBicone (X Y : MixedHodgeStructureCat.{u}) : BinaryBicone X Y where
+private noncomputable def binaryBicone (X Y : MixedHodgeStructureCat.{u}) : BinaryBicone X Y where
   pt := .of (IsBaseChange.prodMap X.toRat Y.toRat X.isBaseChangeRat Y.isBaseChangeRat)
     (IsBaseChange.prodMap X.toComplex Y.toComplex X.isBaseChangeComplex Y.isBaseChangeComplex)
     (X.hs.prod Y.hs)
@@ -166,64 +176,17 @@ noncomputable def binaryBicone (X Y : MixedHodgeStructureCat.{u}) : BinaryBicone
   inr_fst := by apply hom_ext; simp
   inr_snd := by apply hom_ext; simp
 
-/-- The direct-sum point has product carriers and componentwise filtrations. -/
-@[simp]
-theorem binaryBicone_pt (X Y : MixedHodgeStructureCat.{u}) :
-    (binaryBicone X Y).pt =
-      .of (IsBaseChange.prodMap X.toRat Y.toRat X.isBaseChangeRat Y.isBaseChangeRat)
-        (IsBaseChange.prodMap X.toComplex Y.toComplex X.isBaseChangeComplex Y.isBaseChangeComplex)
-        (X.hs.prod Y.hs) :=
-  (rfl)
-
-/-- The direct-sum `fst` map is the corresponding mixed Hodge morphism. -/
-@[simp]
-theorem binaryBicone_fst (X Y : MixedHodgeStructureCat.{u}) :
-    (binaryBicone X Y).fst = eqToHom (binaryBicone_pt X Y) ≫ X.hs.fst Y.hs := by
-  exact (Category.id_comp (obj := MixedHodgeStructureCat.{u})
-    (X := (binaryBicone X Y).pt) (Y := X) (X.hs.fst Y.hs)).symm
-
-/-- The direct-sum `snd` map is the corresponding mixed Hodge morphism. -/
-@[simp]
-theorem binaryBicone_snd (X Y : MixedHodgeStructureCat.{u}) :
-    (binaryBicone X Y).snd = eqToHom (binaryBicone_pt X Y) ≫ X.hs.snd Y.hs := by
-  exact (Category.id_comp (obj := MixedHodgeStructureCat.{u})
-    (X := (binaryBicone X Y).pt) (Y := Y) (X.hs.snd Y.hs)).symm
-
-/-- The direct-sum `inl` map is the corresponding mixed Hodge morphism. -/
-@[simp]
-theorem binaryBicone_inl (X Y : MixedHodgeStructureCat.{u}) :
-    (binaryBicone X Y).inl = X.hs.inl Y.hs ≫ eqToHom (binaryBicone_pt X Y).symm := by
-  exact (Category.comp_id (obj := MixedHodgeStructureCat.{u})
-    (X := X) (Y := (binaryBicone X Y).pt) (X.hs.inl Y.hs)).symm
-
-/-- The direct-sum `inr` map is the corresponding mixed Hodge morphism. -/
-@[simp]
-theorem binaryBicone_inr (X Y : MixedHodgeStructureCat.{u}) :
-    (binaryBicone X Y).inr = X.hs.inr Y.hs ≫ eqToHom (binaryBicone_pt X Y).symm := by
-  exact (Category.comp_id (obj := MixedHodgeStructureCat.{u})
-    (X := Y) (Y := (binaryBicone X Y).pt) (X.hs.inr Y.hs)).symm
-
 /-- The componentwise direct sum is both a product and a coproduct. -/
-noncomputable def binaryBiconeIsBilimit (X Y : MixedHodgeStructureCat.{u}) :
+private noncomputable def binaryBiconeIsBilimit (X Y : MixedHodgeStructureCat.{u}) :
     (binaryBicone X Y).IsBilimit := by
   apply isBinaryBilimitOfTotal
-  let P : MixedHodgeStructureCat.{u} :=
-    .of (IsBaseChange.prodMap X.toRat Y.toRat X.isBaseChangeRat Y.isBaseChangeRat)
-      (IsBaseChange.prodMap X.toComplex Y.toComplex X.isBaseChangeComplex Y.isBaseChangeComplex)
-      (X.hs.prod Y.hs)
-  have total : (X.hs.fst Y.hs : P ⟶ X) ≫ X.hs.inl Y.hs +
-      (X.hs.snd Y.hs : P ⟶ Y) ≫ X.hs.inr Y.hs = 𝟙 P := by
-    apply hom_ext
-    rw [MixedHodgeStructure.Hom.add_toRatLinearMap]
-    simp only [comp_toRatLinearMap, id_toRatLinearMap,
-      MixedHodgeStructure.fst_toRatLinearMap, MixedHodgeStructure.snd_toRatLinearMap,
-      MixedHodgeStructure.inl_toRatLinearMap, MixedHodgeStructure.inr_toRatLinearMap]
-    exact LinearMap.coprod_inl_inr
-  simp only [binaryBicone_fst, binaryBicone_snd, binaryBicone_inl, binaryBicone_inr,
-    Category.assoc, ← Preadditive.comp_add]
-  rw [← Category.assoc, ← Category.assoc, ← Preadditive.add_comp, total]
-  rw [Category.id_comp, eqToHom_trans]
-  exact eqToHom_refl _ _
+  apply hom_ext
+  rw [MixedHodgeStructure.Hom.add_toRatLinearMap]
+  -- Unfold the private bicone to identify its four maps on the rational product carrier.
+  simp only [binaryBicone, comp_toRatLinearMap, id_toRatLinearMap,
+    MixedHodgeStructure.fst_toRatLinearMap, MixedHodgeStructure.snd_toRatLinearMap,
+    MixedHodgeStructure.inl_toRatLinearMap, MixedHodgeStructure.inr_toRatLinearMap]
+  exact LinearMap.coprod_inl_inr
 
 noncomputable instance hasBinaryBiproducts : HasBinaryBiproducts MixedHodgeStructureCat.{u} where
   has_binary_biproduct X Y :=
