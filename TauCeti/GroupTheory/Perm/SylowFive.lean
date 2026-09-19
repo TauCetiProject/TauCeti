@@ -66,8 +66,9 @@ private theorem natCard_perm_eq_120 [Finite α] (hα : Nat.card α = 5) : Nat.ca
   rfl
 
 /-- The symmetric group on five points has exactly six Sylow `5`-subgroups. -/
-theorem card_sylow_five_perm [Finite α] (hα : Nat.card α = 5) :
+theorem card_sylow_five_perm (hα : Nat.card α = 5) :
     Nat.card (Sylow 5 (Perm α)) = 6 := by
+  let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
   classical
   have := Fintype.ofFinite α
   have h120 := natCard_perm_eq_120 hα
@@ -96,17 +97,19 @@ theorem card_sylow_five_perm [Finite α] (hα : Nat.card α = 5) :
 
 /-- The normalizer of a Sylow `5`-subgroup of the symmetric group on five points has order
 `20`. -/
-theorem card_normalizer_sylow_five_perm [Finite α] (hα : Nat.card α = 5) (P : Sylow 5 (Perm α)) :
+theorem card_normalizer_sylow_five_perm (hα : Nat.card α = 5) (P : Sylow 5 (Perm α)) :
     Nat.card (normalizer (P : Set (Perm α))) = 20 := by
+  let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
   have h := (normalizer (P : Set (Perm α))).index_mul_card
   rw [← P.card_eq_index_normalizer, card_sylow_five_perm hα, natCard_perm_eq_120 hα] at h
   omega
 
 /-- A subgroup of the symmetric group on five points whose order is divisible by `5` has one or
 six Sylow `5`-subgroups. -/
-theorem card_sylow_five_eq_one_or_six [Finite α] (hα : Nat.card α = 5)
+theorem card_sylow_five_eq_one_or_six (hα : Nat.card α = 5)
     (G : Subgroup (Perm α)) (h5 : 5 ∣ Nat.card G) :
     Nat.card (Sylow 5 G) = 1 ∨ Nat.card (Sylow 5 G) = 6 := by
+  let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
   have hG : Nat.card G ∣ 120 := natCard_perm_eq_120 hα ▸ G.card_subgroup_dvd_card
   obtain ⟨Q⟩ : Nonempty (Sylow 5 G) := inferInstance
   have hQ : Nat.card Q = 5 := Q.card_eq_of_dvd_of_not_sq_dvd h5 fun h => by
@@ -126,9 +129,10 @@ theorem card_sylow_five_eq_one_or_six [Finite α] (hα : Nat.card α = 5)
 /-- A subgroup `G` of the symmetric group on five points whose order is divisible by `5` and which
 has a unique Sylow `5`-subgroup lies between a Sylow `5`-subgroup of the symmetric group and its
 normalizer. -/
-theorem exists_sylow_le_le_normalizer_of_card_sylow_five_eq_one [Finite α] (hα : Nat.card α = 5)
+theorem exists_sylow_le_le_normalizer_of_card_sylow_five_eq_one (hα : Nat.card α = 5)
     (G : Subgroup (Perm α)) (h5 : 5 ∣ Nat.card G) (h1 : Nat.card (Sylow 5 G) = 1) :
     ∃ P : Sylow 5 (Perm α), (P : Subgroup (Perm α)) ≤ G ∧ G ≤ normalizer (P : Set (Perm α)) := by
+  let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
   have h120 := natCard_perm_eq_120 hα
   have hG : Nat.card G ∣ 120 := h120 ▸ G.card_subgroup_dvd_card
   obtain ⟨Q⟩ : Nonempty (Sylow 5 G) := inferInstance
@@ -179,8 +183,9 @@ theorem eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard [Fintype α] [Decida
     omega
 
 /-- The symmetric group on five points has no subgroup of order `30`. -/
-theorem natCard_ne_thirty [Finite α] (hα : Nat.card α = 5) (G : Subgroup (Perm α)) :
+theorem natCard_ne_thirty (hα : Nat.card α = 5) (G : Subgroup (Perm α)) :
     Nat.card G ≠ 30 := by
+  let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
   classical
   have := Fintype.ofFinite α
   intro h
@@ -208,9 +213,10 @@ theorem exists_sylow_le_le_normalizer_or_alternatingGroup_le [Fintype α] [Decid
 
 /-- A subgroup of the symmetric group on five points whose order is divisible by `5` has order
 `5`, `10`, `20`, `60` or `120`. -/
-theorem natCard_mem_of_five_dvd_natCard [Finite α] (hα : Nat.card α = 5)
+theorem natCard_mem_of_five_dvd_natCard (hα : Nat.card α = 5)
     (G : Subgroup (Perm α)) (h5 : 5 ∣ Nat.card G) :
     Nat.card G ∈ ({5, 10, 20, 60, 120} : Finset ℕ) := by
+  let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
   classical
   have := Fintype.ofFinite α
   have hG : Nat.card G ∣ 120 := natCard_perm_eq_120 hα ▸ G.card_subgroup_dvd_card
@@ -231,9 +237,10 @@ theorem natCard_mem_of_five_dvd_natCard [Finite α] (hα : Nat.card α = 5)
 
 /-- A transitive subgroup of the symmetric group on five points has order `5`, `10`, `20`,
 `60` or `120`. -/
-theorem natCard_mem_of_natCard_eq_five_of_isPretransitive [Finite α] (hα : Nat.card α = 5)
+theorem natCard_mem_of_natCard_eq_five_of_isPretransitive (hα : Nat.card α = 5)
     (G : Subgroup (Perm α)) [MulAction.IsPretransitive G α] :
     Nat.card G ∈ ({5, 10, 20, 60, 120} : Finset ℕ) := by
+  let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
   have : Nonempty α := (Nat.card_pos_iff.mp (by omega)).1
   exact natCard_mem_of_five_dvd_natCard hα G (hα ▸ natCard_dvd_natCard_of_isPretransitive G)
 
