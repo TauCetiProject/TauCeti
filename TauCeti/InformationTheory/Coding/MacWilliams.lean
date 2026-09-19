@@ -40,7 +40,7 @@ to `AddChar.FiniteField.primitiveChar`.
   identity over a finite commutative ring with a primitive additive character.
 * `Submodule.natCard_mul_weightEnumerator_euclideanDual`: the MacWilliams identity over a finite
   field.
-* `TauCeti.BinaryCode.aeval_weightEnumerator_of_eq_euclideanDual`: the self-dual binary
+* `TauCeti.BinaryCode.aeval_weightEnumerator_add_sub_of_eq_euclideanDual`: the self-dual binary
   specialization `W_C(X + Y, X - Y) = 2^(n/2) W_C(X, Y)` in `ℤ[X, Y]`.
 
 ## References
@@ -126,7 +126,7 @@ namespace TauCeti.BinaryCode
 variable {ι : Type*} [Fintype ι] {C : LinearCode (ZMod 2) ι}
 
 /-- The integral MacWilliams symmetry of a self-dual binary code. -/
-theorem aeval_weightEnumerator_of_eq_euclideanDual (hC : C = C.euclideanDual) :
+theorem aeval_weightEnumerator_add_sub_of_eq_euclideanDual (hC : C = C.euclideanDual) :
     aeval ![X 0 + X 1, X 0 - X 1] (C : Set (ι → ZMod 2)).weightEnumerator =
       (2 : MvPolynomial (Fin 2) ℤ) ^ (Fintype.card ι / 2) *
         (C : Set (ι → ZMod 2)).weightEnumerator := by

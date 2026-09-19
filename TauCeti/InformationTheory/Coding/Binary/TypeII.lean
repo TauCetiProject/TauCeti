@@ -55,17 +55,17 @@ theorem IsTypeII.eight_dvd_card (hC : IsTypeII C) : 8 ∣ Fintype.card ι := by
   have hcard : (Nat.card C : ℂ) = 2 ^ (Fintype.card ι / 2) := by
     rw [natCard_of_eq_euclideanDual hC.eq_euclideanDual, Nat.cast_pow, Nat.cast_ofNat]
   have hI : aeval ![1, I] (C : Set (ι → ZMod 2)).weightEnumerator = (Nat.card C : ℂ) := by
-    have h := hC.isDoublyEven.aeval_weightEnumerator_mul I_pow_four (1 : ℂ) 1
+    have h := hC.isDoublyEven.aeval_weightEnumerator_mul_second I_pow_four (1 : ℂ) 1
     simpa [aeval_weightEnumerator_diag _ (Set.toFinite _)] using h
   have htransform : aeval ![1 + I, 1 - I] (C : Set (ι → ZMod 2)).weightEnumerator =
       (Nat.card C : ℂ) * (1 + I) ^ Fintype.card ι := by
-    have h := hC.isDoublyEven.aeval_weightEnumerator_mul
+    have h := hC.isDoublyEven.aeval_weightEnumerator_mul_second
       isPrimitiveRoot_neg_I.pow_eq_one (1 + I) (1 + I)
     have heq : -I * (1 + I) = 1 - I := by linear_combination -I_sq
     simpa only [heq, aeval_weightEnumerator_diag _ (Set.toFinite _), SetLike.coe_sort_coe] using h
   -- Evaluate MacWilliams at (1, I), then cancel the nonzero cardinality.
   have hmac := congrArg (aeval ![1, I] : MvPolynomial (Fin 2) ℤ →ₐ[ℤ] ℂ)
-    (aeval_weightEnumerator_of_eq_euclideanDual hC.eq_euclideanDual)
+    (aeval_weightEnumerator_add_sub_of_eq_euclideanDual hC.eq_euclideanDual)
   rw [comp_aeval_apply] at hmac
   have heval : (fun i ↦ (aeval ![1, I] : MvPolynomial (Fin 2) ℤ →ₐ[ℤ] ℂ)
       (![X 0 + X 1, X 0 - X 1] i)) = ![1 + I, 1 - I] := by

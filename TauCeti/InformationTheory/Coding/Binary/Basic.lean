@@ -24,7 +24,7 @@ An even code is characterized by membership of the all-ones word in its dual. In
 a binary self-dual code is even and contains the all-ones word. These facts supply the elementary
 parity constraints used in the study of doubly-even self-dual codes.
 
-`IsDoublyEven.aeval_weightEnumerator_mul` shows that the weight enumerator of a doubly-even
+`IsDoublyEven.aeval_weightEnumerator_mul_second` shows that the weight enumerator of a doubly-even
 code is invariant under multiplying its second argument by a fourth root of unity. This supplies
 the fourth-root symmetry used for Type II codes.
 
@@ -168,7 +168,7 @@ theorem natCard_of_eq_euclideanDual (hC : C = C.euclideanDual) :
 /-- The weight enumerator of a doubly-even code is unchanged when its second argument is
 multiplied by a fourth root of unity. Taking `R = ℂ[X,Y]` gives the polynomial symmetry. -/
 @[simp]
-theorem IsDoublyEven.aeval_weightEnumerator_mul {R : Type*} [CommRing R]
+theorem IsDoublyEven.aeval_weightEnumerator_mul_second {R : Type*} [CommRing R]
     (hC : IsDoublyEven C) {ζ : R} (hζ : ζ ^ 4 = 1) (x y : R) :
     aeval ![x, ζ * y] (C : Set (ι → ZMod 2)).weightEnumerator =
       aeval ![x, y] (C : Set (ι → ZMod 2)).weightEnumerator := by
