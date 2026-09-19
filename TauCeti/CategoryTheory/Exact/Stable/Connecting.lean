@@ -127,15 +127,19 @@ theorem projectiveStableFunctor_map_connectingMap_eq
 factors through the injective `I(X)`. -/
 @[simp]
 theorem projectiveStableFunctor_map_g_comp_connectingMap :
-    E.projectiveStableFunctor.map (S.g ≫ hE.connectingMap hS) = 0 := by
-  rw [ExactStructure.projectiveStableFunctor_map_eq_zero_iff, g_comp_connectingMap]
+    E.projectiveStableFunctor.map S.g ≫
+      E.projectiveStableFunctor.map (hE.connectingMap hS) = 0 := by
+  rw [← Functor.map_comp, ExactStructure.projectiveStableFunctor_map_eq_zero_iff,
+    g_comp_connectingMap]
   exact ObjectProperty.factorsThrough_comp E.isProjective
     ((hE.projective_iff_injective _).mpr (hE.suspensionPresentation S.X₁).isInjective) _ _
 
 /-- The composite `Z ⟶ ΣX ⟶ ΣY` of the standard triangle vanishes in the stable category. -/
 @[simp]
 theorem projectiveStableFunctor_map_connectingMap_comp_suspensionMap :
-    E.projectiveStableFunctor.map (hE.connectingMap hS ≫ hE.suspensionMap S.f) = 0 := by
+    E.projectiveStableFunctor.map (hE.connectingMap hS) ≫
+      E.projectiveStableFunctor.map (hE.suspensionMap S.f) = 0 := by
+  rw [← Functor.map_comp]
   refine hE.projectiveStableFunctor_map_eq_zero_of_g_comp_eq hS
     (b := hE.connectingMiddleMap hS ≫ hE.suspensionMiddleMap S.f - hE.suspensionInflation S.X₂)
     ?_ ?_
