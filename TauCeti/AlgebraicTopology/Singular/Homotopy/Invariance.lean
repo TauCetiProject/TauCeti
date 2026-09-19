@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.HomotopyInvariance
-public import TauCeti.AlgebraicTopology.Singular.Homotopy
+public import TauCeti.AlgebraicTopology.Singular.Homotopy.Basic
 
 /-!
 # Homotopy invariance of relative singular homology
