@@ -32,18 +32,27 @@ in `TauCeti/CategoryTheory/GrothendieckGroup/ProjectiveResolution.lean`; see
 of deflations and dimension shifting in `TauCeti/CategoryTheory/GrothendieckGroup/Resolving.lean`;
 see `TauCeti.ExactStructure.IsResolving.resolutionEquiv`.
 
+The class of an object itself, as opposed to that of a resolution, is defined here by choosing one
+of its finite `P`-resolutions; each of those two files removes the choice from its own
+independence theorem.
+
 ## Main definitions
 
 * `TauCeti.ExactStructure.FiniteResolution.eulerClass`: the alternating class of a finite
   resolution in ambient exact `K₀`.
 * `TauCeti.ExactStructure.FiniteResolution.eulerClassFullSubcategory`: the alternating class in
   the exact `K₀` of an extension-closed full subcategory containing the resolution terms.
+* `TauCeti.ExactStructure.eulerClassOf`: the alternating class, in that same `K₀`, of a chosen
+  finite `P`-resolution of an object admitting one.
 
 ## Main results
 
 * `TauCeti.ExactStructure.FiniteResolution.eulerClass_eq_of`: the Euler class of a resolution of
   `X` is the class of `X`; `TauCeti.ExactStructure.FiniteResolution.eulerClass_eq_eulerClass` is
   the resulting independence of the resolution.
+* `TauCeti.ExactStructure.eulerClassOf_eq_of_forall_eulerClassFullSubcategory_eq`: a resolution
+  whose alternating class is shared by every finite `P`-resolution of the same object computes
+  `TauCeti.ExactStructure.eulerClassOf`.
 * `TauCeti.ExactK0.mem_propClasses_iff`: membership in the generator set `propClasses E P` is
   being the class of an object satisfying `P`.
 * `TauCeti.ExactK0.closure_propClasses_eq_top`: if every object admits a finite `P`-resolution,
@@ -223,6 +232,41 @@ class. -/
 end FullSubcategory
 
 end ExactStructure.FiniteResolution
+
+namespace ExactStructure
+
+section EulerClassOf
+
+variable [LocallySmall.{w} C] [ObjectProperty.EssentiallySmall.{w} P]
+  [P.ContainsZero] [P.IsClosedUnderBinaryProducts]
+
+/-- A property containing a zero object and closed under binary products is automatically
+replete, by `CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_containsZero`. -/
+local instance : P.IsClosedUnderIsomorphisms :=
+  ObjectProperty.isClosedUnderIsomorphisms_of_containsZero P
+
+variable (hP : E.IsExtensionClosed P)
+
+/-- **The Euler class of an object of finite `P`-dimension**, in the exact `K₀` of the structure
+induced on the full subcategory on `P`: the alternating class of some, hence when `P` consists of
+`E`-projectives, by `TauCeti.ExactStructure.eulerClassOf_eq`, or when `P` is resolving, by
+`TauCeti.ExactStructure.IsResolving.eulerClassOf_eq`, of any, finite `P`-resolution of it. -/
+noncomputable def eulerClassOf {X : C} (hX : E.admitsFiniteResolution P X) :
+    ExactK0 (E.fullSubcategory P hP) :=
+  ((E.admitsFiniteResolution_iff P).mp hX).some.eulerClassFullSubcategory hP
+
+/-- If every finite `P`-resolution of `X` has the same alternating class as the resolution `r`,
+then `r` computes `TauCeti.ExactStructure.eulerClassOf`. -/
+theorem eulerClassOf_eq_of_forall_eulerClassFullSubcategory_eq {X : C}
+    (hX : E.admitsFiniteResolution P X) (r : E.FiniteResolution P X)
+    (h : ∀ s : E.FiniteResolution P X,
+      s.eulerClassFullSubcategory hP = r.eulerClassFullSubcategory hP) :
+    E.eulerClassOf hP hX = r.eulerClassFullSubcategory hP :=
+  h _
+
+end EulerClassOf
+
+end ExactStructure
 
 namespace ExactK0
 

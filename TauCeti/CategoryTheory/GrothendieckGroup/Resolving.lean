@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Resolving
-public import TauCeti.CategoryTheory.GrothendieckGroup.ProjectiveResolution
+public import TauCeti.CategoryTheory.GrothendieckGroup.Resolution
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -15,8 +15,8 @@ import Mathlib.Tactic.Module
 
 Let `E` be an exact structure on an additive category `C` and let `P` be a resolving property:
 it contains a zero object, is closed under binary direct sums and extensions, is closed under
-kernels of deflations between its objects and under retracts, and every object of `C` admits a
-finite `P`-resolution. This file proves Weibel's **resolution theorem** in this generality: the
+kernels of deflations between its objects, and every object of `C` admits a finite
+`P`-resolution. This file proves Weibel's **resolution theorem** in this generality: the
 inclusion of the full subcategory on `P`, with its induced exact structure, induces an isomorphism
 
 ```text
@@ -140,7 +140,8 @@ private theorem eulerClassFullSubcategory_eq_aux (n : ℕ) :
               have hY₂ := E.conflation_baseChange hp' sq.flip
               rw [baseChange_def] at hY₂
               obtain ⟨K'', Q'', i'', p'', h'', hQ'', hc'', hK''⟩ :=
-                IsResolving.exists_conflation (E := E) (P := P) (pullback p p')
+                IsResolving.exists_conflation_prop_X₂_admitsFiniteResolution_X₁
+                  (E := E) (P := P) (pullback p p')
               let t := ((E.admitsFiniteResolution_iff P).mp hK'').some
               obtain ⟨L, c, α, β, hc, hβ, hLc, hKL, -, -⟩ := E.exists_conflation_comp' hY₁ hc''
               obtain ⟨L', c', α', β', hc', hβ', hLc', hKL', -, -⟩ :=
@@ -174,8 +175,8 @@ theorem eulerClassFullSubcategory_eq_eulerClassFullSubcategory {X : C}
 theorem eulerClassOf_eq {X : C} (hX : E.admitsFiniteResolution P X)
     (r : E.FiniteResolution P X) :
     E.eulerClassOf hP hX = r.eulerClassFullSubcategory hP :=
-  ExactStructure.eulerClassOf_eq_of hP hX r
-    eulerClassFullSubcategory_eq_eulerClassFullSubcategory
+  ExactStructure.eulerClassOf_eq_of_forall_eulerClassFullSubcategory_eq hP hX r fun s =>
+    eulerClassFullSubcategory_eq_eulerClassFullSubcategory s r
 
 /-- On an object satisfying `P` the Euler class is the class of that object. -/
 @[simp]
@@ -207,7 +208,8 @@ private theorem eulerClassOf_eq_add_of_prop_X₃ {S : ShortComplex C} (hS : E.Co
     (h₃ : P S.X₃) (a₁ : E.admitsFiniteResolution P S.X₁)
     (a₂ : E.admitsFiniteResolution P S.X₂) (a₃ : E.admitsFiniteResolution P S.X₃) :
     E.eulerClassOf hP a₂ = E.eulerClassOf hP a₁ + E.eulerClassOf hP a₃ := by
-  obtain ⟨K, Q, i, a, hia, hQ, hc, hK⟩ := IsResolving.exists_conflation (E := E) (P := P) S.X₂
+  obtain ⟨K, Q, i, a, hia, hQ, hc, hK⟩ :=
+    IsResolving.exists_conflation_prop_X₂_admitsFiniteResolution_X₁ (E := E) (P := P) S.X₂
   obtain ⟨M, c, α, β, hc', hβ, hMc, hKM, -, -⟩ := E.exists_conflation_comp' hS hc
   have hM : P M := IsResolving.prop_X₁ (S := ShortComplex.mk _ _ hc') hMc hQ h₃
   have key : (ExactK0.of ⟨Q, hQ⟩ : ExactK0 (E.fullSubcategory P hP)) =
@@ -248,7 +250,8 @@ private theorem eulerClassOf_add_aux (n : ℕ) :
       have hY₂ := E.conflation_baseChange hcZ sq.flip
       rw [baseChange_def] at hY₂
       obtain ⟨K', Q', i', p', h', hQ', hc', hK'⟩ :=
-        IsResolving.exists_conflation (E := E) (P := P) (pullback S.g pZ)
+        IsResolving.exists_conflation_prop_X₂_admitsFiniteResolution_X₁
+          (E := E) (P := P) (pullback S.g pZ)
       obtain ⟨M, c, α, β, hMc', hβ, hMc, hK'M, -, -⟩ := E.exists_conflation_comp' hY₂ hc'
       have aY := IsResolving.finiteResolution (E := E) (P := P) (pullback S.g pZ)
       have aKZ := IsResolving.finiteResolution (E := E) (P := P) KZ

@@ -38,8 +38,6 @@ theorem** in the projective case.
   finite `P`-resolution, in the exact `K₀` of the exact structure induced on the full subcategory
   on `P`. On top of the additivity hypotheses assumed throughout, its definition needs only
   extension closure of `P`, not projectivity.
-* `TauCeti.ExactStructure.eulerClassOf`: the Euler class of an object admitting a finite
-  `P`-resolution.
 * `TauCeti.ExactStructure.resolutionEquiv`: the isomorphism of the resolution theorem.
 
 ## Main results
@@ -69,9 +67,11 @@ lemma and the horseshoe are replaced by pullbacks of deflations and dimension sh
 `TauCeti/CategoryTheory/GrothendieckGroup/Resolving.lean`. The projective case proved here needs
 no kernel closure and resolves only the objects of finite `P`-dimension.
 
-The class of an object, as opposed to that of a resolution, is defined by choosing a resolution
-with `Nonempty.some`; `TauCeti.ExactStructure.eulerClassOf_eq` immediately removes the choice, so
-no result below depends on it.
+The class of an object, as opposed to that of a resolution, is
+`TauCeti.ExactStructure.eulerClassOf` of
+`TauCeti/CategoryTheory/GrothendieckGroup/Resolution.lean`, defined by choosing a resolution with
+`Nonempty.some`; `TauCeti.ExactStructure.eulerClassOf_eq` immediately removes the choice under the
+projectivity hypothesis, so no result below depends on it.
 
 Two inductions are carried out on a numerical bound rather than on the resolutions themselves:
 the well-definedness induction consumes the sum of the two lengths, because Schanuel's lemma
@@ -201,29 +201,6 @@ end FiniteResolution
 
 section EulerClassOf
 
-section General
-
-variable (hP : E.IsExtensionClosed P)
-
-/-- **The Euler class of an object of finite `P`-dimension**, in the exact `K₀` of the structure
-induced on the full subcategory on `P`: the alternating class of some, hence when `P` consists of
-`E`-projectives, by `TauCeti.ExactStructure.eulerClassOf_eq`, or when `P` is resolving, by
-`TauCeti.ExactStructure.IsResolving.eulerClassOf_eq`, of any, finite `P`-resolution of it. -/
-noncomputable def eulerClassOf {X : C} (hX : E.admitsFiniteResolution P X) :
-    ExactK0 (E.fullSubcategory P hP) :=
-  ((E.admitsFiniteResolution_iff P).mp hX).some.eulerClassFullSubcategory hP
-
-/-- If the alternating class is independent of the finite `P`-resolution of `X`, then every such
-resolution computes `TauCeti.ExactStructure.eulerClassOf`. -/
-theorem eulerClassOf_eq_of {X : C} (hX : E.admitsFiniteResolution P X)
-    (r : E.FiniteResolution P X)
-    (h : ∀ r s : E.FiniteResolution P X,
-      r.eulerClassFullSubcategory hP = s.eulerClassFullSubcategory hP) :
-    E.eulerClassOf hP hX = r.eulerClassFullSubcategory hP :=
-  h _ r
-
-end General
-
 variable (hproj : P ≤ E.isProjective)
 
 local notation "hP" => E.isExtensionClosed_of_le_isProjective hproj
@@ -233,8 +210,8 @@ include hproj in
 theorem eulerClassOf_eq {X : C} (hX : E.admitsFiniteResolution P X)
     (r : E.FiniteResolution P X) :
     E.eulerClassOf hP hX = r.eulerClassFullSubcategory hP :=
-  E.eulerClassOf_eq_of hP hX r
-    (FiniteResolution.eulerClassFullSubcategory_eq_eulerClassFullSubcategory hproj)
+  E.eulerClassOf_eq_of_forall_eulerClassFullSubcategory_eq hP hX r fun s =>
+    FiniteResolution.eulerClassFullSubcategory_eq_eulerClassFullSubcategory hproj s r
 
 include hproj in
 /-- On an object satisfying `P` the Euler class is the class of that object. -/

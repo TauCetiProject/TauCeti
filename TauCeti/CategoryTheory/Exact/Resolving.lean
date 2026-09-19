@@ -137,7 +137,7 @@ variable {E P} [E.IsResolving P]
 /-- Every object of a category with a resolving property `P` is the quotient of a conflation
 `K ↪ Q ↠ X` whose middle term satisfies `P` and whose kernel again admits a finite
 `P`-resolution. -/
-theorem IsResolving.exists_conflation (X : C) :
+theorem IsResolving.exists_conflation_prop_X₂_admitsFiniteResolution_X₁ (X : C) :
     ∃ (K Q : C) (i : K ⟶ Q) (p : Q ⟶ X) (hip : i ≫ p = 0), P Q ∧
       E.Conflation (ShortComplex.mk i p hip) ∧ E.admitsFiniteResolution P K := by
   have : P.IsClosedUnderIsomorphisms := ObjectProperty.isClosedUnderIsomorphisms_of_containsZero P
@@ -220,7 +220,7 @@ private theorem dimension_shift_aux (n : ℕ) :
           ∃ r : E.FiniteResolution P S.X₂, r.length ≤ n + 1 := by
         intro S hS h₃ h₁
         obtain ⟨K, Q, i, a, hia, hQ, hc, -⟩ :=
-          IsResolving.exists_conflation (E := E) (P := P) S.X₂
+          IsResolving.exists_conflation_prop_X₂_admitsFiniteResolution_X₁ (E := E) (P := P) S.X₂
         obtain ⟨L, c, α, β, hc', hβ, hL, hKL, -, -⟩ := E.exists_conflation_comp' hS hc
         obtain ⟨t, ht⟩ := ih.2 (S := ShortComplex.mk β α hβ) hKL
           (IsResolving.prop_X₁ (S := ShortComplex.mk c (a ≫ S.g) hc') hL hQ h₃) h₁
