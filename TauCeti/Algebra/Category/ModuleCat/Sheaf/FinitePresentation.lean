@@ -15,8 +15,8 @@ finitely presented. Locally free data gives presentations with the chosen bases 
 and no relations, so finiteness of the local bases is enough.
 
 The main result is
-`SheafOfModules.LocalGeneratorsData.IsLocallyFreeData.isFinitePresentation`. In particular the
-free sheaf of modules on a finite type is finitely presented
+`SheafOfModules.LocalGeneratorsData.IsLocallyFreeData.isFinitePresentation`. In particular, when
+the site has binary products, the free sheaf of modules on a finite type is finitely presented
 (`TauCeti.SheafOfModules.isFinitePresentation_free`).
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer B, item "Coherent sheaves and

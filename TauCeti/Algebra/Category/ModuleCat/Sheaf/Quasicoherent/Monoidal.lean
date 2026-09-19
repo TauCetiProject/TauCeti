@@ -21,13 +21,14 @@ quasi-coherent sheaves of `R`-modules, then so is `M ⊗ N`: on a common refinem
 which `M` and `N` have presentations, the restriction of `M ⊗ N` is the tensor product of the
 restrictions of `M` and `N` (`SheafOfModules.overTensorIso`), which is presented by the tensor
 product of their presentations (`SheafOfModules.Presentation.tensor`). As the unit `R` is free on
-one generator, quasi-coherence is a monoidal property of sheaves of modules, and quasi-coherent
-sheaves of modules form a monoidal full subcategory.
+one generator, quasi-coherence is a monoidal property of sheaves of modules when the site also
+has binary products, and quasi-coherent sheaves of modules then form a monoidal full
+subcategory.
 
 The same construction applied to finite presentations gives finite presentations, so finite
-presentation is a monoidal property as well. Applied to presentations whose generating morphisms
-are isomorphisms, it gives presentations of the same kind; this is the local input for the tensor
-product of locally free sheaves.
+presentation is a monoidal property as well when the site has binary products. Applied to
+presentations whose generating morphisms are isomorphisms, it gives presentations of the same
+kind; this is the local input for the tensor product of locally free sheaves.
 
 ## Main declarations
 
