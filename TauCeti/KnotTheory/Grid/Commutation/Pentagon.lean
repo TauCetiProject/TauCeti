@@ -234,9 +234,11 @@ underlying rectangle. -/
 theorem mem_coveredSquares_iff_of_ne (P : GridPentagonBetween a s x y) {p : Fin n × Fin n}
     (ha : p.1 ≠ a) (hb : p.1 ≠ finRotate n a) :
     p ∈ P.coveredSquares ↔ p ∈ P.toGridRectangle.coveredSquares := by
-  rw [GridRectangleBetween.mem_toGridRectangle_coveredSquares]
-  simpa only [P.right_eq, ha, hb, ne_eq, not_false_eq_true, true_and, false_and, or_false]
-    using P.mem_coveredSquares p
+  simpa only [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
+    GridRectangle.mem_coveredRows, GridRectangleBetween.toGridRectangle_left,
+    GridRectangleBetween.toGridRectangle_right, GridRectangleBetween.toGridRectangle_bottom,
+    GridRectangleBetween.toGridRectangle_top, P.right_eq, ha, hb, ne_eq, not_false_eq_true,
+    true_and, false_and, or_false] using P.mem_coveredSquares p
 
 /-- A pentagon carries no `X`-marking exactly when the underlying rectangle carries none away
 from columns `a` and `finRotate n a`, the `X`-marking of column `a` is not above the turn row,
@@ -291,7 +293,7 @@ theorem card_pentagons_le_one (C : ColumnCommutationData G) (x y : GridState n) 
 /-- The columns of the original diagram whose `O`-marking a pentagon carries. -/
 noncomputable def pentagonOColumns {x y : GridState n} (C : ColumnCommutationData G)
     (P : GridPentagonBetween C.column C.turnRow x y) : Finset (Fin n) :=
-  Finset.univ.filter fun c => (c, G.O c) ∈ P.coveredSquares
+  G.OColumnsOfSquares P.coveredSquares
 
 /-- A column is a covered `O`-column of a pentagon exactly when its `O`-marking is a covered
 square. -/
@@ -322,15 +324,10 @@ theorem pentagonWeight_eq_prod_coveredSquares {x y : GridState n}
         if p ∈ G.OSet then MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) p.1)
         else (1 : MvPolynomial (Fin n) R) := by
   classical
-  have h : P.coveredSquares ∩ G.OSet = (G.pentagonOColumns C P).image fun c => (c, G.O c) := by
-    ext p
-    simp only [Finset.mem_inter, Finset.mem_image, mem_pentagonOColumns, mem_OSet]
-    constructor
-    · rintro ⟨hcov, hp⟩
-      exact ⟨p.1, by rwa [hp], by rw [hp]⟩
-    · rintro ⟨c, hc, rfl⟩
-      exact ⟨hc, rfl⟩
-  rw [pentagonWeight, Finset.prod_ite_mem, h,
+  rw [pentagonWeight, Finset.prod_ite_mem, Finset.inter_comm,
+    G.OSet_inter_eq_image_OColumnsOfSquares P.coveredSquares]
+  simp only [pentagonOColumns]
+  rw [
     Finset.prod_image fun _ _ _ _ hab => congrArg Prod.fst hab]
 
 /-- The weight of a pentagon is the product of the variables of the columns of the commuted
@@ -439,12 +436,6 @@ theorem pentagonMap_apply_apply (C : ColumnCommutationData G) (c : GridChainMinu
   | single x p =>
     rw [pentagonMap_single, Finsupp.smul_apply, smul_eq_mul, pentagonMapOnGenerator_apply,
       Finsupp.sum_single_index (by simp)]
-
-/-- The matrix coefficient of the pentagon map on a single generator is the sum of the weights of
-the contributing pentagons. -/
-theorem pentagonMap_single_one_apply (C : ColumnCommutationData G) (x y : GridState n) :
-    G.pentagonMap R C (Finsupp.single x 1) y = G.pentagonCoefficient R C x y := by
-  rw [pentagonMap_single, map_one, one_smul, pentagonMapOnGenerator_apply]
 
 end GridDiagram
 

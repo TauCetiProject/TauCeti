@@ -169,20 +169,4 @@ theorem card_coveredSquares :
 
 end GridRectangle
 
-namespace GridRectangleBetween
-
-variable {n : ℕ} {x y : GridState n}
-
-/-- Membership in the squares covered by the underlying rectangle of an oriented rectangle,
-expressed directly in terms of its four sides. -/
-theorem mem_toGridRectangle_coveredSquares (R : GridRectangleBetween x y)
-    (p : Fin n × Fin n) :
-    p ∈ R.toGridRectangle.coveredSquares ↔
-      p.1 ∈ Grid.cIco R.left R.right ∧ p.2 ∈ Grid.cIco R.bottom R.top := by
-  simp only [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
-    GridRectangle.mem_coveredRows, toGridRectangle_left, toGridRectangle_right,
-    toGridRectangle_bottom, toGridRectangle_top]
-
-end GridRectangleBetween
-
 end TauCeti

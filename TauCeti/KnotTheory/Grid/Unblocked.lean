@@ -163,12 +163,34 @@ variable {n : ℕ} (G : GridDiagram n)
 
 /-! ### The `O`-monomial of a rectangle -/
 
+/-- The columns whose `O`-marking belongs to a given set of squares. -/
+noncomputable def OColumnsOfSquares (s : Finset (Fin n × Fin n)) : Finset (Fin n) :=
+  Finset.univ.filter fun c => (c, G.O c) ∈ s
+
+/-- A column belongs to `OColumnsOfSquares` exactly when its `O`-marking belongs to the given
+set of squares. -/
+@[simp]
+theorem mem_OColumnsOfSquares {s : Finset (Fin n × Fin n)} {c : Fin n} :
+    c ∈ G.OColumnsOfSquares s ↔ (c, G.O c) ∈ s := by
+  simp [OColumnsOfSquares]
+
+/-- The `O`-markings in a set of squares are exactly those indexed by its covered `O`-columns. -/
+theorem OSet_inter_eq_image_OColumnsOfSquares (s : Finset (Fin n × Fin n)) :
+    G.OSet ∩ s = (G.OColumnsOfSquares s).image fun c => (c, G.O c) := by
+  ext p
+  simp only [Finset.mem_inter, Finset.mem_image, mem_OColumnsOfSquares, mem_OSet]
+  constructor
+  · rintro ⟨hp, hs⟩
+    exact ⟨p.1, by rwa [hp], by rw [hp]⟩
+  · rintro ⟨c, hc, rfl⟩
+    exact ⟨rfl, hc⟩
+
 /-- The columns whose `O`-marking lies in the squares a toroidal rectangle covers.
 
 The `O`-markings of a grid diagram are indexed by their columns, so this finite set of columns is
 the index set of the variables occurring in the rectangle's weight. -/
 noncomputable def OColumns (r : GridRectangle n) : Finset (Fin n) :=
-  Finset.univ.filter fun c => (c, G.O c) ∈ r.coveredSquares
+  G.OColumnsOfSquares r.coveredSquares
 
 /-- A column is a covered `O`-column exactly when its `O`-marking is a covered square. -/
 @[simp]
@@ -179,13 +201,7 @@ theorem mem_OColumns {r : GridRectangle n} {c : Fin n} :
 /-- The covered `O`-markings are exactly the markings of the covered `O`-columns. -/
 theorem OSet_inter_coveredSquares (r : GridRectangle n) :
     G.OSet ∩ r.coveredSquares = (G.OColumns r).image fun c => (c, G.O c) := by
-  ext p
-  simp only [Finset.mem_inter, Finset.mem_image, mem_OColumns, mem_OSet]
-  constructor
-  · rintro ⟨hp, hcov⟩
-    exact ⟨p.1, by rwa [hp], by rw [hp]⟩
-  · rintro ⟨c, hc, rfl⟩
-    exact ⟨rfl, hc⟩
+  exact G.OSet_inter_eq_image_OColumnsOfSquares r.coveredSquares
 
 /-- The number of covered `O`-columns is the number of `O`-markings among the covered squares:
 a grid diagram has exactly one `O`-marking in each column. -/

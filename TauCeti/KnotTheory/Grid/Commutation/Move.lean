@@ -198,19 +198,27 @@ noncomputable def ofNoninterleaving (a : Fin n) (ha : a ≠ finRotate n a)
       column_ne_next := ha
       noninterleaving := hG
       O_column_below := Finset.mem_insert_self _ _
-      X_column_below := Grid.left_mem_insert_right_cIco hOX.symm
-      O_next_above := Grid.mem_insert_right_cIco_of_mem_cIoo h
-      X_next_above := Grid.mem_insert_right_cIco_of_mem_cIoo (hb.mp h) }
+      X_column_below := Finset.mem_insert_of_mem (Grid.left_mem_cIco hOX.symm)
+      O_next_above := Finset.mem_insert_of_mem (Grid.cIoo_subset_cIco _ _ h)
+      X_next_above := Finset.mem_insert_of_mem (Grid.cIoo_subset_cIco _ _ (hb.mp h)) }
   else
+    have memOpposite {x : Fin n} (hx : x ∉ Grid.cIoo (G.O a) (G.X a)) :
+        x ∈ insert (G.O a) (Grid.cIco (G.X a) (G.O a)) := by
+      rcases (Grid.not_mem_cIoo_iff hOX).mp hx with hx | hx | hx
+      · rw [hx]
+        exact Finset.mem_insert_self _ _
+      · rw [hx]
+        exact Finset.mem_insert_of_mem (Grid.left_mem_cIco hOX.symm)
+      · exact Finset.mem_insert_of_mem (Grid.cIoo_subset_cIco _ _ hx)
     { column := a
       turnRow := G.X a
       oppositeTurnRow := G.O a
       column_ne_next := ha
       noninterleaving := hG
-      O_column_below := Grid.left_mem_insert_right_cIco hOX
+      O_column_below := Finset.mem_insert_of_mem (Grid.left_mem_cIco hOX)
       X_column_below := Finset.mem_insert_self _ _
-      O_next_above := Grid.mem_insert_cIco_swap_of_notMem_cIoo hOX h
-      X_next_above := Grid.mem_insert_cIco_swap_of_notMem_cIoo hOX (mt hb.mpr h) }
+      O_next_above := memOpposite h
+      X_next_above := memOpposite (mt hb.mpr h) }
 
 /-- The data built from a non-interleaving pair commutes the given column. -/
 @[simp]
