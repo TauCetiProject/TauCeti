@@ -36,6 +36,25 @@ of its roots in the splitting field is induced by a Galois automorphism. -/
 def HasFullSymmetricGaloisGroup (f : F[X]) : Prop :=
   f.Separable ∧ Function.Surjective (Gal.galActionHom f f.SplittingField)
 
+/-- Separability and surjectivity of the action on splitting-field roots give full symmetric
+Galois group. -/
+theorem HasFullSymmetricGaloisGroup.mk (hsep : f.Separable)
+    (hsurj : Function.Surjective (Gal.galActionHom f f.SplittingField)) :
+    HasFullSymmetricGaloisGroup f :=
+  ⟨hsep, hsurj⟩
+
+/-- A polynomial with full symmetric Galois group is separable. -/
+theorem HasFullSymmetricGaloisGroup.separable (hf : HasFullSymmetricGaloisGroup f) :
+    f.Separable :=
+  hf.1
+
+/-- Every permutation of the splitting-field roots of a polynomial with full symmetric
+Galois group is induced by a Galois automorphism. -/
+theorem HasFullSymmetricGaloisGroup.surjective_galActionHom
+    (hf : HasFullSymmetricGaloisGroup f) :
+    Function.Surjective (Gal.galActionHom f f.SplittingField) :=
+  hf.2
+
 /-- Among separable polynomials, full symmetric Galois group is equivalent to the Galois
 group having order equal to the factorial of the degree. -/
 theorem hasFullSymmetricGaloisGroup_iff_natCard (hsep : f.Separable) :
@@ -66,9 +85,9 @@ theorem hasFullSymmetricGaloisGroup_iff_of_splits (E : Type*) [Field E] [Algebra
 points as its degree. No numbering of its roots is fixed globally. -/
 theorem HasFullSymmetricGaloisGroup.nonempty_mulEquiv (hf : HasFullSymmetricGaloisGroup f) :
     Nonempty (f.Gal ≃* Equiv.Perm (Fin f.natDegree)) := by
-  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hf.1
+  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hf.separable
   exact ⟨(MulEquiv.ofBijective (Gal.galActionHom f f.SplittingField)
-    ⟨Gal.galActionHom_injective f _, hf.2⟩).trans (Equiv.permCongrHom e)⟩
+    ⟨Gal.galActionHom_injective f _, hf.surjective_galActionHom⟩).trans (Equiv.permCongrHom e)⟩
 
 /-- Repeated roots rule out full symmetric Galois group, even when the action on the
 distinct roots is surjective: in particular `X ^ n` is excluded for `2 ≤ n`. -/
@@ -76,7 +95,7 @@ distinct roots is surjective: in particular `X ^ n` is excluded for `2 ≤ n`. -
 theorem not_hasFullSymmetricGaloisGroup_X_pow (n : ℕ) (hn : 2 ≤ n) :
     ¬ HasFullSymmetricGaloisGroup (X ^ n : F[X]) := by
   intro h
-  have := h.1.squarefree.eq_zero_or_one_of_pow_of_not_isUnit (not_isUnit_X (R := F))
+  have := h.separable.squarefree.eq_zero_or_one_of_pow_of_not_isUnit (not_isUnit_X (R := F))
   omega
 
 end TauCeti.Polynomial
