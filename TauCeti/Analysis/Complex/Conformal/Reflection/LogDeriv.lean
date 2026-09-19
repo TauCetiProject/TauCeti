@@ -79,7 +79,7 @@ arbitrary target line; its holomorphy and its agreement with `f` on the closed u
   mapping the upper half-plane to one side of the target line, it is holomorphic across the axis.
 * `TauCeti.exists_differentiableOn_eqOn_logDeriv_deriv` -- the pre-Schwarzian derivative of a map
   of the upper half-plane with straight boundary arcs away from a set `S` continues to a
-  conjugation-symmetric function holomorphic off `S`.
+  conjugation-symmetric function holomorphic away from the real points of `S`.
 
 ## References
 
@@ -281,8 +281,8 @@ open Filter
 holomorphic with nonvanishing derivative on the open upper half-plane, and suppose that near every
 real point outside `S` it extends continuously and injectively to the real axis, with boundary
 values on a line and the nearby upper half-plane mapped strictly to one side of that line. Then
-the pre-Schwarzian derivative `logDeriv (deriv f)` continues to a function holomorphic off `S`
-and symmetric under conjugation.
+the pre-Schwarzian derivative `logDeriv (deriv f)` continues to a function holomorphic away from
+the real points of `S` and symmetric under conjugation.
 
 This is the situation of a conformal map of the upper half-plane onto a polygon, with `S` the set
 of prevertices: each boundary interval between consecutive prevertices is carried into one side of
@@ -296,7 +296,8 @@ theorem exists_differentiableOn_eqOn_logDeriv_deriv {S : Set ℂ}
       InjOn f (Metric.ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
       (∀ z ∈ Metric.ball (x : ℂ) r, z.im = 0 → ((f z - q) / b).im = 0) ∧
       ∀ z ∈ Metric.ball (x : ℂ) r, 0 < z.im → 0 < ((f z - q) / b).im) :
-    ∃ φ : ℂ → ℂ, DifferentiableOn ℂ φ Sᶜ ∧ EqOn φ (logDeriv (deriv f)) {z : ℂ | 0 < z.im} ∧
+    ∃ φ : ℂ → ℂ, DifferentiableOn ℂ φ (S ∩ {z : ℂ | z.im = 0})ᶜ ∧
+      EqOn φ (logDeriv (deriv f)) {z : ℂ | 0 < z.im} ∧
       ∀ z, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z) := by
   set ψ := logDeriv (deriv f)
   have hopen : IsOpen {z : ℂ | 0 < z.im} := isOpen_lt continuous_const Complex.continuous_im
@@ -365,9 +366,10 @@ theorem exists_differentiableOn_eqOn_logDeriv_deriv {S : Set ℂ}
     refine hmir.congr_of_eventuallyEq ?_
     filter_upwards [(isOpen_lt Complex.continuous_im continuous_const).mem_nhds h] with w hw
     simp [φ, hw.not_gt, show w.im < 0 from hw]
-  · have hzre : ((z.re : ℂ)) = z := Complex.ext (by simp) (by simp [h])
-    rw [← hzre] at hz ⊢
-    exact hreal z.re hz
+  · have hzS : z ∉ S := fun hzS => hz ⟨hzS, h⟩
+    have hzre : ((z.re : ℂ)) = z := Complex.ext (by simp) (by simp [h])
+    rw [← hzre] at hzS ⊢
+    exact hreal z.re hzS
   · refine (hψ z h).congr_of_eventuallyEq ?_
     filter_upwards [hopen.mem_nhds h] with w hw
     simp [φ, show 0 < w.im from hw]
