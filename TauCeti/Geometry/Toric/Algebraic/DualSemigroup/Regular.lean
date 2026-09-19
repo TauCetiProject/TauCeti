@@ -135,7 +135,10 @@ theorem nonempty_dualSemigroup_addEquiv (hi : IsIntegralLattice i) (hσ : IsRegu
     (Equiv.sumCongr (Equiv.ofInjective r r.injective) (Fintype.equivFinOfCardEq hC).symm).trans
       (Equiv.sumCompl fun j ↦ j ∈ Set.range r)
   -- By construction the splitting sends each ray to its own basis index.
-  have he : ∀ ρ, e (Sum.inl ρ) = r ρ := fun ρ ↦ rfl
+  have he : ∀ ρ, e (Sum.inl ρ) = r ρ := by
+    intro ρ
+    simp only [e, Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inl]
+    rw [Equiv.sumCompl_apply_inl, Equiv.ofInjective_apply]
   exact ⟨regularDualSemigroupEquiv hi hσ.toIsToricCone (b := b.reindex e.symm)
     fun ρ ↦ by simpa [he] using hb.isPrimitiveGenerator_apply ρ⟩
 
