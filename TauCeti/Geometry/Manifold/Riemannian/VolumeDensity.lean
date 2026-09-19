@@ -7,14 +7,14 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.LinearAlgebra.Matrix.BilinearForm
 
 /-!
 # Riemannian volume density in a chart
 
 The local Riemannian volume density is the positive square root of the determinant of
-the metric Gram matrix. It is smooth on its chart and transforms by the absolute
-determinant of a change of frame. Thus it applies without an orientation, including
+the metric Gram matrix. Under a `C^n` metric on a `C^(n+1)` manifold, it is `C^n` on
+its chart and transforms by the absolute determinant of a change of frame. Thus it
+applies without an orientation, including
 on manifolds with boundary.
 
 The frame is `Riemannian.Tensor.chartLocalFrame`, based on `Module.finBasis ℝ E`.
@@ -65,11 +65,7 @@ theorem chartVolumeDensity_pos (α : M) {x : M}
 @[simp]
 theorem chartVolumeDensity_sq (α x : M) :
     chartVolumeDensity (I := I) α x ^ 2 = (chartGramMatrix (I := I) α x).det := by
-  have hgram : chartGramMatrix (I := I) α x =
-      Matrix.gram ℝ (fun i ↦ chartLocalFrame (I := I) α i x) := by
-    ext i j
-    simp only [chartGramMatrix_apply, Matrix.gram_apply]
-  rw [chartVolumeDensity_def, hgram]
+  rw [chartVolumeDensity_def, chartGramMatrix]
   exact Real.sq_sqrt (Matrix.posSemidef_gram ℝ _).det_nonneg
 
 /-- A `C^n` metric has a `C^n` volume density in every chart of a `C^(n+1)` manifold. -/
