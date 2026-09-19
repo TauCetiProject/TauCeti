@@ -19,9 +19,9 @@ measure transformation
 `μ ↦ ν`, the image of `x⁻¹ μ(dx)` under `x ↦ x⁻¹`,
 
 because for `x > 0` the kernels satisfy `(t⁻¹ + x)⁻¹ / t = x⁻¹ (t + x⁻¹)⁻¹`.  This measure
-transformation, `TauCeti.stieltjesInversion`, preserves the Stieltjes weight condition, never
-charges `0`, and is an involution on measures without an atom at `0`.  Consequently the
-substitution is an involution of the Stieltjes class.
+transformation, `MeasureTheory.Measure.stieltjesInversion`, preserves the Stieltjes weight
+condition, never charges `0`, and is an involution on measures without an atom at `0`.
+Consequently the substitution is an involution of the Stieltjes class.
 
 Combined with the correspondence `f ↦ t f(t)` between Stieltjes and complete Bernstein functions,
 this yields two further standard dualities: `f` is Stieltjes exactly when `t ↦ f(t⁻¹)` on
@@ -32,14 +32,16 @@ as extensions of functions given on `(0, ∞)`.
 
 ## Main declarations
 
-* `TauCeti.stieltjesInversion`: the measure transformation `μ ↦ (x⁻¹ • μ).inv`.
-* `TauCeti.integral_stieltjesInversion`, `TauCeti.lintegral_stieltjesInversion` and
-  `TauCeti.integrable_stieltjesInversion_iff`: integration against the transformed measure.
-* `TauCeti.stieltjesInversion_singleton_zero` and
-  `TauCeti.integrable_weight_stieltjesInversion_iff`: the transform never charges `0` and
-  preserves the Stieltjes weight condition.
-* `TauCeti.stieltjesInversion_stieltjesInversion`: the transformation is an involution on measures
-  without an atom at `0`.
+* `MeasureTheory.Measure.stieltjesInversion`: the measure transformation `μ ↦ (x⁻¹ • μ).inv`.
+* `MeasureTheory.Measure.integral_stieltjesInversion`,
+  `MeasureTheory.Measure.lintegral_stieltjesInversion` and
+  `MeasureTheory.Measure.integrable_stieltjesInversion_iff`: integration against the transformed
+  measure.
+* `MeasureTheory.Measure.stieltjesInversion_singleton_zero` and
+  `MeasureTheory.Measure.integrable_weight_stieltjesInversion_iff`: the transform never charges
+  `0` and preserves the Stieltjes weight condition.
+* `MeasureTheory.Measure.stieltjesInversion_stieltjesInversion`: the transformation is an
+  involution on measures without an atom at `0`.
 * `TauCeti.RepresentsStieltjes.comp_inv_div` and `TauCeti.representsStieltjes_comp_inv_div_iff`:
   the effect of the substitution on representing data.
 * `TauCeti.IsStieltjesFunction.comp_inv_div` and `TauCeti.isStieltjesFunction_comp_inv_div_iff`:
@@ -62,7 +64,7 @@ noncomputable section
 open MeasureTheory Set
 open scoped ENNReal NNReal
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
 /-- The measure transformation dual to the substitution `t ↦ t⁻¹` in a Stieltjes
 representation: the image of the measure `x⁻¹ μ(dx)` under `x ↦ x⁻¹`.  The density `x⁻¹` is
@@ -103,28 +105,45 @@ theorem stieltjesInversion_singleton_zero : stieltjesInversion μ {0} = 0 := by
     withDensity_apply _ (measurableSet_singleton 0)]
   simp
 
+/-- Applying `stieltjesInversion` twice removes exactly the atom at `0`. -/
+theorem stieltjesInversion_stieltjesInversion_eq_restrict :
+    stieltjesInversion (stieltjesInversion μ) = μ.restrict {0}ᶜ := by
+  refine (Measure.ext_of_lintegral (μ.restrict {0}ᶜ) fun g hg => ?_)
+  rw [lintegral_stieltjesInversion g hg, lintegral_stieltjesInversion _ (by fun_prop)]
+  rw [← lintegral_indicator (measurableSet_singleton 0).compl]
+  refine lintegral_congr fun x => ?_
+  by_cases hx : x = 0
+  · subst x
+    simp
+  rw [indicator_of_mem (by simp [hx])]
+  simp only [inv_inv]
+  rw [← mul_assoc, ← ENNReal.coe_mul, inv_mul_cancel₀ hx, ENNReal.coe_one, one_mul]
+
 /-- `stieltjesInversion` is an involution on measures without an atom at `0`. -/
+@[simp]
 theorem stieltjesInversion_stieltjesInversion (hμ : μ {0} = 0) :
     stieltjesInversion (stieltjesInversion μ) = μ := by
-  refine (Measure.ext_of_lintegral μ fun g hg => ?_)
-  rw [lintegral_stieltjesInversion g hg, lintegral_stieltjesInversion _ (by fun_prop)]
-  refine lintegral_congr_ae ((measure_eq_zero_iff_ae_notMem.mp hμ).mono fun x hx => ?_)
-  simp only [inv_inv]
-  rw [← mul_assoc, ← ENNReal.coe_mul, inv_mul_cancel₀ (notMem_singleton_iff.mp hx),
-    ENNReal.coe_one, one_mul]
+  rw [stieltjesInversion_stieltjesInversion_eq_restrict,
+    Measure.restrict_eq_self_of_ae_mem]
+  simpa only [mem_compl_iff] using measure_eq_zero_iff_ae_notMem.mp hμ
 
 /-- The transformed measure satisfies the Stieltjes weight condition exactly when the original
 measure does, provided the latter has no atom at `0`.  Indeed `x⁻¹ (1 + x⁻¹)⁻¹ = (1 + x)⁻¹`
 for `x > 0`. -/
 theorem integrable_weight_stieltjesInversion_iff (hμ : μ {0} = 0) :
-    Integrable stieltjesWeight (stieltjesInversion μ) ↔ Integrable stieltjesWeight μ := by
+    Integrable TauCeti.stieltjesWeight (stieltjesInversion μ) ↔
+      Integrable TauCeti.stieltjesWeight μ := by
   rw [integrable_stieltjesInversion_iff]
   refine integrable_congr ((measure_eq_zero_iff_ae_notMem.mp hμ).mono fun x hx => ?_)
   have hx' : (x : ℝ) ≠ 0 := NNReal.coe_ne_zero.mpr (notMem_singleton_iff.mp hx)
-  simp only [stieltjesWeight_apply, NNReal.coe_inv, smul_eq_mul]
+  simp only [TauCeti.stieltjesWeight_apply, NNReal.coe_inv, smul_eq_mul]
   have : (1 + (x : ℝ)) ≠ 0 := by positivity
   field_simp
   ring
+
+end MeasureTheory.Measure
+
+namespace TauCeti
 
 namespace RepresentsStieltjes
 
@@ -134,11 +153,12 @@ variable {a b : ℝ≥0} {f : ℝ → ℝ}
 `t ↦ f(t⁻¹) / t` is represented by `(stieltjesInversion μ, b, a)`: the singular and constant
 coefficients are exchanged. -/
 theorem comp_inv_div (h : RepresentsStieltjes μ a b f) :
-    RepresentsStieltjes (stieltjesInversion μ) b a (fun t => f t⁻¹ / t) := by
-  refine representsStieltjes_iff.mpr ⟨stieltjesInversion_singleton_zero,
-    (integrable_weight_stieltjesInversion_iff h.measure_singleton_zero).mpr h.integrable_weight,
+    RepresentsStieltjes μ.stieltjesInversion b a (fun t => f t⁻¹ / t) := by
+  refine representsStieltjes_iff.mpr ⟨Measure.stieltjesInversion_singleton_zero,
+    (Measure.integrable_weight_stieltjesInversion_iff h.measure_singleton_zero).mpr
+      h.integrable_weight,
     fun t ht => ?_⟩
-  rw [h.eq_div_add_add_integral_inv_add (inv_pos.mpr ht), integral_stieltjesInversion,
+  rw [h.eq_div_add_add_integral_inv_add (inv_pos.mpr ht), Measure.integral_stieltjesInversion,
     add_div, add_div, ← integral_div]
   have hint : ∫ x : ℝ≥0, (t⁻¹ + (x : ℝ))⁻¹ / t ∂μ =
       ∫ x : ℝ≥0, ((x : ℝ)⁻¹) • (t + ((x⁻¹ : ℝ≥0) : ℝ))⁻¹ ∂μ := by
@@ -161,14 +181,14 @@ represents `t ↦ f(t⁻¹) / t` exactly when `(stieltjesInversion ν, a, b)` re
 theorem representsStieltjes_comp_inv_div_iff {ν : Measure ℝ≥0} {a b : ℝ≥0} {f : ℝ → ℝ}
     (hν : ν {0} = 0) :
     RepresentsStieltjes ν b a (fun t => f t⁻¹ / t) ↔
-      RepresentsStieltjes (stieltjesInversion ν) a b f := by
+      RepresentsStieltjes ν.stieltjesInversion a b f := by
   constructor
   · intro h
     refine h.comp_inv_div.congr fun t ht => ?_
     have ht' : t ≠ 0 := (mem_Ioi.mp ht).ne'
     simp [ht']
   · intro h
-    simpa [stieltjesInversion_stieltjesInversion hν] using h.comp_inv_div
+    simpa [Measure.stieltjesInversion_stieltjesInversion hν] using h.comp_inv_div
 
 namespace IsStieltjesFunction
 
@@ -177,7 +197,7 @@ variable {f : ℝ → ℝ}
 /-- If `f` is a Stieltjes function, then so is `t ↦ f(t⁻¹) / t`. -/
 theorem comp_inv_div (hf : IsStieltjesFunction f) : IsStieltjesFunction (fun t => f t⁻¹ / t) := by
   obtain ⟨a, b, μ, hμ⟩ := isStieltjesFunction_iff.mp hf
-  exact isStieltjesFunction_iff.mpr ⟨b, a, stieltjesInversion μ, hμ.comp_inv_div⟩
+  exact isStieltjesFunction_iff.mpr ⟨b, a, μ.stieltjesInversion, hμ.comp_inv_div⟩
 
 end IsStieltjesFunction
 
@@ -204,8 +224,7 @@ theorem isStieltjesFunction_iff_exists_isCompleteBernsteinFunction_eqOn_comp_inv
     simp [h ht, ht', mul_div_cancel₀]
 
 /-- **Duality of complete Bernstein functions.**  If `f` is a complete Bernstein function, then
-`t ↦ t f(t⁻¹)` on `(0, ∞)` extends to a complete Bernstein function on `[0, ∞)`.  Applying the
-duality twice returns `f` on `(0, ∞)`. -/
+`t ↦ t f(t⁻¹)` on `(0, ∞)` extends to a complete Bernstein function on `[0, ∞)`. -/
 theorem IsCompleteBernsteinFunction.exists_isCompleteBernsteinFunction_eqOn_mul_comp_inv
     {f : ℝ → ℝ} (hf : IsCompleteBernsteinFunction f) :
     ∃ g : ℝ → ℝ, IsCompleteBernsteinFunction g ∧ EqOn g (fun t => t * f t⁻¹) (Ioi 0) := by
