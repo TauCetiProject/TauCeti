@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Periodic
-public import TauCeti.LinearAlgebra.LinearMap.Cardinality
+import TauCeti.LinearAlgebra.LinearMap.Cardinality
 import Mathlib.RepresentationTheory.Homological.FiniteCyclic
 import TauCeti.RepresentationTheory.Invariants
 
