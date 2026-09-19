@@ -41,8 +41,8 @@ from Mathlib.
 
 * `TauCeti.Relator.toWord_toFreeGroup`: compilation preserves the free-group element denoted by an
   expression.
-* `TauCeti.Relator.relatorSet_eq_of_perm_map_toWord`: relator lists with the same compiled words,
-  in any order, denote the same relations.
+* `TauCeti.Relator.relatorSet_eq_of_map_toWord_mem_iff`: relator lists with the same compiled-word
+  membership denote the same relations.
 
 ## References
 
@@ -329,22 +329,22 @@ theorem toWord_toFreeGroup {α : Type*} (r : Relator α) :
     rw [toWord_comm, toFreeGroup_comm, commutatorElement_def, ← FreeGroup.mul_mk,
       ← FreeGroup.mul_mk, ← FreeGroup.mul_mk, ← FreeGroup.inv_mk, ← FreeGroup.inv_mk, ihr, ihs]
 
-/-- **Two relator lists with the same compiled words, in any order, denote the same relations.**
+/-- **Two relator lists with the same compiled-word membership denote the same relations.**
 
 A source may present the same relation in two shapes: an involution relation is written `sᵢ ^ 2`
 by one source and `(sᵢ sᵢ) ^ 1` by another, and a list of relations carries no order. Neither
 difference reaches the presented group, because the relations are the free-group elements of the
 compiled words and these agree. A transcription can therefore be compared with a generated relator
 list letter by letter, which is decidable, rather than expression by expression, which would see
-both differences. -/
-theorem relatorSet_eq_of_perm_map_toWord {α : Type*} {l l' : List (Relator α)}
-    (h : (l.map toWord).Perm (l'.map toWord)) : relatorSet l = relatorSet l' := by
-  have key : ∀ {m m' : List (Relator α)}, (m.map toWord).Perm (m'.map toWord) →
-      relatorSet m ⊆ relatorSet m' := by
+both differences. Multiplicity is irrelevant because `relatorSet` is a set. -/
+theorem relatorSet_eq_of_map_toWord_mem_iff {α : Type*} {l l' : List (Relator α)}
+    (h : ∀ w, w ∈ l.map toWord ↔ w ∈ l'.map toWord) : relatorSet l = relatorSet l' := by
+  have key : ∀ {m m' : List (Relator α)},
+      (∀ w, w ∈ m.map toWord → w ∈ m'.map toWord) → relatorSet m ⊆ relatorSet m' := by
     rintro m m' hm r ⟨t, ht, rfl⟩
-    obtain ⟨s, hs, hst⟩ := List.mem_map.mp (hm.mem_iff.mp (List.mem_map_of_mem ht))
+    obtain ⟨s, hs, hst⟩ := List.mem_map.mp (hm _ (List.mem_map_of_mem ht))
     exact ⟨s, hs, by rw [← toWord_toFreeGroup s, ← toWord_toFreeGroup t, hst]⟩
-  exact Set.Subset.antisymm (key h) (key h.symm)
+  exact Set.Subset.antisymm (key fun w => (h w).mp) (key fun w => (h w).mpr)
 
 end Relator
 

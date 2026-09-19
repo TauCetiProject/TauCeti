@@ -180,12 +180,6 @@ which cuts the Coxeter group down to `M × 2`, and Ivanov's central relator, whi
 to `M`. -/
 def adjoinedRelators : List (Relator (Fin 12)) := [spiderRelator, centralInvolutionRelator]
 
-/-- The two adjoined relators, in the order the sources impose them. This is the unfolding lemma
-for the sealed body. -/
-theorem adjoinedRelators_def :
-    adjoinedRelators = [spiderRelator, centralInvolutionRelator] := by
-  rw [adjoinedRelators]
-
 /-- The eighty relators of the Monster presentation: the `Y₄₄₃` Coxeter relations, followed by
 the spider and central-involution relators. -/
 def relatorList : List (Relator (Fin 12)) :=
@@ -295,7 +289,7 @@ theorem length_coxeterRelators : (coxeterRelators coxeterMatrix).length = 78 := 
 
 /-- The full Monster presentation has eighty relators. -/
 theorem length_relatorList : relatorList.length = 80 := by
-  simp [relatorList_def, adjoinedRelators_def]
+  simp [relatorList_def, adjoinedRelators]
   norm_num [Nat.choose]
 
 /-- The generator and relator counts recorded for the Monster agree with the transcribed data. -/
@@ -332,7 +326,7 @@ theorem length_centralInvolutionRelator : centralInvolutionRelator.toWord.length
 /-- The compiled relators of the Monster presentation contain `463` signed letters in total. -/
 theorem presentation_totalLength : presentation.totalLength = 463 := by
   have h : (relatorList.map fun r => r.toWord.length).sum = 463 := by
-    rw [relatorList_def, adjoinedRelators_def, ← List.singleton_append, ← List.append_assoc,
+    rw [relatorList_def, adjoinedRelators, ← List.singleton_append, ← List.append_assoc,
       List.map_append, List.sum_append]
     simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, Nat.add_zero]
     rw [coxeterAndSpider_totalLength, length_centralInvolutionRelator]
@@ -348,7 +342,7 @@ theorem isCyclicallyReduced_toWord_of_mem_relatorList (r : Relator (Fin 12))
   · rw [mem_coxeterRelators_iff] at hr
     obtain ⟨i, j, rfl⟩ := hr
     exact isCyclicallyReduced_toWord_coxeterRelator coxeterMatrix _ _
-  · simp only [adjoinedRelators_def, List.mem_cons, List.not_mem_nil, or_false] at hr
+  · simp only [adjoinedRelators, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;>
       simp [spiderRelator, centralInvolutionRelator, FreeGroup.IsCyclicallyReduced,
         FreeGroup.IsReduced]
@@ -371,11 +365,12 @@ theorem presentation_transcribed_append :
 /-- **The compiled words of the row are those of the `Y₄₄₃` Coxeter relators followed by the two
 adjoined relators.** This is the hypothesis that
 `TauCeti.Sporadic.Monster.mulEquivPresentedGroupCoxeterAppend` below consumes; it is weaker than
-the list equation above, comparing the two lists letter by letter and up to order. -/
-theorem presentation_map_toWord_perm :
-    (presentation.transcribed.map Relator.toWord).Perm
-      ((coxeterRelators coxeterMatrix ++ adjoinedRelators).map Relator.toWord) := by
+the list equation above, comparing compiled-word membership. -/
+theorem presentation_map_toWord_mem_iff (w) :
+    w ∈ presentation.transcribed.map Relator.toWord ↔
+      w ∈ (coxeterRelators coxeterMatrix ++ adjoinedRelators).map Relator.toWord := by
   rw [presentation_transcribed_append]
+  rfl
 
 /-- **The row presents the Coxeter group of the `Y₄₄₃` diagram cut down by the spider and central
 relations**, which is the shape in which Bray and Ivanov state the presentation.
@@ -387,7 +382,7 @@ def mulEquivPresentedGroupCoxeterAppend :
     presentation.Group ≃*
       PresentedGroup (coxeterMatrix.relationsSet ∪ Relator.relatorSet adjoinedRelators) :=
   presentation.mulEquivPresentedGroupCoxeterAppend coxeterMatrix adjoinedRelators
-    presentation_map_toWord_perm
+    presentation_map_toWord_mem_iff
 
 /-- The Coxeter equivalence sends each canonical generator to the corresponding canonical
 generator. -/
@@ -395,6 +390,6 @@ generator. -/
 theorem mulEquivPresentedGroupCoxeterAppend_apply_of (i : Fin presentation.generatorCount) :
     mulEquivPresentedGroupCoxeterAppend (PresentedGroup.of i) = PresentedGroup.of i :=
   GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of _ _ _
-    presentation_map_toWord_perm i
+    presentation_map_toWord_mem_iff i
 
 end TauCeti.Sporadic.Monster

@@ -83,11 +83,11 @@ a consumer reasons about the row without unfolding it.
 The relations above are the hand-written expansion of the source's two paths, and the read-through
 checks that expansion by reading it. The graph is also recorded directly, as the edge list
 `TauCeti.Sporadic.fi23Edges` and the simply laced Coxeter matrix it determines, and the expansion
-is then compared with the relations that matrix generates. The comparison is of compiled words and
-up to order, since the transcription writes an involution relation as `sᵢ ^ 2` where the generated
+is then compared with the relations that matrix generates. The comparison is of compiled-word
+membership, since the transcription writes an involution relation as `sᵢ ^ 2` where the generated
 list writes `(sᵢ sᵢ) ^ 1`, and groups its relations by kind rather than by pair; neither difference
-changes the relations. So the thirty-six omitted-edge relations, the ones a reader is least likely
-to check individually, are checked against the nine edges the source draws.
+changes the relation set. So the thirty-six omitted-edge relations, the ones a reader is least
+likely to check individually, are checked against the nine edges the source draws.
 
 The row is therefore also an instance of Mathlib's Coxeter groups: it presents the Coxeter group of
 its graph, cut down by the two words the source appends.
@@ -105,8 +105,8 @@ its graph, cut down by the two words the source appends.
   words.
 * `TauCeti.Sporadic.fi23Edges` and `TauCeti.Sporadic.fi23CoxeterMatrix`: the graph the source's two
   paths encode, and its Coxeter matrix.
-* `TauCeti.Sporadic.fi23Presentation_map_toWord_perm`: the transcribed relations are the ones that
-  matrix generates, together with the two appended words.
+* `TauCeti.Sporadic.fi23Presentation_map_toWord_mem_iff`: the transcribed relations are the ones
+  that matrix generates, together with the two appended words.
 * `TauCeti.Sporadic.fi23MulEquivPresentedGroupCoxeterAppend`: the row presents the Coxeter group of
   the graph cut down by those two words.
 
@@ -149,7 +149,7 @@ local infixl:70 " ⬝ " => Relator.mul
 
 /-- The ten involution relations and the nine labeled-edge relations decoded from the two Coxeter
 paths `a3b3c3d3e3f3g3j` and `d3h3i` in `GPLTable.Fi23.1`. -/
-def fi23NodeAndEdgeRelators : List (Relator (Fin 10)) :=
+private def fi23NodeAndEdgeRelators : List (Relator (Fin 10)) :=
   [ .pow a 2,
     .pow b 2,
     .pow c 2,
@@ -172,7 +172,7 @@ def fi23NodeAndEdgeRelators : List (Relator (Fin 10)) :=
 
 /-- The thirty-six omitted-edge relations decoded from the two Coxeter paths in
 `GPLTable.Fi23.1`. Each omitted edge has label two. -/
-def fi23NonedgeRelators : List (Relator (Fin 10)) :=
+private def fi23NonedgeRelators : List (Relator (Fin 10)) :=
   [ .pow (a ⬝ c) 2,
     .pow (a ⬝ d) 2,
     .pow (a ⬝ e) 2,
@@ -216,12 +216,6 @@ oriented along its path. -/
 def fi23Edges : List (Fin 10 × Fin 10) :=
   [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 9), (3, 7), (7, 8)]
 
-/-- The explicit edge list of the numbered `Fi₂₃` Coxeter graph. This is the unfolding lemma for
-the sealed body. -/
-theorem fi23Edges_def :
-    fi23Edges = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 9), (3, 7), (7, 8)] := by
-  rw [fi23Edges]
-
 /-- The Coxeter matrix of the `Fi₂₃` graph, the simply laced matrix of its edge list: diagonal
 entries are one, an edge has label three, and every other pair has label two. This is the
 `m`-labelled data the source's two paths encode, before any expansion into relations. -/
@@ -240,12 +234,10 @@ def fi23AdditionalRelators : List (Relator (Fin 10)) :=
   [ .pow (d ⬝ c ⬝ b ⬝ d ⬝ e ⬝ f ⬝ d ⬝ h ⬝ i) 10,
     .pow (a ⬝ b ⬝ c ⬝ d ⬝ e ⬝ f ⬝ h) 9 ]
 
-/-- The two appended words spelled out in the numbered alphabet. This is the unfolding lemma for
-the sealed body. -/
-theorem fi23AdditionalRelators_def : fi23AdditionalRelators =
-    [ .pow (.gen 3 ⬝ .gen 2 ⬝ .gen 1 ⬝ .gen 3 ⬝ .gen 4 ⬝ .gen 5 ⬝ .gen 3 ⬝ .gen 7 ⬝ .gen 8) 10,
-      .pow (.gen 0 ⬝ .gen 1 ⬝ .gen 2 ⬝ .gen 3 ⬝ .gen 4 ⬝ .gen 5 ⬝ .gen 7) 9 ] := by
-  rw [fi23AdditionalRelators]
+/-- The complete relator list transcribed for `Fi₂₃`: the Coxeter-path expansion followed by the
+two words that the source appends. -/
+def fi23RelatorList : List (Relator (Fin 10)) :=
+  fi23NodeAndEdgeRelators ++ fi23NonedgeRelators ++ fi23AdditionalRelators
 
 /-- The Group Presentations Library finite presentation `GPLTable.Fi23.1` of the Fischer group
 `Fi₂₃` on generators `a`, `b`, `c`, `d`, `e`, `f`, `g`, `h`, `i`, and `j`.
@@ -277,7 +269,7 @@ def fi23Presentation : GroupPresentation where
     labels 2.Fi22."
   expectedGeneratorCount := 10
   expectedRelatorCount := 57
-  transcribed := fi23NodeAndEdgeRelators ++ fi23NonedgeRelators ++ fi23AdditionalRelators
+  transcribed := fi23RelatorList
 
 /-- The generator names recorded for `Fi₂₃`. This is what lets a consumer see that it is a
 ten-generator presentation, and it is what bounds the generator indices of
@@ -416,7 +408,8 @@ theorem fi23Presentation_transcribed :
         -- (abcdefh)⁹
         .pow (.gen ⟨0, by simp⟩ ⬝ .gen ⟨1, by simp⟩ ⬝ .gen ⟨2, by simp⟩ ⬝ .gen ⟨3, by simp⟩ ⬝
           .gen ⟨4, by simp⟩ ⬝ .gen ⟨5, by simp⟩ ⬝ .gen ⟨7, by simp⟩) 9 ] := by
-  simp [fi23Presentation, fi23NodeAndEdgeRelators, fi23NonedgeRelators, fi23AdditionalRelators]
+  simp [fi23Presentation, fi23RelatorList, fi23NodeAndEdgeRelators, fi23NonedgeRelators,
+    fi23AdditionalRelators]
 
 /-- The compiled relator words of `Fi₂₃`, generated from the nodes, edges, nonedges, and two
 additional words of `GPLTable.Fi23.1`. A letter `(i, true)` is generator `i`; all source letters
@@ -463,7 +456,9 @@ theorem fi23Presentation_map_length_relators :
 
 /-- The generator and relator counts recorded for `Fi₂₃` agree with the transcribed data. -/
 theorem fi23Presentation_matchesMetadata : fi23Presentation.matchesMetadata := by
-  decide
+  simp [GroupPresentation.matchesMetadata_iff, GroupPresentation.generatorCount,
+    fi23Presentation, fi23RelatorList, fi23NodeAndEdgeRelators, fi23NonedgeRelators,
+    fi23AdditionalRelators]
 
 /-- The compiled relators of the `Fi₂₃` presentation contain `371` signed letters in total. -/
 theorem fi23Presentation_totalLength : fi23Presentation.totalLength = 371 := by
@@ -474,8 +469,8 @@ theorem fi23Presentation_totalLength : fi23Presentation.totalLength = 371 := by
 theorem fi23Presentation_relatorsCyclicallyReduced :
     fi23Presentation.relatorsCyclicallyReduced := by
   simp [GroupPresentation.relatorsCyclicallyReduced_iff, GroupPresentation.relators_def,
-    fi23Presentation, fi23NodeAndEdgeRelators, fi23NonedgeRelators, fi23AdditionalRelators,
-    FreeGroup.IsCyclicallyReduced]
+    fi23Presentation, fi23RelatorList, fi23NodeAndEdgeRelators, fi23NonedgeRelators,
+    fi23AdditionalRelators, FreeGroup.IsCyclicallyReduced]
 
 /-! ### The row against the Coxeter group of its graph -/
 
@@ -485,25 +480,29 @@ with the two appended words.**
 The row transcribes the source's two paths by hand, as ten square relations, nine labelled-edge
 relations and thirty-six omitted-edge relations. This compares that expansion, letter by letter,
 with the relations generated from `TauCeti.Sporadic.fi23CoxeterMatrix`, so the expansion is
-checked against the graph rather than only read against it. The comparison is up to order, and of
-compiled words rather than of expressions, because the row writes an involution relation as
-`sᵢ ^ 2` where the generated list writes `(sᵢ sᵢ) ^ 1` and groups its relations by kind. -/
-theorem fi23Presentation_map_toWord_perm :
-    (fi23Presentation.transcribed.map Relator.toWord).Perm
-      ((coxeterRelators fi23CoxeterMatrix ++ fi23AdditionalRelators).map Relator.toWord) := by
+checked against the graph rather than only read against it. The comparison is of compiled-word
+membership rather than expressions or multiplicities, because the row writes an involution
+relation as `sᵢ ^ 2` where the generated list writes `(sᵢ sᵢ) ^ 1` and groups its relations by
+kind. -/
+theorem fi23Presentation_map_toWord_mem_iff (w) :
+    w ∈ fi23Presentation.transcribed.map Relator.toWord ↔
+      w ∈ (coxeterRelators fi23CoxeterMatrix ++ fi23AdditionalRelators).map Relator.toWord := by
   -- The row's relators are this append by definition; stating the comparison at that index type
   -- keeps the rewrites below away from the record's generator count.
-  have key : ((fi23NodeAndEdgeRelators ++ fi23NonedgeRelators ++ fi23AdditionalRelators).map
-      Relator.toWord).Perm
-        ((coxeterRelators fi23CoxeterMatrix ++ fi23AdditionalRelators).map Relator.toWord) := by
+  have key :
+      ((fi23NodeAndEdgeRelators ++ fi23NonedgeRelators ++ fi23AdditionalRelators).map
+        Relator.toWord).Perm
+          ((coxeterRelators fi23CoxeterMatrix ++ fi23AdditionalRelators).map Relator.toWord) := by
     rw [coxeterRelators_def, coxeterRelatorsOfList_def]
     simp only [List.map_append, List.map_map, Function.comp_def, toWord_coxeterRelator,
-      fi23CoxeterMatrix_apply, fi23Edges_def]
+      fi23CoxeterMatrix_apply, fi23Edges]
     rw [fi23NodeAndEdgeRelators, fi23NonedgeRelators, fi23AdditionalRelators]
     simp only [List.map_cons, List.map_nil, Relator.toWord_pow, Relator.toWord_mul,
       Relator.toWord_gen]
     decide
-  exact key
+  change w ∈ fi23RelatorList.map Relator.toWord ↔ _
+  rw [fi23RelatorList]
+  exact key.mem_iff
 
 /-- **The row presents the Coxeter group of its graph cut down by the two appended relations**,
 which is the shape in which the source states the presentation: a Coxeter graph, given by two
@@ -516,7 +515,7 @@ def fi23MulEquivPresentedGroupCoxeterAppend :
     fi23Presentation.Group ≃*
       PresentedGroup (fi23CoxeterMatrix.relationsSet ∪ Relator.relatorSet fi23AdditionalRelators) :=
   fi23Presentation.mulEquivPresentedGroupCoxeterAppend fi23CoxeterMatrix fi23AdditionalRelators
-    fi23Presentation_map_toWord_perm
+    fi23Presentation_map_toWord_mem_iff
 
 /-- The Coxeter equivalence sends each canonical generator to the corresponding canonical
 generator. -/
@@ -525,6 +524,6 @@ theorem fi23MulEquivPresentedGroupCoxeterAppend_apply_of
     (i : Fin fi23Presentation.generatorCount) :
     fi23MulEquivPresentedGroupCoxeterAppend (PresentedGroup.of i) = PresentedGroup.of i :=
   GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of _ _ _
-    fi23Presentation_map_toWord_perm i
+    fi23Presentation_map_toWord_mem_iff i
 
 end TauCeti.Sporadic
