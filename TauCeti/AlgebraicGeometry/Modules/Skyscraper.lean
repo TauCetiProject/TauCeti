@@ -56,7 +56,7 @@ universe u
 
 noncomputable section
 
-namespace Scheme
+open Scheme
 
 variable {X : Scheme.{u}}
 
@@ -64,7 +64,7 @@ variable {X : Scheme.{u}}
 pushforward of the structure sheaf of `Spec κ(x)` along `Scheme.fromSpecResidueField`. Its
 sections are `κ(x)` over the open subsets containing `x` (`skyscraperResidueFieldEquiv`) and `0`
 over the others (`subsingleton_skyscraperResidueField`). -/
-def skyscraperResidueField (x : X) : X.Modules :=
+def _root_.AlgebraicGeometry.Scheme.skyscraperResidueField (x : X) : X.Modules :=
   (Scheme.Modules.pushforward (X.fromSpecResidueField x)).obj (SheafOfModules.unit _)
 
 private def residueFieldSectionsIso (x : X) {U : X.Opens} (hx : x ∈ U) :
@@ -113,13 +113,14 @@ private lemma app_comp_residueFieldSectionsIso (x : X) {U : X.Opens} (hx : x ∈
 
 /-- The sections of the skyscraper sheaf `κ(x)ₓ` over an open subset containing `x` are the
 residue field `κ(x)`. -/
-def skyscraperResidueFieldEquiv (x : X) {U : X.Opens} (hx : x ∈ U) :
+def _root_.AlgebraicGeometry.Scheme.skyscraperResidueFieldEquiv (x : X) {U : X.Opens} (hx : x ∈ U) :
     Γ(skyscraperResidueField x, U) ≃+ X.residueField x :=
   (residueFieldSectionsIso x hx).commRingCatIsoToRingEquiv.toAddEquiv
 
 /-- A regular function acts on the sections of `κ(x)ₓ` by multiplication with its value at `x`. -/
 @[simp]
-lemma skyscraperResidueFieldEquiv_smul (x : X) {U : X.Opens} (hx : x ∈ U) (r : Γ(X, U))
+lemma _root_.AlgebraicGeometry.Scheme.skyscraperResidueFieldEquiv_smul
+    (x : X) {U : X.Opens} (hx : x ∈ U) (r : Γ(X, U))
     (s : Γ(skyscraperResidueField x, U)) :
     skyscraperResidueFieldEquiv x hx (r • s) =
       X.evaluation U x hx r * skyscraperResidueFieldEquiv x hx s := by
@@ -135,12 +136,12 @@ lemma skyscraperResidueFieldEquiv_smul (x : X) {U : X.Opens} (hx : x ∈ U) (r :
 
 /-- The identifications of the sections of `κ(x)ₓ` with `κ(x)` commute with restriction. -/
 @[simp]
-lemma skyscraperResidueFieldEquiv_map (x : X) {U V : X.Opens} (i : U ⟶ V) (hx : x ∈ U)
+lemma _root_.AlgebraicGeometry.Scheme.skyscraperResidueFieldEquiv_map
+    (x : X) {U V : X.Opens} (i : U ⟶ V) (hx : x ∈ U)
     (s : Γ(skyscraperResidueField x, V)) :
     skyscraperResidueFieldEquiv x hx ((skyscraperResidueField x).presheaf.map i.op s) =
       skyscraperResidueFieldEquiv x (i.le hx) s := by
-  rw [show (skyscraperResidueField x).presheaf.map i.op = _ from
-    Scheme.Modules.pushforward_obj_presheaf_map (X.fromSpecResidueField x) i]
+  dsimp only [skyscraperResidueField, Scheme.Modules.pushforward_obj_presheaf_map]
   -- `pushforward_obj_presheaf_map` identifies the restriction map, but its source remains the
   -- module-sheaf section carrier, while `residueFieldSectionsIso` uses the definitionally equal
   -- ring-sheaf section carrier. There is no bundled equivalence between those carriers, so this
@@ -155,12 +156,12 @@ lemma skyscraperResidueFieldEquiv_map (x : X) {U V : X.Opens} (i : U ⟶ V) (hx 
 
 /-- The skyscraper sheaf `κ(x)ₓ` has no nonzero sections over an open subset not containing
 `x`. -/
-lemma subsingleton_skyscraperResidueField (x : X) {U : X.Opens} (hx : x ∉ U) :
+lemma _root_.AlgebraicGeometry.Scheme.subsingleton_skyscraperResidueField
+    (x : X) {U : X.Opens} (hx : x ∉ U) :
     Subsingleton Γ(skyscraperResidueField x, U) := by
   have hpreimage : X.fromSpecResidueField x ⁻¹ᵁ U = ⊥ := by
-    apply SetLike.coe_injective
-    change (X.fromSpecResidueField x) ⁻¹' (U : Set X) = ∅
-    rw [Set.preimage_eq_empty_iff, Scheme.range_fromSpecResidueField,
+    rw [← Opens.coe_eq_empty, Scheme.Hom.coe_preimage, Set.preimage_eq_empty_iff,
+      Scheme.range_fromSpecResidueField,
       Set.disjoint_singleton_right]
     exact hx
   have : Subsingleton Γ(Spec (X.residueField x), X.fromSpecResidueField x ⁻¹ᵁ U) := by
@@ -169,7 +170,8 @@ lemma subsingleton_skyscraperResidueField (x : X) {U : X.Opens} (hx : x ∉ U) :
   exact this
 
 /-- The restriction maps of `κ(x)ₓ` between open subsets containing `x` are bijective. -/
-lemma skyscraperResidueField_map_bijective (x : X) {U V : X.Opens} (i : U ⟶ V) (hx : x ∈ U) :
+lemma _root_.AlgebraicGeometry.Scheme.skyscraperResidueField_map_bijective
+    (x : X) {U V : X.Opens} (i : U ⟶ V) (hx : x ∈ U) :
     Function.Bijective ((skyscraperResidueField x).presheaf.map i.op) := by
   have h : ⇑((skyscraperResidueField x).presheaf.map i.op) =
       (skyscraperResidueFieldEquiv x hx).symm ∘ skyscraperResidueFieldEquiv x (i.le hx) := by
@@ -182,7 +184,7 @@ lemma skyscraperResidueField_map_bijective (x : X) {U V : X.Opens} (i : U ⟶ V)
 
 /-- The skyscraper sheaf `κ(x)ₓ` is flasque: its restriction maps are bijective between open
 subsets containing `x`, and land in the zero group otherwise. -/
-instance isFlasque_skyscraperResidueField (x : X) :
+instance _root_.AlgebraicGeometry.Scheme.isFlasque_skyscraperResidueField (x : X) :
     (skyscraperResidueField x).presheaf.IsFlasque where
   epi {U V} i := by
     rw [AddCommGrpCat.epi_iff_surjective]
@@ -198,7 +200,7 @@ variable (k : Type u) [Field k] [X.Over (Spec (.of k))]
 /-- **The dimension of the global sections of a skyscraper sheaf.** Over a field `k`, the zeroth
 cohomology `H⁰(X, κ(x)ₓ) = κ(x)` has dimension the residue degree `[κ(x) : k]` of the structure
 morphism at `x` (which is `0` by convention when `κ(x)` is infinite over `k`). -/
-theorem finrank_cohomology_zero_skyscraperResidueField (x : X) :
+theorem _root_.AlgebraicGeometry.Scheme.finrank_cohomology_zero_skyscraperResidueField (x : X) :
     Module.finrank k (Scheme.Modules.Cohomology (skyscraperResidueField x) 0) =
       (X ↘ Spec (.of k)).residueDegree x := by
   let f := X ↘ Spec (.of k)
@@ -216,7 +218,7 @@ theorem finrank_cohomology_zero_skyscraperResidueField (x : X) :
 
 /-- At a point whose residue field is finite over `k`, the skyscraper sheaf `κ(x)ₓ` has
 finite-dimensional cohomology in every degree: `κ(x)` in degree zero and `0` above. -/
-theorem finiteDimensional_cohomology_skyscraperResidueField {x : X}
+theorem _root_.AlgebraicGeometry.Scheme.finiteDimensional_cohomology_skyscraperResidueField {x : X}
     (hx : (X ↘ Spec (.of k)).residueDegree x ≠ 0) (i : ℕ) :
     FiniteDimensional k (Scheme.Modules.Cohomology (skyscraperResidueField x) i) := by
   cases i with
@@ -227,8 +229,6 @@ theorem finiteDimensional_cohomology_skyscraperResidueField {x : X}
   | succ i => infer_instance
 
 end Base
-
-end Scheme
 
 end
 

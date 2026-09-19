@@ -25,7 +25,8 @@ gives a short exact sequence
 `0 ⟶ 𝒪_X(D) ⟶ 𝒪_X(D + y) ⟶ κ(y)_y ⟶ 0`.
 
 The morphism depends on the choice of `g`, through multiplication by a unit of `κ(y)`; its kernel
-and its image do not.
+does not. When `y` is closed its image is the whole skyscraper sheaf
+(`epi_toSkyscraperResidueField`), whatever the choice of `g`.
 
 ## Main declarations
 
