@@ -114,13 +114,16 @@ theorem mem_code (ω : F) (x : Fin 6 → F) :
 /-- Distinct messages give distinct hexacode words. -/
 theorem vecMul_generatorMatrix_injective (ω : F) :
     Function.Injective (fun a ↦ a ᵥ* generatorMatrix ω) := by
-  intro a b h
-  simp only [vecMul_generatorMatrix] at h
-  ext i
-  fin_cases i
-  · exact congrFun h 0
-  · exact congrFun h 1
-  · exact congrFun h 2
+  let A : Matrix (Fin 3) (Fin 3) F := !![1, ω, ω; ω, 1, ω; ω, ω, 1]
+  have hG : generatorMatrix ω = (fromCols 1 A).submatrix id finSumFinEquiv.symm := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> rfl
+  let e := LinearEquiv.funCongrLeft F F (finSumFinEquiv : Fin 3 ⊕ Fin 3 ≃ Fin 6).symm
+  rw [Matrix.vecMul_injective_iff, hG]
+  convert (Matrix.linearIndependent_row_one_fromCols A).map_injOn
+    e.toLinearMap e.injective.injOn using 1
+  ext i j
+  simp [e, Matrix.row_apply, Matrix.submatrix_apply]
 
 /-- The hexacode has dimension three. -/
 @[simp]
@@ -168,7 +171,7 @@ variable [CharP F 2] {ω : F} (hω : ω ^ 2 + ω + 1 = 0)
 include hω
 
 /-- The generator has zero Hermitian Gram matrix. -/
-theorem generatorMatrix_mul_frobenius_transpose :
+theorem generatorMatrix_mul_frobenius_transpose_eq_zero :
     generatorMatrix ω * ((generatorMatrix ω).map (frobenius F 2))ᵀ = 0 := by
   have hmul : ω + ω ^ 2 + ω ^ 3 = 0 := by
     linear_combination ω * hω
@@ -194,7 +197,7 @@ theorem checkedBy_frobenius_generatorMatrix :
   have hle : code ω ≤ ((generatorMatrix ω).map (frobenius F 2)).checkedBy := by
     rw [code_def, Matrix.generatedBy_le_checkedBy_iff]
     simpa only [Matrix.transpose_mul, Matrix.transpose_transpose, Matrix.transpose_zero] using
-      congrArg Matrix.transpose (generatorMatrix_mul_frobenius_transpose hω)
+      congrArg Matrix.transpose (generatorMatrix_mul_frobenius_transpose_eq_zero hω)
   apply (Submodule.eq_of_le_of_finrank_le hle ?_).symm
   have hrank : (generatorMatrix ((frobenius F 2) ω)).rank = 3 := by
     rw [← Matrix.finrank_generatedBy]
@@ -251,6 +254,7 @@ theorem isPermutationEquivalent_code_sq [CharP F 2] {ω : F}
   exact ⟨conjugatePerm.symm, map_code_sq_conjugatePerm hω⟩
 
 /-- A word belongs to both root choices exactly when it is constant. -/
+@[simp↓]
 theorem mem_code_inf_code_sq [CharP F 2] {ω : F} (hω : ω ^ 2 + ω + 1 = 0)
     (x : Fin 6 → F) : x ∈ code ω ⊓ code (ω ^ 2) ↔ ∀ i, x i = x 0 := by
   rw [Submodule.mem_inf, mem_code, mem_code]
