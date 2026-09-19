@@ -191,7 +191,7 @@ theorem faceAffineToricSchemeMap_comp_affineToricChartι (hΦ : Φ.IsRegular) {�
   colimit.w Φ.affineToricDiagram (homOfLE h.le)
 
 /-- The left overlap map followed by its chart inclusion is the inclusion of the overlap chart. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem affineToricOverlapLeft_comp_affineToricChartι (hΦ : Φ.IsRegular) (σ τ : Φ.cones) :
     Φ.affineToricOverlapLeft σ τ ≫ Φ.affineToricChartι hΦ σ =
       Φ.affineToricChartι hΦ ⟨σ.1 ⊓ τ.1, Φ.inf_mem σ.2 τ.2⟩ := by
@@ -201,7 +201,7 @@ theorem affineToricOverlapLeft_comp_affineToricChartι (hΦ : Φ.IsRegular) (σ 
       (Φ.inf_isFaceOf_left σ.2 τ.2)
 
 /-- The right overlap map followed by its chart inclusion is the inclusion of the overlap chart. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem affineToricOverlapRight_comp_affineToricChartι (hΦ : Φ.IsRegular) (σ τ : Φ.cones) :
     Φ.affineToricOverlapRight σ τ ≫ Φ.affineToricChartι hΦ τ =
       Φ.affineToricChartι hΦ ⟨σ.1 ⊓ τ.1, Φ.inf_mem σ.2 τ.2⟩ := by
