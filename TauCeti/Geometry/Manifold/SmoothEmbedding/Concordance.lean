@@ -13,18 +13,16 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Bas
 /-!
 # Smooth concordance of smooth embeddings
 
-Two smooth embeddings `f g : M → N` are **concordant** when they are the two ends of a smooth
-embedding `M × [0, 1] → N × [0, 1]` which sends `M × {0}`, `M × {1}` and `M × (0, 1)` into
-`N × {0}`, `N × {1}` and `N × (0, 1)` respectively. For knots, `M` is the circle and the track
-is an annulus in `N × [0, 1]`; this is the relation underlying the knot concordance group.
+This file defines a globally collared smooth concordance between two smooth embeddings
+`f g : M → N`. To avoid manifolds with boundary, a concordance is a `C^n` embedding
+`F : M × ℝ → N × ℝ` which is the product `f × id` and `g × id` on uniform positive-width
+neighborhoods of the initial and final ends, and maps `M × (0, 1)` into `N × (0, 1)`.
 
-To avoid manifolds with boundary, a concordance is stored in its *collared* form: a `C^n` embedding
-`F : M × ℝ → N × ℝ` which is the product `f × id` on some neighborhood of the initial end, the
-product `g × id` on some neighborhood of the final end, and maps `M × (0, 1)` into
-`N × (0, 1)`. Its restriction to `M × [0, 1]` is therefore a concordance in the sense above which
-is a product near both ends; by the collar theorem, every smooth concordance can be made a product
-near its ends, so no concordances are lost. The product ends are what make concordances stack
-smoothly.
+Its restriction to `M × [0, 1]` is an ordinary smooth concordance which is a product near both
+ends. The uniform collar widths are part of the data here, so this is stronger than merely requiring
+an ordinary smooth concordance; no converse is asserted for noncompact `M`. The product ends make
+globally collared concordances stack smoothly. For knots, `M` is the circle and the track is an
+annulus in `N × [0, 1]`; this is the relation underlying the knot concordance group.
 
 The relation is defined here for arbitrary smooth embeddings, in line with defining isotopy once
 for general maps; smooth knot concordance is the case of `TauCeti.SmoothCircleEmbedding`, whose
@@ -103,6 +101,11 @@ structure Concordance (f g : SmoothEmbedding I J n M N) where
 /-- Two smooth embeddings are **concordant** when there is a concordance from one to the other. -/
 def Concordant (f g : SmoothEmbedding I J n M N) : Prop :=
   Nonempty (Concordance f g)
+
+/-- Two smooth embeddings are concordant exactly when their concordance type is nonempty. -/
+theorem concordant_iff_nonempty {f g : SmoothEmbedding I J n M N} :
+    Concordant f g ↔ Nonempty (Concordance f g) :=
+  Iff.rfl
 
 namespace Concordance
 
@@ -300,16 +303,18 @@ def symm (F : Concordance f g) : Concordance g f where
     ext <;> simp
   snd_apply_mem_Ioo' x t ht := by
     rw [conjTime_apply, coe_toSmoothEmbedding]
-    have := (F.snd_apply_mem_Ioo_iff x).2 (show -1 * t + 1 ∈ Ioo 0 1 by
-      simp only [mem_Ioo] at ht ⊢; constructor <;> linarith)
+    have h_reflected_time : -1 * t + 1 ∈ Ioo 0 1 := by
+      simp only [mem_Ioo] at ht ⊢
+      constructor <;> linarith
+    have := (F.snd_apply_mem_Ioo_iff x).2 h_reflected_time
     simp only [mem_Ioo] at this ⊢
     constructor <;> linarith
 
 @[simp]
 theorem symm_apply (F : Concordance f g) (x : M) (t : ℝ) :
     F.symm (x, t) = ((F (x, 1 - t)).1, 1 - (F (x, 1 - t)).2) := by
-  rw [← coe_toSmoothEmbedding, symm, conjTime_apply, coe_toSmoothEmbedding,
-    show -1 * t + 1 = 1 - t by ring]
+  have h_reflected_time : -1 * t + 1 = 1 - t := by ring
+  rw [← coe_toSmoothEmbedding, symm, conjTime_apply, coe_toSmoothEmbedding, h_reflected_time]
   ext <;> simp
 
 /-- Reversing a concordance twice gives it back. -/
@@ -595,25 +600,46 @@ variable {f g h : SmoothEmbedding I J n M N}
 
 /-- A concordance witnesses concordance. -/
 theorem of_concordance (F : Concordance f g) : Concordant f g :=
-  ⟨F⟩
+  concordant_iff_nonempty.2 ⟨F⟩
+
+section Diffeomorph
+
+variable {M' : Type*} [TopologicalSpace M'] [ChartedSpace H M'] [IsManifold I n M']
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H' P] [IsManifold J n P]
+
+/-- An ambient diffeomorphism preserves concordance. -/
+theorem transDiffeomorph (hfg : Concordant f g) (e : N ≃ₘ^n⟮J, J⟯ P) :
+    Concordant (f.transDiffeomorph e) (g.transDiffeomorph e) :=
+  concordant_iff_nonempty.2 <|
+    (concordant_iff_nonempty.1 hfg).map fun F => F.transDiffeomorph e
+
+/-- Reparametrizing the source by a diffeomorphism preserves concordance. -/
+theorem compDiffeomorph (hfg : Concordant f g) (e : M' ≃ₘ^n⟮I, I⟯ M) :
+    Concordant (f.compDiffeomorph e) (g.compDiffeomorph e) :=
+  concordant_iff_nonempty.2 <|
+    (concordant_iff_nonempty.1 hfg).map fun F => F.compDiffeomorph e
+
+end Diffeomorph
 
 variable [IsManifold I n M] [IsManifold J n N]
 
 /-- Concordance is reflexive. -/
 @[refl]
 theorem refl (f : SmoothEmbedding I J n M N) : Concordant f f :=
-  ⟨Concordance.refl f⟩
+  concordant_iff_nonempty.2 ⟨Concordance.refl f⟩
 
 /-- Concordance is symmetric. -/
 @[symm]
 theorem symm (hfg : Concordant f g) : Concordant g f :=
-  hfg.map Concordance.symm
+  concordant_iff_nonempty.2 <| (concordant_iff_nonempty.1 hfg).map Concordance.symm
 
 /-- Concordance is transitive, for a finite-dimensional ambient model. -/
 @[trans]
 theorem trans [FiniteDimensional ℝ E'] (hfg : Concordant f g) (hgh : Concordant g h) :
-    Concordant f h :=
-  hfg.elim fun F => hgh.elim fun G => ⟨F.trans G⟩
+    Concordant f h := by
+  apply concordant_iff_nonempty.2
+  exact (concordant_iff_nonempty.1 hfg).elim fun F =>
+    (concordant_iff_nonempty.1 hgh).map fun G => F.trans G
 
 /-- For a finite-dimensional ambient model, concordance is an equivalence relation on smooth
 embeddings. -/
@@ -641,7 +667,7 @@ theorem SmoothAmbientIsotopic.concordant [IsManifold I n M] [IsManifold J n N] (
     {f g : SmoothEmbedding I J n M N} (hfg : SmoothAmbientIsotopic f g) : Concordant f g := by
   obtain ⟨Φ, hΦ⟩ := smoothAmbientIsotopic_def.mp hfg
   have hg : f.transDiffeomorph Φ.final = g := SmoothEmbedding.ext fun x => by simp [hΦ x]
-  exact hg ▸ ⟨Concordance.ofDiffeotopy hn Φ f⟩
+  exact hg ▸ concordant_iff_nonempty.2 ⟨Concordance.ofDiffeotopy hn Φ f⟩
 
 end SmoothEmbedding
 
