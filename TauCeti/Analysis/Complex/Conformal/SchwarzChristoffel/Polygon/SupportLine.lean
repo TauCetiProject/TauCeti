@@ -35,6 +35,8 @@ bounded side.
 
 * `TauCeti.im_exp_neg_mul_sub_schwarzChristoffelVertex_nonneg_of_mem_boundary` -- the polygon
   boundary lies on the interior side of the line through a bounded side.
+* `TauCeti.im_exp_neg_mul_sub_schwarzChristoffelVertex_pos_of_mem_interior_closedConvexHull` -- the
+  polygon interior lies strictly on the interior side of the line through a bounded side.
 * `TauCeti.im_exp_neg_mul_schwarzChristoffelPrimitive_sub_pos` -- every value of the primitive
   lies strictly on the interior side of that line.
 * `TauCeti.disjoint_image_schwarzChristoffelPrimitive_edgeSet_castSucc_castSucc` -- the image of
@@ -162,7 +164,11 @@ theorem im_exp_neg_mul_sub_schwarzChristoffelVertex_nonneg_of_mem_boundary
   · exact hconv.segment_subset (hvert _) hinf hz
   · exact hconv.segment_subset hinf (hvert _) hz
 
-private lemma im_exp_neg_mul_sub_schwarzChristoffelVertex_pos_of_mem_interior_closedConvexHull
+/-- **The convex Schwarz--Christoffel polygon interior lies strictly on the interior side of each
+bounded side.**  Rotate the bounded side from vertex `i` to vertex `i + 1` to the positive real
+axis.  Every point in the interior of the closed convex hull of the polygon boundary then has
+strictly positive imaginary part relative to the rotated supporting line. -/
+theorem im_exp_neg_mul_sub_schwarzChristoffelVertex_pos_of_mem_interior_closedConvexHull
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) (i : Fin n) {z : ℂ}
     (hz : z ∈ interior (closedConvexHull ℝ ((schwarzChristoffelPolygon a e z₀).boundary ℝ))) :

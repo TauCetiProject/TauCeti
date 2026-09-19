@@ -26,6 +26,8 @@ assembled in `TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Mapp
 
 * `TauCeti.schwarzChristoffelPolygon_boundary_subset_halfSpace` -- the polygon boundary lies on or
   above its closing line.
+* `TauCeti.im_schwarzChristoffelVertex_zero_lt_of_mem_interior_closedConvexHull_boundary` -- the
+  polygon interior lies strictly above its closing line.
 * `TauCeti.im_schwarzChristoffelVertex_zero_lt_primitive` -- every value of the primitive in the
   upper half-plane lies strictly above the closing line.
 * `TauCeti.disjoint_image_schwarzChristoffelPrimitive_closingSides` -- the image misses both
@@ -70,7 +72,10 @@ theorem schwarzChristoffelPolygon_boundary_subset_halfSpace
       (schwarzChristoffelVertex a e z₀ 0).im := le_rfl
     exact (convex_halfSpace_im_ge _).segment_subset hinfty hzero hz
 
-private lemma im_schwarzChristoffelVertex_zero_lt_of_mem_interior_closedConvexHull_boundary
+/-- **The convex Schwarz--Christoffel polygon interior lies strictly above its closing line.**
+Here the polygon interior is represented by the interior of the closed convex hull of its
+boundary. -/
+theorem im_schwarzChristoffelVertex_zero_lt_of_mem_interior_closedConvexHull_boundary
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) {z : ℂ}
     (hz : z ∈ interior (closedConvexHull ℝ
