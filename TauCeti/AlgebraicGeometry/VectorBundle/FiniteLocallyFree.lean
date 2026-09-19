@@ -28,10 +28,6 @@ vector bundles of finite rank. This file packages them as the full subcategory
 Invertible sheaves are finite locally free, and finite locally free sheaves are finitely
 presented; the corresponding inclusions of full subcategories are fully faithful.
 
-Since `X.Modules` is not reducibly the category of sheaves of modules over the structure sheaf,
-instance search does not find the site-level instances for it, and they are restated here for
-`AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree X`.
-
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree X`: finite local freeness as a property
@@ -161,6 +157,12 @@ abbrev InvertibleSheaf.toFiniteLocallyFree : InvertibleSheaf X ⥤ FiniteLocally
     have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) M := hM
     ⟨TauCeti.SheafOfModules.IsInvertible.isLocallyFree M,
       TauCeti.SheafOfModules.IsInvertible.isFinitePresentation (M := M)⟩
+
+instance : (InvertibleSheaf.toFiniteLocallyFree X).Full :=
+  ObjectProperty.full_ιOfLE _
+
+instance : (InvertibleSheaf.toFiniteLocallyFree X).Faithful :=
+  ObjectProperty.faithful_ιOfLE _
 
 end
 
