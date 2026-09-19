@@ -34,8 +34,7 @@ partial sums `∑_{1 ≤ k ≤ t} c k`.
 
 * `TauCeti.summable_div_mul_one_add_log_cube`: if the partial sums `∑_{1 ≤ k ≤ t} u k` of a
   nonnegative sequence are `O(t log t)`, then `∑ u n / (n (1 + log n) ^ 3)` converges.
-* `TauCeti.isLittleO_integral_rpow_sub_one_mul`: a remainder `E t = o(t)` has
-  `∫ t in 1..x, t ^ (τ - 1) * E t = o(x ^ (τ + 1))`.
+* `TauCeti.sum_Icc_rpow_mul_eq`: the exact Abel-summation identity for the weight `t ^ τ`.
 * `TauCeti.tendsto_rpow_inv_mul_sum_Icc_rpow_mul`: if `x⁻¹ ∑_{1 ≤ n ≤ x} c n → κ`, then
   `(x ^ (τ + 1))⁻¹ ∑_{1 ≤ n ≤ x} n ^ τ c n → κ / (τ + 1)` for `τ > -1`.
 -/
@@ -238,71 +237,6 @@ theorem summable_div_mul_one_add_log_cube {u : ℕ → ℝ} (hu : ∀ n, 0 ≤ u
 
 /-! ### Partial sums against a power weight -/
 
-/-- **A remainder `o(t)` integrates to `o(x ^ (τ + 1))` against `t ^ (τ - 1)`.** If `E` is
-interval integrable above `1` and `E t = o(t)`, then for every exponent `τ > -1` the weighted
-integral `∫ t in 1..x, t ^ (τ - 1) * E t` is `o(x ^ (τ + 1))`. -/
-theorem isLittleO_integral_rpow_sub_one_mul {E : ℝ → ℝ} {τ : ℝ} (hτ : -1 < τ)
-    (hE_int : ∀ x, 1 ≤ x → IntervalIntegrable E volume 1 x) (hE : E =o[atTop] id) :
-    (fun x : ℝ ↦ ∫ t in (1 : ℝ)..x, t ^ (τ - 1) * E t) =o[atTop] fun x ↦ x ^ (τ + 1) := by
-  have hτ1 : 0 < τ + 1 := by linarith
-  have hint {a b : ℝ} (ha : 1 ≤ a) (hab : a ≤ b) :
-      IntervalIntegrable (fun t ↦ t ^ (τ - 1) * E t) volume a b := by
-    have hE' : IntervalIntegrable E volume a b := (hE_int b (ha.trans hab)).mono_set <| by
-      rw [uIcc_of_le (ha.trans hab), uIcc_of_le hab]
-      exact Icc_subset_Icc ha le_rfl
-    refine hE'.continuousOn_mul fun t ht ↦ ?_
-    rw [uIcc_of_le hab] at ht
-    exact (Real.continuousAt_rpow_const _ _ (Or.inl (by linarith [ht.1]))).continuousWithinAt
-  rw [isLittleO_iff]
-  intro ε hε
-  -- Beyond a cutoff `T`, `|E t| ≤ ε' t` with `ε' = ε (τ + 1) / 2`.
-  set ε' := ε * (τ + 1) / 2 with hε'
-  obtain ⟨T, hT⟩ := eventually_atTop.mp
-    ((isLittleO_iff.mp hE (by positivity : 0 < ε')).and (eventually_ge_atTop (1 : ℝ)))
-  have hT1 : 1 ≤ T := (hT T le_rfl).2
-  have hbound (t : ℝ) (ht : T ≤ t) : |E t| ≤ ε' * t := by
-    have h := (hT t ht).1
-    have ht0 : 0 ≤ t := by linarith [(hT t ht).2]
-    rwa [Real.norm_eq_abs, Real.norm_eq_abs, id, abs_of_nonneg ht0] at h
-  -- The initial segment `∫ t in 1..T` is a constant, eventually below `ε / 2 * x ^ (τ + 1)`.
-  set M := |∫ t in (1 : ℝ)..T, t ^ (τ - 1) * E t|
-  filter_upwards [eventually_ge_atTop T,
-    (tendsto_rpow_atTop hτ1).eventually_ge_atTop (2 * M / ε)] with x hx hxM
-  have hxpow : 0 ≤ x ^ (τ + 1) := Real.rpow_nonneg (by linarith) _
-  have hTpow : 0 ≤ T ^ (τ + 1) := Real.rpow_nonneg (by linarith) _
-  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg hxpow,
-    ← intervalIntegral.integral_add_adjacent_intervals (hint le_rfl hT1) (hint hT1 hx)]
-  have htail : |∫ t in T..x, t ^ (τ - 1) * E t| ≤
-      ε' * ((x ^ (τ + 1) - T ^ (τ + 1)) / (τ + 1)) := by
-    calc |∫ t in T..x, t ^ (τ - 1) * E t|
-        ≤ ∫ t in T..x, |t ^ (τ - 1) * E t| := intervalIntegral.abs_integral_le_integral_abs hx
-      _ ≤ ∫ t in T..x, ε' * t ^ τ := by
-          refine intervalIntegral.integral_mono_on hx (hint hT1 hx).abs
-            ((intervalIntegral.intervalIntegrable_rpow' hτ).const_mul ε') fun t ht ↦ ?_
-          have ht0 : 0 < t := by linarith [ht.1]
-          rw [abs_mul, abs_of_pos (Real.rpow_pos_of_pos ht0 _)]
-          calc t ^ (τ - 1) * |E t| ≤ t ^ (τ - 1) * (ε' * t) := by
-                gcongr
-                exact hbound t ht.1
-            _ = ε' * t ^ τ := by
-                rw [Real.rpow_sub_one ht0.ne']
-                field_simp
-      _ = ε' * ((x ^ (τ + 1) - T ^ (τ + 1)) / (τ + 1)) := by
-          rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inl hτ)]
-  have hM : M ≤ ε / 2 * x ^ (τ + 1) := by
-    rw [div_le_iff₀ hε] at hxM
-    linarith
-  have hε'x : ε' * ((x ^ (τ + 1) - T ^ (τ + 1)) / (τ + 1)) ≤ ε / 2 * x ^ (τ + 1) := by
-    have : ε' * ((x ^ (τ + 1) - T ^ (τ + 1)) / (τ + 1)) =
-        ε / 2 * (x ^ (τ + 1) - T ^ (τ + 1)) := by
-      rw [hε']
-      field_simp
-    rw [this]
-    nlinarith
-  calc |(∫ t in (1 : ℝ)..T, t ^ (τ - 1) * E t) + ∫ t in T..x, t ^ (τ - 1) * E t|
-      ≤ M + |∫ t in T..x, t ^ (τ - 1) * E t| := abs_add_le _ _
-    _ ≤ ε * x ^ (τ + 1) := by linarith
-
 /-- Restricting a sequence to `n ≥ 1` does not change its sums over `Icc 0 m` against a weight,
 provided the weight is read from `Icc 1 m`. -/
 private lemma sum_Icc_zero_mul_ite (g c : ℕ → ℝ) (m : ℕ) :
@@ -317,7 +251,7 @@ private lemma sum_Icc_zero_mul_ite (g c : ℕ → ℝ) (m : ℕ) :
 /-- The Abel-summation identity `sum_mul_eq_sub_integral_mul₀` for the weight `t ^ τ`:
 `∑_{1 ≤ n ≤ x} n ^ τ c n = x ^ τ S(x) - τ ∫ t in 1..x, t ^ (τ - 1) S(t)` for `x ≥ 1`, where
 `S(t) = ∑_{1 ≤ n ≤ t} c n`. -/
-private lemma sum_Icc_rpow_mul_eq (c : ℕ → ℝ) (τ : ℝ) {x : ℝ} (hx : 1 ≤ x) :
+theorem sum_Icc_rpow_mul_eq (c : ℕ → ℝ) (τ : ℝ) {x : ℝ} (hx : 1 ≤ x) :
     ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, (n : ℝ) ^ τ * c n =
       x ^ τ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, c n -
         τ * ∫ t in (1 : ℝ)..x, t ^ (τ - 1) * ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n := by
