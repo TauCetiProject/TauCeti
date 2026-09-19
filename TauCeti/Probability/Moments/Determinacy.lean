@@ -76,6 +76,11 @@ variable {μ ν : Measure ℝ}
 
 /-! ### Determinacy from the moment-generating function -/
 
+private theorem isFiniteMeasure_of_zero_mem_interior_integrableExpSet
+    (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ)) : IsFiniteMeasure μ :=
+  (integrable_const_iff_isFiniteMeasure one_ne_zero).mp <| by
+    simpa using integrable_of_mem_integrableExpSet (interior_subset hμ)
+
 /-- **Determinacy at the level of characteristic functions, from the moment-generating function.**
 Two measures on `ℝ`, one with finite exponential moments near `0` and the other finite, that have
 the same moment-generating function have the same characteristic function.
@@ -88,9 +93,7 @@ proving each side non-integrable there and closing the goal with
 theorem charFun_eq_of_mgf_eq [IsFiniteMeasure ν]
     (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ)) (hmgf : mgf id μ = mgf id ν) :
     charFun μ = charFun ν := by
-  let _ : IsFiniteMeasure μ :=
-    (integrable_const_iff_isFiniteMeasure one_ne_zero).mp <| by
-      simpa using integrable_of_mem_integrableExpSet (interior_subset hμ)
+  let _ := isFiniteMeasure_of_zero_mem_interior_integrableExpSet hμ
   have hzero : μ = 0 ↔ ν = 0 := by
     have h0 : μ.real Set.univ = ν.real Set.univ := by
       simpa only [mgf_zero'] using congrFun hmgf 0
@@ -113,9 +116,7 @@ moment-generating functions must agree at every real `t`, not only on the integr
 theorem Measure.ext_of_mgf [IsFiniteMeasure ν]
     (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ)) (hmgf : mgf id μ = mgf id ν) :
     μ = ν := by
-  let _ : IsFiniteMeasure μ :=
-    (integrable_const_iff_isFiniteMeasure one_ne_zero).mp <| by
-      simpa using integrable_of_mem_integrableExpSet (interior_subset hμ)
+  let _ := isFiniteMeasure_of_zero_mem_interior_integrableExpSet hμ
   exact Measure.ext_of_charFun (charFun_eq_of_mgf_eq hμ hmgf)
 
 /-! ### Determinacy from the moments -/
