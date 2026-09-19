@@ -257,29 +257,24 @@ theorem maxNonTorsionDegree_add_le [Module.Finite k[X] M] [Module.Finite k[X] N]
   le_maxNonTorsionDegree hXN
     (add_mem_nonTorsionDegrees hf hft (isGreatest_maxNonTorsionDegree hXM hM).1)
 
-/-- A graded isomorphism of finitely generated graded `k[X]`-modules preserves the maximal
-non-torsion degree. -/
-theorem maxNonTorsionDegree_eq_of_linearEquiv [Module.Finite k[X] M]
-    (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d))
-    (hM : ¬Module.IsTorsion k[X] M) (e : M ≃ₗ[k[X]] N)
+omit [IsScalarTower k k[X] M] [IsScalarTower k k[X] N] in
+/-- A graded isomorphism of graded `k[X]`-modules preserves the maximal non-torsion degree. -/
+theorem maxNonTorsionDegree_eq_of_linearEquiv (e : M ≃ₗ[k[X]] N)
     (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0)
     (he' : LinearMap.IsHomogeneous e.symm.toLinearMap H.piece G.piece 0) :
     G.maxNonTorsionDegree = H.maxNonTorsionDegree := by
-  have : Module.Finite k[X] N := Module.Finite.equiv e
-  have hXN : ∀ ⦃p : ℤ⦄ ⦃y : N⦄, y ∈ H.piece p → (X : k[X]) • y ∈ H.piece (p - d) := by
-    intro p y hy
-    have := he.map_mem (hX (by simpa only [add_zero] using he'.map_mem hy))
-    rw [← e.apply_symm_apply y]
-    simpa only [add_zero, LinearEquiv.coe_coe, map_smul] using this
-  have hN : ¬Module.IsTorsion k[X] N := fun hN ↦ hM fun ⦃x⦄ ↦ by
-    obtain ⟨a, ha⟩ := @hN (e x)
-    exact ⟨a, e.injective (by
-      rw [Submonoid.smul_def, map_smul, ← Submonoid.smul_def, ha, map_zero])⟩
-  have h₁ := maxNonTorsionDegree_add_le hX hXN hM he
-    (Submodule.comap_torsion_le_of_comp_eq_smul (g := e.symm.toLinearMap) (one_mem _) (by simp))
-  have h₂ := maxNonTorsionDegree_add_le hXN hX hN he'
-    (Submodule.comap_torsion_le_of_comp_eq_smul (g := e.toLinearMap) (one_mem _) (by simp))
-  omega
+  rw [maxNonTorsionDegree_def, maxNonTorsionDegree_def]
+  congr 1
+  ext p
+  constructor
+  · rintro ⟨x, hx, hxt⟩
+    refine ⟨e.toLinearMap x, by simpa only [add_zero] using he.map_mem hx, fun het ↦ hxt ?_⟩
+    exact Submodule.comap_torsion_le_of_comp_eq_smul (f := e.toLinearMap)
+      (g := e.symm.toLinearMap) (one_mem _) (by simp) het
+  · rintro ⟨y, hy, hyt⟩
+    refine ⟨e.symm.toLinearMap y, by simpa only [add_zero] using he'.map_mem hy, fun het ↦ hyt ?_⟩
+    exact Submodule.comap_torsion_le_of_comp_eq_smul (f := e.symm.toLinearMap)
+      (g := e.toLinearMap) (one_mem _) (by simp) het
 
 /-- If `X` lowers degree by `d ≠ 0`, the terms `a.coeff n • X ^ n • x` of `a • x`, for `x`
 homogeneous of degree `p`, lie in the pairwise distinct degrees `p - n * d`; so the component of
