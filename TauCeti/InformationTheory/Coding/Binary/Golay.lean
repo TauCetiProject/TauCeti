@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.GeneratorParityCheck
-public import TauCeti.InformationTheory.Coding.Binary.Basic
+public import TauCeti.InformationTheory.Coding.Binary.Generators
 public import TauCeti.InformationTheory.Coding.WeightEnumerator
 
 import Mathlib.Tactic.FinCases
@@ -552,11 +551,8 @@ theorem hammingNorm_mem {x : Fin 24 → ZMod 2} (hx : x ∈ code) :
 /-- The extended binary Golay code is doubly even. -/
 @[simp]
 theorem isDoublyEven_code : BinaryCode.IsDoublyEven code := by
-  rw [BinaryCode.isDoublyEven_iff]
-  intro x hx
-  have h := hammingNorm_mem hx
-  simp only [Finset.mem_insert, Finset.mem_singleton] at h
-  rcases h with h | h | h | h | h <;> rw [h] <;> decide
+  rw [code_def, BinaryCode.isDoublyEven_generatedBy_iff]
+  exact ⟨by decide +kernel, generator_mul_transpose⟩
 
 private theorem weightDistribution_eq_card (w : ℕ) :
     (code : Set (Fin 24 → ZMod 2)).weightDistribution w =
