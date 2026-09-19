@@ -54,8 +54,9 @@ lemma singularChainComplexMap_def :
 @[reassoc (attr := simp)]
 lemma singularChainComplexMap_hom (p q : ℕ) :
     (P.singularChainComplexπ R).f p ≫ (H.singularChainComplexMap R).hom p q =
-      (H.fst.toSSet.chainComplexMap R).hom p q ≫ (P'.singularChainComplexπ R).f q :=
-  H.toSSetPair.chainComplexMap_hom R p q
+      (H.fst.toSSet.chainComplexMap R).hom p q ≫ (P'.singularChainComplexπ R).f q := by
+  rw [singularChainComplexMap_def, ← H.toSSetPair_right]
+  exact H.toSSetPair.chainComplexMap_hom R p q
 
 include H in
 /-- Homotopic maps of topological pairs induce the same map on relative singular homology. -/

@@ -31,11 +31,15 @@ namespace TopPair.Homotopy
 variable {P P' : TopPair.{w}} {f g : P ⟶ P'} (H : Homotopy f g)
 
 /-- The homotopy between the induced maps of pairs of singular simplicial sets. -/
-@[simps]
+@[no_expose]
 def toSSetPair : SSetPair.Homotopy (TopPair.toSSetPair.map f) (TopPair.toSSetPair.map g) where
   left := H.snd.toSSet
   right := H.fst.toSSet
   w := by
     simp [TopCat.Homotopy.toSSet, ← whisker_exchange_assoc, ← Functor.map_comp, H.w]
+
+@[simp] lemma toSSetPair_left : H.toSSetPair.left = H.snd.toSSet := (rfl)
+
+@[simp] lemma toSSetPair_right : H.toSSetPair.right = H.fst.toSSet := (rfl)
 
 end TopPair.Homotopy
