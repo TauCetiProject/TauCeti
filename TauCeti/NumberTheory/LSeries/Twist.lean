@@ -16,8 +16,8 @@ at `s` is the original one at `s + z`. The identity is termwise, hence needs no 
 hypothesis; at a point where neither series converges both sides are Mathlib's junk value `0`.
 
 The purely imaginary parameters `z = -u * I` are the ones a Hecke character twisted by
-`N(I) ^ (i u)` produces. They slide the series along the horizontal direction, so a pole of the
-original series at `s = 1` becomes a pole of the twisted one at `s = 1 + i u`.
+`N(I) ^ (i u)` produces. They translate the series in the imaginary (vertical) direction, so a
+pole of the original series at `s = 1` becomes a pole of the twisted one at `s = 1 + i u`.
 
 ## Main results
 

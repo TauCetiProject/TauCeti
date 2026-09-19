@@ -194,8 +194,8 @@ coefficients are those of the indicator of the ideals prime to its bad primes, t
 deleted, read at `s - u * I`. That series has a pole at `s = 1 + u * I`, a point at which
 cancellation would make `TauCeti.continuedLFunctionOfWeight` holomorphic.
 
-This is the rejection test a character-family argument needs: cancellation may not be assumed
-for the degenerate members of a family, and this theorem says exactly which they are. -/
+This is a rejection test for character-family arguments: these weights are degenerate examples
+for which cancellation may not be assumed. -/
 theorem not_hasCancellation_of_isNormTwistOnGood {χ : UnitaryIdealWeight K} {u : ℝ}
     (hχ : χ.1.IsNormTwistOnGood u) : ¬ HasCancellation χ := by
   intro hcanc

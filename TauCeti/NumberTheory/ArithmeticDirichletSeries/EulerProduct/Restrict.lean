@@ -265,7 +265,7 @@ namespace MultiplicativeIdealWeight
 /-- **The `L`-series of a weight that is a norm twist on its good ideals.** Such a weight is the
 twist by `N(I) ^ (u * I)` of the indicator of the ideals prime to its bad primes `S`, so its
 `L`-series is the Dedekind zeta function with the Euler factors at `S` deleted, read at the
-horizontal translate `s - u * I`. -/
+imaginary translate `s - u * I`. -/
 theorem IsNormTwistOnGood.LSeries_normCoeff {χ : MultiplicativeIdealWeight K} {u : ℝ}
     (h : χ.IsNormTwistOnGood u) {S : Finset (HeightOneSpectrum (𝓞 K))}
     (hS : χ.badPrimes = (S : Set (HeightOneSpectrum (𝓞 K)))) (s : ℂ) :
@@ -276,7 +276,7 @@ theorem IsNormTwistOnGood.LSeries_normCoeff {χ : MultiplicativeIdealWeight K} {
       (MultiplicativeIdealWeight.normTwist (-((u : ℂ) * Complex.I))
         (ofBadPrimes (S : Set (HeightOneSpectrum (𝓞 K)))
           S.finite_toSet)).toIdealArithmeticFunction := by
-    rw [← h.eq_normTwist S.finite_toSet hS]
+    rw [← h.eq_normTwist hS]
   have hcoeff : ⇑(normCoeff K χ.toIdealArithmeticFunction) = fun n : ℕ ↦
       normCoeff K (ofBadPrimes (S : Set (HeightOneSpectrum (𝓞 K)))
         S.finite_toSet).toIdealArithmeticFunction n *

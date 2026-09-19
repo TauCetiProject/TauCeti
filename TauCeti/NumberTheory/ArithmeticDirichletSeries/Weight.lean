@@ -428,9 +428,9 @@ a weight is the purely imaginary norm twist `TauCeti.MultiplicativeIdealWeight.n
 trivial weight, and it is the whole of that twist once the bad primes are taken into account
 (`TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood.eq_normTwist`).
 
-These are the degenerate members of a family of ideal weights: their `L`-series is a Dedekind
-zeta function with finitely many Euler factors deleted, read along a horizontal translate, so it
-has a pole and no cancellation in its ideal partial sums
+These weights give degenerate examples in families of ideal weights: their `L`-series is a
+Dedekind zeta function with finitely many Euler factors deleted, read after an imaginary
+translation, so it has a pole and no cancellation in its ideal partial sums
 (`TauCeti.not_hasCancellation_of_isNormTwistOnGood`). -/
 def IsNormTwistOnGood (χ : MultiplicativeIdealWeight K) (u : ℝ) : Prop :=
   ∀ I : Ideal (𝓞 K), χ.IsGood I → χ I = (Ideal.absNorm I : ℂ) ^ ((u : ℂ) * Complex.I)
@@ -443,6 +443,7 @@ def IsTrivialOnGood (χ : MultiplicativeIdealWeight K) : Prop :=
 
 /-- The norm twists with parameter `0` on the good ideals are the weights that are trivial
 there. -/
+@[simp]
 theorem isNormTwistOnGood_zero_iff (χ : MultiplicativeIdealWeight K) :
     χ.IsNormTwistOnGood 0 ↔ χ.IsTrivialOnGood := by
   simp [IsNormTwistOnGood, IsTrivialOnGood]
@@ -464,8 +465,9 @@ a norm twist with parameter `u` on its good ideals is the twist by `N(I) ^ (u * 
 indicator of the ideals prime to its bad primes. The bad set is a parameter, so that a caller
 holding it as a `Finset` need not convert. -/
 theorem IsNormTwistOnGood.eq_normTwist {χ : MultiplicativeIdealWeight K} {u : ℝ}
-    (h : χ.IsNormTwistOnGood u) (hS : S.Finite) (hSbad : χ.badPrimes = S) :
-    χ = normTwist (-((u : ℂ) * Complex.I)) (ofBadPrimes S hS) := by
+    (h : χ.IsNormTwistOnGood u) (hSbad : χ.badPrimes = S) :
+    χ = normTwist (-((u : ℂ) * Complex.I))
+      (ofBadPrimes S (hSbad ▸ χ.finite_badPrimes)) := by
   classical
   ext I
   by_cases hI : χ.IsGood I
