@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
 public import TauCeti.NumberTheory.LSeries.SumCoeff
 
@@ -35,10 +36,16 @@ continuation of the L-series of `χ` across the line `Re s = 1`.
 Cancellation is a hypothesis about the partial sums themselves. It cannot be replaced by
 finiteness of the image of `χ` or of a quotient through which it factors: the values of a weight
 factoring through a finite quotient of the free group on the prime ideals can be prescribed
-arbitrarily prime by prime. The trivial weight shows that the hypothesis is not automatic:
-its partial sums are the ideal counts, which grow linearly, and it fails `HasCancellation`
-(`TauCeti.not_hasCancellation_one`); correspondingly its L-series is the Dedekind zeta function,
-which has a pole at `s = 1`.
+arbitrarily prime by prime.
+
+Nor is it automatic, and `TauCeti.not_hasCancellation_of_isNormTwistOnGood` says which weights it
+excludes: those agreeing with a norm twist `I ↦ N(I) ^ (u * I)` on the ideals prime to their bad
+primes. The `L`-series of such a weight is the Dedekind zeta function with finitely many Euler
+factors deleted, read at `s - u * I`, so it has a pole at `s = 1 + u * I`, where cancellation
+would instead make `continuedLFunctionOfWeight χ` holomorphic. The trivial weight
+(`TauCeti.not_hasCancellation_one`) and its purely imaginary norm twists
+(`TauCeti.not_hasCancellation_normTwist_one`) are the cases a character-family argument meets:
+it must not assume cancellation for the degenerate members of its family.
 
 ## References
 
@@ -52,8 +59,8 @@ public section
 
 namespace TauCeti
 
-open Filter Asymptotics
-open scoped nonZeroDivisors NumberField
+open Filter Asymptotics IsDedekindDomain
+open scoped nonZeroDivisors NumberField Topology
 
 variable {K : Type*} [Field K] [NumberField K]
 
@@ -133,28 +140,6 @@ theorem HasCancellation.isBigO_sum_normCoeff {χ : UnitaryIdealWeight K} (hχ : 
     Real.norm_of_nonneg (by positivity)]
   exact hC n (by exact_mod_cast hn)
 
-/-- **The trivial weight has no cancellation.** Its partial sums are the ideal counts, which are
-bounded below by a positive multiple of `x`, while `x ^ (1 - 1 / [K : ℚ]) = o(x)`. -/
-theorem not_hasCancellation_one : ¬ HasCancellation (1 : UnitaryIdealWeight K) := by
-  rw [HasCancellation]
-  rintro ⟨C, hC⟩
-  obtain ⟨b⟩ := idealCount_linearBounds K
-  set θ : ℝ := 1 - 1 / (Module.finrank ℚ K : ℝ)
-  have hθ : 0 < 1 - θ := sub_pos.mpr cancellationExponent_lt_one
-  obtain ⟨x, hx⟩ := ((tendsto_rpow_atTop hθ).eventually_gt_atTop (C / b.lower)).and
-    (eventually_ge_atTop (1 : ℝ)) |>.exists
-  have hxpos : 0 < x := zero_lt_one.trans_le hx.2
-  have hsum : ‖idealSummatory K (1 : UnitaryIdealWeight K).toIdealArithmeticFunction x‖ =
-      Nat.card {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x} := by
-    rw [UnitaryIdealWeight.toIdealArithmeticFunction_one, idealSummatory_apply,
-      Nat.card_coe_normLE]
-    simp
-  have hle : b.lower * x ≤ C * x ^ θ := (b.le_card x hx.2).trans (hsum ▸ hC x hx.2)
-  have hsplit : b.lower * x ^ (1 - θ) * x ^ θ ≤ C * x ^ θ := by
-    rwa [mul_assoc, ← Real.rpow_add hxpos, sub_add_cancel, Real.rpow_one]
-  exact absurd ((div_lt_iff₀' b.lower_pos).mp hx.1)
-    (not_lt.mpr (le_of_mul_le_mul_right hsplit (Real.rpow_pos_of_pos hxpos θ)))
-
 /-- **The continued L-function of a unitary weight**, defined by partial summation:
 `s * ∫_{1}^{∞} (∑_{N(I) ≤ t} χ(I)) t ^ (-(s + 1)) dt`.
 
@@ -198,5 +183,86 @@ theorem differentiableOn_continuedLFunctionOfWeight {χ : UnitaryIdealWeight K}
       {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} := by
   rw [funext (continuedLFunctionOfWeight_eq_mul_integral χ)]
   exact LSeries.differentiableOn_mul_integral_of_isBigO _ hχ.isBigO_sum_normCoeff
+
+/-!
+### The rejection test: weights that are norm twists on their good ideals
+-/
+
+/-- **A weight that is a norm twist on its good ideals has no cancellation.** Its norm
+coefficients are those of the indicator of the ideals prime to its bad primes, twisted by
+`n ^ (u * I)`, so its `L`-series is the Dedekind zeta function with finitely many Euler factors
+deleted, read at `s - u * I`. That series has a pole at `s = 1 + u * I`, a point at which
+cancellation would make `TauCeti.continuedLFunctionOfWeight` holomorphic.
+
+This is the rejection test a character-family argument needs: cancellation may not be assumed
+for the degenerate members of a family, and this theorem says exactly which they are. -/
+theorem not_hasCancellation_of_isNormTwistOnGood {χ : UnitaryIdealWeight K} {u : ℝ}
+    (hχ : χ.1.IsNormTwistOnGood u) : ¬ HasCancellation χ := by
+  intro hcanc
+  obtain ⟨S, hS⟩ : ∃ S : Finset (HeightOneSpectrum (𝓞 K)),
+      χ.1.badPrimes = (S : Set (HeightOneSpectrum (𝓞 K))) :=
+    ⟨χ.1.finite_badPrimes.toFinset, χ.1.finite_badPrimes.coe_toFinset.symm⟩
+  have hfun : χ.toIdealArithmeticFunction = χ.1.toIdealArithmeticFunction := by
+    funext I
+    rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply,
+      MultiplicativeIdealWeight.toIdealArithmeticFunction_apply]
+  -- cancellation makes the continued `L`-function continuous at `1 + u * I`, so multiplying it
+  -- by `t - 1` kills it as `t → 1⁺` along the horizontal ray through that point
+  have hcontAt : ContinuousAt (continuedLFunctionOfWeight χ) (1 + (u : ℂ) * Complex.I) := by
+    refine (differentiableOn_continuedLFunctionOfWeight hcanc).continuousOn.continuousAt
+      ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds ?_)
+    simpa using cancellationExponent_lt_one (K := K)
+  have hzero : Tendsto (fun t : ℝ ↦ ((t : ℂ) - 1) *
+      continuedLFunctionOfWeight χ ((t : ℂ) + (u : ℂ) * Complex.I)) (𝓝[>] 1) (𝓝 0) := by
+    have hray : Tendsto (fun t : ℝ ↦ ((t : ℂ) + (u : ℂ) * Complex.I)) (𝓝[>] (1 : ℝ))
+        (𝓝 (1 + (u : ℂ) * Complex.I)) := by
+      have hc : Continuous fun t : ℝ ↦ ((t : ℂ) + (u : ℂ) * Complex.I) :=
+        Complex.continuous_ofReal.add continuous_const
+      simpa using (hc.tendsto 1).mono_left nhdsWithin_le_nhds
+    have hsub : Tendsto (fun t : ℝ ↦ ((t : ℂ) - 1)) (𝓝[>] (1 : ℝ)) (𝓝 0) := by
+      have hc : Continuous fun t : ℝ ↦ ((t : ℂ) - 1) :=
+        Complex.continuous_ofReal.sub continuous_const
+      simpa using (hc.tendsto 1).mono_left nhdsWithin_le_nhds
+    simpa using hsub.mul (hcontAt.tendsto.comp hray)
+  -- but on the ray the continued `L`-function is the `L`-series, which has a pole at `1 + u * I`
+  have heq : (fun t : ℝ ↦ ((t : ℂ) - 1) *
+      LSeries (normCoeff K χ.1.toIdealArithmeticFunction) ((t : ℂ) + (u : ℂ) * Complex.I))
+      =ᶠ[𝓝[>] 1] fun t : ℝ ↦ ((t : ℂ) - 1) *
+        continuedLFunctionOfWeight χ ((t : ℂ) + (u : ℂ) * Complex.I) := by
+    filter_upwards [self_mem_nhdsWithin] with t (ht : (1 : ℝ) < t)
+    have hre : (1 : ℝ) < ((t : ℂ) + (u : ℂ) * Complex.I).re := by simpa using ht
+    rw [continuedLFunctionOfWeight_eq_LSeries χ hre, hfun]
+  have hne : (NumberField.dedekindZeta_residue K : ℂ) *
+      ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-1 : ℂ)) ≠ 0 :=
+    mul_ne_zero (by exact_mod_cast (NumberField.dedekindZeta_residue_pos K).ne')
+      (prod_one_sub_absNorm_cpow_neg_ne_zero S (by simp))
+  exact hne (tendsto_nhds_unique ((hχ.tendsto_sub_one_mul_LSeries hS).congr' heq) hzero)
+
+/-- **A weight that is trivial on its good ideals has no cancellation**: its `L`-series is the
+Dedekind zeta function with finitely many Euler factors deleted, which has a pole at `s = 1`. -/
+theorem not_hasCancellation_of_isTrivialOnGood {χ : UnitaryIdealWeight K}
+    (hχ : χ.1.IsTrivialOnGood) : ¬ HasCancellation χ :=
+  not_hasCancellation_of_isNormTwistOnGood
+    ((MultiplicativeIdealWeight.isNormTwistOnGood_zero_iff _).mpr hχ)
+
+/-- **The trivial weight has no cancellation.** Its `L`-series is the Dedekind zeta function,
+which has a pole at `s = 1`. -/
+theorem not_hasCancellation_one : ¬ HasCancellation (1 : UnitaryIdealWeight K) :=
+  not_hasCancellation_of_isTrivialOnGood
+    (by rw [UnitaryIdealWeight.val_one]; exact MultiplicativeIdealWeight.isTrivialOnGood_one)
+
+/-- **No imaginary norm twist of the trivial weight has cancellation.** Its `L`-series is the
+Dedekind zeta function read at `s + z`, which has a pole at `s = 1 - z`. -/
+theorem not_hasCancellation_normTwist_one {z : ℂ} (hz : z.re = 0) :
+    ¬ HasCancellation (UnitaryIdealWeight.normTwist z hz (1 : UnitaryIdealWeight K)) := by
+  have hzz : -(((-z.im : ℝ) : ℂ) * Complex.I) = z := by
+    apply Complex.ext <;> simp [hz]
+  have h0 : (1 : MultiplicativeIdealWeight K).IsNormTwistOnGood 0 :=
+    (MultiplicativeIdealWeight.isNormTwistOnGood_zero_iff _).mpr
+      MultiplicativeIdealWeight.isTrivialOnGood_one
+  have h1 := h0.normTwist (-z.im)
+  rw [zero_add, hzz] at h1
+  exact not_hasCancellation_of_isNormTwistOnGood
+    (by rwa [UnitaryIdealWeight.val_normTwist, UnitaryIdealWeight.val_one])
 
 end TauCeti
