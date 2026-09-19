@@ -729,13 +729,10 @@ theorem latticeConj_prodMap (x : Vℂ × V'ℂ) :
 theorem map_latticeConj_prod (U : Submodule ℂ Vℂ) (U' : Submodule ℂ V'ℂ) :
     (U.prod U').map (latticeConj (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ)) =
       (U.map (latticeConj hℂ)).prod (U'.map (latticeConj h'ℂ)) := by
-  ext x
-  simp only [Submodule.mem_map, Submodule.mem_prod, latticeConj_prodMap hℂ h'ℂ, Prod.ext_iff]
-  constructor
-  · rintro ⟨y, ⟨hy, hy'⟩, h, h'⟩
-    exact ⟨⟨y.1, hy, h⟩, ⟨y.2, hy', h'⟩⟩
-  · rintro ⟨⟨y, hy, h⟩, ⟨y', hy', h'⟩⟩
-    exact ⟨(y, y'), ⟨hy, hy'⟩, h, h'⟩
+  apply SetLike.coe_injective
+  simpa only [Submodule.map_coe, Submodule.prod_coe, Prod.map_def,
+    funext (latticeConj_prodMap hℂ h'ℂ)] using
+    Set.prodMap_image_prod (latticeConj hℂ) (latticeConj h'ℂ) (U : Set Vℂ) (U' : Set V'ℂ)
 
 end Prod
 
