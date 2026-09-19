@@ -211,6 +211,14 @@ oriented along its path. -/
 def fi23Edges : List (Fin 10 × Fin 10) :=
   [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 9), (3, 7), (7, 8)]
 
+/-- The nine edges, in source order. The body is sealed, so this equation is what lets a consumer
+reduce the graph — and with it the membership test of
+`TauCeti.Sporadic.fi23CoxeterMatrix_apply` — to the pairs the source's two paths draw. -/
+@[simp]
+theorem fi23Edges_def :
+    fi23Edges = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 9), (3, 7), (7, 8)] := by
+  rw [fi23Edges]
+
 /-- The Coxeter matrix of the `Fi₂₃` graph, the simply laced matrix of its edge list: diagonal
 entries are one, an edge has label three, and every other pair has label two. This is the
 `m`-labelled data the source's two paths encode, before any expansion into relations. -/
@@ -229,9 +237,20 @@ def fi23AdditionalRelators : List (Relator (Fin 10)) :=
   [ .pow (d ⬝ c ⬝ b ⬝ d ⬝ e ⬝ f ⬝ d ⬝ h ⬝ i) 10,
     .pow (a ⬝ b ⬝ c ⬝ d ⬝ e ⬝ f ⬝ h) 9 ]
 
+/-- The two appended words, with their generator indices written out. The body is sealed and is
+written with this file's private letter abbreviations, so this equation is what publishes the two
+words `(dcbdefdhi)¹⁰` and `(abcdefh)⁹` themselves. -/
+@[simp]
+theorem fi23AdditionalRelators_def :
+    fi23AdditionalRelators =
+      [ .pow (.gen 3 ⬝ .gen 2 ⬝ .gen 1 ⬝ .gen 3 ⬝ .gen 4 ⬝ .gen 5 ⬝ .gen 3 ⬝ .gen 7 ⬝ .gen 8) 10,
+        .pow (.gen 0 ⬝ .gen 1 ⬝ .gen 2 ⬝ .gen 3 ⬝ .gen 4 ⬝ .gen 5 ⬝ .gen 7) 9 ] := by
+  rw [fi23AdditionalRelators]
+
 /-- The complete relator list transcribed for `Fi₂₃`: the Coxeter-path expansion followed by the
-two words that the source appends. -/
-def fi23RelatorList : List (Relator (Fin 10)) :=
+two words that the source appends. This is a grouping helper: what it names is published by
+`TauCeti.Sporadic.fi23Presentation_transcribed`. -/
+private def fi23RelatorList : List (Relator (Fin 10)) :=
   fi23NodeAndEdgeRelators ++ fi23NonedgeRelators ++ fi23AdditionalRelators
 
 /-- The Group Presentations Library finite presentation `GPLTable.Fi23.1` of the Fischer group
@@ -465,6 +484,11 @@ theorem fi23Presentation_relatorsCyclicallyReduced :
 
 /-! ### The row against the Coxeter group of its graph -/
 
+-- The row records ten generator names, so `Fin fi23Presentation.generatorCount` and `Fin 10` are
+-- the same type by definition and this cast transports along an equality of a type with itself;
+-- the transcribed field is `fi23RelatorList` by definition as well. Both sides are therefore the
+-- same list, which is what `rfl` checks. Transporting once here keeps the rewrites in
+-- `fi23Presentation_map_toWord_mem_iff` at the literal index type.
 private theorem fi23Presentation_transcribed_cast :
     (cast (by simp [fi23Presentation_generatorNames]) fi23Presentation.transcribed :
       List (Relator (Fin 10))) = fi23RelatorList := by
@@ -511,9 +535,12 @@ def fi23MulEquivPresentedGroupCoxeterAppend :
     fi23Presentation.Group ≃*
       PresentedGroup
         (fi23CoxeterMatrix.relationsSet ∪ Relator.relatorSet fi23AdditionalRelators) := by
+  -- The generic equivalence indexes its Coxeter matrix and extra relators by
+  -- `Fin fi23Presentation.generatorCount`. That is `Fin 10` by definition but not syntactically,
+  -- because the row is sealed, so the row is unfolded here to make the two index types meet.
   unfold fi23Presentation
-  apply GroupPresentation.mulEquivPresentedGroupCoxeterAppendOfMapToWordMemIff
-  exact fi23Presentation_map_toWord_mem_iff
+  apply GroupPresentation.mulEquivPresentedGroupCoxeterAppend
+  exact Relator.relatorSet_eq_of_map_toWord_mem_iff fi23Presentation_map_toWord_mem_iff
 
 /-- The Coxeter equivalence sends each canonical generator to the corresponding canonical
 generator. -/
@@ -524,7 +551,9 @@ theorem fi23MulEquivPresentedGroupCoxeterAppend_apply_of
         (PresentedGroup.of
           (Fin.cast (by simp [GroupPresentation.generatorCount, fi23Presentation]) i)) =
       PresentedGroup.of i := by
+  -- Same reduction as in the equivalence itself: `Fin.cast` moves the index from `Fin 10` to
+  -- `Fin fi23Presentation.generatorCount`, and unfolding the sealed row identifies the two.
   unfold fi23MulEquivPresentedGroupCoxeterAppend fi23Presentation
-  apply GroupPresentation.mulEquivPresentedGroupCoxeterAppendOfMapToWordMemIff_apply_of
+  apply GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of
 
 end TauCeti.Sporadic

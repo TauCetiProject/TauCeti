@@ -444,15 +444,15 @@ side. -/
 def mulEquivPresentedGroupCoxeterAppend :
     presentation.Group ≃*
       PresentedGroup (coxeterMatrix.relationsSet ∪ Relator.relatorSet adjoinedRelators) :=
-  presentation.mulEquivPresentedGroupCoxeterAppendOfMapToWordMemIff coxeterMatrix
-    adjoinedRelators fun _ => by rw [presentation_transcribed_append]; rfl
+  presentation.mulEquivPresentedGroupCoxeterAppend coxeterMatrix adjoinedRelators
+    (congrArg Relator.relatorSet presentation_transcribed_append)
 
 /-- The Coxeter equivalence sends each canonical generator to the corresponding canonical
 generator. -/
 @[simp]
 theorem mulEquivPresentedGroupCoxeterAppend_apply_of (i : Fin presentation.generatorCount) :
     mulEquivPresentedGroupCoxeterAppend (PresentedGroup.of i) = PresentedGroup.of i :=
-  GroupPresentation.mulEquivPresentedGroupCoxeterAppendOfMapToWordMemIff_apply_of _ _ _
-    (fun _ => by rw [presentation_transcribed_append]; rfl) i
+  GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of _ _ _
+    (congrArg Relator.relatorSet presentation_transcribed_append) i
 
 end TauCeti.Sporadic.BabyMonster
