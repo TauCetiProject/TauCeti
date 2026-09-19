@@ -19,10 +19,10 @@ The extended binary Golay code is the row space of the systematic matrix `[I₁�
 where `B` is the bordered reverse-circulant matrix over `ZMod 2`. The first twelve
 coordinates recover the message. The generator is also a parity-check matrix.
 
-The weight distribution and minimum distance follow by exact enumeration. Mathlib's
-`finFunctionFinEquiv` indexes the messages in sixteen blocks of 256. Each block of the private
-weight table is checked against the actual encoded words by the kernel; the table is only a
-computational certificate. Self-duality is checked independently through the generator/check API.
+This doubly-even self-dual binary code has parameters `[24, 12, 8]`. Its self-duality and
+divisibility of weights by four make it an input to Construction A, which associates an even
+unimodular lattice to such a code. The weight distribution and homogeneous weight enumerator
+describe the numbers of codewords of each weight.
 
 The matrix convention is that of Huffman and Pless, *Fundamentals of Error-Correcting
 Codes*, §1.9.1 and Chapter 9.
@@ -51,6 +51,7 @@ def block : Matrix (Fin 12) (Fin 12) (ZMod 2) :=
      1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1]
 
 /-- The entries of the border and of the reverse-circulant interior. -/
+@[simp]
 theorem block_apply (i j : Fin 12) :
     block i j = if i = 0 then (if j = 0 then 0 else 1) else if j = 0 then 1 else
       if (i.val + j.val - 2) % 11 ∈ ({0, 1, 3, 4, 5, 9} : Finset ℕ) then 1 else 0 := by
@@ -84,6 +85,7 @@ theorem generator_addNat (i j : Fin 12) : generator i (j.addNat 12) = block i j 
 
 /-- Encoding a message keeps it in the first twelve coordinates and appends its product with
 `block`. -/
+@[simp]
 theorem vecMul_generator (a : Fin 12 → ZMod 2) :
     a ᵥ* generator = Fin.append a (a ᵥ* block) := by
   ext j
@@ -548,6 +550,7 @@ theorem hammingNorm_mem {x : Fin 24 → ZMod 2} (hx : x ∈ code) :
   exact (by decide +kernel : ∀ i j, weightTable i j ∈ ({0, 8, 12, 16, 24} : Finset ℕ)) i j
 
 /-- The extended binary Golay code is doubly even. -/
+@[simp]
 theorem isDoublyEven_code : BinaryCode.IsDoublyEven code := by
   rw [BinaryCode.isDoublyEven_iff]
   intro x hx
@@ -601,24 +604,13 @@ theorem weightEnumerator_code :
 /-- The extended binary Golay code has minimum distance eight. -/
 @[simp]
 theorem hammingMinDist_code : Set.hammingMinDist (code : Set (Fin 24 → ZMod 2)) = 8 := by
-  have hex : ∃ x ∈ code, hammingNorm x = 8 := by
-    apply (Set.weightDistribution_ne_zero_iff (Set.toFinite _)).mp
-    simp
-  obtain ⟨x, hx, hw⟩ := hex
-  have hx0 : x ≠ 0 := by
-    intro h
-    simp [h] at hw
-  have hC : code.toAddSubgroup ≠ ⊥ := by
-    intro h
-    have : x ∈ (⊥ : AddSubgroup (Fin 24 → ZMod 2)) := h ▸ hx
-    exact hx0 this
-  apply le_antisymm
-  · exact hw ▸ Set.hammingMinDist_le_hammingNorm (E := code.toAddSubgroup) hx hx0
-  · apply (Set.le_hammingMinDist_iff_hammingNorm hC).mpr
-    intro y hy hy0
-    have h := hammingNorm_mem hy
-    have h0 : hammingNorm y ≠ 0 := mt hammingNorm_eq_zero.mp hy0
-    simp only [Finset.mem_insert, Finset.mem_singleton] at h
-    omega
+  rw [← Submodule.coe_toAddSubgroup, Set.hammingMinDist_eq_sInf_weightDistribution
+    (Set.toFinite _), Submodule.coe_toAddSubgroup]
+  apply IsLeast.csInf_eq
+  constructor
+  · norm_num
+  · intro w hw
+    simp only [Set.mem_ofPred_eq, weightDistribution_code] at hw
+    split_ifs at hw <;> omega
 
 end TauCeti.BinaryGolay
