@@ -10,17 +10,19 @@ public import Mathlib.RingTheory.AdicCompletion.Functoriality
 /-!
 # Adic completeness of finite products
 
-For an ideal `I` of a commutative ring `R` and a finite family of `R`-modules `M i`, the product
-`∀ i, M i` is `I`-adically Hausdorff, precomplete, or complete as soon as every factor is. In
-particular a finite free module `Fin n → R` over an `I`-adically complete ring is `I`-adically
-complete, which is what the complete Nakayama lemma
-(`surjective_of_mkQ_comp_surjective`) requires of the source of a map out of a finite free module.
+For an ideal `I` of a commutative ring `R` and a family of `R`-modules `M i`, the product `∀ i, M i`
+is `I`-adically Hausdorff as soon as every factor is. If the family is finite, the analogous result
+holds for adic precompleteness and completeness. In particular a finite free module `Fin n → R`
+over an `I`-adically complete ring is `I`-adically complete, which is what the complete Nakayama
+lemma (`surjective_of_mkQ_comp_surjective`) requires of the source of a map out of a finite free
+module.
 
 ## Main results
 
 * `AdicCompletion.pi_of`: the product of the completions of the factors receives the canonical
   map from the product as the product of the canonical maps.
-* `IsHausdorff.pi`, `IsPrecomplete.pi`, `IsAdicComplete.pi`: the three properties pass to finite
+* `IsHausdorff.pi`: adic Hausdorffness passes to products.
+* `IsPrecomplete.pi`, `IsAdicComplete.pi`: adic precompleteness and completeness pass to finite
   products.
 -/
 
@@ -39,10 +41,8 @@ theorem AdicCompletion.pi_of (x : ∀ i, M i) (j : ι) :
     AdicCompletion.pi I M (of I (∀ i, M i) x) j = of I (M j) (x j) := by
   simp [AdicCompletion.pi, map_of]
 
-/-- A finite product of `I`-adically Hausdorff modules is `I`-adically Hausdorff. -/
-instance IsHausdorff.pi [Finite ι] [∀ i, IsHausdorff I (M i)] : IsHausdorff I (∀ i, M i) := by
-  classical
-  have := Fintype.ofFinite ι
+/-- A product of `I`-adically Hausdorff modules is `I`-adically Hausdorff. -/
+instance IsHausdorff.pi [∀ i, IsHausdorff I (M i)] : IsHausdorff I (∀ i, M i) := by
   refine of_injective_iff.mp fun x y hxy ↦ _root_.funext fun j ↦ (of_injective I (M j)) ?_
   rw [← pi_of, ← pi_of, hxy]
 
