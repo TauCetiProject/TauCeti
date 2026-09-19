@@ -35,7 +35,7 @@ densities `t(·, W)`, so `f = t(·, W)`.  No graphon is involved in the construc
 
 * `TauCeti.DenseGraphLimits.paramGraphLaw_apply` — the mass of a set of graphs is the sum of the
   clipped nonnegative Möbius weights of its members;
-* `TauCeti.DenseGraphLimits.paramGraphLaw_isProbabilityMeasure` — each level is a probability
+* `TauCeti.DenseGraphLimits.isProbabilityMeasure_paramGraphLaw` — each level is a probability
   measure;
 * `TauCeti.DenseGraphLimits.paramGraphLaw_map_comap` — the levels are consistent along label
   injections;
@@ -70,7 +70,7 @@ namespace TauCeti.DenseGraphLimits
 
 /-- The **level-`n` law of a graph parameter**: the measure on the graphs on `Fin n` with mass
 `f†(H)` at each `H`, clipped at `0`.  For a parameter satisfying the structural conditions it is a
-probability measure (`paramGraphLaw_isProbabilityMeasure`). -/
+probability measure (`isProbabilityMeasure_paramGraphLaw`). -/
 def paramGraphLaw (f : GraphParam) (n : ℕ) : Measure (SimpleGraph (Fin n)) :=
   ∑ H : SimpleGraph (Fin n), ENNReal.ofReal (graphParamMobius f n H) • Measure.dirac H
 
@@ -93,7 +93,7 @@ theorem paramGraphLaw_singleton (f : GraphParam) (n : ℕ) (H : SimpleGraph (Fin
 
 /-- For a parameter satisfying the structural conditions, each level law is a probability
 measure: the Möbius masses are nonnegative and sum to one. -/
-theorem paramGraphLaw_isProbabilityMeasure (f : GraphParam) (hiso : IsIsoInvariant f)
+theorem isProbabilityMeasure_paramGraphLaw (f : GraphParam) (hiso : IsIsoInvariant f)
     (hmul : IsMultiplicative f) (hnorm : IsNormalized f) (hrp : IsReflectionPositive f)
     (n : ℕ) : IsProbabilityMeasure (paramGraphLaw f n) := by
   classical
@@ -121,7 +121,7 @@ level-`n` marginal gives each graph `H` on `Fin n` the Möbius mass `f†(H)`. -
 def paramExchangeableLaw (f : GraphParam) (hiso : IsIsoInvariant f) (hmul : IsMultiplicative f)
     (hnorm : IsNormalized f) (hrp : IsReflectionPositive f) : ExchangeableGraphLaw where
   law := paramGraphLaw f
-  prob := paramGraphLaw_isProbabilityMeasure f hiso hmul hnorm hrp
+  prob := isProbabilityMeasure_paramGraphLaw f hiso hmul hnorm hrp
   consistent := paramGraphLaw_map_comap f hiso hmul hnorm hrp
 
 /-- The marginals of `L_f` are the level laws `paramGraphLaw f`. -/
