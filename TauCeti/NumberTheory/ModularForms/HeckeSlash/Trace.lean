@@ -46,7 +46,7 @@ namespace CuspForm
 
 /-- Coercing the cusp-form trace of a translate to a modular form agrees with tracing the
 corresponding translated modular form. -/
-theorem coe_trace_translate {k : ℤ} {𝒢 ℋ : Subgroup (GL (Fin 2) ℝ)}
+@[simp] theorem coe_trace_translate {k : ℤ} {𝒢 ℋ : Subgroup (GL (Fin 2) ℝ)}
     (f : CuspForm 𝒢 k) (x : GL (Fin 2) ℝ)
     [(ConjAct.toConjAct x⁻¹ • 𝒢).IsFiniteRelIndex ℋ] :
     (CuspForm.trace ℋ (CuspForm.translate f x) : ModularForm ℋ k) =
