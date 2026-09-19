@@ -216,7 +216,7 @@ lemma singularPrismX_naturality {Y : TopCat.{w}} (f : X ⟶ Y) (n : ℕ) :
 
 /-- The chain homotopy formula for the singular prism operator in positive degrees:
 `∂ P + P ∂ = 1 - S`. -/
-lemma singularPrismX_comm (n : ℕ) :
+lemma singularPrismX_boundary_add_boundary_singularPrismX (n : ℕ) :
     ((TopCat.toSSet.obj X).chainComplex R).d (n + 1) n ≫ singularPrismX R X n +
         singularPrismX R X (n + 1) ≫ ((TopCat.toSSet.obj X).chainComplex R).d (n + 2) (n + 1) =
       𝟙 _ - singularSubdivisionX R X (n + 1) := by
@@ -247,7 +247,7 @@ def singularSubdivisionHomotopy : Homotopy (𝟙 _) (singularSubdivisionChainMap
       simp
     | succ n =>
       rw [Homotopy.dNext_succ_chainComplex, Homotopy.prevD_chainComplex]
-      simp [singularPrismX_comm]
+      simp [singularPrismX_boundary_add_boundary_singularPrismX]
 
 @[simp]
 lemma singularSubdivisionHomotopy_hom (n : ℕ) :
