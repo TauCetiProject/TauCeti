@@ -103,25 +103,6 @@ private theorem lSeriesConverges_ite_iff :
     · simp [hn]
   exact LSeriesConverges.congr h
 
-/-- Decompose the interval from zero by splitting off its first element. -/
-private theorem Icc_zero_eq_insert (n : ℕ) : Icc 0 n = insert 0 (Icc 1 n) := by
-  ext k
-  simp [Finset.mem_Icc]
-  omega
-
-/-- Splitting off the index `0` from a partial sum over `Finset.Icc 0 n`. -/
-private theorem sum_Icc_one_eq_sub (g : ℕ → ℂ) (n : ℕ) :
-    ∑ k ∈ Icc 1 n, g k = (∑ k ∈ Icc 0 n, g k) - g 0 := by
-  rw [Icc_zero_eq_insert, Finset.sum_insert (by simp)]
-  ring
-
-/-- The partial sums over `Finset.Icc 0 n` of a sequence corrected to vanish at `0`. -/
-private theorem sum_Icc_zero_ite (f : ℕ → ℂ) (n : ℕ) :
-    ∑ k ∈ Icc 0 n, (if k = 0 then 0 else f k) = ∑ k ∈ Icc 1 n, f k := by
-  rw [Icc_zero_eq_insert, Finset.sum_insert (by simp)]
-  simp only [reduceIte, zero_add]
-  exact Finset.sum_congr rfl fun k hk ↦ ite_eq_right (by have := (Finset.mem_Icc.mp hk).1; omega)
-
 /-- The Abel-summation core of `TauCeti.LSeriesConverges_of_sum_isBigO`, for a sequence already
 vanishing at `0`. -/
 private theorem lSeriesConverges_of_sum_isBigO_aux (hf : f 0 = 0) {r : ℝ}
@@ -185,8 +166,7 @@ private theorem lSeriesConverges_of_sum_isBigO_aux (hf : f 0 = 0) {r : ℝ}
       refine (hO.comp_tendsto tendsto_nat_floor_atTop).trans
         ((hfloor.rpow fun t ↦ le_max_right t 0).isBigO.congr' EventuallyEq.rfl ?_)
       filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
-      change (max t 0) ^ r = t ^ r
-      rw [max_eq_left ht]
+      simp [max_eq_left ht]
     refine (hderivO.mul hsumO).congr' EventuallyEq.rfl ?_
     filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht
     rw [← Real.rpow_add ht]
@@ -220,12 +200,19 @@ theorem LSeriesConverges_of_sum_isBigO {r : ℝ}
     (hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, f k) =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ r)
     (hs : r < s.re) : LSeriesConverges f s := by
   rw [← lSeriesConverges_ite_iff]
+  have hsum : ∀ n : ℕ,
+      ∑ k ∈ Icc 0 n, (if k = 0 then 0 else f k) = ∑ k ∈ Icc 1 n, f k := fun n ↦ by
+    rw [← Finset.insert_Icc_add_one_left_eq_Icc (Nat.zero_le n),
+      Finset.sum_insert (by simp)]
+    simp only [reduceIte, zero_add]
+    exact Finset.sum_congr rfl fun k hk ↦
+      ite_eq_right (by have := (Finset.mem_Icc.mp hk).1; omega)
   exact lSeriesConverges_of_sum_isBigO_aux (by simp)
-    (hO.congr' (.of_forall fun n ↦ (sum_Icc_zero_ite f n).symm) EventuallyEq.rfl) hs
+    (hO.congr' (.of_forall fun n ↦ (hsum n).symm) EventuallyEq.rfl) hs
 
 /-- Iterating the Dirichlet term: dividing the terms at `s` by `n ^ (s' - s)` gives the terms
 at `s'`. -/
-private theorem term_term (f : ℕ → ℂ) (s s' : ℂ) (n : ℕ) :
+@[simp] theorem LSeries.term_term_sub (f : ℕ → ℂ) (s s' : ℂ) (n : ℕ) :
     LSeries.term (LSeries.term f s) (s' - s) n = LSeries.term f s' n := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp
@@ -250,11 +237,17 @@ theorem LSeriesConverges.of_re_lt_re (h : LSeriesConverges f s) (hs : s.re < s'.
   have hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, LSeries.term f s k) =O[atTop]
       fun n : ℕ ↦ (n : ℝ) ^ (0 : ℝ) := by
     refine Asymptotics.IsBigO.of_bound M (.of_forall fun n ↦ ?_)
-    rw [Real.rpow_zero, norm_one, mul_one, sum_Icc_one_eq_sub, LSeries.term_zero, sub_zero]
+    rw [Real.rpow_zero, norm_one, mul_one]
+    have hsum : ∑ k ∈ Icc 1 n, LSeries.term f s k =
+        ∑ k ∈ Icc 0 n, LSeries.term f s k := by
+      rw [← Finset.insert_Icc_add_one_left_eq_Icc (Nat.zero_le n),
+        Finset.sum_insert (by simp), LSeries.term_zero, zero_add]
+      simp only [zero_add]
+    rw [hsum]
     exact hM n
   obtain ⟨L', hL'⟩ := LSeriesConverges_of_sum_isBigO (s := s' - s) hO
     (by simpa using sub_pos.mpr hs)
-  exact ⟨L', by simpa only [term_term] using hL'⟩
+  exact ⟨L', by simpa only [LSeries.term_term_sub] using hL'⟩
 
 /-- **The abscissa of ordinary convergence** of the L-series of `f`: the infimum of the real
 points at which the partial sums of the series converge.  The series converges at every `s` with
@@ -355,7 +348,9 @@ theorem abscissaOfConv_neg_one_pow_le_zero :
   have hsum : ∀ n : ℕ, ‖∑ k ∈ Icc 1 n, (-1 : ℂ) ^ k‖ ≤ 1 := by
     intro n
     have h : ∑ k ∈ Icc 1 n, (-1 : ℂ) ^ k = (∑ k ∈ range (n + 1), (-1 : ℂ) ^ k) - 1 := by
-      rw [Nat.range_succ_eq_Icc_zero, sum_Icc_one_eq_sub]
+      rw [Nat.range_succ_eq_Icc_zero,
+        ← Finset.insert_Icc_add_one_left_eq_Icc (Nat.zero_le n),
+        Finset.sum_insert (by simp)]
       simp
     rw [h, neg_one_geom_sum]
     split_ifs <;> simp
@@ -394,14 +389,18 @@ end LSeries
 
 /-! ### Nonnegative coefficients -/
 
-/-- **For nonnegative coefficients, convergence at a real point is absolute.**  The terms are then
-nonnegative reals, so their partial sums converge exactly when they are bounded. -/
-theorem lSeriesConverges_iff_lSeriesSummable_of_nonneg (ha : 0 ≤ f) (x : ℝ) :
+/-- **For coefficients nonnegative away from the ignored index zero, convergence at a real point
+is absolute.**  The terms are then nonnegative reals, so their partial sums converge exactly when
+they are bounded. -/
+theorem lSeriesConverges_iff_lSeriesSummable_of_nonneg
+    (ha : ∀ n, n ≠ 0 → 0 ≤ f n) (x : ℝ) :
     LSeriesConverges f (x : ℂ) ↔ LSeriesSummable f (x : ℂ) := by
   refine ⟨fun ⟨L, hL⟩ ↦ ?_, LSeriesSummable.lSeriesConverges⟩
   set r : ℕ → ℝ := fun n ↦ ‖LSeries.term f (x : ℂ) n‖
-  have hterm : ∀ n, ((r n : ℝ) : ℂ) = LSeries.term f (x : ℂ) n := fun n ↦
-    Complex.norm_of_nonneg' (LSeries.term_nonneg (ha n) x)
+  have hterm : ∀ n, ((r n : ℝ) : ℂ) = LSeries.term f (x : ℂ) n := fun n ↦ by
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp [r]
+    · exact Complex.norm_of_nonneg' (LSeries.term_nonneg (ha n hn) x)
   have hsum : ∀ N : ℕ, ((∑ n ∈ range N, r n : ℝ) : ℂ) = ∑ n ∈ range N, LSeries.term f (x : ℂ) n :=
     fun N ↦ by rw [Complex.ofReal_sum]; exact Finset.sum_congr rfl fun n _ ↦ hterm n
   have hre : Tendsto (fun N ↦ ∑ n ∈ range N, r n) atTop (𝓝 L.re) := by
@@ -416,10 +415,10 @@ theorem lSeriesConverges_iff_lSeriesSummable_of_nonneg (ha : 0 ≤ f) (x : ℝ) 
 
 namespace LSeries
 
-/-- **For nonnegative coefficients the two abscissae agree.**  A Dirichlet series with nonnegative
-coefficients therefore has a single half-plane of convergence, and the abscissa appearing in
-Landau's theorem is the ordinary one as well as the absolute one. -/
-theorem abscissaOfConv_eq_abscissaOfAbsConv_of_nonneg (ha : 0 ≤ f) :
+/-- **For coefficients nonnegative away from the ignored index zero the two abscissae agree.**
+A Dirichlet series with nonnegative coefficients therefore has a single half-plane of convergence,
+and the abscissa appearing in Landau's theorem is the ordinary one as well as the absolute one. -/
+theorem abscissaOfConv_eq_abscissaOfAbsConv_of_nonneg (ha : ∀ n, n ≠ 0 → 0 ≤ f n) :
     abscissaOfConv f = _root_.LSeries.abscissaOfAbsConv f :=
   congrArg sInf (congrArg _
     (Set.ext fun x ↦ lSeriesConverges_iff_lSeriesSummable_of_nonneg ha x))

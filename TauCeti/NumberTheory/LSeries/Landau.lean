@@ -331,12 +331,25 @@ theorem landau (ha : 0 ≤ a) {σ : ℝ} (habs : LSeries.abscissaOfAbsConv a = (
   have hσx : σ ≤ x := mod_cast hle
   linarith
 
-/-- **Landau's theorem at the abscissa of ordinary convergence.**  A Dirichlet series with
-nonnegative coefficients has a single abscissa of convergence, so the singularity may equally be
-located by the ordinary one. -/
-theorem landau_of_abscissaOfConv (ha : 0 ≤ a) {σ : ℝ}
-    (hconv : abscissaOfConv a = (σ : EReal)) : ¬ HasAnalyticExtensionAt a σ :=
-  landau ha ((abscissaOfConv_eq_abscissaOfAbsConv_of_nonneg ha).symm.trans hconv)
+/-- **Landau's theorem at the abscissa of ordinary convergence.**  A Dirichlet series whose
+coefficients away from the ignored index zero are nonnegative has a single abscissa of convergence,
+so the singularity may equally be located by the ordinary one. -/
+theorem landau_of_abscissaOfConv (ha : ∀ n, n ≠ 0 → 0 ≤ a n) {σ : ℝ}
+    (hconv : abscissaOfConv a = (σ : EReal)) : ¬ HasAnalyticExtensionAt a σ := by
+  let a' : ℕ → ℂ := fun n ↦ if n = 0 then 0 else a n
+  have ha' : 0 ≤ a' := fun n ↦ by
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp [a']
+    · simpa [a', hn] using ha n hn
+  have haa' : ∀ {n}, n ≠ 0 → a n = a' n := fun {n} hn ↦ by simp [a', hn]
+  have habs : _root_.LSeries.abscissaOfAbsConv a = (σ : EReal) :=
+    (abscissaOfConv_eq_abscissaOfAbsConv_of_nonneg ha).symm.trans hconv
+  have habs' : _root_.LSeries.abscissaOfAbsConv a' = (σ : EReal) :=
+    (_root_.LSeries.abscissaOfAbsConv_congr fun hn ↦ (haa' hn).symm).trans habs
+  intro h
+  apply landau ha' habs'
+  obtain ⟨r, hr, F, hF, hFeq⟩ := h
+  exact ⟨r, hr, F, hF, fun s hs hσ ↦ (hFeq s hs hσ).trans (LSeries_congr haa' s)⟩
 
 /-- **Meromorphic form of Landau's theorem.** Let `F` be a meromorphic continuation of a
 Dirichlet series with nonnegative coefficients to a neighborhood of its finite, actual abscissa
