@@ -16,6 +16,9 @@ of codes preserves dimension, cardinality, Hamming data, and weight enumerators.
 allows conjugate codes over a finite field to be compared without treating field
 conjugation as a linear map over that field.
 
+Use `TauCeti.semilinearMonomialEquiv σ u e` for the word transformation and
+`TauCeti.IsSemilinearEquivalent C D` for the induced relation on codes.
+
 The conventions extend `TauCeti.monomialEquiv`: the units are applied after the alphabet
 automorphism and before relabelling. Codes remain ordinary submodules, and their images
 are formed with Mathlib's semilinear `Submodule.map`. When using the semilinear
