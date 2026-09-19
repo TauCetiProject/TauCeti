@@ -123,6 +123,15 @@ theorem isotypicComponent_le_iff (S : Type*) [AddCommGroup S] [Module R S]
   rw [isotypicComponent_def, sSup_le_iff]
   simp only [Set.mem_ofPred_eq]
 
+/-- The Lie isotypic component of the zero module is zero: a Lie submodule equivalent to a
+subsingleton is itself zero. -/
+theorem isotypicComponent_eq_bot_of_subsingleton (S : Type*) [AddCommGroup S] [Module R S]
+    [LieRingModule L S] [Subsingleton S] : isotypicComponent R L M S = ⊥ := by
+  rw [eq_bot_iff, isotypicComponent_le_iff]
+  rintro P ⟨e⟩ x hx
+  have hx0 : (⟨x, hx⟩ : P) = 0 := e.injective (Subsingleton.elim _ _)
+  simpa using congrArg Subtype.val hx0
+
 end LieModule
 
 namespace LieSubmodule
