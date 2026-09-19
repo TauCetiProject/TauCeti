@@ -88,7 +88,8 @@ theorem RegularFormClass.mul_hyperbolicClass (x : RegularFormClass K) :
     rw [add_mul, ih, RegularFormClass.mk_rankOne_mul_hyperbolicClass,
       RegularFormClass.rank_add, RegularFormClass.rank_mk, add_nsmul, one_nsmul]
 
-/-- Scaling a rank-one class by `-1` produces a hyperbolic plane: `⟨a, -a⟩ ≅ ℍ`. -/
+/-- Adding a rank-one class to its scaling by `-1` produces a hyperbolic plane:
+`⟨a, -a⟩ ≅ ℍ`. -/
 theorem RegularFormClass.mk_rankOne_add_neg_one_mul (a : Kˣ) :
     Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ +
         Quotient.mk (regularFormSetoid K) ⟨1, fun _ => (-1 : Kˣ)⟩ *
