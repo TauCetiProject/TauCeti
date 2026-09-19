@@ -31,7 +31,8 @@ complexes and hence a long exact sequence of homology groups, which alternates b
 degree-`0` and the degree-`-1` Tate groups; naturality of the periodicity in odd degrees splices
 that sequence into a cycle of six maps. Counting each of the six groups against the image of the
 map leaving it and the image of the map entering it gives the identity
-`|Ĥ⁰(X₁)| |Ĥ⁰(X₃)| |Ĥ⁻¹(X₂)| = |Ĥ⁻¹(X₁)| |Ĥ⁻¹(X₃)| |Ĥ⁰(X₂)|`, which is multiplicativity once the
+`|H-hat^0(X₁)| |H-hat^0(X₃)| |H-hat^(-1)(X₂)| =
+|H-hat^(-1)(X₁)| |H-hat^(-1)(X₃)| |H-hat^0(X₂)|`, which is multiplicativity once the
 degree-`-1` orders are known to be nonzero.
 
 The proofs are adapted to Mathlib's current Tate complex from the corresponding calculations in
