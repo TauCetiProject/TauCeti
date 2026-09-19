@@ -93,6 +93,12 @@ theorem mk_eq_mk_iff {t t' : ConnectedTriple n} :
 theorem mk_surjective : Function.Surjective (mk : ConnectedTriple n → ConnectedIsoClass n) :=
   Quotient.mk''_surjective
 
+noncomputable instance : Fintype (ConnectedIsoClass n) := by
+  classical
+  exact Fintype.ofSurjective mk mk_surjective
+
+noncomputable instance : DecidableEq (ConnectedIsoClass n) := Classical.decEq _
+
 end ConnectedIsoClass
 
 /-! ## Passport specifications -/

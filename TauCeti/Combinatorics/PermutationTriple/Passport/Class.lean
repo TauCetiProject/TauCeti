@@ -43,18 +43,6 @@ public section
 
 namespace TauCeti
 
-namespace ConnectedIsoClass
-
-variable {n : ℕ}
-
-noncomputable instance : Fintype (ConnectedIsoClass n) := by
-  classical
-  exact Fintype.ofSurjective ConnectedIsoClass.mk ConnectedIsoClass.mk_surjective
-
-noncomputable instance : DecidableEq (ConnectedIsoClass n) := Classical.decEq _
-
-end ConnectedIsoClass
-
 namespace PassportSpec
 
 variable {n : ℕ}
@@ -78,11 +66,15 @@ theorem mem_classSet {P : PassportSpec n} {c : ConnectedIsoClass n} :
 /-- The size of a passport is the number of isomorphism classes of connected triples in it. -/
 noncomputable def passportSize (P : PassportSpec n) : ℕ := P.classSet.card
 
+/-- The passport size is the cardinality of the passport class set. -/
+theorem passportSize_def (P : PassportSpec n) : P.passportSize = P.classSet.card :=
+  (rfl)
+
 /-- A passport has positive size exactly when some connected triple has that passport. -/
 theorem passportSize_pos_iff (P : PassportSpec n) :
     0 < P.passportSize ↔ ∃ t : ConnectedTriple n, HasPassport t P := by
   classical
-  rw [passportSize, Finset.card_pos]
+  rw [passportSize_def, Finset.card_pos]
   constructor
   · rintro ⟨c, hc⟩
     obtain ⟨t, rfl⟩ := ConnectedIsoClass.mk_surjective c
@@ -121,7 +113,7 @@ theorem classSet_eq_empty_of_not_isAdmissible {P : PassportSpec n} (hP : ¬ P.Is
 /-- An inadmissible passport has size zero. -/
 theorem passportSize_eq_zero_of_not_isAdmissible {P : PassportSpec n}
     (hP : ¬ P.IsAdmissible) : P.passportSize = 0 := by
-  rw [passportSize, classSet_eq_empty_of_not_isAdmissible hP, Finset.card_empty]
+  rw [passportSize_def, classSet_eq_empty_of_not_isAdmissible hP, Finset.card_empty]
 
 /-- Conjugating the reference monodromy subgroup does not change the passport class set. -/
 @[simp]
@@ -135,7 +127,7 @@ theorem classSet_conjugate (P : PassportSpec n) (tau : Perm (Fin n)) :
 @[simp]
 theorem passportSize_conjugate (P : PassportSpec n) (tau : Perm (Fin n)) :
     (P.conjugate tau).passportSize = P.passportSize := by
-  rw [passportSize, passportSize, classSet_conjugate]
+  rw [passportSize_def, passportSize_def, classSet_conjugate]
 
 /-! ## Invariants determined by a passport -/
 
