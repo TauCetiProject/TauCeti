@@ -39,7 +39,7 @@ graded `k[X]`-modules:
   long as both modules are finitely generated, `X` lowers degree on each of them, and the source
   is not torsion (`InternalGrading.maxNonTorsionDegree_add_le`). This applies in particular when
   the map has a left inverse up to multiplication by a nonzerodivisor such as a power of `X`
-  (`Submodule.comap_torsion_le_of_comp_eq_smul`), the shape of the bounds on `τ` coming from
+  (`TauCeti.Submodule.comap_torsion_le_of_comp_eq_smul`), the shape of the bounds on `τ` coming from
   crossing changes and cobordisms; a graded isomorphism preserves the invariant
   (`InternalGrading.maxNonTorsionDegree_eq_of_linearEquiv`).
 
@@ -114,6 +114,7 @@ theorem nonTorsionDegrees_shift (G : InternalGrading k M) (c : ℤ) :
     exact hx
 
 /-- The maximal non-torsion degree decreases by `c` when the grading is shifted by `c`. -/
+@[simp]
 theorem maxNonTorsionDegree_shift (G : InternalGrading k M) (c : ℤ)
     (hne : G.nonTorsionDegrees.Nonempty) (hbdd : BddAbove G.nonTorsionDegrees) :
     (G.shift c).maxNonTorsionDegree = G.maxNonTorsionDegree - c := by
@@ -201,9 +202,45 @@ theorem maxNonTorsionDegree_add_le [Module.Finite k[X] M] [Module.Finite k[X] N]
 omit [IsScalarTower k k[X] M] [IsScalarTower k k[X] N] in
 /-- A graded isomorphism of graded `k[X]`-modules preserves the maximal non-torsion degree. -/
 theorem maxNonTorsionDegree_eq_of_linearEquiv (e : M ≃ₗ[k[X]] N)
-    (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0)
-    (he' : LinearMap.IsHomogeneous e.symm.toLinearMap H.piece G.piece 0) :
+    (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0) :
     G.maxNonTorsionDegree = H.maxNonTorsionDegree := by
+  let ep : (p : ℤ) → G.piece p →+ H.piece p := fun p =>
+    { toFun := fun x => ⟨e.toLinearMap (x : M), by
+        simpa only [add_zero] using he.map_mem x.2⟩
+      map_zero' := Subtype.ext (map_zero e.toLinearMap)
+      map_add' := fun x y =>
+        Subtype.ext (map_add e.toLinearMap (x : M) (y : M)) }
+  have hcomm :
+      (DirectSum.coeAddMonoidHom H.piece).comp (DirectSum.map ep) =
+        e.toAddEquiv.toAddMonoidHom.comp (DirectSum.coeAddMonoidHom G.piece) := by
+    apply DirectSum.addHom_ext
+    intro p x
+    simp [ep]
+  have hmap_surj : Function.Surjective (DirectSum.map ep) := by
+    intro y
+    obtain ⟨x, hx⟩ := G.isInternal.surjective
+      (e.symm (DirectSum.coeAddMonoidHom H.piece y))
+    refine ⟨x, H.isInternal.injective ?_⟩
+    have hc := DFunLike.congr_fun hcomm x
+    rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, hx] at hc
+    exact hc.trans (e.apply_symm_apply _)
+  have hep_surj : ∀ p, Function.Surjective (ep p) :=
+    (DirectSum.map_surjective ep).mp hmap_surj
+  have he' : LinearMap.IsHomogeneous e.symm.toLinearMap H.piece G.piece 0 := by
+    rw [LinearMap.isHomogeneous_def]
+    intro p y hy
+    obtain ⟨x, hx⟩ := hep_surj p ⟨y, hy⟩
+    have hx' : e.toLinearMap (x : M) = y := by
+      have := congrArg Subtype.val hx
+      dsimp only [ep] at this
+      exact this
+    have hxy : e.symm.toLinearMap y = (x : M) := by
+      calc
+        _ = e.symm.toLinearMap (e.toLinearMap (x : M)) := congrArg _ hx'.symm
+        _ = _ := e.symm_apply_apply _
+    simp only [add_zero]
+    rw [hxy]
+    exact x.2
   rw [maxNonTorsionDegree_def, maxNonTorsionDegree_def]
   congr 1
   ext p

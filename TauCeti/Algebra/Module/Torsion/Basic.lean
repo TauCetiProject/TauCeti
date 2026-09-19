@@ -23,7 +23,7 @@ A linear map `f` with a left inverse up to multiplication by a nonzerodivisor `a
 
 * `AddSubgroup.le_torsionBy_natCard`: a subgroup `H` is contained in the `Nat.card H`-torsion
   subgroup.
-* `Submodule.comap_torsion_le_of_comp_eq_smul`: a linear map with a left inverse up to a
+* `TauCeti.Submodule.comap_torsion_le_of_comp_eq_smul`: a linear map with a left inverse up to a
   nonzerodivisor reflects torsion.
 -/
 
@@ -44,6 +44,8 @@ end AddSubgroup
 
 open scoped nonZeroDivisors
 
+namespace TauCeti
+
 namespace Submodule
 
 variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
@@ -52,11 +54,15 @@ variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCom
 /-- A linear map `f` for which some `g` satisfies `g ∘ f = a • id` with `a` a nonzerodivisor
 reflects torsion: an element whose image is torsion is itself torsion. -/
 theorem comap_torsion_le_of_comp_eq_smul {f : M →ₗ[R] N} {g : N →ₗ[R] M} {a : R} (ha : a ∈ R⁰)
-    (hgf : ∀ x, g (f x) = a • x) : (torsion R N).comap f ≤ torsion R M := by
+    (hgf : ∀ x, g (f x) = a • x) :
+    (_root_.Submodule.torsion R N).comap f ≤ _root_.Submodule.torsion R M := by
   intro x hx
-  obtain ⟨b, hb⟩ := (mem_torsion_iff _).mp (mem_comap.mp hx)
-  refine (mem_torsion_iff x).mpr ⟨b * ⟨a, ha⟩, ?_⟩
+  obtain ⟨b, hb⟩ := (_root_.Submodule.mem_torsion_iff _).mp
+    (_root_.Submodule.mem_comap.mp hx)
+  refine (_root_.Submodule.mem_torsion_iff x).mpr ⟨b * ⟨a, ha⟩, ?_⟩
   rw [mul_smul, Submonoid.smul_def ⟨a, ha⟩, ← hgf, Submonoid.smul_def, ← map_smul,
     ← Submonoid.smul_def, hb, map_zero]
 
 end Submodule
+
+end TauCeti
