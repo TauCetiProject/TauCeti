@@ -187,38 +187,36 @@ theorem HasDirichletDensity.zero_of_encard_fiber_le (hS : S.HasDirichletDensity 
     exact div_le_div_of_nonneg_right (primeIdealZetaSum_le_mul_of_encard_fiber_le hmaps hnorm
       hfiber (by linarith) (TauCeti.summable_absNorm_rpow_subtype_of_one_lt S hs1)) hs.le
 
-/-- **Dirichlet densities along a fibre count off a negligible set.** Let `π` map `T` into `S`,
-preserve absolute norms away from the preimage of `Z`, and not increase norms over `Z`. Suppose
-that every prime of `S` outside the density-zero set `Z` has exactly `c ≠ 0` preimages in `T`, and
-every prime of `S` in `Z` has at most `m`. Then `T` has Dirichlet density `δ` exactly when `S` has
-Dirichlet density `δ / c`. -/
+/-- **Dirichlet densities along a fibre count off a negligible set.** Let `π` map the part of `T`
+away from the preimage of `Z` into `S \ Z`, preserve absolute norms there, and not increase norms
+over `Z`. Suppose that every prime of `S` outside the density-zero set `Z` has exactly `c ≠ 0`
+preimages in `T`, and every prime in `Z` has at most `m`. Then `T` has Dirichlet density `δ`
+exactly when `S` has Dirichlet density `δ / c`. -/
 theorem hasDirichletDensity_iff_of_card_fiber_of_negligible {Z : Set (HeightOneSpectrum (𝓞 K))}
-    (hZ : Z.HasDirichletDensity 0) (hmaps : Set.MapsTo π T S)
+    (hZ : Z.HasDirichletDensity 0) (hmaps : Set.MapsTo π (T \ π ⁻¹' Z) (S \ Z))
     (hnorm : ∀ 𝔓 ∈ T \ π ⁻¹' Z, Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (π 𝔓).asIdeal)
     (hnorm_le : ∀ 𝔓 ∈ T ∩ π ⁻¹' Z, Ideal.absNorm (π 𝔓).asIdeal ≤ Ideal.absNorm 𝔓.asIdeal)
     (hc : c ≠ 0)
     (hfiber : ∀ 𝔭 ∈ S \ Z, Nat.card {𝔓 // π 𝔓 = 𝔭 ∧ 𝔓 ∈ T} = c) {m : ℕ}
-    (hbound : ∀ 𝔭 ∈ S ∩ Z, (T ∩ π ⁻¹' {𝔭}).encard ≤ m) {δ : ℝ} :
+    (hbound : ∀ 𝔭 ∈ Z, (T ∩ π ⁻¹' {𝔭}).encard ≤ m) {δ : ℝ} :
     T.HasDirichletDensity δ ↔ S.HasDirichletDensity (δ / c) := by
   -- Remove the exceptional primes on both sides; away from them the fibre count is exact.
-  have hmaps' : Set.MapsTo π (T \ π ⁻¹' Z) (S \ Z) := fun 𝔓 h𝔓 ↦ ⟨hmaps h𝔓.1, h𝔓.2⟩
   have hfiber' (𝔭 : HeightOneSpectrum (𝓞 K)) (h𝔭 : 𝔭 ∈ S \ Z) :
       Nat.card {𝔓 // π 𝔓 = 𝔭 ∧ 𝔓 ∈ T \ π ⁻¹' Z} = c := by
     rw [← hfiber 𝔭 h𝔭]
     refine Nat.card_congr (Equiv.subtypeEquivRight fun 𝔓 ↦ ?_)
     simp only [Set.mem_sdiff, Set.mem_preimage]
     exact ⟨fun h ↦ ⟨h.1, h.2.1⟩, fun h ↦ ⟨h.1, h.2, h.1 ▸ h𝔭.2⟩⟩
-  have hcore := hasDirichletDensity_iff_of_card_fiber hmaps' hnorm hc
+  have hcore := hasDirichletDensity_iff_of_card_fiber hmaps hnorm hc
     hfiber' (δ := δ)
-  -- The primes of `T` over `Z` are negligible, since `π` has bounded fibres over `S ∩ Z`.
+  -- The primes of `T` over `Z` are negligible, since `π` has bounded fibres over `Z`.
   have hTZ : (T \ π ⁻¹' Z) ∆ T = T ∩ π ⁻¹' Z := by
     ext 𝔓
     simp only [Set.mem_symmDiff, Set.mem_sdiff, Set.mem_inter_iff, Set.mem_preimage]
     tauto
   have hT : ((T \ π ⁻¹' Z) ∆ T).HasDirichletDensity 0 := by
     rw [hTZ]
-    refine (hZ.zero_of_subset Set.inter_subset_right).zero_of_encard_fiber_le (m := m)
-      (fun 𝔓 h𝔓 ↦ ⟨hmaps h𝔓.1, h𝔓.2⟩) hnorm_le fun 𝔭 h𝔭 ↦ ?_
+    refine hZ.zero_of_encard_fiber_le (m := m) (fun _ h𝔓 ↦ h𝔓.2) hnorm_le fun 𝔭 h𝔭 ↦ ?_
     exact (Set.encard_le_encard (Set.inter_subset_inter_left _ Set.inter_subset_left)).trans
       (hbound 𝔭 h𝔭)
   have hS : ((S \ Z) ∆ S).HasDirichletDensity 0 :=
@@ -228,16 +226,17 @@ theorem hasDirichletDensity_iff_of_card_fiber_of_negligible {Z : Set (HeightOneS
   rw [← hasDirichletDensity_iff_of_symmDiff hT, hcore, hasDirichletDensity_iff_of_symmDiff hS]
 
 /-- **Dirichlet densities along contraction.** Let `E / K` be an extension of number fields, `T` a
-set of primes of `E` whose residue-degree-one members contract into a set `S` of primes of `K`, and
-`Z` a set of primes of `K` of Dirichlet density zero. If every prime of `S` outside `Z` lies below
-exactly `c ≠ 0` members of `T` of residue degree one over `K`, then `T` has Dirichlet density `δ`
-exactly when `S` has Dirichlet density `δ / c`.
+set of primes of `E` whose residue-degree-one members outside the preimage of `Z` contract into a
+set `S` of primes of `K`, and `Z` a set of primes of `K` of Dirichlet density zero. If every prime
+of `S` outside `Z` lies below exactly `c ≠ 0` members of `T` of residue degree one over `K`, then
+`T` has Dirichlet density `δ` exactly when `S` has Dirichlet density `δ / c`.
 
 Neither the primes of `T` of residue degree above one over `K` nor those over `Z` need to be
 counted: both form sets of density zero. -/
 theorem hasDirichletDensity_contraction [Algebra K E] {Z : Set (HeightOneSpectrum (𝓞 K))}
     (hZ : Z.HasDirichletDensity 0)
-    (hmaps : ∀ 𝔓 ∈ T, 𝔓.asIdeal.inertiaDeg (𝓞 K) = 1 → 𝔓.under (𝓞 K) ∈ S) (hc : c ≠ 0)
+    (hmaps : ∀ 𝔓 ∈ T, 𝔓.asIdeal.inertiaDeg (𝓞 K) = 1 → 𝔓.under (𝓞 K) ∉ Z →
+      𝔓.under (𝓞 K) ∈ S) (hc : c ≠ 0)
     (hfiber : ∀ 𝔭 ∈ S \ Z, Nat.card {𝔓 // 𝔓.under (𝓞 K) = 𝔭 ∧ 𝔓 ∈ T ∧
       𝔓.asIdeal.inertiaDeg (𝓞 K) = 1} = c) {δ : ℝ} :
     T.HasDirichletDensity δ ↔ S.HasDirichletDensity (δ / c) := by
@@ -257,7 +256,7 @@ theorem hasDirichletDensity_contraction [Algebra K E] {Z : Set (HeightOneSpectru
       ⟨HeightOneSpectrum.under_asIdeal _ 𝔓⟩
     rw [← Ideal.absNorm_pow_inertiaDeg (𝔓.under (𝓞 K)).asIdeal 𝔓.asIdeal, h𝔓.2, pow_one]
   refine hasDirichletDensity_iff_of_card_fiber_of_negligible hZ
-    (fun 𝔓 h𝔓 ↦ hmaps 𝔓 h𝔓.1 h𝔓.2)
+    (fun 𝔓 h𝔓 ↦ ⟨hmaps 𝔓 h𝔓.1.1 h𝔓.1.2 h𝔓.2, h𝔓.2⟩)
     (fun 𝔓 h𝔓 ↦ hnorm 𝔓 h𝔓.1) (fun 𝔓 h𝔓 ↦ (hnorm 𝔓 h𝔓.1).ge) hc hfiber
     (m := Module.finrank K E) fun 𝔭 _ ↦
       (Set.encard_le_encard Set.inter_subset_right).trans
