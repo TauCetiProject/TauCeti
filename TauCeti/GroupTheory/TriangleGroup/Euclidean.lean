@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.TriangleGroup.Basic
-public import Mathlib.Algebra.Group.Commutator
-public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
+public import TauCeti.LinearAlgebra.AffineSpace.AffineEquiv
 import Mathlib.RingTheory.RootsOfUnity.Complex
 
 /-!
@@ -112,14 +111,8 @@ theorem affineRep_z :
 theorem affineRep_commutator_x_y :
     affineRep ω η hω hη hωη hωη₁ ⁅x a b c, y a b c⁆ =
       AffineEquiv.constVAdd K K (((ω : K) - 1) * (1 - η)) := by
-  rw [commutatorElement_def, map_mul, map_mul, map_mul, map_inv, map_inv, affineRep_x,
-    affineRep_y, ← map_inv, ← map_inv]
-  ext z
-  simp only [AffineEquiv.coe_mul, Function.comp_apply,
-    AffineEquiv.coe_homothetyUnitsMulHom_apply, AffineMap.homothety_apply, vsub_eq_sub,
-    vadd_eq_add, smul_eq_mul, Units.val_inv_eq_inv_val, AffineEquiv.constVAdd_apply]
-  field_simp
-  ring
+  rw [map_commutatorElement, affineRep_x, affineRep_y,
+    AffineEquiv.commutatorElement_homothetyUnitsMulHom_zero_one]
 
 /-- If a field of characteristic zero has units `ω ≠ 1`, `η ≠ 1` with `ω * η ≠ 1` and
 `ω ^ a = η ^ b = (ω * η) ^ c = 1`, then the commutator of the generators `x` and `y` of the
