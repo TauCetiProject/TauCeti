@@ -161,15 +161,10 @@ theorem qCoordinate_smul (g : stabilizer Γ D.cusp) (z : ℍ) :
   (orbitRel_iff_qCoordinate_eq D _ _).mp (orbitRel_apply.mpr ⟨g, rfl⟩)
 
 /-- The q-coordinate is invariant under any group element fixing the cusp. -/
+@[simp]
 theorem qCoordinate_smul_of_mem {g : Γ} (hg : g ∈ stabilizer Γ D.cusp) (z : ℍ) :
     qCoordinate D (g • z) = qCoordinate D z :=
   qCoordinate_smul D ⟨g, hg⟩ z
-
-/-- Integral powers of the selected generator preserve the q-coordinate. -/
-@[simp]
-theorem qCoordinate_generator_zpow_smul (n : ℤ) (z : ℍ) :
-    qCoordinate D ((D.generator ^ n : Γ) • z) = qCoordinate D z :=
-  qCoordinate_smul_of_mem D (D.mem_stabilizer_iff.mpr ⟨n, rfl⟩) z
 
 /-- The scaled logarithmic lift is a right inverse of the q-coordinate. -/
 @[simp]
