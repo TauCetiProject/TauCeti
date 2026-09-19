@@ -74,15 +74,22 @@ private theorem even_card_parityFlip {ι : Type*} [DecidableEq ι] (i : ι) (s :
     simp [parityFlip, h, Finset.card_erase_of_mem h, Nat.even_sub h1]
   · simp [parityFlip, h, Finset.card_insert_of_notMem h, Nat.even_add_one]
 
-/-- **Exactly half the subsets of a nonempty finite type have even cardinality.** Deleting a fixed
-point from the subsets that contain it, and adjoining it to those that do not, is an involution of
-the subsets of `ι` reversing the parity of the cardinality; the two parities are therefore
-equinumerous, and together they exhaust the `2 ^ n` subsets. -/
-theorem card_even_card_finset {ι : Type*} [Finite ι] [Nonempty ι] :
+/-- **Half the subsets of a finite type have even cardinality**, `2 ^ (n - 1)` of the `2 ^ n`.
+Deleting a fixed point from the subsets that contain it, and adjoining it to those that do not, is
+an involution of the subsets of `ι` reversing the parity of the cardinality; the two parities are
+therefore equinumerous, and together they exhaust the `2 ^ n` subsets. The empty type has no fixed
+point to flip, but there the lone subset `∅` is even and `2 ^ (0 - 1) = 1` counts it, so no
+nonemptiness hypothesis is needed. (Its odd counterpart `TauCeti.card_odd_card_finset` does need
+one: the empty type has no subset of odd cardinality.) -/
+theorem card_even_card_finset {ι : Type*} [Finite ι] :
     Nat.card {S : Finset ι // Even S.card} = 2 ^ (Nat.card ι - 1) := by
   classical
   let _ := Fintype.ofFinite ι
-  obtain ⟨i⟩ : Nonempty ι := inferInstance
+  rcases isEmpty_or_nonempty ι with hι | hne
+  · rw [Nat.card_eq_zero.mpr (Or.inl hι), Nat.zero_sub, pow_zero]
+    exact Nat.card_eq_one_iff_unique.mpr
+      ⟨⟨fun _ _ => Subtype.ext (Finset.ext fun x => (hι.false x).elim)⟩, ⟨⟨∅, by simp⟩⟩⟩
+  obtain ⟨i⟩ := hne
   have hbij : (Finset.univ.filter fun s : Finset ι => Even s.card).card
       = (Finset.univ.filter fun s : Finset ι => ¬ Even s.card).card := by
     refine Finset.card_bij' (fun s _ => parityFlip i s) (fun s _ => parityFlip i s) ?_ ?_ ?_ ?_
@@ -98,7 +105,7 @@ theorem card_even_card_finset {ι : Type*} [Finite ι] [Nonempty ι] :
       + (Finset.univ.filter fun s : Finset ι => ¬ Even s.card).card = 2 ^ Fintype.card ι := by
     rw [Finset.card_filter_add_card_filter_not, Finset.card_univ, Fintype.card_finset]
   have hpow : 2 ^ Fintype.card ι = 2 * 2 ^ (Fintype.card ι - 1) := by
-    have hpos : 1 ≤ Fintype.card ι := Fintype.card_pos
+    have hpos : 1 ≤ Fintype.card ι := Fintype.card_pos_iff.mpr ⟨i⟩
     rw [← pow_succ', Nat.sub_add_cancel hpos]
   rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Nat.card_eq_fintype_card]
   omega

@@ -66,10 +66,11 @@ vectors actually lies in is read off `TauCeti.basis_mem_spinPlus_iff` and
   `TauCeti.iSup_spinWeightSpace_odd_eq_spinMinus`: **each half-spin summand is the sum of the
   weight lines of its parity**, with `TauCeti.iSup_spinWeightSpace_even_le_spinPlus` and
   `TauCeti.iSup_spinWeightSpace_odd_le_spinMinus` the easy inclusions.
-* `TauCeti.setOf_spinWeightSpace_le_spinPlus` and `TauCeti.setOf_spinWeightSpace_le_spinMinus`:
-  **the weights of a half-spin summand are the sign vectors of the matching parity**, and
-  `TauCeti.ncard_spinWeightSpace_le_spinPlus` and `TauCeti.ncard_spinWeightSpace_le_spinMinus`
-  count them, `2 ^ (l - 1)` each.
+* `TauCeti.setOf_spinWeightSpace_ne_bot_and_le_spinPlus_eq_image_spinWeight_even` and
+  `TauCeti.setOf_spinWeightSpace_ne_bot_and_le_spinMinus_eq_image_spinWeight_odd`: **the weights
+  of a half-spin summand are the sign vectors of the matching parity**, and
+  `TauCeti.ncard_setOf_spinWeightSpace_ne_bot_and_le_spinPlus` and
+  `TauCeti.ncard_setOf_spinWeightSpace_ne_bot_and_le_spinMinus` count them, `2 ^ (l - 1)` each.
 * `TauCeti.basis_univ_mem_spinPlus_iff_basis_univ_erase_mem_spinMinus`: **the two type-`Dₗ` fork
   vectors flip parity**, the basis vector with every coordinate occupied lying in `S⁺` exactly when
   the one obtained from it by erasing a coordinate lies in `S⁻`.
@@ -216,7 +217,7 @@ variable [NoZeroDivisors K]
 of eigenvalues counts as a weight of `S⁺` when its weight space is nonzero and contained in `S⁺`;
 the nonvanishing clause is what rules out the tuples that occur nowhere, whose weight space is `⊥`
 and so vacuously contained in both summands. -/
-theorem setOf_spinWeightSpace_le_spinPlus :
+theorem setOf_spinWeightSpace_ne_bot_and_le_spinPlus_eq_image_spinWeight_even :
     {χ : ι → K | spinWeightSpace Q P b χ ≠ ⊥ ∧ spinWeightSpace Q P b χ ≤ spinPlus Q P} =
       spinWeight K '' {s : Finset ι | Even s.card} := by
   ext χ
@@ -229,7 +230,7 @@ theorem setOf_spinWeightSpace_le_spinPlus :
       (spinWeightSpace_le_spinPlus_iff P b s).mpr hs⟩
 
 /-- **The weights of `S⁻` are exactly the sign vectors with an odd number of `+` signs.** -/
-theorem setOf_spinWeightSpace_le_spinMinus :
+theorem setOf_spinWeightSpace_ne_bot_and_le_spinMinus_eq_image_spinWeight_odd :
     {χ : ι → K | spinWeightSpace Q P b χ ≠ ⊥ ∧ spinWeightSpace Q P b χ ≤ spinMinus Q P} =
       spinWeight K '' {s : Finset ι | Odd s.card} := by
   ext χ
@@ -244,16 +245,20 @@ theorem setOf_spinWeightSpace_le_spinMinus :
 /-- **`S⁺` carries `2 ^ (l - 1)` weights** on `l` coordinates: half the `2 ^ l` weights of the
 spinor module. Over a field this is the dimension `TauCeti.finrank_spinPlus` of `S⁺`, as it must
 be, each weight space being a line. -/
-theorem ncard_spinWeightSpace_le_spinPlus [Finite ι] [Nonempty ι] :
+theorem ncard_setOf_spinWeightSpace_ne_bot_and_le_spinPlus [Finite ι] :
     {χ : ι → K | spinWeightSpace Q P b χ ≠ ⊥ ∧
         spinWeightSpace Q P b χ ≤ spinPlus Q P}.ncard = 2 ^ (Nat.card ι - 1) := by
-  rw [setOf_spinWeightSpace_le_spinPlus P b, ncard_spinWeight_image_even]
+  rw [setOf_spinWeightSpace_ne_bot_and_le_spinPlus_eq_image_spinWeight_even P b,
+    ncard_spinWeight_image_even]
 
-/-- **`S⁻` carries `2 ^ (l - 1)` weights**, matching `TauCeti.finrank_spinMinus` over a field. -/
-theorem ncard_spinWeightSpace_le_spinMinus [Finite ι] [Nonempty ι] :
+/-- **`S⁻` carries `2 ^ (l - 1)` weights**, matching `TauCeti.finrank_spinMinus` over a field.
+Unlike its `S⁺` counterpart this asks the coordinates to be nonempty, there being no weight at all
+of odd parity on none. -/
+theorem ncard_setOf_spinWeightSpace_ne_bot_and_le_spinMinus [Finite ι] [Nonempty ι] :
     {χ : ι → K | spinWeightSpace Q P b χ ≠ ⊥ ∧
         spinWeightSpace Q P b χ ≤ spinMinus Q P}.ncard = 2 ^ (Nat.card ι - 1) := by
-  rw [setOf_spinWeightSpace_le_spinMinus P b, ncard_spinWeight_image_odd]
+  rw [setOf_spinWeightSpace_ne_bot_and_le_spinMinus_eq_image_spinWeight_odd P b,
+    ncard_spinWeight_image_odd]
 
 end WeightSpace
 

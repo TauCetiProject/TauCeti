@@ -214,18 +214,20 @@ theorem ncard_range_spinWeight [Finite ι] [Nontrivial K] :
   rw [Set.ncard_range_of_injective spinWeight_injective, Nat.card_eq_fintype_card,
     Nat.card_eq_fintype_card, Fintype.card_finset]
 
-/-- **The sign vectors with an even number of `+` signs number `2 ^ (l - 1)`** on a nonempty index
-type of cardinality `l`: exactly half of the `2 ^ l` sign vectors of
-`TauCeti.ncard_range_spinWeight`. These are the weights of the even half-spin summand, by
-`TauCeti.setOf_spinWeightSpace_le_spinPlus`. -/
-theorem ncard_spinWeight_image_even [Finite ι] [Nonempty ι] [Nontrivial K] :
+/-- **The sign vectors with an even number of `+` signs number `2 ^ (l - 1)`** on an index type of
+cardinality `l`: half of the `2 ^ l` sign vectors of `TauCeti.ncard_range_spinWeight`, the empty
+index type contributing its one empty sign vector to `2 ^ (0 - 1) = 1`. These are the weights of
+the even half-spin summand, by
+`TauCeti.setOf_spinWeightSpace_ne_bot_and_le_spinPlus_eq_image_spinWeight_even`. -/
+theorem ncard_spinWeight_image_even [Finite ι] [Nontrivial K] :
     (spinWeight K '' {s : Finset ι | Even s.card}).ncard = 2 ^ (Nat.card ι - 1) := by
   rw [Set.ncard_image_of_injective _ spinWeight_injective]
   exact card_even_card_finset
 
 /-- **The sign vectors with an odd number of `+` signs number `2 ^ (l - 1)`**, the other half of
-`TauCeti.ncard_spinWeight_image_even`. These are the weights of the odd half-spin summand, by
-`TauCeti.setOf_spinWeightSpace_le_spinMinus`. -/
+`TauCeti.ncard_spinWeight_image_even`, on a nonempty index type: the empty index type has no sign
+vector of odd parity. These are the weights of the odd half-spin summand, by
+`TauCeti.setOf_spinWeightSpace_ne_bot_and_le_spinMinus_eq_image_spinWeight_odd`. -/
 theorem ncard_spinWeight_image_odd [Finite ι] [Nonempty ι] [Nontrivial K] :
     (spinWeight K '' {s : Finset ι | Odd s.card}).ncard = 2 ^ (Nat.card ι - 1) := by
   rw [Set.ncard_image_of_injective _ spinWeight_injective]
