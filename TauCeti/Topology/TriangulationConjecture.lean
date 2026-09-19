@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Manifold.ChartedSpace
-public import TauCeti.Topology.TriangulableSphere
+public import TauCeti.Topology.Triangulable
 
 /-!
 # The triangulation conjecture
@@ -31,9 +32,7 @@ older Kirby–Siebenmann result and is a different statement.
 The conjecture is stated, not proved. It holds in dimension zero, where every such space is
 discrete (`TauCeti.triangulationConjecture_zero`); it is also known in dimensions at most three
 (Radó, Moise), fails in dimension four by the work of Freedman and Casson, and fails in every
-dimension at least five by Manolescu. Every round sphere satisfies the hypotheses, with the charts
-`EuclideanSpace.instChartedSpaceSphere`, and is triangulated by the boundary of a simplex
-(`TauCeti.isTriangulable_sphere`).
+dimension at least five by Manolescu.
 
 ## Main definitions
 
