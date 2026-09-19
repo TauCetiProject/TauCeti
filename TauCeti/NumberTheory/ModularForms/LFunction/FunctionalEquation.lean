@@ -193,16 +193,16 @@ private lemma sqrt_cpow_eq (N : ℕ) (s : ℂ) :
     Complex.cpow_mul_ofReal_nonneg hN, ← Real.sqrt_eq_rpow]
 
 private theorem frickeCompletedL_eq_sqrt_cpow_mul_Λ [Γ.IsArithmetic]
-    (f : CuspForm Γ k) (N : ℕ) [NeZero N] (hk : 0 < k) (s : ℂ) :
-    frickeCompletedL f (N.toPNat (NeZero.pos N)) s =
-      (Real.sqrt N : ℂ) ^ s * ModularForm.Λ hk f s := by
-  have hN : 0 < Real.sqrt N := Real.sqrt_pos.mpr (by exact_mod_cast NeZero.pos N)
+    (f : CuspForm Γ k) (N : ℕ+) (hk : 0 < k) (s : ℂ) :
+    frickeCompletedL f N s =
+      (Real.sqrt (N : ℕ) : ℂ) ^ s * ModularForm.Λ hk f s := by
+  have hN : 0 < Real.sqrt (N : ℕ) := Real.sqrt_pos.mpr (by exact_mod_cast N.pos)
   have hNinv : 0 < (Real.sqrt N)⁻¹ := inv_pos.mpr hN
   have heq : (fun t : ℝ ↦ resToImagAxis (f : ℍ → ℂ) (t / Real.sqrt N)) =
       (fun t : ℝ ↦ resToImagAxis (f : ℍ → ℂ) (t * (Real.sqrt N)⁻¹)) := by
     funext t
     rw [div_eq_mul_inv]
-  simp only [frickeCompletedL, Nat.toPNat, PNat.val]
+  simp only [frickeCompletedL]
   rw [heq, mellin_comp_mul_right _ s hNinv, smul_eq_mul,
     CuspForm.Λ_eq_mellin]
   have harg : (Real.sqrt N : ℂ).arg ≠ Real.pi := by
@@ -221,25 +221,20 @@ private theorem frickeCompletedL_eq_sqrt_cpow_mul_Λ [Γ.IsArithmetic]
 `ModularForm.Λ`.  Thus this definition has the classical completion
 `N^(s/2) (2π)^(-s) Γ(s) L(s, f)` on the Dirichlet-series half-plane. -/
 theorem frickeCompletedL_eq [Γ.IsArithmetic]
-    (f : CuspForm Γ k) (N : ℕ) [NeZero N] (hk : 0 < k) (s : ℂ) :
-    frickeCompletedL f (N.toPNat (NeZero.pos N)) s =
-      (N : ℂ) ^ (s / 2) * ModularForm.Λ hk f s := by
+    (f : CuspForm Γ k) (N : ℕ+) (hk : 0 < k) (s : ℂ) :
+    frickeCompletedL f N s =
+      ((N : ℕ) : ℂ) ^ (s / 2) * ModularForm.Λ hk f s := by
   rw [frickeCompletedL_eq_sqrt_cpow_mul_Λ f N hk s, sqrt_cpow_eq]
 
 /-- The level-`N` completed L-function of a positive-weight cusp form is entire. -/
 theorem differentiable_frickeCompletedL [Γ.IsArithmetic]
-    (f : CuspForm Γ k) (N : ℕ) [NeZero N] (hk : 0 < k) :
-    Differentiable ℂ (frickeCompletedL f (N.toPNat (NeZero.pos N))) := by
+    (f : CuspForm Γ k) (N : ℕ+) (hk : 0 < k) :
+    Differentiable ℂ (frickeCompletedL f N) := by
   rw [funext fun s ↦ frickeCompletedL_eq_sqrt_cpow_mul_Λ f N hk s]
-  let _ : NeZero (Real.sqrt N : ℂ) :=
-    ⟨Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (by exact_mod_cast NeZero.pos N)).ne'⟩
-  exact (differentiable_const_cpow_of_neZero (Real.sqrt N : ℂ)).mul
+  let _ : NeZero (Real.sqrt (N : ℕ) : ℂ) :=
+    ⟨Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (by exact_mod_cast N.pos)).ne'⟩
+  exact (differentiable_const_cpow_of_neZero (Real.sqrt (N : ℕ) : ℂ)).mul
     (CuspForm.differentiable_Λ hk f)
-
-private lemma resToImagAxis_scaled_smul (c : ℂ) (H : ℍ → ℂ) (N : ℕ) (t : ℝ) :
-    resToImagAxis (c • H) (t / Real.sqrt N) =
-      c • resToImagAxis H (t / Real.sqrt N) :=
-  congrFun (resToImagAxis_smul c H) _
 
 private lemma scaled_fricke_relation (H G : ℍ → ℂ)
     (hG : G = (Real.sqrt N : ℂ) ^ (2 - k) • (H ∣[k] TauCeti.frickeGL ℝ N))
@@ -250,7 +245,9 @@ private lemma scaled_fricke_relation (H G : ℍ → ℂ)
   have hN : 0 < Real.sqrt N := Real.sqrt_pos.mpr (by exact_mod_cast NeZero.pos N)
   have hNc : (Real.sqrt N : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hN.ne'
   have htc : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ht.ne'
-  rw [hG, resToImagAxis_scaled_smul, UpperHalfPlane.resToImagAxis_slash_frickeGL H ht]
+  rw [hG, congrFun (resToImagAxis_smul _ _) _]
+  simp only [Pi.smul_apply]
+  rw [UpperHalfPlane.resToImagAxis_slash_frickeGL H ht]
   -- Bridge the real `rpow` used by the FE convention to the corresponding complex `zpow`.
   rw [smul_eq_mul, smul_eq_mul,
     show ((t ^ (k : ℝ) : ℝ) : ℂ) = (t : ℂ) ^ k by
