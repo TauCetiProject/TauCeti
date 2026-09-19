@@ -324,7 +324,7 @@ private theorem trace_translate_adjugateGL_natDiagGL_eq_heckeT_diamond (hn : n.C
       heckeTCuspNat k n (diamondOpCusp k (ZMod.unitOfCoprime n hn)⁻¹ f) := by
   apply CuspForm.toModularFormₗ_injective
   rw [CuspForm.toModularFormₗ_eq_coe, CuspForm.toModularFormₗ_eq_coe,
-    TauCeti.CuspForm.coe_trace_translate, ← heckeTNat_coe_cuspForm, ← diamondOp_coe_cuspForm]
+    CuspForm.coe_trace_translate, ← heckeTNat_coe_cuspForm, ← diamondOp_coe_cuspForm]
   exact modularForm_trace_translate_adjugateGL_natDiagGL_eq_heckeT_diamond k hn _
 
 /-- **The double coset operator of `diag(n, 1)` is `⟨n⟩⁻¹ Tₙ`.** For `n` coprime to `N`, the
@@ -338,7 +338,7 @@ theorem trace_translate_adjugateGL_natDiagGL_eq_diamond_heckeT (hn : n.Coprime N
       diamondOpCusp k (ZMod.unitOfCoprime n hn)⁻¹ (heckeTCuspNat k n f) := by
   apply CuspForm.toModularFormₗ_injective
   rw [CuspForm.toModularFormₗ_eq_coe, CuspForm.toModularFormₗ_eq_coe,
-    TauCeti.CuspForm.coe_trace_translate, ← diamondOp_coe_cuspForm, ← heckeTNat_coe_cuspForm]
+    CuspForm.coe_trace_translate, ← diamondOp_coe_cuspForm, ← heckeTNat_coe_cuspForm]
   exact modularForm_trace_translate_adjugateGL_natDiagGL_eq_diamond_heckeT k hn _
 
 /-- **`⟨n⟩⁻¹` commutes with `Tₙ`.** For `n` coprime to `N`, the inverse diamond operator

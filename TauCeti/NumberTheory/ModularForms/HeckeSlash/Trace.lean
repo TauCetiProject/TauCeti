@@ -27,7 +27,7 @@ of a translate be compared with another one whose level is equal but not syntact
 happens when the translating matrix is changed by an element normalizing the level. When that
 element multiplies on the right, it comes out of the trace as a slash
 (`TauCeti.SlashInvariantForm.coe_trace_translate_mul_of_mem_normalizer`). The lemma
-`TauCeti.CuspForm.coe_trace_translate` records the compatibility of the cusp-form and
+`CuspForm.coe_trace_translate` records the compatibility of the cusp-form and
 modular-form trace constructions.
 
 ## References
@@ -41,6 +41,19 @@ public section
 
 open Matrix Matrix.SpecialLinearGroup UpperHalfPlane DoubleCoset HeckeRing.GL2
 open scoped MatrixGroups ModularForm Pointwise
+
+namespace CuspForm
+
+/-- Coercing the cusp-form trace of a translate to a modular form agrees with tracing the
+corresponding translated modular form. -/
+theorem coe_trace_translate {k : ℤ} {𝒢 ℋ : Subgroup (GL (Fin 2) ℝ)}
+    (f : CuspForm 𝒢 k) (x : GL (Fin 2) ℝ)
+    [(ConjAct.toConjAct x⁻¹ • 𝒢).IsFiniteRelIndex ℋ] :
+    (CuspForm.trace ℋ (CuspForm.translate f x) : ModularForm ℋ k) =
+      ModularForm.trace ℋ (ModularForm.translate (f : ModularForm 𝒢 k) x) := by
+  rfl
+
+end CuspForm
 
 namespace TauCeti
 
@@ -100,20 +113,6 @@ theorem coe_trace_translate_mul_of_mem_normalizer {k : ℤ} {𝒢 ℋ : Subgroup
     simp [mul_assoc]
 
 end SlashInvariantForm
-
-namespace CuspForm
-
-/-- Coercing the cusp-form trace of a translate to a modular form agrees with tracing the
-corresponding translated modular form. -/
-theorem coe_trace_translate {k : ℤ} {𝒢 ℋ : Subgroup (GL (Fin 2) ℝ)} [𝒢.HasDetOne]
-    [ℋ.HasDetOne] (f : _root_.CuspForm 𝒢 k) (x : GL (Fin 2) ℝ)
-    [(ConjAct.toConjAct x⁻¹ • 𝒢).IsFiniteRelIndex ℋ] :
-    (_root_.CuspForm.trace ℋ (_root_.CuspForm.translate f x) : _root_.ModularForm ℋ k) =
-      _root_.ModularForm.trace ℋ (_root_.ModularForm.translate
-        (f : _root_.ModularForm 𝒢 k) x) := by
-  rfl
-
-end CuspForm
 
 variable {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℚ)} {δ : GL (Fin 2) ℚ}
 
