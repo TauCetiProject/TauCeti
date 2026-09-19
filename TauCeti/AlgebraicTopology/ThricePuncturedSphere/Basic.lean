@@ -251,7 +251,7 @@ theorem basePt_mem_leftOpen_inter_rightOpen : basePt ∈ leftOpen ∩ rightOpen 
 
 /-- The self-homeomorphism `z ↦ 1 − z` of the thrice-punctured sphere. It is the anharmonic
 transformation exchanging the punctures `0` and `1` and fixing `∞`, and among the six anharmonic
-transformations it is the only one fixing the basepoint `1/2`. -/
+transformations it is the only nonidentity one fixing the basepoint `1/2`. -/
 noncomputable def mob01 : ThricePuncturedSphere ≃ₜ ThricePuncturedSphere :=
   (IsometryEquiv.subLeft (1 : ℂ)).toHomeomorph.subtype fun z ↦ by
     simp only [ne_eq, IsometryEquiv.coe_toHomeomorph, IsometryEquiv.subLeft_apply]
@@ -259,8 +259,10 @@ noncomputable def mob01 : ThricePuncturedSphere ≃ₜ ThricePuncturedSphere :=
       exact ⟨fun h ↦ h₁ (by linear_combination -h), fun h ↦ h₀ (by linear_combination -h)⟩
 
 @[simp]
-theorem coe_mob01 (z : ThricePuncturedSphere) : (mob01 z : ℂ) = 1 - z :=
-  (rfl)
+theorem coe_mob01 (z : ThricePuncturedSphere) : (mob01 z : ℂ) = 1 - z := by
+  unfold mob01
+  rw [Homeomorph.subtype_apply_coe, IsometryEquiv.coe_toHomeomorph,
+    IsometryEquiv.subLeft_apply]
 
 /-- `z ↦ 1 − z` is an involution. -/
 @[simp]

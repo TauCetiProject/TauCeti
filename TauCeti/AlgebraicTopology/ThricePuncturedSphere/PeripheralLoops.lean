@@ -80,9 +80,11 @@ noncomputable def γ1 : Path basePt basePt where
   source' := Subtype.ext (by norm_num [circleMap])
   target' := Subtype.ext (by norm_num [circleMap])
 
+@[simp]
 theorem coe_γ0 (t : unitInterval) : (γ0 t : ℂ) = circleMap 0 (1 / 2) (2 * π * t) :=
   (rfl)
 
+@[simp]
 theorem coe_γ1 (t : unitInterval) : (γ1 t : ℂ) = circleMap 1 (-(1 / 2)) (2 * π * t) :=
   (rfl)
 
@@ -127,7 +129,8 @@ theorem range_γ0_inter_range_γ1 : range γ0 ∩ range γ1 = {basePt} := by
     simp only [Complex.sq_norm, normSq_apply, sub_re, one_re, sub_im, one_im, sub_zero] at e₀ e₁
     have hre : (γ0 s : ℂ).re = 1 / 2 := by nlinarith
     have him : (γ0 s : ℂ).im = 0 := by nlinarith
-    exact Subtype.ext (Complex.ext (by simp [hre]) (by simp [him]))
+    exact Subtype.ext (Complex.ext (hre.trans (by norm_num [coe_basePt]))
+      (him.trans (by norm_num [coe_basePt])))
   · rintro _ rfl
     exact ⟨⟨0, γ0.source⟩, ⟨0, γ1.source⟩⟩
 
