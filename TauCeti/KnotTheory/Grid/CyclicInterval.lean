@@ -695,7 +695,6 @@ theorem noninterleaving_rev (a₀ a₁ b₀ b₁ : Fin n) :
 
 /-- Inserting a new point into the cycle `Fin n` preserves the clockwise open arcs between old
 points. -/
-@[simp]
 theorem succAbove_mem_cIoo_succAbove_succAbove (p : Fin (n + 1)) (a b x : Fin n) :
     p.succAbove x ∈ cIoo (p.succAbove a) (p.succAbove b) ↔ x ∈ cIoo a b := by
   simp only [mem_cIoo, ne_eq, Fin.succAbove, Fin.lt_def, ← Fin.val_inj]
@@ -703,7 +702,6 @@ theorem succAbove_mem_cIoo_succAbove_succAbove (p : Fin (n + 1)) (a b x : Fin n)
 
 /-- Inserting a new point into the cycle `Fin n` preserves the clockwise half-open arcs between
 old points. -/
-@[simp]
 theorem succAbove_mem_cIco_succAbove_succAbove (p : Fin (n + 1)) (a b x : Fin n) :
     p.succAbove x ∈ cIco (p.succAbove a) (p.succAbove b) ↔ x ∈ cIco a b := by
   simp only [mem_cIco, ne_eq, Fin.succAbove, Fin.lt_def, ← Fin.val_inj]

@@ -160,7 +160,6 @@ theorem exists_insertPoint_eq
 
 /-- A transported rectangle covers the embedded image of a square exactly when the original
 rectangle covers that square. -/
-@[simp]
 theorem succAbove_mem_coveredSquares_insertPoint (c r : Fin n) :
     (p.succAbove c, q.succAbove r) ∈ (R.insertPoint p q).toGridRectangle.coveredSquares ↔
       (c, r) ∈ R.toGridRectangle.coveredSquares := by
