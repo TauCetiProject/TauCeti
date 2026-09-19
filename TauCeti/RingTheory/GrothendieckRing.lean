@@ -88,36 +88,35 @@ section NonUnitalNonAssoc
 
 variable {S : Type*} [NonUnitalNonAssocSemiring S]
 
-/-- Multiplication on the Grothendieck ring, packaged as the biadditive map that the two
-distributive laws say it is: `mulAddHom x y` is the product `x * y`. Multiplication by a fixed
-element of the semiring extends to the completion by the universal property, and that extension
-is itself additive in the element, so it extends once more. -/
-noncomputable def mulAddHom :
-    GrothendieckAddGroup S →+ (GrothendieckAddGroup S →+ GrothendieckAddGroup S) :=
-  lift (((liftAddEquiv (M := S) (G := GrothendieckAddGroup S)).toAddMonoidHom.comp
-    (AddMonoidHom.compHom (of : S →+ GrothendieckAddGroup S))).comp AddMonoidHom.mul)
-
 /-- Multiplication on the Grothendieck ring of a semiring. -/
-noncomputable instance instMul : Mul (GrothendieckAddGroup S) := ⟨fun x y => mulAddHom x y⟩
-
-/-- The product of two elements of the Grothendieck ring is the value of the biadditive map
-`Algebra.GrothendieckAddGroup.mulAddHom`. -/
-theorem mul_def (x y : GrothendieckAddGroup S) : x * y = mulAddHom x y := (rfl)
+noncomputable instance instMul : Mul (GrothendieckAddGroup S) :=
+  ⟨fun x y =>
+    lift (((liftAddEquiv (M := S) (G := GrothendieckAddGroup S)).toAddMonoidHom.comp
+      (AddMonoidHom.compHom (of : S →+ GrothendieckAddGroup S))).comp AddMonoidHom.mul) x y⟩
 
 /-- The canonical map into the Grothendieck ring is multiplicative. -/
 theorem of_mul_of (a b : S) : (of a : GrothendieckAddGroup S) * of b = of (a * b) := by
-  rw [mul_def, mulAddHom, lift_apply_of]
+  change lift (((liftAddEquiv (M := S) (G := GrothendieckAddGroup S)).toAddMonoidHom.comp
+    (AddMonoidHom.compHom (of : S →+ GrothendieckAddGroup S))).comp AddMonoidHom.mul) (of a)
+      (of b) = of (a * b)
+  rw [lift_apply_of]
   exact lift_apply_of ((of : S →+ GrothendieckAddGroup S).comp (AddMonoidHom.mulLeft a)) b
 
 /-- The Grothendieck group of a semiring is a ring for the induced multiplication; associativity
 and the unit are supplied by `Algebra.GrothendieckAddGroup.instRing`. -/
 noncomputable instance instNonUnitalNonAssocRing : NonUnitalNonAssocRing (GrothendieckAddGroup S)
-    where
-  __ := (inferInstance : AddCommGroup (GrothendieckAddGroup S))
-  left_distrib x y z := map_add (mulAddHom x) y z
-  right_distrib x y z := by rw [mul_def, map_add, AddMonoidHom.add_apply, mul_def, mul_def]
-  zero_mul x := by rw [mul_def, map_zero, AddMonoidHom.zero_apply]
-  mul_zero x := map_zero (mulAddHom x)
+    := by
+  let mulAddHom :
+      GrothendieckAddGroup S →+ (GrothendieckAddGroup S →+ GrothendieckAddGroup S) :=
+    lift (((liftAddEquiv (M := S) (G := GrothendieckAddGroup S)).toAddMonoidHom.comp
+      (AddMonoidHom.compHom (of : S →+ GrothendieckAddGroup S))).comp AddMonoidHom.mul)
+  have mul_def (x y : GrothendieckAddGroup S) : x * y = mulAddHom x y := rfl
+  exact
+    { __ := (inferInstance : AddCommGroup (GrothendieckAddGroup S))
+      left_distrib x y z := map_add (mulAddHom x) y z
+      right_distrib x y z := by rw [mul_def, map_add, AddMonoidHom.add_apply, mul_def, mul_def]
+      zero_mul x := by rw [mul_def, map_zero, AddMonoidHom.zero_apply]
+      mul_zero x := map_zero (mulAddHom x) }
 
 end NonUnitalNonAssoc
 

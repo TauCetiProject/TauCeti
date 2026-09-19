@@ -89,7 +89,7 @@ theorem RegularFormClass.mul_hyperbolicClass (x : RegularFormClass K) :
       RegularFormClass.rank_add, RegularFormClass.rank_mk, add_nsmul, one_nsmul]
 
 /-- Scaling a rank-one class by `-1` produces a hyperbolic plane: `⟨a, -a⟩ ≅ ℍ`. -/
-theorem RegularFormClass.mk_rankOne_add_neg_mul (a : Kˣ) :
+theorem RegularFormClass.mk_rankOne_add_neg_one_mul (a : Kˣ) :
     Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ +
         Quotient.mk (regularFormSetoid K) ⟨1, fun _ => (-1 : Kˣ)⟩ *
           Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ = hyperbolicClass K := by
@@ -104,14 +104,14 @@ theorem RegularFormClass.mk_rankOne_add_neg_mul (a : Kˣ) :
 /-- **Scaling by `-1` inverts a form modulo hyperbolic planes**: `q ⊥ (-q)` is `dim q` copies of
 `ℍ`. This is what makes the Witt class of every form invertible in `W(K)` without leaving the
 image of the forms. -/
-theorem RegularFormClass.add_neg_mul (x : RegularFormClass K) :
+theorem RegularFormClass.add_neg_one_mul (x : RegularFormClass K) :
     x + Quotient.mk (regularFormSetoid K) ⟨1, fun _ => (-1 : Kˣ)⟩ * x =
       RegularFormClass.rank x • hyperbolicClass K := by
   induction x using RegularFormClass.induction_on_rankOne with
   | zero => simp
   | add_rankOne y a ih =>
     rw [mul_add, RegularFormClass.rank_add, RegularFormClass.rank_mk, add_nsmul, one_nsmul, ← ih,
-      ← RegularFormClass.mk_rankOne_add_neg_mul a]
+      ← RegularFormClass.mk_rankOne_add_neg_one_mul a]
     abel
 
 /-! ### The Witt-Grothendieck ring -/
@@ -119,41 +119,68 @@ theorem RegularFormClass.add_neg_mul (x : RegularFormClass K) :
 /-- **The Witt-Grothendieck ring** `GW(K)`: the Grothendieck ring of the semiring of isometry
 classes of regular quadratic forms, with orthogonal sum for addition and tensor product for
 multiplication. -/
-abbrev WittGrothendieckRing (K : Type u) [Field K] : Type u :=
+def WittGrothendieckRing (K : Type u) [Field K] : Type u :=
   Algebra.GrothendieckAddGroup (RegularFormClass K)
+
+/-- The ring structure on the Witt-Grothendieck ring induced by orthogonal sum and tensor
+product. -/
+noncomputable instance : CommRing (WittGrothendieckRing K) :=
+  inferInstanceAs (CommRing (Algebra.GrothendieckAddGroup (RegularFormClass K)))
+
+attribute [irreducible] WittGrothendieckRing
+
+unseal WittGrothendieckRing in
+/-- The canonical ring equivalence from the Witt-Grothendieck ring to the additive Grothendieck
+group equipped with its induced multiplication. -/
+noncomputable def WittGrothendieckRing.equivGrothendieck :
+    WittGrothendieckRing K ≃+* Algebra.GrothendieckAddGroup (RegularFormClass K) :=
+  RingEquiv.refl _
 
 /-- The class of an isometry class of regular forms in the Witt-Grothendieck ring. -/
 noncomputable def toWittGrothendieck : RegularFormClass K →+* WittGrothendieckRing K :=
-  Algebra.GrothendieckAddGroup.ofRingHom
+  (WittGrothendieckRing.equivGrothendieck (K := K)).symm.toRingHom.comp
+    Algebra.GrothendieckAddGroup.ofRingHom
 
 /-- Witt cancellation makes the map into the Witt-Grothendieck ring injective: no information
 about a regular form is lost by passing to its virtual class. -/
 theorem toWittGrothendieck_injective :
-    Function.Injective (toWittGrothendieck (K := K)) :=
-  Algebra.GrothendieckAddGroup.ofRingHom_injective
+    Function.Injective (toWittGrothendieck (K := K)) := by
+  intro x y h
+  apply Algebra.GrothendieckAddGroup.ofRingHom_injective
+  have := congrArg (WittGrothendieckRing.equivGrothendieck (K := K)) h
+  simpa only [toWittGrothendieck, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.coe_toRingHom, RingEquiv.apply_symm_apply] using this
 
 /-- The Witt–Grothendieck class map agrees with the canonical map into the underlying additive
 Grothendieck group. -/
 theorem toWittGrothendieck_apply (x : RegularFormClass K) :
-    toWittGrothendieck x = Algebra.GrothendieckAddGroup.of x :=
-  Algebra.GrothendieckAddGroup.ofRingHom_apply x
+    WittGrothendieckRing.equivGrothendieck (toWittGrothendieck x) =
+      Algebra.GrothendieckAddGroup.of x := by
+  rw [toWittGrothendieck, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.coe_toRingHom, RingEquiv.apply_symm_apply]
+  exact Algebra.GrothendieckAddGroup.ofRingHom_apply x
 
 /-- Every element of the Witt-Grothendieck ring is a formal difference of two isometry
 classes. -/
 theorem exists_eq_sub_toWittGrothendieck (z : WittGrothendieckRing K) :
     ∃ x y : RegularFormClass K, z = toWittGrothendieck x - toWittGrothendieck y := by
-  obtain ⟨x, y, hxy⟩ := Algebra.GrothendieckAddGroup.exists_eq_sub_of z
-  exact ⟨x, y, by rw [toWittGrothendieck_apply, toWittGrothendieck_apply, hxy]⟩
+  obtain ⟨x, y, hxy⟩ := Algebra.GrothendieckAddGroup.exists_eq_sub_of
+    (WittGrothendieckRing.equivGrothendieck z)
+  refine ⟨x, y, WittGrothendieckRing.equivGrothendieck.injective ?_⟩
+  rw [map_sub, toWittGrothendieck_apply, toWittGrothendieck_apply, hxy]
 
 /-- The rank of a virtual form, as a ring homomorphism to `ℤ`. On the class of an honest form it
 is the dimension of the underlying space. -/
 noncomputable def WittGrothendieckRing.rank : WittGrothendieckRing K →+* ℤ :=
-  Algebra.GrothendieckAddGroup.liftRingHom ((Nat.castRingHom ℤ).comp RegularFormClass.rankHom)
+  (Algebra.GrothendieckAddGroup.liftRingHom
+    ((Nat.castRingHom ℤ).comp RegularFormClass.rankHom)).comp
+      (WittGrothendieckRing.equivGrothendieck (K := K)).toRingHom
 
 @[simp]
 theorem WittGrothendieckRing.rank_toWittGrothendieck (x : RegularFormClass K) :
     WittGrothendieckRing.rank (toWittGrothendieck x) = (RegularFormClass.rank x : ℤ) := by
-  rw [toWittGrothendieck_apply, WittGrothendieckRing.rank,
+  rw [WittGrothendieckRing.rank, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.coe_toRingHom, toWittGrothendieck_apply,
     Algebra.GrothendieckAddGroup.liftRingHom_apply_of, RingHom.comp_apply,
     RegularFormClass.rankHom_apply, Nat.coe_castRingHom]
 
@@ -185,16 +212,38 @@ theorem mem_hyperbolicIdeal_iff {z : WittGrothendieckRing K} :
 
 /-- **The Witt ring** `W(K)`: the Witt-Grothendieck ring modulo the ideal generated by the
 hyperbolic plane. -/
-abbrev WittRing (K : Type u) [Field K] [Invertible (2 : K)] : Type u :=
+def WittRing (K : Type u) [Field K] [Invertible (2 : K)] : Type u :=
   WittGrothendieckRing K ⧸ hyperbolicIdeal K
+
+/-- The quotient ring structure on the Witt ring. -/
+noncomputable instance : CommRing (WittRing K) :=
+  inferInstanceAs (CommRing (WittGrothendieckRing K ⧸ hyperbolicIdeal K))
+
+attribute [irreducible] WittRing
+
+unseal WittRing in
+/-- The canonical ring equivalence from the Witt ring to the quotient by the hyperbolic ideal. -/
+noncomputable def WittRing.equivQuotient :
+    WittRing K ≃+* WittGrothendieckRing K ⧸ hyperbolicIdeal K :=
+  RingEquiv.refl _
 
 /-- The Witt class of an isometry class of regular quadratic forms. -/
 noncomputable def wittClass : RegularFormClass K →+* WittRing K :=
-  (Ideal.Quotient.mk (hyperbolicIdeal K)).comp toWittGrothendieck
+  (WittRing.equivQuotient (K := K)).symm.toRingHom.comp
+    ((Ideal.Quotient.mk (hyperbolicIdeal K)).comp toWittGrothendieck)
+
+/-- The Witt class map is the composite of the Grothendieck map and the quotient map. -/
+theorem wittClass_apply (x : RegularFormClass K) :
+    WittRing.equivQuotient (wittClass x) =
+      Ideal.Quotient.mk (hyperbolicIdeal K) (toWittGrothendieck x) := by
+  rw [wittClass, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    RingEquiv.apply_symm_apply, RingHom.comp_apply]
 
 @[simp]
 theorem wittClass_hyperbolicClass : wittClass (hyperbolicClass K) = 0 :=
-  Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span rfl)
+  WittRing.equivQuotient.injective <| by
+    rw [map_zero, wittClass_apply]
+    exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span rfl)
 
 -- Not `@[simp]`: `RegularFormClass K` is a semiring, so `nsmul_eq_mul` rewrites the left-hand
 -- side to `wittClass (↑m * hyperbolicClass K + x)` and the tag fails `simpNF`.
@@ -208,9 +257,10 @@ theorem wittClass_eq_iff_exists_nsmul {x y : RegularFormClass K} :
     wittClass x = wittClass y ↔
       ∃ m n : ℕ, m • hyperbolicClass K + x = n • hyperbolicClass K + y := by
   refine ⟨fun h => ?_, ?_⟩
-  · rw [wittClass, RingHom.comp_apply, RingHom.comp_apply, Ideal.Quotient.eq,
-      mem_hyperbolicIdeal_iff] at h
-    obtain ⟨m, hm⟩ := h
+  · have hq := congrArg WittRing.equivQuotient h
+    rw [wittClass_apply, wittClass_apply, Ideal.Quotient.eq,
+      mem_hyperbolicIdeal_iff] at hq
+    obtain ⟨m, hm⟩ := hq
     rcases le_or_gt 0 m with hpos | hneg
     · lift m to ℕ using hpos with k
       refine ⟨0, k, ?_⟩
@@ -263,38 +313,39 @@ theorem wittClass_eq_zero_iff {x : RegularFormClass K} :
     RegularFormClass.anisotropicPart_eq_self RegularFormClass.anisotropic_zero]
 
 /-- **Every element of the Witt ring is the Witt class of a form.** The inverse of the class of
-`q` is the class of `-q`, by `TauCeti.RegularFormClass.add_neg_mul`. -/
+`q` is the class of `-q`, by `TauCeti.RegularFormClass.add_neg_one_mul`. -/
 theorem wittClass_surjective : Function.Surjective (wittClass (K := K)) := by
   intro z
-  obtain ⟨w, rfl⟩ := Ideal.Quotient.mk_surjective z
-  obtain ⟨x, y, rfl⟩ := exists_eq_sub_toWittGrothendieck w
+  obtain ⟨w, hw⟩ := Ideal.Quotient.mk_surjective (WittRing.equivQuotient z)
+  obtain ⟨x, y, hxy⟩ := exists_eq_sub_toWittGrothendieck w
   refine ⟨x + Quotient.mk (regularFormSetoid K) ⟨1, fun _ => (-1 : Kˣ)⟩ * y, ?_⟩
   have hy : wittClass (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => (-1 : Kˣ)⟩ * y) =
       -wittClass y := by
-    rw [eq_neg_iff_add_eq_zero, add_comm, ← map_add, RegularFormClass.add_neg_mul, map_nsmul,
+    rw [eq_neg_iff_add_eq_zero, add_comm, ← map_add, RegularFormClass.add_neg_one_mul, map_nsmul,
       wittClass_hyperbolicClass, smul_zero]
-  have hsplit : (Ideal.Quotient.mk (hyperbolicIdeal K))
-      (toWittGrothendieck x - toWittGrothendieck y) = wittClass x - wittClass y := by
-    rw [map_sub, wittClass, RingHom.comp_apply, RingHom.comp_apply]
-  rw [hsplit, map_add, hy, ← sub_eq_add_neg]
+  apply WittRing.equivQuotient.injective
+  rw [map_add, hy, map_add, map_neg, wittClass_apply, wittClass_apply, ← sub_eq_add_neg,
+    ← map_sub, ← hxy, hw]
 
 /-! ### The dimension map -/
 
 /-- **The dimension map** `W(K) → ZMod 2`: the rank of a form modulo two, which is well defined
 on Witt classes because a hyperbolic plane has rank two. -/
 noncomputable def WittRing.dimMod2 : WittRing K →+* ZMod 2 :=
-  Ideal.Quotient.lift _ ((Int.castRingHom (ZMod 2)).comp WittGrothendieckRing.rank) <| by
-    intro z hz
-    obtain ⟨m, rfl⟩ := mem_hyperbolicIdeal_iff.mp hz
-    rw [RingHom.comp_apply, map_zsmul, WittGrothendieckRing.rank_toWittGrothendieck,
-      rank_hyperbolicClass, map_zsmul, eq_intCast]
-    change m • (0 : ZMod 2) = 0
-    exact smul_zero m
+  (Ideal.Quotient.lift _ ((Int.castRingHom (ZMod 2)).comp WittGrothendieckRing.rank) <| by
+      intro z hz
+      obtain ⟨m, rfl⟩ := mem_hyperbolicIdeal_iff.mp hz
+      rw [RingHom.comp_apply, map_zsmul, WittGrothendieckRing.rank_toWittGrothendieck,
+        rank_hyperbolicClass, map_zsmul, eq_intCast]
+      rw [zsmul_eq_mul, ← Int.cast_mul, ZMod.intCast_zmod_eq_zero_iff_dvd]
+      exact ⟨m, by ring⟩).comp (WittRing.equivQuotient (K := K)).toRingHom
 
 @[simp]
 theorem WittRing.dimMod2_wittClass (x : RegularFormClass K) :
     WittRing.dimMod2 (wittClass x) = (RegularFormClass.rank x : ZMod 2) := by
-  rw [wittClass, RingHom.comp_apply, WittRing.dimMod2, Ideal.Quotient.lift_mk, RingHom.comp_apply,
+  rw [WittRing.dimMod2, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.coe_toRingHom, wittClass_apply, Ideal.Quotient.lift_mk,
+    RingHom.comp_apply,
     WittGrothendieckRing.rank_toWittGrothendieck, eq_intCast, Int.cast_natCast]
 
 end TauCeti
