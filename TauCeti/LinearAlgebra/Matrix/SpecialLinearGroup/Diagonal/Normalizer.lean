@@ -186,7 +186,6 @@ theorem diagonalNormalizerPerm_apply (hsep : DiagonalTorusSeparatesCoordinates k
 
 /-- The coordinate permutation of a normalizer element of the diagonal torus of `SL_n(k)` is
 trivial exactly for elements of the torus. -/
-@[simp]
 theorem diagonalNormalizerPerm_eq_one_iff (hsep : DiagonalTorusSeparatesCoordinates k n)
     (g : Subgroup.normalizer (diagonalTorus k n : Set (SpecialLinearGroup (Fin n) k))) :
     diagonalNormalizerPerm hsep g = 1 ↔
