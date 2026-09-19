@@ -45,15 +45,6 @@ namespace TauCeti
 
 variable (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] (R : C)
 
-/-- In degree `n`, the simplicial chain complex with coefficients in `R` is the coproduct of
-copies of `R` indexed by the `n`-simplices, naturally in the simplicial set.  This is the
-functorial form of `SSet.isColimitChainComplexXCofan`; the two functors agree by construction,
-so the isomorphism is the identity. -/
-def sSetChainComplexFunctorCompEvalIso (n : ℕ) :
-    (SSet.chainComplexFunctor.{w} C).obj R ⋙ HomologicalComplex.eval C _ n ≅
-      (evaluation _ _).obj (Opposite.op ⦋n⦌) ⋙ sigmaConst.obj R :=
-  Iso.refl _
-
 variable {J : Type u'} [Category.{v'} J] [HasColimitsOfShape J (Type w)]
 
 /-- The simplicial chain complex with coefficients in `R` preserves every shape of colimit that
@@ -65,6 +56,7 @@ instance : PreservesColimitsOfShape J ((SSet.chainComplexFunctor.{w} C).obj R) :
         ((evaluation SimplexCategoryᵒᵖ (Type w)).obj (Opposite.op ⦋n⦌) ⋙ sigmaConst.obj R) :=
       comp_preservesColimitsOfShape _ _
     exact preservesColimitsOfShape_of_natIso
-      (sSetChainComplexFunctorCompEvalIso C R n).symm
+      (show (evaluation SimplexCategoryᵒᵖ (Type w)).obj (Opposite.op ⦋n⦌) ⋙ sigmaConst.obj R ≅
+        (SSet.chainComplexFunctor.{w} C).obj R ⋙ HomologicalComplex.eval C _ n from Iso.refl _)
 
 end TauCeti

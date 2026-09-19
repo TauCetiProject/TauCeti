@@ -51,14 +51,6 @@ namespace TauCeti
 
 variable {ι : Type w} (X : ι → TopCat.{w}) (n : SimplexCategoryᵒᵖ)
 
-/-- Mathlib defines `TopCat.sigmaι` through a tactic block, so its underlying continuous map is
-`ContinuousMap.sigmaMk` only up to the proof of continuity.  Naming the identification keeps the
-proofs below from depending on that definitional unfolding. -/
-private lemma sigmaι_hom_eq (i : ι) :
-    ConcreteCategory.hom (sigmaι X i) =
-      ContinuousMap.sigmaMk (X := fun i ↦ ((X i : TopCat.{w}) : Type w)) i :=
-  rfl
-
 /-- In each degree, the singular simplices of a disjoint union of spaces are exactly the singular
 simplices of the summands: the topological simplex is connected, so a singular simplex of
 `Σ i, X i` comes from a unique summand and a unique singular simplex there. -/
@@ -81,7 +73,8 @@ lemma toSSet_map_sigmaι_app_bijective : Function.Bijective
         (Equiv.sigmaCongrRight fun i ↦ toSSetObjEquiv (X i) n) := by
     ext ⟨i, x⟩
     rw [Function.comp_apply, Function.comp_apply, Equiv.eq_symm_apply,
-      TopCat.toSSetObjEquiv_toSSet_map_app, sigmaι_hom_eq]
+      TopCat.toSSetObjEquiv_toSSet_map_app]
+    change (ContinuousMap.sigmaMk i).comp _ = _
     rfl
   rw [hfun]
   exact (Equiv.bijective _).comp (key.comp (Equiv.bijective _))
