@@ -42,7 +42,7 @@ variable {ι V P : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [MetricSpac
 
 /-- The displacement of the centroid from a point `q` is the average of the displacements of
 the points from `q`. -/
-private lemma centroid_vsub_eq_sum (hs : s.Nonempty) (q : P) :
+lemma centroid_vsub_eq_sum (hs : s.Nonempty) (q : P) :
     s.centroid ℝ p -ᵥ q = ∑ i ∈ s, (#s : ℝ)⁻¹ • (p i -ᵥ q) := by
   rw [s.centroid_vsub_const ℝ hs, centroid_def, affineCombination_eq_linear_combination _ _ _
     (s.sum_centroidWeights_eq_one_of_nonempty ℝ hs)]
@@ -58,16 +58,16 @@ theorem dist_centroid_le (hs : s.Nonempty) {q : P} {r : ℝ} (h : ∀ i ∈ s, d
   · rw [mem_closedBall_zero_iff, ← dist_eq_norm_vsub V]
     exact h i hi
 
-/-- If the points `p i`, `i ∈ s`, are pairwise at distance at most `d`, then the centroid lies
-within `(1 - 1 / #s) * d` of each of them. -/
-theorem dist_centroid_apply_le {d : ℝ} (hd : ∀ i ∈ s, ∀ j ∈ s, dist (p i) (p j) ≤ d) {j : ι}
+/-- If the points `p i`, `i ∈ s`, are at distance at most `d` from `p j`, then the centroid lies
+within `(1 - 1 / #s) * d` of `p j`. -/
+theorem dist_centroid_apply_le {d : ℝ} {j : ι} (hd : ∀ i ∈ s, dist (p i) (p j) ≤ d)
     (hj : j ∈ s) : dist (s.centroid ℝ p) (p j) ≤ (1 - (#s : ℝ)⁻¹) * d := by
   have hcard : (#s : ℝ) ≠ 0 := by exact_mod_cast (card_pos.2 ⟨j, hj⟩).ne'
   -- The term of `p j` itself vanishes, so only `#s - 1` distances contribute.
   have hsum : ∑ i ∈ s, dist (p i) (p j) ≤ (#s - 1 : ℝ) * d := by
     classical
     rw [← sum_erase (f := fun i ↦ dist (p i) (p j)) s (dist_self (p j))]
-    refine (sum_le_card_nsmul _ _ d fun i hi ↦ hd i (mem_of_mem_erase hi) j hj).trans_eq ?_
+    refine (sum_le_card_nsmul _ _ d fun i hi ↦ hd i (mem_of_mem_erase hi)).trans_eq ?_
     rw [card_erase_of_mem hj, nsmul_eq_mul, Nat.cast_sub (card_pos.2 ⟨j, hj⟩), Nat.cast_one]
   calc dist (s.centroid ℝ p) (p j)
       = ‖∑ i ∈ s, (#s : ℝ)⁻¹ • (p i -ᵥ p j)‖ := by
@@ -86,6 +86,7 @@ nonempty subfamily lies within `(1 - 1 / #s) * d` of the centroid of the whole f
 theorem dist_centroid_centroid_le_of_subset {d : ℝ}
     (hd : ∀ i ∈ s, ∀ j ∈ s, dist (p i) (p j) ≤ d) (hts : t ⊆ s) (ht : t.Nonempty) :
     dist (t.centroid ℝ p) (s.centroid ℝ p) ≤ (1 - (#s : ℝ)⁻¹) * d :=
-  dist_centroid_le ht fun i hi ↦ dist_comm (p i) _ ▸ dist_centroid_apply_le hd (hts hi)
+  dist_centroid_le ht fun i hi ↦ dist_comm (p i) _ ▸
+    dist_centroid_apply_le (fun j hj ↦ hd j hj i (hts hi)) (hts hi)
 
 end Finset

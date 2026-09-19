@@ -33,6 +33,7 @@ chains and transported to singular chains along singular simplices.
   (`TauCeti.AffineChain.map_subdivision`).
 * `TauCeti.AffineChain.singularChain`: the push-forward of affine chains of `Δᵐ` along a singular
   `m`-simplex, compatible with the boundary, faces, subdivision and continuous maps.
+* `ContinuousMap.singularChain_subdivision`: pushing forward commutes with subdivision.
 
 ## References
 
@@ -300,6 +301,8 @@ lemma singularChain_simplex {n : ℕ} (σ : TopCat.toSSet.obj X _⦋n⦌) :
   ext z
   simp [StdSimplex.affineMapMk_apply]
 
+namespace _root_.ContinuousMap
+
 /-- Pushing the subdivision of an affine chain forward along a singular simplex gives the
 barycentric subdivision of the pushed-forward chain. -/
 lemma singularChain_subdivision {m : ℕ} (σ : C(StdSimplex ℝ (Fin (m + 1)), X)) {k : ℕ}
@@ -319,12 +322,14 @@ lemma singularChain_subdivision {m : ℕ} (σ : C(StdSimplex ℝ (Fin (m + 1)), 
       simp [← StdSimplex.comp_affineMapMk]
     simp [hv, Finset.smul_sum, mul_smul, Units.smul_def, ContinuousMap.comp_assoc]
 
+end _root_.ContinuousMap
+
 /-- Pushing the subdivision of the standard simplex forward along a singular simplex gives the
 barycentric subdivision of that singular simplex. -/
 lemma singularChain_subdivision_simplex {n : ℕ} (σ : TopCat.toSSet.obj X _⦋n⦌) :
     singularChain R (X.toSSetObjEquiv _ σ) n (subdivision _ n (simplex n)) =
       (TopCat.toSSet.obj X).ιChainComplex σ ≫ singularSubdivisionX R X n := by
-  rw [singularChain_subdivision, singularChain_simplex]
+  rw [_root_.ContinuousMap.singularChain_subdivision, singularChain_simplex]
 
 /-- Pushing affine chains forward along a singular simplex commutes with continuous maps. -/
 lemma singularChain_comp_map {m : ℕ} (σ : C(StdSimplex ℝ (Fin (m + 1)), X)) (f : X ⟶ Y) {k : ℕ}

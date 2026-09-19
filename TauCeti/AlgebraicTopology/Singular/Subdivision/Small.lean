@@ -26,7 +26,7 @@ Combined with the Lebesgue number lemma, this shows that for every open cover `U
 and every singular simplex `σ : Δᵐ → X`, all affine simplices of a sufficiently fine iterated
 subdivision are carried by `σ` into a single member of `U`. Since pushing affine chains forward
 along `σ` intertwines their subdivision with the barycentric subdivision of singular chains
-(`TauCeti.AffineChain.singularChain_subdivision`), this is the statement that every singular
+(`ContinuousMap.singularChain_subdivision`), this is the statement that every singular
 simplex becomes subordinate to `U` after sufficiently many barycentric subdivisions.
 
 ## Main results
@@ -37,7 +37,7 @@ simplex becomes subordinate to `U` after sufficiently many barycentric subdivisi
   `n`-fold subdivision of an affine `k`-chain are pairwise at distance at most `(k / (k + 1)) ^ n`.
 * `ContinuousMap.exists_pos_forall_range_subset_of_dist_weights_lt`: a Lebesgue number for an
   open cover pulled back along a singular simplex, bounding the distances between vertices.
-* `TauCeti.AffineChain.exists_forall_mem_support_subdivision_iterate_range_subset`: every affine
+* `ContinuousMap.exists_forall_mem_support_subdivision_iterate_range_subset`: every affine
   simplex of a sufficiently fine iterated subdivision is carried into a member of the cover.
 
 ## References
@@ -166,7 +166,9 @@ theorem exists_pos_forall_range_subset_of_dist_weights_lt (σ : C(StdSimplex ℝ
 
 end ContinuousMap
 
-namespace TauCeti.AffineChain
+namespace ContinuousMap
+
+open TauCeti.AffineChain
 
 variable {N : Type*} [Finite N] {X : Type*} [TopologicalSpace X]
 
@@ -188,4 +190,4 @@ theorem exists_forall_mem_support_subdivision_iterate_range_subset (σ : C(StdSi
   exact ((dist_weights_of_mem_support_subdivision_iterate hu i j).trans
     (pow_le_pow_of_le_one hq₀ hq₁.le hn)).trans_lt hn₀
 
-end TauCeti.AffineChain
+end ContinuousMap
