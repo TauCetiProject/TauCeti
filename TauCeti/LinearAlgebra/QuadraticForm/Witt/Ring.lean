@@ -288,7 +288,6 @@ noncomputable def wittClass : RegularFormClass K →+* WittRing K :=
   WittRing.mk.comp toWittGrothendieck
 
 /-- The Witt class map is the composite of the Grothendieck map and the quotient map. -/
-@[simp]
 theorem wittClass_apply (x : RegularFormClass K) :
     wittClass x = WittRing.mk (toWittGrothendieck x) := by
   rw [wittClass, RingHom.comp_apply]
