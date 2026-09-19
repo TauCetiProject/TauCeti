@@ -74,6 +74,11 @@ lemma toSSet_map_sigmaι_app_bijective : Function.Bijective
     ext ⟨i, x⟩
     rw [Function.comp_apply, Function.comp_apply, Equiv.eq_symm_apply,
       TopCat.toSSetObjEquiv_toSSet_map_app]
+    -- `TopCat.sigmaι X i` is assembled by a tactic block out of `Sigma.mk i` and a continuity
+    -- proof, so its underlying continuous map is `ContinuousMap.sigmaMk i` by construction;
+    -- Mathlib states nothing about that map beyond its definition, so there is no rewrite to
+    -- perform.  The `change` puts that identification in the goal, leaving the `rfl` to unfold
+    -- `Equiv.sigmaCongrRight` on the right-hand side.
     change (ContinuousMap.sigmaMk i).comp _ = _
     rfl
   rw [hfun]

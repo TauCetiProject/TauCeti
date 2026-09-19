@@ -55,6 +55,13 @@ instance : PreservesColimitsOfShape J ((SSet.chainComplexFunctor.{w} C).obj R) :
     have : PreservesColimitsOfShape J
         ((evaluation SimplexCategoryᵒᵖ (Type w)).obj (Opposite.op ⦋n⦌) ⋙ sigmaConst.obj R) :=
       comp_preservesColimitsOfShape _ _
+    -- The two functors named below are the same functor.  `SSet.chainComplexFunctor C` is
+    -- `X ↦ X ⋙ sigmaConst.obj R` postcomposed with `alternatingFaceMapComplex`, and degree `n`
+    -- of an alternating face map complex is evaluation at `⦋n⦌`, on morphisms as well as on
+    -- objects; Mathlib records both halves of that as `rfl`, in `alternatingFaceMapComplex_obj_X`
+    -- and `alternatingFaceMapComplex_map_f`.  The comparison therefore has no content beyond the
+    -- identity, and no interface lemma can stand in for `Iso.refl` here; the `show` spells out
+    -- which two functors are being identified.
     exact preservesColimitsOfShape_of_natIso
       (show (evaluation SimplexCategoryᵒᵖ (Type w)).obj (Opposite.op ⦋n⦌) ⋙ sigmaConst.obj R ≅
         (SSet.chainComplexFunctor.{w} C).obj R ⋙ HomologicalComplex.eval C _ n from Iso.refl _)
