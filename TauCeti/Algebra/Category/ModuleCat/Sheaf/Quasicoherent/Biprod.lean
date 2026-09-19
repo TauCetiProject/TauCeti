@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Basic.Finite.Sum
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 public import TauCeti.CategoryTheory.Sites.CoversTop
 
@@ -45,26 +46,13 @@ open CategoryTheory Limits
 
 namespace TauCeti
 
-universe u v₁ u₁ v₂ u₂
+universe u v₁ u₁
 
 noncomputable section
 
 namespace SheafOfModules
 
 open _root_.SheafOfModules
-
-section Pushforward
-
-variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
-  {J : GrothendieckTopology C} {K : GrothendieckTopology D} {F : C ⥤ D}
-  {S : Sheaf J RingCat.{u}} {R : Sheaf K RingCat.{u}} [Functor.IsContinuous F J K]
-  (φ : S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj R)
-
-/-- The pushforward of sheaves of modules is additive. -/
-instance : (pushforward.{u} φ).Additive where
-  map_add := rfl
-
-end Pushforward
 
 section Global
 
@@ -85,6 +73,18 @@ theorem inl_freeBiprodIso_hom (I I' : Type u) :
 theorem inr_freeBiprodIso_hom (I I' : Type u) :
     biprod.inr ≫ (freeBiprodIso (R := R) I I').hom = freeMap Sum.inr := by
   simp [freeBiprodIso]
+
+@[reassoc (attr := simp)]
+theorem freeMap_inl_freeBiprodIso_inv (I I' : Type u) :
+    freeMap (R := R) Sum.inl ≫ (freeBiprodIso I I').inv = biprod.inl := by
+  rw [← cancel_mono (freeBiprodIso I I').hom]
+  simp
+
+@[reassoc (attr := simp)]
+theorem freeMap_inr_freeBiprodIso_inv (I I' : Type u) :
+    freeMap (R := R) Sum.inr ≫ (freeBiprodIso I I').inv = biprod.inr := by
+  rw [← cancel_mono (freeBiprodIso I I').hom]
+  simp
 
 variable {M N : SheafOfModules.{u} R}
 
@@ -171,10 +171,6 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C} {R : S
   [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
   {M N : SheafOfModules.{u} R}
 
-/-- Restriction to a slice site is additive. -/
-instance (X : C) : (overFunctor.{u} R X).Additive :=
-  inferInstanceAs (pushforward _).Additive
-
 variable (M N) in
 /-- Restriction to a slice site commutes with direct sums. -/
 def _root_.SheafOfModules.overBiprodIso (X : C) : (M ⊞ N).over X ≅ M.over X ⊞ N.over X :=
@@ -192,6 +188,18 @@ theorem inr_overBiprodIso_inv (X : C) :
     biprod.inr ≫ (overBiprodIso M N X).inv = (biprod.inr : N ⟶ M ⊞ N).over X := by
   simp only [overBiprodIso, Functor.mapBiprod_inv]
   exact biprod.inr_desc _ _
+
+@[reassoc (attr := simp)]
+theorem overBiprodIso_hom_fst (X : C) :
+    (overBiprodIso M N X).hom ≫ biprod.fst = (biprod.fst : M ⊞ N ⟶ M).over X := by
+  simp only [overBiprodIso, Functor.mapBiprod_hom]
+  exact biprod.lift_fst _ _
+
+@[reassoc (attr := simp)]
+theorem overBiprodIso_hom_snd (X : C) :
+    (overBiprodIso M N X).hom ≫ biprod.snd = (biprod.snd : M ⊞ N ⟶ N).over X := by
+  simp only [overBiprodIso, Functor.mapBiprod_hom]
+  exact biprod.lift_snd _ _
 
 variable [HasPullbacks C]
 
