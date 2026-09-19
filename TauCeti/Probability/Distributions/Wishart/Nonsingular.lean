@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Matrix.MeasurableSpace
 public import TauCeti.Analysis.Matrix.PosDef
 public import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Basic
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix
-public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.ChiSquared
 import Mathlib.Algebra.Order.Star.Real
 import TauCeti.MeasureTheory.Measure.WithDensity
