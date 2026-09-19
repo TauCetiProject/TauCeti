@@ -9,6 +9,9 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Subalgebra
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 public import TauCeti.RepresentationTheory.Spin.Polarization.CliffordAction
+-- Private: `TauCeti.card_even_card_finset` and `TauCeti.card_odd_card_finset` are used only
+-- inside proofs.
+import TauCeti.Data.Finset.Basic
 
 /-!
 # The weights of the spinor module
@@ -87,6 +90,10 @@ rest of the layer this file opens.
 * `TauCeti.range_spinWeight`: for a finite index type the weights are exactly the sign vectors,
   and, when `K` is nontrivial, `TauCeti.ncard_range_spinWeight` counts them: there are `2 ^ l` of
   them on an index type of cardinality `l`.
+* `TauCeti.ncard_spinWeight_image_even` and `TauCeti.ncard_spinWeight_image_odd`: **the two
+  parities of sign vector are equinumerous**, `2 ^ (l - 1)` each. These are the weights of the two
+  half-spin summands; the identification is
+  `TauCeti/RepresentationTheory/Spin/HalfSpin/Weight.lean`.
 
 ## References
 
@@ -206,6 +213,23 @@ theorem ncard_range_spinWeight [Finite ι] [Nontrivial K] :
   have : Fintype ι := Fintype.ofFinite ι
   rw [Set.ncard_range_of_injective spinWeight_injective, Nat.card_eq_fintype_card,
     Nat.card_eq_fintype_card, Fintype.card_finset]
+
+/-- **The sign vectors with an even number of `+` signs number `2 ^ (l - 1)`** on a nonempty index
+type of cardinality `l`: exactly half of the `2 ^ l` sign vectors of
+`TauCeti.ncard_range_spinWeight`. These are the weights of the even half-spin summand, by
+`TauCeti.setOf_spinWeightSpace_le_spinPlus`. -/
+theorem ncard_spinWeight_image_even [Finite ι] [Nonempty ι] [Nontrivial K] :
+    (spinWeight K '' {s : Finset ι | Even s.card}).ncard = 2 ^ (Nat.card ι - 1) := by
+  rw [Set.ncard_image_of_injective _ spinWeight_injective]
+  exact card_even_card_finset
+
+/-- **The sign vectors with an odd number of `+` signs number `2 ^ (l - 1)`**, the other half of
+`TauCeti.ncard_spinWeight_image_even`. These are the weights of the odd half-spin summand, by
+`TauCeti.setOf_spinWeightSpace_le_spinMinus`. -/
+theorem ncard_spinWeight_image_odd [Finite ι] [Nonempty ι] [Nontrivial K] :
+    (spinWeight K '' {s : Finset ι | Odd s.card}).ncard = 2 ^ (Nat.card ι - 1) := by
+  rw [Set.ncard_image_of_injective _ spinWeight_injective]
+  exact card_odd_card_finset
 
 end Weight
 
