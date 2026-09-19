@@ -25,12 +25,13 @@ For the trivial weight the restriction is `ofBadPrimes S`, the indicator of the 
 `L_S(s) = ζ_K(s) * ∏ 𝔭 ∈ S, (1 - N(𝔭) ^ (-s))`  for `Re s > 1`.
 
 The correction factor does not vanish on `Re s > 0`, because
-`|N(𝔭) ^ s| = N(𝔭) ^ (Re s) > 1` there. Consequently `L_S` has the same kind of singularity at
-`s = 1` as `ζ_K`: its residue from the right is that of `ζ_K` multiplied by the nonzero number
-`∏ 𝔭 ∈ S, (1 - N(𝔭)⁻¹)`, and its logarithmic derivative differs from that of `ζ_K` by the finite
-sum `∑ 𝔭 ∈ S, log N(𝔭) / (N(𝔭) ^ s - 1)`, which is holomorphic on `Re s > 0` and in particular
-across the line `Re s = 1`. This is the form in which Dirichlet series whose Euler products omit
-the ramified primes, such as the series of a Galois character, are compared with `ζ_K`.
+`|N(𝔭) ^ s| = N(𝔭) ^ (Re s) > 1` there. As `s → 1⁺`, the normalized expression
+`(s - 1) L_S(s)` tends to `dedekindZeta_residue K` multiplied by the nonzero number
+`∏ 𝔭 ∈ S, (1 - N(𝔭)⁻¹)`. The logarithmic derivative of `L_S` differs from that of `ζ_K` by the
+finite sum `∑ 𝔭 ∈ S, log N(𝔭) / (N(𝔭) ^ s - 1)`, which is holomorphic on `Re s > 0` and in
+particular across the line `Re s = 1`. This is the form in which Dirichlet series whose Euler
+products omit the ramified primes, such as the series of a Galois character, are compared with
+`ζ_K`.
 
 ## Main results
 
@@ -45,7 +46,7 @@ the ramified primes, such as the series of a Galois character, are compared with
   `ζ_K(s) * ∏ 𝔭 ∈ S, (1 - N(𝔭) ^ (-s))` on `Re s > 1`.
 * `TauCeti.prod_one_sub_absNorm_cpow_neg_ne_zero`: the correction factor has no zero on
   `Re s > 0`.
-* `TauCeti.tendsto_sub_one_mul_LSeries_ofBadPrimes`: the residue at `s = 1` from the right.
+* `TauCeti.tendsto_sub_one_mul_LSeries_ofBadPrimes`: the normalized right-hand limit at `s = 1`.
 * `TauCeti.logDeriv_LSeries_ofBadPrimes`: the logarithmic derivative on `Re s > 1`, and
   `TauCeti.differentiableOn_sum_log_absNorm_div_cpow_sub_one`: the correction term in it is
   holomorphic on `Re s > 0`.
@@ -162,8 +163,8 @@ end MultiplicativeIdealWeight
 
 /-! ### The Dedekind zeta function with finitely many Euler factors deleted -/
 
-/-- **The deleted Euler factors do not vanish on `Re s > 0`.** In particular they do not vanish
-at `s = 1`, so deleting them does not change the order of the pole there. -/
+/-- **The deleted Euler-factor correction does not vanish on `Re s > 0`.** In particular, its
+value at `s = 1` is nonzero. -/
 theorem prod_one_sub_absNorm_cpow_neg_ne_zero (S : Finset (HeightOneSpectrum (𝓞 K))) {s : ℂ}
     (hs : 0 < s.re) : ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ≠ 0 := by
   refine Finset.prod_ne_zero_iff.mpr fun P _ h ↦ P.absNorm_cpow_sub_one_ne_zero hs ?_
@@ -188,9 +189,10 @@ theorem LSeries_ofBadPrimes (S : Finset (HeightOneSpectrum (𝓞 K))) {s : ℂ} 
   refine Finset.prod_congr rfl fun P _ ↦ ?_
   rw [MultiplicativeIdealWeight.one_apply, ite_eq_right P.ne_bot, Complex.cpow_neg, one_div]
 
-/-- **The residue at `s = 1` after deleting Euler factors.** As `s → 1⁺`,
-`(s - 1) L_S(s)` tends to the residue of `ζ_K` multiplied by `∏ 𝔭 ∈ S, (1 - N(𝔭) ^ (-1))`, which
-is nonzero by `prod_one_sub_absNorm_cpow_neg_ne_zero`. -/
+/-- **The normalized right-hand limit at `s = 1` after deleting Euler factors.** As `s → 1⁺`,
+`(s - 1) L_S(s)` tends to `dedekindZeta_residue K` multiplied by
+`∏ 𝔭 ∈ S, (1 - N(𝔭) ^ (-1))`, which is nonzero by
+`prod_one_sub_absNorm_cpow_neg_ne_zero`. -/
 theorem tendsto_sub_one_mul_LSeries_ofBadPrimes (S : Finset (HeightOneSpectrum (𝓞 K))) :
     Tendsto (fun s : ℝ ↦ (s - 1) * LSeries (normCoeff K
         (MultiplicativeIdealWeight.ofBadPrimes (S : Set (HeightOneSpectrum (𝓞 K)))

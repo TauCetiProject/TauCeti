@@ -336,7 +336,8 @@ theorem badPrimes_restrict (χ : MultiplicativeIdealWeight K) (hS : S.Finite) :
     (χ.restrict S hS).badPrimes = χ.badPrimes ∪ S := by
   simp [restrict]
 
-/-- Restricting the trivial weight away from `S` gives the indicator weight of `S`. -/
+/-- Restricting the trivial weight away from `S` gives the indicator weight of ideals prime to
+every prime in `S`. -/
 @[simp]
 theorem one_restrict (hS : S.Finite) :
     (1 : MultiplicativeIdealWeight K).restrict S hS = ofBadPrimes S hS :=
