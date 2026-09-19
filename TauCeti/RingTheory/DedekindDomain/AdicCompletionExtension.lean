@@ -332,6 +332,15 @@ lemma adicCompletionExtension_coe (x : K) :
   rw [WithVal.algebraMap_left_apply, WithVal.algebraMap_right_apply]
   rfl
 
+/-- The square with sides `R → K_v → L_w` and `R → B → L_w` commutes. -/
+lemma adicCompletionExtension_algebraMap (a : R) :
+    adicCompletionExtension K L v w (algebraMap R (v.adicCompletion K) a) =
+      algebraMap B (w.adicCompletion L) (algebraMap R B a) := by
+  rw [IsScalarTower.algebraMap_apply R K (v.adicCompletion K)]
+  simp only [algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self,
+    RingHom.id_apply, adicCompletionExtension_coe, ← IsScalarTower.algebraMap_apply R K L,
+    ← IsScalarTower.algebraMap_apply R B L]
+
 /-- `adicCompletionExtension` is continuous. -/
 theorem continuous_adicCompletionExtension :
     Continuous (adicCompletionExtension K L v w) := by
