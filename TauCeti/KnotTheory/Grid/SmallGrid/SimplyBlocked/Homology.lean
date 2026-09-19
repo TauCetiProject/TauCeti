@@ -65,7 +65,11 @@ theorem twoByTwo_mem_simplyBlockedBoundaries_iff (c : Cyc) :
       constantCoeff (eChain c.val GridState.twoByTwoSwap) = 0 := by
   constructor
   · rintro ⟨b, rfl⟩
-    simp [IsKnot.simplyBlockedChainEquiv_boundaryMap]
+    -- Expose the differential beneath the boundary map's codomain restriction.
+    change constantCoeff (eChain ((twoByTwo.simplyBlockedComplex R 0).d () () b)
+      GridState.twoByTwoSwap) = 0
+    rw [twoByTwo.simplyBlockedChainEquiv_d R 0]
+    simp
   · intro hc
     let : Unique {c : Fin 2 // c ≠ 0} :=
       ⟨⟨twoByTwoSurvivingColumn⟩, fun c => Subtype.ext (by
@@ -91,7 +95,10 @@ theorem twoByTwo_mem_simplyBlockedBoundaries_iff (c : Cyc) :
     refine ⟨(eChain).symm (Finsupp.single GridState.twoByTwoId (e.symm q)), ?_⟩
     apply Subtype.ext
     apply (eChain).injective
-    simp only [IsKnot.simplyBlockedChainEquiv_boundaryMap, LinearEquiv.apply_symm_apply]
+    -- Expose the differential beneath the boundary map's codomain restriction.
+    change eChain ((twoByTwo.simplyBlockedComplex R 0).d () ()
+      ((eChain).symm (Finsupp.single GridState.twoByTwoId (e.symm q)))) = eChain c.val
+    rw [twoByTwo.simplyBlockedChainEquiv_d R 0, LinearEquiv.apply_symm_apply]
     rw [twoByTwo_simplyBlockedDifferential_apply,
       Finsupp.single_eq_same, ← he, ← cycle_eq_single]
 

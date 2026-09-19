@@ -95,14 +95,6 @@ theorem mem_simplyBlockedCycles (hG : G.IsKnot) (i : Fin n)
     (G.simplyBlockedChainEquiv R i).injective.eq_iff]
   rfl
 
-/-- The boundary map is the specialized differential in explicit chain coordinates. -/
-@[simp]
-theorem simplyBlockedChainEquiv_boundaryMap (hG : G.IsKnot) (i : Fin n)
-    (c : (G.simplyBlockedComplex R i).X ()) :
-    G.simplyBlockedChainEquiv R i (hG.simplyBlockedBoundaryMap R i c).val =
-      G.simplyBlockedDifferential R i (G.simplyBlockedChainEquiv R i c) :=
-  G.simplyBlockedChainEquiv_d R i c
-
 /-- The boundaries of the simply blocked complex, regarded as a submodule of its cycles. -/
 noncomputable abbrev simplyBlockedBoundaries (hG : G.IsKnot) (i : Fin n) :
     Submodule (MvPolynomial {c : Fin n // c ≠ i} R)
