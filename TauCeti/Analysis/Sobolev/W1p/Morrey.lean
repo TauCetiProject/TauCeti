@@ -43,6 +43,8 @@ required representative.
 * `TauCeti.W1p.exists_holderWith_ae_eq_value`: Morrey's embedding; a function in `W^{1,p}(ℝⁿ)`,
   `n < p < ∞`, agrees almost everywhere with a Hölder continuous function of exponent `1 - n / p`,
   whose Hölder constant is controlled by `‖∇u‖_{Lᵖ}`.
+* `TauCeti.W1p.morreyRepresentative`: the canonical continuous representative supplied by
+  Morrey's estimate.
 
 ## References
 
@@ -140,5 +142,34 @@ theorem W1p.exists_holderWith_ae_eq_value (hp : (finrank ℝ E : ℝ≥0) < p)
   obtain ⟨g, hg, hgA⟩ := hholder.extend_of_dense hα (mu.dense_of_ae hA)
   refine ⟨g, hg, ?_⟩
   filter_upwards [hA] with x hx using hgA hx
+
+/-- The canonical continuous representative of a whole-space Sobolev function in Morrey's
+supercritical range. It is canonical because two continuous representatives that agree almost
+everywhere for Haar measure agree everywhere. -/
+def W1p.morreyRepresentative (u : W1p mu ⊤ (p : ℝ≥0∞)) (hp : (finrank ℝ E : ℝ≥0) < p) :
+    E → ℝ :=
+  Classical.choose (W1p.exists_holderWith_ae_eq_value hp u)
+
+/-- Morrey's estimate for the canonical representative. -/
+theorem W1p.holderWith_morreyRepresentative (u : W1p mu ⊤ (p : ℝ≥0∞))
+    (hp : (finrank ℝ E : ℝ≥0) < p) :
+    HolderWith (Real.toNNReal (2 ^ (finrank ℝ E + 1) / (finrank ℝ E * mu.real (ball 0 1)) *
+        (finrank ℝ E * mu.real (ball 0 1) * (p - 1) / (p - finrank ℝ E)) ^
+          (1 - 1 / (p : ℝ)) * 2 ^ (1 - finrank ℝ E / (p : ℝ))) *
+          ‖W1p.gradient u‖₊)
+      (1 - finrank ℝ E / p) (W1p.morreyRepresentative u hp) :=
+  (Classical.choose_spec (W1p.exists_holderWith_ae_eq_value hp u)).1
+
+/-- The canonical Morrey representative agrees almost everywhere with the Sobolev value. -/
+theorem W1p.value_ae_eq_morreyRepresentative (u : W1p mu ⊤ (p : ℝ≥0∞))
+    (hp : (finrank ℝ E : ℝ≥0) < p) :
+    W1p.value u =ᵐ[mu] W1p.morreyRepresentative u hp :=
+  (Classical.choose_spec (W1p.exists_holderWith_ae_eq_value hp u)).2
+
+/-- The canonical Morrey representative is continuous. -/
+theorem W1p.continuous_morreyRepresentative (u : W1p mu ⊤ (p : ℝ≥0∞))
+    (hp : (finrank ℝ E : ℝ≥0) < p) : Continuous (W1p.morreyRepresentative u hp) :=
+  (W1p.holderWith_morreyRepresentative u hp).continuous
+    (tsub_pos_of_lt ((div_lt_one (zero_le.trans_lt hp)).2 hp))
 
 end TauCeti
