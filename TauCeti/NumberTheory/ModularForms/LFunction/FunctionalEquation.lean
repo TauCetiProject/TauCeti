@@ -175,13 +175,13 @@ variable {Γ : Subgroup (GL (Fin 2) ℝ)}
 
 /-- The level-`N` completed L-function of a cusp form, for a positive level `N`, defined as the
 Mellin transform of its restriction to the rescaled imaginary axis `t ↦ i t / √N`. -/
-noncomputable def frickeCompletedL (f : CuspForm Γ k) (N : ℕ) [NeZero N] (s : ℂ) : ℂ :=
-  mellin (fun t : ℝ ↦ resToImagAxis (f : ℍ → ℂ) (t / Real.sqrt N)) s
+noncomputable def frickeCompletedL (f : CuspForm Γ k) (N : ℕ+) (s : ℂ) : ℂ :=
+  mellin (fun t : ℝ ↦ resToImagAxis (f : ℍ → ℂ) (t / Real.sqrt (N : ℕ))) s
 
 /-- The defining equation for the level-`N` completed L-function. -/
-lemma frickeCompletedL_apply (f : CuspForm Γ k) (N : ℕ) [NeZero N] (s : ℂ) :
+lemma frickeCompletedL_apply (f : CuspForm Γ k) (N : ℕ+) (s : ℂ) :
     frickeCompletedL f N s =
-      mellin (fun t : ℝ ↦ resToImagAxis (f : ℍ → ℂ) (t / Real.sqrt N)) s :=
+      mellin (fun t : ℝ ↦ resToImagAxis (f : ℍ → ℂ) (t / Real.sqrt (N : ℕ))) s :=
   (rfl)
 
 private lemma sqrt_cpow_eq (N : ℕ) (s : ℂ) :
@@ -194,14 +194,16 @@ private lemma sqrt_cpow_eq (N : ℕ) (s : ℂ) :
 
 private theorem frickeCompletedL_eq_sqrt_cpow_mul_Λ [Γ.IsArithmetic]
     (f : CuspForm Γ k) (N : ℕ) [NeZero N] (hk : 0 < k) (s : ℂ) :
-    frickeCompletedL f N s = (Real.sqrt N : ℂ) ^ s * ModularForm.Λ hk f s := by
+    frickeCompletedL f (N.toPNat (NeZero.pos N)) s =
+      (Real.sqrt N : ℂ) ^ s * ModularForm.Λ hk f s := by
   have hN : 0 < Real.sqrt N := Real.sqrt_pos.mpr (by exact_mod_cast NeZero.pos N)
   have hNinv : 0 < (Real.sqrt N)⁻¹ := inv_pos.mpr hN
   have heq : (fun t : ℝ ↦ resToImagAxis (f : ℍ → ℂ) (t / Real.sqrt N)) =
       (fun t : ℝ ↦ resToImagAxis (f : ℍ → ℂ) (t * (Real.sqrt N)⁻¹)) := by
     funext t
     rw [div_eq_mul_inv]
-  rw [frickeCompletedL, heq, mellin_comp_mul_right _ s hNinv, smul_eq_mul,
+  simp only [frickeCompletedL, Nat.toPNat, PNat.val]
+  rw [heq, mellin_comp_mul_right _ s hNinv, smul_eq_mul,
     CuspForm.Λ_eq_mellin]
   have harg : (Real.sqrt N : ℂ).arg ≠ Real.pi := by
     rw [Complex.arg_ofReal_of_nonneg (Real.sqrt_nonneg _)]
@@ -220,13 +222,14 @@ private theorem frickeCompletedL_eq_sqrt_cpow_mul_Λ [Γ.IsArithmetic]
 `N^(s/2) (2π)^(-s) Γ(s) L(s, f)` on the Dirichlet-series half-plane. -/
 theorem frickeCompletedL_eq [Γ.IsArithmetic]
     (f : CuspForm Γ k) (N : ℕ) [NeZero N] (hk : 0 < k) (s : ℂ) :
-    frickeCompletedL f N s = (N : ℂ) ^ (s / 2) * ModularForm.Λ hk f s := by
+    frickeCompletedL f (N.toPNat (NeZero.pos N)) s =
+      (N : ℂ) ^ (s / 2) * ModularForm.Λ hk f s := by
   rw [frickeCompletedL_eq_sqrt_cpow_mul_Λ f N hk s, sqrt_cpow_eq]
 
 /-- The level-`N` completed L-function of a positive-weight cusp form is entire. -/
 theorem differentiable_frickeCompletedL [Γ.IsArithmetic]
     (f : CuspForm Γ k) (N : ℕ) [NeZero N] (hk : 0 < k) :
-    Differentiable ℂ (frickeCompletedL f N) := by
+    Differentiable ℂ (frickeCompletedL f (N.toPNat (NeZero.pos N))) := by
   rw [funext fun s ↦ frickeCompletedL_eq_sqrt_cpow_mul_Λ f N hk s]
   let _ : NeZero (Real.sqrt N : ℂ) :=
     ⟨Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (by exact_mod_cast NeZero.pos N)).ne'⟩
@@ -279,8 +282,8 @@ theorem frickeCompletedL_functional_equation
     (hg : (g : ℍ → ℂ) =
       (Real.sqrt N : ℂ) ^ (2 - k) • ((f : ℍ → ℂ) ∣[k] TauCeti.frickeGL ℝ N))
     (s : ℂ) :
-    frickeCompletedL f N ((k : ℂ) - s) =
-      Complex.I ^ k * frickeCompletedL g N s := by
+    frickeCompletedL f (N.toPNat (NeZero.pos N)) ((k : ℂ) - s) =
+      Complex.I ^ k * frickeCompletedL g (N.toPNat (NeZero.pos N)) s := by
   -- The width and weight hypotheses identify these Mellin transforms with the classical entire
   -- completions; the integral identity itself uses only the normalized Fricke relation.
   clear _hw₁ _hw₂ _hk
@@ -298,7 +301,7 @@ theorem frickeCompletedL_functional_equation
     congr 2
     rw [← zpow_neg, ← Complex.cpow_intCast]
     norm_cast
-  rw [frickeCompletedL, frickeCompletedL]
+  simp only [frickeCompletedL, Nat.toPNat, PNat.val]
   have hcongr : mellin A ((k : ℂ) - s) =
       mellin (fun t ↦ (Complex.I ^ k) • ((t : ℂ) ^ (-(k : ℂ)) • B (1 / t)))
         ((k : ℂ) - s) := by
@@ -326,8 +329,9 @@ variable {N : ℕ} [NeZero N] {k : ℤ}
 Fricke operator providing the companion cusp form. -/
 theorem frickeCompletedL_functional_equation_Gamma1
     (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) (hk : 0 < k) (s : ℂ) :
-    frickeCompletedL f N ((k : ℂ) - s) =
-      Complex.I ^ k * frickeCompletedL (normalizedFrickeOperatorCusp k f) N s := by
+    frickeCompletedL f (N.toPNat (NeZero.pos N)) ((k : ℂ) - s) =
+      Complex.I ^ k *
+        frickeCompletedL (normalizedFrickeOperatorCusp k f) (N.toPNat (NeZero.pos N)) s := by
   apply frickeCompletedL_functional_equation f (normalizedFrickeOperatorCusp k f) N
       (by simp) (by simp) hk
   simp only [coe_normalizedFrickeOperatorCusp, atkinLehnerNormalizer_def]
