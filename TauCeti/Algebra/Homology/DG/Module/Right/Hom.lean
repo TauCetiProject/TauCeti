@@ -138,15 +138,21 @@ theorem neg_apply (f : DGRightModuleHom hM hN) (x : M) : (-f) x = -f x := (rfl)
 theorem sub_apply (f g : DGRightModuleHom hM hN) (x : M) :
     (f - g) x = f x - g x := (rfl)
 
-instance : AddCommGroup (DGRightModuleHom hM hN) where
-  add_assoc f g k := by ext x; simp [add_assoc]
-  zero_add f := by ext x; simp
-  add_zero f := by ext x; simp
-  add_comm f g := by ext x; simp [add_comm]
-  neg_add_cancel f := by ext x; simp
-  sub_eq_add_neg f g := by ext x; simp [sub_eq_add_neg]
-  nsmul := nsmulRec
-  zsmul := zsmulRec
+instance : SMul ℕ (DGRightModuleHom hM hN) where
+  smul n f :=
+    { toLinearMap := n • f.toLinearMap
+      map_mem' := fun {q} {_} hx ↦ (ℳN q).nsmul_mem (f.map_mem' hx) n
+      map_d' := fun x ↦ by simp }
+
+instance : SMul ℤ (DGRightModuleHom hM hN) where
+  smul n f :=
+    { toLinearMap := n • f.toLinearMap
+      map_mem' := fun {q} {_} hx ↦ (ℳN q).toAddSubgroup.zsmul_mem (f.map_mem' hx) n
+      map_d' := fun x ↦ by simp }
+
+instance : AddCommGroup (DGRightModuleHom hM hN) :=
+  Function.Injective.addCommGroup toLinearMap toLinearMap_injective
+    rfl (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
 
 instance : SMul R (DGRightModuleHom hM hN) where
   smul r f :=
@@ -158,13 +164,10 @@ instance : SMul R (DGRightModuleHom hM hN) where
 theorem smul_apply (r : R) (f : DGRightModuleHom hM hN) (x : M) :
     (r • f) x = r • f x := (rfl)
 
-instance : Module R (DGRightModuleHom hM hN) where
-  one_smul f := by ext x; simp
-  mul_smul r s f := by ext x; simp [mul_smul]
-  smul_zero r := by ext x; simp
-  smul_add r f g := by ext x; simp [smul_add]
-  add_smul r s f := by ext x; simp [add_smul]
-  zero_smul f := by ext x; simp
+instance : Module R (DGRightModuleHom hM hN) :=
+  Function.Injective.module R
+    { toFun := toLinearMap, map_zero' := rfl, map_add' := fun _ _ ↦ rfl }
+    toLinearMap_injective (fun _ _ ↦ rfl)
 
 /-- The identity morphism of a differential graded right module. -/
 protected def id (hM : IsDGRightModule h ℳ dM) : DGRightModuleHom hM hM where
