@@ -231,6 +231,23 @@ theorem smul_apply_one (hf : IsTransgressionLift c f) (n : N) : n • f 1 = f 1 
 theorem apply_coe (hf : IsTransgressionLift c f) (n : N) : f n = f 1 + c n := by
   simpa using hf.apply_mul 1 n
 
+/-- The function on `N` admitting a transgression lift is a continuous `1`-cocycle. -/
+theorem mem_Z1 [IsTopologicalAddGroup M] (hf : IsTransgressionLift c f) : c ∈ Z1 N M := by
+  refine mem_Z1_iff.2 ⟨?_, fun n n' => ?_⟩
+  · rw [show c = fun n : N => f n - f 1 by
+      funext n
+      rw [hf.apply_coe]
+      abel]
+    exact (hf.continuous.comp continuous_subtype_val).sub continuous_const
+  · calc
+      c (n * n') = f (n * n') - f 1 := by
+        have h := hf.apply_coe (n * n')
+        rw [Subgroup.coe_mul] at h
+        rw [h]
+        abel
+      _ = (f n + (n : G) • c n') - f 1 := by rw [hf.apply_mul]
+      _ = n • c n' + c n := by rw [hf.apply_coe, Subgroup.smul_def]; abel
+
 /-- Subtracting its value at `1` from a transgression lift gives a transgression lift of the same
 function that vanishes at `1`. -/
 theorem sub_apply_one [IsTopologicalAddGroup M] (hf : IsTransgressionLift c f) :
@@ -821,10 +838,7 @@ theorem fiveTerm_exact_H2Q (hN : IsClosed (N : Set G)) :
       (fun n g => by
         rw [hd1, hmk, map_one_fst_of_mem_Z2 z.2, ← ha,
           ← Subgroup.smul_def, (FixedPoints.mem_addSubgroup N M _).1 a.2 n, sub_self])
-  have hc : (fun n : N => f₀ n) ∈ Z1 N M :=
-    mem_Z1_iff.2 ⟨hlift.continuous.comp continuous_subtype_val, fun n n' => by
-      simp only [Subgroup.coe_mul, hlift.apply_mul, Subgroup.smul_def]
-      abel⟩
+  have hc : (fun n : N => f₀ n) ∈ Z1 N M := hlift.mem_Z1
   refine ⟨⟨((⟨_, hc⟩ : Z1 N M) : H1 N M), hlift.mk_mem_H1ConjInvariants⟩, ?_⟩
   rw [transgression_eq_mk_cocycle G M N hN _ ⟨_, hc⟩ rfl hlift, H2pi_eq_iff, mem_B2_iff']
   refine ⟨fun _ => -a, continuous_const, fun q r => ?_⟩
