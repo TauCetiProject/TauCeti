@@ -26,9 +26,8 @@ identity, both on complexes and on the homotopy category.
 
 A periodic complex proper has a positive period: `ZMod 0` is integer indexing, hence an
 ordinary complex rather than a finite cyclic grading. None of the constructions below uses
-positivity of `n`, so no `NeZero n` hypothesis is imposed; it would be an unused instance
-argument, which the environment linter rejects. For `n = 0` the formulas degenerate to those
-of Mathlib's shift on cochain complexes.
+positivity of `n`, so no `NeZero n` hypothesis is imposed. For `n = 0` the formulas degenerate
+to those of Mathlib's shift on cochain complexes.
 
 ## Main definitions
 
@@ -147,16 +146,19 @@ lemma shiftFunctor_map_f' {K L : HomologicalComplex C (ComplexShape.up (ZMod n))
 lemma shiftFunctor_obj_d' (K : HomologicalComplex C (ComplexShape.up (ZMod n))) (k : ℤ)
     (i j : ZMod n) : (K⟦k⟧).d i j = k.negOnePow • K.d (i + k) (j + k) := rfl
 
+@[simp]
 lemma shiftFunctorAdd_hom_app_f (K : HomologicalComplex C (ComplexShape.up (ZMod n)))
     (k₁ k₂ : ℤ) (i : ZMod n) :
     ((CategoryTheory.shiftFunctorAdd (HomologicalComplex C (ComplexShape.up (ZMod n)))
       k₁ k₂).hom.app K).f i = (K.XIsoOfEq (by push_cast; ring)).hom := rfl
 
+@[simp]
 lemma shiftFunctorAdd_inv_app_f (K : HomologicalComplex C (ComplexShape.up (ZMod n)))
     (k₁ k₂ : ℤ) (i : ZMod n) :
     ((CategoryTheory.shiftFunctorAdd (HomologicalComplex C (ComplexShape.up (ZMod n)))
       k₁ k₂).inv.app K).f i = (K.XIsoOfEq (by push_cast; ring)).hom := rfl
 
+@[simp]
 lemma shiftFunctorAdd'_hom_app_f' (K : HomologicalComplex C (ComplexShape.up (ZMod n)))
     (k₁ k₂ k₁₂ : ℤ) (h : k₁ + k₂ = k₁₂) (i : ZMod n) :
     ((CategoryTheory.shiftFunctorAdd' (HomologicalComplex C (ComplexShape.up (ZMod n)))
@@ -165,6 +167,7 @@ lemma shiftFunctorAdd'_hom_app_f' (K : HomologicalComplex C (ComplexShape.up (ZM
   subst h
   rw [shiftFunctorAdd'_eq_shiftFunctorAdd, shiftFunctorAdd_hom_app_f]
 
+@[simp]
 lemma shiftFunctorAdd'_inv_app_f' (K : HomologicalComplex C (ComplexShape.up (ZMod n)))
     (k₁ k₂ k₁₂ : ℤ) (h : k₁ + k₂ = k₁₂) (i : ZMod n) :
     ((CategoryTheory.shiftFunctorAdd' (HomologicalComplex C (ComplexShape.up (ZMod n)))
@@ -173,11 +176,13 @@ lemma shiftFunctorAdd'_inv_app_f' (K : HomologicalComplex C (ComplexShape.up (ZM
   subst h
   rw [shiftFunctorAdd'_eq_shiftFunctorAdd, shiftFunctorAdd_inv_app_f]
 
+@[simp]
 lemma shiftFunctorZero_hom_app_f (K : HomologicalComplex C (ComplexShape.up (ZMod n)))
     (i : ZMod n) :
     ((CategoryTheory.shiftFunctorZero (HomologicalComplex C (ComplexShape.up (ZMod n))) ℤ).hom.app
       K).f i = (K.XIsoOfEq (by simp)).hom := rfl
 
+@[simp]
 lemma shiftFunctorZero_inv_app_f (K : HomologicalComplex C (ComplexShape.up (ZMod n)))
     (i : ZMod n) :
     ((CategoryTheory.shiftFunctorZero (HomologicalComplex C (ComplexShape.up (ZMod n))) ℤ).inv.app
@@ -290,6 +295,7 @@ noncomputable instance commShiftQuotient :
     (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).CommShift ℤ :=
   Quotient.functor_commShift (homotopic C (ComplexShape.up (ZMod n))) ℤ
 
+@[simp]
 lemma shift_quotient_obj (K : HomologicalComplex C (ComplexShape.up (ZMod n))) (k : ℤ) :
     ((HomotopyCategory.quotient _ _).obj K)⟦k⟧ = (HomotopyCategory.quotient _ _).obj (K⟦k⟧) :=
   Quotient.functor_obj_shift ..
