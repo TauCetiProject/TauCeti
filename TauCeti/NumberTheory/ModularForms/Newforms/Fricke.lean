@@ -75,8 +75,7 @@ namespace TauCeti
 variable {N : ℕ} [NeZero N] {k : ℤ}
 
 /-- **The normalized Fricke operator preserves the new subspace**: `𝒲_N` maps
-`S_k(Γ₁(N))ⁿᵉʷ` into itself. The new subspace is the Petersson complement of the old one, which
-`𝒲_N` preserves, and the adjoint of `𝒲_N` is a scalar multiple of `𝒲_N`. -/
+`S_k(Γ₁(N))ⁿᵉʷ` into itself. -/
 theorem normalizedFrickeOperatorCusp_mem_cuspFormsNew
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormsNew N k) :
     normalizedFrickeOperatorCusp k f ∈ cuspFormsNew N k := by
@@ -84,8 +83,7 @@ theorem normalizedFrickeOperatorCusp_mem_cuspFormsNew
   exact normalizedFrickeOperatorCusp_mem_peterssonOrthogonal
     (fun _ hg ↦ normalizedFrickeOperatorCusp_mem_cuspFormsOld hg) hf
 
-/-- **The normalized Fricke operator carries the new subspace onto itself**: it maps the new
-subspace into itself, and squares to the unit `(-1) ^ k`. -/
+/-- **The normalized Fricke operator carries the new subspace onto itself.** -/
 theorem cuspFormsNew_map_normalizedFrickeOperatorCusp (N : ℕ) [NeZero N] (k : ℤ) :
     (cuspFormsNew N k).map (normalizedFrickeOperatorCusp k) = cuspFormsNew N k := by
   refine le_antisymm (Submodule.map_le_iff_le_comap.mpr fun f hf ↦
@@ -102,9 +100,10 @@ open HeckeRing.GL2
 /-- **The normalized Fricke operator on the trivial-nebentypus space** `S_k(N, 1)`, as the
 endomorphism obtained by specializing `normalizedFrickeCharCuspRestrict` to the trivial
 character. -/
-noncomputable abbrev normalizedFrickeCharCuspOneEnd (k : ℤ) :
+noncomputable def normalizedFrickeCharCuspOneEnd (k : ℤ) :
     Module.End ℂ (cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)) :=
-  normalizedFrickeCharCuspRestrict k (1 : (ZMod N)ˣ →* ℂˣ)
+  (normalizedFrickeOperatorCusp k).restrict fun _ hf ↦ by
+    simpa using normalizedFrickeOperatorCusp_mem_cuspFormCharSpace k 1 hf
 
 /-- On underlying cusp forms, `normalizedFrickeCharCuspOneEnd` is
 `normalizedFrickeOperatorCusp`. -/
@@ -114,7 +113,7 @@ theorem coe_normalizedFrickeCharCuspOneEnd_apply
     ((normalizedFrickeCharCuspOneEnd k f : cuspFormCharSpace k 1) :
         CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
       normalizedFrickeOperatorCusp k (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := by
-  exact coe_normalizedFrickeCharCuspRestrict_apply k 1 f
+  exact LinearMap.coe_restrict_apply _ _
 
 /-- The slash sum of a double coset of determinant prime to `N` commutes with the Fricke slash
 on a form of trivial nebentypus. This is the `Γ₀(N)` commutation read through the identification
@@ -198,12 +197,7 @@ theorem commute_normalizedFrickeCharCuspOneEnd_heckeRingHomCuspCharSpace {n : �
 
 /-- **The Fricke sign**: a nonzero cusp form in the new part of
 `S_k(N, 1)` that is an eigenvector of `Tₚ` at every prime `p ∤ N` is an eigenvector of the
-normalized Fricke operator, with eigenvalue `1` or `-1`.
-
-`𝒲_N f` is again in the new part of `S_k(N, 1)` and, since `𝒲_N` commutes with the good `Tₚ`,
-has the eigenvalues of `f`; multiplicity one makes it a multiple `ε • f`. Then
-`ε ^ 2 • f = 𝒲_N (𝒲_N f) = (-1) ^ k • f`, and `(-1) ^ k = 1` because `S_k(N, 1)` vanishes in odd
-weight. -/
+normalized Fricke operator, with eigenvalue `1` or `-1`. -/
 theorem exists_normalizedFrickeOperatorCusp_eq_smul_of_mem_cuspFormsNew
     {f : cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)}
     (ha : ∀ p : ℕ, p.Prime → Nat.Coprime p N → ∃ c : ℂ,
