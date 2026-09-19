@@ -59,7 +59,8 @@ connection and live with the rest of the along-curve API in
   `TauCeti.Manifold.isGeodesicCurve_iff`.
 * `TauCeti.Manifold.IsGeodesicCurveOnFrom`: a geodesic together with its initial data, the point
   and velocity at parameter `0`, read off by `TauCeti.Manifold.IsGeodesicCurveOnFrom.base_eq` and
-  `TauCeti.Manifold.IsGeodesicCurveOnFrom.velocity_eq`.
+  `TauCeti.Manifold.IsGeodesicCurveOnFrom.velocity_eq`, with
+  `TauCeti.Manifold.IsGeodesicCurveOnFrom.hasMFDerivAt_zero` the unrestricted derivative at `0`.
 * `TauCeti.Manifold.isGeodesicCurveOn_iff_chart`: **the geodesic equation in a chart**, the
   second-order ODE `u'' + Γ (u', u') = 0`.
 * `TauCeti.Manifold.isGeodesicCurveOn_iff_of_isOpen`: on an open parameter set the equation is
@@ -77,7 +78,7 @@ connection and live with the rest of the along-curve API in
 public section
 
 open Bundle CovariantDerivative Set
-open scoped Manifold
+open scoped Manifold Topology
 
 noncomputable section
 
@@ -165,6 +166,16 @@ theorem IsGeodesicCurveOnFrom.velocity_heq (h : IsGeodesicCurveOnFrom I γ s p v
 theorem IsGeodesicCurveOnFrom.velocity_eq (h : IsGeodesicCurveOnFrom I γ s p v) :
     cast (congrArg (TangentSpace I) h.base_eq) (curveVelocityWithin I γ s 0) = v :=
   eq_of_heq ((cast_heq _ _).trans h.velocity_heq)
+
+/-- A geodesic with initial data `(p, v)` on a neighbourhood of `0` has `v` as its unrestricted
+velocity at `0`. -/
+theorem IsGeodesicCurveOnFrom.hasMFDerivAt_zero (h : IsGeodesicCurveOnFrom I γ s p v)
+    (hs : s ∈ 𝓝 (0 : ℝ)) :
+    HasMFDerivAt 𝓘(ℝ, ℝ) I γ 0 ((1 : ℝ →L[ℝ] ℝ).smulRight v) := by
+  have hvel := hasMFDerivWithinAt_curveVelocityWithin
+    (h.isGeodesicCurveOn.mdifferentiableOn 0 h.zero_mem)
+  rw [eq_of_heq h.velocity_heq] at hvel
+  exact hvel.hasMFDerivAt hs
 
 /-- A geodesic on a parameter set containing `0` is a geodesic with the initial data it has
 there. -/
