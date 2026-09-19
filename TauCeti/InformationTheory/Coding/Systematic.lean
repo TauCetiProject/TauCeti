@@ -169,6 +169,15 @@ theorem parityCheckMatrix_apply_compl (r i : ↥(sᶜ)) :
     h.parityCheckMatrix r i = (1 : Matrix ↥(sᶜ) ↥(sᶜ) F) r i := by
   simp [parityCheckMatrix]
 
+open Classical in
+/-- Splitting off the information coordinates displays the check matrix as `[-Aᵀ | I]`. -/
+@[simp]
+theorem parityCheckMatrix_submatrix_sumCompl :
+    h.parityCheckMatrix.submatrix id (Equiv.Set.sumCompl s) =
+      fromCols (-(h.generatorMatrix.submatrix id (Subtype.val : ↥(sᶜ) → ι))ᵀ)
+        (1 : Matrix ↥(sᶜ) ↥(sᶜ) F) := by
+  simp [parityCheckMatrix, Matrix.submatrix_submatrix]
+
 /-- The systematic check matrix has linearly independent rows. -/
 theorem linearIndependent_parityCheckMatrix : LinearIndependent F h.parityCheckMatrix.row := by
   classical
