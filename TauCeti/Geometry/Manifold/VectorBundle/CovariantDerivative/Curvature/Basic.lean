@@ -67,7 +67,7 @@ variable
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, NormedAddCommGroup (V x)] [∀ x, NormedSpace 𝕜 (V x)]
+  [fiberNorm : ∀ x, NormedAddCommGroup (V x)] [∀ x, NormedSpace 𝕜 (V x)]
   [FiberBundle F V]
 
 variable (cov : _root_.CovariantDerivative I F V)
@@ -161,7 +161,7 @@ variable
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, NormedAddCommGroup (V x)] [∀ x, NormedSpace ℝ (V x)] [FiberBundle F V]
+  [fiberNorm : ∀ x, NormedAddCommGroup (V x)] [∀ x, NormedSpace ℝ (V x)] [FiberBundle F V]
 
 variable (cov : _root_.CovariantDerivative I F V)
 
