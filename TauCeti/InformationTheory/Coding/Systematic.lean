@@ -153,25 +153,19 @@ def parityCheckMatrix : Matrix ↥(sᶜ) ι F :=
   (fromCols (-(h.generatorMatrix.submatrix id (Subtype.val : ↥(sᶜ) → ι))ᵀ)
     (1 : Matrix ↥(sᶜ) ↥(sᶜ) F)).submatrix id (Equiv.Set.sumCompl s).symm
 
-open Classical in
-/-- The systematic check matrix is the usual block check matrix with columns relabelled. -/
-theorem parityCheckMatrix_def : h.parityCheckMatrix =
-    (fromCols (-(h.generatorMatrix.submatrix id (Subtype.val : ↥(sᶜ) → ι))ᵀ)
-      (1 : Matrix ↥(sᶜ) ↥(sᶜ) F)).submatrix id (Equiv.Set.sumCompl s).symm := (rfl)
-
 /-- On the information coordinates, the check matrix is the negative transpose of the
 redundancy block. -/
 @[simp]
 theorem parityCheckMatrix_apply_of_mem (r : ↥(sᶜ)) (i : s) :
     h.parityCheckMatrix r i = -h.generatorMatrix i r := by
-  simp [parityCheckMatrix_def]
+  simp [parityCheckMatrix]
 
 open Classical in
 /-- On the complementary coordinates, the check matrix is the identity. -/
 @[simp]
 theorem parityCheckMatrix_apply_of_notMem (r i : ↥(sᶜ)) :
     h.parityCheckMatrix r i = (1 : Matrix ↥(sᶜ) ↥(sᶜ) F) r i := by
-  simp [parityCheckMatrix_def]
+  simp [parityCheckMatrix]
 
 /-- The systematic check matrix has linearly independent rows. -/
 theorem linearIndependent_parityCheckMatrix : LinearIndependent F h.parityCheckMatrix.row := by
@@ -214,7 +208,7 @@ variable [Fintype ι]
 @[simp↓]
 theorem checkedBy_parityCheckMatrix : h.parityCheckMatrix.checkedBy = C := by
   classical
-  rw [parityCheckMatrix_def,
+  rw [parityCheckMatrix,
     ← Matrix.generatedBy_one_fromCols_eq_checkedBy_fromCols_neg_transpose_one_submatrix,
     ← h.generatorMatrix_submatrix_sumCompl]
   simp [Matrix.submatrix_submatrix]
