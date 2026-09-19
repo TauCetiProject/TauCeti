@@ -351,12 +351,7 @@ private theorem ramifiedPrimes_iSup_of_isGalois
 
 /-- **The ramified primes of a compositum.** Let `K` be a number field and let `E i` be
 intermediate fields of `K`. A rational prime ramifies in the compositum `⨆ i, E i` exactly when
-it ramifies in one of the `E i`.
-
-Embed `K` in a finite normal closure. There the result follows from
-`NumberField.notMem_ramifiedPrimes_iff_forall_inertia_le`, since a compositum lies in a fixed
-field exactly when each factor does; invariance under algebra equivalence transfers the result
-back to `K`. -/
+it ramifies in one of the `E i`. -/
 @[simp] theorem ramifiedPrimes_iSup {K : Type*} [Field K] [NumberField K]
     {ι : Sort*} (E : ι → IntermediateField ℚ K) :
     ramifiedPrimes (⨆ i, E i : IntermediateField ℚ K) = ⋃ i, ramifiedPrimes (E i) := by
