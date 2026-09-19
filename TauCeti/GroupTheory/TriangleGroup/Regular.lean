@@ -24,9 +24,8 @@ stabilizer is the kernel of the representation, a normal subgroup whose index is
 
 * `TauCeti.TriangleGroup.normal_comap_stabilizer_toPerm_iff`: for a connected triple, the point
   stabilizer of its representation is normal exactly when the triple is regular.
-* `TauCeti.TriangleGroup.comap_stabilizer_toPerm_eq_ker`: when the monodromy group acts freely
-  (e.g. for a regular triple), the point stabilizer of every sheet is the kernel of the
-  representation.
+* `TauCeti.TriangleGroup.comap_stabilizer_toPerm_eq_ker`: when a sheet has trivial monodromy
+  stabilizer (e.g. for a regular triple), its point stabilizer is the kernel of the representation.
 * `TauCeti.TriangleGroup.index_ker_toPerm`: the kernel of the representation has index the order
   of the monodromy group, and `TauCeti.TriangleGroup.index_ker_toPerm_of_isRegular`: for a
   regular triple this is the degree.
@@ -58,10 +57,10 @@ private theorem exists_toPerm_apply_eq (ht : t.IsConnected) (i k : Fin n) :
     (range_toPerm t ha hb hc).symm ▸ g.2
   exact ⟨κ, hκ ▸ hg⟩
 
-/-- For a triple whose monodromy group acts freely (for instance a regular triple), the point
-stabilizer of every sheet under the representation of the triangle group is the kernel of the
-representation. -/
-theorem comap_stabilizer_toPerm_eq_ker [IsCancelSMul t.monodromyGroup (Fin n)] (i : Fin n) :
+/-- If a sheet has trivial monodromy stabilizer, its point stabilizer under the representation of
+the triangle group is the kernel of the representation. -/
+theorem comap_stabilizer_toPerm_eq_ker (i : Fin n)
+    (hi : MulAction.stabilizer t.monodromyGroup i = ⊥) :
     (MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t ha hb hc) =
       (toPerm t ha hb hc).ker := by
   ext δ
@@ -69,8 +68,11 @@ theorem comap_stabilizer_toPerm_eq_ker [IsCancelSMul t.monodromyGroup (Fin n)] (
   refine ⟨fun hδ => ?_, fun hδ => by rw [hδ, one_smul]⟩
   have hmem : toPerm t ha hb hc δ ∈ t.monodromyGroup :=
     range_toPerm t ha hb hc ▸ MonoidHom.mem_range.mpr ⟨δ, rfl⟩
-  exact congrArg Subtype.val
-    (IsCancelSMul.eq_one_of_smul (g := (⟨_, hmem⟩ : t.monodromyGroup)) (x := i) hδ)
+  let g : t.monodromyGroup := ⟨toPerm t ha hb hc δ, hmem⟩
+  have hg : g = 1 := by
+    rw [← Subgroup.mem_bot, ← hi, MulAction.mem_stabilizer_iff]
+    exact hδ
+  exact congrArg Subtype.val hg
 
 /-- **The normality criterion.** For a connected triple, the point stabilizer of a sheet under the
 representation of the triangle group is a normal subgroup exactly when the triple is regular. -/
@@ -83,8 +85,13 @@ theorem normal_comap_stabilizer_toPerm_iff (ht : t.IsConnected) (i : Fin n) :
       intro δ k
       obtain ⟨κ, hκ⟩ := exists_toPerm_apply_eq t ha hb hc ht i k
       have hconj : κ⁻¹ * δ * κ ∈ K ↔ toPerm t ha hb hc δ k = k := by
-        rw [Subgroup.mem_comap, MulAction.mem_stabilizer_iff, map_mul, map_mul, map_inv,
-          Perm.smul_def, Perm.mul_apply, Perm.mul_apply, hκ, Perm.inv_eq_iff_eq, hκ]
+        rw [Subgroup.mem_comap, MulAction.mem_stabilizer_iff]
+        simp only [map_mul, map_inv, Perm.smul_def, Perm.mul_apply]
+        calc
+          (toPerm t ha hb hc κ)⁻¹ (toPerm t ha hb hc δ (toPerm t ha hb hc κ i)) = i ↔
+              toPerm t ha hb hc δ (toPerm t ha hb hc κ i) = toPerm t ha hb hc κ i := by
+                rw [Perm.inv_eq_iff_eq]
+          _ ↔ toPerm t ha hb hc δ k = k := by rw [hκ]
       rw [← hconj]
       exact ⟨fun h => by simpa [mul_assoc] using hN.conj_mem _ h κ,
         fun h => by simpa using hN.conj_mem _ h κ⁻¹⟩
@@ -98,7 +105,7 @@ theorem normal_comap_stabilizer_toPerm_iff (ht : t.IsConnected) (i : Fin n) :
       exact (hK δ k).mpr ((hK δ j).mp hδj)
     exact ht.isRegular
   · have := hreg.isCancelSMul
-    rw [comap_stabilizer_toPerm_eq_ker t ha hb hc i]
+    rw [comap_stabilizer_toPerm_eq_ker t ha hb hc i (IsCancelSMul.stabilizer_eq_bot i)]
     infer_instance
 
 /-- The kernel of the representation of a triple has index the order of its monodromy group, the
