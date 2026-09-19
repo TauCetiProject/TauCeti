@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.HomotopyCofiber
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
+public import TauCeti.Algebra.Homology.OneObject
 
 /-!
 # The mapping cone of a split monomorphism of complexes
@@ -118,16 +119,6 @@ theorem quasiIso_homotopyCofiberDesc [∀ i, (homotopyCofiber S.f).HasHomology i
 end CategoryTheory.ShortComplex.Splitting
 
 /-! ### Mapping cones of one-object complexes -/
-
-/-- Membership in the relation of the one-object-per-index shape `ComplexShape.refl ι` is
-decidable when equality of indices is. -/
-instance ComplexShape.refl.decidableRel {ι : Type*} [DecidableEq ι] :
-    DecidableRel (ComplexShape.refl ι).Rel :=
-  fun i j => inferInstanceAs (Decidable (i = j))
-
-/-- Every index of `ComplexShape.refl ι` is related to itself. -/
-theorem ComplexShape.refl_rel {ι : Type*} (i : ι) : (ComplexShape.refl ι).Rel i i :=
-  rfl
 
 namespace HomologicalComplex.homotopyCofiber
 
