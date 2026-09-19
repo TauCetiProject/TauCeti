@@ -177,7 +177,7 @@ instance (X : C) : (overFunctor.{u} R X).Additive :=
 
 variable (M N) in
 /-- Restriction to a slice site commutes with direct sums. -/
-def overBiprodIso (X : C) : (M ⊞ N).over X ≅ M.over X ⊞ N.over X :=
+def _root_.SheafOfModules.overBiprodIso (X : C) : (M ⊞ N).over X ≅ M.over X ⊞ N.over X :=
   have := preservesBinaryBiproducts_of_preservesBiproducts (overFunctor.{u} R X)
   (overFunctor R X).mapBiprod M N
 
@@ -198,7 +198,7 @@ variable [HasPullbacks C]
 /-- Local generators of `M` and of `N` give local generators of `M ⊞ N`. Its cover is the common
 refinement of the two covers, and over each of its members the generators are the direct sum of
 the restricted generators of `M` and `N`. -/
-@[expose, simps I X]
+@[expose, simps I X generators]
 def _root_.SheafOfModules.LocalGeneratorsData.biprod (qM : M.LocalGeneratorsData)
     (qN : N.LocalGeneratorsData) : (M ⊞ N).LocalGeneratorsData :=
   let r := GrothendieckTopology.CoversTop.commonRefinement qM.coversTop qN.coversTop
@@ -232,7 +232,7 @@ instance (qM : M.LocalGeneratorsData) (qN : N.LocalGeneratorsData) [qM.IsFiniteT
 /-- Quasi-coherent data for `M` and for `N` give quasi-coherent data for `M ⊞ N`. Its cover is the
 common refinement of the two covers, and over each of its members the presentation is the direct
 sum of the restricted presentations of `M` and `N`. -/
-@[expose, simps I X]
+@[expose, simps I X presentation]
 def _root_.SheafOfModules.QuasicoherentData.biprod (qM : M.QuasicoherentData)
     (qN : N.QuasicoherentData) : (M ⊞ N).QuasicoherentData :=
   let r := GrothendieckTopology.CoversTop.commonRefinement qM.coversTop qN.coversTop
