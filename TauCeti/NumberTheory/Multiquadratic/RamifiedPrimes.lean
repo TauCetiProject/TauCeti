@@ -24,10 +24,10 @@ exactly the odd ramified primes, and at `2` the ramification is governed by the 
 `dᵢ` or `4dᵢ` of the quadratic subfields rather than by the radicands themselves.
 
 The reduction to the quadratic subfields is `NumberField.ramifiedPrimes_iSup`: in a Galois number
-field, a compositum ramifies exactly where one of its factors does. The quadratic case is
-`TauCeti.Multiquadratic.mem_ramifiedPrimes_adjoin_iff_dvd_fundamentalDiscriminant`. A radicand
-equal to `1` contributes the trivial factor `ℚ` and no ramification, consistently with
-`fundamentalDiscriminant 1 = 1`, so the radicands need not be nonsquares.
+field, a compositum ramifies exactly where one of its factors does. The quadratic case, including
+the trivial factor contributed by the radicand `1`, is
+`TauCeti.Multiquadratic.mem_ramifiedPrimes_adjoin_singleton_iff`, so the radicands need not be
+nonsquares.
 
 ## Main results
 
@@ -52,31 +52,6 @@ open IntermediateField NumberField
 open scoped NumberField
 
 namespace TauCeti.Multiquadratic
-
-/-- The quadratic case, allowing the square radicand `1`: a rational prime ramifies in `ℚ(x)`,
-for `x ^ 2 = a` with `a` squarefree, exactly when it divides `fundamentalDiscriminant a`. -/
-private theorem mem_ramifiedPrimes_adjoin_singleton_iff {M : Type*} [Field M] [NumberField M]
-    {a : ℤ} (hsf : Squarefree a) {x : M} (hx : x ^ 2 = algebraMap ℤ M a) {p : ℕ}
-    (hp : p.Prime) :
-    p ∈ ramifiedPrimes (adjoin ℚ {x} : IntermediateField ℚ M) ↔
-      (p : ℤ) ∣ fundamentalDiscriminant a := by
-  by_cases hsq : IsSquare ((a : ℤ) : ℚ)
-  · -- A squarefree square is `1`, so `x = ±1` and `ℚ(x) = ℚ` is unramified.
-    obtain ⟨b, rfl⟩ := Rat.isSquare_intCast_iff.mp hsq
-    have hb : b * b = 1 := by
-      rcases Int.isUnit_iff.mp (hsf b dvd_rfl) with rfl | rfl <;> norm_num
-    rw [hb] at hx ⊢
-    have hx1 : x ∈ (⊥ : IntermediateField ℚ M) := by
-      rw [map_one, ← one_pow 2, sq_eq_sq_iff_eq_or_eq_neg] at hx
-      rcases hx with rfl | rfl
-      · exact one_mem _
-      · exact neg_mem (one_mem _)
-    rw [adjoin_simple_eq_bot_iff.mpr hx1,
-      ramifiedPrimes_eq_of_algEquiv (IntermediateField.botEquiv ℚ M), ramifiedPrimes_rat,
-      fundamentalDiscriminant_of_mod_four_eq_one (by norm_num)]
-    simp only [Set.mem_empty_iff_false, false_iff]
-    exact fun h => hp.not_dvd_one (Int.natCast_dvd_natCast.mp (by exact_mod_cast h))
-  · exact mem_ramifiedPrimes_adjoin_iff_dvd_fundamentalDiscriminant hsf hsq hx hp
 
 variable {ι : Type*} [Finite ι] {L : Type*} [Field L] [NumberField L]
   {d : ι → ℤ} {r : ι → L}
