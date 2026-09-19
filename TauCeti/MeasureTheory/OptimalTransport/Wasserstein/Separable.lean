@@ -32,6 +32,8 @@ metric space, and indeed `P_∞ (X)` need not be separable.
 
 * `TauCeti.WassersteinSpace.separableSpace` — separability of `P_p (X)` for `1 ≤ p < ∞`, with
   `TauCeti.WassersteinSpace.instSeparableSpace` its instance form.
+* `TauCeti.WassersteinComponent.separableSpace_of_hasFiniteMoment` — separability of the component
+  anchored at a law with finite `p`-moment.
 
 ## Implementation notes
 
@@ -187,5 +189,20 @@ instance instSeparableSpace [Fact (p ≠ ∞)] :
 end Separable
 
 end WassersteinSpace
+
+namespace WassersteinComponent
+
+variable [PseudoMetricSpace X] [StandardBorelSpace X] [BorelSpace X]
+  [SecondCountableTopology X] [Fact (1 ≤ p)] {μ₀ : ProbabilityMeasure X}
+
+/-- For a finite exponent `1 ≤ p < ∞`, the finite-distance component of an anchor law of finite
+`p`-moment is separable, being isometric to the separable space `P_p (X)`. -/
+theorem separableSpace_of_hasFiniteMoment (hp : p ≠ ∞) (hμ₀ : HasFiniteMoment p (μ₀ : Measure X)) :
+    TopologicalSpace.SeparableSpace (WassersteinComponent p μ₀) :=
+  have := WassersteinSpace.separableSpace (X := X) hp
+  let e := WassersteinSpace.isometryEquivComponentOfFiniteMoment hμ₀
+  e.surjective.denseRange.separableSpace e.continuous
+
+end WassersteinComponent
 
 end TauCeti

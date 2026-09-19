@@ -29,6 +29,8 @@ automatic.
   discriminant.
 * `TauCeti.NumberField.mem_ramifiedSupport_iff_exists`: equivalently, some prime of `𝓞 L` above
   `v` has ramification index greater than one — so the name is honest.
+* `TauCeti.NumberField.isUnramifiedAway_ramifiedSupport`: primes outside the ramified support are
+  unramified throughout the extension.
 
 ## References
 
@@ -67,5 +69,18 @@ theorem mem_ramifiedSupport_iff_exists {v : HeightOneSpectrum (𝓞 K)} :
       ∃ P : (v.asIdeal).primesOver (𝓞 L), 1 < (P : Ideal (𝓞 L)).ramificationIdx (𝓞 K) := by
   rw [mem_ramifiedSupport]
   exact dvd_relDiscr_iff_exists_one_lt_ramificationIdx v.ne_bot
+
+/-- **Every prime outside the ramified support is unramified.** If a finite place `v` does not
+divide the relative discriminant of `L/K`, then every prime of `L` above `v` is unramified over
+`K`. This is the unramified-away hypothesis that specializations of the Artin map consume. -/
+theorem isUnramifiedAway_ramifiedSupport :
+    ∀ v : HeightOneSpectrum (𝓞 K), v ∉ ramifiedSupport K L →
+      ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver v.asIdeal],
+        Algebra.IsUnramifiedAt (𝓞 K) Q := by
+  intro v hv Q _ _
+  by_contra hQ
+  apply hv
+  rw [mem_ramifiedSupport, TauCeti.dvd_relDiscr_iff_exists_not_isUnramifiedAt v.ne_bot]
+  exact ⟨⟨Q, inferInstance, inferInstance⟩, hQ⟩
 
 end TauCeti.NumberField

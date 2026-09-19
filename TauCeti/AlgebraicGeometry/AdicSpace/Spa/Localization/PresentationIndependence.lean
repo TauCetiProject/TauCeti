@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.UniversalProperty
-public import TauCeti.RingTheory.Huber.LocalizationTopology.Presentation
+public import TauCeti.RingTheory.Huber.LocalizationTopology.CompleteSeparated.RefinementCategory
 
 /-!
 # Comparison maps from a containment of rational subsets
@@ -36,9 +36,10 @@ elements of `A` does.
 
 ## Main definitions
 
-* `TauCeti.ValuationSpectrum.ringHomOfRationalSubsetSubset` : the comparison map of
-  Proposition 8.2(1), characterised by `continuous_ringHomOfRationalSubsetSubset`,
-  `ringHomOfRationalSubsetSubset_comp_toCompletionLoc` and `eq_ringHomOfRationalSubsetSubset`.
+* `TauCeti.ValuationSpectrum.ringHomOfRationalSubsetSubset` and
+  `TauCeti.ValuationSpectrum.homOfRationalSubsetSubset` : the comparison map of Proposition
+  8.2(1), respectively as a ring homomorphism and as a morphism of complete separated topological
+  rings.
 * `TauCeti.ValuationSpectrum.presentationRingEquivOfEq` : **presentation independence** — two
   presentations of the same rational subset have canonically isomorphic coordinate rings, by the
   comparison maps in both directions.
@@ -48,6 +49,8 @@ elements of `A` does.
 * `TauCeti.ValuationSpectrum.existsUnique_continuous_ringHom_of_rationalSubset_subset` :
   **Wedhorn's Proposition 8.2(1)** — a containment of rational subsets induces a unique continuous
   comparison map compatible with the structure maps.
+* `TauCeti.ValuationSpectrum.restrictionHom_eq_homOfRationalSubsetSubset` : the restriction
+  morphism of a refinement is the comparison morphism of the induced containment.
 
 `presentationRingEquivOfEq` is a `def`, so it comes with the lemmas that pin down what it is
 without unfolding the proof term: `continuous_presentationRingEquivOfEq` and
@@ -72,7 +75,7 @@ public section
 
 namespace TauCeti.ValuationSpectrum
 
-open TauCeti.Huber TauCeti.Huber.PairOfDefinition
+open CategoryTheory TauCeti.Huber TauCeti.Huber.PairOfDefinition
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 
@@ -195,6 +198,67 @@ theorem eq_ringHomOfRationalSubsetSubset (P : PairOfDefinition A) (Aplus : Subri
       g = ringHomOfRationalSubsetSubset P Aplus hAplus T s S hden T' s' S' hden' hsub :=
   fun g hgc hge ↦ (existsUnique_continuous_ringHom_of_rationalSubset_subset P Aplus hAplus
     T s S hden T' s' S' hden' hsub).choose_spec.2 g ⟨hgc, hge⟩
+
+/-! ### Comparison morphisms between completed rational localizations -/
+
+/-- **The comparison morphism of a containment** `R(q) ⊆ R(p)`: Wedhorn's Proposition 8.2(1) map
+`A⟨p⟩ → A⟨q⟩`, the unique continuous ring homomorphism compatible with the structure maps from `A`,
+as a morphism of `CompleteSeparatedTopCommRingCat`. -/
+noncomputable def homOfRationalSubsetSubset (Aplus : Subring A)
+    (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a) {P : PairOfDefinition A}
+    {p q : Presentation P}
+    (h : rationalSubset Aplus q.num q.den ⊆ rationalSubset Aplus p.num p.den) :
+    p.completionLocObj ⟶ q.completionLocObj :=
+  completionLocObjHom P p.num p.den _ p.hasDenominatorPower q.num q.den _ q.hasDenominatorPower
+    (ringHomOfRationalSubsetSubset P Aplus hAplus p.num p.den _ p.hasDenominatorPower q.num q.den _
+      q.hasDenominatorPower h)
+    (continuous_ringHomOfRationalSubsetSubset P Aplus hAplus p.num p.den _ p.hasDenominatorPower
+      q.num q.den _ q.hasDenominatorPower h)
+
+/-- The comparison morphism of `R(p) ⊆ R(p)` is the identity. -/
+@[simp]
+theorem homOfRationalSubsetSubset_self (Aplus : Subring A)
+    (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a) {P : PairOfDefinition A}
+    {p : Presentation P}
+    (h : rationalSubset Aplus p.num p.den ⊆ rationalSubset Aplus p.num p.den) :
+    homOfRationalSubsetSubset Aplus hAplus h = 𝟙 p.completionLocObj :=
+  completionLocObjHom_eq_id P p.num p.den _ p.hasDenominatorPower _ _
+    (ringHomOfRationalSubsetSubset_comp_toCompletionLoc P Aplus hAplus p.num p.den _
+      p.hasDenominatorPower p.num p.den _ p.hasDenominatorPower h)
+
+/-- Comparison morphisms compose along a chain of containments. -/
+@[reassoc (attr := simp)]
+theorem homOfRationalSubsetSubset_comp (Aplus : Subring A)
+    (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a) {P : PairOfDefinition A}
+    {p q w : Presentation P}
+    (h₁ : rationalSubset Aplus q.num q.den ⊆ rationalSubset Aplus p.num p.den)
+    (h₂ : rationalSubset Aplus w.num w.den ⊆ rationalSubset Aplus q.num q.den) :
+    homOfRationalSubsetSubset Aplus hAplus h₁ ≫ homOfRationalSubsetSubset Aplus hAplus h₂ =
+      homOfRationalSubsetSubset Aplus hAplus (h₂.trans h₁) :=
+  (completionLocObjHom_eq_comp P p.num p.den _ p.hasDenominatorPower q.num q.den _
+    q.hasDenominatorPower w.num w.den _ w.hasDenominatorPower _ _ _ _ _ _
+    (ringHomOfRationalSubsetSubset_comp_toCompletionLoc P Aplus hAplus _ _ _ _ _ _ _ _ h₁)
+    (ringHomOfRationalSubsetSubset_comp_toCompletionLoc P Aplus hAplus _ _ _ _ _ _ _ _ h₂)
+    (ringHomOfRationalSubsetSubset_comp_toCompletionLoc P Aplus hAplus _ _ _ _ _ _ _ _
+      (h₂.trans h₁))).symm
+
+/-- **The restriction morphism of a refinement is a comparison morphism**: both are continuous
+and compatible with the structure maps from `A`, which determines the map. -/
+theorem restrictionHom_eq_homOfRationalSubsetSubset (Aplus : Subring A)
+    (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a) {P : PairOfDefinition A}
+    {p q : Presentation P} (h : p ≤ q) :
+    Presentation.restrictionHom h =
+      homOfRationalSubsetSubset Aplus hAplus
+        (rationalSubset_subset_rationalSubset_of_le Aplus h) := by
+  obtain ⟨r, hr, hT⟩ := Presentation.le_def.mp h
+  rw [Presentation.restrictionHom_eq h r hr hT, restrictionObjHom_eq_completionLocObjHom]
+  -- both are `completionLocObjHom` of a ring homomorphism; the two ring homomorphisms agree by
+  -- the uniqueness in Proposition 8.2(1)
+  unfold homOfRationalSubsetSubset
+  congr 1
+  exact eq_ringHomOfRationalSubsetSubset P Aplus hAplus _ _ _ _ _ _ _ _ _ _
+    (continuous_restrictionRingHom P _ _ _ _ _ _ _ _ r hr hT)
+    (restrictionRingHom_comp_toCompletionLoc P _ _ _ _ _ _ _ _ r hr hT)
 
 /-- **Presentation independence**: two presentations of the *same* rational subset have
 canonically isomorphic coordinate rings.

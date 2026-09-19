@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
 public import TauCeti.GroupTheory.Index.Basic
+import TauCeti.Algebra.Group.Subgroup.Map
 public import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
 public import Mathlib.Topology.Algebra.OpenSubgroup
 
@@ -25,8 +26,9 @@ to `G`, and conversely a corestriction from `V` may be recognised as one from an
 
 * `explicitCor0Le`, `explicitCor1Le`, `explicitCor2Le`: corestriction along a subgroup inclusion
   `V ≤ U`, evaluated by `coe_explicitCor0Le`, `explicitCor1Le_mk`, and `explicitCor2Le_mk`.
-* `explicitCor0_trans`, `explicitCor1_trans`, `explicitCor2_trans`: transitivity in degrees zero,
-  one, and two.
+* `explicitCor0Le_trans`: transitivity of relative degree-zero corestriction in a subgroup tower.
+* `explicitCor0_trans`, `explicitCor1_trans`, `explicitCor2_trans`: transitivity from a subgroup to
+  the ambient group in degrees zero, one, and two.
 -/
 
 public section
@@ -344,6 +346,71 @@ theorem explicitCor0_trans [U.FiniteIndex] [(V.subgroupOf U).FiniteIndex] :
   change (∑ q : G ⧸ V, r q • (m : M)) =
     ∑ a : G ⧸ U, t a • ∑ b : U ⧸ V.subgroupOf U, (s b : U) • (m : M)
   exact sum_compositeTransversal G M U V hVU t Quotient.out_eq s (m : M)
+
+private theorem finsum_smul_quotient_trans (hVU : V ≤ U) (W : Subgroup G) (hUW : U ≤ W)
+    [(U.subgroupOf W).FiniteIndex] [(V.subgroupOf U).FiniteIndex]
+    [(V.subgroupOf W).FiniteIndex] (m : M) (hm : ∀ v ∈ V, v • m = m) :
+    ∑ᶠ q : W ⧸ V.subgroupOf W, (q.out : G) • m =
+      ∑ᶠ q : W ⧸ U.subgroupOf W, (q.out : G) •
+        (∑ᶠ r : U ⧸ V.subgroupOf U, (r.out : G) • m) := by
+  let UW := U.subgroupOf W
+  let VW := V.subgroupOf W
+  have hVWUW : VW ≤ UW := fun v hv ↦ hVU hv
+  let mVW : H0 VW M := ⟨m, fun v ↦ hm v (Subgroup.mem_subgroupOf.mp v.2)⟩
+  let _ : (VW.subgroupOf UW).FiniteIndex :=
+    ⟨(Subgroup.relIndex_subgroupOf hUW).trans_ne Subgroup.FiniteIndex.index_ne_zero⟩
+  have h := congrArg (fun f ↦ f mVW) (explicitCor0_trans W M UW VW hVWUW)
+  -- Transport the inner sum over cosets of `VW` in `UW` to one over cosets of `V` in `U`.
+  let e := QuotientGroup.congrOfMapEq (A := VW.subgroupOf UW) (B := V.subgroupOf U)
+      (Subgroup.subgroupOfEquivOfLe hUW) (by
+    ext x
+    simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf]
+    constructor
+    · rintro ⟨y, hy, rfl⟩
+      exact hy
+    · intro hx
+      exact ⟨⟨⟨x, hUW x.2⟩, x.2⟩, hx, Subtype.ext rfl⟩)
+  have hsum :
+      ∑ r : UW ⧸ VW.subgroupOf UW, ((r.out : UW) : G) • m =
+        ∑ r : U ⧸ V.subgroupOf U, (r.out : G) • m := by
+    rw [← e.sum_comp]
+    refine Finset.sum_congr rfl fun r _ ↦ ?_
+    -- The representative of `e r` differs from that of `r` by an element of `V`.
+    obtain ⟨v, hv⟩ := QuotientGroup.mk_out_eq_mul (V.subgroupOf U)
+      (Subgroup.subgroupOfEquivOfLe hUW r.out)
+    rw [← QuotientGroup.out_eq' r, QuotientGroup.congrOfMapEq_mk, hv,
+      QuotientGroup.out_eq' r, Subgroup.coe_mul, mul_smul,
+      hm _ (Subgroup.mem_subgroupOf.mp v.2), Subgroup.subgroupOfEquivOfLe_apply_coe]
+  rw [finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype,
+    finsum_eq_sum_of_fintype]
+  calc
+    _ = ∑ q : W ⧸ U.subgroupOf W, (q.out : G) •
+          (∑ r : UW ⧸ VW.subgroupOf UW, ((r.out : UW) : G) • m) := by
+      simpa only [coe_explicitCor0, coe_explicitCor0Le, AddMonoidHom.comp_apply,
+        Subgroup.smul_def] using congrArg Subtype.val h
+    _ = _ := by
+      apply Finset.sum_congr rfl
+      intro q _
+      rw [hsum]
+
+/-- **Transitivity of relative degree-zero corestriction.** For subgroups `V ≤ U ≤ W`, the
+relative corestriction from `V` to `W` is the composite of the relative corestrictions through
+`U`. -/
+theorem explicitCor0Le_trans (W : Subgroup G) (hUW : U ≤ W)
+    [(U.subgroupOf W).FiniteIndex] [(V.subgroupOf U).FiniteIndex] :
+    haveI : V.IsFiniteRelIndex W :=
+      (Subgroup.isFiniteRelIndex_iff_finiteIndex (H := V) (K := U)).mpr inferInstance |>.trans
+        ((Subgroup.isFiniteRelIndex_iff_finiteIndex (H := U) (K := W)).mpr inferInstance)
+    explicitCor0Le G M W V (hVU.trans hUW) =
+      (explicitCor0Le G M W U hUW).comp (explicitCor0Le G M U V hVU) := by
+  have : V.IsFiniteRelIndex W :=
+    (Subgroup.isFiniteRelIndex_iff_finiteIndex (H := V) (K := U)).mpr inferInstance |>.trans
+      ((Subgroup.isFiniteRelIndex_iff_finiteIndex (H := U) (K := W)).mpr inferInstance)
+  ext m
+  simp only [coe_explicitCor0Le, AddMonoidHom.comp_apply, Subgroup.smul_def]
+  simpa only [finsum_eq_sum_of_fintype] using
+    finsum_smul_quotient_trans G M U V hVU W hUW (m : M) fun v hv ↦
+      (FixedPoints.mem_addSubgroup V M m).1 m.2 ⟨v, hv⟩
 
 section TransitivityTopological
 

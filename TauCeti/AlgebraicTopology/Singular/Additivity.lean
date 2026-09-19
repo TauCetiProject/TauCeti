@@ -55,7 +55,8 @@ variable {ι : Type w} (X : ι → TopCat.{w}) (n : SimplexCategoryᵒᵖ)
 `ContinuousMap.sigmaMk` only up to the proof of continuity.  Naming the identification keeps the
 proofs below from depending on that definitional unfolding. -/
 private lemma sigmaι_hom_eq (i : ι) :
-    (sigmaι X i).hom = ContinuousMap.sigmaMk (X := fun i ↦ ((X i : TopCat.{w}) : Type w)) i :=
+    ConcreteCategory.hom (sigmaι X i) =
+      ContinuousMap.sigmaMk (X := fun i ↦ ((X i : TopCat.{w}) : Type w)) i :=
   rfl
 
 /-- In each degree, the singular simplices of a disjoint union of spaces are exactly the singular

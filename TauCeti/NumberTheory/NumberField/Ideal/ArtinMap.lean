@@ -141,6 +141,12 @@ theorem artinElementAway_eq_one_of_mem {v : HeightOneSpectrum (𝓞 K)} (hv : v 
     artinElementAway (L := L) hab S hur v = 1 :=
   dite_eq_left hv
 
+/-- Outside the excluded set, `artinElementAway` is the ordinary Artin automorphism at the
+prime. -/
+theorem artinElementAway_eq_artinElement {v : HeightOneSpectrum (𝓞 K)} (hv : v ∉ S) :
+    artinElementAway (L := L) hab S hur v = artinElement hab v.asIdeal (hur v hv) := by
+  rw [artinElementAway, dite_eq_right hv]
+
 /-- Outside the excluded set the Artin automorphism represents the Artin symbol. -/
 theorem artinSymbol_eq_mk_artinElementAway {v : HeightOneSpectrum (𝓞 K)} (hv : v ∉ S) :
     artinSymbol (L := L) v.asIdeal (hur v hv) =

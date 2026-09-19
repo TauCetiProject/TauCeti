@@ -27,6 +27,8 @@ The generation proof transports Mathlib's unique factorization of a nonzero frac
 ## Main definitions
 
 * `NumberFieldArithmetic.idealsAway`: unit fractional ideals trivial at the primes in `S`.
+* `NumberFieldArithmetic.idealsAwayEmptyEquiv`: ideals away from no primes are all invertible
+  fractional ideals.
 * `NumberFieldArithmetic.idealsAwayInclusion`: inclusion obtained from `S ⊆ S'`.
 * `NumberFieldArithmetic.integralIdealsAway`: nonzero integral ideals prime to `S`.
 * `NumberFieldArithmetic.integralIdealsAwayHom`: the map from integral to fractional ideals.
@@ -70,6 +72,30 @@ theorem mem_idealsAway_iff {S : Finset (HeightOneSpectrum (𝓞 K))}
     I ∈ idealsAway S ↔
       ∀ v ∈ S, FractionalIdeal.count K v (I : FractionalIdeal (𝓞 K)⁰ K) = 0 :=
   Iff.rfl
+
+/-- Ideals away from the empty set are canonically all invertible fractional ideals. -/
+def idealsAwayEmptyEquiv :
+    idealsAway (K := K) ∅ ≃* (FractionalIdeal (𝓞 K)⁰ K)ˣ where
+  toFun I := I
+  invFun I := ⟨I, by simp⟩
+  left_inv I := rfl
+  right_inv I := rfl
+  map_mul' _ _ := rfl
+
+/-- The equivalence from ideals away from the empty set does not change the underlying fractional
+ideal unit. -/
+@[simp]
+theorem idealsAwayEmptyEquiv_apply (I : idealsAway (K := K) ∅) :
+    idealsAwayEmptyEquiv I = (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :=
+  (rfl)
+
+/-- The inverse equivalence regards every invertible fractional ideal as an ideal away from the
+empty set, without changing its underlying value. -/
+@[simp]
+theorem coe_idealsAwayEmptyEquiv_symm_apply (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    ((idealsAwayEmptyEquiv.symm I : idealsAway (K := K) ∅) :
+      (FractionalIdeal (𝓞 K)⁰ K)ˣ) = I :=
+  (rfl)
 
 /-- Enlarging the excluded set of primes shrinks the group of fractional ideals away from it. -/
 theorem idealsAway_antitone {S S' : Finset (HeightOneSpectrum (𝓞 K))} (h : S ⊆ S') :

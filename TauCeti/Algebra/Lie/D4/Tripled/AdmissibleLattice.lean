@@ -56,6 +56,10 @@ noncomputable def rep :
       Module.End ℚ (Fin 24 → ℚ) :=
   weightTable.rep
 
+/-- The rational tripled representation is the representation of the tripled weight table. -/
+theorem rep_def : rep = weightTable.rep :=
+  (rfl)
+
 /-- Every represented positive or negative Serre root generator acts nilpotently. -/
 theorem isNilpotent_rep_serreRootGenerator (k : Fin 4 ⊕ Fin 4) :
     IsNilpotent (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
@@ -67,6 +71,10 @@ theorem isNilpotent_rep_serreRootGenerator (k : Fin 4 ⊕ Fin 4) :
 /-- The coordinate `ℤ`-lattice in the rational tripled module. -/
 def lattice : Submodule ℤ (Fin 24 → ℚ) :=
   TauCeti.coordinateLattice (Fin 24)
+
+/-- The tripled lattice is the standard coordinate lattice. -/
+theorem lattice_def : lattice = TauCeti.coordinateLattice (Fin 24) :=
+  (rfl)
 
 /-- The coordinate basis of the tripled lattice. -/
 noncomputable def latticeBasis : Module.Basis (Fin 24) ℤ lattice :=

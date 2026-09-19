@@ -98,6 +98,13 @@ theorem isCycleOn_preimage_quotientMk (b : Quotient (SameCycle.setoid σ)) :
     rw [hfibre]
     exact σ.isCycleOn_setOf_sameCycle x
 
+/-- Transporting a permutation along an equivalence transports its cycles. -/
+@[simp]
+theorem sameCycle_permCongr {β : Type*} (e : α ≃ β) {x y : α} :
+    (e.permCongr σ).SameCycle (e x) (e y) ↔ σ.SameCycle x y := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.map fun z ↦ by simp⟩
+  simpa using h.map (g := e.symm) fun z ↦ by simp
+
 end Equiv.Perm
 
 namespace TauCeti

@@ -17,7 +17,7 @@ subfield of the prime-discriminant compositum. The isomorphism
 the ordinary ideal class modulo squares. Thus its kernel consists exactly of ideals whose
 ordinary classes are squares, and every automorphism is represented by an ideal.
 
-The comparison holds on fractional ideals prime to `2 · disc K`. It follows by restricting the
+The comparison holds on fractional ideals away from any finite set. It follows by restricting the
 Artin map of the full compositum and forgetting positivity on narrow ideal classes. In particular,
 principal ideals need no sign condition for the real genus-field Artin map to vanish.
 
@@ -37,13 +37,10 @@ namespace TauCeti.Multiquadratic
 variable {d : ℤ}
 
 /-- The real genus-field isomorphism carries the Artin automorphism of an ideal to its ordinary
-class modulo squares. The excluded set may be any finite set containing the primes above
-`2 · disc K`. -/
+class modulo squares. The excluded set may be any finite set of primes. -/
 theorem autCandidateGenusFieldRealEquivElementaryTwoQuotient_artinHomAway
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d)
     (S : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))))
-    (hS : ∀ v : IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd)),
-      (TauCeti.rationalPrimeBelow v : ℤ) ∣ 2 * fundamentalDiscriminant d → v ∈ S)
     (I : NumberFieldArithmetic.idealsAway (K := candidateGenusFieldBase hd) S) :
     letI := candidateGenusFieldRealAlgebra hd hpos
     letI := candidateGenusFieldRealIsScalarTower hd hpos
@@ -76,7 +73,7 @@ theorem autCandidateGenusFieldRealEquivElementaryTwoQuotient_artinHomAway
   have hclass := congrArg (fun x => Multiplicative.ofAdd
     (NarrowClassGroup.toClassGroupElementaryTwoQuotient (candidateGenusFieldBase hd)
       (Multiplicative.toAdd x)))
-    (autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway hd hnsq S hS I)
+    (autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway hd hnsq S I)
   simpa only [autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_apply,
     toAdd_ofAdd, NarrowClassGroup.toClassGroupElementaryTwoQuotient_mk,
     NarrowClassGroup.toClassGroup_mk] using hclass
@@ -87,8 +84,6 @@ condition on principal generators is needed. -/
 theorem artinHomAway_candidateGenusFieldReal_eq_one_iff
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d)
     (S : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))))
-    (hS : ∀ v : IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd)),
-      (TauCeti.rationalPrimeBelow v : ℤ) ∣ 2 * fundamentalDiscriminant d → v ∈ S)
     (I : NumberFieldArithmetic.idealsAway (K := candidateGenusFieldBase hd) S) :
     letI := candidateGenusFieldRealAlgebra hd hpos
     letI := candidateGenusFieldRealIsScalarTower hd hpos
@@ -105,11 +100,11 @@ theorem artinHomAway_candidateGenusFieldReal_eq_one_iff
   let _ := candidateGenusFieldRealIsScalarTower hd hpos
   let _ := isAbelianGalois_candidateGenusFieldReal_over_base hd hpos
   rw [← (autCandidateGenusFieldRealEquivElementaryTwoQuotient hd hnsq hpos).map_eq_one_iff,
-    autCandidateGenusFieldRealEquivElementaryTwoQuotient_artinHomAway hd hnsq hpos S hS I,
+    autCandidateGenusFieldRealEquivElementaryTwoQuotient_artinHomAway hd hnsq hpos S I,
     ofAdd_eq_one, TauCeti.elementaryTwoQuotientMk_eq_zero_iff]
 
 /-- Every automorphism of the real genus field is the Artin automorphism of an integral ideal
-prime to `2 · disc K`. -/
+prime to `disc K`. -/
 theorem artinHomAwayIntegral_candidateGenusFieldReal_surjective
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d) :
     letI := candidateGenusFieldRealAlgebra hd hpos
@@ -143,7 +138,7 @@ theorem artinHomAwayIntegral_candidateGenusFieldReal_surjective
   exact hrestrict.symm.trans (congrArg (candidateGenusFieldRestrictionToReal hd hpos) hI)
 
 /-- Every automorphism of the real genus field is the Artin automorphism of a fractional ideal
-prime to `2 · disc K`. -/
+prime to `disc K`. -/
 theorem artinHomAway_candidateGenusFieldReal_surjective
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d) :
     letI := candidateGenusFieldRealAlgebra hd hpos

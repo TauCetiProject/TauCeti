@@ -24,6 +24,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ScalarUnipotent
 -- proofs, so downstream importers do not pay for it.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.GroupTheory.Index.Basic
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # Centralizers of the regular elements of `GL₂`

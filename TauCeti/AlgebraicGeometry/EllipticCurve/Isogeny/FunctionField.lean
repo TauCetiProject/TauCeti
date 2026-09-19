@@ -220,6 +220,26 @@ theorem id_fieldPullback (W : WeierstrassCurve.Affine F) :
   intro x
   simp
 
+section BaseFieldTower
+
+variable (φ : Isogeny W₁ W₂) [Algebra W₂.FunctionField W₁.FunctionField]
+  (h : ∀ z, algebraMap W₂.FunctionField W₁.FunctionField z = φ.fieldPullback z)
+
+include h in
+/-- **The pullback is a tower map over the base field**: `fieldPullback` is an `F`-algebra map, so
+`F(W₁)` is an `F(W₂)`-algebra over `F`.
+
+Not an instance — like the algebra structure it refines, it depends on `φ` — so a consumer installs
+it with `haveI := φ.isScalarTower_of_algebraMap_eq_fieldPullback h`. That is the opening of every
+argument that reads an invariant of `F(W₁)/F(W₂)` against the base field: the differential
+criterion for separability and the divisor pullback both begin with it. -/
+theorem isScalarTower_of_algebraMap_eq_fieldPullback :
+    IsScalarTower F W₂.FunctionField W₁.FunctionField :=
+  IsScalarTower.of_algebraMap_eq fun c ↦
+    ((h _).trans (φ.fieldPullback.commutes c)).symm
+
+end BaseFieldTower
+
 variable {W₃ : WeierstrassCurve.Affine F}
 
 /-- **Composition maps infinity to infinity**: the composite pullback of two isogenies again

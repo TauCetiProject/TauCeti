@@ -38,6 +38,10 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
   a point exactly when it is `parabolicFixedPoint g` (in characteristic other than two).
 * `Matrix.ProjectiveSpecialLinearGroup.isParabolic_iff_exists_eq_upperRightHom`: an element
   fixing `∞` is parabolic exactly when it is a nonzero translation.
+* `Matrix.ProjectiveSpecialLinearGroup.exists_conj_upperRightHom_of_smul_infty`: conjugation by
+  an element fixing `∞` rescales every translation by the same nonzero square, and
+  `Matrix.ProjectiveSpecialLinearGroup.exists_eq_upperRightHom_of_commute`: such an element
+  commuting with a nonzero translation is itself a translation.
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic.exists_conj_eq_upperRightHom` and
   `Matrix.ProjectiveSpecialLinearGroup.isParabolic_iff_exists_conj_upperRightHom`: the parabolic
   elements are exactly the conjugates of nonzero translations (in characteristic other than two).
@@ -186,6 +190,65 @@ theorem isParabolic_iff_exists_eq_upperRightHom {g : PSL(2, K)}
     refine congrArg _ (SpecialLinearGroup.ext _ _ fun i j ↦ ?_)
     fin_cases i <;> fin_cases j <;> simp [SpecialLinearGroup.transvection_coe, *]
   · refine ⟨-a 0 1, neg_ne_zero.mpr hb, ?_⟩
+    have ha : a = -SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) (-a 0 1) :=
+      SpecialLinearGroup.ext _ _ fun i j ↦ by
+        fin_cases i <;> fin_cases j <;> simp [SpecialLinearGroup.transvection_coe, *]
+    rw [upperRightHom_apply, QuotientGroup.eq]
+    generalize SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) (-a 0 1) = t at ha ⊢
+    subst ha
+    simp [inv_neg]
+
+omit [DecidableEq K] in
+/-- Conjugating a translation by an upper-triangular matrix `!![a, b; 0, a⁻¹]` rescales it by
+`a ^ 2`. -/
+private theorem mk_mul_upperRightHom_mul_inv (a : SL(2, K)) (ha : a 1 0 = 0) (x : K) :
+    (a : PSL(2, K)) * upperRightHom x * (a : PSL(2, K))⁻¹ = upperRightHom (a 0 0 ^ 2 * x) := by
+  have hdet : a 0 0 * a 1 1 = 1 := by
+    have := a.det_coe
+    rw [det_fin_two, ha] at this
+    simpa using this
+  rw [mul_inv_eq_iff_eq_mul, upperRightHom_apply, upperRightHom_apply, ← QuotientGroup.mk_mul,
+    ← QuotientGroup.mk_mul]
+  congr 1
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [SpecialLinearGroup.transvection_coe, Matrix.mul_apply, Fin.sum_univ_two, ha]
+  linear_combination -(a 0 0 * x) * hdet
+
+/-- **Conjugating translations by an element fixing `∞`.** Conjugation by an element `g` of
+`PSL(2, K)` fixing `∞` rescales every translation by the same nonzero square. -/
+theorem exists_conj_upperRightHom_of_smul_infty {g : PSL(2, K)}
+    (hg : g • (∞ : OnePoint K) = ∞) :
+    ∃ t : K, t ≠ 0 ∧ ∀ x, g * upperRightHom x * g⁻¹ = upperRightHom (t ^ 2 * x) := by
+  induction g using QuotientGroup.induction_on with | H a => ?_
+  rw [pslMk_smul, smul_infty_eq_self_iff, SpecialLinearGroup.coe_GL_coe_matrix] at hg
+  refine ⟨a 0 0, fun h ↦ ?_, mk_mul_upperRightHom_mul_inv a hg⟩
+  have := a.det_coe
+  rw [det_fin_two, hg, h] at this
+  simp at this
+
+/-- An element of `PSL(2, K)` fixing `∞` and commuting with a nonzero translation is itself a
+translation. -/
+theorem exists_eq_upperRightHom_of_commute {g : PSL(2, K)} (hg : g • (∞ : OnePoint K) = ∞)
+    {x : K} (hx : x ≠ 0) (hcomm : Commute g (upperRightHom x)) : ∃ y, g = upperRightHom y := by
+  induction g using QuotientGroup.induction_on with | H a => ?_
+  rw [pslMk_smul, smul_infty_eq_self_iff, SpecialLinearGroup.coe_GL_coe_matrix] at hg
+  have hconj := mk_mul_upperRightHom_mul_inv a hg x
+  rw [hcomm.eq, mul_inv_cancel_right] at hconj
+  have hsq : a 0 0 ^ 2 = 1 :=
+    mul_right_cancel₀ hx (by rw [one_mul]; exact (upperRightHom_injective hconj).symm)
+  have hdet : a 0 0 * a 1 1 = 1 := by
+    have := a.det_coe
+    rw [det_fin_two, hg] at this
+    simpa using this
+  have h11 : a 1 1 = a 0 0 := by linear_combination a 0 0 * hdet - a 1 1 * hsq
+  -- the diagonal entries are both `1` or both `-1`
+  rcases sq_eq_one_iff.mp hsq with h | h
+  · refine ⟨a 0 1, ?_⟩
+    rw [upperRightHom_apply]
+    refine congrArg _ (SpecialLinearGroup.ext _ _ fun i j ↦ ?_)
+    fin_cases i <;> fin_cases j <;> simp [SpecialLinearGroup.transvection_coe, *]
+  · refine ⟨-a 0 1, ?_⟩
     have ha : a = -SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) (-a 0 1) :=
       SpecialLinearGroup.ext _ _ fun i j ↦ by
         fin_cases i <;> fin_cases j <;> simp [SpecialLinearGroup.transvection_coe, *]

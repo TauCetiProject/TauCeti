@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Composite
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.EigenFromPrimes
-public import TauCeti.NumberTheory.ModularForms.Newforms.Newform
+public import TauCeti.NumberTheory.ModularForms.Newforms.RingEigenvalue
 
 /-!
 # Full Hecke eigenforms
@@ -32,6 +33,13 @@ and bad primes.
   missing bad-prime eigenrelations are supplied.
 * `HeckeRing.GL2.Eigenform.qExpansion_coeff_eq_eigenvalue_mul_coeff_one`: the coefficient at
   every positive index is its eigenvalue times the first coefficient.
+* `HeckeRing.GL2.Eigenform.eigenvalue_mul`, `HeckeRing.GL2.Eigenform.eigenvalue_prime_pow_add_two`:
+  the eigenvalues are multiplicative at coprime indices and satisfy the Hecke recurrence along the
+  powers of every prime, with the nebentypus zero-extended to the primes dividing the level.
+* `HeckeRing.GL2.Eigenform.qExpansion_coeff_mul`,
+  `HeckeRing.GL2.Eigenform.qExpansion_coeff_prime_pow_add_two`: the same identities for the
+  coefficients of a normalised eigenform, conditions (2) and (3) of Diamond–Shurman's
+  Proposition 5.8.5 at every index.
 
 ## Provenance
 
@@ -166,6 +174,111 @@ theorem qExpansion_coeff_eq_eigenvalue_mul_coeff_one (f : Eigenform N k) (n : �
     ModularForm.qExpansion_smul one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map _),
     PowerSeries.coeff_smul, smul_eq_mul] at h
   simpa using h.symm
+
+/-! ### The eigenvalue system -/
+
+/-- Two scalars acting alike on a full eigenform are equal. -/
+private theorem eq_of_smul_eq (f : Eigenform N k) {a b : ℂ}
+    (h : a • (⟨f.toCuspForm, f.mem_charSpace⟩ : cuspFormCharSpace k f.χ) =
+      b • (⟨f.toCuspForm, f.mem_charSpace⟩ : cuspFormCharSpace k f.χ)) : a = b :=
+  smul_left_injective ℂ (fun h ↦ f.ne_zero (congrArg Subtype.val h)) h
+
+/-- The eigenvalue at `1` is `1`: the Hecke element at index `1` is the identity. -/
+@[simp]
+theorem eigenvalue_one (f : Eigenform N k) : f.eigenvalue 1 = 1 := by
+  refine f.eq_of_smul_eq ?_
+  simp [← f.isEigen 1, heckeTCompositeGamma0_one]
+
+/-- **Multiplicativity on coprime indices**: `λ_{mn} = λ_m λ_n`, the image of the coprime
+multiplication rule `heckeTCompositeGamma0_mul_of_coprime`. Unlike
+`EigenformAwayFromLevel.eigenvalue_mul`, the indices may share primes with the level. -/
+theorem eigenvalue_mul (f : Eigenform N k) {m n : ℕ+} (hmn : Nat.Coprime m n) :
+    f.eigenvalue (m * n) = f.eigenvalue m * f.eigenvalue n := by
+  refine f.eq_of_smul_eq ?_
+  rw [← f.isEigen (m * n), PNat.mul_coe, heckeTCompositeGamma0_mul_of_coprime N hmn, map_mul]
+  simp only [Module.End.mul_apply, f.isEigen, map_smul, smul_smul, mul_comm]
+
+/-- At a bad prime, the power identity for Hecke operators acts on a full eigenform by the
+product of the eigenvalues at `p` and `p ^ (r + 1)`. -/
+private theorem heckeRingHomCuspCharSpace_prime_pow_add_two_of_not_coprime
+    (f : Eigenform N k) {p : ℕ+} (hp : (p : ℕ).Prime) (hpN : ¬Nat.Coprime p N) (r : ℕ) :
+    heckeRingHomCuspCharSpace k f.χ (heckeTCompositeGamma0 N (p ^ (r + 2)))
+        ⟨f.toCuspForm, f.mem_charSpace⟩ =
+      (f.eigenvalue p * f.eigenvalue (p ^ (r + 1))) •
+        (⟨f.toCuspForm, f.mem_charSpace⟩ : cuspFormCharSpace k f.χ) := by
+  -- `T_{p^{r+2}} = T_p * T_{p^{r+1}}`, since both sides are powers of `T_p`
+  have hT : heckeTCompositeGamma0 N (p ^ (r + 2)) =
+      heckeTCompositeGamma0 N p * heckeTCompositeGamma0 N (p ^ (r + 1)) := by
+    rw [heckeTCompositeGamma0_prime_pow_of_not_coprime N hp hpN,
+      heckeTCompositeGamma0_prime_pow_of_not_coprime N hp hpN, heckeTCompositeGamma0_prime N hp,
+      ← pow_succ']
+  rw [hT, map_mul, Module.End.mul_apply, ← PNat.pow_coe]
+  simp only [f.isEigen, map_smul, smul_smul, mul_comm]
+
+/-- **The recurrence along the powers of a prime**:
+`λ_{p^{r+2}} = λ_p λ_{p^{r+1}} − χ(p) p^{k−1} λ_{p^r}`, with `χ(p)` read through Mathlib's
+zero-extension `MulChar.ofUnitHom`. At a good prime this is
+`EigenformAwayFromLevel.eigenvalue_prime_pow_add_two`; at a prime dividing the level the
+character term vanishes and the identity is `T_{p^{r+2}} = T_p T_{p^{r+1}}`, from
+`T_{p^v} = T_p^v` (`heckeTCompositeGamma0_prime_pow_of_not_coprime`). -/
+theorem eigenvalue_prime_pow_add_two (f : Eigenform N k) {p : ℕ+} (hp : (p : ℕ).Prime)
+    (r : ℕ) :
+    f.eigenvalue (p ^ (r + 2)) =
+      f.eigenvalue p * f.eigenvalue (p ^ (r + 1)) -
+        (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) (p : ℕ) * (p : ℂ) ^ (k - 1) *
+          f.eigenvalue (p ^ r) := by
+  by_cases hpN : Nat.Coprime p N
+  · have h := f.toEigenformAwayFromLevel.eigenvalue_prime_pow_add_two hp hpN r
+    simp only [toEigenformAwayFromLevel_eigenvalue, toEigenformAwayFromLevel_χ] at h
+    rwa [← ZMod.coe_unitOfCoprime (p : ℕ) hpN, MulChar.ofUnitHom_coe]
+  · have hχ : (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) (p : ℕ) = 0 :=
+      MulChar.map_nonunit _ (by rwa [ZMod.isUnit_iff_coprime])
+    rw [hχ, zero_mul, zero_mul, sub_zero]
+    refine f.eq_of_smul_eq ?_
+    exact (f.isEigen (p ^ (r + 2))).symm.trans
+      (f.heckeRingHomCuspCharSpace_prime_pow_add_two_of_not_coprime hp hpN r)
+
+/-! ### The Fourier coefficients of a normalised eigenform
+
+With `a₁ = 1` the coefficients are the eigenvalues, so they satisfy conditions (2) and (3) of
+Diamond–Shurman's Proposition 5.8.5 at every index, good or bad. These are exactly the hypotheses
+of the Euler product. -/
+
+/-- **The coefficients of a normalised full eigenform are its eigenvalues**: `a_n(f) = λ_n` at
+every positive index `n`, when `a_1(f) = 1`. -/
+theorem qExpansion_coeff_eq_eigenvalue (f : Eigenform N k)
+    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (n : ℕ+) :
+    (qExpansion 1 f.toCuspForm).coeff n = f.eigenvalue n := by
+  rw [f.qExpansion_coeff_eq_eigenvalue_mul_coeff_one n, h₁, mul_one]
+
+/-- **Multiplicativity of the coefficients of a normalised full eigenform**: `a_{mn} = a_m a_n`
+for all coprime `m`, `n` (Diamond–Shurman Proposition 5.8.5 (3)). -/
+theorem qExpansion_coeff_mul (f : Eigenform N k)
+    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) {m n : ℕ} (hmn : Nat.Coprime m n) :
+    (qExpansion 1 f.toCuspForm).coeff (m * n) =
+      (qExpansion 1 f.toCuspForm).coeff m * (qExpansion 1 f.toCuspForm).coeff n := by
+  have h₀ := CuspFormClass.qExpansion_coeff_zero f.toCuspForm one_pos
+    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · simp [h₀]
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp [h₀]
+  lift m to ℕ+ using hm
+  lift n to ℕ+ using hn
+  simp only [← PNat.mul_coe, f.qExpansion_coeff_eq_eigenvalue h₁, f.eigenvalue_mul hmn]
+
+/-- **The prime-power recurrence for the coefficients of a normalised full eigenform**:
+`a_{p^{r+2}} = a_p a_{p^{r+1}} − χ(p) p^{k−1} a_{p^r}` at every prime `p`, with `χ(p) = 0` for
+`p ∣ N` (Diamond–Shurman Proposition 5.8.5 (2)). -/
+theorem qExpansion_coeff_prime_pow_add_two (f : Eigenform N k)
+    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) {p : ℕ} (hp : p.Prime) (r : ℕ) :
+    (qExpansion 1 f.toCuspForm).coeff (p ^ (r + 2)) =
+      (qExpansion 1 f.toCuspForm).coeff p * (qExpansion 1 f.toCuspForm).coeff (p ^ (r + 1)) -
+        (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ (k - 1) *
+          (qExpansion 1 f.toCuspForm).coeff (p ^ r) := by
+  lift p to ℕ+ using hp.pos
+  simp only [← PNat.pow_coe, f.qExpansion_coeff_eq_eigenvalue h₁]
+  exact f.eigenvalue_prime_pow_add_two hp r
 
 end Eigenform
 

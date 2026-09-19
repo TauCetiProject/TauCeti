@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Descent
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Shift
 public import TauCeti.CategoryTheory.Exact.Graded.FullSubcategory
-public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent
+public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent.Basic
 public import TauCeti.LinearAlgebra.SesquilinearForm.LaurentSpecialization
 public import Mathlib.LinearAlgebra.BilinearMap
 

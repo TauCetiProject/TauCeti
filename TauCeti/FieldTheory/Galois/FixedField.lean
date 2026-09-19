@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
+import Mathlib.FieldTheory.Galois.Infinite
 
 /-!
 # Fixed fields and fixing subgroups
@@ -51,7 +52,11 @@ its fixing subgroup is the stabilizer of `x`; this too needs no hypothesis on `M
 * `IntermediateField.fixingSubgroup_fixedField_of_finite`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
-* `IntermediateField.fixingSubgroup_adjoin_simple`
+* `IntermediateField.fixingSubgroup_adjoin_simple`, with
+  `IntermediateField.mem_fixedField_stabilizer`,
+  `IntermediateField.fixedField_stabilizer_eq_adjoin_simple` and
+  `IntermediateField.adjoin_eq_top_of_fixedField_stabilizer`: the stabilizer of `x` fixes
+  exactly `K⟮x⟯`, in which `x` is a primitive element
 * `FixedPoints.isCyclic_algEquiv`
 * `AlgEquiv.toFixedFieldAlgEquiv`, with `AlgEquiv.zpowers_toFixedFieldAlgEquiv_eq_top` and
   `AlgEquiv.card_algEquiv_fixedField_zpowers`
@@ -167,6 +172,34 @@ theorem fixingSubgroup_adjoin_simple (x : M) :
   ext σ
   rw [mem_fixingSubgroup_iff, MulAction.mem_stabilizer_iff]
   simpa using forall_mem_adjoin_smul_eq_self_iff K (S := {x}) σ
+
+/-- An element lies in the fixed field of its own stabilizer. -/
+theorem mem_fixedField_stabilizer (x : M) :
+    x ∈ fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x) :=
+  (mem_fixedField_iff _ x).mpr fun _ hσ => hσ
+
+/-- For a Galois extension, the fixed field of the stabilizer of `x` is `K⟮x⟯`. -/
+@[simp]
+theorem fixedField_stabilizer_eq_adjoin_simple [IsGalois K M] (x : M) :
+    fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x) = K⟮x⟯ := by
+  rw [← fixingSubgroup_adjoin_simple, InfiniteGalois.fixedField_fixingSubgroup]
+
+/-- For a Galois extension, `x` generates the fixed field of its stabilizer as a `K`-algebra. -/
+@[simp]
+theorem adjoin_eq_top_of_fixedField_stabilizer [IsGalois K M] (x : M) :
+    Algebra.adjoin K {(⟨x, mem_fixedField_stabilizer x⟩ :
+      fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x))} = ⊤ := by
+  set E := fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x) with hE
+  set x' : E := ⟨x, mem_fixedField_stabilizer x⟩
+  have hx' : IsAlgebraic K x' :=
+    (isAlgebraic_algebraMap_iff (algebraMap E M).injective).mp (Algebra.IsAlgebraic.isAlgebraic x)
+  have htop : K⟮x'⟯ = ⊤ := by
+    apply IntermediateField.map_injective E.val
+    rw [adjoin_map, Set.image_singleton, ← AlgHom.fieldRange_eq_map, fieldRange_val]
+    exact (fixedField_stabilizer_eq_adjoin_simple x).symm
+  have h := adjoin_simple_toSubalgebra_of_isAlgebraic hx'
+  rw [htop, IntermediateField.top_toSubalgebra] at h
+  exact h.symm
 
 end IntermediateField
 

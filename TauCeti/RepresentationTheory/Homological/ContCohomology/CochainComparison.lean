@@ -17,8 +17,8 @@ As additive groups, the first three terms of Mathlib's homogeneous cochain compl
 with `M`, `C1 G M`, and `C2 G M`. The forward maps are the classical formulas
 `g₀ • m`, `g₀ • c (g₀⁻¹ * g₁)`, and `g₀ • c (g₀⁻¹ * g₁, g₁⁻¹ * g₂)`;
 the inverse maps evaluate at `1`, at `(1, g)`, and at `(1, g, g * h)`.
-The differential compatibilities identify the canonical differentials with `d0` and `d1`,
-providing the cochain comparison needed to identify first cohomology and its coboundaries.
+The differential compatibilities identify the canonical differentials with `d0`, `d1`, and `d2`,
+including the cocycle condition in degree two.
 All three comparisons are natural in compatible pairs of group and coefficient maps.
 These are additive equivalences; no identification of the pointwise and compact-open
 topologies is asserted.
@@ -258,6 +258,51 @@ theorem cochainEquiv2_symm_d
           (mem_C1_iff.mp ((cochainEquiv1 G M).symm c).property))⟩ := by
   apply (cochainEquiv2 G M).injective
   simpa only [AddEquiv.apply_symm_apply] using d_cochainEquiv1 G M ((cochainEquiv1 G M).symm c)
+
+/-- The differential of the degree-two comparison is the homogeneous form of `d2`. -/
+theorem d_cochainEquiv2_apply (c : C2 G M) (g h k l : G) :
+    (((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 2 3).hom
+        (cochainEquiv2 G M c)).val g h k l =
+      g • d2 G M c.val (g⁻¹ * h, h⁻¹ * k, k⁻¹ * l) := by
+  rw [TopRep.homogeneousCochains.d_apply]
+  simp only [TopRep.hom_d_succ, TopRep.d_zero, TopRep.hom_ofHom,
+    ContIntertwiningMap.sub_apply, ContRepresentation.coind₁ι_toFun,
+    ContRepresentation.coind₁Map_toFun, ContinuousMap.sub_apply,
+    ContinuousMap.const_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk,
+    cochainEquiv2_apply, homogeneous2_apply, d2_apply, smul_sub, smul_add, ← mul_smul]
+  simp only [mul_assoc, mul_inv_cancel_left]
+  -- Fix the coefficient carrier explicitly so that the constant-map evaluation matches.
+  have hi (m : M) : ((ofDiscreteModule ℤ G M).ρ.coind₁ι m) l = m := rfl
+  rw [hi]
+  -- All four evaluations live in `M`; normalize the bundled additive instances for `abel`.
+  change (h • c.val (h⁻¹ * k, k⁻¹ * l) : M) -
+      (g • c.val (g⁻¹ * k, k⁻¹ * l) -
+        (g • c.val (g⁻¹ * h, h⁻¹ * l) - g • c.val (g⁻¹ * h, h⁻¹ * k))) =
+    h • c.val (h⁻¹ * k, k⁻¹ * l) - g • c.val (g⁻¹ * k, k⁻¹ * l) +
+      g • c.val (g⁻¹ * h, h⁻¹ * l) - g • c.val (g⁻¹ * h, h⁻¹ * k)
+  abel
+
+/-- The degree-two comparison detects precisely the continuous inhomogeneous cocycles. -/
+theorem d_cochainEquiv2_eq_zero_iff (c : C2 G M) :
+    ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 2 3).hom
+        (cochainEquiv2 G M c) = 0 ↔ c.val ∈ Z2 G M := by
+  rw [mem_Z2_iff, and_iff_right (mem_C2_iff.mp c.property), ← d2_apply_eq_zero_iff]
+  constructor
+  · intro hc
+    funext ⟨g, h, k⟩
+    have e := congrArg (fun z => z.val 1 g (g * h) (g * h * k)) hc
+    rw [d_cochainEquiv2_apply] at e
+    -- Normalize the bundled coefficient carrier before simplifying the group coordinates.
+    change (1 : G) • d2 G M c.val (1⁻¹ * g, g⁻¹ * (g * h),
+      (g * h)⁻¹ * (g * h * k)) = (0 : M) at e
+    simpa only [inv_one, one_mul, inv_mul_cancel_left, one_smul, Pi.zero_apply] using e
+  · intro hc
+    apply Subtype.ext
+    ext g h k l
+    rw [d_cochainEquiv2_apply]
+    -- The right side is the zero continuous map, evaluated in the bundled carrier.
+    change g • d2 G M c.val (g⁻¹ * h, h⁻¹ * k, k⁻¹ * l) = (0 : M)
+    rw [hc, Pi.zero_apply, smul_zero]
 
 section Naturality
 

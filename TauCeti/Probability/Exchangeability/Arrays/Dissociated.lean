@@ -78,6 +78,8 @@ These results advance the exchangeable-arrays milestone of
   coordinatewise pushforward;
 * `TauCeti.Probability.JointlyDissociated.indep_blockSigma_prod_self` — square blocks over
   arbitrary disjoint index sets generate independent σ-algebras;
+* `TauCeti.Probability.jointlyDissociated_iff_indep_blockSigma_finset` — conversely, independence
+  of the square blocks over disjoint finite index sets already gives joint dissociation;
 * `TauCeti.Probability.SeparatelyDissociated.indepFun_apply` and
   `TauCeti.Probability.JointlyDissociated.indepFun_arrayDiag` — entries in different rows and
   different columns are independent, so in particular the diagonal entries of a jointly dissociated
@@ -210,6 +212,64 @@ theorem JointlyDissociated.indep_blockSigma_prod_self [IsZeroOrProbabilityMeasur
     rw [blockSigma_empty]
     exact indep_bot_right _
   exact h.indep_blockSigma_prod_self_of_nonempty hS hT hd
+
+/-- **Joint dissociation from finite blocks.** A coordinatewise measurable array is jointly
+dissociated as soon as its square blocks over disjoint *finite* index sets are independent: the
+square block over the range of an index map is exhausted by the increasing square blocks over its
+finite initial images. -/
+theorem jointlyDissociated_of_indep_blockSigma_finset [IsZeroOrProbabilityMeasure μ]
+    (hX : ∀ p, Measurable (X p))
+    (h : ∀ I J : Finset ℕ, Disjoint I J →
+      Indep (blockSigma X (↑I ×ˢ ↑I)) (blockSigma X (↑J ×ˢ ↑J)) μ) :
+    JointlyDissociated μ X := by
+  classical
+  refine jointlyDissociated_iff.mpr fun e e' hd ↦ ?_
+  -- the square block along `e` is exhausted by the square blocks over its finite initial images
+  obtain ⟨M, hM⟩ : ∃ M : (ℕ → ℕ) → ℕ → MeasurableSpace Ω, ∀ f n, M f n =
+      blockSigma X (↑((Finset.range n).image f) ×ˢ ↑((Finset.range n).image f)) :=
+    ⟨_, fun _ _ ↦ rfl⟩
+  have hM_le : ∀ f n, M f n ≤ ‹MeasurableSpace Ω› := fun _ _ ↦ by
+    rw [hM]; exact blockSigma_le _ fun p _ ↦ hX p
+  have hM_mono : ∀ f, Monotone (M f) := fun f a b hab ↦ by
+    rw [hM, hM]
+    exact blockSigma_mono (by gcongr)
+  have hU : ∀ f : ℕ → ℕ, Measurable[blockSigma X (Set.range f ×ˢ Set.range f)]
+      fun ω (p : ℕ × ℕ) ↦ X (f p.1, f p.2) ω := fun f ↦ by
+    let : MeasurableSpace Ω := blockSigma X (Set.range f ×ˢ Set.range f)
+    exact Measurable.of_eval fun p ↦ measurable_blockSigma_of_mem (Z := X)
+      (Set.mem_prod.2 ⟨Set.mem_range_self _, Set.mem_range_self _⟩)
+  have hexhaust : ∀ f : ℕ → ℕ, blockSigma X (Set.range f ×ˢ Set.range f) ≤ ⨆ n, M f n := by
+    refine fun f ↦ blockSigma_le_iff.mpr fun p hp ↦ ?_
+    obtain ⟨⟨i, hi⟩, j, hj⟩ := hp
+    have hp : p ∈ (↑((Finset.range (max i j + 1)).image f) ×ˢ
+        ↑((Finset.range (max i j + 1)).image f) : Set (ℕ × ℕ)) := by
+      simp only [Set.mem_prod, Finset.coe_image, Finset.coe_range, Set.mem_image, Set.mem_Iio]
+      exact ⟨⟨i, by omega, hi⟩, ⟨j, by omega, hj⟩⟩
+    exact (measurable_blockSigma_of_mem (Z := X) hp).mono
+      ((hM f _).symm.le.trans (le_iSup (M f) _)) le_rfl
+  have hdisj : ∀ n m, Disjoint ((Finset.range n).image e) ((Finset.range m).image e') := by
+    intro n m
+    rw [← Finset.disjoint_coe]
+    exact hd.mono (by simp) (by simp)
+  have hindep : Indep (⨆ n, M e n) (⨆ m, M e' m) μ := by
+    refine indep_iSup_of_monotone (fun n ↦ ?_) (hM_le e) (iSup_le (hM_le e')) (hM_mono e)
+    refine (indep_iSup_of_monotone (fun m ↦ ?_) (hM_le e') (hM_le e n) (hM_mono e')).symm
+    rw [hM, hM]
+    exact (h _ _ (hdisj n m)).symm
+  rw [IndepFun_iff_Indep]
+  exact indep_of_indep_of_le_left
+    (indep_of_indep_of_le_right hindep ((hU e').comap_le.trans (hexhaust e')))
+    ((hU e).comap_le.trans (hexhaust e))
+
+/-- **Joint dissociation is independence of finite square blocks** for a coordinatewise measurable
+array under a zero-or-probability measure: it suffices to test the square blocks over disjoint
+finite index sets. -/
+theorem jointlyDissociated_iff_indep_blockSigma_finset [IsZeroOrProbabilityMeasure μ]
+    (hX : ∀ p, Measurable (X p)) :
+    JointlyDissociated μ X ↔ ∀ I J : Finset ℕ, Disjoint I J →
+      Indep (blockSigma X (↑I ×ˢ ↑I)) (blockSigma X (↑J ×ˢ ↑J)) μ :=
+  ⟨fun h _ _ hIJ ↦ h.indep_blockSigma_prod_self (Finset.disjoint_coe.2 hIJ),
+    jointlyDissociated_of_indep_blockSigma_finset hX⟩
 
 /-- Entries of a separately dissociated array in different rows **and** different columns are
 independent. -/

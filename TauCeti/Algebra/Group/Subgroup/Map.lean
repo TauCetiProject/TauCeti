@@ -46,6 +46,9 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   centreless group.
 * `TauCeti.Subgroup.map_commutator_eq_commutator`: a surjective homomorphism carries the derived
   subgroup onto the derived subgroup.
+* `Subgroup.map_inf_comap`: the image of `H ⊓ f⁻¹(K)` is `f(H) ⊓ K`.
+* `Subgroup.map_conj_map_conj`: successive conjugations of a subgroup compose to one
+  conjugation.
 * `Subgroup.map_map_conj`: the image of a conjugate subgroup is the conjugate of the image.
 * `Subgroup.map_quotientGroupMap_map_mk'`: taking images in quotients commutes with the maps
   induced on quotients.
@@ -281,6 +284,15 @@ theorem _root_.MulEquiv.commutatorCongr_symm (e : G ≃* H) :
     (MulEquiv.commutatorCongr e).symm = MulEquiv.commutatorCongr e.symm :=
   Subgroup.congrOfMapEq_symm e _
 
+/-- The image of `H ⊓ f⁻¹(K)` under `f` is the part of `K` inside `f(H)`. -/
+theorem _root_.Subgroup.map_inf_comap {G N : Type*} [Group G] [Group N]
+    (H : Subgroup G) (K : Subgroup N) (f : G →* N) :
+    (H ⊓ K.comap f).map f = H.map f ⊓ K := by
+  ext y
+  simp only [Subgroup.mem_map, Subgroup.mem_inf, Subgroup.mem_comap]
+  exact ⟨fun ⟨x, ⟨hx, hxK⟩, hxy⟩ ↦ ⟨⟨x, hx, hxy⟩, hxy ▸ hxK⟩,
+    fun ⟨⟨x, hx, hxy⟩, hy⟩ ↦ ⟨x, ⟨hx, hxy ▸ hy⟩, hxy⟩⟩
+
 /-- The image of a conjugate subgroup `gRg⁻¹` under a homomorphism `f` is the conjugate of `f(R)`
 by `f g`.
 
@@ -294,6 +306,13 @@ theorem _root_.Subgroup.map_map_conj (R : Subgroup G) (f : G →* H) (g : G) :
   rw [Subgroup.map_map, Subgroup.map_map]
   -- conjugation is natural: `f ∘ conj g` and `conj (f g) ∘ f` agree pointwise
   exact congrArg (Subgroup.map · R) (MonoidHom.ext fun x ↦ by simp)
+
+/-- Conjugating a subgroup first by `g` and then by `h` is conjugation by `h * g`. -/
+theorem _root_.Subgroup.map_conj_map_conj (R : Subgroup G) (g h : G) :
+    (R.map (MulAut.conj g).toMonoidHom).map (MulAut.conj h).toMonoidHom =
+      R.map (MulAut.conj (h * g)).toMonoidHom := by
+  simp only [Subgroup.map_map, MulEquiv.toMonoidHom_eq_coe,
+    ← MulEquiv.coe_monoidHom_trans, ← MulAut.mul_def, ← map_mul]
 
 /-- The image of a subgroup in `G ⧸ N`, pushed forward along the map `G ⧸ N →* H ⧸ M` induced by
 `f`, is the image in `H ⧸ M` of the image of the subgroup under `f`.

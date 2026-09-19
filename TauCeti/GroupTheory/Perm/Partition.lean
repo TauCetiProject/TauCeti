@@ -44,6 +44,11 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
   `Equiv.permCongrHom_coe` rewrites it to `Equiv.permCongr`.
 * `Equiv.Perm.parts_partition_of_isCycle`, `Equiv.Perm.parts_partition_swap`: the values on a cycle
   and on a transposition, which are the two shapes the low-degree recognition theorems read.
+* `Equiv.Perm.cycleType_eq_singleton_iff`: a single cycle length `n` characterizes a cycle moving
+  `n` points; through `Equiv.Perm.filter_fullCycleType_eq_cycleType` this reads a cycle off a full
+  cycle type.
+* `Equiv.Perm.fullCycleType_eq_map_card_filter`: the full cycle type is the multiset of orbit
+  sizes, read through any function whose fibres are the orbits.
 * `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints`: the classes of `Equiv.Perm.SameCycle`
   are the nontrivial cycle factors together with the fixed points, via the point-level map
   `Equiv.Perm.cycleFactorOrFixedPoint`.
@@ -282,6 +287,15 @@ theorem _root_.Equiv.Perm.filter_fullCycleType_eq_cycleType {σ : Equiv.Perm α}
   rw [fullCycleType_def]
   exact Equiv.Perm.filter_parts_partition_eq_cycleType
 
+/-- A permutation has a single cycle length `n`, and no other, exactly when it is a cycle
+moving `n` points. -/
+@[simp]
+theorem _root_.Equiv.Perm.cycleType_eq_singleton_iff {σ : Equiv.Perm α} {n : ℕ} :
+    σ.cycleType = {n} ↔ σ.IsCycle ∧ σ.support.card = n := by
+  refine ⟨fun h => ⟨card_cycleType_eq_one.mp (by rw [h, Multiset.card_singleton]), ?_⟩,
+    fun h => by rw [h.1.cycleType, h.2]⟩
+  rw [← sum_cycleType, h, Multiset.sum_singleton]
+
 /-- Conjugate permutations have equal full cycle types. -/
 theorem _root_.Equiv.Perm.fullCycleType_eq_of_isConj {σ τ : Equiv.Perm α}
     (hστ : IsConj σ τ) : fullCycleType σ = fullCycleType τ := by
@@ -367,6 +381,80 @@ theorem _root_.Equiv.Perm.count_one_fullCycleType (σ : Equiv.Perm α) :
     (fullCycleType σ).count 1 = Fintype.card α - σ.support.card := by
   rw [fullCycleType_def]
   exact Equiv.Perm.count_one_parts_partition σ
+
+open scoped Classical in
+/-- **The full cycle type lists the sizes of the orbits.** If the fibres of `m : α → γ` are
+exactly the orbits of `σ`, then the full cycle type of `σ` is the multiset of the sizes of those
+fibres, one for each value of `m`. -/
+theorem _root_.Equiv.Perm.fullCycleType_eq_map_card_filter {γ : Type*}
+    (σ : Equiv.Perm α) (m : α → γ) (hm : ∀ x y, σ.SameCycle x y ↔ m x = m y) :
+    fullCycleType σ =
+      (Finset.univ.image m).val.map fun c => (Finset.univ.filter fun x => m x = c).card := by
+  classical
+  set T := Finset.univ.image m
+  set fib : γ → ℕ := fun c => (Finset.univ.filter fun x => m x = c).card
+  -- A value of `m` is either hit by the support of `σ` or only by fixed points.
+  set R : γ → Prop := fun c => ∃ x ∈ σ.support, m x = c
+  -- The values hit by the support match the cycle factors, each fibre being a cycle's support.
+  have hcycle : (T.filter R).val.map fib = σ.cycleType := by
+    rw [cycleType_def, Function.comp_def]
+    refine (Multiset.map_eq_map_of_bij_of_nodup _ _ σ.cycleFactorsFinset.nodup
+      (T.filter R).nodup
+      (fun c hc => m (mem_cycleFactorsFinset_iff.mp hc).1.nonempty_support.choose)
+      ?_ ?_ ?_ ?_).symm
+    · intro c hc
+      have hx := (mem_cycleFactorsFinset_iff.mp hc).1.nonempty_support.choose_spec
+      exact Finset.mem_filter.mpr ⟨Finset.mem_image_of_mem _ (Finset.mem_univ _),
+        _, mem_cycleFactorsFinset_support_le hc hx, rfl⟩
+    · intro c hc d hd hcd
+      have hx := (mem_cycleFactorsFinset_iff.mp hc).1.nonempty_support.choose_spec
+      have hy := (mem_cycleFactorsFinset_iff.mp hd).1.nonempty_support.choose_spec
+      rw [cycle_is_cycleOf hx hc, cycle_is_cycleOf hy hd]
+      exact ((hm _ _).mpr hcd).cycleOf_eq
+    · intro c hc
+      obtain ⟨-, x, hx, rfl⟩ := Finset.mem_filter.mp hc
+      have hmem : σ.cycleOf x ∈ σ.cycleFactorsFinset :=
+        cycleOf_mem_cycleFactorsFinset_iff.mpr hx
+      refine ⟨_, hmem, ?_⟩
+      have hy := (mem_cycleFactorsFinset_iff.mp hmem).1.nonempty_support.choose_spec
+      exact ((hm _ _).mp ((mem_support_cycleOf_iff' (mem_support.mp hx)).mp hy)).symm
+    · intro c hc
+      have hx := (mem_cycleFactorsFinset_iff.mp hc).1.nonempty_support.choose_spec
+      set x := (mem_cycleFactorsFinset_iff.mp hc).1.nonempty_support.choose
+      have hxs : σ x ≠ x := mem_support.mp (mem_cycleFactorsFinset_support_le hc hx)
+      rw [cycle_is_cycleOf hx hc]
+      congr 1
+      ext y
+      rw [mem_support_cycleOf_iff' hxs, hm]
+      simp [eq_comm]
+  -- The remaining values are the images of the fixed points, each with a singleton fibre.
+  have hfixed : (T.filter fun c => ¬ R c).val.map fib =
+      Multiset.replicate (Fintype.card α - σ.support.card) 1 := by
+    have himage : T.filter (fun c => ¬ R c) = σ.supportᶜ.image m := by
+      ext c
+      simp only [T, R, Finset.mem_filter, Finset.mem_image, Finset.mem_univ, true_and,
+        Finset.mem_compl, not_exists, not_and]
+      constructor
+      · rintro ⟨⟨x, rfl⟩, hx⟩
+        exact ⟨x, fun h => hx x h rfl, rfl⟩
+      · rintro ⟨x, hx, rfl⟩
+        exact ⟨⟨x, rfl⟩, fun y hy hxy => mem_support.mp hy
+          (((hm y x).mpr hxy).apply_eq_self_iff.mpr (notMem_support.mp hx))⟩
+    rw [himage, Multiset.eq_replicate]
+    refine ⟨?_, fun n hn => ?_⟩
+    · rw [Multiset.card_map, Finset.card_val, Finset.card_image_of_injOn, Finset.card_compl]
+      intro x hx y _ hxy
+      exact ((hm x y).mpr hxy).eq_of_left (notMem_support.mp (Finset.mem_compl.mp hx))
+    · obtain ⟨c, hc, rfl⟩ := Multiset.mem_map.mp hn
+      obtain ⟨x, hx, rfl⟩ := Finset.mem_image.mp hc
+      refine Finset.card_eq_one.mpr ⟨x, ?_⟩
+      ext y
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton]
+      refine ⟨fun hxy => ?_, fun h => h ▸ rfl⟩
+      exact (((hm x y).mpr hxy.symm).eq_of_left
+        (notMem_support.mp (Finset.mem_compl.mp hx))).symm
+  rw [fullCycleType, ← hcycle, ← hfixed, ← Multiset.map_add, Finset.filter_val,
+    Finset.filter_val, Multiset.filter_add_not]
 
 /-! ### Orbit sizes -/
 

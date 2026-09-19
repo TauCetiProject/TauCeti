@@ -28,8 +28,8 @@ construction descends from Weil divisors to the divisor class group.
 
 This is the set-level divisor-to-line-bundle comparison. Its compatibility with addition,
 `𝓞_X(D + E) ≅ 𝓞_X(D) ⊗ 𝓞_X(E)`, needs the tensor product of module sheaves and is proved in
-`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/TensorProduct.lean`; that the comparison is
-surjective requires further structure still.
+`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/TensorProduct.lean`, and its surjectivity in
+`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Picard.lean`.
 -/
 
 public section

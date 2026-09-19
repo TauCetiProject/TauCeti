@@ -210,6 +210,18 @@ def starEquivNeighborSet (v : V) :
     ext
     rfl
 
+/-- The star at a doubled-quiver vertex is finite whenever its neighbor set is finite. -/
+noncomputable instance instFintypeStarVertex (v : V) [Fintype (G.neighborSet v)] :
+    Fintype (Quiver.Star (vertex G v)) :=
+  Fintype.ofEquiv _ (starEquivNeighborSet G v).symm
+
+/-- If every graph neighbor set is finite, then every star of its doubled quiver is finite. -/
+noncomputable instance instFintypeStar [∀ v, Fintype (G.neighborSet v)]
+    (x : DoubledQuiver G) : Fintype (Quiver.Star x) :=
+  Fintype.ofEquiv (G.neighborSet ((vertexEquiv G).symm x))
+    ((starEquivNeighborSet G _).symm.trans
+      (Equiv.cast (congrArg Quiver.Star (vertexEquiv_symm_apply G x))))
+
 @[simp]
 theorem starEquivNeighborSet_apply (v : V) (e : Quiver.Star (vertex G v)) :
     starEquivNeighborSet G v e =
@@ -258,13 +270,13 @@ theorem card_hom_eq_adjMatrix [DecidableRel G.Adj] (i j : V) :
 theorem card_star_eq_degree (v : V) [Fintype (G.neighborSet v)] :
     Nat.card (Quiver.Star (vertex G v)) = G.degree v := by
   rw [Nat.card_congr (starEquivNeighborSet G v)]
-  simpa using G.card_neighborSet_eq_degree v
+  simp
 
 /-- The number of doubled-quiver arrows entering a vertex is its degree in the graph. -/
 theorem card_costar_eq_degree (v : V) [Fintype (G.neighborSet v)] :
     Nat.card (Quiver.Costar (vertex G v)) = G.degree v := by
   rw [Nat.card_congr (costarEquivNeighborSet G v)]
-  simpa using G.card_neighborSet_eq_degree v
+  simp
 
 /-- The total number of doubled-quiver arrows is twice the number of graph edges. -/
 theorem card_totalArrow_eq_twice_card_edges [Fintype V] [DecidableRel G.Adj] :

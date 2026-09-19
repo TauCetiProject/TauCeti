@@ -49,6 +49,8 @@ quotient, a gauge-trivial parameter presents the ordinary zigzag algebra.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_iff`: gauge equivalence in existential form.
 * `TauCeti.SkewZigzagParameter.IsGaugeEquivalent.equivalence`: gauge equivalence is an equivalence
   relation.
+* `TauCeti.SkewZigzagParameter.isGaugeEquivalent_one_iff_exists_ratio_eq_div`: a parameter is
+  gauge trivial exactly when its ratios are quotients of a symmetric edge scale.
 * `TauCeti.skewZigzagQuotientGaugeEquiv`: **gauge independence**, a gauge transform of a parameter
   presents an isomorphic algebra.
 * `TauCeti.nonempty_algEquiv_nonisolatedZigzagQuotient_of_isGaugeEquivalent_one`: a gauge-trivial
@@ -262,6 +264,48 @@ theorem IsGaugeEquivalent.trans {c c' c'' : SkewZigzagParameter k G}
 theorem IsGaugeEquivalent.equivalence :
     Equivalence (IsGaugeEquivalent (k := k) (G := G)) :=
   ⟨IsGaugeEquivalent.refl, IsGaugeEquivalent.symm, IsGaugeEquivalent.trans⟩
+
+/-! ### Gauge triviality through edge scales -/
+
+/-- A unit-valued labelling of the arrows of the doubled quiver whose backtrack scale along every
+edge is a prescribed symmetric edge scale: orient each edge from the smaller to the larger end for
+a well-ordering of the vertices and put the scale on that orientation only. -/
+private noncomputable def orientedLabelling (s : ∀ ⦃i j : V⦄, G.Adj i j → kˣ) :
+    ∀ ⦃x y : DoubledQuiver G⦄, (x ⟶ y) → kˣ :=
+  fun ⦃x y⦄ e ↦ by
+    classical
+    exact if WellOrderingRel ((vertexEquiv G).symm x) ((vertexEquiv G).symm y) then s e.down
+      else 1
+
+private theorem backtrackScale_orientedLabelling (s : ∀ ⦃i j : V⦄, G.Adj i j → kˣ)
+    (hs : ∀ ⦃i j : V⦄ (h : G.Adj i j), s h.symm = s h) {i j : V} (h : G.Adj i j) :
+    backtrackScale G (orientedLabelling s) h = s h := by
+  classical
+  simp only [backtrackScale_apply, orientedLabelling, vertexEquiv_symm_vertex]
+  rcases trichotomous_of WellOrderingRel i j with hij | rfl | hji
+  · rw [ite_eq_left hij, ite_eq_right (asymm hij), mul_one]
+  · exact absurd h (G.irrefl)
+  · rw [ite_eq_right (asymm hji), ite_eq_left hji, one_mul, ← hs h]
+
+/-- **A parameter is gauge trivial exactly when its ratios are quotients of a symmetric edge
+scale**: a unit `s` on each edge, independent of its orientation, with
+`ratio(h, h') = s h / s h'` for every two edges `h`, `h'` at a common vertex. -/
+theorem isGaugeEquivalent_one_iff_exists_ratio_eq_div {c : SkewZigzagParameter k G} :
+    IsGaugeEquivalent 1 c ↔ ∃ s : ∀ ⦃i j : V⦄, G.Adj i j → kˣ,
+      (∀ ⦃i j : V⦄ (h : G.Adj i j), s h.symm = s h) ∧
+        ∀ ⦃i j j' : V⦄ (h : G.Adj i j) (h' : G.Adj i j'), c.ratio h h' = s h / s h' := by
+  rw [isGaugeEquivalent_iff]
+  constructor
+  · rintro ⟨u, rfl⟩
+    refine ⟨fun _ _ h ↦ (backtrackScale G u h)⁻¹, fun _ _ h ↦ ?_, fun _ _ _ h h' ↦ ?_⟩
+    · exact congrArg _ (backtrackScale_symm G u h)
+    · rw [gauge_ratio, one_ratio, one_mul, inv_div_inv]
+  · rintro ⟨s, hs, hc⟩
+    refine ⟨orientedLabelling fun _ _ h ↦ (s h)⁻¹, ?_⟩
+    ext i j j' h h'
+    rw [gauge_ratio, one_ratio, one_mul,
+      backtrackScale_orientedLabelling _ (fun _ _ h ↦ by rw [hs]) h,
+      backtrackScale_orientedLabelling _ (fun _ _ h ↦ by rw [hs]) h', inv_div_inv, hc]
 
 section Map
 

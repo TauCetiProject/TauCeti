@@ -224,6 +224,25 @@ theorem valuationSubring_normalization :
     (normalization v).valuationSubring = v.valuationSubring :=
   (isEquiv_iff_valuationSubring _ _).mp (isEquiv_normalization v)
 
+/-- **A surjective valuation has index `1`**: it already attains the order `1`, and the index
+divides every order attained. -/
+@[simp]
+theorem ordIndex_eq_one_of_surjective (hv : Function.Surjective v) : ordIndex v = 1 := by
+  obtain ⟨f, hf⟩ := ord_surjective v hv 1
+  have hdvd := ordIndex_dvd_ord v f
+  rw [hf] at hdvd
+  exact Nat.dvd_one.mp (Int.natCast_dvd_natCast.mp (by simpa using hdvd))
+
+/-- **A surjective valuation is its own normalization**: normalizing divides every order by the
+index, which is `1`. -/
+@[simp]
+theorem normalization_eq_self_of_surjective (hv : Function.Surjective v) : normalization v = v := by
+  ext f
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  · rw [normalization_apply v hf, ordIndex_eq_one_of_surjective v hv, Nat.cast_one, Int.ediv_one,
+      ← valuation_eq_exp_neg_ord v hf]
+
 /-- The normalization of a nontrivial valuation is surjective: its value group is all of
 `ℤᵐ⁰`. -/
 theorem normalization_surjective (hv : ordIndex v ≠ 0) :
