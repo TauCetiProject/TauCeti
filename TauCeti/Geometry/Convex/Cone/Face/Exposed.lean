@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Convex.Cone.Face.Basic
 public import Mathlib.Algebra.Order.Archimedean.Basic
 public import Mathlib.RingTheory.Finiteness.Defs
-public import TauCeti.Geometry.Convex.Cone.Face.Finite
+import TauCeti.Geometry.Convex.Cone.Face.Finite
 
 /-!
 # Faces cut out by nonnegative linear functionals

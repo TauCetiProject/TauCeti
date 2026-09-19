@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Geometry.Convex.Cone.Face.Exposed
 public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Basic
-public import TauCeti.Geometry.Toric.Algebraic.Ray.Generation
+public import TauCeti.Geometry.Toric.Algebraic.Regular
+import TauCeti.Geometry.Toric.Algebraic.Ray.Generation
 
 /-!
 # Dual semigroups of faces of toric cones
@@ -81,8 +82,7 @@ theorem dualSemigroup_inf_ker_eq_sup (hi : IsIntegralLattice i) (hσ : σ.FG)
     exact neg_mem_dualSemigroup_inf_ker hi σ m
 
 /-- Every face `τ` of a regular cone `σ` is cut out by a character in the dual semigroup of `σ`:
-there is `m` with `σ ⊓ ker m = τ`. Such a character takes the value `1` on the primitive ray
-generators outside `τ` and the value `0` on those in `τ`. -/
+there is `m` with `σ ⊓ ker m = τ`. -/
 theorem IsRegularCone.exists_mem_dualSemigroup_inf_ker_eq (hi : IsIntegralLattice i)
     (hσ : IsRegularCone i σ) {τ : PointedCone ℝ V} (hτ : τ.IsFaceOf σ) :
     ∃ m ∈ dualSemigroup hi σ,
