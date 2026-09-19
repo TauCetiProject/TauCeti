@@ -159,9 +159,12 @@ theorem not_isOfFinOrder_commutator_x_y_of_inv_add_inv_add_inv_eq_one (ha : a �
       have := congr((($h : ℚ) : ℂ))
       push_cast at this
       linear_combination this
-    rw [← Complex.exp_add, ← Complex.exp_neg, div_eq_mul_inv, div_eq_mul_inv, ← mul_add, hC,
-      mul_sub, mul_one, sub_eq_add_neg, Complex.exp_add, Complex.exp_two_pi_mul_I, one_mul,
-      div_eq_mul_inv]
+    have hexp : 2 * Real.pi * Complex.I / a + 2 * Real.pi * Complex.I / b =
+        -(2 * Real.pi * Complex.I / c) + 2 * Real.pi * Complex.I := by
+      rw [div_eq_mul_inv, div_eq_mul_inv, div_eq_mul_inv, ← mul_add, hC]
+      ring
+    rw [← Complex.exp_add, hexp, Complex.exp_add, Complex.exp_neg,
+      Complex.exp_two_pi_mul_I, mul_one]
   have hζ := (Complex.isPrimitiveRoot_exp c hc).inv
   rw [← hωη] at hζ
   let ω : ℂˣ := Units.mk0 _ (Complex.exp_ne_zero (2 * Real.pi * Complex.I / a))

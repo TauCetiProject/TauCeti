@@ -13,7 +13,9 @@ import Mathlib.Tactic.Ring
 /-!
 # Affine equivalences
 
-This file records computations with affine equivalences.
+This file records computations with affine equivalences. In particular, identifying the
+commutator of two homotheties as a translation supports affine representations that detect
+infinite-order elements, such as those used for Euclidean triangle groups.
 
 ## Main results
 
