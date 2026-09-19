@@ -112,12 +112,7 @@ theorem denseRange_algebraMap_pi_liesOver :
   have hΦs : Function.Surjective Φ := fun y ↦
     ⟨(fun w ↦ y ⟨w.1, hS.mp w.2⟩, fun u ↦ (Finset.notMem_empty _ u.2).elim), by
       funext w
-      change y ⟨w.1, hS.mp (hS.mpr w.2)⟩ = y w
-      have hw : (⟨w.1, hS.mp (hS.mpr w.2)⟩ :
-          {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) = w :=
-        Subtype.ext rfl
-      cases hw
-      rfl⟩
+      simp only [Φ]⟩
   exact hΦs.denseRange.comp (TauCeti.GlobalNumberFields.weakApproximation_denseRange S ∅) hΦc
 
 /-- **The semi-local map is surjective**: every family `(y_w)_{w ∣ v}` of elements of the
