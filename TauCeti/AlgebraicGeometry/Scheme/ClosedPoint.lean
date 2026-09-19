@@ -25,7 +25,7 @@ degree of a closed point `x` of a curve.
 
 * `AlgebraicGeometry.Scheme.finite_Γevaluation_of_isClosed`: the evaluation map
   `Γ(X, ⊤) ⟶ κ(x)` at a closed point is finite;
-* `TauCeti.AlgebraicGeometry.residueDegree_ne_zero_of_isClosed`: the residue degree
+* `AlgebraicGeometry.Scheme.Hom.residueDegree_ne_zero_of_isClosed`: the residue degree
   `[κ(x) : κ(f x)]` at a closed point is finite, hence nonzero.
 
 The input is Mathlib's `isFinite_iff_locallyOfFiniteType_of_jacobsonSpace` applied to
@@ -64,7 +64,8 @@ theorem _root_.AlgebraicGeometry.Scheme.finite_Γevaluation_of_isClosed {X Y : S
 /-- At a closed point `x` of a scheme locally of finite type over a Jacobson scheme, the
 residue field extension `κ(f x) ⟶ κ(x)` is finite, so its residue degree is nonzero. For a scheme
 of finite type over a field `k` this says that closed points have finite degree over `k`. -/
-theorem residueDegree_ne_zero_of_isClosed {X Y : Scheme.{u}} [JacobsonSpace Y]
+theorem _root_.AlgebraicGeometry.Scheme.Hom.residueDegree_ne_zero_of_isClosed
+    {X Y : Scheme.{u}} [JacobsonSpace Y]
     (f : X ⟶ Y) [LocallyOfFiniteType f] {x : X} (hx : IsClosed {x}) :
     f.residueDegree x ≠ 0 := by
   have := isClosed_singleton_iff_isClosedImmersion.mp hx

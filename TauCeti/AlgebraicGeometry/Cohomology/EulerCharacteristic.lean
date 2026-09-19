@@ -132,7 +132,8 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.finrank_cohomology_zero_eq_finrank
   (cohomologyZeroBaseLinearEquiv k X M).finrank_eq
 
 /-- An isomorphism of sheaves of modules induces a `k`-linear equivalence on cohomology. -/
-private def cohomologyBaseLinearEquivOfIso {M N : X.Modules} (e : M ≅ N) (i : ℕ) :
+def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBaseLinearEquivOfIso
+    {M N : X.Modules} (e : M ≅ N) (i : ℕ) :
     Cohomology M i ≃ₗ[k] Cohomology N i :=
   LinearEquiv.ofLinearMap (cohomologyMapBaseLinear k X e.hom i)
     (cohomologyMapBaseLinear k X e.inv i)

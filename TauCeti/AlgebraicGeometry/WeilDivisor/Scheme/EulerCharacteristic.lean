@@ -179,7 +179,8 @@ private lemma isNoetherian_and_isClosed_and_residueDegree_ne_zero
   have : CompactSpace X := (quasiCompact_iff_compactSpace (X ↘ Spec (.of k))).mp inferInstance
   have hclosed (y : CodimensionOnePoint X) : IsClosed ({(y : X)} : Set X) :=
     isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hX y.property
-  exact ⟨{}, hclosed, fun y ↦ residueDegree_ne_zero_of_isClosed _ (hclosed y)⟩
+  exact ⟨{}, hclosed, fun y ↦
+    Scheme.Hom.residueDegree_ne_zero_of_isClosed _ (hclosed y)⟩
 
 omit [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))] in
 /-- On a curve, `𝒪_X(0)` is the trivial line bundle `𝒪_X`. -/
@@ -263,7 +264,7 @@ end InvertibleSheaf
 
 namespace LineBundleClass
 
-variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
+variable {X : Scheme.{u}} [IsIntegral X] [IsLocallyNoetherian X]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
   (k : Type u) [Field k] [X.Over (Spec (.of k))] [IsProper (X ↘ Spec (.of k))]
   (hX : ∀ y : X, coheight y ≤ 1)
@@ -274,8 +275,14 @@ proper integral curve over `k` whose codimension-one local rings are discrete va
 and whose `H¹(X, 𝒪_X)` is finite-dimensional. -/
 @[simp]
 theorem eulerDegree_toLineBundleClass (D : SchemeWeilDivisor X) :
-    eulerDegree k (SchemeWeilDivisor.toLineBundleClass hX D) =
+    eulerDegree k (@SchemeWeilDivisor.toLineBundleClass X _
+      { toIsLocallyNoetherian := inferInstance
+        toCompactSpace := (quasiCompact_iff_compactSpace (X ↘ Spec (.of k))).mp inferInstance }
+      _ hX D) =
       SchemeWeilDivisor.relativeDegree (X ↘ Spec (.of k)) D := by
+  let _ : IsNoetherian X :=
+    { toIsLocallyNoetherian := inferInstance
+      toCompactSpace := (quasiCompact_iff_compactSpace (X ↘ Spec (.of k))).mp inferInstance }
   rw [(SchemeWeilDivisor.toLineBundleClass_eq_mk_iff hX).mpr ⟨Iso.refl _⟩, eulerDegree_mk]
   exact InvertibleSheaf.eulerDegree_eq_relativeDegree k hX
     (eqToIso (SchemeWeilDivisor.toInvertibleSheaf_obj hX D))
@@ -284,8 +291,12 @@ include hX in
 /-- **The Euler-characteristic degree is additive under tensor product**, on a proper integral
 curve over `k` whose codimension-one local rings are discrete valuation rings and whose
 `H¹(X, 𝒪_X)` is finite-dimensional. -/
+@[simp]
 theorem eulerDegree_mul (a b : LineBundleClass X) :
     eulerDegree k (a * b) = eulerDegree k a + eulerDegree k b := by
+  let _ : IsNoetherian X :=
+    { toIsLocallyNoetherian := inferInstance
+      toCompactSpace := (quasiCompact_iff_compactSpace (X ↘ Spec (.of k))).mp inferInstance }
   obtain ⟨D, rfl⟩ := SchemeWeilDivisor.toLineBundleClass_surjective hX a
   obtain ⟨E, rfl⟩ := SchemeWeilDivisor.toLineBundleClass_surjective hX b
   rw [← SchemeWeilDivisor.toLineBundleClass_add, eulerDegree_toLineBundleClass,
