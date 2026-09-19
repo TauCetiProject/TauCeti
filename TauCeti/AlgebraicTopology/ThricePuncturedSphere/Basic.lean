@@ -360,12 +360,6 @@ theorem puncturedDiscOne_disjoint_puncturedDiscInf :
 noncomputable def mobId : ThricePuncturedSphere ≃ₜ ThricePuncturedSphere :=
   Homeomorph.refl _
 
-@[simp]
-theorem coe_mobId (z : ThricePuncturedSphere) : (mobId z : ℂ) = z :=
-  by
-    unfold mobId
-    simp
-
 /-- The self-homeomorphism `z ↦ 1 − z` of the thrice-punctured sphere. It is the anharmonic
 transformation exchanging the punctures `0` and `1` and fixing `∞`, and among the six anharmonic
 transformations it is the only nonidentity one fixing the basepoint `1/2`. -/
