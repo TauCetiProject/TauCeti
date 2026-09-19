@@ -73,13 +73,11 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
   norm is orthogonal; `TauCeti.QuadraticMap.reflection_mul_self` says it is an involution, and
   `TauCeti.QuadraticMap.reflection_apply_of_isOrtho` that it fixes the orthogonal hyperplane,
   `TauCeti.QuadraticMap.reflection_smul_eq` that rescaling by an invertible scalar does not change
-  it, and `TauCeti.QuadraticMap.reflection_smul_eq_of_invertible` that the same equality retains a
-  caller-supplied invertibility instance for the rescaled norm. Finally,
-  `TauCeti.QuadraticMap.det_reflection` computes its determinant on a finite free module. These are
-  the elements a Cartan-Dieudonné theorem would write an orthogonal automorphism as a product of,
-  under hypotheses (a field of characteristic not two, a nondegenerate form, finite dimension)
-  that are not assumed here, and the image of the Pin group's generating vectors under twisted
-  conjugation.
+  it, and `TauCeti.QuadraticMap.det_reflection` computes its determinant on a finite free module.
+  These are the elements a Cartan-Dieudonné theorem would write an orthogonal automorphism as a
+  product of, under hypotheses (a field of characteristic not two, a nondegenerate form, finite
+  dimension) that are not assumed here, and the image of the Pin group's generating vectors under
+  twisted conjugation.
 * `QuadraticMap.exists_isometryEquiv_apply_eq_of_map_eq`: **Witt transitivity**, the orthogonal
   group acts transitively on the vectors of a fixed nonzero value, by reflecting in `x - y` or in
   `x + y`.
@@ -461,15 +459,6 @@ theorem reflection_smul_eq (a : R) [Invertible a] :
     ⅟(Q (a • v)) * (a * polar Q v m) * a =
         (⅟(Q (a • v)) * a * a) * polar Q v m := by ring
     _ = ⅟(Q v) * polar Q v m := by rw [hcoeff]
-
-/-- Rescaling a vector does not change its reflection when the caller has already chosen the
-invertibility instance for the rescaled norm. -/
-@[simp]
-theorem reflection_smul_eq_of_invertible (a : R) [Invertible a]
-    [Invertible (Q (a • v))] : reflection Q (a • v) = reflection Q v := by
-  convert reflection_smul_eq Q v a using 1
-  congr 1
-  exact Subsingleton.elim _ _
 
 @[simp]
 theorem reflection_apply_self : reflection Q v v = -v :=

@@ -31,8 +31,8 @@ lying in a level set into a periodic orbit.
 * `QuadraticMap.PosDef.finite_setOf_apply_eq`: consequently only finitely many vectors of
   value exactly `n`.
 
-Both live in the root `QuadraticMap.PosDef` namespace so that they are available by dot notation
-on a `QuadraticForm.PosDef` hypothesis.
+These results live in the root `QuadraticMap.PosDef` namespace so that they are available by dot
+notation on a `QuadraticForm.PosDef` hypothesis.
 
 ## Implementation notes
 
@@ -73,7 +73,7 @@ namespace QuadraticMap.PosDef
 
 section Real
 
-variable {M : Type*} [AddCommGroup M] [Module ℝ M]
+variable {M : Type*} [AddCommMonoid M] [Module ℝ M]
 
 /-- Scaling a nonzero vector by the inverse square root of its value under a positive-definite
 real quadratic form gives a vector of quadratic value one. -/

@@ -45,12 +45,10 @@ theorem pathConnectedSpace_realCliffordSpinGroupZero_add_two (n : ℕ) :
     · exact mem_pathComponent_iff.mpr
         (joined_one_negOne_realCliffordSpinGroupZero_add_two n)
     · intro v w _ _
-      have nonzero_of_invertible (u : Fin (n + 2) → ℝ) [Invertible (Q u)] : u ≠ 0 := by
-        intro hu
-        subst u
-        exact (isUnit_of_invertible (Q (0 : Fin (n + 2) → ℝ))).ne_zero (by simp)
-      have hv0 : v ≠ 0 := nonzero_of_invertible v
-      have hw0 : w ≠ 0 := nonzero_of_invertible w
+      have hv0 : v ≠ 0 := (posDef_realCliffordForm_zero (n + 2)).anisotropic.eq_zero_iff.not.mp
+        (isUnit_of_invertible (Q v)).ne_zero
+      have hw0 : w ≠ 0 := (posDef_realCliffordForm_zero (n + 2)).anisotropic.eq_zero_iff.not.mp
+        (isUnit_of_invertible (Q w)).ne_zero
       let a := (Real.sqrt (Q v))⁻¹
       let b := (Real.sqrt (Q w))⁻¹
       have hva : a ≠ 0 :=
@@ -76,12 +74,14 @@ theorem pathConnectedSpace_realCliffordSpinGroupZero_add_two (n : ℕ) :
         simp only [Subgroup.coe_mul, QuadraticMap.coe_reflectionOrthogonal]
         have hvref : QuadraticMap.reflection Q (a • v) =
             QuadraticMap.reflection Q v := by
-          simpa only [Q, a] using
-            QuadraticMap.reflection_smul_eq_of_invertible Q v a
+          convert QuadraticMap.reflection_smul_eq Q v a using 1
+          congr 1
+          exact Subsingleton.elim _ _
         have hwref : QuadraticMap.reflection Q (b • w) =
             QuadraticMap.reflection Q w := by
-          simpa only [Q, b] using
-            QuadraticMap.reflection_smul_eq_of_invertible Q w b
+          convert QuadraticMap.reflection_smul_eq Q w b using 1
+          congr 1
+          exact Subsingleton.elim _ _
         rw [hvref, hwref]
   apply pathConnectedSpace_iff_eq.mpr
   refine ⟨1, ?_⟩
