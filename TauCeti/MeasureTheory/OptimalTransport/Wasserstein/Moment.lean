@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.UniformIntegrable
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.WeakConvergence
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.WeakConvergence
+public import TauCeti.Topology.MetricSpace.DisplacementTail
 
 /-!
 # Wasserstein convergence and convergence of moments
@@ -28,9 +29,11 @@ unbounded continuous functions along weakly convergent families.
 For the sufficiency half, a displacement larger than `2 R` forces one of the two endpoints to lie
 at distance at least `R` from the basepoint, and then the displacement is at most twice that
 distance. The `p`-th power of the displacement is therefore at most its truncation at `2 R` plus
-`2 ^ p` times the `p`-moment tails beyond `R` of the two marginals. The tails are uniformly small
+`2 ^ p` times the `p`-moment tails beyond `R` of the two marginals
+(`TauCeti.edist_rpow_le_min_add_indicator`). The tails are uniformly small
 by the uniform integrability just described, and the transport cost of the bounded truncated cost
-tends to `0` along weak convergence by `TauCeti.tendsto_transportCost_of_tendsto`.
+tends to `0` along weak convergence by
+`TauCeti.tendsto_transportCost_of_tendsto_probabilityMeasure`.
 
 ## Main statements
 
@@ -42,9 +45,10 @@ tends to `0` along weak convergence by `TauCeti.tendsto_transportCost_of_tendsto
   family whose `p`-moments converge to a finite limit, the `p`-moments have uniformly small tails;
 * `TauCeti.WassersteinSpace.exists_setLIntegral_edist_rpow_le` — in particular, the `p`-moments
   have uniformly small tails along a `W_p`-convergent family;
-* `TauCeti.tendsto_wassersteinEDist_of_tendsto_lintegral` — on a separable pseudometric space,
-  weak convergence together with convergence of the `p`-moments to a finite limit gives
-  convergence in the `p`-Wasserstein distance, for every finite nonzero exponent;
+* `TauCeti.tendsto_wassersteinEDist_of_tendsto_probabilityMeasure_of_tendsto_lintegral` — on a
+  separable pseudometric space, weak convergence together with convergence of the `p`-moments to
+  a finite limit gives convergence in the `p`-Wasserstein distance, for every finite nonzero
+  exponent;
 * `TauCeti.WassersteinSpace.tendsto_iff_tendsto_toProbabilityMeasure_and_lintegral` — the
   characterization of convergence in the Wasserstein space.
 
@@ -148,42 +152,12 @@ section Sufficiency
 variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   {p : ℝ≥0∞} {γ : Type*} {L : Filter γ} {μs : γ → ProbabilityMeasure X} {μ : ProbabilityMeasure X}
 
-omit [MeasurableSpace X] [OpensMeasurableSpace X] in
-/-- A displacement larger than `2 R` is at most twice the distance from the basepoint `x` of an
-endpoint lying at distance at least `R` from it. Hence the `p`-th power of the displacement is at
-most its truncation at `2 R` plus `2 ^ p` times the tail parts, beyond `R`, of the `p`-th powers of
-the distances of the two endpoints from `x`. -/
-private theorem edist_rpow_le_min_add_indicator {q : ℝ} (hq : 0 < q) (x : X) (R : ℝ≥0)
-    (y z : X) :
-    edist y z ^ q ≤ min (edist y z) (2 * R) ^ q +
-      2 ^ q * {w | R ≤ nndist x w}.indicator (fun w ↦ edist x w ^ q) y +
-      2 ^ q * {w | R ≤ nndist x w}.indicator (fun w ↦ edist x w ^ q) z := by
-  by_cases hd : edist y z ≤ 2 * R
-  · rw [min_eq_left hd, add_assoc]
-    exact le_self_add
-  rw [not_le] at hd
-  -- An endpoint `w` with `edist y z ≤ 2 * edist x w` lies at distance at least `R` from `x`.
-  have hmem {w : X} (hw : edist y z ≤ 2 * edist x w) : w ∈ {w | R ≤ nndist x w} := by
-    rw [mem_ofPred_eq, ← ENNReal.coe_le_coe, ← edist_nndist]
-    by_contra hlt
-    exact (not_le.2 hd) (hw.trans (by gcongr; exact (not_le.1 hlt).le))
-  have hbound {w : X} (hw : edist y z ≤ 2 * edist x w) :
-      edist y z ^ q ≤ 2 ^ q * {w | R ≤ nndist x w}.indicator (fun w ↦ edist x w ^ q) w := by
-    rw [indicator_of_mem (hmem hw), ← ENNReal.mul_rpow_of_nonneg _ _ hq.le]
-    exact ENNReal.rpow_le_rpow hw hq.le
-  have htri : edist y z ≤ edist x y + edist x z := edist_triangle_left y z x
-  rcases le_total (edist x z) (edist x y) with hle | hle
-  · refine (hbound ?_).trans (le_add_right (le_add_left le_rfl))
-    exact htri.trans (by rw [two_mul]; gcongr)
-  · refine (hbound ?_).trans (le_add_left le_rfl)
-    exact htri.trans (by rw [two_mul]; gcongr)
-
 /-- **Weak convergence and convergence of moments give Wasserstein convergence.** On a separable
 pseudometric space, let probability measures `μᵢ` converge weakly to `μ`, and let their
 `p`-moments about a basepoint `x` converge to the finite `p`-moment of `μ`. Then for every finite
 nonzero exponent `p` the `p`-Wasserstein distance from `μᵢ` to `μ` tends to `0`. -/
-theorem tendsto_wassersteinEDist_of_tendsto_lintegral [TopologicalSpace.SeparableSpace X]
-    (hp0 : p ≠ 0) (hp : p ≠ ∞) (h : Tendsto μs L (𝓝 μ)) (x : X)
+theorem tendsto_wassersteinEDist_of_tendsto_probabilityMeasure_of_tendsto_lintegral
+    [TopologicalSpace.SeparableSpace X] (hp0 : p ≠ 0) (hp : p ≠ ∞) (h : Tendsto μs L (𝓝 μ)) (x : X)
     (hμ : ∫⁻ y, edist x y ^ p.toReal ∂(μ : Measure X) ≠ ∞)
     (hlim : Tendsto (fun i ↦ ∫⁻ y, edist x y ^ p.toReal ∂(μs i : Measure X)) L
       (𝓝 (∫⁻ y, edist x y ^ p.toReal ∂(μ : Measure X)))) :
@@ -224,7 +198,7 @@ theorem tendsto_wassersteinEDist_of_tendsto_lintegral [TopologicalSpace.Separabl
   -- The transport cost of the truncated cost tends to `0` along weak convergence.
   have hcore : Tendsto (fun i ↦ transportCost (fun z : X × X ↦ min (edist z.1 z.2) (2 * R) ^
       p.toReal) (μs i : Measure X) (μ : Measure X)) L (𝓝 0) := by
-    refine tendsto_transportCost_of_tendsto (M := (2 * (R : ℝ≥0∞)) ^ p.toReal)
+    refine tendsto_transportCost_of_tendsto_probabilityMeasure (M := (2 * (R : ℝ≥0∞)) ^ p.toReal)
       (ENNReal.rpow_ne_top_of_nonneg hq.le (by finiteness))
       (fun z ↦ ENNReal.rpow_le_rpow (min_le_right _ _) hq.le) (fun η hη ↦ ?_) h
     have hpow : Tendsto (fun t : ℝ≥0∞ ↦ t ^ p.toReal) (𝓝 0) (𝓝 0) := by
@@ -274,7 +248,8 @@ theorem tendsto_iff_tendsto_toProbabilityMeasure_and_lintegral (hp : p ≠ ∞) 
     ((continuous_lintegral_edist_rpow hp x).tendsto μ).comp h⟩, fun ⟨hw, hm⟩ ↦ ?_⟩
   rw [tendsto_iff_edist_tendsto_0]
   simpa only [edist_def] using
-    tendsto_wassersteinEDist_of_tendsto_lintegral (zero_lt_one.trans_le Fact.out).ne' hp hw x
+    tendsto_wassersteinEDist_of_tendsto_probabilityMeasure_of_tendsto_lintegral
+      (zero_lt_one.trans_le Fact.out).ne' hp hw x
       (lintegral_edist_rpow_ne_top hp μ x) hm
 
 end WassersteinSpace

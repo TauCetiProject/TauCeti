@@ -58,12 +58,18 @@ variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableS
 
 /-- A finite partition of `X` into pieces of `μ`-null boundary: all but the last piece lie in
 balls of radius `r`, and the last piece has `μ`-mass at most `ε`. -/
-theorem exists_partition_null_frontier_small_last (μ : Measure X) [IsFiniteMeasure μ] [Nonempty X]
-    {r : ℝ} (hr : 0 < r) {ε : ℝ≥0∞} (hε : 0 < ε) :
+theorem exists_partition_null_frontier_small_last (μ : Measure X) [IsFiniteMeasure μ] {r : ℝ}
+    (hr : 0 < r) {ε : ℝ≥0∞} (hε : 0 < ε) :
     ∃ (N : ℕ) (A : Fin (N + 1) → Set X), (∀ i, MeasurableSet (A i)) ∧
       Pairwise (Disjoint on A) ∧ (⋃ i, A i) = univ ∧ (∀ i, μ (frontier (A i)) = 0) ∧
       (∀ i : Fin (N + 1), i ≠ Fin.last N → ∃ x, A i ⊆ Metric.ball x r) ∧
       μ (A (Fin.last N)) ≤ ε := by
+  -- On the empty space the single cell `univ` is null.
+  cases isEmpty_or_nonempty X
+  · refine ⟨0, fun _ ↦ univ, fun _ ↦ .univ,
+      fun i j hij ↦ (hij (Subsingleton.elim (α := Fin 1) i j)).elim, iUnion_const _,
+      fun _ ↦ by simp, fun i hi ↦ (hi (Subsingleton.elim (α := Fin 1) _ _)).elim, ?_⟩
+    simp [univ_eq_empty_iff.2 ‹IsEmpty X›]
   obtain ⟨u, hu⟩ := TopologicalSpace.exists_dense_seq X
   obtain ⟨ρ, ⟨hρ0, hρr⟩, hρ⟩ := μ.exists_forall_null_frontier_thickening (fun k ↦ {u k}) hr
   simp only [Metric.thickening_singleton] at hρ
@@ -99,7 +105,7 @@ theorem exists_partition_null_frontier_small_last (μ : Measure X) [IsFiniteMeas
   · rw [iUnion_disjointed, eq_univ_iff_forall]
     exact fun x ↦ mem_iUnion.2 ⟨Fin.last N, by simp [hf]⟩
   · refine disjointedRec (p := fun t ↦ μ (frontier t) = 0) (fun t j ht ↦ ?_) (hff i)
-    rw [sdiff_eq]
+    rw [Set.sdiff_eq]
     exact null_frontier_inter ht (by rw [frontier_compl]; exact hff j)
   · have hiN : (i : ℕ) < N := by simpa using Fin.val_lt_last hi
     refine ⟨u i, (disjointed_subset f i).trans ?_⟩
