@@ -73,7 +73,7 @@ theorem existsUnique_hasGaloisLabel_three (hsep : f.Separable) (hirr : Irreducib
 private theorem discr_C_mul_of_natDegree_eq_three (a : F) (ha : a ≠ 0)
     (hdeg : f.natDegree = 3) : (C a * f).discr = a ^ 4 * f.discr := by
   have hfdeg : f.degree = 3 :=
-    (degree_eq_iff_natDegree_eq_of_pos (show 0 < (3 : ℕ) by omega)).mpr hdeg
+    (degree_eq_iff_natDegree_eq_of_pos (n := 3) (by omega)).mpr hdeg
   have hscaled : (C a * f).degree = 3 := by rw [degree_C_mul ha, hfdeg]
   rw [discr_of_degree_eq_three hscaled, discr_of_degree_eq_three hfdeg]
   simp only [coeff_C_mul]
@@ -158,13 +158,24 @@ theorem hasGaloisLabel_three_zero_iff :
 
 /-- **A cubic with non-square discriminant has label `3T2`.** Away from characteristic `2`, a
 polynomial has label `3T2`, that is Galois group the full symmetric group on its three
-roots, exactly when it is a separable irreducible cubic whose discriminant is not a square. -/
+roots, exactly when it is an irreducible cubic whose discriminant is not a square. -/
 theorem hasGaloisLabel_three_one_iff :
     HasGaloisLabel f (⟨1, by simp⟩ : TransitiveGroupIndex 3) ↔
-      f.Separable ∧ Irreducible f ∧ f.natDegree = 3 ∧ ¬ IsSquare f.discr := by
-  refine ⟨fun h => ⟨h.separable, h.irreducible, h.natDegree_eq,
+      Irreducible f ∧ f.natDegree = 3 ∧ ¬ IsSquare f.discr := by
+  refine ⟨fun h => ⟨h.irreducible, h.natDegree_eq,
     fun hsq => not_referenceSubgroup_three_one_le_alternatingGroup
-      ((h.isSquare_discr_iff_three hchar).mp hsq)⟩, fun ⟨hsep, hirr, hdeg, hsq⟩ => ?_⟩
+      ((h.isSquare_discr_iff_three hchar).mp hsq)⟩, fun ⟨hirr, hdeg, hsq⟩ => ?_⟩
+  have hf0 : f ≠ 0 := by rintro rfl; simp at hdeg
+  have hlc : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hf0
+  have hdiscr : f.discr ≠ 0 := fun hzero => hsq ⟨0, by simp [hzero]⟩
+  have hscaleddiscr : (C f.leadingCoeff⁻¹ * f).discr ≠ 0 := by
+    rw [discr_C_mul_of_natDegree_eq_three _ (inv_ne_zero hlc) hdeg]
+    exact mul_ne_zero (pow_ne_zero 4 (inv_ne_zero hlc)) hdiscr
+  have hscaledmonic : (C f.leadingCoeff⁻¹ * f).Monic := by
+    rw [mul_comm]
+    exact monic_mul_leadingCoeff_inv hf0
+  have hsep : f.Separable :=
+    (hscaledmonic.discr_ne_zero_iff.mp hscaleddiscr).of_mul_right
   obtain ⟨j, hj, -⟩ := existsUnique_hasGaloisLabel_three hsep hirr hdeg
   obtain ⟨_ | _ | _, hlt⟩ := j
   · exact (hsq ((hj.isSquare_discr_iff_three hchar).mpr
@@ -192,7 +203,7 @@ theorem discr_X_pow_three_sub_two : (X ^ 3 - 2 : ℚ[X]).discr = -108 := by
 /-- `X³ - 3X - 1` is irreducible over `ℚ`: it has no root modulo `2`, so no integral root. -/
 theorem irreducible_X_pow_three_sub_three_mul_X_sub_one :
     Irreducible (X ^ 3 - 3 * X - 1 : ℚ[X]) := by
-  have := irreducible_map_rat_of_natDegree_eq_three (g := X ^ 3 - 3 * X - 1)
+  have := irreducible_map_intCast_of_natDegree_eq_three (g := X ^ 3 - 3 * X - 1)
     (by monicity!) (by compute_degree!) fun m hm => by
       have h2 := congrArg (Int.cast : ℤ → ZMod 2) hm
       push_cast [eval_sub, eval_pow, eval_X, eval_mul, eval_one, eval_ofNat] at h2
@@ -203,7 +214,7 @@ theorem irreducible_X_pow_three_sub_three_mul_X_sub_one :
 
 /-- `X³ - 2` is irreducible over `ℚ`: it has no root modulo `7`, so no integral root. -/
 theorem irreducible_X_pow_three_sub_two : Irreducible (X ^ 3 - 2 : ℚ[X]) := by
-  have := irreducible_map_rat_of_natDegree_eq_three (g := X ^ 3 - 2)
+  have := irreducible_map_intCast_of_natDegree_eq_three (g := X ^ 3 - 2)
     (by monicity!) (by compute_degree!) fun m hm => by
       have h7 := congrArg (Int.cast : ℤ → ZMod 7) hm
       push_cast [eval_sub, eval_pow, eval_X, eval_ofNat] at h7
@@ -225,8 +236,7 @@ roots. The discriminant `-108` is negative, hence not a square. -/
 theorem hasGaloisLabel_X_pow_three_sub_two :
     HasGaloisLabel (X ^ 3 - 2 : ℚ[X]) (⟨1, by simp⟩ : TransitiveGroupIndex 3) :=
   (hasGaloisLabel_three_one_iff (by simp)).mpr
-    ⟨irreducible_X_pow_three_sub_two.separable, irreducible_X_pow_three_sub_two,
-      by compute_degree!, by
+    ⟨irreducible_X_pow_three_sub_two, by compute_degree!, by
         rw [discr_X_pow_three_sub_two]
         rintro ⟨r, hr⟩
         nlinarith [mul_self_nonneg r]⟩

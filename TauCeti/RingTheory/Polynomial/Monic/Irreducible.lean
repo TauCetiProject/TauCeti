@@ -27,7 +27,7 @@ finite function space `Fin d → R`.
 * `Polynomial.mem_monicIrreduciblesOfDegree_iff`: the defining membership condition.
 * `Polynomial.finite_monicIrreduciblesOfDegree`: over a finite coefficient ring there are
   finitely many.
-* `TauCeti.irreducible_map_rat_of_natDegree_eq_three`: a monic integral cubic with no integral
+* `TauCeti.irreducible_map_intCast_of_natDegree_eq_three`: a monic integral cubic with no integral
   root is irreducible over `ℚ`.
 -/
 
@@ -70,7 +70,7 @@ open Polynomial
 
 /-- A monic integral cubic without an integral root is irreducible over `ℚ`: a rational root of
 a monic integral polynomial is integral. -/
-theorem irreducible_map_rat_of_natDegree_eq_three {g : ℤ[X]} (hg : g.Monic)
+theorem irreducible_map_intCast_of_natDegree_eq_three {g : ℤ[X]} (hg : g.Monic)
     (hdeg : g.natDegree = 3) (h : ∀ m : ℤ, g.eval m ≠ 0) :
     Irreducible (g.map (Int.castRingHom ℚ)) := by
   refine irreducible_of_degree_le_three_of_not_isRoot
