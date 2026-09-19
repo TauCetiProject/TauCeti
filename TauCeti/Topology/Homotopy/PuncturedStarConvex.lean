@@ -90,6 +90,13 @@ def sphereInclusionDiffSingleton (hr : 0 < r) (hS : sphere p r ⊆ V) :
     C(sphere p r, ↥(V \ {p})) :=
   ContinuousMap.inclusion (sphere_subset_diff hr hS)
 
+omit [NormedSpace ℝ E] in
+/-- The inclusion of the sphere into `V \ {p}` does not move points. -/
+@[simp]
+theorem coe_sphereInclusionDiffSingleton_apply (hr : 0 < r) (hS : sphere p r ⊆ V)
+    (x : sphere p r) : (sphereInclusionDiffSingleton hr hS x : E) = x :=
+  (rfl)
+
 /-- Radial projection of `V \ {p}` onto the sphere `sphere p r`. -/
 def radialProjectionToSphere (hr : 0 < r) : C(↥(V \ {p}), sphere p r) where
   toFun z := ⟨p + (r / ‖(z : E) - p‖) • ((z : E) - p), by
@@ -103,6 +110,12 @@ def radialProjectionToSphere (hr : 0 < r) : C(↥(V \ {p}), sphere p r) where
     exact continuous_const.add
       ((continuous_const.div hsub.norm fun z => norm_ne_zero_iff.mpr (sub_ne_zero.mpr z.2.2)).smul
         hsub)
+
+/-- The radial projection onto `sphere p r` is `z ↦ p + (r / ‖z - p‖) • (z - p)`. -/
+@[simp]
+theorem coe_radialProjectionToSphere_apply (hr : 0 < r) (z : ↥(V \ {p})) :
+    (radialProjectionToSphere hr z : E) = p + (r / ‖(z : E) - p‖) • ((z : E) - p) :=
+  (rfl)
 
 /-- The straight-line homotopy from the radial projection to the identity of `V \ {p}`. -/
 def _root_.StarConvex.radialHomotopy (hV : StarConvex ℝ p V) (hr : 0 < r)
@@ -142,9 +155,7 @@ theorem _root_.StarConvex.coe_radialHomotopy_apply (hV : StarConvex ℝ p V) (hr
     (hS : sphere p r ⊆ V) (t : I) (z : ↥(V \ {p})) :
     ((hV.radialHomotopy hr hS (t, z) : ↥(V \ {p})) : E) =
       p + ((1 - (t : ℝ)) * (r / ‖(z : E) - p‖) + t) • ((z : E) - p) :=
-  by
-    change ((hV.radialHomotopy hr hS).toContinuousMap.toFun (t, z)).1 = _
-    rw [StarConvex.radialHomotopy]
+  (rfl)
 
 /-- The radial deformation fixes every included point of the sphere throughout the homotopy. -/
 @[simp]
@@ -155,9 +166,8 @@ theorem _root_.StarConvex.radialHomotopy_apply_sphereInclusion
       sphereInclusionDiffSingleton hr hS x := by
   ext
   have hx : ‖(x : E) - p‖ = r := by simpa [dist_eq_norm] using x.2
-  rw [StarConvex.coe_radialHomotopy_apply]
-  change p + ((1 - (t : ℝ)) * (r / ‖(x : E) - p‖) + t) • ((x : E) - p) = x
-  rw [hx, div_self hr.ne']
+  rw [StarConvex.coe_radialHomotopy_apply, coe_sphereInclusionDiffSingleton_apply, hx,
+    div_self hr.ne']
   simp
 
 /-- **A punctured star-convex set is homotopy equivalent to a sphere about the puncture.** If `V`
@@ -173,8 +183,8 @@ def _root_.StarConvex.sphereHomotopyEquiv (hV : StarConvex ℝ p V) (hr : 0 < r)
     convert ContinuousMap.Homotopic.refl (ContinuousMap.id (sphere p r))
     ext x
     have hx : ‖(x : E) - p‖ = r := by simpa [dist_eq_norm] using x.2
-    change p + (r / ‖(x : E) - p‖) • ((x : E) - p) = x
-    rw [hx, div_self hr.ne']
+    rw [ContinuousMap.comp_apply, coe_radialProjectionToSphere_apply,
+      coe_sphereInclusionDiffSingleton_apply, hx, div_self hr.ne']
     simp
   right_inv := ⟨hV.radialHomotopy hr hS⟩
 
