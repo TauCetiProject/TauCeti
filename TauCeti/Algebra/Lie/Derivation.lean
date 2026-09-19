@@ -27,6 +27,8 @@ instances of it.
 
 * `TauCeti.derivationLieAlgebra R A`: the derivations of `A`, as a Lie subalgebra of
   `Module.End R A`.
+* `TauCeti.innerDerivation`: for an associative algebra, the inner derivation `⁅z, -⁆` at an
+  element `z`, as an element of `Der A`.
 * `TauCeti.derivationLieAlgebraCongr`: an isomorphism of algebras induces an isomorphism of their
   derivation Lie algebras, by conjugation.
 
@@ -37,7 +39,8 @@ instances of it.
   unit; and `TauCeti.derivationLieAlgebra.apply_mul_eq_zero`: its constants are closed under
   multiplication.
 * `TauCeti.ad_mem_derivationLieAlgebra_commutatorRing`: the adjoint action of a Lie algebra is by
-  derivations -- the Jacobi identity in Leibniz form.
+  derivations -- the Jacobi identity in Leibniz form; and
+  `TauCeti.ad_mem_derivationLieAlgebra`: the same for the commutator of an associative algebra.
 * `TauCeti.derivationEquivDerivationLieAlgebra`: for a commutative associative algebra, `Der A` is
   Mathlib's `Derivation R A A` with its Lie structure.
 * `TauCeti.derivationLieAlgebraCommutatorRingEquivLieDerivation`: for a Lie algebra `L`, the
@@ -170,6 +173,29 @@ theorem derivationLieAlgebra.apply_one_eq_zero (D : derivationLieAlgebra R A) :
 
 end Unital
 
+section Associative
+
+variable (R : Type u) {A : Type v} [CommRing R] [Ring A] [Algebra R A]
+
+/-- **The commutator of an associative algebra acts by derivations**: `ad z : a ↦ ⁅z, a⁆` obeys the
+Leibniz rule, which for the commutator bracket is the associativity of the multiplication. -/
+theorem ad_mem_derivationLieAlgebra (z : A) :
+    LieAlgebra.ad R A z ∈ derivationLieAlgebra R A := by
+  refine mem_derivationLieAlgebra.2 fun a b => ?_
+  simp only [LieAlgebra.ad_apply, Ring.lie_def, sub_mul, mul_sub, mul_assoc]
+  abel
+
+/-- **The inner derivation** of an associative algebra `A` at an element `z`: the commutator
+`⁅z, -⁆`, as an element of `Der A`. -/
+def innerDerivation (z : A) : derivationLieAlgebra R A :=
+  ⟨LieAlgebra.ad R A z, ad_mem_derivationLieAlgebra R z⟩
+
+@[simp]
+theorem coe_innerDerivation (z : A) :
+    (innerDerivation R z : Module.End R A) = LieAlgebra.ad R A z :=
+  (rfl)
+
+end Associative
 
 section Congr
 
