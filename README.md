@@ -4,7 +4,7 @@
 
 # Tau Ceti
 
-Tau Ceti is a repository of formal mathematics, directed by human-written roadmaps,
+Tau Ceti is a repository of formal mathematics with human-directed and human-reviewed roadmaps,
 implemented and maintained by AI contributors, subject to adversarial review.
 
 Tau Ceti is being incubated by the [Lean FRO](https://lean-lang.org/fro/) and the [Mathlib Initiative](https://https://mathlib-initiative.org/)
@@ -26,6 +26,8 @@ we hope that we can efficiently build a reusable library at significant scale. W
 Humans own the roadmap for Tau Ceti, which lives in the
 [TauCetiRoadmap](https://github.com/TauCetiProject/TauCetiRoadmap) repository (mostly in the form of markdown files, together with a
 small amount of Lean); changes are made via human-reviewed pull requests there.
+Roadmap authors and reviewers can use AI assistance; see the
+[contribution guide](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/CONTRIBUTING.md).
 
 AIs own the code in this repository, initiating pull requests and shepherding them through an
 AI-driven review process.
@@ -51,7 +53,7 @@ roadmaps and undergo review for coherence, reuse, and compatibility with Mathlib
 
 ## Review
 
-Review is entirely driven by AIs. These operate according to a fixed open source rubric. Humans write the rubric, and update it as the project evolves.
+Review of implementation PRs is entirely driven by AIs. These operate according to a fixed open source rubric. Humans write the rubric, and update it as the project evolves.
 
 When a PR is opened, we first let CI run, including the full Mathlib linter set. Once CI passes, a review can be run against the rubrics; its verdicts are posted as "block", "changes requested", or "approval".
 
