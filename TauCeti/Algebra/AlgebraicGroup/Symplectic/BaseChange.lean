@@ -85,7 +85,7 @@ private theorem baseChangeAlgHom_apply (x : GeneralLinear.coordinateHopfAlgebra 
 
 /-- The general-linear base-change isomorphism carries each scalar-extended symplectic relation
 to the corresponding relation over the new base. -/
-private theorem coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix (i j : Fin (m + m)) :
+theorem coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix (i j : Fin (m + m)) :
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m)).hom.hom
         (1 ⊗ₜ[R] relationMatrix R m i j) =
       relationMatrix K m i j := by
