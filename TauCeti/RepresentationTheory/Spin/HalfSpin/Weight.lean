@@ -41,8 +41,9 @@ off* a basis vector, that vector having to be nonzero for its parity to be well 
 weight-space statements inherit from `TauCeti/RepresentationTheory/Spin/Weight.lean` the standing
 hypothesis that `2` be invertible — without it the sign vector `TauCeti.spinWeight` is not even
 defined — and that is the only extra hypothesis the inclusions and the identification of the two
-summands carry; the two counts of weights ask in addition that `K` have no zero divisors, since
-they read off which weight spaces are nonzero.
+summands carry; the exact descriptions of the weight sets of `S⁺` and `S⁻`, and the two counts of
+weights read off them, ask in addition that `K` have no zero divisors, since deciding which weight
+spaces are nonzero does.
 
 As in `TauCeti/RepresentationTheory/Spin/Weight.lean`, "weight" means a tuple of simultaneous
 eigenvalues for the family `H`, no Cartan subalgebra being exhibited; and no weight is called
