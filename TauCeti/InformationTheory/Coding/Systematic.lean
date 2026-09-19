@@ -158,14 +158,14 @@ def parityCheckMatrix : Matrix ↥(sᶜ) ι F :=
 /-- On the information coordinates, the check matrix is the negative transpose of the
 redundancy block. -/
 @[simp]
-theorem parityCheckMatrix_apply_of_mem (r : ↥(sᶜ)) (i : s) :
+theorem parityCheckMatrix_apply (r : ↥(sᶜ)) (i : s) :
     h.parityCheckMatrix r i = -h.generatorMatrix i r := by
   simp [parityCheckMatrix]
 
 open Classical in
 /-- On the complementary coordinates, the check matrix is the identity. -/
 @[simp]
-theorem parityCheckMatrix_apply_of_notMem (r i : ↥(sᶜ)) :
+theorem parityCheckMatrix_apply_compl (r i : ↥(sᶜ)) :
     h.parityCheckMatrix r i = (1 : Matrix ↥(sᶜ) ↥(sᶜ) F) r i := by
   simp [parityCheckMatrix]
 
@@ -177,7 +177,9 @@ theorem linearIndependent_parityCheckMatrix : LinearIndependent F h.parityCheckM
       (LinearEquiv.funCongrLeft F F (Equiv.Set.sumCompl s).symm).toLinearMap
       (LinearEquiv.funCongrLeft F F (Equiv.Set.sumCompl s).symm).injective.injOn using 1
   ext r i
-  rfl
+  simp only [parityCheckMatrix, Matrix.row_apply, Matrix.submatrix_apply,
+    Function.comp_apply, LinearEquiv.coe_toLinearMap, LinearEquiv.funCongrLeft_apply,
+    LinearMap.funLeft_apply, id_eq]
 
 /-- Relabelling coordinates also relabels the complementary rows and columns of the
 systematic check matrix. -/
@@ -189,15 +191,15 @@ theorem parityCheckMatrix_reindex {κ : Type*} (e : κ ≃ ι) :
   ext r i
   by_cases hi : e i ∈ s
   · have hi' : i ∈ e ⁻¹' s := hi
-    have hn := (h.reindex e).parityCheckMatrix_apply_of_mem r ⟨i, hi'⟩
-    have ho := h.parityCheckMatrix_apply_of_mem
+    have hn := (h.reindex e).parityCheckMatrix_apply r ⟨i, hi'⟩
+    have ho := h.parityCheckMatrix_apply
       ((e.subtypeEquiv (p := (· ∈ (e ⁻¹' s)ᶜ)) (q := (· ∈ sᶜ)) fun _ ↦ Iff.rfl) r)
       ⟨e i, hi⟩
     rw [h.generatorMatrix_reindex e] at hn
     exact hn.trans ho.symm
   · have hi' : i ∈ (e ⁻¹' s)ᶜ := hi
-    have hn := (h.reindex e).parityCheckMatrix_apply_of_notMem r ⟨i, hi'⟩
-    have ho := h.parityCheckMatrix_apply_of_notMem
+    have hn := (h.reindex e).parityCheckMatrix_apply_compl r ⟨i, hi'⟩
+    have ho := h.parityCheckMatrix_apply_compl
       ((e.subtypeEquiv (p := (· ∈ (e ⁻¹' s)ᶜ)) (q := (· ∈ sᶜ)) fun _ ↦ Iff.rfl) r)
       ⟨e i, hi⟩
     refine hn.trans (Eq.trans ?_ ho.symm)
@@ -226,11 +228,14 @@ theorem parityCheckMatrix_eq_of_le_checkedBy_of_submatrix_eq_one
     have hsplit := Fintype.sum_subtype_add_sum_subtype (· ∈ s)
       (fun k ↦ H r k * (h.equiv.symm (Pi.single j 1) : ι → F) k)
     have hentry : H r j + h.generatorMatrix j r = 0 := by
-      simpa [Matrix.mulVec, dotProduct, ← hsplit, hcomp, Matrix.one_apply,
-        Pi.single_apply] using hzero
-    rw [h.parityCheckMatrix_apply_of_mem r j]
+      simp only [Matrix.mulVec, dotProduct, Pi.zero_apply] at hzero
+      rw [← hsplit] at hzero
+      simpa only [equiv_symm_apply, Pi.single_apply, mul_ite, mul_one, mul_zero,
+        Finset.sum_ite_eq', Finset.mem_univ, ite_true, hcomp, Matrix.one_apply,
+        ite_mul, one_mul, zero_mul, Finset.sum_ite_eq, generatorMatrix_apply] using hzero
+    rw [h.parityCheckMatrix_apply r j]
     exact (eq_neg_of_add_eq_zero_left hentry).symm
-  · exact (h.parityCheckMatrix_apply_of_notMem r ⟨i, hi⟩).trans (hcomp r ⟨i, hi⟩).symm
+  · exact (h.parityCheckMatrix_apply_compl r ⟨i, hi⟩).trans (hcomp r ⟨i, hi⟩).symm
 
 /-- The systematic check matrix cuts out exactly the original code. -/
 @[simp↓]
