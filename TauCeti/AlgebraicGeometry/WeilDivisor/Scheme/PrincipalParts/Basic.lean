@@ -68,24 +68,21 @@ universe u
 
 variable {X : Scheme.{u}}
 
-namespace Scheme.Opens
+namespace SchemeWeilDivisor
+
+noncomputable section
 
 /-- The germs at the codimension-one points of `U` of a function on `U`. -/
-noncomputable def codimensionOneGerms (U : X.Opens) :
+@[expose]
+def codimensionOneGerms (U : X.Opens) :
     Γ(X, U) →+* ∀ x : {x : CodimensionOnePoint X // (x : X) ∈ U}, X.presheaf.stalk (x.1 : X) :=
   RingHom.pi fun x ↦ (X.presheaf.germ U x.1 x.2).hom
 
 @[simp]
 lemma codimensionOneGerms_apply (U : X.Opens) (r : Γ(X, U))
     (x : {x : CodimensionOnePoint X // (x : X) ∈ U}) :
-    Scheme.Opens.codimensionOneGerms U r x = X.presheaf.germ U x.1 x.2 r :=
-  (rfl)
-
-end Scheme.Opens
-
-namespace SchemeWeilDivisor
-
-noncomputable section
+    codimensionOneGerms U r x = X.presheaf.germ U x.1 x.2 r :=
+  rfl
 
 variable [IsIntegral X]
   [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
@@ -193,7 +190,7 @@ private lemma principalPartsSections_smul_apply (D : SchemeWeilDivisor X) (U : X
 codimension-one points of `U`, the ring acting through its germs. -/
 abbrev principalPartsObj (D : SchemeWeilDivisor X) (U : X.Opens) :
     ModuleCat.{u} (X.ringCatSheaf.obj.obj (op U)) :=
-  (ModuleCat.restrictScalars (Scheme.Opens.codimensionOneGerms U)).obj
+  (ModuleCat.restrictScalars (codimensionOneGerms U)).obj
     (ModuleCat.of _ (principalPartsSections D U))
 
 /-- The underlying additive group of `principalPartsObj D U` is the group of finitely supported
@@ -209,9 +206,9 @@ lemma principalPartsObj_smul_apply (D : SchemeWeilDivisor X) (U : X.Opens) (r : 
       X.presheaf.germ U x.1 x.2 r • principalPartsObjSectionsEquiv D U s x := by
   -- `restrictScalars` defines this action through `codimensionOneGerms`; this is its public
   -- pointwise characterization, so this is the one intentional reduction of that wrapper.
-  change (Scheme.Opens.codimensionOneGerms U r •
+  change (codimensionOneGerms U r •
     principalPartsObjSectionsEquiv D U s) x = _
-  rw [principalPartsSections_smul_apply, Scheme.Opens.codimensionOneGerms_apply]
+  rw [principalPartsSections_smul_apply, codimensionOneGerms_apply]
 
 /-- The presheaf of `𝒪_X`-modules of principal parts of `D`. -/
 def principalPartsPresheaf (D : SchemeWeilDivisor X) :
