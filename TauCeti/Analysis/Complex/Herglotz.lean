@@ -41,9 +41,9 @@ The proof has two steps.
 
 * `DiffContOnCl.circleAverage_herglotzRieszKernel_smul_re_add`: the Herglotz formula on a disc,
   recovering a holomorphic function from the boundary values of its real part.
-* `TauCeti.differentiableOn_integral_add_div_sub` and `TauCeti.re_integral_add_div_sub_nonneg`:
-  the Herglotz transform of a finite measure on the circle is holomorphic on the disc with
-  nonnegative real part.
+* `TauCeti.Measure.differentiableOn_integral_add_div_sub` and
+  `TauCeti.Measure.re_integral_add_div_sub_nonneg`: the Herglotz transform of a finite measure on
+  the circle is holomorphic on the disc with nonnegative real part.
 * `TauCeti.exists_isFiniteMeasure_eq_integral_add_div_sub`: **the Herglotz representation
   theorem**.
 * `TauCeti.differentiableOn_and_re_nonneg_iff_exists_eq_integral_add_div_sub`: the resulting
@@ -194,6 +194,8 @@ private lemma continuous_add_div_sub (hw : w ∈ ball (0 : ℂ) 1) :
   (continuous_subtype_val.add continuous_const).div (continuous_subtype_val.sub continuous_const)
     (coe_sub_ne_zero hw)
 
+namespace Measure
+
 /-- The Herglotz transform `w ↦ ∫ (z + w) / (z - w) dμ(z)` of a finite measure on the unit
 circle is holomorphic on the unit disc. -/
 theorem differentiableOn_integral_add_div_sub (μ : Measure Circle) [IsFiniteMeasure μ] :
@@ -244,15 +246,12 @@ theorem re_integral_add_div_sub_nonneg (μ : Measure Circle) (hw : w ∈ ball (0
   · simp [integral_undef hint]
   rw [← reCLM_apply, ← reCLM.integral_comp_comm hint]
   refine integral_nonneg fun z ↦ ?_
-  have h := congrFun (poissonKernel_eq_re_herglotzRieszKernel (c := 0) (w := w)) z
-  simp only [Function.comp_apply, poissonKernel_def, herglotzRieszKernel_def, sub_zero,
-    Circle.norm_coe] at h
-  rw [reCLM_apply, ← h]
-  have : ‖w‖ ^ 2 ≤ 1 := by
-    have := mem_ball_zero_iff.1 hw
-    nlinarith [norm_nonneg w]
-  rw [Pi.zero_apply]
-  exact div_nonneg (by rw [one_pow]; linarith) (sq_nonneg _)
+  have hnonneg : 0 ≤ (1 - ‖w‖) / (1 + ‖w‖) :=
+    div_nonneg (sub_nonneg.2 (mem_ball_zero_iff.1 hw).le) (by positivity)
+  exact hnonneg.trans (by simpa using
+    le_re_herglotzRieszKernel (c := 0) (R := 1) (z := (z : ℂ)) (by simp) hw)
+
+end Measure
 
 /-! ### The Herglotz representation -/
 
@@ -346,8 +345,8 @@ theorem differentiableOn_and_re_nonneg_iff_exists_eq_integral_add_div_sub {F : �
   refine ⟨fun ⟨hF, hre⟩ ↦ ?_, fun ⟨μ, b, hμ, hrep⟩ ↦ ⟨?_, fun w hw ↦ ?_⟩⟩
   · obtain ⟨μ, hμ, hrep⟩ := exists_isFiniteMeasure_eq_integral_add_div_sub hF hre
     exact ⟨μ, (F 0).im, hμ, hrep⟩
-  · exact ((differentiableOn_integral_add_div_sub μ).add_const _).congr hrep
+  · exact ((Measure.differentiableOn_integral_add_div_sub μ).add_const _).congr hrep
   · rw [hrep w hw, add_re, mul_re, ofReal_re, ofReal_im, I_re, I_im]
-    simpa using re_integral_add_div_sub_nonneg μ hw
+    simpa using Measure.re_integral_add_div_sub_nonneg μ hw
 
 end TauCeti
