@@ -96,12 +96,7 @@ theorem lSeriesConverges_of_lSeriesSummable (h : LSeriesSummable f s) : LSeriesC
 zero changes nothing.  Abel summation needs the sequence it sums to vanish at `0`. -/
 private theorem lSeriesConverges_ite_iff :
     LSeriesConverges (fun n ↦ if n = 0 then 0 else f n) s ↔ LSeriesConverges f s := by
-  have h : ∀ n, LSeries.term (fun n ↦ if n = 0 then 0 else f n) s n = LSeries.term f s n := by
-    intro n
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · simp [hn]
-  exact LSeriesConverges.congr h
+  exact LSeriesConverges.congr (LSeries.term_congr (fun hn ↦ ite_eq_right hn) s)
 
 /-- The Abel-summation core of `TauCeti.LSeriesConverges_of_sum_isBigO`, for a sequence already
 vanishing at `0`. -/
@@ -261,10 +256,8 @@ namespace LSeries
 /-- The abscissa of ordinary convergence depends only on the coefficients away from zero. -/
 theorem abscissaOfConv_congr {g : ℕ → ℂ} (h : ∀ {n}, n ≠ 0 → f n = g n) :
     abscissaOfConv f = abscissaOfConv g :=
-  congrArg sInf <| congrArg _ <| Set.ext fun _ ↦ LSeriesConverges.congr fun n ↦ by
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · simp only [LSeries.term_of_ne_zero hn, h hn]
+  congrArg sInf <| congrArg _ <| Set.ext fun x ↦
+    LSeriesConverges.congr (LSeries.term_congr h x)
 
 /-- If the series converges at every real point above `x`, its abscissa of ordinary convergence is
 at most `x`. -/
