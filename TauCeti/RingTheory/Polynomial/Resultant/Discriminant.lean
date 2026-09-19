@@ -547,8 +547,8 @@ theorem isSquare_discr_iff_mem_range {E : Type*} [Field E] [Algebra F E]
       discr_C_mul _ hlcE, hpdeg, discr_prod_X_sub_C_eq_sq, discrSqrt_def]
   have hexp : 2 * f.natDegree - 2 = 2 * (f.natDegree - 1) := by omega
   rw [hexp, mul_comm 2, pow_mul] at hdiscr
-  let d : E := algebraMap F E f.leadingCoeff ^ (f.natDegree - 1)
-  change algebraMap F E f.discr = d ^ 2 * discrSqrt e ^ 2 at hdiscr
+  set d : E := algebraMap F E f.leadingCoeff ^ (f.natDegree - 1) with hd_def
+  simp only [pow_two] at hdiscr
   have hd : d ≠ 0 := pow_ne_zero _ hlcE
   constructor
   · rintro ⟨c, hc⟩
@@ -558,9 +558,7 @@ theorem isSquare_discr_iff_mem_range {E : Type*} [Field E] [Algebra F E]
       have h := hdiscr
       rw [hc, map_mul] at h
       simp only [map_inv₀, map_pow, map_mul]
-      rw [inv_pow]
-      change discrSqrt e * discrSqrt e = d⁻¹ * algebraMap F E c *
-        (d⁻¹ * algebraMap F E c)
+      rw [inv_pow, ← hd_def]
       field_simp [hd] at h ⊢
       ring_nf at h ⊢
       exact h.symm
@@ -570,7 +568,7 @@ theorem isSquare_discr_iff_mem_range {E : Type*} [Field E] [Algebra F E]
   · rintro ⟨c, hc⟩
     refine ⟨f.leadingCoeff ^ (f.natDegree - 1) * c, (algebraMap F E).injective ?_⟩
     simp only [map_mul, map_pow]
-    change algebraMap F E f.discr = d * algebraMap F E c * (d * algebraMap F E c)
+    rw [← hd_def]
     rw [hc, hdiscr]
     ring
 
