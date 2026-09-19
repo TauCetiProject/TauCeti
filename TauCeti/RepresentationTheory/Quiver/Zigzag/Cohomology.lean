@@ -28,9 +28,9 @@ square roots of units are needed. Hence:
 gauge classes of skew-zigzag parameters of G  ≃  H¹(G, kˣ),
 ```
 
-over any commutative monoid `k`. Over a commutative ring the gauge classes are the vertex-fixing
-isomorphism classes of the skew-zigzag relation quotients, so the cohomology class classifies
-those quotients up to vertex-fixing isomorphism.
+over any commutative monoid `k`. Over a commutative ring and for a finite graph, the gauge classes
+are the vertex-fixing isomorphism classes of the skew-zigzag relation quotients, so the cohomology
+class classifies those quotients up to vertex-fixing isomorphism.
 
 ## Main definitions
 
@@ -50,8 +50,8 @@ those quotients up to vertex-fixing isomorphism.
 * `TauCeti.SkewZigzagParameter.cohomologyClass_surjective`: every class in `H¹(G, kˣ)` is the class
   of a parameter.
 * `TauCeti.SkewZigzagParameter.cohomologyClass_eq_iff_exists_vertexFixing_algEquiv`: over a
-  commutative ring, two parameters have the same class exactly when their relation quotients are
-  isomorphic by an isomorphism fixing every vertex idempotent.
+  commutative ring and for a finite graph, two parameters have the same class exactly when their
+  relation quotients are isomorphic by an isomorphism fixing every vertex idempotent.
 
 ## References
 
@@ -159,11 +159,17 @@ theorem cohomologyClass_gauge (c : SkewZigzagParameter k G)
 /-! ### Every class is attained -/
 
 /-- The parameter with prescribed edge coordinates `τ`, whose ratios are `τ h / τ h'`. -/
-private def ofEdgeCoordinate (τ : ∀ ⦃i j : V⦄, G.Adj i j → kˣ) : SkewZigzagParameter k G where
+def ofEdgeCoordinate (τ : ∀ ⦃i j : V⦄, G.Adj i j → kˣ) : SkewZigzagParameter k G where
   ratio _ _ _ h h' := τ h / τ h'
   ratio_self _ _ h := div_self' (τ h)
   ratio_inv _ _ _ h h' := by rw [div_mul_div_cancel, div_self']
   ratio_cocycle _ _ _ _ h h' h'' := by rw [div_mul_div_cancel, div_mul_div_cancel, div_self']
+
+/-- The ratio of the parameter constructed from edge coordinates is their quotient. -/
+@[simp]
+theorem ofEdgeCoordinate_ratio (τ : ∀ ⦃i j : V⦄, G.Adj i j → kˣ) {i j j' : V}
+    (h : G.Adj i j) (h' : G.Adj i j') :
+    (ofEdgeCoordinate τ).ratio h h' = τ h / τ h' := (rfl)
 
 /-- **Every class in `H¹(G, kˣ)` is the cohomology class of a skew-zigzag parameter.** -/
 theorem cohomologyClass_surjective : Function.Surjective (cohomologyClass k G) := by
@@ -175,7 +181,8 @@ theorem cohomologyClass_surjective : Function.Surjective (cohomologyClass k G) :
   let τ : ∀ ⦃i j : V⦄, G.Adj i j → kˣ := fun i j h ↦
     if WellOrderingRel i j then (σ : G.Dart → kˣ) ⟨(i, j), h⟩ else 1
   refine ⟨ofEdgeCoordinate τ, ?_⟩
-  rw [cohomologyClass_eq_mk_of_ratio_eq_div _ τ fun _ _ _ _ _ ↦ rfl]
+  rw [cohomologyClass_eq_mk_of_ratio_eq_div (ofEdgeCoordinate τ) τ
+    (fun _ _ _ h h' ↦ ofEdgeCoordinate_ratio τ h h')]
   congr 1
   refine Subtype.ext <| funext fun ⟨(i, j), h⟩ ↦ ?_
   have hsymm : (σ : G.Dart → kˣ) ⟨(j, i), h.symm⟩ = ((σ : G.Dart → kˣ) ⟨(i, j), h⟩)⁻¹ :=
