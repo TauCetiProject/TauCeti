@@ -88,21 +88,22 @@ theorem generatedBy_generatorMatrix : h.generatorMatrix.generatedBy = C := by
     refine ⟨h.equiv ⟨x, hx⟩, ?_⟩
     simp
 
+end FiniteInformationSet
+
 open Classical in
-/-- The information coordinates uniquely determine a systematic generator of a code. -/
-theorem generatorMatrix_eq_of_generatedBy_eq_of_submatrix_eq_one {G : Matrix s ι F}
-    (hG : G.generatedBy = C) (hI : G.submatrix id (Subtype.val : s → ι) = 1) :
+/-- A matrix with rows in the code and identity information columns is the systematic
+generator, without any finiteness assumption. -/
+theorem generatorMatrix_eq_of_row_mem_of_submatrix_eq_one {G : Matrix s ι F}
+    (hG : ∀ r, G.row r ∈ C) (hI : G.submatrix id (Subtype.val : s → ι) = 1) :
     h.generatorMatrix = G := by
   ext r i
-  have hr : G.row r ∈ C := hG ▸ G.row_mem_generatedBy r
+  have hr : G.row r ∈ C := hG r
   have he : h.equiv ⟨G.row r, hr⟩ = Pi.single r 1 := by
     funext j
     simpa [Matrix.submatrix_apply, Matrix.one_apply, Pi.single_apply, eq_comm] using
       congrFun (congrFun hI r) j
   have hx := congrArg (fun x : C ↦ (x : ι → F) i) (h.equiv.symm_apply_eq.mpr he.symm)
   exact hx
-
-end FiniteInformationSet
 
 /-- The rows of the systematic generator are linearly independent. -/
 theorem linearIndependent_generatorMatrix : LinearIndependent F h.generatorMatrix.row := by
