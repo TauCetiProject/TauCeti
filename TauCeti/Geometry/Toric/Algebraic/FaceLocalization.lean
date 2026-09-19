@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Toric.Algebraic.AffineScheme
 # Face localizations of affine toric schemes
 
 A character `m` in the dual semigroup of a cone `σ` is nonnegative on `σ`, so it cuts out the face
-`σ ⊓ ker m` of `σ` (`PointedCone.inf_ker_isFaceOf`). The inclusion of that face into `σ` induces
+`σ ⊓ ker m` of `σ` (`PointedCone.isFaceOf_inf_ker`). The inclusion of that face into `σ` induces
 the restriction map from the coordinate ring of `σ` to the coordinate ring of the face. When `σ`
 is finitely generated, this map is the localization away from the monomial of `m`: the dual
 semigroup of the face is obtained from that of `σ` by adjoining `-m`

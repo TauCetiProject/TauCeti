@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Convex.Cone.Face.Basic
 public import Mathlib.Algebra.Order.Archimedean.Basic
-public import Mathlib.RingTheory.Finiteness.Basic
+public import Mathlib.RingTheory.Finiteness.Defs
 
 /-!
 # Faces cut out by nonnegative linear functionals
@@ -27,7 +27,7 @@ the chart of `σ` away from the monomial of `m`. Finite generation cannot be dro
 
 ## Main declarations
 
-* `PointedCone.inf_ker_isFaceOf`: a functional nonnegative on `C` cuts out a face of `C`.
+* `PointedCone.isFaceOf_inf_ker`: a functional nonnegative on `C` cuts out a face of `C`.
 * `PointedCone.FG.exists_nonneg_add_nsmul`: on a finitely generated cone, a functional
   nonnegative on the face cut out by `φ` becomes nonnegative after adding a multiple of `φ`.
 
@@ -44,7 +44,7 @@ namespace PointedCone
 variable {R M : Type*} [AddCommGroup M]
 
 /-- A linear functional that is nonnegative on a pointed cone cuts out a face of the cone. -/
-theorem inf_ker_isFaceOf [Semiring R] [PartialOrder R] [IsOrderedRing R] [NoZeroDivisors R]
+theorem isFaceOf_inf_ker [Semiring R] [PartialOrder R] [IsOrderedRing R] [NoZeroDivisors R]
     [Module R M] {C : PointedCone R M} {φ : Module.Dual R M} (hφ : ∀ x ∈ C, 0 ≤ φ x) :
     (C ⊓ PointedCone.ofSubmodule (LinearMap.ker φ)).IsFaceOf C := by
   refine ⟨inf_le_left, fun {x y a} hx hy ha hxy ↦ ⟨hx, ?_⟩⟩
@@ -82,7 +82,10 @@ theorem FG.exists_nonneg_add_nsmul [Ring R] [PartialOrder R] [IsOrderedRing R] [
     rw [map_add, map_add, smul_add, add_add_add_comm]
     exact add_nonneg hx hy
   | smul c x _ hx =>
-    rw [← Nonneg.coe_smul, map_smul, map_smul, smul_eq_mul, smul_eq_mul, ← mul_smul_comm, ← mul_add]
-    exact mul_nonneg c.2 hx
+    rw [← Nonneg.coe_smul]
+    calc
+      0 ≤ (c : R) * (ψ x + s.sup n • φ x) := mul_nonneg c.2 hx
+      _ = ψ ((c : R) • x) + s.sup n • φ ((c : R) • x) := by
+        simp only [map_smul, smul_eq_mul, ← mul_smul_comm, mul_add]
 
 end PointedCone

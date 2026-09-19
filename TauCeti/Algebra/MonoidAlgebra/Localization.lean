@@ -60,18 +60,21 @@ theorem MonoidAlgebra.isLocalization_away_mapDomainRingHom (f : M →* N)
     | of y =>
       obtain ⟨n, z, hz⟩ := hsurj y
       refine ⟨n, single z 1, ?_⟩
-      rw [halg, halg, mapDomain_single, mapDomain_single, of_apply, single_pow, single_mul_single,
-        hz, one_pow, one_mul]
+      simp [halg, hz]
     | add s t hs ht =>
       obtain ⟨n, a, ha⟩ := hs
       obtain ⟨k, b, hb⟩ := ht
       refine ⟨n + k, a * single x 1 ^ k + b * single x 1 ^ n, ?_⟩
-      rw [map_add, map_mul, map_mul, ← ha, ← hb, map_pow, map_pow, add_mul, pow_add]
+      simp only [map_add, map_mul, map_pow]
+      rw [← ha, ← hb]
       ring
     | smul r s hs =>
       obtain ⟨n, a, ha⟩ := hs
       refine ⟨n, algebraMap R (MonoidAlgebra R M) r * a, ?_⟩
-      rw [Algebra.smul_def, mul_assoc, ha, map_mul, halg (algebraMap R _ r)]
+      have ha' : s * mapDomain f (single x 1) ^ n = mapDomain f a := by
+        simpa only [halg] using ha
+      simp only [Algebra.smul_def, halg]
+      rw [mul_assoc, ha', mapDomain_mul]
       congr 1
       exact ((mapDomainAlgHom R R f).commutes r).symm
   · intro a b hab
