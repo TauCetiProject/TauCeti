@@ -169,7 +169,6 @@ theorem periphInf_def : periphInf = (periph1 * periph0)⁻¹ :=
   (rfl)
 
 /-- The product relation of the three peripheral elements. -/
-@[simp]
 theorem periphInf_mul_periph1_mul_periph0 : periphInf * periph1 * periph0 = 1 := by
   rw [periphInf_def, mul_assoc, inv_mul_cancel]
 
