@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Real.FixedField
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.OrdinaryClassGroup
-import TauCeti.Algebra.Module.ZMod.SpanSingleton
+import TauCeti.Algebra.Module.ZMod.Span.Singleton
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
