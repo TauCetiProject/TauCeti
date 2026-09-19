@@ -66,7 +66,7 @@ group scheme of type `D₄`.
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 12.2.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * B. Conrad, *Reductive Group Schemes*, §1.
-* The declarations and the points-level proofs are adapted from
+* Analogous base-change APIs for other explicit carriers are provided by
   `TauCeti.Algebra.Lie.E6.DoubledMinuscule.BaseChange` and
   `TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.BaseChange`.
 -/
