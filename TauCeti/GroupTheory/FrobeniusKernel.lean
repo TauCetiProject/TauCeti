@@ -51,6 +51,14 @@ subgroup whose carrier is the Frobenius kernel is automatically a complement to 
 Frobenius's theorem supplies the subgroup, the semidirect decomposition `G = N ⋊ H` is free.
 Nothing here asserts that a subgroup with that carrier exists.
 
+The last section runs the recognition in the other direction.  A semidirect decomposition
+`G = N ⋊ H` in which `H` acts on `N` with no nonidentity fixed points forces `H` to be a
+trivial-intersection subgroup (`TauCeti.isTISubgroup_of_isComplement'`), and then the given `N` is
+already the Frobenius kernel (`TauCeti.coe_eq_frobeniusKernel_of_isComplement'`) -- the inclusion
+`N ⊆ frobeniusKernel H` needs only normality and disjointness, and the count above turns it into
+an equality.  Nothing there is character theory: it is what a concrete Frobenius group is checked
+against once Frobenius's theorem has produced its kernel abstractly.
+
 No subgroup hypothesis beyond `TauCeti.IsTISubgroup` is needed for the count once `G` is finite, and
 the two degenerate cases are honest instances rather than exclusions:
 `frobeniusKernel ⊤ = {1}` has one element and `⊤` has index `1`, while `frobeniusKernel ⊥` is
@@ -77,6 +85,13 @@ everything and `⊥` has index `|G|`.
   elements.**
 * `TauCeti.IsTISubgroup.isComplement'_of_coe_eq_frobeniusKernel`: for a finite `G`, a subgroup
   whose carrier is the kernel is a complement to `H`.
+* `TauCeti.isTISubgroup_of_isComplement'`: **a complement to a normal subgroup on which it acts
+  without nonidentity fixed points is a trivial-intersection subgroup**, with
+  `TauCeti.isFrobeniusComplement_of_isComplement'` its bundled form for a proper nontrivial `H`.
+* `TauCeti.coe_subset_frobeniusKernel` and
+  `TauCeti.coe_eq_frobeniusKernel_of_isComplement'`: **a normal complement meeting `H` trivially
+  lies in the Frobenius kernel, and for a finite `G` it *is* the Frobenius kernel** when its
+  action is fixed-point free.
 
 ## References
 
@@ -276,5 +291,48 @@ theorem IsTISubgroup.isComplement'_of_coe_eq_frobeniusKernel [Finite G] (hH : Is
   have hmem : y ∈ frobeniusKernel H ∩ (H : Set G) :=
     ⟨hN ▸ SetLike.mem_coe.2 hyN, SetLike.mem_coe.2 hyH⟩
   rwa [frobeniusKernel_inter_eq_singleton, Set.mem_singleton_iff] at hmem
+
+/-! ### Recognizing the kernel from a semidirect decomposition -/
+
+section Semidirect
+
+variable {N : Subgroup G}
+
+/-- **A normal subgroup meeting `H` trivially lies in the Frobenius kernel of `H`.**  Every
+conjugate of such a subgroup is itself, so a nonidentity element of it is conjugated into `H` by
+nothing at all.  No finiteness and no complement hypothesis: this inclusion is the easy half of
+`TauCeti.coe_eq_frobeniusKernel_of_isComplement'`. -/
+theorem coe_subset_frobeniusKernel [N.Normal] (hdisj : Disjoint N H) :
+    (N : Set G) ⊆ frobeniusKernel H := by
+  intro y hy
+  rw [SetLike.mem_coe] at hy
+  rw [mem_frobeniusKernel]
+  by_cases h1 : y = 1
+  · exact Or.inl h1
+  refine Or.inr fun x hx => h1 ?_
+  have hmem : x⁻¹ * y * x ∈ N := by
+    have hrw : x⁻¹ * y * x = x⁻¹ * y * (x⁻¹)⁻¹ := by group
+    rw [hrw]
+    exact ‹N.Normal›.conj_mem y hy x⁻¹
+  have hone : x⁻¹ * y * x = 1 := Subgroup.disjoint_def.mp hdisj hmem hx
+  calc y = x * (x⁻¹ * y * x) * x⁻¹ := by group
+    _ = 1 := by rw [hone, mul_one, mul_inv_cancel]
+
+/-- **The Frobenius kernel of a fixed-point-free complement is the normal complement itself.**
+The inclusion `N ⊆ frobeniusKernel H` is `TauCeti.coe_subset_frobeniusKernel`, and the two sides
+have the same number of elements: `|N| = |G : H|` because `N` is a complement, and the kernel has
+`|G : H|` elements by `TauCeti.IsTISubgroup.ncard_frobeniusKernel`.
+
+This is what identifies the kernel that Frobenius's theorem constructs from the character theory
+of `G` with the normal complement a semidirect decomposition `G = N ⋊ H` hands over directly; the
+subgroup-level statement is `TauCeti.frobeniusKernelSubgroup_eq_of_isComplement'`. -/
+theorem coe_eq_frobeniusKernel_of_isComplement' [Finite G] [N.Normal] (hNH : N.IsComplement' H)
+    (hfpf : ∀ h ∈ H, h ≠ 1 → ∀ n ∈ N, n ≠ 1 → h * n * h⁻¹ ≠ n) :
+    (N : Set G) = frobeniusKernel H := by
+  have hcoe : (N : Set G).ncard = Nat.card N := (Nat.card_coe_set_eq (N : Set G)).symm
+  refine Set.eq_of_subset_of_ncard_le (coe_subset_frobeniusKernel hNH.disjoint) ?_ (Set.toFinite _)
+  rw [(isTISubgroup_of_isComplement' hNH hfpf).ncard_frobeniusKernel, hcoe, hNH.index_eq_card]
+
+end Semidirect
 
 end TauCeti

@@ -9,6 +9,7 @@ module
 -- exceptional-character correspondence asks for.
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import TauCeti.GroupTheory.FrobeniusKernel
+public import TauCeti.GroupTheory.Perm.FinThree
 public import TauCeti.RepresentationTheory.CharacterTable.Completeness
 public import TauCeti.RepresentationTheory.CharacterTable.Kernel
 public import TauCeti.RepresentationTheory.Induction.ExceptionalCharacter
@@ -55,6 +56,22 @@ complement.
   is proper the kernel is nontrivial, and when `H` is nontrivial the kernel is proper — so for a
   Frobenius complement (`TauCeti.IsFrobeniusComplement`, which is both) the kernel is a **proper
   nontrivial** normal subgroup.
+* `TauCeti.frobeniusKernelSubgroup_eq_of_isComplement'`: **the kernel constructed here is the
+  normal complement one started from**, when `G = N ⋊ H` with `H` acting on `N` without
+  nonidentity fixed points.
+* `TauCeti.frobeniusKernelSubgroup_stabilizer_perm_fin_three`: **the worked example** — the
+  Frobenius kernel of a point stabilizer of `S₃` is the alternating group `A₃`.
+
+A concrete Frobenius group is presented the other way round, as a semidirect product `G = N ⋊ H`
+whose complement acts on the kernel without nonidentity fixed points.  That presentation already
+forces the trivial-intersection condition and already exhibits the kernel
+(`TauCeti.isTISubgroup_of_isComplement'` and `TauCeti.coe_eq_frobeniusKernel_of_isComplement'`, both
+elementary), so `TauCeti.frobeniusKernelSubgroup_eq_of_isComplement'` is the statement that the
+character-theoretic construction above agrees with it.  The last section runs that check on the
+smallest Frobenius group, `S₃` with complement a point stabilizer `⟨(a+1 a+2)⟩` of order two and
+kernel `A₃` of order three; the point stabilizers of `S₃` are described in
+`TauCeti/GroupTheory/Perm/FinThree.lean`, and fixed-point freeness is the fact that a transposition
+inverts a three-cycle.
 
 ## Implementation notes
 
@@ -83,7 +100,10 @@ class function of the identity class, which is `1` at the identity and `0` elsew
 * J.-P. Serre, *Linear Representations of Finite Groups*, Section 7.2.
 * [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
   Layer 8 (`frobeniusKernelSubgroup`, `coe_frobeniusKernelSubgroup`,
-  `frobeniusKernelSubgroup_normal`, `frobeniusKernel_isComplement'`).
+  `frobeniusKernelSubgroup_normal`, `frobeniusKernel_isComplement'`), and its worked example "A
+  Frobenius group (Layer 8)", whose `S₃` half — complement `⟨(1 2)⟩` of order `2`, kernel `A₃` of
+  order `3`, "the exceptional-character construction of `N` ... checked against the direct
+  semidirect-product description" — is the last section here.
 -/
 
 public section
@@ -260,5 +280,78 @@ theorem frobeniusKernelSubgroup_ne_bot (hH : IsTISubgroup H) (hne : H ≠ ⊤) :
   have hcard := (frobeniusKernel_isComplement' hH).index_eq_card
   rw [hbot, Subgroup.card_bot] at hcard
   exact hne (Subgroup.index_eq_one.mp hcard)
+
+/-! ### The kernel of a fixed-point-free complement -/
+
+section Semidirect
+
+variable {N : Subgroup G}
+
+/-- **Frobenius's theorem returns the normal complement it was handed.**  If `G = N ⋊ H` with `H`
+acting on `N` without nonidentity fixed points, then `H` is a trivial-intersection subgroup
+(`TauCeti.isTISubgroup_of_isComplement'`) and the subgroup that the exceptional-character argument
+above constructs is `N` itself.
+
+This is what makes the abstract construction checkable on a concrete Frobenius group: the kernel
+is produced from the irreducible characters of `H`, with no reference to `N`, and comes out equal
+to the normal complement one started from.  The carriers agree by
+`TauCeti.coe_eq_frobeniusKernel_of_isComplement'`, which is a count, and a subgroup is determined
+by its carrier. -/
+theorem frobeniusKernelSubgroup_eq_of_isComplement' [N.Normal] (hNH : N.IsComplement' H)
+    (hfpf : ∀ h ∈ H, h ≠ 1 → ∀ n ∈ N, n ≠ 1 → h * n * h⁻¹ ≠ n) :
+    frobeniusKernelSubgroup (isTISubgroup_of_isComplement' hNH hfpf) = N :=
+  SetLike.coe_injective <|
+    (coe_frobeniusKernelSubgroup _).trans
+      (coe_eq_frobeniusKernel_of_isComplement' hNH hfpf).symm
+
+end Semidirect
+
+/-! ### The worked example: the symmetric group on three points -/
+
+section SymmetricThree
+
+/-- **A point stabilizer of `S₃` is a trivial-intersection subgroup**, by the fixed-point-free
+action of `TauCeti.isTISubgroup_of_isComplement'` on the alternating complement. -/
+theorem isTISubgroup_stabilizer_perm_fin_three (a : Fin 3) :
+    IsTISubgroup (MulAction.stabilizer (Equiv.Perm (Fin 3)) a) :=
+  isTISubgroup_of_isComplement' (isComplement'_alternatingGroup_stabilizer_perm_fin_three a)
+    (conj_ne_self_of_mem_alternatingGroup_fin_three a)
+
+/-- **`S₃` is a Frobenius group with complement a point stabilizer.**  Properness and
+nontriviality come from the stabilizer not being normal, which `⊥` and `⊤` both are. -/
+theorem isFrobeniusComplement_stabilizer_perm_fin_three (a : Fin 3) :
+    IsFrobeniusComplement (MulAction.stabilizer (Equiv.Perm (Fin 3)) a) := by
+  refine isFrobeniusComplement_of_isComplement'
+    (isComplement'_alternatingGroup_stabilizer_perm_fin_three a) ?_ ?_
+    (conj_ne_self_of_mem_alternatingGroup_fin_three a)
+  · intro hbot
+    refine not_normal_stabilizer_perm_fin_three a ?_
+    rw [hbot]
+    infer_instance
+  · intro htop
+    refine not_normal_stabilizer_perm_fin_three a ?_
+    rw [htop]
+    infer_instance
+
+/-- **The Frobenius kernel of a point stabilizer of `S₃` is the alternating group `A₃`.**
+
+This is the `S₃` acceptance criterion of Layer 8 of the character-theory roadmap: the kernel that
+the exceptional-character correspondence constructs — as the common kernel of representations
+affording the extended irreducible characters of the two-element subgroup `⟨(a+1 a+2)⟩`, with no
+reference to `A₃` at all — is the alternating subgroup that the semidirect decomposition
+`S₃ = A₃ ⋊ ⟨(a+1 a+2)⟩` supplies directly. -/
+theorem frobeniusKernelSubgroup_stabilizer_perm_fin_three (a : Fin 3) :
+    frobeniusKernelSubgroup (isTISubgroup_stabilizer_perm_fin_three a)
+      = alternatingGroup (Fin 3) :=
+  frobeniusKernelSubgroup_eq_of_isComplement'
+    (isComplement'_alternatingGroup_stabilizer_perm_fin_three a)
+    (conj_ne_self_of_mem_alternatingGroup_fin_three a)
+
+/-- **The Frobenius kernel of a point stabilizer of `S₃` has order three.** -/
+theorem card_frobeniusKernelSubgroup_stabilizer_perm_fin_three (a : Fin 3) :
+    Nat.card (frobeniusKernelSubgroup (isTISubgroup_stabilizer_perm_fin_three a)) = 3 := by
+  rw [frobeniusKernelSubgroup_stabilizer_perm_fin_three, card_alternatingGroup_fin_three]
+
+end SymmetricThree
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
+public import Mathlib.GroupTheory.Complement
 public import Mathlib.GroupTheory.Index
 public import Mathlib.Tactic.Group
 
@@ -40,6 +41,16 @@ exceptional-character argument for Frobenius's theorem.  That induction statemen
 `TauCeti.characterPairing_ind_ind_of_isTISet`, in
 `TauCeti/RepresentationTheory/Induction/TrivialIntersection.lean`.
 
+A concrete Frobenius group is normally presented the other way round, as a semidirect product
+`G = N ⋊ H` with `H` acting on `N` without nonidentity fixed points, and that presentation is
+enough: `TauCeti.isTISubgroup_of_isComplement'` reads the trivial-intersection condition off it.
+Conjugation by an element `g = n · t` outside `H` is conjugation by its `H`-part `t`, which stays
+inside `H`, followed by conjugation by its `N`-part `n`; so an element of `H` conjugated back into
+`H` commutes with `n`, and the fixed-point hypothesis leaves only the identity.  That is the
+recognition criterion the worked examples of the roadmap's Layer 8 are checked with, and
+`TauCeti.coe_eq_frobeniusKernel_of_isComplement'` completes it by identifying `N` with the
+Frobenius kernel.
+
 ## Main definitions
 
 * `TauCeti.IsTISubgroup`: `H` meets each of its distinct conjugates trivially.
@@ -58,8 +69,18 @@ exceptional-character argument for Frobenius's theorem.  That induction statemen
 * `TauCeti.IsTISet.ncard_conjugatesOfSet`: the `Set.ncard` identity
   `(Group.conjugatesOfSet S).ncard = |G : H| · |S|`, an actual count of the elements the conjugates
   of a trivial-intersection set cover when `H` has finite index and `S` is finite.
+* `TauCeti.isTISubgroup_of_isComplement'`: **a complement to a normal subgroup on which it acts
+  without nonidentity fixed points is a trivial-intersection subgroup**, with
+  `TauCeti.isFrobeniusComplement_of_isComplement'` its bundled form for a proper nontrivial `H`.
 
 ## Implementation notes
+
+The fixed-point hypothesis of `TauCeti.isTISubgroup_of_isComplement'` is written with ambient
+elements, `∀ h ∈ H, h ≠ 1 → ∀ n ∈ N, n ≠ 1 → h * n * h⁻¹ ≠ n`, rather than as
+`MonoidHom.FixedPointFree` of the automorphism `MulAut.conjNormal h` of `N` that it is equivalent
+to.  The two say the same thing, but every caller -- and the proof itself -- works with elements of
+`G`, so the bundled spelling would only insert a `Subtype.ext` at each use.
+
 
 The count `TauCeti.IsTISet.ncard_conjugatesOfSet` is proved through a map *into* `G` out of
 `(G ⧸ H) × S`, rather than through an `Equiv` onto `Group.conjugatesOfSet S`, because the two facts
@@ -306,5 +327,71 @@ theorem not_normal (hH : IsFrobeniusComplement H) : ¬H.Normal := by
   exact hH.ne_top (hH.normalizer_eq_self ▸ htop)
 
 end IsFrobeniusComplement
+
+/-! ### Fixed-point-free complements -/
+
+section Semidirect
+
+variable {N : Subgroup G}
+
+/-- **A complement to a normal subgroup that acts on it without nonidentity fixed points is a
+trivial-intersection subgroup.**  This is the elementary converse direction of Frobenius's
+theorem: where Frobenius's theorem *produces* a normal complement out of the trivial-intersection
+condition, here a normal complement is given and the trivial-intersection condition is read off
+its action.
+
+The proof is the decomposition `g = n · t` of an element outside `H` into its `N`- and `H`-parts.
+Conjugation by `g` is conjugation by `t`, which stays inside `H`, followed by conjugation by `n`;
+so if `x ∈ H` is conjugated back into `H`, the commutator of `n` with `y = t x t⁻¹` lies in `N`
+(by normality) and in `H` (by construction), hence is trivial.  That makes `y` a fixed point of
+`n` under conjugation, and the hypothesis leaves only `y = 1`. -/
+theorem isTISubgroup_of_isComplement' [N.Normal] (hNH : N.IsComplement' H)
+    (hfpf : ∀ h ∈ H, h ≠ 1 → ∀ n ∈ N, n ≠ 1 → h * n * h⁻¹ ≠ n) :
+    IsTISubgroup H := by
+  have hdisj : ∀ {y : G}, y ∈ N → y ∈ H → y = 1 := Subgroup.disjoint_def.mp hNH.disjoint
+  intro g x hg hx hgx
+  obtain ⟨n, hn, t, ht, rfl⟩ :=
+    Set.mem_mul.mp (Set.eq_univ_iff_forall.mp (Subgroup.isComplement'_def.mp hNH).mul_eq g)
+  rw [SetLike.mem_coe] at hn ht
+  -- the `N`-part of `g` is nontrivial, since `g` itself is outside `H`
+  have hn1 : n ≠ 1 := fun h => hg (by rw [h, one_mul]; exact ht)
+  have hyH : t * x * t⁻¹ ∈ H := H.mul_mem (H.mul_mem ht hx) (H.inv_mem ht)
+  have hconj : n * (t * x * t⁻¹) * n⁻¹ ∈ H := by
+    have hrw : n * (t * x * t⁻¹) * n⁻¹ = n * t * x * (n * t)⁻¹ := by group
+    rw [hrw]
+    exact hgx
+  -- the commutator of `n` with `t x t⁻¹` lies in `N` by normality and in `H` by construction
+  have hcomm : n * (t * x * t⁻¹) * n⁻¹ * (t * x * t⁻¹)⁻¹ = 1 := by
+    refine hdisj ?_ (H.mul_mem hconj (H.inv_mem hyH))
+    have hrw : n * (t * x * t⁻¹) * n⁻¹ * (t * x * t⁻¹)⁻¹
+        = n * (t * x * t⁻¹ * n⁻¹ * (t * x * t⁻¹)⁻¹) := by group
+    rw [hrw]
+    exact N.mul_mem hn (‹N.Normal›.conj_mem n⁻¹ (N.inv_mem hn) (t * x * t⁻¹))
+  -- so `n` is a fixed point of conjugation by `t x t⁻¹`, which the hypothesis forbids
+  have hy1 : t * x * t⁻¹ = 1 := by
+    by_contra hne
+    refine hfpf _ hyH hne n hn hn1 ?_
+    have h0 : n * (t * x * t⁻¹) * n⁻¹ = t * x * t⁻¹ := mul_inv_eq_one.mp hcomm
+    have h1 : n * (t * x * t⁻¹) = t * x * t⁻¹ * n :=
+      calc n * (t * x * t⁻¹) = n * (t * x * t⁻¹) * n⁻¹ * n := by group
+        _ = t * x * t⁻¹ * n := by rw [h0]
+    rw [← h1]
+    group
+  have h2 : t * x = t * 1 := by
+    rw [mul_one]
+    exact mul_inv_eq_one.mp hy1
+  exact mul_left_cancel h2
+
+/-- **A proper nontrivial fixed-point-free complement is a Frobenius complement.**  The
+trivial-intersection condition is `TauCeti.isTISubgroup_of_isComplement'`; properness and
+nontriviality are exactly what the bundled predicate adds. -/
+theorem isFrobeniusComplement_of_isComplement' [N.Normal] (hNH : N.IsComplement' H) (hbot : H ≠ ⊥)
+    (htop : H ≠ ⊤) (hfpf : ∀ h ∈ H, h ≠ 1 → ∀ n ∈ N, n ≠ 1 → h * n * h⁻¹ ≠ n) :
+    IsFrobeniusComplement H where
+  ne_bot := hbot
+  ne_top := htop
+  isTISubgroup := isTISubgroup_of_isComplement' hNH hfpf
+
+end Semidirect
 
 end TauCeti
