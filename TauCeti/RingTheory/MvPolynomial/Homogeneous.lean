@@ -22,7 +22,10 @@ namespace TauCeti
 open MvPolynomial
 
 /-- Scaling all variables by `a` scales the value of a degree-`n` homogeneous polynomial
-by `a ^ n`, after any change of coefficient ring. -/
+by `a ^ n`, after any change of coefficient ring.
+
+Use `simp only [eval₂_fun_mul_of_isHomogeneous hp]` with a homogeneity proof `hp`.
+This is not a global `simp` lemma: the degree `n` cannot be inferred from its left-hand side. -/
 theorem eval₂_fun_mul_of_isHomogeneous {σ R S : Type*} [CommSemiring R] [CommSemiring S]
     {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n)
     (f : R →+* S) (g : σ → S) (a : S) :
