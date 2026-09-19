@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Burnside
 public import Mathlib.LinearAlgebra.Basis.Basic
-import TauCeti.Algebra.Module.ZMod.Span
+import TauCeti.Algebra.Module.ZMod.Span.Basic
 import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
