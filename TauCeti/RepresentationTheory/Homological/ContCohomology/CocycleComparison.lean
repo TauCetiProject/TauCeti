@@ -130,6 +130,36 @@ theorem mem_B1_iff_cocycleEquiv1_mem_range (c : Z1 G M) :
     have hd := congrArg Subtype.val ((cocycleEquiv1 G M).injective hb)
     exact mem_B1_iff.mpr ⟨b, fun g => (d0_apply b g).symm.trans (congrFun hd g)⟩
 
+/-- The one-cocycle comparison is natural in compatible pairs of group and coefficient maps. -/
+theorem cocycleEquiv1_naturality
+    (H N : Type u) [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction H N] [ContinuousSMul H N]
+    (φ : H →ₜ* G) (f : M →+ N)
+    (hf : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (c : Z1 G M) :
+    _root_.ContinuousCohomology.cocyclesMap φ
+        (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap (fun h m ↦ hf h m)) 1
+        (cocycleEquiv1 G M c) =
+      cocycleEquiv1 H N
+        (cocyclesMap1 G M H N φ f continuous_of_discreteTopology hf c) := by
+  apply (cocycleEquiv1 H N).symm.injective
+  apply Subtype.ext
+  funext h
+  rw [cocycleEquiv1_symm_apply, AddEquiv.symm_apply_apply]
+  have e := ConcreteCategory.congr_hom
+    (HomologicalComplex.cyclesMap_i
+      (_root_.ContinuousCohomology.cochainsMap φ
+        (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap (fun h m ↦ hf h m))) 1)
+    (cocycleEquiv1 G M c)
+  simp only [ConcreteCategory.comp_apply] at e
+  -- `cyclesMap_i` uses the homological-complex spelling of the same inclusion.
+  have hc : (TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).iCycles 1
+      (cocycleEquiv1 G M c) =
+      cochainEquiv1 G M ⟨c.val, Z1_le_C1 G M c.property⟩ := iCycles_cocycleEquiv1 G M c
+  rw [hc] at e
+  rw [e, cochainEquiv1_naturality G M H N φ f hf]
+  simp [cocyclesMap1_apply]
+
 /-! ### Degree two -/
 
 section LocallyCompact
