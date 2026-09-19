@@ -234,10 +234,10 @@ theorem apply_coe (hf : IsTransgressionLift c f) (n : N) : f n = f 1 + c n := by
 /-- The function on `N` admitting a transgression lift is a continuous `1`-cocycle. -/
 theorem mem_Z1 [IsTopologicalAddGroup M] (hf : IsTransgressionLift c f) : c ∈ Z1 N M := by
   refine mem_Z1_iff.2 ⟨?_, fun n n' => ?_⟩
-  · rw [show c = fun n : N => f n - f 1 by
-      funext n
+  · have hc : c = fun n : N => f n - f 1 := funext fun n => by
       rw [hf.apply_coe]
-      abel]
+      abel
+    rw [hc]
     exact (hf.continuous.comp continuous_subtype_val).sub continuous_const
   · calc
       c (n * n') = f (n * n') - f 1 := by
