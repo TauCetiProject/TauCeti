@@ -247,6 +247,7 @@ lemma skyscraperResidueFieldEquiv_toSkyscraperResidueField_app
 
 /-- **The kernel of `𝒪_X(D + y) ⟶ κ(y)_y` is `𝒪_X(D)`**, on sections: a section of
 `𝒪_X(D + y)` is sent to zero exactly when it is a section of `𝒪_X(D)`. -/
+@[simp]
 lemma toSkyscraperResidueField_app_eq_zero_iff
     (hg : X.ord (g : X.functionField) y = WeilDivisor.coeff D y + 1) (U : X.Opens)
     (t : Γ(sheaf (D + WeilDivisor.ofPoint y), U)) :
