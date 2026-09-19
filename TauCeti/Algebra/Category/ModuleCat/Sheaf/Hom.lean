@@ -42,7 +42,7 @@ variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
   {R : Sheaf J RingCat.{w}} (M N : SheafOfModules.{w'} R)
 
 /-- The subpresheaf of additive local morphisms that commute with scalar multiplication. -/
-def linearHomSubfunctor : Subfunctor (presheafHom M.val.presheaf N.val.presheaf) where
+private def linearHomSubfunctor : Subfunctor (presheafHom M.val.presheaf N.val.presheaf) where
   obj U := {φ | ∀ (V : Over U.unop) (r : R.obj.obj (op V.left)) (m : M.val.obj (op V.left)),
     φ.app (op V) (r • m) =
       (r • · : N.val.obj (op V.left) → N.val.obj (op V.left)) (φ.app (op V) m)}
@@ -51,7 +51,7 @@ def linearHomSubfunctor : Subfunctor (presheafHom M.val.presheaf N.val.presheaf)
 /-- Membership in the local linear-morphism presheaf means linearity at every object of the
 slice site. -/
 @[simp]
-theorem mem_linearHomSubfunctor {U : Cᵒᵖ}
+private theorem mem_linearHomSubfunctor {U : Cᵒᵖ}
     (φ : (presheafHom M.val.presheaf N.val.presheaf).obj U) :
     φ ∈ (linearHomSubfunctor M N).obj U ↔
       ∀ (V : Over U.unop) (r : R.obj.obj (op V.left)) (m : M.val.obj (op V.left)),
@@ -59,7 +59,7 @@ theorem mem_linearHomSubfunctor {U : Cᵒᵖ}
           (r • · : N.val.obj (op V.left) → N.val.obj (op V.left)) (φ.app (op V) m) := Iff.rfl
 
 /-- Linearity of a local additive morphism can be checked on a covering sieve. -/
-theorem mem_linearHomSubfunctor_of_cover {U : Cᵒᵖ}
+private theorem mem_linearHomSubfunctor_of_cover {U : Cᵒᵖ}
     (φ : (presheafHom M.val.presheaf N.val.presheaf).obj U)
     (S : Sieve U.unop) (hS : S ∈ J U.unop)
     (hφ : ∀ ⦃V⦄ (f : V ⟶ U.unop), S f →
@@ -93,7 +93,7 @@ theorem mem_linearHomSubfunctor_of_cover {U : Cᵒᵖ}
         (N.val.map_smul f.op r (φ.app (op V) m)).symm
 
 /-- Local linear morphisms satisfy the sheaf condition. -/
-theorem isSheaf_linearHomSubfunctor :
+private theorem isSheaf_linearHomSubfunctor :
     Presheaf.IsSheaf J (linearHomSubfunctor M N).toFunctor := by
   rw [isSheaf_iff_isSheaf_of_type]
   apply ((linearHomSubfunctor M N).isSheaf_iff
@@ -123,13 +123,20 @@ def linearHomObjEquiv (U : C) :
     ext V m
     rfl
 
+private theorem linearHomObjEquiv_app (U : C)
+    (φ : (linearHom M N).obj.obj (op U)) (V : Over U) (m : M.val.obj (op V.left)) :
+    ((linearHomObjEquiv M N U φ).val.app (op V)) m = φ.val.app (op V) m := by
+  rfl
+
 /-- Restriction of a Hom section restricts its component linear maps. -/
 @[simp]
 theorem linearHomObjEquiv_map_app {U V W : C} (f : V ⟶ U) (g : W ⟶ V)
     (φ : (linearHom M N).obj.obj (op U)) (m : M.val.obj (op W)) :
     ((linearHomObjEquiv M N V ((linearHom M N).obj.map f.op φ)).val.app
       (op (Over.mk g))) m =
-        ((linearHomObjEquiv M N U φ).val.app (op (Over.mk (g ≫ f)))) m := by rfl
+        ((linearHomObjEquiv M N U φ).val.app (op (Over.mk (g ≫ f)))) m := by
+  rw [linearHomObjEquiv_app, linearHomObjEquiv_app]
+  exact ConcreteCategory.congr_hom (presheafHom_map_app g f (g ≫ f) rfl φ.val) m
 
 /-- Global sections of the linear Hom sheaf are morphisms of sheaves of modules. -/
 def linearHomSectionsEquiv : (linearHom M N).obj.sections ≃ (M ⟶ N) where
@@ -144,7 +151,10 @@ def linearHomSectionsEquiv : (linearHom M N).obj.sections ≃ (M ⟶ N) where
       apply NatTrans.ext
       funext W
       ext m
-      rfl⟩
+      -- Subtype projection removes the linearity witness; the remaining map is presheaf Hom.
+      exact ConcreteCategory.congr_hom
+        (presheafHom_map_app W.unop.hom f.unop (W.unop.hom ≫ f.unop) rfl
+          ((linearHomObjEquiv M N U.unop).symm (φ.over U.unop)).val) m⟩
   left_inv s := by
     apply Subtype.ext
     funext U
