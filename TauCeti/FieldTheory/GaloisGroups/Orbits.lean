@@ -43,7 +43,7 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
   set of its minimal polynomial.
 * `TauCeti.natCard_orbit_eq_natDegree_minpoly`: when the corresponding minimal polynomial is
   separable, an orbit has as many elements as its degree.
-* `TauCeti.natCard_rootSet_complex_eq_natDegree`: a monic integral polynomial with nonzero
+* `TauCeti.natCard_rootSet_complex_eq_natDegree`: an integral polynomial with nonzero
   discriminant has as many distinct complex roots as its degree.
 * `TauCeti.isPretransitive_iff_irreducible`: for separable `p` of positive degree, transitivity
   of the root action is equivalent to irreducibility of `p`.
@@ -193,14 +193,44 @@ theorem natCard_orbit_eq_natDegree_minpoly (x : p.rootSet E)
     image_val_orbit_eq_rootSet_minpoly, Nat.card_eq_fintype_card,
     card_rootSet_eq_natDegree hsep hsplits]
 
-/-- A monic integral polynomial with nonzero discriminant has as many distinct complex roots as
-its degree. -/
-theorem natCard_rootSet_complex_eq_natDegree {f : ℤ[X]} (hf : f.Monic) (hd : f.discr ≠ 0) :
+/-- An integral polynomial with nonzero discriminant has as many distinct complex roots as its
+degree. -/
+theorem natCard_rootSet_complex_eq_natDegree {f : ℤ[X]} (hd : f.discr ≠ 0) :
     Nat.card ((f.map (Int.castRingHom ℚ)).rootSet ℂ) = f.natDegree := by
+  by_cases hf : f = 0
+  · subst f
+    simp
+  have hmap : f.map (Int.castRingHom ℚ) ≠ 0 :=
+    (Polynomial.map_ne_zero_iff Int.cast_injective).mpr hf
+  have hdeg : (f.map (Int.castRingHom ℚ)).natDegree = f.natDegree :=
+    Polynomial.natDegree_map_eq_of_injective Int.cast_injective f
+  have hdisc : (f.map (Int.castRingHom ℚ)).discr ≠ 0 := by
+    rw [Polynomial.discr_map_of_natDegree_eq _ hdeg]
+    exact Int.cast_injective.ne hd
   have hsep : (f.map (Int.castRingHom ℚ)).Separable := by
-    simpa using (hf.discr_ne_zero_iff_separable_map ℚ).mp hd
+    rcases Nat.eq_zero_or_pos (f.map (Int.castRingHom ℚ)).natDegree with hzero | hpos
+    · rw [Polynomial.eq_C_of_natDegree_eq_zero hzero, Polynomial.separable_C,
+        isUnit_iff_ne_zero]
+      intro hcoeff
+      apply hmap
+      rw [Polynomial.eq_C_of_natDegree_eq_zero hzero, hcoeff, Polynomial.C_0]
+    · rw [Polynomial.separable_def]
+      by_contra hcoprime
+      have hres : (f.map (Int.castRingHom ℚ)).resultant
+          (f.map (Int.castRingHom ℚ)).derivative = 0 :=
+        Polynomial.resultant_eq_zero_iff.mpr ⟨Or.inl hmap, hcoprime⟩
+      have hbound : (f.map (Int.castRingHom ℚ)).resultant
+          (f.map (Int.castRingHom ℚ)).derivative
+          (f.map (Int.castRingHom ℚ)).natDegree
+          ((f.map (Int.castRingHom ℚ)).natDegree - 1) = 0 := by
+        rw [← Nat.add_sub_of_le (Polynomial.natDegree_derivative_le _),
+          Polynomial.resultant_add_right_deg _ _ _ _ _ (le_refl _), hres, mul_zero]
+      rw [Polynomial.resultant_deriv (Polynomial.natDegree_pos_iff_degree_pos.mp hpos)] at hbound
+      exact (mul_ne_zero
+        (mul_ne_zero (pow_ne_zero _ (by norm_num)) (Polynomial.leadingCoeff_ne_zero.mpr hmap))
+        hdisc) hbound
   rw [Nat.card_eq_fintype_card, card_rootSet_eq_natDegree hsep Gal.splits_ℚ_ℂ.out,
-    hf.natDegree_map]
+    hdeg]
 
 /-! ## Transitivity and irreducibility -/
 

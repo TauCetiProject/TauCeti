@@ -114,7 +114,7 @@ theorem exists_isCycle_mem_range_galActionHom_of_irreducible_map (hf : f.Monic)
   obtain ⟨hcyc, hsupp⟩ := cycleType_eq_singleton_iff.mp hcyc
   refine ⟨σ, hσG, hcyc, Finset.eq_univ_of_card _ ?_⟩
   rw [hsupp, ← Nat.card_eq_fintype_card,
-    natCard_rootSet_complex_eq_natDegree hf fun h => hp (h ▸ dvd_zero _)]
+    natCard_rootSet_complex_eq_natDegree fun h => hp (h ▸ dvd_zero _)]
 
 open scoped Classical in
 /-- **A single quadratic factor exhibits a transposition.** Let `f` be a monic integral
@@ -174,7 +174,7 @@ theorem surjective_galActionHom_of_prime_natDegree (hf : f.Monic)
   rw [← MonoidHom.range_eq_top]
   refine subgroup_eq_top_of_isPretransitive_of_prime_card_of_isSwap_mem
     (isPretransitive_range_galActionHom ℂ hirr) ?_ τ hτ hτG
-  rwa [natCard_rootSet_complex_eq_natDegree hf fun h => hp (h ▸ dvd_zero _)]
+  rwa [natCard_rootSet_complex_eq_natDegree fun h => hp (h ▸ dvd_zero _)]
 
 open scoped Classical in
 /-- **The full symmetric group from two reductions.** Let `f` be a monic integral polynomial of
@@ -191,7 +191,7 @@ theorem surjective_galActionHom_of_factorDegrees (hf : f.Monic)
     (r : ℕ) [Fact r.Prime] (hr : ¬ (r : ℤ) ∣ f.discr) (htwo : (f.factorDegrees r).count 2 = 1)
     (hodd : ∀ k ∈ f.factorDegrees r, k ≠ 2 → Odd k) :
     Function.Surjective (Gal.galActionHom (f.map (Int.castRingHom ℚ)) ℂ) := by
-  have hcard := natCard_rootSet_complex_eq_natDegree hf fun h => hr (h ▸ dvd_zero _)
+  have hcard := natCard_rootSet_complex_eq_natDegree fun h => hr (h ▸ dvd_zero _)
   obtain ⟨τ, hτG, hτ⟩ := exists_isSwap_mem_range_galActionHom hf r hr htwo hodd
   -- A transposition moves two roots, so the degree is at least two; degree two is prime.
   have h2 : 2 ≤ f.natDegree := by
