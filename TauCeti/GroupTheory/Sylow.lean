@@ -23,6 +23,8 @@ group whenever `p` does.
   order of the group but `p ^ 2` does not.
 * `Sylow.mul_card_sylow_dvd_card`: if `p` divides the order of the group, then so does `p` times
   the number of Sylow `p`-subgroups.
+* `TauCeti.thirty_dvd_natCard_of_card_sylow_five_eq_six`: a finite group with six Sylow
+  `5`-subgroups and order divisible by `5` has order divisible by `30`.
 -/
 
 public section
@@ -57,3 +59,15 @@ theorem mul_card_sylow_dvd_card (hdvd : p ∣ Nat.card G) :
   exact Nat.mul_dvd_mul_left _ hN
 
 end Sylow
+
+namespace TauCeti
+
+local instance thirtyDvdFactPrimeFive : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
+
+/-- A finite group of order divisible by `5` with six Sylow `5`-subgroups has order divisible by
+`30`. -/
+theorem thirty_dvd_natCard_of_card_sylow_five_eq_six {G : Type*} [Group G] [Finite G]
+    (h5 : 5 ∣ Nat.card G) (h6 : Nat.card (Sylow 5 G) = 6) : 30 ∣ Nat.card G := by
+  simpa [h6] using Sylow.mul_card_sylow_dvd_card h5
+
+end TauCeti

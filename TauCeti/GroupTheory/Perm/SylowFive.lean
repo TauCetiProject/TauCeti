@@ -34,8 +34,6 @@ classification of the transitive subgroups of `S₅`: the transitive subgroups o
   or six Sylow `5`-subgroups.
 * `TauCeti.exists_sylow_le_le_normalizer_of_card_sylow_five_eq_one`: if it has one, it lies
   between a Sylow `5`-subgroup of `S₅` and its normalizer.
-* `TauCeti.thirty_dvd_natCard_of_card_sylow_five_eq_six`: if it has six, its order is divisible
-  by `30`.
 * `TauCeti.natCard_subgroup_perm_ne_thirty`: `S₅` has no subgroup of order `30`.
 * `TauCeti.eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard`: a subgroup of `S₅` of order
   divisible by `30` is `A₅` or `S₅`.
@@ -152,12 +150,6 @@ theorem exists_sylow_le_le_normalizer_of_card_sylow_five_eq_one (hα : Nat.card 
       _ = (normalizer ((Q : Subgroup G) : Set G)).map G.subtype := by rw [normalizer_eq_top]
       _ ≤ _ := le_normalizer_map _
   rwa [hPQ] at key
-
-/-- A finite group of order divisible by `5` with six Sylow `5`-subgroups has order divisible by
-`30`. -/
-theorem thirty_dvd_natCard_of_card_sylow_five_eq_six {G : Type*} [Group G] [Finite G]
-    (h5 : 5 ∣ Nat.card G) (h6 : Nat.card (Sylow 5 G) = 6) : 30 ∣ Nat.card G := by
-  simpa [h6] using Sylow.mul_card_sylow_dvd_card h5
 
 /-- A subgroup of the symmetric group on five points whose order is divisible by `30` is the
 alternating group or the whole symmetric group. -/
