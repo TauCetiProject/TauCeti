@@ -61,10 +61,10 @@ theorem _root_.AlgebraicGeometry.Scheme.finite_Γevaluation_of_isClosed {X Y : S
     ← Spec.map_comp] at this
   exact (IsFinite.SpecMap_iff _).mp this
 
-/-- At a closed point `x` of a scheme locally of finite type over an affine Jacobson scheme, the
+/-- At a closed point `x` of a scheme locally of finite type over a Jacobson scheme, the
 residue field extension `κ(f x) ⟶ κ(x)` is finite, so its residue degree is nonzero. For a scheme
 of finite type over a field `k` this says that closed points have finite degree over `k`. -/
-theorem residueDegree_ne_zero_of_isClosed {X Y : Scheme.{u}} [IsAffine Y] [JacobsonSpace Y]
+theorem residueDegree_ne_zero_of_isClosed {X Y : Scheme.{u}} [JacobsonSpace Y]
     (f : X ⟶ Y) [LocallyOfFiniteType f] {x : X} (hx : IsClosed {x}) :
     f.residueDegree x ≠ 0 := by
   have := isClosed_singleton_iff_isClosedImmersion.mp hx
