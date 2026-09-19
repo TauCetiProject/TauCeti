@@ -98,13 +98,8 @@ variable {R : Type u} {M : Type v} {I : Type w} [CommRing R] [AddCommGroup M] [M
   exact h
 
 /-- **An exterior coordinate-basis vector is homogeneous of exactly one degree**: it lies in the
-graded piece `i` precisely when `i` is the parity of its number of coordinates. The forward
-direction is the only content, and it is the nonvanishing of a basis vector against the
-disjointness of the two graded pieces.
-
-This is deliberately not a `simp` lemma: `Module.Basis.exteriorAlgebra_mem_evenOdd_card` already
-closes the membership goals whose degree is the one the basis vector carries, and tagging the
-equivalence as well would make that lemma redundant. -/
+graded piece `i` precisely when `i` is the parity of its number of coordinates. -/
+@[simp]
 theorem exteriorAlgebra_mem_evenOdd_iff [Nontrivial R] (b : Module.Basis I R M) (s : Finset I)
     (i : ZMod 2) :
     b.ExteriorAlgebra s ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i ↔

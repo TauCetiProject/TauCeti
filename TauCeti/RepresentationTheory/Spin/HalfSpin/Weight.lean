@@ -35,8 +35,10 @@ argument.
 
 Nothing here needs a field, a nondegeneracy hypothesis, a finite dimension, or a polarization
 without a line summand: the parity grading of `⋀·W` and the diagonalization are both available
-over the commutative ring the polarization data lives over. A nontrivial ring is needed, and only
-because an exterior basis vector must be nonzero for its parity to be well defined.
+over the commutative ring the polarization data lives over. Even nontriviality of the ring is
+needed only where a parity is *read off* a basis vector, that vector having to be nonzero for its
+parity to be well defined; the inclusions and the identification of the two summands hold over any
+commutative ring.
 
 As in `TauCeti/RepresentationTheory/Spin/Weight.lean`, "weight" means a tuple of simultaneous
 eigenvalues for the family `H`, no Cartan subalgebra being exhibited; and no weight is called
@@ -69,8 +71,6 @@ half-spin summands, which is `TauCeti.basis_univ_mem_spinPlus_iff_basis_univ_era
   representations `S⁺`, `S⁻` of `𝔰𝔬(2l)` and their weights, the sign vectors of even and of odd
   parity.
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
-* [Spin-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 5, "Weights of the spin module" and "Type `Dₗ`: `𝔰𝔬(2l)`".
 -/
 
 public section
@@ -99,6 +99,7 @@ theorem basis_mem_spinMinus_iff (s : Finset ι) :
     b.ExteriorAlgebra s ∈ spinMinus Q P ↔ Odd s.card := by
   rw [mem_spinMinus, b.exteriorAlgebra_mem_evenOdd_iff s 1, ZMod.natCast_eq_one_iff_odd]
 
+omit [Nontrivial K] in
 /-- **The two type-`Dₗ` fork vectors lie in different half-spin summands.** The vector with every
 coordinate occupied and the vector obtained from it by erasing one coordinate differ in parity, so
 whenever the first is even the second is odd and conversely. These are the two vectors that
@@ -107,6 +108,12 @@ every positive simple generator, with the fork fundamental weights. -/
 theorem basis_univ_mem_spinPlus_iff_basis_univ_erase_mem_spinMinus [Fintype ι] (i : ι) :
     b.ExteriorAlgebra Finset.univ ∈ spinPlus Q P ↔
       b.ExteriorAlgebra (Finset.univ.erase i) ∈ spinMinus Q P := by
+  rcases subsingleton_or_nontrivial K with _ | _
+  -- Over a trivial ring every spinor is `0`, so both sides hold.
+  · have : Subsingleton (ExteriorAlgebra K P.W) := Module.subsingleton K _
+    have hmem : ∀ (x : ExteriorAlgebra K P.W) (N : Submodule K (ExteriorAlgebra K P.W)), x ∈ N :=
+      fun x N => by rw [Subsingleton.elim x 0]; exact N.zero_mem
+    exact ⟨fun _ => hmem _ _, fun _ => hmem _ _⟩
   have hpos : 1 ≤ Fintype.card ι := Fintype.card_pos_iff.mpr ⟨i⟩
   rw [basis_mem_spinPlus_iff, basis_mem_spinMinus_iff,
     Finset.card_erase_of_mem (Finset.mem_univ i), Finset.card_univ, Nat.even_iff, Nat.odd_iff]
@@ -144,23 +151,28 @@ private theorem sup_iSup_spinWeightSpace_parity_eq_top :
   · exact le_sup_of_le_left (le_iSup_of_le s (le_iSup_of_le hs le_rfl))
   · exact le_sup_of_le_right (le_iSup_of_le s (le_iSup_of_le hs le_rfl))
 
-/-- The sum of the weight lines of even parity is contained in `S⁺`, by
-`TauCeti.spinWeightSpace_le_spinPlus_iff` applied line by line. -/
+omit [Nontrivial K] in
+/-- The sum of the weight lines of even parity is contained in `S⁺`. -/
 theorem iSup_spinWeightSpace_even_le_spinPlus :
     (⨆ (s : Finset ι) (_ : Even s.card), spinWeightSpace Q P b (spinWeight K s)) ≤
-      spinPlus Q P :=
-  iSup_le fun s => iSup_le fun hs => (spinWeightSpace_le_spinPlus_iff P b s).mpr hs
+      spinPlus Q P := by
+  refine iSup_le fun s => iSup_le fun hs => ?_
+  rw [spinWeightSpace_spinWeight, Submodule.span_singleton_le_iff_mem, mem_spinPlus]
+  have hcard := b.exteriorAlgebra_mem_evenOdd_card s
+  rwa [ZMod.natCast_eq_zero_iff_even.mpr hs] at hcard
 
+omit [Nontrivial K] in
 /-- The sum of the weight lines of odd parity is contained in `S⁻`. -/
 theorem iSup_spinWeightSpace_odd_le_spinMinus :
     (⨆ (s : Finset ι) (_ : Odd s.card), spinWeightSpace Q P b (spinWeight K s)) ≤
-      spinMinus Q P :=
-  iSup_le fun s => iSup_le fun hs => (spinWeightSpace_le_spinMinus_iff P b s).mpr hs
+      spinMinus Q P := by
+  refine iSup_le fun s => iSup_le fun hs => ?_
+  rw [spinWeightSpace_spinWeight, Submodule.span_singleton_le_iff_mem, mem_spinMinus]
+  have hcard := b.exteriorAlgebra_mem_evenOdd_card s
+  rwa [ZMod.natCast_eq_one_iff_odd.mpr hs] at hcard
 
-/-- **`S⁺` is the sum of the weight lines of even parity.** One inclusion is
-`TauCeti.iSup_spinWeightSpace_even_le_spinPlus`; the other is the modular law
-(`eq_of_le_of_inf_le_of_le_sup`) against the sum of the odd lines, which is contained in the
-complement `S⁻` and which completes the even lines to the whole spinor module. -/
+omit [Nontrivial K] in
+/-- **`S⁺` is the sum of the weight lines of even parity.** -/
 theorem iSup_spinWeightSpace_even_eq_spinPlus :
     (⨆ (s : Finset ι) (_ : Even s.card), spinWeightSpace Q P b (spinWeight K s)) =
       spinPlus Q P := by
@@ -172,6 +184,7 @@ theorem iSup_spinWeightSpace_even_eq_spinPlus :
   · rw [sup_iSup_spinWeightSpace_parity_eq_top P b]
     exact le_top
 
+omit [Nontrivial K] in
 /-- **`S⁻` is the sum of the weight lines of odd parity**, the other half of
 `TauCeti.iSup_spinWeightSpace_even_eq_spinPlus`. -/
 theorem iSup_spinWeightSpace_odd_eq_spinMinus :

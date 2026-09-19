@@ -99,8 +99,7 @@ theorem card_even_card_finset {ι : Type*} [Finite ι] [Nonempty ι] :
     rw [Finset.card_filter_add_card_filter_not, Finset.card_univ, Fintype.card_finset]
   have hpow : 2 ^ Fintype.card ι = 2 * 2 ^ (Fintype.card ι - 1) := by
     have hpos : 1 ≤ Fintype.card ι := Fintype.card_pos
-    conv_lhs => rw [show Fintype.card ι = (Fintype.card ι - 1) + 1 by omega]
-    rw [pow_succ, Nat.mul_comm]
+    rw [← pow_succ', Nat.sub_add_cancel hpos]
   rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Nat.card_eq_fintype_card]
   omega
 
@@ -119,8 +118,7 @@ theorem card_odd_card_finset {ι : Type*} [Finite ι] [Nonempty ι] :
     simp only [Nat.not_even_iff_odd]
   have hpow : 2 ^ Fintype.card ι = 2 * 2 ^ (Fintype.card ι - 1) := by
     have hpos : 1 ≤ Fintype.card ι := Fintype.card_pos
-    conv_lhs => rw [show Fintype.card ι = (Fintype.card ι - 1) + 1 by omega]
-    rw [pow_succ, Nat.mul_comm]
+    rw [← pow_succ', Nat.sub_add_cancel hpos]
   rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Nat.card_eq_fintype_card]
   rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Nat.card_eq_fintype_card] at heven
   omega
