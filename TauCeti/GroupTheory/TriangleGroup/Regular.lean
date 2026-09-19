@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.TriangleGroup.PermutationRepresentation
-public import TauCeti.Combinatorics.PermutationTriple.Examples
+public import TauCeti.Combinatorics.PermutationTriple.Regular
 
 /-!
 # Regular triples and normal subgroups of triangle groups
@@ -18,8 +18,7 @@ The preimage of the stabilizer of a sheet `i` is the point stabilizer of this ac
 This file proves the *normality criterion*: for a connected triple, the point stabilizer is a
 normal subgroup of `Δ(a, b, c)` exactly when the triple is regular. In that case the point
 stabilizer is the kernel of the representation, a normal subgroup whose index is the degree
-`n`, the order of the monodromy group. The torus triple gives a normal subgroup of index `4`
-in `Δ(4, 4, 2)`.
+`n`, the order of the monodromy group.
 
 ## Main results
 
@@ -30,8 +29,6 @@ in `Δ(4, 4, 2)`.
 * `TauCeti.TriangleGroup.index_ker_toPerm`: the kernel of the representation has index the order
   of the monodromy group, and `TauCeti.TriangleGroup.index_ker_toPerm_of_isRegular`: for a
   regular triple this is the degree.
-* `TauCeti.TriangleGroup.index_ker_toPerm_torusTriple`: the torus triple gives a normal subgroup of
-  index `4` of `Δ(4, 4, 2)`.
 
 ## References
 
@@ -110,15 +107,6 @@ theorem index_ker_toPerm : (toPerm t ha hb hc).ker.index = Nat.card t.monodromyG
 /-- The kernel of the representation of a regular triple has index the degree. -/
 theorem index_ker_toPerm_of_isRegular (ht : t.IsRegular) : (toPerm t ha hb hc).ker.index = n :=
   (index_ker_toPerm t ha hb hc).trans (PermutationTriple.isRegular_iff_card_monodromyGroup.mp ht).2
-
-/-- The torus triple, with cycle types `[4], [4], [2, 2]`, exhibits a normal subgroup of index `4`
-in `Δ(4, 4, 2)`: the kernel of its representation. -/
-theorem index_ker_toPerm_torusTriple :
-    (toPerm (a := 4) (b := 4) (c := 2) PermutationTriple.torusTriple
-      (by rw [PermutationTriple.torusTriple_σ0]; decide)
-      (by rw [PermutationTriple.torusTriple_σ1]; decide)
-      (by rw [PermutationTriple.torusTriple_σinf]; decide)).ker.index = 4 :=
-  index_ker_toPerm_of_isRegular _ _ _ _ PermutationTriple.isRegular_torusTriple
 
 end TriangleGroup
 
