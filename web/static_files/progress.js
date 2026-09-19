@@ -459,7 +459,9 @@
         // list is recorded as an explicit close, which the next query change forgets.
         var p = b.getAttribute("data-kids"), j = state.kids.indexOf(p), k = state.closed.indexOf(p);
         var expanded = b.getAttribute("aria-expanded") === "true";
-        if (expanded) { if (j >= 0) state.kids.splice(j, 1); else if (k < 0) state.closed.push(p); }
+        // Both forms of expansion can hold at once (opened by hand, then a matching search), so a
+        // collapse drops the explicit open and records the explicit close.
+        if (expanded) { if (j >= 0) state.kids.splice(j, 1); if (k < 0) state.closed.push(p); }
         else { if (k >= 0) state.closed.splice(k, 1); else state.kids.push(p); }
         writeUrl(false); renderRows(); refocus('[data-kids="' + CSS.escape(p) + '"]');
       } else if (b.classList.contains("pb-reset")) {
