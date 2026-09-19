@@ -38,6 +38,9 @@ is injective, and an epimorphism exactly when its rational map is surjective.
 ## References
 
 Deligne, *Théorie de Hodge II*, §2.3; Peters–Steenbrink, *Mixed Hodge Structures*, Chapter 3.
+
+The kernel and cokernel constructions adapt the corresponding formalization in
+`Mathlib.Algebra.Category.ModuleCat.Kernels`, by Markus Himmel.
 -/
 
 public section
@@ -59,6 +62,13 @@ noncomputable def kernelCone : KernelFork f :=
       apply hom_ext
       ext x
       simp
+
+/-- The point of the kernel fork is the structure induced on the rational kernel. -/
+@[simp]
+theorem kernelCone_pt :
+    (kernelCone f).pt =
+      .of _ _ (MixedHodgeStructure.Hom.isSubstructure_ker f).hodgeStructure :=
+  rfl
 
 /-- The kernel inclusion is the inclusion of the structure induced on the rational kernel. -/
 @[simp]
@@ -83,6 +93,13 @@ noncomputable def cokernelCocone : CokernelCofork f :=
       apply hom_ext
       ext x
       simp
+
+/-- The point of the cokernel cofork is the quotient by the rational image. -/
+@[simp]
+theorem cokernelCocone_pt :
+    (cokernelCocone f).pt =
+      .of _ _ (MixedHodgeStructure.Hom.isSubstructure_range f).quotient :=
+  rfl
 
 /-- The cokernel projection is the projection onto the quotient by the rational image. -/
 @[simp]
