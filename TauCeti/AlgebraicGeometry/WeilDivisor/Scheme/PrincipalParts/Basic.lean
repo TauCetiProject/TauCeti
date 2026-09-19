@@ -165,6 +165,7 @@ lemma principalPartsRestrict_apply (D : SchemeWeilDivisor X) {U V : X.Opens} (i 
     principalPartsRestrict D i s y = s ⟨y.1, i.le y.2⟩ :=
   (rfl)
 
+/-- The pointwise module structure on finitely supported families of principal parts. -/
 local instance (D : SchemeWeilDivisor X) (U : X.Opens) :
     Module (∀ x : {x : CodimensionOnePoint X // (x : X) ∈ U}, X.presheaf.stalk (x.1 : X))
       (principalPartsSections D U) := by
