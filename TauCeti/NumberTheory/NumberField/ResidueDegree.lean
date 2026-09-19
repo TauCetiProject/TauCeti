@@ -40,6 +40,8 @@ objects that description involves and records their elementary theory.
   intermediate number field forces residue degree above one over `ℚ`.
 * `TauCeti.card_filter_rationalPrimeBelow_le_finrank`: at most `[K : ℚ]` height-one primes have
   a given rational prime below them.
+* `TauCeti.encard_setOf_under_eq_le_finrank`: at most `[E : ℚ]` height-one primes of `E`
+  contract to a given height-one prime of an intermediate number field.
 * `IsDedekindDomain.HeightOneSpectrum.absNorm_dvd_rationalPrimeBelow_pow_finrank`: the absolute
   norm of `𝔭` divides `p ^ [K : ℚ]`, so the residue degree is at most the degree of the field.
 * `TauCeti.asIdeal_eq_span_singleton_of_absNorm_eq_pow_finrank`: a prime of full residue degree
@@ -169,6 +171,25 @@ theorem card_filter_rationalPrimeBelow_le_finrank (F : Finset (HeightOneSpectrum
     (fun 𝔮 _ 𝔮' _ h ↦ HeightOneSpectrum.ext h))
     (NumberField.card_primesOverFinset_le_finrank (K := K) hne)
   exact (IsDedekindDomain.mem_primesOverFinset_iff hne (𝓞 K)).mpr ⟨𝔮.isPrime, ⟨(key 𝔮 h𝔮).symm⟩⟩
+
+omit [NumberField K] in
+/-- At most `[E : ℚ]` height-one primes of `E` contract to a given height-one prime of `K`, since
+they all lie over the same rational prime. -/
+theorem encard_setOf_under_eq_le_finrank {E : Type*} [Field E] [NumberField E] [Algebra K E]
+    (𝔭 : HeightOneSpectrum (𝓞 K)) :
+    {𝔓 : HeightOneSpectrum (𝓞 E) | 𝔓.under (𝓞 K) = 𝔭}.encard ≤ Module.finrank ℚ E := by
+  by_contra! h
+  obtain ⟨t, hts, ht⟩ := Set.exists_subset_encard_eq (Order.add_one_le_of_lt h)
+  have htfin : t.Finite := Set.finite_of_encard_eq_coe (k := Module.finrank ℚ E + 1) (by simpa)
+  have hcard :=
+    card_filter_rationalPrimeBelow_le_finrank htfin.toFinset (rationalPrimeBelow 𝔭)
+  rw [Finset.filter_true_of_mem fun 𝔓 h𝔓 ↦ ?_] at hcard
+  · have := htfin.encard_eq_coe_toFinset_card
+    rw [ht] at this
+    norm_cast at this
+    omega
+  · rw [← hts (htfin.mem_toFinset.mp h𝔓), rationalPrimeBelow_def,
+      rationalPrimeBelow_def, HeightOneSpectrum.under_asIdeal, Ideal.under_under]
 
 /-! ### Inert primes -/
 
