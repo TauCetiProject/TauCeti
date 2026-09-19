@@ -135,6 +135,7 @@ lemma quotientPointsHom_liftQuotientPoint (H : _root_.CommHopfAlgCat.{v} R)
 
 /-- Evaluating the commutator of two lifted quotient points on a quotient class gives
 the commutator of the original ambient points on its representative. -/
+@[simp↓]
 theorem commutator_liftQuotientPoint_apply_mkQuotient
     {A : _root_.CommHopfAlgCat.{v} R}
     (I : HopfIdeal R A) (B : CommAlgCat R) (g h : WithConv (A →ₐ[R] B))
