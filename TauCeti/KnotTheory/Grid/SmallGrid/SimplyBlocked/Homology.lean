@@ -134,7 +134,8 @@ noncomputable def twoByTwoSimplyBlockedHomologyEquiv :
     ((Submodule.quotEquivOfEq _ _ (ker_cycleConstantCoeff R).symm).trans
       ((cycleConstantCoeff R).quotKerEquivOfSurjective (cycleConstantCoeff_surjective R)))
 
-/-- The homology equivalence is computed on any cycle by its transposition coefficient. -/
+/-- The homology equivalence is computed on any cycle by the constant term of its
+transposition-state coefficient. -/
 @[simp]
 theorem twoByTwoSimplyBlockedHomologyEquiv_class (c : Cyc) :
     twoByTwoSimplyBlockedHomologyEquiv R
