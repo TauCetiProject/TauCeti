@@ -123,7 +123,9 @@ theorem dist_weights_of_mem_support_subdivision_iterate {k n : ℕ}
     rw [pow_succ']
     exact dist_weights_of_mem_support_subdivision (fun v hv ↦ ih hv) hu i j
 
-end TauCeti.AffineChain
+end AffineChain
+
+end TauCeti
 
 namespace ContinuousMap
 
