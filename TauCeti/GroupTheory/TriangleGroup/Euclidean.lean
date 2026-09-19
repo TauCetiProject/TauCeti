@@ -8,7 +8,7 @@ module
 public import TauCeti.GroupTheory.TriangleGroup.Basic
 public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
-public import Mathlib.RingTheory.RootsOfUnity.Complex
+import Mathlib.RingTheory.RootsOfUnity.Complex
 
 /-!
 # Euclidean triangle groups are infinite
