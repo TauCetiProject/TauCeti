@@ -14,7 +14,8 @@ import TauCeti.Probability.Distributions.PDFInstances
 import TauCeti.MeasureTheory.Integral.ExpDecay
 -- Non-public: the finite-extrema CDF formulas are used only inside proofs.
 import TauCeti.Probability.Distributions.Relations
-import TauCeti.MeasureTheory.Order.Lattice
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+import Mathlib.Order.ConditionallyCompleteLattice.Finset
 
 /-!
 # Elementary theory of the exponential distribution
@@ -413,8 +414,8 @@ theorem hasLaw_min_iid_expMeasure {Ω ι : Type*} {mΩ : MeasurableSpace Ω} [Fi
   have _ : IsProbabilityMeasure (expMeasure ((Fintype.card ι : ℝ) * r)) :=
     isProbabilityMeasure_expMeasure (mul_pos hd hr)
   have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P := by
-    have hX : ∀ i, AEMeasurable (X i) P := fun i => (hlaw i).aemeasurable
-    fun_prop
+    simp_rw [Finset.inf'_univ_eq_ciInf]
+    exact AEMeasurable.iInf fun i => (hlaw i).aemeasurable
   have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
   refine ⟨hmin, ?_⟩
   refine Measure.eq_of_cdf _ _ ?_

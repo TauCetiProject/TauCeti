@@ -8,7 +8,8 @@ module
 public import Mathlib.Probability.CDF
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Independence.Basic
-import TauCeti.MeasureTheory.Order.Lattice
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+import Mathlib.Order.ConditionallyCompleteLattice.Finset
 
 /-!
 # The extremes of an independent identically distributed family
@@ -132,8 +133,8 @@ theorem measureReal_setOf_min_le_iid [IsProbabilityMeasure μ] (hindep : iIndepF
     ext ω
     simp
   have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P := by
-    have hX : ∀ i, AEMeasurable (X i) P := fun i => (hlaw i).aemeasurable
-    fun_prop
+    simp_rw [Finset.inf'_univ_eq_ciInf]
+    exact AEMeasurable.iInf fun i => (hlaw i).aemeasurable
   have hnull : NullMeasurableSet
       {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω} P :=
     hmin.nullMeasurableSet_preimage measurableSet_Ioi
@@ -147,8 +148,8 @@ theorem cdf_max_iid [IsProbabilityMeasure μ] (hindep : iIndepFun X P)
     cdf (P.map fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) x
       = cdf μ x ^ Fintype.card ι := by
   have hmax : AEMeasurable (fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) P := by
-    have hX : ∀ i, AEMeasurable (X i) P := fun i => (hlaw i).aemeasurable
-    fun_prop
+    simp_rw [Finset.sup'_univ_eq_ciSup]
+    exact AEMeasurable.iSup fun i => (hlaw i).aemeasurable
   have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
   rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hmax measurableSet_Iic,
     ← measureReal_setOf_max_le_iid hindep hlaw x]
@@ -161,8 +162,8 @@ theorem cdf_min_iid [IsProbabilityMeasure μ] (hindep : iIndepFun X P)
     cdf (P.map fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) x
       = 1 - (1 - cdf μ x) ^ Fintype.card ι := by
   have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P := by
-    have hX : ∀ i, AEMeasurable (X i) P := fun i => (hlaw i).aemeasurable
-    fun_prop
+    simp_rw [Finset.inf'_univ_eq_ciInf]
+    exact AEMeasurable.iInf fun i => (hlaw i).aemeasurable
   have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
   rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hmin measurableSet_Iic,
     ← measureReal_setOf_min_le_iid hindep hlaw x]
