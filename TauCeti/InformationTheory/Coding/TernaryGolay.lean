@@ -100,11 +100,8 @@ theorem finrank_code : Module.finrank (ZMod 3) code = 6 := by
 
 /-- Encoding is a linear equivalence between messages and codewords. -/
 noncomputable def encodeEquiv : (Fin 6 → ZMod 3) ≃ₗ[ZMod 3] code :=
-  LinearEquiv.ofBijective
-    (generator.vecMulLinear.codRestrict code (fun a ↦ mem_code.mpr ⟨a, rfl⟩))
-    ⟨fun _ _ h ↦ vecMul_generator_injective (congrArg Subtype.val h), fun x ↦ by
-      obtain ⟨a, ha⟩ := mem_code.mp x.property
-      exact ⟨a, Subtype.ext ha⟩⟩
+  (LinearEquiv.ofInjective generator.vecMulLinear vecMul_generator_injective).trans
+    (LinearEquiv.ofEq _ _ (by rw [code_def, Matrix.generatedBy_def]))
 
 /-- The encoding equivalence sends each message to its product with the generator. -/
 @[simp]
