@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.Coding.GeneratorParityCheck
+public import TauCeti.InformationTheory.Coding.WeightDivisibility
 public import TauCeti.InformationTheory.Coding.WeightEnumerator
 public import TauCeti.LinearAlgebra.Matrix.Rank
 public import Mathlib.Algebra.Field.ZMod
@@ -200,9 +201,7 @@ theorem weightDistribution_code (w : ℕ) :
 /-- Every weight of the extended ternary Golay code is divisible by three. -/
 theorem three_dvd_hammingNorm {x : Fin 12 → ZMod 3} (hx : x ∈ code) :
     3 ∣ hammingNorm x := by
-  have h := hammingNorm_mem hx
-  simp only [Finset.mem_insert, Finset.mem_singleton] at h
-  rcases h with h | h | h | h <;> simp [h]
+  exact three_dvd_hammingNorm_of_le_euclideanDual euclideanDual_code.ge hx
 
 /-- The minimum distance of the extended ternary Golay code is six. -/
 @[simp]
