@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.FieldTheory.Finite.GaloisField
 public import Mathlib.Algebra.CharP.Two
 public import Mathlib.Data.Fin.VecNotation
 
@@ -22,6 +22,12 @@ another model of the field. Squaring exchanges the two roots in characteristic t
 public section
 
 namespace TauCeti
+
+/-- The Galois field of order four has four elements, independently of its enumeration. -/
+theorem card_galoisField_two_two [Fintype (GaloisField 2 2)] :
+    Fintype.card (GaloisField 2 2) = 4 := by
+  rw [← Nat.card_eq_fintype_card, GaloisField.card 2 2 (by decide)]
+  decide
 
 variable {F : Type*} [Field F] [Fintype F]
 
