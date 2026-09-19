@@ -40,6 +40,17 @@ noncomputable def coordinate (D : Γ.CuspDatum) (z : ℍ) : ℂ :=
 theorem coordinate_apply (D : Γ.CuspDatum) (z : ℍ) :
     coordinate D z = Function.Periodic.qParam D.width (↑(D.scaling • z) : ℂ) := (rfl)
 
+/-- The exponential cusp coordinate never vanishes on the upper half-plane. -/
+@[simp]
+theorem coordinate_ne_zero (D : Γ.CuspDatum) (z : ℍ) : coordinate D z ≠ 0 := by
+  rw [coordinate_apply]
+  exact Function.Periodic.qParam_ne_zero _
+
+/-- The exponential cusp coordinate lies in the open unit disc. -/
+theorem norm_coordinate_lt_one (D : Γ.CuspDatum) (z : ℍ) : ‖coordinate D z‖ < 1 := by
+  rw [coordinate_apply]
+  exact Function.Periodic.norm_qParam_lt_one D.width_pos (D.scaling • z).im_pos
+
 /-- In scaling coordinates, the selected generator acts by translation through the width. -/
 theorem coe_scaling_smul_generator (D : Γ.CuspDatum) (z : ℍ) :
     (↑(D.scaling • (D.generator : PSL(2, ℝ)) • z) : ℂ) =
