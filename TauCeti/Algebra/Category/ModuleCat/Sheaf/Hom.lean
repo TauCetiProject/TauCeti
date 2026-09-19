@@ -174,4 +174,10 @@ theorem linearHomSectionsEquiv_app (s : (linearHom M N).obj.sections) (U : Cᵒ�
       ((linearHomObjEquiv M N U.unop (s.val U)).val.app
         (op (Over.mk (𝟙 U.unop)))) m := by rfl
 
+/-- The global Hom section associated to a morphism restricts to that morphism on each slice. -/
+@[simp]
+theorem linearHomSectionsEquiv_symm_apply (φ : M ⟶ N) (U : Cᵒᵖ) :
+    ((linearHomSectionsEquiv M N).symm φ).val U =
+      (linearHomObjEquiv M N U.unop).symm (φ.over U.unop) := by rfl
+
 end TauCeti.SheafOfModules
