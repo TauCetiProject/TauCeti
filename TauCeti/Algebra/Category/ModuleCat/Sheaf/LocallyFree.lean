@@ -17,8 +17,8 @@ free on the product of the index types. If the site also has binary products, th
 one generator, so local freeness is a monoidal property of sheaves of modules. Together with the
 corresponding result for finite presentation
 (`TauCeti.SheafOfModules.isMonoidal_isFinitePresentation`), this shows that finite locally free
-sheaves of modules, the sheaves of sections of vector bundles, form a monoidal full subcategory
-(`ObjectProperty.fullMonoidalSubcategory`).
+sheaves of modules form a monoidal full subcategory (`ObjectProperty.fullMonoidalSubcategory`).
+In appropriate geometric settings, these are the sheaves of sections of vector bundles.
 
 Local freeness is also shown to be invariant under isomorphism, by transporting local bases along
 an isomorphism (`SheafOfModules.LocalGeneratorsData.ofIsIso`).
@@ -65,7 +65,6 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
 /-- Local generators data transported along an isomorphism `f : M ⟶ N`: the covering family is
 unchanged, and the generating sections of `M.over (q.X i)` are pushed forward along the
 restriction of `f`. -/
-@[expose, simps I X generators]
 def _root_.SheafOfModules.LocalGeneratorsData.ofIsIso (f : M ⟶ N) [IsIso f]
     (q : M.LocalGeneratorsData) : N.LocalGeneratorsData where
   I := q.I
@@ -73,14 +72,33 @@ def _root_.SheafOfModules.LocalGeneratorsData.ofIsIso (f : M ⟶ N) [IsIso f]
   coversTop := q.coversTop
   generators i := (q.generators i).ofEpi (f.over (q.X i))
 
+/-- Transporting local generators preserves the cover's index type. -/
+@[simp]
+theorem _root_.SheafOfModules.LocalGeneratorsData.ofIsIso_I (f : M ⟶ N) [IsIso f]
+    (q : M.LocalGeneratorsData) : (q.ofIsIso f).I = q.I := (rfl)
+
+/-- Transporting local generators preserves the covering objects. -/
+@[simp]
+theorem _root_.SheafOfModules.LocalGeneratorsData.ofIsIso_X (f : M ⟶ N) [IsIso f]
+    (q : M.LocalGeneratorsData) :
+    (q.ofIsIso f).X = fun i ↦ q.X ((LocalGeneratorsData.ofIsIso_I f q).mp i) := (rfl)
+
+/-- Transporting local generators pushes each generating family along the restricted isomorphism. -/
+@[simp]
+theorem _root_.SheafOfModules.LocalGeneratorsData.ofIsIso_generators
+    (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) (i : (q.ofIsIso f).I) :
+    (q.ofIsIso f).generators i =
+      cast (by rw [LocalGeneratorsData.ofIsIso_X])
+        ((q.generators ((LocalGeneratorsData.ofIsIso_I f q).mp i)).ofEpi
+          (f.over (q.X ((LocalGeneratorsData.ofIsIso_I f q).mp i)))) := (rfl)
+
 /-- Locally free data transported along an isomorphism is locally free data. -/
 instance (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) [q.IsLocallyFreeData] :
     (q.ofIsIso f).IsLocallyFreeData where
-  -- `LocalGeneratorsData.ofIsIso_generators` cannot be rewritten here: the category in which
-  -- `IsIso` is stated depends on the index `i`, whose type is `(q.ofIsIso f).I` rather than
-  -- `q.I`. The generators are stated directly in their unfolded form instead.
-  isIso i := (q.generators i).isIso_ofEpi_π (f.over (q.X i))
-    (LocalGeneratorsData.IsLocallyFreeData.isIso (q := q) i)
+  isIso i := by
+    rw [LocalGeneratorsData.ofIsIso_generators]
+    exact (q.generators _).isIso_ofEpi_π (f.over (q.X _))
+      (LocalGeneratorsData.IsLocallyFreeData.isIso (q := q) _)
 
 variable (R) in
 /-- Local freeness of sheaves of modules, as a property of objects. -/
