@@ -143,8 +143,8 @@ theorem filledHull_empty [Nontrivial E] : filledHull (∅ : Set E) = ∅ := by
     exact NormedSpace.unbounded_univ ℝ E
 
 /-- **The filled hull of a sphere is the closed ball**, for a sphere of nonnegative radius. This
-identifies the region enclosed by a sphere without choosing a component of its complement. The
-statement fails in the zero space, where `filledHull ∅` is everything. -/
+identifies the region enclosed by a sphere without choosing a component of its complement. No
+nontriviality is needed: in the zero space both sides are the whole (one-point) space. -/
 @[simp]
 theorem filledHull_sphere (x : E) {r : ℝ} (hr : 0 ≤ r) :
     filledHull (sphere x r) = closedBall x r := by

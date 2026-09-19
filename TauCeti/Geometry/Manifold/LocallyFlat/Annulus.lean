@@ -83,8 +83,8 @@ section CoboundAnnulus
 
 variable {X E : Type*} [TopologicalSpace X] [TopologicalSpace E] [Bornology E]
 
-/-- The maps `f g : X → E` **cobound an annulus** if the closed region between their images, the
-filled hull of `range f` with the part strictly inside `range g` removed, is the image of an
+/-- The maps `f g : X → E` **cobound an annulus** if the designated region between their images,
+the filled hull of `range f` with the part strictly inside `range g` removed, is the image of an
 embedding `X × [0, 1] → E` carrying the end `X × {0}` onto `range f` and the end `X × {1}` onto
 `range g`. For spheres `f` and `g` this says that the region between them is homeomorphic to the
 product of a sphere and an interval, with the two boundary spheres as its two ends. -/
