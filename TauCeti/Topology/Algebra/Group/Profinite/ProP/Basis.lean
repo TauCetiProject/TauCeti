@@ -6,21 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.FiniteGeneration
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.Span.ZMod
 
 /-!
-# The number of generators of a finitely generated pro-`p` group
+# Bases of the Frattini quotient and topological generation
 
 When the Frattini quotient is finite, Burnside's topological generation criterion becomes
-a linear spanning criterion over `𝔽_p`. Consequently a basis lifts to topological generators,
-and the least length of a generating tuple is the dimension of the Frattini quotient.
+a linear spanning criterion over `𝔽_p`. Any basis of the Frattini quotient lifts to
+topological generators, even when the quotient is infinite.
 
-The finiteness assumption is on the quotient itself. For a profinite pro-`p` group it is
-equivalent to topological finite generation, by
+The finiteness assumption in the spanning equivalence is on the quotient itself.
+For a profinite pro-`p` group it is equivalent to topological finite generation, by
 `IsProP.isTopologicallyFinitelyGenerated_iff_finite_quotient_proPFrattini`.
-Without that assumption, algebraic span must be replaced by its topological closure.
+Without that assumption, the equivalence requires the topological closure of the algebraic
+span. Algebraic spanning still suffices for topological generation.
 
 ## References
 
@@ -34,12 +34,12 @@ namespace TauCeti
 variable {p : ℕ} [Fact p.Prime]
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]
-  [Finite (G ⧸ proPFrattini p G)]
 
 /-- **Burnside's basis theorem, spanning form.** If the Frattini quotient is finite, a set
 topologically generates a profinite pro-`p` group exactly when its images span that quotient
 over `𝔽_p`. -/
-theorem topologicallyGenerates_iff_span_frattiniQuotient (hG : IsProP p G) (s : Set G) :
+theorem topologicallyGenerates_iff_span_frattiniQuotient [Finite (G ⧸ proPFrattini p G)]
+    (hG : IsProP p G) (s : Set G) :
     (Subgroup.closure s).topologicalClosure = ⊤ ↔
       Submodule.span (ZMod p)
         ((fun g ↦ Additive.ofMul ((QuotientGroup.mk' (proPFrattini p G)) g)) '' s) = ⊤ := by
@@ -57,17 +57,28 @@ theorem topologicallyGenerates_iff_span_frattiniQuotient (hG : IsProP p G) (s : 
     ← Subgroup.toAddSubgroup_closure]
   exact Subgroup.toAddSubgroup.injective.eq_iff.symm
 
-/-- Any chosen lifts of a basis of the finite Frattini quotient topologically generate the
+/-- Any chosen lifts of a basis of the Frattini quotient topologically generate the
 profinite pro-`p` group. -/
 theorem topologicallyGenerates_of_basis_frattiniQuotient (hG : IsProP p G) {ι : Type*}
     (b : Module.Basis ι (ZMod p) (Additive (G ⧸ proPFrattini p G)))
     (g : ι → G)
     (hg : ∀ i, Additive.ofMul ((QuotientGroup.mk' (proPFrattini p G)) (g i)) = b i) :
     (Subgroup.closure (Set.range g)).topologicalClosure = ⊤ := by
-  rw [topologicallyGenerates_iff_span_frattiniQuotient hG, ← Set.range_comp]
-  simpa only [Function.comp_def, hg] using b.span_eq
+  rw [topologicallyGenerates_iff_frattiniQuotient hG]
+  have himage : Additive.toMul ⁻¹'
+      ((QuotientGroup.mk' (proPFrattini p G)) '' Set.range g) = Set.range b := by
+    rw [← Additive.ofMul_symm_eq, ← Additive.ofMul.image_eq_preimage_symm,
+      Set.image_image, ← Set.range_comp]
+    simp only [Function.comp_def, hg]
+  have hclosure : Subgroup.closure
+      ((QuotientGroup.mk' (proPFrattini p G)) '' Set.range g) = ⊤ := by
+    apply Subgroup.toAddSubgroup.injective
+    rw [Subgroup.toAddSubgroup_closure, himage,
+      ← span_zmod_eq_addSubgroupClosure (n := p), b.span_eq]
+    rfl
+  exact top_unique (hclosure ▸ Subgroup.le_topologicalClosure _)
 
-/-- Every basis of the finite Frattini quotient has a lift to a topological generating family. -/
+/-- Every basis of the Frattini quotient has a lift to a topological generating family. -/
 theorem exists_lift_basis_frattiniQuotient (hG : IsProP p G) {ι : Type*}
     (b : Module.Basis ι (ZMod p) (Additive (G ⧸ proPFrattini p G))) :
     ∃ g : ι → G,
@@ -77,31 +88,5 @@ theorem exists_lift_basis_frattiniQuotient (hG : IsProP p G) {ι : Type*}
   have hg' i : Additive.ofMul ((QuotientGroup.mk' (proPFrattini p G)) (g i)) = b i :=
     congrArg Additive.ofMul (hg i)
   exact ⟨g, hg', topologicallyGenerates_of_basis_frattiniQuotient hG b g hg'⟩
-
-/-- **The generator number from the Frattini quotient.** A profinite pro-`p` group with
-finite Frattini quotient admits a topological generating `n`-tuple exactly when the quotient
-has dimension at most `n`. In particular, its dimension is the minimum possible tuple length,
-including length zero for the trivial group. -/
-theorem exists_topologicalClosure_closure_range_eq_top_iff_finrank_le (hG : IsProP p G)
-    {n : ℕ} :
-    (∃ g : Fin n → G, (Subgroup.closure (Set.range g)).topologicalClosure = ⊤) ↔
-      Module.finrank (ZMod p) (Additive (G ⧸ proPFrattini p G)) ≤ n := by
-  constructor
-  · rintro ⟨g, hg⟩
-    have hspan := (topologicallyGenerates_iff_span_frattiniQuotient hG _).mp hg
-    rw [← Set.range_comp] at hspan
-    simpa using finrank_le_of_span_eq_top hspan
-  · intro hn
-    classical
-    obtain ⟨g, -, hg⟩ := exists_lift_basis_frattiniQuotient hG
-      (Module.finBasis (ZMod p) (Additive (G ⧸ proPFrattini p G)))
-    let e := Fin.castLEEmb hn
-    let f := Function.extend e g (fun _ ↦ (1 : G))
-    refine ⟨f, top_unique ?_⟩
-    rw [← hg]
-    apply Subgroup.topologicalClosure_mono
-    apply Subgroup.closure_mono
-    rintro _ ⟨i, rfl⟩
-    exact ⟨e i, e.injective.extend_apply _ _ _⟩
 
 end TauCeti
