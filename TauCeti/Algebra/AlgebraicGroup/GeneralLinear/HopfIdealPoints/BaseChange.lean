@@ -98,6 +98,37 @@ theorem pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv (B : CommAl
     ← CommHopfAlgCat.mkQuotient_apply, CommHopfAlgCat.baseChangeIsoPointsMulEquiv_apply_apply]
   exact congrArg q.ofConv (iso_inv_one_tmul_mkQuotient_X n I J e he i j)
 
+/-- An equivalence from quotient points to a matrix subgroup identifies membership in the
+quotient-point subgroup whenever it preserves the ambient invertible matrix. -/
+theorem mem_quotientPointsSubgroup_iff_mem_of_pointsMulEquiv
+    {R : Type u} [CommRing R] (I' : HopfIdeal R (coordinateHopfAlgebra R n))
+    (B : CommAlgCat.{w} R) (P : Subgroup (Matrix.GeneralLinearGroup (Fin n) B))
+    (E : HopfAlgebra.points (R := R)
+        (H := CommHopfAlgCat.quotient (coordinateHopfAlgebra R n) I') B ≃* P)
+    (hE : ∀ q,
+      (E q : Matrix.GeneralLinearGroup (Fin n) B) =
+        pointsMulEquiv n
+          (CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R n) I' B q))
+    (g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) B) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R n) I' B ↔
+      pointsMulEquiv n g ∈ P := by
+  constructor
+  · intro hg
+    let q := CommHopfAlgCat.liftQuotientPoint (coordinateHopfAlgebra R n) I' B g
+      ((CommHopfAlgCat.mem_quotientPointsSubgroup_iff
+        (coordinateHopfAlgebra R n) I' B g).mp hg)
+    have hq := hE q
+    rw [CommHopfAlgCat.quotientPointsHom_liftQuotientPoint] at hq
+    exact hq ▸ (E q).property
+  · intro hg
+    let p : P := ⟨pointsMulEquiv n g, hg⟩
+    let q := E.symm p
+    have hq : CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R n) I' B q = g := by
+      apply (pointsMulEquiv n).injective
+      rw [← hE q, MulEquiv.apply_symm_apply]
+    rw [← hq]
+    exact CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup _ _ _ _
+
 end
 
 end TauCeti.GeneralLinear

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.Basic
+public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.PointsFunctor
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.GeneralLinearBaseChange
 
 /-!
@@ -54,7 +54,7 @@ open TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.SlStd
 
-universe v
+universe v w
 
 noncomputable section
 
@@ -118,6 +118,33 @@ theorem mkQuotient_comp_baseChangeCoordinateIso_hom :
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
     (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
     (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) A
+
+/-! ## Points of the base-changed carrier -/
+
+/-- The points of the base-changed type-`A_r` carrier over a commutative `A`-algebra are its
+matrix-valued carrier points over that algebra. -/
+noncomputable def baseChangePointsMulEquiv (B : CommAlgCat.{w} A) :
+    HopfAlgebra.points (R := A)
+        (H := CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A (r + 1))
+          (baseChangeDefiningIdeal r A)) B ≃*
+      points r B :=
+  (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (baseChangeCoordinateIso r A) B).trans
+    (pointsMulEquiv r (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B))
+
+/-- The base-change points equivalence preserves the ambient invertible matrix. -/
+@[simp]
+theorem coe_baseChangePointsMulEquiv_apply (B : CommAlgCat.{w} A)
+    (q : HopfAlgebra.points (R := A)
+      (H := CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A (r + 1))
+        (baseChangeDefiningIdeal r A)) B) :
+    (baseChangePointsMulEquiv r A B q : Matrix.GeneralLinearGroup (Fin (r + 1)) B) =
+      GeneralLinear.pointsMulEquiv (r + 1)
+        (CommHopfAlgCat.quotientPointsHom (GeneralLinear.coordinateHopfAlgebra A (r + 1))
+          (baseChangeDefiningIdeal r A) B q) := by
+  rw [baseChangePointsMulEquiv, MulEquiv.trans_apply, coe_pointsMulEquiv_apply]
+  exact GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
+    (r + 1) (definingIdeal r) (baseChangeDefiningIdeal r A)
+    (baseChangeCoordinateIso r A) (mkQuotient_comp_baseChangeCoordinateIso_hom r A) B q
 
 /-- The base change to `A` of the integral root-subgroup coordinate map at the numbered root
 `i`, transported to the coordinate Hopf algebras constructed directly over `A`. -/

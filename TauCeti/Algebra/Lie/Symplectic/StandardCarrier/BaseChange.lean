@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Scheme
+public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.PointsFunctor
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.GeneralLinearBaseChange
 
 /-!
@@ -82,7 +82,7 @@ open TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.SpStd
 
-universe v
+universe v w
 
 open LieAlgebra.Symplectic
 
@@ -169,6 +169,37 @@ theorem mkQuotient_comp_baseChangeCoordinateIso_hom :
     (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
     (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A (definingIdeal_def n)
+
+/-! ## Points of the base-changed carrier -/
+
+/-- The points of the base-changed type-`C_(n+1)` carrier over a commutative `A`-algebra are its
+matrix-valued carrier points over that algebra. -/
+noncomputable def baseChangePointsMulEquiv (B : CommAlgCat.{w} A) :
+    HopfAlgebra.points (R := A)
+        (H := CommHopfAlgCat.quotient
+          (GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1)))
+          (baseChangeDefiningIdeal n A)) B ≃*
+      points n B :=
+  (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (baseChangeCoordinateIso n A) B).trans
+    (pointsMulEquiv n (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B))
+
+/-- The base-change points equivalence preserves the ambient invertible matrix. -/
+@[simp]
+theorem coe_baseChangePointsMulEquiv_apply (B : CommAlgCat.{w} A)
+    (q : HopfAlgebra.points (R := A)
+      (H := CommHopfAlgCat.quotient
+        (GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1)))
+        (baseChangeDefiningIdeal n A)) B) :
+    (baseChangePointsMulEquiv n A B q :
+        Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) B) =
+      GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1))
+        (CommHopfAlgCat.quotientPointsHom
+          (GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1)))
+          (baseChangeDefiningIdeal n A) B q) := by
+  rw [baseChangePointsMulEquiv, MulEquiv.trans_apply, coe_pointsMulEquiv_apply]
+  exact GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
+    ((n + 1) + (n + 1)) (definingIdeal n) (baseChangeDefiningIdeal n A)
+    (baseChangeCoordinateIso n A) (mkQuotient_comp_baseChangeCoordinateIso_hom n A) B q
 
 /-! ## The transported root subgroups -/
 

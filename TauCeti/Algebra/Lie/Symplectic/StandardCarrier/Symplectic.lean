@@ -31,8 +31,8 @@ with the coordinate Hopf algebra of `Sp_(2n+2)`.
 
 ## Main declarations
 
-* `TauCeti.SpStd.mem_baseChangeDefiningPointsSubgroup_iff_mem_points`: on base-ring-valued
-  points, the transported carrier equations cut out the original integral carrier's matrices.
+* `TauCeti.SpStd.mem_baseChangeDefiningPointsSubgroup_iff_mem_points`: over every value algebra,
+  the transported carrier equations cut out the original integral carrier's matrices.
 * `TauCeti.SpStd.baseChangeDefiningIdeal_eq_symplecticDefiningHopfIdeal`: over an algebraically
   closed field, the transported carrier and symplectic defining ideals agree.
 * `TauCeti.SpStd.baseChangeCoordinateSymplecticIso`: the induced coordinate Hopf-algebra
@@ -42,11 +42,8 @@ with the coordinate Hopf algebra of `Sp_(2n+2)`.
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * R. Steinberg, *Lectures on Chevalley Groups*, §§3--4.
-
-This advances Layer 9, "The Chevalley--Demazure construction", of the ReductiveGroups roadmap:
-it identifies the explicit full-weight type `C` carrier with the expected simply connected
-reductive group after extension to an algebraically closed field. Its consumer is milestone L0,
-"explicit pinned Chevalley--Demazure groups", of the CFSGStatement roadmap.
+* The proof structure is adapted from the type-`A` carrier comparison in
+  `TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.SpecialLinear`.
 -/
 
 public section
@@ -65,178 +62,22 @@ attribute [local instance high] Algebra.toModule
 
 variable (n : ℕ)
 
-/-- Mapping an invertible matrix along a ring homomorphism identified with the identity leaves
-the matrix unchanged. This isolates the identity-map coercion used in both transport directions. -/
-private theorem generalLinearMap_eq_self_of_ringHom_eq_id
-    {k : Type u} [CommRing k] (m : ℕ) (φ : k →+* k) (hφ : φ = RingHom.id k)
-    (g : Matrix.GeneralLinearGroup (Fin m) k) :
-    Matrix.GeneralLinearGroup.map φ g = g := by
-  rw [hφ, Matrix.GeneralLinearGroup.map_id, MonoidHom.id_apply]
-
-/-- Transporting a quotient point in its value algebra commutes with reading its ambient
-invertible matrix. -/
-private theorem pointsMulEquiv_quotientPointsHom_mapPoints
-    (m : ℕ) (I : HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ m))
-    {A B : CommAlgCat ℤ} (χ : A ⟶ B)
-    (q : HopfAlgebra.points (R := ℤ)
-      (H := CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ m) I) A) :
-    GeneralLinear.pointsMulEquiv m
-        (CommHopfAlgCat.quotientPointsHom
-          (GeneralLinear.coordinateHopfAlgebra ℤ m) I B
-          (HopfAlgebra.mapPoints
-            (H := CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ m) I) χ q)) =
-      Matrix.GeneralLinearGroup.map χ.hom.toRingHom
-        (GeneralLinear.pointsMulEquiv m
-          (CommHopfAlgCat.quotientPointsHom
-            (GeneralLinear.coordinateHopfAlgebra ℤ m) I A q)) := by
-  rw [← CommHopfAlgCat.mapPoints_quotientPointsHom]
-  exact GeneralLinear.pointsMulEquiv_mapValue m χ.hom _
-
-/-- A base-ring-valued point satisfies the transported defining equations of the type `C_(n+1)`
-carrier exactly when its underlying matrix is a point of the original integral carrier. This
-holds over every commutative base ring. -/
+/-- A point over any value algebra satisfies the transported defining equations of the
+type `C_(n+1)` carrier exactly when its underlying matrix is an integral carrier point. -/
+@[simp]
 theorem mem_baseChangeDefiningPointsSubgroup_iff_mem_points
-    (k : Type u) [CommRing k]
+    (k : Type u) [CommRing k] (A : Type v) [CommRing A] [Algebra k A]
     (g : HopfAlgebra.points (R := k)
-      (H := GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1))) (CommAlgCat.of k k)) :
+      (H := GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
+      (CommAlgCat.of k A)) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup
         (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
-        (baseChangeDefiningIdeal n k) (CommAlgCat.of k k) ↔
-      GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1)) g ∈ points n k := by
-  let B := CommAlgCat.of k k
-  let BZ := CommAlgCat.restrictScalarsObj (algebraMap ℤ k) B
-  let C := CommAlgCat.of ℤ k
-  let I := definingIdeal n
-  let J := baseChangeDefiningIdeal n k
-  let e := baseChangeCoordinateIso n k
-  have he := mkQuotient_comp_baseChangeCoordinateIso_hom n k
-  constructor
-  · rintro ⟨q, rfl⟩
-    let qZraw := CommHopfAlgCat.baseChangeIsoPointsMulEquiv e B q
-    let χhom : @AlgHom ℤ (↑BZ) (↑C) _ _ _ BZ.algebra C.algebra :=
-      @AlgHom.mk ℤ (↑BZ) (↑C) _ _ _ BZ.algebra C.algebra (RingHom.id k)
-        (by intro z; simp)
-    let χ : BZ ⟶ C :=
-      @CommAlgCat.ofHom ℤ _ (↑BZ) (↑C) BZ.commRing BZ.algebra C.commRing C.algebra χhom
-    let qZ := HopfAlgebra.mapPoints
-      (H := CommHopfAlgCat.quotient
-        (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1))) I) χ qZraw
-    have hmatrix :=
-      GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
-        ((n + 1) + (n + 1)) I J e he B q
-    have htransport : GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1))
-        (CommHopfAlgCat.quotientPointsHom
-          (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1))) I
-          (CommAlgCat.of ℤ k) qZ) =
-      GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1))
-        (CommHopfAlgCat.quotientPointsHom
-          (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1))) J B q) := by
-      exact (pointsMulEquiv_quotientPointsHom_mapPoints
-          ((n + 1) + (n + 1)) I χ qZraw).trans
-        ((generalLinearMap_eq_self_of_ringHom_eq_id
-          ((n + 1) + (n + 1)) (RingHom.id k) rfl _).trans hmatrix)
-    have hmem : GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1))
-        (CommHopfAlgCat.quotientPointsHom
-          (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1))) I
-          (CommAlgCat.of ℤ k) qZ) ∈ points n k := by
-      rw [points_def]
-      apply GeneralLinear.pointsMulEquiv_mem_hopfIdealPointsSubgroup
-      exact CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup _ _ _ _
-    rw [htransport] at hmem
-    exact hmem
-  · intro hg
-    rw [points_def] at hg
-    let qZ := (GeneralLinear.hopfIdealPointsSubgroupMulEquiv
-      ((n + 1) + (n + 1)) I (CommAlgCat.of ℤ k)).symm
-      ⟨GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1)) g, hg⟩
-    let χhom : @AlgHom ℤ (↑C) (↑BZ) _ _ _ C.algebra BZ.algebra :=
-      @AlgHom.mk ℤ (↑C) (↑BZ) _ _ _ C.algebra BZ.algebra (RingHom.id k)
-        (by intro z; simp)
-    let χ : C ⟶ BZ :=
-      @CommAlgCat.ofHom ℤ _ (↑C) (↑BZ) C.commRing C.algebra BZ.commRing BZ.algebra χhom
-    let qZraw := HopfAlgebra.mapPoints
-      (H := CommHopfAlgCat.quotient
-        (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1))) I) χ qZ
-    let E := CommHopfAlgCat.baseChangeIsoPointsMulEquiv e B
-    let q := E.symm qZraw
-    let g' := CommHopfAlgCat.quotientPointsHom
-      (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1))) J B q
-    have hg' : g' ∈ CommHopfAlgCat.quotientPointsSubgroup
-        (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1))) J B :=
-      CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup _ _ _ _
-    have hmatrix :=
-      GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
-        ((n + 1) + (n + 1)) I J e he B q
-    have hqZraw : E q = qZraw := E.apply_symm_apply qZraw
-    rw [hqZraw] at hmatrix
-    have htransport : GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1)) g' =
-      GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1))
-        (CommHopfAlgCat.quotientPointsHom
-          (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1))) I
-          (CommAlgCat.of ℤ k) qZ) := by
-      exact hmatrix.symm.trans
-        ((pointsMulEquiv_quotientPointsHom_mapPoints
-          ((n + 1) + (n + 1)) I χ qZ).trans
-          (generalLinearMap_eq_self_of_ringHom_eq_id
-            ((n + 1) + (n + 1)) (RingHom.id k) rfl _))
-    have hleft : GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1))
-        (CommHopfAlgCat.quotientPointsHom
-          (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1))) I
-          (CommAlgCat.of ℤ k) qZ) =
-          GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1)) g := by
-      rw [← GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply]
-      simp only [qZ, MulEquiv.apply_symm_apply, Subtype.coe_mk]
-    have hgg : g' = g := by
-      apply (GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1))).injective
-      exact htransport.trans hleft
-    rwa [hgg] at hg'
-
-/-- The `ℤ`-algebra map obtained by restricting the ambient general-linear base-change
-isomorphism to the original coordinate Hopf algebra. -/
-private noncomputable def baseChangeAlgHom
-    (A : Type u) [CommRing A] :
-    GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1)) →ₐ[ℤ]
-      GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1)) :=
-  ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso ℤ A
-    ((n + 1) + (n + 1))).hom.hom.toAlgHom.restrictScalars ℤ).comp
-    (Algebra.TensorProduct.includeRight :
-      GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1)) →ₐ[ℤ]
-        A ⊗[ℤ] GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1)))
-
-private theorem baseChangeAlgHom_apply
-    (A : Type u) [CommRing A]
-    (x : GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1))) :
-    baseChangeAlgHom n A x =
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso ℤ A
-        ((n + 1) + (n + 1))).hom.hom (1 ⊗ₜ[ℤ] x) := by
-  simp only [baseChangeAlgHom, AlgHom.comp_apply, Algebra.TensorProduct.includeRight_apply,
-    AlgHom.coe_restrictScalars', BialgHom.coe_toAlgHom]
-
-/-- Base change carries an integral symplectic relation to the corresponding relation over the
-new base ring. -/
-private theorem coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix
-    (A : Type u) [CommRing A] (i j : Fin ((n + 1) + (n + 1))) :
-    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso ℤ A
-      ((n + 1) + (n + 1))).hom.hom
-        (1 ⊗ₜ[ℤ] Symplectic.relationMatrix ℤ (n + 1) i j) =
-      Symplectic.relationMatrix A (n + 1) i j := by
-  rw [← baseChangeAlgHom_apply n A]
-  have hgeneric :
-      (GeneralLinear.genericMatrix ℤ ((n + 1) + (n + 1))).map (baseChangeAlgHom n A) =
-        GeneralLinear.genericMatrix A ((n + 1) + (n + 1)) := by
-    ext a b
-    rw [Matrix.map_apply, GeneralLinear.genericMatrix_apply, baseChangeAlgHom,
-      AlgHom.comp_apply, Algebra.TensorProduct.includeRight_apply,
-      GeneralLinear.genericMatrix_apply]
-    simpa only [AlgHom.coe_restrictScalars', BialgHom.coe_toAlgHom, one_smul,
-      MvPolynomial.map_X] using
-      GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_apply ℤ A
-        ((n + 1) + (n + 1)) 1 (MvPolynomial.X (a, b))
-  have hmatrix := ConstantForm.relationMatrix_map ℤ ((n + 1) + (n + 1))
-    (JFin (n + 1) ℤ) (baseChangeAlgHom n A)
-  rw [hgeneric, JFin_map] at hmatrix
-  rw [Symplectic.relationMatrix_def A (n + 1)]
-  exact congrFun (congrFun hmatrix i) j
+        (baseChangeDefiningIdeal n k) (CommAlgCat.of k A) ↔
+      GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1)) g ∈ points n A := by
+  exact GeneralLinear.mem_quotientPointsSubgroup_iff_mem_of_pointsMulEquiv
+    ((n + 1) + (n + 1)) (baseChangeDefiningIdeal n k) (CommAlgCat.of k A) (points n A)
+      (baseChangePointsMulEquiv n k (CommAlgCat.of k A))
+      (coe_baseChangePointsMulEquiv_apply n k (CommAlgCat.of k A)) g
 
 /-- The symplectic ideal is contained in the transported defining ideal of the full-weight
 type `C_(n+1)` carrier over every commutative ring. Equivalently, every point of the transported
@@ -260,7 +101,8 @@ theorem symplecticDefiningHopfIdeal_le_baseChangeDefiningIdeal
           (JFin (n + 1) ℤ) i j)
     exact HopfIdeal.mem_toIdeal.mpr hmem
   have hmap := map_tmul_mem_baseChangeDefiningIdeal_of_mem n A (1 : A) hgenerator
-  rwa [coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix n A i j] at hmap
+  rwa [Symplectic.coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix ℤ A (n + 1) i j]
+    at hmap
 
 /-- **Over an algebraically closed field, the transported defining ideal of the full-weight
 type `C_(n+1)` carrier is the symplectic ideal.** Thus the explicit carrier obtained from the
