@@ -27,6 +27,7 @@ This is the group in which Couture's classification of skew-zigzag algebras take
 * `SimpleGraph.coboundary`: the coboundary of a function on the vertices.
 * `SimpleGraph.FirstCohomology`: the first cohomology group `H¹(G, A)`.
 * `SimpleGraph.FirstCohomology.mk`: the cohomology class of a `1`-cochain.
+* `SimpleGraph.FirstCohomology.lift`: the universal property of first cohomology.
 
 ## Main results
 
@@ -112,6 +113,28 @@ variable {G A}
 /-- Every cohomology class is the class of a `1`-cochain. -/
 theorem mk_surjective : Function.Surjective (mk G A) :=
   QuotientGroup.mk'_surjective _
+
+variable {M : Type*} [Monoid M]
+
+/-- **Universal property of first cohomology.** A homomorphism from `1`-cochains which is trivial
+on coboundaries descends to a homomorphism from `H¹(G, A)`. -/
+def lift (f : G.oneCochains A →* M) (h : (G.coboundary A).range ≤ f.ker) :
+    G.FirstCohomology A →* M :=
+  QuotientGroup.lift _ f h
+
+/-- The descended homomorphism agrees with the original homomorphism on cohomology classes. -/
+@[simp]
+theorem lift_mk (f : G.oneCochains A →* M) (h : (G.coboundary A).range ≤ f.ker)
+    (c : G.oneCochains A) : lift f h (mk G A c) = f c :=
+  QuotientGroup.lift_mk' _ h c
+
+/-- The lift is the unique homomorphism from `H¹(G, A)` agreeing with the original homomorphism
+on cohomology classes. -/
+theorem lift_unique (f : G.oneCochains A →* M) (h : (G.coboundary A).range ≤ f.ker)
+    (g : G.FirstCohomology A →* M) (hg : ∀ c, g (mk G A c) = f c) : g = lift f h :=
+  MonoidHom.ext fun x ↦ by
+    obtain ⟨c, rfl⟩ := mk_surjective x
+    exact (hg c).trans (lift_mk f h c).symm
 
 /-- **A `1`-cochain has trivial cohomology class exactly when it is a coboundary.** -/
 theorem mk_eq_one_iff {σ : G.oneCochains A} : mk G A σ = 1 ↔ ∃ φ : V → A, G.coboundary A φ = σ :=
