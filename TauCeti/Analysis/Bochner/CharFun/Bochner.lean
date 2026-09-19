@@ -24,16 +24,17 @@ the normalization `F 0 = 1` corresponds to that measure being a probability meas
 
 The two conventions differ by the rescaling `q ↦ (-2π) • q` of the representing measure:
 the characteristic-function representing measure of `F` is the image of
-`TauCeti.bochnerMeasure F` under this rescaling (`TauCeti.charFun_map_bochnerMeasure`).
+`TauCeti.bochnerMeasure F` under this rescaling
+(`TauCeti.charFun_map_neg_two_pi_smul_bochnerMeasure`).
 
 ## Main declarations
 
-* `TauCeti.charFun_map_bochnerMeasure`: the rescaled Bochner measure has characteristic
-  function `F`.
+* `TauCeti.charFun_map_neg_two_pi_smul_bochnerMeasure`: the rescaled Bochner measure has
+  characteristic function `F`.
 * `TauCeti.bochner_charFun`: **Bochner's theorem, characteristic-function form**.
 * `TauCeti.bochner_charFun_probabilityMeasure`: the normalized form — continuous positive-definite
   functions with `F 0 = 1` are exactly the characteristic functions of probability measures.
-* `TauCeti.bochner_real`: the classical statement on the real line.
+* `TauCeti.bochner_charFun_real`: the characteristic-function statement on the real line.
 
 ## References
 
@@ -55,7 +56,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 /-- **The characteristic-function representing measure.** The image of the Bochner measure of a
 continuous positive-definite function `F` under the rescaling `q ↦ (-2π) • q` has characteristic
 function `F`. -/
-theorem charFun_map_bochnerMeasure {F : V → ℂ} (hcont : Continuous F)
+theorem charFun_map_neg_two_pi_smul_bochnerMeasure {F : V → ℂ} (hcont : Continuous F)
     (hpd : IsPositiveDefiniteSub F) :
     charFun ((bochnerMeasure F).map ((-2 * Real.pi) • ·)) = F := by
   funext v
@@ -70,9 +71,10 @@ theorem bochner_charFun (F : V → ℂ) :
       ∃! μ : Measure V, IsFiniteMeasure μ ∧ charFun μ = F := by
   constructor
   · rintro ⟨hcont, hpd⟩
-    refine ⟨_, ⟨inferInstance, charFun_map_bochnerMeasure hcont hpd⟩, ?_⟩
+    refine ⟨_, ⟨inferInstance, charFun_map_neg_two_pi_smul_bochnerMeasure hcont hpd⟩, ?_⟩
     rintro ν ⟨hν, hνF⟩
-    exact Measure.ext_of_charFun (hνF.trans (charFun_map_bochnerMeasure hcont hpd).symm)
+    exact Measure.ext_of_charFun
+      (hνF.trans (charFun_map_neg_two_pi_smul_bochnerMeasure hcont hpd).symm)
   · rintro ⟨μ, ⟨hμ, rfl⟩, -⟩
     exact ⟨continuous_charFun, isPositiveDefiniteSub_charFun⟩
 
@@ -96,7 +98,7 @@ theorem bochner_charFun_probabilityMeasure (F : V → ℂ) :
 /-- **Bochner's theorem on the real line**, in its classical form: a function `F : ℝ → ℂ` is
 continuous and positive definite if and only if `F x = ∫ ξ, exp (i x ξ) dμ(ξ)` for a unique
 finite Borel measure `μ` on `ℝ`. -/
-theorem bochner_real (F : ℝ → ℂ) :
+theorem bochner_charFun_real (F : ℝ → ℂ) :
     (Continuous F ∧ IsPositiveDefiniteSub F) ↔
       ∃! μ : Measure ℝ, IsFiniteMeasure μ ∧ ∀ x, F x = ∫ ξ, exp (x * ξ * I) ∂μ := by
   simp_rw [bochner_charFun F, funext_iff, charFun_apply_real, eq_comm (a := F _)]

@@ -57,8 +57,7 @@ theorem charFun_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E] (hstar : ∀
   simp [hstar, sub_eq_add_neg]
 
 /-- The characteristic function of a finite measure is positive definite in the subtraction form:
-`∑ i, ∑ j, c i * conj (c j) * charFun μ (v i - v j)` is nonnegative. This is
-`posSemidef_charFun` read through `TauCeti.isPositiveDefiniteSub_iff_posSemidef`. -/
+`∑ i, ∑ j, c i * conj (c j) * charFun μ (v i - v j)` is nonnegative. -/
 theorem isPositiveDefiniteSub_charFun : IsPositiveDefiniteSub (MeasureTheory.charFun μ) :=
   isPositiveDefiniteSub_iff_posSemidef.mpr posSemidef_charFun
 
