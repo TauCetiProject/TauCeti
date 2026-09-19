@@ -79,13 +79,6 @@ noncomputable def faceAffineCoordinateRingMap (hi : IsIntegralLattice i)
   affineCoordinateRingMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
     fun _ hx ↦ hτσ.le hx
 
-/-- The face restriction is the coordinate-ring map induced by the identity lattice map. -/
-theorem faceAffineCoordinateRingMap_def (hi : IsIntegralLattice i) (hτσ : τ.IsFaceOf σ) :
-    faceAffineCoordinateRingMap hi hτσ =
-      affineCoordinateRingMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
-        fun _ hx ↦ hτσ.le hx :=
-  (rfl)
-
 /-- Restriction along a face inclusion sends a monomial to the same integral character, regarded
 as an element of the larger dual semigroup of the face. -/
 @[simp]
@@ -93,7 +86,7 @@ theorem faceAffineCoordinateRingMap_single (hi : IsIntegralLattice i)
     (hτσ : τ.IsFaceOf σ) (m : dualSemigroup hi σ) (z : ℂ) :
     faceAffineCoordinateRingMap hi hτσ (MonoidAlgebra.single (ofAdd m) z) =
       MonoidAlgebra.single (ofAdd ⟨m, dualSemigroup_anti hi hτσ.le m.2⟩) z := by
-  rw [faceAffineCoordinateRingMap_def]
+  rw [faceAffineCoordinateRingMap]
   convert affineCoordinateRingMap_single hi hi (AddMonoidHom.id N) LinearMap.id
     (fun _ ↦ rfl) (fun _ hx ↦ hτσ.le hx) m z using 1
   apply congrArg (fun u ↦ MonoidAlgebra.single (ofAdd u) z)
@@ -102,14 +95,14 @@ theorem faceAffineCoordinateRingMap_single (hi : IsIntegralLattice i)
 
 /-- Restriction to a cone viewed as its own face is the identity map of its coordinate ring. -/
 @[simp]
-theorem faceAffineCoordinateRingMap_refl (hi : IsIntegralLattice i) :
+theorem faceAffineCoordinateRingMap_id (hi : IsIntegralLattice i) :
     faceAffineCoordinateRingMap hi (PointedCone.IsFaceOf.refl σ) =
       AlgHom.id ℂ (affineCoordinateRing hi σ) :=
   affineCoordinateRingMap_id hi σ
 
 /-- Restriction through two successive face inclusions is restriction along their composite. -/
 @[simp]
-theorem faceAffineCoordinateRingMap_trans (hi : IsIntegralLattice i)
+theorem faceAffineCoordinateRingMap_comp (hi : IsIntegralLattice i)
     (hυτ : υ.IsFaceOf τ) (hτσ : τ.IsFaceOf σ) :
     (faceAffineCoordinateRingMap hi hυτ).comp (faceAffineCoordinateRingMap hi hτσ) =
       faceAffineCoordinateRingMap hi (hυτ.trans hτσ) := by
@@ -136,15 +129,15 @@ theorem faceAffineToricSchemeMap_def (hi : IsIntegralLattice i) (hτσ : τ.IsFa
 
 /-- The morphism of a cone viewed as its own face is the identity morphism. -/
 @[simp]
-theorem faceAffineToricSchemeMap_refl (hi : IsIntegralLattice i) :
+theorem faceAffineToricSchemeMap_id (hi : IsIntegralLattice i) :
     faceAffineToricSchemeMap hi (PointedCone.IsFaceOf.refl σ) =
       𝟙 (affineToricScheme hi σ) := by
-  rw [faceAffineToricSchemeMap_def, faceAffineCoordinateRingMap_refl]
+  rw [faceAffineToricSchemeMap_def, faceAffineCoordinateRingMap_id]
   exact Spec.map_id _
 
 /-- The morphism of a composite face inclusion is the composite of the face morphisms. -/
 @[simp]
-theorem faceAffineToricSchemeMap_trans (hi : IsIntegralLattice i)
+theorem faceAffineToricSchemeMap_comp (hi : IsIntegralLattice i)
     (hυτ : υ.IsFaceOf τ) (hτσ : τ.IsFaceOf σ) :
     faceAffineToricSchemeMap hi hυτ ≫ faceAffineToricSchemeMap hi hτσ =
       faceAffineToricSchemeMap hi (hυτ.trans hτσ) := by
@@ -236,7 +229,7 @@ theorem exists_isLocalization_away_faceAffineCoordinateRingMap (hi : IsIntegralL
       ((mem_dualSemigroup hi m).1 hm) := Subsingleton.elim _ _
   subst hτ
   refine ⟨⟨m, hm⟩, ?_⟩
-  rw [faceAffineCoordinateRingMap_def]
+  rw [faceAffineCoordinateRingMap]
   exact isLocalization_away_affineCoordinateRingMap_inf_ker hi hσ.fg ⟨m, hm⟩
 
 /-- For a face `τ` of a regular cone `σ`, the morphism from the affine toric scheme of `τ` to that
@@ -248,7 +241,7 @@ theorem isOpenImmersion_faceAffineToricSchemeMap {N : Type u} [AddCommGroup N] {
   have hh : hτ = PointedCone.isFaceOf_inf_ker
       ((mem_dualSemigroup hi m).1 hm) := Subsingleton.elim _ _
   subst hτ
-  rw [faceAffineToricSchemeMap_def, faceAffineCoordinateRingMap_def]
+  rw [faceAffineToricSchemeMap_def, faceAffineCoordinateRingMap]
   convert isOpenImmersion_affineToricSchemeMap_inf_ker hi hσ.fg ⟨m, hm⟩ using 1
   exact (affineToricSchemeMap_def ..).symm
 
@@ -274,25 +267,11 @@ noncomputable def affineToricOverlapLeft (σ τ : Φ.cones) :
   faceAffineToricSchemeMap Φ.lattice
     (Φ.inf_isFaceOf_left σ.property τ.property)
 
-/-- The left overlap map is the face morphism for `σ ⊓ τ ≼ σ`. -/
-theorem affineToricOverlapLeft_def (σ τ : Φ.cones) :
-    Φ.affineToricOverlapLeft σ τ =
-      faceAffineToricSchemeMap Φ.lattice
-        (Φ.inf_isFaceOf_left σ.property τ.property) :=
-  (rfl)
-
 /-- The canonical map from a pairwise overlap into its right affine chart. -/
 noncomputable def affineToricOverlapRight (σ τ : Φ.cones) :
     Φ.affineToricOverlap σ τ ⟶ Φ.affineToricChart τ :=
   faceAffineToricSchemeMap Φ.lattice
     (Φ.inf_isFaceOf_right σ.property τ.property)
-
-/-- The right overlap map is the face morphism for `σ ⊓ τ ≼ τ`. -/
-theorem affineToricOverlapRight_def (σ τ : Φ.cones) :
-    Φ.affineToricOverlapRight σ τ =
-      faceAffineToricSchemeMap Φ.lattice
-        (Φ.inf_isFaceOf_right σ.property τ.property) :=
-  (rfl)
 
 /-- If the left target cone is regular, the map from a pairwise overlap into its left chart is an
 open immersion. -/
