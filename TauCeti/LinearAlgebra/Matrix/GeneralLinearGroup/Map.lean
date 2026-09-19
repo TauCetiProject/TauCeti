@@ -62,8 +62,8 @@ open Matrix.SpecialLinearGroup in
 /-- Extending a subgroup of the special linear group first to `S` and then to `T` agrees with
 extending it directly to `T`. This is the subgroup form of `Matrix.SpecialLinearGroup.map_mapGL`,
 used for instance for integral levels extended to `ℚ` and then to `ℝ`. -/
-theorem map_map_mapGL {n R S T : Type*} [DecidableEq n] [Fintype n] [CommRing R] [CommRing S]
-    [CommRing T] [Algebra R S] [Algebra R T] [Algebra S T] [IsScalarTower R S T]
+@[simp] theorem map_map_mapGL {n R S T : Type*} [DecidableEq n] [Fintype n] [CommRing R]
+    [CommRing S] [CommRing T] [Algebra R S] [Algebra R T] [Algebra S T] [IsScalarTower R S T]
     (G : Subgroup (Matrix.SpecialLinearGroup n R)) :
     (G.map (mapGL S)).map (Matrix.GeneralLinearGroup.map (algebraMap S T)) = G.map (mapGL T) := by
   rw [Subgroup.map_map]
