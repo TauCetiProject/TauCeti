@@ -27,6 +27,16 @@ equivalently that the simple reflection `sᵢ` sends `ρ` to `ρ - αᵢ`. Its p
 one: `sᵢ` negates `αᵢ` and permutes the remaining positive roots, so the pairings of those
 remaining roots with `αᵢ^∨` cancel in pairs and only `⟨αᵢ, αᵢ^∨⟩ = 2` survives.
 
+Those values on the simple coroots determine the values on all of them, and the answer is the
+**height** of the coroot: expanding `α^∨` in the simple coroots and pairing termwise gives
+`⟨ρ, α^∨⟩ = ht(α^∨)`, the sum of the coefficients. Two consequences are what the rest of the file
+is for. First, `⟨ρ, α^∨⟩` is never zero, because no root has height zero — so `ρ` is a **regular**
+weight over any coefficient ring, with no order needed. Over a linearly ordered ring that already
+follows from strict dominance, but a root system attached to a Lie algebra over an algebraically
+closed field carries no order, and it is there that the Weyl dimension formula needs its
+denominators `⟨ρ, α^∨⟩` to be invertible. Second, where there *is* an order, the pairing with a
+positive coroot is not merely positive but at least `1`, being a positive integer.
+
 ## Main definitions
 
 * `TauCeti.twoWeylVector`: the sum of the positive roots, that is `2ρ`.
@@ -40,6 +50,15 @@ remaining roots with `αᵢ^∨` cancel in pairs and only `⟨αᵢ, αᵢ^∨�
 * `TauCeti.reflection_twoWeylVector` and `TauCeti.reflection_weylVector`: `sᵢ(2ρ) = 2ρ - 2αᵢ` and
   `sᵢ(ρ) = ρ - αᵢ`.
 * `TauCeti.sum_root_negRootsFinset`: the sum of the negative roots is `-2ρ`.
+* `TauCeti.coroot'_twoWeylVector_eq_height_flip` and `TauCeti.coroot'_weylVector_eq_height_flip`:
+  `⟨2ρ, α^∨⟩ = 2 ht(α^∨)` and `⟨ρ, α^∨⟩ = ht(α^∨)` for an arbitrary root `α`, the general form of
+  the two preceding identities.
+* `TauCeti.root'_weylVector_flip_eq_height`: dually, `⟨α, ρ^∨⟩ = ht(α)` for the half-sum `ρ^∨` of
+  the positive coroots.
+* `TauCeti.isRegularWeight_twoWeylVector` and `TauCeti.isRegularWeight_weylVector`: `2ρ` and `ρ`
+  are regular weights over any coefficient ring, with `TauCeti.coroot'_twoWeylVector_ne_zero` and
+  `TauCeti.coroot'_weylVector_ne_zero` the pairings that witness it and
+  `TauCeti.twoWeylVector_ne_zero`, `TauCeti.weylVector_ne_zero` the resulting nonvanishing.
 * `TauCeti.reflection_add_weylVector_sub_weylVector`: the dot action of a simple reflection,
   `sᵢ ⬝ λ = λ - (⟨λ, αᵢ^∨⟩ + 1) αᵢ`.
 * `TauCeti.add_weylVector_mem_openDominantChamber` and
@@ -47,6 +66,9 @@ remaining roots with `αᵢ^∨` cancel in pairs and only `⟨αᵢ, αᵢ^∨�
   `ρ`-shift of a dominant weight is strictly dominant, and `ρ` itself is a regular weight.
 * `TauCeti.openDominantChamber_nonempty`: consequently the open dominant chamber has a point,
   which over a general coefficient ring is a genuine hypothesis rather than a formality.
+* `TauCeti.one_le_coroot'_weylVector_of_mem_posRoots` and
+  `TauCeti.coroot'_weylVector_le_neg_one_of_mem_negRoots`: over a linearly ordered coefficient ring
+  `⟨ρ, α^∨⟩ ≥ 1` for a positive root and `≤ -1` for a negative one.
 
 ## References
 
@@ -56,10 +78,11 @@ notation `ρ` for the half-sum of positive roots and states dominance and integr
 and the Lie-algebra signature `weylVector (base : (LieAlgebra.IsKilling.rootSystem H).Base) :
 Module.Dual K H` is stated in the Layer 5 section of that roadmap's `Suggested.lean`, where the
 Casimir eigenvalue is the first consumer; the Weyl character and dimension formulas of Layer 6 are
-stated in terms of the same `ρ`. Nothing here is a Lie-algebra-level declaration, and nothing here
-uses the highest-weight machinery of Layers 2-4: `ρ` is built for an abstract root pairing, where
-the positive-root combinatorics it needs already lives, so that the Lie-algebra target is a
-specialization rather than a rebuild.
+stated in terms of the same `ρ`. The nonvanishing and integrality of `⟨ρ, α^∨⟩` proved below are
+what makes the denominator of that dimension formula meaningful. Nothing here is a
+Lie-algebra-level declaration, and nothing here uses the highest-weight machinery of Layers 2-4:
+`ρ` is built for an abstract root pairing, where the positive-root combinatorics it needs already
+lives, so that the Lie-algebra target is a specialization rather than a rebuild.
 
 The argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and Representation
 Theory*, GTM 9, Ch. III, §10.2 and §13.3.
@@ -130,6 +153,43 @@ theorem reflection_twoWeylVector {i : ι} (hi : i ∈ b.support) :
     P.reflection i (twoWeylVector P b) = twoWeylVector P b - (2 : R) • P.root i := by
   rw [RootPairing.reflection_apply, coroot'_twoWeylVector P b hi]
 
+/-- **The sum of the positive roots pairs with an arbitrary coroot to twice the height of that
+coroot**, `⟨2ρ, α^∨⟩ = 2 ht(α^∨)`, the height being taken relative to the flipped base. In
+particular the pairing is an even integer; a simple coroot has height `1`, so there it is the
+value `2` of `TauCeti.coroot'_twoWeylVector`. -/
+theorem coroot'_twoWeylVector_eq_height_flip (i : ι) :
+    P.coroot' i (twoWeylVector P b) = 2 * (b.flip.height i : R) := by
+  obtain ⟨f, -, -, hf⟩ := b.flip.exists_root_eq_sum_int i
+  have hcoroot : P.coroot i = ∑ j ∈ b.support, f j • P.coroot j := by simpa using hf
+  rw [RootPairing.Base.height_eq_sum hf, RootPairing.Base.flip_support]
+  -- `RootPairing.coroot'` is the transpose of `P.toLinearMap` evaluated at a coroot, so evaluating
+  -- it at a fixed weight is a linear map in the coroot; that is what carries the expansion of
+  -- `α^∨` over to the pairings.
+  have key : P.coroot' i (twoWeylVector P b)
+      = ∑ j ∈ b.support, f j • P.coroot' j (twoWeylVector P b) := by
+    rw [LinearMap.flip_apply P.toLinearMap (twoWeylVector P b) (P.coroot i), hcoroot, map_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by
+      rw [map_zsmul, ← LinearMap.flip_apply P.toLinearMap (twoWeylVector P b) (P.coroot j)]
+  rw [key, Finset.sum_congr rfl fun j hj ↦ by rw [coroot'_twoWeylVector P b hj],
+    ← Finset.sum_smul, zsmul_eq_mul, mul_comm]
+
+/-- **The sum of the positive roots pairs to a nonzero scalar with every coroot.** No order on the
+coefficient ring is involved: the pairing is twice the height of the coroot, and no root has height
+zero. -/
+theorem coroot'_twoWeylVector_ne_zero (i : ι) : P.coroot' i (twoWeylVector P b) ≠ 0 := by
+  rw [coroot'_twoWeylVector_eq_height_flip]
+  have h : (2 : R) * (b.flip.height i : R) = ((2 * b.flip.height i : ℤ) : R) := by push_cast; ring
+  rw [h, Int.cast_ne_zero]
+  exact mul_ne_zero two_ne_zero (b.flip.height_ne_zero i)
+
+/-- **The sum of the positive roots is a regular weight**, lying on no wall. -/
+theorem isRegularWeight_twoWeylVector : IsRegularWeight P (twoWeylVector P b) :=
+  (isRegularWeight_iff P _).mpr (coroot'_twoWeylVector_ne_zero P b)
+
+/-- The sum of the positive roots is nonzero as soon as there is a root at all. -/
+theorem twoWeylVector_ne_zero [Nonempty ι] : twoWeylVector P b ≠ 0 := fun h ↦
+  coroot'_twoWeylVector_ne_zero P b (Classical.arbitrary ι) (by rw [h, map_zero])
+
 end Reduced
 
 /-- **The sum of the negative roots is `-2ρ`.** Root negation is a bijection from the negative
@@ -194,6 +254,51 @@ theorem reflection_add_weylVector_sub_weylVector {i : ι} (hi : i ∈ b.support)
   rw [RootPairing.reflection_apply, coroot'_add_weylVector P b hi]
   abel
 
+/-- **The Weyl vector pairs with an arbitrary coroot to give the height of that coroot**,
+`⟨ρ, α^∨⟩ = ht(α^∨)`. In particular the pairing is an integer, which for a simple coroot is the
+value `1` of `TauCeti.coroot'_weylVector`.
+
+Not `@[simp]`, for the same reason as `TauCeti.coroot'_twoWeylVector`. -/
+theorem coroot'_weylVector_eq_height_flip (i : ι) :
+    P.coroot' i (weylVector P b) = (b.flip.height i : R) := by
+  rw [weylVector_def, map_smul, coroot'_twoWeylVector_eq_height_flip, smul_eq_mul, ← mul_assoc,
+    invOf_mul_self, one_mul]
+
+/-- **The Weyl vector pairs to a nonzero scalar with every coroot.** This is the nonvanishing of
+the denominators `⟨ρ, α^∨⟩` of the Weyl dimension formula, and it needs no order on the coefficient
+ring: the pairing is the height of the coroot, and no root has height zero. -/
+theorem coroot'_weylVector_ne_zero (i : ι) : P.coroot' i (weylVector P b) ≠ 0 := by
+  rw [coroot'_weylVector_eq_height_flip]
+  exact_mod_cast b.flip.height_ne_zero i
+
+/-- **The Weyl vector is a regular weight**, lying on no wall. Over a linearly ordered coefficient
+ring this also follows from `TauCeti.weylVector_mem_openDominantChamber`; the point of the present
+form is that it holds with no order at all, which is the situation of a root system attached to a
+Lie algebra over an algebraically closed field. -/
+theorem isRegularWeight_weylVector : IsRegularWeight P (weylVector P b) :=
+  (isRegularWeight_iff P _).mpr (coroot'_weylVector_ne_zero P b)
+
+/-- The Weyl vector is nonzero as soon as there is a root at all. -/
+theorem weylVector_ne_zero [Nonempty ι] : weylVector P b ≠ 0 := fun h ↦
+  coroot'_weylVector_ne_zero P b (Classical.arbitrary ι) (by rw [h, map_zero])
+
+omit [P.IsReduced] in
+/-- **The half-sum of the positive coroots pairs with a root to give the height of that root**,
+`⟨α, ρ^∨⟩ = ht(α)`. This is the previous theorem read in the flipped pairing, where the Weyl vector
+is the half-sum of the positive coroots; it identifies the height function of a base with a pairing,
+on the roots. -/
+theorem root'_weylVector_flip_eq_height [P.flip.IsReduced] (i : ι) :
+    P.root' i (weylVector P.flip b.flip) = (b.height i : R) := by
+  -- The two identifications that carry the flipped statement to this one, made explicit: the
+  -- coroot functionals of `P.flip` are the root functionals of `P`, and `RootPairing.Base.flip`
+  -- is involutive, so the doubly flipped base has the height function of `b`.
+  have hroot' : P.flip.coroot' i = P.root' i := by
+    simp only [RootPairing.coroot', RootPairing.root', RootPairing.flip_toLinearMap,
+      RootPairing.flip_coroot, LinearMap.flip_flip]
+  have hheight : b.flip.flip.height i = b.height i := rfl
+  rw [← hroot', ← hheight]
+  exact coroot'_weylVector_eq_height_flip P.flip b.flip i
+
 end Weyl
 
 section Ordered
@@ -219,6 +324,24 @@ theorem weylVector_mem_openDominantChamber :
 `1` with every simple coroot, so it is strictly dominant. -/
 theorem openDominantChamber_nonempty : (openDominantChamber P b).Nonempty :=
   ⟨weylVector P b, weylVector_mem_openDominantChamber P b⟩
+
+/-- **The Weyl vector pairs to at least `1` with the coroot of every positive root.** This sharpens
+`TauCeti.coroot'_pos_of_mem_posRoots` at `ρ` from a strict inequality to an integral one: the
+pairing is the height of the coroot, a positive integer. It is the positivity of the denominators
+of the Weyl dimension formula. -/
+theorem one_le_coroot'_weylVector_of_mem_posRoots [P.flip.IsReduced] {i : ι}
+    (hi : i ∈ posRoots P b) : 1 ≤ P.coroot' i (weylVector P b) := by
+  rw [coroot'_weylVector_eq_height_flip]
+  exact_mod_cast one_le_height_of_mem_posRoots P.flip b.flip (by rwa [posRoots_flip])
+
+/-- **The Weyl vector pairs to at most `-1` with the coroot of every negative root.** -/
+theorem coroot'_weylVector_le_neg_one_of_mem_negRoots [P.flip.IsReduced] {i : ι}
+    (hi : i ∈ negRoots P b) : P.coroot' i (weylVector P b) ≤ -1 := by
+  rw [coroot'_weylVector_eq_height_flip]
+  have h : b.flip.height i ≤ -1 := by
+    have := height_neg_of_mem_negRoots P.flip b.flip (by rwa [negRoots_flip])
+    omega
+  exact_mod_cast h
 
 end Ordered
 
