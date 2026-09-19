@@ -70,64 +70,6 @@ theorem existsUnique_hasGaloisLabel_three (hsep : f.Separable) (hirr : Irreducib
   (exists_hasGaloisLabel_of_irreducible hsep hirr hdeg fun G _ =>
     exists_transitiveGroupLabel_three G).elim fun j hj => ⟨j, hj, fun _ hk => hk.eq_of_three hj⟩
 
-private theorem discr_C_mul_of_natDegree_eq_three (a : F) (ha : a ≠ 0)
-    (hdeg : f.natDegree = 3) : (C a * f).discr = a ^ 4 * f.discr := by
-  have hfdeg : f.degree = 3 :=
-    (degree_eq_iff_natDegree_eq_of_pos (n := 3) (by omega)).mpr hdeg
-  have hscaled : (C a * f).degree = 3 := by rw [degree_C_mul ha, hfdeg]
-  rw [discr_of_degree_eq_three hscaled, discr_of_degree_eq_three hfdeg]
-  simp only [coeff_C_mul]
-  ring
-
-private theorem isSquare_discr_iff_mem_range_three {E : Type*} [Field E] [Algebra F E]
-    (hsep : f.Separable) (hdeg : f.natDegree = 3)
-    (e : Fin f.natDegree ≃ f.rootSet E) :
-    IsSquare f.discr ↔ discrSqrt e ∈ Set.range (algebraMap F E) := by
-  have hf0 : f ≠ 0 := by rintro rfl; simp at hdeg
-  have hlc : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hf0
-  let p : E[X] := ∏ i, (X - C (e i : E))
-  have hfmapdeg : (f.map (algebraMap F E)).natDegree = 3 := by
-    rw [natDegree_map_eq_of_injective (algebraMap F E).injective, hdeg]
-  have hsplits : (f.map (algebraMap F E)).Splits := by
-    rw [splits_iff_card_roots, hsep.roots_map_eq_map_numbering e]
-    simpa [hfmapdeg] using hdeg
-  have hfac : f.map (algebraMap F E) = C (algebraMap F E f.leadingCoeff) * p := by
-    have hprod := hsplits.eq_prod_roots
-    rw [hsep.roots_map_eq_map_numbering e] at hprod
-    simpa [p, ← List.prod_ofFn, Function.comp_def] using hprod
-  have hpdeg : p.natDegree = 3 := by
-    rw [← hfmapdeg, hfac, natDegree_C_mul
-      ((map_eq_zero_iff _ (algebraMap F E).injective).not.mpr hlc)]
-  have hdiscr : algebraMap F E f.discr =
-      (algebraMap F E f.leadingCoeff) ^ 4 * discrSqrt e ^ 2 := by
-    rw [← discr_map_of_natDegree_eq (algebraMap F E)
-      (natDegree_map_eq_of_injective (algebraMap F E).injective f), hfac,
-      discr_C_mul_of_natDegree_eq_three _
-        ((map_eq_zero_iff _ (algebraMap F E).injective).not.mpr hlc) hpdeg,
-      discr_prod_X_sub_C_eq_sq]
-    rw [discrSqrt_def]
-  constructor
-  · rintro ⟨c, hc⟩
-    have hs : discrSqrt e * discrSqrt e =
-        algebraMap F E (f.leadingCoeff⁻¹ ^ 2 * c) *
-          algebraMap F E (f.leadingCoeff⁻¹ ^ 2 * c) := by
-      have h := hdiscr
-      rw [hc, map_mul] at h
-      simp only [map_inv₀, map_pow, map_mul]
-      have hlcE : algebraMap F E f.leadingCoeff ≠ 0 :=
-        (map_eq_zero_iff _ (algebraMap F E).injective).not.mpr hlc
-      field_simp [hlcE] at h ⊢
-      ring_nf at h ⊢
-      exact h.symm
-    rcases mul_self_eq_mul_self_iff.mp hs with hs | hs
-    · exact ⟨_, hs.symm⟩
-    · exact ⟨-_, by rw [map_neg, ← hs]⟩
-  · rintro ⟨c, hc⟩
-    refine ⟨f.leadingCoeff ^ 2 * c, (algebraMap F E).injective ?_⟩
-    simp only [map_mul, map_pow]
-    rw [hc, hdiscr]
-    ring
-
 private theorem HasGaloisLabel.isSquare_discr_iff_three {j : TransitiveGroupIndex 3}
     (h : HasGaloisLabel f j) (hchar : ringChar F ≠ 2) :
     IsSquare f.discr ↔ referenceSubgroup 3 j ≤ alternatingGroup (Fin 3) := by
