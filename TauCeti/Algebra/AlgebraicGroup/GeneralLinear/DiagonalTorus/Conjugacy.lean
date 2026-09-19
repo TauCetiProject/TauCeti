@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.EssentialImage
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Maximal
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
-public import TauCeti.Algebra.AlgebraicGroup.Torus.AlgebraicallyClosed
+public import TauCeti.Algebra.AlgebraicGroup.Torus.Conjugation
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
-import TauCeti.Algebra.AlgebraicGroup.Torus.Conjugation
 import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 import TauCeti.Algebra.Coalgebra.Comodule.Weight.Decomposition
 
@@ -35,6 +32,8 @@ conjugates of the diagonal torus, and any two maximal tori are conjugate.
 
 ## Main declarations
 
+* `TauCeti.GeneralLinear.exists_mul_map_eq_map_mul_diagGL`: a point of `GLₙ` with values in a
+  Hopf algebra spanned by its group-like elements is diagonalized by a rational matrix.
 * `TauCeti.GeneralLinear.exists_conjugate_diagonalTorusDefiningIdeal_le`: a diagonalizable closed
   subgroup of `GLₙ` is contained in a conjugate of the diagonal torus.
 * `TauCeti.GeneralLinear.exists_eq_conjugate_diagonalTorusDefiningIdeal_of_isMaximalTorus`: a
@@ -122,6 +121,34 @@ private theorem exists_basis_coact_eq_tmul {Q : Type u} [AddCommGroup Q] [Module
   have h := _root_.GroupLike.mem_weightSpace.mp (hχ j)
   rwa [Comodule.corestrict_coact_apply, standardComodule_coact, CoalgHom.toLinearMap_eq_coe] at h
 
+/-- **Simultaneous diagonalization over a diagonalizable Hopf algebra.**
+
+If the group-like elements of `Q` span it, then for every bialgebra morphism
+`π : O(GLₙ) → Q` some rational matrix `P` diagonalizes the `Q`-valued point `π`:
+`π P = P diag(t)`. The columns of `P` are weight vectors of the standard comodule corestricted
+along `π`, and the entries of `t` are their weights. -/
+theorem exists_mul_map_eq_map_mul_diagGL {Q : Type u} [CommRing Q] [HopfAlgebra k Q]
+    (hQ : Subcoalgebra.groupLikeSetSpan (R := k) (C := Q) Set.univ = ⊤)
+    (π : coordinateHopfAlgebra k n →ₐc[k] Q) :
+    ∃ (P : GL (Fin n) k) (t : Fin n → Qˣ),
+      pointsMulEquiv n (toConv (π : coordinateHopfAlgebra k n →ₐ[k] Q)) *
+          Matrix.GeneralLinearGroup.map (algebraMap k Q) P =
+        Matrix.GeneralLinearGroup.map (algebraMap k Q) P * diagGL t := by
+  obtain ⟨w, χ, hw⟩ := exists_basis_coact_eq_tmul (n := n) (Q := Q) hQ
+    (π : coordinateHopfAlgebra k n →ₗc[k] Q)
+  let _ := (Pi.basisFun k (Fin n)).invertibleToMatrix w
+  refine ⟨unitOfInvertible ((Pi.basisFun k (Fin n)).toMatrix w),
+    fun j ↦ GroupLike.toUnits k (χ j), ?_⟩
+  ext i j
+  rw [Matrix.GeneralLinearGroup.coe_mul, Matrix.GeneralLinearGroup.coe_mul, diagGL_coe,
+    Matrix.mul_diagonal, Matrix.mul_apply]
+  simp only [Matrix.GeneralLinearGroup.map_apply, pointsMulEquiv_apply,
+    pointToGeneralLinear_apply, val_unitOfInvertible, Module.Basis.toMatrix_apply,
+    Pi.basisFun_repr, BialgHom.coe_toAlgHom, ← genericMatrix_apply]
+  have h := sum_mul_algebraMap_eq_of_coact_eq (π : coordinateHopfAlgebra k n →ₗc[k] Q)
+    (w j) (χ j) (hw j) i
+  rwa [BialgHom.coe_toCoalgHom] at h
+
 /-- **A diagonalizable closed subgroup of `GLₙ` is conjugate into the diagonal torus.**
 
 If the quotient coordinate Hopf algebra of `I` is spanned by its group-like elements, then some
@@ -136,28 +163,12 @@ theorem exists_conjugate_diagonalTorusDefiningIdeal_le
       (diagonalTorusDefiningIdeal k n).conjugate g ≤ I := by
   let Q := CommHopfAlgCat.quotient (coordinateHopfAlgebra k n) I
   let π : coordinateHopfAlgebra k n →ₐc[k] Q := (CommHopfAlgCat.mkQuotient _ I).hom
-  obtain ⟨w, χ, hw⟩ := exists_basis_coact_eq_tmul (n := n) (Q := Q)
-    ((DiagonalizableGroup.groupLikeSpannedProperty_iff k _).mp hI)
-    (π : coordinateHopfAlgebra k n →ₗc[k] Q)
-  let _ := (Pi.basisFun k (Fin n)).invertibleToMatrix w
-  let P : GL (Fin n) k := unitOfInvertible ((Pi.basisFun k (Fin n)).toMatrix w)
-  let t : Fin n → Qˣ := fun j ↦ GroupLike.toUnits k (χ j)
+  obtain ⟨P, t, hmat⟩ := exists_mul_map_eq_map_mul_diagGL (n := n) (Q := Q)
+    ((DiagonalizableGroup.groupLikeSpannedProperty_iff k _).mp hI) π
   let τ : WithConv (MonoidAlgebra k (Multiplicative (ULift.{u} (Fin n) →₀ ℤ)) →ₐ[k] Q) :=
     (SplitTorus.pointsMulEquiv (R := k) (A := Q)).symm fun i ↦ t i.down
   let g : WithConv (coordinateHopfAlgebra k n →ₐ[k] k) :=
     (pointsMulEquiv (R := k) (A := k) n).symm P⁻¹
-  let φ : k →+* Q := (Algebra.ofId k Q : k →+* Q)
-  have hmat : pointsMulEquiv n (toConv (π : coordinateHopfAlgebra k n →ₐ[k] Q)) *
-      Matrix.GeneralLinearGroup.map φ P = Matrix.GeneralLinearGroup.map φ P * diagGL t := by
-    ext i j
-    rw [Matrix.GeneralLinearGroup.coe_mul, Matrix.GeneralLinearGroup.coe_mul, diagGL_coe,
-      Matrix.mul_diagonal, Matrix.mul_apply]
-    simp only [Matrix.GeneralLinearGroup.map_apply, pointsMulEquiv_apply,
-      pointToGeneralLinear_apply, P, val_unitOfInvertible, Module.Basis.toMatrix_apply,
-      Pi.basisFun_repr, BialgHom.coe_toAlgHom, ← genericMatrix_apply]
-    have h := sum_mul_algebraMap_eq_of_coact_eq (π : coordinateHopfAlgebra k n →ₗc[k] Q)
-      (w j) (χ j) (hw j) i
-    rwa [BialgHom.coe_toCoalgHom] at h
   have hkey : toConv ((π : coordinateHopfAlgebra k n →ₐ[k] Q).comp
       (HopfAlgebra.pointConjugationAlgHom g)) = diagonalTorusPoints τ := by
     apply (pointsMulEquiv (R := k) (A := Q) n).injective
@@ -190,17 +201,9 @@ theorem exists_eq_conjugate_diagonalTorusDefiningIdeal_of_isMaximalTorus
         ⟨coordinateHopfAlgebra k n, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩ I)) :
     ∃ g : WithConv (coordinateHopfAlgebra k n →ₐ[k] k),
       I = (diagonalTorusDefiningIdeal k n).conjugate g := by
-  obtain ⟨m, ⟨e⟩⟩ := (splitTorusCommHopfAlgProperty_iff k _).mp hsplit
-  have hspan : DiagonalizableGroup.groupLikeSpannedProperty k
-      (FiniteTypeCommHopfAlgCat.quotient
-        ⟨coordinateHopfAlgebra k n, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩ I) :=
-    (DiagonalizableGroup.groupLikeSpannedProperty k).prop_of_iso e
-      ((DiagonalizableGroup.groupLikeSpannedProperty_iff k _).mpr
-        (MonoidAlgebra.groupLikeSetSpan_eq_top (R := k) _))
-  obtain ⟨g, hg⟩ := exists_conjugate_diagonalTorusDefiningIdeal_le I hspan
-  have hD := (HopfIdeal.isMaximalTorus_iff k _ _).mp
-    ((isMaximalTorus_diagonalTorusDefiningIdeal k n).conjugate g)
-  exact ⟨g, le_antisymm (((HopfIdeal.isMaximalTorus_iff k _ _).mp hI).2 _ hD.1 hg) hg⟩
+  exact HopfIdeal.exists_eq_conjugate_of_isMaximalTorus_of_split
+    (diagonalTorusDefiningIdeal k n) (isMaximalTorus_diagonalTorusDefiningIdeal k n)
+    exists_conjugate_diagonalTorusDefiningIdeal_le hI hsplit
 
 /-- **Any two split maximal tori of `GLₙ` over a field are conjugate** by a rational point
 of `GLₙ`. -/
@@ -215,11 +218,9 @@ theorem exists_conjugate_eq_of_isMaximalTorus_of_split
       (FiniteTypeCommHopfAlgCat.quotient
         ⟨coordinateHopfAlgebra k n, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩ J)) :
     ∃ g : WithConv (coordinateHopfAlgebra k n →ₐ[k] k), I.conjugate g = J := by
-  obtain ⟨g, rfl⟩ :=
-    exists_eq_conjugate_diagonalTorusDefiningIdeal_of_isMaximalTorus hI hsplitI
-  obtain ⟨h, rfl⟩ :=
-    exists_eq_conjugate_diagonalTorusDefiningIdeal_of_isMaximalTorus hJ hsplitJ
-  exact ⟨h * g⁻¹, by simp [HopfIdeal.conjugate_mul]⟩
+  exact HopfIdeal.exists_conjugate_eq_of_isMaximalTorus_of_split
+    (diagonalTorusDefiningIdeal k n) (isMaximalTorus_diagonalTorusDefiningIdeal k n)
+    exists_conjugate_diagonalTorusDefiningIdeal_le hI hJ hsplitI hsplitJ
 
 /-- **Maximal tori of `GLₙ` over an algebraically closed field are exactly the conjugates of the
 diagonal torus.** The equality is an equality of defining Hopf ideals, hence of closed subgroup
@@ -229,12 +230,9 @@ theorem isMaximalTorus_iff_exists_eq_conjugate_diagonalTorusDefiningIdeal [IsAlg
     HopfIdeal.IsMaximalTorus k (coordinateHopfAlgebra k n) I ↔
       ∃ g : WithConv (coordinateHopfAlgebra k n →ₐ[k] k),
         I = (diagonalTorusDefiningIdeal k n).conjugate g := by
-  constructor
-  · intro hI
-    exact exists_eq_conjugate_diagonalTorusDefiningIdeal_of_isMaximalTorus hI
-      (torusCommHopfAlgProperty.split k _ ((HopfIdeal.isMaximalTorus_iff k _ I).mp hI).1)
-  · rintro ⟨g, rfl⟩
-    exact (isMaximalTorus_diagonalTorusDefiningIdeal k n).conjugate g
+  exact HopfIdeal.isMaximalTorus_iff_exists_eq_conjugate
+    (diagonalTorusDefiningIdeal k n) (isMaximalTorus_diagonalTorusDefiningIdeal k n)
+    exists_conjugate_diagonalTorusDefiningIdeal_le I
 
 /-- **Any two maximal tori of `GLₙ` over an algebraically closed field are conjugate** by a
 rational point of `GLₙ`. -/
@@ -243,9 +241,9 @@ theorem exists_conjugate_eq_of_isMaximalTorus [IsAlgClosed k]
     (hI : HopfIdeal.IsMaximalTorus k (coordinateHopfAlgebra k n) I)
     (hJ : HopfIdeal.IsMaximalTorus k (coordinateHopfAlgebra k n) J) :
     ∃ g : WithConv (coordinateHopfAlgebra k n →ₐ[k] k), I.conjugate g = J := by
-  exact exists_conjugate_eq_of_isMaximalTorus_of_split hI hJ
-    (torusCommHopfAlgProperty.split k _ ((HopfIdeal.isMaximalTorus_iff k _ I).mp hI).1)
-    (torusCommHopfAlgProperty.split k _ ((HopfIdeal.isMaximalTorus_iff k _ J).mp hJ).1)
+  exact HopfIdeal.exists_conjugate_eq_of_isMaximalTorus
+    (diagonalTorusDefiningIdeal k n) (isMaximalTorus_diagonalTorusDefiningIdeal k n)
+    exists_conjugate_diagonalTorusDefiningIdeal_le hI hJ
 
 end
 

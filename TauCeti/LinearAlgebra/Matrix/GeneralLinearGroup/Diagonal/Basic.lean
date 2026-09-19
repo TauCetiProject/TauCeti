@@ -94,6 +94,8 @@ The action of the torus on the coordinate lines of the standard representation i
 
 * `TauCeti.isUnit_apply_of_isDiag`: the diagonal entries of an invertible diagonal matrix are
   units.
+* `TauCeti.exists_det_eq_one_mul_map_eq_map_mul_diagGL`: a matrix intertwining another matrix with
+  a diagonal matrix can be normalized to have determinant one while preserving the equation.
 * `TauCeti.mem_diagonalTorus_iff`: membership in the torus is diagonality of the matrix.
 * `TauCeti.mul_diagGL_of_coe_eq_permMatrix`: a permutation matrix moves past a diagonal by
   relabelling its entries.
@@ -352,10 +354,48 @@ variable [CommRing k]
 
 /-- The determinant of a diagonal matrix is the product of its diagonal entries. -/
 @[simp]
-theorem det_diagGL (t : Fin n → kˣ) :
+theorem det_diagGL {ι : Type*} [Fintype ι] [DecidableEq ι] (t : ι → kˣ) :
     Matrix.GeneralLinearGroup.det (diagGL t) = ∏ i, t i := by
   apply Units.ext
   simp [Matrix.GeneralLinearGroup.val_det_apply, diagGL_coe, Matrix.det_diagonal]
+
+/-- Mapping the entries of `diagGL t` along a ring homomorphism gives the diagonal matrix of the
+mapped units. -/
+@[simp]
+theorem map_diagGL {S : Type*} [CommRing S] {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (f : k →+* S) (t : ι → kˣ) :
+    Matrix.GeneralLinearGroup.map f (diagGL t) = diagGL fun i ↦ Units.map (f : k →* S) (t i) := by
+  ext i j
+  simp only [Matrix.GeneralLinearGroup.map_apply, diagGL_apply, Units.coe_map, MonoidHom.coe_coe]
+  split_ifs <;> simp
+
+/-- If `P` intertwines `M` with a diagonal matrix, rescaling one of its columns gives an
+intertwining matrix of determinant one. -/
+theorem exists_det_eq_one_mul_map_eq_map_mul_diagGL {Q ι : Type*} [CommRing Q]
+    [Fintype ι] [DecidableEq ι] (i : ι) (f : k →+* Q) (M : GL ι Q) (P : GL ι k)
+    (t : ι → Qˣ)
+    (h : M * Matrix.GeneralLinearGroup.map f P =
+      Matrix.GeneralLinearGroup.map f P * diagGL t) :
+    ∃ P' : GL ι k, Matrix.GeneralLinearGroup.det P' = 1 ∧
+      M * Matrix.GeneralLinearGroup.map f P' =
+        Matrix.GeneralLinearGroup.map f P' * diagGL t := by
+  let u : ι → kˣ := Pi.mulSingle i (Matrix.GeneralLinearGroup.det P)⁻¹
+  refine ⟨P * diagGL u, ?_, ?_⟩
+  · rw [map_mul, det_diagGL, Fintype.prod_pi_mulSingle' i, mul_inv_cancel]
+  · have hcomm : Commute (diagGL t) (Matrix.GeneralLinearGroup.map f (diagGL u)) := by
+      rw [map_diagGL]
+      exact (Commute.all _ _).map diagGL
+    calc
+      M * Matrix.GeneralLinearGroup.map f (P * diagGL u) =
+          (M * Matrix.GeneralLinearGroup.map f P) *
+            Matrix.GeneralLinearGroup.map f (diagGL u) := by rw [map_mul, mul_assoc]
+      _ = (Matrix.GeneralLinearGroup.map f P * diagGL t) *
+            Matrix.GeneralLinearGroup.map f (diagGL u) := by rw [h]
+      _ = Matrix.GeneralLinearGroup.map f P *
+            (Matrix.GeneralLinearGroup.map f (diagGL u) * diagGL t) := by
+          rw [mul_assoc, hcomm.eq]
+      _ = Matrix.GeneralLinearGroup.map f (P * diagGL u) * diagGL t := by
+          rw [map_mul, mul_assoc]
 
 /-- The determinant of an element of the diagonal torus is the product of its diagonal entries. -/
 theorem det_of_mem_diagonalTorus {g : GL (Fin n) k} (hg : g ∈ diagonalTorus k n) :
