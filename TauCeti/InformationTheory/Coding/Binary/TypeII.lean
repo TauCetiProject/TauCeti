@@ -34,6 +34,11 @@ variable {ι : Type*} [Fintype ι] {C : LinearCode (ZMod 2) ι}
 def IsTypeII (C : LinearCode (ZMod 2) ι) : Prop :=
   IsDoublyEven C ∧ C = C.euclideanDual
 
+/-- A doubly-even Euclidean self-dual binary code is Type II. -/
+theorem IsDoublyEven.isTypeII (hC : IsDoublyEven C) (hdual : C = C.euclideanDual) :
+    IsTypeII C :=
+  ⟨hC, hdual⟩
+
 /-- Every Type II code is doubly even. -/
 theorem IsTypeII.isDoublyEven (hC : IsTypeII C) : IsDoublyEven C :=
   hC.1
@@ -49,22 +54,15 @@ theorem IsTypeII.eight_dvd_card (hC : IsTypeII C) : 8 ∣ Fintype.card ι := by
   have hn : Fintype.card ι = 2 * (Fintype.card ι / 2) := by omega
   have hcard : (Nat.card C : ℂ) = 2 ^ (Fintype.card ι / 2) := by
     rw [natCard_of_eq_euclideanDual hC.eq_euclideanDual, Nat.cast_pow, Nat.cast_ofNat]
-  -- On the diagonal, every weight monomial has the same total degree.
-  have hdiag (z : ℂ) : aeval ![z, z] (C : Set (ι → ZMod 2)).weightEnumerator =
-      (Nat.card C : ℂ) * z ^ Fintype.card ι := by
-    rw [Set.weightEnumerator_eq_sum (Set.toFinite _)]
-    simp only [map_sum, map_mul, map_pow, aeval_X, Matrix.cons_val_zero,
-      Matrix.cons_val_one, ← pow_add, Nat.sub_add_cancel hammingNorm_le_card_fintype]
-    simp [nsmul_eq_mul]
   have hI : aeval ![1, I] (C : Set (ι → ZMod 2)).weightEnumerator = (Nat.card C : ℂ) := by
     have h := hC.isDoublyEven.aeval_weightEnumerator_mul I_pow_four (1 : ℂ) 1
-    simpa [hdiag] using h
+    simpa [aeval_weightEnumerator_diag _ (Set.toFinite _)] using h
   have htransform : aeval ![1 + I, 1 - I] (C : Set (ι → ZMod 2)).weightEnumerator =
       (Nat.card C : ℂ) * (1 + I) ^ Fintype.card ι := by
     have h := hC.isDoublyEven.aeval_weightEnumerator_mul
       isPrimitiveRoot_neg_I.pow_eq_one (1 + I) (1 + I)
     have heq : -I * (1 + I) = 1 - I := by linear_combination -I_sq
-    simpa only [heq, hdiag] using h
+    simpa only [heq, aeval_weightEnumerator_diag _ (Set.toFinite _), SetLike.coe_sort_coe] using h
   -- Evaluate MacWilliams at (1, I), then cancel the nonzero cardinality.
   have hmac := congrArg (aeval ![1, I] : MvPolynomial (Fin 2) ℤ →ₐ[ℤ] ℂ)
     (aeval_weightEnumerator_of_eq_euclideanDual hC.eq_euclideanDual)
