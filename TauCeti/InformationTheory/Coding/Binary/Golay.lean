@@ -101,7 +101,7 @@ theorem mem_code_iff {x : Fin 24 → ZMod 2} :
 
 /-- The generator has zero Euclidean Gram matrix. -/
 @[simp]
-theorem generator_mul_transpose : generator * generator.transpose = 0 := by
+theorem generator_mul_transpose_eq_zero : generator * generator.transpose = 0 := by
   decide +kernel
 
 /-- Systematic encoding gives a linear equivalence between messages and codewords. -/
@@ -151,7 +151,7 @@ theorem euclideanDual_code : code.euclideanDual = code := by
   apply Submodule.eq_euclideanDual_of_le_of_card_le_two_mul_finrank
   · rw [code_def, ← Matrix.checkedBy_eq_euclideanDual_generatedBy,
       Matrix.generatedBy_le_checkedBy_iff]
-    exact generator_mul_transpose
+    exact generator_mul_transpose_eq_zero
   · simp
 
 /-- The same matrix is a parity-check matrix for the extended Golay code. -/
@@ -552,7 +552,7 @@ theorem hammingNorm_mem {x : Fin 24 → ZMod 2} (hx : x ∈ code) :
 @[simp]
 theorem isDoublyEven_code : BinaryCode.IsDoublyEven code := by
   rw [code_def, BinaryCode.isDoublyEven_generatedBy_iff]
-  exact ⟨by decide +kernel, generator_mul_transpose⟩
+  exact ⟨by decide +kernel, generator_mul_transpose_eq_zero⟩
 
 private theorem weightDistribution_eq_card (w : ℕ) :
     (code : Set (Fin 24 → ZMod 2)).weightDistribution w =
