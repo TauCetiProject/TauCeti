@@ -285,17 +285,12 @@ private lemma charEisensteinSeriesMF_apply_eq_add_tsum_pnat (hk : 3 ≤ (k : ℤ
     add_right_inj]
   ring
 
-/-- **The `q`-expansion of the Eisenstein series with character.** For characters `ψ` modulo
-`u` and `φ` modulo `v` with `ψ(-1) φ(-1) = (-1)^k`, the constant coefficient of `G_k^{ψ,φ}` is
-`ψ(0) ∑_{d ∈ ℤ} φ⁻¹(d) d^(-k)`, and for `n ≥ 1` its `n`-th coefficient is
-`2 (-2πi)^k / ((k-1)! v^k) ∑_{c m = n} ψ(c) φ̂(m) m^(k-1)`,
-where `φ̂(m) = ∑_{r mod v} φ⁻¹(r) e^(2πi r m / v)` is the discrete Fourier transform of `φ⁻¹`
-at `-m`. (If the parity condition fails, the series is zero:
-`charEisensteinSeriesMF_eq_zero`.) -/
+/-- The simp-normal coefficient formula for the weighted series underlying the Eisenstein series
+with character. -/
 @[simp]
-theorem qExpansion_charEisensteinSeriesMF_coeff (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N)
+theorem qExpansion_charWeight_coeff (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N)
     (hpar : ψ (-1) * φ (-1) = (-1) ^ k) (n : ℕ) :
-    (qExpansion 1 (charEisensteinSeriesMF ψ φ hk huv)).coeff n =
+    (qExpansion 1 (weightedEisensteinSeries (charWeight N ψ φ) k)).coeff n =
       if n = 0 then ψ 0 * ∑' d : ℤ, φ⁻¹ d * (d : ℂ) ^ (-(k : ℤ))
       else 2 * (-2 * π * I) ^ k / ((k - 1).factorial * v ^ k) *
         ∑ x ∈ n.divisorsAntidiagonal,
@@ -350,6 +345,23 @@ theorem qExpansion_charEisensteinSeriesMF_coeff (hk : 3 ≤ (k : ℤ)) (huv : u 
     simp only [Nat.divisorsAntidiagonal_zero, Finset.sum_empty, pow_zero, mul_one, mul_zero,
       add_zero, f, q, a]
     ring
+
+/-- **The `q`-expansion of the Eisenstein series with character.** For characters `ψ` modulo
+`u` and `φ` modulo `v` with `ψ(-1) φ(-1) = (-1)^k`, the constant coefficient of `G_k^{ψ,φ}` is
+`ψ(0) ∑_{d ∈ ℤ} φ⁻¹(d) d^(-k)`, and for `n ≥ 1` its `n`-th coefficient is
+`2 (-2πi)^k / ((k-1)! v^k) ∑_{c m = n} ψ(c) φ̂(m) m^(k-1)`,
+where `φ̂(m) = ∑_{r mod v} φ⁻¹(r) e^(2πi r m / v)` is the discrete Fourier transform of `φ⁻¹`
+at `-m`. (If the parity condition fails, the series is zero:
+`charEisensteinSeriesMF_eq_zero`.) -/
+theorem qExpansion_charEisensteinSeriesMF_coeff (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N)
+    (hpar : ψ (-1) * φ (-1) = (-1) ^ k) (n : ℕ) :
+    (qExpansion 1 (charEisensteinSeriesMF ψ φ hk huv)).coeff n =
+      if n = 0 then ψ 0 * ∑' d : ℤ, φ⁻¹ d * (d : ℂ) ^ (-(k : ℤ))
+      else 2 * (-2 * π * I) ^ k / ((k - 1).factorial * v ^ k) *
+        ∑ x ∈ n.divisorsAntidiagonal,
+          ψ x.1 * 𝓕 ⇑(φ⁻¹) (-(x.2 : ZMod v)) * (x.2 : ℂ) ^ (k - 1) := by
+  simpa only [coe_charEisensteinSeriesMF] using
+    qExpansion_charWeight_coeff ψ φ hk huv hpar n
 
 /-- **The `q`-expansion of the Eisenstein series with character, for primitive `φ`.** Then the
 Fourier transform of `φ⁻¹` is a multiple of `φ` by the Gauss sum `g(φ⁻¹)`, and for `n ≥ 1` the
