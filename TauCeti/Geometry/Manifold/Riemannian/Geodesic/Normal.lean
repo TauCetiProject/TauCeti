@@ -24,8 +24,8 @@ neighbourhood into the initial velocity of the radial geodesic reaching it.
 
 The logarithm is defined as a total function taking a junk value outside the normal
 neighbourhood, so each theorem about its value carries the corresponding membership hypothesis.
-There is deliberately no single global logarithm: past the cut locus a point is reached by
-several geodesics from `p`, and no continuous choice exists.
+There is deliberately no single global logarithm: beyond a normal neighbourhood the exponential
+map may lose injectivity or local invertibility, so no canonical smooth global inverse is provided.
 
 ## Main definitions and results
 
@@ -163,15 +163,15 @@ theorem exists_isNormalDomain_ball [T2Space (TangentBundle I M)] (p : M) :
 /-! ### The Riemannian logarithm -/
 
 variable (I M) in
-/-- The **Riemannian logarithm** at `p` relative to a set `U` of tangent vectors: the inverse of
-the restriction of `exp_p` to `U`.  It is the useful notion when `U` is a normal domain, in which
-case it inverts `exp_p` on the normal neighbourhood `exp_p '' U`; outside that neighbourhood it
-takes a junk value, so every theorem about its value carries a membership hypothesis. -/
+/-- The **Riemannian logarithm** at `p` relative to a set `U` of tangent vectors, defined as the
+chosen preimage function `invFunOn` for the restriction of `exp_p` to `U`.  When `U` is a normal
+domain, it inverts `exp_p` on the normal neighbourhood `exp_p '' U`; outside that neighbourhood
+it takes a junk value, so every theorem about its value carries a membership hypothesis. -/
 def riemannianLog (p : M) (U : Set (TangentSpace I p)) : M → TangentSpace I p :=
   invFunOn (riemannianExp I M p) U
 
 omit [I.Boundaryless] in
-/-- The Riemannian logarithm relative to `U` is the inverse of `exp_p` on `U`. -/
+/-- The Riemannian logarithm relative to `U` is `invFunOn` for `exp_p` restricted to `U`. -/
 theorem riemannianLog_def (p : M) (U : Set (TangentSpace I p)) :
     riemannianLog I M p U = invFunOn (riemannianExp I M p) U := by
   rfl
@@ -197,7 +197,7 @@ theorem riemannianLog_mem (h : IsNormalDomain I M p U) (hq : q ∈ riemannianExp
 
 omit [I.Boundaryless] in
 /-- **The exponential map inverts the logarithm** on a normal neighbourhood. -/
-theorem riemannianExp_riemannianLog (h : IsNormalDomain I M p U)
+@[simp] theorem riemannianExp_riemannianLog (h : IsNormalDomain I M p U)
     (hq : q ∈ riemannianExp I M p '' U) :
     riemannianExp I M p (riemannianLog I M p U q) = q := by
   obtain ⟨w, hw, rfl⟩ := hq
