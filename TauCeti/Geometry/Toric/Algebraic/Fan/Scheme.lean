@@ -154,10 +154,7 @@ theorem affineToricCocone_pt (hΦ : Φ.IsRegular) :
 theorem affineToricCocone_ι_app (hΦ : Φ.IsRegular) (σ : Φ.cones) :
     (Φ.affineToricCocone hΦ).ι.app σ = Φ.affineToricChartι hΦ σ :=
   by
-    have := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
-      isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
-    have := isLocallyDirected_affineToricDiagram hΦ
-    change (colimit.cocone Φ.affineToricDiagram).ι.app σ = colimit.ι Φ.affineToricDiagram σ
+    unfold affineToricCocone affineToricChartι
     rfl
 
 /-- The affine toric cocone is a colimit cocone. -/
