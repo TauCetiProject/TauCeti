@@ -99,7 +99,7 @@ private lemma tsum_residue (z : ℍ) {k : ℕ} (hk : 2 ≤ k) (r : ℕ) :
 a weight `k ≥ 2` and `z` in the upper half-plane,
 `∑_{n ∈ ℤ} f(n) (z + n)^(-k) = (-2πi)^k / ((k-1)! v^k) ∑_{m ≥ 1} 𝓕f(-m) m^(k-1) e^(2πi m z / v)`,
 where `𝓕f(-m) = ∑_{r mod v} f(r) e^(2πi r m / v)` is the discrete Fourier transform of `f`.
-For `v = 1` this is Mathlib's `EisensteinSeries.qExpansion_identity_pnat`. -/
+For `v = 1` this is `f 0` times Mathlib's `EisensteinSeries.qExpansion_identity_pnat`. -/
 theorem qExpansion_identity_zmod (f : ZMod v → ℂ) {k : ℕ} (hk : 2 ≤ k) (z : ℍ) :
     ∑' n : ℤ, f n * ((z : ℂ) + n) ^ (-(k : ℤ)) =
       (-2 * π * I) ^ k / ((k - 1).factorial * v ^ k) * ∑' m : ℕ+,
@@ -292,6 +292,7 @@ private lemma charEisensteinSeriesMF_apply_eq_add_tsum_pnat (hk : 3 ≤ (k : ℤ
 where `φ̂(m) = ∑_{r mod v} φ⁻¹(r) e^(2πi r m / v)` is the discrete Fourier transform of `φ⁻¹`
 at `-m`. (If the parity condition fails, the series is zero:
 `charEisensteinSeriesMF_eq_zero`.) -/
+@[simp]
 theorem qExpansion_charEisensteinSeriesMF_coeff (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N)
     (hpar : ψ (-1) * φ (-1) = (-1) ^ k) (n : ℕ) :
     (qExpansion 1 (charEisensteinSeriesMF ψ φ hk huv)).coeff n =
