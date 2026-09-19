@@ -233,7 +233,7 @@ theorem IsInternal.lieModuleProjection_apply_of_ne {N : ι → LieSubmodule R L 
 
 /-- The canonical projection is idempotent. -/
 @[simp]
-theorem IsInternal.lieModuleProjection_apply_self {N : ι → LieSubmodule R L M}
+theorem IsInternal.lieModuleProjection_apply_apply {N : ι → LieSubmodule R L M}
     (h : IsInternal fun i ↦ (N i).toSubmodule) (i : ι) (m : M) :
     h.lieModuleProjection i (h.lieModuleProjection i m) = h.lieModuleProjection i m := by
   apply h.lieModuleProjection_apply_of_mem
