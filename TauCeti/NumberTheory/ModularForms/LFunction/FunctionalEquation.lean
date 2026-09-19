@@ -313,7 +313,8 @@ theorem frickeCompletedL_sub_eq_I_zpow_mul
 /-- Hecke's two-form functional equation.  If `f` and `g` are positive-weight, width-one cusp
 forms and `g` is the Petersson-normalized Fricke companion of `f`, then
 `Λ_N(k - s, f) = i^k Λ_N(s, g)`.  The two forms may live on different carriers, but both have
-weight `k`. -/
+weight `k`.  This is the classical hypothesis-bearing interface; for the stronger underlying
+Mellin identity, use `frickeCompletedL_sub_eq_I_zpow_mul`. -/
 theorem frickeCompletedL_functional_equation
     {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℝ)}
     (f : CuspForm Γ₁ k) (g : CuspForm Γ₂ k) (N : ℕ) [NeZero N]
