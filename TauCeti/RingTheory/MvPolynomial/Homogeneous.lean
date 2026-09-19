@@ -35,8 +35,7 @@ theorem eval₂_fun_mul_of_isHomogeneous {σ R S : Type*} [CommSemiring R] [Comm
   simp only [eval₂_eq, Finset.mul_sum]
   apply Finset.sum_congr rfl
   intro d hd
-  have hdeg : ∑ i ∈ d.support, d i = n := by
-    simpa [Finsupp.weight_apply, Finsupp.sum] using hp (mem_support_iff.mp hd)
+  have hdeg : ∑ i ∈ d.support, d i = n := (hp.degree_eq_sum_deg_support hd).symm
   simp only [mul_pow, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum, hdeg]
   ring
 

@@ -40,7 +40,7 @@ variable {ι F : Type*} [Fintype ι] [Field F] [Finite F] [DecidableEq F]
 /-- The rational normalized MacWilliams identity, evaluated in any commutative
 `ℚ`-algebra. Taking `x` and `y` to be polynomial variables gives the homogeneous
 polynomial identity over `ℚ`. -/
-theorem aeval_weightEnumerator_euclideanDual {A : Type*} [CommRing A] [Algebra ℚ A]
+@[simp] theorem aeval_weightEnumerator_euclideanDual {A : Type*} [CommRing A] [Algebra ℚ A]
     (x y : A) :
     aeval ![x, y] (Submodule.euclideanDual C : Set (ι → F)).weightEnumerator =
       (Nat.card C : ℚ)⁻¹ •
@@ -69,17 +69,14 @@ theorem aeval_weightEnumerator_normalized_of_eq_euclideanDual
     rw [← Submodule.two_mul_finrank_eq_card_of_eq_euclideanDual hC, pow_mul,
       Real.sq_sqrt (Nat.cast_nonneg _),
       Module.natCard_eq_pow_finrank (K := F) (V := C), Nat.cast_pow]
-  have h := congrArg (aeval ![x, y]) (C.natCard_mul_weightEnumerator_euclideanDual)
-  rw [← hC] at h
   have hmac : aeval ![x + (Nat.card F - 1 : A) * y, x - y]
       (C : Set (ι → F)).weightEnumerator =
         (Nat.card C : ℝ) • aeval ![x, y] (C : Set (ι → F)).weightEnumerator := by
-    simp only [aeval_eq_bind₁, aeval_bind₁, map_mul, map_natCast] at h
-    convert h.symm using 1
-    · congr 1
-      ext i
-      fin_cases i <;> simp
-    · simp [Algebra.smul_def]
+    let : Algebra ℚ A := Algebra.compHom A (algebraMap ℚ ℝ)
+    have hcardQ : (Nat.card C : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+    have h := aeval_weightEnumerator_euclideanDual C x y
+    rw [← hC, eq_inv_smul_iff₀ hcardQ] at h
+    simpa only [Algebra.smul_def, map_natCast] using h.symm
   have hscale := eval₂_fun_mul_of_isHomogeneous
     (C : Set (ι → F)).isHomogeneous_weightEnumerator (algebraMap ℤ A)
     ![x + (Nat.card F - 1 : A) * y, x - y]
