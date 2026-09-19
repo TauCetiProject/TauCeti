@@ -80,20 +80,16 @@ section Field
 
 variable [Field k]
 
-/-- The determinant-one diagonal torus separates coordinates if the unit group is nontrivial and
-each pair of distinct coordinates receives different values under some diagonal element of
-determinant one. The nontriviality component supplies the hypothesis needed by the corresponding
-`GL_n` coordinate-permutation API. -/
+/-- The determinant-one diagonal torus separates coordinates if each pair of distinct coordinates
+receives different values under some diagonal element of determinant one. -/
 def DiagonalTorusSeparatesCoordinates (k : Type u) [Field k] (n : ℕ) : Prop :=
-  Nontrivial kˣ ∧
-    ∀ i j : Fin n, i ≠ j → ∃ t : Fin n → kˣ, ∏ r, (t r : k) = 1 ∧ t i ≠ t j
+  ∀ i j : Fin n, i ≠ j → ∃ t : Fin n → kˣ, ∏ r, (t r : k) = 1 ∧ t i ≠ t j
 
 /-- A unit whose square is not one makes the determinant-one diagonal torus separate
 coordinates. -/
 theorem diagonalTorusSeparatesCoordinates_of_exists_sq_ne_one
     (hk : ∃ a : kˣ, a ^ 2 ≠ 1) : DiagonalTorusSeparatesCoordinates k n := by
   obtain ⟨a, ha⟩ := hk
-  refine ⟨nontrivial_of_ne a 1 fun h ↦ ha (by rw [h, one_pow]), ?_⟩
   intro i j hij
   let t : Fin n → kˣ := fun r ↦ if r = i then a else if r = j then a⁻¹ else 1
   refine ⟨t, ?_, ?_⟩
@@ -121,7 +117,7 @@ private theorem exists_conj_mem_diagonalTorus_apply_ne
     {i j : Fin n} (hij : i ≠ j) :
     ∃ t : Fin n → kˣ,
       toGL g * diagGL t * (toGL g)⁻¹ ∈ TauCeti.diagonalTorus k n ∧ t i ≠ t j := by
-  obtain ⟨t, htprod, htne⟩ := hsep.2 i j hij
+  obtain ⟨t, htprod, htne⟩ := hsep i j hij
   let d : SpecialLinearGroup (Fin n) k :=
     ⟨(diagGL t : Matrix (Fin n) (Fin n) k), by
       simpa only [diagGL_coe, det_diagonal] using htprod⟩
@@ -149,10 +145,15 @@ theorem mem_normalizer_diagonalTorus_iff_toGL_mem
     (Subgroup.le_normalizer (mem_diagonalTorus_iff_exists_diagGL.mpr ⟨d, rfl⟩))
     (permutationGL_mem_normalizer σ)
 
-/-- Coordinate separation includes nontriviality of the unit group. -/
-theorem DiagonalTorusSeparatesCoordinates.nontrivial
-    (hsep : DiagonalTorusSeparatesCoordinates k n) : Nontrivial kˣ := by
-  exact hsep.1
+/-- Coordinate separation implies that the unit group is nontrivial when there are at least two
+coordinates. -/
+theorem DiagonalTorusSeparatesCoordinates.nontrivial_of_not_subsingleton
+    (hsep : DiagonalTorusSeparatesCoordinates k n) (hn : ¬ Subsingleton (Fin n)) :
+    Nontrivial kˣ := by
+  let _ : Nontrivial (Fin n) := not_subsingleton_iff_nontrivial.mp hn
+  obtain ⟨i, j, hij⟩ := exists_pair_ne (Fin n)
+  obtain ⟨t, _, ht⟩ := hsep i j hij
+  exact nontrivial_of_ne (t i) (t j) ht
 
 /-- The homomorphism from the normalizer of the diagonal torus of `SL_n(k)` to the normalizer of
 the diagonal torus of `GL_n(k)`. -/
@@ -166,23 +167,41 @@ private def diagonalNormalizerToGL (hsep : DiagonalTorusSeparatesCoordinates k n
 diagonal torus. It is the coordinate permutation of the same matrix in `GL_n(k)`. -/
 def diagonalNormalizerPerm (hsep : DiagonalTorusSeparatesCoordinates k n) :
     Subgroup.normalizer (diagonalTorus k n : Set (SpecialLinearGroup (Fin n) k)) →*
-      Equiv.Perm (Fin n) :=
-  letI := hsep.nontrivial
-  TauCeti.diagonalNormalizerPerm.comp (diagonalNormalizerToGL hsep)
+      Equiv.Perm (Fin n) := by
+  classical
+  by_cases hn : Subsingleton (Fin n)
+  · exact 1
+  · let _ := hsep.nontrivial_of_not_subsingleton hn
+    exact TauCeti.diagonalNormalizerPerm.comp (diagonalNormalizerToGL hsep)
 
 /-- The coordinate permutation of a normalizer element of `SL_n(k)` is the coordinate permutation
 of the same matrix in `GL_n(k)`. -/
-@[simp]
 theorem diagonalNormalizerPerm_apply (hsep : DiagonalTorusSeparatesCoordinates k n)
+    (hn : ¬ Subsingleton (Fin n))
     (g : Subgroup.normalizer (diagonalTorus k n : Set (SpecialLinearGroup (Fin n) k))) :
     diagonalNormalizerPerm hsep g =
-      let _ := hsep.nontrivial
+      let _ := hsep.nontrivial_of_not_subsingleton hn
       TauCeti.diagonalNormalizerPerm
         ⟨toGL (g : SpecialLinearGroup (Fin n) k),
-          (mem_normalizer_diagonalTorus_iff_toGL_mem hsep).mp g.property⟩ :=
-  by
-    let _ := hsep.nontrivial
-    rfl
+          (mem_normalizer_diagonalTorus_iff_toGL_mem hsep).mp g.property⟩ := by
+  classical
+  rw [diagonalNormalizerPerm]
+  split
+  · contradiction
+  · rfl
+
+/-- There is only the trivial coordinate permutation when the coordinate type is a
+subsingleton. -/
+@[simp]
+theorem diagonalNormalizerPerm_apply_of_subsingleton
+    (hsep : DiagonalTorusSeparatesCoordinates k n) [Subsingleton (Fin n)]
+    (g : Subgroup.normalizer (diagonalTorus k n : Set (SpecialLinearGroup (Fin n) k))) :
+    diagonalNormalizerPerm hsep g = 1 := by
+  classical
+  rw [diagonalNormalizerPerm]
+  split
+  · rfl
+  · contradiction
 
 /-- The coordinate permutation of a normalizer element of the diagonal torus of `SL_n(k)` is
 trivial exactly for elements of the torus. -/
@@ -190,9 +209,18 @@ theorem diagonalNormalizerPerm_eq_one_iff (hsep : DiagonalTorusSeparatesCoordina
     (g : Subgroup.normalizer (diagonalTorus k n : Set (SpecialLinearGroup (Fin n) k))) :
     diagonalNormalizerPerm hsep g = 1 ↔
       (g : SpecialLinearGroup (Fin n) k) ∈ diagonalTorus k n := by
-  let _ := hsep.nontrivial
-  rw [diagonalNormalizerPerm_apply, TauCeti.diagonalNormalizerPerm_eq_one_iff,
-    mem_diagonalTorus_iff_toGL_mem]
+  classical
+  by_cases hn : Subsingleton (Fin n)
+  · let _ := hn
+    constructor
+    · intro _
+      rw [mem_diagonalTorus_iff_toGL_mem, TauCeti.mem_diagonalTorus_iff]
+      exact Matrix.isDiag_of_subsingleton _
+    · intro _
+      exact diagonalNormalizerPerm_apply_of_subsingleton hsep g
+  · let _ := hsep.nontrivial_of_not_subsingleton hn
+    rw [diagonalNormalizerPerm_apply hsep hn,
+      TauCeti.diagonalNormalizerPerm_eq_one_iff, mem_diagonalTorus_iff_toGL_mem]
 
 /-- A permutation matrix corrected by a sign in one diagonal position has determinant one. -/
 private theorem exists_toGL_eq_diagGL_mul_permutationGL (σ : Equiv.Perm (Fin n)) :
@@ -219,15 +247,22 @@ private theorem exists_toGL_eq_diagGL_mul_permutationGL (σ : Equiv.Perm (Fin n)
 the diagonal torus: a permutation matrix with a sign correcting its determinant. -/
 theorem diagonalNormalizerPerm_surjective (hsep : DiagonalTorusSeparatesCoordinates k n) :
     Function.Surjective (diagonalNormalizerPerm (k := k) (n := n) hsep) := by
-  let _ := hsep.nontrivial
-  intro σ
-  obtain ⟨g, d, hg⟩ := exists_toGL_eq_diagGL_mul_permutationGL (k := k) σ
-  have hgN : g ∈ Subgroup.normalizer (diagonalTorus k n : Set (SpecialLinearGroup (Fin n) k)) :=
-    mem_normalizer_diagonalTorus_of_toGL_mem
-      ((mem_normalizer_diagonalTorus_iff_exists (k := k)).mpr ⟨d, σ, hg⟩)
-  refine ⟨⟨g, hgN⟩, ?_⟩
-  rw [diagonalNormalizerPerm_apply]
-  exact diagonalNormalizerPerm_eq_of_eq_diagGL_mul_permutationGL _ d σ hg
+  classical
+  by_cases hn : Subsingleton (Fin n)
+  · let _ := hn
+    intro σ
+    refine ⟨1, ?_⟩
+    rw [map_one, Subsingleton.elim σ 1]
+  · let _ := hsep.nontrivial_of_not_subsingleton hn
+    intro σ
+    obtain ⟨g, d, hg⟩ := exists_toGL_eq_diagGL_mul_permutationGL (k := k) σ
+    have hgN : g ∈ Subgroup.normalizer
+        (diagonalTorus k n : Set (SpecialLinearGroup (Fin n) k)) :=
+      mem_normalizer_diagonalTorus_of_toGL_mem
+        ((mem_normalizer_diagonalTorus_iff_exists (k := k)).mpr ⟨d, σ, hg⟩)
+    refine ⟨⟨g, hgN⟩, ?_⟩
+    rw [diagonalNormalizerPerm_apply hsep hn]
+    exact diagonalNormalizerPerm_eq_of_eq_diagGL_mul_permutationGL _ d σ hg
 
 /-- **The Weyl group of the diagonal torus of `SL_n(k)`**: when the determinant-one diagonal
 torus separates coordinates, its normalizer modulo the torus is canonically the symmetric group
