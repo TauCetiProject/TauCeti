@@ -234,9 +234,7 @@ private theorem not_two_dvd_discr_X_pow_five_sub_X_sub_one :
   exact squarefree_map_of_nodup_factorDegrees (hf.map _).ne_zero
     (by rw [factorDegrees_X_pow_five_sub_X_sub_one_two]; decide)
 
-/-- **The Galois group of `X ^ 5 - X - 1` over `ℚ` is `S₅`.** The polynomial is irreducible
-modulo `5`, hence over `ℚ`, and modulo `2` it factors with degrees `3` and `2`, which exhibits a
-transposition in the Galois image; in prime degree this forces every permutation of the roots. -/
+/-- **The Galois group of `X ^ 5 - X - 1` over `ℚ` is `S₅`.** -/
 theorem surjective_galActionHom_X_pow_five_sub_X_sub_one :
     Function.Surjective
       (Gal.galActionHom ((X ^ 5 - X - 1 : ℤ[X]).map (Int.castRingHom ℚ)) ℂ) := by
