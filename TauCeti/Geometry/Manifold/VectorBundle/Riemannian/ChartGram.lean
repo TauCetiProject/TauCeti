@@ -173,6 +173,12 @@ theorem contMDiffOn_chartGramMatrix_entry
     (contMDiffOn_chartLocalFrame (I := I) (n := n) α i)
     (contMDiffOn_chartLocalFrame (I := I) (n := n) α j)
 
+/-- The determinant of the coordinate metric is `C^n` on the tangent-trivialization base set. -/
+theorem _root_.TauCeti.contMDiffOn_chartGramMatrix_det (α : M) :
+    ContMDiffOn I 𝓘(ℝ) n (fun x ↦ (chartGramMatrix (I := I) α x).det)
+      (trivializationAt E (TangentSpace I) α).baseSet :=
+  contMDiffOn_matrix_det_of_entries (contMDiffOn_chartGramMatrix_entry α)
+
 /-- Every adjugate entry of the chart Gram matrix is `C^n` on the tangent-trivialization base
 set. -/
 private lemma contMDiffOn_adjugate_chartGramMatrix_entry
