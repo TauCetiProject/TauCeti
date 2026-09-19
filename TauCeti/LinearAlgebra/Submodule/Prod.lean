@@ -52,6 +52,7 @@ end Submodule
 namespace TauCeti
 
 /-- Taking products of submodules commutes with indexed suprema, including the empty one. -/
+@[simp]
 theorem iSup_prod_submodule {R M N : Type*} {ι : Sort*} [Semiring R]
     [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N]
     (P : ι → Submodule R M) (Q : ι → Submodule R N) :
