@@ -68,7 +68,7 @@ theorem isInjective_loopProjective (X : C) :
 
 /-- A chosen extension `I(ΩX) ⟶ P(X)` of the loop inflation `ΩX ⟶ P(X)` along the suspension
 inflation `ΩX ⟶ I(ΩX)`. -/
-private noncomputable abbrev suspensionLoopMiddleMap (X : C) :
+private noncomputable def suspensionLoopMiddleMap (X : C) :
     hE.suspensionInjective (hE.enoughProjectives.loopObj X) ⟶
       hE.enoughProjectives.loopProjective X :=
   (hE.isInjective_loopProjective X).factorThru
@@ -174,7 +174,7 @@ theorem projectiveStableFunctor_map_fromSuspensionLoop_naturality {X Y : C} (f :
 
 /-- A chosen lift `I(X) ⟶ P(ΣX)` of the suspension deflation `I(X) ⟶ ΣX` along the loop
 deflation `P(ΣX) ⟶ ΣX`. -/
-private noncomputable abbrev loopSuspensionMiddleMap (X : C) :
+private noncomputable def loopSuspensionMiddleMap (X : C) :
     hE.suspensionInjective X ⟶ hE.enoughProjectives.loopProjective (hE.suspensionObj X) :=
   (hE.isProjective_suspensionInjective X).factorThru
     (E.isDeflation_g (hE.enoughProjectives.conflation_loopInflation_loopDeflation _))
@@ -209,7 +209,7 @@ private theorem toLoopSuspension_comp_loopInflation (X : C) :
 
 /-- A chosen lift `P(ΣX) ⟶ I(X)` of the loop deflation `P(ΣX) ⟶ ΣX` along the suspension
 deflation `I(X) ⟶ ΣX`. -/
-private noncomputable abbrev loopSuspensionInvMiddleMap (X : C) :
+private noncomputable def loopSuspensionInvMiddleMap (X : C) :
     hE.enoughProjectives.loopProjective (hE.suspensionObj X) ⟶ hE.suspensionInjective X :=
   (hE.enoughProjectives.isProjective_loopProjective _).factorThru
     (E.isDeflation_g (hE.suspensionPresentation X).conflation)
