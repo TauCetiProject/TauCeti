@@ -64,7 +64,7 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits
+open CategoryTheory CategoryTheory.Limits ZeroObject
 
 universe v u
 
@@ -130,41 +130,55 @@ theorem isResolving_isProjective
     exact ObjectProperty.IsStableUnderRetracts.of_biprod_left E.isProjective hbiprod
   finiteResolution := hfinite
 
-section DimensionShifting
+section ResolutionCover
 
-variable {E P} [E.IsResolving P]
+variable {E P} [P.IsClosedUnderIsomorphisms] [P.ContainsZero]
 
-/-- Every object of a category with a resolving property `P` is the quotient of a conflation
-`K ↪ Q ↠ X` whose middle term satisfies `P` and whose kernel again admits a finite
-`P`-resolution. -/
-theorem IsResolving.exists_conflation_prop_X₂_admitsFiniteResolution_X₁ (X : C) :
+/-- An object admitting a finite `P`-resolution is the quotient of a conflation `K ↪ Q ↠ X`
+whose middle term satisfies `P` and whose kernel again admits a finite `P`-resolution. -/
+theorem IsResolving.exists_conflation_prop_X₂_admitsFiniteResolution_X₁ (X : C)
+    (hX : E.admitsFiniteResolution P X) :
     ∃ (K Q : C) (i : K ⟶ Q) (p : Q ⟶ X) (hip : i ≫ p = 0), P Q ∧
       E.Conflation (ShortComplex.mk i p hip) ∧ E.admitsFiniteResolution P K := by
-  have : P.IsClosedUnderIsomorphisms := ObjectProperty.isClosedUnderIsomorphisms_of_containsZero P
-  obtain ⟨r⟩ := (E.admitsFiniteResolution_iff P).mp (IsResolving.finiteResolution X)
+  obtain ⟨r⟩ := (E.admitsFiniteResolution_iff P).mp hX
   obtain ⟨K, Q, i, p, hip, hQ, hc, s, -⟩ :=
     E.exists_conflation_of_exists_finiteResolution_length_le_succ (n := r.length) ⟨r, by omega⟩
   exact ⟨K, Q, i, p, hip, hQ, hc, (E.admitsFiniteResolution_iff P).mpr ⟨s⟩⟩
 
-/-- The kernel of a deflation from an object of `P`-dimension at most `n` onto an object of `P`
-has `P`-dimension at most `n`. -/
+end ResolutionCover
+
+section KernelResolution
+
+variable {E P} [P.IsClosedUnderIsomorphisms]
+
+/-- For a replete property closed under kernels of deflations between its objects, the kernel of a
+deflation from an object of `P`-dimension at most `n` onto an object of `P` has `P`-dimension at
+most `n`. -/
 theorem IsResolving.exists_finiteResolution_X₁_length_le_of_prop_X₃ {n : ℕ}
+    (hkernel : ∀ {T : ShortComplex C}, E.Conflation T → P T.X₂ → P T.X₃ → P T.X₁)
     {S : ShortComplex C} (hS : E.Conflation S) (h₃ : P S.X₃)
     (h₂ : ∃ r : E.FiniteResolution P S.X₂, r.length ≤ n) :
     ∃ r : E.FiniteResolution P S.X₁, r.length ≤ n := by
-  have : P.IsClosedUnderIsomorphisms := ObjectProperty.isClosedUnderIsomorphisms_of_containsZero P
+  let _ : P.ContainsZero := ⟨(0 : C), isZero_zero C,
+    hkernel (E.conflation_zero_id S.X₃) h₃ h₃⟩
   cases n with
   | zero =>
       obtain ⟨r, hr⟩ := h₂
       have hX₂ : P S.X₂ := by simpa using r.prop_syzygy hr
-      exact ⟨.base (IsResolving.prop_X₁ hS hX₂ h₃), by simp⟩
+      exact ⟨.base (hkernel hS hX₂ h₃), by simp⟩
   | succ n =>
       obtain ⟨K, Q, i, a, hia, hQ, hc, s, hs⟩ :=
         E.exists_conflation_of_exists_finiteResolution_length_le_succ h₂
       -- The kernel `L` of the composite deflation `Q ↠ X₂ ↠ X₃` satisfies `P`, and `K ↪ L ↠ X₁`.
       obtain ⟨L, c, α, β, hc', hβ, hL, hKL, -, -⟩ := E.exists_conflation_comp' hS hc
-      exact ⟨.step (IsResolving.prop_X₁ (S := ShortComplex.mk c (a ≫ S.g) hc') hL hQ h₃)
+      exact ⟨.step (hkernel (T := ShortComplex.mk c (a ≫ S.g) hc') hL hQ h₃)
         β α hβ hKL s, by simpa using hs⟩
+
+end KernelResolution
+
+section DimensionShifting
+
+variable {E P} [E.IsResolving P]
 
 /-- The two halves of the dimension-shifting induction: at level `n`, an extension of an object
 of `P` by an object of `P`-dimension at most `n` has `P`-dimension at most `n`, and a kernel of a
@@ -202,7 +216,7 @@ private theorem dimension_shift_aux (n : ℕ) :
     have hY₂ : E.Conflation T₂ := by
       simpa only [T₂, baseChange_def] using E.conflation_baseChange hc₀ sq.flip
     exact IsResolving.exists_finiteResolution_X₁_length_le_of_prop_X₃
-      (S := T₁) hY₁ hQ₀ (ext (S := T₂) hY₂ h₂ hK₀)
+      IsResolving.prop_X₁ (S := T₁) hY₁ hQ₀ (ext (S := T₂) hY₂ h₂ hK₀)
   induction n with
   | zero =>
       have ext : ∀ {S : ShortComplex C}, E.Conflation S → P S.X₃ →
@@ -221,6 +235,7 @@ private theorem dimension_shift_aux (n : ℕ) :
         intro S hS h₃ h₁
         obtain ⟨K, Q, i, a, hia, hQ, hc, -⟩ :=
           IsResolving.exists_conflation_prop_X₂_admitsFiniteResolution_X₁ (E := E) (P := P) S.X₂
+            (IsResolving.finiteResolution S.X₂)
         obtain ⟨L, c, α, β, hc', hβ, hL, hKL, -, -⟩ := E.exists_conflation_comp' hS hc
         obtain ⟨t, ht⟩ := ih.2 (S := ShortComplex.mk β α hβ) hKL
           (IsResolving.prop_X₁ (S := ShortComplex.mk c (a ≫ S.g) hc') hL hQ h₃) h₁

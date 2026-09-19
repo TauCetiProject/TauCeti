@@ -109,6 +109,7 @@ private theorem eulerClassFullSubcategory_base_eq {X : C} (hX : P X)
 private theorem eulerClassFullSubcategory_eq_aux (n : ℕ) :
     ∀ {X : C} (r s : E.FiniteResolution P X), r.length ≤ n →
       r.eulerClassFullSubcategory hP = s.eulerClassFullSubcategory hP := by
+  have : P.IsClosedUnderIsomorphisms := ObjectProperty.isClosedUnderIsomorphisms_of_containsZero P
   -- For two nontrivial resolutions, compare their first steps through a resolving cover of their
   -- pullback; dimension shifting supplies the shorter resolution needed for the induction.
   induction n with
@@ -136,7 +137,7 @@ private theorem eulerClassFullSubcategory_eq_aux (n : ℕ) :
               rw [baseChange_def] at hY₂
               obtain ⟨K'', Q'', i'', p'', h'', hQ'', hc'', hK''⟩ :=
                 IsResolving.exists_conflation_prop_X₂_admitsFiniteResolution_X₁
-                  (E := E) (P := P) (pullback p p')
+                  (E := E) (P := P) (pullback p p') (IsResolving.finiteResolution _)
               let t := ((E.admitsFiniteResolution_iff P).mp hK'').some
               obtain ⟨L, c, α, β, hc, hβ, hLc, hKL, -, -⟩ := E.exists_conflation_comp' hY₁ hc''
               obtain ⟨L', c', α', β', hc', hβ', hLc', hKL', -, -⟩ :=
@@ -201,10 +202,11 @@ private theorem eulerClassOf_eq_add_of_prop_X₃ {S : ShortComplex C} (hS : E.Co
     (h₃ : P S.X₃) (a₁ : E.admitsFiniteResolution P S.X₁)
     (a₂ : E.admitsFiniteResolution P S.X₂) (a₃ : E.admitsFiniteResolution P S.X₃) :
     E.eulerClassOf hP a₂ = E.eulerClassOf hP a₁ + E.eulerClassOf hP a₃ := by
+  have : P.IsClosedUnderIsomorphisms := ObjectProperty.isClosedUnderIsomorphisms_of_containsZero P
   -- Cover the middle term by a resolving object; the Noether conflation for its composite with
   -- the quotient expresses the two sides using the same kernel.
   obtain ⟨K, Q, i, a, hia, hQ, hc, hK⟩ :=
-    IsResolving.exists_conflation_prop_X₂_admitsFiniteResolution_X₁ (E := E) (P := P) S.X₂
+    IsResolving.exists_conflation_prop_X₂_admitsFiniteResolution_X₁ (E := E) (P := P) S.X₂ a₂
   obtain ⟨M, c, α, β, hc', hβ, hMc, hKM, -, -⟩ := E.exists_conflation_comp' hS hc
   have hM : P M := IsResolving.prop_X₁ (S := ShortComplex.mk _ _ hc') hMc hQ h₃
   have key : (ExactK0.of ⟨Q, hQ⟩ : ExactK0 (E.fullSubcategory P hP)) =
@@ -243,7 +245,7 @@ private theorem eulerClassOf_add_aux (n : ℕ) :
       rw [baseChange_def] at hY₂
       obtain ⟨K', Q', i', p', h', hQ', hc', hK'⟩ :=
         IsResolving.exists_conflation_prop_X₂_admitsFiniteResolution_X₁
-          (E := E) (P := P) (pullback S.g pZ)
+          (E := E) (P := P) (pullback S.g pZ) (IsResolving.finiteResolution _)
       obtain ⟨M, c, α, β, hMc', hβ, hMc, hK'M, -, -⟩ := E.exists_conflation_comp' hY₂ hc'
       have aY := IsResolving.finiteResolution (E := E) (P := P) (pullback S.g pZ)
       have aKZ := IsResolving.finiteResolution (E := E) (P := P) KZ
