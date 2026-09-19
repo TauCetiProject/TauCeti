@@ -29,10 +29,9 @@ fibre to regularity on every fibre.
 
 ## References
 
-This is the regular-cover criterion in `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2,
-item 8: a cover attached to `H` is regular (normal/Galois) exactly when `H` is normal. It uses
-Mathlib's covering-space lifting criterion, due to Junyan Xu, through Tau Ceti's pointed-cover
-classification; no external proof is copied or adapted here.
+This is the regular-cover criterion: a cover attached to `H` is regular (normal/Galois) exactly
+when `H` is normal. It uses Mathlib's covering-space lifting criterion, due to Junyan Xu, through
+Tau Ceti's pointed-cover classification.
 -/
 
 public section
@@ -57,12 +56,12 @@ theorem _root_.IsCoveringMap.isRegular_iff_normal_range
   constructor
   · intro htrans e'
     let := htrans
-    obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (Deck p) e e'
+    obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (deck p) e e'
     have hhome : ∃ h : E ≃ₜ E, h e = e' ∧ p ∘ h = p := by
       refine ⟨φ.1, ?_, ?_⟩
-      · simpa only [Deck.fiber_smul_coe] using congrArg Subtype.val hφ
+      · simpa only [deck.fiber_smul_coe] using congrArg Subtype.val hφ
       · funext z
-        exact Deck.map_proj φ z
+        exact deck.map_proj φ z
     have hrange :=
       (IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
         hp hp e.2 e'.2).mp hhome
@@ -77,9 +76,9 @@ theorem _root_.IsCoveringMap.isRegular_iff_normal_range
     obtain ⟨h, he, hcomp⟩ :=
       IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq
         hp hp e₀.2 e₁.2 h₀₁
-    let φ : Deck p := ⟨h, fun z ↦ congrFun hcomp z⟩
+    let φ : deck p := ⟨h, hcomp⟩
     refine ⟨φ, ?_⟩
     apply Subtype.ext
-    simpa only [Deck.fiber_smul_coe] using he
+    simpa only [deck.fiber_smul_coe] using he
 
 end TauCeti
