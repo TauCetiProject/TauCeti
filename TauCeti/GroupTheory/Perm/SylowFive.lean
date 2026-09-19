@@ -36,7 +36,7 @@ classification of the transitive subgroups of `S₅`: the transitive subgroups o
   between a Sylow `5`-subgroup of `S₅` and its normalizer.
 * `TauCeti.thirty_dvd_natCard_of_card_sylow_five_eq_six`: if it has six, its order is divisible
   by `30`.
-* `TauCeti.natCard_ne_thirty`: `S₅` has no subgroup of order `30`.
+* `TauCeti.natCard_subgroup_perm_ne_thirty`: `S₅` has no subgroup of order `30`.
 * `TauCeti.eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard`: a subgroup of `S₅` of order
   divisible by `30` is `A₅` or `S₅`.
 * `TauCeti.exists_sylow_le_le_normalizer_or_alternatingGroup_le`: a subgroup of `S₅` of order
@@ -161,9 +161,15 @@ theorem thirty_dvd_natCard_of_card_sylow_five_eq_six {G : Type*} [Group G] [Fini
 
 /-- A subgroup of the symmetric group on five points whose order is divisible by `30` is the
 alternating group or the whole symmetric group. -/
-theorem eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard [Fintype α] [DecidableEq α]
-    (hα : Nat.card α = 5) (G : Subgroup (Perm α)) (h30 : 30 ∣ Nat.card G) :
+theorem eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard (hα : Nat.card α = 5)
+    (G : Subgroup (Perm α)) (h30 : 30 ∣ Nat.card G) :
+    let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
+    let _ : Fintype α := Fintype.ofFinite α
+    let _ : DecidableEq α := Classical.decEq α
     G = alternatingGroup α ∨ G = ⊤ := by
+  let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
+  classical
+  let _ : Fintype α := Fintype.ofFinite α
   have h120 := natCard_perm_eq_120 hα
   have hGi := G.index_mul_card
   rw [h120] at hGi
@@ -183,33 +189,41 @@ theorem eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard [Fintype α] [Decida
     omega
 
 /-- The symmetric group on five points has no subgroup of order `30`. -/
-theorem natCard_ne_thirty (hα : Nat.card α = 5) (G : Subgroup (Perm α)) :
+theorem natCard_subgroup_perm_ne_thirty (hα : Nat.card α = 5) (G : Subgroup (Perm α)) :
     Nat.card G ≠ 30 := by
   let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
   classical
-  have := Fintype.ofFinite α
+  let _ : Fintype α := Fintype.ofFinite α
   intro h
   have : Nontrivial α := Finite.one_lt_card_iff_nontrivial.mp (by omega)
-  rcases eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard hα G (h ▸ dvd_rfl) with rfl | rfl
-  · rw [nat_card_alternatingGroup, hα] at h
-    norm_num [Nat.factorial] at h
-  · rw [card_top, natCard_perm_eq_120 hα] at h
-    norm_num at h
+  rcases eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard hα G (h ▸ dvd_rfl) with hG | hG
+  · have hcard := congrArg (fun H : Subgroup (Perm α) ↦ Nat.card H) hG
+    rw [h, nat_card_alternatingGroup, hα] at hcard
+    norm_num [Nat.factorial] at hcard
+  · have hcard := congrArg (fun H : Subgroup (Perm α) ↦ Nat.card H) hG
+    rw [h, card_top, natCard_perm_eq_120 hα] at hcard
+    norm_num at hcard
 
 /-- A subgroup `G` of the symmetric group on five points whose order is divisible by `5` either
 lies between a Sylow `5`-subgroup of the symmetric group and its normalizer, or contains the
 alternating group. -/
-theorem exists_sylow_le_le_normalizer_or_alternatingGroup_le [Fintype α] [DecidableEq α]
-    (hα : Nat.card α = 5)
+theorem exists_sylow_le_le_normalizer_or_alternatingGroup_le (hα : Nat.card α = 5)
     (G : Subgroup (Perm α)) (h5 : 5 ∣ Nat.card G) :
+    let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
+    let _ : Fintype α := Fintype.ofFinite α
+    let _ : DecidableEq α := Classical.decEq α
     (∃ P : Sylow 5 (Perm α), (P : Subgroup (Perm α)) ≤ G ∧ G ≤ normalizer (P : Set (Perm α))) ∨
       alternatingGroup α ≤ G := by
+  let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
+  classical
+  let _ : Fintype α := Fintype.ofFinite α
   rcases card_sylow_five_eq_one_or_six hα G h5 with h1 | h6
   · exact Or.inl (exists_sylow_le_le_normalizer_of_card_sylow_five_eq_one hα G h5 h1)
   · right
     rcases eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard hα G
-      (thirty_dvd_natCard_of_card_sylow_five_eq_six h5 h6) with rfl | rfl
-    exacts [le_rfl, le_top]
+      (thirty_dvd_natCard_of_card_sylow_five_eq_six h5 h6) with hG | hG
+    · simpa only using hG.symm.le
+    · exact hG ▸ le_top
 
 /-- A subgroup of the symmetric group on five points whose order is divisible by `5` has order
 `5`, `10`, `20`, `60` or `120`. -/
@@ -218,7 +232,7 @@ theorem natCard_mem_of_five_dvd_natCard (hα : Nat.card α = 5)
     Nat.card G ∈ ({5, 10, 20, 60, 120} : Finset ℕ) := by
   let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
   classical
-  have := Fintype.ofFinite α
+  let _ : Fintype α := Fintype.ofFinite α
   have hG : Nat.card G ∣ 120 := natCard_perm_eq_120 hα ▸ G.card_subgroup_dvd_card
   rcases exists_sylow_le_le_normalizer_or_alternatingGroup_le hα G h5 with ⟨P, -, hle⟩ | hA
   · have h20 := card_dvd_of_le hle
