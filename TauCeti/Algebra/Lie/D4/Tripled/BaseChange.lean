@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.BaseChange
 public import TauCeti.Algebra.Lie.D4.Tripled.PointsFunctor
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.GeneralLinearBaseChange
 
@@ -67,13 +66,6 @@ group scheme of type `D₄`.
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 12.2.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * B. Conrad, *Reductive Group Schemes*, §1.
-
-The declaration structure specializes the sibling files
-`TauCeti.Algebra.Lie.E6.DoubledMinuscule.BaseChange` and
-`TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.BaseChange` to the tripled carrier. Every
-construction below uses the generic Kostant base-change API from
-`Kostant/RootSubgroup/Scheme/ToralClosure/GeneralLinearBaseChange.lean`; in particular, none of
-the coordinate-ring calculation is repeated here.
 -/
 
 public section
