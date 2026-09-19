@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.PolynomialGaloisGroup
+public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
+public import Mathlib.FieldTheory.PolynomialGaloisGroup
+public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.RingTheory.Polynomial.Factors
 import TauCeti.GroupTheory.Perm.PermCongr
+import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
 # Galois orbits on the roots of a polynomial
@@ -40,6 +43,8 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
   set of its minimal polynomial.
 * `TauCeti.natCard_orbit_eq_natDegree_minpoly`: when the corresponding minimal polynomial is
   separable, an orbit has as many elements as its degree.
+* `TauCeti.natCard_rootSet_complex_eq_natDegree`: a monic integral polynomial with nonzero
+  discriminant has as many distinct complex roots as its degree.
 * `TauCeti.isPretransitive_iff_irreducible`: for separable `p` of positive degree, transitivity
   of the root action is equivalent to irreducibility of `p`.
 * `TauCeti.isPretransitive_range_galActionHom`: the Galois image of an irreducible polynomial,
@@ -60,9 +65,9 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
 
 public section
 
-namespace TauCeti
-
 open Polynomial
+
+namespace TauCeti
 
 universe u v w
 
@@ -187,6 +192,15 @@ theorem natCard_orbit_eq_natDegree_minpoly (x : p.rootSet E)
   rw [Nat.card_congr (Equiv.Set.image _ _ Subtype.val_injective),
     image_val_orbit_eq_rootSet_minpoly, Nat.card_eq_fintype_card,
     card_rootSet_eq_natDegree hsep hsplits]
+
+/-- A monic integral polynomial with nonzero discriminant has as many distinct complex roots as
+its degree. -/
+theorem natCard_rootSet_complex_eq_natDegree {f : ℤ[X]} (hf : f.Monic) (hd : f.discr ≠ 0) :
+    Nat.card ((f.map (Int.castRingHom ℚ)).rootSet ℂ) = f.natDegree := by
+  have hsep : (f.map (Int.castRingHom ℚ)).Separable := by
+    simpa using (hf.discr_ne_zero_iff_separable_map ℚ).mp hd
+  rw [Nat.card_eq_fintype_card, card_rootSet_eq_natDegree hsep Gal.splits_ℚ_ℂ.out,
+    hf.natDegree_map]
 
 /-! ## Transitivity and irreducibility -/
 

@@ -76,15 +76,6 @@ attribute [local instance] Gal.splits_ℚ_ℂ
 
 variable {f : ℤ[X]}
 
-/-- A monic integral polynomial with nonzero discriminant has as many distinct complex roots as
-its degree. -/
-theorem natCard_rootSet_complex_eq_natDegree (hf : f.Monic) (hd : f.discr ≠ 0) :
-    Nat.card ((f.map (Int.castRingHom ℚ)).rootSet ℂ) = f.natDegree := by
-  have hsep : (f.map (Int.castRingHom ℚ)).Separable := by
-    simpa using (hf.discr_ne_zero_iff_separable_map ℚ).mp hd
-  rw [Nat.card_eq_fintype_card, card_rootSet_eq_natDegree hsep Gal.splits_ℚ_ℂ.out,
-    hf.natDegree_map]
-
 open scoped Classical in
 /-- **Factor degrees are a full cycle type of the Galois image.** Let `f` be a monic integral
 polynomial and `p` a prime not dividing `disc f`. Some permutation of the complex roots of `f`
