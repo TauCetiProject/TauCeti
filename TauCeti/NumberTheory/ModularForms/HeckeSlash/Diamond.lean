@@ -307,8 +307,7 @@ theorem commute_heckeTCuspNat_diamondOpCusp_inv (hn : n.Coprime N) :
   apply LinearMap.ext
   intro f
   have := isFiniteRelIndex_adjugateGL_natDiagGL hn
-  change heckeTCuspNat k n (diamondOpCusp k (ZMod.unitOfCoprime n hn)⁻¹ f) =
-    diamondOpCusp k (ZMod.unitOfCoprime n hn)⁻¹ (heckeTCuspNat k n f)
+  simp only [Module.End.mul_apply]
   rw [← trace_translate_adjugateGL_natDiagGL_eq_heckeT_diamond k hn,
     trace_translate_adjugateGL_natDiagGL_eq_diamond_heckeT k hn]
 
