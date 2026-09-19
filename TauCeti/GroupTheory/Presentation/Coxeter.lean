@@ -50,13 +50,18 @@ hand-built matrix.
 * `TauCeti.length_coxeterRelators`: the relator count of a diagram on `n` nodes.
 * `TauCeti.normalClosure_relatorSet_coxeterRelators`: the finite list and Mathlib's ordered-pair
   set have the same normal closure.
-* `TauCeti.mulEquivCoxeterGroup` and `TauCeti.GroupPresentation.mulEquivCoxeterGroup`: a
-  transcription whose relators compile to the Coxeter relators of `M` presents `M.Group`.
-* `TauCeti.mulEquivPresentedGroupCoxeterAppend` and
-  `TauCeti.GroupPresentation.mulEquivPresentedGroupCoxeterAppend`: a transcription that appends
-  further relators to the Coxeter relators of `M` presents the group defined by Mathlib's Coxeter
-  relations together with those extra relations. The two `GroupPresentation` forms compare normal
-  closures; `TauCeti.Relator.relatorSet_eq_of_mem_map_toWord_iff` can supply that hypothesis from
+* `TauCeti.mulEquivCoxeterGroup`: the group presented by the Coxeter relator list of `M` is
+  `M.Group`.
+* `TauCeti.mulEquivPresentedGroupCoxeterAppend`: the group presented by that list followed by
+  further relators is the group defined by Mathlib's Coxeter relations together with those extra
+  relations.
+* `TauCeti.GroupPresentation.mulEquivCoxeterGroup` and
+  `TauCeti.GroupPresentation.mulEquivPresentedGroupCoxeterAppend`: the same two conclusions for a
+  transcribed presentation row. Neither asks the row's relators to be the Coxeter relators, or the
+  Coxeter relators followed by the extras, on the nose: each takes as hypothesis only that the
+  relation set of the transcription and the relation set of that list have the same normal closure,
+  which is the datum the quotient depends on.
+  `TauCeti.Relator.relatorSet_eq_of_mem_map_toWord_iff` can supply such a hypothesis from
   compiled-word membership.
 
 ## References
