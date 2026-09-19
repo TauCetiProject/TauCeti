@@ -82,12 +82,6 @@ instance ofInstances (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 end FinitePadicExtension
 
-instance finitePadicExtensionPadic (p : ℕ) [Fact p.Prime] :
-    FinitePadicExtension ℚ_[p] p where
-  algebra := inferInstance
-  toModuleFinite := inferInstance
-  toValuativeExtension := ⟨fun a b ↦ by simp⟩
-
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 variable (p : ℕ) [Fact p.Prime] [FinitePadicExtension K p]
