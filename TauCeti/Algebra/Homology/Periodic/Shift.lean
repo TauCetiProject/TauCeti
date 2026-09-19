@@ -35,7 +35,7 @@ cochain complexes.
 * `TauCeti.PeriodicComplex.instHasShift`: the resulting shift by `ℤ` on periodic complexes.
 * `TauCeti.PeriodicComplex.shiftFunctorIsoId`: the periodicity isomorphism `X⟦k⟧ ≅ X` for even
   `k` divisible by `n`.
-* `TauCeti.Homotopy.periodicShift`: the shift of a homotopy.
+* `Homotopy.periodicShift`: the shift of a homotopy.
 * `TauCeti.PeriodicComplex.homotopyCategoryShiftFunctorIsoId`: periodicity in the homotopy
   category.
 
@@ -49,11 +49,11 @@ cochain complexes.
 
 public section
 
+universe v u
+
 namespace TauCeti
 
 open CategoryTheory
-
-universe v u
 
 namespace PeriodicComplex
 
@@ -230,9 +230,11 @@ lemma shiftFunctorIsoId_inv_app_f (k : ℤ) (hk : (k : ZMod n) = 0) (he : Even k
 
 end PeriodicComplex
 
+end TauCeti
+
 namespace Homotopy
 
-open HomologicalComplex
+open CategoryTheory HomologicalComplex
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] {n : ℕ}
 
@@ -257,11 +259,15 @@ def periodicShift {K L : HomologicalComplex C (ComplexShape.up (ZMod n))} {φ₁
 lemma periodicShift_hom {K L : HomologicalComplex C (ComplexShape.up (ZMod n))}
     {φ₁ φ₂ : K ⟶ L}
     (h : Homotopy φ₁ φ₂) (k : ℤ) (i j : ZMod n) :
-    (TauCeti.Homotopy.periodicShift h k).hom i j =
+    (h.periodicShift k).hom i j =
       k.negOnePow • h.hom (i + k) (j + k) := by
-  rw [TauCeti.Homotopy.periodicShift.eq_def]
+  rw [periodicShift.eq_def]
 
 end Homotopy
+
+namespace TauCeti
+
+open CategoryTheory
 
 namespace PeriodicComplex
 
@@ -270,7 +276,7 @@ open HomologicalComplex
 variable (C : Type u) [Category.{v} C] [Preadditive C] (n : ℕ)
 
 instance : (homotopic C (ComplexShape.up (ZMod n))).IsCompatibleWithShift ℤ :=
-  ⟨fun k _ _ _ _ ⟨h⟩ => ⟨TauCeti.Homotopy.periodicShift h k⟩⟩
+  ⟨fun k _ _ _ _ ⟨h⟩ => ⟨h.periodicShift k⟩⟩
 
 /-- The periodic homotopy category carries the shift by `ℤ` induced from periodic complexes. -/
 noncomputable instance homotopyCategoryHasShift :
