@@ -58,7 +58,8 @@ variable {α : Type*}
 
 local instance sylowFiveFactPrimeFive : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
 
-private theorem natCard_perm_eq_120 [Finite α] (hα : Nat.card α = 5) : Nat.card (Perm α) = 120 := by
+/-- The symmetric group on a type with five elements has order `120`. -/
+theorem natCard_perm_eq_120 [Finite α] (hα : Nat.card α = 5) : Nat.card (Perm α) = 120 := by
   rw [Nat.card_perm, hα]
   rfl
 
