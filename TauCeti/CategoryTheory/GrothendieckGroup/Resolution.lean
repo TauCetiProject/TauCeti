@@ -229,6 +229,18 @@ class. -/
           rw [ih, ExactK0.of_biprod_fullSubcategory hP hQ hQ']
           abel
 
+variable [EssentiallySmall.{w} C]
+
+/-- Mapping the Euler class of a finite resolution along the full-subcategory inclusion gives its
+Euler class in the ambient exact Grothendieck group. -/
+@[simp] theorem map_eulerClassFullSubcategory (r : E.FiniteResolution P X) :
+    ExactK0.map P.ι (E.isConflationExact_ι hP) (r.eulerClassFullSubcategory hP) = r.eulerClass := by
+  induction r with
+  | base hX => rw [eulerClassFullSubcategory_base, ExactK0.map_of, eulerClass_base]; rfl
+  | step hQ i p zero hp r ih =>
+      rw [eulerClassFullSubcategory_step, map_sub, ExactK0.map_of, ih, eulerClass_step]
+      rfl
+
 end FullSubcategory
 
 end ExactStructure.FiniteResolution

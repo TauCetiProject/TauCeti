@@ -104,18 +104,13 @@ private theorem eulerClassFullSubcategory_base_eq {X : C} (hX : P X)
         eulerClassFullSubcategory_base, key]
       abel
 
-/-- The inductive core of
-`TauCeti.ExactStructure.IsResolving.eulerClassFullSubcategory_eq_eulerClassFullSubcategory`, on
-the length of the first resolution.
-
-For two first steps `K ↪ Q ↠ X` and `K' ↪ Q' ↠ X`, cover the pullback `Y` of `Q ↠ X` and
-`Q' ↠ X` by an object `Q''` of `P`, with kernel `K''`. The kernels `L` of `Q'' ↠ Q'` and `L'` of
-`Q'' ↠ Q` lie in `P`, and `K'' ↪ L ↠ K`, `K'' ↪ L' ↠ K'` are conflations. The induction hypothesis
-compares the given resolutions of `K` and `K'` with the ones through `L` and `L'`; dimension
-shifting makes the resolution of `K'` short enough for this. -/
+/-- Two finite `P`-resolutions have the same alternating class when the first has length at most
+`n`. -/
 private theorem eulerClassFullSubcategory_eq_aux (n : ℕ) :
     ∀ {X : C} (r s : E.FiniteResolution P X), r.length ≤ n →
       r.eulerClassFullSubcategory hP = s.eulerClassFullSubcategory hP := by
+  -- For two nontrivial resolutions, compare their first steps through a resolving cover of their
+  -- pullback; dimension shifting supplies the shorter resolution needed for the induction.
   induction n with
   | zero =>
       intro X r s h
@@ -201,13 +196,13 @@ theorem eulerClassOf_congr {X Y : C} (e : X ≅ Y) (hX : E.admitsFiniteResolutio
     eulerClassFullSubcategory_ofIso]
   exact eulerClassOf_eq hX _
 
-/-- Additivity of the Euler class on a conflation whose quotient term satisfies `P`. Cover the
-middle term by `Q ↠ X₂` with kernel `K`; the kernel `M` of `Q ↠ X₂ ↠ X₃` lies in `P`, and
-`K ↪ M ↠ X₁` computes the Euler class of `X₁`. -/
+/-- The Euler class is additive on a conflation whose quotient term satisfies `P`. -/
 private theorem eulerClassOf_eq_add_of_prop_X₃ {S : ShortComplex C} (hS : E.Conflation S)
     (h₃ : P S.X₃) (a₁ : E.admitsFiniteResolution P S.X₁)
     (a₂ : E.admitsFiniteResolution P S.X₂) (a₃ : E.admitsFiniteResolution P S.X₃) :
     E.eulerClassOf hP a₂ = E.eulerClassOf hP a₁ + E.eulerClassOf hP a₃ := by
+  -- Cover the middle term by a resolving object; the Noether conflation for its composite with
+  -- the quotient expresses the two sides using the same kernel.
   obtain ⟨K, Q, i, a, hia, hQ, hc, hK⟩ :=
     IsResolving.exists_conflation_prop_X₂_admitsFiniteResolution_X₁ (E := E) (P := P) S.X₂
   obtain ⟨M, c, α, β, hc', hβ, hMc, hKM, -, -⟩ := E.exists_conflation_comp' hS hc
@@ -219,19 +214,16 @@ private theorem eulerClassOf_eq_add_of_prop_X₃ {S : ShortComplex C} (hS : E.Co
     eulerClassOf_eq_sub_of_conflation hM hKM hK a₁, eulerClassOf_of_prop h₃, key]
   abel
 
-/-- The inductive core of `TauCeti.ExactStructure.IsResolving.eulerClassOf_eq_add_of_conflation`,
-on the length of a resolution of the quotient term.
-
-For `X₁ ↪ X₂ ↠ X₃` and a first step `K ↪ Q ↠ X₃`, the pullback `Y` of `X₂ ↠ X₃` along `Q ↠ X₃`
-is an extension `X₁ ↪ Y ↠ Q`, handled by the case of a resolving quotient, and an extension
-`K ↪ Y ↠ X₂`. Covering `Y` by `Q' ↠ Y` with kernel `K'`, the kernel `M` of `Q' ↠ Y ↠ X₂` is an
-extension `K' ↪ M ↠ K` whose quotient has a shorter resolution. -/
+/-- The Euler class is additive when the quotient has a finite `P`-resolution of length at most
+`n`. -/
 private theorem eulerClassOf_add_aux (n : ℕ) :
     ∀ {S : ShortComplex C}, E.Conflation S →
       (∃ t : E.FiniteResolution P S.X₃, t.length ≤ n) →
       ∀ (a₁ : E.admitsFiniteResolution P S.X₁) (a₂ : E.admitsFiniteResolution P S.X₂)
         (a₃ : E.admitsFiniteResolution P S.X₃),
         E.eulerClassOf hP a₂ = E.eulerClassOf hP a₁ + E.eulerClassOf hP a₃ := by
+  -- Pull back the conflation along the first resolving step of the quotient. A resolving cover of
+  -- the pullback yields a conflation whose quotient has a shorter resolution for the induction.
   have := ObjectProperty.isClosedUnderIsomorphisms_of_containsZero P
   induction n with
   | zero =>
@@ -294,12 +286,7 @@ theorem map_eulerClassFullSubcategory_eq_of {X : C}
     (r : E.FiniteResolution P X) :
     ExactK0.map P.ι (IsResolving.isConflationExact_ι E P) (r.eulerClassFullSubcategory hP) =
       ExactK0.of X := by
-  induction r with
-  | base hX => rw [eulerClassFullSubcategory_base, ExactK0.map_of]; rfl
-  | @step K Q X hQ i p zero hp r ih =>
-      rw [eulerClassFullSubcategory_step, map_sub, ExactK0.map_of, ih,
-        ExactK0.of_eq_sub_of_conflation (S := ShortComplex.mk i p zero) hp]
-      exact sub_sub_cancel _ _
+  rw [FiniteResolution.map_eulerClassFullSubcategory, r.eulerClass_eq_of]
 
 variable (E P)
 
