@@ -15,11 +15,6 @@ The standard split orthogonal Lie algebra has explicit Bourbaki-numbered raising
 Cartan generators in `TauCeti.TypeDStd`. This file packages their bracket relations as a
 `TauCeti.IsSerreSystem` and names the resulting homomorphism from the type-`D` Serre presentation.
 
-The only relations not already stated in the matrix API are the higher Serre relations in their
-Cartan-matrix exponent form. For a type-`D` Cartan entry, the exponent is zero at a diagonal or a
-nonadjacent pair and one at an adjacent pair. The proof therefore reduces to the existing
-self-bracket, nonadjacent-bracket, and double-bracket calculations.
-
 ## Main definitions and results
 
 * `TauCeti.TypeDStd.isSerreSystem_rootGenerator`: the standard matrix generators form a type-`D`

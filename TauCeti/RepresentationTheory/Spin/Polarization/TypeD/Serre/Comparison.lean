@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SerrePresentation
+public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Serre.Presentation
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.KostantLattice
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.RootGenerators
 
