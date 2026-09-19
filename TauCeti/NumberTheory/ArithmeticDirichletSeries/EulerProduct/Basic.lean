@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.ArithmeticFunction.LFunction
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution
 public import TauCeti.RingTheory.DedekindDomain.Ideal
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
 
@@ -47,7 +48,9 @@ no analytic convergence hypothesis enters.
   local factors.
 * `IsDedekindDomain.HeightOneSpectrum.one_lt_norm_absNorm_cpow` and
   `IsDedekindDomain.HeightOneSpectrum.absNorm_cpow_sub_one_ne_zero`: basic analytic bounds for
-  the complex powers of prime-ideal norms on the right half-plane.
+  the complex powers of prime-ideal norms on the right half-plane;
+* `TauCeti.logDeriv_one_sub_absNorm_cpow_neg`: the logarithmic derivative of a deleted Euler
+  factor.
 
 ## Implementation notes
 
@@ -144,6 +147,18 @@ theorem primeIdealPow_injective (P : HeightOneSpectrum (𝓞 K)) :
 end IsDedekindDomain.HeightOneSpectrum
 
 namespace TauCeti
+
+/-- The logarithmic derivative of a deleted Euler factor `1 - N(𝔭) ^ (-s)`. -/
+theorem logDeriv_one_sub_absNorm_cpow_neg {K : Type*} [Field K] [NumberField K]
+    (P : HeightOneSpectrum (𝓞 K)) {s : ℂ} (hs : 0 < s.re) :
+    logDeriv (fun z : ℂ ↦ 1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-z)) s =
+      Complex.log (Ideal.absNorm P.asIdeal) / ((Ideal.absNorm P.asIdeal : ℂ) ^ s - 1) := by
+  have h0 := P.natCast_absNorm_ne_zero
+  have hderiv := (((hasDerivAt_neg s).const_cpow (Or.inl h0)).const_sub 1).deriv
+  have hpow : (Ideal.absNorm P.asIdeal : ℂ) ^ s ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl h0)
+  have hsub := P.absNorm_cpow_sub_one_ne_zero hs
+  rw [logDeriv_apply, hderiv, Complex.cpow_neg]
+  field_simp
 
 /-- **Every nonzero ideal is eventually supported.** A finite set of height-one primes that
 contains all primes of norm at most `Ideal.absNorm A` already contains every prime divisor of `A`,

@@ -206,18 +206,6 @@ theorem tendsto_sub_one_mul_LSeries_ofBadPrimes (S : Finset (HeightOneSpectrum (
   filter_upwards [self_mem_nhdsWithin] with s (hs : 1 < s)
   rw [LSeries_ofBadPrimes S (by simpa using hs), mul_assoc]
 
-/-- The logarithmic derivative of a deleted Euler factor `1 - N(𝔭) ^ (-s)`. -/
-private theorem logDeriv_one_sub_absNorm_cpow_neg (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
-    (hs : 0 < s.re) :
-    logDeriv (fun z : ℂ ↦ 1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-z)) s =
-      Complex.log (Ideal.absNorm P.asIdeal) / ((Ideal.absNorm P.asIdeal : ℂ) ^ s - 1) := by
-  have h0 := P.natCast_absNorm_ne_zero
-  have hderiv := (((hasDerivAt_neg s).const_cpow (Or.inl h0)).const_sub 1).deriv
-  have hpow : (Ideal.absNorm P.asIdeal : ℂ) ^ s ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl h0)
-  have hsub := P.absNorm_cpow_sub_one_ne_zero hs
-  rw [logDeriv_apply, hderiv, Complex.cpow_neg]
-  field_simp
-
 /-- **The logarithmic derivative after deleting Euler factors.** For a finite set `S` of primes
 and `Re s > 1`, the logarithmic derivative of `L_S(s) = ζ_K(s) * ∏ 𝔭 ∈ S, (1 - N(𝔭) ^ (-s))` is
 that of `ζ_K` plus `∑ 𝔭 ∈ S, log N(𝔭) / (N(𝔭) ^ s - 1)`. -/
