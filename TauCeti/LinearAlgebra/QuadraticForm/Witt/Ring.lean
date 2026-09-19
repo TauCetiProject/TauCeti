@@ -26,7 +26,8 @@ The ideal is easy to describe because the hyperbolic plane absorbs tensor produc
 subgroup `ℤ · [ℍ]`. Consequently two forms have the same Witt class exactly when they differ by
 hyperbolic planes, which by the uniqueness half of Witt decomposition happens exactly when their
 anisotropic parts are isometric. Each Witt class therefore has a canonical representative, the
-anisotropic part, and the Witt ring is the set of anisotropic classes with the induced operations.
+anisotropic part, unique up to isometry. Under this identification the ring operations take the
+anisotropic part after the usual operations on forms.
 
 Scaling by `-1` supplies additive inverses modulo hyperbolic planes — `q ⊥ (-q)` is `dim q`
 copies of `ℍ` — so every element of `W(K)` is the Witt class of an honest form even though `GW(K)`
@@ -131,18 +132,18 @@ theorem toWittGrothendieck_injective :
     Function.Injective (toWittGrothendieck (K := K)) :=
   Algebra.GrothendieckAddGroup.ofRingHom_injective
 
--- `toWittGrothendieck` is `Algebra.GrothendieckAddGroup.ofRingHom`, whose body is not exposed
--- outside its own module; this is the bridge to the underlying additive map.
-private theorem toWittGrothendieck_eq_of (x : RegularFormClass K) :
+/-- The Witt–Grothendieck class map agrees with the canonical map into the underlying additive
+Grothendieck group. -/
+theorem toWittGrothendieck_apply (x : RegularFormClass K) :
     toWittGrothendieck x = Algebra.GrothendieckAddGroup.of x :=
-  congrFun Algebra.GrothendieckAddGroup.coe_ofRingHom x
+  Algebra.GrothendieckAddGroup.ofRingHom_apply x
 
 /-- Every element of the Witt-Grothendieck ring is a formal difference of two isometry
 classes. -/
 theorem exists_eq_sub_toWittGrothendieck (z : WittGrothendieckRing K) :
     ∃ x y : RegularFormClass K, z = toWittGrothendieck x - toWittGrothendieck y := by
   obtain ⟨x, y, hxy⟩ := Algebra.GrothendieckAddGroup.exists_eq_sub_of z
-  exact ⟨x, y, by rw [toWittGrothendieck_eq_of, toWittGrothendieck_eq_of, hxy]⟩
+  exact ⟨x, y, by rw [toWittGrothendieck_apply, toWittGrothendieck_apply, hxy]⟩
 
 /-- The rank of a virtual form, as a ring homomorphism to `ℤ`. On the class of an honest form it
 is the dimension of the underlying space. -/
@@ -152,7 +153,7 @@ noncomputable def WittGrothendieckRing.rank : WittGrothendieckRing K →+* ℤ :
 @[simp]
 theorem WittGrothendieckRing.rank_toWittGrothendieck (x : RegularFormClass K) :
     WittGrothendieckRing.rank (toWittGrothendieck x) = (RegularFormClass.rank x : ℤ) := by
-  rw [toWittGrothendieck_eq_of, WittGrothendieckRing.rank,
+  rw [toWittGrothendieck_apply, WittGrothendieckRing.rank,
     Algebra.GrothendieckAddGroup.liftRingHom_apply_of, RingHom.comp_apply,
     RegularFormClass.rankHom_apply, Nat.coe_castRingHom]
 
@@ -249,7 +250,7 @@ theorem wittClass_anisotropicPart (x : RegularFormClass K) :
 
 /-- **Anisotropic forms are separated by their Witt classes**: this is Witt's theorem that the
 anisotropic part is a complete invariant. -/
-theorem eq_of_wittClass_eq_of_anisotropic {x y : RegularFormClass K}
+theorem eq_of_anisotropic_of_anisotropic_of_wittClass_eq {x y : RegularFormClass K}
     (hx : RegularFormClass.Anisotropic x) (hy : RegularFormClass.Anisotropic y)
     (h : wittClass x = wittClass y) : x = y := by
   rw [← RegularFormClass.anisotropicPart_eq_self hx, ← RegularFormClass.anisotropicPart_eq_self hy]
@@ -287,7 +288,8 @@ noncomputable def WittRing.dimMod2 : WittRing K →+* ZMod 2 :=
     obtain ⟨m, rfl⟩ := mem_hyperbolicIdeal_iff.mp hz
     rw [RingHom.comp_apply, map_zsmul, WittGrothendieckRing.rank_toWittGrothendieck,
       rank_hyperbolicClass, map_zsmul, eq_intCast]
-    simp [show (2 : ZMod 2) = 0 by decide]
+    change m • (0 : ZMod 2) = 0
+    exact smul_zero m
 
 @[simp]
 theorem WittRing.dimMod2_wittClass (x : RegularFormClass K) :

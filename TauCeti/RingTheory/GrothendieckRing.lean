@@ -156,6 +156,9 @@ noncomputable def ofRingHom : S →+* GrothendieckAddGroup S where
 @[simp]
 theorem coe_ofRingHom : ⇑(ofRingHom : S →+* GrothendieckAddGroup S) = of := (rfl)
 
+/-- The canonical ring map agrees with the canonical additive map on elements. -/
+theorem ofRingHom_apply (a : S) : ofRingHom a = of a := (rfl)
+
 /-- A cancellative semiring embeds into its Grothendieck ring. -/
 theorem ofRingHom_injective [IsCancelAdd S] :
     Function.Injective (ofRingHom : S →+* GrothendieckAddGroup S) :=
