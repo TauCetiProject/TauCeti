@@ -105,8 +105,9 @@ That the four normal forms exhaust the conjugacy classes is
 `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ConjugacyClasses`; as in
 `TauCeti/RepresentationTheory/CharacterTable/GL2/PrincipalSeries/CharacterValues.lean`, the values
 below are stated at the normal forms themselves rather than assembled into a single case
-distinction.  None of the class-function values is a `simp` lemma: they evaluate a class function
-at a normal form, and neither side is a normal form for `simp`.
+distinction.  Each of the four class-function values is a `simp` lemma, as are the four character
+values it specialises to: the left-hand side is `indClassFun` (respectively the character) at one
+of the normal forms, and the right-hand side is the closed form it reduces to.
 
 ## References
 
@@ -280,6 +281,7 @@ theorem indClassFun_eq_zero_of_forall_sq_ne_zero (f : GL2ScalarUnipotent F → k
 conjugate of it is itself and lies in `Z U`, and each of the `[GL₂(F) : Z U]` cosets contributes
 the same value.  Over a field with `q` elements the index is `q² - 1`, by
 `TauCeti.index_gl2ScalarUnipotent`. -/
+@[simp]
 theorem indClassFun_scalar (f : GL2ScalarUnipotent F → k) (a : Fˣ) :
     indClassFun (GL2ScalarUnipotent F) f (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
       (GL2ScalarUnipotent F).index •
@@ -297,6 +299,7 @@ theorem indClassFun_scalar (f : GL2ScalarUnipotent F → k) (a : Fˣ) :
 /-- **The induced class function vanishes on the split semisimple classes**: if `diag (a, b)`
 differed from a scalar `u` by a square-zero matrix then `(a - u)² = (b - u)² = 0`, so
 `a = u = b`. -/
+@[simp]
 theorem indClassFun_diagGL (f : GL2ScalarUnipotent F → k) {t : Fin 2 → Fˣ} (ht : t 0 ≠ t 1) :
     indClassFun (GL2ScalarUnipotent F) f (diagGL t) = 0 := by
   refine indClassFun_eq_zero_of_forall_sq_ne_zero f fun u hu => ht ?_
@@ -314,6 +317,7 @@ variable {E : Type*} [Field E] [Algebra F E] (hE : Module.finrank F E = 2)
 
 /-- **The induced class function vanishes on the elliptic classes**: `E` is a field, so
 `(x - u)² = 0` would force `x` to be the scalar `u`, which lies in `F`. -/
+@[simp]
 theorem indClassFun_gl2NonSplitTorusHom (f : GL2ScalarUnipotent F → k) {x : Eˣ}
     (hx : (x : E) ∉ Set.range (algebraMap F E)) :
     indClassFun (GL2ScalarUnipotent F) f (GL2NonSplitTorusHom F E hE x) = 0 := by
@@ -361,6 +365,7 @@ with `b ≠ 0` is conjugated into `Z U` exactly by the upper triangular matrices
 sends the block to `!![a, c⁻¹ b; 0, a]`, so the summands run over all the Jordan blocks with
 diagonal entry `a` and nonzero off-diagonal entry.  In particular the value does not depend on
 `b`. -/
+@[simp]
 theorem indClassFun_jordanGL (f : GL2ScalarUnipotent F → k) (a : Fˣ) {b : F} (hb : b ≠ 0) :
     indClassFun (GL2ScalarUnipotent F) f (jordanGL a b) =
       ∑ c : Fˣ, f ⟨jordanGL a (c : F), jordanGL_mem_gl2ScalarUnipotent a (c : F)⟩ := by
