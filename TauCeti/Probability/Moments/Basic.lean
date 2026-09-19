@@ -39,14 +39,8 @@ theorem isProbabilityMeasure_of_mgf_zero_eq_one (hmgf : mgf X μ 0 = 1) :
   exact ⟨(ENNReal.toReal_eq_one_iff _).1 hmgf⟩
 
 /-- **The moment-generating function of a convolution is the product of the two
-moment-generating functions.** A convolution is the image of the product measure under addition,
-so the exponential moment factors over the two coordinates and Fubini
-(`MeasureTheory.integral_prod_mul`) separates it.  This is the transform companion of
-`MeasureTheory.charFun_conv`.
-
-No integrability hypothesis is needed, even though Mathlib totalizes a divergent `mgf` to `0`:
-`integral_prod_mul` is itself unconditional, and as soon as one of the two exponential moments
-diverges both sides are `0`. -/
+moment-generating functions.** This is the transform companion of `MeasureTheory.charFun_conv`.
+No integrability hypothesis is needed, even though Mathlib totalizes a divergent `mgf` to `0`. -/
 theorem mgf_id_conv {μ ν : Measure ℝ} [SFinite μ] [SFinite ν] :
     mgf id (μ ∗ ν) = mgf id μ * mgf id ν := by
   ext t

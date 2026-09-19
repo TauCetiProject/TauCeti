@@ -45,13 +45,10 @@ distributions …")
 records the determinacy fact as an open gap in Mathlib; the results here complete it for finite
 measures, both via the polynomial-moment route and directly from the moment-generating function.
 
-The transform route is shorter, because Mathlib's `ProbabilityTheory.eqOn_complexMGF_of_mgf'`
-already performs the strip propagation from an equality of moment-generating functions.  What
-remains is to read off the imaginary axis, so this file also records the last two steps as named
-theorems: a finite measure on `ℝ` with finite exponential moments near `0` is determined by its
-moment-generating function.  Their hypothesis is an equality of the two moment-generating
-functions as functions on all of `ℝ`, not merely near the origin; see the theorem docstrings for
-what that asks of a caller who only knows a closed form on the integrability set.
+This file also records determinacy directly from the moment-generating function: a measure on `ℝ`
+with finite exponential moments near `0` is determined among finite measures by its
+moment-generating function.  The hypothesis requires equality on all of `ℝ`, not merely near the
+origin; behavior outside the integrability region must be established separately.
 
 ## Main declarations
 
@@ -80,17 +77,20 @@ variable {μ ν : Measure ℝ}
 /-! ### Determinacy from the moment-generating function -/
 
 /-- **Determinacy at the level of characteristic functions, from the moment-generating function.**
-Two finite measures on `ℝ`, one of them with finite exponential moments near `0`, that have the
-same moment-generating function have the same characteristic function.
+Two measures on `ℝ`, one with finite exponential moments near `0` and the other finite, that have
+the same moment-generating function have the same characteristic function.
 
 The hypothesis is equality of the two moment-generating functions at *every* real `t`, including
 the `t` at which they are `0` only because Mathlib totalizes a divergent integral.  A caller who
 knows a closed form on the integrability set must therefore still settle the complement, by
 proving each side non-integrable there and closing the goal with
 `ProbabilityTheory.mgf_undef` twice. -/
-theorem charFun_eq_of_mgf_eq [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+theorem charFun_eq_of_mgf_eq [IsFiniteMeasure ν]
     (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ)) (hmgf : mgf id μ = mgf id ν) :
     charFun μ = charFun ν := by
+  let _ : IsFiniteMeasure μ :=
+    (integrable_const_iff_isFiniteMeasure one_ne_zero).mp <| by
+      simpa using integrable_of_mem_integrableExpSet (interior_subset hμ)
   have hzero : μ = 0 ↔ ν = 0 := by
     have h0 : μ.real Set.univ = ν.real Set.univ := by
       simpa only [mgf_zero'] using congrFun hmgf 0
@@ -110,10 +110,13 @@ The strip hypothesis is asked of one measure only: evaluating the equality of mo
 functions at `0` already matches the two total masses, so the second measure is zero exactly when
 the first is, which is all the strip propagation needs.  As in `charFun_eq_of_mgf_eq`, the
 moment-generating functions must agree at every real `t`, not only on the integrability set. -/
-theorem Measure.ext_of_mgf [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+theorem Measure.ext_of_mgf [IsFiniteMeasure ν]
     (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ)) (hmgf : mgf id μ = mgf id ν) :
-    μ = ν :=
-  Measure.ext_of_charFun (charFun_eq_of_mgf_eq hμ hmgf)
+    μ = ν := by
+  let _ : IsFiniteMeasure μ :=
+    (integrable_const_iff_isFiniteMeasure one_ne_zero).mp <| by
+      simpa using integrable_of_mem_integrableExpSet (interior_subset hμ)
+  exact Measure.ext_of_charFun (charFun_eq_of_mgf_eq hμ hmgf)
 
 /-! ### Determinacy from the moments -/
 
