@@ -20,7 +20,6 @@ import all TauCeti.Combinatorics.Enumerative.PerfectMatching
 `OrientedPlanarDiagram.ReidemeisterTwo` inserts the existing oriented clasp across a common
 face of a planar rotation system, or removes such a clasp. Both endpoints are planar diagrams;
 the insertion constructor takes an explicit certificate for the resulting rotation system.
-Thus it does not assume that arbitrary algebraic clasp insertions preserve planarity.
 The relation covers arcs incident to crossings on a common face boundary. Moves involving
 crossing-free circles or separate boundary cycles require additional placement data.
 
@@ -36,22 +35,39 @@ polynomial*, Topology 26 (1987), 395–407.
 
 public section
 
+/-! The two distinct arcs face one another across a common face in the endpoint convention
+of `insertClasp`. The opposite side of the second arc is essential. -/
+namespace TauCeti.PDCode
+
+variable {n : ℕ}
+
+/-- The two selected arc sides lie on one face boundary in the insertion convention. -/
+structure ClaspLocal (D : PDCode n) (p q : Fin (4 * n)) : Prop where
+  /-- The chosen endpoints differ. -/
+  ne : q ≠ p
+  /-- The chosen arcs differ. -/
+  ne_edgePair : q ≠ D.edgePair.val p
+  /-- The facing sides lie on the same boundary cycle. -/
+  sameCycle : D.projectionTriple.σinf.SameCycle p (D.edgePair.val q)
+
+end TauCeti.PDCode
+
 namespace TauCeti.OrientedPlanarDiagram
 
 /-- Second Reidemeister moves on planar rotation-system diagrams, with the two selected arc
 sides on one face boundary. The symmetric constructor includes clasp removal. -/
-inductive ReidemeisterTwo : {n m : ℕ} → OrientedPlanarDiagram n →
+inductive IsReidemeisterTwo : {n m : ℕ} → OrientedPlanarDiagram n →
     OrientedPlanarDiagram m → Prop
   | insert {n : ℕ} (D : OrientedPlanarDiagram n) (p q : Fin (4 * n)) (b : Bool)
       (h : D.val.toPDCode.ClaspLocal p q)
       (hplanar : (D.val.insertClasp p q b h.ne h.ne_edgePair).toPDCode.IsPlanar) :
-      ReidemeisterTwo D ⟨D.val.insertClasp p q b h.ne h.ne_edgePair, hplanar⟩
+      IsReidemeisterTwo D ⟨D.val.insertClasp p q b h.ne h.ne_edgePair, hplanar⟩
   | symm {n m : ℕ} {D : OrientedPlanarDiagram n} {E : OrientedPlanarDiagram m} :
-      ReidemeisterTwo D E → ReidemeisterTwo E D
+      IsReidemeisterTwo D E → IsReidemeisterTwo E D
 
 /-- A local second Reidemeister move between planar diagrams preserves the normalized bracket. -/
-theorem ReidemeisterTwo.normalizedKauffmanBracket_eq {n m : ℕ}
-    {D : OrientedPlanarDiagram n} {E : OrientedPlanarDiagram m} (h : ReidemeisterTwo D E)
+theorem IsReidemeisterTwo.normalizedKauffmanBracket_eq {n m : ℕ}
+    {D : OrientedPlanarDiagram n} {E : OrientedPlanarDiagram m} (h : IsReidemeisterTwo D E)
     {R : Type*} [CommRing R] (a : Rˣ) :
     E.val.normalizedKauffmanBracket a = D.val.normalizedKauffmanBracket a := by
   induction h with
@@ -87,13 +103,17 @@ theorem orientedPDCodeOneCrossingPositive_isPlanar : (D₀).toPDCode.IsPlanar :=
 
 /-- Slots zero and three face each other across the two-sided face of the one-crossing code. -/
 theorem orientedPDCodeOneCrossingPositive_claspLocal : (D₀).toPDCode.ClaspLocal 0 3 := by
-  constructor <;> decide
+  constructor
+  · decide
+  · decide
+  · simpa only [PDCode.projectionTriple_σinf] using
+      (show (D₀).toPDCode.facePerm.SameCycle 0 ((D₀).edgePair.val 3) by decide)
 
 /-- Reversing only the second selected arc chooses a different face and fails locality. -/
 theorem orientedPDCodeOneCrossingPositive_not_claspLocal : ¬(D₀).toPDCode.ClaspLocal 0 2 := by
   intro h
   have hn : ¬(D₀).toPDCode.facePerm.SameCycle 0 ((D₀).edgePair.val 2) := by decide
-  exact hn h.sameCycle
+  exact hn (by simpa only [PDCode.projectionTriple_σinf] using h.sameCycle)
 
 private theorem oneCrossing_insertClasp_connected (t b : Bool) :
     ((D₀).insertClasp 0 (if t then 2 else 3) b (by cases t <;> decide)
@@ -131,8 +151,8 @@ theorem orientedPDCodeOneCrossingPositive_not_isPlanar_insertClasp (b : Bool) :
   cases b <;> decide +kernel
 
 /-- A nondegenerate second Reidemeister move on the existing one-crossing diagram. -/
-theorem orientedPDCodeOneCrossingPositive_reidemeisterTwo (b : Bool) :
-    OrientedPlanarDiagram.ReidemeisterTwo
+theorem orientedPDCodeOneCrossingPositive_isReidemeisterTwo (b : Bool) :
+    OrientedPlanarDiagram.IsReidemeisterTwo
       ⟨D₀, orientedPDCodeOneCrossingPositive_isPlanar⟩
       ⟨(D₀).insertClasp 0 3 b (by decide) (by decide),
         orientedPDCodeOneCrossingPositive_isPlanar_insertClasp b⟩ :=
