@@ -207,18 +207,6 @@ theorem twoByTwo_simplyBlockedDifferential_cycle :
   rw [twoByTwo_simplyBlockedDifferential_apply]
   simp [twoByTwoSimplyBlockedCycle]
 
-private theorem twoByTwoSwap_bidegree :
-    OddComponentGridDiagram.twoByTwo.bidegree GridState.twoByTwoSwap = (0, 0) := by
-  apply Prod.ext
-  · simpa only [OddComponentGridDiagram.bidegree_fst] using
-      maslovOℤ_twoByTwo_twoByTwoSwap
-  · have h := (OddComponentGridDiagram.twoByTwo.two_mul_alexanderℤ
-        GridState.twoByTwoSwap)
-    rw [alexanderTwoℤ_twoByTwo_twoByTwoSwap] at h
-    have hA : OddComponentGridDiagram.twoByTwo.alexanderℤ GridState.twoByTwoSwap = 0 := by
-      omega
-    simpa only [OddComponentGridDiagram.bidegree_snd] using hA
-
 /-- The surviving two-by-two simply blocked cycle is homogeneous of
 Maslov--Alexander bidegree `(0, 0)`. -/
 theorem twoByTwoSimplyBlockedCycle_mem_bigradedChainHatPiece :
@@ -236,6 +224,6 @@ theorem twoByTwoSimplyBlockedCycle_mem_bigradedChainHatPiece :
     simp [twoByTwoSimplyBlockedCycle, MvPolynomial.coeff_one, Ne.symm h] at he
   subst e
   rw [Prod.ext_iff]
-  simp [Finsupp.degree_apply, twoByTwoSwap_bidegree]
+  simp [Finsupp.degree_apply, OddComponentGridDiagram.bidegree_twoByTwo_twoByTwoSwap]
 
 end TauCeti.GridDiagram
