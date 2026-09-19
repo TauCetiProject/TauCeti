@@ -92,10 +92,10 @@ namespace MeasureTheory
 
 /-- A function locally integrable on `Ω` and vanishing almost everywhere on `Ω` off a compact
 `K ⊆ Ω` is, after extension by zero, integrable on the whole space. -/
-theorem integrable_indicator_of_isCompact {X F : Type*} [NormedAddCommGroup X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] [NormedAddCommGroup F] {μ : Measure X}
-    {Ω : Opens X} {f : X → F} {K : Set X} (hK : IsCompact K) (hKΩ : K ⊆ Ω)
-    (hloc : LocallyIntegrableOn f Ω μ)
+theorem integrable_indicator_of_isCompact {X F : Type*} [TopologicalSpace X] [T2Space X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] [TopologicalSpace F] [ESeminormedAddMonoid F]
+    [PseudoMetrizableSpace F] {μ : Measure X} {Ω : Opens X} {f : X → F} {K : Set X}
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hloc : LocallyIntegrableOn f Ω μ)
     (hf : ∀ᵐ x ∂μ.restrict Ω, x ∉ K → f x = 0) :
     Integrable ((Ω : Set X).indicator f) μ := by
   have hae : (Ω : Set X).indicator f =ᵐ[μ] K.indicator f := by
