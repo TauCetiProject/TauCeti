@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.RingDivision
 public import Mathlib.Data.Int.ConditionallyCompleteOrder
 public import TauCeti.Algebra.Module.GradedModule.Polynomial
+public import TauCeti.Algebra.Module.GradedModule.Shift
 public import TauCeti.Algebra.Module.Torsion.Basic
 
 /-!
@@ -25,7 +26,8 @@ graded module over `𝔽[U]` on which `U` lowers the Alexander grading by one.
 The file shows that the invariant is well behaved without appeal to the structure theorem for
 graded `k[X]`-modules:
 
-* over a field, a homogeneous element is torsion exactly when a power of `X` kills it
+* over a field, when `X` lowers degree by a nonzero `d`, a homogeneous element is torsion exactly
+  when a power of `X` kills it
   (`InternalGrading.mem_torsion_iff_exists_X_pow_smul_eq_zero`), because the terms `c • X ^ n • x`
   of `a • x` lie in pairwise distinct degrees; so `G.nonTorsionDegrees` are the degrees of the
   homogeneous elements no power of `X` kills
@@ -92,8 +94,35 @@ theorem mem_nonTorsionDegrees {G : InternalGrading k M} {p : ℤ} :
     p ∈ G.nonTorsionDegrees ↔ ∃ x ∈ G.piece p, x ∉ Submodule.torsion k[X] M :=
   Iff.rfl
 
+/-- Shifting a grading by `c` subtracts `c` from every non-torsion degree. -/
+@[simp]
+theorem nonTorsionDegrees_shift (G : InternalGrading k M) (c : ℤ) :
+    (G.shift c).nonTorsionDegrees = OrderIso.addRight (-c) '' G.nonTorsionDegrees := by
+  ext p
+  simp only [mem_nonTorsionDegrees, shift_piece, Set.mem_image]
+  constructor
+  · rintro ⟨x, hx, hxt⟩
+    refine ⟨p + c, ⟨x, hx, hxt⟩, ?_⟩
+    simp only [OrderIso.addRight_apply]
+    omega
+  · rintro ⟨q, ⟨x, hx, hxt⟩, rfl⟩
+    refine ⟨x, ?_, hxt⟩
+    have hqc : OrderIso.addRight (-c) q + c = q := by
+      simp only [OrderIso.addRight_apply]
+      omega
+    rw [hqc]
+    exact hx
+
+/-- The maximal non-torsion degree decreases by `c` when the grading is shifted by `c`. -/
+theorem maxNonTorsionDegree_shift (G : InternalGrading k M) (c : ℤ)
+    (hne : G.nonTorsionDegrees.Nonempty) (hbdd : BddAbove G.nonTorsionDegrees) :
+    (G.shift c).maxNonTorsionDegree = G.maxNonTorsionDegree - c := by
+  rw [maxNonTorsionDegree_def, nonTorsionDegrees_shift, ← OrderIso.map_csSup' _ hne hbdd,
+    OrderIso.addRight_apply, maxNonTorsionDegree_def, sub_eq_add_neg]
+
 /-- A graded `k[X]`-module has a homogeneous non-torsion element exactly when it is not torsion:
 if every homogeneous component of `x` is torsion, then so is their sum `x`. -/
+@[simp]
 theorem nonTorsionDegrees_nonempty_iff (G : InternalGrading k M) :
     G.nonTorsionDegrees.Nonempty ↔ ¬Module.IsTorsion k[X] M := by
   classical
@@ -284,8 +313,8 @@ variable {k M : Type*} [Field k]
   [AddCommGroup M] [Module k M] [Module k[X] M] [IsScalarTower k k[X] M]
   {G : InternalGrading k M} {d : ℕ}
 
-/-- Over a field, a homogeneous element of a graded `k[X]`-module on which `X` lowers degree is
-torsion exactly when some power of `X` kills it. -/
+/-- Over a field, a homogeneous element of a graded `k[X]`-module on which `X` lowers degree by a
+nonzero `d` is torsion exactly when some power of `X` kills it. -/
 theorem mem_torsion_iff_exists_X_pow_smul_eq_zero (hd : d ≠ 0)
     (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d))
     {p : ℤ} {x : M} (hx : x ∈ G.piece p) :
@@ -322,6 +351,7 @@ variable {k : Type*} [CommSemiring k] [IsDomain k]
 /-- The degrees of the homogeneous non-torsion elements of `k[X]`, graded by `negDegreeGrading`,
 are the nonpositive integers: every nonzero homogeneous element is a nonzero multiple of a
 monomial `X ^ n`, of degree `-n`. -/
+@[simp]
 theorem nonTorsionDegrees_negDegreeGrading :
     (negDegreeGrading k).nonTorsionDegrees = Set.Iic 0 := by
   ext p
@@ -344,6 +374,7 @@ theorem nonTorsionDegrees_negDegreeGrading :
       exact pow_ne_zero _ X_ne_zero ((mul_eq_zero.mp h).resolve_left (nonZeroDivisors.ne_zero ha))
 
 /-- The top of the tower `k[X]`, graded by `negDegreeGrading`, sits in degree `0`. -/
+@[simp]
 theorem maxNonTorsionDegree_negDegreeGrading : (negDegreeGrading k).maxNonTorsionDegree = 0 := by
   rw [InternalGrading.maxNonTorsionDegree_def, nonTorsionDegrees_negDegreeGrading, csSup_Iic]
 
