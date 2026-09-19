@@ -47,13 +47,14 @@ value. The initial values of the bounded forward solutions are therefore exactly
 with `lyapunovPerronSolution x 0 = x`; their `P`-component is free and determines the rest
 Lipschitz-continuously.
 
-The fixed points also decay: for every rate `β ≥ 0` with `2 K ε < α - β`, two Lyapunov--Perron
-solutions approach each other at rate `β`. When `N 0 = 0` every Lyapunov--Perron solution
-therefore decays exponentially to the equilibrium `0`, and the bounded forward solutions are
-exactly the forward solutions tending to `0`: the initial values above form the stable set of
-the equilibrium. This is the analytic core of the Lyapunov--Perron proof of the stable-manifold
-theorem at a hyperbolic equilibrium, where the local stable manifold is read off from the initial
-values of these fixed points after the nonlinearity has been cut off.
+The fixed points also satisfy weighted bounds: for every `β ≥ 0` with `2 K ε < α - β`, the
+difference of two Lyapunov--Perron solutions is bounded by a constant times `exp (-β t)`. For
+`β > 0`, they therefore approach each other exponentially. When `N 0 = 0` every
+Lyapunov--Perron solution tends to the equilibrium `0`, and the bounded forward solutions are
+exactly the forward solutions tending to `0`: the initial values above form the stable set of the
+equilibrium. This is the analytic core of the Lyapunov--Perron proof of the stable-manifold theorem
+at a hyperbolic equilibrium, where the local stable manifold is read off from the initial values of
+these fixed points after the nonlinearity has been cut off.
 
 ## Main declarations
 
@@ -80,13 +81,14 @@ values of these fixed points after the nonlinearity has been cut off.
   is `P ξ`.
 * `ContinuousLinearMap.lyapunovPerronSolution_lyapunovPerronSolution_zero`: restarting a
   Lyapunov--Perron solution from its initial value reproduces it.
-* `ContinuousLinearMap.norm_lyapunovPerronSolution_sub_le`: Lyapunov--Perron solutions approach
-  each other exponentially, at every rate `β ≥ 0` with `2 K ε < α - β`.
+* `ContinuousLinearMap.norm_lyapunovPerronSolution_sub_le`: the difference of two
+  Lyapunov--Perron solutions has a weighted bound for every `β ≥ 0` with
+  `2 K ε < α - β`, giving exponential approach when `β > 0`.
 * `ContinuousLinearMap.norm_lyapunovPerronSolution_le`,
   `ContinuousLinearMap.tendsto_lyapunovPerronSolution`: when `N 0 = 0`, Lyapunov--Perron
-  solutions decay exponentially to `0`.
-* `ContinuousLinearMap.norm_le_of_isIntegralCurveOn_of_bounded`: bounded forward solutions decay
-  exponentially to `0`.
+  solutions satisfy the corresponding weighted bounds and tend to `0`.
+* `ContinuousLinearMap.norm_le_of_isIntegralCurveOn_of_bounded`: bounded forward solutions
+  satisfy the corresponding weighted bounds, which give exponential decay when `β > 0`.
 * `ContinuousLinearMap.exists_isIntegralCurveOn_tendsto_iff`: the initial values of forward
   solutions tending to `0` are the fixed points of `ξ ↦ lyapunovPerronSolution ξ 0`.
 
@@ -266,7 +268,7 @@ theorem norm_lyapunovPerronIntegral_le_mul_exp
     fun s hs ↦ hgM s hs.1
   have h₂ := norm_setIntegral_lyapunovPerron_unstable_le_mul_exp hu (by linarith) t
     fun s hs ↦ hgM s (ht.trans (le_of_lt hs))
-  -- The unstable integral decays with the better constant `1 / (α + β) ≤ 1 / (α - β)`.
+  -- The unstable integral has the better constant `1 / (α + β) ≤ 1 / (α - β)`.
   have h₃ : K * M / (α + β) * Real.exp (-β * t) ≤ K * M / (α - β) * Real.exp (-β * t) := by
     gcongr
     linarith
@@ -735,11 +737,11 @@ section Decay
 
 /-! ### Exponential decay of Lyapunov--Perron solutions
 
-For every rate `β ≥ 0` in the spectral gap left by the nonlinearity, `2 K ε < α - β`, the
-Lyapunov--Perron solutions approach each other at rate `β`. When `N 0 = 0` the solution with
-input parameter `0` is the zero solution, so all Lyapunov--Perron solutions decay exponentially,
-and the bounded forward solutions are exactly the forward solutions tending to the equilibrium
-`0`. -/
+For every `β ≥ 0` in the spectral gap left by the nonlinearity, `2 K ε < α - β`, the difference
+of two Lyapunov--Perron solutions is bounded by a constant times `exp (-β t)`; when `β > 0`, this
+gives exponential approach. When `N 0 = 0` the solution with input parameter `0` is the zero
+solution, so all Lyapunov--Perron solutions tend to `0`, and the bounded forward solutions are
+exactly the forward solutions tending to the equilibrium `0`. -/
 
 /-- The weighted form of `dist_lyapunovPerronMap_le`: if two curves stay within
 `R exp (-β t)` of each other in forward time, for a rate `0 ≤ β < α`, then their images under
@@ -773,9 +775,10 @@ theorem norm_lyapunovPerronMap_sub_le_mul_exp {β : ℝ} (hβ : 0 ≤ β) (hβα
           (add_le_add hlin (norm_lyapunovPerronIntegral_le_mul_exp hs hu hβ hβα hdiff t.2))
     _ = _ := by ring
 
-/-- **Exponential decay of the difference of Lyapunov--Perron solutions.** For a rate `β ≥ 0`
-with `2 K ε < α - β`, two Lyapunov--Perron solutions approach each other at rate `β`, with a
-constant proportional to the distance between their input parameters. -/
+/-- **Weighted bound for the difference of Lyapunov--Perron solutions.** For `β ≥ 0` with
+`2 K ε < α - β`, the difference is bounded by a constant times `exp (-β t)`, with the constant
+proportional to the distance between the input parameters. In particular, the solutions approach
+each other exponentially when `β > 0`. -/
 theorem norm_lyapunovPerronSolution_sub_le {β : ℝ} (hβ : 0 ≤ β) (hβα : 2 * K * ε < α - β)
     (ξ ζ : X) (t : ℝ≥0) :
     ‖lyapunovPerronSolution A P N hs hu hα hN hsmall ξ t -
@@ -813,9 +816,9 @@ theorem norm_lyapunovPerronSolution_sub_le {β : ℝ} (hβ : 0 ≤ β) (hβα : 
   calc _ ≤ R * Real.exp (-β * t) := hfix t
     _ = _ := by ring
 
-/-- **Exponential decay of Lyapunov--Perron solutions.** If the nonlinearity vanishes at the
-origin, then for a rate `β ≥ 0` with `2 K ε < α - β` every Lyapunov--Perron solution decays to
-`0` at rate `β`. -/
+/-- **Weighted bound for Lyapunov--Perron solutions.** If the nonlinearity vanishes at the origin,
+then for `β ≥ 0` with `2 K ε < α - β` every Lyapunov--Perron solution is bounded by a constant
+times `exp (-β t)`. In particular, it decays exponentially to `0` when `β > 0`. -/
 theorem norm_lyapunovPerronSolution_le (hN0 : N 0 = 0) {β : ℝ} (hβ : 0 ≤ β)
     (hβα : 2 * K * ε < α - β) (ξ : X) (t : ℝ≥0) :
     ‖lyapunovPerronSolution A P N hs hu hα hN hsmall ξ t‖ ≤
@@ -843,9 +846,10 @@ theorem tendsto_lyapunovPerronSolution (hN0 : N 0 = 0) (ξ : X) :
   simpa only [C, mul_right_comm _ (Real.exp _)] using h
 
 include hs hu hα hN hsmall in
-/-- **Bounded forward solutions decay exponentially.** When the nonlinearity vanishes at the
+/-- **Weighted bounds for bounded forward solutions.** When the nonlinearity vanishes at the
 origin and `P` is idempotent and commutes with `A`, every solution of `y' = A y + N y` that stays
-bounded on `[0, ∞)` decays to `0` there at every rate `β ≥ 0` with `2 K ε < α - β`. -/
+bounded on `[0, ∞)` is bounded by a constant times `exp (-β t)` for every `β ≥ 0` with
+`2 K ε < α - β`. In particular, it decays exponentially to `0` when `β > 0`. -/
 theorem norm_le_of_isIntegralCurveOn_of_bounded (hN0 : N 0 = 0) (hP : IsIdempotentElem P)
     (hAP : Commute A P) {β : ℝ} (hβ : 0 ≤ β) (hβα : 2 * K * ε < α - β) {y : ℝ → X}
     (hy : IsIntegralCurveOn y (fun _ y ↦ A y + N y) (Ici 0)) {B : ℝ}
