@@ -367,13 +367,13 @@ it ramifies in one of the `E i`. -/
   calc
     ramifiedPrimes (⨆ i, E i : IntermediateField ℚ K) =
         ramifiedPrimes ((⨆ i, E i).map g) :=
-      ramifiedPrimes_eq_of_algEquiv ((⨆ i, E i).equivMap g)
+      ((⨆ i, E i).equivMap g).ramifiedPrimes_eq
     _ = ramifiedPrimes (⨆ i, (E i).map g : IntermediateField ℚ N) :=
       congrArg (fun F : IntermediateField ℚ N => ramifiedPrimes F) hmap
     _ = ⋃ i, ramifiedPrimes ((E i).map g) := ramifiedPrimes_iSup_of_isGalois _
     _ = ⋃ i, ramifiedPrimes (E i) := by
       congr 1
       funext i
-      exact (ramifiedPrimes_eq_of_algEquiv ((E i).equivMap g)).symm
+      exact ((E i).equivMap g).ramifiedPrimes_eq.symm
 
 end NumberField

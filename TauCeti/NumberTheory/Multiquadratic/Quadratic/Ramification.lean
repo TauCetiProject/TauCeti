@@ -119,7 +119,7 @@ theorem mem_ramifiedPrimes_adjoin_iff_dvd_fundamentalDiscriminant {M : Type*} [F
       · exact one_mem _
       · exact neg_mem (one_mem _)
     rw [IntermediateField.adjoin_simple_eq_bot_iff.mpr hx1,
-      NumberField.ramifiedPrimes_eq_of_algEquiv (IntermediateField.botEquiv ℚ M),
+      (IntermediateField.botEquiv ℚ M).ramifiedPrimes_eq,
       NumberField.ramifiedPrimes_rat,
       fundamentalDiscriminant_of_mod_four_eq_one (by norm_num)]
     simp only [Set.mem_empty_iff_false, false_iff]

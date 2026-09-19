@@ -74,8 +74,7 @@ theorem mem_ramifiedPrimes_adjoin_range_iff (hd : ∀ i, Squarefree (d i))
     rw [gen_sq hrℚ, eq_intCast, map_intCast]
   have hsup : adjoin ℚ (Set.range (gen (K := ℚ) r)) = ⨆ i, adjoin ℚ {gen (K := ℚ) r i} := by
     rw [← adjoin_iUnion, Set.iUnion_singleton_eq_range]
-  rw [← ramifiedPrimes_eq_of_algEquiv
-      ((equivOfEq (adjoin_gen_eq_top (K := ℚ) (root := r))).trans topEquiv),
+  rw [← ((equivOfEq (adjoin_gen_eq_top (K := ℚ) (root := r))).trans topEquiv).ramifiedPrimes_eq,
     hsup, ramifiedPrimes_iSup, Set.mem_iUnion]
   exact exists_congr fun i =>
     mem_ramifiedPrimes_adjoin_iff_dvd_fundamentalDiscriminant (hd i) (hgen i) hp
@@ -88,7 +87,7 @@ theorem mem_ramifiedPrimes_iff_exists_dvd_fundamentalDiscriminant (hd : ∀ i, S
     (hp : p.Prime) :
     p ∈ ramifiedPrimes L ↔ ∃ i, (p : ℤ) ∣ fundamentalDiscriminant (d i) := by
   rw [← mem_ramifiedPrimes_adjoin_range_iff hd hr hp,
-    ramifiedPrimes_eq_of_algEquiv ((equivOfEq htop).trans topEquiv)]
+    ((equivOfEq htop).trans topEquiv).ramifiedPrimes_eq]
 
 /-- **The odd ramified primes are the divisors of the radicands.** In a number field `L` generated
 by square roots of squarefree integers `d i`, an odd prime `p` is unramified exactly when it

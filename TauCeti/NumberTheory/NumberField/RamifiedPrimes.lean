@@ -30,8 +30,7 @@ natural primes, which is the form in which `t` is counted.
   discriminant.
 * `NumberField.coprime_natAbs_discr_of_isUnramifiedIn`: an unramified prime is coprime to the
   discriminant.
-* `NumberField.ramifiedPrimes_eq_of_algEquiv`: isomorphic number fields have the same ramified
-  primes.
+* `AlgEquiv.ramifiedPrimes_eq`: isomorphic number fields have the same ramified primes.
 * `NumberField.ramifiedPrimes_rat`: no prime ramifies in `ℚ`.
 * `NumberField.finite_ramifiedPrimes`: only finitely many primes ramify.
 * `NumberField.ramifiedPrimes_nonempty`: some prime ramifies, unless `K = ℚ`
@@ -78,7 +77,8 @@ theorem mem_ramifiedPrimes_iff_dvd_discr {p : ℕ} (hp : p.Prime) :
 
 /-- **Isomorphic number fields have the same ramified primes**, since they have the same
 discriminant (`NumberField.discr_eq_discr_of_algEquiv`). -/
-theorem ramifiedPrimes_eq_of_algEquiv {L : Type*} [Field L] [NumberField L] (f : K ≃ₐ[ℚ] L) :
+theorem _root_.AlgEquiv.ramifiedPrimes_eq {L : Type*} [Field L] [NumberField L]
+    (f : K ≃ₐ[ℚ] L) :
     ramifiedPrimes K = ramifiedPrimes L := by
   ext p
   by_cases hp : p.Prime
