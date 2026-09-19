@@ -23,6 +23,8 @@ target sheaf can be checked on a covering sieve. Thus Mathlib's sheaf theorem fo
 
 The equivalences `linearHomObjEquiv` and `linearHomSectionsEquiv` identify local and global
 sections with module-sheaf morphisms, and `linearHomObjEquiv_map_app` describes restriction.
+With `open TauCeti`, these declarations support dot notation, for example `M.linearHom N`
+and `M.linearHomObjEquiv N U`.
 
 This file constructs the underlying sheaf of sets; it does not equip it with a module
 structure or identify it with a categorical internal Hom.
