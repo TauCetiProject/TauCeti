@@ -19,8 +19,7 @@ charts on the upper half-plane.
 The coordinate accessor `TauCeti.Subgroup.CuspDatum.coordinate` uses
 `Function.Periodic.qParam`, so the statements apply before choosing a complex structure on the
 cusp quotient. No discreteness hypothesis is needed once normalized cusp data
-have been supplied. The affine normal form reuses Mathlib's
-`UpperHalfPlane.exists_SL2_smul_eq_of_apply_zero_one_eq_zero`.
+have been supplied.
 
 ## References
 
@@ -66,6 +65,8 @@ theorem cuspDatum_exists_scaling_eq_affine (hc : D.cusp = D'.cusp) :
   obtain ⟨g, hgeq⟩ := QuotientGroup.mk_surjective (D'.scaling * D.scaling⁻¹)
   rw [← hgeq, OnePoint.pslMk_smul, OnePoint.smul_infty_eq_self_iff,
     Matrix.SpecialLinearGroup.coe_GL_coe_matrix] at hg
+  -- The affine normal form reuses Mathlib's
+  -- `UpperHalfPlane.exists_SL2_smul_eq_of_apply_zero_one_eq_zero`.
   obtain ⟨a, b, hab⟩ := exists_SL2_smul_eq_of_apply_zero_one_eq_zero g hg
   refine ⟨a, b, a.property, fun z ↦ ?_⟩
   have heq : g • (D.scaling • z) = D'.scaling • z := by
