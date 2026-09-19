@@ -264,6 +264,22 @@ theorem coe_mob01 (z : ThricePuncturedSphere) : (mob01 z : ℂ) = 1 - z := by
   rw [Homeomorph.subtype_apply_coe, IsometryEquiv.coe_toHomeomorph,
     IsometryEquiv.subLeft_apply]
 
+/-- The involution `z ↦ 1 − z` carries `leftOpen` to `rightOpen`. -/
+@[simp]
+theorem preimage_mob01_leftOpen : mob01 ⁻¹' leftOpen = rightOpen := by
+  ext z
+  simp only [mem_preimage, mem_leftOpen, coe_mob01, Complex.sub_re, Complex.one_re,
+    mem_rightOpen]
+  constructor <;> intro h <;> linarith
+
+/-- The involution `z ↦ 1 − z` carries `rightOpen` to `leftOpen`. -/
+@[simp]
+theorem preimage_mob01_rightOpen : mob01 ⁻¹' rightOpen = leftOpen := by
+  ext z
+  simp only [mem_preimage, mem_rightOpen, coe_mob01, Complex.sub_re, Complex.one_re,
+    mem_leftOpen]
+  constructor <;> intro h <;> linarith
+
 /-- `z ↦ 1 − z` is an involution. -/
 @[simp]
 theorem mob01_mob01 (z : ThricePuncturedSphere) : mob01 (mob01 z) = z :=
