@@ -45,7 +45,7 @@ else follows formally from `QuaternionAlgebra.self_mul_star`.
 
 ## Implementation notes
 
-Everything is stated over a commutative ring in which `2` is left regular, which is exactly what
+Everything is stated over a commutative ring in which `2` is regular, which is exactly what
 the proof consumes; over a field this is the standing hypothesis that `2` is invertible. Some such
 hypothesis is needed for the argument: when `2 = 0` and `c₂ = 0` the trace of left multiplication
 vanishes identically, so it carries no information about conjugation.
@@ -80,18 +80,18 @@ theorem trace_mulLeft (x : ℍ[R,c₁,c₂,c₃]) :
   ring
 
 /-- An algebra equivalence of quaternion algebras preserves the reduced trace, in coordinates. -/
-private theorem two_mul_re_add_mul_imI_of_algEquiv (h2 : IsLeftRegular (2 : R))
+private theorem two_mul_re_add_mul_imI_of_algEquiv (h2 : IsRegular (2 : R))
     (f : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] ℍ[R,d₁,d₂,d₃]) (x : ℍ[R,c₁,c₂,c₃]) :
     2 * (f x).re + d₂ * (f x).imI = 2 * x.re + c₂ * x.imI := by
-  refine h2 ?_
+  refine h2.left ?_
   have hconj : f.toLinearEquiv.conj (LinearMap.mulLeft R x) = LinearMap.mulLeft R (f x) :=
     LinearMap.ext fun y => by simp
   simp only [← trace_mulLeft, ← hconj, LinearMap.trace_conj']
 
-/-- **An algebra equivalence of quaternion algebras commutes with conjugation**, once `2` is left
+/-- **An algebra equivalence of quaternion algebras commutes with conjugation**, once `2` is
 regular. Together with `StarAlgEquiv.ofAlgEquiv` this makes every such equivalence a
 `⋆`-algebra equivalence. -/
-theorem map_star_of_algEquiv (h2 : IsLeftRegular (2 : R))
+theorem map_star_of_algEquiv (h2 : IsRegular (2 : R))
     (f : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] ℍ[R,d₁,d₂,d₃]) (x : ℍ[R,c₁,c₂,c₃]) :
     f (star x) = star (f x) := by
   rw [star_eq_two_re_sub, star_eq_two_re_sub, two_mul_re_add_mul_imI_of_algEquiv h2, map_sub,
@@ -99,7 +99,7 @@ theorem map_star_of_algEquiv (h2 : IsLeftRegular (2 : R))
 
 /-- **An algebra equivalence of quaternion algebras preserves the reduced norm.** -/
 @[simp]
-theorem normForm_eq_of_algEquiv (h2 : IsLeftRegular (2 : R))
+theorem normForm_eq_of_algEquiv (h2 : IsRegular (2 : R))
     (f : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] ℍ[R,d₁,d₂,d₃]) (x : ℍ[R,c₁,c₂,c₃]) :
     normForm d₁ d₂ d₃ (f x) = normForm c₁ c₂ c₃ x := by
   refine coe_injective (c₁ := d₁) (c₂ := d₂) (c₃ := d₃) ?_
@@ -109,14 +109,14 @@ theorem normForm_eq_of_algEquiv (h2 : IsLeftRegular (2 : R))
         rw [self_mul_star, ← coe_algebraMap, AlgEquiv.commutes, coe_algebraMap]
 
 /-- An algebra equivalence of quaternion algebras, viewed as an isometry of their norm forms. -/
-def normFormIsometryEquivOfAlgEquiv (h2 : IsLeftRegular (2 : R))
+def normFormIsometryEquivOfAlgEquiv (h2 : IsRegular (2 : R))
     (f : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] ℍ[R,d₁,d₂,d₃]) :
     (normForm c₁ c₂ c₃).IsometryEquiv (normForm d₁ d₂ d₃) where
   __ := f.toLinearEquiv
   map_app' := normForm_eq_of_algEquiv h2 f
 
 @[simp]
-theorem normFormIsometryEquivOfAlgEquiv_apply (h2 : IsLeftRegular (2 : R))
+theorem normFormIsometryEquivOfAlgEquiv_apply (h2 : IsRegular (2 : R))
     (f : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] ℍ[R,d₁,d₂,d₃]) (x : ℍ[R,c₁,c₂,c₃]) :
     normFormIsometryEquivOfAlgEquiv h2 f x = f x := (rfl)
 
@@ -128,14 +128,14 @@ variable {a b c d : R}
 
 /-- **An algebra equivalence between quaternion algebras `ℍ[R,a,b]` preserves real parts.** -/
 @[simp]
-theorem re_eq_of_algEquiv (h2 : IsLeftRegular (2 : R)) (f : ℍ[R,a,b] ≃ₐ[R] ℍ[R,c,d])
+theorem re_eq_of_algEquiv (h2 : IsRegular (2 : R)) (f : ℍ[R,a,b] ≃ₐ[R] ℍ[R,c,d])
     (x : ℍ[R,a,b]) : (f x).re = x.re := by
-  refine h2 ?_
+  refine h2.left ?_
   simpa using two_mul_re_add_mul_imI_of_algEquiv h2 f x
 
 /-- **An algebra equivalence between quaternion algebras `ℍ[R,a,b]` maps the pure quaternions onto
 the pure quaternions.** -/
-theorem map_ker_reₗ_of_algEquiv (h2 : IsLeftRegular (2 : R)) (f : ℍ[R,a,b] ≃ₐ[R] ℍ[R,c,d]) :
+theorem map_ker_reₗ_of_algEquiv (h2 : IsRegular (2 : R)) (f : ℍ[R,a,b] ≃ₐ[R] ℍ[R,c,d]) :
     (LinearMap.ker (reₗ a (0 : R) b)).map (f.toLinearEquiv : ℍ[R,a,b] →ₗ[R] ℍ[R,c,d]) =
       LinearMap.ker (reₗ c (0 : R) d) := by
   ext y
@@ -144,7 +144,7 @@ theorem map_ker_reₗ_of_algEquiv (h2 : IsLeftRegular (2 : R)) (f : ℍ[R,a,b] �
 
 /-- An algebra equivalence `ℍ[R,a,b] ≃ₐ[R] ℍ[R,c,d]`, restricted to the pure quaternions, as an
 isometry of the pure norm forms. -/
-def pureNormFormIsometryEquivOfAlgEquiv (h2 : IsLeftRegular (2 : R))
+def pureNormFormIsometryEquivOfAlgEquiv (h2 : IsRegular (2 : R))
     (f : ℍ[R,a,b] ≃ₐ[R] ℍ[R,c,d]) :
     (pureNormForm a b).IsometryEquiv (pureNormForm c d) where
   __ := f.toLinearEquiv.ofSubmodules _ _ (map_ker_reₗ_of_algEquiv h2 f)
@@ -152,18 +152,18 @@ def pureNormFormIsometryEquivOfAlgEquiv (h2 : IsLeftRegular (2 : R))
     simpa [LinearEquiv.ofSubmodules_apply] using normForm_eq_of_algEquiv h2 f x
 
 @[simp]
-theorem coe_pureNormFormIsometryEquivOfAlgEquiv_apply (h2 : IsLeftRegular (2 : R))
+theorem coe_pureNormFormIsometryEquivOfAlgEquiv_apply (h2 : IsRegular (2 : R))
     (f : ℍ[R,a,b] ≃ₐ[R] ℍ[R,c,d]) (x : LinearMap.ker (reₗ a (0 : R) b)) :
     (pureNormFormIsometryEquivOfAlgEquiv h2 f x : ℍ[R,c,d]) = f x := (rfl)
 
 /-- **Isomorphic quaternion algebras have isometric pure norm forms.** -/
-theorem equivalent_pureNormForm_of_algEquiv (h2 : IsLeftRegular (2 : R))
+theorem equivalent_pureNormForm_of_algEquiv (h2 : IsRegular (2 : R))
     (f : ℍ[R,a,b] ≃ₐ[R] ℍ[R,c,d]) : (pureNormForm a b).Equivalent (pureNormForm c d) :=
   ⟨pureNormFormIsometryEquivOfAlgEquiv h2 f⟩
 
 /-- **Isomorphic quaternion algebras `ℍ[R,a,b]` and `ℍ[R,c,d]` have isometric ternary forms
 `⟨-a, -b, ab⟩` and `⟨-c, -d, cd⟩`**, the diagonalizations of their pure norm forms. -/
-theorem equivalent_weightedSumSquares_of_algEquiv (h2 : IsLeftRegular (2 : R))
+theorem equivalent_weightedSumSquares_of_algEquiv (h2 : IsRegular (2 : R))
     (f : ℍ[R,a,b] ≃ₐ[R] ℍ[R,c,d]) :
     (weightedSumSquares R ![-a, -b, a * b]).Equivalent (weightedSumSquares R ![-c, -d, c * d]) :=
   ((equivalent_pureNormForm_weightedSumSquares a b).symm.trans
