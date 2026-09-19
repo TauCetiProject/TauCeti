@@ -153,7 +153,7 @@ private theorem stabilizeXOffCenterInclusion_projection_apply (f : GridChainMinu
   · exact Finsupp.mapDomain_apply Subtype.val_injective _ (⟨y, h⟩ : G.StabilizeXOffCenterState s)
 
 /-- Every chain of the stabilization is the sum of its center and off-center parts. -/
-theorem stabilizeXCenterInclusion_projection_add_offCenter (f : GridChainMinus R (n + 1)) :
+@[simp] theorem stabilizeXCenterInclusion_projection_add_offCenter (f : GridChainMinus R (n + 1)) :
     G.stabilizeXCenterInclusion s R (G.stabilizeXCenterProjection s R f) +
       G.stabilizeXOffCenterInclusion s R (G.stabilizeXOffCenterProjection s R f) = f := by
   ext y
