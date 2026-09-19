@@ -80,7 +80,7 @@ theorem aeval_weightEnumerator_normalized_of_eq_euclideanDual
       ext i
       fin_cases i <;> simp
     · simp [Algebra.smul_def]
-  have hscale := eval₂_mul_of_isHomogeneous
+  have hscale := eval₂_fun_mul_of_isHomogeneous
     (C : Set (ι → F)).isHomogeneous_weightEnumerator (algebraMap ℤ A)
     ![x + (Nat.card F - 1 : A) * y, x - y]
     (algebraMap ℝ A ((Real.sqrt (Nat.card F))⁻¹))

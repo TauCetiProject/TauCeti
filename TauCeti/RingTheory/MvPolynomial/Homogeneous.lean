@@ -23,7 +23,7 @@ open MvPolynomial
 
 /-- Scaling all variables by `a` scales the value of a degree-`n` homogeneous polynomial
 by `a ^ n`, after any change of coefficient ring. -/
-theorem eval₂_mul_of_isHomogeneous {σ R S : Type*} [CommSemiring R] [CommSemiring S]
+theorem eval₂_fun_mul_of_isHomogeneous {σ R S : Type*} [CommSemiring R] [CommSemiring S]
     {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n)
     (f : R →+* S) (g : σ → S) (a : S) :
     eval₂ f (fun i ↦ a * g i) p = a ^ n * eval₂ f g p := by
