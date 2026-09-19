@@ -159,20 +159,19 @@ theorem bddAbove_nonTorsionDegrees [Module.Finite k[X] M]
   rw [hp, Submodule.mem_bot] at hx
   exact hx ▸ Submodule.zero_mem _
 
-/-- The maximal non-torsion degree of a finitely generated graded `k[X]`-module that is not
-torsion is attained: it is the largest degree of a homogeneous non-torsion element. -/
-theorem isGreatest_supNonTorsionDegree [Module.Finite k[X] M]
-    (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d))
-    (hM : ¬Module.IsTorsion k[X] M) :
+omit [IsScalarTower k k[X] M] [IsScalarTower k k[X] N] in
+/-- The supremal non-torsion degree is the greatest non-torsion degree when the set of such
+degrees is nonempty and bounded above. -/
+theorem isGreatest_supNonTorsionDegree (hne : G.nonTorsionDegrees.Nonempty)
+    (hbdd : BddAbove G.nonTorsionDegrees) :
     IsGreatest G.nonTorsionDegrees G.supNonTorsionDegree :=
-  ⟨Int.csSup_mem (G.nonTorsionDegrees_nonempty_iff.mpr hM) (bddAbove_nonTorsionDegrees hX),
-    fun _ hp ↦ le_csSup (bddAbove_nonTorsionDegrees hX) hp⟩
+  ⟨Int.csSup_mem hne hbdd, fun _ hp ↦ le_csSup hbdd hp⟩
 
+omit [IsScalarTower k k[X] M] [IsScalarTower k k[X] N] in
 /-- Every degree of a homogeneous non-torsion element is at most the maximal non-torsion degree. -/
-theorem le_supNonTorsionDegree [Module.Finite k[X] M]
-    (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d)) {p : ℤ}
+theorem le_supNonTorsionDegree (hbdd : BddAbove G.nonTorsionDegrees) {p : ℤ}
     (hp : p ∈ G.nonTorsionDegrees) : p ≤ G.supNonTorsionDegree :=
-  le_csSup (bddAbove_nonTorsionDegrees hX) hp
+  le_csSup hbdd hp
 
 omit [IsScalarTower k k[X] M] [IsScalarTower k k[X] N] in
 /-- A homogeneous map of degree `δ` that reflects torsion carries a homogeneous non-torsion element
