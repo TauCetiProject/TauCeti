@@ -20,11 +20,8 @@ completion map `completionAlgHom v w`. Together these give the semi-local map
 semilocalHom v : K_v ⊗[K] L →ₐ[K_v] ∏_{w ∣ v} L_w,    a ⊗ x ↦ (a · x)_w .
 ```
 
-This file constructs that map and proves that it is surjective. The image of `1 ⊗ L` is the
-diagonal image of `L`, which is dense by weak approximation at the finitely many places `w ∣ v`.
-The image of the whole map is a `K_v`-subspace of a finite-dimensional space over the complete
-field `K_v`, so it is closed, and a closed set containing a dense set is everything. Comparing
-dimensions gives `∑_{w ∣ v} [L_w : K_v] ≤ [L : K]`.
+This file constructs that map, proves that it is surjective, and derives the degree bound
+`∑_{w ∣ v} [L_w : K_v] ≤ [L : K]`.
 
 The map is in fact an isomorphism, and equality holds in the degree inequality (Neukirch II
 (8.3)). Injectivity is the reverse inequality `∑_{w ∣ v} [L_w : K_v] ≥ [L : K]`, which is not
@@ -38,17 +35,17 @@ The places above `v` are indexed by the subtype
 
 ## Main definitions
 
-* `IsDedekindDomain.HeightOneSpectrum.semilocalHom`: the semi-local map
+* `TauCeti.semilocalHom`: the semi-local map
   `K_v ⊗[K] L →ₐ[K_v] ∏_{w ∣ v} L_w`.
 
 ## Main results
 
-* `IsDedekindDomain.HeightOneSpectrum.semilocalHom_tmul`: its value on pure tensors,
+* `TauCeti.semilocalHom_tmul`: its value on pure tensors,
   `semilocalHom v (a ⊗ₜ x) w = algebraMap K_v L_w a * algebraMap L L_w x`.
-* `IsDedekindDomain.HeightOneSpectrum.denseRange_algebraMap_pi_liesOver`: `L` is dense in
+* `TauCeti.denseRange_algebraMap_pi_liesOver`: `L` is dense in
   `∏_{w ∣ v} L_w`.
-* `IsDedekindDomain.HeightOneSpectrum.semilocalHom_surjective`: the semi-local map is surjective.
-* `IsDedekindDomain.HeightOneSpectrum.sum_finrank_adicCompletion_le_finrank`:
+* `TauCeti.semilocalHom_surjective`: the semi-local map is surjective.
+* `TauCeti.sum_finrank_adicCompletion_le_finrank`:
   `∑_{w ∣ v} [L_w : K_v] ≤ [L : K]`.
 
 ## References
@@ -62,7 +59,9 @@ noncomputable section
 open IsDedekindDomain NumberField Module
 open scoped TensorProduct NumberField AdicCompletionExtension Valued
 
-namespace IsDedekindDomain.HeightOneSpectrum
+namespace TauCeti
+
+open IsDedekindDomain.HeightOneSpectrum
 
 local notation "𝒪" => _root_.NumberField.RingOfIntegers
 
@@ -111,7 +110,14 @@ theorem denseRange_algebraMap_pi_liesOver :
   have hΦc : Continuous Φ :=
     continuous_pi fun w ↦ (continuous_apply _).comp continuous_fst
   have hΦs : Function.Surjective Φ := fun y ↦
-    ⟨(fun w ↦ y ⟨w.1, hS.mp w.2⟩, fun u ↦ (Finset.notMem_empty _ u.2).elim), rfl⟩
+    ⟨(fun w ↦ y ⟨w.1, hS.mp w.2⟩, fun u ↦ (Finset.notMem_empty _ u.2).elim), by
+      funext w
+      change y ⟨w.1, hS.mp (hS.mpr w.2)⟩ = y w
+      have hw : (⟨w.1, hS.mp (hS.mpr w.2)⟩ :
+          {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) = w :=
+        Subtype.ext rfl
+      cases hw
+      rfl⟩
   exact hΦs.denseRange.comp (TauCeti.GlobalNumberFields.weakApproximation_denseRange S ∅) hΦc
 
 /-- **The semi-local map is surjective**: every family `(y_w)_{w ∣ v}` of elements of the
@@ -136,4 +142,4 @@ theorem sum_finrank_adicCompletion_le_finrank :
   rwa [LinearMap.range_eq_top (f := (semilocalHom L v).toLinearMap).mpr
     (semilocalHom_surjective L v), finrank_top, finrank_pi_fintype, finrank_baseChange] at h
 
-end IsDedekindDomain.HeightOneSpectrum
+end TauCeti
