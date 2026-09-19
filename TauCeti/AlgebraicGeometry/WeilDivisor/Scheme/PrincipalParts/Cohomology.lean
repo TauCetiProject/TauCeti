@@ -31,7 +31,7 @@ In degree one the same resolution identifies `H¹(X, 𝒪_X(D))` with the cokern
 `H⁰(X, 𝒦_X) ⟶ H⁰(X, 𝒦_X / 𝒪_X(D))`, by `Scheme.Modules.cohomologyOneLinearEquivOfIsFlasque`
 applied to `SchemeWeilDivisor.principalPartsShortComplex_shortExact`.
 
-No formalization is vendored: the acyclicity of flasque sheaves is
+The acyclicity of flasque sheaves is
 `Scheme.Modules.subsingleton_cohomology_succ_of_isFlasque`, the long exact sequence is
 `TauCeti/AlgebraicGeometry/Cohomology/LongExactSequence.lean`, and the comparison of line bundles
 with divisor sheaves is `SchemeWeilDivisor.exists_nonempty_iso_sheaf`.

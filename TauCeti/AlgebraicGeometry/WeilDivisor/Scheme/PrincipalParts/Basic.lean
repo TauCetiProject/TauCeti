@@ -42,7 +42,7 @@ through which its cohomology on a curve is computed.
   `toPrincipalParts D` is an epimorphism;
 * `SchemeWeilDivisor.principalPartsShortComplex_shortExact`, the resulting short exact sequence.
 
-No formalization is vendored. The sheaf `𝒪_X(D)` and its inclusion into `𝒦_X` are
+The sheaf `𝒪_X(D)` and its inclusion into `𝒦_X` are
 `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Sheaf.lean`, the finiteness of the points at which a
 rational function violates the order bound is `SchemeWeilDivisor.finite_setOf_ord_lt`, the sheaf
 condition is checked through Mathlib's `TopCat.Presheaf.isSheaf_iff_isSheafUniqueGluing`, and
