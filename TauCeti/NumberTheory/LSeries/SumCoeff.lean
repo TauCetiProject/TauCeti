@@ -11,8 +11,8 @@ public import Mathlib.NumberTheory.LSeries.SumCoeff
 /-!
 # Analytic continuation of an L-series from a bound on its partial sums
 
-If the partial sums `A(n) = ∑_{k=1}^n f k` of a sequence `f : ℕ → ℂ` are `O(n ^ r)` for some
-`0 ≤ r`, Mathlib's `LSeries_eq_mul_integral` (from `Mathlib/NumberTheory/LSeries/SumCoeff.lean`)
+If the partial sums `A(n) = ∑_{k=1}^n f k` of a sequence `f : ℕ → ℂ` are `O(n ^ r)`, Mathlib's
+`LSeries_eq_mul_integral` (from `Mathlib/NumberTheory/LSeries/SumCoeff.lean`)
 writes the L-series of `f` as
 
 `LSeries f s = s * ∫ t in Set.Ioi 1, A(⌊t⌋₊) * t ^ (-(s + 1))`
@@ -30,8 +30,8 @@ Probabilistic Number Theory*, Chapter II.1).
 
 ## Main results
 
-* `TauCeti.LSeries.differentiableOn_mul_integral_of_isBigO`: under the bound `A(n) = O(n ^ r)`
-  with `0 ≤ r`, the function `s ↦ s * ∫ t in Set.Ioi 1, A(⌊t⌋₊) * t ^ (-(s + 1))` is
+* `TauCeti.LSeries.differentiableOn_mul_integral_of_isBigO`: under the bound `A(n) = O(n ^ r)`,
+  the function `s ↦ s * ∫ t in Set.Ioi 1, A(⌊t⌋₊) * t ^ (-(s + 1))` is
   complex-differentiable on `{s | r < s.re}`.
 -/
 
@@ -67,13 +67,13 @@ private theorem integral_Ioi_one_eq_mellin (f : ℕ → ℂ) (s : ℂ) :
     Set.inter_eq_right.mpr (Set.Ici_subset_Ioi.mpr zero_lt_one), integral_Ici_eq_integral_Ioi]
 
 /-- **Holomorphy of the partial-summation integral.** If the partial sums
-`∑ k ∈ Icc 1 n, f k` are `O(n ^ r)` for some `0 ≤ r`, then
+`∑ k ∈ Icc 1 n, f k` are `O(n ^ r)`, then
 `s ↦ s * ∫ t in Set.Ioi 1, (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * t ^ (-(s + 1))` is complex-differentiable
 on the half-plane `r < Re s`.
 
 By Mathlib's `LSeries_eq_mul_integral` this function agrees with `LSeries f` wherever the series
 converges in that half-plane, so it is an analytic continuation of `LSeries f` to `Re s > r`. -/
-theorem differentiableOn_mul_integral_of_isBigO (f : ℕ → ℂ) {r : ℝ} (hr : 0 ≤ r)
+theorem differentiableOn_mul_integral_of_isBigO (f : ℕ → ℂ) {r : ℝ}
     (hO : (fun n ↦ ∑ k ∈ Icc 1 n, f k) =O[atTop] fun n ↦ (n : ℝ) ^ r) :
     DifferentiableOn ℂ
       (fun s : ℂ ↦ s * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(s + 1)))
@@ -84,8 +84,14 @@ theorem differentiableOn_mul_integral_of_isBigO (f : ℕ → ℂ) {r : ℝ} (hr 
       (g := fun _ ↦ (1 : ℂ)) (locallyIntegrableOn_const 1)).mono_set Set.Ioi_subset_Ici_self
   have htop : A =O[atTop] (· ^ (-(-r))) := by
     simp_rw [neg_neg]
+    have hmax : (fun t : ℝ ↦ max t 0) =ᶠ[atTop] fun t ↦ t := by
+      filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
+      exact max_eq_left ht
+    have hequiv : (fun t : ℝ ↦ (⌊t⌋₊ : ℝ)) ~[atTop] fun t ↦ max t 0 :=
+      isEquivalent_nat_floor.congr_right hmax.symm
     exact (hO.comp_tendsto tendsto_nat_floor_atTop).trans <|
-      isEquivalent_nat_floor.isBigO.rpow hr (eventually_ge_atTop 0)
+      (hequiv.rpow fun _ ↦ le_max_right _ _).isBigO.congr' EventuallyEq.rfl
+        (hmax.fun_comp fun t ↦ t ^ r)
   have hbot (b : ℝ) : A =O[𝓝[>] 0] (· ^ (-b)) := by
     refine (isBigO_zero _ _).congr' ?_ EventuallyEq.rfl
     filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht

@@ -63,11 +63,13 @@ def HasCancellation (χ : UnitaryIdealWeight K) : Prop :=
     ‖idealSummatory K χ.toIdealArithmeticFunction x‖ ≤
       C * x ^ (1 - 1 / (Module.finrank ℚ K : ℝ))
 
-/-- The cancellation exponent `1 - 1 / [K : ℚ]` is nonnegative. -/
-private theorem cancellationExponent_nonneg : 0 ≤ 1 - 1 / (Module.finrank ℚ K : ℝ) := by
-  have h : (1 : ℝ) ≤ Module.finrank ℚ K := by exact_mod_cast Module.finrank_pos
-  rw [sub_nonneg]
-  exact div_le_one_of_le₀ h (by positivity)
+/-- A unitary ideal weight has cancellation exactly when its ideal partial sums satisfy the
+defining uniform bound. -/
+theorem hasCancellation_iff (χ : UnitaryIdealWeight K) :
+    HasCancellation χ ↔ ∃ C : ℝ, ∀ x : ℝ, 1 ≤ x →
+      ‖idealSummatory K χ.toIdealArithmeticFunction x‖ ≤
+        C * x ^ (1 - 1 / (Module.finrank ℚ K : ℝ)) :=
+  Iff.rfl
 
 /-- The cancellation exponent `1 - 1 / [K : ℚ]` is less than `1`. -/
 private theorem cancellationExponent_lt_one : 1 - 1 / (Module.finrank ℚ K : ℝ) < 1 := by
@@ -84,14 +86,14 @@ theorem hasCancellation_conj_iff {χ : UnitaryIdealWeight K} :
     simp only [idealSummatory_apply, UnitaryIdealWeight.toIdealArithmeticFunction_apply,
       UnitaryIdealWeight.val_conj, MultiplicativeIdealWeight.conj_apply, ← map_sum,
       Complex.norm_conj]
-  simp only [HasCancellation, h]
+  simp only [hasCancellation_iff, h]
 
 /-- **Cancellation bounds the partial sums of the norm coefficients**, in the `O(n ^ r)` form of
 Mathlib's `LSeries_eq_mul_integral`. -/
 theorem HasCancellation.isBigO_sum_normCoeff {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ) :
     (fun n : ℕ ↦ ∑ k ∈ Finset.Icc 1 n, normCoeff K χ.toIdealArithmeticFunction k) =O[atTop]
       fun n : ℕ ↦ (n : ℝ) ^ (1 - 1 / (Module.finrank ℚ K : ℝ)) := by
-  obtain ⟨C, hC⟩ := hχ
+  obtain ⟨C, hC⟩ := (hasCancellation_iff χ).mp hχ
   refine IsBigO.of_bound C ?_
   filter_upwards [eventually_ge_atTop 1] with n hn
   rw [← Nat.floor_natCast (R := ℝ) n, ← idealSummatory_eq_sum_Icc_normCoeff, Nat.floor_natCast,
@@ -101,6 +103,7 @@ theorem HasCancellation.isBigO_sum_normCoeff {χ : UnitaryIdealWeight K} (hχ : 
 /-- **The trivial weight has no cancellation.** Its partial sums are the ideal counts, which are
 bounded below by a positive multiple of `x`, while `x ^ (1 - 1 / [K : ℚ]) = o(x)`. -/
 theorem not_hasCancellation_one : ¬ HasCancellation (1 : UnitaryIdealWeight K) := by
+  rw [hasCancellation_iff]
   rintro ⟨C, hC⟩
   obtain ⟨b⟩ := idealCount_linearBounds K
   set θ : ℝ := 1 - 1 / (Module.finrank ℚ K : ℝ)
@@ -169,7 +172,6 @@ theorem differentiableOn_continuedLFunctionOfWeight {χ : UnitaryIdealWeight K}
     DifferentiableOn ℂ (continuedLFunctionOfWeight χ)
       {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} := by
   rw [funext (continuedLFunctionOfWeight_eq_mul_integral χ)]
-  exact LSeries.differentiableOn_mul_integral_of_isBigO _ cancellationExponent_nonneg
-    hχ.isBigO_sum_normCoeff
+  exact LSeries.differentiableOn_mul_integral_of_isBigO _ hχ.isBigO_sum_normCoeff
 
 end TauCeti
