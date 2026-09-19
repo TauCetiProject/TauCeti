@@ -277,17 +277,6 @@ variable [EssentiallySmall.{w} C]
 local instance : ObjectProperty.EssentiallySmall.{w} P :=
   ObjectProperty.EssentiallySmall.of_le (Q := ⊤) le_top
 
-/-- **The alternating class of a finite `P`-resolution of `X`, pushed forward along the inclusion,
-is the class of `X`.** This is the telescoping computation
-`TauCeti.ExactStructure.FiniteResolution.eulerClass_eq_of`, carried out through the inclusion of
-the resolving subcategory. -/
-@[simp]
-theorem map_eulerClassFullSubcategory_eq_of {X : C}
-    (r : E.FiniteResolution P X) :
-    ExactK0.map P.ι (IsResolving.isConflationExact_ι E P) (r.eulerClassFullSubcategory hP) =
-      ExactK0.of X := by
-  rw [FiniteResolution.map_eulerClassFullSubcategory, r.eulerClass_eq_of]
-
 variable (E P)
 
 /-- The Euler class as a conflation-additive invariant of the objects of `C`. -/
@@ -327,8 +316,8 @@ noncomputable def resolutionEquiv : ExactK0 (E.resolvingSubcategory P) ≃+ Exac
       fun X => ?_) x
     rw [AddMonoidHom.coe_comp, Function.comp_apply, eulerHom_of, AddMonoidHom.id_apply,
       eulerClassOf_eq _ ((E.admitsFiniteResolution_iff P).mp
-        (IsResolving.finiteResolution X)).some]
-    exact map_eulerClassFullSubcategory_eq_of _
+        (IsResolving.finiteResolution X)).some,
+      FiniteResolution.map_eulerClassFullSubcategory, FiniteResolution.eulerClass_eq_of]
 
 /-- The forward map of the resolution theorem sends a `P`-object to its class in `K₀(C)`. -/
 @[simp] theorem resolutionEquiv_of (X : P.FullSubcategory) :
