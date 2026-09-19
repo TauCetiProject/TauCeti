@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.KernelCard
 -- Proof-only: the coset count the fiber cardinality is read off.
-import TauCeti.GroupTheory.Coset.FiberCard
+import TauCeti.GroupTheory.Coset.Fiber
 
 /-!
 # How many points `[n]` sends to a given one
@@ -15,7 +15,7 @@ import TauCeti.GroupTheory.Coset.FiberCard
 The points that `[n]` carries to a fixed `T` form a coset of `ker [n]` as soon as there is one of
 them, so there are exactly `#ker [n]` of them — and over an algebraically closed field with `n`
 invertible that is `n ²`. The coset count itself is group theory, and lives in
-`TauCeti/GroupTheory/Coset/FiberCard.lean`; what is added here is the identification of the
+`TauCeti/GroupTheory/Coset/Fiber.lean`; what is added here is the identification of the
 kernel with `ker [n]` and the value `n ²`.
 
 The count is what turns a sum over the places above a point into a sum of `n ²` terms, which is how
