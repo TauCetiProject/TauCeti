@@ -340,7 +340,7 @@ exactly when it ramifies in one of the `E i`.
 By `NumberField.notMem_ramifiedPrimes_iff_forall_inertia_le`, a prime `p` is unramified in an
 intermediate field exactly when that field lies in the fixed field of the inertia subgroup of
 every prime above `p`; and a compositum lies in a field exactly when each factor does. -/
-theorem ramifiedPrimes_iSup {ι : Sort*} (E : ι → IntermediateField ℚ K) :
+@[simp] theorem ramifiedPrimes_iSup {ι : Sort*} (E : ι → IntermediateField ℚ K) :
     ramifiedPrimes (⨆ i, E i : IntermediateField ℚ K) = ⋃ i, ramifiedPrimes (E i) := by
   ext p
   rw [Set.mem_iUnion, ← not_iff_not, not_exists]
