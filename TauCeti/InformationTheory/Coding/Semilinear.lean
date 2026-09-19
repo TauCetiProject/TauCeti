@@ -35,6 +35,8 @@ attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEqu
 
 variable {R ι κ μ : Type*} [CommSemiring R]
 
+namespace RingEquiv
+
 /-- Apply `σ` to the alphabet, multiply coordinate `i` by `u i`, then move it to `e i`. -/
 def semilinearMonomialEquiv (σ : R ≃+* R) (u : ι → Rˣ) (e : ι ≃ κ) :
     (ι → R) ≃ₛₗ[(σ : R →+* R)] (κ → R) :=
@@ -61,7 +63,8 @@ theorem semilinearMonomialEquiv_symm_apply (σ : R ≃+* R) (u : ι → Rˣ) (e 
 theorem semilinearMonomialEquiv_refl (u : ι → Rˣ) (e : ι ≃ κ) :
     semilinearMonomialEquiv (RingEquiv.refl R) u e = monomialEquiv u e := by
   ext x j
-  rfl
+  simp only [semilinearMonomialEquiv_apply, RingEquiv.refl_apply]
+  exact (monomialEquiv_apply u e x j).symm
 
 /-- The inverse uses the inverse alphabet automorphism and its images of the inverse units. -/
 theorem semilinearMonomialEquiv_symm (σ : R ≃+* R) (u : ι → Rˣ) (e : ι ≃ κ)
@@ -102,7 +105,9 @@ variable [Fintype ι] [Fintype κ] [DecidableEq R]
 theorem hammingNorm_semilinearMonomialEquiv (σ : R ≃+* R) (u : ι → Rˣ)
     (e : ι ≃ κ) (x : ι → R) :
     hammingNorm (semilinearMonomialEquiv σ u e x) = hammingNorm x := by
-  have h : semilinearMonomialEquiv σ u e x = monomialEquiv u e (fun i ↦ σ (x i)) := rfl
+  have h : semilinearMonomialEquiv σ u e x = monomialEquiv u e (fun i ↦ σ (x i)) := by
+    ext j
+    simp
   rw [h, hammingNorm_monomialEquiv]
   exact hammingNorm_comp (fun _ ↦ σ) (fun _ ↦ σ.injective) (fun _ ↦ σ.map_zero)
 
@@ -113,11 +118,17 @@ theorem hammingDist_semilinearMonomialEquiv (σ : R ≃+* R) (u : ι → Rˣ)
     hammingDist (semilinearMonomialEquiv σ u e x) (semilinearMonomialEquiv σ u e y) =
       hammingDist x y := by
   have h (z : ι → R) :
-      semilinearMonomialEquiv σ u e z = monomialEquiv u e (fun i ↦ σ (z i)) := rfl
+      semilinearMonomialEquiv σ u e z = monomialEquiv u e (fun i ↦ σ (z i)) := by
+    ext j
+    simp
   rw [h, h, hammingDist_monomialEquiv]
   exact hammingDist_comp (fun _ ↦ σ) (fun _ ↦ σ.injective)
 
 end Hamming
+
+end RingEquiv
+
+open TauCeti.RingEquiv
 
 /-- Codes are semilinearly equivalent when a semilinear monomial transformation carries
 one onto the other. The alphabet automorphism is shared by all coordinates. -/
@@ -139,10 +150,12 @@ theorem IsMonomialEquivalent.isSemilinearEquivalent (h : IsMonomialEquivalent C 
   obtain ⟨u, e, he⟩ := isMonomialEquivalent_iff.mp h
   exact ⟨RingEquiv.refl R, u, e, by simpa using he⟩
 
+/-- Semilinear equivalence of codes is reflexive. -/
 @[refl]
 theorem IsSemilinearEquivalent.refl (C : Submodule R (ι → R)) :
     IsSemilinearEquivalent C C := (IsMonomialEquivalent.refl C).isSemilinearEquivalent
 
+/-- Semilinear equivalence of codes is symmetric. -/
 @[symm]
 theorem IsSemilinearEquivalent.symm (h : IsSemilinearEquivalent C D) :
     IsSemilinearEquivalent D C := by
@@ -153,6 +166,7 @@ theorem IsSemilinearEquivalent.symm (h : IsSemilinearEquivalent C D) :
   ext x
   simp only [Submodule.mem_map, LinearEquiv.coe_coe, semilinearMonomialEquiv_symm]
 
+/-- Semilinear equivalence of codes is transitive. -/
 @[trans]
 theorem IsSemilinearEquivalent.trans (h : IsSemilinearEquivalent C D)
     (h' : IsSemilinearEquivalent D E) : IsSemilinearEquivalent C E := by
