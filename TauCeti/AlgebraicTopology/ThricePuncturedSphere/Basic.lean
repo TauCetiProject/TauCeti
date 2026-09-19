@@ -280,6 +280,12 @@ theorem mem_puncturedDiscOne {z : ThricePuncturedSphere} :
     z ∈ puncturedDiscOne ↔ 0 < ‖(z : ℂ) - 1‖ ∧ ‖(z : ℂ) - 1‖ < 1 / 2 :=
   Iff.rfl
 
+/-- Membership in the standard punctured-disc neighbourhood of `∞`. -/
+@[simp]
+theorem mem_puncturedDiscInf {z : ThricePuncturedSphere} :
+    z ∈ puncturedDiscInf ↔ 2 < ‖(z : ℂ)‖ :=
+  Iff.rfl
+
 /-- In the chart `w = 1 / z` at infinity, `puncturedDiscInf` is the punctured disc of radius
 `1/2` about `0`. -/
 theorem mem_puncturedDiscInf_iff_inv {z : ThricePuncturedSphere} :
@@ -288,12 +294,12 @@ theorem mem_puncturedDiscInf_iff_inv {z : ThricePuncturedSphere} :
   have hz : 0 < ‖(z : ℂ)‖ := norm_pos_iff.mpr z.ne_zero
   constructor
   · intro h
-    change 2 < ‖(z : ℂ)‖ at h
+    rw [mem_puncturedDiscInf] at h
     constructor
     · positivity
     · simpa only [one_div] using (inv_lt_inv₀ hz (by norm_num)).mpr h
   · rintro ⟨_, h⟩
-    change 2 < ‖(z : ℂ)‖
+    rw [mem_puncturedDiscInf]
     exact (inv_lt_inv₀ hz (by norm_num)).mp (by simpa only [one_div] using h)
 
 /-- The standard punctured-disc neighbourhood of `0` is open. -/
@@ -332,8 +338,8 @@ theorem puncturedDiscZero_disjoint_puncturedDiscInf :
     Disjoint puncturedDiscZero puncturedDiscInf := by
   rw [Set.disjoint_left]
   intro z hz0 hzInf
-  change 0 < ‖(z : ℂ)‖ ∧ ‖(z : ℂ)‖ < 1 / 2 at hz0
-  change 2 < ‖(z : ℂ)‖ at hzInf
+  rw [mem_puncturedDiscZero] at hz0
+  rw [mem_puncturedDiscInf] at hzInf
   linarith
 
 /-- The standard neighbourhoods at `1` and `∞` are disjoint. -/
