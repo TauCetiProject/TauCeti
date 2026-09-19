@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.AbelSummation
+import Mathlib.NumberTheory.AbelSummation
 public import Mathlib.NumberTheory.LSeries.Convergence
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
@@ -81,11 +81,12 @@ This is weaker than `LSeriesSummable f s`, which in `ℂ` amounts to absolute co
 def LSeriesConverges (f : ℕ → ℂ) (s : ℂ) : Prop :=
   ∃ L : ℂ, Tendsto (fun N ↦ ∑ n ∈ range N, LSeries.term f s n) atTop (𝓝 L)
 
-/-- Unfolds `TauCeti.LSeriesConverges` to the convergence of the partial sums. -/
-theorem LSeriesConverges_def :
-    LSeriesConverges f s ↔
-      ∃ L : ℂ, Tendsto (fun N ↦ ∑ n ∈ range N, LSeries.term f s n) atTop (𝓝 L) :=
-  (Iff.rfl)
+/-- Ordinary convergence is unchanged when the terms of two Dirichlet series agree pointwise. -/
+theorem LSeriesConverges.congr {g : ℕ → ℂ}
+    (h : ∀ n, LSeries.term f s n = LSeries.term g s n) :
+    LSeriesConverges f s ↔ LSeriesConverges g s := by
+  unfold LSeriesConverges
+  simp_rw [h]
 
 /-- An absolutely convergent Dirichlet series converges. -/
 theorem LSeriesSummable.lSeriesConverges (h : LSeriesSummable f s) : LSeriesConverges f s :=
@@ -100,34 +101,39 @@ private theorem lSeriesConverges_ite_iff :
     rcases eq_or_ne n 0 with rfl | hn
     · simp
     · simp [hn]
-  simp only [LSeriesConverges_def, h]
+  exact LSeriesConverges.congr h
+
+/-- Decompose the interval from zero by splitting off its first element. -/
+private theorem Icc_zero_eq_insert (n : ℕ) : Icc 0 n = insert 0 (Icc 1 n) := by
+  ext k
+  simp [Finset.mem_Icc]
+  omega
 
 /-- Splitting off the index `0` from a partial sum over `Finset.Icc 0 n`. -/
 private theorem sum_Icc_one_eq_sub (g : ℕ → ℂ) (n : ℕ) :
     ∑ k ∈ Icc 1 n, g k = (∑ k ∈ Icc 0 n, g k) - g 0 := by
-  rw [show Icc 0 n = insert 0 (Icc 1 n) by ext k; simp [Finset.mem_Icc]; omega,
-    Finset.sum_insert (by simp)]
+  rw [Icc_zero_eq_insert, Finset.sum_insert (by simp)]
   ring
 
 /-- The partial sums over `Finset.Icc 0 n` of a sequence corrected to vanish at `0`. -/
 private theorem sum_Icc_zero_ite (f : ℕ → ℂ) (n : ℕ) :
     ∑ k ∈ Icc 0 n, (if k = 0 then 0 else f k) = ∑ k ∈ Icc 1 n, f k := by
-  rw [show Icc 0 n = insert 0 (Icc 1 n) by ext k; simp [Finset.mem_Icc]; omega,
-    Finset.sum_insert (by simp)]
+  rw [Icc_zero_eq_insert, Finset.sum_insert (by simp)]
   simp only [reduceIte, zero_add]
   exact Finset.sum_congr rfl fun k hk ↦ ite_eq_right (by have := (Finset.mem_Icc.mp hk).1; omega)
 
 /-- The Abel-summation core of `TauCeti.LSeriesConverges_of_sum_isBigO`, for a sequence already
 vanishing at `0`. -/
-private theorem lSeriesConverges_of_sum_isBigO_aux (hf : f 0 = 0) {r : ℝ} (hr : 0 ≤ r)
+private theorem lSeriesConverges_of_sum_isBigO_aux (hf : f 0 = 0) {r : ℝ}
     (hO : (fun n : ℕ ↦ ∑ k ∈ Icc 0 n, f k) =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ r)
     (hs : r < s.re) : LSeriesConverges f s := by
-  have hsre : 0 < s.re := hr.trans_lt hs
-  have hs0 : s ≠ 0 := fun h ↦ by simp [h] at hsre
   set g : ℝ → ℂ := fun t ↦ (t : ℂ) ^ (-s) with hg
   -- The multiplier is differentiable away from the origin, with the expected derivative.
-  have hderiv : ∀ t : ℝ, t ≠ 0 → HasDerivAt g (-s * (t : ℂ) ^ (-s - 1)) t := fun t ht ↦
-    hasDerivAt_ofReal_cpow_const ht (neg_ne_zero.mpr hs0)
+  have hderiv : ∀ t : ℝ, t ≠ 0 → HasDerivAt g (-s * (t : ℂ) ^ (-s - 1)) t := by
+    intro t ht
+    rcases eq_or_ne s 0 with rfl | hs0
+    · simpa [hg] using hasDerivAt_const (x := t) (c := (1 : ℂ))
+    · exact hasDerivAt_ofReal_cpow_const ht (neg_ne_zero.mpr hs0)
   have hg_diff : ∀ t ∈ Set.Ici (1 : ℝ), DifferentiableAt ℝ g t := fun t ht ↦
     (hderiv t (zero_lt_one.trans_le ht).ne').differentiableAt
   have hderiv' : ∀ t : ℝ, t ≠ 0 → deriv g t = -s * (t : ℂ) ^ (-s - 1) := fun t ht ↦
@@ -158,27 +164,34 @@ private theorem lSeriesConverges_of_sum_isBigO_aux (hf : f 0 = 0) {r : ℝ} (hr 
     calc (n : ℝ) ^ (-s.re) * ‖∑ k ∈ Icc 0 n, f k‖
         ≤ (n : ℝ) ^ (-s.re) * (C * (n : ℝ) ^ r) := by gcongr
       _ = C * (n : ℝ) ^ (-(s.re - r)) := by
-          rw [show -(s.re - r) = -s.re + r by ring, Real.rpow_add hn0']; ring
+          have hexp : -(s.re - r) = -s.re + r := by ring
+          rw [hexp, Real.rpow_add hn0']
+          ring
   -- The integrand of Abel summation has an integrable majorant.
   have hg_dom : (fun t ↦ deriv g t * ∑ k ∈ Icc 0 ⌊t⌋₊, f k) =O[atTop]
       fun t : ℝ ↦ t ^ (r - s.re - 1) := by
-    refine Asymptotics.IsBigO.of_bound (‖s‖ * C) ?_
-    filter_upwards [(tendsto_nat_floor_atTop (α := ℝ)).eventually hC,
-      eventually_ge_atTop (1 : ℝ)] with t hn ht
-    have ht0 : (0 : ℝ) < t := zero_lt_one.trans_le ht
-    have hnorm : ‖deriv g t‖ = ‖s‖ * t ^ (-s.re - 1) := by
-      rw [hderiv' t ht0.ne', norm_mul, norm_neg,
-        Complex.norm_cpow_eq_rpow_re_of_pos ht0, Complex.sub_re, Complex.neg_re, Complex.one_re]
-    calc ‖deriv g t * ∑ k ∈ Icc 0 ⌊t⌋₊, f k‖
-        = ‖s‖ * t ^ (-s.re - 1) * ‖∑ k ∈ Icc 0 ⌊t⌋₊, f k‖ := by rw [norm_mul, hnorm]
-      _ ≤ ‖s‖ * t ^ (-s.re - 1) * (C * t ^ r) := by
-          have hfl : C * ((⌊t⌋₊ : ℝ)) ^ r ≤ C * t ^ r := mul_le_mul_of_nonneg_left
-            (Real.rpow_le_rpow (Nat.cast_nonneg _) (Nat.floor_le ht0.le) hr) hC0
-          exact mul_le_mul_of_nonneg_left (hn.trans hfl) (by positivity)
-      _ = ‖s‖ * C * ‖t ^ (r - s.re - 1)‖ := by
-          rw [Real.norm_of_nonneg (Real.rpow_nonneg ht0.le _),
-            show r - s.re - 1 = -s.re - 1 + r by ring, Real.rpow_add ht0]
-          ring
+    have hderivO : (fun t : ℝ ↦ deriv g t) =O[atTop] fun t : ℝ ↦ t ^ (-s.re - 1) := by
+      refine Asymptotics.IsBigO.of_bound ‖s‖ ?_
+      filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht
+      rw [hderiv' t ht.ne', norm_mul, norm_neg,
+        Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.sub_re, Complex.neg_re, Complex.one_re,
+        Real.norm_of_nonneg (Real.rpow_nonneg ht.le _)]
+    have hsumO : (fun t : ℝ ↦ ∑ k ∈ Icc 0 ⌊t⌋₊, f k) =O[atTop]
+        fun t : ℝ ↦ t ^ r := by
+      have hfloor : Asymptotics.IsEquivalent atTop (fun t : ℝ ↦ (⌊t⌋₊ : ℝ))
+          (fun t ↦ max t 0) :=
+        Asymptotics.isEquivalent_nat_floor.congr_right
+          ((eventually_ge_atTop (0 : ℝ)).mono fun t ht ↦ (max_eq_left ht).symm)
+      refine (hO.comp_tendsto tendsto_nat_floor_atTop).trans
+        ((hfloor.rpow fun t ↦ le_max_right t 0).isBigO.congr' EventuallyEq.rfl ?_)
+      filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
+      change (max t 0) ^ r = t ^ r
+      rw [max_eq_left ht]
+    refine (hderivO.mul hsumO).congr' EventuallyEq.rfl ?_
+    filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht
+    rw [← Real.rpow_add ht]
+    congr 1
+    ring
   have hg_int' : IntegrableAtFilter (fun t : ℝ ↦ t ^ (r - s.re - 1)) atTop :=
     ⟨Set.Ioi 1, Ioi_mem_atTop 1, integrableOn_Ioi_rpow_of_lt (by linarith) zero_lt_one⟩
   have key := tendsto_sum_mul_atTop_nhds_one_sub_integral₀ f hf
@@ -196,18 +209,18 @@ private theorem lSeriesConverges_of_sum_isBigO_aux (hf : f 0 = 0) {r : ℝ} (hr 
     (by simpa only [Nat.range_succ_eq_Icc_zero] using final)⟩
 
 /-- **Ordinary convergence from a bound on the partial sums of the coefficients.**  If
-`∑_{1 ≤ k ≤ n} f k` is `O(n ^ r)` for some `r ≥ 0`, then the Dirichlet series of `f` converges at
+`∑_{1 ≤ k ≤ n} f k` is `O(n ^ r)`, then the Dirichlet series of `f` converges at
 every `s` with `Re s > r`.
 
 This is the criterion that produces a half-plane of ordinary convergence.  Abel summation against
 the multiplier `t ↦ t ^ (-s)` turns the partial sums into a boundary term, which tends to `0`
 because `Re s > r`, plus an integral whose integrand is dominated by the integrable majorant
 `t ^ (r - Re s - 1)`. -/
-theorem LSeriesConverges_of_sum_isBigO {r : ℝ} (hr : 0 ≤ r)
+theorem LSeriesConverges_of_sum_isBigO {r : ℝ}
     (hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, f k) =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ r)
     (hs : r < s.re) : LSeriesConverges f s := by
   rw [← lSeriesConverges_ite_iff]
-  exact lSeriesConverges_of_sum_isBigO_aux (by simp) hr
+  exact lSeriesConverges_of_sum_isBigO_aux (by simp)
     (hO.congr' (.of_forall fun n ↦ (sum_Icc_zero_ite f n).symm) EventuallyEq.rfl) hs
 
 /-- Iterating the Dirichlet term: dividing the terms at `s` by `n ^ (s' - s)` gives the terms
@@ -239,7 +252,7 @@ theorem LSeriesConverges.of_re_lt_re (h : LSeriesConverges f s) (hs : s.re < s'.
     refine Asymptotics.IsBigO.of_bound M (.of_forall fun n ↦ ?_)
     rw [Real.rpow_zero, norm_one, mul_one, sum_Icc_one_eq_sub, LSeries.term_zero, sub_zero]
     exact hM n
-  obtain ⟨L', hL'⟩ := LSeriesConverges_of_sum_isBigO (s := s' - s) le_rfl hO
+  obtain ⟨L', hL'⟩ := LSeriesConverges_of_sum_isBigO (s := s' - s) hO
     (by simpa using sub_pos.mpr hs)
   exact ⟨L', by simpa only [term_term] using hL'⟩
 
@@ -271,11 +284,11 @@ theorem abscissaOfConv_le_abscissaOfAbsConv (f : ℕ → ℂ) :
 
 /-- Partial sums of the coefficients that are `O(n ^ r)` bound the abscissa of ordinary
 convergence by `r`. -/
-theorem abscissaOfConv_le_of_sum_isBigO {r : ℝ} (hr : 0 ≤ r)
+theorem abscissaOfConv_le_of_sum_isBigO {r : ℝ}
     (hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, f k) =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ r) :
     abscissaOfConv f ≤ r :=
   abscissaOfConv_le_of_forall_lt_LSeriesConverges fun _ hy ↦
-    LSeriesConverges_of_sum_isBigO hr hO (by simpa using hy)
+    LSeriesConverges_of_sum_isBigO hO (by simpa using hy)
 
 end LSeries
 
@@ -306,8 +319,10 @@ theorem abscissaOfAbsConv_le_abscissaOfConv_add_one (f : ℕ → ℂ) :
   have hlt : abscissaOfConv f < ((z - 1 : ℝ) : EReal) := by
     by_contra hcon
     refine absurd hz₁ (not_lt.mpr ?_)
-    calc (z : EReal) = ((z - 1 : ℝ) : EReal) + 1 := by
-          rw [← EReal.coe_one, ← EReal.coe_add]; norm_num
+    have hz_eq : (z : EReal) = ((z - 1 : ℝ) : EReal) + 1 := by
+      rw [← EReal.coe_one, ← EReal.coe_add]
+      norm_num
+    calc (z : EReal) = ((z - 1 : ℝ) : EReal) + 1 := hz_eq
       _ ≤ abscissaOfConv f + 1 := add_le_add (not_lt.mp hcon) le_rfl
   obtain ⟨L, hL⟩ := LSeriesConverges_of_abscissaOfConv_lt_re
     (s := ((z - 1 : ℝ) : ℂ)) (by simpa using hlt)
@@ -344,7 +359,7 @@ theorem abscissaOfConv_neg_one_pow_le_zero :
       simp
     rw [h, neg_one_geom_sum]
     split_ifs <;> simp
-  have h := abscissaOfConv_le_of_sum_isBigO (f := fun n ↦ (-1 : ℂ) ^ n) (r := 0) le_rfl
+  have h := abscissaOfConv_le_of_sum_isBigO (f := fun n ↦ (-1 : ℂ) ^ n) (r := 0)
     (Asymptotics.IsBigO.of_bound 1 (.of_forall fun n ↦ by simpa using hsum n))
   exact_mod_cast h
 
@@ -362,9 +377,10 @@ theorem abscissaOfAbsConv_neg_one_pow :
     · simp
     · rw [LSeries.term_of_ne_zero hn, LSeries.term_of_ne_zero hn, norm_div, norm_div]
       simp
-  rw [show _root_.LSeries.abscissaOfAbsConv (fun n ↦ (-1 : ℂ) ^ n) =
-      _root_.LSeries.abscissaOfAbsConv 1 from
-    congrArg sInf (congrArg _ (Set.ext fun x ↦ h x)), _root_.LSeries.abscissaOfAbsConv_one]
+  have habs : _root_.LSeries.abscissaOfAbsConv (fun n ↦ (-1 : ℂ) ^ n) =
+      _root_.LSeries.abscissaOfAbsConv 1 :=
+    congrArg sInf (congrArg _ (Set.ext fun x ↦ h x))
+  rw [habs, _root_.LSeries.abscissaOfAbsConv_one]
 
 /-- **The two abscissae can be different.**  For the alternating coefficients the ordinary
 abscissa is at most `0` while the absolute one is `1`. -/
