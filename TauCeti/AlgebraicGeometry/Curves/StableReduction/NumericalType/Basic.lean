@@ -170,6 +170,13 @@ lemma exists_mem_notMem_adj (s : Set T.Component) (hne : s.Nonempty) (hs : s ≠
     ∃ i ∈ s, ∃ j ∉ s, T.Adj i j :=
   (Relation.forall_reflTransGen_iff T.Adj).1 T.reflTransGen_adj s hne hs
 
+/-- The fibre relation in matrix form: the multiplicity vector lies in the kernel of the
+intersection matrix. -/
+lemma intersection_mulVec_multiplicity :
+    T.intersection.mulVec (fun i ↦ (T.multiplicity i : ℤ)) = 0 := by
+  funext i
+  simpa [Matrix.mulVec, dotProduct, mul_comm] using T.fiber_relation i
+
 /-! ### Self-intersections -/
 
 private lemma multiplicity_pos (i : T.Component) : (0 : ℤ) < (T.multiplicity i : ℤ) :=
@@ -287,10 +294,8 @@ the multiplicity vector, so this is an instance of
 `Matrix.IsSymm.even_sum_mul_diag_of_dotProduct_mulVec_eq_zero`. -/
 lemma even_sum_multiplicity_mul_diagonal :
     Even (∑ i, (T.multiplicity i : ℤ) * T.intersection i i) := by
-  have hker : T.intersection.mulVec (fun j ↦ (T.multiplicity j : ℤ)) = 0 := funext fun i ↦ by
-    simpa [Matrix.mulVec, dotProduct, mul_comm] using T.fiber_relation i
   exact T.intersection_isSymm.even_sum_mul_diag_of_dotProduct_mulVec_eq_zero
-    (by rw [hker, dotProduct_zero])
+    (by rw [T.intersection_mulVec_multiplicity, dotProduct_zero])
 
 /-! ### The signed genus -/
 
