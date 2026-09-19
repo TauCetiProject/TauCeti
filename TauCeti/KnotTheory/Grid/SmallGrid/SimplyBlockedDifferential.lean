@@ -179,6 +179,7 @@ theorem twoByTwo_simplyBlockedCoefficient_swap_id :
 
 /-- The simply blocked differential on the standard two-by-two unknot is
 `d(a · id + b · swap) = (a V) · swap`. -/
+@[simp]
 theorem twoByTwo_simplyBlockedDifferential_apply
     (c : GridChainHat R 2 0) :
     twoByTwo.simplyBlockedDifferential R 0 c =
@@ -197,16 +198,14 @@ theorem twoByTwo_simplyBlockedDifferential_apply
           simp
 
 /-- The surviving cycle in the simply blocked complex of the standard two-by-two unknot. -/
-noncomputable def twoByTwoSimplyBlockedCycle : GridChainHat (ZMod 2) 2 0 :=
+noncomputable def twoByTwoSimplyBlockedCycle : GridChainHat R 2 0 :=
   Finsupp.single GridState.twoByTwoSwap 1
 
 /-- The named surviving chain is killed by the simply blocked differential. -/
-@[simp]
 theorem twoByTwo_simplyBlockedDifferential_cycle :
-    twoByTwo.simplyBlockedDifferential (ZMod 2) 0 twoByTwoSimplyBlockedCycle = 0 :=
-  by
-    rw [twoByTwo_simplyBlockedDifferential_apply]
-    simp [twoByTwoSimplyBlockedCycle]
+    twoByTwo.simplyBlockedDifferential R 0 (twoByTwoSimplyBlockedCycle R) = 0 := by
+  rw [twoByTwo_simplyBlockedDifferential_apply]
+  simp [twoByTwoSimplyBlockedCycle]
 
 private theorem twoByTwoSwap_bidegree :
     OddComponentGridDiagram.twoByTwo.bidegree GridState.twoByTwoSwap = (0, 0) := by
@@ -223,8 +222,8 @@ private theorem twoByTwoSwap_bidegree :
 /-- The surviving two-by-two simply blocked cycle is homogeneous of
 Maslov--Alexander bidegree `(0, 0)`. -/
 theorem twoByTwoSimplyBlockedCycle_mem_bigradedChainHatPiece :
-    twoByTwoSimplyBlockedCycle ∈
-      OddComponentGridDiagram.twoByTwo.bigradedChainHatPiece (ZMod 2) 0 (0, 0) := by
+    twoByTwoSimplyBlockedCycle R ∈
+      OddComponentGridDiagram.twoByTwo.bigradedChainHatPiece R 0 (0, 0) := by
   rw [OddComponentGridDiagram.mem_bigradedChainHatPiece]
   intro x e he
   have hx : x = GridState.twoByTwoSwap := by
@@ -233,7 +232,8 @@ theorem twoByTwoSimplyBlockedCycle_mem_bigradedChainHatPiece :
     · exact h
   subst x
   have hezero : e = 0 := by
-    simpa [twoByTwoSimplyBlockedCycle] using he
+    by_contra h
+    simp [twoByTwoSimplyBlockedCycle, MvPolynomial.coeff_one, Ne.symm h] at he
   subst e
   rw [Prod.ext_iff]
   simp [Finsupp.degree_apply, twoByTwoSwap_bidegree]
