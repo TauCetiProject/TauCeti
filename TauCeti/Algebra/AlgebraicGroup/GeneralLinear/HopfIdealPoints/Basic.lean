@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 public import TauCeti.Algebra.Group.Subgroup.Map
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 /-!
 # General-linear points cut out by Hopf ideals
@@ -176,10 +177,9 @@ algebra loses no information. -/
 theorem mapHopfIdealPointsSubgroup_injective
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) {φ : A →ₐ[R] B} (hφ : Function.Injective φ) :
     Function.Injective (mapHopfIdealPointsSubgroup n I φ) := by
-  have hmap : Function.Injective (Matrix.GeneralLinearGroup.map (n := Fin n) (φ : A →+* B)) :=
-    Units.map_injective (Matrix.map_injective hφ)
   intro g g' h
-  refine Subtype.ext (hmap ?_)
+  refine Subtype.ext
+    (Matrix.GeneralLinearGroup.map_injective (n := Fin n) (f := (φ : A →+* B)) hφ ?_)
   rw [← coe_mapHopfIdealPointsSubgroup, ← coe_mapHopfIdealPointsSubgroup, h]
 
 /-! ### Transport along a presentation of the point subgroup

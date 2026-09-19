@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.FixedField
 public import TauCeti.FieldTheory.GaloisGroups.Orbits
+public import TauCeti.GroupTheory.GroupAction.Transitive
 
 /-!
 # Point stabilizers of the Galois action on the roots
@@ -26,14 +27,18 @@ separable, and for irreducible `p` this follows from `p.Separable`.
 
 * `TauCeti.stabilizer_eq_fixingSubgroup_adjoin_simple`: the stabilizer of a root is the fixing
   subgroup of the field the root generates.
-* `TauCeti.fixedField_stabilizer`: for a Galois splitting field, the field the stabilizer fixes
-  is that same field.
+* `TauCeti.isPretransitive_rootSet_of_irreducible`: in a normal extension the Galois group acts
+  transitively on the roots of an irreducible polynomial.
 * `TauCeti.index_stabilizer_eq_natDegree_minpoly`,
   `TauCeti.index_stabilizer_eq_natDegree`: the index of the stabilizer is the degree of the
   minimal polynomial of the root, so for irreducible separable `p` it is `p.natDegree`.
 * `TauCeti.stabilizer_eq_bot_iff_adjoin_simple_eq_top`,
   `TauCeti.stabilizer_eq_top_iff_adjoin_simple_eq_bot`: the two ends of the correspondence, a
   root that generates the whole splitting field and a root that lies in the base field.
+* `TauCeti.coe_rootSet_eq_orbit_of_irreducible`, `TauCeti.rootSetEquivQuotientStabilizer`: for the
+  action of `Gal(M/F)` on the roots in a normal extension `M / F` of an irreducible polynomial,
+  the roots form one orbit and are identified equivariantly with the cosets of the stabilizer of
+  a chosen root `α`, the coset of `ρ` corresponding to the root `ρ • α`.
 
 ## Implementation notes
 
@@ -71,12 +76,6 @@ theorem stabilizer_eq_fixingSubgroup_adjoin_simple (x : p.rootSet p.SplittingFie
     IntermediateField.fixingSubgroup_adjoin_simple]
   exact Iff.rfl
 
-/-- **The field a root generates is recovered from its stabilizer.** When the splitting field is
-Galois over `F` the fixed field of the stabilizer of `x` is `F⟮x⟯`. -/
-theorem fixedField_stabilizer [IsGalois F p.SplittingField] (x : p.rootSet p.SplittingField) :
-    IntermediateField.fixedField (stabilizer p.Gal x) = F⟮(x : p.SplittingField)⟯ := by
-  rw [stabilizer_eq_fixingSubgroup_adjoin_simple, IsGalois.fixedField_fixingSubgroup]
-
 /-! ### The index of a point stabilizer -/
 
 /-- **The index of a point stabilizer is the degree of the minimal polynomial of the point.** The
@@ -110,7 +109,9 @@ theorem stabilizer_eq_bot_iff_adjoin_simple_eq_top [IsGalois F p.SplittingField]
     (x : p.rootSet p.SplittingField) :
     stabilizer p.Gal x = ⊥ ↔ F⟮(x : p.SplittingField)⟯ = ⊤ := by
   refine ⟨fun h => ?_, fun h => ?_⟩
-  · rw [← fixedField_stabilizer x, h]
+  · rw [stabilizer_eq_fixingSubgroup_adjoin_simple, IntermediateField.fixingSubgroup_adjoin_simple]
+      at h
+    rw [← IntermediateField.fixedField_stabilizer_eq_adjoin_simple (x : p.SplittingField), h]
     exact IntermediateField.fixedField_bot
   · rw [stabilizer_eq_fixingSubgroup_adjoin_simple, h]
     exact IntermediateField.fixingSubgroup_top
@@ -122,9 +123,101 @@ theorem stabilizer_eq_top_iff_adjoin_simple_eq_bot [IsGalois F p.SplittingField]
     (x : p.rootSet p.SplittingField) :
     stabilizer p.Gal x = ⊤ ↔ F⟮(x : p.SplittingField)⟯ = ⊥ := by
   refine ⟨fun h => ?_, fun h => ?_⟩
-  · rw [← fixedField_stabilizer x, h]
+  · rw [stabilizer_eq_fixingSubgroup_adjoin_simple, IntermediateField.fixingSubgroup_adjoin_simple]
+      at h
+    rw [← IntermediateField.fixedField_stabilizer_eq_adjoin_simple (x : p.SplittingField), h]
     exact IsGalois.fixedField_top
   · rw [stabilizer_eq_fixingSubgroup_adjoin_simple, h]
     exact IntermediateField.fixingSubgroup_bot
+
+/-! ### The roots of an irreducible polynomial in a normal extension -/
+
+section Normal
+
+variable {M : Type*} [Field M] [Algebra F M] [Normal F M]
+
+/-- In a normal extension `M / F`, the roots in `M` of an irreducible polynomial over `F` form one
+orbit of `Gal(M/F)`: the orbit of any of them. -/
+theorem coe_rootSet_eq_orbit_of_irreducible {q : F[X]} (hq : Irreducible q) {α : M}
+    (hα : α ∈ q.rootSet M) : (q.rootSet M : Set M) = orbit (M ≃ₐ[F] M) α := by
+  ext β
+  constructor
+  · intro hβ
+    rw [← Normal.minpoly_eq_iff_mem_orbit, ← minpoly.eq_of_irreducible hq (mem_rootSet.mp hβ).2,
+      ← minpoly.eq_of_irreducible hq (mem_rootSet.mp hα).2]
+  · rintro ⟨τ, rfl⟩
+    exact smul_mem_rootSet τ hα
+
+/-- In a normal extension `M / F`, `Gal(M/F)` acts transitively on the roots in `M` of an
+irreducible polynomial over `F`. -/
+theorem isPretransitive_rootSet_of_irreducible {q : F[X]} (hq : Irreducible q) :
+    IsPretransitive (M ≃ₐ[F] M) (q.rootSet M) where
+  exists_smul_eq x y := by
+    obtain ⟨g, hg⟩ := mem_orbit_iff.mp
+      ((Set.ext_iff.mp (coe_rootSet_eq_orbit_of_irreducible hq x.2) y).mp y.2)
+    exact ⟨g, Subtype.ext hg⟩
+
+omit [Normal F M] in
+/-- The stabilizer of a root, as a point of the root set, is its stabilizer as an element of the
+field. -/
+theorem stabilizer_rootSet_mk {q : F[X]} {α : M} (hα : α ∈ q.rootSet M) :
+    stabilizer (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M) = stabilizer (M ≃ₐ[F] M) α := by
+  ext g
+  simp only [mem_stabilizer_iff, Subtype.ext_iff, rootSet.coe_smul]
+
+/-- The roots in a normal extension `M / F` of an irreducible polynomial over `F`, as the cosets
+of the stabilizer in `Gal(M/F)` of a chosen root: the transitive-action identification
+`TauCeti.quotientStabilizerEquiv`, transported along `TauCeti.stabilizer_rootSet_mk`. -/
+noncomputable def rootSetEquivQuotientStabilizer {q : F[X]} (hq : Irreducible q) {α : M}
+    (hα : α ∈ q.rootSet M) : q.rootSet M ≃ (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α :=
+  have := isPretransitive_rootSet_of_irreducible (M := M) hq
+  (quotientStabilizerEquiv (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M)).symm.trans
+    (Subgroup.quotientEquivOfEq (stabilizer_rootSet_mk hα))
+
+/-- The root `ρ α` corresponds to the coset of `ρ`. -/
+@[simp]
+theorem rootSetEquivQuotientStabilizer_apply_mk {q : F[X]} (hq : Irreducible q) {α : M}
+    (hα : α ∈ q.rootSet M) (ρ : M ≃ₐ[F] M) (h : ρ α ∈ q.rootSet M) :
+    rootSetEquivQuotientStabilizer hq hα ⟨ρ α, h⟩ =
+      (ρ : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α) := by
+  have := isPretransitive_rootSet_of_irreducible (M := M) hq
+  have h1 : (quotientStabilizerEquiv (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M)).symm ⟨ρ α, h⟩ =
+      (ρ : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M)) := by
+    rw [Equiv.symm_apply_eq, quotientStabilizerEquiv_mk]
+    rfl
+  rw [rootSetEquivQuotientStabilizer, Equiv.trans_apply, h1]
+  exact Subgroup.quotientEquivOfEq_mk _ _
+
+/-- The coset of `ρ` corresponds to the root `ρ • α`. -/
+@[simp]
+theorem coe_rootSetEquivQuotientStabilizer_symm_apply_mk {q : F[X]} (hq : Irreducible q) {α : M}
+    (hα : α ∈ q.rootSet M) (ρ : M ≃ₐ[F] M) :
+    (((rootSetEquivQuotientStabilizer hq hα).symm
+      (ρ : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α) : q.rootSet M) : M) = ρ • α := by
+  rw [(Equiv.symm_apply_eq _).mpr
+    (rootSetEquivQuotientStabilizer_apply_mk hq hα ρ (smul_mem_rootSet ρ hα)).symm]
+  rfl
+
+/-- The identification of the roots with the cosets of a stabilizer is equivariant. -/
+@[simp]
+theorem rootSetEquivQuotientStabilizer_smul {q : F[X]} (hq : Irreducible q) {α : M}
+    (hα : α ∈ q.rootSet M) (g : M ≃ₐ[F] M) (x : q.rootSet M) :
+    rootSetEquivQuotientStabilizer hq hα (g • x) = g • rootSetEquivQuotientStabilizer hq hα x := by
+  have := isPretransitive_rootSet_of_irreducible (M := M) hq
+  -- The inverse of the transitive-action identification is equivariant, and so is the transport
+  -- along the equality of stabilizers.
+  have h1 : ∀ y : q.rootSet M,
+      (quotientStabilizerEquiv (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M)).symm (g • y) =
+        g • (quotientStabilizerEquiv (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M)).symm y := fun y => by
+    rw [Equiv.symm_apply_eq, quotientStabilizerEquiv_smul, Equiv.apply_symm_apply]
+  have h2 : ∀ c, Subgroup.quotientEquivOfEq (stabilizer_rootSet_mk hα) (g • c) =
+      g • Subgroup.quotientEquivOfEq (stabilizer_rootSet_mk hα) c := fun c => by
+    induction c using QuotientGroup.induction_on with
+    | H a =>
+      rw [MulAction.Quotient.smul_mk, Subgroup.quotientEquivOfEq_mk, Subgroup.quotientEquivOfEq_mk,
+        MulAction.Quotient.smul_mk]
+  simp only [rootSetEquivQuotientStabilizer, Equiv.trans_apply, h1, h2]
+
+end Normal
 
 end TauCeti

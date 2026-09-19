@@ -39,6 +39,8 @@ closed-subgroup inclusion assumes the source Hopf algebra `H` is commutative.
   compatibility for an arbitrary point of the kernel quotient.
 * `TauCeti.HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range`: the subgroup cut out by
   the kernel consists exactly of points obtained by pre-composition with the morphism.
+* `TauCeti.HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor`: its form
+  for morphisms of bundled commutative Hopf algebras.
 
 ## References
 
@@ -187,6 +189,15 @@ theorem quotientPointsSubgroup_kerOfSurjective_eq_range (f : H →ₐc[R] K)
   · rintro ⟨q, rfl⟩
     exact ⟨(quotientKerPointsMulEquiv f hf A).symm q,
       quotientPointsHom_quotientKerPointsMulEquiv_symm_apply f hf A q⟩
+
+/-- The bundled form of `quotientPointsSubgroup_kerOfSurjective_eq_range`: the points cut out by
+the kernel of a surjective morphism are the range of its point map. -/
+theorem quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor
+    {H K : _root_.CommHopfAlgCat.{v} R} (f : H ⟶ K) (hf : Function.Surjective f.hom)
+    (A : CommAlgCat.{x} R) :
+    CommHopfAlgCat.quotientPointsSubgroup H (kerOfSurjective f.hom hf) A =
+      ((CommHopfAlgCat.mapPointsFunctor f).app A).hom.range :=
+  quotientPointsSubgroup_kerOfSurjective_eq_range f.hom hf A
 
 end CommSource
 

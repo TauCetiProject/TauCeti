@@ -103,7 +103,7 @@ lemma det_rightCosetRep_pos_of_delta0
     (D : HeckeCoset (Delta0 N) ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)))
     (v : DecompQuotient ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ))
       (D.out : GL (Fin 2) ℚ)⁻¹) :
-    0 < (rightCosetRep D v : Matrix (Fin 2) (Fin 2) ℚ).det :=
+    0 < (↑(rightCosetRep D v) : Matrix (Fin 2) (Fin 2) ℚ).det :=
   posDetInt_le_glpos 2 (Delta0_le_posDetInt N (rightCosetRep_mem_Delta0 D v))
 
 end Representatives

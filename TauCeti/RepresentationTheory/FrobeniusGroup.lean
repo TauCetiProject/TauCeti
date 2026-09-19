@@ -55,6 +55,12 @@ complement.
   is proper the kernel is nontrivial, and when `H` is nontrivial the kernel is proper — so for a
   Frobenius complement (`TauCeti.IsFrobeniusComplement`, which is both) the kernel is a **proper
   nontrivial** normal subgroup.
+* `TauCeti.card_frobeniusKernelSubgroup`: the kernel has `|G : H|` elements.
+* `TauCeti.card_dvd_card_frobeniusKernelSubgroup_sub_one`: **`|H| ∣ |N| - 1`**, with
+  `TauCeti.coprime_card_card_frobeniusKernelSubgroup` and
+  `TauCeti.card_lt_card_frobeniusKernelSubgroup` its two immediate consequences — a Frobenius
+  complement and a Frobenius kernel have coprime orders, and a proper `H` is strictly smaller than
+  its kernel.
 
 ## Implementation notes
 
@@ -62,8 +68,14 @@ Everything here needs only `TauCeti.IsTISubgroup H`, not the full
 `TauCeti.IsFrobeniusComplement H`: properness and nontriviality of `H` play no part in the
 character argument, and the degenerate cases are true as stated (`frobeniusKernel ⊤ = {1}` is the
 carrier of `⊥`, and `frobeniusKernel ⊥ = Set.univ` that of `⊤`).  They are exactly what makes the
-kernel itself nontrivial and proper, so the last two statements take `H ≠ ⊤` and `H ≠ ⊥` as plain
-hypotheses.
+kernel itself nontrivial and proper, so the statements that need them take `H ≠ ⊤` and `H ≠ ⊥` as
+plain hypotheses.
+
+The arithmetic of the last three statements is not character theory: it is the freeness of the
+conjugation action of `H` on the nonidentity part of the kernel, proved for a trivial-intersection
+subgroup in `TauCeti/GroupTheory/FrobeniusKernel.lean` as
+`TauCeti.IsTISubgroup.card_dvd_index_sub_one`.  What Frobenius's theorem adds here is only that the
+kernel *is* a subgroup `N`, so that `|G : H|` may be read as `|N|`.
 
 The bundled subgroup is read off a private existence statement with `Exists.choose`.  That keeps
 the choice of affording representations — which is genuinely arbitrary — inside a single proof,
@@ -260,5 +272,38 @@ theorem frobeniusKernelSubgroup_ne_bot (hH : IsTISubgroup H) (hne : H ≠ ⊤) :
   have hcard := (frobeniusKernel_isComplement' hH).index_eq_card
   rw [hbot, Subgroup.card_bot] at hcard
   exact hne (Subgroup.index_eq_one.mp hcard)
+
+/-! ### The order of the complement against the order of the kernel -/
+
+-- Not `@[simp]`: `TauCeti.mem_frobeniusKernelSubgroup` already rewrites the left-hand side, so the
+-- `simpNF` linter rejects the tag.
+/-- **The Frobenius kernel has `|G : H|` elements**, the counting half of
+`TauCeti.frobeniusKernel_isComplement'` read on the bundled subgroup. -/
+theorem card_frobeniusKernelSubgroup (hH : IsTISubgroup H) :
+    Nat.card (frobeniusKernelSubgroup hH) = H.index :=
+  (frobeniusKernel_isComplement' hH).index_eq_card.symm
+
+/-- **The order of a Frobenius complement divides the order of the Frobenius kernel minus one**,
+`|H| ∣ |N| - 1`.  This is `TauCeti.IsTISubgroup.card_dvd_index_sub_one` read on the bundled
+kernel, whose order is `|G : H|`. -/
+theorem card_dvd_card_frobeniusKernelSubgroup_sub_one (hH : IsTISubgroup H) :
+    Nat.card H ∣ Nat.card (frobeniusKernelSubgroup hH) - 1 := by
+  rw [card_frobeniusKernelSubgroup hH]
+  exact hH.card_dvd_index_sub_one
+
+/-- **A Frobenius complement and the Frobenius kernel have coprime orders**, the bundled form of
+`TauCeti.IsTISubgroup.coprime_card_index`. -/
+theorem coprime_card_card_frobeniusKernelSubgroup (hH : IsTISubgroup H) :
+    Nat.Coprime (Nat.card H) (Nat.card (frobeniusKernelSubgroup hH)) := by
+  rw [card_frobeniusKernelSubgroup hH]
+  exact hH.coprime_card_index
+
+/-- **A proper trivial-intersection subgroup is smaller than its Frobenius kernel**, `|H| < |N|`,
+the bundled form of `TauCeti.IsTISubgroup.card_lt_index`.  Properness is needed: for `H = ⊤` the
+kernel is trivial and the inequality reverses. -/
+theorem card_lt_card_frobeniusKernelSubgroup (hH : IsTISubgroup H) (hne : H ≠ ⊤) :
+    Nat.card H < Nat.card (frobeniusKernelSubgroup hH) := by
+  rw [card_frobeniusKernelSubgroup hH]
+  exact hH.card_lt_index hne
 
 end TauCeti

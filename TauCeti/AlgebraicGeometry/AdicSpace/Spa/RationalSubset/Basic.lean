@@ -8,6 +8,7 @@ module
 import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Points
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Presentation
 
 /-!
 # Rational subsets of the adic spectrum
@@ -64,6 +65,10 @@ layer deferred above.
   in the adic spectrum.
 * `TauCeti.ValuationSpectrum.rationalSubset_subset_rationalSubset_of_subset` : the rational
   subset is antitone in its numerator set.
+* `TauCeti.ValuationSpectrum.rationalSubset_mul_subset_rationalSubset` : refining a
+  presentation by a cofactor shrinks the rational subset.
+* `TauCeti.ValuationSpectrum.rationalSubset_subset_rationalSubset_of_le` : refinement of bundled
+  presentations shrinks the rational subset.
 * `TauCeti.ValuationSpectrum.rationalSubset_insert_of_forall_vle` : a numerator already
   dominated by the denominator throughout `R(T/s)` may be adjoined to `T` without changing the
   subset.
@@ -184,6 +189,30 @@ theorem rationalSubset_subset_rationalSubset_of_subset (Aplus : Subring A) {T T'
   rw [mem_rationalSubset_iff] at hv ⊢
   exact ⟨hv.1, fun t ht ↦ hv.2.1 t (h ht), hv.2.2⟩
 
+/-- **Refining a presentation shrinks the rational subset.** If a cofactor `r` carries every
+numerator of `T` into `T'`, then `R(T'/(s · r)) ⊆ R(T/s)`: at a point of the smaller subset `r` is
+off the support, so it cancels from `v(t · r) ≤ v(s · r)`. This is the containment behind a
+refinement of presentations, whose restriction map goes from `A⟨T/s⟩` to `A⟨T'/(s · r)⟩`. -/
+theorem rationalSubset_mul_subset_rationalSubset (Aplus : Subring A) {T T' : Finset A} {s r : A}
+    (hT : ∀ t ∈ T, t * r ∈ T') :
+    rationalSubset Aplus T' (s * r) ⊆ rationalSubset Aplus T s := fun v hv ↦ by
+  rw [mem_rationalSubset_iff] at hv ⊢
+  have h {t : A} (ht : v.toValuativeRel.vle (t * r) (s * r)) : v ∈ basicOpen t s :=
+    basicOpen_mul_subset r t s <| by
+      rw [mem_basicOpen_iff, mul_comm r t, mul_comm r s]
+      exact ⟨ht, hv.2.2⟩
+  exact ⟨hv.1, fun t ht ↦ ((mem_basicOpen_iff _ _ _).mp (h (hv.2.1 _ (hT t ht)))).1,
+    ((mem_basicOpen_iff _ _ _).mp (h (v.toValuativeRel.vle_refl _))).2⟩
+
+/-- **A refinement of presentations shrinks the rational subset**: if `q` refines `p`, then
+`R(q) ⊆ R(p)`. -/
+theorem rationalSubset_subset_rationalSubset_of_le {P : TauCeti.Huber.PairOfDefinition A}
+    (Aplus : Subring A) {p q : P.Presentation} (h : p ≤ q) :
+    rationalSubset Aplus q.num q.den ⊆ rationalSubset Aplus p.num p.den := by
+  obtain ⟨r, hr, hT⟩ := TauCeti.Huber.PairOfDefinition.Presentation.le_def.mp h
+  rw [hr]
+  exact rationalSubset_mul_subset_rationalSubset Aplus hT
+
 open scoped Classical in
 /-- Inserting the denominator among the numerators changes nothing — Wedhorn's "one may
 replace `T` by `T ∪ {s}`" (Definition 7.29). -/
@@ -263,6 +292,15 @@ def spaBasicOpen (Aplus : Subring A) (T : Finset A) (s : A) :
 theorem mem_spaBasicOpen {Aplus : Subring A} {T : Finset A} {s : A} {v : ↥(spa Aplus)} :
     v ∈ spaBasicOpen Aplus T s ↔ (v : Spv A) ∈ rationalSubset Aplus T s :=
   Iff.rfl
+
+/-- **Containment of basic opens** is containment of the underlying rational subsets, since every
+rational subset already lies in `spa A⁺`. -/
+theorem spaBasicOpen_le_spaBasicOpen_iff {Aplus : Subring A} {T T' : Finset A} {s s' : A} :
+    spaBasicOpen Aplus T' s' ≤ spaBasicOpen Aplus T s ↔
+      rationalSubset Aplus T' s' ⊆ rationalSubset Aplus T s :=
+  ⟨fun h v hv ↦ mem_spaBasicOpen.mp <|
+    h ((mem_spaBasicOpen (v := ⟨v, rationalSubset_subset_spa Aplus T' s' hv⟩)).mpr hv),
+    fun h _ hv ↦ mem_spaBasicOpen.mpr (h (mem_spaBasicOpen.mp hv))⟩
 
 open scoped Classical Pointwise in
 /-- **The set-level half of Wedhorn Remark 7.30(5)**: writing `Uᵢ = insert sᵢ Tᵢ` for each

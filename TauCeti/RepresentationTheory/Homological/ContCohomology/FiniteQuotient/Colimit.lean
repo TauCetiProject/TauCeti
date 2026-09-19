@@ -5,26 +5,36 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
+import TauCeti.Algebra.Category.Grp.FilteredColimits
+import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Descent
+import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.DegreeTwoDescent
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Explicit
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation
+public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
-# Finite-quotient comparison in degrees one and two
+# Finite-quotient comparison in degrees zero, one and two
 
-For a profinite group `G` acting continuously on a discrete module `M`, the first continuous
-cohomology group is the colimit of the finite-level groups over the open normal subgroups:
+For a profinite group `G` acting continuously on a discrete module `M`, the explicit continuous
+cohomology groups in degrees zero, one and two are colimits of the finite-level groups over the open
+normal subgroups:
 
 ```text
-H¹(G, M) = colim_U H¹(G ⧸ U, M^U).
+Hⁱ(G, M) = colim_U Hⁱ(G ⧸ U, M^U),  i = 0, 1, 2.
 ```
 
-This file names the comparison maps into `H¹(G, M)` and `H²(G, M)` and assembles them into cocones
-on `TauCeti.ContCohomology.explicitFiniteQuotientSystem1` and
-`explicitFiniteQuotientSystem2`. It proves that the degree-one cocone is colimiting. The
-degree-two cocone is the specified comparison object for the degree-two colimit theorem.
+This file names the comparison maps into `Hⁱ(G, M)` for `i = 0, 1, 2` and assembles them into
+cocones on the systems `TauCeti.ContCohomology.explicitFiniteQuotientSystem0`,
+`explicitFiniteQuotientSystem1` and `explicitFiniteQuotientSystem2`. It proves that all three
+cocones are colimiting; those statements are universality of the named maps, not bare
+isomorphisms.
 
 ## Main definitions
 
+* `TauCeti.ContCohomology.explicitFiniteQuotientComparison0` and
+  `explicitFiniteQuotientCocone0`: degree-zero inflation assembled as a cocone.
+* `TauCeti.ContCohomology.explicitFiniteQuotientColimit0`: that cocone is colimiting.
 * `TauCeti.ContCohomology.explicitFiniteQuotientComparison1`: the leg family, inflation along
   `G → G ⧸ U`.
 * `TauCeti.ContCohomology.explicitFiniteQuotientCocone1`: the cocone those legs form, with apex
@@ -34,9 +44,14 @@ degree-two cocone is the specified comparison object for the degree-two colimit 
   given by inflation.
 * `TauCeti.ContCohomology.explicitFiniteQuotientCocone2`: the degree-two comparison cocone with
   apex `H²(G, M)`.
+* `TauCeti.ContCohomology.explicitFiniteQuotientColimit2`: that cocone is colimiting.
 
 ## Main statements
 
+* `TauCeti.ContCohomology.explicitInfl0_comp_explicitFiniteQuotientTransition0`: degree-zero
+  inflation is compatible with the finite-level transitions.
+* `TauCeti.ContCohomology.explicitFiniteQuotientTransition0_bijective`: every degree-zero
+  transition is bijective.
 * `TauCeti.ContCohomology.explicitInfl1_comp_explicitFiniteQuotientTransition1` and its
   elementwise form `explicitInfl1_explicitFiniteQuotientTransition1`: inflating through a deeper
   level is inflating directly, which is the cocone condition.
@@ -48,13 +63,23 @@ degree-two cocone is the specified comparison object for the degree-two colimit 
   trivial first cohomology, so does `H¹(G, M)`.
 * `TauCeti.ContCohomology.explicitInfl2_comp_explicitFiniteQuotientTransition2`: degree-two
   inflation is compatible with the finite-level transitions.
+* `TauCeti.ContCohomology.exists_explicitFiniteQuotientTransition2_eq_zero`: a finite-level class
+  which inflates to zero vanishes after transition to a sufficiently deep finite level.
 
 ## Implementation notes
 
 The comparison map from the `U`-level is inflation along `G → G ⧸ U`, already built as
-`TauCeti.ContCohomology.explicitInfl1` and `explicitInfl2`; they are used under those names, and
-the comparison natural transformations assemble the maps rather than introducing second names
-for individual legs.
+`TauCeti.ContCohomology.explicitInfl0`, `explicitInfl1` or `explicitInfl2`; they are used under
+those names, and the comparison natural transformations assemble the maps rather than introducing
+second names for individual legs.
+
+In degree zero every comparison leg is an additive equivalence: being fixed by the quotient on
+`M^U` is exactly being fixed by `G` on `M`. Every transition is therefore bijective, so the
+degree-zero system is eventually constant in the sense of
+`CategoryTheory.Functor.IsEventuallyConstantFrom` and the colimit statement is Mathlib's
+`CategoryTheory.Functor.IsEventuallyConstantFrom.isColimitOfIsIso` applied at the whole-group
+level. Consequently the degree-zero cocone is already colimiting for any topological group; no
+compactness or discreteness hypothesis enters that proof.
 
 Surjectivity of the comparison is *strict*. The zero set of a continuous `1`-cocycle is an open
 neighbourhood of `1`, so `ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one` puts an open
@@ -65,19 +90,24 @@ arbitrary normal subgroup and needs neither compactness nor discreteness, so the
 directed union and the descent of an arbitrary cocone is defined by choosing any level a class
 comes from.
 
-Compactness and total disconnectedness of `G` are used only for that open normal subgroup:
-discreteness of `M` makes the zero set open, and the two topological hypotheses make the open
-normal subgroups a neighbourhood basis of `1`.
+In the degree-one argument, compactness and total disconnectedness of `G` are used only to put an
+open normal subgroup inside the open zero set supplied by discreteness of `M`.
+
+In degree two, strict descent supplies surjectivity. For injectivity, a continuous primitive of an
+inflated coboundary is uniformly constant on right cosets of some open normal subgroup and has
+finite image. Passing to a still smaller subgroup which fixes that image descends the primitive,
+so the original finite-level class becomes a coboundary at that deeper level.
+
+The degree-two colimit statement is then read off from
+`TauCeti.AddCommGrpCat.isColimitOfJointlySurjective`: the comparison legs are jointly surjective,
+and two finite-level classes with the same inflation already agree after transition to a common
+deeper level.
 
 ## References
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (1.2.5).
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Cor. 6.5.6(a).
 -/
-
--- Provenance: the statements follow the human-authored roadmap
--- `TauCetiRoadmap/ProfiniteCohomology`, whose `README.md` and `Suggested.lean` fix the names and
--- the signatures used here.
 
 public section
 
@@ -90,6 +120,127 @@ universe u v
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M]
+
+section DegreeZero
+
+variable {G M}
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- Inflating from the `U`-level through the `V`-level, for `V ≤ U`, is the same as inflating
+from the `U`-level directly. -/
+theorem explicitInfl0_comp_explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G)
+    (hVU : V ≤ U) :
+    (explicitInfl0 G M V.toSubgroup).comp (explicitFiniteQuotientTransition0 G M U V hVU) =
+      explicitInfl0 G M U.toSubgroup := by
+  ext m
+  simp only [AddMonoidHom.comp_apply]
+  exact (coe_explicitInfl0 G M V.toSubgroup _).trans
+    ((coe_explicitFiniteQuotientTransition0 G M hVU m).trans
+      (coe_explicitInfl0 G M U.toSubgroup m).symm)
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- Inflating a degree-zero class through a deeper finite level does not change it. -/
+theorem explicitInfl0_explicitFiniteQuotientTransition0 {U V : OpenNormalSubgroup G} (hVU : V ≤ U)
+    (m : H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :
+    explicitInfl0 G M V.toSubgroup (explicitFiniteQuotientTransition0 G M U V hVU m) =
+      explicitInfl0 G M U.toSubgroup m := by
+  rw [← AddMonoidHom.comp_apply, explicitInfl0_comp_explicitFiniteQuotientTransition0]
+
+variable (G M)
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- The degree-zero comparison maps into `H⁰(G, M)`, assembled from inflation at every open
+normal subgroup. -/
+noncomputable def explicitFiniteQuotientComparison0 :
+    explicitFiniteQuotientSystem0 G M ⟶
+      (Functor.const ((OpenNormalSubgroup G)ᵒᵖ)).obj (AddCommGrpCat.of (H0 G M)) where
+  app U := AddCommGrpCat.ofHom (explicitInfl0 G M U.unop.toSubgroup)
+  naturality U V f :=
+    AddCommGrpCat.hom_ext (explicitInfl0_comp_explicitFiniteQuotientTransition0
+      U.unop V.unop (leOfHom f.unop))
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- The degree-zero comparison map at `U` is inflation along `G → G ⧸ U`. -/
+@[simp]
+theorem explicitFiniteQuotientComparison0_app (U : OpenNormalSubgroup G) :
+    (explicitFiniteQuotientComparison0 G M).app (Opposite.op U) =
+      AddCommGrpCat.ofHom (explicitInfl0 G M U.toSubgroup) := by
+  rw [explicitFiniteQuotientComparison0]
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- The degree-zero finite-quotient cocone, whose point is `H⁰(G, M)`. -/
+@[expose] noncomputable def explicitFiniteQuotientCocone0 :
+    Cocone (explicitFiniteQuotientSystem0 G M) where
+  pt := AddCommGrpCat.of (H0 G M)
+  ι := explicitFiniteQuotientComparison0 G M
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- The apex of the degree-zero finite-quotient cocone is `H⁰(G, M)`. -/
+@[simp]
+theorem explicitFiniteQuotientCocone0_pt :
+    (explicitFiniteQuotientCocone0 G M).pt = AddCommGrpCat.of (H0 G M) :=
+  rfl
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- The legs of the degree-zero finite-quotient cocone are the comparison maps. -/
+@[simp]
+theorem explicitFiniteQuotientCocone0_ι :
+    (explicitFiniteQuotientCocone0 G M).ι = explicitFiniteQuotientComparison0 G M :=
+  rfl
+
+variable {G M}
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- Every degree-zero finite-quotient transition is bijective: inflation is an equivalence at
+both levels, and inflating through the deeper level is inflating directly. -/
+theorem explicitFiniteQuotientTransition0_bijective {U V : OpenNormalSubgroup G} (hVU : V ≤ U) :
+    Function.Bijective (explicitFiniteQuotientTransition0 G M U V hVU) := by
+  refine ⟨fun x y h ↦ explicitInfl0_injective G M U.toSubgroup ?_, fun x ↦ ?_⟩
+  · rw [← explicitInfl0_explicitFiniteQuotientTransition0 hVU x,
+      ← explicitInfl0_explicitFiniteQuotientTransition0 hVU y, h]
+  · obtain ⟨y, hy⟩ := explicitInfl0_surjective G M U.toSubgroup (explicitInfl0 G M V.toSubgroup x)
+    exact ⟨y, explicitInfl0_injective G M V.toSubgroup
+      ((explicitInfl0_explicitFiniteQuotientTransition0 hVU y).trans hy)⟩
+
+variable (G M)
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- The degree-zero finite-quotient system is eventually constant from the whole-group level:
+every transition out of that level is an isomorphism. -/
+private theorem isEventuallyConstantFrom_explicitFiniteQuotientSystem0 :
+    (explicitFiniteQuotientSystem0 G M).IsEventuallyConstantFrom
+      (Opposite.op (openNormalSubgroupTop G)) := by
+  intro U f
+  rw [ConcreteCategory.isIso_iff_bijective]
+  exact explicitFiniteQuotientTransition0_bijective (leOfHom f.unop)
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
+  [ContinuousSMul G M] in
+/-- **The degree-zero finite-quotient colimit theorem**: `H⁰(G, M)` is the colimit of
+`H⁰(G ⧸ U, M^U)` over the open normal subgroups, through the inflation maps.
+
+Every transition is an isomorphism, so the system is eventually constant and the whole-group
+level — where the comparison leg is the equivalence
+`TauCeti.ContCohomology.explicitInfl0Equiv` — already computes the colimit. -/
+noncomputable def explicitFiniteQuotientColimit0 :
+    IsColimit (explicitFiniteQuotientCocone0 G M) :=
+  haveI : Nonempty (OpenNormalSubgroup G) := ⟨openNormalSubgroupTop G⟩
+  haveI : IsIso ((explicitFiniteQuotientCocone0 G M).ι.app
+      (Opposite.op (openNormalSubgroupTop G))) := by
+    rw [ConcreteCategory.isIso_iff_bijective]
+    exact ⟨explicitInfl0_injective G M _, explicitInfl0_surjective G M _⟩
+  (isEventuallyConstantFrom_explicitFiniteQuotientSystem0 G M).isColimitOfIsIso _
+
+end DegreeZero
 
 section Cocone
 
@@ -379,6 +530,152 @@ theorem subsingleton_H1_of_forall_openNormalSubgroup
   rw [← explicitInfl1_explicitFiniteQuotientTransition1 (inf_le_left : U ⊓ V ≤ U) y,
     ← explicitInfl1_explicitFiniteQuotientTransition1 (inf_le_right : U ⊓ V ≤ V) y']
   exact congrArg _ (@Subsingleton.elim _ (h (U ⊓ V)) _ _)
+
+/-! ### Degree two -/
+
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] [ContinuousSMul G M]
+  [CompactSpace G] [TotallyDisconnectedSpace G] in
+/-- Pulling a degree-two cochain back along a finite-level transition and then to `G` is pulling
+it back to `G` directly: the composite pair is the pair defining inflation from `G ⧸ U`. -/
+private theorem cochainsMap2_quotientMk_comp_transition {U V : OpenNormalSubgroup G}
+    (hVU : V ≤ U)
+    (c : (G ⧸ U.toSubgroup) × (G ⧸ U.toSubgroup) → FixedPoints.addSubgroup U.toSubgroup M) :
+    cochainsMap2 (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+        (FixedPoints.addSubgroup V.toSubgroup M).subtype
+        (cochainsMap2 (continuousFiniteQuotientMap G hVU : G ⧸ V.toSubgroup →* G ⧸ U.toSubgroup)
+          (fixedPointsInclusion hVU : FixedPoints.addSubgroup U.toSubgroup M →+
+            FixedPoints.addSubgroup V.toSubgroup M) c) =
+      cochainsMap2 (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
+        (FixedPoints.addSubgroup U.toSubgroup M).subtype c := by
+  have hquot : (continuousFiniteQuotientMap G hVU : G ⧸ V.toSubgroup →* G ⧸ U.toSubgroup).comp
+      (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup) =
+      (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup) := by
+    ext g
+    simp
+  have hincl : ((FixedPoints.addSubgroup V.toSubgroup M).subtype).comp
+      (fixedPointsInclusion hVU : FixedPoints.addSubgroup U.toSubgroup M →+
+        FixedPoints.addSubgroup V.toSubgroup M) =
+      (FixedPoints.addSubgroup U.toSubgroup M).subtype :=
+    AddMonoidHom.ext fun m ↦ coe_fixedPointsInclusion hVU m
+  exact (DFunLike.congr_fun (cochainsMap2_comp _ _ _ _) c).symm.trans
+    (congrArg₂ (fun φ f ↦ cochainsMap2 φ f c) hquot hincl)
+
+omit [ContinuousSMul G M] [CompactSpace G] [TotallyDisconnectedSpace G] in
+/-- Naturality of `d1` identifies the descended primitive with the transition of the original
+cocycle. -/
+private theorem d1_descend_eq_cocyclesMap2 {U V : OpenNormalSubgroup G} (hVU : V ≤ U)
+    (c : Z2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M))
+    (b : G → M) (bV : G ⧸ V.toSubgroup → FixedPoints.addSubgroup V.toSubgroup M)
+    (hbV_apply : ∀ g : G, (bV (g : G ⧸ V.toSubgroup) : M) = b g)
+    (hd : d1 G M b =
+      cocyclesMap2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) G M
+        (ContinuousMonoidHom.quotientMk U.toSubgroup)
+        (FixedPoints.addSubgroup U.toSubgroup M).subtype
+        (continuous_fixedPoints_addSubgroup_subtype G M U.toSubgroup)
+        (subtype_quotientMk_smul G M U.toSubgroup) c) :
+    d1 (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M) bV =
+      cocyclesMap2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
+        (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
+        (continuousFiniteQuotientMap G hVU) (fixedPointsInclusion hVU)
+        continuous_of_discreteTopology
+        (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) c := by
+  apply cochainsMap2_injective
+    (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+    (FixedPoints.addSubgroup V.toSubgroup M).subtype
+    (fun q ↦ QuotientGroup.induction_on q fun g ↦ ⟨g, rfl⟩) Subtype.coe_injective
+  have hbV_eq :
+      cochainsMap1 (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+        (FixedPoints.addSubgroup V.toSubgroup M).subtype bV = b := by
+    funext g
+    rw [cochainsMap1_apply]
+    exact hbV_apply g
+  -- The transition followed by pullback to `G` is the inflation from `G ⧸ U`.
+  have htransition :
+      cochainsMap2 (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+        (FixedPoints.addSubgroup V.toSubgroup M).subtype
+        (cocyclesMap2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
+          (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
+          (continuousFiniteQuotientMap G hVU) (fixedPointsInclusion hVU)
+          continuous_of_discreteTopology
+          (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) c) =
+      (cocyclesMap2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) G M
+        (ContinuousMonoidHom.quotientMk U.toSubgroup)
+        (FixedPoints.addSubgroup U.toSubgroup M).subtype
+        (continuous_fixedPoints_addSubgroup_subtype G M U.toSubgroup)
+        (subtype_quotientMk_smul G M U.toSubgroup) c : G × G → M) := by
+    refine (congrArg _ (cocyclesMap2_coe _ _ _ _ _ _ _ _ c)).trans ?_
+    exact (cochainsMap2_quotientMk_comp_transition (M := M) hVU c).trans
+      (cocyclesMap2_coe _ _ _ _ _ _ _ _ c).symm
+  -- Pulling back to `G`, `d1` commutes with the pullback and `bV` becomes `b`.
+  refine (cochainsMap2_d1
+    (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+    (FixedPoints.addSubgroup V.toSubgroup M).subtype
+    (subtype_quotientMk_smul G M V.toSubgroup) bV).trans ?_
+  rw [hbV_eq, htransition]
+  exact hd
+
+/-- A degree-two class at a finite quotient which inflates to zero becomes zero after transition
+to a sufficiently deep finite quotient. This is the injectivity half of the degree-two
+finite-quotient colimit theorem. -/
+theorem exists_explicitFiniteQuotientTransition2_eq_zero (U : OpenNormalSubgroup G)
+    (x : H2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M))
+    (hx : explicitInfl2 G M U.toSubgroup x = 0) :
+    ∃ (V : OpenNormalSubgroup G) (hVU : V ≤ U),
+      explicitFiniteQuotientTransition2 G M U V hVU x = 0 := by
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [explicitInfl2_mk, H2pi_eq_zero_iff] at hx
+    obtain ⟨b, hb, hd⟩ := mem_B2_iff.1 hx
+    -- Uniform local constancy and finite-image stabilization descend the primitive `b`.
+    obtain ⟨V, hVU, bV, hbV, hbV_apply⟩ :=
+      exists_openNormalSubgroup_descendContinuous U b hb
+    refine ⟨V, hVU, ?_⟩
+    rw [explicitFiniteQuotientTransition2_mk]
+    apply H2pi_eq_zero_iff.2
+    refine mem_B2_iff.2 ⟨bV, hbV, ?_⟩
+    exact d1_descend_eq_cocyclesMap2 hVU c b bV hbV_apply hd
+
+/-- Two finite-level degree-two classes with the same inflation agree after transition to a
+common deeper level: their difference inflates to zero, hence dies at a sufficiently deep
+level. -/
+private theorem exists_explicitFiniteQuotientTransition2_eq_of_explicitInfl2_eq
+    {U V : OpenNormalSubgroup G}
+    (y : H2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M))
+    (y' : H2 (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M))
+    (h : explicitInfl2 G M U.toSubgroup y = explicitInfl2 G M V.toSubgroup y') :
+    ∃ (W : OpenNormalSubgroup G) (hWU : W ≤ U) (hWV : W ≤ V),
+      explicitFiniteQuotientTransition2 G M U W hWU y =
+        explicitFiniteQuotientTransition2 G M V W hWV y' := by
+  let W := U ⊓ V
+  let z := explicitFiniteQuotientTransition2 G M U W inf_le_left y -
+    explicitFiniteQuotientTransition2 G M V W inf_le_right y'
+  have hz : explicitInfl2 G M W.toSubgroup z = 0 := by
+    simp only [z, map_sub, explicitInfl2_explicitFiniteQuotientTransition2, h, sub_self]
+  obtain ⟨T, hTW, hzero⟩ :=
+    exists_explicitFiniteQuotientTransition2_eq_zero W z hz
+  refine ⟨T, hTW.trans inf_le_left, hTW.trans inf_le_right, ?_⟩
+  have htransition :
+      explicitFiniteQuotientTransition2 G M W T hTW z = 0 := hzero
+  simp only [z, map_sub, sub_eq_zero] at htransition
+  exact (congrArg (fun f => f y)
+    (explicitFiniteQuotientTransition2_comp G M U W T inf_le_left hTW)).trans
+      (htransition.trans (congrArg (fun f => f y')
+        (explicitFiniteQuotientTransition2_comp G M V W T inf_le_right hTW)).symm)
+
+variable (G M)
+
+/-- **The degree-two finite-quotient colimit theorem**: `H²(G, M)` is the colimit of the
+finite-level second cohomology groups `H²(G ⧸ U, M^U)`, through the inflation maps. -/
+noncomputable def explicitFiniteQuotientColimit2 :
+    IsColimit (explicitFiniteQuotientCocone2 G M) :=
+  AddCommGrpCat.isColimitOfJointlySurjective (explicitFiniteQuotientCocone2 G M)
+    (fun x ↦ by
+      obtain ⟨U, y, hy⟩ := exists_explicitInfl2_eq x
+      exact ⟨Opposite.op U, y, hy⟩)
+    fun U V y y' h ↦ by
+      obtain ⟨W, hWU, hWV, hW⟩ :=
+        exists_explicitFiniteQuotientTransition2_eq_of_explicitInfl2_eq y y' h
+      exact ⟨Opposite.op W, (homOfLE hWU).op, (homOfLE hWV).op, hW⟩
 
 end Colimit
 

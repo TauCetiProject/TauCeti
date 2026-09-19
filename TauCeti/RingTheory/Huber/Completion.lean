@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Nonarchimedean.Completion.Basic
 public import TauCeti.RingTheory.Huber.Basic
+public import TauCeti.RingTheory.Huber.Pair
 
 /-!
 # The completion of a Huber ring
@@ -54,6 +55,10 @@ converge because `Â` is complete, and their sums exhibit the element as a combi
 * `TauCeti.Huber.PairOfDefinition.completionIdeal_pow`: `Îⁿ` is the closure of the image of `Iⁿ`.
 * `TauCeti.Huber.IsHuberRing.completion`: the completion of a Huber ring is a Huber ring, and
   `TauCeti.Huber.IsTateRing.completion`: the completion of a Tate ring is a Tate ring.
+* `TauCeti.Huber.topologicalClosure_map_coeRingHom_le_powerBoundedSubring` and
+  `TauCeti.Huber.IsRingOfIntegralElements.completion`: the closure in `Â` of the image of a subring
+  of `A⁰` lies in `Â⁰`, and the closure of the image of a ring of integral elements of `A` is a ring
+  of integral elements of `Â`.
 
 ## References
 
@@ -529,4 +534,29 @@ instance IsTateRing.completion [IsTateRing A] : IsTateRing (Completion A) where
     exact ⟨(a : Completion A), isPseudoUniformizer_iff.mpr
       ⟨ha.isUnit.map Completion.coeRingHom,
         ha.isTopologicallyNilpotent.map Completion.continuous_coeRingHom⟩⟩
+
+/-- **The closure in `Â` of the image of a subring of `A⁰` lies in `Â⁰`**: the image lies in `Â⁰`
+by `isPowerBounded_completion_coe_of_isPowerBounded`, and `Â⁰` is open, hence closed. -/
+theorem topologicalClosure_map_coeRingHom_le_powerBoundedSubring [IsHuberRing A] {R : Subring A}
+    (hR : R ≤ powerBoundedSubring A) :
+    (R.map (Completion.coeRingHom : A →+* Completion A)).topologicalClosure ≤
+      powerBoundedSubring (Completion A) :=
+  Subring.topologicalClosure_minimal _
+    (Subring.map_le_iff_le_comap.mpr fun _ ha ↦ mem_powerBoundedSubring.mpr <|
+      isPowerBounded_completion_coe_of_isPowerBounded (mem_powerBoundedSubring.mp (hR ha)))
+    (AddSubgroup.isClosed_of_isOpen (powerBoundedSubring _).toAddSubgroup
+      (isOpen_powerBoundedSubring _))
+
+/-- **Completion preserves rings of integral elements** (Wedhorn, Lemma 7.47): the closure in `Â`
+of the image of a ring of integral elements of a Huber ring `A` is a ring of integral elements of
+`Â`. -/
+theorem IsRingOfIntegralElements.completion [IsHuberRing A] {Aplus : Subring A}
+    (h : IsRingOfIntegralElements Aplus) :
+    IsRingOfIntegralElements
+      (Aplus.map (Completion.coeRingHom : A →+* Completion A)).topologicalClosure :=
+  have := h.isIntegrallyClosedIn
+  ⟨Completion.isOpen_topologicalClosure_map_coeRingHom h.isOpen,
+    Completion.isIntegrallyClosedIn_topologicalClosure_map_coeRingHom h.isOpen,
+    topologicalClosure_map_coeRingHom_le_powerBoundedSubring h.le_powerBoundedSubring⟩
+
 end TauCeti.Huber

@@ -6,21 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Frobenius
+public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.GraphAutomorphism
 public import TauCeti.GroupTheory.FixedPointCandidate
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Frobenius
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.GraphTwisted
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 
 /-!
-# The three families on a type-`D` diagram, and the candidate group of `Dₙ(q)`
+# The three families on a type-`D` diagram, and the candidate groups of `Dₙ(q)` and `²Dₙ(q)`
 
 Three classification-list families are built on the diagram `Dₙ`: the untwisted `Dₙ(q)`, the
-graph-twisted `²Dₙ(q)`, and, at rank four, the triality-twisted `³D₄(q)`. They share a diagram, so
-they share a carrier, and `TauCeti.TypeDDiagramLieIndex` is the subtype that collects exactly them.
+graph-twisted `²Dₙ(q)`, and, at rank four, the triality-twisted `³D₄(q)`. They share a diagram, and
+`TauCeti.TypeDDiagramLieIndex` is the subtype that collects exactly them.
 This file attaches to such an index the group of algebraic-closure-valued points of Tau Ceti's
 explicit full-weight type-`D` spin Chevalley carrier at the index's own rank,
 `TauCeti.TypeDSpinCarrier.points`, together with that group's Bourbaki-numbered simple root
-subgroups and its `q`-power Frobenius; and it then runs the milestone L3 recipe on the untwisted
-branch, where the Frobenius *is* the Steinberg map.
+subgroups and its `q`-power Frobenius; and it then forms the Steinberg endomorphism and the
+candidate group on the untwisted branch, where the Frobenius *is* the Steinberg map, and on the
+graph-twisted branch, where the Steinberg map is the Frobenius composed with the fork-exchange
+graph automorphism of the carrier.
 
 The rank is available because it is at least four on this subtype, by
 `TauCeti.TypeDDiagramLieIndex.four_le_rank`, which is exactly the hypothesis the carrier takes: the
@@ -34,13 +38,13 @@ one of those, by `TauCeti.LieTypeIndex.not_hasUnimodularDiagram_of_hasTypeDDiagr
 spin representation is what sees both spinor cosets of the type-`D` root lattice; its weights span
 that lattice, by `TauCeti.TypeDSpinCarrier.span_range_basisWeight_eq_top`.
 
-## Why only one of the three branches gets a candidate group
+## The three Steinberg maps
 
-The three families differ exactly in the endomorphism whose fixed points milestone L3 takes. On
-the untwisted branch that endomorphism is the `q`-power Frobenius outright, which is what milestone
-L1's table asks of an untwisted family and what
-`TauCeti.TypeDLieIndex.diagramPerm_toGraphTwistedIndex` checks: the diagram permutation the index
-carries is trivial. So `TauCeti.TypeDLieIndex.steinberg` is the shared Frobenius, and the recipe
+The three families differ exactly in the endomorphism whose fixed points the classification recipe
+takes. On the untwisted branch that endomorphism is the `q`-power Frobenius outright, and
+`TauCeti.TypeDLieIndex.diagramPerm_toGraphTwistedIndex` checks that the diagram permutation the
+index carries is trivial. So `TauCeti.TypeDLieIndex.steinberg` is the shared Frobenius, and the
+recipe
 
 ```text
 H_d = fixedSubgroup d.steinberg,        d.Group = [H_d, H_d] / Z([H_d, H_d])
@@ -48,22 +52,41 @@ H_d = fixedSubgroup d.steinberg,        d.Group = [H_d, H_d] / Z([H_d, H_d])
 
 runs on this branch, on the spin carrier.
 
-On the two twisted branches the Steinberg map is `γ ∘ Frob_q` for a nontrivial diagram
-permutation, the fork exchange on `²Dₙ(q)` and triality on `³D₄(q)`. The graph factor `γ` is
-point-level data that the carrier does not yet carry, and its pinning equation
-`γ (x_{α_i}(t)) = x_{α_{σ i}}(t)` is stated against the numbered root subgroups on matrix points.
-Neither twisted Steinberg map is formed until that factor exists, and hence no candidate group is
-formed on those two branches either; the Frobenius supplied here is the factor they will compose
-with, on the very carrier their fixed points will be taken in.
+On the graph-twisted branch the Steinberg map is `γ₂ ∘ Frob_q`, where `γ₂` is the graph
+automorphism `TauCeti.TypeDSpinCarrier.graphAutPoints` of the carrier, conjugation by a signed
+permutation matrix of the spin coordinates. It realizes the diagram permutation the index carries,
+the fork exchange `TauCeti.graphPermD`, by the pinned equation `γ₂ (x_i(u)) = x_{σ i}(u)` on the
+simple-root subgroups, it is an involution, and it commutes with the Frobenius, so that
 
-Nothing here asserts that the spin carrier is reductive, that its weight torus is maximal, or that
-any group below is finite, perfect, or simple.
+```text
+F = γ₂ ∘ Frob_q = Frob_q ∘ γ₂,        F (x_i(u)) = x_{σ i}(u ^ q).
+```
+
+`TauCeti.TypeTwistedDLieIndex.steinberg` is this composite and the same recipe runs on it. The
+Frobenius fixed points are the points with entries in `𝔽_q`; the fixed points of the composite are
+not characterized here.
+
+The triality-twisted branch takes `γ₃ ∘ Frob_q` for an order-three symmetry that has no linear
+realization on the spin module: triality permutes the three eight-dimensional representations of
+`D₄`, so the spin module `8ₛ ⊕ 8_c` is not stable under it and no fixed linear automorphism of that
+module realizes it. (The spin representation is faithful, so triality does act on the spin carrier
+as an abstract automorphism; it is an explicit linear realization that is missing.) The `³D₄(q)`
+branch is therefore built on the tripled carrier `TauCeti.D4Tripled.groupScheme`, on which triality
+is a permutation of the weight basis, in `TauCeti/GroupTheory/SpecificGroups/CFSG/TrialityD4.lean`;
+the spin-carrier points and Frobenius attached below to a triality-twisted index are not the
+ambient group and Frobenius of that branch.
+
+The spin carrier is not identified with the pinned simply connected Chevalley--Demazure group
+scheme of type `Dₙ`, and nothing here identifies the two: the constructions below transfer to that
+pinned group only along such an identification, once one is proved. Nor is it asserted that the
+carrier is reductive, that its weight torus is maximal, or that any group below is finite, perfect,
+or simple.
 
 ## Main declarations
 
 * `TauCeti.TypeDDiagramLieIndex.AmbientGroup`: the algebraic-closure-valued points of the
   full-weight type-`D` spin carrier at the rank the index names, the group inside which the
-  classification recipe is run on the untwisted branch below.
+  classification recipe is run on the two branches below.
 * `TauCeti.TypeDDiagramLieIndex.simpleRootSubgroup`: the positive simple-root subgroup at a
   Bourbaki node.
 * `TauCeti.TypeDDiagramLieIndex.rootGeneratorWeight_eq_root_simpleIndex`: the character of that
@@ -73,40 +96,34 @@ any group below is finite, perfect, or simple.
   entrywise description, and its pinned equation `Frob_q (x_i(u)) = x_i(u ^ q)`.
 * `TauCeti.TypeDDiagramLieIndex.mem_fixedSubgroup_frobenius_iff`: its fixed points are the points
   whose matrix entries lie in the field of definition `𝔽_q`.
-* `TauCeti.TypeDLieIndex.steinberg` and `TauCeti.TypeDLieIndex.Group`: the milestone L1 Steinberg
-  endomorphism of the untwisted branch and the milestone L3 quotient formed from it, both on the
-  spin carrier rather than on the pinned group milestone L0 asks for.
+* `TauCeti.TypeDLieIndex.steinberg` and `TauCeti.TypeDLieIndex.Group`: the Steinberg endomorphism
+  of the untwisted family `Dₙ(q)`, which is the Frobenius, and its candidate group.
+* `TauCeti.TypeTwistedDLieIndex.graphAut`, with
+  `TauCeti.TypeTwistedDLieIndex.graphAut_simpleRootSubgroup`,
+  `TauCeti.TypeTwistedDLieIndex.graphAut_sq`,
+  `TauCeti.TypeTwistedDLieIndex.graphAut_pow_twistOrder` and
+  `TauCeti.TypeTwistedDLieIndex.graphAut_comp_frobenius`: the fork-exchange graph automorphism of
+  the ambient group of a `²Dₙ` index, its pinned equation `γ₂ (x_i(u)) = x_{σ i}(u)`, the relation
+  `γ₂ ^ 2 = 1`, also in the form the twist order of the index states it, and its commutation with
+  the Frobenius.
+* `TauCeti.TypeTwistedDLieIndex.steinberg`, with `TauCeti.TypeTwistedDLieIndex.steinberg_def`,
+  `TauCeti.TypeTwistedDLieIndex.steinberg_eq_frobenius_comp_graphAut` and
+  `TauCeti.TypeTwistedDLieIndex.steinberg_simpleRootSubgroup`: the Steinberg endomorphism
+  `γ₂ ∘ Frob_q` of `²Dₙ(q)`, its two factorizations, and its pinned equation
+  `F (x_i(u)) = x_{σ i}(u ^ q)`.
+* `TauCeti.TypeTwistedDLieIndex.FixedPoints` and `TauCeti.TypeTwistedDLieIndex.Group`: the fixed
+  subgroup of that Steinberg map, and the candidate group of `²Dₙ(q)`.
 
 ## References
 
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II, for the spin representation the
   carrier is built from.
-* R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 14.
-* R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.
+* R. W. Carter, *Simple Groups of Lie Type*, §§4.4, 12.2 and 14.
+* R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §§1.15 and
+  1.17.
+* R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate IV, for the numbering of the
   `Dₙ` diagram that the index's rank and diagram permutation are read in.
-* The target signatures realized here follow the human-authored formal skeleton
-  `TauCetiRoadmap/CFSGStatement/Suggested.lean`: the ambient group, the numbered simple root
-  subgroup, the Steinberg map with its pinned equation, and the fixed-point recipe, all taken on a
-  validated-index subtype.
-
-## Roadmap
-
-Milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md` asks for the points of the *pinned* simply
-connected Chevalley--Demazure group scheme of `TauCeti.DynkinType.simplyConnectedRootDatum` at the
-diagram the index names, with its root subgroups. **This file does not close L0 on the three
-type-`D` branches, and the spin carrier is not offered as a substitute for that pinned group.** The
-pinned group scheme, its pinning, and any identification of a carrier with it are Layer 9 targets
-of `TauCetiRoadmap/ReductiveGroups/README.md` that the CFSG roadmap consumes rather than builds;
-none of them is proved of `TauCeti.TypeDSpinCarrier.groupScheme` here or in the files this one
-imports. What this file supplies is the branches' explicit carrier, its numbered root characters
-read in the type-`Dₙ` root datum, the equation `Frob_q (x_i(u)) = x_i(u ^ q)` that milestone L1
-asks of an ordinary Frobenius factor, and, on the untwisted branch, the milestone L3 recipe run on
-that Frobenius, each in the shape those milestones state it; they transfer to the L0 carrier along
-that Layer 9 identification, and not before. The counterparts on the branches already assembled are
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeA.lean`,
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeE6.lean` and
-`TauCeti/GroupTheory/SpecificGroups/CFSG/Unimodular.lean`.
 -/
 
 public section
@@ -125,16 +142,18 @@ variable (d : TypeDDiagramLieIndex)
 of the explicit full-weight type-`Dₙ` spin Chevalley carrier, at the rank the index names, over the
 algebraic closure of its prime field.
 
-It is infinite, and it is the same group for the untwisted, graph-twisted and triality-twisted
-families of a given rank and field order, those three differing only in the Steinberg map taken of
-it. No finiteness, reductivity, pinning or maximality statement is attached to it, and it is not
-claimed to be the pinned `Dₙ` group scheme's points that milestone L0 asks for, that identification
-being the Layer 9 target described in the module docstring. -/
+It is infinite, and it is the same group for every index on the diagram of a given rank and field
+order. The untwisted and graph-twisted families run their recipes inside it; the triality-twisted
+family's own branch is instead built on the tripled carrier, in
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TrialityD4.lean`. No finiteness, reductivity, pinning or
+maximality statement is attached to it, and it is not identified with the points of the pinned
+simply connected `Dₙ` group scheme, as the module docstring describes. -/
 abbrev AmbientGroup : Type :=
   TypeDSpinCarrier.points d.1.rank d.four_le_rank d.1.Closure
 
-/-- Milestone L3 runs its recipe inside this group, so it carries a group structure; the carrier
-being a subgroup of a general linear group supplies it. -/
+/-- The classification recipe runs its fixed-point and quotient construction inside this group, so
+it carries a group structure; the carrier being a subgroup of a general linear group supplies
+it. -/
 example : Group d.AmbientGroup := inferInstance
 
 /-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of the `Dₙ` diagram. It is
@@ -183,7 +202,8 @@ theorem rootGeneratorWeight_eq_root_simpleIndex (i j : Fin d.1.rank) :
 diagram**, for `q` the field order the index records. On the untwisted family `Dₙ(q)` it is the
 Steinberg map itself, by `TauCeti.TypeDLieIndex.steinberg_def`. On the two twisted families it is
 not: there the Steinberg map is `γ ∘ Frob_q` for a nontrivial diagram permutation, and this is the
-factor that composite composes with. -/
+factor that composite composes with, as `TauCeti.TypeTwistedDLieIndex.steinberg_def` records on the
+graph-twisted family. -/
 def frobenius : d.AmbientGroup →* d.AmbientGroup :=
   TypeDSpinCarrier.frobenius d.1.rank d.four_le_rank d.1.characteristic d.1.fieldExponent
     d.1.Closure
@@ -215,8 +235,8 @@ theorem coe_frobenius_apply (g : d.AmbientGroup)
   exact TypeDSpinCarrier.coe_frobenius_apply _ _ _ _ _ g r c
 
 /-- **The Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises its parameter
-to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. This is the equation milestone L1
-asks of an ordinary Frobenius factor. -/
+to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. The diagram permutation of a
+twisted family enters through the graph factor of its Steinberg map, and not through this one. -/
 @[simp]
 theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
     d.frobenius (d.simpleRootSubgroup i u) =
@@ -256,13 +276,13 @@ variable (d : TypeDLieIndex)
 
 /-! ## The Steinberg endomorphism of the untwisted family -/
 
-/-- **The milestone L1 Steinberg endomorphism of a validated untwisted type-`D` index, formed on
-the spin carrier**: the `q`-power Frobenius of the ambient group, `q` being the field order the
-index records. The family is untwisted, so no diagram automorphism and no half-Frobenius enters;
+/-- **The Steinberg endomorphism of a validated untwisted type-`D` index, formed on the spin
+carrier**: the `q`-power Frobenius of the ambient group, `q` being the field order the index
+records. The family is untwisted, so no diagram automorphism and no half-Frobenius enters;
 `diagramPerm_toGraphTwistedIndex` is the check that its diagram permutation is trivial.
 
-It is the Steinberg map of `Dₙ(q)` on the pinned carrier milestone L0 asks for only along the
-Layer 9 identification of the two carriers described in the module docstring, and not before. -/
+It is the Steinberg map of `Dₙ(q)` on the pinned simply connected group only along an
+identification of the spin carrier with that group, as the module docstring describes. -/
 def steinberg :
     d.toTypeDDiagramLieIndex.AmbientGroup →* d.toTypeDDiagramLieIndex.AmbientGroup :=
   d.toTypeDDiagramLieIndex.frobenius
@@ -274,8 +294,8 @@ Steinberg map. -/
 theorem steinberg_def : d.steinberg = d.toTypeDDiagramLieIndex.frobenius := (rfl)
 
 /-- **The Steinberg map fixes the Bourbaki numbering of a simple-root subgroup and raises its
-parameter to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. This is the equation
-milestone L1 asks of the untwisted families, on this branch. -/
+parameter to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`, the pinned equation of
+an untwisted family. -/
 @[simp]
 theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
     d.steinberg (d.toTypeDDiagramLieIndex.simpleRootSubgroup i u) =
@@ -285,8 +305,8 @@ theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
   exact d.toTypeDDiagramLieIndex.frobenius_simpleRootSubgroup i u
 
 /-- **A point of the ambient group is fixed by the Steinberg map exactly when all of its matrix
-entries lie in the field of definition**, so the group `H_d` that the milestone L3 recipe is run on
-below is the group of points of the spin carrier whose entries lie in `𝔽_q`. -/
+entries lie in the field of definition**, so the group `H_d` that the classification recipe is run
+on below is the group of points of the spin carrier whose entries lie in `𝔽_q`. -/
 theorem mem_fixedSubgroup_steinberg_iff (g : d.toTypeDDiagramLieIndex.AmbientGroup) :
     g ∈ fixedSubgroup d.steinberg ↔
       ∀ r c, ((g :
@@ -296,24 +316,152 @@ theorem mem_fixedSubgroup_steinberg_iff (g : d.toTypeDDiagramLieIndex.AmbientGro
   rw [steinberg_def]
   exact d.toTypeDDiagramLieIndex.mem_fixedSubgroup_frobenius_iff g
 
-/-! ## The milestone L3 quotient -/
+/-! ## The candidate group of the untwisted family -/
 
-/-- **The milestone L3 quotient on the type-`Dₙ` spin carrier**: the derived subgroup of the fixed
-points of the Steinberg map above, modulo the centre of that derived subgroup.
-
-This is the shape milestone L3 asks of the untwisted family `Dₙ(q)`, formed on the spin carrier
-rather than on the pinned simply connected Chevalley--Demazure group scheme that milestone L0 asks
-for. It becomes the candidate simple group of that family along the Layer 9 identification of the
-two carriers described in the module docstring, and not before; it is not offered as that candidate
-here. Nothing below asserts that it is finite, perfect, or simple. -/
+/-- **The finite-simple-group candidate attached to `Dₙ(q)`, formed on the spin carrier**: the
+derived subgroup of the fixed points of the Steinberg map above, modulo the centre of that derived
+subgroup. It becomes the candidate on the pinned simply connected group along an identification of
+the spin carrier with that group, as the module docstring describes. No finiteness or simplicity
+assertion is part of this definition. -/
 abbrev Group : Type := FixedPointCandidate d.steinberg
 
-/-- Milestone L3 asks every valid branch to carry a group instance; the quotient construction
-supplies it. -/
+/-- The candidate group carries a group structure; the quotient construction supplies it. -/
 example : _root_.Group d.Group := inferInstance
 
 end
 
 end TypeDLieIndex
+
+namespace TypeTwistedDLieIndex
+
+noncomputable section
+
+variable (d : TypeTwistedDLieIndex)
+
+/-! ## The graph automorphism factor of the Steinberg map of `²Dₙ(q)` -/
+
+/-- **The graph automorphism of the ambient group of a validated `²Dₙ` index**: conjugation by the
+signed permutation matrix of the spin coordinates that realizes the fork exchange of the `Dₙ`
+diagram on the spin carrier. It sends the Bourbaki-numbered simple-root subgroup at `i` to the one
+at `σ i`, for `σ` the diagram permutation the index carries, without changing its parameter, and
+it is the left-hand factor `γ₂` of the Steinberg map `γ₂ ∘ Frob_q` of the family. -/
+def graphAut : MulAut d.toTypeDDiagramLieIndex.AmbientGroup :=
+  TypeDSpinCarrier.graphAutPoints d.1.rank d.toTypeDDiagramLieIndex.four_le_rank d.1.Closure
+
+/-- The graph automorphism of a `²Dₙ` index is the spin carrier's graph automorphism on points at
+the index's rank, over its closure. This is its unfolding lemma; the definition itself stays
+sealed. -/
+-- Not `@[simp]`: `graphAut_simpleRootSubgroup` and `graphAut_graphAut` are the normal forms the
+-- pinned equations of this file are stated against, and unfolding to
+-- `TauCeti.TypeDSpinCarrier.graphAutPoints` would keep them from firing.
+theorem graphAut_def :
+    d.graphAut =
+      TypeDSpinCarrier.graphAutPoints d.1.rank d.toTypeDDiagramLieIndex.four_le_rank
+        d.1.Closure :=
+  (rfl)
+
+/-- **The graph automorphism has the pinned action on every simple-root subgroup**: it sends
+`x_i(u)` to `x_{σ i}(u)`, where `σ` is the diagram permutation the index carries, the fork
+exchange. The parameter is carried across unchanged, with neither a field power nor a sign; on a
+general root the equation would acquire a sign forced by the Chevalley structure constants. -/
+@[simp]
+theorem graphAut_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.graphAut (d.toTypeDDiagramLieIndex.simpleRootSubgroup i u) =
+      d.toTypeDDiagramLieIndex.simpleRootSubgroup
+        (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm i) u := by
+  rw [graphAut_def, TypeDDiagramLieIndex.simpleRootSubgroup_def,
+    TypeDDiagramLieIndex.simpleRootSubgroup_def, TypeDSpinCarrier.graphAutPoints_rootSubgroupPoints,
+    TypeDSpinCarrier.graphRootPerm_inl, diagramPerm_toGraphTwistedIndex]
+
+/-- **The graph automorphism is an involution.** -/
+@[simp]
+theorem graphAut_graphAut (g : d.toTypeDDiagramLieIndex.AmbientGroup) :
+    d.graphAut (d.graphAut g) = g := by
+  rw [graphAut_def, TypeDSpinCarrier.graphAutPoints_apply_apply]
+
+/-- **The graph automorphism squares to the identity**: `γ₂ ^ 2 = 1`. -/
+@[simp]
+theorem graphAut_sq : d.graphAut ^ 2 = 1 := by
+  rw [pow_two]
+  exact MulEquiv.ext fun g => by rw [MulAut.mul_apply, graphAut_graphAut, MulAut.one_apply]
+
+/-- **The twist order of the index annihilates its graph automorphism.** This is the order relation
+on the graph factor of the Steinberg map of a graph-twisted family, and it matches
+`TauCeti.GraphTwistedIndex.diagramPerm_pow_twistOrder` on the diagram permutation that `γ₂`
+realizes. -/
+-- Not `@[simp]`: `twistOrder_toGraphTwistedIndex` already rewrites the exponent to `2`, after which
+-- `graphAut_sq` applies.
+theorem graphAut_pow_twistOrder :
+    d.graphAut ^ d.toTypeDDiagramLieIndex.toGraphTwistedIndex.twistOrder = 1 := by
+  rw [twistOrder_toGraphTwistedIndex, graphAut_sq]
+
+/-- **The graph automorphism commutes with the Frobenius, as an identity of endomorphisms**:
+`γ₂ ∘ Frob_q = Frob_q ∘ γ₂`. The graph automorphism is natural in the value ring, and the Frobenius
+is the map on points induced by a ring endomorphism of the closure. -/
+theorem graphAut_comp_frobenius :
+    d.graphAut.toMonoidHom.comp d.toTypeDDiagramLieIndex.frobenius =
+      d.toTypeDDiagramLieIndex.frobenius.comp d.graphAut.toMonoidHom := by
+  rw [graphAut_def, TypeDDiagramLieIndex.frobenius_def, TypeDSpinCarrier.frobenius_eq_map]
+  exact (TypeDSpinCarrier.map_comp_graphAutPoints _ _ _).symm
+
+/-! ## The Steinberg endomorphism of the graph-twisted family -/
+
+/-- **The Steinberg endomorphism of `²Dₙ(q)` on the spin carrier**: the fork-exchange graph
+automorphism composed with the `q`-power Frobenius, `γ₂ ∘ Frob_q`, for `q` the field order the
+index records. The two factors commute, so the order of composition is immaterial, by
+`steinberg_eq_frobenius_comp_graphAut`.
+
+It is the Steinberg map of `²Dₙ(q)` on the pinned simply connected group only along an
+identification of the spin carrier with that group, as the module docstring describes. -/
+def steinberg :
+    d.toTypeDDiagramLieIndex.AmbientGroup →* d.toTypeDDiagramLieIndex.AmbientGroup :=
+  d.graphAut.toMonoidHom.comp d.toTypeDDiagramLieIndex.frobenius
+
+/-- **The Steinberg map of `²Dₙ(q)` is its graph automorphism composed with the shared Frobenius
+of the type-`D` diagram.** This is its unfolding lemma; the definition itself stays sealed, and it
+is through this equation that the two factors reach the Steinberg map. -/
+-- Not `@[simp]`: `steinberg_simpleRootSubgroup` is the normal form the pinned equation of the
+-- Steinberg map is stated against, and unfolding to the composite would keep it from firing.
+theorem steinberg_def :
+    d.steinberg = d.graphAut.toMonoidHom.comp d.toTypeDDiagramLieIndex.frobenius :=
+  (rfl)
+
+/-- The Steinberg map may equally be read with its Frobenius factor last, the two factors
+commuting. -/
+theorem steinberg_eq_frobenius_comp_graphAut :
+    d.steinberg = d.toTypeDDiagramLieIndex.frobenius.comp d.graphAut.toMonoidHom := by
+  rw [steinberg_def, graphAut_comp_frobenius]
+
+/-- **The Steinberg map has the pinned action on every simple-root subgroup.** It sends `x_i(u)`
+to `x_{σ i}(u ^ q)`, where `σ` is the diagram permutation the index carries, the fork exchange, and
+`q` is its recorded field order. -/
+@[simp]
+theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.steinberg (d.toTypeDDiagramLieIndex.simpleRootSubgroup i u) =
+      d.toTypeDDiagramLieIndex.simpleRootSubgroup
+        (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm i)
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+  rw [steinberg_def, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    TypeDDiagramLieIndex.frobenius_simpleRootSubgroup, graphAut_simpleRootSubgroup]
+
+/-! ## The candidate group of the graph-twisted family -/
+
+/-- The fixed subgroup of the Steinberg endomorphism of `²Dₙ(q)`. Its points are not the points
+with entries in `𝔽_q`, which are the fixed points of the Frobenius factor alone. -/
+abbrev FixedPoints : Type := ↥(fixedSubgroup d.steinberg)
+
+/-- **The finite-simple-group candidate attached to `²Dₙ(q)`, formed on the spin carrier**: the
+derived subgroup of the fixed points of its Steinberg map, modulo the centre of that derived
+subgroup. It becomes the candidate on the pinned simply connected group along an identification of
+the spin carrier with that group, as the module docstring describes. No finiteness or simplicity
+assertion is part of this definition. -/
+abbrev Group : Type := FixedPointCandidate d.steinberg
+
+/-- The candidate group carries a group structure; the quotient construction supplies it. -/
+example : _root_.Group d.Group := inferInstance
+
+end
+
+end TypeTwistedDLieIndex
 
 end TauCeti

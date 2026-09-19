@@ -30,7 +30,9 @@ nontriviality or positive-rank assumption.
 
 ## Main declarations
 
-* `TauCeti.GeneralLinear.pointToGeneralLinear`: the invertible matrix read from a point.
+* `TauCeti.GeneralLinear.pointToGeneralLinear`: the invertible matrix read from a point, with
+  `TauCeti.GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear` identifying it with the
+  transported generic matrix.
 * `TauCeti.GeneralLinear.generalLinearToPoint`: the point obtained by matrix evaluation.
 * `TauCeti.GeneralLinear.pointsMulEquiv`: the group equivalence between convolution points and
   invertible matrices.
@@ -99,6 +101,17 @@ theorem pointToGeneralLinear_apply
       f.ofConv (coordinateHopfAlgebraAlgEquiv R n
         (coordinateRingMap R n (MvPolynomial.X (i, j)))) := by
   exact matrixOfPoint_apply n f i j
+
+/-- **The generic matrix transported along an algebra morphism out of the coordinate Hopf algebra
+is the matrix of the point that morphism is.** -/
+theorem map_genericMatrix_eq_coe_pointToGeneralLinear
+    (ψ : coordinateHopfAlgebra R n →ₐ[R] A) :
+    (genericMatrix R n).map ψ =
+      ((pointToGeneralLinear n (toConv ψ) : Matrix.GeneralLinearGroup (Fin n) A) :
+        Matrix (Fin n) (Fin n) A) := by
+  ext i j
+  rw [Matrix.map_apply, genericMatrix_apply, pointToGeneralLinear_apply,
+    WithConv.ofConv_toConv]
 
 /-- Evaluate the polynomial coordinate ring at the entries of an invertible matrix. -/
 private noncomputable def evaluationOfGeneralLinear

@@ -24,6 +24,8 @@ relative to when the "bad" primes are given downstairs:
   of `R`, as a preimage under `HeightOneSpectrum.under`.
 * `IsDedekindDomain.selmerGroupAbove`: the `n`-Selmer group of `L` relative to the primes of `B`
   above `S`.
+* `IsDedekindDomain.HeightOneSpectrum.liesOverEquivPrimesOver`: the height one primes of `B`
+  lying over a height one prime `v` of `R` are `Ideal.primesOver v.asIdeal B`.
 
 ## Main results
 
@@ -33,6 +35,8 @@ relative to when the "bad" primes are given downstairs:
   `HeightOneSpectrum.under R w ∈ S`.
 * `IsDedekindDomain.HeightOneSpectrum.primesAbove_finite`: finitely many primes lie above a
   finite set.
+* `IsDedekindDomain.HeightOneSpectrum.finite_liesOver`: finitely many height one primes lie over
+  a given one.
 
 ## Roadmap
 
@@ -102,6 +106,53 @@ lemma primesAbove_finite [Module.IsTorsionFree R B] {S : Set (HeightOneSpectrum 
   have := v.isMaximal
   exact (IsDedekindDomain.primesOver_finite v.asIdeal B).preimage
     (fun a _ b _ hab ↦ HeightOneSpectrum.ext hab)
+
+variable {R B}
+
+omit [IsDedekindDomain R] [IsDedekindDomain B] [Algebra.IsIntegral R B] in
+/-- A height one prime of `B` taken from the subtype of those lying over `v` lies over `v`. -/
+instance liesOver_val {v : HeightOneSpectrum R}
+    (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
+    w.1.asIdeal.LiesOver v.asIdeal :=
+  w.2
+
+variable (B) [Module.IsTorsionFree R B]
+
+omit [Algebra.IsIntegral R B] in
+/-- The height one primes of `B` lying over a height one prime `v` of `R` are the primes of `B`
+over `v.asIdeal`, in Mathlib's `Ideal.primesOver` spelling. Mathlib's
+`IsDedekindDomain.HeightOneSpectrum.equivPrimesOver` is the same bijection for the subtype cut out
+by divisibility `w.asIdeal ∣ v.asIdeal.map (algebraMap R B)` instead of `LiesOver`. -/
+noncomputable def liesOverEquivPrimesOver (v : HeightOneSpectrum R) :
+    {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} ≃ v.asIdeal.primesOver B := by
+  letI := v.isMaximal
+  exact (Equiv.subtypeEquivRight fun w ↦
+    Ideal.liesOver_iff_dvd_map w.isPrime.ne_top).trans
+      (HeightOneSpectrum.equivPrimesOver B v.ne_bot)
+
+omit [Algebra.IsIntegral R B] in
+@[simp]
+theorem liesOverEquivPrimesOver_apply (v : HeightOneSpectrum R)
+    (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
+    (liesOverEquivPrimesOver B v w : Ideal B) = w.1.asIdeal :=
+  by simp [liesOverEquivPrimesOver]
+
+omit [Algebra.IsIntegral R B] in
+@[simp]
+theorem liesOverEquivPrimesOver_symm_apply (v : HeightOneSpectrum R)
+    (Q : v.asIdeal.primesOver B) :
+    ((liesOverEquivPrimesOver B v).symm Q).1.asIdeal = Q :=
+  by
+    let _ := v.isMaximal
+    simp only [liesOverEquivPrimesOver]
+    exact congrArg Subtype.val
+      ((HeightOneSpectrum.equivPrimesOver B v.ne_bot).apply_symm_apply Q)
+
+/-- Only finitely many height one primes of `B` lie over a given height one prime of `R`. -/
+instance finite_liesOver (v : HeightOneSpectrum R) :
+    Finite {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} :=
+  have := v.isMaximal
+  .of_equiv _ (liesOverEquivPrimesOver B v).symm
 
 end HeightOneSpectrum
 

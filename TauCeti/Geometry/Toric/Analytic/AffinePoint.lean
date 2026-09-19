@@ -30,9 +30,18 @@ it, the object of study: a semigroup that arises as the dual of a cone has no pr
 generating family, and later coordinate descriptions must be compared with a topology that was
 not defined using them.
 
+The construction is contravariantly functorial in the semigroup: a homomorphism `S →+ T` pulls
+the complex points of `T` back to those of `S` through the induced map of monoid algebras, and
+the pulled-back map is continuous whichever generating families topologize the two sides. These
+are the maps by which face localizations and morphisms of fans act on affine charts, and an
+isomorphism of semigroups, such as a choice of coordinates on the dual semigroup of a regular
+cone, induces a homeomorphism.
+
 ## Main declarations
 
 * `TauCeti.Toric.AffineSemigroupComplexPoint`: the complex points of an affine semigroup.
+* `TauCeti.Toric.AffineSemigroupComplexPoint.ext`: a complex point is determined by its values
+  on monomials.
 * `TauCeti.Toric.AddGeneratingFamily`: a finite family generating an additive monoid, which
   exists exactly for a finitely generated additive monoid.
 * `TauCeti.Toric.monomialEmbedding`: evaluation of a complex point on such a family.
@@ -42,6 +51,13 @@ not defined using them.
 * `TauCeti.Toric.affinePointTopology_eq`: it does not depend on the generating family.
 * `TauCeti.Toric.isClosedEmbedding_monomialEmbedding`: the monomial embedding is a closed
   embedding, whence the Hausdorff, second countable and locally compact conclusions.
+* `TauCeti.Toric.AffineSemigroupComplexPoint.comap`: the map on complex points induced by a
+  homomorphism of additive monoids, with `TauCeti.Toric.AffineSemigroupComplexPoint.comap_id`
+  and `TauCeti.Toric.AffineSemigroupComplexPoint.comap_comp`.
+* `TauCeti.Toric.AffineSemigroupComplexPoint.continuous_comap`: it is continuous for the
+  monomial-embedding topologies of arbitrary finite generating families.
+* `TauCeti.Toric.AffineSemigroupComplexPoint.comapHomeomorph`: an isomorphism of additive monoids
+  induces a homeomorphism of complex points.
 
 ## References
 
@@ -62,6 +78,13 @@ variable {S : Type*} [AddCommMonoid S] {r r' : ℕ}
 carrier; no topology is part of the data. -/
 abbrev AffineSemigroupComplexPoint (S : Type*) [AddCommMonoid S] :=
   MonoidAlgebra ℂ (Multiplicative S) →ₐ[ℂ] ℂ
+
+/-- Two complex points of `S` that agree on every monomial are equal. -/
+@[ext]
+theorem AffineSemigroupComplexPoint.ext {x y : AffineSemigroupComplexPoint S}
+    (h : ∀ s : S, x (MonoidAlgebra.single (ofAdd s) 1) = y (MonoidAlgebra.single (ofAdd s) 1)) :
+    x = y :=
+  MonoidAlgebra.algHom_ext (fun m ↦ h (toAdd m)) (Subsingleton.elim _ _)
 
 /-- A finite family generating a commutative additive monoid. The affine complex points of `S`
 are topologized through evaluation on such a family, so the chosen indexed family, and not just
@@ -115,14 +138,12 @@ theorem apply_single_eq_prod_monomialEmbedding (g : AddGeneratingFamily S r) {s 
 theorem monomialEmbedding_injective (g : AddGeneratingFamily S r) :
     Function.Injective (monomialEmbedding g) := by
   intro x y hxy
-  refine (MonoidAlgebra.lift ℂ ℂ (Multiplicative S)).symm.injective (MonoidHom.ext fun m ↦ ?_)
-  obtain ⟨a, ha⟩ := AddSubmonoid.exists_of_mem_closure_range g.toFun (toAdd m) (by
+  refine AffineSemigroupComplexPoint.ext fun s ↦ ?_
+  obtain ⟨a, ha⟩ := AddSubmonoid.exists_of_mem_closure_range g.toFun s (by
     rw [g.spans]
     trivial)
-  have hm : m = ofAdd (∑ j, a j • g.toFun j) := congrArg ofAdd ha
-  rw [MonoidAlgebra.lift_symm_apply, MonoidAlgebra.lift_symm_apply, hm,
-    apply_single_eq_prod_monomialEmbedding g rfl, apply_single_eq_prod_monomialEmbedding g rfl,
-    hxy]
+  rw [apply_single_eq_prod_monomialEmbedding g ha x,
+    apply_single_eq_prod_monomialEmbedding g ha y, hxy]
 
 /-- The range of a monomial embedding is the locus of the binomial relations of the generating
 family: a point of `ℂ^r` extends to an affine complex point exactly when every additive relation
@@ -272,5 +293,106 @@ theorem locallyCompactSpace_affinePointTopology (g : AddGeneratingFamily S r) :
     LocallyCompactSpace (AffineSemigroupComplexPoint S) :=
   letI := affinePointTopology g
   (isClosedEmbedding_monomialEmbedding g).locallyCompactSpace
+
+/-! ### Functoriality in the semigroup -/
+
+namespace AffineSemigroupComplexPoint
+
+variable {T U : Type*} [AddCommMonoid T] [AddCommMonoid U]
+
+/-- The map on affine complex points induced by a homomorphism `f : S →+ T` of additive monoids:
+a point of `T` is pulled back to a point of `S` by precomposing it with the map `ℂ[S] → ℂ[T]` of
+monoid algebras induced by `f`. The construction is contravariant in the semigroup. -/
+noncomputable def comap (f : S →+ T) :
+    AffineSemigroupComplexPoint T → AffineSemigroupComplexPoint S :=
+  fun x ↦ x.comp (MonoidAlgebra.mapDomainAlgHom ℂ ℂ (AddMonoidHom.toMultiplicative f))
+
+/-- The pulled-back point is the original point composed with the induced map of monoid
+algebras. -/
+@[simp]
+theorem comap_apply (f : S →+ T) (x : AffineSemigroupComplexPoint T)
+    (a : MonoidAlgebra ℂ (Multiplicative S)) :
+    comap f x a = x (MonoidAlgebra.mapDomainAlgHom ℂ ℂ (AddMonoidHom.toMultiplicative f) a) :=
+  (rfl)
+
+/-- The pulled-back point takes the value of the original point on the image monomial. -/
+theorem comap_apply_single (f : S →+ T) (x : AffineSemigroupComplexPoint T) (s : S) :
+    comap f x (MonoidAlgebra.single (ofAdd s) 1) = x (MonoidAlgebra.single (ofAdd (f s)) 1) := by
+  simp [comap_apply]
+
+/-- Pulling back along the identity does nothing. -/
+@[simp]
+theorem comap_id : comap (AddMonoidHom.id S) = id := by
+  funext x
+  rw [comap, AddMonoidHom.toMultiplicative_id, MonoidAlgebra.mapDomainAlgHom_id,
+    AlgHom.comp_id]
+  rfl
+
+/-- Pulling back along two homomorphisms in turn is pulling back along their composite. -/
+@[simp]
+theorem comap_comap (f : S →+ T) (f' : T →+ U) (x : AffineSemigroupComplexPoint U) :
+    comap f (comap f' x) = comap (f'.comp f) x := by
+  -- Mathlib supplies `AddMonoidHom.toMultiplicative_id` but no composition counterpart.
+  have hcomp : AddMonoidHom.toMultiplicative (f'.comp f) =
+      (AddMonoidHom.toMultiplicative f').comp (AddMonoidHom.toMultiplicative f) := by
+    ext s
+    simp
+  simp only [comap, hcomp, MonoidAlgebra.mapDomainAlgHom_comp, AlgHom.comp_assoc]
+
+/-- The pullback of complex points is contravariant for composition. -/
+theorem comap_comp (f : S →+ T) (f' : T →+ U) : comap (f'.comp f) = comap f ∘ comap f' := by
+  funext x
+  exact (comap_comap f f' x).symm
+
+/-- The map induced by a homomorphism of additive monoids is continuous for the
+monomial-embedding topologies attached to any finite generating families of the source and the
+target. -/
+theorem continuous_comap (g : AddGeneratingFamily S r) (h : AddGeneratingFamily T r')
+    (f : S →+ T) : Continuous[affinePointTopology h, affinePointTopology g] (comap f) := by
+  -- install the source topology as an instance so that `continuous_apply_single` applies
+  let _ := affinePointTopology h
+  rw [affinePointTopology_eq_iInf g, continuous_iInf_rng]
+  intro s
+  rw [continuous_induced_rng]
+  simpa [Function.comp_def] using continuous_apply_single h (f s)
+
+/-- An isomorphism of additive monoids induces a bijection between their affine complex
+points. -/
+noncomputable def comapEquiv (e : S ≃+ T) :
+    AffineSemigroupComplexPoint T ≃ AffineSemigroupComplexPoint S where
+  toFun := comap (e : S →+ T)
+  invFun := comap (e.symm : T →+ S)
+  left_inv x := by simp
+  right_inv x := by simp
+
+@[simp]
+theorem coe_comapEquiv (e : S ≃+ T) : ⇑(comapEquiv e) = comap (e : S →+ T) := (rfl)
+
+@[simp]
+theorem comapEquiv_symm (e : S ≃+ T) : (comapEquiv e).symm = comapEquiv e.symm := (rfl)
+
+/-- An isomorphism of additive monoids induces a homeomorphism between their affine complex
+points, for the monomial-embedding topologies attached to any finite generating families. -/
+noncomputable def comapHomeomorph (e : S ≃+ T) (g : AddGeneratingFamily S r)
+    (h : AddGeneratingFamily T r') :
+    @Homeomorph (AffineSemigroupComplexPoint T) (AffineSemigroupComplexPoint S)
+      (affinePointTopology h) (affinePointTopology g) :=
+  @Homeomorph.mk _ _ (affinePointTopology h) (affinePointTopology g) (comapEquiv e)
+    (continuous_comap g h _) (continuous_comap h g _)
+
+@[simp]
+theorem coe_comapHomeomorph (e : S ≃+ T) (g : AddGeneratingFamily S r)
+    (h : AddGeneratingFamily T r') :
+    ⇑(comapHomeomorph e g h) = comap (e : S →+ T) :=
+  (rfl)
+
+@[simp]
+theorem comapHomeomorph_symm (e : S ≃+ T) (g : AddGeneratingFamily S r)
+    (h : AddGeneratingFamily T r') :
+    @Homeomorph.symm _ _ (affinePointTopology h) (affinePointTopology g)
+      (comapHomeomorph e g h) = comapHomeomorph e.symm h g :=
+  (rfl)
+
+end AffineSemigroupComplexPoint
 
 end TauCeti.Toric

@@ -99,7 +99,7 @@ universe u v w
 
 section Sign
 
-variable (k : Type w) {Q : Type u} [One k] [Neg k] [Quiver.{v + 1} Q]
+variable (k : Type w) {Q : Type u} [One k] [Neg k] [Quiver.{v} Q]
 
 /-- The sign labelling attached to a reorientation: an arrow which `σ` turns around enters the
 preprojective relator with the opposite sign, and every other arrow keeps its sign. -/
@@ -122,7 +122,7 @@ end Sign
 
 section SignUnit
 
-variable (k : Type w) {Q : Type u} [Monoid k] [HasDistribNeg k] [Quiver.{v + 1} Q]
+variable (k : Type w) {Q : Type u} [Monoid k] [HasDistribNeg k] [Quiver.{v} Q]
 
 /-- The sign labelling, valued in the units of `k`. -/
 def reorientSignUnit (σ : ∀ ⦃i j : Q⦄, (i ⟶ j) → Bool) ⦃i j : Q⦄ (a : i ⟶ j) : kˣ :=
@@ -147,7 +147,7 @@ end SignUnit
 
 section Doubled
 
-variable (k : Type w) {Q : Type u} [CommSemiring k] [Quiver.{v + 1} Q] [Finite Q]
+variable (k : Type w) {Q : Type u} [CommSemiring k] [Quiver.{v} Q] [Finite Q]
   (σ : ∀ ⦃i j : Q⦄, (i ⟶ j) → Bool)
 
 /-- **The isomorphism of doubled path algebras attached to a reorientation**: the path algebra of
@@ -244,7 +244,7 @@ end Doubled
 
 section DoubledSub
 
-variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Finite Q]
+variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Finite Q]
   (σ : ∀ ⦃i j : Q⦄, (i ⟶ j) → Bool)
 
 /-- An arrow which `σ` leaves alone contributes its own difference of backtracks. -/
@@ -271,7 +271,7 @@ end DoubledSub
 
 section Relator
 
-variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)] (σ : ∀ ⦃i j : Q⦄, (i ⟶ j) → Bool)
 
 /-- Summing a function of the arrows of `Q` over the hom sets of a reorientation, with the
@@ -343,7 +343,7 @@ end Relator
 
 section Independence
 
-variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)] (σ : ∀ ⦃i j : Q⦄, (i ⟶ j) → Bool)
 
 /-- The preprojective algebra of a reorientation, presented by the signed relator of the original

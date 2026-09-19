@@ -21,6 +21,8 @@ needing no integrability hypothesis.
 
 * `TauCeti.lintegral_comp_smul`: `∫⁻ x, g (r • x) ∂μ = |(r ^ n)⁻¹| * ∫⁻ x, g x ∂μ`.
 * `TauCeti.lintegral_comp_inv_smul`: the same law written for `r⁻¹` and `0 < r`.
+* `TauCeti.lintegral_comp_homothety`: the same law for the homothety of ratio `r` about any
+  centre.
 -/
 
 public section
@@ -50,5 +52,15 @@ theorem lintegral_comp_inv_smul (g : E → ℝ≥0∞) {r : ℝ} (hr : 0 < r) :
     ∫⁻ x, g (r⁻¹ • x) ∂μ = ENNReal.ofReal (r ^ finrank ℝ E) * ∫⁻ x, g x ∂μ := by
   rw [lintegral_comp_smul μ g (inv_ne_zero hr.ne'), inv_pow, inv_inv,
     abs_of_nonneg (by positivity)]
+
+/-- **Homothety scaling of the lower Lebesgue integral.** Precomposing with the homothety of
+ratio `r ≠ 0` about any centre `x` rescales a lower Lebesgue integral against an additive Haar
+measure by `|(r ^ n)⁻¹|`, where `n` is the dimension of the ambient space. -/
+theorem lintegral_comp_homothety (g : E → ℝ≥0∞) (x : E) {r : ℝ} (hr : r ≠ 0) :
+    ∫⁻ y, g (AffineMap.homothety x r y) ∂μ =
+      ENNReal.ofReal |(r ^ finrank ℝ E)⁻¹| * ∫⁻ y, g y ∂μ := by
+  simp only [AffineMap.homothety_apply, vsub_eq_sub, vadd_eq_add]
+  rw [lintegral_sub_right_eq_self (fun z => g (r • z + x)) x,
+    lintegral_comp_smul μ (fun z => g (z + x)) hr, lintegral_add_right_eq_self]
 
 end TauCeti

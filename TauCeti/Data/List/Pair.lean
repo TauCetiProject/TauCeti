@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.List.Defs
 public import Mathlib.Algebra.Group.Nat.Even
-import Lean.Elab.Tactic.Omega
 
 /-!
 # Grouping consecutive list elements into pairs
@@ -41,11 +40,7 @@ theorem prod_map_pairAdjacent {α : Type u} {β : Type v} [Monoid β] (f : α �
   | [], _ => by simp [pairAdjacent]
   | [_], hl => by simp at hl
   | a :: b :: l, hl => by
-      have htail : Even l.length := by
-        obtain ⟨k, hk⟩ := hl
-        use k - 1
-        simp only [List.length_cons] at hk
-        omega
+      have htail : Even l.length := by grind
       simp only [pairAdjacent, List.map_cons, List.prod_cons,
         prod_map_pairAdjacent f l htail, mul_assoc]
 
@@ -58,6 +53,6 @@ theorem length_pairAdjacent {α : Type u} : ∀ (l : List α),
   | _ :: _ :: l => by
       rw [pairAdjacent, List.length_cons, List.length_cons, List.length_cons,
         length_pairAdjacent]
-      omega
+      rw [← Nat.add_div_right l.length (by decide), Nat.add_assoc]
 
 end List

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Grading
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Basic
 public import TauCeti.RingTheory.Idempotents.Corner
 
 /-!
