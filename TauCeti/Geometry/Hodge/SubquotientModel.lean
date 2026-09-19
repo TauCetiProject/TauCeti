@@ -238,6 +238,7 @@ theorem rationalToComplexSubmodule_comap_subtype (U V : Submodule ℚ Vℚ) :
 
 /-- Complexifying the image of a rational subspace in a quotient gives the image of its
 complexification in the corresponding complex quotient. -/
+@[simp]
 theorem rationalToComplexSubmodule_map_mkQ (U V : Submodule ℚ Vℚ) :
     rationalToComplexSubmodule (isBaseChange_integralQuotientToRational hℚ U)
         (isBaseChange_integralQuotientToComplex hℚ hℂ U) (V.map U.mkQ) =
@@ -283,16 +284,16 @@ theorem latticeConj_integralQuotientToComplex_mk (U : Submodule ℚ Vℚ) (x : V
   simp
 
 /-- Conjugating the image of a complex subspace in a quotient is the image of its conjugate. -/
+@[simp]
 theorem map_latticeConj_integralQuotientToComplex (U : Submodule ℚ Vℚ)
     (A : Submodule ℂ Vℂ) :
     (A.map (rationalToComplexSubmodule hℚ hℂ U).mkQ).map
         (latticeConj (isBaseChange_integralQuotientToComplex hℚ hℂ U)) =
       (A.map (latticeConj hℂ)).map (rationalToComplexSubmodule hℚ hℂ U).mkQ := by
-  refine le_antisymm ?_ ?_
-  · rintro _ ⟨_, ⟨x, hx, rfl⟩, rfl⟩
-    exact ⟨latticeConj hℂ x, ⟨x, hx, rfl⟩, by simp⟩
-  · rintro _ ⟨_, ⟨x, hx, rfl⟩, rfl⟩
-    exact ⟨Submodule.Quotient.mk x, ⟨x, hx, rfl⟩, by simp⟩
+  rw [← Submodule.map_comp, ← Submodule.map_comp]
+  congr 1
+  ext x
+  simp
 
 /-- The lattice conjugation of the complex model of a rational subspace is the restriction of
 the ambient lattice conjugation. -/

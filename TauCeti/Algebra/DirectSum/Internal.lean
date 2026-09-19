@@ -310,11 +310,11 @@ theorem _root_.LinearMap.ker_eq_iSup_inf_of_map_le {R ι M N : Type*} [Ring R] [
     Submodule.mem_iSup_of_mem i ⟨LinearMap.mem_ker.2 (hzero i hi), hc i⟩
 
 /-- **A homogeneous submodule can be quotiented componentwise.** If `A` is an independent
-family and `U` is the sum of its intersections with the members of `A`, then the images of the
+family and `U` is contained in the sum of its intersections with the members of `A`, then the
 members of `A` in `M ⧸ U` are again independent. -/
 theorem Submodule.iSupIndep_map_mkQ {R ι M : Type*} [Ring R] [AddCommGroup M] [Module R M]
     {A : ι → Submodule R M} (hA : iSupIndep A) {U : Submodule R M}
-    (hU : U = ⨆ i, U ⊓ A i) : iSupIndep fun i ↦ (A i).map U.mkQ := by
+    (hU : U ≤ ⨆ i, U ⊓ A i) : iSupIndep fun i ↦ (A i).map U.mkQ := by
   rw [iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero]
   classical
   intro s v hv hv0 j hj
@@ -329,12 +329,12 @@ theorem Submodule.iSupIndep_map_mkQ {R ι M : Type*} [Ring R] [AddCommGroup M] [
     apply (Submodule.Quotient.mk_eq_zero (p := U)).mp
     calc
       Submodule.Quotient.mk (∑ i ∈ s, a i) = ∑ i ∈ s, U.mkQ (a i) := by
-        change U.mkQ (∑ i ∈ s, a i) = _
+        rw [← Submodule.mkQ_apply]
         rw [map_sum]
       _ = ∑ i ∈ s, v i := Finset.sum_congr rfl fun i hi ↦ haQ i hi
       _ = 0 := hv0
   have hasum' : ∑ i ∈ s, a i ∈ ⨆ i, U ⊓ A i := by
-    rwa [← hU]
+    exact hU hasum
   obtain ⟨c, hc, hca⟩ := (Submodule.mem_iSup_iff_exists_finsupp _ _).1 hasum'
   have haj : a j = c j := by
     refine (iSupIndep_iff_finsetSum_eq_imp_eq A).1 hA (s ∪ c.support) a c
@@ -350,7 +350,7 @@ theorem Submodule.iSupIndep_map_mkQ {R ι M : Type*} [Ring R] [AddCommGroup M] [
           apply Finset.sum_subset (Finset.subset_union_right)
           simp
   rw [← haQ j hj, haj]
-  change (Submodule.Quotient.mk (c j) : M ⧸ U) = 0
+  rw [Submodule.mkQ_apply]
   exact (Submodule.Quotient.mk_eq_zero (p := U)).mpr (hc j).1
 
 end TauCeti

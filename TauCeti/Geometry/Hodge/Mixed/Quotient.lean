@@ -64,11 +64,8 @@ theorem map_mkQ (h : IsHodgeBigrading hℚ hℂ WQ F I) {U : Submodule ℚ Vℚ}
       (fun k ↦ (WQ k).map U.mkQ)
       (fun p ↦ (F p).map (rationalToComplexSubmodule hℚ hℂ U).mkQ)
       (fun pq ↦ (I pq).map (rationalToComplexSubmodule hℚ hℂ U).mkQ) := by
-  let UC := rationalToComplexSubmodule hℚ hℂ U
-  have hUC : UC = ⨆ pq : ℤ × ℤ, UC ⊓ I pq :=
-    le_antisymm hU (iSup_le fun _ ↦ inf_le_left)
   refine
-    { iSupIndep := TauCeti.Submodule.iSupIndep_map_mkQ h.iSupIndep hUC
+    { iSupIndep := TauCeti.Submodule.iSupIndep_map_mkQ h.iSupIndep hU
       rationalToComplexSubmodule_eq_iSup := fun k ↦ ?_
       F_eq_iSup := fun p ↦ ?_
       map_latticeConj_le := fun pq ↦ ?_ }
@@ -124,6 +121,7 @@ theorem quotient_F (p : ℤ) : hU.quotient.F p =
 
 /-- The complex weight filtration on the quotient is the image of the ambient complex weight
 filtration. -/
+@[simp]
 theorem quotient_WC (k : ℤ) : hU.quotient.WC k =
     (mhs.WC k).map (rationalToComplexSubmodule hℚ hℂ U).mkQ := by
   rw [MixedHodgeStructure.WC_def, quotient_WQ, rationalToComplexSubmodule_map_mkQ,
