@@ -35,7 +35,7 @@ variable {F ι : Type*} [Field F] [DecidableEq F] [Fintype ι]
 
 /-- Puncturing loses at most one unit of minimum distance per deleted coordinate, including
 when the punctured code collapses to zero. The set `s` consists of the retained coordinates. -/
-theorem hammingMinDist_le_hammingMinDist_puncture_add :
+theorem hammingMinDist_le_hammingMinDist_puncture_add_card_compl :
     hammingMinDist (C : Set (ι → F)) ≤
       hammingMinDist (puncture C s : Set (s → F)) + Fintype.card ↥sᶜ := by
   by_cases hC : C = ⊥
@@ -94,69 +94,84 @@ theorem hammingMinDist_le_hammingMinDist_shorten (hS : shorten C s ≠ ⊥) :
       rw [hammingNorm_eq_domRestrict_add_domRestrict_compl s, hxs, hxsc, hammingNorm_zero,
         add_zero, hyd]
 
+/-- Deleting one coordinate reduces minimum distance by at most one. -/
+theorem hammingMinDist_le_hammingMinDist_punctureAt_add_one [DecidableEq ι] (i : ι) :
+    hammingMinDist (C : Set (ι → F)) ≤
+      hammingMinDist (punctureAt C i : Set (({i}ᶜ : Set ι) → F)) + 1 := by
+  simpa only [punctureAt_def, compl_compl, Fintype.card_unique] using
+    hammingMinDist_le_hammingMinDist_puncture_add_card_compl C {i}ᶜ
+
+/-- Shortening at one coordinate cannot decrease minimum distance if the result is nonzero. -/
+theorem hammingMinDist_le_hammingMinDist_shortenAt [DecidableEq ι] (i : ι)
+    (hS : shortenAt C i ≠ ⊥) :
+    hammingMinDist (C : Set (ι → F)) ≤
+      hammingMinDist (shortenAt C i : Set (({i}ᶜ : Set ι) → F)) := by
+  rw [shortenAt_def] at hS ⊢
+  exact hammingMinDist_le_hammingMinDist_shorten C {i}ᶜ hS
+
 end CoordinateSets
 
 section DirectSum
 
-variable {R ι κ : Type*} [Ring R] [DecidableEq R] [Fintype ι] [Fintype κ]
+variable {R ι κ : Type*} [Semiring R] [DecidableEq R] [Fintype ι] [Fintype κ]
   (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
 
 /-- The minimum distance of a direct sum of two nonzero codes is the minimum of their
 minimum distances. -/
+@[simp]
 theorem hammingMinDist_directSum (hC : C ≠ ⊥) (hD : D ≠ ⊥) :
     hammingMinDist (C.directSum D : Set (ι ⊕ κ → R)) =
       min (hammingMinDist (C : Set (ι → R))) (hammingMinDist (D : Set (κ → R))) := by
-  have hC' : C.toAddSubgroup ≠ ⊥ := fun h ↦ hC (Submodule.toAddSubgroup_injective h)
-  have hD' : D.toAddSubgroup ≠ ⊥ := fun h ↦ hD (Submodule.toAddSubgroup_injective h)
-  obtain ⟨x, hx, hx0, hxd⟩ := exists_hammingNorm_eq_hammingMinDist hC'
-  obtain ⟨y, hy, hy0, hyd⟩ := exists_hammingNorm_eq_hammingMinDist hD'
-  rw [Submodule.coe_toAddSubgroup] at hxd hyd
+  have hC' : (C : Set (ι → R)).Nontrivial :=
+    Set.nontrivial_coe_sort.mp (Submodule.nontrivial_iff_ne_bot.mpr hC)
+  have hD' : (D : Set (κ → R)).Nontrivial :=
+    Set.nontrivial_coe_sort.mp (Submodule.nontrivial_iff_ne_bot.mpr hD)
+  obtain ⟨x, hx, x', hx', hxx', hxd⟩ := exists_hammingDist_eq_hammingMinDist hC'
+  obtain ⟨y, hy, y', hy', hyy', hyd⟩ := exists_hammingDist_eq_hammingMinDist hD'
   have hxmem : Sum.elim x 0 ∈ C.directSum D :=
     Submodule.mem_directSum_iff.mpr ⟨hx, D.zero_mem⟩
-  have hxne : Sum.elim x (0 : κ → R) ≠ 0 := by
+  have hxmem' : Sum.elim x' 0 ∈ C.directSum D :=
+    Submodule.mem_directSum_iff.mpr ⟨hx', D.zero_mem⟩
+  have hxne : Sum.elim x (0 : κ → R) ≠ Sum.elim x' 0 := by
     intro h
-    exact hx0 (funext fun i ↦ congrFun h (.inl i))
-  have hE : (C.directSum D).toAddSubgroup ≠ ⊥ := by
-    intro h
-    have hxmem' : Sum.elim x (0 : κ → R) ∈ (C.directSum D).toAddSubgroup := hxmem
-    rw [h] at hxmem'
-    exact hxne (by simpa only [AddSubgroup.mem_bot] using hxmem')
-  -- Embed a minimum-weight word of either summand to obtain both upper bounds.
+    exact hxx' (funext fun i ↦ congrFun h (.inl i))
+  -- Embed a pair attaining minimum distance in either summand for both upper bounds.
   apply le_antisymm
   · apply le_min
-    · have h := hammingMinDist_le_hammingNorm
-        (E := (C.directSum D).toAddSubgroup) hxmem hxne
-      simpa only [Submodule.coe_toAddSubgroup, hammingNorm_sumElim, hammingNorm_zero,
-        add_zero, hxd] using h
+    · simpa only [hammingDist_sumElim, hammingDist_self, add_zero, hxd] using
+        hammingMinDist_le hxmem hxmem' hxne
     · have hymem : Sum.elim (0 : ι → R) y ∈ C.directSum D :=
         Submodule.mem_directSum_iff.mpr ⟨C.zero_mem, hy⟩
-      have hyne : Sum.elim (0 : ι → R) y ≠ 0 := by
+      have hymem' : Sum.elim (0 : ι → R) y' ∈ C.directSum D :=
+        Submodule.mem_directSum_iff.mpr ⟨C.zero_mem, hy'⟩
+      have hyne : Sum.elim (0 : ι → R) y ≠ Sum.elim (0 : ι → R) y' := by
         intro h
-        exact hy0 (funext fun i ↦ congrFun h (.inr i))
-      have h := hammingMinDist_le_hammingNorm
-        (E := (C.directSum D).toAddSubgroup) hymem hyne
-      simpa only [Submodule.coe_toAddSubgroup, hammingNorm_sumElim, hammingNorm_zero,
-        zero_add, hyd] using h
-  -- A nonzero word has a nonzero component, which supplies the lower bound.
-  · rw [← Submodule.coe_toAddSubgroup]
-    apply (le_hammingMinDist_iff_hammingNorm hE).mpr
-    intro z hz hz0
+        exact hyy' (funext fun i ↦ congrFun h (.inr i))
+      simpa only [hammingDist_sumElim, hammingDist_self, zero_add, hyd] using
+        hammingMinDist_le hymem hymem' hyne
+  -- Distinct words differ in a component, which supplies the lower bound.
+  · apply (le_hammingMinDist_iff ⟨_, hxmem, _, hxmem', hxne⟩).mpr
+    intro z hz w hw hzw
     obtain ⟨hzC, hzD⟩ := Submodule.mem_directSum_iff.mp hz
-    have hzsplit : z = Sum.elim (fun i ↦ z (.inl i)) (fun j ↦ z (.inr j)) := by
-      funext i
-      cases i <;> rfl
-    rw [hzsplit, hammingNorm_sumElim]
-    by_cases hleft : (fun i ↦ z (.inl i)) = 0
-    · have hright : (fun j ↦ z (.inr j)) ≠ 0 := by
+    obtain ⟨hwC, hwD⟩ := Submodule.mem_directSum_iff.mp hw
+    have hsplit : hammingDist z w =
+        hammingDist (z ∘ Sum.inl) (w ∘ Sum.inl) +
+          hammingDist (z ∘ Sum.inr) (w ∘ Sum.inr) := by
+      simpa only [Sum.elim_comp_inl_inr] using
+        hammingDist_sumElim (z ∘ Sum.inl) (w ∘ Sum.inl) (z ∘ Sum.inr) (w ∘ Sum.inr)
+    rw [hsplit]
+    by_cases hleft : z ∘ Sum.inl = w ∘ Sum.inl
+    · have hright : z ∘ Sum.inr ≠ w ∘ Sum.inr := by
         intro hright
-        apply hz0
-        rw [hzsplit, hleft, hright]
+        apply hzw
         funext i
-        cases i <;> rfl
-      exact (min_le_right _ _).trans ((hammingMinDist_le_hammingNorm
-        (E := D.toAddSubgroup) hzD hright).trans (Nat.le_add_left _ _))
-    · exact (min_le_left _ _).trans ((hammingMinDist_le_hammingNorm
-        (E := C.toAddSubgroup) hzC hleft).trans (Nat.le_add_right _ _))
+        cases i with
+        | inl i => exact congrFun hleft i
+        | inr i => exact congrFun hright i
+      exact (min_le_right _ _).trans
+        ((hammingMinDist_le hzD hwD hright).trans (Nat.le_add_left _ _))
+    · exact (min_le_left _ _).trans
+        ((hammingMinDist_le hzC hwC hleft).trans (Nat.le_add_right _ _))
 
 end DirectSum
 
