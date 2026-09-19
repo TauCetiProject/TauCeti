@@ -37,7 +37,7 @@ defining `𝒪_X(D)`.
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.isoSheafOfCoeffEq`: the isomorphism `L ≅ 𝒪_X(D)`
   through which the rational embedding of `L` factors (`isoSheafOfCoeffEq_hom_sheafι`);
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.toLineBundleClass_surjective` and
-  `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.classGroupToLineBundleClass_bijective`;
+  `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.classGroupToLineBundleClass_surjective`;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.classGroupAddEquivLineBundleClass`, the additive
   equivalence `Cl(X) ≃+ Pic(X)`;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.isUnit_lineBundleClass`: every line-bundle class
@@ -345,11 +345,6 @@ theorem classGroupToLineBundleClass_surjective :
   obtain ⟨D, rfl⟩ := toLineBundleClass_surjective hX a
   exact ⟨_, classGroupToLineBundleClass_divisorClass hX D⟩
 
-/-- **The map from divisor classes to line-bundle classes is bijective.** -/
-theorem classGroupToLineBundleClass_bijective :
-    Function.Bijective (classGroupToLineBundleClass (X := X) hX) :=
-  ⟨classGroupToLineBundleClass_injective hX, classGroupToLineBundleClass_surjective hX⟩
-
 /-- **Line bundles on a curve are invertible under tensor product.** Every line-bundle class is
 the class of some `𝒪_X(D)`, which `𝒪_X(-D)` inverts. -/
 theorem isUnit_lineBundleClass (a : LineBundleClass X) : IsUnit a := by
@@ -377,7 +372,9 @@ def classGroupAddEquivLineBundleClass :
         classGroupToLineBundleClass hX.out :=
       funext (classGroupToLineBundleClassHom_apply hX.out)
     rw [hfun]
-    exact Additive.ofMul.bijective.comp (classGroupToLineBundleClass_bijective hX.out)
+    exact Additive.ofMul.bijective.comp
+      ⟨classGroupToLineBundleClass_injective hX.out,
+        classGroupToLineBundleClass_surjective hX.out⟩
 
 /-- The equivalence `Cl(X) ≃+ Pic(X)` sends a divisor class to the class of its line bundle. -/
 @[simp]
