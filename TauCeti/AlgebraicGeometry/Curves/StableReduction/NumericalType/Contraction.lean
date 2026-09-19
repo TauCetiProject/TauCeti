@@ -109,6 +109,7 @@ lemma two_mul_contractWeight {i : {i // i ≠ e}} (h : T.ContractHalvesWeight e 
   exact_mod_cast Nat.mul_div_cancel' h.two_dvd_weight
 
 /-- A weight that is not halved is unchanged. -/
+@[simp]
 lemma contractWeight_of_not {i : {i // i ≠ e}} (h : ¬ T.ContractHalvesWeight e i) :
     T.contractWeight e i = T.weight i := by
   simp only [contractWeight, h, ↓reduceDIte]
@@ -242,6 +243,7 @@ def contractIntersection (e : T.Component) : Matrix {i // i ≠ e} {i // i ≠ e
   fun i j ↦ T.intersection i j + T.intersection i e * T.intersection j e / T.weight e
 
 /-- Unfolding of `TauCeti.NumericalType.contractIntersection`. -/
+@[simp]
 lemma contractIntersection_apply (i j : {i // i ≠ e}) :
     T.contractIntersection e i j =
       T.intersection i j + T.intersection i e * T.intersection j e / T.weight e :=
