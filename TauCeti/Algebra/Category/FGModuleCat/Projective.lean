@@ -22,6 +22,8 @@ every short exact sequence of finite-dimensional modules splits.
 * `FGModuleCat.projective_of_moduleProjective`: every finitely generated projective module is a
   projective object.
 * `FGModuleCat.projective_of_free`: every finite free module is projective.
+* `FGModuleCat.enoughProjectives`: every finitely generated module is a quotient of a finite free
+  module.
 * `FGModuleCat.moduleProjective_of_projective`: a projective object of `FGModuleCat R` is a
   projective `R`-module, provided `R` is small relative to the universe of the modules.
 * `FGModuleCat.nonempty_splitting_of_shortExact`: every short exact sequence of finite-dimensional
@@ -65,6 +67,22 @@ theorem _root_.FGModuleCat.moduleProjective_of_projective [Small.{v} R]
   apply LinearMap.ext
   intro x
   exact congrArg (fun g : X ⟶ X ↦ g.hom.hom x) (Projective.factorThru_comp (𝟙 X) p)
+
+variable {R} in
+/-- `FGModuleCat R` has enough projectives: every finitely generated module is a quotient of a
+finite free module. The smallness hypothesis holds automatically when the modules live in a
+universe containing `R`. -/
+instance _root_.FGModuleCat.enoughProjectives [Small.{v} R] :
+    EnoughProjectives (FGModuleCat.{v} R) where
+  presentation X := by
+    obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R X
+    let e := Shrink.linearEquiv.{v} R (Fin n → R)
+    let _ : Module.Free R (Shrink.{v} (Fin n → R)) := .of_equiv e.symm
+    exact ⟨{
+      p := FGModuleCat.of R (Shrink.{v} (Fin n → R))
+      projective := FGModuleCat.projective_of_free R _
+      f := FGModuleCat.ofHom (f ∘ₗ e.toLinearMap)
+      epi := ConcreteCategory.epi_of_surjective _ (hf.comp e.surjective) }⟩
 
 variable (k : Type u) [DivisionRing k]
 
