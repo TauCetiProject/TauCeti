@@ -96,6 +96,8 @@ theorem coe_γ0_eq_exp (t : unitInterval) : (γ0 t : ℂ) = 1 / 2 * exp (2 * π 
 theorem coe_γ1_eq_exp (t : unitInterval) : (γ1 t : ℂ) = 1 - 1 / 2 * exp (2 * π * I * t) := by
   simp [coe_γ1, circleMap, mul_right_comm _ I, sub_eq_add_neg]
 
+-- These are not simp lemmas: the coercion formulas and Mathlib's circle-map simp rules already
+-- normalize their left-hand sides, so extra simp attributes would fail the simpNF linter.
 /-- The loop `γ0` lies on the circle of radius `1/2` about `0`. -/
 theorem norm_coe_γ0 (t : unitInterval) : ‖(γ0 t : ℂ)‖ = 1 / 2 := by
   simp [coe_γ0, norm_circleMap_zero]
