@@ -262,8 +262,8 @@ finitely generated module over the polynomial ring of the unblocked columns. -/
 theorem finite_simplyBlockedHomology [IsNoetherianRing R] (i : Fin n) :
     Module.Finite (MvPolynomial {c : Fin n // c ≠ i} R) (hG.simplyBlockedHomology R i) := by
   have : Module.Finite (MvPolynomial {c : Fin n // c ≠ i} R)
-      ((G.simplyBlockedComplex R i).sc' () () ()).X₂ :=
-    Module.Finite.equiv (eqToIso (G.simplyBlockedComplex_X R i ())).symm.toLinearEquiv
+      ((G.simplyBlockedComplex R i).X ()) :=
+    Module.Finite.equiv (G.simplyBlockedChainEquiv R i).symm
   exact Module.Finite.of_surjective _ (hG.simplyBlockedHomologyClass_surjective R i)
 
 /-- Over a Noetherian coefficient ring `R`, the simply blocked grid homology of a knot grid is a

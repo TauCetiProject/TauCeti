@@ -201,6 +201,13 @@ theorem twoByTwo_simplyBlockedDifferential_apply
 noncomputable def twoByTwoSimplyBlockedCycle : GridChainHat R 2 0 :=
   Finsupp.single GridState.twoByTwoSwap 1
 
+/-- The surviving cycle has coefficient one at the transposition state and zero elsewhere. -/
+@[simp]
+theorem twoByTwoSimplyBlockedCycle_apply (x : GridState 2) :
+    twoByTwoSimplyBlockedCycle R x = if x = GridState.twoByTwoSwap then 1 else 0 := by
+  classical
+  simp [twoByTwoSimplyBlockedCycle, Finsupp.single_apply, eq_comm]
+
 /-- The named surviving chain is killed by the simply blocked differential. -/
 @[simp high]
 theorem twoByTwo_simplyBlockedDifferential_cycle :
