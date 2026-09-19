@@ -35,7 +35,7 @@ cochain complexes.
 * `TauCeti.PeriodicComplex.instHasShift`: the resulting shift by `ℤ` on periodic complexes.
 * `TauCeti.PeriodicComplex.shiftFunctorIsoId`: the periodicity isomorphism `X⟦k⟧ ≅ X` for even
   `k` divisible by `n`.
-* `TauCeti.PeriodicHomotopy.shift`: the shift of a homotopy.
+* `TauCeti.Homotopy.periodicShift`: the shift of a homotopy.
 * `TauCeti.PeriodicComplex.homotopyCategoryShiftFunctorIsoId`: periodicity in the homotopy
   category.
 
@@ -230,7 +230,7 @@ lemma shiftFunctorIsoId_inv_app_f (k : ℤ) (hk : (k : ZMod n) = 0) (he : Even k
 
 end PeriodicComplex
 
-namespace PeriodicHomotopy
+namespace Homotopy
 
 open HomologicalComplex
 
@@ -238,7 +238,7 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] {n : ℕ}
 
 /-- If `h : Homotopy φ₁ φ₂` and `k : ℤ`, this is the induced homotopy between `φ₁⟦k⟧'` and
 `φ₂⟦k⟧'`. -/
-def shift {K L : HomologicalComplex C (ComplexShape.up (ZMod n))} {φ₁ φ₂ : K ⟶ L}
+def periodicShift {K L : HomologicalComplex C (ComplexShape.up (ZMod n))} {φ₁ φ₂ : K ⟶ L}
     (h : Homotopy φ₁ φ₂) (k : ℤ) : Homotopy (φ₁⟦k⟧') (φ₂⟦k⟧') where
   hom i j := k.negOnePow • h.hom (i + k) (j + k)
   zero i j hij := by
@@ -254,13 +254,14 @@ def shift {K L : HomologicalComplex C (ComplexShape.up (ZMod n))} {φ₁ φ₂ :
       using h.comm (i + k)
 
 @[simp]
-lemma shift_hom {K L : HomologicalComplex C (ComplexShape.up (ZMod n))} {φ₁ φ₂ : K ⟶ L}
+lemma periodicShift_hom {K L : HomologicalComplex C (ComplexShape.up (ZMod n))}
+    {φ₁ φ₂ : K ⟶ L}
     (h : Homotopy φ₁ φ₂) (k : ℤ) (i j : ZMod n) :
-    (PeriodicHomotopy.shift h k).hom i j =
+    (TauCeti.Homotopy.periodicShift h k).hom i j =
       k.negOnePow • h.hom (i + k) (j + k) := by
-  rw [PeriodicHomotopy.shift.eq_def]
+  rw [TauCeti.Homotopy.periodicShift.eq_def]
 
-end PeriodicHomotopy
+end Homotopy
 
 namespace PeriodicComplex
 
@@ -269,7 +270,7 @@ open HomologicalComplex
 variable (C : Type u) [Category.{v} C] [Preadditive C] (n : ℕ)
 
 instance : (homotopic C (ComplexShape.up (ZMod n))).IsCompatibleWithShift ℤ :=
-  ⟨fun k _ _ _ _ ⟨h⟩ => ⟨PeriodicHomotopy.shift h k⟩⟩
+  ⟨fun k _ _ _ _ ⟨h⟩ => ⟨TauCeti.Homotopy.periodicShift h k⟩⟩
 
 /-- The periodic homotopy category carries the shift by `ℤ` induced from periodic complexes. -/
 noncomputable instance homotopyCategoryHasShift :
@@ -324,6 +325,8 @@ lemma homotopyCategoryShiftFunctorIsoId_hom_app_quotient_obj (k : ℤ) (hk : (k 
         (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).map
           ((shiftFunctorIsoId C n k hk he).hom.app K) := by
   rw [homotopyCategoryShiftFunctorIsoId.eq_def]
+  -- `natIsoLift` packages its hom component via `natTransLift`; expose that definitional layer
+  -- so the quotient API lemma applies.
   change (Quotient.natTransLift _ _).app ((Quotient.functor _).obj K) = _
   apply Quotient.natTransLift_app
 
@@ -336,6 +339,8 @@ lemma homotopyCategoryShiftFunctorIsoId_inv_app_quotient_obj (k : ℤ) (hk : (k 
           ((shiftFunctorIsoId C n k hk he).inv.app K) ≫
         ((HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).commShiftIso k).hom.app K := by
   rw [homotopyCategoryShiftFunctorIsoId.eq_def]
+  -- `natIsoLift` packages its inv component via `natTransLift`; expose that definitional layer
+  -- so the quotient API lemma applies.
   change (Quotient.natTransLift _ _).app ((Quotient.functor _).obj K) = _
   apply Quotient.natTransLift_app
 
