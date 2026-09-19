@@ -31,8 +31,8 @@ explicit carrier with the coordinate Hopf algebra of `SL_{r+1}`.
 
 ## Main declarations
 
-* `TauCeti.SlStd.mem_baseChangeDefiningPointsSubgroup_iff_mem_points`: over every value algebra,
-  the transported carrier equations cut out the original integral carrier's matrices.
+* `TauCeti.SlStd.mem_baseChangeDefiningPointsSubgroup_iff_mem_points`: on base-ring-valued
+  points, the transported carrier equations cut out the original integral carrier's matrices.
 * `TauCeti.SlStd.baseChangeDefiningIdeal_eq_specialLinearDefiningHopfIdeal`: over an
   algebraically closed field, the transported carrier and special-linear defining ideals agree.
 * `TauCeti.SlStd.baseChangeCoordinateSpecialLinearIso`: the induced coordinate Hopf-algebra
@@ -64,20 +64,124 @@ attribute [local instance high] Algebra.toModule
 
 variable (r : ℕ)
 
-/-- A point over any value algebra satisfies the transported defining equations of the type `A_r`
-carrier exactly when its underlying matrix is an integral carrier point. -/
+/-- Mapping an invertible matrix along a ring homomorphism identified with the identity leaves
+the matrix unchanged. This isolates the identity-map coercion used in both transport directions. -/
+private theorem generalLinearMap_eq_self_of_ringHom_eq_id
+    {k : Type u} [CommRing k] (n : ℕ) (φ : k →+* k) (hφ : φ = RingHom.id k)
+    (g : Matrix.GeneralLinearGroup (Fin n) k) :
+    Matrix.GeneralLinearGroup.map φ g = g := by
+  rw [hφ, Matrix.GeneralLinearGroup.map_id, MonoidHom.id_apply]
+
+/-- Transporting a quotient point in its value algebra commutes with reading its ambient
+invertible matrix. -/
+private theorem pointsMulEquiv_quotientPointsHom_mapPoints
+    (n : ℕ) (I : HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ n))
+    {A B : CommAlgCat ℤ} (χ : A ⟶ B)
+    (q : HopfAlgebra.points (R := ℤ)
+      (H := CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n) I) A) :
+    GeneralLinear.pointsMulEquiv n
+        (CommHopfAlgCat.quotientPointsHom
+          (GeneralLinear.coordinateHopfAlgebra ℤ n) I B
+          (HopfAlgebra.mapPoints
+            (H := CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n) I) χ q)) =
+      Matrix.GeneralLinearGroup.map χ.hom.toRingHom
+        (GeneralLinear.pointsMulEquiv n
+          (CommHopfAlgCat.quotientPointsHom
+            (GeneralLinear.coordinateHopfAlgebra ℤ n) I A q)) := by
+  rw [← CommHopfAlgCat.mapPoints_quotientPointsHom]
+  exact GeneralLinear.pointsMulEquiv_mapValue n χ.hom _
+
+/-- A base-ring-valued point satisfies the transported defining equations of the type `A_r`
+carrier exactly when its underlying matrix is a point of the original integral carrier. This
+holds over every commutative base ring. -/
 theorem mem_baseChangeDefiningPointsSubgroup_iff_mem_points
-    (k : Type u) [CommRing k] (A : Type v) [CommRing A] [Algebra k A]
+    (k : Type u) [CommRing k]
     (g : HopfAlgebra.points (R := k)
-      (H := GeneralLinear.coordinateHopfAlgebra k (r + 1)) (CommAlgCat.of k A)) :
+      (H := GeneralLinear.coordinateHopfAlgebra k (r + 1)) (CommAlgCat.of k k)) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup
         (GeneralLinear.coordinateHopfAlgebra k (r + 1))
-        (baseChangeDefiningIdeal r k) (CommAlgCat.of k A) ↔
-      GeneralLinear.pointsMulEquiv (r + 1) g ∈ points r A := by
-  exact GeneralLinear.mem_quotientPointsSubgroup_iff_mem_of_pointsMulEquiv
-    (r + 1) (baseChangeDefiningIdeal r k) (CommAlgCat.of k A) (points r A)
-      (baseChangePointsMulEquiv r k (CommAlgCat.of k A))
-      (coe_baseChangePointsMulEquiv_apply r k (CommAlgCat.of k A)) g
+        (baseChangeDefiningIdeal r k) (CommAlgCat.of k k) ↔
+      GeneralLinear.pointsMulEquiv (r + 1) g ∈ points r k := by
+  let B := CommAlgCat.of k k
+  let BZ := CommAlgCat.restrictScalarsObj (algebraMap ℤ k) B
+  let C := CommAlgCat.of ℤ k
+  let I := definingIdeal r
+  let J := baseChangeDefiningIdeal r k
+  let e := baseChangeCoordinateIso r k
+  have he := mkQuotient_comp_baseChangeCoordinateIso_hom r k
+  constructor
+  · rintro ⟨q, rfl⟩
+    let qZraw := CommHopfAlgCat.baseChangeIsoPointsMulEquiv e B q
+    let χhom : @AlgHom ℤ (↑BZ) (↑C) _ _ _ BZ.algebra C.algebra :=
+      @AlgHom.mk ℤ (↑BZ) (↑C) _ _ _ BZ.algebra C.algebra (RingHom.id k)
+        (by intro z; simp)
+    let χ : BZ ⟶ C :=
+      @CommAlgCat.ofHom ℤ _ (↑BZ) (↑C) BZ.commRing BZ.algebra C.commRing C.algebra χhom
+    let qZ := HopfAlgebra.mapPoints
+      (H := CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) I)
+      χ qZraw
+    have hmatrix :=
+      GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
+        (r + 1) I J e he B q
+    have htransport : GeneralLinear.pointsMulEquiv (r + 1)
+        (CommHopfAlgCat.quotientPointsHom
+          (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) I (CommAlgCat.of ℤ k) qZ) =
+      GeneralLinear.pointsMulEquiv (r + 1)
+        (CommHopfAlgCat.quotientPointsHom
+          (GeneralLinear.coordinateHopfAlgebra k (r + 1)) J B q) := by
+      exact (pointsMulEquiv_quotientPointsHom_mapPoints (r + 1) I χ qZraw).trans
+        ((generalLinearMap_eq_self_of_ringHom_eq_id (r + 1) (RingHom.id k) rfl _).trans hmatrix)
+    have hmem : GeneralLinear.pointsMulEquiv (r + 1)
+        (CommHopfAlgCat.quotientPointsHom
+          (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) I (CommAlgCat.of ℤ k) qZ) ∈
+          points r k := by
+      rw [points_def]
+      apply GeneralLinear.pointsMulEquiv_mem_hopfIdealPointsSubgroup
+      exact CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup _ _ _ _
+    rw [htransport] at hmem
+    exact hmem
+  · intro hg
+    rw [points_def] at hg
+    let qZ := (GeneralLinear.hopfIdealPointsSubgroupMulEquiv
+      (r + 1) I (CommAlgCat.of ℤ k)).symm
+      ⟨GeneralLinear.pointsMulEquiv (r + 1) g, hg⟩
+    let χhom : @AlgHom ℤ (↑C) (↑BZ) _ _ _ C.algebra BZ.algebra :=
+      @AlgHom.mk ℤ (↑C) (↑BZ) _ _ _ C.algebra BZ.algebra (RingHom.id k)
+        (by intro z; simp)
+    let χ : C ⟶ BZ :=
+      @CommAlgCat.ofHom ℤ _ (↑C) (↑BZ) C.commRing C.algebra BZ.commRing BZ.algebra χhom
+    let qZraw := HopfAlgebra.mapPoints
+      (H := CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) I)
+      χ qZ
+    let E := CommHopfAlgCat.baseChangeIsoPointsMulEquiv e B
+    let q := E.symm qZraw
+    let g' := CommHopfAlgCat.quotientPointsHom
+      (GeneralLinear.coordinateHopfAlgebra k (r + 1)) J B q
+    have hg' : g' ∈ CommHopfAlgCat.quotientPointsSubgroup
+        (GeneralLinear.coordinateHopfAlgebra k (r + 1)) J B :=
+      CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup _ _ _ _
+    have hmatrix :=
+      GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
+        (r + 1) I J e he B q
+    have hqZraw : E q = qZraw := E.apply_symm_apply qZraw
+    rw [hqZraw] at hmatrix
+    have htransport : GeneralLinear.pointsMulEquiv (r + 1) g' =
+      GeneralLinear.pointsMulEquiv (r + 1)
+        (CommHopfAlgCat.quotientPointsHom
+          (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) I (CommAlgCat.of ℤ k) qZ) := by
+      exact hmatrix.symm.trans
+        ((pointsMulEquiv_quotientPointsHom_mapPoints (r + 1) I χ qZ).trans
+          (generalLinearMap_eq_self_of_ringHom_eq_id (r + 1) (RingHom.id k) rfl _))
+    have hleft : GeneralLinear.pointsMulEquiv (r + 1)
+        (CommHopfAlgCat.quotientPointsHom
+          (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) I (CommAlgCat.of ℤ k) qZ) =
+          GeneralLinear.pointsMulEquiv (r + 1) g := by
+      rw [← GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply]
+      simp only [qZ, MulEquiv.apply_symm_apply, Subtype.coe_mk]
+    have hgg : g' = g := by
+      apply (GeneralLinear.pointsMulEquiv (r + 1)).injective
+      exact htransport.trans hleft
+    rwa [hgg] at hg'
 
 /-- The determinant-one ideal is contained in the transported defining ideal of the full-weight
 type `A_r` carrier over every commutative ring. Equivalently, every point of the transported
