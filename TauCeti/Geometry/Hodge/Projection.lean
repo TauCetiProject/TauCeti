@@ -35,16 +35,13 @@ Following Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.1.2, and 
 
 ## Main declarations
 
-* `TauCeti.Hodge.RationalHodgeSubstructure.ofRationalMorphismRange` and
-  `…ofRationalMorphismKer`: the image and the kernel of a rational linear map whose
-  complexification is a morphism of pure Hodge structures are rational Hodge substructures.
 * `TauCeti.Hodge.RationalHodgeSubstructure.projection`: the projector onto a rational Hodge
   substructure along its orthogonal complement for a chosen polarization, with
   `…isMorphism_rationalMapToComplex_projection` exhibiting its complexification as a morphism of
   pure Hodge structures.
-* `TauCeti.Hodge.exists_isIdempotentElem_isMorphism_of_isPolarizable`: **every rational Hodge
-  substructure of a polarizable pure Hodge structure is the image of an idempotent rational Hodge
-  endomorphism**, and `TauCeti.Hodge.exists_isIdempotentElem_isMorphism_iff` is the
+* `TauCeti.Hodge.exists_isIdempotentElem_isMorphism_range_eq_of_isPolarizable`: **every rational
+  Hodge substructure of a polarizable pure Hodge structure is the image of an idempotent rational
+  Hodge endomorphism**, and `TauCeti.Hodge.exists_isIdempotentElem_isMorphism_range_eq_iff` is the
   characterization of the rational Hodge substructures it yields.
 -/
 
@@ -52,7 +49,7 @@ public section
 
 namespace TauCeti.Hodge
 
-universe u v w u' v' w'
+universe u v w
 
 variable {Vℤ : Type u} {Vℚ : Type v} {Vℂ : Type w}
 variable [AddCommGroup Vℤ]
@@ -61,61 +58,6 @@ variable [AddCommGroup Vℂ] [Module ℂ Vℂ]
 variable {ιℚ : Vℤ →ₗ[ℤ] Vℚ} {ιℂ : Vℤ →ₗ[ℤ] Vℂ}
 variable {hℚ : IsBaseChange ℚ ιℚ} {hℂ : IsBaseChange ℂ ιℂ}
 variable {n : ℤ} {hs : HodgeStructure hℂ n}
-
-/-! ### Subobjects cut out by rational morphisms -/
-
-section Morphism
-
-variable {V'ℤ : Type u'} {V'ℚ : Type v'} {V'ℂ : Type w'}
-variable [AddCommGroup V'ℤ]
-variable [AddCommGroup V'ℚ] [Module ℚ V'ℚ]
-variable [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
-variable {ι'ℚ : V'ℤ →ₗ[ℤ] V'ℚ} {ι'ℂ : V'ℤ →ₗ[ℤ] V'ℂ}
-variable {h'ℚ : IsBaseChange ℚ ι'ℚ} {h'ℂ : IsBaseChange ℂ ι'ℂ}
-variable {hs' : HodgeStructure h'ℂ n} {f : Vℚ →ₗ[ℚ] V'ℚ}
-variable (hf : HodgeStructureOn.IsMorphism hs hs' (rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f))
-
-namespace RationalHodgeSubstructure
-
-/-- **The image of a rational Hodge morphism**, as a rational Hodge substructure of the target: its
-complexification is the image of the complexified map, which is a sub-Hodge structure. -/
-def ofRationalMorphismRange : RationalHodgeSubstructure h'ℚ hs' :=
-  ofIsSubstructure (LinearMap.range f) <| by
-    rw [← range_rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f]
-    exact hf.isSubstructure_range
-
-@[simp]
-theorem ofRationalMorphismRange_WQ : (ofRationalMorphismRange hf).WQ = LinearMap.range f :=
-  ofIsSubstructure_WQ _ _
-
-/-- The complexification of the image of a rational Hodge morphism is the image of the
-complexified map. -/
-@[simp]
-theorem ofRationalMorphismRange_WC :
-    (ofRationalMorphismRange hf).WC = LinearMap.range (rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f) := by
-  rw [WC_def, ofRationalMorphismRange_WQ, range_rationalMapToComplex]
-
-/-- **The kernel of a rational Hodge morphism**, as a rational Hodge substructure of the source:
-its complexification is the kernel of the complexified map, which is a sub-Hodge structure. -/
-def ofRationalMorphismKer : RationalHodgeSubstructure hℚ hs :=
-  ofIsSubstructure (LinearMap.ker f) <| by
-    rw [← ker_rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f]
-    exact hf.isSubstructure_ker
-
-@[simp]
-theorem ofRationalMorphismKer_WQ : (ofRationalMorphismKer hf).WQ = LinearMap.ker f :=
-  ofIsSubstructure_WQ _ _
-
-/-- The complexification of the kernel of a rational Hodge morphism is the kernel of the
-complexified map. -/
-@[simp]
-theorem ofRationalMorphismKer_WC :
-    (ofRationalMorphismKer hf).WC = LinearMap.ker (rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f) := by
-  rw [WC_def, ofRationalMorphismKer_WQ, ker_rationalMapToComplex]
-
-end RationalHodgeSubstructure
-
-end Morphism
 
 /-! ### The projector onto a rational Hodge substructure -/
 
@@ -141,10 +83,12 @@ theorem isIdempotentElem_projection : IsIdempotentElem (projection P W) :=
   Submodule.isIdempotentElem_projection _
 
 /-- The Hodge projector fixes the rational Hodge substructure it projects onto. -/
+@[simp]
 theorem projection_apply_of_mem {x : Vℚ} (hx : x ∈ W.WQ) : projection P W x = x :=
   Submodule.projection_apply_of_mem_left _ hx
 
 /-- The Hodge projector annihilates the orthogonal complement it projects along. -/
+@[simp]
 theorem projection_apply_of_mem_orthogonal {x : Vℚ} (hx : x ∈ (orthogonal P W).WQ) :
     projection P W x = 0 :=
   Submodule.projection_apply_of_mem_right _ hx
@@ -167,7 +111,7 @@ end RationalHodgeSubstructure
 Hodge substructure of a polarizable pure Hodge structure is the image of an idempotent rational
 endomorphism whose complexification is a morphism of pure Hodge structures: the substructure is a
 direct summand as an object, split off by an endomorphism of the Hodge structure. -/
-theorem exists_isIdempotentElem_isMorphism_of_isPolarizable [Module.Finite ℚ Vℚ]
+theorem exists_isIdempotentElem_isMorphism_range_eq_of_isPolarizable [Module.Finite ℚ Vℚ]
     (h : IsPolarizable hℂ hs) (W : RationalHodgeSubstructure hℚ hs) :
     ∃ e : Vℚ →ₗ[ℚ] Vℚ, IsIdempotentElem e ∧
       HodgeStructureOn.IsMorphism hs hs (rationalMapToComplex hℚ hℂ hℚ hℂ e) ∧
@@ -182,7 +126,8 @@ theorem exists_isIdempotentElem_isMorphism_of_isPolarizable [Module.Finite ℚ V
 of the idempotent rational Hodge endomorphisms.** The forward implication needs neither
 idempotency nor a polarization: the image of any rational Hodge morphism is a rational Hodge
 substructure. -/
-theorem exists_isIdempotentElem_isMorphism_iff [Module.Finite ℚ Vℚ] (h : IsPolarizable hℂ hs)
+theorem exists_isIdempotentElem_isMorphism_range_eq_iff [Module.Finite ℚ Vℚ]
+    (h : IsPolarizable hℂ hs)
     (A : Submodule ℚ Vℚ) :
     (∃ e : Vℚ →ₗ[ℚ] Vℚ, IsIdempotentElem e ∧
         HodgeStructureOn.IsMorphism hs hs (rationalMapToComplex hℚ hℂ hℚ hℂ e) ∧
@@ -193,6 +138,6 @@ theorem exists_isIdempotentElem_isMorphism_iff [Module.Finite ℚ Vℚ] (h : IsP
     exact ⟨RationalHodgeSubstructure.ofRationalMorphismRange he,
       RationalHodgeSubstructure.ofRationalMorphismRange_WQ he⟩
   · rintro ⟨W, rfl⟩
-    exact exists_isIdempotentElem_isMorphism_of_isPolarizable h W
+    exact exists_isIdempotentElem_isMorphism_range_eq_of_isPolarizable h W
 
 end TauCeti.Hodge
