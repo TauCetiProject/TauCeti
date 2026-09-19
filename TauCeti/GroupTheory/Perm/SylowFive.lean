@@ -61,7 +61,7 @@ namespace TauCeti
 
 variable {α : Type*}
 
-local instance : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
+local instance sylowFiveFactPrimeFive : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
 
 /-- A subgroup of the symmetric group on `n ≥ 5` points whose index is less than `n` contains
 the alternating group. -/
