@@ -17,9 +17,8 @@ exact sequence of chain complexes `0 ⟶ C(X) ⟶ C(Y) ⟶ C(Y, X) ⟶ 0` and th
 of these short exact sequences, and deduces that the connecting morphism is natural, so that it
 forms a natural transformation `SSetPair.homologyδNatTrans`.
 
-It also records that the quotient maps from ambient to relative chains and homology are natural in
-the pair: they commute with morphisms of simplicial-set pairs. The chain-level statement restates
-the naturality that Mathlib's `SSetPair.chainComplexFunctorπ` expresses functorially.
+It also records that the quotient maps from ambient to relative homology are natural in the pair:
+they commute with morphisms of simplicial-set pairs.
 
 The source is Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
@@ -36,13 +35,6 @@ namespace SSetPair
 
 variable {C : Type*} [Category* C] [HasCoproducts.{w} C] [Preadditive C]
 
-/-- The quotient map onto the relative chain complex is natural in the pair. -/
-@[reassoc]
-lemma chainComplexπ_naturality {P P' : SSetPair.{w}} (f : P ⟶ P') (R : C) :
-    P.chainComplexπ R ≫ SSetPair.chainComplexMap f R =
-      SSet.chainComplexMap f.right R ≫ P'.chainComplexπ R :=
-  (((chainComplexFunctorπ C).app R).naturality f).symm
-
 /-- The morphism of chain complex sequences `C(X) ⟶ C(Y) ⟶ C(Y, X)` induced by a morphism of
 pairs of simplicial sets. -/
 noncomputable def chainComplexShortComplexMap {P P' : SSetPair.{w}} (f : P ⟶ P') (R : C) :
@@ -51,7 +43,7 @@ noncomputable def chainComplexShortComplexMap {P P' : SSetPair.{w}} (f : P ⟶ P
   τ₂ := SSet.chainComplexMap f.right R
   τ₃ := chainComplexMap f R
   comm₁₂ := ((chainComplexFunctorLeftToRight C).app R).naturality f
-  comm₂₃ := (chainComplexπ_naturality f R).symm
+  comm₂₃ := ((chainComplexFunctorπ C).app R).naturality f
 
 @[simp]
 lemma chainComplexShortComplexMap_τ₁ {P P' : SSetPair.{w}} (f : P ⟶ P') (R : C) :
@@ -106,7 +98,7 @@ lemma homologyπ_naturality {P P' : SSetPair.{w}} (f : P ⟶ P') (R : D) (n : �
       P.homologyπ R n ≫ SSetPair.homologyMap f R n := by
   have h : SSet.chainComplexMap f.right R ≫ P'.chainComplexπ R =
       P.chainComplexπ R ≫ SSetPair.chainComplexMap f R :=
-    (chainComplexπ_naturality f R).symm
+    ((chainComplexFunctorπ D).app R).naturality f
   rw [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp, h]
 
 end SSetPair

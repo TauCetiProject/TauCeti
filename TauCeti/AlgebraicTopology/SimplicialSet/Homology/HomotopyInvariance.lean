@@ -76,22 +76,26 @@ induced morphisms of relative chain complexes. -/
 @[no_expose]
 def chainComplexMap :
     _root_.Homotopy (SSetPair.chainComplexMap f R) (SSetPair.chainComplexMap g R) :=
-  _root_.Homotopy.descCokernel (SSet.chainComplexMap P.hom R) (P.chainComplexπ R)
+  _root_.Homotopy.descCokernel (H.right.chainComplexMap R)
+    (SSet.chainComplexMap P.hom R) (P.chainComplexπ R)
     (P'.chainComplexπ R)
     (fun n ↦ P.chainComplex_condition_f R n)
     (fun n ↦ P.isColimitCokernelCoforkChainComplexX R n)
-    (H.right.chainComplexMap R) (H.chainComplexMap_condition R)
-    (chainComplexπ_naturality f R) (chainComplexπ_naturality g R)
+    (H.chainComplexMap_condition R)
+    (((chainComplexFunctorπ C).app R).naturality f).symm
+    (((chainComplexFunctorπ C).app R).naturality g).symm
 
 @[reassoc (attr := simp)]
 lemma chainComplexMap_hom (p q : ℕ) :
     (P.chainComplexπ R).f p ≫ (H.chainComplexMap R).hom p q =
       (H.right.chainComplexMap R).hom p q ≫ (P'.chainComplexπ R).f q :=
-  _root_.Homotopy.π_descCokernel_hom (SSet.chainComplexMap P.hom R) (P.chainComplexπ R)
+  _root_.Homotopy.π_descCokernel_hom (H.right.chainComplexMap R)
+    (SSet.chainComplexMap P.hom R) (P.chainComplexπ R)
     (P'.chainComplexπ R) (fun n ↦ P.chainComplex_condition_f R n)
     (fun n ↦ P.isColimitCokernelCoforkChainComplexX R n)
-    (H.right.chainComplexMap R) (H.chainComplexMap_condition R)
-    (chainComplexπ_naturality f R) (chainComplexπ_naturality g R) p q
+    (H.chainComplexMap_condition R)
+    (((chainComplexFunctorπ C).app R).naturality f).symm
+    (((chainComplexFunctorπ C).app R).naturality g).symm p q
 
 include H in
 /-- Homotopic morphisms of pairs of simplicial sets induce the same morphism on relative

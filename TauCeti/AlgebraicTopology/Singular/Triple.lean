@@ -53,7 +53,8 @@ lemma singularChainComplexπ_comp_innerToTotal :
       SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R ≫
         (totalPair.obj T).singularChainComplexπ R := by
   rw [← innerToTotal_app_fst]
-  exact SSetPair.chainComplexπ_naturality (TopPair.toSSetPair.map (innerToTotal.app T)) R
+  exact (((SSetPair.chainComplexFunctorπ C).app R).naturality
+    (TopPair.toSSetPair.map (innerToTotal.app T))).symm
 
 @[reassoc]
 lemma singularChainComplexπ_comp_totalToOuter :
@@ -68,8 +69,13 @@ lemma singularChainComplexπ_comp_totalToOuter :
       rw [totalToOuter_app_fst, TopCat.toSSet.map_id]
     exact (congrArg (((SSet.chainComplexFunctor C).obj R).map) h).trans
       (((SSet.chainComplexFunctor C).obj R).map_id _)
-  refine (SSetPair.chainComplexπ_naturality
-    (TopPair.toSSetPair.map (totalToOuter.app T)) R).trans ?_
+  have h := (((SSetPair.chainComplexFunctorπ C).app R).naturality
+    (TopPair.toSSetPair.map (totalToOuter.app T))).symm
+  change (totalPair.obj T).singularChainComplexπ R ≫
+      TopPair.singularChainComplexMap (totalToOuter.app T) R =
+    SSet.chainComplexMap (TopPair.toSSetPair.map (totalToOuter.app T)).right R ≫
+      (outerPair.obj T).singularChainComplexπ R at h
+  refine h.trans ?_
   rw [key]
   -- `Category.id_comp` is applied as a term because the two ambient simplicial sets it
   -- identifies are definitionally, but not syntactically, equal.
