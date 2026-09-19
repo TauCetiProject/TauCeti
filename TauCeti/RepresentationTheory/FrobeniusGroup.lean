@@ -61,6 +61,16 @@ complement.
   `TauCeti.card_lt_card_frobeniusKernelSubgroup` its two immediate consequences — a Frobenius
   complement and a Frobenius kernel have coprime orders, and a proper `H` is strictly smaller than
   its kernel.
+* `TauCeti.frobeniusKernelSubgroup_eq_of_isComplement'`: **the kernel constructed here is the
+  normal complement one started from**, whenever `G = N ⋊ H` with `N` normal.
+
+A concrete Frobenius group is presented the other way round, as a semidirect product `G = N ⋊ H`
+whose complement acts on the kernel without nonidentity fixed points.  That presentation already
+forces the trivial-intersection condition and already exhibits the kernel
+(`TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree` and
+`TauCeti.IsTISubgroup.coe_eq_frobeniusKernel_of_isComplement'`, both elementary), so
+`TauCeti.frobeniusKernelSubgroup_eq_of_isComplement'` is the statement that the
+character-theoretic construction above agrees with it.
 
 ## Implementation notes
 
@@ -305,5 +315,27 @@ theorem card_lt_card_frobeniusKernelSubgroup (hH : IsTISubgroup H) (hne : H ≠ 
     Nat.card H < Nat.card (frobeniusKernelSubgroup hH) := by
   rw [card_frobeniusKernelSubgroup hH]
   exact hH.card_lt_index hne
+
+/-! ### The kernel of a normal complement -/
+
+section Semidirect
+
+variable {N : Subgroup G}
+
+/-- **Frobenius's theorem returns the normal complement it was handed.**  If `G = N ⋊ H` with `N`
+normal and `H` a trivial-intersection subgroup, then the subgroup that the exceptional-character
+argument above constructs -- out of the irreducible characters of `H`, with no reference to `N` --
+is `N` itself.
+
+This is what makes the abstract construction checkable on a concrete Frobenius group, which comes
+presented as such a decomposition with `H` acting on `N` without nonidentity fixed points
+(`TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree`). -/
+theorem frobeniusKernelSubgroup_eq_of_isComplement' [N.Normal] (hH : IsTISubgroup H)
+    (hNH : N.IsComplement' H) :
+    frobeniusKernelSubgroup hH = N :=
+  SetLike.coe_injective <|
+    (coe_frobeniusKernelSubgroup _).trans (hH.coe_eq_frobeniusKernel_of_isComplement' hNH).symm
+
+end Semidirect
 
 end TauCeti
