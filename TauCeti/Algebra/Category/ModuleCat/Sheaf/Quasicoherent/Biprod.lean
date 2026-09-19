@@ -25,6 +25,9 @@ sections, and a presentation, of `M ⊞ N`: the free sheaf on `I ⊕ I'` is `fre
 so it commutes with direct sums (`SheafOfModules.overBiprodIso`), and the local data of `M` and `N`
 are compared on a common refinement of their covers.
 
+The common-refinement construction follows the tensor-product closure formalization in
+`SheafOfModules.QuasicoherentData.tensor`.
+
 ## Main declarations
 
 * `SheafOfModules.GeneratingSections.biprod` and `SheafOfModules.Presentation.biprod`: the
