@@ -13,8 +13,8 @@ public import TauCeti.Algebra.Homology.DG.Module.Right.Defs
 
 A morphism of differential graded right modules is an `Aᵐᵒᵖ`-linear map which preserves every
 homogeneous degree and commutes with the differentials.  This file bundles these maps and supplies
-their extensionality, identity, and composition API.  They form the degree-zero closed maps which
-later enter the morphism complexes and DG category of right modules.
+their pointwise module structure, extensionality, identity, and composition API. They form the
+degree-zero closed maps which later enter the morphism complexes and DG category of right modules.
 
 ## Main definitions
 
@@ -99,6 +99,72 @@ theorem ext {f g : DGRightModuleHom hM hN} (hfg : ∀ x, f x = g x) : f = g :=
 @[simp]
 theorem map_d (f : DGRightModuleHom hM hN) (x : M) : dN (f x) = f (dM x) :=
   f.map_d' x
+
+instance : Zero (DGRightModuleHom hM hN) where
+  zero :=
+    { toLinearMap := 0
+      map_mem' := fun {q} {_} _ ↦ (ℳN q).zero_mem
+      map_d' := fun x ↦ by simp }
+
+instance : Add (DGRightModuleHom hM hN) where
+  add f g :=
+    { toLinearMap := f.toLinearMap + g.toLinearMap
+      map_mem' := fun {q} {_} hx ↦ (ℳN q).add_mem (f.map_mem' hx) (g.map_mem' hx)
+      map_d' := fun x ↦ by simp }
+
+instance : Neg (DGRightModuleHom hM hN) where
+  neg f :=
+    { toLinearMap := -f.toLinearMap
+      map_mem' := fun {q} {_} hx ↦ (ℳN q).neg_mem (f.map_mem' hx)
+      map_d' := fun x ↦ by simp }
+
+instance : Sub (DGRightModuleHom hM hN) where
+  sub f g :=
+    { toLinearMap := f.toLinearMap - g.toLinearMap
+      map_mem' := fun {q} {_} hx ↦ (ℳN q).sub_mem (f.map_mem' hx) (g.map_mem' hx)
+      map_d' := fun x ↦ by simp }
+
+@[simp]
+theorem zero_apply (x : M) : (0 : DGRightModuleHom hM hN) x = 0 := (rfl)
+
+@[simp]
+theorem add_apply (f g : DGRightModuleHom hM hN) (x : M) :
+    (f + g) x = f x + g x := (rfl)
+
+@[simp]
+theorem neg_apply (f : DGRightModuleHom hM hN) (x : M) : (-f) x = -f x := (rfl)
+
+@[simp]
+theorem sub_apply (f g : DGRightModuleHom hM hN) (x : M) :
+    (f - g) x = f x - g x := (rfl)
+
+instance : AddCommGroup (DGRightModuleHom hM hN) where
+  add_assoc f g k := by ext x; simp [add_assoc]
+  zero_add f := by ext x; simp
+  add_zero f := by ext x; simp
+  add_comm f g := by ext x; simp [add_comm]
+  neg_add_cancel f := by ext x; simp
+  sub_eq_add_neg f g := by ext x; simp [sub_eq_add_neg]
+  nsmul := nsmulRec
+  zsmul := zsmulRec
+
+instance : SMul R (DGRightModuleHom hM hN) where
+  smul r f :=
+    { toLinearMap := r • f.toLinearMap
+      map_mem' := fun {q} {_} hx ↦ (ℳN q).smul_mem r (f.map_mem' hx)
+      map_d' := fun x ↦ by simp }
+
+@[simp]
+theorem smul_apply (r : R) (f : DGRightModuleHom hM hN) (x : M) :
+    (r • f) x = r • f x := (rfl)
+
+instance : Module R (DGRightModuleHom hM hN) where
+  one_smul f := by ext x; simp
+  mul_smul r s f := by ext x; simp [mul_smul]
+  smul_zero r := by ext x; simp
+  smul_add r f g := by ext x; simp [smul_add]
+  add_smul r s f := by ext x; simp [add_smul]
+  zero_smul f := by ext x; simp
 
 /-- The identity morphism of a differential graded right module. -/
 protected def id (hM : IsDGRightModule h ℳ dM) : DGRightModuleHom hM hM where

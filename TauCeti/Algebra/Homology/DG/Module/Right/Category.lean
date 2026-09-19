@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
-public import TauCeti.Algebra.Homology.DG.Module.Right.HomComplex
+public import TauCeti.Algebra.Homology.DG.Module.Right.Hom
 
 /-!
 # The category of differential graded right modules
@@ -144,41 +145,26 @@ instance : Preadditive (DGRightModuleCat.{uR, uA, uM} h) where
   homGroup M N := inferInstanceAs
     (AddCommGroup (DGRightModuleHom M.isDGRightModule N.isDGRightModule))
   add_comp M N P f f' g := by
-    -- Expose category composition so the unbundled morphism API applies.
-    change g.comp (f + f') = g.comp f + g.comp f'
-    apply DGRightModuleHom.ext
+    apply hom_ext
     intro x
-    rw [DGRightModuleHom.comp_apply, DGRightModuleHom.add_apply f f',
-      DGRightModuleHom.add_apply (g.comp f) (g.comp f'),
-      DGRightModuleHom.comp_apply, DGRightModuleHom.comp_apply]
-    exact map_add g _ _
+    simp
   comp_add M N P f g g' := by
-    -- Expose category composition so the unbundled morphism API applies.
-    change (g + g').comp f = g.comp f + g'.comp f
-    apply DGRightModuleHom.ext
+    apply hom_ext
     intro x
-    rw [DGRightModuleHom.comp_apply, DGRightModuleHom.add_apply g g',
-      DGRightModuleHom.add_apply (g.comp f) (g'.comp f),
-      DGRightModuleHom.comp_apply, DGRightModuleHom.comp_apply]
+    simp
 
 instance : Linear R (DGRightModuleCat.{uR, uA, uM} h) where
   homModule M N := inferInstanceAs
     (Module R (DGRightModuleHom M.isDGRightModule N.isDGRightModule))
   smul_comp M N P r f g := by
-    -- Expose category composition so the unbundled morphism API applies.
-    change g.comp (r • f) = r • g.comp f
-    apply DGRightModuleHom.ext
+    apply hom_ext
     intro x
-    rw [DGRightModuleHom.comp_apply, DGRightModuleHom.smul_apply r f,
-      DGRightModuleHom.smul_apply r (g.comp f), DGRightModuleHom.comp_apply]
+    simp only [comp_apply, smul_apply]
     exact g.toLinearMap.map_smul_of_tower r (f x)
   comp_smul M N P f r g := by
-    -- Expose category composition so the unbundled morphism API applies.
-    change (r • g).comp f = r • g.comp f
-    apply DGRightModuleHom.ext
+    apply hom_ext
     intro x
-    rw [DGRightModuleHom.comp_apply, DGRightModuleHom.smul_apply r g,
-      DGRightModuleHom.smul_apply r (g.comp f), DGRightModuleHom.comp_apply]
+    simp
 
 /-- Forget the grading, differential, and algebra action of a DG right module. -/
 @[expose]

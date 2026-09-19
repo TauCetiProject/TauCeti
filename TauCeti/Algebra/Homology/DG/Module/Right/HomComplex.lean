@@ -30,8 +30,7 @@ degree-zero cocycles are exactly `TauCeti.DGRightModuleHom`.
   modules.
 * `TauCeti.dgRightModuleHomComplex`: the cochain complex of homogeneous right-module maps.
 * `TauCeti.dgRightModuleHomLinearEquivZeroCocycles`: the linear identification of DG morphisms
-  with closed degree-zero cochains. The module structure on morphisms is transported through
-  the underlying equivalence.
+  with closed degree-zero cochains.
 
 ## Implementation notes
 
@@ -281,42 +280,18 @@ theorem dgRightModuleHomEquivZeroCocycles_symm_apply (hM : IsDGRightModule h ℳ
     (dgRightModuleHomEquivZeroCocycles hM hN).symm f x = (f.1.1 : M →ₗ[Aᵐᵒᵖ] N) x :=
   (rfl)
 
-namespace DGRightModuleHom
-
-variable {hM : IsDGRightModule h ℳ dM} {hN : IsDGRightModule h ℳN dN}
-
-instance : AddCommGroup (DGRightModuleHom hM hN) :=
-  (dgRightModuleHomEquivZeroCocycles hM hN).addCommGroup
-
-instance : Module R (DGRightModuleHom hM hN) :=
-  (dgRightModuleHomEquivZeroCocycles hM hN).addEquiv.module R
-
-@[simp]
-theorem zero_apply (x : M) : (0 : DGRightModuleHom hM hN) x = 0 := (rfl)
-
-@[simp]
-theorem add_apply (f g : DGRightModuleHom hM hN) (x : M) :
-    (f + g) x = f x + g x := (rfl)
-
-@[simp]
-theorem neg_apply (f : DGRightModuleHom hM hN) (x : M) : (-f) x = -f x := (rfl)
-
-@[simp]
-theorem sub_apply (f g : DGRightModuleHom hM hN) (x : M) :
-    (f - g) x = f x - g x := (rfl)
-
-@[simp]
-theorem smul_apply (r : R) (f : DGRightModuleHom hM hN) (x : M) :
-    (r • f) x = r • f x := (rfl)
-
-end DGRightModuleHom
-
 /-- The identification of DG right-module maps with closed degree-zero cochains is linear. -/
 def dgRightModuleHomLinearEquivZeroCocycles (hM : IsDGRightModule h ℳ dM)
     (hN : IsDGRightModule h ℳN dN) :
     DGRightModuleHom hM hN ≃ₗ[R] LinearMap.ker
-      (dgRightModuleCochains.differential (hM := hM) (hN := hN) 0) :=
-  (dgRightModuleHomEquivZeroCocycles hM hN).addEquiv.linearEquiv R
+      (dgRightModuleCochains.differential (hM := hM) (hN := hN) 0) where
+  __ := dgRightModuleHomEquivZeroCocycles hM hN
+  map_add' f g := by
+    ext x
+    exact DGRightModuleHom.add_apply f g x
+  map_smul' r f := by
+    ext x
+    exact DGRightModuleHom.smul_apply r f x
 
 @[simp]
 theorem dgRightModuleHomLinearEquivZeroCocycles_toEquiv (hM : IsDGRightModule h ℳ dM)
