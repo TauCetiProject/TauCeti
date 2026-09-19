@@ -26,7 +26,7 @@ Combined with the Lebesgue number lemma, this shows that for every open cover `U
 and every singular simplex `σ : Δᵐ → X`, all affine simplices of a sufficiently fine iterated
 subdivision are carried by `σ` into a single member of `U`. Since pushing affine chains forward
 along `σ` intertwines their subdivision with the barycentric subdivision of singular chains
-(`ContinuousMap.singularChain_subdivision`), this is the statement that every singular
+(`TauCeti.AffineChain.singularChain_subdivision`), this is the statement that every singular
 simplex becomes subordinate to `U` after sufficiently many barycentric subdivisions.
 
 ## Main results
