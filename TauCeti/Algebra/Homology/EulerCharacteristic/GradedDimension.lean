@@ -383,6 +383,7 @@ theorem HasFiniteLaurentSupport.finiteDimensional_directSum (h : HasFiniteLauren
 
 /-- **The graded dimension at `q = 1` is the total dimension.**  Its coefficients are the
 dimensions of the homogeneous pieces, so setting `q = 1` adds them up. -/
+@[simp]
 theorem laurentEval_one_gradedDimension (h : HasFiniteLaurentSupport k V) :
     laurentEval (1 : ℤˣ) (gradedDimension k V h) = Module.finrank k (⨁ j, V j) := by
   obtain ⟨s, hs⟩ := h.exists_finset
@@ -392,6 +393,7 @@ theorem laurentEval_one_gradedDimension (h : HasFiniteLaurentSupport k V) :
 
 /-- **The target-shift graded dimension at `q = 1` is the total dimension.**  The two conventions
 differ by `q ↦ q⁻¹`, which the specialization at `q = 1` does not see. -/
+@[simp]
 theorem laurentEval_one_targetShiftGradedDimension (h : HasFiniteLaurentSupport k V) :
     laurentEval (1 : ℤˣ) (targetShiftGradedDimension k V h) = Module.finrank k (⨁ j, V j) := by
   simp only [targetShiftGradedDimension]

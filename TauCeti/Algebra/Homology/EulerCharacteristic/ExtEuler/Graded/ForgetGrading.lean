@@ -47,7 +47,7 @@ characteristic.  The same identity for the packaged sesquilinear form is
 ## Main results
 
 * `TauCeti.isGradedExtComparison_of_subsingleton_ne`: a grading concentrated in a single internal
-  degree is its own comparison pair.
+  degree admits the shifted pair `(X, Y{d})` as a comparison inside the same category.
 * `TauCeti.IsGradedExtComparison.isEulerAdmissible`: a graded Euler-admissible pair has an
   Euler-admissible comparison pair.
 * `TauCeti.IsGradedExtComparison.laurentEval_one_gradedExtEuler`: `χ_q(X, Y)` evaluated at
@@ -88,9 +88,10 @@ structure IsGradedExtComparison (X Y : C) (X' Y' : D) : Prop where
   nonempty_linearEquiv (n : ℕ) :
     Nonempty ((⨁ j : ℤ, GradedExt.{w} e X Y n j) ≃ₗ[k] Ext.{w'} X' Y' n)
 
-/-- **A grading concentrated in a single internal degree is its own comparison.**  If the bigraded
-`Ext` groups of `(X, Y)` vanish in every internal degree other than `d`, then the surviving degree
-is the whole direct sum, so the ungraded pair `(X, Y{d})` of `C` itself compares with `(X, Y)`. -/
+/-- **A grading concentrated in a single internal degree admits a shifted comparison pair.**  If
+the bigraded `Ext` groups of `(X, Y)` vanish in every internal degree other than `d`, then the
+surviving degree is the whole direct sum, so `(X, Y{d})` is a comparison pair for `(X, Y)` inside
+the same category. -/
 theorem isGradedExtComparison_of_subsingleton_ne {X Y : C} (d : ℤ)
     (hd : ∀ (n : ℕ) (j : ℤ), j ≠ d → Subsingleton (GradedExt.{w} e X Y n j)) :
     IsGradedExtComparison.{w, w} k e X Y X ((e ^ d).functor.obj Y) :=

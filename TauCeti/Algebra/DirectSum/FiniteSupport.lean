@@ -118,10 +118,11 @@ theorem DirectSum.componentLinearEquiv_symm_apply (d : ι) (hd : ∀ i, i ≠ d 
   (rfl)
 
 omit [DecidableEq ι] in
-/-- A direct sum of finite modules whose summands are trivial outside a finite set of indices is
-a finite module, even though the index type may be infinite. -/
-theorem DirectSum.finite_of_subsingleton_notMem [∀ i, Module.Finite R (M i)] (s : Finset ι)
-    (hs : ∀ i ∉ s, Subsingleton (M i)) : Module.Finite R (⨁ i, M i) := by
+/-- A direct sum whose potentially nontrivial summands lie in a finite set and are finite modules
+is a finite module, even though the index type may be infinite. -/
+theorem DirectSum.finite_of_subsingleton_notMem (s : Finset ι)
+    [∀ i : s, Module.Finite R (M i)] (hs : ∀ i ∉ s, Subsingleton (M i)) :
+    Module.Finite R (⨁ i, M i) := by
   classical
   exact Module.Finite.equiv (DirectSum.restrictLinearEquiv M s hs).symm
 
@@ -130,13 +131,14 @@ end Restriction
 section Finrank
 
 variable {K : Type u} [DivisionRing K] (M : ι → Type w) [∀ i, AddCommGroup (M i)]
-  [∀ i, Module K (M i)] [∀ i, Module.Finite K (M i)]
+  [∀ i, Module K (M i)]
 
 omit [DecidableEq ι] in
 /-- **The dimension of a direct sum with finitely many nonzero summands.**  Unlike
 `Module.finrank_directSum`, the index type here may be infinite; what is asked instead is a finite
-set of indices outside which the summands are trivial. -/
-theorem finrank_directSum_eq_sum (s : Finset ι) (hs : ∀ i ∉ s, Subsingleton (M i)) :
+set of finite-dimensional summands outside which the summands are trivial. -/
+theorem finrank_directSum_eq_sum (s : Finset ι) [∀ i : s, Module.Finite K (M i)]
+    (hs : ∀ i ∉ s, Subsingleton (M i)) :
     Module.finrank K (⨁ i, M i) = ∑ i ∈ s, Module.finrank K (M i) := by
   classical
   rw [(DirectSum.restrictLinearEquiv M s hs).finrank_eq, Module.finrank_directSum]
