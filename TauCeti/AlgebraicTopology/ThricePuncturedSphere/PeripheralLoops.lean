@@ -97,12 +97,10 @@ theorem coe_γ1_eq_exp (t : unitInterval) : (γ1 t : ℂ) = 1 - 1 / 2 * exp (2 *
   simp [coe_γ1, circleMap, mul_right_comm _ I, sub_eq_add_neg]
 
 /-- The loop `γ0` lies on the circle of radius `1/2` about `0`. -/
-@[simp]
 theorem norm_coe_γ0 (t : unitInterval) : ‖(γ0 t : ℂ)‖ = 1 / 2 := by
   simp [coe_γ0, norm_circleMap_zero]
 
 /-- The loop `γ1` lies on the circle of radius `1/2` about `1`. -/
-@[simp]
 theorem norm_coe_γ1_sub_one (t : unitInterval) : ‖(γ1 t : ℂ) - 1‖ = 1 / 2 := by
   simp [coe_γ1, circleMap_sub_center, norm_circleMap_zero]
 
