@@ -22,6 +22,8 @@ its analytic consequence.
 * `TauCeti.HasCancellation χ` is the uniform bound
   `‖∑_{N(I) ≤ x} χ(I)‖ ≤ C * x ^ (1 - 1 / d)` for every real cutoff `x ≥ 1`, with the inclusive
   summatory function `TauCeti.idealSummatory`.
+  Equivalently (`TauCeti.hasCancellation_iff_isBigO`), the partial sums are
+  `O(x ^ (1 - 1 / d))` as `x → ∞`.
 * `TauCeti.continuedLFunctionOfWeight χ` is the partial-summation integral
   `s * ∫_{1}^{∞} (∑_{N(I) ≤ t} χ(I)) t ^ (-(s + 1)) dt`.
 
@@ -67,6 +69,45 @@ def HasCancellation (χ : UnitaryIdealWeight K) : Prop :=
 theorem cancellationExponent_lt_one : 1 - 1 / (Module.finrank ℚ K : ℝ) < 1 := by
   have h : (0 : ℝ) < Module.finrank ℚ K := by exact_mod_cast Module.finrank_pos
   linarith [one_div_pos.mpr h]
+
+/-- **Cancellation is an asymptotic bound.** A weight has cancellation exactly when its ideal
+partial sums are `O(x ^ (1 - 1 / [K : ℚ]))` as `x → ∞`: on any bounded range of cutoffs `x ≥ 1`
+the partial sums are bounded by an ideal count, so the eventual bound is uniform. -/
+theorem hasCancellation_iff_isBigO {χ : UnitaryIdealWeight K} :
+    HasCancellation χ ↔
+      (fun x : ℝ ↦ idealSummatory K χ.toIdealArithmeticFunction x) =O[atTop]
+        fun x : ℝ ↦ x ^ (1 - 1 / (Module.finrank ℚ K : ℝ)) := by
+  set θ : ℝ := 1 - 1 / (Module.finrank ℚ K : ℝ)
+  constructor
+  · rintro ⟨C, hC⟩
+    refine IsBigO.of_bound C ?_
+    filter_upwards [eventually_ge_atTop 1] with x hx
+    rw [Real.norm_of_nonneg (by positivity)]
+    exact hC x hx
+  · intro h
+    obtain ⟨c, hc⟩ := h.bound
+    obtain ⟨x₀, hx₀⟩ := eventually_atTop.mp hc
+    have hθ : 0 ≤ θ := by
+      have hd : (1 : ℝ) ≤ Module.finrank ℚ K := by exact_mod_cast Module.finrank_pos
+      exact sub_nonneg.mpr ((div_le_one (zero_lt_one.trans_le hd)).mpr hd)
+    set M : ℝ := ∑ k ∈ Finset.Icc 1 ⌊x₀⌋₊, ‖normCoeff K (1 : IdealArithmeticFunction K) k‖
+    have hM : 0 ≤ M := Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
+    refine ⟨max c M, fun x hx ↦ ?_⟩
+    have hxθ : 1 ≤ x ^ θ := Real.one_le_rpow hx hθ
+    rcases le_total x₀ x with hx₀x | hxx₀
+    · have hbound := hx₀ x hx₀x
+      rw [Real.norm_of_nonneg (by positivity)] at hbound
+      exact hbound.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
+    · calc ‖idealSummatory K χ.toIdealArithmeticFunction x‖
+          ≤ ∑ k ∈ Finset.Icc 1 ⌊x⌋₊, ‖normCoeff K χ.toIdealArithmeticFunction k‖ := by
+            rw [idealSummatory_eq_sum_Icc_normCoeff]
+            exact norm_sum_le _ _
+        _ ≤ M := (Finset.sum_le_sum fun k _ ↦
+              UnitaryIdealWeight.norm_normCoeff_le_norm_normCoeff_one K χ k).trans
+            (Finset.sum_le_sum_of_subset_of_nonneg
+              (Finset.Icc_subset_Icc_right (Nat.floor_mono hxx₀)) fun _ _ _ ↦ norm_nonneg _)
+        _ ≤ max c M * x ^ θ :=
+            (le_max_right c M).trans (le_mul_of_one_le_right (hM.trans (le_max_right c M)) hxθ)
 
 /-- A weight has cancellation exactly when its complex conjugate does: conjugation commutes with
 the finite partial sums and preserves their modulus. -/
