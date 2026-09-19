@@ -68,6 +68,22 @@ noncomputable abbrev loopInflation (X : C) : hE.loopObj X ⟶ hE.loopProjective 
 noncomputable abbrev loopDeflation (X : C) : hE.loopProjective X ⟶ X :=
   (hE.projectivePresentation X).p
 
+/-- The middle term of the chosen loop presentation is projective relative to `E`. -/
+theorem isProjective_loopProjective (X : C) : E.isProjective (hE.loopProjective X) :=
+  (hE.projectivePresentation X).isProjective
+
+/-- The two maps in the chosen loop presentation compose to zero. -/
+@[reassoc (attr := simp)]
+theorem loopInflation_comp_loopDeflation (X : C) :
+    hE.loopInflation X ≫ hE.loopDeflation X = 0 :=
+  (hE.projectivePresentation X).zero
+
+/-- The chosen loop presentation is a conflation of `E`. -/
+theorem loopPresentation_conflation (X : C) :
+    E.Conflation (ShortComplex.mk (hE.loopInflation X) (hE.loopDeflation X)
+      (hE.loopInflation_comp_loopDeflation X)) :=
+  (hE.projectivePresentation X).conflation
+
 /-- The chosen lift of `f : X ⟶ Y` between the projective middle terms. -/
 noncomputable def loopMiddleMap {X Y : C} (f : X ⟶ Y) :
     hE.loopProjective X ⟶ hE.loopProjective Y :=
