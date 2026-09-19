@@ -111,6 +111,12 @@ theorem walkTransition_nil (c : SkewZigzagParameter k G) (v : V) :
   rw [walkTransition_def]
   rfl
 
+/-- The transition factor of a one-edge walk is the transition factor of that edge. -/
+@[simp]
+theorem walkTransition_toWalk (c : SkewZigzagParameter k G) {v w : V} (h : G.Adj v w) :
+    walkTransition c h.toWalk = transition c h := by
+  simp [walkTransition, SimpleGraph.Adj.toWalk]
+
 /-- **Extending a walk by an edge multiplies its transition factor by that of the edge.** -/
 @[simp]
 theorem walkTransition_concat (c : SkewZigzagParameter k G) {r v w : V} (q : G.Walk r v)
@@ -198,7 +204,7 @@ theorem isGaugeEquivalent_one_of_walkTransition_eq (c : SkewZigzagParameter k G)
       ← hpot (root_eq_of_adj h) _ ((rootPath_isPath v).takeUntil hw),
       hc _ h.symm.toWalk ((rootPath_isPath v).dropUntil hw) h.symm.isPath_toWalk] at hsplit
     have hedge : walkTransition c h.symm.toWalk = (transition c h)⁻¹ := by
-      simpa [walkTransition, SimpleGraph.Adj.toWalk] using transition_symm c h
+      rw [walkTransition_toWalk, transition_symm]
     rw [hedge] at hsplit
     exact (eq_mul_inv_iff_mul_eq.mp hsplit.symm).symm
   -- Otherwise the path to `v` extended by the edge is a path to `w`.
