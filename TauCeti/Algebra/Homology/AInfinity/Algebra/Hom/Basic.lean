@@ -139,6 +139,7 @@ theorem ext {f g : AInfinityHom AA BB} (h : f.taylor = g.taylor) : f = g :=
 /-- The suspended component equation of an `A∞` morphism: the Taylor map of the target after the
 bar map equals the Taylor components after the bar differential of the source.  On words of length
 `n` this is the arity-`n` relation between the components `fᵢ` and the operations `mⱼ`. -/
+@[simp]
 theorem taylor_comp_barMap (f : AInfinityHom AA BB) :
     BB.taylor ∘ₗ f.barMap = f.taylor ∘ₗ AA.barDifferential := by
   rw [← BB.letter_comp_barDifferential, LinearMap.comp_assoc, f.barDifferential_comp_barMap,
