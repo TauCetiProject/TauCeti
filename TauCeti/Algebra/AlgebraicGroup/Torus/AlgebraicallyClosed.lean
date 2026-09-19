@@ -16,9 +16,6 @@ predicate with its split counterpart, so results proved for split tori apply to 
 such a field. In particular, it removes the splitting assumption from conjugacy of maximal
 tori in general linear groups.
 
-The splitting isomorphism over the algebraic closure is base-changed back to the original
-field, using the inverse of its algebra map into the closure.
-
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Definitions 12.14 and 12.17.
