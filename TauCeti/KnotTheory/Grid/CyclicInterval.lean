@@ -472,6 +472,27 @@ theorem not_mem_cIoo_iff {a b x : Fin n} (h : a ≠ b) :
     · intro hxab
       exact not_mem_cIoo_and_cIoo_swap a b x ⟨hxab, hx⟩
 
+/-- A point outside a nondegenerate open arc belongs to the opposite half-open arc after the
+missing terminal endpoint is inserted. -/
+theorem mem_insert_cIco_swap_of_notMem_cIoo {a b x : Fin n} (h : a ≠ b)
+    (hx : x ∉ cIoo a b) : x ∈ insert a (cIco b a) := by
+  rcases (not_mem_cIoo_iff h).mp hx with rfl | rfl | hx
+  · exact Finset.mem_insert_self _ _
+  · exact Finset.mem_insert_of_mem (left_mem_cIco h.symm)
+  · exact Finset.mem_insert_of_mem (cIoo_subset_cIco _ _ hx)
+
+/-- A point of an open arc remains in the half-open arc after its terminal endpoint is
+inserted. -/
+theorem mem_insert_right_cIco_of_mem_cIoo {a b x : Fin n} (hx : x ∈ cIoo a b) :
+    x ∈ insert b (cIco a b) :=
+  Finset.mem_insert_of_mem (cIoo_subset_cIco _ _ hx)
+
+/-- The initial endpoint of a nondegenerate arc belongs to its half-open version, even after
+the terminal endpoint is inserted. -/
+theorem left_mem_insert_right_cIco {a b : Fin n} (h : a ≠ b) :
+    a ∈ insert b (cIco a b) :=
+  Finset.mem_insert_of_mem (left_mem_cIco h)
+
 /-- Rotating a cyclic order: if `b` lies on the clockwise arc from `a` to `c`, then `c` lies on
 the clockwise arc from `b` to `a`. -/
 theorem mem_cIoo_cyclic_left {a b c : Fin n} (h : b ∈ cIoo a c) : c ∈ cIoo b a := by

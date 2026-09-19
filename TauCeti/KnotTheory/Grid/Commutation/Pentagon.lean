@@ -234,10 +234,7 @@ underlying rectangle. -/
 theorem mem_coveredSquares_iff_of_ne (P : GridPentagonBetween a s x y) {p : Fin n × Fin n}
     (ha : p.1 ≠ a) (hb : p.1 ≠ finRotate n a) :
     p ∈ P.coveredSquares ↔ p ∈ P.toGridRectangle.coveredSquares := by
-  rw [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
-    GridRectangle.mem_coveredRows]
-  change p ∈ P.coveredSquares ↔
-    p.1 ∈ Grid.cIco P.left P.right ∧ p.2 ∈ Grid.cIco P.bottom P.top
+  rw [GridRectangleBetween.mem_toGridRectangle_coveredSquares]
   simpa only [P.right_eq, ha, hb, ne_eq, not_false_eq_true, true_and, false_and, or_false]
     using P.mem_coveredSquares p
 

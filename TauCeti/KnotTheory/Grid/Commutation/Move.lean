@@ -156,24 +156,6 @@ theorem reverse_oppositeTurnRow (C : ColumnCommutationData G) :
     C.reverse.oppositeTurnRow = C.turnRow :=
   (rfl)
 
-/-- A row off the open arc from `u` to `v` lies in the closed complementary arc from `v` to `u`. -/
-private theorem mem_insert_cIco_of_notMem_cIoo {u v r : Fin n} (huv : u ≠ v)
-    (hr : r ∉ Grid.cIoo u v) : r ∈ insert u (Grid.cIco v u) := by
-  rcases (Grid.not_mem_cIoo_iff huv).mp hr with rfl | rfl | hr
-  · exact Finset.mem_insert_self _ _
-  · exact Finset.mem_insert_of_mem (Grid.left_mem_cIco huv.symm)
-  · exact Finset.mem_insert_of_mem (Grid.cIoo_subset_cIco _ _ hr)
-
-/-- A row on the open arc from `u` to `v` lies in the closed arc from `u` to `v`. -/
-private theorem mem_insert_cIco_of_mem_cIoo {u v r : Fin n} (hr : r ∈ Grid.cIoo u v) :
-    r ∈ insert v (Grid.cIco u v) :=
-  Finset.mem_insert_of_mem (Grid.cIoo_subset_cIco _ _ hr)
-
-/-- Both endpoints of a nondegenerate arc lie in its closed version. -/
-private theorem mem_insert_cIco_left {u v : Fin n} (huv : u ≠ v) :
-    u ∈ insert v (Grid.cIco u v) :=
-  Finset.mem_insert_of_mem (Grid.left_mem_cIco huv)
-
 /-- Validated commutation data for every adjacent non-interleaving pair of columns.
 
 The two rows of the markings of `a` serve as the turn rows. Non-interleaving puts both markings
@@ -192,19 +174,19 @@ noncomputable def ofNoninterleaving (a : Fin n) (ha : a ≠ finRotate n a)
       column_ne_next := ha
       noninterleaving := hG
       O_column_below := Finset.mem_insert_self _ _
-      X_column_below := mem_insert_cIco_left hOX.symm
-      O_next_above := mem_insert_cIco_of_mem_cIoo h
-      X_next_above := mem_insert_cIco_of_mem_cIoo (hb.mp h) }
+      X_column_below := Grid.left_mem_insert_right_cIco hOX.symm
+      O_next_above := Grid.mem_insert_right_cIco_of_mem_cIoo h
+      X_next_above := Grid.mem_insert_right_cIco_of_mem_cIoo (hb.mp h) }
   else
     { column := a
       turnRow := G.X a
       oppositeTurnRow := G.O a
       column_ne_next := ha
       noninterleaving := hG
-      O_column_below := mem_insert_cIco_left hOX
+      O_column_below := Grid.left_mem_insert_right_cIco hOX
       X_column_below := Finset.mem_insert_self _ _
-      O_next_above := mem_insert_cIco_of_notMem_cIoo hOX h
-      X_next_above := mem_insert_cIco_of_notMem_cIoo hOX (mt hb.mpr h) }
+      O_next_above := Grid.mem_insert_cIco_swap_of_notMem_cIoo hOX h
+      X_next_above := Grid.mem_insert_cIco_swap_of_notMem_cIoo hOX (mt hb.mpr h) }
 
 /-- The data built from a non-interleaving pair commutes the given column. -/
 @[simp]
