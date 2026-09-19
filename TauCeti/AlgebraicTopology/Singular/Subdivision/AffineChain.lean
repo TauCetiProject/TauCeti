@@ -300,16 +300,31 @@ lemma singularChain_simplex {n : ℕ} (σ : TopCat.toSSet.obj X _⦋n⦌) :
   ext z
   simp [StdSimplex.affineMapMk_apply]
 
+/-- Pushing the subdivision of an affine chain forward along a singular simplex gives the
+barycentric subdivision of the pushed-forward chain. -/
+lemma singularChain_subdivision {m : ℕ} (σ : C(StdSimplex ℝ (Fin (m + 1)), X)) {k : ℕ}
+    (c : (Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) →₀ ℤ) :
+    singularChain R σ k (subdivision _ k c) =
+      singularChain R σ k c ≫ singularSubdivisionX R X k := by
+  induction c using Finsupp.induction_linear with
+  | zero => simp
+  | add c d hc hd => simp only [map_add, hc, hd, Preadditive.add_comp]
+  | single v a =>
+    have hv (π : Perm (Fin (k + 1))) :
+        StdSimplex.continuousAffineMapMk (R := ℝ)
+            (StdSimplex.affineMapMk (R := ℝ) v ∘ BarycentricSubdivision.vertex π) =
+          (StdSimplex.continuousAffineMapMk v).comp
+            (StdSimplex.continuousAffineMapMk (BarycentricSubdivision.vertex π)) := by
+      ext x : 1
+      simp [← StdSimplex.comp_affineMapMk]
+    simp [hv, Finset.smul_sum, mul_smul, Units.smul_def, ContinuousMap.comp_assoc]
+
 /-- Pushing the subdivision of the standard simplex forward along a singular simplex gives the
 barycentric subdivision of that singular simplex. -/
 lemma singularChain_subdivision_simplex {n : ℕ} (σ : TopCat.toSSet.obj X _⦋n⦌) :
     singularChain R (X.toSSetObjEquiv _ σ) n (subdivision _ n (simplex n)) =
       (TopCat.toSSet.obj X).ιChainComplex σ ≫ singularSubdivisionX R X n := by
-  have : ⇑(StdSimplex.affineMapMk (R := ℝ) (StdSimplex.single : Fin (n + 1) → _)) = id := by
-    funext x
-    simp [StdSimplex.affineMapMk_apply]
-  rw [simplex, subdivision_single, map_sum, ιChainComplex_singularSubdivisionX]
-  simp [this, Units.smul_def]
+  rw [singularChain_subdivision, singularChain_simplex]
 
 /-- Pushing affine chains forward along a singular simplex commutes with continuous maps. -/
 lemma singularChain_comp_map {m : ℕ} (σ : C(StdSimplex ℝ (Fin (m + 1)), X)) (f : X ⟶ Y) {k : ℕ}
