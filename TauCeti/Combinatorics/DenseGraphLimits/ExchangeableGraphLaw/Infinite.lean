@@ -320,6 +320,8 @@ structure InfiniteExchangeableGraphLaw where
   /-- Invariance under every relabelling. -/
   exchangeable : ∀ σ : Equiv.Perm ℕ, law.map (SimpleGraph.comap ⇑σ) = law
 
+attribute [simp] InfiniteExchangeableGraphLaw.exchangeable
+
 namespace InfiniteExchangeableGraphLaw
 
 instance instIsProbabilityMeasureLaw (L : InfiniteExchangeableGraphLaw) :
