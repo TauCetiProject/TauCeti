@@ -66,7 +66,6 @@ variable (r : ℕ)
 
 /-- A point over any value algebra satisfies the transported defining equations of the type `A_r`
 carrier exactly when its underlying matrix is an integral carrier point. -/
-@[simp]
 theorem mem_baseChangeDefiningPointsSubgroup_iff_mem_points
     (k : Type u) [CommRing k] (A : Type v) [CommRing A] [Algebra k A]
     (g : HopfAlgebra.points (R := k)

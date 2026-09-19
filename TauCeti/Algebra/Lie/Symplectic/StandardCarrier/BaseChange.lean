@@ -181,7 +181,8 @@ noncomputable def baseChangePointsMulEquiv (B : CommAlgCat.{w} A) :
           (baseChangeDefiningIdeal n A)) B ≃*
       points n B :=
   (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (baseChangeCoordinateIso n A) B).trans
-    (pointsMulEquiv n (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B))
+    (pointsPresentation n
+      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
 
 /-- The base-change points equivalence preserves the ambient invertible matrix. -/
 @[simp]
@@ -196,7 +197,8 @@ theorem coe_baseChangePointsMulEquiv_apply (B : CommAlgCat.{w} A)
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1)))
           (baseChangeDefiningIdeal n A) B q) := by
-  rw [baseChangePointsMulEquiv, MulEquiv.trans_apply, coe_pointsMulEquiv_apply]
+  rw [baseChangePointsMulEquiv, MulEquiv.trans_apply,
+    GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply]
   exact GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
     ((n + 1) + (n + 1)) (definingIdeal n) (baseChangeDefiningIdeal n A)
     (baseChangeCoordinateIso n A) (mkQuotient_comp_baseChangeCoordinateIso_hom n A) B q
