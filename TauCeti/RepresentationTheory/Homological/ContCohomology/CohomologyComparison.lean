@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CocycleComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 
 /-!
 # The explicit model against the canonical object, in degrees one and two
@@ -48,6 +49,10 @@ is why the discrete synonyms exist.
 * `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology_apply` and
   `explicitH2AddEquivContinuousCohomology_apply`: the comparisons send the class of an explicit
   cocycle to the homology class of the cocycle it corresponds to.
+* `TauCeti.ContCohomology.explicitH2AddEquivContinuousCohomology_map` and
+  `explicitH2AddEquivContinuousCohomology_coeffMap`: the degree-two comparison carries the explicit
+  pullback along a compatible pair, and in particular the explicit coefficient map, to the
+  canonical one.
 
 ## References
 
@@ -179,6 +184,58 @@ theorem explicitH2AddEquivContinuousCohomology_symm_apply
   apply (explicitH2AddEquivContinuousCohomology G M).injective
   rw [AddEquiv.apply_symm_apply, explicitH2AddEquivContinuousCohomology_apply,
     AddEquiv.apply_symm_apply]
+
+/-- The degree-two comparison carries the explicit pullback `TauCeti.ContCohomology.explicitMap2`
+along a compatible pair to Mathlib's `ContinuousCohomology.map` along the same pair. On a cocycle
+this is the naturality of the cocycle comparison, `cocycleEquiv2_naturality`, followed by the
+naturality of the canonical projection onto homology. -/
+theorem explicitH2AddEquivContinuousCohomology_map
+    (H N : Type u) [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [LocallyCompactSpace H]
+    [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction H N]
+    [ContinuousSMul H N] (φ : H →ₜ* G) (f : M →+ N)
+    (hf : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (x : H2 G M) :
+    _root_.ContinuousCohomology.map φ
+        (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap fun h m ↦ hf h m) 2
+        (explicitH2AddEquivContinuousCohomology G M x) =
+      explicitH2AddEquivContinuousCohomology H N
+        (explicitMap2 G M H N φ f continuous_of_discreteTopology hf x) := by
+  induction x using QuotientAddGroup.induction_on with
+  | H c =>
+    rw [explicitMap2_mk, explicitH2AddEquivContinuousCohomology_apply,
+      explicitH2AddEquivContinuousCohomology_apply, ← cocycleEquiv2_naturality]
+    exact congr($(_root_.ContinuousCohomology.π_map φ
+      (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap fun h m ↦ hf h m) 2)
+      (cocycleEquiv2 G M c))
+
+/-- The degree-two comparison carries the explicit coefficient map to the canonical coefficient
+map `TauCeti.ContinuousCohomology.coeffMap` attached to the same equivariant homomorphism. This is
+`explicitH2AddEquivContinuousCohomology_map` at the identity of `G`, where the compatible pair is
+the coefficient morphism itself. -/
+theorem explicitH2AddEquivContinuousCohomology_coeffMap
+    (N : Type u) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction G N] [ContinuousSMul G N] (f : M →+[G] N) (x : H2 G M) :
+    TauCeti.ContinuousCohomology.coeffMap
+        (ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m ↦ map_smul f g m) 2
+        (explicitH2AddEquivContinuousCohomology G M x) =
+      explicitH2AddEquivContinuousCohomology G N
+        (explicitCoeff2 G M f continuous_of_discreteTopology x) := by
+  have hpair : ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G)
+      f.toAddMonoidHom.toIntLinearMap (fun g m ↦ map_smul f g m) =
+      ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m ↦ map_smul f g m :=
+    ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl
+  -- The explicit coefficient map is the explicit pullback at the identity, class by class.
+  have hcoeff : explicitCoeff2 G M f continuous_of_discreteTopology x =
+      explicitMap2 G M G N (ContinuousMonoidHom.id G) f.toAddMonoidHom
+        continuous_of_discreteTopology (fun g m ↦ map_smul f g m) x := by
+    induction x using QuotientAddGroup.induction_on with
+    | H c =>
+      rw [explicitCoeff2_mk]
+      -- `explicitCoeff2_mk` coerces `f` to `M →+ N`, which is `f.toAddMonoidHom` by definition;
+      -- `exact` rather than `rw` lets the two spellings of the same map unify.
+      exact (explicitMap2_mk G M G N _ _ _ _ c).symm
+  rw [TauCeti.ContinuousCohomology.coeffMap_def, ← hpair, hcoeff]
+  exact explicitH2AddEquivContinuousCohomology_map G M G N (ContinuousMonoidHom.id G)
+    f.toAddMonoidHom (fun g m ↦ map_smul f g m) x
 
 end LocallyCompact
 
