@@ -133,21 +133,10 @@ noncomputable def geckTorusPositiveGroupScheme : Grp (Over (Spec (CommRingCat.of
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
     (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1)
 
-/-- The positive Geck carrier is the Kostant torus-subsystem group scheme for the positive
-simple-root indices. -/
-theorem geckTorusPositiveGroupScheme_def :
-    t.geckTorusPositiveGroupScheme ht =
-      UniversalEnvelopingAlgebra.kostantTorusSubsystemGroupScheme
-        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-        (t.geckCoordinateLattice ht).toAddSubgroup
-        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-        (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) := (rfl)
-
 /-- **The inclusion of the positive Geck carrier into the full Geck carrier.** -/
 def geckTorusPositiveInclusion :
     t.geckTorusPositiveGroupScheme ht ⟶ t.geckGroupScheme ht :=
-  eqToHom (t.geckTorusPositiveGroupScheme_def ht) ≫
+  eqToHom (by unfold geckTorusPositiveGroupScheme; rfl) ≫
     UniversalEnvelopingAlgebra.kostantTorusSubsystemToToral
     (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
     (t.geckCoordinateLattice ht).toAddSubgroup
@@ -161,7 +150,7 @@ Kostant subsystem inclusion. -/
 @[simp]
 theorem geckTorusPositiveInclusion_comp_geckGroupSchemeι :
     t.geckTorusPositiveInclusion ht ≫ t.geckGroupSchemeι ht =
-      eqToHom (t.geckTorusPositiveGroupScheme_def ht) ≫
+      eqToHom (by unfold geckTorusPositiveGroupScheme; rfl) ≫
         UniversalEnvelopingAlgebra.kostantTorusSubsystemGroupSchemeι
           (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
           (t.geckCoordinateLattice ht).toAddSubgroup
@@ -171,7 +160,7 @@ theorem geckTorusPositiveInclusion_comp_geckGroupSchemeι :
   rw [geckTorusPositiveInclusion, geckGroupSchemeι_def]
   slice_lhs 3 5 => simp
   simpa only [Category.assoc] using congrArg
-    (fun f => eqToHom (t.geckTorusPositiveGroupScheme_def ht) ≫ f)
+    (fun f => eqToHom (by unfold geckTorusPositiveGroupScheme; rfl) ≫ f)
     (UniversalEnvelopingAlgebra.kostantTorusSubsystemToToral_comp_ι
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
       (t.geckCoordinateLattice ht).toAddSubgroup
@@ -184,9 +173,18 @@ instance isClosedImmersion_geckTorusPositiveInclusion :
     IsClosedImmersion (t.geckTorusPositiveInclusion ht).hom.hom.left := by
   have hcomp : IsClosedImmersion
       ((t.geckTorusPositiveInclusion ht ≫ t.geckGroupSchemeι ht).hom.hom.left) := by
+    have hpositive : t.geckTorusPositiveGroupScheme ht =
+        UniversalEnvelopingAlgebra.kostantTorusSubsystemGroupScheme
+          (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+          (t.geckCoordinateLattice ht).toAddSubgroup
+          (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+          (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
+          (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) := by
+      unfold geckTorusPositiveGroupScheme
+      rfl
     let E := (Grp.forget (Over (Spec (CommRingCat.of ℤ))) ⋙
       Over.forget (Spec (CommRingCat.of ℤ))).mapIso
-        (eqToIso (t.geckTorusPositiveGroupScheme_def ht))
+        (eqToIso hpositive)
     let e := E.hom
     let c := (UniversalEnvelopingAlgebra.kostantTorusSubsystemGroupSchemeι
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
@@ -228,7 +226,7 @@ def geckPositiveRootSubgroup (i : Fin t.rank) :
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
     (fun j => t.isNilpotent_geckRepresentation_rootGenerator ht j.1)
     (Set.mem_range_self i) ≫
-      eqToHom (t.geckTorusPositiveGroupScheme_def ht).symm
+      eqToHom (by unfold geckTorusPositiveGroupScheme; rfl)
 
 /-- Factoring a positive simple-root subgroup through the positive carrier and then including it
 into the full carrier recovers the named Geck root subgroup. -/
@@ -283,7 +281,7 @@ def geckWeightTorusToTorusPositive :
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
     (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) ≫
-      eqToHom (t.geckTorusPositiveGroupScheme_def ht).symm
+      eqToHom (by unfold geckTorusPositiveGroupScheme; rfl)
 
 /-- Factoring the weight torus through the positive carrier and then including it into the full
 carrier recovers the named Geck weight torus. -/
@@ -330,15 +328,15 @@ theorem geckTorusPositiveGroupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} ℤ}
     (htorus : t.geckWeightTorusToTorusPositive ht ≫ φ =
       t.geckWeightTorusToTorusPositive ht ≫ ψ) :
     φ = ψ := by
-  apply (cancel_epi (eqToHom (t.geckTorusPositiveGroupScheme_def ht).symm)).1
+  apply (cancel_epi (eqToHom (by unfold geckTorusPositiveGroupScheme; rfl))).1
   apply UniversalEnvelopingAlgebra.kostantTorusSubsystemGroupScheme_hom_ext
     (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
     (t.geckCoordinateLattice ht).toAddSubgroup
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
     (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1)
-    (eqToHom (t.geckTorusPositiveGroupScheme_def ht).symm ≫ φ)
-    (eqToHom (t.geckTorusPositiveGroupScheme_def ht).symm ≫ ψ)
+    (eqToHom (by unfold geckTorusPositiveGroupScheme; rfl) ≫ φ)
+    (eqToHom (by unfold geckTorusPositiveGroupScheme; rfl) ≫ ψ)
   · intro i hi
     obtain ⟨j, rfl⟩ := hi
     simpa only [geckPositiveRootSubgroup, Category.assoc] using hroot j
