@@ -144,8 +144,12 @@ representatives, divided by `2m`. -/
 theorem coordinatePower_zmodStandard_quadratic (x : ι → ZMod m) :
     ((FiniteQuadraticModule.zmodStandard m hm).coordinatePower ι).quadratic x =
       (((∑ i, ((x i).val : ℚ) ^ 2) / (2 * m) : ℚ) : AddCircle (1 : ℚ)) := by
-  rw [FiniteQuadraticModule.coordinatePower_quadratic, Finset.sum_div, AddCircle.coe_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ FiniteQuadraticModule.zmodStandardMap_val m hm (x i)
+  rw [FiniteQuadraticModule.coordinatePower_quadratic, Finset.sum_div]
+  calc
+    _ = ∑ i, ((((x i).val : ℚ) ^ 2 / (2 * m) : ℚ) : AddCircle (1 : ℚ)) :=
+      Finset.sum_congr rfl fun i _ ↦ FiniteQuadraticModule.zmodStandardMap_val m hm (x i)
+    _ = _ := (map_sum (QuotientAddGroup.mk' (AddSubgroup.zmultiples (1 : ℚ)))
+      (fun i ↦ ((x i).val : ℚ) ^ 2 / (2 * m)) Finset.univ).symm
 
 /-- The quadratic value of a word over an even `ℤ/m` is computed by any coordinatewise integer
 lift: the sum of the squares of the lifts, divided by `2m`. -/
@@ -153,8 +157,12 @@ theorem coordinatePower_zmodStandard_quadratic_intCast (z : ι → ℤ) :
     ((FiniteQuadraticModule.zmodStandard m hm).coordinatePower ι).quadratic
         (fun i ↦ ((z i : ZMod m))) =
       (((∑ i, (z i : ℚ) ^ 2) / (2 * m) : ℚ) : AddCircle (1 : ℚ)) := by
-  rw [FiniteQuadraticModule.coordinatePower_quadratic, Finset.sum_div, AddCircle.coe_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ FiniteQuadraticModule.zmodStandardMap_intCast m hm (z i)
+  rw [FiniteQuadraticModule.coordinatePower_quadratic, Finset.sum_div]
+  calc
+    _ = ∑ i, ((((z i : ℤ) : ℚ) ^ 2 / (2 * m) : ℚ) : AddCircle (1 : ℚ)) :=
+      Finset.sum_congr rfl fun i _ ↦ FiniteQuadraticModule.zmodStandardMap_intCast m hm (z i)
+    _ = _ := (map_sum (QuotientAddGroup.mk' (AddSubgroup.zmultiples (1 : ℚ)))
+      (fun i ↦ ((z i : ℤ) : ℚ) ^ 2 / (2 * m)) Finset.univ).symm
 
 /-- The quadratic value of a binary word is a quarter of its Hamming weight. -/
 theorem coordinatePower_zmodStandard_two_quadratic (x : ι → ZMod 2) :

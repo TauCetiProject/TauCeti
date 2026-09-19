@@ -60,7 +60,6 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   `p / n` as a distinguished generator.
 * `AddCircle.isAddTorsion_rat`: a rational circle is a torsion group, so its torsion subgroups
   exhaust it (`AddCircle.exists_mem_torsionBy_rat`).
-* `AddCircle.coe_sum`: reduction to `AddCircle p` commutes with finite sums.
 * `ZMod.toRatAddCircle`: the injection of `ℤ/n` into `ℚ/ℤ` sending the class of an integer `k`
   to the class of `k / n`.
 
@@ -76,11 +75,6 @@ public section
 open AddSubgroup
 
 namespace AddCircle
-
-/-- The reduction map to `AddCircle p` commutes with finite sums. -/
-theorem coe_sum {𝕜 : Type*} [AddCommGroup 𝕜] (p : 𝕜) {ι : Type*} (s : Finset ι) (f : ι → 𝕜) :
-    ((∑ i ∈ s, f i : 𝕜) : AddCircle p) = ∑ i ∈ s, ((f i : 𝕜) : AddCircle p) :=
-  map_sum (QuotientAddGroup.mk' (AddSubgroup.zmultiples p)) f s
 
 /-- A rational number reduces to zero in `ℚ/ℤ` exactly when it is an integer. -/
 theorem coe_eq_zero_iff_mem_one (q : ℚ) :
