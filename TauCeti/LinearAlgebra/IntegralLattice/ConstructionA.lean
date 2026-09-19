@@ -26,6 +26,10 @@ and the resulting integral lattice is unimodular exactly when the code is self-d
 Additive codes over `ZMod m` are canonically submodules through `AddSubgroup.toZModSubmodule`;
 their dual here is the existing `Submodule.euclideanDual`, transported back to an additive
 subgroup. The modulus is a positive natural number; no primality hypothesis is needed.
+Only nonvanishing of the modulus is used here, as permitted by the AlgebraicCodingTheory
+roadmap's standing convention. The type `ℕ+` supplies `NeZero (m : ℕ)` and excludes zero
+even in the carrier and form definitions. At `m = 1`, the construction is the integer
+coordinate lattice with the ordinary dot product, and the same results apply.
 
 ## References
 
