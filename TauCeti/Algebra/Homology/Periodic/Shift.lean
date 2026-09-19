@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
-public import Mathlib.Data.ZMod.Defs
 public import Mathlib.Tactic.Ring
 
 /-!
@@ -25,9 +24,11 @@ is multiplied by `(-1)ᵏ`. The shift by `1` is thus the cyclic shift
 the shift is periodic: shifting by an even multiple `k` of the period is isomorphic to the
 identity, both on complexes and on the homotopy category.
 
-None of the constructions here needs the period to be positive, so no `NeZero n` hypothesis
-is imposed. For `n = 0`, `ZMod 0` is `ℤ` and the formulas are those of Mathlib's shift on
-cochain complexes.
+A periodic complex proper has a positive period: `ZMod 0` is integer indexing, hence an
+ordinary complex rather than a finite cyclic grading. None of the constructions below uses
+positivity of `n`, so no `NeZero n` hypothesis is imposed; it would be an unused instance
+argument, which the environment linter rejects. For `n = 0` the formulas degenerate to those
+of Mathlib's shift on cochain complexes.
 
 ## Main definitions
 
@@ -301,17 +302,13 @@ instance (k : ℤ) :
       ((HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).commShiftIso k)
   exact Functor.additive_of_full_essSurj_comp (HomotopyCategory.quotient _ _) _
 
-attribute [local implicit_reducible] HomotopyCategory.quotient in
 instance {R : Type*} [Semiring R] [Linear R C] (k : ℤ) :
-    (CategoryTheory.shiftFunctor (HomotopyCategory C (ComplexShape.up (ZMod n))) k).Linear R where
-  map_smul := by
-    rintro ⟨X⟩ ⟨Y⟩ f r
-    obtain ⟨f, rfl⟩ := (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).map_surjective f
-    have h₁ := NatIso.naturality_1 ((HomotopyCategory.quotient _ _).commShiftIso k) f
-    have h₂ := NatIso.naturality_1 ((HomotopyCategory.quotient _ _).commShiftIso k) (r • f)
-    dsimp at h₁ h₂
-    rw [← Functor.map_smul, ← h₁, ← h₂]
-    simp
+    (CategoryTheory.shiftFunctor (HomotopyCategory C (ComplexShape.up (ZMod n))) k).Linear R := by
+  have : ((HomotopyCategory.quotient C (ComplexShape.up (ZMod n)) ⋙
+      CategoryTheory.shiftFunctor _ k)).Linear R :=
+    Functor.linear_of_iso R
+      ((HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).commShiftIso k)
+  exact Functor.linear_of_full_essSurj_comp (HomotopyCategory.quotient _ _) _
 
 /-- Periodicity of the shift on the periodic homotopy category: shifting by an even integer `k`
 which is a multiple of the period is isomorphic to the identity. -/
