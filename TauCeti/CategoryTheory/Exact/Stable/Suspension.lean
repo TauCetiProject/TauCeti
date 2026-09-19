@@ -214,6 +214,11 @@ public noncomputable def stableSuspension :
   E.projectiveStableIdeal.lift hE.suspensionToStable
     hE.suspensionToStable_kills_projectiveStableIdeal
 
+/-- Stable suspension preserves addition of morphisms. -/
+public noncomputable instance stableSuspension_additive : (hE.stableSuspension).Additive := by
+  rw [stableSuspension]
+  infer_instance
+
 /-- On objects represented by `X`, stable suspension is represented by `ΣX`. -/
 @[simp]
 public theorem stableSuspension_obj_projectiveStableFunctor_obj (X : C) :
