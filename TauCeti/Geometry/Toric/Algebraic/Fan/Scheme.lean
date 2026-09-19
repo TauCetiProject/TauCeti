@@ -78,12 +78,12 @@ theorem affineToricDiagram_map {τ σ : Φ.cones} (f : τ ⟶ σ) :
 
 variable {Φ}
 
-/-- In a regular fan every morphism of the diagram of affine toric charts is an open
+/-- A morphism of the diagram of affine toric charts whose target cone is regular is an open
 immersion. -/
-theorem isOpenImmersion_affineToricDiagram_map (hΦ : Φ.IsRegular) {τ σ : Φ.cones}
+theorem isOpenImmersion_affineToricDiagram_map {τ σ : Φ.cones} (hσ : IsRegularCone i σ.1)
     (f : τ ⟶ σ) : IsOpenImmersion (Φ.affineToricDiagram.map f) := by
   rw [affineToricDiagram_map]
-  exact (isRegular_iff.1 hΦ _ σ.2).isOpenImmersion_faceAffineToricSchemeMap _ _
+  exact hσ.isOpenImmersion_faceAffineToricSchemeMap _ _
 
 /-- The diagram of affine toric charts of a regular fan is locally directed: if points of the
 charts of two faces `τ` and `υ` of a cone `σ` have the same image in the chart of `σ`, they come
@@ -121,57 +121,60 @@ variable (Φ)
 
 /-- The toric scheme of a regular fan: the colimit of its diagram of affine toric charts, which
 glues the charts along the open immersions of their faces. -/
-noncomputable def algebraicRealization (hΦ : Φ.IsRegular) : Scheme :=
-  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦ isOpenImmersion_affineToricDiagram_map hΦ f
+@[expose] noncomputable def algebraicRealization (hΦ : Φ.IsRegular) : Scheme :=
+  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
+    isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
   haveI := isLocallyDirected_affineToricDiagram hΦ
   colimit Φ.affineToricDiagram
 
 /-- The inclusion of the affine toric chart of a cone into the toric scheme of a regular fan. -/
 noncomputable def affineToricChartι (hΦ : Φ.IsRegular) (σ : Φ.cones) :
     Φ.affineToricChart σ ⟶ Φ.algebraicRealization hΦ :=
-  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦ isOpenImmersion_affineToricDiagram_map hΦ f
+  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
+    isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
   haveI := isLocallyDirected_affineToricDiagram hΦ
   colimit.ι Φ.affineToricDiagram σ
 
 /-- The colimit cocone from the affine toric charts to the toric scheme of a regular fan. -/
 @[expose] noncomputable def affineToricCocone (hΦ : Φ.IsRegular) :
     Cocone Φ.affineToricDiagram :=
-  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦ isOpenImmersion_affineToricDiagram_map hΦ f
+  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
+    isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
   haveI := isLocallyDirected_affineToricDiagram hΦ
-  { pt := Φ.algebraicRealization hΦ
-    ι :=
-      { app := Φ.affineToricChartι hΦ
-        naturality := fun _ _ f ↦ by
-          dsimp
-          exact colimit.w Φ.affineToricDiagram f } }
+  colimit.cocone Φ.affineToricDiagram
 
 /-- The point of the affine toric cocone is the toric scheme. -/
 @[simp]
 theorem affineToricCocone_pt (hΦ : Φ.IsRegular) :
     (Φ.affineToricCocone hΦ).pt = Φ.algebraicRealization hΦ :=
-  by rw [affineToricCocone]
+  by simp only [affineToricCocone, algebraicRealization, colimit.cocone_x]
 
 /-- The legs of the affine toric cocone are the affine chart inclusions. -/
 @[simp]
 theorem affineToricCocone_ι_app (hΦ : Φ.IsRegular) (σ : Φ.cones) :
     (Φ.affineToricCocone hΦ).ι.app σ = Φ.affineToricChartι hΦ σ :=
-  rfl
+  by
+    have := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
+      isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
+    have := isLocallyDirected_affineToricDiagram hΦ
+    change (colimit.cocone Φ.affineToricDiagram).ι.app σ = colimit.ι Φ.affineToricDiagram σ
+    rfl
 
 /-- The affine toric cocone is a colimit cocone. -/
 noncomputable def isColimitAffineToricCocone (hΦ : Φ.IsRegular) :
     IsColimit (Φ.affineToricCocone hΦ) :=
-  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦ isOpenImmersion_affineToricDiagram_map hΦ f
+  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
+    isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
   haveI := isLocallyDirected_affineToricDiagram hΦ
-  by
-    unfold affineToricCocone algebraicRealization affineToricChartι
-    exact colimit.isColimit Φ.affineToricDiagram
+  colimit.isColimit Φ.affineToricDiagram
 
 variable {Φ}
 
 /-- Each affine toric chart is an open subscheme of the toric scheme of a regular fan. -/
 instance isOpenImmersion_affineToricChartι (hΦ : Φ.IsRegular) (σ : Φ.cones) :
     IsOpenImmersion (Φ.affineToricChartι hΦ σ) :=
-  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦ isOpenImmersion_affineToricDiagram_map hΦ f
+  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
+    isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
   haveI := isLocallyDirected_affineToricDiagram hΦ
   inferInstanceAs (IsOpenImmersion (colimit.ι Φ.affineToricDiagram σ))
 
@@ -182,14 +185,43 @@ theorem faceAffineToricSchemeMap_comp_affineToricChartι (hΦ : Φ.IsRegular) {�
     (h : τ.1.IsFaceOf σ.1) :
     faceAffineToricSchemeMap Φ.lattice h ≫ Φ.affineToricChartι hΦ σ =
       Φ.affineToricChartι hΦ τ :=
-  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦ isOpenImmersion_affineToricDiagram_map hΦ f
+  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
+    isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
   haveI := isLocallyDirected_affineToricDiagram hΦ
   colimit.w Φ.affineToricDiagram (homOfLE h.le)
+
+/-- The left overlap map followed by its chart inclusion is the inclusion of the overlap chart. -/
+@[reassoc (attr := simp)]
+theorem affineToricOverlapLeft_comp_affineToricChartι (hΦ : Φ.IsRegular) (σ τ : Φ.cones) :
+    Φ.affineToricOverlapLeft σ τ ≫ Φ.affineToricChartι hΦ σ =
+      Φ.affineToricChartι hΦ ⟨σ.1 ⊓ τ.1, Φ.inf_mem σ.2 τ.2⟩ := by
+  simpa only [affineToricOverlapLeft_def] using
+    faceAffineToricSchemeMap_comp_affineToricChartι hΦ
+      (τ := ⟨σ.1 ⊓ τ.1, Φ.inf_mem σ.2 τ.2⟩) (σ := σ)
+      (Φ.inf_isFaceOf_left σ.2 τ.2)
+
+/-- The right overlap map followed by its chart inclusion is the inclusion of the overlap chart. -/
+@[reassoc (attr := simp)]
+theorem affineToricOverlapRight_comp_affineToricChartι (hΦ : Φ.IsRegular) (σ τ : Φ.cones) :
+    Φ.affineToricOverlapRight σ τ ≫ Φ.affineToricChartι hΦ τ =
+      Φ.affineToricChartι hΦ ⟨σ.1 ⊓ τ.1, Φ.inf_mem σ.2 τ.2⟩ := by
+  simpa only [affineToricOverlapRight_def] using
+    faceAffineToricSchemeMap_comp_affineToricChartι hΦ
+      (τ := ⟨σ.1 ⊓ τ.1, Φ.inf_mem σ.2 τ.2⟩) (σ := τ)
+      (Φ.inf_isFaceOf_right σ.2 τ.2)
+
+/-- The two inclusions of a pairwise overlap into the toric scheme agree. -/
+theorem affineToricOverlap_comp_affineToricChartι (hΦ : Φ.IsRegular) (σ τ : Φ.cones) :
+    Φ.affineToricOverlapLeft σ τ ≫ Φ.affineToricChartι hΦ σ =
+      Φ.affineToricOverlapRight σ τ ≫ Φ.affineToricChartι hΦ τ := by
+  rw [affineToricOverlapLeft_comp_affineToricChartι,
+    affineToricOverlapRight_comp_affineToricChartι]
 
 /-- Every point of the toric scheme of a regular fan lies in one of its affine toric charts. -/
 theorem exists_affineToricChartι_apply_eq (hΦ : Φ.IsRegular) (x : Φ.algebraicRealization hΦ) :
     ∃ (σ : Φ.cones) (y : Φ.affineToricChart σ), Φ.affineToricChartι hΦ σ y = x :=
-  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦ isOpenImmersion_affineToricDiagram_map hΦ f
+  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
+    isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
   haveI := isLocallyDirected_affineToricDiagram hΦ
   Scheme.IsLocallyDirected.ι_jointly_surjective Φ.affineToricDiagram x
 
@@ -200,7 +232,8 @@ theorem affineToricChartι_eq_affineToricChartι_iff (hΦ : Φ.IsRegular)
     Φ.affineToricChartι hΦ σ x = Φ.affineToricChartι hΦ τ y ↔
       ∃ z : Φ.affineToricOverlap σ τ,
         Φ.affineToricOverlapLeft σ τ z = x ∧ Φ.affineToricOverlapRight σ τ z = y := by
-  have := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦ isOpenImmersion_affineToricDiagram_map hΦ f
+  have := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
+    isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
   have := isLocallyDirected_affineToricDiagram hΦ
   let στ : Φ.cones := ⟨σ.1 ⊓ τ.1, Φ.inf_mem σ.2 τ.2⟩
   refine ⟨fun h ↦ ?_, fun ⟨z, hzx, hzy⟩ ↦ ?_⟩
@@ -213,9 +246,8 @@ theorem affineToricChartι_eq_affineToricChartι_iff (hΦ : Φ.IsRegular)
       exact hwx
     · rw [affineToricOverlapRight_def, ← Scheme.Hom.comp_apply, faceAffineToricSchemeMap_comp]
       exact hwy
-  · rw [← hzx, ← hzy, affineToricOverlapLeft_def, affineToricOverlapRight_def,
-      ← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply,
-      faceAffineToricSchemeMap_comp_affineToricChartι (τ := στ),
-      faceAffineToricSchemeMap_comp_affineToricChartι (τ := στ)]
+  · rw [← hzx, ← hzy, ← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply,
+      affineToricOverlapLeft_comp_affineToricChartι,
+      affineToricOverlapRight_comp_affineToricChartι]
 
 end TauCeti.Toric.Fan

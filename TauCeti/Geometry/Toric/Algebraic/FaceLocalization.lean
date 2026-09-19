@@ -285,8 +285,7 @@ theorem range_faceAffineToricSchemeMap_inf (hi : IsIntegralLattice i)
       (by rw [AddSubmonoid.coe_add, map_add, PointedCone.inf_ker_add
         ((mem_dualSemigroup hi m₁).1 hm₁) ((mem_dualSemigroup hi m₂).1 hm₂), h₁, h₂]),
     hmul, PrimeSpectrum.basicOpen_mul]
-  -- The two sides agree up to the identification of `Spec` points with prime ideals.
-  rfl
+  exact TopologicalSpace.Opens.coe_inf ..
 
 end IsRegularCone
 
