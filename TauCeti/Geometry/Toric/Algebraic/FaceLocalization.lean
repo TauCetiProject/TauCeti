@@ -28,6 +28,9 @@ inclusion of an arbitrary face induces a localization at a single monomial and a
 of affine toric schemes.
 
 These open immersions are the maps along which the affine toric schemes of a fan are glued.
+The canonical face maps introduced here satisfy identity and composition laws, so successive
+face restrictions give the same morphism as the composite face inclusion. This is the
+functoriality needed for the overlap and cocycle maps in fan gluing.
 
 ## Main declarations
 
@@ -36,10 +39,16 @@ These open immersions are the maps along which the affine toric schemes of a fan
   `m`.
 * `TauCeti.Toric.isOpenImmersion_affineToricSchemeMap_inf_ker`: the affine toric scheme of the
   face is an open subscheme of the affine toric scheme of `σ`.
-* `TauCeti.Toric.IsRegularCone.exists_isLocalization_away_affineCoordinateRingMap` and
-  `TauCeti.Toric.IsRegularCone.isOpenImmersion_affineToricSchemeMap`: for a face `τ` of a regular
-  cone `σ`, the coordinate ring of `τ` is the localization of that of `σ` away from a single
-  monomial, and the affine toric scheme of `τ` is an open subscheme of that of `σ`.
+* `TauCeti.Toric.faceAffineCoordinateRingMap` and
+  `TauCeti.Toric.faceAffineToricSchemeMap`: the canonical restriction map and affine-scheme
+  morphism attached to a face inclusion, with identity and composition laws.
+* `TauCeti.Toric.IsRegularCone.exists_isLocalization_away_faceAffineCoordinateRingMap` and
+  `TauCeti.Toric.IsRegularCone.isOpenImmersion_faceAffineToricSchemeMap`: for a face `τ` of a
+  regular cone `σ`, the coordinate ring of `τ` is the localization of that of `σ` away from a
+  single monomial, and the affine toric scheme of `τ` is an open subscheme of that of `σ`.
+* `TauCeti.Toric.Fan.affineToricChart`, `TauCeti.Toric.Fan.affineToricOverlap`,
+  `TauCeti.Toric.Fan.affineToricOverlapLeft` and `TauCeti.Toric.Fan.affineToricOverlapRight`: the
+  affine toric charts of a fan and the two open immersions from their pairwise overlap.
 
 ## References
 
@@ -49,7 +58,7 @@ These open immersions are the maps along which the affine toric schemes of a fan
 
 public section
 
-open AlgebraicGeometry Multiplicative
+open AlgebraicGeometry CategoryTheory Multiplicative
 
 namespace TauCeti.Toric
 
@@ -57,6 +66,89 @@ universe u
 
 variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N →+ V}
   {σ : PointedCone ℝ V}
+
+/-! ### Canonical maps attached to face inclusions -/
+
+variable {τ υ : PointedCone ℝ V}
+
+/-- A face inclusion `τ ≼ σ` induces the restriction map from the coordinate ring of `σ`
+to the coordinate ring of `τ`. -/
+noncomputable def faceAffineCoordinateRingMap (hi : IsIntegralLattice i)
+    (hτσ : τ.IsFaceOf σ) : affineCoordinateRing hi σ →ₐ[ℂ] affineCoordinateRing hi τ :=
+  affineCoordinateRingMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
+    fun _ hx ↦ hτσ.le hx
+
+/-- The face restriction is the coordinate-ring map induced by the identity lattice map. -/
+theorem faceAffineCoordinateRingMap_def (hi : IsIntegralLattice i) (hτσ : τ.IsFaceOf σ) :
+    faceAffineCoordinateRingMap hi hτσ =
+      affineCoordinateRingMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
+        fun _ hx ↦ hτσ.le hx :=
+  (rfl)
+
+/-- Restriction along a face inclusion sends a monomial to the same integral character, regarded
+as an element of the larger dual semigroup of the face. -/
+@[simp]
+theorem faceAffineCoordinateRingMap_single (hi : IsIntegralLattice i)
+    (hτσ : τ.IsFaceOf σ) (m : dualSemigroup hi σ) (z : ℂ) :
+    faceAffineCoordinateRingMap hi hτσ (MonoidAlgebra.single (ofAdd m) z) =
+      MonoidAlgebra.single (ofAdd ⟨m, dualSemigroup_anti hi hτσ.le m.2⟩) z := by
+  rw [faceAffineCoordinateRingMap_def]
+  convert affineCoordinateRingMap_single hi hi (AddMonoidHom.id N) LinearMap.id
+    (fun _ ↦ rfl) (fun _ hx ↦ hτσ.le hx) m z using 1
+  apply congrArg (fun u ↦ MonoidAlgebra.single (ofAdd u) z)
+  apply Subtype.ext
+  exact (coe_dualSemigroupMap_id hi (fun _ hx ↦ hτσ.le hx) m).symm
+
+/-- Restriction to a cone viewed as its own face is the identity map of its coordinate ring. -/
+@[simp]
+theorem faceAffineCoordinateRingMap_refl (hi : IsIntegralLattice i) :
+    faceAffineCoordinateRingMap hi (PointedCone.IsFaceOf.refl σ) =
+      AlgHom.id ℂ (affineCoordinateRing hi σ) :=
+  affineCoordinateRingMap_id hi σ
+
+/-- Restriction through two successive face inclusions is restriction along their composite. -/
+@[simp]
+theorem faceAffineCoordinateRingMap_trans (hi : IsIntegralLattice i)
+    (hυτ : υ.IsFaceOf τ) (hτσ : τ.IsFaceOf σ) :
+    (faceAffineCoordinateRingMap hi hυτ).comp (faceAffineCoordinateRingMap hi hτσ) =
+      faceAffineCoordinateRingMap hi (hυτ.trans hτσ) := by
+  simpa [faceAffineCoordinateRingMap] using
+    affineCoordinateRingMap_comp hi hi hi (AddMonoidHom.id N) (AddMonoidHom.id N)
+      LinearMap.id LinearMap.id (fun _ ↦ rfl) (fun _ ↦ rfl)
+      (fun _ hx ↦ hυτ.le hx) (fun _ hx ↦ hτσ.le hx)
+
+/-- The canonical morphism from the affine toric scheme of a face to that of its ambient cone. -/
+noncomputable def faceAffineToricSchemeMap (hi : IsIntegralLattice i)
+    (hτσ : τ.IsFaceOf σ) : affineToricScheme hi τ ⟶ affineToricScheme hi σ :=
+  Spec.map (CommRingCat.ofHom (faceAffineCoordinateRingMap hi hτσ).toRingHom)
+
+/-- The morphism attached to a face inclusion is the spectrum of its coordinate-ring
+restriction. -/
+theorem faceAffineToricSchemeMap_def (hi : IsIntegralLattice i) (hτσ : τ.IsFaceOf σ) :
+    faceAffineToricSchemeMap hi hτσ =
+      Spec.map (CommRingCat.ofHom (faceAffineCoordinateRingMap hi hτσ).toRingHom) :=
+  (rfl)
+
+/-- The morphism of a cone viewed as its own face is the identity morphism. -/
+@[simp]
+theorem faceAffineToricSchemeMap_refl (hi : IsIntegralLattice i) :
+    faceAffineToricSchemeMap hi (PointedCone.IsFaceOf.refl σ) =
+      𝟙 (affineToricScheme hi σ) := by
+  rw [faceAffineToricSchemeMap_def, faceAffineCoordinateRingMap_refl]
+  exact Spec.map_id _
+
+/-- The morphism of a composite face inclusion is the composite of the face morphisms. -/
+@[simp]
+theorem faceAffineToricSchemeMap_trans (hi : IsIntegralLattice i)
+    (hυτ : υ.IsFaceOf τ) (hτσ : τ.IsFaceOf σ) :
+    faceAffineToricSchemeMap hi hυτ ≫ faceAffineToricSchemeMap hi hτσ =
+      faceAffineToricSchemeMap hi (hυτ.trans hτσ) := by
+  rw [faceAffineToricSchemeMap_def, faceAffineToricSchemeMap_def,
+    faceAffineToricSchemeMap_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  exact congrArg Spec.map <| congrArg CommRingCat.ofHom <|
+    congrArg AlgHom.toRingHom (faceAffineCoordinateRingMap_trans hi hυτ hτσ)
+
+/-! ### Localizations and open immersions -/
 
 /-- For a character `m` in the dual semigroup of a finitely generated cone `σ`, the restriction
 map from the coordinate ring of `σ` to that of the face `σ ⊓ ker m` is the localization away from
@@ -128,25 +220,91 @@ variable {τ : PointedCone ℝ V}
 /-- For a face `τ` of a regular cone `σ`, the restriction map from the coordinate ring of `σ` to
 that of `τ` is the localization away from the monomial of a character in the dual semigroup
 of `σ`. -/
-theorem exists_isLocalization_away_affineCoordinateRingMap (hi : IsIntegralLattice i)
+theorem exists_isLocalization_away_faceAffineCoordinateRingMap (hi : IsIntegralLattice i)
     (hσ : IsRegularCone i σ) (hτ : τ.IsFaceOf σ) :
     ∃ m : dualSemigroup hi σ,
-      letI := (affineCoordinateRingMap (σ := τ) (τ := σ) hi hi (AddMonoidHom.id N) LinearMap.id
-        (fun _ ↦ rfl) (fun _ hx ↦ hτ.le hx)).toRingHom.toAlgebra
+      letI := (faceAffineCoordinateRingMap hi hτ).toRingHom.toAlgebra
       IsLocalization.Away (MonoidAlgebra.single (ofAdd m) (1 : ℂ))
         (affineCoordinateRing hi τ) := by
   obtain ⟨m, hm, rfl⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hτ
-  exact ⟨⟨m, hm⟩, isLocalization_away_affineCoordinateRingMap_inf_ker hi hσ.fg ⟨m, hm⟩⟩
+  have hh : hτ = PointedCone.isFaceOf_inf_ker
+      ((mem_dualSemigroup hi m).1 hm) := Subsingleton.elim _ _
+  subst hτ
+  refine ⟨⟨m, hm⟩, ?_⟩
+  rw [faceAffineCoordinateRingMap_def]
+  exact isLocalization_away_affineCoordinateRingMap_inf_ker hi hσ.fg ⟨m, hm⟩
 
 /-- For a face `τ` of a regular cone `σ`, the morphism from the affine toric scheme of `τ` to that
 of `σ` is an open immersion. -/
-theorem isOpenImmersion_affineToricSchemeMap {N : Type u} [AddCommGroup N] {i : N →+ V}
+theorem isOpenImmersion_faceAffineToricSchemeMap {N : Type u} [AddCommGroup N] {i : N →+ V}
     (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ) (hτ : τ.IsFaceOf σ) :
-    IsOpenImmersion (affineToricSchemeMap (σ := τ) (τ := σ) hi hi (AddMonoidHom.id N)
-      LinearMap.id (fun _ ↦ rfl) (fun _ hx ↦ hτ.le hx)) := by
+    IsOpenImmersion (faceAffineToricSchemeMap hi hτ) := by
   obtain ⟨m, hm, rfl⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hτ
-  exact isOpenImmersion_affineToricSchemeMap_inf_ker hi hσ.fg ⟨m, hm⟩
+  have hh : hτ = PointedCone.isFaceOf_inf_ker
+      ((mem_dualSemigroup hi m).1 hm) := Subsingleton.elim _ _
+  subst hτ
+  rw [faceAffineToricSchemeMap_def, faceAffineCoordinateRingMap_def]
+  convert isOpenImmersion_affineToricSchemeMap_inf_ker hi hσ.fg ⟨m, hm⟩ using 1
+  exact (affineToricSchemeMap_def ..).symm
 
 end IsRegularCone
+
+/-! ### Pairwise overlaps in a regular fan -/
+
+namespace Fan
+
+variable (Φ : Fan i)
+
+/-- The affine toric chart indexed by a cone of a fan. -/
+noncomputable abbrev affineToricChart (σ : Φ.cones) : Scheme :=
+  affineToricScheme Φ.lattice σ
+
+/-- The affine toric scheme of the intersection of two cones is their pairwise overlap chart. -/
+noncomputable abbrev affineToricOverlap (σ τ : Φ.cones) : Scheme :=
+  affineToricScheme Φ.lattice (σ.1 ⊓ τ.1)
+
+/-- The canonical map from a pairwise overlap into its left affine chart. -/
+noncomputable def affineToricOverlapLeft (σ τ : Φ.cones) :
+    Φ.affineToricOverlap σ τ ⟶ Φ.affineToricChart σ :=
+  faceAffineToricSchemeMap Φ.lattice
+    (Φ.inf_isFaceOf_left σ.property τ.property)
+
+/-- The left overlap map is the face morphism for `σ ⊓ τ ≼ σ`. -/
+theorem affineToricOverlapLeft_def (σ τ : Φ.cones) :
+    Φ.affineToricOverlapLeft σ τ =
+      faceAffineToricSchemeMap Φ.lattice
+        (Φ.inf_isFaceOf_left σ.property τ.property) :=
+  (rfl)
+
+/-- The canonical map from a pairwise overlap into its right affine chart. -/
+noncomputable def affineToricOverlapRight (σ τ : Φ.cones) :
+    Φ.affineToricOverlap σ τ ⟶ Φ.affineToricChart τ :=
+  faceAffineToricSchemeMap Φ.lattice
+    (Φ.inf_isFaceOf_right σ.property τ.property)
+
+/-- The right overlap map is the face morphism for `σ ⊓ τ ≼ τ`. -/
+theorem affineToricOverlapRight_def (σ τ : Φ.cones) :
+    Φ.affineToricOverlapRight σ τ =
+      faceAffineToricSchemeMap Φ.lattice
+        (Φ.inf_isFaceOf_right σ.property τ.property) :=
+  (rfl)
+
+/-- In a regular fan, the map from a pairwise overlap into its left chart is an open
+immersion. -/
+theorem isOpenImmersion_affineToricOverlapLeft (hΦ : Φ.IsRegular) (σ τ : Φ.cones) :
+    IsOpenImmersion (Φ.affineToricOverlapLeft σ τ) :=
+  ((Φ.isRegular_iff.mp hΦ) σ σ.property).isOpenImmersion_faceAffineToricSchemeMap
+    Φ.lattice
+    (Φ.inf_isFaceOf_left σ.property τ.property)
+
+/-- In a regular fan, the map from a pairwise overlap into its right chart is an open
+immersion. -/
+theorem isOpenImmersion_affineToricOverlapRight (hΦ : Φ.IsRegular) (σ τ : Φ.cones) :
+    IsOpenImmersion (Φ.affineToricOverlapRight σ τ) :=
+  ((Φ.isRegular_iff.mp hΦ) τ τ.property).isOpenImmersion_faceAffineToricSchemeMap
+    Φ.lattice
+    (Φ.inf_isFaceOf_right σ.property τ.property)
+
+end Fan
 
 end TauCeti.Toric
