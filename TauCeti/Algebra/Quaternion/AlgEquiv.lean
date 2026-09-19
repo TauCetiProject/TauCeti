@@ -93,6 +93,8 @@ theorem reducedTrace_eq_of_algEquiv (h2 : IsRegular (2 : R))
 /-- **An algebra equivalence of quaternion algebras commutes with conjugation**, once `2` is
 regular. Together with `StarAlgEquiv.ofAlgEquiv` this makes every such equivalence a
 `⋆`-algebra equivalence. -/
+-- This cannot be a simp lemma: its left-hand side has variable head `f`, so simp cannot index it;
+-- callers should rewrite with `map_star_of_algEquiv h2`.
 theorem map_star_of_algEquiv (h2 : IsRegular (2 : R))
     (f : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] ℍ[R,d₁,d₂,d₃]) (x : ℍ[R,c₁,c₂,c₃]) :
     f (star x) = star (f x) := by
