@@ -21,12 +21,13 @@ The point of naming the integer is that `K` carries no order. Statements such as
 dominant" or "`⟨lam + ρ, α^∨⟩` is positive" are not about `K` at all: they are about the integers
 that integrality produces, and over an arbitrary characteristic-zero field they can only be made
 by naming those integers. `TauCeti.coweightPairing lam i` is that name. Being `ℤ`-valued it is
-total in `lam`, and off the integral weights it is junk: the cast equation
-`TauCeti.intCast_coweightPairing` saying what the integer *is*, and the algebraic laws that follow
-from it, therefore carry the integrality hypothesis that makes them meaningful. What needs no
-hypothesis is a weight whose value at one coroot is already displayed as an integer -- exhibiting
-that integer *is* integrality at that root -- and that is how the pairing is computed here
-(`TauCeti.coweightPairing_eq_of_apply_coroot_eq_intCast`).
+total in `lam`: it is the integer that `lam (αᵢ^∨)` names whenever that one value is an integer,
+and it is unconstrained only at the roots where that value is not. Integrality is what guarantees
+this at every root at once, so the cast equation `TauCeti.intCast_coweightPairing` saying what the
+integer *is* -- a statement about all of `lam` -- and the algebraic laws that follow from it carry
+the integrality hypothesis. What needs no hypothesis is a single coroot value already displayed as
+an integer -- exhibiting that integer *is* integrality at that root -- and that is how the pairing
+is computed here (`TauCeti.coweightPairing_eq_of_apply_coroot_eq_intCast`).
 
 The integral weights are closed under the operations of `TauCeti.IsIntegralWeight.add`,
 `TauCeti.IsIntegralWeight.neg` and `TauCeti.IsIntegralWeight.zsmul`, so they form a `ℤ`-submodule
@@ -38,7 +39,8 @@ vector `ρ` of a base does too is proved with the rest of the dominance theory, 
 ## Main definitions
 
 * `TauCeti.coweightPairing lam i`: the integer `⟨lam, αᵢ^∨⟩` pairing a weight with the coroot of
-  the root `i`, junk unless `lam` is integral.
+  the root `i`; the value of `lam` on that coroot whenever that value is an integer -- so at every
+  root when `lam` is integral -- and unconstrained where it is not.
 * `TauCeti.integralWeightLattice H`: the integral weights, as a `ℤ`-submodule of
   `Module.Dual K H`.
 
@@ -56,8 +58,9 @@ vector `ρ` of a base does too is proved with the rest of the dominance theory, 
 ## Implementation notes
 
 `TauCeti.coweightPairing` is the inverse image of `lam (αᵢ^∨)` under the integer cast, taken with
-`Function.invFun`; the cast is injective in characteristic zero, so on integral weights this is
-the unique integer with the right image, and no further choice is made.
+`Function.invFun`; the cast is injective in characteristic zero, so wherever that value is an
+integer -- in particular at every root of an integral weight -- this is the unique integer with the
+right image, and no further choice is made.
 
 `TauCeti.rootCartanWeight` of `TauCeti/Algebra/Lie/Weights/Root/CorootSpan.lean` is the same
 integer for a *root* in the first argument, where the root-chain coefficients compute it outright.
@@ -86,9 +89,11 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
 
 /-! ### The coroot pairings of a weight -/
 
-/-- **The coroot pairing `⟨lam, αᵢ^∨⟩` of a weight, as an integer.** For an integral weight `lam`
-this is the unique integer whose image in `K` is `lam (αᵢ^∨)`
-(`TauCeti.intCast_coweightPairing`); for any other linear form it is junk.
+/-- **The coroot pairing `⟨lam, αᵢ^∨⟩` of a weight, as an integer.** Whenever `lam (αᵢ^∨)` lies in
+the image of `ℤ` this is the unique integer mapping to it
+(`TauCeti.coweightPairing_eq_of_apply_coroot_eq_intCast`), which for an integral weight `lam` is the
+case at every root (`TauCeti.intCast_coweightPairing`); at a root where `lam (αᵢ^∨)` is not an
+integer the value is unconstrained.
 
 Making the pairing `ℤ`-valued is what lets dominance and positivity be stated over a field with no
 order: see the module docstring. -/
