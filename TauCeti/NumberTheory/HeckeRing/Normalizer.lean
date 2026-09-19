@@ -262,6 +262,26 @@ theorem commute_single_of_mem_normalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [S
   rw [Commute, SemiconjBy, single_mul_single_of_mem_normalizer R hx,
     single_mul_single_of_mem_normalizer_right R hx, hxy]
 
+/-- **A normalizing basis element commutes with another whenever conjugation by it fixes the
+other's double coset**, `x y x⁻¹ ∈ ΓyΓ`.
+
+This is the form to reach for in practice. `commute_single_of_mem_normalizer` asks for the coset
+identity `Γ(xy)Γ = Γ(yx)Γ`, which a caller almost never has directly; what a caller does have is a
+conjugation-stability statement about `y`, and this lemma does the transport: writing
+`x y x⁻¹ = l · y · r` with `l, r ∈ Γ`, the right factor is pushed back across `x` as
+`x⁻¹ r x ∈ Γ`, giving `x y = l · (y x) · (x⁻¹ r x)`. -/
+theorem commute_single_of_conj_mem_doubleCoset [IsHeckeTriple Δ Γ Γ] (R : Type*) [Semiring R]
+    (hx : (x : G) ∈ Subgroup.normalizer (Γ : Set G))
+    (hconj : (x : G) * y * (x : G)⁻¹ ∈ DoubleCoset.doubleCoset (y : G) Γ Γ) :
+    Commute (single R (HeckeCoset.mk Γ Γ x) 1) (single R (HeckeCoset.mk Γ Γ y) 1) := by
+  obtain ⟨l, hl, r, hr, hlr⟩ := DoubleCoset.mem_doubleCoset.mp hconj
+  refine commute_single_of_mem_normalizer R hx (HeckeCoset.mk_eq_mk_of_mem
+    (DoubleCoset.mem_doubleCoset.mpr
+      ⟨l, hl, _, (Subgroup.mem_normalizer_iff''.mp hx r).mp hr, ?_⟩))
+  push_cast
+  rw [mul_inv_eq_iff_eq_mul.mp hlr]
+  group
+
 end HeckeCosetModule
 
 end
