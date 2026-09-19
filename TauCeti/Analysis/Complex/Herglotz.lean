@@ -41,9 +41,9 @@ The proof has two steps.
 
 * `DiffContOnCl.circleAverage_herglotzRieszKernel_smul_re_add`: the Herglotz formula on a disc,
   recovering a holomorphic function from the boundary values of its real part.
-* `TauCeti.Measure.differentiableOn_integral_add_div_sub` and
-  `TauCeti.Measure.re_integral_add_div_sub_nonneg`: the Herglotz transform of a finite measure on
-  the circle is holomorphic on the disc with nonnegative real part.
+* `MeasureTheory.Measure.differentiableOn_integral_add_div_sub` and
+  `MeasureTheory.Measure.re_integral_add_div_sub_nonneg`: the Herglotz transform of a finite
+  measure on the circle is holomorphic on the disc with nonnegative real part.
 * `TauCeti.exists_isFiniteMeasure_eq_integral_add_div_sub`: **the Herglotz representation
   theorem**.
 * `TauCeti.differentiableOn_and_re_nonneg_iff_exists_eq_integral_add_div_sub`: the resulting
@@ -194,11 +194,10 @@ private lemma continuous_add_div_sub (hw : w ∈ ball (0 : ℂ) 1) :
   (continuous_subtype_val.add continuous_const).div (continuous_subtype_val.sub continuous_const)
     (coe_sub_ne_zero hw)
 
-namespace Measure
-
 /-- The Herglotz transform `w ↦ ∫ (z + w) / (z - w) dμ(z)` of a finite measure on the unit
 circle is holomorphic on the unit disc. -/
-theorem differentiableOn_integral_add_div_sub (μ : Measure Circle) [IsFiniteMeasure μ] :
+theorem _root_.MeasureTheory.Measure.differentiableOn_integral_add_div_sub
+    (μ : Measure Circle) [IsFiniteMeasure μ] :
     DifferentiableOn ℂ (fun w ↦ ∫ z : Circle, ((z : ℂ) + w) / ((z : ℂ) - w) ∂μ) (ball 0 1) := by
   intro w₀ hw₀
   have hw₀' : ‖w₀‖ < 1 := mem_ball_zero_iff.1 hw₀
@@ -239,7 +238,8 @@ theorem differentiableOn_integral_add_div_sub (μ : Measure Circle) [IsFiniteMea
 
 /-- The Herglotz transform of a measure on the unit circle has nonnegative real part on the unit
 disc. -/
-theorem re_integral_add_div_sub_nonneg (μ : Measure Circle) (hw : w ∈ ball (0 : ℂ) 1) :
+theorem _root_.MeasureTheory.Measure.re_integral_add_div_sub_nonneg
+    (μ : Measure Circle) (hw : w ∈ ball (0 : ℂ) 1) :
     0 ≤ (∫ z : Circle, ((z : ℂ) + w) / ((z : ℂ) - w) ∂μ).re := by
   by_cases hint : Integrable (fun z : Circle ↦ ((z : ℂ) + w) / ((z : ℂ) - w)) μ
   swap
@@ -250,8 +250,6 @@ theorem re_integral_add_div_sub_nonneg (μ : Measure Circle) (hw : w ∈ ball (0
     div_nonneg (sub_nonneg.2 (mem_ball_zero_iff.1 hw).le) (by positivity)
   exact hnonneg.trans (by simpa using
     le_re_herglotzRieszKernel (c := 0) (R := 1) (z := (z : ℂ)) (by simp) hw)
-
-end Measure
 
 /-! ### The Herglotz representation -/
 
