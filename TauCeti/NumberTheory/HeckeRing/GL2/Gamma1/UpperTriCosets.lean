@@ -123,12 +123,11 @@ lemma coe_natDiagGL_one (hp : 0 < p) :
   fin_cases i <;> fin_cases j <;> simp
 
 /-- The real matrix obtained by mapping `diag(1, p)` from `GL₂(ℚ)`, for nonzero `p`. -/
-lemma coe_map_natDiagGL_one [NeZero p] :
-    (((Matrix.GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ ℝ))
-        (natDiagGL 2 ![1, p]) : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
+@[simp] lemma coe_map_natDiagGL_one [NeZero p] :
+    (↑(natDiagGL 2 ![1, p]) : Matrix (Fin 2) (Fin 2) ℚ).map (algebraMap ℚ ℝ) =
       !![1, 0; 0, (p : ℝ)] := by
   ext i j
-  rw [Matrix.GeneralLinearGroup.map_apply, coe_natDiagGL_one (Nat.pos_of_neZero p)]
+  rw [coe_natDiagGL_one (Nat.pos_of_neZero p)]
   fin_cases i <;> fin_cases j <;> simp
 
 /-- **The Hecke double coset of `diag(1, p)` at level `Γ₁(N)`.** For `p ∣ N` this is the coset

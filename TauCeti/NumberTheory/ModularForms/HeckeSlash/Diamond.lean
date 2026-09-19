@@ -65,8 +65,9 @@ for the nebentypus specialization. This is the standard argument of Diamond--Shu
   the Hecke ring, at the unit-indexed element `⟨d⟩`.
 * `HeckeRing.GL2.isFiniteRelIndex_adjugateGL_natDiagGL`: the finite-relative-index instance
   needed to trace the adjugate translate.
-* `HeckeRing.GL2.trace_translate_adjugateGL_natDiagGL_eq_diamondOpCusp_heckeTCuspNat`: the
-  adjugate trace is `⟨n⟩⁻¹ Tₙ` on cusp forms.
+* `HeckeRing.GL2.trace_translate_adjugateGL_natDiagGL_eq_diamondOp_heckeTNat` and
+  `HeckeRing.GL2.trace_translate_adjugateGL_natDiagGL_eq_diamondOpCusp_heckeTCuspNat`: the
+  adjugate trace is `⟨n⟩⁻¹ Tₙ` on modular forms and on cusp forms.
 * `HeckeRing.GL2.commute_heckeTNat_diamondOp_inv` and
   `HeckeRing.GL2.commute_heckeTCuspNat_diamondOpCusp_inv`: at every index prime to the level,
   `Tₙ` commutes with the inverse diamond operator `⟨n⟩⁻¹`.
@@ -206,14 +207,14 @@ private theorem trace_translate_adjugateGL_natDiagGL_eq_heckeTNat_diamondOp
   apply DFunLike.coe_injective
   rw [coe_heckeTNat,
     TauCeti.heckeSlashSum_eq_coe_trace_translate k (diagCosetGamma1 N n) hδ
-      (TauCeti.map_map_mapGL (Gamma1 N)) (TauCeti.map_map_mapGL (Gamma1 N))]
+      (Subgroup.map_mapGL (Gamma1 N)) (Subgroup.map_mapGL (Gamma1 N))]
   refine congrArg DFunLike.coe (TauCeti.SlashInvariantForm.trace_eq_of_eq_of_coe_eq
     (by rw [hadj, conjAct_mapGL_mul_smul_Gamma1 hA]) ?_)
   rw [ModularForm.coe_translate, SlashInvariantForm.coe_translate,
     coe_diamondOp k _ ⟨A, hA⟩ hAd, ← SlashAction.slash_mul, hadj]
 
 /-- The modular-form double coset operator of `diag(n, 1)` is `⟨n⟩⁻¹ Tₙ`. -/
-private theorem trace_translate_adjugateGL_natDiagGL_eq_diamondOp_heckeTNat
+theorem trace_translate_adjugateGL_natDiagGL_eq_diamondOp_heckeTNat
     (hn : n.Coprime N)
     (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
     let _ := isFiniteRelIndex_adjugateGL_natDiagGL hn
@@ -234,7 +235,7 @@ private theorem trace_translate_adjugateGL_natDiagGL_eq_diamondOp_heckeTNat
   apply DFunLike.coe_injective
   rw [coe_diamondOp k _ ⟨A, hA⟩ hAd, coe_heckeTNat,
     TauCeti.heckeSlashSum_eq_coe_trace_translate k (diagCosetGamma1 N n) hδ
-      (TauCeti.map_map_mapGL (Gamma1 N)) (TauCeti.map_map_mapGL (Gamma1 N)),
+      (Subgroup.map_mapGL (Gamma1 N)) (Subgroup.map_mapGL (Gamma1 N)),
     ← TauCeti.SlashInvariantForm.coe_trace_translate_mul_of_mem_normalizer _ _
       (mapGL_mem_normalizer_Gamma1_map ℝ ⟨A, hA⟩)]
   refine congrArg DFunLike.coe (TauCeti.SlashInvariantForm.trace_eq_of_eq_of_coe_eq

@@ -189,7 +189,7 @@ right-coset decomposition is finite. This supplies the instance required by Math
 instance isFiniteRelIndex_conj_mapGL {G H : Subgroup SL(2, ℤ)}
     [Finite (DecompQuotient (H.map (mapGL ℚ)) (G.map (mapGL ℚ)) δ⁻¹)] :
     (ConjAct.toConjAct (φ δ)⁻¹ • G.map (mapGL ℝ)).IsFiniteRelIndex (H.map (mapGL ℝ)) := by
-  simpa only [map_map_mapGL] using
+  simpa only [Subgroup.map_mapGL] using
     (isFiniteRelIndex_ratCast_conj (Γ₁ := G.map (mapGL ℚ))
       (Γ₂ := H.map (mapGL ℚ)) (δ := δ))
 
@@ -209,7 +209,7 @@ theorem heckeSlashCuspFormEnd_eq_trace_translate {G : Subgroup SL(2, ℤ)}
   let := finite_decompQuotient_inv_of_mem_doubleCoset hδ
   apply DFunLike.coe_injective
   rw [coe_heckeSlashCuspFormEnd]
-  exact heckeSlashSum_eq_coe_trace_translate k D hδ (map_map_mapGL G) (map_map_mapGL G) f
+  exact heckeSlashSum_eq_coe_trace_translate k D hδ (Subgroup.map_mapGL G) (Subgroup.map_mapGL G) f
 
 open CongruenceSubgroup HeckeRing.GLn
 
@@ -223,7 +223,7 @@ theorem heckeTCuspNat_eq_trace_translate (N : ℕ) [NeZero N] (k : ℤ) (n : ℕ
   apply DFunLike.coe_injective
   rw [coe_heckeTCuspNat]
   apply heckeSlashSum_eq_coe_trace_translate k (diagCosetGamma1 N n) _
-    (map_map_mapGL (Gamma1 N)) (map_map_mapGL (Gamma1 N)) f
+    (Subgroup.map_mapGL (Gamma1 N)) (Subgroup.map_mapGL (Gamma1 N)) f
   rw [doubleCoset_out_diagCosetGamma1_eq_doubleCoset_natDiagGL]
   exact mem_doubleCoset_self _ _ _
 

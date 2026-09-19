@@ -141,7 +141,8 @@ lemma exists_adjugateGL_natDiagGL_eq {n : ℕ} [NeZero n] (hn : n.Coprime N) :
     constructor <;>
       refine Units.ext ?_ <;>
       rw [map_mul, map_mapGL, TauCeti.adjugateGL_val, Units.val_mul, Units.val_mul,
-        coe_map_natDiagGL_one, hAcoe, hBcoe, Matrix.adjugate_fin_two] <;>
+        Matrix.GeneralLinearGroup.val_map_apply, coe_map_natDiagGL_one, hAcoe, hBcoe,
+        Matrix.adjugate_fin_two] <;>
       ext i j <;>
       fin_cases i <;> fin_cases j <;>
       simp [Matrix.mul_apply, Fin.sum_univ_two]
