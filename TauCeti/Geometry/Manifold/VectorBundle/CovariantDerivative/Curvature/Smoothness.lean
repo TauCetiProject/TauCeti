@@ -16,10 +16,10 @@ iterated hom bundle. We express the existing algebraic `curvatureTensor` using
 continuous linear maps, so Mathlib's hom-bundle topology and smooth structure apply.
 The application equation identifies the two tensors, without any new choice of extensions.
 
-Smoothness follows by testing each of the three arguments on globally smooth sections
-and using `CovariantDerivative.contMDiff_curvatureOperator`. Thus the tensor can be
-evaluated on smooth sections along arbitrary smooth base maps, using Mathlib's
-`ContMDiff.clm_bundle_apply` three times.
+This smooth tensor-field packaging makes curvature available for subsequent geometric
+constructions, including Ricci and sectional curvature, while retaining the original
+pointwise tensor as its evaluation. It requires neither metric compatibility nor
+vanishing torsion.
 
 The curvature convention follows J. M. Lee, *Introduction to Riemannian Manifolds*,
 2nd ed., Springer GTM 176 (2018), Chapter 7, pp. 196–198, as in `curvatureTensor`.

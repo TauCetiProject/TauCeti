@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.BumpFunction
-import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
 /-!
 # Testing smooth bundle homomorphisms on sections
@@ -17,9 +16,9 @@ it sends every globally smooth section to a smooth section. This turns smoothnes
 tensorial operations on sections into smoothness of the associated tensor field, by
 applying the criterion once for each argument.
 
-The reverse implication uses `TauCeti.Manifold.contMDiffOn_hom_of_localFrame`, cutting
-off its local frame with a smooth bump function that equals one near the point, as in
-`TauCeti.Manifold.eq_of_contMDiff_tensorial`.
+The criterion applies over arbitrary smooth finite-dimensional manifolds, including
+noncompact manifolds and manifolds with boundary, and places no finite-dimensionality
+assumption on the target fibres.
 -/
 
 public section
