@@ -94,8 +94,7 @@ theorem explicitCoeff2_kummerShortExact_proj (x : H2 (AbsoluteGaloisGroup K) (Un
     refine (cocyclesMap2_apply _ _ _ _ _ _ _ _ c p.1 p.2).trans ?_
     simp [DiscreteShortExact.projDistribMulActionHom_apply, unitsCoeffPow_eq_nsmul]
 
-/-- **`H²(G_K, μₙ) → H²(G_K, (Kˢ)ˣ)` is injective**, on the explicit model: its kernel is the image
-of `δ¹` from `H¹(G_K, (Kˢ)ˣ)`, which vanishes by Hilbert 90. -/
+/-- **`H²(G_K, μₙ) → H²(G_K, (Kˢ)ˣ)` is injective**, on the explicit model. -/
 theorem explicitCoeff2_kummerShortExact_incl_injective :
     Function.Injective (explicitCoeff2 _ _ (kummerShortExact K n hn).inclDistribMulActionHom
       continuous_of_discreteTopology) := by
@@ -106,8 +105,8 @@ theorem explicitCoeff2_kummerShortExact_incl_injective :
   obtain ⟨y, rfl⟩ := hx'
   rw [Subsingleton.elim y 0, map_zero]
 
-/-- **The image of `H²(G_K, μₙ)` in `H²(G_K, (Kˢ)ˣ)` is the `n`-torsion**, on the explicit model:
-it is the kernel of the map induced by the `n`-th power map, which is multiplication by `n`. -/
+/-- **The image of `H²(G_K, μₙ)` in `H²(G_K, (Kˢ)ˣ)` is the `n`-torsion**, on the explicit
+model. -/
 -- Not `@[simp]`: simplifying the explicit quotient's additive structure exceeds the simp
 -- linter's deterministic typeclass-synthesis budget. Use this theorem explicitly to rewrite
 -- image membership.
@@ -167,9 +166,7 @@ theorem h2KummerToUnits_explicitH2AddEquivContinuousCohomology (hn : IsUnit (n :
   exact explicitH2AddEquivContinuousCohomology_coeffMap _ _ _
     (kummerShortExact K n hn).inclDistribMulActionHom x
 
-/-- **`H²(G_K, μₙ) → H²(G_K, (Kˢ)ˣ)` is injective** for `n` invertible in `K`. This is Hilbert 90
-read through the long exact sequence of the Kummer sequence: the term before it is
-`H¹(G_K, (Kˢ)ˣ)`, which vanishes. -/
+/-- **`H²(G_K, μₙ) → H²(G_K, (Kˢ)ˣ)` is injective** for `n` invertible in `K`. -/
 theorem h2KummerToUnits_injective (hn : IsUnit (n : K)) :
     Function.Injective (h2KummerToUnits K n).hom := by
   intro x y hxy
@@ -181,8 +178,7 @@ theorem h2KummerToUnits_injective (hn : IsUnit (n : K)) :
     ((explicitH2AddEquivContinuousCohomology _ _).injective hxy))
 
 /-- **The image of `H²(G_K, μₙ)` in `H²(G_K, (Kˢ)ˣ)` is the `n`-torsion** for `n` invertible in
-`K`. This is exactness of the long exact sequence of the Kummer sequence at `H²(G_K, (Kˢ)ˣ)`, the
-next map being multiplication by `n`. -/
+`K`. -/
 -- Not `@[simp]`: the invertibility witness does not occur in the left-hand side, so the simplifier
 -- cannot infer it and the rule would never apply.
 theorem h2KummerToUnits_range (hn : IsUnit (n : K))

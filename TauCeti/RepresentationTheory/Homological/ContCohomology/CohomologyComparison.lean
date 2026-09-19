@@ -186,9 +186,8 @@ theorem explicitH2AddEquivContinuousCohomology_symm_apply
     AddEquiv.apply_symm_apply]
 
 /-- The degree-two comparison carries the explicit pullback `TauCeti.ContCohomology.explicitMap2`
-along a compatible pair to Mathlib's `ContinuousCohomology.map` along the same pair. On a cocycle
-this is the naturality of the cocycle comparison, `cocycleEquiv2_naturality`, followed by the
-naturality of the canonical projection onto homology. -/
+along a compatible pair to Mathlib's `ContinuousCohomology.map` along the same pair. This is the
+naturality equation used to transport general compatible-pair maps between the two models. -/
 theorem explicitH2AddEquivContinuousCohomology_map
     (H N : Type u) [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [LocallyCompactSpace H]
     [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction H N]
@@ -208,9 +207,8 @@ theorem explicitH2AddEquivContinuousCohomology_map
       (cocycleEquiv2 G M c))
 
 /-- The degree-two comparison carries the explicit coefficient map to the canonical coefficient
-map `TauCeti.ContinuousCohomology.coeffMap` attached to the same equivariant homomorphism. This is
-`explicitH2AddEquivContinuousCohomology_map` at the identity of `G`, where the compatible pair is
-the coefficient morphism itself. -/
+map `TauCeti.ContinuousCohomology.coeffMap` attached to the same equivariant homomorphism. This
+naturality equation transports coefficient maps between the two models. -/
 theorem explicitH2AddEquivContinuousCohomology_coeffMap
     (N : Type u) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
     [DistribMulAction G N] [ContinuousSMul G N] (f : M →+[G] N) (x : H2 G M) :
