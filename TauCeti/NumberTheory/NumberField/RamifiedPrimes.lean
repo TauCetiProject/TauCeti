@@ -30,6 +30,9 @@ natural primes, which is the form in which `t` is counted.
   discriminant.
 * `NumberField.coprime_natAbs_discr_of_isUnramifiedIn`: an unramified prime is coprime to the
   discriminant.
+* `NumberField.ramifiedPrimes_eq_of_algEquiv`: isomorphic number fields have the same ramified
+  primes.
+* `NumberField.ramifiedPrimes_rat`: no prime ramifies in `ℚ`.
 * `NumberField.finite_ramifiedPrimes`: only finitely many primes ramify.
 * `NumberField.ramifiedPrimes_nonempty`: some prime ramifies, unless `K = ℚ`
   (Minkowski, via `NumberField.exists_not_isUnramifiedIn`).
@@ -72,6 +75,26 @@ theorem mem_ramifiedPrimes_iff_dvd_discr {p : ℕ} (hp : p.Prime) :
   rw [mem_ramifiedPrimes_iff, and_iff_right hp,
     ← NumberField.not_dvd_discr_iff_isUnramifiedIn K (𝓞 K) (Nat.prime_iff_prime_int.mp hp),
     not_not]
+
+/-- **Isomorphic number fields have the same ramified primes**, since they have the same
+discriminant (`NumberField.discr_eq_discr_of_algEquiv`). -/
+theorem ramifiedPrimes_eq_of_algEquiv {L : Type*} [Field L] [NumberField L] (f : K ≃ₐ[ℚ] L) :
+    ramifiedPrimes K = ramifiedPrimes L := by
+  ext p
+  by_cases hp : p.Prime
+  · rw [mem_ramifiedPrimes_iff_dvd_discr hp, mem_ramifiedPrimes_iff_dvd_discr hp,
+      NumberField.discr_eq_discr_of_algEquiv K f]
+  · simp [hp]
+
+/-- **No prime ramifies in `ℚ`**, whose discriminant is `1`. -/
+@[simp]
+theorem ramifiedPrimes_rat : ramifiedPrimes ℚ = ∅ := by
+  ext p
+  simp only [Set.mem_empty_iff_false, iff_false]
+  intro hp
+  have h := (mem_ramifiedPrimes_iff_dvd_discr hp.1).mp hp
+  rw [NumberField.discr_rat] at h
+  exact hp.1.not_dvd_one (Int.natCast_dvd_natCast.mp (by exact_mod_cast h))
 
 -- Source. The hypothesis this discharges is
 -- `hcop : ((NumberField.discr L).natAbs).Coprime m` in the Birkbeck--Brasca Chebotarev

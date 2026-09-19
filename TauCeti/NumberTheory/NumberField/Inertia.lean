@@ -68,6 +68,8 @@ fields is Kummer theory over `ℚ` and is not formalised here.
   `TauCeti/FieldTheory/Galois/IsGaloisGroup.lean`).
 * `NumberField.aut_exponent_dvd_finrank_of_isUnramifiedIn`: the resulting degree bound for the
   automorphism group of an abelian number-field extension and an arbitrary intermediate field.
+* `NumberField.ramifiedPrimes_iSup`: in a number field Galois over `ℚ`, a compositum of
+  intermediate fields ramifies exactly at the primes ramifying in one of them.
 
 ## References
 
@@ -324,5 +326,33 @@ theorem aut_exponent_dvd_finrank_of_isUnramifiedIn (F : IntermediateField ℚ M)
     · exact hunr q hq hq0) σ
   rw [IsGaloisGroup.index_eq_finrank H ℚ F M] at hpow
   exact hpow
+
+end NumberField
+
+namespace NumberField
+
+variable {K : Type*} [Field K] [NumberField K] [IsGalois ℚ K]
+
+/-- **The ramified primes of a compositum.** Let `K` be a number field Galois over `ℚ` and let
+`E i` be intermediate fields of `K`. A rational prime ramifies in the compositum `⨆ i, E i`
+exactly when it ramifies in one of the `E i`.
+
+By `NumberField.notMem_ramifiedPrimes_iff_forall_inertia_le`, a prime `p` is unramified in an
+intermediate field exactly when that field lies in the fixed field of the inertia subgroup of
+every prime above `p`; and a compositum lies in a field exactly when each factor does. -/
+theorem ramifiedPrimes_iSup {ι : Sort*} (E : ι → IntermediateField ℚ K) :
+    ramifiedPrimes (⨆ i, E i : IntermediateField ℚ K) = ⋃ i, ramifiedPrimes (E i) := by
+  ext p
+  rw [Set.mem_iUnion, ← not_iff_not, not_exists]
+  by_cases hp : p.Prime
+  · have key (F : IntermediateField ℚ K) : p ∉ ramifiedPrimes F ↔
+        ∀ P : Ideal (𝓞 K), P.IsPrime → P.LiesOver (Ideal.span {(p : ℤ)}) →
+          F ≤ IntermediateField.fixedField (P.inertia Gal(K/ℚ)) := by
+      rw [notMem_ramifiedPrimes_iff_forall_inertia_le (K := K) (F := F)
+        (fixingSubgroup Gal(K/ℚ) (F : Set K)) hp]
+      exact forall₃_congr fun P _ _ => (IntermediateField.le_iff_le _ _).symm
+    simp only [key, iSup_le_iff]
+    exact ⟨fun h i P hP hPp => h P hP hPp i, fun h P hP hPp i => h i P hP hPp⟩
+  · simp [mem_ramifiedPrimes_iff, hp]
 
 end NumberField
