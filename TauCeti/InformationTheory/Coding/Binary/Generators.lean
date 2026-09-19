@@ -59,6 +59,7 @@ theorem isDoublyEven_span_iff_of_le_euclideanDual {s : Set (ι → ZMod 2)}
 
 /-- A binary span is doubly even exactly when the generators have weight divisible by four
 and every pair of generators is orthogonal. -/
+@[simp]
 theorem isDoublyEven_span_iff {s : Set (ι → ZMod 2)} :
     IsDoublyEven (Submodule.span (ZMod 2) s) ↔
       (∀ x ∈ s, 4 ∣ hammingNorm x) ∧ (∀ x ∈ s, ∀ y ∈ s, x ⬝ᵥ y = 0) := by
@@ -75,6 +76,7 @@ theorem isDoublyEven_span_iff {s : Set (ι → ZMod 2)} :
 
 /-- A binary row code is doubly even exactly when every row has weight divisible by four
 and its Gram matrix is zero. The matrix may have dependent rows or no rows. -/
+@[simp]
 theorem isDoublyEven_generatedBy_iff [Fintype ρ] {G : Matrix ρ ι (ZMod 2)} :
     IsDoublyEven G.generatedBy ↔
       (∀ r, 4 ∣ hammingNorm (G.row r)) ∧ G * G.transpose = 0 := by
