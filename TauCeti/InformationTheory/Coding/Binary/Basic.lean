@@ -73,6 +73,7 @@ theorem dotProduct_one_eq_hammingNorm (x : ι → ZMod 2) :
 
 /-- The sum of two binary words of weights divisible by four again has weight divisible by
 four exactly when the two words are orthogonal. -/
+@[simp]
 theorem four_dvd_hammingNorm_add_iff {x y : ι → ZMod 2}
     (hx : 4 ∣ hammingNorm x) (hy : 4 ∣ hammingNorm y) :
     4 ∣ hammingNorm (x + y) ↔ x ⬝ᵥ y = 0 := by
