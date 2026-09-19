@@ -34,7 +34,10 @@ open scoped ENNReal
 
 namespace TauCeti
 
-/-- The measure on `Circle` with density `φ` with respect to normalized arc length. -/
+/-- The measure on `Circle` with density `max φ 0` with respect to normalized arc length.
+
+Negative values of `φ` are truncated to `0` by `ENNReal.ofReal`; for a nonnegative `φ` the density
+is `φ` itself. -/
 def circleDensityMeasure (φ : ℂ → ℝ) : Measure Circle :=
   ((volume.restrict (Ioc 0 (2 * π))).withDensity
     fun θ ↦ ENNReal.ofReal ((2 * π)⁻¹ * φ (circleMap 0 1 θ))).map Circle.exp

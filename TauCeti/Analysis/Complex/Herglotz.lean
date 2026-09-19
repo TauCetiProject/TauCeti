@@ -165,8 +165,7 @@ circle is holomorphic on the unit disc. -/
 theorem _root_.MeasureTheory.Measure.differentiableOn_herglotzTransform
     (μ : Measure Circle) [IsFiniteMeasure μ] :
     DifferentiableOn ℂ μ.herglotzTransform (ball 0 1) := by
-  change DifferentiableOn ℂ (fun w ↦ μ.herglotzTransform w) (ball 0 1)
-  simp_rw [Measure.herglotzTransform_def]
+  rw [funext μ.herglotzTransform_def]
   intro w₀ hw₀
   have hw₀' : ‖w₀‖ < 1 := mem_ball_zero_iff.1 hw₀
   set ε : ℝ := (1 - ‖w₀‖) / 2 with hε_def
@@ -274,7 +273,7 @@ theorem exists_isFiniteMeasure_eq_herglotzTransform_add
     exists_isFiniteMeasure_comp_mul_eq_integral_add_div_sub hF hre
       (by simp only [hr_def, sub_nonneg]
           exact div_le_one_of_le₀ (by linarith [n.cast_nonneg (α := ℝ)]) (by positivity))
-      (by simp only [hr_def]; linarith [show 0 < 1 / ((n : ℝ) + 1) by positivity])
+      (by simp only [hr_def]; linarith [Nat.one_div_pos_of_nat (α := ℝ) (n := n)])
   choose μs hμs hrep using hdil
   -- Evaluating at the centre shows that every `μs n` has mass `(F 0).re`.
   have hre₀ : 0 ≤ (F 0).re := hre 0 (mem_ball_self one_pos)
@@ -301,10 +300,9 @@ theorem exists_isFiniteMeasure_eq_herglotzTransform_add
       simpa using ((continuous_ofReal.tendsto 1).comp hr_lim).mul_const w
     exact ((hF.continuousOn.continuousAt (isOpen_ball.mem_nhds hw)).tendsto.comp h).mono_left hU
   exact tendsto_nhds_unique hFlim ((hconv.add_const _).congr fun n ↦ by
-    change (∫ z : Circle, ((z : ℂ) + w) / ((z : ℂ) - w) ∂μs n) + (F 0).im * I =
-      F (r n * w)
-    rw [← Measure.herglotzTransform_def]
-    exact (hrep n w hw).symm)
+    rw [hrep n w hw, Measure.herglotzTransform_def]
+    simp only [FiniteMeasure.toMeasure_mk, BoundedContinuousFunction.mkOfCompact_apply,
+      ContinuousMap.coe_mk, μf])
 
 /-- **The Herglotz representation theorem**, as a characterization: a function on the unit disc
 is holomorphic with nonnegative real part if and only if it is the Herglotz transform of a finite
