@@ -13,7 +13,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 A group `H` presented as cyclic of order `m` by a coordinate `e : H ≃* Multiplicative (ZMod m)`
 has its characters named by the `m`-th roots of unity: the character attached to `ζ` sends the
 element with coordinate `i` to `ζ ^ i`. This file reads Mathlib's `AddChar.zmodChar` through such
-a coordinate to get `TauCeti.zmodCoordChar`, and shows that a *primitive* root of unity gives a
+a coordinate to get `MulEquiv.zmodCoordChar`, and shows that a *primitive* root of unity gives a
 faithful character.
 
 The coordinate is data, not merely the existence of `IsCyclic H`: the character depends on which
@@ -24,18 +24,18 @@ specializations of this one.
 
 ## Main definitions
 
-* `TauCeti.zmodCoordChar`: the character sending the element with coordinate `i` to `ζ ^ i`, for
+* `MulEquiv.zmodCoordChar`: the character sending the element with coordinate `i` to `ζ ^ i`, for
   `ζ` an `m`-th root of unity.
 
 ## Main results
 
-* `TauCeti.zmodCoordChar_injective`: the character attached to a *primitive* `m`-th root of unity
+* `MulEquiv.zmodCoordChar_injective`: the character attached to a *primitive* `m`-th root of unity
   is faithful.
 -/
 
 public section
 
-namespace TauCeti
+namespace MulEquiv
 
 variable {H M : Type*} [Group H] [CommMonoid M] {m : ℕ} [NeZero m] {ζ : M}
 
@@ -62,4 +62,4 @@ theorem zmodCoordChar_injective (e : H ≃* Multiplicative (ZMod m)) (h : IsPrim
     (Multiplicative.toAdd (e x))).mp (by rwa [AddChar.zmodChar_apply])
   exact e.map_eq_one_iff.mp (toAdd_eq_zero.mp hzero)
 
-end TauCeti
+end MulEquiv

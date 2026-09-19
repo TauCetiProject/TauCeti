@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.Index.Two
 public import TauCeti.RepresentationTheory.Induction.Mackey.Irreducible
 public import TauCeti.RepresentationTheory.LinearCharacter
+import Mathlib.GroupTheory.IndexNormal
 
 /-!
 # Inducing a linear character from a normal subgroup
@@ -122,6 +123,7 @@ theorem simple_indFDRep_ofLinearCharacter_iff (χ : N →* kˣ) :
   exact ⟨fun h s hs => by simpa using h s⁻¹ (fun hc => hs (by simpa using inv_mem hc)),
     fun h s hs => by simpa using h s⁻¹ (fun hc => hs (by simpa using inv_mem hc))⟩
 
+omit [N.Normal] in
 /-- **The Mackey criterion for a linear character of an inverted subgroup of index two:** the
 induced representation is irreducible exactly when some value of `χ` is not a square root of `1`.
 Conjugation by any element outside `N` inverts it, by
@@ -131,6 +133,7 @@ outside element `s` only. -/
 theorem simple_indFDRep_ofLinearCharacter_iff_of_conj_eq_inv (hindex : N.index = 2) {s : G}
     (hs : s ∉ N) (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) (χ : N →* kˣ) :
     Simple (indFDRep (FDRep.ofLinearCharacter χ)) ↔ ∃ x, χ x ^ 2 ≠ 1 := by
+  let _ : N.Normal := Subgroup.normal_of_index_eq_two hindex
   rw [simple_indFDRep_ofLinearCharacter_iff]
   -- Conjugation by any `t` outside `N` inverts `χ`, so `χ ({}^t x) ≠ χ x` says exactly that `χ x`
   -- is not its own inverse; only the existence of such an `x` is left on either side.
