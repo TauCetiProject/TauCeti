@@ -34,8 +34,11 @@ central character on the class sums are a common left eigenrow of the class-mult
 zero enters only through that conversion, which divides by the degrees `χ(1)`.
 
 What the count is not: it counts triples, not isomorphism classes; it puts no generation condition
-on the three entries; and a conjugacy class of a permutation group is finer than a cycle type, so
-it is not a count of triples with prescribed cycle types.
+on the three entries; and its data are three conjugacy classes of `G`, not three cycle types. For a
+permutation group `G` the two differ: a single cycle type of the ambient symmetric group can split
+into several `G`-conjugacy classes, and then a count of triples of prescribed cycle types is a sum
+of several of these counts. They agree when the cycle type does determine the class, as in the
+full symmetric group of the worked `S₃` example below.
 
 ## Main definitions
 
@@ -267,8 +270,9 @@ theorem sum_characterTable_threeCycle_transposition (k : Type u) [Field k] [IsAl
   have h := card_productOneTriples_eq_sum_characterTable (k := k) (ConjClasses.mk (finRotate 3))
     (ConjClasses.mk (Equiv.swap (0 : Fin 3) 1)) (ConjClasses.mk (Equiv.swap (0 : Fin 3) 1))
   rw [card_productOneTriples_threeCycle_transposition, hthree, htrans, hcard] at h
-  push_cast at h
-  rw [show (2 : k) * 3 * 3 / 6 = 3 by norm_num] at h
+  -- Normalizing evaluates the class-size factor `2 * 3 * 3 / 6` to `3` in `h`, and rewrites both
+  -- character sums to `TauCeti.characterTable_apply` normal form so that they match.
+  norm_num at h ⊢
   refine mul_left_cancel₀ (three_ne_zero : (3 : k) ≠ 0) ?_
   rw [← h]
   norm_num
