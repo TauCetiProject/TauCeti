@@ -145,7 +145,7 @@ theorem projectiveStableFunctor_map_suspensionMap_eq {X Y : C} (f : X ⟶ Y)
 
 /-- Suspension from the exact category to its stable quotient. Functoriality holds in the
 quotient because different lifts between injective presentations differ through an injective. -/
-noncomputable abbrev suspensionToStable : C ⥤ E.ProjectiveStableCategory where
+public noncomputable def suspensionToStable : C ⥤ E.ProjectiveStableCategory where
   obj X := E.projectiveStableFunctor.obj (hE.suspensionObj X)
   map f := E.projectiveStableFunctor.map (hE.suspensionMap f)
   map_id X := by
@@ -156,9 +156,29 @@ noncomputable abbrev suspensionToStable : C ⥤ E.ProjectiveStableCategory where
       (hE.suspensionMiddleMap f ≫ hE.suspensionMiddleMap g)
       (hE.suspensionMap f ≫ hE.suspensionMap g) (by simp) (by simp)
 
-noncomputable instance suspensionToStable_additive : (hE.suspensionToStable).Additive where
+/-- Suspension to the stable quotient sends `X` to the image of `ΣX`. -/
+@[simp]
+public theorem suspensionToStable_obj (X : C) :
+    hE.suspensionToStable.obj X =
+      E.projectiveStableFunctor.obj (hE.suspensionObj X) :=
+  (rfl)
+
+/-- Suspension to the stable quotient sends `f` to the image of the chosen `suspensionMap`. -/
+@[simp]
+public theorem suspensionToStable_map {X Y : C} (f : X ⟶ Y) :
+    hE.suspensionToStable.map f =
+      eqToHom (hE.suspensionToStable_obj X) ≫
+        E.projectiveStableFunctor.map (hE.suspensionMap f) ≫
+          eqToHom (hE.suspensionToStable_obj Y).symm :=
+  (conj_eqToHom_iff_heq _ _ (hE.suspensionToStable_obj X)
+    (hE.suspensionToStable_obj Y)).2 HEq.rfl
+
+public noncomputable instance suspensionToStable_additive : (hE.suspensionToStable).Additive where
   map_add := by
     intro X Y f g
+    change E.projectiveStableFunctor.map (hE.suspensionMap (f + g)) =
+      E.projectiveStableFunctor.map (hE.suspensionMap f) +
+        E.projectiveStableFunctor.map (hE.suspensionMap g)
     simpa using hE.projectiveStableFunctor_map_suspensionMap_eq (f := f + g)
       (hE.suspensionMiddleMap f + hE.suspensionMiddleMap g)
       (hE.suspensionMap f + hE.suspensionMap g) (by simp) (by simp)
@@ -189,24 +209,30 @@ theorem suspensionToStable_kills_projectiveStableIdeal :
   rw [hzero.eq_of_tgt ((hE.suspensionToStable).map i) 0, zero_comp]
 
 /-- The additive suspension endofunctor on the stable category of a Frobenius exact structure. -/
-noncomputable abbrev stableSuspension :
+public noncomputable def stableSuspension :
     E.ProjectiveStableCategory ⥤ E.ProjectiveStableCategory :=
   E.projectiveStableIdeal.lift hE.suspensionToStable
     hE.suspensionToStable_kills_projectiveStableIdeal
 
 /-- On objects represented by `X`, stable suspension is represented by `ΣX`. -/
 @[simp]
-theorem stableSuspension_obj_projectiveStableFunctor_obj (X : C) :
+public theorem stableSuspension_obj_projectiveStableFunctor_obj (X : C) :
     hE.stableSuspension.obj (E.projectiveStableFunctor.obj X) =
       E.projectiveStableFunctor.obj (hE.suspensionObj X) :=
-  rfl
+  by
+    simp only [stableSuspension, CategoryTheory.Quotient.lift_obj_functor_obj,
+      hE.suspensionToStable_obj]
 
 /-- On represented morphisms, stable suspension is induced by the chosen `suspensionMap`. -/
 @[simp]
-theorem stableSuspension_map_projectiveStableFunctor_map {X Y : C} (f : X ⟶ Y) :
+public theorem stableSuspension_map_projectiveStableFunctor_map {X Y : C} (f : X ⟶ Y) :
     hE.stableSuspension.map (E.projectiveStableFunctor.map f) =
-      E.projectiveStableFunctor.map (hE.suspensionMap f) :=
-  rfl
+      eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj X) ≫
+        E.projectiveStableFunctor.map (hE.suspensionMap f) ≫
+          eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj Y).symm :=
+  (conj_eqToHom_iff_heq _ _
+    (hE.stableSuspension_obj_projectiveStableFunctor_obj X)
+    (hE.stableSuspension_obj_projectiveStableFunctor_obj Y)).2 HEq.rfl
 
 end ExactStructure.IsFrobenius
 
