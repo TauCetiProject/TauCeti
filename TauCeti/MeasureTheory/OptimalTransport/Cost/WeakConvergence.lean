@@ -208,7 +208,7 @@ theorem tendsto_transportCost_of_tendsto {c : X × X → ℝ≥0∞} {M : ℝ≥
   obtain ⟨κ, hκ, hMκ⟩ : ∃ κ > 0, M * κ ≤ ε / 3 :=
     ⟨ε / 3 / M, ENNReal.div_pos hε3.ne' hM_top, ENNReal.mul_div_le⟩
   obtain ⟨N, A, hAm, hAd, hAu, hAf, hAball, hAlast⟩ :=
-    exists_partition_null_frontier_small_last (μ : Measure X) (half_pos hr) hκ
+    (μ : Measure X).exists_partition_null_frontier_small_last (half_pos hr) hκ
   set η : Fin (N + 1) → ℝ≥0∞ := fun i ↦ if i = Fin.last N then M else ε / 3 with hη
   have hcA (i : Fin (N + 1)) : ∀ x ∈ A i, ∀ y ∈ A i, c (x, y) ≤ η i := by
     intro x hx y hy

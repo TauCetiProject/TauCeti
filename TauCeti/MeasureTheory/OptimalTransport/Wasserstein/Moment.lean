@@ -44,7 +44,7 @@ tends to `0` along weak convergence by `TauCeti.tendsto_transportCost_of_tendsto
   have uniformly small tails along a `W_p`-convergent family;
 * `TauCeti.tendsto_wassersteinEDist_of_tendsto_lintegral` — on a separable pseudometric space,
   weak convergence together with convergence of the `p`-moments to a finite limit gives
-  convergence in the `p`-Wasserstein distance, for every finite exponent;
+  convergence in the `p`-Wasserstein distance, for every finite nonzero exponent;
 * `TauCeti.WassersteinSpace.tendsto_iff_tendsto_toProbabilityMeasure_and_lintegral` — the
   characterization of convergence in the Wasserstein space.
 
@@ -181,16 +181,13 @@ private theorem edist_rpow_le_min_add_indicator {q : ℝ} (hq : 0 < q) (x : X) (
 /-- **Weak convergence and convergence of moments give Wasserstein convergence.** On a separable
 pseudometric space, let probability measures `μᵢ` converge weakly to `μ`, and let their
 `p`-moments about a basepoint `x` converge to the finite `p`-moment of `μ`. Then for every finite
-exponent `p` the `p`-Wasserstein distance from `μᵢ` to `μ` tends to `0`. -/
+nonzero exponent `p` the `p`-Wasserstein distance from `μᵢ` to `μ` tends to `0`. -/
 theorem tendsto_wassersteinEDist_of_tendsto_lintegral [TopologicalSpace.SeparableSpace X]
-    (hp : p ≠ ∞) (h : Tendsto μs L (𝓝 μ)) (x : X)
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (h : Tendsto μs L (𝓝 μ)) (x : X)
     (hμ : ∫⁻ y, edist x y ^ p.toReal ∂(μ : Measure X) ≠ ∞)
     (hlim : Tendsto (fun i ↦ ∫⁻ y, edist x y ^ p.toReal ∂(μs i : Measure X)) L
       (𝓝 (∫⁻ y, edist x y ^ p.toReal ∂(μ : Measure X)))) :
     Tendsto (fun i ↦ wassersteinEDist p (μs i : Measure X) (μ : Measure X)) L (𝓝 0) := by
-  rcases eq_or_ne p 0 with rfl | hp0
-  · simp_rw [wassersteinEDist_exponent_zero ⟨_, isCoupling_prod _ _⟩]
-    exact tendsto_const_nhds
   have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   -- It suffices that the transport cost of `edist ^ p` tends to `0`.
   suffices hc : Tendsto (fun i ↦ transportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal)
@@ -277,7 +274,8 @@ theorem tendsto_iff_tendsto_toProbabilityMeasure_and_lintegral (hp : p ≠ ∞) 
     ((continuous_lintegral_edist_rpow hp x).tendsto μ).comp h⟩, fun ⟨hw, hm⟩ ↦ ?_⟩
   rw [tendsto_iff_edist_tendsto_0]
   simpa only [edist_def] using
-    tendsto_wassersteinEDist_of_tendsto_lintegral hp hw x (lintegral_edist_rpow_ne_top hp μ x) hm
+    tendsto_wassersteinEDist_of_tendsto_lintegral (zero_lt_one.trans_le Fact.out).ne' hp hw x
+      (lintegral_edist_rpow_ne_top hp μ x) hm
 
 end WassersteinSpace
 

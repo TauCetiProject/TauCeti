@@ -22,9 +22,9 @@ of arbitrarily small probability.
 
 * `MeasureTheory.Measure.exists_forall_null_frontier_thickening` — for countably many sets, some
   radius in any nonempty open interval gives thickenings whose boundaries are all null.
-* `TauCeti.exists_partition_null_frontier_small_last` — a probability measure on a separable
-  pseudometric space admits a finite measurable partition into null-boundary sets, all but the last
-  lying in balls of a prescribed radius and the last having arbitrarily small measure.
+* `MeasureTheory.Measure.exists_partition_null_frontier_small_last` — a probability measure on a
+  separable pseudometric space admits a finite measurable partition into null-boundary sets, all but
+  the last lying in balls of a prescribed radius and the last having arbitrarily small measure.
 -/
 
 public section
@@ -52,10 +52,6 @@ theorem exists_forall_null_frontier_thickening (μ : Measure Ω) [SFinite μ] {�
   refine ⟨r, hr, fun k ↦ ?_⟩
   by_contra hk
   exact hr' (mem_iUnion.2 ⟨k, pos_iff_ne_zero.2 hk⟩)
-
-end MeasureTheory.Measure
-
-namespace TauCeti
 
 variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   [TopologicalSpace.SeparableSpace X]
@@ -118,4 +114,4 @@ theorem exists_partition_null_frontier_small_last (μ : Measure X) [IsProbabilit
     refine hx.2 ⟨k, by omega⟩ (Fin.mk_lt_of_lt_val (by simpa using hk)) ?_
     simp [hf, hk, hxk]
 
-end TauCeti
+end MeasureTheory.Measure
