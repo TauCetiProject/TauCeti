@@ -60,7 +60,7 @@ def _root_.StarConvex.sphereFundamentalGroupMulEquiv (hV : StarConvex ℝ p V) (
     FundamentalGroup (sphere p r) x ≃*
       FundamentalGroup ↥(V \ {p}) (hV.sphereHomotopyEquiv hr hS x) :=
   MulEquiv.ofBijective (FundamentalGroup.map (hV.sphereHomotopyEquiv hr hS).toFun x)
-    ((hV.sphereHomotopyEquiv hr hS).bijective_fundamentalGroup_map x)
+    ((hV.sphereHomotopyEquiv hr hS).fundamentalGroup_map_bijective x)
 
 /-- The isomorphism `StarConvex.sphereFundamentalGroupMulEquiv` is the map induced on fundamental
 groups by the inclusion of the sphere. -/

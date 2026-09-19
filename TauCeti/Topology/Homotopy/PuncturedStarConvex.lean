@@ -24,7 +24,7 @@ In particular the inclusion of the sphere into `V \ {p}` is a homotopy equivalen
 convex subset of `ℂ` this is the reduction of the fundamental group of a punctured convex domain
 to that of a circle.
 
-Star-convexity about the puncture is essential: a punctured annulus is connected and open but is
+Connectedness and openness alone do not suffice: a punctured annulus is connected and open but is
 not homotopy equivalent to a circle.
 
 ## Main declarations
@@ -32,6 +32,8 @@ not homotopy equivalent to a circle.
 * `StarConvex.sphereHomotopyEquiv`: the inclusion `sphere p r → V \ {p}` as a homotopy
   equivalence, with the radial projection as homotopy inverse
   (`StarConvex.coe_sphereHomotopyEquiv_apply`, `StarConvex.coe_sphereHomotopyEquiv_symm_apply`).
+* `StarConvex.radialHomotopy`: the straight-line deformation from the radial projection to the
+  identity, fixing the included sphere pointwise throughout.
 
 ## References
 
@@ -68,8 +70,9 @@ private theorem add_smul_sub_mem_diff (hV : StarConvex ℝ p V) (hr : 0 < r)
           abs_of_pos (div_pos hr hd), div_mul_cancel₀ _ hd.ne']
       have hmem := hV.add_smul_sub_mem hw (t := c * ‖z - p‖ / r) (by positivity)
         ((div_le_one hr).mpr ((le_div_iff₀ hd).mp hc))
-      rwa [hw_def, add_sub_cancel_left, smul_smul,
-        show c * ‖z - p‖ / r * (r / ‖z - p‖) = c by field_simp] at hmem
+      have hscale : c * ‖z - p‖ / r * (r / ‖z - p‖) = c := by
+        field_simp
+      rwa [hw_def, add_sub_cancel_left, smul_smul, hscale] at hmem
   · have h0 : c • (z - p) = 0 := by simpa using h
     exact hzp ((smul_eq_zero.mp h0).resolve_left hc₀.ne')
 
@@ -82,8 +85,13 @@ private theorem sphere_subset_diff (hr : 0 < r) (hS : sphere p r ⊆ V) :
     subst h
     simp [hr.ne] at hz⟩
 
+/-- The inclusion of `sphere p r` into `V \ {p}`. -/
+def sphereInclusionDiffSingleton (hr : 0 < r) (hS : sphere p r ⊆ V) :
+    C(sphere p r, ↥(V \ {p})) :=
+  ContinuousMap.inclusion (sphere_subset_diff hr hS)
+
 /-- Radial projection of `V \ {p}` onto the sphere `sphere p r`. -/
-private def radialProjection (hr : 0 < r) : C(↥(V \ {p}), sphere p r) where
+def radialProjectionToSphere (hr : 0 < r) : C(↥(V \ {p}), sphere p r) where
   toFun z := ⟨p + (r / ‖(z : E) - p‖) • ((z : E) - p), by
     have hd : 0 < ‖(z : E) - p‖ := norm_pos_iff.mpr (sub_ne_zero.mpr z.2.2)
     rw [mem_sphere, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
@@ -97,9 +105,10 @@ private def radialProjection (hr : 0 < r) : C(↥(V \ {p}), sphere p r) where
         hsub)
 
 /-- The straight-line homotopy from the radial projection to the identity of `V \ {p}`. -/
-private def radialHomotopy (hV : StarConvex ℝ p V) (hr : 0 < r) (hS : sphere p r ⊆ V) :
-    ((ContinuousMap.inclusion (sphere_subset_diff hr hS)).comp
-      (radialProjection hr)).Homotopy (ContinuousMap.id ↥(V \ {p})) where
+def _root_.StarConvex.radialHomotopy (hV : StarConvex ℝ p V) (hr : 0 < r)
+    (hS : sphere p r ⊆ V) :
+    ((sphereInclusionDiffSingleton hr hS).comp (radialProjectionToSphere hr)).Homotopy
+      (ContinuousMap.id ↥(V \ {p})) where
   toFun x := ⟨p + ((1 - (x.1 : ℝ)) * (r / ‖(x.2 : E) - p‖) + x.1) • ((x.2 : E) - p), by
     have hd : 0 < ‖(x.2 : E) - p‖ := norm_pos_iff.mpr (sub_ne_zero.mpr x.2.2.2)
     have ht₀ : 0 ≤ (x.1 : ℝ) := x.1.2.1
@@ -122,10 +131,34 @@ private def radialHomotopy (hV : StarConvex ℝ p V) (hr : 0 < r) (hS : sphere p
     exact continuous_const.add ((((continuous_const.sub ht).mul hdiv).add ht).smul hsub)
   map_zero_left z := by
     ext
-    simp [radialProjection]
+    simp [radialProjectionToSphere, sphereInclusionDiffSingleton]
   map_one_left z := by
     ext
     simp
+
+/-- The radial deformation has the stated pointwise straight-line formula. -/
+@[simp]
+theorem _root_.StarConvex.coe_radialHomotopy_apply (hV : StarConvex ℝ p V) (hr : 0 < r)
+    (hS : sphere p r ⊆ V) (t : I) (z : ↥(V \ {p})) :
+    ((hV.radialHomotopy hr hS (t, z) : ↥(V \ {p})) : E) =
+      p + ((1 - (t : ℝ)) * (r / ‖(z : E) - p‖) + t) • ((z : E) - p) :=
+  by
+    change ((hV.radialHomotopy hr hS).toContinuousMap.toFun (t, z)).1 = _
+    rw [StarConvex.radialHomotopy]
+
+/-- The radial deformation fixes every included point of the sphere throughout the homotopy. -/
+@[simp]
+theorem _root_.StarConvex.radialHomotopy_apply_sphereInclusion
+    (hV : StarConvex ℝ p V) (hr : 0 < r) (hS : sphere p r ⊆ V) (t : I)
+    (x : sphere p r) :
+    hV.radialHomotopy hr hS (t, sphereInclusionDiffSingleton hr hS x) =
+      sphereInclusionDiffSingleton hr hS x := by
+  ext
+  have hx : ‖(x : E) - p‖ = r := by simpa [dist_eq_norm] using x.2
+  rw [StarConvex.coe_radialHomotopy_apply]
+  change p + ((1 - (t : ℝ)) * (r / ‖(x : E) - p‖) + t) • ((x : E) - p) = x
+  rw [hx, div_self hr.ne']
+  simp
 
 /-- **A punctured star-convex set is homotopy equivalent to a sphere about the puncture.** If `V`
 is star-convex about `p` and contains the sphere `sphere p r` with `r > 0`, then the inclusion
@@ -133,15 +166,17 @@ is star-convex about `p` and contains the sphere `sphere p r` with `r > 0`, then
 `z ↦ p + (r / ‖z - p‖) • (z - p)`. -/
 def _root_.StarConvex.sphereHomotopyEquiv (hV : StarConvex ℝ p V) (hr : 0 < r)
     (hS : sphere p r ⊆ V) : ContinuousMap.HomotopyEquiv (sphere p r) ↥(V \ {p}) where
-  toFun := ContinuousMap.inclusion (sphere_subset_diff hr hS)
-  invFun := radialProjection hr
+  toFun := sphereInclusionDiffSingleton hr hS
+  invFun := radialProjectionToSphere hr
   left_inv := by
     -- The radial projection fixes the sphere pointwise.
     convert ContinuousMap.Homotopic.refl (ContinuousMap.id (sphere p r))
     ext x
     have hx : ‖(x : E) - p‖ = r := by simpa [dist_eq_norm] using x.2
-    simp [radialProjection, hx, hr.ne']
-  right_inv := ⟨radialHomotopy hV hr hS⟩
+    change p + (r / ‖(x : E) - p‖) • ((x : E) - p) = x
+    rw [hx, div_self hr.ne']
+    simp
+  right_inv := ⟨hV.radialHomotopy hr hS⟩
 
 /-- The homotopy equivalence `StarConvex.sphereHomotopyEquiv` is the inclusion of the sphere. -/
 @[simp]

@@ -29,7 +29,7 @@ homeomorphism is what is available.
 * `ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv_refl`,
   `ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv_trans`: the construction respects
   identities and composition of homotopy equivalences.
-* `ContinuousMap.HomotopyEquiv.bijective_fundamentalGroup_map`: the homomorphism
+* `ContinuousMap.HomotopyEquiv.fundamentalGroup_map_bijective`: the homomorphism
   `FundamentalGroup.map e.toFun x` induced by the forward map itself is bijective.
 * `ContinuousMap.HomotopyEquiv.nonempty_fundamentalGroupMulEquiv`: over a path connected
   space, the fundamental groups at *any* pair of base points are isomorphic.
@@ -117,7 +117,7 @@ theorem _root_.ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv_trans {Z : T
 `FundamentalGroup.map` of `e.toFun`, so it computes on loop classes by mapping representatives.
 It is the full faithfulness of Mathlib's equivalence of fundamental groupoids
 `FundamentalGroupoidFunctor.equivOfHomotopyEquiv`, read on endomorphisms of `x`. -/
-theorem _root_.ContinuousMap.HomotopyEquiv.bijective_fundamentalGroup_map (e : X ≃ₕ Y) (x : X) :
+theorem _root_.ContinuousMap.HomotopyEquiv.fundamentalGroup_map_bijective (e : X ≃ₕ Y) (x : X) :
     Function.Bijective (_root_.FundamentalGroup.map e.toFun x) :=
   (FundamentalGroupoidFunctor.equivOfHomotopyEquiv e).fullyFaithfulFunctor.map_bijective
     (FundamentalGroupoid.mk x) (FundamentalGroupoid.mk x)
