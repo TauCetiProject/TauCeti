@@ -73,13 +73,12 @@ namespace SchemeWeilDivisor
 noncomputable section
 
 /-- The germs at the codimension-one points of `U` of a function on `U`. -/
-@[expose]
-def codimensionOneGerms (U : X.Opens) :
+private def codimensionOneGerms (U : X.Opens) :
     Γ(X, U) →+* ∀ x : {x : CodimensionOnePoint X // (x : X) ∈ U}, X.presheaf.stalk (x.1 : X) :=
   RingHom.pi fun x ↦ (X.presheaf.germ U x.1 x.2).hom
 
 @[simp]
-lemma codimensionOneGerms_apply (U : X.Opens) (r : Γ(X, U))
+private lemma codimensionOneGerms_apply (U : X.Opens) (r : Γ(X, U))
     (x : {x : CodimensionOnePoint X // (x : X) ∈ U}) :
     codimensionOneGerms U r x = X.presheaf.germ U x.1 x.2 r :=
   rfl
@@ -188,19 +187,19 @@ private lemma principalPartsSections_smul_apply (D : SchemeWeilDivisor X) (U : X
 
 /-- The `Γ(X, U)`-module of finitely supported families of principal parts of `D` at the
 codimension-one points of `U`, the ring acting through its germs. -/
-abbrev principalPartsObj (D : SchemeWeilDivisor X) (U : X.Opens) :
+private abbrev principalPartsObj (D : SchemeWeilDivisor X) (U : X.Opens) :
     ModuleCat.{u} (X.ringCatSheaf.obj.obj (op U)) :=
   (ModuleCat.restrictScalars (codimensionOneGerms U)).obj
     (ModuleCat.of _ (principalPartsSections D U))
 
 /-- The underlying additive group of `principalPartsObj D U` is the group of finitely supported
 families of principal parts. -/
-def principalPartsObjSectionsEquiv (D : SchemeWeilDivisor X) (U : X.Opens) :
+private def principalPartsObjSectionsEquiv (D : SchemeWeilDivisor X) (U : X.Opens) :
     (principalPartsObj D U : Type u) ≃+ principalPartsSections D U :=
   AddEquiv.refl _
 
 /-- A function on `U` acts on a family of principal parts through its germs. -/
-lemma principalPartsObj_smul_apply (D : SchemeWeilDivisor X) (U : X.Opens) (r : Γ(X, U))
+private lemma principalPartsObj_smul_apply (D : SchemeWeilDivisor X) (U : X.Opens) (r : Γ(X, U))
     (s : principalPartsObj D U) (x : {x : CodimensionOnePoint X // (x : X) ∈ U}) :
     principalPartsObjSectionsEquiv D U (r • s) x =
       X.presheaf.germ U x.1 x.2 r • principalPartsObjSectionsEquiv D U s x := by
@@ -211,7 +210,7 @@ lemma principalPartsObj_smul_apply (D : SchemeWeilDivisor X) (U : X.Opens) (r : 
   rw [principalPartsSections_smul_apply, codimensionOneGerms_apply]
 
 /-- The presheaf of `𝒪_X`-modules of principal parts of `D`. -/
-def principalPartsPresheaf (D : SchemeWeilDivisor X) :
+private def principalPartsPresheaf (D : SchemeWeilDivisor X) :
     PresheafOfModules X.ringCatSheaf.obj where
   obj U := principalPartsObj D U.unop
   map {U V} i := ModuleCat.semilinearMapAddEquiv (X.ringCatSheaf.obj.map i).hom
@@ -238,16 +237,15 @@ def principalPartsPresheaf (D : SchemeWeilDivisor X) :
     rfl
 
 /-- Sections of the principal-parts presheaf are finitely supported families of local
-principal parts. This equivalence is the public interface to the sealed presheaf construction. -/
-def principalPartsPresheafSectionsEquiv (D : SchemeWeilDivisor X) (U : X.Opens) :
+principal parts. This equivalence is the internal interface to the presheaf construction. -/
+private def principalPartsPresheafSectionsEquiv (D : SchemeWeilDivisor X) (U : X.Opens) :
     ((principalPartsPresheaf D).obj (op U) : Type u) ≃+
-      principalPartsSections D U := by
-  change principalPartsObj D U ≃+ principalPartsSections D U
-  exact AddEquiv.refl _
+      principalPartsSections D U :=
+  principalPartsObjSectionsEquiv D U
 
 /-- Under `principalPartsPresheafSectionsEquiv`, restriction is
 `principalPartsRestrict`. -/
-lemma principalPartsPresheafSectionsEquiv_map (D : SchemeWeilDivisor X)
+private lemma principalPartsPresheafSectionsEquiv_map (D : SchemeWeilDivisor X)
     {U V : X.Opens} (i : V ⟶ U) (s : (principalPartsPresheaf D).presheaf.obj (op U)) :
     principalPartsPresheafSectionsEquiv D V ((principalPartsPresheaf D).presheaf.map i.op s) =
       principalPartsRestrict D i (principalPartsPresheafSectionsEquiv D U s) :=
@@ -262,7 +260,7 @@ variable [IsNoetherian X]
 /-- On a Noetherian scheme, principal parts form a sheaf: compatible finitely supported families
 glue pointwise, and the glued family is finitely supported because the union of the open subsets
 is quasi-compact. -/
-theorem isSheaf_principalPartsPresheaf (D : SchemeWeilDivisor X) :
+private theorem isSheaf_principalPartsPresheaf (D : SchemeWeilDivisor X) :
     Presheaf.IsSheaf (Opens.grothendieckTopology X) (principalPartsPresheaf D).presheaf := by
   refine (TopCat.Presheaf.isSheaf_iff_isSheafUniqueGluing _).mpr ?_
   intro ι U sf hsf
@@ -331,9 +329,8 @@ def principalParts (D : SchemeWeilDivisor X) : X.Modules :=
 /-- Sections of the sheaf of principal parts are finitely supported families of local principal
 parts. This equivalence is the public interface to the sealed sheaf construction. -/
 def principalPartsSectionsEquiv (D : SchemeWeilDivisor X) (U : X.Opens) :
-    (Γ(principalParts D, U) : Type u) ≃+ principalPartsSections D U := by
-  change principalPartsObj D U ≃+ principalPartsSections D U
-  exact AddEquiv.refl _
+    (Γ(principalParts D, U) : Type u) ≃+ principalPartsSections D U :=
+  principalPartsPresheafSectionsEquiv D U
 
 /-- Under `principalPartsSectionsEquiv`, restriction is `principalPartsRestrict`. -/
 @[simp]
