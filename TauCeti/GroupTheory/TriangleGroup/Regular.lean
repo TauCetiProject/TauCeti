@@ -37,7 +37,7 @@ in `Δ(4, 4, 2)`.
 
 * E. Girondo, G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins d'Enfants*,
   LMS Student Texts 79, Cambridge University Press, 2012, Definition 2.64 and Proposition 2.66.
-* G. A. Jones, D. Singerman, *Belyĭ functions, hypermaps and Galois groups*, Bull. London Math.
+* G. A. Jones, D. Singerman, *Belyi functions, hypermaps and Galois groups*, Bull. London Math.
   Soc. 28 (1996), 561–590.
 -/
 
