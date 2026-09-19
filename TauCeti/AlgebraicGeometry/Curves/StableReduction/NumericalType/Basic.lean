@@ -271,6 +271,12 @@ lemma intersection_eq_zero_of_card_eq_one (h : Fintype.card T.Component = 1)
   rw [Fintype.sum_eq_single j fun k hk ↦ absurd (hsub k) hk] at hrel
   exact (mul_eq_zero.mp hrel).resolve_left (Int.natCast_pos.mpr (T.multiplicity j).pos).ne'
 
+/-- A numerical type with a component of nonzero self-intersection has more than one component. -/
+lemma one_lt_card_of_intersection_self_ne_zero {i : T.Component}
+    (h : T.intersection i i ≠ 0) : 1 < Fintype.card T.Component :=
+  lt_of_le_of_ne Fintype.card_pos fun h1 ↦
+    h (T.intersection_eq_zero_of_card_eq_one h1.symm i i)
+
 /-! ### Integrality of the signed genus -/
 
 /-- The multiplicity-weighted sum of the self-intersections of a numerical type is even.

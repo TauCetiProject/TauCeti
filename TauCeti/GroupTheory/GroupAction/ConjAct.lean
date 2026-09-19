@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.GroupAction.ConjAct
+public import Mathlib.Algebra.Group.Subgroup.Pointwise
 
 /-!
 # Conjugation by an element of a normal subgroup, seen through a commutative target
@@ -14,10 +15,15 @@ A normal subgroup `N` of `G` carries the conjugation action `MulAut.conjNormal` 
 `G`. Conjugation by an element of `N` itself is inner, so a homomorphism `ψ : N →* M` to a
 *commutative* monoid cannot see it: conjugate elements of `N` have the same image in `M`.
 
+Dually, conjugation cannot move a *central* element: a subgroup containing one has every
+conjugate containing it too.
+
 ## Main statements
 
 * `MonoidHom.map_conjNormal_val`: a homomorphism from a normal subgroup to a commutative monoid is
   unchanged by conjugation by an element of that subgroup.
+* `Subgroup.mem_conjAct_smul_of_mem_center`: a central element of a subgroup lies in each of its
+  conjugates.
 -/
 
 public section
@@ -36,3 +42,17 @@ theorem map_conjNormal_val (ψ : N →* M) (a x : N) : ψ (MulAut.conjNormal (a 
   exact (isConj_iff_eq.mp (ψ.map_isConj h)).symm
 
 end MonoidHom
+
+namespace Subgroup
+
+open scoped Pointwise
+
+/-- **A central element of a subgroup lies in each of its conjugates**, since conjugation fixes
+it. -/
+theorem mem_conjAct_smul_of_mem_center {G : Type*} [Group G] {H : Subgroup G} {z : G}
+    (hz : z ∈ center G) (c : G) (h : z ∈ H) : z ∈ ConjAct.toConjAct c • H := by
+  rw [mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def, map_inv, ConjAct.ofConjAct_toConjAct,
+    inv_inv, mem_center_iff.mp hz c⁻¹, inv_mul_cancel_right]
+  exact h
+
+end Subgroup

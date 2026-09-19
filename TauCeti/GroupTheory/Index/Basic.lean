@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.GroupTheory.Index
+public import TauCeti.Algebra.Group.Subgroup.Map
+import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Tactic.Group
 
 /-!
@@ -35,12 +38,15 @@ centre gives the `Γ.withCenter` readings.
   and the index doubling, for an `N` normalised by `Γ` whose elements are `1` and `a ∉ Γ`.
 * `Subgroup.instCountableQuotient`: a coset space of a countable group is countable.
 * `Subgroup.finiteIndex_of_finiteIndex_subgroupOf`: finite index composes along `V ≤ U ≤ G`.
+* `Subgroup.finiteIndex_inf_comap`: `H ⊓ f⁻¹(K)` has finite index when `H` does and
+  `K` has finite index relative to `f(H)`.
 * `MonoidHom.finiteIndex_range_comp`: finite index of ranges is preserved by composition
   with a homomorphism of finite-index range.
 * `MonoidHom.mk_mul_out_bijective`: right cosets of a composite range are represented by
   products of representatives for the two successive ranges.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}`.
+* `Subgroup.isCoatom_of_index_prime`: a subgroup of prime index is maximal.
 -/
 
 
@@ -153,6 +159,17 @@ theorem finiteIndex_of_finiteIndex_subgroupOf {G : Type*} [Group G] (H K : Subgr
   isFiniteRelIndex_top_iff.mp <|
     ((isFiniteRelIndex_iff_finiteIndex (H := H) (K := K)).mpr inferInstance).trans
       (isFiniteRelIndex_top_iff.mpr inferInstance)
+
+/-- **Pulling back a subgroup of finite relative index.** If `H` has finite index in `G` and `K`
+has finite index relative to `f(H)`, then `H ⊓ f⁻¹(K)` has finite index in `G`: its index in `H` is
+the relative index of `K` in `f(H)`. -/
+theorem finiteIndex_inf_comap {G N : Type*} [Group G] [Group N] (H : Subgroup G)
+    [H.FiniteIndex] (K : Subgroup N) (f : G →* N) [K.IsFiniteRelIndex (H.map f)] :
+    (H ⊓ K.comap f).FiniteIndex := by
+  refine ⟨?_⟩
+  rw [← relIndex_mul_index (inf_le_left : H ⊓ K.comap f ≤ H), inf_comm, inf_relIndex_right,
+    relIndex_comap]
+  exact mul_ne_zero IsFiniteRelIndex.relIndex_ne_zero FiniteIndex.index_ne_zero
 
 /-- `Γ` with the centre of the ambient group adjoined. For `Γ ≤ SL(2, ℤ)` the centre is
 `{±I}`, which acts trivially on `ℍ`; it is the cosets of `Γ·{±I}` — not those of `Γ` itself —
@@ -269,6 +286,14 @@ theorem index_eq_two_mul_index_withCenter (ha : a ∈ Subgroup.center G) (haΓ :
     (hcenter : ∀ c ∈ Subgroup.center G, c = 1 ∨ c = a) : Γ.index = 2 * Γ.withCenter.index :=
   Subgroup.withCenter_def Γ ▸
     index_eq_two_mul_index_sup _ Subgroup.le_normalizer_of_normal ha haΓ hcenter
+
+/-- A subgroup of prime index is maximal: an intermediate subgroup has index dividing a prime,
+so it is either the subgroup itself or everything. -/
+theorem isCoatom_of_index_prime {H : Subgroup G} (hH : H.index.Prime) : IsCoatom H := by
+  refine ⟨fun h ↦ hH.ne_one (index_eq_one.mpr h), fun K hK ↦ ?_⟩
+  rcases Nat.prime_mul_iff.mp ((relIndex_mul_index hK.le).symm ▸ hH) with ⟨-, hK1⟩ | ⟨-, hHK⟩
+  · exact index_eq_one.mp hK1
+  · exact absurd (relIndex_eq_one.mp hHK) (not_le_of_gt hK)
 
 end Subgroup
 

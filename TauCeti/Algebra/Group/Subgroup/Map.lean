@@ -46,6 +46,7 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   centreless group.
 * `TauCeti.Subgroup.map_commutator_eq_commutator`: a surjective homomorphism carries the derived
   subgroup onto the derived subgroup.
+* `Subgroup.map_inf_comap`: the image of `H ⊓ f⁻¹(K)` is `f(H) ⊓ K`.
 * `Subgroup.map_conj_map_conj`: successive conjugations of a subgroup compose to one
   conjugation.
 * `Subgroup.map_map_conj`: the image of a conjugate subgroup is the conjugate of the image.
@@ -282,6 +283,15 @@ composition ones. Mathlib's `abelianizationCongr_symm` says the same for the abe
 theorem _root_.MulEquiv.commutatorCongr_symm (e : G ≃* H) :
     (MulEquiv.commutatorCongr e).symm = MulEquiv.commutatorCongr e.symm :=
   Subgroup.congrOfMapEq_symm e _
+
+/-- The image of `H ⊓ f⁻¹(K)` under `f` is the part of `K` inside `f(H)`. -/
+theorem _root_.Subgroup.map_inf_comap {G N : Type*} [Group G] [Group N]
+    (H : Subgroup G) (K : Subgroup N) (f : G →* N) :
+    (H ⊓ K.comap f).map f = H.map f ⊓ K := by
+  ext y
+  simp only [Subgroup.mem_map, Subgroup.mem_inf, Subgroup.mem_comap]
+  exact ⟨fun ⟨x, ⟨hx, hxK⟩, hxy⟩ ↦ ⟨⟨x, hx, hxy⟩, hxy ▸ hxK⟩,
+    fun ⟨⟨x, hx, hxy⟩, hy⟩ ↦ ⟨x, ⟨hx, hxy ▸ hy⟩, hxy⟩⟩
 
 /-- The image of a conjugate subgroup `gRg⁻¹` under a homomorphism `f` is the conjugate of `f(R)`
 by `f g`.

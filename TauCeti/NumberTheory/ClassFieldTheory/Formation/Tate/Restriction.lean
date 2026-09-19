@@ -25,7 +25,7 @@ Galois group is identified with the image of its inclusion into the larger one, 
 
 The comparison lemmas below identify each branch with the corresponding established map, and the
 degree-zero lemma reads restriction on norm quotients as the ground-level inclusion. Corestriction
-after restriction is multiplication by the relative degree `[E : F]` in every degree `r ≥ -1`.
+after restriction is multiplication by the relative degree `[E : F]` in every degree.
 
 ## Main definitions
 
@@ -40,8 +40,8 @@ after restriction is multiplication by the relative degree `[E : F]` in every de
   positive degrees, Tate restriction is ordinary cohomological restriction.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateHZeroEquivNormQuotient_tateRes_H0π`: in degree
   zero, restriction is the ground-level inclusion read on norm quotients.
-* `TauCeti.ClassFieldTheory.LayerRestriction.tateCor_tateRes_of_neg_one_le`: `cor ∘ res = [E : F]`
-  in every degree `r ≥ -1`.
+* `TauCeti.ClassFieldTheory.LayerRestriction.tateCor_tateRes`: `cor ∘ res = [E : F]` in every
+  degree.
 
 ## References
 
@@ -141,14 +141,17 @@ theorem tateHZeroEquivNormQuotient_tateRes_H0π (T : LayerRestriction small big)
   exact T.repIso_inv_apply_coe F _
 
 /-- **Corestriction after restriction is multiplication by the relative degree** `[E : F]`, in
-every Tate degree `r ≥ -1`. -/
-@[reassoc]
-theorem tateCor_tateRes_of_neg_one_le (T : LayerRestriction small big) (F : Formation G)
-    {r : ℤ} (hr : -1 ≤ r) :
+every Tate degree. -/
+@[reassoc, elementwise]
+theorem tateCor_tateRes (T : LayerRestriction small big) (F : Formation G) (r : ℤ) :
     T.tateRes F r ≫ T.tateCor F r = T.relativeDegree • 𝟙 (big.TateH F r) := by
-  obtain ⟨n, rfl⟩ | rfl | rfl : (∃ n : ℕ, r = n + 1) ∨ r = 0 ∨ r = -1 := by
+  obtain ⟨n, rfl⟩ | rfl | rfl | ⟨n, rfl⟩ :
+      (∃ n : ℕ, r = n + 1) ∨ r = 0 ∨ r = -1 ∨ ∃ n : ℕ, r = Int.negSucc (n + 1) := by
     rcases lt_trichotomy r 0 with h | rfl | h
-    · exact .inr (.inr (by omega))
+    · have hr : r ≤ -1 := by omega
+      rcases eq_or_lt_of_le hr with rfl | h'
+      · exact .inr (.inr (.inl rfl))
+      · exact .inr (.inr (.inr ⟨(-r - 2).toNat, by omega⟩))
     · exact .inr (.inl rfl)
     · exact .inl ⟨(r - 1).toNat, by omega⟩
   · simp only [tateRes_ofNat_succ, tateCor_ofNat_succ, Category.assoc, Iso.inv_hom_id_assoc,
@@ -159,6 +162,9 @@ theorem tateCor_tateRes_of_neg_one_le (T : LayerRestriction small big) (F : Form
   · rw [← T.index_range_galHom]
     simpa using
       TauCeti.TateCohomology.HNegOneRes_comp_HNegOneCor (big.rep F) T.galHom.range
+  · rw [← T.index_range_galHom]
+    simpa using
+      TauCeti.TateCohomology.negSuccRes_comp_negSuccCor (big.rep F) T.galHom.range (n + 1)
 
 /-! ### Trivial coefficients -/
 

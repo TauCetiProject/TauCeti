@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Datum
+public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
+public import Mathlib.Analysis.Complex.Periodic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.CuspCoordinate
 public import TauCeti.Analysis.Complex.UpperHalfPlane.ProperAction
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Manifold
@@ -36,14 +38,64 @@ full group quotient additionally requires precise invariance of the horodisc.
 
 public noncomputable section
 
-open Filter Function MulAction UpperHalfPlane
+open Filter Function Matrix.ProjectiveSpecialLinearGroup MulAction UpperHalfPlane
 open scoped Complex.UnitDisc ContDiff Manifold MatrixGroups Topology
 
 namespace TauCeti.Subgroup.CuspDatum
 
 open TauCeti.UpperHalfPlane
 
-variable {Γ : Subgroup PSL(2, ℝ)} (D : Γ.CuspDatum)
+variable {Γ : Subgroup PSL(2, ℝ)}
+
+/-- The exponential coordinate of a normalized cusp datum on the upper half-plane. -/
+noncomputable def coordinate (D : Γ.CuspDatum) (z : ℍ) : ℂ :=
+  Function.Periodic.qParam D.width (↑(D.scaling • z) : ℂ)
+
+/-- The cusp coordinate is the q-parameter of the scaled point, with the datum's width. -/
+theorem coordinate_apply (D : Γ.CuspDatum) (z : ℍ) :
+    coordinate D z = Function.Periodic.qParam D.width (↑(D.scaling • z) : ℂ) := (rfl)
+
+/-- The exponential cusp coordinate never vanishes on the upper half-plane. -/
+@[simp]
+theorem coordinate_ne_zero (D : Γ.CuspDatum) (z : ℍ) : coordinate D z ≠ 0 := by
+  rw [coordinate_apply]
+  exact Function.Periodic.qParam_ne_zero _
+
+/-- The exponential cusp coordinate lies in the open unit disc. -/
+theorem norm_coordinate_lt_one (D : Γ.CuspDatum) (z : ℍ) : ‖coordinate D z‖ < 1 := by
+  rw [coordinate_apply]
+  exact Function.Periodic.norm_qParam_lt_one D.width_pos (D.scaling • z).im_pos
+
+/-- In scaling coordinates, the selected generator acts by translation through the width. -/
+theorem coe_scaling_smul_generator (D : Γ.CuspDatum) (z : ℍ) :
+    (↑(D.scaling • (D.generator : PSL(2, ℝ)) • z) : ℂ) =
+      (↑(D.scaling • z) : ℂ) + D.width := by
+  have heq : D.scaling • (D.generator : PSL(2, ℝ)) • z =
+      upperRightHom D.width • (D.scaling • z) := by
+    rw [← D.scaling_mul_generator_mul_inv, mul_smul, mul_smul, inv_smul_smul]
+  rw [heq, upperRightHom_apply, UpperHalfPlane.pslMk_smul, coe_specialLinearGroup_apply]
+  simp [Matrix.SpecialLinearGroup.transvection_coe]
+
+/-- The exponential cusp coordinate is invariant under the full cusp stabilizer. -/
+@[simp]
+theorem coordinate_smul (D : Γ.CuspDatum) {g : Γ}
+    (hg : g ∈ MulAction.stabilizer Γ D.cusp) (z : ℍ) :
+    coordinate D (g • z) = coordinate D z := by
+  obtain ⟨n, hn⟩ := D.mem_stabilizer_iff_conj.mp hg
+  have heq : D.scaling • (g • z) = upperRightHom (n * D.width) • (D.scaling • z) := by
+    rw [← hn, mul_smul, mul_smul, inv_smul_smul, Subgroup.smul_def]
+  have hcoe : (↑(D.scaling • (g • z)) : ℂ) =
+      (↑(D.scaling • z) : ℂ) + (n : ℝ) * D.width := by
+    rw [heq, upperRightHom_apply, UpperHalfPlane.pslMk_smul, coe_specialLinearGroup_apply]
+    simp [Matrix.SpecialLinearGroup.transvection_coe]
+  rw [coordinate_apply, coordinate_apply, hcoe]
+  simp only [Function.Periodic.qParam]
+  apply Complex.exp_eq_exp_iff_exists_int.mpr
+  refine ⟨n, ?_⟩
+  push_cast
+  field_simp [D.width_pos.ne']
+
+variable (D : Γ.CuspDatum)
 
 /-- In the scaling coordinate, powers of the primitive cusp generator are integral-width
 translations. -/
@@ -52,24 +104,28 @@ theorem scaling_smul_generator_zpow (n : ℤ) (z : ℍ) :
   simpa only [Subgroup.smul_def, Subgroup.coe_zpow] using
     smul_zpow_smul D.scaling_mul_generator_mul_inv n z
 
-/-- The normalized q-coordinate, valued in the punctured unit disc. -/
+/-- The exponential `coordinate`, regarded as a map into the punctured unit disc. -/
 def qCoordinate (z : ℍ) : {q : 𝔻 // q ≠ 0} :=
-  qParamPuncturedUnitDisc D.width D.width_pos (D.scaling • z)
+  ⟨Complex.UnitDisc.mk (coordinate D z) (norm_coordinate_lt_one D z), by
+    intro h
+    exact coordinate_ne_zero D z (congrArg (fun q : 𝔻 ↦ (q : ℂ)) h)⟩
 
 /-- Evaluation of the normalized q-coordinate as the width parameter after scaling. -/
 theorem qCoordinate_eq (z : ℍ) :
-    qCoordinate D z = qParamPuncturedUnitDisc D.width D.width_pos (D.scaling • z) :=
-  (rfl)
+    qCoordinate D z = qParamPuncturedUnitDisc D.width D.width_pos (D.scaling • z) := by
+  apply Subtype.ext
+  apply Complex.UnitDisc.coe_injective
+  exact (coe_qParamPuncturedUnitDisc D.width D.width_pos (D.scaling • z)).symm
 
 /-- The normalized q-coordinate is the width parameter composed with scaling. -/
 theorem qCoordinate_eq_comp :
     qCoordinate D = qParamPuncturedUnitDisc D.width D.width_pos ∘ (D.scaling • ·) :=
-  (rfl)
+  funext (qCoordinate_eq D)
 
 @[simp]
 theorem coe_qCoordinate (z : ℍ) :
-    ((qCoordinate D z : 𝔻) : ℂ) = Function.Periodic.qParam D.width (D.scaling • z : ℍ) := by
-  rw [qCoordinate_eq, coe_qParamPuncturedUnitDisc]
+    ((qCoordinate D z : 𝔻) : ℂ) = coordinate D z :=
+  (rfl)
 
 /-- The q-coordinate has exactly the full cusp-stabilizer orbits as its fibres. -/
 theorem orbitRel_iff_qCoordinate_eq (z z' : ℍ) :

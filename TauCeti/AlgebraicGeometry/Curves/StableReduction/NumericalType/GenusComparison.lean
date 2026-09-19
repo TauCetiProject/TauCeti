@@ -254,19 +254,12 @@ theorem sum_genusDefect :
   have hdegree := T.intersectionGraph.sum_degrees_eq_twice_card_edges
   have hedge : #T.intersectionGraph.edgeFinset = T.intersectionGraph.edgeSet.ncard := by
     rw [SimpleGraph.edgeFinset_card, ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
-  have hdegree' : ∑ v, (T.intersectionGraph.neighborSet v).ncard =
+  have hdegree' : ∑ v, T.intersectionGraph.degree v =
       2 * T.intersectionGraph.edgeSet.ncard := by
-    calc
-      ∑ v, (T.intersectionGraph.neighborSet v).ncard =
-          ∑ v, T.intersectionGraph.degree v := by
-        apply Finset.sum_congr rfl
-        intro v _
-        rw [← SimpleGraph.card_neighborSet_eq_degree, Set.fintypeCard_eq_ncard]
-      _ = 2 * #T.intersectionGraph.edgeFinset := hdegree
-      _ = 2 * T.intersectionGraph.edgeSet.ncard := by rw [hedge]
-  have hdegreeQ : (∑ v, (T.intersectionGraph.neighborSet v).ncard : ℚ) =
+    rw [hdegree, hedge]
+  have hdegreeQ : (∑ v, (T.intersectionGraph.degree v : ℚ)) =
       2 * T.intersectionGraph.edgeSet.ncard := by exact_mod_cast hdegree'
-  have hhalf : ∑ v, ((T.intersectionGraph.neighborSet v).ncard : ℚ) / 2 =
+  have hhalf : ∑ v, (T.intersectionGraph.degree v : ℚ) / 2 =
       (T.intersectionGraph.edgeSet.ncard : ℚ) := by
     rw [← Finset.sum_div]
     linarith

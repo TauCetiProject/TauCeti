@@ -21,12 +21,19 @@ the unit of the first adjunction, `a ↦ (g ↦ g • a)`, and the counit of the
 multiplication by the index `[G : S]`. This is the identity behind the normalization
 `cor ∘ res = [G : S]` of group-cohomological corestriction.
 
+Because the index is finite, induction `Ind_S^G` is identified with coinduction
+(`Rep.indCoindIso`), and the same identity holds for the unit `A ⟶ Ind_S^G(Res_S A)` of
+restriction–induction followed by the counit `Ind_S^G(Res_S A) ⟶ A` of induction–restriction. That
+form is behind the normalization of the transfer in group homology.
+
 ## Main results
 
 * `Subgroup.coindResAdjunction_counit_app_hom_apply`: the trace sums `g⁻¹ • f g` over the
   chosen representatives `g` of the right cosets of `S`.
 * `TauCeti.Rep.resCoindAdjunction_unit_app_comp_coindResAdjunction_counit_app`: the composite of
   the unit and the trace is `[G : S] • 𝟙 A`.
+* `TauCeti.Rep.resIndAdjunction_unit_app_comp_indResAdjunction_counit_app`: the same identity
+  with coinduction replaced by induction, through Mathlib's identification `Rep.indCoindIso`.
 
 ## References
 
@@ -113,5 +120,16 @@ theorem resCoindAdjunction_unit_app_comp_coindResAdjunction_counit_app
     -- `a` lives in `(𝟭 _).obj A`, so `Rep.hom_id` does not match syntactically; the identity
     -- morphism acts as the identity by definition.
     rfl
+
+open Classical in
+/-- **Unit followed by counit is the index, for induction.** For a finite-index subgroup `S ≤ G`,
+the unit `A ⟶ Ind_S^G(Res_S A)` of restriction–induction followed by the counit
+`Ind_S^G(Res_S A) ⟶ A` of induction–restriction is multiplication by `[G : S]`. -/
+@[reassoc]
+theorem resIndAdjunction_unit_app_comp_indResAdjunction_counit_app (A : Rep.{u} k G) :
+    (resIndAdjunction.{u, u, u} k S).unit.app A ≫ (indResAdjunction k S.subtype).counit.app A =
+      S.index • 𝟙 A := by
+  rw [resIndAdjunction_unit_app, Category.assoc, ← coindResAdjunction_counit_app]
+  exact resCoindAdjunction_unit_app_comp_coindResAdjunction_counit_app S A
 
 end TauCeti.Rep

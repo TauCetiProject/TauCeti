@@ -29,6 +29,8 @@ degree-zero cocycles are exactly `TauCeti.DGRightModuleHom`.
 * `TauCeti.dgRightModuleCochains`: homogeneous cochains of a fixed degree between two right DG
   modules.
 * `TauCeti.dgRightModuleHomComplex`: the cochain complex of homogeneous right-module maps.
+* `TauCeti.dgRightModuleHomLinearEquivZeroCocycles`: the linear identification of DG morphisms
+  with closed degree-zero cochains.
 
 ## Implementation notes
 
@@ -277,5 +279,24 @@ theorem dgRightModuleHomEquivZeroCocycles_symm_apply (hM : IsDGRightModule h ℳ
       (dgRightModuleCochains.differential (hM := hM) (hN := hN) 0)) (x : M) :
     (dgRightModuleHomEquivZeroCocycles hM hN).symm f x = (f.1.1 : M →ₗ[Aᵐᵒᵖ] N) x :=
   (rfl)
+
+/-- The identification of DG right-module maps with closed degree-zero cochains is linear. -/
+def dgRightModuleHomLinearEquivZeroCocycles (hM : IsDGRightModule h ℳ dM)
+    (hN : IsDGRightModule h ℳN dN) :
+    DGRightModuleHom hM hN ≃ₗ[R] LinearMap.ker
+      (dgRightModuleCochains.differential (hM := hM) (hN := hN) 0) where
+  __ := dgRightModuleHomEquivZeroCocycles hM hN
+  map_add' f g := by
+    ext x
+    exact DGRightModuleHom.add_apply f g x
+  map_smul' r f := by
+    ext x
+    exact DGRightModuleHom.smul_apply r f x
+
+@[simp]
+theorem dgRightModuleHomLinearEquivZeroCocycles_toEquiv (hM : IsDGRightModule h ℳ dM)
+    (hN : IsDGRightModule h ℳN dN) :
+    (dgRightModuleHomLinearEquivZeroCocycles hM hN).toEquiv =
+      dgRightModuleHomEquivZeroCocycles hM hN := (rfl)
 
 end TauCeti

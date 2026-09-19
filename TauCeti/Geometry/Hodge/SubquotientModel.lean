@@ -48,6 +48,8 @@ and the lattice conjugation of each model is the one induced by the ambient latt
   inclusion and the projection complexify to the inclusion and the projection.
 * `TauCeti.Hodge.rationalToComplexSubmodule_comap_subtype`: complexification commutes with
   taking the trace of a rational subspace on another.
+* `TauCeti.Hodge.rationalToComplexSubmodule_map_mkQ`: complexification commutes with passing to
+  the image of a rational subspace in a quotient.
 * `TauCeti.Hodge.latticeConjugation_integralSubmoduleToComplex` and
   `TauCeti.Hodge.latticeConjugation_integralQuotientToComplex`: the lattice conjugations of the
   models are induced by the ambient one.
@@ -234,6 +236,18 @@ theorem rationalToComplexSubmodule_comap_subtype (U V : Submodule ℚ Vℚ) :
     rw [← rationalMapToComplex_subtype hℚ hℂ U, map_rationalToComplexSubmodule]
   rw [Submodule.map_comap_subtype, Submodule.map_comap_subtype, rationalToComplexSubmodule_inf]
 
+/-- Complexifying the image of a rational subspace in a quotient gives the image of its
+complexification in the corresponding complex quotient. -/
+@[simp]
+theorem rationalToComplexSubmodule_map_mkQ (U V : Submodule ℚ Vℚ) :
+    rationalToComplexSubmodule (isBaseChange_integralQuotientToRational hℚ U)
+        (isBaseChange_integralQuotientToComplex hℚ hℂ U) (V.map U.mkQ) =
+      (rationalToComplexSubmodule hℚ hℂ V).map
+        (rationalToComplexSubmodule hℚ hℂ U).mkQ := by
+  rw [← map_rationalToComplexSubmodule hℚ hℂ
+    (isBaseChange_integralQuotientToRational hℚ U)
+    (isBaseChange_integralQuotientToComplex hℚ hℂ U), rationalMapToComplex_mkQ]
+
 /-- Lattice conjugation preserves the complexification of a rational subspace, in the form taken
 by `TauCeti.Hodge.Conjugation.restrict` and `TauCeti.Hodge.Conjugation.quotient`. -/
 theorem latticeConjugation_mem_rationalToComplexSubmodule (U : Submodule ℚ Vℚ) :
@@ -267,6 +281,18 @@ theorem latticeConj_integralQuotientToComplex_mk (U : Submodule ℚ Vℚ) (x : V
     fun v ↦ by
       induction v using Submodule.Quotient.induction_on
       simp]
+  simp
+
+/-- Conjugating the image of a complex subspace in a quotient is the image of its conjugate. -/
+@[simp]
+theorem map_latticeConj_integralQuotientToComplex (U : Submodule ℚ Vℚ)
+    (A : Submodule ℂ Vℂ) :
+    (A.map (rationalToComplexSubmodule hℚ hℂ U).mkQ).map
+        (latticeConj (isBaseChange_integralQuotientToComplex hℚ hℂ U)) =
+      (A.map (latticeConj hℂ)).map (rationalToComplexSubmodule hℚ hℂ U).mkQ := by
+  rw [← Submodule.map_comp, ← Submodule.map_comp]
+  congr 1
+  ext x
   simp
 
 /-- The lattice conjugation of the complex model of a rational subspace is the restriction of

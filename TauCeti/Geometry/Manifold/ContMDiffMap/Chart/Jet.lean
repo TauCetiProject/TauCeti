@@ -23,6 +23,9 @@ chart. It is the vector-valued coordinate-map space needed when treating maps be
 locally in the target. The topology is supplied explicitly, so it can coexist with the existing
 global-chart instance; on normed spaces the two topologies agree.
 
+Use `open scoped TauCeti.ChartWeakWhitney` to select the source-chart topology on the
+space of smooth maps, including when forming continuous maps into that space.
+
 The construction follows M. Hirsch, *Differential Topology*, GTM 33, Chapter 2, §1, and extends
 the global-chart construction in `ContMDiffMap.WeakWhitney` using Mathlib's extended charts and
 iterated derivatives within sets. No boundaryless or compactness assumption is needed here.
@@ -241,3 +244,10 @@ global-chart construction. -/
 end NormedSpace
 
 end ContMDiffMap
+
+namespace TauCeti
+
+-- When selected, prefer this topology to the global-chart instance on normed spaces.
+scoped[TauCeti.ChartWeakWhitney] attribute [instance 1100] ContMDiffMap.chartWeakWhitneyTopology
+
+end TauCeti

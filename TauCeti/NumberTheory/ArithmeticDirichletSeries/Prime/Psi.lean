@@ -63,10 +63,9 @@ standard nonnegative logarithmic prime-power weight, use Layer 5 to prove
 `primeTheta_asymptotic_of_primePsi` consume that named estimate."  It also supplies the arithmetic
 half of Layer **10.1**, "Define `primePsi` with all prime powers present": the exact nonnegative
 von Mangoldt coefficient system and the identity presenting `ψ` as its partial sum, which is the
-shape in which a Tauberian theorem delivers its conclusion.  What remains of 10.1 — the analytic
-package `PrimeBoundaryRemainder`, carrying the `LSeriesHasSum` and boundary-continuity hypotheses,
-and the asymptotic `primePsi_asymptotic_of_boundary` it yields — waits on the Wiener–Ikehara
-theorem of Layer 9.
+shape in which a Tauberian theorem delivers its conclusion.  The analytic boundary package and
+the resulting prime-number-theorem transfer are in
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Prime/Boundary.lean`.
 
 ## References
 

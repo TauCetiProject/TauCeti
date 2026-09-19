@@ -59,6 +59,13 @@ the ambiguous class number formula and its narrow form.
   `2`-torsion narrow class is the narrow class of an ambiguous ideal.
 * `NumberField.NarrowClassGroup.sq_eq_one_iff_exists_map_ringOfIntegersQuadraticConj_eq_self`: the
   ambiguous narrow classes are exactly the narrow classes of ambiguous ideals.
+* `NumberField.NarrowClassGroup.isStronglyAmbiguousClass_iff_exists_sq_eq_one`: the strongly
+  ambiguous classes are the image of the narrow `2`-torsion classes.
+* `NumberField.stronglyAmbiguousClassSubgroup`: the subgroup of strongly ambiguous ordinary ideal
+  classes, defined in the signature-independent basic module.
+* `NumberField.NarrowClassGroup.natCard_stronglyAmbiguousClassSubgroup_mul_natCard_ker`: the
+  number of strongly ambiguous classes times the narrow defect is the number of `2`-torsion
+  narrow classes.
 * `NumberField.NarrowClassGroup.mk0_mem_closure_of_map_eq_self`: the narrow class of an ambiguous
   ideal is a product of narrow classes of primes above ramified rational primes.
 * `NumberField.NarrowClassGroup.mem_closure_of_sq_eq_one`: every `2`-torsion narrow class is such a
@@ -222,6 +229,57 @@ theorem sq_eq_one_iff_exists_map_ringOfIntegersQuadraticConj_eq_self
   ⟨exists_map_ringOfIntegersQuadraticConj_eq_self_of_sq_eq_one hmin hgen, by
     rintro ⟨I, hI, rfl⟩
     exact mk0_sq_eq_one_of_map_ringOfIntegersQuadraticConj_eq_self hmin hgen hI⟩
+
+variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
+
+/-- The strongly ambiguous ordinary classes are exactly the images of the `2`-torsion narrow
+classes under `Cl⁺(K) → Cl(K)`. -/
+theorem isStronglyAmbiguousClass_iff_exists_sq_eq_one
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    (C : ClassGroup (𝓞 K)) :
+    IsStronglyAmbiguousClass hmin hgen C ↔
+      ∃ c : NarrowClassGroup K, c ^ 2 = 1 ∧ toClassGroup c = C := by
+  constructor
+  · intro hC
+    obtain ⟨I, hI, rfl⟩ := hC.elim
+    exact ⟨mk0 I, mk0_sq_eq_one_of_map_ringOfIntegersQuadraticConj_eq_self hmin hgen hI,
+      toClassGroup_mk0 I⟩
+  · rintro ⟨c, hc, rfl⟩
+    obtain ⟨I, hI, rfl⟩ :=
+      (sq_eq_one_iff_exists_map_ringOfIntegersQuadraticConj_eq_self hmin hgen c).mp hc
+    rw [toClassGroup_mk0]
+    exact IsStronglyAmbiguousClass.intro hmin hgen I hI
+
+/-- **The classes of ambiguous ideals and the narrow defect.** For a quadratic field `K` of either
+signature, the number of ideal classes represented by an ideal fixed by quadratic conjugation,
+times the order of the kernel of `Cl⁺(K) → Cl(K)`, is the number of narrow classes of order
+dividing `2`. -/
+theorem natCard_stronglyAmbiguousClassSubgroup_mul_natCard_ker
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
+    Nat.card (stronglyAmbiguousClassSubgroup hmin hgen) *
+        Nat.card (toClassGroup (K := K)).ker =
+      Nat.card {C : NarrowClassGroup K // C ^ 2 = 1} := by
+  set f := toClassGroup (K := K)
+  set H := (powMonoidHom 2 : NarrowClassGroup K →* NarrowClassGroup K).ker
+  have hkerH : f.ker ≤ H := by
+    rw [toClassGroup_ker]
+    rintro _ ⟨x, rfl⟩
+    simp [H, MonoidHom.mem_ker]
+  have hS : Nat.card (stronglyAmbiguousClassSubgroup hmin hgen) =
+      Nat.card (H.map f) := by
+    refine Nat.card_congr (Equiv.subtypeEquivRight fun C => ?_)
+    simpa only [mem_stronglyAmbiguousClassSubgroup, Subgroup.mem_map, H, MonoidHom.mem_ker,
+      powMonoidHom_apply, f] using
+      isStronglyAmbiguousClass_iff_exists_sq_eq_one hmin hgen C
+  have hH : Nat.card {C : NarrowClassGroup K // C ^ 2 = 1} = Nat.card H :=
+    Nat.card_congr (Equiv.subtypeEquivRight fun C => by simp [H, MonoidHom.mem_ker])
+  have hker : Nat.card (f.domRestrict H).ker = Nat.card f.ker := by
+    rw [MonoidHom.ker_domRestrict]
+    exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe hkerH).toEquiv
+  rw [hS, hH, ← MonoidHom.domRestrict_range, ← hker, ← Subgroup.index_ker, mul_comm,
+    Subgroup.card_mul_index]
+
+variable {Q : ℕ → (Ideal (𝓞 K))⁰}
 
 /-- **The narrow class of an ambiguous ideal is a product of narrow classes of ramified primes.**
 Let `K` be a quadratic number field with quadratic conjugation `σ`, and let `Q p` be a prime of

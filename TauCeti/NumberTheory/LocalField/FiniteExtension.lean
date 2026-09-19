@@ -27,7 +27,8 @@ restricting to the valuation class of `K` induces the order of the spectral norm
 element of spectral norm at most `1` has a minimal polynomial with integral coefficients. Hence
 any valuative relation on `M` extending that of `K` is the one constructed here, any compatible
 valuative topology on `M` is the norm topology, and every `K`-algebra automorphism of `M`
-preserves the valuation.
+preserves the valuation. The same integrality of the minimal polynomial identifies the ring of
+integers of `M` with the integral closure of that of `K`.
 
 All structures are named definitions rather than global instances, so that a field already
 carrying a compatible topology or valuative relation acquires no diamond. They are meant to be
@@ -56,6 +57,10 @@ installed locally, as in `letI := finiteExtensionValuativeRel K M`.
 * `TauCeti.finiteExtensionNormedFieldTopology_eq`: any valuative topology for such a relation is
   the norm topology.
 * `AlgEquiv.valuation_eq`: `K`-algebra automorphisms of `M` preserve the valuation.
+* `Valuation.Integers.isIntegral_iff_valuation_le_one`: for any valuative relation on `M`
+  extending that of `K`, an element of `M` is integral over a ring of integers of `K` exactly when
+  its valuation is at most `1`.
+* `TauCeti.integerRing_eq_integralClosure`: `𝒪[M]` is the integral closure of `𝒪[K]` in `M`.
 
 ## Implementation notes
 
@@ -223,19 +228,27 @@ section Uniqueness
 
 variable {K M} {Γ : Type*} [LinearOrderedCommGroupWithZero Γ]
 
+/-- The coefficients of the minimal polynomial over `K` of an element of `M` of spectral norm at
+most `1` lie in `𝒪[K]`. -/
+private theorem coeff_minpoly_mem_integer_of_finiteExtensionNormedField_norm_le_one {x : M}
+    (hx : letI := finiteExtensionNormedField K M; ‖x‖ ≤ 1) (n : ℕ) :
+    (minpoly K x).coeff n ∈ 𝒪[K] := by
+  let _ := normalizedNontriviallyNormedField K
+  have hmon : (minpoly K x).Monic := minpoly.monic (Algebra.IsIntegral.isIntegral x)
+  have h : ‖(minpoly K x).coeff n‖ ≤ 1 := (spectralValue_le_one_iff hmon).1 hx n
+  exact (mem_integer_iff_normalizedAbsoluteValue_le_one _).2
+    (by exact_mod_cast (normalizedNormedField_norm_def ((minpoly K x).coeff n)).symm.trans_le h)
+
 /-- If a valuation `w` on `M` restricts to the valuation class of `K`, every element of `M` of
 spectral norm at most `1` has `w`-valuation at most `1`: the coefficients of its minimal
 polynomial over `K` are integral, so it is integral over the valuation ring of `w`. -/
 private theorem valuation_le_one_of_finiteExtensionNormedField_norm_le_one {w : Valuation M Γ}
     (hw : (w.comap (algebraMap K M)).IsEquiv (valuation K)) {x : M}
     (hx : letI := finiteExtensionNormedField K M; ‖x‖ ≤ 1) : w x ≤ 1 := by
-  let _ := normalizedNontriviallyNormedField K
   have hmon : (minpoly K x).Monic := minpoly.monic (Algebra.IsIntegral.isIntegral x)
   have hcoeff (n : ℕ) : w (algebraMap K M ((minpoly K x).coeff n)) ≤ 1 := by
-    have h : ‖(minpoly K x).coeff n‖ ≤ 1 := (spectralValue_le_one_iff hmon).1 hx n
-    have hc := (mem_integer_iff_normalizedAbsoluteValue_le_one _).2
-      (by exact_mod_cast (normalizedNormedField_norm_def ((minpoly K x).coeff n)).symm.trans_le h)
-    simpa using hw.le_one_iff_le_one.2 hc
+    simpa using hw.le_one_iff_le_one.2
+      (coeff_minpoly_mem_integer_of_finiteExtensionNormedField_norm_le_one hx n)
   refine w.le_one_of_root_monic (hmon.map (algebraMap K M)) (fun n _ => ?_) ?_
   · simpa using hcoeff n
   · rw [Polynomial.eval_map_algebraMap, minpoly.aeval]
@@ -350,5 +363,54 @@ theorem _root_.AlgEquiv.valuation_eq [ValuativeRel M] [ValuativeExtension K M] (
     ((finiteExtensionNormedField_norm_le_norm_iff hw _ _).1 h.ge)
 
 end Uniqueness
+
+/-! ### The ring of integers is the integral closure -/
+
+section IntegralClosure
+
+variable {K M} [ValuativeRel M] [ValuativeExtension K M]
+
+/-- **The integers of a finite extension are the integral elements.** Let `M` be a finite
+extension of a nonarchimedean local field `K`, with a valuative relation extending that of `K`,
+and let `O` be any ring of integers of `K`, that is, `(valuation K).Integers O`. An element of
+`M` is integral over `O` exactly when its valuation is at most `1`; see Neukirch, Chapter II,
+§4 and §6. -/
+theorem _root_.Valuation.Integers.isIntegral_iff_valuation_le_one {O : Type*} [CommRing O]
+    [Algebra O K] [Algebra O M] [IsScalarTower O K M] (hO : (valuation K).Integers O) (x : M) :
+    IsIntegral O x ↔ valuation M x ≤ 1 := by
+  have hw := ValuativeRel.isEquiv ((valuation M).comap (algebraMap K M)) (valuation K)
+  constructor
+  · -- A root of a monic polynomial with coefficients of valuation at most `1` has valuation at
+    -- most `1`.
+    rintro ⟨p, hp, hpx⟩
+    refine (valuation M).le_one_of_root_monic (hp.map (algebraMap O M)) (fun n _ => ?_) ?_
+    · rw [Polynomial.coeff_map, IsScalarTower.algebraMap_apply O K M]
+      exact hw.le_one_iff_le_one.2 (hO.map_le_one _)
+    · rwa [Polynomial.eval_map]
+  · -- The minimal polynomial over `K` has coefficients in `𝒪[K]`, so it lifts to a monic
+    -- polynomial over `O`.
+    intro hx
+    let _ := finiteExtensionNormedField K M
+    have hmon : (minpoly K x).Monic := minpoly.monic (Algebra.IsIntegral.isIntegral x)
+    have hlifts : minpoly K x ∈ Polynomial.lifts (algebraMap O K) :=
+      (Polynomial.lifts_iff_coeff_lifts _).2 fun n => hO.exists_of_le_one
+        (coeff_minpoly_mem_integer_of_finiteExtensionNormedField_norm_le_one
+          ((finiteExtensionNormedField_norm_le_one_iff hw x).2 hx) n)
+    obtain ⟨q, hq, -, hqm⟩ := Polynomial.lifts_and_natDegree_eq_and_monic hlifts hmon
+    refine ⟨q, hqm, ?_⟩
+    rw [← Polynomial.aeval_def, ← Polynomial.aeval_map_algebraMap K, hq, minpoly.aeval]
+
+variable (K M) in
+/-- The ring of integers `𝒪[M]` of a finite extension `M` of a nonarchimedean local field `K`,
+for a valuative relation extending that of `K`, is the integral closure of `𝒪[K]` in `M`. -/
+theorem integerRing_eq_integralClosure :
+    𝒪[M] = (integralClosure 𝒪[K] M).toSubring := by
+  ext x
+  rw [Subalgebra.mem_toSubring, mem_integralClosure_iff,
+    Valuation.Integers.isIntegral_iff_valuation_le_one
+      (Valuation.integer.integers (valuation K)),
+    Valuation.mem_integer_iff]
+
+end IntegralClosure
 
 end TauCeti
