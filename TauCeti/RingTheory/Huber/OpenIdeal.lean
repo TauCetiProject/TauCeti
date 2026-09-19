@@ -36,6 +36,8 @@ work is that an *ideal* of `A` containing the image of `Iⁿ` automatically cont
   those criteria that the valuation theory needs — if a finite set `T` spans an open ideal, then
   a basic neighbourhood of zero consists of `T`-combinations whose *coefficients* lie in the
   image of the ideal of definition, hence are topologically nilpotent.
+* `TauCeti.Huber.exists_finset_subset_isOpen_span`: every neighbourhood of zero of a Huber ring
+  contains a finite set generating an open ideal.
 * `TauCeti.Huber.IsTateRing.isOpen_iff_eq_top`: an ideal of a Tate ring is open exactly when it is
   the whole ring.
 
@@ -205,6 +207,28 @@ theorem exists_forall_mem_idealImage_exists_sum_eq (P : PairOfDefinition A) (T :
       _ = (y : A) := by rw [hsum]
 
 end PairOfDefinition
+
+section IsHuberRing
+
+open Topology
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+
+/-- **Every neighbourhood of zero of a Huber ring contains a finite set generating an open
+ideal.** Unlike an open ideal itself, such a set can be chosen inside an arbitrarily small
+neighbourhood of zero. -/
+theorem exists_finset_subset_isOpen_span [IsHuberRing A] {V : Set A} (hV : V ∈ 𝓝 (0 : A)) :
+    ∃ G : Finset A, (G : Set A) ⊆ V ∧ IsOpen (Ideal.span (G : Set A) : Set A) := by
+  obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
+  obtain ⟨n, -, hn⟩ := P.hasBasis_nhds_zero.mem_iff.mp hV
+  -- `(I · A)ⁿ` is finitely generated and spanned by the image of `Iⁿ`, which lies in `V`, so a
+  -- finite part of that image already spans it.
+  obtain ⟨G, hG, hspan⟩ := (Submodule.fg_span_iff_fg_span_finset_subset _).mp
+    (P.extendedIdealOfDefinition_pow n ▸ P.fg_extendedIdealOfDefinition.pow)
+  exact ⟨G, hG.trans hn, (P.isOpen_iff_exists_pow_le _).mpr
+    ⟨n, (P.extendedIdealOfDefinition_pow n).trans_le hspan.le⟩⟩
+
+end IsHuberRing
 
 section Tate
 
