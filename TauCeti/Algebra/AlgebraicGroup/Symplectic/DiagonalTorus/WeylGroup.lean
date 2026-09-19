@@ -290,21 +290,25 @@ theorem diagonalWreathProductMulEquivWeylGroup_smul_single
     signedPerm_diagonalWreathProductMulEquivWeylGroup, WreathProduct.imprimitiveToPerm_apply]
   split_ifs with h <;> simp [signedCharacter, h]
 
-/-- In coordinates, a signed permutation `w` moves the `a`-th coordinate of a character to position
-`π a`, where `π` is `w.right`, negating it exactly when `w` changes the sign of `π a`. -/
+/-- In coordinates, the `b`-th coordinate of a character moved by a signed permutation `w` is the
+`π⁻¹ b`-th coordinate of the character, where `π` is `w.right`, negated exactly when `w` changes
+the sign of `b`. -/
 @[simp]
 theorem diagonalWreathProductMulEquivWeylGroup_smul_apply
-    (w : WreathProduct (Equiv.Perm Bool) (Fin m)) (x : ULift.{u} (Fin m) →₀ ℤ) (a : Fin m) :
-    (diagonalWreathProductMulEquivWeylGroup.{u} m w • x) (ULift.up (w.right a)) =
-      if w.left (w.right a) false then -x (ULift.up a) else x (ULift.up a) := by
+    (w : WreathProduct (Equiv.Perm Bool) (Fin m)) (x : ULift.{u} (Fin m) →₀ ℤ) (b : Fin m) :
+    (diagonalWreathProductMulEquivWeylGroup.{u} m w • x) (ULift.up b) =
+      if w.left b false then -x (ULift.up (w.right.symm b))
+        else x (ULift.up (w.right.symm b)) := by
   classical
+  obtain ⟨a, rfl⟩ : ∃ a, w.right a = b := ⟨w.right.symm b, w.right.apply_symm_apply b⟩
+  rw [Equiv.symm_apply_apply]
   induction x using Finsupp.induction_linear with
   | zero => simp
   | add x y hx hy =>
     rw [smul_add, Finsupp.add_apply, hx, hy]
     split_ifs <;> simp only [Finsupp.add_apply, neg_add]
-  | single b n =>
-    obtain ⟨b⟩ := b
+  | single c n =>
+    obtain ⟨c⟩ := c
     rw [diagonalWreathProductMulEquivWeylGroup_smul_single]
     simp only [Finsupp.single_apply, ULift.up_inj, (w.right).injective.eq_iff]
     split_ifs <;> simp_all
