@@ -37,6 +37,10 @@ namespace TauCeti.GridDiagram
 
 variable (R : Type*) [CommRing R] [CharP R 2]
 
+/- Notation local to this file: `Poly` is the surviving polynomial ring, and `Cyc` is the
+cycle submodule `simplyBlockedCycles`. The equivalence `eChain` is `simplyBlockedChainEquiv`,
+identifying the complex's object with `GridChainHat R 2 0`; applying `eChain c` to a grid
+state extracts its coefficient from this finitely supported chain. -/
 local notation "Poly" => MvPolynomial {c : Fin 2 // c ≠ 0} R
 local notation "Cyc" => twoByTwo.isKnot_of_two.simplyBlockedCycles R 0
 local notation "eChain" => twoByTwo.simplyBlockedChainEquiv R 0
