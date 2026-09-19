@@ -24,8 +24,9 @@ stabilizer is the kernel of the representation, a normal subgroup whose index is
 
 * `TauCeti.TriangleGroup.normal_comap_stabilizer_toPerm_iff`: for a connected triple, the point
   stabilizer of its representation is normal exactly when the triple is regular.
-* `TauCeti.TriangleGroup.comap_stabilizer_toPerm_eq_ker`: for a regular triple, the point
-  stabilizer of every sheet is the kernel of the representation.
+* `TauCeti.TriangleGroup.comap_stabilizer_toPerm_eq_ker`: when the monodromy group acts freely
+  (e.g. for a regular triple), the point stabilizer of every sheet is the kernel of the
+  representation.
 * `TauCeti.TriangleGroup.index_ker_toPerm`: the kernel of the representation has index the order
   of the monodromy group, and `TauCeti.TriangleGroup.index_ker_toPerm_of_isRegular`: for a
   regular triple this is the degree.
@@ -57,12 +58,12 @@ private theorem exists_toPerm_apply_eq (ht : t.IsConnected) (i k : Fin n) :
     (range_toPerm t ha hb hc).symm ▸ g.2
   exact ⟨κ, hκ ▸ hg⟩
 
-/-- For a regular triple, the point stabilizer of every sheet under the representation of the
-triangle group is the kernel of the representation. -/
-theorem comap_stabilizer_toPerm_eq_ker (ht : t.IsRegular) (i : Fin n) :
+/-- For a triple whose monodromy group acts freely (for instance a regular triple), the point
+stabilizer of every sheet under the representation of the triangle group is the kernel of the
+representation. -/
+theorem comap_stabilizer_toPerm_eq_ker [IsCancelSMul t.monodromyGroup (Fin n)] (i : Fin n) :
     (MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t ha hb hc) =
       (toPerm t ha hb hc).ker := by
-  have := ht.isCancelSMul
   ext δ
   rw [Subgroup.mem_comap, MulAction.mem_stabilizer_iff, MonoidHom.mem_ker]
   refine ⟨fun hδ => ?_, fun hδ => by rw [hδ, one_smul]⟩
@@ -96,7 +97,8 @@ theorem normal_comap_stabilizer_toPerm_iff (ht : t.IsConnected) (i : Fin n) :
       refine Subtype.ext <| hδ ▸ Equiv.ext fun k => ?_
       exact (hK δ k).mpr ((hK δ j).mp hδj)
     exact ht.isRegular
-  · rw [comap_stabilizer_toPerm_eq_ker t ha hb hc hreg i]
+  · have := hreg.isCancelSMul
+    rw [comap_stabilizer_toPerm_eq_ker t ha hb hc i]
     infer_instance
 
 /-- The kernel of the representation of a triple has index the order of its monodromy group, the
