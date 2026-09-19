@@ -21,10 +21,10 @@ empty.
 
 The grid states of `G'` split into those that contain `c`, denoted `I`, and the others, denoted
 `N`. This file proves two coefficient-level facts about the unblocked differential `∂⁻` of
-`G'`. They are ingredients for a future presentation of `GC⁻(G')` as the mapping cone of the
-component `I → N` of `∂⁻`, with the `I` block identified with `GC⁻(G)` over one more
-variable; this is the form in which Ozsváth, Stipsicz and Szabó compare the stabilized complex
-with `GC⁻(G)`.
+`G'`. They are the ingredients of the presentation of `GC⁻(G')` as the mapping cone of the
+component `I → N` of `∂⁻` in `TauCeti.KnotTheory.Grid.Stabilization.Cone`, with the `I` block
+identified with `GC⁻(G)` over one more variable; this is the form in which Ozsváth, Stipsicz and
+Szabó compare the stabilized complex with `GC⁻(G)`.
 
 * **The `N`-to-`I` coefficient block vanishes.** A rectangle from a state outside `I` to a state
   in `I` has `c` as a corner, so it covers one of the two `X`-marked squares of the block. Hence
