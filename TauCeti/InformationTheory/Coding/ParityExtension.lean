@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.Binary.Basic
+public import TauCeti.InformationTheory.Coding.Elementary.Basic
 public import TauCeti.InformationTheory.Coding.Puncture
 public import Mathlib.Logic.Equiv.Option
 
@@ -17,9 +17,8 @@ every extended word has coordinate sum zero. The original coordinates are indexe
 and the new coordinate by `none`. The extension preserves dimension and cardinality.
 
 A code with zero coordinate sums can be recovered after puncturing any coordinate by parity
-extension, with the original coordinate order restored by `Equiv.optionSubtypeNe`. Over the
-binary alphabet the hypothesis is exactly evenness. This gives the recovery mechanism for
-punctured even codes, including extended binary Golay codes.
+extension, with the original coordinate order restored by `Equiv.optionSubtypeNe`. The binary
+evenness specializations are in `TauCeti.InformationTheory.Coding.Binary.ParityExtension`.
 
 ## References
 
@@ -223,18 +222,5 @@ theorem parityExtension_reindex [Fintype κ] (C : LinearCode F ι) (e : κ ≃ �
     refine ⟨⟨y ∘ some, hy, fun k ↦ hyx (some k)⟩, ?_⟩
     rw [← Equiv.sum_comp e.optionCongr y] at hys
     simpa only [hyx] using hys
-
-/-- Every binary parity extension is even. -/
-theorem BinaryCode.isEven_parityExtension (C : LinearCode (ZMod 2) ι) :
-    BinaryCode.IsEven (parityExtension C) :=
-  BinaryCode.isEven_iff_le_singleParityCheckCode.mpr
-    (parityExtension_le_singleParityCheckCode C)
-
-/-- Every even binary code is recovered by parity-extending a puncture at any coordinate. -/
-theorem BinaryCode.IsEven.parityExtension_punctureAt [DecidableEq ι]
-    {C : LinearCode (ZMod 2) ι} (hC : BinaryCode.IsEven C) (i : ι) :
-    parityExtension (punctureAt C i) = reindex C (Equiv.optionSubtypeNe i) :=
-  TauCeti.parityExtension_punctureAt C i
-    (BinaryCode.isEven_iff_le_singleParityCheckCode.mp hC)
 
 end TauCeti
