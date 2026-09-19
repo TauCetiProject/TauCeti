@@ -16,7 +16,8 @@ direction `a`: its members are the `z` with `0 < (conj a * z).re`. Specializatio
 four axis-aligned half-planes cover the common cases.
 
 The module also records a locally uniform lower bound for the distance from a point of the slit
-plane to the closed negative half-axis.
+plane to the closed negative half-axis. This bound locally dominates slit-plane kernels and thus
+supports differentiation and holomorphy arguments for parameter-dependent Stieltjes integrals.
 
 These criteria feed logarithm evaluations of index integrals: a curve piece confined to a
 half-plane about the winding point has slit-compatible chord ratios, so its index integral
