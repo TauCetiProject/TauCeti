@@ -34,6 +34,9 @@ arbitrary, rather than vertex-fixing, isomorphism classes of skew-zigzag algebra
   relators for the transported parameter.
 * `TauCeti.skewZigzagQuotientEquiv_skewZigzagMk`: the quotient isomorphism sends a class to the
   class of its relabelled path-algebra representative.
+* `TauCeti.skewZigzagQuotientEquiv_refl`, `TauCeti.skewZigzagQuotientEquiv_trans`, and
+  `TauCeti.skewZigzagQuotientEquiv_symm`: quotient relabelling is coherent with graph-isomorphism
+  identities, composition, and inverses.
 
 ## References
 
@@ -203,5 +206,54 @@ theorem skewZigzagQuotientEquiv_skewZigzagMk (e : G ≃g H)
       skewZigzagMk k H (c.relabel e) (pathAlgebraEquiv k e z) := by
   rw [skewZigzagMk_apply, skewZigzagMk_apply, skewZigzagQuotientEquiv,
     Ideal.quotientEquivAlg_mk]
+
+private theorem skewZigzagMk_cast {c d : SkewZigzagParameter k G} (h : c = d)
+    (x : pathAlgebra k (DoubledQuiver G)) :
+    AlgEquiv.cast (R := k) h (skewZigzagMk k G c x) = skewZigzagMk k G d x := by
+  subst d
+  rfl
+
+/-- The inverse quotient isomorphism is induced by inverse graph relabelling, after identifying
+the twice-relabelled parameter with the original parameter. -/
+@[simp]
+theorem skewZigzagQuotientEquiv_symm (e : G ≃g H) (c : SkewZigzagParameter k G) :
+    (skewZigzagQuotientEquiv k e c).symm =
+      (skewZigzagQuotientEquiv k e.symm (c.relabel e)).trans
+        (AlgEquiv.cast (SkewZigzagParameter.relabel_symm_relabel e c)) := by
+  refine AlgEquiv.ext fun z ↦ ?_
+  obtain ⟨x, rfl⟩ := skewZigzagMk_surjective k H (c.relabel e) z
+  apply (skewZigzagQuotientEquiv k e c).injective
+  rw [AlgEquiv.apply_symm_apply, AlgEquiv.trans_apply,
+    skewZigzagQuotientEquiv_skewZigzagMk, skewZigzagMk_cast,
+    skewZigzagQuotientEquiv_skewZigzagMk, ← DoubledQuiver.pathAlgebraEquiv_symm,
+    AlgEquiv.apply_symm_apply]
+
+/-- Relabelling by the identity graph isomorphism induces the identity quotient isomorphism,
+after identifying the relabelled parameter with the original parameter. -/
+@[simp]
+theorem skewZigzagQuotientEquiv_refl (c : SkewZigzagParameter k G) :
+    (skewZigzagQuotientEquiv k (SimpleGraph.Iso.refl (G := G)) c).trans
+        (AlgEquiv.cast (SkewZigzagParameter.relabel_refl c)) = AlgEquiv.refl := by
+  refine AlgEquiv.ext fun z ↦ ?_
+  obtain ⟨x, rfl⟩ := skewZigzagMk_surjective k G c z
+  rw [AlgEquiv.trans_apply, skewZigzagQuotientEquiv_skewZigzagMk,
+    skewZigzagMk_cast, DoubledQuiver.pathAlgebraEquiv_refl]
+  rfl
+
+/-- Relabelling along a composite graph isomorphism agrees with successive quotient
+relabellings, after identifying the two relabelled parameters. -/
+theorem skewZigzagQuotientEquiv_trans {X : Type x} [Finite X] {K : SimpleGraph X} (e : G ≃g H)
+    (f : H ≃g K) (c : SkewZigzagParameter k G) :
+    (skewZigzagQuotientEquiv k (e.trans f) c).trans
+        (AlgEquiv.cast (SkewZigzagParameter.relabel_trans e f c)) =
+      (skewZigzagQuotientEquiv k e c).trans
+        (skewZigzagQuotientEquiv k f (c.relabel e)) := by
+  refine AlgEquiv.ext fun z ↦ ?_
+  obtain ⟨x, rfl⟩ := skewZigzagMk_surjective k G c z
+  rw [AlgEquiv.trans_apply, AlgEquiv.trans_apply,
+    skewZigzagQuotientEquiv_skewZigzagMk, skewZigzagQuotientEquiv_skewZigzagMk,
+    skewZigzagQuotientEquiv_skewZigzagMk, skewZigzagMk_cast,
+    DoubledQuiver.pathAlgebraEquiv_trans]
+  rfl
 
 end TauCeti
