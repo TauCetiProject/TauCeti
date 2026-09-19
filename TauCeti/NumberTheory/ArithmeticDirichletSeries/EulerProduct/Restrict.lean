@@ -239,7 +239,7 @@ theorem logDeriv_LSeries_ofBadPrimes (S : Finset (HeightOneSpectrum (𝓞 K))) {
     logDeriv_fun_mul s (dedekindZeta_ne_zero_of_one_lt_re hs)
       (prod_one_sub_absNorm_cpow_neg_ne_zero S hs0) hζ (DifferentiableAt.fun_finsetProd hfac),
     logDeriv_fun_prod ?_ hfac]
-  · exact congrArg _ (Finset.sum_congr rfl fun P _ ↦ logDeriv_one_sub_absNorm_cpow_neg P hs0)
+  · exact congrArg _ (Finset.sum_congr rfl fun P _ ↦ P.logDeriv_one_sub_absNorm_cpow_neg hs0)
   · exact fun P hP ↦ Finset.prod_ne_zero_iff.mp (prod_one_sub_absNorm_cpow_neg_ne_zero S hs0) P hP
 
 /-- **The Euler-factor correction is holomorphic on `Re s > 0`.** The finite sum
