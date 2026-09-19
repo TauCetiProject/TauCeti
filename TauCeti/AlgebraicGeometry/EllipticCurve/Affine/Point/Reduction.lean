@@ -15,20 +15,22 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.ValuationIntegralit
 
 Let `v` be a valuation on a field `F`, with valuation ring `O` and residue field `k`, and let `W`
 be a Weierstrass curve over `F` with an integral model `W_O` over `O`. Every point of `W(F)`
-reduces to a `k`-point of the projective plane lying on the reduced curve `W̃ = W_O ⊗ k`: write
+reduces to a `k`-point of the projective plane lying on the reduced curve `W_k = W_O ⊗ k`: write
 the point in projective coordinates `(X : Y : Z)` with `X, Y, Z ∈ O` not all in the maximal
-ideal, and reduce the coordinates. This is the reduction map `E(K) → Ẽ(k)` of Silverman VII.2,
-here for an arbitrary valuation and an arbitrary integral model.
+ideal, and reduce the coordinates. This is the reduction map `E(K) → E_k(k)` of Silverman VII.2,
+here for an arbitrary valuation and an arbitrary integral model. Throughout, `res a` denotes the
+image in `k` of an element `a` of `O`.
 
 The value is a class of `Fin 3 → k` modulo scaling, Mathlib's
 `WeierstrassCurve.Projective.PointClass`. It need not be a nonsingular point: at a point
 reducing to the singular point of a curve with bad reduction it is not.
 
 `Point.reduction` is defined by cases rather than through a choice of primitive coordinates. An
-affine point `(x, y)` with `v(x) ≤ 1` has `v(y) ≤ 1` as well, and reduces to `(x̄ : ȳ : 1)`; one
-with `1 < v(x)` has `v(x) < v(y)`, so `(x : y : 1) = (x / y : 1 : 1 / y)` with `x / y` and `1 / y`
-in the maximal ideal, and it reduces to `(0 : 1 : 0)`. That this agrees with reducing *any*
-primitive representative is `Point.reduction_some_eq_mk`.
+affine point `(x, y)` with `v(x) ≤ 1` has `v(y) ≤ 1` as well, and reduces to
+`(res x : res y : 1)`; one with `1 < v(x)` has `v(x) < v(y)`, so
+`(x : y : 1) = (x / y : 1 : 1 / y)` with `x / y` and `1 / y` in the maximal ideal, and it reduces
+to `(0 : 1 : 0)`. That this agrees with reducing *any* primitive representative is
+`Point.reduction_some_eq_mk`.
 
 ## Main definitions
 
@@ -62,7 +64,7 @@ variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v :
 /-- **The reduction of a point modulo a valuation**, as a point class of the projective plane over
 the residue field. The point at infinity, and an affine point whose `x`-coordinate has a pole,
 reduce to `(0 : 1 : 0)`; an affine point with integral `x`-coordinate, whose `y`-coordinate is
-then integral too, reduces to `(x̄ : ȳ : 1)`. -/
+then integral too, reduces to `(res x : res y : 1)`. -/
 noncomputable def reduction : W.Point → Projective.PointClass (ResidueField v.valuationSubring)
   | 0 => ⟦![0, 1, 0]⟧
   | some x y h =>
@@ -89,7 +91,7 @@ theorem reduction_some_of_one_lt {x y : F} (h : W.Nonsingular x y) (hx : 1 < v x
 
 /-- **Reduction is computed by any primitive representative.** If `(X : Y : Z)`, with coordinates
 in the valuation ring and at least one of them a unit, represents the affine point `(x, y)`, then
-the point reduces to `(X̄ : Ȳ : Z̄)`. -/
+the point reduces to `(res X : res Y : res Z)`. -/
 theorem reduction_some_eq_mk {x y : F} (h : W.Nonsingular x y) {X Y Z : v.valuationSubring}
     (hX : (X : F) = x * Z) (hY : (Y : F) = y * Z) (hu : IsUnit X ∨ IsUnit Y ∨ IsUnit Z) :
     reduction v (some x y h) = ⟦![residue _ X, residue _ Y, residue _ Z]⟧ := by
@@ -119,7 +121,7 @@ theorem reduction_some_eq_mk {x y : F} (h : W.Nonsingular x y) {X Y Z : v.valuat
     ext i
     fin_cases i <;> simp [mul_comm, a, b]
   · -- `x` has a pole, so `X` and `Z` lie in the maximal ideal, `Y` is the unit, and
-    -- `(X : Y : Z)` reduces to `Ȳ • (0 : 1 : 0)`.
+    -- `(X : Y : Z)` reduces to `res Y • (0 : 1 : 0)`.
     rw [reduction_some_of_one_lt v h hx]
     have hxy := valuation_x_lt_valuation_y v h.left hx
     have hY1 : v (Y : F) ≤ 1 := hle Y
