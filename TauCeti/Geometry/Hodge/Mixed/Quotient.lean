@@ -121,6 +121,8 @@ theorem quotient_F (p : ℤ) : hU.quotient.F p =
 
 /-- The complex weight filtration on the quotient is the image of the ambient complex weight
 filtration. -/
+-- This is already a consequence of the simp lemmas `MixedHodgeStructure.WC_def`, `quotient_WQ`,
+-- and `rationalToComplexSubmodule_map_mkQ`, so a simp attribute here would violate `simpNF`.
 theorem quotient_WC (k : ℤ) : hU.quotient.WC k =
     (mhs.WC k).map (rationalToComplexSubmodule hℚ hℂ U).mkQ := by
   rw [MixedHodgeStructure.WC_def, quotient_WQ, rationalToComplexSubmodule_map_mkQ,
