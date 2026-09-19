@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import TauCeti.NumberTheory.LocalField.NormedField
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 import TauCeti.RingTheory.Valuation.RootMonic
 
 /-!
@@ -29,6 +30,14 @@ any valuative relation on `M` extending that of `K` is the one constructed here,
 valuative topology on `M` is the norm topology, and every `K`-algebra automorphism of `M`
 preserves the valuation. The same integrality of the minimal polynomial identifies the ring of
 integers of `M` with the integral closure of that of `K`.
+
+The last part of the file records the module structure of that ring of integers over `𝒪[K]`, for
+an `M` already carrying a compatible valuative topology. Since the topology of `M` is the module
+topology over `K`, the coordinate functionals of a `K`-basis of `M` are continuous, so they are
+bounded on the compact set `𝒪[M]`: a fixed power of a uniformizer of `K` clears the denominators
+of every integer of `M` at once. Hence `𝒪[M]` embeds into a finite free `𝒪[K]`-module and is a
+finite `𝒪[K]`-module of rank `[M : K]`. Freeness is then automatic, since a finite torsion-free
+module over the discrete valuation ring `𝒪[K]` is free.
 
 All structures are named definitions rather than global instances, so that a field already
 carrying a compatible topology or valuative relation acquires no diamond. They are meant to be
@@ -61,6 +70,11 @@ installed locally, as in `letI := finiteExtensionValuativeRel K M`.
   extending that of `K`, an element of `M` is integral over a ring of integers of `K` exactly when
   its valuation is at most `1`.
 * `TauCeti.integerRing_eq_integralClosure`: `𝒪[M]` is the integral closure of `𝒪[K]` in `M`.
+* `TauCeti.continuous_algebraMap`, `TauCeti.continuousSMul` and `TauCeti.isModuleTopology`: the
+  structure map of a compatible finite extension is continuous, and the topology of `M` is the
+  module topology over `K`.
+* `TauCeti.integerRingModuleFinite`: `𝒪[M]` is a finite `𝒪[K]`-module.
+* `TauCeti.finrank_integerRing`: its rank is `[M : K]`.
 
 ## Implementation notes
 
@@ -412,5 +426,158 @@ theorem integerRing_eq_integralClosure :
     Valuation.mem_integer_iff]
 
 end IntegralClosure
+
+/-! ### The integer ring as a module over the base -/
+
+section IntegerRingModule
+
+variable {K M} [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
+  [ValuativeExtension K M]
+
+variable (K M) in
+/-- The structure map of a finite extension `M` of a nonarchimedean local field `K` whose
+valuative relation extends that of `K` is continuous: it is an isometry for the spectral norm,
+whose topology is the topology of `M`. -/
+theorem continuous_algebraMap : Continuous (algebraMap K M) := by
+  -- Rewrite both topologies as the norm topologies, then use that the spectral norm extends the
+  -- normalized absolute value of `K`.
+  rw [← normalizedNormedField_topology_eq K, ← finiteExtensionNormedFieldTopology_eq K M]
+  let _ := normalizedNontriviallyNormedField K
+  have := normalizedNormedField_isUltrametricDist K
+  let _ := finiteExtensionNormedField K M
+  exact (AddMonoidHomClass.isometry_of_norm (algebraMap K M)
+    (finiteExtensionNormedField_norm_algebraMap (M := M))).continuous
+
+/-- A finite extension of a nonarchimedean local field is a topological module over it. -/
+instance continuousSMul : ContinuousSMul K M := by
+  refine ⟨?_⟩
+  have h : Continuous fun p : K × M => algebraMap K M p.1 * p.2 :=
+    ((continuous_algebraMap K M).comp continuous_fst).mul continuous_snd
+  simpa [Algebra.smul_def] using h
+
+/-- **The topology of a finite extension is the module topology.** For a finite extension `M` of
+a nonarchimedean local field `K` with a compatible valuative topology, the topology of `M` is the
+finest one making it a topological `K`-module. Consequently every `K`-linear map from `M` to a
+topological `K`-module is continuous. -/
+instance isModuleTopology : IsModuleTopology K M := by
+  -- `Mathlib.isModuleTopologyOfFiniteDimensional` is stated for the norm topology of `K`, so
+  -- rewrite that topology into the goal and transport the hypotheses it needs.
+  rw [← normalizedNormedField_topology_eq K]
+  let _ := normalizedNontriviallyNormedField K
+  have := normalizedNormedField_isUltrametricDist K
+  have : CompleteSpace K := normalizedNormedField_completeSpace K
+  have : @ContinuousSMul K M _ (normalizedNormedFieldTopology K) ‹TopologicalSpace M› := by
+    rw [normalizedNormedField_topology_eq]
+    infer_instance
+  have : T2Space M := by
+    let _ := IsTopologicalAddGroup.rightUniformSpace M
+    have := isUniformAddGroup_of_addCommGroup (G := M)
+    infer_instance
+  exact isModuleTopologyOfFiniteDimensional
+
+/-- Every element of `K` becomes integral after multiplication by a power of a uniformizer. -/
+private theorem exists_pow_mul_mem_integer {π : 𝒪[K]} (hπ : Irreducible π) (y : K) :
+    ∃ n : ℕ, (π : K) ^ n * y ∈ 𝒪[K] := by
+  rcases le_total (valuation K y) 1 with h | h
+  · exact ⟨0, by rw [Valuation.mem_integer_iff]; simpa using h⟩
+  rcases eq_or_ne y 0 with rfl | hy
+  · exact ⟨0, by simp⟩
+  have hinv : y⁻¹ ∈ 𝒪[K] := by
+    rw [Valuation.mem_integer_iff, map_inv₀, inv_le_one₀ (zero_lt_iff.2 (by simpa using hy))]
+    exact h
+  obtain ⟨m, u, hu⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible
+    (x := (⟨y⁻¹, hinv⟩ : 𝒪[K])) (by simp [Subtype.ext_iff, inv_ne_zero hy]) hπ
+  refine ⟨m, ?_⟩
+  have h1 : y⁻¹ = ((u : 𝒪[K]) : K) * (π : K) ^ m := congrArg Subtype.val hu
+  have h2 : ((u : 𝒪[K]) : K) ≠ 0 := by simp [(Units.isUnit u).ne_zero]
+  have h3 : (((u⁻¹ : 𝒪[K]ˣ) : 𝒪[K]) : K) * ((u : 𝒪[K]) : K) = 1 :=
+    congrArg Subtype.val u.inv_mul
+  have h4 : (π : K) ^ m * y * ((u : 𝒪[K]) : K) = 1 := by
+    have h5 : y * ((u : 𝒪[K]) : K) * (π : K) ^ m = 1 := by
+      rw [mul_assoc, ← h1, mul_inv_cancel₀ hy]
+    linear_combination h5
+  rw [eq_div_of_mul_eq h2 h4, ← eq_div_of_mul_eq h2 h3]
+  exact ((u⁻¹ : 𝒪[K]ˣ) : 𝒪[K]).2
+
+/-- One power of a uniformizer of `K` clears the denominators of the coordinates of every
+integer of `M`: the coordinate functionals of a `K`-basis are continuous, hence bounded on the
+compact set `𝒪[M]`. -/
+private theorem exists_pow_mul_coord_mem_integer {ι : Type*} [Finite ι] (b : Module.Basis ι K M)
+    {π : 𝒪[K]} (hπ : Irreducible π) :
+    ∃ n : ℕ, ∀ x ∈ 𝒪[M], ∀ i, (π : K) ^ n * b.coord i x ∈ 𝒪[K] := by
+  classical
+  have := Fintype.ofFinite ι
+  set V : ℕ → Set M := fun n => {x : M | ∀ i, (π : K) ^ n * b.coord i x ∈ 𝒪[K]} with hV
+  -- Each `V n` is open, because the coordinate functionals are continuous for the module
+  -- topology and `𝒪[K]` is open in `K`.
+  have hVopen : ∀ n, IsOpen (V n) := by
+    intro n
+    have hre : V n = ⋂ i : ι,
+        (b.coord i) ⁻¹' ((fun y : K => (π : K) ^ n * y) ⁻¹' (𝒪[K] : Set K)) := by
+      ext x; simp [hV]
+    rw [hre]
+    exact isOpen_iInter_of_finite fun i =>
+      (Valuation.isOpen_integer.preimage (continuous_const.mul continuous_id)).preimage
+        (IsModuleTopology.continuous_of_linearMap (b.coord i))
+  -- The family increases with `n` and covers `M`.
+  have hstep : ∀ (n : ℕ) (y : K), (π : K) ^ n * y ∈ 𝒪[K] → (π : K) ^ (n + 1) * y ∈ 𝒪[K] := by
+    intro n y hy
+    rw [pow_succ, mul_comm ((π : K) ^ n), mul_assoc]
+    exact Subring.mul_mem _ π.2 hy
+  have hVcover : Set.univ ⊆ ⋃ n, V n := by
+    intro x _
+    choose N hN using fun i => exists_pow_mul_mem_integer hπ (b.coord i x)
+    refine Set.mem_iUnion.2 ⟨Finset.univ.sup N, fun i => ?_⟩
+    exact Nat.le_induction (m := N i) (hN i) (fun k _ ih => hstep k _ ih) _
+      (Finset.le_sup (Finset.mem_univ i))
+  -- Compactness of `𝒪[M]` selects one `n`.
+  have hcpt := IsNonarchimedeanLocalField.isCompact_closedBall M 1
+  obtain ⟨t, ht⟩ := hcpt.elim_finite_subcover V hVopen fun x _ => hVcover (Set.mem_univ x)
+  refine ⟨t.sup id, fun x hx i => ?_⟩
+  obtain ⟨n, hn, hxn⟩ := Set.mem_iUnion₂.1 (ht ((Valuation.mem_integer_iff _ _).1 hx))
+  exact Nat.le_induction (m := n) (hxn i) (fun k _ ih => hstep k _ ih) _
+    (Finset.le_sup (f := id) hn)
+
+/-- The `𝒪[K]`-linear map carrying an integer of `M` to its coordinates against a `K`-basis of
+`M`, rescaled by a common denominator `c` that makes them integral. -/
+private def integerCoord {ι : Type*} (b : Module.Basis ι K M) (c : K)
+    (hc : ∀ x : 𝒪[M], ∀ i, c * b.coord i (x : M) ∈ 𝒪[K]) :
+    𝒪[M] →ₗ[𝒪[K]] (ι → 𝒪[K]) where
+  toFun x i := ⟨c * b.coord i (x : M), hc x i⟩
+  map_add' x y := by
+    ext i
+    simp [mul_add]
+  map_smul' a x := by
+    ext i
+    have h1 : b.coord i ((a • x : 𝒪[M]) : M) = (a : K) * b.coord i (x : M) := by
+      rw [Algebra.smul_def, Subring.coe_mul, coe_algebraMap_integerRing, ← Algebra.smul_def,
+        map_smul, smul_eq_mul]
+    simp only [h1, Pi.smul_apply, smul_eq_mul, Subring.coe_mul, RingHom.id_apply]
+    ring
+
+/-- **The integer ring of a finite extension is a finite module over the base.** Let `M` be a
+finite extension of a nonarchimedean local field `K`, with a compatible valuative topology. Then
+`𝒪[M]` is a finite `𝒪[K]`-module. Together with `Module.Free 𝒪[K] 𝒪[M]`, which instance search
+supplies because `𝒪[K]` is a discrete valuation ring, this gives the integral bases used by the
+theory of ramification. -/
+instance integerRingModuleFinite : Module.Finite 𝒪[K] 𝒪[M] := by
+  classical
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  obtain ⟨n, hn⟩ := exists_pow_mul_coord_mem_integer (Module.finBasis K M) hπ
+  refine Module.Finite.of_injective
+    (integerCoord (Module.finBasis K M) ((π : K) ^ n) fun x i => hn x x.2 i) fun x y hxy => ?_
+  have hc : (π : K) ^ n ≠ 0 := pow_ne_zero _ fun h => hπ.ne_zero (Subtype.ext h)
+  refine Subtype.ext ((Module.finBasis K M).ext_elem fun i => ?_)
+  exact mul_left_cancel₀ hc (congrArg Subtype.val (congrFun hxy i))
+
+omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Module.Finite K M] [TopologicalSpace M]
+  [IsNonarchimedeanLocalField M] in
+variable (K M) in
+/-- The rank of `𝒪[M]` over `𝒪[K]` is the degree `[M : K]`: passing to the fraction fields does
+not change the rank. -/
+theorem finrank_integerRing : Module.finrank 𝒪[K] 𝒪[M] = Module.finrank K M :=
+  (IsFractionRing.finrank_eq 𝒪[K] K 𝒪[M] M).symm
+
+end IntegerRingModule
 
 end TauCeti
