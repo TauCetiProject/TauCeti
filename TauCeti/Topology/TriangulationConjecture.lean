@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ChartedSpace
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.BoundarySphere
-public import TauCeti.Topology.Triangulable
+public import TauCeti.Topology.TriangulableSphere
 
 /-!
 # The triangulation conjecture
@@ -31,8 +30,9 @@ older Kirby–Siebenmann result and is a different statement.
 
 The conjecture is stated, not proved. It holds in dimension zero, where every such space is
 discrete (`TauCeti.triangulationConjecture_zero`); it is also known in dimensions at most three
-(Radó, Moise) and open in dimension four. Every round sphere satisfies the hypotheses, with the
-charts `EuclideanSpace.instChartedSpaceSphere`, and is triangulated by the boundary of a simplex
+(Radó, Moise), fails in dimension four by the work of Freedman and Casson, and fails in every
+dimension at least five by Manolescu. Every round sphere satisfies the hypotheses, with the charts
+`EuclideanSpace.instChartedSpaceSphere`, and is triangulated by the boundary of a simplex
 (`TauCeti.isTriangulable_sphere`).
 
 ## Main definitions
@@ -41,11 +41,11 @@ charts `EuclideanSpace.instChartedSpaceSphere`, and is triangulated by the bound
 
 ## Main results
 
-* `TauCeti.triangulationConjecture_iff`: the defining characterization.
 * `TauCeti.not_triangulationConjecture_iff`: a disproof is a closed topological manifold that is
   not triangulable, the shape of Manolescu's theorem.
+* `TauCeti.isTriangulable_of_chartedSpace_zero`: every space locally homeomorphic to `ℝ⁰` is
+  triangulable.
 * `TauCeti.triangulationConjecture_zero`: the conjecture holds in dimension zero.
-* `TauCeti.isTriangulable_sphere`: the unit `n`-sphere is triangulable.
 
 ## References
 
@@ -53,14 +53,14 @@ charts `EuclideanSpace.instChartedSpaceSphere`, and is triangulated by the bound
   conjecture*, J. Amer. Math. Soc. 29 (2016), 147–176.
 * D. Galewski, R. Stern, *Classification of simplicial triangulations of topological manifolds*,
   Ann. of Math. 111 (1980), 1–34.
+* S. Akbulut, J. McCarthy, *Casson's invariant for oriented homology 3-spheres: an exposition*,
+  Princeton University Press (1990).
 * E. E. Moise, *Geometric Topology in Dimensions 2 and 3*, Springer GTM 47 (1977).
 -/
 
 public section
 
 noncomputable section
-
-open Metric
 
 namespace TauCeti
 
@@ -75,40 +75,26 @@ def TriangulationConjecture.{v} (n : ℕ) : Prop :=
   ∀ (M : Type v) [TopologicalSpace M] [T2Space M] [CompactSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin n)) M], IsTriangulable.{v} M
 
-/-- The defining characterization of the triangulation conjecture. -/
-theorem triangulationConjecture_iff {n : ℕ} :
-    TriangulationConjecture.{u} n ↔
-      ∀ (M : Type u) [TopologicalSpace M] [T2Space M] [CompactSpace M]
-        [ChartedSpace (EuclideanSpace ℝ (Fin n)) M], IsTriangulable.{u} M :=
-  Iff.rfl
-
-/-- The triangulation conjecture triangulates any closed topological manifold of its
-dimension. -/
-theorem TriangulationConjecture.isTriangulable {n : ℕ} (h : TriangulationConjecture.{u} n)
-    (M : Type u) [TopologicalSpace M] [T2Space M] [CompactSpace M]
-    [ChartedSpace (EuclideanSpace ℝ (Fin n)) M] : IsTriangulable.{u} M :=
-  h M
-
 /-- The triangulation conjecture fails in dimension `n` exactly when some closed topological
 `n`-manifold is not triangulable. This is the shape of Manolescu's theorem. -/
+@[simp]
 theorem not_triangulationConjecture_iff {n : ℕ} :
     ¬ TriangulationConjecture.{u} n ↔
       ∃ (M : Type u) (_ : TopologicalSpace M) (_ : T2Space M) (_ : CompactSpace M)
         (_ : ChartedSpace (EuclideanSpace ℝ (Fin n)) M), ¬ IsTriangulable.{u} M := by
-  simp only [triangulationConjecture_iff, not_forall, exists_prop]
+  simp only [TriangulationConjecture, not_forall, exists_prop]
+
+/-- Every topological space locally homeomorphic to the zero-dimensional Euclidean space is
+triangulable. -/
+theorem isTriangulable_of_chartedSpace_zero (M : Type u) [TopologicalSpace M]
+    [ChartedSpace (EuclideanSpace ℝ (Fin 0)) M] : IsTriangulable.{u} M := by
+  have := ChartedSpace.discreteTopology (EuclideanSpace ℝ (Fin 0)) M
+  exact isTriangulable_of_discreteTopology M
 
 /-- The triangulation conjecture holds in dimension zero: a space locally homeomorphic to the
 one-point space `ℝ⁰` is discrete, hence triangulated by its points. -/
 theorem triangulationConjecture_zero : TriangulationConjecture.{u} 0 := by
   intro M _ _ _ _
-  have := ChartedSpace.discreteTopology (EuclideanSpace ℝ (Fin 0)) M
-  exact isTriangulable_of_discreteTopology M
-
-/-- The unit `n`-sphere, a closed topological `n`-manifold, is triangulable: it is
-homeomorphic to the realization of the boundary of the standard `(n + 1)`-simplex. -/
-theorem isTriangulable_sphere (n : ℕ) :
-    IsTriangulable.{0} (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
-  (AbstractSimplicialComplex.realizationStandardSuccSimplexBoundaryHomeomorphSphere
-    n).isTriangulable_iff.mp (AbstractSimplicialComplex.isTriangulable_realization _)
+  exact isTriangulable_of_chartedSpace_zero M
 
 end TauCeti
