@@ -484,6 +484,7 @@ theorem eulerCharBelow_sheaf_add_ofPoint (hclosed : IsClosed ({(y : X)} : Set X)
       (X ↘ Spec (.of k)).residueDegree y := by
     dsimp only [S]
     rw [residueShortComplex_X₃]
+    rw [Scheme.Modules.finrank_cohomology_zero_eq_finrank_globalSections]
     exact Scheme.finrank_cohomology_zero_skyscraperResidueField k (y : X)
   rw [h₀, Module.finrank_zero_of_subsingleton, Nat.cast_zero, sub_zero]
   dsimp only [S]

@@ -50,13 +50,12 @@ cohomology `H⁰(X, κ(x)ₓ) = κ(x)` has dimension the residue degree `[κ(x) 
 morphism at `x` (which is `0` by convention when `κ(x)` is infinite over `k`). -/
 @[simp]
 theorem _root_.AlgebraicGeometry.Scheme.finrank_cohomology_zero_skyscraperResidueField (x : X) :
-    Module.finrank k (Scheme.Modules.Cohomology (skyscraperResidueField x) 0) =
+    Module.finrank k Γ(skyscraperResidueField x, ⊤) =
       (X ↘ Spec (.of k)).residueDegree x := by
   let f := X ↘ Spec (.of k)
   let : Algebra ((Spec (.of k)).residueField (f x)) (X.residueField x) :=
     (f.residueFieldMap x).hom.toAlgebra
-  rw [(Scheme.Modules.cohomologyZeroBaseLinearEquiv k X _).finrank_eq, Scheme.Hom.residueDegree,
-    Module.finrank, Module.finrank]
+  rw [Scheme.Hom.residueDegree, Module.finrank, Module.finrank]
   congr 1
   have hx : x ∈ (⊤ : X.Opens) := trivial
   refine rank_eq_of_equiv_equiv _ (skyscraperResidueFieldEquiv x hx)
@@ -73,7 +72,8 @@ theorem _root_.AlgebraicGeometry.Scheme.finiteDimensional_cohomology_skyscraperR
   cases i with
   | zero =>
     refine Module.finite_of_finrank_pos ?_
-    rw [finrank_cohomology_zero_skyscraperResidueField]
+    rw [(Scheme.Modules.cohomologyZeroBaseLinearEquiv k X _).finrank_eq,
+      finrank_cohomology_zero_skyscraperResidueField]
     exact Nat.pos_of_ne_zero hx
   | succ i => infer_instance
 
