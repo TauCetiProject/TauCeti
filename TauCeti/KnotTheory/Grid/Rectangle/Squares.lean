@@ -175,7 +175,6 @@ variable {n : ℕ} {x y : GridState n}
 
 /-- Membership in the squares covered by the underlying rectangle of an oriented rectangle,
 expressed directly in terms of its four sides. -/
-@[simp]
 theorem mem_toGridRectangle_coveredSquares (R : GridRectangleBetween x y)
     (p : Fin n × Fin n) :
     p ∈ R.toGridRectangle.coveredSquares ↔
