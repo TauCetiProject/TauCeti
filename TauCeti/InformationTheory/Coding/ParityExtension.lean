@@ -75,21 +75,52 @@ theorem parityExtend_comp_some {x : Option ι → F} (hx : ∑ j, x j = 0) :
 def parityExtension (C : Submodule F (ι → F)) : Submodule F (Option ι → F) :=
   C.map parityExtend
 
-/-- Parity extension is the image under the parity extension map. -/
-theorem parityExtension_def (C : Submodule F (ι → F)) :
-    parityExtension C = C.map parityExtend := (rfl)
+/-- Parity extension is monotone in the code. -/
+theorem parityExtension_mono : Monotone (parityExtension :
+    Submodule F (ι → F) → Submodule F (Option ι → F)) :=
+  fun _ _ h ↦ Submodule.map_mono h
+
+/-- Parity extension preserves and reflects inclusion of codes. -/
+@[simp]
+theorem parityExtension_le_parityExtension_iff {C D : Submodule F (ι → F)} :
+    parityExtension C ≤ parityExtension D ↔ C ≤ D :=
+  Submodule.map_le_map_iff_of_injective parityExtend_injective C D
+
+/-- The parity extension of the zero code is zero. -/
+@[simp]
+theorem parityExtension_bot : parityExtension (⊥ : Submodule F (ι → F)) = ⊥ :=
+  Submodule.map_bot parityExtend
+
+/-- Parity extension preserves sums of codes. -/
+@[simp]
+theorem parityExtension_sup (C D : Submodule F (ι → F)) :
+    parityExtension (C ⊔ D) = parityExtension C ⊔ parityExtension D :=
+  Submodule.map_sup C D parityExtend
+
+/-- Parity extension preserves intersections of codes. -/
+@[simp]
+theorem parityExtension_inf (C D : Submodule F (ι → F)) :
+    parityExtension (C ⊓ D) = parityExtension C ⊓ parityExtension D :=
+  Submodule.map_inf parityExtend parityExtend_injective
 
 /-- Membership in the extended code is membership of the old coordinates together with the
 zero-sum parity condition. -/
 @[simp]
 theorem mem_parityExtension {C : Submodule F (ι → F)} {x : Option ι → F} :
     x ∈ parityExtension C ↔ x ∘ some ∈ C ∧ ∑ j, x j = 0 := by
-  rw [parityExtension_def, Submodule.mem_map]
+  rw [parityExtension, Submodule.mem_map]
   constructor
   · rintro ⟨y, hy, rfl⟩
     exact ⟨by simpa only [Function.comp_def, parityExtend_some] using hy, sum_parityExtend y⟩
   · rintro ⟨hxC, hx⟩
     exact ⟨x ∘ some, hxC, parityExtend_comp_some hx⟩
+
+/-- Extending the whole word space gives the single-parity-check code. -/
+@[simp]
+theorem parityExtension_top : parityExtension (⊤ : Submodule F (ι → F)) =
+    singleParityCheckCode F (Option ι) := by
+  ext x
+  simp only [mem_parityExtension, Submodule.mem_top, true_and, mem_singleParityCheckCode]
 
 /-- Every parity extension is a subcode of the single-parity-check code. -/
 theorem parityExtension_le_singleParityCheckCode (C : Submodule F (ι → F)) :
@@ -105,7 +136,7 @@ theorem map_some_parityExtension (C : Submodule F (ι → F)) :
       (parityExtend : (ι → F) →ₗ[F] (Option ι → F)) = LinearMap.id := by
     ext x i
     simp
-  rw [parityExtension_def, ← Submodule.map_comp, h, Submodule.map_id]
+  rw [parityExtension, ← Submodule.map_comp, h, Submodule.map_id]
 
 /-- Encoding by parity extension gives a linear equivalence of codeword spaces. -/
 noncomputable def parityExtensionEquiv (C : Submodule F (ι → F)) : C ≃ₗ[F] parityExtension C :=
@@ -113,7 +144,8 @@ noncomputable def parityExtensionEquiv (C : Submodule F (ι → F)) : C ≃ₗ[F
 
 @[simp]
 theorem coe_parityExtensionEquiv_apply (C : Submodule F (ι → F)) (x : C) :
-    (parityExtensionEquiv C x : Option ι → F) = parityExtend (x : ι → F) := (rfl)
+    (parityExtensionEquiv C x : Option ι → F) = parityExtend (x : ι → F) :=
+  Submodule.coe_equivMapOfInjective_apply parityExtend parityExtend_injective C x
 
 @[simp]
 theorem coe_parityExtensionEquiv_symm_apply (C : Submodule F (ι → F))
