@@ -13,6 +13,8 @@ public import TauCeti.InformationTheory.Coding.EuclideanDual
 The repetition code consists of constant words, and the single-parity-check code consists of
 words whose coordinate sum is zero. They are Euclidean duals. A positive-length repetition
 code has as many words as its alphabet; at length zero it has only one word.
+Over a finite field with `q` elements, the parity-check code has `q^(n - 1)` words at length `n`,
+including length zero, where the natural-number subtraction gives exponent zero.
 
 Their weight enumerators are computed in
 `TauCeti.InformationTheory.Coding.Elementary.WeightEnumerator`.
@@ -87,5 +89,17 @@ theorem natCard_repetitionCode [Semiring R] [Nonempty ι] :
     Nat.card (repetitionCode R ι) = Nat.card R := by
   unfold repetitionCode
   exact Nat.card_range_of_injective (Function.const_injective (α := ι) (β := R))
+
+/-- Over a finite field, the parity-check code has `q^(n - 1)` words, including at length zero. -/
+@[simp↓]
+theorem natCard_singleParityCheckCode [Field R] [Finite R] [Fintype ι] :
+    Nat.card (singleParityCheckCode R ι) = Nat.card R ^ (Fintype.card ι - 1) := by
+  cases isEmpty_or_nonempty ι with
+  | inl hι => simp [Fintype.card_eq_zero]
+  | inr hι =>
+    apply Nat.eq_of_mul_eq_mul_left (Nat.card_pos (α := R))
+    rw [mul_pow_sub_one (ne_of_gt (Fintype.card_pos))]
+    simpa only [natCard_repetitionCode, euclideanDual_repetitionCode] using
+      Submodule.natCard_mul_natCard_euclideanDual (repetitionCode R ι)
 
 end TauCeti
