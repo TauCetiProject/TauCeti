@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.Algebra.Module.Submodule.Map
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.InformationTheory.Coding.Basic
+public import TauCeti.InformationTheory.Coding.Equivalence
 
 /-!
 # Relabelling the coordinates of a linear code
@@ -26,6 +27,8 @@ Neither the field nor the coordinate types are assumed finite.
 * `TauCeti.mem_reindex`: membership characterization, with the direction of the equivalence
   explicit.
 * `TauCeti.finrank_reindex`: relabelling coordinates preserves the dimension.
+* `TauCeti.isPermutationEquivalent_reindex`: a reindexed code is permutation equivalent to the
+  original one.
 
 ## References
 
@@ -99,6 +102,12 @@ theorem reindex_sup (C D : LinearCode F ι) (e : κ ≃ ι) :
 theorem reindex_inf (C D : LinearCode F ι) (e : κ ≃ ι) :
     reindex (C ⊓ D) e = reindex C e ⊓ reindex D e :=
   Submodule.map_inf _ (LinearEquiv.funCongrLeft F F e).injective
+
+/-- Reindexing along a coordinate equivalence is exactly a permutation equivalence of codes. -/
+theorem isPermutationEquivalent_reindex (C : LinearCode F ι) (e : κ ≃ ι) :
+    IsPermutationEquivalent (reindex C e) C :=
+  isPermutationEquivalent_iff.mpr
+    ⟨e, by rw [← reindex_def, reindex_reindex, Equiv.symm_trans_self, reindex_refl]⟩
 
 /-- A coordinate equivalence preserves the dimension of a code. -/
 @[simp]

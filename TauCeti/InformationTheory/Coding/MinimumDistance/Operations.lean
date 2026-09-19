@@ -12,7 +12,8 @@ public import TauCeti.InformationTheory.Coding.DirectSum
 /-!
 # Minimum distance under coordinate operations
 
-Puncturing can reduce minimum distance by at most the number of deleted coordinates.
+Puncturing can reduce minimum distance by at most the number of deleted coordinates, and
+preserves dimension as long as the minimum distance is at least two.
 Shortening cannot reduce it unless the shortened code is zero. The minimum distance of a
 direct sum of two nonzero codes is the minimum of their distances; a zero summand leaves
 the distance unchanged. The zero-code cases matter because minimum distance is defined as
@@ -100,6 +101,25 @@ theorem hammingMinDist_le_hammingMinDist_punctureAt_add_one [DecidableEq ι] (i 
       hammingMinDist (punctureAt C i : Set (({i}ᶜ : Set ι) → F)) + 1 := by
   simpa only [punctureAt_def, compl_compl, Fintype.card_unique] using
     hammingMinDist_le_hammingMinDist_puncture_add_card_compl C {i}ᶜ
+
+/-- Deleting one coordinate preserves dimension as soon as the minimum distance is at least
+two, since then no nonzero codeword is supported at the deleted coordinate alone. -/
+theorem finrank_punctureAt_eq (i : ι)
+    (hd : 2 ≤ hammingMinDist (C : Set (ι → F))) :
+    Module.finrank F (punctureAt C i) = Module.finrank F C := by
+  classical
+  rw [punctureAt_def]
+  refine finrank_puncture_eq C _ fun x hx hx0 ↦ ?_
+  by_contra hne
+  have hle := hammingMinDist_le_hammingNorm (E := C.toAddSubgroup) hx hne
+  rw [Submodule.coe_toAddSubgroup] at hle
+  have hzero : ({i}ᶜ : Set ι).domRestrict x = 0 := funext hx0
+  have hone : hammingNorm x ≤ 1 := by
+    rw [hammingNorm_eq_domRestrict_add_domRestrict_compl ({i}ᶜ : Set ι) x, hzero,
+      hammingNorm_zero, zero_add]
+    simpa only [compl_compl, Fintype.card_unique] using
+      hammingNorm_le_card_fintype (x := ({i}ᶜᶜ : Set ι).domRestrict x)
+  omega
 
 /-- Shortening at one coordinate cannot decrease minimum distance if the result is nonzero. -/
 theorem hammingMinDist_le_hammingMinDist_shortenAt [DecidableEq ι] (i : ι)
