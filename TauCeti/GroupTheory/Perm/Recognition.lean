@@ -111,6 +111,8 @@ theorem subgroup_eq_top_of_isPretransitive_of_prime_card_of_isSwap_mem
 the alternating group. -/
 theorem alternatingGroup_le_of_index_lt (hα : 5 ≤ Nat.card α)
     {H : Subgroup (Equiv.Perm α)} (hH : H.index < Nat.card α) : alternatingGroup α ≤ H := by
+  -- The bound on the normal core follows the proof of Mathlib's
+  -- `Subgroup.normal_of_index_eq_minFac_card`.
   have hcore : H.normalCore.index ∣ Nat.factorial H.index := by
     rw [Subgroup.normalCore_eq_ker, Subgroup.index_ker, Subgroup.index_eq_card, ← Nat.card_perm]
     exact Subgroup.card_subgroup_dvd_card (toPermHom (Equiv.Perm α) (Equiv.Perm α ⧸ H)).range
