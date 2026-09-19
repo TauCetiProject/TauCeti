@@ -65,7 +65,7 @@ theorem map_mkQ (h : IsHodgeBigrading hℚ hℂ WQ F I) {U : Submodule ℚ Vℚ}
       (fun p ↦ (F p).map (rationalToComplexSubmodule hℚ hℂ U).mkQ)
       (fun pq ↦ (I pq).map (rationalToComplexSubmodule hℚ hℂ U).mkQ) := by
   refine
-    { iSupIndep := TauCeti.Submodule.iSupIndep_map_mkQ h.iSupIndep hU
+    { iSupIndep := TauCeti.iSupIndep_map_mkQ h.iSupIndep hU
       rationalToComplexSubmodule_eq_iSup := fun k ↦ ?_
       F_eq_iSup := fun p ↦ ?_
       map_latticeConj_le := fun pq ↦ ?_ }

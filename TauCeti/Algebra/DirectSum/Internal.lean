@@ -312,7 +312,7 @@ theorem _root_.LinearMap.ker_eq_iSup_inf_of_map_le {R ι M N : Type*} [Ring R] [
 /-- **A homogeneous submodule can be quotiented componentwise.** If `A` is an independent
 family and `U` is contained in the sum of its intersections with the members of `A`, then the
 members of `A` in `M ⧸ U` are again independent. -/
-theorem Submodule.iSupIndep_map_mkQ {R ι M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+theorem iSupIndep_map_mkQ {R ι M : Type*} [Ring R] [AddCommGroup M] [Module R M]
     {A : ι → Submodule R M} (hA : iSupIndep A) {U : Submodule R M}
     (hU : U ≤ ⨆ i, U ⊓ A i) : iSupIndep fun i ↦ (A i).map U.mkQ := by
   rw [iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero]
