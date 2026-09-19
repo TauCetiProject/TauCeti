@@ -6,17 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 
 /-!
 # Diagonal matrices in the special linear group
 
-A unit in a commutative ring defines a determinant-one diagonal matrix by placing the unit and
-its inverse in two distinct diagonal positions. This generalizes Mathlib's field-valued
+The diagonal torus of `SL_n` is the preimage of the diagonal torus of `GL_n`. A unit in a
+commutative ring also defines a determinant-one diagonal matrix by placing the unit and its
+inverse in two distinct diagonal positions. This generalizes Mathlib's field-valued
 `Matrix.SpecialLinearGroup.diag2n` construction.
 
 ## Main declarations
 
 * `Matrix.SpecialLinearGroup.diag2nUnit`: the two-coordinate diagonal matrix attached to a unit.
+* `Matrix.SpecialLinearGroup.diagonalTorus`: the diagonal torus of `SL_n`.
 * `Matrix.SpecialLinearGroup.map_diag2nUnit`: naturality under a ring homomorphism.
 * `Matrix.SpecialLinearGroup.diag2nUnit_decompose`: a two-coordinate unit diagonal matrix is a
   product of six transvections.
@@ -133,3 +136,35 @@ theorem _root_.Matrix.SpecialLinearGroup.diag2n_decompose {K : Type u} [Field K]
 end
 
 end TauCeti
+
+open Matrix TauCeti
+
+namespace Matrix.SpecialLinearGroup
+
+universe u
+
+noncomputable section
+
+variable {R : Type u} {n : ℕ} [CommRing R]
+
+variable (R n) in
+/-- The diagonal torus of `SL_n(R)`: the determinant-one invertible diagonal matrices, that is,
+the preimage of the diagonal torus of `GL_n(R)`. -/
+def diagonalTorus : Subgroup (SpecialLinearGroup (Fin n) R) :=
+  (TauCeti.diagonalTorus R n).comap toGL
+
+/-- An element of `SL_n(R)` lies in its diagonal torus exactly when it lies in the diagonal torus
+of `GL_n(R)`. -/
+theorem mem_diagonalTorus_iff_toGL_mem {g : SpecialLinearGroup (Fin n) R} :
+    g ∈ diagonalTorus R n ↔ toGL g ∈ TauCeti.diagonalTorus R n :=
+  Subgroup.mem_comap
+
+/-- An element of `SL_n(R)` lies in its diagonal torus exactly when it is a diagonal matrix. -/
+@[simp]
+theorem mem_diagonalTorus_iff {g : SpecialLinearGroup (Fin n) R} :
+    g ∈ diagonalTorus R n ↔ (g : Matrix (Fin n) (Fin n) R).IsDiag := by
+  rw [mem_diagonalTorus_iff_toGL_mem, TauCeti.mem_diagonalTorus_iff, coe_GL_coe_matrix]
+
+end
+
+end Matrix.SpecialLinearGroup

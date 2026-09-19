@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.AddTorsor
 public import Mathlib.Analysis.Normed.Module.Basic
+import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 
 /-!
 # Affine normalizations of metric balls and spheres
@@ -55,5 +56,19 @@ theorem preimage_smul_vadd_sphere (x : P) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
   · exact congrArg ((· * ·) ‖c‖)
 
 end Preimage
+
+section Range
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The image of the unit sphere under scaling by a positive real `c` is the sphere of radius
+`c`. -/
+@[simp]
+theorem range_smul_coe_sphere {c : ℝ} (hc : 0 < c) :
+    Set.range (fun u : Metric.sphere (0 : E) 1 ↦ c • (u : E)) = Metric.sphere 0 c := by
+  rw [Set.range_comp' (c • ·) Subtype.val, Subtype.range_coe, Set.image_smul,
+    smul_sphere' hc.ne', smul_zero, Real.norm_of_nonneg hc.le, mul_one]
+
+end Range
 
 end TauCeti

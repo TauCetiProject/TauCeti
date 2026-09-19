@@ -44,6 +44,9 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
   `Equiv.permCongrHom_coe` rewrites it to `Equiv.permCongr`.
 * `Equiv.Perm.parts_partition_of_isCycle`, `Equiv.Perm.parts_partition_swap`: the values on a cycle
   and on a transposition, which are the two shapes the low-degree recognition theorems read.
+* `Equiv.Perm.cycleType_eq_singleton_iff`: a single cycle length `n` characterizes a cycle moving
+  `n` points; through `Equiv.Perm.filter_fullCycleType_eq_cycleType` this reads a cycle off a full
+  cycle type.
 * `Equiv.Perm.fullCycleType_eq_map_card_filter`: the full cycle type is the multiset of orbit
   sizes, read through any function whose fibres are the orbits.
 * `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints`: the classes of `Equiv.Perm.SameCycle`
@@ -283,6 +286,15 @@ theorem _root_.Equiv.Perm.filter_fullCycleType_eq_cycleType {σ : Equiv.Perm α}
     (fullCycleType σ).filter (fun n => 2 ≤ n) = σ.cycleType := by
   rw [fullCycleType_def]
   exact Equiv.Perm.filter_parts_partition_eq_cycleType
+
+/-- A permutation has a single cycle length `n`, and no other, exactly when it is a cycle
+moving `n` points. -/
+@[simp]
+theorem _root_.Equiv.Perm.cycleType_eq_singleton_iff {σ : Equiv.Perm α} {n : ℕ} :
+    σ.cycleType = {n} ↔ σ.IsCycle ∧ σ.support.card = n := by
+  refine ⟨fun h => ⟨card_cycleType_eq_one.mp (by rw [h, Multiset.card_singleton]), ?_⟩,
+    fun h => by rw [h.1.cycleType, h.2]⟩
+  rw [← sum_cycleType, h, Multiset.sum_singleton]
 
 /-- Conjugate permutations have equal full cycle types. -/
 theorem _root_.Equiv.Perm.fullCycleType_eq_of_isConj {σ τ : Equiv.Perm α}

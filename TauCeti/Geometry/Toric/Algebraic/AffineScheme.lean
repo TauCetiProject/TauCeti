@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.AlgebraicGeometry.Scheme
-public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup
+public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Basic
 
 /-!
 # Affine toric schemes of cones

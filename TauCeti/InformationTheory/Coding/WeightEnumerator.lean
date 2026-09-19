@@ -245,7 +245,49 @@ theorem hammingMinDist_eq_sInf_weightDistribution {β : ι → Type*} [∀ i, Ad
 
 end Set
 
+/-! ### Elementary enumerators -/
+
 namespace TauCeti
+
+section Elementary
+
+open Finset MvPolynomial
+
+/-- A singleton word has its weight monomial as weight enumerator. -/
+@[simp]
+theorem weightEnumerator_singleton {ι : Type*} {β : ι → Type*} [Fintype ι]
+    [∀ i, Zero (β i)] [∀ i, DecidableEq (β i)] (x : ∀ i, β i) :
+    ({x} : Set (∀ i, β i)).weightEnumerator =
+      X 0 ^ (Fintype.card ι - hammingNorm x) * X 1 ^ hammingNorm x := by
+  rw [Set.weightEnumerator_eq_sum (Set.finite_singleton _)]
+  simp
+
+variable {ι R : Type*} [Fintype ι] [Zero R] [DecidableEq R]
+
+/-- The whole word space has weight enumerator `(X + (q - 1) Y)^n`. -/
+@[simp]
+theorem weightEnumerator_univ [Finite R] :
+    (Set.univ : Set (ι → R)).weightEnumerator =
+      (X 0 + (Nat.card R - 1 : MvPolynomial (Fin 2) ℤ) * X 1) ^ Fintype.card ι := by
+  classical
+  let _ : Fintype R := .ofFinite R
+  rw [Set.weightEnumerator_eq_sum (Set.toFinite _)]
+  simp only [Set.toFinite_toFinset, Set.toFinset_univ]
+  simp_rw [← prod_ite_eq_zero_eq_pow_mul_pow_hammingNorm]
+  rw [← Fintype.prod_sum (fun (_ : ι) (a : R) ↦
+    if a = 0 then (X 0 : MvPolynomial (Fin 2) ℤ) else X 1)]
+  have h : (∑ a : R, if a = 0 then (X 0 : MvPolynomial (Fin 2) ℤ) else X 1) =
+      X 0 + (Nat.card R - 1 : MvPolynomial (Fin 2) ℤ) * X 1 := by
+    have hs (a : R) : (if a = 0 then (X 0 : MvPolynomial (Fin 2) ℤ) else X 1) =
+        X 1 + if a = 0 then X 0 - X 1 else 0 := by
+      split_ifs <;> ring
+    simp_rw [hs]
+    simp [sum_add_distrib, Nat.card_eq_fintype_card]
+    ring
+  simp_rw [h]
+  simp
+
+end Elementary
 
 /-- On the diagonal, the weight enumerator of a finite set of words is its cardinality
 times the common argument raised to the length. -/
