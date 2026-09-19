@@ -31,6 +31,8 @@ its `p`-free factor.
 
 * `TauCeti.pFreePart_mul_pPart`: the two factors multiply back to `x`.
 * `TauCeti.commute_pFreePart_pPart`: the two factors commute.
+* `TauCeti.commute_pFreePart`, `TauCeti.commute_pPart`: anything commuting with `x` commutes with
+  both factors.
 * `TauCeti.orderOf_pFreePart`, `TauCeti.orderOf_pPart`: when `p` is prime and `x` has finite
   order, their orders are `ordCompl[p] (orderOf x)` and `ordProj[p] (orderOf x)`.
 * `TauCeti.eq_pFreePart`, `TauCeti.eq_pPart`: the factorisation is the only one of its kind.
@@ -80,6 +82,15 @@ theorem commute_pFreePart_pPart (p : ℕ) (x : G) : Commute (pFreePart p x) (pPa
   rw [← ha, ← hb]
   exact (Commute.refl x).zpow_zpow a b
 
+/-- An element commuting with `x` commutes with the `p`-free part of `x`. -/
+theorem commute_pFreePart (p : ℕ) {y : G} (h : Commute y x) : Commute y (pFreePart p x) :=
+  h.pow_right _
+
+/-- An element commuting with `x` commutes with the `p`-part of `x`. -/
+theorem commute_pPart (p : ℕ) {y : G} (h : Commute y x) : Commute y (pPart p x) := by
+  rw [pPart]
+  exact ((commute_pFreePart p h).inv_right).mul_right h
+
 /-- The reversed product of the `p`-part and `p`-free part of `x` is `x`. -/
 @[simp]
 theorem pPart_mul_pFreePart (p : ℕ) (x : G) : pPart p x * pFreePart p x = x := by
@@ -127,6 +138,7 @@ private theorem gcd_orderOf_pFreeExponent :
     _ = ordProj[p] (orderOf x) := by rw [Nat.gcd_mul_left, hfm.gcd_eq_one, mul_one]
 
 /-- The order of the `p`-free part of `x` is the `p`-free part of the order of `x`. -/
+@[simp]
 theorem orderOf_pFreePart : orderOf (pFreePart p x) = ordCompl[p] (orderOf x) := by
   rw [pFreePart, orderOf_pow' _ (pFreeExponent_ne_zero),
     gcd_orderOf_pFreeExponent hp hx]
@@ -156,6 +168,7 @@ private theorem pPart_pow_ordProj : pPart p x ^ ordProj[p] (orderOf x) = 1 := by
 
 /-- The order of the `p`-part of `x` is the `p`-part of the order of `x`. In particular it is a
 power of `p`. -/
+@[simp]
 theorem orderOf_pPart : orderOf (pPart p x) = ordProj[p] (orderOf x) := by
   have hdvd : orderOf (pPart p x) ∣ ordProj[p] (orderOf x) :=
     orderOf_dvd_of_pow_eq_one (pPart_pow_ordProj hp hx)

@@ -70,13 +70,10 @@ theorem disjoint_of_not_dvd_natCard_of_isPGroup [Fact p.Prime] {C Q : Subgroup G
     (hC : ¬ p ∣ Nat.card C) (hQ : IsPGroup p Q) : Disjoint C Q := by
   rw [Subgroup.disjoint_def]
   intro g hg hgQ
-  obtain ⟨k, hk⟩ := hQ ⟨g, hgQ⟩
-  have hk' : g ^ p ^ k = 1 := by simpa using congrArg (Subtype.val (p := (· ∈ Q))) hk
-  obtain ⟨j, -, hj⟩ := (Nat.dvd_prime_pow (Fact.out : p.Prime)).1 (orderOf_dvd_of_pow_eq_one hk')
-  rcases Nat.eq_zero_or_pos j with rfl | hj0
-  · exact orderOf_eq_one_iff.1 (by simpa using hj)
-  · refine absurd (((hj ▸ dvd_pow_self p hj0.ne') : p ∣ orderOf g).trans ?_) hC
-    simpa [Subgroup.orderOf_mk] using orderOf_dvd_natCard (⟨g, hg⟩ : C)
+  by_contra hg1
+  refine hC ((?_ : p ∣ orderOf g).trans ?_)
+  · simpa [Subgroup.orderOf_mk] using hQ.dvd_orderOf (g := (⟨g, hgQ⟩ : Q)) (by simpa using hg1)
+  · simpa [Subgroup.orderOf_mk] using orderOf_dvd_natCard (⟨g, hg⟩ : C)
 
 /-- A maximal subgroup of a finite `p`-group has index `p`. -/
 theorem _root_.IsPGroup.index_eq_prime_of_isCoatom [Finite G] [hp : Fact p.Prime]
