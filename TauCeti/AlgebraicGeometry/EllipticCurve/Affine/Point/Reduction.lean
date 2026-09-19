@@ -78,6 +78,7 @@ noncomputable def reduction : W.Point → Projective.PointClass (ResidueField v.
 theorem reduction_zero : reduction v (0 : W.Point) = ⟦![0, 1, 0]⟧ := (rfl)
 
 /-- A point with integral `x`-coordinate reduces to the reduction of its coordinates. -/
+@[simp]
 theorem reduction_some_of_valuation_le_one {x y : F} (h : W.Nonsingular x y) (hx : v x ≤ 1) :
     reduction v (some x y h) = ⟦![residue _ ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩,
       residue _ ⟨y, (v.mem_valuationSubring_iff y).mpr
@@ -85,6 +86,7 @@ theorem reduction_some_of_valuation_le_one {x y : F} (h : W.Nonsingular x y) (hx
   simp [reduction, hx]
 
 /-- A point whose `x`-coordinate has a pole reduces to `(0 : 1 : 0)`. -/
+@[simp]
 theorem reduction_some_of_one_lt {x y : F} (h : W.Nonsingular x y) (hx : 1 < v x) :
     reduction v (some x y h) = ⟦![0, 1, 0]⟧ := by
   simp [reduction, hx.not_ge]
@@ -186,6 +188,7 @@ theorem equation_of_reduction_eq {P : W.Point} {Q : Fin 3 → ResidueField v.val
 
 /-- **Reduction commutes with negation**, the negation on the right being that of the reduced
 curve. -/
+@[simp]
 theorem reduction_neg (P : W.Point) :
     reduction v (-P) =
       ((integralModel v.valuationSubring W).map (residue v.valuationSubring)).toProjective.negMap

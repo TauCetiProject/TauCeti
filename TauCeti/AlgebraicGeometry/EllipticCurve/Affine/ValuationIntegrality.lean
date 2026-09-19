@@ -253,9 +253,7 @@ theorem valuation_y_sq_eq_valuation_x_cube {x y : F} (hxy : W.Equation x y) (hx 
   rw [← valuation_lhs_eq (W := W) v hlt (hx.trans hlt), valuation_lhs_eq_rhs v hxy,
     valuation_rhs_eq (W := W) v hx]
 
-/-- **An integral `x`-coordinate forces an integral `y`-coordinate**, over any value group. The
-curve equation makes `y` integral over `O` once `x` is
-(`isIntegral_y_of_equation_of_isIntegral_x`), and `O` is integrally closed in `F`. -/
+/-- **An integral `x`-coordinate forces an integral `y`-coordinate**, over any value group. -/
 theorem valuation_y_le_one_of_valuation_x_le_one {x y : F} (hxy : W.Equation x y)
     (hx : v x ≤ 1) : v y ≤ 1 := by
   have hxy' : ((integralModel v.valuationSubring W).baseChange F).toAffine.Equation x y := by

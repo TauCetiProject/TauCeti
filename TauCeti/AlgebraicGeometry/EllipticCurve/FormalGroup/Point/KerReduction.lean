@@ -18,12 +18,6 @@ points reducing to `(0 : 1 : 0)` form the kernel of reduction `E₁(F_u)`. This 
 subgroup and identifies it with the group `Ê(𝔪_u)` of formal-group parameters in the maximal
 ideal: Silverman AEC VII.2.2.
 
-Both halves are already on hand. `Point.reduction_eq_zero_iff` describes the kernel of reduction
-as the point at infinity together with the points whose `x`-coordinate has a pole, and
-`range_formalPointHomAdicCompletion` shows that this is exactly the image of the formal
-parametrisation, which is injective. In particular the kernel of reduction is a subgroup because it
-is the image of an additive homomorphism.
-
 ## Main definitions
 
 * `WeierstrassCurve.kerReduction`: the kernel of reduction `E₁(F_u)`, as a subgroup of the points
@@ -62,20 +56,11 @@ local instance : Fact (IsAdic m_u) :=
 
 variable (C : WeierstrassCurve (u.adicCompletionIntegers F))
 
-/-- A curve over the completed valuation ring has an integral model for the valuation of the
-completion, namely itself: the completed valuation ring is by definition the valuation subring of
-that valuation. -/
-instance isIntegral_baseChange_adicCompletion :
-    IsIntegral (Valued.v : Valuation F_u (WithZero (Multiplicative ℤ))).valuationSubring
-      (C.baseChange F_u) :=
-  ⟨C, rfl⟩
-
 variable [(C.baseChange (u.adicCompletion F)).IsElliptic]
 
 open scoped Classical in
 /-- **The kernel of reduction** `E₁(F_u)`: the points of `C` over the completion `F_u` that reduce
-to `(0 : 1 : 0)` modulo `u`. It is a subgroup because it is the image of the formal
-parametrisation (`range_formalPointHomAdicCompletion_eq_kerReduction`). -/
+to `(0 : 1 : 0)` modulo `u`. -/
 noncomputable def kerReduction : AddSubgroup (C.baseChange F_u).toAffine.Point :=
   (C.formalPointHomAdicCompletion u).range.copy
     {P | Affine.Point.reduction Valued.v P = ⟦![0, 1, 0]⟧} <| by
