@@ -32,6 +32,8 @@ else follows formally from `QuaternionAlgebra.self_mul_star`.
 ## Main results
 
 * `QuaternionAlgebra.trace_mulLeft`: the trace of left multiplication by a quaternion.
+* `QuaternionAlgebra.reducedTrace_eq_of_algEquiv`: an algebra equivalence preserves the reduced
+  trace.
 * `QuaternionAlgebra.map_star_of_algEquiv`: an algebra equivalence of quaternion algebras commutes
   with conjugation, so that `StarAlgEquiv.ofAlgEquiv` makes it a `⋆`-algebra equivalence.
 * `QuaternionAlgebra.normForm_eq_of_algEquiv`: it preserves the reduced norm, and
@@ -80,7 +82,7 @@ theorem trace_mulLeft (x : ℍ[R,c₁,c₂,c₃]) :
   ring
 
 /-- An algebra equivalence of quaternion algebras preserves the reduced trace, in coordinates. -/
-private theorem two_mul_re_add_mul_imI_of_algEquiv (h2 : IsRegular (2 : R))
+theorem reducedTrace_eq_of_algEquiv (h2 : IsRegular (2 : R))
     (f : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] ℍ[R,d₁,d₂,d₃]) (x : ℍ[R,c₁,c₂,c₃]) :
     2 * (f x).re + d₂ * (f x).imI = 2 * x.re + c₂ * x.imI := by
   refine h2.left ?_
@@ -94,7 +96,7 @@ regular. Together with `StarAlgEquiv.ofAlgEquiv` this makes every such equivalen
 theorem map_star_of_algEquiv (h2 : IsRegular (2 : R))
     (f : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] ℍ[R,d₁,d₂,d₃]) (x : ℍ[R,c₁,c₂,c₃]) :
     f (star x) = star (f x) := by
-  rw [star_eq_two_re_sub, star_eq_two_re_sub, two_mul_re_add_mul_imI_of_algEquiv h2, map_sub,
+  rw [star_eq_two_re_sub, star_eq_two_re_sub, reducedTrace_eq_of_algEquiv h2, map_sub,
     ← coe_algebraMap, ← coe_algebraMap, AlgEquiv.commutes]
 
 /-- **An algebra equivalence of quaternion algebras preserves the reduced norm.** -/
@@ -131,7 +133,7 @@ variable {a b c d : R}
 theorem re_eq_of_algEquiv (h2 : IsRegular (2 : R)) (f : ℍ[R,a,b] ≃ₐ[R] ℍ[R,c,d])
     (x : ℍ[R,a,b]) : (f x).re = x.re := by
   refine h2.left ?_
-  simpa using two_mul_re_add_mul_imI_of_algEquiv h2 f x
+  simpa using reducedTrace_eq_of_algEquiv h2 f x
 
 /-- **An algebra equivalence between quaternion algebras `ℍ[R,a,b]` maps the pure quaternions onto
 the pure quaternions.** -/
