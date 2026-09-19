@@ -73,6 +73,8 @@ structure PrimeBoundaryRemainder (K : Type*) [Field K] [NumberField K]
 
 namespace PrimeBoundaryRemainder
 
+attribute [simp] remainder_eq
+
 /-- Construct prime boundary data from functions on the whole complex plane.  Only their
 restrictions to `Re s > 1` and `Re s ≥ 1` are retained. -/
 def ofFunctions (F G : ℂ → ℂ)
@@ -173,15 +175,14 @@ theorem primeIdealTheorem_of_boundary
     primePsi K Set.univ ~[atTop] (fun x : ℝ ↦ x) ∧
       primeTheta K Set.univ ~[atTop] (fun x : ℝ ↦ x) ∧
       primeCount K Set.univ ~[atTop] Real.logIntegral := by
-  obtain ⟨hψ, hθ, -⟩ := primeNumberTheoremTransfer B
+  obtain ⟨hψ, hθ, hπ⟩ := primeNumberTheoremTransfer B
   have hψ' : primePsi K Set.univ ~[atTop] (fun x : ℝ ↦ x) := by
     rw [Asymptotics.IsEquivalent]
     exact hψ.congr' (Eventually.of_forall fun x ↦ by simp) EventuallyEq.rfl
   have hθ' : primeTheta K Set.univ ~[atTop] (fun x : ℝ ↦ x) := by
     rw [Asymptotics.IsEquivalent]
     exact hθ.congr' (Eventually.of_forall fun x ↦ by simp) EventuallyEq.rfl
-  have hπ := (primeCount_sub_mul_logIntegral_isLittleO hθ).trans_isBigO
-    Real.logIntegral_isEquivalent_div_log.isBigO_symm
+  replace hπ := hπ.trans_isBigO Real.logIntegral_isEquivalent_div_log.isBigO_symm
   have hπ' : primeCount K Set.univ ~[atTop] Real.logIntegral := by
     rw [Asymptotics.IsEquivalent]
     exact hπ.congr' (Eventually.of_forall fun x ↦ by simp) EventuallyEq.rfl
