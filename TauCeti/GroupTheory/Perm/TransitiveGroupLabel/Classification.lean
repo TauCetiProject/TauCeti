@@ -359,7 +359,7 @@ theorem exists_transitiveGroupLabel_four_iff (G : Subgroup (Perm (Fin 4))) :
 
 section DegreeFive
 
-local instance : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
+local instance transitiveGroupLabelFactPrimeFive : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
 
 private theorem natCard_perm_fin_five : Nat.card (Perm (Fin 5)) = 120 := by
   rw [Nat.card_perm, Nat.card_fin]
