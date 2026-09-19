@@ -164,7 +164,7 @@ private lemma isFiniteMeasure_circleDensityMeasure {φ : ℂ → ℝ}
   infer_instance
 
 private lemma integral_circleDensityMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [CompleteSpace E] {φ : ℂ → ℝ} (hφ : ContinuousOn φ (sphere 0 1))
+    {φ : ℂ → ℝ} (hφ : ContinuousOn φ (sphere 0 1))
     (hφ₀ : ∀ z ∈ sphere (0 : ℂ) 1, 0 ≤ φ z) {g : ℂ → E} (hg : ContinuousOn g (sphere 0 1)) :
     ∫ z : Circle, g z ∂circleDensityMeasure φ = circleAverage (fun ζ ↦ φ ζ • g ζ) 0 1 := by
   have hgc : Continuous fun z : Circle ↦ g z :=
