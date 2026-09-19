@@ -36,12 +36,6 @@ of its roots in the splitting field is induced by a Galois automorphism. -/
 def HasFullSymmetricGaloisGroup (f : F[X]) : Prop :=
   f.Separable ∧ Function.Surjective (Gal.galActionHom f f.SplittingField)
 
-/-- The defining characterization of full symmetric Galois group. -/
-theorem hasFullSymmetricGaloisGroup_iff :
-    HasFullSymmetricGaloisGroup f ↔
-      f.Separable ∧ Function.Surjective (Gal.galActionHom f f.SplittingField) :=
-  (Iff.rfl)
-
 /-- Among separable polynomials, full symmetric Galois group is equivalent to the Galois
 group having order equal to the factorial of the degree. -/
 theorem hasFullSymmetricGaloisGroup_iff_natCard (hsep : f.Separable) :
@@ -50,7 +44,7 @@ theorem hasFullSymmetricGaloisGroup_iff_natCard (hsep : f.Separable) :
       f.natDegree.factorial := by
     rw [Nat.card_perm, Nat.card_eq_fintype_card,
       card_rootSet_eq_natDegree hsep (IsSplittingField.splits f.SplittingField f)]
-  rw [hasFullSymmetricGaloisGroup_iff, and_iff_right hsep, ← hcard]
+  rw [HasFullSymmetricGaloisGroup, and_iff_right hsep, ← hcard]
   exact ⟨fun h ↦ Nat.card_eq_of_bijective _ ⟨Gal.galActionHom_injective f _, h⟩,
     fun h ↦ ((Gal.galActionHom_injective f _).bijective_of_nat_card_le h.ge).2⟩
 
@@ -66,7 +60,7 @@ theorem hasFullSymmetricGaloisGroup_iff_of_splits (E : Type*) [Field E] [Algebra
     rw [← hcard]
     exact ⟨fun h ↦ ((Gal.galActionHom_injective f E).bijective_of_nat_card_le h.ge).2,
       fun h ↦ Nat.card_eq_of_bijective _ ⟨Gal.galActionHom_injective f E, h⟩⟩
-  · simp [hasFullSymmetricGaloisGroup_iff, hsep]
+  · simp [HasFullSymmetricGaloisGroup, hsep]
 
 /-- A polynomial with full symmetric Galois group realizes the symmetric group on as many
 points as its degree. No numbering of its roots is fixed globally. -/
