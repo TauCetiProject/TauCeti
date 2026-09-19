@@ -136,11 +136,10 @@ private theorem algEquiv_ext_of_continuous {w'' : HeightOneSpectrum (𝒪 L)}
 theorem completionCongr_one :
     completionCongr v (1 : L ≃ₐ[K] L)
       (show w.asIdeal = (1 : L ≃ₐ[K] L) • w.asIdeal by simp) = AlgEquiv.refl := by
-  apply AlgEquiv.ext
-  intro x
-  change adicCompletionCongr w w (1 : L ≃+* L) _ x = x
-  exact congrArg (fun e : w.adicCompletion L ≃+* w.adicCompletion L ↦ e x)
-    (adicCompletionCongr_one (v := w) (K := L))
+  refine algEquiv_ext_of_continuous
+    (continuous_completionCongr v (1 : L ≃ₐ[K] L)
+      (by simp)) continuous_id fun x ↦ ?_
+  simp
 
 /-- `completionCongr` is multiplicative: transporting along `σ` and then along `τ` is
 transporting along `τ * σ`. -/
@@ -148,15 +147,10 @@ theorem completionCongr_trans {w'' : HeightOneSpectrum (𝒪 L)} [w''.asIdeal.Li
     (σ τ : L ≃ₐ[K] L) (hσ : w'.asIdeal = σ • w.asIdeal) (hτ : w''.asIdeal = τ • w'.asIdeal) :
     (completionCongr v σ hσ).trans (completionCongr v τ hτ) =
       completionCongr v (τ * σ) (by rw [hτ, hσ, mul_smul]) := by
-  apply AlgEquiv.ext
-  intro x
-  change ((adicCompletionCongr w w' σ.toRingEquiv _).trans
-    (adicCompletionCongr w' w'' τ.toRingEquiv _)) x =
-      adicCompletionCongr w w'' (τ * σ).toRingEquiv _ x
-  exact congrArg (fun e : w.adicCompletion L ≃+* w''.adicCompletion L ↦ e x)
-    (adicCompletionCongr_trans
-      (valuation_apply_eq_of_asIdeal_eq_smul σ hσ) w'' τ.toRingEquiv
-      (valuation_apply_eq_of_asIdeal_eq_smul τ hτ))
+  refine algEquiv_ext_of_continuous
+    ((continuous_completionCongr v τ hτ).comp (continuous_completionCongr v σ hσ))
+    (continuous_completionCongr v (τ * σ) (by rw [hτ, hσ, mul_smul])) fun x ↦ ?_
+  simp
 
 /-- The inverse of `completionCongr v σ h` is `completionCongr` of `σ⁻¹`. -/
 theorem completionCongr_symm (σ : L ≃ₐ[K] L) (h : w'.asIdeal = σ • w.asIdeal) :
