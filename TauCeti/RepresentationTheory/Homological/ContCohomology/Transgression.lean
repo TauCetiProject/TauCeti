@@ -100,6 +100,9 @@ only compactness of `G` and `N`.
 
 ## References
 
+The exactness arguments for the five-term sequence follow the classical cochain proofs in
+Neukirch--Schmidt--Wingberg (1.6.7), Ribes--Zalesskii Cor. 7.2.5(a), and Koch Thm. 3.14.
+
 * J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (1.6.7).
 * L. Ribes and P. Zalesskii, *Profinite Groups*, 2nd ed., Prop. 2.2.2 and Cor. 7.2.5.
 * H. Koch, *Galois Theory of p-Extensions*, Thm. 3.14.
