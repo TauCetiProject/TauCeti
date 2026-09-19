@@ -69,7 +69,6 @@ theorem relabel_ratio (e : G ≃g H) (c : SkewZigzagParameter k G) {i j j' : W}
       c.ratio (e.symm.map_adj_iff.mpr h) (e.symm.map_adj_iff.mpr h') := (rfl)
 
 /-- Relabelling preserves the ratio attached to two incident edges. -/
-@[simp]
 theorem relabel_ratio_map (e : G ≃g H) (c : SkewZigzagParameter k G) {i j j' : V}
     (h : G.Adj i j) (h' : G.Adj i j') :
     (c.relabel e).ratio (e.map_adj_iff.mpr h) (e.map_adj_iff.mpr h') = c.ratio h h' := by
