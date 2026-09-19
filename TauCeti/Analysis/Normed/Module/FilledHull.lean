@@ -145,6 +145,7 @@ theorem filledHull_empty [Nontrivial E] : filledHull (∅ : Set E) = ∅ := by
 /-- **The filled hull of a sphere is the closed ball**, for a sphere of nonnegative radius. This
 identifies the region enclosed by a sphere without choosing a component of its complement. The
 statement fails in the zero space, where `filledHull ∅` is everything. -/
+@[simp]
 theorem filledHull_sphere (x : E) {r : ℝ} (hr : 0 ≤ r) :
     filledHull (sphere x r) = closedBall x r := by
   refine Subset.antisymm (fun y hy => ?_) fun y hy => ?_
