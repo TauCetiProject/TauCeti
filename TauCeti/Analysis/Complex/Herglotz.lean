@@ -143,7 +143,9 @@ theorem _root_.MeasureTheory.Measure.herglotzTransform_def (μ : Measure Circle)
     μ.herglotzTransform w = ∫ z : Circle, ((z : ℂ) + w) / ((z : ℂ) - w) ∂μ := by
   rw [Measure.herglotzTransform]
 
-/-- The value at zero of the Herglotz transform is the real part of its total mass. -/
+/-- The value at zero of the Herglotz transform is `μ.real univ`. For a finite measure this is
+its total mass; for an infinite measure both sides are `0`, since `μ.real univ = 0` and the
+Bochner integral of the non-integrable constant `1` is `0` by convention. -/
 @[simp]
 theorem _root_.MeasureTheory.Measure.herglotzTransform_zero (μ : Measure Circle) :
     μ.herglotzTransform 0 = ((μ.real univ : ℝ) : ℂ) := by
