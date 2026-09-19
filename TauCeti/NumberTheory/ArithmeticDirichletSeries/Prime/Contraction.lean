@@ -228,15 +228,16 @@ theorem hasDirichletDensity_iff_of_card_fiber_of_negligible {Z : Set (HeightOneS
   rw [← hasDirichletDensity_iff_of_symmDiff hT, hcore, hasDirichletDensity_iff_of_symmDiff hS]
 
 /-- **Dirichlet densities along contraction.** Let `E / K` be an extension of number fields, `T` a
-set of primes of `E` whose contractions lie in a set `S` of primes of `K`, and `Z` a set of primes
-of `K` of Dirichlet density zero. If every prime of `S` outside `Z` lies below exactly `c ≠ 0`
-members of `T` of residue degree one over `K`, then `T` has Dirichlet density `δ` exactly when `S`
-has Dirichlet density `δ / c`.
+set of primes of `E` whose residue-degree-one members contract into a set `S` of primes of `K`, and
+`Z` a set of primes of `K` of Dirichlet density zero. If every prime of `S` outside `Z` lies below
+exactly `c ≠ 0` members of `T` of residue degree one over `K`, then `T` has Dirichlet density `δ`
+exactly when `S` has Dirichlet density `δ / c`.
 
 Neither the primes of `T` of residue degree above one over `K` nor those over `Z` need to be
 counted: both form sets of density zero. -/
 theorem hasDirichletDensity_contraction [Algebra K E] {Z : Set (HeightOneSpectrum (𝓞 K))}
-    (hZ : Z.HasDirichletDensity 0) (hmaps : ∀ 𝔓 ∈ T, 𝔓.under (𝓞 K) ∈ S) (hc : c ≠ 0)
+    (hZ : Z.HasDirichletDensity 0)
+    (hmaps : ∀ 𝔓 ∈ T, 𝔓.asIdeal.inertiaDeg (𝓞 K) = 1 → 𝔓.under (𝓞 K) ∈ S) (hc : c ≠ 0)
     (hfiber : ∀ 𝔭 ∈ S \ Z, Nat.card {𝔓 // 𝔓.under (𝓞 K) = 𝔭 ∧ 𝔓 ∈ T ∧
       𝔓.asIdeal.inertiaDeg (𝓞 K) = 1} = c) {δ : ℝ} :
     T.HasDirichletDensity δ ↔ S.HasDirichletDensity (δ / c) := by
@@ -255,7 +256,8 @@ theorem hasDirichletDensity_contraction [Algebra K E] {Z : Set (HeightOneSpectru
     have : 𝔓.asIdeal.LiesOver (𝔓.under (𝓞 K)).asIdeal :=
       ⟨HeightOneSpectrum.under_asIdeal _ 𝔓⟩
     rw [← Ideal.absNorm_pow_inertiaDeg (𝔓.under (𝓞 K)).asIdeal 𝔓.asIdeal, h𝔓.2, pow_one]
-  refine hasDirichletDensity_iff_of_card_fiber_of_negligible hZ (fun 𝔓 h𝔓 ↦ hmaps 𝔓 h𝔓.1)
+  refine hasDirichletDensity_iff_of_card_fiber_of_negligible hZ
+    (fun 𝔓 h𝔓 ↦ hmaps 𝔓 h𝔓.1 h𝔓.2)
     (fun 𝔓 h𝔓 ↦ hnorm 𝔓 h𝔓.1) (fun 𝔓 h𝔓 ↦ (hnorm 𝔓 h𝔓.1).ge) hc hfiber
     (m := Module.finrank ℚ E) fun 𝔭 _ ↦
       (Set.encard_le_encard Set.inter_subset_right).trans
