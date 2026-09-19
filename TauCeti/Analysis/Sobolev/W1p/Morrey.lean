@@ -110,8 +110,8 @@ theorem W1p.exists_holderWith_ae_eq_value (hp : (finrank ℝ E : ℝ≥0) < p)
   obtain ⟨v, hvmem, hvlim⟩ := mem_closure_iff_seq_limit.1
     (W1p.denseRange_ofTestFunctionₗ_top (mu := mu) ENNReal.coe_ne_top u)
   choose phi hphi using hvmem
-  have hlim : Tendsto (fun k => T (phi k)) atTop (𝓝 u) := by
-    rwa [show (fun k => T (phi k)) = v from funext hphi]
+  have hlim : Tendsto (fun k => T (phi k)) atTop (𝓝 u) :=
+    hvlim.congr fun k => (hphi k).symm
   -- A subsequence converges to `u` almost everywhere.
   obtain ⟨ns, hmono, hns⟩ := (tendstoInMeasure_of_tendsto_Lp
     ((W1p.valueL.continuous.tendsto u).comp hlim)).exists_seq_tendsto_ae
