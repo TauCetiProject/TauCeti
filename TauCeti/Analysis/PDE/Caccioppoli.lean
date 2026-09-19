@@ -26,9 +26,10 @@ This is the **Caccioppoli inequality** (the reverse Poincaré, or interior energ
 the gradient of a solution on the region where `ζ = 1` is controlled by the solution itself on
 the support of `ζ`. The constants depend only on the ellipticity constants `λ` and `Λ`, and not
 on `Ω`, on the dimension, or on any regularity of the coefficients beyond measurability. It is
-the basic interior estimate of elliptic regularity theory: applied to difference quotients of a
-solution it gives interior `H²` regularity, and its variant for the truncations `(u - k)⁺` of
-subsolutions, not proved here, is the starting point of De Giorgi's iteration.
+the basic interior estimate of elliptic regularity theory: it is an ingredient in
+difference-quotient proofs of interior `H²` regularity under additional coefficient regularity,
+and its variant for the truncations `(u - k)⁺` of subsolutions, not proved here, is the starting
+point of De Giorgi's iteration.
 
 The proof tests the equation against `ζ² u`, which lies in `H¹₀(Ω)` because `ζ` is compactly
 supported in `Ω`, and whose gradient is `ζ² ∇u + 2ζu ∇ζ`. Ellipticity bounds the first term of
