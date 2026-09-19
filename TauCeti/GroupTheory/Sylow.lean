@@ -29,12 +29,9 @@ variable {G : Type*} [Group G] [Finite G] {p : ℕ} [hp : Fact p.Prime]
 /-- A Sylow `p`-subgroup has order `p` when `p` divides the order of the group exactly once. -/
 theorem card_eq_of_dvd_of_not_sq_dvd (P : Sylow p G) (hdvd : p ∣ Nat.card G)
     (hsq : ¬ p ^ 2 ∣ Nat.card G) : Nat.card P = p := by
-  obtain ⟨n, hn⟩ := IsPGroup.iff_card.mp P.isPGroup'
-  have h1 : p ∣ p ^ n := hn ▸ P.dvd_card_of_dvd_card hdvd
-  have h2 : p ^ n ∣ Nat.card G := hn ▸ P.1.card_subgroup_dvd_card
-  rcases n with _ | _ | n
-  · exact absurd (Nat.le_of_dvd one_pos (by simpa using h1)) hp.out.one_lt.not_ge
-  · simpa using hn
-  · exact absurd ((pow_dvd_pow p (by omega : 2 ≤ n + 2)).trans h2) hsq
+  have hG : Nat.card G ≠ 0 := Nat.card_pos.ne'
+  have h1 := (hp.out.dvd_iff_one_le_factorization hG).1 hdvd
+  have h2 := mt (hp.out.pow_dvd_iff_le_factorization (k := 2) hG).2 hsq
+  rw [P.card_eq_multiplicity, show (Nat.card G).factorization p = 1 by omega, pow_one]
 
 end Sylow

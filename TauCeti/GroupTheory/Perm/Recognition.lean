@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.Transitive
 public import Mathlib.GroupTheory.Perm.Cycle.Type
+public import Mathlib.GroupTheory.SpecificGroups.Alternating.Simple
 public import TauCeti.GroupTheory.GroupAction.Transitive
 import Mathlib.GroupTheory.GroupAction.Jordan
 
@@ -26,6 +27,9 @@ second result produces. In the Galois-theoretic application the cycle pattern of
 to the second result is the degree pattern of a factorization of a polynomial modulo a prime, read
 through the Frobenius element.
 
+A subgroup of `Sₙ`, `n ≥ 5`, of index less than `n` contains `Aₙ`. This recognizes the large
+subgroups in the low-degree classification, where the order of a subgroup bounds its index.
+
 ## Main results
 
 * `TauCeti.card_dvd_natCard_and_natCard_dvd_factorial_of_isPretransitive`: the order of a
@@ -34,6 +38,8 @@ through the Frobenius element.
   of prime degree contains a full cycle.
 * `TauCeti.subgroup_eq_top_of_isPretransitive_of_prime_card_of_isSwap_mem`: a transitive
   permutation group of prime degree that contains a transposition is the full symmetric group.
+* `TauCeti.alternatingGroup_le_of_index_lt`: a subgroup of `Sₙ`, `n ≥ 5`, of index less than
+  `n` contains `Aₙ`.
 * `Equiv.Perm.isSwap_pow_prod_erase_two_cycleType_and_odd`: if a permutation has exactly one
   2-cycle and all its other cycles have odd length, an explicit odd power is a transposition.
 * `Equiv.Perm.exists_odd_isSwap_pow`: the corresponding existential form.
@@ -100,6 +106,24 @@ theorem subgroup_eq_top_of_isPretransitive_of_prime_card_of_isSwap_mem
   let _ : IsPretransitive G β := hG
   exact Equiv.Perm.subgroup_eq_top_of_isPreprimitive_of_isSwap_mem
     (IsPreprimitive.of_prime_card hp) g hgSwap hg
+
+/-- A subgroup of the symmetric group on `n ≥ 5` points whose index is less than `n` contains
+the alternating group.
+
+The bound on the normal core follows the argument of `Subgroup.normal_of_index_eq_minFac_card`
+in Mathlib. -/
+theorem alternatingGroup_le_of_index_lt (hα : 5 ≤ Nat.card α)
+    {H : Subgroup (Equiv.Perm α)} (hH : H.index < Nat.card α) : alternatingGroup α ≤ H := by
+  have hcore : H.normalCore.index ∣ Nat.factorial H.index := by
+    rw [Subgroup.normalCore_eq_ker, Subgroup.index_ker, Subgroup.index_eq_card, ← Nat.card_perm]
+    exact Subgroup.card_subgroup_dvd_card (toPermHom (Equiv.Perm α) (Equiv.Perm α ⧸ H)).range
+  have hne : Nontrivial H.normalCore := by
+    rw [Subgroup.nontrivial_iff_ne_bot]
+    intro hbot
+    rw [hbot, Subgroup.index_bot, Nat.card_perm] at hcore
+    exact (Nat.factorial_lt (Nat.pos_of_ne_zero Subgroup.index_ne_zero_of_finite)).2 hH |>.not_ge
+      (Nat.le_of_dvd (Nat.factorial_pos _) hcore)
+  exact (Equiv.Perm.alternatingGroup_le_of_normal hα hne).trans H.normalCore_le
 
 /-- If a permutation has exactly one cycle of length two and every other cycle has odd length,
 then raising it to the product of those other cycle lengths gives a transposition.

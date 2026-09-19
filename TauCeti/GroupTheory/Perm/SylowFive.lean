@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.SpecificGroups.Alternating.Simple
-public import TauCeti.GroupTheory.GroupAction.Transitive
+public import TauCeti.GroupTheory.Perm.Recognition
 public import TauCeti.GroupTheory.Sylow
 
 /-!
@@ -18,10 +17,8 @@ normalizer of order `20`.
 
 The main result is a dichotomy for a subgroup `G` of `S₅` whose order is divisible by `5`:
 either `G` lies between a Sylow `5`-subgroup `P` of `S₅` and its normalizer, or `G` contains
-the alternating group. Indeed, the number of Sylow `5`-subgroups of `G` divides `24` and is
-`1` modulo `5`, so it is `1` or `6`. If it is `1`, the Sylow `5`-subgroup of `G` is normal in
-`G`, and `G` normalizes it. If it is `6`, the order of `G` is divisible by `30`, so `G` has index
-at most `4`, and a subgroup of `Sₙ` of index less than `n ≥ 5` contains `Aₙ`.
+the alternating group. The two cases are distinguished by whether `G` has one or six Sylow
+`5`-subgroups.
 
 Applied to a transitive subgroup, whose order is divisible by `5`, this shows that the order of a
 transitive subgroup of `S₅` is one of `5`, `10`, `20`, `60`, `120`. This is the first half of the
@@ -31,22 +28,23 @@ classification of the transitive subgroups of `S₅`: the transitive subgroups o
 
 ## Main results
 
-* `TauCeti.alternatingGroup_le_of_index_lt`: a subgroup of `Sₙ`, `n ≥ 5`, of index less than
-  `n` contains `Aₙ`.
 * `TauCeti.card_sylow_five_perm`: `S₅` has six Sylow `5`-subgroups.
 * `TauCeti.card_normalizer_sylow_five_perm`: each has a normalizer of order `20`.
+* `TauCeti.card_sylow_five_eq_one_or_six`: a subgroup of `S₅` of order divisible by `5` has one
+  or six Sylow `5`-subgroups.
+* `TauCeti.exists_sylow_le_le_normalizer_of_card_sylow_five_eq_one`: if it has one, it lies
+  between a Sylow `5`-subgroup of `S₅` and its normalizer.
+* `TauCeti.thirty_dvd_natCard_of_card_sylow_five_eq_six`: if it has six, its order is divisible
+  by `30`.
+* `TauCeti.natCard_ne_thirty`: `S₅` has no subgroup of order `30`.
+* `TauCeti.eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard`: a subgroup of `S₅` of order
+  divisible by `30` is `A₅` or `S₅`.
 * `TauCeti.exists_sylow_le_le_normalizer_or_alternatingGroup_le`: a subgroup of `S₅` of order
   divisible by `5` lies between a Sylow `5`-subgroup and its normalizer, or contains `A₅`.
 * `TauCeti.natCard_mem_of_five_dvd_natCard`: a subgroup of `S₅` of order divisible by `5` has
   order `5`, `10`, `20`, `60` or `120`.
-* `TauCeti.natCard_mem_of_isPretransitive_of_natCard_eq_five`: in particular so does a transitive
+* `TauCeti.natCard_mem_of_natCard_eq_five_of_isPretransitive`: in particular so does a transitive
   subgroup of `S₅`.
-
-## Implementation notes
-
-The bound on the normal core in `TauCeti.alternatingGroup_le_of_index_lt` follows the argument of
-`Subgroup.normal_of_index_eq_minFac_card` in Mathlib: the normal core of `H` is the kernel of the
-action on `G ⧸ H`, so its index divides `H.index !`.
 
 ## References
 
@@ -62,21 +60,6 @@ namespace TauCeti
 variable {α : Type*}
 
 local instance sylowFiveFactPrimeFive : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
-
-/-- A subgroup of the symmetric group on `n ≥ 5` points whose index is less than `n` contains
-the alternating group. -/
-theorem alternatingGroup_le_of_index_lt [Fintype α] [DecidableEq α] (hα : 5 ≤ Nat.card α)
-    {H : Subgroup (Perm α)} (hH : H.index < Nat.card α) : alternatingGroup α ≤ H := by
-  have hcore : H.normalCore.index ∣ Nat.factorial H.index := by
-    rw [normalCore_eq_ker, index_ker, index_eq_card, ← Nat.card_perm]
-    exact card_subgroup_dvd_card (MulAction.toPermHom (Perm α) (Perm α ⧸ H)).range
-  have hne : Nontrivial H.normalCore := by
-    rw [nontrivial_iff_ne_bot]
-    intro hbot
-    rw [hbot, index_bot, Nat.card_perm] at hcore
-    exact (Nat.factorial_lt (Nat.pos_of_ne_zero index_ne_zero_of_finite)).2 hH |>.not_ge
-      (Nat.le_of_dvd (Nat.factorial_pos _) hcore)
-  exact (Perm.alternatingGroup_le_of_normal hα hne).trans H.normalCore_le
 
 private theorem natCard_perm_eq_120 [Finite α] (hα : Nat.card α = 5) : Nat.card (Perm α) = 120 := by
   rw [Nat.card_perm, hα]
@@ -119,6 +102,97 @@ theorem card_normalizer_sylow_five_perm [Finite α] (hα : Nat.card α = 5) (P :
   rw [← P.card_eq_index_normalizer, card_sylow_five_perm hα, natCard_perm_eq_120 hα] at h
   omega
 
+/-- A subgroup of the symmetric group on five points whose order is divisible by `5` has one or
+six Sylow `5`-subgroups. -/
+theorem card_sylow_five_eq_one_or_six [Finite α] (hα : Nat.card α = 5)
+    (G : Subgroup (Perm α)) (h5 : 5 ∣ Nat.card G) :
+    Nat.card (Sylow 5 G) = 1 ∨ Nat.card (Sylow 5 G) = 6 := by
+  have hG : Nat.card G ∣ 120 := natCard_perm_eq_120 hα ▸ G.card_subgroup_dvd_card
+  obtain ⟨Q⟩ : Nonempty (Sylow 5 G) := inferInstance
+  have hQ : Nat.card Q = 5 := Q.card_eq_of_dvd_of_not_sq_dvd h5 fun h => by
+    have := h.trans hG
+    norm_num at this
+  have hQi : Q.index * 5 = Nat.card G := by
+    rw [← (Q : Subgroup G).index_mul_card, hQ]
+  have hQ24 : Q.index ∣ 24 :=
+    Nat.dvd_of_mul_dvd_mul_right (by norm_num : 0 < 5) (by rw [hQi]; exact hG)
+  have hdvd := Q.card_dvd_index.trans hQ24
+  have hmod := card_sylow_modEq_one 5 G
+  generalize Nat.card (Sylow 5 G) = n at hmod hdvd ⊢
+  have hle : n ≤ 24 := Nat.le_of_dvd (by norm_num) hdvd
+  unfold Nat.ModEq at hmod
+  interval_cases n <;> omega
+
+/-- A subgroup `G` of the symmetric group on five points whose order is divisible by `5` and which
+has a unique Sylow `5`-subgroup lies between a Sylow `5`-subgroup of the symmetric group and its
+normalizer. -/
+theorem exists_sylow_le_le_normalizer_of_card_sylow_five_eq_one [Finite α] (hα : Nat.card α = 5)
+    (G : Subgroup (Perm α)) (h5 : 5 ∣ Nat.card G) (h1 : Nat.card (Sylow 5 G) = 1) :
+    ∃ P : Sylow 5 (Perm α), (P : Subgroup (Perm α)) ≤ G ∧ G ≤ normalizer (P : Set (Perm α)) := by
+  have h120 := natCard_perm_eq_120 hα
+  have hG : Nat.card G ∣ 120 := h120 ▸ G.card_subgroup_dvd_card
+  obtain ⟨Q⟩ : Nonempty (Sylow 5 G) := inferInstance
+  have hQ : Nat.card Q = 5 := Q.card_eq_of_dvd_of_not_sq_dvd h5 fun h => by
+    have := h.trans hG
+    norm_num at this
+  have : Subsingleton (Sylow 5 G) := (Nat.card_eq_one_iff_unique.mp h1).1
+  have := Q.normal_of_subsingleton
+  obtain ⟨P, hP⟩ := (Q.isPGroup'.map G.subtype).exists_le_sylow
+  have hPQ : (Q : Subgroup G).map G.subtype = P := by
+    refine eq_of_le_of_card_ge hP ?_
+    rw [card_map_of_injective G.subtype_injective, hQ,
+      P.card_eq_of_dvd_of_not_sq_dvd (by rw [h120]; norm_num) (by rw [h120]; norm_num)]
+  refine ⟨P, hPQ ▸ map_subtype_le _, ?_⟩
+  have key : G ≤ normalizer ((Q : Subgroup G).map G.subtype : Set (Perm α)) :=
+    calc G = (⊤ : Subgroup G).map G.subtype := by rw [← MonoidHom.range_eq_map, range_subtype]
+      _ = (normalizer ((Q : Subgroup G) : Set G)).map G.subtype := by rw [normalizer_eq_top]
+      _ ≤ _ := le_normalizer_map _
+  rwa [hPQ] at key
+
+/-- A finite group of order divisible by `5` with six Sylow `5`-subgroups has order divisible by
+`30`. -/
+theorem thirty_dvd_natCard_of_card_sylow_five_eq_six {G : Type*} [Group G] [Finite G]
+    (h5 : 5 ∣ Nat.card G) (h6 : Nat.card (Sylow 5 G) = 6) : 30 ∣ Nat.card G := by
+  obtain ⟨P⟩ : Nonempty (Sylow 5 G) := inferInstance
+  have h6G : 6 ∣ Nat.card G := h6 ▸ P.card_eq_index_normalizer ▸ index_dvd_card _
+  exact Nat.Coprime.mul_dvd_of_dvd_of_dvd (by norm_num) h5 h6G
+
+/-- A subgroup of the symmetric group on five points whose order is divisible by `30` is the
+alternating group or the whole symmetric group. -/
+theorem eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard [Fintype α] [DecidableEq α]
+    (hα : Nat.card α = 5) (G : Subgroup (Perm α)) (h30 : 30 ∣ Nat.card G) :
+    G = alternatingGroup α ∨ G = ⊤ := by
+  have h120 := natCard_perm_eq_120 hα
+  have hGi := G.index_mul_card
+  rw [h120] at hGi
+  obtain ⟨k, hk⟩ := h30
+  have h4 : G.index ∣ 4 := Dvd.intro k (by rw [hk] at hGi; linarith)
+  have hle := Nat.le_of_dvd (by norm_num) h4
+  have hA : alternatingGroup α ≤ G := alternatingGroup_le_of_index_lt (by omega) (by omega)
+  have : Nontrivial α := Finite.one_lt_card_iff_nontrivial.mp (by omega)
+  have hdvd := index_dvd_of_le hA
+  rw [alternatingGroup.index_eq_two] at hdvd
+  rcases (Nat.dvd_prime Nat.prime_two).mp hdvd with h | h
+  · exact Or.inr (index_eq_one.mp h)
+  · refine Or.inl (eq_of_le_of_card_ge hA ?_).symm
+    have hAi := (alternatingGroup α).index_mul_card
+    rw [alternatingGroup.index_eq_two, h120] at hAi
+    rw [h] at hGi
+    omega
+
+/-- The symmetric group on five points has no subgroup of order `30`. -/
+theorem natCard_ne_thirty [Finite α] (hα : Nat.card α = 5) (G : Subgroup (Perm α)) :
+    Nat.card G ≠ 30 := by
+  classical
+  have := Fintype.ofFinite α
+  intro h
+  have : Nontrivial α := Finite.one_lt_card_iff_nontrivial.mp (by omega)
+  rcases eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard hα G (h ▸ dvd_rfl) with rfl | rfl
+  · rw [nat_card_alternatingGroup, hα] at h
+    norm_num [Nat.factorial] at h
+  · rw [card_top, natCard_perm_eq_120 hα] at h
+    norm_num at h
+
 /-- A subgroup `G` of the symmetric group on five points whose order is divisible by `5` either
 lies between a Sylow `5`-subgroup of the symmetric group and its normalizer, or contains the
 alternating group. -/
@@ -127,49 +201,12 @@ theorem exists_sylow_le_le_normalizer_or_alternatingGroup_le [Fintype α] [Decid
     (G : Subgroup (Perm α)) (h5 : 5 ∣ Nat.card G) :
     (∃ P : Sylow 5 (Perm α), (P : Subgroup (Perm α)) ≤ G ∧ G ≤ normalizer (P : Set (Perm α))) ∨
       alternatingGroup α ≤ G := by
-  have h120 := natCard_perm_eq_120 hα
-  have hG : Nat.card G ∣ 120 := h120 ▸ G.card_subgroup_dvd_card
-  obtain ⟨Q⟩ : Nonempty (Sylow 5 G) := inferInstance
-  have hQ : Nat.card Q = 5 := Q.card_eq_of_dvd_of_not_sq_dvd h5 fun h => by
-    have := h.trans hG
-    norm_num at this
-  by_cases hsub : Subsingleton (Sylow 5 G)
-  · -- The Sylow `5`-subgroup `Q` of `G` is normal, and its image in `Perm α` is a Sylow
-    -- `5`-subgroup normalized by `G`.
-    left
-    have := Q.normal_of_subsingleton
-    obtain ⟨P, hP⟩ := (Q.isPGroup'.map G.subtype).exists_le_sylow
-    have hPQ : (Q : Subgroup G).map G.subtype = P := by
-      refine eq_of_le_of_card_ge hP ?_
-      rw [card_map_of_injective G.subtype_injective, hQ,
-        P.card_eq_of_dvd_of_not_sq_dvd (by rw [h120]; norm_num) (by rw [h120]; norm_num)]
-    refine ⟨P, hPQ ▸ map_subtype_le _, ?_⟩
-    have key : G ≤ normalizer ((Q : Subgroup G).map G.subtype : Set (Perm α)) :=
-      calc G = (⊤ : Subgroup G).map G.subtype := by rw [← MonoidHom.range_eq_map, range_subtype]
-        _ = (normalizer ((Q : Subgroup G) : Set G)).map G.subtype := by rw [normalizer_eq_top]
-        _ ≤ _ := le_normalizer_map _
-    rwa [hPQ] at key
-  · -- `G` has six Sylow `5`-subgroups, so `30` divides its order and its index is at most `4`.
-    right
-    refine alternatingGroup_le_of_index_lt (by omega) ?_
-    have hmod := card_sylow_modEq_one 5 G
-    have hne : Nat.card (Sylow 5 G) ≠ 1 := fun h => hsub (Nat.card_eq_one_iff_unique.mp h).1
-    have hQi : Q.index * 5 = Nat.card G := by
-      rw [← (Q : Subgroup G).index_mul_card, hQ]
-    have hQ24 : Q.index ∣ 24 :=
-      Nat.dvd_of_mul_dvd_mul_right (by norm_num : 0 < 5) (by rw [hQi]; exact hG)
-    have h6 : 6 ∣ Q.index := by
-      have hdvd := Q.card_dvd_index
-      generalize Nat.card (Sylow 5 G) = n at hmod hne hdvd
-      have hle : n ≤ 24 := Nat.le_of_dvd (by norm_num) (hdvd.trans hQ24)
-      unfold Nat.ModEq at hmod
-      interval_cases n <;> first | omega | exact hdvd | exact absurd (hdvd.trans hQ24) (by decide)
-    obtain ⟨k, hk⟩ := h6
-    have hGi := G.index_mul_card
-    rw [h120, ← hQi, hk] at hGi
-    have h4 : G.index ∣ 4 := Dvd.intro k (by linarith)
-    have := Nat.le_of_dvd (by norm_num) h4
-    omega
+  rcases card_sylow_five_eq_one_or_six hα G h5 with h1 | h6
+  · exact Or.inl (exists_sylow_le_le_normalizer_of_card_sylow_five_eq_one hα G h5 h1)
+  · right
+    rcases eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard hα G
+      (thirty_dvd_natCard_of_card_sylow_five_eq_six h5 h6) with rfl | rfl
+    exacts [le_rfl, le_top]
 
 /-- A subgroup of the symmetric group on five points whose order is divisible by `5` has order
 `5`, `10`, `20`, `60` or `120`. -/
@@ -196,7 +233,7 @@ theorem natCard_mem_of_five_dvd_natCard [Finite α] (hα : Nat.card α = 5)
 
 /-- A transitive subgroup of the symmetric group on five points has order `5`, `10`, `20`,
 `60` or `120`. -/
-theorem natCard_mem_of_isPretransitive_of_natCard_eq_five [Finite α] (hα : Nat.card α = 5)
+theorem natCard_mem_of_natCard_eq_five_of_isPretransitive [Finite α] (hα : Nat.card α = 5)
     (G : Subgroup (Perm α)) [MulAction.IsPretransitive G α] :
     Nat.card G ∈ ({5, 10, 20, 60, 120} : Finset ℕ) := by
   have : Nonempty α := (Nat.card_pos_iff.mp (by omega)).1
