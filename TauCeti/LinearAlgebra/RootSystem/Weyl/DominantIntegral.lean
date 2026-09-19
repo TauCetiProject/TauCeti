@@ -25,7 +25,7 @@ formula, however, is an identity about a Lie module over an algebraically closed
 carries no linear order making it a strictly ordered ring, so the chamber statements do not apply
 to it. As in `TauCeti/LinearAlgebra/RootSystem/Weyl/IntegralDetermination.lean`, the fundamental
 domain is therefore described arithmetically: `λ` is dominant integral when `⟨λ, αᵢ^∨⟩ ∈ ℕ` for
-every simple root `αᵢ`, which for integral weights is the same condition as `0 ≤ ⟨λ, αᵢ^∨⟩`.
+every simple root `αᵢ`.
 
 ## The arguments
 
@@ -63,10 +63,8 @@ The dot-action versions follow by applying these to the `ρ`-shift `x = λ + ρ`
 
 ## References
 
-These are the facts about the Weyl numerator that the Weyl character formula of Layer 6 ("the Weyl
-character, dimension, and Kostant formulas") of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md` consumes, matching the facts about
-`ch M · Δ` proved in `TauCeti/Algebra/Lie/HighestWeight/WeylCharacter.lean`.
+These facts about the Weyl numerator match the corresponding facts about `ch M · Δ` and together
+yield the Weyl character formula.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §10.3 and
   §13.2 for the two arguments, and Ch. VI, §24 for their use.
@@ -146,6 +144,16 @@ end Free
 
 /-! ### The Weyl orbit of a dominant integral weight -/
 
+omit [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] in
+/-- The reflection identity used in the inversion descent for a dominant integral weight. -/
+private theorem sub_mul_ofIdx_smul (v : P.weylGroup) (i : ι) :
+    x - (v * _root_.RootPairing.weylGroup.ofIdx P i) • x =
+      (x - v • x) + P.coroot' i x • P.root (P.weylGroupToPerm v i) := by
+  simp only [mul_smul, _root_.RootPairing.weylGroup.ofIdx_smul,
+    _root_.RootPairing.Equiv.reflection_smul, _root_.RootPairing.reflection_apply, smul_sub,
+    smul_comm, P.weylGroup_apply_root]
+  abel
+
 /-- **The Weyl orbit of a dominant integral weight lies below it in the positive root cone.**
 
 The induction is on the number of inversions of `w`: choosing a simple inversion `αᵢ` and writing
@@ -181,10 +189,7 @@ theorem sub_weylGroup_smul_mem_posRootCone_of_dominantIntegral
     obtain ⟨m, hm⟩ := hx i hi
     -- the reflection formula, with the coefficient read as a natural multiple
     have hstep : x - w • x = (x - v • x) + m • P.root (P.weylGroupToPerm v i) := by
-      rw [hwv, mul_smul, _root_.RootPairing.weylGroup.ofIdx_smul,
-        _root_.RootPairing.Equiv.reflection_smul, _root_.RootPairing.reflection_apply, hm,
-        smul_sub, smul_comm, P.weylGroup_apply_root, Nat.cast_smul_eq_nsmul]
-      abel
+      rw [hwv, sub_mul_ofIdx_smul, hm, Nat.cast_smul_eq_nsmul]
     rw [hstep]
     exact add_mem (ih _ hlt v rfl)
       (nsmul_mem (root_mem_posRootCone_of_mem_posRoots P b hvpos) m)
@@ -223,9 +228,11 @@ theorem dotAction_injective_of_dominantIntegral
     (hlam : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i lam = (n : R)) :
     Function.Injective fun w : P.weylGroup ↦ dotAction P b w lam := by
   intro v w hvw
+  -- Expose the applications hidden by the lambda in `Function.Injective` before rewriting.
+  have hdot : dotAction P b v lam = dotAction P b w lam := hvw
   have hshift : v • (lam + weylVector P b) = w • (lam + weylVector P b) := by
     rw [← dotAction_add_weylVector P b v lam, ← dotAction_add_weylVector P b w lam,
-      show dotAction P b v lam = dotAction P b w lam from hvw]
+      hdot]
   have hfix : (w⁻¹ * v) • (lam + weylVector P b) = lam + weylVector P b := by
     rw [mul_smul, hshift, inv_smul_smul]
   have hone := eq_one_of_smul_eq_self_of_forall_coroot'_eq_natCast_add_one
