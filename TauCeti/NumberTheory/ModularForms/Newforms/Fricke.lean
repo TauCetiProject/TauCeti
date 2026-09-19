@@ -118,18 +118,23 @@ private lemma commute_normalizedFrickeCharCuspRestrict_one_single
     {D : HeckeCoset (Delta0 N) ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ))}
     (hD : CoprimeDetCoset N N D) (c : ℤ) :
     Commute
-      (show Module.End ℂ (cuspFormCharSpace k 1) from
-        normalizedFrickeCharCuspRestrict k (1 : (ZMod N)ˣ →* ℂˣ))
+      ((LinearEquiv.ofEq _ _
+        (congrArg (cuspFormCharSpace (N := N) k)
+          (inv_one (G := (ZMod N)ˣ →* ℂˣ)))).toLinearMap.comp
+        (normalizedFrickeCharCuspRestrict k (1 : (ZMod N)ˣ →* ℂˣ)))
       (heckeRingHomCuspCharSpace k 1 (HeckeCosetModule.single ℤ D c)) := by
   let W : Module.End ℂ (cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)) :=
-    normalizedFrickeCharCuspRestrict k 1
+    (LinearEquiv.ofEq _ _
+      (congrArg (cuspFormCharSpace (N := N) k)
+        (inv_one (G := (ZMod N)ˣ →* ℂˣ)))).toLinearMap.comp
+      (normalizedFrickeCharCuspRestrict k (1 : (ZMod N)ˣ →* ℂˣ))
   change Commute W _
   refine LinearMap.ext fun f ↦ ?_
   have coe_W (g : cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)) :
       ((W g : cuspFormCharSpace k 1) : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
         normalizedFrickeOperatorCusp k
           (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :=
-    coe_normalizedFrickeCharCuspRestrict_apply k 1 g
+    by simp [W]
   have key : W (twistedHeckeSlashCuspFormCharEnd k 1 D f) =
       twistedHeckeSlashCuspFormCharEnd k 1 D (W f) := by
     refine Subtype.ext (DFunLike.coe_injective ?_)
@@ -144,11 +149,16 @@ for `n` prime to `N`, `𝒲_N Tₙ = Tₙ 𝒲_N`. -/
 theorem commute_normalizedFrickeCharCuspRestrict_one_heckeRingHomCuspCharSpace {n : ℕ}
     (hn : Nat.Coprime n N) :
     Commute
-      (show Module.End ℂ (cuspFormCharSpace k 1) from
-        normalizedFrickeCharCuspRestrict k (1 : (ZMod N)ˣ →* ℂˣ))
+      ((LinearEquiv.ofEq _ _
+        (congrArg (cuspFormCharSpace (N := N) k)
+          (inv_one (G := (ZMod N)ˣ →* ℂˣ)))).toLinearMap.comp
+        (normalizedFrickeCharCuspRestrict k (1 : (ZMod N)ˣ →* ℂˣ)))
       (heckeRingHomCuspCharSpace k 1 (heckeTCompositeGamma0 N n)) := by
   let W : Module.End ℂ (cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)) :=
-    normalizedFrickeCharCuspRestrict k 1
+    (LinearEquiv.ofEq _ _
+      (congrArg (cuspFormCharSpace (N := N) k)
+        (inv_one (G := (ZMod N)ˣ →* ℂˣ)))).toLinearMap.comp
+      (normalizedFrickeCharCuspRestrict k (1 : (ZMod N)ˣ →* ℂˣ))
   change Commute W _
   -- the Hecke ring elements whose action commutes with `𝒲_N` form a subring
   let S := (Subring.centralizer {W}).comap (heckeRingHomCuspCharSpace k 1)
@@ -159,7 +169,7 @@ theorem commute_normalizedFrickeCharCuspRestrict_one_heckeRingHomCuspCharSpace {
   have hdiag {a : Fin 2 → ℕ} (ha : ∀ i, 0 < a i) (h : Nat.Coprime (a 0 * a 1) N) hgcd :
       HeckeCosetModule.single ℤ (diagCosetGamma0 N a hgcd) 1 ∈ S :=
     (hS _).2 <| commute_normalizedFrickeCharCuspRestrict_one_single
-      (coprimeDetCoset_diagCosetGamma0 N ha h hgcd) 1
+      (coprimeDetCoset_diagCosetGamma0 N ha h) 1
   -- hence every `T_{p^v}` at a good prime, by the recurrence
   have hrec {p : ℕ} (hp : 0 < p) (hpN : Nat.Coprime p N) (v : ℕ) :
       heckeTGeneratorRecGamma0 N p v ∈ S := by
@@ -209,12 +219,15 @@ theorem exists_normalizedFrickeOperatorCusp_eq_smul_of_mem_cuspFormsNew
       normalizedFrickeOperatorCusp k (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
         ε • (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := by
   let W : Module.End ℂ (cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)) :=
-    normalizedFrickeCharCuspRestrict k 1
+    (LinearEquiv.ofEq _ _
+      (congrArg (cuspFormCharSpace (N := N) k)
+        (inv_one (G := (ZMod N)ˣ →* ℂˣ)))).toLinearMap.comp
+      (normalizedFrickeCharCuspRestrict k (1 : (ZMod N)ˣ →* ℂˣ))
   have coe_W (g : cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)) :
       ((W g : cuspFormCharSpace k 1) : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
         normalizedFrickeOperatorCusp k
           (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :=
-    coe_normalizedFrickeCharCuspRestrict_apply k 1 g
+    by simp [W]
   -- `𝒲_N f` has the good Hecke eigenvalues of `f`, and lies in the new part
   have heig (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N) : ∃ c : ℂ,
       heckeRingHomCuspCharSpace k 1 (heckeTCompositeGamma0 N p) f = c • f ∧

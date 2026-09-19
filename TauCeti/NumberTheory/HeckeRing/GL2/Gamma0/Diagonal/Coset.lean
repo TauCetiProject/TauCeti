@@ -178,8 +178,9 @@ theorem degree_diagCosetGamma0_const (c : ℕ)
 determinant of `diag(a₀, a₁)` is `a₀ a₁`. This is the hypothesis `CoprimeDetCoset N N` under which
 the good Hecke operators `T(a₀, a₁)` commute with the Atkin–Lehner operators. -/
 theorem coprimeDetCoset_diagCosetGamma0 {a : Fin 2 → ℕ} (ha : ∀ i, 0 < a i)
-    (h : Nat.Coprime (a 0 * a 1) N) (hgcd : (∀ i, 0 < a i) → Nat.Coprime (a 0) N) :
-    CoprimeDetCoset N N (diagCosetGamma0 N a hgcd) := by
+    (h : Nat.Coprime (a 0 * a 1) N) :
+    CoprimeDetCoset N N
+      (diagCosetGamma0 N a fun _ ↦ (Nat.coprime_mul_iff_left.mp h).1) := by
   rw [diagCosetGamma0_def, coprimeDetCoset_self_mk,
     coprimeDet_iff N (natDiagGL_coe_eq_map_intCast 2 a ha)]
   simp only [Matrix.det_fin_two, Matrix.diagonal_apply_eq,
