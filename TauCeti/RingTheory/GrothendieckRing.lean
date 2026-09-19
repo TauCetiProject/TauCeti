@@ -170,6 +170,12 @@ noncomputable instance instRing : Ring (GrothendieckAddGroup S) where
   __ := (inferInstance : NonUnitalRing (GrothendieckAddGroup S))
   __ := (inferInstance : NonAssocRing (GrothendieckAddGroup S))
 
+end Semiring
+
+section NonAssocSemiring
+
+variable {S : Type*} [NonAssocSemiring S]
+
 /-- The canonical map from a semiring into its Grothendieck ring. -/
 noncomputable def ofRingHom : S →+* GrothendieckAddGroup S where
   __ := (of : S →+ GrothendieckAddGroup S)
@@ -220,7 +226,7 @@ theorem liftRingHom_apply_of (f : S →+* R) (a : S) : liftRingHom f (of a) = f 
 theorem liftRingHom_symm_apply (F : GrothendieckAddGroup S →+* R) :
     liftRingHom.symm F = F.comp ofRingHom := (rfl)
 
-end Semiring
+end NonAssocSemiring
 
 /-- The Grothendieck ring of a commutative semiring is commutative. -/
 noncomputable instance instCommRing {S : Type*} [CommSemiring S] :
