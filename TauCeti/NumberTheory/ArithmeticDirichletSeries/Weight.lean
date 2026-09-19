@@ -48,6 +48,8 @@ good primes; this is the engine behind both
   (`TauCeti.MultiplicativeIdealWeight.IsGood`);
 * `TauCeti.MultiplicativeIdealWeight.apply_ne_zero_iff_isGood`: a weight is nonzero exactly on
   the good ideals;
+* `TauCeti.MultiplicativeIdealWeight.ext_heightOneSpectrum`: a weight is determined by its
+  values at the height-one primes;
 * `TauCeti.MultiplicativeIdealWeight.ofBadPrimes`, the pointwise `CommMonoid` structure (whose
   unit is the trivial weight), `TauCeti.MultiplicativeIdealWeight.restrict`,
   `TauCeti.MultiplicativeIdealWeight.conj` and
@@ -150,6 +152,17 @@ theorem apply_bot (χ : MultiplicativeIdealWeight K) : χ ⊥ = 0 := map_zero χ
 @[simp]
 theorem apply_top (χ : MultiplicativeIdealWeight K) : χ ⊤ = 1 := by
   simpa using map_one χ
+
+/-- A multiplicative ideal weight is determined by its values at the height-one primes: every
+nonzero ideal of `𝓞 K` is a product of them. -/
+theorem ext_heightOneSpectrum {χ ψ : MultiplicativeIdealWeight K}
+    (h : ∀ 𝔭 : HeightOneSpectrum (𝓞 K), χ 𝔭.asIdeal = ψ 𝔭.asIdeal) : χ = ψ := by
+  ext I
+  induction I using UniqueFactorizationMonoid.induction_on_prime with
+  | h₁ => rw [map_zero, map_zero]
+  | h₂ x hx => rw [Ideal.isUnit_iff.mp hx, apply_top, apply_top]
+  | h₃ a p _ hp ih =>
+    rw [_root_.map_mul, _root_.map_mul, ih, h ⟨p, Ideal.isPrime_of_prime hp, hp.ne_zero⟩]
 
 /-- The **bad primes** of an ideal weight: the height-one primes it kills. This is a derived,
 canonically determined accessor, not extra data. -/
@@ -322,6 +335,12 @@ theorem restrict_apply (χ : MultiplicativeIdealWeight K) (hS : S.Finite) (I : I
 theorem badPrimes_restrict (χ : MultiplicativeIdealWeight K) (hS : S.Finite) :
     (χ.restrict S hS).badPrimes = χ.badPrimes ∪ S := by
   simp [restrict]
+
+/-- Restricting the trivial weight away from `S` gives the indicator weight of `S`. -/
+@[simp]
+theorem one_restrict (hS : S.Finite) :
+    (1 : MultiplicativeIdealWeight K).restrict S hS = ofBadPrimes S hS :=
+  one_mul _
 
 /-- The **conjugate weight** `I ↦ conj (χ I)`. -/
 def conj (χ : MultiplicativeIdealWeight K) : MultiplicativeIdealWeight K where
