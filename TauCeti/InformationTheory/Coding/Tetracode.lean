@@ -127,7 +127,9 @@ theorem weightDistribution_tetracode (w : ℕ) :
       if w = 0 then 1 else if w = 3 then 8 else 0 := by
   by_cases hw : 4 < w
   · rw [Set.weightDistribution_eq_zero_of_card_lt (by simpa using hw)]
-    simp [show w ≠ 0 by omega, show w ≠ 3 by omega]
+    have hw0 : w ≠ 0 := by omega
+    have hw3 : w ≠ 3 := by omega
+    simp [hw0, hw3]
   · simp only [Set.weightDistribution_def, SetLike.mem_coe, mem_tetracode_iff]
     rw [Nat.card_eq_fintype_card]
     interval_cases w <;> decide
