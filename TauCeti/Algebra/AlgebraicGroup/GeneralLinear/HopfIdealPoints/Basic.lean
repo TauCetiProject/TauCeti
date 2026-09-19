@@ -22,7 +22,9 @@ vanishing on the Hopf ideal and is functorial in the value algebra.
 * `TauCeti.GeneralLinear.hopfIdealPointsSubgroup`: the matrix subgroup cut out by a Hopf ideal
   in the general-linear coordinate ring.
 * `TauCeti.GeneralLinear.mem_hopfIdealPointsSubgroup_iff`: membership is characterized by
-  vanishing on the Hopf ideal.
+  vanishing on the Hopf ideal, with
+  `TauCeti.GeneralLinear.pointToGeneralLinear_mem_hopfIdealPointsSubgroup_iff_toIdeal_le_ker`
+  reading it as a kernel containment for an algebra-valued point.
 * `TauCeti.GeneralLinear.hopfIdealPointsSubgroup_le_of_le`: larger Hopf ideals cut out smaller
   point subgroups.
 * `TauCeti.GeneralLinear.hopfIdealPointsSubgroup_sup`: a join of Hopf ideals cuts out the
@@ -106,6 +108,22 @@ theorem pointsMulEquiv_mapPointsFunctor_mem_hopfIdealPointsSubgroup
   have hxmap : φ.hom x = 0 := by
     simpa only [BialgHom.coe_toAlgHom, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using hx'
   rw [hxmap, map_zero]
+
+/-- An `A`-valued point lies in the subgroup cut out by a Hopf ideal exactly when its algebra
+homomorphism kills that ideal. -/
+theorem pointToGeneralLinear_mem_hopfIdealPointsSubgroup_iff_toIdeal_le_ker
+    (I : HopfIdeal R (coordinateHopfAlgebra R n)) (A : Type w) [CommRing A] [Algebra R A]
+    (chi : coordinateHopfAlgebra R n →ₐ[R] A) :
+    pointToGeneralLinear n (toConv chi) ∈ hopfIdealPointsSubgroup n I A ↔
+      I.toIdeal ≤ RingHom.ker chi.toRingHom := by
+  rw [mem_hopfIdealPointsSubgroup_iff]
+  simp only [← pointsMulEquiv_apply, MulEquiv.symm_apply_apply, WithConv.ofConv_toConv]
+  constructor
+  · intro h x hx
+    rw [RingHom.mem_ker]
+    exact h x hx
+  · intro h x hx
+    exact (RingHom.mem_ker.mp (h hx))
 
 /-- Applying a value-algebra homomorphism entrywise preserves the general-linear point subgroup
 cut out by a Hopf ideal. -/

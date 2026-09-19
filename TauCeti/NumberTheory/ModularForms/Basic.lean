@@ -30,6 +30,11 @@ cusps of `Γ'`, so one needs to know that `Γ` has no further cusps, which
 constructions are mutually inverse: the image of `M_k(Γ) → M_k(Γ')` is exactly the
 `Γ`-invariant part of `M_k(Γ')` (`ModularForm.mem_range_ofLeₗ_iff`).
 
+Translation by a positive-determinant matrix is packaged as the linear map
+`ModularForm.translateₗ`. General `GL₂(ℝ)` translation is only semilinear because a
+negative-determinant matrix applies complex conjugation, whereas a positive-determinant matrix
+acts `ℂ`-linearly.
+
 The first group of lemmas was split out of the diamond-operator development ported from the
 AINTLIB `LeanModularForms` project
 (<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>).
@@ -40,6 +45,8 @@ AINTLIB `LeanModularForms` project
   read as a form for a subgroup `Γ' ≤ Γ`.
 * `ModularForm.ofSlashInvariant`, `CuspForm.ofSlashInvariant`: a `Γ'`-form which is slash
   invariant under a group `Γ` all of whose cusps are cusps of `Γ'`, read as a form for `Γ`.
+* `ModularForm.translateₗ`: translation by a positive-determinant element of `GL₂(ℝ)` as a
+  `ℂ`-linear map.
 
 ## Main results
 
@@ -63,7 +70,7 @@ public section
 
 open Matrix Matrix.SpecialLinearGroup UpperHalfPlane
 
-open scoped MatrixGroups ModularForm
+open scoped MatrixGroups ModularForm Pointwise
 
 /-- **Every element of `𝒮ℒ` has positive determinant**: it is the image of a matrix of
 determinant `1`.
@@ -214,6 +221,7 @@ slash is multiplication by the scalar to the power `k - 2`.
 The calculation generalizes AINTLIB's `slash_diag_scalar` (Chris Birkbeck, Apache-2.0), in
 `LeanModularForms/HeckeRIngs/GL2/Unified/NebentypusHeckeRingHom.lean` at commit
 `2baa76f742bdb4fb8ee323fabba41203bd390e08`. -/
+@[simp]
 theorem _root_.ModularForm.slash_scalar (k : ℤ) (u : ℝˣ) (f : ℍ → ℂ) :
     f ∣[k] Matrix.GeneralLinearGroup.scalar (Fin 2) u =
       ((u : ℝ) : ℂ) ^ (k - 2) • f := by
@@ -262,6 +270,34 @@ theorem _root_.SlashInvariantForm.slash_action_eqn_of_det_pos {F : Type*} [FunLi
   rw [(eq_mul_inv_iff_mul_eq₀ hpow).mpr ((eq_mul_inv_iff_mul_eq₀ hden).mpr h),
     ← zpow_neg, ← zpow_neg, neg_neg, neg_sub]
   ring
+
+/-! ### Translation by positive-determinant matrices -/
+
+namespace ModularForm
+
+variable {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ}
+
+/-- Translation by `g ∈ GL₂(ℝ)` with `0 < det g` as a linear map on modular forms. -/
+noncomputable def translateₗ [Γ.HasDetOne] (g : GL (Fin 2) ℝ) (hg : 0 < g.det.val) :
+    ModularForm Γ k →ₗ[ℂ] ModularForm (ConjAct.toConjAct g⁻¹ • Γ) k where
+  toFun f := translate f g
+  map_add' f f' := by
+    ext z
+    -- `translate` is sealed; pass to the underlying slash action, whose additivity is public.
+    change ((⇑(f + f') : ℍ → ℂ) ∣[k] g) z =
+      (((⇑f : ℍ → ℂ) ∣[k] g) + ((⇑f' : ℍ → ℂ) ∣[k] g)) z
+    rw [FunLike.coe_add, SlashAction.add_slash]
+  map_smul' c f := by
+    ext z
+    -- As above; scalars commute with the slash since `0 < det g`.
+    change ((⇑(c • f) : ℍ → ℂ) ∣[k] g) z = (c • ((⇑f : ℍ → ℂ) ∣[k] g)) z
+    rw [FunLike.coe_smul, ModularForm.smul_slash_of_det_pos k hg]
+
+lemma translateₗ_apply [Γ.HasDetOne] (g : GL (Fin 2) ℝ) (hg : 0 < g.det.val)
+    (f : ModularForm Γ k) :
+    translateₗ g hg f = translate f g := (rfl)
+
+end ModularForm
 
 /-! ### Changing the invariance group
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.GroupTheory.Nilpotent
 public import Mathlib.GroupTheory.PGroup
 
 /-!
@@ -27,6 +28,8 @@ that a homomorphism into a pro-`p` group kills their intersection.
 
 * `IsPGroup.prod`: a product of two `p`-groups is a `p`-group.
 * `IsPGroup.pi`: a finite product of `p`-groups is a `p`-group.
+* `IsPGroup.index_eq_prime_of_isCoatom`: a maximal subgroup of a finite `p`-group has index
+  `p`.
 * `IsPGroup.quotient_inf`: if `G ⧸ M` and `G ⧸ N` are `p`-groups, so is `G ⧸ (M ⊓ N)`.
 * `IsPGroup.quotient_comap`: if `H ⧸ N` is a `p`-group and `f : G →* H`, then `G ⧸ N.comap f`
   is a `p`-group.
@@ -58,6 +61,40 @@ theorem _root_.IsPGroup.pi {ι : Type*} [Finite ι] {G : ι → Type*} [∀ i, G
   obtain ⟨k, hk⟩ := pow_dvd_pow p (Finset.single_le_sum (fun j _ ↦ Nat.zero_le (n j))
     (Finset.mem_univ i))
   rw [Pi.pow_apply, hk, pow_mul, hn, one_pow, Pi.one_apply]
+
+/-- A maximal subgroup of a finite `p`-group has index `p`. -/
+theorem _root_.IsPGroup.index_eq_prime_of_isCoatom [Finite G] [hp : Fact p.Prime]
+    (hG : IsPGroup p G) {H : Subgroup G} (hH : IsCoatom H) : H.index = p := by
+  let _ : Group.IsNilpotent G := hG.isNilpotent
+  let _ : H.Normal :=
+    Subgroup.NormalizerCondition.normal_of_coatom
+      H (Group.normalizerCondition_of_isNilpotent (G := G)) hH
+  let Q := G ⧸ H
+  let _ : Nontrivial Q := QuotientGroup.nontrivial_iff.mpr hH.ne_top
+  have hQ : IsPGroup p Q := hG.to_quotient H
+  have hp_dvd : p ∣ Nat.card Q := hQ.card_eq_or_dvd.resolve_left Finite.one_lt_card.ne'
+  let _ : Group.IsNilpotent Q := hQ.isNilpotent
+  obtain ⟨K, hKindex, hKnormal⟩ :=
+    Group.IsNilpotent.exists_normal_index_eq_of_dvd_card hp_dvd
+  let _ : K.Normal := hKnormal
+  let q : G →* Q := QuotientGroup.mk' H
+  have hHK : H ≤ K.comap q := by
+    intro x hx
+    rw [Subgroup.mem_comap]
+    have hxq : q x = 1 := (QuotientGroup.eq_one_iff x).mpr hx
+    rw [hxq]
+    exact K.one_mem
+  have hKbot : K = ⊥ := by
+    rcases hH.le_iff.mp hHK with htop | hH'
+    · have hKtop : K = ⊤ := Subgroup.comap_injective (QuotientGroup.mk'_surjective H) htop
+      rw [hKtop, Subgroup.index_top] at hKindex
+      exact (hp.out.ne_one hKindex.symm).elim
+    · apply Subgroup.comap_injective (QuotientGroup.mk'_surjective H)
+      rw [hH', MonoidHom.comap_bot]
+      exact (QuotientGroup.ker_mk' H).symm
+  rw [hKbot, Subgroup.index_eq_card] at hKindex
+  exact (Subgroup.index_eq_card (H := H)).trans <|
+    (Nat.card_congr QuotientGroup.quotientBot.toEquiv).symm.trans hKindex
 
 /-- The normal subgroups of `G` with `p`-group quotient are closed under binary intersection. -/
 theorem _root_.IsPGroup.quotient_inf {M N : Subgroup G} [M.Normal] [N.Normal]

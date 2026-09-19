@@ -14,7 +14,8 @@ public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 This file records how contractions against one factor of a tensor product detect equality when
 that factor is free. It also proves that the coordinates in bases obtained by scalar extension
-commute with a map of the scalar-extension algebras.
+commute with a map of the scalar-extension algebras, and that over a basis with at most one
+index a scalar extension consists of pure tensors.
 
 ## Main declarations
 
@@ -22,6 +23,9 @@ commute with a map of the scalar-extension algebras.
   factor detect equality.
 * `Module.Basis.map_baseChange_repr`: applying a scalar map to a coordinate in a base-changed
   basis agrees with first mapping the tensor and then taking its coordinate.
+* `Module.Basis.eq_baseChange_repr_tmul_of_subsingleton`: over a basis with at most one index,
+  every element of a scalar extension is the pure tensor of its unique coordinate with the
+  corresponding basis vector.
 * `Module.Basis.map_toMatrixAlgEquiv_baseChange`: matrices in base-changed bases commute with
   scalar maps when the represented endomorphisms are intertwined by tensor-product base change.
 -/
@@ -116,6 +120,18 @@ variable {T : Type w} [Semiring T] [Algebra R T]
   | zero => simp
   | add x y hx hy => simp only [map_add, Finsupp.add_apply, hx, hy]
   | tmul s m => simp
+
+/-- Over a basis with at most one index, every element of a scalar extension is the pure tensor
+of its unique coordinate with the corresponding basis vector.  This isolates the tensor
+bookkeeping needed to reduce statements about rank-at-most-one scalar extensions to scalar
+multiples of a single vector. -/
+theorem eq_baseChange_repr_tmul_of_subsingleton [Subsingleton ι] (b : Basis ι R M)
+    (z : S ⊗[R] M) (i : ι) :
+    z = (b.baseChange S).repr z i ⊗ₜ b i := by
+  let _ : Fintype ι := Fintype.ofFinite ι
+  conv_lhs => rw [← (b.baseChange S).sum_repr z]
+  rw [Fintype.sum_subsingleton _ i, baseChange_apply, TensorProduct.smul_tmul', smul_eq_mul,
+    mul_one]
 
 end Repr
 

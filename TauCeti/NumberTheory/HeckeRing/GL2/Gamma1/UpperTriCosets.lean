@@ -61,8 +61,9 @@ every power of `T = !![1, 1; 0, 1]` lies in `Γ₁(N)`.
 
 ## Main results
 
-* `HeckeRing.GL2.natDiagGL_one_mem_Delta0`, `HeckeRing.GL2.coe_natDiagGL_one`: `diag(1, p)` lies
-  in `Δ₀(N)` at every level, and its matrix.
+* `HeckeRing.GL2.natDiagGL_one_mem_Delta0`, `HeckeRing.GL2.coe_natDiagGL_one`, and
+  `HeckeRing.GL2.coe_map_natDiagGL_one`: `diag(1, p)` lies in `Δ₀(N)` at every level, and its
+  matrix over `ℚ` and `ℝ`.
 * `HeckeRing.GL2.natDiagGL_mul_mapGL_T_zpow`: `diag(1, p) · Tᵇ = !![1, b; 0, p]`, the
   reverse inclusion in one line.
 * `HeckeRing.GL2.exists_mem_Gamma1_natDiagGL_mul_of_dvd`: the factorisation
@@ -121,6 +122,14 @@ lemma coe_natDiagGL_one (hp : 0 < p) :
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
+/-- The real matrix obtained by mapping `diag(1, p)` from `GL₂(ℚ)`, for nonzero `p`. -/
+@[simp] lemma coe_map_natDiagGL_one [NeZero p] :
+    (↑(natDiagGL 2 ![1, p]) : Matrix (Fin 2) (Fin 2) ℚ).map (algebraMap ℚ ℝ) =
+      !![1, 0; 0, (p : ℝ)] := by
+  ext i j
+  rw [coe_natDiagGL_one (Nat.pos_of_neZero p)]
+  fin_cases i <;> fin_cases j <;> simp
+
 /-- **The Hecke double coset of `diag(1, p)` at level `Γ₁(N)`.** For `p ∣ N` this is the coset
 whose slash sum is the classical `Tₚ = Uₚ`; the identification is
 `doubleCoset_natDiagGL_eq_iUnion_rightCosets`, and its operator form lives in
@@ -173,7 +182,7 @@ lemma exists_mem_Gamma1_natDiagGL_mul_of_dvd (hp : 0 < p) {γ : SL(2, ℤ)} (hγ
     {j : ℕ} (hjlt : j < p) (hj : (p : ℤ) ∣ γ 0 1 - γ 0 0 * j) :
     ∃ δ : SL(2, ℤ), δ ∈ Gamma1 N ∧
       natDiagGL 2 ![1, p] * mapGL ℚ γ = mapGL ℚ δ * upperTriRep p ⟨j, hjlt⟩ := by
-  obtain ⟨ha, hd, hc⟩ := (Gamma1_mem N γ).mp hγ
+  obtain ⟨-, hd, hc⟩ := (Gamma1_mem N γ).mp hγ
   obtain ⟨m, hm⟩ := hj
   -- the new left factor
   have hdet : (!![γ 0 0, m; (p : ℤ) * γ 1 0, γ 1 1 - γ 1 0 * j] :
@@ -185,11 +194,10 @@ lemma exists_mem_Gamma1_natDiagGL_mul_of_dvd (hp : 0 < p) {γ : SL(2, ℤ)} (hγ
   obtain ⟨δ, hδmat⟩ : ∃ δ : SL(2, ℤ), (δ : Matrix (Fin 2) (Fin 2) ℤ) =
       !![γ 0 0, m; (p : ℤ) * γ 1 0, γ 1 1 - γ 1 0 * j] := ⟨⟨_, hdet⟩, rfl⟩
   refine ⟨δ, ?_, ?_⟩
-  · refine (Gamma1_mem N δ).mpr ⟨?_, ?_, ?_⟩
-    · simpa [hδmat] using ha
-    · have h : ((γ 1 1 - γ 1 0 * j : ℤ) : ZMod N) = 1 := by push_cast; rw [hd, hc]; ring
-      simpa [hδmat] using h
+  · refine mem_Gamma1_iff.mpr ⟨Gamma0_mem.mpr ?_, ?_⟩
     · have h : (((p : ℤ) * γ 1 0 : ℤ) : ZMod N) = 0 := by push_cast; rw [hc]; ring
+      simpa [hδmat] using h
+    · have h : ((γ 1 1 - γ 1 0 * j : ℤ) : ZMod N) = 1 := by push_cast; rw [hd, hc]; ring
       simpa [hδmat] using h
   · refine Units.ext ?_
     have hmZ : (γ 0 1 : ℤ) = γ 0 0 * j + m * p := by linarith
@@ -349,5 +357,21 @@ theorem doubleCoset_out_diagCosetGamma1_eq_iUnion_rightCosets (hp : 0 < p)
     doubleCoset_natDiagGL_eq_iUnion_rightCosets hp hpN]
 
 end HeckeRing.GL2
+
+namespace TauCeti
+
+open HeckeRing.GL2
+
+/-- The right-coset decomposition of `Γ₁(N) diag(1,n) Γ₁(N)` is finite. Stated on the
+underlying rational matrix so instance search does not need to recover its `Δ₀(N)` membership. -/
+instance finite_decompQuotient_natDiagGL_Gamma1 (N n : ℕ) [NeZero N] :
+    Finite (DecompQuotient ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ))
+      (natDiagGL 2 ![1, n])⁻¹) :=
+  @Finite.of_fintype _ (Subgroup.fintypeOfIndexNeZero
+    (IsHeckeTriple.commensurable_conjAct_inv_left
+      (H₁ := (Gamma1 N).map (mapGL ℚ)) (H₂ := (Gamma1 N).map (mapGL ℚ))
+      (⟨natDiagGL 2 ![1, n], natDiagGL_one_mem_Delta0 N n⟩ : Delta0 N)).1.relIndex_ne_zero)
+
+end TauCeti
 
 end

@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Stalk
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
+public import Mathlib.Topology.Sheaves.Flasque
 
 /-!
 # The sheaf of rational functions on an integral scheme
@@ -27,7 +28,9 @@ condition and the `𝒪_X`-module structure automatic.
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.Scheme.genericPoint_mem`, the elementary fact that every nonempty open
-  subset of an irreducible scheme contains the generic point;
+  subset of an irreducible scheme contains the generic point, and
+  `TauCeti.AlgebraicGeometry.Scheme.germ_smul_functionField`, which says that a function on such
+  a subset acts on the function field through its germ at any of its points;
 * `TauCeti.AlgebraicGeometry.Scheme.fromSpecFunctionField`, the canonical morphism
   `Spec K(X) ⟶ X` from the spectrum of the function field, and
   `TauCeti.AlgebraicGeometry.Scheme.fromSpecFunctionField_preimage`: it pulls a nonempty open
@@ -51,7 +54,8 @@ condition and the `𝒪_X`-module structure automatic.
   really is the constant sheaf: `TauCeti.AlgebraicGeometry.Scheme.isIso_rationalFunctions_map`,
   the restriction maps between nonempty open subsets are isomorphisms, and
   `TauCeti.AlgebraicGeometry.Scheme.subsingleton_rationalFunctions`, the sections over an empty
-  open subset vanish;
+  open subset vanish; together these give
+  `TauCeti.AlgebraicGeometry.Scheme.isFlasque_rationalFunctions`;
 * `TauCeti.AlgebraicGeometry.Scheme.rationalFunctionsMul`, multiplication by a rational function
   as an endomorphism of `𝒦_X`, obtained by pushing forward multiplication by the corresponding
   global function on `Spec K(X)`; `rationalFunctionsEquiv_rationalFunctionsMul_app` identifies it
@@ -108,6 +112,13 @@ variable {X}
 /-- The generic point of an irreducible scheme lies in every nonempty open subset. -/
 theorem genericPoint_mem (U : X.Opens) [Nonempty U] : genericPoint X ∈ U :=
   ((genericPoint_spec X).mem_open_set_iff U.isOpen).mpr (by simpa using ‹Nonempty U›)
+
+/-- A function on a nonempty open subset `U` acts on the function field through its germ at any
+point of `U`. -/
+theorem germ_smul_functionField {U : X.Opens} [Nonempty U] {x : X} (hx : x ∈ U) (r : Γ(X, U))
+    (f : X.functionField) : X.presheaf.germ U x hx r • f = r • f := by
+  rw [Algebra.smul_def, Algebra.smul_def, Scheme.algebraMap_germ_eq_germToFunctionField,
+    RingHom.algebraMap_toAlgebra]
 
 instance instUniqueSpecFunctionField (X : Scheme.{u}) [IrreducibleSpace X] :
     Unique (Spec X.functionField) where
@@ -328,6 +339,20 @@ theorem subsingleton_rationalFunctionsRing (U : X.Opens) (hU : U = ⊥) :
     Subsingleton ((rationalFunctionsRing X).presheaf.obj (.op U)) :=
   haveI := subsingleton_rationalFunctions U hU
   (rationalFunctionsSectionsEquiv X U).symm.injective.subsingleton
+
+/-- The sheaf `𝒦_X` of rational functions on an irreducible scheme is flasque: its restriction
+maps between nonempty open subsets are bijective, and its sections over the empty open subset
+vanish. -/
+instance isFlasque_rationalFunctions : (rationalFunctions X).presheaf.IsFlasque where
+  epi {U V} i := by
+    rw [AddCommGrpCat.epi_iff_surjective]
+    by_cases hV : V.unop = ⊥
+    · have := subsingleton_rationalFunctions (X := X) V.unop hV
+      exact fun t ↦ ⟨0, Subsingleton.elim _ _⟩
+    · have hV := (Opens.ne_bot_iff_nonempty _).mp hV
+      have : Nonempty V.unop := hV.to_subtype
+      have : Nonempty U.unop := (hV.mono (leOfHom i.unop)).to_subtype
+      exact (rationalFunctions_map_bijective (X := X) i.unop).surjective
 
 /-- The canonical morphism `𝒪_X ⟶ 𝒦_X`; it is an inclusion when `X` is integral, by
 `toRationalFunctions_app_injective`. -/

@@ -19,10 +19,12 @@ public import Mathlib.Probability.Independence.InfinitePi
 The Diaconis–Freedman representation of a Markov exchangeable process passes through its
 **successor array** `TauCeti.Probability.successorProcess`, whose `(a, k)`-entry is the state
 reached right after the `k`-th visit to `a`. The change of variables back from a row exchangeable
-array to a mixture of Markov chains is
-`TauCeti.Probability.mixedMarkovChain_of_rowExchangeable_successorProcess`, and its hypothesis is
-row exchangeability of that array. This file shows that recurrence and Markov exchangeability do
-not supply that hypothesis, and exhibits an obstruction to it.
+array to a mixture of Markov chains is `TauCeti.Probability.mixedMarkovChain_of_rowExchangeable`,
+and one array it accepts is that successor array. This file shows that recurrence and Markov
+exchangeability do not make the successor array row exchangeable, and exhibits an obstruction to
+it; that is why the Diaconis–Freedman representation
+`TauCeti.Probability.MarkovExchangeable.mixedMarkovChain` passes through the visited successor
+array `TauCeti.Probability.visitedSuccessorProcess` instead, whose unvisited rows are constant.
 
 The obstruction is not the reordering of genuine transitions but the junk rows. A state the
 process never visits has no genuine successors, so every one of its visit times is `Nat.nth`'s
@@ -280,9 +282,9 @@ is almost sure — the tie is broken, so the reindexed array does not almost sur
 identity the original array almost surely satisfies.
 
 Together with `spareStateProcess_markovExchangeable` and `spareStateProcess_recurrent` this shows
-that the row-exchangeability input of
-`TauCeti.Probability.mixedMarkovChain_of_rowExchangeable_successorProcess` cannot be obtained from
-recurrence and Markov exchangeability alone. -/
+that the row-exchangeability input of `TauCeti.Probability.mixedMarkovChain_of_rowExchangeable`
+cannot be obtained for the plain successor array from recurrence and Markov exchangeability
+alone. -/
 theorem spareStateProcess_not_rowExchangeable_successorProcess :
     ¬ RowExchangeable spareStateMeasure (successorProcess spareStateProcess) := by
   intro hrow

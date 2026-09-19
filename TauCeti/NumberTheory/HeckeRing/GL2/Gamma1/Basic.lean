@@ -86,16 +86,10 @@ lemma Gamma1Image_le_Delta0 : (Gamma1Image N).toSubmonoid ≤ Delta0 N :=
 
 variable [NeZero N]
 
-/-- `Γ₁(N)` is commensurable with `SL₂(ℤ)`: it has finite index in it. -/
-lemma commensurable_Gamma1Image_SLnZ : Commensurable (Gamma1Image N) (SLnZ 2) :=
-  commensurable_map_SLnZ 2 (Gamma1 N)
-
-/-- `Δ₀(N)` lies in the commensurator of `Γ₁(N)`: it lies in that of `SL₂(ℤ)`, and the two
-groups are commensurable. -/
+/-- `Δ₀(N)` lies in the commensurator of `Γ₁(N)`, the right-hand half of its Hecke triple. -/
 lemma Delta0_le_commensurator_Gamma1Image :
-    Delta0 N ≤ (commensurator (Gamma1Image N)).toSubmonoid := by
-  rw [Subgroup.Commensurable.eq (commensurable_Gamma1Image_SLnZ N)]
-  exact (Delta0_le_posDetInt N).trans (posDetInt_le_commensurator 2)
+    Delta0 N ≤ (commensurator (Gamma1Image N)).toSubmonoid :=
+  Delta0_le_commensurator_map N (Gamma1 N)
 
 /-- **The Hecke triple of `Γ₁(N)`**: `Γ₁(N) ≤ Δ₀(N) ≤ commensurator(Γ₁(N))` inside
 `GL₂(ℚ)` — the setting of the Hecke operators on modular forms of level `N`.

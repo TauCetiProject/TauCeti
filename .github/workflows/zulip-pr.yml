@@ -34,7 +34,7 @@ jobs:
     if: github.repository == 'TauCetiProject/TauCeti'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
         id: app-token
         with:
           app-id: ${{ secrets.APP_ID }}
@@ -43,7 +43,6 @@ jobs:
           repositories: TauCeti
           permission-issues: read
           permission-pull-requests: read
-          permission-statuses: read
       - uses: actions/checkout@v4
         with:
           sparse-checkout: scripts/pr_status

@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.HighestWeight.Casimir
 public import TauCeti.Algebra.Lie.Weights.Positivity
 import TauCeti.Algebra.Lie.HighestWeight.Module
-import TauCeti.Algebra.Lie.HighestWeight.WeightSupport
+import TauCeti.Algebra.Lie.HighestWeight.Weight.Support
 
 /-!
 # Separation by the Casimir scalar
@@ -66,7 +66,7 @@ module lie in `lam - Q⁺`, so `lam - mu` is a nonzero member of the positive ro
 of a finite-dimensional module are Weyl stable and integral, so `mu` has a Weyl translate
 `nu = w · mu` that is again a weight of the module and is dominant integral, by
 `TauCeti.exists_weylGroup_smul_isDominantIntegral_of_genWeightSpace_ne_bot` of
-`TauCeti/Algebra/Lie/HighestWeight/WeightSupport.lean`. The form is Weyl
+`TauCeti/Algebra/Lie/HighestWeight/Weight/Support.lean`. The form is Weyl
 invariant (`RootPairing.InvariantForm.apply_weylGroup_smul`), so
 `⟨mu, mu⟩ = ⟨nu, nu⟩` and the first summand is
 `⟨lam + nu, lam - nu⟩`, which is nonnegative: `lam + nu` is dominant integral and `lam - nu` lies
@@ -81,6 +81,11 @@ in the cone. A nonnegative rational plus a positive one is nonzero.
   vector.
 * `TauCeti.representation_casimirElement_apply_eq_zero_of_isTrivial`: on a module with trivial
   action the Casimir element acts by zero.
+* `TauCeti.IsDominantIntegral.exists_nonneg_rat_invForm_of_mem_posRootCone`: a dominant integral
+  weight pairs to a nonnegative rational with every member of the positive root cone.
+* `casimirScalar_ne_casimirScalar_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne` (in the
+  `TauCeti.IsDominantIntegral` namespace): **the Casimir scalar separates a dominant integral
+  weight from the dominant integral weights strictly below it.**
 * `TauCeti.casimirScalar_ne_casimirScalar_of_genWeightSpace_ne_bot_of_isHighestWeightVector`:
   **over an algebraically closed field, the Casimir scalar of a weight of a finite-dimensional
   highest weight module differs from that of the highest weight, except at the highest weight
@@ -188,7 +193,7 @@ theorem casimir_apply_ne_zero_of_isHighestWeightVector_of_lieSpan_eq_top {v : M}
 the cone is a natural combination of the simple roots, and a dominant integral weight pairs
 nonnegatively with each of those by
 `TauCeti.IsDominantIntegral.exists_nonneg_rat_invForm_root`. -/
-private theorem exists_nonneg_rat_invForm_of_mem_posRootCone {chi u : Module.Dual K H}
+theorem IsDominantIntegral.exists_nonneg_rat_invForm_of_mem_posRootCone {chi u : Module.Dual K H}
     (hchi : IsDominantIntegral base chi)
     (hu : u ∈ posRootCone (IsKilling.rootSystem H) base) :
     ∃ q : ℚ, 0 ≤ q ∧ invForm chi u = (q : K) := by
@@ -250,6 +255,33 @@ private theorem exists_pos_rat_invForm_twoWeylVector {u : Module.Dual K H}
     rw [map_nsmul, nsmul_eq_mul, invForm_twoWeylVector_root hi,
       IsKilling.rootSystem_root_apply, hg i]
 
+/-! ### Separating dominant integral weights -/
+
+namespace IsDominantIntegral
+
+/-- **The Casimir scalar separates a dominant integral weight from the dominant integral weights
+below it**: if `lam` and `nu` are dominant integral, `lam - nu` lies in the positive root cone and
+`nu ≠ lam`, then `c(lam) ≠ c(nu)`.
+
+In the expansion `c(lam) - c(nu) = ⟨lam + nu, lam - nu⟩ + ⟨2ρ, lam - nu⟩` the first summand is a
+nonnegative rational, `lam + nu` being dominant integral, and the second a positive one, `lam - nu`
+being a nonzero member of the cone. -/
+theorem casimirScalar_ne_casimirScalar_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne
+    (hlam : IsDominantIntegral base lam) {nu : Module.Dual K H}
+    (hnu : IsDominantIntegral base nu)
+    (hle : lam - nu ∈ posRootCone (IsKilling.rootSystem H) base) (hne : nu ≠ lam) :
+    casimirScalar base lam ≠ casimirScalar base nu := by
+  obtain ⟨q₁, hq₁0, hq₁⟩ := (hlam.add hnu).exists_nonneg_rat_invForm_of_mem_posRootCone hle
+  obtain ⟨q₂, hq₂0, hq₂⟩ := exists_pos_rat_invForm_twoWeylVector hle (sub_ne_zero_of_ne hne.symm)
+  have hdiff : casimirScalar base lam - casimirScalar base nu = ((q₁ + q₂ : ℚ) : K) := by
+    rw [casimirScalar_sub_casimirScalar, invForm_self_sub_invForm_self, hq₁, hq₂, Rat.cast_add]
+  have hne0 : ((q₁ + q₂ : ℚ) : K) ≠ 0 := by
+    have hpos : (0 : ℚ) < q₁ + q₂ := by linarith
+    exact_mod_cast hpos.ne'
+  exact fun hcon ↦ hne0 (by rw [← hdiff, hcon, sub_self])
+
+end IsDominantIntegral
+
 /-! ### Separating the weights of a highest weight module -/
 
 section HighestWeightModule
@@ -266,10 +298,9 @@ weight multiplicities of `M`: the coefficient the recursion divides by,
 `⟨lam + ρ, lam + ρ⟩ - ⟨mu + ρ, mu + ρ⟩`, is `casimirScalar base lam - casimirScalar base mu`, and
 is nonzero at every weight other than `lam` itself.
 
-Expanded through `TauCeti.casimirScalar_eq_add_sum`, the difference is
-`(⟨lam, lam⟩ - ⟨mu, mu⟩) + ⟨2ρ, lam - mu⟩`. The second summand is positive because `lam - mu` is a
-nonzero member of the positive root cone. For the first, replace `mu` by the dominant integral
-conjugate `nu = w · mu` of
+Expanded, the difference is `(⟨lam, lam⟩ - ⟨mu, mu⟩) + ⟨2ρ, lam - mu⟩`. The second summand is
+positive because `lam - mu` is a nonzero member of the positive root cone. For the first, replace
+`mu` by the dominant integral conjugate `nu = w · mu` of
 `TauCeti.exists_weylGroup_smul_isDominantIntegral_of_genWeightSpace_ne_bot`, which has the same
 length by `RootPairing.InvariantForm.apply_weylGroup_smul`; then
 `⟨lam, lam⟩ - ⟨nu, nu⟩ = ⟨lam + nu, lam - nu⟩` is
@@ -278,41 +309,25 @@ theorem casimirScalar_ne_casimirScalar_of_genWeightSpace_ne_bot_of_isHighestWeig
     (hv : IsHighestWeightVector base lam v) (hgen : LieSubmodule.lieSpan K L {v} = ⊤)
     {mu : Module.Dual K H} (hmu : genWeightSpace M (mu : H → K) ≠ ⊥) (hne : mu ≠ lam) :
     casimirScalar base lam ≠ casimirScalar base mu := by
-  classical
   obtain ⟨w, hwS, hwdom⟩ :=
     exists_weylGroup_smul_isDominantIntegral_of_genWeightSpace_ne_bot hv hgen hmu
   set nu : Module.Dual K H := w • mu
-  obtain ⟨q₁, hq₁0, hq₁⟩ := exists_nonneg_rat_invForm_of_mem_posRootCone
-    (hv.isDominantIntegral.add hwdom)
-    (sub_mem_posRootCone_of_genWeightSpace_ne_bot_of_isHighestWeightVector_of_lieSpan_eq_top
-      hv hgen hwS)
+  obtain ⟨q₁, hq₁0, hq₁⟩ :=
+    (hv.isDominantIntegral.add hwdom).exists_nonneg_rat_invForm_of_mem_posRootCone
+      (sub_mem_posRootCone_of_genWeightSpace_ne_bot_of_isHighestWeightVector_of_lieSpan_eq_top
+        hv hgen hwS)
   obtain ⟨q₂, hq₂0, hq₂⟩ := exists_pos_rat_invForm_twoWeylVector
     (sub_mem_posRootCone_of_genWeightSpace_ne_bot_of_isHighestWeightVector_of_lieSpan_eq_top
       hv hgen hmu)
     (sub_ne_zero_of_ne (Ne.symm hne))
-  -- the constant part of the difference, after replacing `mu` by its dominant conjugate
-  have hquad : invForm lam lam - invForm mu mu = invForm (lam + nu) (lam - nu) := by
-    have hlen : invForm mu mu = invForm nu nu := by
-      simpa only [rootInvariantForm_form] using
-        (RootPairing.InvariantForm.apply_weylGroup_smul (IsKilling.rootSystem H)
-          (B := rootInvariantForm (H := H)) w mu mu).symm
-    rw [hlen]
-    simp only [map_add, map_sub, LinearMap.add_apply]
-    rw [(invForm_isSymm (H := H)).eq nu lam]
-    ring
-  -- the root part of the difference
-  have hsum : ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) base,
-      (invForm lam ((IsKilling.rootSystem H).root i) -
-        invForm mu ((IsKilling.rootSystem H).root i)) =
-      invForm (twoWeylVector (IsKilling.rootSystem H) base) (lam - mu) := by
-    rw [(invForm_isSymm (H := H)).eq (twoWeylVector (IsKilling.rootSystem H) base) (lam - mu),
-      twoWeylVector_def, map_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ by rw [map_sub, LinearMap.sub_apply]
-  -- regrouping the two expansions into the constant part and the root part
-  have hregroup : ∀ a b c d : K, a + b - (c + d) = a - c + (b - d) := fun a b c d ↦ by ring
+  -- `mu` and its dominant conjugate `nu` have the same length
+  have hlen : invForm mu mu = invForm nu nu := by
+    simpa only [rootInvariantForm_form] using
+      (RootPairing.InvariantForm.apply_weylGroup_smul (IsKilling.rootSystem H)
+        (B := rootInvariantForm (H := H)) w mu mu).symm
   have hdiff : casimirScalar base lam - casimirScalar base mu = ((q₁ + q₂ : ℚ) : K) := by
-    rw [casimirScalar_eq_add_sum (lam := lam), casimirScalar_eq_add_sum (lam := mu), hregroup,
-      ← Finset.sum_sub_distrib, hsum, hquad, hq₁, hq₂, Rat.cast_add]
+    rw [casimirScalar_sub_casimirScalar, hlen, invForm_self_sub_invForm_self, hq₁, hq₂,
+      Rat.cast_add]
   have hne0 : ((q₁ + q₂ : ℚ) : K) ≠ 0 := by
     have hpos : (0 : ℚ) < q₁ + q₂ := by linarith
     exact_mod_cast hpos.ne'

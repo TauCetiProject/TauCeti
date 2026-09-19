@@ -10,12 +10,16 @@ public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Basic
 public import TauCeti.Algebra.AlgebraicGroup.UpperUnitriangular.Scheme
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
+import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
+
 /-!
 # The upper-unitriangular group is unipotent
 
-For a natural number `n`, the generic upper-unitriangular matrix defines the standard comodule of
-the coordinate Hopf algebra `O(U_n)` on `R^n`.  Its coordinate morphism is the closed immersion
-`U_n → GL_n`, so this comodule is faithful.  At every point its action is
+For a natural number `n`, corestricting the standard `O(GL_n)`-comodule along
+`O(GL_n) → O(U_n)` gives the standard comodule of `O(U_n)` on `R^n`. Its coaction is given by
+the generic upper-unitriangular matrix. Its coordinate morphism is the closed immersion
+`U_n → GL_n`, so this comodule is faithful. At every point its action is
 the corresponding upper-unitriangular matrix, hence is unipotent.  The faithful-representation
 criterion then proves that every geometric point of `U_n` is unipotent.
 
@@ -34,10 +38,6 @@ therefore smooth; over a field this makes `U_n` a smooth unipotent affine group.
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
-
-This supplies the upper-unitriangular model in Layer 5, "Unipotent groups", of the
-ReductiveGroups roadmap.  Together with closure under smooth closed subgroups, it is the forward
-direction of the roadmap's upper-unitriangular embedding characterization.
 -/
 
 public section
@@ -68,74 +68,48 @@ theorem standardCoact_apply_basisFun (j : Fin n) :
         coordinateHopfAlgebraAlgEquiv R (Fin n) (genericMatrix R (Fin n) i j) := by
   rw [standardCoact, ← Pi.basisFun_apply, Basis.constr_basis]
 
-/-- The standard right comodule of the upper-unitriangular coordinate Hopf algebra. -/
+/-- The standard right comodule of the upper-unitriangular coordinate Hopf algebra, obtained by
+corestricting the standard general-linear comodule along `O(GL_n) → O(U_n)`. -/
 @[instance_reducible]
 noncomputable def standardComodule :
-    Comodule R (coordinateHopfAlgebra R (Fin n)) (Fin n → R) where
-  coact := standardCoact R n
-  coassoc := by
-    apply (Pi.basisFun R (Fin n)).ext
-    intro j
-    simp only [LinearMap.coe_comp, Function.comp_apply]
-    rw [Pi.basisFun_apply, standardCoact_apply_basisFun]
-    simp only [map_sum, LinearMap.rTensor_tmul, standardCoact_apply_basisFun,
-      TensorProduct.sum_tmul, LinearEquiv.coe_coe, TensorProduct.assoc_tmul,
-      LinearMap.lTensor_tmul,
-      coordinateHopfAlgebra_comul_genericMatrix_apply, TensorProduct.tmul_sum]
-    rw [Finset.sum_comm]
-  lTensor_counit_comp_coact := by
-    apply (Pi.basisFun R (Fin n)).ext
-    intro j
-    simp only [LinearMap.coe_comp, Function.comp_apply]
-    rw [Pi.basisFun_apply, standardCoact_apply_basisFun]
-    simp only [map_sum, LinearMap.lTensor_tmul,
-      coordinateHopfAlgebra_counit_genericMatrix_apply]
-    rw [Finset.sum_eq_single j]
-    · simp
-    · intro i _ hij
-      simp [hij]
-    · simp
+    Comodule R (coordinateHopfAlgebra R (Fin n)) (Fin n → R) := by
+  let _ := GeneralLinear.standardComodule R n
+  exact Comodule.Corestrict (M := Fin n → R) (coordinateMap R n).hom.toCoalgHom
 
 /-- The coaction of the standard comodule is `standardCoact`. -/
-@[simp]
 theorem standardComodule_coact :
-    (standardComodule R n).coact = standardCoact R n :=
-  (rfl)
+    (standardComodule R n).coact = standardCoact R n := by
+  let _ := GeneralLinear.standardComodule R n
+  rw [standardComodule]
+  apply (Pi.basisFun R (Fin n)).ext
+  intro j
+  rw [Comodule.corestrict_coact_apply, GeneralLinear.standardComodule_coact,
+    Pi.basisFun_apply, GeneralLinear.standardCoact_apply_basisFun, standardCoact_apply_basisFun]
+  simp [BialgHom.toCoalgHom_apply]
 
 attribute [local instance] standardComodule
 
 /-- The coefficient matrix of the standard comodule is the generic upper-unitriangular matrix. -/
-@[simp]
 theorem coefficientMatrix_basisFun :
     Comodule.coefficientMatrix (C := coordinateHopfAlgebra R (Fin n))
         (Pi.basisFun R (Fin n)) = fun i j ↦
           coordinateHopfAlgebraAlgEquiv R (Fin n) (genericMatrix R (Fin n) i j) := by
+  let _ := GeneralLinear.standardComodule R n
+  rw [standardComodule]
+  rw [Comodule.coefficientMatrix_corestrict, GeneralLinear.coefficientMatrix_basisFun]
   ext i j
-  rw [Comodule.coefficientMatrix_apply, Comodule.matrixCoefficient_def,
-    standardComodule_coact, Pi.basisFun_apply, standardCoact_apply_basisFun]
-  simp [Pi.single_apply]
+  rw [Matrix.map_apply, GeneralLinear.genericMatrix_apply]
+  simp [BialgHom.toCoalgHom_apply, coordinateMap_genericMatrix_apply]
 
 /-- The coordinate morphism of the standard comodule is the coordinate morphism of the closed
 immersion `U_n → GL_n`. -/
-@[simp]
 theorem coordinateBialgHom_basisFun :
     Comodule.coordinateBialgHom (H := coordinateHopfAlgebra R (Fin n))
         (Pi.basisFun R (Fin n)) = (coordinateMap R n).hom := by
-  apply BialgHom.ext
-  intro x
-  have hAlg :
-      (Comodule.coordinateBialgHom (H := coordinateHopfAlgebra R (Fin n))
-          (Pi.basisFun R (Fin n))).toAlgHom = (coordinateMap R n).hom.toAlgHom := by
-    apply GeneralLinear.coordinateHopfAlgebra_algHom_ext R n
-    intro i j
-    calc
-      _ = Comodule.coefficientMatrix (C := coordinateHopfAlgebra R (Fin n))
-            (Pi.basisFun R (Fin n)) i j :=
-        Comodule.coordinateBialgHom_X (Pi.basisFun R (Fin n)) i j
-      _ = coordinateHopfAlgebraAlgEquiv R (Fin n) (genericMatrix R (Fin n) i j) := by
-        rw [coefficientMatrix_basisFun]
-      _ = _ := (coordinateMap_genericMatrix_apply R n i j).symm
-  exact DFunLike.congr_fun hAlg x
+  let _ := GeneralLinear.standardComodule R n
+  rw [standardComodule]
+  rw [Comodule.coordinateBialgHom_corestrict,
+    GeneralLinear.coordinateBialgHom_basisFun, BialgHom.comp_id]
 
 /-- The standard comodule of `U_n` is faithful. -/
 theorem isFaithful_standardComodule :
@@ -181,7 +155,6 @@ theorem standardScalarExtensionEquiv_comp_endOfPoint
 
 /-- Transporting the standard point action to `A^n` gives the natural linear action of the
 associated upper-unitriangular matrix. -/
-@[simp]
 theorem congrLinearEquiv_pointsAction_eq_toLin
     (g : WithConv (coordinateHopfAlgebra R (Fin n) →ₐ[R] A)) :
     LinearMap.GeneralLinearGroup.ofLinearEquiv

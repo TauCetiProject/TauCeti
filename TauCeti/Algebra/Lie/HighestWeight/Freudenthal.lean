@@ -260,6 +260,41 @@ private theorem sum_weightString_erase_eq_sum_range {beta : Dual K H} (hbeta : b
         ⟨(Finset.mem_erase.mp hjs).1, (mem_weightString_iff hbeta mu).mpr hne⟩)
     rw [LieSubmodule.finrank_eq_zero_of_eq_bot hbot', Nat.cast_zero, zero_mul]
 
+omit [IsAlgClosed K] in
+/-- A Freudenthal string sum telescopes along its own direction: after erasing the zeroth rung, the
+sum above `μ` is the first summand at `μ + β` plus the corresponding sum above `μ + β`, also with
+its zeroth rung erased. -/
+theorem sum_weightString_erase_zero_eq_add_sum_erase_zero {beta : Dual K H}
+    (hbeta : beta ≠ 0) (mu : Dual K H) :
+    ∑ j ∈ (weightString M hbeta mu).erase 0,
+        (finrank K (genWeightSpace M ((mu + j • beta : Dual K H) : H → K)) : K) *
+          invForm (mu + j • beta) beta =
+      (finrank K (genWeightSpace M ((mu + beta : Dual K H) : H → K)) : K) *
+          invForm (mu + beta) beta +
+        ∑ j ∈ (weightString M hbeta (mu + beta)).erase 0,
+          (finrank K (genWeightSpace M ((mu + beta + j • beta : Dual K H) : H → K)) : K) *
+            invForm (mu + beta + j • beta) beta := by
+  obtain ⟨N, hN⟩ := exists_genWeightSpace_add_nsmul_eq_bot_of_le (M := M) hbeta mu
+  have hN' : ∀ j : ℕ, N ≤ j →
+      genWeightSpace M ((mu + beta + j • beta : Dual K H) : H → K) = ⊥ := fun j hj ↦ by
+    rw [add_assoc, ← succ_nsmul']
+    exact hN (j + 1) (by omega)
+  -- both string sums are sums over initial segments, shifted to start at the first rung
+  have hshift : ∀ (f : ℕ → K) (n : ℕ),
+      ∑ j ∈ (Finset.range (n + 1)).erase 0, f j = ∑ j ∈ Finset.range n, f (j + 1) := by
+    intro f n
+    have h := Finset.sum_erase_add (Finset.range (n + 1)) f
+      (Finset.mem_range.mpr (Nat.succ_pos n))
+    rw [Finset.sum_range_succ'] at h
+    exact add_right_cancel h
+  rw [sum_weightString_erase_eq_sum_range hbeta mu (N := N + 1) fun j hj ↦ hN j (by omega),
+    sum_weightString_erase_eq_sum_range hbeta (mu + beta) hN', hshift, hshift,
+    Finset.sum_range_succ', add_comm]
+  have hrung : ∀ k : ℕ, mu + (k + 1 + 1) • beta = mu + beta + (k + 1) • beta := fun k ↦ by
+    rw [add_assoc mu beta, ← succ_nsmul']
+  rw [zero_add, one_nsmul]
+  exact congrArg _ (Finset.sum_congr rfl fun k _ ↦ by rw [hrung])
+
 /-- **Integrality along the string.** If any rung of the two-sided `α`-string through `μ` is a
 weight of `M`, then `μ` takes an integer value on the coroot `α^∨`: the rung does, by the
 integrality of the weights of a finite-dimensional module, and the rungs differ from `μ` by

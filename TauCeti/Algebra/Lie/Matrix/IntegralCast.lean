@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.Data.Matrix.Basic
+public import Mathlib.Data.Matrix.Mul
 public import TauCeti.LinearAlgebra.CoordinateLattice
 
 /-!
@@ -65,6 +66,12 @@ theorem matrixIntCastLieHom_apply (R : Type*) [Ring R] (M : Matrix n n ℤ) (a b
   simp only [matrixIntCastLieHom, AlgHom.toLieHom_apply, RingHom.toIntAlgHom_apply,
     RingHom.mapMatrix_apply, Matrix.map_apply, Int.coe_castRingHom]
 
+/-- Entrywise coercion through `matrixIntCastLieHom` is the usual matrix map by integer cast. -/
+theorem matrixIntCastLieHom_eq_map (R : Type*) [Ring R] (M : Matrix n n ℤ) :
+    matrixIntCastLieHom R M = M.map (Int.cast : ℤ → R) := by
+  ext a b
+  rw [matrixIntCastLieHom_apply, Matrix.map_apply]
+
 /-- Entrywise coercion of integer matrices is multiplicative, being a ring homomorphism read as
 a homomorphism of Lie rings. -/
 @[simp]
@@ -79,6 +86,8 @@ namespace Matrix
 
 open TauCeti
 
+section
+
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- **A coerced integer matrix preserves the integral coordinate lattice**, each coordinate of
@@ -92,5 +101,25 @@ theorem intCastLieHom_mulVec_mem_coordinateLattice (M : Matrix n n ℤ) {v : n �
   refine ⟨∑ b, M a b * z b, ?_⟩
   simp only [Int.cast_sum, Int.cast_mul, hz, Matrix.mulVec, dotProduct,
     matrixIntCastLieHom_apply]
+
+end
+
+variable {m n : Type*} [Fintype m] [Fintype n]
+
+/-- An integral matrix acts on a coordinate-lattice basis vector by its corresponding column. -/
+theorem intCast_mulVec_coordinateLatticeBasis_eq_sum (M : Matrix m n ℤ) (s : n) :
+    M.map (Int.castRingHom ℚ) *ᵥ
+        ((coordinateLatticeBasis n s : coordinateLattice n) : n → ℚ) =
+      ∑ r, M r s • ((coordinateLatticeBasis m r : coordinateLattice m) : m → ℚ) := by
+  classical
+  rw [coe_coordinateLatticeBasis, Pi.basisFun_apply, Matrix.mulVec_single_one]
+  ext a
+  simp only [Matrix.col_apply, Finset.sum_apply, Pi.smul_apply, coe_coordinateLatticeBasis,
+    Pi.basisFun_apply, Pi.single_apply, Matrix.map_apply, Int.coe_castRingHom]
+  rw [Finset.sum_eq_single a]
+  · simp
+  · intro b _ hba
+    simp [Ne.symm hba]
+  · simp
 
 end Matrix

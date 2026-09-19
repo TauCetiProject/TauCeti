@@ -36,6 +36,8 @@ inherit.
 * `TauCeti.multivariateGamma_add` — the dimensions add,
   `Γ_{p + q}(a) = π ^ (p * q / 2) * Γ_p(a) * Γ_q(a - p / 2)`, with the classical one-step
   recursion `TauCeti.multivariateGamma_succ` as a special case;
+* `TauCeti.multivariateGamma_eq_prod` — `Γ_p(a)` as a product of one factor
+  `π ^ (i / 2) * Γ(a - i / 2)` per row;
 * `TauCeti.multivariateGamma_one` — dimension one recovers `Real.Gamma`;
 * `TauCeti.multivariateGamma_pos` — positivity on the classical range `(p - 1) / 2 < a`;
 * `TauCeti.multivariateGamma_eq_zero_iff` — the vanishing locus outside that range;
@@ -106,6 +108,17 @@ theorem multivariateGamma_succ (p : ℕ) (a : ℝ) :
       π ^ ((p : ℝ) / 2) * multivariateGamma p a * Real.Gamma (a - (p : ℝ) / 2) := by
   rw [multivariateGamma_add, multivariateGamma_one]
   norm_num
+
+/-- The multivariate Gamma function as a product over its rows: row `i` contributes the Gamma
+factor `Γ(a - i / 2)` together with the share `π ^ (i / 2)` of the power of `π`. -/
+theorem multivariateGamma_eq_prod (p : ℕ) (a : ℝ) :
+    multivariateGamma p a = ∏ i : Fin p, π ^ ((i.1 : ℝ) / 2) * Real.Gamma (a - (i.1 : ℝ) / 2) := by
+  induction p with
+  | zero => simp
+  | succ p ih =>
+    rw [multivariateGamma_succ, ih, Fin.prod_univ_castSucc]
+    simp only [Fin.val_castSucc, Fin.val_last]
+    ring
 
 /-- On the classical range of the shape parameter every Gamma factor is evaluated to the right of
 its rightmost pole, so `Γ_p(a)` is positive. This is the range on which it normalizes a Wishart

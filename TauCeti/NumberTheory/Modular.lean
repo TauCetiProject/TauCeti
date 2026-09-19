@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.Modular
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Measure
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
-public import TauCeti.Analysis.Complex.UpperHalfPlane.PSLAction
+public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 public import TauCeti.GroupTheory.Index.Basic
 import TauCeti.GroupTheory.QuotientGroup.ThirdIso
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
@@ -51,6 +51,10 @@ every level, which is what a Petersson product for a congruence subgroup is an i
   fundamental domain for any subgroup of `PSL(2, ℤ)`.
 * `ModularGroup.isFundamentalDomain_iUnion_out_inv_smul_fdo_withCenter`: the same tiling indexed
   by `SL(2, ℤ) ⧸ Γ.withCenter`, which is the indexing the Petersson product uses.
+* `ModularGroup.isFundamentalDomain_smul_of_inv_conjAct_eq`: an element of `GL(2, ℝ)`
+  conjugating the image of `Γ` onto that of `Γ'` carries a fundamental domain for `Γ` to one for
+  `Γ'` — the step that lets a Petersson product be compared with its translate under the Fricke
+  or an Atkin–Lehner matrix, or under the matrix of a double coset operator.
 
 Split out of the Petersson inner-product development ported from the AINTLIB
 `LeanModularForms` project
@@ -301,5 +305,62 @@ theorem isFundamentalDomain_iUnion_out_inv_smul_fdo_withCenter (Γ : Subgroup SL
   exact ((Subgroup.quotientEquivOfEq (Subgroup.withCenter_def Γ)).trans
     (QuotientGroup.quotientQuotientEquivQuotientSup Γ
       (Subgroup.center SL(2, ℤ))).symm).bijective
+
+open Matrix.SpecialLinearGroup in
+/-- **A conjugating translate of a fundamental domain is a fundamental domain for the conjugate
+group.** If `α ∈ GL(2, ℝ)` conjugates the image of `Γ` in `GL(2, ℝ)` onto that of `Γ'` —
+`α⁻¹ Γ' α = Γ`, stated as `ConjAct.toConjAct α⁻¹ • Γ' = Γ` — then for every fundamental domain
+`S` of the image of `Γ` in `PSL(2, ℤ)`, the translate `α • S` is a fundamental domain for the
+image of `Γ'`: `α` carries `Γ`-orbits on `ℍ` to `Γ'`-orbits, since `α γ α⁻¹` acts on `ℍ` as an
+element of `Γ'` does, and it preserves the invariant measure.
+
+`α` need not lie in `SL(2, ℤ)`, nor even have integral entries. With `Γ' = Γ` this is the case of
+a normaliser: the Fricke matrix `!![0, -1; N, 0]`, which normalises `Γ₁(N)` and `Γ₀(N)`, and the
+Atkin–Lehner matrices, which normalise `Γ₀(N)`. With `Γ' ≠ Γ` it is the case of the double coset
+operators, where a rational `α` carries `Γ ∩ α⁻¹ Γ α` onto `α Γ α⁻¹ ∩ Γ`. That is also why
+`MeasureTheory.IsFundamentalDomain.smul_of_eq_conjAct_pointwise_smul` does not apply: it translates
+by an element of the acting group itself, and `α` does not lie in `PSL(2, ℤ)`. -/
+theorem isFundamentalDomain_smul_of_inv_conjAct_eq {Γ Γ' : Subgroup SL(2, ℤ)}
+    {α : GL (Fin 2) ℝ} (hα : ConjAct.toConjAct α⁻¹ • Γ'.map (mapGL ℝ) = Γ.map (mapGL ℝ))
+    {S : Set ℍ}
+    (hS : IsFundamentalDomain (Γ.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))) S volume) :
+    IsFundamentalDomain (Γ'.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))) (α • S)
+      volume := by
+  have hmem : ∀ x : GL (Fin 2) ℝ, α * x * α⁻¹ ∈ Γ'.map (mapGL ℝ) ↔ x ∈ Γ.map (mapGL ℝ) := by
+    intro x
+    conv_rhs => rw [← hα]
+    rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem]
+    simp [ConjAct.smul_def]
+  have hconj : ∀ {A B : Subgroup SL(2, ℤ)} (β : GL (Fin 2) ℝ),
+      (∀ x ∈ A.map (mapGL ℝ), β * x * β⁻¹ ∈ B.map (mapGL ℝ)) →
+      ∀ h : A.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))),
+        ∃ h' : B.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))), ∀ τ : ℍ,
+          (h' : PSL(2, ℤ)) • τ = β • ((h : PSL(2, ℤ)) • (β⁻¹ • τ)) := by
+    rintro A B β hβ ⟨_, γ, hγ, rfl⟩
+    obtain ⟨γ', hγ', he⟩ := hβ _ ⟨γ, hγ, rfl⟩
+    refine ⟨⟨QuotientGroup.mk' _ γ', γ', hγ', rfl⟩, fun τ ↦ ?_⟩
+    simp only [QuotientGroup.mk'_apply, pslMk_smul, sl_moeb]
+    rw [← mul_smul, ← mul_smul]
+    -- `sl_moeb` states the action through the coercion `SL(2, ℤ) → GL (Fin 2) ℝ`, which is
+    -- `mapGL ℝ` by definition
+    exact congrArg (· • τ) he
+  have hα' : ∀ x ∈ Γ.map (mapGL ℝ), α * x * α⁻¹ ∈ Γ'.map (mapGL ℝ) := fun x ↦ (hmem x).mpr
+  have hα'' : ∀ x ∈ Γ'.map (mapGL ℝ), α⁻¹ * x * α⁻¹⁻¹ ∈ Γ.map (mapGL ℝ) := fun x hx ↦
+    (hmem _).mp (by simpa [mul_assoc] using hx)
+  choose e he using hconj α hα'
+  have heq : ∀ {C : Subgroup SL(2, ℤ)}
+      {g h : C.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))},
+      (∀ τ : ℍ, (g : PSL(2, ℤ)) • τ = (h : PSL(2, ℤ)) • τ) → g = h :=
+    fun hgh ↦ Subtype.ext (eq_of_smul_eq_smul hgh)
+  have hbij : Function.Bijective e := by
+    refine ⟨fun g h hgh ↦ heq fun τ ↦ ?_, fun h ↦ ?_⟩
+    · have := congrArg (fun g : Γ'.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))) ↦
+        (g : PSL(2, ℤ)) • (α • τ)) hgh
+      simpa [he] using this
+    · obtain ⟨g, hg⟩ := hconj α⁻¹ hα'' h
+      exact ⟨g, heq fun τ ↦ by simp [he, hg]⟩
+  rw [← Set.preimage_smul_inv]
+  exact hS.preimage_of_equiv (measurePreserving_smul α⁻¹ volume).quasiMeasurePreserving hbij
+    fun g τ ↦ by simp only [Subgroup.smul_def, he, inv_smul_smul]
 
 end ModularGroup

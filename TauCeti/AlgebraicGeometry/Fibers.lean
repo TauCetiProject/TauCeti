@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.OpenImmersion
 public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.FunctionField
+public import TauCeti.AlgebraicGeometry.PullbackSpecMap
 public import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 
 /-!
@@ -303,6 +304,19 @@ section Tower
 variable (R K L : Type u) [CommRing R] [CommRing K] [CommRing L]
 variable [Algebra R K] [Algebra K L] [Algebra R L] [IsScalarTower R K L]
 variable {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
+
+/-- Direct scalar extension from `R` to `L` is naturally isomorphic to scalar extension first to
+`K` and then to `L`. -/
+noncomputable def genericFiberTowerNatIso :
+    Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R L))) ≅
+      Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K))) ⋙
+        Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L))) :=
+  eqToIso (by
+    congr 2
+    ext r
+    exact IsScalarTower.algebraMap_apply R K L r) ≪≫
+    TauCeti.AlgebraicGeometry.Over.pullbackSpecMapComp
+      (CommRingCat.ofHom (algebraMap R K)) (CommRingCat.ofHom (algebraMap K L))
 
 /-- Iterated scalar extension from `R` through `K` to `L` is a pullback of the direct map from
 `R` to `L`. -/

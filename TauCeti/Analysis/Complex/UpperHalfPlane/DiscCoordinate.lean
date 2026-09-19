@@ -7,8 +7,11 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Metric
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
+public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Algebra.Field.LinearFractional
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
+public import TauCeti.Analysis.Complex.UpperHalfPlane.SmulDeriv
+public import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 
 /-!
 # The disc coordinate centred at a point of the upper half-plane
@@ -21,8 +24,12 @@ hyperbolic distance `d` to `z`. In this coordinate every matrix of positive dete
 `discCoordinate z (g • τ) = conj (denom g z) / denom g z * discCoordinate z τ`.
 
 This is the local linearizing coordinate at a point with nontrivial stabilizer: the multiplier
-`conj (denom g z) / denom g z` is a complex number of modulus one, and it records the
-derivative of `τ ↦ g • τ` at its fixed point `z`.
+`conj (denom g z) / denom g z` is a complex number of modulus one, and it is exactly the
+derivative `Matrix.ProjectiveSpecialLinearGroup.smulDeriv` of `τ ↦ g • τ` at its fixed
+point `z`.
+
+Because the modulus of the disc coordinate is `tanh` of half the hyperbolic distance to `z`, the
+hyperbolic discs about `z` are precisely the preimages of the Euclidean discs about `0`.
 
 ## Main declarations
 
@@ -30,12 +37,20 @@ derivative of `τ ↦ g • τ` at its fixed point `z`.
 * `UpperHalfPlane.discCoordinate_eq_zero_iff` and `UpperHalfPlane.discCoordinate_injective`.
 * `UpperHalfPlane.norm_discCoordinate`: the modulus of the disc coordinate is
   `tanh (dist τ z / 2)`, so the coordinate takes values in the unit disc.
-* `UpperHalfPlane.discCoordinateEquiv`: the disc coordinate as an equivalence `ℍ ≃ 𝔻`, with
-  explicit inverse, and `UpperHalfPlane.range_discCoordinate`: its range is the open unit disc.
+* `UpperHalfPlane.mdifferentiable_discCoordinate` and
+  `UpperHalfPlane.analyticOnNhd_discCoordinateHomeomorph_symm`: the coordinate and its explicit
+  inverse are holomorphic.
+* `UpperHalfPlane.discCoordinateHomeomorph`: the disc coordinate as a homeomorphism `ℍ ≃ₜ 𝔻`,
+  with explicit inverse, and `UpperHalfPlane.range_discCoordinate`: its range is the open unit
+  disc.
+* `UpperHalfPlane.mem_ball_iff_norm_discCoordinate_lt` and
+  `UpperHalfPlane.image_discCoordinate_ball`: the hyperbolic disc of radius `ε` about `z` is
+  carried onto the Euclidean disc of radius `tanh (ε / 2)` about `0`.
 * `UpperHalfPlane.discCoordinate_smul_of_smul_eq_self`: a matrix of positive determinant
   fixing `z` acts in the disc coordinate by multiplication by `conj (denom g z) / denom g z`,
   with the `SL(2, ℝ)` specialization
-  `UpperHalfPlane.discCoordinate_specialLinearGroup_smul_of_smul_eq_self`.
+  `UpperHalfPlane.discCoordinate_specialLinearGroup_smul_of_smul_eq_self` and the effective
+  projective form `UpperHalfPlane.discCoordinate_psl_smul_of_smul_eq_self`.
 
 ## References
 
@@ -47,7 +62,7 @@ public section
 
 noncomputable section
 
-open scoped MatrixGroups ComplexConjugate Complex.UnitDisc
+open scoped Manifold MatrixGroups ComplexConjugate Complex.UnitDisc
 
 namespace UpperHalfPlane
 
@@ -114,9 +129,36 @@ private theorem im_discCoordinateInv_pos (z : ℍ) (w : 𝔻) :
   exact div_pos (mul_pos z.im_pos (sub_pos.mpr w.normSq_lt_one))
     (Complex.normSq_pos.mpr (sub_ne_zero.mpr w.coe_ne_one.symm))
 
-/-- The disc coordinate centred at `z` as an equivalence between the upper half-plane and the
-open unit disc `𝔻`, with inverse `w ↦ (z - conj z * w) / (1 - w)`. -/
-def discCoordinateEquiv (z : ℍ) : ℍ ≃ 𝔻 where
+/-- The disc coordinate centred at `z` is continuous. -/
+@[fun_prop]
+theorem continuous_discCoordinate (z : ℍ) : Continuous (discCoordinate z) :=
+  Continuous.div (by fun_prop) (by fun_prop) (coe_sub_conj_ne_zero z)
+
+/-- The disc coordinate centred at `z` is holomorphic. -/
+theorem mdifferentiable_discCoordinate (z : ℍ) : MDiff (discCoordinate z) := by
+  exact (mdifferentiable_coe.sub mdifferentiable_const).div
+    (mdifferentiable_coe.sub mdifferentiable_const) (coe_sub_conj_ne_zero z)
+
+/-- The explicit inverse of the disc coordinate is holomorphic on the open unit disc. -/
+theorem analyticOnNhd_discCoordinateHomeomorph_symm (z : ℍ) :
+    AnalyticOnNhd ℂ (fun w : ℂ ↦ ((z : ℂ) - conj (z : ℂ) * w) / (1 - w))
+      (Metric.ball 0 1) := by
+  apply DifferentiableOn.analyticOnNhd _ Metric.isOpen_ball
+  intro w hw
+  have hw1 : w ≠ 1 := by
+    intro h
+    rw [h, Metric.mem_ball, dist_zero_right, norm_one] at hw
+    exact lt_irrefl 1 hw
+  exact (((differentiableAt_const (z : ℂ)).sub
+      ((differentiableAt_const (conj (z : ℂ))).mul differentiableAt_id)).div
+    ((differentiableAt_const (1 : ℂ)).sub differentiableAt_id)
+      (sub_ne_zero.mpr hw1.symm)).differentiableWithinAt
+
+/-- The disc coordinate centred at `z` as a homeomorphism between the upper half-plane and the
+open unit disc `𝔻`, with inverse `w ↦ (z - conj z * w) / (1 - w)`. Both directions are
+holomorphic, by `UpperHalfPlane.mdifferentiable_discCoordinate` and
+`UpperHalfPlane.analyticOnNhd_discCoordinateHomeomorph_symm`. -/
+def discCoordinateHomeomorph (z : ℍ) : ℍ ≃ₜ 𝔻 where
   toFun τ := .mk (discCoordinate z τ) (norm_discCoordinate_lt_one z τ)
   invFun w := ⟨((z : ℂ) - conj (z : ℂ) * w) / (1 - w), im_discCoordinateInv_pos z w⟩
   left_inv τ := by
@@ -138,16 +180,28 @@ def discCoordinateEquiv (z : ℍ) : ℍ ≃ 𝔻 where
     · ring
     · convert hz using 1
       ring
+  continuous_toFun :=
+    Complex.UnitDisc.isEmbedding_coe.continuous_iff.mpr (continuous_discCoordinate z)
+  continuous_invFun :=
+    Continuous.upperHalfPlaneMk
+      (Continuous.div (by fun_prop) (by fun_prop)
+        fun w ↦ sub_ne_zero.mpr w.coe_ne_one.symm) _
 
 @[simp]
-theorem coe_discCoordinateEquiv_apply (z τ : ℍ) :
-    (discCoordinateEquiv z τ : ℂ) = discCoordinate z τ :=
+theorem coe_discCoordinateHomeomorph_apply (z τ : ℍ) :
+    (discCoordinateHomeomorph z τ : ℂ) = discCoordinate z τ :=
   (rfl)
 
 @[simp]
-theorem coe_discCoordinateEquiv_symm_apply (z : ℍ) (w : 𝔻) :
-    ((discCoordinateEquiv z).symm w : ℂ) = ((z : ℂ) - conj (z : ℂ) * w) / (1 - w) :=
+theorem coe_discCoordinateHomeomorph_symm_apply (z : ℍ) (w : 𝔻) :
+    ((discCoordinateHomeomorph z).symm w : ℂ) = ((z : ℂ) - conj (z : ℂ) * w) / (1 - w) :=
   (rfl)
+
+/-- The disc coordinate recovers the point of the unit disc it came from. -/
+@[simp]
+theorem discCoordinate_discCoordinateHomeomorph_symm (z : ℍ) (w : 𝔻) :
+    discCoordinate z ((discCoordinateHomeomorph z).symm w) = w :=
+  congrArg ((↑) : 𝔻 → ℂ) ((discCoordinateHomeomorph z).apply_symm_apply w)
 
 /-- The range of the disc coordinate centred at any point is the open unit disc. -/
 theorem range_discCoordinate (z : ℍ) : Set.range (discCoordinate z) = Metric.ball 0 1 := by
@@ -156,8 +210,29 @@ theorem range_discCoordinate (z : ℍ) : Set.range (discCoordinate z) = Metric.b
   · rintro ⟨τ, rfl⟩
     exact mem_ball_zero_iff.mpr (norm_discCoordinate_lt_one z τ)
   · lift w to 𝔻 using mem_ball_zero_iff.mp hw
-    exact ⟨(discCoordinateEquiv z).symm w,
-      congrArg ((↑) : 𝔻 → ℂ) ((discCoordinateEquiv z).apply_symm_apply w)⟩
+    exact ⟨(discCoordinateHomeomorph z).symm w,
+      congrArg ((↑) : 𝔻 → ℂ) ((discCoordinateHomeomorph z).apply_symm_apply w)⟩
+
+/-- A point lies in the hyperbolic disc of radius `ε` about `z` exactly when its disc coordinate
+has modulus less than `tanh (ε / 2)`. -/
+theorem mem_ball_iff_norm_discCoordinate_lt {z τ : ℍ} {ε : ℝ} :
+    τ ∈ Metric.ball z ε ↔ ‖discCoordinate z τ‖ < Real.tanh (ε / 2) := by
+  rw [Metric.mem_ball, norm_discCoordinate, Real.tanh_lt_tanh_iff]
+  constructor <;> intro h <;> linarith
+
+/-- **The disc coordinate carries hyperbolic discs to Euclidean discs**: the hyperbolic disc of
+radius `ε` about `z` is mapped onto the Euclidean disc of radius `tanh (ε / 2)` about `0`. -/
+theorem image_discCoordinate_ball (z : ℍ) (ε : ℝ) :
+    discCoordinate z '' Metric.ball z ε = Metric.ball 0 (Real.tanh (ε / 2)) := by
+  ext u
+  simp only [Set.mem_image, mem_ball_zero_iff]
+  refine ⟨?_, fun hu ↦ ?_⟩
+  · rintro ⟨τ, hτ, rfl⟩
+    exact mem_ball_iff_norm_discCoordinate_lt.mp hτ
+  · obtain ⟨τ, rfl⟩ : u ∈ Set.range (discCoordinate z) := by
+      rw [range_discCoordinate]
+      exact mem_ball_zero_iff.mpr (hu.trans (Real.tanh_lt_one _))
+    exact ⟨τ, mem_ball_iff_norm_discCoordinate_lt.mpr hu, rfl⟩
 
 /-- **A matrix of positive determinant fixing `z` is a rotation in the disc coordinate centred
 at `z`**, by the unimodular multiplier `conj (denom g z) / denom g z`.
@@ -201,5 +276,28 @@ theorem discCoordinate_specialLinearGroup_smul_of_smul_eq_self {g : SL(2, ℝ)} 
   rw [← Matrix.SpecialLinearGroup.toGL_smul]
   exact discCoordinate_smul_of_smul_eq_self (by simp)
     (by rwa [Matrix.SpecialLinearGroup.toGL_smul]) τ
+
+/-- **An element of `PSL(2, ℝ)` fixing `z` is a rotation in the disc coordinate centred at
+`z`**, by its derivative `Matrix.ProjectiveSpecialLinearGroup.smulDeriv` at `z`, which is a
+complex number of modulus one. This is the linearization of a point stabilizer of the effective
+projective action. -/
+theorem discCoordinate_psl_smul_of_smul_eq_self {q : PSL(2, ℝ)} {z : ℍ} (hq : q • z = z) (τ : ℍ) :
+    discCoordinate z (q • τ) =
+      Matrix.ProjectiveSpecialLinearGroup.smulDeriv q z * discCoordinate z τ := by
+  induction q using QuotientGroup.induction_on with | _ g =>
+  have hsl : g • z = z := by rwa [pslMk_smul] at hq
+  have hgl : Matrix.SpecialLinearGroup.mapGL ℝ g • z = z := by
+    rwa [MulAction.compHom_smul_def] at hsl
+  rw [pslMk_smul, MulAction.compHom_smul_def,
+    discCoordinate_smul_of_smul_eq_self (by simp) hgl,
+    Matrix.SpecialLinearGroup.smulDeriv_coe]
+  congr 1
+  -- the automorphy factor at a fixed point is unimodular, so its conjugate is its inverse
+  have hconj : conj (denom (Matrix.SpecialLinearGroup.mapGL ℝ g) (z : ℂ)) =
+      (denom (Matrix.SpecialLinearGroup.mapGL ℝ g) (z : ℂ))⁻¹ :=
+    eq_inv_of_mul_eq_one_left <| by
+      rw [mul_comm, Complex.mul_conj,
+        Matrix.SpecialLinearGroup.normSq_denom_eq_one_of_smul_eq_self hsl, Complex.ofReal_one]
+  rw [hconj, div_eq_mul_inv, ← mul_inv, ← sq]
 
 end UpperHalfPlane

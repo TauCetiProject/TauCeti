@@ -21,10 +21,10 @@ its coordinates in `F`: the extension buys no new torsion.
 
 ## Main results
 
-* `WeierstrassCurve.mem_range_x_of_zsmul_eq_zero`: hence, over an algebraically closed one, it
-  lies in the image of `F`.
-* `WeierstrassCurve.mem_range_baseChange_of_zsmul_eq_zero`: hence an `n`-torsion point of `W` over
-  `Ω` is the base change of one over `F`.
+* `WeierstrassCurve.mem_range_x_of_zsmul_eq_zero`: over an algebraically closed `F`, the
+  `x`-coordinate of an `n`-torsion point of `W` over an extension lies in the image of `F`.
+* `WeierstrassCurve.mem_range_baseChange_of_zsmul_eq_zero`: such an `n`-torsion point is
+  therefore the base change of one over `F`.
 
 ## References
 

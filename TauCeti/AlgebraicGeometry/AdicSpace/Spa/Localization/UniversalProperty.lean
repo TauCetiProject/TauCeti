@@ -182,7 +182,7 @@ Asking `B` to be Huber is not a restriction added here: Wedhorn states Lemma 8.1
 homomorphism into a *complete affinoid ring*, and an affinoid ring is a Huber pair.
 
 The unit `φ s` is a hypothesis rather than something derived, so that a caller already holding it
-— as the presentation-independence results do at a coordinate ring — need not go through step 1;
+need not go through step 1;
 `isUnit_of_forall_comap_mem_rationalSubset` is that step, and the corollary below is the two
 together, which is Wedhorn's own statement.
 

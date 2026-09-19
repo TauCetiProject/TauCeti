@@ -7,8 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Alternating
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.CentralCharacterCount
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Checker
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Lift
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Solver
 
 /-!
 # The cyclotomic Dixon computation for the alternating group of degree four
@@ -24,13 +23,16 @@ distinguished primitive sixth root in `TauCeti.Cyclotomic 6` and `ω = ζ²`, th
 3 -1   0    0
 ```
 
-The exponent of `A₄` is six, so the Dixon computation uses the prime `7` and its primitive sixth
-root `3`.  The entries of `alternatingGroupFourExactCentralCharacterTable` are the class sizes times
-the corresponding ordinary character values divided by the character degrees.  Reduction at the
-chosen root sends its four rows to precisely the output of the executable modular eigenrow search.
-The exact checker then verifies, inside the computable coefficient-vector ring `Cyclotomic 6`, the
-central-character equations, the central-to-ordinary conversion, the degree-square identity, and
-Hermitian row orthogonality.
+The exponent of `A₄` is six.  The modular certificate uses the Dixon prime `7` and its primitive
+sixth root `3`.  The assembled solver uses the larger Dixon prime `13` and the root `4`, whose
+balanced residue window contains the central-character coefficients of absolute value four.  The
+entries of `alternatingGroupFourExactCentralCharacterTable` are the class sizes times the
+corresponding ordinary character values divided by the character degrees.  Reduction at the root
+modulo `7` sends its four rows to precisely the output of the executable modular eigenrow search;
+at the root modulo `13`, all conjugate reductions are pairwise distinct and reconstruct the exact
+table.  The exact checker then verifies, inside the computable coefficient-vector ring
+`Cyclotomic 6`, the central-character equations, the central-to-ordinary conversion, the
+degree-square identity, and Hermitian row orthogonality.
 
 The two nonreal linear rows form a nontrivial Galois-conjugate pair, so the exact certificate
 simultaneously sees a nonlinear row and genuinely cyclotomic values.
@@ -38,6 +40,7 @@ simultaneously sees a nonlinear row and genuinely cyclotomic values.
 ## Main definitions
 
 * `TauCeti.alternatingGroupFourDixonPrimeData`: the prime `7` with primitive sixth root `3`.
+* `TauCeti.alternatingGroupFourSolverDixonPrimeData`: the prime `13` with primitive sixth root `4`.
 * `TauCeti.alternatingGroupFourExactCentralCharacterTable`: the exact central-character table.
 * `TauCeti.alternatingGroupFourExactCharacterTable`: the exact ordinary character table.
 * `TauCeti.alternatingGroupFourCharacterDegrees`: the degrees `1`, `1`, `1`, and `3`.
@@ -50,6 +53,8 @@ simultaneously sees a nonlinear row and genuinely cyclotomic values.
   two nonreal linear rows.
 * `TauCeti.alternatingGroupFourExactCharacterTable_lift_conjugateResidues`: the structured lift
   recovers every exact ordinary-table entry from its conjugate residues.
+* `TauCeti.isSome_dixonCyclotomicCharacterTable_alternatingGroupFour`: the assembled exact solver
+  succeeds on the certified data.
 * `TauCeti.isCyclotomicCharacterTableSpec_alternatingGroupFour`: the exact tables pass the
   executable cyclotomic certificate.
 * `TauCeti.isCharacterTableSpec_alternatingGroupFour`: the distinguished complex embedding of the
@@ -74,7 +79,7 @@ namespace TauCeti
 
 open Matrix
 
-local instance fact_prime_seven : Fact (Nat.Prime 7) := ⟨by decide⟩
+local instance fact_prime_seven_alternatingFour : Fact (Nat.Prime 7) := ⟨by decide⟩
 
 private theorem sqrt_twelve : Nat.sqrt 12 = 3 := by
   exact ((Nat.eq_sqrt).2 (by norm_num)).symm
@@ -109,6 +114,43 @@ theorem alternatingGroupFourDixonPrimeData_p : alternatingGroupFourDixonPrimeDat
 @[simp]
 theorem alternatingGroupFourDixonPrimeData_root :
     alternatingGroupFourDixonPrimeData.root = 3 := rfl
+
+local instance fact_prime_thirteen_alternatingFour : Fact (Nat.Prime 13) := ⟨by decide⟩
+
+/-- **`13` is a good Dixon prime for `A₄`.** -/
+theorem isGoodDixonPrime_alternatingGroup_four_thirteen :
+    IsGoodDixonPrime (alternatingGroup (Fin 4)) 13 := by
+  refine ⟨by decide, ?_, ?_, ?_⟩
+  · rw [natCard_alternatingGroup_four]
+    decide
+  · rw [exponent_alternatingGroup_four]
+    norm_num
+  · rw [natCard_alternatingGroup_four, sqrt_twelve]
+    norm_num
+
+/-- Dixon prime data used by the assembled `A₄` solver: the prime `13`, with `4` as a
+primitive sixth root.  The larger prime is needed to reconstruct the central-character entries
+whose coefficients have absolute value four. -/
+@[expose] def alternatingGroupFourSolverDixonPrimeData :
+    DixonPrimeData (alternatingGroup (Fin 4)) where
+  p := 13
+  root := 4
+  isGoodDixonPrime := isGoodDixonPrime_alternatingGroup_four_thirteen
+  isPrimitiveRoot_root := by
+    simpa only [exponent_alternatingGroup_four] using
+      (IsPrimitiveRoot.mk_of_lt (4 : ZMod 13) (by norm_num) (by decide)
+        fun l hl0 hl6 ↦ by interval_cases l <;> decide)
+
+/-- The prime carried by `TauCeti.alternatingGroupFourSolverDixonPrimeData` is `13`. -/
+@[simp]
+theorem alternatingGroupFourSolverDixonPrimeData_p :
+    alternatingGroupFourSolverDixonPrimeData.p = 13 := rfl
+
+/-- The primitive sixth root carried by `TauCeti.alternatingGroupFourSolverDixonPrimeData` is
+`4`. -/
+@[simp]
+theorem alternatingGroupFourSolverDixonPrimeData_root :
+    alternatingGroupFourSolverDixonPrimeData.root = 4 := rfl
 
 /-- The numbered conjugacy classes of the alternating group of degree four. -/
 abbrev AlternatingGroupFourClassIndex := Fin alternatingGroupFourClassData.numClasses
@@ -301,6 +343,87 @@ theorem alternatingGroupFourExactCharacterTable_lift_conjugateResidues
     fun {_} => alternatingGroupFourDixonPrimeData.lift_conjugateResidues
   rw [exponent_alternatingGroup_four] at hLift
   exact hLift (alternatingGroupFourExactCharacterTable_natAbs_coeff_le_sqrt i j)
+
+/-- **The assembled cyclotomic Dixon--Schneider solver succeeds on the certified `A₄` data.** -/
+theorem isSome_dixonCyclotomicCharacterTable_alternatingGroupFour :
+    (alternatingGroupFourClassData.dixonCyclotomicCharacterTable? 6
+      exponent_alternatingGroup_four.symm
+      alternatingGroupFourSolverDixonPrimeData).isSome = true := by
+  apply alternatingGroupFourClassData.isSome_dixonCyclotomicCharacterTable_of_spec 6
+    exponent_alternatingGroup_four.symm alternatingGroupFourSolverDixonPrimeData
+    alternatingGroupFourExactCentralCharacterTable alternatingGroupFourExactCharacterTable
+    alternatingGroupFourCharacterDegrees isCyclotomicCharacterTableSpec_alternatingGroupFour
+  · intro i j k
+    rw [alternatingGroupFourSolverDixonPrimeData_p]
+    fin_cases i <;> fin_cases j <;> fin_cases k <;> decide
+  · intro j i i' h
+    have hbase : IsPrimitiveRoot (4 : ZMod 13) 6 := by
+      have hprime := alternatingGroupFourSolverDixonPrimeData.isPrimitiveRoot_root
+      rw [alternatingGroupFourSolverDixonPrimeData_root,
+        exponent_alternatingGroup_four] at hprime
+      exact hprime
+    have hroot : IsPrimitiveRoot
+        (Cyclotomic.conjugateRoot 6 (4 : ZMod 13) j) 6 :=
+      Cyclotomic.isPrimitiveRoot_conjugateRoot hbase j
+    let f := Cyclotomic.reduceRingHom 13
+      (Cyclotomic.conjugateRoot 6 (4 : ZMod 13) j) hroot
+    let k₁ : AlternatingGroupFourClassIndex := ⟨1, by decide⟩
+    let k₂ : AlternatingGroupFourClassIndex := ⟨2, by decide⟩
+    have hcol₁ (r : AlternatingGroupFourClassIndex) :
+        alternatingGroupFourExactCentralCharacterTable r k₁ =
+          if r.val = 3 then -1 else 3 := by
+      fin_cases r <;> decide
+    have hcol₂ (r : AlternatingGroupFourClassIndex) :
+        alternatingGroupFourExactCentralCharacterTable r k₂ =
+          if r.val = 3 then 0 else 4 * alternatingGroupFourOmega ^ r.val := by
+      fin_cases r <;> decide
+    -- The prime data carries the literals `13` and `4`, so the hypothesis reads off at each
+    -- column as a residue equation at the `j`-th conjugate root.
+    have hres₁ : Cyclotomic.conjugateResidues (4 : ZMod 13)
+        (alternatingGroupFourExactCentralCharacterTable i k₁) j =
+      Cyclotomic.conjugateResidues (4 : ZMod 13)
+        (alternatingGroupFourExactCentralCharacterTable i' k₁) j := congrFun h k₁
+    have hres₂ : Cyclotomic.conjugateResidues (4 : ZMod 13)
+        (alternatingGroupFourExactCentralCharacterTable i k₂) j =
+      Cyclotomic.conjugateResidues (4 : ZMod 13)
+        (alternatingGroupFourExactCentralCharacterTable i' k₂) j := congrFun h k₂
+    have h₁ : f (alternatingGroupFourExactCentralCharacterTable i k₁) =
+        f (alternatingGroupFourExactCentralCharacterTable i' k₁) := by
+      simpa only [f, Cyclotomic.reduceRingHom_apply, Cyclotomic.conjugateResidues_apply]
+        using hres₁
+    have h₂ : f (alternatingGroupFourExactCentralCharacterTable i k₂) =
+        f (alternatingGroupFourExactCentralCharacterTable i' k₂) := by
+      simpa only [f, Cyclotomic.reduceRingHom_apply, Cyclotomic.conjugateResidues_apply]
+        using hres₂
+    rw [hcol₁ i, hcol₁ i'] at h₁
+    rw [hcol₂ i, hcol₂ i'] at h₂
+    have hfzeta : f (Cyclotomic.zeta 6) =
+        Cyclotomic.conjugateRoot 6 (4 : ZMod 13) j := by
+      dsimp only [f]
+      rw [Cyclotomic.reduceRingHom_apply, Cyclotomic.reduce_zeta]
+      exact hroot
+    have hf3 : f (3 : Cyclotomic 6) = (3 : ZMod 13) := map_ofNat f 3
+    have hf4 : f (4 : Cyclotomic 6) = (4 : ZMod 13) := map_ofNat f 4
+    have hfneg1 : f (-1 : Cyclotomic 6) = (-1 : ZMod 13) := by
+      rw [map_neg, map_one]
+    have hthree_ne_neg_one : (3 : ZMod 13) ≠ -1 := by decide
+    have hfour_ne_zero : (4 : ZMod 13) ≠ 0 := by decide
+    apply Fin.ext
+    have hi_lt : i.val < 4 := by
+      simpa only [numClasses_alternatingGroupFourClassData] using i.isLt
+    have hi'_lt : i'.val < 4 := by
+      simpa only [numClasses_alternatingGroupFourClassData] using i'.isLt
+    interval_cases hi : i.val <;> interval_cases hi' : i'.val <;> try rfl
+    all_goals
+      simp only [Nat.reduceEqDiff, reduceCtorEq, ↓reduceIte] at h₁ h₂
+      first
+      | exact (hthree_ne_neg_one (by simpa only [hf3, hfneg1] using h₁)).elim
+      | exact (hthree_ne_neg_one (by simpa only [hf3, hfneg1] using h₁.symm)).elim
+      | simp only [map_mul, map_pow, hf4, alternatingGroupFourOmega, hfzeta] at h₂
+        have hpows := mul_left_cancel₀ hfour_ne_zero h₂
+        rw [← pow_mul, ← pow_mul] at hpows
+        have hexponents := hroot.pow_inj (by norm_num) (by norm_num) hpows
+        omega
 
 /-- The displayed exact ordinary table, embedded in `ℂ` and reindexed by actual conjugacy
 classes. -/
