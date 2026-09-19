@@ -32,7 +32,8 @@ resulting measure is a probability measure, and it is concentrated on the standa
 * `TauCeti.Probability.isProbabilityMeasure_dirichletMeasure_iff` characterizes exactly when this
   totalized measure is a probability measure.
 * `TauCeti.ae_pos_sum_pi_gammaMeasure` shows that the zero-denominator locus is null.
-* `TauCeti.Probability.ae_mem_stdSimplex_dirichletMeasure` gives the standard-simplex support.
+* `TauCeti.Probability.ae_mem_stdSimplex_dirichletMeasure` and
+  `TauCeti.Probability.ae_sum_eq_one_dirichletMeasure` give the standard-simplex support.
 
 ## References
 
@@ -200,6 +201,14 @@ theorem ae_mem_stdSimplex_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : 
   · exact
       (StdSimplex.isClosedEmbedding_toFun_comp_weights ℝ ι).isClosed_range.measurableSet.preimage
         (EuclideanSpace.equiv ι ℝ).continuous.measurable
+
+/-- Under a Dirichlet law with positive concentration parameters the coordinates almost surely
+total one: this is the coordinate form of the standard-simplex support. -/
+theorem ae_sum_eq_one_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
+    ∀ᵐ x ∂dirichletMeasure a, ∑ i, x i = 1 := by
+  filter_upwards [ae_mem_stdSimplex_dirichletMeasure ha] with x ⟨p, hp⟩
+  have hxp : ∀ i, x i = p.weights i := fun i ↦ (congrFun hp i).symm
+  simp [hxp]
 
 end Probability
 

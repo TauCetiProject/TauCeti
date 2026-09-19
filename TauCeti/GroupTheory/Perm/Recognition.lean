@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.Transitive
 public import Mathlib.GroupTheory.Perm.Cycle.Type
+public import TauCeti.GroupTheory.GroupAction.Transitive
 import Mathlib.GroupTheory.GroupAction.Jordan
 
 /-!
@@ -27,6 +28,8 @@ through the Frobenius element.
 
 ## Main results
 
+* `TauCeti.card_dvd_natCard_and_natCard_dvd_factorial_of_isPretransitive`: the order of a
+  transitive permutation group of degree `n` is a multiple of `n` and a divisor of `n !`.
 * `TauCeti.exists_isCycle_mem_of_isPretransitive_of_prime_card`: a transitive permutation group
   of prime degree contains a full cycle.
 * `TauCeti.subgroup_eq_top_of_isPretransitive_of_prime_card_of_isSwap_mem`: a transitive
@@ -43,6 +46,17 @@ namespace TauCeti
 open MulAction
 
 variable {α : Type*} [Fintype α] [DecidableEq α]
+
+omit [DecidableEq α] in
+/-- The order of a transitive permutation group on a nonempty finite set `α` is a multiple of the
+degree `Fintype.card α`, by `TauCeti.natCard_dvd_natCard_of_isPretransitive`, and a divisor of
+`(Fintype.card α)!`, by Lagrange's theorem. -/
+theorem card_dvd_natCard_and_natCard_dvd_factorial_of_isPretransitive
+    (G : Subgroup (Equiv.Perm α)) [IsPretransitive G α] [Nonempty α] :
+    Fintype.card α ∣ Nat.card G ∧ Nat.card G ∣ (Fintype.card α).factorial := by
+  classical
+  refine ⟨by simpa using natCard_dvd_natCard_of_isPretransitive G (X := α), ?_⟩
+  simpa [Fintype.card_perm] using Subgroup.card_subgroup_dvd_card G
 
 /-- A transitive permutation group of prime degree contains a full cycle.
 

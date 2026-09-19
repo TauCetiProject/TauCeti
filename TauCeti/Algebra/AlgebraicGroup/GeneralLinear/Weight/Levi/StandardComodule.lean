@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.Geometry
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
 
 /-!
 # The standard representation of a weight Levi
@@ -99,29 +100,16 @@ theorem isFaithful_weightLeviStandardComodule :
 def weightLeviCoordinateSubcomodule (s : Set (Fin N))
     (hs : ∀ i j, w i = w j → j ∈ s → i ∈ s) :
     Subcomodule R (weightLeviCoordinateHopfAlgebra R w) (Fin N → R) :=
-  Subcomodule.ofSubmodule (Submodule.span R ((Pi.basisFun R (Fin N)) '' s)) fun v hv ↦ by
-    classical
-    let S := Submodule.span R ((Pi.basisFun R (Fin N)) '' s)
-    let T := LinearMap.range (TensorProduct.map S.subtype
-      (LinearMap.id : weightLeviCoordinateHopfAlgebra R w →ₗ[R] _))
-    induction hv using Submodule.span_induction with
-    | mem v hv =>
-      obtain ⟨j, hj, rfl⟩ := hv
-      rw [Pi.basisFun_apply, weightLeviStandardComodule_coact_single]
-      apply T.sum_mem
-      intro i _
-      by_cases hij : w i = w j
-      · exact ⟨⟨Pi.single i 1, Submodule.subset_span
-          ⟨i, hs i j hij hj, Pi.basisFun_apply R (Fin N) i⟩⟩ ⊗ₜ[R]
-            Ideal.Quotient.mk (weightLeviDefiningHopfIdeal R w).toIdeal
-              (genericMatrix R N i j), by simp only [TensorProduct.map_tmul,
-                Submodule.coe_subtype, LinearMap.id_apply]⟩
-      · rw [genericMatrix_apply, weightLeviQuotient_mk_genericMatrix_apply_of_ne R w hij,
-          TensorProduct.tmul_zero]
-        exact T.zero_mem
-    | zero => rw [map_zero]; exact T.zero_mem
-    | add x y _ _ hx hy => rw [map_add]; exact T.add_mem hx hy
-    | smul a x _ hx => rw [map_smul]; exact T.smul_mem a hx
+  (Pi.basisFun R (Fin N)).coordinateSpanSubcomodule s <|
+    ((Pi.basisFun R (Fin N)).coordinateSpanIsStable_iff
+      (C := weightLeviCoordinateHopfAlgebra R w) s).2 <| by
+    intro i hi j hj
+    have hij : w i ≠ w j := fun hij => hi (hs i j hij hj)
+    rw [Comodule.coefficientMatrix_corestrict, Matrix.map_apply,
+      coefficientMatrix_basisFun, BialgHom.toCoalgHom_apply,
+      CommHopfAlgCat.mkQuotient_apply]
+    simpa only [Ideal.Quotient.mkₐ_eq_mk, genericMatrix_apply] using
+      weightLeviQuotient_mk_genericMatrix_apply_of_ne R w hij
 
 /-- The coordinate subcomodule is the span of the selected standard basis vectors. -/
 @[simp]
@@ -129,7 +117,7 @@ theorem weightLeviCoordinateSubcomodule_toSubmodule (s : Set (Fin N))
     (hs : ∀ i j, w i = w j → j ∈ s → i ∈ s) :
     (weightLeviCoordinateSubcomodule R w s hs).toSubmodule =
       Submodule.span R ((Pi.basisFun R (Fin N)) '' s) :=
-  (rfl)
+  Module.Basis.coordinateSpanSubcomodule_toSubmodule _ _ _
 
 /-- Membership in a coordinate subcomodule means vanishing outside its chosen weight blocks. -/
 @[simp]

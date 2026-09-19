@@ -103,7 +103,7 @@ bridge. -/
 theorem FullyExchangeable.measurePreserving_shift {μ : Measure Ω} {X : ℕ → Ω → α}
     [IsFiniteMeasure μ] (hX : FullyExchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) :
     MeasurePreserving (shift α) (pathLaw μ X) (pathLaw μ X) := by
-  have hc : Contractable μ X := contractable_of_exchangeable (hX.exchangeable hX_meas) hX_meas
+  have hc : Contractable μ X := (hX.exchangeable hX_meas).contractable hX_meas
   exact Contractable.measurePreserving_shift hc hX_meas
 
 /-! ## Path-law permutation reindexing -/

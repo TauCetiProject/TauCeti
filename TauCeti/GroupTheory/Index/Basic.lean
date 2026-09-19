@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.GroupTheory.Index
+public import TauCeti.Algebra.Group.Subgroup.Map
+import Mathlib.Data.Nat.Prime.Basic
+import Mathlib.Tactic.Group
 
 /-!
 # Consequences of the index formula
@@ -33,12 +37,93 @@ centre gives the `Γ.withCenter` readings.
 * `Subgroup.relIndex_sup_eq_two`, `Subgroup.index_eq_two_mul_index_sup`: the relative index `2`
   and the index doubling, for an `N` normalised by `Γ` whose elements are `1` and `a ∉ Γ`.
 * `Subgroup.instCountableQuotient`: a coset space of a countable group is countable.
+* `Subgroup.finiteIndex_of_finiteIndex_subgroupOf`: finite index composes along `V ≤ U ≤ G`.
+* `Subgroup.finiteIndex_inf_comap`: `H ⊓ f⁻¹(K)` has finite index when `H` does and
+  `K` has finite index relative to `f(H)`.
+* `MonoidHom.finiteIndex_range_comp`: finite index of ranges is preserved by composition
+  with a homomorphism of finite-index range.
+* `MonoidHom.mk_mul_out_bijective`: right cosets of a composite range are represented by
+  products of representatives for the two successive ranges.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}`.
+* `Subgroup.isCoatom_of_index_prime`: a subgroup of prime index is maximal.
 -/
 
 
 public section
+
+namespace Subgroup
+
+universe u
+
+/-- A chosen representative of the right coset `S x` differs from `x` by an element of `S`. -/
+theorem exists_mul_out_eq {G : Type u} [Group G] (S : Subgroup G) (x : G) :
+    ∃ s ∈ S, s * (Quotient.mk (QuotientGroup.rightRel S) x).out = x :=
+  ⟨_, QuotientGroup.rightRel_apply.1
+    (Quotient.exact (Quotient.out_eq (Quotient.mk (QuotientGroup.rightRel S) x))), by group⟩
+
+end Subgroup
+
+namespace MonoidHom
+
+universe u v w
+
+variable {A : Type u} {B : Type v} {C : Type w} [Group A] [Group B] [Group C]
+
+/-- If `φ₂.ker ≤ φ₁.range`, the right cosets of `(φ₂.comp φ₁).range` are represented
+uniquely by products `φ₂ b * c`, where `b` and `c` are the chosen representatives of right
+cosets for the two successive ranges. -/
+theorem mk_mul_out_bijective (φ₁ : A →* B) (φ₂ : B →* C) (hker : φ₂.ker ≤ φ₁.range) :
+    Function.Bijective fun x : Quotient (QuotientGroup.rightRel φ₂.range) ×
+        Quotient (QuotientGroup.rightRel φ₁.range) =>
+      Quotient.mk (QuotientGroup.rightRel (φ₂.comp φ₁).range) (φ₂ x.2.out * x.1.out) := by
+  constructor
+  · rintro ⟨p, q⟩ ⟨p', q'⟩ h
+    obtain ⟨a, ha⟩ := QuotientGroup.rightRel_apply.1 (Quotient.exact h)
+    have hp : p = p' := by
+      rw [← Quotient.out_eq p, ← Quotient.out_eq p']
+      refine Quotient.sound (QuotientGroup.rightRel_apply.2 ⟨q'.out⁻¹ * φ₁ a * q.out, ?_⟩)
+      simp only [map_mul, map_inv]
+      rw [← MonoidHom.comp_apply φ₂ φ₁, ha]
+      group
+    subst hp
+    have hq : q = q' := by
+      rw [← Quotient.out_eq q, ← Quotient.out_eq q']
+      refine Quotient.sound (QuotientGroup.rightRel_apply.2 ?_)
+      rw [show q'.out * q.out⁻¹ = φ₁ a * ((φ₁ a)⁻¹ * q'.out * q.out⁻¹) by group]
+      refine φ₁.range.mul_mem ⟨a, rfl⟩ (hker ?_)
+      rw [MonoidHom.mem_ker]
+      simp only [map_mul, map_inv]
+      rw [← MonoidHom.comp_apply φ₂ φ₁, ha]
+      group
+    rw [hq]
+  · intro t
+    induction t using Quotient.inductionOn with | h x =>
+    obtain ⟨_, ⟨b, rfl⟩, hb⟩ := Subgroup.exists_mul_out_eq φ₂.range x
+    obtain ⟨_, ⟨a, rfl⟩, ha⟩ := Subgroup.exists_mul_out_eq φ₁.range b
+    refine ⟨(Quotient.mk _ x, Quotient.mk _ b), Quotient.sound
+      (QuotientGroup.rightRel_apply.2 ⟨a, ?_⟩)⟩
+    rw [eq_mul_inv_iff_mul_eq]
+    conv_rhs => rw [← hb]
+    conv_rhs => rw [← ha]
+    simp only [MonoidHom.coe_comp, Function.comp_apply, map_mul, mul_assoc]
+
+/-- The homomorphism from the range of `φ₁` to the range of `φ₂.comp φ₁` induced by `φ₂`. -/
+abbrev rangeCompHom (φ₁ : A →* B) (φ₂ : B →* C) : φ₁.range →* (φ₂.comp φ₁).range :=
+  (φ₂.comp φ₁.range.subtype).codRestrict _ fun ⟨_, a, ha⟩ => ⟨a, by simp [← ha]⟩
+
+/-- If the ranges of `φ₁` and `φ₂` have finite index, then the range of their composite has
+finite index. -/
+theorem finiteIndex_range_comp (φ₁ : A →* B) (φ₂ : B →* C) [φ₁.range.FiniteIndex]
+    [φ₂.range.FiniteIndex] : (φ₂.comp φ₁).range.FiniteIndex := by
+  refine ⟨?_⟩
+  rw [MonoidHom.range_comp, Subgroup.index_map]
+  have hle : φ₁.range ≤ φ₁.range ⊔ φ₂.ker := le_sup_left
+  exact Nat.mul_ne_zero
+    (Subgroup.finiteIndex_of_le hle).index_ne_zero
+    Subgroup.FiniteIndex.index_ne_zero
+
+end MonoidHom
 
 namespace Subgroup
 
@@ -60,6 +145,31 @@ instance instCountableQuotient {G : Type*} [Group G] [Countable G] (H : Subgroup
 instance instFiniteIndexComap {G G' : Type*} [Group G] [Group G'] (H : Subgroup G) [H.FiniteIndex]
     (f : G' →* G) : (H.comap f).FiniteIndex :=
   ⟨by rw [index_comap]; exact FiniteIndex.index_ne_zero⟩
+
+/-- **Finite index composes along a chain of subgroups.** If `K` has finite index in `G` and `H`
+has finite index in `K` -- that is, the copy `H.subgroupOf K` of `H` inside `K` has finite index --
+then `H` has finite index in `G`. This is the converse of `Subgroup.instFiniteIndex_subgroupOf`,
+which restricts a finite index in `G` to one in `K`; neither direction is an instance, because the
+intermediate subgroup `K` cannot be recovered from the goal `H.FiniteIndex`. -/
+@[to_additive /-- **Finite index composes along a chain of additive subgroups.** If `K` has finite
+index in `G` and `H` has finite index in `K` -- that is, the copy `H.addSubgroupOf K` of `H` inside
+`K` has finite index -- then `H` has finite index in `G`. -/]
+theorem finiteIndex_of_finiteIndex_subgroupOf {G : Type*} [Group G] (H K : Subgroup G)
+    [K.FiniteIndex] [(H.subgroupOf K).FiniteIndex] : H.FiniteIndex :=
+  isFiniteRelIndex_top_iff.mp <|
+    ((isFiniteRelIndex_iff_finiteIndex (H := H) (K := K)).mpr inferInstance).trans
+      (isFiniteRelIndex_top_iff.mpr inferInstance)
+
+/-- **Pulling back a subgroup of finite relative index.** If `H` has finite index in `G` and `K`
+has finite index relative to `f(H)`, then `H ⊓ f⁻¹(K)` has finite index in `G`: its index in `H` is
+the relative index of `K` in `f(H)`. -/
+theorem finiteIndex_inf_comap {G N : Type*} [Group G] [Group N] (H : Subgroup G)
+    [H.FiniteIndex] (K : Subgroup N) (f : G →* N) [K.IsFiniteRelIndex (H.map f)] :
+    (H ⊓ K.comap f).FiniteIndex := by
+  refine ⟨?_⟩
+  rw [← relIndex_mul_index (inf_le_left : H ⊓ K.comap f ≤ H), inf_comm, inf_relIndex_right,
+    relIndex_comap]
+  exact mul_ne_zero IsFiniteRelIndex.relIndex_ne_zero FiniteIndex.index_ne_zero
 
 /-- `Γ` with the centre of the ambient group adjoined. For `Γ ≤ SL(2, ℤ)` the centre is
 `{±I}`, which acts trivially on `ℍ`; it is the cosets of `Γ·{±I}` — not those of `Γ` itself —
@@ -176,6 +286,14 @@ theorem index_eq_two_mul_index_withCenter (ha : a ∈ Subgroup.center G) (haΓ :
     (hcenter : ∀ c ∈ Subgroup.center G, c = 1 ∨ c = a) : Γ.index = 2 * Γ.withCenter.index :=
   Subgroup.withCenter_def Γ ▸
     index_eq_two_mul_index_sup _ Subgroup.le_normalizer_of_normal ha haΓ hcenter
+
+/-- A subgroup of prime index is maximal: an intermediate subgroup has index dividing a prime,
+so it is either the subgroup itself or everything. -/
+theorem isCoatom_of_index_prime {H : Subgroup G} (hH : H.index.Prime) : IsCoatom H := by
+  refine ⟨fun h ↦ hH.ne_one (index_eq_one.mpr h), fun K hK ↦ ?_⟩
+  rcases Nat.prime_mul_iff.mp ((relIndex_mul_index hK.le).symm ▸ hH) with ⟨-, hK1⟩ | ⟨-, hHK⟩
+  · exact index_eq_one.mp hK1
+  · exact absurd (relIndex_eq_one.mp hHK) (not_le_of_gt hK)
 
 end Subgroup
 

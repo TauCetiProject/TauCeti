@@ -30,6 +30,8 @@ disjoint. This needs no more about `Γ` than the membership description above, s
 
 * `Subgroup.mem_withCenter_iff_exists_eq_or_eq_neg`: membership in `Γ·{±I}` is being `±` an
   element of `Γ`.
+* `Subgroup.inf_withCenter_eq_of_le`: for `Γ' ≤ Γ` with `-I ∈ Γ → -I ∈ Γ'`, the part of
+  `Γ'·{±I}` inside `Γ` is `Γ'`.
 * `TauCeti.ModularForm.index_eq_two_mul_index_withCenter_of_neg_one_notMem` and
   `TauCeti.ModularForm.relIndex_withCenter_eq_two_of_neg_one_notMem`: when `-I ∉ Γ`,
   `[SL₂(ℤ) : Γ] = 2 · [SL₂(ℤ) : ±Γ]`.
@@ -62,6 +64,22 @@ theorem _root_.Subgroup.mem_withCenter_iff_exists_eq_or_eq_neg {γ : SL(2, ℤ)}
     · exact Subgroup.mem_withCenter_iff.mpr ⟨_, hγ', -1,
         Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mpr (Or.inr rfl),
         mul_neg_one _⟩
+
+/-- **Adjoining `±I` to a subgroup adds nothing back inside a larger group that it does not
+already contain.** For `Γ' ≤ Γ` with `-I ∈ Γ → -I ∈ Γ'`, an element of `Γ` lying in `Γ'·{±I}`
+lies in `Γ'` itself: it is `±` an element of `Γ'`, and the minus sign can only occur when `-I` is
+in `Γ`, hence in `Γ'`.
+
+This is what makes the cosets `Γ / Γ'` and `Γ·{±I} / Γ'·{±I}` match up, so that a sum over the
+former can be compared with the Petersson product, which is a sum over cosets of `Γ'·{±I}`. -/
+theorem _root_.Subgroup.inf_withCenter_eq_of_le {Γ' : Subgroup SL(2, ℤ)} (hle : Γ' ≤ Γ)
+    (hneg : (-1 : SL(2, ℤ)) ∈ Γ → (-1 : SL(2, ℤ)) ∈ Γ') : Γ ⊓ Γ'.withCenter = Γ' := by
+  refine le_antisymm (fun x hx ↦ ?_) (le_inf hle Γ'.le_withCenter)
+  obtain ⟨hx, hx'⟩ := Subgroup.mem_inf.mp hx
+  obtain ⟨y, hy, rfl | rfl⟩ := Subgroup.mem_withCenter_iff_exists_eq_or_eq_neg.mp hx'
+  · exact hy
+  · have h1 : (-1 : SL(2, ℤ)) ∈ Γ := by simpa using Γ.mul_mem hx (Γ.inv_mem (hle hy))
+    simpa using Γ'.mul_mem (hneg h1) hy
 
 /-- **The `±Γ` factor of two, index form**: when `-I ∉ Γ`, the index of `Γ` in `SL(2, ℤ)` is
 twice the projective index `[SL₂(ℤ) : ±Γ]`.

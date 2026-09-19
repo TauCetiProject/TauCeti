@@ -75,6 +75,32 @@ theorem insertPoint_apply_succAbove (x : GridState n) (newColumn newRow : Fin (n
       newRow.succAbove (x c) := by
   simp [insertPoint]
 
+/-- Inserting the same point into two grid states gives equal states only if the states were
+equal. -/
+theorem insertPoint_injective (newColumn newRow : Fin (n + 1)) :
+    Function.Injective fun x : GridState n => x.insertPoint newColumn newRow := by
+  intro x y h
+  refine GridState.ext fun c => newRow.succAbove_right_injective ?_
+  simpa using congrArg (fun z : GridState (n + 1) => z (newColumn.succAbove c)) h
+
+/-- Every grid state containing the point `(newColumn, newRow)` is obtained by inserting that
+point into a grid state of the smaller grid. -/
+theorem exists_insertPoint_eq {newColumn newRow : Fin (n + 1)} {y : GridState (n + 1)}
+    (h : y newColumn = newRow) : ∃ x : GridState n, x.insertPoint newColumn newRow = y := by
+  let e : Equiv.Perm (Option (Fin n)) :=
+    (finSuccEquiv' newColumn).symm.trans (y.toPerm.trans (finSuccEquiv' newRow))
+  have hnone : e none = none := by
+    simp only [e, Equiv.trans_apply, finSuccEquiv'_symm_none, finSuccEquiv'_eq_none]
+    exact h.symm
+  refine ⟨⟨Equiv.removeNone e⟩, GridState.ext fun c => ?_⟩
+  induction c using Fin.succAboveCases newColumn with
+  | x => simp [h]
+  | p c =>
+    have hsome : some (Equiv.removeNone e c) = e (some c) :=
+      Equiv.removeNone_some e (Option.ne_none_iff_exists'.mp fun hc =>
+        Option.some_ne_none c (e.injective (hc.trans hnone.symm)))
+    simpa [e] using congrArg (finSuccEquiv' newRow).symm hsome
+
 /-- Split the point in column `splitColumn` across an inserted row and column.
 
 The old point at `(splitColumn, x splitColumn)` is replaced by the two points
@@ -197,6 +223,20 @@ theorem stabilizeX_X (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n) :
     (G.stabilizeX newColumn newRow splitColumn).X =
       G.X.splitPoint newColumn newRow splitColumn :=
   (rfl)
+
+/-- In the stabilization splitting the `X`-marking of column `s`, the `X`-marking of each column
+collapses under `Fin.predAbove` onto the `X`-marking of `G` in the collapsed column: both
+`X`-markings of the new block collapse onto the split marking. -/
+theorem predAbove_X_stabilizeX (s : Fin n) (c : Fin (n + 1)) :
+    (G.X s).predAbove ((G.stabilizeX s.castSucc (G.X s).castSucc s).X c) =
+      G.X (s.predAbove c) := by
+  induction c using Fin.succAboveCases s.castSucc with
+  | x => simp
+  | p i =>
+    rw [stabilizeX_X, GridState.splitPoint_apply_succAbove, Fin.predAbove_succAbove]
+    split_ifs with h
+    · simp [h]
+    · exact Fin.predAbove_succAbove _ _
 
 /-- Exchanging the marking types turns an `O`-stabilization into an `X`-stabilization. -/
 @[simp]

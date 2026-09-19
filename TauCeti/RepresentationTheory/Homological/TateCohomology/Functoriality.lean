@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.RepresentationTheory.Homological.TateCohomology.Basic
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 
 /-!
@@ -56,6 +56,10 @@ invariants of its conjugate through the resulting map in degree two.
   is `groupCohomology.map` along `e.symm`.
 * `TauCeti.TateCohomology.map_comp_isoGroupHomology_hom`: in degrees at most `-2` it is
   `groupHomology.map` along `e`.
+* `TauCeti.TateCohomology.map_comp_H0IsoNormQuotient_hom`: in degree zero the construction is
+  the map induced on the quotient of invariants by the norm image.
+* `TauCeti.TateCohomology.HNegOneπ_comp_map`: in degree `-1` the construction sends the class of
+  a norm-zero element to the class of its image (`TauCeti.TateCohomology.mapKerNorm`).
 
 ## References
 
@@ -104,6 +108,13 @@ def complexMap (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
     (groupHomology.chainsMap (e : G →* H) (IsIntertwiningMap.toRes hφ))
     (groupCohomology.cochainsMap (e.symm : H →* G) (IsIntertwiningMap.ofRes hφ))
     (chainsMap_comp_d₀ hφ)
+
+/-- In degree zero, the map of Tate complexes is the degree-zero component of
+`groupCohomology.cochainsMap` along `e.symm`. -/
+theorem complexMap_f_zero (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    (complexMap hφ).f 0 =
+      (groupCohomology.cochainsMap (e.symm : H →* G) (IsIntertwiningMap.ofRes hφ)).f 0 := by
+  rw [complexMap, CochainComplex.ConnectData.map_f]
 
 end Complex
 
@@ -216,6 +227,186 @@ def mapIso {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
     (he : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) (e' : M.V →ₗ[R] N.V)) (n : ℤ) :
     (mapIso he n).inv = map (IsIntertwiningMap.symm he) n := by
   rw [mapIso, HomologicalComplex.homologyMapIso_inv, complexMapIso_inv, map_def]
+
+/-! ### Degree zero -/
+
+/-- A compatible pair carries invariants to invariants. -/
+def mapInvariants {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    M.ρ.invariants →ₗ[R] N.ρ.invariants :=
+  (φ.comp M.ρ.invariants.subtype).codRestrict N.ρ.invariants fun x ↦ by
+    rw [Representation.mem_invariants]
+    intro h
+    calc
+      N.ρ h (φ x) = N.ρ (e (e.symm h)) (φ x) := by rw [e.apply_symm_apply]
+      _ = φ (M.ρ (e.symm h) x) := (hφ.isIntertwining (e.symm h) x).symm
+      _ = φ x := congrArg φ (x.2 (e.symm h))
+
+omit [Fintype G] [Fintype H] in
+@[simp]
+theorem mapInvariants_apply_coe {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ)
+    (x : M.ρ.invariants) : ((mapInvariants hφ x : N.ρ.invariants) : N.V) = φ x :=
+  (rfl)
+
+/-- The map on norm quotients induced by a compatible pair. -/
+def mapNormQuotient {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    M.ρ.invariants ⧸ (LinearMap.range M.ρ.norm).submoduleOf M.ρ.invariants →ₗ[R]
+      N.ρ.invariants ⧸ (LinearMap.range N.ρ.norm).submoduleOf N.ρ.invariants :=
+  Submodule.mapQ _ _ (mapInvariants hφ) (by
+    rintro ⟨_, hx⟩ ⟨y, rfl⟩
+    refine ⟨φ y, ?_⟩
+    rw [Submodule.subtype_apply, mapInvariants_apply_coe]
+    simpa only [LinearMap.comp_apply] using
+      (LinearMap.congr_fun (Representation.IsIntertwiningMap.comp_norm hφ) y).symm)
+
+/-- The map on norm quotients sends the class of an invariant to the class of its image. -/
+@[simp]
+theorem mapNormQuotient_mk {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) (x : M.ρ.invariants) :
+    mapNormQuotient hφ (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk (mapInvariants hφ x) := by
+  rw [mapNormQuotient, Submodule.mapQ_apply]
+
+/-- The degree-zero Tate map sends the class of an invariant to the class of its image under the
+compatible coefficient map. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+theorem H0π_comp_map {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    H0π M ≫ map hφ 0 = ModuleCat.ofHom (mapInvariants hφ) ≫ H0π N := by
+  have hmap :
+      ModuleCat.ofHom (mapInvariants hφ) ≫ ModuleCat.ofHom N.ρ.invariants.subtype =
+        ModuleCat.ofHom M.ρ.invariants.subtype ≫ ModuleCat.ofHom φ := by
+    ext
+    rfl
+  have hcochainsZero :
+      (groupCohomology.cochainsMap (e.symm : H →* G)
+          (IsIntertwiningMap.ofRes hφ)).f 0 ≫ (groupCohomology.cochainsIso₀ N).hom =
+        (groupCohomology.cochainsIso₀ M).hom ≫ ModuleCat.ofHom φ := by
+    rw [groupCohomology.cochainsMap_f_0_comp_cochainsIso₀]
+    simp only [Rep.Hom.toModuleCatHom, IsIntertwiningMap.ofRes_hom_toLinearMap]
+  have hcomponentZero :
+      (complexMap hφ).f 0 ≫ (groupCohomology.cochainsIso₀ N).hom =
+        (groupCohomology.cochainsIso₀ M).hom ≫ ModuleCat.ofHom φ :=
+    (congrArg (fun k ↦ k ≫ (groupCohomology.cochainsIso₀ N).hom)
+      (complexMap_f_zero hφ)).trans hcochainsZero
+  have hcycles :
+      HomologicalComplex.cyclesMap (complexMap hφ) 0 ≫ (H0CyclesIso N).hom =
+        (H0CyclesIso M).hom ≫ ModuleCat.ofHom (mapInvariants hφ) := by
+    let _ : Mono (ModuleCat.ofHom N.ρ.invariants.subtype) :=
+      (ModuleCat.mono_iff_injective _).2 Subtype.val_injective
+    rw [← cancel_mono (ModuleCat.ofHom N.ρ.invariants.subtype)]
+    rw [Category.assoc, H0CyclesIso_hom_comp_subtype]
+    rw [Category.assoc, hmap, H0CyclesIso_hom_comp_subtype_assoc]
+    calc
+      HomologicalComplex.cyclesMap (complexMap hφ) 0 ≫
+          (tateComplex N).iCycles 0 ≫ (groupCohomology.cochainsIso₀ N).hom =
+        (tateComplex M).iCycles 0 ≫ (complexMap hφ).f 0 ≫
+          (groupCohomology.cochainsIso₀ N).hom :=
+        HomologicalComplex.cyclesMap_i_assoc (complexMap hφ) 0 _
+      _ = (tateComplex M).iCycles 0 ≫ (groupCohomology.cochainsIso₀ M).hom ≫
+          ModuleCat.ofHom φ :=
+        congrArg (fun k ↦ (tateComplex M).iCycles 0 ≫ k) hcomponentZero
+  have hcyclesInv :
+      (H0CyclesIso M).inv ≫ HomologicalComplex.cyclesMap (complexMap hφ) 0 =
+        ModuleCat.ofHom (mapInvariants hφ) ≫ (H0CyclesIso N).inv := by
+    rw [← cancel_mono (H0CyclesIso N).hom]
+    rw [Category.assoc, Category.assoc, hcycles]
+    simp
+  have hπ :
+      (tateComplex M).homologyπ 0 ≫ map hφ 0 =
+        HomologicalComplex.cyclesMap (complexMap hφ) 0 ≫ (tateComplex N).homologyπ 0 := by
+    rw [map_def]
+    exact HomologicalComplex.homologyπ_naturality (complexMap hφ) 0
+  rw [H0π_eq_cyclesIso_inv_comp_homologyπ, H0π_eq_cyclesIso_inv_comp_homologyπ]
+  exact (Category.assoc _ _ _).trans <|
+    (congrArg ((H0CyclesIso M).inv ≫ ·) hπ).trans <| (Category.assoc _ _ _).symm.trans <|
+      (congrArg (· ≫ (tateComplex N).homologyπ 0) hcyclesInv).trans (Category.assoc _ _ _)
+
+/-- In degree zero, the map attached to a compatible pair is the induced map on the quotient of
+invariants by the norm image. -/
+theorem map_comp_H0IsoNormQuotient_hom {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    map hφ 0 ≫ (H0IsoNormQuotient N).hom =
+      (H0IsoNormQuotient M).hom ≫ ModuleCat.ofHom (mapNormQuotient hφ) := by
+  rw [← cancel_epi (H0π M)]
+  rw [← Category.assoc, H0π_comp_map, Category.assoc,
+    H0π_comp_H0IsoNormQuotient_hom]
+  rw [H0π_comp_H0IsoNormQuotient_hom_assoc]
+  ext x
+  simp [mapNormQuotient]
+
+/-! ### Degree minus one -/
+
+/-- A compatible pair carries norm-zero elements to norm-zero elements. -/
+def mapKerNorm {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    LinearMap.ker M.ρ.norm →ₗ[R] LinearMap.ker N.ρ.norm :=
+  (φ.comp (LinearMap.ker M.ρ.norm).subtype).codRestrict (LinearMap.ker N.ρ.norm) fun x ↦ by
+    rw [LinearMap.mem_ker, LinearMap.comp_apply, Submodule.subtype_apply, ← LinearMap.comp_apply,
+      ← Representation.IsIntertwiningMap.comp_norm hφ, LinearMap.comp_apply,
+      LinearMap.mem_ker.1 x.2, map_zero]
+
+@[simp]
+theorem mapKerNorm_apply_coe {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ)
+    (x : LinearMap.ker M.ρ.norm) :
+    ((mapKerNorm hφ x : LinearMap.ker N.ρ.norm) : N.V) = φ x :=
+  (rfl)
+
+/-- The degree `-1` Tate map sends the class of a norm-zero element to the class of its image
+under the compatible coefficient map. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+theorem HNegOneπ_comp_map {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    HNegOneπ M ≫ map hφ (-1) = ModuleCat.ofHom (mapKerNorm hφ) ≫ HNegOneπ N := by
+  have hcycles : (HNegOneCyclesIso M).inv ≫ HomologicalComplex.cyclesMap (complexMap hφ) (-1) =
+      ModuleCat.ofHom (mapKerNorm hφ) ≫ (HNegOneCyclesIso N).inv := by
+    have : Mono ((tateComplex N).iCycles (-1) ≫ (groupHomology.chainsIso₀ N).hom) :=
+      @mono_comp _ _ _ _ _ ((tateComplex N).iCycles (-1)) inferInstance
+        (groupHomology.chainsIso₀ N).hom (@IsIso.mono_of_iso _ _ _ _ _ (Iso.isIso_hom _))
+    rw [← cancel_mono ((tateComplex N).iCycles (-1) ≫ (groupHomology.chainsIso₀ N).hom)]
+    have hM := HNegOneCyclesIso_hom_comp_subtype M
+    have hN := HNegOneCyclesIso_hom_comp_subtype N
+    have hf : (complexMap hφ).f (-1) ≫ (groupHomology.chainsIso₀ N).hom =
+        (groupHomology.chainsIso₀ M).hom ≫ ModuleCat.ofHom φ := by
+      refine (groupHomology.chainsMap_f_0_comp_chainsIso₀ (e : G →* H)
+        (IsIntertwiningMap.toRes hφ)).trans ?_
+      congr 1
+      ext x
+      simp
+    -- The cycles in degree `-1` live in the degree-zero chains, which the Tate complex has in
+    -- degree `-1` only up to unfolding; the squares are therefore chained as terms.
+    calc (HNegOneCyclesIso M).inv ≫ HomologicalComplex.cyclesMap (complexMap hφ) (-1) ≫
+          (tateComplex N).iCycles (-1) ≫ (groupHomology.chainsIso₀ N).hom
+        = (HNegOneCyclesIso M).inv ≫ (tateComplex M).iCycles (-1) ≫
+            (complexMap hφ).f (-1) ≫ (groupHomology.chainsIso₀ N).hom :=
+          congrArg ((HNegOneCyclesIso M).inv ≫ ·)
+            (HomologicalComplex.cyclesMap_i_assoc (complexMap hφ) (-1) _)
+      _ = (HNegOneCyclesIso M).inv ≫ ((tateComplex M).iCycles (-1) ≫
+            (groupHomology.chainsIso₀ M).hom) ≫ ModuleCat.ofHom φ :=
+          congrArg ((HNegOneCyclesIso M).inv ≫ ·)
+            ((congrArg ((tateComplex M).iCycles (-1) ≫ ·) hf).trans (Category.assoc _ _ _).symm)
+      _ = ModuleCat.ofHom (LinearMap.ker M.ρ.norm).subtype ≫ ModuleCat.ofHom φ := by
+          rw [← hM, Category.assoc, Iso.inv_hom_id_assoc]
+      _ = ModuleCat.ofHom (mapKerNorm hφ) ≫ (HNegOneCyclesIso N).inv ≫
+            (HNegOneCyclesIso N).hom ≫ ModuleCat.ofHom (LinearMap.ker N.ρ.norm).subtype := by
+          rw [Iso.inv_hom_id_assoc]
+          rfl
+      _ = _ := congrArg (fun k ↦ ModuleCat.ofHom (mapKerNorm hφ) ≫ (HNegOneCyclesIso N).inv ≫ k)
+          hN
+  have hπ :
+      (tateComplex M).homologyπ (-1) ≫ map hφ (-1) =
+        HomologicalComplex.cyclesMap (complexMap hφ) (-1) ≫ (tateComplex N).homologyπ (-1) := by
+    rw [map_def]
+    exact HomologicalComplex.homologyπ_naturality (complexMap hφ) (-1)
+  rw [HNegOneπ_eq_cyclesIso_inv_comp_homologyπ, HNegOneπ_eq_cyclesIso_inv_comp_homologyπ]
+  -- Degree `-1` Tate cohomology is by definition the homology of the Tate complex, so the squares
+  -- are composed as terms: `rw` cannot match across that unfolding.
+  refine (Category.assoc _ _ _).trans ((congrArg ((HNegOneCyclesIso M).inv ≫ ·) hπ).trans ?_)
+  exact (Category.assoc _ _ _).symm.trans
+    ((congrArg (· ≫ (tateComplex N).homologyπ (-1)) hcycles).trans (Category.assoc _ _ _))
 
 /-- Tate cohomology in a fixed degree depends only on the compatible pair. -/
 theorem map_congr {e₁ e₂ : G ≃* H} {φ₁ φ₂ : M.V →ₗ[R] N.V}

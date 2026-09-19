@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.CycleGraph
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Exterior
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Monodromy
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.VertexFixing
 
 /-!
 # The skew-zigzag algebras of the cycles
@@ -30,9 +31,9 @@ and consequently:
 In characteristic two the exterior parameter *is* the constant parameter, on any graph, so the two
 presentations agree identically by `TauCeti.SkewZigzagParameter.exterior_eq_one`.
 
-The odd-cycle statement is a statement about gauge classes.  Whether inequivalent classes present
-nonisomorphic algebras is the separate classification question, which needs the identification of
-vertex-fixing graded isomorphism classes with `H¹(G, kˣ)`.
+Over a commutative ring, gauge classes are exactly the vertex-fixing isomorphism classes of the
+relation quotients, so on such an odd cycle when `2` is not zero the exterior skew-zigzag algebra
+is not isomorphic to the ordinary one by any vertex-fixing isomorphism.
 
 ## Main definitions
 
@@ -50,6 +51,9 @@ vertex-fixing graded isomorphism classes with `H¹(G, kˣ)`.
   algebra.
 * `TauCeti.SkewZigzagParameter.not_isGaugeEquivalent_one_exteriorCycle`: on an odd cycle with at
   least three vertices, over a ring in which `2` is not zero, it is not gauge trivial.
+* `TauCeti.not_exists_vertexFixing_algEquiv_skewZigzagQuotient_exteriorCycle`: on an odd cycle,
+  away from characteristic two, no vertex-fixing isomorphism identifies the ordinary relation
+  quotient with the exterior one.
 
 ## References
 
@@ -78,8 +82,8 @@ section ExteriorCycle
 variable (k : Type w) [CommRing k] (m : ℕ) [NeZero m]
 
 /-- The **exterior skew-zigzag parameter of a cycle graph**.  On a cycle with at least three
-vertices, the two backtracks at a vertex sum to zero.  On such an odd cycle over a field of
-characteristic other than two this is the nontrivial skew class; on such an even cycle it is gauge
+vertices, the two backtracks at a vertex sum to zero.  On such an odd cycle over a commutative ring
+in which `2` is not zero this is the nontrivial skew class; on such an even cycle it is gauge
 equivalent to the constant parameter. -/
 def exteriorCycle : SkewZigzagParameter k (cycleGraph m) :=
   exterior k (Or.inr fun _ _ _ _ h h' h'' => eq_or_eq_or_eq_of_cycleGraph_adj h h' h'')
@@ -205,5 +209,22 @@ theorem nonempty_algEquiv_zigzagAlgebra_exteriorCycle (hm : 3 ≤ m) (hev : Even
   exact ⟨e.trans (zigzagAlgebraEquivNonisolated k _ cycleGraph_connected).symm⟩
 
 end ExteriorCycleAlgebra
+
+/-! ### The odd cycles up to vertex-fixing isomorphism -/
+
+open PathAlgebra SkewZigzagParameter in
+/-- **The exterior skew-zigzag algebra of an odd cycle is not the ordinary one up to vertex-fixing
+isomorphism.** On a cycle with an odd number `m ≥ 3` of vertices, over a commutative ring in which
+`2` is not zero, no algebra isomorphism from the ordinary relation quotient, presented by the
+constant parameter, to the exterior relation quotient fixes every vertex idempotent. -/
+theorem not_exists_vertexFixing_algEquiv_skewZigzagQuotient_exteriorCycle
+    (k : Type w) [CommRing k] {m : ℕ}
+    [NeZero m] (hm : 3 ≤ m) (hodd : Odd m) (h2 : (2 : k) ≠ 0) :
+    ¬ ∃ φ : skewZigzagQuotient k (cycleGraph m) 1 ≃ₐ[k]
+        skewZigzagQuotient k (cycleGraph m) (exteriorCycle k m),
+      ∀ i : Fin m, φ (skewZigzagMk k _ 1 (vertexIdempotent k (vertex _ i))) =
+        skewZigzagMk k _ (exteriorCycle k m) (vertexIdempotent k (vertex _ i)) :=
+  fun hφ => not_isGaugeEquivalent_one_exteriorCycle hm hodd h2
+    (isGaugeEquivalent_iff_exists_vertexFixing_algEquiv.mpr hφ)
 
 end TauCeti

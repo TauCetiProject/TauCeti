@@ -12,25 +12,27 @@ public import Mathlib.LinearAlgebra.Matrix.Permutation
 -- `MulEquiv.piUnits` identifies the units of a product with the product of the units, and is what
 -- makes the diagonal embedding a homomorphism.
 public import Mathlib.Algebra.Group.Pi.Units
--- `Matrix.IsDiag` occurs in the statements below.
-public import Mathlib.LinearAlgebra.Matrix.IsDiag
 -- `Subgroup.centralizer` and its maximal-commutative-subgroup API occur below.
 public import TauCeti.Algebra.Group.Subgroup.Centralizer
+-- `Matrix.IsDiag` occurs in the statements below.
+public import Mathlib.LinearAlgebra.Matrix.IsDiag
 -- `Nat.card` occurs in the statement of `TauCeti.natCard_diagonalTorus`.
 public import Mathlib.SetTheory.Cardinal.Finite
 -- Non-public: `Nat.card_units`, the number of units of a `GroupWithZero`, is used only inside the
 -- proof of `TauCeti.natCard_diagonalTorus`, so downstream importers do not pay for it.
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # Diagonal elements of the general linear group, and the diagonal torus
 
 A family of units indexed by a finite type `ι` is the diagonal of an invertible diagonal matrix,
 and this assignment is a group homomorphism `TauCeti.diagGL : (ι → kˣ) →* GL ι k`. Its entries,
-its determinant and its injectivity are recorded here, together with two facts about diagonal
-matrices proper: invertibility of a diagonal matrix upgrades its diagonal entries to units, and a
-matrix commuting with a diagonal matrix has no entries away from the diagonal wherever that
-diagonal matrix separates two coordinates.
+its determinant and its injectivity are recorded here, together with the fact that invertibility
+of a diagonal matrix upgrades its diagonal entries to units.  The facts about diagonal matrices
+that involve no general linear group live in `TauCeti/LinearAlgebra/Matrix/Diagonal.lean`; the one
+used below is that a matrix commuting with a diagonal matrix has no entry away from the diagonal
+wherever that diagonal matrix separates two coordinates.
 
 The image of `diagGL` is gathered into a subgroup
 
@@ -92,8 +94,6 @@ The action of the torus on the coordinate lines of the standard representation i
 
 * `TauCeti.isUnit_apply_of_isDiag`: the diagonal entries of an invertible diagonal matrix are
   units.
-* `TauCeti.isDiag_of_commute_diagonal`: a matrix commuting with a diagonal matrix of pairwise
-  distinct entries is itself diagonal.
 * `TauCeti.mem_diagonalTorus_iff`: membership in the torus is diagonality of the matrix.
 * `TauCeti.mul_diagGL_of_coe_eq_permMatrix`: a permutation matrix moves past a diagonal by
   relabelling its entries.
@@ -153,6 +153,17 @@ theorem diagGL_injective {ι : Type*} [Fintype ι] [DecidableEq ι] :
   apply Units.ext
   have := congrArg (fun g : GL ι k ↦ (g : Matrix ι ι k) i i) h
   simpa using this
+
+/-- An invertible diagonal matrix with distinct diagonal entries is not scalar. Like `diagGL`
+itself, this needs only a semiring; it is what supplies the non-scalarity — the regularity — of a
+diagonal matrix in size two. -/
+theorem notMem_range_scalar_diagGL {t : Fin 2 → kˣ} (ht : t 0 ≠ t 1) :
+    (diagGL t : Matrix (Fin 2) (Fin 2) k) ∉ Set.range (Matrix.scalar (Fin 2)) := by
+  rintro ⟨c, hc⟩
+  refine ht (Units.ext ?_)
+  have h0 : c = (t 0 : k) := by simpa using congrFun (congrFun hc 0) 0
+  have h1 : c = (t 1 : k) := by simpa using congrFun (congrFun hc 1) 1
+  rw [← h0, ← h1]
 
 /-- A general-linear element whose underlying matrix is the permutation matrix of `π` moves
 past a diagonal matrix by relabelling its diagonal entries along `π`. -/
@@ -311,27 +322,6 @@ end Scalar
 section IsCancelMulZero
 
 variable [IsCancelMulZero k]
-
-section Diagonal
-
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- A matrix commuting with a diagonal matrix has vanishing `(i, j)` entry whenever the diagonal
-matrix separates the coordinates `i` and `j`. -/
-theorem apply_eq_zero_of_commute_diagonal {t : ι → k} {g : Matrix ι ι k}
-    (hg : Commute (Matrix.diagonal t) g) {i j : ι} (hij : t i ≠ t j) : g i j = 0 := by
-  have hentry : (Matrix.diagonal t * g) i j = (g * Matrix.diagonal t) i j := by rw [hg.eq]
-  rw [Matrix.diagonal_mul, Matrix.mul_diagonal] at hentry
-  -- `hentry : t i * g i j = g i j * t j`; cancelling `g i j` on the left would give `t i = t j`.
-  by_contra h
-  exact hij (mul_left_cancel₀ h (by rw [mul_comm (g i j) (t i)]; exact hentry))
-
-/-- **A matrix commuting with a diagonal matrix of pairwise distinct entries is diagonal.** -/
-theorem isDiag_of_commute_diagonal {t : ι → k} (ht : Function.Injective t)
-    {g : Matrix ι ι k} (hg : Commute (Matrix.diagonal t) g) : g.IsDiag :=
-  fun _ _ hij => apply_eq_zero_of_commute_diagonal hg (ht.ne hij)
-
-end Diagonal
 
 variable [Nontrivial kˣ]
 

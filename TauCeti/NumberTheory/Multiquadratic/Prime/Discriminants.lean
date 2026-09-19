@@ -160,6 +160,13 @@ theorem primeDiscriminant_eq_radicand_or_eq_four_mul_radicand {D : ℤ} (hD : Is
       exact evenPrimeDiscriminant_eq_four_mul_radicand hD
   · exact Or.inl <| by rw [primeDiscriminantRadicand_oddPrimeDiscriminant hodd]
 
+/-- A prime discriminant and its squarefree radicand have the same sign. -/
+@[simp] theorem primeDiscriminantRadicand_neg_iff {D : ℤ} (hD : IsPrimeDiscriminant D) :
+    primeDiscriminantRadicand D < 0 ↔ D < 0 := by
+  rcases hD with hD | ⟨p, _hp, hodd, rfl⟩
+  · rcases hD with rfl | rfl | rfl <;> simp
+  · rw [primeDiscriminantRadicand_oddPrimeDiscriminant hodd]
+
 variable {q : ℕ} [Fact q.Prime]
 
 /-- Away from `2`, divisibility of an integer is the same as divisibility of its associated

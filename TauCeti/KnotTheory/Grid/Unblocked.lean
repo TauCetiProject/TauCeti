@@ -7,7 +7,8 @@ module
 
 import Mathlib.Tactic.Linarith
 public import Mathlib.Algebra.MvPolynomial.Degrees
-public import TauCeti.KnotTheory.Grid.Chain.Basic
+public import TauCeti.Algebra.MvPolynomial.Rename
+public import TauCeti.KnotTheory.Grid.Chain.Relabeling
 public import TauCeti.KnotTheory.Grid.Grading.MarkingCount
 import TauCeti.KnotTheory.Grid.Rectangle.Count
 import TauCeti.KnotTheory.Grid.Rectangle.Swap
@@ -58,6 +59,8 @@ assignment, a later stage of the roadmap.
 * `TauCeti.GridDiagram.OMonomial`: the monomial `V^{O(r)}` weighting a rectangle.
 * `TauCeti.GridDiagram.unblockedRectangles`: the empty rectangles carrying no `X`-marking.
 * `TauCeti.GridChainMinus`: the free `R[V₀, …, V_{n-1}]`-module on grid states.
+* `TauCeti.GridChain.relabelColumnsRenameEquiv`: the semilinear equivalence on `GC⁻` that
+  relabels columns and renames the coefficient variables.
 * `TauCeti.GridDiagram.unblockedDifferential`: the unblocked differential, as a linear map over
   the polynomial ring.
 
@@ -83,6 +86,8 @@ assignment, a later stage of the roadmap.
   fully blocked ones, so the fully blocked matrix coefficient is the constant term of `∂⁻`.
 * `TauCeti.GridDiagram.exists_mem_unblockedRectangles_of_mem_support_unblockedCoefficient`: every
   monomial of a matrix coefficient is the weight of a contributing rectangle.
+* `TauCeti.GridChain.relabelColumnsRenameEquiv_symm_apply`: the inverse column relabeling and
+  coefficient-renaming formula.
 
 ## References
 
@@ -104,18 +109,88 @@ states over the polynomial ring `R[V₀, …, V_{n-1}]`, with one variable for e
 abbrev GridChainMinus (R : Type*) [CommSemiring R] (n : ℕ) : Type _ :=
   GridChain (MvPolynomial (Fin n) R) n
 
+namespace GridChain
+
+variable {n : ℕ} (R : Type*) [CommSemiring R]
+
+/-- The semilinear equivalence on `GC⁻` induced by relabeling columns and renaming coefficient
+variables by the same permutation. Its inverse uses the inverse column permutation. -/
+noncomputable def relabelColumnsRenameEquiv (κ : Equiv.Perm (Fin n)) :
+    GridChainMinus R n ≃ₛₗ[((MvPolynomial.renameEquiv R κ).toRingEquiv :
+      MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)] GridChainMinus R n :=
+  (Finsupp.mapRange.linearEquiv
+    (MvPolynomial.renameEquiv R κ).toRingEquiv.toSemilinearEquiv).trans (relabelColumnsEquiv κ)
+
+/-- The coefficient of a relabeled and renamed chain at a state is the renamed coefficient at the
+inverse-relabeled state. -/
+@[simp]
+theorem relabelColumnsRenameEquiv_apply (κ : Equiv.Perm (Fin n)) (c : GridChainMinus R n)
+    (y : GridState n) :
+    (relabelColumnsRenameEquiv R κ).toLinearMap c y =
+      rename κ (c (y.relabelColumns κ.symm)) := by
+  rw [LinearEquiv.coe_coe, relabelColumnsRenameEquiv, LinearEquiv.trans_apply,
+    relabelColumnsEquiv_apply, Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_apply,
+    RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_ringEquiv, renameEquiv_apply]
+
+/-- Relabeling and renaming send a generator with coefficient `a` to the relabeled generator with
+the renamed coefficient. -/
+@[simp]
+theorem relabelColumnsRenameEquiv_single (κ : Equiv.Perm (Fin n)) (x : GridState n)
+    (a : MvPolynomial (Fin n) R) :
+    (relabelColumnsRenameEquiv R κ).toLinearMap (Finsupp.single x a) =
+      Finsupp.single (x.relabelColumns κ) (rename κ a) := by
+  rw [LinearEquiv.coe_coe, relabelColumnsRenameEquiv, LinearEquiv.trans_apply,
+    Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_single, relabelColumnsEquiv_single,
+    RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_ringEquiv, renameEquiv_apply]
+
+/-- The inverse equivalence relabels columns and coefficient variables by the inverse
+permutation. -/
+@[simp]
+theorem relabelColumnsRenameEquiv_symm_apply (κ : Equiv.Perm (Fin n))
+    (c : GridChainMinus R n) (y : GridState n) :
+    (relabelColumnsRenameEquiv R κ).symm c y =
+      rename κ.symm (c (y.relabelColumns κ)) := by
+  rw [relabelColumnsRenameEquiv, LinearEquiv.symm_trans_apply, Finsupp.mapRange.linearEquiv_symm,
+    Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_apply, relabelColumnsEquiv_symm_apply,
+    LinearEquiv.symm_apply_eq, RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_ringEquiv,
+    renameEquiv_apply, rename_rename, Equiv.self_comp_symm, rename_id_apply]
+
+end GridChain
+
 namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)
 
 /-! ### The `O`-monomial of a rectangle -/
 
+/-- The columns whose `O`-marking belongs to a given set of squares. -/
+noncomputable def OColumnsOfSquares (s : Finset (Fin n × Fin n)) : Finset (Fin n) :=
+  Finset.univ.filter fun c => (c, G.O c) ∈ s
+
+/-- A column belongs to `OColumnsOfSquares` exactly when its `O`-marking belongs to the given
+set of squares. -/
+@[simp]
+theorem mem_OColumnsOfSquares {s : Finset (Fin n × Fin n)} {c : Fin n} :
+    c ∈ G.OColumnsOfSquares s ↔ (c, G.O c) ∈ s := by
+  simp [OColumnsOfSquares]
+
+/-- The `O`-markings in a set of squares are exactly those indexed by its covered `O`-columns. -/
+theorem OSet_inter_eq_image_OColumnsOfSquares (s : Finset (Fin n × Fin n)) :
+    G.OSet ∩ s = (G.OColumnsOfSquares s).image fun c => (c, G.O c) := by
+  ext p
+  simp only [Finset.mem_inter, Finset.mem_image, mem_OColumnsOfSquares, mem_OSet]
+  constructor
+  · rintro ⟨hp, hs⟩
+    exact ⟨p.1, by rwa [hp], by rw [hp]⟩
+  · rintro ⟨c, hc, rfl⟩
+    exact ⟨rfl, hc⟩
+
 /-- The columns whose `O`-marking lies in the squares a toroidal rectangle covers.
 
 The `O`-markings of a grid diagram are indexed by their columns, so this finite set of columns is
 the index set of the variables occurring in the rectangle's weight. -/
 noncomputable def OColumns (r : GridRectangle n) : Finset (Fin n) :=
-  Finset.univ.filter fun c => (c, G.O c) ∈ r.coveredSquares
+  G.OColumnsOfSquares r.coveredSquares
 
 /-- A column is a covered `O`-column exactly when its `O`-marking is a covered square. -/
 @[simp]
@@ -126,13 +201,7 @@ theorem mem_OColumns {r : GridRectangle n} {c : Fin n} :
 /-- The covered `O`-markings are exactly the markings of the covered `O`-columns. -/
 theorem OSet_inter_coveredSquares (r : GridRectangle n) :
     G.OSet ∩ r.coveredSquares = (G.OColumns r).image fun c => (c, G.O c) := by
-  ext p
-  simp only [Finset.mem_inter, Finset.mem_image, mem_OColumns, mem_OSet]
-  constructor
-  · rintro ⟨hp, hcov⟩
-    exact ⟨p.1, by rwa [hp], by rw [hp]⟩
-  · rintro ⟨c, hc, rfl⟩
-    exact ⟨rfl, hc⟩
+  exact G.OSet_inter_eq_image_OColumnsOfSquares r.coveredSquares
 
 /-- The number of covered `O`-columns is the number of `O`-markings among the covered squares:
 a grid diagram has exactly one `O`-marking in each column. -/

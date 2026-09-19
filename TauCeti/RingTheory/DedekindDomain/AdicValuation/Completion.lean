@@ -23,6 +23,8 @@ Everything here concerns one completion. The comparison of two completions along
 
 ## Main results
 
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletion_charZero`: a completion of a field of
+  characteristic zero has characteristic zero.
 * `IsDedekindDomain.HeightOneSpectrum.under_maximalIdeal_adicCompletionIntegers`: `v` is the
   prime lying under the maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.mem_maximalIdeal_pow_iff`: membership in `𝔪 ^ n` is the
@@ -33,8 +35,8 @@ Everything here concerns one completion. The comparison of two completions along
   topology on `𝒪_v` is the `𝔪`-adic one.
 * `IsDedekindDomain.HeightOneSpectrum.henselianLocalRing_adicCompletionIntegers`: `𝒪_v` is a
   Henselian local ring, being local and complete for its maximal ideal.
-* `IsDedekindDomain.HeightOneSpectrum.exists_valued_sub_lt_one`: every element of `𝒪_v` is
-  congruent to an element of `R` modulo the maximal ideal.
+* `IsDedekindDomain.HeightOneSpectrum.exists_valued_sub_le`: every element of `𝒪_v` is
+  congruent to an element of `R` modulo any power of the maximal ideal, so `R` is dense in `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletionIntegers`: consequently the
   residue field of `v` is the residue field of `𝒪_v`;
   `residueFieldEquivAdicCompletionIntegers_apply_mk` describes that isomorphism on a quotient
@@ -62,7 +64,8 @@ Adapted, with the author's proof, from Michael Stoll's `EllipticCurves` project
 `TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
 `EllipticCurves/Mathlib/Basic.lean` line 594, and
 `EllipticCurves/Mathlib/AdicCompletionExtension.lean` for the filtration and Henselian results,
-and for `exists_valued_sub_lt_one` and `residueFieldEquivAdicCompletionIntegers`.
+and for `residueFieldEquivAdicCompletionIntegers` and the approximation modulo the maximal ideal
+behind it, which `exists_valued_sub_le` generalizes to every power of the maximal ideal.
 The source states the contraction with `Ideal.comap` of an `algebraMap`; Mathlib spells that
 `Ideal.under`, which is used here.
 -/
@@ -75,6 +78,12 @@ namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+
+/-- The completion of a field of characteristic zero at a height-one prime has characteristic
+zero, since the field embeds into it. -/
+instance adicCompletion_charZero [CharZero K] (v : HeightOneSpectrum R) :
+    CharZero (v.adicCompletion K) :=
+  charZero_of_injective_algebraMap (algebraMap K (v.adicCompletion K)).injective
 
 /-- The prime of `R` lying under the maximal ideal of the ring of integers of the completion of
 `K` at `v` is `v` itself. -/
@@ -258,49 +267,39 @@ instance henselianLocalRing_adicCompletionIntegers :
     (IsAdicComplete.henselianRing _
       (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K))).is_henselian f hf a₀ h₁ (h₂.map _)
 
-/-- Any element of the ring of integers of the completion is congruent to an element of `R`
-modulo the maximal ideal — equivalently, `R` surjects onto the residue field of `𝒪_v`.
-
-This is approximation at the single threshold `1`, not density: it says nothing about
-approximating to arbitrarily small valuation. -/
-theorem exists_valued_sub_lt_one (x : v.adicCompletionIntegers K) :
-    ∃ a : R, Valued.v ((x : v.adicCompletion K) - algebraMap R (v.adicCompletion K) a) < 1 := by
-  -- approximate by an element of `K` first
-  have hball : {y | Valued.v (y - (x : v.adicCompletion K)) < 1} ∈
-      nhds (x : v.adicCompletion K) := by
-    rw [Valued.mem_nhds]
-    exact ⟨1, fun y hy ↦ by simpa using hy⟩
-  obtain ⟨w, hwball, z, rfl⟩ :=
-    mem_closure_iff_nhds.mp (denseRange_algebraMap (K := K) v _) _ hball
-  rw [Set.mem_ofPred_eq] at hwball
-  -- the approximating element is integral at `v`
-  have hz1 : v.valuation K z ≤ 1 := by
-    rw [← v.valuedAdicCompletion_eq_valuation' z]
-    calc Valued.v (algebraMap K (v.adicCompletion K) z)
-        = Valued.v (algebraMap K (v.adicCompletion K) z - (x : v.adicCompletion K)
-            + (x : v.adicCompletion K)) := by ring_nf
-      _ ≤ max (Valued.v (algebraMap K (v.adicCompletion K) z - (x : v.adicCompletion K)))
-            (Valued.v (x : v.adicCompletion K)) := Valuation.map_add _ _ _
-      _ ≤ 1 := max_le hwball.le x.2
-  -- then approximate that element of `K` by an element of `R`
-  obtain ⟨a, ha⟩ := v.exists_valuation_sub_lt_of_integer hz1 1
+/-- **`R` is dense in `𝒪_v`**: every element of the ring of integers of the completion is
+congruent to an element of `R` modulo any power `𝔪 ^ n` of the maximal ideal. -/
+theorem exists_valued_sub_le (x : v.adicCompletionIntegers K) (n : ℕ) :
+    ∃ a : R, Valued.v ((x : v.adicCompletion K) - algebraMap R (v.adicCompletion K) a) ≤
+      exp (-(n : ℤ)) := by
+  -- the elements of `𝒪_v` congruent to `x` modulo `𝔪 ^ n` form an open subset of `K_v`
+  let U : Set (v.adicCompletionIntegers K) := (· - x) ⁻¹'
+    ((IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n :
+      Ideal (v.adicCompletionIntegers K)) : Set (v.adicCompletionIntegers K))
+  have hU : IsOpen (((↑) : v.adicCompletionIntegers K → v.adicCompletion K) '' U) :=
+    (Valued.isOpen_valuationSubring _).isOpenMap_subtype_val _
+      ((v.isOpen_maximalIdeal_pow_adicCompletionIntegers n).preimage (continuous_sub_right x))
+  -- so it contains an element `z` of `K`, which is then integral at `v`
+  obtain ⟨z, y, hy, hyz⟩ := (denseRange_algebraMap (K := K) v).exists_mem_open hU
+    ⟨x, x, by simp [U], rfl⟩
+  have hz : v.valuation K z ≤ 1 := by
+    have hy1 : Valued.v (algebraMap K (v.adicCompletion K) z) ≤ 1 :=
+      hyz ▸ (mem_adicCompletionIntegers R K v).mp y.2
+    rwa [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation'] at hy1
+  -- and `z` is approximated by an element of `R`
+  obtain ⟨a, ha⟩ := v.exists_valuation_sub_lt_of_integer hz (Units.mk0 (exp (-(n : ℤ))) exp_ne_zero)
   refine ⟨a, ?_⟩
-  have ha' : Valued.v (algebraMap K (v.adicCompletion K) z -
-      algebraMap R (v.adicCompletion K) a) < 1 := by
-    rw [IsScalarTower.algebraMap_apply R K (v.adicCompletion K), ← map_sub,
-      -- `valuedAdicCompletion_eq_valuation'` states its left side through `WithVal.equiv`, so a
-      -- bare `rw` does not match the `algebraMap` spelling in the goal; `show` supplies the
-      -- defeq bridge that lets the equation apply.
-      show Valued.v (algebraMap K (v.adicCompletion K) (z - algebraMap R K a)) =
-        v.valuation K (z - algebraMap R K a) from v.valuedAdicCompletion_eq_valuation' _,
-      Valuation.map_sub_swap]
-    simpa using ha
-  calc Valued.v ((x : v.adicCompletion K) - algebraMap R (v.adicCompletion K) a)
-      = Valued.v (((x : v.adicCompletion K) - algebraMap K (v.adicCompletion K) z)
-          + (algebraMap K (v.adicCompletion K) z - algebraMap R (v.adicCompletion K) a)) := by
-        ring_nf
-    _ ≤ max _ _ := Valuation.map_add _ _ _
-    _ < 1 := max_lt (by rwa [Valuation.map_sub_swap] at hwball) ha'
+  have hxy : Valued.v ((x : v.adicCompletion K) - y) ≤ exp (-(n : ℤ)) := by
+    have hy' := (v.mem_maximalIdeal_pow_iff (K := K)).mp hy
+    rwa [AddSubgroupClass.coe_sub, Valuation.map_sub_swap] at hy'
+  have hza : Valued.v ((y : v.adicCompletion K) - algebraMap R (v.adicCompletion K) a) ≤
+      exp (-(n : ℤ)) := by
+    rw [hyz, IsScalarTower.algebraMap_apply R K (v.adicCompletion K), ← map_sub,
+      algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
+      Algebra.algebraMap_self, RingHom.id_apply, Valuation.map_sub_swap]
+    exact ha.le
+  rw [← sub_add_sub_cancel _ (y : v.adicCompletion K)]
+  exact Valuation.map_add_le _ hxy hza
 
 /-- The residue field of `v` maps isomorphically onto the residue field of the ring of integers of
 the completion at `v`. -/
@@ -314,7 +313,7 @@ noncomputable def residueFieldEquivAdicCompletionIntegers :
       (le_of_eq (v.under_maximalIdeal_adicCompletionIntegers (K := K)))
   · intro y
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
-    obtain ⟨a, ha⟩ := v.exists_valued_sub_lt_one (K := K) x
+    obtain ⟨a, ha⟩ := v.exists_valued_sub_le (K := K) x 1
     refine ⟨Ideal.Quotient.mk _ a, ?_⟩
     rw [Ideal.quotientMap_mk]
     refine Ideal.Quotient.eq.mpr ?_
@@ -323,7 +322,7 @@ noncomputable def residueFieldEquivAdicCompletionIntegers :
     push_cast [IsScalarTower.algebraMap_apply R (v.adicCompletionIntegers K)
       (v.adicCompletion K)]
     rw [Valuation.map_sub_swap]
-    exact ha
+    exact ha.trans_lt (by simp)
 
 /-- **The residue-field equivalence on a quotient representative.** This is the characterization
 consumers should use; the equivalence's construction as an `Ideal.quotientMap` is an implementation

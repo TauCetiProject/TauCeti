@@ -48,6 +48,8 @@ filtration, which are all they depend on.
 
 * `TauCeti.repartitionDualComponent_apply_eq_zero_of_le`: the local component at `P` of a Weil
   differential bounded by `D` vanishes on the functions whose pole at `P` is bounded by `D`.
+* `TauCeti.repartitionDualComponent_repartitionDualMul_algebraMap`: scaling a linear form by a
+  constant scales each of its local components.
 * `TauCeti.finite_support_repartitionDualComponent_apply` and
   `TauCeti.apply_eq_finsum_repartitionDualComponent`: **`ω a = ∑_P ω_P (a P)`, with cofinite
   vanishing** (Stichtenoth, Proposition 1.7.2).
@@ -100,6 +102,15 @@ theorem repartitionDualComponent_repartitionDualMul (hF : IsFunctionField k F) (
     repartitionDualComponent (repartitionDualMul hF f ω) P x =
       repartitionDualComponent ω P (f * x) := by
   simp
+
+/-- The local components of a constant multiple of a linear form: `(c · ω)_P x = c • ω_P x`.  This
+is the case of `TauCeti.repartitionDualComponent_repartitionDualMul` in which the scalar is a
+constant, where the multiplication can be pulled out of the linear form. -/
+theorem repartitionDualComponent_repartitionDualMul_algebraMap (hF : IsFunctionField k F) (c : k)
+    (ω : Module.Dual k ↥(repartitionSpace k F)) (P : Place k F) (x : F) :
+    repartitionDualComponent (repartitionDualMul hF (algebraMap k F c) ω) P x =
+      c • repartitionDualComponent ω P x := by
+  rw [repartitionDualComponent_repartitionDualMul, ← Algebra.smul_def, map_smul]
 
 /-- **The local component at `P` of a Weil differential bounded by `D` kills the functions whose
 pole at `P` is bounded by `D`**: such an `x` has `ι_P x ∈ A_F(D)`, which `ω` kills. -/

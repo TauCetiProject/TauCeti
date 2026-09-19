@@ -14,10 +14,11 @@ import Mathlib.Tactic.Ring
 
 This file records arithmetic identities involving natural-number binomial coefficients.
 
-## Main result
+## Main results
 
 * `Nat.choose_two_add_mul_succ_div_two`: the sum of the second binomial coefficient and
   the triangular number is the corresponding square.
+* `Nat.add_choose_two`: the second binomial coefficient of a sum, with its cross term.
 -/
 
 public section
@@ -37,5 +38,17 @@ theorem choose_two_add_mul_succ_div_two (N : ℕ) :
     have hsum : N - 1 + (N + 1) = 2 * N := by omega
     rw [hsum]
     ring
+
+/-- The second binomial coefficient of a sum: `C(m + n, 2) = C(m, 2) + C(n, 2) + mn`. -/
+theorem add_choose_two (m n : ℕ) : (m + n).choose 2 = m.choose 2 + n.choose 2 + m * n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+      have h1 : (m + (n + 1)).choose 2 = (m + n).choose 1 + (m + n).choose 2 := by
+        rw [← Nat.add_assoc]
+        exact Nat.choose_succ_succ (m + n) 1
+      have h2 : (n + 1).choose 2 = n.choose 1 + n.choose 2 := Nat.choose_succ_succ n 1
+      rw [h1, h2, ih, Nat.choose_one_right, Nat.choose_one_right]
+      ring
 
 end Nat

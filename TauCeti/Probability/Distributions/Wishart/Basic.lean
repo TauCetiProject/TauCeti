@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Probability.HasLaw
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix
 public import TauCeti.Probability.Distributions.Gaussian.Affine
+public import TauCeti.Probability.Distributions.Gaussian.ChiSquared
 
 import Mathlib.MeasureTheory.Group.Convolution
 import Mathlib.Probability.ProductMeasure
@@ -54,6 +55,8 @@ a density definition cannot.
 * `TauCeti.ae_rank_le_wishartGramMeasure` — the same rank bound holds almost everywhere.
 * `TauCeti.mutuallySingular_wishartGramMeasure_symmetricLebesgue` — below that rank threshold the
   law has no density against `TauCeti.symmetricLebesgue`.
+* `TauCeti.map_symmetricFinOneEquiv_wishartGramMeasure` — in dimension one the law is a chi-squared
+  law scaled by the variance, read through the single-entry identification with `ℝ`.
 
 ## References
 
@@ -362,5 +365,46 @@ theorem wishartGramMeasure_conv_wishartGramMeasure (ν₁ ν₂ : ℕ)
   rw [MeasurableEquiv.coe_piCongrLeft, Function.comp_apply, Function.comp_apply,
     Function.comp_apply, wishartGram_piCongrLeft]
   rfl
+
+/-! ### The one-dimensional law -/
+
+/-- **In dimension one the Gaussian-Gram Wishart law is a scaled chi-squared law.** Read through
+the single-entry identification `TauCeti.symmetricFinOneEquiv` of `1 × 1` symmetric matrices with
+the reals, the Gram law of degree `ν` and scale `S` is the chi-squared law with `ν` degrees of
+freedom, scaled by the variance `S 0 0`. At `ν = 0` both sides are the point mass at zero.
+
+In dimension one the hypothesis `0 ≤ S 0 0` is exactly positive semidefiniteness of the scale, so
+nothing is assumed beyond the range on which the Gram law is the classical Wishart law. -/
+theorem map_symmetricFinOneEquiv_wishartGramMeasure (ν : ℕ) {S : Matrix (Fin 1) (Fin 1) ℝ}
+    (hS : 0 ≤ S 0 0) :
+    (wishartGramMeasure ν S).map symmetricFinOneEquiv =
+      (Probability.chiSquaredMeasure ν).map (S 0 0 * ·) := by
+  have hposSemidef : S.PosSemidef := by
+    have hdiag : S = Matrix.diagonal ![S 0 0] := by
+      ext i j
+      fin_cases i
+      fin_cases j
+      simp
+    rw [hdiag, Matrix.posSemidef_diagonal_iff]
+    simp [hS]
+  have heval : (multivariateGaussian 0 S).map (fun x : EuclideanSpace ℝ (Fin 1) => x 0) =
+      gaussianReal 0 (S 0 0).toNNReal := by
+    simpa using (measurePreserving_eval_multivariateGaussian
+      (μ := (0 : EuclideanSpace ℝ (Fin 1))) hposSemidef (i := 0)).map_eq
+  have hpi : (Measure.pi fun _ : Fin ν => multivariateGaussian 0 S).map (fun X r => X r 0) =
+      Measure.pi fun _ : Fin ν => gaussianReal 0 (S 0 0).toNNReal := by
+    -- `Measure.pi_map_pi` asks for σ-finiteness of the pushed-forward factors.
+    have : ∀ _ : Fin ν, SigmaFinite ((multivariateGaussian 0 S).map
+        (fun x : EuclideanSpace ℝ (Fin 1) => x 0)) := fun _ => by rw [heval]; infer_instance
+    rw [Measure.pi_map_pi fun _ => (by fun_prop : AEMeasurable
+      (fun x : EuclideanSpace ℝ (Fin 1) => x 0) _)]
+    simp only [heval]
+  have hgram : (symmetricFinOneEquiv ∘ wishartGram : (Fin ν → EuclideanSpace ℝ (Fin 1)) → ℝ) =
+      (fun y : Fin ν → ℝ => ∑ r, y r ^ 2) ∘ (fun X r => X r 0) := by
+    funext X
+    simp [coe_wishartGram, Matrix.sum_apply, Matrix.vecMulVec_apply, sq]
+  rw [wishartGramMeasure, Measure.map_map symmetricFinOneEquiv.continuous.measurable
+      measurable_wishartGram, hgram, ← Measure.map_map (by fun_prop) (by fun_prop), hpi,
+    Probability.map_sum_sq_pi_gaussianReal, Fintype.card_fin, Real.coe_toNNReal _ hS]
 
 end TauCeti

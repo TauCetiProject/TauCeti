@@ -53,7 +53,7 @@ example := @ConditionallyIID
 
 -- Relations between them.
 example := @exchangeable_iff_fullyExchangeable
-example := @contractable_of_exchangeable
+example := @Exchangeable.contractable
 example := @MixedIID.exchangeable
 example := @mixedIIDWith_of_conditionallyIIDWith
 example := @mixedIID_of_conditionallyIID

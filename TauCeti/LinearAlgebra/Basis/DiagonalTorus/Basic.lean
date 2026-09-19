@@ -174,6 +174,12 @@ value there: the other coordinates contribute the factor `1`. -/
   rw [torusCharacter, prod_eq_single c (fun j _ hj => by rw [Pi.mulSingle_eq_of_ne hj, one_zpow])
     fun hc => absurd (mem_univ c) hc, Pi.mulSingle_eq_same]
 
+/-- The character of the weight `z • e_c` is the `z`-th power of the `c`-th coordinate. -/
+@[simp] theorem torusCharacter_single [DecidableEq κ] (s : κ → Rˣ) (c : κ) (z : ℤ) :
+    torusCharacter s (Pi.single c z) = s c ^ z := by
+  rw [torusCharacter, prod_eq_single c (fun j _ hj => by rw [Pi.single_eq_of_ne hj, zpow_zero])
+    fun hc => absurd (mem_univ c) hc, Pi.single_eq_same]
+
 /-! ## Reflections of split-torus points -/
 
 section Reflect
@@ -281,10 +287,7 @@ theorem weightChar_add (μ ν : κ → ℤ) :
 @[simp]
 theorem weightChar_single [DecidableEq κ] (c : κ) (s : κ → Rˣ) :
     weightChar R (Pi.single c 1) s = s c := by
-  rw [weightChar_apply, torusCharacter_def,
-    prod_eq_single c (fun j _ hj ↦ by simp [Pi.single_eq_of_ne hj])
-      (fun h ↦ absurd (mem_univ c) h),
-    Pi.single_eq_same, zpow_one]
+  rw [weightChar_apply, torusCharacter_single, zpow_one]
 
 /-- The character of a constant weight is a power of the product of the coordinates. -/
 theorem weightChar_const (z : ℤ) (s : κ → Rˣ) :

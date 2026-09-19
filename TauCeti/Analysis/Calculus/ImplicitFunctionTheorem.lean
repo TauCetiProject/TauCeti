@@ -57,6 +57,8 @@ Mathlib's lemma.
   derivative of the coordinate map stays invertible.
 * `HasStrictFDerivAt.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem`: the
   inverse homeomorphism is `C^n` at every point of the target coming from that neighbourhood.
+* `HasStrictFDerivAt.surjective_of_mem_implicitCoordSource`: the derivative of the equation stays
+  surjective on that neighbourhood.
 -/
 
 public section
@@ -198,6 +200,22 @@ theorem isInvertible_prod_of_mem_implicitCoordSource (hf : HasStrictFDerivAt f f
   exact (hf.hasStrictFDerivAt_implicitCoord hf'
     hker).isInvertible_of_mem_toOpenPartialHomeomorph_source hx
       (hA.prodMk ((Classical.choose hker).hasFDerivAt.comp x ((hasFDerivAt_id x).sub_const a)))
+
+/-- **The derivative of the equation stays surjective on
+`HasStrictFDerivAt.implicitCoordSource`.** The pair `(A, P)` is invertible there, and a pair is
+invertible only if its first component is onto.
+
+Surjectivity of the derivative is the hypothesis under which the level set of `f` is locally a
+manifold, so this says that a regular point of a level set has a whole neighbourhood of regular
+points, with no continuity argument on `x ↦ fderiv f x`. -/
+theorem surjective_of_mem_implicitCoordSource (hf : HasStrictFDerivAt f f' a)
+    (hf' : f'.range = ⊤) (hker : f'.ker.ClosedComplemented) {x : E}
+    (hx : x ∈ hf.implicitCoordSource hf' hker) {A : E →L[K] F} (hA : HasFDerivAt f A x) :
+  Function.Surjective A := by
+  intro x
+  obtain ⟨y, hy⟩ := (Prod.fst_surjective.comp
+    (hf.isInvertible_prod_of_mem_implicitCoordSource hf' hker hx hA).surjective) x
+  exact ⟨y, by simpa using hy⟩
 
 /-- **The implicit function is `C^n` on a whole neighbourhood of the origin of the slice.** The
 inverse of the implicit-function homeomorphism is `C^n` at every point of its target whose

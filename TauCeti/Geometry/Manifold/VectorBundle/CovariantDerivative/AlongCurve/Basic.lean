@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
-public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongCurve
+public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongCurve.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Add
 public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -36,7 +36,7 @@ ambient covariant derivative.
 ## Main definitions and results
 
 * `TauCeti.Manifold.sectionCoord`: the coordinate reading of a tangent field along a curve in a
-  specified tangent-bundle trivialization; see `VectorBundle/SectionAlongCurve.lean`.
+  specified tangent-bundle trivialization; see `VectorBundle/SectionAlongCurve/Basic.lean`.
 * `CovariantDerivative.alongCurveInChartWithin`: the model-space formula `v' + Γ(v, u')` within
   a parameter set, computed by `CovariantDerivative.alongCurveInChartWithin_apply`.
 * `CovariantDerivative.alongCurveWithin`: the resulting tangent field along the curve, computed
