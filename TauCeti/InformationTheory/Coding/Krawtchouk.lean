@@ -68,6 +68,7 @@ theorem coeff_krawtchouk_generating (q n w j : ℕ) :
   ring
 
 /-- Krawtchouk values above the length vanish on the range of word weights. -/
+@[simp]
 theorem krawtchouk_eq_zero_of_lt (q n w j : ℕ) (hj : j ≤ n) (hw : n < w) :
     krawtchouk q n w j = 0 := by
   rw [krawtchouk_def]

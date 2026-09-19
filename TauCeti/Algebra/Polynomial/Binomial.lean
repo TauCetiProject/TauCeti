@@ -21,6 +21,7 @@ namespace TauCeti
 open Polynomial Finset
 
 /-- The coefficient of `X^k` in `(a + b X)^n`, including coefficients above the degree. -/
+@[simp]
 theorem coeff_C_add_C_mul_X_pow {R : Type*} [CommSemiring R] (a b : R) (n k : ℕ) :
     ((C a + C b * X) ^ n).coeff k = (n.choose k : R) * a ^ (n - k) * b ^ k := by
   rw [add_comm, add_pow, finsetSum_coeff]
