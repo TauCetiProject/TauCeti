@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import TauCeti.Data.ZMod.Count
-public import TauCeti.GroupTheory.OrderOfElement
+public import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
 # Counting the elements of a cyclic group by a condition on their order
