@@ -62,13 +62,14 @@ variable (k : Type u) [Field k]
 group is finite-dimensional. -/
 def _root_.AlgebraicGeometry.Scheme.genus (X : Scheme.{u}) [X.Over (Spec (.of k))]
     [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)] : ℕ :=
-  finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)
+  Fintype.card (Module.Free.ChooseBasisIndex k
+    (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1))
 
 /-- The genus is the dimension of the first cohomology of the structure sheaf. -/
 lemma _root_.AlgebraicGeometry.Scheme.genus_def (X : Scheme.{u}) [X.Over (Spec (.of k))]
     [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)] :
     X.genus k = finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) :=
-  (rfl)
+  (Module.finrank_eq_card_chooseBasisIndex k _).symm
 
 variable {X : Scheme.{u}} [X.Over (Spec (.of k))]
 
