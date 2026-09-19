@@ -48,7 +48,8 @@ functoriality needed for the overlap and cocycle maps in fan gluing.
   single monomial, and the affine toric scheme of `τ` is an open subscheme of that of `σ`.
 * `TauCeti.Toric.Fan.affineToricChart`, `TauCeti.Toric.Fan.affineToricOverlap`,
   `TauCeti.Toric.Fan.affineToricOverlapLeft` and `TauCeti.Toric.Fan.affineToricOverlapRight`: the
-  affine toric charts of a fan and the two open immersions from their pairwise overlap.
+  affine toric charts of a fan and the two maps from their pairwise overlap; these maps are open
+  immersions when their target cones are regular.
 
 ## References
 
@@ -120,14 +121,18 @@ theorem faceAffineCoordinateRingMap_trans (hi : IsIntegralLattice i)
 /-- The canonical morphism from the affine toric scheme of a face to that of its ambient cone. -/
 noncomputable def faceAffineToricSchemeMap (hi : IsIntegralLattice i)
     (hτσ : τ.IsFaceOf σ) : affineToricScheme hi τ ⟶ affineToricScheme hi σ :=
-  Spec.map (CommRingCat.ofHom (faceAffineCoordinateRingMap hi hτσ).toRingHom)
+  affineToricSchemeMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
+    fun _ hx ↦ hτσ.le hx
 
 /-- The morphism attached to a face inclusion is the spectrum of its coordinate-ring
 restriction. -/
 theorem faceAffineToricSchemeMap_def (hi : IsIntegralLattice i) (hτσ : τ.IsFaceOf σ) :
     faceAffineToricSchemeMap hi hτσ =
       Spec.map (CommRingCat.ofHom (faceAffineCoordinateRingMap hi hτσ).toRingHom) :=
-  (rfl)
+  by
+    rw [faceAffineToricSchemeMap, faceAffineCoordinateRingMap]
+    exact affineToricSchemeMap_def hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
+      (fun _ hx ↦ hτσ.le hx)
 
 /-- The morphism of a cone viewed as its own face is the identity morphism. -/
 @[simp]
@@ -143,10 +148,10 @@ theorem faceAffineToricSchemeMap_trans (hi : IsIntegralLattice i)
     (hυτ : υ.IsFaceOf τ) (hτσ : τ.IsFaceOf σ) :
     faceAffineToricSchemeMap hi hυτ ≫ faceAffineToricSchemeMap hi hτσ =
       faceAffineToricSchemeMap hi (hυτ.trans hτσ) := by
-  rw [faceAffineToricSchemeMap_def, faceAffineToricSchemeMap_def,
-    faceAffineToricSchemeMap_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-  exact congrArg Spec.map <| congrArg CommRingCat.ofHom <|
-    congrArg AlgHom.toRingHom (faceAffineCoordinateRingMap_trans hi hυτ hτσ)
+  simpa [faceAffineToricSchemeMap] using
+    affineToricSchemeMap_comp hi hi hi (AddMonoidHom.id N) (AddMonoidHom.id N)
+      LinearMap.id LinearMap.id (fun _ ↦ rfl) (fun _ ↦ rfl)
+      (fun _ hx ↦ hυτ.le hx) (fun _ hx ↦ hτσ.le hx)
 
 /-! ### Localizations and open immersions -/
 
@@ -289,20 +294,20 @@ theorem affineToricOverlapRight_def (σ τ : Φ.cones) :
         (Φ.inf_isFaceOf_right σ.property τ.property) :=
   (rfl)
 
-/-- In a regular fan, the map from a pairwise overlap into its left chart is an open
-immersion. -/
-theorem isOpenImmersion_affineToricOverlapLeft (hΦ : Φ.IsRegular) (σ τ : Φ.cones) :
+/-- If the left target cone is regular, the map from a pairwise overlap into its left chart is an
+open immersion. -/
+theorem isOpenImmersion_affineToricOverlapLeft (σ τ : Φ.cones)
+    (hσ : IsRegularCone i σ.1) :
     IsOpenImmersion (Φ.affineToricOverlapLeft σ τ) :=
-  ((Φ.isRegular_iff.mp hΦ) σ σ.property).isOpenImmersion_faceAffineToricSchemeMap
-    Φ.lattice
+  hσ.isOpenImmersion_faceAffineToricSchemeMap Φ.lattice
     (Φ.inf_isFaceOf_left σ.property τ.property)
 
-/-- In a regular fan, the map from a pairwise overlap into its right chart is an open
-immersion. -/
-theorem isOpenImmersion_affineToricOverlapRight (hΦ : Φ.IsRegular) (σ τ : Φ.cones) :
+/-- If the right target cone is regular, the map from a pairwise overlap into its right chart is an
+open immersion. -/
+theorem isOpenImmersion_affineToricOverlapRight (σ τ : Φ.cones)
+    (hτ : IsRegularCone i τ.1) :
     IsOpenImmersion (Φ.affineToricOverlapRight σ τ) :=
-  ((Φ.isRegular_iff.mp hΦ) τ τ.property).isOpenImmersion_faceAffineToricSchemeMap
-    Φ.lattice
+  hτ.isOpenImmersion_faceAffineToricSchemeMap Φ.lattice
     (Φ.inf_isFaceOf_right σ.property τ.property)
 
 end Fan
