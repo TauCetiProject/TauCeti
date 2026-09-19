@@ -27,14 +27,20 @@ submodule.
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sections D U`, the displayed `Γ(X, U)`-submodule of
-  `Γ(𝒦_X, U)`, with `mem_sections_iff` its description over a nonempty open subset;
+  `Γ(𝒦_X, U)`, with `mem_sections_iff` its description over a nonempty open subset and
+  `rationalFunctionsEquiv_symm_mem_sections` its membership criterion for a rational function;
+  `sections_congr` and `sections_add_zsmul_ofPoint_eq` describe its dependence on the divisor's
+  coefficients inside `U`;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.submodule D`, the same data as a submodule of the
   *sheaf* `𝒦_X` — the membership condition is local — and
   `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sheaf D`, the resulting sheaf `𝒪_X(D)` of
   `𝒪_X`-modules, together with its monomorphism `sheafι D : 𝒪_X(D) ⟶ 𝒦_X`, which is described on
-  sections by `sheafι_app_injective`, `sheafι_app_mem` and `range_sheafι_app`;
+  sections by `sheafι_app_injective`, `sheafι_app_mem` and `range_sheafι_app`, and the construction
+  `sectionMk` of a section from a rational function satisfying the order bound, and
+  `sheafLift`, the factorization through `𝒪_X(D)` of a morphism to `𝒦_X` satisfying that bound;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sheafHomOfLE`, the inclusion
-  `𝒪_X(D) ⟶ 𝒪_X(E)` for `D ≤ E`, and
+  `𝒪_X(D) ⟶ 𝒪_X(E)` for `D ≤ E`, with `sheafHomOfLE_app_bijective_of_coeff_eq` showing that it is
+  bijective on sections wherever the divisors' coefficients agree, and
   `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.unitToSheaf`, the factorization of `𝒪_X ⟶ 𝒦_X`
   through `𝒪_X(D)` for an effective `D`;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sheafOverMulIsoOfCoeffEq`, multiplication by a
@@ -130,6 +136,26 @@ lemma mem_sections {D : SchemeWeilDivisor X} {U : X.Opens}
         -WeilDivisor.coeff D x ≤ X.ord (Scheme.rationalFunctionsEquiv U s) x :=
   (Iff.rfl)
 
+/-- The sections of `𝒪_X(D)` over `U` depend only on the coefficients of `D` at the
+codimension-one points of `U`. -/
+lemma sections_congr {D E : SchemeWeilDivisor X} {U : X.Opens}
+    (h : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
+      WeilDivisor.coeff D y = WeilDivisor.coeff E y) :
+    sections D U = sections E U := by
+  ext s
+  simp only [mem_sections]
+  exact forall_congr' fun y ↦ forall_congr' fun hy ↦ by rw [h y hy]
+
+/-- Altering a divisor at a codimension-one point `x₀` leaves the sections of its sheaf unchanged
+over every open subset missing `x₀`: the two divisor sheaves agree away from the closure of
+`x₀`. -/
+lemma sections_add_zsmul_ofPoint_eq (D : SchemeWeilDivisor X) (x₀ : CodimensionOnePoint X)
+    (n : ℤ) {U : X.Opens} (hU : (x₀ : X) ∉ U) :
+    sections (D + n • WeilDivisor.ofPoint x₀) U = sections D U :=
+  sections_congr fun y hy ↦ by
+    have hne : y ≠ x₀ := fun hyx ↦ hU (hyx ▸ hy)
+    simp [hne]
+
 open Scheme in
 /-- Over a nonempty open subset, a section of `𝒦_X` lies in `𝒪_X(D)` exactly when it vanishes or
 has order at least `-D` at every codimension-one point of that subset.
@@ -151,6 +177,15 @@ lemma mem_sections_iff {D : SchemeWeilDivisor X} {U : X.Opens} [Nonempty U]
   · rintro (h0 | h) x hx
     · exact Or.inl h0
     · exact Or.inr (h x hx)
+
+/-- A rational function whose order is at least `-D` at every codimension-one point of a nonempty
+open subset `U` is a section of `𝒪_X(D)` over `U`. -/
+lemma rationalFunctionsEquiv_symm_mem_sections {D : SchemeWeilDivisor X} {U : X.Opens}
+    [Nonempty U] {c : X.functionField}
+    (h : ∀ x : CodimensionOnePoint X, (x : X) ∈ U → -WeilDivisor.coeff D x ≤ X.ord c x) :
+    (Scheme.rationalFunctionsEquiv U).symm c ∈ sections D U := by
+  rw [mem_sections_iff]
+  exact Or.inr fun x hx ↦ by rw [LinearEquiv.apply_symm_apply]; exact h x hx
 
 /-- Over an empty open subset, `𝒪_X(D)` has all of the (zero) sections of `𝒦_X`. -/
 lemma sections_eq_top_of_eq_bot (D : SchemeWeilDivisor X) {U : X.Opens} (hU : U = ⊥) :
@@ -206,10 +241,27 @@ lemma sheaf_val_obj (D : SchemeWeilDivisor X) (U : X.Opens) :
 def sheafι (D : SchemeWeilDivisor X) : sheaf D ⟶ Scheme.rationalFunctions X :=
   (submodule D).ι
 
+/-- A rational function on `U` satisfying the order bound imposed by `D`, viewed as a section of
+`𝒪_X(D)` over `U`.
+
+Together with `sheafι_app_mem` and `sheafι_app_injective` this describes the sections of `𝒪_X(D)`
+completely: they are exactly the rational functions satisfying the bound. -/
+def sectionMk {D : SchemeWeilDivisor X} {U : X.Opens} (s : Γ(Scheme.rationalFunctions X, U))
+    (hs : s ∈ sections D U) : Γ(sheaf D, U) :=
+  ⟨s, hs⟩
+
 /-- The inclusion `𝒪_X(D) ⟶ 𝒦_X` is injective on sections over every open subset. -/
 lemma sheafι_app_injective (D : SchemeWeilDivisor X) (U : X.Opens) :
     Function.Injective (Scheme.Modules.Hom.app (sheafι D) U) :=
   Subtype.val_injective
+
+/-- The section of `𝒪_X(D)` built from a rational function includes back into `𝒦_X` as that
+rational function. -/
+@[simp]
+lemma sheafι_app_sectionMk {D : SchemeWeilDivisor X} {U : X.Opens}
+    (s : Γ(Scheme.rationalFunctions X, U)) (hs : s ∈ sections D U) :
+    Scheme.Modules.Hom.app (sheafι D) U (sectionMk s hs) = s :=
+  (rfl)
 
 /-- A section of `𝒪_X(D)` over `U`, viewed as a rational function, satisfies the order bound
 imposed by `D`. -/
@@ -233,6 +285,33 @@ instance (D : SchemeWeilDivisor X) : Mono (sheafι D) := by
       Mono (((Scheme.Modules.toPresheaf X).map (sheafι D)).app U) := fun U ↦
     ConcreteCategory.mono_of_injective _ (sheafι_app_injective D U.unop)
   exact (Scheme.Modules.toPresheaf X).mono_of_mono_map (NatTrans.mono_of_mono_app _)
+
+/-- A morphism to `𝒦_X` whose sections all satisfy the order bound imposed by `D` factors through
+`𝒪_X(D)`. -/
+def sheafLift {M : X.Modules} (D : SchemeWeilDivisor X) (φ : M ⟶ Scheme.rationalFunctions X)
+    (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ sections D U) :
+    M ⟶ sheaf D :=
+  TauCeti.SheafOfModules.liftToSubmodule (submodule D) φ fun U s ↦ hφ U.unop s
+
+/-- `sheafLift` factors `φ` through `𝒪_X(D)`: composing it with the canonical inclusion
+`sheafι D : 𝒪_X(D) ⟶ 𝒦_X` recovers the original morphism `φ`. -/
+@[reassoc (attr := simp)]
+lemma sheafLift_ι {M : X.Modules} (D : SchemeWeilDivisor X) (φ : M ⟶ Scheme.rationalFunctions X)
+    (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ sections D U) :
+    sheafLift D φ hφ ≫ sheafι D = φ :=
+  TauCeti.SheafOfModules.liftToSubmodule_ι _ _ _
+
+/-- On sections, `sheafLift` followed by the inclusion into `𝒦_X` is the original morphism. -/
+@[simp]
+lemma sheafι_app_sheafLift {M : X.Modules} (D : SchemeWeilDivisor X)
+    (φ : M ⟶ Scheme.rationalFunctions X)
+    (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ sections D U)
+    (U : X.Opens) (s : Γ(M, U)) :
+    Scheme.Modules.Hom.app (sheafι D) U (Scheme.Modules.Hom.app (sheafLift D φ hφ) U s) =
+      Scheme.Modules.Hom.app φ U s := by
+  simpa only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply] using
+    ConcreteCategory.congr_hom
+      (congrArg (fun η ↦ Scheme.Modules.Hom.app η U) (sheafLift_ι D φ hφ)) s
 
 /-- A larger divisor allows more sections. -/
 lemma sections_mono {D E : SchemeWeilDivisor X} (h : D ≤ E) (U : X.Opens) :
@@ -267,6 +346,35 @@ lemma sheafHomOfLE_refl (D : SchemeWeilDivisor X) : sheafHomOfLE (le_refl D) = �
 lemma sheafHomOfLE_comp {D E F : SchemeWeilDivisor X} (h : D ≤ E) (h' : E ≤ F) :
     sheafHomOfLE h ≫ sheafHomOfLE h' = sheafHomOfLE (h.trans h') := by
   rw [← cancel_mono (sheafι F), Category.assoc, sheafHomOfLE_ι, sheafHomOfLE_ι, sheafHomOfLE_ι]
+
+/-- The comparison map `𝒪_X(D) ⟶ 𝒪_X(E)` of a pair `D ≤ E` is bijective on sections over an open
+subset on which the larger sheaf has no more sections than the smaller one. -/
+lemma sheafHomOfLE_app_bijective {D E : SchemeWeilDivisor X} (h : D ≤ E) (U : X.Opens)
+    (hDE : sections E U ≤ sections D U) :
+    Function.Bijective (Scheme.Modules.Hom.app (sheafHomOfLE h) U) := by
+  have happ : Scheme.Modules.Hom.app (sheafHomOfLE h) U ≫ Scheme.Modules.Hom.app (sheafι E) U =
+      Scheme.Modules.Hom.app (sheafι D) U := by
+    rw [← Scheme.Modules.Hom.comp_app, sheafHomOfLE_ι]
+  have hcomp : ∀ a : Γ(sheaf D, U),
+      Scheme.Modules.Hom.app (sheafι E) U (Scheme.Modules.Hom.app (sheafHomOfLE h) U a) =
+        Scheme.Modules.Hom.app (sheafι D) U a := fun a ↦ by
+    simpa using ConcreteCategory.congr_hom happ a
+  have hinj : Function.Injective (Scheme.Modules.Hom.app (sheafHomOfLE h) U) := fun a b hab ↦
+    sheafι_app_injective D U (by rw [← hcomp a, ← hcomp b, hab])
+  refine ⟨hinj, fun t ↦ ?_⟩
+  obtain ⟨a, ha⟩ : Scheme.Modules.Hom.app (sheafι E) U t ∈
+      Set.range (Scheme.Modules.Hom.app (sheafι D) U) := by
+    rw [range_sheafι_app]
+    exact hDE (sheafι_app_mem E U t)
+  exact ⟨a, sheafι_app_injective E U (by rw [hcomp a, ha])⟩
+
+/-- The comparison map `𝒪_X(D) ⟶ 𝒪_X(E)` of a pair `D ≤ E` is bijective on sections over an open
+subset at whose codimension-one points the two divisors agree. -/
+lemma sheafHomOfLE_app_bijective_of_coeff_eq {D E : SchemeWeilDivisor X} (h : D ≤ E)
+    {U : X.Opens} (hcoeff : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
+      WeilDivisor.coeff D y = WeilDivisor.coeff E y) :
+    Function.Bijective (Scheme.Modules.Hom.app (sheafHomOfLE h) U) :=
+  sheafHomOfLE_app_bijective h U (sections_congr hcoeff).ge
 
 /-- For an effective divisor `D`, every regular function on `U` is a section of `𝒪_X(D)`. -/
 lemma toRationalFunctions_app_mem_sections {D : SchemeWeilDivisor X}

@@ -63,6 +63,8 @@ names around it. The cardinality identity is still expressed through the squarin
 * `TauCeti.card_le_card_elementaryTwoQuotient_of_forall_sq_eq_one` and
   `TauCeti.le_twoRank_of_card_eq_two_pow`: a subgroup of exponent dividing two bounds the
   elementary-2 quotient, hence the 2-rank, from below.
+* `TauCeti.sq_eq_one_of_card_elementaryTwoQuotient_eq_card`: a finite group as large as `G/G²`
+  has exponent dividing two.
 * `TauCeti.twoRank` and `TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
   `|G/G²| = 2 ^ twoRank`, and `TauCeti.twoRank_eq_of_card_elementaryTwoQuotient_eq_two_pow` its
   inversion (`|G/G²| = 2 ^ n → twoRank G = n`).
@@ -460,6 +462,16 @@ theorem le_twoRank_of_card_eq_two_pow {H : Subgroup G} {r : ℕ} (hH : ∀ x ∈
   have h := card_le_card_elementaryTwoQuotient_of_forall_sq_eq_one G hH
   rw [hcard, card_elementaryTwoQuotient_eq_two_pow_twoRank] at h
   exact (Nat.pow_le_pow_iff_right one_lt_two).mp h
+
+variable {G} in
+/-- **A finite commutative group as large as its maximal elementary-2 quotient has exponent
+dividing two.** The 2-torsion `{g | g² = 1}` is equinumerous with `G / G²`
+(`card_elementaryTwoQuotient_eq_card_twoTorsion`), so it then exhausts `G`. -/
+theorem sq_eq_one_of_card_elementaryTwoQuotient_eq_card
+    (h : Nat.card (ElementaryTwoQuotient G) = Nat.card G) (g : G) : g ^ 2 = 1 := by
+  rw [card_elementaryTwoQuotient_eq_card_twoTorsion, ← Set.coe_ofPred, Nat.card_coe_set_eq,
+    ← Set.eq_univ_iff_ncard] at h
+  simpa only [Set.mem_ofPred_eq] using Set.eq_univ_iff_forall.mp h g
 
 end FiniteCardinality
 

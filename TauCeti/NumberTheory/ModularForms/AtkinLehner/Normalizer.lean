@@ -38,6 +38,8 @@ of `(·) ^ (2 - k)` has to be chosen.
 * `TauCeti.atkinLehnerNormalizer_mul`: it is multiplicative in the divisor, which is what makes
   the normalized operators multiply the way the raw ones do.
 * `TauCeti.atkinLehnerNormalizer_one`: at `Q = 1` it is `1`.
+* `TauCeti.conj_atkinLehnerNormalizer`: it is real, so complex conjugation fixes it; this is what
+  lets the normalized operators be Petersson-unitary.
 
 ## References
 
@@ -46,6 +48,8 @@ of `(·) ^ (2 - k)` has to be chosen.
 -/
 
 public section
+
+open scoped ComplexConjugate
 
 namespace TauCeti
 
@@ -102,5 +106,13 @@ the identity. -/
 theorem atkinLehnerNormalizer_one (k : ℤ) : atkinLehnerNormalizer 1 k = 1 := by
   rw [atkinLehnerNormalizer_def]
   simp
+
+/-- **The normalizer is real**: it is a power of the real number `√Q`, so complex conjugation
+fixes it. The Petersson product is conjugate-linear in one argument, so this is what makes the
+scalar a normalized operator contributes to `⟪𝒲 f, 𝒲 g⟫` the *square* of the normalizer. -/
+@[simp]
+theorem conj_atkinLehnerNormalizer (Q : ℕ) (k : ℤ) :
+    conj (atkinLehnerNormalizer Q k) = atkinLehnerNormalizer Q k := by
+  rw [atkinLehnerNormalizer_def, map_zpow₀, Complex.conj_ofReal]
 
 end TauCeti

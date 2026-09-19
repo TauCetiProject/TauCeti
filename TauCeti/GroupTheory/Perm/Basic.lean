@@ -15,8 +15,9 @@ import Mathlib.GroupTheory.Perm.ViaEmbedding
 This file records general-purpose facts about permutations: an identity between transpositions,
 a characterization of permutations with a unique fixed point, functions constant on a permutation
 orbit, the orbit relation of an involution, a positive-power representative of a relation inside a
-periodic orbit, a permutation transported along an injection, and the combination of two
-permutations transported along injections with disjoint ranges.
+periodic orbit, a permutation transported along an injection, the combination of two
+permutations transported along injections with disjoint ranges, and the fact that a permutation
+is a single cycle on each of its own orbits.
 -/
 
 public section
@@ -74,6 +75,37 @@ theorem exists_pos_pow_eq_of_mem_periodicPts (h : σ.SameCycle x y)
   exact hred
 
 end Equiv.Perm.SameCycle
+
+namespace Equiv.Perm
+
+variable {α : Type*} (σ : Equiv.Perm α)
+
+/-- A permutation is a single cycle on each of its own orbits. -/
+theorem isCycleOn_setOf_sameCycle (x : α) : σ.IsCycleOn {y | σ.SameCycle x y} :=
+  ⟨σ.bijOn fun _ => sameCycle_apply_right, fun _ hy _ hz => hy.symm.trans hz⟩
+
+/-- A permutation is a single cycle on each fibre of the quotient map onto its orbits. This is the
+form in which the cyclic order around a vertex of a ribbon graph is read off a permutation. -/
+theorem isCycleOn_preimage_quotientMk (b : Quotient (SameCycle.setoid σ)) :
+    σ.IsCycleOn (Quotient.mk (SameCycle.setoid σ) ⁻¹' {b}) := by
+  induction b using Quotient.inductionOn with
+  | _ x =>
+    have hfibre : Quotient.mk (SameCycle.setoid σ) ⁻¹' {Quotient.mk _ x} =
+        {y | σ.SameCycle x y} := by
+      ext y
+      simp only [Set.mem_preimage, Set.mem_singleton_iff, Quotient.eq, Set.mem_ofPred_eq]
+      exact sameCycle_comm
+    rw [hfibre]
+    exact σ.isCycleOn_setOf_sameCycle x
+
+/-- Transporting a permutation along an equivalence transports its cycles. -/
+@[simp]
+theorem sameCycle_permCongr {β : Type*} (e : α ≃ β) {x y : α} :
+    (e.permCongr σ).SameCycle (e x) (e y) ↔ σ.SameCycle x y := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.map fun z ↦ by simp⟩
+  simpa using h.map (g := e.symm) fun z ↦ by simp
+
+end Equiv.Perm
 
 namespace TauCeti
 

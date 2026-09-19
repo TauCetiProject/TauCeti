@@ -22,6 +22,8 @@ subsets of `ℂ` are null in `ℍ`.
   `UpperHalfPlane.comap_absolutelyContinuous_volume`: mutual absolute continuity.
 * the `IsOpenPosMeasure` instance for `volume : Measure ℍ`.
 * `UpperHalfPlane.volume_preimage_coe_null`: preimages of Lebesgue-null sets are null.
+* the `NullSingletonClass` instance for `volume : Measure ℍ`: points, hence countable sets, are
+  null.
 
 Split out of the Petersson inner-product development ported from the AINTLIB
 `LeanModularForms` project
@@ -73,5 +75,11 @@ theorem volume_preimage_coe_null {S : Set ℂ} (hS : volume S = 0) :
   refine volume_absolutelyContinuous_comap ?_
   rw [isOpenEmbedding_coe.measurableEmbedding.comap_apply]
   exact measure_mono_null (image_preimage_subset _ _) hS
+
+/-- Points of `ℍ` have zero invariant measure. -/
+instance : NullSingletonClass (volume : Measure ℍ) where
+  measure_singleton τ := by
+    have h := volume_preimage_coe_null (measure_singleton (τ : ℂ))
+    rwa [← image_singleton, isOpenEmbedding_coe.injective.preimage_image] at h
 
 end UpperHalfPlane

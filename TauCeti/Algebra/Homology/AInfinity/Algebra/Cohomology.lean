@@ -22,6 +22,7 @@ boundary as well.  Neither argument needs homogeneous inputs.
 
 The arbitrary-input arity-three identity `AInfinityAlgebra.m_one_m_three` exhibits the associator
 of the binary operation as a unary boundary, so the induced product is associative on cohomology.
+Together with bilinearity, this makes the cohomology an associative nonunital `R`-algebra.
 
 ## Main definitions
 
@@ -32,6 +33,8 @@ of the binary operation as a unary boundary, so the induced product is associati
 * `TauCeti.AInfinityAlgebra.cohomologyClass`: the class represented by a cycle.
 * `TauCeti.AInfinityAlgebra.cohomologyMul`: the product on cohomology induced by the binary
   operation.
+* `TauCeti.AInfinityAlgebra.instNonUnitalRingCohomology`, together with the scalar tower and
+  commuting-scalars instances: the cohomology as an associative nonunital `R`-algebra.
 
 ## References
 
@@ -258,6 +261,30 @@ theorem cohomologyMul_assoc (𝒜 : AInfinityAlgebra R A) (a b c : 𝒜.Cohomolo
   simp only [cohomologyMul_cohomologyClass]
   rw [cohomologyClass_eq_iff]
   exact 𝒜.m_two_assoc_sub_mem_boundaries hx hy hz
+
+/-! ### The cohomology algebra -/
+
+/-- The cohomology of an `A∞` algebra is an associative nonunital ring under `cohomologyMul`. -/
+instance instNonUnitalRingCohomology (𝒜 : AInfinityAlgebra R A) :
+    NonUnitalRing 𝒜.Cohomology where
+  mul := fun a b ↦ 𝒜.cohomologyMul a b
+  left_distrib a b c := (𝒜.cohomologyMul a).map_add b c
+  right_distrib a b c := LinearMap.map_add₂ 𝒜.cohomologyMul a b c
+  zero_mul a := LinearMap.map_zero₂ 𝒜.cohomologyMul a
+  mul_zero a := (𝒜.cohomologyMul a).map_zero
+  mul_assoc := 𝒜.cohomologyMul_assoc
+
+/-- Multiplication on cohomology is `cohomologyMul`. -/
+@[simp]
+theorem cohomology_mul_eq_cohomologyMul (𝒜 : AInfinityAlgebra R A) (a b : 𝒜.Cohomology) :
+    a * b = 𝒜.cohomologyMul a b :=
+  rfl
+
+instance (𝒜 : AInfinityAlgebra R A) : IsScalarTower R 𝒜.Cohomology 𝒜.Cohomology where
+  smul_assoc r a b := LinearMap.map_smul₂ 𝒜.cohomologyMul r a b
+
+instance (𝒜 : AInfinityAlgebra R A) : SMulCommClass R 𝒜.Cohomology 𝒜.Cohomology where
+  smul_comm r a b := ((𝒜.cohomologyMul a).map_smul r b).symm
 
 end AInfinityAlgebra
 

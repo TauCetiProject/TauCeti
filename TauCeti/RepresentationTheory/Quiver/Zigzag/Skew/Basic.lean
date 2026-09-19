@@ -29,6 +29,8 @@ ordinary zigzag relation ideal, so the two presentations agree there.
 * `TauCeti.SkewZigzagParameter`: a unit-valued backtrack-ratio labelling.
 * the `One` instance on `TauCeti.SkewZigzagParameter`: the constant parameter, all of whose ratios
   are one.
+* the `CommGroup` instance on `TauCeti.SkewZigzagParameter`: over a commutative monoid, parameters
+  multiply ratio by ratio.
 * `TauCeti.IsSkewZigzagRelator` and `TauCeti.skewZigzagIdeal`: the uniform skew relation family
   and the two-sided ideal it generates, with `TauCeti.skewZigzagIdeal_eq_span` reading it as a
   two-sided span.
@@ -115,6 +117,75 @@ theorem one_ratio {i j j' : V} (h : G.Adj i j) (h' : G.Adj i j') :
     (1 : SkewZigzagParameter k G).ratio h h' = 1 := (rfl)
 
 end One
+
+section Group
+
+variable {k : Type w} [CommMonoid k] {V : Type u} {G : SimpleGraph V}
+
+/-- The ratio-by-ratio product of two skew-zigzag parameters. -/
+instance : Mul (SkewZigzagParameter k G) where
+  mul c c' :=
+    { ratio _ _ _ h h' := c.ratio h h' * c'.ratio h h'
+      ratio_self := by intro i j h; rw [c.ratio_self, c'.ratio_self, one_mul]
+      ratio_inv := by
+        intro i j j' h h'
+        calc c.ratio h h' * c'.ratio h h' * (c.ratio h' h * c'.ratio h' h)
+            = c.ratio h h' * c.ratio h' h * (c'.ratio h h' * c'.ratio h' h) := by ac_rfl
+          _ = 1 := by rw [c.ratio_inv, c'.ratio_inv, one_mul]
+      ratio_cocycle := by
+        intro i j j' j'' h h' h''
+        calc c.ratio h h' * c'.ratio h h' * (c.ratio h' h'' * c'.ratio h' h'') *
+              (c.ratio h'' h * c'.ratio h'' h)
+            = c.ratio h h' * c.ratio h' h'' * c.ratio h'' h *
+                (c'.ratio h h' * c'.ratio h' h'' * c'.ratio h'' h) := by ac_rfl
+          _ = 1 := by rw [c.ratio_cocycle, c'.ratio_cocycle, one_mul] }
+
+/-- The ratio-by-ratio inverse of a skew-zigzag parameter. -/
+instance : Inv (SkewZigzagParameter k G) where
+  inv c :=
+    { ratio _ _ _ h h' := (c.ratio h h')⁻¹
+      ratio_self := by intro i j h; rw [c.ratio_self, inv_one]
+      ratio_inv := by intro i j j' h h'; rw [← mul_inv, c.ratio_inv, inv_one]
+      ratio_cocycle := by
+        intro i j j' j'' h h' h''
+        rw [← mul_inv, ← mul_inv, c.ratio_cocycle, inv_one] }
+
+/-- The ratios of a product of parameters are the products of their ratios. -/
+@[simp]
+theorem mul_ratio (c c' : SkewZigzagParameter k G) {i j j' : V} (h : G.Adj i j)
+    (h' : G.Adj i j') : (c * c').ratio h h' = c.ratio h h' * c'.ratio h h' := (rfl)
+
+/-- The ratios of an inverse parameter are the inverses of its ratios. -/
+@[simp]
+theorem inv_ratio (c : SkewZigzagParameter k G) {i j j' : V} (h : G.Adj i j)
+    (h' : G.Adj i j') : c⁻¹.ratio h h' = (c.ratio h h')⁻¹ := (rfl)
+
+/-- Over a commutative monoid, **skew-zigzag parameters form a commutative group** under the
+ratio-by-ratio product, with the constant parameter as identity. -/
+instance : CommGroup (SkewZigzagParameter k G) where
+  mul_assoc c c' c'' := by
+    ext i j j' h h'
+    simp only [mul_ratio, mul_assoc]
+  one_mul c := by
+    ext i j j' h h'
+    simp only [mul_ratio, one_ratio, one_mul]
+  mul_one c := by
+    ext i j j' h h'
+    simp only [mul_ratio, one_ratio, mul_one]
+  inv_mul_cancel c := by
+    ext i j j' h h'
+    simp only [mul_ratio, inv_ratio, one_ratio, inv_mul_cancel]
+  mul_comm c c' := by
+    ext i j j' h h'
+    simp only [mul_ratio, mul_comm]
+
+/-- The ratios of a quotient of parameters are the quotients of their ratios. -/
+@[simp]
+theorem div_ratio (c c' : SkewZigzagParameter k G) {i j j' : V} (h : G.Adj i j)
+    (h' : G.Adj i j') : (c / c').ratio h h' = c.ratio h h' / c'.ratio h h' := by
+  rw [div_eq_mul_inv, mul_ratio, inv_ratio, div_eq_mul_inv]
+
+end Group
 
 section Map
 

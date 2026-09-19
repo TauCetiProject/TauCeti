@@ -18,12 +18,12 @@ in every dimension: the kernel and derivative are zero in dimensions zero and tw
 one-dimensional kernel is continuous, and the higher-dimensional singularities are integrable.
 This file packages that fact with Mathlib's canonical distribution induced by a locally
 integrable function.  The resulting distribution is the object to which the distributional
-identity `-Δ Gₙ = δ₀` will apply.
+identity `-Δ Gₙ = δ₀` applies.
 
 The normalization and decay estimate are the standard ones from Evans, *Partial Differential
 Equations*, Section 2.2.  The kernel and its derivative have locally integrable singularities;
-their induced distribution and test-function pairing provide the input for the later proof of
-the distributional identity `-Δ Gₙ = δ₀`.
+their local integrability is the input for the distributional identity `-Δ Gₙ = δ₀`, proved in
+`TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.DistributionalLaplacian`.
 
 ## Main declarations
 

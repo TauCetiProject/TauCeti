@@ -86,6 +86,27 @@ theorem valuation_ne_zero_of_mem_rationalSubset {Aplus : Subring A} {T : Finset 
 
 variable [IsTopologicalRing A]
 
+/-- The canonical valuation of a point in `R(T/s)` extends continuously to the algebraic
+localisation with `locTopology`, provided the ring of definition lies in `Aplus`. -/
+theorem isContinuous_extendToLocalization_of_mem_rationalSubset (P : PairOfDefinition A)
+    (Aplus : Subring A) (hP : P.ringOfDefinition ≤ Aplus) (T : Finset A) (s : A)
+    (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) {v : Spv A} (hv : v ∈ rationalSubset Aplus T s) :
+    letI := locTopology P T s S hden
+    (v.valuation.extendToLocalization
+      (Valuation.powers_le_supp_primeCompl (valuation_ne_zero_of_mem_rationalSubset hv))
+      S).IsContinuous := by
+  let _ := locTopology P T s S hden
+  have hspa := rationalSubset_subset_spa Aplus T s hv
+  have hA₀ : ∀ a ∈ P.ringOfDefinition, v.valuation a ≤ 1 := fun a ha ↦ by
+    rw [← map_one v.valuation, valuation_le_iff]
+    exact ((mem_spa_iff Aplus v).mp hspa).2 a (hP ha)
+  have hT : ∀ t ∈ T, v.valuation t ≤ v.valuation s := fun t ht ↦
+    (valuation_le_iff v t s).mpr (((mem_rationalSubset_iff Aplus T s v).mp hv).2.1 t ht)
+  exact isContinuous_extendToLocalization S P T s hden
+    ((isContinuous_def v).mp ((mem_spa_iff Aplus v).mp hspa).1)
+    (valuation_ne_zero_of_mem_rationalSubset hv) hA₀ hT
+
 /-- **Every point of `R(T/s)` is the pullback of a point of the adic spectrum of the rational
 localisation.** The canonical valuation of the point is continuous, dominates every numerator by
 the denominator, and is `≤ 1` on `A⁺`; extending it along `A → Aₛ` therefore gives a continuous
@@ -113,9 +134,7 @@ theorem exists_mem_spa_comap_algebraMap_eq (P : PairOfDefinition A) (Aplus : Sub
     (v.valuation.extendToLocalization (Valuation.powers_le_supp_primeCompl hs) S), ?_, ?_⟩
   · rw [mem_spa_iff]
     refine ⟨(isContinuous_ofValuation_iff _).mpr ?_, fun x hx ↦ ?_⟩
-    · exact isContinuous_extendToLocalization S P T s hden
-        ((isContinuous_def v).mp ((mem_spa_iff Aplus v).mp hspa).1) hs
-        (fun a ha ↦ hplus a (hP ha)) hT
+    · exact isContinuous_extendToLocalization_of_mem_rationalSubset P Aplus hP T s S hden hv
     · rw [vle_ofValuation, map_one]
       exact extendToLocalization_le_one_of_mem_integralClosure_adjoin_plus S T s Aplus hs
         hplus hT hx

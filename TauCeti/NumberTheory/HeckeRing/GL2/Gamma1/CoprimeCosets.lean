@@ -233,11 +233,7 @@ lemma exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none (hp : 0 < p) (hσ10 : σ 
     linear_combination hσdet
   obtain ⟨γ, hγmat⟩ : ∃ γ : SL(2, ℤ), (γ : Matrix (Fin 2) (Fin 2) ℤ) =
       !![σ 0 0 * (p : ℤ), σ 0 1; (N : ℤ), 1] := ⟨⟨_, hdet⟩, rfl⟩
-  have hmp : ((σ 0 0 * (p : ℤ) : ℤ) : ZMod N) = 1 := by
-    have hσΓ0 : σ ∈ Gamma0 N := Gamma0_mem.mpr (by rw [hσ10]; simp)
-    simpa [hσ11] using intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hσΓ0
-  refine ⟨γ, (Gamma1_mem N γ).mpr ⟨?_, ?_, ?_⟩, ?_⟩
-  · simpa [hγmat] using hmp
+  refine ⟨γ, mem_Gamma1_iff.mpr ⟨Gamma0_mem.mpr ?_, ?_⟩, ?_⟩
   · simp [hγmat]
   · simp [hγmat]
   · have e00 : (γ 0 0 : ℤ) = σ 0 0 * (p : ℤ) := by rw [hγmat]; simp

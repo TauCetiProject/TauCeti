@@ -59,6 +59,8 @@ by `isHomogeneous_gradedCoderiv` and `IsGradedCoderivation.isHomogeneous`.
   determined by its letter component.
 * `TauCeti.ReducedTensorWords.iSup_gradedPiece_eq_top`: the total-degree pieces span the reduced
   tensor coalgebra.
+* `TauCeti.ReducedTensorWords.isHomogeneous_map`: applying a degree-zero homogeneous map to every
+  letter preserves the total degree of a word.
 * `TauCeti.ReducedTensorWords.map_koszulTwist_apply_of_mem`: the letterwise twist has the expected
   scalar action on each total-degree piece.
 * `TauCeti.LinearMap.IsHomogeneous.map_koszulTwist_comp`: a homogeneous endomorphism of reduced
@@ -79,7 +81,7 @@ public section
 
 open scoped BigOperators DirectSum TensorProduct
 
-universe uR uM
+universe uR uM uN
 
 namespace TauCeti
 
@@ -327,6 +329,31 @@ theorem ReducedTensorWords.mem_gradedPiece_of_tprod (G : InternalGrading R M) {n
     (x : Fin n → M) (𝒟 : Fin n → ℤ) (h𝒟 : ∀ i, x i ∈ G.piece (𝒟 i)) :
     of R M ⟨n, hn⟩ (PiTensorProduct.tprod R x) ∈ gradedPiece G (∑ i, 𝒟 i) :=
   Submodule.subset_span ⟨n, hn, 𝒟, x, h𝒟, rfl, rfl⟩
+
+/-- Applying a degree-zero homogeneous map to every letter preserves the total degree of a word:
+the letterwise extension `ReducedTensorWords.map f` is homogeneous of degree zero for the total
+degree gradings. -/
+theorem ReducedTensorWords.isHomogeneous_map {N : Type uN} [AddCommMonoid N] [Module R N]
+    (G : InternalGrading R M) (H : InternalGrading R N) {f : M →ₗ[R] N}
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) :
+    LinearMap.IsHomogeneous (ReducedTensorWords.map (R := R) f) (gradedPiece G)
+      (gradedPiece H) 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro D z hz
+  refine gradedPiece_induction
+    (motive := fun w ↦ ReducedTensorWords.map (R := R) f w ∈ gradedPiece H (D + 0)) hz ?_ ?_ ?_ ?_
+  · intro n hn 𝒟 x hx hD
+    rw [map_of_tprod]
+    simpa only [hD, add_zero] using mem_gradedPiece_of_tprod H hn (fun i ↦ f (x i)) 𝒟
+      fun i ↦ by simpa only [add_zero] using hf.map_mem (hx i)
+  · rw [map_zero]
+    exact Submodule.zero_mem _
+  · intro u v _ _ hu hv
+    rw [map_add]
+    exact Submodule.add_mem _ hu hv
+  · intro a u _ hu
+    rw [map_smul]
+    exact Submodule.smul_mem _ _ hu
 
 /-- Splicing one homogeneous letter into a word of homogeneous letters stays inside the graded
 piece: the total degree is that of the untouched prefix and suffix plus the degree of the new

@@ -109,19 +109,6 @@ noncomputable def candidateGenusFieldRelativeSignSubmodule {d : ℤ} (hd : Squar
     v ∈ candidateGenusFieldRelativeSignSubmodule hd ↔ ∑ P, v P = 0 := by
   simp [candidateGenusFieldRelativeSignSubmodule, Fintype.linearCombination_apply]
 
-private theorem candidateGenusFieldGen_ne_zero {d : ℤ} (hd : Squarefree d)
-    (P : {P // P ∈ genusPrimeDiscriminants hd}) : candidateGenusFieldGen hd P ≠ 0 := by
-  have hrad : primeDiscriminantRadicand P.val ≠ 0 :=
-    primeDiscriminantRadicand_ne_zero ((genusPrimeDiscriminants_spec hd).1 P.val P.property)
-  have hq : (((primeDiscriminantRadicand P.val : ℤ) : ℚ)) ≠ 0 := by
-    exact_mod_cast hrad
-  have hmap : algebraMap ℚ (candidateGenusField hd)
-      (((primeDiscriminantRadicand P.val : ℤ) : ℚ)) ≠ 0 :=
-    by simpa using (algebraMap ℚ (candidateGenusField hd)).injective.ne hq
-  intro hzero
-  apply hmap
-  simpa [hzero] using (candidateGenusFieldGen_sq hd P).symm
-
 private theorem candidateGenusFieldProdRoot_ne_zero {d : ℤ} (hd : Squarefree d) :
     candidateGenusFieldProdRoot hd ≠ 0 := by
   rw [candidateGenusFieldProdRoot]

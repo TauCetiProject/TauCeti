@@ -287,7 +287,8 @@ theorem coe_pointsMulEquivGLSymplectic
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R m) (CommAlgCat.of R A)) :
     ((pointsMulEquivGLSymplectic R m (A := A) f : GLSymplectic (Fin m) A) :
         GL (Fin m ⊕ Fin m) A) =
-      reindexGL m A (pointsMulEquiv R m (A := A) f : GL (Fin (m + m)) A) :=
+      Equiv.reindexGL finSumFinEquiv.symm A
+        (pointsMulEquiv R m (A := A) f : GL (Fin (m + m)) A) :=
   GLSymplecticFin.coe_mulEquivGLSymplectic m A (pointsMulEquiv R m (A := A) f)
 
 end Points
