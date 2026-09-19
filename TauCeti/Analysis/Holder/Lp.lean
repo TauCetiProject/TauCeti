@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.Holder.Normed
-public import TauCeti.MeasureTheory.Function.Lp.BallAverage
+
+import TauCeti.MeasureTheory.Function.Lp.BallAverage
 
 /-!
 # Global Hölder functions in `Lᵖ`

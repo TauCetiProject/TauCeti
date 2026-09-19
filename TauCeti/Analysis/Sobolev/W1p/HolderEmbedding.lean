@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.Lp
+public import TauCeti.Analysis.Holder.Normed
 public import TauCeti.Analysis.Sobolev.W1p.Morrey
+
+import TauCeti.Analysis.Holder.Lp
 
 /-!
 # Morrey's embedding into the Hölder Banach space
@@ -41,43 +43,6 @@ open scoped Distributions ENNReal NNReal Gradient BoundedContinuousFunction
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {p : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))]
-
-private theorem W1p.morreyRepresentative_add (hp : (finrank ℝ E : ℝ≥0) < p)
-    (u v : W1p mu ⊤ (p : ℝ≥0∞)) :
-    W1p.morreyRepresentative (u + v) hp =
-      W1p.morreyRepresentative u hp + W1p.morreyRepresentative v hp := by
-  apply (Continuous.ae_eq_iff_eq mu (W1p.continuous_morreyRepresentative (u + v) hp)
-    ((W1p.continuous_morreyRepresentative u hp).add
-      (W1p.continuous_morreyRepresentative v hp))).1
-  refine (W1p.value_ae_eq_morreyRepresentative (u + v) hp).symm.trans ?_
-  have hadd := Lp.coeFn_add (W1p.value u) (W1p.value v)
-  have hadd' : ((W1p.value u + W1p.value v :
-      Lp ℝ (p : ℝ≥0∞) (mu.restrict (⊤ : Opens E))) : E → ℝ) =ᵐ[mu]
-        W1p.value u + W1p.value v := by
-    simpa only [Opens.coe_top, Measure.restrict_univ] using hadd
-  have hvalue : W1p.value (u + v) = W1p.value u + W1p.value v :=
-    by simpa only [W1p.valueL_apply] using W1p.valueL.map_add u v
-  rw [hvalue]
-  exact hadd'.trans
-      ((W1p.value_ae_eq_morreyRepresentative u hp).add
-        (W1p.value_ae_eq_morreyRepresentative v hp))
-
-private theorem W1p.morreyRepresentative_smul (hp : (finrank ℝ E : ℝ≥0) < p) (c : ℝ)
-    (u : W1p mu ⊤ (p : ℝ≥0∞)) :
-    W1p.morreyRepresentative (c • u) hp = c • W1p.morreyRepresentative u hp := by
-  apply (Continuous.ae_eq_iff_eq mu (W1p.continuous_morreyRepresentative (c • u) hp)
-    ((W1p.continuous_morreyRepresentative u hp).const_smul c)).1
-  refine (W1p.value_ae_eq_morreyRepresentative (c • u) hp).symm.trans ?_
-  have hsmul := Lp.coeFn_smul c (W1p.value u)
-  have hsmul' : ((c • W1p.value u :
-      Lp ℝ (p : ℝ≥0∞) (mu.restrict (⊤ : Opens E))) : E → ℝ) =ᵐ[mu]
-        c • W1p.value u := by
-    simpa only [Opens.coe_top, Measure.restrict_univ] using hsmul
-  have hvalue : W1p.value (c • u) = c • W1p.value u := by
-    simpa only [W1p.valueL_apply] using W1p.valueL.map_smul c u
-  rw [hvalue]
-  exact hsmul'.trans
-      ((W1p.value_ae_eq_morreyRepresentative u hp).const_smul c)
 
 private def W1p.morreyHolderSpace (hp : (finrank ℝ E : ℝ≥0) < p)
     (u : W1p mu ⊤ (p : ℝ≥0∞)) : HolderSpace (1 - finrank ℝ E / p) E ℝ := by
@@ -133,6 +98,17 @@ private theorem W1p.norm_morreyHolderSpace_le_aux
   rw [W1p.morreyHolderSpace]
   exact HolderWith.norm_toHolderSpace_le _ _ _ _ _
 
+omit [FiniteDimensional ℝ E] in
+private theorem W1p.toReal_morreyEmbedding_bound (A : ℝ≥0) (V : ℝ≥0∞) (hV : V ≠ ∞)
+    (u : W1p mu ⊤ (p : ℝ≥0∞)) :
+    ((A * ‖W1p.gradient u‖₊ : ℝ≥0) + V * ‖W1p.value u‖ₑ).toReal +
+        (A * ‖W1p.gradient u‖₊ : ℝ≥0) =
+      (A : ℝ) * ‖W1p.gradient u‖ + V.toReal * ‖W1p.value u‖ +
+        (A : ℝ) * ‖W1p.gradient u‖ := by
+  rw [ENNReal.toReal_add ENNReal.coe_ne_top (ENNReal.mul_ne_top hV enorm_ne_top),
+    ENNReal.toReal_mul, toReal_enorm]
+  simp only [ENNReal.coe_toReal, NNReal.coe_mul, coe_nnnorm]
+
 private theorem W1p.exists_bound_morreyEmbeddingLinearMap
     (hp : (finrank ℝ E : ℝ≥0) < p) :
     ∃ B : ℝ, 0 ≤ B ∧ ∀ u : W1p mu ⊤ (p : ℝ≥0∞),
@@ -154,8 +130,6 @@ private theorem W1p.exists_bound_morreyEmbeddingLinearMap
   have hV : V ≠ ∞ := by
     exact ENNReal.rpow_ne_top_of_ne_zero (measure_ball_pos mu 0 one_pos).ne'
       measure_ball_lt_top.ne
-  have hC : (A * ‖W1p.gradient u‖₊ : ℝ≥0∞) ≠ ∞ := ENNReal.coe_ne_top
-  have hvalue : ‖W1p.value u‖ₑ ≠ ∞ := enorm_ne_top
   have hbase := W1p.norm_morreyHolderSpace_le_aux hp u
   have hbase' : ‖W1p.morreyEmbeddingLinearMap hp u‖ ≤
       ((A * ‖W1p.gradient u‖₊ : ℝ≥0) +
@@ -164,10 +138,7 @@ private theorem W1p.exists_bound_morreyEmbeddingLinearMap
     convert hbase using 1
     · rfl
     · rfl
-  rw [hrep, ENNReal.coe_mul, ENNReal.toReal_add hC (ENNReal.mul_ne_top hV hvalue),
-    ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_enorm,
-    NNReal.coe_mul, coe_nnnorm] at hbase'
-  simp only [ENNReal.coe_toReal, coe_nnnorm] at hbase'
+  rw [hrep, W1p.toReal_morreyEmbedding_bound A V hV u] at hbase'
   calc
     ‖W1p.morreyEmbeddingLinearMap hp u‖ ≤
         (A : ℝ) * ‖W1p.gradient u‖ + V.toReal * ‖W1p.value u‖ +
@@ -195,6 +166,7 @@ private theorem W1p.morreyEmbedding_apply (hp : (finrank ℝ E : ℝ≥0) < p)
   rfl
 
 /-- Evaluating the Morrey embedding gives the canonical continuous representative. -/
+@[simp]
 theorem W1p.morreyEmbedding_apply_apply (hp : (finrank ℝ E : ℝ≥0) < p)
     (u : W1p mu ⊤ (p : ℝ≥0∞)) (x : E) :
     W1p.morreyEmbedding hp u x = W1p.morreyRepresentative u hp x := by
