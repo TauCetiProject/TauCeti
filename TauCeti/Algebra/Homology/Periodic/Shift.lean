@@ -61,6 +61,9 @@ open HomologicalComplex
 
 variable (C : Type u) [Category.{v} C] [Preadditive C] (n : ℕ)
 
+-- Exposure is required for the exported definitional component API below, as in Mathlib's
+-- cochain-complex shift: the `HasShift` instance and its coherence maps reduce to these
+-- definitions.
 @[expose] public section
 
 /-- The shift by `k : ℤ` on `ZMod n`-graded complexes: it sends `K` to the complex which is
