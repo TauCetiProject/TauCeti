@@ -16,9 +16,10 @@ public import TauCeti.Algebra.Module.Torsion.Basic
 
 Let `M` be a `ℤ`-graded module over a polynomial ring `k[X]` in which `X` lowers degree by a fixed
 `d`. The degrees of the homogeneous elements of `M` that are not torsion form a set
-`G.nonTorsionDegrees`, and its supremum `G.maxNonTorsionDegree` is its maximal non-torsion degree
-(for instance, it is `s` for `M` the tower `k[X]` shifted so that `1` sits in degree `s`, direct
-sum a torsion module). This is the algebraic invariant through which the
+`G.nonTorsionDegrees`. Its supremum `G.maxNonTorsionDegree` is attained, and hence is its maximal
+non-torsion degree, when `M` is finitely generated and not torsion (for instance, it is `s` for
+`M` the tower `k[X]` shifted so that `1` sits in degree `s`, direct sum a torsion module). This is
+the algebraic invariant through which the
 concordance invariant `τ` of a knot is defined: `τ(K)` is minus the maximal Alexander grading of a
 homogeneous non-torsion element of the unblocked grid homology `GH⁻(K)`, a finitely generated
 graded module over `𝔽[U]` on which `U` lowers the Alexander grading by one.
@@ -77,8 +78,8 @@ def nonTorsionDegrees (G : InternalGrading k M) : Set ℤ :=
 
 /-- The maximal non-torsion degree of a graded `k[X]`-module: the supremum of the degrees of its
 homogeneous non-torsion elements. It is only meaningful when that set is nonempty and bounded
-above, which holds for a finitely generated module that is not torsion
-(`InternalGrading.isGreatest_maxNonTorsionDegree`). -/
+above, which holds for a finitely generated module that is not torsion and on which `X` lowers
+degree (`InternalGrading.isGreatest_maxNonTorsionDegree`). -/
 noncomputable def maxNonTorsionDegree (G : InternalGrading k M) : ℤ :=
   sSup G.nonTorsionDegrees
 
