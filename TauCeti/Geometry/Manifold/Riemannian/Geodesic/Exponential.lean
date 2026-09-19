@@ -236,10 +236,9 @@ theorem continuousAt_riemannianExp [T2Space (TangentBundle I M)] {p : M}
 
 /-! ### The derivative at the origin -/
 
-/-- **The differential of the exponential map at the origin.**  Differentiating along the ray
-`t ↦ t • v`, on which the exponential map is the maximal geodesic with initial velocity `v`, the
-differential of `exp_p` at `0` sends `v` to `v`. -/
-@[simp] theorem mfderiv_riemannianExp_zero_apply [T2Space (TangentBundle I M)] (p : M)
+/-- **The differential of the exponential map at the origin** sends every tangent vector to
+itself. -/
+@[simp] theorem mfderiv_riemannianExp_apply_zero [T2Space (TangentBundle I M)] (p : M)
     (v : TangentSpace I p) :
     mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v = v := by
   have hd : MDifferentiableAt 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 :=
@@ -259,14 +258,22 @@ differential of `exp_p` at `0` sends `v` to `v`. -/
   have hgeo := ((isGeodesicCurveOnFrom_maximalGeodesic p v).hasMFDerivAt_zero
     (isOpen_geodesicInterval.mem_nhds zero_mem_geodesicInterval)).congr_of_eventuallyEq_abuse
     hray_eq
-  -- Both sides are evaluated at `1 : ℝ`; `(L ∘L (1 : ℝ →L[ℝ] ℝ).smulRight v) 1` is
-  -- `L ((1 : ℝ) • v)` by `ContinuousLinearMap.comp_apply` and
-  -- `ContinuousLinearMap.smulRight_apply`, which do not fire by `rw` or `simp` here because the
-  -- tangent spaces involved are only definitionally `TangentSpace I p`.
-  have h1 : mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 ((1 : ℝ) • v) =
-      (1 : ℝ) • v :=
+  have hcomp_apply :
+      (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 ∘L
+        (1 : ℝ →L[ℝ] ℝ).smulRight v) 1 =
+        mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v := by
+    change mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0
+      (((1 : ℝ →L[ℝ] ℝ).smulRight v) 1) = _
+    rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self, one_smul]
+  change mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0
+    (((1 : ℝ →L[ℝ] ℝ).smulRight v) 1) =
+      mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v at hcomp_apply
+  have h1 : mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0
+      (((1 : ℝ →L[ℝ] ℝ).smulRight v) 1) = ((1 : ℝ →L[ℝ] ℝ).smulRight v) 1 :=
     DFunLike.congr_fun (hasMFDerivAt_unique (hexp.comp 0 hray) hgeo) (1 : ℝ)
-  rwa [one_smul] at h1
+  have hv : ((1 : ℝ →L[ℝ] ℝ).smulRight v) 1 = v := by
+    rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self, one_smul]
+  exact Eq.trans hcomp_apply.symm (Eq.trans h1 hv)
 
 /-- **The differential of the exponential map at the origin is the identity**, under the
 canonical identification `NormedSpace.fromTangentSpace` of the tangent space to `T_p M` at `0`
@@ -275,7 +282,7 @@ theorem mfderiv_riemannianExp_zero [T2Space (TangentBundle I M)] (p : M) :
     mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 =
       (NormedSpace.fromTangentSpace (0 : TangentSpace I p)).toContinuousLinearMap := by
   ext v
-  exact mfderiv_riemannianExp_zero_apply (I := I) p v
+  exact mfderiv_riemannianExp_apply_zero (I := I) p v
 
 /-- The exponential map has the identity of `T_p M` as its derivative at the origin. -/
 theorem hasMFDerivAt_riemannianExp_zero [T2Space (TangentBundle I M)] (p : M) :
@@ -285,8 +292,34 @@ theorem hasMFDerivAt_riemannianExp_zero [T2Space (TangentBundle I M)] (p : M) :
   exact ((contMDiffAt_riemannianExp (zero_mem_expDomain p)).mdifferentiableAt
     (by simp)).hasMFDerivAt
 
-/-- **The exponential map is a local diffeomorphism at the origin**: by the inverse function
-theorem, since its differential there is the identity. -/
+/-- In extended coordinates, the exponential map has the canonical identification
+`T_p M →L[ℝ] E` as its strict derivative at the origin. -/
+theorem hasStrictFDerivAt_riemannianExp_zero [T2Space (TangentBundle I M)] (p : M) :
+    HasStrictFDerivAt
+      (writtenInExtChartAt 𝓘(ℝ, TangentSpace I p) I 0 (riemannianExp I M p))
+      (tangentSpaceCastModel I p).toContinuousLinearMap 0 := by
+  have hsmooth := contMDiffAt_riemannianExp (I := I) (M := M) (zero_mem_expDomain p)
+  have hcoord : ContDiffAt ℝ ∞
+      (writtenInExtChartAt 𝓘(ℝ, TangentSpace I p) I 0 (riemannianExp I M p)) 0 := by
+    have h := (contMDiffAt_iff.1 hsmooth).2.contDiffAt (by simp)
+    simpa only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+      Function.comp_id, Function.id_def, riemannianExp_zero] using h
+  apply hcoord.hasStrictFDerivAt'
+  · have h := (hasMFDerivAt_riemannianExp_zero (I := I) p).2
+    rw [riemannianExp_zero] at h
+    have h' : HasFDerivWithinAt
+        (writtenInExtChartAt 𝓘(ℝ, TangentSpace I p) I 0 (riemannianExp I M p))
+        ((tangentSpaceCastModel I p).toContinuousLinearMap.comp
+          ((NormedSpace.fromTangentSpace (0 : TangentSpace I p)).toContinuousLinearMap.comp
+            (tangentSpaceCastModel 𝓘(ℝ, TangentSpace I p) 0).symm.toContinuousLinearMap))
+        Set.univ 0 := by
+      simpa only [modelWithCornersSelf_coe, Set.range_id, ext_chart_model_space_apply] using h
+    apply (h'.hasFDerivAt Filter.univ_mem).congr_fderiv
+    ext v
+    rfl
+  · simp
+
+/-- **The exponential map is a local diffeomorphism at the origin.** -/
 theorem isLocalDiffeomorphAt_riemannianExp_zero [T2Space (TangentBundle I M)] (p : M) :
     IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p) 0 :=
   isLocalDiffeomorphAt_of_mfderiv_eq (contMDiffOn_riemannianExp (I := I) p)

@@ -172,9 +172,13 @@ velocity at `0`. -/
 theorem IsGeodesicCurveOnFrom.hasMFDerivAt_zero (h : IsGeodesicCurveOnFrom I γ s p v)
     (hs : s ∈ 𝓝 (0 : ℝ)) :
     HasMFDerivAt 𝓘(ℝ, ℝ) I γ 0 ((1 : ℝ →L[ℝ] ℝ).smulRight v) := by
+  have hp := h.base_eq
+  subst p
   have hvel := hasMFDerivWithinAt_curveVelocityWithin
     (h.isGeodesicCurveOn.mdifferentiableOn 0 h.zero_mem)
-  rw [eq_of_heq h.velocity_heq] at hvel
+  have hv : curveVelocityWithin I γ s 0 = v := by
+    simpa using h.velocity_eq
+  rw [hv] at hvel
   exact hvel.hasMFDerivAt hs
 
 /-- A geodesic on a parameter set containing `0` is a geodesic with the initial data it has
