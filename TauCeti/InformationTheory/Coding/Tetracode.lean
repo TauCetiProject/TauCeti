@@ -100,7 +100,7 @@ theorem natCard_tetracode : Nat.card tetracode = 9 := by
   norm_num [Nat.card_eq_fintype_card]
 
 /-- Every nonzero tetracode word has weight three. -/
-theorem hammingNorm_eq_three_of_mem_tetracode {x : Fin 4 → ZMod 3}
+theorem hammingNorm_eq_three_of_mem_tetracode_of_ne_zero {x : Fin 4 → ZMod 3}
     (hx : x ∈ tetracode) (hx0 : x ≠ 0) : hammingNorm x = 3 := by
   rw [mem_tetracode_iff] at hx
   exact (by decide : ∀ x : Fin 4 → ZMod 3,
@@ -117,7 +117,7 @@ theorem hammingMinDist_tetracode : (tetracode : Set (Fin 4 → ZMod 3)).hammingM
     have := congrFun hz 0
     norm_num at this
   obtain ⟨x, hx, hx0, hd⟩ := Set.exists_hammingNorm_eq_hammingMinDist hne
-  exact hd.symm.trans (hammingNorm_eq_three_of_mem_tetracode hx hx0)
+  exact hd.symm.trans (hammingNorm_eq_three_of_mem_tetracode_of_ne_zero hx hx0)
 
 /-- The weight distribution of the tetracode consists of one word of weight zero and eight
 words of weight three. -/
@@ -125,14 +125,10 @@ words of weight three. -/
 theorem weightDistribution_tetracode (w : ℕ) :
     (tetracode : Set (Fin 4 → ZMod 3)).weightDistribution w =
       if w = 0 then 1 else if w = 3 then 8 else 0 := by
-  by_cases hw : 4 < w
-  · rw [Set.weightDistribution_eq_zero_of_card_lt (by simpa using hw)]
-    have hw0 : w ≠ 0 := by omega
-    have hw3 : w ≠ 3 := by omega
-    simp [hw0, hw3]
-  · simp only [Set.weightDistribution_def, SetLike.mem_coe, mem_tetracode_iff]
-    rw [Nat.card_eq_fintype_card]
-    interval_cases w <;> decide
+  simpa only [SetLike.coe_sort_coe, natCard_tetracode, Nat.reduceSub] using
+    weightDistribution_eq_of_constant_weight (Set.toFinite _) tetracode.zero_mem
+      (by decide : 3 ≠ 0) (fun _ hx hx0 ↦
+        hammingNorm_eq_three_of_mem_tetracode_of_ne_zero hx hx0) w
 
 /-- The homogeneous weight enumerator of the tetracode is `X^4 + 8XY^3`. -/
 @[simp]

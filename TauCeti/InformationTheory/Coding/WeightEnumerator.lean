@@ -245,6 +245,48 @@ theorem hammingMinDist_eq_sInf_weightDistribution {β : ι → Type*} [∀ i, Ad
 
 end Set
 
+namespace TauCeti
+
+/-- A finite set containing zero whose nonzero words all have weight `d ≠ 0` has one word of
+weight zero, `Nat.card C - 1` words of weight `d`, and no words of any other weight. -/
+theorem weightDistribution_eq_of_constant_weight {ι : Type*} {β : ι → Type*} [Fintype ι]
+    [∀ i, Zero (β i)] [∀ i, DecidableEq (β i)] {C : Set (∀ i, β i)} {d : ℕ}
+    (hC : C.Finite) (h0 : 0 ∈ C) (hd : d ≠ 0)
+    (hweight : ∀ x ∈ C, x ≠ 0 → hammingNorm x = d) (w : ℕ) :
+    C.weightDistribution w = if w = 0 then 1 else if w = d then Nat.card C - 1 else 0 := by
+  have hvanish : ∀ w, w ≠ 0 → w ≠ d → C.weightDistribution w = 0 := by
+    intro w hw0 hwd
+    by_contra hw
+    obtain ⟨x, hx, hxw⟩ := (Set.weightDistribution_ne_zero_iff hC).mp hw
+    have hx0 : x ≠ 0 := by
+      intro hx0
+      simp [hx0] at hxw
+      exact hw0 hxw.symm
+    exact hwd (hxw.symm.trans (hweight x hx hx0))
+  have hshape (w : ℕ) : C.weightDistribution w =
+      (if w = 0 then 1 else 0) + (if w = d then C.weightDistribution d else 0) := by
+    by_cases hw0 : w = 0
+    · subst w
+      simp [Set.weightDistribution_zero h0, hd.symm]
+    · by_cases hwd : w = d <;> simp [hw0, hwd, hd, hvanish w hw0]
+  have hsum := Set.sum_weightDistribution hC
+  rw [Finset.sum_congr rfl (fun w _ ↦ hshape w)] at hsum
+  simp only [Finset.sum_add_distrib, Finset.sum_ite_eq', Finset.mem_range,
+    Nat.zero_lt_succ, ite_true] at hsum
+  have hcount : C.weightDistribution d = Nat.card C - 1 := by
+    by_cases hdlen : d < Fintype.card ι + 1
+    · simp only [hdlen, ite_true] at hsum
+      omega
+    · rw [Set.weightDistribution_eq_zero_of_card_lt (by omega)]
+      simp only [hdlen, ite_false, add_zero] at hsum
+      omega
+  by_cases hw0 : w = 0
+  · subst w
+    simp [Set.weightDistribution_zero h0]
+  · by_cases hwd : w = d <;> simp [hw0, hwd, hd, hcount, hvanish w hw0]
+
+end TauCeti
+
 /-! ### Monomial equivalence and direct sums -/
 
 namespace TauCeti
