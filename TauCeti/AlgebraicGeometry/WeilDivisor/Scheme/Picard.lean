@@ -332,7 +332,7 @@ theorem exists_nonempty_iso_sheaf (L : InvertibleSheaf X) :
 /-- Every line-bundle class on such a curve is the class of `𝒪_X(D)` for a Weil divisor `D`. -/
 theorem toLineBundleClass_surjective : Function.Surjective (toLineBundleClass (X := X) hX) := by
   intro a
-  obtain ⟨L, rfl⟩ := LineBundleClass.mk_surjective a
+  obtain ⟨L, rfl⟩ := Quotient.mk_surjective a
   obtain ⟨D, ⟨φ⟩⟩ := exists_nonempty_iso_sheaf hX L
   refine ⟨D, (toLineBundleClass_eq_mk_iff hX).mpr ⟨?_⟩⟩
   rw [toInvertibleSheaf_obj]
