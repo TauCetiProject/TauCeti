@@ -65,6 +65,7 @@ private theorem pFreeExponent_def (p : ℕ) (x : G) :
 
 private theorem pFreePart_eq_pow (p : ℕ) (x : G) : pFreePart p x = x ^ pFreeExponent p x := rfl
 
+/-- The `p`-free and `p`-parts of `x` multiply back to `x`. -/
 @[simp]
 theorem pFreePart_mul_pPart (p : ℕ) (x : G) : pFreePart p x * pPart p x = x :=
   mul_inv_cancel_left _ _
@@ -78,11 +79,17 @@ theorem pFreePart_mem_zpowers (p : ℕ) (x : G) : pFreePart p x ∈ Subgroup.zpo
 theorem pPart_mem_zpowers (p : ℕ) (x : G) : pPart p x ∈ Subgroup.zpowers x :=
   mul_mem (inv_mem (pFreePart_mem_zpowers p x)) (Subgroup.mem_zpowers x)
 
+/-- The `p`-free and `p`-parts of `x` commute. -/
 theorem commute_pFreePart_pPart (p : ℕ) (x : G) : Commute (pFreePart p x) (pPart p x) := by
   obtain ⟨a, ha⟩ := pFreePart_mem_zpowers p x
   obtain ⟨b, hb⟩ := pPart_mem_zpowers p x
   rw [← ha, ← hb]
   exact (Commute.refl x).zpow_zpow a b
+
+/-- The reversed product of the `p`-part and `p`-free part of `x` is `x`. -/
+@[simp]
+theorem pPart_mul_pFreePart (p : ℕ) (x : G) : pPart p x * pFreePart p x = x := by
+  rw [← (commute_pFreePart_pPart p x).eq, pFreePart_mul_pPart]
 
 @[simp]
 theorem pFreePart_one (p : ℕ) : pFreePart p (1 : G) = 1 := one_pow _
