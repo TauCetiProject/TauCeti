@@ -51,6 +51,8 @@ three reductions are prescribed modulo `2`, `3` and `5`.
   exhibits a cycle moving every root.
 * `TauCeti.exists_isSwap_mem_range_galActionHom`: a reduction with one quadratic factor and odd
   other factors exhibits a transposition.
+* `TauCeti.exists_isThreeCycle_mem_range_galActionHom`: a reduction whose only nonlinear factor
+  is cubic exhibits a `3`-cycle.
 * `TauCeti.alternatingGroup_le_range_galActionHom`: a primitive Galois image with a reduction
   whose only nonlinear factor is a cubic contains the alternating group.
 * `TauCeti.surjective_galActionHom_of_prime_natDegree`: in prime degree, irreducibility and a
@@ -132,7 +134,19 @@ theorem exists_isSwap_mem_range_galActionHom (hf : f.Monic) (p : ℕ) [Fact p.Pr
   exact ⟨σ ^ k, pow_mem hσG k, hk⟩
 
 open scoped Classical in
-/-- **A single cubic factor exhibits a `3`-cycle.** Let `f` be a monic integral polynomial whose
+/-- **A single cubic factor exhibits a `3`-cycle.** Let `f` be a monic integral polynomial and
+let `p` be a prime not dividing `disc f`. If the only irreducible factor of `f` modulo `p` of
+degree at least two is a cubic, then the Galois image contains a `3`-cycle. -/
+theorem exists_isThreeCycle_mem_range_galActionHom (hf : f.Monic)
+    (p : ℕ) [Fact p.Prime] (hp : ¬ (p : ℤ) ∣ f.discr)
+    (hthree : (f.factorDegrees p).filter (2 ≤ ·) = {3}) :
+    ∃ σ ∈ (Gal.galActionHom (f.map (Int.castRingHom ℚ)) ℂ).range, σ.IsThreeCycle := by
+  obtain ⟨σ, hσG, hσ⟩ := exists_mem_range_galActionHom_fullCycleType_eq_factorDegrees hf p hp
+  refine ⟨σ, hσG, ?_⟩
+  rw [IsThreeCycle, ← filter_fullCycleType_eq_cycleType, hσ, hthree]
+
+open scoped Classical in
+/-- **A cubic factor forces the alternating group.** Let `f` be a monic integral polynomial whose
 Galois image over `ℚ` acts primitively on the complex roots of `f`, and let `p` be a prime not
 dividing `disc f`. If the only irreducible factor of `f` modulo `p` of degree at least two is a
 cubic, then the Galois image contains the alternating group of the roots. -/
@@ -143,9 +157,8 @@ theorem alternatingGroup_le_range_galActionHom (hf : f.Monic)
     (hthree : (f.factorDegrees p).filter (2 ≤ ·) = {3}) :
     alternatingGroup ((f.map (Int.castRingHom ℚ)).rootSet ℂ) ≤
       (Gal.galActionHom (f.map (Int.castRingHom ℚ)) ℂ).range := by
-  obtain ⟨σ, hσG, hσ⟩ := exists_mem_range_galActionHom_fullCycleType_eq_factorDegrees hf p hp
-  refine alternatingGroup_le_of_isPreprimitive_of_isThreeCycle_mem hprim ?_ hσG
-  rw [IsThreeCycle, ← filter_fullCycleType_eq_cycleType, hσ, hthree]
+  obtain ⟨σ, hσG, hσ⟩ := exists_isThreeCycle_mem_range_galActionHom hf p hp hthree
+  exact alternatingGroup_le_of_isPreprimitive_of_isThreeCycle_mem hprim hσ hσG
 
 open scoped Classical in
 /-- **The full symmetric group in prime degree.** Let `f` be a monic integral polynomial of
@@ -192,7 +205,8 @@ theorem surjective_galActionHom_of_factorDegrees (hf : f.Monic)
     rw [PerfectField.separable_iff_squarefree]
     apply squarefree_map_of_nodup_factorDegrees (hf.map _).ne_zero
     rw [hqdeg]
-    simpa using (show 1 ≠ f.natDegree - 1 by omega)
+    have hne : 1 ≠ f.natDegree - 1 := by omega
+    simpa using hne
   obtain ⟨σ, hσG, hσ⟩ := exists_mem_range_galActionHom_fullCycleType_eq_factorDegrees hf q hq
   have hcyc : σ.cycleType = {f.natDegree - 1} := by
     rw [← filter_fullCycleType_eq_cycleType, hσ, hqdeg]
