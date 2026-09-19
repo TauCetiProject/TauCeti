@@ -438,21 +438,9 @@ open scoped Pointwise
 
 /-! ### Every profinite group has a generating set converging to one
 
-The proof is a Zorn's lemma argument over *partial solutions*. A partial solution consists of a
-closed subgroup `K` and a closed set `S ⊇ K`, saturated under right multiplication by `K`, whose
-generated subgroup is dense and which has only finitely many `K`-cosets outside each open
-subgroup containing `K`; so `S` generates `G` and converges to one modulo `K`. The pair
-`K = S = G` is a partial solution. A partial solution refines another when its subgroup is
-smaller, its set is smaller, it still meets every `K`-coset of the coarser set, and it meets each
-`K`-coset lying outside `K` in a single coset of its own subgroup. That last condition is what
-makes the intersection of a chain again converge to one; that the intersection still meets
-every coset is compactness. A maximal partial solution has trivial subgroup: if `K` contains
-`x ≠ 1`, pick an open normal `U` missing `x` and refine `K` to `K ⊓ U`, keeping `K`, the points
-of `S` lying in `U`, and a single `K ⊓ U`-coset in each of the finitely many `K`-cosets of `S`
-outside `K ⊔ U`. For trivial `K` the set `S` itself converges to one.
-
-The need to *choose* new representatives at each refinement is why the solutions keep whole
-cosets: a partial solution cannot in general be refined by merely adding elements of `K`. -/
+Every profinite group admits a set that converges to `1` and generates a dense subgroup
+(Ribes–Zalesskii, Proposition 2.6.2). This makes the family used to define the cardinal-valued
+topological generator rank nonempty. -/
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
