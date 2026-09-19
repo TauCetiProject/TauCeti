@@ -157,6 +157,16 @@ def HasPassport (t : ConnectedTriple n) (P : PassportSpec n) : Prop :=
     t.1.cycleData.2.1 = P.lam1 ∧
     t.1.cycleData.2.2 = P.laminf
 
+/-- The defining characterization of passport membership. -/
+theorem hasPassport_iff (t : ConnectedTriple n) (P : PassportSpec n) :
+    HasPassport t P ↔
+      (∃ τ : Perm (Fin n),
+        (t.1.monodromyGroup).map (MulAut.conj τ).toMonoidHom = P.G) ∧
+      t.1.cycleData.1 = P.lam0 ∧
+      t.1.cycleData.2.1 = P.lam1 ∧
+      t.1.cycleData.2.2 = P.laminf :=
+  Iff.rfl
+
 /-- Relabeling a connected triple does not change its passport membership. -/
 @[simp]
 theorem hasPassport_smul_iff (τ : Perm (Fin n)) (t : ConnectedTriple n)
