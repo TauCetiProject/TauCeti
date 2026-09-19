@@ -151,6 +151,11 @@ lemma isMinimal_of_card_eq_one (h : Fintype.card T.Component = 1) : T.IsMinimal 
   have := hi.2.symm.trans (T.intersection_eq_zero_of_card_eq_one h i i)
   linarith
 
+/-- A numerical type with a `(-1)`-index has more than one component. -/
+lemma IsMinusOneIndex.one_lt_card {i : T.Component} (h : T.IsMinusOneIndex i) :
+    1 < Fintype.card T.Component :=
+  lt_of_le_of_ne Fintype.card_pos fun h1 ↦ T.isMinimal_of_card_eq_one h1.symm i h
+
 /-! ### Genus contributions -/
 
 /-- The contribution `mᵢ (wᵢ (gᵢ - 1) - aᵢᵢ / 2)` of a component to the signed genus of a numerical
