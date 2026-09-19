@@ -23,12 +23,16 @@ to define the Riemannian exponential map by evaluation at time one.
 ## Main definitions and results
 
 * `TauCeti.Manifold.maximalGeodesic` is the chosen maximal geodesic with prescribed initial data.
+* `TauCeti.Manifold.maximalGeodesic_def` identifies it with the base projection of the maximal
+  integral curve of the geodesic spray.
 * `TauCeti.Manifold.maximalIntegralCurveInterval_geodesicSpray` identifies the two independently
   defined maximal domains.
 * `TauCeti.Manifold.isGeodesicCurveOnFrom_maximalGeodesic` gives the geodesic equation and initial
   data on the maximal domain.
 * `TauCeti.Manifold.IsGeodesicCurveOnFrom.eqOn_maximalGeodesic` is the corresponding uniqueness
   theorem for any open-interval geodesic witness.
+* `TauCeti.Manifold.IsGeodesicCurveOnFrom.eq_maximalGeodesic_of_univ` specializes uniqueness to
+  geodesics defined for all time.
 * `TauCeti.Manifold.maximalGeodesic_smul` is homogeneity in the initial velocity and time.
 
 ## References
@@ -119,6 +123,14 @@ maximal interval. -/
 def maximalGeodesic (p : M) (v : TangentSpace I p) (t : ℝ) : M :=
   (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) t).proj
 
+omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
+/-- The maximal geodesic is the base projection of the corresponding maximal integral curve of
+the geodesic spray. -/
+theorem maximalGeodesic_def (p : M) (v : TangentSpace I p) (t : ℝ) :
+    maximalGeodesic I M p v t =
+      (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) t).proj := by
+  rfl
+
 /-- The maximal geodesic has the prescribed initial data on its maximal interval. -/
 theorem isGeodesicCurveOnFrom_maximalGeodesic (p : M) (v : TangentSpace I p) :
     IsGeodesicCurveOnFrom I (maximalGeodesic I M p v) (geodesicInterval I M p v) p v := by
@@ -172,6 +184,14 @@ theorem IsGeodesicCurveOnFrom.eqOn_maximalGeodesic
   intro t ht
   rw [maximalGeodesic]
   simpa only [curveVelocityLiftWithin_proj] using congrArg TotalSpace.proj (heq ht)
+
+/-- A geodesic defined for all time with initial data `(p, v)` is the maximal geodesic. -/
+theorem IsGeodesicCurveOnFrom.eq_maximalGeodesic_of_univ
+    {p : M} {v : TangentSpace I p} {γ : ℝ → M} (hγ : IsGeodesicCurveOnFrom I γ univ p v)
+    (t : ℝ) : maximalGeodesic I M p v t = γ t := by
+  have hc : (0 : ℝ) < |t| + 1 := by positivity
+  exact (hγ.mono (uniqueDiffOn_Ioo _ _) (subset_univ _) ⟨neg_lt_zero.2 hc, hc⟩).eqOn_maximalGeodesic
+    (abs_lt.1 (lt_add_one |t|))
 
 /-- The maximal geodesic with zero initial velocity is the constant curve. -/
 @[simp] theorem maximalGeodesic_zero_velocity (p : M) :

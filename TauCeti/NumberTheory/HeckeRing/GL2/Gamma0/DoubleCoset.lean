@@ -39,6 +39,8 @@ Ported from the AINTLIB `LeanModularForms` project
 
 * `HeckeRing.GL2.Gamma0_map_le_SLnZ`: `Γ₀(N) ≤ SL₂(ℤ)` inside `GL₂(ℚ)`.
 * `HeckeRing.GL2.doubleCoset_Gamma0_map_le_doubleCoset_SLnZ`: `Γ₀(N) α Γ₀(N) ⊆ Γ α Γ`.
+* `HeckeRing.GL2.gcd_apply_one_one_eq_one`: for an integral matrix with `N ∣ c` and determinant
+  coprime to `N`, the lower-right entry is coprime to `N`.
 * `HeckeRing.GL2.doubleCoset_SLnZ_inter_Delta0_eq_doubleCoset_Gamma0_map`: the equality above.
 
 ## References
@@ -79,7 +81,7 @@ lemma doubleCoset_Gamma0_map_le_doubleCoset_SLnZ (α : GL (Fin 2) ℚ) :
 
 /-- If `N ∣ c` and `det` is coprime to `N`, then so is the lower-right entry: modulo `N` the
 determinant is `a * d`, so `d` divides a unit. -/
-private lemma gcd_apply_one_one_eq_one (A : Matrix (Fin 2) (Fin 2) ℤ) (hAN : (N : ℤ) ∣ A 1 0)
+lemma gcd_apply_one_one_eq_one (A : Matrix (Fin 2) (Fin 2) ℤ) (hAN : (N : ℤ) ∣ A 1 0)
     (hdet : Int.gcd A.det N = 1) : Int.gcd (A 1 1) N = 1 := by
   rw [← Int.isCoprime_iff_gcd_eq_one] at hdet ⊢
   obtain ⟨k, hk⟩ := hAN

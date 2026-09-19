@@ -34,7 +34,8 @@ them; that classification, which runs through the action on the projective line,
   under nonzero powers in characteristic zero.
 * `Matrix.ProjectiveSpecialLinearGroup.upperRightHom`: the translations `x ↦ !![1, x; 0, 1]`, as
   an injective additive character `R → PSL(2, R)`, parabolic exactly away from `x = 0`
-  (`isParabolic_upperRightHom_iff`).
+  (`isParabolic_upperRightHom_iff`); `mul_zpow_mul_inv_eq_upperRightHom`: a conjugate of a
+  translation by `w` has its `n`-th power conjugate to the translation by `n * w`.
 
 ## References
 
@@ -153,6 +154,15 @@ theorem upperRightHom_injective : Function.Injective (upperRightHom : AddChar R 
   rwa [upperRightHom_apply, upperRightHom_apply, QuotientGroup.eq,
     SpecialLinearGroup.transvection_inv, ← SpecialLinearGroup.transvection_add,
     SpecialLinearGroup.transvection_mem_center_iff, neg_add_eq_zero] at h
+
+omit [NoZeroDivisors R] in
+/-- If `σ` conjugates `γ` to the translation by `w`, it conjugates `γ ^ n` to the translation by
+`n * w`. -/
+theorem mul_zpow_mul_inv_eq_upperRightHom {σ γ : PSL(2, R)} {w : R}
+    (h : σ * γ * σ⁻¹ = upperRightHom w) (n : ℤ) :
+    σ * γ ^ n * σ⁻¹ = upperRightHom (n * w) := by
+  rw [← MulAut.conj_apply, map_zpow, MulAut.conj_apply, h, ← zsmul_eq_mul,
+    AddChar.map_zsmul_eq_zpow]
 
 /-- A translation is parabolic exactly when it is nontrivial. -/
 @[simp]

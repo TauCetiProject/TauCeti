@@ -7,7 +7,7 @@ module
 
 -- Public: the compactified boundary path and the filled hull occur in the exported statements.
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Compactification
-public import TauCeti.Topology.FilledHull
+public import TauCeti.Analysis.Normed.Module.FilledHull
 -- Non-public: analyticity of the primitive and the inverse function theorem are used only to
 -- prove that the primitive is an open map.
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
@@ -36,7 +36,12 @@ Two consequences describe the image by the components of the complement of `P`. 
 in `filledHull P`: it misses the unbounded complementary component.  And a complementary
 component that meets the image is contained in it.  Away from `P`, the image is therefore a union
 of bounded complementary components of `P`; identifying it with the inside of the polygon further
-requires knowing those components and showing that the image does not meet `P`.
+requires knowing those components and showing that the image does not meet `P`.  In the same
+direction, a preconnected set avoiding `P` and containing the image is equal to the image.
+
+The primitive is also proper over the complement of `P`: the points of the upper half-plane that
+it sends into a closed set avoiding `P` form a compact set.  Near the real axis and near infinity
+the primitive is close to its boundary values, which all lie on `P`.
 
 ## Main results
 
@@ -50,8 +55,14 @@ requires knowing those components and showing that the image does not meet `P`.
   boundary path outside the image.
 * `TauCeti.image_schwarzChristoffelPrimitive_subset_filledHull` -- the image lies in the filled
   hull of the boundary path.
+* `TauCeti.image_schwarzChristoffelPrimitive_subset_interior_closedConvexHull` -- the image lies
+  in the interior of the closed convex hull of the boundary path.
 * `TauCeti.connectedComponentIn_subset_image_schwarzChristoffelPrimitive` -- a complementary
   component of the boundary path meeting the image lies in the image.
+* `TauCeti.image_schwarzChristoffelPrimitive_eq_of_subset` -- a preconnected set avoiding the
+  boundary path and containing the image is the image.
+* `TauCeti.isCompact_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive` -- the
+  preimage of a closed set avoiding the boundary path is compact.
 
 ## References
 
@@ -243,6 +254,23 @@ theorem image_schwarzChristoffelPrimitive_subset_filledHull (a e : ι → ℝ) (
   rw [frontier_image_schwarzChristoffelPrimitive a e z₀ hfinite hinfty]
   exact sdiff_subset
 
+/-- **The image of the Schwarz--Christoffel primitive lies in the interior of the closed convex
+hull of its compactified boundary path.** The filled hull of a nonempty set lies in its closed
+convex hull. Since the primitive has open image, that containment automatically improves to
+containment in the interior. -/
+theorem image_schwarzChristoffelPrimitive_subset_interior_closedConvexHull
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hinfty : ∑ i, e i < -1) :
+    schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet ⊆
+      interior (closedConvexHull ℝ
+        (range (schwarzChristoffelCompactifiedBoundary a e z₀))) := by
+  let P := range (schwarzChristoffelCompactifiedBoundary a e z₀)
+  have hP : P.Nonempty := range_nonempty _
+  apply interior_maximal _
+    (isOpen_image_schwarzChristoffelPrimitive a e z₀ isOpen_upperHalfPlaneSet subset_rfl)
+  exact (image_schwarzChristoffelPrimitive_subset_filledHull a e z₀ hfinite hinfty).trans
+    (filledHull_subset_closedConvexHull hP)
+
 /-- **A complementary component of the boundary path that meets the image lies in the image.**
 The component is preconnected and avoids the path, which contains the frontier of the open
 image. -/
@@ -258,5 +286,60 @@ theorem connectedComponentIn_subset_image_schwarzChristoffelPrimitive (a e : ι 
     ⟨w, mem_connectedComponentIn hwP, hw⟩ fun z ⟨hz, hzC⟩ => ?_
   rw [closure_image_schwarzChristoffelPrimitive a e z₀ hfinite hinfty] at hz
   exact hz.resolve_right (connectedComponentIn_subset _ _ hzC)
+
+
+/-- **A preconnected set avoiding the boundary path and containing the image is the image.** -/
+theorem image_schwarzChristoffelPrimitive_eq_of_subset (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hinfty : ∑ i, e i < -1) {W : Set ℂ}
+    (hW : IsPreconnected W)
+    (hWP : Disjoint W (range (schwarzChristoffelCompactifiedBoundary a e z₀)))
+    (hFW : schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet ⊆ W) :
+    schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet = W := by
+  refine hFW.antisymm <| hW.subset_of_closure_inter_subset
+    (isOpen_image_schwarzChristoffelPrimitive a e z₀ isOpen_upperHalfPlaneSet subset_rfl) ?_
+    fun w ⟨hw, hwW⟩ => ?_
+  · have hz₀ : (z₀ : ℂ) ∈ upperHalfPlaneSet := z₀.im_pos
+    exact ⟨_, hFW (mem_image_of_mem _ hz₀), mem_image_of_mem _ hz₀⟩
+  · rw [closure_image_schwarzChristoffelPrimitive a e z₀ hfinite hinfty] at hw
+    exact hw.resolve_right (disjoint_left.mp hWP hwW)
+
+/-- **The Schwarz--Christoffel primitive is proper over the complement of its boundary path.**
+The points of the upper half-plane that the primitive sends into a closed set `K` avoiding the
+compactified boundary path form a compact set. -/
+theorem isCompact_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive (a e : ι → ℝ)
+    (z₀ : UpperHalfPlane) (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i)
+    (hinfty : ∑ i, e i < -1) {K : Set ℂ} (hK : IsClosed K)
+    (hKP : Disjoint K (range (schwarzChristoffelCompactifiedBoundary a e z₀))) :
+    IsCompact (upperHalfPlaneSet ∩ schwarzChristoffelPrimitive a e z₀ ⁻¹' K) := by
+  set F := schwarzChristoffelPrimitive a e z₀
+  refine Metric.isCompact_of_isClosed_isBounded (isClosed_of_closure_subset fun z hz => ?_) ?_
+  · -- A limit point `z` is either in the upper half-plane, where `F` is continuous, or real,
+    -- where `F` tends to a boundary value; the latter would have to lie in `K`.
+    have hzH : z ∈ closure upperHalfPlaneSet := closure_mono inter_subset_left hz
+    have : (𝓝[upperHalfPlaneSet ∩ F ⁻¹' K] z).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hz
+    have hFK : ∀ᶠ w in 𝓝[upperHalfPlaneSet ∩ F ⁻¹' K] z, F w ∈ K :=
+      eventually_nhdsWithin_of_forall fun w hw => hw.2
+    by_cases hzH' : z ∈ upperHalfPlaneSet
+    · have hcont := (differentiableOn_schwarzChristoffelPrimitive a e z₀).continuousOn.continuousAt
+        (isOpen_upperHalfPlaneSet.mem_nhds hzH')
+      exact ⟨hzH', hK.mem_of_tendsto (hcont.tendsto.mono_left nhdsWithin_le_nhds) hFK⟩
+    · have hre := ofReal_re_eq_of_mem_closure_of_notMem hzH hzH'
+      have ht := (tendsto_schwarzChristoffelPrimitive_boundary a e z₀ z.re
+        (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite z.re)).mono_left
+          (nhdsWithin_mono _ (inter_subset_left (t := F ⁻¹' K)))
+      rw [hre] at ht
+      exact absurd ⟨(z.re : OnePoint ℝ), schwarzChristoffelCompactifiedBoundary_coe a e z₀ z.re⟩
+        (disjoint_left.mp hKP (hK.mem_of_tendsto ht hFK))
+  · -- Far out, `F` stays in a neighbourhood of the vertex at infinity that misses `K`.
+    have hV : schwarzChristoffelVertexAtInfinity a e z₀ ∉ K := fun hV =>
+      disjoint_left.mp hKP hV ⟨∞, schwarzChristoffelCompactifiedBoundary_infty a e z₀⟩
+    have h := (tendsto_schwarzChristoffelPrimitive_atInfinity a e z₀ hinfty).eventually
+      (hK.isOpen_compl.mem_nhds hV)
+    rw [eventually_inf_principal, hasBasis_cobounded_norm.eventually_iff] at h
+    obtain ⟨R, -, hR⟩ := h
+    refine (isBounded_ball (x := (0 : ℂ)) (r := R)).subset fun z hz => ?_
+    rw [mem_ball_zero_iff]
+    by_contra hzR
+    exact hR (not_lt.mp hzR) hz.1 hz.2
 
 end TauCeti

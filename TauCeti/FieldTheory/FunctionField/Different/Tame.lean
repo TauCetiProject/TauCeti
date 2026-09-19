@@ -48,6 +48,9 @@ the statement.
 * `TauCeti.Divisor.coeff_different_add_one_eq_ramificationIdx_iff` and
   `TauCeti.Divisor.ramificationIdx_le_coeff_different_iff`: the same statements read on the
   different divisor.
+* `TauCeti.Divisor.tameDifferent`: the divisor `∑_{P'} (e(P' ∣ P) - 1) · P'`, with
+  `TauCeti.Divisor.tameDifferent_le_different` and `TauCeti.Divisor.tameDifferent_eq_different_iff`:
+  it is bounded by the different divisor, with equality exactly when every place is tame.
 
 ## References
 
@@ -174,6 +177,52 @@ theorem coeff_different_add_one_eq_ramificationIdx_iff (hF : IsFunctionField k F
     (different k' F' hF).coeff P' + 1 = (Place.ramificationIdx F P' : ℤ) ↔ Place.IsTame k F P' := by
   rw [coeff_different, ← Place.ramificationIdx_eq_differentExponent_add_one_iff, eq_comm]
   norm_cast
+
+open AlgebraicGeometry
+
+variable (k' F') (hF : IsFunctionField k F)
+
+/-- **The tame different** `∑_{P'} (e(P' ∣ P) - 1) · P'` of a finite separable extension `F' / F`
+of an algebraic function field: the value the different divisor `Diff(F'/F)` would take if every
+place of `F'` were tame (Stichtenoth, Theorem 3.5.1(b)).  It is a divisor because a place with
+`e(P' ∣ P) > 1` lies in the support of the different, and it is the lower bound for the different
+in the Hurwitz genus formula (Stichtenoth, Corollary 3.5.6). -/
+noncomputable def tameDifferent : Divisor k' F' :=
+  Finsupp.ofSupportFinite (fun P' ↦ (Place.ramificationIdx F P' : ℤ) - 1)
+    ((different k' F' hF).support.finite_toSet.subset fun P' hP' ↦ by
+      have hne : (Place.ramificationIdx F P' : ℤ) - 1 ≠ 0 := hP'
+      have hpos := Place.ramificationIdx_pos F P'
+      exact mem_support_different_of_one_lt_ramificationIdx k' F' hF (by omega))
+
+/-- The coefficient of `P'` in the tame different is `e(P' ∣ P) - 1`. -/
+@[simp]
+theorem coeff_tameDifferent (P' : Place k' F') :
+    (tameDifferent k' F' hF).coeff P' = (Place.ramificationIdx F P' : ℤ) - 1 :=
+  (rfl)
+
+/-- **The tame different is effective**: every ramification index is positive. -/
+theorem zero_le_tameDifferent : 0 ≤ tameDifferent k' F' hF := by
+  refine WeilDivisor.isEffective_iff_zero_le.mp <| (WeilDivisor.isEffective_iff _).mpr fun P' ↦ ?_
+  have := Place.ramificationIdx_pos F P'
+  rw [coeff_tameDifferent]
+  omega
+
+/-- **Dedekind's different theorem, first part, as an inequality of divisors** (Stichtenoth,
+Theorem 3.5.1(a)): the tame different is bounded by the different divisor. -/
+theorem tameDifferent_le_different : tameDifferent k' F' hF ≤ different k' F' hF := by
+  refine WeilDivisor.le_iff.mpr fun P' ↦ ?_
+  have := ramificationIdx_le_coeff_different_add_one k' F' hF P'
+  rw [coeff_tameDifferent]
+  omega
+
+/-- **The different divisor is the tame different exactly when every place is tame**
+(Stichtenoth, Theorem 3.5.1(b)). -/
+@[simp]
+theorem tameDifferent_eq_different_iff :
+    tameDifferent k' F' hF = different k' F' hF ↔ ∀ P' : Place k' F', Place.IsTame k F P' := by
+  simp only [← coeff_different_add_one_eq_ramificationIdx_iff hF,
+    WeilDivisor.ext_iff, coeff_tameDifferent]
+  exact forall_congr' fun P' ↦ by omega
 
 end Divisor
 

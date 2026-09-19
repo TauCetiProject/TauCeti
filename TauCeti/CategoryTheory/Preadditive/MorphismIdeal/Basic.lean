@@ -58,6 +58,10 @@ faithfulness of precomposition with the quotient functor — applies to `C/I` un
 * `TauCeti.MorphismIdeal.exists_quotientFunctor_comp_eq_iff`: an additive functor factors through
   `C/I` exactly when its kernel contains `I`.
 * `TauCeti.MorphismIdeal.smul_mem`: an ideal of an `R`-linear category is stable under scalars.
+* `TauCeti.MorphismIdeal.isZero_quotientFunctor_obj_iff`: an object becomes zero in `C/I` exactly
+  when its identity belongs to `I`.
+* `TauCeti.MorphismIdeal.isIso_quotientFunctor_map_iff`: a morphism becomes invertible in `C/I`
+  exactly when it admits a two-sided inverse modulo `I`.
 
 ## References
 
@@ -146,7 +150,7 @@ namespace TauCeti
 
 namespace MorphismIdeal
 
-open CategoryTheory
+open CategoryTheory CategoryTheory.Limits
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] (I : MorphismIdeal C)
 
@@ -209,6 +213,35 @@ theorem quotientFunctor_map_eq_iff {X Y : C} {f g : X ⟶ Y} :
 theorem quotientFunctor_map_eq_zero_iff {X Y : C} {f : X ⟶ Y} :
     I.quotientFunctor.map f = 0 ↔ f ∈ I.hom X Y := by
   rw [← I.quotientFunctor.map_zero X Y, quotientFunctor_map_eq_iff, sub_zero]
+
+/-- An object becomes zero in the quotient exactly when its identity belongs to the ideal. -/
+@[simp]
+theorem isZero_quotientFunctor_obj_iff (X : C) :
+    IsZero (I.quotientFunctor.obj X) ↔ 𝟙 X ∈ I.hom X X := by
+  rw [IsZero.iff_id_eq_zero, ← I.quotientFunctor.map_id,
+    I.quotientFunctor_map_eq_zero_iff]
+
+/-- A morphism is invertible in the quotient exactly when it has a two-sided inverse modulo
+the ideal. The lift of the inverse need not be invertible in the original category. -/
+theorem isIso_quotientFunctor_map_iff {X Y : C} (f : X ⟶ Y) :
+    IsIso (I.quotientFunctor.map f) ↔
+      ∃ g : Y ⟶ X, f ≫ g - 𝟙 X ∈ I.hom X X ∧ g ≫ f - 𝟙 Y ∈ I.hom Y Y := by
+  constructor
+  · intro hf
+    obtain ⟨g, hg⟩ := I.quotientFunctor.map_surjective (inv (I.quotientFunctor.map f))
+    refine ⟨g, ?_, ?_⟩
+    · rw [← I.quotientFunctor_map_eq_iff, I.quotientFunctor.map_comp, hg,
+        I.quotientFunctor.map_id]
+      exact IsIso.hom_inv_id _
+    · rw [← I.quotientFunctor_map_eq_iff, I.quotientFunctor.map_comp, hg,
+        I.quotientFunctor.map_id]
+      exact IsIso.inv_hom_id _
+  · rintro ⟨g, hfg, hgf⟩
+    refine ⟨⟨I.quotientFunctor.map g, ?_, ?_⟩⟩
+    · rw [← I.quotientFunctor.map_comp, ← I.quotientFunctor.map_id]
+      exact I.quotientFunctor_map_eq_iff.mpr hfg
+    · rw [← I.quotientFunctor.map_comp, ← I.quotientFunctor.map_id]
+      exact I.quotientFunctor_map_eq_iff.mpr hgf
 
 /-- Every ideal is the kernel of its quotient functor. -/
 @[simp]

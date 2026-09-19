@@ -46,6 +46,8 @@ and the lattice conjugation of each model is the one induced by the ambient latt
   `TauCeti.Hodge.isBaseChange_integralQuotientToComplex`: the same for the quotients.
 * `TauCeti.Hodge.rationalMapToComplex_subtype` and `TauCeti.Hodge.rationalMapToComplex_mkQ`: the
   inclusion and the projection complexify to the inclusion and the projection.
+* `TauCeti.Hodge.rationalToComplexSubmodule_comap_subtype`: complexification commutes with
+  taking the trace of a rational subspace on another.
 * `TauCeti.Hodge.latticeConjugation_integralSubmoduleToComplex` and
   `TauCeti.Hodge.latticeConjugation_integralQuotientToComplex`: the lattice conjugations of the
   models are induced by the ambient one.
@@ -219,6 +221,18 @@ theorem rationalMapToComplex_mkQ (U : Submodule ℚ Vℚ) :
   simpa using rationalToComplexLinearEquiv_one_tmul_ι
     (isBaseChange_integralQuotientToRational hℚ U)
     (isBaseChange_integralQuotientToComplex hℚ hℂ U) (Submodule.Quotient.mk x)
+
+/-- Complexifying the trace of a rational subspace `V` on a rational subspace `U` gives the trace
+of the complexification of `V` on the complexification of `U`. -/
+theorem rationalToComplexSubmodule_comap_subtype (U V : Submodule ℚ Vℚ) :
+    rationalToComplexSubmodule (isBaseChange_integralSubmoduleToRational hℚ U)
+      (isBaseChange_integralSubmoduleToComplex hℚ hℂ U) (V.comap U.subtype) =
+      (rationalToComplexSubmodule hℚ hℂ V).comap (rationalToComplexSubmodule hℚ hℂ U).subtype := by
+  apply Submodule.map_injective_of_injective
+    (rationalToComplexSubmodule hℚ hℂ U).subtype_injective
+  conv_lhs =>
+    rw [← rationalMapToComplex_subtype hℚ hℂ U, map_rationalToComplexSubmodule]
+  rw [Submodule.map_comap_subtype, Submodule.map_comap_subtype, rationalToComplexSubmodule_inf]
 
 /-- Lattice conjugation preserves the complexification of a rational subspace, in the form taken
 by `TauCeti.Hodge.Conjugation.restrict` and `TauCeti.Hodge.Conjugation.quotient`. -/

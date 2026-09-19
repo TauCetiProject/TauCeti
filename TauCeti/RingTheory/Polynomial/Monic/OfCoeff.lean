@@ -87,6 +87,13 @@ theorem eval_monicOfCoeff (c : Fin n → R) (z : R) :
     (monicOfCoeff c).eval z = z ^ n + ∑ i : Fin n, c i * z ^ (i : ℕ) := by
   simp [monicOfCoeff, eval_finsetSum]
 
+/-- Mapping coefficients commutes with forming the monic polynomial with prescribed lower
+coefficients. -/
+@[simp]
+theorem map_monicOfCoeff {S : Type*} [CommSemiring S] (φ : R →+* S) (c : Fin n → R) :
+    (monicOfCoeff c).map φ = monicOfCoeff (fun i ↦ φ (c i)) := by
+  simp [monicOfCoeff, Polynomial.map_sum]
+
 variable [Nontrivial R]
 
 /-- The polynomial attached to a tuple of `n` coefficients has degree exactly `n`, the degree of its

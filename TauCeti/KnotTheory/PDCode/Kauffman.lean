@@ -35,13 +35,19 @@ over a commutative ring with a distinguished unit `a` at the loop value
 Kauffman-bracket expansion of a crossing is invertible. This is Kauffman's `⟨·⟩` with Lickorish's
 normalisation `⟨unknot⟩ = 1`: a code with no crossings and `c ≥ 1` circles has bracket
 `δ ^ (c - 1)`. The exponent is truncated subtraction, so the empty code has bracket `1`; every
-code with a crossing has at least one circle in each state, so this affects only the empty code.
+code with a crossing has at least one circle in each state (`TauCeti.PDCode.one_le_stateLoopCount`),
+so this affects only the empty code.
 
 The bracket depends on a PD-code only through its relabelling class, and mirroring a code inverts
 the unit `a`. On the one-crossing kink diagram `TauCeti.PDCode.kink` it takes the value
 `-a ^ 3`, the framing factor of the first Reidemeister move. Whether the bracket descends from
-diagrams to knots is the question of its behaviour under the Reidemeister moves, which are a
-separate construction on PD-codes and are not treated here.
+diagrams to knots is the question of its behaviour under the Reidemeister moves, which are
+separate constructions on PD-codes; the first move is in
+`TauCeti/KnotTheory/PDCode/ReidemeisterOne.lean`.
+
+For an oriented PD-code, `TauCeti.OrientedPDCode.normalizedKauffmanBracket` multiplies the bracket
+by the writhe correction `(-a ^ 3) ^ (-writhe)`. This is the normalization used to obtain the
+Jones polynomial from the bracket.
 
 ## Main definitions
 
@@ -53,9 +59,13 @@ separate construction on PD-codes and are not treated here.
 * `TauCeti.PDCode.stateWeight`: the weight `a ^ (A(s) - B(s))` of a state.
 * `TauCeti.PDCode.kauffmanBracket`: the Kauffman bracket state sum.
 * `TauCeti.PDCode.kink`: the one-crossing kink diagram.
+* `TauCeti.OrientedPDCode.normalizedKauffmanBracket`: the writhe-normalized bracket.
 
 ## Main results
 
+* `TauCeti.PDCode.even_orbitCount_statePerm`: the traversal orbits of a smoothed diagram come in
+  pairs, and `TauCeti.PDCode.one_le_stateLoopCount`: a code with a crossing leaves at least one
+  circle in every state.
 * `TauCeti.PDCode.kauffmanBracket_relabel`: the bracket is invariant under relabelling.
 * `TauCeti.PDCode.kauffmanBracket_mirror`: mirroring the code inverts the unit.
 * `TauCeti.PDCode.kauffmanBracket_eq_jonesDelta_pow`: a code with no crossings and `c` circles has
@@ -209,6 +219,10 @@ circle of the smoothed diagram. -/
 def statePerm (D : PDCode n) (s : Fin n → Bool) : Equiv.Perm (Fin (4 * n)) :=
   D.smoothingTurn (D.smoothingChoice s) * D.edgePair.val
 
+/-- The defining equation of smoothed traversal. -/
+theorem statePerm_def (D : PDCode n) (s : Fin n → Bool) :
+    D.statePerm s = D.smoothingTurn (D.smoothingChoice s) * D.edgePair.val := (rfl)
+
 /-- Smoothed traversal pairs the arc first, then follows the chosen smoothing. -/
 @[simp] theorem statePerm_apply (D : PDCode n) (s : Fin n → Bool) (h : Fin (4 * n)) :
     D.statePerm s h = D.smoothingTurn (D.smoothingChoice s) (D.edgePair.val h) := by
@@ -241,6 +255,35 @@ noncomputable def stateLoopCount (D : PDCode n) (s : Fin n → Bool) : ℕ :=
 plus the crossing-free circles. -/
 theorem stateLoopCount_def (D : PDCode n) (s : Fin n → Bool) :
     D.stateLoopCount s = orbitCount (D.statePerm s) / 2 + D.crossinglessComponentCount := (rfl)
+
+/-- Smoothing every crossing of a code pairs off its half-edges. -/
+theorem isPerfectMatching_smoothingTurn (D : PDCode n) (b : Fin n → Bool) :
+    IsPerfectMatching (D.smoothingTurn b) := by
+  refine isPerfectMatching_iff.mpr ⟨D.smoothingTurn_apply_apply b, fun h hh => ?_⟩
+  obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
+  obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective x
+  rw [smoothingTurn_crossing, crossing_apply, D.halfEdge.apply_eq_iff_eq,
+    (crossingSlotEquiv n).apply_eq_iff_eq, Prod.mk.injEq] at hh
+  exact slotSmoothing_ne _ slot hh.2
+
+/-- The directed traversal orbits of a smoothed diagram come in pairs, as the halving in
+`TauCeti.PDCode.stateLoopCount` presumes: smoothed traversal is a product of two perfect
+matchings. -/
+theorem even_orbitCount_statePerm (D : PDCode n) (s : Fin n → Bool) :
+    Even (orbitCount (D.statePerm s)) :=
+  (D.isPerfectMatching_smoothingTurn _).even_orbitCount_mul D.edgePair.prop
+
+/-- A code with a crossing leaves at least one circle in every state. -/
+theorem one_le_stateLoopCount (D : PDCode n) (hn : n ≠ 0) (s : Fin n → Bool) :
+    1 ≤ D.stateLoopCount s := by
+  have hpos : 0 < orbitCount (D.statePerm s) := by
+    have : Nonempty (Quotient (SameCycle.setoid (D.statePerm s))) :=
+      ⟨Quotient.mk _ ⟨0, by omega⟩⟩
+    rw [orbitCount_def]
+    exact Nat.card_pos
+  obtain ⟨k, hk⟩ := D.even_orbitCount_statePerm s
+  rw [stateLoopCount_def]
+  omega
 
 /-- A code with no crossings has one circle per crossing-free component, in every state. -/
 @[simp] theorem stateLoopCount_eq_crossinglessComponentCount (D : PDCode 0) (s : Fin 0 → Bool) :
@@ -291,6 +334,13 @@ theorem stateWeight_def (s : Fin n → Bool) (a : Rˣ) :
 @[simp] theorem stateWeight_comp (s : Fin n → Bool) (a : Rˣ) (cross : Equiv.Perm (Fin n)) :
     stateWeight (s ∘ cross) a = stateWeight s a :=
   Equiv.prod_comp cross fun i => bif s i then a else a⁻¹
+
+/-- Extending a state by a choice at a new last crossing multiplies its weight by the weight of
+that choice. -/
+@[simp] theorem stateWeight_snoc (s : Fin n → Bool) (c : Bool) (a : Rˣ) :
+    stateWeight (Fin.snoc (α := fun _ => Bool) s c) a =
+      stateWeight s a * bif c then a else a⁻¹ := by
+  simp [stateWeight_def, Fin.prod_univ_castSucc]
 
 end StateWeight
 
@@ -488,5 +538,28 @@ theorem kauffmanBracket_kink (a : Rˣ) :
 end Bracket
 
 end PDCode
+
+namespace OrientedPDCode
+
+variable {n : ℕ}
+
+/-- The writhe-normalized Kauffman bracket.  Its correction factor is a unit, so the definition
+makes sense over every commutative ring and does not require the bracket value itself to be
+invertible. -/
+noncomputable def normalizedKauffmanBracket {R : Type*} [CommRing R]
+    (D : OrientedPDCode n) (a : Rˣ) : R :=
+  (((-a ^ 3) ^ (-D.writhe) : Rˣ) : R) * D.toPDCode.kauffmanBracket a
+
+/-- The writhe-normalized Kauffman bracket is the bracket multiplied by its writhe
+correction factor. -/
+theorem normalizedKauffmanBracket_def {R : Type*} [CommRing R]
+    (D : OrientedPDCode n) (a : Rˣ) :
+    D.normalizedKauffmanBracket a =
+      (((-a ^ 3) ^ (-D.writhe) : Rˣ) : R) * D.toPDCode.kauffmanBracket a :=
+  by
+    unfold normalizedKauffmanBracket
+    rfl
+
+end OrientedPDCode
 
 end TauCeti

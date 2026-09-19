@@ -29,6 +29,8 @@ functor along the forgetful map, and the value is its limit — which exists bec
 
 * `TauCeti.ValuationSpectrum.PresentationIndex` : the index category for an open — presentations
   whose numerator ideal is open, so that the basic open they present really is a rational subset.
+* `TauCeti.ValuationSpectrum.PresentationIndex.commonRefinement` : the common refinement of two
+  indices.
 * `TauCeti.ValuationSpectrum.presentationIndexDiagram` : the diagram it indexes.
 * `TauCeti.ValuationSpectrum.presentationLimit` : the limit itself.
 * `TauCeti.ValuationSpectrum.presentationLimitMap` : the restriction morphism of a containment.
@@ -68,10 +70,11 @@ priori on presentation data. Two results close the gap:
 * the presentation index is then cofinal in the subset index, so the two limits agree. This one is
   not yet available.
 
-Until the second is available, no result here may be read as computing `𝒪_X(V)`, and
-in particular nothing here shows the value on a rational open `U` is `A_U`. What *is* established
-is self-contained: the limit exists, restriction along a containment is reindexing, and the two
-functor laws hold.
+Nothing in this file computes `𝒪_X(V)`. What it establishes is self-contained: the limit exists,
+restriction along a containment is reindexing, and the two functor laws hold. On a rational open
+`U` the value is identified with `A_U` in
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational`, when `A⁺` consists of
+power-bounded elements.
 
 ## References
 
@@ -130,28 +133,66 @@ theorem PresentationIndex.ext {i j : PresentationIndex (P := P) Aplus V} (h : i.
   subst h
   rfl
 
-open scoped Classical Pointwise in
-/-- **The index is directed**: two admissible presentations refining `V` are both refined by their
-common refinement, which is again admissible.
+omit [IsTopologicalRing A] in
+/-- **The common refinement presents the intersection**: `R(p · q) = R(p) ∩ R(q)` for the common
+refinement of two presentations. This is `TauCeti.ValuationSpectrum.rationalSubset_inter`, whose
+presentation of an intersection the common refinement follows. -/
+theorem rationalSubset_commonRefinement (Aplus : Subring A) (p q : P.Presentation) :
+    rationalSubset Aplus (p.commonRefinement q).num (p.commonRefinement q).den =
+      rationalSubset Aplus p.num p.den ∩ rationalSubset Aplus q.num q.den := by
+  classical
+  rw [PairOfDefinition.Presentation.commonRefinement_num,
+    PairOfDefinition.Presentation.commonRefinement_den, rationalSubset_inter]
+
+omit [IsTopologicalRing A] in
+/-- The rational subset of an index of `V` lies in every rational subset containing `V`. -/
+theorem PresentationIndex.rationalSubset_subset (i : PresentationIndex (P := P) Aplus V)
+    {T : Finset A} {s : A} (hV : V ≤ spaBasicOpen Aplus T s) :
+    rationalSubset Aplus i.pres.num i.pres.den ⊆ rationalSubset Aplus T s :=
+  spaBasicOpen_le_spaBasicOpen_iff.mp (i.le_open.trans hV)
+
+/-- **The common refinement of two indices**: `Presentation.commonRefinement` of the underlying
+presentations, which is again admissible and presents the intersection of the two rational
+subsets, so it again lies in `V`.
 
 Both of the index's own fields have to be re-established, which is what
 `TauCeti.Huber.PairOfDefinition.Presentation.commonRefinement` deliberately does not do — it
-carries no openness field. The containment in `V` is the intersection identity
-`TauCeti.ValuationSpectrum.rationalSubset_inter`, and openness of the numerator span is
-`TauCeti.Huber.PairOfDefinition.isOpen_span_insert_mul_insert`, the admissibility half of Wedhorn
-Remark 7.30(5), which `TauCeti.ValuationSpectrum.inter_mem_spaRationalFamily_of_pairOfDefinition`
-also uses. -/
-instance : IsDirected (PresentationIndex (P := P) Aplus V) (· ≤ ·) := by
-  refine ⟨fun i j ↦ ⟨⟨i.pres.commonRefinement j.pres, ?_, ?_⟩,
-    i.pres.le_commonRefinement_left j.pres, i.pres.le_commonRefinement_right j.pres⟩⟩
-  · rw [PairOfDefinition.Presentation.commonRefinement_num]
+carries no openness field. The containment in `V` is `rationalSubset_commonRefinement`, and
+openness of the numerator span is `TauCeti.Huber.PairOfDefinition.isOpen_span_insert_mul_insert`,
+the admissibility half of Wedhorn Remark 7.30(5), which
+`TauCeti.ValuationSpectrum.inter_mem_spaRationalFamily_of_pairOfDefinition` also uses. -/
+noncomputable def PresentationIndex.commonRefinement (i j : PresentationIndex (P := P) Aplus V) :
+    PresentationIndex (P := P) Aplus V where
+  pres := i.pres.commonRefinement j.pres
+  isOpen_span := by
+    classical
+    rw [PairOfDefinition.Presentation.commonRefinement_num]
     exact P.isOpen_span_insert_mul_insert i.isOpen_span j.isOpen_span
-  · refine le_trans ?_ i.le_open
-    intro v hv
-    rw [mem_spaBasicOpen] at hv ⊢
-    rw [PairOfDefinition.Presentation.commonRefinement_num,
-      PairOfDefinition.Presentation.commonRefinement_den, ← rationalSubset_inter] at hv
-    exact hv.1
+  le_open := le_trans (spaBasicOpen_le_spaBasicOpen_iff.mpr <| by
+    rw [rationalSubset_commonRefinement]
+    exact Set.inter_subset_left) i.le_open
+
+/-- The presentation of the common refinement of two indices is the common refinement of their
+presentations. -/
+@[simp]
+theorem PresentationIndex.commonRefinement_pres (i j : PresentationIndex (P := P) Aplus V) :
+    (i.commonRefinement j).pres = i.pres.commonRefinement j.pres := (rfl)
+
+/-- The common refinement of two indices refines the left one. -/
+theorem PresentationIndex.le_commonRefinement_left (i j : PresentationIndex (P := P) Aplus V) :
+    i ≤ i.commonRefinement j :=
+  i.pres.le_commonRefinement_left j.pres
+
+/-- The common refinement of two indices refines the right one. -/
+theorem PresentationIndex.le_commonRefinement_right (i j : PresentationIndex (P := P) Aplus V) :
+    j ≤ i.commonRefinement j :=
+  i.pres.le_commonRefinement_right j.pres
+
+/-- **The index is directed**: two admissible presentations refining `V` are both refined by
+their common refinement `PresentationIndex.commonRefinement`. -/
+instance : IsDirected (PresentationIndex (P := P) Aplus V) (· ≤ ·) :=
+  ⟨fun i j ↦ ⟨i.commonRefinement j, i.le_commonRefinement_left j,
+    i.le_commonRefinement_right j⟩⟩
 
 /-- Forgetting the containment is a functor to the category of all presentations. -/
 private def presentationIndexInclusion (Aplus : Subring A) (V : Opens ↥(spa Aplus)) :
@@ -164,6 +205,103 @@ private def presentationIndexInclusion (Aplus : Subring A) (V : Opens ↥(spa Ap
 noncomputable def presentationIndexDiagram (Aplus : Subring A) (V : Opens ↥(spa Aplus)) :
     PresentationIndex (P := P) Aplus V ⥤ CompleteSeparatedTopCommRingCat.{v} :=
   presentationIndexInclusion Aplus V ⋙ P.presentationFunctor
+
+private theorem presentationIndexDiagram_obj_eq (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    (i : PresentationIndex (P := P) Aplus V) :
+    (presentationIndexDiagram Aplus V).obj i = i.pres.completionLocObj := by
+  rw [presentationIndexDiagram]
+  exact PairOfDefinition.presentationFunctor_obj P i.pres
+
+/-- The diagram sends an index to the completed localization of its presentation. -/
+theorem presentationIndexDiagram_obj (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    (i : PresentationIndex (P := P) Aplus V) :
+    (presentationIndexDiagram Aplus V).obj i = i.pres.completionLocObj :=
+  presentationIndexDiagram_obj_eq Aplus V i
+
+private theorem presentationIndexDiagram_map_heq (Aplus : Subring A)
+    (V : Opens ↥(spa Aplus)) {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j) :
+    HEq ((presentationIndexDiagram Aplus V).map f)
+      (PairOfDefinition.Presentation.restrictionHom f.le) := by
+  rw [presentationIndexDiagram]
+  exact heq_of_eq (PairOfDefinition.presentationFunctor_map P (homOfLE f.le))
+
+/-- The diagram takes a refinement of indices to the restriction morphism of the underlying
+refinement of presentations. -/
+@[simp]
+theorem presentationIndexDiagram_map (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j) :
+    HEq ((presentationIndexDiagram Aplus V).map f)
+      (PairOfDefinition.Presentation.restrictionHom f.le) :=
+  presentationIndexDiagram_map_heq Aplus V f
+
+/-- Build a cone over the presentation diagram from maps to the completed localization at each
+index that commute with restriction morphisms. -/
+noncomputable def presentationIndexCone (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    (W : CompleteSeparatedTopCommRingCat.{v})
+    (app : ∀ i : PresentationIndex (P := P) Aplus V, W ⟶ i.pres.completionLocObj)
+    (naturality : ∀ {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j),
+      app i ≫ PairOfDefinition.Presentation.restrictionHom f.le = app j) :
+    Cone (presentationIndexDiagram (P := P) Aplus V) := by
+  rw [presentationIndexDiagram]
+  exact
+    { pt := W
+      π :=
+        { app := app
+          naturality := fun i j f ↦ by
+            -- Unfolding the composite diagram leaves its object and map types definitionally,
+            -- but not propositionally, identified with those of `presentationFunctor`.  Its map
+            -- lemma is consequently an `HEq`, so it cannot rewrite this dependent naturality
+            -- goal; `change` exposes the common restriction-morphism normal form instead.
+            change app j = app i ≫ PairOfDefinition.Presentation.restrictionHom f.le
+            exact (naturality f).symm } }
+
+private theorem presentationIndexCone_pt_aux (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    (W : CompleteSeparatedTopCommRingCat.{v})
+    (app : ∀ i : PresentationIndex (P := P) Aplus V, W ⟶ i.pres.completionLocObj)
+    (naturality : ∀ {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j),
+      app i ≫ PairOfDefinition.Presentation.restrictionHom f.le = app j) :
+    (presentationIndexCone Aplus V W app naturality).pt = W := by
+  unfold presentationIndexCone presentationIndexDiagram
+  rfl
+
+/-- The vertex of a cone built with `presentationIndexCone` is the specified object. -/
+theorem presentationIndexCone_pt (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    (W : CompleteSeparatedTopCommRingCat.{v})
+    (app : ∀ i : PresentationIndex (P := P) Aplus V, W ⟶ i.pres.completionLocObj)
+    (naturality : ∀ {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j),
+      app i ≫ PairOfDefinition.Presentation.restrictionHom f.le = app j) :
+    (presentationIndexCone Aplus V W app naturality).pt = W :=
+  presentationIndexCone_pt_aux Aplus V W app naturality
+
+private theorem presentationIndexCone_π_app_aux (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    (W : CompleteSeparatedTopCommRingCat.{v})
+    (app : ∀ i : PresentationIndex (P := P) Aplus V, W ⟶ i.pres.completionLocObj)
+    (naturality : ∀ {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j),
+      app i ≫ PairOfDefinition.Presentation.restrictionHom f.le = app j)
+    (i : PresentationIndex (P := P) Aplus V) :
+    eqToHom (presentationIndexCone_pt Aplus V W app naturality).symm ≫
+        (presentationIndexCone Aplus V W app naturality).π.app i ≫
+          eqToHom (presentationIndexDiagram_obj Aplus V i) = app i := by
+  unfold presentationIndexCone presentationIndexDiagram
+  -- The cone-point and diagram-object equations insert `eqToHom` transports around the stored
+  -- leg.  After unfolding the wrappers these transports reduce to identities by proof
+  -- irrelevance; `change` makes that definitional reduction explicit before reflexivity.
+  change app i = app i
+  rfl
+
+/-- A cone built with `presentationIndexCone` has the specified leg after transporting the diagram
+object to the completed localization of its presentation. -/
+@[simp]
+theorem presentationIndexCone_π_app (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    (W : CompleteSeparatedTopCommRingCat.{v})
+    (app : ∀ i : PresentationIndex (P := P) Aplus V, W ⟶ i.pres.completionLocObj)
+    (naturality : ∀ {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j),
+      app i ≫ PairOfDefinition.Presentation.restrictionHom f.le = app j)
+    (i : PresentationIndex (P := P) Aplus V) :
+    eqToHom (presentationIndexCone_pt Aplus V W app naturality).symm ≫
+        (presentationIndexCone Aplus V W app naturality).π.app i ≫
+          eqToHom (presentationIndexDiagram_obj Aplus V i) = app i :=
+  presentationIndexCone_π_app_aux Aplus V W app naturality i
 
 /-- **The limit over the presentations refining `V`**, `lim_{R(T/s) ⊆ V} A⟨T/s⟩` — Wedhorn §8.1's
 formula for `𝒪_X(V)`, but indexed by presentations rather than by rational subsets. The limit
@@ -179,6 +317,13 @@ def presentationIndexRestrict {V W : Opens ↥(spa Aplus)} (h : W ≤ V) :
     PresentationIndex (P := P) Aplus W ⥤ PresentationIndex (P := P) Aplus V where
   obj i := ⟨i.pres, i.isOpen_span, i.le_open.trans h⟩
   map f := homOfLE f.le
+
+omit [IsTopologicalRing A] in
+/-- Restricting an index keeps its presentation. -/
+@[simp]
+theorem presentationIndexRestrict_obj_pres {V W : Opens ↥(spa Aplus)} (h : W ≤ V)
+    (i : PresentationIndex (P := P) Aplus W) :
+    ((presentationIndexRestrict (P := P) h).obj i).pres = i.pres := (rfl)
 
 /-- **The restriction morphism of a containment `W ≤ V`**: the limit over the presentations
 refining `V` maps to the limit over the smaller index, by reindexing. -/
@@ -203,6 +348,13 @@ noncomputable def presentationLimitπ (Aplus : Subring A) (V : Opens ↥(spa Apl
     presentationLimit (P := P) Aplus V ⟶ (presentationIndexDiagram (P := P) Aplus V).obj i :=
   limit.π _ i
 
+/-- The projection at an index, with its codomain transported to the completed localization of
+the underlying presentation. -/
+noncomputable def presentationLimitπToPresentation (Aplus : Subring A)
+    (V : Opens ↥(spa Aplus)) (i : PresentationIndex (P := P) Aplus V) :
+    presentationLimit (P := P) Aplus V ⟶ i.pres.completionLocObj :=
+  presentationLimitπ Aplus V i ≫ eqToHom (presentationIndexDiagram_obj Aplus V i)
+
 /-- **Projections are compatible with refinement**: projecting then restricting along a refinement
 is projecting at the finer index. -/
 -- These three are not restatements of Mathlib's limit API for their own sake: `presentationLimit`
@@ -213,6 +365,32 @@ theorem presentationLimitπ_comp_map {i j : PresentationIndex (P := P) Aplus V} 
     presentationLimitπ (P := P) Aplus V i ≫ (presentationIndexDiagram (P := P) Aplus V).map h =
       presentationLimitπ (P := P) Aplus V j :=
   limit.w _ h
+
+private theorem presentationIndexDiagram_obj_comp_restriction
+    {i j : PresentationIndex (P := P) Aplus V} (h : i ⟶ j) :
+    eqToHom (presentationIndexDiagram_obj (P := P) Aplus V i) ≫
+        PairOfDefinition.Presentation.restrictionHom h.le =
+      (presentationIndexDiagram (P := P) Aplus V).map h ≫
+        eqToHom (presentationIndexDiagram_obj (P := P) Aplus V j) := by
+  unfold presentationIndexDiagram
+  -- Changing the diagram objects also changes both endpoints of its map, which is why
+  -- `presentationIndexDiagram_map` is an `HEq` rather than a rewrite lemma.  Once the composite
+  -- functor is unfolded, both transported sides reduce definitionally to the restriction map.
+  change PairOfDefinition.Presentation.restrictionHom h.le =
+    PairOfDefinition.Presentation.restrictionHom h.le
+  rfl
+
+/-- Projecting at a presentation and then restricting is projection at the refined presentation,
+after transporting the diagram objects to their completed-localization descriptions. -/
+@[simp]
+theorem presentationLimitπ_comp_restriction
+    {i j : PresentationIndex (P := P) Aplus V} (h : i ≤ j) :
+    presentationLimitπToPresentation (P := P) Aplus V i ≫
+        PairOfDefinition.Presentation.restrictionHom h =
+      presentationLimitπToPresentation (P := P) Aplus V j := by
+  unfold presentationLimitπToPresentation
+  rw [Category.assoc, presentationIndexDiagram_obj_comp_restriction (homOfLE h), ← Category.assoc,
+    presentationLimitπ_comp_map (P := P) (homOfLE h)]
 
 /-- **The universal property**: a cone over the diagram factors through the limit. -/
 noncomputable def presentationLimitLift (Aplus : Subring A) (V : Opens ↥(spa Aplus))
@@ -228,6 +406,31 @@ theorem presentationLimitLift_comp_π (Aplus : Subring A) (V : Opens ↥(spa Apl
     presentationLimitLift (P := P) Aplus V s ≫ presentationLimitπ (P := P) Aplus V i = s.π.app i :=
   limit.lift_π _ _
 
+/-- The lift followed by the projection transported to the presentation object is the transported
+cone leg. -/
+@[simp]
+theorem presentationLimitLift_comp_πToPresentation (Aplus : Subring A)
+    (V : Opens ↥(spa Aplus)) (s : Cone (presentationIndexDiagram (P := P) Aplus V))
+    (i : PresentationIndex (P := P) Aplus V) :
+    presentationLimitLift (P := P) Aplus V s ≫
+        presentationLimitπToPresentation (P := P) Aplus V i =
+      s.π.app i ≫ eqToHom (presentationIndexDiagram_obj Aplus V i) := by
+  unfold presentationLimitπToPresentation
+  rw [← Category.assoc, presentationLimitLift_comp_π]
+
+/-- The lift of a cone built from presentationwise maps has those maps as its transported
+projections. -/
+theorem presentationIndexCone_lift_comp_πToPresentation (Aplus : Subring A)
+    (V : Opens ↥(spa Aplus)) (W : CompleteSeparatedTopCommRingCat.{v})
+    (app : ∀ i : PresentationIndex (P := P) Aplus V, W ⟶ i.pres.completionLocObj)
+    (naturality : ∀ {i j : PresentationIndex (P := P) Aplus V} (f : i ⟶ j),
+      app i ≫ PairOfDefinition.Presentation.restrictionHom f.le = app j)
+    (i : PresentationIndex (P := P) Aplus V) :
+    eqToHom (presentationIndexCone_pt Aplus V W app naturality).symm ≫
+        presentationLimitLift Aplus V (presentationIndexCone Aplus V W app naturality) ≫
+          presentationLimitπToPresentation Aplus V i = app i := by
+  rw [presentationLimitLift_comp_πToPresentation, presentationIndexCone_π_app]
+
 /-- **Extensionality**: maps into the limit agree when their projections do. -/
 -- Tagged `@[ext]` because `presentationLimit` is sealed, so `ext` cannot reach `limit.hom_ext`
 -- through it from another module.
@@ -237,6 +440,16 @@ theorem presentationLimit_hom_ext {W : CompleteSeparatedTopCommRingCat.{v}}
     (h : ∀ i, f ≫ presentationLimitπ (P := P) Aplus V i =
       g ≫ presentationLimitπ (P := P) Aplus V i) : f = g :=
   limit.hom_ext h
+
+/-- Extensionality using the projections transported to their presentation objects. -/
+theorem presentationLimit_hom_ext_toPresentation {W : CompleteSeparatedTopCommRingCat.{v}}
+    {f g : W ⟶ presentationLimit (P := P) Aplus V}
+    (h : ∀ i, f ≫ presentationLimitπToPresentation (P := P) Aplus V i =
+      g ≫ presentationLimitπToPresentation (P := P) Aplus V i) : f = g := by
+  apply presentationLimit_hom_ext
+  intro i
+  apply (cancel_mono (eqToHom (presentationIndexDiagram_obj Aplus V i))).mp
+  simpa only [presentationLimitπToPresentation, Category.assoc] using h i
 
 /-- **Restricting an index does not change what the diagram sends it to.** -/
 -- This is the object half of the reindexing characterisation, and what lets the index functors
@@ -259,6 +472,21 @@ theorem presentationLimitMap_comp_π {V W : Opens ↥(spa Aplus)} (h : W ≤ V)
       presentationLimitπ (P := P) Aplus V ((presentationIndexRestrict (P := P) h).obj i) ≫
         eqToHom (presentationIndexDiagram_obj_restrict (P := P) h i) :=
   limit.pre_π _ _ _
+
+/-- Restriction followed by a projection transported to its presentation object is the
+corresponding transported projection before restriction. -/
+@[simp]
+theorem presentationLimitMap_comp_πToPresentation {V W : Opens ↥(spa Aplus)} (h : W ≤ V)
+    (i : PresentationIndex (P := P) Aplus W) :
+    presentationLimitMap (P := P) h ≫
+        presentationLimitπToPresentation (P := P) Aplus W i =
+      presentationLimitπToPresentation (P := P) Aplus V
+          ((presentationIndexRestrict (P := P) h).obj i) ≫
+        eqToHom (congrArg PairOfDefinition.Presentation.completionLocObj
+          (presentationIndexRestrict_obj_pres h i)) := by
+  unfold presentationLimitπToPresentation
+  rw [← Category.assoc, presentationLimitMap_comp_π]
+  simp only [Category.assoc, eqToHom_trans]
 
 /-- **Restricting along `le_refl` is the identity.** -/
 @[simp]

@@ -24,7 +24,8 @@ constellations, and the same data as a hypermap or a bipartite ribbon graph.
 
 This file sets up the carrier and the symmetry attached to it.
 
-* `TauCeti.PermutationTriple`: the carrier, with `TauCeti.PermutationTriple.ofTwo` building a
+* `TauCeti.PermutationTriple`: the carrier, with `TauCeti.PermutationTriple.component` accessing
+  the component at any of the three branch points, `TauCeti.PermutationTriple.ofTwo` building a
   triple from its first two components — the third is determined — and
   `TauCeti.PermutationTriple.equivPair` recording that this is a bijection.
 * `TauCeti.PermutationTriple.equivOppositeConvention`: componentwise inversion is a bijection
@@ -40,6 +41,8 @@ This file sets up the carrier and the symmetry attached to it.
 * `TauCeti.PermutationTriple.automorphismGroup`: the stabilizer of a triple under relabeling,
   equivalently the centralizer of its monodromy group. For a connected triple it acts freely on
   the sheets, so its order divides the degree.
+* `TauCeti.PermutationTriple.mapMonodromy`: the image of a triple under a homomorphism from its
+  monodromy group to another symmetric group.
 
 ## Implementation notes
 
@@ -83,6 +86,20 @@ namespace PermutationTriple
 variable {n : ℕ}
 
 /-! ### The carrier -/
+
+/-- The component of a permutation triple over the branch point numbered `i`, where `0, 1, 2`
+number the branch points `0, 1, ∞`. -/
+def component (t : PermutationTriple n) : Fin 3 → Perm (Fin n) :=
+  fun
+  | 0 => t.σ0
+  | 1 => t.σ1
+  | 2 => t.σinf
+
+@[simp] theorem component_zero (t : PermutationTriple n) : t.component 0 = t.σ0 := (rfl)
+
+@[simp] theorem component_one (t : PermutationTriple n) : t.component 1 = t.σ1 := (rfl)
+
+@[simp] theorem component_two (t : PermutationTriple n) : t.component 2 = t.σinf := (rfl)
 
 /-- The triple with prescribed first two components, the third being forced. -/
 def ofTwo (σ0 σ1 : Perm (Fin n)) : PermutationTriple n where
@@ -268,6 +285,10 @@ theorem equivalent_iff_exists_smul_eq {t t' : PermutationTriple n} :
   rw [Equivalent, MulAction.orbitRel_apply, MulAction.mem_orbit_symm,
     MulAction.mem_orbit_iff]
 
+/-- Every relabeling of a permutation triple is isomorphic to it. -/
+theorem equivalent_smul (τ : Perm (Fin n)) (t : PermutationTriple n) : Equivalent (τ • t) t :=
+  equivalent_iff_exists_smul_eq.mpr ⟨τ⁻¹, inv_smul_smul τ t⟩
+
 /-- Isomorphism of triples — relabeling the sheets — is decidable, by searching the finitely many
 relabelings. -/
 instance : DecidableRel (@Equivalent n) :=
@@ -289,6 +310,19 @@ def IsoClass.mk (t : PermutationTriple n) : IsoClass n :=
 @[simp] theorem IsoClass.mk_eq_mk_iff {t t' : PermutationTriple n} :
     IsoClass.mk t = IsoClass.mk t' ↔ Equivalent t t' := by
   exact Quotient.eq''
+
+/-- Every isomorphism class is the class of some triple. -/
+theorem IsoClass.mk_surjective : Function.Surjective (IsoClass.mk : PermutationTriple n → _) :=
+  Quotient.mk''_surjective
+
+/-- A function on triples that is constant on isomorphism classes, as a function on classes. -/
+def IsoClass.lift {α : Sort*} (f : PermutationTriple n → α)
+    (hf : ∀ t t', Equivalent t t' → f t = f t') : IsoClass n → α :=
+  Quotient.lift f hf
+
+@[simp] theorem IsoClass.lift_mk {α : Sort*} (f : PermutationTriple n → α)
+    (hf : ∀ t t', Equivalent t t' → f t = f t') (t : PermutationTriple n) :
+    IsoClass.lift f hf (IsoClass.mk t) = f t := (rfl)
 
 /-! ### The monodromy group -/
 
@@ -367,6 +401,26 @@ theorem IsConnected.isPretransitive (ht : t.IsConnected) :
     · simpa [Subgroup.smul_def, Perm.smul_def] using congrArg υ hg
   refine ⟨fun h => ?_, key τ t⟩
   simpa using key τ⁻¹ _ h
+
+/-- The trivial triple has trivial monodromy. -/
+@[simp] theorem monodromyGroup_one : (1 : PermutationTriple n).monodromyGroup = ⊥ := by
+  simp [monodromyGroup]
+
+/-- The trivial triple is the disjoint union of `n` unbranched sheets, so it is connected exactly
+in degree one. -/
+@[simp] theorem isConnected_one_iff : (1 : PermutationTriple n).IsConnected ↔ n = 1 := by
+  rw [isConnected_iff, monodromyGroup_one]
+  refine ⟨fun ⟨hn, h⟩ => ?_, fun hn => ⟨by omega, ⟨fun i j => ⟨1, ?_⟩⟩⟩⟩
+  · by_contra hn'
+    obtain ⟨g, hg⟩ := h.exists_smul_eq (⟨0, by omega⟩ : Fin n) ⟨1, by omega⟩
+    rw [Subsingleton.elim g 1, one_smul] at hg
+    simp [Fin.ext_iff] at hg
+  · subst hn
+    exact Subsingleton.elim _ _
+
+/-- A triple of degree one is connected. -/
+theorem isConnected_of_degree_one (t : PermutationTriple 1) : t.IsConnected := by
+  rw [Subsingleton.elim t 1, isConnected_one_iff]
 
 /-- Translating to the opposite convention preserves connectedness. -/
 theorem isConnected_equivOppositeConvention_iff (t : PermutationTriple n) :
@@ -456,6 +510,63 @@ theorem card_automorphismGroup_dvd
   have hcard := Nat.card_congr (MulAction.selfEquivOrbitsQuotientProd hfree)
   rw [Nat.card_prod, Nat.card_eq_fintype_card, Fintype.card_fin] at hcard
   exact ⟨_, hcard.trans (mul_comm _ _)⟩
+
+/-! ### Images under representations of the monodromy group -/
+
+/-- The image of a triple under a homomorphism from its monodromy group to the permutations of
+another set of sheets: the three components are sent to their images, and the relation
+`σinf * σ1 * σ0 = 1` is preserved because `f` is multiplicative. Restricting a triple to a
+monodromy orbit and passing to its action on a system of blocks are both of this form. -/
+def mapMonodromy {m : ℕ} (t : PermutationTriple n) (f : t.monodromyGroup →* Perm (Fin m)) :
+    PermutationTriple m where
+  σ0 := f ⟨t.σ0, t.σ0_mem_monodromyGroup⟩
+  σ1 := f ⟨t.σ1, t.σ1_mem_monodromyGroup⟩
+  σinf := f ⟨t.σinf, t.σinf_mem_monodromyGroup⟩
+  product_eq_one := by
+    rw [← map_mul, ← map_mul]
+    convert map_one f using 2
+    exact Subtype.ext t.product_eq_one
+
+section mapMonodromy
+
+variable {m : ℕ} (t : PermutationTriple n) (f : t.monodromyGroup →* Perm (Fin m))
+
+@[simp] theorem mapMonodromy_σ0 :
+    (t.mapMonodromy f).σ0 = f ⟨t.σ0, t.σ0_mem_monodromyGroup⟩ := (rfl)
+
+@[simp] theorem mapMonodromy_σ1 :
+    (t.mapMonodromy f).σ1 = f ⟨t.σ1, t.σ1_mem_monodromyGroup⟩ := (rfl)
+
+@[simp] theorem mapMonodromy_σinf :
+    (t.mapMonodromy f).σinf = f ⟨t.σinf, t.σinf_mem_monodromyGroup⟩ := (rfl)
+
+/-- The image of a triple under the inclusion of its monodromy group is the triple itself. -/
+@[simp] theorem mapMonodromy_subtype : t.mapMonodromy t.monodromyGroup.subtype = t :=
+  ext_of_two rfl rfl
+
+/-- Composing the representation with conjugation by `τ` relabels the image triple by `τ`. -/
+theorem mapMonodromy_conj_comp (τ : Perm (Fin m)) :
+    t.mapMonodromy ((MulAut.conj τ).toMonoidHom.comp f) = τ • t.mapMonodromy f :=
+  ext_of_two rfl rfl
+
+/-- The monodromy group of the image triple is the image of the representation. -/
+theorem monodromyGroup_mapMonodromy : (t.mapMonodromy f).monodromyGroup = f.range := by
+  have hgen : Subgroup.closure ({⟨t.σ0, t.σ0_mem_monodromyGroup⟩,
+      ⟨t.σ1, t.σ1_mem_monodromyGroup⟩} : Set t.monodromyGroup) = ⊤ := by
+    rw [← Subgroup.map_subtype_inj, MonoidHom.map_closure]
+    simp only [Set.image_insert_eq, Set.image_singleton, Subgroup.coe_subtype]
+    rw [closure_pair_eq_monodromyGroup, ← MonoidHom.range_eq_map]
+    simp
+  rw [monodromyGroup, mapMonodromy_σ0, mapMonodromy_σ1, ← Set.image_singleton,
+    ← Set.image_insert_eq, ← MonoidHom.map_closure, hgen, MonoidHom.range_eq_map]
+
+/-- The image triple is connected exactly when it has a sheet and the image of the
+representation is transitive on its sheets. -/
+theorem isConnected_mapMonodromy_iff :
+    (t.mapMonodromy f).IsConnected ↔ m ≠ 0 ∧ MulAction.IsPretransitive f.range (Fin m) := by
+  rw [isConnected_iff, monodromyGroup_mapMonodromy]
+
+end mapMonodromy
 
 end PermutationTriple
 

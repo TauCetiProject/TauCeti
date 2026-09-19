@@ -1,0 +1,172 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.MvPolynomial.Basic
+public import Mathlib.Algebra.Polynomial.Basic
+public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
+public import Mathlib.RingTheory.Localization.FractionRing
+-- Proof-only: the equivalence `k[X] ≃ k[X_⋆]`, Mathlib's separable finiteness theorem, the normal
+-- closure, and the three Tau Ceti inputs (the purely inseparable case, the fixed-field splitting,
+-- and the transfer lemmas).
+import Mathlib.Algebra.MvPolynomial.Equiv
+import Mathlib.FieldTheory.Normal.Closure
+import Mathlib.RingTheory.DedekindDomain.IntegralClosure
+import TauCeti.FieldTheory.Normal.FixedField
+import TauCeti.RingTheory.IntegralClosure.PurelyInseparable
+import TauCeti.RingTheory.IntegralClosure.Transfer
+
+/-!
+# Finiteness of the normalization of a polynomial ring over a field
+
+Let `k` be a field, `P = k[X_1, …, X_r]` a polynomial ring in finitely many variables, `K` its
+fraction field and `L / K` a finite field extension. This file proves that the integral closure
+of `P` in `L` is a **finite `P`-module**, with no separability hypothesis on `L / K`. For one
+variable this is the finiteness of the normalization of `k[x]` in an algebraic function field:
+the integral closure of `k[x]` in a finite extension of `k(x)` is a finitely generated
+`k[x]`-module, including when `k` is imperfect and the extension is inseparable.
+
+Mathlib's `IsIntegralClosure.finite` needs `L / K` separable, since it works through the trace
+form. The inseparable case is supplied by
+`TauCeti.IsIntegralClosure.finite_mvPolynomial_of_isPurelyInseparable`. The two combine through
+the splitting of a normal extension `E / K` at the fixed field `M = E ^ Aut(E/K)`: `M / K` is
+purely inseparable (`TauCeti.IntermediateField.isPurelyInseparable_fixedField_top`) and `E / M`
+is Galois. The integral closure `B` of `P` in `M` is therefore a finite `P`-module; it is a
+Noetherian integrally closed domain with fraction field `M`, so its integral closure in the
+separable extension `E / M` is a finite `B`-module, and that ring is also the integral closure of
+`P` in `E`. A general `L` embeds into a normal closure `E`, and finiteness descends along the
+embedding because `P` is Noetherian.
+
+## Main results
+
+* `TauCeti.IsIntegralClosure.finite_mvPolynomial`: the integral closure of a polynomial ring in
+  finitely many variables over a field, in a finite extension of its fraction field, is a finite
+  module.
+* `TauCeti.IsIntegralClosure.finite_polynomial`: the one-variable form over `k[X]`.
+
+## References
+
+* Stacks Project, Lemma 10.161.12 (tag 032N) and Lemma 10.161.13 (tag 032O), whose argument
+  (reduce to a normal extension, split it into a purely inseparable and a separable step) is the
+  one followed here for a polynomial ring over a field.
+-/
+
+public section
+
+open Polynomial
+
+namespace TauCeti
+
+namespace IsIntegralClosure
+
+variable (k : Type*) [Field k] {σ : Type*} [Finite σ] (K : Type*) [Field K]
+  [Algebra (MvPolynomial σ k) K] [IsFractionRing (MvPolynomial σ k) K]
+
+/-- A tower `K ⊆ M ⊆ E` over the fraction field `K` of `P = k[X_1, …, X_r]`, with `M / K` finite
+purely inseparable and `E / M` finite separable: the integral closure `B` of `P` in `M` is finite
+over `P`, and the integral closure of `B` in `E`, which is the integral closure of `P` in `E`, is
+finite over `B`. -/
+private theorem finite_mvPolynomial_of_tower (M : Type*) [Field M] [Algebra K M]
+    [Algebra (MvPolynomial σ k) M] [IsScalarTower (MvPolynomial σ k) K M]
+    [IsPurelyInseparable K M] [FiniteDimensional K M] (E : Type*) [Field E] [Algebra M E]
+    [Algebra (MvPolynomial σ k) E] [IsScalarTower (MvPolynomial σ k) M E]
+    [Algebra.IsSeparable M E] [FiniteDimensional M E] (C : Type*) [CommRing C]
+    [Algebra (MvPolynomial σ k) C] [Algebra C E] [IsScalarTower (MvPolynomial σ k) C E]
+    [IsIntegralClosure C (MvPolynomial σ k) E] :
+    Module.Finite (MvPolynomial σ k) C := by
+  -- the purely inseparable step: `B`, the integral closure of `P` in `M`, is finite over `P`
+  let B := integralClosure (MvPolynomial σ k) M
+  have : Module.Finite (MvPolynomial σ k) B :=
+    finite_mvPolynomial_of_isPurelyInseparable k K M B
+  -- `B` is a Noetherian integrally closed domain with fraction field `M`
+  have : IsNoetherianRing B := IsNoetherianRing.of_finite (MvPolynomial σ k) B
+  have : IsFractionRing B M := integralClosure.isFractionRing_of_finite_extension K M
+  have : IsIntegrallyClosed B := integralClosure.isIntegrallyClosedOfFiniteExtension K
+  -- the separable step: the integral closure `D` of `B` in `E` is finite over `B`, hence over `P`
+  let D := integralClosure B E
+  have : Module.Finite B D := IsIntegralClosure.finite B M E D
+  have : Module.Finite (MvPolynomial σ k) D := Module.Finite.trans B D
+  -- `D` is also the integral closure of `P` in `E`, so finiteness passes to `C`
+  have : IsIntegralClosure D (MvPolynomial σ k) E := IsIntegralClosure.tower_bot (A := B)
+  exact IsIntegralClosure.finite_of_injective (C' := D) (AlgHom.id (MvPolynomial σ k) E)
+    Function.injective_id
+
+/-- The normal case of `TauCeti.IsIntegralClosure.finite_mvPolynomial`: over a finite normal
+extension `E` of the fraction field `K` of `P = k[X_1, …, X_r]`, the integral closure of `P` in
+`E` is a finite `P`-module. The extension is cut at `M = E ^ Aut(E/K)`: below `M` it is purely
+inseparable, above it Galois. -/
+private theorem finite_mvPolynomial_of_normal (E : Type*) [Field E] [Algebra K E]
+    [Algebra (MvPolynomial σ k) E] [IsScalarTower (MvPolynomial σ k) K E] [Normal K E]
+    [FiniteDimensional K E] (C : Type*) [CommRing C] [Algebra (MvPolynomial σ k) C]
+    [Algebra C E] [IsScalarTower (MvPolynomial σ k) C E]
+    [IsIntegralClosure C (MvPolynomial σ k) E] :
+    Module.Finite (MvPolynomial σ k) C := by
+  let M := IntermediateField.fixedField (⊤ : Subgroup (E ≃ₐ[K] E))
+  have : IsPurelyInseparable K M := IntermediateField.isPurelyInseparable_fixedField_top K E
+  have : IsGalois M E := IsGalois.of_fixed_field E (⊤ : Subgroup (E ≃ₐ[K] E))
+  -- `P` acts on `M` through `K` (`IntermediateField.algebra'`), so the tower `P → M → E` is the
+  -- tower `P → K → E` and holds by definition; instance search does not find it on its own.
+  have : IsScalarTower (MvPolynomial σ k) M E := IsScalarTower.of_algebraMap_eq' rfl
+  exact finite_mvPolynomial_of_tower k K M E C
+
+/-- **Finiteness of normalization** for a polynomial ring over a field. Let `P = k[X_1, …, X_r]`
+be a polynomial ring in finitely many variables over a field `k`, with fraction field `K`, and let
+`L / K` be a finite extension. Then any integral closure `C` of `P` in `L` is a finite
+`P`-module. No separability of `L / K` is assumed. -/
+theorem finite_mvPolynomial (L : Type*) [Field L] [Algebra K L]
+    [Algebra (MvPolynomial σ k) L] [IsScalarTower (MvPolynomial σ k) K L] [FiniteDimensional K L]
+    (C : Type*) [CommRing C] [Algebra (MvPolynomial σ k) C] [Algebra C L]
+    [IsScalarTower (MvPolynomial σ k) C L] [IsIntegralClosure C (MvPolynomial σ k) L] :
+    Module.Finite (MvPolynomial σ k) C := by
+  -- a finite normal extension `E / K` containing `L`: the normal closure of `L / K`
+  let E := IntermediateField.normalClosure K L (AlgebraicClosure L)
+  let _ : Algebra (MvPolynomial σ k) E :=
+    ((algebraMap K E).comp (algebraMap (MvPolynomial σ k) K)).toAlgebra
+  have : IsScalarTower (MvPolynomial σ k) K E := IsScalarTower.of_algebraMap_eq' rfl
+  have : Module.Finite (MvPolynomial σ k) (integralClosure (MvPolynomial σ k) E) :=
+    finite_mvPolynomial_of_normal k K E _
+  exact IsIntegralClosure.finite_of_injective (C' := integralClosure (MvPolynomial σ k) E)
+    ((IsScalarTower.toAlgHom K L E).restrictScalars (MvPolynomial σ k))
+    (algebraMap L E).injective
+
+/-- **Finiteness of normalization** for `k[X]`: the integral closure of the polynomial ring `k[X]`
+over a field `k` in a finite extension `L` of its fraction field `K` is a finite `k[X]`-module.
+No separability of `L / K` is assumed. For `K = k(X)` and `L` an algebraic function field this is
+the finiteness of the normalization of `k[x]` in `L`. -/
+theorem finite_polynomial (K : Type*) [Field K] [Algebra k[X] K] [IsFractionRing k[X] K]
+    (L : Type*) [Field L] [Algebra K L] [Algebra k[X] L] [IsScalarTower k[X] K L]
+    [FiniteDimensional K L] (C : Type*) [CommRing C] [Algebra k[X] C] [Algebra C L]
+    [IsScalarTower k[X] C L] [IsIntegralClosure C k[X] L] :
+    Module.Finite k[X] C := by
+  -- transport every structure along `k[X] ≃ k[X_⋆]`, the polynomial ring in one variable `⋆`
+  let e := (MvPolynomial.uniqueAlgEquiv k Unit).toRingEquiv
+  let _ : Algebra (MvPolynomial Unit k) k[X] := e.toRingHom.toAlgebra
+  let _ : Algebra (MvPolynomial Unit k) K := ((algebraMap k[X] K).comp e.toRingHom).toAlgebra
+  let _ : Algebra (MvPolynomial Unit k) L := ((algebraMap k[X] L).comp e.toRingHom).toAlgebra
+  let _ : Algebra (MvPolynomial Unit k) C := ((algebraMap k[X] C).comp e.toRingHom).toAlgebra
+  have : IsScalarTower (MvPolynomial Unit k) k[X] K := IsScalarTower.of_algebraMap_eq' rfl
+  have : IsScalarTower (MvPolynomial Unit k) k[X] L := IsScalarTower.of_algebraMap_eq' rfl
+  have : IsScalarTower (MvPolynomial Unit k) k[X] C := IsScalarTower.of_algebraMap_eq' rfl
+  have : IsScalarTower (MvPolynomial Unit k) K L := IsScalarTower.of_algebraMap_eq fun a ↦ by
+    simp only [RingHom.algebraMap_toAlgebra, RingHom.comp_apply]
+    exact IsScalarTower.algebraMap_apply k[X] K L _
+  have : IsScalarTower (MvPolynomial Unit k) C L := IsScalarTower.of_algebraMap_eq fun a ↦ by
+    simp only [RingHom.algebraMap_toAlgebra, RingHom.comp_apply]
+    exact IsScalarTower.algebraMap_apply k[X] C L _
+  have : IsFractionRing (MvPolynomial Unit k) K :=
+    (IsFractionRing.isFractionRing_iff_of_base_ringEquiv (R := k[X]) (S := K) (h := e.symm)).mp
+      inferInstance
+  have : Algebra.IsIntegral (MvPolynomial Unit k) k[X] := ⟨fun b ↦ by
+    have hb : algebraMap (MvPolynomial Unit k) k[X] (e.symm b) = b := e.apply_symm_apply b
+    exact hb ▸ isIntegral_algebraMap⟩
+  have : IsIntegralClosure C (MvPolynomial Unit k) L :=
+    IsIntegralClosure.tower_bot (A := k[X])
+  have : Module.Finite (MvPolynomial Unit k) C := finite_mvPolynomial k K L C
+  exact Module.Finite.of_restrictScalars_finite (MvPolynomial Unit k) k[X] C
+
+end IsIntegralClosure
+
+end TauCeti

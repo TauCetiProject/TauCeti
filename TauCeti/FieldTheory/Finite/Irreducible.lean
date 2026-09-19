@@ -23,6 +23,8 @@ when reading off cycle types of Galois groups by reduction modulo primes.
 
 * `TauCeti.exists_monic_irreducible_natDegree_eq`: a monic irreducible polynomial of any
   prescribed positive degree over a finite field.
+* `TauCeti.exists_monic_irreducible_natDegree_eq_ne_X`: such a polynomial can be chosen distinct
+  from `X`.
 
 ## References
 
@@ -56,5 +58,18 @@ theorem exists_monic_irreducible_natDegree_eq
     (minpoly k α).natDegree = Module.finrank k (FiniteField.Extension k p d) :=
       (Field.primitive_element_iff_minpoly_natDegree_eq k α).mp hα
     _ = d := FiniteField.finrank_extension k p d
+
+/-- For every positive `d`, a finite field has a monic irreducible polynomial of degree `d` other
+than `X`: in degree `1` take `X + 1`, and in higher degree any irreducible polynomial differs
+from `X` by its degree. -/
+theorem exists_monic_irreducible_natDegree_eq_ne_X
+    (k : Type*) [Field k] [Finite k] (d : ℕ) (hd : 0 < d) :
+    ∃ h : k[X], h.Monic ∧ Irreducible h ∧ h.natDegree = d ∧ h ≠ X := by
+  obtain rfl | hd1 := eq_or_lt_of_le (Nat.one_le_iff_ne_zero.mpr hd.ne')
+  · refine ⟨X + C 1, monic_X_add_C 1, irreducible_of_degree_eq_one (degree_X_add_C 1),
+      natDegree_X_add_C 1, fun h ↦ ?_⟩
+    simpa using congrArg (coeff · 0) h
+  · obtain ⟨h, hmonic, hirr, hdeg⟩ := exists_monic_irreducible_natDegree_eq k d hd
+    exact ⟨h, hmonic, hirr, hdeg, fun hX ↦ by simp [hX] at hdeg; omega⟩
 
 end TauCeti

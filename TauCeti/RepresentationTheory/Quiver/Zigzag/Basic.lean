@@ -210,6 +210,18 @@ def starEquivNeighborSet (v : V) :
     ext
     rfl
 
+/-- The star at a doubled-quiver vertex is finite whenever its neighbor set is finite. -/
+noncomputable instance instFintypeStarVertex (v : V) [Fintype (G.neighborSet v)] :
+    Fintype (Quiver.Star (vertex G v)) :=
+  Fintype.ofEquiv _ (starEquivNeighborSet G v).symm
+
+/-- If every graph neighbor set is finite, then every star of its doubled quiver is finite. -/
+noncomputable instance instFintypeStar [∀ v, Fintype (G.neighborSet v)]
+    (x : DoubledQuiver G) : Fintype (Quiver.Star x) :=
+  Fintype.ofEquiv (G.neighborSet ((vertexEquiv G).symm x))
+    ((starEquivNeighborSet G _).symm.trans
+      (Equiv.cast (congrArg Quiver.Star (vertexEquiv_symm_apply G x))))
+
 @[simp]
 theorem starEquivNeighborSet_apply (v : V) (e : Quiver.Star (vertex G v)) :
     starEquivNeighborSet G v e =
