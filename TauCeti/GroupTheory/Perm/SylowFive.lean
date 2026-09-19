@@ -66,7 +66,6 @@ private theorem natCard_perm_eq_120 [Finite α] (hα : Nat.card α = 5) : Nat.ca
   rfl
 
 /-- The symmetric group on five points has exactly six Sylow `5`-subgroups. -/
-@[simp]
 theorem card_sylow_five_perm [Finite α] (hα : Nat.card α = 5) :
     Nat.card (Sylow 5 (Perm α)) = 6 := by
   classical
@@ -97,7 +96,6 @@ theorem card_sylow_five_perm [Finite α] (hα : Nat.card α = 5) :
 
 /-- The normalizer of a Sylow `5`-subgroup of the symmetric group on five points has order
 `20`. -/
-@[simp]
 theorem card_normalizer_sylow_five_perm [Finite α] (hα : Nat.card α = 5) (P : Sylow 5 (Perm α)) :
     Nat.card (normalizer (P : Set (Perm α))) = 20 := by
   have h := (normalizer (P : Set (Perm α))).index_mul_card
