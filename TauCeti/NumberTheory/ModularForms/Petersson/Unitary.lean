@@ -27,7 +27,9 @@ Atkin–Lehner matrices normalise `Γ₁(N)` or `Γ₀(N)` from inside `GL₂(�
 `D > 0`, in general different from `1`. For such an `α` the coset-sum argument is unavailable —
 `α` does not act on `SL₂(ℤ)/Γ·{±I}` — and the pairing is instead read as one integral over a
 fundamental domain, which `α` carries to another fundamental domain; what survives of the slash
-is the factor `D ^ (k - 2)` of `UpperHalfPlane.peterssonInner_slash_slash_of_det_pos`.
+is the factor `D ^ (k - 2)` of `UpperHalfPlane.peterssonInner_slash_slash_of_det_pos`. The same
+argument needs no normalising hypothesis: an `α` conjugating `Γ` onto `Γ'` carries a fundamental
+domain for `Γ` to one for `Γ'`, and so compares the Petersson products at the two levels.
 
 Two consequences of the diamond case carry the newform theory forward. First, the
 Petersson-orthogonal complement of a diamond-stable subspace is again diamond-stable — the
@@ -41,8 +43,8 @@ Petersson-orthogonal, since the diamond eigenvalues `χ(d)` are roots of unity: 
 * `TauCeti.CuspForm.peterssonInnerCosets_slash`: the Petersson product is unchanged by slashing
   both arguments with an element of the normaliser of `Γ·{±I}`.
 * `TauCeti.CuspForm.peterssonInnerCosets_slash_of_inv_conjAct_eq`: slashing both arguments by a
-  positive-determinant `α ∈ GL₂(ℝ)` normalising `Γ` multiplies the Petersson product by
-  `(det α) ^ (k - 2)`.
+  positive-determinant `α ∈ GL₂(ℝ)` conjugating `Γ` onto `Γ'` multiplies the Petersson product by
+  `(det α) ^ (k - 2)`; for `Γ' = Γ` this is the case of a normaliser.
 * `TauCeti.CuspForm.peterssonInnerCosets_diamondOpCusp`: the diamond operators are
   Petersson-unitary.
 * `TauCeti.CuspForm.diamondOpCusp_mem_peterssonOrthogonal`: the Petersson-orthogonal complement
@@ -108,22 +110,6 @@ private lemma cosetRightMul_apply {α : SL(2, ℤ)}
   conv_lhs => rw [← Quotient.out_eq q]
   rfl
 
-omit [Γ.FiniteIndex] in
-/-- **The summand of the Petersson product is a function of the coset.** Replacing the chosen
-representative `q.out` of a coset by any other element of it does not change the level-one-domain
-pairing of the correspondingly slashed forms. -/
-private theorem peterssonInner_slash_inv_out (f g : CuspForm (Γ.map (mapGL ℝ)) k) (δ : SL(2, ℤ)) :
-    UpperHalfPlane.peterssonInner k fd
-        (⇑f ∣[k] ((QuotientGroup.mk δ : SL(2, ℤ) ⧸ Γ.withCenter).out)⁻¹)
-        (⇑g ∣[k] ((QuotientGroup.mk δ : SL(2, ℤ) ⧸ Γ.withCenter).out)⁻¹) =
-      UpperHalfPlane.peterssonInner k fd (⇑f ∣[k] δ⁻¹) (⇑g ∣[k] δ⁻¹) := by
-  have hmem : ((QuotientGroup.mk δ : SL(2, ℤ) ⧸ Γ.withCenter).out)⁻¹ * δ ∈ Γ.withCenter :=
-    QuotientGroup.eq.mp (Quotient.out_eq _)
-  have h := peterssonInner_slash_slash_of_mem_withCenter f g hmem δ⁻¹
-  have hcancel : ((QuotientGroup.mk δ : SL(2, ℤ) ⧸ Γ.withCenter).out)⁻¹ * δ * δ⁻¹ =
-      ((QuotientGroup.mk δ : SL(2, ℤ) ⧸ Γ.withCenter).out)⁻¹ := by group
-  rwa [← SlashAction.slash_mul, ← SlashAction.slash_mul, hcancel] at h
-
 /-- **The Petersson product is unitary under a normalising slash.** If `α ∈ SL₂(ℤ)` normalises
 `Γ·{±I}` and the slashes `f ∣[k] α`, `g ∣[k] α` are again cusp forms `F`, `G` for `Γ`, then
 `⟪F, G⟫ = ⟪f, g⟫`: right multiplication by `α⁻¹` permutes the cosets of `Γ·{±I}` indexing the
@@ -150,35 +136,40 @@ theorem peterssonInnerCosets_slash {α : SL(2, ℤ)}
   rw [peterssonInnerCosets_def, peterssonInnerCosets_def, Finset.sum_congr rfl fun q _ ↦ hsummand q]
   exact Fintype.sum_equiv (cosetRightMul hα) _ _ fun _ ↦ rfl
 
-/-- **Slashing by a normaliser in `GL₂(ℝ)` rescales the Petersson product.** If
-`α ∈ GL₂(ℝ)` has positive determinant and conjugates the image of `Γ` in `GL₂(ℝ)` onto itself,
-and the slashes `f ∣[k] α`, `g ∣[k] α` are again cusp forms `F`, `G` for `Γ`, then
+/-- **Slashing by a conjugating element of `GL₂(ℝ)` rescales the Petersson product.** If
+`α ∈ GL₂(ℝ)` has positive determinant and conjugates the image of `Γ` in `GL₂(ℝ)` onto that of
+`Γ'` — `α⁻¹ Γ' α = Γ` — and `F`, `G` are the cusp forms for `Γ` obtained by slashing cusp forms
+`f`, `g` for `Γ'` by `α`, then
 
 ```text
-⟪F, G⟫ = (det α) ^ (k - 2) · ⟪f, g⟫.
+⟪F, G⟫_Γ = (det α) ^ (k - 2) · ⟪f, g⟫_Γ'.
 ```
 
 The pairing is one integral over the fundamental domain `⋃_q q⁻¹ • 𝒟ᵒ`
 (`CuspForm.peterssonInnerCosets_eq_peterssonInner`); the slash moves it to the translate by `α`
 at the cost of `(det α) ^ (k - 2)` (`UpperHalfPlane.peterssonInner_slash_slash_of_det_pos`), and
-that translate is again a fundamental domain for `Γ`
+that translate is a fundamental domain for `Γ'`
 (`ModularGroup.isFundamentalDomain_smul_of_inv_conjAct_eq`), over which the pairing is the same
-(`UpperHalfPlane.peterssonInner_eq_of_isFundamentalDomain`).
+as over any other (`UpperHalfPlane.peterssonInner_eq_of_isFundamentalDomain`).
 
-As in `peterssonInnerCosets_slash`, the forms `F` and `G` are taken as data with their defining
-equations, since the Fricke and Atkin–Lehner operators each package the slashed function as a cusp
-form in their own way. -/
-theorem peterssonInnerCosets_slash_of_inv_conjAct_eq {α : GL (Fin 2) ℝ}
-    (hdet : 0 < (α : Matrix (Fin 2) (Fin 2) ℝ).det)
-    (hα : ConjAct.toConjAct α⁻¹ • Γ.map (mapGL ℝ) = Γ.map (mapGL ℝ))
-    {f g F G : CuspForm (Γ.map (mapGL ℝ)) k} (hF : ⇑F = ⇑f ∣[k] α) (hG : ⇑G = ⇑g ∣[k] α) :
+With `Γ' = Γ` this is the case of a normaliser, such as the Fricke and Atkin–Lehner matrices; with
+`Γ' ≠ Γ` it is the conjugation step of the adjoint theory of the double coset operators
+(`CuspForm.peterssonInnerCosets_trace_translate`). As in `peterssonInnerCosets_slash`, the forms
+`F` and `G` are taken as data with their defining equations, since the operators that arise this
+way each package the slashed function as a cusp form in their own way. -/
+theorem peterssonInnerCosets_slash_of_inv_conjAct_eq {Γ' : Subgroup SL(2, ℤ)} [Γ'.FiniteIndex]
+    {α : GL (Fin 2) ℝ} (hdet : 0 < (α : Matrix (Fin 2) (Fin 2) ℝ).det)
+    (hα : ConjAct.toConjAct α⁻¹ • Γ'.map (mapGL ℝ) = Γ.map (mapGL ℝ))
+    {f g : CuspForm (Γ'.map (mapGL ℝ)) k} {F G : CuspForm (Γ.map (mapGL ℝ)) k}
+    (hF : ⇑F = ⇑f ∣[k] α) (hG : ⇑G = ⇑g ∣[k] α) :
     peterssonInnerCosets F G =
       ((α : Matrix (Fin 2) (Fin 2) ℝ).det : ℂ) ^ (k - 2) * peterssonInnerCosets f g := by
-  have hD := isFundamentalDomain_iUnion_out_inv_smul_fdo_withCenter Γ
   rw [peterssonInnerCosets_eq_peterssonInner, peterssonInnerCosets_eq_peterssonInner, hF, hG,
     UpperHalfPlane.peterssonInner_slash_slash_of_det_pos k hdet,
     UpperHalfPlane.peterssonInner_eq_of_isFundamentalDomain k f g
-      (isFundamentalDomain_smul_of_inv_conjAct_eq hα hD) hD]
+      (isFundamentalDomain_smul_of_inv_conjAct_eq hα
+        (isFundamentalDomain_iUnion_out_inv_smul_fdo_withCenter Γ))
+      (isFundamentalDomain_iUnion_out_inv_smul_fdo_withCenter Γ')]
 
 /-! ### The diamond operators are unitary -/
 

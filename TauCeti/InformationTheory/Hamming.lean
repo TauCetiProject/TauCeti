@@ -16,7 +16,9 @@ and its complement. These identities let constructions assembled from
 independent coordinate blocks reduce their Hamming data to the data of the blocks.
 
 It also proves that Hamming distance and Hamming weight are invariant under relabelling a finite
-coordinate type along an equivalence.
+coordinate type along an equivalence, and evaluates a product over the coordinates of a word which
+only depends on which coordinates vanish; this is how weight monomials `X^(n - wt x) Y^(wt x)`
+factor over the coordinates.
 -/
 
 public section
@@ -70,6 +72,16 @@ theorem hammingNorm_eq_domRestrict_add_domRestrict_compl {ι : Type*} {A : ι �
     hammingNorm x = hammingNorm (s.domRestrict x) + hammingNorm (sᶜ.domRestrict x) := by
   simp only [hammingNorm, Finset.card_filter]
   exact (Fintype.sum_subtype_add_sum_subtype (· ∈ s) _).symm
+
+/-- A product over the coordinates which takes the value `a` at the zero coordinates of a word
+and `b` elsewhere is `a ^ (n - wt x) * b ^ (wt x)`, where `n` is the length and `wt` is the
+Hamming weight. -/
+@[simp] theorem prod_ite_eq_zero_eq_pow_mul_pow_hammingNorm {M : Type*} {β : ι → Type*} [Fintype ι]
+    [∀ i, Zero (β i)] [∀ i, DecidableEq (β i)] [CommMonoid M] (x : ∀ i, β i) (a b : M) :
+    ∏ i, (if x i = 0 then a else b) = a ^ (Fintype.card ι - hammingNorm x) * b ^ hammingNorm x := by
+  have h := Finset.card_filter_add_card_filter_not (s := Finset.univ) (fun i ↦ x i = 0)
+  rw [Finset.card_univ] at h
+  rw [Finset.prod_ite, Finset.prod_const, Finset.prod_const, hammingNorm, ← h, Nat.add_sub_cancel]
 
 end TauCeti
 

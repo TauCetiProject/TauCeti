@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Index
+public import TauCeti.Algebra.Group.Subgroup.Map
 import Mathlib.Tactic.Group
 
 /-!
@@ -35,6 +36,8 @@ centre gives the `Γ.withCenter` readings.
   and the index doubling, for an `N` normalised by `Γ` whose elements are `1` and `a ∉ Γ`.
 * `Subgroup.instCountableQuotient`: a coset space of a countable group is countable.
 * `Subgroup.finiteIndex_of_finiteIndex_subgroupOf`: finite index composes along `V ≤ U ≤ G`.
+* `Subgroup.finiteIndex_inf_comap`: `H ⊓ f⁻¹(K)` has finite index when `H` does and
+  `K` has finite index relative to `f(H)`.
 * `MonoidHom.finiteIndex_range_comp`: finite index of ranges is preserved by composition
   with a homomorphism of finite-index range.
 * `MonoidHom.mk_mul_out_bijective`: right cosets of a composite range are represented by
@@ -153,6 +156,17 @@ theorem finiteIndex_of_finiteIndex_subgroupOf {G : Type*} [Group G] (H K : Subgr
   isFiniteRelIndex_top_iff.mp <|
     ((isFiniteRelIndex_iff_finiteIndex (H := H) (K := K)).mpr inferInstance).trans
       (isFiniteRelIndex_top_iff.mpr inferInstance)
+
+/-- **Pulling back a subgroup of finite relative index.** If `H` has finite index in `G` and `K`
+has finite index relative to `f(H)`, then `H ⊓ f⁻¹(K)` has finite index in `G`: its index in `H` is
+the relative index of `K` in `f(H)`. -/
+theorem finiteIndex_inf_comap {G N : Type*} [Group G] [Group N] (H : Subgroup G)
+    [H.FiniteIndex] (K : Subgroup N) (f : G →* N) [K.IsFiniteRelIndex (H.map f)] :
+    (H ⊓ K.comap f).FiniteIndex := by
+  refine ⟨?_⟩
+  rw [← relIndex_mul_index (inf_le_left : H ⊓ K.comap f ≤ H), inf_comm, inf_relIndex_right,
+    relIndex_comap]
+  exact mul_ne_zero IsFiniteRelIndex.relIndex_ne_zero FiniteIndex.index_ne_zero
 
 /-- `Γ` with the centre of the ambient group adjoined. For `Γ ≤ SL(2, ℤ)` the centre is
 `{±I}`, which acts trivially on `ℍ`; it is the cosets of `Γ·{±I}` — not those of `Γ` itself —
