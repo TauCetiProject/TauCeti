@@ -96,6 +96,8 @@ noncomputable instance instMul : Mul (GrothendieckAddGroup S) :=
 
 /-- The canonical map into the Grothendieck ring is multiplicative. -/
 theorem of_mul_of (a b : S) : (of a : GrothendieckAddGroup S) * of b = of (a * b) := by
+  -- Unfold the multiplication here to establish its first public characteristic equation: the
+  -- multiplication is defined by applying the additive Grothendieck-group universal property twice.
   change lift (((liftAddEquiv (M := S) (G := GrothendieckAddGroup S)).toAddMonoidHom.comp
     (AddMonoidHom.compHom (of : S →+ GrothendieckAddGroup S))).comp AddMonoidHom.mul) (of a)
       (of b) = of (a * b)
@@ -165,7 +167,7 @@ theorem ofRingHom_injective [IsCancelAdd S] :
 
 /-! ### The universal property, in ring form -/
 
-variable {R : Type*} [Ring R]
+variable {R : Type*} [NonAssocRing R]
 
 /-- Two ring homomorphisms out of the Grothendieck ring agree as soon as they agree on the image
 of the semiring. -/

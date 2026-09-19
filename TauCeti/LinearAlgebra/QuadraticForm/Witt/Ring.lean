@@ -279,6 +279,7 @@ theorem wittClass_eq_iff_exists_nsmul {x y : RegularFormClass K} :
 
 /-- **The anisotropic part is the canonical representative of a Witt class**: two regular forms
 have the same Witt class exactly when their anisotropic parts are isometric. -/
+@[simp]
 theorem wittClass_eq_iff_anisotropicPart_eq {x y : RegularFormClass K} :
     wittClass x = wittClass y ↔
       RegularFormClass.anisotropicPart x = RegularFormClass.anisotropicPart y := by
@@ -307,6 +308,7 @@ theorem eq_of_anisotropic_of_anisotropic_of_wittClass_eq {x y : RegularFormClass
   exact wittClass_eq_iff_anisotropicPart_eq.mp h
 
 /-- A form has trivial Witt class exactly when it is a sum of hyperbolic planes. -/
+@[simp]
 theorem wittClass_eq_zero_iff {x : RegularFormClass K} :
     wittClass x = 0 ↔ RegularFormClass.anisotropicPart x = 0 := by
   rw [← map_zero (wittClass (K := K)), wittClass_eq_iff_anisotropicPart_eq,
