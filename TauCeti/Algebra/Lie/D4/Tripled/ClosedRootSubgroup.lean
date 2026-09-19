@@ -104,6 +104,10 @@ instance isClosedImmersion_rootSubgroup (k : Fin 4 ⊕ Fin 4) :
   exact kostantRootSubgroupToralCoordinateMap_surjective_of_surjective
     _ _ _ _ _ _ _ _ k (represented_rootSubgroupCoordinateMap_surjective k)
 
+/-- Every numbered root-subgroup map into the tripled type-`D₄` carrier is a monomorphism. -/
+theorem mono_rootSubgroup (k : Fin 4 ⊕ Fin 4) : Mono (rootSubgroup k) :=
+  mono_of_isClosedImmersion_underlying (rootSubgroup k)
+
 /-- Surjectivity of the numbered root-subgroup coordinate maps persists over every commutative
 base ring, in the transported quotient presentation of the carrier. -/
 theorem rootSubgroupToBaseChangeCoordinateMap_surjective
@@ -124,7 +128,7 @@ def rootSubgroupClosedSubgroup (k : Fin 4 ⊕ Fin 4) : ClosedSubgroupScheme grou
 @[simp]
 theorem coe_rootSubgroupClosedSubgroup (k : Fin 4 ⊕ Fin 4) :
     (rootSubgroupClosedSubgroup k).1 =
-      letI := mono_of_isClosedImmersion_underlying (rootSubgroup k)
+      letI := mono_rootSubgroup k
       Subobject.mk (rootSubgroup k) :=
   ClosedSubgroupScheme.coe_mk _
 
