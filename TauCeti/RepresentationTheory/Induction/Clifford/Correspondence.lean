@@ -18,15 +18,17 @@ import TauCeti.RepresentationTheory.Simple.Basic
 Let `N` be a normal subgroup of a finite group `G`, let `V` be an irreducible representation of
 `N`, and let `T = inertia V` be its inertia group.  An irreducible representation `U` of `T`
 **lies over** `V` when `V` occurs in the restriction of `U` to `N`, that is, when there is a
-nonzero intertwiner `V ⟶ Res_N U`.  This file proves the first half of the Clifford
-correspondence: for such a `U` the induced representation `Ind_T^G U` is irreducible
-(`TauCeti.simple_indFDRep_of_inertia`).
+nonzero intertwiner `V ⟶ Res_N U`.  This file proves the Clifford correspondence's
+irreducibility step: for such a `U` the induced representation `Ind_T^G U` is
+irreducible (`FDRep.simple_indFDRep_of_inertia`).  Showing that the induced representation lies
+over `V`, and hence defining the map between the corresponding irreducible classes, remains
+separate.
 
 The proof reads the Mackey irreducibility criterion `TauCeti.simple_indFDRep_iff`.  Two facts
 about the restriction of `U` to `N` do the work.
 
 * The images of the intertwiners `V → Res_N U` span `U`
-  (`TauCeti.iSup_range_intertwiningMap_inertia_eq_top`).  Their span is stable under `T`, because
+  (`FDRep.iSup_range_intertwiningMap_inertia_eq_top`).  Their span is stable under `T`, because
   translating such an image by `t ∈ T` gives the image of an intertwiner out of `{}^t V ≅ V`; it
   is nonzero because `U` lies over `V`; and `U` is irreducible, so the span is everything.
 * A Mackey intertwiner `ψ` at `s ∉ T` intertwines, on `N`, the restriction `Res_N U` with its
@@ -35,19 +37,18 @@ about the restriction of `U` to `N` do the work.
   (`Representation.IntertwiningMap.exists_comp_eq_id_of_injective`) retracts the embedding, and
   as the copies of `V` span `U` the retraction is nonzero on some copy of `V`.  The composite is a
   nonzero intertwiner from `V` to `{}^{s⁻¹} V`, so Schur's lemma puts `s⁻¹`, hence `s`, in `T`
-  (`TauCeti.mem_inertia_of_intertwiningMap_ne_zero`).
+  (`Representation.IntertwiningMap.mem_inertia`).
 
 The first step uses that `T` is contained in the inertia group, the second that it contains it.
-The other half of the correspondence, that every irreducible representation of `G` lying over `V`
-arises this way from exactly one `U` up to isomorphism, is a separate statement.
+Before this gives the Clifford-correspondence map, one must also prove that the induced
+representation lies over `V`.  Surjectivity and uniqueness—that every irreducible representation of
+`G` lying over `V` arises this way from exactly one `U` up to isomorphism—are separate statements.
 
 ## Main statements
 
-* `TauCeti.mem_inertia_of_intertwiningMap_ne_zero`: a nonzero intertwiner from an irreducible
-  `V` to its conjugate `{}^g V` puts `g` in the inertia group of `V`.
-* `TauCeti.iSup_range_intertwiningMap_inertia_eq_top`: if `U` lies over `V`, the images of the
+* `FDRep.iSup_range_intertwiningMap_inertia_eq_top`: if `U` lies over `V`, the images of the
   intertwiners `V → Res_N U` span `U`.
-* `TauCeti.simple_indFDRep_of_inertia`: **induction from the inertia group preserves
+* `FDRep.simple_indFDRep_of_inertia`: **induction from the inertia group preserves
   irreducibility** for representations lying over `V`.
 
 ## References
@@ -64,7 +65,9 @@ open Representation (IntertwiningMap)
 
 universe u
 
-namespace TauCeti
+namespace FDRep
+
+open TauCeti
 
 section Inertia
 
@@ -93,21 +96,6 @@ private theorem exists_linearEquiv_of_mem_inertia {V : FDRep k N} {t : G} (ht : 
       ModuleCat.hom_comp, FDRep.hom_hom_action_ρ, LinearMap.coe_comp, Function.comp_apply,
       conjNormalFDRep_ρ, map_inv, MulAut.inv_apply] at h
     exact h
-
-/-- **A nonzero intertwiner into a conjugate puts the conjugating element in the inertia group.**
-If `V` is irreducible and some intertwiner from `V` to `{}^g V` is nonzero, then Schur's lemma makes
-it an isomorphism, so `g ∈ inertia V`. -/
-theorem mem_inertia_of_intertwiningMap_ne_zero {V : FDRep k N} [Simple V] {g : G}
-    (q : IntertwiningMap V.ρ (conjNormalFDRep g V).ρ) (hq : q ≠ 0) : g ∈ inertia V := by
-  have := FDRep.isIrreducible_of_simple V
-  have : Simple (conjNormalFDRep g V) := by
-    rw [conjNormalFDRep, ← conjNormalFDRepEquiv_functor]
-    exact CategoryTheory.simple_obj _ V
-  have := FDRep.isIrreducible_of_simple (conjNormalFDRep g V)
-  obtain ⟨i⟩ := nonempty_fdRepIso_iff.mpr
-    ⟨IntertwiningMap.ofBijective q
-      ((_root_.Representation.IsIrreducible.bijective_or_eq_zero q).resolve_right hq)⟩
-  exact mem_inertia_iff.mpr ⟨i.symm⟩
 
 /-- **The copies of `V` span a representation of the inertia group lying over `V`.**  If `U` is an
 irreducible representation of the inertia group of `V` and some intertwiner `V → Res_N U` is
@@ -188,8 +176,9 @@ of characteristic zero, and let `U` be an irreducible representation of the iner
 lying over `V`, that is, with a nonzero intertwiner from `V` to the restriction of `U` to `N`.
 Then the representation of `G` induced from `U` is irreducible.
 
-This is the half of the Clifford correspondence `Irr(inertia V ∣ V) → Irr(G ∣ V)` saying that
-induction lands among the irreducible representations. -/
+This is the irreducibility step toward the Clifford correspondence.  One must additionally prove
+that the induced representation lies over `V` before induction defines a map
+`Irr(inertia V ∣ V) → Irr(G ∣ V)`. -/
 theorem simple_indFDRep_of_inertia (V : FDRep k N) [Simple V] (U : FDRep k (inertia V))
     [Simple U] (f : V ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia V))).obj U)
     (hf : f ≠ 0) :
@@ -200,7 +189,7 @@ theorem simple_indFDRep_of_inertia (V : FDRep k N) [Simple V] (U : FDRep k (iner
   set ρN := U.ρ.comp (Subgroup.inclusion (le_inertia V))
   -- The copies of `V` in `Res_N U` span `U`.
   have hspan : ⨆ g : IntertwiningMap V.ρ ρN, LinearMap.range g.toLinearMap = ⊤ := by
-    refine iSup_range_intertwiningMap_inertia_eq_top V U
+    refine V.iSup_range_intertwiningMap_inertia_eq_top U
       ((FDRep.forget₂HomLinearEquiv _ _).symm f).hom fun h0 => hf ?_
     apply Action.Hom.ext
     ext v
@@ -255,8 +244,8 @@ theorem simple_indFDRep_of_inertia (V : FDRep k N) [Simple V] (U : FDRep k (iner
         rw [hc]
         rfl
   have hq : q ≠ 0 := fun h0 => hg₂ (LinearMap.ext fun v => DFunLike.congr_fun h0 v)
-  exact hs (by simpa using (inertia V).inv_mem (mem_inertia_of_intertwiningMap_ne_zero q hq))
+  exact hs (by simpa using (inertia V).inv_mem (q.mem_inertia hq))
 
 end Criterion
 
-end TauCeti
+end FDRep
