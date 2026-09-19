@@ -35,7 +35,7 @@ variable
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, NormedAddCommGroup (V x)] [∀ x, NormedSpace 𝕜 (V x)]
+  [fiberNorm : ∀ x, NormedAddCommGroup (V x)] [∀ x, NormedSpace 𝕜 (V x)]
   [FiberBundle F V] [IsManifold I 1 M] [VectorBundle 𝕜 F V]
   {n : ℕ∞ω}
 
