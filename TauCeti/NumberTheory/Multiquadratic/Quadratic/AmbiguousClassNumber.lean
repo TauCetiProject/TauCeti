@@ -163,10 +163,16 @@ theorem natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_foral
     (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
-    (hsf : Squarefree d) (hd : 0 < d) (hpos : ∀ P ∈ s, 0 < P) :
+    (hsf : Squarefree d) (hpos : ∀ P ∈ s, 0 < P) :
     Nat.card {C : ClassGroup (𝓞 K) //
       ClassGroup.mulEquiv (ringOfIntegersQuadraticConj hmin hgen) C = C} =
       2 ^ ((ramifiedPrimes K).ncard - 1) := by
+  have hd : 0 < d := by
+    have hfd : 0 < fundamentalDiscriminant d := by
+      rw [← hprod]
+      exact Finset.prod_pos hpos
+    obtain ⟨c, hc, hcfd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
+    rcases hc with rfl | rfl <;> norm_num at hcfd <;> omega
   rw [Nat.card_congr (Equiv.subtypeEquivRight fun C =>
       mulEquiv_ringOfIntegersQuadraticConj_apply_eq_self_iff hmin hgen C),
     ← TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion,
