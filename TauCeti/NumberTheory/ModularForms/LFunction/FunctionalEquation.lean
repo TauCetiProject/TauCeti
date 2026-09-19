@@ -34,7 +34,7 @@ entire `ModularForm.Λ`, so the completed function is entire.  On `Γ₁(N)`, Ta
 * `CuspForm.frickeCompletedL_sub_eq_I_zpow_mul`: `Λ_N(k - s, f) = i^k Λ_N(s, g)` for any
   Fricke companion `g`, without weight or width hypotheses.
 * `CuspForm.frickeCompletedL_functional_equation`: the two-form Fricke functional equation.
-* `CuspForm.frickeCompletedL_functional_equation_Gamma1`: the functional equation on `Γ₁(N)`
+* `CuspForm.frickeCompletedL_functional_equation_gamma1`: the functional equation on `Γ₁(N)`
   with the bundled normalized Fricke companion.
 
 ## Provenance
@@ -332,7 +332,7 @@ variable {N : ℕ} [NeZero N] {k : ℤ}
 
 /-- Hecke's functional equation for a positive-weight cusp form on `Γ₁(N)`, with the normalized
 Fricke operator providing the companion cusp form. -/
-theorem frickeCompletedL_functional_equation_Gamma1
+theorem frickeCompletedL_functional_equation_gamma1
     (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) (hk : 0 < k) (s : ℂ) :
     frickeCompletedL f (N.toPNat (NeZero.pos N)) ((k : ℂ) - s) =
       Complex.I ^ k *
