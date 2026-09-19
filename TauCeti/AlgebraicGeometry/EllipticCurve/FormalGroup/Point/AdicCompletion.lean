@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Hom
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
@@ -66,6 +67,14 @@ local instance : Fact (IsAdic m_v) :=
   ⟨v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)⟩
 
 variable (W : WeierstrassCurve (v.adicCompletionIntegers K))
+
+/-- A curve over the completed valuation ring is an integral model of its base change to the
+completion. -/
+instance isIntegral_baseChange_adicCompletion :
+    WeierstrassCurve.IsIntegral
+      (Valued.v : Valuation K_v (WithZero (Multiplicative ℤ))).valuationSubring
+        (W.baseChange K_v) :=
+  ⟨W, rfl⟩
 
 private theorem valued_coe_isUnit {a : O_v} (ha : IsUnit a) :
     Valued.v (a : K_v) = 1 :=
