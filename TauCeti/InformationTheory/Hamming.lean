@@ -26,6 +26,12 @@ namespace TauCeti
 
 variable {ι κ : Type*} {β : ι ⊕ κ → Type*}
 
+/-- A constant word has full weight unless its constant value is zero. -/
+@[simp]
+theorem hammingNorm_const {A : Type*} [Fintype ι] [Zero A] [DecidableEq A] (a : A) :
+    hammingNorm (Function.const ι a) = if a = 0 then 0 else Fintype.card ι := by
+  by_cases ha : a = 0 <;> simp [hammingNorm, Function.const, ha]
+
 /-- The Hamming distance between two pairs of words combined on a disjoint union is the sum of
 the distances between the respective words. -/
 @[simp]
