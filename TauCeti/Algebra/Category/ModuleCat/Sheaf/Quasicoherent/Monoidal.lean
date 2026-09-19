@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Sheaf.LocallyFree
 public import Mathlib.CategoryTheory.Monoidal.Subcategory
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FinitePresentation
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free

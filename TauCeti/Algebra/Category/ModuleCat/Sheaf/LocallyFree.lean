@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Sheaf.LocallyFree
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FinitePresentation
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Monoidal
 
 /-!
@@ -15,11 +13,12 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Monoidal
 Let `R` be a sheaf of commutative rings on a small site with pullbacks. If `M` and `N` are locally
 free sheaves of `R`-modules, then so is `M ⊗ N`: on a common refinement of covers on which `M`
 and `N` are free, the restriction of `M ⊗ N` is the tensor product of two free sheaves, which is
-free on the product of the index types. Since the unit is free on one generator, local freeness
-is a monoidal property of sheaves of modules. Together with the corresponding result for finite
-presentation (`TauCeti.SheafOfModules.isMonoidal_isFinitePresentation`), this shows that finite
-locally free sheaves of modules, the sheaves of sections of vector bundles, form a monoidal full
-subcategory (`ObjectProperty.fullMonoidalSubcategory`).
+free on the product of the index types. If the site also has binary products, the unit is free on
+one generator, so local freeness is a monoidal property of sheaves of modules. Together with the
+corresponding result for finite presentation
+(`TauCeti.SheafOfModules.isMonoidal_isFinitePresentation`), this shows that finite locally free
+sheaves of modules, the sheaves of sections of vector bundles, form a monoidal full subcategory
+(`ObjectProperty.fullMonoidalSubcategory`).
 
 Local freeness is also shown to be invariant under isomorphism, by transporting local bases along
 an isomorphism (`SheafOfModules.LocalGeneratorsData.ofIsIso`).
@@ -94,13 +93,6 @@ instance : (isLocallyFree R).IsClosedUnderIsomorphisms where
     have := h.exists_isLocallyFreeData.choose_spec
     (h.exists_isLocallyFreeData.choose.ofIsIso e.hom).isLocallyFree
 
-/-- Quasi-coherent data whose presentations all have invertible generating morphisms has locally
-free underlying local generators data. -/
-theorem _root_.SheafOfModules.QuasicoherentData.isLocallyFreeData_localGeneratorsData
-    (q : M.QuasicoherentData) (h : ∀ i, IsIso (q.presentation i).generators.π) :
-    q.localGeneratorsData.IsLocallyFreeData :=
-  ⟨h⟩
-
 variable [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
 
 /-- The quasi-coherent data associated with locally free data presents each restriction by the
@@ -116,10 +108,6 @@ variable (R) in
 abbrev _root_.SheafOfModules.isFiniteLocallyFree : ObjectProperty (SheafOfModules.{u} R) :=
   isLocallyFree R ⊓ isFinitePresentation R
 
-/-- Finite local freeness is invariant under isomorphism. -/
-instance : (isFiniteLocallyFree R).IsClosedUnderIsomorphisms where
-  of_iso e h := ⟨(isLocallyFree R).prop_of_iso e h.1, (isFinitePresentation R).prop_of_iso e h.2⟩
-
 end LocalGeneratorsData
 
 section Tensor
@@ -132,10 +120,12 @@ instance isLocallyFree_tensorObj [M.IsLocallyFree] [N.IsLocallyFree] :
     (M ⊗ N).IsLocallyFree := by
   obtain ⟨qM, _⟩ := ‹M.IsLocallyFree›.exists_isLocallyFreeData
   obtain ⟨qN, _⟩ := ‹N.IsLocallyFree›.exists_isLocallyFreeData
-  have := (qM.quasiCoherentData.tensor qN.quasiCoherentData).isLocallyFreeData_localGeneratorsData
-    (QuasicoherentData.isIso_tensor_presentation_generators_π _ _
-      qM.isIso_quasiCoherentData_presentation_generators_π
-      qN.isIso_quasiCoherentData_presentation_generators_π)
+  have :
+      (qM.quasiCoherentData.tensor qN.quasiCoherentData).localGeneratorsData.IsLocallyFreeData :=
+    { isIso := QuasicoherentData.isIso_tensor_presentation_generators_π
+        qM.quasiCoherentData qN.quasiCoherentData
+        qM.isIso_quasiCoherentData_presentation_generators_π
+        qN.isIso_quasiCoherentData_presentation_generators_π }
   exact (qM.quasiCoherentData.tensor qN.quasiCoherentData).localGeneratorsData.isLocallyFree
 
 variable [HasBinaryProducts C]
