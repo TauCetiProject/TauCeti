@@ -143,6 +143,7 @@ theorem analyticOnNhd_stieltjesExtension (hμ : Integrable stieltjesWeight μ) :
   (differentiableOn_stieltjesExtension hμ).analyticOnNhd isOpen_slitPlane
 
 /-- The complex Stieltjes transform commutes with complex conjugation. -/
+@[simp]
 theorem stieltjesExtension_conj (μ : Measure ℝ≥0) (a b : ℝ≥0) (z : ℂ) :
     stieltjesExtension μ a b (conj z) = conj (stieltjesExtension μ a b z) := by
   simp only [stieltjesExtension_apply, map_add, map_div₀, conj_ofReal, ← integral_conj,
@@ -212,6 +213,7 @@ namespace RepresentsStieltjes
 
 /-- The complex Stieltjes transform of a Stieltjes representation of `f` extends `f`: it agrees
 with `f` on `(0, ∞)`. -/
+@[simp]
 theorem stieltjesExtension_ofReal (h : RepresentsStieltjes μ a b f) {t : ℝ} (ht : 0 < t) :
     stieltjesExtension μ a b t = f t := by
   rw [h.eq_div_add_add_integral_inv_add ht, stieltjesExtension_apply]
@@ -255,6 +257,7 @@ theorem IsStieltjesFunction.exists_analyticOnNhd_slitPlane (hf : IsStieltjesFunc
 
 /-- On `(0, ∞)` a complete Bernstein function is `t` times the complex Stieltjes transform of its
 representing data. -/
+@[simp]
 theorem RepresentsCompleteBernstein.ofReal_mul_stieltjesExtension
     (h : RepresentsCompleteBernstein μ a b f) {t : ℝ} (ht : 0 < t) :
     (t : ℂ) * stieltjesExtension μ a b t = f t := by
