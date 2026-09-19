@@ -787,6 +787,27 @@ theorem relativeDegree_le_finrank : relativeDegree k F P' ≤ Module.finrank F F
 
 end Bound
 
+section Self
+
+variable {k F : Type*} [Field k] [Field F] [Algebra k F] (P : Place k F)
+
+/-- **A place restricts to itself along the identity extension.** Restriction normalizes the
+valuation pulled back along `algebraMap F F`, which is the identity, and a place's valuation is
+already surjective, hence already normalized. -/
+@[simp]
+theorem restrict_self : restrict k F P = P := by
+  refine Place.ext ?_
+  rw [valuation_restrict, Algebra.algebraMap_self, Valuation.comap_id,
+    Valuation.normalization_eq_self_of_surjective _ P.valuation_surjective]
+
+/-- **The identity extension is unramified**: `e(P ∣ P) = 1`. -/
+@[simp]
+theorem ramificationIdx_self : ramificationIdx F P = 1 := by
+  rw [ramificationIdx_def, Algebra.algebraMap_self, Valuation.comap_id,
+    Valuation.ordIndex_eq_one_of_surjective _ P.valuation_surjective]
+
+end Self
+
 end Place
 
 end TauCeti

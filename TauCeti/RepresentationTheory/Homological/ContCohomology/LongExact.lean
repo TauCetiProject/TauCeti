@@ -41,6 +41,9 @@ and `mem_Z2_of_incl_comp_mem_Z2` are what put it back into the continuous cocycl
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitLongExact_H1C`: exactness at `H¹(G, C)`.
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitLongExact_H2A`: exactness at `H²(G, A)`.
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitLongExact_H2B`: exactness at `H²(G, B)`.
+* `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_surjective_of_subsingleton` and
+  `explicitDelta1_bijective_of_subsingleton`: when `H¹(G, B)` and `H²(G, B)` vanish, `δ⁰` is onto
+  and `δ¹` is bijective.
 
 The maps and their normalization are those of
 `TauCeti/RepresentationTheory/Homological/ContCohomology/LowDegree.lean`,
@@ -549,6 +552,46 @@ theorem explicitLongExact_H2B :
   le_antisymm S.range_coeff2_le_ker_coeff2 S.ker_coeff2_le_range_coeff2
 
 end DegreeTwo
+
+/-! ### An acyclic middle term
+
+When `B` has vanishing `H¹` and `H²`, the long exact sequence makes the connecting maps shift
+degree: `δ⁰` is onto and `δ¹` is an isomorphism. This is the step of the dimension-shifting
+argument that does not depend on how the acyclic module was built. -/
+
+section AcyclicMiddle
+
+variable {G : Type u} [Group G] [TopologicalSpace G]
+  {A : Type vA} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+    [DistribMulAction G A] [ContinuousSMul G A]
+  {B : Type vB} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B]
+    [DistribMulAction G B] [ContinuousSMul G B]
+  {C : Type vC} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C]
+    [DistribMulAction G C]
+  (S : DiscreteShortExact G A B C)
+
+/-- If the middle term has vanishing `H¹`, then `δ⁰ : H⁰(G, C) → H¹(G, A)` is surjective. -/
+theorem explicitDelta0_surjective_of_subsingleton [Subsingleton (H1 G B)] :
+    Function.Surjective S.explicitDelta0 := fun x => by
+  have hx : x ∈ (explicitCoeff1 G A S.inclDistribMulActionHom
+      continuous_of_discreteTopology).ker := Subsingleton.elim _ _
+  rwa [← S.explicitLongExact_H1A] at hx
+
+/-- If the middle term has vanishing `H¹` and `H²`, then `δ¹ : H¹(G, C) → H²(G, A)` is
+bijective. -/
+theorem explicitDelta1_bijective_of_subsingleton [ContinuousMul G] [ContinuousSMul G C]
+    [Subsingleton (H1 G B)] [Subsingleton (H2 G B)] :
+    Function.Bijective S.explicitDelta1 := by
+  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx => ?_, fun x => ?_⟩
+  · have hx' : x ∈ S.explicitDelta1.ker := hx
+    rw [← S.explicitLongExact_H1C] at hx'
+    obtain ⟨y, rfl⟩ := hx'
+    rw [Subsingleton.elim y 0, map_zero]
+  · have hx : x ∈ (explicitCoeff2 G A S.inclDistribMulActionHom
+        continuous_of_discreteTopology).ker := Subsingleton.elim _ _
+    rwa [← S.explicitLongExact_H2A] at hx
+
+end AcyclicMiddle
 
 end DiscreteShortExact
 

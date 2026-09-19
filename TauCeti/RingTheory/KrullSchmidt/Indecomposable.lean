@@ -44,6 +44,9 @@ local-endomorphism-ring theorem. Both are supplied here.
   that a local endomorphism ring forces the module to be nonzero.
 * `TauCeti.isIndecomposableModule_iff_isLocalRing_end`: for a module of finite length the converse
   holds too, so indecomposability is *equivalent* to having a local endomorphism ring.
+* `TauCeti.isIndecomposableModule_self`: a local ring is indecomposable over itself.
+* `TauCeti.IsIndecomposableModule.nonempty_linearEquiv_of_free`: an indecomposable free module is
+  isomorphic to the ring.
 
 ## Implementation notes
 
@@ -283,6 +286,35 @@ theorem isIndecomposableModule_iff_isLocalRing_end (hM : IsFiniteLength A M) :
   refine ⟨isLocalRing_end_of_isIndecomposable hM, fun h ↦ ?_⟩
   have := h
   exact isIndecomposableModule_of_isLocalRing_end
+
+variable (A) in
+/-- **A local ring is indecomposable as a left module over itself**: its endomorphism ring is the
+opposite ring, which is again local. -/
+theorem isIndecomposableModule_self [IsLocalRing A] : IsIndecomposableModule A A := by
+  have : IsLocalRing (Module.End A A) :=
+    .of_surjective' (RingEquiv.moduleEndSelf A).toRingHom (RingEquiv.moduleEndSelf A).surjective
+  exact isIndecomposableModule_of_isLocalRing_end
+
+/-! ### Indecomposable free modules -/
+
+/-- **An indecomposable free module is isomorphic to the ring.** For a basis vector `b i`, the span
+of `b i` and the span of the remaining basis vectors are complementary, so the latter span is zero
+and `i` is the only index. -/
+theorem IsIndecomposableModule.nonempty_linearEquiv_of_free [Module.Free A M]
+    (h : IsIndecomposableModule A M) : Nonempty (M ≃ₗ[A] A) := by
+  have := h.nontrivial
+  have := Module.nontrivial A M
+  let b := Module.Free.chooseBasis A M
+  obtain ⟨i⟩ := b.index_nonempty
+  have hi (j : Module.Free.ChooseBasisIndex A M) : j = i := by
+    by_contra hji
+    rcases h.eq_bot_or_eq_bot (b.linearIndependent.isCompl_span_image b.span_eq
+      (isCompl_compl (x := {i}))) with hbot | hbot
+    · exact b.ne_zero i (Submodule.span_eq_bot.mp hbot _ ⟨i, rfl, rfl⟩)
+    · exact b.ne_zero j (Submodule.span_eq_bot.mp hbot _ ⟨j, hji, rfl⟩)
+  have : Subsingleton (Module.Free.ChooseBasisIndex A M) :=
+    ⟨fun j j' ↦ (hi j).trans (hi j').symm⟩
+  exact ⟨b.repr.trans (Finsupp.uniqueLinearEquiv A A i)⟩
 
 end Ring
 

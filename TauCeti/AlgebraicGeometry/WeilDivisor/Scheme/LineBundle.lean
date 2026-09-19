@@ -26,8 +26,10 @@ construction descends from Weil divisors to the divisor class group.
   `SchemeWeilDivisor.classGroupToLineBundleClass_injective` says that it is injective: a divisor
   is determined up to linear equivalence by the isomorphism class of its sheaf.
 
-This is the set-level divisor-to-line-bundle comparison. Proving compatibility with addition
-and tensor product, and proving that the comparison is surjective, require further structure.
+This is the set-level divisor-to-line-bundle comparison. Its compatibility with addition,
+`𝓞_X(D + E) ≅ 𝓞_X(D) ⊗ 𝓞_X(E)`, needs the tensor product of module sheaves and is proved in
+`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/TensorProduct.lean`, and its surjectivity in
+`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Picard.lean`.
 -/
 
 public section
@@ -64,6 +66,14 @@ lemma toInvertibleSheaf_obj (D : SchemeWeilDivisor X) :
 /-- The isomorphism class of the line bundle `𝓞_X(D)` associated to a Weil divisor. -/
 def toLineBundleClass (D : SchemeWeilDivisor X) : LineBundleClass X :=
   LineBundleClass.mk (toInvertibleSheaf hX D)
+
+/-- The line-bundle class of `D` equals the class of `L` exactly when their underlying sheaves
+are isomorphic. -/
+lemma toLineBundleClass_eq_mk_iff {D : SchemeWeilDivisor X} {L : InvertibleSheaf X} :
+    toLineBundleClass hX D = LineBundleClass.mk L ↔
+      Nonempty ((toInvertibleSheaf hX D).obj ≅ L.obj) := by
+  unfold toLineBundleClass
+  exact LineBundleClass.mk_eq_mk_iff
 
 /-- Linearly equivalent Weil divisors determine the same line-bundle class. -/
 theorem toLineBundleClass_eq_of_linearlyEquivalent {D E : SchemeWeilDivisor X}

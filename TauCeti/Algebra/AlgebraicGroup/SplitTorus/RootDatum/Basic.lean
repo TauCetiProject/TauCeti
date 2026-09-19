@@ -110,6 +110,32 @@ theorem coordinatePermRootIndex_mul (e f : Equiv.Perm σ) :
   apply Subtype.ext
   simp only [coordinatePermRootIndex_coe, Equiv.Perm.mul_def, Equiv.trans_apply]
 
+/-- Coordinate permutations acting on the ordered root indices, as a homomorphism. -/
+noncomputable def coordinatePermRootIndexHom :
+    Equiv.Perm σ →* Equiv.Perm (CoordinateRootIndex σ) where
+  toFun := coordinatePermRootIndex
+  map_one' := coordinatePermRootIndex_one
+  map_mul' := coordinatePermRootIndex_mul
+
+@[simp]
+theorem coordinatePermRootIndexHom_apply (e : Equiv.Perm σ) :
+    coordinatePermRootIndexHom e = coordinatePermRootIndex e := (rfl)
+
+/-- The action of coordinate permutations on ordered root indices is faithful, including when
+there are fewer than two coordinates. -/
+theorem coordinatePermRootIndexHom_injective :
+    Function.Injective (coordinatePermRootIndexHom (σ := σ)) := by
+  intro e f h
+  ext i
+  by_cases hi : ∃ j, i ≠ j
+  · obtain ⟨j, hij⟩ := hi
+    have hp := congrArg (fun g : Equiv.Perm (CoordinateRootIndex σ) =>
+      (g ⟨(i, j), hij⟩).1.1) h
+    simpa only [coordinatePermRootIndexHom_apply, coordinatePermRootIndex_coe] using hp
+  · have hsub : Subsingleton σ := ⟨fun a b => (not_not.mp (not_exists.mp hi a)).symm.trans
+        (not_not.mp (not_exists.mp hi b))⟩
+    exact hsub.elim _ _
+
 /-- The character-lattice vector `e_i - e_j`, defined for any two coordinates. -/
 noncomputable def coordinateRoot (i j : σ) : σ →₀ ℤ := by
   classical

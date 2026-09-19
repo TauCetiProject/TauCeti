@@ -77,6 +77,8 @@ hypotheses this simply connected datum does not carry.
 ## Main definitions
 
 * `TauCeti.DynkinType.typeASimplyConnectedRootDatum`: the pinned root datum of type `Aₙ`.
+* `TauCeti.DynkinType.TypeAIndex` and `TauCeti.DynkinType.typeAIndexEquiv`: the ordered pairs
+  `(a, b)` of distinct classical indices, and their pinned enumeration as root indices.
 * `TauCeti.DynkinType.typeASimpleIndex`: the first `n` root indices, the Bourbaki-numbered simple
   roots.
 * `TauCeti.DynkinType.typeASimplyConnectedBase`: the base they form.
@@ -84,6 +86,11 @@ hypotheses this simply connected datum does not carry.
 
 ## Main results
 
+* `TauCeti.DynkinType.root_typeAIndexEquiv`, `TauCeti.DynkinType.coroot_typeAIndexEquiv`,
+  `TauCeti.DynkinType.pairing_typeAIndexEquiv` and
+  `TauCeti.DynkinType.typeAIndexEquiv_symm_reflectionPerm`: the root and coroot `e_a - e_b` in
+  coordinates, the Cartan integers, and the reflections as transpositions, all read on ordered
+  pairs.
 * `TauCeti.DynkinType.root_typeASimpleIndex` and
   `TauCeti.DynkinType.coroot_typeASimpleIndex`: the `i`-th simple root is the `i`-th row of
   `CartanMatrix.A n` and the `i`-th simple coroot is `Pi.single i 1`, which is what pins the two
@@ -169,7 +176,7 @@ private lemma typeAWeight_dotProduct_typeACoweight {a c : ℕ} (ha : a ≤ n) (h
 
 /-- The ordered pairs of distinct elements of `Fin (n + 1)`, indexing the roots `e_a - e_b` of type
 `Aₙ` before they are enumerated by `Fin (n * (n + 1))`. -/
-private abbrev TypeAIndex (n : ℕ) := {p : Fin (n + 1) × Fin (n + 1) // p.1 ≠ p.2}
+abbrev TypeAIndex (n : ℕ) := {p : Fin (n + 1) × Fin (n + 1) // p.1 ≠ p.2}
 
 /-- The root `e_a - e_b` in fundamental-weight coordinates. -/
 private def typeAPairRoot (p : TypeAIndex n) : Fin n → ℤ :=
@@ -310,7 +317,7 @@ private def typeAPairEquiv (n : ℕ) : TypeAIndex n ≃ Fin n × Fin (n + 1) whe
     omega
 
 /-- The pinned enumeration of the roots of type `Aₙ` by `Fin (n * (n + 1))`. -/
-private def typeAIndexEquiv (n : ℕ) : TypeAIndex n ≃ Fin (n * (n + 1)) :=
+def typeAIndexEquiv (n : ℕ) : TypeAIndex n ≃ Fin (n * (n + 1)) :=
   (typeAPairEquiv n).trans finProdFinEquiv
 
 /-- Reflection in the root indexed by `k`, transported to the pinned enumeration. -/
@@ -372,6 +379,27 @@ private lemma coroot_typeASimplyConnectedRootDatum (k : Fin (n * (n + 1))) :
     (typeASimplyConnectedRootDatum n).coroot k = typeAPairCoroot ((typeAIndexEquiv n).symm k) :=
   rfl
 
+private lemma reflectionPerm_typeASimplyConnectedRootDatum (k : Fin (n * (n + 1))) :
+    (typeASimplyConnectedRootDatum n).reflectionPerm k = typeAReflectionPerm n k :=
+  rfl
+
+/-- **The root indexed by the ordered pair `(a, b)` is `e_a - e_b`.** In the fundamental-weight
+coordinates, `e_c` has `k`-th entry `⟨e_c, αₖ^∨⟩ = [c = k] - [c = k + 1]`. -/
+@[simp]
+theorem root_typeAIndexEquiv (p : TypeAIndex n) (k : Fin n) :
+    (typeASimplyConnectedRootDatum n).root (typeAIndexEquiv n p) k =
+      ((if p.val.1 = k.castSucc then 1 else 0) - (if p.val.1 = k.succ then 1 else 0)) -
+        ((if p.val.2 = k.castSucc then 1 else 0) - (if p.val.2 = k.succ then 1 else 0)) := by
+  simp [root_typeASimplyConnectedRootDatum, typeAPairRoot, typeAWeight, Fin.ext_iff]
+
+/-- **The coroot indexed by the ordered pair `(a, b)` is `e_a - e_b`.** In the simple-coroot
+coordinates, `e_a - e_b` has `k`-th entry `[a ≤ k] - [b ≤ k]`. -/
+@[simp]
+theorem coroot_typeAIndexEquiv (p : TypeAIndex n) (k : Fin n) :
+    (typeASimplyConnectedRootDatum n).coroot (typeAIndexEquiv n p) k =
+      (if p.val.1 ≤ k.castSucc then 1 else 0) - (if p.val.2 ≤ k.castSucc then 1 else 0) := by
+  simp [coroot_typeASimplyConnectedRootDatum, typeAPairCoroot, typeACoweight, Fin.le_def]
+
 private lemma pairing_typeASimplyConnectedRootDatum (k l : Fin (n * (n + 1))) :
     (typeASimplyConnectedRootDatum n).pairing k l =
       (typeASimplyConnectedRootDatum n).root k ⬝ᵥ (typeASimplyConnectedRootDatum n).coroot l :=
@@ -391,6 +419,27 @@ theorem pairing_typeASimplyConnectedRootDatum_comm (k l : Fin (n * (n + 1))) :
     ite_eq_comm ((typeAIndexEquiv n).symm l).val.2 ((typeAIndexEquiv n).symm k).val.2]
   ring
 
+/-- **The Cartan integers of type `Aₙ` on ordered pairs.** The pairing of `e_a - e_b` with the
+coroot `e_c - e_d` is `[a = c] - [a = d] - ([b = c] - [b = d])`. -/
+@[simp]
+theorem pairing_typeAIndexEquiv (p q : TypeAIndex n) :
+    (typeASimplyConnectedRootDatum n).pairing (typeAIndexEquiv n p) (typeAIndexEquiv n q) =
+      (if p.val.1 = q.val.1 then 1 else 0) - (if p.val.1 = q.val.2 then 1 else 0)
+        - ((if p.val.2 = q.val.1 then 1 else 0) - (if p.val.2 = q.val.2 then 1 else 0)) := by
+  rw [pairing_typeASimplyConnectedRootDatum, root_typeASimplyConnectedRootDatum,
+    coroot_typeASimplyConnectedRootDatum, Equiv.symm_apply_apply, Equiv.symm_apply_apply,
+    typeAPairing]
+
+/-- **Reflections of type `Aₙ` transpose the entries of ordered pairs.** The reflection in
+`e_a - e_b` sends the root `e_c - e_d` to `e_{s c} - e_{s d}`, where `s` is the transposition of
+`a` and `b`. -/
+theorem typeAIndexEquiv_symm_reflectionPerm (p q : TypeAIndex n) :
+    ((typeAIndexEquiv n).symm ((typeASimplyConnectedRootDatum n).reflectionPerm
+        (typeAIndexEquiv n p) (typeAIndexEquiv n q))).val =
+      (Equiv.swap p.val.1 p.val.2 q.val.1, Equiv.swap p.val.1 p.val.2 q.val.2) := by
+  simp [reflectionPerm_typeASimplyConnectedRootDatum, typeAReflectionPerm_apply,
+    typeAPairReflection, Prod.map]
+
 /-- The `i`-th simple root of type `Aₙ` sits at root index `i`, the Bourbaki node `i + 1`. -/
 def typeASimpleIndex (n : ℕ) (i : Fin n) : Fin (n * (n + 1)) :=
   Fin.castLE (Nat.le_mul_of_pos_right n n.succ_pos) i
@@ -401,7 +450,8 @@ def typeASimpleIndex (n : ℕ) (i : Fin n) : Fin (n * (n + 1)) :=
 lemma typeASimpleIndex_injective : Injective (typeASimpleIndex n) :=
   Fin.castLE_injective (Nat.le_mul_of_pos_right n n.succ_pos)
 
-private lemma typeAIndexEquiv_symm_typeASimpleIndex (i : Fin n) :
+/-- The Bourbaki simple index corresponds to the consecutive pair of matrix indices. -/
+@[simp] lemma typeAIndexEquiv_symm_typeASimpleIndex (i : Fin n) :
     (typeAIndexEquiv n).symm (typeASimpleIndex n i) =
       ⟨(⟨i, by omega⟩, ⟨(i : ℕ) + 1, by omega⟩), by simp [Fin.ext_iff]⟩ := by
   have hlt : (i : ℕ) < n + 1 := by omega

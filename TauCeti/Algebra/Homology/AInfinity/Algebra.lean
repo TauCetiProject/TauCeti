@@ -26,6 +26,8 @@ vanish, rather than being unconstrained data hidden from the bar construction.
 * `TauCeti.AInfinityAlgebra`: an uncurved nonunital `A∞` algebra.
 * `TauCeti.AInfinityAlgebra.barDifferential`: its square-zero bar coderivation.
 * `TauCeti.AInfinityAlgebra.ofStasheff`: construct an algebra from the unsuspended identities.
+* `TauCeti.AInfinityAlgebra.differential`: the unary operation as a linear endomorphism.
+* `TauCeti.AInfinityAlgebra.mul`: the binary operation as a bilinear map.
 
 ## References
 
@@ -303,6 +305,196 @@ theorem stasheff_arity_four (𝒜 : AInfinityAlgebra R A) (a b c d : A) (p q r :
     rw [AInfinity.stasheffSum_four] at h
     simpa [E, x, e] using h
   rw [hE, LinearMap.zero_apply]
+
+/-! ### Low-arity identities for arbitrary inputs -/
+
+/-- The unary `A∞` operation, regarded as a linear differential on the total module. -/
+def differential (𝒜 : AInfinityAlgebra R A) : A →ₗ[R] A :=
+  (𝒜.m 1).curryRight ![]
+
+/-- Evaluating the differential is evaluating the unary operation. -/
+@[simp]
+theorem differential_apply (𝒜 : AInfinityAlgebra R A) (x : A) :
+    𝒜.differential x = 𝒜.m 1 ![x] := by
+  simp [differential, MultilinearMap.curryRight_apply]
+
+/-- On a single letter the Taylor map is the unary operation: the suspension sign of a word of
+length one is trivial. -/
+@[simp]
+theorem taylor_ofLetter (𝒜 : AInfinityAlgebra R A) (x : A) :
+    𝒜.taylor (ReducedTensorWords.ofLetter R A x) = 𝒜.m 1 ![x] := by
+  have h : 𝒜.taylor ∘ₗ ReducedTensorWords.ofLetter R A = 𝒜.differential := by
+    refine 𝒜.grading.linearMap_ext fun p y hy ↦ ?_
+    have hs := (AInfinity.isSuspension_def _ _ _).1 𝒜.taylor_isSuspension 1 Nat.one_pos
+      (fun _ ↦ p) (fun _ ↦ y) fun _ _ ↦ hy
+    rw [ReducedTensorWords.of_tprod_eq_subword R Nat.one_pos,
+      ReducedTensorWords.subword_one R A _ Nat.one_pos] at hs
+    rw [LinearMap.comp_apply, hs, AInfinity.evalNat_suspend, _root_.MultilinearMap.suspExp_one,
+      negOnePowCast_zero, one_smul, MultilinearMap.evalNat_def, differential_apply]
+    congr 1
+    funext i
+    fin_cases i
+    rfl
+  simpa using LinearMap.congr_fun h x
+
+/-- The bar differential sends a single letter to the single letter given by the unary
+operation. -/
+@[simp]
+theorem barDifferential_ofLetter (𝒜 : AInfinityAlgebra R A) (x : A) :
+    𝒜.barDifferential (ReducedTensorWords.ofLetter R A x) =
+      ReducedTensorWords.ofLetter R A (𝒜.m 1 ![x]) := by
+  -- A coderivation sends primitives to primitives, and the primitives are the single letters.
+  have hd : ReducedTensorWords.deconcatenation R A
+      (𝒜.barDifferential (ReducedTensorWords.ofLetter R A x)) = 0 := by
+    rw [𝒜.isGradedCoderivation_barDifferential.deconcatenation_apply,
+      ReducedTensorWords.deconcatenation_ofLetter, map_zero, map_zero, map_zero, add_zero]
+  obtain ⟨y, hy⟩ := (ReducedTensorWords.deconcatenation_eq_zero_iff R A).1 hd
+  rw [← taylor_ofLetter, ← letter_comp_barDifferential, LinearMap.comp_apply, ← hy,
+    ReducedTensorWords.letter_ofLetter]
+
+/-- The unary operation squares to zero. -/
+@[simp]
+theorem differential_comp_self_eq_zero (𝒜 : AInfinityAlgebra R A) :
+    𝒜.differential ∘ₗ 𝒜.differential = 0 := by
+  ext x
+  simp only [LinearMap.comp_apply, differential_apply, LinearMap.zero_apply,
+    𝒜.stasheff_arity_one]
+
+/-- The binary `A∞` operation, regarded as a bilinear map on the total module. -/
+def mul (𝒜 : AInfinityAlgebra R A) : A →ₗ[R] A →ₗ[R] A :=
+  LinearMap.mk₂ R (fun x y ↦ 𝒜.m 2 ![x, y])
+    (fun x x' y ↦ by
+      convert (𝒜.m 2).map_update_add ![x, y] 0 x x' using 3 <;> ext i <;> fin_cases i <;> rfl)
+    (fun c x y ↦ by
+      convert (𝒜.m 2).map_update_smul ![x, y] 0 c x using 3 <;> ext i <;> fin_cases i <;> rfl)
+    (fun x y y' ↦ by
+      convert (𝒜.m 2).map_update_add ![x, y] 1 y y' using 3 <;> ext i <;> fin_cases i <;> rfl)
+    (fun c x y ↦ by
+      convert (𝒜.m 2).map_update_smul ![x, y] 1 c y using 3 <;> ext i <;> fin_cases i <;> rfl)
+
+/-- Evaluating the bilinear product is evaluating the binary operation. -/
+@[simp]
+theorem mul_apply (𝒜 : AInfinityAlgebra R A) (x y : A) : 𝒜.mul x y = 𝒜.m 2 ![x, y] := by
+  simp [mul]
+
+/-- The unary operation anticommutes with the degree-one Koszul twist. -/
+theorem m_one_koszulTwist (𝒜 : AInfinityAlgebra R A) (x : A) :
+    𝒜.m 1 ![𝒜.grading.koszulTwist 1 x] = -𝒜.grading.koszulTwist 1 (𝒜.m 1 ![x]) := by
+  have h : 𝒜.differential ∘ₗ 𝒜.grading.koszulTwist 1 =
+      -(𝒜.grading.koszulTwist 1 ∘ₗ 𝒜.differential) := by
+    refine 𝒜.grading.linearMap_ext fun p y hy ↦ ?_
+    have hdy : 𝒜.differential y ∈ 𝒜.grading.piece (p + 1) := by
+      simpa using (𝒜.m_degree 1 one_pos).map_mem (fun _ ↦ p) ![y] (fun _ ↦ by simpa using hy)
+    rw [LinearMap.comp_apply, LinearMap.neg_apply, LinearMap.comp_apply,
+      𝒜.grading.koszulTwist_apply_of_mem hy, map_smul, 𝒜.grading.koszulTwist_apply_of_mem hdy,
+      ← neg_smul]
+    congr 1
+    simp [Int.negOnePow_succ]
+  simpa using LinearMap.congr_fun h x
+
+/-- The graded Leibniz rule for arbitrary inputs, with the sign on the second term carried by the
+degree-one Koszul twist of the left factor. -/
+theorem m_one_m_two (𝒜 : AInfinityAlgebra R A) (x y : A) :
+    𝒜.m 1 ![𝒜.m 2 ![x, y]] =
+      𝒜.m 2 ![𝒜.m 1 ![x], y] + 𝒜.m 2 ![𝒜.grading.koszulTwist 1 x, 𝒜.m 1 ![y]] := by
+  have h : 𝒜.differential ∘ₗ 𝒜.mul.flip y =
+      𝒜.mul.flip y ∘ₗ 𝒜.differential +
+        𝒜.mul.flip (𝒜.m 1 ![y]) ∘ₗ 𝒜.grading.koszulTwist 1 := by
+    refine 𝒜.grading.linearMap_ext fun p z hz ↦ ?_
+    simpa [𝒜.grading.koszulTwist_apply_of_mem hz, negOnePowCast_eq_intCast] using
+      𝒜.stasheff_arity_two z y p hz
+  simpa using LinearMap.congr_fun h x
+
+/-- The arity-three Stasheff identity for arbitrary inputs, with the Koszul signs of the first two
+inputs carried by the degree-one twist.  It expresses the associator of the binary operation as a
+unary boundary, modulo the three terms in which the ternary operation meets a unary boundary. -/
+theorem m_one_m_three (𝒜 : AInfinityAlgebra R A) (x y z : A) :
+    𝒜.m 1 ![𝒜.m 3 ![x, y, z]] =
+      𝒜.m 2 ![x, 𝒜.m 2 ![y, z]] - 𝒜.m 2 ![𝒜.m 2 ![x, y], z]
+        - 𝒜.m 3 ![𝒜.m 1 ![x], y, z]
+        - 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 𝒜.m 1 ![y], z]
+        - 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 𝒜.grading.koszulTwist 1 y, 𝒜.m 1 ![z]] := by
+  -- Package the six terms as trilinear maps in the three inputs, so that the identity can be
+  -- checked on homogeneous inputs, where it is `stasheff_arity_three`.
+  let L : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    (𝒜.mul.compMultilinearMap (𝒜.m 2)).uncurryRight
+  let Qc : A →ₗ[R] MultilinearMap R (fun _ : Fin 2 ↦ A) A :=
+    { toFun := fun a ↦ (𝒜.mul a).compMultilinearMap (𝒜.m 2)
+      map_add' := fun a b ↦ by ext v; simp
+      map_smul' := fun r a ↦ by ext v; simp }
+  let Q : MultilinearMap R (fun _ : Fin 3 ↦ A) A := Qc.uncurryLeft
+  have L_apply (a b c : A) : L ![a, b, c] = 𝒜.m 2 ![𝒜.m 2 ![a, b], c] := by
+    simp only [L, MultilinearMap.uncurryRight_apply, LinearMap.compMultilinearMap_apply,
+      mul_apply]
+    congr 1
+    funext i
+    fin_cases i
+    · apply congrArg (𝒜.m 2)
+      funext j
+      fin_cases j <;> rfl
+    · rfl
+  have Q_apply (a b c : A) : Q ![a, b, c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
+    dsimp [Q, Qc]
+    simp only [mul_apply]
+  let D : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    𝒜.differential.compMultilinearMap (𝒜.m 3)
+  let T₀ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    (𝒜.m 3).compLinearMap ![𝒜.differential, LinearMap.id, LinearMap.id]
+  let T₁ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    (𝒜.m 3).compLinearMap
+      ![𝒜.grading.koszulTwist 1, 𝒜.differential, LinearMap.id]
+  let T₂ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+    (𝒜.m 3).compLinearMap
+      ![𝒜.grading.koszulTwist 1, 𝒜.grading.koszulTwist 1, 𝒜.differential]
+  have D_apply (a b c : A) : D ![a, b, c] = 𝒜.differential (𝒜.m 3 ![a, b, c]) := rfl
+  have T₀_apply (a b c : A) : T₀ ![a, b, c] = 𝒜.m 3 ![𝒜.differential a, b, c] := by
+    simp only [T₀, MultilinearMap.compLinearMap_apply]
+    congr 1
+    funext i
+    fin_cases i <;> rfl
+  have T₁_apply (a b c : A) : T₁ ![a, b, c] =
+      𝒜.m 3 ![𝒜.grading.koszulTwist 1 a, 𝒜.differential b, c] := by
+    simp only [T₁, MultilinearMap.compLinearMap_apply]
+    congr 1
+    funext i
+    fin_cases i <;> rfl
+  have T₂_apply (a b c : A) : T₂ ![a, b, c] =
+      𝒜.m 3 ![𝒜.grading.koszulTwist 1 a, 𝒜.grading.koszulTwist 1 b,
+        𝒜.differential c] := by
+    simp only [T₂, MultilinearMap.compLinearMap_apply]
+    congr 1
+    funext i
+    fin_cases i <;> rfl
+  have m_three_smul_first (r : R) (a b c : A) :
+      𝒜.m 3 ![r • a, b, c] = r • 𝒜.m 3 ![a, b, c] := by
+    convert (𝒜.m 3).map_update_smul ![a, b, c] 0 r a using 2 <;>
+      congr 1 <;> funext i <;> fin_cases i <;> rfl
+  have m_three_smul_second (r : R) (a b c : A) :
+      𝒜.m 3 ![a, r • b, c] = r • 𝒜.m 3 ![a, b, c] := by
+    convert (𝒜.m 3).map_update_smul ![a, b, c] 1 r b using 2 <;>
+      congr 1 <;> funext i <;> fin_cases i <;> rfl
+  -- On homogeneous inputs the two Koszul twists produce exactly the signs of the graded identity.
+  let E : MultilinearMap R (fun _ : Fin 3 ↦ A) A := D + L - Q + T₀ + T₁ + T₂
+  have hE : E = 0 := by
+    apply 𝒜.grading.multilinearMap_ext
+    intro d a ha
+    have avec : a = ![a 0, a 1, a 2] := by
+      funext i
+      fin_cases i <;> rfl
+    rw [avec]
+    simp only [E, add_apply, sub_apply, D_apply, L_apply, Q_apply, T₀_apply, T₁_apply,
+      T₂_apply, zero_apply, differential_apply,
+      𝒜.grading.koszulTwist_apply_of_mem (ha 0),
+      𝒜.grading.koszulTwist_apply_of_mem (ha 1),
+      m_three_smul_first, m_three_smul_second, smul_smul, one_mul]
+    rw [← negOnePowCast_eq_intCast (R := R) (d 0),
+      ← negOnePowCast_eq_intCast (R := R) (d 1), ← negOnePowCast_add]
+    exact 𝒜.stasheff_arity_three (a 0) (a 1) (a 2) (d 0) (d 1) (ha 0) (ha 1)
+  have h := MultilinearMap.congr_fun hE ![x, y, z]
+  simp only [E, add_apply, sub_apply, D_apply, L_apply, Q_apply, T₀_apply, T₁_apply,
+    T₂_apply, zero_apply, differential_apply] at h
+  rw [← sub_eq_zero, ← h]
+  abel
 
 /-- If the ternary operation vanishes, the arity-three identity says that `m₂` is associative. -/
 theorem m_two_assoc_of_m_three_eq_zero (𝒜 : AInfinityAlgebra R A) (h₃ : 𝒜.m 3 = 0)

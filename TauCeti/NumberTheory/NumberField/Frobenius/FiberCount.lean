@@ -37,6 +37,8 @@ divisibility for a whole conjugacy class.
   its members under the centralizer of `σ`.
 * `Ideal.frobenius_fiber_card_mul_orderOf_eq_card_centralizer`: its size, times `orderOf σ`, is
   the order of that centralizer.
+* `HeightOneSpectrum.frobeniusFiberEquiv`: the height-one-prime and ideal representations of the
+  fiber are equivalent.
 
 ## References
 
@@ -47,11 +49,12 @@ divisibility for a whole conjugacy class.
 public section
 
 open scoped NumberField Pointwise
+open IsDedekindDomain (HeightOneSpectrum)
 
 namespace Ideal
 
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
-  [Algebra K L] [IsGalois K L]
+  [Algebra K L]
 
 -- Source. The count is specified by the Chebotarev roadmap:
 -- `TauCetiRoadmap/Chebotarev/README.md` §8.2, which displays the fibre size as
@@ -69,7 +72,8 @@ Frobenius elements at `τ • Q` are the conjugates `τ σ τ⁻¹`: an element 
 into the fiber exactly when conjugation by it fixes `σ`. Transitivity of the action on the primes
 above `𝔭` is what makes every member of the fiber such a translate. -/
 theorem frobenius_fiber_eq_orbit_centralizer (𝔭 : Ideal (𝓞 K)) {σ : L ≃ₐ[K] L}
-    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭] [Algebra.IsUnramifiedAt (𝓞 K) Q]
+    (Q : Ideal (𝓞 L)) [IsGalois K L] [Q.IsPrime] [Q.LiesOver 𝔭]
+    [Algebra.IsUnramifiedAt (𝓞 K) Q]
     (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     {P : Ideal (𝓞 L) | ∃ (_ : P.IsPrime) (_ : P.LiesOver 𝔭) (_ : P ≠ ⊥),
         IsArithFrobAt (𝓞 K) σ P}
@@ -99,7 +103,7 @@ stabilizer of `Q` in the centralizer is the decomposition group `⟨σ⟩`, of o
 Compare `Ideal.frobenius_fiber_card_eq_of_isConj`, which says fibers of conjugate elements have
 equal size without saying what that size is. -/
 theorem frobenius_fiber_card_mul_orderOf_eq_card_centralizer (𝔭 : Ideal (𝓞 K))
-    {σ : L ≃ₐ[K] L} (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭]
+    {σ : L ≃ₐ[K] L} (Q : Ideal (𝓞 L)) [IsGalois K L] [Q.IsPrime] [Q.LiesOver 𝔭]
     [Algebra.IsUnramifiedAt (𝓞 K) Q] (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     Nat.card {P : Ideal (𝓞 L) // ∃ (_ : P.IsPrime) (_ : P.LiesOver 𝔭) (_ : P ≠ ⊥),
         IsArithFrobAt (𝓞 K) σ P} * orderOf σ
@@ -123,3 +127,82 @@ theorem frobenius_fiber_card_mul_orderOf_eq_card_centralizer (𝔭 : Ideal (𝓞
   exact key
 
 end Ideal
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
+  [Algebra K L]
+
+/-- The equivalence between the height-one-prime and ideal representations of a Frobenius fiber
+above `p`, induced by `HeightOneSpectrum.asIdeal`. -/
+noncomputable def frobeniusFiberEquiv
+    (p : HeightOneSpectrum (𝓞 K)) (sigma : L ≃ₐ[K] L) :
+    {Q : HeightOneSpectrum (𝓞 L) //
+        Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal} ≃
+      {Q : Ideal (𝓞 L) // ∃ (_ : Q.IsPrime) (_ : Q.LiesOver p.asIdeal) (_ : Q ≠ ⊥),
+        IsArithFrobAt (𝓞 K) sigma Q} := by
+  let hdiv : ∀ Q : HeightOneSpectrum (𝓞 L),
+      Q.under (𝓞 K) = p ↔
+        Q.asIdeal ∣ Ideal.map (algebraMap (𝓞 K) (𝓞 L)) p.asIdeal := fun Q ↦ by
+    rw [← Ideal.liesOver_iff_dvd_map Q.isPrime.ne_top]
+    exact ⟨fun h ↦ ⟨(congrArg HeightOneSpectrum.asIdeal h).symm⟩,
+      fun h ↦ HeightOneSpectrum.ext h.over.symm⟩
+  let domainEquiv :
+      {Q : HeightOneSpectrum (𝓞 L) //
+          Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal} ≃
+        {Q : {Q : HeightOneSpectrum (𝓞 L) //
+            Q.asIdeal ∣ Ideal.map (algebraMap (𝓞 K) (𝓞 L)) p.asIdeal} //
+          IsArithFrobAt (𝓞 K) sigma Q.1.asIdeal} :=
+    (Equiv.subtypeEquivRight fun Q ↦ and_congr (hdiv Q) Iff.rfl).trans
+      (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm
+  let coreEquiv :
+      {Q : {Q : HeightOneSpectrum (𝓞 L) //
+          Q.asIdeal ∣ Ideal.map (algebraMap (𝓞 K) (𝓞 L)) p.asIdeal} //
+        IsArithFrobAt (𝓞 K) sigma Q.1.asIdeal} ≃
+        {Q : p.asIdeal.primesOver (𝓞 L) // IsArithFrobAt (𝓞 K) sigma Q.1} :=
+    (HeightOneSpectrum.equivPrimesOver (𝓞 L) p.ne_bot).subtypeEquiv fun _ ↦ Iff.rfl
+  let codomainEquiv :
+      {Q : p.asIdeal.primesOver (𝓞 L) // IsArithFrobAt (𝓞 K) sigma Q.1} ≃
+        {Q : Ideal (𝓞 L) // ∃ (_ : Q.IsPrime) (_ : Q.LiesOver p.asIdeal) (_ : Q ≠ ⊥),
+          IsArithFrobAt (𝓞 K) sigma Q} :=
+    (Equiv.subtypeSubtypeEquivSubtypeInter
+      (fun Q : Ideal (𝓞 L) ↦ Q ∈ p.asIdeal.primesOver (𝓞 L))
+      (fun Q ↦ IsArithFrobAt (𝓞 K) sigma Q)).trans
+      (Equiv.subtypeEquivRight fun Q ↦ by
+        constructor
+        · rintro ⟨hQ, hfrob⟩
+          exact ⟨hQ.1, hQ.2, Ideal.ne_bot_of_mem_primesOver p.ne_bot hQ, hfrob⟩
+        · rintro ⟨hprime, hover, -, hfrob⟩
+          exact ⟨⟨hprime, hover⟩, hfrob⟩)
+  exact domainEquiv.trans (coreEquiv.trans codomainEquiv)
+
+@[simp]
+theorem frobeniusFiberEquiv_apply
+    (p : HeightOneSpectrum (𝓞 K)) (sigma : L ≃ₐ[K] L)
+    (Q : {Q : HeightOneSpectrum (𝓞 L) //
+      Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal}) :
+    (p.frobeniusFiberEquiv sigma Q : Ideal (𝓞 L)) = Q.1.asIdeal := by
+  -- `subtypeEquivRight` and `subtypeSubtypeEquivSubtypeInter` only reassociate predicates and
+  -- proof fields, so they have no value-level application lemma. Reducing those identity-on-values
+  -- wrappers is stable; the sole data-changing component is `equivPrimesOver`, whose public
+  -- application lemma completes the proof below.
+  change ((HeightOneSpectrum.equivPrimesOver (𝓞 L) p.ne_bot) _ : Ideal (𝓞 L)) =
+    Q.1.asIdeal
+  rw [HeightOneSpectrum.equivPrimesOver_apply]
+  rfl
+
+@[simp]
+theorem frobeniusFiberEquiv_symm_apply_asIdeal
+    (p : HeightOneSpectrum (𝓞 K)) (sigma : L ≃ₐ[K] L)
+    (Q : {Q : Ideal (𝓞 L) // ∃ (_ : Q.IsPrime) (_ : Q.LiesOver p.asIdeal) (_ : Q ≠ ⊥),
+      IsArithFrobAt (𝓞 K) sigma Q}) :
+    ((p.frobeniusFiberEquiv sigma).symm Q).1.asIdeal = Q.1 := by
+  calc
+    ((p.frobeniusFiberEquiv sigma).symm Q).1.asIdeal =
+        (p.frobeniusFiberEquiv sigma
+          ((p.frobeniusFiberEquiv sigma).symm Q) : Ideal (𝓞 L)) :=
+      (p.frobeniusFiberEquiv_apply sigma _).symm
+    _ = Q.1 := congrArg Subtype.val
+      ((p.frobeniusFiberEquiv sigma).apply_symm_apply Q)
+
+end IsDedekindDomain.HeightOneSpectrum

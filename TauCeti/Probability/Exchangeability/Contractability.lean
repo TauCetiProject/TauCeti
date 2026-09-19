@@ -22,13 +22,12 @@ This file records basic lemmas for `Contractable` processes. The definitions liv
 `TauCeti.Probability.Exchangeability.Basic`; this file is the Layer 0 home for
 contractability-specific API.
 
-The main result is `contractable_of_exchangeable` (with dot-notation form
-`Exchangeable.contractable`): every exchangeable sequence with a.e. measurable coordinates is
-contractable. The file also provides `Exchangeable.blockLaw_eq_prefixLaw_of_injective` (the
-injective-selection analogue) and `Contractable.measurePreserving_reindex` /
-`Contractable.measurePreserving_shift` (a contractable path law is invariant under strictly monotone
-time-reindexing, in particular the shift), plus the converse characterization
-`contractable_iff_forall_map_reindex_pathLaw`.
+The main result is `Exchangeable.contractable`: every exchangeable sequence with a.e. measurable
+coordinates is contractable. The file also provides
+`Exchangeable.blockLaw_eq_prefixLaw_of_injective` (the injective-selection analogue) and
+`Contractable.measurePreserving_reindex` / `Contractable.measurePreserving_shift` (a contractable
+path law is invariant under strictly monotone time-reindexing, in particular the shift), plus the
+converse characterization `contractable_iff_forall_map_reindex_pathLaw`.
 
 These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned
 at `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses; the
@@ -172,15 +171,9 @@ theorem Exchangeable.blockLaw_eq_prefixLaw_of_injective {μ : Measure Ω} {X : �
 /-- **Every exchangeable sequence with a.e. measurable coordinates is contractable**: along any
 strictly increasing finite selection `k`, `blockLaw μ X k = prefixLaw μ X m`. One direction of the
 de Finetti–Ryll-Nardzewski equivalence. -/
-theorem contractable_of_exchangeable {μ : Measure Ω} {X : ℕ → Ω → α}
-    (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) : Contractable μ X :=
-  fun _ k hk => Exchangeable.blockLaw_eq_prefixLaw_of_injective hX hX_meas k hk.injective
-
-/-- Every exchangeable sequence with a.e. measurable coordinates is contractable (dot-notation
-form of `contractable_of_exchangeable`). -/
 theorem Exchangeable.contractable {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) : Contractable μ X :=
-  contractable_of_exchangeable hX hX_meas
+  fun _ k hk => Exchangeable.blockLaw_eq_prefixLaw_of_injective hX hX_meas k hk.injective
 
 /-- **A contractable process's path law is invariant under strictly monotone time-reindexing:** for
 `StrictMono φ`, the reindexing `x ↦ x ∘ φ` preserves `pathLaw μ X`. -/

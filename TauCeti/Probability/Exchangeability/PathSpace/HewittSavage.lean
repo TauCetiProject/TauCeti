@@ -185,7 +185,7 @@ theorem measure_eq_zero_or_one_of_exchangeableSigma {ρ : Measure (ℕ → α)} 
     ρ s = 0 ∨ ρ s = 1 := by
   have hs_meas : MeasurableSet s := exchangeableSigma_le s hs
   refine TauCeti.MeasureTheory.measure_eq_zero_or_one_of_forall_exists_symmDiff_lt_inter_eq_mul
-    hs_meas.nullMeasurableSet ?_
+    ?_
   intro ε hε
   obtain ⟨F, S, hS, hFS⟩ :=
     TauCeti.MeasureTheory.exists_cylinder_measure_symmDiff_lt (ρ := ρ) hs_meas
@@ -195,10 +195,8 @@ theorem measure_eq_zero_or_one_of_exchangeableSigma {ρ : Measure (ℕ → α)} 
   set t := cylinder (α := fun _ : ℕ => α) F S with ht
   have ht_meas : MeasurableSet t := MeasurableSet.cylinder (α := fun _ : ℕ => α) F hS
   set t' := permReindex (α := α) π ⁻¹' t with ht'
-  have ht'_meas : MeasurableSet t' := ht_meas.preimage (measurable_reindex π)
   have hs_null := hs_meas.nullMeasurableSet (μ := ρ)
   have ht_null := ht_meas.nullMeasurableSet (μ := ρ)
-  have ht'_null := ht'_meas.nullMeasurableSet (μ := ρ)
   have ht'_cyl : t' = cylinder (α := fun _ : ℕ => α) (F.map (Equiv.toEmbedding π))
       (pullMoved π F α ⁻¹' S) := preimage_permReindex_cylinder π F S
   have hs_inv : permReindex (α := α) π ⁻¹' s = s :=
@@ -213,7 +211,7 @@ theorem measure_eq_zero_or_one_of_exchangeableSigma {ρ : Measure (ℕ → α)} 
     rw [Measure.real, Measure.real, Measure.real, ht'_cyl, ht,
       hprod (Nat.disjoint_map_blockSwap hN) hS (hS.preimage (measurable_pullMoved π F)),
       ENNReal.toReal_mul]
-  exact ⟨t, t', ht_null, ht'_null, h1, h2, hinter⟩
+  exact ⟨t, t', h1, h2, hinter⟩
 
 end ZeroOne
 

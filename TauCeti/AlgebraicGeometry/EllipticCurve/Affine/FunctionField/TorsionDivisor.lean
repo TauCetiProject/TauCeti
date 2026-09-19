@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.DivisorClass
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Divisor.Sum
 
 /-!
 # The function with divisor `n(T) - n(O)` at an `n`-torsion point
 
-An affine point `T` of `W` is the degree-zero divisor class of `(T) - (O)`, so `T` is killed by `n`
-exactly when that class is, and a degree-zero class is trivial exactly when its divisor is the
-divisor of a function. At an `n`-torsion point, therefore, `n(T) - n(O)` is principal.
+The sum of `(T) - (O)` is `T`, so the sum of `n(T) - n(O)` is `n • T`, and a degree-zero divisor is
+principal exactly when its sum is `O`. At an `n`-torsion point, therefore, `n(T) - n(O)` is
+principal.
 
 This is the first input to the divisor construction of the Weil pairing (Silverman III.8): the
 pairing is built from such a function together with a second one whose `n`-th power is its
@@ -44,12 +44,13 @@ theorem exists_principal_zsmul_pointPlace_sub_infinity {x y : F} (h : W.Nonsingu
     ∃ z : W.FunctionFieldˣ, Divisor.principal W.isFunctionField z =
       n • (WeilDivisor.ofPoint (Place.ofPrime F W.FunctionField
             (CoordinateRing.pointPlace h.left)) -
-          WeilDivisor.ofPoint (Place.infinity W)) := by
-  rw [← Divisor.divisorClass_eq_zero_iff, map_zsmul,
-    ← W.val_pointEquivDegreeZeroDivisorClass_some h]
-  have hzero : n • W.pointEquivDegreeZeroDivisorClass (Point.some x y h) = 0 := by
-    rw [← map_zsmul, hT, map_zero]
-  exact congrArg Subtype.val hzero
+          WeilDivisor.ofPoint (Place.infinity W)) :=
+  W.divisorSum_eq_zero_iff (D := n • ⟨WeilDivisor.ofPoint
+        (Place.ofPrime F W.FunctionField (CoordinateRing.pointPlace h.left)) -
+      WeilDivisor.ofPoint (Place.infinity W), by
+    simpa only [AddMonoidHom.mem_ker, Divisor.degreeClass_divisorClass] using
+      W.degreeClass_divisorClass_pointPlace_sub_infinity h.left⟩) |>.1
+    (by rw [map_zsmul, W.divisorSum_pointPlace_sub_infinity h, hT])
 
 end WeierstrassCurve.Affine
 

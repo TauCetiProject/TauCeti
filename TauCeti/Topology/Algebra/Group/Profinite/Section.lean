@@ -40,7 +40,8 @@ intersection of a chain of such `C`'s still meets every coset.
 * `TauCeti.exists_continuous_section`: the normalized continuous section `G ⧸ H → G`.
 * `TauCeti.exists_continuous_section_of_le`: the continuous section of `G ⧸ K → G ⧸ H` for `K ≤ H`.
 * `TauCeti.exists_continuous_rightCosetFactorization`: the right-coset form, `g = w g * r g` with
-  `w g ∈ H` and `r g` depending only on the right coset `H * g`, both continuous.
+  `w g ∈ H` and `r g` depending only on the right coset `H * g`, both continuous, and normalized
+  by `w 1 = 1`.
 
 ## Implementation notes
 
@@ -262,7 +263,8 @@ theorem exists_continuous_section_of_le [CompactSpace G] [TotallyDisconnectedSpa
 /-- **The right-coset form of the continuous section.** For a closed subgroup `H` of a profinite
 group `G`, every `g : G` factors as `g = w g * r g` with `w g ∈ H`, where `r g` is a representative
 of the *right* coset `H * g` depending only on that coset and `w` is the resulting `H`-valued
-cocycle; both are continuous.
+cocycle; both are continuous.  The factorization is normalized: `w 1 = 1`, inherited from the
+normalization of `TauCeti.exists_continuous_section`.
 
 Mathlib's quotient `G ⧸ H` is the space of *left* cosets, so `TauCeti.exists_continuous_section`
 produces a continuous choice of representatives of `g H`. Inverting exchanges the two sides:
@@ -274,8 +276,8 @@ theorem exists_continuous_rightCosetFactorization [CompactSpace G] [TotallyDisco
     ∃ (w : G → H) (r : G → G), Continuous w ∧ Continuous r ∧
       (∀ g : G, (w g : G) * r g = g) ∧
       (∀ (h : H) (g : G), w ((h : G) * g) = h * w g) ∧
-      (∀ (h : H) (g : G), r ((h : G) * g) = r g) := by
-  obtain ⟨s, hs_cont, hs_sec, -⟩ := exists_continuous_section H hH
+      (∀ (h : H) (g : G), r ((h : G) * g) = r g) ∧ w 1 = 1 := by
+  obtain ⟨s, hs_cont, hs_sec, hs_one⟩ := exists_continuous_section H hH
   have hcoset : ∀ (h : H) (g : G),
       (QuotientGroup.mk (((h : G) * g)⁻¹) : G ⧸ H) = QuotientGroup.mk g⁻¹ := by
     intro h g
@@ -287,7 +289,8 @@ theorem exists_continuous_rightCosetFactorization [CompactSpace G] [TotallyDisco
     rw [QuotientGroup.eq] at h
     simpa using H.inv_mem h
   refine ⟨fun g => ⟨g * s (QuotientGroup.mk g⁻¹), hmem g⟩,
-    fun g => (s (QuotientGroup.mk g⁻¹))⁻¹, ?_, ?_, fun g => by simp, fun h g => ?_, fun h g => ?_⟩
+    fun g => (s (QuotientGroup.mk g⁻¹))⁻¹, ?_, ?_, fun g => by simp, fun h g => ?_, fun h g => ?_,
+    Subtype.ext (by simp [hs_one])⟩
   · exact continuous_induced_rng.2 (continuous_id.mul
       (hs_cont.comp (QuotientGroup.continuous_mk.comp continuous_inv)))
   · exact (hs_cont.comp (QuotientGroup.continuous_mk.comp continuous_inv)).inv

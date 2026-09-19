@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Universal
+-- Proof-only: the two evaluation bridges `ψₙ = Ψₙ` and `Ψₙ ² = ΨSqₙ` on the curve, which turn the
+-- `ψ`-vanishing criterion below into one on `ΨSqₙ`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Eval
 
 /-!
 # Coordinates of scalar multiplication through the division polynomials
@@ -1091,6 +1094,21 @@ theorem evalEval_ψ_eq_zero_of_zsmul_eq_zero {x y : F}
   rw [heval, hzero] at htors
   exact (Jacobian.Z_eq_zero_of_equiv (Quotient.exact htors)).mpr rfl
 
+/-- **A point is `n`-torsion exactly when `ΨSqₙ` vanishes at its abscissa.**
+
+`ΨSqₙ` is the square of `Ψₙ`, which on the curve is `ψₙ`, so this is the `ψ`-criterion above read
+through the two evaluation bridges. Both directions hold pointwise, for a supplied `y` completing
+`x` to a point: no closure assumption is needed, because the point is given rather than produced,
+and no ellipticity, because neither bridge uses it. -/
+-- Not `@[simp]`: the left-hand side determines `x` but not `y`, which the right-hand side needs
+-- to name the point, so `simpNF` rejects the attribute as one `simp` could never apply.
+theorem eval_ΨSq_eq_zero_iff_zsmul_eq_zero {x y : F} (hns : W.toAffine.Nonsingular x y) (n : ℤ) :
+    (W.ΨSq n).eval x = 0 ↔ n • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0 := by
+  rw [← evalEval_Ψ_sq_eq_eval_ΨSq W hns.left n, ← evalEval_ψ_eq_evalEval_Ψ W hns.left n,
+    pow_eq_zero_iff two_ne_zero]
+  exact ⟨zsmul_eq_zero_of_evalEval_ψ_eq_zero W hns n,
+    evalEval_ψ_eq_zero_of_zsmul_eq_zero W hns n⟩
+
 /-- **Torsion transports between the affine and Jacobian point groups.** `n • P = 0` affinely,
 with `n : ℕ`, is the same statement as `(n : ℤ) • P = 0` on the Jacobian side.
 
@@ -1099,18 +1117,27 @@ while the theorems above take their torsion hypothesis on `Jacobian.Point.fromAf
 vanishing statement travels forwards and a non-vanishing one backwards. The proof is the additive
 equivalence alone, so `P` ranges over every affine point, the point at infinity included.
 
+The integer-scalar form `zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero` is the one this rests on;
+the `ℕ`-cast reading below is its specialisation, and is what a consumer holding an `ℕ`-torsion
+hypothesis wants.
+
 **Not a `simp` lemma.** Its left-hand side is not in simp normal form: `natCast_zsmul` rewrites
 `(n : ℤ) • Q` to `n • Q`, so tagging it `@[simp]` fails `simpNF`. The `ℤ`-cast orientation is
 nevertheless the useful one, because every consumer's torsion hypothesis is a `ℤ`-scalar
 multiple; stating it in `ℕ`-normal form would only move the cast to each call site. -/
-lemma zsmul_fromAffine_eq_zero_iff [DecidableEq F] {E : WeierstrassCurve F}
-    {P : Affine.Point E.toAffine} {n : ℕ} :
-    (n : ℤ) • Jacobian.Point.fromAffine P = 0 ↔ n • P = 0 := by
+lemma zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero [DecidableEq F] {E : WeierstrassCurve F}
+    {P : Affine.Point E.toAffine} {n : ℤ} :
+    n • Jacobian.Point.fromAffine P = 0 ↔ n • P = 0 := by
   -- `fromAffine` is the `invFun` field of `toAffineAddEquiv`, so the two agree definitionally —
   -- but `toAffineAddEquiv` is a plain `noncomputable def`, so `simp` cannot unfold it at
   -- reducible transparency. Rewrite into equiv form first.
-  rw [natCast_zsmul, ← Jacobian.Point.toAffineAddEquiv_symm_apply,
-    ← map_nsmul (Jacobian.Point.toAffineAddEquiv E).symm, AddEquiv.map_eq_zero_iff]
+  rw [← Jacobian.Point.toAffineAddEquiv_symm_apply,
+    ← map_zsmul (Jacobian.Point.toAffineAddEquiv E).symm, AddEquiv.map_eq_zero_iff]
+
+lemma zsmul_fromAffine_eq_zero_iff [DecidableEq F] {E : WeierstrassCurve F}
+    {P : Affine.Point E.toAffine} {n : ℕ} :
+    (n : ℤ) • Jacobian.Point.fromAffine P = 0 ↔ n • P = 0 := by
+  rw [zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero, natCast_zsmul]
 
 /-- **Two-torsion is exactly the vanishing of `ψ₂`.** For a nonsingular affine point, having order
 two and `ψ₂` vanishing there are the same condition. Forwards, order two gives `2 • P = 0` and

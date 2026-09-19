@@ -93,7 +93,7 @@ too. -/
 theorem IsRealForm.frobeniusSchurIndicator_eq_one [ρ.IsIrreducible] (h : IsRealForm ρ σ) :
     frobeniusSchurIndicator ρ = 1 := by
   have : FiniteDimensional ℂ V := IsIrreducible.finiteDimensional ‹ρ.IsIrreducible›
-  have : Nontrivial V := IsIrreducible.nontrivial ‹ρ.IsIrreducible›
+  have : Nontrivial V := Representation.IsIrreducible.nontrivial ‹ρ.IsIrreducible›
   have : FiniteDimensional ℝ W := h.finiteDimensional_iff.mpr inferInstance
   have hrank : finrank ℝ W = finrank ℂ V := h.finrank_eq
   have : Nontrivial W :=

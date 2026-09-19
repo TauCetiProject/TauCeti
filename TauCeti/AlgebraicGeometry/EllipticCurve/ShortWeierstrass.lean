@@ -41,6 +41,14 @@ reduce a projection of the opaque constructor. Every other fact about `shortCurv
   automatically unfold `baseChange`, so that lemma never fires on this spelling by itself.
 * `WeierstrassCurve.shortCurve_equation_iff`: a point lies on it exactly when
   `y² = x³ + Ax + B`.
+* `WeierstrassCurve.shortCurve_a₄_a₆`: a curve in short normal form is `shortCurve` of its own
+  `a₄` and `a₆`. This is how a statement about an arbitrary `[W.IsShortNF]` reaches the explicit
+  `y² = x³ + Ax + B` shape and the `shortCurve` API.
+* `WeierstrassCurve.smul_shortCurve`: the scaling `(x, y) ↦ (u²x, u³y)` carries `shortCurve A B`
+  to `shortCurve (u⁻⁴A) (u⁻⁶B)`. Over a field of characteristic other than `2` and `3` these
+  scalings are the only changes of variables between short equations
+  (`WeierstrassCurve.variableChange_a₄_of_isShortNF`), so this is the whole coefficient freedom
+  of a short equation.
 
 The classical discriminant `-16(4A³ + 27B²)` is *not* restated: it is Mathlib's `Δ_of_isShortNF`,
 which the instance below makes applicable and the coefficient lemmas reduce.
@@ -127,5 +135,19 @@ hand. -/
     (shortCurve A B).toAffine.Equation x y ↔ y ^ 2 = x ^ 3 + A * x + B := by
   rw [Affine.equation_iff]
   simp [shortCurve]
+
+/-- A curve in short normal form is `shortCurve` of its own `a₄` and `a₆`. This is how a statement
+about an arbitrary `[W.IsShortNF]` reaches the explicit `y² = x³ + Ax + B` shape and the
+`shortCurve` API. -/
+@[simp] lemma shortCurve_a₄_a₆ (W : WeierstrassCurve R) [W.IsShortNF] :
+    shortCurve W.a₄ W.a₆ = W := by
+  ext <;> simp
+
+/-- The scaling `(x, y) ↦ (u²x, u³y)`, the change of variables `⟨u, 0, 0, 0⟩`, carries
+`y² = x³ + Ax + B` to `y² = x³ + u⁻⁴Ax + u⁻⁶B`. -/
+@[simp] lemma smul_shortCurve (u : Rˣ) :
+    (⟨u, 0, 0, 0⟩ : VariableChange R) • shortCurve A B =
+      shortCurve (u⁻¹ ^ 4 * A) (u⁻¹ ^ 6 * B) := by
+  ext <;> simp [variableChange_def]
 
 end WeierstrassCurve

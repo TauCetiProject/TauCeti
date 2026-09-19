@@ -55,7 +55,7 @@ variable {X : Scheme.{u}}
 
 /-- The tensor product of two line bundles on a scheme. -/
 def tensorProduct (L K : InvertibleSheaf X) : InvertibleSheaf X :=
-  ⟨Scheme.Modules.tensorProduct X L.obj K.obj,
+  ⟨SheafOfModules.tensorProduct X.sheaf L.obj K.obj,
     by
       let _ : SheafOfModules.IsInvertible (R := X.ringCatSheaf) L.obj := L.property
       let _ : SheafOfModules.IsInvertible (R := X.ringCatSheaf) K.obj := K.property
@@ -65,14 +65,13 @@ def tensorProduct (L K : InvertibleSheaf X) : InvertibleSheaf X :=
 underlying sheaves of `L` and `K`. -/
 @[simp]
 lemma tensorProduct_obj (L K : InvertibleSheaf X) :
-    (tensorProduct L K).obj = Scheme.Modules.tensorProduct X L.obj K.obj :=
+    (tensorProduct L K).obj = SheafOfModules.tensorProduct X.sheaf L.obj K.obj :=
   (rfl)
 
 /-- The sheaf isomorphism underlying transport through the first tensor factor. -/
 def tensorProductCongrLeftIso {L L' K : InvertibleSheaf X} (e : L ≅ L') :
     @Iso (SheafOfModules X.ringCatSheaf) _ (tensorProduct L K).obj (tensorProduct L' K).obj := by
-  simpa only [tensorProduct_obj, ObjectProperty.ι_obj,
-    _root_.AlgebraicGeometry.Scheme.Modules.tensorProduct] using
+  simpa only [tensorProduct_obj, ObjectProperty.ι_obj] using
     (SheafOfModules.tensorProductCongrLeft (N := K.obj) X.sheaf
       ((SheafOfModules.isInvertible X).ι.mapIso e))
 
@@ -100,8 +99,7 @@ lemma tensorProductCongrLeft_inv_val {L L' K : InvertibleSheaf X} (e : L ≅ L')
 /-- The sheaf isomorphism underlying transport through the second tensor factor. -/
 def tensorProductCongrRightIso {L K K' : InvertibleSheaf X} (e : K ≅ K') :
     @Iso (SheafOfModules X.ringCatSheaf) _ (tensorProduct L K).obj (tensorProduct L K').obj := by
-  simpa only [tensorProduct_obj, ObjectProperty.ι_obj,
-    _root_.AlgebraicGeometry.Scheme.Modules.tensorProduct] using
+  simpa only [tensorProduct_obj, ObjectProperty.ι_obj] using
     (SheafOfModules.tensorProductCongrRight (M := L.obj) X.sheaf
       ((SheafOfModules.isInvertible X).ι.mapIso e))
 
@@ -137,8 +135,7 @@ lemma isIsomorphic_tensorProduct {L L' K K' : InvertibleSheaf X}
 /-- The sheaf isomorphism underlying symmetry of the tensor product of line bundles. -/
 def tensorProductCommIso (L K : InvertibleSheaf X) :
     @Iso (SheafOfModules X.ringCatSheaf) _ (tensorProduct L K).obj (tensorProduct K L).obj := by
-  simpa only [tensorProduct_obj, ObjectProperty.ι_obj,
-    _root_.AlgebraicGeometry.Scheme.Modules.tensorProduct] using
+  simpa only [tensorProduct_obj, ObjectProperty.ι_obj] using
     (SheafOfModules.tensorProductComm X.sheaf L.obj K.obj)
 
 /-- The tensor product of line bundles is symmetric. -/
@@ -165,8 +162,7 @@ lemma tensorProductComm_inv_val (L K : InvertibleSheaf X) :
 def tensorProductAssocIso (L K M : InvertibleSheaf X) :
     @Iso (SheafOfModules X.ringCatSheaf) _ (tensorProduct (tensorProduct L K) M).obj
       (tensorProduct L (tensorProduct K M)).obj := by
-  simpa only [tensorProduct_obj, ObjectProperty.ι_obj,
-    _root_.AlgebraicGeometry.Scheme.Modules.tensorProduct] using
+  simpa only [tensorProduct_obj, ObjectProperty.ι_obj] using
     (SheafOfModules.tensorProductAssoc X.sheaf L.obj K.obj M.obj)
 
 /-- The tensor product of line bundles is associative. -/
@@ -193,8 +189,7 @@ lemma tensorProductAssoc_inv_val (L K M : InvertibleSheaf X) :
 /-- The sheaf isomorphism underlying the left unit for the tensor product of line bundles. -/
 def tensorTrivialLeftIsoSheaf (L : InvertibleSheaf X) :
     @Iso (SheafOfModules X.ringCatSheaf) _ (tensorProduct (trivial X) L).obj L.obj := by
-  simpa only [tensorProduct_obj, trivial_obj,
-    _root_.AlgebraicGeometry.Scheme.Modules.tensorProduct] using
+  simpa only [tensorProduct_obj, trivial_obj] using
     (TauCeti.SheafOfModules.tensorProductFreePUnitIsoLeft X.sheaf L.obj)
 
 /-- The trivial line bundle is a left unit for the sheafified tensor product of invertible
@@ -221,8 +216,7 @@ lemma tensorTrivialLeftIso_inv_val (L : InvertibleSheaf X) :
 /-- The sheaf isomorphism underlying the right unit for the tensor product of line bundles. -/
 def tensorTrivialRightIsoSheaf (L : InvertibleSheaf X) :
     @Iso (SheafOfModules X.ringCatSheaf) _ (tensorProduct L (trivial X)).obj L.obj := by
-  simpa only [tensorProduct_obj, trivial_obj,
-    _root_.AlgebraicGeometry.Scheme.Modules.tensorProduct] using
+  simpa only [tensorProduct_obj, trivial_obj] using
     (TauCeti.SheafOfModules.tensorProductFreePUnitIsoRight X.sheaf L.obj)
 
 /-- The trivial line bundle is a right unit for the sheafified tensor product of invertible

@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.LSeries.Convolution
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Data
 import Mathlib.Analysis.SpecialFunctions.Log.Summable
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 
 /-!
 # The analytic Euler product of an ideal arithmetic function
@@ -42,6 +43,11 @@ product of the Dedekind zeta function.
   function**, valid on `Re s > 1`.
 * `TauCeti.dedekindZeta_ne_zero_of_one_lt_re`: the Dedekind zeta function is **nonzero** on
   `Re s > 1`.
+* `IsDedekindDomain.HeightOneSpectrum.one_lt_norm_absNorm_cpow` and
+  `IsDedekindDomain.HeightOneSpectrum.absNorm_cpow_sub_one_ne_zero`: analytic bounds for the
+  complex powers of prime-ideal norms on the right half-plane.
+* `IsDedekindDomain.HeightOneSpectrum.logDeriv_one_sub_absNorm_cpow_neg`: the logarithmic
+  derivative of a deleted Euler factor.
 
 The nonvanishing is pointwise, at each `s` where the ideal-indexed series converges absolutely, and
 nothing is claimed off that region. It is not a formality: an unconditionally convergent product of
@@ -56,10 +62,47 @@ nonzero factors may still vanish.
 
 public section
 
+open scoped NumberField
+open IsDedekindDomain (HeightOneSpectrum)
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- The absolute norm of a height-one prime, cast to `ℂ`, is nonzero. -/
+theorem natCast_absNorm_ne_zero (P : HeightOneSpectrum (𝓞 K)) :
+    (Ideal.absNorm P.asIdeal : ℂ) ≠ 0 :=
+  Nat.cast_ne_zero.mpr (NumberField.HeightOneSpectrum.one_lt_absNorm P).ne_bot
+
+/-- On `Re s > 0`, `N(𝔭) ^ s` lies outside the closed unit disc. -/
+theorem one_lt_norm_absNorm_cpow (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
+    (hs : 0 < s.re) : 1 < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ s‖ := by
+  have hP := NumberField.HeightOneSpectrum.one_lt_absNorm P
+  rw [Complex.norm_natCast_cpow_of_pos (by omega)]
+  exact Real.one_lt_rpow (by exact_mod_cast hP) hs
+
+/-- On `Re s > 0`, `N(𝔭) ^ s - 1` is nonzero. -/
+theorem absNorm_cpow_sub_one_ne_zero (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
+    (hs : 0 < s.re) : (Ideal.absNorm P.asIdeal : ℂ) ^ s - 1 ≠ 0 := fun h ↦ by
+  simpa [sub_eq_zero.mp h] using P.one_lt_norm_absNorm_cpow hs
+
+/-- The logarithmic derivative of a deleted Euler factor `1 - N(𝔭) ^ (-s)`. -/
+theorem logDeriv_one_sub_absNorm_cpow_neg (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
+    (hs : 0 < s.re) :
+    logDeriv (fun z : ℂ ↦ 1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-z)) s =
+      Complex.log (Ideal.absNorm P.asIdeal) / ((Ideal.absNorm P.asIdeal : ℂ) ^ s - 1) := by
+  have h0 := P.natCast_absNorm_ne_zero
+  have hderiv := (((hasDerivAt_neg s).const_cpow (Or.inl h0)).const_sub 1).deriv
+  have hpow : (Ideal.absNorm P.asIdeal : ℂ) ^ s ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl h0)
+  have hsub := P.absNorm_cpow_sub_one_ne_zero hs
+  rw [logDeriv_apply, hderiv, Complex.cpow_neg]
+  field_simp
+
+end IsDedekindDomain.HeightOneSpectrum
+
 namespace TauCeti
 
-open scoped nonZeroDivisors NumberField ComplexOrder
-open IsDedekindDomain (HeightOneSpectrum)
+open scoped nonZeroDivisors ComplexOrder
 
 variable {K : Type*} [Field K] [NumberField K]
 

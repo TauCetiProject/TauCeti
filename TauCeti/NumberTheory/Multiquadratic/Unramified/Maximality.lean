@@ -116,13 +116,13 @@ variable [IsGalois ℚ M]
 /-- **A quadratic subfield of an unramified Galois extension lies in the candidate genus field.**
 Let `M / ℚ` be Galois, let `y ∈ M` be a square root of a squarefree non-square `d` generating a
 quadratic subfield, and assume `M` is unramified over that subfield at every finite prime. Then for
-every squarefree non-square `a` with a square root in `M`, the candidate genus field
+every squarefree `a` with a square root in `M`, the candidate genus field
 `candidateGenusField hd` contains an element squaring to `a`.
 
 This is the arithmetic core of maximality: the discriminant of `ℚ(√a)` is a *subproduct* of the
 prime-discriminant factorization of the discriminant of `ℚ(√d)`. -/
 theorem exists_mem_candidateGenusField_sq_eq_intCast {d a : ℤ} (hd : Squarefree d)
-    (hnsqd : ¬ IsSquare ((d : ℤ) : ℚ)) (hsfa : Squarefree a) (hnsqa : ¬ IsSquare ((a : ℤ) : ℚ))
+    (hnsqd : ¬ IsSquare ((d : ℤ) : ℚ)) (hsfa : Squarefree a)
     {x y : M} (hx : x ^ 2 = algebraMap ℤ M a) (hy : y ^ 2 = algebraMap ℤ M d)
     (hunr : ∀ q : Ideal (𝓞 (adjoin ℚ {y} : IntermediateField ℚ M)), q.IsPrime → q ≠ ⊥ →
       Algebra.IsUnramifiedIn (𝓞 M) q) :
@@ -152,11 +152,12 @@ theorem exists_mem_candidateGenusField_sq_eq_intCast {d a : ℤ} (hd : Squarefre
     obtain ⟨hs, hse, hsprod⟩ := genusPrimeDiscriminants_spec hd
     refine exists_mem_candidateGenusField_sq_eq_intCast_of_subset hd huprod
       (subset_of_forall_prime_dvd_fundamentalDiscriminant hs hse hsprod hu hue huprod hce
-        (fun p hp hpa => dvd_fundamentalDiscriminant_base_of_dvd_subfield hsfa hnsqa hd hnsqd hx hy
-          hunr hp hpa) fun h2 => ?_)
+        (fun p hp hpa =>
+          dvd_fundamentalDiscriminant_base_of_dvd_subfield hsfa hd hx hy hunr hp hpa)
+        fun h2 => ?_)
     have hdeg := finrank_adjoin_sq_eq_intCast hnsqd hy
-    have h := not_dvd_fundamentalDiscriminant_mul_of_dvd_subfield hsfa hnsqa hsfc hnsqc hx hy
-      hdeg hunr he hce (p := 2) Nat.prime_two (by exact_mod_cast h2)
+    have h := not_dvd_fundamentalDiscriminant_mul_of_dvd_subfield hsfa hsfc hx hy hdeg hunr he hce
+      (p := 2) Nat.prime_two (by exact_mod_cast h2)
     exact_mod_cast h
 
 end IsGalois
@@ -179,17 +180,14 @@ theorem nonempty_algHom_candidateGenusField {d : ℤ} (hd : Squarefree d)
       Algebra.IsUnramifiedIn (𝓞 M) q) :
     Nonempty (M →ₐ[ℚ] candidateGenusField hd) := by
   have hdeg := finrank_adjoin_sq_eq_intCast hnsqd hy
-  obtain ⟨n, a, root, hsf, hroot, hindep, htop, -⟩ :=
+  obtain ⟨n, a, root, hsf, hroot, _, htop, -⟩ :=
     exists_squarefree_root_adjoin_range_eq_top_of_isUnramifiedIn_over_quadratic
       (adjoin ℚ {y} : IntermediateField ℚ M) hdeg hunr
   have key : ∀ i, ∃ z ∈ candidateGenusField hd, z ^ 2 = ((a i : ℤ) : ℂ) := fun i => by
-    have hnsqa : ¬ IsSquare ((a i : ℤ) : ℚ) := by
-      rw [Rat.isSquare_intCast_iff]
-      simpa using hindep {i} ⟨i, Finset.mem_singleton_self i⟩
     have hxi : root i ^ 2 = algebraMap ℤ M (a i) := by
       rw [hroot i, IsScalarTower.algebraMap_apply ℤ ℚ M]
       norm_num
-    exact exists_mem_candidateGenusField_sq_eq_intCast hd hnsqd (hsf i) hnsqa hxi hy hunr
+    exact exists_mem_candidateGenusField_sq_eq_intCast hd hnsqd (hsf i) hxi hy hunr
   choose z hzmem hzsq using key
   set φ : M →ₐ[ℚ] ℂ := IsAlgClosed.lift
   have hle : adjoin ℚ (Set.range root) ≤ (candidateGenusField hd).comap φ := by

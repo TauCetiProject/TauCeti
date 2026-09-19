@@ -13,8 +13,9 @@ public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Prime.Powe
 The composite element `heckeTCompositeGamma0 N n` of the `Γ₀(N)` Hecke ring is the ordered
 product of the prime-power blocks `heckeTGeneratorRecGamma0 N p (v_p n)` over the primes of `n`
 (`HeckeRing/GL2/Gamma0/Diagonal/Composite.lean`), and each block reads the coefficient at
-`p^{v_p n} m` when `p ∤ m` (`HeckeSlash/Nebentypus/Prime/Power.lean`). Peeling the blocks off one
-at a time therefore gives, for `n ≠ 0` coprime to the level and `m` coprime to `n`,
+`p^{v_p n} m` — at a good prime when `p ∤ m`, and at a prime dividing the level unconditionally
+(`HeckeSlash/Nebentypus/Prime/Power.lean`). Peeling the blocks off one at a time therefore
+gives, for `n ≠ 0` and `m` coprime to `n`,
 
 `a_m(T_n F) = a_{m n}(F)`.
 
@@ -27,7 +28,10 @@ it says `a_1(T_n F) = a_n(F)`; read on a Hecke eigenvector, where `T_n F = λ_n 
 ## Main results
 
 * `HeckeRing.GL2.qExpansion_coeff_heckeRingHomCharSpace_heckeTCompositeGamma0_of_coprime`:
-  `a_m(T_n F) = a_{m n}(F)` for `n ≠ 0` coprime to `N` and `m` coprime to `n`, on `M_k(N, χ)`.
+  `a_m(T_n F) = a_{m n}(F)` for `n ≠ 0` and `m` coprime to `n`, on `M_k(N, χ)`.
+* `HeckeRing.GL2.qExpansion_coeff_one_heckeRingHomCharSpace_heckeTCompositeGamma0`: its `m = 1`
+  case `a_1(T_n F) = a_n(F)`, the normalisation reading an arbitrary coefficient of `F` off the
+  first coefficient of `T_n F`.
 * `HeckeRing.GL2.qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_of_coprime`:
   its specialisation to `S_k(N, χ)`, along `cuspToModFormCharSpace`.
 
@@ -58,25 +62,25 @@ namespace HeckeRing.GL2
 
 variable {N : ℕ} [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
 
-/-- **The Fourier coefficient of `T_n F` at an index coprime to `n`.** For `n ≠ 0` coprime to the
-level and `m` coprime to `n`, the Hecke ring's composite element reads the coefficient at `m n`:
-`a_m(T_n F) = a_{m n}(F)`. -/
+/-- **The Fourier coefficient of `T_n F` at an index coprime to `n`.** For `n ≠ 0` and `m`
+coprime to `n`, the Hecke ring's composite element reads the coefficient at `m n`:
+`a_m(T_n F) = a_{m n}(F)`. No hypothesis relating `n` to the level is needed: the blocks at the
+primes dividing `N` shift every coefficient. -/
 theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTCompositeGamma0_of_coprime {n : ℕ}
-    (hn : n ≠ 0) (hnN : Nat.Coprime n N) (F : modFormCharSpace k χ) {m : ℕ}
-    (hmn : Nat.Coprime m n) :
+    (hn : n ≠ 0) (F : modFormCharSpace k χ) {m : ℕ} (hmn : Nat.Coprime m n) :
     (qExpansion 1 (heckeRingHomCharSpace k χ (heckeTCompositeGamma0 N n) F :
         ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff m =
       (qExpansion 1 (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff (m * n) := by
-  suffices key : ∀ n : ℕ, n ≠ 0 → Nat.Coprime n N → ∀ m : ℕ, Nat.Coprime m n →
+  suffices key : ∀ n : ℕ, n ≠ 0 → ∀ m : ℕ, Nat.Coprime m n →
       (qExpansion 1 (heckeRingHomCharSpace k χ (heckeTCompositeGamma0 N n) F :
           ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff m =
         (qExpansion 1 (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff (m * n) by
-    exact key n hn hnN m hmn
-  clear hmn hnN hn m n
+    exact key n hn m hmn
+  clear hmn hn m n
   intro n
   induction n using Nat.strong_induction_on with
   | _ n ih =>
-  intro hn hnN m hmn
+  intro hn m hmn
   by_cases h1 : n = 1
   · subst h1
     rw [heckeTCompositeGamma0_one, map_one, Module.End.one_apply, mul_one]
@@ -96,29 +100,43 @@ theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTCompositeGamma0_of_coprime 
       exact hn hnn'.symm
     have hn'lt : n / n.minFac ^ n.factorization n.minFac < n :=
       Nat.div_lt_self (Nat.pos_of_ne_zero hn) (Nat.one_lt_pow hv hp.one_lt)
-    have hpN : Nat.Coprime n.minFac N := Nat.Coprime.coprime_dvd_left hpn hnN
-    have hn'N : Nat.Coprime (n / n.minFac ^ n.factorization n.minFac) N :=
-      Nat.Coprime.coprime_dvd_left (Nat.ordCompl_dvd n n.minFac) hnN
     have hpm : ¬ n.minFac ∣ m :=
       (hp.coprime_iff_not_dvd).mp (Nat.Coprime.coprime_dvd_right hpn hmn).symm
     have hcop : Nat.Coprime (n.minFac ^ n.factorization n.minFac * m)
         (n / n.minFac ^ n.factorization n.minFac) :=
       Nat.Coprime.mul_left ((Nat.coprime_ordCompl hp hn).pow_left _)
         (Nat.Coprime.coprime_dvd_right (Nat.ordCompl_dvd n n.minFac) hmn)
-    rw [qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_not_dvd hp hpN _ hpm,
-      ih _ hn'lt hn'0 hn'N _ hcop, mul_comm (n.minFac ^ n.factorization n.minFac) m, mul_assoc,
-      hnn']
+    -- the block at `n.minFac` shifts by `n.minFac ^ v`, whether or not that prime divides `N`
+    by_cases hpN : n.minFac ∣ N
+    · rw [qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd_level hp hpN,
+        ih _ hn'lt hn'0 _ hcop, mul_comm (n.minFac ^ n.factorization n.minFac) m, mul_assoc,
+        hnn']
+    · rw [qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_not_dvd hp
+          (hp.coprime_iff_not_dvd.mpr hpN) _ hpm,
+        ih _ hn'lt hn'0 _ hcop, mul_comm (n.minFac ^ n.factorization n.minFac) m, mul_assoc,
+        hnn']
+
+/-- **The first Fourier coefficient of `T_n F` is the `n`-th coefficient of `F`**:
+`a_1(T_n F) = a_n(F)`, the `m = 1` case of
+`qExpansion_coeff_heckeRingHomCharSpace_heckeTCompositeGamma0_of_coprime`. It is this
+normalisation that lets an arbitrary coefficient of `F` be read off a first coefficient. -/
+theorem qExpansion_coeff_one_heckeRingHomCharSpace_heckeTCompositeGamma0 {n : ℕ} (hn : n ≠ 0)
+    (F : modFormCharSpace k χ) :
+    (qExpansion 1 (heckeRingHomCharSpace k χ (heckeTCompositeGamma0 N n) F :
+        ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff 1 =
+      (qExpansion 1 (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff n := by
+  simpa using qExpansion_coeff_heckeRingHomCharSpace_heckeTCompositeGamma0_of_coprime hn F
+    (Nat.coprime_one_left n)
 
 /-- **The Fourier coefficient of `T_n F` at an index coprime to `n`, on `S_k(N, χ)`**: the case
 of `qExpansion_coeff_heckeRingHomCharSpace_heckeTCompositeGamma0_of_coprime` at a cusp form,
 transported along the inclusion of character spaces. -/
 theorem qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_of_coprime {n : ℕ}
-    (hn : n ≠ 0) (hnN : Nat.Coprime n N) (F : cuspFormCharSpace k χ) {m : ℕ}
-    (hmn : Nat.Coprime m n) :
+    (hn : n ≠ 0) (F : cuspFormCharSpace k χ) {m : ℕ} (hmn : Nat.Coprime m n) :
     (qExpansion 1 (heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N n) F :
         CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff m =
       (qExpansion 1 (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff (m * n) := by
-  have h := qExpansion_coeff_heckeRingHomCharSpace_heckeTCompositeGamma0_of_coprime hn hnN
+  have h := qExpansion_coeff_heckeRingHomCharSpace_heckeTCompositeGamma0_of_coprime hn
     (cuspToModFormCharSpace k χ F) hmn
   rw [heckeRingHomCharSpace_apply, ← cuspToModFormCharSpace_twistedHeckeSlashCuspFormCharLinearMap,
     ← heckeRingHomCuspCharSpace_apply] at h

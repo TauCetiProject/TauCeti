@@ -122,7 +122,7 @@ def theme : Theme := { Theme.default with
 
         <section class="band taste">
           <h2 class="section-title">"A taste of the maths"</h2>
-          <p class="taste-note">"Four real theorems — one for each roadmap theme — extracted from the library and type-checked when this page is built, so they cannot drift out of date."</p>
+          <p class="taste-note">"Burnside’s theorem, Carathéodory’s boundary extension theorem, and Schur–Weyl duality — each example is checked against the library when this page is built."</p>
           <div class="carousel">
             <button class="carousel-arrow prev" type="button" aria-label="Previous example">"‹"</button>
             <div class="carousel-track">

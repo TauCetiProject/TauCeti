@@ -51,7 +51,7 @@ nontrivial expresses that the dimension is at least two. -/
 instance subsingleton_homotopyGroup : Subsingleton (HomotopyGroup N (AddCircle p) x) := by
   classical
   obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective x
-  exact (TauCeti.IsCoveringMap.homotopyGroupMulEquiv (N := N)
+  exact (IsCoveringMap.homotopyGroupMulEquiv (N := N)
     (AddCircle.isCoveringMap_coe p) x).toEquiv.subsingleton_congr.mp inferInstance
 
 /-- Every higher homotopy class of a real circle is the identity. -/
