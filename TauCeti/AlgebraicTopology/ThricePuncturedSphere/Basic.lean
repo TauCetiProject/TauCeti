@@ -229,6 +229,8 @@ theorem isPathConnected_leftOpen_inter_rightOpen :
     IsPathConnected (leftOpen ∩ rightOpen) :=
   isSimplyConnected_leftOpen_inter_rightOpen.isPathConnected
 
+-- These are not simp lemmas: `mem_leftOpen`, `mem_rightOpen`, and `coe_basePt` already let
+-- `simp` prove both statements, so extra simp attributes would fail the simpNF linter.
 /-- The basepoint `1/2` lies in `leftOpen`. -/
 theorem basePt_mem_leftOpen : basePt ∈ leftOpen := by
   simp only [mem_leftOpen, coe_basePt]
