@@ -18,8 +18,8 @@ parameters. The equivalence `TauCeti.QuaternionAlgebra.baseChange` identifies
 It lets quaternion algebras and their splitting isomorphisms be transported along extensions.
 The construction works over arbitrary commutative rings, including in characteristic two.
 
-The underlying linear equivalence uses Mathlib's `QuaternionAlgebra.linearEquivTuple` and
-`TensorProduct.piScalarRight`; multiplicativity is obtained from `AlgHom.liftEquiv`.
+The formula `baseChange_tmul` sends a pure tensor to the scalar multiple of the coefficientwise
+image. The inverse formula `baseChange_symm_mk` expands a quaternion in the basis `1, i, j, k`.
 -/
 
 public section
@@ -79,9 +79,8 @@ theorem map_comp {T : Type*} [CommRing T] (a b c : R) (f : R →+* S) (g : S →
 
 variable (R S) [Algebra R S] (a b c : R)
 
-/-- Extending scalars in a quaternion algebra applies the algebra map to its parameters. -/
-noncomputable def baseChange :
-    S ⊗[R] ℍ[R,a,b,c] ≃ₐ[S]
+private noncomputable def baseChangeHom :
+    S ⊗[R] ℍ[R,a,b,c] →ₐ[S]
       ℍ[S,algebraMap R S a,algebraMap R S b,algebraMap R S c] := by
   let f : ℍ[R,a,b,c] →ₐ[R]
       ℍ[S,algebraMap R S a,algebraMap R S b,algebraMap R S c] :=
@@ -90,7 +89,19 @@ noncomputable def baseChange :
         rw [IsScalarTower.algebraMap_apply R S
           ℍ[S,algebraMap R S a,algebraMap R S b,algebraMap R S c]]
         ext <;> simp [_root_.QuaternionAlgebra.algebraMap_eq] }
-  let g := AlgHom.liftEquiv R S _ _ f
+  exact AlgHom.liftEquiv R S _ _ f
+
+private theorem baseChangeHom_tmul (s : S) (q : ℍ[R,a,b,c]) :
+    baseChangeHom R S a b c (s ⊗ₜ[R] q) = s • map a b c (algebraMap R S) q := by
+  exact AlgHom.liftEquiv_tmul _ s q
+
+/-- Extending scalars in a quaternion algebra applies the algebra map to its parameters. -/
+noncomputable def baseChange :
+    S ⊗[R] ℍ[R,a,b,c] ≃ₐ[S]
+      ℍ[S,algebraMap R S a,algebraMap R S b,algebraMap R S c] := by
+  let g := baseChangeHom R S a b c
+  -- The underlying linear equivalence uses Mathlib's `QuaternionAlgebra.linearEquivTuple`
+  -- and `TensorProduct.piScalarRight`; `AlgHom.liftEquiv` supplies multiplicativity.
   let e := (LinearEquiv.baseChange R S _ _
       (_root_.QuaternionAlgebra.linearEquivTuple a b c)).trans
     ((TensorProduct.piScalarRight R S S (Fin 4)).trans
@@ -98,15 +109,16 @@ noncomputable def baseChange :
         (algebraMap R S a) (algebraMap R S b) (algebraMap R S c)).symm)
   have h : g.toLinearMap = e.toLinearMap := by
     ext : 2
-    ext <;> simp [g, f, e, Algebra.smul_def, mul_comm,
+    ext <;> simp [g, baseChangeHom_tmul, e, Algebra.smul_def, mul_comm,
       _root_.QuaternionAlgebra.equivTuple]
   have he : (g : _ → _) = e := congrArg DFunLike.coe h
   exact AlgEquiv.ofBijective g (he.symm ▸ e.bijective)
 
+/-- Base change sends a pure tensor to the scalar multiple of the coefficientwise image. -/
 @[simp]
 theorem baseChange_tmul (s : S) (q : ℍ[R,a,b,c]) :
     baseChange R S a b c (s ⊗ₜ[R] q) = s • map a b c (algebraMap R S) q := by
-  simp [baseChange]
+  exact baseChangeHom_tmul R S a b c s q
 
 /-- The inverse base-change equivalence expands a quaternion in the basis `1, i, j, k`. -/
 @[simp]
