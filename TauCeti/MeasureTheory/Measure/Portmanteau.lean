@@ -20,15 +20,15 @@ the points of a dense sequence, and the thickenings are the balls around them.
 
 ## Main statements
 
-* `TauCeti.exists_forall_null_frontier_thickening` — for countably many sets, some radius in any
-  nonempty open interval gives thickenings whose boundaries are all null.
+* `MeasureTheory.Measure.exists_forall_null_frontier_thickening` — for countably many sets, some
+  radius in any nonempty open interval gives thickenings whose boundaries are all null.
 -/
 
 public section
 
 open MeasureTheory Set
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
 variable {Ω : Type*} [MeasurableSpace Ω] [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω]
 
@@ -39,7 +39,7 @@ theorem exists_forall_null_frontier_thickening (μ : Measure Ω) [SFinite μ] {�
     [Countable ι] (s : ι → Set Ω) {a b : ℝ} (hab : a < b) :
     ∃ r ∈ Ioo a b, ∀ k, μ (frontier (Metric.thickening r (s k))) = 0 := by
   have hcount (k : ι) : {r : ℝ | 0 < μ (frontier (Metric.thickening r (s k)))}.Countable :=
-    Measure.countable_meas_pos_of_disjoint_iUnion (fun r ↦ isClosed_frontier.measurableSet)
+    countable_meas_pos_of_disjoint_iUnion (fun r ↦ isClosed_frontier.measurableSet)
       (Metric.frontier_thickening_disjoint (s k))
   obtain ⟨r, hr, hr'⟩ :
       (Ioo a b \ ⋃ k, {r : ℝ | 0 < μ (frontier (Metric.thickening r (s k)))}).Nonempty := by
@@ -49,4 +49,4 @@ theorem exists_forall_null_frontier_thickening (μ : Measure Ω) [SFinite μ] {�
   by_contra hk
   exact hr' (mem_iUnion.2 ⟨k, pos_iff_ne_zero.2 hk⟩)
 
-end TauCeti
+end MeasureTheory.Measure

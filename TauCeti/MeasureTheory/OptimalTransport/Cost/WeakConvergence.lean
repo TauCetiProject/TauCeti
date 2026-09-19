@@ -199,7 +199,7 @@ private theorem exists_partition (μ : Measure X) [IsProbabilityMeasure μ] {r :
       μ (A (Fin.last N)) ≤ ε := by
   have := nonempty_of_isProbabilityMeasure μ
   obtain ⟨u, hu⟩ := TopologicalSpace.exists_dense_seq X
-  obtain ⟨ρ, ⟨hρ0, hρr⟩, hρ⟩ := exists_forall_null_frontier_thickening μ (fun k ↦ {u k}) hr
+  obtain ⟨ρ, ⟨hρ0, hρr⟩, hρ⟩ := μ.exists_forall_null_frontier_thickening (fun k ↦ {u k}) hr
   simp only [Metric.thickening_singleton] at hρ
   -- The union of the first `N` balls exhausts the space, so its complement becomes small.
   set G : ℕ → Set X := fun N ↦ ⋃ k < N, Metric.ball (u k) ρ
