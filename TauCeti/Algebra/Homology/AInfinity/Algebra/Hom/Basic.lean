@@ -372,6 +372,7 @@ theorem IsStrict.toAInfinityHom_toStrictHom {f : AInfinityHom AA BB} (hf : f.IsS
   rw [AInfinityStrictHom.taylor_toAInfinityHom, IsStrict.toStrictHom_toLinearMap, hf]
 
 /-- The `A∞` morphism induced by a strict morphism is strict. -/
+@[simp]
 theorem isStrict_toAInfinityHom (f : AInfinityStrictHom AA BB) : f.toAInfinityHom.IsStrict := by
   rw [IsStrict, AInfinityStrictHom.taylor_toAInfinityHom,
     AInfinityStrictHom.linearPart_toAInfinityHom]
