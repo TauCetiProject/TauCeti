@@ -68,10 +68,10 @@ directions before taking products.
 * `TauCeti.Grid.Noninterleaving`: two endpoint pairs lie on the same cyclic side of each other.
 * `TauCeti.Grid.noninterleaving_rev`: non-interleaving is preserved by reversing every endpoint
   with `Fin.rev`, exchanging the two endpoints within each pair.
-* `TauCeti.Grid.succAbove_mem_cIoo_succAbove_succAbove`,
-  `TauCeti.Grid.succAbove_mem_cIco_succAbove_succAbove`: inserting a point into the cycle with
+* `TauCeti.Grid.mem_cIoo_succAbove_succAbove`,
+  `TauCeti.Grid.mem_cIco_succAbove_succAbove`: inserting a point into the cycle with
   `Fin.succAbove` preserves the arcs between old points, and
-  `TauCeti.Grid.succ_mem_cIoo_succAbove_succAbove_iff` locates the inserted point.
+  `TauCeti.Grid.mem_cIoo_succ_succAbove_succ_succAbove_iff` locates the inserted point.
 * `TauCeti.Grid.mem_cIco_succ_succAbove_succ_succAbove_iff`: after inserting a point immediately
   after `i`, a half-open arc between old points is the preimage of the old arc under the collapse
   `Fin.predAbove i`.
@@ -695,14 +695,14 @@ theorem noninterleaving_rev (a₀ a₁ b₀ b₁ : Fin n) :
 
 /-- Inserting a new point into the cycle `Fin n` preserves the clockwise open arcs between old
 points. -/
-theorem succAbove_mem_cIoo_succAbove_succAbove (p : Fin (n + 1)) (a b x : Fin n) :
+theorem mem_cIoo_succAbove_succAbove (p : Fin (n + 1)) (a b x : Fin n) :
     p.succAbove x ∈ cIoo (p.succAbove a) (p.succAbove b) ↔ x ∈ cIoo a b := by
   simp only [mem_cIoo, ne_eq, Fin.succAbove, Fin.lt_def, ← Fin.val_inj]
   split_ifs <;> simp only [Fin.val_castSucc, Fin.val_succ] at * <;> omega
 
 /-- Inserting a new point into the cycle `Fin n` preserves the clockwise half-open arcs between
 old points. -/
-theorem succAbove_mem_cIco_succAbove_succAbove (p : Fin (n + 1)) (a b x : Fin n) :
+theorem mem_cIco_succAbove_succAbove (p : Fin (n + 1)) (a b x : Fin n) :
     p.succAbove x ∈ cIco (p.succAbove a) (p.succAbove b) ↔ x ∈ cIco a b := by
   simp only [mem_cIco, ne_eq, Fin.succAbove, Fin.lt_def, ← Fin.val_inj]
   split_ifs <;> simp only [Fin.val_castSucc, Fin.val_succ] at * <;> omega
@@ -710,7 +710,7 @@ theorem succAbove_mem_cIco_succAbove_succAbove (p : Fin (n + 1)) (a b x : Fin n)
 /-- A point inserted immediately after `i` lies strictly inside the arc between two old points
 exactly when the arc passes from `i` to its successor, that is, when `i` lies in the half-open
 arc. -/
-theorem succ_mem_cIoo_succAbove_succAbove_iff (i a b : Fin n) :
+theorem mem_cIoo_succ_succAbove_succ_succAbove_iff (i a b : Fin n) :
     i.succ ∈ cIoo (i.succ.succAbove a) (i.succ.succAbove b) ↔ i ∈ cIco a b := by
   simp only [mem_cIoo, mem_cIco, ne_eq, Fin.succAbove, Fin.lt_def, ← Fin.val_inj]
   split_ifs <;> simp only [Fin.val_castSucc, Fin.val_succ] at * <;> omega
@@ -724,7 +724,7 @@ theorem mem_cIco_succ_succAbove_succ_succAbove_iff (i a b : Fin n) (x : Fin (n +
     rw [Fin.predAbove_succ_self]
     simp only [mem_cIco, ne_eq, Fin.succAbove, Fin.lt_def, ← Fin.val_inj]
     split_ifs <;> simp only [Fin.val_castSucc, Fin.val_succ] at * <;> omega
-  | p c => rw [Fin.predAbove_succ_succAbove, succAbove_mem_cIco_succAbove_succAbove]
+  | p c => rw [Fin.predAbove_succ_succAbove, mem_cIco_succAbove_succAbove]
 
 /-- The cyclic predecessor of the terminal endpoint `i.succ` lies in every nondegenerate
 half-open arc ending there. -/

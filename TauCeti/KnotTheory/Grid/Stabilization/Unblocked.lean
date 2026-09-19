@@ -87,6 +87,7 @@ variable {s} in
 /-- If a transported rectangle avoids the split `X`-square, it covers the `O`-markings of the old
 columns of the stabilization that the original rectangle covers in `G`, and never the new
 `O`-marking. -/
+@[simp]
 theorem OColumns_stabilizeX_insertPoint {x y : GridState n} {R : GridRectangleBetween x y}
     (hXs : (s, G.X s) ∉ R.toGridRectangle.coveredSquares) :
     (G.stabilizeX s.castSucc (G.X s).castSucc s).OColumns
@@ -97,11 +98,11 @@ theorem OColumns_stabilizeX_insertPoint {x y : GridState n} {R : GridRectangleBe
     mem_coveredSquares_insertPoint_succ_succ]
   induction c using Fin.succAboveCases s.castSucc with
   | x =>
-    rw [predAbove_O_stabilizeX_castSucc, Fin.predAbove_castSucc_self]
+    simp only [stabilizeX_O, GridState.insertPoint_apply_newColumn, Fin.predAbove_castSucc_self]
     simp only [hXs, false_iff, not_exists, not_and]
     exact fun c _ h => Fin.succAbove_ne _ _ h
   | p i =>
-    rw [predAbove_O_stabilizeX_succAbove, Fin.predAbove_succAbove]
+    simp only [stabilizeX_O, GridState.insertPoint_apply_succAbove, Fin.predAbove_succAbove]
     simp only [Fin.succAbove_right_inj, exists_eq_right]
 
 variable (R : Type*) [CommSemiring R]
@@ -109,6 +110,7 @@ variable (R : Type*) [CommSemiring R]
 variable {s} in
 /-- If a transported rectangle avoids the split `X`-square, its weight is the weight of the
 original rectangle with the variables renamed into those of the stabilization. -/
+@[simp]
 theorem OMonomial_stabilizeX_insertPoint {x y : GridState n} {r : GridRectangleBetween x y}
     (hXs : (s, G.X s) ∉ r.toGridRectangle.coveredSquares) :
     (G.stabilizeX s.castSucc (G.X s).castSucc s).OMonomial R
@@ -122,7 +124,7 @@ variable {s} in
 /-- Transporting along the insertion of the centre `c = (s.succ, (G.X s).succ)` identifies the
 rectangles counted by the unblocked differential of `G` with those counted by the unblocked
 differential of the stabilization between states containing `c`. -/
-theorem insertPoint_mem_unblockedRectangles_stabilizeX_iff {x y : GridState n}
+theorem mem_unblockedRectangles_stabilizeX_insertPoint {x y : GridState n}
     (r : GridRectangleBetween x y) :
     r.insertPoint s.succ (G.X s).succ ∈
         (G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedRectangles
@@ -136,7 +138,7 @@ theorem insertPoint_mem_unblockedRectangles_stabilizeX_iff {x y : GridState n}
   simp only [GridRectangle.mem_interior, GridRectangle.mem_columnInterior,
     GridRectangle.mem_rowInterior, toGridRectangle_left, toGridRectangle_right,
     toGridRectangle_bottom, toGridRectangle_top, insertPoint_left, insertPoint_right,
-    insertPoint_bottom, insertPoint_top, Grid.succ_mem_cIoo_succAbove_succAbove_iff] at hc
+    insertPoint_bottom, insertPoint_top, Grid.mem_cIoo_succ_succAbove_succ_succAbove_iff] at hc
   have hcov : (s, G.X s) ∈ r.toGridRectangle.coveredSquares := by
     simpa only [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
       GridRectangle.mem_coveredRows, toGridRectangle_left, toGridRectangle_right,
@@ -148,6 +150,7 @@ centre `c = (s.succ, (G.X s).succ)` of the new block, the matrix coefficients of
 differential of the stabilization are those of `G`, with the variable of each column renamed to
 the variable of the corresponding old column. The variable of the new `O`-marking does not
 occur. -/
+@[simp]
 theorem unblockedCoefficient_stabilizeX_insertPoint (x y : GridState n) :
     (G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedCoefficient R
         (x.insertPoint s.succ (G.X s).succ) (y.insertPoint s.succ (G.X s).succ) =
@@ -155,13 +158,13 @@ theorem unblockedCoefficient_stabilizeX_insertPoint (x y : GridState n) :
   rw [unblockedCoefficient_def, unblockedCoefficient_def, map_sum]
   symm
   refine Finset.sum_nbij (fun r => r.insertPoint s.succ (G.X s).succ)
-    (fun r hr => (G.insertPoint_mem_unblockedRectangles_stabilizeX_iff r).mpr hr)
+    (fun r hr => (G.mem_unblockedRectangles_stabilizeX_insertPoint r).mpr hr)
     (fun r _ r' _ h => insertPoint_injective _ _ h) (fun r' hr' => ?_)
     (fun r hr => (G.OMonomial_stabilizeX_insertPoint R (fun h =>
       Finset.disjoint_left.mp (G.disjoint_XSet_of_mem_unblockedRectangles hr) h
         ((G.mem_XSet _).mpr rfl))).symm)
   obtain ⟨r, rfl⟩ := exists_insertPoint_eq r'
-  exact ⟨r, (G.insertPoint_mem_unblockedRectangles_stabilizeX_iff r).mp hr', rfl⟩
+  exact ⟨r, (G.mem_unblockedRectangles_stabilizeX_insertPoint r).mp hr', rfl⟩
 
 /-- **The `N`-to-`I` coefficient block vanishes.** The unblocked differential of the stabilization
 has no matrix coefficient from a grid state not containing the centre

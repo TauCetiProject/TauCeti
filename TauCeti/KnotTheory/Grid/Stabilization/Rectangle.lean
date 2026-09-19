@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Grading.MarkingCount
+public import TauCeti.KnotTheory.Grid.Rectangle.Squares
 public import TauCeti.KnotTheory.Grid.Stabilization.Basic
 
 /-!
@@ -25,7 +25,7 @@ inserted point, and compares emptiness before and after transport.
 
 * `TauCeti.GridRectangleBetween.exists_insertPoint_eq`: every rectangle between two states with
   a common inserted point is transported from the smaller grid.
-* `TauCeti.GridRectangleBetween.succAbove_mem_coveredSquares_insertPoint`: transport preserves
+* `TauCeti.GridRectangleBetween.mem_coveredSquares_insertPoint`: transport preserves
   membership of embedded squares in the covered region.
 * `TauCeti.GridRectangleBetween.mem_coveredSquares_insertPoint_succ_succ`: covered-square
   membership for insertion immediately after specified coordinates is detected by collapsing
@@ -134,13 +134,13 @@ theorem exists_insertPoint_eq
 
 /-- A transported rectangle covers the embedded image of a square exactly when the original
 rectangle covers that square. -/
-theorem succAbove_mem_coveredSquares_insertPoint (c r : Fin n) :
+theorem mem_coveredSquares_insertPoint (c r : Fin n) :
     (p.succAbove c, q.succAbove r) ∈ (R.insertPoint p q).toGridRectangle.coveredSquares ↔
       (c, r) ∈ R.toGridRectangle.coveredSquares := by
   simp only [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
     GridRectangle.mem_coveredRows, toGridRectangle_left, toGridRectangle_right,
     toGridRectangle_bottom, toGridRectangle_top, insertPoint_left, insertPoint_right,
-    insertPoint_bottom, insertPoint_top, Grid.succAbove_mem_cIco_succAbove_succAbove]
+    insertPoint_bottom, insertPoint_top, Grid.mem_cIco_succAbove_succAbove]
 
 /-- When the point is inserted immediately after the column `i` and the row `j`, a square of
 the larger grid is covered by a transported rectangle exactly when its collapse under
@@ -165,7 +165,7 @@ theorem isEmpty_insertPoint_iff :
     GridRectangle.mem_rowInterior, toGridRectangle_left, toGridRectangle_right,
     toGridRectangle_bottom, toGridRectangle_top, insertPoint_left, insertPoint_right,
     insertPoint_bottom, insertPoint_top, GridState.insertPoint_apply_newColumn,
-    GridState.insertPoint_apply_succAbove, Grid.succAbove_mem_cIoo_succAbove_succAbove, not_and]
+    GridState.insertPoint_apply_succAbove, Grid.mem_cIoo_succAbove_succAbove, not_and]
 
 end GridRectangleBetween
 

@@ -238,20 +238,6 @@ theorem predAbove_X_stabilizeX (s : Fin n) (c : Fin (n + 1)) :
     · simp [h]
     · exact Fin.predAbove_succAbove _ _
 
-/-- The `O`-marking of each old column of the stabilization collapses under `Fin.predAbove`
-onto the `O`-marking of the corresponding column of `G`. -/
-theorem predAbove_O_stabilizeX_succAbove (s i : Fin n) :
-    (G.X s).predAbove
-        ((G.stabilizeX s.castSucc (G.X s).castSucc s).O (s.castSucc.succAbove i)) =
-      G.O i := by
-  simp
-
-/-- The new `O`-marking of the stabilization lies in the new column and collapses onto the
-row of the split `X`-marking. -/
-theorem predAbove_O_stabilizeX_castSucc (s : Fin n) :
-    (G.X s).predAbove ((G.stabilizeX s.castSucc (G.X s).castSucc s).O s.castSucc) = G.X s := by
-  simp
-
 /-- Exchanging the marking types turns an `O`-stabilization into an `X`-stabilization. -/
 @[simp]
 theorem stabilizeO_swapMarkings (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n) :
