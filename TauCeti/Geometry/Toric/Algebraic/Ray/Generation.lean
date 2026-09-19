@@ -28,6 +28,8 @@ integral basis, hence linearly independent, so a regular cone is simplicial.
   primitive ray generators.
 * `TauCeti.Toric.mem_dualSemigroup_iff_primitiveGenerator`: an integral character lies in the dual
   semigroup of a toric cone exactly when it is nonnegative on every primitive ray generator.
+* `TauCeti.Toric.mem_dualSemigroup_iff_of_isPrimitiveGenerator`: the same criterion for any
+  chosen primitive generator of each ray.
 * `TauCeti.Toric.IsRegularCone.isSimplicial`: a regular cone is simplicial.
 
 ## References
@@ -73,6 +75,13 @@ theorem mem_dualSemigroup_iff_primitiveGenerator (hi : IsIntegralLattice i)
     m ∈ dualSemigroup hi σ ↔ ∀ ρ : ToricRay σ, 0 ≤ m (primitiveGenerator hi hσ ρ) := by
   have h := mem_dualSemigroup_hull_image hi (Set.range (primitiveGenerator hi hσ)) m
   rwa [hσ.hull_primitiveGenerator hi, Set.forall_mem_range] at h
+
+/-- An integral character lies in the dual semigroup of a toric cone exactly when it is
+nonnegative on a chosen primitive generator of each ray. -/
+theorem mem_dualSemigroup_iff_of_isPrimitiveGenerator (hi : IsIntegralLattice i)
+    (hσ : IsToricCone i σ) {v : ToricRay σ → N} (hv : ∀ ρ, IsPrimitiveGenerator i ρ (v ρ))
+    (m : N →+ ℤ) : m ∈ dualSemigroup hi σ ↔ ∀ ρ : ToricRay σ, 0 ≤ m (v ρ) := by
+  simp only [mem_dualSemigroup_iff_primitiveGenerator hi hσ, ← (hv _).eq_primitiveGenerator hi hσ]
 
 /-- A regular cone is simplicial: it is the cone hull of its primitive ray generators, which are
 part of an integral basis and hence linearly independent over the reals. -/

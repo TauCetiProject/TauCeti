@@ -26,8 +26,6 @@ generated.
 
 ## Main declarations
 
-* `TauCeti.Toric.mem_dualSemigroup_iff_of_isPrimitiveGenerator`: membership in the dual
-  semigroup, read off from the values of a character on any choice of primitive ray generators.
 * `TauCeti.Toric.regularDualSemigroupEquiv`: the regular-coordinate equivalence of the dual
   semigroup attached to a basis extending the primitive ray generators, with
   `TauCeti.Toric.coe_regularDualSemigroupEquiv_fst_apply`,
@@ -51,13 +49,6 @@ namespace TauCeti.Toric
 
 variable {N V ι : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} {σ : PointedCone ℝ V}
-
-/-- An integral character lies in the dual semigroup of a toric cone exactly when it is
-nonnegative on a chosen primitive generator of each ray. -/
-theorem mem_dualSemigroup_iff_of_isPrimitiveGenerator (hi : IsIntegralLattice i)
-    (hσ : IsToricCone i σ) {v : ToricRay σ → N} (hv : ∀ ρ, IsPrimitiveGenerator i ρ (v ρ))
-    (m : N →+ ℤ) : m ∈ dualSemigroup hi σ ↔ ∀ ρ : ToricRay σ, 0 ≤ m (v ρ) := by
-  simp only [mem_dualSemigroup_iff_primitiveGenerator hi hσ, ← (hv _).eq_primitiveGenerator hi hσ]
 
 variable (hi : IsIntegralLattice i) (hσ : IsToricCone i σ) {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
   (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ)))
