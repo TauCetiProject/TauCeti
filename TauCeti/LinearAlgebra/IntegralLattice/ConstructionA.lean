@@ -20,7 +20,8 @@ For an additive code `C ≤ (ZMod m)^ι`, `ConstructionA.lattice m C` is the sub
 `ConstructionA.form m x y = (∑ i, x i * y i) / m`. This rational model becomes the usual
 Construction A lattice after scaling real coordinates by `1 / √m`.
 
-The carrier is a full lattice for every code. Its dual carrier is literally the carrier
+When the coordinate type is finite, the carrier is a full lattice for every code.
+Its dual carrier is literally the carrier
 constructed from the dual code, so integrality is equivalent to self-orthogonality of the code,
 and the resulting integral lattice is unimodular exactly when the code is self-dual.
 Additive codes over `ZMod m` are canonically submodules through `AddSubgroup.toZModSubmodule`;
@@ -33,6 +34,9 @@ coordinate lattice with the ordinary dot product, and the same results apply.
 ## References
 
 * W. Ebeling, *Lattices and Codes*, §1.3, for binary Construction A.
+* M. Harada, A. Munemasa, and B. Venkov, *Classification of ternary extremal self-dual codes of
+  length 28*, §2, for the general positive-modulus normalization and the self-dual-to-unimodular
+  implication.
 * A. Munemasa and H. Tamura, *The codes and the lattices of Hadamard matrices*, §4, for the
   integrality criterion over `ZMod m`.
 -/
@@ -152,6 +156,7 @@ theorem form_intCast_mem_one_iff (x y : ι → ℤ) :
 
 /-- The dual of a Construction A carrier is the Construction A carrier of the Euclidean dual
 code, as an equality of submodules of the same rational coordinate space. -/
+@[simp]
 theorem dualSubmodule_lattice (C : AddSubgroup (ι → ZMod m)) :
     (form m).dualSubmodule (lattice m C) =
       lattice m (AddSubgroup.toZModSubmodule m C).euclideanDual.toAddSubgroup := by
@@ -179,6 +184,7 @@ theorem dualSubmodule_lattice (C : AddSubgroup (ι → ZMod m)) :
 
 /-- The Construction A form is integral on its carrier exactly when the additive code is
 self-orthogonal for the dot product modulo `m`. -/
+@[simp↓]
 theorem lattice_le_dualSubmodule_iff (C : AddSubgroup (ι → ZMod m)) :
     lattice m C ≤ (form m).dualSubmodule (lattice m C) ↔
       AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual := by
