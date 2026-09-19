@@ -239,11 +239,11 @@ theorem logDeriv_deriv_lineSchwarzReflection_conj (hb : b ≠ 0) (hΩopen : IsOp
     (fun _ hw => lineSchwarzReflection_conj_eq hb hline hw) hz
 
 /-- **The pre-Schwarzian derivative of a reflected conformal map is holomorphic across the
-axis.** Let `f` be continuous on the closed upper part of a conjugation-symmetric open set `Ω`,
-holomorphic and injective there, with boundary values on the line through `q` with direction `b`
-and with the open upper part mapped strictly to the left of that line. Then the reflected
-extension is injective with nonvanishing derivative on `Ω`, so its pre-Schwarzian derivative is
-holomorphic on all of `Ω`, the real points included. -/
+axis.** Let `f` be continuous and injective on the closed upper part of a conjugation-symmetric
+open set `Ω` and holomorphic on its open upper part, with boundary values on the line through `q`
+with direction `b` and with the open upper part mapped strictly to the left of that line. Then the
+reflected extension is injective with nonvanishing derivative on `Ω`, so its pre-Schwarzian
+derivative is holomorphic on all of `Ω`, the real points included. -/
 theorem differentiableOn_logDeriv_deriv_lineSchwarzReflection (hb : b ≠ 0) (hΩopen : IsOpen Ω)
     (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
     (hcont : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
@@ -286,8 +286,8 @@ the real points of `S` and symmetric under conjugation.
 
 This is the situation of a conformal map of the upper half-plane onto a polygon, with `S` the set
 of prevertices: each boundary interval between consecutive prevertices is carried into one side of
-the polygon. The continuation is in fact holomorphic at every non-real point; only the real points
-of `S` are genuine exceptions. -/
+the polygon. The continuation is in fact holomorphic at every non-real point; the theorem permits
+exceptions only at the real points of `S`. -/
 theorem exists_differentiableOn_eqOn_logDeriv_deriv {S : Set ℂ}
     (hholo : DifferentiableOn ℂ f {z : ℂ | 0 < z.im})
     (hderiv : ∀ z : ℂ, 0 < z.im → deriv f z ≠ 0)
@@ -308,18 +308,13 @@ theorem exists_differentiableOn_eqOn_logDeriv_deriv {S : Set ℂ}
     refine (((h1.deriv hopen) z hz).differentiableAt hz').div ((h1 z hz).differentiableAt hz')
       (hderiv z hz) |>.congr_of_eventuallyEq (Filter.Eventually.of_forall fun w => ?_)
     exact logDeriv_apply _ _
-  -- The continuation: `ψ` above the axis, its mirror image below it, and on the axis the real
-  -- part of its limit from above.
-  let φ : ℂ → ℂ := fun z => if 0 < z.im then ψ z
-    else if z.im < 0 then (starRingEnd ℂ) (ψ ((starRingEnd ℂ) z))
+  -- The continuation is the Schwarz reflection of `ψ` filled in on the axis by the real part of
+  -- its limit from above.
+  let ψu : ℂ → ℂ := fun z => if 0 < z.im then ψ z
     else ((limUnder (𝓝[{w : ℂ | 0 < w.im}] z) ψ).re : ℂ)
-  have hconj : ∀ z, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z) := fun z => by
-    rcases lt_trichotomy z.im 0 with h | h | h
-    · simp [φ, h, h.not_gt, neg_pos.mpr h]
-    · have hz : (starRingEnd ℂ) z = z := Complex.conj_eq_iff_im.mpr h
-      rw [hz]
-      simp [φ, h]
-    · simp [φ, h, h.not_gt]
+  let φ := schwarzReflection ψu
+  have hconj : ∀ z, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z) := fun z =>
+    schwarzReflection_conj z fun h => by simp [ψu, h]
   -- Near a real point outside `S`, the continuation is the pre-Schwarzian derivative of the
   -- local Schwarz reflection of `f`.
   have hreal : ∀ x : ℝ, (x : ℂ) ∉ S → DifferentiableAt ℂ φ x := by
@@ -339,7 +334,7 @@ theorem exists_differentiableOn_eqOn_logDeriv_deriv {S : Set ℂ}
       filter_upwards [Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr)] with z hz
       rcases lt_trichotomy z.im 0 with h | h | h
       · have hc : 0 < ((starRingEnd ℂ) z).im := by simpa using h
-        simp only [φ, h.not_gt, h, ↓reduceIte]
+        simp only [φ, schwarzReflection_of_im_neg h, ψu, hc, ↓reduceIte]
         rw [← hGψ hc, hGconj z hz, Complex.conj_conj]
       · -- On the axis, `G` is continuous and agrees with `ψ` above, so it is the limit there.
         have hlim : Tendsto ψ (𝓝[{w : ℂ | 0 < w.im}] z) (𝓝 (G z)) :=
@@ -350,13 +345,13 @@ theorem exists_differentiableOn_eqOn_logDeriv_deriv {S : Set ℂ}
           simpa [hzre] using Real.nhdsWithin_upperHalfPlaneSet_neBot z.re
         have hGre : ((G z).re : ℂ) = G z := Complex.conj_eq_iff_re.mp <| by
           simpa [Complex.conj_eq_iff_im.mpr h] using (hGconj z hz).symm
-        simp only [φ, h, lt_irrefl, ↓reduceIte]
+        simp only [φ, schwarzReflection_of_im_zero h, ψu, h, lt_irrefl, ↓reduceIte]
         rw [hlim.limUnder_eq, hGre]
-      · simp only [φ, h, ↓reduceIte]
+      · simp only [φ, schwarzReflection_of_im_nonneg h.le, ψu, h, ↓reduceIte]
         exact (hGψ h).symm
     exact ((hG x (Metric.mem_ball_self hr)).differentiableAt
       (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr))).congr_of_eventuallyEq hφG
-  refine ⟨φ, fun z hz => ?_, fun z hz => by simp [φ, show 0 < z.im from hz], hconj⟩
+  refine ⟨φ, fun z hz => ?_, fun z (hz : 0 < z.im) => by simp [φ, ψu, hz, hz.le], hconj⟩
   refine DifferentiableAt.differentiableWithinAt ?_
   rcases lt_trichotomy z.im 0 with h | h | h
   · -- Below the axis the continuation is the mirror image of `ψ`.
@@ -365,14 +360,14 @@ theorem exists_differentiableOn_eqOn_logDeriv_deriv {S : Set ℂ}
     rw [Complex.conj_conj] at hmir
     refine hmir.congr_of_eventuallyEq ?_
     filter_upwards [(isOpen_lt Complex.continuous_im continuous_const).mem_nhds h] with w hw
-    simp [φ, hw.not_gt, show w.im < 0 from hw]
+    simp [φ, ψu, hw]
   · have hzS : z ∉ S := fun hzS => hz ⟨hzS, h⟩
     have hzre : ((z.re : ℂ)) = z := Complex.ext (by simp) (by simp [h])
     rw [← hzre] at hzS ⊢
     exact hreal z.re hzS
   · refine (hψ z h).congr_of_eventuallyEq ?_
     filter_upwards [hopen.mem_nhds h] with w hw
-    simp [φ, show 0 < w.im from hw]
+    simp [φ, ψu, hw, hw.le]
 
 end Continuation
 
