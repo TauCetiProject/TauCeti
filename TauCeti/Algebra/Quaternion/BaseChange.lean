@@ -20,6 +20,8 @@ The construction works over arbitrary commutative rings, including in characteri
 
 The formula `baseChange_tmul` sends a pure tensor to the scalar multiple of the coefficientwise
 image. The inverse formula `baseChange_symm_mk` expands a quaternion in the basis `1, i, j, k`.
+For the two-parameter notation, `baseChangeTwoParams` gives the equivalence directly with
+`ℍ[S,algebraMap R S a,algebraMap R S b]`.
 -/
 
 public section
@@ -114,11 +116,16 @@ noncomputable def baseChange :
   have he : (g : _ → _) = e := congrArg DFunLike.coe h
   exact AlgEquiv.ofBijective g (he.symm ▸ e.bijective)
 
+-- The equivalence retains the scalar-extension homomorphism as its forward map.
+private theorem baseChange_toAlgHom :
+    (baseChange R S a b c).toAlgHom = baseChangeHom R S a b c := by
+  exact AlgEquiv.toAlgHom_ofBijective _ _
+
 /-- Base change sends a pure tensor to the scalar multiple of the coefficientwise image. -/
 @[simp]
 theorem baseChange_tmul (s : S) (q : ℍ[R,a,b,c]) :
     baseChange R S a b c (s ⊗ₜ[R] q) = s • map a b c (algebraMap R S) q := by
-  exact baseChangeHom_tmul R S a b c s q
+  rw [← AlgEquiv.coe_toAlgHom, baseChange_toAlgHom, baseChangeHom_tmul]
 
 /-- The inverse base-change equivalence expands a quaternion in the basis `1, i, j, k`. -/
 @[simp]
@@ -130,5 +137,40 @@ theorem baseChange_symm_mk (w x y z : S) :
   simp only [AlgEquiv.apply_symm_apply, map_add, baseChange_tmul, map_one, map_mk,
     map_zero]
   ext <;> simp
+
+/-- Scalar extension of the two-parameter quaternion algebra, with zero middle parameter. -/
+noncomputable def baseChangeTwoParams :
+    S ⊗[R] ℍ[R,a,b] ≃ₐ[S] ℍ[S,algebraMap R S a,algebraMap R S b] :=
+  (baseChange R S a 0 b).trans
+    (AlgEquiv.cast (A := fun t => ℍ[S,algebraMap R S a,t,algebraMap R S b])
+      (map_zero (algebraMap R S)))
+
+/-- Two-parameter base change applies the algebra map to each coefficient of a pure tensor. -/
+@[simp]
+theorem baseChangeTwoParams_tmul (s : S) (q : ℍ[R,a,b]) :
+    baseChangeTwoParams R S a b (s ⊗ₜ[R] q) =
+      s • ⟨algebraMap R S q.re, algebraMap R S q.imI,
+        algebraMap R S q.imJ, algebraMap R S q.imK⟩ := by
+  rw [baseChangeTwoParams, AlgEquiv.trans_apply, baseChange_tmul, map_smul]
+  congr 1
+  cases q
+  rw [map_mk]
+  generalize_proofs h
+  generalize algebraMap R S 0 = t at h ⊢
+  cases h
+  rfl
+
+/-- The inverse two-parameter base change expands a quaternion in the basis `1, i, j, k`. -/
+@[simp]
+theorem baseChangeTwoParams_symm_mk (w x y z : S) :
+    (baseChangeTwoParams R S a b).symm ⟨w, x, y, z⟩ =
+      w ⊗ₜ[R] (1 : ℍ[R,a,b]) + x ⊗ₜ[R] ⟨0, 1, 0, 0⟩ +
+        y ⊗ₜ[R] ⟨0, 0, 1, 0⟩ + z ⊗ₜ[R] ⟨0, 0, 0, 1⟩ := by
+  rw [baseChangeTwoParams, AlgEquiv.symm_trans_apply]
+  convert baseChange_symm_mk R S a 0 b w x y z using 2
+  generalize_proofs h
+  generalize algebraMap R S 0 = t at h ⊢
+  cases h
+  rfl
 
 end TauCeti.QuaternionAlgebra
