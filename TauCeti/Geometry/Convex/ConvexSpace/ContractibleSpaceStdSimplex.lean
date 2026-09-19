@@ -30,6 +30,8 @@ public section
 
 namespace Convexity.StdSimplex
 
+/-- The standard simplex on a finite nonempty type is contractible: the straight-line homotopy
+towards a vertex contracts it. -/
 instance contractibleSpace (M : Type*) [Finite M] [Nonempty M] :
     ContractibleSpace (StdSimplex ℝ M) := by
   classical

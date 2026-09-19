@@ -31,6 +31,8 @@ universe u
 
 namespace SimplexCategory
 
+/-- Every topological simplex is contractible, being a universe lift of a standard simplex on a
+finite nonempty type. -/
 instance contractibleSpace (n : SimplexCategory) : ContractibleSpace (toTop.{u}.obj n) :=
   (Homeomorph.ulift (X := StdSimplex ℝ (Fin (n.len + 1)))).contractibleSpace
 
