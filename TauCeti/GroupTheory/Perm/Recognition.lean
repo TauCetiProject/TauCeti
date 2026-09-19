@@ -108,10 +108,7 @@ theorem subgroup_eq_top_of_isPretransitive_of_prime_card_of_isSwap_mem
     (IsPreprimitive.of_prime_card hp) g hgSwap hg
 
 /-- A subgroup of the symmetric group on `n ≥ 5` points whose index is less than `n` contains
-the alternating group.
-
-The bound on the normal core follows the argument of `Subgroup.normal_of_index_eq_minFac_card`
-in Mathlib. -/
+the alternating group. -/
 theorem alternatingGroup_le_of_index_lt (hα : 5 ≤ Nat.card α)
     {H : Subgroup (Equiv.Perm α)} (hH : H.index < Nat.card α) : alternatingGroup α ≤ H := by
   have hcore : H.normalCore.index ∣ Nat.factorial H.index := by

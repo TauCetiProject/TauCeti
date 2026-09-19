@@ -149,14 +149,6 @@ theorem exists_sylow_le_le_normalizer_of_card_sylow_five_eq_one [Finite α] (hα
       _ ≤ _ := le_normalizer_map _
   rwa [hPQ] at key
 
-/-- A finite group of order divisible by `5` with six Sylow `5`-subgroups has order divisible by
-`30`. -/
-theorem thirty_dvd_natCard_of_card_sylow_five_eq_six {G : Type*} [Group G] [Finite G]
-    (h5 : 5 ∣ Nat.card G) (h6 : Nat.card (Sylow 5 G) = 6) : 30 ∣ Nat.card G := by
-  obtain ⟨P⟩ : Nonempty (Sylow 5 G) := inferInstance
-  have h6G : 6 ∣ Nat.card G := h6 ▸ P.card_eq_index_normalizer ▸ index_dvd_card _
-  exact Nat.Coprime.mul_dvd_of_dvd_of_dvd (by norm_num) h5 h6G
-
 /-- A subgroup of the symmetric group on five points whose order is divisible by `30` is the
 alternating group or the whole symmetric group. -/
 theorem eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard [Fintype α] [DecidableEq α]
