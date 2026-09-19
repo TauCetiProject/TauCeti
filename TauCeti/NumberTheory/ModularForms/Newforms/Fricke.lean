@@ -52,8 +52,8 @@ specific to trivial nebentypus.
 * `TauCeti.exists_normalizedFrickeOperatorCusp_eq_smul_of_mem_cuspFormsNew`: a nonzero
   form in the new part of `S_k(N, 1)` that is an eigenvector of every good `Tₚ` satisfies
   `𝒲_N f = ε • f` with `ε = 1` or `ε = -1`.
-* `HeckeRing.GL2.Newform.exists_normalizedFrickeOperatorCusp_eq_smul`: the same for a newform
-  of trivial nebentypus.
+* `HeckeRing.GL2.Newform.frickeSign`: the canonical Fricke sign of a newform of trivial
+  nebentypus, together with its eigenvalue equation and sign law.
 
 ## References
 
@@ -252,5 +252,28 @@ theorem Newform.exists_normalizedFrickeOperatorCusp_eq_smul (f : Newform N k) (h
   rintro rfl
   exact exists_normalizedFrickeOperatorCusp_eq_smul_of_mem_cuspFormsNew (f := ⟨F, hmem⟩)
     (fun p hp hpN ↦ ⟨a ⟨p, hp.pos⟩ hpN, heig ⟨p, hp.pos⟩ hpN⟩) hnew hne
+
+/-- **The Fricke sign** `ε_N(f)` of a newform with trivial nebentypus. -/
+noncomputable def Newform.frickeSign (f : Newform N k) (hχ : f.χ = 1) : ℂ :=
+  (f.exists_normalizedFrickeOperatorCusp_eq_smul hχ).choose
+
+/-- The normalized Fricke operator acts on a trivial-nebentypus newform by its Fricke sign. -/
+theorem Newform.normalizedFrickeOperatorCusp_eq_frickeSign_smul
+    (f : Newform N k) (hχ : f.χ = 1) :
+    normalizedFrickeOperatorCusp k f.toCuspForm = f.frickeSign hχ • f.toCuspForm :=
+  (f.exists_normalizedFrickeOperatorCusp_eq_smul hχ).choose_spec.2
+
+/-- The Fricke sign of a trivial-nebentypus newform is `1` or `-1`. -/
+theorem Newform.frickeSign_eq_one_or_neg_one (f : Newform N k) (hχ : f.χ = 1) :
+    f.frickeSign hχ = 1 ∨ f.frickeSign hχ = -1 :=
+  (f.exists_normalizedFrickeOperatorCusp_eq_smul hχ).choose_spec.1
+
+/-- A scalar satisfying the normalized Fricke eigenvalue equation is the Fricke sign. -/
+theorem Newform.frickeSign_eq_of_normalizedFrickeOperatorCusp_eq_smul
+    (f : Newform N k) (hχ : f.χ = 1) {ε : ℂ}
+    (hε : normalizedFrickeOperatorCusp k f.toCuspForm = ε • f.toCuspForm) :
+    f.frickeSign hχ = ε :=
+  smul_left_injective ℂ f.ne_zero
+    ((f.normalizedFrickeOperatorCusp_eq_frickeSign_smul hχ).symm.trans hε)
 
 end HeckeRing.GL2
