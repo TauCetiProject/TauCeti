@@ -26,11 +26,6 @@ bound `dim Pic(T)[ℓ] ≤ g_top` on minimal numerical types in
 [Stacks, Proposition 55.7.4](https://stacks.math.columbia.edu/tag/0C9X), which in turn is what
 forces a reduced nodal special fibre in the proof of semistable reduction.
 
-## Main definitions
-
-* `TauCeti.NumericalType.cokerTorsion`: the subgroup `Coker(A)[ℓ]`, with its `ZMod ℓ`-module
-  structure.
-
 ## Main results
 
 * `TauCeti.NumericalType.finrank_cokerTorsion_le_topologicalGenus`:
@@ -65,18 +60,7 @@ namespace NumericalType
 
 universe u
 
-variable (T : NumericalType.{u})
-
-/-- The subgroup `Coker(A)[ℓ]` of classes in the cokernel of the intersection matrix killed by
-`ℓ`. -/
-abbrev cokerTorsion (ℓ : ℕ) : AddSubgroup T.Coker :=
-  AddSubgroup.torsionBy T.Coker (ℓ : ℤ)
-
-/-- The canonical `ZMod ℓ`-module structure on the `ℓ`-torsion of `Coker(A)`. -/
-noncomputable instance cokerTorsionModule (ℓ : ℕ) : Module (ZMod ℓ) (T.cokerTorsion ℓ) :=
-  AddSubgroup.torsionBy.zmodModule
-
-variable {T} {ℓ : ℕ}
+variable {T : NumericalType.{u}} {ℓ : ℕ}
 
 /-! ### Torsion classes from the kernel of the intersection matrix modulo `ℓ` -/
 
