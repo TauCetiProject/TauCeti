@@ -218,7 +218,7 @@ theorem finiteProjectiveModulesExactStructure_eq_split :
 
 /-- The conflations of finitely generated modules are the short exact sequences of `R`-modules
 whose three terms are finitely generated. -/
-@[simp] theorem finiteModulesExactStructure_conflation_iff
+theorem finiteModulesExactStructure_conflation_iff
     (S : ShortComplex (FGModuleCat.{u} R)) :
     (finiteModulesExactStructure R).Conflation S ↔ (S.map (ModuleCat.isFG R).ι).ShortExact :=
   (ExactStructure.fullSubcategory_conflation_iff (E := ExactStructure.abelian (ModuleCat.{u} R))
