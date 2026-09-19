@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph
-import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Geometry.Lie.Interior
 
 /-!
 # Complementary exponential-product charts
@@ -27,13 +25,13 @@ of any subgroup.
 
 ## Main definitions
 
-* `TauCeti.Lie.lieExpMul`: the product of the exponentials of two linear coordinates.
+* `Submodule.lieExpMul`: the product of the exponentials of two linear coordinates.
 
 ## Main results
 
-* `TauCeti.Lie.mfderiv_lieExpMul_zero_apply`: the derivative is addition in Lie-algebra
+* `Submodule.mfderiv_lieExpMul_apply_zero`: the derivative is addition in Lie-algebra
   coordinates.
-* `TauCeti.Lie.isLocalDiffeomorphAt_lieExpMul_zero_of_isCompl`: complementary subspaces give a
+* `Submodule.isLocalDiffeomorphAt_lieExpMul_zero_of_isCompl`: complementary subspaces give a
   local exponential-product chart at the identity.
 
 ## References
@@ -45,7 +43,7 @@ public section
 
 noncomputable section
 
-namespace TauCeti.Lie
+namespace Submodule
 
 open Function Manifold
 open scoped ContDiff Manifold Topology
@@ -124,7 +122,8 @@ private theorem fderiv_extChartAt_lieExpMul_zero_apply
   let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   dsimp only
-  let L := leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G)
+  let T := leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
+    BoundarylessManifold.isInteriorPoint
   let F : p × q → E := fun w => extChartAt I (1 : G) (lieExpMul (I := I) (G := G) p q w)
   -- Differentiate the chart representative along the line through the prescribed direction.
   have hsource : lieExpMul (I := I) (G := G) p q 0 ∈ (chartAt H (1 : G)).source := by
@@ -141,43 +140,35 @@ private theorem fderiv_extChartAt_lieExpMul_zero_apply
   -- Compute the same curve through the established derivative formula for two invariant
   -- exponential curves, after translating between the two Lie-algebra models.
   have hcurve := hasFDerivAt_extChartAt_mulInvariantExp_smul_mul_mulInvariantExp_smul_zero
-    (I := I) (G := G)
-    (L (z.1 : LeftInvariantDerivation I G) : GroupLieAlgebra I G)
-    (L (z.2 : LeftInvariantDerivation I G) : GroupLieAlgebra I G)
+    (I := I) (G := G) (T z.1) (T z.2)
   have hfunctions :
       (fun t : ℝ => extChartAt I (1 : G)
         (mulInvariantExp (I := I) (G := G)
-            (t • (L (z.1 : LeftInvariantDerivation I G) : GroupLieAlgebra I G)) *
+            (t • T z.1) *
           mulInvariantExp (I := I) (G := G)
-            (t • (L (z.2 : LeftInvariantDerivation I G) : GroupLieAlgebra I G)))) =
+            (t • T z.2))) =
       fun t : ℝ => F (t • z) := by
     funext t
     dsimp only [F]
     rw [lieExpMul_apply]
     simp only [Prod.smul_fst, Prod.smul_snd, Submodule.coe_smul_of_tower]
     rw [lieExp_eq_mulInvariantExp, lieExp_eq_mulInvariantExp]
+    dsimp only [T]
     simp only [map_smul]
-    rw [← leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply,
-      ← leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply]
-    dsimp only [L]
-    rfl
   have hcurve' := hcurve.hasDerivAt
-  have hcurve'' : HasDerivAt (fun t : ℝ => F (t • z))
-      (((1 : ℝ →L[ℝ] ℝ).smulRight
-        ((show E from (L (z.1 : LeftInvariantDerivation I G) : GroupLieAlgebra I G)) +
-         (show E from (L (z.2 : LeftInvariantDerivation I G) : GroupLieAlgebra I G)))) 1) 0 := by
-    rw [← hfunctions]
-    exact hcurve'
-  have hderiv := hline.unique hcurve''
+  rw [hfunctions] at hcurve'
+  have hderiv := hline.unique hcurve'
   -- Unfold the local abbreviations to compare the two directional derivatives in model
   -- coordinates.
-  change fderiv ℝ F 0 z = L ((z.1 : LeftInvariantDerivation I G) + z.2)
-  rw [map_add]
-  simpa only [ContinuousLinearMap.smulRight_apply, one_apply_eq_self, one_smul] using hderiv
+  rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self, one_smul] at hderiv
+  rw [map_add, leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply,
+    leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply]
+  exact hderiv
 
 /-- At the zero pair, the derivative of the exponential-product map sends `(X, Y)` to the model
 coordinate of `X + Y`. -/
-theorem mfderiv_lieExpMul_zero_apply
+@[simp]
+theorem mfderiv_lieExpMul_apply_zero
     (p q : Submodule ℝ (LeftInvariantDerivation I G)) (z : p × q) :
     let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
     let _ : ContMDiffMul I 1 G := ContMDiffMul.of_le (m := 1) (n := ∞) (by norm_num)
@@ -209,17 +200,12 @@ theorem mfderiv_lieExpMul_zero_apply
   have hmf := hcomp.mfderiv
   -- Read the composite derivative as the Frechet derivative of the identity-chart
   -- representative.
-  change mfderiv (modelWithCornersSelf ℝ (p × q)) (modelWithCornersSelf ℝ E)
-      (fun w : p × q => extChartAt I (1 : G) (lieExpMul (I := I) (G := G) p q w)) 0 = _
-      at hmf
+  simp only [Function.comp_apply] at hmf
   rw [mfderiv_eq_fderiv] at hmf
   have happly := DFunLike.congr_fun hmf z
   have hfderiv := fderiv_extChartAt_lieExpMul_zero_apply (I := I) (G := G) p q z
   have hresult := happly.symm.trans hfderiv
   rw [hzero, mfderiv_extChartAt_self] at hresult
-  -- The target tangent space at the identity is definitionally the model space `E`.
-  change (show E from mfderiv (modelWithCornersSelf ℝ (p × q)) I
-    (lieExpMul (I := I) (G := G) p q) 0 z) = _
   exact hresult
 
 /-- Complementary linear subspaces of the Lie algebra give a local product chart at the group
@@ -247,10 +233,10 @@ theorem isLocalDiffeomorphAt_lieExpMul_zero_of_isCompl
       (leftInvariantDerivationLinearIsometryEquivModelVectorSpace
         (I := I) (G := G)).toContinuousLinearEquiv
   have hzero : lieExpMul (I := I) (G := G) p q 0 = 1 := by simp
-  let eTarget : E ≃L[ℝ]
-      TangentSpace I (lieExpMul (I := I) (G := G) p q 0) := by
+  let eTarget : E ≃L[ℝ] TangentSpace I (lieExpMul (I := I) (G := G) p q 0) := by
     rw [hzero]
-    exact ContinuousLinearEquiv.refl ℝ E
+    exact (groupLieAlgebraEquivModelVectorSpace
+      (I := I) (G := G)).symm.toContinuousLinearEquiv
   let e : TangentSpace (modelWithCornersSelf ℝ (p × q)) (0 : p × q) ≃L[ℝ]
       TangentSpace I (lieExpMul (I := I) (G := G) p q 0) :=
     (NormedSpace.fromTangentSpace (0 : p × q)).trans (e₀.trans eTarget)
@@ -263,14 +249,10 @@ theorem isLocalDiffeomorphAt_lieExpMul_zero_of_isCompl
       (by simp)
   apply ContinuousLinearMap.ext
   intro z
-  have hm := mfderiv_lieExpMul_zero_apply (I := I) (G := G) p q
+  have hm := mfderiv_lieExpMul_apply_zero (I := I) (G := G) p q
     (NormedSpace.fromTangentSpace (0 : p × q) z)
-  change eTarget (e₀ (NormedSpace.fromTangentSpace (0 : p × q) z)) = _
-  -- Use Mathlib's canonical tangent equivalence for a model vector space to align the argument.
-  rw [show z = NormedSpace.fromTangentSpace (0 : p × q) z by rfl, hm]
-  simp only [e₀, ContinuousLinearEquiv.trans_apply]
-  rw [Submodule.prodEquivOfIsTopCompl_apply]
   rw [hzero]
-  rfl
+  simp only [e, eTarget, e₀]
+  exact hm.symm
 
-end TauCeti.Lie
+end Submodule
