@@ -41,6 +41,8 @@ public section
 
 namespace PointedCone
 
+section
+
 variable {R M : Type*} [AddCommGroup M]
 
 /-- A linear functional that is nonnegative on a pointed cone cuts out a face of the cone. -/
@@ -53,6 +55,12 @@ theorem isFaceOf_inf_ker [Semiring R] [PartialOrder R] [IsOrderedRing R] [NoZero
   have hax : a * φ x = 0 :=
     (add_eq_zero_iff_of_nonneg (mul_nonneg ha.le (hφ x hx)) (hφ y hy)).1 hker |>.1
   exact (mul_eq_zero.1 hax).resolve_left ha.ne'
+
+end
+
+section
+
+variable {R M : Type*} [AddCommMonoid M]
 
 /-- On a finitely generated pointed cone `C`, let `φ` be nonnegative on `C` and let `ψ` be
 nonnegative on the face `C ⊓ ker φ`. Then `ψ + n • φ` is nonnegative on `C` for some natural
@@ -87,5 +95,7 @@ theorem FG.exists_nonneg_add_nsmul [Ring R] [PartialOrder R] [IsOrderedRing R] [
       0 ≤ (c : R) * (ψ x + s.sup n • φ x) := mul_nonneg c.2 hx
       _ = ψ ((c : R) • x) + s.sup n • φ ((c : R) • x) := by
         simp only [map_smul, smul_eq_mul, ← mul_smul_comm, mul_add]
+
+end
 
 end PointedCone
