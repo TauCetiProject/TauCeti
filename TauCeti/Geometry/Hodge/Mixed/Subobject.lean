@@ -32,6 +32,8 @@ needed for categorical kernels and images.
   induced on a rational subspace.
 * `TauCeti.Hodge.MixedHodgeStructure.IsSubstructure.inclusion`: the inclusion of the induced
   structure into the ambient mixed Hodge structure.
+* `TauCeti.Hodge.MixedHodgeStructure.IsSubstructure.codRestrict`: the universal factorization of
+  a morphism with values in the subspace through the inclusion.
 * `TauCeti.Hodge.MixedHodgeStructure.IsSubstructure.hodgeStructure_deligneSplitting`: the Deligne
   bigrading of the induced structure is the intersection with the ambient one.
 
@@ -44,7 +46,7 @@ public section
 
 namespace TauCeti.Hodge
 
-universe u v w
+universe u v w u' v' w'
 
 variable {Vℤ : Type u} {Vℚ : Type v} {Vℂ : Type w}
 variable [AddCommGroup Vℤ] [AddCommGroup Vℚ] [Module ℚ Vℚ]
@@ -212,6 +214,57 @@ theorem inclusion_toLinearMap : hU.inclusion.toLinearMap =
     (rationalToComplexSubmodule hℚ hℂ U).subtype := by
   rw [MixedHodgeStructure.Hom.toLinearMap_def, inclusion_toRatLinearMap,
     rationalMapToComplex_subtype]
+
+section CodRestrict
+
+variable {V'ℤ : Type u'} {V'ℚ : Type v'} {V'ℂ : Type w'}
+variable [AddCommGroup V'ℤ] [AddCommGroup V'ℚ] [Module ℚ V'ℚ]
+variable [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
+variable {ι'ℚ : V'ℤ →ₗ[ℤ] V'ℚ} {ι'ℂ : V'ℤ →ₗ[ℤ] V'ℂ}
+variable {h'ℚ : IsBaseChange ℚ ι'ℚ} {h'ℂ : IsBaseChange ℂ ι'ℂ}
+variable {source : MixedHodgeStructure h'ℚ h'ℂ}
+
+/-- A morphism whose rational map takes values in a sub-mixed Hodge structure factors through
+the induced mixed Hodge structure. -/
+noncomputable def codRestrict (f : source.Hom mhs) (hf : ∀ x, f.toRatLinearMap x ∈ U) :
+    source.Hom hU.hodgeStructure where
+  toRatLinearMap := f.toRatLinearMap.codRestrict U hf
+  map_mem_WQ k x hx := by
+    rw [hodgeStructure_WQ]
+    exact f.map_mem_WQ k x hx
+  map_mem_F p x hx := by
+    rw [hodgeStructure_F, Submodule.mem_comap, ← rationalMapToComplex_subtype hℚ hℂ U,
+      ← LinearMap.comp_apply, ← rationalMapToComplex_comp, LinearMap.subtype_comp_codRestrict]
+    exact f.map_mem_F p x hx
+
+/-- The rational map underlying a corestricted morphism is the corestricted rational map. -/
+@[simp]
+theorem codRestrict_toRatLinearMap (f : source.Hom mhs) (hf : ∀ x, f.toRatLinearMap x ∈ U) :
+    (hU.codRestrict f hf).toRatLinearMap = f.toRatLinearMap.codRestrict U hf := by
+  rw [codRestrict]
+
+/-- A corestricted morphism followed by the inclusion is the original morphism. -/
+@[simp]
+theorem inclusion_comp_codRestrict (f : source.Hom mhs) (hf : ∀ x, f.toRatLinearMap x ∈ U) :
+    hU.inclusion.comp (hU.codRestrict f hf) = f := by
+  ext x
+  simp
+
+/-- Morphisms into an induced mixed Hodge structure are equal when they agree after the
+inclusion. -/
+theorem inclusionHom_ext {f g : source.Hom hU.hodgeStructure}
+    (hfg : hU.inclusion.comp f = hU.inclusion.comp g) : f = g := by
+  ext x
+  simpa using congrArg (fun q ↦ q.toRatLinearMap x) hfg
+
+/-- The corestriction is the unique morphism whose composite with the inclusion is `f`. -/
+theorem eq_codRestrict {f : source.Hom mhs} {hf : ∀ x, f.toRatLinearMap x ∈ U}
+    {g : source.Hom hU.hodgeStructure} (hg : hU.inclusion.comp g = f) :
+    g = hU.codRestrict f hf := by
+  apply hU.inclusionHom_ext
+  rw [hg, inclusion_comp_codRestrict]
+
+end CodRestrict
 
 /-- The Deligne bigrading of the induced mixed Hodge structure is the ambient Deligne bigrading
 intersected with the complexification of the subspace. -/
