@@ -59,11 +59,6 @@ namespace ExactStructure.IsFrobenius
 
 variable {E : ExactStructure C} (hE : E.IsFrobenius)
 
-/-- The middle term of a chosen loop presentation is relatively injective. -/
-theorem isInjective_loopProjective (X : C) :
-    E.isInjective (hE.enoughProjectives.loopProjective X) :=
-  (hE.projective_iff_injective _).mp (hE.enoughProjectives.isProjective_loopProjective X)
-
 /-! ### The comparison `ΣΩX ≅ X` -/
 
 /-- A chosen extension `I(ΩX) ⟶ P(X)` of the loop inflation `ΩX ⟶ P(X)` along the suspension

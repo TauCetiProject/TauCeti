@@ -15,9 +15,11 @@ Lifting a morphism `X ⟶ Y` to the projective middle terms induces a map `ΩX �
 Different lifts induce the same map modulo morphisms factoring through projectives. This
 constructs the additive loop endofunctor on the projective stable category.
 
-Only enough projectives are needed here. In a Frobenius exact category this is the loop
-functor used with suspension to construct the stable triangulation. Neither a quasi-inverse
-comparison nor a triangulated structure is asserted in this file.
+Only enough projectives are needed for the construction. In a Frobenius exact category this is
+the loop functor used with suspension to construct the stable triangulation; the one statement
+about the chosen presentation that needs the Frobenius hypothesis, that its middle term is also
+relatively injective, is recorded at the end of the file. Neither a quasi-inverse comparison nor
+a triangulated structure is asserted in this file.
 
 The API follows the suspension construction in
 `TauCeti.CategoryTheory.Exact.Stable.Suspension`, but works without the Frobenius hypothesis.
@@ -225,5 +227,18 @@ theorem stableLoop_map_projectiveStableFunctor_map {X Y : C} (f : X ⟶ Y) :
     (hE.stableLoop_obj_projectiveStableFunctor_obj Y)).2 HEq.rfl
 
 end ExactStructure.EnoughProjectives
+
+/-! ### Loop presentations of a Frobenius exact structure -/
+
+namespace ExactStructure.IsFrobenius
+
+variable {E : ExactStructure C} (hE : E.IsFrobenius)
+
+/-- The middle term of a chosen loop presentation is relatively injective. -/
+theorem isInjective_loopProjective (X : C) :
+    E.isInjective (hE.enoughProjectives.loopProjective X) :=
+  (hE.projective_iff_injective _).mp (hE.enoughProjectives.isProjective_loopProjective X)
+
+end ExactStructure.IsFrobenius
 
 end TauCeti
