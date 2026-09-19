@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Algebra.Module.Injective.SelfInjective
-public import TauCeti.LinearAlgebra.Dual.RightAction
+public import TauCeti.LinearAlgebra.Dual.Cogenerator
 
 /-!
 # Finite-dimensional injective modules over a self-injective algebra
@@ -40,7 +40,7 @@ carrying the action of `a` to precomposition with right multiplication by `a`.
 
 * `Module.Projective.of_linearEquiv_dual`: over a finite-dimensional right self-injective algebra,
   the left module `D(A_A)` is projective.
-* `TauCeti.exists_injective_linearMap_pi_of_linearEquiv_dual`: `D(A_A)` is a cogenerator for
+* `LinearEquiv.exists_injective_linearMap_pi_of_dual`: `D(A_A)` is a cogenerator for
   finite-dimensional modules; each embeds into a finite power of it.
 * `Module.Projective.of_finiteDimensional_injective`: over a finite-dimensional right
   self-injective algebra, every finite-dimensional injective module is projective.
@@ -141,28 +141,6 @@ theorem _root_.Module.Projective.of_linearEquiv_dual [FiniteDimensional k A]
     _ = e q x := by rw [Finset.univ_sum_single, hrj]
     _ = e (LinearMap.id q) x := rfl
 
-/-- **The dual of the right regular module is a cogenerator.** Let `A` be an algebra over a field
-`k` and `Q` a left `A`-module identified with `Module.Dual k A` by a `k`-linear equivalence carrying
-the action of `a` to precomposition with right multiplication by `a`. Every finite-dimensional left
-`A`-module embeds `A`-linearly into a finite power of `Q`. -/
-theorem exists_injective_linearMap_pi_of_linearEquiv_dual (e : Q ≃ₗ[k] Module.Dual k A)
-    (he : ∀ (a : A) (q : Q) (x : A), e (a • q) x = e q (x * a)) (M : Type*) [AddCommGroup M]
-    [Module A M] [Module k M] [IsScalarTower k A M] [FiniteDimensional k M] :
-    ∃ (n : ℕ) (f : M →ₗ[A] (Fin n → Q)), Function.Injective f := by
-  let b := Module.finBasis k M
-  -- The coordinate `i` of `f m` is the functional `x ↦ b.coord i (x • m)`.
-  let f₀ (m : M) (i : Fin (Module.finrank k M)) : Module.Dual k A :=
-    (b.coord i).comp ((LinearMap.toSpanSingleton A M m).restrictScalars k)
-  have hf₀ (m : M) (i : Fin (Module.finrank k M)) (x : A) : f₀ m i x = b.coord i (x • m) := rfl
-  let f : M →ₗ[A] (Fin (Module.finrank k M) → Q) :=
-    { toFun := fun m i ↦ e.symm (f₀ m i)
-      map_add' := fun _ _ ↦ by ext i; apply e.injective; ext; simp [hf₀]
-      map_smul' := fun _ _ ↦ by ext i; apply e.injective; ext; simp [hf₀, he, mul_smul] }
-  refine ⟨_, f, (injective_iff_map_eq_zero f).2 fun m hm ↦ b.ext_elem fun i ↦ ?_⟩
-  have hm' : e.symm (f₀ m i) = 0 := congr_fun hm i
-  have h : f₀ m i = 0 := by simpa using congr(e $hm')
-  simpa [hf₀] using congr($h 1)
-
 end Dual
 
 /-- **Over a finite-dimensional right self-injective algebra, finite-dimensional injective modules
@@ -178,8 +156,7 @@ theorem _root_.Module.Projective.of_finiteDimensional_injective [FiniteDimension
   have hsmul (a : A) (φ : Module.Dual k A) (x : A) : (a • φ) x = φ (x * a) :=
     (dualRightAction_apply_apply k A a φ x).trans (by rw [op_smul_eq_mul])
   have := Module.Projective.of_linearEquiv_dual hA (LinearEquiv.refl k _) hsmul
-  obtain ⟨n, f, hf⟩ := exists_injective_linearMap_pi_of_linearEquiv_dual
-    (LinearEquiv.refl k _) hsmul M
+  obtain ⟨n, f, hf⟩ := (LinearEquiv.refl k _).exists_injective_linearMap_pi_of_dual hsmul M
   have : Module.Projective A (Fin n → Module.Dual k A) :=
     .of_equiv' DFinsupp.linearEquivFunOnFintype
   obtain ⟨g, hg⟩ := Module.Injective.extension_property A M _ _ f hf LinearMap.id
