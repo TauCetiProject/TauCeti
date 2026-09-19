@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Operators
+public import TauCeti.NumberTheory.HeckeRing.StabConjugation
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 /-!
@@ -24,9 +25,7 @@ Hecke operators already constructed from rational double cosets.
 
 * [F. Diamond and J. Shurman, *A first course in modular forms*][diamondshurman2005],
   Sections 5.1 and 5.5.
-
-The proof uses Mathlib's trace construction (`NormTrace.lean`, David Loeffler) and Tau Ceti's
-`DoubleCoset.decompQuotientEquivMapOfInjective` to compare the indexing quotients.
+* David Loeffler, Mathlib's trace construction in `NormTrace.lean`.
 -/
 
 public section
@@ -45,11 +44,19 @@ trace a translate after extension of scalars to `ℝ`. -/
 theorem isFiniteRelIndex_ratCast_conj
     [Finite (DecompQuotient Γ₂ Γ₁ δ⁻¹)] :
     (ConjAct.toConjAct (φ δ)⁻¹ • Γ₁.map φ).IsFiniteRelIndex (Γ₂.map φ) := by
-  have hinj := Matrix.GeneralLinearGroup.map_injective (n := Fin 2) (algebraMap ℚ ℝ).injective
-  rw [Subgroup.isFiniteRelIndex_iff_finiteIndex, Subgroup.finiteIndex_iff_finite_quotient]
-  have h := (decompQuotientEquivMapOfInjective φ hinj Γ₂ Γ₁ δ⁻¹).finite_iff.mp
-    (inferInstance : Finite (DecompQuotient Γ₂ Γ₁ δ⁻¹))
-  simpa only [DecompQuotient, map_inv] using h
+  have h : (ConjAct.toConjAct δ⁻¹ • Γ₁).IsFiniteRelIndex Γ₂ := by
+    rw [Subgroup.isFiniteRelIndex_iff_finiteIndex]
+    exact Subgroup.finiteIndex_of_finite_quotient
+  have hmap : (ConjAct.toConjAct δ⁻¹ • Γ₁).map φ =
+      ConjAct.toConjAct (φ δ)⁻¹ • Γ₁.map φ := by
+    -- Express the conjugation action as subgroup maps so `map_map` applies to both sides.
+    change (Γ₁.map (MulAut.conj δ⁻¹).toMonoidHom).map φ =
+      (Γ₁.map φ).map (MulAut.conj (φ δ)⁻¹).toMonoidHom
+    rw [Subgroup.map_map, Subgroup.map_map]
+    congr 1
+    ext g
+    simp
+  simpa only [hmap] using h.map φ
 
 /-- The rational slash sum equals the trace of the translate by any representative of the
 same double coset. This statement needs only slash invariance, and allows different source
@@ -57,10 +64,10 @@ and target groups. -/
 theorem heckeSlashSum_eq_coe_trace_translate {Δ : Submonoid (GL (Fin 2) ℚ)}
     (k : ℤ) (D : HeckeCoset Δ Γ₁ Γ₂)
     [Finite (DecompQuotient Γ₂ Γ₁ (D.out : GL (Fin 2) ℚ)⁻¹)]
-    [Finite (DecompQuotient Γ₂ Γ₁ δ⁻¹)]
     (hδ : δ ∈ doubleCoset (D.out : GL (Fin 2) ℚ) Γ₁ Γ₂)
     {𝒢 ℋ : Subgroup (GL (Fin 2) ℝ)} (hΓ₁ : Γ₁.map φ = 𝒢) (hΓ₂ : Γ₂.map φ = ℋ)
     {F : Type*} [FunLike F ℍ ℂ] [SlashInvariantFormClass F 𝒢 k] (f : F) :
+    let := finite_decompQuotient_inv_of_mem_doubleCoset hδ
     letI : (ConjAct.toConjAct (φ δ)⁻¹ • 𝒢).IsFiniteRelIndex ℋ := by
       rw [← hΓ₁, ← hΓ₂]
       exact isFiniteRelIndex_ratCast_conj
@@ -68,6 +75,7 @@ theorem heckeSlashSum_eq_coe_trace_translate {Δ : Submonoid (GL (Fin 2) ℚ)}
       ⇑(SlashInvariantForm.trace ℋ (SlashInvariantForm.translate f (φ δ))) := by
   subst 𝒢 ℋ
   classical
+  let := finite_decompQuotient_inv_of_mem_doubleCoset hδ
   have hinj := Matrix.GeneralLinearGroup.map_injective (n := Fin 2) (algebraMap ℚ ℝ).injective
   let := isFiniteRelIndex_ratCast_conj (Γ₁ := Γ₁) (Γ₂ := Γ₂) (δ := δ)
   let : Fintype (DecompQuotient Γ₂ Γ₁ δ⁻¹) := Fintype.ofFinite _
@@ -107,11 +115,12 @@ theorem heckeSlashCuspFormEnd_eq_trace_translate {G : Subgroup SL(2, ℤ)}
     [Finite (DecompQuotient (G.map (mapGL ℚ)) (G.map (mapGL ℚ))
       (D.out : GL (Fin 2) ℚ)⁻¹)]
     (hD : (D.out : GL (Fin 2) ℚ) ∈ Matrix.GLPos (Fin 2) ℚ)
-    [Finite (DecompQuotient (G.map (mapGL ℚ)) (G.map (mapGL ℚ)) δ⁻¹)]
     (hδ : δ ∈ doubleCoset (D.out : GL (Fin 2) ℚ) (G.map (mapGL ℚ)) (G.map (mapGL ℚ)))
     (f : CuspForm (G.map (mapGL ℝ)) k) :
+    let := finite_decompQuotient_inv_of_mem_doubleCoset hδ
     heckeSlashCuspFormEnd k D hD f =
       CuspForm.trace (G.map (mapGL ℝ)) (CuspForm.translate f (φ δ)) := by
+  let := finite_decompQuotient_inv_of_mem_doubleCoset hδ
   apply DFunLike.coe_injective
   rw [coe_heckeSlashCuspFormEnd]
   have hφ : (φ).comp (mapGL ℚ : SL(2, ℤ) →* GL (Fin 2) ℚ) = mapGL ℝ :=
