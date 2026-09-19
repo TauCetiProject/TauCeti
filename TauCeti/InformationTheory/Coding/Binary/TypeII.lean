@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.MacWilliams
+public import TauCeti.InformationTheory.Coding.Binary.WeightEnumerator
 
 import Mathlib.RingTheory.RootsOfUnity.Complex
 

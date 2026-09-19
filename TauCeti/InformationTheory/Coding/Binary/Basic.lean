@@ -7,7 +7,6 @@ module
 
 public import TauCeti.InformationTheory.Coding.Basic
 public import TauCeti.InformationTheory.Coding.Elementary.Basic
-public import TauCeti.InformationTheory.Coding.WeightEnumerator
 public import Mathlib.InformationTheory.Hamming
 public import Mathlib.Algebra.Field.ZMod
 
@@ -24,10 +23,6 @@ An even code is characterized by membership of the all-ones word in its dual. In
 a binary self-dual code is even and contains the all-ones word. These facts supply the elementary
 parity constraints used in the study of doubly-even self-dual codes.
 
-`IsDoublyEven.aeval_weightEnumerator_mul_second` shows that the weight enumerator of a doubly-even
-code is invariant under multiplying its second argument by a fourth root of unity. This supplies
-the fourth-root symmetry used for Type II codes.
-
 The conventions and weight-intersection argument follow Huffman and Pless,
 *Fundamentals of Error-Correcting Codes*, Chapters 1 and 9.
 -/
@@ -36,7 +31,7 @@ public section
 
 namespace TauCeti
 
-open Matrix MvPolynomial
+open Matrix
 
 variable {ι : Type*} [Fintype ι]
 
@@ -164,21 +159,6 @@ theorem natCard_of_eq_euclideanDual (hC : C = C.euclideanDual) :
   simp only [Nat.card_eq_fintype_card, ZMod.card]
   congr 1
   omega
-
-/-- The weight enumerator of a doubly-even code is unchanged when its second argument is
-multiplied by a fourth root of unity. Taking `R = ℂ[X,Y]` gives the polynomial symmetry. -/
-@[simp]
-theorem IsDoublyEven.aeval_weightEnumerator_mul_second {R : Type*} [CommRing R]
-    (hC : IsDoublyEven C) {ζ : R} (hζ : ζ ^ 4 = 1) (x y : R) :
-    aeval ![x, ζ * y] (C : Set (ι → ZMod 2)).weightEnumerator =
-      aeval ![x, y] (C : Set (ι → ZMod 2)).weightEnumerator := by
-  classical
-  rw [Set.weightEnumerator_eq_sum (Set.toFinite _)]
-  simp only [map_sum]
-  apply Finset.sum_congr rfl
-  intro c hc
-  obtain ⟨k, hk⟩ := isDoublyEven_iff.mp hC c (by simpa using hc)
-  simp [hk, mul_pow, pow_mul, hζ]
 
 end BinaryCode
 
