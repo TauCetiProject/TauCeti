@@ -100,19 +100,24 @@ theorem denseRange_algebraMap_pi_liesOver :
   let S := (Set.finite_coe_iff.mp (finite_liesOver (𝒪 L) v)).toFinset
   have hS {w : HeightOneSpectrum (𝒪 L)} : w ∈ S ↔ w.asIdeal.LiesOver v.asIdeal :=
     Set.Finite.mem_toFinset _
+  let e : {w : HeightOneSpectrum (𝒪 L) // w ∈ S} ≃
+      {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} :=
+    Equiv.subtypeEquivRight fun w ↦ hS (w := w)
   -- Weak approximation is stated for the places of a `Finset`, together with a (here empty)
   -- family of infinite places; reindex its product along `S ↔ {w ∣ v}`.
   let Φ : ((w : {w // w ∈ S}) → w.1.adicCompletion L) ×
       ((u : {u : InfinitePlace L // u ∈ (∅ : Finset (InfinitePlace L))}) → u.1.Completion) →
       (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
         w.1.adicCompletion L :=
-    fun p w ↦ p.1 ⟨w.1, hS.mpr w.2⟩
+    fun p w ↦ p.1 (e.symm w)
   have hΦc : Continuous Φ :=
     continuous_pi fun w ↦ (continuous_apply _).comp continuous_fst
   have hΦs : Function.Surjective Φ := fun y ↦
-    ⟨(fun w ↦ y ⟨w.1, hS.mp w.2⟩, fun u ↦ (Finset.notMem_empty _ u.2).elim), by
+    ⟨(fun w ↦ y (e w), fun u ↦ (Finset.notMem_empty _ u.2).elim), by
       funext w
-      simp only [Φ]⟩
+      change y (e (e.symm w)) = y w
+      cases e.apply_symm_apply w
+      rfl⟩
   exact hΦs.denseRange.comp (TauCeti.GlobalNumberFields.weakApproximation_denseRange S ∅) hΦc
 
 /-- **The semi-local map is surjective**: every family `(y_w)_{w ∣ v}` of elements of the
