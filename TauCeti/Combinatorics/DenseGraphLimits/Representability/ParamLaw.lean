@@ -34,7 +34,7 @@ densities `t(·, W)`, so `f = t(·, W)`.  No graphon is involved in the construc
 ## Main results
 
 * `TauCeti.DenseGraphLimits.paramGraphLaw_apply` — the mass of a set of graphs is the sum of the
-  Möbius masses of its members;
+  clipped nonnegative Möbius weights of its members;
 * `TauCeti.DenseGraphLimits.paramGraphLaw_isProbabilityMeasure` — each level is a probability
   measure;
 * `TauCeti.DenseGraphLimits.paramGraphLaw_map_comap` — the levels are consistent along label
@@ -60,10 +60,6 @@ hypothesis of the consistency theorem even though the underlying identity
   Section 5.3 and Chapter 11.
 -/
 
--- Provenance: the names and signatures of the declarations below follow
--- `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`; `paramGraphLaw_isProbabilityMeasure` also
--- assumes isomorphism invariance, which the nonnegativity of `f†` needs.
-
 public section
 
 noncomputable section
@@ -79,15 +75,15 @@ def paramGraphLaw (f : GraphParam) (n : ℕ) : Measure (SimpleGraph (Fin n)) :=
   ∑ H : SimpleGraph (Fin n), ENNReal.ofReal (graphParamMobius f n H) • Measure.dirac H
 
 open Classical in
-/-- The mass of a set of graphs under `paramGraphLaw` is the sum of the Möbius masses of its
-members. -/
+/-- The mass of a set of graphs under `paramGraphLaw` is the sum of the clipped nonnegative
+Möbius weights of its members. -/
 theorem paramGraphLaw_apply (f : GraphParam) (n : ℕ) (s : Set (SimpleGraph (Fin n))) :
     paramGraphLaw f n s =
       ∑ H ∈ univ.filter (· ∈ s), ENNReal.ofReal (graphParamMobius f n H) := by
   simp [paramGraphLaw, Measure.dirac_apply' _ (MeasurableSet.of_discrete (s := s)),
     Set.indicator_apply, sum_filter]
 
-/-- The mass of a single graph under `paramGraphLaw` is its Möbius mass. -/
+/-- The mass of a single graph under `paramGraphLaw` is its clipped nonnegative Möbius weight. -/
 @[simp]
 theorem paramGraphLaw_singleton (f : GraphParam) (n : ℕ) (H : SimpleGraph (Fin n)) :
     paramGraphLaw f n {H} = ENNReal.ofReal (graphParamMobius f n H) := by

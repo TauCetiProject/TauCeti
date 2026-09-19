@@ -224,14 +224,24 @@ theorem IsMultiplicative.apply_map {f : GraphParam} (hmul : IsMultiplicative f)
   let φ : Fin k ⊕ Fin (Nat.card {x // x ∉ Set.range e}) ≃ Fin n :=
     (Equiv.sumCongr (Equiv.ofInjective e e.injective) (Finite.equivFin _).symm).trans
       (Equiv.sumCompl (· ∈ Set.range e))
+  have hφ_inl (a : Fin k) : φ (.inl a) = e a := by
+    simp [φ]
+  have hφ_inr (a : Fin (Nat.card {x // x ∉ Set.range e})) :
+      φ (.inr a) ∉ Set.range e := by
+    change ↑((Finite.equivFin {x // x ∉ Set.range e}).symm a) ∉ Set.range e
+    exact ((Finite.equivFin {x // x ∉ Set.range e}).symm a).property
   have hφ : (F ⊕g (⊥ : SimpleGraph (Fin (Nat.card {x // x ∉ Set.range e})))).map φ.toEmbedding =
       F.map e := by
     ext x y
     simp only [SimpleGraph.map_adj]
     constructor
-    · rintro ⟨a | a, b | b, h, rfl, rfl⟩ <;> simp_all [φ]
+    · rintro ⟨a | a, b | b, h, rfl, rfl⟩
+      · exact ⟨a, b, h, (hφ_inl a).symm, (hφ_inl b).symm⟩
+      · exact Bool.noConfusion h
+      · exact Bool.noConfusion h
+      · exact h.elim
     · rintro ⟨a, b, h, rfl, rfl⟩
-      exact ⟨.inl a, .inl b, by simpa using h, by simp [φ], by simp [φ]⟩
+      exact ⟨.inl a, .inl b, by simpa using h, hφ_inl a, hφ_inl b⟩
   rw [← hφ, ← hmul.apply_sum_bot hnorm k _ F]
   exact hiso.eq_of_iso ((SimpleGraph.Iso.map φ _).symm.trans (SimpleGraph.Iso.map _ _))
 
