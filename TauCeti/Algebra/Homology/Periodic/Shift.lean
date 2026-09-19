@@ -35,7 +35,7 @@ cochain complexes.
 * `TauCeti.PeriodicComplex.instHasShift`: the resulting shift by `ℤ` on periodic complexes.
 * `TauCeti.PeriodicComplex.shiftFunctorIsoId`: the periodicity isomorphism `X⟦k⟧ ≅ X` for even
   `k` divisible by `n`.
-* `TauCeti.PeriodicComplex.homotopyShift`: the shift of a homotopy.
+* `TauCeti.Homotopy.shift`: the shift of a homotopy.
 * `TauCeti.PeriodicComplex.homotopyCategoryShiftFunctorIsoId`: periodicity in the homotopy
   category.
 
@@ -47,7 +47,7 @@ cochain complexes.
   `Mathlib.Algebra.Homology.HomotopyCategory.Shift`.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti
 
@@ -60,6 +60,8 @@ namespace PeriodicComplex
 open HomologicalComplex
 
 variable (C : Type u) [Category.{v} C] [Preadditive C] (n : ℕ)
+
+@[expose] public section
 
 /-- The shift by `k : ℤ` on `ZMod n`-graded complexes: it sends `K` to the complex which is
 `K.X (i + k)` in degree `i`, with the differentials multiplied by `(-1)ᵏ`. -/
@@ -77,7 +79,7 @@ def shiftFunctor (k : ℤ) :
 
 instance (k : ℤ) : (shiftFunctor C n k).Additive where
 
-instance (k : ℤ) {R : Type*} [Ring R] [Linear R C] : Functor.Linear R (shiftFunctor C n k) where
+instance (k : ℤ) {R : Type*} [Semiring R] [Linear R C] : Functor.Linear R (shiftFunctor C n k) where
 
 variable {C n} in
 /-- The canonical isomorphism `((shiftFunctor C n k).obj K).X i ≅ K.X m` when `m = i + k`. -/
@@ -117,11 +119,15 @@ instance instHasShift : HasShift (HomologicalComplex C (ComplexShape.up (ZMod n)
 
 end
 
+end
+
+attribute [local simp] XIsoOfEq_hom_naturality
+
 instance (k : ℤ) :
     (CategoryTheory.shiftFunctor (HomologicalComplex C (ComplexShape.up (ZMod n))) k).Additive :=
   inferInstanceAs (shiftFunctor C n k).Additive
 
-instance (k : ℤ) {R : Type*} [Ring R] [Linear R C] :
+instance (k : ℤ) {R : Type*} [Semiring R] [Linear R C] :
     Functor.Linear R
       (CategoryTheory.shiftFunctor (HomologicalComplex C (ComplexShape.up (ZMod n))) k) :=
   inferInstanceAs (Functor.Linear R (shiftFunctor C n k))
@@ -180,17 +186,27 @@ variable (C n)
 
 /-- Shifting by `k` and evaluating in degree `i` identifies to evaluating in degree `i'` when
 `i + k = i'`. -/
-@[simps!]
 def shiftEval (k : ℤ) (i i' : ZMod n) (hi : i + k = i') :
     CategoryTheory.shiftFunctor (HomologicalComplex C (ComplexShape.up (ZMod n))) k ⋙
       HomologicalComplex.eval C (ComplexShape.up (ZMod n)) i ≅
       HomologicalComplex.eval C (ComplexShape.up (ZMod n)) i' :=
   NatIso.ofComponents (fun K => K.XIsoOfEq hi) (by simp)
 
+@[simp]
+lemma shiftEval_hom_app (k : ℤ) (i i' : ZMod n) (hi : i + k = i')
+    (K : HomologicalComplex C (ComplexShape.up (ZMod n))) :
+    (shiftEval C n k i i' hi).hom.app K = (K.XIsoOfEq hi).hom := by
+  simp [shiftEval.eq_def]
+
+@[simp]
+lemma shiftEval_inv_app (k : ℤ) (i i' : ZMod n) (hi : i + k = i')
+    (K : HomologicalComplex C (ComplexShape.up (ZMod n))) :
+    (shiftEval C n k i i' hi).inv.app K = (K.XIsoOfEq hi).inv := by
+  simp [shiftEval.eq_def]
+
 /-- Periodicity of the shift: shifting by an even integer `k` which is a multiple of the period
 is isomorphic to the identity. The degree-`i` component is the identification
 `Xⁱ⁺ᵏ = Xⁱ`; evenness of `k` is what makes it commute with the differentials. -/
-@[simps!]
 def shiftFunctorIsoId (k : ℤ) (hk : (k : ZMod n) = 0) (he : Even k) :
     CategoryTheory.shiftFunctor (HomologicalComplex C (ComplexShape.up (ZMod n))) k ≅ 𝟭 _ :=
   NatIso.ofComponents (fun K => Hom.isoOfComponents
@@ -198,27 +214,62 @@ def shiftFunctorIsoId (k : ℤ) (hk : (k : ZMod n) = 0) (he : Even k) :
     (fun _ _ _ => by simp [Int.negOnePow_even k he]))
     (fun _ ↦ by ext; simp)
 
-variable {C n}
+@[simp]
+lemma shiftFunctorIsoId_hom_app_f (k : ℤ) (hk : (k : ZMod n) = 0) (he : Even k)
+    (K : HomologicalComplex C (ComplexShape.up (ZMod n))) (i : ZMod n) :
+    ((shiftFunctorIsoId C n k hk he).hom.app K).f i =
+      (K.XIsoOfEq (by simp [hk])).hom := by
+  simp [shiftFunctorIsoId.eq_def]
+
+@[simp]
+lemma shiftFunctorIsoId_inv_app_f (k : ℤ) (hk : (k : ZMod n) = 0) (he : Even k)
+    (K : HomologicalComplex C (ComplexShape.up (ZMod n))) (i : ZMod n) :
+    ((shiftFunctorIsoId C n k hk he).inv.app K).f i =
+      (K.XIsoOfEq (by simp [hk])).inv := by
+  simp [shiftFunctorIsoId.eq_def]
+
+end PeriodicComplex
+
+namespace Homotopy
+
+open HomologicalComplex
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {n : ℕ}
 
 /-- If `h : Homotopy φ₁ φ₂` and `k : ℤ`, this is the induced homotopy between `φ₁⟦k⟧'` and
 `φ₂⟦k⟧'`. -/
-def homotopyShift {K L : HomologicalComplex C (ComplexShape.up (ZMod n))} {φ₁ φ₂ : K ⟶ L}
+def shift {K L : HomologicalComplex C (ComplexShape.up (ZMod n))} {φ₁ φ₂ : K ⟶ L}
     (h : Homotopy φ₁ φ₂) (k : ℤ) : Homotopy (φ₁⟦k⟧') (φ₂⟦k⟧') where
   hom i j := k.negOnePow • h.hom (i + k) (j + k)
   zero i j hij := by
     rw [h.zero _ _ (fun h => hij (by simp only [ComplexShape.up_Rel] at h ⊢; grind)), smul_zero]
   comm i := by
-    rw [dNext_eq _ (show (ComplexShape.up (ZMod n)).Rel i (i + 1) by simp),
-      prevD_eq _ (show (ComplexShape.up (ZMod n)).Rel (i - 1) i by simp)]
+    have hi_next : (ComplexShape.up (ZMod n)).Rel i (i + 1) := by simp
+    have hi_prev : (ComplexShape.up (ZMod n)).Rel (i - 1) i := by simp
+    have hik_next : (ComplexShape.up (ZMod n)).Rel (i + k) (i + 1 + k) := by simp; ring
+    have hik_prev : (ComplexShape.up (ZMod n)).Rel (i - 1 + k) (i + k) := by simp; ring
+    rw [dNext_eq _ hi_next, prevD_eq _ hi_prev]
     simpa [Linear.units_smul_comp, Linear.comp_units_smul, smul_smul, Int.units_mul_self,
-      dNext_eq _ (show (ComplexShape.up (ZMod n)).Rel (i + k) (i + 1 + k) by simp; ring),
-      prevD_eq _ (show (ComplexShape.up (ZMod n)).Rel (i - 1 + k) (i + k) by simp; ring)]
+      dNext_eq _ hik_next, prevD_eq _ hik_prev]
       using h.comm (i + k)
 
-variable (C n)
+@[simp]
+lemma shift_hom {K L : HomologicalComplex C (ComplexShape.up (ZMod n))} {φ₁ φ₂ : K ⟶ L}
+    (h : Homotopy φ₁ φ₂) (k : ℤ) (i j : ZMod n) :
+    (TauCeti.Homotopy.shift h k).hom i j =
+      k.negOnePow • h.hom (i + k) (j + k) := by
+  rw [TauCeti.Homotopy.shift.eq_def]
+
+end Homotopy
+
+namespace PeriodicComplex
+
+open HomologicalComplex
+
+variable (C : Type u) [Category.{v} C] [Preadditive C] (n : ℕ)
 
 instance : (homotopic C (ComplexShape.up (ZMod n))).IsCompatibleWithShift ℤ :=
-  ⟨fun k _ _ _ _ ⟨h⟩ => ⟨homotopyShift h k⟩⟩
+  ⟨fun k _ _ _ _ ⟨h⟩ => ⟨TauCeti.Homotopy.shift h k⟩⟩
 
 /-- The periodic homotopy category carries the shift by `ℤ` induced from periodic complexes. -/
 noncomputable instance homotopyCategoryHasShift :
@@ -244,7 +295,7 @@ instance (k : ℤ) :
   exact Functor.additive_of_full_essSurj_comp (HomotopyCategory.quotient _ _) _
 
 attribute [local implicit_reducible] HomotopyCategory.quotient in
-instance {R : Type*} [Ring R] [Linear R C] (k : ℤ) :
+instance {R : Type*} [Semiring R] [Linear R C] (k : ℤ) :
     (CategoryTheory.shiftFunctor (HomotopyCategory C (ComplexShape.up (ZMod n))) k).Linear R where
   map_smul := by
     rintro ⟨X⟩ ⟨Y⟩ f r
@@ -271,7 +322,10 @@ lemma homotopyCategoryShiftFunctorIsoId_hom_app_quotient_obj (k : ℤ) (hk : (k 
         ((HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).obj K) =
       ((HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).commShiftIso k).inv.app K ≫
         (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).map
-          ((shiftFunctorIsoId C n k hk he).hom.app K) := rfl
+          ((shiftFunctorIsoId C n k hk he).hom.app K) := by
+  rw [homotopyCategoryShiftFunctorIsoId.eq_def]
+  change (Quotient.natTransLift _ _).app ((Quotient.functor _).obj K) = _
+  apply Quotient.natTransLift_app
 
 @[simp]
 lemma homotopyCategoryShiftFunctorIsoId_inv_app_quotient_obj (k : ℤ) (hk : (k : ZMod n) = 0)
@@ -280,7 +334,10 @@ lemma homotopyCategoryShiftFunctorIsoId_inv_app_quotient_obj (k : ℤ) (hk : (k 
         ((HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).obj K) =
       (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).map
           ((shiftFunctorIsoId C n k hk he).inv.app K) ≫
-        ((HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).commShiftIso k).hom.app K := rfl
+        ((HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).commShiftIso k).hom.app K := by
+  rw [homotopyCategoryShiftFunctorIsoId.eq_def]
+  change (Quotient.natTransLift _ _).app ((Quotient.functor _).obj K) = _
+  apply Quotient.natTransLift_app
 
 end PeriodicComplex
 
