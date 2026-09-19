@@ -134,8 +134,8 @@ private theorem algEquiv_ext_of_continuous {w'' : HeightOneSpectrum (𝒪 L)}
 /-- `completionCongr` of the identity is the identity. -/
 @[simp]
 theorem completionCongr_one :
-    completionCongr v (1 : L ≃ₐ[K] L)
-      (show w.asIdeal = (1 : L ≃ₐ[K] L) • w.asIdeal by simp) = AlgEquiv.refl := by
+    completionCongr (w := w) (w' := w) v (1 : L ≃ₐ[K] L)
+      (by simp) = AlgEquiv.refl := by
   refine algEquiv_ext_of_continuous
     (continuous_completionCongr v (1 : L ≃ₐ[K] L)
       (by simp)) continuous_id fun x ↦ ?_
@@ -156,14 +156,14 @@ theorem completionCongr_trans {w'' : HeightOneSpectrum (𝒪 L)} [w''.asIdeal.Li
 theorem completionCongr_symm (σ : L ≃ₐ[K] L) (h : w'.asIdeal = σ • w.asIdeal) :
     (completionCongr v σ h).symm =
       completionCongr v σ⁻¹
-        (show w.asIdeal = σ⁻¹ • w'.asIdeal by rw [h, inv_smul_smul]) := by
+        (by rw [h, inv_smul_smul]) := by
+  have hinv : w.asIdeal = σ⁻¹ • w'.asIdeal := by
+    rw [h, inv_smul_smul]
   have hid :
-      (completionCongr v σ⁻¹
-        (show w.asIdeal = σ⁻¹ • w'.asIdeal by rw [h, inv_smul_smul])).trans
+      (completionCongr v σ⁻¹ hinv).trans
           (completionCongr v σ h) = AlgEquiv.refl :=
     algEquiv_ext_of_continuous (v := v)
-      ((continuous_completionCongr v σ h).comp (continuous_completionCongr v σ⁻¹
-        (show w.asIdeal = σ⁻¹ • w'.asIdeal by rw [h, inv_smul_smul])))
+      ((continuous_completionCongr v σ h).comp (continuous_completionCongr v σ⁻¹ hinv))
       continuous_id fun x ↦ by simp
   refine AlgEquiv.ext fun y ↦ ?_
   rw [AlgEquiv.symm_apply_eq, ← AlgEquiv.trans_apply, hid, AlgEquiv.coe_refl, id]
@@ -226,11 +226,12 @@ theorem decompositionHom_conj {w' : HeightOneSpectrum (𝒪 L)} [w'.asIdeal.Lies
     decompositionHom v w' τ' =
       (completionCongr v σ h).symm.trans
         ((decompositionHom v w τ).trans (completionCongr v σ h)) := by
+  have hinv : w.asIdeal = σ⁻¹ • w'.asIdeal := by
+    rw [h, inv_smul_smul]
   rw [completionCongr_symm σ h]
   refine algEquiv_ext_of_continuous (continuous_decompositionHom v τ')
     ((continuous_completionCongr v σ h).comp ((continuous_decompositionHom v τ).comp
-      (continuous_completionCongr v σ⁻¹
-        (show w.asIdeal = σ⁻¹ • w'.asIdeal by rw [h, inv_smul_smul])))) fun x ↦ ?_
+      (continuous_completionCongr v σ⁻¹ hinv))) fun x ↦ ?_
   simp [hτ]
 
 end IsDedekindDomain.HeightOneSpectrum
