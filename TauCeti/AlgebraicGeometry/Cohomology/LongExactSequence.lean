@@ -9,8 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Basic
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
-public import Mathlib.Algebra.Exact.Basic
-public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import TauCeti.LinearAlgebra.Exact
 
 /-!
 # The long exact cohomology sequence of a short exact sequence of sheaves of modules
@@ -273,8 +272,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X�
     [FiniteDimensional k (Cohomology S.X₃ i)] :
     FiniteDimensional k (Cohomology S.X₂ i) := by
   have hex : Function.Exact (cohomologyMapBaseLinear k X S.f i)
-      (cohomologyMapBaseLinear k X S.g i).rangeRestrict := by
-    rw [LinearMap.exact_iff, LinearMap.ker_rangeRestrict, ← LinearMap.exact_iff]
+      (cohomologyMapBaseLinear k X S.g i) := by
     have coe_map : ∀ {M N : X.Modules} (f : M ⟶ N),
         ⇑(cohomologyMapBaseLinear k X f i) = ⇑(cohomologyMap f i) := by
       intro M N f
@@ -283,7 +281,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X�
       rfl
     rw [coe_map, coe_map]
     exact exact_cohomologyMap_cohomologyMap hS i
-  exact Module.Finite.of_exact hex (LinearMap.surjective_rangeRestrict _)
+  exact finiteDimensional_of_exact hex
 
 end Field
 

@@ -100,18 +100,13 @@ This identifies residue degrees over `Spec k` with dimensions over `k`. -/
 theorem Γevaluation_comp_ΓSpecIso_inv_bijective (k : Type u) [Field k] (p : Spec (.of k)) :
     Function.Bijective ((Spec (.of k)).Γevaluation p ∘ (Scheme.ΓSpecIso (.of k)).inv) := by
   have : p.asIdeal.IsPrime := p.isPrime
-  have : p.asIdeal.IsMaximal := by
-    rw [Ideal.eq_bot_of_prime p.asIdeal]
-    exact Ideal.bot_isMaximal
   have h : (Spec (.of k)).Γevaluation p ∘ (Scheme.ΓSpecIso (.of k)).inv =
       (Scheme.Spec.residueFieldIso (.of k) p).inv ∘ algebraMap k p.asIdeal.ResidueField := by
     funext c
     exact (ConcreteCategory.congr_hom (Scheme.Spec.algebraMap_residueFieldIso_inv (.of k) p) c).symm
-  rw [h, IsScalarTower.algebraMap_eq k (k ⧸ p.asIdeal) p.asIdeal.ResidueField,
-    RingHom.coe_comp]
+  rw [h]
   exact (ConcreteCategory.bijective_of_isIso _).comp
-    ((p.asIdeal.bijective_algebraMap_quotient_residueField).comp
-      ⟨(algebraMap k (k ⧸ p.asIdeal)).injective, Ideal.Quotient.mk_surjective⟩)
+    p.asIdeal.algEquivResidueFieldOfField.bijective
 
 end AlgebraicGeometry
 

@@ -42,6 +42,12 @@ divisor sheaves on a curve, which is how the Euler characteristic of a divisor s
 
 * R. Hartshorne, *Algebraic Geometry*, II, Exercise 1.17 (skyscraper sheaves) and IV,
   Theorem 1.3 (their role in the proof of Riemann–Roch).
+
+## Formalization notes
+
+The pushforward construction, section equivalences, restriction-map arguments, and flasqueness
+proof follow the implementation pattern in
+`TauCeti/AlgebraicGeometry/Modules/RationalFunctions.lean`.
 -/
 
 public section
