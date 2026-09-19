@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.PuncturedStarConvex
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PeripheralLoops
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 import TauCeti.Topology.Homotopy.Path
 
 /-!
@@ -200,22 +201,16 @@ theorem rightOpenFundamentalGroupMulEquivInt_periph1Right :
 
 /-! ### Generation -/
 
-private theorem zpowers_eq_top_of_mulEquivInt {G : Type*} [Group G] {g : G}
-    (e : G ≃* Multiplicative ℤ) (hg : e g = Multiplicative.ofAdd 1) :
-    Subgroup.zpowers g = ⊤ :=
-  (Subgroup.eq_top_iff' _).mpr fun y => ⟨(e y).toAdd,
-    e.injective (by simp [hg, ← ofAdd_zsmul])⟩
-
 /-- The class of `γ0` generates `π₁(A, 1/2)`. -/
 @[simp]
 theorem zpowers_periph0Left : Subgroup.zpowers periph0Left = ⊤ :=
-  zpowers_eq_top_of_mulEquivInt leftOpenFundamentalGroupMulEquivInt
+  TauCeti.zpowers_eq_top_of_mulEquivInt leftOpenFundamentalGroupMulEquivInt
     leftOpenFundamentalGroupMulEquivInt_periph0Left
 
 /-- The class of `γ1` generates `π₁(B, 1/2)`. -/
 @[simp]
 theorem zpowers_periph1Right : Subgroup.zpowers periph1Right = ⊤ :=
-  zpowers_eq_top_of_mulEquivInt rightOpenFundamentalGroupMulEquivInt
+  TauCeti.zpowers_eq_top_of_mulEquivInt rightOpenFundamentalGroupMulEquivInt
     rightOpenFundamentalGroupMulEquivInt_periph1Right
 
 end ThricePuncturedSphere

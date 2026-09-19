@@ -324,13 +324,17 @@ theorem fundamentalGroupMulEquiv_expLoop :
     fundamentalGroupMulEquiv 1
       (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop)) =
       Multiplicative.ofAdd 1 := by
+  have map_conj (e : FundamentalGroup Circle 1 ≃* Multiplicative ℤ)
+      (a x : FundamentalGroup Circle 1) : e (a * x * a⁻¹) = e x := by
+    simp only [map_mul, map_inv]
+    rw [mul_comm (e a) (e x)]
+    simp
   -- The basepoint change at `1` is along a loop, hence an inner automorphism, which the
   -- commutative target does not see.
   rw [fundamentalGroupMulEquiv_def, MulEquiv.trans_apply,
     FundamentalGroup.fundamentalGroupMulEquivOfPathConnected,
     FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj, MulAut.conj_apply,
-    map_mul, map_mul, mul_comm, ← mul_assoc, ← map_mul, inv_mul_cancel, map_one, one_mul,
-    MulEquiv.trans_apply, AddCircle.fundamentalGroupMulEquivZero_apply_eq_iff]
+    map_conj, MulEquiv.trans_apply, AddCircle.fundamentalGroupMulEquivZero_apply_eq_iff]
   -- On `AddCircle (2π)` the loop lifts to `t ↦ 2πt` in `ℝ`, which ends at `1 • 2π`.
   have hlift : (AddCircle.isCoveringMap_coe (2 * Real.pi)).monodromy
       ((TauCeti.FundamentalGroup.homeomorphMulEquivOfEq
