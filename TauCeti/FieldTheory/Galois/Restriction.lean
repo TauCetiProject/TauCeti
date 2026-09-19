@@ -66,6 +66,19 @@ theorem _root_.AlgHom.restrictNormalHom_toAlgHom [Algebra M K] [IsScalarTower F 
   MonoidHom.ext fun σ ↦ (IsScalarTower.toAlgHom F M K).restrictNormalHom_eq_iff.2
     fun y ↦ (AlgEquiv.restrictNormal_commutes σ M y).symm
 
+/-- **Mathlib's two restriction APIs agree on elements.** `AlgEquiv.restrictNormalHom` is the
+bundled `MonoidHom` built from `AlgEquiv.restrictNormal`, so applying it is definitionally the
+latter. Stating the identification once lets proofs rewrite between the two rather than lean on
+the `MonoidHom.mk'` wrapper unfolding, which is an artefact of the bundling and not a documented
+part of the API.
+
+Mathlib's `AlgEquiv.restrictNormalHom_apply` covers only the case where the subextension is an
+`IntermediateField`; this is the abstract scalar-tower form. -/
+@[simp]
+theorem _root_.AlgEquiv.restrictNormalHom_eq_restrictNormal [Algebra M K] [IsScalarTower F M K]
+    [Normal F M] (σ : Gal(K/F)) : AlgEquiv.restrictNormalHom M σ = σ.restrictNormal M :=
+  rfl
+
 end RestrictAlong
 
 end TauCeti
