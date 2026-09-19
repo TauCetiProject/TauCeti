@@ -7,6 +7,8 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus
 
+import TauCeti.RingTheory.ClassGroup.Basic
+
 /-!
 # The ray class group of a modulus
 
@@ -30,6 +32,8 @@ class group (`oneEquivClassGroup`).
 
 ## Main definitions
 
+* `TauCeti.GlobalNumberFields.principalIdealPrimeTo`: the principal fractional ideals whose
+  generators are units at the finite part.
 * `TauCeti.GlobalNumberFields.rayHom`, `TauCeti.GlobalNumberFields.ray`: the principal ideals of
   the elements congruent to one, and the subgroup they form.
 * `TauCeti.GlobalNumberFields.idealsPrimeToClassGroup`: the ordinary ideal class of an invertible
@@ -103,6 +107,22 @@ theorem IsCongrOne.toPrincipalIdeal_mem_idealsPrimeTo {𝔪 : Modulus K} {x : K�
   toPrincipalIdeal_mem_idealsPrimeTo_iff.mpr
     (congruenceSubgroup_le_primeToSubgroup 𝔪 (mem_congruenceSubgroup.mpr hx))
 
+/-- The principal fractional ideal of an element that is a unit at every prime dividing the
+finite part of `m`, viewed as an element of `idealsPrimeTo m`. -/
+noncomputable def principalIdealPrimeTo (m : Modulus K) :
+    primeToSubgroup m →* idealsPrimeTo m :=
+  MonoidHom.codRestrict
+    ((toPrincipalIdeal (RingOfIntegers K) K).comp (primeToSubgroup m).subtype)
+    (idealsPrimeTo m) fun x ↦ toPrincipalIdeal_mem_idealsPrimeTo_iff.mpr x.2
+
+/-- `principalIdealPrimeTo` does not change the underlying principal fractional ideal. -/
+@[simp] theorem coe_principalIdealPrimeTo (m : Modulus K) (x : primeToSubgroup m) :
+    ((principalIdealPrimeTo m x : idealsPrimeTo m) :
+        (FractionalIdeal (RingOfIntegers K)⁰ K)ˣ) =
+      toPrincipalIdeal (RingOfIntegers K) K (x : Kˣ) := by
+  simp only [principalIdealPrimeTo, MonoidHom.codRestrict_apply, MonoidHom.comp_apply,
+    Subgroup.subtype_apply]
+
 /-- The homomorphism sending an element of `Kˣ` congruent to one modulo `𝔪` to its principal
 fractional ideal, viewed inside the ideals prime to `𝔪`. -/
 noncomputable def rayHom (𝔪 : Modulus K) :
@@ -138,6 +158,22 @@ noncomputable def idealsPrimeToClassGroup (𝔪 : Modulus K) :
     idealsPrimeToClassGroup 𝔪 I =
       ClassGroup.mk K (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :=
   by simp only [idealsPrimeToClassGroup, MonoidHom.comp_apply, Subgroup.subtype_apply]
+
+/-- The principal fractional ideals prime to a modulus are exactly the kernel of the map to the
+ordinary ideal class group. -/
+theorem range_principalIdealPrimeTo (m : Modulus K) :
+    (principalIdealPrimeTo m).range = (idealsPrimeToClassGroup m).ker := by
+  ext I
+  rw [MonoidHom.mem_range, MonoidHom.mem_ker, idealsPrimeToClassGroup_apply,
+    ClassGroup.mk_eq_one_iff_exists]
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact ⟨(x : Kˣ), coe_principalIdealPrimeTo m x⟩
+  · rintro ⟨x, hx⟩
+    refine ⟨⟨x, toPrincipalIdeal_mem_idealsPrimeTo_iff.mp (hx ▸ I.2)⟩, ?_⟩
+    apply Subtype.ext
+    apply Units.ext
+    rw [coe_principalIdealPrimeTo, hx]
 
 /-- **The ray class group of a modulus**: the invertible fractional ideals prime to the finite part
 of `𝔪`, modulo the principal ideals of the elements congruent to one modulo `𝔪`. -/
@@ -180,6 +216,13 @@ theorem rayClassLift_unique {M : Type*} [Monoid M] {𝔪 : Modulus K} (φ : idea
   refine MonoidHom.ext fun c ↦ ?_
   obtain ⟨I, rfl⟩ := rayClassMk_surjective 𝔪 c
   rw [rayClassLift_rayClassMk, ← hψ, MonoidHom.comp_apply]
+
+/-- The kernel of `rayClassLift φ h` is the image under `rayClassMk 𝔪` of `φ.ker`.  This exposes
+`QuotientGroup.ker_lift` through the module-opaque `RayClassGroup` representation. -/
+theorem ker_rayClassLift {M : Type*} [Group M] {𝔪 : Modulus K}
+    (φ : idealsPrimeTo 𝔪 →* M) (h : ray 𝔪 ≤ φ.ker) :
+    (rayClassLift φ h).ker = Subgroup.map (rayClassMk 𝔪) φ.ker :=
+  QuotientGroup.ker_lift (ray 𝔪) φ h
 
 /-- **The ray class of an integral ideal prime to the modulus.**  The domain is the monoid of
 nonzero integral ideals prime to the finite part of `𝔪`, never `Ideal (𝓞 K)`: an ideal sharing a

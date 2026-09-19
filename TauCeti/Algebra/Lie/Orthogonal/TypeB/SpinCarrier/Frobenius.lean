@@ -5,8 +5,9 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.PointsFunctor
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
+public import TauCeti.Algebra.CharP.Frobenius.Basic
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.PointsFunctor
 
 /-!
 # Frobenius on the full-weight type-B spin carrier
@@ -68,7 +69,7 @@ variable (n p k : ℕ) (A : Type v) [CommRing A] [ExpChar A p]
 For `p` prime, `0 < k`, and `A` an algebraic closure of `ZMod p`, this is intended to supply the
 Frobenius component in a future construction of the `Bₙ₊₁(p ^ k)` Steinberg map. -/
 def frobenius : points n A →* points n A :=
-  pointsMap n (iterateFrobenius A p k)
+  (pointsPresentation n A).map (pointsPresentation n A) (iterateFrobenius A p k)
 
 /-- The Frobenius endomorphism of the type-`Bₙ₊₁` spin carrier acts by entrywise Frobenius.
 
@@ -76,7 +77,7 @@ This is not a `simp` lemma because `coe_frobenius_apply` is the coefficient-leve
 theorem coe_frobenius (g : points n A) :
     (frobenius n p k A g : _root_.Matrix.GeneralLinearGroup (Fin (dimension n)) A) =
       _root_.Matrix.GeneralLinearGroup.map (iterateFrobenius A p k) g := by
-  rw [frobenius, coe_pointsMap]
+  rw [frobenius, GeneralLinear.IntegralPointsPresentation.coe_map]
 
 /-- Entrywise, the Frobenius endomorphism raises each matrix coefficient to its `p ^ k`-th
 power. -/
@@ -96,7 +97,7 @@ theorem frobenius_rootSubgroupPoints
     frobenius n p k A (rootSubgroupPoints n i A u) =
       rootSubgroupPoints n i A
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ p ^ k)) := by
-  rw [frobenius, pointsMap_rootSubgroupPoints]
+  rw [frobenius, map_rootSubgroupPoints]
   exact Subtype.ext (by rw [iterateFrobenius_def])
 
 /-- **Frobenius raises every coordinate of the split spin weight torus to its `p ^ k`-th
@@ -105,23 +106,19 @@ power.** -/
 theorem frobenius_weightTorusPoints (s : Fin (n + 1) → Aˣ) :
     frobenius n p k A (weightTorusPoints n A s) =
       weightTorusPoints n A (s ^ p ^ k) := by
-  have hs : (fun i => Units.map (iterateFrobenius A p k : A →* A) (s i)) = s ^ p ^ k := by
-    funext i
-    exact Units.ext (by
-      rw [Units.coe_map, MonoidHom.coe_coe, iterateFrobenius_def, Pi.pow_apply,
-        Units.val_pow_eq_pow_val])
-  rw [frobenius, pointsMap_weightTorusPoints, hs]
+  rw [frobenius, map_weightTorusPoints, map_iterateFrobenius_units_eq_pow]
 
 /-- The zeroth Frobenius iterate is the identity on the type-`Bₙ₊₁` spin carrier's point
 group. -/
 @[simp]
 theorem frobenius_zero : frobenius n p 0 A = MonoidHom.id _ := by
-  rw [frobenius, iterateFrobenius_zero, pointsMap_id]
+  rw [frobenius, iterateFrobenius_zero, GeneralLinear.IntegralPointsPresentation.map_id]
 
 /-- Frobenius iterates add under composition on the type-`Bₙ₊₁` spin carrier's point group. -/
 theorem frobenius_add (m : ℕ) :
     frobenius n p (k + m) A = (frobenius n p k A).comp (frobenius n p m A) := by
-  rw [frobenius, frobenius, frobenius, iterateFrobenius_add, pointsMap_comp]
+  rw [frobenius, frobenius, frobenius, iterateFrobenius_add,
+    GeneralLinear.IntegralPointsPresentation.map_comp (Q := pointsPresentation n A)]
 
 /-- A type-`Bₙ₊₁` spin-carrier point is fixed by Frobenius exactly when all of its matrix
 entries lie in the Frobenius-fixed subring. -/

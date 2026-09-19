@@ -6,21 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
+public import Mathlib.LinearAlgebra.TensorProduct.Pi
+public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 import Mathlib.LinearAlgebra.TensorProduct.Prod
+public import Mathlib.RingTheory.Flat.Basic
 import TauCeti.LinearAlgebra.BilinearForm.BaseChange
+import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Base change of quadratic forms
 
 This file supplies the functorial API for extending quadratic spaces along a commutative algebra.
 It lifts isometries and isometric equivalences by extending their underlying linear maps, records
-the interaction with the additive operations on forms, and proves that finite-dimensional
-nondegenerate forms remain nondegenerate over a field extension.
+the interaction with the additive operations on forms, compares direct and successive extension
+through a scalar tower, and proves that finite-dimensional nondegenerate forms remain
+nondegenerate over a field extension. It also identifies the base change of a diagonal form with
+the diagonal form obtained by mapping its coefficients into the target algebra.
 
 These results complement Mathlib's construction `QuadraticForm.baseChange` and its pure-tensor
-evaluation theorem.  They allow localizations of a quadratic space to inherit maps and regularity
-from the original space without choosing bases in each completion.
+evaluation theorem.  They allow localizations of a quadratic space to inherit maps, injective
+representations, isotropy, and regularity from the original space without choosing bases in each
+completion.
 -/
 
 public section
@@ -200,6 +207,43 @@ theorem QuadraticMap.Represents.baseChange {Q : _root_.QuadraticForm R M} {a : R
 
 namespace QuadraticForm
 
+section Diagonal
+
+variable {ι : Type*} [Fintype ι]
+
+/-- The canonical coordinate equivalence identifies the base change of a diagonal quadratic form
+with the diagonal form obtained by mapping each coefficient into the target algebra. -/
+def baseChangeWeightedSumSquares (w : ι → R) :
+    (_root_.QuadraticForm.baseChange A
+      (QuadraticMap.weightedSumSquares R w)).IsometryEquiv
+      (QuadraticMap.weightedSumSquares A fun i => algebraMap R A (w i)) := by
+  classical
+  refine
+    { toLinearEquiv := TensorProduct.piScalarRight R A A ι
+      map_app' := fun x => ?_ }
+  have h :
+      (QuadraticMap.weightedSumSquares A fun i => algebraMap R A (w i)).comp
+          (TensorProduct.piScalarRight R A A ι).toLinearMap =
+        _root_.QuadraticForm.baseChange A (QuadraticMap.weightedSumSquares R w) := by
+    apply _root_.baseChange_ext
+    intro x
+    simp only [QuadraticMap.comp_apply, LinearEquiv.coe_coe,
+      TensorProduct.piScalarRight_apply, TensorProduct.piScalarRightHom_tmul,
+      _root_.QuadraticForm.baseChange_tmul, mul_one]
+    simp [QuadraticMap.weightedSumSquares_apply, Algebra.smul_def]
+  exact DFunLike.congr_fun h x
+
+/-- The underlying linear equivalence for diagonal base change is the canonical distribution of
+tensor product over the finite coordinate space. -/
+@[simp]
+theorem baseChangeWeightedSumSquares_apply (w : ι → R) (x : A ⊗[R] (ι → R)) :
+    baseChangeWeightedSumSquares (A := A) w x =
+      TensorProduct.piScalarRightHom R A A ι x := by
+  classical
+  rfl
+
+end Diagonal
+
 /-- The canonical equivalence distributing tensor product over a product identifies the base
 change of an orthogonal sum with the orthogonal sum of the base changes. -/
 def baseChangeProd (Q : _root_.QuadraticForm R M) (Q' : _root_.QuadraticForm R N) :
@@ -265,9 +309,108 @@ theorem baseChange_smul (r : R) (Q : _root_.QuadraticForm R M) :
   apply _root_.baseChange_ext
   simp [Algebra.smul_def, mul_comm]
 
+/-- A quadratic form vanishes after a faithful scalar extension exactly when it vanishes.
+This is the quadratic-form analogue of Mathlib's
+`LinearMap.BilinForm.baseChange_eq_zero_iff`. -/
+@[simp]
+theorem baseChange_eq_zero_iff [FaithfulSMul R A] {Q : _root_.QuadraticForm R M} :
+    Q.baseChange A = 0 ↔ Q = 0 := by
+  refine ⟨fun h ↦ QuadraticMap.ext fun x ↦ ?_, fun h ↦ h ▸ baseChange_zero⟩
+  have hx := congrArg (fun F : _root_.QuadraticForm A (A ⊗[R] M) ↦ F (1 ⊗ₜ x)) h
+  simp only [baseChange_tmul, mul_one, zero_apply, Algebra.smul_def] at hx
+  exact FaithfulSMul.algebraMap_injective R A (hx.trans (map_zero _).symm)
+
+/-- Isotropy is preserved by a faithful scalar extension when the underlying module is flat. -/
+theorem not_anisotropic_baseChange [FaithfulSMul R A] [Module.Flat R M]
+    {Q : _root_.QuadraticForm R M} (hQ : ¬ Q.Anisotropic) :
+    ¬ (Q.baseChange A).Anisotropic := by
+  rw [QuadraticMap.not_anisotropic_iff_exists] at hQ ⊢
+  obtain ⟨x, hx, hQx⟩ := hQ
+  refine ⟨1 ⊗ₜ x, ?_, by simp [hQx]⟩
+  intro hzero
+  apply hx
+  apply Module.Flat.tensorProduct_mk_injective R M A
+  simpa using hzero
+
 end QuadraticForm
 
+/-- Representation of one quadratic form by another is preserved by flat base change. -/
+theorem QuadraticMap.IsRepresentedBy.baseChange [Module.Flat R A]
+    {Q : _root_.QuadraticForm R M} {Q' : _root_.QuadraticForm R N}
+    (h : Q.IsRepresentedBy Q') :
+    (Q.baseChange A).IsRepresentedBy (Q'.baseChange A) := by
+  rw [QuadraticMap.isRepresentedBy_iff] at h ⊢
+  obtain ⟨f, hf, hQ⟩ := h
+  let g : Q →qᵢ Q' := ⟨f, hQ⟩
+  refine ⟨(g.baseChange A).toLinearMap, ?_, g.baseChange A |>.map_app⟩
+  have hinjective : Function.Injective (f.lTensor A) :=
+    Module.Flat.lTensor_preserves_injective_linearMap f hf
+  intro x y hxy
+  apply hinjective
+  simpa only [QuadraticMap.Isometry.baseChange_toLinearMap,
+    LinearMap.baseChange_eq_ltensor] using hxy
+
 end CommRing
+
+section ScalarTower
+
+variable {R : Type uR} {A : Type uA} {B : Type uN}
+variable [CommRing R] [CommRing A] [CommRing B]
+variable [Algebra R A] [Algebra A B] [Algebra R B] [IsScalarTower R A B]
+variable [Invertible (2 : R)]
+variable {M : Type uM} [AddCommGroup M] [Module R M]
+
+namespace QuadraticForm
+
+/-- Direct base change through a scalar tower is isometric to successive base change.
+
+The underlying linear equivalence is the inverse of Mathlib's canonical cancellation
+`B ⊗[A] (A ⊗[R] M) ≃ B ⊗[R] M`. -/
+def baseChangeBaseChange (Q : _root_.QuadraticForm R M) :
+    letI : Invertible (2 : A) :=
+      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+    (Q.baseChange B).IsometryEquiv ((Q.baseChange A).baseChange B) :=
+  letI : Invertible (2 : A) :=
+    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+  { toLinearEquiv :=
+      (TensorProduct.AlgebraTensorModule.cancelBaseChange R A B B M).symm
+    map_app' x := by
+      have h : ((Q.baseChange A).baseChange B).comp
+          (TensorProduct.AlgebraTensorModule.cancelBaseChange R A B B M).symm.toLinearMap =
+          Q.baseChange B := by
+        apply _root_.baseChange_ext
+        intro m
+        simp only [QuadraticMap.comp_apply, LinearEquiv.coe_coe,
+          TensorProduct.AlgebraTensorModule.cancelBaseChange_symm_tmul,
+          _root_.QuadraticForm.baseChange_tmul, mul_one, smul_assoc, one_smul]
+      exact DFunLike.congr_fun h x }
+
+/-- The linear equivalence underlying repeated base change is Mathlib's canonical tensor-product
+cancellation, read in the direction from direct to successive base change. -/
+@[simp]
+theorem baseChangeBaseChange_toLinearEquiv (Q : _root_.QuadraticForm R M) :
+    (baseChangeBaseChange (A := A) (B := B) Q).toLinearEquiv =
+      (TensorProduct.AlgebraTensorModule.cancelBaseChange R A B B M).symm :=
+  (rfl)
+
+/-- On a pure tensor, the scalar-tower base-change equivalence inserts the intermediate unit
+tensor. -/
+@[simp]
+theorem baseChangeBaseChange_tmul (Q : _root_.QuadraticForm R M) (b : B) (m : M) :
+    baseChangeBaseChange (A := A) Q (b ⊗ₜ m) = b ⊗ₜ (1 ⊗ₜ m) :=
+  TensorProduct.AlgebraTensorModule.cancelBaseChange_symm_tmul R A B b m
+
+/-- The inverse scalar-tower base-change equivalence multiplies the intermediate scalar into
+the outer tensor factor. -/
+@[simp]
+theorem baseChangeBaseChange_symm_tmul (Q : _root_.QuadraticForm R M)
+    (b : B) (a : A) (m : M) :
+    (baseChangeBaseChange (A := A) Q).symm (b ⊗ₜ (a ⊗ₜ m)) = (a • b) ⊗ₜ m :=
+  TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul R A B b m a
+
+end QuadraticForm
+
+end ScalarTower
 
 section Field
 
@@ -288,6 +431,27 @@ theorem Nondegenerate.baseChange [Invertible (2 : K)]
   rw [_root_.QuadraticForm.associated_baseChange]
   exact (TauCeti.nondegenerate_baseChange_iff (QuadraticMap.associated Q) b).2
     (QuadraticMap.nondegenerate_associated_iff.mpr hQ)
+
+/-- On a space of dimension at most one, a quadratic form is anisotropic exactly when its
+extension to a nontrivial ring without zero divisors is anisotropic.  Dimension one is sharp:
+`⟨1, 1⟩` over `ℚ` is anisotropic, while its extension to `ℂ` is not. -/
+@[simp]
+theorem anisotropic_baseChange_iff_of_finrank_le_one [Invertible (2 : K)]
+    {A : Type*} [CommRing A] [Nontrivial A] [NoZeroDivisors A] [Algebra K A]
+    [FiniteDimensional K V]
+    {Q : _root_.QuadraticForm K V} (hV : Module.finrank K V ≤ 1) :
+    (Q.baseChange A).Anisotropic ↔ Q.Anisotropic := by
+  refine ⟨fun hQA ↦ ?_, fun hQ x hx ↦ ?_⟩
+  · by_contra hQ
+    exact not_anisotropic_baseChange hQ hQA
+  let b := Module.finBasis K V
+  have : Subsingleton (Fin (Module.finrank K V)) := Fin.subsingleton_iff_le_one.mpr hV
+  refine (b.baseChange A).ext_elem fun i ↦ ?_
+  rw [b.eq_baseChange_repr_tmul_of_subsingleton x i, baseChange_tmul, Algebra.smul_def,
+    mul_eq_zero, mul_self_eq_zero] at hx
+  rw [map_zero, Finsupp.zero_apply]
+  refine hx.resolve_left fun h ↦ b.ne_zero i (hQ _ ?_)
+  exact (FaithfulSMul.algebraMap_injective K A).eq_iff.mp (h.trans (map_zero _).symm)
 
 end QuadraticForm
 

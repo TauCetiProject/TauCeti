@@ -52,7 +52,7 @@ theorem _root_.LinearMap.BilinForm.dualSubmoduleToDual_surjective
   let bd := B.dualBasis hB b_ext
   let x : V := ∑ i, (algebraMap R K (f (b i))) • bd i
   have hx : x ∈ B.dualSubmodule N := by
-    rw [← Basis.span_range_extendOfIsLattice b, B.dualSubmodule_span_of_basis hB b_ext]
+    rw [← b.span_range_extendOfIsLattice, B.dualSubmodule_span_of_basis hB b_ext]
     exact Submodule.sum_mem _ fun i _ => by
       simpa only [algebraMap_smul] using
         Submodule.smul_mem _ (f (b i)) (Submodule.subset_span (Set.mem_range_self i))
@@ -106,10 +106,10 @@ theorem _root_.LinearMap.BilinForm.dualSubmodule_dualSubmodule_flip
     B.dualSubmodule (B.flip.dualSubmodule N) =
         B.dualSubmodule (B.flip.dualSubmodule (Submodule.span R (Set.range b_ext))) :=
       congrArg (fun S => B.dualSubmodule (B.flip.dualSubmodule S))
-        (Basis.span_range_extendOfIsLattice b).symm
+        b.span_range_extendOfIsLattice.symm
     _ = Submodule.span R (Set.range b_ext) :=
       B.dualSubmodule_dualSubmodule_flip_of_basis hB b_ext
-    _ = N := Basis.span_range_extendOfIsLattice b
+    _ = N := b.span_range_extendOfIsLattice
 
 omit [IsDomain R] [Module.IsTorsionFree R K] in
 /-- Dualizing by `B` and then by `B.flip` recovers the original free full lattice. -/

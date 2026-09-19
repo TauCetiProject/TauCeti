@@ -166,9 +166,10 @@ theorem geckGraphAut_geckRootSubgroup (i : Fin d.1.rank ⊕ Fin d.1.rank)
       d.1.geckRootSubgroup (DynkinType.diagramRootGeneratorPerm d.diagramPerm i) u := by
   -- Both sides are read through `ValidLieTypeIndex.coe_geckRootSubgroup`, since the body of
   -- `ValidLieTypeIndex.geckRootSubgroup` is not exposed.
-  have h := congrArg Subtype.val (d.1.dynkinType.geckGraphAutPoints_geckRootSubgroupMatrix
+  have h := congrArg Subtype.val (d.1.dynkinType.geckGraphAutPoints_geckRootSubgroupPoints
     d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry d.1.Closure i u)
-  rw [DynkinType.coe_geckGraphAutPoints] at h
+  rw [DynkinType.coe_geckGraphAutPoints, DynkinType.coe_geckRootSubgroupPoints,
+    DynkinType.coe_geckRootSubgroupPoints] at h
   refine Subtype.ext ?_
   rw [coe_geckGraphAut, ValidLieTypeIndex.coe_geckRootSubgroup,
     ValidLieTypeIndex.coe_geckRootSubgroup]

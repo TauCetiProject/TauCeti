@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `TauCeti.indClassFun` is the object computed here.
+-- `TauCeti.indClassFun` is the object the four values below are computed for.
 public import TauCeti.RepresentationTheory.Induction.ClassFunction
+-- `FDRep.ofLinearCharacter` and `TauCeti.indFDRep` are the bodies of the constructions below.
+public import TauCeti.RepresentationTheory.Induction.LinearCharacter
 -- `TauCeti.GL2ScalarUnipotent` and `TauCeti.jordanGL` occur in the statements below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ScalarUnipotent
 -- `TauCeti.diagGL` occurs in the statements below: the contributing cosets are those of the
@@ -14,13 +16,16 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ScalarUnipotent
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 -- `TauCeti.GL2NonSplitTorusHom` occurs in the elliptic statement below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus
--- `AddChar` occurs in the statement of the Gelfand-Graev value.
+-- `AddChar` occurs in the public construction.
 public import Mathlib.Algebra.Group.AddChar
 -- Non-public: `TauCeti.smul_quotientGroup_mk_eq_self_iff` is used only inside a proof.
 import TauCeti.GroupTheory.QuotientGroup.Basic
+-- Non-public: the sum of a nontrivial additive character over the nonzero field elements is used
+-- in the Jordan computation.
+import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 
 /-!
-# The class function of `GL₂(𝔽_q)` induced from the scalar–unipotent subgroup
+# Induction from the scalar--unipotent subgroup of `GL₂(𝔽_q)`
 
 Let `F` be a finite field with `q` elements and let `Z U = TauCeti.GL2ScalarUnipotent F` be the
 product of the centre of `GL₂(F)` with the unipotent radical of the Borel subgroup: the matrices
@@ -30,13 +35,23 @@ product of the centre of `GL₂(F)` with the unipotent radical of the Borel subg
 the split semisimple and the elliptic families, and at a non-semisimple element with repeated
 eigenvalue `a` it is the sum of `f` over the `q - 1` Jordan blocks `!![a, c; 0, a]` with `c ≠ 0`.
 
-Applied to a product character `μ ⊗ ψ` of `Z U` with `ψ` a nontrivial additive character of `F`,
-the last sum collapses to `-μ(a)`, because the values of `ψ` on `Fˣ` sum to `-1`
-(`TauCeti.GL2ScalarUnipotent.indClassFun_jordanGL_of_eq_mul`).  That is the Gelfand-Graev induced
-character of `GL₂(𝔽_q)`, one of the two induced characters whose difference is the cuspidal
-(discrete series) character attached to a character of `Eˣ` in general position; the other is
-induced from the non-split torus `Eˣ` of a quadratic extension.  The degree of the difference is
-the difference of the two inducing indices,
+It then specialises those four values to the inducing datum that the character table needs.  A
+multiplicative character `μ : Fˣ → ℂˣ` and an additive character `ψ : F → ℂ` define the linear
+character
+
+`(a, t) ↦ μ(a) ψ(t)`
+
+under the isomorphism `Fˣ × (F, +) ≃ Z U`; this file constructs that character, the line it acts
+on, and the representation the line induces to `GL₂(F)`, and reads its degree and its four
+character values off the class-function computation:
+
+* `(q² - 1) μ(a)` on the scalar matrix `a I`;
+* `0` on split regular semisimple and on elliptic elements;
+* `-μ(a)` on a nontrivial Jordan block with eigenvalue `a`, once `ψ` is nontrivial.
+
+Together with `TauCeti.GL2NonSplitTorus.indClassFun_gl2NonSplitTorusHom` this supplies the two
+induced class functions whose difference is the cuspidal (discrete series) character of
+`GL₂(𝔽_q)`.  The Gelfand-Graev summand here is the one that carries the degree, since
 `[GL₂(F) : Z U] - [GL₂(F) : Eˣ] = (q² - 1) - q (q - 1) = q - 1`.
 
 ## The geometry behind the four values
@@ -58,6 +73,16 @@ two distinct eigenvalues -- split or elliptic -- fails.
   off-diagonal entry to `c⁻¹ b`, so the `q - 1` summands run over all the Jordan blocks with the
   same diagonal entry.
 
+Neither the square-zero argument nor the coset count needs separability or a case split on the
+characteristic, unlike the trace-and-determinant route, which in characteristic two only sees the
+trace.
+
+## Main definitions
+
+* `TauCeti.GL2ScalarUnipotent.linearChar`: the character `(a, t) ↦ μ(a) ψ(t)` of `Z U`.
+* `TauCeti.GL2ScalarUnipotentRep`: its one-dimensional complex representation.
+* `TauCeti.GL2ScalarUnipotentInduction`: the representation induced from `Z U` to `GL₂(F)`.
+
 ## Main results
 
 * `TauCeti.GL2ScalarUnipotent.indClassFun_eq_zero_of_forall_sq_ne_zero`: the induced class
@@ -69,19 +94,25 @@ two distinct eigenvalues -- split or elliptic -- fails.
   `TauCeti.GL2ScalarUnipotent.indClassFun_gl2NonSplitTorusHom` and
   `TauCeti.GL2ScalarUnipotent.indClassFun_jordanGL`: **the four values**, on the central, split
   semisimple, elliptic and non-semisimple normal forms.
-* `TauCeti.GL2ScalarUnipotent.indClassFun_jordanGL_of_eq_mul`: the non-semisimple value `-μ(a)`
-  for a product character `μ ⊗ ψ` with `ψ` nontrivial.
+* `TauCeti.finrank_GL2ScalarUnipotentInduction`: the induced representation has dimension
+  `q² - 1`.
+* `TauCeti.character_GL2ScalarUnipotentInduction_scalar`,
+  `TauCeti.character_GL2ScalarUnipotentInduction_diagGL`,
+  `TauCeti.character_GL2ScalarUnipotentInduction_gl2NonSplitTorusHom` and
+  `TauCeti.character_GL2ScalarUnipotentInduction_jordanGL`: its four character values.
 
 That the four normal forms exhaust the conjugacy classes is
 `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ConjugacyClasses`; as in
 `TauCeti/RepresentationTheory/CharacterTable/GL2/PrincipalSeries/CharacterValues.lean`, the values
 below are stated at the normal forms themselves rather than assembled into a single case
-distinction.  None of them is a `simp` lemma: they evaluate a class function at a normal form, and
-neither side is a normal form for `simp`.
+distinction.  None of the class-function values is a `simp` lemma: they evaluate a class function
+at a normal form, and neither side is a normal form for `simp`.
 
 ## References
 
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`*, Springer (2011), Chapter 6.
+* I. Piatetski-Shapiro, *Complex Representations of `GL(2, K)` for Finite Fields `K`*,
+  Contemporary Mathematics 16, AMS (1983), §5.
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2.
 * [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
   Layer 9, "The cuspidal (discrete series) representations".
@@ -93,9 +124,11 @@ open Matrix
 
 namespace TauCeti
 
+universe u
+
 namespace GL2ScalarUnipotent
 
-variable {F : Type*} [Field F]
+variable {F : Type u} [Field F]
 
 /-! ### Which conjugates land in `Z U` -/
 
@@ -195,15 +228,10 @@ private theorem exists_quotient_mk_eq_diagGL {x : GL (Fin 2) F} (hx : x ∈ GL2B
   rw [eq_comm, QuotientGroup.eq, hsplit, inv_mul_cancel_left]
   exact jordanGL_mem_gl2ScalarUnipotent _ _
 
-/-- The two diagonal entries of an element of `Z U` agree. -/
-private theorem apply_zero_zero_eq_apply_one_one {z : GL (Fin 2) F}
-    (hz : z ∈ GL2ScalarUnipotent F) :
-    (z : Matrix (Fin 2) (Fin 2) F) 0 0 = (z : Matrix (Fin 2) (Fin 2) F) 1 1 := by
-  obtain ⟨v, w, rfl⟩ := mem_gl2ScalarUnipotent_iff.mp hz
-  simp
-
-/-- **The cosets `diag (c, 1) · Z U` are pairwise distinct**, so together with the previous lemma
-they enumerate the `q - 1` cosets of `Z U` inside the Borel subgroup. -/
+/-- **The cosets `diag (c, 1) · Z U` are pairwise distinct**: the two diagonal entries of an
+element of `Z U` agree, so `diag (c, 1)⁻¹ diag (d, 1)` lies in `Z U` only for `c = d`.  Together
+with `TauCeti.GL2ScalarUnipotent.exists_quotient_mk_eq_diagGL` this enumerates the `q - 1` cosets
+of `Z U` inside the Borel subgroup. -/
 private theorem quotient_mk_diagGL_injective :
     Function.Injective fun c : Fˣ =>
       (QuotientGroup.mk (diagGL ![c, 1]) : GL (Fin 2) F ⧸ GL2ScalarUnipotent F) := by
@@ -253,7 +281,7 @@ theorem indClassFun_eq_zero_of_forall_sq_ne_zero (f : GL2ScalarUnipotent F → k
 /-- **The induced class function at a central element**: a scalar matrix is central, so every
 conjugate of it is itself and lies in `Z U`, and each of the `[GL₂(F) : Z U]` cosets contributes
 the same value.  Over a field with `q` elements the index is `q² - 1`, by
-`TauCeti.GL2ScalarUnipotent.index_eq`. -/
+`TauCeti.index_gl2ScalarUnipotent`. -/
 theorem indClassFun_scalar (f : GL2ScalarUnipotent F → k) (a : Fˣ) :
     indClassFun (GL2ScalarUnipotent F) f (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
       (GL2ScalarUnipotent F).index •
@@ -356,52 +384,163 @@ theorem indClassFun_jordanGL (f : GL2ScalarUnipotent F → k) (a : Fˣ) {b : F} 
   exact Fintype.sum_equiv ((Equiv.inv Fˣ).trans (Equiv.mulRight (Units.mk0 b hb))) _ _
     fun c => congrArg f (Subtype.ext (by simp))
 
-/-- **The values of a nontrivial additive character on the units of a finite field sum to
-`-1`**: they are the values on all of `F`, which sum to `0`, minus the value `1` at `0`. -/
-private theorem sum_units_addChar {R : Type*} [CommRing R] [IsDomain R] [CharZero R]
-    {ψ : AddChar F R} (hψ : ψ ≠ 0) : ∑ c : Fˣ, ψ (c : F) = -1 := by
-  have hunits : ∑ t ∈ (Finset.univ : Finset F).erase 0, ψ t = ∑ c : Fˣ, ψ (c : F) := by
-    rw [Finset.sum_subtype ((Finset.univ : Finset F).erase 0) (p := fun x => x ≠ 0)
-      (fun x => by simp) (fun t => ψ t)]
-    exact (Fintype.sum_equiv unitsEquivNeZero _ _ fun c => rfl).symm
-  have hsplit : ψ 0 + ∑ t ∈ (Finset.univ : Finset F).erase 0, ψ t = ∑ t : F, ψ t :=
-    Finset.add_sum_erase _ _ (Finset.mem_univ 0)
-  rw [hunits, AddChar.map_zero_eq_one, AddChar.sum_eq_zero_iff_ne_zero.mpr hψ] at hsplit
-  linear_combination hsplit
-
 end Fintype
-
-/-- **The induced class function of a product character at a non-semisimple element.**  If `f`
-reads the two coordinates of `Z U ≅ Fˣ × (F, +)` as `f (!![u, u t; 0, u]) = μ u * ψ t`, with `ψ` a
-nontrivial additive character, then the `q - 1` summands of
-`TauCeti.GL2ScalarUnipotent.indClassFun_jordanGL` are `μ a` times the values of `ψ` on `Fˣ`, and
-those sum to `-1`.  So the value is `-μ a`, of size `1` rather than of size `q - 1`.
-
-Together with `TauCeti.GL2ScalarUnipotent.indClassFun_scalar` and the two vanishing statements
-this is the Gelfand-Graev induced character of `GL₂(𝔽_q)`, of degree `q² - 1`. -/
-theorem indClassFun_jordanGL_of_eq_mul [Finite F] {R : Type*} [CommRing R] [IsDomain R]
-    [CharZero R]
-    (f : GL2ScalarUnipotent F → R) (μ : Fˣ → R) {ψ : AddChar F R} (hψ : ψ ≠ 0)
-    (hf : ∀ (u : Fˣ) (t : F),
-      f ⟨jordanGL u ((u : F) * t), jordanGL_mem_gl2ScalarUnipotent u ((u : F) * t)⟩ = μ u * ψ t)
-    (a : Fˣ) {b : F} (hb : b ≠ 0) :
-    indClassFun (GL2ScalarUnipotent F) f (jordanGL a b) = -μ a := by
-  classical
-  let _ := Fintype.ofFinite F
-  have hval : ∀ c : Fˣ,
-      f ⟨jordanGL a (c : F), jordanGL_mem_gl2ScalarUnipotent a (c : F)⟩ =
-        μ a * ψ (((a⁻¹ : Fˣ) : F) * (c : F)) := fun c => by
-    rw [← hf a (((a⁻¹ : Fˣ) : F) * (c : F))]
-    exact congrArg f (Subtype.ext (congrArg (jordanGL a)
-      (by rw [← mul_assoc, ← Units.val_mul, mul_inv_cancel, Units.val_one, one_mul])))
-  have hshift : ∑ c : Fˣ, ψ (((a⁻¹ : Fˣ) : F) * (c : F)) = ∑ c : Fˣ, ψ (c : F) :=
-    Fintype.sum_equiv (Equiv.mulLeft a⁻¹) _ _ fun c => congrArg ψ (Units.val_mul a⁻¹ c).symm
-  rw [indClassFun_jordanGL f a hb, Finset.sum_congr rfl fun c _ => hval c, ← Finset.mul_sum,
-    hshift, sum_units_addChar hψ, mul_neg_one]
-
 
 end Semiring
 
+/-! ### The scalar--unipotent linear character -/
+
+section LinearCharacter
+
+/-- **The scalar--unipotent linear character** attached to a multiplicative character `μ` and
+an additive character `ψ`.  In the coordinates `Fˣ × (F,+) ≃ Z U` it is
+`(a,t) ↦ μ(a)ψ(t)`. -/
+noncomputable def linearChar (μ : Fˣ →* ℂˣ) (ψ : AddChar F ℂ) :
+    GL2ScalarUnipotent F →* ℂˣ :=
+  (μ.coprod ψ.toMonoidHom.toHomUnits).comp (mulEquiv F).symm.toMonoidHom
+
+/-- Evaluation of the scalar--unipotent character in product coordinates. -/
+@[simp]
+theorem linearChar_mulEquiv (μ : Fˣ →* ℂˣ) (ψ : AddChar F ℂ)
+    (a : Fˣ) (t : Multiplicative F) :
+    linearChar μ ψ (mulEquiv F (a, t)) = μ a * ψ.toMonoidHom.toHomUnits t := by
+  simp [linearChar]
+
+/-- The complex value of the scalar--unipotent character on a Jordan block. -/
+@[simp]
+theorem coe_linearChar_jordanGL (μ : Fˣ →* ℂˣ) (ψ : AddChar F ℂ) (a : Fˣ) (b : F) :
+    ((linearChar μ ψ ⟨jordanGL a b, jordanGL_mem_gl2ScalarUnipotent a b⟩ : ℂˣ) : ℂ) =
+      (μ a : ℂ) * ψ ((a⁻¹ : Fˣ) * b) := by
+  let t : Multiplicative F := Multiplicative.ofAdd ((a⁻¹ : Fˣ) * b)
+  have h : (mulEquiv F (a, t) : GL (Fin 2) F) = jordanGL a b := by
+    simp [t]
+  have hs : mulEquiv F (a, t) =
+      ⟨jordanGL a b, jordanGL_mem_gl2ScalarUnipotent a b⟩ := Subtype.ext h
+  rw [← hs, linearChar_mulEquiv, Units.val_mul, MonoidHom.coe_toHomUnits]
+  rfl
+
+end LinearCharacter
+
 end GL2ScalarUnipotent
+
+section Representations
+
+variable (F : Type u) [Field F]
+
+/-- The one-dimensional representation of `Z U` carrying
+`TauCeti.GL2ScalarUnipotent.linearChar μ ψ`. -/
+noncomputable def GL2ScalarUnipotentRep (μ : Fˣ →* ℂˣ) (ψ : AddChar F ℂ) :
+    FDRep ℂ (GL2ScalarUnipotent F) :=
+  FDRep.ofLinearCharacter (GL2ScalarUnipotent.linearChar μ ψ)
+
+/-- The scalar--unipotent representation is one-dimensional. -/
+@[simp]
+theorem finrank_GL2ScalarUnipotentRep (μ : Fˣ →* ℂˣ) (ψ : AddChar F ℂ) :
+    Module.finrank ℂ (GL2ScalarUnipotentRep F μ ψ) = 1 := by
+  rw [GL2ScalarUnipotentRep, FDRep.finrank_ofLinearCharacter]
+
+/-- The character of the scalar--unipotent line is its defining linear character. -/
+@[simp]
+theorem character_GL2ScalarUnipotentRep (μ : Fˣ →* ℂˣ) (ψ : AddChar F ℂ)
+    (g : GL2ScalarUnipotent F) :
+    (GL2ScalarUnipotentRep F μ ψ).character g =
+      (GL2ScalarUnipotent.linearChar μ ψ g : ℂ) :=
+  FDRep.char_ofLinearCharacter _ g
+
+variable [Fintype F]
+
+/-- **The scalar--unipotent induction for `GL₂(F)` with central character `μ`**: induce the
+character `(a,t) ↦ μ(a)ψ(t)` from `Z U` to `GL₂(F)`. -/
+noncomputable def GL2ScalarUnipotentInduction (μ : Fˣ →* ℂˣ) (ψ : AddChar F ℂ) :
+    FDRep ℂ (GL (Fin 2) F) :=
+  indFDRep (GL2ScalarUnipotentRep F μ ψ)
+
+/-- The scalar--unipotent induction has dimension `q² - 1`, the index of `Z U`. -/
+@[simp]
+theorem finrank_GL2ScalarUnipotentInduction (μ : Fˣ →* ℂˣ) (ψ : AddChar F ℂ) :
+    Module.finrank ℂ (GL2ScalarUnipotentInduction F μ ψ) = Fintype.card F ^ 2 - 1 := by
+  rw [GL2ScalarUnipotentInduction, GL2ScalarUnipotentRep,
+    finrank_indFDRep_ofLinearCharacter, index_gl2ScalarUnipotent]
+
+end Representations
+
+/-! ### The four character values -/
+
+section CharacterValues
+
+variable {F : Type u} [Field F] [Fintype F]
+variable (μ : Fˣ →* ℂˣ) (ψ : AddChar F ℂ)
+
+private theorem character_GL2ScalarUnipotentInduction_eq_indClassFun (g : GL (Fin 2) F) :
+    (GL2ScalarUnipotentInduction F μ ψ).character g =
+      indClassFun (GL2ScalarUnipotent F) (GL2ScalarUnipotentRep F μ ψ).character g := by
+  rw [GL2ScalarUnipotentInduction, ← indClassFun_ofFDRep_character]
+
+/-- **The scalar--unipotent induced character at a scalar matrix** is `(q² - 1) μ(a)`: every coset
+contributes the value of the inducing character at the unchanged scalar. -/
+@[simp]
+theorem character_GL2ScalarUnipotentInduction_scalar (a : Fˣ) :
+    (GL2ScalarUnipotentInduction F μ ψ).character
+        (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
+      (Fintype.card F ^ 2 - 1 : ℂ) * (μ a : ℂ) := by
+  have hvalue : (GL2ScalarUnipotentRep F μ ψ).character
+      ⟨Matrix.GeneralLinearGroup.scalar (Fin 2) a, GL2ScalarUnipotent.scalar_mem a⟩ =
+        (μ a : ℂ) := by
+    rw [character_GL2ScalarUnipotentRep]
+    have hsub :
+        (⟨Matrix.GeneralLinearGroup.scalar (Fin 2) a, GL2ScalarUnipotent.scalar_mem a⟩ :
+            GL2ScalarUnipotent F) =
+          ⟨jordanGL a 0, jordanGL_mem_gl2ScalarUnipotent _ _⟩ :=
+      Subtype.ext (jordanGL_zero a).symm
+    rw [hsub, GL2ScalarUnipotent.coe_linearChar_jordanGL]
+    simp
+  rw [character_GL2ScalarUnipotentInduction_eq_indClassFun,
+    GL2ScalarUnipotent.indClassFun_scalar _ a, hvalue, index_gl2ScalarUnipotent, nsmul_eq_mul]
+  have hle : 1 ≤ Fintype.card F ^ 2 :=
+    Nat.one_le_pow 2 (Fintype.card F) Fintype.card_pos
+  rw [Nat.cast_sub hle]
+  push_cast
+  rfl
+
+/-- **The scalar--unipotent induced character vanishes on split regular semisimple elements.** -/
+@[simp]
+theorem character_GL2ScalarUnipotentInduction_diagGL {t : Fin 2 → Fˣ} (ht : t 0 ≠ t 1) :
+    (GL2ScalarUnipotentInduction F μ ψ).character (diagGL t) = 0 := by
+  rw [character_GL2ScalarUnipotentInduction_eq_indClassFun]
+  exact GL2ScalarUnipotent.indClassFun_diagGL _ ht
+
+section Elliptic
+
+variable {E : Type*} [Field E] [Algebra F E] (hE : Module.finrank F E = 2)
+
+/-- **The scalar--unipotent induced character vanishes on elliptic elements.** -/
+@[simp]
+theorem character_GL2ScalarUnipotentInduction_gl2NonSplitTorusHom {z : Eˣ}
+    (hz : (z : E) ∉ Set.range (algebraMap F E)) :
+    (GL2ScalarUnipotentInduction F μ ψ).character (GL2NonSplitTorusHom F E hE z) = 0 := by
+  rw [character_GL2ScalarUnipotentInduction_eq_indClassFun]
+  exact GL2ScalarUnipotent.indClassFun_gl2NonSplitTorusHom hE _ hz
+
+end Elliptic
+
+/-- **The scalar--unipotent induced character at a nontrivial Jordan block** is `-μ(a)`: the
+`q - 1` summands of `TauCeti.GL2ScalarUnipotent.indClassFun_jordanGL` are `μ(a)` times the values
+of `ψ` on `Fˣ`, and those sum to `-1`.  So the induced character has degree `q² - 1` but absolute
+value `1` on the unipotent classes. -/
+@[simp]
+theorem character_GL2ScalarUnipotentInduction_jordanGL
+    (hψ : ψ ≠ 1) (a : Fˣ) {b : F} (hb : b ≠ 0) :
+    (GL2ScalarUnipotentInduction F μ ψ).character (jordanGL a b) = -(μ a : ℂ) := by
+  classical
+  have hterm : ∀ c : Fˣ, (GL2ScalarUnipotentRep F μ ψ).character
+      ⟨jordanGL a (c : F), jordanGL_mem_gl2ScalarUnipotent a (c : F)⟩ =
+        (μ a : ℂ) * ψ (((a⁻¹ : Fˣ) : F) * (c : F)) := fun c => by
+    rw [character_GL2ScalarUnipotentRep, GL2ScalarUnipotent.coe_linearChar_jordanGL]
+  rw [character_GL2ScalarUnipotentInduction_eq_indClassFun,
+    GL2ScalarUnipotent.indClassFun_jordanGL _ a hb,
+    Finset.sum_congr rfl fun c _ => hterm c, ← Finset.mul_sum,
+    AddChar.sum_units_mul_eq_neg_one ψ hψ a⁻¹, mul_neg_one]
+
+end CharacterValues
 
 end TauCeti

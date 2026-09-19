@@ -41,6 +41,10 @@ disjoint rectangles or rectangles sharing exactly one side column.
   applies two disjoint column transpositions has disjoint side pairs.
 * `TauCeti.GridRectangleDecomposition.target_ne_source_iff`: a decomposition is nondiagonal
   exactly when its sides are disjoint or have exactly one column in common.
+* `TauCeti.GridRectangleDecomposition.sideColumns_ne_of_hasOneCommonSide`: sharing exactly one
+  side column means the two side pairs differ.
+* `TauCeti.GridRectangleDecomposition.hasOneCommonSide_of_mem_commonSideColumns`: a nondiagonal
+  decomposition with a common side column has exactly one.
 
 ## References
 
@@ -259,6 +263,13 @@ theorem hasDisjointSides_or_hasOneCommonSide_of_ne
   · exact Or.inr h
   · exact (hzx h).elim
 
+/-- A nondiagonal decomposition whose two rectangles have a common side column has exactly one
+common side column. -/
+theorem hasOneCommonSide_of_mem_commonSideColumns (D : GridRectangleDecomposition x z)
+    {c : Fin n} (hc : c ∈ D.commonSideColumns) (hzx : z ≠ x) : D.HasOneCommonSide :=
+  (D.hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left fun hdisjoint =>
+    Finset.eq_empty_iff_forall_notMem.mp (D.commonSideColumns_eq_empty_iff.mpr hdisjoint) c hc
+
 /-- A two-step rectangle decomposition is nondiagonal exactly when its side pairs are disjoint or
 share exactly one column. -/
 theorem target_ne_source_iff (D : GridRectangleDecomposition x z) :
@@ -282,6 +293,12 @@ theorem target_ne_source_of_hasDisjointSides (D : GridRectangleDecomposition x z
 theorem target_ne_source_of_hasOneCommonSide (D : GridRectangleDecomposition x z)
     (h : D.HasOneCommonSide) : z ≠ x :=
   D.target_ne_source_iff.mpr (Or.inr h)
+
+/-- A decomposition sharing exactly one side column does not use the same unordered pair of side
+columns twice: coinciding side pairs are the diagonal case. -/
+theorem sideColumns_ne_of_hasOneCommonSide (D : GridRectangleDecomposition x z)
+    (hone : D.HasOneCommonSide) : D.first.sideColumns ≠ D.second.sideColumns := fun h =>
+  D.target_ne_source_of_hasOneCommonSide hone (D.target_eq_source_iff_sideColumns_eq.mpr h)
 
 /-- The disjoint-side and one-common-side cases are mutually exclusive. -/
 theorem not_hasDisjointSides_of_hasOneCommonSide (D : GridRectangleDecomposition x z)

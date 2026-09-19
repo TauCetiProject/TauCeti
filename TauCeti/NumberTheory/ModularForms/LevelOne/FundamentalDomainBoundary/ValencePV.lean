@@ -122,11 +122,11 @@ analyticity and non-vanishing hypothesis applies to it. -/
 private theorem analyticAt_and_ne_zero_of_not_excised {g : ℂ → ℂ} {H : ℝ} {Sx : Finset ℂ}
     (hoffγ : ∀ t ∈ Icc (0 : ℝ) 5, fdBoundary H t ∉ Sx →
       AnalyticAt ℂ g (fdBoundary H t) ∧ g (fdBoundary H t) ≠ 0)
-    {ε t : ℝ} (hε : 0 < ε) (hex : ¬(∃ s ∈ Sx, ‖fdBoundary H t - s‖ ≤ ε))
+    {ε t : ℝ} (hε : 0 ≤ ε) (hex : ¬(∃ s ∈ Sx, ‖fdBoundary H t - s‖ ≤ ε))
     (ht : t ∈ Icc (0 : ℝ) 5) :
     AnalyticAt ℂ g (fdBoundary H t) ∧ g (fdBoundary H t) ≠ 0 := by
   refine hoffγ t ht fun hs => hex ?_
-  exact ⟨_, hs, by rw [sub_self, norm_zero]; exact hε.le⟩
+  exact ⟨_, hs, by rw [sub_self, norm_zero]; exact hε⟩
 
 /-- The boundary principal value from an eventual fixed-`ε` identity: once each small-`ε`
 excised boundary integral is `c` minus `w/2` times the excised arc integral, the arc limit
@@ -176,9 +176,9 @@ private theorem eventually_intervalIntegral_excised_eq [SlashInvariantFormClass 
   filter_upwards [eventually_forall_im_add_lt hHgt, self_mem_nhdsWithin] with ε hlt hε
   simpa only [smul_eq_mul, mul_comm] using
     intervalIntegral_excised_logDeriv_fdBoundary f hS hnorm hinv hlt hper
-      (fun t ht hex => (analyticAt_and_ne_zero_of_not_excised hoffγ hε hex
+      (fun t ht hex => (analyticAt_and_ne_zero_of_not_excised hoffγ (le_of_lt hε) hex
         ⟨by linarith [ht.1], by linarith [ht.2]⟩).1.differentiableAt)
-      (fun t ht hex => (analyticAt_and_ne_zero_of_not_excised hoffγ hε hex
+      (fun t ht hex => (analyticAt_and_ne_zero_of_not_excised hoffγ (le_of_lt hε) hex
         ⟨by linarith [ht.1], by linarith [ht.2]⟩).2)
       hga hgz
       (intervalIntegrable_excised_of_subset hε le_rfl (by norm_num) (by norm_num) hoffγ)
@@ -239,9 +239,9 @@ private theorem eventually_intervalIntegral_union_excised_eq [SlashInvariantForm
   simpa only [smul_eq_mul, mul_comm] using
     intervalIntegral_excised_logDeriv_fdBoundary_arcSingularSet_union_verticalSingularSet f hS
       hfar hlt hper
-      (fun t ht hex => (analyticAt_and_ne_zero_of_not_excised hoffγ hε hex
+      (fun t ht hex => (analyticAt_and_ne_zero_of_not_excised hoffγ (le_of_lt hε) hex
         ⟨by linarith [ht.1], by linarith [ht.2]⟩).1.differentiableAt)
-      (fun t ht hex => (analyticAt_and_ne_zero_of_not_excised hoffγ hε hex
+      (fun t ht hex => (analyticAt_and_ne_zero_of_not_excised hoffγ (le_of_lt hε) hex
         ⟨by linarith [ht.1], by linarith [ht.2]⟩).2)
       hga hgz
       (intervalIntegrable_excised_of_subset hε le_rfl (by norm_num) (by norm_num) hoffγ)

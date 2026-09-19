@@ -254,4 +254,22 @@ theorem exists_mem_Gamma0_upperTriRep_mul_of_mem_Gamma0 [NeZero p] (hpN : p ∣ 
   rw [Gamma0_mem.mp hγ]
   ring
 
+/-- **Conjugating an element of `Γ(N)` through `[1, 0; 0, p]` lands in `Γ₁(N)`**, for `p ∣ N`:
+`[1, 0; 0, p] · δ = ε · [1, 0; 0, p]` with `ε ∈ Γ₁(N)`. This is what lets a `Γ₁(N)`-invariant
+function absorb a change of the extra representative of the descent family
+(`Newforms/Descent/LevelCommute.lean`). -/
+theorem exists_mem_Gamma1_upperTriRep_mul_of_mem_Gamma [NeZero p] (hpN : p ∣ N) {δ : SL(2, ℤ)}
+    (hδ : δ ∈ Gamma N) :
+    ∃ ε ∈ Gamma1 N, upperTriRep p ⟨0, NeZero.pos p⟩ * mapGL ℚ δ =
+      mapGL ℚ ε * upperTriRep p ⟨0, NeZero.pos p⟩ := by
+  obtain ⟨h00, h01, -, -⟩ := Gamma_mem.mp (Gamma_le_Gamma_of_dvd hpN hδ)
+  obtain ⟨ε, hε, hdd, hmul⟩ :=
+    exists_mem_Gamma0_upperTriRep_mul_of_mem_Gamma0 hpN (Gamma_le_Gamma0 N hδ) ⟨0, NeZero.pos p⟩
+  have hshift : upperTriShift p δ ⟨0, NeZero.pos p⟩ = ⟨0, NeZero.pos p⟩ := by
+    rw [upperTriShift_eq_iff (by simp [h00])]
+    simp [h01]
+  refine ⟨ε, mem_Gamma1_iff.mpr ⟨hε, ?_⟩, ?_⟩
+  · rw [hdd, (Gamma_mem.mp hδ).2.2.2]
+  · rwa [hshift] at hmul
+
 end HeckeRing.GL2

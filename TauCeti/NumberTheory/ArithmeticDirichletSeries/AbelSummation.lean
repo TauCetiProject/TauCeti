@@ -31,6 +31,13 @@ so each boundary term is counted exactly once, as the roadmap's conventions tabl
   all have `N`-value at least `2`, where the boundary term at the cutoff `2` cancels.
 * `TauCeti.primeSummatory_mul_eq_sub_integral_mul`: that form for the height-one primes of a
   number field.
+* `TauCeti.integrableOn_mul_summatory`: a summatory function times an integrable factor is
+  integrable on a compact interval, so the integrals above are genuine.
+* `TauCeti.summatory_mul_le_of_summatory_le` and `TauCeti.tsum_mul_le_of_summatory_le`: for a
+  nonnegative nonincreasing `g` and a carrier whose indices all have `N`-value at least `a ≥ 0`,
+  an upper bound `C` on the partial sums of `w` gives the upper bound `C * g a` for the twisted
+  partial sums and series.  This is how an eventual comparison of
+  counting functions becomes a comparison of Dirichlet series uniform in `s`.
 * `TauCeti.primeTheta_eq_log_mul_primeCount_sub_integral` and
   `TauCeti.primeCount_eq_primeTheta_div_log_add_integral`: the two exact Abel identities relating
   the roadmap's weighted prime counts,
@@ -155,6 +162,66 @@ theorem summatory_mul_eq_sub_integral_mul_of_two_le (h2 : ∀ i, 2 ≤ N i) (w :
     have key := summatory_mul_eq_sub_sub_integral_mul N w (by norm_num) hb hg_diff hg_int
     rw [hcut] at key
     linear_combination key
+
+/-- A summatory function, multiplied by a factor integrable on a compact interval of nonnegative
+cutoffs, is integrable there. -/
+theorem integrableOn_mul_summatory (w : ι → 𝕜) {f : ℝ → 𝕜} {a b : ℝ} (ha : 0 ≤ a)
+    (hf : IntegrableOn f (Set.Icc a b)) :
+    IntegrableOn (fun t ↦ f t * summatory N w t) (Set.Icc a b) :=
+  (integrableOn_mul_sum_Icc (normFiberSum N w) ha hf).congr_fun
+    (fun t ht ↦ by rw [summatory_eq_sum_Icc_normFiberSum N w (ha.trans ht.1)]) measurableSet_Icc
+
+/-! ### One-sided bounds for twisted sums -/
+
+/-- **A one-sided Abel bound.**  Let every index have `N`-value at least the cutoff `a ≥ 0`, and
+let `g` be nonincreasing on `[a, x]` with `0 ≤ g x`.  If the summatory function of a real weight `w`
+is at most `C` at every cutoff in `[a, x]`, then the summatory function at `x` of the twisted weight
+`i ↦ w i * g (N i)` is at most `C * g a`.
+
+No sign condition is imposed on `w` or on `C`: only the partial sums of `w` are controlled. -/
+theorem summatory_mul_le_of_summatory_le {a : ℝ} (ha : 0 ≤ a) (hN : ∀ i, a ≤ N i) (w : ι → ℝ)
+    {g : ℝ → ℝ} {C x : ℝ} (hx : a ≤ x) (hC : ∀ t ∈ Set.Icc a x, summatory N w t ≤ C)
+    (hg_diff : ∀ t ∈ Set.Icc a x, DifferentiableAt ℝ g t)
+    (hg_int : IntegrableOn (deriv g) (Set.Icc a x))
+    (hg_deriv : ∀ t ∈ Set.Icc a x, deriv g t ≤ 0) (hg_nonneg : 0 ≤ g x) :
+    summatory N (fun i ↦ w i * g (N i)) x ≤ C * g a := by
+  have hcut : summatory N (fun i ↦ w i * g (N i)) a = g a * summatory N w a := by
+    rw [summatory_apply, summatory_apply, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    rw [le_antisymm ((mem_normLE N).mp hi) (hN i), mul_comm]
+  have key := summatory_mul_eq_sub_sub_integral_mul N w ha hx hg_diff hg_int
+  rw [hcut] at key
+  have hint : IntegrableOn (fun t ↦ deriv g t * summatory N w t) (Set.Ioc a x) :=
+    (integrableOn_mul_summatory N w ha hg_int).mono_set Set.Ioc_subset_Icc_self
+  have hmono : ∫ t in Set.Ioc a x, deriv g t * C ≤
+      ∫ t in Set.Ioc a x, deriv g t * summatory N w t :=
+    setIntegral_mono_on ((hg_int.mono_set Set.Ioc_subset_Icc_self).mul_const C) hint
+      measurableSet_Ioc fun t ht ↦ mul_le_mul_of_nonpos_left
+        (hC t (Set.Ioc_subset_Icc_self ht)) (hg_deriv t (Set.Ioc_subset_Icc_self ht))
+  have hftc : ∫ t in Set.Ioc a x, deriv g t = g x - g a := by
+    rw [← intervalIntegral.integral_of_le hx]
+    exact intervalIntegral.integral_deriv_eq_sub
+      (fun t ht ↦ hg_diff t (by rwa [Set.uIcc_of_le hx] at ht))
+      ((intervalIntegrable_iff_integrableOn_Icc_of_le hx).2 hg_int)
+  rw [integral_mul_const, hftc] at hmono
+  nlinarith [mul_le_mul_of_nonneg_left (hC x ⟨hx, le_rfl⟩) hg_nonneg]
+
+/-- **A one-sided Abel bound for the full series.**  Let every index have `N`-value at least the
+cutoff `a ≥ 0`.  If the summatory function of a real weight `w` is at most `C` at every cutoff
+`t ≥ a`, and `g` is nonnegative and nonincreasing on `[a, ∞)`, then the sum of the summable twisted
+family `i ↦ w i * g (N i)` is at most `C * g a`. -/
+theorem tsum_mul_le_of_summatory_le {a : ℝ} (ha : 0 ≤ a) (hN : ∀ i, a ≤ N i) (w : ι → ℝ)
+    {g : ℝ → ℝ} {C : ℝ} (hC : ∀ t, a ≤ t → summatory N w t ≤ C)
+    (hg_diff : ∀ t, a ≤ t → DifferentiableAt ℝ g t)
+    (hg_int : ∀ x, a ≤ x → IntegrableOn (deriv g) (Set.Icc a x))
+    (hg_deriv : ∀ t, a ≤ t → deriv g t ≤ 0) (hg_nonneg : ∀ t, a ≤ t → 0 ≤ g t)
+    (hsum : Summable fun i ↦ w i * g (N i)) :
+    ∑' i, w i * g (N i) ≤ C * g a := by
+  refine le_of_tendsto (hsum.hasSum.comp (tendsto_normLE_atTop N)) ?_
+  filter_upwards [Filter.eventually_ge_atTop a] with x hx
+  rw [Function.comp_apply, ← summatory_apply]
+  exact summatory_mul_le_of_summatory_le N ha hN w hx (fun t ht ↦ hC t ht.1)
+    (fun t ht ↦ hg_diff t ht.1) (hg_int x hx) (fun t ht ↦ hg_deriv t ht.1) (hg_nonneg x hx)
 
 /-! ### The prime carrier of a number field -/
 

@@ -385,6 +385,35 @@ theorem pinToOrthogonal_spinToPin (x : spinGroup Q) :
   rw [ι_pinToOrthogonal_apply, coe_spinToPin_apply, spinGroup.involute_eq x.2,
     coe_spinToOrthogonal_apply, ι_spinVectorAction_apply]
 
+/-- A Spin element represented by the product of two Clifford generators acts by the product of
+the corresponding orthogonal reflections. -/
+theorem spinToOrthogonal_eq_reflection_mul_reflection_of_coe_eq
+    (x : spinGroup Q) (v w : M) [Invertible (Q v)] [Invertible (Q w)]
+    (hx : (x : CliffordAlgebra Q) = ι Q v * ι Q w) :
+    spinToOrthogonal Q x =
+      QuadraticMap.reflectionOrthogonal Q v * QuadraticMap.reflectionOrthogonal Q w := by
+  let a : lipschitzGroup Q :=
+    ⟨unitι Q v * unitι Q w,
+      mul_mem (unitι_mem_lipschitzGroup v) (unitι_mem_lipschitzGroup w)⟩
+  have hpin : pinToLipschitz Q (spinToPin Q x) = a := by
+    apply Subtype.ext
+    apply Units.ext
+    simp only [coe_pinToLipschitz_apply, coe_spinToPin_apply, hx, a, Units.val_mul, coe_unitι]
+  have hmul : a =
+      (⟨unitι Q v, unitι_mem_lipschitzGroup v⟩ : lipschitzGroup Q) *
+        ⟨unitι Q w, unitι_mem_lipschitzGroup w⟩ := by
+    apply Subtype.ext
+    simp only [a, Subgroup.coe_mul]
+  have ha : lipschitzToOrthogonal Q a =
+      QuadraticMap.reflectionOrthogonal Q v * QuadraticMap.reflectionOrthogonal Q w := by
+    rw [hmul, map_mul, lipschitzToOrthogonal_unitι, lipschitzToOrthogonal_unitι]
+  apply Subtype.ext
+  apply LinearEquiv.ext
+  intro m
+  rw [← pinToOrthogonal_spinToPin, coe_pinToOrthogonal_apply, hpin]
+  exact (coe_lipschitzToOrthogonal_apply Q a m).symm.trans
+    (congrArg (fun y : QuadraticMap.orthogonalGroup Q => (y : M ≃ₗ[R] M) m) ha)
+
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   {Q : QuadraticForm R M}
 

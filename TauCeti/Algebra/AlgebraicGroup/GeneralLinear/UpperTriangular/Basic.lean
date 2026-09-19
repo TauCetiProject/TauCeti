@@ -421,7 +421,8 @@ private noncomputable def hopfIdealPointsSubgroupNatIso :
           GeneralLinear.coe_mapHopfIdealPointsSubgroup,
           UpperTriangularGroup.coe_map,
           hopfIdealPointsSubgroupMulEquiv,
-          MulEquiv.subgroupCongr_apply (hopfIdealPointsSubgroup_eq R n)]
+          MulEquiv.subgroupCongr_apply (hopfIdealPointsSubgroup_eq R n),
+          AlgHom.toRingHom_eq_coe]
       have h := congrArg
         (fun f ↦ eqToHom
             (GeneralLinear.hopfIdealPointsSubgroupFunctor_obj n
@@ -611,7 +612,7 @@ theorem pointsMulEquiv_rootSubgroupCoordinateMap (hij : i < j)
     apply WithConv.ext
     exact AlgHom.comp_id f.ofConv
   have hcoe_ring (x : AdditiveGroup.coordinateHopfAlgebra R) :
-      f.ofConv.toRingHom x = f.ofConv x :=
+      (f.ofConv : _ →+* _) x = f.ofConv x :=
     congrFun (AlgHom.coe_toRingHom f.ofConv) x
   apply (GeneralLinear.pointsMulEquiv (R := R) (A := A) n).injective
   rw [GeneralLinear.pointsMulEquiv_mapValue,

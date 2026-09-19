@@ -252,7 +252,7 @@ theorem rootIntMatrix_map_mul_self_eq_zero {A : Type*} [CommRing A]
   exact h2
 
 open TauCeti.UniversalEnvelopingAlgebra
-  (exists_map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul) in
+  (map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul) in
 private theorem rootCoordinateMap_symplectic (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     (GeneralLinear.genericMatrix ℤ ((n + 1) + (n + 1))).map
         (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator n)
@@ -268,8 +268,8 @@ private theorem rootCoordinateMap_symplectic (k : Fin (n + 1) ⊕ Fin (n + 1)) :
             (isNilpotent_rep_rootGenerator n k) (latticeBasis n)).hom.toAlgHom)ᵀ =
       (TauCeti.JFin (n + 1) ℤ).map
         (algebraMap ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) := by
-  obtain ⟨t, ht⟩ :=
-    exists_map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul
+  have ht :=
+    map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul
       (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
       (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
       (isNilpotent_rep_rootGenerator n k) (latticeBasis n) (rootIntMatrix n k)

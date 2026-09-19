@@ -73,11 +73,11 @@ reductivity, maximality of the weight torus, or any finiteness or simplicity sta
   normalizes the points of the carrier.
 * `TauCeti.DynkinType.schemePointsMulEquiv_geckGraphAut_comp_geckGroupSchemeι`: the automorphism on
   points is the map the carrier automorphism induces.
-* `TauCeti.DynkinType.geckGraphAutPoints_geckRootSubgroupMatrix` and
+* `TauCeti.DynkinType.geckGraphAutPoints_geckRootSubgroupPoints` and
   `TauCeti.DynkinType.geckGraphAutPoints_geckTorusMatrix`: the two pinning equations on points.
 * `TauCeti.DynkinType.geckGraphAutPoints_geckWeightTorusPoints`: the second of those equations
   read on the represented weight torus, which is the form a consumer of that homomorphism uses.
-* `TauCeti.DynkinType.geckPointsMap_comp_geckGraphAutPoints`: the automorphism on points is natural
+* `TauCeti.DynkinType.map_comp_geckGraphAutPoints`: the automorphism on points is natural
   in the value ring.
 * `TauCeti.DynkinType.geckGraphAutPoints_pow_eq_one` and
   `TauCeti.DynkinType.geckGraphAutPoints_one`: the order relation on points, and the identity
@@ -407,19 +407,16 @@ theorem schemePointsMulEquiv_geckGraphAut_comp_geckGroupSchemeι
 
 /-- **The graph automorphism renumbers the pinned root subgroups on points**, without changing
 their additive parameter. This is the equation which pins the graph automorphism, read on the
-points of the carrier. -/
+points of the carrier, on `TauCeti.DynkinType.geckRootSubgroupPoints`, the homomorphism through
+which a root subgroup enters the point group, as in
+`TauCeti.DynkinType.geckFrobenius_geckRootSubgroupPoints`. -/
 @[simp]
-theorem geckGraphAutPoints_geckRootSubgroupMatrix (hsigma : sigma ∈ t.diagramSymmetry)
+theorem geckGraphAutPoints_geckRootSubgroupPoints (hsigma : sigma ∈ t.diagramSymmetry)
     (A : Type v) [CommRing A] (i : Fin t.rank ⊕ Fin t.rank) (u : Multiplicative A) :
-    t.geckGraphAutPoints ht hsigma A
-        ⟨t.geckRootSubgroupMatrix ht i
-            ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u),
-          t.geckRootSubgroupMatrix_mem_geckPoints ht A i _⟩ =
-      ⟨t.geckRootSubgroupMatrix ht (diagramRootGeneratorPerm sigma i)
-          ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u),
-        t.geckRootSubgroupMatrix_mem_geckPoints ht A _ _⟩ :=
+    t.geckGraphAutPoints ht hsigma A (t.geckRootSubgroupPoints ht i A u) =
+      t.geckRootSubgroupPoints ht (diagramRootGeneratorPerm sigma i) A u :=
   Subtype.ext (by
-    rw [coe_geckGraphAutPoints]
+    rw [coe_geckGraphAutPoints, coe_geckRootSubgroupPoints, coe_geckRootSubgroupPoints]
     exact UniversalEnvelopingAlgebra.kostantNumberedSymmetryMatrix_conj_kostantRootSubgroupMatrix
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
       (t.geckCoordinateLattice ht).toAddSubgroup
@@ -490,17 +487,20 @@ theorem geckGraphAutPoints_geckWeightTorusPoints (hsigma : sigma ∈ t.diagramSy
 
 /-- **The graph automorphism on points is natural in the value ring.** In particular it commutes
 with the Frobenius endomorphism of the points of the carrier. -/
-theorem geckPointsMap_comp_geckGraphAutPoints (hsigma : sigma ∈ t.diagramSymmetry)
+theorem map_comp_geckGraphAutPoints (hsigma : sigma ∈ t.diagramSymmetry)
     {A : Type v} {B : Type v'} [CommRing A] [CommRing B] (f : A →+* B) :
-    (t.geckPointsMap ht f).comp (t.geckGraphAutPoints ht hsigma A).toMonoidHom =
-      (t.geckGraphAutPoints ht hsigma B).toMonoidHom.comp (t.geckPointsMap ht f) :=
+    ((t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht B) f).comp
+        (t.geckGraphAutPoints ht hsigma A).toMonoidHom =
+      (t.geckGraphAutPoints ht hsigma B).toMonoidHom.comp
+        ((t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht B) f) :=
   TauCeti.UniversalEnvelopingAlgebra.comp_kostantNumberedSymmetryPoints
     (t.geckCoordinateLattice ht).toAddSubgroup (t.geckCoordinateBasisFin ht)
     (t.geckDiagramModuleEquiv ht hsigma)
     (t.geckDiagramModuleEquiv_mem_geckCoordinateLattice_iff ht hsigma)
     (t.geckPoints ht A) (t.map_geckPoints_conj_geckGraphAutMatrix ht hsigma A)
     (t.geckPoints ht B) (t.map_geckPoints_conj_geckGraphAutMatrix ht hsigma B) f
-    (t.geckPointsMap ht f) (t.coe_geckPointsMap ht f)
+    ((t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht B) f)
+    ((t.geckPointsPresentation ht A).coe_map (t.geckPointsPresentation ht B) f)
 
 /-- **The order of the graph automorphism on points divides that of the diagram symmetry.** An
 involution of the numbered diagram therefore gives `γ ^ 2 = 1` on points, and the triality of `D₄`

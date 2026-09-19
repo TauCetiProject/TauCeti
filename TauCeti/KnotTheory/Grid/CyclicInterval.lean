@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Fin.Rev
 public import Mathlib.Data.Set.Finite.Basic
+public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Order.Circular.ZMod
 public import Mathlib.Order.Interval.Finset.Fin
 
@@ -34,6 +35,8 @@ directions before taking products.
 * `TauCeti.Grid.mem_cIoo_or_mem_cIoo_swap_iff`: a point lies in one opposite arc exactly when
   it is not an endpoint.
 * `TauCeti.Grid.cIoo_union_swap`: the two opposite arcs cover the endpoint complement.
+* `TauCeti.Grid.mem_cIoo_cyclic_left`, `TauCeti.Grid.mem_cIoo_cyclic_right`: the two rotations
+  of a cyclic order of three points.
 * `TauCeti.Grid.mem_cIoo_swap_of_notMem`: a point off both endpoints that misses one arc lies on
   the opposite arc.
 * `TauCeti.Grid.mem_cIoo_of_mem_cIoo_of_mem_cIoo_swap`: if `a` and `b` lie on opposite arcs from
@@ -43,6 +46,13 @@ directions before taking products.
 * `TauCeti.Grid.card_cIoo_add_card_cIoo_swap`: the two arc lengths add to `n - 2`.
 * `TauCeti.Grid.cIoo_image_rev`: reversing a clockwise open arc by `Fin.rev` gives the clockwise
   open arc with reversed, exchanged endpoints.
+* `TauCeti.Grid.mem_cIoo_finRotate_finRotate`, `TauCeti.Grid.mem_cIco_finRotate_finRotate`: the
+  cyclic permutation `finRotate n` preserves the open and half-open arcs.
+* `TauCeti.Grid.finRotate_ne_self`: on a cycle of length at least two, the cyclic successor has
+  no fixed point.
+* `TauCeti.Grid.cIoo_finRotate_eq_empty`, `TauCeti.Grid.cIco_eq_singleton_iff`: the arcs from a
+  point to its cyclic successor are empty and a single point, and these are the only one-point
+  half-open arcs.
 * `TauCeti.Grid.mem_cIco`: membership in the clockwise half-open arc.
 * `TauCeti.Grid.card_cIco`: the length of a half-open arc in standard representatives.
 * `TauCeti.Grid.cIco_union_swap`: opposite nondegenerate half-open arcs partition the grid.
@@ -462,6 +472,18 @@ theorem not_mem_cIoo_iff {a b x : Fin n} (h : a ≠ b) :
     · intro hxab
       exact not_mem_cIoo_and_cIoo_swap a b x ⟨hxab, hx⟩
 
+/-- Rotating a cyclic order: if `b` lies on the clockwise arc from `a` to `c`, then `c` lies on
+the clockwise arc from `b` to `a`. -/
+theorem mem_cIoo_cyclic_left {a b c : Fin n} (h : b ∈ cIoo a c) : c ∈ cIoo b a := by
+  simp only [cIoo, Set.Finite.mem_toFinset, Set.mem_cIoo] at h ⊢
+  exact sbtw_cyclic_left h
+
+/-- Rotating a cyclic order the other way: if `b` lies on the clockwise arc from `a` to `c`, then
+`a` lies on the clockwise arc from `c` to `b`. -/
+theorem mem_cIoo_cyclic_right {a b c : Fin n} (h : b ∈ cIoo a c) : a ∈ cIoo c b := by
+  simp only [cIoo, Set.Finite.mem_toFinset, Set.mem_cIoo] at h ⊢
+  exact sbtw_cyclic_right h
+
 /-- A point off both endpoints and outside one cyclic arc lies on the opposite arc. -/
 theorem mem_cIoo_swap_of_notMem {a b u : Fin n} (hab : a ≠ b)
     (hua : u ≠ a) (hub : u ≠ b) (hout : u ∉ cIoo a b) : u ∈ cIoo b a :=
@@ -577,6 +599,81 @@ theorem mem_cIoo_rev_rev (a b x : Fin n) :
     exact hy
   · intro hx
     exact ⟨x, hx, rfl⟩
+
+/-- The cyclic permutation `finRotate n` preserves and reflects membership in open cyclic
+intervals. -/
+theorem mem_cIoo_finRotate_finRotate (a b x : Fin n) :
+    finRotate n x ∈ cIoo (finRotate n a) (finRotate n b) ↔ x ∈ cIoo a b := by
+  cases n with
+  | zero => exact x.elim0
+  | succ n =>
+    rw [mem_cIoo, mem_cIoo, (finRotate _).injective.ne_iff]
+    simp only [coe_finRotate, Fin.ext_iff, Fin.val_last]
+    have := a.isLt; have := b.isLt; have := x.isLt
+    split_ifs <;> omega
+
+/-- The cyclic permutation `finRotate n` preserves and reflects membership in half-open cyclic
+intervals. -/
+theorem mem_cIco_finRotate_finRotate (a b x : Fin n) :
+    finRotate n x ∈ cIco (finRotate n a) (finRotate n b) ↔ x ∈ cIco a b := by
+  by_cases hab : a = b
+  · subst b
+    simp
+  · rw [cIco_of_ne ((finRotate n).injective.ne hab), cIco_of_ne hab,
+      Finset.mem_insert, Finset.mem_insert, (finRotate n).injective.eq_iff,
+      mem_cIoo_finRotate_finRotate]
+
+/-- On a cycle of length at least two, no point is fixed by the cyclic successor `finRotate n`. -/
+theorem finRotate_ne_self (hn : 1 < n) (a : Fin n) : finRotate n a ≠ a := by
+  cases n with
+  | zero => exact a.elim0
+  | succ n =>
+    rw [Ne, Fin.ext_iff, coe_finRotate]
+    have := a.isLt
+    split_ifs with h <;> simp only [Fin.ext_iff, Fin.val_last] at h <;> omega
+
+/-- The open cyclic interval from a point to its cyclic successor is empty. -/
+theorem cIoo_finRotate_eq_empty (a : Fin n) : cIoo a (finRotate n a) = ∅ := by
+  cases n with
+  | zero => exact a.elim0
+  | succ n =>
+    ext x
+    simp only [mem_cIoo, ne_eq, Finset.notMem_empty, iff_false, not_and]
+    intro _
+    have := a.isLt; have := x.isLt
+    rw [coe_finRotate]
+    split_ifs with h₁ h₂ <;> simp only [Fin.ext_iff, Fin.val_last] at h₁ <;> omega
+
+/-- A half-open cyclic interval is a single point exactly when that point is its initial endpoint
+and its terminal endpoint is the distinct cyclic successor of that point. -/
+theorem cIco_eq_singleton_iff {a b c : Fin n} :
+    cIco a b = {c} ↔ a = c ∧ b = finRotate n c ∧ a ≠ b := by
+  constructor
+  · intro h
+    have hab : a ≠ b := by
+      rintro rfl
+      simp at h
+    have hac : a = c := Finset.mem_singleton.mp (h ▸ left_mem_cIco hab)
+    subst c
+    refine ⟨rfl, ?_, hab⟩
+    have hcard := congrArg Finset.card h
+    simp only [card_cIco, Finset.card_singleton, hab, ↓reduceIte] at hcard
+    cases n with
+    | zero => exact a.elim0
+    | succ n =>
+      have := a.isLt; have := b.isLt
+      rw [Fin.ext_iff, coe_finRotate]
+      have hab' : a.val ≠ b.val := fun e => hab (Fin.ext e)
+      by_cases hlast : a = Fin.last n
+      · simp only [hlast, ↓reduceIte] at hcard ⊢
+        simp only [Fin.val_last] at hcard ⊢
+        split_ifs at hcard <;> omega
+      · simp only [hlast, ↓reduceIte]
+        rw [Fin.ext_iff, Fin.val_last] at hlast
+        split_ifs at hcard <;> omega
+  · rintro ⟨rfl, rfl, hab⟩
+    rw [cIco_of_ne hab, cIoo_finRotate_eq_empty]
+    rfl
 
 /-- Non-interleaving is preserved by reversing every endpoint with `Fin.rev`, with the cyclic
 orientation reversal accounted for by exchanging the two endpoints within each pair. -/

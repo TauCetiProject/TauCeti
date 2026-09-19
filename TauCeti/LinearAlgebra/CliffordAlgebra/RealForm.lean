@@ -25,7 +25,8 @@ sign vector `TauCeti.realCliffordWeight p q`. It is nondegenerate
 (`TauCeti.nondegenerate_realCliffordForm`), and its Clifford algebra has dimension `2 ^ (p + q)`
 (`TauCeti.finrank_cliffordAlgebra_realCliffordForm`).
 The compact form `realCliffordForm n 0` is positive definite
-(`TauCeti.posDef_realCliffordForm_zero`).
+(`TauCeti.posDef_realCliffordForm_zero`) and equals the standard sum-of-squares form
+(`TauCeti.realCliffordForm_zero_eq_weightedSumSquares_one`).
 Negating the form swaps the two signature indices through
 `TauCeti.realCliffordFormNegIsometry`; its coordinate action is given by
 `TauCeti.realCliffordFormNegIsometry_pos_of_neg` and
@@ -85,6 +86,8 @@ equivalences and their values, not their bare existence, that the Bott-periodici
 ## Main results
 
 * `TauCeti.nondegenerate_realCliffordForm`: the signature forms are nondegenerate.
+* `TauCeti.realCliffordForm_zero_eq_weightedSumSquares_one`: the compact signature form is the
+  standard real sum-of-squares form.
 * `TauCeti.finrank_cliffordAlgebra_realCliffordForm`:
   `finrank ℝ (CliffordAlgebra (realCliffordForm p q)) = 2 ^ (p + q)`.
 
@@ -141,6 +144,15 @@ theorem realCliffordWeight_ne_zero (p q : ℕ) (i : Fin (p + q)) :
 theorem realCliffordForm_apply (p q : ℕ) (v : Fin (p + q) → ℝ) :
     realCliffordForm p q v = ∑ i, realCliffordWeight p q i * (v i * v i) := by
   simp [realCliffordForm]
+
+/-- The positive-definite signature form is the standard real sum-of-squares form. -/
+theorem realCliffordForm_zero_eq_weightedSumSquares_one (n : ℕ) :
+    realCliffordForm n 0 = weightedSumSquares ℝ (1 : Fin n → ℝ) := by
+  ext x
+  simp only [realCliffordForm_apply, weightedSumSquares_apply, Pi.one_apply, one_smul]
+  apply Finset.sum_congr rfl
+  intro i _
+  rw [realCliffordWeight_of_lt (by omega), one_mul]
 
 /-- The signature forms are nondegenerate: the radical of a weighted sum of squares is spanned by
 the coordinates with weight zero, and every signature weight is `±1`. -/

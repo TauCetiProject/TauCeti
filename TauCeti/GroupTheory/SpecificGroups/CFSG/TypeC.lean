@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Frobenius
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.RootDatum
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Closure
+public import TauCeti.GroupTheory.FixedPointCandidate
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Frobenius
 
 /-!
-# The standard symplectic carrier of a validated type-`C` index
+# The standard symplectic carrier and the candidate group of a validated type-`C` index
 
 The type-`C` branch of the classification list is built on the type-`C` diagram of rank `n`, and
 Tau Ceti's explicit full-weight Chevalley carrier for that diagram is `TauCeti.SpStd.groupScheme`,
@@ -17,6 +19,13 @@ the Kostant toral closure of the standard representation of `sp_(2n)` inside `GL
 This file attaches that carrier to a validated type-`C` index: the group of algebraic-closure-valued
 points of the carrier at the index's rank, its Bourbaki-numbered simple root subgroups, and the
 reading of their root characters in the type-`C` root datum the index names.
+
+The carrier also has a `q`-power Frobenius, where `q` is the field order recorded by the index: the
+endomorphism of its point group raising every matrix entry to the `q`-th power. This file records
+that entrywise action, the equations it satisfies on the numbered simple-root subgroups and on the
+split weight torus, where it raises the subgroup parameter and every torus coordinate to the `q`-th
+power, and the description of its fixed points as the carrier points all of whose matrix entries lie
+in the field of `q` elements inside the closure.
 
 The carrier is indexed by `n` in the spelling `C (n + 1)`, so a validated index of rank `r` uses
 the carrier at `TauCeti.TypeCLieIndex.carrierRank`, which is `r - 1`. That subtraction is harmless
@@ -35,9 +44,21 @@ validated type-`C` index has rank at least three. The rank-two carrier serves th
 instead, in `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two.lean`, where the node correspondence
 acquires the swap of the two Bourbaki nodes.
 
+The family is untwisted, so its Steinberg endomorphism is that Frobenius outright:
+`TauCeti.TypeCLieIndex.diagramPerm_eq_one` records that the diagram permutation attached to the
+index is trivial, and `TauCeti.TypeCLieIndex.steinberg` is the Frobenius read as the Steinberg map.
+The candidate group of the family is then the derived subgroup of the Steinberg fixed points modulo
+the centre of that derived subgroup,
+
+```text
+H_d = fixedSubgroup d.steinberg,        d.Group = [H_d, H_d] / Z([H_d, H_d]).
+```
+
 Nothing here asserts that the carrier is reductive, that its weight torus is maximal, that it is
 the symplectic group scheme or the pinned simply connected Chevalley--Demazure group scheme of type
-`Cₙ`, or that its point group is finite.
+`Cₙ`, or that its point group or any group formed from it is finite, perfect, or simple. The
+Steinberg endomorphism and the candidate group transfer to that pinned group scheme only along an
+identification of the carrier with it, once one is proved.
 
 ## Main declarations
 
@@ -47,10 +68,24 @@ the symplectic group scheme or the pinned simply connected Chevalley--Demazure g
   Bourbaki-numbered node, with
   `TauCeti.TypeCLieIndex.rootGeneratorWeight_carrierNode_eq_root_simpleIndex` identifying the
   character of that subgroup with the corresponding simple root of the type-`C` root datum.
+* `TauCeti.TypeCLieIndex.frobenius`: the carrier's `q`-power Frobenius, with
+  `TauCeti.TypeCLieIndex.frobenius_simpleRootSubgroup` and
+  `TauCeti.TypeCLieIndex.frobenius_weightTorusPoints` recording its action on the numbered
+  simple-root subgroups and split weight torus.
+* `TauCeti.TypeCLieIndex.mem_fixedSubgroup_frobenius_iff`: its fixed points are the carrier points
+  whose matrix entries all lie in the field of `q` elements inside the closure.
+* `TauCeti.TypeCLieIndex.steinberg`, `TauCeti.TypeCLieIndex.steinberg_simpleRootSubgroup` and
+  `TauCeti.TypeCLieIndex.mem_fixedSubgroup_steinberg_iff`: the Steinberg endomorphism of the
+  untwisted family, its simple-root-subgroup action formula, and the description of the group it
+  fixes.
+* `TauCeti.TypeCLieIndex.FixedPoints` and `TauCeti.TypeCLieIndex.Group`: that fixed group and the
+  candidate group of `Cₙ(q)`, its derived central quotient.
 
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 11.3.
+* R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17, for
+  the entrywise Frobenius action.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate III, for the numbering of the
   type-`C` diagram that the root subgroups below are indexed by.
 -/
@@ -151,6 +186,130 @@ theorem rootGeneratorWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.1.rank)
   rw [SpStd.rootGeneratorWeight_inl]
   simp only [DynkinType.root_simpleIndex]
   rw [d.dynkinType_cartanMatrix_apply, d.cartanMatrix_C_carrierNode]
+
+-- The Frobenius API and proof plan below are adapted from the
+-- `TauCeti.RankTwoBLieIndex.frobenius` block in
+-- `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB2.lean`.
+/-! ## Frobenius on the carrier -/
+
+/-- **The `q`-power Frobenius of the standard symplectic carrier attached to a validated type-`C`
+index**, where `q` is the field order recorded by the index. It is the endomorphism of the point
+group raising every matrix entry to the `q`-th power. -/
+def frobenius : d.AmbientGroup →* d.AmbientGroup :=
+  SpStd.frobenius d.carrierRank d.1.characteristic d.1.fieldExponent d.1.Closure
+
+/-- The Frobenius is the standard carrier's Frobenius at the characteristic and field exponent
+recorded by the index. -/
+theorem frobenius_def :
+    d.frobenius =
+      SpStd.frobenius d.carrierRank d.1.characteristic d.1.fieldExponent d.1.Closure :=
+  (rfl)
+
+/-- The Frobenius raises every matrix entry to the field order recorded by the index. -/
+@[simp]
+theorem coe_frobenius_apply (g : d.AmbientGroup)
+    (r c : Fin (d.carrierRank + 1 + (d.carrierRank + 1))) :
+    ((d.frobenius g : Matrix.GeneralLinearGroup
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) :
+        Matrix (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) :
+        Matrix (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) r c ^ d.1.fieldOrder := by
+  rw [frobenius_def, d.1.fieldOrder_eq_characteristic_pow]
+  exact SpStd.coe_frobenius_apply d.carrierRank _ _ _ g r c
+
+/-- **The Frobenius fixes the numbering of a simple-root subgroup and raises its parameter to the
+`q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. -/
+@[simp]
+theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    d.frobenius (d.simpleRootSubgroup i u) =
+      d.simpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+  rw [frobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints,
+    ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
+/-- **The Frobenius raises every coordinate of the split weight torus to the `q`-th power.** -/
+@[simp]
+theorem frobenius_weightTorusPoints
+    (s : Fin (d.carrierRank + 1) → d.1.Closureˣ) :
+    d.frobenius (SpStd.weightTorusPoints d.carrierRank d.1.Closure s) =
+      SpStd.weightTorusPoints d.carrierRank d.1.Closure (s ^ d.1.fieldOrder) := by
+  rw [frobenius_def, SpStd.frobenius_weightTorusPoints,
+    ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
+/-- **A point of the ambient group is fixed by the Frobenius exactly when all of its matrix entries
+lie in the field of definition.** Writing `𝔽_q` for `TauCeti.ValidLieTypeIndex.fixedField`, the copy
+of the field of `q` elements inside the algebraic closure, the fixed points of the Frobenius are the
+points of the standard symplectic carrier whose entries all lie in `𝔽_q`. -/
+-- Not `@[simp]`, as for `TauCeti.RankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff`:
+-- `TauCeti.fixedSubgroup` is `MonoidHom.eqLocus` against the identity, so `simp` rewrites its
+-- left-hand side to `d.frobenius g = g` through `MonoidHom.mem_eqLocus`, and the `simpNF` linter
+-- rejects the annotation.
+theorem mem_fixedSubgroup_frobenius_iff (g : d.AmbientGroup) :
+    g ∈ fixedSubgroup d.frobenius ↔
+      ∀ r c, ((g : Matrix.GeneralLinearGroup
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) :
+        Matrix (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) r c ∈ d.1.fixedField := by
+  rw [mem_fixedSubgroup, frobenius_def, SpStd.frobenius_eq_self_iff]
+  simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
+    d.1.fieldOrder_eq_characteristic_pow]
+
+/-! ## The Steinberg endomorphism -/
+
+/-- **The Steinberg endomorphism of a validated type-`C` index**: the `q`-power Frobenius of the
+ambient group, `q` being the field order the index records. The family is untwisted, so no diagram
+automorphism and no half-Frobenius enters; `TauCeti.TypeCLieIndex.diagramPerm_eq_one` records that
+the diagram permutation attached to the index is trivial.
+
+It is formed on the standard symplectic carrier, which is not identified with the pinned simply
+connected group scheme of type `Cₙ`; it transfers to that pinned group only along such an
+identification, and not before. -/
+def steinberg : d.AmbientGroup →* d.AmbientGroup := d.frobenius
+
+/-- The Steinberg map of a type-`C` index equals the carrier's Frobenius. -/
+theorem steinberg_def : d.steinberg = d.frobenius := (rfl)
+
+/-- **The Steinberg map fixes the numbering of a simple-root subgroup and raises its parameter to
+the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`, the simple-root-subgroup action
+formula of an untwisted Steinberg endomorphism. -/
+@[simp]
+theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.steinberg (d.simpleRootSubgroup i u) =
+      d.simpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+  rw [steinberg_def]
+  exact d.frobenius_simpleRootSubgroup i u
+
+/-- **A point of the ambient group is fixed by the Steinberg map exactly when all of its matrix
+entries lie in the field of definition**, so the fixed group `H_d` of the family is the group of
+points of the standard symplectic carrier whose entries lie in `𝔽_q`. Like
+`mem_fixedSubgroup_frobenius_iff`, it is not a `simp` lemma. -/
+theorem mem_fixedSubgroup_steinberg_iff (g : d.AmbientGroup) :
+    g ∈ fixedSubgroup d.steinberg ↔
+      ∀ r c, ((g : Matrix.GeneralLinearGroup
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) :
+        Matrix (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) r c ∈ d.1.fixedField := by
+  rw [steinberg_def]
+  exact d.mem_fixedSubgroup_frobenius_iff g
+
+/-! ## The finite-group candidate -/
+
+/-- The fixed subgroup of the Steinberg endomorphism attached to a type-`C` index. -/
+abbrev FixedPoints : Type := ↥(fixedSubgroup d.steinberg)
+
+/-- **The finite-simple-group candidate attached to a type-`C` index**: the derived subgroup of
+the Steinberg fixed points, modulo the centre of that derived subgroup. No finiteness or
+simplicity assertion is part of this definition, nor any identification of the standard symplectic
+carrier with the pinned simply connected group scheme of type `Cₙ`. -/
+abbrev Group : Type := FixedPointCandidate d.steinberg
+
+/-- The candidate carries a group structure; the quotient construction supplies it. -/
+example : _root_.Group d.Group := inferInstance
 
 end
 

@@ -49,7 +49,8 @@ on the empty diagram both hold, and there `Sₙ` is trivial and so are both char
 states them, as the action formula together with the dimension: a line on which `σ` acts by `1`
 resp. by `sgn σ`.  No isomorphism with a separately constructed model object is built here.  The
 third named small irreducible, the standard representation `S^{(n-1,1)}`, is not treated here
-either; it is not a line and needs the tabloid combinatorics of the two-row shape.
+either; it is not a line and needs the tabloid combinatorics of the two-row shape, which is
+`TauCeti.RepresentationTheory.Symmetric.Specht.SingletonSecondRow`.
 
 ## Main results
 

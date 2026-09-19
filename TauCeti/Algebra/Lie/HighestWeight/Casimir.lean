@@ -57,6 +57,10 @@ submodule by centrality and it contains the generator.
 * `TauCeti.casimirScalar_eq_add_sum`: the scalar expanded as
   `⟨λ, λ⟩ + ∑_{α > 0} ⟨λ, α⟩`, the shape in which its sign is read off.
 * `TauCeti.casimirScalar_zero`: the scalar of the zero weight is `0`.
+* `TauCeti.casimirScalar_sub_casimirScalar`: the difference of two scalars,
+  `c(λ) - c(μ) = (⟨λ, λ⟩ - ⟨μ, μ⟩) + ⟨2ρ, λ - μ⟩`.
+* `TauCeti.casimirScalar_add_sub_casimirScalar`: the scalar along a translation,
+  `c(χ + σ) - c(χ) = 2⟨χ + σ, σ⟩ - c(-σ)`.
 
 ## Implementation notes
 
@@ -305,6 +309,32 @@ theorem casimirScalar_eq_add_sum :
   simp only [map_add, LinearMap.add_apply]
   rw [hsymm, hsum]
   ring
+
+/-- **The difference of two Casimir scalars**, split into a quadratic part and a root part:
+`c(lam) - c(mu) = (⟨lam, lam⟩ - ⟨mu, mu⟩) + ⟨2ρ, lam - mu⟩`. -/
+theorem casimirScalar_sub_casimirScalar (mu : Module.Dual K H) :
+    casimirScalar base lam - casimirScalar base mu =
+      (invForm lam lam - invForm mu mu) +
+        invForm (twoWeylVector (IsKilling.rootSystem H) base) (lam - mu) := by
+  have hsum : ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) base,
+      (invForm lam ((IsKilling.rootSystem H).root i) -
+        invForm mu ((IsKilling.rootSystem H).root i)) =
+      invForm (twoWeylVector (IsKilling.rootSystem H) base) (lam - mu) := by
+    rw [(invForm_isSymm (H := H)).eq (twoWeylVector (IsKilling.rootSystem H) base) (lam - mu),
+      twoWeylVector_def, map_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ by rw [map_sub, LinearMap.sub_apply]
+  rw [casimirScalar_eq_add_sum (lam := lam), casimirScalar_eq_add_sum (lam := mu), ← hsum,
+    Finset.sum_sub_distrib]
+  ring
+
+/-- **The Casimir scalar along a translation**:
+`c(χ + σ) - c(χ) = 2⟨χ + σ, σ⟩ - c(-σ)`. -/
+theorem casimirScalar_add_sub_casimirScalar (chi sigma : Module.Dual K H) :
+    casimirScalar base (chi + sigma) - casimirScalar base chi =
+      2 * invForm (chi + sigma) sigma - casimirScalar base (-sigma) := by
+  have h1 := (invForm_isSymm (H := H)).eq chi sigma
+  simp only [casimirScalar_def, map_add, map_neg, LinearMap.add_apply, LinearMap.neg_apply]
+  linear_combination -h1
 
 /-- **The Casimir eigenvalue on a highest weight vector.** The Casimir element sends a highest
 weight vector of weight `lam` to `casimirScalar base lam • v`. -/

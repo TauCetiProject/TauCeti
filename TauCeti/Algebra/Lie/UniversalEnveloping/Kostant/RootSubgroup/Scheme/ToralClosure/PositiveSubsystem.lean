@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.UpperTriangular
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.PositiveSubsystem
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Subsystem
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Subsystem.Basic
 
 /-!
 # Positive Kostant subsystem schemes are upper triangular

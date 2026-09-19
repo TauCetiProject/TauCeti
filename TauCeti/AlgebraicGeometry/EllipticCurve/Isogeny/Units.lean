@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Factorisation
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Basic
 
 /-!
 # The units of the endomorphism monoid

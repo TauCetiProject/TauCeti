@@ -75,8 +75,7 @@ transported along the function-field pullback of the inner isogeny. -/
 theorem tautologicalPoint_comp (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W₂) :
     (ψ.comp φ).pullback.tautologicalPoint =
       Point.map φ.fieldPullback ψ.pullback.tautologicalPoint := by
-  rw [tautologicalPoint_eq_map_genericPoint, tautologicalPoint_eq_map_genericPoint,
-    comp_fieldPullback, Point.map_map]
+  rw [comp_pullback, CoordinatePullback.tautologicalPoint_comp]
 
 end Isogeny
 

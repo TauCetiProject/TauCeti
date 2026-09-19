@@ -30,7 +30,12 @@ identity rather than merely lower-triangular.
 * `TauCeti.descendMatrixCount`: the size of the family, `p` when `p² ∣ N` and `p + 1` otherwise.
 * `TauCeti.descendExtraGamma`: the extra matrix, with the junk value `1` outside the hypotheses
   that make the choice.
-* `TauCeti.descendMatrix`: the family itself, indexed by `Fin (descendMatrixCount p N)`.
+* `TauCeti.descendMatrixRat`: the family before the embedding into `GL₂(ℝ)`, indexed by
+  `Fin (descendMatrixCount p N)`.
+* `TauCeti.descendMatrix`: the family itself, the image of `descendMatrixRat` in `GL₂(ℝ)`
+  (`descendMatrix_eq_map`); `descendMatrixRat_of_lt`/`descendMatrixRat_of_le` and
+  `descendMatrix_of_lt`/`descendMatrix_of_le` describe the members, and `descendMatrixRat_det`/
+  `descendMatrix_det` their determinant.
 
 ## Main results
 
@@ -46,6 +51,8 @@ identity rather than merely lower-triangular.
 * `TauCeti.descendMatrix_of_lt` and `TauCeti.descendMatrix_of_le`: the two branches of the
   family, as equations in `GL₂(ℝ)`.
 * `TauCeti.descendMatrix_det`: every member of the family has determinant `p`.
+* `TauCeti.descendMatrix_det_pos`: that determinant is positive, which is what the slash action
+  needs to pull a scalar through a member of the family.
 
 ## Scope
 
@@ -160,26 +167,54 @@ theorem descendExtraGamma_eq_one_of_not {p N : ℕ} (h : ¬ (p.Prime ∧ p ∣ N
     descendExtraGamma p N = 1 := by
   simp [descendExtraGamma, h]
 
-/-- **The descent family at `p`** (Miyake, Lemma 4.5.11). The `p` upper-triangular matrices
-`[1, v; 0, p]` for `v < p`, together with — when `p²` does not divide `N`, so that
-`descendMatrixCount` is `p + 1` — the further matrix `[1, 0; 0, p] * descendExtraGamma p N`.
-
-Over `ℚ` the upper-triangular part is `HeckeRing.GL2.upperTriRep`, this repository's `T_p`
-representative family; the descent family is its image in `GL₂(ℝ)`, where the slash action of a
-modular form lives.
+/-- **The descent family at `p`, over `ℚ`** (Miyake, Lemma 4.5.11): a family in `GL₂(ℚ)` made of
+the `p` upper-triangular matrices `upperTriRep p v = [1, v; 0, p]` for `v < p` — this
+repository's `T_p` representative family — together with, when `p²` does not divide `N`, so
+that `descendMatrixCount` is `p + 1`, the further matrix `[1, 0; 0, p] * mapGL ℚ γ_p`, where
+`γ_p = descendExtraGamma p N` is embedded into `GL₂(ℚ)` by `mapGL ℚ`.
 
 Neither `p ∣ N` nor primality of `p` is required: the construction uses only `p ≠ 0`, to name the
 zero index of `Fin p`. Those two hypotheses are what make the family the *descent* family at a
 prime — without `p ∣ N` the matrix `descendExtraGamma p N` is `1` and the extra member degenerates
 to `[1, 0; 0, p]`, which the first branch already lists at `v = 0` — so they belong on the later
 results that establish descent, not on the family itself. -/
+noncomputable def descendMatrixRat (p N : ℕ) [NeZero p] :
+    Fin (descendMatrixCount p N) → GL (Fin 2) ℚ := fun v ↦
+  if h : v.val < p then upperTriRep p ⟨v.val, h⟩
+  else upperTriRep p ⟨0, NeZero.pos p⟩ * Matrix.SpecialLinearGroup.mapGL ℚ (descendExtraGamma p N)
+
+/-- **The descent family**, the image of `descendMatrixRat p N` in `GL₂(ℝ)`, where the slash
+action of a modular form lives. -/
 noncomputable def descendMatrix (p N : ℕ) [NeZero p] :
     Fin (descendMatrixCount p N) → GL (Fin 2) ℝ := fun v ↦
-  if h : v.val < p then
-    Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (upperTriRep p ⟨v.val, h⟩)
-  else
-    Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (upperTriRep p ⟨0, NeZero.pos p⟩) *
-      Matrix.SpecialLinearGroup.mapGL ℝ (descendExtraGamma p N)
+  Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (descendMatrixRat p N v)
+
+/-- The descent family is the image of the rational descent family. -/
+theorem descendMatrix_eq_map (p N : ℕ) [NeZero p] (v : Fin (descendMatrixCount p N)) :
+    descendMatrix p N v = Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (descendMatrixRat p N v) :=
+  (rfl)
+
+/-- The members of the rational descent family below index `p` are the upper-triangular
+matrices `[1, v; 0, p]`. -/
+@[simp]
+theorem descendMatrixRat_of_lt {p N : ℕ} [NeZero p]
+    {v : Fin (descendMatrixCount p N)} (h : v.val < p) :
+    descendMatrixRat p N v = upperTriRep p ⟨v.val, h⟩ := by
+  rw [descendMatrixRat]
+  split_ifs
+  rfl
+
+/-- The member of the rational descent family at index `p`, present exactly when `p²` does not
+divide `N`, is `[1, 0; 0, p]` times the extra matrix. -/
+@[simp]
+theorem descendMatrixRat_of_le {p N : ℕ} [NeZero p]
+    {v : Fin (descendMatrixCount p N)} (h : p ≤ v.val) :
+    descendMatrixRat p N v = upperTriRep p ⟨0, NeZero.pos p⟩ *
+      Matrix.SpecialLinearGroup.mapGL ℚ (descendExtraGamma p N) := by
+  rw [descendMatrixRat]
+  split_ifs with h'
+  · exact absurd h' (Nat.not_lt.mpr h)
+  · rfl
 
 /-- The members of the descent family below index `p` are the upper-triangular matrices
 `[1, v; 0, p]`. -/
@@ -188,9 +223,7 @@ theorem descendMatrix_of_lt {p N : ℕ} [NeZero p]
     {v : Fin (descendMatrixCount p N)} (h : v.val < p) :
     descendMatrix p N v =
       Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (upperTriRep p ⟨v.val, h⟩) := by
-  rw [descendMatrix]
-  split_ifs
-  rfl
+  rw [descendMatrix_eq_map, descendMatrixRat_of_lt h]
 
 /-- The member of the descent family at index `p`, present exactly when `p²` does not divide `N`,
 is `[1, 0; 0, p]` times the extra matrix. -/
@@ -200,27 +233,38 @@ theorem descendMatrix_of_le {p N : ℕ} [NeZero p]
     descendMatrix p N v =
       Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (upperTriRep p ⟨0, NeZero.pos p⟩) *
         Matrix.SpecialLinearGroup.mapGL ℝ (descendExtraGamma p N) := by
-  rw [descendMatrix]
-  split_ifs with h'
-  · exact absurd h' (Nat.not_lt.mpr h)
-  · rfl
+  rw [descendMatrix_eq_map, descendMatrixRat_of_le h, map_mul, Matrix.SpecialLinearGroup.map_mapGL]
 
-/-- **Every member of the descent family has determinant `p`.** Every element of the double coset
-`Γ₀(N) diag(1, p) Γ₀(N)` that the descent sum runs over has determinant `p`, so this is a
-necessary condition for lying in it, not a characterisation of it; that these matrices lie in the
-double coset is not proved here. -/
+/-- **Every member of the rational descent family has determinant `p`.** Every element of the
+double coset `Γ₀(N) diag(1, p) Γ₀(N)` that the descent sum runs over has determinant `p`, so this
+is a necessary condition for lying in it, not a characterisation of it; that these matrices lie
+in the double coset is not proved here. -/
 @[simp]
-theorem descendMatrix_det (p N : ℕ) [NeZero p]
-    (v : Fin (descendMatrixCount p N)) :
-    (descendMatrix p N v : Matrix (Fin 2) (Fin 2) ℝ).det = (p : ℝ) := by
-  have hγ : (Matrix.SpecialLinearGroup.mapGL ℝ (descendExtraGamma p N) :
-      Matrix (Fin 2) (Fin 2) ℝ).det = 1 := by
+theorem descendMatrixRat_det (p N : ℕ) [NeZero p] (v : Fin (descendMatrixCount p N)) :
+    (descendMatrixRat p N v : Matrix (Fin 2) (Fin 2) ℚ).det = (p : ℚ) := by
+  have hγ : (Matrix.SpecialLinearGroup.mapGL ℚ (descendExtraGamma p N) :
+      Matrix (Fin 2) (Fin 2) ℚ).det = 1 := by
     rw [← Matrix.GeneralLinearGroup.val_det_apply, Matrix.SpecialLinearGroup.det_mapGL,
       Units.val_one]
-  rw [descendMatrix]
+  rw [descendMatrixRat]
   split_ifs
   · simp [Matrix.det_fin_two]
   · rw [Matrix.GeneralLinearGroup.coe_mul, Matrix.det_mul, hγ, mul_one]
     simp [Matrix.det_fin_two]
+
+/-- **Every member of the descent family has determinant `p`**: the image under `algebraMap ℚ ℝ`
+of `descendMatrixRat_det`. -/
+@[simp]
+theorem descendMatrix_det (p N : ℕ) [NeZero p]
+    (v : Fin (descendMatrixCount p N)) :
+    (descendMatrix p N v : Matrix (Fin 2) (Fin 2) ℝ).det = (p : ℝ) := by
+  rw [descendMatrix_eq_map, Matrix.GeneralLinearGroup.val_map_apply, ← RingHom.mapMatrix_apply,
+    ← RingHom.map_det, descendMatrixRat_det, map_natCast]
+
+/-- Every member of the descent family has positive determinant, namely `p`. -/
+theorem descendMatrix_det_pos (p N : ℕ) [NeZero p] (v : Fin (descendMatrixCount p N)) :
+    0 < (descendMatrix p N v : Matrix (Fin 2) (Fin 2) ℝ).det := by
+  rw [descendMatrix_det]
+  exact_mod_cast NeZero.pos p
 
 end TauCeti

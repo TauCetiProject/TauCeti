@@ -19,7 +19,7 @@ This file defines the corresponding averaging operator on `Lᵖ` by the Bochner 
 as a continuous linear map of norm at most one, and proves that these operators converge strongly
 to the identity when the outer radii of the bumps tend to zero.  The result holds for `1 ≤ p < ∞`,
 for functions with values in an arbitrary real Banach space, and for every additive Haar measure
-on a finite-dimensional real normed space.
+on a proper real normed space.
 
 The integral is taken directly in `Lᵖ`.  This avoids choosing pointwise representatives: translation
 is continuous in `Lᵖ`, so the average is a Bochner integral of a continuous compactly supported
@@ -56,8 +56,10 @@ open ContinuousLinearMap Filter MeasureTheory Metric Set
 open scoped Convolution ENNReal
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [BorelSpace E] [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [BorelSpace E] [ProperSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal} [Fact (1 ≤ p)]
+
+local instance : FiniteDimensional ℝ E := .of_locallyCompactSpace ℝ
 
 /-- The average of an `Lᵖ` class against the normalized form of a smooth bump centred at zero,
 before it is bundled as a continuous linear map by `TauCeti.normedBumpLp`. -/

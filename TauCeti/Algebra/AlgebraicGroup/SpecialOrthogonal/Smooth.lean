@@ -73,8 +73,9 @@ private instance instFormallySmoothCoordinateHopfAlgebra [Invertible (2 : R)] :
   have hg : pointsMulEquiv R n (A := B) g = t :=
     (pointsMulEquiv R n (A := B)).apply_symm_apply t
   rw [hg]
-  have hq : (Ideal.Quotient.mkₐ R I).toRingHom = Ideal.Quotient.mk I :=
-    Ideal.Quotient.mkₐ_toRingHom (R₁ := R) I
+  have hq : ((Ideal.Quotient.mkₐ R I : B →ₐ[R] B ⧸ I) : B →+* B ⧸ I) = Ideal.Quotient.mk I := by
+    rw [← AlgHom.toRingHom_eq_coe]
+    exact Ideal.Quotient.mkₐ_toRingHom (R₁ := R) I
   rw [hq]
   exact ht
 

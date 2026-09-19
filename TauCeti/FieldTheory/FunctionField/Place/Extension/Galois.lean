@@ -45,6 +45,7 @@ decomposition group, and is identified with Mathlib's `ValuationSubring.decompos
 
 * `TauCeti.Place.restrictScalars_smul`: the automorphisms of `F'` over an intermediate field of
   `F' / F` act on the places of `F' / k` through the action of the automorphisms over `F`.
+* `TauCeti.Place.degree_smul`: the action preserves the degree of a place over the constants.
 * `TauCeti.Place.restrict_smul`, `TauCeti.Place.ramificationIdx_smul` and
   `TauCeti.Place.relativeDegree_smul`: the action preserves the fibres of
   `TauCeti.Place.restrict` and the two invariants attached to a place of a fibre.
@@ -148,6 +149,30 @@ theorem stabilizer_eq_decompositionSubgroup :
   rw [MulAction.mem_stabilizer_iff, MulAction.mem_stabilizer_iff, ← integers_smul]
   exact ⟨fun h ↦ by rw [h], fun h ↦ integers_injective h⟩
 
+section Transport
+
+variable (F) (g : P.integers.decompositionSubgroup F)
+
+/-- An automorphism fixing `P` leaves the valuation at `P` unchanged. -/
+@[simp]
+theorem valuation_decompositionSubgroup_apply (x : F') :
+    P.valuation ((g : F' ≃ₐ[F] F') x) = P.valuation x := by
+  have h : (g : F' ≃ₐ[F] F') • P = P := by
+    have hg : (g : F' ≃ₐ[F] F') ∈ MulAction.stabilizer (F' ≃ₐ[F] F') P := by
+      rw [stabilizer_eq_decompositionSubgroup]
+      exact g.2
+    exact hg
+  calc P.valuation ((g : F' ≃ₐ[F] F') x)
+      = ((g : F' ≃ₐ[F] F') • P).valuation ((g : F' ≃ₐ[F] F') x) := by rw [h]
+    _ = P.valuation x := valuation_smul_apply _ _ _
+
+/-- An automorphism fixing `P` preserves the valuation ring of `P`. -/
+theorem mem_integers_decompositionSubgroup_apply {x : F'} :
+    (g : F' ≃ₐ[F] F') x ∈ P.integers ↔ x ∈ P.integers := by
+  simp only [mem_integers_iff, valuation_decompositionSubgroup_apply]
+
+end Transport
+
 /-- Two equal places have the same valuation ring; the isomorphism between the two carriers is
 the identity on representatives. -/
 private def integersEquivOfEq {P Q : Place k F} (h : P = Q) : P.integers ≃+* Q.integers where
@@ -175,6 +200,23 @@ private def integersEquivSmul : (σ • P).integers ≃+* P.integers where
 @[simp]
 private theorem coe_integersEquivSmul (x : (σ • P).integers) :
     ((integersEquivSmul σ P x : P.integers) : F') = σ.symm (x : F') := rfl
+
+/-- **The action preserves the degree of a place**: `σ⁻¹` carries the valuation ring of `σ • P`
+onto that of `P` and fixes the constants, so it identifies the two residue fields as
+`k`-algebras. -/
+@[simp]
+theorem degree_smul : (σ • P).degree = P.degree := by
+  rw [degree_eq_finrank, degree_eq_finrank]
+  refine Algebra.finrank_eq_of_equiv_equiv (RingEquiv.refl k)
+    (IsLocalRing.ResidueField.mapEquiv (integersEquivSmul σ P)) (RingHom.ext fun c ↦ ?_)
+  have hfix : integersEquivSmul σ P (algebraMap k (σ • P).integers c) =
+      algebraMap k P.integers c :=
+    Subtype.ext (by simp [IsScalarTower.algebraMap_apply k F F'])
+  simp only [RingHom.coe_comp, Function.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+    RingEquiv.refl_apply, IsLocalRing.ResidueField.mapEquiv_apply,
+    IsScalarTower.algebraMap_apply k P.integers P.ResidueField,
+    IsScalarTower.algebraMap_apply k (σ • P).integers (σ • P).ResidueField,
+    IsLocalRing.ResidueField.algebraMap_eq, IsLocalRing.ResidueField.map_residue, hfix]
 
 end Action
 

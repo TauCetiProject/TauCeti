@@ -121,6 +121,20 @@ theorem lastExitAdmissible_of_support_lt_visitCount {π : α → Equiv.Perm ℕ}
     have hlt := h a ha (visitCount x a m - 1) hlast
     omega
 
+/-- **Last-exit admissibility through time `m` only depends on the sequence up to `m`.** Both of
+its conditions are stated in terms of the visit counts before `m`. -/
+theorem LastExitAdmissible.congr {π : α → Equiv.Perm ℕ} {x y : ℕ → α} {m : ℕ}
+    (h : LastExitAdmissible π x m) (hxy : ∀ i ≤ m, x i = y i) :
+    LastExitAdmissible π y m := by
+  have hcount : ∀ a, visitCount y a m = visitCount x a m :=
+    fun a => visitCount_congr fun i hi => (hxy i hi.le).symm
+  rw [lastExitAdmissible_iff]
+  refine ⟨fun a k hk => ?_, fun a ha => ?_⟩
+  · rw [hcount a] at hk ⊢
+    exact h.maps_lt_visitCount hk
+  · rw [hcount a] at ha ⊢
+    exact h.apply_visitCount_sub_one ha
+
 /-- Rebuild `x` after reindexing the entries in each row of its successor array by `π`. -/
 def pathOfReindexedSuccessors (π : α → Equiv.Perm ℕ) (x : ℕ → α) : ℕ → α :=
   pathOfSuccessors (x 0) fun a k => successorArray x a (π a k)
@@ -615,6 +629,36 @@ theorem pathOfReindexedSuccessors_symm_apply_apply {π : α → Equiv.Perm ℕ} 
         successorArray_pathOfReindexedSuccessors_of_lt_visitCount π x (x j) hjy,
         (π (x j)).apply_symm_apply, successorArray_visitCount]
   simpa only [z, y] using hzxi
+
+/-- **A last-exit reconstruction through time `m` only depends on the sequence up to `m`.** Every
+successor entry the reconstruction consumes before `m` is one the original prefix consumes, so it
+is read off the first `m + 1` values alone.
+
+This is what lets the reconstruction be applied to a finite path word rather than to a whole
+sequence. -/
+theorem pathOfReindexedSuccessors_congr {π : α → Equiv.Perm ℕ} {x y : ℕ → α} {m : ℕ}
+    (h : LastExitAdmissible π x m) (hxy : ∀ i ≤ m, x i = y i) :
+    ∀ i ≤ m, pathOfReindexedSuccessors π x i = pathOfReindexedSuccessors π y i := by
+  intro i
+  induction i using Nat.strong_induction_on with
+  | _ i ih =>
+    cases i with
+    | zero =>
+      intro _
+      simpa only [pathOfReindexedSuccessors_zero] using hxy 0 (Nat.zero_le m)
+    | succ n =>
+      intro hi
+      have hprev : ∀ j ≤ n,
+          pathOfReindexedSuccessors π x j = pathOfReindexedSuccessors π y j :=
+        fun j hj => ih j (by omega) (by omega)
+      have hstate : pathOfReindexedSuccessors π x n = pathOfReindexedSuccessors π y n :=
+        hprev n le_rfl
+      have hcount : ∀ a, visitCount (pathOfReindexedSuccessors π x) a n =
+          visitCount (pathOfReindexedSuccessors π y) a n :=
+        fun a => visitCount_congr fun j hj => hprev j hj.le
+      have hlt := visitCount_pathOfReindexedSuccessors_lt_visitCount π x m h n (by omega)
+      rw [pathOfReindexedSuccessors_succ, pathOfReindexedSuccessors_succ, ← hstate, ← hcount]
+      exact successorArray_congr hxy (h.maps_lt_visitCount hlt)
 
 end TauCeti
 

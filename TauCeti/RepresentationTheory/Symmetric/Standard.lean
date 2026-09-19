@@ -119,9 +119,12 @@ the vectors of `k[α]` whose coefficients sum to zero.  No hypothesis on `k` or 
 here; when `α` is finite and `(Fintype.card α : k) ≠ 0` it is a complement of the invariant line in
 the permutation representation `k[α]`, by
 `isCompl_invariantLine_augmentationSubrepresentation`, whereas when `(Fintype.card α : k) = 0` the
-invariant line lies inside it instead.  Identifying it with the Specht module of the shape
-`(|α|-1, 1)` is an aim for later: the polytabloid presentation needed to state that equivalence is
-not yet in the repository. -/
+invariant line lies inside it instead.  Over `ℚ` and on the labels `α = Fin μ.card` of a Young
+diagram `μ` whose second row is a single cell and which has no third row -- a shape `(m, 1)` -- it
+is the Specht module `S^μ`, by
+`TauCeti.standardRepresentationEquivSpechtSubrepresentation` of
+`TauCeti.RepresentationTheory.Symmetric.Specht.SingletonSecondRow`; for the partition `(n+1, 1)`
+of `n+2` that reads, on `α = Fin (n+2)`, as `S^{(n+1,1)} = standard`. -/
 noncomputable def standardRepresentation :
     Representation k (Equiv.Perm α)
       (augmentationSubrepresentation k (Equiv.Perm α) α).toSubmodule :=

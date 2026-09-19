@@ -50,6 +50,8 @@ degree off any algebra structure whose structure map is the pullback.
 * `TauCeti.Isogeny.degree_eq_one_iff`: degree one means the function-field pullback is onto;
   `TauCeti.Isogeny.degree_id` is the identity's case, and is the `@[simp]` normal form of a
   degree.
+* `TauCeti.Isogeny.finrank_map_ratFuncRange_fieldPullback`: the pulled-back coordinate subfield
+  sits `2 · deg φ` below the function field.
 * `TauCeti.Isogeny.degree_comp`: **the tower formula** `deg (ψ ∘ φ) = deg ψ * deg φ`.
 
 These are the `Isogeny.finiteDimensional` and `degree_pos` seeds of
@@ -63,6 +65,15 @@ map of curves finite.
 in that shared upstream development, in its function-field form, ahead of the mathlib PRs
 (`TauCetiRoadmap/EllipticCurves/README.md` §Provenance). It is built here until those land; the
 proofs below are written against the coordinate-ring form rather than ported.
+
+## Provenance
+
+`degree` and `finiteDimensional` are as described above. Separately,
+`finrank_map_ratFuncRange_fieldPullback` is an identity the AINTLIB `HasseWeil` project (Chris
+Birkbeck, Apache 2.0, commit `513e83879e2f8cbc626eb9e04d660e92be16ccba`) needs for its point count
+and assumes rather than proves: it is the hypothesis `h_tower_witness` of
+`bridgeA_intermediateField_finrank_eq_two_mul_degree_of_witness` in
+`Hasse/SepDegreeEqPointCount.lean`.
 
 ## References
 
@@ -191,6 +202,18 @@ theorem degree_comp (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W₂) :
     (ψ.comp φ).fieldPullback.algebraMap_toAlgebra_apply
   rw [φ.degree_eq_finrank hφ, ψ.degree_eq_finrank hψ, (ψ.comp φ).degree_eq_finrank hc]
   exact (Module.finrank_mul_finrank W₃.FunctionField W₂.FunctionField W₁.FunctionField).symm
+
+/-- **The pulled-back coordinate subfield sits `2 · deg φ` below the function field**, converting
+the isogeny's degree into a degree over a rational subfield. Over a finite base that is what a
+point count is read through, but nothing here is restricted to one and no count is proved. -/
+-- Higher priority than the generic `WeierstrassCurve.Affine.finrank_map_ratFuncRange`, so that this
+-- fires first and the normal form is `2 * φ.degree` rather than `2 * finrank …fieldRange …`.
+@[simp 1100]
+theorem finrank_map_ratFuncRange_fieldPullback (φ : Isogeny W₁ W₂) :
+    Module.finrank ((WeierstrassCurve.Affine.ratFuncRange W₂).map φ.fieldPullback)
+      W₁.FunctionField = 2 * φ.degree :=
+  (WeierstrassCurve.Affine.finrank_map_ratFuncRange W₂ φ.fieldPullback).trans
+    (congrArg (2 * ·) (φ.degree_def).symm)
 
 /-- **Both factors of an identity composite have degree one.** Degree is multiplicative and the
 identity has degree one, and `1` factors in `ℕ` only as `1 * 1`. -/

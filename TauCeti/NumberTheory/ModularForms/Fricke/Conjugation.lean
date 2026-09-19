@@ -175,8 +175,7 @@ at every use site. This is the only place the `Γ₀(N)` divisibility is used. -
 public theorem natCast_mul_lowerLeft_ediv (σ : ↥(Gamma0 N)) :
     (N : ℤ) * ((σ : Matrix (Fin 2) (Fin 2) ℤ) 1 0 / (N : ℤ)) =
       (σ : Matrix (Fin 2) (Fin 2) ℤ) 1 0 :=
-  Int.mul_ediv_cancel'
-    ((ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma0_mem.mp σ.property))
+  Int.mul_ediv_cancel' (mem_Gamma0_iff_dvd.mp σ.property)
 
 /-- **The Fricke conjugate** of `σ = !![a, b; N·c', d] ∈ Γ₀(N)`, as an element of `SL(2, ℤ)`:
 the matrix `!![d, -c'; -N·b, a]`.

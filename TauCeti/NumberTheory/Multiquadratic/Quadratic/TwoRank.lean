@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.RamifiedPrime.Independence
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.RamifiedPrime.Narrow
 public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.ElementaryTwoQuotient
+import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.NarrowClassGroup
 import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 import Mathlib.NumberTheory.NumberField.ClassNumber
 import TauCeti.Data.ZMod.IntUnitsPower
@@ -73,6 +74,11 @@ form-theoretic genus theory it descends from.
   narrow `2`-rank of a quadratic field of either signature.
 * `TauCeti.Multiquadratic.narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one`: the narrow `2`-rank of a
   quadratic field of either signature is exactly `t - 1`.
+* `TauCeti.Multiquadratic.twoRank_eq_ncard_ramifiedPrimes_sub_one_of_exists_norm_eq_neg_one`: the
+  ordinary `2`-rank is also exactly `t - 1` when some unit of `𝓞 K` has norm `-1`.
+* `TauCeti.Multiquadratic.ncard_ramifiedPrimes_sub_two_le_twoRank` and
+  `TauCeti.Multiquadratic.twoRank_eq_ncard_ramifiedPrimes_sub_one_or_sub_two`: the ordinary
+  `2`-rank of any field of degree `2` over `ℚ` is `t - 1` or `t - 2`.
 -/
 
 public section
@@ -250,5 +256,68 @@ theorem narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one
       NumberField.isTotallyComplex_of_minpoly_eq_X_sq_sub_C_of_neg hmin hneg
     rw [NumberField.NarrowClassGroup.twoRank_eq_classGroupTwoRank,
       twoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen hsf hneg]
+
+/-- **The `2`-rank formula for a real quadratic field with a unit of norm `-1`.** For `K = ℚ(√d)`
+with `d` squarefree, if some unit of `𝓞 K` has norm `-1` then the narrow and ordinary class groups
+coincide (`NumberField.NarrowClassGroup.toClassGroup_injective_of_norm_eq_neg_one`), so the
+ordinary `2`-rank inherits the narrow value `t - 1`, with `t` the number of rational primes
+ramifying in `K`. A unit of norm `-1` suffices to keep the real case from dropping; without one
+the ordinary rank can be smaller, as for `ℚ(√3)`, which has `t = 2` and class number `1`. -/
+theorem twoRank_eq_ncard_ramifiedPrimes_sub_one_of_exists_norm_eq_neg_one
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    (hsf : Squarefree d)
+    (hu : ∃ u : (𝓞 K)ˣ, Algebra.norm ℚ (((u : 𝓞 K) : K)) = -1) :
+    TauCeti.ClassGroup.twoRank (𝓞 K) = (ramifiedPrimes K).ncard - 1 := by
+  obtain ⟨u, hu⟩ := hu
+  rw [← NumberField.NarrowClassGroup.twoRank_eq_classGroupTwoRank_of_injective K
+    (NumberField.NarrowClassGroup.toClassGroup_injective_of_norm_eq_neg_one hmin hgen hu)]
+  exact narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen hsf
+
+/-! ### The ordinary `2`-rank of a quadratic field -/
+
+/-- **The ordinary `2`-rank of a quadratic field falls at most one short of `t - 1`.** For any
+field `K` of degree `2` over `ℚ`, `t - 2 ≤ 2-rank Cl(𝓞 K)`, where `t` is the number of rational
+primes ramifying in `K`.
+
+Writing `K = ℚ(√d)` with `d` squarefree
+(`NumberField.exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top`), the narrow `2`-rank is exactly
+`t - 1` (`narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one`) and forgetting positivity is a surjection
+`Cl⁺(K) → Cl(K)` whose kernel has at most two elements
+(`NumberField.card_ker_toClassGroup_le_two`), so the ordinary `2`-rank drops by at most one
+(`MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow`). For an imaginary field the kernel is
+trivial and no drop occurs; for a real field it can, as `ℚ(√3)` shows. -/
+theorem ncard_ramifiedPrimes_sub_two_le_twoRank (hK : Module.finrank ℚ K = 2) :
+    (ramifiedPrimes K).ncard - 2 ≤ TauCeti.ClassGroup.twoRank (𝓞 K) := by
+  obtain ⟨θ, d, hmin, hgen, hsf⟩ :=
+    NumberField.exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top hK
+  have hnarrow : TauCeti.twoRank (NumberField.NarrowClassGroup K) =
+      (ramifiedPrimes K).ncard - 1 := by
+    rw [TauCeti.twoRank_def, ← NumberField.NarrowClassGroup.twoRank_def]
+    exact narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen hsf
+  have hdrop : TauCeti.twoRank (NumberField.NarrowClassGroup K) ≤
+      TauCeti.twoRank (ClassGroup (𝓞 K)) + 1 :=
+    MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow (n := 1)
+      (NumberField.NarrowClassGroup.toClassGroup (K := K))
+      NumberField.NarrowClassGroup.toClassGroup_surjective
+      (by simpa using NumberField.card_ker_toClassGroup_le_two hK)
+  rw [TauCeti.ClassGroup.twoRank_def, ← TauCeti.twoRank_def]
+  omega
+
+/-- **The ordinary `2`-rank of a quadratic field is `t - 1` or `t - 2`.** For any field `K` of
+degree `2` over `ℚ`, the `2`-rank of `Cl(𝓞 K)` is one of the two values allowed by the narrow
+formula `2-rank Cl⁺(K) = t - 1`, with `t` the number of ramified rational primes. Both values occur
+among real quadratic fields: `ℚ(√3)` has `t = 2` and class number `1`, so its `2`-rank is
+`0 = t - 2`, while `ℚ(√10)` has `t = 2` and class number `2`, so its `2`-rank is `1 = t - 1`. For
+an imaginary field the value is always `t - 1` (`twoRank_eq_ncard_ramifiedPrimes_sub_one`). -/
+theorem twoRank_eq_ncard_ramifiedPrimes_sub_one_or_sub_two (hK : Module.finrank ℚ K = 2) :
+    TauCeti.ClassGroup.twoRank (𝓞 K) = (ramifiedPrimes K).ncard - 1 ∨
+      TauCeti.ClassGroup.twoRank (𝓞 K) = (ramifiedPrimes K).ncard - 2 := by
+  obtain ⟨θ, d, hmin, hgen, hsf⟩ :=
+    NumberField.exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top hK
+  have hupper : TauCeti.ClassGroup.twoRank (𝓞 K) ≤ (ramifiedPrimes K).ncard - 1 :=
+    (NumberField.NarrowClassGroup.classGroupTwoRank_le_twoRank K).trans_eq
+      (narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen hsf)
+  have hlower := ncard_ramifiedPrimes_sub_two_le_twoRank hK
+  omega
 
 end TauCeti.Multiquadratic

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 public import TauCeti.NumberTheory.ModularForms.Petersson.Orthogonal
+import Mathlib.Analysis.Normed.Ring.Finite
+import TauCeti.NumberTheory.ModularForms.Petersson.Adjoint
 
 /-!
 # The Petersson product is unitary under a normalising slash
@@ -17,9 +19,19 @@ an `α ∈ SL₂(ℤ)` that *normalises* `Γ·{±I}` permutes those cosets — r
 is a well-defined permutation of `SL₂(ℤ)/Γ·{±I}` exactly because `α` normalises the group — so it
 leaves the whole sum unchanged: such a slash is **unitary** for the Petersson product.
 
-The case this roadmap needs is `Γ = Γ₁(N)` and `α ∈ Γ₀(N)`, that is, the **diamond operators**
+The main case is `Γ = Γ₁(N)` and `α ∈ Γ₀(N)`, that is, the **diamond operators**
 `⟨d⟩` of `TauCeti/NumberTheory/ModularForms/DiamondOperators.lean`: `⟪⟨d⟩f, ⟨d⟩g⟫ = ⟪f, g⟫`.
-Two consequences carry Layer 3 of the ModularForms roadmap forward. First, the
+
+The normaliser in `SL₂(ℤ)` is not the whole story: the Fricke matrix `!![0, -1; N, 0]` and the
+Atkin–Lehner matrices normalise `Γ₁(N)` or `Γ₀(N)` from inside `GL₂(ℝ)`, with determinant
+`D > 0`, in general different from `1`. For such an `α` the coset-sum argument is unavailable —
+`α` does not act on `SL₂(ℤ)/Γ·{±I}` — and the pairing is instead read as one integral over a
+fundamental domain, which `α` carries to another fundamental domain; what survives of the slash
+is the factor `D ^ (k - 2)` of `UpperHalfPlane.peterssonInner_slash_slash_of_det_pos`. The same
+argument needs no normalising hypothesis: an `α` conjugating `Γ` onto `Γ'` carries a fundamental
+domain for `Γ` to one for `Γ'`, and so compares the Petersson products at the two levels.
+
+Two consequences of the diamond case carry the newform theory forward. First, the
 Petersson-orthogonal complement of a diamond-stable subspace is again diamond-stable — the
 diamonds form a *group* of unitaries, so a stable subspace is mapped *onto* itself, which is
 what an orthogonal complement needs. Second, cusp forms with distinct nebentypus characters are
@@ -30,6 +42,9 @@ Petersson-orthogonal, since the diamond eigenvalues `χ(d)` are roots of unity: 
 
 * `TauCeti.CuspForm.peterssonInnerCosets_slash`: the Petersson product is unchanged by slashing
   both arguments with an element of the normaliser of `Γ·{±I}`.
+* `TauCeti.CuspForm.peterssonInnerCosets_slash_of_inv_conjAct_eq`: slashing both arguments by a
+  positive-determinant `α ∈ GL₂(ℝ)` conjugating `Γ` onto `Γ'` multiplies the Petersson product by
+  `(det α) ^ (k - 2)`; for `Γ' = Γ` this is the case of a normaliser.
 * `TauCeti.CuspForm.peterssonInnerCosets_diamondOpCusp`: the diamond operators are
   Petersson-unitary.
 * `TauCeti.CuspForm.diamondOpCusp_mem_peterssonOrthogonal`: the Petersson-orthogonal complement
@@ -51,7 +66,7 @@ public section
 
 open Matrix.SpecialLinearGroup UpperHalfPlane ModularGroup CongruenceSubgroup
 
-open scoped MatrixGroups ModularForm ComplexConjugate
+open scoped MatrixGroups ModularForm ComplexConjugate Pointwise
 
 namespace TauCeti
 
@@ -95,22 +110,6 @@ private lemma cosetRightMul_apply {α : SL(2, ℤ)}
   conv_lhs => rw [← Quotient.out_eq q]
   rfl
 
-omit [Γ.FiniteIndex] in
-/-- **The summand of the Petersson product is a function of the coset.** Replacing the chosen
-representative `q.out` of a coset by any other element of it does not change the level-one-domain
-pairing of the correspondingly slashed forms. -/
-private theorem peterssonInner_slash_inv_out (f g : CuspForm (Γ.map (mapGL ℝ)) k) (δ : SL(2, ℤ)) :
-    UpperHalfPlane.peterssonInner k fd
-        (⇑f ∣[k] ((QuotientGroup.mk δ : SL(2, ℤ) ⧸ Γ.withCenter).out)⁻¹)
-        (⇑g ∣[k] ((QuotientGroup.mk δ : SL(2, ℤ) ⧸ Γ.withCenter).out)⁻¹) =
-      UpperHalfPlane.peterssonInner k fd (⇑f ∣[k] δ⁻¹) (⇑g ∣[k] δ⁻¹) := by
-  have hmem : ((QuotientGroup.mk δ : SL(2, ℤ) ⧸ Γ.withCenter).out)⁻¹ * δ ∈ Γ.withCenter :=
-    QuotientGroup.eq.mp (Quotient.out_eq _)
-  have h := peterssonInner_slash_slash_of_mem_withCenter f g hmem δ⁻¹
-  have hcancel : ((QuotientGroup.mk δ : SL(2, ℤ) ⧸ Γ.withCenter).out)⁻¹ * δ * δ⁻¹ =
-      ((QuotientGroup.mk δ : SL(2, ℤ) ⧸ Γ.withCenter).out)⁻¹ := by group
-  rwa [← SlashAction.slash_mul, ← SlashAction.slash_mul, hcancel] at h
-
 /-- **The Petersson product is unitary under a normalising slash.** If `α ∈ SL₂(ℤ)` normalises
 `Γ·{±I}` and the slashes `f ∣[k] α`, `g ∣[k] α` are again cusp forms `F`, `G` for `Γ`, then
 `⟪F, G⟫ = ⟪f, g⟫`: right multiplication by `α⁻¹` permutes the cosets of `Γ·{±I}` indexing the
@@ -136,6 +135,41 @@ theorem peterssonInnerCosets_slash {α : SL(2, ℤ)}
       ← SlashAction.slash_mul, ← SlashAction.slash_mul, hinv]
   rw [peterssonInnerCosets_def, peterssonInnerCosets_def, Finset.sum_congr rfl fun q _ ↦ hsummand q]
   exact Fintype.sum_equiv (cosetRightMul hα) _ _ fun _ ↦ rfl
+
+/-- **Slashing by a conjugating element of `GL₂(ℝ)` rescales the Petersson product.** If
+`α ∈ GL₂(ℝ)` has positive determinant and conjugates the image of `Γ` in `GL₂(ℝ)` onto that of
+`Γ'` — `α⁻¹ Γ' α = Γ` — and `F`, `G` are the cusp forms for `Γ` obtained by slashing cusp forms
+`f`, `g` for `Γ'` by `α`, then
+
+```text
+⟪F, G⟫_Γ = (det α) ^ (k - 2) · ⟪f, g⟫_Γ'.
+```
+
+The pairing is one integral over the fundamental domain `⋃_q q⁻¹ • 𝒟ᵒ`
+(`CuspForm.peterssonInnerCosets_eq_peterssonInner`); the slash moves it to the translate by `α`
+at the cost of `(det α) ^ (k - 2)` (`UpperHalfPlane.peterssonInner_slash_slash_of_det_pos`), and
+that translate is a fundamental domain for `Γ'`
+(`ModularGroup.isFundamentalDomain_smul_of_inv_conjAct_eq`), over which the pairing is the same
+as over any other (`UpperHalfPlane.peterssonInner_eq_of_isFundamentalDomain`).
+
+With `Γ' = Γ` this is the case of a normaliser, such as the Fricke and Atkin–Lehner matrices; with
+`Γ' ≠ Γ` it is the conjugation step of the adjoint theory of the double coset operators
+(`CuspForm.peterssonInnerCosets_trace_translate`). As in `peterssonInnerCosets_slash`, the forms
+`F` and `G` are taken as data with their defining equations, since the operators that arise this
+way each package the slashed function as a cusp form in their own way. -/
+theorem peterssonInnerCosets_slash_of_inv_conjAct_eq {Γ' : Subgroup SL(2, ℤ)} [Γ'.FiniteIndex]
+    {α : GL (Fin 2) ℝ} (hdet : 0 < (α : Matrix (Fin 2) (Fin 2) ℝ).det)
+    (hα : ConjAct.toConjAct α⁻¹ • Γ'.map (mapGL ℝ) = Γ.map (mapGL ℝ))
+    {f g : CuspForm (Γ'.map (mapGL ℝ)) k} {F G : CuspForm (Γ.map (mapGL ℝ)) k}
+    (hF : ⇑F = ⇑f ∣[k] α) (hG : ⇑G = ⇑g ∣[k] α) :
+    peterssonInnerCosets F G =
+      ((α : Matrix (Fin 2) (Fin 2) ℝ).det : ℂ) ^ (k - 2) * peterssonInnerCosets f g := by
+  rw [peterssonInnerCosets_eq_peterssonInner, peterssonInnerCosets_eq_peterssonInner, hF, hG,
+    UpperHalfPlane.peterssonInner_slash_slash_of_det_pos k hdet,
+    UpperHalfPlane.peterssonInner_eq_of_isFundamentalDomain k f g
+      (isFundamentalDomain_smul_of_inv_conjAct_eq hα
+        (isFundamentalDomain_iUnion_out_inv_smul_fdo_withCenter Γ))
+      (isFundamentalDomain_iUnion_out_inv_smul_fdo_withCenter Γ')]
 
 /-! ### The diamond operators are unitary -/
 
@@ -174,15 +208,6 @@ theorem diamondOpCusp_mem_peterssonOrthogonal {k : ℤ}
 
 /-! ### Distinct nebentypus characters are orthogonal -/
 
-/-- A character of the finite group `(ZMod N)ˣ` takes unimodular values. -/
-private lemma conj_mul_char_eq_one (χ : (ZMod N)ˣ →* ℂˣ) (d : (ZMod N)ˣ) :
-    conj (χ d : ℂ) * (χ d : ℂ) = 1 := by
-  have hpow : ((χ d : ℂ)) ^ Nat.card (ZMod N)ˣ = 1 := by
-    rw [← Units.val_pow_eq_pow_val, ← map_pow, pow_card_eq_one', map_one, Units.val_one]
-  have hnorm : ‖(χ d : ℂ)‖ = 1 := Complex.norm_eq_one_of_pow_eq_one hpow Nat.card_pos.ne'
-  rw [RCLike.conj_mul, hnorm]
-  norm_num
-
 /-- **Cusp forms with distinct nebentypus characters are Petersson-orthogonal.** The diamond
 operators are unitary and act on the two forms by the scalars `χ(d)` and `ψ(d)`, so the pairing
 is multiplied by `conj (χ d) * ψ d`; at a `d` where the characters differ this scalar is not `1`,
@@ -195,10 +220,16 @@ theorem peterssonInnerCosets_eq_zero_of_mem_cuspFormCharSpace_of_ne {k : ℤ}
   obtain ⟨d, hd⟩ : ∃ d, χ d ≠ ψ d := by
     by_contra hcon
     exact hne (MonoidHom.ext fun d ↦ not_not.mp fun h ↦ hcon ⟨d, h⟩)
+  -- the value `χ d` is unimodular — it has finite order, `(ZMod N)ˣ` being finite — so
+  -- `conj (χ d) * ψ d = 1` would force `χ d = ψ d`
+  have hnorm : ‖(χ d : ℂ)‖ = 1 :=
+    (((Units.coeHom ℂ).comp χ).isOfFinOrder (isOfFinOrder_of_finite d)).norm_eq_one
+  have hunit : conj (χ d : ℂ) * (χ d : ℂ) = 1 := by
+    rw [RCLike.conj_mul, hnorm]
+    norm_num
   have hscal : conj (χ d : ℂ) * (ψ d : ℂ) ≠ 1 := fun h ↦ hd <| Units.ext <| by
     have h2 : (χ d : ℂ) * (conj (χ d : ℂ) * (ψ d : ℂ)) = (χ d : ℂ) * 1 := by rw [h]
-    rwa [← mul_assoc, mul_comm (χ d : ℂ) (conj (χ d : ℂ)), conj_mul_char_eq_one, one_mul,
-      mul_one, eq_comm] at h2
+    rwa [← mul_assoc, mul_comm (χ d : ℂ) (conj (χ d : ℂ)), hunit, one_mul, mul_one, eq_comm] at h2
   have key : peterssonInnerCosets f g =
       conj (χ d : ℂ) * (ψ d : ℂ) * peterssonInnerCosets f g := by
     conv_lhs => rw [← peterssonInnerCosets_diamondOpCusp k d f g]

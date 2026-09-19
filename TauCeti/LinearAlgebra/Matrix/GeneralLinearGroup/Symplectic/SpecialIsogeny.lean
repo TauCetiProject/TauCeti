@@ -55,7 +55,6 @@ endomorphism over an arbitrary commutative ring.
 
 ## Main definitions
 
-* `Matrix.pairMinor`: the `2 × 2` minor of a matrix on an ordered row pair and column pair.
 * `Matrix.symplecticSpecialIsogeny`: the matrix of `2 × 2` minors on the four form-free index
   pairs.
 * `TauCeti.specialIsogeny`: the resulting endomorphism of `TauCeti.GLSymplecticFin 2 R` in
@@ -63,7 +62,6 @@ endomorphism over an arbitrary commutative ring.
 
 ## Main results
 
-* `Matrix.pairMinor_mul_fin_four`: Cauchy--Binet for `2 × 2` minors of a `4 × 4` product.
 * `TauCeti.pairMinor_row_add_eq_neg_jFin` and
   `TauCeti.pairMinor_column_add_eq_neg_jFin`: the symplectic condition read on minors, along rows
   and along columns.
@@ -100,23 +98,6 @@ namespace TauCeti
 
 variable {R : Type u} [CommRing R]
 
-/-! ### The standard alternating form in rank two -/
-
-/-- The transported alternating form of `Sp₄`, written out. -/
-private theorem jFin_two_eq : JFin 2 R = !![0, 0, -1, 0; 0, 0, 0, -1; 1, 0, 0, 0; 0, 1, 0, 0] := by
-  have hJ : JFin 2 R =
-      (Matrix.J (Fin 2) R).submatrix finSumFinEquiv.symm finSumFinEquiv.symm := by
-    rw [← JFin_submatrix 2 (R := R), Matrix.submatrix_submatrix]
-    simp
-  have e0 : finSumFinEquiv.symm (0 : Fin (2 + 2)) = Sum.inl 0 := by rw [Equiv.symm_apply_eq]; rfl
-  have e1 : finSumFinEquiv.symm (1 : Fin (2 + 2)) = Sum.inl 1 := by rw [Equiv.symm_apply_eq]; rfl
-  have e2 : finSumFinEquiv.symm (2 : Fin (2 + 2)) = Sum.inr 0 := by rw [Equiv.symm_apply_eq]; rfl
-  have e3 : finSumFinEquiv.symm (3 : Fin (2 + 2)) = Sum.inr 1 := by rw [Equiv.symm_apply_eq]; rfl
-  rw [hJ]
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [e0, e1, e2, e3, Matrix.J, Matrix.fromBlocks]
-
 variable {g : Matrix (Fin 4) (Fin 4) R}
 
 /-- **The symplectic condition, read on minors.** The two minors supported by the form on a fixed
@@ -124,7 +105,7 @@ row pair sum to the corresponding entry of the form. -/
 theorem pairMinor_row_add_eq_neg_jFin (hg : g * JFin 2 R * gᵀ = JFin 2 R) (p : Fin 4 × Fin 4) :
     pairMinor g p (0, 2) + pairMinor g p (1, 3) = -JFin 2 R p.1 p.2 := by
   have h := congrFun (congrFun hg p.1) p.2
-  simp [Matrix.mul_apply, Matrix.transpose_apply, Fin.sum_univ_four, jFin_two_eq,
+  simp [Matrix.mul_apply, Matrix.transpose_apply, Fin.sum_univ_four, JFin_two_eq,
     pairMinor_eq] at h ⊢
   linear_combination -h
 
@@ -133,7 +114,7 @@ form on a fixed column pair sum to the corresponding entry of the form. -/
 theorem pairMinor_column_add_eq_neg_jFin (hg : g * JFin 2 R * gᵀ = JFin 2 R) (q : Fin 4 × Fin 4) :
     pairMinor g (0, 2) q + pairMinor g (1, 3) q = -JFin 2 R q.1 q.2 := by
   have h := congrFun (congrFun (transpose_mul_JFin_mul_self (m := 2) hg) q.1) q.2
-  simp [Matrix.mul_apply, Matrix.transpose_apply, Fin.sum_univ_four, jFin_two_eq,
+  simp [Matrix.mul_apply, Matrix.transpose_apply, Fin.sum_univ_four, JFin_two_eq,
     pairMinor_eq] at h ⊢
   linear_combination -h
 
@@ -158,7 +139,7 @@ def specialIsogenyPair : Fin 4 → Fin 4 × Fin 4 := ![(0, 1), (0, 3), (2, 3), (
 @[simp]
 theorem jFin_specialIsogenyPair_eq_zero (i : Fin 4) :
     JFin 2 R (specialIsogenyPair i).1 (specialIsogenyPair i).2 = 0 := by
-  fin_cases i <;> simp [specialIsogenyPair, jFin_two_eq]
+  fin_cases i <;> simp [specialIsogenyPair, JFin_two_eq]
 
 end TauCeti
 
@@ -175,7 +156,7 @@ private theorem neg_jFin_mul_transpose_mul_jFin_eq (M : Matrix (Fin 4) (Fin 4) R
         M 2 3, M 3 3, -M 0 3, -M 1 3;
         -M 2 0, -M 3 0, M 0 0, M 1 0;
         -M 2 1, -M 3 1, M 0 1, M 1 1] := by
-  rw [jFin_two_eq]
+  rw [JFin_two_eq]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_four, -Matrix.cons_mul]
 
@@ -282,68 +263,14 @@ theorem symplecticSpecialIsogeny_symplecticSpecialIsogeny [CharP R 2]
   have h12 := pairMinor_row_add_eq_neg_jFin hg (1, 2)
   have h13 := pairMinor_row_add_eq_neg_jFin hg (1, 3)
   have h23 := pairMinor_row_add_eq_neg_jFin hg (2, 3)
-  simp [jFin_two_eq, pairMinor_eq] at h01 h02 h03 h12 h13 h23
+  simp [JFin_two_eq, pairMinor_eq] at h01 h02 h03 h12 h13 h23
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp only [symplecticSpecialIsogeny_apply, specialIsogenyPair_zero, specialIsogenyPair_one,
       specialIsogenyPair_two, specialIsogenyPair_three, pairMinor_eq, Matrix.map_apply,
       Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk]
-  -- The sixteen entries are grouped by the row of the output. The entry at `(i, j)` is a quartic
-  -- in the entries of `g`, and reducing it to `g i j ^ 2` takes three of the six row identities
-  -- above together with `2 = 0`; which three depends only on `i`, so each group of four shares
-  -- them and differs only in the column. Each certificate below is that combination written out.
-  -- Row `0`: the identities on the row pairs `(0,1)`, `(0,3)` and `(1,3)`.
-  · linear_combination (g 0 0 * g 3 0) * h01 + (g 0 0 * g 1 0) * h03 + (g 0 0^2) * h13 + (-g 0 0^2
-      * g 1 0 * g 3 2 - g 0 0 * g 0 1 * g 1 0 * g 3 3 + g 0 0 * g 0 2 * g 1 0 * g 3 0 + g 0 0 *
-      g 0 3 * g 1 0 * g 3 1) * h2
-  · linear_combination (g 0 1 * g 3 1) * h01 + (g 0 1 * g 1 1) * h03 + (g 0 1^2) * h13 + (-g 0 0 *
-      g 0 1 * g 1 2 * g 3 1 - g 0 1^2 * g 1 0 * g 3 2 - g 0 1^2 * g 1 1 * g 3 3 + g 0 1^2 * g 1 2
-      * g 3 0 + g 0 1 * g 0 2 * g 1 0 * g 3 1 + g 0 1 * g 0 3 * g 1 1 * g 3 1) * h2
-  · linear_combination (g 0 2 * g 3 2) * h01 + (g 0 2 * g 1 2) * h03 + (g 0 2^2) * h13 + (-g 0 0 *
-      g 0 2 * g 1 2 * g 3 2 - g 0 1 * g 0 2 * g 1 2 * g 3 3 + g 0 2^2 * g 1 2 * g 3 0 + g 0 2 *
-      g 0 3 * g 1 2 * g 3 1) * h2
-  · linear_combination (g 0 3 * g 3 3) * h01 + (g 0 3 * g 1 3) * h03 + (g 0 3^2) * h13 + (-g 0 0 *
-      g 0 3 * g 1 3 * g 3 2 - g 0 1 * g 0 3 * g 1 3 * g 3 3 + g 0 2 * g 0 3 * g 1 3 * g 3 0 +
-      g 0 3^2 * g 1 3 * g 3 1) * h2
-  -- Row `1`: the identities on the row pairs `(0,1)`, `(0,2)` and `(1,2)`.
-  · linear_combination (g 1 0 * g 2 0) * h01 + (g 1 0^2) * h02 + (g 0 0 * g 1 0) * h12 + (-g 0 0 *
-      g 1 0^2 * g 2 2 - g 0 1 * g 1 0^2 * g 2 3 + g 0 2 * g 1 0^2 * g 2 0 + g 0 3 * g 1 0^2 *
-      g 2 1) * h2
-  · linear_combination (g 1 1 * g 2 1) * h01 + (g 1 1^2) * h02 + (g 0 1 * g 1 1) * h12 + (-g 0 0 *
-      g 1 1 * g 1 2 * g 2 1 - g 0 1 * g 1 0 * g 1 1 * g 2 2 - g 0 1 * g 1 1^2 * g 2 3 + g 0 1 *
-      g 1 1 * g 1 2 * g 2 0 + g 0 2 * g 1 0 * g 1 1 * g 2 1 + g 0 3 * g 1 1^2 * g 2 1) * h2
-  · linear_combination (g 1 2 * g 2 2) * h01 + (g 1 2^2) * h02 + (g 0 2 * g 1 2) * h12 + (-g 0 0 *
-      g 1 2^2 * g 2 2 - g 0 1 * g 1 2^2 * g 2 3 + g 0 2 * g 1 2^2 * g 2 0 + g 0 3 * g 1 2^2 *
-      g 2 1) * h2
-  · linear_combination (g 1 3 * g 2 3) * h01 + (g 1 3^2) * h02 + (g 0 3 * g 1 3) * h12 + (-g 0 0 *
-      g 1 3^2 * g 2 2 - g 0 1 * g 1 3^2 * g 2 3 + g 0 2 * g 1 3^2 * g 2 0 + g 0 3 * g 1 3^2 *
-      g 2 1) * h2
-  -- Row `2`: the identities on the row pairs `(1,2)`, `(1,3)` and `(2,3)`.
-  · linear_combination (g 2 0 * g 3 0) * h12 + (g 2 0^2) * h13 + (g 1 0 * g 2 0) * h23 + (-g 1 0 *
-      g 2 0^2 * g 3 2 - g 1 0 * g 2 0 * g 2 1 * g 3 3 + g 1 0 * g 2 0 * g 2 3 * g 3 1 - g 1 1 *
-      g 2 0 * g 2 3 * g 3 0 + g 1 2 * g 2 0^2 * g 3 0 + g 1 3 * g 2 0 * g 2 1 * g 3 0) * h2
-  · linear_combination (g 2 1 * g 3 1) * h12 + (g 2 1^2) * h13 + (g 1 1 * g 2 1) * h23 + (-g 1 0 *
-      g 2 1^2 * g 3 2 - g 1 1 * g 2 1^2 * g 3 3 + g 1 2 * g 2 1^2 * g 3 0 + g 1 3 * g 2 1^2 *
-      g 3 1) * h2
-  · linear_combination (g 2 2 * g 3 2) * h12 + (g 2 2^2) * h13 + (g 1 2 * g 2 2) * h23 + (-g 1 0 *
-      g 2 2^2 * g 3 2 - g 1 1 * g 2 2 * g 2 3 * g 3 2 - g 1 2 * g 2 1 * g 2 2 * g 3 3 + g 1 2 *
-      g 2 2^2 * g 3 0 + g 1 2 * g 2 2 * g 2 3 * g 3 1 + g 1 3 * g 2 1 * g 2 2 * g 3 2) * h2
-  · linear_combination (g 2 3 * g 3 3) * h12 + (g 2 3^2) * h13 + (g 1 3 * g 2 3) * h23 + (-g 1 0 *
-      g 2 2 * g 2 3 * g 3 3 - g 1 1 * g 2 3^2 * g 3 3 + g 1 2 * g 2 0 * g 2 3 * g 3 3 - g 1 3 *
-      g 2 0 * g 2 3 * g 3 2 + g 1 3 * g 2 2 * g 2 3 * g 3 0 + g 1 3 * g 2 3^2 * g 3 1) * h2
-  -- Row `3`: the identities on the row pairs `(0,2)`, `(0,3)` and `(2,3)`.
-  · linear_combination (g 3 0^2) * h02 + (g 2 0 * g 3 0) * h03 + (g 0 0 * g 3 0) * h23 + (-g 0 0 *
-      g 2 0 * g 3 0 * g 3 2 - g 0 1 * g 2 0 * g 3 0 * g 3 3 + g 0 2 * g 2 0 * g 3 0^2 + g 0 3 *
-      g 2 0 * g 3 0 * g 3 1) * h2
-  · linear_combination (g 3 1^2) * h02 + (g 2 1 * g 3 1) * h03 + (g 0 1 * g 3 1) * h23 + (-g 0 0 *
-      g 2 2 * g 3 1^2 - g 0 1 * g 2 0 * g 3 1 * g 3 2 - g 0 1 * g 2 1 * g 3 1 * g 3 3 + g 0 1 *
-      g 2 2 * g 3 0 * g 3 1 + g 0 2 * g 2 0 * g 3 1^2 + g 0 3 * g 2 1 * g 3 1^2) * h2
-  · linear_combination (g 3 2^2) * h02 + (g 2 2 * g 3 2) * h03 + (g 0 2 * g 3 2) * h23 + (-g 0 0 *
-      g 2 2 * g 3 2^2 - g 0 1 * g 2 2 * g 3 2 * g 3 3 + g 0 2 * g 2 2 * g 3 0 * g 3 2 + g 0 3 *
-      g 2 2 * g 3 1 * g 3 2) * h2
-  · linear_combination (g 3 3^2) * h02 + (g 2 3 * g 3 3) * h03 + (g 0 3 * g 3 3) * h23 + (-g 0 0 *
-      g 2 3 * g 3 2 * g 3 3 - g 0 1 * g 2 3 * g 3 3^2 + g 0 2 * g 2 3 * g 3 0 * g 3 3 + g 0 3 *
-      g 2 3 * g 3 1 * g 3 3) * h2
+  -- Each entry is a polynomial consequence of the six specialized symplectic identities.
+  all_goals grind
 
 end Matrix
 

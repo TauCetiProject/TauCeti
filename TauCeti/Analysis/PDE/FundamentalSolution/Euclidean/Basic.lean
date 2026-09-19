@@ -23,8 +23,8 @@ versions for a pole at an arbitrary point.  The dimension-three specialization r
 classical kernel `1 / (4π‖x‖)`.
 
 The normalization and formulas follow Evans, *Partial Differential Equations*, Section 2.2.
-The remaining distributional identity `-Δ Gₙ = δ₀` will use the sphere-flux calculation built
-from the derivative proved here.
+The distributional identity `-Δ Gₙ = δ₀` is proved from the derivative formula here in
+`TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.DistributionalLaplacian`.
 
 ## Main declarations
 

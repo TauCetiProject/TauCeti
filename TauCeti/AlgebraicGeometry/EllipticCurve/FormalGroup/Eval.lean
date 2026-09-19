@@ -430,6 +430,16 @@ theorem hasEval_formalInverseEval {I : Ideal O} (hI : IsAdic I) {t : O} (ht : t 
     simpa using W.formalInverseEval_mem (k := 1)
       (hI.isTopologicallyNilpotent_of_mem ht) (by simpa using ht)
 
+/-- **The inverse series evaluates to the inverse of the parameter**: the algebra map
+`PowerSeries.aeval` and the `eval₂` defining `formalInverseEval` agree on `formalInverse`. -/
+private theorem aeval_formalInverse {t : O} (hE : PowerSeries.HasEval t) :
+    PowerSeries.aeval hE W.formalInverse = W.formalInverseEval t := by
+  -- the coercion lands on `eval₂ (algebraMap O O)`, which is `RingHom.id O` only up to
+  -- definitional unfolding, so the ascription is what lets `rw` fire
+  have hcoe : ∀ f : PowerSeries O, PowerSeries.aeval hE f = eval₂ (RingHom.id O) t f :=
+    congrFun (PowerSeries.coe_aeval hE)
+  rw [hcoe, ← W.formalInverseEval_def]
+
 /-- **The `w`-expansion at an inverted parameter**: `w(ι(t)) = -(w(t) * d(t)⁻¹)`, the evaluation of
 the series identity `subst_formalInverse_formalW`. -/
 theorem formalWEval_formalInverseEval {t : O} (hE : PowerSeries.HasEval t)
@@ -438,13 +448,12 @@ theorem formalWEval_formalInverseEval {t : O} (hE : PowerSeries.HasEval t)
       -(W.formalWEval t * W.formalInverseDenomInvEval t) := by
   have hcoe : ∀ f : PowerSeries O, PowerSeries.aeval hE f = eval₂ (RingHom.id O) t f :=
     congrFun (PowerSeries.coe_aeval hE)
-  have hsub : PowerSeries.aeval hE W.formalInverse = W.formalInverseEval t := by
-    rw [hcoe, ← W.formalInverseEval_def]
-  have hV' : PowerSeries.HasEval (PowerSeries.aeval hE W.formalInverse) := hsub ▸ hV
+  have hV' : PowerSeries.HasEval (PowerSeries.aeval hE W.formalInverse) :=
+    W.aeval_formalInverse hE ▸ hV
   have h := PowerSeries.aeval_subst W.hasSubst_formalInverse
     (PowerSeries.continuous_aeval hE) hV' W.formalW
   rw [W.subst_formalInverse_formalW, map_neg, map_mul,
-    congrFun (PowerSeries.coe_aeval hV') W.formalW, hsub] at h
+    congrFun (PowerSeries.coe_aeval hV') W.formalW, W.aeval_formalInverse hE] at h
   simpa [hcoe, formalWEval, formalInverseEval, formalInverseDenomInvEval] using h.symm
 
 /-- **The formal inverse fixes the `x`-coordinate.** `ι(t) = -(t · d(t)⁻¹)` and
@@ -507,13 +516,12 @@ theorem formalInverseEval_formalInverseEval {t : O} (hE : PowerSeries.HasEval t)
     W.formalInverseEval (W.formalInverseEval t) = t := by
   have hcoe : ∀ f : PowerSeries O, PowerSeries.aeval hE f = eval₂ (RingHom.id O) t f :=
     congrFun (PowerSeries.coe_aeval hE)
-  have hsub : PowerSeries.aeval hE W.formalInverse = W.formalInverseEval t := by
-    rw [hcoe, ← W.formalInverseEval_def]
-  have hV' : PowerSeries.HasEval (PowerSeries.aeval hE W.formalInverse) := hsub ▸ hV
+  have hV' : PowerSeries.HasEval (PowerSeries.aeval hE W.formalInverse) :=
+    W.aeval_formalInverse hE ▸ hV
   have h := PowerSeries.aeval_subst W.hasSubst_formalInverse
     (PowerSeries.continuous_aeval hE) hV' W.formalInverse
   rw [W.subst_formalInverse_self,
-    congrFun (PowerSeries.coe_aeval hV') W.formalInverse, hsub] at h
+    congrFun (PowerSeries.coe_aeval hV') W.formalInverse, W.aeval_formalInverse hE] at h
   simpa [hcoe, formalInverseEval, PowerSeries.eval₂_X] using h.symm
 
 end WeierstrassCurve

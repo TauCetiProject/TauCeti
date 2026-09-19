@@ -30,7 +30,7 @@ precisely the irreducible rational representations of `Sₙ`
 column of the identity holds the degrees.
 
 The general half of the argument is stated for an arbitrary rational representation of a finite
-group, as `TauCeti.FDRep.intCharacter`, and is what this file specializes. Nothing here computes
+group, as `FDRep.intCharacter`, and is what this file specializes. Nothing here computes
 an entry of the table: the recursion that does is the Murnaghan--Nakayama rule, which needs rim
 hooks and is not proved here. The comparison with the library's general
 `TauCeti.characterTable k G`, which lives over an algebraically closed field and enumerates its
@@ -76,7 +76,7 @@ variable {n : ℕ}
 /-! ## The integer character -/
 
 /-- **The integer character `χ^μ` of the Specht module** `S^μ`. The character of `S^μ` takes
-rational values, and those values are integers (`TauCeti.FDRep.intCharacter`); this is the
+rational values, and those values are integers (`FDRep.intCharacter`); this is the
 integer-valued refinement, related to the rational character by `TauCeti.spechtChar_cast`. -/
 noncomputable def spechtChar (μ : n.Partition) : Equiv.Perm (Fin n) → ℤ :=
   FDRep.intCharacter (spechtModule μ)
@@ -121,7 +121,7 @@ theorem spechtChar_one_pos (μ : n.Partition) : 0 < spechtChar μ 1 := by
 /-! ## Descent to the conjugacy classes -/
 
 /-- **The integer character as a function of the conjugacy class**, the descent
-(`TauCeti.ClassFunction.toConjClasses`) of the class function `TauCeti.FDRep.intClassFunction` of
+(`TauCeti.ClassFunction.toConjClasses`) of the class function `FDRep.intClassFunction` of
 `S^μ`. -/
 noncomputable def spechtCharConjClasses (μ : n.Partition) : ConjClasses (Equiv.Perm (Fin n)) → ℤ :=
   ClassFunction.toConjClasses (FDRep.intClassFunction (spechtModule μ))

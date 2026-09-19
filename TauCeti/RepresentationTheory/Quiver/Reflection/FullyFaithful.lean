@@ -68,9 +68,8 @@ As in the neighbouring files, a vertex `i : Q` is used both as an object of `Cat
 and as a vertex of `TauCeti.Quiver.Reflect Q i`, identifications that hold only by unfolding
 semireducible definitions. Goals mentioning both are therefore not type-correct at the transparency
 `rw` and `simp` build motives with, so every step that strips a conjugation by `eqToHom` is
-factored through `TauCeti.eqToHom_conjugate_cancel` and `TauCeti.eqToHom_conjugate_square`, which
-`subst` the object equalities away before doing anything, or through one of the two rearrangements
-of them at the top of the file.
+factored through the general transport lemmas in `TauCeti.CategoryTheory.EqToHom`, which `subst`
+the object equalities away before doing anything.
 
 The linear section of the incoming sum used to build the preimage exists because a vector space is
 projective; the private `sinkSection` is a choice of one. Nothing downstream depends on which
@@ -101,36 +100,6 @@ variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q] [Fintype Q]
   [∀ a b : Q, Fintype (a ⟶ b)]
 variable {M N : QuiverRep.{u, v, w, max v w x} k Q} {i : Q}
 
-/-! ### Stripping conjugations by `eqToHom`
-
-The two helpers below only move conjugations by `eqToHom` from one pair of edges to another; each
-is a rearrangement of `TauCeti.eqToHom_conjugate_cancel`, respectively of
-`TauCeti.eqToHom_conjugate_square`, from
-`TauCeti.RepresentationTheory.Quiver.Reflection.Representation`, and is proved from it rather than
-by unfolding transports again. Like those, they are stated for an abstract category, where a vertex
-is not simultaneously an object of `CategoryTheory.Paths` and a vertex of the reflected quiver;
-that is what makes them usable on goals where it is. -/
-
-/-- Two morphisms conjugated to the same morphism are equal: conjugating back cancels, by
-`TauCeti.eqToHom_conjugate_cancel`, on both sides at once. -/
-private theorem eq_of_eqToHom_conj {C : Type*} [Category* C] {X X' Y Y' : C} (hX : X' = X)
-    (hY : Y = Y') {f g : X ⟶ Y}
-    (h : eqToHom hX ≫ f ≫ eqToHom hY = eqToHom hX ≫ g ≫ eqToHom hY) : f = g :=
-  (eqToHom_conjugate_cancel hX hY.symm f).symm.trans
-    ((congrArg (fun u : X' ⟶ Y' ↦ eqToHom hX.symm ≫ u ≫ eqToHom hY.symm) h).trans
-      (eqToHom_conjugate_cancel hX hY.symm g))
-
-/-- A commuting square whose two horizontal edges are conjugates commutes after the conjugations
-are moved onto the vertical edges. This is `TauCeti.eqToHom_conjugate_square` for the square whose
-vertical edges are the conjugated ones, whose horizontal edges are then conjugated twice and so, by
-`TauCeti.eqToHom_conjugate_cancel`, are the given ones. -/
-private theorem eqToHom_strip_square {C : Type*} [Category* C]
-    {A A' B B' D D' E E' : C} (hA : A = A') (hB : B = B') (hD : D = D') (hE : E = E')
-    (p : A' ⟶ B') (q : E' ⟶ D') (f : B ⟶ D) (g : A ⟶ E)
-    (h : (eqToHom hA ≫ p ≫ eqToHom hB.symm) ≫ f = g ≫ eqToHom hE ≫ q ≫ eqToHom hD.symm) :
-    p ≫ (eqToHom hB.symm ≫ f ≫ eqToHom hD) = (eqToHom hA.symm ≫ g ≫ eqToHom hE) ≫ q :=
-  (eqToHom_conjugate_square hA hB hD hE p _ _ q).mp (by simpa using h)
-
 /-! ### Faithfulness -/
 
 /-- **The reflection functor at a sink is faithful** on the representations whose incoming sum
@@ -147,7 +116,7 @@ theorem reflectionFunctor_map_injective (hi : IsSink i)
       α.app j) h
     simp only at h1
     rw [reflectionFunctor_map_app_of_ne η hi hj, reflectionFunctor_map_app_of_ne η' hi hj] at h1
-    exact eq_of_eqToHom_conj _ _ h1
+    exact eq_of_eqToHom_conjugate _ _ h1
   refine NatTrans.ext (funext fun j ↦ ?_)
   rcases eq_or_ne j i with rfl | hj
   · refine ModuleCat.hom_ext (LinearMap.ext fun y ↦ ?_)
@@ -226,7 +195,7 @@ private theorem homKer_coe_apply (f : LinearMap.ker (incomingSum M i))
     (homKer θ f).1 e = homAway θ (hi.ne_of_hom e.2) (f.1 e) := by
   have hnat := θ.naturality (reflectArrow i e.2).toPath
   rw [functorObj_map_reflectArrow M hi e.2, functorObj_map_reflectArrow N hi e.2] at hnat
-  have hstrip := eqToHom_strip_square (reflectObj_self M hi)
+  have hstrip := eqToHom_conjugate_vertical_square_of_horizontal_square (reflectObj_self M hi)
     (reflectObj_of_ne M hi (hi.ne_of_hom e.2)) (reflectObj_of_ne N hi (hi.ne_of_hom e.2))
     (reflectObj_self N hi) _ _ (θ.app e.1) (θ.app i) hnat
   exact (congrArg (fun g : ModuleCat.of k (LinearMap.ker (incomingSum M i)) ⟶ N.obj e.1 ↦ g f)
@@ -330,7 +299,8 @@ private theorem homPreimageApp_naturality (hs : Function.Surjective (incomingSum
     have hnat := θ.naturality (reflectArrowOfNeOfNe ha hb e).toPath
     rw [functorObj_map_reflectArrowOfNeOfNe M hi ha hb e,
       functorObj_map_reflectArrowOfNeOfNe N hi ha hb e] at hnat
-    exact eqToHom_strip_square (reflectObj_of_ne M hi ha) (reflectObj_of_ne M hi hb)
+    exact eqToHom_conjugate_vertical_square_of_horizontal_square (reflectObj_of_ne M hi ha)
+      (reflectObj_of_ne M hi hb)
       (reflectObj_of_ne N hi hb) (reflectObj_of_ne N hi ha) _ _ (θ.app b) (θ.app a) hnat
 
 /-- **The preimage of `θ` under reflection.** -/
@@ -347,7 +317,7 @@ private theorem reflectionFunctor_map_homPreimage (hs : Function.Surjective (inc
   refine NatTrans.ext (funext fun j ↦ ?_)
   by_cases hj : j = i
   · subst j
-    refine eq_of_eqToHom_conj (reflectObj_self M hi).symm (reflectObj_self N hi) ?_
+    refine eq_of_eqToHom_conjugate (reflectObj_self M hi).symm (reflectObj_self N hi) ?_
     refine ModuleCat.hom_ext (LinearMap.ext fun f ↦ Subtype.ext (funext fun e ↦ ?_))
     rw [reflectionFunctor_map_app_self_apply (homPreimage θ hs) hi f e,
       homPreimage_app, homPreimageApp_of_ne θ hs (hi.ne_of_hom e.2)]

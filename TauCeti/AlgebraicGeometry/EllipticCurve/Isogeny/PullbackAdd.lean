@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MapsInfinity
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.TautologicalPoint
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.PointPlace
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.PolePoints
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
 
 /-!
 # Adding coordinate pullbacks
@@ -17,9 +21,10 @@ Weierstrass addition law read on function fields, taken from Mathlib's group str
 rather than from the rational formulas directly.
 
 The sum of two points may be the point at infinity, which is not the tautological point of
-anything, so `add` takes that exclusion as a hypothesis. On the hom carrier, where a zero element
-is available, that case is the zero map; making the sum an *isogeny* rather than a bare pullback
-needs pointedness of the result, and neither is established here.
+anything, so `add` takes that exclusion as a hypothesis; on the hom carrier, where a zero element
+is available, that case is the zero map (`Isogeny/Hom/Add.lean`). The sum of two *pointed*
+pullbacks whose tautological points do not cancel is pointed again (`mapsInfinity_add`), so the
+sum of two isogenies is an isogeny.
 
 ## Main definitions
 
@@ -34,6 +39,8 @@ needs pointedness of the result, and neither is established here.
   point of the sum is the sum of the tautological points.
 * `TauCeti.CoordinatePullback.eq_add_of_tautologicalPoint_eq`: that property characterises the
   sum.
+* `TauCeti.CoordinatePullback.mapsInfinity_add`: the sum of two pointed pullbacks whose tautological
+  points do not cancel is pointed.
 * `TauCeti.CoordinatePullback.add_comm` and `TauCeti.CoordinatePullback.add_assoc`: addition is
   commutative and associative where it is defined.
 
@@ -122,6 +129,20 @@ theorem add_assoc (p q r : CoordinatePullback W₁ W₂)
   tautologicalPoint_injective (by
     rw [tautologicalPoint_add, tautologicalPoint_add, tautologicalPoint_add,
       tautologicalPoint_add, _root_.add_assoc])
+
+/-- **The sum of two pointed coordinate pullbacks whose tautological points do not cancel is
+pointed.** -/
+theorem mapsInfinity_add (p q : CoordinatePullback W₁ W₂) (hp : p.MapsInfinity)
+    (hq : q.MapsInfinity) (h : p.tautologicalPoint + q.tautologicalPoint ≠ 0) :
+    (p.add q h).MapsInfinity := by
+  -- The pole of `x` at infinity is preserved by addition of points (`one_lt_valuation_xCoord_add`).
+  have key : ∀ r : CoordinatePullback W₁ W₂, r.MapsInfinity →
+      1 < (Place.infinity W₁).valuation (Point.xCoord r.tautologicalPoint) := fun r hr ↦ by
+    rw [xCoord_tautologicalPoint, Place.valuation_infinity, ← AdjoinRoot.algebraMap_eq]
+    exact (mapsInfinity_iff_one_lt_infinityPlace r).1 hr
+  rw [mapsInfinity_iff_one_lt_infinityPlace, AdjoinRoot.algebraMap_eq, add_of_X,
+    ← Place.valuation_infinity]
+  exact one_lt_valuation_xCoord_add W₂ (Place.infinity W₁) (key p hp) (key q hq) h
 
 end CoordinatePullback
 

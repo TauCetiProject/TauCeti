@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.Valuation.Extension
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.RingTheory.Valuation.Discrete.Normalize
+-- Proof-only: nontriviality survives restriction along an algebraic extension.
+import TauCeti.RingTheory.Valuation.NontrivialComap
 
 /-!
 # Extensions of places: the ramification index and the relative degree
@@ -267,11 +269,10 @@ private theorem ord_comap (f : F) :
 contained in a valuation ring is contained in that valuation ring, so a place of `F'` trivial on
 `F` would have all of `F'` as its valuation ring. -/
 private theorem ordIndex_comap_ne_zero [Algebra.IsIntegral F F'] :
-    Valuation.ordIndex (P'.valuation.comap (algebraMap F F')) ≠ 0 := fun h ↦ by
-  have hall := (Valuation.ordIndex_eq_zero_iff _).mp h
-  refine P'.integers_ne_top (top_unique fun y _ ↦ ?_)
-  refine P'.mem_integers_of_isIntegral (R := F) (fun f ↦ ?_) (Algebra.IsIntegral.isIntegral y)
-  exact P'.mem_integers_iff_ord_nonneg.mpr (by rw [← ord_comap F P' f, hall f])
+    Valuation.ordIndex (P'.valuation.comap (algebraMap F F')) ≠ 0 :=
+  haveI := Valuation.isNontrivial_of_surjective P'.valuation_surjective
+  haveI := Valuation.isNontrivial_comap_algebraMap (K := F) P'.valuation
+  Valuation.ordIndex_ne_zero_of_isNontrivial _
 
 variable [Algebra.IsIntegral F F']
 
@@ -785,6 +786,27 @@ theorem relativeDegree_le_finrank : relativeDegree k F P' ≤ Module.finrank F F
     (ramificationIdx_mul_relativeDegree_le_finrank k F P')
 
 end Bound
+
+section Self
+
+variable {k F : Type*} [Field k] [Field F] [Algebra k F] (P : Place k F)
+
+/-- **A place restricts to itself along the identity extension.** Restriction normalizes the
+valuation pulled back along `algebraMap F F`, which is the identity, and a place's valuation is
+already surjective, hence already normalized. -/
+@[simp]
+theorem restrict_self : restrict k F P = P := by
+  refine Place.ext ?_
+  rw [valuation_restrict, Algebra.algebraMap_self, Valuation.comap_id,
+    Valuation.normalization_eq_self_of_surjective _ P.valuation_surjective]
+
+/-- **The identity extension is unramified**: `e(P ∣ P) = 1`. -/
+@[simp]
+theorem ramificationIdx_self : ramificationIdx F P = 1 := by
+  rw [ramificationIdx_def, Algebra.algebraMap_self, Valuation.comap_id,
+    Valuation.ordIndex_eq_one_of_surjective _ P.valuation_surjective]
+
+end Self
 
 end Place
 

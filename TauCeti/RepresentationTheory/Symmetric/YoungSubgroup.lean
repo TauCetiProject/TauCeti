@@ -208,13 +208,11 @@ theorem youngSubgroupMulEquiv_apply_youngBlocksEquiv {n : ℕ} (μ : n.Partition
         ((σ : Equiv.Perm (Fin n)) (youngBlocksEquiv μ ⟨i, j⟩)) =
       ⟨i, (youngSubgroupMulEquiv μ σ) i j⟩ := by
   apply (youngBlocksEquiv μ).injective
-  rw [Equiv.apply_symm_apply]
-  rw [← youngBlockEquiv_val μ i ((youngSubgroupMulEquiv μ σ) i j)]
+  rw [Equiv.apply_symm_apply, ← youngBlockEquiv_val μ i ((youngSubgroupMulEquiv μ σ) i j)]
   have h := DomMulAct.stabilizerMulEquiv_apply
     (youngSubgroupStabilizerMulEquiv μ σ) (youngBlock_youngBlocksEquiv μ ⟨i, j⟩)
   rw [youngSubgroupStabilizerMulEquiv_apply] at h
-  rw [← h]
-  rw [← youngBlockEquiv_apply μ i j, youngSubgroupMulEquiv_apply]
+  rw [← h, ← youngBlockEquiv_apply μ i j, youngSubgroupMulEquiv_apply]
   rw [Equiv.permCongrHom_coe, Equiv.permCongr_apply, Equiv.symm_symm,
     Equiv.apply_symm_apply]
 

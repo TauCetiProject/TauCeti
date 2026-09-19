@@ -315,52 +315,6 @@ class InProgress(unittest.TestCase):
         self.assertFalse(core.inprogress_from([{"body": "just a comment"}], self.HEAD, self.NOW))
 
 
-class DerivedLabel(unittest.TestCase):
-    def label(self, lifecycle="open", ci=None, review="none", inprogress=False):
-        return labels.derived_label(
-            {"lifecycle": lifecycle, "ci": ci, "review": review,
-             "review_inprogress": inprogress, "head": "h", "title": "t"})
-
-    def test_merged_and_closed_have_no_label(self):
-        self.assertIsNone(self.label(lifecycle="merged"))
-        self.assertIsNone(self.label(lifecycle="closed"))
-
-    def test_ci_not_reported_or_running_is_awaiting_ci(self):
-        self.assertEqual(self.label(ci=None), "awaiting-CI")
-        self.assertEqual(self.label(ci="running"), "awaiting-CI")
-
-    def test_ci_failure_is_ci_failed(self):
-        self.assertEqual(self.label(ci="failure"), "ci-failed")
-
-    def test_green_changes_is_awaiting_author(self):
-        self.assertEqual(self.label(ci="success", review="changes"), "awaiting-author")
-
-    def test_a_red_build_outranks_the_review_verdict(self):
-        # Both states want the author, but they are told apart on purpose: a red build is read in the
-        # build log and a changes request in the review threads. A PR that is red AND has a changes
-        # request shows ci-failed, because nothing about the review can be trusted until it builds.
-        self.assertEqual(self.label(ci="failure", review="changes"), "ci-failed")
-        self.assertEqual(self.label(ci="failure", review="approved"), "ci-failed")
-
-    def test_green_approved_is_ready(self):
-        self.assertEqual(self.label(ci="success", review="approved"), "ready-to-merge")
-
-    def test_green_pending_no_marker_is_awaiting_review(self):
-        self.assertEqual(self.label(ci="success", review="none"), "awaiting-review")
-        self.assertEqual(self.label(ci="success", review="running"), "awaiting-review")
-
-    def test_green_pending_with_marker_is_review_in_progress(self):
-        self.assertEqual(self.label(ci="success", review="none", inprogress=True), "review-in-progress")
-        self.assertEqual(self.label(ci="success", review="running", inprogress=True), "review-in-progress")
-
-    def test_marker_only_overlays_the_awaiting_review_slot(self):
-        # A live marker never overrides a more important state.
-        self.assertEqual(self.label(ci="running", inprogress=True), "awaiting-CI")
-        self.assertEqual(self.label(ci="failure", inprogress=True), "ci-failed")
-        self.assertEqual(self.label(ci="success", review="changes", inprogress=True), "awaiting-author")
-        self.assertEqual(self.label(ci="success", review="approved", inprogress=True), "ready-to-merge")
-
-
 class Derive(unittest.TestCase):
     """core.derive glues pr_state/ci_status/issue_comments together; stub them."""
 
@@ -427,28 +381,30 @@ class Reconcile(unittest.TestCase):
     """labels.reconcile drives the label set to exactly {desired}; stub derive and the writes."""
 
     def setUp(self):
-        self._d = labels.core.derive
+        self._d = labels.readiness.assess
         self._c = labels.current_status_labels
         self._a = labels.add_label
         self._r = labels.remove_label
+        self._e = labels.ensure_label
+        labels.ensure_label = lambda name: None
         self.added, self.removed = [], []
         labels.add_label = lambda pr, name: self.added.append(name)
         labels.remove_label = lambda pr, name: self.removed.append(name)
 
     def tearDown(self):
-        labels.core.derive = self._d
+        labels.readiness.assess = self._d
         labels.current_status_labels = self._c
         labels.add_label = self._a
         labels.remove_label = self._r
+        labels.ensure_label = self._e
 
     def run_with(self, status, present):
-        labels.core.derive = lambda pr, ci=None: status
+        labels.readiness.assess = lambda pr, ci=None: status
         labels.current_status_labels = lambda pr: present
 
     def test_switches_to_the_single_desired_label(self):
         self.run_with(
-            {"lifecycle": "open", "ci": "success", "review": "approved", "review_inprogress": False,
-             "head": "h", "title": "t"},
+            {"category": "ready-to-merge", "head": "h", "reason": "gate accepted"},
             present=["awaiting-review"])
         labels.reconcile("1")
         self.assertEqual(self.added, ["ready-to-merge"])
@@ -456,8 +412,7 @@ class Reconcile(unittest.TestCase):
 
     def test_idempotent_when_already_correct(self):
         self.run_with(
-            {"lifecycle": "open", "ci": None, "review": "none", "review_inprogress": False,
-             "head": "h", "title": "t"},
+            {"category": "awaiting-CI", "head": "h", "reason": "build missing"},
             present=["awaiting-CI"])
         labels.reconcile("1")
         self.assertEqual(self.added, [])
@@ -465,12 +420,31 @@ class Reconcile(unittest.TestCase):
 
     def test_terminal_strips_all(self):
         self.run_with(
-            {"lifecycle": "merged", "ci": None, "review": None, "review_inprogress": False,
-             "head": "h", "title": "t"},
+            {"category": None, "head": "h", "reason": "closed"},
             present=["ready-to-merge", "review-in-progress"])
         labels.reconcile("1")
         self.assertEqual(self.added, [])
         self.assertEqual(sorted(self.removed), ["ready-to-merge", "review-in-progress"])
+
+
+class Backfill(unittest.TestCase):
+    def run_backfill(self, errors):
+        with mock.patch.object(labels.readiness, "engine"), \
+             mock.patch.object(labels.core, "gh_api", return_value="1\n2\n3"), \
+             mock.patch.object(labels, "ensure_label") as ensure, \
+             mock.patch.object(labels, "reconcile", side_effect=errors) as reconcile:
+            status = labels.reconcile_all()
+        self.assertEqual(ensure.call_count, len(labels.LABELS))
+        return status, reconcile.call_count
+
+    def test_individual_failure_does_not_starve_later_prs(self):
+        self.assertEqual(self.run_backfill([None, RuntimeError("unavailable"), None]), (1, 3))
+
+    def test_rate_limit_stops_remaining_reads(self):
+        self.assertEqual(self.run_backfill([core.RateLimited("quota"), None, None]), (1, 1))
+
+    def test_successful_backfill(self):
+        self.assertEqual(self.run_backfill([None, None, None]), (0, 3))
 
 
 class EnsureLabel(unittest.TestCase):

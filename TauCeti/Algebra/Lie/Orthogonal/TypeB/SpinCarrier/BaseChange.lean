@@ -166,8 +166,8 @@ noncomputable def baseChangePointsMulEquiv (B : CommAlgCat.{w} A) :
           (baseChangeDefiningIdeal n A)) B ≃*
       points n B :=
   (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (baseChangeCoordinateIso n A) B).trans
-    (pointsMulEquiv n
-      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B))
+    (pointsPresentation n
+      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
 
 /-- The base-change points equivalence preserves the ambient invertible matrix. -/
 @[simp]
@@ -182,7 +182,8 @@ theorem coe_baseChangePointsMulEquiv_apply (B : CommAlgCat.{w} A)
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra A (dimension n))
           (baseChangeDefiningIdeal n A) B q) := by
-  rw [baseChangePointsMulEquiv, MulEquiv.trans_apply, coe_pointsMulEquiv_apply]
+  rw [baseChangePointsMulEquiv, MulEquiv.trans_apply,
+    GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply]
   exact GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
     (dimension n) (definingIdeal n) (baseChangeDefiningIdeal n A)
     (baseChangeCoordinateIso n A) (mkQuotient_comp_baseChangeCoordinateIso_hom n A) B q
@@ -215,14 +216,18 @@ theorem baseChangePointsMulEquiv_mapPoints {B C : CommAlgCat.{w} A} (f : B ⟶ C
           (H := CommHopfAlgCat.quotient
             (GeneralLinear.coordinateHopfAlgebra A (dimension n))
             (baseChangeDefiningIdeal n A)) f q) =
-      pointsMap n f.hom.toRingHom (baseChangePointsMulEquiv n A B q) := by
+      (pointsPresentation n B).map (pointsPresentation n C) f.hom
+        (baseChangePointsMulEquiv n A B q) := by
   simp only [baseChangePointsMulEquiv, MulEquiv.trans_apply]
   rw [CommHopfAlgCat.baseChangeIsoPointsMulEquiv_mapPoints,
-    pointsMulEquiv_mapPoints n
+    (pointsPresentation n
+      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv_mapPoints
+      (pointsPresentation n
+        (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) C))
       ((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map f)]
   have hring :
-      ((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map f).hom.toRingHom =
-        f.hom.toRingHom := by
+      ((((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map f).hom : ↑B →+* ↑C)) =
+        (f.hom : ↑B →+* ↑C) := by
     rw [TauCeti.CommAlgCat.restrictScalars_map,
       TauCeti.CommAlgCat.restrictScalarsMap_hom]
     exact RingHom.ext fun x ↦ AlgHom.restrictScalars_apply ℤ f.hom x
@@ -273,17 +278,17 @@ theorem mkQuotient_comp_rootSubgroupIntegralCoordinateMap
 
 /-- On points, the integral factored coordinate map is the named numbered root subgroup. -/
 @[simp]
-theorem pointsMulEquiv_mapPointsFunctor_rootSubgroupIntegralCoordinateMap
+theorem mulEquiv_mapPointsFunctor_rootSubgroupIntegralCoordinateMap
     (B : CommAlgCat.{w} ℤ) (k : Fin (n + 1) ⊕ Fin (n + 1))
     (q : HopfAlgebra.points
       (R := ℤ) (H := AdditiveGroup.coordinateHopfAlgebra ℤ) B) :
-    pointsMulEquiv n B
+    (pointsPresentation n B).mulEquiv
         ((CommHopfAlgCat.mapPointsFunctor
           (rootSubgroupIntegralCoordinateMap n k)).app B q) =
       rootSubgroupPoints n k B (AdditiveGroup.gaPointsMulEquiv q) := by
   rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
   apply Subtype.ext
-  rw [coe_pointsMulEquiv_apply, coe_rootSubgroupPoints]
+  rw [GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply, coe_rootSubgroupPoints]
   have h := pointsMulEquiv_kostantRootSubgroupToralCoordinateMapOfEq
     (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
@@ -431,19 +436,19 @@ theorem mkQuotient_comp_weightTorusIntegralCoordinateMap :
 
 /-- On points, the integral factored coordinate map is the named spin weight torus. -/
 @[simp]
-theorem pointsMulEquiv_mapPointsFunctor_weightTorusIntegralCoordinateMap
+theorem mulEquiv_mapPointsFunctor_weightTorusIntegralCoordinateMap
     (B : CommAlgCat.{w} ℤ)
     (q : HopfAlgebra.points
       (R := ℤ)
       (H := (DiagonalizableGroup.coordinateRing ℤ
         (SplitTorus.characterGroup (Fin (n + 1)))).obj) B) :
-    pointsMulEquiv n B
+    (pointsPresentation n B).mulEquiv
         ((CommHopfAlgCat.mapPointsFunctor
           (weightTorusIntegralCoordinateMap n)).app B q) =
       weightTorusPoints n B (SplitTorus.pointsMulEquiv q) := by
   rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
   apply Subtype.ext
-  rw [coe_pointsMulEquiv_apply, coe_weightTorusPoints]
+  rw [GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply, coe_weightTorusPoints]
   have h := pointsMulEquiv_kostantWeightTorusToralCoordinateMapOfEq
       (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
       (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup

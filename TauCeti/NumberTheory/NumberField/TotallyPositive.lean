@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Order.Ring.Units
-public import TauCeti.GroupTheory.Index
+public import TauCeti.GroupTheory.Index.Basic
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 

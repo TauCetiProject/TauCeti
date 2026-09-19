@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Conformal
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Integrand
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Primitive
 
@@ -41,8 +42,12 @@ separate boundary analysis.
   the value at the new base point.
 * `TauCeti.conformalAt_schwarzChristoffelPrimitive` -- it is conformal throughout the upper
   half-plane.
+* `TauCeti.logDeriv_deriv_schwarzChristoffelPrimitive` -- its pre-Schwarzian derivative is the
+  sum of the simple fractions `e i / (z - a i)`.
 * `TauCeti.eqOn_schwarzChristoffelPrimitive` -- the derivative and normalization uniquely
   characterize it on the upper half-plane.
+* `TauCeti.norm_schwarzChristoffelPrimitive_sub_le_integral` -- along an affine segment of the
+  upper half-plane it moves by at most the integral of any integrable bound on its speed.
 
 ## References
 
@@ -56,7 +61,7 @@ noncomputable section
 
 namespace TauCeti
 
-open Complex UpperHalfPlane
+open Complex MeasureTheory Set UpperHalfPlane
 
 variable {ι : Type*} [Fintype ι]
 
@@ -102,6 +107,21 @@ theorem deriv_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : UpperHalfPl
     deriv (schwarzChristoffelPrimitive a e z₀) z = schwarzChristoffelIntegrand a e z :=
   (hasDerivAt_schwarzChristoffelPrimitive a e z₀ hz).deriv
 
+/-- **The pre-Schwarzian derivative of the Schwarz--Christoffel map.**  Throughout the upper
+half-plane the quotient `F'' / F'` of the normalized primitive `F` is the sum of simple fractions
+`∑ i, e i / (z - a i)`.  This is the Schwarz--Christoffel differential equation, the identity a
+conformal map of the upper half-plane onto a polygon has to satisfy for `a` its prevertices and
+`e` its turning exponents. -/
+theorem logDeriv_deriv_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    {z : ℂ} (hz : z ∈ upperHalfPlaneSet) :
+    logDeriv (deriv (schwarzChristoffelPrimitive a e z₀)) z =
+      ∑ i, (e i : ℂ) / (z - (a i : ℂ)) := by
+  have heq : deriv (schwarzChristoffelPrimitive a e z₀) =ᶠ[nhds z]
+      schwarzChristoffelIntegrand a e :=
+    Filter.eventuallyEq_of_mem (isOpen_upperHalfPlaneSet.mem_nhds hz)
+      fun _ hw => deriv_schwarzChristoffelPrimitive a e z₀ hw
+  rw [(logDeriv_congr_nhds heq).eq_of_nhds, logDeriv_schwarzChristoffelIntegrand a e hz]
+
 /-- The normalized Schwarz--Christoffel primitive is holomorphic on the upper half-plane. -/
 theorem differentiableOn_schwarzChristoffelPrimitive (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) :
@@ -130,5 +150,38 @@ theorem eqOn_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : UpperHalfPla
     (fun z hz ↦ (hg z hz).deriv.trans (deriv_schwarzChristoffelPrimitive a e z₀ hz).symm)
     z₀.coe_im_pos
   simpa using hg₀
+
+/-- **Displacement of the normalized Schwarz--Christoffel primitive along an affine segment.**  If
+the segment `s ↦ c + s * v`, `s ∈ [α, β]`, stays in the upper half-plane and the speed
+`‖v‖ * ‖schwarzChristoffelIntegrand a e (c + s * v)‖` is bounded along it by an integrable
+function `B`, then the primitive moves by at most `∫ s in α..β, B s`. -/
+theorem norm_schwarzChristoffelPrimitive_sub_le_integral (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    {α β : ℝ} (hab : α ≤ β) {c v : ℂ} {B : ℝ → ℝ}
+    (hmem : ∀ s ∈ Icc α β, c + (s : ℂ) * v ∈ upperHalfPlaneSet)
+    (hB : ∀ s ∈ Icc α β,
+      ‖v‖ * ‖schwarzChristoffelIntegrand a e (c + (s : ℂ) * v)‖ ≤ B s)
+    (hBi : IntervalIntegrable B volume α β) :
+    ‖schwarzChristoffelPrimitive a e z₀ (c + (β : ℂ) * v) -
+        schwarzChristoffelPrimitive a e z₀ (c + (α : ℂ) * v)‖ ≤ ∫ s in α..β, B s := by
+  have hderiv : ∀ s ∈ Icc α β,
+      HasDerivAt (fun s : ℝ => schwarzChristoffelPrimitive a e z₀ (c + (s : ℂ) * v))
+        (v * schwarzChristoffelIntegrand a e (c + (s : ℂ) * v)) s := by
+    intro s hs
+    have h1 : HasDerivAt (fun s : ℝ => c + (s : ℂ) * v) v s := by
+      simpa using ((Complex.ofRealCLM.hasDerivAt (x := s)).mul_const v).const_add c
+    have h2 := hasDerivAt_schwarzChristoffelPrimitive a e z₀ (hmem s hs)
+    simpa [Function.comp_def, smul_eq_mul] using h2.scomp s h1
+  have hfc : ContinuousOn
+      (fun s : ℝ => schwarzChristoffelPrimitive a e z₀ (c + (s : ℂ) * v)) (Icc α β) :=
+    fun s hs => (hderiv s hs).continuousAt.continuousWithinAt
+  have hfd : DifferentiableOn ℝ
+      (fun s : ℝ => schwarzChristoffelPrimitive a e z₀ (c + (s : ℂ) * v)) (Ioo α β) :=
+    fun s hs => (hderiv s (Ioo_subset_Icc_self hs)).differentiableAt.differentiableWithinAt
+  have hfB : ∀ᵐ t : ℝ, t ∈ Ioo α β →
+      ‖deriv (fun s : ℝ => schwarzChristoffelPrimitive a e z₀ (c + (s : ℂ) * v)) t‖ ≤ B t :=
+    .of_forall fun t ht => by
+      rw [(hderiv t (Ioo_subset_Icc_self ht)).deriv, norm_mul]
+      exact hB t (Ioo_subset_Icc_self ht)
+  exact norm_sub_le_integral_of_norm_deriv_le_of_le hab hfc hfd hfB hBi
 
 end TauCeti

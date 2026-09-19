@@ -17,8 +17,8 @@ empty rectangles whose two pairs of side columns are either disjoint or share ex
 In the second case the two rectangles meet at a corner and their union is an L-shaped hexagon,
 which can be cut into two rectangles in exactly one other way. This file builds that alternate cut
 in the orientation where the two rectangles share their *initial* side column, and shows that it
-is again a decomposition by two rectangles the unblocked differential counts, carrying the same
-weight and passing through a different intermediate grid state.
+is again a decomposition by two empty rectangles, covering the same squares and passing through a
+different intermediate grid state.
 
 The relation between the two cuts is packaged as `GridRectangleDecomposition.IsRepartition`: the
 rectangles of each cut cover disjoint sets of squares, and the two unions agree. The geometric
@@ -40,9 +40,6 @@ columns above it.
 * `TauCeti.GridRectangleDecomposition.exists_isRepartition_of_isEmpty_of_left_eq_left`: two
   composable empty rectangles sharing their initial side column admit a recut by two empty
   rectangles, whose intermediate state and side columns are computed.
-* `GridRectangleDecomposition.exists_isRepartition_of_mem_unblockedRectangles_of_left_eq_left`:
-  for each two-step term of `∂⁻ ∘ ∂⁻` whose two rectangles share their initial side column there
-  is a unique second such term through a different intermediate state.
 
 ## References
 
@@ -351,41 +348,6 @@ theorem exists_isRepartition_of_isEmpty_of_left_eq_left (D : GridRectangleDecomp
     exact GridRectangleDecomposition.ext (hlefts.1.trans hE1left.symm)
       (hE1right'.trans hE1right.symm) (hlefts.2.trans hE2left.symm)
       (hE2right'.trans hE2right.symm)
-
-/-- For each two-step term of `∂⁻ ∘ ∂⁻` whose two rectangles share their initial side column
-there is a unique second such term through a different intermediate grid state. Its domain is a
-repartition of the original domain, so its weight agrees over every coefficient ring. -/
-theorem exists_isRepartition_of_mem_unblockedRectangles_of_left_eq_left (G : GridDiagram n)
-    (D : GridRectangleDecomposition x z)
-    (hleft : D.first.left = D.second.left) (hright : D.first.right ≠ D.second.right)
-    (hfirst : D.first ∈ G.unblockedRectangles x D.middle)
-    (hsecond : D.second ∈ G.unblockedRectangles D.middle z) :
-    ∃! E : GridRectangleDecomposition x z,
-      D.IsRepartition E ∧ E.middle ≠ D.middle ∧
-        E.first ∈ G.unblockedRectangles x E.middle ∧
-          E.second ∈ G.unblockedRectangles E.middle z ∧
-            E.first.right = D.second.right ∧ E.second.right = D.first.right ∧
-              ((D.first.right ∈ Grid.cIoo D.first.left D.second.right ∧
-                  E.middle = x.swapColumns D.first.right D.second.right ∧
-                    E.first.left = D.first.right ∧ E.second.left = D.first.left) ∨
-                (D.second.right ∈ Grid.cIoo D.first.left D.first.right ∧
-                  E.middle = x.swapColumns D.first.left D.second.right ∧
-                    E.first.left = D.first.left ∧ E.second.left = D.second.right)) := by
-  obtain ⟨E, ⟨hrecut, hmiddle, hEfirst, hEsecond, hE1right, hE2right, hcols⟩, hunique⟩ :=
-    D.exists_isRepartition_of_isEmpty_of_left_eq_left hleft hright
-    (G.isEmpty_of_mem_unblockedRectangles hfirst) (G.isEmpty_of_mem_unblockedRectangles hsecond)
-  have hX₁ := G.disjoint_XSet_of_mem_unblockedRectangles hfirst
-  have hX₂ := G.disjoint_XSet_of_mem_unblockedRectangles hsecond
-  refine ⟨E, ⟨hrecut, hmiddle,
-    (G.mem_unblockedRectangles _).mpr
-      ⟨hEfirst, hrecut.disjoint_coveredSquares_first hX₁ hX₂⟩,
-    (G.mem_unblockedRectangles _).mpr
-      ⟨hEsecond, hrecut.disjoint_coveredSquares_second hX₁ hX₂⟩,
-    hE1right, hE2right, hcols⟩, ?_⟩
-  intro E' hE'
-  apply hunique E'
-  exact ⟨hE'.1, hE'.2.1, (G.mem_unblockedRectangles _).mp hE'.2.2.1 |>.1,
-    (G.mem_unblockedRectangles _).mp hE'.2.2.2.1 |>.1, hE'.2.2.2.2⟩
 
 end GridRectangleDecomposition
 

@@ -8,6 +8,8 @@ module
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.Transitive
 public import Mathlib.GroupTheory.Perm.Cycle.Type
+public import TauCeti.GroupTheory.GroupAction.Transitive
+import Mathlib.GroupTheory.GroupAction.Jordan
 
 /-!
 # Recognizing cycles and transpositions in a permutation group
@@ -26,8 +28,12 @@ through the Frobenius element.
 
 ## Main results
 
+* `TauCeti.card_dvd_natCard_and_natCard_dvd_factorial_of_isPretransitive`: the order of a
+  transitive permutation group of degree `n` is a multiple of `n` and a divisor of `n !`.
 * `TauCeti.exists_isCycle_mem_of_isPretransitive_of_prime_card`: a transitive permutation group
   of prime degree contains a full cycle.
+* `TauCeti.subgroup_eq_top_of_isPretransitive_of_prime_card_of_isSwap_mem`: a transitive
+  permutation group of prime degree that contains a transposition is the full symmetric group.
 * `Equiv.Perm.isSwap_pow_prod_erase_two_cycleType_and_odd`: if a permutation has exactly one
   2-cycle and all its other cycles have odd length, an explicit odd power is a transposition.
 * `Equiv.Perm.exists_odd_isSwap_pow`: the corresponding existential form.
@@ -40,6 +46,17 @@ namespace TauCeti
 open MulAction
 
 variable {α : Type*} [Fintype α] [DecidableEq α]
+
+omit [DecidableEq α] in
+/-- The order of a transitive permutation group on a nonempty finite set `α` is a multiple of the
+degree `Fintype.card α`, by `TauCeti.natCard_dvd_natCard_of_isPretransitive`, and a divisor of
+`(Fintype.card α)!`, by Lagrange's theorem. -/
+theorem card_dvd_natCard_and_natCard_dvd_factorial_of_isPretransitive
+    (G : Subgroup (Equiv.Perm α)) [IsPretransitive G α] [Nonempty α] :
+    Fintype.card α ∣ Nat.card G ∧ Nat.card G ∣ (Fintype.card α).factorial := by
+  classical
+  refine ⟨by simpa using natCard_dvd_natCard_of_isPretransitive G (X := α), ?_⟩
+  simpa [Fintype.card_perm] using Subgroup.card_subgroup_dvd_card G
 
 /-- A transitive permutation group of prime degree contains a full cycle.
 
@@ -69,6 +86,20 @@ theorem exists_isCycle_mem_of_isPretransitive_of_prime_card
   have hsupport : (g : Equiv.Perm α).support = Finset.univ :=
     Finset.eq_univ_of_card (g : Equiv.Perm α).support (hcycle.orderOf.symm.trans horder)
   exact ⟨g, g.property, hcycle, hsupport⟩
+
+/-- A transitive subgroup of a symmetric group of prime degree that contains a transposition is
+the full symmetric group, the prime-degree form of Jordan's transposition recognition theorem.
+
+This recognition result identifies Galois groups from an irreducible polynomial and a
+factorization pattern exhibiting a transposition. -/
+theorem subgroup_eq_top_of_isPretransitive_of_prime_card_of_isSwap_mem
+    {β : Type*} [DecidableEq β] {G : Subgroup (Equiv.Perm β)} (hG : IsPretransitive G β)
+    (hp : Nat.Prime (Nat.card β)) (g : Equiv.Perm β) (hgSwap : g.IsSwap) (hg : g ∈ G) :
+    G = ⊤ := by
+  have : Finite β := Nat.finite_of_card_ne_zero hp.ne_zero
+  let _ : IsPretransitive G β := hG
+  exact Equiv.Perm.subgroup_eq_top_of_isPreprimitive_of_isSwap_mem
+    (IsPreprimitive.of_prime_card hp) g hgSwap hg
 
 /-- If a permutation has exactly one cycle of length two and every other cycle has odd length,
 then raising it to the product of those other cycle lengths gives a transposition.

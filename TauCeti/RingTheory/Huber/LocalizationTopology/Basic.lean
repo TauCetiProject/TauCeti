@@ -37,11 +37,16 @@ universal property in `LocalizationTopology.UniversalProperty`, the completion `
 
 * `locSubring_eq_of_coe_eq_image_mul_left`: rescaling numerators and denominator by one common
   factor leaves `D` unchanged — the first step of a change of presentation.
+* `locIdealImage_congr` and `locTopology_congr`: presentations sharing a ring of definition share
+  the whole neighbourhood filtration, and so the topology — the step that lets a rescaled
+  presentation stand in for the original.
 * `hasBasis_nhds_zero_locTopology`, `isTopologicalRing_locTopology` and
   `nonarchimedeanRing_locTopology`: the contract of `locTopology`, to be used in place of
   unfolding the construction.
 * `TauCeti.Huber.HasDenominatorPower.mono`: the standing hypothesis is monotone in the
   numerators.
+* `TauCeti.Huber.HasDenominatorPower.of_coe_eq_image_mul_left`: it also survives rescaling the
+  whole presentation by a unit — the second step of a change of presentation.
 * `hasDenominatorPower_of_idealOfDefinition_le_span`: numerators containing a subset of `A₀`
   whose span contains `I` supply the standing denominator-power hypothesis for every denominator.
 * `isHuberRing_locTopology`: `Aₛ` under `locTopology` is a Huber ring.
@@ -72,7 +77,12 @@ no AINTLIB analogue at all** — commit `37bbdaeb9` carries no transfer of `D`-m
 neighbourhood filtration along a comparison map, no combination of the denominator hypothesis for
 a product denominator, and no π-adic characterisation of the filtration: its `locNhd` API states
 no principal-ideal-of-definition hypothesis at all. They are new work for the
-nested-presentation comparison of Wedhorn §8.2. The main changes
+nested-presentation comparison of Wedhorn §8.2. `locSubring_insert_eq_of_divBy_mem` and
+`HasDenominatorPower.exists_unit_divBy_mem_locSubring` are later additions with no AINTLIB
+analogue either: commit `37bbdaeb9` has no lemma adjoining a numerator whose fraction already lies
+in `D`, and none producing a unit `u` with `u/s` in `D` over a Tate ring. They are new work for the
+structure-map case of Wedhorn's Proposition 8.30,
+`TauCeti.Huber.PairOfDefinition.flat_toCompletionLoc`. The main changes
 are: adapted `PairOfDefinition` field names to TauCeti conventions (`A₀`→`ringOfDefinition`,
 `I`→`ideal`, etc.); uses characteristic lemmas instead of destructuring definitions; removed
 unused hypotheses to satisfy `#lint` checks; stated over an arbitrary localisation `S` away from
@@ -259,6 +269,18 @@ theorem locSubring_insert [DecidableEq A] (P : PairOfDefinition A) (t : A)
     Algebra.adjoin_union_eq_adjoin_adjoin]
   rfl
 
+/-- **Adjoining a numerator whose fraction already lies in `D` leaves `D` alone**: if `t/s` is in
+`locSubring P T s S`, then `insert t T` gives the same `D` as `T`, so a presentation can take on an
+extra numerator — `s` itself, as `s/s = 1`, or `1` once `1/s ∈ D` — without changing `D`. This is
+the degenerate case of `locSubring_insert`, where the adjoined fraction adds nothing. -/
+theorem locSubring_insert_eq_of_divBy_mem [DecidableEq A] (P : PairOfDefinition A) {t : A}
+    {T : Finset A} (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (h : divBy t s ∈ locSubring P T s S) : locSubring P (insert t T) s S = locSubring P T s S :=
+  le_antisymm ((locSubring_le_iff P (insert t T) s S).mpr
+    ⟨fun _ ↦ algebraMap_mem_locSubring P T s S,
+      (Finset.forall_mem_insert t T _).mpr ⟨h, fun _ ↦ divBy_mem_locSubring P T s S⟩⟩)
+    (locSubring_mono P s S (Finset.subset_insert t T))
+
 /-! ### The standing hypothesis -/
 
 /-- **The standing hypothesis** of Wedhorn's construction: some power of the ideal of definition
@@ -285,6 +307,48 @@ theorem HasDenominatorPower.mono {P : PairOfDefinition A} {T U : Finset A} {s : 
     (h : HasDenominatorPower P T s S) (hTU : T ⊆ U) : HasDenominatorPower P U s S := by
   rw [hasDenominatorPower_iff] at h ⊢
   exact h.imp fun _ hN b hb ↦ locSubring_mono P s S hTU (hN b hb)
+
+/-- **The standing hypothesis survives a change of presentation by a unit.** Rescaling both the
+numerators and the denominator by a unit `u` carries `HasDenominatorPower` from `(T, s)` to
+`(u · T, u · s)`.
+
+Of the data a presentation carries, this is the part whose invariance under rescaling is not
+immediate, so it is what a rescaled presentation needs in order to stand in for the original. -/
+theorem HasDenominatorPower.of_coe_eq_image_mul_left [IsTopologicalRing A]
+    {P : PairOfDefinition A} {T T' : Finset A} {u s : A} (hu : IsUnit u)
+    {S : Type*} [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    [IsLocalization.Away (u * s) S] (h : HasDenominatorPower P T s S)
+    (hT' : (T' : Set A) = (u * ·) '' (T : Set A)) :
+    HasDenominatorPower P T' (u * s) S := by
+  rw [hasDenominatorPower_iff] at h ⊢
+  obtain ⟨N, hN⟩ := h
+  obtain ⟨N', hN'⟩ := exists_idealImage_subset_image_mul_left P hu N
+  refine ⟨N', fun b hb ↦ ?_⟩
+  obtain ⟨c, hc, hbc⟩ := hN' ((P.mem_idealImage N').mpr ⟨b, hb, rfl⟩)
+  obtain ⟨c₀, hc₀, rfl⟩ := (P.mem_idealImage N).mp hc
+  rw [locSubring_eq_of_coe_eq_image_mul_left P T T' u s S hT', ← hbc, divBy_mul_mul_left]
+  exact hN c₀ hc₀
+
+/-- **The standing hypothesis puts a unit fraction in `D`**: over a Tate ring, some unit `u` has
+`u/s` in `D = A₀[t₁/s, …, tₙ/s]`.
+
+Typically used to make `1` a numerator: after rescaling `(T, s)` by `u⁻¹`
+(`locSubring_eq_of_coe_eq_image_mul_left`), `u/s` is the fraction `1/(u⁻¹ s)`, so `1` can be
+adjoined to the numerators without changing `D`.
+
+The Tate hypothesis is needed: over `ℤ_[p]`, with `T = ∅` and `s = p`, the standing hypothesis
+holds, but `D` is the image of `ℤ_[p]` in `ℚ_[p]`, which contains no `u/p` with `u` a unit. -/
+theorem HasDenominatorPower.exists_unit_divBy_mem_locSubring [IsTopologicalRing A] [IsTateRing A]
+    {P : PairOfDefinition A} {T : Finset A} {s : A} {S : Type*} [CommRing S] [Algebra A S]
+    [IsLocalization.Away s S] (h : HasDenominatorPower P T s S) :
+    ∃ u : Aˣ, divBy (u : A) s ∈ locSubring P T s S := by
+  obtain ⟨N, hN⟩ := (hasDenominatorPower_iff P T s S).mp h
+  -- a power of a pseudouniformiser lies in the image of `I ^ N`, a neighbourhood of zero
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  obtain ⟨m, hm⟩ := hϖ.isTopologicallyNilpotent.exists_pow_mem_of_mem_nhds
+    (P.hasBasis_nhds_zero.mem_of_mem (i := N) trivial)
+  obtain ⟨y, hy, hyeq⟩ := (P.mem_idealImage N).mp hm
+  exact ⟨(hϖ.isUnit.pow m).unit, by simpa [hyeq] using hN y hy⟩
 
 /-- **Introduction**: if some power of `I` lies in the ideal generated by `s` inside `A₀`, the
 standing hypothesis holds. Indeed `b = c · s` makes `b/s = c`, which lies in `A₀ ⊆ D`. This is
@@ -804,6 +868,61 @@ theorem isTopologicalRing_locTopology [IsTopologicalRing A] (P : PairOfDefinitio
     (hden : HasDenominatorPower P T s S) :
     @IsTopologicalRing _ (locTopology P T s S hden) _ :=
   (locBasis P T s S hden).toRingFilterBasis.isTopologicalRing
+
+/-! ### A change of presentation leaves the topology alone -/
+
+/-- **Presentations with the same ring of definition have the same neighbourhood filtration.**
+`locIdealImage` depends on `(T, s)` only through `locSubring P T s S`, so two presentations
+sharing that subring give the same subgroup of `Aₛ` at every level. -/
+theorem locIdealImage_congr (P : PairOfDefinition A) (T T' : Finset A) (s s' : A)
+    (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] [IsLocalization.Away s' S]
+    (h : locSubring P T' s' S = locSubring P T s S) (n : ℕ) :
+    locIdealImage P T' s' S n = locIdealImage P T s S n := by
+  have hc : ((RingEquiv.subringCongr h : _ →+* _).comp (toLocSubring P T' s' S))
+      = toLocSubring P T s S :=
+    RingHom.ext fun a ↦ Subtype.ext <| by
+      rw [RingHom.comp_apply, RingEquiv.coe_toRingHom, RingEquiv.coe_subringCongr_apply,
+        toLocSubring_apply, toLocSubring_apply]
+  have hc' : (((RingEquiv.subringCongr h).symm : _ →+* _).comp (toLocSubring P T s S))
+      = toLocSubring P T' s' S :=
+    RingHom.ext fun a ↦ Subtype.ext <| by
+      rw [RingHom.comp_apply, RingEquiv.coe_toRingHom, RingEquiv.subringCongr_symm,
+        RingEquiv.coe_subringCongr_apply, toLocSubring_apply, toLocSubring_apply]
+  have hmap : Ideal.map (RingEquiv.subringCongr h : _ →+* _) (locIdeal P T' s' S)
+      = locIdeal P T s S := by
+    rw [locIdeal_def, locIdeal_def, Ideal.map_map, hc]
+  have hmap' : Ideal.map ((RingEquiv.subringCongr h).symm : _ →+* _) (locIdeal P T s S)
+      = locIdeal P T' s' S := by
+    rw [locIdeal_def, locIdeal_def, Ideal.map_map, hc']
+  ext x
+  simp only [mem_locIdealImage_iff]
+  constructor
+  · rintro ⟨d, hd, rfl⟩
+    refine ⟨RingEquiv.subringCongr h d, ?_, RingEquiv.coe_subringCongr_apply h d⟩
+    rw [← hmap, ← Ideal.map_pow]
+    exact Ideal.mem_map_of_mem _ hd
+  · rintro ⟨d, hd, rfl⟩
+    refine ⟨(RingEquiv.subringCongr h).symm d, ?_, RingEquiv.coe_subringCongr_apply h.symm d⟩
+    rw [← hmap', ← Ideal.map_pow]
+    exact Ideal.mem_map_of_mem _ hd
+
+/-- **A change of presentation with the same ring of definition leaves `locTopology` alone.**
+
+This is what lets a presentation be replaced by another one — for instance a rescaled one — while
+the topology on `Aₛ`, and hence its completion, stays the same object. -/
+theorem locTopology_congr [IsTopologicalRing A] (P : PairOfDefinition A) (T T' : Finset A)
+    (s s' : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    [IsLocalization.Away s' S] (hden : HasDenominatorPower P T s S)
+    (hden' : HasDenominatorPower P T' s' S) (h : locSubring P T' s' S = locSubring P T s S) :
+    locTopology P T' s' S hden' = locTopology P T s S hden := by
+  have hb' := hasBasis_nhds_zero_locTopology P T' s' S hden'
+  rw [funext fun n ↦ locIdealImage_congr P T T' s s' S h n] at hb'
+  exact IsTopologicalAddGroup.ext
+    (@IsTopologicalRing.isTopologicalAddGroup S _ (locTopology P T' s' S hden')
+      (isTopologicalRing_locTopology P T' s' S hden'))
+    (@IsTopologicalRing.isTopologicalAddGroup S _ (locTopology P T s S hden)
+      (isTopologicalRing_locTopology P T s S hden))
+    (hb'.eq_of_same_basis (hasBasis_nhds_zero_locTopology P T s S hden))
 
 /-- `locTopology` is nonarchimedean: `Aₛ` inherits a basis of open additive subgroups at zero. -/
 theorem nonarchimedeanRing_locTopology [IsTopologicalRing A] (P : PairOfDefinition A)

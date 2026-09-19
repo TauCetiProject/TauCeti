@@ -30,7 +30,7 @@ rational algebraic integer is an integer, so `χ(1)` divides `|G|`.
 
 * `TauCeti.Representation.finrank_mul_sum_centralCharacter_eq_card`: the division-free identity
   `χ(1) · ∑_C ωᵪ(K_C) χ(g_C⁻¹) = |G|`.
-* `TauCeti.Representation.finrank_dvd_card` and `TauCeti.FDRep.finrank_dvd_card`: the degree of an
+* `TauCeti.Representation.finrank_dvd_card` and `FDRep.finrank_dvd_card`: the degree of an
   irreducible representation divides the order of the group.
 
 ## Implementation notes
@@ -121,7 +121,7 @@ theorem finrank_dvd_card : finrank k V ∣ Nat.card G := by
   let _ : Fintype G := Fintype.ofFinite G
   have hcard : (Nat.card G : k) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   have : Invertible (Nat.card G : k) := invertibleOfNonzero hcard
-  have : Nontrivial V := IsIrreducible.nontrivial ‹ρ.IsIrreducible›
+  have : Nontrivial V := Representation.IsIrreducible.nontrivial ‹ρ.IsIrreducible›
   refine dvd_of_isIntegral_of_natCast_mul_eq (k := k) ?_
     (finrank_mul_sum_centralCharacter_eq_card ρ) Module.finrank_pos.ne'
   refine IsIntegral.sum _ fun C _ => IsIntegral.mul
@@ -140,7 +140,7 @@ variable {k G : Type*} [Field k] [IsAlgClosed k] [CharZero k] [Group G] [Finite 
 
 /-- **The degree of an irreducible character divides the order of the group**, for a bundled
 finite-dimensional representation. -/
-theorem finrank_dvd_card (X : FDRep k G) [_root_.Representation.IsIrreducible X.ρ] :
+theorem _root_.FDRep.finrank_dvd_card (X : FDRep k G) [_root_.Representation.IsIrreducible X.ρ] :
     finrank k X ∣ Nat.card G :=
   Representation.finrank_dvd_card X.ρ
 
