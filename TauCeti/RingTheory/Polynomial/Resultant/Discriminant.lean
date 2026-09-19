@@ -44,14 +44,16 @@ depressed specialization of that formula is used to compare a quartic with its c
   roots and multiplies `δ` by the sign of that permutation.
 * `Polynomial.Monic.discr_eq_prod_roots_sub_sq`: the same formula for a monic polynomial,
   written against a numbering `r : Fin f.natDegree → L` of its root multiset over an extension.
-* `TauCeti.discrSqrt`, `Polynomial.Monic.discrSqrt_sq`: the product of the differences of a
-  numbering of the distinct roots of a separable polynomial, and the fact that its square is the
-  discriminant.
+* `TauCeti.discrSqrt`, `TauCeti.discrSqrt_ne_zero`, `Polynomial.Monic.discrSqrt_sq`: the product
+  of the differences of a numbering of the distinct roots, its nonvanishing, and the fact that
+  its square is the discriminant for a monic separable polynomial.
 * `Polynomial.Monic.prod_roots_eval_derivative`: the product of the derivative over the root
   multiset, which is the discriminant up to the same sign. This is the shape in which the
   discriminant of a minimal polynomial is a norm.
 * `Polynomial.Monic.discr_mul`: the product formula for discriminants, with the square of the
   resultant as its cross term.
+* `TauCeti.discr_C_mul`, `TauCeti.isSquare_discr_iff_mem_range`: the scaling law and
+  square-root criterion for a not-necessarily-monic polynomial over a field.
 * `Polynomial.discr_map_of_natDegree_eq`, `Polynomial.Monic.discr_map`: base change whenever the
   degree is preserved, with monicity as a convenient sufficient condition.
 * `Polynomial.Monic.isUnit_discr_iff`, `Polynomial.Monic.discr_ne_zero_iff`,
@@ -465,6 +467,113 @@ theorem _root_.Polynomial.Monic.isSquare_discr_iff_mem_range (hf : f.Monic) (hse
 
 end Field
 
+section Nonmonic
+
+variable {F : Type*} [Field F] {f : F[X]}
+
+/-- Scaling a polynomial of degree `n` by a nonzero constant `a` scales its discriminant by
+`a ^ (2 * n - 2)`. -/
+theorem discr_C_mul (a : F) (ha : a ≠ 0) :
+    (C a * f).discr = a ^ (2 * f.natDegree - 2) * f.discr := by
+  by_cases hdeg : f.natDegree = 0
+  · rw [eq_C_of_natDegree_eq_zero hdeg]
+    rw [← C_mul, discr_C]
+    simp
+  have hf0 : f ≠ 0 := by
+    rintro rfl
+    simp at hdeg
+  have hpos : 0 < f.degree :=
+    natDegree_pos_iff_degree_pos.mp (Nat.pos_of_ne_zero hdeg)
+  have hscaleddeg : (C a * f).natDegree = f.natDegree := natDegree_C_mul ha
+  have hscaledpos : 0 < (C a * f).degree := by
+    rw [degree_C_mul ha]
+    exact hpos
+  have hfres := resultant_deriv hpos
+  have hscaledres := resultant_deriv hscaledpos
+  rw [derivative_C_mul, resultant_C_mul_left, resultant_C_mul_right,
+    hscaleddeg, hfres, leadingCoeff_mul, leadingCoeff_C] at hscaledres
+  apply mul_left_cancel₀ (a := a * f.leadingCoeff)
+    (mul_ne_zero ha (leadingCoeff_ne_zero.mpr hf0))
+  calc
+    a * f.leadingCoeff * (C a * f).discr =
+        a ^ (f.natDegree - 1) * a ^ f.natDegree *
+          (f.leadingCoeff * f.discr) := by
+            apply mul_left_cancel₀ (a := (-1 : F) ^ (f.natDegree * (f.natDegree - 1) / 2))
+              (pow_ne_zero _ (by simp))
+            simpa only [mul_assoc, mul_left_comm, mul_comm] using hscaledres.symm
+    _ = a * f.leadingCoeff *
+        (a ^ (2 * f.natDegree - 2) * f.discr) := by
+          rw [← pow_add]
+          have hn : f.natDegree - 1 + f.natDegree = 1 + (2 * f.natDegree - 2) := by omega
+          rw [hn, pow_add, pow_one]
+          ring
+
+/-- For a separable polynomial, the discriminant is a square in the base field exactly when the
+product of the root differences comes from the base field. This is the nonmonic analogue of
+`Polynomial.Monic.isSquare_discr_iff_mem_range`. -/
+theorem isSquare_discr_iff_mem_range {E : Type*} [Field E] [Algebra F E]
+    (hsep : f.Separable) (e : Fin f.natDegree ≃ f.rootSet E) :
+    IsSquare f.discr ↔ discrSqrt e ∈ Set.range (algebraMap F E) := by
+  have hf0 : f ≠ 0 := hsep.ne_zero
+  have hlc : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hf0
+  have hlcE : algebraMap F E f.leadingCoeff ≠ 0 :=
+    (map_eq_zero_iff _ (algebraMap F E).injective).not.mpr hlc
+  let p : E[X] := ∏ i, (X - C (e i : E))
+  have hfmapdeg : (f.map (algebraMap F E)).natDegree = f.natDegree :=
+    natDegree_map_eq_of_injective (algebraMap F E).injective f
+  have hroots := hsep.roots_map_eq_map_numbering e
+  have hrootsCard : (f.map (algebraMap F E)).roots.card =
+      (f.map (algebraMap F E)).natDegree := by
+    rw [hroots, hfmapdeg]
+    simp
+  have hsplits : (f.map (algebraMap F E)).Splits :=
+    splits_iff_card_roots.mpr hrootsCard
+  have hfac : f.map (algebraMap F E) = C (algebraMap F E f.leadingCoeff) * p := by
+    calc
+      f.map (algebraMap F E) = C (f.map (algebraMap F E)).leadingCoeff *
+          ((f.map (algebraMap F E)).roots.map (X - C ·)).prod := hsplits.eq_prod_roots
+      _ = C (algebraMap F E f.leadingCoeff) *
+          ((univ.val.map fun i ↦ (e i : E)).map (X - C ·)).prod := by
+            rw [leadingCoeff_map_of_injective (algebraMap F E).injective, hroots]
+      _ = C (algebraMap F E f.leadingCoeff) * ∏ i, (X - C (e i : E)) := by
+            rw [Multiset.map_map, ← Finset.prod_eq_multiset_prod]
+            rfl
+      _ = C (algebraMap F E f.leadingCoeff) * p := rfl
+  have hpdeg : p.natDegree = f.natDegree := by
+    rw [← hfmapdeg, hfac, natDegree_C_mul hlcE]
+  have hdiscr : algebraMap F E f.discr =
+      (algebraMap F E f.leadingCoeff) ^ (2 * f.natDegree - 2) * discrSqrt e ^ 2 := by
+    rw [← discr_map_of_natDegree_eq (algebraMap F E) hfmapdeg, hfac,
+      discr_C_mul _ hlcE, hpdeg, discr_prod_X_sub_C_eq_sq, discrSqrt_def]
+  have hexp : 2 * f.natDegree - 2 = 2 * (f.natDegree - 1) := by omega
+  rw [hexp, mul_comm 2, pow_mul] at hdiscr
+  set d : E := algebraMap F E f.leadingCoeff ^ (f.natDegree - 1) with hd_def
+  simp only [pow_two] at hdiscr
+  have hd : d ≠ 0 := pow_ne_zero _ hlcE
+  constructor
+  · rintro ⟨c, hc⟩
+    have hs : discrSqrt e * discrSqrt e =
+        algebraMap F E (f.leadingCoeff⁻¹ ^ (f.natDegree - 1) * c) *
+          algebraMap F E (f.leadingCoeff⁻¹ ^ (f.natDegree - 1) * c) := by
+      have h := hdiscr
+      rw [hc, map_mul] at h
+      simp only [map_inv₀, map_pow, map_mul]
+      rw [inv_pow, ← hd_def]
+      field_simp [hd] at h ⊢
+      ring_nf at h ⊢
+      exact h.symm
+    rcases mul_self_eq_mul_self_iff.mp hs with hs | hs
+    · exact ⟨_, hs.symm⟩
+    · exact ⟨-_, by rw [map_neg, ← hs]⟩
+  · rintro ⟨c, hc⟩
+    refine ⟨f.leadingCoeff ^ (f.natDegree - 1) * c, (algebraMap F E).injective ?_⟩
+    simp only [map_mul, map_pow]
+    rw [← hd_def]
+    rw [hc, hdiscr]
+    ring
+
+end Nonmonic
+
 end DiscrSqrt
 
 /-! ### Separability -/
@@ -492,16 +601,16 @@ theorem _root_.Polynomial.Monic.discr_ne_zero_iff {K : Type*} [Field K] {f : K[X
     (hf : f.Monic) : f.discr ≠ 0 ↔ f.Separable := by
   rw [← hf.isUnit_discr_iff, isUnit_iff_ne_zero]
 
-/-- A separable monic polynomial has nonzero discriminant, so the product of its root differences
-is nonzero. -/
-theorem _root_.Polynomial.Monic.discrSqrt_ne_zero {F E : Type*} [CommRing F] [CommRing E]
-    [IsDomain E]
-    [Algebra F E] {f : F[X]} (hf : f.Monic) (hsep : f.Separable)
-    (e : Fin f.natDegree ≃ f.rootSet E) :
+/-- The product of the differences of a numbering of distinct roots is nonzero. -/
+theorem discrSqrt_ne_zero {F E : Type*} [CommRing F] [CommRing E] [IsDomain E]
+    [Algebra F E] {f : F[X]} (e : Fin f.natDegree ≃ f.rootSet E) :
     discrSqrt e ≠ 0 := by
-  intro h
-  apply ((hf.isUnit_discr_iff.mpr hsep).map (algebraMap F E)).ne_zero
-  rw [← hf.discrSqrt_sq hsep e, h, zero_pow two_ne_zero]
+  rw [discrSqrt_def]
+  refine Finset.prod_ne_zero_iff.mpr fun i _ => Finset.prod_ne_zero_iff.mpr fun j hj => ?_
+  rw [sub_ne_zero]
+  intro hij
+  have : e i = e j := Subtype.ext hij
+  exact (Finset.mem_Ioi.mp hj).ne (e.injective this)
 
 /-- A monic polynomial becomes separable along a ring homomorphism into a field exactly when its
 discriminant does not become zero. No injectivity is needed: the discriminant commutes with base

@@ -94,6 +94,20 @@ theorem _root_.IsCompact.exists_contDiff_cutoff_with_bounds [InnerProductSpace �
     exact (hC ⟨x, rfl⟩).trans (le_max_right _ _)
   exact ⟨ψ, M, hψ, hψ_range, hψ_one_nhds, hψ_cpt, hψ_ts, hM0, hψM, hgradψM⟩
 
+/-- A compactly supported `C¹` function and its gradient are bounded by a common nonnegative
+constant. -/
+theorem _root_.ContDiff.exists_abs_le_and_norm_gradient_le [InnerProductSpace ℝ E]
+    [CompleteSpace E] {ψ : E → ℝ} (hψ : ContDiff ℝ 1 ψ) (hcpt : HasCompactSupport ψ) :
+    ∃ M : ℝ, 0 ≤ M ∧ (∀ x, |ψ x| ≤ M) ∧ ∀ x, ‖∇ ψ x‖ ≤ M := by
+  obtain ⟨C, hC⟩ := hψ.continuous.norm.bddAbove_range_of_hasCompactSupport hcpt.norm
+  obtain ⟨D, hD⟩ := (hψ.continuous_fderiv one_ne_zero).norm.bddAbove_range_of_hasCompactSupport
+    (hcpt.fderiv ℝ).norm
+  refine ⟨max 0 (max C D), le_max_left _ _, fun x => ?_, fun x => ?_⟩
+  · rw [← Real.norm_eq_abs]
+    exact (hC ⟨x, rfl⟩).trans ((le_max_left _ _).trans (le_max_right _ _))
+  · rw [_root_.gradient, LinearIsometryEquiv.norm_map]
+    exact (hD ⟨x, rfl⟩).trans ((le_max_right _ _).trans (le_max_right _ _))
+
 /-- A compact-exhaustion term in an open set admits a smooth cutoff supported in the interior of
 the next term. -/
 theorem _root_.CompactExhaustion.exists_contDiff_cutoff [NormedSpace ℝ E]

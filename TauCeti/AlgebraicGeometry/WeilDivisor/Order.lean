@@ -66,6 +66,10 @@ lemma isEffective_iff_zero_le {D : WeilDivisor X} : IsEffective D ↔ 0 ≤ D :=
   rw [isEffective_iff, le_iff]
   simp
 
+/-- Adding a point to a divisor gives a larger divisor. -/
+lemma le_add_ofPoint (D : WeilDivisor X) (x : X) : D ≤ D + ofPoint x :=
+  le_add_of_nonneg_right (isEffective_iff_zero_le.mp (isEffective_ofPoint x))
+
 /-- Membership in the effective submonoid is nonnegativity in the coefficientwise order. -/
 lemma mem_effectiveSubmonoid_iff_zero_le {D : WeilDivisor X} :
     D ∈ effectiveSubmonoid X ↔ 0 ≤ D := by

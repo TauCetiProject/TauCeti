@@ -200,11 +200,11 @@ theorem mem_evenAutSubgroup {ϕ : E ≃ₐ[F] E} :
   Equiv.Perm.mem_alternatingGroup
 
 open scoped Classical in
-/-- The even part of the Galois group is the subgroup fixing a square root of the discriminant.
+/-- The even part of the Galois group is the subgroup fixing the root-difference product.
 Both inclusions are the transformation law `AlgEquiv.map_discrSqrt`: an even automorphism fixes the
-square root, and an odd one negates it, which moves it because it is nonzero and `2 ≠ 0`. -/
-theorem evenAutSubgroup_eq_fixingSubgroup (hf : f.Monic) (hsep : f.Separable)
-    (hchar : ringChar F ≠ 2) (e : Fin f.natDegree ≃ f.rootSet E) :
+product, and an odd one negates it, which moves it because it is nonzero and `2 ≠ 0`. -/
+theorem evenAutSubgroup_eq_fixingSubgroup (hchar : ringChar F ≠ 2)
+    (e : Fin f.natDegree ≃ f.rootSet E) :
     evenAutSubgroup f E = IntermediateField.fixingSubgroup F⟮discrSqrt e⟯ := by
   have h2 : (2 : E) ≠ 0 := by
     rw [← map_ofNat (algebraMap F E) 2]
@@ -224,8 +224,8 @@ theorem evenAutSubgroup_eq_fixingSubgroup (hf : f.Monic) (hsep : f.Separable)
     rcases Int.units_eq_one_or (Equiv.Perm.sign (Gal.galActionHom f E (Gal.restrict f E ϕ)))
       with h1 | h1
     · exact h1
-    -- An odd automorphism would negate the nonzero square root and fix it, forcing `2 = 0`.
-    · refine absurd ?_ (hf.discrSqrt_ne_zero hsep e)
+    -- An odd automorphism would negate the nonzero product and fix it, forcing `2 = 0`.
+    · refine absurd ?_ (discrSqrt_ne_zero e)
       rw [h1] at hfix
       have hdouble : (2 : E) * discrSqrt (f := f) e = 0 := by
         simp only [Units.smul_def, Units.val_neg, Units.val_one, neg_smul, one_smul] at hfix
@@ -242,7 +242,7 @@ theorem fixedField_evenAutSubgroup [IsGalois F E] (hf : f.Monic) (hsep : f.Separ
   obtain ⟨e⟩ : Nonempty (Fin f.natDegree ≃ f.rootSet E) :=
     ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
   rw [discrField_eq_adjoin_simple (hf.discrSqrt_sq hsep e),
-    evenAutSubgroup_eq_fixingSubgroup hf hsep hchar e,
+    evenAutSubgroup_eq_fixingSubgroup hchar e,
     InfiniteGalois.fixedField_fixingSubgroup]
 
 open scoped Classical in

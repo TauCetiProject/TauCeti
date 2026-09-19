@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.HighestWeight.Casimir
 public import TauCeti.Algebra.Lie.Weights.Positivity
 import TauCeti.Algebra.Lie.HighestWeight.Module
-import TauCeti.Algebra.Lie.HighestWeight.WeightSupport
+import TauCeti.Algebra.Lie.HighestWeight.Weight.Support
 
 /-!
 # Separation by the Casimir scalar
@@ -66,7 +66,7 @@ module lie in `lam - Q⁺`, so `lam - mu` is a nonzero member of the positive ro
 of a finite-dimensional module are Weyl stable and integral, so `mu` has a Weyl translate
 `nu = w · mu` that is again a weight of the module and is dominant integral, by
 `TauCeti.exists_weylGroup_smul_isDominantIntegral_of_genWeightSpace_ne_bot` of
-`TauCeti/Algebra/Lie/HighestWeight/WeightSupport.lean`. The form is Weyl
+`TauCeti/Algebra/Lie/HighestWeight/Weight/Support.lean`. The form is Weyl
 invariant (`RootPairing.InvariantForm.apply_weylGroup_smul`), so
 `⟨mu, mu⟩ = ⟨nu, nu⟩` and the first summand is
 `⟨lam + nu, lam - nu⟩`, which is nonnegative: `lam + nu` is dominant integral and `lam - nu` lies
