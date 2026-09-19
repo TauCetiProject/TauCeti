@@ -48,6 +48,9 @@ primes is what makes the ramified Euler factors drop out as `(1 - 0)⁻¹ = 1`.
   exactly when that prime ramifies in `L`.
 * `MonoidHom.badPrimes_galoisCharacterWeight`: the bad primes of the weight are exactly the
   ramified primes.
+* `MonoidHom.galoisCharacterWeight_one`: the weight of the trivial character is the indicator of
+  the ideals prime to the ramified primes, so its `L`-series is the Dedekind zeta function with the
+  ramified Euler factors deleted.
 * `MonoidHom.val_galoisCharacterUnitaryWeight`: the unitary packaging has the same underlying
   weight.
 
@@ -226,6 +229,25 @@ theorem badPrimes_galoisCharacterWeight (χ : (L ≃ₐ[K] L) →* ℂˣ) :
   ext 𝔭
   simpa only [TauCeti.MultiplicativeIdealWeight.mem_badPrimes, Finset.mem_coe] using
     galoisCharacterWeight_apply_eq_zero_iff χ 𝔭
+
+/-- **The weight of the trivial character** is the indicator of the ideals prime to the ramified
+primes. Its `L`-series is therefore the Dedekind zeta function of `K` with the Euler factors at the
+ramified primes deleted (`TauCeti.LSeries_ofBadPrimes`). -/
+@[simp]
+theorem galoisCharacterWeight_one :
+    galoisCharacterWeight (L := L) (1 : (L ≃ₐ[K] L) →* ℂˣ) =
+      TauCeti.MultiplicativeIdealWeight.ofBadPrimes (ramifiedPrimes K L : Set _)
+        (ramifiedPrimes K L).finite_toSet := by
+  classical
+  refine TauCeti.MultiplicativeIdealWeight.ext_heightOneSpectrum fun 𝔭 ↦ ?_
+  rw [TauCeti.MultiplicativeIdealWeight.ofBadPrimes_apply, Ideal.isPrimeTo_asIdeal_iff,
+    Finset.mem_coe]
+  by_cases h : 𝔭 ∈ ramifiedPrimes K L
+  · simp only [h, not_true_eq_false, ↓reduceIte]
+    exact (galoisCharacterWeight_apply_eq_zero_iff _ 𝔭).mpr h
+  · simp only [h, not_false_eq_true, ↓reduceIte]
+    rw [galoisCharacterWeight_apply_of_unramified _ 𝔭
+        (not_not.mp (mt (mem_ramifiedPrimes_iff 𝔭).mpr h)), MonoidHom.one_apply, Units.val_one]
 
 /-- **The weight of a Galois character is unitary.** Its values have modulus `1` at every
 unramified prime, and `0` at the ramified ones — which is exactly the `UnitaryIdealWeight`

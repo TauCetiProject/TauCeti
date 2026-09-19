@@ -37,6 +37,8 @@ trivializes the parameter.
 
 * `TauCeti.SkewZigzagParameter.ratio_eq_localCoordinate_div`: every ratio is a quotient of local
   edge coordinates.
+* `TauCeti.SkewZigzagParameter.transition_mul`: transition factors are multiplicative in the
+  parameter.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_one_of_potential`: a vertex potential for the
   transition factors trivializes the parameter.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_one_of_walkTransition_eq`: a parameter whose
@@ -93,6 +95,22 @@ theorem ratio_eq_localCoordinate_div (c : SkewZigzagParameter k G) {i j j' : V}
 theorem transition_symm (c : SkewZigzagParameter k G) {v w : V} (h : G.Adj v w) :
     transition c h.symm = (transition c h)⁻¹ := by
   rw [transition, transition, inv_div]
+
+/-- The local coordinates of a product of parameters are the products of their local
+coordinates. -/
+@[simp]
+theorem localCoordinate_mul (c c' : SkewZigzagParameter k G) {v w : V} (h : G.Adj v w) :
+    localCoordinate (c * c') h = localCoordinate c h * localCoordinate c' h := by
+  unfold localCoordinate
+  exact mul_ratio c c' _ _
+
+/-- The transition factors of a product of parameters are the products of their transition
+factors. -/
+@[simp]
+theorem transition_mul (c c' : SkewZigzagParameter k G) {v w : V} (h : G.Adj v w) :
+    transition (c * c') h = transition c h * transition c' h := by
+  rw [transition_def, transition_def, transition_def, localCoordinate_mul, localCoordinate_mul,
+    mul_div_mul_comm]
 
 /-! ### Transition factors along walks -/
 

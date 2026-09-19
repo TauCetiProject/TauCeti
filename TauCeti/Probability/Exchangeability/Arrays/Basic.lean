@@ -272,6 +272,21 @@ theorem separatelyExchangeable_iff_map_pairReindex {μ : Measure Ω} {X : ℕ ×
       rw [pairReindex_apply]
     rw [map_map_array hX (measurable_pairReindex σ τ), hread]
 
+/-- **Joint exchangeability is a property of the array law**: an array is jointly exchangeable
+exactly when the coordinate array under its law on `ℕ × ℕ → α` is. -/
+theorem jointlyExchangeable_map_iff {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
+    (hX : ∀ p, AEMeasurable (X p) μ) :
+    JointlyExchangeable (μ.map fun ω p => X p ω) (fun p x => x p) ↔ JointlyExchangeable μ X :=
+  forall_congr' fun σ => by
+    have hread : (fun ω => pairReindex σ σ fun p => X p ω) = fun ω p => X (σ p.1, σ p.2) ω := by
+      funext ω p
+      rw [pairReindex_apply]
+    have hfun : (fun (x : ℕ × ℕ → α) (p : ℕ × ℕ) => x (σ p.1, σ p.2)) = pairReindex σ σ := by
+      funext x p
+      rw [pairReindex_apply]
+    beta_reduce
+    rw [hfun, map_map_array hX (measurable_pairReindex σ σ), hread, Measure.map_id']
+
 /-- **An array law is the uncurried path law of its row process.** A statement about the law of the
 row process therefore transports to one about the law of the array. -/
 theorem map_uncurry_pathLaw_arrayRow {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}

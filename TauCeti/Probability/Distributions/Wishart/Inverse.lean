@@ -61,6 +61,9 @@ one.
   `TauCeti.inverseWishartMeasure_of_le` describe the two invalid branches.
 * `TauCeti.isProbabilityMeasure_inverseWishartMeasure` — at those parameters the law has total
   mass one.
+* `TauCeti.hasPDF_of_hasLaw_inverseWishartMeasure` and `TauCeti.rnDeriv_inverseWishartMeasure` —
+  an inverse-Wishart random matrix has a density against `TauCeti.symmetricLebesgue`, and at
+  those parameters the law's Radon–Nikodym derivative is `TauCeti.inverseWishartPDF`.
 * `TauCeti.ae_posDef_inverseWishartMeasure` — the sampled matrix is positive definite almost
   everywhere.
 * `TauCeti.map_symmetricCongruence_inverseWishartMeasure` — congruence by an invertible matrix
@@ -446,6 +449,48 @@ theorem isProbabilityMeasure_inverseWishartMeasure (hS : S.PosDef) (hn : (p : �
   have := isProbabilityMeasure_nonsingularWishartMeasure hS.inv hn
   rw [inverseWishartMeasure_def]
   infer_instance
+
+/-! ### The density of an inverse-Wishart random matrix -/
+
+section Density
+
+open ProbabilityTheory
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+  {X : Ω → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
+
+/-- A random symmetric matrix with an inverse-Wishart law has a density against
+`TauCeti.symmetricLebesgue`, at every degree and scale: outside the classical parameter range the
+law is zero, which trivially has one. -/
+theorem hasPDF_of_hasLaw_inverseWishartMeasure (hX : HasLaw X (inverseWishartMeasure n S) P) :
+    HasPDF X P (symmetricLebesgue p) := by
+  by_cases hS : S.PosDef
+  · by_cases hn : (p : ℝ) - 1 < n
+    · exact Probability.hasPDF_of_hasLaw_withDensity
+        (measurable_inverseWishartPDF n S).aemeasurable
+        (by rwa [← inverseWishartMeasure_of_posDef hS hn])
+    · refine Probability.hasPDF_of_hasLaw_withDensity (f := 0) aemeasurable_const ?_
+      rwa [withDensity_zero, ← inverseWishartMeasure_of_le S (not_lt.1 hn)]
+  · refine Probability.hasPDF_of_hasLaw_withDensity (f := 0) aemeasurable_const ?_
+    rwa [withDensity_zero, ← inverseWishartMeasure_of_not_posDef n hS]
+
+/-- The density against `TauCeti.symmetricLebesgue` of a random symmetric matrix with an
+inverse-Wishart law is `TauCeti.inverseWishartPDF`. -/
+theorem pdf_eq_inverseWishartPDF_of_hasLaw_inverseWishartMeasure (hS : S.PosDef)
+    (hn : (p : ℝ) - 1 < n) (hX : HasLaw X (inverseWishartMeasure n S) P) :
+    pdf X P (symmetricLebesgue p) =ᵐ[symmetricLebesgue p] inverseWishartPDF n S :=
+  Probability.pdf_eq_of_hasLaw_withDensity (measurable_inverseWishartPDF n S).aemeasurable
+    (by rwa [← inverseWishartMeasure_of_posDef hS hn])
+
+/-- **The Radon–Nikodym derivative of the inverse-Wishart law** against
+`TauCeti.symmetricLebesgue` is the inverse-Wishart density. -/
+theorem rnDeriv_inverseWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) - 1 < n) :
+    (inverseWishartMeasure n S).rnDeriv (symmetricLebesgue p) =ᵐ[symmetricLebesgue p]
+      inverseWishartPDF n S := by
+  rw [inverseWishartMeasure_of_posDef hS hn]
+  exact Measure.rnDeriv_withDensity _ (measurable_inverseWishartPDF n S)
+
+end Density
 
 /-! ### Congruence -/
 

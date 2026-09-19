@@ -218,6 +218,15 @@ theorem norm_normCoeff_one (n : ℕ) :
   rw [normCoeff_eq_sum_normFiber]
   simp
 
+/-- The norm coefficients of a unitary weight are bounded in modulus by those of the trivial
+weight, which count the ideals of each norm. -/
+theorem UnitaryIdealWeight.norm_normCoeff_le_norm_normCoeff_one (χ : UnitaryIdealWeight K) (n : ℕ) :
+    ‖normCoeff K χ.toIdealArithmeticFunction n‖ ≤
+      ‖normCoeff K (1 : IdealArithmeticFunction K) n‖ := by
+  rw [norm_normCoeff_one, normCoeff_eq_sum_normFiber]
+  refine (norm_sum_le _ _).trans ?_
+  simpa using Finset.sum_le_sum fun I (_ : I ∈ normFiber K n) ↦ χ.norm_le_one (I : Ideal (𝓞 K))
+
 /-- **The partial sums of the trivial norm coefficients are the ideal counts.** Summing the norm
 coefficients of the trivial ideal weight over `1 ≤ k ≤ n` counts the nonzero integral ideals of
 absolute norm at most `n`, because the absolute-norm fibres partition them. -/

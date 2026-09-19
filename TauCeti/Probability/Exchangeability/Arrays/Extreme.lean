@@ -34,7 +34,10 @@ action, `ErgodicSMul.iff_mem_extremePoints`, composed with `jointlyDissociated_i
   identification with the invariant measures of total mass one of the diagonal action;
 * `TauCeti.Probability.jointlyDissociated_iff_mem_extremePoints` — **joint dissociation is
   extremality** among jointly exchangeable probability laws, with
-  `jointlyDissociated_of_mem_extremePoints` reading dissociation off an extreme point.
+  `jointlyDissociated_of_mem_extremePoints` reading dissociation off an extreme point;
+* `TauCeti.Probability.JointlyDissociated.ae_eq_of_comp_eq` — the integral form: a jointly
+  dissociated law written as a mixture of jointly exchangeable laws has almost every component
+  equal to itself.
 
 ## References
 
@@ -161,6 +164,23 @@ theorem jointlyDissociated_of_mem_extremePoints {ρ : Measure (ℕ × ℕ → α
     JointlyDissociated ρ fun p x => x p :=
   have := isProbabilityMeasure_of_mem_extremePoints h
   (jointlyDissociated_iff_mem_extremePoints (jointlyExchangeable_of_mem_extremePoints h)).2 h
+
+open ProbabilityTheory in
+/-- **A jointly dissociated array law is not a nontrivial mixture of jointly exchangeable
+laws.** If `ρ` is the mixture `κ ∘ₘ π` of a Markov kernel whose laws are almost all jointly
+exchangeable, then almost every `κ z` is `ρ` itself. This is the integral form of
+`jointlyDissociated_iff_mem_extremePoints`. -/
+theorem JointlyDissociated.ae_eq_of_comp_eq [StandardBorelSpace α] {Z : Type*}
+    [MeasurableSpace Z] {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ] {π : Measure Z}
+    {κ : Kernel Z (ℕ × ℕ → α)} [IsMarkovKernel κ]
+    (hρ : JointlyDissociated ρ fun p x => x p)
+    (hκ : ∀ᵐ z ∂π, JointlyExchangeable (κ z) fun p x => x p) (hmix : κ ∘ₘ π = ρ) :
+    ∀ᵐ z ∂π, κ z = ρ := by
+  have hinv : ∀ᵐ z ∂π, SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) (κ z) :=
+    hκ.mono fun _ hz => hz.smulInvariantMeasure
+  have : SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) ρ := hmix ▸ smulInvariantMeasure_comp hinv
+  have := ergodicSMul_of_jointlyDissociated hρ
+  exact ErgodicSMul.ae_eq_of_comp_eq hinv hmix
 
 end Probability
 

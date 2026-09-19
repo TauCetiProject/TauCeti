@@ -93,6 +93,12 @@ theorem mk_eq_mk_iff {t t' : ConnectedTriple n} :
 theorem mk_surjective : Function.Surjective (mk : ConnectedTriple n → ConnectedIsoClass n) :=
   Quotient.mk''_surjective
 
+noncomputable instance : Fintype (ConnectedIsoClass n) := by
+  classical
+  exact Fintype.ofSurjective mk mk_surjective
+
+noncomputable instance : DecidableEq (ConnectedIsoClass n) := Classical.decEq _
+
 end ConnectedIsoClass
 
 /-! ## Passport specifications -/
@@ -156,6 +162,16 @@ def HasPassport (t : ConnectedTriple n) (P : PassportSpec n) : Prop :=
     t.1.cycleData.1 = P.lam0 ∧
     t.1.cycleData.2.1 = P.lam1 ∧
     t.1.cycleData.2.2 = P.laminf
+
+/-- The defining characterization of passport membership. -/
+theorem hasPassport_iff (t : ConnectedTriple n) (P : PassportSpec n) :
+    HasPassport t P ↔
+      (∃ τ : Perm (Fin n),
+        (t.1.monodromyGroup).map (MulAut.conj τ).toMonoidHom = P.G) ∧
+      t.1.cycleData.1 = P.lam0 ∧
+      t.1.cycleData.2.1 = P.lam1 ∧
+      t.1.cycleData.2.2 = P.laminf :=
+  Iff.rfl
 
 /-- Relabeling a connected triple does not change its passport membership. -/
 @[simp]

@@ -207,6 +207,19 @@ theorem invariantDualForm_def :
       0, -2, 0, 0, 0, 0, 0;
       2, 0, 0, 0, 0, 0, 0] := (rfl)
 
+/-- A nonzero cross-product coefficient has output weight equal to the sum of the input weights. -/
+theorem weight_eq_add_of_crossOperator_ne_zero (k i j : Fin 7) (h : crossOperator k i j ≠ 0) :
+    weight i = weight k + weight j := by
+  fin_cases k <;> fin_cases i <;> fin_cases j <;>
+    norm_num [crossOperator_def] at h <;> decide
+
+/-- The invariant dual form pairs only basis vectors whose weights sum to zero. -/
+theorem weight_add_eq_zero_of_invariantDualForm_ne_zero (i j : Fin 7)
+    (h : invariantDualForm i j ≠ 0) :
+    weight i + weight j = 0 := by
+  fin_cases i <;> fin_cases j <;>
+    norm_num [invariantDualForm_def] at h <;> decide
+
 /-- The seven matrices `crossOperator a * invariantDualForm`, the cross-product operators
 transported by the invariant dual form. They are alternating, and in characteristic three they
 span the short-root ideal of the Lie algebra, read inside the alternating matrices. -/

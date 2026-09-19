@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.GroupTheory.Index
 public import TauCeti.Algebra.Group.Subgroup.Map
+import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Tactic.Group
 
 /-!
@@ -44,6 +46,7 @@ centre gives the `Γ.withCenter` readings.
   products of representatives for the two successive ranges.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}`.
+* `Subgroup.isCoatom_of_index_prime`: a subgroup of prime index is maximal.
 -/
 
 
@@ -283,6 +286,14 @@ theorem index_eq_two_mul_index_withCenter (ha : a ∈ Subgroup.center G) (haΓ :
     (hcenter : ∀ c ∈ Subgroup.center G, c = 1 ∨ c = a) : Γ.index = 2 * Γ.withCenter.index :=
   Subgroup.withCenter_def Γ ▸
     index_eq_two_mul_index_sup _ Subgroup.le_normalizer_of_normal ha haΓ hcenter
+
+/-- A subgroup of prime index is maximal: an intermediate subgroup has index dividing a prime,
+so it is either the subgroup itself or everything. -/
+theorem isCoatom_of_index_prime {H : Subgroup G} (hH : H.index.Prime) : IsCoatom H := by
+  refine ⟨fun h ↦ hH.ne_one (index_eq_one.mpr h), fun K hK ↦ ?_⟩
+  rcases Nat.prime_mul_iff.mp ((relIndex_mul_index hK.le).symm ▸ hH) with ⟨-, hK1⟩ | ⟨-, hHK⟩
+  · exact index_eq_one.mp hK1
+  · exact absurd (relIndex_eq_one.mp hHK) (not_le_of_gt hK)
 
 end Subgroup
 
