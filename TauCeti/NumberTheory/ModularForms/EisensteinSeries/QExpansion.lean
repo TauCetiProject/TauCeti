@@ -295,7 +295,7 @@ at `-m`. (If the parity condition fails, the series is zero:
 @[simp]
 theorem qExpansion_charEisensteinSeriesMF_coeff (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N)
     (hpar : ψ (-1) * φ (-1) = (-1) ^ k) (n : ℕ) :
-    (qExpansion 1 (charEisensteinSeriesMF ψ φ hk huv)).coeff n =
+    (qExpansion 1 (weightedEisensteinSeries (charWeight N ψ φ) k)).coeff n =
       if n = 0 then ψ 0 * ∑' d : ℤ, φ⁻¹ d * (d : ℂ) ^ (-(k : ℤ))
       else 2 * (-2 * π * I) ^ k / ((k - 1).factorial * v ^ k) *
         ∑ x ∈ n.divisorsAntidiagonal,
@@ -305,10 +305,11 @@ theorem qExpansion_charEisensteinSeriesMF_coeff (hk : 3 ≤ (k : ℤ)) (huv : u 
     ψ x.1 * 𝓕 ⇑(φ⁻¹) (-(x.2 : ZMod v)) * (x.2 : ℂ) ^ (k - 1) with ha
   set b : ℕ → ℂ := fun n ↦ if n = 0 then ψ 0 * ∑' d : ℤ, φ⁻¹ d * (d : ℂ) ^ (-(k : ℤ))
     else K * a n
-  suffices ∀ τ : ℍ, HasSum (fun m ↦ b m • Function.Periodic.qParam 1 τ ^ m)
-      (charEisensteinSeriesMF ψ φ hk huv τ) from
-    (ModularFormClass.qExpansion_coeff_unique one_pos
-      (TauCeti.one_mem_strictPeriods_Gamma1_map N) this n).symm
+  suffices h : ∀ τ : ℍ, HasSum (fun m ↦ b m • Function.Periodic.qParam 1 τ ^ m)
+      (charEisensteinSeriesMF ψ φ hk huv τ) by
+    simpa only [coe_charEisensteinSeriesMF] using
+      (ModularFormClass.qExpansion_coeff_unique one_pos
+        (TauCeti.one_mem_strictPeriods_Gamma1_map N) h n).symm
   intro τ
   set q := cexp (2 * π * I * τ)
   have hq : Function.Periodic.qParam 1 τ = q := by
@@ -364,7 +365,8 @@ theorem qExpansion_charEisensteinSeriesMF_coeff_of_isPrimitive (hk : 3 ≤ (k : 
   have hφ' : (φ⁻¹).IsPrimitive := by
     rw [DirichletCharacter.isPrimitive_def, DirichletCharacter.conductor_inv]
     exact hφ
-  rw [qExpansion_charEisensteinSeriesMF_coeff ψ φ hk huv hpar]
+  rw [coe_charEisensteinSeriesMF,
+    qExpansion_charEisensteinSeriesMF_coeff ψ φ hk huv hpar]
   simp only [hn, ↓reduceIte]
   rw [DirichletCharacter.twistedDivisorSum_apply,
     ← Nat.sum_divisorsAntidiagonal' (f := fun a b : ℕ ↦ ψ a * φ b * (b : ℂ) ^ (k - 1)),
