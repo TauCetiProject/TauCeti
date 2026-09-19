@@ -108,7 +108,9 @@ theorem explicitCoeff2_kummerShortExact_incl_injective :
 
 /-- **The image of `H²(G_K, μₙ)` in `H²(G_K, (Kˢ)ˣ)` is the `n`-torsion**, on the explicit model:
 it is the kernel of the map induced by the `n`-th power map, which is multiplication by `n`. -/
-@[simp]
+-- Not `@[simp]`: simplifying the explicit quotient's additive structure exceeds the simp
+-- linter's deterministic typeclass-synthesis budget. Use this theorem explicitly to rewrite
+-- image membership.
 theorem mem_range_explicitCoeff2_kummerShortExact_incl_iff
     (x : H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :
     x ∈ (explicitCoeff2 _ _ (kummerShortExact K n hn).inclDistribMulActionHom
@@ -188,7 +190,8 @@ theorem h2KummerToUnits_injective (hn : IsUnit (n : K)) :
 /-- **The image of `H²(G_K, μₙ)` in `H²(G_K, (Kˢ)ˣ)` is the `n`-torsion** for `n` invertible in
 `K`. This is exactness of the long exact sequence of the Kummer sequence at `H²(G_K, (Kˢ)ˣ)`, the
 next map being multiplication by `n`. -/
-@[simp]
+-- Not `@[simp]`: the invertibility witness does not occur in the left-hand side, so the simplifier
+-- cannot infer it and the rule would never apply.
 theorem h2KummerToUnits_range (hn : IsUnit (n : K))
     (x : continuousCohomology 2 (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) :
     (∃ y, (h2KummerToUnits K n).hom y = x) ↔ n • x = 0 := by
