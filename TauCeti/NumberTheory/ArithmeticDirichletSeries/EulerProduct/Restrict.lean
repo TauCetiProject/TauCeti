@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.LSeries.Deriv
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
+public import TauCeti.NumberTheory.LSeries.Twist
 
 /-!
 # Deleting finitely many Euler factors
@@ -50,6 +51,10 @@ products omit the ramified primes, such as the trivial Galois-character series, 
 * `TauCeti.logDeriv_LSeries_ofBadPrimes`: the logarithmic derivative on `Re s > 1`, and
   `TauCeti.differentiableOn_sum_log_absNorm_div_cpow_sub_one`: the correction term in it is
   holomorphic on `Re s > 0`.
+* `TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood.LSeries_normCoeff` and
+  `TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood.tendsto_sub_one_mul_LSeries`: a weight that
+  is a norm twist with parameter `u` on its good ideals has for `L`-series such a deleted zeta
+  function read at `s - u * I`, with the corresponding pole at `s = 1 + u * I`.
 
 ## References
 
@@ -252,5 +257,49 @@ theorem differentiableOn_sum_log_absNorm_div_cpow_sub_one (S : Finset (HeightOne
   (DifferentiableAt.fun_sum fun P _ ↦ (differentiableAt_const _).div
     ((differentiableAt_id.const_cpow (Or.inl P.natCast_absNorm_ne_zero)).sub_const 1)
     (P.absNorm_cpow_sub_one_ne_zero hs)).differentiableWithinAt
+
+/-! ### Weights that are norm twists on their good ideals -/
+
+namespace MultiplicativeIdealWeight
+
+/-- **The `L`-series of a weight that is a norm twist on its good ideals.** Such a weight is the
+twist by `N(I) ^ (u * I)` of the indicator of the ideals prime to its bad primes `S`, so its
+`L`-series is the Dedekind zeta function with the Euler factors at `S` deleted, read at the
+horizontal translate `s - u * I`. -/
+theorem IsNormTwistOnGood.LSeries_normCoeff {χ : MultiplicativeIdealWeight K} {u : ℝ}
+    (h : χ.IsNormTwistOnGood u) {S : Finset (HeightOneSpectrum (𝓞 K))}
+    (hS : χ.badPrimes = (S : Set (HeightOneSpectrum (𝓞 K)))) (s : ℂ) :
+    LSeries (normCoeff K χ.toIdealArithmeticFunction) s =
+      LSeries (normCoeff K (ofBadPrimes (S : Set (HeightOneSpectrum (𝓞 K)))
+        S.finite_toSet).toIdealArithmeticFunction) (s - (u : ℂ) * Complex.I) := by
+  have hfun : χ.toIdealArithmeticFunction =
+      (MultiplicativeIdealWeight.normTwist (-((u : ℂ) * Complex.I))
+        (ofBadPrimes (S : Set (HeightOneSpectrum (𝓞 K)))
+          S.finite_toSet)).toIdealArithmeticFunction := by
+    rw [← h.eq_normTwist S.finite_toSet hS]
+  have hcoeff : ⇑(normCoeff K χ.toIdealArithmeticFunction) = fun n : ℕ ↦
+      normCoeff K (ofBadPrimes (S : Set (HeightOneSpectrum (𝓞 K)))
+        S.finite_toSet).toIdealArithmeticFunction n *
+        (n : ℂ) ^ (-(-((u : ℂ) * Complex.I))) := by
+    funext n
+    rw [hfun, normCoeff_normTwist]
+  rw [hcoeff, TauCeti.LSeries.LSeries_mul_natCast_cpow_neg, sub_eq_add_neg]
+
+/-- **The pole of the `L`-series of a norm twist on the good ideals.** Along the horizontal ray
+`s = t + u * I` with `t → 1⁺`, the normalized series tends to the residue of the Dedekind zeta
+function times the deleted Euler factors at `s = 1`; that limit is nonzero by
+`TauCeti.prod_one_sub_absNorm_cpow_neg_ne_zero` and
+`NumberField.dedekindZeta_residue_pos`. -/
+theorem IsNormTwistOnGood.tendsto_sub_one_mul_LSeries {χ : MultiplicativeIdealWeight K} {u : ℝ}
+    (h : χ.IsNormTwistOnGood u) {S : Finset (HeightOneSpectrum (𝓞 K))}
+    (hS : χ.badPrimes = (S : Set (HeightOneSpectrum (𝓞 K)))) :
+    Tendsto (fun t : ℝ ↦ ((t : ℂ) - 1) *
+        LSeries (normCoeff K χ.toIdealArithmeticFunction) ((t : ℂ) + (u : ℂ) * Complex.I))
+      (𝓝[>] 1) (𝓝 (NumberField.dedekindZeta_residue K *
+        ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-1 : ℂ)))) :=
+  (tendsto_sub_one_mul_LSeries_ofBadPrimes S).congr fun t ↦ by
+    rw [h.LSeries_normCoeff hS, add_sub_cancel_right]
+
+end MultiplicativeIdealWeight
 
 end TauCeti
