@@ -127,7 +127,6 @@ noncomputable def residueFieldEquiv (σ : L ≃ₐ[K] L) : 𝓀[L] ≃ₐ[𝓀[K
   IsLocalRing.ResidueField.mapAlgEquiv' σ.integerRingAlgEquiv
 
 /-- The induced residue-field automorphism commutes with reduction from the integer ring. -/
-@[simp]
 theorem residueFieldEquiv_residue (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
     σ.residueFieldEquiv (IsLocalRing.residue 𝒪[L] x) =
       IsLocalRing.residue 𝒪[L] (σ • x) := by

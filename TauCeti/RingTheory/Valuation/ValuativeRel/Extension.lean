@@ -63,7 +63,6 @@ noncomputable instance residueFieldAlgebra : Algebra 𝓀ᵥ[K] 𝓀ᵥ[L] :=
   IsLocalRing.ResidueField.instAlgebra
 
 /-- Coercing the integer-ring structure map to `L` gives the field structure map. -/
-@[simp]
 theorem coe_algebraMap_integerRing (x : 𝒪ᵥ[K]) :
     ((algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] x : 𝒪ᵥ[L]) : L) = algebraMap K L (x : K) :=
   Valuation.HasExtension.coe_algebraMap_valuationSubring_eq (valuation K) (valuation L) x
