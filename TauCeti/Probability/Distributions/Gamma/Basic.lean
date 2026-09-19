@@ -74,7 +74,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory ProbabilityTheory Real Set
-open scoped MeasureTheory
+open scoped MeasureTheory Topology
 
 variable {a r : ℝ}
 
@@ -435,25 +435,17 @@ theorem gammaMeasure_conv_gammaMeasure {b : ℝ} (ha : 0 < a) (hb : 0 < b) (hr :
   let _ := isProbabilityMeasure_gammaMeasure ha hr
   let _ := isProbabilityMeasure_gammaMeasure hb hr
   let _ := isProbabilityMeasure_gammaMeasure hab hr
-  have hmgf : mgf id (gammaMeasure (a + b) r) =
+  have hmgf : mgf id (gammaMeasure (a + b) r) =ᶠ[𝓝 0]
       mgf id (gammaMeasure a r ∗ gammaMeasure b r) := by
     rw [mgf_id_conv]
-    ext t
+    filter_upwards [Iio_mem_nhds hr] with t ht
     simp only [Pi.mul_apply]
-    rcases lt_or_ge t r with ht | ht
-    · rw [mgf_id_gammaMeasure hab hr ht, mgf_id_gammaMeasure ha hr ht,
-        mgf_id_gammaMeasure hb hr ht, ← Real.rpow_add]
-      · congr 1
-        ring
-      · rw [sub_pos, div_lt_one hr]
-        exact ht
-    · rw [mgf_undef (by simpa [id_eq] using
-          not_integrable_exp_mul_id_gammaMeasure hab hr ht),
-        mgf_undef (by simpa [id_eq] using
-          not_integrable_exp_mul_id_gammaMeasure ha hr ht),
-        mgf_undef (by simpa [id_eq] using
-          not_integrable_exp_mul_id_gammaMeasure hb hr ht)]
-      simp
+    rw [mgf_id_gammaMeasure hab hr ht, mgf_id_gammaMeasure ha hr ht,
+      mgf_id_gammaMeasure hb hr ht, ← Real.rpow_add]
+    · congr 1
+      ring
+    · rw [sub_pos, div_lt_one hr]
+      exact ht
   refine (Measure.ext_of_mgf ?_ hmgf).symm
   rw [integrableExpSet_id_gammaMeasure hab hr]
   simpa using hr

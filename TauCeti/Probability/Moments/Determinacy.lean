@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Moments.ComplexMGF
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Analysis.Analytic.Order
+import TauCeti.Probability.Moments.Basic
 
 /-!
 # Moment determinacy of finite measures with finite exponential moments
@@ -36,7 +37,7 @@ the measures coincide.  The proof stays inside Mathlib's `ProbabilityTheory.comp
 * `ProbabilityTheory.complexMGF_id_mul_I` turns the imaginary-axis values into `charFun`, and
   `MeasureTheory.Measure.ext_of_charFun` concludes.
 
-The strip-propagation core of `charFun_eq_of_forall_integral_pow_eq` adapts Mathlib's
+Both routes share one strip-propagation core, adapted from Mathlib's
 `ProbabilityTheory.eqOn_complexMGF_of_mgf'` (`Mathlib/Probability/Moments/ComplexMGF.lean`): it
 reuses the same analyticity strip and the same
 `convex_integrableExpSet.interior.…linear_preimage Complex.reLm |>.isPreconnected`
@@ -46,9 +47,8 @@ records the determinacy fact as an open gap in Mathlib; the results here complet
 measures, both via the polynomial-moment route and directly from the moment-generating function.
 
 This file also records determinacy directly from the moment-generating function: a measure on `ℝ`
-with finite exponential moments near `0` is determined among finite measures by its
-moment-generating function.  The hypothesis requires equality on all of `ℝ`, not merely near the
-origin; behavior outside the integrability region must be established separately.
+with finite exponential moments near `0` is determined among finite measures by the values its
+moment-generating function takes on an arbitrarily small neighbourhood of the origin.
 
 ## Main declarations
 
@@ -62,7 +62,7 @@ origin; behavior outside the integrability region must be established separately
   completeness argument consumes: the hypothesis holds for Gaussian decay and automatically for
   compactly supported measures.
 * `TauCeti.charFun_eq_of_mgf_eq` and `TauCeti.Measure.ext_of_mgf`: the same two conclusions from an
-  equality of moment-generating functions on all of `ℝ` instead of an equality of moments.
+  equality of moment-generating functions near `0` instead of an equality of moments.
 -/
 
 public section
@@ -74,49 +74,86 @@ open scoped Topology
 
 variable {μ ν : Measure ℝ}
 
-/-! ### Determinacy from the moment-generating function -/
+/-! ### The shared strip-propagation core -/
 
-private theorem isFiniteMeasure_of_zero_mem_interior_integrableExpSet
-    (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ)) : IsFiniteMeasure μ :=
-  (integrable_const_iff_isFiniteMeasure one_ne_zero).mp <| by
-    simpa using integrable_of_mem_integrableExpSet (interior_subset hμ)
-
-/-- **Determinacy at the level of characteristic functions, from the moment-generating function.**
-Two measures on `ℝ`, one with finite exponential moments near `0` and the other finite, that have
-the same moment-generating function have the same characteristic function.
-
-The hypothesis is equality of the two moment-generating functions at *every* real `t`, including
-the `t` at which they are `0` only because Mathlib totalizes a divergent integral.  A caller who
-knows a closed form on the integrability set must therefore still settle the complement, by
-proving each side non-integrable there and closing the goal with
-`ProbabilityTheory.mgf_undef` twice. -/
-theorem charFun_eq_of_mgf_eq [IsFiniteMeasure ν]
-    (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ)) (hmgf : mgf id μ = mgf id ν) :
+/-- **The identity principle on the strip shared by two measures with exponential moments near
+`0`.** Complex moment-generating functions that agree frequently near `0` agree on the whole
+shared strip, in particular on the imaginary axis, where they are the characteristic functions. -/
+private theorem charFun_eq_of_frequently_complexMGF_eq
+    (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ))
+    (hν : (0 : ℝ) ∈ interior (integrableExpSet id ν))
+    (heq : ∃ᶠ z in 𝓝[≠] (0 : ℂ), complexMGF id μ z = complexMGF id ν z) :
     charFun μ = charFun ν := by
-  let _ := isFiniteMeasure_of_zero_mem_interior_integrableExpSet hμ
-  have hzero : μ = 0 ↔ ν = 0 := by
-    have h0 : μ.real Set.univ = ν.real Set.univ := by
-      simpa only [mgf_zero'] using congrFun hmgf 0
-    rw [← Measure.measure_univ_eq_zero, ← Measure.measure_univ_eq_zero,
-      ← measureReal_eq_zero_iff, ← measureReal_eq_zero_iff, h0]
+  set U : Set ℂ :=
+    Complex.reLm ⁻¹' (interior (integrableExpSet id μ) ∩ interior (integrableExpSet id ν))
+    with hUdef
+  have hUconn : IsPreconnected U :=
+    ((convex_integrableExpSet.interior.inter
+      convex_integrableExpSet.interior).linear_preimage Complex.reLm).isPreconnected
+  have hAμU : AnalyticOnNhd ℂ (complexMGF id μ) U :=
+    analyticOnNhd_complexMGF.mono fun _ hz => hz.1
+  have hAνU : AnalyticOnNhd ℂ (complexMGF id ν) U :=
+    analyticOnNhd_complexMGF.mono fun _ hz => hz.2
+  -- The imaginary axis lies in the strip, and there the values are the characteristic functions.
+  have hmemU : ∀ z : ℂ, z.re = 0 → z ∈ U := by
+    intro z hz
+    have hz' : reLm z = 0 := by rw [Complex.reLm_coe]; exact hz
+    simp only [hUdef, Set.mem_preimage, Set.mem_inter_iff, hz']
+    exact ⟨hμ, hν⟩
+  have hEqU : Set.EqOn (complexMGF id μ) (complexMGF id ν) U :=
+    hAμU.eqOn_of_preconnected_of_frequently_eq hAνU hUconn (hmemU 0 (by simp)) heq
   ext t
-  have hre : ((t : ℂ) * I).re ∈ interior (integrableExpSet id μ) := by
-    simpa using hμ
-  have h := eqOn_complexMGF_of_mgf' hmgf hzero hre
+  have h := hEqU (hmemU ((t : ℂ) * I) (by simp))
   rwa [complexMGF_id_mul_I, complexMGF_id_mul_I] at h
 
-/-- **A finite measure on `ℝ` with finite exponential moments near `0` is determined by its
-moment-generating function.** This is the determinacy statement recorded as a `TODO` in Mathlib's
-`Mathlib/Probability/Moments/ComplexMGF.lean`.
+/-! ### Determinacy from the moment-generating function -/
 
-The strip hypothesis is asked of one measure only: evaluating the equality of moment-generating
-functions at `0` already matches the two total masses, so the second measure is zero exactly when
-the first is, which is all the strip propagation needs.  As in `charFun_eq_of_mgf_eq`, the
-moment-generating functions must agree at every real `t`, not only on the integrability set. -/
+/-- **Determinacy at the level of characteristic functions, from the moment-generating function.**
+Two measures on `ℝ`, one with finite exponential moments near `0` and the other finite, whose
+moment-generating functions agree on a neighbourhood of `0`, have the same characteristic
+function. -/
+theorem charFun_eq_of_mgf_eq [IsFiniteMeasure ν]
+    (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ)) (hmgf : mgf id μ =ᶠ[𝓝 0] mgf id ν) :
+    charFun μ = charFun ν := by
+  have _ := isFiniteMeasure_of_zero_mem_integrableExpSet (interior_subset hμ)
+  have hzero : μ = 0 ↔ ν = 0 := by
+    have h0 : μ.real Set.univ = ν.real Set.univ := by
+      simpa only [mgf_zero'] using hmgf.self_of_nhds
+    rw [← Measure.measure_univ_eq_zero, ← Measure.measure_univ_eq_zero,
+      ← measureReal_eq_zero_iff, ← measureReal_eq_zero_iff, h0]
+  rcases eq_or_ne μ 0 with rfl | hμ0
+  · rw [hzero.mp rfl]
+  have : NeZero μ := ⟨hμ0⟩
+  have : NeZero ν := ⟨fun h => hμ0 (hzero.mpr h)⟩
+  -- Where the two agree, `ν` inherits the exponential moments of `μ`, both being positive there.
+  have hν : (0 : ℝ) ∈ interior (integrableExpSet id ν) := by
+    refine mem_interior_iff_mem_nhds.mpr ?_
+    filter_upwards [isOpen_interior.mem_nhds hμ, hmgf] with t ht hteq
+    exact mgf_pos_iff.mp
+      (hteq ▸ mgf_pos_iff.mpr (integrable_of_mem_integrableExpSet (interior_subset ht)))
+  -- The two complex moment-generating functions agree at the real points near `0`.
+  have hofReal : Filter.Tendsto (fun x : ℝ => (x : ℂ)) (𝓝[≠] 0) (𝓝[≠] 0) := by
+    rw [tendsto_nhdsWithin_iff]
+    refine ⟨?_, ?_⟩
+    · simpa using (Complex.continuous_ofReal.tendsto (0 : ℝ)).mono_left nhdsWithin_le_nhds
+    · filter_upwards [self_mem_nhdsWithin] with x hx
+      simpa using hx
+  refine charFun_eq_of_frequently_complexMGF_eq hμ hν (hofReal.frequently ?_)
+  refine Filter.Eventually.frequently ?_
+  filter_upwards [hmgf.filter_mono nhdsWithin_le_nhds] with x hx
+  rw [complexMGF_ofReal, complexMGF_ofReal, hx]
+
+/-- **A finite measure on `ℝ` with finite exponential moments near `0` is determined by its
+moment-generating function near `0`.** This is the determinacy statement recorded as a `TODO` in
+Mathlib's `Mathlib/Probability/Moments/ComplexMGF.lean`.
+
+The strip hypothesis is asked of one measure only: matching the moment-generating functions near
+`0` matches the two total masses, and forces the second measure to have the exponential moments of
+the first at every rate near `0`. -/
 theorem Measure.ext_of_mgf [IsFiniteMeasure ν]
-    (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ)) (hmgf : mgf id μ = mgf id ν) :
+    (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ)) (hmgf : mgf id μ =ᶠ[𝓝 0] mgf id ν) :
     μ = ν := by
-  let _ := isFiniteMeasure_of_zero_mem_interior_integrableExpSet hμ
+  have _ := isFiniteMeasure_of_zero_mem_integrableExpSet (interior_subset hμ)
   exact Measure.ext_of_charFun (charFun_eq_of_mgf_eq hμ hmgf)
 
 /-! ### Determinacy from the moments -/
@@ -166,32 +203,10 @@ characteristic functions coincide. -/
 theorem charFun_eq_of_forall_integral_pow_eq (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ))
     (hν : (0 : ℝ) ∈ interior (integrableExpSet id ν)) (hmom : ∀ n, ∫ x, x ^ n ∂μ = ∫ x, x ^ n ∂ν) :
     charFun μ = charFun ν := by
-  have hμ0 : (0 : ℂ).re ∈ interior (integrableExpSet id μ) := by simpa using hμ
-  have hν0 : (0 : ℂ).re ∈ interior (integrableExpSet id ν) := by simpa using hν
   have hEqNear : complexMGF id μ =ᶠ[𝓝 0] complexMGF id ν :=
     complexMGF_eventuallyEq_of_forall_integral_pow_eq hμ hν hmom
-  -- Propagate the equality across the common analyticity strip by the identity principle.
-  set U : Set ℂ :=
-    Complex.reLm ⁻¹' (interior (integrableExpSet id μ) ∩ interior (integrableExpSet id ν))
-    with hUdef
-  have hUconn : IsPreconnected U :=
-    ((convex_integrableExpSet.interior.inter
-      convex_integrableExpSet.interior).linear_preimage Complex.reLm).isPreconnected
-  have hsubμ : U ⊆ {z | z.re ∈ interior (integrableExpSet id μ)} := fun z hz => hz.1
-  have hsubν : U ⊆ {z | z.re ∈ interior (integrableExpSet id ν)} := fun z hz => hz.2
-  have hAμU : AnalyticOnNhd ℂ (complexMGF id μ) U := analyticOnNhd_complexMGF.mono hsubμ
-  have hAνU : AnalyticOnNhd ℂ (complexMGF id ν) U := analyticOnNhd_complexMGF.mono hsubν
-  have h0U : (0 : ℂ) ∈ U := ⟨hμ0, hν0⟩
-  have hEqU : Set.EqOn (complexMGF id μ) (complexMGF id ν) U :=
-    hAμU.eqOn_of_preconnected_of_eventuallyEq hAνU hUconn h0U hEqNear
-  -- The imaginary axis lies in the strip, and there the values are the characteristic functions.
-  ext t
-  have htU : ((t : ℂ) * I) ∈ U := by
-    have ht0 : reLm ((t : ℂ) * I) = 0 := by rw [Complex.reLm_coe]; simp
-    simp only [hUdef, Set.mem_preimage, Set.mem_inter_iff, ht0]
-    exact ⟨hμ, hν⟩
-  have := hEqU htU
-  rwa [complexMGF_id_mul_I, complexMGF_id_mul_I] at this
+  exact charFun_eq_of_frequently_complexMGF_eq hμ hν
+    (hEqNear.filter_mono nhdsWithin_le_nhds).frequently
 
 /-- **Moment determinacy for finite measures on `ℝ`.** A finite measure on `ℝ` with finite
 exponential moments near `0` is determined by its polynomial moments `∫ xⁿ`.  Combines
