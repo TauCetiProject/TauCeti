@@ -88,34 +88,11 @@ evaluation at `x`. -/
 private lemma app_comp_residueFieldSectionsIso (x : X) {U : X.Opens} (hx : x ∈ U) :
     (X.fromSpecResidueField x).app U ≫ (residueFieldSectionsIso x hx).hom =
       X.evaluation U x hx := by
-  simp only [residueFieldSectionsIso, Iso.trans_hom, Iso.symm_hom, Functor.mapIso_inv]
-  rw [← Category.assoc, Scheme.Hom.app_eq_appLE, Scheme.Hom.appLE_map]
-  -- `fromSpecResidueField` is the composite `Spec κ(x) ⟶ Spec 𝒪_{X,x} ⟶ X`. Its `appLE` is
-  -- transported along that factorization by hand, since unfolding it inside the dependent
-  -- `appLE` produces a term which is not type-correct at reducible transparency.
-  have key : ∀ {f g : Spec (X.residueField x) ⟶ X} (_ : f = g) (e : ⊤ ≤ f ⁻¹ᵁ U)
-      (e' : ⊤ ≤ g ⁻¹ᵁ U), f.appLE U ⊤ e = g.appLE U ⊤ e' := by
-    rintro _ _ rfl _ _
-    rfl
-  have hf : X.fromSpecResidueField x = Spec.map (X.residue x) ≫ X.fromSpecStalk x := by
-    simp only [Scheme.fromSpecResidueField]
-  have e' : ⊤ ≤ (Spec.map (X.residue x) ≫ X.fromSpecStalk x) ⁻¹ᵁ U := by
-    rw [← hf, Scheme.preimage_eq_top_of_closedPoint_mem (X.fromSpecResidueField x)
-      (by
-        convert hx using 1
-        exact Scheme.fromSpecResidueField_apply x
-          (IsLocalRing.closedPoint (X.residueField x)))]
-  rw [key hf _ e', Scheme.Hom.comp_appLE, Scheme.fromSpecStalk_app hx]
-  have htop : ∀ e'' : (⊤ : (Spec (X.residueField x)).Opens) ≤
-      Spec.map (X.residue x) ⁻¹ᵁ X.fromSpecStalk x ⁻¹ᵁ U,
-      (Spec (X.presheaf.stalk x)).presheaf.map (homOfLE le_top).op ≫
-        (Spec.map (X.residue x)).appLE (X.fromSpecStalk x ⁻¹ᵁ U) ⊤ e'' =
-      (Spec.map (X.residue x)).appTop := fun _ ↦ by
-    rw [Scheme.Hom.map_appLE, Scheme.Hom.appTop, Scheme.Hom.app_eq_appLE]
-    rfl
-  simp only [Category.assoc]
-  rw [reassoc_of% (htop e'), Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
-  exact X.germ_residue x hx
+  have h := hx
+  rw [← Scheme.fromSpecResidueField_apply x (IsLocalRing.closedPoint (X.residueField x))] at h
+  have : IsLocalHom (X.residue x).hom := inferInstanceAs (IsLocalHom (IsLocalRing.residue _))
+  rw [← X.germ_residue x hx, ← Scheme.germ_stalkClosedPointTo_Spec_fromSpecStalk (X.residue x) U h]
+  exact (Scheme.germ_stalkClosedPointTo (X.fromSpecResidueField x) U h).symm
 
 /-- The sections of the skyscraper sheaf `κ(x)ₓ` over an open subset containing `x` are the
 residue field `κ(x)`. -/
