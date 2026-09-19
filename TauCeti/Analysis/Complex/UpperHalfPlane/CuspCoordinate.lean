@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Exp
+public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
@@ -116,7 +117,7 @@ theorem image_qParamPuncturedUnitDisc_setOf_lt_im (w : ℝ) (hw : 0 < w) (A : �
 /-- The q-parameter tends to zero through nonzero values as the height tends to infinity. -/
 theorem tendsto_qParamPuncturedUnitDisc (w : ℝ) (hw : 0 < w) :
     Tendsto (fun z : ℍ ↦ ((qParamPuncturedUnitDisc w hw z : 𝔻) : ℂ))
-      (atTop.comap UpperHalfPlane.im) (𝓝[≠] 0) := by
+      atImInfty (𝓝[≠] 0) := by
   simp only [coe_qParamPuncturedUnitDisc]
   exact (Function.Periodic.qParam_tendsto hw).comp
     (tendsto_comap_iff.mpr tendsto_comap)
