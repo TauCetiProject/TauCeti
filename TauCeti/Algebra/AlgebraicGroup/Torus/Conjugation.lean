@@ -68,18 +68,18 @@ theorem isMaximalTorus_conjugate_iff
     simpa using h
   · exact fun hI ↦ hI.conjugate g
 
-/-- A split maximal torus is conjugate to a distinguished maximal torus, provided every
-diagonalizable subgroup can be conjugated into the distinguished torus. -/
+/-- A split maximal torus is conjugate to a distinguished maximal torus, provided it can be
+conjugated into the distinguished torus. -/
 theorem exists_eq_conjugate_of_isMaximalTorus_of_split
     (D : HopfIdeal k H)
     (hD : IsMaximalTorus k (_root_.CommHopfAlgCat.of k H) D)
-    (hcontain : ∀ I : HopfIdeal k H,
+    {I : HopfIdeal k H}
+    (hcontain :
       DiagonalizableGroup.groupLikeSpannedProperty k
         (FiniteTypeCommHopfAlgCat.quotient
           ⟨_root_.CommHopfAlgCat.of k H, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
           I) →
       ∃ g : WithConv (H →ₐ[k] k), D.conjugate g ≤ I)
-    {I : HopfIdeal k H}
     (hI : IsMaximalTorus k (_root_.CommHopfAlgCat.of k H) I)
     (hsplit : splitTorusCommHopfAlgProperty k
       (FiniteTypeCommHopfAlgCat.quotient
@@ -93,7 +93,7 @@ theorem exists_eq_conjugate_of_isMaximalTorus_of_split
     (DiagonalizableGroup.groupLikeSpannedProperty k).prop_of_iso e
       ((DiagonalizableGroup.groupLikeSpannedProperty_iff k _).mpr
         (MonoidAlgebra.groupLikeSetSpan_eq_top (R := k) _))
-  obtain ⟨g, hg⟩ := hcontain I hspan
+  obtain ⟨g, hg⟩ := hcontain hspan
   have hDg := (isMaximalTorus_iff k _ _).mp (hD.conjugate g)
   exact ⟨g, le_antisymm (((isMaximalTorus_iff k _ _).mp hI).2 _ hDg.1 hg) hg⟩
 
@@ -102,13 +102,19 @@ a distinguished maximal torus. -/
 theorem exists_conjugate_eq_of_isMaximalTorus_of_split
     (D : HopfIdeal k H)
     (hD : IsMaximalTorus k (_root_.CommHopfAlgCat.of k H) D)
-    (hcontain : ∀ I : HopfIdeal k H,
+    {I J : HopfIdeal k H}
+    (hcontainI :
       DiagonalizableGroup.groupLikeSpannedProperty k
         (FiniteTypeCommHopfAlgCat.quotient
           ⟨_root_.CommHopfAlgCat.of k H, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
           I) →
       ∃ g : WithConv (H →ₐ[k] k), D.conjugate g ≤ I)
-    {I J : HopfIdeal k H}
+    (hcontainJ :
+      DiagonalizableGroup.groupLikeSpannedProperty k
+        (FiniteTypeCommHopfAlgCat.quotient
+          ⟨_root_.CommHopfAlgCat.of k H, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
+          J) →
+      ∃ g : WithConv (H →ₐ[k] k), D.conjugate g ≤ J)
     (hI : IsMaximalTorus k (_root_.CommHopfAlgCat.of k H) I)
     (hJ : IsMaximalTorus k (_root_.CommHopfAlgCat.of k H) J)
     (hsplitI : splitTorusCommHopfAlgProperty k
@@ -118,8 +124,8 @@ theorem exists_conjugate_eq_of_isMaximalTorus_of_split
       (FiniteTypeCommHopfAlgCat.quotient
         ⟨_root_.CommHopfAlgCat.of k H, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩ J)) :
     ∃ g : WithConv (H →ₐ[k] k), I.conjugate g = J := by
-  obtain ⟨g, rfl⟩ := exists_eq_conjugate_of_isMaximalTorus_of_split D hD hcontain hI hsplitI
-  obtain ⟨h, rfl⟩ := exists_eq_conjugate_of_isMaximalTorus_of_split D hD hcontain hJ hsplitJ
+  obtain ⟨g, rfl⟩ := exists_eq_conjugate_of_isMaximalTorus_of_split D hD hcontainI hI hsplitI
+  obtain ⟨h, rfl⟩ := exists_eq_conjugate_of_isMaximalTorus_of_split D hD hcontainJ hJ hsplitJ
   exact ⟨h * g⁻¹, by simp [conjugate_mul]⟩
 
 /-- Over an algebraically closed field, the maximal tori are exactly the conjugates of a
@@ -127,13 +133,13 @@ distinguished maximal torus when diagonalizable subgroups can be conjugated into
 theorem isMaximalTorus_iff_exists_eq_conjugate [IsAlgClosed k]
     (D : HopfIdeal k H)
     (hD : IsMaximalTorus k (_root_.CommHopfAlgCat.of k H) D)
-    (hcontain : ∀ I : HopfIdeal k H,
+    (I : HopfIdeal k H)
+    (hcontain :
       DiagonalizableGroup.groupLikeSpannedProperty k
         (FiniteTypeCommHopfAlgCat.quotient
           ⟨_root_.CommHopfAlgCat.of k H, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
           I) →
-      ∃ g : WithConv (H →ₐ[k] k), D.conjugate g ≤ I)
-    (I : HopfIdeal k H) :
+      ∃ g : WithConv (H →ₐ[k] k), D.conjugate g ≤ I) :
     IsMaximalTorus k (_root_.CommHopfAlgCat.of k H) I ↔
       ∃ g : WithConv (H →ₐ[k] k), I = D.conjugate g := by
   constructor
@@ -150,13 +156,19 @@ subgroups can be conjugated into a distinguished maximal torus. -/
 theorem exists_conjugate_eq_of_isMaximalTorus [IsAlgClosed k]
     (D : HopfIdeal k H)
     (hD : IsMaximalTorus k (_root_.CommHopfAlgCat.of k H) D)
-    (hcontain : ∀ I : HopfIdeal k H,
+    {I J : HopfIdeal k H}
+    (hcontainI :
       DiagonalizableGroup.groupLikeSpannedProperty k
         (FiniteTypeCommHopfAlgCat.quotient
           ⟨_root_.CommHopfAlgCat.of k H, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
           I) →
       ∃ g : WithConv (H →ₐ[k] k), D.conjugate g ≤ I)
-    {I J : HopfIdeal k H}
+    (hcontainJ :
+      DiagonalizableGroup.groupLikeSpannedProperty k
+        (FiniteTypeCommHopfAlgCat.quotient
+          ⟨_root_.CommHopfAlgCat.of k H, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
+          J) →
+      ∃ g : WithConv (H →ₐ[k] k), D.conjugate g ≤ J)
     (hI : IsMaximalTorus k (_root_.CommHopfAlgCat.of k H) I)
     (hJ : IsMaximalTorus k (_root_.CommHopfAlgCat.of k H) J) :
     ∃ g : WithConv (H →ₐ[k] k), I.conjugate g = J := by
@@ -165,6 +177,6 @@ theorem exists_conjugate_eq_of_isMaximalTorus [IsAlgClosed k]
   have hsplitI := torusCommHopfAlgProperty.split k _ htorusI
   have hsplitJ := torusCommHopfAlgProperty.split k _ htorusJ
   exact exists_conjugate_eq_of_isMaximalTorus_of_split (k := k) (H := H)
-    D hD hcontain hI hJ hsplitI hsplitJ
+    D hD hcontainI hcontainJ hI hJ hsplitI hsplitJ
 
 end TauCeti.HopfIdeal

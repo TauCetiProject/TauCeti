@@ -151,7 +151,7 @@ theorem exists_eq_conjugate_diagonalTorusDefiningIdeal_of_isMaximalTorus
       I = (diagonalTorusDefiningIdeal r k).conjugate g := by
   exact HopfIdeal.exists_eq_conjugate_of_isMaximalTorus_of_split
     (diagonalTorusDefiningIdeal r k) (isMaximalTorus_diagonalTorusDefiningIdeal r k)
-    exists_conjugate_diagonalTorusDefiningIdeal_le hI hsplit
+    (exists_conjugate_diagonalTorusDefiningIdeal_le I) hI hsplit
 
 /-- **Any two split maximal tori of `SL_{r+1}` over a field are conjugate** by a rational point
 of `SL_{r+1}`. -/
@@ -170,7 +170,8 @@ theorem exists_conjugate_eq_of_isMaximalTorus_of_split
     ∃ g : WithConv (coordinateHopfAlgebra k (r + 1) →ₐ[k] k), I.conjugate g = J := by
   exact HopfIdeal.exists_conjugate_eq_of_isMaximalTorus_of_split
     (diagonalTorusDefiningIdeal r k) (isMaximalTorus_diagonalTorusDefiningIdeal r k)
-    exists_conjugate_diagonalTorusDefiningIdeal_le hI hJ hsplitI hsplitJ
+    (exists_conjugate_diagonalTorusDefiningIdeal_le I)
+    (exists_conjugate_diagonalTorusDefiningIdeal_le J) hI hJ hsplitI hsplitJ
 
 /-- **Maximal tori of `SL_{r+1}` over an algebraically closed field are exactly the conjugates of
 the diagonal torus.** The equality is an equality of defining Hopf ideals, hence of closed
@@ -182,7 +183,7 @@ theorem isMaximalTorus_iff_exists_eq_conjugate_diagonalTorusDefiningIdeal [IsAlg
         I = (diagonalTorusDefiningIdeal r k).conjugate g := by
   exact HopfIdeal.isMaximalTorus_iff_exists_eq_conjugate
     (diagonalTorusDefiningIdeal r k) (isMaximalTorus_diagonalTorusDefiningIdeal r k)
-    exists_conjugate_diagonalTorusDefiningIdeal_le I
+    I (exists_conjugate_diagonalTorusDefiningIdeal_le I)
 
 /-- **Any two maximal tori of `SL_{r+1}` over an algebraically closed field are conjugate** by a
 rational point of `SL_{r+1}`. -/
@@ -193,7 +194,8 @@ theorem exists_conjugate_eq_of_isMaximalTorus [IsAlgClosed k]
     ∃ g : WithConv (coordinateHopfAlgebra k (r + 1) →ₐ[k] k), I.conjugate g = J :=
   HopfIdeal.exists_conjugate_eq_of_isMaximalTorus
     (diagonalTorusDefiningIdeal r k) (isMaximalTorus_diagonalTorusDefiningIdeal r k)
-    exists_conjugate_diagonalTorusDefiningIdeal_le hI hJ
+    (exists_conjugate_diagonalTorusDefiningIdeal_le I)
+    (exists_conjugate_diagonalTorusDefiningIdeal_le J) hI hJ
 
 end
 

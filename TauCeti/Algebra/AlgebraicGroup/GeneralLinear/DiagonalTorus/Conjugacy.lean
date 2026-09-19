@@ -203,7 +203,7 @@ theorem exists_eq_conjugate_diagonalTorusDefiningIdeal_of_isMaximalTorus
       I = (diagonalTorusDefiningIdeal k n).conjugate g := by
   exact HopfIdeal.exists_eq_conjugate_of_isMaximalTorus_of_split
     (diagonalTorusDefiningIdeal k n) (isMaximalTorus_diagonalTorusDefiningIdeal k n)
-    exists_conjugate_diagonalTorusDefiningIdeal_le hI hsplit
+    (exists_conjugate_diagonalTorusDefiningIdeal_le I) hI hsplit
 
 /-- **Any two split maximal tori of `GLₙ` over a field are conjugate** by a rational point
 of `GLₙ`. -/
@@ -220,7 +220,8 @@ theorem exists_conjugate_eq_of_isMaximalTorus_of_split
     ∃ g : WithConv (coordinateHopfAlgebra k n →ₐ[k] k), I.conjugate g = J := by
   exact HopfIdeal.exists_conjugate_eq_of_isMaximalTorus_of_split
     (diagonalTorusDefiningIdeal k n) (isMaximalTorus_diagonalTorusDefiningIdeal k n)
-    exists_conjugate_diagonalTorusDefiningIdeal_le hI hJ hsplitI hsplitJ
+    (exists_conjugate_diagonalTorusDefiningIdeal_le I)
+    (exists_conjugate_diagonalTorusDefiningIdeal_le J) hI hJ hsplitI hsplitJ
 
 /-- **Maximal tori of `GLₙ` over an algebraically closed field are exactly the conjugates of the
 diagonal torus.** The equality is an equality of defining Hopf ideals, hence of closed subgroup
@@ -232,7 +233,7 @@ theorem isMaximalTorus_iff_exists_eq_conjugate_diagonalTorusDefiningIdeal [IsAlg
         I = (diagonalTorusDefiningIdeal k n).conjugate g := by
   exact HopfIdeal.isMaximalTorus_iff_exists_eq_conjugate
     (diagonalTorusDefiningIdeal k n) (isMaximalTorus_diagonalTorusDefiningIdeal k n)
-    exists_conjugate_diagonalTorusDefiningIdeal_le I
+    I (exists_conjugate_diagonalTorusDefiningIdeal_le I)
 
 /-- **Any two maximal tori of `GLₙ` over an algebraically closed field are conjugate** by a
 rational point of `GLₙ`. -/
@@ -243,7 +244,8 @@ theorem exists_conjugate_eq_of_isMaximalTorus [IsAlgClosed k]
     ∃ g : WithConv (coordinateHopfAlgebra k n →ₐ[k] k), I.conjugate g = J := by
   exact HopfIdeal.exists_conjugate_eq_of_isMaximalTorus
     (diagonalTorusDefiningIdeal k n) (isMaximalTorus_diagonalTorusDefiningIdeal k n)
-    exists_conjugate_diagonalTorusDefiningIdeal_le hI hJ
+    (exists_conjugate_diagonalTorusDefiningIdeal_le I)
+    (exists_conjugate_diagonalTorusDefiningIdeal_le J) hI hJ
 
 end
 
