@@ -20,8 +20,9 @@ trefoil the value changes from `-2` at `ω = -1` to `0` at the unit-circle point
 both computed below.
 
 The form is Hermitian for every `ω : ℂ`, so no hypothesis on `ω` is imposed here. This file
-constructs an invariant of a chosen Seifert matrix and proves congruence invariance, but not
-invariance under S-equivalence or knot concordance. Classically, the ordinary signature at
+constructs an invariant of a chosen Seifert matrix and proves congruence invariance.
+The enlargement identities are proved in `TristramLevine.Enlargement`; the passage to knots
+and knot concordance is separate. Classically, the ordinary signature at
 unit-circle parameters away from the relevant Alexander-polynomial roots is a knot-concordance
 invariant; values at roots require an additional convention such as the averaged signature. The
 value at `ω = 1` is `0` for every `V`.
@@ -29,8 +30,8 @@ value at `ω = 1` is `0` for every `V`.
 Congruence `V ↦ P * V * Pᵀ` by a matrix with unit determinant — over `ℤ` a change of basis of
 the first homology of the Seifert surface — leaves `σ_ω` unchanged
 (`TauCeti.KnotTheory.tristramLevineSignature_congr`). Invariance under the two enlargements
-`TauCeti.KnotTheory.enlargeColumn` and `TauCeti.KnotTheory.enlargeRow`, which would complete
-invariance under S-equivalence, is not proved here.
+`TauCeti.KnotTheory.enlargeColumn` and `TauCeti.KnotTheory.enlargeRow` is proved in
+`TristramLevine.Enlargement`.
 
 ## Main definitions
 
@@ -110,6 +111,13 @@ theorem tristramLevineForm_conj (V : Matrix ι ι ℝ) (ω : ℂ) :
     tristramLevineForm V (conj ω) = (tristramLevineForm V ω).map (starRingEnd ℂ) := by
   ext i j
   simp
+
+/-- Transposing the Seifert matrix conjugates the parameter of its Tristram--Levine form. -/
+@[simp]
+theorem tristramLevineForm_transpose (V : Matrix ι ι ℝ) (ω : ℂ) :
+    tristramLevineForm Vᵀ ω = tristramLevineForm V (conj ω) := by
+  ext i j
+  simp [Matrix.transpose_apply, add_comm]
 
 /-- The Seifert matrix `-Vᵀ` of the mirror image has the negated form at the conjugate
 parameter. -/
@@ -204,6 +212,15 @@ theorem tristramLevineSignature_conj (V : Matrix ι ι ℝ) (ω : ℂ) :
   unfold tristramLevineSignature
   simpa only [tristramLevineForm_conj] using
     (isHermitian_tristramLevineForm V ω).signature_map_starRingEnd
+
+/-- Transposing a Seifert matrix preserves its Tristram--Levine signature. -/
+@[simp]
+theorem tristramLevineSignature_transpose (V : Matrix ι ι ℝ) (ω : ℂ) :
+    tristramLevineSignature Vᵀ ω = tristramLevineSignature V ω := by
+  have h : tristramLevineSignature Vᵀ ω = tristramLevineSignature V (conj ω) := by
+    unfold tristramLevineSignature
+    simp only [tristramLevineForm_transpose]
+  exact h.trans (tristramLevineSignature_conj V ω)
 
 /-- **The mirror image negates the Tristram--Levine signature.** The mirror of a knot has
 Seifert matrix `-Vᵀ`. -/
