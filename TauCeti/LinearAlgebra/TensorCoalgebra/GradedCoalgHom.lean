@@ -37,7 +37,6 @@ suspended component equation.
 
 ## Main results
 
-* `TauCeti.ReducedTensorWords.prepend_mem_gradedPiece`: prepending a letter adds its degree.
 * `TauCeti.ReducedTensorWords.isHomogeneous_coalgHom`: the Taylor expansion of degree-zero
   components has degree zero.
 * `TauCeti.ReducedTensorWords.IsCoalgHom.comp_eq_comp_iff_letter_comp_eq`: a degree-zero coalgebra
@@ -61,39 +60,6 @@ namespace ReducedTensorWords
 
 variable {R : Type uR} {M : Type uM} {N : Type uN} [CommRing R] [AddCommMonoid M] [Module R M]
   [AddCommMonoid N] [Module R N] {G : InternalGrading R M} {H : InternalGrading R N}
-
-/-- Prepending a letter of degree `p` to a word of total degree `D` gives a word of total degree
-`p + D`. -/
-theorem prepend_mem_gradedPiece {p D : ℤ} {a : N} (ha : a ∈ H.piece p)
-    {w : ReducedTensorWords R N} (hw : w ∈ gradedPiece H D) :
-    prepend R N a w ∈ gradedPiece H (p + D) := by
-  refine gradedPiece_induction (motive := fun w ↦ prepend R N a w ∈ gradedPiece H (p + D)) hw
-    ?_ ?_ ?_ ?_
-  · intro k hk 𝒟 y hy hD
-    rw [prepend_of_tprod, ← hD, ← Fin.sum_cons p 𝒟]
-    refine mem_gradedPiece_of_tprod H _ _ _ fun i ↦ ?_
-    induction i using Fin.cases with
-    | zero => simpa only [Fin.cons_zero] using ha
-    | succ j => simpa only [Fin.cons_succ] using hy j
-  · rw [map_zero]
-    exact zero_mem _
-  · intro u v _ _ hu hv
-    rw [map_add]
-    exact add_mem hu hv
-  · intro c u _ hu
-    rw [map_smul]
-    exact Submodule.smul_mem _ _ hu
-
-/-- A block of a pure tensor word of homogeneous letters lies in the graded piece of the sum of
-the degrees of its letters.  The degree family is indexed by absolute positions. -/
-private theorem subword_mem_gradedPiece {n : ℕ} (x : Fin n → M) (𝒟 : ℕ → ℤ)
-    (h𝒟 : ∀ i : Fin n, x i ∈ G.piece (𝒟 i)) (a b : ℕ) (hab : a + b ≤ n) :
-    subword R x a b ∈ gradedPiece G (∑ j ∈ Finset.range b, 𝒟 (a + j)) := by
-  rcases Nat.eq_zero_or_pos b with rfl | hb
-  · rw [subword_length_zero]
-    exact zero_mem _
-  · rw [subword_eq_of_tprod R x hb hab, ← Fin.sum_univ_eq_sum_range (fun j ↦ 𝒟 (a + j)) b]
-    exact mem_gradedPiece_of_tprod G hb _ _ fun j ↦ h𝒟 ⟨a + j.1, by have := j.isLt; omega⟩
 
 /-- The Taylor expansion of components of degree zero has degree zero: every word
 `f(B₁) ⋯ f(B_k)` it produces from a homogeneous word has the total degree of that word. -/

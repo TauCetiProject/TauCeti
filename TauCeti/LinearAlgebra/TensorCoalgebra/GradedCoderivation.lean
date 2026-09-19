@@ -59,6 +59,9 @@ by `isHomogeneous_gradedCoderiv` and `IsGradedCoderivation.isHomogeneous`.
   determined by its letter component.
 * `TauCeti.ReducedTensorWords.iSup_gradedPiece_eq_top`: the total-degree pieces span the reduced
   tensor coalgebra.
+* `TauCeti.ReducedTensorWords.prepend_mem_gradedPiece`,
+  `TauCeti.ReducedTensorWords.subword_mem_gradedPiece`: prepending a homogeneous letter and taking
+  a block of homogeneous letters have the expected total degrees.
 * `TauCeti.ReducedTensorWords.isHomogeneous_map`: applying a degree-zero homogeneous map to every
   letter preserves the total degree of a word.
 * `TauCeti.ReducedTensorWords.map_koszulTwist_apply_of_mem`: the letterwise twist has the expected
@@ -336,6 +339,41 @@ theorem ReducedTensorWords.ofLetter_mem_gradedPiece (G : InternalGrading R M) {p
   have h := mem_gradedPiece_of_tprod G Nat.one_pos (fun _ : Fin 1 ↦ x) (fun _ ↦ p) fun _ ↦ hx
   rwa [of_tprod_eq_subword R Nat.one_pos, subword_one R M _ Nat.one_pos,
     Fin.sum_univ_one] at h
+
+/-- Prepending a letter of degree `p` to a word of total degree `D` gives a word of total degree
+`p + D`. -/
+theorem ReducedTensorWords.prepend_mem_gradedPiece {N : Type uN} [AddCommMonoid N] [Module R N]
+    {H : InternalGrading R N} {p D : ℤ} {a : N} (ha : a ∈ H.piece p)
+    {w : ReducedTensorWords R N} (hw : w ∈ gradedPiece H D) :
+    prepend R N a w ∈ gradedPiece H (p + D) := by
+  refine gradedPiece_induction (motive := fun w ↦ prepend R N a w ∈ gradedPiece H (p + D)) hw
+    ?_ ?_ ?_ ?_
+  · intro k hk 𝒟 y hy hD
+    rw [prepend_of_tprod, ← hD, ← Fin.sum_cons p 𝒟]
+    refine mem_gradedPiece_of_tprod H _ _ _ fun i ↦ ?_
+    induction i using Fin.cases with
+    | zero => simpa only [Fin.cons_zero] using ha
+    | succ j => simpa only [Fin.cons_succ] using hy j
+  · rw [map_zero]
+    exact zero_mem _
+  · intro u v _ _ hu hv
+    rw [map_add]
+    exact add_mem hu hv
+  · intro c u _ hu
+    rw [map_smul]
+    exact Submodule.smul_mem _ _ hu
+
+/-- A block of a pure tensor word of homogeneous letters lies in the graded piece of the sum of
+the degrees of its letters. The degree family is indexed by absolute positions. -/
+theorem ReducedTensorWords.subword_mem_gradedPiece {G : InternalGrading R M} {n : ℕ}
+    (x : Fin n → M) (𝒟 : ℕ → ℤ) (h𝒟 : ∀ i : Fin n, x i ∈ G.piece (𝒟 i))
+    (a b : ℕ) (hab : a + b ≤ n) :
+    subword R x a b ∈ gradedPiece G (∑ j ∈ Finset.range b, 𝒟 (a + j)) := by
+  rcases Nat.eq_zero_or_pos b with rfl | hb
+  · rw [subword_length_zero]
+    exact zero_mem _
+  · rw [subword_eq_of_tprod R x hb hab, ← Fin.sum_univ_eq_sum_range (fun j ↦ 𝒟 (a + j)) b]
+    exact mem_gradedPiece_of_tprod G hb _ _ fun j ↦ h𝒟 ⟨a + j.1, by have := j.isLt; omega⟩
 
 /-- Projecting a word onto its length-one component preserves the total degree. -/
 theorem ReducedTensorWords.isHomogeneous_letter (G : InternalGrading R M) :
