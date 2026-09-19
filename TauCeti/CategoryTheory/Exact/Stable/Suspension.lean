@@ -176,12 +176,12 @@ public theorem suspensionToStable_map {X Y : C} (f : X ⟶ Y) :
 public noncomputable instance suspensionToStable_additive : (hE.suspensionToStable).Additive where
   map_add := by
     intro X Y f g
-    change E.projectiveStableFunctor.map (hE.suspensionMap (f + g)) =
-      E.projectiveStableFunctor.map (hE.suspensionMap f) +
-        E.projectiveStableFunctor.map (hE.suspensionMap g)
-    simpa using hE.projectiveStableFunctor_map_suspensionMap_eq (f := f + g)
+    rw [hE.suspensionToStable_map (f + g), hE.suspensionToStable_map f,
+      hE.suspensionToStable_map g, ← Preadditive.comp_add, ← Preadditive.add_comp]
+    rw [hE.projectiveStableFunctor_map_suspensionMap_eq (f := f + g)
       (hE.suspensionMiddleMap f + hE.suspensionMiddleMap g)
-      (hE.suspensionMap f + hE.suspensionMap g) (by simp) (by simp)
+      (hE.suspensionMap f + hE.suspensionMap g) (by simp) (by simp)]
+    simp only [Functor.map_add]
 
 /-- The suspension of a projective object is projective. Thus suspension sends every object
 killed by the stable quotient to another object killed by it. -/
