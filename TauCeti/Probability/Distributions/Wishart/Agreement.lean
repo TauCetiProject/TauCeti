@@ -100,7 +100,7 @@ degenerate scale, `TauCeti.mutuallySingular_wishartGramMeasure_symmetricLebesgue
 has none. -/
 theorem hasPDF_of_hasLaw_wishartGramMeasure (hS : S.PosDef) (hp : p ≤ ν)
     (hX : HasLaw X (wishartGramMeasure ν S) P) : HasPDF X P (symmetricLebesgue p) :=
-  hasPDF_of_hasLaw_nonsingularWishartMeasure hS ((sub_one_lt _).trans_le (Nat.cast_le.2 hp))
+  hasPDF_of_hasLaw_nonsingularWishartMeasure
     (wishartGramMeasure_eq_nonsingularWishartMeasure hS hp ▸ hX)
 
 /-- The density against `TauCeti.symmetricLebesgue` of a Gaussian-Gram random matrix with a

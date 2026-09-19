@@ -53,8 +53,8 @@ constant leave the density equal to `1`, so for `-1 < n` the law is that Dirac m
   everywhere, so by `TauCeti.map_subtype_val_comap_nonsingularWishartMeasure` the law is recovered
   from its lift to the cone.
 * `TauCeti.hasPDF_of_hasLaw_nonsingularWishartMeasure` and
-  `TauCeti.rnDeriv_nonsingularWishartMeasure` — at a valid degree and scale a Wishart random
-  matrix has a density against `TauCeti.symmetricLebesgue`, and the law's Radon–Nikodym
+  `TauCeti.rnDeriv_nonsingularWishartMeasure` — a Wishart random matrix has a density against
+  `TauCeti.symmetricLebesgue`, and at a valid degree and scale the law's Radon–Nikodym
   derivative is `TauCeti.nonsingularWishartPDF`.
 * `TauCeti.nonsingularWishartMeasure_zero` — in dimension zero the law is the Dirac mass at
   the unique symmetric matrix, hence a probability measure.
@@ -377,11 +377,19 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {X : Ω → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
 
 /-- A random symmetric matrix with a nonsingular Wishart law has a density against
-`TauCeti.symmetricLebesgue`. -/
-theorem hasPDF_of_hasLaw_nonsingularWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
-    (hX : HasLaw X (nonsingularWishartMeasure n S) P) : HasPDF X P (symmetricLebesgue p) :=
-  Probability.hasPDF_of_hasLaw_withDensity (measurable_nonsingularWishartPDF n S).aemeasurable
-    (by rwa [← nonsingularWishartMeasure_of_posDef hS hn])
+`TauCeti.symmetricLebesgue`, at every degree and scale: outside the classical parameter range the
+law is zero, which trivially has one. -/
+theorem hasPDF_of_hasLaw_nonsingularWishartMeasure
+    (hX : HasLaw X (nonsingularWishartMeasure n S) P) : HasPDF X P (symmetricLebesgue p) := by
+  by_cases hS : S.PosDef
+  · by_cases hn : (p : ℝ) - 1 < n
+    · exact Probability.hasPDF_of_hasLaw_withDensity
+        (measurable_nonsingularWishartPDF n S).aemeasurable
+        (by rwa [← nonsingularWishartMeasure_of_posDef hS hn])
+    · refine Probability.hasPDF_of_hasLaw_withDensity (f := 0) aemeasurable_const ?_
+      rwa [withDensity_zero, ← nonsingularWishartMeasure_of_le S (not_lt.1 hn)]
+  · refine Probability.hasPDF_of_hasLaw_withDensity (f := 0) aemeasurable_const ?_
+    rwa [withDensity_zero, ← nonsingularWishartMeasure_of_not_posDef n hS]
 
 /-- The density against `TauCeti.symmetricLebesgue` of a random symmetric matrix with a
 nonsingular Wishart law is `TauCeti.nonsingularWishartPDF`. -/
