@@ -214,7 +214,7 @@ theorem tendsto_wassersteinEDist_of_tendsto_probabilityMeasure_of_tendsto_linteg
           2 ^ p.toReal * S.indicator (fun w ↦ edist x w ^ p.toReal) z.1 +
           2 ^ p.toReal * S.indicator (fun w ↦ edist x w ^ p.toReal) z.2)
           (μs i : Measure X) μ :=
-        transportCost_mono fun z ↦ edist_rpow_le_min_add_indicator hq x R z.1 z.2
+        transportCost_mono fun z ↦ edist_rpow_le_min_add_indicator hq.le x R z.1 z.2
     _ = transportCost (fun z : X × X ↦ min (edist z.1 z.2) (2 * R) ^ p.toReal)
           (μs i : Measure X) μ +
           ∫⁻ y, 2 ^ p.toReal * S.indicator (fun w ↦ edist x w ^ p.toReal) y ∂(μs i : Measure X) +

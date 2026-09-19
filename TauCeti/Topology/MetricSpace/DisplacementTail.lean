@@ -36,7 +36,7 @@ variable {X : Type*} [PseudoMetricSpace X]
 endpoint lying at distance at least `R` from it. Hence the `q`-th power of the displacement is at
 most its truncation at `2 R` plus `2 ^ q` times the tail parts, beyond `R`, of the `q`-th powers of
 the distances of the two endpoints from `x`. -/
-theorem edist_rpow_le_min_add_indicator {q : ℝ} (hq : 0 < q) (x : X) (R : ℝ≥0) (y z : X) :
+theorem edist_rpow_le_min_add_indicator {q : ℝ} (hq : 0 ≤ q) (x : X) (R : ℝ≥0) (y z : X) :
     edist y z ^ q ≤ min (edist y z) (2 * R) ^ q +
       2 ^ q * {w | R ≤ nndist x w}.indicator (fun w ↦ edist x w ^ q) y +
       2 ^ q * {w | R ≤ nndist x w}.indicator (fun w ↦ edist x w ^ q) z := by
@@ -51,8 +51,8 @@ theorem edist_rpow_le_min_add_indicator {q : ℝ} (hq : 0 < q) (x : X) (R : ℝ�
     exact (not_le.2 hd) (hw.trans (by gcongr; exact (not_le.1 hlt).le))
   have hbound {w : X} (hw : edist y z ≤ 2 * edist x w) :
       edist y z ^ q ≤ 2 ^ q * {w | R ≤ nndist x w}.indicator (fun w ↦ edist x w ^ q) w := by
-    rw [indicator_of_mem (hmem hw), ← ENNReal.mul_rpow_of_nonneg _ _ hq.le]
-    exact ENNReal.rpow_le_rpow hw hq.le
+    rw [indicator_of_mem (hmem hw), ← ENNReal.mul_rpow_of_nonneg _ _ hq]
+    exact ENNReal.rpow_le_rpow hw hq
   have htri : edist y z ≤ edist x y + edist x z := edist_triangle_left y z x
   rcases le_total (edist x z) (edist x y) with hle | hle
   · refine (hbound ?_).trans (le_add_right (le_add_left le_rfl))
