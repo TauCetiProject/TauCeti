@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.PuncturedStarConvex
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PeripheralLoops
-public import TauCeti.Topology.Homotopy.Path
+import TauCeti.Topology.Homotopy.Path
 
 /-!
 # The fundamental groups of the two open sets of the standard cover
@@ -73,18 +73,6 @@ def periph1Right : FundamentalGroup rightOpen ⟨basePt, basePt_mem_rightOpen⟩
   FundamentalGroup.fromPath <| Path.Homotopic.Quotient.mk <| γ1.codRestrict
     (x := ⟨basePt, basePt_mem_rightOpen⟩) (y := ⟨basePt, basePt_mem_rightOpen⟩) γ1_mem_rightOpen
 
-theorem periph0Left_def :
-    periph0Left = FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk <| γ0.codRestrict
-      (x := ⟨basePt, basePt_mem_leftOpen⟩) (y := ⟨basePt, basePt_mem_leftOpen⟩)
-      γ0_mem_leftOpen) :=
-  (rfl)
-
-theorem periph1Right_def :
-    periph1Right = FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk <| γ1.codRestrict
-      (x := ⟨basePt, basePt_mem_rightOpen⟩) (y := ⟨basePt, basePt_mem_rightOpen⟩)
-      γ1_mem_rightOpen) :=
-  (rfl)
-
 /-- The inclusion `A ↪ ℂ ∖ {0, 1}` carries the class of `γ0` in `A` to the peripheral element
 `periph0`. -/
 @[simp]
@@ -95,7 +83,7 @@ theorem map_val_periph0Left :
       (FundamentalGroup leftOpen ⟨basePt, basePt_mem_leftOpen⟩)
       (fun _ => FundamentalGroup ThricePuncturedSphere basePt) MonoidHom.instFunLike
       (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ _) periph0Left = periph0 := by
-  rw [periph0Left_def, periph0_def, FundamentalGroup.map_apply,
+  rw [periph0Left, periph0_def, FundamentalGroup.map_apply,
     ← Path.Homotopic.Quotient.mk_map, Path.map_codRestrict]
   -- `⟦γ0⟧` is notation for `Path.Homotopic.Quotient.mk γ0`.
   rfl
@@ -110,7 +98,7 @@ theorem map_val_periph1Right :
       (FundamentalGroup rightOpen ⟨basePt, basePt_mem_rightOpen⟩)
       (fun _ => FundamentalGroup ThricePuncturedSphere basePt) MonoidHom.instFunLike
       (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ _) periph1Right = periph1 := by
-  rw [periph1Right_def, periph1_def, FundamentalGroup.map_apply,
+  rw [periph1Right, periph1_def, FundamentalGroup.map_apply,
     ← Path.Homotopic.Quotient.mk_map, Path.map_codRestrict]
   -- `⟦γ1⟧` is notation for `Path.Homotopic.Quotient.mk γ1`.
   rfl
@@ -162,7 +150,7 @@ theorem leftOpenFundamentalGroupMulEquivInt_periph0Left :
       sphere_subset_halfPlane]
   congr 1
   rw [FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply,
-    periph0Left_def, FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map,
+    periph0Left, FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map,
     ← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_cast]
   congr 1
   ext t
@@ -185,7 +173,7 @@ private theorem homeomorphMulEquivOfEq_mob01LeftRight_periph0Left :
     FundamentalGroup.homeomorphMulEquivOfEq mob01LeftRight mob01LeftRight_basePt periph0Left =
       periph1Right := by
   rw [FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply,
-    periph0Left_def, periph1Right_def, ← Path.Homotopic.Quotient.mk_map,
+    periph0Left, periph1Right, ← Path.Homotopic.Quotient.mk_map,
     ← Path.Homotopic.Quotient.mk_cast]
   congr 1
   ext t
@@ -212,15 +200,23 @@ theorem rightOpenFundamentalGroupMulEquivInt_periph1Right :
 
 /-! ### Generation -/
 
+private theorem zpowers_eq_top_of_mulEquivInt {G : Type*} [Group G] {g : G}
+    (e : G ≃* Multiplicative ℤ) (hg : e g = Multiplicative.ofAdd 1) :
+    Subgroup.zpowers g = ⊤ :=
+  (Subgroup.eq_top_iff' _).mpr fun y => ⟨(e y).toAdd,
+    e.injective (by simp [hg, ← ofAdd_zsmul])⟩
+
 /-- The class of `γ0` generates `π₁(A, 1/2)`. -/
+@[simp]
 theorem zpowers_periph0Left : Subgroup.zpowers periph0Left = ⊤ :=
-  (Subgroup.eq_top_iff' _).mpr fun y => ⟨(leftOpenFundamentalGroupMulEquivInt y).toAdd,
-    leftOpenFundamentalGroupMulEquivInt.injective (by simp [← ofAdd_zsmul])⟩
+  zpowers_eq_top_of_mulEquivInt leftOpenFundamentalGroupMulEquivInt
+    leftOpenFundamentalGroupMulEquivInt_periph0Left
 
 /-- The class of `γ1` generates `π₁(B, 1/2)`. -/
+@[simp]
 theorem zpowers_periph1Right : Subgroup.zpowers periph1Right = ⊤ :=
-  (Subgroup.eq_top_iff' _).mpr fun y => ⟨(rightOpenFundamentalGroupMulEquivInt y).toAdd,
-    rightOpenFundamentalGroupMulEquivInt.injective (by simp [← ofAdd_zsmul])⟩
+  zpowers_eq_top_of_mulEquivInt rightOpenFundamentalGroupMulEquivInt
+    rightOpenFundamentalGroupMulEquivInt_periph1Right
 
 end ThricePuncturedSphere
 
