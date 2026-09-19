@@ -69,6 +69,9 @@ theorem ringKrullDim_le_finrank_lie :
     ringKrullDim H ≤
       Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
   let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
+  let _ : IsNoetherianRing
+      ((Spec (CommRingCat.of H)).presheaf.stalk (Bialgebra.augmentationPoint k H)) :=
+    IsLocalization.isNoetherianRing (Bialgebra.AugmentationIdeal k H).primeCompl _ inferInstance
   rw [Derivation.finrank_eq_finrank_cotangentSpace, ← ringKrullDim_augmentationStalk (k := k)]
   exact ringKrullDim_kernelStalk_le_finrank_kernelCotangent
     (_root_.Bialgebra.counitAlgHom k H)
@@ -81,6 +84,9 @@ theorem isRegularLocalRing_augmentationStalk_iff :
       (Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) : WithBot ℕ∞) =
         ringKrullDim H := by
   let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
+  let _ : IsNoetherianRing
+      ((Spec (CommRingCat.of H)).presheaf.stalk (Bialgebra.augmentationPoint k H)) :=
+    IsLocalization.isNoetherianRing (Bialgebra.AugmentationIdeal k H).primeCompl _ inferInstance
   rw [isRegularLocalRing_kernelStalk_iff,
     Derivation.finrank_eq_finrank_cotangentSpace, ringKrullDim_augmentationStalk]
 

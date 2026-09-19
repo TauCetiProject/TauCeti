@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.TangentSpace.Affine
 
 For an augmentation `f : A →ₐ[k] k`, the dimension of `ker(f) / ker(f)²` over `k`
 is the embedding dimension of the local ring at the corresponding rational point.
-For Noetherian `A`, this bounds the local Krull dimension, with equality exactly when
+When this local ring is Noetherian, this bounds its Krull dimension, with equality exactly when
 the local ring is regular. These statements allow tangent-space calculations in the
 coordinate algebra to detect regularity of the affine scheme.
 
@@ -46,29 +46,24 @@ theorem finrank_kernelCotangent_eq_finrank_residueFieldCotangent :
         (kernelCotangentLinearEquivZariski_smul f r x))
   simpa only [Cardinal.toNat_lift, Module.finrank] using congrArg Cardinal.toNat h
 
-variable [IsNoetherianRing A]
-
-/-- At a rational point of a Noetherian affine scheme, local dimension is bounded by the
+/-- At a rational point with Noetherian local ring, local dimension is bounded by the
 dimension of the augmentation cotangent space. -/
-theorem ringKrullDim_kernelStalk_le_finrank_kernelCotangent :
+theorem ringKrullDim_kernelStalk_le_finrank_kernelCotangent
+    [IsNoetherianRing ((Spec (CommRingCat.of A)).presheaf.stalk (kernelPoint f))] :
     ringKrullDim ((Spec (CommRingCat.of A)).presheaf.stalk (kernelPoint f)) ≤
       Module.finrank k (RingHom.ker (f : A →+* k)).Cotangent := by
   let S := (Spec (CommRingCat.of A)).presheaf.stalk (kernelPoint f)
-  let _ : IsNoetherianRing S := IsLocalization.isNoetherianRing
-    (RingHom.ker (f : A →+* k)).primeCompl S inferInstance
   rw [finrank_kernelCotangent_eq_finrank_residueFieldCotangent,
     ← spanFinrank_maximalIdeal_eq_finrank_cotangentSpace]
   exact ringKrullDim_le_spanFinrank_maximalIdeal S
 
-/-- The local ring at a rational point of a Noetherian affine scheme is regular exactly when
+/-- A Noetherian local ring at a rational point of an affine scheme is regular exactly when
 its dimension equals the dimension of the augmentation cotangent space. -/
-theorem isRegularLocalRing_kernelStalk_iff :
+theorem isRegularLocalRing_kernelStalk_iff
+    [IsNoetherianRing ((Spec (CommRingCat.of A)).presheaf.stalk (kernelPoint f))] :
     IsRegularLocalRing ((Spec (CommRingCat.of A)).presheaf.stalk (kernelPoint f)) ↔
       (Module.finrank k (RingHom.ker (f : A →+* k)).Cotangent : WithBot ℕ∞) =
         ringKrullDim ((Spec (CommRingCat.of A)).presheaf.stalk (kernelPoint f)) := by
-  let S := (Spec (CommRingCat.of A)).presheaf.stalk (kernelPoint f)
-  let _ : IsNoetherianRing S := IsLocalization.isNoetherianRing
-    (RingHom.ker (f : A →+* k)).primeCompl S inferInstance
   rw [IsRegularLocalRing.iff_finrank_cotangentSpace,
     finrank_kernelCotangent_eq_finrank_residueFieldCotangent]
 
