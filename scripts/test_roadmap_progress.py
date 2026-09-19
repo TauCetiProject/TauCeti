@@ -48,10 +48,12 @@ in place. Nothing else has begun.
 - **Gizmos.** Later.
 """
 
-MARKER = (f'<!--tauceti-coverage:v1 {{"roadmap":"Widgets","to_sha":"{SHA}",'
+MARKER = (f'<!--tauceti-coverage:v1 {{"roadmap":"Widgets","to_sha":"{SHA}","readme_sha":"__README__",'
           '"layers":[{"id":"Layer 0","state":"done"},{"id":"Layer 1","state":"partial"},'
           '{"id":"Layer 2.5","state":"untouched"}]}-->\n')
 
+MARKER = MARKER.replace("__README__", rp.sha256(README)[:12])
+README_SHA = rp.sha256(README)
 UTC = dt.timezone.utc
 
 
@@ -133,8 +135,29 @@ class Status(unittest.TestCase):
     def test_marker_applies_when_it_names_the_roadmap_and_every_layer_once(self):
         st = rp.parse_status(MARKER + STATUS)
         layers = rp.layer_headings(README)
-        self.assertEqual(rp.states_from_marker(st["coverage"], "Widgets", layers, SHA),
+        self.assertEqual(rp.states_from_marker(st["coverage"], "Widgets", layers, SHA, README_SHA),
                          (["done", "partial", "untouched"], None))
+
+    def test_marker_needs_the_readme_it_assessed(self):
+        st = rp.parse_status(MARKER + STATUS)
+        layers = rp.layer_headings(README)
+        m = st["coverage"]
+        # Same ids, edited requirements (body or title): the marker no longer applies.
+        edited = README.replace("text\n", "completely different requirements\n")
+        self.assertEqual(rp.layer_headings(edited), layers)
+        states, why = rp.states_from_marker(m, "Widgets", layers, SHA, rp.sha256(edited))
+        self.assertIsNone(states)
+        self.assertIn("different README", why)
+        retitled = README.replace("Layer 0: the widget", "Layer 0: the gadget")
+        states, why = rp.states_from_marker(m, "Widgets", rp.layer_headings(retitled), SHA, rp.sha256(retitled))
+        self.assertIsNone(states)
+        self.assertIn("different README", why)
+        # A marker that names no README at all is not applied to whichever README is current.
+        unbound = {k: v for k, v in m.items() if k != "readme_sha"}
+        states, why = rp.states_from_marker(unbound, "Widgets", layers, SHA, README_SHA)
+        self.assertIsNone(states)
+        self.assertIn("no readme_sha", why)
+        self.assertIsNone(rp.states_from_marker(dict(m, readme_sha="abc"), "Widgets", layers, SHA, README_SHA)[0])
 
     def test_marker_is_refused_whole_with_a_reason(self):
         st = rp.parse_status(MARKER + STATUS)
@@ -142,7 +165,7 @@ class Status(unittest.TestCase):
         m = st["coverage"]
 
         def refused(marker, name="Widgets", lay=layers, sha=SHA):
-            states, why = rp.states_from_marker(marker, name, lay, sha)
+            states, why = rp.states_from_marker(marker, name, lay, sha, README_SHA)
             self.assertIsNone(states)
             return why
 
@@ -167,7 +190,7 @@ class Status(unittest.TestCase):
         broken = '<!--tauceti-coverage:v1 {"roadmap":"Widgets", "layers": [}-->\n' + STATUS
         st = rp.parse_status(broken)
         self.assertEqual(st["coverage"], rp.MALFORMED)
-        self.assertEqual(rp.states_from_marker(st["coverage"], "Widgets", rp.layer_headings(README), SHA)[1],
+        self.assertEqual(rp.states_from_marker(st["coverage"], "Widgets", rp.layer_headings(README), SHA, README_SHA)[1],
                          "marker JSON does not parse")
 
     def test_hand_transcription_is_bound_to_report_readme_and_layer_ids(self):
@@ -303,6 +326,13 @@ class Tree(unittest.TestCase):
         widgets = rp.read_roadmaps(self.root, {})[2]
         self.assertEqual(widgets["assessment"]["reason"], "invalid-marker")
         self.assertIn("does not parse", widgets["assessment"]["detail"])
+        # A valid marker over an edited README: unassessed, with the README reason, no fallback.
+        status.write_text(MARKER + STATUS)
+        (self.root / rp.AREAS_DIR / "Widgets" / "README.md").write_text(README.replace("text\n", "new requirements\n"))
+        widgets = rp.read_roadmaps(self.root, {"TauCetiRoadmap/Widgets": entry()})[2]
+        self.assertEqual(widgets["assessment"]["reason"], "invalid-marker")
+        self.assertIn("different README", widgets["assessment"]["detail"])
+        self.assertEqual(widgets["states"], ["unassessed"] * 3)
 
     def test_no_layers_and_no_report_are_distinct_reasons(self):
         (self.root / rp.AREAS_DIR / "Widgets" / "README.md").write_text("# Roadmap: widgets\n\nprose\n")

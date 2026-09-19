@@ -43,7 +43,8 @@
     return c;
   }
   function isCount(v) { return typeof v === "number" && isFinite(v) && v >= 0 && Math.floor(v) === v; }
-  function isTs(v) { return typeof v === "string" && TS_RE.test(v) && !isNaN(Date.parse(v)); }
+  function isTs(v) { return typeof v === "string" && TS_RE.test(v) && !isNaN(Date.parse(v)) && new Date(v).toISOString() === v.replace(/Z$/, ".000Z"); }
+  function isDay(v) { return typeof v === "string" && DATE_RE.test(v) && !isNaN(Date.parse(v)) && new Date(v).toISOString().slice(0, 10) === v; }
   function daysBetween(a, b) { return Math.round((Date.parse(b) - Date.parse(a)) / 86400000); }
   function plural(n, word) { return n + " " + word + (n === 1 ? "" : "s"); }
 
@@ -54,7 +55,7 @@
     if (!isTs(data.exported_at) || !isTs(data.cutoff)) return "missing export time or cutoff";
     if (data.collected_at !== null && !isTs(data.collected_at)) return "malformed collection time";
     if (!isCount(data.update_due_prs) || !isCount(data.recent_days)) return "malformed thresholds";
-    if (!data.weeks.every(function (w) { return typeof w === "string" && DATE_RE.test(w); })) return "malformed week labels";
+    if (!data.weeks.every(isDay)) return "malformed week labels";
     if (!Array.isArray(data.topics) || !data.topics.every(function (t) { return typeof t === "string"; })) return "malformed topic list";
     var g = data.global;
     if (!Array.isArray(g.weekly) || g.weekly.length !== data.weeks.length || !g.weekly.every(isCount)) return "malformed global weekly counts";
@@ -72,6 +73,8 @@
       if (!r.layer_lines.every(function (n) { return isCount(n) && n > 0; })) return "malformed layer lines in " + r.id;
       if (!Array.isArray(r.links) || !r.links.every(function (l) { return l && typeof l.label === "string" && typeof l.url === "string" && /^https:\/\//.test(l.url); })) return "malformed links in " + r.id;
       if (!r.layers.every(function (l) { return typeof l === "string"; }) || !r.layer_ids.every(function (l) { return typeof l === "string"; })) return "malformed layer titles in " + r.id;
+      var seenIds = {};
+      for (var q = 0; q < r.layer_ids.length; q++) { if (seenIds[r.layer_ids[q]]) return "repeated layer id in " + r.id; seenIds[r.layer_ids[q]] = true; }
       for (var j = 0; j < r.states.length; j++) if (STATES.indexOf(r.states[j]) < 0) return "unknown layer state in " + r.id;
       if (!r.assessment || typeof r.assessment.reason !== "string") return "missing assessment in " + r.id;
       if (r.status !== null) {
@@ -92,7 +95,7 @@
   }
 
   // ---- URL state ----
-  var state = { group: "topic", sort: "activity", show: "all", q: "", open: [], kids: [] };
+  var state = { group: "topic", sort: "activity", show: "all", q: "", open: [], kids: [], closed: [] };
   function readUrl() {
     try {
       var q = new URLSearchParams(location.search);
@@ -102,6 +105,7 @@
       state.q = q.get("q") || "";
       state.open = (q.get("open") || "").split(",").filter(Boolean);
       state.kids = (q.get("kids") || "").split(",").filter(Boolean);
+      state.closed = (q.get("closed") || "").split(",").filter(Boolean);
     } catch (e) { /* no query string */ }
   }
   function writeUrl(push) {
@@ -113,6 +117,7 @@
       if (state.q) q.set("q", state.q);
       if (state.open.length) q.set("open", state.open.join(","));
       if (state.kids.length) q.set("kids", state.kids.join(","));
+      if (state.closed.length && state.q) q.set("closed", state.closed.join(","));
       var s = q.toString();
       var url = location.pathname + (s ? "?" + s : "");
       if (push) history.pushState(null, "", url); else history.replaceState(null, "", url);
@@ -172,7 +177,7 @@
         '<span><span class="pb-sw u"></span>reported untouched</span>' +
         '<span><span class="pb-sw q"></span>unassessed: no report, or the report does not say</span>' +
         '<span class="pb-legend-note">What each roadmap’s latest report says, not a percentage of the work.</span>' +
-        '<a class="pb-jump" href="#pb-roadmaps">Jump to the roadmaps ↓</a></div>';
+        '<button type="button" class="pb-jump">Jump to the roadmaps \u2193</button></div>';
     }
     function stack(c, cls) {
       var total = STATES.reduce(function (a, s) { return a + c[s]; }, 0);
@@ -334,7 +339,7 @@
         var remaining = a.remaining && typeof a.remaining === "object" ? a.remaining : {};
         right += '<h4>Layers <span class="pb-ev">each linked to its heading in the README used</span></h4><ul class="pb-layers">' + r.layers.map(function (l, i) {
           var note = notes[r.layer_ids[i]], rem = remaining[r.layer_ids[i]];
-          return '<li><span class="pb-dot ' + STATE_CLASS[r.states[i]] + '"></span><span><a href="' + pinned(r.readme) + "#L" + r.layer_lines[i] + '">' + esc(l) + '</a> <span class="pb-faint">\u00b7 ' + STATE_WORD[r.states[i]] + "</span>" +
+          return '<li><span class="pb-dot ' + STATE_CLASS[r.states[i]] + '"></span><span><a href="' + pinned(r.readme) + "?plain=1#L" + r.layer_lines[i] + '">' + esc(l) + '</a> <span class="pb-faint">\u00b7 ' + STATE_WORD[r.states[i]] + "</span>" +
             (typeof rem === "string" ? '<div class="pb-note"><b>Remaining:</b> ' + inline(rem) + "</div>" : "") +
             (typeof note === "string" ? '<div class="pb-note">' + esc(note) + "</div>" : "") + "</span></li>";
         }).join("") + "</ul>";
@@ -342,7 +347,7 @@
       }
       if (r.activity) right += "<h4>Activity</h4>" + weeklyTable(r.activity.weekly);
       else if (r.parent_id) right += '<h4>Activity</h4><p class="pb-faint">Pull requests are labelled with the parent roadmap, so activity cannot be split by sub-roadmap.</p>';
-      if (r.activity && r.activity.open) right += '<p class="pb-faint">' + plural(r.activity.open, "pull request") + " open with this label at the snapshot: work in flight that no report describes yet.</p>";
+      if (r.activity && r.activity.open) right += '<p class="pb-faint">' + plural(r.activity.open, "pull request") + " open with this label when the snapshot was taken (the queue as it stood then, not as of the cutoff): work in flight that no report describes yet.</p>";
       return '<div class="pb-detail-inner"><div>' + left + "</div><div>" + right + "</div></div>";
     }
     // Totals over the rows that actually match: a top-level match counts itself (or, for an
@@ -377,7 +382,7 @@
       function emit(r) {
         var ch = kids(r), chVisible = ch.filter(visible), self = visible(r);
         if (!self && !chVisible.length) return;
-        var expand = ch.length && (state.kids.indexOf(r.id) >= 0 || (!!state.q && chVisible.length > 0));
+        var expand = ch.length && (state.kids.indexOf(r.id) >= 0 || (!!state.q && chVisible.length > 0 && state.closed.indexOf(r.id) < 0));
         out.push(rowHtml(r, !self, expand ? chVisible.length : null, ch.length));
         if (self) shown++;
         if (expand) chVisible.sort(state.sort === "name" ? sorters.name : s).forEach(function (c) { out.push(rowHtml(c, false, null, 0)); shown++; });
@@ -435,7 +440,9 @@
     });
     var searchTimer = null;
     root.querySelector(".pb-search").addEventListener("input", function (e) {
-      state.q = e.target.value.trim();
+      var next = e.target.value.trim();
+      if (next !== state.q) state.closed = [];
+      state.q = next;
       clearTimeout(searchTimer);
       searchTimer = setTimeout(function () { writeUrl(false); renderRows(); }, 120);
     });
@@ -448,12 +455,25 @@
         if (i >= 0) state.open.splice(i, 1); else state.open.push(id);
         writeUrl(false); renderRows(); refocus('[data-open="' + CSS.escape(id) + '"]');
       } else if (b.hasAttribute("data-kids")) {
-        var p = b.getAttribute("data-kids"), j = state.kids.indexOf(p);
-        if (j >= 0) state.kids.splice(j, 1); else state.kids.push(p);
+        // Expanded either explicitly (kids) or by a matching search; collapsing an auto-expanded
+        // list is recorded as an explicit close, which the next query change forgets.
+        var p = b.getAttribute("data-kids"), j = state.kids.indexOf(p), k = state.closed.indexOf(p);
+        var expanded = b.getAttribute("aria-expanded") === "true";
+        if (expanded) { if (j >= 0) state.kids.splice(j, 1); else if (k < 0) state.closed.push(p); }
+        else { if (k >= 0) state.closed.splice(k, 1); else state.kids.push(p); }
         writeUrl(false); renderRows(); refocus('[data-kids="' + CSS.escape(p) + '"]');
       } else if (b.classList.contains("pb-reset")) {
         state.q = ""; state.show = "all";
         writeUrl(true); renderRows(); refocus(".pb-search");
+      } else if (b.classList.contains("pb-jump")) {
+        // The page carries a <base>, so a bare fragment href would resolve against the site root;
+        // scroll within this document instead, allowing for the sticky site navigation.
+        var controls = root.querySelector(".pb-controls");
+        var nav = document.querySelector(".site-nav");
+        controls.scrollIntoView({ block: "start", behavior: "instant" });
+        window.scrollBy({ top: -((nav ? nav.getBoundingClientRect().height : 0) + 8), behavior: "instant" });
+        var first = controls.querySelector("select, input");
+        if (first) first.focus({ preventScroll: true });
       } else if (b.classList.contains("pb-more")) {
         var on = root.querySelector(".pb-tiles").classList.toggle("expanded");
         b.setAttribute("aria-expanded", String(on)); b.textContent = on ? "Fewer figures" : "More figures";

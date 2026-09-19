@@ -18,8 +18,14 @@ Three kinds of evidence go into the output, and the page keeps them apart:
   a particular revision, and the only place that assessment is made is the generated `STATUS.md`
   that TauCetiProgress writes for a roadmap. Its prose cannot be aggregated, so this script reads
   a machine-readable companion, a `tauceti-coverage:v1` marker beside the `tauceti-status:v1`
-  header, when one is present and fits; each layer entry may also carry a one-line `remaining`
-  note, what the next contributor would pick up. Until TauCetiProgress emits that marker,
+  header, when one is present and fits. Fitting means it names this roadmap, the library commit
+  of the status header, and the README it assessed (`readme_sha`, a hash of that README's text,
+  which must match the README the layers were read from), and lists every layer id exactly once
+  with a legal state; each entry may also carry a one-line `remaining` note, what the next
+  contributor would pick up. That is what this page will accept, offered as a proposal to
+  TauCetiProgress, not a contract it has agreed to; a marker without the README binding is left
+  unassessed with a reason rather than applied to whatever README happens to be current. Until
+  TauCetiProgress emits such a marker,
   `scripts/roadmap_coverage.json` carries the same verdicts transcribed by hand from the prose.
   A transcription is bound to the exact report it was read from (its library commit and a hash of
   the report's text), to the exact specification it was read against (a hash of the README), and
@@ -228,6 +234,10 @@ def parse_status(text: str) -> dict | None:
     }
 
 
+def _prefix_ok(want, full: str, minimum: int) -> bool:
+    return isinstance(want, str) and len(want) >= minimum and full.startswith(want)
+
+
 def _check_ids(by_id: dict, ids: list[str]) -> str | None:
     """Why a mapping of layer id to state does not fit the layer ids, or None if it does."""
     if len(set(ids)) != len(ids):
@@ -243,14 +253,17 @@ def _check_ids(by_id: dict, ids: list[str]) -> str | None:
     return None
 
 
-def states_from_marker(marker, name: str, layers: list[str], to_sha: str) -> tuple[list[str] | None, str | None]:
+def states_from_marker(marker, name: str, layers: list[str], to_sha: str,
+                       readme_sha: str) -> tuple[list[str] | None, str | None]:
     """Per-layer states from a `tauceti-coverage:v1` marker, or (None, reason).
 
-    It fits when it names this roadmap and this snapshot and lists every layer id exactly once
-    with a legal state; anything else is refused whole, with a reason, rather than half-applied.
-    The marker's shape is TauCetiProgress's contract and is read as it is; specification identity
-    is recorded beside it (`readme_sha` on the row), not written into it. An entry's optional
-    string `remaining` is read by `remaining_from_marker`.
+    It fits when it names this roadmap, this library commit and the README it assessed (a
+    `readme_sha` matching, as a prefix of at least twelve characters, the hash of the README the
+    layers were read from), and lists every layer id exactly once with a legal state; anything
+    else is refused whole, with a reason, rather than half-applied. Layer ids alone are not a
+    specification identity: a layer's requirements can change under an unchanged heading, which
+    is exactly what the README hash detects. An entry's optional string `remaining` is read by
+    `remaining_notes`.
     """
     if marker == MALFORMED:
         return None, "marker JSON does not parse"
@@ -260,6 +273,9 @@ def states_from_marker(marker, name: str, layers: list[str], to_sha: str) -> tup
         return None, f"marker names roadmap {marker.get('roadmap')!r}, not {name!r}"
     if marker.get("to_sha") != to_sha:
         return None, "marker describes a different library commit than the status header"
+    if not _prefix_ok(marker.get("readme_sha"), readme_sha, 12):
+        return None, ("marker does not name the README it assessed (no readme_sha)" if marker.get("readme_sha") is None
+                      else "marker assessed a different README than the one the layers were read from")
     entries = marker.get("layers")
     if not isinstance(entries, list):
         return None, "marker has no layer list"
@@ -285,10 +301,6 @@ def remaining_notes(entries, ids: list[str]) -> dict:
     if not isinstance(entries, dict):
         return {}
     return {k: v.strip() for k, v in entries.items() if k in ids and isinstance(v, str) and v.strip()}
-
-
-def _prefix_ok(want, full: str, minimum: int) -> bool:
-    return isinstance(want, str) and len(want) >= minimum and full.startswith(want)
 
 
 def _layer_map(raw, ids: list[str]) -> dict | None:
@@ -375,7 +387,7 @@ def read_roadmap(dirpath: pathlib.Path, base: str, transitional: dict, parent: s
         return row
     a = row["assessment"]
     if st["coverage"] is not None and not inherited:
-        states, why = states_from_marker(st["coverage"], name, layers, st["to_sha"])
+        states, why = states_from_marker(st["coverage"], name, layers, st["to_sha"], row["readme_sha"])
         if states:
             row["states"], a["source"], a["reason"] = states, "marker", "ok"
             a["remaining"] = remaining_notes(st["coverage"].get("layers"), row["layer_ids"])

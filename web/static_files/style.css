@@ -321,7 +321,9 @@ a.card:hover { transform: translateY(-3px); border-color: var(--teal); text-deco
 .pb-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.84rem; color: var(--muted); font-variant-numeric: tabular-nums; align-items: center; }
 .pb-legend-main { margin: 0.2rem 0 0.4rem; }
 .pb-legend-note { color: var(--muted); font-style: italic; }
-.pb-jump { margin-left: auto; font-family: var(--display); font-size: 0.8rem; }
+.pb-jump { margin-left: auto; font: inherit; font-family: var(--display); font-size: 0.8rem; color: var(--teal); background: transparent; border: 0; padding: 0; cursor: pointer; }
+.pb-jump:hover { text-decoration: underline; }
+.pb-jump:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 .pb-more { display: none; }
 .pb-methods { margin: 1.5rem 0 0; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); padding: 0.2rem 1.1rem 0.4rem; }
 .pb-methods summary { cursor: pointer; font-family: var(--display); font-weight: 600; font-size: 1.1rem; padding: 0.6rem 0; color: var(--text); }
