@@ -268,7 +268,7 @@ end InternalGrading
 
 namespace Polynomial
 
-variable {k : Type*} [CommSemiring k] [IsDomain k]
+variable {k : Type*} [CommSemiring k] [Nontrivial k]
 
 /-- The degrees of the homogeneous non-torsion elements of `k[X]`, graded by `negDegreeGrading`,
 are the nonpositive integers: every nonzero homogeneous element is a nonzero multiple of a
@@ -293,7 +293,8 @@ theorem nonTorsionDegrees_negDegreeGrading :
     · simp [Int.toNat_of_nonneg (neg_nonneg.mpr hp)]
     · obtain ⟨⟨a, ha⟩, h⟩ := (Submodule.mem_torsion_iff _).mp h
       rw [Submonoid.smul_def, smul_eq_mul] at h
-      exact pow_ne_zero _ X_ne_zero ((mul_eq_zero.mp h).resolve_left (nonZeroDivisors.ne_zero ha))
+      exact nonZeroDivisors.ne_zero (pow_mem X_mem_nonzeroDivisors _)
+        (mem_nonZeroDivisors_iff_left.mp ha _ h)
 
 /-- The top of the tower `k[X]`, graded by `negDegreeGrading`, sits in degree `0`. -/
 @[simp]
