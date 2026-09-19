@@ -22,7 +22,7 @@ of arbitrarily small probability.
 
 * `MeasureTheory.Measure.exists_forall_null_frontier_thickening` — for countably many sets, some
   radius in any nonempty open interval gives thickenings whose boundaries are all null.
-* `MeasureTheory.Measure.exists_partition_null_frontier_small_last` — a probability measure on a
+* `MeasureTheory.Measure.exists_partition_null_frontier_small_last` — a finite measure on a
   separable pseudometric space admits a finite measurable partition into null-boundary sets, all but
   the last lying in balls of a prescribed radius and the last having arbitrarily small measure.
 -/
@@ -58,13 +58,12 @@ variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableS
 
 /-- A finite partition of `X` into pieces of `μ`-null boundary: all but the last piece lie in
 balls of radius `r`, and the last piece has `μ`-mass at most `ε`. -/
-theorem exists_partition_null_frontier_small_last (μ : Measure X) [IsProbabilityMeasure μ]
+theorem exists_partition_null_frontier_small_last (μ : Measure X) [IsFiniteMeasure μ] [Nonempty X]
     {r : ℝ} (hr : 0 < r) {ε : ℝ≥0∞} (hε : 0 < ε) :
     ∃ (N : ℕ) (A : Fin (N + 1) → Set X), (∀ i, MeasurableSet (A i)) ∧
       Pairwise (Disjoint on A) ∧ (⋃ i, A i) = univ ∧ (∀ i, μ (frontier (A i)) = 0) ∧
       (∀ i : Fin (N + 1), i ≠ Fin.last N → ∃ x, A i ⊆ Metric.ball x r) ∧
       μ (A (Fin.last N)) ≤ ε := by
-  have := nonempty_of_isProbabilityMeasure μ
   obtain ⟨u, hu⟩ := TopologicalSpace.exists_dense_seq X
   obtain ⟨ρ, ⟨hρ0, hρr⟩, hρ⟩ := μ.exists_forall_null_frontier_thickening (fun k ↦ {u k}) hr
   simp only [Metric.thickening_singleton] at hρ
