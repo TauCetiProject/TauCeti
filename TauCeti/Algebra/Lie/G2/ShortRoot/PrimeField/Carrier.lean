@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Generated.Basic
 public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.GeneralLinearBaseChange
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Equalizer
-import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
 
 /-!
 # The short-root type-G2 carrier over the prime field of characteristic three
@@ -47,8 +46,9 @@ proved.
 
 ## Main results
 
-* `TauCeti.G2ShortRoot.PrimeField.groupScheme_hom_ext`: a morphism out of the carrier is
-  determined by its restrictions to the four numbered root subgroups and to the weight torus.
+* `TauCeti.G2ShortRoot.PrimeField.groupScheme_hom_ext`: a morphism from the carrier to an affine
+  group scheme presented as `hopfSpec Y` is determined by its restrictions to the four numbered
+  root subgroups and to the weight torus.
 * `TauCeti.G2ShortRoot.PrimeField.baseChangePresentationIdeal_le_definingIdeal`: the carrier is a
   closed subgroup scheme of the base change of the integral short-root carrier.
 
@@ -61,6 +61,9 @@ and Lie Algebras, Chapters 4--6*, Plate IX. The reason the prime field, rather t
 base for a carrier carrying the special isogeny is the maximality of the defining ideal explained
 above; see R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968),
 §11.
+
+The file layout, declaration order, and proof plan follow the type-`F₄` sibling construction in
+[TauCeti PR #6823](https://github.com/TauCetiProject/TauCeti/pull/6823).
 -/
 
 public section
@@ -198,8 +201,9 @@ theorem weightTorus_comp_carrierι :
   rw [weightTorus_def, carrierι_def, Category.assoc,
     TauCeti.GeneralLinear.generatorToGeneratedGroupScheme_comp_ι]
 
-/-- Two morphisms out of the carrier over `𝔽₃` agree when they agree on all four numbered simple
-root subgroups and on the weight torus. -/
+/-- Two morphisms from the carrier over `𝔽₃` to an affine group scheme presented as
+`hopfSpec Y` agree when they agree on all four numbered simple root subgroups and on the weight
+torus. -/
 @[ext]
 theorem groupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} (ZMod 3)}
     (f g : groupScheme ⟶ (hopfSpec (CommRingCat.of (ZMod 3))).obj (Opposite.op Y))

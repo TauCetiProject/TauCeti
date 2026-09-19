@@ -46,6 +46,9 @@ The identification of the reduced generators with the integral ones is the base-
 compatibility of the Chevalley--Demazure construction; see R. W. Carter, *Simple Groups of Lie
 Type*, §4.4, and J. C. Jantzen, *Representations of Algebraic Groups*, II.1--2. The weight
 conventions follow N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate IX.
+
+The file layout, declaration order, and proof plan follow the type-`F₄` sibling construction in
+[TauCeti PR #6823](https://github.com/TauCetiProject/TauCeti/pull/6823).
 -/
 
 public section
@@ -283,6 +286,7 @@ theorem pointsMap_id {A : Type v} [CommRing A] [Algebra (ZMod 3) A] :
     (points_eq_hopfIdealPointsSubgroup A)
 
 /-- The induced maps on carrier points compose. -/
+@[simp]
 theorem pointsMap_comp {A : Type u} {B : Type v} {C : Type w}
     [CommRing A] [CommRing B] [CommRing C]
     [Algebra (ZMod 3) A] [Algebra (ZMod 3) B] [Algebra (ZMod 3) C]
