@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Cohomology.Flasque
-public import TauCeti.AlgebraicGeometry.ResidueDegree
+public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
+public import Mathlib.AlgebraicGeometry.ResidueField
 
 /-!
 # The skyscraper sheaf of a residue field
@@ -15,12 +15,14 @@ For a point `x` of a scheme `X`, the skyscraper sheaf `κ(x)ₓ` has sections `�
 subsets containing `x` and `0` over the others, a regular function `r` acting through its value
 `r(x) ∈ κ(x)`. This file realizes it as the pushforward of the structure sheaf along the canonical
 morphism `Spec κ(x) ⟶ X`, which makes the sheaf condition and the `𝒪_X`-module structure
-automatic, and computes its cohomology: it is flasque, hence acyclic in positive degrees, and its
-zeroth cohomology over a base field `k` has dimension `[κ(x) : k]`.
+automatic. Its restriction maps are surjective, so the sheaf is flasque.
+This is the residue-field analogue of `Scheme.rationalFunctions`, with `x` and `κ(x)` in place
+of the generic point and the function field.
 
-Skyscraper sheaves of residue fields are the cokernels of the inclusions `𝒪_X(D) ⟶ 𝒪_X(D + x)` of
-divisor sheaves on a curve, which is how the Euler characteristic of a divisor sheaf changes by
-`[κ(x) : k]` when a point is added to the divisor.
+On a Noetherian integral scheme whose codimension-one local rings are discrete valuation rings,
+the skyscraper sheaf at a closed codimension-one point `x` is the cokernel of the inclusion
+`𝒪_X(D) ⟶ 𝒪_X(D + x)`. This describes how adding a point to a divisor changes its
+divisor sheaf.
 
 ## Main declarations
 
@@ -31,23 +33,12 @@ divisor sheaves on a curve, which is how the Euler characteristic of a divisor s
   (`Scheme.skyscraperResidueFieldEquiv_map`);
 * `Scheme.subsingleton_skyscraperResidueField`: the sections over an open subset not containing
   `x` vanish;
-* `Scheme.isFlasque_skyscraperResidueField`: the skyscraper sheaf is flasque, so its cohomology
-  vanishes in positive degrees;
-* `Scheme.finrank_cohomology_zero_skyscraperResidueField`: over a field `k`, the dimension of
-  `H⁰(X, κ(x)ₓ)` is the residue degree `[κ(x) : k]` of the structure morphism at `x`, so that
-  the cohomology is finite-dimensional when that degree is nonzero
-  (`Scheme.finiteDimensional_cohomology_skyscraperResidueField`).
+* `Scheme.isFlasque_skyscraperResidueField`: the skyscraper sheaf is flasque.
 
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, II, Exercise 1.17 (skyscraper sheaves) and IV,
   Theorem 1.3 (their role in the proof of Riemann–Roch).
-
-## Formalization notes
-
-The pushforward construction, section equivalences, restriction-map arguments, and flasqueness
-proof follow the implementation pattern in
-`TauCeti/AlgebraicGeometry/Modules/RationalFunctions.lean`.
 -/
 
 public section
@@ -175,43 +166,6 @@ instance _root_.AlgebraicGeometry.Scheme.isFlasque_skyscraperResidueField (x : X
     · exact (skyscraperResidueField_map_bijective x i.unop hx).surjective
     · have := subsingleton_skyscraperResidueField x hx
       exact fun _ ↦ ⟨0, Subsingleton.elim _ _⟩
-
-section Base
-
-variable (k : Type u) [Field k] [X.Over (Spec (.of k))]
-
-/-- **The dimension of the global sections of a skyscraper sheaf.** Over a field `k`, the zeroth
-cohomology `H⁰(X, κ(x)ₓ) = κ(x)` has dimension the residue degree `[κ(x) : k]` of the structure
-morphism at `x` (which is `0` by convention when `κ(x)` is infinite over `k`). -/
-theorem _root_.AlgebraicGeometry.Scheme.finrank_cohomology_zero_skyscraperResidueField (x : X) :
-    Module.finrank k (Scheme.Modules.Cohomology (skyscraperResidueField x) 0) =
-      (X ↘ Spec (.of k)).residueDegree x := by
-  let f := X ↘ Spec (.of k)
-  let : Algebra ((Spec (.of k)).residueField (f x)) (X.residueField x) :=
-    (f.residueFieldMap x).hom.toAlgebra
-  rw [(Scheme.Modules.cohomologyZeroBaseLinearEquiv k X _).finrank_eq, Scheme.Hom.residueDegree,
-    Module.finrank, Module.finrank]
-  congr 1
-  have hx : x ∈ (⊤ : X.Opens) := trivial
-  refine rank_eq_of_equiv_equiv _ (skyscraperResidueFieldEquiv x hx)
-    (Γevaluation_comp_ΓSpecIso_inv_bijective k (f x)) fun c s ↦ ?_
-  rw [Scheme.Modules.base_smul_globalSections, skyscraperResidueFieldEquiv_smul,
-    Algebra.smul_def, RingHom.algebraMap_toAlgebra, Function.comp_apply,
-    Scheme.Γevaluation_naturality_apply, Scheme.Modules.baseRingToGlobalSections_apply]
-
-/-- At a point whose residue field is finite over `k`, the skyscraper sheaf `κ(x)ₓ` has
-finite-dimensional cohomology in every degree: `κ(x)` in degree zero and `0` above. -/
-theorem _root_.AlgebraicGeometry.Scheme.finiteDimensional_cohomology_skyscraperResidueField {x : X}
-    (hx : (X ↘ Spec (.of k)).residueDegree x ≠ 0) (i : ℕ) :
-    FiniteDimensional k (Scheme.Modules.Cohomology (skyscraperResidueField x) i) := by
-  cases i with
-  | zero =>
-    refine Module.finite_of_finrank_pos ?_
-    rw [finrank_cohomology_zero_skyscraperResidueField]
-    exact Nat.pos_of_ne_zero hx
-  | succ i => infer_instance
-
-end Base
 
 end
 

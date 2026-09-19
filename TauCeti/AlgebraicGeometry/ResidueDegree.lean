@@ -22,7 +22,7 @@ composite with the product of the two successive residue degrees. We also charac
 residue degree is positive and when it is one. Over the spectrum of a field `k` the residue field
 at the unique point is `k` itself (`Γevaluation_comp_ΓSpecIso_inv_bijective`), which identifies
 residue degrees over `Spec k` with dimensions over `k`. These facts supply the residue-field
-weights used in the degree and pushforward parts of Layer A of the Jacobian challenge roadmap.
+weights used in degree and pushforward constructions.
 
 The construction follows the residue-degree convention for pushforward of cycles in the
 [Stacks Project, Tag 02R4](https://stacks.math.columbia.edu/tag/02R4). The proofs reuse
