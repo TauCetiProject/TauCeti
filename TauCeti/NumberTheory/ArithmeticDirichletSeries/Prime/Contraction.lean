@@ -31,7 +31,7 @@ uniform bound over `Z`.
 
 The typical `π` is contraction `𝔓 ↦ 𝔓 ∩ 𝓞 K` for an extension `E / K`. It preserves norms exactly
 on the primes of residue degree one over `K`, and the others have density zero, so only primes of
-residue degree one need to be counted in the fibres; at most `[E : ℚ]` primes of `E` lie over a
+residue degree one need to be counted in the fibres; at most `[E : K]` primes of `E` lie over a
 given prime of `K`, which supplies the uniform bound over `Z`. This is how a density computed over
 an extension field is transported down to the base, as in the proof of the Chebotarev density
 theorem, where a relative Frobenius fibre over the fixed field of a cyclic subgroup is counted
@@ -259,8 +259,8 @@ theorem hasDirichletDensity_contraction [Algebra K E] {Z : Set (HeightOneSpectru
   refine hasDirichletDensity_iff_of_card_fiber_of_negligible hZ
     (fun 𝔓 h𝔓 ↦ hmaps 𝔓 h𝔓.1 h𝔓.2)
     (fun 𝔓 h𝔓 ↦ hnorm 𝔓 h𝔓.1) (fun 𝔓 h𝔓 ↦ (hnorm 𝔓 h𝔓.1).ge) hc hfiber
-    (m := Module.finrank ℚ E) fun 𝔭 _ ↦
+    (m := Module.finrank K E) fun 𝔭 _ ↦
       (Set.encard_le_encard Set.inter_subset_right).trans
-        (TauCeti.encard_setOf_under_eq_le_finrank 𝔭)
+        (𝔭.encard_setOf_under_eq_le_finrank (E := E))
 
 end NumberField.Set
