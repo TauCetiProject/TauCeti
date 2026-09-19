@@ -47,9 +47,10 @@ compatibility of the Chevalley--Demazure construction; see R. W. Carter, *Simple
 Type*, §4.4, and J. C. Jantzen, *Representations of Algebraic Groups*, II.1--2. The weight
 conventions follow N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate IX.
 
-The file layout, declaration order, and proof plan follow the type-`F₄` sibling construction in
-[TauCeti PR #6823](https://github.com/TauCetiProject/TauCeti/pull/6823).
 -/
+
+/- Formal source: the file layout, declaration order, and proof plan follow the type-`F₄`
+sibling construction in [TauCeti PR #6823](https://github.com/TauCetiProject/TauCeti/pull/6823). -/
 
 public section
 
