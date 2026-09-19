@@ -322,7 +322,7 @@ theorem isOpen_puncturedDiscInf : IsOpen puncturedDiscInf :=
 
 /-- The standard neighbourhoods at `0` and `1` are disjoint; their boundary circles are tangent
 at the basepoint, but the neighbourhoods use strict inequalities. -/
-theorem puncturedDiscZero_disjoint_puncturedDiscOne :
+theorem disjoint_puncturedDiscZero_puncturedDiscOne :
     Disjoint puncturedDiscZero puncturedDiscOne := by
   rw [Set.disjoint_left]
   intro z hz0 hz1
@@ -334,7 +334,7 @@ theorem puncturedDiscZero_disjoint_puncturedDiscOne :
   linarith
 
 /-- The standard neighbourhoods at `0` and `∞` are disjoint. -/
-theorem puncturedDiscZero_disjoint_puncturedDiscInf :
+theorem disjoint_puncturedDiscZero_puncturedDiscInf :
     Disjoint puncturedDiscZero puncturedDiscInf := by
   rw [Set.disjoint_left]
   intro z hz0 hzInf
@@ -343,7 +343,7 @@ theorem puncturedDiscZero_disjoint_puncturedDiscInf :
   linarith
 
 /-- The standard neighbourhoods at `1` and `∞` are disjoint. -/
-theorem puncturedDiscOne_disjoint_puncturedDiscInf :
+theorem disjoint_puncturedDiscOne_puncturedDiscInf :
     Disjoint puncturedDiscOne puncturedDiscInf := by
   rw [Set.disjoint_left]
   intro z hz1 hzInf
