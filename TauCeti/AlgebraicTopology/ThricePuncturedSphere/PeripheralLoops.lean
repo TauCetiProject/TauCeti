@@ -56,20 +56,14 @@ namespace TauCeti
 
 namespace ThricePuncturedSphere
 
-/-- A point at distance `1/2` from `0` avoids both punctures. -/
-private theorem ne_zero_and_ne_one_of_norm_eq {z : ℂ} (hz : ‖z‖ = 1 / 2) : z ≠ 0 ∧ z ≠ 1 := by
-  constructor <;> rintro rfl <;> norm_num at hz
-
-/-- A point at distance `1/2` from `1` avoids both punctures. -/
-private theorem ne_zero_and_ne_one_of_norm_sub_one_eq {z : ℂ} (hz : ‖z - 1‖ = 1 / 2) :
-    z ≠ 0 ∧ z ≠ 1 := by
-  constructor <;> rintro rfl <;> norm_num at hz
-
 /-- The peripheral loop around the puncture `0`: the circle `t ↦ (1/2)·exp(2πit)` of radius `1/2`
 about `0`, based at `b = 1/2` and traversed counterclockwise. -/
 noncomputable def γ0 : Path basePt basePt where
   toFun t := ⟨circleMap 0 (1 / 2) (2 * π * t),
-    ne_zero_and_ne_one_of_norm_eq (by simp [norm_circleMap_zero])⟩
+    by
+      have hnorm : ‖circleMap 0 (1 / 2) (2 * π * t)‖ = 1 / 2 := by
+        simp [norm_circleMap_zero]
+      constructor <;> rintro h <;> rw [h] at hnorm <;> norm_num at hnorm⟩
   continuous_toFun := by fun_prop
   source' := Subtype.ext (by simp [circleMap])
   target' := Subtype.ext (by simp [circleMap])
@@ -78,7 +72,10 @@ noncomputable def γ0 : Path basePt basePt where
 `1/2` about `1`, based at `b = 1/2` and traversed counterclockwise. -/
 noncomputable def γ1 : Path basePt basePt where
   toFun t := ⟨circleMap 1 (-(1 / 2)) (2 * π * t),
-    ne_zero_and_ne_one_of_norm_sub_one_eq (by simp [circleMap_sub_center, norm_circleMap_zero])⟩
+    by
+      have hnorm : ‖circleMap 1 (-(1 / 2)) (2 * π * t) - 1‖ = 1 / 2 := by
+        simp [circleMap_sub_center, norm_circleMap_zero]
+      constructor <;> rintro h <;> rw [h] at hnorm <;> norm_num at hnorm⟩
   continuous_toFun := by fun_prop
   source' := Subtype.ext (by norm_num [circleMap])
   target' := Subtype.ext (by norm_num [circleMap])
@@ -97,10 +94,12 @@ theorem coe_γ0_eq_exp (t : unitInterval) : (γ0 t : ℂ) = 1 / 2 * exp (2 * π 
 theorem coe_γ1_eq_exp (t : unitInterval) : (γ1 t : ℂ) = 1 - 1 / 2 * exp (2 * π * I * t) := by
   simp [coe_γ1, circleMap, mul_right_comm _ I, sub_eq_add_neg]
 
+/-- The loop `γ0` lies on the circle of radius `1/2` about `0`. -/
 @[simp]
 theorem norm_coe_γ0 (t : unitInterval) : ‖(γ0 t : ℂ)‖ = 1 / 2 := by
   simp [coe_γ0, norm_circleMap_zero]
 
+/-- The loop `γ1` lies on the circle of radius `1/2` about `1`. -/
 @[simp]
 theorem norm_coe_γ1_sub_one (t : unitInterval) : ‖(γ1 t : ℂ) - 1‖ = 1 / 2 := by
   simp [coe_γ1, circleMap_sub_center, norm_circleMap_zero]
