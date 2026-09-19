@@ -32,6 +32,9 @@ of `n` modulo `v`. The rows `c` and `-c` of `G_k^{ψ,φ}` contribute equally by 
 condition, the row `c = 0` gives the constant term, and the remaining double series is regrouped
 by `n = c m` (`HasSum.sum_divisorsAntidiagonal`).
 
+The coefficient-identification argument follows Mathlib's
+`EisensteinSeries.E_qExpansion_coeff`.
+
 ## Main results
 
 * `TauCeti.EisensteinSeries.qExpansion_identity_zmod`: the Lipschitz formula for a function of
@@ -79,7 +82,8 @@ private lemma tsum_residue (z : ℍ) {k : ℕ} (hk : 2 ≤ k) (r : ℕ) :
         (m : ℂ) ^ (k - 1) * cexp (2 * π * I * residuePoint v z r) ^ (m : ℕ) := by
   have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
   have H := qExpansion_identity_pnat (k := k - 1) (by omega) (residuePoint v z r)
-  rw [show k - 1 + 1 = k by omega] at H
+  have hk' : k - 1 + 1 = k := by omega
+  rw [hk'] at H
   have hterm (q : ℤ) : ((z : ℂ) + (q * v + r : ℤ)) ^ (-(k : ℤ)) =
       ((v : ℂ) ^ k)⁻¹ * (1 / ((residuePoint v z r : ℂ) + q) ^ k) := by
     have : (z : ℂ) + (q * v + r : ℤ) = v * ((residuePoint v z r : ℂ) + q) := by
@@ -135,9 +139,11 @@ theorem qExpansion_identity_zmod (f : ZMod v → ℂ) {k : ℕ} (hk : 2 ≤ k) (
   -- the residue `r` contributes the additive character `r m / v` to the exponential
   have hexp (r : Fin v) : cexp (2 * π * I * residuePoint v z (r : ℕ)) ^ (m : ℕ) =
       stdAddChar (-(((r : ℕ) : ZMod v) * -(m : ZMod v))) * cexp (2 * π * I * z / v) ^ (m : ℕ) := by
-    rw [show -(((r : ℕ) : ZMod v) * -(m : ZMod v)) = (((r : ℕ) * m : ℕ) : ℤ) by push_cast; ring,
-      stdAddChar_coe, coe_residuePoint, ← Complex.exp_nat_mul, ← Complex.exp_nat_mul,
-      ← Complex.exp_add]
+    have hrm : -(((r : ℕ) : ZMod v) * -(m : ZMod v)) = (((r : ℕ) * m : ℕ) : ℤ) := by
+      push_cast
+      ring
+    rw [hrm, stdAddChar_coe, coe_residuePoint, ← Complex.exp_nat_mul,
+      ← Complex.exp_nat_mul, ← Complex.exp_add]
     congr 1
     push_cast
     ring
@@ -199,8 +205,12 @@ private lemma charEisensteinSeriesMF_apply_eq_tsum_tsum (hk : 3 ≤ (k : ℤ)) (
       (if (v : ℤ) ∣ x 0 then ψ ((x 0 / v : ℤ) : ZMod u) * φ⁻¹ (x 1 : ZMod v) else 0) *
         eisSummand k x z
   simp only [finTwoArrowEquiv_symm_apply] at hW'
-  rw [← hW', show _ = ∑' p, F p from tsum_congr fun p ↦ by simp [hF], hsum.tsum_prod,
-    ← hinj.tsum_eq hsupp]
+  have hFsum : (∑' p : ℤ × ℤ,
+      (if (v : ℤ) ∣ ![p.1, p.2] 0 then
+        ψ ((![p.1, p.2] 0 / v : ℤ) : ZMod u) * φ⁻¹ (![p.1, p.2] 1 : ZMod v) else 0) *
+          eisSummand k ![p.1, p.2] z) = ∑' p, F p :=
+    tsum_congr fun p ↦ by simp [hF]
+  rw [← hW', hFsum, hsum.tsum_prod, ← hinj.tsum_eq hsupp]
   exact tsum_congr hT
 
 omit [NeZero v] in

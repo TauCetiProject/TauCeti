@@ -27,7 +27,7 @@ same equivalence `sigmaAntidiagonalEquivProd`.
 
 public section
 
-variable {α : Type*} [AddCommMonoid α] [TopologicalSpace α] [ContinuousAdd α] [T3Space α]
+variable {α : Type*} [AddCommMonoid α] [TopologicalSpace α] [ContinuousAdd α] [RegularSpace α]
 
 /-- **Regrouping a double series by the product of the indices.** If the family
 `(c, m) ↦ f c m` over pairs of positive integers sums to `a`, then so does the series over
