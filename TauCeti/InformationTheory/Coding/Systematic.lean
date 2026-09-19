@@ -37,18 +37,21 @@ namespace IsInformationSet
 open Matrix
 
 variable {F ι : Type*} [Field F] {C : LinearCode F ι} {s : Set ι}
-variable (h : IsInformationSet C s) [DecidableEq s]
+variable (h : IsInformationSet C s)
 
+open Classical in
 /-- The systematic generator associated to an information set: each row encodes one unit
 message, and the columns retain their original labels. -/
 def generatorMatrix : Matrix s ι F :=
   fun r i ↦ (h.equiv.symm (Pi.single r 1) : ι → F) i
 
+open Classical in
 /-- A row of the systematic generator is the encoding of a unit message. -/
 @[simp]
 theorem generatorMatrix_apply (r : s) (i : ι) :
     h.generatorMatrix r i = (h.equiv.symm (Pi.single r 1) : ι → F) i := (rfl)
 
+open Classical in
 /-- Restricting a systematic generator to its information columns gives the identity. -/
 @[simp]
 theorem generatorMatrix_submatrix :
@@ -64,12 +67,13 @@ variable [Fintype s]
 @[simp]
 theorem vecMul_generatorMatrix (a : s → F) :
     a ᵥ* h.generatorMatrix = (h.equiv.symm a : ι → F) := by
+  classical
   have hmatrix : h.generatorMatrix =
       (LinearMap.toMatrix' (C.subtype.comp h.equiv.symm.toLinearMap))ᵀ := by
     ext r i
     simp
   rw [hmatrix, vecMul_transpose, LinearMap.toMatrix'_mulVec]
-  rfl
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Submodule.subtype_apply]
 
 /-- The systematic generator generates the original code. -/
 @[simp]
@@ -84,8 +88,9 @@ theorem generatedBy_generatorMatrix : h.generatorMatrix.generatedBy = C := by
     refine ⟨h.equiv ⟨x, hx⟩, ?_⟩
     simp
 
+open Classical in
 /-- The information coordinates uniquely determine a systematic generator of a code. -/
-theorem generatorMatrix_eq_of_generatedBy_eq {G : Matrix s ι F}
+theorem generatorMatrix_eq_of_generatedBy_eq_of_submatrix_eq_one {G : Matrix s ι F}
     (hG : G.generatedBy = C) (hI : G.submatrix id (Subtype.val : s → ι) = 1) :
     h.generatorMatrix = G := by
   ext r i
@@ -100,18 +105,19 @@ theorem generatorMatrix_eq_of_generatedBy_eq {G : Matrix s ι F}
 end FiniteInformationSet
 
 /-- The rows of the systematic generator are linearly independent. -/
-theorem linearIndependent_generatorMatrix : LinearIndependent F h.generatorMatrix.row :=
-  .of_comp (LinearMap.funLeft F F (Subtype.val : s → ι)) <| by
+theorem linearIndependent_generatorMatrix : LinearIndependent F h.generatorMatrix.row := by
+  classical
+  exact .of_comp (LinearMap.funLeft F F (Subtype.val : s → ι)) <| by
     convert Pi.linearIndependent_single_one s F using 1
     ext r i
     simp
 
 /-- Relabelling coordinates relabels the information rows and the columns of the systematic
 generator by the corresponding equivalences. -/
-theorem generatorMatrix_reindex {κ : Type*} (e : κ ≃ ι)
-    [DecidableEq ↥(e ⁻¹' s)] :
+theorem generatorMatrix_reindex {κ : Type*} (e : κ ≃ ι) :
     (h.reindex e).generatorMatrix =
       h.generatorMatrix.submatrix (e.subtypeEquiv fun _ ↦ Iff.rfl) e := by
+  classical
   let es : (e ⁻¹' s) ≃ s := e.subtypeEquiv fun _ ↦ Iff.rfl
   ext r i
   let x := h.equiv.symm (Pi.single (es r) 1)
@@ -131,8 +137,7 @@ theorem generatorMatrix_reindex {κ : Type*} (e : κ ≃ ι)
       _ = _ := hx.symm
   exact congrArg (fun z : TauCeti.reindex C e ↦ (z : κ → F) i) hy
 
-variable [DecidablePred (· ∈ s)]
-
+open Classical in
 /-- Splitting off the information coordinates displays the generator as `[I | A]`. -/
 theorem generatorMatrix_submatrix_sumCompl :
     h.generatorMatrix.submatrix id (Equiv.Set.sumCompl s) =
@@ -142,13 +147,13 @@ theorem generatorMatrix_submatrix_sumCompl :
   · simpa using congrFun (congrFun h.generatorMatrix_submatrix r) i
   · rfl
 
-variable [DecidableEq ↥(sᶜ)]
-
+open Classical in
 /-- The systematic parity-check matrix `[-Aᵀ | I]`, in the original coordinate order. -/
 def parityCheckMatrix : Matrix ↥(sᶜ) ι F :=
   (fromCols (-(h.generatorMatrix.submatrix id (Subtype.val : ↥(sᶜ) → ι))ᵀ)
     (1 : Matrix ↥(sᶜ) ↥(sᶜ) F)).submatrix id (Equiv.Set.sumCompl s).symm
 
+open Classical in
 /-- The systematic check matrix is the usual block check matrix with columns relabelled. -/
 theorem parityCheckMatrix_def : h.parityCheckMatrix =
     (fromCols (-(h.generatorMatrix.submatrix id (Subtype.val : ↥(sᶜ) → ι))ᵀ)
@@ -161,6 +166,7 @@ theorem parityCheckMatrix_apply_of_mem (r : ↥(sᶜ)) (i : s) :
     h.parityCheckMatrix r i = -h.generatorMatrix i r := by
   simp [parityCheckMatrix_def]
 
+open Classical in
 /-- On the complementary coordinates, the check matrix is the identity. -/
 @[simp]
 theorem parityCheckMatrix_apply_of_notMem (r i : ↥(sᶜ)) :
@@ -168,20 +174,20 @@ theorem parityCheckMatrix_apply_of_notMem (r i : ↥(sᶜ)) :
   simp [parityCheckMatrix_def]
 
 /-- The systematic check matrix has linearly independent rows. -/
-theorem linearIndependent_parityCheckMatrix : LinearIndependent F h.parityCheckMatrix.row :=
-  .of_comp (LinearMap.funLeft F F (Subtype.val : ↥(sᶜ) → ι)) <| by
+theorem linearIndependent_parityCheckMatrix : LinearIndependent F h.parityCheckMatrix.row := by
+  classical
+  exact .of_comp (LinearMap.funLeft F F (Subtype.val : ↥(sᶜ) → ι)) <| by
     convert Pi.linearIndependent_single_one ↥(sᶜ) F using 1
     ext r i
     simp [Pi.single_apply, Matrix.one_apply, eq_comm]
 
 /-- Relabelling coordinates also relabels the complementary rows and columns of the
 systematic check matrix. -/
-theorem parityCheckMatrix_reindex {κ : Type*} (e : κ ≃ ι)
-    [DecidableEq ↥(e ⁻¹' s)] [DecidableEq ↥((e ⁻¹' s)ᶜ)]
-    [DecidablePred (· ∈ e ⁻¹' s)] :
+theorem parityCheckMatrix_reindex {κ : Type*} (e : κ ≃ ι) :
     (h.reindex e).parityCheckMatrix =
       h.parityCheckMatrix.submatrix
         (e.subtypeEquiv (p := (· ∈ (e ⁻¹' s)ᶜ)) (q := (· ∈ sᶜ)) fun _ ↦ Iff.rfl) e := by
+  classical
   ext r i
   by_cases hi : e i ∈ s
   · have hi' : i ∈ e ⁻¹' s := hi
@@ -207,6 +213,7 @@ variable [Fintype ι]
 /-- The systematic check matrix cuts out exactly the original code. -/
 @[simp↓]
 theorem checkedBy_parityCheckMatrix : h.parityCheckMatrix.checkedBy = C := by
+  classical
   rw [parityCheckMatrix_def,
     ← Matrix.generatedBy_one_fromCols_eq_checkedBy_fromCols_neg_transpose_one_submatrix,
     ← h.generatorMatrix_submatrix_sumCompl]
