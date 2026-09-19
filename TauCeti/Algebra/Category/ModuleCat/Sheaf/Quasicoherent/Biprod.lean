@@ -129,6 +129,7 @@ instance _root_.SheafOfModules.GeneratingSections.isIso_biprod_π (G : M.Generat
 
 /-- Presentations of `M` and of `N` give a presentation of `M ⊞ N`: its generators and its
 relations are indexed by the disjoint unions of those of `M` and `N`. -/
+@[expose]
 def _root_.SheafOfModules.Presentation.biprod (P : M.Presentation) (Q : N.Presentation) :
     (M ⊞ N).Presentation :=
   presentationOfIsCokernelFree
@@ -154,6 +155,34 @@ theorem _root_.SheafOfModules.Presentation.biprod_generators (P : M.Presentation
 theorem _root_.SheafOfModules.Presentation.biprod_relations_I (P : M.Presentation)
     (Q : N.Presentation) : (P.biprod Q).relations.I = (P.relations.I ⊕ Q.relations.I) :=
   (rfl)
+
+private theorem relationsOfIsCokernelFree_π {M : SheafOfModules.{u} R} {ι σ : Type u}
+    (f : free ι ⟶ free σ) (g : free σ ⟶ M) (H : f ≫ g = 0)
+    (H' : IsColimit (CokernelCofork.ofπ g H)) :
+    (relationsOfIsCokernelFree f g H H').π =
+      kernel.lift (generatorsOfIsCokernelFree f g H H').π f
+        (by rw [generatorsOfIsCokernelFree_π]; exact H) :=
+  (kernel (generatorsOfIsCokernelFree f g H H').π).freeHomEquiv.symm_apply_apply _
+
+private theorem relationsOfIsCokernelFree_π_kernel_ι {M : SheafOfModules.{u} R}
+    {ι σ : Type u} (f : free ι ⟶ free σ) (g : free σ ⟶ M) (H : f ≫ g = 0)
+    (H' : IsColimit (CokernelCofork.ofπ g H)) :
+    (relationsOfIsCokernelFree f g H H').π ≫
+      kernel.ι (generatorsOfIsCokernelFree f g H H').π = f := by
+  rw [relationsOfIsCokernelFree_π]
+  apply kernel.lift_ι
+
+/-- The relation morphism of the direct-sum presentation is the direct sum of the two relation
+morphisms, read through the free-sheaf biproduct isomorphisms. -/
+@[simp]
+theorem _root_.SheafOfModules.Presentation.biprod_relations_π (P : M.Presentation)
+    (Q : N.Presentation) :
+    (P.biprod Q).relations.π ≫ kernel.ι (P.biprod Q).generators.π =
+      (freeBiprodIso _ _).inv ≫
+        biprod.map (P.relations.π ≫ kernel.ι P.generators.π)
+          (Q.relations.π ≫ kernel.ι Q.generators.π) ≫ (freeBiprodIso _ _).hom := by
+  unfold Presentation.biprod
+  apply relationsOfIsCokernelFree_π_kernel_ι
 
 /-- The direct sum of two finite presentations is finite. -/
 instance (P : M.Presentation) (Q : N.Presentation) [P.IsFinite] [Q.IsFinite] :
