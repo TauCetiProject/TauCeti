@@ -72,9 +72,11 @@ abbrev ThricePuncturedSphere : Type := {z : ℂ // z ≠ 0 ∧ z ≠ 1}
 namespace ThricePuncturedSphere
 
 /-- A point of the thrice-punctured sphere is not the puncture `0`. -/
+@[simp]
 theorem ne_zero (z : ThricePuncturedSphere) : (z : ℂ) ≠ 0 := z.2.1
 
 /-- A point of the thrice-punctured sphere is not the puncture `1`. -/
+@[simp]
 theorem ne_one (z : ThricePuncturedSphere) : (z : ℂ) ≠ 1 := z.2.2
 
 /-- The points of `ℂ` underlying the thrice-punctured sphere are those other than `0` and `1`. -/
@@ -154,9 +156,11 @@ theorem mem_leftOpen {z : ThricePuncturedSphere} : z ∈ leftOpen ↔ (z : ℂ).
 theorem mem_rightOpen {z : ThricePuncturedSphere} : z ∈ rightOpen ↔ 0 < (z : ℂ).re :=
   Iff.rfl
 
+/-- The set `leftOpen` is open in the thrice-punctured sphere. -/
 theorem isOpen_leftOpen : IsOpen leftOpen :=
   isOpen_lt (Complex.continuous_re.comp continuous_subtype_val) continuous_const
 
+/-- The set `rightOpen` is open in the thrice-punctured sphere. -/
 theorem isOpen_rightOpen : IsOpen rightOpen :=
   isOpen_lt continuous_const (Complex.continuous_re.comp continuous_subtype_val)
 
