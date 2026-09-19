@@ -19,6 +19,8 @@ matrix is a parity-check matrix. The code is Euclidean self-dual with parameters
 Its weight distribution is 1, 264, 440, and 24 at weights 0, 6, 9, and 12, respectively.
 Every weight is divisible by three, and its homogeneous enumerator is
 `X^12 + 264 X^6 Y^6 + 440 X^3 Y^9 + 24 Y^12`.
+Self-duality and divisibility of the weights by three provide the code data for constructing
+quadratic-isotropic Lagrangian subgroups over the standard `A₂` discriminant alphabet.
 
 The matrix convention and code are those of Huffman and Pless,
 *Fundamentals of Error-Correcting Codes* (2003), §1.9 and Chapter 9.
@@ -106,7 +108,9 @@ noncomputable def encodeEquiv : (Fin 6 → ZMod 3) ≃ₗ[ZMod 3] code :=
 /-- The encoding equivalence sends each message to its product with the generator. -/
 @[simp]
 theorem coe_encodeEquiv_apply (a : Fin 6 → ZMod 3) : (encodeEquiv a : Fin 12 → ZMod 3) =
-    a ᵥ* generator := (rfl)
+    a ᵥ* generator := by
+  simp only [encodeEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+  exact LinearEquiv.ofInjective_apply generator.vecMulLinear a
 
 /-- The inverse encoding equivalence reads the first six coordinates of a codeword. -/
 @[simp]
