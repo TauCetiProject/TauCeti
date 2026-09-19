@@ -10,9 +10,9 @@ public import TauCeti.FieldTheory.GaloisGroups.Degree
 /-!
 # Polynomials with full symmetric Galois group
 
-`HasFullSymmetricGaloisGroup f` requires separability and surjectivity of the Galois action
-on the roots in the splitting field. Separability ensures that this is the symmetric group
-on `f.natDegree` points, rather than on a smaller set of distinct roots.
+`TauCeti.Polynomial.HasFullSymmetricGaloisGroup f` requires separability and surjectivity of
+the Galois action on the roots in the splitting field. Separability ensures that this is the
+symmetric group on `f.natDegree` points, rather than on a smaller set of distinct roots.
 
 The property can be checked in any field where `f` splits, or by checking that the Galois
 group has order `f.natDegree!`. A numbering of the roots gives an explicit group isomorphism
@@ -22,9 +22,9 @@ for Galois groups with realizations of symmetric groups over the rational number
 
 public section
 
-namespace TauCeti
-
 open Polynomial
+
+namespace TauCeti.Polynomial
 
 variable {F : Type*} [Field F] {f : F[X]}
 
@@ -79,4 +79,4 @@ theorem not_hasFullSymmetricGaloisGroup_X_pow (n : ℕ) (hn : 2 ≤ n) :
   have := h.1.squarefree.eq_zero_or_one_of_pow_of_not_isUnit (not_isUnit_X (R := F))
   omega
 
-end TauCeti
+end TauCeti.Polynomial

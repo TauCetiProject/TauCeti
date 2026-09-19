@@ -33,17 +33,14 @@ lifting already provided by Tau Ceti, and the criterion
 
 public section
 
-open Polynomial
+open Polynomial TauCeti.Polynomial
 
 namespace TauCeti
 
 attribute [local instance] Gal.splits_ℚ_ℂ
 
 /-- Every positive degree occurs for a monic integral polynomial irreducible over `ℚ`
-with full symmetric Galois group.
-
-In degree at least two the polynomial is obtained by Chinese remainder lifting of the
-irreducible, `(1, n - 1)`, and quadratic-with-odd-others patterns at `2`, `3`, and `5`. -/
+with full symmetric Galois group. -/
 theorem exists_monic_int_polynomial_hasFullSymmetricGaloisGroup (n : ℕ) (hn : 1 ≤ n) :
     ∃ f : ℤ[X], f.Monic ∧ f.natDegree = n ∧
       Irreducible (f.map (Int.castRingHom ℚ)) ∧
