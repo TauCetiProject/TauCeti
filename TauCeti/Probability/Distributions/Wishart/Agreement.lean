@@ -31,6 +31,8 @@ Gaussian factors, or a degenerate covariance, leave the Gram law with no density
 * `TauCeti.hasLaw_wishartGram_gaussian_nonsingularWishartMeasure` — a Gaussian sample of size at
   least the dimension has a Gram sum with the nonsingular Wishart law.
 * `TauCeti.ae_posDef_wishartGramMeasure` — such a Gram sum is almost surely nonsingular.
+* `TauCeti.hasPDF_of_hasLaw_wishartGramMeasure` and `TauCeti.rnDeriv_wishartGramMeasure` — such
+  a Gram law has a density against `TauCeti.symmetricLebesgue`, the nonsingular Wishart density.
 
 ## References
 
@@ -86,5 +88,40 @@ theorem ae_posDef_wishartGramMeasure {ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
       (A : Matrix (Fin p) (Fin p) ℝ).PosDef := by
   rw [wishartGramMeasure_eq_nonsingularWishartMeasure hS hp]
   exact ae_posDef_nonsingularWishartMeasure _ S
+
+section Density
+
+variable {ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ} {Ω : Type*} {mΩ : MeasurableSpace Ω}
+  {P : Measure Ω} {X : Ω → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
+
+/-- **A Gaussian-Gram random matrix of degree at least the dimension has a density** against
+`TauCeti.symmetricLebesgue` when its scale is positive definite. With fewer Gaussian factors, or a
+degenerate scale, `TauCeti.mutuallySingular_wishartGramMeasure_symmetricLebesgue` shows that it
+has none. -/
+theorem hasPDF_of_hasLaw_wishartGramMeasure (hS : S.PosDef) (hp : p ≤ ν)
+    (hX : HasLaw X (wishartGramMeasure ν S) P) : HasPDF X P (symmetricLebesgue p) :=
+  hasPDF_of_hasLaw_nonsingularWishartMeasure hS ((sub_one_lt _).trans_le (Nat.cast_le.2 hp))
+    (wishartGramMeasure_eq_nonsingularWishartMeasure hS hp ▸ hX)
+
+/-- The density against `TauCeti.symmetricLebesgue` of a Gaussian-Gram random matrix with a
+positive-definite scale and a degree at least the dimension is the Wishart density
+`TauCeti.nonsingularWishartPDF` of the same degree and scale. -/
+theorem pdf_eq_nonsingularWishartPDF_of_hasLaw_wishartGramMeasure (hS : S.PosDef) (hp : p ≤ ν)
+    (hX : HasLaw X (wishartGramMeasure ν S) P) :
+    pdf X P (symmetricLebesgue p) =ᵐ[symmetricLebesgue p] nonsingularWishartPDF (ν : ℝ) S :=
+  pdf_eq_nonsingularWishartPDF_of_hasLaw_nonsingularWishartMeasure hS
+    ((sub_one_lt _).trans_le (Nat.cast_le.2 hp))
+    (wishartGramMeasure_eq_nonsingularWishartMeasure hS hp ▸ hX)
+
+/-- **The Radon–Nikodym derivative of the Gaussian-Gram law** against `TauCeti.symmetricLebesgue`
+is the Wishart density `TauCeti.nonsingularWishartPDF` of the same degree and scale, for a
+positive-definite scale and a degree at least the dimension. -/
+theorem rnDeriv_wishartGramMeasure (hS : S.PosDef) (hp : p ≤ ν) :
+    (wishartGramMeasure ν S).rnDeriv (symmetricLebesgue p) =ᵐ[symmetricLebesgue p]
+      nonsingularWishartPDF (ν : ℝ) S := by
+  rw [wishartGramMeasure_eq_nonsingularWishartMeasure hS hp]
+  exact rnDeriv_nonsingularWishartMeasure hS ((sub_one_lt _).trans_le (Nat.cast_le.2 hp))
+
+end Density
 
 end TauCeti
