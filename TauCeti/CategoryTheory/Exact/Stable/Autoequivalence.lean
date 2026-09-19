@@ -68,7 +68,7 @@ theorem isInjective_loopProjective (X : C) :
 
 /-- A chosen extension `I(ΩX) ⟶ P(X)` of the loop inflation `ΩX ⟶ P(X)` along the suspension
 inflation `ΩX ⟶ I(ΩX)`. -/
-noncomputable def suspensionLoopMiddleMap (X : C) :
+private noncomputable abbrev suspensionLoopMiddleMap (X : C) :
     hE.suspensionInjective (hE.enoughProjectives.loopObj X) ⟶
       hE.enoughProjectives.loopProjective X :=
   (hE.isInjective_loopProjective X).factorThru
@@ -77,27 +77,27 @@ noncomputable def suspensionLoopMiddleMap (X : C) :
 
 /-- The chosen middle map extends the loop inflation along the suspension inflation. -/
 @[reassoc (attr := simp)]
-theorem suspensionInflation_comp_suspensionLoopMiddleMap (X : C) :
-    hE.suspensionInflation (hE.enoughProjectives.loopObj X) ≫ hE.suspensionLoopMiddleMap X =
+private theorem suspensionInflation_comp_suspensionLoopMiddleMap (X : C) :
+    hE.suspensionInflation (hE.enoughProjectives.loopObj X) ≫ suspensionLoopMiddleMap hE X =
       hE.enoughProjectives.loopInflation X :=
   (hE.isInjective_loopProjective X).comp_factorThru
     (E.isInflation_f (hE.suspensionPresentation _).conflation)
     (hE.enoughProjectives.loopInflation X)
 
-/-- The comparison map `ΣΩX ⟶ X`, induced on cokernels by `suspensionLoopMiddleMap`. It is an
+/-- The comparison map `ΣΩX ⟶ X`, induced on cokernels by the chosen middle map. It is an
 isomorphism in the stable category. -/
 noncomputable def fromSuspensionLoop (X : C) :
     hE.suspensionObj (hE.enoughProjectives.loopObj X) ⟶ X :=
   (E.isKernelCokernelPair _ (hE.suspensionPresentation _).conflation).desc
-    (hE.suspensionLoopMiddleMap X ≫ hE.enoughProjectives.loopDeflation X) (by
-      rw [hE.suspensionInflation_comp_suspensionLoopMiddleMap_assoc,
+    (suspensionLoopMiddleMap hE X ≫ hE.enoughProjectives.loopDeflation X) (by
+      rw [suspensionInflation_comp_suspensionLoopMiddleMap_assoc hE,
         hE.enoughProjectives.loopInflation_comp_loopDeflation])
 
 /-- The comparison `ΣΩX ⟶ X` makes the square on the two deflations commute. -/
 @[reassoc (attr := simp)]
-theorem suspensionDeflation_comp_fromSuspensionLoop (X : C) :
+private theorem suspensionDeflation_comp_fromSuspensionLoop (X : C) :
     hE.suspensionDeflation (hE.enoughProjectives.loopObj X) ≫ hE.fromSuspensionLoop X =
-      hE.suspensionLoopMiddleMap X ≫ hE.enoughProjectives.loopDeflation X :=
+      suspensionLoopMiddleMap hE X ≫ hE.enoughProjectives.loopDeflation X :=
   (E.isKernelCokernelPair _ (hE.suspensionPresentation _).conflation).g_desc _ _
 
 /-- In the stable category, the connecting map `X ⟶ ΣΩX` of the loop conflation is a right
@@ -110,7 +110,7 @@ theorem projectiveStableFunctor_map_connectingMap_comp_fromSuspensionLoop (X : C
   let φ : ShortComplex.mk _ _ (hE.enoughProjectives.loopInflation_comp_loopDeflation X) ⟶
       ShortComplex.mk _ _ (hE.enoughProjectives.loopInflation_comp_loopDeflation X) :=
     { τ₁ := 𝟙 _
-      τ₂ := hE.connectingMiddleMap hS ≫ hE.suspensionLoopMiddleMap X
+      τ₂ := hE.connectingMiddleMap hS ≫ suspensionLoopMiddleMap hE X
       τ₃ := hE.connectingMap hS ≫ hE.fromSuspensionLoop X
       comm₁₂ := by simp [hE.f_comp_connectingMiddleMap_assoc hS]
       comm₂₃ := by simp [hE.g_comp_connectingMap_assoc hS] }
@@ -127,7 +127,7 @@ theorem projectiveStableFunctor_map_fromSuspensionLoop_comp_connectingMap (X : C
   let S := ShortComplex.mk _ _ (hE.suspensionPresentation (hE.enoughProjectives.loopObj X)).zero
   let φ : S ⟶ S :=
     { τ₁ := 𝟙 _
-      τ₂ := hE.suspensionLoopMiddleMap X ≫ hE.connectingMiddleMap hS
+      τ₂ := suspensionLoopMiddleMap hE X ≫ hE.connectingMiddleMap hS
       τ₃ := hE.fromSuspensionLoop X ≫ hE.connectingMap hS
       comm₁₂ := by simp [S, hE.f_comp_connectingMiddleMap hS]
       comm₂₃ := by simp [S, hE.g_comp_connectingMap hS] }
@@ -157,13 +157,13 @@ theorem projectiveStableFunctor_map_fromSuspensionLoop_naturality {X Y : C} (f :
   let φ : S ⟶ T :=
     { τ₁ := hE.enoughProjectives.loopMap f
       τ₂ := hE.suspensionMiddleMap (hE.enoughProjectives.loopMap f) ≫
-        hE.suspensionLoopMiddleMap Y
+        suspensionLoopMiddleMap hE Y
       τ₃ := hE.suspensionMap (hE.enoughProjectives.loopMap f) ≫ hE.fromSuspensionLoop Y
       comm₁₂ := by simp [S, T]
       comm₂₃ := by simp [S, T] }
   let ψ : S ⟶ T :=
     { τ₁ := hE.enoughProjectives.loopMap f
-      τ₂ := hE.suspensionLoopMiddleMap X ≫ hE.enoughProjectives.loopMiddleMap f
+      τ₂ := suspensionLoopMiddleMap hE X ≫ hE.enoughProjectives.loopMiddleMap f
       τ₃ := hE.fromSuspensionLoop X ≫ f
       comm₁₂ := by simp [S, T]
       comm₂₃ := by simp [S, T] }
@@ -174,7 +174,7 @@ theorem projectiveStableFunctor_map_fromSuspensionLoop_naturality {X Y : C} (f :
 
 /-- A chosen lift `I(X) ⟶ P(ΣX)` of the suspension deflation `I(X) ⟶ ΣX` along the loop
 deflation `P(ΣX) ⟶ ΣX`. -/
-noncomputable def loopSuspensionMiddleMap (X : C) :
+private noncomputable abbrev loopSuspensionMiddleMap (X : C) :
     hE.suspensionInjective X ⟶ hE.enoughProjectives.loopProjective (hE.suspensionObj X) :=
   (hE.isProjective_suspensionInjective X).factorThru
     (E.isDeflation_g (hE.enoughProjectives.conflation_loopInflation_loopDeflation _))
@@ -182,34 +182,34 @@ noncomputable def loopSuspensionMiddleMap (X : C) :
 
 /-- The chosen middle map lifts the suspension deflation along the loop deflation. -/
 @[reassoc (attr := simp)]
-theorem loopSuspensionMiddleMap_comp_loopDeflation (X : C) :
-    hE.loopSuspensionMiddleMap X ≫ hE.enoughProjectives.loopDeflation (hE.suspensionObj X) =
+private theorem loopSuspensionMiddleMap_comp_loopDeflation (X : C) :
+    loopSuspensionMiddleMap hE X ≫ hE.enoughProjectives.loopDeflation (hE.suspensionObj X) =
       hE.suspensionDeflation X :=
   (hE.isProjective_suspensionInjective X).factorThru_comp
     (E.isDeflation_g (hE.enoughProjectives.conflation_loopInflation_loopDeflation _))
     (hE.suspensionDeflation X)
 
-/-- The comparison map `X ⟶ ΩΣX`, induced on kernels by `loopSuspensionMiddleMap`. It is an
+/-- The comparison map `X ⟶ ΩΣX`, induced on kernels by the chosen middle map. It is an
 isomorphism in the stable category. -/
 noncomputable def toLoopSuspension (X : C) :
     X ⟶ hE.enoughProjectives.loopObj (hE.suspensionObj X) :=
   (E.isKernelCokernelPair _
     (hE.enoughProjectives.conflation_loopInflation_loopDeflation _)).lift
-      (hE.suspensionInflation X ≫ hE.loopSuspensionMiddleMap X) (by
-        rw [Category.assoc, hE.loopSuspensionMiddleMap_comp_loopDeflation,
+      (hE.suspensionInflation X ≫ loopSuspensionMiddleMap hE X) (by
+        rw [Category.assoc, loopSuspensionMiddleMap_comp_loopDeflation hE,
           (hE.suspensionPresentation X).zero])
 
 /-- The comparison `X ⟶ ΩΣX` makes the square on the two inflations commute. -/
 @[reassoc (attr := simp)]
-theorem toLoopSuspension_comp_loopInflation (X : C) :
+private theorem toLoopSuspension_comp_loopInflation (X : C) :
     hE.toLoopSuspension X ≫ hE.enoughProjectives.loopInflation (hE.suspensionObj X) =
-      hE.suspensionInflation X ≫ hE.loopSuspensionMiddleMap X :=
+      hE.suspensionInflation X ≫ loopSuspensionMiddleMap hE X :=
   (E.isKernelCokernelPair _
     (hE.enoughProjectives.conflation_loopInflation_loopDeflation _)).lift_f _ _
 
 /-- A chosen lift `P(ΣX) ⟶ I(X)` of the loop deflation `P(ΣX) ⟶ ΣX` along the suspension
 deflation `I(X) ⟶ ΣX`. -/
-noncomputable def loopSuspensionInvMiddleMap (X : C) :
+private noncomputable abbrev loopSuspensionInvMiddleMap (X : C) :
     hE.enoughProjectives.loopProjective (hE.suspensionObj X) ⟶ hE.suspensionInjective X :=
   (hE.enoughProjectives.isProjective_loopProjective _).factorThru
     (E.isDeflation_g (hE.suspensionPresentation X).conflation)
@@ -217,28 +217,28 @@ noncomputable def loopSuspensionInvMiddleMap (X : C) :
 
 /-- The chosen middle map lifts the loop deflation along the suspension deflation. -/
 @[reassoc (attr := simp)]
-theorem loopSuspensionInvMiddleMap_comp_suspensionDeflation (X : C) :
-    hE.loopSuspensionInvMiddleMap X ≫ hE.suspensionDeflation X =
+private theorem loopSuspensionInvMiddleMap_comp_suspensionDeflation (X : C) :
+    loopSuspensionInvMiddleMap hE X ≫ hE.suspensionDeflation X =
       hE.enoughProjectives.loopDeflation (hE.suspensionObj X) :=
   (hE.enoughProjectives.isProjective_loopProjective _).factorThru_comp
     (E.isDeflation_g (hE.suspensionPresentation X).conflation)
     (hE.enoughProjectives.loopDeflation (hE.suspensionObj X))
 
-/-- The comparison map `ΩΣX ⟶ X`, induced on kernels by `loopSuspensionInvMiddleMap`. It is the
+/-- The comparison map `ΩΣX ⟶ X`, induced on kernels by the chosen middle map. It is the
 inverse of `toLoopSuspension` in the stable category. -/
 noncomputable def fromLoopSuspension (X : C) :
     hE.enoughProjectives.loopObj (hE.suspensionObj X) ⟶ X :=
   (E.isKernelCokernelPair _ (hE.suspensionPresentation X).conflation).lift
-    (hE.enoughProjectives.loopInflation _ ≫ hE.loopSuspensionInvMiddleMap X) (by
-      rw [Category.assoc, hE.loopSuspensionInvMiddleMap_comp_suspensionDeflation,
+    (hE.enoughProjectives.loopInflation _ ≫ loopSuspensionInvMiddleMap hE X) (by
+      rw [Category.assoc, loopSuspensionInvMiddleMap_comp_suspensionDeflation hE,
         hE.enoughProjectives.loopInflation_comp_loopDeflation])
 
 /-- The comparison `ΩΣX ⟶ X` makes the square on the two inflations commute. -/
 @[reassoc (attr := simp)]
-theorem fromLoopSuspension_comp_suspensionInflation (X : C) :
+private theorem fromLoopSuspension_comp_suspensionInflation (X : C) :
     hE.fromLoopSuspension X ≫ hE.suspensionInflation X =
       hE.enoughProjectives.loopInflation (hE.suspensionObj X) ≫
-        hE.loopSuspensionInvMiddleMap X :=
+        loopSuspensionInvMiddleMap hE X :=
   (E.isKernelCokernelPair _ (hE.suspensionPresentation X).conflation).lift_f _ _
 
 /-- In the stable category, `fromLoopSuspension` is a left inverse of `toLoopSuspension`. -/
@@ -247,7 +247,7 @@ theorem projectiveStableFunctor_map_toLoopSuspension_comp_fromLoopSuspension (X 
   let S := ShortComplex.mk _ _ (hE.suspensionPresentation X).zero
   let φ : S ⟶ S :=
     { τ₁ := hE.toLoopSuspension X ≫ hE.fromLoopSuspension X
-      τ₂ := hE.loopSuspensionMiddleMap X ≫ hE.loopSuspensionInvMiddleMap X
+      τ₂ := loopSuspensionMiddleMap hE X ≫ loopSuspensionInvMiddleMap hE X
       τ₃ := 𝟙 _
       comm₁₂ := by simp [S]
       comm₂₃ := by simp [S] }
@@ -264,7 +264,7 @@ theorem projectiveStableFunctor_map_fromLoopSuspension_comp_toLoopSuspension (X 
       ShortComplex.mk _ _
         (hE.enoughProjectives.loopInflation_comp_loopDeflation (hE.suspensionObj X)) :=
     { τ₁ := hE.fromLoopSuspension X ≫ hE.toLoopSuspension X
-      τ₂ := hE.loopSuspensionInvMiddleMap X ≫ hE.loopSuspensionMiddleMap X
+      τ₂ := loopSuspensionInvMiddleMap hE X ≫ loopSuspensionMiddleMap hE X
       τ₃ := 𝟙 _
       comm₁₂ := by simp
       comm₂₃ := by simp }
@@ -295,13 +295,13 @@ theorem projectiveStableFunctor_map_toLoopSuspension_naturality {X Y : C} (f : X
     (hE.enoughProjectives.loopInflation_comp_loopDeflation (hE.suspensionObj Y))
   let φ : S ⟶ T :=
     { τ₁ := f ≫ hE.toLoopSuspension Y
-      τ₂ := hE.suspensionMiddleMap f ≫ hE.loopSuspensionMiddleMap Y
+      τ₂ := hE.suspensionMiddleMap f ≫ loopSuspensionMiddleMap hE Y
       τ₃ := hE.suspensionMap f
       comm₁₂ := by simp [S, T]
       comm₂₃ := by simp [S, T] }
   let ψ : S ⟶ T :=
     { τ₁ := hE.toLoopSuspension X ≫ hE.enoughProjectives.loopMap (hE.suspensionMap f)
-      τ₂ := hE.loopSuspensionMiddleMap X ≫
+      τ₂ := loopSuspensionMiddleMap hE X ≫
         hE.enoughProjectives.loopMiddleMap (hE.suspensionMap f)
       τ₃ := hE.suspensionMap f
       comm₁₂ := by simp [S, T]
