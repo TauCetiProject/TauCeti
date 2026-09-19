@@ -24,7 +24,9 @@ Hecke operators already constructed from rational double cosets.
 The trace of a form depends only on its underlying function and its level, not on the type the
 form is packaged in (`TauCeti.SlashInvariantForm.trace_eq_of_coe_eq`). This is what lets a trace
 of a translate be compared with another one whose level is equal but not syntactically so, as
-happens when the translating matrix is changed by an element normalizing the level.
+happens when the translating matrix is changed by an element normalizing the level. When that
+element multiplies on the right, it comes out of the trace as a slash
+(`TauCeti.SlashInvariantForm.coe_trace_translate_mul_of_mem_normalizer`).
 
 ## References
 
@@ -58,6 +60,46 @@ theorem trace_eq_of_coe_eq {k : ℤ} {𝒢₁ 𝒢₂ ℋ : Subgroup (GL (Fin 2)
   refine congrFun (Finset.sum_congr rfl fun q _ ↦ ?_) τ
   induction q using Quotient.inductionOn with
   | h r => simp [hf]
+
+/-- **Translating by a normalizing element commutes with the trace.** If `a` normalizes the
+level `ℋ`, the trace of the translate of `f` by `x a` is the slash by `a` of the trace of the
+translate by `x`. The cosets of the two traces correspond under conjugation by `a`. -/
+theorem coe_trace_translate_mul_of_mem_normalizer {k : ℤ} {𝒢 ℋ : Subgroup (GL (Fin 2) ℝ)}
+    {F : Type*} [FunLike F ℍ ℂ] [SlashInvariantFormClass F 𝒢 k] (f : F) (x : GL (Fin 2) ℝ)
+    {a : GL (Fin 2) ℝ} (ha : a ∈ Subgroup.normalizer (ℋ : Set (GL (Fin 2) ℝ)))
+    [(ConjAct.toConjAct x⁻¹ • 𝒢).IsFiniteRelIndex ℋ]
+    [(ConjAct.toConjAct (x * a)⁻¹ • 𝒢).IsFiniteRelIndex ℋ] :
+    ⇑(_root_.SlashInvariantForm.trace ℋ (_root_.SlashInvariantForm.translate f (x * a))) =
+      ⇑(_root_.SlashInvariantForm.trace ℋ (_root_.SlashInvariantForm.translate f x)) ∣[k] a := by
+  rw [Subgroup.mem_normalizer_iff] at ha
+  have ha' : ∀ h, h ∈ ℋ ↔ a⁻¹ * h * a⁻¹⁻¹ ∈ ℋ := by
+    intro h
+    rw [ha (a⁻¹ * h * a⁻¹⁻¹)]
+    simp [mul_assoc]
+  let e₀ : ℋ ≃ ℋ :=
+    { toFun r := ⟨a * r * a⁻¹, (ha r).mp r.2⟩
+      invFun r := ⟨a⁻¹ * r * a⁻¹⁻¹, (ha' r).mp r.2⟩
+      left_inv r := by ext; simp [mul_assoc]
+      right_inv r := by ext; simp [mul_assoc] }
+  let e : ℋ ⧸ (ConjAct.toConjAct (x * a)⁻¹ • 𝒢).subgroupOf ℋ ≃
+      ℋ ⧸ (ConjAct.toConjAct x⁻¹ • 𝒢).subgroupOf ℋ :=
+    Quotient.congr e₀ fun r s ↦ by
+      rw [QuotientGroup.leftRel_apply, QuotientGroup.leftRel_apply, Subgroup.mem_subgroupOf,
+        Subgroup.mem_subgroupOf, Subgroup.mem_pointwise_smul_iff_inv_smul_mem,
+        Subgroup.mem_pointwise_smul_iff_inv_smul_mem]
+      simp [e₀, ConjAct.smul_def, mul_assoc]
+  rw [SlashInvariantForm.coe_trace, SlashInvariantForm.coe_trace, SlashAction.sum_slash]
+  let := Fintype.ofFinite (ℋ ⧸ (ConjAct.toConjAct (x * a)⁻¹ • 𝒢).subgroupOf ℋ)
+  let := Fintype.ofFinite (ℋ ⧸ (ConjAct.toConjAct x⁻¹ • 𝒢).subgroupOf ℋ)
+  refine Fintype.sum_equiv e _ _ fun q ↦ ?_
+  induction q using Quotient.inductionOn with
+  | h r =>
+    change _ = SlashInvariantForm.quotientFunc _ ⟦e₀ r⟧ ∣[k] a
+    rw [SlashInvariantForm.quotientFunc_mk, SlashInvariantForm.quotientFunc_mk,
+      SlashInvariantForm.coe_translate, SlashInvariantForm.coe_translate, ← SlashAction.slash_mul,
+      ← SlashAction.slash_mul, ← SlashAction.slash_mul]
+    congr 1
+    simp [e₀, mul_assoc]
 
 end SlashInvariantForm
 
