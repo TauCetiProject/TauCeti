@@ -45,6 +45,9 @@ no analytic convergence hypothesis enters.
 * `TauCeti.IdealArithmeticFunction.normCoeff_eq_eulerProduct`: the norm coefficients of a
   multiplicative ideal arithmetic function are Mathlib's formal Euler product of its canonical
   local factors.
+* `IsDedekindDomain.HeightOneSpectrum.one_lt_norm_absNorm_cpow` and
+  `IsDedekindDomain.HeightOneSpectrum.absNorm_cpow_sub_one_ne_zero`: basic analytic bounds for
+  the complex powers of prime-ideal norms on the right half-plane.
 
 ## Implementation notes
 
@@ -104,6 +107,23 @@ variable [NumberField K]
 theorem absNorm_primeIdealPow (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
     Ideal.absNorm (primeIdealPow P e : Ideal (𝓞 K)) = Ideal.absNorm P.asIdeal ^ e := by
   rw [coe_primeIdealPow, map_pow]
+
+/-- The absolute norm of a height-one prime, cast to `ℂ`, is nonzero. -/
+theorem natCast_absNorm_ne_zero (P : HeightOneSpectrum (𝓞 K)) :
+    (Ideal.absNorm P.asIdeal : ℂ) ≠ 0 :=
+  Nat.cast_ne_zero.mpr (NumberField.HeightOneSpectrum.one_lt_absNorm P).ne_bot
+
+/-- On `Re s > 0`, `N(𝔭) ^ s` lies outside the closed unit disc. -/
+theorem one_lt_norm_absNorm_cpow (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
+    (hs : 0 < s.re) : 1 < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ s‖ := by
+  have hP := NumberField.HeightOneSpectrum.one_lt_absNorm P
+  rw [Complex.norm_natCast_cpow_of_pos (by omega)]
+  exact Real.one_lt_rpow (by exact_mod_cast hP) hs
+
+/-- On `Re s > 0`, `N(𝔭) ^ s - 1` is nonzero. -/
+theorem absNorm_cpow_sub_one_ne_zero (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
+    (hs : 0 < s.re) : (Ideal.absNorm P.asIdeal : ℂ) ^ s - 1 ≠ 0 := fun h ↦ by
+  simpa [sub_eq_zero.mp h] using P.one_lt_norm_absNorm_cpow hs
 
 omit [NumberField K] in
 /-- Distinct primes give distinct first powers, so a family indexed by the primes is a subfamily

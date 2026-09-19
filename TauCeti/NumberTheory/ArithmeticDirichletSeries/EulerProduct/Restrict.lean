@@ -9,7 +9,6 @@ public import Mathlib.NumberTheory.LSeries.Deriv
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
-import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 
 /-!
 # Deleting finitely many Euler factors
@@ -83,6 +82,7 @@ theorem summable_idealTerm_restrictAway (S : Set (HeightOneSpectrum (𝓞 K)))
   split_ifs <;> simp
 
 /-- Restricting away from `S` replaces the local Euler factor at a prime of `S` by `1`. -/
+@[simp]
 theorem eulerFactor_restrictAway_of_mem {S : Set (HeightOneSpectrum (𝓞 K))}
     {P : HeightOneSpectrum (𝓞 K)} (hP : P ∈ S) (s : ℂ) :
     (D.restrictAway S).eulerFactor P s = 1 := by
@@ -96,6 +96,7 @@ theorem eulerFactor_restrictAway_of_mem {S : Set (HeightOneSpectrum (𝓞 K))}
     simp [idealTerm_def, hnot]
 
 /-- Restricting away from `S` leaves the local Euler factor at a prime outside `S` unchanged. -/
+@[simp]
 theorem eulerFactor_restrictAway_of_notMem {S : Set (HeightOneSpectrum (𝓞 K))}
     {P : HeightOneSpectrum (𝓞 K)} (hP : P ∉ S) (s : ℂ) :
     (D.restrictAway S).eulerFactor P s = D.eulerFactor P s := by
@@ -161,26 +162,11 @@ end MultiplicativeIdealWeight
 
 /-! ### The Dedekind zeta function with finitely many Euler factors deleted -/
 
-private theorem natCast_absNorm_ne_zero (P : HeightOneSpectrum (𝓞 K)) :
-    (Ideal.absNorm P.asIdeal : ℂ) ≠ 0 :=
-  Nat.cast_ne_zero.mpr (NumberField.HeightOneSpectrum.one_lt_absNorm P).ne_bot
-
-/-- On `Re s > 0`, `N(𝔭) ^ s` lies outside the closed unit disc. -/
-private theorem one_lt_norm_absNorm_cpow (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
-    (hs : 0 < s.re) : 1 < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ s‖ := by
-  have hP := NumberField.HeightOneSpectrum.one_lt_absNorm P
-  rw [Complex.norm_natCast_cpow_of_pos (by omega)]
-  exact Real.one_lt_rpow (by exact_mod_cast hP) hs
-
-private theorem absNorm_cpow_sub_one_ne_zero (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
-    (hs : 0 < s.re) : (Ideal.absNorm P.asIdeal : ℂ) ^ s - 1 ≠ 0 := fun h ↦ by
-  simpa [sub_eq_zero.mp h] using one_lt_norm_absNorm_cpow P hs
-
 /-- **The deleted Euler factors do not vanish on `Re s > 0`.** In particular they do not vanish
 at `s = 1`, so deleting them does not change the order of the pole there. -/
 theorem prod_one_sub_absNorm_cpow_neg_ne_zero (S : Finset (HeightOneSpectrum (𝓞 K))) {s : ℂ}
     (hs : 0 < s.re) : ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ≠ 0 := by
-  refine Finset.prod_ne_zero_iff.mpr fun P _ h ↦ absNorm_cpow_sub_one_ne_zero P hs ?_
+  refine Finset.prod_ne_zero_iff.mpr fun P _ h ↦ P.absNorm_cpow_sub_one_ne_zero hs ?_
   rw [Complex.cpow_neg, sub_eq_zero, eq_comm, inv_eq_one] at h
   rw [h, sub_self]
 
@@ -213,7 +199,7 @@ theorem tendsto_sub_one_mul_LSeries_ofBadPrimes (S : Finset (HeightOneSpectrum (
         ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-1 : ℂ)))) := by
   have hcont : Continuous fun s : ℝ ↦ ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-(s : ℂ))) :=
     continuous_finsetProd _ fun P _ ↦ continuous_const.sub <|
-      (Complex.continuous_ofReal.neg).const_cpow <| Or.inl <| natCast_absNorm_ne_zero P
+      (Complex.continuous_ofReal.neg).const_cpow <| Or.inl P.natCast_absNorm_ne_zero
   have hprod := (hcont.tendsto 1).mono_left (nhdsWithin_le_nhds (s := Set.Ioi 1))
   rw [Complex.ofReal_one] at hprod
   refine ((NumberField.tendsto_sub_one_mul_dedekindZeta_nhdsGT K).mul hprod).congr' ?_
@@ -225,10 +211,10 @@ private theorem logDeriv_one_sub_absNorm_cpow_neg (P : HeightOneSpectrum (𝓞 K
     (hs : 0 < s.re) :
     logDeriv (fun z : ℂ ↦ 1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-z)) s =
       Complex.log (Ideal.absNorm P.asIdeal) / ((Ideal.absNorm P.asIdeal : ℂ) ^ s - 1) := by
-  have h0 := natCast_absNorm_ne_zero P
+  have h0 := P.natCast_absNorm_ne_zero
   have hderiv := (((hasDerivAt_neg s).const_cpow (Or.inl h0)).const_sub 1).deriv
   have hpow : (Ideal.absNorm P.asIdeal : ℂ) ^ s ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl h0)
-  have hsub := absNorm_cpow_sub_one_ne_zero P hs
+  have hsub := P.absNorm_cpow_sub_one_ne_zero hs
   rw [logDeriv_apply, hderiv, Complex.cpow_neg]
   field_simp
 
@@ -258,7 +244,7 @@ theorem logDeriv_LSeries_ofBadPrimes (S : Finset (HeightOneSpectrum (𝓞 K))) {
   have hfac : ∀ P ∈ S, DifferentiableAt ℂ
       (fun z : ℂ ↦ 1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-z)) s := fun P _ ↦
     (differentiableAt_neg_iff.mpr differentiableAt_id).const_cpow
-      (Or.inl (natCast_absNorm_ne_zero P)) |>.const_sub 1
+      (Or.inl P.natCast_absNorm_ne_zero) |>.const_sub 1
   rw [logDeriv_apply, heq.deriv_eq, heq.eq_of_nhds, ← logDeriv_apply,
     logDeriv_fun_mul s (dedekindZeta_ne_zero_of_one_lt_re hs)
       (prod_one_sub_absNorm_cpow_neg_ne_zero S hs0) hζ (DifferentiableAt.fun_finsetProd hfac),
@@ -274,7 +260,7 @@ theorem differentiableOn_sum_log_absNorm_div_cpow_sub_one (S : Finset (HeightOne
         Complex.log (Ideal.absNorm P.asIdeal) / ((Ideal.absNorm P.asIdeal : ℂ) ^ s - 1))
       {s | 0 < s.re} := fun _ hs ↦
   (DifferentiableAt.fun_sum fun P _ ↦ (differentiableAt_const _).div
-    ((differentiableAt_id.const_cpow (Or.inl (natCast_absNorm_ne_zero P))).sub_const 1)
-    (absNorm_cpow_sub_one_ne_zero P hs)).differentiableWithinAt
+    ((differentiableAt_id.const_cpow (Or.inl P.natCast_absNorm_ne_zero)).sub_const 1)
+    (P.absNorm_cpow_sub_one_ne_zero hs)).differentiableWithinAt
 
 end TauCeti
