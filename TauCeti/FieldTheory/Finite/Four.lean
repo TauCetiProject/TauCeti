@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Finite.GaloisField
+public import Mathlib.Algebra.CharP.CharAndCard
 public import Mathlib.Algebra.CharP.Two
 public import Mathlib.Data.Fin.VecNotation
 
@@ -29,13 +30,15 @@ theorem card_galoisField_two_two [Fintype (GaloisField 2 2)] :
   rw [← Nat.card_eq_fintype_card, GaloisField.card 2 2 (by decide)]
   decide
 
-variable {F : Type*} [Field F] [Fintype F]
+variable {F : Type*} [Field F] [Finite F]
 
 /-- Every element other than zero and one in a field of order four is a root of
 `X² + X + 1`. -/
-theorem sq_add_self_add_one_eq_zero (hF : Fintype.card F = 4) {ω : F}
+theorem sq_add_self_add_one_eq_zero (hF : Nat.card F = 4) {ω : F}
     (h0 : ω ≠ 0) (h1 : ω ≠ 1) : ω ^ 2 + ω + 1 = 0 := by
-  have hpow : ω ^ 3 = 1 := by simpa [hF] using FiniteField.pow_card_sub_one_eq_one ω h0
+  let := Fintype.ofFinite F
+  have hcard : Fintype.card F = 4 := by simpa only [Nat.card_eq_fintype_card] using hF
+  have hpow : ω ^ 3 = 1 := by simpa [hcard] using FiniteField.pow_card_sub_one_eq_one ω h0
   have hmul : (ω - 1) * (ω ^ 2 + ω + 1) = 0 := by
     linear_combination hpow
   exact (mul_eq_zero.mp hmul).resolve_left (sub_ne_zero.mpr h1)
@@ -46,24 +49,24 @@ theorem sq_sq_add_sq_add_one_eq_zero {R : Type*} [CommSemiring R] [CharP R 2]
   simpa only [map_add, map_pow, map_one, map_zero, frobenius_def] using
     congrArg (frobenius R 2) hω
 
-/-- A field of order four has characteristic two. -/
-theorem charP_two_of_card_eq_four (hF : Fintype.card F = 4) : CharP F 2 :=
-  ringChar.of_eq ((FiniteField.even_card_iff_char_two (F := F)).mpr (by omega))
-
 /-- Every field of order four contains a root of `X² + X + 1`. -/
-theorem exists_sq_add_self_add_one_eq_zero_of_card_eq_four (hF : Fintype.card F = 4) :
+theorem exists_sq_add_self_add_one_eq_zero_of_card_eq_four (hF : Nat.card F = 4) :
     ∃ ω : F, ω ^ 2 + ω + 1 = 0 := by
   classical
+  let := Fintype.ofFinite F
+  have hcard : Fintype.card F = 4 := by simpa only [Nat.card_eq_fintype_card] using hF
   obtain ⟨ω, _, hω⟩ := Finset.exists_mem_notMem_of_card_lt_card
-    (s := ({0, 1} : Finset F)) (t := Finset.univ) (by simp [hF])
+    (s := ({0, 1} : Finset F)) (t := Finset.univ) (by simp [hcard])
   simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hω
   exact ⟨ω, sq_add_self_add_one_eq_zero hF hω.1 hω.2⟩
 
+omit [Finite F] in
 /-- The four elements of a field of order four, labelled by a root of `X² + X + 1`. -/
-theorem univ_eq_zero_one_root_sq [DecidableEq F] (hF : Fintype.card F = 4) {ω : F}
+theorem univ_eq_zero_one_root_sq [Fintype F] [DecidableEq F] (hF : Nat.card F = 4) {ω : F}
     (hω : ω ^ 2 + ω + 1 = 0) : Finset.univ = {0, 1, ω, ω ^ 2} := by
   classical
-  let := charP_two_of_card_eq_four hF
+  have hcard : Fintype.card F = 4 := by simpa only [Nat.card_eq_fintype_card] using hF
+  let := charP_of_card_eq_prime_pow (p := 2) (f := 2) hcard
   have h0 : ω ≠ 0 := by rintro rfl; simp at hω
   have h1 : ω ≠ 1 := by rintro rfl; simp [CharTwo.add_self_eq_zero] at hω
   have hs0 : ω ^ 2 ≠ 0 := pow_ne_zero _ h0
@@ -75,16 +78,18 @@ theorem univ_eq_zero_one_root_sq [DecidableEq F] (hF : Fintype.card F = 4) {ω :
     intro h
     simp [h, CharTwo.add_self_eq_zero] at hω
   apply (Finset.eq_of_subset_of_card_le (Finset.subset_univ _) ?_).symm
-  simp [hF, Ne.symm hself, Ne.symm h0, Ne.symm h1,
+  simp [hcard, Ne.symm hself, Ne.symm h0, Ne.symm h1,
     Ne.symm hs0, Ne.symm hs1]
 
 /-- Label a field of four elements by `0, 1, ω, ω²`, in that order. -/
-noncomputable def finFourEquiv (hF : Fintype.card F = 4) {ω : F}
+noncomputable def finFourEquiv (hF : Nat.card F = 4) {ω : F}
     (hω : ω ^ 2 + ω + 1 = 0) : Fin 4 ≃ F := by
   classical
+  letI := Fintype.ofFinite F
+  have hcard : Fintype.card F = 4 := by simpa only [Nat.card_eq_fintype_card] using hF
   refine Equiv.ofBijective ![0, 1, ω, ω ^ 2] ?_
   apply (Fintype.bijective_iff_surjective_and_card _).mpr
-  refine ⟨?_, by simp [hF]⟩
+  refine ⟨?_, by simp [hcard]⟩
   intro x
   have hx : x ∈ ({0, 1, ω, ω ^ 2} : Finset F) := by
     rw [← univ_eq_zero_one_root_sq hF hω]
@@ -98,7 +103,7 @@ noncomputable def finFourEquiv (hF : Fintype.card F = 4) {ω : F}
 
 /-- The four-element labelling evaluates to the displayed tuple. -/
 @[simp]
-theorem finFourEquiv_apply (hF : Fintype.card F = 4) {ω : F}
+theorem finFourEquiv_apply (hF : Nat.card F = 4) {ω : F}
     (hω : ω ^ 2 + ω + 1 = 0) (i : Fin 4) :
     finFourEquiv hF hω i = ![0, 1, ω, ω ^ 2] i := (rfl)
 

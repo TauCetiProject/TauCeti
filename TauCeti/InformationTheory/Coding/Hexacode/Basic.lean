@@ -65,15 +65,13 @@ theorem code_def (ω : F) : code ω = (generatorMatrix ω).generatedBy := (rfl)
 
 /-- A chosen root of `X² + X + 1` in the hexacode alphabet `GaloisField 2 2`. -/
 noncomputable def omega : GaloisField 2 2 := by
-  letI := Fintype.ofFinite (GaloisField 2 2)
   exact Classical.choose (exists_sq_add_self_add_one_eq_zero_of_card_eq_four
-    card_galoisField_two_two)
+    (GaloisField.card 2 2 (by decide)))
 
 /-- The chosen hexacode alphabet root satisfies its defining equation. -/
 theorem omega_sq_add_omega_add_one : omega ^ 2 + omega + 1 = 0 := by
-  let := Fintype.ofFinite (GaloisField 2 2)
   exact Classical.choose_spec (exists_sq_add_self_add_one_eq_zero_of_card_eq_four
-    card_galoisField_two_two)
+    (GaloisField.card 2 2 (by decide)))
 
 /-- The hexacode over `GaloisField 2 2`, with the fixed root `omega`. -/
 noncomputable def galoisFieldCode : Submodule (GaloisField 2 2) (Fin 6 → GaloisField 2 2) :=
@@ -206,14 +204,16 @@ theorem checkedBy_map_frobenius_generatorMatrix :
   decide
 
 /-- Over a field of order four, the hexacode is Hermitian self-dual for Frobenius. -/
-theorem galoisDual_code [Fintype F] (hF : Fintype.card F = 4) :
+theorem galoisDual_code [Finite F] (hF : Nat.card F = 4) :
     (frobeniusEquiv F 2).galoisDual (code ω) = code ω := by
+  let := Fintype.ofFinite F
+  have hcard : Fintype.card F = 4 := by simpa only [Nat.card_eq_fintype_card] using hF
   rw [code_def, Matrix.generatedBy_def,
     RingEquiv.galoisDual_range_vecMulLinear_of_involutive _
       (fun x ↦ by
         simpa only [coe_frobeniusEquiv, pow_two, RingHom.mul_def,
           RingHom.comp_apply, RingHom.one_def, RingHom.id_apply] using
-          DFunLike.congr_fun (FiniteField.frobenius_pow (p := 2) (n := 2) hF) x)]
+          DFunLike.congr_fun (FiniteField.frobenius_pow (p := 2) (n := 2) hcard) x)]
   simpa only [Matrix.checkedBy_def, code_def, Matrix.generatedBy_def, coe_frobeniusEquiv]
     using checkedBy_map_frobenius_generatorMatrix hω
 
@@ -221,6 +221,7 @@ end CharacteristicTwo
 
 /-- Coordinatewise Frobenius conjugation carries membership in the hexacode to membership
 in the code with squared root parameter. -/
+@[simp↓]
 theorem mem_code_sq_iff [CharP F 2] (ω : F) (x : Fin 6 → F) :
     (fun i ↦ x i ^ 2) ∈ code (ω ^ 2) ↔ x ∈ code ω := by
   simp only [mem_code, ← frobenius_def, ← map_mul, ← map_add,
@@ -318,18 +319,16 @@ theorem finrank_galoisFieldCode : Module.finrank (GaloisField 2 2) galoisFieldCo
 /-- The named hexacode contains 64 words. -/
 @[simp↓]
 theorem natCard_galoisFieldCode : Nat.card galoisFieldCode = 64 := by
-  let := Fintype.ofFinite (GaloisField 2 2)
-  rw [galoisFieldCode_def, natCard_code, Nat.card_eq_fintype_card, card_galoisField_two_two]
+  rw [galoisFieldCode_def, natCard_code, GaloisField.card 2 2 (by decide)]
   decide
 
 /-- The named hexacode is Hermitian self-dual for Frobenius. -/
 @[simp]
 theorem galoisDual_galoisFieldCode :
     (frobeniusEquiv (GaloisField 2 2) 2).galoisDual galoisFieldCode = galoisFieldCode := by
-  let := Fintype.ofFinite (GaloisField 2 2)
   rw [galoisFieldCode_def]
   exact galoisDual_code omega_sq_add_omega_add_one
-    card_galoisField_two_two
+    (GaloisField.card 2 2 (by decide))
 
 /-- The specified coordinate ordering carries the conjugate back to the named hexacode. -/
 theorem map_code_omega_sq_conjugatePerm :
@@ -349,9 +348,9 @@ theorem isPermutationEquivalent_code_omega_sq :
 @[simp↓]
 theorem natCard_galoisFieldCode_inf_code_omega_sq :
     Nat.card ↥(galoisFieldCode ⊓ code (omega ^ 2)) = 4 := by
-  let := Fintype.ofFinite (GaloisField 2 2)
   rw [galoisFieldCode_def, natCard_code_inf_code_sq omega_sq_add_omega_add_one,
-    Nat.card_eq_fintype_card, card_galoisField_two_two]
+    GaloisField.card 2 2 (by decide)]
+  decide
 
 /-- The conjugate differs from the named hexacode in the fixed coordinate order. -/
 theorem galoisFieldCode_ne_code_omega_sq : galoisFieldCode ≠ code (omega ^ 2) := by

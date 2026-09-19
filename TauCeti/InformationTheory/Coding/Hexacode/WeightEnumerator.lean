@@ -28,8 +28,10 @@ namespace TauCeti.Hexacode
 
 open Matrix
 
-variable {F : Type*} [Field F] [Fintype F] [DecidableEq F]
-  (hF : Fintype.card F = 4) {ω : F} (hω : ω ^ 2 + ω + 1 = 0)
+section
+
+variable {F : Type*} [Field F] [Finite F] [DecidableEq F]
+  (hF : Nat.card F = 4) {ω : F} (hω : ω ^ 2 + ω + 1 = 0)
 
 -- The rows and columns list the second and third message symbols, respectively;
 -- the four matrices correspond to the first message symbol.
@@ -45,7 +47,9 @@ private theorem hammingNorm_encoding_labels (a b c : Fin 4) :
     hammingNorm (encodingEquiv ω ![finFourEquiv hF hω a,
       finFourEquiv hF hω b, finFourEquiv hF hω c] : Fin 6 → F) = messageWeight a b c := by
   classical
-  let := charP_two_of_card_eq_four hF
+  let := Fintype.ofFinite F
+  let := charP_of_card_eq_prime_pow (p := 2) (f := 2)
+    (by simpa only [Nat.card_eq_fintype_card, Nat.reducePow] using hF)
   have htwo : (2 : F) = 0 := CharTwo.two_eq_zero
   have h0 : ω ≠ 0 := by rintro rfl; simp at hω
   have h1 : ω ≠ 1 := by intro h; grind
@@ -73,12 +77,19 @@ private theorem weightDistribution_eq_card_messageWeight (w : ℕ) :
     (fun x ↦ hammingNorm x = w)).symm.trans
       (e.subtypeEquiv (fun a ↦ by rw [he])).symm
 
+end
+
+variable {F : Type*} [Field F] [Fintype F] [DecidableEq F]
+  (hF : Fintype.card F = 4) {ω : F} (hω : ω ^ 2 + ω + 1 = 0)
+
+include hF hω
+
 /-- The hexacode has one word of weight zero, 45 of weight four, and 18 of weight six. -/
 @[simp]
 theorem weightDistribution_code (w : ℕ) :
     (code ω : Set (Fin 6 → F)).weightDistribution w =
       if w = 0 then 1 else if w = 4 then 45 else if w = 6 then 18 else 0 := by
-  rw [weightDistribution_eq_card_messageWeight hF hω]
+  rw [weightDistribution_eq_card_messageWeight (Nat.card_eq_fintype_card.trans hF) hω]
   have hcounts : ∀ w : Fin 7,
       Fintype.card {a : Fin 3 → Fin 4 // messageWeight (a 0) (a 1) (a 2) = w.val} =
         if w.val = 0 then 1 else if w.val = 4 then 45 else if w.val = 6 then 18 else 0 := by
