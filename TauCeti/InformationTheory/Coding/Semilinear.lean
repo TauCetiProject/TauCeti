@@ -35,8 +35,6 @@ attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEqu
 
 variable {R ι κ μ : Type*} [CommSemiring R]
 
-namespace RingEquiv
-
 /-- Apply `σ` to the alphabet, multiply coordinate `i` by `u i`, then move it to `e i`. -/
 def semilinearMonomialEquiv (σ : R ≃+* R) (u : ι → Rˣ) (e : ι ≃ κ) :
     (ι → R) ≃ₛₗ[(σ : R →+* R)] (κ → R) :=
@@ -125,10 +123,6 @@ theorem hammingDist_semilinearMonomialEquiv (σ : R ≃+* R) (u : ι → Rˣ)
   exact hammingDist_comp (fun _ ↦ σ) (fun _ ↦ σ.injective)
 
 end Hamming
-
-end RingEquiv
-
-open TauCeti.RingEquiv
 
 /-- Codes are semilinearly equivalent when a semilinear monomial transformation carries
 one onto the other. The alphabet automorphism is shared by all coordinates. -/
