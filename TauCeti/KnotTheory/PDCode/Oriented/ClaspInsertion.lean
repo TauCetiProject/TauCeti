@@ -123,6 +123,31 @@ variable (D : OrientedPDCode n) (p q : Fin (4 * n)) (b : Bool)
 @[simp] theorem crossinglessComponents_insertClasp :
     (D.insertClasp p q b hqp hqe).crossinglessComponents = D.crossinglessComponents := (rfl)
 
+/-- Reflection commutes with clasp insertion, exchanging the over-strand. -/
+@[simp] theorem mirror_insertClasp :
+    (D.insertClasp p q b hqp hqe).mirror =
+      D.mirror.insertClasp p q (!b) hqp (by rwa [mirror_edgePair]) := by
+  apply ext
+  · simp
+  · simp [insertClasp]
+  · simp
+
+/-- Reversing every component commutes with clasp insertion. -/
+@[simp] theorem reverse_insertClasp :
+    (D.insertClasp p q b hqp hqe).reverse =
+      D.reverse.insertClasp p q b hqp (by rwa [reverse_toPDCode]) := by
+  apply ext
+  · simp
+  · funext x
+    obtain ⟨x, rfl⟩ := (PDCode.halfEdgeSuccEquiv (n + 1)).surjective x
+    rcases x with x | slot
+    · obtain ⟨x, rfl⟩ := (PDCode.halfEdgeSuccEquiv n).surjective x
+      rcases x with x | slot
+      · simp
+      · fin_cases slot <;> simp
+    · fin_cases slot <;> simp
+  · simp
+
 /-- Every old crossing retains its sign. -/
 @[simp] theorem crossingSign_insertClasp_castSucc_castSucc (i : Fin n) :
     (D.insertClasp p q b hqp hqe).crossingSign i.castSucc.castSucc = D.crossingSign i := by
