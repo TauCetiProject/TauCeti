@@ -52,6 +52,7 @@ property `Ideal.Quotient.liftₐ`.
 public section
 
 open CategoryTheory WithConv
+open scoped commutatorElement
 
 namespace TauCeti
 
@@ -131,6 +132,21 @@ lemma quotientPointsHom_liftQuotientPoint (H : _root_.CommHopfAlgCat.{v} R)
   apply AlgHom.ext
   intro h
   rw [quotientPointsHom_apply_apply, liftQuotientPoint_mk]
+
+/-- Evaluating the commutator of two lifted quotient points on a quotient class gives
+the commutator of the original ambient points on its representative. -/
+@[simp↓]
+theorem commutator_liftQuotientPoint_apply_mkQuotient
+    {A : _root_.CommHopfAlgCat.{v} R}
+    (I : HopfIdeal R A) (B : CommAlgCat R) (g h : WithConv (A →ₐ[R] B))
+    (hg : ∀ x ∈ I, g.ofConv x = 0) (hh : ∀ x ∈ I, h.ofConv x = 0) (x : A) :
+    (⁅liftQuotientPoint A I B g hg, liftQuotientPoint A I B h hh⁆).ofConv
+      ((mkQuotient A I).hom x) = ⁅g, h⁆.ofConv x := by
+  have heval := quotientPointsHom_apply_apply A I B
+    ⁅liftQuotientPoint A I B g hg, liftQuotientPoint A I B h hh⁆ x
+  rw [map_commutatorElement, quotientPointsHom_liftQuotientPoint,
+    quotientPointsHom_liftQuotientPoint] at heval
+  exact heval.symm
 
 /-- A point of the ambient Hopf algebra lies in the image of quotient points if and only if it
 kills the Hopf ideal. -/
