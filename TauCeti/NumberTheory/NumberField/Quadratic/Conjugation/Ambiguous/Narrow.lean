@@ -63,8 +63,9 @@ the ambiguous class number formula and its narrow form.
   ambiguous classes are the image of the narrow `2`-torsion classes.
 * `NumberField.stronglyAmbiguousClassSubgroup`: the subgroup of strongly ambiguous ordinary ideal
   classes, defined in the signature-independent basic module.
-* `NumberField.NarrowClassGroup.natCard_isStronglyAmbiguousClass_mul_natCard_ker`: the number of
-  strongly ambiguous classes times the narrow defect is the number of `2`-torsion narrow classes.
+* `NumberField.NarrowClassGroup.natCard_stronglyAmbiguousClassSubgroup_mul_natCard_ker`: the
+  number of strongly ambiguous classes times the narrow defect is the number of `2`-torsion
+  narrow classes.
 * `NumberField.NarrowClassGroup.mk0_mem_closure_of_map_eq_self`: the narrow class of an ambiguous
   ideal is a product of narrow classes of primes above ramified rational primes.
 * `NumberField.NarrowClassGroup.mem_closure_of_sq_eq_one`: every `2`-torsion narrow class is such a
@@ -253,7 +254,7 @@ theorem isStronglyAmbiguousClass_iff_exists_sq_eq_one
 signature, the number of ideal classes represented by an ideal fixed by quadratic conjugation,
 times the order of the kernel of `Cl⁺(K) → Cl(K)`, is the number of narrow classes of order
 dividing `2`. -/
-theorem natCard_isStronglyAmbiguousClass_mul_natCard_ker
+theorem natCard_stronglyAmbiguousClassSubgroup_mul_natCard_ker
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
     Nat.card (stronglyAmbiguousClassSubgroup hmin hgen) *
         Nat.card (toClassGroup (K := K)).ker =
