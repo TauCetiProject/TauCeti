@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.EssentialImage
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Maximal
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
+public import TauCeti.Algebra.AlgebraicGroup.Torus.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 import TauCeti.Algebra.AlgebraicGroup.Torus.Conjugation
 import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
@@ -28,6 +29,8 @@ weight equations say `M P = P diag(χ)`. Hence conjugating the generic point by 
 diagonal torus, which is the inclusion of closed subgroups to be proved.
 
 As a consequence, every split maximal torus of `GLₙ` is conjugate to the diagonal torus.
+Over an algebraically closed field every torus is split, so the maximal tori are exactly the
+conjugates of the diagonal torus, and any two maximal tori are conjugate.
 
 ## Main declarations
 
@@ -35,6 +38,10 @@ As a consequence, every split maximal torus of `GLₙ` is conjugate to the diago
   subgroup of `GLₙ` is contained in a conjugate of the diagonal torus.
 * `TauCeti.GeneralLinear.exists_eq_conjugate_diagonalTorusDefiningIdeal_of_isMaximalTorus`: a
   split maximal torus of `GLₙ` is a conjugate of the diagonal torus.
+* `TauCeti.GeneralLinear.isMaximalTorus_iff_exists_eq_conjugate_diagonalTorusDefiningIdeal`:
+  over an algebraically closed field, the maximal tori are exactly those conjugates.
+* `TauCeti.GeneralLinear.exists_conjugate_eq_of_isMaximalTorus`: any two maximal tori of `GLₙ`
+  over an algebraically closed field are conjugate.
 
 ## References
 
@@ -191,6 +198,34 @@ theorem exists_eq_conjugate_diagonalTorusDefiningIdeal_of_isMaximalTorus
   have hD := (HopfIdeal.isMaximalTorus_iff k _ _).mp
     ((isMaximalTorus_diagonalTorusDefiningIdeal k n).conjugate g)
   exact ⟨g, le_antisymm (((HopfIdeal.isMaximalTorus_iff k _ _).mp hI).2 _ hD.1 hg) hg⟩
+
+/-- **Maximal tori of `GLₙ` over an algebraically closed field are exactly the conjugates of the
+diagonal torus.** The equality is an equality of defining Hopf ideals, hence of closed subgroup
+schemes, rather than only of their rational points. -/
+theorem isMaximalTorus_iff_exists_eq_conjugate_diagonalTorusDefiningIdeal [IsAlgClosed k]
+    (I : HopfIdeal k (coordinateHopfAlgebra k n)) :
+    HopfIdeal.IsMaximalTorus k (coordinateHopfAlgebra k n) I ↔
+      ∃ g : WithConv (coordinateHopfAlgebra k n →ₐ[k] k),
+        I = (diagonalTorusDefiningIdeal k n).conjugate g := by
+  constructor
+  · intro hI
+    exact exists_eq_conjugate_diagonalTorusDefiningIdeal_of_isMaximalTorus hI
+      (torusCommHopfAlgProperty.split k _ ((HopfIdeal.isMaximalTorus_iff k _ I).mp hI).1)
+  · rintro ⟨g, rfl⟩
+    exact (isMaximalTorus_diagonalTorusDefiningIdeal k n).conjugate g
+
+/-- **Any two maximal tori of `GLₙ` over an algebraically closed field are conjugate** by a
+rational point of `GLₙ`. -/
+theorem exists_conjugate_eq_of_isMaximalTorus [IsAlgClosed k]
+    {I J : HopfIdeal k (coordinateHopfAlgebra k n)}
+    (hI : HopfIdeal.IsMaximalTorus k (coordinateHopfAlgebra k n) I)
+    (hJ : HopfIdeal.IsMaximalTorus k (coordinateHopfAlgebra k n) J) :
+    ∃ g : WithConv (coordinateHopfAlgebra k n →ₐ[k] k), I.conjugate g = J := by
+  obtain ⟨g, rfl⟩ :=
+    (isMaximalTorus_iff_exists_eq_conjugate_diagonalTorusDefiningIdeal I).mp hI
+  obtain ⟨h, rfl⟩ :=
+    (isMaximalTorus_iff_exists_eq_conjugate_diagonalTorusDefiningIdeal J).mp hJ
+  exact ⟨h * g⁻¹, by simp [HopfIdeal.conjugate_mul]⟩
 
 end
 
