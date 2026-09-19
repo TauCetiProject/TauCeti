@@ -38,8 +38,8 @@ tends to `0` along weak convergence by `TauCeti.tendsto_transportCost_of_tendsto
   basepoint is continuous on the Wasserstein space;
 * `TauCeti.WassersteinSpace.continuous_lintegral_edist_rpow` — for `p < ∞`, so is the `p`-moment
   `∫⁻ y, edist x y ^ p`;
-* `TauCeti.exists_setLIntegral_edist_rpow_le_of_tendsto` — along a weakly convergent family whose
-  `p`-moments converge to a finite limit, the `p`-moments have uniformly small tails;
+* `TauCeti.exists_setLIntegral_edist_rpow_le_of_tendsto_lintegral` — along a weakly convergent
+  family whose `p`-moments converge to a finite limit, the `p`-moments have uniformly small tails;
 * `TauCeti.WassersteinSpace.exists_setLIntegral_edist_rpow_le` — in particular, the `p`-moments
   have uniformly small tails along a `W_p`-convergent family;
 * `TauCeti.tendsto_wassersteinEDist_of_tendsto_lintegral` — on a separable pseudometric space,
@@ -73,7 +73,7 @@ family of probability measures whose `p`-moments about a basepoint converge to t
 `p`-moment of the limit, the `p`-moments have uniformly small tails: for every `ε > 0` there is a
 radius `R` such that eventually the part of the `p`-moment coming from distance at least `R` is at
 most `ε`. -/
-theorem exists_setLIntegral_edist_rpow_le_of_tendsto (hp0 : p ≠ 0) (hp : p ≠ ∞)
+theorem exists_setLIntegral_edist_rpow_le_of_tendsto_lintegral (hp0 : p ≠ 0) (hp : p ≠ ∞)
     (h : Tendsto μs L (𝓝 μ)) (x : X) (hμ : ∫⁻ y, edist x y ^ p.toReal ∂(μ : Measure X) ≠ ∞)
     (hlim : Tendsto (fun i ↦ ∫⁻ y, edist x y ^ p.toReal ∂(μs i : Measure X)) L
       (𝓝 (∫⁻ y, edist x y ^ p.toReal ∂(μ : Measure X)))) {ε : ℝ≥0∞} (hε : 0 < ε) :
@@ -137,7 +137,7 @@ theorem exists_setLIntegral_edist_rpow_le (hp : p ≠ ∞) {γ : Type*} {L : Fil
     {ε : ℝ≥0∞} (hε : 0 < ε) :
     ∃ R : ℝ≥0, ∀ᶠ i in L, ∫⁻ y in {y | R ≤ nndist x y}, edist x y ^ p.toReal
       ∂((μs i : ProbabilityMeasure X) : Measure X) ≤ ε :=
-  exists_setLIntegral_edist_rpow_le_of_tendsto (zero_lt_one.trans_le Fact.out).ne' hp
+  exists_setLIntegral_edist_rpow_le_of_tendsto_lintegral (zero_lt_one.trans_le Fact.out).ne' hp
     ((continuous_toProbabilityMeasure.tendsto μ).comp h) x (lintegral_edist_rpow_ne_top hp μ x)
     (((continuous_lintegral_edist_rpow hp x).tendsto μ).comp h) hε
 
@@ -207,8 +207,10 @@ theorem tendsto_wassersteinEDist_of_tendsto_lintegral [TopologicalSpace.Separabl
     calc 2 ^ p.toReal * (ε / 2 / 2 / 2 ^ p.toReal) + 2 ^ p.toReal * (ε / 2 / 2 / 2 ^ p.toReal)
         ≤ ε / 2 / 2 + ε / 2 / 2 := add_le_add ENNReal.mul_div_le ENNReal.mul_div_le
       _ = ε / 2 := ENNReal.add_halves _
-  obtain ⟨R₁, hR₁⟩ := exists_setLIntegral_edist_rpow_le_of_tendsto hp0 hp h x hμ hlim hτ
-  obtain ⟨R₂, hR₂⟩ := exists_setLIntegral_edist_rpow_le_of_tendsto (L := (⊤ : Filter Unit))
+  obtain ⟨R₁, hR₁⟩ :=
+    exists_setLIntegral_edist_rpow_le_of_tendsto_lintegral hp0 hp h x hμ hlim hτ
+  obtain ⟨R₂, hR₂⟩ :=
+    exists_setLIntegral_edist_rpow_le_of_tendsto_lintegral (L := (⊤ : Filter Unit))
     (μs := fun _ ↦ μ) hp0 hp tendsto_const_nhds x hμ tendsto_const_nhds hτ
   set R : ℝ≥0 := max R₁ R₂
   set S : Set X := {w | R ≤ nndist x w}
