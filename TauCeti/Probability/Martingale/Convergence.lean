@@ -34,6 +34,9 @@ result (`Martingale/AntitoneLimit.lean`) all feed into `tendsto_ae_condExp_iInf`
 - `measure_inter_eq_mul_of_forall_zero_or_one_iInf`: factorization along a decreasing filtration
   with `μ`-trivial intersection — if `B' n` is `𝔽 n`-measurable with `μ (B' n)` and `μ (A ∩ B' n)`
   independent of `n`, then `μ (A ∩ B) = μ A * μ B`.
+- `condExp_inter_ae_eq_mul_iInf`: the conditional form of this factorization, for an arbitrary
+  tail — if the tail-conditional expectations of the indicators of `B' n` and `A ∩ B' n` do not
+  depend on `n`, then the corresponding conditional expectations for `A` and `B` factorize.
 
 ## References
 
@@ -54,7 +57,7 @@ noncomputable section
 
 open MeasureTheory Filter
 
-open scoped Topology ENNReal
+open scoped Topology ENNReal ProbabilityTheory
 
 open TauCeti.MeasureTheory
 
@@ -239,5 +242,64 @@ theorem measure_inter_eq_mul_of_forall_zero_or_one_iInf
   rw [ENNReal.toReal_mul]
   have := abs_eq_zero.mp habs0
   linarith
+
+/-- **Conditional factorization along a decreasing filtration.** If `B' n` is `𝔽 n`-measurable
+and the tail-conditional expectations of the indicators of `B' n` and `A ∩ B' n` agree with those
+of `B` and `A ∩ B`, respectively, then the following factorization identity holds almost
+everywhere:
+`μ⟦A ∩ B | ⨅ n, 𝔽 n⟧ = μ⟦A | ⨅ n, 𝔽 n⟧ * μ⟦B | ⨅ n, 𝔽 n⟧`.
+
+This is the conditional form of `measure_inter_eq_mul_of_forall_zero_or_one_iInf`, and needs no
+triviality of the tail. -/
+theorem condExp_inter_ae_eq_mul_iInf [IsFiniteMeasure μ]
+    {𝔽 : ℕ → MeasurableSpace Ω} (hanti : Antitone 𝔽) (h𝔽 : 𝔽 0 ≤ ‹MeasurableSpace Ω›)
+    {A B : Set Ω} (hA : MeasurableSet A) {B' : ℕ → Set Ω}
+    (hB' : ∀ n, MeasurableSet[𝔽 n] (B' n))
+    (hBmass : ∀ n, μ⟦B' n | ⨅ n, 𝔽 n⟧ =ᵐ[μ] μ⟦B | ⨅ n, 𝔽 n⟧)
+    (hjoint : ∀ n, μ⟦A ∩ B' n | ⨅ n, 𝔽 n⟧ =ᵐ[μ] μ⟦A ∩ B | ⨅ n, 𝔽 n⟧) :
+    μ⟦A ∩ B | ⨅ n, 𝔽 n⟧ =ᵐ[μ] μ⟦A | ⨅ n, 𝔽 n⟧ * μ⟦B | ⨅ n, 𝔽 n⟧ := by
+  have h𝔽' : ∀ n, 𝔽 n ≤ ‹MeasurableSpace Ω› := fun n => (hanti (Nat.zero_le n)).trans h𝔽
+  have h𝒢𝔽 : ∀ n, (⨅ n, 𝔽 n) ≤ 𝔽 n := iInf_le 𝔽
+  have hfA : Integrable (A.indicator fun _ => (1 : ℝ)) μ := (integrable_const 1).indicator hA
+  -- at every level `n`, the defect is the conditional expectation, given the tail, of the Lévy
+  -- increment of `A` restricted to `B' n`
+  have hDn : ∀ n, μ⟦A ∩ B | ⨅ n, 𝔽 n⟧ - μ⟦A | ⨅ n, 𝔽 n⟧ * μ⟦B | ⨅ n, 𝔽 n⟧ =ᵐ[μ]
+      μ[(B' n).indicator (μ⟦A | 𝔽 n⟧ - μ⟦A | ⨅ n, 𝔽 n⟧) | ⨅ n, 𝔽 n] := by
+    intro n
+    have hBn : MeasurableSet (B' n) := h𝔽' n _ (hB' n)
+    have h1 : μ⟦A ∩ B' n | ⨅ n, 𝔽 n⟧ =ᵐ[μ] μ[(B' n).indicator (μ⟦A | 𝔽 n⟧) | ⨅ n, 𝔽 n] := by
+      rw [Set.inter_comm, ← Set.indicator_indicator]
+      exact (condExp_condExp_of_le (h𝒢𝔽 n) (h𝔽' n)).symm.trans
+        (condExp_congr_ae (condExp_indicator hfA (hB' n)))
+    have h2 : μ⟦A | ⨅ n, 𝔽 n⟧ * μ⟦B' n | ⨅ n, 𝔽 n⟧ =ᵐ[μ]
+        μ[(B' n).indicator (μ⟦A | ⨅ n, 𝔽 n⟧) | ⨅ n, 𝔽 n] := by
+      have : (B' n).indicator (μ⟦A | ⨅ n, 𝔽 n⟧) =
+          μ⟦A | ⨅ n, 𝔽 n⟧ * (B' n).indicator (fun _ => (1 : ℝ)) := by
+        ext ω; by_cases h : ω ∈ B' n <;> simp [h]
+      rw [this]
+      refine (condExp_mul_of_stronglyMeasurable_left stronglyMeasurable_condExp ?_
+        ((integrable_const 1).indicator hBn)).symm
+      rw [← this]
+      exact integrable_condExp.indicator hBn
+    have h3 : μ[(B' n).indicator (μ⟦A | 𝔽 n⟧ - μ⟦A | ⨅ n, 𝔽 n⟧) | ⨅ n, 𝔽 n] =ᵐ[μ]
+        μ[(B' n).indicator (μ⟦A | 𝔽 n⟧) | ⨅ n, 𝔽 n] -
+          μ[(B' n).indicator (μ⟦A | ⨅ n, 𝔽 n⟧) | ⨅ n, 𝔽 n] := by
+      rw [Set.indicator_sub']
+      exact condExp_sub (integrable_condExp.indicator hBn) (integrable_condExp.indicator hBn) _
+    filter_upwards [h1, h2, h3, hBmass n, hjoint n] with ω h1 h2 h3 hB hj
+    simp only [Pi.sub_apply, Pi.mul_apply] at h1 h2 h3 ⊢
+    rw [h3, ← h1, ← h2, hj, hB]
+  -- so its `L¹` norm is bounded by that of the Lévy increment, which tends to zero
+  have hbound : ∀ n, eLpNorm (μ⟦A ∩ B | ⨅ n, 𝔽 n⟧ - μ⟦A | ⨅ n, 𝔽 n⟧ * μ⟦B | ⨅ n, 𝔽 n⟧) 1 μ ≤
+      eLpNorm (μ⟦A | 𝔽 n⟧ - μ⟦A | ⨅ n, 𝔽 n⟧) 1 μ := fun n =>
+    (eLpNorm_congr_ae (hDn n)).le.trans
+      ((eLpNorm_condExp_le_eLpNorm _ le_rfl).trans (eLpNorm_indicator_le _))
+  have hzero : eLpNorm (μ⟦A ∩ B | ⨅ n, 𝔽 n⟧ - μ⟦A | ⨅ n, 𝔽 n⟧ * μ⟦B | ⨅ n, 𝔽 n⟧) 1 μ = 0 :=
+    le_antisymm (ge_of_tendsto' (tendsto_eLpNorm_condExp_iInf hanti h𝔽 _) hbound) bot_le
+  rw [eLpNorm_eq_zero_iff (((stronglyMeasurable_condExp.sub
+    (stronglyMeasurable_condExp.mul stronglyMeasurable_condExp)).mono
+      ((h𝒢𝔽 0).trans h𝔽)).aestronglyMeasurable) one_ne_zero] at hzero
+  filter_upwards [hzero] with ω hω
+  exact sub_eq_zero.1 hω
 
 end MeasureTheory

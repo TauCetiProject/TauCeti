@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Codex
 -/
 module
 
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 
@@ -43,6 +44,8 @@ as `Kˣ` enters through an `Additive` adapter.
 * `TauCeti.ClassFieldTheory.Formation`: a compact, totally disconnected topological group's
   smooth discrete integral coefficient module.
 * `TauCeti.ClassFieldTheory.Formation.level`: the level `A^U` of an open subgroup.
+* `TauCeti.ClassFieldTheory.Formation.levelEquivH0`: the level `A^U` as the degree-zero
+  cohomology `H⁰(U, A)`.
 * `TauCeti.ClassFieldTheory.NormalLayer`: a finite normal layer `V ◁ U`.
 * `TauCeti.ClassFieldTheory.NormalLayer.Gal`, `degree`: the Galois group `U ⧸ V` and its order.
 * `TauCeti.ClassFieldTheory.NormalLayer.ofOpenNormal`: the layer `V ◁ ⊤` of an open normal
@@ -52,6 +55,11 @@ as `Kˣ` enters through an `Additive` adapter.
 * `TauCeti.ClassFieldTheory.NormalLayer.H`, `TateH`, `TrivialTateH`: the ordinary and Tate
   cohomology carriers of the layer, in the coefficient module `A^V` and in trivial integral
   coefficients.
+* `TauCeti.ClassFieldTheory.NormalLayer.tateHIsoH`: the identification of positive-degree Tate
+  cohomology of the layer with its ordinary cohomology.
+* `TauCeti.ClassFieldTheory.NormalLayer.tateHMinusTwoEquivAbelianization`: the canonical
+  identification of degree `-2` Tate cohomology with the additive abelianization of the Galois
+  group.
 * `TauCeti.ClassFieldTheory.NormalLayer.norm`, `normSubgroup`, `NormQuotient`, `normQuotientMk`:
   the norm of the layer, its image, the norm quotient and the quotient map onto it.
 
@@ -60,6 +68,8 @@ as `Kˣ` enters through an `Additive` adapter.
 * `TauCeti.ClassFieldTheory.Formation.exists_mem_level`: every element of the coefficient module
   is fixed by an open subgroup.
 * `TauCeti.ClassFieldTheory.NormalLayer.groundLevelEquiv`: `(A^V)^{U/V} ≃ A^U`.
+* `TauCeti.ClassFieldTheory.NormalLayer.tateHMinusTwoEquivAbelianization_single_one`: the
+  degree `-2` identification sends the standard homology class of `g` to its abelianization.
 * `TauCeti.ClassFieldTheory.NormalLayer.tateHZeroEquivNormQuotient`: degree-zero Tate cohomology
   of the layer is the norm quotient.
 
@@ -170,6 +180,24 @@ theorem level_antitone : Antitone F.level := by
   intro U U' hUU' x hx
   rw [mem_level] at hx ⊢
   exact fun u hu ↦ hx u (hUU' hu)
+
+/-- **The level `A^U` of an open subgroup is the degree-zero cohomology `H⁰(U, A)`** of `U`
+acting on the coefficient module: both are the elements of the ambient module fixed by `U`, and
+the equivalence moves none of them. -/
+def levelEquivH0 (U : OpenSubgroup G) : F.level U ≃+ ContCohomology.H0 U.toSubgroup F.toRep.V :=
+  AddEquiv.addSubgroupCongr (H := (F.level U).toAddSubgroup) rfl
+
+/-- `levelEquivH0` moves no element of the ambient module. -/
+@[simp]
+theorem levelEquivH0_apply_coe (U : OpenSubgroup G) (x : F.level U) :
+    (F.levelEquivH0 U x : F.toRep.V) = x :=
+  (rfl)
+
+/-- The inverse of `levelEquivH0` moves no element of the ambient module either. -/
+@[simp]
+theorem levelEquivH0_symm_apply_coe (U : OpenSubgroup G)
+    (x : ContCohomology.H0 U.toSubgroup F.toRep.V) : ((F.levelEquivH0 U).symm x : F.toRep.V) = x :=
+  (rfl)
 
 end Formation
 
@@ -369,6 +397,52 @@ abbrev TateH (r : ℤ) : ModuleCat ℤ := tateCohomology (L.rep F) r
 group `H^r(U/V, ℤ)`. Its degree `-2` is the abelianization of the Galois group of the layer, and
 the Artin map of a class formation is a cup product between this carrier and `TateH`. -/
 abbrev TrivialTateH (r : ℤ) : ModuleCat ℤ := tateCohomology (Rep.trivial ℤ L.Gal ℤ) r
+
+/-! ### The two low Tate degrees -/
+
+/-- **Degree `-2` Tate cohomology with trivial integral coefficients is the additive
+abelianization of the Galois group.** This is the finite-layer form of the canonical generic
+identification, and is the source of the Galois side of the Nakayama map. -/
+def tateHMinusTwoEquivAbelianization :
+    L.TrivialTateH (-2) ≃+ Additive (Abelianization L.Gal) :=
+  TauCeti.TateCohomology.HNegTwoAddEquivAbelianization
+
+/-- The degree `-2` identification sends the standard first-homology class represented by
+`(g, 1)` to the class of `g` in the additive abelianization. -/
+@[simp]
+theorem tateHMinusTwoEquivAbelianization_single_one (g : L.Gal) :
+    L.tateHMinusTwoEquivAbelianization
+      ((TateCohomology.isoGroupHomology (-2) 1 rfl).inv.app
+        (Rep.trivial ℤ L.Gal ℤ)
+        (groupHomology.H1π (Rep.trivial ℤ L.Gal ℤ)
+          ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ L.Gal ℤ)).inv
+            (Finsupp.single g 1)))) =
+      Additive.ofMul (Abelianization.of g) := by
+  exact TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_single_one g
+
+/-- The inverse degree `-2` identification sends the abelianization class of `g` to its standard
+first-homology representative with coefficient `1`. -/
+@[simp]
+theorem tateHMinusTwoEquivAbelianization_symm_of (g : L.Gal) :
+    L.tateHMinusTwoEquivAbelianization.symm (Additive.ofMul (Abelianization.of g)) =
+      (TateCohomology.isoGroupHomology (-2) 1 rfl).inv.app
+        (Rep.trivial ℤ L.Gal ℤ)
+        (groupHomology.H1π (Rep.trivial ℤ L.Gal ℤ)
+          ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ L.Gal ℤ)).inv
+            (Finsupp.single g 1))) := by
+  exact TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_symm_of g
+
+/-- **In positive degrees the Tate cohomology of a finite normal layer is its ordinary
+cohomology.** This is Mathlib's comparison `TateCohomology.isoGroupCohomology`, stated between the
+carriers `TateH` and `H` of the layer, so that it composes with maps between those carriers. -/
+def tateHIsoH (r : ℕ) [NeZero r] : L.TateH F r ≅ L.H F r :=
+  (TateCohomology.isoGroupCohomology r).app (L.rep F)
+
+/-- The identification of positive-degree Tate cohomology of a layer with its ordinary cohomology
+is Mathlib's comparison isomorphism at the coefficient module of the layer. -/
+theorem tateHIsoH_def (r : ℕ) [NeZero r] :
+    L.tateHIsoH F r = (TateCohomology.isoGroupCohomology r).app (L.rep F) :=
+  (rfl)
 
 end Cohomology
 

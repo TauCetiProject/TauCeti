@@ -114,6 +114,21 @@ theorem schwarzChristoffelEdgeAngle_eq_sum_filter (a e : ι → ℝ) (c : ℝ) :
       Real.pi * ∑ i ∈ Finset.univ.filter fun i => c < a i, e i := by
   rw [schwarzChristoffelEdgeAngle, Finset.sum_filter]
 
+/-- The Schwarz--Christoffel edge angle is zero to the right of every prevertex. -/
+theorem schwarzChristoffelEdgeAngle_eq_zero_of_forall_le (a e : ι → ℝ) {c : ℝ}
+    (hc : ∀ i, a i ≤ c) :
+    schwarzChristoffelEdgeAngle a e c = 0 := by
+  rw [schwarzChristoffelEdgeAngle_eq_sum_filter]
+  simp [not_lt.mpr (hc _)]
+
+/-- To the left of every prevertex, the Schwarz--Christoffel edge angle is `π` times the total
+exponent. -/
+theorem schwarzChristoffelEdgeAngle_eq_pi_mul_sum_of_forall_lt (a e : ι → ℝ) {c : ℝ}
+    (hc : ∀ i, c < a i) :
+    schwarzChristoffelEdgeAngle a e c = Real.pi * ∑ i, e i := by
+  rw [schwarzChristoffelEdgeAngle_eq_sum_filter]
+  simp only [hc, Finset.filter_true]
+
 /-- The edge angle drops, as the reference point moves to the right past a set of prevertices, by
 `π` times the total of their exponents.  For the classical choice `e i = α i / π - 1` attached to a
 polygon with interior angle `α i`, passing a single prevertex therefore turns the edge direction by

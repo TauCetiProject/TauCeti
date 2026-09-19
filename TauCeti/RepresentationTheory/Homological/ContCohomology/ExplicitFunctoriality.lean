@@ -75,6 +75,18 @@ theorem cochainsMap2_apply (φ : H →* G) (f : M →+ N) (c : G × G → M) (h 
     cochainsMap2 φ f c (h, k) = f (c (φ h, φ k)) :=
   by rfl
 
+/-- Pullback of degree-one cochains is injective when the group map is surjective and the
+coefficient map is injective. -/
+theorem cochainsMap1_injective (φ : H →* G) (f : M →+ N) (hφ : Function.Surjective φ)
+    (hf : Function.Injective f) : Function.Injective (cochainsMap1 φ f) :=
+  hφ.injective_comp_right.comp hf.comp_left
+
+/-- Pullback of degree-two cochains is injective when the group map is surjective and the
+coefficient map is injective. -/
+theorem cochainsMap2_injective (φ : H →* G) (f : M →+ N) (hφ : Function.Surjective φ)
+    (hf : Function.Injective f) : Function.Injective (cochainsMap2 φ f) :=
+  cochainsMap1_injective (φ.prodMap φ) f (hφ.prodMap hφ) hf
+
 /-- Pullback preserves continuity of degree-one cochains. -/
 theorem continuous_cochainsMap1 [TopologicalSpace G] [TopologicalSpace H]
     [TopologicalSpace M] [TopologicalSpace N] (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)

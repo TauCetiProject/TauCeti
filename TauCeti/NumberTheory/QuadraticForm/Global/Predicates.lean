@@ -19,6 +19,11 @@ Global witnesses base-change to local witnesses.  The resulting API also records
 under global equivalence and the rank constraint imposed by local equivalence.  These are the
 common hypotheses used in local-to-global statements for quadratic forms.
 
+Complex places do not occur in the definitions: over `ℂ`, isotropy is automatic in dimension
+at least two, representation of regular forms is controlled only by dimension, and regular forms
+of equal dimension are equivalent.  `TauCeti.NumberTheory.QuadraticForm.Global.ComplexPlaces`
+makes this omission explicit.
+
 -/
 
 -- Provenance: TauCetiRoadmap/GlobalQuadraticForms/README.md, section "The local predicates", and
@@ -265,10 +270,18 @@ theorem QuadraticMap.Equivalent.locallyRepresents_congr
 theorem LocallyEquivalent.finrank_eq [FiniteDimensional K V] [FiniteDimensional K W]
     {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
     (h : Q.LocallyEquivalent R) : Module.finrank K V = Module.finrank K W := by
-  let place : HeightOneSpectrum (𝓞 K) :=
-    (HeightOneSpectrum.equivMaximalSpectrum (RingOfIntegers.not_isField K)).symm
-      (Classical.choice (inferInstance : Nonempty (MaximalSpectrum (𝓞 K))))
-  obtain ⟨e⟩ := h.1 place
+  obtain ⟨e⟩ := h.1 (Classical.arbitrary _)
   simpa only [Module.finrank_baseChange] using LinearEquiv.finrank_eq e.toLinearEquiv
+
+/-- Local representation of finite-dimensional forms forces the expected inequality between
+their global dimensions. -/
+theorem LocallyRepresents.finrank_le [FiniteDimensional K V] [FiniteDimensional K W]
+    {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
+    (h : Q.LocallyRepresents R) : Module.finrank K V ≤ Module.finrank K W := by
+  have hp := h.1 (Classical.arbitrary _)
+  rw [QuadraticMap.isRepresentedBy_iff] at hp
+  obtain ⟨f, hf, -⟩ := hp
+  simpa only [Module.finrank_baseChange] using
+    LinearMap.finrank_le_finrank_of_injective hf
 
 end QuadraticForm

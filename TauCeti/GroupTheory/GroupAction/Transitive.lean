@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import Mathlib.GroupTheory.Index
 
 /-!
 # Orbit-stabiliser for a transitive action
@@ -26,6 +27,8 @@ equivariance -- Mathlib's `MulAction.ofQuotientStabilizer_smul` -- that makes it
 
 * `TauCeti.quotientStabilizerEquiv_mk`: its value on a coset, and
   `TauCeti.quotientStabilizerEquiv_smul`: its equivariance.
+* `TauCeti.natCard_dvd_natCard_of_isPretransitive`: the number of points of a nonempty set acted
+  on transitively divides the order of the group.
 
 ## Implementation notes
 
@@ -64,5 +67,12 @@ theorem quotientStabilizerEquiv_mk (b : X) (g : G) :
 theorem quotientStabilizerEquiv_smul (b : X) (g : G) (q : G ⧸ stabilizer G b) :
     quotientStabilizerEquiv G b (g • q) = g • quotientStabilizerEquiv G b q :=
   ofQuotientStabilizer_smul G b g q
+
+/-- If `G` acts transitively on a nonempty set `X`, then the number of points of `X` divides the
+order of `G`: it is the index of a point stabiliser, by `MulAction.index_stabilizer_of_transitive`.
+Both cardinalities are `Nat.card`, so the statement also holds, trivially, for infinite `G`. -/
+theorem natCard_dvd_natCard_of_isPretransitive [Nonempty X] : Nat.card X ∣ Nat.card G := by
+  obtain ⟨x⟩ := ‹Nonempty X›
+  simpa [index_stabilizer_of_transitive G x] using (stabilizer G x).index_dvd_card
 
 end TauCeti

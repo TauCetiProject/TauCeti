@@ -483,6 +483,22 @@ theorem zigzagVolume_ne_zero [Nontrivial k] {i j : V} (h : G.Adj i j) :
     (length_backtrackPath G h), vertexEquiv_symm_vertex] at hproj
   exact hne hproj
 
+/-- Scalar multiplication of a volume class at a nonisolated vertex is injective. -/
+theorem zigzagVolume_smul_left_injective {i j : V} (h : G.Adj i j) :
+  Function.Injective fun r : k ↦ r • zigzagVolume k G i := by
+  intro r s hrs
+  beta_reduce at hrs
+  rw [zigzagVolume_eq_zigzagMk_backtrackElem k G h, ← map_smul, ← map_smul] at hrs
+  have hmem : r • backtrackElem G k h - s • backtrackElem G k h ∈ zigzagIdeal k G :=
+    (zigzagMk_eq_zero_iff k G).mp (by rw [map_sub, hrs, sub_self])
+  have hproj := shortProj_eq_zero_of_mem_zigzagIdeal k G hmem
+  rw [map_sub, map_smul, map_smul, backtrackElem_eq_ofPath,
+    shortProj_ofPath_of_loop k G (backtrackPath G h) (length_backtrackPath G h),
+    vertexEquiv_symm_vertex, sub_eq_zero] at hproj
+  apply (pathAlgebraBasis k (DoubledQuiver G)).linearIndependent.smul_left_injective
+    (volumePath G i)
+  simpa only [coe_pathAlgebraBasis] using hproj
+
 /-! ### The dimension -/
 
 /-- **The dimension of a zigzag algebra.** A finite simple graph with no isolated vertex has

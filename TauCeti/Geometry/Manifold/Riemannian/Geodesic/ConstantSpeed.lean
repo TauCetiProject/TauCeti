@@ -67,7 +67,7 @@ theorem IsGeodesicCurveOn.inner_curveVelocityWithin_self_eq
     {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) :
     inner ℝ (curveVelocityWithin I γ s a) (curveVelocityWithin I γ s a) =
       inner ℝ (curveVelocityWithin I γ s b) (curveVelocityWithin I γ s b) := by
-  have hmetric := (isLeviCivita_leviCivita (I := I) (M := M)).isMetricCompatible
+  have hmetric := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
   apply hconn.ordConnected.convex.is_const_of_fderivWithin_eq_zero
     (𝕜 := ℝ)
     (f := fun t : ℝ ↦

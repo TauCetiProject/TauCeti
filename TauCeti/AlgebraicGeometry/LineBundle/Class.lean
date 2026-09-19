@@ -22,7 +22,9 @@ those are available, the operations defined here are the operations of the Picar
 ## Main declarations
 
 * `LineBundleClass X` is the type of line bundles on `X` up to isomorphism;
-* `LineBundleClass.mk` sends a line bundle to its isomorphism class;
+* `LineBundleClass.mk` sends a line bundle to its isomorphism class, and every class arises this
+  way (`LineBundleClass.mk_surjective`);
+* `LineBundleClass.lift` descends an isomorphism-invariant function to line-bundle classes;
 * `LineBundleClass.mk_eq_mk_iff` characterizes equality by an isomorphism of the underlying
   sheaves;
 * multiplication is induced by `InvertibleSheaf.tensorProduct`, and `1` is the class of the
@@ -41,7 +43,7 @@ namespace TauCeti
 
 namespace AlgebraicGeometry
 
-universe u
+universe u v
 
 noncomputable section
 
@@ -57,12 +59,29 @@ variable {X : Scheme.{u}}
 def mk (L : InvertibleSheaf X) : LineBundleClass X :=
   toSkeleton L
 
+/-- Descend a function on invertible sheaves that is invariant under isomorphism to line-bundle
+classes. -/
+noncomputable def lift {α : Sort v} (f : InvertibleSheaf X → α)
+    (hf : ∀ L M, Nonempty (L.obj ≅ M.obj) → f L = f M) : LineBundleClass X → α :=
+  (SheafOfModules.isInvertible X).skeletonLift f hf
+
+/-- Applying `lift` to the class represented by `L` recovers the original function at `L`. -/
+@[simp]
+theorem lift_mk {α : Sort v} {f : InvertibleSheaf X → α}
+    {hf : ∀ L M, Nonempty (L.obj ≅ M.obj) → f L = f M} (L : InvertibleSheaf X) :
+    lift f hf (mk L) = f L :=
+  ObjectProperty.skeletonLift_toSkeleton _ L
+
 /-- Two line bundles have the same class exactly when their underlying sheaves are isomorphic. -/
 @[simp]
 lemma mk_eq_mk_iff {L K : InvertibleSheaf X} :
     mk L = mk K ↔ Nonempty (L.obj ≅ K.obj) := by
   exact (ObjectProperty.toSkeleton_eq_toSkeleton_iff_nonempty_iso
     (SheafOfModules.isInvertible X) L.property K.property)
+
+/-- Every line-bundle class is the class of a line bundle. -/
+theorem mk_surjective : Function.Surjective (mk : InvertibleSheaf X → LineBundleClass X) :=
+  fun a ↦ Quotient.inductionOn a fun L ↦ ⟨L, rfl⟩
 
 /-- Tensor product of line bundles descends to their isomorphism classes. -/
 noncomputable def tensorProduct (a b : LineBundleClass X) : LineBundleClass X :=

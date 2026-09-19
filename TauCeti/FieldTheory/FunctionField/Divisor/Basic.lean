@@ -57,6 +57,21 @@ lemma degree_apply (D : Divisor k F) :
   simpa only [degree] using
     WeilDivisor.weightedDegree_apply (fun P : Place k F => (P.degree : ℤ)) D
 
+/-- The degree of a function-field divisor is the formal weighted degree against the residue
+degrees; this is the bridge to the weight-generic `TauCeti.AlgebraicGeometry.WeilDivisor` API. -/
+lemma degree_eq_weightedDegree (D : Divisor k F) :
+    degree D = WeilDivisor.weightedDegree (fun P : Place k F => (P.degree : ℤ)) D := by
+  simp only [degree]
+
+/-- The degree-zero divisors are the weighted-degree-zero divisors for the residue-degree
+weights.  This is the bridge from the degree kernel to the weight-generic `WeilDivisor` API,
+and in particular to `Pic⁰`. -/
+theorem ker_degree_eq_weightedDegreeZeroSubgroup :
+    (degree (k := k) (F := F)).ker =
+      WeilDivisor.weightedDegreeZeroSubgroup (fun P : Place k F => (P.degree : ℤ)) := by
+  ext D
+  rw [AddMonoidHom.mem_ker, WeilDivisor.mem_weightedDegreeZeroSubgroup, ← degree_eq_weightedDegree]
+
 /-- The support-indexed form of the degree sum. -/
 lemma degree_eq_sum_support (D : Divisor k F) :
     degree D = ∑ P ∈ D.support, D P * P.degree := by
@@ -169,6 +184,24 @@ lemma degree_le_degree_of_coeff_ne_zero {D : Divisor k F} (hD : 0 ≤ D) {P : Pl
     _ ≤ D.coeff P * P.degree := mul_le_mul_of_nonneg_right hone (Int.natCast_nonneg _)
     _ ≤ degree D := coeff_mul_degree_le_degree hD P
 
+/-- An effective divisor of degree one on an algebraic function field contains a rational place.
+
+Indeed, any place in its support contributes at least its positive residue degree to the total
+degree, so both that residue degree and its coefficient must equal one. -/
+theorem exists_place_degree_eq_one_of_isEffective_of_degree_eq_one
+    (hF : IsFunctionField k F) {D : Divisor k F} (hD : 0 ≤ D) (hdeg : degree D = 1) :
+    ∃ P : Place k F, P ∈ D.support ∧ P.degree = 1 := by
+  have hD0 : D ≠ 0 := by
+    rintro rfl
+    simp at hdeg
+  obtain ⟨P, hP⟩ := Finsupp.support_nonempty_iff.mpr hD0
+  refine ⟨P, hP, ?_⟩
+  have hle : (P.degree : ℤ) ≤ 1 := by
+    rw [← hdeg]
+    exact degree_le_degree_of_coeff_ne_zero hD (WeilDivisor.mem_support_iff.mp hP)
+  have hone : 1 ≤ P.degree := P.one_le_degree_of_isFunctionField hF
+  omega
+
 /-- The coefficients of an effective divisor of a function field are bounded by its degree. -/
 lemma coeff_le_degree (hF : IsFunctionField k F) {D : Divisor k F} (hD : 0 ≤ D)
     (P : Place k F) : D.coeff P ≤ degree D := by
@@ -184,6 +217,17 @@ lemma eq_of_le_of_degree_eq (hF : IsFunctionField k F) {D E : Divisor k F} (hDE 
   apply WeilDivisor.eq_of_le_of_weightedDegree_eq_of_pos
     (degree_pos_of_isFunctionField hF) hDE
   simpa only [degree] using hdeg
+
+/-- **An effective divisor of degree one is a place of degree one**: since every place of an
+algebraic function field has degree at least one, an effective divisor of degree one is the
+prime divisor of a single place, and that place has degree one. -/
+lemma exists_eq_ofPoint_of_degree_eq_one (hF : IsFunctionField k F) {D : Divisor k F}
+    (hD : 0 ≤ D) (hdeg : degree D = 1) :
+    ∃ P : Place k F, P.degree = 1 ∧ D = WeilDivisor.ofPoint P := by
+  obtain ⟨P, hP, hDP⟩ := (WeilDivisor.isEffective_iff_zero_le.mpr
+    hD).exists_eq_ofPoint_of_weightedDegree_eq_one
+    (fun P _ ↦ degree_pos_of_isFunctionField hF P) (by simpa only [degree] using hdeg)
+  exact ⟨P, by exact_mod_cast hP, hDP⟩
 
 /-- Degree is strictly monotone on divisors of an algebraic function field. -/
 lemma strictMono_degree (hF : IsFunctionField k F) :

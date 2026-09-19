@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Biproduct
+public import TauCeti.CategoryTheory.Exact.Functor
 public import TauCeti.CategoryTheory.Exact.Split
 public import TauCeti.CategoryTheory.ObjectProperty
 public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
@@ -48,6 +49,8 @@ property, before any projectivity hypothesis is available.
   conflations `0 ↪ Kₙ ↠ Kₙ` at its far end.
 * `TauCeti.ExactStructure.FiniteResolution.biprod`: the componentwise direct sum of two
   resolutions.
+* `TauCeti.ExactStructure.FiniteResolution.map`: the image of a resolution under a
+  conflation-exact functor carrying `P` into `P'`, a finite `P'`-resolution of the image.
 * `TauCeti.ExactStructure.admitsFiniteResolution`: the object property of admitting some finite
   `P`-resolution, the object-property presentation of the above data.
 
@@ -68,6 +71,9 @@ property, before any projectivity hypothesis is available.
 * `TauCeti.ExactStructure.admitsFiniteResolution_induction`: the object property of admitting a
   finite `P`-resolution is the smallest one containing `P` and closed under passing from the
   subobject of a conflation with resolving middle term to its quotient.
+* `TauCeti.ExactStructure.admitsFiniteResolution_le_inverseImage`: a conflation-exact functor
+  carrying `P` into `P'` carries objects of finite `P`-dimension to objects of finite
+  `P'`-dimension.
 
 ## Implementation notes
 
@@ -108,7 +114,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
-universe v u
+universe v v' u u'
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
 
@@ -456,6 +462,41 @@ noncomputable def biprod :
 
 end Biprod
 
+section Map
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
+  {E' : ExactStructure D} {P' : ObjectProperty D} {F : C ⥤ D} [F.Additive]
+
+/-- The image of a finite `P`-resolution under a conflation-exact functor `F` carrying `P` into
+`P'`: applying `F` to every conflation of the chain gives a finite `P'`-resolution of `F X`. -/
+def map (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F) :
+    ∀ {X : C}, FiniteResolution E P X → FiniteResolution E' P' (F.obj X)
+  | _, .base hX => .base ((P'.prop_inverseImage_iff F _).mp (hPP' _ hX))
+  | _, .step hQ i p zero hp r =>
+      .step ((P'.prop_inverseImage_iff F _).mp (hPP' _ hQ)) (F.map i) (F.map p)
+        (by rw [← F.map_comp, zero, F.map_zero]) (hF.map_conflation hp) (r.map hF hPP')
+
+@[simp] theorem map_base (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F) {X : C}
+    (hX : P X) :
+    (base (E := E) hX).map hF hPP' = base ((P'.prop_inverseImage_iff F _).mp (hPP' _ hX)) := by
+  simp [map]
+
+@[simp] theorem map_step (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F)
+    {K Q X : C} (hQ : P Q) (i : K ⟶ Q) (p : Q ⟶ X) (zero : i ≫ p = 0)
+    (hp : E.Conflation (ShortComplex.mk i p zero)) (r : FiniteResolution E P K) :
+    (step hQ i p zero hp r).map hF hPP' =
+      step ((P'.prop_inverseImage_iff F _).mp (hPP' _ hQ)) (F.map i) (F.map p)
+        (by rw [← F.map_comp, zero, F.map_zero]) (hF.map_conflation hp) (r.map hF hPP') := by
+  simp [map]
+
+@[simp] theorem length_map (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F)
+    {X : C} (r : FiniteResolution E P X) : (r.map hF hPP').length = r.length := by
+  induction r with
+  | base hX => simp
+  | step hQ i p zero hp r ih => simp [ih]
+
+end Map
+
 end FiniteResolution
 
 /-- The first step of a finite `P`-resolution of length at most `n + 1`: a conflation
@@ -523,6 +564,14 @@ instance [P.IsClosedUnderIsomorphisms] [P.IsClosedUnderBinaryProducts] :
     (E.admitsFiniteResolution P).IsClosedUnderBinaryProducts :=
   ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod (E.admitsFiniteResolution P)
     fun _ _ hX hY => E.admitsFiniteResolution_biprod P hX hY
+
+/-- A conflation-exact functor carrying `P` into `P'` carries objects of finite `P`-dimension to
+objects of finite `P'`-dimension, by `TauCeti.ExactStructure.FiniteResolution.map`. -/
+theorem admitsFiniteResolution_le_inverseImage {D : Type u'} [Category.{v'} D] [Preadditive D]
+    [HasZeroObject D] [HasBinaryBiproducts D] {E' : ExactStructure D} {P' : ObjectProperty D}
+    {F : C ⥤ D} [F.Additive] (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F) :
+    E.admitsFiniteResolution P ≤ (E'.admitsFiniteResolution P').inverseImage F :=
+  fun _ hX => ⟨hX.some.map hF hPP'⟩
 
 end ExactStructure
 
