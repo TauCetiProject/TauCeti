@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Contraction
-public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Torsion
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Torsion.Basic
 
 /-!
 # The Picard group under contraction of a `(-1)`-index
