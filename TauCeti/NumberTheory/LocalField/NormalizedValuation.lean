@@ -52,6 +52,8 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
   API for it comes from.
 * `TauCeti.normalizedValuation_eq_one_of_isOfFinOrder`: the normalized valuation vanishes on the
   roots of unity of `K`.
+* `TauCeti.exists_pow_mul_mem_integer`: a power of any uniformizer clears the denominator of an
+  element of `K`.
 * `TauCeti.normalizedAbsoluteValue_apply_ne_zero`: the formula `|x|_K = q ^ (-v_K(x))`.
 * `TauCeti.isNonarchimedean_normalizedAbsoluteValue`: the normalized absolute value satisfies the
   strong triangle inequality.
@@ -291,6 +293,30 @@ theorem exists_eq_mul_zpow_of_irreducible {π : 𝒪[K]} (hπ : Irreducible π) 
     -- that equality before applying the DVR decomposition equation.
     rw [show algebraMap 𝒪[K] K π = (π : K) by rfl] at hx
     simpa [uK, Units.smul_def, Algebra.smul_def] using hx
+
+/-- Every element of `K` becomes integral after multiplication by a power of a uniformizer. -/
+theorem exists_pow_mul_mem_integer {π : 𝒪[K]} (hπ : Irreducible π) (y : K) :
+    ∃ n : ℕ, (π : K) ^ n * y ∈ 𝒪[K] := by
+  rcases le_total (valuation K y) 1 with h | h
+  · exact ⟨0, by rw [Valuation.mem_integer_iff]; simpa using h⟩
+  rcases eq_or_ne y 0 with rfl | hy
+  · exact ⟨0, by simp⟩
+  have hinv : y⁻¹ ∈ 𝒪[K] := by
+    rw [Valuation.mem_integer_iff, map_inv₀, inv_le_one₀ (zero_lt_iff.2 (by simpa using hy))]
+    exact h
+  obtain ⟨m, u, hu⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible
+    (x := (⟨y⁻¹, hinv⟩ : 𝒪[K])) (by simp [Subtype.ext_iff, inv_ne_zero hy]) hπ
+  refine ⟨m, ?_⟩
+  have h1 : y⁻¹ = ((u : 𝒪[K]) : K) * (π : K) ^ m := congrArg Subtype.val hu
+  have h2 : ((u : 𝒪[K]) : K) ≠ 0 := by simp [(Units.isUnit u).ne_zero]
+  have h3 : (((u⁻¹ : 𝒪[K]ˣ) : 𝒪[K]) : K) * ((u : 𝒪[K]) : K) = 1 :=
+    congrArg Subtype.val u.inv_mul
+  have h4 : (π : K) ^ m * y * ((u : 𝒪[K]) : K) = 1 := by
+    have h5 : y * ((u : 𝒪[K]) : K) * (π : K) ^ m = 1 := by
+      rw [mul_assoc, ← h1, mul_inv_cancel₀ hy]
+    linear_combination h5
+  rw [eq_div_of_mul_eq h2 h4, ← eq_div_of_mul_eq h2 h3]
+  exact ((u⁻¹ : 𝒪[K]ˣ) : 𝒪[K]).2
 
 /-- The normalized valuation of an irreducible element of `𝒪[K]`, that is of a uniformizer of
 `K`, is `Multiplicative.ofAdd 1`. -/

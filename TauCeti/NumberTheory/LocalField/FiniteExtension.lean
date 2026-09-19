@@ -476,30 +476,6 @@ instance isModuleTopology : IsModuleTopology K M := by
     infer_instance
   exact isModuleTopologyOfFiniteDimensional
 
-/-- Every element of `K` becomes integral after multiplication by a power of a uniformizer. -/
-private theorem exists_pow_mul_mem_integer {π : 𝒪[K]} (hπ : Irreducible π) (y : K) :
-    ∃ n : ℕ, (π : K) ^ n * y ∈ 𝒪[K] := by
-  rcases le_total (valuation K y) 1 with h | h
-  · exact ⟨0, by rw [Valuation.mem_integer_iff]; simpa using h⟩
-  rcases eq_or_ne y 0 with rfl | hy
-  · exact ⟨0, by simp⟩
-  have hinv : y⁻¹ ∈ 𝒪[K] := by
-    rw [Valuation.mem_integer_iff, map_inv₀, inv_le_one₀ (zero_lt_iff.2 (by simpa using hy))]
-    exact h
-  obtain ⟨m, u, hu⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible
-    (x := (⟨y⁻¹, hinv⟩ : 𝒪[K])) (by simp [Subtype.ext_iff, inv_ne_zero hy]) hπ
-  refine ⟨m, ?_⟩
-  have h1 : y⁻¹ = ((u : 𝒪[K]) : K) * (π : K) ^ m := congrArg Subtype.val hu
-  have h2 : ((u : 𝒪[K]) : K) ≠ 0 := by simp [(Units.isUnit u).ne_zero]
-  have h3 : (((u⁻¹ : 𝒪[K]ˣ) : 𝒪[K]) : K) * ((u : 𝒪[K]) : K) = 1 :=
-    congrArg Subtype.val u.inv_mul
-  have h4 : (π : K) ^ m * y * ((u : 𝒪[K]) : K) = 1 := by
-    have h5 : y * ((u : 𝒪[K]) : K) * (π : K) ^ m = 1 := by
-      rw [mul_assoc, ← h1, mul_inv_cancel₀ hy]
-    linear_combination h5
-  rw [eq_div_of_mul_eq h2 h4, ← eq_div_of_mul_eq h2 h3]
-  exact ((u⁻¹ : 𝒪[K]ˣ) : 𝒪[K]).2
-
 /-- One power of a uniformizer of `K` clears the denominators of the coordinates of every
 integer of `M`: the coordinate functionals of a `K`-basis are continuous, hence bounded on the
 compact set `𝒪[M]`. -/
@@ -582,6 +558,7 @@ omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Module.Finite K M] [To
 variable (K M) in
 /-- The rank of `𝒪[M]` over `𝒪[K]` is the degree `[M : K]`: passing to the fraction fields does
 not change the rank. -/
+@[simp]
 theorem finrank_integerRing : Module.finrank 𝒪[K] 𝒪[M] = Module.finrank K M :=
   (IsFractionRing.finrank_eq 𝒪[K] K 𝒪[M] M).symm
 
