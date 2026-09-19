@@ -58,8 +58,8 @@ is killed by two.
   is the class of `-1`, and its signed discriminant is trivial.
 * `TauCeti.RegularFormClass.signedDiscr_add_hyperbolicClass`: adding a hyperbolic plane leaves the
   signed discriminant unchanged.
-* `TauCeti.RegularFormClass.eq_hyperbolicClass_of_rank_eq_two_of_discr`: a binary class of
-  discriminant `[-1]` is the hyperbolic class.
+* `TauCeti.RegularFormClass.eq_hyperbolicClass_of_rank_eq_two_of_discr_eq_neg_one`: a binary
+  class of discriminant `[-1]` is the hyperbolic class.
 
 ## References
 
@@ -272,7 +272,8 @@ theorem RegularFormClass.discr_hyperbolicClass :
 
 /-- A class of rank two whose discriminant is the class of `-1` is the hyperbolic class: in rank
 two the discriminant is a complete invariant of hyperbolicity. -/
-theorem RegularFormClass.eq_hyperbolicClass_of_rank_eq_two_of_discr {x : RegularFormClass K}
+theorem RegularFormClass.eq_hyperbolicClass_of_rank_eq_two_of_discr_eq_neg_one
+    {x : RegularFormClass K}
     (hrank : RegularFormClass.rank x = 2)
     (hdiscr : RegularFormClass.discr x = squareClass (-1 : Kˣ)) : x = hyperbolicClass K := by
   induction x using Quotient.inductionOn with

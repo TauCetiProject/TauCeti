@@ -122,9 +122,24 @@ noncomputable instance instNonUnitalNonAssocRing : NonUnitalNonAssocRing (Grothe
 
 end NonUnitalNonAssoc
 
-section Semiring
+section NonUnitalSemiring
 
-variable {S : Type*} [Semiring S]
+variable {S : Type*} [NonUnitalSemiring S]
+
+/-- The Grothendieck group of a non-unital semiring is a non-unital ring. -/
+noncomputable instance instNonUnitalRing : NonUnitalRing (GrothendieckAddGroup S) where
+  __ := (inferInstance : NonUnitalNonAssocRing (GrothendieckAddGroup S))
+  mul_assoc x y z := by
+    obtain ⟨a, b, rfl⟩ := exists_eq_sub_of x
+    obtain ⟨c, d, rfl⟩ := exists_eq_sub_of y
+    obtain ⟨e, f, rfl⟩ := exists_eq_sub_of z
+    simp only [sub_mul, mul_sub, of_mul_of, mul_assoc]
+
+end NonUnitalSemiring
+
+section NonAssocSemiring
+
+variable {S : Type*} [NonAssocSemiring S]
 
 /-- The unit of the Grothendieck ring of a semiring. -/
 noncomputable instance instOne : One (GrothendieckAddGroup S) := ⟨of 1⟩
@@ -132,9 +147,9 @@ noncomputable instance instOne : One (GrothendieckAddGroup S) := ⟨of 1⟩
 /-- The unit of the Grothendieck ring is the image of the unit of the semiring. -/
 theorem one_def : (1 : GrothendieckAddGroup S) = of 1 := (rfl)
 
-/-- **The Grothendieck ring**: the group completion of the additive monoid underlying a semiring
-is a ring, with the multiplication induced by that of the semiring. -/
-noncomputable instance instRing : Ring (GrothendieckAddGroup S) where
+/-- The Grothendieck group of a possibly nonassociative semiring is a possibly nonassociative
+ring. -/
+noncomputable instance instNonAssocRing : NonAssocRing (GrothendieckAddGroup S) where
   __ := (inferInstance : NonUnitalNonAssocRing (GrothendieckAddGroup S))
   one_mul x := by
     obtain ⟨a, b, rfl⟩ := exists_eq_sub_of x
@@ -142,11 +157,18 @@ noncomputable instance instRing : Ring (GrothendieckAddGroup S) where
   mul_one x := by
     obtain ⟨a, b, rfl⟩ := exists_eq_sub_of x
     rw [one_def, sub_mul, of_mul_of, of_mul_of, mul_one, mul_one]
-  mul_assoc x y z := by
-    obtain ⟨a, b, rfl⟩ := exists_eq_sub_of x
-    obtain ⟨c, d, rfl⟩ := exists_eq_sub_of y
-    obtain ⟨e, f, rfl⟩ := exists_eq_sub_of z
-    simp only [sub_mul, mul_sub, of_mul_of, mul_assoc]
+
+end NonAssocSemiring
+
+section Semiring
+
+variable {S : Type*} [Semiring S]
+
+/-- **The Grothendieck ring**: the group completion of the additive monoid underlying a semiring
+is a ring, with the multiplication induced by that of the semiring. -/
+noncomputable instance instRing : Ring (GrothendieckAddGroup S) where
+  __ := (inferInstance : NonUnitalRing (GrothendieckAddGroup S))
+  __ := (inferInstance : NonAssocRing (GrothendieckAddGroup S))
 
 /-- The canonical map from a semiring into its Grothendieck ring. -/
 noncomputable def ofRingHom : S →+* GrothendieckAddGroup S where
@@ -159,11 +181,6 @@ theorem coe_ofRingHom : ⇑(ofRingHom : S →+* GrothendieckAddGroup S) = of := 
 
 /-- The canonical ring map agrees with the canonical additive map on elements. -/
 theorem ofRingHom_apply (a : S) : ofRingHom a = of a := (rfl)
-
-/-- A cancellative semiring embeds into its Grothendieck ring. -/
-theorem ofRingHom_injective [IsCancelAdd S] :
-    Function.Injective (ofRingHom : S →+* GrothendieckAddGroup S) :=
-  of_injective
 
 /-! ### The universal property, in ring form -/
 
@@ -192,9 +209,13 @@ noncomputable def liftRingHom : (S →+* R) ≃ (GrothendieckAddGroup S →+* R)
   left_inv f := RingHom.ext fun a => lift_apply_of f.toAddMonoidHom a
   right_inv F := ringHom_ext fun a => lift_apply_of (F.comp ofRingHom).toAddMonoidHom a
 
+/-- The ring-homomorphism extension evaluates to the original semiring homomorphism on each
+generator. -/
 theorem liftRingHom_apply_of (f : S →+* R) (a : S) : liftRingHom f (of a) = f a :=
   lift_apply_of f.toAddMonoidHom a
 
+/-- The inverse universal-property equivalence restricts a ring homomorphism along
+`ofRingHom`. -/
 @[simp]
 theorem liftRingHom_symm_apply (F : GrothendieckAddGroup S →+* R) :
     liftRingHom.symm F = F.comp ofRingHom := (rfl)

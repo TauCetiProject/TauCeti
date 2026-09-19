@@ -444,9 +444,7 @@ theorem RegularFormClass.rank_zero : RegularFormClass.rank (0 : RegularFormClass
 
 /-! ### Induction on the rank -/
 
-/-- Peeling the last weight off a presentation of positive rank splits its class as the
-orthogonal sum of the class of the remaining weights and a rank-one class. -/
-theorem RegularFormClass.mk_succ {n : ℕ} (w : Fin (n + 1) → Kˣ) :
+private theorem RegularFormClass.mk_succ {n : ℕ} (w : Fin (n + 1) → Kˣ) :
     Quotient.mk (regularFormSetoid K) ⟨n + 1, w⟩ =
       Quotient.mk (regularFormSetoid K) ⟨n, Fin.init w⟩ +
         Quotient.mk (regularFormSetoid K) ⟨1, fun _ => w (Fin.last n)⟩ := by
