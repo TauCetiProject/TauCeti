@@ -21,6 +21,9 @@ import Mathlib.Tactic.NoncommRing
 
 * `TauCeti.product_union_eq_union_product` rearranges a union of products of finsets.
 * `TauCeti.card_nonempty_finset` counts the nonempty finsets of a finite type.
+* `TauCeti.card_even_card_finset` and `TauCeti.card_odd_card_finset` count the finsets of a
+  nonempty finite type by the parity of their cardinality: each parity accounts for exactly half
+  of them.
 * `Finset.sum_powerset_neg_one_pow_mul_eq_zero` pairs subsets that differ by one element
   to cancel a signed sum.
 * `Finset.sum_Icc_neg_one_pow_card_sub_card_left` and
@@ -60,6 +63,74 @@ theorem card_nonempty_finset {ι : Type*} [Finite ι] :
     rw [Finset.filter_ne', Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ,
       Fintype.card_finset]
   rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, h]
+
+/-- Deleting a fixed point `i` from a subset that contains it, and adjoining it to one that does
+not. This is the parity-reversing involution of the subsets of `ι` behind
+`TauCeti.card_even_card_finset`. -/
+private def parityFlip {ι : Type*} [DecidableEq ι] (i : ι) (s : Finset ι) : Finset ι :=
+  if i ∈ s then s.erase i else insert i s
+
+private theorem parityFlip_parityFlip {ι : Type*} [DecidableEq ι] (i : ι) (s : Finset ι) :
+    parityFlip i (parityFlip i s) = s := by
+  by_cases h : i ∈ s
+  · simp [parityFlip, h, Finset.insert_erase h]
+  · simp [parityFlip, h, Finset.erase_insert h]
+
+private theorem even_card_parityFlip {ι : Type*} [DecidableEq ι] (i : ι) (s : Finset ι) :
+    Even (parityFlip i s).card ↔ ¬ Even s.card := by
+  by_cases h : i ∈ s
+  · have h1 : 1 ≤ s.card := Finset.card_pos.mpr ⟨i, h⟩
+    simp [parityFlip, h, Finset.card_erase_of_mem h, Nat.even_sub h1]
+  · simp [parityFlip, h, Finset.card_insert_of_notMem h, Nat.even_add_one]
+
+/-- **Exactly half the subsets of a nonempty finite type have even cardinality.** Deleting a fixed
+point from the subsets that contain it, and adjoining it to those that do not, is an involution of
+the subsets of `ι` reversing the parity of the cardinality; the two parities are therefore
+equinumerous, and together they exhaust the `2 ^ n` subsets. -/
+theorem card_even_card_finset {ι : Type*} [Finite ι] [Nonempty ι] :
+    Nat.card {S : Finset ι // Even S.card} = 2 ^ (Nat.card ι - 1) := by
+  classical
+  let _ := Fintype.ofFinite ι
+  obtain ⟨i⟩ : Nonempty ι := inferInstance
+  have hbij : (Finset.univ.filter fun s : Finset ι => Even s.card).card
+      = (Finset.univ.filter fun s : Finset ι => ¬ Even s.card).card := by
+    refine Finset.card_bij' (fun s _ => parityFlip i s) (fun s _ => parityFlip i s) ?_ ?_ ?_ ?_
+    · intro s hs
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hs ⊢
+      exact fun hcon => (even_card_parityFlip i s).mp hcon hs
+    · intro s hs
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hs ⊢
+      exact (even_card_parityFlip i s).mpr hs
+    · exact fun s _ => parityFlip_parityFlip i s
+    · exact fun s _ => parityFlip_parityFlip i s
+  have htot : (Finset.univ.filter fun s : Finset ι => Even s.card).card
+      + (Finset.univ.filter fun s : Finset ι => ¬ Even s.card).card = 2 ^ Fintype.card ι := by
+    rw [Finset.card_filter_add_card_filter_not, Finset.card_univ, Fintype.card_finset]
+  have hpow : 2 ^ Fintype.card ι = 2 * 2 ^ (Fintype.card ι - 1) := by
+    have hpos : 1 ≤ Fintype.card ι := Fintype.card_pos
+    rw [← pow_succ', Nat.sub_add_cancel hpos]
+  rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Nat.card_eq_fintype_card]
+  omega
+
+/-- **Exactly half the subsets of a nonempty finite type have odd cardinality**, the other half of
+`TauCeti.card_even_card_finset`. -/
+theorem card_odd_card_finset {ι : Type*} [Finite ι] [Nonempty ι] :
+    Nat.card {S : Finset ι // Odd S.card} = 2 ^ (Nat.card ι - 1) := by
+  classical
+  let _ := Fintype.ofFinite ι
+  have heven := card_even_card_finset (ι := ι)
+  have htot : (Finset.univ.filter fun s : Finset ι => Even s.card).card
+      + (Finset.univ.filter fun s : Finset ι => ¬ Even s.card).card = 2 ^ Fintype.card ι := by
+    rw [Finset.card_filter_add_card_filter_not, Finset.card_univ, Fintype.card_finset]
+  have hodd : (Finset.univ.filter fun s : Finset ι => ¬ Even s.card).card
+      = (Finset.univ.filter fun s : Finset ι => Odd s.card).card := by
+    simp only [Nat.not_even_iff_odd]
+  have hpow : 2 ^ Fintype.card ι = 2 * 2 ^ (Fintype.card ι - 1) := by
+    have hpos : 1 ≤ Fintype.card ι := Fintype.card_pos
+    rw [← pow_succ', Nat.sub_add_cancel hpos]
+  rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Nat.card_eq_fintype_card]
+  rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Nat.card_eq_fintype_card] at heven
+  omega
 
 end TauCeti
 
