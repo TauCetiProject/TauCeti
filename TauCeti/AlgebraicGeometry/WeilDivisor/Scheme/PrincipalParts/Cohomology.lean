@@ -66,11 +66,14 @@ theorem subsingleton_cohomology_sheaf_add_two
     (D : SchemeWeilDivisor X) (n : ℕ) :
     Subsingleton (Scheme.Modules.Cohomology (sheaf D) (n + 2)) :=
   have : (principalPartsShortComplex D).X₂.presheaf.IsFlasque :=
-    inferInstanceAs (Scheme.rationalFunctions X).presheaf.IsFlasque
+    principalPartsShortComplex_X₂ D ▸
+      inferInstanceAs (Scheme.rationalFunctions X).presheaf.IsFlasque
   have : (principalPartsShortComplex D).X₃.presheaf.IsFlasque :=
-    inferInstanceAs (principalParts D).presheaf.IsFlasque
-  Scheme.Modules.subsingleton_cohomology_X₁ (principalPartsShortComplex_shortExact hclosed D)
-    (n + 1) (n + 2) rfl inferInstance inferInstance
+    principalPartsShortComplex_X₃ D ▸
+      inferInstanceAs (principalParts D).presheaf.IsFlasque
+  principalPartsShortComplex_X₁ D ▸
+    Scheme.Modules.subsingleton_cohomology_X₁ (principalPartsShortComplex_shortExact hclosed D)
+      (n + 1) (n + 2) rfl inferInstance inferInstance
 
 /-- **Line bundles on a curve have no cohomology above degree one.** On a Noetherian integral
 scheme of dimension at most one whose codimension-one local rings are discrete valuation rings,
