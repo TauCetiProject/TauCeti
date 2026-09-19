@@ -13,8 +13,8 @@ import TauCeti.NumberTheory.NumberField.Inertia
 # The ramified primes of a multiquadratic field
 
 Let `d₁, …, dₙ` be squarefree integers and let `M = ℚ(√d₁, …, √dₙ)`. A rational prime `p`
-ramifies in `M` exactly when it ramifies in one of the possibly trivial quadratic factors
-`ℚ(√dᵢ)`, that is, when it divides one of the fundamental discriminants
+ramifies in `M` exactly when it ramifies in one of the possibly trivial square-root-generated
+factors `ℚ(√dᵢ)`, that is, when it divides one of the fundamental discriminants
 `fundamentalDiscriminant dᵢ`. Concretely:
 
 * an odd prime ramifies in `M` exactly when it divides some `dᵢ`;
@@ -62,7 +62,7 @@ variable {ι : Type*} [Finite ι] {L : Type*} [Field L] [NumberField L]
 /-- **The ramified primes of a multiquadratic field.** Let `r i` be square roots of squarefree
 integers `d i` in a number field. A rational prime ramifies in `ℚ(r i : i)` exactly when it
 divides the fundamental discriminant of one of the `d i`, that is, exactly when it ramifies in one
-of the possibly trivial quadratic factors `ℚ(r i)`. -/
+of the possibly trivial square-root-generated factors `ℚ(r i)`. -/
 theorem mem_ramifiedPrimes_adjoin_range_iff (hd : ∀ i, Squarefree (d i))
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ L (d i)) {p : ℕ} (hp : p.Prime) :
     p ∈ ramifiedPrimes (adjoin ℚ (Set.range r)) ↔
