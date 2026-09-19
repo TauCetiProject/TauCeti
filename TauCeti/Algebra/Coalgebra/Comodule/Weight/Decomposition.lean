@@ -67,7 +67,7 @@ private theorem pairCoeff_coord_comp_comul
   · simp
 
 /-- The coordinate of a coaction along a group-like basis vector has that group-like weight. -/
-private theorem coactComponent_coord_mem_weightSpace
+theorem coactComponent_groupLikeBasis_coord_mem_weightSpace
     (hC : Subcoalgebra.groupLikeSetSpan (R := k) (C := C) Set.univ = ⊤)
     (g : GroupLike k C) (m : M) :
     coactComponent (R := k) (C := C) (M := M) ((Subcoalgebra.groupLikeBasis hC).coord g) m ∈
@@ -116,17 +116,24 @@ theorem iSup_groupLikeWeightSpace_eq_top
   refine Submodule.finsuppSum_mem _ _ _ _ fun g _ ↦ ?_
   refine Submodule.mem_iSup_of_mem g ?_
   rw [he, ← coactComponent_apply]
-  exact coactComponent_coord_mem_weightSpace hC g m
+  exact coactComponent_groupLikeBasis_coord_mem_weightSpace hC g m
+
+section Internal
+
+attribute [local instance] Classical.decEq
 
 /-- **A torsion-free comodule over a coalgebra spanned by its group-like elements is the internal
 direct sum of its group-like weight spaces.** Over a field this says that every representation
 of a diagonalizable group is diagonalizable. -/
-theorem isInternal_groupLikeWeightSpace [DecidableEq (GroupLike k C)] [Module.IsTorsionFree k M]
+theorem isInternal_groupLikeWeightSpace [Module.IsTorsionFree k M]
     (hC : Subcoalgebra.groupLikeSetSpan (R := k) (C := C) Set.univ = ⊤) :
     DirectSum.IsInternal
       (_root_.GroupLike.weightSpace (M := M) : GroupLike k C → Submodule k M) := by
+  classical
   let _ : Module.Projective k C := Module.Projective.of_basis (Subcoalgebra.groupLikeBasis hC)
   exact (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mpr
     ⟨iSupIndep_groupLikeWeightSpace, iSup_groupLikeWeightSpace_eq_top hC⟩
+
+end Internal
 
 end TauCeti.Comodule
