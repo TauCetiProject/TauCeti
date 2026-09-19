@@ -115,6 +115,8 @@ theorem denseRange_algebraMap_pi_liesOver :
   have hΦs : Function.Surjective Φ := fun y ↦
     ⟨(fun w ↦ y (e w), fun u ↦ (Finset.notMem_empty _ u.2).elim), by
       funext w
+      -- The codomain `w.1.adicCompletion L` depends on the index, so expose the reindexed
+      -- application before eliminating the equality `e (e.symm w) = w`.
       change y (e (e.symm w)) = y w
       cases e.apply_symm_apply w
       rfl⟩
