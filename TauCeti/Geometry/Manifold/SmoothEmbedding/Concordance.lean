@@ -19,11 +19,12 @@ embedding `M × [0, 1] → N × [0, 1]` which sends `M × {0}`, `M × {1}` and `
 is an annulus in `N × [0, 1]`; this is the relation underlying the knot concordance group.
 
 To avoid manifolds with boundary, a concordance is stored in its *collared* form: a `C^n` embedding
-`F : M × ℝ → N × ℝ` which is the product `f × id` for `t ≤ 0`, the product `g × id` for `1 ≤ t`,
-and maps `M × (0, 1)` into `N × (0, 1)`. Its restriction to `M × [0, 1]` is a concordance in the
-sense above which is a product near both ends; by the collar theorem, every smooth concordance
-can be made a product near its ends, so no concordances are lost. The product ends are what
-make concordances stack smoothly.
+`F : M × ℝ → N × ℝ` which is the product `f × id` on some neighborhood of the initial end, the
+product `g × id` on some neighborhood of the final end, and maps `M × (0, 1)` into
+`N × (0, 1)`. Its restriction to `M × [0, 1]` is therefore a concordance in the sense above which
+is a product near both ends; by the collar theorem, every smooth concordance can be made a product
+near its ends, so no concordances are lost. The product ends are what make concordances stack
+smoothly.
 
 The relation is defined here for arbitrary smooth embeddings, in line with defining isotopy once
 for general maps; smooth knot concordance is the case of `TauCeti.SmoothCircleEmbedding`, whose
@@ -84,15 +85,17 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {n : ℕ∞ω}
 
 /-- A `C^n` **concordance** from the smooth embedding `f` to the smooth embedding `g`, in collared
-form: a `C^n` embedding of `M × ℝ` into `N × ℝ` which is `f × id` for `t ≤ 0`, is `g × id` for
-`1 ≤ t`, and maps `M × (0, 1)` into `N × (0, 1)`. -/
+form: a `C^n` embedding of `M × ℝ` into `N × ℝ` which is `f × id` and `g × id` on neighborhoods
+of the initial and final ends, and maps `M × (0, 1)` into `N × (0, 1)`. -/
 structure Concordance (f g : SmoothEmbedding I J n M N) where
   /-- The track of the concordance, a smooth embedding of `M × ℝ` into `N × ℝ`. -/
   toSmoothEmbedding : SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ)
-  /-- Below time `0` the track is the product of `f` with the identity. -/
-  apply_of_nonpos' (x : M) (t : ℝ) (ht : t ≤ 0) : toSmoothEmbedding (x, t) = (f x, t)
-  /-- Above time `1` the track is the product of `g` with the identity. -/
-  apply_of_one_le' (x : M) (t : ℝ) (ht : 1 ≤ t) : toSmoothEmbedding (x, t) = (g x, t)
+  /-- The track is the product of `f` with the identity on a neighborhood of the initial end. -/
+  exists_pos_apply_eq_left' :
+    ∃ ε : ℝ, 0 < ε ∧ ∀ (x : M) (t : ℝ), t ≤ ε → toSmoothEmbedding (x, t) = (f x, t)
+  /-- The track is the product of `g` with the identity on a neighborhood of the final end. -/
+  exists_pos_apply_eq_right' :
+    ∃ ε : ℝ, 0 < ε ∧ ∀ (x : M) (t : ℝ), 1 - ε ≤ t → toSmoothEmbedding (x, t) = (g x, t)
   /-- The track maps the open slab `M × (0, 1)` into the open slab `N × (0, 1)`. -/
   snd_apply_mem_Ioo' (x : M) (t : ℝ) (ht : t ∈ Ioo 0 1) :
     (toSmoothEmbedding (x, t)).2 ∈ Ioo 0 1
@@ -125,13 +128,29 @@ theorem ext {F G : Concordance f g} (hFG : ∀ p, F p = G p) : F = G :=
 
 variable (F : Concordance f g)
 
+/-- A concordance is the product of its initial embedding with the identity on a positive-width
+collar. -/
+theorem exists_pos_apply_eq_left :
+    ∃ ε : ℝ, 0 < ε ∧ ∀ (x : M) (t : ℝ), t ≤ ε → F (x, t) = (f x, t) := by
+  rcases F.exists_pos_apply_eq_left' with ⟨ε, hε, hF⟩
+  exact ⟨ε, hε, fun x t ht => by simpa only [← coe_toSmoothEmbedding] using hF x t ht⟩
+
+/-- A concordance is the product of its final embedding with the identity on a positive-width
+collar. -/
+theorem exists_pos_apply_eq_right :
+    ∃ ε : ℝ, 0 < ε ∧ ∀ (x : M) (t : ℝ), 1 - ε ≤ t → F (x, t) = (g x, t) := by
+  rcases F.exists_pos_apply_eq_right' with ⟨ε, hε, hF⟩
+  exact ⟨ε, hε, fun x t ht => by simpa only [← coe_toSmoothEmbedding] using hF x t ht⟩
+
 /-- A concordance is the product of its initial embedding with the identity for `t ≤ 0`. -/
-theorem apply_of_nonpos (x : M) {t : ℝ} (ht : t ≤ 0) : F (x, t) = (f x, t) :=
-  F.apply_of_nonpos' x t ht
+theorem apply_of_nonpos (x : M) {t : ℝ} (ht : t ≤ 0) : F (x, t) = (f x, t) := by
+  rcases F.exists_pos_apply_eq_left with ⟨ε, hε, hF⟩
+  exact hF x t (ht.trans hε.le)
 
 /-- A concordance is the product of its final embedding with the identity for `1 ≤ t`. -/
-theorem apply_of_one_le (x : M) {t : ℝ} (ht : 1 ≤ t) : F (x, t) = (g x, t) :=
-  F.apply_of_one_le' x t ht
+theorem apply_of_one_le (x : M) {t : ℝ} (ht : 1 ≤ t) : F (x, t) = (g x, t) := by
+  rcases F.exists_pos_apply_eq_right with ⟨ε, hε, hF⟩
+  exact hF x t (by linarith)
 
 /-- At time `0` a concordance is its initial embedding. -/
 @[simp]
@@ -183,8 +202,12 @@ def transDiffeomorph (F : Concordance f g) (e : N ≃ₘ^n⟮J, J⟯ P) :
     Concordance (f.transDiffeomorph e) (g.transDiffeomorph e) where
   toSmoothEmbedding :=
     F.toSmoothEmbedding.transDiffeomorph (e.prodCongr (Diffeomorph.refl 𝓘(ℝ) ℝ n))
-  apply_of_nonpos' x t ht := by simp [F.apply_of_nonpos x ht]
-  apply_of_one_le' x t ht := by simp [F.apply_of_one_le x ht]
+  exists_pos_apply_eq_left' := by
+    rcases F.exists_pos_apply_eq_left' with ⟨ε, hε, hF⟩
+    exact ⟨ε, hε, fun x t ht => by simp [hF x t ht]⟩
+  exists_pos_apply_eq_right' := by
+    rcases F.exists_pos_apply_eq_right with ⟨ε, hε, hF⟩
+    exact ⟨ε, hε, fun x t ht => by simp [hF x t ht]⟩
   snd_apply_mem_Ioo' x t ht := by simpa using F.snd_apply_mem_Ioo' x t ht
 
 @[simp]
@@ -198,8 +221,12 @@ def compDiffeomorph (F : Concordance f g) (e : M' ≃ₘ^n⟮I, I⟯ M) :
     Concordance (f.compDiffeomorph e) (g.compDiffeomorph e) where
   toSmoothEmbedding :=
     F.toSmoothEmbedding.compDiffeomorph (e.prodCongr (Diffeomorph.refl 𝓘(ℝ) ℝ n))
-  apply_of_nonpos' x t ht := by simp [F.apply_of_nonpos _ ht]
-  apply_of_one_le' x t ht := by simp [F.apply_of_one_le _ ht]
+  exists_pos_apply_eq_left' := by
+    rcases F.exists_pos_apply_eq_left with ⟨ε, hε, hF⟩
+    exact ⟨ε, hε, fun x t ht => by simp [hF _ t ht]⟩
+  exists_pos_apply_eq_right' := by
+    rcases F.exists_pos_apply_eq_right with ⟨ε, hε, hF⟩
+    exact ⟨ε, hε, fun x t ht => by simp [hF _ t ht]⟩
   snd_apply_mem_Ioo' x t ht := by simpa using F.snd_apply_mem_Ioo' (e x) t ht
 
 @[simp]
@@ -250,8 +277,8 @@ private theorem conjTime_apply
 /-- The constant concordance from `f` to itself, whose track is `f × id`. -/
 def refl (f : SmoothEmbedding I J n M N) : Concordance f f where
   toSmoothEmbedding := f.prodMap SmoothEmbedding.id
-  apply_of_nonpos' _ _ _ := by simp
-  apply_of_one_le' _ _ _ := by simp
+  exists_pos_apply_eq_left' := ⟨1, by norm_num, by simp⟩
+  exists_pos_apply_eq_right' := ⟨1, by norm_num, by simp⟩
   snd_apply_mem_Ioo' _ _ ht := by simpa using ht
 
 @[simp]
@@ -261,11 +288,15 @@ theorem refl_apply (f : SmoothEmbedding I J n M N) (p : M × ℝ) : refl f p = (
 /-- The reversed concordance from `g` to `f`, obtained by reflecting time in `1 / 2`. -/
 def symm (F : Concordance f g) : Concordance g f where
   toSmoothEmbedding := conjTime F.toSmoothEmbedding (-1) 1 (by norm_num)
-  apply_of_nonpos' x t ht := by
-    rw [conjTime_apply, coe_toSmoothEmbedding, F.apply_of_one_le x (by linarith)]
+  exists_pos_apply_eq_left' := by
+    rcases F.exists_pos_apply_eq_right with ⟨ε, hε, hF⟩
+    refine ⟨ε, hε, fun x t ht => ?_⟩
+    rw [conjTime_apply, coe_toSmoothEmbedding, hF x (-1 * t + 1) (by linarith)]
     ext <;> simp
-  apply_of_one_le' x t ht := by
-    rw [conjTime_apply, coe_toSmoothEmbedding, F.apply_of_nonpos x (by linarith)]
+  exists_pos_apply_eq_right' := by
+    rcases F.exists_pos_apply_eq_left with ⟨ε, hε, hF⟩
+    refine ⟨ε, hε, fun x t ht => ?_⟩
+    rw [conjTime_apply, coe_toSmoothEmbedding, hF x (-1 * t + 1) (by linarith)]
     ext <;> simp
   snd_apply_mem_Ioo' x t ht := by
     rw [conjTime_apply, coe_toSmoothEmbedding]
@@ -412,17 +443,27 @@ at triple speed during `[2/3, 1]`. -/
 def trans [FiniteDimensional ℝ E'] (F : Concordance f g) (G : Concordance g h) :
     Concordance f h where
   toSmoothEmbedding := .ofIsSmoothEmbedding (stack F G) (isSmoothEmbedding_stack F G)
-  apply_of_nonpos' x t ht := by
+  exists_pos_apply_eq_left' := by
+    rcases F.exists_pos_apply_eq_left with ⟨ε, hε, hF⟩
+    let δ := min (ε / 3) (1 / 4)
+    refine ⟨δ, lt_min (by linarith) (by norm_num), fun x t ht => ?_⟩
+    have hδε : δ ≤ ε / 3 := min_le_left _ _
+    have hδ : δ ≤ 1 / 4 := min_le_right _ _
     have ht' : t ≤ 1 / 2 := by linarith
     rw [ofIsSmoothEmbedding_apply]
     simp only [stack, ht', ↓reduceIte, lower_apply]
-    rw [F.apply_of_nonpos x (by linarith)]
+    rw [hF x (3 * t) (by linarith)]
     ext <;> simp
-  apply_of_one_le' x t ht := by
+  exists_pos_apply_eq_right' := by
+    rcases G.exists_pos_apply_eq_right with ⟨ε, hε, hG⟩
+    let δ := min (ε / 3) (1 / 4)
+    refine ⟨δ, lt_min (by linarith) (by norm_num), fun x t ht => ?_⟩
+    have hδε : δ ≤ ε / 3 := min_le_left _ _
+    have hδ : δ ≤ 1 / 4 := min_le_right _ _
     have ht' : ¬ t ≤ 1 / 2 := by linarith
     rw [ofIsSmoothEmbedding_apply]
     simp only [stack, ht', ↓reduceIte, upper_apply]
-    rw [G.apply_of_one_le x (by linarith)]
+    rw [hG x (3 * t - 2) (by linarith)]
     ext <;> simp
   snd_apply_mem_Ioo' x t ht := by
     rw [ofIsSmoothEmbedding_apply]
@@ -473,21 +514,30 @@ private theorem contMDiff_smoothTransitionUnit (hn : n ≤ ∞) :
   · exact Real.smoothTransition.continuous.subtype_mk _
   · exact (Real.smoothTransition.contDiff.of_le hn).contMDiff
 
+/-- A smooth transition which is constant on neighborhoods of both ends of the unit interval. -/
+private def collaredSmoothTransitionUnit (t : ℝ) : unitInterval :=
+  smoothTransitionUnit (2 * t - 1 / 2)
+
+private theorem contMDiff_collaredSmoothTransitionUnit (hn : n ≤ ∞) :
+    ContMDiff 𝓘(ℝ) (𝓡∂ 1) n collaredSmoothTransitionUnit :=
+  (contMDiff_smoothTransitionUnit hn).comp
+    (((contDiff_const.mul contDiff_id).sub contDiff_const).contMDiff)
+
 /-- The diffeomorphism `(y, t) ↦ (Φ (ρ t, y), t)` of `N × ℝ`, where `ρ` is the smooth transition
 from `0` to `1`. -/
 private def traceDiffeomorph (Φ : Diffeotopy J n N) (hn : n ≤ ∞) :
     (N × ℝ) ≃ₘ^n⟮J.prod 𝓘(ℝ), J.prod 𝓘(ℝ)⟯ (N × ℝ) where
-  toFun p := (Φ (smoothTransitionUnit p.2, p.1), p.2)
-  invFun p := ((Φ.toDiffeomorph.symm (smoothTransitionUnit p.2, p.1)).2, p.2)
+  toFun p := (Φ (collaredSmoothTransitionUnit p.2, p.1), p.2)
+  invFun p := ((Φ.toDiffeomorph.symm (collaredSmoothTransitionUnit p.2, p.1)).2, p.2)
   left_inv p := by
-    set q := (smoothTransitionUnit p.2, p.1)
+    set q := (collaredSmoothTransitionUnit p.2, p.1)
     have hp : (q.1, (Φ.toDiffeomorph q).2) = Φ.toDiffeomorph q := (Φ.toDiffeomorph_apply q).symm
     ext
     · simp only [Diffeotopy.coe_apply]
       rw [hp, Φ.toDiffeomorph.symm_apply_apply]
     · rfl
   right_inv p := by
-    set q := (smoothTransitionUnit p.2, p.1)
+    set q := (collaredSmoothTransitionUnit p.2, p.1)
     have hp : (q.1, (Φ.toDiffeomorph.symm q).2) = Φ.toDiffeomorph.symm q :=
       (Φ.toDiffeomorph_symm_apply q).symm
     ext
@@ -495,29 +545,34 @@ private def traceDiffeomorph (Φ : Diffeotopy J n N) (hn : n ≤ ∞) :
       rw [hp, Φ.toDiffeomorph.apply_symm_apply]
     · rfl
   contMDiff_toFun :=
-    (Φ.contMDiff.comp (((contMDiff_smoothTransitionUnit hn).comp contMDiff_snd).prodMk
+    (Φ.contMDiff.comp (((contMDiff_collaredSmoothTransitionUnit hn).comp contMDiff_snd).prodMk
       contMDiff_fst)).prodMk contMDiff_snd
   contMDiff_invFun :=
     (contMDiff_snd.comp (Φ.toDiffeomorph.symm.contMDiff.comp
-      (((contMDiff_smoothTransitionUnit hn).comp contMDiff_snd).prodMk contMDiff_fst))).prodMk
-      contMDiff_snd
+      (((contMDiff_collaredSmoothTransitionUnit hn).comp contMDiff_snd).prodMk
+        contMDiff_fst))).prodMk contMDiff_snd
 
 omit [IsManifold J n N] in
 @[simp]
 private theorem traceDiffeomorph_apply (Φ : Diffeotopy J n N) (hn : n ≤ ∞) (p : N × ℝ) :
-    traceDiffeomorph Φ hn p = (Φ (smoothTransitionUnit p.2, p.1), p.2) :=
+    traceDiffeomorph Φ hn p = (Φ (collaredSmoothTransitionUnit p.2, p.1), p.2) :=
   (rfl)
 
 /-- The **trace of a diffeotopy** `Φ` of `N`: the concordance `(x, t) ↦ (Φ (ρ t, f x), t)` from `f`
-to its image under the final diffeomorphism of `Φ`, where `ρ` is `Real.smoothTransition`. -/
+to its image under the final diffeomorphism of `Φ`, where
+`ρ(t) = Real.smoothTransition (2 * t - 1 / 2)`. -/
 def ofDiffeotopy (hn : n ≤ ∞) (Φ : Diffeotopy J n N) (f : SmoothEmbedding I J n M N) :
     Concordance f (f.transDiffeomorph Φ.final) where
   toSmoothEmbedding := (f.prodMap SmoothEmbedding.id).transDiffeomorph (traceDiffeomorph Φ hn)
-  apply_of_nonpos' x t ht := by
-    have : smoothTransitionUnit t = 0 := Subtype.ext (Real.smoothTransition.zero_of_nonpos ht)
+  exists_pos_apply_eq_left' := by
+    refine ⟨1 / 4, by norm_num, fun x t ht => ?_⟩
+    have : collaredSmoothTransitionUnit t = 0 :=
+      Subtype.ext (Real.smoothTransition.zero_of_nonpos (by linarith))
     simp [this]
-  apply_of_one_le' x t ht := by
-    have : smoothTransitionUnit t = 1 := Subtype.ext (Real.smoothTransition.one_of_one_le ht)
+  exists_pos_apply_eq_right' := by
+    refine ⟨1 / 4, by norm_num, fun x t ht => ?_⟩
+    have : collaredSmoothTransitionUnit t = 1 :=
+      Subtype.ext (Real.smoothTransition.one_of_one_le (by linarith))
     simp [this, Diffeotopy.final_apply]
   snd_apply_mem_Ioo' _ _ ht := by simpa using ht
 
@@ -525,9 +580,10 @@ def ofDiffeotopy (hn : n ≤ ∞) (Φ : Diffeotopy J n N) (f : SmoothEmbedding I
 theorem ofDiffeotopy_apply (hn : n ≤ ∞) (Φ : Diffeotopy J n N) (f : SmoothEmbedding I J n M N)
     (p : M × ℝ) :
     ofDiffeotopy hn Φ f p =
-      (Φ (⟨Real.smoothTransition p.2, Real.smoothTransition.nonneg _,
+      (Φ (⟨Real.smoothTransition (2 * p.2 - 1 / 2), Real.smoothTransition.nonneg _,
         Real.smoothTransition.le_one _⟩, f p.1), p.2) := by
-  simp [← coe_toSmoothEmbedding, ofDiffeotopy, smoothTransitionUnit]
+  simp [← coe_toSmoothEmbedding, ofDiffeotopy, collaredSmoothTransitionUnit,
+    smoothTransitionUnit]
 
 end Concordance
 
