@@ -30,7 +30,7 @@ entire `ModularForm.Λ`, so the completed function is entire.  On `Γ₁(N)`, Ta
 
 * `UpperHalfPlane.resToImagAxis_slash_frickeGL`: the Fricke slash on the rescaled imaginary axis.
 * `CuspForm.frickeCompletedL`: the level-`N` completed L-function.
-* `CuspForm.frickeCompletedL_eq`: its expression as `N^(s/2) · ModularForm.Λ`.
+* `CuspForm.frickeCompletedL_eq_cpow_mul_Λ`: its expression as `N^(s/2) · ModularForm.Λ`.
 * `CuspForm.frickeCompletedL_functional_equation`: the two-form Fricke functional equation.
 * `CuspForm.frickeCompletedL_functional_equation_Gamma1`: the functional equation on `Γ₁(N)`
   with the bundled normalized Fricke companion.
@@ -179,18 +179,10 @@ noncomputable def frickeCompletedL (f : CuspForm Γ k) (N : ℕ+) (s : ℂ) : �
   mellin (fun t : ℝ ↦ resToImagAxis (f : ℍ → ℂ) (t / Real.sqrt (N : ℕ))) s
 
 /-- The defining equation for the level-`N` completed L-function. -/
-lemma frickeCompletedL_apply (f : CuspForm Γ k) (N : ℕ+) (s : ℂ) :
+@[simp] lemma frickeCompletedL_apply (f : CuspForm Γ k) (N : ℕ+) (s : ℂ) :
     frickeCompletedL f N s =
       mellin (fun t : ℝ ↦ resToImagAxis (f : ℍ → ℂ) (t / Real.sqrt (N : ℕ))) s :=
   (rfl)
-
-private lemma sqrt_cpow_eq (N : ℕ) (s : ℂ) :
-    (Real.sqrt N : ℂ) ^ s = (N : ℂ) ^ (s / 2) := by
-  have hN : (0 : ℝ) ≤ (N : ℝ) := Nat.cast_nonneg N
-  -- `cpow_mul_ofReal_nonneg` expects a real base and its exponent as an explicit product.
-  rw [show (N : ℂ) = ((N : ℝ) : ℂ) by norm_cast,
-    show s / 2 = ((1 / 2 : ℝ) : ℂ) * s by push_cast; ring,
-    Complex.cpow_mul_ofReal_nonneg hN, ← Real.sqrt_eq_rpow]
 
 private theorem frickeCompletedL_eq_sqrt_cpow_mul_Λ [Γ.IsArithmetic]
     (f : CuspForm Γ k) (N : ℕ+) (hk : 0 < k) (s : ℂ) :
@@ -220,11 +212,15 @@ private theorem frickeCompletedL_eq_sqrt_cpow_mul_Λ [Γ.IsArithmetic]
 /-- The level-`N` completed L-function is `N^(s/2)` times Mathlib's completed L-function
 `ModularForm.Λ`.  Thus this definition has the classical completion
 `N^(s/2) (2π)^(-s) Γ(s) L(s, f)` on the Dirichlet-series half-plane. -/
-theorem frickeCompletedL_eq [Γ.IsArithmetic]
+theorem frickeCompletedL_eq_cpow_mul_Λ [Γ.IsArithmetic]
     (f : CuspForm Γ k) (N : ℕ+) (hk : 0 < k) (s : ℂ) :
     frickeCompletedL f N s =
       ((N : ℕ) : ℂ) ^ (s / 2) * ModularForm.Λ hk f s := by
-  rw [frickeCompletedL_eq_sqrt_cpow_mul_Λ f N hk s, sqrt_cpow_eq]
+  rw [frickeCompletedL_eq_sqrt_cpow_mul_Λ f N hk s]
+  -- `cpow_mul_ofReal_nonneg` expects a real base and its exponent as an explicit product.
+  rw [show ((N : ℕ) : ℂ) = (((N : ℕ) : ℝ) : ℂ) by norm_cast,
+    show s / 2 = ((1 / 2 : ℝ) : ℂ) * s by push_cast; ring,
+    Complex.cpow_mul_ofReal_nonneg (Nat.cast_nonneg _), ← Real.sqrt_eq_rpow]
 
 /-- The level-`N` completed L-function of a positive-weight cusp form is entire. -/
 theorem differentiable_frickeCompletedL [Γ.IsArithmetic]
@@ -268,22 +264,20 @@ private lemma scaled_fricke_relation (H G : ℍ → ℂ)
     ← zpow_add₀ Complex.I_ne_zero, ← zpow_add₀ htc, add_neg_cancel, zpow_zero,
     zpow_zero, one_mul, one_mul]
 
-/-- Hecke's two-form functional equation.  If `f` and `g` are positive-weight, width-one cusp
-forms and `g` is the Petersson-normalized Fricke companion of `f`, then
-`Λ_N(k - s, f) = i^k Λ_N(s, g)`.  The two forms may live on different arithmetic carriers, but
-both have weight `k`. -/
+/-- Hecke's two-form functional equation.  If `g` is the Petersson-normalized Fricke companion
+of `f`, then `Λ_N(k - s, f) = i^k Λ_N(s, g)`.  The two forms may live on different carriers, but
+both have weight `k`.  In particular this covers the classical statement for positive-weight
+cusp forms on width-one arithmetic carriers, where `Λ_N` is the entire completion
+`N^(s/2) (2π)^(-s) Γ(s) L(s, ·)` (see `frickeCompletedL_eq_cpow_mul_Λ`); the Mellin identity
+itself needs no weight or width hypothesis. -/
 theorem frickeCompletedL_functional_equation
     {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℝ)}
     (f : CuspForm Γ₁ k) (g : CuspForm Γ₂ k) (N : ℕ) [NeZero N]
-    (_hw₁ : Γ₁.strictWidthInfty = 1) (_hw₂ : Γ₂.strictWidthInfty = 1) (_hk : 0 < k)
     (hg : (g : ℍ → ℂ) =
       (Real.sqrt N : ℂ) ^ (2 - k) • ((f : ℍ → ℂ) ∣[k] TauCeti.frickeGL ℝ N))
     (s : ℂ) :
     frickeCompletedL f (N.toPNat (NeZero.pos N)) ((k : ℂ) - s) =
       Complex.I ^ k * frickeCompletedL g (N.toPNat (NeZero.pos N)) s := by
-  -- The width and weight hypotheses identify these Mellin transforms with the classical entire
-  -- completions; the integral identity itself uses only the normalized Fricke relation.
-  clear _hw₁ _hw₂ _hk
   let A : ℝ → ℂ := fun t ↦ resToImagAxis (f : ℍ → ℂ) (t / Real.sqrt N)
   let B : ℝ → ℂ := fun t ↦ resToImagAxis (g : ℍ → ℂ) (t / Real.sqrt N)
   have hAB {t : ℝ} (ht : 0 < t) :
@@ -322,15 +316,14 @@ open TauCeti
 
 variable {N : ℕ} [NeZero N] {k : ℤ}
 
-/-- Hecke's functional equation for a positive-weight cusp form on `Γ₁(N)`, with the normalized
-Fricke operator providing the companion cusp form. -/
+/-- Hecke's functional equation for a cusp form on `Γ₁(N)`, with the normalized Fricke operator
+providing the companion cusp form. -/
 theorem frickeCompletedL_functional_equation_Gamma1
-    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) (hk : 0 < k) (s : ℂ) :
+    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) (s : ℂ) :
     frickeCompletedL f (N.toPNat (NeZero.pos N)) ((k : ℂ) - s) =
       Complex.I ^ k *
         frickeCompletedL (normalizedFrickeOperatorCusp k f) (N.toPNat (NeZero.pos N)) s := by
   apply frickeCompletedL_functional_equation f (normalizedFrickeOperatorCusp k f) N
-      (by simp) (by simp) hk
   simp only [coe_normalizedFrickeOperatorCusp, atkinLehnerNormalizer_def]
 
 end CuspForm
