@@ -65,7 +65,8 @@ variable {I}
 /-- `biproductIsoFree` sends the `i`-th summand to the `i`-th basis section. -/
 @[reassoc (attr := simp)]
 theorem biproduct_ι_biproductIsoFree_hom (i : I) :
-    biproduct.ι _ i ≫ (biproductIsoFree (R := R) I).hom = ιFree i :=
+    biproduct.ι (fun _ : I ↦ unit (ringCatSheaf R)) i ≫
+      (biproductIsoFree (R := R) I).hom = ιFree i :=
   (biproduct.isColimit _).comp_coconePointUniqueUpToIso_hom (isColimitFreeCofan I) ⟨i⟩
 
 /-- The inverse of `biproductIsoFree` sends the `i`-th basis section to the `i`-th summand. -/
@@ -131,8 +132,8 @@ theorem coevaluation_free [Fintype I] :
     η_ (free (R := ringCatSheaf R) I) (free I) =
       ∑ i, (ρ_ (𝟙_ (SheafOfModules.{u} (ringCatSheaf R)))).inv ≫ (ιFree i ⊗ₘ ιFree i) := by
   rw [coevaluation_free_eq, ExactPairing.biproduct_coevaluation, Preadditive.sum_comp]
-  simp only [ExactPairing.unit_coevaluation, Category.assoc, tensorHom_comp_tensorHom,
-    biproduct_ι_biproductIsoFree_hom]
+  simp only [ExactPairing.unit_coevaluation, Category.assoc, tensorHom_comp_tensorHom]
+  simp only [tensorUnit_eq, biproduct_ι_biproductIsoFree_hom]
 
 end SheafOfModules
 
