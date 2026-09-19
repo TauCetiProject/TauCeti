@@ -27,6 +27,10 @@ weight-space theory.
   with its intersection with the ambient weight space.
 * `LieSubmodule.finrank_inf_weightSpace`: that intersection has the dimension of the submodule's
   weight space.
+* `LieSubmodule.toSubmodule_map_genWeightSpace_incl`: inclusion identifies a submodule's
+  generalized weight space with its intersection with the ambient generalized weight space.
+* `LieSubmodule.finrank_inf_genWeightSpace`: that intersection has the dimension of the
+  submodule's generalized weight space.
 * `TauCeti.Weight.coe_neg_eq_add_of_coe_eq_add`: reading a vanishing sum of four weights as an
   equation between opposite pair sums.
 
@@ -118,6 +122,30 @@ theorem finrank_inf_weightSpace {K : Type*} [Field K] [LieAlgebra K L]
   have hequiv := (LieSubmodule.equivMapOfInjective
     (f := N.incl.restrictLie H) (weightSpace ↥N χ) (injective_incl N)).toLinearEquiv.finrank_eq
   rw [← N.toSubmodule_map_weightSpace_incl χ, TauCeti.finrank_toSubmodule, ← hequiv]
+
+/-- Inclusion of a Lie submodule identifies its generalized weight space with the intersection of
+the ambient generalized weight space and its carrier. -/
+theorem toSubmodule_map_genWeightSpace_incl [LieRing.IsNilpotent H]
+    (N : LieSubmodule R L M) (χ : H → R) :
+    ((genWeightSpace ↥N χ).map (N.incl.restrictLie H)).toSubmodule
+      = (genWeightSpace M χ).toSubmodule ⊓ N.toSubmodule := by
+  rw [LieModule.map_genWeightSpace_eq_of_injective
+      (f := N.incl.restrictLie H) (injective_incl N),
+    LieSubmodule.inf_toSubmodule]
+  congr 1
+  ext x
+  simp
+
+/-- The intersection of an ambient generalized weight space with a Lie submodule has the
+dimension of the corresponding generalized weight space in the submodule. -/
+theorem finrank_inf_genWeightSpace {K : Type*} [Field K] [LieAlgebra K L]
+    [Module K M] [LieModule K L M] {H : LieSubalgebra K L} [LieRing.IsNilpotent H]
+    (N : LieSubmodule K L M) (χ : H → K) :
+    finrank K ((genWeightSpace M χ).toSubmodule ⊓ N.toSubmodule : Submodule K M)
+      = finrank K (genWeightSpace ↥N χ) := by
+  have hequiv := (LieSubmodule.equivMapOfInjective
+    (f := N.incl.restrictLie H) (genWeightSpace ↥N χ) (injective_incl N)).toLinearEquiv.finrank_eq
+  rw [← N.toSubmodule_map_genWeightSpace_incl χ, TauCeti.finrank_toSubmodule, ← hequiv]
 
 end LieSubmodule
 

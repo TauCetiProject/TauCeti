@@ -17,6 +17,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Decomposition
 -- a statement.
 import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Lie.Submodule.DirectSum
+import TauCeti.Algebra.Lie.Weights.Basic
 
 /-!
 # The formal character of a finite-dimensional Lie module
@@ -311,33 +312,6 @@ variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
   {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
   {ι : Type w₁} {N : ι → LieSubmodule K L M}
 
-omit [LieRing.IsNilpotent H] [LieModule K L M] in
-/-- The inclusion of a summand, restricted to a Lie subalgebra, is injective. -/
-private theorem injective_incl_restrictLie (i : ι) :
-    Function.Injective ((N i).incl.restrictLie H) :=
-  fun _ _ hxy ↦ LieSubmodule.injective_incl (N i) hxy
-
-/-- The image in `M` of the `chi`-weight space of a summand is the part of the `chi`-weight space
-of `M` that the summand carries: the inclusion of the summand is injective, and its range is the
-summand itself. -/
-private theorem toSubmodule_map_genWeightSpace_incl (i : ι) (chi : H → K) :
-    ((genWeightSpace (N i : Type w) chi).map ((N i).incl.restrictLie H)).toSubmodule
-      = (genWeightSpace M chi).toSubmodule ⊓ (N i).toSubmodule := by
-  rw [map_genWeightSpace_eq_of_injective (injective_incl_restrictLie i),
-    LieSubmodule.inf_toSubmodule]
-  congr 1
-  ext x
-  simp
-
-/-- Each summand of an internal decomposition contributes its own `chi`-weight space to the
-`chi`-weight space of the ambient module, with the same dimension. -/
-private theorem finrank_inf_genWeightSpace (i : ι) (chi : H → K) :
-    finrank K ((genWeightSpace M chi).toSubmodule ⊓ (N i).toSubmodule : Submodule K M)
-      = finrank K (genWeightSpace (N i : Type w) chi) := by
-  have hequiv := (LieSubmodule.equivMapOfInjective
-    (genWeightSpace (N i : Type w) chi) (injective_incl_restrictLie i)).toLinearEquiv.finrank_eq
-  rw [← toSubmodule_map_genWeightSpace_incl i chi, finrank_toSubmodule, ← hequiv]
-
 variable [FiniteDimensional K M] [LinearWeights K H M] [∀ i, LinearWeights K H (N i : Type w)]
   [Fintype ι] [DecidableEq ι]
 
@@ -366,7 +340,7 @@ theorem formalCharacter_eq_sum_of_isInternal
     ← h.iSup_inf_eq_of_component_mem
       (genWeightSpace M (chi : H → K)).toSubmodule hcomponent,
     finrank_iSup_eq_sum_finrank_of_iSupIndep hindep]
-  exact Finset.sum_congr rfl fun i _ ↦ finrank_inf_genWeightSpace i (chi : H → K)
+  exact Finset.sum_congr rfl fun i _ ↦ (N i).finrank_inf_genWeightSpace (chi : H → K)
 
 end InternalDirectSum
 

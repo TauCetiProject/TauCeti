@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.DirectSum.LinearMap
 public import TauCeti.Algebra.Lie.Weights.Diagonalizable
 public import TauCeti.Algebra.Lie.Weights.Killing
 import TauCeti.LinearAlgebra.Projection
