@@ -142,7 +142,7 @@ private theorem twoByTwo_simplyBlockedRectangles_swap_id :
 
 variable (R : Type*) [CommSemiring R]
 
-/-- The nonzero off-diagonal simply blocked coefficient of the standard two-by-two unknot is the
+/-- The off-diagonal simply blocked coefficient of the standard two-by-two unknot is the
 sole surviving variable. -/
 @[simp]
 theorem twoByTwo_simplyBlockedCoefficient_id_swap :
