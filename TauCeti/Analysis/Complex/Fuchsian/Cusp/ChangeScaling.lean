@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Datum
-public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
-public import Mathlib.Analysis.Complex.Periodic
+public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Coordinate
 
 /-!
 # Changing the scaling of a cusp
@@ -16,10 +14,11 @@ Two normalized data at the same cusp have the same positive primitive generator.
 are related by `σ' = aσ + b`, with `a > 0`, and their widths satisfy `w' = aw`.
 Consequently their exponential coordinates differ by the constant
 `exp (2πib / (aw))`, of modulus one. This is the coordinate transition needed to compare cusp
-charts, including at the added point where the exponential coordinate vanishes.
+charts on the upper half-plane.
 
-The statements use `Function.Periodic.qParam` directly, so they apply before choosing a complex
-structure on the cusp quotient. No discreteness hypothesis is needed once normalized cusp data
+The coordinate accessor `TauCeti.Subgroup.CuspDatum.coordinate` uses
+`Function.Periodic.qParam`, so the statements apply before choosing a complex structure on the
+cusp quotient. No discreteness hypothesis is needed once normalized cusp data
 have been supplied. The affine normal form reuses Mathlib's
 `UpperHalfPlane.exists_SL2_smul_eq_of_apply_zero_one_eq_zero`.
 
@@ -79,26 +78,19 @@ theorem cuspDatum_exists_scaling_eq_affine (hc : D.cusp = D'.cusp) :
 theorem cuspDatum_width_eq_mul (hc : D.cusp = D'.cusp) {a b : ℝ}
     (hσ : ∀ z : ℍ, (↑(D'.scaling • z) : ℂ) = a * (↑(D.scaling • z) : ℂ) + b) :
     D'.width = a * D.width := by
-  have htranslate (E : Γ.CuspDatum) (z : ℍ) :
-      (↑(E.scaling • (E.generator : PSL(2, ℝ)) • z) : ℂ) =
-        (↑(E.scaling • z) : ℂ) + E.width := by
-    have heq : E.scaling • (E.generator : PSL(2, ℝ)) • z =
-        upperRightHom E.width • (E.scaling • z) := by
-      rw [← E.scaling_mul_generator_mul_inv, mul_smul, mul_smul, inv_smul_smul]
-    rw [heq, upperRightHom_apply, UpperHalfPlane.pslMk_smul, coe_specialLinearGroup_apply]
-    simp [Matrix.SpecialLinearGroup.transvection_coe]
   have h := hσ ((D.generator : PSL(2, ℝ)) • UpperHalfPlane.I)
-  rw [htranslate D, cuspDatum_generator_eq hc, htranslate D', hσ] at h
+  rw [Subgroup.CuspDatum.coe_scaling_smul_generator D, cuspDatum_generator_eq hc,
+    Subgroup.CuspDatum.coe_scaling_smul_generator D', hσ] at h
   have hw : (D'.width : ℂ) = (a : ℂ) * D.width := by linear_combination h
   exact_mod_cast hw
 
 /-- The exact change-of-scaling formula for the exponential cusp coordinate. -/
-theorem cuspDatum_qParam_eq (hc : D.cusp = D'.cusp) {a b : ℝ}
+theorem cuspDatum_coordinate_eq (hc : D.cusp = D'.cusp) {a b : ℝ}
     (hσ : ∀ z : ℍ, (↑(D'.scaling • z) : ℂ) = a * (↑(D.scaling • z) : ℂ) + b)
     (z : ℍ) :
-    Function.Periodic.qParam D'.width (↑(D'.scaling • z) : ℂ) =
+    Subgroup.CuspDatum.coordinate D' z =
       Complex.exp (2 * Real.pi * Complex.I * b / (a * D.width)) *
-        Function.Periodic.qParam D.width (↑(D.scaling • z) : ℂ) := by
+        Subgroup.CuspDatum.coordinate D z := by
   have hw := cuspDatum_width_eq_mul hc hσ
   have ha : a ≠ 0 := by
     intro h
@@ -107,18 +99,18 @@ theorem cuspDatum_qParam_eq (hc : D.cusp = D'.cusp) {a b : ℝ}
     exact lt_irrefl _ this
   have ha' : (a : ℂ) ≠ 0 := by exact_mod_cast ha
   have hw' : (D.width : ℂ) ≠ 0 := by exact_mod_cast D.width_pos.ne'
-  simp only [Function.Periodic.qParam, hσ, hw, Complex.ofReal_mul]
+  simp only [Subgroup.CuspDatum.coordinate_apply, Function.Periodic.qParam, hσ, hw,
+    Complex.ofReal_mul]
   rw [← Complex.exp_add]
   congr 1
   field_simp
   ring
 
 /-- The modulus of the exponential cusp coordinate is independent of the normalized scaling. -/
-theorem cuspDatum_norm_qParam_eq (hc : D.cusp = D'.cusp) (z : ℍ) :
-    ‖Function.Periodic.qParam D'.width (↑(D'.scaling • z) : ℂ)‖ =
-      ‖Function.Periodic.qParam D.width (↑(D.scaling • z) : ℂ)‖ := by
+theorem cuspDatum_norm_coordinate_eq (hc : D.cusp = D'.cusp) (z : ℍ) :
+    ‖Subgroup.CuspDatum.coordinate D' z‖ = ‖Subgroup.CuspDatum.coordinate D z‖ := by
   obtain ⟨a, b, -, hσ⟩ := cuspDatum_exists_scaling_eq_affine hc
-  rw [cuspDatum_qParam_eq hc hσ, norm_mul, Complex.norm_exp]
+  rw [cuspDatum_coordinate_eq hc hσ, norm_mul, Complex.norm_exp]
   simp [Complex.div_re, Complex.mul_re, Complex.mul_im]
 
 end TauCeti
