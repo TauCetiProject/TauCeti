@@ -225,6 +225,24 @@ theorem signature_neg (hA : A.IsHermitian) : hA.neg.signature = -hA.signature :=
   rw [realify_neg, Matrix.signature_neg, hA.signature_realify] at h
   omega
 
+/-- A two-dimensional Hermitian form with zero diagonal has signature zero, including
+when its off-diagonal entry vanishes. -/
+theorem signature_eq_zero_of_fin_two_diagonal_eq_zero {A : Matrix (Fin 2) (Fin 2) 𝕜}
+    (hA : A.IsHermitian) (h₀ : A 0 0 = 0) (h₁ : A 1 1 = 0) : hA.signature = 0 := by
+  let P : Matrix (Fin 2) (Fin 2) 𝕜 := !![1, 0; 0, -1]
+  have hP : IsUnit P.det := by
+    simp [P, Matrix.det_fin_two]
+  have hneg : P * A * Pᴴ = -A := by
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [P, Matrix.mul_apply, Fin.sum_univ_two, Matrix.conjTranspose_apply, Matrix.vecMul,
+        Matrix.vecHead, Matrix.vecTail, h₀, h₁]
+  have h : hA.neg.signature = hA.signature := by
+    convert hA.signature_congr hP using 2
+    exact hneg.symm
+  rw [hA.signature_neg] at h
+  omega
+
 /-- Conjugating every entry of a Hermitian matrix preserves its signature: it is the congruence
 by the reflection negating the imaginary coordinates. -/
 @[simp]
