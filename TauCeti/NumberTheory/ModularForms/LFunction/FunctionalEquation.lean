@@ -31,6 +31,8 @@ entire `ModularForm.Λ`, so the completed function is entire.  On `Γ₁(N)`, Ta
 * `UpperHalfPlane.resToImagAxis_slash_frickeGL`: the Fricke slash on the rescaled imaginary axis.
 * `CuspForm.frickeCompletedL`: the level-`N` completed L-function.
 * `CuspForm.frickeCompletedL_eq_cpow_mul_Λ`: its expression as `N^(s/2) · ModularForm.Λ`.
+* `CuspForm.frickeCompletedL_sub_eq_I_zpow_mul`: `Λ_N(k - s, f) = i^k Λ_N(s, g)` for any
+  Fricke companion `g`, without weight or width hypotheses.
 * `CuspForm.frickeCompletedL_functional_equation`: the two-form Fricke functional equation.
 * `CuspForm.frickeCompletedL_functional_equation_Gamma1`: the functional equation on `Γ₁(N)`
   with the bundled normalized Fricke companion.
@@ -264,10 +266,10 @@ private lemma scaled_fricke_relation (H G : ℍ → ℂ)
     ← zpow_add₀ Complex.I_ne_zero, ← zpow_add₀ htc, add_neg_cancel, zpow_zero,
     zpow_zero, one_mul, one_mul]
 
-/-- The Mellin identity underlying Hecke's two-form functional equation.  If `g` is the
+/-- The identity underlying Hecke's two-form functional equation.  If `g` is the
 Petersson-normalized Fricke companion of `f`, then `Λ_N(k - s, f) = i^k Λ_N(s, g)`, without
-additional weight or width hypotheses. -/
-theorem frickeCompletedL_mellin_identity
+additional weight or width hypotheses; this follows from Mellin change of variables alone. -/
+theorem frickeCompletedL_sub_eq_I_zpow_mul
     {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℝ)}
     (f : CuspForm Γ₁ k) (g : CuspForm Γ₂ k) (N : ℕ) [NeZero N]
     (hg : (g : ℍ → ℂ) =
@@ -321,7 +323,7 @@ theorem frickeCompletedL_functional_equation
     (s : ℂ) :
     frickeCompletedL f (N.toPNat (NeZero.pos N)) ((k : ℂ) - s) =
       Complex.I ^ k * frickeCompletedL g (N.toPNat (NeZero.pos N)) s :=
-  frickeCompletedL_mellin_identity f g N hg s
+  frickeCompletedL_sub_eq_I_zpow_mul f g N hg s
 
 open Matrix.SpecialLinearGroup CongruenceSubgroup
 open TauCeti
