@@ -60,8 +60,8 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   `p / n` as a distinguished generator.
 * `AddCircle.isAddTorsion_rat`: a rational circle is a torsion group, so its torsion subgroups
   exhaust it (`AddCircle.exists_mem_torsionBy_rat`).
-* `ZMod.toRatAddCircle`: the injection of `ℤ/n` into `ℚ/ℤ` sending the class of an integer `k`
-  to the class of `k / n`.
+* `ZMod.toRatAddCircle` and `ZMod.toRatAddCircle_range`: the injection of `ℤ/n` onto the
+  `n`-torsion of `ℚ/ℤ`, sending the class of an integer `k` to the class of `k / n`.
 
 ## References
 
@@ -365,7 +365,7 @@ theorem toRatAddCircle_natCast (k : ℕ) :
   simpa using toRatAddCircle_intCast n (k : ℤ)
 
 /-- The value of `ZMod.toRatAddCircle` on the canonical representative of a residue class. -/
-theorem toRatAddCircle_val [NeZero n] (x : ZMod n) :
+theorem toRatAddCircle_apply [NeZero n] (x : ZMod n) :
     toRatAddCircle n x = ((x.val / n : ℚ) : AddCircle (1 : ℚ)) := by
   have hx : ((x.val : ℕ) : ZMod n) = x := ZMod.natCast_rightInverse x
   conv_lhs => rw [← hx]
@@ -383,5 +383,22 @@ theorem toRatAddCircle_eq_zero_iff [NeZero n] {x : ZMod n} : toRatAddCircle n x 
 theorem toRatAddCircle_injective [NeZero n] : Function.Injective (toRatAddCircle n) :=
   (injective_iff_map_eq_zero (toRatAddCircle n)).mpr fun _ h ↦
     (toRatAddCircle_eq_zero_iff n).mp h
+
+/-- For a nonzero modulus, the image of the rational-circle character of `ℤ/n` is exactly the
+`n`-torsion of `ℚ/ℤ`. -/
+theorem toRatAddCircle_range [NeZero n] :
+    (toRatAddCircle n).range = (AddCircle (1 : ℚ))[(n : ℤ)] := by
+  ext u
+  constructor
+  · rintro ⟨x, rfl⟩
+    rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul]
+    simp
+  · intro hu
+    obtain ⟨k, hk⟩ :=
+      AddCircle.exists_zsmul_eq_of_mem_torsionBy (1 : ℚ) (Nat.pos_of_ne_zero (NeZero.ne n)) hu
+    refine AddMonoidHom.mem_range.mpr ⟨(k : ZMod n), ?_⟩
+    rw [toRatAddCircle_intCast, ← hk, ← AddCircle.coe_zsmul, zsmul_eq_mul]
+    congr 1
+    ring
 
 end ZMod
