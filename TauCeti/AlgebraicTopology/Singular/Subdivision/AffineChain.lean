@@ -301,11 +301,10 @@ lemma singularChain_simplex {n : ℕ} (σ : TopCat.toSSet.obj X _⦋n⦌) :
   ext z
   simp [StdSimplex.affineMapMk_apply]
 
-namespace _root_.ContinuousMap
-
 /-- Pushing the subdivision of an affine chain forward along a singular simplex gives the
 barycentric subdivision of the pushed-forward chain. -/
-lemma singularChain_subdivision {m : ℕ} (σ : C(StdSimplex ℝ (Fin (m + 1)), X)) {k : ℕ}
+lemma _root_.ContinuousMap.singularChain_subdivision {m : ℕ}
+    (σ : C(StdSimplex ℝ (Fin (m + 1)), X)) {k : ℕ}
     (c : (Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) →₀ ℤ) :
     singularChain R σ k (subdivision _ k c) =
       singularChain R σ k c ≫ singularSubdivisionX R X k := by
@@ -321,8 +320,6 @@ lemma singularChain_subdivision {m : ℕ} (σ : C(StdSimplex ℝ (Fin (m + 1)), 
       ext x : 1
       simp [← StdSimplex.comp_affineMapMk]
     simp [hv, Finset.smul_sum, mul_smul, Units.smul_def, ContinuousMap.comp_assoc]
-
-end _root_.ContinuousMap
 
 /-- Pushing the subdivision of the standard simplex forward along a singular simplex gives the
 barycentric subdivision of that singular simplex. -/
