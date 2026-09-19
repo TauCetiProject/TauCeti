@@ -126,10 +126,10 @@ theorem semilocalHom_surjective : Function.Surjective (semilocalHom L v) := by
   exact s.closed_of_finiteDimensional.closure_subset_iff.mpr hs
     (denseRange_algebraMap_pi_liesOver L v y)
 
+attribute [local instance] Fintype.ofFinite in
 /-- The local degrees above `v` add up to at most the global degree:
 `∑_{w ∣ v} [L_w : K_v] ≤ [L : K]`. -/
-theorem sum_finrank_adicCompletion_le_finrank
-    [Fintype {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}] :
+theorem sum_finrank_adicCompletion_le_finrank :
     ∑ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
         finrank (v.adicCompletion K) (w.1.adicCompletion L) ≤ finrank K L := by
   have h := (semilocalHom L v).toLinearMap.finrank_range_le

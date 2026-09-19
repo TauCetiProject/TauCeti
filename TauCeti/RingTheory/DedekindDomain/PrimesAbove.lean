@@ -124,25 +124,29 @@ over `v.asIdeal`, in Mathlib's `Ideal.primesOver` spelling. Mathlib's
 `IsDedekindDomain.HeightOneSpectrum.equivPrimesOver` is the same bijection for the subtype cut out
 by divisibility `w.asIdeal ∣ v.asIdeal.map (algebraMap R B)` instead of `LiesOver`. -/
 noncomputable def liesOverEquivPrimesOver (v : HeightOneSpectrum R) :
-    {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} ≃ v.asIdeal.primesOver B where
-  toFun w := ⟨w.1.asIdeal, w.1.isPrime, w.2⟩
-  invFun Q := ⟨⟨Q.1, Q.2.1, Ideal.ne_bot_of_mem_primesOver v.ne_bot Q.2⟩, Q.2.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
+    {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} ≃ v.asIdeal.primesOver B := by
+  letI := v.isMaximal
+  exact (Equiv.subtypeEquivRight fun w ↦
+    Ideal.liesOver_iff_dvd_map w.isPrime.ne_top).trans
+      (HeightOneSpectrum.equivPrimesOver B v.ne_bot)
 
 omit [Algebra.IsIntegral R B] in
 @[simp]
-theorem coe_liesOverEquivPrimesOver_apply (v : HeightOneSpectrum R)
+theorem liesOverEquivPrimesOver_apply (v : HeightOneSpectrum R)
     (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
     (liesOverEquivPrimesOver B v w : Ideal B) = w.1.asIdeal :=
-  (rfl)
+  by simp [liesOverEquivPrimesOver]
 
 omit [Algebra.IsIntegral R B] in
 @[simp]
-theorem asIdeal_liesOverEquivPrimesOver_symm_apply (v : HeightOneSpectrum R)
+theorem liesOverEquivPrimesOver_symm_apply (v : HeightOneSpectrum R)
     (Q : v.asIdeal.primesOver B) :
     ((liesOverEquivPrimesOver B v).symm Q).1.asIdeal = Q :=
-  (rfl)
+  by
+    let _ := v.isMaximal
+    simp only [liesOverEquivPrimesOver]
+    exact congrArg Subtype.val
+      ((HeightOneSpectrum.equivPrimesOver B v.ne_bot).apply_symm_apply Q)
 
 /-- Only finitely many height one primes of `B` lie over a given height one prime of `R`. -/
 instance finite_liesOver (v : HeightOneSpectrum R) :
