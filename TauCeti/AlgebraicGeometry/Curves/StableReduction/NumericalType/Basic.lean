@@ -172,10 +172,19 @@ lemma exists_mem_notMem_adj (s : Set T.Component) (hne : s.Nonempty) (hs : s ≠
 
 /-- The fibre relation in matrix form: the multiplicity vector lies in the kernel of the
 intersection matrix. -/
+@[simp]
 lemma intersection_mulVec_multiplicity :
     T.intersection.mulVec (fun i ↦ (T.multiplicity i : ℤ)) = 0 := by
   funext i
   simpa [Matrix.mulVec, dotProduct, mul_comm] using T.fiber_relation i
+
+/-- The fibre relation in row-vector form: the multiplicity vector lies in the kernel of the
+intersection matrix. -/
+@[simp]
+lemma multiplicity_vecMul_intersection :
+    Matrix.vecMul (fun i ↦ (T.multiplicity i : ℤ)) T.intersection = 0 := by
+  rw [← Matrix.mulVec_transpose, T.intersection_isSymm.eq,
+    T.intersection_mulVec_multiplicity]
 
 /-! ### Self-intersections -/
 

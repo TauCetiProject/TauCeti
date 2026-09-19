@@ -171,11 +171,6 @@ private lemma kerToCokerTorsion_surjective (hℓ : ℓ ≠ 0) :
     refine ⟨⟨_, hx⟩, Subtype.ext ?_⟩
     exact mk_eq_mk_of_intCast_eq hℓ (smul_liftQuot hx) hy.symm fun i ↦ intCast_intLift _ i
 
-/-- The multiplicity vector lies in the kernel of the intersection matrix. -/
-private lemma multiplicity_vecMul_intersection :
-    (fun i ↦ (T.multiplicity i : ℤ)) ᵥ* T.intersection = 0 := by
-  rw [← mulVec_transpose, T.intersection_isSymm.eq, T.intersection_mulVec_multiplicity]
-
 private lemma multiplicityMod_mem_ker :
     (fun i ↦ ((T.multiplicity i : ℤ) : ZMod ℓ)) ∈
       LinearMap.ker (intersectionMod T ℓ).vecMulLinear := by
