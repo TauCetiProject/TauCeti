@@ -69,6 +69,7 @@ theorem
         (xa_notMem_quaternionRotations 0) hx)
       (isUnit_iff_ne_zero.mpr (by rw [hcard]; norm_num)) hψ]
   rw [hsq, coe_quaternionGroupTwoRotationChar_a]
-  rw [show (2 : ZMod 4).val = 2 by decide, Complex.I_sq]
+  rw [ZMod.val_two_eq_two_mod]
+  norm_num [Complex.I_sq]
 
 end TauCeti

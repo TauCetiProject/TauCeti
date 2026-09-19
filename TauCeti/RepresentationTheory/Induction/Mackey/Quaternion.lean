@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
-public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import TauCeti.GroupTheory.SpecificGroups.Quaternion.Character
 public import TauCeti.RepresentationTheory.Induction.LinearCharacter
 public import TauCeti.RepresentationTheory.Induction.Mackey.LinearCharacter
@@ -26,8 +25,6 @@ two-dimensional irreducible complex representation.
 
 * `TauCeti.simple_indFDRep_ofLinearCharacter_quaternionRotations_iff`: the Mackey criterion for
   quaternion rotations.
-* `TauCeti.quaternionGroupTwoRotationChar`: the character of the rotations of `Q₈` sending `a 1`
-  to `i`.
 * `TauCeti.simple_indFDRep_ofLinearCharacter_quaternionGroupTwoRotationChar`: its induction is
   irreducible.
 * `TauCeti.finrank_indFDRep_ofLinearCharacter_quaternionGroupTwoRotationChar`: its induction has
@@ -81,38 +78,6 @@ theorem simple_indFDRep_ofLinearCharacter_quaternionRotations_iff
 end Criterion
 
 section QuaternionTwo
-
-private theorem unitI_pow_four : (Units.mk0 Complex.I Complex.I_ne_zero) ^ 4 = 1 := by
-  apply Units.ext
-  simp
-
-/-- The faithful character of the cyclic rotation subgroup of `Q₈` sending `a 1` to `i`. -/
-noncomputable def quaternionGroupTwoRotationChar : quaternionRotations 2 →* ℂˣ :=
-  quaternionRotationChar unitI_pow_four
-
-/-- The value of `TauCeti.quaternionGroupTwoRotationChar` at `a i` is `i ^ i.val`. -/
-@[simp]
-theorem coe_quaternionGroupTwoRotationChar_a (i : ZMod 4) :
-    (quaternionGroupTwoRotationChar
-      ⟨QuaternionGroup.a i, by simp⟩ : ℂ) =
-        Complex.I ^ i.val := by
-  rw [quaternionGroupTwoRotationChar, quaternionRotationChar_a,
-    Units.val_pow_eq_pow_val, Units.val_mk0]
-
-/-- The character `TauCeti.quaternionGroupTwoRotationChar` sends `a 1` to `i`. -/
-theorem coe_quaternionGroupTwoRotationChar_a_one :
-    (quaternionGroupTwoRotationChar
-      ⟨QuaternionGroup.a 1, a_mem_quaternionRotations (n := 2) 1⟩ : ℂ) = Complex.I := by
-  rw [coe_quaternionGroupTwoRotationChar_a, ZMod.val_one_eq_one_mod]
-  norm_num
-
-/-- The character `TauCeti.quaternionGroupTwoRotationChar` is faithful. -/
-theorem quaternionGroupTwoRotationChar_injective :
-    Function.Injective quaternionGroupTwoRotationChar := by
-  apply quaternionRotationChar_injective
-  apply IsPrimitiveRoot.coe_units_iff.mp
-  rw [Units.val_mk0]
-  exact Complex.isPrimitiveRoot_I
 
 /-- The character of the rotations of `Q₈` sending `a 1` to `i` induces irreducibly. -/
 theorem simple_indFDRep_ofLinearCharacter_quaternionGroupTwoRotationChar :
