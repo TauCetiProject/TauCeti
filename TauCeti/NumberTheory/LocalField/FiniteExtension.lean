@@ -79,31 +79,6 @@ open ValuativeRel
 
 namespace TauCeti
 
-variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
-  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
-
-/-- The structure map of a compatible extension restricts to its rings of integers. -/
-noncomputable instance integerRingAlgebra : Algebra 𝒪[K] 𝒪[L] := inferInstance
-
-/-- The local map on rings of integers induces the residue-field extension. -/
-noncomputable instance residueFieldAlgebra : Algebra 𝓀[K] 𝓀[L] := inferInstance
-
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [TopologicalSpace L]
-  [IsNonarchimedeanLocalField L] in
-/-- Coercing the integer-ring structure map to `L` gives the field structure map. -/
-@[simp]
-theorem coe_algebraMap_integerRing (x : 𝒪[K]) :
-    ((algebraMap 𝒪[K] 𝒪[L] x : 𝒪[L]) : L) = algebraMap K L (x : K) :=
-  rfl
-
-/-- Reduction commutes with the structure map between the rings of integers. -/
-@[simp]
-theorem algebraMap_residueField_residue (x : 𝒪[K]) :
-    algebraMap 𝓀[K] 𝓀[L] (IsLocalRing.residue 𝒪[K] x) =
-      IsLocalRing.residue 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] x) :=
-  rfl
-
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 variable (M : Type*) [Field M] [Algebra K M] [Module.Finite K M]

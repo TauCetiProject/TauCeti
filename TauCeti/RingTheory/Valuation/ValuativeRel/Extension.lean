@@ -19,10 +19,12 @@ This file supplies the canonical bridge for the valuations attached to valuative
 allows Mathlib's valuation-extension API, including its algebra maps between valuation rings and
 residue fields, to be used directly from a `ValuativeExtension` hypothesis.
 
-## Main result
+## Main results
 
 * `ValuativeExtension.valuationHasExtension`: the canonical valuation on `B` extends the
   canonical valuation on `A`.
+* `TauCeti.integerRingAlgebra`: the induced algebra structure on the valuation rings.
+* `TauCeti.residueFieldAlgebra`: the induced algebra structure on the residue fields.
 -/
 
 public section
@@ -43,3 +45,34 @@ instance valuationHasExtension :
     (ValuativeRel.isEquiv ((valuation B).comap (algebraMap A B)) (valuation A)).symm
 
 end ValuativeExtension
+
+namespace TauCeti
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L]
+  [Algebra K L] [ValuativeExtension K L]
+
+local notation "𝒪ᵥ[" K "]" => Valuation.integer (valuation K)
+local notation "𝓀ᵥ[" K "]" => IsLocalRing.ResidueField ↥𝒪ᵥ[K]
+
+/-- The structure map of a compatible extension restricts to its rings of integers. -/
+noncomputable instance integerRingAlgebra : Algebra 𝒪ᵥ[K] 𝒪ᵥ[L] :=
+  Valuation.HasExtension.instAlgebra_valuationSubring (valuation K) (valuation L)
+
+/-- The local map on rings of integers induces the residue-field extension. -/
+noncomputable instance residueFieldAlgebra : Algebra 𝓀ᵥ[K] 𝓀ᵥ[L] :=
+  IsLocalRing.ResidueField.instAlgebra
+
+/-- Coercing the integer-ring structure map to `L` gives the field structure map. -/
+@[simp]
+theorem coe_algebraMap_integerRing (x : 𝒪ᵥ[K]) :
+    ((algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] x : 𝒪ᵥ[L]) : L) = algebraMap K L (x : K) :=
+  Valuation.HasExtension.coe_algebraMap_valuationSubring_eq (valuation K) (valuation L) x
+
+/-- Reduction commutes with the structure map between the rings of integers. -/
+@[simp]
+theorem algebraMap_residueField_residue (x : 𝒪ᵥ[K]) :
+    algebraMap 𝓀ᵥ[K] 𝓀ᵥ[L] (IsLocalRing.residue 𝒪ᵥ[K] x) =
+      IsLocalRing.residue 𝒪ᵥ[L] (algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] x) :=
+  Valuation.HasExtension.algebraMap_residue_eq_residue_algebraMap (valuation K) (valuation L) x
+
+end TauCeti

@@ -18,8 +18,8 @@ and descends to the residue field. This file constructs those three actions and 
 compatibility with inclusion and reduction.
 
 The induced residue-field automorphism is linear over the residue field of the base. It therefore
-gives the canonical homomorphism from the Galois group of the extension to the Galois group of
-the residue extension; its kernel is the inertia group in ramification theory.
+gives the canonical homomorphism between the corresponding automorphism groups. When the field
+extension is Galois, the kernel of this homomorphism is the inertia group in ramification theory.
 
 ## Main definitions
 
@@ -70,8 +70,12 @@ noncomputable def integerRingAlgEquiv (σ : L ≃ₐ[K] L) : 𝒪[L] ≃ₐ[𝒪
   __ := MulSemiringAction.toRingAut (L ≃ₐ[K] L) 𝒪[L] σ
   commutes' x := by
     apply Subtype.ext
-    change σ (algebraMap K L (x : K)) = algebraMap K L (x : K)
-    exact σ.commutes (x : K)
+    calc
+      ((MulSemiringAction.toRingAut (L ≃ₐ[K] L) 𝒪[L] σ
+          (algebraMap 𝒪[K] 𝒪[L] x) : 𝒪[L]) : L) =
+          σ (((algebraMap 𝒪[K] 𝒪[L] x : 𝒪[L]) : L)) := rfl
+      _ = σ (algebraMap K L (x : K)) := by rw [TauCeti.coe_algebraMap_integerRing]
+      _ = algebraMap K L (x : K) := σ.commutes (x : K)
 
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 /-- The integer-ring algebra equivalence agrees with the canonical action. -/
@@ -81,7 +85,7 @@ theorem integerRingAlgEquiv_apply (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
   (rfl)
 
 /-- The automorphism induced on the maximal ideal of the ring of integers. -/
-noncomputable def maximalIdealEquiv (σ : L ≃ₐ[K] L) : 𝓂[L] ≃+ 𝓂[L] where
+noncomputable def maximalIdealEquiv (σ : L ≃ₐ[K] L) : 𝓂[L] ≃+* 𝓂[L] where
   toFun x := ⟨MulSemiringAction.toRingAut (L ≃ₐ[K] L) 𝒪[L] σ x, by
     rw [IsLocalRing.mem_maximalIdeal]
     intro hx
@@ -106,6 +110,10 @@ noncomputable def maximalIdealEquiv (σ : L ≃ₐ[K] L) : 𝓂[L] ≃+ 𝓂[L] 
     apply Subtype.ext
     apply Subtype.ext
     simp
+  map_mul' x y := by
+    apply Subtype.ext
+    apply Subtype.ext
+    simp
 
 /-- Coercing the induced maximal-ideal automorphism to `L` recovers the field automorphism. -/
 @[simp]
@@ -119,6 +127,7 @@ noncomputable def residueFieldEquiv (σ : L ≃ₐ[K] L) : 𝓀[L] ≃ₐ[𝓀[K
   IsLocalRing.ResidueField.mapAlgEquiv' σ.integerRingAlgEquiv
 
 /-- The induced residue-field automorphism commutes with reduction from the integer ring. -/
+@[simp]
 theorem residueFieldEquiv_residue (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
     σ.residueFieldEquiv (IsLocalRing.residue 𝒪[L] x) =
       IsLocalRing.residue 𝒪[L] (σ • x) := by
