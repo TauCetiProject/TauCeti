@@ -157,6 +157,7 @@ def residueMap {g : X.functionField} (hg0 : g ≠ 0)
 
 /-- The kernel of `residueMap D y hg0 hg` consists exactly of the sections of `𝒪_X(D)` inside
 the sections of `𝒪_X(D + y)`. -/
+@[simp]
 lemma residueMap_eq_zero_iff {g : X.functionField} (hg0 : g ≠ 0)
     (hg : X.ord g y = WeilDivisor.coeff D y + 1) (s : sections (D + WeilDivisor.ofPoint y) ⊤) :
     residueMap D y hg0 hg s = 0 ↔ (s : Γ(Scheme.rationalFunctions X, ⊤)) ∈ sections D ⊤ := by
