@@ -24,10 +24,8 @@ ideals over every field:
   baseChangeDefiningIdeal n k = Symplectic.definingHopfIdeal k (n + 1).
 ```
 
-The passage from points to equations uses reduced finite-type point separation over an algebraic
-closure of the base field. The symplectic coordinate algebra is smooth, hence reduced, so only the
-symplectic side of the comparison needs a reducedness input. The resulting quotient isomorphism
-identifies the base-changed explicit carrier with the coordinate Hopf algebra of `Sp_(2n+2)`.
+The resulting quotient isomorphism identifies the base-changed explicit carrier with the coordinate
+Hopf algebra of `Sp_(2n+2)`.
 
 ## Main declarations
 
@@ -40,8 +38,6 @@ identifies the base-changed explicit carrier with the coordinate Hopf algebra of
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * R. Steinberg, *Lectures on Chevalley Groups*, §§3--4.
-* The proof structure is adapted from the type-`A` carrier comparison in
-  `TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.SpecialLinear`.
 -/
 
 public section
@@ -84,6 +80,9 @@ theorem symplecticDefiningHopfIdeal_le_baseChangeDefiningIdeal
   have hmap := map_tmul_mem_baseChangeDefiningIdeal_of_mem n A (1 : A) hgenerator
   rwa [Symplectic.coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix ℤ A (n + 1) i j]
     at hmap
+
+/- The proof is adapted from the type-`A` carrier comparison in
+`TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.SpecialLinear`. -/
 
 /-- **Over a field, the transported defining ideal of the full-weight
 type `C_(n+1)` carrier is the symplectic ideal.** Thus the explicit carrier obtained from the
