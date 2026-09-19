@@ -30,6 +30,8 @@ subobject construction, while cokernels use the quotient by the range.
   on the quotient by a sub-mixed Hodge structure.
 * `TauCeti.Hodge.MixedHodgeStructure.IsSubstructure.projection`: the quotient projection as a
   morphism of mixed Hodge structures.
+* `TauCeti.Hodge.MixedHodgeStructure.IsSubstructure.lift`: the universal factorization of a
+  morphism annihilating the substructure through the quotient projection.
 
 ## References
 
@@ -40,7 +42,7 @@ public section
 
 namespace TauCeti.Hodge
 
-universe u v w
+universe u v w u' v' w'
 
 variable {Vℤ : Type u} {Vℚ : Type v} {Vℂ : Type w}
 variable [AddCommGroup Vℤ] [AddCommGroup Vℚ] [Module ℚ Vℚ]
@@ -65,7 +67,7 @@ theorem map_mkQ (h : IsHodgeBigrading hℚ hℂ WQ F I) {U : Submodule ℚ Vℚ}
       (fun p ↦ (F p).map (rationalToComplexSubmodule hℚ hℂ U).mkQ)
       (fun pq ↦ (I pq).map (rationalToComplexSubmodule hℚ hℂ U).mkQ) := by
   refine
-    { iSupIndep := TauCeti.iSupIndep_map_mkQ h.iSupIndep hU
+    { iSupIndep := TauCeti.iSupIndep_map_mkQ h.iSupIndep fun _ hx ↦ hU hx.1
       rationalToComplexSubmodule_eq_iSup := fun k ↦ ?_
       F_eq_iSup := fun p ↦ ?_
       map_latticeConj_le := fun pq ↦ ?_ }
@@ -157,6 +159,59 @@ theorem projection_toLinearMap : hU.projection.toLinearMap =
     (rationalToComplexSubmodule hℚ hℂ U).mkQ := by
   rw [MixedHodgeStructure.Hom.toLinearMap_def, projection_toRatLinearMap,
     rationalMapToComplex_mkQ]
+
+section Lift
+
+variable {V'ℤ : Type u'} {V'ℚ : Type v'} {V'ℂ : Type w'}
+variable [AddCommGroup V'ℤ] [AddCommGroup V'ℚ] [Module ℚ V'ℚ]
+variable [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
+variable {ι'ℚ : V'ℤ →ₗ[ℤ] V'ℚ} {ι'ℂ : V'ℤ →ₗ[ℤ] V'ℂ}
+variable {h'ℚ : IsBaseChange ℚ ι'ℚ} {h'ℂ : IsBaseChange ℂ ι'ℂ}
+variable {target : MixedHodgeStructure h'ℚ h'ℂ}
+
+/-- A morphism annihilating a sub-mixed Hodge structure factors through its quotient. -/
+noncomputable def lift (f : mhs.Hom target) (hf : U ≤ LinearMap.ker f.toRatLinearMap) :
+    hU.quotient.Hom target where
+  toRatLinearMap := U.liftQ f.toRatLinearMap hf
+  map_mem_WQ k x hx := by
+    rw [quotient_WQ] at hx
+    obtain ⟨y, hy, rfl⟩ := hx
+    simpa using f.map_mem_WQ k y hy
+  map_mem_F p x hx := by
+    rw [quotient_F] at hx
+    obtain ⟨y, hy, rfl⟩ := hx
+    rw [← rationalMapToComplex_mkQ hℚ hℂ U, ← LinearMap.comp_apply,
+      ← rationalMapToComplex_comp, Submodule.liftQ_mkQ]
+    exact f.map_mem_F p y hy
+
+/-- The rational map underlying the quotient lift is the usual linear quotient lift. -/
+@[simp]
+theorem lift_toRatLinearMap (f : mhs.Hom target) (hf : U ≤ LinearMap.ker f.toRatLinearMap) :
+    (hU.lift f hf).toRatLinearMap = U.liftQ f.toRatLinearMap hf := by
+  rw [lift]
+
+/-- The quotient lift restricts along the quotient projection to the original morphism. -/
+@[simp]
+theorem lift_comp_projection (f : mhs.Hom target)
+    (hf : U ≤ LinearMap.ker f.toRatLinearMap) : (hU.lift f hf).comp hU.projection = f := by
+  ext x
+  simp
+
+/-- Morphisms out of the quotient are equal when they agree after the quotient projection. -/
+@[ext]
+theorem quotientHom_ext {f g : hU.quotient.Hom target}
+    (hfg : f.comp hU.projection = g.comp hU.projection) : f = g := by
+  ext x
+  obtain ⟨y, rfl⟩ := U.mkQ_surjective x
+  simpa using congrArg (fun q ↦ q.toRatLinearMap y) hfg
+
+/-- The quotient lift is the unique morphism whose composite with the projection is `f`. -/
+theorem eq_lift {f : mhs.Hom target} {hf : U ≤ LinearMap.ker f.toRatLinearMap}
+    {g : hU.quotient.Hom target} (hg : g.comp hU.projection = f) : g = hU.lift f hf := by
+  apply hU.quotientHom_ext
+  rw [hg, lift_comp_projection]
+
+end Lift
 
 /-- The Deligne bigrading of the quotient is the image of the ambient Deligne bigrading. -/
 @[simp]
