@@ -21,6 +21,11 @@ factor: both use the arithmetic slash action.
 This comparison allows the Petersson adjunction for traces of translates to be applied to
 Hecke operators already constructed from rational double cosets.
 
+The trace of a form depends only on its underlying function and its level, not on the type the
+form is packaged in (`TauCeti.SlashInvariantForm.trace_eq_of_coe_eq`). This is what lets a trace
+of a translate be compared with another one whose level is equal but not syntactically so, as
+happens when the translating matrix is changed by an element normalizing the level.
+
 ## References
 
 * [F. Diamond and J. Shurman, *A first course in modular forms*][diamondshurman2005],
@@ -36,6 +41,25 @@ open scoped MatrixGroups ModularForm Pointwise
 namespace TauCeti
 
 local notation "φ" => Matrix.GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ ℝ)
+
+namespace SlashInvariantForm
+
+/-- **The trace sees only the underlying function and the level.** Two slash-invariant forms
+with the same underlying function, for levels that are equal (though perhaps not
+syntactically), have the same trace. -/
+theorem trace_eq_of_coe_eq {k : ℤ} {𝒢₁ 𝒢₂ ℋ : Subgroup (GL (Fin 2) ℝ)} (h : 𝒢₁ = 𝒢₂)
+    [𝒢₁.IsFiniteRelIndex ℋ] [𝒢₂.IsFiniteRelIndex ℋ] {F₁ F₂ : Type*} [FunLike F₁ ℍ ℂ]
+    [SlashInvariantFormClass F₁ 𝒢₁ k] [FunLike F₂ ℍ ℂ] [SlashInvariantFormClass F₂ 𝒢₂ k]
+    {f₁ : F₁} {f₂ : F₂} (hf : ⇑f₁ = ⇑f₂) :
+    _root_.SlashInvariantForm.trace ℋ f₁ = _root_.SlashInvariantForm.trace ℋ f₂ := by
+  subst h
+  ext τ
+  simp only [_root_.SlashInvariantForm.coe_trace]
+  refine congrFun (Finset.sum_congr rfl fun q _ ↦ ?_) τ
+  induction q using Quotient.inductionOn with
+  | h r => simp [hf]
+
+end SlashInvariantForm
 
 variable {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℚ)} {δ : GL (Fin 2) ℚ}
 
