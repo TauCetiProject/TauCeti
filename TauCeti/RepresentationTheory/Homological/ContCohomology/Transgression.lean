@@ -27,8 +27,9 @@ is the fourth arrow of the inflation-restriction-transgression five-term sequenc
 
 It is defined by lifting a cocycle `c` on `N` whose class is conjugation-invariant to a continuous
 cochain `f` on `G`, differentiating, and observing that `d¹ f` descends to a cocycle on `G ⧸ N`
-with values in `M ^ N`. This file carries out that construction on the explicit low-degree model
-and proves that the resulting class is independent of every choice made.
+with values in `M ^ N`. This file carries out that construction on the explicit low-degree model,
+proves that the resulting class is independent of every choice made, and proves exactness of the
+five-term sequence at the source and the target of the transgression.
 
 ## The lift
 
@@ -83,6 +84,12 @@ continuous.
   restriction.
 * `TauCeti.ContCohomology.explicitInfl2_transgression`: inflation kills the image of
   transgression.
+* `TauCeti.ContCohomology.transgression_eq_mk_cocycle`: the transgression is the class of the
+  descended coboundary of any transgression lift of a representative.
+* `TauCeti.ContCohomology.fiveTerm_exact_H1N` and `TauCeti.ContCohomology.fiveTerm_exact_H2Q`:
+  exactness of the five-term sequence at `H¹(N, M) ^ (G ⧸ N)` and at `H²(G ⧸ N, M ^ N)`. Together
+  with `TauCeti.ContCohomology.explicitInfl1_injective` and
+  `TauCeti.ContCohomology.explicitInfResConj_exact` this is exactness at every node.
 
 ## Implementation notes
 
@@ -174,6 +181,28 @@ theorem d0 [IsTopologicalAddGroup M] [ContinuousSMul G M] (m : M) :
     simp only [d0_apply, Subgroup.smul_def, smul_sub, inverseConjugationHom_apply, smul_smul]
     have hmul : g * (g⁻¹ * (n : G) * g) = n * g := by group
     rw [hmul, mul_smul]
+    abel
+
+/-- A continuous cochain on `G` whose coboundary vanishes on `G × N` and on `N × G` is a
+transgression lift of its own restriction to `N`. -/
+theorem of_d1_apply_eq_zero (hf : Continuous f)
+    (hright : ∀ (g : G) (n : N), d1 G M f (g, n) = 0)
+    (hleft : ∀ (n : N) (g : G), d1 G M f (n, g) = 0) :
+    IsTransgressionLift (fun n : N => f n) f where
+  continuous := hf
+  apply_mul g n := by
+    have h := hright g n
+    rw [d1_apply] at h
+    rw [← sub_eq_zero, ← neg_eq_zero, ← h]
+    abel
+  smul_conj_sub g n := by
+    have h₁ := hright g (inverseConjugationHom N g n)
+    have h₂ := hleft n g
+    have hmul : g * (g⁻¹ * (n : G) * g) = n * g := by group
+    rw [d1_apply, inverseConjugationHom_apply, hmul] at h₁
+    rw [d1_apply] at h₂
+    rw [inverseConjugationHom_apply, d0_apply, Subgroup.smul_def, ← sub_eq_zero,
+      ← sub_eq_zero.2 (h₁.trans h₂.symm)]
     abel
 
 /-- A continuous `1`-cocycle on `G` is a transgression lift of its restriction to `N`. -/
@@ -354,6 +383,17 @@ theorem cocycle_sub_mem_B2 (hf : IsTransgressionLift c f) (hf' : IsTransgression
     ← Pi.sub_apply (d1 G M f), hd1, d1_apply, d1_apply, ← QuotientGroup.mk_mul]
   simp only [AddSubgroup.coe_add, AddSubgroup.coe_sub, coe_quotient_smul_fixedPoints_addSubgroup,
     coe_smul_fixedPoints_addSubgroup, Quotient.liftOn'_mk'']
+
+/-- A continuous `1`-cocycle on `N` admitting a transgression lift has conjugation-invariant
+class: the value of the lift at `g` trivialises the difference between the cocycle and its
+conjugate by `g`. -/
+theorem mk_mem_H1ConjInvariants {c : Z1 N M} (hf : IsTransgressionLift (c : N → M) f) :
+    (c : H1 N M) ∈ H1ConjInvariants G M N := by
+  refine (mem_H1ConjInvariants_iff G M N).2 fun g => ?_
+  rw [explicitConj1_apply_eq_smul, smul_mk, H1pi_eq_iff, mem_B1_iff]
+  refine ⟨f g, fun n => ?_⟩
+  rw [Pi.sub_apply, cocyclesMap1_apply, DistribSMul.toAddMonoidHom_apply, hf.smul_conj_sub g n,
+    d0_apply]
 
 variable [hquot : ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)]
 
@@ -687,6 +727,111 @@ theorem explicitInfl2_transgression (hN : IsClosed (N : Set G)) (y : H1ConjInvar
   obtain ⟨c, hc⟩ := QuotientAddGroup.mk_surjective (y : H1 N M)
   rw [transgression_apply G M N hN s hs_cont hs y c hc, transgressionCocycle_eq_cocycle]
   exact IsTransgressionLift.explicitInfl2_mk_cocycle _
+
+/-- **The transgression through an arbitrary lift.** The transgression of the class of `c` is the
+class of the descended coboundary of *any* transgression lift of `c`, not only of the
+section-dependent `transgressionLift`. -/
+theorem transgression_eq_mk_cocycle (hN : IsClosed (N : Set G)) (y : H1ConjInvariants G M N)
+    (c : Z1 N M) (hc : (c : H1 N M) = y) {f : G → M} (hf : IsTransgressionLift (c : N → M) f) :
+    transgression G M N hN y = (hf.cocycle : H2 (G ⧸ N) (FixedPoints.addSubgroup N M)) := by
+  obtain ⟨s, hs_cont, hs, -⟩ := exists_continuous_section N hN
+  rw [transgression_apply G M N hN s hs_cont hs y c hc, transgressionCocycle_eq_cocycle]
+  exact IsTransgressionLift.mk_cocycle_eq _ hf (by rw [sub_self]; exact zero_mem _)
+
+/-- **Exactness of the five-term sequence at `H¹(N, M) ^ (G ⧸ N)`.** A conjugation-invariant
+class in `H¹(N, M)` has vanishing transgression exactly when it is the restriction of a class in
+`H¹(G, M)`. -/
+theorem fiveTerm_exact_H1N (hN : IsClosed (N : Set G)) :
+    (explicitResConj1 G M N).range = (transgression G M N hN).ker := by
+  refine le_antisymm ?_ fun y hy => ?_
+  · rintro _ ⟨x, rfl⟩
+    exact transgression_explicitResConj1 G M N hN x
+  -- If the descended coboundary of a lift `f` of `c` is the coboundary of `e` on `G ⧸ N`, then
+  -- `f` minus the inflation of `e` is a continuous `1`-cocycle on `G` restricting to `c`.
+  obtain ⟨s, hs_cont, hs, -⟩ := exists_continuous_section N hN
+  obtain ⟨c, hc⟩ := QuotientAddGroup.mk_surjective (y : H1 N M)
+  have hf := isTransgressionLift_transgressionLift G M N hN.isCompact s hs_cont hs c (hc ▸ y.2)
+  set f : G → M := (transgressionLift G M N hN.isCompact s hs_cont hs c (hc ▸ y.2) : G → M)
+  rw [AddMonoidHom.mem_ker, transgression_eq_mk_cocycle G M N hN y c hc hf, H2pi_eq_zero_iff,
+    mem_B2_iff] at hy
+  obtain ⟨e, he_cont, he⟩ := hy
+  -- The coboundary of `e` at `(g N, h N)`, read in `M`, is the coboundary of `f` at `(g, h)`.
+  have hde : ∀ g h : G, g • (e h : M) - e (g * h : G) + e g = d1 G M f (g, h) := fun g h => by
+    have := congrArg (fun w => (w ((g : G ⧸ N), (h : G ⧸ N)) : M)) he
+    simpa only [d1_apply, AddSubgroup.coe_add, AddSubgroup.coe_sub,
+      coe_quotient_smul_fixedPoints_addSubgroup, coe_smul_fixedPoints_addSubgroup,
+      ← QuotientGroup.mk_mul, IsTransgressionLift.coe_cocycle_apply_mk] using this
+  have he₁ : (e 1 : M) = 0 := by
+    have := hde 1 1
+    simp only [d1_apply, one_smul, mul_one, sub_self, zero_add, QuotientGroup.mk_one] at this
+    rw [this]
+    exact transgressionLift_apply_one G M N _ s hs_cont hs c _
+  let z : G → M := fun g => f g - e g
+  have hz : z ∈ Z1 G M := by
+    refine mem_Z1_iff.2 ⟨hf.continuous.sub
+      (continuous_subtype_val.comp (he_cont.comp QuotientGroup.continuous_mk)), fun g h => ?_⟩
+    have := hde g h
+    rw [d1_apply, QuotientGroup.mk_mul] at this
+    simp only [z, QuotientGroup.mk_mul, smul_sub]
+    rw [← sub_eq_zero, ← sub_eq_zero.2 this]
+    abel
+  refine ⟨(⟨z, hz⟩ : Z1 G M), Subtype.ext ?_⟩
+  rw [coe_explicitResConj1, explicitRes1_mk, ← hc]
+  congr 1
+  ext n
+  simp only [cocyclesMap1_apply, ContinuousMonoidHom.subgroupSubtype_apply,
+    AddMonoidHom.id_apply, z, (QuotientGroup.eq_one_iff (n : G)).2 n.2, he₁, sub_zero, f,
+    transgressionLift_apply_coe]
+
+/-- **Exactness of the five-term sequence at `H²(G ⧸ N, M ^ N)`.** A class in `H²(G ⧸ N, M ^ N)`
+inflates to zero in `H²(G, M)` exactly when it is a transgression. -/
+theorem fiveTerm_exact_H2Q (hN : IsClosed (N : Set G)) :
+    (transgression G M N hN).range = (explicitInfl2 G M N).ker := by
+  refine le_antisymm ?_ fun x hx => ?_
+  · rintro _ ⟨y, rfl⟩
+    exact explicitInfl2_transgression G M N hN y
+  -- If the inflation of `z` is the coboundary of `f` on `G`, then `f`, shifted by the constant
+  -- `z (1, 1)`, has coboundary vanishing on `G × N` and `N × G`; it is therefore a transgression
+  -- lift of its restriction to `N`, whose transgression is the class of `z`.
+  induction x using QuotientAddGroup.induction_on with | _ z => ?_
+  rw [AddMonoidHom.mem_ker, explicitInfl2_mk, H2pi_eq_zero_iff, mem_B2_iff'] at hx
+  obtain ⟨f, hf_cont, hf⟩ := hx
+  set a : FixedPoints.addSubgroup N M :=
+    (z : (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (1, 1) with ha
+  let f₀ : G → M := fun g => f g - a
+  -- The coboundary of `f₀` is the inflation of `z` shifted by the coboundary of the constant `a`.
+  have hd1 : ∀ g h : G, d1 G M f₀ (g, h) =
+      ((z : (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (g, h) : M) - g • (a : M) :=
+    fun g h => by
+      have := hf g h
+      simp only [cocyclesMap2_apply, ContinuousMonoidHom.quotientMk_apply,
+        AddSubgroup.coe_subtype] at this
+      rw [← this, d1_apply]
+      simp only [f₀, smul_sub]
+      abel
+  have hmk : ∀ n : N, ((n : G) : G ⧸ N) = 1 := fun n => (QuotientGroup.eq_one_iff (n : G)).2 n.2
+  have hlift : IsTransgressionLift (fun n : N => f₀ n) f₀ :=
+    IsTransgressionLift.of_d1_apply_eq_zero (hf_cont.sub continuous_const)
+      (fun g n => by
+        rw [hd1, hmk, map_one_snd_of_mem_Z2 z.2, ← ha, coe_quotient_smul_fixedPoints_addSubgroup,
+          coe_smul_fixedPoints_addSubgroup, sub_self])
+      (fun n g => by
+        rw [hd1, hmk, map_one_fst_of_mem_Z2 z.2, ← ha,
+          ← Subgroup.smul_def, (FixedPoints.mem_addSubgroup N M _).1 a.2 n, sub_self])
+  have hc : (fun n : N => f₀ n) ∈ Z1 N M :=
+    mem_Z1_iff.2 ⟨hlift.continuous.comp continuous_subtype_val, fun n n' => by
+      simp only [Subgroup.coe_mul, hlift.apply_mul, Subgroup.smul_def]
+      abel⟩
+  refine ⟨⟨((⟨_, hc⟩ : Z1 N M) : H1 N M), hlift.mk_mem_H1ConjInvariants⟩, ?_⟩
+  rw [transgression_eq_mk_cocycle G M N hN _ ⟨_, hc⟩ rfl hlift, H2pi_eq_iff, mem_B2_iff']
+  refine ⟨fun _ => -a, continuous_const, fun q r => ?_⟩
+  induction q using QuotientGroup.induction_on with | H g => ?_
+  induction r using QuotientGroup.induction_on with | H h => ?_
+  refine Subtype.ext ?_
+  simp only [AddSubgroup.coe_add, AddSubgroup.coe_sub, AddSubgroup.coe_neg, Pi.sub_apply,
+    coe_quotient_smul_fixedPoints_addSubgroup, coe_smul_fixedPoints_addSubgroup,
+    IsTransgressionLift.coe_cocycle_apply_mk, hd1, smul_neg]
+  abel
 
 end Transgression
 
