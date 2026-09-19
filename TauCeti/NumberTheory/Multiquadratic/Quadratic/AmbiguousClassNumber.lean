@@ -205,7 +205,7 @@ theorem natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_neg {
 theorem natCard_isStronglyAmbiguousClass_eq_two_pow_of_norm_eq_neg_one
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) {u : (𝓞 K)ˣ} (hu : Algebra.norm ℚ ((u : 𝓞 K) : K) = -1) :
-    Nat.card {C : ClassGroup (𝓞 K) // IsStronglyAmbiguousClass hmin hgen C} =
+    Nat.card (stronglyAmbiguousClassSubgroup hmin hgen) =
       2 ^ ((ramifiedPrimes K).ncard - 1) := by
   have key := NarrowClassGroup.natCard_isStronglyAmbiguousClass_mul_natCard_ker hmin hgen
   rw [(MonoidHom.ker_eq_bot_iff _).mpr
@@ -222,7 +222,7 @@ theorem natCard_isStronglyAmbiguousClass_eq_two_pow_of_forall_norm_ne_neg_one
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) (hd : 0 < d)
     (hu : ∀ u : (𝓞 K)ˣ, Algebra.norm ℚ ((u : 𝓞 K) : K) ≠ -1) :
-    Nat.card {C : ClassGroup (𝓞 K) // IsStronglyAmbiguousClass hmin hgen C} =
+    Nat.card (stronglyAmbiguousClassSubgroup hmin hgen) =
       2 ^ ((ramifiedPrimes K).ncard - 2) := by
   have key := NarrowClassGroup.natCard_isStronglyAmbiguousClass_mul_natCard_ker hmin hgen
   -- Without a unit of norm `-1` the kernel of `Cl⁺(K) → Cl(K)` is nontrivial, of order `2`.

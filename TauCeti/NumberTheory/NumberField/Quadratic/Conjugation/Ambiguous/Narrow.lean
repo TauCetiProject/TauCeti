@@ -59,10 +59,10 @@ the ambiguous class number formula and its narrow form.
   `2`-torsion narrow class is the narrow class of an ambiguous ideal.
 * `NumberField.NarrowClassGroup.sq_eq_one_iff_exists_map_ringOfIntegersQuadraticConj_eq_self`: the
   ambiguous narrow classes are exactly the narrow classes of ambiguous ideals.
-* `NumberField.IsStronglyAmbiguousClass`: an ordinary ideal class is strongly ambiguous when it is
-  represented by an ideal fixed by quadratic conjugation.
 * `NumberField.NarrowClassGroup.isStronglyAmbiguousClass_iff_exists_sq_eq_one`: the strongly
   ambiguous classes are the image of the narrow `2`-torsion classes.
+* `NumberField.stronglyAmbiguousClassSubgroup`: the subgroup of strongly ambiguous ordinary ideal
+  classes, defined in the signature-independent basic module.
 * `NumberField.NarrowClassGroup.natCard_isStronglyAmbiguousClass_mul_natCard_ker`: the number of
   strongly ambiguous classes times the narrow defect is the number of `2`-torsion narrow classes.
 * `NumberField.NarrowClassGroup.mk0_mem_closure_of_map_eq_self`: the narrow class of an ambiguous
@@ -229,59 +229,6 @@ theorem sq_eq_one_iff_exists_map_ringOfIntegersQuadraticConj_eq_self
     rintro ⟨I, hI, rfl⟩
     exact mk0_sq_eq_one_of_map_ringOfIntegersQuadraticConj_eq_self hmin hgen hI⟩
 
-end NumberField.NarrowClassGroup
-
-namespace NumberField
-
-variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
-
-/-- An ordinary ideal class is **strongly ambiguous** if it is represented by an ideal fixed by
-quadratic conjugation. -/
-def IsStronglyAmbiguousClass (hmin : minpoly ℤ θ = X ^ 2 - C d)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (C : ClassGroup (𝓞 K)) : Prop :=
-  ∃ I : (Ideal (𝓞 K))⁰,
-    Ideal.map (ringOfIntegersQuadraticConj hmin hgen) (I : Ideal (𝓞 K)) = (I : Ideal (𝓞 K)) ∧
-      ClassGroup.mk0 I = C
-
-/-- A class is strongly ambiguous exactly when it has a representative fixed by quadratic
-conjugation. -/
-theorem isStronglyAmbiguousClass_iff_exists_map_ringOfIntegersQuadraticConj_eq_self
-    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
-    (C : ClassGroup (𝓞 K)) :
-    IsStronglyAmbiguousClass hmin hgen C ↔ ∃ I : (Ideal (𝓞 K))⁰,
-      Ideal.map (ringOfIntegersQuadraticConj hmin hgen) (I : Ideal (𝓞 K)) =
-          (I : Ideal (𝓞 K)) ∧
-        ClassGroup.mk0 I = C :=
-  Iff.rfl
-
-/-- A conjugation-fixed ideal represents a strongly ambiguous class. -/
-theorem IsStronglyAmbiguousClass.intro (hmin : minpoly ℤ θ = X ^ 2 - C d)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (I : (Ideal (𝓞 K))⁰)
-    (hI : Ideal.map (ringOfIntegersQuadraticConj hmin hgen) (I : Ideal (𝓞 K)) =
-      (I : Ideal (𝓞 K))) :
-    IsStronglyAmbiguousClass hmin hgen (ClassGroup.mk0 I) :=
-  ⟨I, hI, rfl⟩
-
-/-- A strongly ambiguous class has a representative fixed by quadratic conjugation. -/
-theorem IsStronglyAmbiguousClass.elim {C : ClassGroup (𝓞 K)}
-    (hC : IsStronglyAmbiguousClass hmin hgen C) :
-    ∃ I : (Ideal (𝓞 K))⁰,
-      Ideal.map (ringOfIntegersQuadraticConj hmin hgen) (I : Ideal (𝓞 K)) =
-          (I : Ideal (𝓞 K)) ∧
-        ClassGroup.mk0 I = C :=
-  hC
-
-/-- Every strongly ambiguous class is fixed by quadratic conjugation. -/
-@[aesop safe apply]
-theorem IsStronglyAmbiguousClass.mulEquiv_ringOfIntegersQuadraticConj_eq_self
-    {C : ClassGroup (𝓞 K)} (hC : IsStronglyAmbiguousClass hmin hgen C) :
-    ClassGroup.mulEquiv (ringOfIntegersQuadraticConj hmin hgen) C = C := by
-  obtain ⟨I, hI, rfl⟩ := hC.elim
-  exact (mulEquiv_ringOfIntegersQuadraticConj_apply_eq_self_iff hmin hgen _).mpr
-    (classGroupMk0_sq_eq_one_of_map_ringOfIntegersQuadraticConj_eq_self hmin hgen hI)
-
-namespace NarrowClassGroup
-
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
 
 /-- The strongly ambiguous ordinary classes are exactly the images of the `2`-torsion narrow
@@ -292,13 +239,15 @@ theorem isStronglyAmbiguousClass_iff_exists_sq_eq_one
     IsStronglyAmbiguousClass hmin hgen C ↔
       ∃ c : NarrowClassGroup K, c ^ 2 = 1 ∧ toClassGroup c = C := by
   constructor
-  · rintro ⟨I, hI, rfl⟩
+  · intro hC
+    obtain ⟨I, hI, rfl⟩ := hC.elim
     exact ⟨mk0 I, mk0_sq_eq_one_of_map_ringOfIntegersQuadraticConj_eq_self hmin hgen hI,
       toClassGroup_mk0 I⟩
   · rintro ⟨c, hc, rfl⟩
     obtain ⟨I, hI, rfl⟩ :=
       (sq_eq_one_iff_exists_map_ringOfIntegersQuadraticConj_eq_self hmin hgen c).mp hc
-    exact ⟨I, hI, (toClassGroup_mk0 I).symm⟩
+    rw [toClassGroup_mk0]
+    exact IsStronglyAmbiguousClass.intro hmin hgen I hI
 
 /-- **The classes of ambiguous ideals and the narrow defect.** For a quadratic field `K` of either
 signature, the number of ideal classes represented by an ideal fixed by quadratic conjugation,
@@ -306,7 +255,7 @@ times the order of the kernel of `Cl⁺(K) → Cl(K)`, is the number of narrow c
 dividing `2`. -/
 theorem natCard_isStronglyAmbiguousClass_mul_natCard_ker
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    Nat.card {C : ClassGroup (𝓞 K) // IsStronglyAmbiguousClass hmin hgen C} *
+    Nat.card (stronglyAmbiguousClassSubgroup hmin hgen) *
         Nat.card (toClassGroup (K := K)).ker =
       Nat.card {C : NarrowClassGroup K // C ^ 2 = 1} := by
   set f := toClassGroup (K := K)
@@ -315,10 +264,11 @@ theorem natCard_isStronglyAmbiguousClass_mul_natCard_ker
     rw [toClassGroup_ker]
     rintro _ ⟨x, rfl⟩
     simp [H, MonoidHom.mem_ker]
-  have hS : Nat.card {C : ClassGroup (𝓞 K) // IsStronglyAmbiguousClass hmin hgen C} =
+  have hS : Nat.card (stronglyAmbiguousClassSubgroup hmin hgen) =
       Nat.card (H.map f) := by
     refine Nat.card_congr (Equiv.subtypeEquivRight fun C => ?_)
-    simpa only [Subgroup.mem_map, H, MonoidHom.mem_ker, powMonoidHom_apply, f] using
+    simpa only [mem_stronglyAmbiguousClassSubgroup, Subgroup.mem_map, H, MonoidHom.mem_ker,
+      powMonoidHom_apply, f] using
       isStronglyAmbiguousClass_iff_exists_sq_eq_one hmin hgen C
   have hH : Nat.card {C : NarrowClassGroup K // C ^ 2 = 1} = Nat.card H :=
     Nat.card_congr (Equiv.subtypeEquivRight fun C => by simp [H, MonoidHom.mem_ker])
