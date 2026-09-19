@@ -58,7 +58,9 @@ theorem iSup_prod_submodule {R M N : Type*} {ι : Sort*} [Semiring R]
     (⨆ i, (P i).prod (Q i)) = (⨆ i, P i).prod (⨆ i, Q i) := by
   simp only [LinearMap.prod_eq_sup_map, _root_.Submodule.map_iSup, iSup_sup_eq]
 
-/-- Componentwise products of independent families of submodules are independent. -/
+/-- Componentwise products of independent families of submodules are independent.
+
+Use `TauCeti.iSupIndep.prod hP hQ`, or `hP.prod hQ` after `open TauCeti`. -/
 theorem iSupIndep.prod {R M N : Type*} {ι : Sort*} [Semiring R]
     [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N]
     {P : ι → Submodule R M} {Q : ι → Submodule R N}
