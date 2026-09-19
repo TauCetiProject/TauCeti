@@ -17,27 +17,18 @@ public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 # The ring of integers of an extension of local fields is a finite free module
 
 Let `L/K` be an extension of nonarchimedean local fields whose valuations are compatible, in the
-sense of `ValuativeExtension K L`. This file proves that `𝒪[L]` is a finite `𝒪[K]`-module. Since
-`𝒪[K]` is a discrete valuation ring, hence a principal ideal domain, and `𝒪[L]` is torsion-free,
-`𝒪[L]` is then a free `𝒪[K]`-module; that instance is Mathlib's
-`Module.free_of_finite_type_torsion_free'` and needs no separate statement. Its rank is `[L : K]`,
-and in particular `L/K` is finite: no finiteness of `L/K` is assumed anywhere below.
-
-The proof of finiteness is the complete Nakayama lemma (Mathlib's
-`surjective_of_mkQ_comp_surjective`). The quotient `𝒪[L] / 𝓂[K] 𝒪[L]` is finite, because
-`𝓂[K] 𝒪[L]` is a nonzero ideal of the discrete valuation ring `𝒪[L]`, hence a power of `𝓂[L]`,
-and the residue field of `L` is finite. `𝒪[L]` is `𝓂[K]`-adically separated, because
-`𝓂[K] 𝒪[L] ≤ 𝓂[L]` and `𝒪[L]` is a noetherian local ring, while `𝒪[K]`, and hence every finite
-product of copies of it, is `𝓂[K]`-adically complete. Hence lifts of generators of the quotient
-generate `𝒪[L]`.
-
-The rank is computed by localization: every element of `L` becomes integral after multiplication
-by a power of a uniformizer of `K`, so `L` is the localization of `𝒪[L]` at the nonzero elements
-of `𝒪[K]`.
+sense of `ValuativeExtension K L`. This file proves that `𝒪[L]` is a free `𝒪[K]`-module of finite
+rank `[L : K]`, and in particular that `L/K` is finite: no finiteness of `L/K` is assumed anywhere
+below. This is the basic structural fact about integers in local field extensions: it makes
+`𝒪[L]` a lattice in the `K`-vector space `L`, so that ramification index and inertia degree can
+be read off from `𝒪[L] / 𝓂[K] 𝒪[L]`, whose `𝓀[K]`-dimension is `[L : K]`, leading to the
+formula `e * f = [L : K]`. It also identifies `L` as the fraction field of `𝒪[L]` obtained by
+inverting only the nonzero elements of `𝒪[K]`.
 
 ## Main results
 
 * `TauCeti.integerRingModuleFinite`: `𝒪[L]` is a finite `𝒪[K]`-module.
+* `TauCeti.integerRingModuleFree`: `𝒪[L]` is a free `𝒪[K]`-module.
 * `TauCeti.isLocalization_integerRing`: `L` is the localization of `𝒪[L]` at the image of the
   nonzero elements of `𝒪[K]`.
 * `TauCeti.finrank_integerRing`: the rank of `𝒪[L]` over `𝒪[K]` is `[L : K]`.
@@ -95,6 +86,12 @@ instance integerRingModuleFinite : Module.Finite 𝒪[K] 𝒪[L] := by
   obtain ⟨g, hg⟩ :=
     Module.projective_lifting_property (Submodule.mkQ _) f (Submodule.mkQ_surjective _)
   exact .of_surjective g (surjective_of_mkQ_comp_surjective (I := 𝓂[K]) (hg ▸ hf))
+
+/-- The ring of integers of an extension of nonarchimedean local fields is a free module over the
+ring of integers of the base: it is finite and torsion-free over the principal ideal domain
+`𝒪[K]`. -/
+instance integerRingModuleFree : Module.Free 𝒪[K] 𝒪[L] :=
+  Module.free_of_finite_type_torsion_free'
 
 /-- Every element of `L` is carried into `𝒪[L]` by a nonzero element of `𝒪[K]`: a large enough
 power of a uniformizer of `K` will do. -/
