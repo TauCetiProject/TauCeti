@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.RingDivision
 public import Mathlib.Data.Int.ConditionallyCompleteOrder
 public import TauCeti.Algebra.Module.GradedModule.Polynomial
 public import TauCeti.Algebra.Module.GradedModule.Shift
@@ -27,18 +26,19 @@ graded module over `𝔽[U]` on which `U` lowers the Alexander grading by one.
 The file shows that the invariant is well behaved without appeal to the structure theorem for
 graded `k[X]`-modules:
 
-* over a field, when `X` lowers degree by a nonzero `d`, a homogeneous element is torsion exactly
-  when a power of `X` kills it
+* when the coefficients `k` form a domain over which `M` is torsion-free and `X` lowers degree by
+  a nonzero `d`, a homogeneous element is torsion exactly when a power of `X` kills it
   (`InternalGrading.mem_torsion_iff_exists_X_pow_smul_eq_zero`), because the terms `c • X ^ n • x`
   of `a • x` lie in pairwise distinct degrees; so `G.nonTorsionDegrees` are the degrees of the
   homogeneous elements no power of `X` kills
   (`InternalGrading.mem_nonTorsionDegrees_iff_forall_X_pow_smul_ne_zero`);
-* a finitely generated graded `k[X]`-module has no nonzero homogeneous elements above some degree
-  (`InternalGrading.bddAbove_setOf_piece_ne_bot`), so the supremum is attained as soon as `M` is
-  not torsion (`InternalGrading.isGreatest_maxNonTorsionDegree`);
-* a homogeneous map of degree `δ` that reflects torsion raises the invariant by at least `δ`
-  (`InternalGrading.maxNonTorsionDegree_add_le`). This applies in particular when the map has a
-  left inverse up to multiplication by a nonzerodivisor such as a power of `X`
+* in a finitely generated graded `k[X]`-module on which `X` lowers degree, the non-torsion degrees
+  are bounded above (`InternalGrading.bddAbove_nonTorsionDegrees`), so the supremum is attained as
+  soon as `M` is not torsion (`InternalGrading.isGreatest_maxNonTorsionDegree`);
+* a homogeneous map of degree `δ` that reflects torsion raises the invariant by at least `δ`, as
+  long as both modules are finitely generated, `X` lowers degree on each of them, and the source
+  is not torsion (`InternalGrading.maxNonTorsionDegree_add_le`). This applies in particular when
+  the map has a left inverse up to multiplication by a nonzerodivisor such as a power of `X`
   (`Submodule.comap_torsion_le_of_comp_eq_smul`), the shape of the bounds on `τ` coming from
   crossing changes and cobordisms; a graded isomorphism preserves the invariant
   (`InternalGrading.maxNonTorsionDegree_eq_of_linearEquiv`).
@@ -50,7 +50,6 @@ Finally, the polynomial ring itself, graded by minus the exponent, has the invar
 
 * `TauCeti.InternalGrading.nonTorsionDegrees`: the degrees of homogeneous non-torsion elements.
 * `TauCeti.InternalGrading.maxNonTorsionDegree`: their supremum.
-* `TauCeti.Polynomial.negDegreeGrading`: the grading of `k[X]` placing `X ^ n` in degree `-n`.
 
 ## References
 
@@ -148,65 +147,6 @@ variable {k M N : Type*} [CommSemiring k]
   [AddCommMonoid N] [Module k N] [Module k[X] N] [IsScalarTower k k[X] N]
   {G : InternalGrading k M} {H : InternalGrading k N} {d : ℕ}
 
-omit [IsScalarTower k k[X] M] in
-/-- If `X` lowers degree by `d`, then `X ^ n` lowers degree by `n * d`. -/
-theorem X_pow_smul_mem_piece
-    (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d)) (n : ℕ)
-    {p : ℤ} {x : M} (hx : x ∈ G.piece p) : (X ^ n : k[X]) • x ∈ G.piece (p - n * d) := by
-  induction n generalizing p x with
-  | zero => simpa using hx
-  | succ n ih =>
-    rw [pow_succ, mul_smul]
-    convert ih (hX hx) using 2
-    push_cast
-    ring
-
-/-- A finitely generated graded `k[X]`-module on which `X` lowers degree has no nonzero homogeneous
-elements above some degree: every element is a `k[X]`-combination of the finitely many homogeneous
-components of a finite generating set, and multiplication by a polynomial never raises degree. -/
-theorem bddAbove_setOf_piece_ne_bot [Module.Finite k[X] M]
-    (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d)) :
-    BddAbove {p | G.piece p ≠ ⊥} := by
-  classical
-  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := k[X]) (M := M)
-  -- `D` bounds the degrees of the homogeneous components of the generators.
-  obtain ⟨D, hD⟩ : BddAbove (⋃ g ∈ s, ((DirectSum.decompose G.piece g).support : Set ℤ)) :=
-    (s.finite_toSet.biUnion fun g _ ↦ Finset.finite_toSet _).bddAbove
-  -- `L` is the span of the homogeneous elements of degree at most `D`.
-  let L : Submodule k M := ⨆ q : Set.Iic D, G.piece q
-  have hXL : ∀ y ∈ L, (X : k[X]) • y ∈ L := by
-    intro y hy
-    refine Submodule.iSup_induction _ (motive := fun y ↦ (X : k[X]) • y ∈ L) hy
-      (fun q y hy ↦ ?_) (by simp) fun y z hy hz ↦ by simpa only [smul_add] using L.add_mem hy hz
-    exact Submodule.mem_iSup_of_mem ⟨(q : ℤ) - d, by grind⟩ (hX hy)
-  have hXnL : ∀ n : ℕ, ∀ y ∈ L, (X ^ n : k[X]) • y ∈ L := by
-    intro n
-    induction n with
-    | zero => simp
-    | succ n ih => exact fun y hy ↦ by simpa only [pow_succ, mul_smul] using ih _ (hXL y hy)
-  have hAL : ∀ (a : k[X]), ∀ y ∈ L, a • y ∈ L := by
-    intro a
-    induction a using Polynomial.induction_on' with
-    | add a b ha hb => exact fun y hy ↦ by simpa only [add_smul] using L.add_mem (ha y hy) (hb y hy)
-    | monomial n c =>
-      intro y hy
-      rw [← C_mul_X_pow_eq_monomial, mul_smul, ← algebraMap_eq, algebraMap_smul]
-      exact L.smul_mem c (hXnL n y hy)
-  let L' : Submodule k[X] M := { L.toAddSubmonoid with smul_mem' := hAL }
-  have hL : ∀ y : M, y ∈ L := by
-    have hsL : Submodule.span k[X] (s : Set M) ≤ L' := by
-      refine Submodule.span_le.mpr fun g hg ↦ ?_
-      rw [← DirectSum.sum_support_decompose G.piece g]
-      refine L.sum_mem fun q hq ↦ Submodule.mem_iSup_of_mem ⟨q, ?_⟩ (DirectSum.decompose _ g q).2
-      exact hD (Set.mem_biUnion hg hq)
-    exact fun y ↦ hsL (hs ▸ Submodule.mem_top)
-  refine ⟨D, fun p hp ↦ ?_⟩
-  by_contra! hDp
-  refine hp (eq_bot_iff.mpr fun x hx ↦ ?_)
-  refine Submodule.disjoint_def.mp (G.isInternal.submodule_iSupIndep p) x hx ?_
-  refine (iSup_le fun q ↦ ?_ : L ≤ ⨆ j, ⨆ (_ : j ≠ p), G.piece j) (hL x)
-  exact le_iSup₂_of_le (q : ℤ) (q.2.trans_lt hDp).ne le_rfl
-
 /-- In a finitely generated graded `k[X]`-module on which `X` lowers degree, the degrees of the
 homogeneous non-torsion elements are bounded above. -/
 theorem bddAbove_nonTorsionDegrees [Module.Finite k[X] M]
@@ -243,13 +183,14 @@ theorem add_mem_nonTorsionDegrees {f : M →ₗ[k[X]] N} {δ : ℤ}
   obtain ⟨x, hx, hxt⟩ := hp
   exact ⟨f x, hf.map_mem hx, fun h ↦ hxt (hft h)⟩
 
-/-- A homogeneous map of degree `δ` between finitely generated graded `k[X]`-modules that reflects
-torsion raises the maximal non-torsion degree by at least `δ`. By
-`Submodule.comap_torsion_le_of_comp_eq_smul`, torsion is reflected as soon as the map has a left
-inverse up to multiplication by a power of `X`. -/
-theorem maxNonTorsionDegree_add_le [Module.Finite k[X] M] [Module.Finite k[X] N]
-    (hXM : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d))
-    (hXN : ∀ ⦃p : ℤ⦄ ⦃x : N⦄, x ∈ H.piece p → (X : k[X]) • x ∈ H.piece (p - d))
+/-- A homogeneous map of degree `δ` that reflects torsion raises the maximal non-torsion degree by
+at least `δ`, provided both modules are finitely generated, `X` lowers degree on each of them (by
+`dM` on the source and by `dN` on the target), and the source is not torsion, so that its maximal
+non-torsion degree is attained. By `Submodule.comap_torsion_le_of_comp_eq_smul`, torsion is
+reflected as soon as the map has a left inverse up to multiplication by a power of `X`. -/
+theorem maxNonTorsionDegree_add_le [Module.Finite k[X] M] [Module.Finite k[X] N] {dM dN : ℕ}
+    (hXM : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - dM))
+    (hXN : ∀ ⦃p : ℤ⦄ ⦃x : N⦄, x ∈ H.piece p → (X : k[X]) • x ∈ H.piece (p - dN))
     (hM : ¬Module.IsTorsion k[X] M) {f : M →ₗ[k[X]] N} {δ : ℤ}
     (hf : LinearMap.IsHomogeneous f G.piece H.piece δ)
     (hft : (Submodule.torsion k[X] N).comap f ≤ Submodule.torsion k[X] M) :
@@ -276,41 +217,18 @@ theorem maxNonTorsionDegree_eq_of_linearEquiv (e : M ≃ₗ[k[X]] N)
     exact Submodule.comap_torsion_le_of_comp_eq_smul (f := e.symm.toLinearMap)
       (g := e.toLinearMap) (one_mem _) (by simp) het
 
-/-- If `X` lowers degree by `d ≠ 0`, the terms `a.coeff n • X ^ n • x` of `a • x`, for `x`
-homogeneous of degree `p`, lie in the pairwise distinct degrees `p - n * d`; so the component of
-`a • x` in degree `p - n * d` is the `n`-th of them. -/
-theorem coe_decompose_smul_of_mem (hd : d ≠ 0)
-    (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d))
-    {p : ℤ} {x : M} (hx : x ∈ G.piece p) (a : k[X]) (n : ℕ) :
-    (DirectSum.decompose G.piece (a • x) (p - n * d) : M) = a.coeff n • (X ^ n : k[X]) • x := by
-  classical
-  have hterm : ∀ l : ℕ, (C (a.coeff l) * X ^ l) • x = a.coeff l • (X ^ l : k[X]) • x := by
-    intro l
-    rw [mul_smul, ← algebraMap_eq, algebraMap_smul]
-  have hmem : ∀ l : ℕ, a.coeff l • (X ^ l : k[X]) • x ∈ G.piece (p - l * d) :=
-    fun l ↦ Submodule.smul_mem _ _ (X_pow_smul_mem_piece hX l hx)
-  conv_lhs => rw [a.as_sum_support_C_mul_X_pow, Finset.sum_smul, DirectSum.decompose_sum]
-  simp only [hterm]
-  rw [DFinsupp.finsetSum_apply, Submodule.coe_sum, Finset.sum_eq_single n]
-  · exact DirectSum.decompose_of_mem_same _ (hmem n)
-  · intro l _ hl
-    refine DirectSum.decompose_of_mem_ne _ (hmem l) fun h ↦ hl ?_
-    have : (l : ℤ) * d = n * d := by omega
-    exact_mod_cast mul_right_cancel₀ (by exact_mod_cast hd) this
-  · intro hn
-    rw [notMem_support_iff.mp hn, zero_smul, DirectSum.decompose_zero, DirectSum.zero_apply,
-      ZeroMemClass.coe_zero]
-
 end Degree
 
-section Field
+section Domain
 
-variable {k M : Type*} [Field k]
-  [AddCommGroup M] [Module k M] [Module k[X] M] [IsScalarTower k k[X] M]
+variable {k M : Type*} [CommSemiring k] [IsDomain k]
+  [AddCommMonoid M] [Module k M] [Module k[X] M] [IsScalarTower k k[X] M]
+  [Module.IsTorsionFree k M]
   {G : InternalGrading k M} {d : ℕ}
 
-/-- Over a field, a homogeneous element of a graded `k[X]`-module on which `X` lowers degree by a
-nonzero `d` is torsion exactly when some power of `X` kills it. -/
+/-- When the coefficients `k` form a domain over which `M` is torsion-free, a homogeneous element
+of a graded `k[X]`-module on which `X` lowers degree by a nonzero `d` is torsion exactly when some
+power of `X` kills it. -/
 theorem mem_torsion_iff_exists_X_pow_smul_eq_zero (hd : d ≠ 0)
     (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d))
     {p : ℤ} {x : M} (hx : x ∈ G.piece p) :
@@ -328,15 +246,16 @@ theorem mem_torsion_iff_exists_X_pow_smul_eq_zero (hd : d ≠ 0)
     exact (Submodule.mem_torsion_iff x).mpr
       ⟨⟨X ^ n, pow_mem (mem_nonZeroDivisors_of_ne_zero X_ne_zero) n⟩, hn⟩
 
-/-- Over a field, the degrees of homogeneous non-torsion elements are the degrees of the
-homogeneous elements that no power of `X` kills. -/
+/-- When the coefficients `k` form a domain over which `M` is torsion-free, the degrees of the
+homogeneous non-torsion elements are the degrees of the homogeneous elements that no power of `X`
+kills. -/
 theorem mem_nonTorsionDegrees_iff_forall_X_pow_smul_ne_zero (hd : d ≠ 0)
     (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d)) {p : ℤ} :
     p ∈ G.nonTorsionDegrees ↔ ∃ x ∈ G.piece p, ∀ n : ℕ, (X ^ n : k[X]) • x ≠ 0 := by
   refine exists_congr fun x ↦ and_congr_right fun hx ↦ ?_
   rw [mem_torsion_iff_exists_X_pow_smul_eq_zero hd hX hx, not_exists]
 
-end Field
+end Domain
 
 end InternalGrading
 
