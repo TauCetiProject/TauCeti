@@ -74,13 +74,12 @@ theorem intCast_mem_lattice {C : AddSubgroup (ι → ZMod m)} (z : ι → ℤ) :
 @[simp]
 theorem lattice_le_lattice_iff {C D : AddSubgroup (ι → ZMod m)} :
     lattice m C ≤ lattice m D ↔ C ≤ D := by
-  constructor
-  · intro h x hx
-    obtain ⟨z, rfl⟩ := (Function.Surjective.piMap fun _ ↦ ZMod.intCast_surjective) x
-    exact (intCast_mem_lattice m z).mp (h ((intCast_mem_lattice m z).mpr hx))
-  · intro h x hx
-    obtain ⟨z, hz, rfl⟩ := (mem_lattice m).mp hx
-    exact (intCast_mem_lattice m z).mpr (h hz)
+  unfold lattice
+  rw [Submodule.map_le_map_iff_of_injective
+    (Function.Injective.piMap fun _ ↦ Int.cast_injective),
+    Submodule.comap_le_comap_iff_of_surjective
+      (Function.Surjective.piMap fun _ ↦ ZMod.intCast_surjective)]
+  exact AddSubgroup.toIntSubmodule.le_iff_le
 
 /-- The scaled coordinate vectors `m eᵢ` belong to every Construction A carrier. -/
 theorem single_mem_lattice [DecidableEq ι] (C : AddSubgroup (ι → ZMod m)) (i : ι) :
@@ -144,17 +143,12 @@ theorem form_intCast_mem_one_iff (x y : ι → ℤ) :
       (fun i ↦ (x i : R)) ⬝ᵥ (fun i ↦ (y i : R)) = ((x ⬝ᵥ y : ℤ) : R) := by
     exact ((Int.castRingHom R).map_dotProduct x y).symm
   rw [form_apply, hcast ℚ, hcast (ZMod m), ZMod.intCast_zmod_eq_zero_iff_dvd]
-  constructor
-  · intro h
-    obtain ⟨z, hz⟩ := Submodule.mem_one.mp h
-    refine ⟨z, ?_⟩
-    have hz' : (z : ℚ) = (x ⬝ᵥ y : ℤ) / (m : ℚ) := hz
-    have := (eq_div_iff (by exact_mod_cast (NeZero.ne (m : ℕ)))).mp hz'
-    exact_mod_cast (this.symm.trans (mul_comm _ _))
-  · rintro ⟨z, hz⟩
-    apply Submodule.mem_one.mpr
-    refine ⟨z, ?_⟩
-    simp [hz, NeZero.ne (m : ℚ)]
+  have hint (q : ℚ) : q ∈ (1 : Submodule ℤ ℚ) ↔ q.den = 1 := by
+    rw [Submodule.mem_one]
+    exact ⟨fun ⟨z, hz⟩ ↦ hz ▸ Rat.den_intCast z,
+      fun h ↦ ⟨q.num, (Rat.den_eq_one_iff q).mp h⟩⟩
+  rw [hint]
+  simpa using Rat.den_div_intCast_eq_one_iff (x ⬝ᵥ y) (m : ℤ) (NeZero.ne _)
 
 /-- The dual of a Construction A carrier is the Construction A carrier of the Euclidean dual
 code, as an equality of submodules of the same rational coordinate space. -/
