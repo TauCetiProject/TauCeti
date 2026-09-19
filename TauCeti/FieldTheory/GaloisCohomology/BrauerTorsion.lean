@@ -83,6 +83,7 @@ variable (K : Type u) [Field K] {n : ℕ} (hn : IsUnit (n : K))
 /-- The map on explicit `H²` induced by the `n`-th power map of `(Kˢ)ˣ` is multiplication by `n`:
 in additive notation the power map is `n • ·`, and a coefficient map acts on cocycles by
 postcomposition. -/
+@[simp]
 theorem explicitCoeff2_kummerShortExact_proj (x : H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :
     explicitCoeff2 _ _ (kummerShortExact K n hn).projDistribMulActionHom
       continuous_of_discreteTopology x = n • x := by
@@ -107,6 +108,7 @@ theorem explicitCoeff2_kummerShortExact_incl_injective :
 
 /-- **The image of `H²(G_K, μₙ)` in `H²(G_K, (Kˢ)ˣ)` is the `n`-torsion**, on the explicit model:
 it is the kernel of the map induced by the `n`-th power map, which is multiplication by `n`. -/
+@[simp]
 theorem mem_range_explicitCoeff2_kummerShortExact_incl_iff
     (x : H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :
     x ∈ (explicitCoeff2 _ _ (kummerShortExact K n hn).inclDistribMulActionHom
@@ -186,6 +188,7 @@ theorem h2KummerToUnits_injective (hn : IsUnit (n : K)) :
 /-- **The image of `H²(G_K, μₙ)` in `H²(G_K, (Kˢ)ˣ)` is the `n`-torsion** for `n` invertible in
 `K`. This is exactness of the long exact sequence of the Kummer sequence at `H²(G_K, (Kˢ)ˣ)`, the
 next map being multiplication by `n`. -/
+@[simp]
 theorem h2KummerToUnits_range (hn : IsUnit (n : K))
     (x : continuousCohomology 2 (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) :
     (∃ y, (h2KummerToUnits K n).hom y = x) ↔ n • x = 0 := by
