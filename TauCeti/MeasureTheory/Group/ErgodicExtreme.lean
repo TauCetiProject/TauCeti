@@ -8,6 +8,9 @@ module
 public import Mathlib.Dynamics.Ergodic.Extreme
 public import TauCeti.MeasureTheory.Group.Action
 public import TauCeti.MeasureTheory.Group.CountableAction
+public import Mathlib.Probability.Kernel.Composition.MeasureComp
+import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
+import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Coding
 
 /-!
 # Ergodic group actions and extreme invariant measures
@@ -27,6 +30,11 @@ forward direction of the characterisation need only an action by a type with a s
 multiplication; the group and its countability enter only in the reverse direction, through the
 saturation of an almost invariant event in `CountableAction.lean`.
 
+Extremality also has an integral form: an ergodic probability measure written as a mixture
+`κ ∘ₘ π` of almost surely invariant probability measures has almost every component equal to
+itself (`ErgodicSMul.ae_eq_of_comp_eq`). This is what removes a global randomization parameter
+from a functional representation of an ergodic law.
+
 ## Main results
 
 * `TauCeti.MeasureTheory.invariantMeasuresOfMeasureUnivEq`, with its membership and convexity
@@ -35,6 +43,9 @@ saturation of an almost invariant event in `CountableAction.lean`.
 * `ErgodicSMul.eq_smul_of_absolutelyContinuous`,
   `ErgodicSMul.eq_of_absolutelyContinuous_measure_univ_eq`, `ErgodicSMul.eq_of_absolutelyContinuous`
 * `ErgodicSMul.iff_mem_extremePoints_measure_univ_eq`, `ErgodicSMul.iff_mem_extremePoints`
+* `TauCeti.MeasureTheory.smulInvariantMeasure_comp`, `ErgodicSMul.ae_eq_of_comp_eq`: a mixture of
+  invariant measures is invariant, and an ergodic probability measure written as such a mixture
+  has almost every component equal to itself
 
 ## References
 
@@ -76,6 +87,17 @@ theorem convex_invariantMeasuresOfMeasureUnivEq {c : ℝ≥0∞} :
   rintro ν₁ ⟨hν₁, hν₁u⟩ ν₂ ⟨hν₂, hν₂u⟩ a b _ _ hab
   refine ⟨inferInstance, ?_⟩
   simp [Measure.add_apply, Measure.smul_apply, hν₁u, hν₂u, ← add_mul, hab]
+
+/-- **A mixture of invariant measures is invariant**: if almost every measure of the kernel `κ` is
+`G`-invariant, then so is its mixture `κ ∘ₘ π`. The integral counterpart of the convexity of
+`invariantMeasuresOfMeasureUnivEq`. -/
+theorem smulInvariantMeasure_comp [MeasurableConstSMul G X] {Z : Type*} {mZ : MeasurableSpace Z}
+    {π : Measure Z} {κ : Kernel Z X} (hκ : ∀ᵐ z ∂π, SMulInvariantMeasure G X (κ z)) :
+    SMulInvariantMeasure G X (κ ∘ₘ π) :=
+  ⟨fun c s hs => by
+    rw [Measure.bind_apply hs κ.aemeasurable,
+      Measure.bind_apply (measurable_const_smul c hs) κ.aemeasurable]
+    exact lintegral_congr_ae (hκ.mono fun z hz => hz.measure_preimage_smul c hs)⟩
 
 end TauCeti.MeasureTheory
 
@@ -218,5 +240,57 @@ theorem iff_mem_extremePoints [IsProbabilityMeasure μ] :
   ⟨fun _ => mem_extremePoints, of_mem_extremePoints⟩
 
 end Group
+
+/-! ### Integral decompositions of an ergodic measure -/
+
+section Mixture
+
+variable {G X Z : Type*} [SMul G X] {m : MeasurableSpace X} [MeasurableConstSMul G X]
+  {mZ : MeasurableSpace Z} {μ : Measure X} {π : Measure Z} {κ : Kernel Z X}
+
+/-- **An ergodic probability measure is not a nontrivial mixture of invariant measures.** If `μ`
+is the mixture `κ ∘ₘ π` of a Markov kernel whose measures are almost all invariant, then almost
+every `κ z` equals `μ`. This is the integral form of `mem_extremePoints`: an extreme point of a
+convex set is not a proper finite convex combination, and an ergodic measure is not even a
+proper integral one. -/
+theorem ae_eq_of_comp_eq [MeasurableSpace.CountablyGenerated X] [IsProbabilityMeasure μ]
+    [ErgodicSMul G X μ] [IsMarkovKernel κ] (hκ : ∀ᵐ z ∂π, SMulInvariantMeasure G X (κ z))
+    (hμ : κ ∘ₘ π = μ) : ∀ᵐ z ∂π, κ z = μ := by
+  have : IsProbabilityMeasure π :=
+    ⟨by rw [← Measure.comp_apply_univ (κ := κ), hμ, measure_univ]⟩
+  -- The mixture over a measurable set `B` of parameters is an invariant measure below `μ`, hence
+  -- the multiple `π B • μ` of it.
+  have hmix : ∀ B, MeasurableSet B → κ ∘ₘ π.restrict B = π B • μ := by
+    intro B hB
+    have happly : ∀ s, MeasurableSet s → (κ ∘ₘ π.restrict B) s = ∫⁻ z in B, κ z s ∂π :=
+      fun s hs => Measure.bind_apply hs κ.aemeasurable
+    have hle : κ ∘ₘ π.restrict B ≤ μ := by
+      refine Measure.le_iff.2 fun s hs => ?_
+      rw [happly s hs, ← hμ, Measure.bind_apply hs κ.aemeasurable]
+      exact setLIntegral_le_lintegral _ _
+    have := smulInvariantMeasure_comp (π := π.restrict B) (ae_restrict_of_ae hκ)
+    obtain ⟨c, hc⟩ := eq_smul_of_absolutelyContinuous G (Measure.absolutelyContinuous_of_le hle)
+    have hcB : c = π B := by
+      have huniv := congrArg (fun ρ : Measure X => ρ Set.univ) hc
+      simpa [Measure.comp_apply_univ] using huniv.symm
+    rw [hc, hcB]
+  -- Hence `κ z s = μ s` almost surely for each measurable `s`, and a countable generating algebra
+  -- of sets pins down a probability measure.
+  have hset : ∀ s, MeasurableSet s → (fun z => κ z s) =ᵐ[π] fun _ => μ s := fun s hs =>
+    ae_eq_of_forall_setLIntegral_eq_of_sigmaFinite (κ.measurable_coe hs) measurable_const
+      fun B hB _ => by
+        rw [← Measure.bind_apply hs κ.aemeasurable, hmix B hB, setLIntegral_const,
+          Measure.smul_apply, smul_eq_mul, mul_comm]
+  have hall : ∀ᵐ z ∂π, ∀ s : ProbabilityMeasureCodeIndex X, κ z s.1 = μ s.1 :=
+    ae_all_iff.2 fun s => hset _ (measurableSet_probabilityMeasureCodeIndex s)
+  filter_upwards [hall] with z hz
+  let P : ProbabilityMeasure X := ⟨κ z, inferInstance⟩
+  let Q : ProbabilityMeasure X := ⟨μ, inferInstance⟩
+  have hcode : P = Q := probabilityMeasureCode_injective <| funext fun s => by
+    rw [probabilityMeasureCode_apply, probabilityMeasureCode_apply]
+    exact hz s
+  exact congrArg Subtype.val hcode
+
+end Mixture
 
 end ErgodicSMul

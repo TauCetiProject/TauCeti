@@ -34,6 +34,8 @@ range, so the value is a `dite` rather than a plain application.
   backward rotation and conversely.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
+* `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
+  counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
 * `TauCeti.add_one_add_one_ne_self`: adding one twice in `Fin n` is nontrivial when `3 ≤ n`.
@@ -117,6 +119,14 @@ theorem rev_finRotate_symm {n : ℕ} (i : Fin n) :
   apply Fin.rev_injective
   simp only [Fin.rev_rev]
   simpa only [finRotate_apply, finRotate_symm_apply] using (rev_finRotate_rev i).symm
+
+/-- Collapsing the hole opened immediately after `p` back onto `p` inverts the embedding
+`p.succ.succAbove`. -/
+@[simp]
+theorem predAbove_succ_succAbove {n : ℕ} (p i : Fin n) : p.predAbove (p.succ.succAbove i) = i := by
+  rcases le_or_gt i p with h | h
+  · rw [succAbove_succ_of_le _ _ h, predAbove_castSucc_of_le _ _ h]
+  · rw [succAbove_succ_of_lt _ _ h, predAbove_succ_of_le _ _ h.le]
 
 end Fin
 

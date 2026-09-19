@@ -71,6 +71,7 @@ used, and the separation argument is the general Hahn–Banach one.
 * `TauCeti.diam_le_diam_of_subset_filledHull` and
   `IsPreconnected.diam_le_diam_of_disjoint` — a set inside the filled hull of a bounded `K`,
   in particular a preconnected set that `K` cuts off from infinity, is no wider than `K`.
+* `TauCeti.filledHull_sphere` — filling a sphere gives the closed ball.
 * `TauCeti.isBounded_closedConvexHull`,
   `TauCeti.diam_closedConvexHull` — the closed forms of the two convex-hull facts the width
   argument runs on.
@@ -140,6 +141,40 @@ theorem filledHull_empty [Nontrivial E] : filledHull (∅ : Set E) = ∅ := by
     exact isPreconnected_univ
   · rw [compl_empty]
     exact NormedSpace.unbounded_univ ℝ E
+
+/-- **The filled hull of a sphere is the closed ball**, for a sphere of nonnegative radius. This
+identifies the region enclosed by a sphere without choosing a component of its complement. No
+nontriviality is needed: in the zero space both sides are the whole (one-point) space. -/
+@[simp]
+theorem filledHull_sphere (x : E) {r : ℝ} (hr : 0 ≤ r) :
+    filledHull (sphere x r) = closedBall x r := by
+  refine Subset.antisymm (fun y hy => ?_) fun y hy => ?_
+  · by_contra hyr
+    rw [mem_closedBall, not_le] at hyr
+    have hyx : 0 < ‖y - x‖ := by rw [← dist_eq_norm]; linarith
+    have hdist : ∀ t : ℝ, dist (x + t • (y - x)) x = |t| * ‖y - x‖ := fun t => by
+      rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs]
+    let ray := (fun t : ℝ => x + t • (y - x)) '' Ici 1
+    have hcont : Continuous fun t : ℝ => x + t • (y - x) := by fun_prop
+    have hconn : IsPreconnected ray := isPreconnected_Ici.image _ hcont.continuousOn
+    have hsub : ray ⊆ (sphere x r)ᶜ := by
+      rintro _ ⟨t, ht, rfl⟩
+      rw [mem_compl_iff, mem_sphere, hdist, abs_of_pos (by linarith [mem_Ici.mp ht])]
+      have : ‖y - x‖ ≤ t * ‖y - x‖ := le_mul_of_one_le_left hyx.le (mem_Ici.mp ht)
+      rw [dist_eq_norm] at hyr
+      linarith
+    have hyray : y ∈ ray := ⟨1, self_mem_Ici, by simp⟩
+    obtain ⟨C, hC⟩ := ((mem_filledHull_iff.mp hy).subset
+      (hconn.subset_connectedComponentIn hyray hsub)).subset_closedBall x
+    set t := (|C| + 1) / ‖y - x‖ + 1
+    have ht : 1 ≤ t := le_add_of_nonneg_left (by positivity)
+    have hmem := mem_closedBall.mp (hC ⟨t, ht, rfl⟩)
+    rw [hdist, abs_of_pos (by linarith), add_mul, div_mul_cancel₀ _ hyx.ne'] at hmem
+    linarith [le_abs_self C]
+  · rcases (mem_closedBall.mp hy).eq_or_lt with h | h
+    · exact subset_filledHull (mem_sphere.mpr h)
+    · exact subset_filledHull_of_frontier_subset isBounded_ball frontier_ball_subset_sphere
+        (mem_ball.mpr h)
 
 /-- The filled hull of the empty set is a subsingleton: empty in a nontrivial space by
 `TauCeti.filledHull_empty`, and the whole zero space, a single point, otherwise. Either way it is as

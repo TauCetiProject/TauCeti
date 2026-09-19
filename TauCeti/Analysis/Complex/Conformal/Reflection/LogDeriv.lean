@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Line
+import TauCeti.Analysis.Complex.Conformal.LocalDegree
+import TauCeti.Analysis.Complex.Conformal.Reflection.Injective
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!
 # The pre-Schwarzian derivative along a straight boundary arc
@@ -33,10 +36,14 @@ satisfies the identity as well.
 
 These are the local statements the Schwarz--Christoffel formula needs in its converse direction. A
 conformal map of the upper half-plane onto a polygon carries each boundary interval between two
-consecutive prevertices into one side, hence has real pre-Schwarzian there; assembling those
-intervals and reading off the poles left at the prevertices is what identifies the pre-Schwarzian
-with `∑ i, e i / (z - a i)`, the pre-Schwarzian derivative of the Schwarz--Christoffel map
-(`TauCeti.logDeriv_deriv_schwarzChristoffelPrimitive`).
+consecutive prevertices into one side, hence has real pre-Schwarzian there. When the map is also
+injective up to that interval and sends the upper half-plane to one side of the side's line, the
+reflected extension is injective, so its derivative does not vanish on the interval and its
+pre-Schwarzian is holomorphic across it. Assembling those intervals, the pre-Schwarzian continues to
+a conjugation-symmetric function holomorphic on the plane minus the prevertices
+(`TauCeti.exists_differentiableOn_eqOn_logDeriv_deriv`). Reading off its poles at the prevertices
+is what identifies it with `∑ i, e i / (z - a i)`, the pre-Schwarzian derivative of the
+Schwarz--Christoffel map (`TauCeti.logDeriv_deriv_schwarzChristoffelPrimitive`).
 
 The source line is the real axis throughout, as in
 `TauCeti/Analysis/Complex/Conformal/Reflection/Basic.lean`: unlike holomorphy, the pre-Schwarzian
@@ -67,6 +74,12 @@ arbitrary target line; its holomorphy and its agreement with `f` on the closed u
   the reflected extension is real on the real axis.
 * `TauCeti.eqOn_logDeriv_deriv_lineSchwarzReflection` -- it extends the pre-Schwarzian derivative
   of the original branch.
+* `TauCeti.logDeriv_deriv_lineSchwarzReflection_conj` -- it is conjugation-symmetric.
+* `TauCeti.differentiableOn_logDeriv_deriv_lineSchwarzReflection` -- for an injective branch
+  mapping the upper half-plane to one side of the target line, it is holomorphic across the axis.
+* `TauCeti.exists_differentiableOn_eqOn_logDeriv_deriv` -- the pre-Schwarzian derivative of a map
+  of the upper half-plane with straight boundary arcs away from a set `S` continues to a
+  conjugation-symmetric function holomorphic away from the real points of `S`.
 
 ## References
 
@@ -214,6 +227,148 @@ theorem eqOn_logDeriv_deriv_lineSchwarzReflection (hb : b ≠ 0) :
       lineSchwarzReflection_of_coord_im_nonneg f one_ne_zero hb (by simpa using hv.le)
   exact (logDeriv_congr_nhds h0.deriv).eq_of_nhds
 
+/-- **The pre-Schwarzian derivative of the reflected extension is conjugation-symmetric.** For
+boundary values on the line through `q` with direction `b`, the pre-Schwarzian derivative of the
+extension intertwines conjugation with conjugation on the symmetric domain. -/
+theorem logDeriv_deriv_lineSchwarzReflection_conj (hb : b ≠ 0) (hΩopen : IsOpen Ω)
+    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
+    (hline : ∀ z ∈ Ω, z.im = 0 → ((f z - q) / b).im = 0) {z : ℂ} (hz : z ∈ Ω) :
+    logDeriv (deriv (lineSchwarzReflection 0 1 q b f)) ((starRingEnd ℂ) z) =
+      (starRingEnd ℂ) (logDeriv (deriv (lineSchwarzReflection 0 1 q b f)) z) :=
+  logDeriv_deriv_conj_eq_conj_logDeriv_deriv hΩopen hΩ
+    (fun _ hw => lineSchwarzReflection_conj_eq hb hline hw) hz
+
+/-- **The pre-Schwarzian derivative of a reflected conformal map is holomorphic across the
+axis.** Let `f` be continuous and injective on the closed upper part of a conjugation-symmetric
+open set `Ω` and holomorphic on its open upper part, with boundary values on the line through `q`
+with direction `b` and with the open upper part mapped strictly to the left of that line. Then the
+reflected extension is injective with nonvanishing derivative on `Ω`, so its pre-Schwarzian
+derivative is holomorphic on all of `Ω`, the real points included. -/
+theorem differentiableOn_logDeriv_deriv_lineSchwarzReflection (hb : b ≠ 0) (hΩopen : IsOpen Ω)
+    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
+    (hcont : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
+    (hholo : DifferentiableOn ℂ f (Ω ∩ {z : ℂ | 0 < z.im}))
+    (hline : ∀ z ∈ Ω, z.im = 0 → ((f z - q) / b).im = 0)
+    (hside : ∀ z ∈ Ω, 0 < z.im → 0 < ((f z - q) / b).im)
+    (hinj : InjOn f (Ω ∩ {z : ℂ | 0 ≤ z.im})) :
+    DifferentiableOn ℂ (logDeriv (deriv (lineSchwarzReflection 0 1 q b f))) Ω := by
+  set F := lineSchwarzReflection 0 1 q b f with hFdef
+  have hd : DifferentiableOn ℂ F Ω :=
+    differentiableOn_lineSchwarzReflection_of_symmetric one_ne_zero hΩopen
+      (by simpa using hΩ) (by simpa using hcont) (by simpa using hholo) (by simpa using hline)
+  -- In the target chart `w ↦ (w - q) / b` the extension is the real-axis Schwarz reflection of
+  -- `g`, which is injective because `g` maps the open upper part into the upper half-plane.
+  set g : ℂ → ℂ := fun w => (f w - q) / b with hg
+  have hFg : ∀ z, F z = q + b * schwarzReflection g z := fun z => by
+    simp [hFdef, hg, lineSchwarzReflection_def]
+  have hginj : InjOn (schwarzReflection g) Ω := by
+    refine injOn_schwarzReflection_of_symmetric hΩ (fun z hz => hside z hz.1 hz.2)
+      (fun z hz hz0 => (hline z hz hz0).ge) fun z hz w hw hzw => hinj hz hw ?_
+    simpa [hg, div_left_inj' hb] using hzw
+  have hFinj : InjOn F Ω := fun z hz w hw hzw => hginj hz hw <| by
+    simpa [hFg, hb] using hzw
+  have hd' : DifferentiableOn ℂ (deriv F) Ω := hd.deriv hΩopen
+  refine ((hd'.deriv hΩopen).div hd' fun z hz => deriv_ne_zero_of_injOn hd hΩopen hFinj hz).congr
+    fun z _ => logDeriv_apply _ _
+
 end LineReflection
+
+section Continuation
+
+open Filter
+
+/-- **The pre-Schwarzian derivative continues across straight boundary arcs.** Let `f` be
+holomorphic with nonvanishing derivative on the open upper half-plane, and suppose that near every
+real point outside `S` it extends continuously and injectively to the real axis, with boundary
+values on a line and the nearby upper half-plane mapped strictly to one side of that line. Then
+the pre-Schwarzian derivative `logDeriv (deriv f)` continues to a function holomorphic away from
+the real points of `S` and symmetric under conjugation.
+
+This is the situation of a conformal map of the upper half-plane onto a polygon, with `S` the set
+of prevertices: each boundary interval between consecutive prevertices is carried into one side of
+the polygon. The continuation is in fact holomorphic at every non-real point; the theorem permits
+exceptions only at the real points of `S`. -/
+theorem exists_differentiableOn_eqOn_logDeriv_deriv {S : Set ℂ}
+    (hholo : DifferentiableOn ℂ f {z : ℂ | 0 < z.im})
+    (hderiv : ∀ z : ℂ, 0 < z.im → deriv f z ≠ 0)
+    (hloc : ∀ x : ℝ, (x : ℂ) ∉ S → ∃ r > 0, ∃ q b : ℂ, b ≠ 0 ∧
+      ContinuousOn f (Metric.ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
+      InjOn f (Metric.ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
+      (∀ z ∈ Metric.ball (x : ℂ) r, z.im = 0 → ((f z - q) / b).im = 0) ∧
+      ∀ z ∈ Metric.ball (x : ℂ) r, 0 < z.im → 0 < ((f z - q) / b).im) :
+    ∃ φ : ℂ → ℂ, DifferentiableOn ℂ φ (S ∩ {z : ℂ | z.im = 0})ᶜ ∧
+      EqOn φ (logDeriv (deriv f)) {z : ℂ | 0 < z.im} ∧
+      ∀ z, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z) := by
+  set ψ := logDeriv (deriv f)
+  have hopen : IsOpen {z : ℂ | 0 < z.im} := isOpen_lt continuous_const Complex.continuous_im
+  -- Above the axis the pre-Schwarzian is holomorphic because `deriv f` does not vanish.
+  have hψ : ∀ z : ℂ, 0 < z.im → DifferentiableAt ℂ ψ z := fun z hz => by
+    have h1 := hholo.deriv hopen
+    have hz' := hopen.mem_nhds hz
+    refine (((h1.deriv hopen) z hz).differentiableAt hz').div ((h1 z hz).differentiableAt hz')
+      (hderiv z hz) |>.congr_of_eventuallyEq (Filter.Eventually.of_forall fun w => ?_)
+    exact logDeriv_apply _ _
+  -- The continuation is the Schwarz reflection of `ψ` filled in on the axis by the real part of
+  -- its limit from above.
+  let ψu : ℂ → ℂ := fun z => if 0 < z.im then ψ z
+    else ((limUnder (𝓝[{w : ℂ | 0 < w.im}] z) ψ).re : ℂ)
+  let φ := schwarzReflection ψu
+  have hconj : ∀ z, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z) := fun z =>
+    schwarzReflection_conj z fun h => by simp [ψu, h]
+  -- Near a real point outside `S`, the continuation is the pre-Schwarzian derivative of the
+  -- local Schwarz reflection of `f`.
+  have hreal : ∀ x : ℝ, (x : ℂ) ∉ S → DifferentiableAt ℂ φ x := by
+    intro x hx
+    obtain ⟨r, hr, q, b, hb, hcont, hinj, hline, hside⟩ := hloc x hx
+    have hball : MapsTo (starRingEnd ℂ) (Metric.ball (x : ℂ) r) (Metric.ball (x : ℂ) r) :=
+      fun z hz => by
+        rw [Metric.mem_ball, ← Complex.conj_ofReal, Complex.dist_conj_conj]
+        exact hz
+    set G := logDeriv (deriv (lineSchwarzReflection 0 1 q b f))
+    have hG := differentiableOn_logDeriv_deriv_lineSchwarzReflection hb Metric.isOpen_ball hball
+      hcont ((hholo.mono inter_subset_right)) hline hside hinj
+    have hGψ : EqOn G ψ {z : ℂ | 0 < z.im} := eqOn_logDeriv_deriv_lineSchwarzReflection hb
+    have hGconj : ∀ z ∈ Metric.ball (x : ℂ) r, G ((starRingEnd ℂ) z) = (starRingEnd ℂ) (G z) :=
+      fun _ hz => logDeriv_deriv_lineSchwarzReflection_conj hb Metric.isOpen_ball hball hline hz
+    have hφG : φ =ᶠ[𝓝 (x : ℂ)] G := by
+      filter_upwards [Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr)] with z hz
+      rcases lt_trichotomy z.im 0 with h | h | h
+      · have hc : 0 < ((starRingEnd ℂ) z).im := by simpa using h
+        simp only [φ, schwarzReflection_of_im_neg h, ψu, hc, ↓reduceIte]
+        rw [← hGψ hc, hGconj z hz, Complex.conj_conj]
+      · -- On the axis, `G` is continuous and agrees with `ψ` above, so it is the limit there.
+        have hlim : Tendsto ψ (𝓝[{w : ℂ | 0 < w.im}] z) (𝓝 (G z)) :=
+          ((hG.continuousOn.continuousAt (Metric.isOpen_ball.mem_nhds hz)).tendsto.mono_left
+            nhdsWithin_le_nhds).congr' (eventually_nhdsWithin_of_forall fun w hw => hGψ hw)
+        have hzre : ((z.re : ℂ)) = z := Complex.ext (by simp) (by simp [h])
+        have : (𝓝[{w : ℂ | 0 < w.im}] z).NeBot := by
+          simpa [hzre] using Real.nhdsWithin_upperHalfPlaneSet_neBot z.re
+        have hGre : ((G z).re : ℂ) = G z := Complex.conj_eq_iff_re.mp <| by
+          simpa [Complex.conj_eq_iff_im.mpr h] using (hGconj z hz).symm
+        simp only [φ, schwarzReflection_of_im_zero h, ψu, h, lt_irrefl, ↓reduceIte]
+        rw [hlim.limUnder_eq, hGre]
+      · simp only [φ, schwarzReflection_of_im_nonneg h.le, ψu, h, ↓reduceIte]
+        exact (hGψ h).symm
+    exact ((hG x (Metric.mem_ball_self hr)).differentiableAt
+      (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr))).congr_of_eventuallyEq hφG
+  refine ⟨φ, fun z hz => ?_, fun z (hz : 0 < z.im) => by simp [φ, ψu, hz, hz.le], hconj⟩
+  refine DifferentiableAt.differentiableWithinAt ?_
+  rcases lt_trichotomy z.im 0 with h | h | h
+  · -- Below the axis the continuation is the mirror image of `ψ`.
+    have hc : 0 < ((starRingEnd ℂ) z).im := by simpa using h
+    have hmir := (hψ _ hc).conj_conj
+    rw [Complex.conj_conj] at hmir
+    refine hmir.congr_of_eventuallyEq ?_
+    filter_upwards [(isOpen_lt Complex.continuous_im continuous_const).mem_nhds h] with w hw
+    simp [φ, ψu, hw]
+  · have hzS : z ∉ S := fun hzS => hz ⟨hzS, h⟩
+    have hzre : ((z.re : ℂ)) = z := Complex.ext (by simp) (by simp [h])
+    rw [← hzre] at hzS ⊢
+    exact hreal z.re hzS
+  · refine (hψ z h).congr_of_eventuallyEq ?_
+    filter_upwards [hopen.mem_nhds h] with w hw
+    simp [φ, ψu, hw, hw.le]
+
+end Continuation
 
 end TauCeti

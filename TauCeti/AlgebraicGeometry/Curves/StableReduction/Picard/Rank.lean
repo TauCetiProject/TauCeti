@@ -53,11 +53,6 @@ private lemma multiplicityRat_pos (i : T.Component) :
     0 < ((T.multiplicity i : ℤ) : ℚ) := by
   exact Int.cast_pos.mpr (Int.natCast_pos.mpr (T.multiplicity i).pos)
 
-private lemma intersection_mulVec_multiplicity :
-    T.intersection.mulVec (fun i ↦ (T.multiplicity i : ℤ)) = 0 := by
-  funext i
-  simpa [Matrix.mulVec, dotProduct, mul_comm] using T.fiber_relation i
-
 private lemma intersectionRat_mulVec_multiplicityRat :
     T.intersectionRat.mulVec (fun i ↦ ((T.multiplicity i : ℤ) : ℚ)) = 0 := by
   funext i

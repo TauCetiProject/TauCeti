@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Biprod
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Monoidal
 
 /-!
@@ -20,6 +22,9 @@ corresponding result for finite presentation
 sheaves of modules form a monoidal full subcategory (`ObjectProperty.fullMonoidalSubcategory`).
 In appropriate geometric settings, these are the sheaves of sections of vector bundles.
 
+Finite locally free sheaves also contain the zero sheaf (the free sheaf on the empty type) and are
+closed under direct sums, hence under finite products, so they form an additive full subcategory.
+
 Local freeness is also shown to be invariant under isomorphism, by transporting local bases along
 an isomorphism (`SheafOfModules.LocalGeneratorsData.ofIsIso`).
 
@@ -33,7 +38,10 @@ an isomorphism (`SheafOfModules.LocalGeneratorsData.ofIsIso`).
   `ObjectProperty.IsMonoidal`;
 * `SheafOfModules.isFiniteLocallyFree`: the property of being locally free and finitely
   presented, and `TauCeti.SheafOfModules.isMonoidal_isFiniteLocallyFree`: it is an
-  `ObjectProperty.IsMonoidal`.
+  `ObjectProperty.IsMonoidal`;
+* `TauCeti.SheafOfModules.containsZero_isFiniteLocallyFree` and
+  `TauCeti.SheafOfModules.isClosedUnderFiniteProducts_isFiniteLocallyFree`: finite locally free
+  sheaves contain a zero object and are closed under finite products.
 
 ## References
 
@@ -127,6 +135,41 @@ abbrev _root_.SheafOfModules.isFiniteLocallyFree : ObjectProperty (SheafOfModule
   isLocallyFree R ⊓ isFinitePresentation R
 
 end LocalGeneratorsData
+
+section DirectSum
+
+variable {C : Type u₁} [Category.{v₁} C] [HasPullbacks C] {J : GrothendieckTopology C}
+  {R : Sheaf J RingCat.{u}}
+  [HasSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
+  [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
+  [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
+
+/-- Finite locally free sheaves of modules are closed under binary products, which are the direct
+sums `M ⊞ N`. -/
+instance isClosedUnderBinaryProducts_isFiniteLocallyFree :
+    (isFiniteLocallyFree R).IsClosedUnderBinaryProducts where
+  limitsOfShape_le := by
+    rintro M ⟨p⟩
+    obtain ⟨_, _⟩ := p.prop_diag_obj ⟨.left⟩
+    obtain ⟨_, _⟩ := p.prop_diag_obj ⟨.right⟩
+    exact (isFiniteLocallyFree R).prop_of_iso
+      (IsLimit.conePointUniqueUpToIso (BinaryBiproduct.isLimit _ _)
+        ((IsLimit.postcomposeHomEquiv (diagramIsoPair p.diag) _).2 p.isLimit))
+      ⟨isLocallyFree_biprod, isFinitePresentation_biprod⟩
+
+variable [HasBinaryProducts C]
+
+/-- The zero sheaf of modules is finite locally free, being the free sheaf on the empty type. -/
+instance containsZero_isFiniteLocallyFree : (isFiniteLocallyFree R).ContainsZero where
+  exists_zero := ⟨_, isZero_free PEmpty, inferInstance, isFinitePresentation_free PEmpty⟩
+
+/-- Finite locally free sheaves of modules are closed under finite products, which are the finite
+direct sums. -/
+instance isClosedUnderFiniteProducts_isFiniteLocallyFree :
+    (isFiniteLocallyFree R).IsClosedUnderFiniteProducts :=
+  .mk'
+
+end DirectSum
 
 section Tensor
 

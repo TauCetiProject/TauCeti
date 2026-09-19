@@ -17,6 +17,9 @@ For a continuous and cocontinuous functor between sites, this file identifies pu
 sheafification of a presheaf of modules with sheafification after pushforward. Restriction to a
 slice site is the special case given by `Over.forget X`.
 
+Pushforward of sheaves of modules is additive, as is its specialization to restriction to a slice
+site.
+
 The comparison is obtained from the unit of Mathlib's sheafification adjunction. Its underlying
 morphism of presheaves of abelian groups is the sheafification map whiskered by the functor between
 sites. Cocontinuity preserves its local injectivity and surjectivity, so Mathlib's localization
@@ -29,7 +32,8 @@ the ingredients are Mathlib's `PresheafOfModules.sheafificationAdjunction`,
 
 * `SheafOfModules.pushforwardSheafificationIso` is the sheafification-pushforward comparison for
   a continuous and cocontinuous functor;
-* `SheafOfModules.overSheafificationIso` is its specialization to a slice site.
+* `SheafOfModules.overSheafificationIso` is its specialization to a slice site;
+* `SheafOfModules.pushforward` and `SheafOfModules.overFunctor` are additive.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Invertible sheaves on a
 scheme; the Picard group `Pic X` under `⊗`", by providing the restriction compatibility needed to
@@ -50,6 +54,23 @@ namespace SheafOfModules
 
 variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
 variable [HasWeakSheafify J AddCommGrpCat.{v}] [J.WEqualsLocallyBijective AddCommGrpCat.{v}]
+
+section Additive
+
+variable {D : Type u₂} [Category.{v₂} D] {K : GrothendieckTopology D} {F : C ⥤ D}
+  {S : Sheaf J RingCat.{u}} {R : Sheaf K RingCat.{u}} [Functor.IsContinuous F J K]
+  (φ : S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj R)
+
+/-- The pushforward of sheaves of modules is additive. -/
+instance : (_root_.SheafOfModules.pushforward.{v} φ).Additive where
+  map_add := rfl
+
+/-- Restriction to a slice site is additive. -/
+instance (R : Sheaf J RingCat.{u}) (X : C) :
+    (_root_.SheafOfModules.overFunctor.{v} R X).Additive :=
+  inferInstanceAs (_root_.SheafOfModules.pushforward _).Additive
+
+end Additive
 
 section General
 

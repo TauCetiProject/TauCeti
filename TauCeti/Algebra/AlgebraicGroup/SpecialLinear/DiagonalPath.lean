@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 
 /-!
 # A Laurent-polynomial path in the special linear group
