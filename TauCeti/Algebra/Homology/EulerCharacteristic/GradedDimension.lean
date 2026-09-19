@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.FiniteSupport.Basic
 public import Mathlib.Algebra.Polynomial.Laurent
+public import TauCeti.Algebra.DirectSum.FiniteSupport
+public import TauCeti.Algebra.Polynomial.Laurent.Basic
 public import TauCeti.LinearAlgebra.Exact
 
 /-!
@@ -38,6 +40,9 @@ explicit bounding finset, while coefficient lemmas characterize the resulting La
 * `TauCeti.targetShiftGradedDimension`: the target-shift convention with exponent `-j`.
 * `TauCeti.targetShiftGradedDimension_reindex_add`: translation of the family multiplies this
   polynomial by the corresponding Laurent monomial.
+* `TauCeti.laurentEval_one_gradedDimension` and
+  `TauCeti.laurentEval_one_targetShiftGradedDimension`: both conventions evaluate at `q = 1` to the
+  dimension of the direct sum of all the pieces.
 
 The predicate is closed under degreewise exact sequences, and both dimension conventions are
 additive on degreewise short exact sequences.
@@ -51,6 +56,8 @@ additive on degreewise short exact sequences.
 -/
 
 public section
+
+open scoped DirectSum
 
 namespace TauCeti
 
@@ -364,5 +371,30 @@ theorem targetShiftGradedDimension_shortExact
       targetShiftGradedDimension k U hU + targetShiftGradedDimension k W hW := by
   simp only [targetShiftGradedDimension]
   rw [gradedDimension_shortExact hU hW f g hinj hfg hsurj, map_add]
+
+/-! ### The total dimension -/
+
+/-- A family with finite Laurent support has a finite-dimensional direct sum. -/
+theorem HasFiniteLaurentSupport.finiteDimensional_directSum (h : HasFiniteLaurentSupport k V) :
+    FiniteDimensional k (⨁ j, V j) := by
+  obtain ⟨s, hs⟩ := h.exists_finset
+  have : ∀ j, Module.Finite k (V j) := h.finiteDimensional
+  exact DirectSum.finite_of_subsingleton_notMem V s hs
+
+/-- **The graded dimension at `q = 1` is the total dimension.**  Its coefficients are the
+dimensions of the homogeneous pieces, so setting `q = 1` adds them up. -/
+theorem laurentEval_one_gradedDimension (h : HasFiniteLaurentSupport k V) :
+    laurentEval (1 : ℤˣ) (gradedDimension k V h) = Module.finrank k (⨁ j, V j) := by
+  obtain ⟨s, hs⟩ := h.exists_finset
+  have : ∀ j, Module.Finite k (V j) := h.finiteDimensional
+  rw [gradedDimension_eq_sum h s hs, map_sum, finrank_directSum_eq_sum V s hs, Nat.cast_sum]
+  exact Finset.sum_congr rfl fun j _ => by simp
+
+/-- **The target-shift graded dimension at `q = 1` is the total dimension.**  The two conventions
+differ by `q ↦ q⁻¹`, which the specialization at `q = 1` does not see. -/
+theorem laurentEval_one_targetShiftGradedDimension (h : HasFiniteLaurentSupport k V) :
+    laurentEval (1 : ℤˣ) (targetShiftGradedDimension k V h) = Module.finrank k (⨁ j, V j) := by
+  simp only [targetShiftGradedDimension]
+  rw [laurentEval_invert, inv_one, laurentEval_one_gradedDimension]
 
 end TauCeti
