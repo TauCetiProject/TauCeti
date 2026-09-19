@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 public import TauCeti.Combinatorics.PermutationTriple.GeometryType
 public import TauCeti.Combinatorics.PermutationTriple.BlockQuotient
+public import TauCeti.Combinatorics.PermutationTriple.Regular
 public import TauCeti.GroupTheory.GroupAction.FinRotate
 public import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 public import Mathlib.GroupTheory.Perm.Closure
@@ -23,20 +24,21 @@ characteristic, genus, orders, geometry type, monodromy group and automorphism g
 
 * `TauCeti.PermutationTriple.cyclicTriple n`: for `n ≠ 0`, the monodromy of `z ↦ zⁿ`, totally
   ramified over `0` and `∞` and unramified over `1`. For `n ≠ 0` it is connected of genus zero,
-  with cyclic monodromy of order `n`; it is spherical in every degree. `cyclicTriple 0` is the
-  formal empty triple, which is not connected, and `cyclicTriple 1` is the trivial triple, the
-  identity cover of the sphere. Disjoint sums of two such triples are disconnected, with Euler
-  characteristic `4`, and relabeling `cyclicTriple 4` gives a different but isomorphic triple.
+  with cyclic monodromy of order `n`, hence regular; it is spherical in every degree.
+  `cyclicTriple 0` is the formal empty triple, which is not connected, and `cyclicTriple 1` is
+  the trivial triple, the identity cover of the sphere. Disjoint sums of two such triples are
+  disconnected, with Euler characteristic `4`, and relabeling `cyclicTriple 4` gives a different
+  but isomorphic triple.
 * `TauCeti.PermutationTriple.chebyshevTriple`: the monodromy of `z ↦ 4z(1 - z)`, a connected
   genus-zero triple whose component over `0` is the identity. Being unramified over a point is
   allowed.
 * `TauCeti.PermutationTriple.torusTriple`: a degree-four triple with cycle data `[4], [4], [2, 2]`.
   It is connected of genus one and Euclidean; its automorphism group equals its cyclic monodromy
-  group of order four, so the cover is regular; and `{0, 2}` is a nontrivial block, so its
+  group of order four, so it is regular; and `{0, 2}` is a nontrivial block, so its
   monodromy action is imprimitive. Its quotient by this block is the degree-two triple unramified
   over `∞`.
 * `TauCeti.PermutationTriple.s3Triple`: a degree-three genus-zero triple whose monodromy group is
-  the whole symmetric group and whose automorphism group is trivial.
+  the whole symmetric group and whose automorphism group is trivial, so it is not regular.
 
 ## References
 
@@ -94,6 +96,11 @@ theorem card_monodromyGroup_cyclicTriple (hn : n ≠ 0) :
 @[simp] theorem isConnected_cyclicTriple_iff : (cyclicTriple n).IsConnected ↔ n ≠ 0 :=
   ⟨IsConnected.ne_zero, fun hn =>
     isConnected_iff.mpr ⟨hn, isPretransitive_of_finRotate_mem (σ0_mem_monodromyGroup _)⟩⟩
+
+/-- The cyclic triple of degree `n ≠ 0` is regular: its monodromy group has order `n`. -/
+theorem isRegular_cyclicTriple (hn : n ≠ 0) : (cyclicTriple n).IsRegular :=
+  isRegular_iff_card_monodromyGroup.mpr
+    ⟨isConnected_cyclicTriple_iff.mpr hn, card_monodromyGroup_cyclicTriple hn⟩
 
 /-- The cyclic triple is totally ramified over `0` and `∞` and unramified over `1`. -/
 theorem cycleData_cyclicTriple (hn : n ≠ 0) :
@@ -250,7 +257,7 @@ theorem geometryType_torusTriple : torusTriple.geometryType = .euclidean := by
   rw [geometryType_eq_euclidean_iff, h.1, h.2.1, h.2.2]
   norm_num
 
-/-- The torus triple is regular: its automorphism group is its whole monodromy group. -/
+/-- The automorphism group of the torus triple is its whole monodromy group. -/
 theorem automorphismGroup_torusTriple :
     torusTriple.automorphismGroup = torusTriple.monodromyGroup := by
   refine (Subgroup.eq_of_le_of_card_ge ?_ ?_).symm
@@ -259,6 +266,10 @@ theorem automorphismGroup_torusTriple :
   · rw [card_monodromyGroup_torusTriple]
     exact Nat.le_of_dvd four_pos
       (card_automorphismGroup_dvd isConnected_torusTriple.isPretransitive)
+
+/-- The torus triple is regular: its monodromy group has order equal to the degree `4`. -/
+theorem isRegular_torusTriple : torusTriple.IsRegular :=
+  isRegular_iff_card_monodromyGroup.mpr ⟨isConnected_torusTriple, card_monodromyGroup_torusTriple⟩
 
 /-- The pair `{0, 2}` is a block for the monodromy action of the torus triple. -/
 theorem isBlock_torusTriple : IsBlock torusTriple.monodromyGroup ({0, 2} : Set (Fin 4)) := by
@@ -383,6 +394,12 @@ theorem orderTriple_s3Triple : s3Triple.orderTriple = (3, 2, 2) := by
       τ * finRotate 3 * τ⁻¹ = finRotate 3 → τ * swap 0 1 * τ⁻¹ = swap 0 1 → τ = 1 := by
     decide
   exact Subgroup.mem_bot.mpr (h τ hτ.1 hτ.2)
+
+/-- The triple `s3Triple` is not regular: its automorphism group is trivial, of order `1 ≠ 3`. -/
+theorem not_isRegular_s3Triple : ¬s3Triple.IsRegular := by
+  rw [isRegular_iff_card_automorphismGroup, automorphismGroup_s3Triple,
+    Subgroup.card_eq_one.mpr rfl]
+  omega
 
 end PermutationTriple
 

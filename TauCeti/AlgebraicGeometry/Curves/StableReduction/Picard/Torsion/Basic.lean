@@ -11,13 +11,13 @@ public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Rank
 
 /-!
-# Prime torsion in the Picard group of a numerical type
+# Prime torsion for a numerical type
 
-For a numerical type `T`, this file equips the subgroup `Pic(T)[ℓ]` killed by a natural number
-`ℓ` with its canonical `ZMod ℓ`-module structure.  When `ℓ` is prime this is a finite-dimensional
-vector space.  Its cardinality is therefore `ℓ` raised to its dimension, which is the form of the
-torsion invariant used when comparing a numerical type with torsion line bundles on a regular
-model.
+For a numerical type `T`, this file equips the subgroups `Pic(T)[ℓ]` and `Coker(A)[ℓ]` killed by a
+natural number `ℓ` with their canonical `ZMod ℓ`-module structures.  When `ℓ` is prime,
+`Pic(T)[ℓ]` is a finite-dimensional vector space.  Its cardinality is therefore `ℓ` raised to its
+dimension, which is the form of the torsion invariant used when comparing a numerical type with
+torsion line bundles on a regular model.
 
 The total degree of every nonzero-order torsion class vanishes.  Equivalences of numerical types
 carry torsion classes to torsion classes and induce linear equivalences on the corresponding
@@ -47,6 +47,15 @@ abbrev torsion (ℓ : ℕ) : AddSubgroup T.Pic :=
 
 /-- The canonical `ZMod ℓ`-module structure on the `ℓ`-torsion of `Pic(T)`. -/
 noncomputable instance torsionModule (ℓ : ℕ) : Module (ZMod ℓ) (T.torsion ℓ) :=
+  AddSubgroup.torsionBy.zmodModule
+
+/-- The subgroup `Coker(A)[ℓ]` of classes in the cokernel of the intersection matrix killed by
+`ℓ`. -/
+abbrev cokerTorsion (ℓ : ℕ) : AddSubgroup T.Coker :=
+  AddSubgroup.torsionBy T.Coker (ℓ : ℤ)
+
+/-- The canonical `ZMod ℓ`-module structure on the `ℓ`-torsion of `Coker(A)`. -/
+noncomputable instance cokerTorsionModule (ℓ : ℕ) : Module (ZMod ℓ) (T.cokerTorsion ℓ) :=
   AddSubgroup.torsionBy.zmodModule
 
 /-- If `ℓ` is nonzero, then the `ℓ`-torsion subgroup of `Pic(T)` is finite.

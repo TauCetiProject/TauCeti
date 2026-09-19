@@ -318,6 +318,40 @@ theorem differential_apply (𝒜 : AInfinityAlgebra R A) (x : A) :
     𝒜.differential x = 𝒜.m 1 ![x] := by
   simp [differential, MultilinearMap.curryRight_apply]
 
+/-- On a single letter the Taylor map is the unary operation: the suspension sign of a word of
+length one is trivial. -/
+@[simp]
+theorem taylor_ofLetter (𝒜 : AInfinityAlgebra R A) (x : A) :
+    𝒜.taylor (ReducedTensorWords.ofLetter R A x) = 𝒜.m 1 ![x] := by
+  have h : 𝒜.taylor ∘ₗ ReducedTensorWords.ofLetter R A = 𝒜.differential := by
+    refine 𝒜.grading.linearMap_ext fun p y hy ↦ ?_
+    have hs := (AInfinity.isSuspension_def _ _ _).1 𝒜.taylor_isSuspension 1 Nat.one_pos
+      (fun _ ↦ p) (fun _ ↦ y) fun _ _ ↦ hy
+    rw [ReducedTensorWords.of_tprod_eq_subword R Nat.one_pos,
+      ReducedTensorWords.subword_one R A _ Nat.one_pos] at hs
+    rw [LinearMap.comp_apply, hs, AInfinity.evalNat_suspend, _root_.MultilinearMap.suspExp_one,
+      negOnePowCast_zero, one_smul, MultilinearMap.evalNat_def, differential_apply]
+    congr 1
+    funext i
+    fin_cases i
+    rfl
+  simpa using LinearMap.congr_fun h x
+
+/-- The bar differential sends a single letter to the single letter given by the unary
+operation. -/
+@[simp]
+theorem barDifferential_ofLetter (𝒜 : AInfinityAlgebra R A) (x : A) :
+    𝒜.barDifferential (ReducedTensorWords.ofLetter R A x) =
+      ReducedTensorWords.ofLetter R A (𝒜.m 1 ![x]) := by
+  -- A coderivation sends primitives to primitives, and the primitives are the single letters.
+  have hd : ReducedTensorWords.deconcatenation R A
+      (𝒜.barDifferential (ReducedTensorWords.ofLetter R A x)) = 0 := by
+    rw [𝒜.isGradedCoderivation_barDifferential.deconcatenation_apply,
+      ReducedTensorWords.deconcatenation_ofLetter, map_zero, map_zero, map_zero, add_zero]
+  obtain ⟨y, hy⟩ := (ReducedTensorWords.deconcatenation_eq_zero_iff R A).1 hd
+  rw [← taylor_ofLetter, ← letter_comp_barDifferential, LinearMap.comp_apply, ← hy,
+    ReducedTensorWords.letter_ofLetter]
+
 /-- The unary operation squares to zero. -/
 @[simp]
 theorem differential_comp_self_eq_zero (𝒜 : AInfinityAlgebra R A) :

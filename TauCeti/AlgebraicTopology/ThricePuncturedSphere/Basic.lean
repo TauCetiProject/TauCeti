@@ -26,7 +26,8 @@ computation of its fundamental group and the classification of its finite covers
   because the complement of a countable set in `ℂ` is. The inclusion into the Riemann sphere
   `OnePoint ℂ` is an open embedding whose range is the complement of `{0, 1, ∞}`, which is what
   makes the name honest.
-* **The basepoint** `b = 1/2`, on the real segment between the punctures `0` and `1`.
+* **The basepoint and its symmetry.** The basepoint is `b = 1/2`, on the real segment between
+  the punctures `0` and `1`; the involution `z ↦ 1 − z` fixes it.
 * **The standard two-set cover** by `A = {z | re z < 1}` and `B = {z | 0 < re z}`. The set `A`
   is the convex half-plane `re z < 1` with the puncture `0` removed, `B` is the half-plane
   `0 < re z` with the puncture `1` removed, and `A ∩ B` is the open vertical strip
@@ -44,6 +45,7 @@ computation of its fundamental group and the classification of its finite covers
 * `TauCeti.ThricePuncturedSphere.toOnePoint`, `isOpenEmbedding_toOnePoint`,
   `range_toOnePoint`: the open embedding into the Riemann sphere, with range `{0, 1, ∞}ᶜ`.
 * `TauCeti.ThricePuncturedSphere.basePt`: the basepoint `1/2`.
+* `TauCeti.ThricePuncturedSphere.mob01`: the self-homeomorphism `z ↦ 1 − z`.
 * `TauCeti.ThricePuncturedSphere.leftOpen`, `TauCeti.ThricePuncturedSphere.rightOpen`: the open
   sets `A` and `B` of the standard cover, with `leftOpen_union_rightOpen`, `image_coe_leftOpen`,
   `image_coe_rightOpen`, `image_coe_leftOpen_inter_rightOpen`,
@@ -244,6 +246,26 @@ theorem basePt_mem_rightOpen : basePt ∈ rightOpen := by
 /-- The basepoint `1/2` lies in the strip `A ∩ B`. -/
 theorem basePt_mem_leftOpen_inter_rightOpen : basePt ∈ leftOpen ∩ rightOpen :=
   ⟨basePt_mem_leftOpen, basePt_mem_rightOpen⟩
+
+/-- The self-homeomorphism `z ↦ 1 − z` of the thrice-punctured sphere. It is the anharmonic
+transformation exchanging the punctures `0` and `1` and fixing `∞`, and among the six anharmonic
+transformations it is the only nonidentity one fixing the basepoint `1/2`. -/
+noncomputable def mob01 : ThricePuncturedSphere ≃ₜ ThricePuncturedSphere :=
+  (IsometryEquiv.subLeft (1 : ℂ)).toHomeomorph.subtype fun z ↦ by
+    simp only [ne_eq, IsometryEquiv.coe_toHomeomorph, IsometryEquiv.subLeft_apply]
+    constructor <;> rintro ⟨h₀, h₁⟩ <;>
+      exact ⟨fun h ↦ h₁ (by linear_combination -h), fun h ↦ h₀ (by linear_combination -h)⟩
+
+@[simp]
+theorem coe_mob01 (z : ThricePuncturedSphere) : (mob01 z : ℂ) = 1 - z := by
+  unfold mob01
+  rw [Homeomorph.subtype_apply_coe, IsometryEquiv.coe_toHomeomorph,
+    IsometryEquiv.subLeft_apply]
+
+/-- `z ↦ 1 − z` is an involution. -/
+@[simp]
+theorem mob01_mob01 (z : ThricePuncturedSphere) : mob01 (mob01 z) = z :=
+  Subtype.ext (by simp)
 
 end ThricePuncturedSphere
 

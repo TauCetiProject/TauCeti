@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.InformationTheory.Coding.DirectSum
 public import TauCeti.InformationTheory.Coding.Equivalence
-public import TauCeti.InformationTheory.Coding.MinimumDistance
+public import TauCeti.InformationTheory.Coding.MinimumDistance.Basic
 
 /-!
 # Weight distributions and weight enumerators

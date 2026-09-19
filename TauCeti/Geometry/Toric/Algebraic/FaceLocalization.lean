@@ -22,6 +22,11 @@ semigroup of the face is obtained from that of `σ` by adjoining `-m`
 therefore the basic open subscheme of the affine toric scheme of `σ` where the monomial of `m`
 does not vanish, and the induced morphism is an open immersion.
 
+Every face of a regular cone is cut out by such a character
+(`TauCeti.Toric.IsRegularCone.exists_mem_dualSemigroup_inf_ker_eq`), so for a regular cone the
+inclusion of an arbitrary face induces a localization at a single monomial and an open immersion
+of affine toric schemes.
+
 These open immersions are the maps along which the affine toric schemes of a fan are glued.
 
 ## Main declarations
@@ -31,6 +36,10 @@ These open immersions are the maps along which the affine toric schemes of a fan
   `m`.
 * `TauCeti.Toric.isOpenImmersion_affineToricSchemeMap_inf_ker`: the affine toric scheme of the
   face is an open subscheme of the affine toric scheme of `σ`.
+* `TauCeti.Toric.IsRegularCone.exists_isLocalization_away_affineCoordinateRingMap` and
+  `TauCeti.Toric.IsRegularCone.isOpenImmersion_affineToricSchemeMap`: for a face `τ` of a regular
+  cone `σ`, the coordinate ring of `τ` is the localization of that of `σ` away from a single
+  monomial, and the affine toric scheme of `τ` is an open subscheme of that of `σ`.
 
 ## References
 
@@ -111,5 +120,33 @@ theorem isOpenImmersion_affineToricSchemeMap_inf_ker {N : Type u} [AddCommGroup 
   rw [RingHom.algebraMap_toAlgebra] at h
   convert h using 1
   exact affineToricSchemeMap_def ..
+
+namespace IsRegularCone
+
+variable {τ : PointedCone ℝ V}
+
+/-- For a face `τ` of a regular cone `σ`, the restriction map from the coordinate ring of `σ` to
+that of `τ` is the localization away from the monomial of a character in the dual semigroup
+of `σ`. -/
+theorem exists_isLocalization_away_affineCoordinateRingMap (hi : IsIntegralLattice i)
+    (hσ : IsRegularCone i σ) (hτ : τ.IsFaceOf σ) :
+    ∃ m : dualSemigroup hi σ,
+      letI := (affineCoordinateRingMap (σ := τ) (τ := σ) hi hi (AddMonoidHom.id N) LinearMap.id
+        (fun _ ↦ rfl) (fun _ hx ↦ hτ.le hx)).toRingHom.toAlgebra
+      IsLocalization.Away (MonoidAlgebra.single (ofAdd m) (1 : ℂ))
+        (affineCoordinateRing hi τ) := by
+  obtain ⟨m, hm, rfl⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hτ
+  exact ⟨⟨m, hm⟩, isLocalization_away_affineCoordinateRingMap_inf_ker hi hσ.fg ⟨m, hm⟩⟩
+
+/-- For a face `τ` of a regular cone `σ`, the morphism from the affine toric scheme of `τ` to that
+of `σ` is an open immersion. -/
+theorem isOpenImmersion_affineToricSchemeMap {N : Type u} [AddCommGroup N] {i : N →+ V}
+    (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ) (hτ : τ.IsFaceOf σ) :
+    IsOpenImmersion (affineToricSchemeMap (σ := τ) (τ := σ) hi hi (AddMonoidHom.id N)
+      LinearMap.id (fun _ ↦ rfl) (fun _ hx ↦ hτ.le hx)) := by
+  obtain ⟨m, hm, rfl⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hτ
+  exact isOpenImmersion_affineToricSchemeMap_inf_ker hi hσ.fg ⟨m, hm⟩
+
+end IsRegularCone
 
 end TauCeti.Toric

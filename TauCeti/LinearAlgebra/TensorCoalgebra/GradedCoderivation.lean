@@ -330,6 +330,38 @@ theorem ReducedTensorWords.mem_gradedPiece_of_tprod (G : InternalGrading R M) {n
     of R M ⟨n, hn⟩ (PiTensorProduct.tprod R x) ∈ gradedPiece G (∑ i, 𝒟 i) :=
   Submodule.subset_span ⟨n, hn, 𝒟, x, h𝒟, rfl, rfl⟩
 
+/-- A single homogeneous letter is a word of the same total degree. -/
+theorem ReducedTensorWords.ofLetter_mem_gradedPiece (G : InternalGrading R M) {p : ℤ} {x : M}
+    (hx : x ∈ G.piece p) : ofLetter R M x ∈ gradedPiece G p := by
+  have h := mem_gradedPiece_of_tprod G Nat.one_pos (fun _ : Fin 1 ↦ x) (fun _ ↦ p) fun _ ↦ hx
+  rwa [of_tprod_eq_subword R Nat.one_pos, subword_one R M _ Nat.one_pos,
+    Fin.sum_univ_one] at h
+
+/-- Projecting a word onto its length-one component preserves the total degree. -/
+theorem ReducedTensorWords.isHomogeneous_letter (G : InternalGrading R M) :
+    LinearMap.IsHomogeneous (letter R M) (gradedPiece G) G.piece 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro D z hz
+  rw [add_zero]
+  refine gradedPiece_induction (motive := fun w ↦ letter R M w ∈ G.piece D) hz ?_ ?_ ?_ ?_
+  · intro n hn 𝒟 x hx hD
+    by_cases h1 : n = 1
+    · subst h1
+      rw [of_tprod_eq_subword R hn, subword_one R M x hn, letter_ofLetter]
+      rw [← hD, Fin.sum_univ_one]
+      exact hx 0
+    · have hne : (⟨n, hn⟩ : {n : ℕ // 0 < n}) ≠ 1 := fun h ↦ h1 (congrArg Subtype.val h)
+      rw [letter_apply, component_of_of_ne R M hne, map_zero]
+      exact zero_mem _
+  · rw [map_zero]
+    exact zero_mem _
+  · intro u v _ _ hu hv
+    rw [map_add]
+    exact add_mem hu hv
+  · intro a u _ hu
+    rw [map_smul]
+    exact Submodule.smul_mem _ _ hu
+
 /-- Applying a degree-zero homogeneous map to every letter preserves the total degree of a word:
 the letterwise extension `ReducedTensorWords.map f` is homogeneous of degree zero for the total
 degree gradings. -/

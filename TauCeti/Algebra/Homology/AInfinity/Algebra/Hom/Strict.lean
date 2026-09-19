@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Basic
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Unit
 
 /-!
@@ -16,14 +17,23 @@ above arity one vanish.  Applying the map letterwise gives the corresponding mor
 reduced tensor coalgebras; the deconcatenation naturality theorem records its coalgebra equation.
 
 This file bundles strict morphisms and supplies their extensionality, identity, composition, and
-strict-unit-preservation API.  The operation equations are stated both as multilinear-map
-equalities and pointwise, so later constructions can use them without unfolding the structure.
+strict-unit-preservation API.  It also identifies strict morphisms with general `A∞` morphisms
+whose Taylor components above arity one vanish.  The operation equations are stated both as
+multilinear-map equalities and pointwise, so later constructions can use them without unfolding
+the structure.
 
 ## Main definitions
 
 * `TauCeti.AInfinityStrictHom`: a strict morphism of nonunital `A∞` algebras.
 * `TauCeti.AInfinityStrictHom.barMap`: its letterwise map on reduced tensor words.
+* `TauCeti.AInfinityStrictHom.toAInfinityHom`: a strict morphism as an `A∞` morphism.
+* `TauCeti.AInfinityHom.IsStrict`: the Taylor components above arity one vanish.
 * `TauCeti.AInfinityStrictUnitalHom`: a strict morphism preserving chosen strict units.
+
+## Main results
+
+* `TauCeti.AInfinityHom.isStrict_iff_exists_eq_toAInfinityHom`: the strict `A∞` morphisms are
+  exactly the images of strict morphisms.
 
 ## References
 
@@ -316,6 +326,159 @@ theorem barMap_comp (g : AInfinityStrictHom BB CC) (f : AInfinityStrictHom AA BB
   rw [barMap_def, comp_toLinearMap, ReducedTensorWords.map_comp, barMap_def, barMap_def]
 
 end AInfinityStrictHom
+
+/-! ### Comparison with general `A∞` morphisms -/
+
+namespace AInfinityStrictHom
+
+variable {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B} {CC : AInfinityAlgebra R C}
+
+/-- A strict morphism as an `A∞` morphism: its bar map applies the morphism to every letter. -/
+noncomputable def toAInfinityHom (f : AInfinityStrictHom AA BB) : AInfinityHom AA BB where
+  barMap := f.barMap
+  isCoalgHom_barMap := by
+    rw [barMap_def]
+    exact ReducedTensorWords.isCoalgHom_map f.toLinearMap
+  isHomogeneous_barMap := f.isHomogeneous_barMap
+  barDifferential_comp_barMap := f.barDifferential_comp_barMap
+
+@[simp]
+theorem barMap_toAInfinityHom (f : AInfinityStrictHom AA BB) :
+    f.toAInfinityHom.barMap = f.barMap := (rfl)
+
+/-- The Taylor components of a strict morphism vanish above arity one. -/
+@[simp]
+theorem taylor_toAInfinityHom (f : AInfinityStrictHom AA BB) :
+    f.toAInfinityHom.taylor = f.toLinearMap ∘ₗ ReducedTensorWords.letter R A := by
+  rw [AInfinityHom.taylor_def, barMap_toAInfinityHom, barMap_def,
+    ReducedTensorWords.letter_comp_map]
+
+/-- The linear part of a strict morphism is its underlying linear map. -/
+@[simp]
+theorem linearPart_toAInfinityHom (f : AInfinityStrictHom AA BB) :
+    f.toAInfinityHom.linearPart = f.toLinearMap := by
+  ext a
+  rw [AInfinityHom.linearPart_apply, taylor_toAInfinityHom, LinearMap.comp_apply,
+    ReducedTensorWords.letter_ofLetter]
+
+/-- Passing from strict morphisms to `A∞` morphisms is injective. -/
+theorem toAInfinityHom_injective :
+    Function.Injective (toAInfinityHom : AInfinityStrictHom AA BB → AInfinityHom AA BB) := by
+  intro f g h
+  apply toLinearMap_injective
+  rw [← linearPart_toAInfinityHom, h, linearPart_toAInfinityHom]
+
+/-- The identity strict morphism induces the identity `A∞` morphism. -/
+@[simp]
+theorem toAInfinityHom_id (AA : AInfinityAlgebra R A) :
+    (AInfinityStrictHom.id AA).toAInfinityHom = AInfinityHom.id AA := by
+  apply AInfinityHom.barMap_injective
+  rw [barMap_toAInfinityHom, AInfinityHom.barMap_id, barMap_id]
+
+/-- Passing from strict morphisms to `A∞` morphisms preserves composition. -/
+@[simp]
+theorem toAInfinityHom_comp (g : AInfinityStrictHom BB CC) (f : AInfinityStrictHom AA BB) :
+    (g.comp f).toAInfinityHom = g.toAInfinityHom.comp f.toAInfinityHom := by
+  apply AInfinityHom.barMap_injective
+  rw [barMap_toAInfinityHom, AInfinityHom.barMap_comp, barMap_toAInfinityHom,
+    barMap_toAInfinityHom, barMap_comp]
+
+end AInfinityStrictHom
+
+namespace AInfinityHom
+
+variable {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B}
+
+/-- An `A∞` morphism is *strict* when its Taylor components above arity one vanish, that is,
+when its Taylor map only reads the letter component through the linear part. -/
+def IsStrict (f : AInfinityHom AA BB) : Prop :=
+  f.taylor = f.linearPart ∘ₗ ReducedTensorWords.letter R A
+
+/-- The identity `A∞` morphism is strict. -/
+@[simp]
+theorem isStrict_id (AA : AInfinityAlgebra R A) : (AInfinityHom.id AA).IsStrict := by
+  rw [IsStrict, taylor_id, linearPart_id, LinearMap.id_comp]
+
+/-- A composite of strict `A∞` morphisms is strict. -/
+@[simp]
+theorem IsStrict.comp {CC : AInfinityAlgebra R C} {g : AInfinityHom BB CC}
+    {f : AInfinityHom AA BB} (hg : g.IsStrict) (hf : f.IsStrict) : (g.comp f).IsStrict := by
+  rw [IsStrict, taylor_comp, hg, LinearMap.comp_assoc, ← f.taylor_def, hf,
+    linearPart_comp, LinearMap.comp_assoc]
+
+/-- The strict morphism determined by the linear part of a strict `A∞` morphism. -/
+noncomputable def IsStrict.toStrictHom {f : AInfinityHom AA BB} (hf : f.IsStrict) :
+    AInfinityStrictHom AA BB where
+  toLinearMap := f.linearPart
+  map_mem' ha := f.linearPart_mem ha
+  map_m' n := by
+    -- Unsuspension cancels the common suspension sign on the two sides of the
+    -- bar-differential equation because the linear part preserves degrees.
+    have hbar : f.barMap = ReducedTensorWords.map (R := R) f.linearPart := by
+      rw [f.barMap_eq_coalgHom, hf, ReducedTensorWords.coalgHom_comp_letter]
+    -- Comparing letter components of the bar-differential equation.
+    have htaylor : BB.taylor ∘ₗ ReducedTensorWords.map (R := R) f.linearPart =
+        f.linearPart ∘ₗ AA.taylor := by
+      have h := congrArg (ReducedTensorWords.letter R B ∘ₗ ·) f.barDifferential_comp_barMap
+      simp only [← LinearMap.comp_assoc, AInfinityAlgebra.letter_comp_barDifferential] at h
+      rw [hbar, ReducedTensorWords.letter_comp_map, LinearMap.comp_assoc,
+        AInfinityAlgebra.letter_comp_barDifferential] at h
+      exact h
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · rw [AA.m_zero, BB.m_zero, LinearMap.compMultilinearMap_zero,
+        MultilinearMap.zero_compLinearMap]
+    apply AA.grading.multilinearMap_ext
+    intro d x hx
+    let e : ℕ → ℤ := fun i ↦ if h : i < n then d ⟨i, h⟩ else 0
+    let y : ℕ → A := fun i ↦ if h : i < n then x ⟨i, h⟩ else 0
+    have hy : ∀ i < n, y i ∈ AA.grading.piece (e i) := by
+      intro i hi
+      simp only [y, e, hi, dite_true]
+      exact hx ⟨i, hi⟩
+    have hfy : ∀ i < n, f.linearPart (y i) ∈ BB.grading.piece (e i) :=
+      fun i hi ↦ f.linearPart_mem (hy i hi)
+    have hA := (AInfinity.isSuspension_def _ _ _).1 AA.taylor_isSuspension n hn e y hy
+    have hB := (AInfinity.isSuspension_def _ _ _).1 BB.taylor_isSuspension n hn e
+      (fun i ↦ f.linearPart (y i)) hfy
+    have hxy : (fun i : Fin n ↦ y i) = x := by
+      funext i
+      simp only [y, i.isLt, dite_true]
+    have h := LinearMap.congr_fun htaylor
+      (ReducedTensorWords.of R A ⟨n, hn⟩ (PiTensorProduct.tprod R fun i : Fin n ↦ y i))
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, ReducedTensorWords.map_of_tprod, hB, hA,
+      AInfinity.evalNat_suspend, AInfinity.evalNat_suspend, map_smul] at h
+    simp only [MultilinearMap.evalNat_def, hxy] at h
+    have h' := congrArg (negOnePowCast R (MultilinearMap.suspExp n e) • ·) h
+    simp only [smul_smul, ← negOnePowCast_add, ← two_mul, negOnePowCast_two_mul, one_smul] at h'
+    rw [LinearMap.compMultilinearMap_apply, MultilinearMap.compLinearMap_apply, h'.symm]
+    congr 1
+    funext i
+    simp only [y, i.isLt, dite_true]
+
+@[simp]
+theorem IsStrict.toStrictHom_toLinearMap {f : AInfinityHom AA BB} (hf : f.IsStrict) :
+    hf.toStrictHom.toLinearMap = f.linearPart := (rfl)
+
+@[simp]
+theorem IsStrict.toAInfinityHom_toStrictHom {f : AInfinityHom AA BB} (hf : f.IsStrict) :
+    hf.toStrictHom.toAInfinityHom = f := by
+  ext1
+  rw [AInfinityStrictHom.taylor_toAInfinityHom, IsStrict.toStrictHom_toLinearMap, hf]
+
+/-- The `A∞` morphism induced by a strict morphism is strict. -/
+@[simp]
+theorem isStrict_toAInfinityHom (f : AInfinityStrictHom AA BB) : f.toAInfinityHom.IsStrict := by
+  rw [IsStrict, AInfinityStrictHom.taylor_toAInfinityHom,
+    AInfinityStrictHom.linearPart_toAInfinityHom]
+
+/-- The strict `A∞` morphisms are exactly those induced by strict morphisms. -/
+theorem isStrict_iff_exists_eq_toAInfinityHom (f : AInfinityHom AA BB) :
+    f.IsStrict ↔ ∃ g : AInfinityStrictHom AA BB, g.toAInfinityHom = f := by
+  refine ⟨fun hf ↦ ⟨hf.toStrictHom, hf.toAInfinityHom_toStrictHom⟩, ?_⟩
+  rintro ⟨g, rfl⟩
+  exact isStrict_toAInfinityHom g
+
+end AInfinityHom
 
 /-! ### Strictly unital strict morphisms -/
 
