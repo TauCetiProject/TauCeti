@@ -41,6 +41,8 @@ class classifies those quotients up to vertex-fixing isomorphism.
 
 ## Main results
 
+* `TauCeti.SkewZigzagParameter.cohomologyClass_apply`: the cohomology class of a parameter is
+  the class of its `1`-cochain of transition factors.
 * `TauCeti.SkewZigzagParameter.cohomologyClass_eq_mk_of_ratio_eq_div`: the cohomology class of a
   parameter written in edge coordinates `τ` is the class of `h ↦ τ h / τ h.symm`.
 * `TauCeti.SkewZigzagParameter.cohomologyClass_eq_one_iff`: a parameter has trivial class exactly
@@ -70,7 +72,30 @@ universe u w
 
 namespace SkewZigzagParameter
 
-variable {k : Type w} [CommMonoid k] {V : Type u} {G : SimpleGraph V}
+variable {k : Type w} {V : Type u} {G : SimpleGraph V}
+
+/-! ### Parameters from edge coordinates -/
+
+section EdgeCoordinate
+
+variable [Monoid k]
+
+/-- The parameter with prescribed edge coordinates `τ`, whose ratios are `τ h / τ h'`. -/
+def ofEdgeCoordinate (τ : ∀ ⦃i j : V⦄, G.Adj i j → kˣ) : SkewZigzagParameter k G where
+  ratio _ _ _ h h' := τ h / τ h'
+  ratio_self _ _ h := div_self' (τ h)
+  ratio_inv _ _ _ h h' := by rw [div_mul_div_cancel, div_self']
+  ratio_cocycle _ _ _ _ h h' h'' := by rw [div_mul_div_cancel, div_mul_div_cancel, div_self']
+
+/-- The ratio of the parameter constructed from edge coordinates is their quotient. -/
+@[simp]
+theorem ofEdgeCoordinate_ratio (τ : ∀ ⦃i j : V⦄, G.Adj i j → kˣ) {i j j' : V}
+    (h : G.Adj i j) (h' : G.Adj i j') :
+    (ofEdgeCoordinate τ).ratio h h' = τ h / τ h' := (rfl)
+
+end EdgeCoordinate
+
+variable [CommMonoid k]
 
 /-! ### The cohomology class -/
 
@@ -90,6 +115,13 @@ the graph: the class of the `1`-cochain `h ↦ τ h / τ h.symm` for any edge co
 `ratio(h, h') = τ h / τ h'` (see `cohomologyClass_eq_mk_of_ratio_eq_div`). -/
 noncomputable def cohomologyClass : SkewZigzagParameter k G →* G.FirstCohomology kˣ :=
   (FirstCohomology.mk G kˣ).comp transitionCochain
+
+/-- The cohomology class of a parameter is the class of its `1`-cochain of transition factors
+`h ↦ transition c h`. -/
+theorem cohomologyClass_apply (c : SkewZigzagParameter k G) :
+    cohomologyClass k G c =
+      FirstCohomology.mk G kˣ ⟨fun d ↦ transition c d.adj,
+        mem_oneCochains_iff.mpr fun d ↦ transition_symm c d.adj⟩ := (rfl)
 
 /-- For edge coordinates `τ` of a parameter, the transition factors differ from the quotients
 `τ h / τ h.symm` by the coboundary of a function on the vertices: at every vertex with an incident
@@ -157,19 +189,6 @@ theorem cohomologyClass_gauge (c : SkewZigzagParameter k G)
   (cohomologyClass_eq_iff.mpr (isGaugeEquivalent_iff.mpr ⟨u, rfl⟩)).symm
 
 /-! ### Every class is attained -/
-
-/-- The parameter with prescribed edge coordinates `τ`, whose ratios are `τ h / τ h'`. -/
-def ofEdgeCoordinate (τ : ∀ ⦃i j : V⦄, G.Adj i j → kˣ) : SkewZigzagParameter k G where
-  ratio _ _ _ h h' := τ h / τ h'
-  ratio_self _ _ h := div_self' (τ h)
-  ratio_inv _ _ _ h h' := by rw [div_mul_div_cancel, div_self']
-  ratio_cocycle _ _ _ _ h h' h'' := by rw [div_mul_div_cancel, div_mul_div_cancel, div_self']
-
-/-- The ratio of the parameter constructed from edge coordinates is their quotient. -/
-@[simp]
-theorem ofEdgeCoordinate_ratio (τ : ∀ ⦃i j : V⦄, G.Adj i j → kˣ) {i j j' : V}
-    (h : G.Adj i j) (h' : G.Adj i j') :
-    (ofEdgeCoordinate τ).ratio h h' = τ h / τ h' := (rfl)
 
 /-- **Every class in `H¹(G, kˣ)` is the cohomology class of a skew-zigzag parameter.** -/
 theorem cohomologyClass_surjective : Function.Surjective (cohomologyClass k G) := by
