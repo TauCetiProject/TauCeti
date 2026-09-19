@@ -24,6 +24,9 @@ letter, and cutting is injective, so no component of length at least two can sur
 
 ## Main results
 
+* `TauCeti.ReducedTensorWords.subword_one`: a block of length one is a single letter.
+* `TauCeti.ReducedTensorWords.letter_comp_map`: the letter of a letterwise-mapped word is the
+  image of its letter.
 * `TauCeti.ReducedTensorWords.deconcatenation_eq_zero_iff`: the primitives of the reduced tensor
   coalgebra are exactly the single letters.
 
@@ -37,7 +40,7 @@ public section
 
 open scoped BigOperators DirectSum TensorProduct
 
-universe uR uM
+universe uR uM uN
 
 namespace TauCeti
 
@@ -159,6 +162,17 @@ theorem eq_of_deconcatenation_eq_of_letter_eq {x y : ReducedTensorWords R M}
     simp only [LinearMap.comp_apply] at hx hy
     rw [← hx, ← hy, hd]
 
+/-- A block of length one is the corresponding single letter. -/
+theorem subword_one {n : ℕ} (z : Fin n → M) {a : ℕ} (ha : a < n) :
+    subword R z a 1 = ofLetter R M (z ⟨a, ha⟩) := by
+  refine eq_of_deconcatenation_eq_of_letter_eq R M ?_ ?_
+  · rw [deconcatenation_subword, deconcatenation_ofLetter]
+    exact Finset.sum_eq_zero fun c hc ↦ by simp only [Finset.mem_Ioo] at hc; omega
+  · rw [letter_ofLetter, letter_apply, subword_eq_of_tprod R z Nat.one_pos (by omega),
+      component_of_eq R M (m := ⟨1, Nat.one_pos⟩) (n := 1) (Subtype.ext rfl),
+      TensorPower.cast_refl, LinearEquiv.refl_apply, TauCeti.TensorPower.oneEquiv_tprod]
+    exact congrArg z (Fin.ext (Nat.add_zero a))
+
 /-- The primitive elements of the reduced tensor coalgebra are exactly the single letters. -/
 theorem deconcatenation_eq_zero_iff {x : ReducedTensorWords R M} :
     deconcatenation R M x = 0 ↔ x ∈ LinearMap.range (ofLetter R M) := by
@@ -170,6 +184,25 @@ theorem deconcatenation_eq_zero_iff {x : ReducedTensorWords R M} :
     exact deconcatenation_ofLetter R M a
 
 end Semiring
+
+section Map
+
+variable {R : Type uR} {M : Type uM} {N : Type uN} [CommSemiring R] [AddCommMonoid M]
+  [Module R M] [AddCommMonoid N] [Module R N]
+
+/-- The letter of a letterwise-mapped word is the image of its letter. -/
+theorem letter_comp_map (g : M →ₗ[R] N) :
+    letter R N ∘ₗ ReducedTensorWords.map (R := R) g = g ∘ₗ letter R M := by
+  refine linearMap_ext R M fun n x ↦ ?_
+  simp only [LinearMap.comp_apply, letter_apply, component_map]
+  have h : (TensorPower.oneEquiv R N).toLinearMap ∘ₗ PiTensorProduct.map (fun _ ↦ g) =
+      g ∘ₗ (TensorPower.oneEquiv R M).toLinearMap := by
+    refine PiTensorProduct.ext (MultilinearMap.ext fun y ↦ ?_)
+    simp only [LinearMap.compMultilinearMap_apply, LinearMap.coe_comp, Function.comp_apply,
+      LinearEquiv.coe_coe, PiTensorProduct.map_tprod, TauCeti.TensorPower.oneEquiv_tprod]
+  exact LinearMap.congr_fun h _
+
+end Map
 
 end ReducedTensorWords
 
