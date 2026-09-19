@@ -258,22 +258,18 @@ itself. -/
   have hgeo := ((isGeodesicCurveOnFrom_maximalGeodesic p v).hasMFDerivAt_zero
     (isOpen_geodesicInterval.mem_nhds zero_mem_geodesicInterval)).congr_of_eventuallyEq_abuse
     hray_eq
-  have hcomp_apply :
+  have hv : ((1 : ℝ →L[ℝ] ℝ).smulRight v) 1 = v := by
+    rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self, one_smul]
+  have hcomp :
       (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 ∘L
         (1 : ℝ →L[ℝ] ℝ).smulRight v) 1 =
         mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v := by
-    change mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0
-      (((1 : ℝ →L[ℝ] ℝ).smulRight v) 1) = _
-    rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self, one_smul]
-  change mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0
-    (((1 : ℝ →L[ℝ] ℝ).smulRight v) 1) =
-      mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v at hcomp_apply
-  have h1 : mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0
-      (((1 : ℝ →L[ℝ] ℝ).smulRight v) 1) = ((1 : ℝ →L[ℝ] ℝ).smulRight v) 1 :=
-    DFunLike.congr_fun (hasMFDerivAt_unique (hexp.comp 0 hray) hgeo) (1 : ℝ)
-  have hv : ((1 : ℝ →L[ℝ] ℝ).smulRight v) 1 = v := by
-    rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self, one_smul]
-  exact Eq.trans hcomp_apply.symm (Eq.trans h1 hv)
+    rw [ContinuousLinearMap.comp_apply]
+    -- the argument of the differential lives in `TangentSpace 𝓘(ℝ, T_p M) 0`, which is the
+    -- canonical identification of `T_p M` that `hv` is stated in
+    exact congrArg _ hv
+  exact hcomp.symm.trans
+    ((DFunLike.congr_fun (hasMFDerivAt_unique (hexp.comp 0 hray) hgeo) (1 : ℝ)).trans hv)
 
 /-- **The differential of the exponential map at the origin is the identity**, under the
 canonical identification `NormedSpace.fromTangentSpace` of the tangent space to `T_p M` at `0`
@@ -314,9 +310,15 @@ theorem hasStrictFDerivAt_riemannianExp_zero [T2Space (TangentBundle I M)] (p : 
             (tangentSpaceCastModel 𝓘(ℝ, TangentSpace I p) 0).symm.toContinuousLinearMap))
         Set.univ 0 := by
       simpa only [modelWithCornersSelf_coe, Set.range_id, ext_chart_model_space_apply] using h
-    apply (h'.hasFDerivAt Filter.univ_mem).congr_fderiv
-    ext v
-    rfl
+    refine (h'.hasFDerivAt Filter.univ_mem).congr_fderiv ?_
+    -- `NormedSpace.fromTangentSpace` is by definition `tangentSpaceCastModel` at a model space,
+    -- so the two identifications of `TangentSpace 𝓘(ℝ, T_p M) 0` with `T_p M` cancel
+    have hcancel :
+        (NormedSpace.fromTangentSpace (0 : TangentSpace I p)).toContinuousLinearMap ∘L
+          (tangentSpaceCastModel 𝓘(ℝ, TangentSpace I p) 0).symm.toContinuousLinearMap =
+          ContinuousLinearMap.id ℝ (TangentSpace I p) :=
+      (tangentSpaceCastModel 𝓘(ℝ, TangentSpace I p) 0).coe_comp_coe_symm
+    rw [hcancel, ContinuousLinearMap.comp_id]
   · simp
 
 /-- **The exponential map is a local diffeomorphism at the origin.** -/
