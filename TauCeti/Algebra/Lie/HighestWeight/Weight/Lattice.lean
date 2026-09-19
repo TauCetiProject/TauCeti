@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Invertible
 public import TauCeti.Algebra.Lie.HighestWeight.Basic
 public import TauCeti.Algebra.Lie.Weights.WeightLattice
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector

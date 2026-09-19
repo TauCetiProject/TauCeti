@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import TauCeti.Algebra.Lie.Weights.Integrality
 
