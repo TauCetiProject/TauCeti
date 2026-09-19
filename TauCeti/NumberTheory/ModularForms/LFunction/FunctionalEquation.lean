@@ -264,13 +264,10 @@ private lemma scaled_fricke_relation (H G : ℍ → ℂ)
     ← zpow_add₀ Complex.I_ne_zero, ← zpow_add₀ htc, add_neg_cancel, zpow_zero,
     zpow_zero, one_mul, one_mul]
 
-/-- Hecke's two-form functional equation.  If `g` is the Petersson-normalized Fricke companion
-of `f`, then `Λ_N(k - s, f) = i^k Λ_N(s, g)`.  The two forms may live on different carriers, but
-both have weight `k`.  In particular this covers the classical statement for positive-weight
-cusp forms on width-one arithmetic carriers, where `Λ_N` is the entire completion
-`N^(s/2) (2π)^(-s) Γ(s) L(s, ·)` (see `frickeCompletedL_eq_cpow_mul_Λ`); the Mellin identity
-itself needs no weight or width hypothesis. -/
-theorem frickeCompletedL_functional_equation
+/-- The Mellin identity underlying Hecke's two-form functional equation.  If `g` is the
+Petersson-normalized Fricke companion of `f`, then `Λ_N(k - s, f) = i^k Λ_N(s, g)`, without
+additional weight or width hypotheses. -/
+theorem frickeCompletedL_mellin_identity
     {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℝ)}
     (f : CuspForm Γ₁ k) (g : CuspForm Γ₂ k) (N : ℕ) [NeZero N]
     (hg : (g : ℍ → ℂ) =
@@ -311,19 +308,35 @@ theorem frickeCompletedL_functional_equation
     show (fun t ↦ B (1 / t)) = (fun t ↦ B t⁻¹) by simp [one_div],
     mellin_comp_inv, neg_neg, smul_eq_mul]
 
+/-- Hecke's two-form functional equation.  If `f` and `g` are positive-weight, width-one cusp
+forms and `g` is the Petersson-normalized Fricke companion of `f`, then
+`Λ_N(k - s, f) = i^k Λ_N(s, g)`.  The two forms may live on different carriers, but both have
+weight `k`. -/
+theorem frickeCompletedL_functional_equation
+    {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℝ)}
+    (f : CuspForm Γ₁ k) (g : CuspForm Γ₂ k) (N : ℕ) [NeZero N]
+    (_hw₁ : Γ₁.strictWidthInfty = 1) (_hw₂ : Γ₂.strictWidthInfty = 1) (_hk : 0 < k)
+    (hg : (g : ℍ → ℂ) =
+      (Real.sqrt N : ℂ) ^ (2 - k) • ((f : ℍ → ℂ) ∣[k] TauCeti.frickeGL ℝ N))
+    (s : ℂ) :
+    frickeCompletedL f (N.toPNat (NeZero.pos N)) ((k : ℂ) - s) =
+      Complex.I ^ k * frickeCompletedL g (N.toPNat (NeZero.pos N)) s :=
+  frickeCompletedL_mellin_identity f g N hg s
+
 open Matrix.SpecialLinearGroup CongruenceSubgroup
 open TauCeti
 
 variable {N : ℕ} [NeZero N] {k : ℤ}
 
-/-- Hecke's functional equation for a cusp form on `Γ₁(N)`, with the normalized Fricke operator
-providing the companion cusp form. -/
+/-- Hecke's functional equation for a positive-weight cusp form on `Γ₁(N)`, with the normalized
+Fricke operator providing the companion cusp form. -/
 theorem frickeCompletedL_functional_equation_Gamma1
-    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) (s : ℂ) :
+    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) (hk : 0 < k) (s : ℂ) :
     frickeCompletedL f (N.toPNat (NeZero.pos N)) ((k : ℂ) - s) =
       Complex.I ^ k *
         frickeCompletedL (normalizedFrickeOperatorCusp k f) (N.toPNat (NeZero.pos N)) s := by
   apply frickeCompletedL_functional_equation f (normalizedFrickeOperatorCusp k f) N
+      (by simp) (by simp) hk
   simp only [coe_normalizedFrickeOperatorCusp, atkinLehnerNormalizer_def]
 
 end CuspForm
