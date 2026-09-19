@@ -63,7 +63,7 @@ by `isHomogeneous_gradedCoderiv` and `IsGradedCoderivation.isHomogeneous`.
   letter preserves the total degree of a word.
 * `TauCeti.ReducedTensorWords.map_koszulTwist_apply_of_mem`: the letterwise twist has the expected
   scalar action on each total-degree piece.
-* `TauCeti.LinearMap.IsHomogeneous.map_koszulTwist_comp`: a homogeneous endomorphism of reduced
+* `TauCeti.LinearMap.IsHomogeneous.map_koszulTwist_comp`: a homogeneous linear map of reduced
   tensor words commutes with the letterwise twist up to the sign given by its degree.
 * `TauCeti.ReducedTensorWords.IsGradedCoderivation.isCoderivation_comp_self`: a graded coderivation
   anticommuting with its letterwise Koszul twist has an ordinary coderivation as its square.
@@ -503,12 +503,13 @@ theorem ReducedTensorWords.map_koszulTwist_apply_of_mem (G : InternalGrading R M
   · intro a u _ hu
     rw [map_smul, hu, smul_smul, smul_smul, mul_comm a]
 
-/-- A homogeneous endomorphism of reduced tensor words commutes with the letterwise Koszul twist
+/-- A homogeneous linear map of reduced tensor words commutes with the letterwise Koszul twists
 up to the sign contributed by its degree. -/
-theorem LinearMap.IsHomogeneous.map_koszulTwist_comp {G : InternalGrading R M}
-    {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M} {r : ℤ}
-    (hb : LinearMap.IsHomogeneous b (gradedPiece G) (gradedPiece G) r) (q : ℤ) :
-    ReducedTensorWords.map (R := R) (G.koszulTwist q) ∘ₗ b =
+theorem LinearMap.IsHomogeneous.map_koszulTwist_comp {N : Type uN} [AddCommMonoid N] [Module R N]
+    {G : InternalGrading R M} {H : InternalGrading R N}
+    {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N} {r : ℤ}
+    (hb : LinearMap.IsHomogeneous b (gradedPiece G) (gradedPiece H) r) (q : ℤ) :
+    ReducedTensorWords.map (R := R) (H.koszulTwist q) ∘ₗ b =
       ((((q * r).negOnePow : ℤ) : R) •
         (b ∘ₗ ReducedTensorWords.map (R := R) (G.koszulTwist q))) := by
   apply LinearMap.ext
@@ -518,11 +519,11 @@ theorem LinearMap.IsHomogeneous.map_koszulTwist_comp {G : InternalGrading R M}
   simp only [LinearMap.comp_apply, LinearMap.smul_apply]
   refine Submodule.iSup_induction (fun D : ℤ ↦ gradedPiece G D)
     (motive := fun z ↦
-      ReducedTensorWords.map (R := R) (G.koszulTwist q) (b z) =
+      ReducedTensorWords.map (R := R) (H.koszulTwist q) (b z) =
         (((q * r).negOnePow : ℤ) : R) •
           b (ReducedTensorWords.map (R := R) (G.koszulTwist q) z)) hz ?_ (by simp) ?_
   · intro D x hx
-    rw [ReducedTensorWords.map_koszulTwist_apply_of_mem G (hb.map_mem hx) q,
+    rw [ReducedTensorWords.map_koszulTwist_apply_of_mem H (hb.map_mem hx) q,
       ReducedTensorWords.map_koszulTwist_apply_of_mem G hx q, map_smul, smul_smul]
     congr 1
     rw [← Int.cast_mul, ← Units.val_mul, ← Int.negOnePow_add]
