@@ -270,13 +270,13 @@ theorem card_hom_eq_adjMatrix [DecidableRel G.Adj] (i j : V) :
 theorem card_star_eq_degree (v : V) [Fintype (G.neighborSet v)] :
     Nat.card (Quiver.Star (vertex G v)) = G.degree v := by
   rw [Nat.card_congr (starEquivNeighborSet G v)]
-  simpa using G.card_neighborSet_eq_degree v
+  simp
 
 /-- The number of doubled-quiver arrows entering a vertex is its degree in the graph. -/
 theorem card_costar_eq_degree (v : V) [Fintype (G.neighborSet v)] :
     Nat.card (Quiver.Costar (vertex G v)) = G.degree v := by
   rw [Nat.card_congr (costarEquivNeighborSet G v)]
-  simpa using G.card_neighborSet_eq_degree v
+  simp
 
 /-- The total number of doubled-quiver arrows is twice the number of graph edges. -/
 theorem card_totalArrow_eq_twice_card_edges [Fintype V] [DecidableRel G.Adj] :

@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.ClassGroup
 public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Hilbert90
 
 /-!
-# Ambiguous ideals of an imaginary quadratic field
+# Ambiguous ideals of a quadratic field
 
 An ideal of `𝓞 K` is *ambiguous* when quadratic conjugation `σ` fixes it, `σI = I`; an ideal class
 is *ambiguous* when `σ` fixes it, which for a quadratic field means exactly that the class is
@@ -45,6 +45,11 @@ class group, where total positivity restores the sign for every quadratic field;
 
 The integral Hilbert 90 result used below is proved in `Quadratic.Conjugation.Hilbert90`.
 
+For a quadratic field of either signature, this file also defines a *strongly ambiguous class* to
+be an ordinary ideal class represented by an ambiguous ideal. The definition and its basic API do
+not require the totally complex hypothesis; only the converse from an ambiguous class to an
+ambiguous ideal does.
+
 See F. Lemmermeyer, *Reciprocity Laws: From Euler to Eisenstein*, §2.2, whose Proposition 2.9 is
 the statement proved here, and D. A. Cox, *Primes of the Form x² + ny²*, §6.A, for the classical
 ambiguous class number formula.
@@ -57,6 +62,10 @@ ambiguous class number formula.
   class of an imaginary quadratic field is the class of an ambiguous ideal.
 * `NumberField.classGroupMk0_sq_eq_one_of_map_ringOfIntegersQuadraticConj_eq_self`: conversely, the
   class of an ambiguous ideal is `2`-torsion.
+* `NumberField.IsStronglyAmbiguousClass`: an ordinary ideal class is strongly ambiguous when it is
+  represented by an ideal fixed by quadratic conjugation.
+* `NumberField.stronglyAmbiguousClassSubgroup`: the subgroup of strongly ambiguous ordinary ideal
+  classes.
 * `NumberField.sq_eq_one_iff_exists_map_ringOfIntegersQuadraticConj_eq_self`: the ambiguous classes
   are exactly the classes of ambiguous ideals.
 * `Ideal.map_map_of_involutive`: pushing an ideal forward twice along an involutive ring
@@ -217,6 +226,82 @@ theorem classGroupMk0_sq_eq_one_of_map_ringOfIntegersQuadraticConj_eq_self
     congr 1
     exact Subtype.ext ((Ideal.map_coe (f := ringOfIntegersQuadraticConj hmin hgen)
       (I : Ideal (𝓞 K))).trans hI)
+
+/-- An ordinary ideal class is **strongly ambiguous** if it is represented by an ideal fixed by
+quadratic conjugation. -/
+def IsStronglyAmbiguousClass (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (C : ClassGroup (𝓞 K)) : Prop :=
+  ∃ I : (Ideal (𝓞 K))⁰,
+    Ideal.map (ringOfIntegersQuadraticConj hmin hgen) (I : Ideal (𝓞 K)) = (I : Ideal (𝓞 K)) ∧
+      ClassGroup.mk0 I = C
+
+/-- A class is strongly ambiguous exactly when it has a representative fixed by quadratic
+conjugation. -/
+theorem isStronglyAmbiguousClass_iff_exists_map_ringOfIntegersQuadraticConj_eq_self
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    (C : ClassGroup (𝓞 K)) :
+    IsStronglyAmbiguousClass hmin hgen C ↔ ∃ I : (Ideal (𝓞 K))⁰,
+      Ideal.map (ringOfIntegersQuadraticConj hmin hgen) (I : Ideal (𝓞 K)) =
+          (I : Ideal (𝓞 K)) ∧
+        ClassGroup.mk0 I = C :=
+  Iff.rfl
+
+/-- A conjugation-fixed ideal represents a strongly ambiguous class. -/
+theorem IsStronglyAmbiguousClass.intro (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (I : (Ideal (𝓞 K))⁰)
+    (hI : Ideal.map (ringOfIntegersQuadraticConj hmin hgen) (I : Ideal (𝓞 K)) =
+      (I : Ideal (𝓞 K))) :
+    IsStronglyAmbiguousClass hmin hgen (ClassGroup.mk0 I) :=
+  ⟨I, hI, rfl⟩
+
+/-- A strongly ambiguous class has a representative fixed by quadratic conjugation. -/
+theorem IsStronglyAmbiguousClass.elim {C : ClassGroup (𝓞 K)}
+    (hC : IsStronglyAmbiguousClass hmin hgen C) :
+    ∃ I : (Ideal (𝓞 K))⁰,
+      Ideal.map (ringOfIntegersQuadraticConj hmin hgen) (I : Ideal (𝓞 K)) =
+          (I : Ideal (𝓞 K)) ∧
+        ClassGroup.mk0 I = C :=
+  hC
+
+/-- Every strongly ambiguous class is fixed by quadratic conjugation. -/
+@[aesop safe apply]
+theorem IsStronglyAmbiguousClass.mulEquiv_ringOfIntegersQuadraticConj_eq_self
+    {C : ClassGroup (𝓞 K)} (hC : IsStronglyAmbiguousClass hmin hgen C) :
+    ClassGroup.mulEquiv (ringOfIntegersQuadraticConj hmin hgen) C = C := by
+  obtain ⟨I, hI, rfl⟩ := hC.elim
+  exact (mulEquiv_ringOfIntegersQuadraticConj_apply_eq_self_iff hmin hgen _).mpr
+    (classGroupMk0_sq_eq_one_of_map_ringOfIntegersQuadraticConj_eq_self hmin hgen hI)
+
+/-- The subgroup of the ordinary class group consisting of strongly ambiguous classes. -/
+noncomputable def stronglyAmbiguousClassSubgroup
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
+    Subgroup (ClassGroup (𝓞 K)) where
+  carrier := {C | IsStronglyAmbiguousClass hmin hgen C}
+  one_mem' := by
+    refine ⟨1, ?_, by simp⟩
+    rw [Submonoid.coe_one, Ideal.one_eq_top, Ideal.map_top]
+  mul_mem' := by
+    rintro _ _ hC hD
+    obtain ⟨I, hI, rfl⟩ := hC.elim
+    obtain ⟨J, hJ, rfl⟩ := hD.elim
+    refine ⟨I * J, ?_, by simp⟩
+    simp only [Submonoid.coe_mul, Ideal.map_mul, hI, hJ]
+  inv_mem' := by
+    intro C hC
+    have hsq : C ^ 2 = 1 :=
+      (mulEquiv_ringOfIntegersQuadraticConj_apply_eq_self_iff hmin hgen C).mp
+        hC.mulEquiv_ringOfIntegersQuadraticConj_eq_self
+    have hinv : C⁻¹ = C := by
+      rw [inv_eq_iff_mul_eq_one, ← sq]
+      exact hsq
+    simpa only [hinv] using hC
+
+/-- Membership in the strongly ambiguous class subgroup means having a representative fixed by
+quadratic conjugation. -/
+@[simp] theorem mem_stronglyAmbiguousClassSubgroup {C : ClassGroup (𝓞 K)} :
+    C ∈ stronglyAmbiguousClassSubgroup hmin hgen ↔
+      IsStronglyAmbiguousClass hmin hgen C :=
+  Iff.rfl
 
 /-- **The ambiguous classes of an imaginary quadratic field are exactly the classes of ambiguous
 ideals.** For a totally complex quadratic number field, an ideal class is `2`-torsion — equivalently

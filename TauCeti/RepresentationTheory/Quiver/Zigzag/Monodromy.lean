@@ -5,22 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Gauge
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Potential
 
 /-!
 # The monodromy of a skew-zigzag parameter around a closed edge cycle
 
 A skew-zigzag parameter labels each ordered pair of incident edges of a simple graph by the
 unit-valued ratio between the two backtracks they carry, and gauge equivalent parameters present
-isomorphic algebras.  This file supplies the invariant which detects that a parameter is *not*
-gauge trivial.
+isomorphic algebras. This file supplies a complete invariant of gauge equivalence.
 
 The invariant is the **monodromy** of a closed edge cycle: the product, over the vertices of the
 cycle, of the ratio from the edge along which the cycle arrives at a vertex to the edge along
 which it leaves.  A gauge transform multiplies each factor by the quotient of two backtrack
 scales, and consecutive factors share those scales, so the correction telescopes around the cycle
-and the monodromy depends only on the gauge class.  It is one for the constant parameter, so a
-parameter whose monodromy around some closed edge cycle is not one is not gauge trivial.
+and the monodromy depends only on the gauge class. Conversely, trivial monodromy makes the
+transition factors between local edge coordinates integrate to a vertex potential, which
+trivializes the parameter. Thus two parameters are gauge equivalent exactly when all their
+monodromies agree.
 
 ## Main definitions
 
@@ -34,8 +35,14 @@ parameter whose monodromy around some closed edge cycle is not one is not gauge 
   monodromy.
 * `TauCeti.SkewZigzagParameter.monodromy_reverse`: reversing orientation inverts monodromy.
 * `TauCeti.SkewZigzagParameter.monodromy_gauge`: the monodromy is a gauge invariant.
+* `TauCeti.SkewZigzagParameter.prod_transition_eq_inv_monodromy`: the product of transition
+  factors around a closed edge cycle is the inverse of its monodromy.
 * `TauCeti.SkewZigzagParameter.monodromy_eq_one_of_isGaugeEquivalent_one`: a gauge-trivial
   parameter has trivial monodromy.
+* `TauCeti.SkewZigzagParameter.isGaugeEquivalent_one_iff_monodromy_eq_one`: a skew parameter is
+  gauge trivial exactly when its monodromy around every closed edge cycle is one.
+* `TauCeti.SkewZigzagParameter.isGaugeEquivalent_iff_monodromy_eq`: two skew parameters are gauge
+  equivalent exactly when their monodromies around every closed edge cycle agree.
 
 ## References
 
@@ -140,6 +147,102 @@ theorem monodromy_eq_one_of_isGaugeEquivalent_one {c : SkewZigzagParameter k G}
     (hc : IsGaugeEquivalent (1 : SkewZigzagParameter k G) c)
     (hx : ∀ i : Fin m, G.Adj (x i) (x (i + 1))) : monodromy c hx = 1 := by
   rw [← monodromy_eq_of_isGaugeEquivalent hc hx, monodromy_one]
+
+/-- A transition factor depends only on the endpoints of its edge. -/
+private theorem transition_congr (c : SkewZigzagParameter k G) {v w v' w' : V} (h : G.Adj v w)
+    (h' : G.Adj v' w') (hv : v = v') (hw : w = w') : transition c h = transition c h' := by
+  subst hv hw
+  rfl
+
+/-! ### Trivial monodromy -/
+
+/-- Around a closed edge cycle, the transition factors multiply to the inverse of the monodromy. -/
+theorem prod_transition_eq_inv_monodromy (c : SkewZigzagParameter k G) {n : ℕ}
+    [NeZero n] {y : Fin n → V} (hy : ∀ i : Fin n, G.Adj (y i) (y (i + 1))) :
+    ∏ i, transition c (hy i) = (monodromy c hy)⁻¹ := by
+  have hshift : ∏ i : Fin n, localCoordinate c (hy (i + 1)) = ∏ i, localCoordinate c (hy i) :=
+    Fintype.prod_equiv (Equiv.addRight 1) _ _ fun _ ↦ rfl
+  simp only [monodromy_def, transition_def, ratio_eq_localCoordinate_div c,
+    Finset.prod_div_distrib, hshift, inv_div]
+
+/-- Cyclic indexing of the vertices of a closed walk agrees with ordinary indexing one step past
+every position. -/
+private theorem getVert_val_add_one {u : V} (q : G.Walk u u) [NeZero q.length]
+    (i : Fin q.length) : q.getVert ↑(i + 1) = q.getVert (↑i + 1) := by
+  rw [Fin.val_add, Fin.val_one', Nat.add_mod_mod]
+  have hi : (i : ℕ) + 1 ≤ q.length := by omega
+  rcases hi.lt_or_eq with hlt | heq
+  · rw [Nat.mod_eq_of_lt hlt]
+  · rw [heq, Nat.mod_self, SimpleGraph.Walk.getVert_zero, SimpleGraph.Walk.getVert_length]
+
+/-- The vertices of a closed walk of positive length, indexed cyclically, form a closed edge
+cycle. -/
+private theorem adj_getVert_add_one {u : V} (q : G.Walk u u) [NeZero q.length]
+    (i : Fin q.length) : G.Adj (q.getVert i) (q.getVert ↑(i + 1)) := by
+  rw [getVert_val_add_one]
+  exact q.adj_getVert_succ i.isLt
+
+/-- Along a closed walk, the transition factors multiply to one when the monodromy around every
+closed edge cycle is trivial. -/
+private theorem walkTransition_eq_one_of_monodromy_eq_one (c : SkewZigzagParameter k G)
+    (hc : ∀ (n : ℕ) [NeZero n] (y : Fin n → V) (hy : ∀ i : Fin n, G.Adj (y i) (y (i + 1))),
+      monodromy c hy = 1)
+    {u : V} (q : G.Walk u u) : walkTransition c q = 1 := by
+  rcases Nat.eq_zero_or_pos q.length with hq | hq
+  · rw [walkTransition_def, List.eq_nil_of_length_eq_zero (q.length_darts.trans hq)]
+    rfl
+  have : NeZero q.length := ⟨hq.ne'⟩
+  have hprod : walkTransition c q = ∏ i, transition c (adj_getVert_add_one q i) := by
+    rw [walkTransition_def, ← List.ofFn_getElem_eq_map, List.prod_ofFn,
+      ← Fin.prod_congr' _ q.length_darts]
+    refine Finset.prod_congr rfl fun i _ ↦ ?_
+    have hd := SimpleGraph.Walk.darts_getElem_eq_getVert (p := q) i i.isLt
+    exact transition_congr c _ _ (by rw [hd]; rfl) (by rw [hd, getVert_val_add_one, Fin.val_cast])
+  rw [hprod, prod_transition_eq_inv_monodromy, hc, inv_one]
+
+/-- **A skew-zigzag parameter is gauge trivial exactly when its monodromy around every closed edge
+cycle is one.** This is the converse of `monodromy_eq_one_of_isGaugeEquivalent_one`, and holds on
+every graph, including disconnected graphs and graphs with isolated vertices. -/
+theorem isGaugeEquivalent_one_iff_monodromy_eq_one {c : SkewZigzagParameter k G} :
+    IsGaugeEquivalent (1 : SkewZigzagParameter k G) c ↔
+      ∀ (n : ℕ) [NeZero n] (y : Fin n → V) (hy : ∀ i : Fin n, G.Adj (y i) (y (i + 1))),
+        monodromy c hy = 1 := by
+  refine ⟨fun h _ _ _ hy ↦ monodromy_eq_one_of_isGaugeEquivalent_one h hy, fun hc ↦ ?_⟩
+  have hwalk {r v : V} (p q : G.Walk r v) : walkTransition c p = walkTransition c q := by
+    have h := walkTransition_eq_one_of_monodromy_eq_one c hc (p.append q.reverse)
+    rwa [walkTransition_append, walkTransition_reverse, mul_inv_eq_one] at h
+  exact isGaugeEquivalent_one_of_walkTransition_eq c fun _ _ p q _ _ ↦ hwalk p q
+
+/-- The parameter whose ratios are those of `c'` divided by those of `c`. -/
+private def ratioDiv (c c' : SkewZigzagParameter k G) : SkewZigzagParameter k G where
+  ratio _ _ _ h h' := c'.ratio h h' / c.ratio h h'
+  ratio_self _ _ h := by simp
+  ratio_inv _ _ _ h h' := by rw [div_mul_div_comm, c'.ratio_inv, c.ratio_inv, div_one]
+  ratio_cocycle _ _ _ _ h h' h'' := by
+    rw [div_mul_div_comm, div_mul_div_comm, c'.ratio_cocycle, c.ratio_cocycle, div_one]
+
+private theorem ratioDiv_ratio (c c' : SkewZigzagParameter k G) {i j j' : V} (h : G.Adj i j)
+    (h' : G.Adj i j') : (ratioDiv c c').ratio h h' = c'.ratio h h' / c.ratio h h' := (rfl)
+
+private theorem isGaugeEquivalent_iff_isGaugeEquivalent_one_ratioDiv
+    {c c' : SkewZigzagParameter k G} :
+    c.IsGaugeEquivalent c' ↔ IsGaugeEquivalent 1 (ratioDiv c c') := by
+  rw [isGaugeEquivalent_iff, isGaugeEquivalent_iff]
+  refine exists_congr fun u ↦ ?_
+  simp only [SkewZigzagParameter.ext_iff, funext_iff, gauge_ratio, one_ratio, one_mul,
+    ratioDiv_ratio, div_eq_iff_eq_mul']
+
+/-- **The monodromy is a complete gauge invariant**: two skew-zigzag parameters are gauge
+equivalent exactly when they have the same monodromy around every closed edge cycle. -/
+theorem isGaugeEquivalent_iff_monodromy_eq {c c' : SkewZigzagParameter k G} :
+    c.IsGaugeEquivalent c' ↔
+      ∀ (n : ℕ) [NeZero n] (y : Fin n → V) (hy : ∀ i : Fin n, G.Adj (y i) (y (i + 1))),
+        monodromy c hy = monodromy c' hy := by
+  rw [isGaugeEquivalent_iff_isGaugeEquivalent_one_ratioDiv,
+    isGaugeEquivalent_one_iff_monodromy_eq_one]
+  refine forall_congr' fun _ ↦ forall_congr' fun _ ↦ forall_congr' fun _ ↦ forall_congr' fun hy ↦ ?_
+  simp only [monodromy_def, ratioDiv_ratio, Finset.prod_div_distrib]
+  rw [div_eq_one, eq_comm]
 
 end SkewZigzagParameter
 
