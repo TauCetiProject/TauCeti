@@ -202,6 +202,7 @@ noncomputable def twoByTwoSimplyBlockedCycle : GridChainHat R 2 0 :=
   Finsupp.single GridState.twoByTwoSwap 1
 
 /-- The named surviving chain is killed by the simply blocked differential. -/
+@[simp high]
 theorem twoByTwo_simplyBlockedDifferential_cycle :
     twoByTwo.simplyBlockedDifferential R 0 (twoByTwoSimplyBlockedCycle R) = 0 := by
   rw [twoByTwo_simplyBlockedDifferential_apply]
