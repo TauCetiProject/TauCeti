@@ -15,8 +15,8 @@ import Mathlib.Tactic.Module
 
 Let `E` be an exact structure on an additive category `C` and let `P` be a resolving property:
 it contains a zero object, is closed under binary direct sums and extensions, is closed under
-kernels of deflations between its objects, and every object of `C` admits a finite
-`P`-resolution. This file proves Weibel's **resolution theorem** in this generality: the
+kernels of deflations between its objects and under retracts, and every object of `C` admits a
+finite `P`-resolution. This file proves Weibel's **resolution theorem** in this generality: the
 inclusion of the full subcategory on `P`, with its induced exact structure, induces an isomorphism
 
 ```text
@@ -131,10 +131,16 @@ private theorem eulerClassFullSubcategory_eq_aux (n : ℕ) :
           | base hX => exact (eulerClassFullSubcategory_base_eq hX _).symm
           | @step K' Q' X hQ' i' p' zero' hp' s =>
               have hr : r.length ≤ n := by simpa using h
-              obtain ⟨Y, a, b, hab, a', b', hab', hY₁, hY₂⟩ := E.exists_conflations_pullback
-                (S := ShortComplex.mk i p zero) hp hp'
+              have : HasPullback p p' :=
+                E.hasPullbacks_deflations.hasPullback p' (E.isDeflation_g hp)
+              have sq : IsPullback (pullback.fst p p') (pullback.snd p p') p p' :=
+                IsPullback.of_hasPullback _ _
+              have hY₁ := E.conflation_baseChange hp sq
+              rw [baseChange_def] at hY₁
+              have hY₂ := E.conflation_baseChange hp' sq.flip
+              rw [baseChange_def] at hY₂
               obtain ⟨K'', Q'', i'', p'', h'', hQ'', hc'', hK''⟩ :=
-                IsResolving.exists_conflation (E := E) (P := P) Y
+                IsResolving.exists_conflation (E := E) (P := P) (pullback p p')
               let t := ((E.admitsFiniteResolution_iff P).mp hK'').some
               obtain ⟨L, c, α, β, hc, hβ, hLc, hKL, -, -⟩ := E.exists_conflation_comp' hY₁ hc''
               obtain ⟨L', c', α', β', hc', hβ', hLc', hKL', -, -⟩ :=
@@ -167,9 +173,9 @@ theorem eulerClassFullSubcategory_eq_eulerClassFullSubcategory {X : C}
 /-- Every finite `P`-resolution of `X` computes `TauCeti.ExactStructure.eulerClassOf`. -/
 theorem eulerClassOf_eq {X : C} (hX : E.admitsFiniteResolution P X)
     (r : E.FiniteResolution P X) :
-    E.eulerClassOf hP hX = r.eulerClassFullSubcategory hP := by
-  rw [eulerClassOf_def]
-  exact eulerClassFullSubcategory_eq_eulerClassFullSubcategory _ r
+    E.eulerClassOf hP hX = r.eulerClassFullSubcategory hP :=
+  ExactStructure.eulerClassOf_eq_of hP hX r
+    eulerClassFullSubcategory_eq_eulerClassFullSubcategory
 
 /-- On an object satisfying `P` the Euler class is the class of that object. -/
 @[simp]
@@ -233,16 +239,23 @@ private theorem eulerClassOf_add_aux (n : ℕ) :
       intro S hS ht a₁ a₂ a₃
       obtain ⟨KZ, QZ, iZ, pZ, hZ, hQZ, hcZ, hKZ⟩ :=
         E.exists_conflation_of_exists_finiteResolution_length_le_succ ht
-      obtain ⟨Y, a, b, hab, a', b', hab', hY₁, hY₂⟩ := E.exists_conflations_pullback hS hcZ
+      have : HasPullback S.g pZ :=
+        E.hasPullbacks_deflations.hasPullback pZ (E.isDeflation_g hS)
+      have sq : IsPullback (pullback.fst S.g pZ) (pullback.snd S.g pZ) S.g pZ :=
+        IsPullback.of_hasPullback _ _
+      have hY₁ := E.conflation_baseChange hS sq
+      rw [baseChange_def] at hY₁
+      have hY₂ := E.conflation_baseChange hcZ sq.flip
+      rw [baseChange_def] at hY₂
       obtain ⟨K', Q', i', p', h', hQ', hc', hK'⟩ :=
-        IsResolving.exists_conflation (E := E) (P := P) Y
+        IsResolving.exists_conflation (E := E) (P := P) (pullback S.g pZ)
       obtain ⟨M, c, α, β, hMc', hβ, hMc, hK'M, -, -⟩ := E.exists_conflation_comp' hY₂ hc'
-      have aY := IsResolving.finiteResolution (E := E) (P := P) Y
+      have aY := IsResolving.finiteResolution (E := E) (P := P) (pullback S.g pZ)
       have aKZ := IsResolving.finiteResolution (E := E) (P := P) KZ
       have aM := IsResolving.finiteResolution (E := E) (P := P) M
       have eY : E.eulerClassOf hP aY =
           E.eulerClassOf hP a₁ + ExactK0.of (⟨QZ, hQZ⟩ : P.FullSubcategory) := by
-        rw [eulerClassOf_eq_add_of_prop_X₃ (S := ShortComplex.mk a b hab) hY₁ hQZ a₁ aY
+        rw [eulerClassOf_eq_add_of_prop_X₃ hY₁ hQZ a₁ aY
           (IsResolving.finiteResolution _), eulerClassOf_of_prop hQZ]
       have eM := ih (S := ShortComplex.mk β α hβ) hK'M hKZ hK' aM aKZ
       rw [eulerClassOf_eq_sub_of_conflation hQ' hc' hK' aY] at eY

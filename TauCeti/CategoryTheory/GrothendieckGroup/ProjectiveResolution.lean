@@ -213,12 +213,14 @@ noncomputable def eulerClassOf {X : C} (hX : E.admitsFiniteResolution P X) :
     ExactK0 (E.fullSubcategory P hP) :=
   ((E.admitsFiniteResolution_iff P).mp hX).some.eulerClassFullSubcategory hP
 
-/-- The defining equation of `TauCeti.ExactStructure.eulerClassOf`: the alternating class of the
-chosen resolution. -/
-theorem eulerClassOf_def {X : C} (hX : E.admitsFiniteResolution P X) :
-    E.eulerClassOf hP hX =
-      ((E.admitsFiniteResolution_iff P).mp hX).some.eulerClassFullSubcategory hP :=
-  (rfl)
+/-- If the alternating class is independent of the finite `P`-resolution of `X`, then every such
+resolution computes `TauCeti.ExactStructure.eulerClassOf`. -/
+theorem eulerClassOf_eq_of {X : C} (hX : E.admitsFiniteResolution P X)
+    (r : E.FiniteResolution P X)
+    (h : ∀ r s : E.FiniteResolution P X,
+      r.eulerClassFullSubcategory hP = s.eulerClassFullSubcategory hP) :
+    E.eulerClassOf hP hX = r.eulerClassFullSubcategory hP :=
+  h _ r
 
 end General
 
