@@ -1,0 +1,175 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
+public import TauCeti.NumberTheory.LSeries.SumCoeff
+
+/-!
+# Cancellation in ideal partial sums and the continued L-function of a weight
+
+For a unitary ideal weight `χ` of a number field `K` of degree `d = [K : ℚ]`, the partial sums
+`∑_{N(I) ≤ x} χ(I)` over the nonzero integral ideals are trivially `O(x)`, by the linear ideal
+count. For a nontrivial Hecke character the ideals of norm at most `x` equidistribute over the
+classes of a ray class group, and the partial sums are `O(x ^ (1 - 1 / d))` instead. This file
+names that bound and extracts its analytic consequence.
+
+* `TauCeti.HasCancellation χ` is the uniform bound
+  `‖∑_{N(I) ≤ x} χ(I)‖ ≤ C * x ^ (1 - 1 / d)` for every real cutoff `x ≥ 1`, with the inclusive
+  summatory function `TauCeti.idealSummatory`.
+* `TauCeti.continuedLFunctionOfWeight χ` is the partial-summation integral
+  `s * ∫_{1}^{∞} (∑_{N(I) ≤ t} χ(I)) t ^ (-(s + 1)) dt`.
+
+It agrees with the norm-regrouped L-series of `χ` on `Re s > 1` for *every* unitary weight
+(`TauCeti.continuedLFunctionOfWeight_eq_LSeries`), and under `HasCancellation χ` it is holomorphic
+on `Re s > 1 - 1 / d` (`TauCeti.differentiableOn_continuedLFunctionOfWeight`); so it is an analytic
+continuation of the L-series of `χ` across the line `Re s = 1`.
+
+Cancellation is a hypothesis about the partial sums themselves. It cannot be replaced by
+finiteness of the image of `χ` or of a quotient through which it factors: the values of a weight
+factoring through a finite quotient of the free group on the prime ideals can be prescribed
+arbitrarily prime by prime. The trivial weight shows that the hypothesis is not automatic:
+its partial sums are the ideal counts, which grow linearly, and it fails `HasCancellation`
+(`TauCeti.not_hasCancellation_one`); correspondingly its L-series is the Dedekind zeta function,
+which has a pole at `s = 1`.
+
+## References
+
+* H. Davenport, *Multiplicative Number Theory*, Chapter 1 (partial summation).
+* G. Tenenbaum, *Introduction to Analytic and Probabilistic Number Theory*, Chapter II.1.
+* J. Neukirch, *Algebraic Number Theory*, Chapter VII §6, for the partial-sum bound of Hecke
+  L-series.
+-/
+
+public section
+
+namespace TauCeti
+
+open Filter Asymptotics
+open scoped nonZeroDivisors NumberField
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- **Cancellation in the ideal partial sums of a unitary weight.** There is a constant `C` with
+`‖∑_{N(I) ≤ x} χ(I)‖ ≤ C * x ^ (1 - 1 / [K : ℚ])` for every real cutoff `x ≥ 1`, the sum running
+over the nonzero integral ideals of absolute norm at most `x`. -/
+def HasCancellation (χ : UnitaryIdealWeight K) : Prop :=
+  ∃ C : ℝ, ∀ x : ℝ, 1 ≤ x →
+    ‖idealSummatory K χ.toIdealArithmeticFunction x‖ ≤
+      C * x ^ (1 - 1 / (Module.finrank ℚ K : ℝ))
+
+/-- The cancellation exponent `1 - 1 / [K : ℚ]` is nonnegative. -/
+private theorem cancellationExponent_nonneg : 0 ≤ 1 - 1 / (Module.finrank ℚ K : ℝ) := by
+  have h : (1 : ℝ) ≤ Module.finrank ℚ K := by exact_mod_cast Module.finrank_pos
+  rw [sub_nonneg]
+  exact div_le_one_of_le₀ h (by positivity)
+
+/-- The cancellation exponent `1 - 1 / [K : ℚ]` is less than `1`. -/
+private theorem cancellationExponent_lt_one : 1 - 1 / (Module.finrank ℚ K : ℝ) < 1 := by
+  have h : (0 : ℝ) < Module.finrank ℚ K := by exact_mod_cast Module.finrank_pos
+  linarith [one_div_pos.mpr h]
+
+/-- A weight has cancellation exactly when its complex conjugate does: conjugation commutes with
+the finite partial sums and preserves their modulus. -/
+@[simp]
+theorem hasCancellation_conj_iff {χ : UnitaryIdealWeight K} :
+    HasCancellation χ.conj ↔ HasCancellation χ := by
+  have h (x : ℝ) : ‖idealSummatory K χ.conj.toIdealArithmeticFunction x‖ =
+      ‖idealSummatory K χ.toIdealArithmeticFunction x‖ := by
+    simp only [idealSummatory_apply, UnitaryIdealWeight.toIdealArithmeticFunction_apply,
+      UnitaryIdealWeight.val_conj, MultiplicativeIdealWeight.conj_apply, ← map_sum,
+      Complex.norm_conj]
+  simp only [HasCancellation, h]
+
+/-- **Cancellation bounds the partial sums of the norm coefficients**, in the `O(n ^ r)` form of
+Mathlib's `LSeries_eq_mul_integral`. -/
+theorem HasCancellation.isBigO_sum_normCoeff {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ) :
+    (fun n : ℕ ↦ ∑ k ∈ Finset.Icc 1 n, normCoeff K χ.toIdealArithmeticFunction k) =O[atTop]
+      fun n : ℕ ↦ (n : ℝ) ^ (1 - 1 / (Module.finrank ℚ K : ℝ)) := by
+  obtain ⟨C, hC⟩ := hχ
+  refine IsBigO.of_bound C ?_
+  filter_upwards [eventually_ge_atTop 1] with n hn
+  rw [← Nat.floor_natCast (R := ℝ) n, ← idealSummatory_eq_sum_Icc_normCoeff, Nat.floor_natCast,
+    Real.norm_of_nonneg (by positivity)]
+  exact hC n (by exact_mod_cast hn)
+
+/-- **The trivial weight has no cancellation.** Its partial sums are the ideal counts, which are
+bounded below by a positive multiple of `x`, while `x ^ (1 - 1 / [K : ℚ]) = o(x)`. -/
+theorem not_hasCancellation_one : ¬ HasCancellation (1 : UnitaryIdealWeight K) := by
+  rintro ⟨C, hC⟩
+  obtain ⟨b⟩ := idealCount_linearBounds K
+  set θ : ℝ := 1 - 1 / (Module.finrank ℚ K : ℝ)
+  have hθ : 0 < 1 - θ := sub_pos.mpr cancellationExponent_lt_one
+  obtain ⟨x, hx⟩ := ((tendsto_rpow_atTop hθ).eventually_gt_atTop (C / b.lower)).and
+    (eventually_ge_atTop (1 : ℝ)) |>.exists
+  have hxpos : 0 < x := zero_lt_one.trans_le hx.2
+  have hsum : ‖idealSummatory K (1 : UnitaryIdealWeight K).toIdealArithmeticFunction x‖ =
+      Nat.card {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x} := by
+    rw [UnitaryIdealWeight.toIdealArithmeticFunction_one, idealSummatory_apply,
+      Nat.card_coe_normLE]
+    simp
+  have hle : b.lower * x ≤ C * x ^ θ := (b.le_card x hx.2).trans (hsum ▸ hC x hx.2)
+  have hsplit : b.lower * x ^ (1 - θ) * x ^ θ ≤ C * x ^ θ := by
+    rwa [mul_assoc, ← Real.rpow_add hxpos, sub_add_cancel, Real.rpow_one]
+  exact absurd ((div_lt_iff₀' b.lower_pos).mp hx.1)
+    (not_lt.mpr (le_of_mul_le_mul_right hsplit (Real.rpow_pos_of_pos hxpos θ)))
+
+/-- **The continued L-function of a unitary weight**, defined by partial summation:
+`s * ∫_{1}^{∞} (∑_{N(I) ≤ t} χ(I)) t ^ (-(s + 1)) dt`.
+
+On `Re s > 1` it is the norm-regrouped L-series of `χ`
+(`TauCeti.continuedLFunctionOfWeight_eq_LSeries`); under `TauCeti.HasCancellation χ` it is
+holomorphic on `Re s > 1 - 1 / [K : ℚ]` (`TauCeti.differentiableOn_continuedLFunctionOfWeight`).
+Where the integral does not converge it takes the junk value of Mathlib's Bochner integral. -/
+noncomputable def continuedLFunctionOfWeight (χ : UnitaryIdealWeight K) (s : ℂ) : ℂ :=
+  s * ∫ t in Set.Ioi (1 : ℝ),
+    idealSummatory K χ.toIdealArithmeticFunction t * (t : ℂ) ^ (-(s + 1))
+
+/-- The continued L-function as the integral of Mathlib's `LSeries_eq_mul_integral`, over the
+partial sums of the norm coefficients. -/
+theorem continuedLFunctionOfWeight_eq_mul_integral (χ : UnitaryIdealWeight K) (s : ℂ) :
+    continuedLFunctionOfWeight χ s = s * ∫ t in Set.Ioi (1 : ℝ),
+      (∑ k ∈ Finset.Icc 1 ⌊t⌋₊, normCoeff K χ.toIdealArithmeticFunction k) *
+        (t : ℂ) ^ (-(s + 1)) := by
+  simp only [continuedLFunctionOfWeight, idealSummatory_eq_sum_Icc_normCoeff]
+
+/-- The norm coefficients of a unitary weight are bounded in modulus by those of the trivial
+weight, which count the ideals of each norm. -/
+theorem UnitaryIdealWeight.norm_normCoeff_le_norm_normCoeff_one (χ : UnitaryIdealWeight K) (n : ℕ) :
+    ‖normCoeff K χ.toIdealArithmeticFunction n‖ ≤
+      ‖normCoeff K (1 : IdealArithmeticFunction K) n‖ := by
+  rw [norm_normCoeff_one, normCoeff_eq_sum_normFiber]
+  refine (norm_sum_le _ _).trans ?_
+  simpa using Finset.sum_le_sum fun I (_ : I ∈ normFiber K n) ↦ χ.norm_le_one (I : Ideal (𝓞 K))
+
+/-- **The continued L-function is the L-series on `Re s > 1`.** For every unitary weight, with or
+without cancellation, `continuedLFunctionOfWeight χ` agrees with the `LSeries` of the norm
+coefficients of `χ` to the right of `1`, where that series converges absolutely. -/
+theorem continuedLFunctionOfWeight_eq_LSeries (χ : UnitaryIdealWeight K) {s : ℂ}
+    (hs : 1 < s.re) :
+    continuedLFunctionOfWeight χ s = LSeries (normCoeff K χ.toIdealArithmeticFunction) s := by
+  rw [continuedLFunctionOfWeight_eq_mul_integral]
+  refine (LSeries_eq_mul_integral' _ zero_le_one (by simpa using hs) ?_).symm
+  refine (IsBigO.of_bound 1 (Eventually.of_forall fun n ↦ ?_)).trans
+    (isBigO_sum_norm_normCoeff_one K)
+  rw [one_mul, Real.norm_of_nonneg (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _),
+    Real.norm_of_nonneg (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)]
+  exact Finset.sum_le_sum fun k _ ↦ χ.norm_normCoeff_le_norm_normCoeff_one k
+
+/-- **Cancellation continues the L-series of a weight.** If `χ` has cancellation, its continued
+L-function is holomorphic on the half-plane `Re s > 1 - 1 / [K : ℚ]`, which contains the line
+`Re s = 1`. -/
+theorem differentiableOn_continuedLFunctionOfWeight {χ : UnitaryIdealWeight K}
+    (hχ : HasCancellation χ) :
+    DifferentiableOn ℂ (continuedLFunctionOfWeight χ)
+      {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} := by
+  rw [funext (continuedLFunctionOfWeight_eq_mul_integral χ)]
+  exact LSeries.differentiableOn_mul_integral_of_isBigO _ cancellationExponent_nonneg
+    hχ.isBigO_sum_normCoeff
+
+end TauCeti
