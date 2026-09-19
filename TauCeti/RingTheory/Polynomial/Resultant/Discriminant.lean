@@ -44,9 +44,9 @@ depressed specialization of that formula is used to compare a quartic with its c
   roots and multiplies `δ` by the sign of that permutation.
 * `Polynomial.Monic.discr_eq_prod_roots_sub_sq`: the same formula for a monic polynomial,
   written against a numbering `r : Fin f.natDegree → L` of its root multiset over an extension.
-* `TauCeti.discrSqrt`, `Polynomial.Monic.discrSqrt_sq`: the product of the differences of a
-  numbering of the distinct roots of a separable polynomial, and the fact that its square is the
-  discriminant.
+* `TauCeti.discrSqrt`, `TauCeti.discrSqrt_ne_zero`, `Polynomial.Monic.discrSqrt_sq`: the product
+  of the differences of a numbering of the distinct roots, its nonvanishing, and the fact that
+  its square is the discriminant for a monic separable polynomial.
 * `Polynomial.Monic.prod_roots_eval_derivative`: the product of the derivative over the root
   multiset, which is the discriminant up to the same sign. This is the shape in which the
   discriminant of a minimal polynomial is a norm.
@@ -492,16 +492,16 @@ theorem _root_.Polynomial.Monic.discr_ne_zero_iff {K : Type*} [Field K] {f : K[X
     (hf : f.Monic) : f.discr ≠ 0 ↔ f.Separable := by
   rw [← hf.isUnit_discr_iff, isUnit_iff_ne_zero]
 
-/-- A separable monic polynomial has nonzero discriminant, so the product of its root differences
-is nonzero. -/
-theorem _root_.Polynomial.Monic.discrSqrt_ne_zero {F E : Type*} [CommRing F] [CommRing E]
-    [IsDomain E]
-    [Algebra F E] {f : F[X]} (hf : f.Monic) (hsep : f.Separable)
-    (e : Fin f.natDegree ≃ f.rootSet E) :
+/-- The product of the differences of a numbering of distinct roots is nonzero. -/
+theorem discrSqrt_ne_zero {F E : Type*} [CommRing F] [CommRing E] [IsDomain E]
+    [Algebra F E] {f : F[X]} (e : Fin f.natDegree ≃ f.rootSet E) :
     discrSqrt e ≠ 0 := by
-  intro h
-  apply ((hf.isUnit_discr_iff.mpr hsep).map (algebraMap F E)).ne_zero
-  rw [← hf.discrSqrt_sq hsep e, h, zero_pow two_ne_zero]
+  rw [discrSqrt_def]
+  refine Finset.prod_ne_zero_iff.mpr fun i _ => Finset.prod_ne_zero_iff.mpr fun j hj => ?_
+  rw [sub_ne_zero]
+  intro hij
+  have : e i = e j := Subtype.ext hij
+  exact (Finset.mem_Ioi.mp hj).ne (e.injective this)
 
 /-- A monic polynomial becomes separable along a ring homomorphism into a field exactly when its
 discriminant does not become zero. No injectivity is needed: the discriminant commutes with base

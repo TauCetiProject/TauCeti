@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.SpecificDegree
 public import Mathlib.RingTheory.Polynomial.DegreeLT
+public import Mathlib.RingTheory.Polynomial.RationalRoot
 
 /-!
 # Monic irreducible polynomials of a fixed degree
@@ -25,6 +27,8 @@ finite function space `Fin d → R`.
 * `Polynomial.mem_monicIrreduciblesOfDegree_iff`: the defining membership condition.
 * `Polynomial.finite_monicIrreduciblesOfDegree`: over a finite coefficient ring there are
   finitely many.
+* `TauCeti.irreducible_map_rat_of_natDegree_eq_three`: a monic integral cubic with no integral
+  root is irreducible over `ℚ`.
 -/
 
 public section
@@ -59,5 +63,26 @@ theorem finite_monicIrreduciblesOfDegree [Nontrivial R] [Finite R] (d : ℕ) :
   exact hmon.subset fun g hg => ⟨hg.1, hg.2.2⟩
 
 end Polynomial
+
+namespace TauCeti
+
+open Polynomial
+
+/-- A monic integral cubic without an integral root is irreducible over `ℚ`: a rational root of
+a monic integral polynomial is integral. -/
+theorem irreducible_map_rat_of_natDegree_eq_three {g : ℤ[X]} (hg : g.Monic)
+    (hdeg : g.natDegree = 3) (h : ∀ m : ℤ, g.eval m ≠ 0) :
+    Irreducible (g.map (Int.castRingHom ℚ)) := by
+  refine irreducible_of_degree_le_three_of_not_isRoot
+    (by rw [natDegree_map_eq_of_injective (RingHom.injective_int _), hdeg]; decide)
+    fun x hx => ?_
+  have hx' : aeval x g = 0 := by
+    rwa [aeval_def, algebraMap_int_eq, ← eval_map]
+  obtain ⟨m, rfl⟩ := isInteger_of_is_root_of_monic hg hx'
+  rw [aeval_algebraMap_apply, coe_aeval_eq_eval,
+    map_eq_zero_iff _ (algebraMap ℤ ℚ).injective_int] at hx'
+  exact h m hx'
+
+end TauCeti
 
 end

@@ -7,8 +7,8 @@ module
 
 public import TauCeti.FieldTheory.GaloisGroups.Label
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Classification
-public import Mathlib.Algebra.Polynomial.SpecificDegree
-public import Mathlib.RingTheory.Polynomial.RationalRoot
+public import TauCeti.RingTheory.Polynomial.Monic.Irreducible
+import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # The Galois group of a cubic
@@ -18,14 +18,14 @@ transitive subgroups of the symmetric group on three points are the alternating 
 reference subgroup of the label `3T1`, and the whole group `S₃`, that of `3T2`. So such a cubic
 carries exactly one label, and which one is decided by parity: away from characteristic `2` the
 Galois image lies in the alternating group exactly when the discriminant is a square. The
-discriminant therefore determines the Galois group of a monic irreducible separable cubic on its
+discriminant therefore determines the Galois group of an irreducible separable cubic on its
 own: the label is `3T1` when `f.discr` is a square and `3T2` when it is not.
 
-The two classical examples over `ℚ` are computed in full. The cubic `X³ - 3X - 1`, whose roots are
-`2 cos (2πk / 9)`, has discriminant `81 = 9²`, so its Galois group is cyclic of order three; the
-cubic `X³ - 2` has discriminant `-108`, which is not a square in `ℚ` since it is negative, so its
-Galois group is `S₃`, of order six. Irreducibility over `ℚ` is checked by the integral root theorem
-and a reduction modulo a small prime.
+The two classical examples over `ℚ` are computed in full. The cubic `X³ - 3X - 1` has discriminant
+`81 = 9²`, so its Galois group is cyclic of order three; the cubic `X³ - 2` has discriminant
+`-108`, which is not a square in `ℚ` since it is negative, so its Galois group is `S₃`, of order
+six. Irreducibility over `ℚ` is checked by the integral root theorem and a reduction modulo a small
+prime.
 
 ## Main results
 
@@ -70,37 +70,104 @@ theorem existsUnique_hasGaloisLabel_three (hsep : f.Separable) (hirr : Irreducib
   (exists_hasGaloisLabel_of_irreducible hsep hirr hdeg fun G _ =>
     exists_transitiveGroupLabel_three G).elim fun j hj => ⟨j, hj, fun _ hk => hk.eq_of_three hj⟩
 
-variable (hf : f.Monic) (hchar : ringChar F ≠ 2)
-include hf hchar
+private theorem discr_C_mul_of_natDegree_eq_three (a : F) (ha : a ≠ 0)
+    (hdeg : f.natDegree = 3) : (C a * f).discr = a ^ 4 * f.discr := by
+  have hfdeg : f.degree = 3 :=
+    (degree_eq_iff_natDegree_eq_of_pos (show 0 < (3 : ℕ) by omega)).mpr hdeg
+  have hscaled : (C a * f).degree = 3 := by rw [degree_C_mul ha, hfdeg]
+  rw [discr_of_degree_eq_three hscaled, discr_of_degree_eq_three hfdeg]
+  simp only [coeff_C_mul]
+  ring
 
-/-- **A cubic with square discriminant has label `3T1`.** Away from characteristic `2`, a monic
+private theorem isSquare_discr_iff_mem_range_three {E : Type*} [Field E] [Algebra F E]
+    (hsep : f.Separable) (hdeg : f.natDegree = 3)
+    (e : Fin f.natDegree ≃ f.rootSet E) :
+    IsSquare f.discr ↔ discrSqrt e ∈ Set.range (algebraMap F E) := by
+  have hf0 : f ≠ 0 := by rintro rfl; simp at hdeg
+  have hlc : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hf0
+  let p : E[X] := ∏ i, (X - C (e i : E))
+  have hfmapdeg : (f.map (algebraMap F E)).natDegree = 3 := by
+    rw [natDegree_map_eq_of_injective (algebraMap F E).injective, hdeg]
+  have hsplits : (f.map (algebraMap F E)).Splits := by
+    rw [splits_iff_card_roots, hsep.roots_map_eq_map_numbering e]
+    simpa [hfmapdeg] using hdeg
+  have hfac : f.map (algebraMap F E) = C (algebraMap F E f.leadingCoeff) * p := by
+    have hprod := hsplits.eq_prod_roots
+    rw [hsep.roots_map_eq_map_numbering e] at hprod
+    simpa [p, ← List.prod_ofFn, Function.comp_def] using hprod
+  have hpdeg : p.natDegree = 3 := by
+    rw [← hfmapdeg, hfac, natDegree_C_mul
+      ((map_eq_zero_iff _ (algebraMap F E).injective).not.mpr hlc)]
+  have hdiscr : algebraMap F E f.discr =
+      (algebraMap F E f.leadingCoeff) ^ 4 * discrSqrt e ^ 2 := by
+    rw [← discr_map_of_natDegree_eq (algebraMap F E)
+      (natDegree_map_eq_of_injective (algebraMap F E).injective f), hfac,
+      discr_C_mul_of_natDegree_eq_three _
+        ((map_eq_zero_iff _ (algebraMap F E).injective).not.mpr hlc) hpdeg,
+      discr_prod_X_sub_C_eq_sq]
+    rw [discrSqrt_def]
+  constructor
+  · rintro ⟨c, hc⟩
+    have hs : discrSqrt e * discrSqrt e =
+        algebraMap F E (f.leadingCoeff⁻¹ ^ 2 * c) *
+          algebraMap F E (f.leadingCoeff⁻¹ ^ 2 * c) := by
+      have h := hdiscr
+      rw [hc, map_mul] at h
+      simp only [map_inv₀, map_pow, map_mul]
+      have hlcE : algebraMap F E f.leadingCoeff ≠ 0 :=
+        (map_eq_zero_iff _ (algebraMap F E).injective).not.mpr hlc
+      field_simp [hlcE] at h ⊢
+      ring_nf at h ⊢
+      exact h.symm
+    rcases mul_self_eq_mul_self_iff.mp hs with hs | hs
+    · exact ⟨_, hs.symm⟩
+    · exact ⟨-_, by rw [map_neg, ← hs]⟩
+  · rintro ⟨c, hc⟩
+    refine ⟨f.leadingCoeff ^ 2 * c, (algebraMap F E).injective ?_⟩
+    simp only [map_mul, map_pow]
+    rw [hc, hdiscr]
+    ring
+
+private theorem HasGaloisLabel.isSquare_discr_iff_three {j : TransitiveGroupIndex 3}
+    (h : HasGaloisLabel f j) (hchar : ringChar F ≠ 2) :
+    IsSquare f.discr ↔ referenceSubgroup 3 j ≤ alternatingGroup (Fin 3) := by
+  have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
+  let _ : Fact ((f.map (algebraMap F f.SplittingField)).Splits) := ⟨SplittingField.splits f⟩
+  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
+  exact (isSquare_discr_iff_mem_range_three h.separable h.natDegree_eq e.symm).trans <|
+    (discrSqrt_mem_range_iff hchar e.symm).trans h.range_le_alternatingGroup_iff
+
+variable (hchar : ringChar F ≠ 2)
+include hchar
+
+/-- **A cubic with square discriminant has label `3T1`.** Away from characteristic `2`, a
 polynomial has label `3T1`, that is Galois group cyclic of order three acting on its roots,
 exactly when it is a separable irreducible cubic whose discriminant is a square. -/
 theorem hasGaloisLabel_three_zero_iff :
     HasGaloisLabel f (⟨0, by simp⟩ : TransitiveGroupIndex 3) ↔
       f.Separable ∧ Irreducible f ∧ f.natDegree = 3 ∧ IsSquare f.discr := by
   refine ⟨fun h => ⟨h.separable, h.irreducible, h.natDegree_eq,
-    (h.isSquare_discr_iff hf hchar).mpr referenceSubgroup_three_zero_le_alternatingGroup⟩,
+    (h.isSquare_discr_iff_three hchar).mpr referenceSubgroup_three_zero_le_alternatingGroup⟩,
     fun ⟨hsep, hirr, hdeg, hsq⟩ => ?_⟩
   obtain ⟨j, hj, -⟩ := existsUnique_hasGaloisLabel_three hsep hirr hdeg
   obtain ⟨_ | _ | _, hlt⟩ := j
   · exact hj
   · exact (not_referenceSubgroup_three_one_le_alternatingGroup
-      ((hj.isSquare_discr_iff hf hchar).mp hsq)).elim
+      ((hj.isSquare_discr_iff_three hchar).mp hsq)).elim
   · simp at hlt
 
 /-- **A cubic with non-square discriminant has label `3T2`.** Away from characteristic `2`, a
-monic polynomial has label `3T2`, that is Galois group the full symmetric group on its three
+polynomial has label `3T2`, that is Galois group the full symmetric group on its three
 roots, exactly when it is a separable irreducible cubic whose discriminant is not a square. -/
 theorem hasGaloisLabel_three_one_iff :
     HasGaloisLabel f (⟨1, by simp⟩ : TransitiveGroupIndex 3) ↔
       f.Separable ∧ Irreducible f ∧ f.natDegree = 3 ∧ ¬ IsSquare f.discr := by
   refine ⟨fun h => ⟨h.separable, h.irreducible, h.natDegree_eq,
     fun hsq => not_referenceSubgroup_three_one_le_alternatingGroup
-      ((h.isSquare_discr_iff hf hchar).mp hsq)⟩, fun ⟨hsep, hirr, hdeg, hsq⟩ => ?_⟩
+      ((h.isSquare_discr_iff_three hchar).mp hsq)⟩, fun ⟨hsep, hirr, hdeg, hsq⟩ => ?_⟩
   obtain ⟨j, hj, -⟩ := existsUnique_hasGaloisLabel_three hsep hirr hdeg
   obtain ⟨_ | _ | _, hlt⟩ := j
-  · exact (hsq ((hj.isSquare_discr_iff hf hchar).mpr
+  · exact (hsq ((hj.isSquare_discr_iff_three hchar).mpr
       referenceSubgroup_three_zero_le_alternatingGroup)).elim
   · exact hj
   · simp at hlt
@@ -108,21 +175,6 @@ theorem hasGaloisLabel_three_one_iff :
 end General
 
 /-! ### Two cubics over `ℚ` -/
-
-/-- A monic integral cubic without an integral root is irreducible over `ℚ`: a rational root of
-a monic integral polynomial is integral. -/
-private theorem irreducible_map_rat_of_natDegree_eq_three {g : ℤ[X]} (hg : g.Monic)
-    (hdeg : g.natDegree = 3) (h : ∀ m : ℤ, g.eval m ≠ 0) :
-    Irreducible (g.map (Int.castRingHom ℚ)) := by
-  refine irreducible_of_degree_le_three_of_not_isRoot
-    (by rw [natDegree_map_eq_of_injective (RingHom.injective_int _), hdeg]; decide)
-    fun x hx => ?_
-  have hx' : aeval x g = 0 := by
-    rwa [aeval_def, algebraMap_int_eq, ← eval_map]
-  obtain ⟨m, rfl⟩ := isInteger_of_is_root_of_monic hg hx'
-  rw [aeval_algebraMap_apply, coe_aeval_eq_eval,
-    map_eq_zero_iff _ (algebraMap ℤ ℚ).injective_int] at hx'
-  exact h m hx'
 
 /-- The discriminant of `X³ - 3X - 1` is `81`. -/
 theorem discr_X_pow_three_sub_three_mul_X_sub_one :
@@ -163,7 +215,7 @@ theorem irreducible_X_pow_three_sub_two : Irreducible (X ^ 3 - 2 : ℚ[X]) := by
 /-- **`X³ - 3X - 1` has label `3T1`**: its Galois group over `ℚ` is cyclic of order three. -/
 theorem hasGaloisLabel_X_pow_three_sub_three_mul_X_sub_one :
     HasGaloisLabel (X ^ 3 - 3 * X - 1 : ℚ[X]) (⟨0, by simp⟩ : TransitiveGroupIndex 3) :=
-  (hasGaloisLabel_three_zero_iff (by monicity!) (by simp)).mpr
+  (hasGaloisLabel_three_zero_iff (by simp)).mpr
     ⟨irreducible_X_pow_three_sub_three_mul_X_sub_one.separable,
       irreducible_X_pow_three_sub_three_mul_X_sub_one, by compute_degree!,
       discr_X_pow_three_sub_three_mul_X_sub_one ▸ ⟨9, by norm_num⟩⟩
@@ -172,7 +224,7 @@ theorem hasGaloisLabel_X_pow_three_sub_three_mul_X_sub_one :
 roots. The discriminant `-108` is negative, hence not a square. -/
 theorem hasGaloisLabel_X_pow_three_sub_two :
     HasGaloisLabel (X ^ 3 - 2 : ℚ[X]) (⟨1, by simp⟩ : TransitiveGroupIndex 3) :=
-  (hasGaloisLabel_three_one_iff (by monicity!) (by simp)).mpr
+  (hasGaloisLabel_three_one_iff (by simp)).mpr
     ⟨irreducible_X_pow_three_sub_two.separable, irreducible_X_pow_three_sub_two,
       by compute_degree!, by
         rw [discr_X_pow_three_sub_two]
