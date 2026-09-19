@@ -30,9 +30,10 @@ of Banach bundles require a separate bundle-level extension.
 
 * `TauCeti.IsRegularParameter`: every solution at a parameter has surjective fixed-parameter
   linearization.
-* `TauCeti.isMeagre_setOfPred_not_isRegularParameter`: the non-regular parameters of a universal
+* `TauCeti.isMeagre_setOf_not_isRegularParameter`: the non-regular parameters of a universal
   Fredholm equation form a meagre set.
-* `TauCeti.dense_setOfPred_isRegularParameter`: the regular parameters are dense.
+* `TauCeti.mem_residual_setOf_isRegularParameter`: the regular parameters form a residual set.
+* `TauCeti.dense_setOf_isRegularParameter`: the regular parameters are dense.
 
 ## References
 
@@ -63,22 +64,6 @@ def IsRegularParameter (f : E × Λ → F) (c : F) (l : Λ) : Prop :=
   ∀ x, f (x, l) = c →
     Surjective ((fderiv ℝ f (x, l)).comp (ContinuousLinearMap.inl ℝ E Λ))
 
-omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
-/-- The defining characterization of a regular parameter. -/
-theorem isRegularParameter_iff {f : E × Λ → F} {c : F} {l : Λ} :
-    IsRegularParameter f c l ↔
-      ∀ x, f (x, l) = c →
-        Surjective ((fderiv ℝ f (x, l)).comp (ContinuousLinearMap.inl ℝ E Λ)) :=
-  Iff.rfl
-
-omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
-/-- At every solution belonging to a regular parameter, the fixed-parameter linearization is
-surjective. -/
-theorem IsRegularParameter.surjective {f : E × Λ → F} {c : F} {l : Λ}
-    (hl : IsRegularParameter f c l) {x : E} (hx : f (x, l) = c) :
-    Surjective ((fderiv ℝ f (x, l)).comp (ContinuousLinearMap.inl ℝ E Λ)) :=
-  hl x hx
-
 /-- **Global parametric transversality.** The non-regular parameters of a sufficiently smooth
 universal Fredholm equation form a meagre set.
 
@@ -87,7 +72,7 @@ linearization must be Fredholm, the total linearization must be surjective, and 
 order must meet the current Sard--Smale threshold `(dim ker)² + 1`. Second countability of the
 universal source makes the level set second countable and hence allows the local nowhere dense
 exceptional sets to be reduced to a countable family. -/
-theorem isMeagre_setOfPred_not_isRegularParameter [SecondCountableTopology (E × Λ)]
+theorem isMeagre_setOf_not_isRegularParameter [SecondCountableTopology (E × Λ)]
     {f : E × Λ → F} {c : F} {n : ℕ∞ω}
     (hcont : ∀ z, f z = c → ContDiffAt ℝ n f z)
     (hFred : ∀ z, f z = c →
@@ -164,7 +149,7 @@ theorem isMeagre_setOfPred_not_isRegularParameter [SecondCountableTopology (E ×
   have hsub : {l | ¬ IsRegularParameter f c l} ⊆ ⋃ z ∈ t, B z := by
     intro l hl
     have hl' : ¬ IsRegularParameter f c l := hl
-    rw [isRegularParameter_iff] at hl'
+    simp only [IsRegularParameter] at hl'
     push Not at hl'
     obtain ⟨x, hx, hxbad⟩ := hl'
     let w : S := ⟨(x, l), hx⟩
@@ -173,11 +158,31 @@ theorem isMeagre_setOfPred_not_isRegularParameter [SecondCountableTopology (E ×
   exact IsMeagre.mono hsub
     (isMeagre_biUnion htcount fun z _ ↦ (hBnowhere z).isMeagre)
 
+/-- The regular parameters of a sufficiently smooth universal Fredholm equation form a residual
+set.
+
+This is the complement formulation of
+`TauCeti.isMeagre_setOf_not_isRegularParameter`. -/
+theorem mem_residual_setOf_isRegularParameter [SecondCountableTopology (E × Λ)]
+    {f : E × Λ → F} {c : F} {n : ℕ∞ω}
+    (hcont : ∀ z, f z = c → ContDiffAt ℝ n f z)
+    (hFred : ∀ z, f z = c →
+      ContinuousLinearMap.IsFredholm
+        ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)))
+    (htotal : ∀ z, f z = c → Surjective (fderiv ℝ f z))
+    (hn : ∀ z, f z = c →
+      ((finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker *
+          finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker + 1 : ℕ) :
+        ℕ∞ω) ≤ n) :
+    {l | IsRegularParameter f c l} ∈ residual Λ := by
+  simpa only [IsMeagre, Set.compl_ofPred, Classical.not_not] using
+    isMeagre_setOf_not_isRegularParameter hcont hFred htotal hn
+
 /-- The regular parameters of a sufficiently smooth universal Fredholm equation are dense.
 
 This is the Baire-category consequence of
-`TauCeti.isMeagre_setOfPred_not_isRegularParameter`. -/
-theorem dense_setOfPred_isRegularParameter [SecondCountableTopology (E × Λ)]
+`TauCeti.mem_residual_setOf_isRegularParameter`. -/
+theorem dense_setOf_isRegularParameter [SecondCountableTopology (E × Λ)]
     {f : E × Λ → F} {c : F} {n : ℕ∞ω}
     (hcont : ∀ z, f z = c → ContDiffAt ℝ n f z)
     (hFred : ∀ z, f z = c →
@@ -189,12 +194,8 @@ theorem dense_setOfPred_isRegularParameter [SecondCountableTopology (E × Λ)]
           finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker + 1 : ℕ) :
         ℕ∞ω) ≤ n) :
     Dense {l | IsRegularParameter f c l} := by
-  have hmeagre := isMeagre_setOfPred_not_isRegularParameter hcont hFred htotal hn
-  have hcompl : {l | IsRegularParameter f c l} = {l | ¬ IsRegularParameter f c l}ᶜ := by
-    ext l
-    simp
-  rw [hcompl]
-  exact dense_of_mem_residual hmeagre
+  exact dense_of_mem_residual
+    (mem_residual_setOf_isRegularParameter hcont hFred htotal hn)
 
 end TauCeti
 
