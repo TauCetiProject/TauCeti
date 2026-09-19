@@ -1,12 +1,15 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, Claude
 -/
 module
 
 public import Mathlib.Data.Set.BoolIndicator
+public import Mathlib.MeasureTheory.Constructions.Projective
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
+import Mathlib.Data.Finset.Sym
+import Mathlib.Data.Sym.Sym2.Order
 
 /-!
 # Edge coordinates of an infinite simple graph
@@ -15,6 +18,10 @@ An infinite simple graph is equivalently a Boolean assignment to the unordered, 
 pairs of natural numbers.  This file makes that equivalence measurable and records its
 equivariance under relabelling.  It is the carrier-level bridge between laws on infinite simple
 graphs and laws on jointly exchangeable symmetric, irreflexive Boolean arrays.
+
+Finite measures on infinite graphs are determined by the laws of all their finite vertex windows:
+every finite collection of edge coordinates lies in one such window, so projective-limit
+uniqueness applies after transporting the measures through the coordinate equivalence.
 
 The coordinate type excludes diagonal pairs, rather than imposing an irreflexivity condition on a
 two-dimensional array.  Consequently every Boolean assignment is a graph, and relabelling acts by
@@ -32,6 +39,8 @@ an honest equivalence of coordinates.
 * `TauCeti.DenseGraphLimits.measurable_graphCoordEquiv` and
   `TauCeti.DenseGraphLimits.measurable_graphCoordEquiv_symm` show that the coordinate equivalence
   is measurable in both directions;
+* `TauCeti.DenseGraphLimits.measure_ext_of_map_restrictFin` shows that a finite measure on infinite
+  graphs is determined by its finite windows;
 * `Equiv.Perm.graphCoordEquiv_comap` is the relabelling commuting square.
 
 ## References
@@ -95,6 +104,8 @@ namespace TauCeti
 
 namespace DenseGraphLimits
 
+open MeasureTheory
+
 /-- An edge coordinate is an edge of the decoded graph exactly when its value is true. -/
 @[simp]
 theorem mem_edgeSet_graphCoordEquiv_symm (f : EdgeIndex → Bool) (e : EdgeIndex) :
@@ -139,6 +150,85 @@ theorem measurable_graphCoordEquiv_symm : Measurable ⇑graphCoordEquiv.symm := 
       · exact fun hh => ⟨he, hh⟩
     rw [hfun]
     fun_prop
+
+/-! ### Edge-coordinate windows -/
+
+/-- The edge coordinates both of whose endpoints are below `n`. -/
+def edgeWindow (n : ℕ) : Finset EdgeIndex :=
+  (Finset.range n).sym2.subtype fun e => ¬ e.IsDiag
+
+/-- Membership in `edgeWindow n` means that both endpoints are below `n`. -/
+theorem mem_edgeWindow {n : ℕ} {e : EdgeIndex} :
+    e ∈ edgeWindow n ↔ ∀ a ∈ e.1, a < n := by
+  simp [edgeWindow, Finset.mem_sym2_iff]
+
+/-- A bound below which all endpoints of the coordinates in `J` lie. -/
+def windowBound (J : Finset EdgeIndex) : ℕ :=
+  J.sup fun e => e.1.sup + 1
+
+/-- Every coordinate in a finite set lies in the window at its `windowBound`. -/
+theorem subset_edgeWindow_windowBound (J : Finset EdgeIndex) :
+    J ⊆ edgeWindow (windowBound J) := by
+  intro e he
+  refine mem_edgeWindow.2 fun a ha => Nat.lt_of_lt_of_le ?_
+    (Finset.le_sup (f := fun e : EdgeIndex => e.1.sup + 1) he)
+  obtain ⟨s, hs⟩ := e
+  induction s using Sym2.ind with
+  | _ x y =>
+    rcases Sym2.mem_iff.1 ha with rfl | rfl <;> simp
+
+/-- The edge coordinates of a graph on `Fin n`, with its labels read in `ℕ`. -/
+def windowCoord {n : ℕ} (H : SimpleGraph (Fin n)) : EdgeIndex → Bool :=
+  graphCoordEquiv (H.map Fin.valEmbedding)
+
+/-- A finite graph's window coordinates are those of its embedding into the natural labels. -/
+@[simp]
+theorem windowCoord_apply {n : ℕ} (H : SimpleGraph (Fin n)) (e : EdgeIndex) :
+    windowCoord H e = graphCoordEquiv (H.map Fin.valEmbedding) e := (rfl)
+
+/-- Below a bound, the edge coordinates of an infinite graph are read off its window. -/
+theorem graphCoordEquiv_eq_windowCoord {n : ℕ} (G : SimpleGraph ℕ) {e : EdgeIndex}
+    (he : e ∈ edgeWindow n) : graphCoordEquiv G e = windowCoord (G.restrictFin n) e := by
+  obtain ⟨s, hs⟩ := e
+  induction s using Sym2.ind with
+  | _ x y =>
+    have hx : x < n := mem_edgeWindow.1 he x (Sym2.mem_mk_left x y)
+    have hy : y < n := mem_edgeWindow.1 he y (Sym2.mem_mk_right x y)
+    rw [windowCoord, Bool.eq_iff_iff, SimpleGraph.graphCoordEquiv_apply,
+      SimpleGraph.graphCoordEquiv_apply, SimpleGraph.mem_edgeSet, SimpleGraph.mem_edgeSet]
+    have h := SimpleGraph.map_adj_apply (f := Fin.valEmbedding) (G := G.restrictFin n)
+      (a := ⟨x, hx⟩) (b := ⟨y, hy⟩)
+    rw [SimpleGraph.restrictFin_adj] at h
+    exact h.symm
+
+/-! ### Finite measures on infinite graphs are determined by their windows -/
+
+/-- **A finite measure on the graphs on `ℕ` is determined by its windows.** The coordinates of an
+infinite graph below any bound are a function of its window, so the laws of all finitely many
+coordinates agree, and the law of the coordinates is their unique projective limit. -/
+theorem measure_ext_of_map_restrictFin {μ ν : Measure (SimpleGraph ℕ)} [IsFiniteMeasure μ]
+    (h : ∀ n, μ.map (·.restrictFin n) = ν.map (·.restrictFin n)) : μ = ν := by
+  -- The law of the coordinates in `J` is a pushforward of the window below `windowBound J`.
+  have hcoord : ∀ J : Finset EdgeIndex, (fun G => J.restrict (graphCoordEquiv G)) =
+      (fun H => J.restrict (windowCoord H)) ∘ (·.restrictFin (windowBound J)) := fun J => by
+    funext G
+    ext e
+    exact graphCoordEquiv_eq_windowCoord G (subset_edgeWindow_windowBound J e.2)
+  have hlaw : ∀ ρ : Measure (SimpleGraph ℕ), ∀ J : Finset EdgeIndex,
+      (ρ.map graphCoordEquiv).map J.restrict =
+        (ρ.map (·.restrictFin (windowBound J))).map fun H => J.restrict (windowCoord H) :=
+    fun ρ J => by
+      rw [Measure.map_map (Finset.measurable_restrict J) measurable_graphCoordEquiv,
+        Measure.map_map (measurable_of_countable _) (SimpleGraph.measurable_restrictFin _)]
+      exact congrArg ρ.map (hcoord J)
+  have hcoordEq : μ.map graphCoordEquiv = ν.map graphCoordEquiv :=
+    IsProjectiveLimit.unique (P := fun J => (μ.map graphCoordEquiv).map J.restrict)
+      (fun _ => rfl) fun J => by beta_reduce; rw [hlaw, hlaw, h]
+  have hsymm : ∀ ρ : Measure (SimpleGraph ℕ),
+      (ρ.map graphCoordEquiv).map graphCoordEquiv.symm = ρ := fun ρ => by
+    rw [Measure.map_map measurable_graphCoordEquiv_symm measurable_graphCoordEquiv,
+      Equiv.symm_comp_self, Measure.map_id]
+  rw [← hsymm μ, hcoordEq, hsymm]
 
 end DenseGraphLimits
 

@@ -8,8 +8,6 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Coordinates
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Defs
 public import TauCeti.MeasureTheory.Measure.ProjectiveLimit.Countable
-import Mathlib.Data.Finset.Sym
-import Mathlib.Data.Sym.Sym2.Order
 import Mathlib.Logic.Equiv.Fintype
 
 /-!
@@ -40,8 +38,6 @@ injection, which the consistency of the marginals controls.
 
 ## Main results
 
-* `TauCeti.DenseGraphLimits.measure_ext_of_map_restrictFin` — a finite measure on the graphs on `ℕ`
-  is determined by its windows;
 * `TauCeti.DenseGraphLimits.exchangeableGraphLawEquivInfinite_law_map_restrictFin` — the windows of
   the infinite law attached to an exchangeable graph law are its marginals;
 * `TauCeti.DenseGraphLimits.exchangeableGraphLawEquivInfinite_symm_law` — conversely the marginals
@@ -67,34 +63,6 @@ namespace TauCeti
 
 namespace DenseGraphLimits
 
-/-! ### Edge coordinates below a bound -/
-
-/-- The edge coordinates both of whose endpoints are below `n`. -/
-private def edgeWindow (n : ℕ) : Finset EdgeIndex :=
-  (Finset.range n).sym2.subtype fun e => ¬ e.IsDiag
-
-private theorem mem_edgeWindow {n : ℕ} {e : EdgeIndex} :
-    e ∈ edgeWindow n ↔ ∀ a ∈ e.1, a < n := by
-  simp [edgeWindow, Finset.mem_sym2_iff]
-
-/-- A bound below which all endpoints of the coordinates in `J` lie. -/
-private def windowBound (J : Finset EdgeIndex) : ℕ :=
-  J.sup fun e => e.1.sup + 1
-
-private theorem subset_edgeWindow_windowBound (J : Finset EdgeIndex) :
-    J ⊆ edgeWindow (windowBound J) := by
-  intro e he
-  refine mem_edgeWindow.2 fun a ha => Nat.lt_of_lt_of_le ?_
-    (Finset.le_sup (f := fun e : EdgeIndex => e.1.sup + 1) he)
-  obtain ⟨s, hs⟩ := e
-  induction s using Sym2.ind with
-  | _ x y =>
-    rcases Sym2.mem_iff.1 ha with rfl | rfl <;> simp
-
-/-- The edge coordinates of a graph on `Fin n`, with its labels read in `ℕ`. -/
-private def windowCoord {n : ℕ} (H : SimpleGraph (Fin n)) : EdgeIndex → Bool :=
-  graphCoordEquiv (H.map Fin.valEmbedding)
-
 /-- A window of a graph on `Fin n` embedded in `ℕ` is a restriction along the inclusion. -/
 private theorem restrictFin_map_valEmbedding {m n : ℕ} (H : SimpleGraph (Fin n)) (h : m ≤ n) :
     (H.map Fin.valEmbedding).restrictFin m = H.comap (Fin.castLEEmb h) := by
@@ -109,21 +77,6 @@ private theorem restrictFin_map_valEmbedding_self {n : ℕ} (H : SimpleGraph (Fi
   rw [restrictFin_map_valEmbedding H le_rfl]
   ext a b
   simp
-
-/-- Below a bound, the edge coordinates of an infinite graph are read off its window. -/
-private theorem graphCoordEquiv_eq_windowCoord {n : ℕ} (G : SimpleGraph ℕ) {e : EdgeIndex}
-    (he : e ∈ edgeWindow n) : graphCoordEquiv G e = windowCoord (G.restrictFin n) e := by
-  obtain ⟨s, hs⟩ := e
-  induction s using Sym2.ind with
-  | _ x y =>
-    have hx : x < n := mem_edgeWindow.1 he x (Sym2.mem_mk_left x y)
-    have hy : y < n := mem_edgeWindow.1 he y (Sym2.mem_mk_right x y)
-    rw [windowCoord, Bool.eq_iff_iff, SimpleGraph.graphCoordEquiv_apply,
-      SimpleGraph.graphCoordEquiv_apply, SimpleGraph.mem_edgeSet, SimpleGraph.mem_edgeSet]
-    have h := SimpleGraph.map_adj_apply (f := Fin.valEmbedding) (G := G.restrictFin n)
-      (a := ⟨x, hx⟩) (b := ⟨y, hy⟩)
-    rw [SimpleGraph.restrictFin_adj] at h
-    exact h.symm
 
 /-- Two graphs on `ℕ` have the same window below `n` exactly when their edge coordinates agree
 below `n`. -/
@@ -153,36 +106,8 @@ the smaller bound. -/
 private theorem windowCoord_comap_castLEEmb {m n : ℕ} (h : m ≤ n) (H : SimpleGraph (Fin n))
     {e : EdgeIndex} (he : e ∈ edgeWindow m) :
     windowCoord (H.comap (Fin.castLEEmb h)) e = windowCoord H e := by
-  rw [← restrictFin_map_valEmbedding H h, ← graphCoordEquiv_eq_windowCoord _ he, windowCoord]
-
-/-! ### Finite measures on infinite graphs are determined by their windows -/
-
-/-- **A finite measure on the graphs on `ℕ` is determined by its windows.** The coordinates of an
-infinite graph below any bound are a function of its window, so the laws of all finitely many
-coordinates agree, and the law of the coordinates is their unique projective limit. -/
-theorem measure_ext_of_map_restrictFin {μ ν : Measure (SimpleGraph ℕ)} [IsFiniteMeasure μ]
-    (h : ∀ n, μ.map (·.restrictFin n) = ν.map (·.restrictFin n)) : μ = ν := by
-  -- The law of the coordinates in `J` is a pushforward of the window below `windowBound J`.
-  have hcoord : ∀ J : Finset EdgeIndex, (fun G => J.restrict (graphCoordEquiv G)) =
-      (fun H => J.restrict (windowCoord H)) ∘ (·.restrictFin (windowBound J)) := fun J => by
-    funext G
-    ext e
-    exact graphCoordEquiv_eq_windowCoord G (subset_edgeWindow_windowBound J e.2)
-  have hlaw : ∀ ρ : Measure (SimpleGraph ℕ), ∀ J : Finset EdgeIndex,
-      (ρ.map graphCoordEquiv).map J.restrict =
-        (ρ.map (·.restrictFin (windowBound J))).map fun H => J.restrict (windowCoord H) :=
-    fun ρ J => by
-      rw [Measure.map_map (Finset.measurable_restrict J) measurable_graphCoordEquiv,
-        Measure.map_map (measurable_of_countable _) (SimpleGraph.measurable_restrictFin _)]
-      exact congrArg ρ.map (hcoord J)
-  have hcoordEq : μ.map graphCoordEquiv = ν.map graphCoordEquiv :=
-    IsProjectiveLimit.unique (P := fun J => (μ.map graphCoordEquiv).map J.restrict)
-      (fun _ => rfl) fun J => by beta_reduce; rw [hlaw, hlaw, h]
-  have hsymm : ∀ ρ : Measure (SimpleGraph ℕ),
-      (ρ.map graphCoordEquiv).map graphCoordEquiv.symm = ρ := fun ρ => by
-    rw [Measure.map_map measurable_graphCoordEquiv_symm measurable_graphCoordEquiv,
-      Equiv.symm_comp_self, Measure.map_id]
-  rw [← hsymm μ, hcoordEq, hsymm]
+  rw [← restrictFin_map_valEmbedding H h, ← graphCoordEquiv_eq_windowCoord _ he,
+    windowCoord_apply]
 
 /-! ### The extension of consistent marginals -/
 
@@ -265,14 +190,14 @@ private theorem extensionLaw_map_restrictFin (n : ℕ) :
       Finset.restrict, Subtype.forall]
     rw [← restrictFin_map_valEmbedding_self H, restrictFin_eq_restrictFin_iff,
       restrictFin_map_valEmbedding_self]
-    simp [windowCoord]
+    simp [windowCoord_apply]
   have hwin : ∀ H' : SimpleGraph (Fin n),
       (edgeWindow n).restrict (windowCoord H') = (edgeWindow n).restrict (windowCoord H) ↔
         H' = H := fun H' => by
     rw [← restrictFin_map_valEmbedding_self H', ← restrictFin_map_valEmbedding_self H,
       restrictFin_eq_restrictFin_iff, restrictFin_map_valEmbedding_self,
       restrictFin_map_valEmbedding_self, funext_iff]
-    simp [windowCoord, Finset.restrict]
+    simp [windowCoord_apply, Finset.restrict]
   rw [extensionLaw, Measure.map_map (SimpleGraph.measurable_restrictFin n)
       measurable_graphCoordEquiv_symm,
     Measure.map_apply ((SimpleGraph.measurable_restrictFin n).comp
