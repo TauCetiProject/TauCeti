@@ -349,4 +349,20 @@ theorem doubleCoset_out_diagCosetGamma1_eq_iUnion_rightCosets (hp : 0 < p)
 
 end HeckeRing.GL2
 
+namespace TauCeti
+
+open HeckeRing.GL2
+
+/-- The right-coset decomposition of `Γ₁(N) diag(1,n) Γ₁(N)` is finite. Stated on the
+underlying rational matrix so instance search does not need to recover its `Δ₀(N)` membership. -/
+instance finite_decompQuotient_natDiagGL_Gamma1 (N n : ℕ) [NeZero N] :
+    Finite (DecompQuotient ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ))
+      (natDiagGL 2 ![1, n])⁻¹) :=
+  @Finite.of_fintype _ (Subgroup.fintypeOfIndexNeZero
+    (IsHeckeTriple.commensurable_conjAct_inv_left
+      (H₁ := (Gamma1 N).map (mapGL ℚ)) (H₂ := (Gamma1 N).map (mapGL ℚ))
+      (⟨natDiagGL 2 ![1, n], natDiagGL_one_mem_Delta0 N n⟩ : Delta0 N)).1.relIndex_ne_zero)
+
+end TauCeti
+
 end
