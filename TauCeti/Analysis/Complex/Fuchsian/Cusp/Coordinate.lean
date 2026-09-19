@@ -26,9 +26,9 @@ logarithmic lift transported back by `σ⁻¹`.
 This uses the translation quotient computed in
 `TauCeti.Analysis.Complex.UpperHalfPlane.CuspCoordinate`. No discreteness assumption is needed
 once a normalized cusp datum is given: its primitive-generator condition identifies the full
-stabilizer. The coordinate is holomorphic, and scaled horodiscs correspond exactly to smaller
-punctured discs. This is a local model for cusp charts; embedding such a neighbourhood into the
-full group quotient additionally requires precise invariance of the horodisc.
+stabilizer. The coordinate is holomorphic, and scaled horodiscs of positive height correspond
+exactly to smaller punctured discs. This is a local model for cusp charts; embedding such a
+neighbourhood into the full group quotient additionally requires precise invariance of the horodisc.
 
 ## References
 
@@ -195,6 +195,7 @@ def quotientHomeomorph :
       simpa only [Homeomorph.smul_apply] using orbitRel_iff_cuspTranslationOrbitRel D z z')).trans
     (cuspTranslationQuotientHomeomorph D.width D.width_pos)
 
+/-- The quotient homeomorphism sends the orbit of a point to its q-coordinate. -/
 @[simp]
 theorem quotientHomeomorph_mk (z : ℍ) :
     quotientHomeomorph D (Quotient.mk'' z) = qCoordinate D z := by
@@ -202,6 +203,8 @@ theorem quotientHomeomorph_mk (z : ℍ) :
     Homeomorph.Quotient.congr_mk, cuspTranslationQuotientHomeomorph_mk]
   simp only [Homeomorph.smul_apply, qCoordinate_eq]
 
+/-- The inverse quotient homeomorphism sends a punctured-disc point to the orbit of its
+width-dependent logarithmic lift transported back by the inverse scaling. -/
 @[simp]
 theorem quotientHomeomorph_symm_apply (q : {q : 𝔻 // q ≠ 0}) :
     (quotientHomeomorph D).symm q =
