@@ -70,7 +70,7 @@ through the periodic-resolution calculations `Rep.FiniteCyclicGroup.groupCohomol
 
 * `Rep.FiniteCyclicGroup.natCard_tateCohomology_eq_of_modEq`: Tate degrees congruent modulo two
   have the same cardinality. This is the form the Herbrand quotient is computed with.
-* `Rep.FiniteCyclicGroup.map_periodicFunctor_shortExact`: a short exact sequence of
+* `Rep.FiniteCyclicGroup.shortExact_map_periodicFunctor`: a short exact sequence of
   representations induces a short exact sequence of periodic chain complexes.
 * `Rep.FiniteCyclicGroup.homologyMap_comp_periodicHomologyIsoOdd`: the odd-degree identification
   of the homology of the periodic complex is natural in the coefficients, so the maps it induces
@@ -440,7 +440,7 @@ noncomputable def periodicFunctorEval (i : ℕ) :
 
 /-- A short exact sequence of representations induces a short exact sequence of periodic chain
 complexes, because in each degree it is the underlying short exact sequence of modules. -/
-theorem map_periodicFunctor_shortExact {S : ShortComplex (Rep R G)} (hS : S.ShortExact) :
+theorem shortExact_map_periodicFunctor {S : ShortComplex (Rep R G)} (hS : S.ShortExact) :
     (S.map (periodicFunctor R g)).ShortExact := by
   rw [HomologicalComplex.shortExact_iff_degreewise_shortExact]
   intro i

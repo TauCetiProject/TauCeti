@@ -217,7 +217,7 @@ private theorem exists_hexagon_natCard {S : ShortComplex (Rep R G)} (hS : S.Shor
         Nat.card (tateCohomology S.X₃ (-1)) = t₁ * s₂ ∧
         Nat.card (tateCohomology S.X₂ 0) = s₁ * r₁ ∧
         Nat.card (tateCohomology S.X₂ (-1)) = s₂ * r₂ := by
-  have hT := map_periodicFunctor_shortExact g hS
+  have hT := shortExact_map_periodicFunctor g hS
   -- the left-hand term of the sequence is an extension of the image of the connecting map
   have ha : ∀ (i j : ℕ) (hij : (ComplexShape.down ℕ).Rel i j),
       Nat.card (((periodicFunctor R g).obj S.X₁).homology j) =

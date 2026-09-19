@@ -29,6 +29,8 @@ public section
 
 namespace LinearMap
 
+section
+
 variable {R M N M' N' : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N]
   [Module R N] [AddCommGroup M'] [Module R M'] [AddCommGroup N'] [Module R N']
 
@@ -39,6 +41,13 @@ theorem card_eq_card_range_mul_card_ker (f : M →ₗ[R] N) :
   rw [Submodule.card_eq_card_quotient_mul_card (ker f),
     Nat.card_congr f.quotKerEquivRange.toEquiv, Nat.mul_comm]
 
+end
+
+section
+
+variable {R M N M' N' : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N] [AddCommMonoid M'] [Module R M'] [AddCommMonoid N'] [Module R N']
+
 /-- Linear maps intertwined by linear equivalences on the source and on the target have ranges
 of the same cardinality. -/
 theorem card_range_eq_card_range_of_comp_eq (f : M →ₗ[R] N) (f' : M' →ₗ[R] N') (e : M ≃ₗ[R] M')
@@ -47,5 +56,7 @@ theorem card_range_eq_card_range_of_comp_eq (f : M →ₗ[R] N) (f' : M' →ₗ[
   have hrange : range f' = Submodule.map (e' : N →ₗ[R] N') (range f) := by
     rw [← range_comp, h, range_comp, range_eq_top.2 e.surjective, Submodule.map_top]
   rw [hrange, Nat.card_congr (Submodule.equivMapOfInjective _ e'.injective _).toEquiv]
+
+end
 
 end LinearMap
