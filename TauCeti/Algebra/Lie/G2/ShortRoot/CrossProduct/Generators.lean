@@ -98,7 +98,7 @@ private theorem preservesG2Cross_root (i : Fin 4) (t : R) :
 
 /-- The positive short simple root elements preserve the cross product. -/
 @[simp↓]
-theorem preservesG2Cross_one_add_smul_raisingMatrix_zero (t : R) :
+theorem preservesG2Cross_one_add_smul_raisingMatrix_zero_add_sq_smul_single (t : R) :
     PreservesG2Cross
       (1 + t • (raisingMatrix 0).map (Int.cast : ℤ → R) + t ^ 2 • Matrix.single 2 4 1) := by
   have hs : (Matrix.single (2 : Fin 7) (4 : Fin 7) (1 : ℤ)).map (Int.cast : ℤ → R) =
@@ -114,7 +114,7 @@ theorem preservesG2Cross_one_add_smul_raisingMatrix_one (t : R) :
 
 /-- The negative short simple root elements preserve the cross product. -/
 @[simp↓]
-theorem preservesG2Cross_one_add_smul_loweringMatrix_zero (t : R) :
+theorem preservesG2Cross_one_add_smul_loweringMatrix_zero_add_sq_smul_single (t : R) :
     PreservesG2Cross
       (1 + t • (loweringMatrix 0).map (Int.cast : ℤ → R) + t ^ 2 • Matrix.single 4 2 1) := by
   have hs : (Matrix.single (4 : Fin 7) (2 : Fin 7) (1 : ℤ)).map (Int.cast : ℤ → R) =
@@ -130,7 +130,8 @@ theorem preservesG2Cross_one_add_smul_loweringMatrix_one (t : R) :
 
 /-- The positive short simple root elements fix the invariant dual form by congruence. -/
 @[simp↓]
-theorem one_add_smul_raisingMatrix_zero_mul_invariantDualForm (t : R) :
+theorem one_add_smul_raisingMatrix_zero_add_sq_smul_single_mul_invariantDualForm_mul_transpose
+    (t : R) :
     let g := 1 + t • (raisingMatrix 0).map (Int.cast : ℤ → R) + t ^ 2 • Matrix.single 2 4 1
     g * invariantDualForm.map (Int.cast : ℤ → R) * gᵀ =
       invariantDualForm.map (Int.cast : ℤ → R) := by
@@ -140,7 +141,7 @@ theorem one_add_smul_raisingMatrix_zero_mul_invariantDualForm (t : R) :
 
 /-- The positive long simple root elements fix the invariant dual form by congruence. -/
 @[simp↓]
-theorem one_add_smul_raisingMatrix_one_mul_invariantDualForm (t : R) :
+theorem one_add_smul_raisingMatrix_one_mul_invariantDualForm_mul_transpose (t : R) :
     let g := 1 + t • (raisingMatrix 1).map (Int.cast : ℤ → R)
     g * invariantDualForm.map (Int.cast : ℤ → R) * gᵀ =
       invariantDualForm.map (Int.cast : ℤ → R) := by
@@ -150,7 +151,8 @@ theorem one_add_smul_raisingMatrix_one_mul_invariantDualForm (t : R) :
 
 /-- The negative short simple root elements fix the invariant dual form by congruence. -/
 @[simp↓]
-theorem one_add_smul_loweringMatrix_zero_mul_invariantDualForm (t : R) :
+theorem one_add_smul_loweringMatrix_zero_add_sq_smul_single_mul_invariantDualForm_mul_transpose
+    (t : R) :
     let g := 1 + t • (loweringMatrix 0).map (Int.cast : ℤ → R) + t ^ 2 • Matrix.single 4 2 1
     g * invariantDualForm.map (Int.cast : ℤ → R) * gᵀ =
       invariantDualForm.map (Int.cast : ℤ → R) := by
@@ -160,18 +162,13 @@ theorem one_add_smul_loweringMatrix_zero_mul_invariantDualForm (t : R) :
 
 /-- The negative long simple root elements fix the invariant dual form by congruence. -/
 @[simp↓]
-theorem one_add_smul_loweringMatrix_one_mul_invariantDualForm (t : R) :
+theorem one_add_smul_loweringMatrix_one_mul_invariantDualForm_mul_transpose (t : R) :
     let g := 1 + t • (loweringMatrix 1).map (Int.cast : ℤ → R)
     g * invariantDualForm.map (Int.cast : ℤ → R) * gᵀ =
       invariantDualForm.map (Int.cast : ℤ → R) := by
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Fin.sum_univ_seven, invariantDualForm_def] <;> ring
-
-private theorem crossOperator_weight (k i j : Fin 7) (h : crossOperator k i j ≠ 0) :
-    weight i = weight k + weight j := by
-  fin_cases k <;> fin_cases i <;> fin_cases j <;>
-    norm_num [crossOperator_def] at h <;> decide
 
 /-- The weight torus preserves the cross product. -/
 @[simp]
@@ -189,17 +186,12 @@ theorem preservesG2Cross_diagonal_torusCharacter (s : Fin 2 → Rˣ) :
     smul_eq_mul]
   by_cases h : crossOperator k i j = 0
   · simp [h]
-  · rw [crossOperator_weight k i j h, torusCharacter_add, Units.val_mul]
+  · rw [weight_eq_add_of_crossOperator_ne_zero k i j h, torusCharacter_add, Units.val_mul]
     ring
-
-private theorem invariantDualForm_weight (i j : Fin 7) (h : invariantDualForm i j ≠ 0) :
-    weight i + weight j = 0 := by
-  fin_cases i <;> fin_cases j <;>
-    norm_num [invariantDualForm_def] at h <;> decide
 
 /-- The weight torus fixes the invariant dual form by congruence. -/
 @[simp↓]
-theorem diagonal_torusCharacter_mul_invariantDualForm (s : Fin 2 → Rˣ) :
+theorem diagonal_torusCharacter_mul_invariantDualForm_mul_transpose (s : Fin 2 → Rˣ) :
     let g := Matrix.diagonal fun a => (torusCharacter s (weight a) : R)
     g * invariantDualForm.map (Int.cast : ℤ → R) * gᵀ =
       invariantDualForm.map (Int.cast : ℤ → R) := by
@@ -210,8 +202,8 @@ theorem diagonal_torusCharacter_mul_invariantDualForm (s : Fin 2 → Rˣ) :
   by_cases h : invariantDualForm i j = 0
   · simp [h]
   · have hs : (torusCharacter s (weight i) : R) * (torusCharacter s (weight j) : R) = 1 := by
-      rw [← Units.val_mul, ← torusCharacter_add, invariantDualForm_weight i j h,
-        torusCharacter_zero, Units.val_one]
+      rw [← Units.val_mul, ← torusCharacter_add,
+        weight_add_eq_zero_of_invariantDualForm_ne_zero i j h, torusCharacter_zero, Units.val_one]
     linear_combination (invariantDualForm i j : R) * hs
 
 end TauCeti.G2ShortRoot
