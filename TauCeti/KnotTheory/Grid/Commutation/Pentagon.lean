@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Unblocked
+public import TauCeti.KnotTheory.Grid.Commutation.Move
 import TauCeti.KnotTheory.Grid.Rectangle.Swap
 
 /-!
@@ -29,11 +30,13 @@ point*, at which `γ` crosses from the left of `β` to its right going upwards. 
 point lies the bigon carrying the column-`a` markings, and just above it the bigon carrying the
 column-`b` markings.
 
-The combinatorics of such a pentagon is recorded here with no curve in sight. Its corners are
-those of the oriented rectangle from `x` to `y` whose terminal side is the line `b`
-(`GridPentagonBetween`, which extends `GridRectangleBetween`); the only extra datum is the
-square row `s` containing the turn point, which must lie in the rows spanned by the terminal
-side. The lattice points strictly inside the pentagon are those strictly inside that rectangle,
+The combined diagram is recorded by `GridDiagram.ColumnCommutationData`. Besides the adjacent
+non-interleaving columns, it records the rows of the two intersections and certifies that the
+markings lie in the appropriate two bigons. The combinatorics of a pentagon is then recorded
+with no curve in sight. Its corners are those of the oriented rectangle from `x` to `y` whose
+terminal side is the line `b` (`GridPentagonBetween`, which extends `GridRectangleBetween`); the
+turn row must lie in the rows spanned by the terminal side. The lattice points strictly inside
+the pentagon are those strictly inside that rectangle,
 so emptiness is `GridRectangleBetween.IsEmpty`. The markings it carries differ from those of the
 rectangle only in the two columns next to `β` (`GridPentagonBetween.coveredSquares`): a
 column-`a` marking is inside exactly when it lies above the turn point, where the terminal side
@@ -57,8 +60,10 @@ here.
 
 ## Main definitions
 
-* `TauCeti.GridPentagonBetween`: a pentagon from a grid state of `G` to a grid state of the
-  commuted diagram, recorded by its corners and its turn row.
+* `TauCeti.GridDiagram.ColumnCommutationData`: a column commutation together with the two turn
+  rows and the placement of the four adjacent-column markings in the resulting bigons.
+* `TauCeti.GridPentagonBetween`: the combinatorial shape of a pentagon, recorded by its corners
+  and its turn row.
 * `TauCeti.GridPentagonBetween.coveredSquares`: the squares of `G` whose marking lies inside the
   pentagon.
 * `TauCeti.GridDiagram.pentagons`: the empty pentagons carrying no `X`-marking.
@@ -100,14 +105,58 @@ namespace TauCeti
 
 open MvPolynomial
 
-/-- A pentagon of the commutation of columns `a` and `finRotate n a`, with turn point in square
-row `s`, from a grid state `x` of the original diagram to a grid state `y` of the commuted
-diagram.
+namespace GridDiagram
+
+/-- Validated geometric data for a column commutation.
+
+The column `column` and its cyclic successor are distinct and non-interleaving. The curves in the
+combined diagram meet in the square rows `turnRow` and `oppositeTurnRow`. Going upwards from the
+opposite turn to `turnRow` gives the bigon containing both markings of `column`; going upwards
+from `turnRow` to the opposite turn gives the bigon containing both markings of the successor.
+At `turnRow` the marking of `column` may lie below the intersection while a marking of the
+successor lies above it, so that row is admitted on both sides in these discrete conditions. -/
+structure ColumnCommutationData {n : ℕ} (G : GridDiagram n) where
+  /-- The first of the two adjacent columns being commuted. -/
+  column : Fin n
+  /-- The square row containing the distinguished intersection used by the forward pentagon map. -/
+  turnRow : Fin n
+  /-- The square row containing the other intersection of the two vertical curves. -/
+  oppositeTurnRow : Fin n
+  /-- The adjacent columns are distinct. -/
+  column_ne_next : column ≠ finRotate n column
+  /-- The two marking segments satisfy the hypothesis for a column commutation. -/
+  noninterleaving : ColumnsNoninterleaving G column (finRotate n column)
+  /-- The `O`-marking of the first column lies in the bigon below the distinguished turn. -/
+  O_column_below : G.O column ∈ insert turnRow (Grid.cIco oppositeTurnRow turnRow)
+  /-- The `X`-marking of the first column lies in the bigon below the distinguished turn. -/
+  X_column_below : G.X column ∈ insert turnRow (Grid.cIco oppositeTurnRow turnRow)
+  /-- The `O`-marking of the successor column lies in the bigon above the distinguished turn. -/
+  O_next_above : G.O (finRotate n column) ∈ Grid.cIco turnRow oppositeTurnRow
+  /-- The `X`-marking of the successor column lies in the bigon above the distinguished turn. -/
+  X_next_above : G.X (finRotate n column) ∈ Grid.cIco turnRow oppositeTurnRow
+
+namespace ColumnCommutationData
+
+variable {n : ℕ} {G : GridDiagram n}
+
+/-- Validated column-commutation data determines an elementary column commutation. -/
+theorem isColumnCommutation (C : ColumnCommutationData G) :
+    IsColumnCommutation G (G.swapColumns C.column (finRotate n C.column)) :=
+  G.isColumnCommutation_swapColumns C.column C.column_ne_next C.noninterleaving
+
+end ColumnCommutationData
+
+end GridDiagram
+
+/-- The combinatorial shape of a pentagon for columns `a` and `finRotate n a`, with turn point in
+square row `s`, from a grid state `x` to a grid state `y`.
 
 It is recorded by the oriented rectangle from `x` to `y` with the same corners, whose terminal
 side is the grid line `finRotate n a` replaced by the curve `γ`; the rows that side spans must
-contain the turn row. The points of `x` sit at the lower-left and upper-right corners and those
-of `y` at the upper-left and lower-right corners, the latter on `γ`. -/
+contain the turn row. The points of `x` sit at the lower-left and upper-right corners and those of
+`y` at the upper-left and lower-right corners, the latter on `γ`. A pentagon-counting map only
+uses these shapes through `GridDiagram.ColumnCommutationData`, which validates the commutation and
+the placement of the markings relative to the turn. -/
 structure GridPentagonBetween {n : ℕ} (a s : Fin n) (x y : GridState n)
     extends GridRectangleBetween x y where
   /-- The terminal side lies on the grid line between column `a` and the next column. -/
@@ -260,36 +309,37 @@ variable {n : ℕ} (G : GridDiagram n)
 
 /-! ### The pentagons counted by the pentagon map -/
 
-/-- The pentagons from `x` to `y` counted by the pentagon map of the commutation of columns `a`
-and `finRotate n a` with turn row `s`: the empty pentagons carrying no `X`-marking. -/
-noncomputable def pentagons (a s : Fin n) (x y : GridState n) :
-    Finset (GridPentagonBetween a s x y) := by
+/-- The pentagons from `x` to `y` counted by a validated column commutation: the empty pentagons
+carrying no `X`-marking. -/
+noncomputable def pentagons (C : ColumnCommutationData G) (x y : GridState n) :
+    Finset (GridPentagonBetween C.column C.turnRow x y) := by
   classical
   exact Finset.univ.filter fun P => P.IsEmpty ∧ Disjoint P.coveredSquares G.XSet
 
 /-- Membership in the counted pentagons is emptiness together with `X`-avoidance. -/
 @[simp]
-theorem mem_pentagons {a s : Fin n} {x y : GridState n} (P : GridPentagonBetween a s x y) :
-    P ∈ G.pentagons a s x y ↔ P.IsEmpty ∧ Disjoint P.coveredSquares G.XSet := by
+theorem mem_pentagons {C : ColumnCommutationData G} {x y : GridState n}
+    (P : GridPentagonBetween C.column C.turnRow x y) :
+    P ∈ G.pentagons C x y ↔ P.IsEmpty ∧ Disjoint P.coveredSquares G.XSet := by
   classical
   simp [pentagons]
 
 /-- At most one pentagon contributes to each matrix coefficient of the pentagon map. -/
-theorem card_pentagons_le_one (a s : Fin n) (x y : GridState n) :
-    (G.pentagons a s x y).card ≤ 1 :=
+theorem card_pentagons_le_one (C : ColumnCommutationData G) (x y : GridState n) :
+    (G.pentagons C x y).card ≤ 1 :=
   Finset.card_le_one_of_subsingleton _
 
 /-- The columns of the original diagram whose `O`-marking a pentagon carries. -/
-noncomputable def pentagonOColumns {a s : Fin n} {x y : GridState n}
-    (P : GridPentagonBetween a s x y) : Finset (Fin n) :=
+noncomputable def pentagonOColumns {x y : GridState n} (C : ColumnCommutationData G)
+    (P : GridPentagonBetween C.column C.turnRow x y) : Finset (Fin n) :=
   Finset.univ.filter fun c => (c, G.O c) ∈ P.coveredSquares
 
 /-- A column is a covered `O`-column of a pentagon exactly when its `O`-marking is a covered
 square. -/
 @[simp]
-theorem mem_pentagonOColumns {a s : Fin n} {x y : GridState n}
-    {P : GridPentagonBetween a s x y} {c : Fin n} :
-    c ∈ G.pentagonOColumns P ↔ (c, G.O c) ∈ P.coveredSquares := by
+theorem mem_pentagonOColumns {x y : GridState n} {C : ColumnCommutationData G}
+    {P : GridPentagonBetween C.column C.turnRow x y} {c : Fin n} :
+    c ∈ G.pentagonOColumns C P ↔ (c, G.O c) ∈ P.coveredSquares := by
   simp [pentagonOColumns]
 
 variable (R : Type*) [CommSemiring R]
@@ -299,20 +349,21 @@ diagram `G.swapColumns a (finRotate n a)` attaches to the `O`-markings the penta
 
 The `O`-marking of column `c` of `G` is the `O`-marking of column `Equiv.swap a (finRotate n a) c`
 of the commuted diagram, so it contributes the variable of that column. -/
-noncomputable def pentagonWeight {a s : Fin n} {x y : GridState n}
-    (P : GridPentagonBetween a s x y) : MvPolynomial (Fin n) R :=
-  ∏ c ∈ G.pentagonOColumns P, MvPolynomial.X (Equiv.swap a (finRotate n a) c)
+noncomputable def pentagonWeight {x y : GridState n} (C : ColumnCommutationData G)
+    (P : GridPentagonBetween C.column C.turnRow x y) : MvPolynomial (Fin n) R :=
+  ∏ c ∈ G.pentagonOColumns C P,
+    MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) c)
 
 /-- The weight of a pentagon as a product over the squares it covers: the renamed variable of the
 column at each `O`-marked square and `1` elsewhere. -/
-theorem pentagonWeight_eq_prod_coveredSquares {a s : Fin n} {x y : GridState n}
-    (P : GridPentagonBetween a s x y) :
-    G.pentagonWeight R P =
+theorem pentagonWeight_eq_prod_coveredSquares {x y : GridState n}
+    (C : ColumnCommutationData G) (P : GridPentagonBetween C.column C.turnRow x y) :
+    G.pentagonWeight R C P =
       ∏ p ∈ P.coveredSquares,
-        if p ∈ G.OSet then MvPolynomial.X (Equiv.swap a (finRotate n a) p.1)
+        if p ∈ G.OSet then MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) p.1)
         else (1 : MvPolynomial (Fin n) R) := by
   classical
-  have h : P.coveredSquares ∩ G.OSet = (G.pentagonOColumns P).image fun c => (c, G.O c) := by
+  have h : P.coveredSquares ∩ G.OSet = (G.pentagonOColumns C P).image fun c => (c, G.O c) := by
     ext p
     simp only [Finset.mem_inter, Finset.mem_image, mem_pentagonOColumns, mem_OSet]
     constructor
@@ -325,13 +376,16 @@ theorem pentagonWeight_eq_prod_coveredSquares {a s : Fin n} {x y : GridState n}
 
 /-- The weight of a pentagon is the product of the variables of the columns of the commuted
 diagram whose `O`-marking the pentagon carries. -/
-theorem pentagonWeight_eq_prod_swapColumns {a s : Fin n} {x y : GridState n}
-    (P : GridPentagonBetween a s x y) :
-    G.pentagonWeight R P =
-      ∏ c ∈ Finset.univ.filter (fun c => (Equiv.swap a (finRotate n a) c,
-          (G.swapColumns a (finRotate n a)).O c) ∈ P.coveredSquares), MvPolynomial.X c := by
+theorem pentagonWeight_eq_prod_swapColumns {x y : GridState n}
+    (C : ColumnCommutationData G) (P : GridPentagonBetween C.column C.turnRow x y) :
+    G.pentagonWeight R C P =
+      ∏ c ∈ Finset.univ.filter (fun c =>
+          (Equiv.swap C.column (finRotate n C.column) c,
+            (G.swapColumns C.column (finRotate n C.column)).O c) ∈ P.coveredSquares),
+        MvPolynomial.X c := by
   rw [pentagonWeight]
-  exact Finset.prod_nbij' (Equiv.swap a (finRotate n a)) (Equiv.swap a (finRotate n a))
+  exact Finset.prod_nbij' (Equiv.swap C.column (finRotate n C.column))
+    (Equiv.swap C.column (finRotate n C.column))
     (by simp [swapColumns_O, GridState.swapColumns_apply])
     (by simp [swapColumns_O, GridState.swapColumns_apply]) (by simp) (by simp) (by simp)
 
@@ -339,24 +393,26 @@ theorem pentagonWeight_eq_prod_swapColumns {a s : Fin n} {x y : GridState n}
 
 /-- The matrix coefficient of the pentagon map from `x` to `y`: the sum of the weights of the
 empty pentagons from `x` to `y` carrying no `X`-marking. -/
-noncomputable def pentagonCoefficient (a s : Fin n) (x y : GridState n) :
+noncomputable def pentagonCoefficient (C : ColumnCommutationData G) (x y : GridState n) :
     MvPolynomial (Fin n) R :=
-  ∑ P ∈ G.pentagons a s x y, G.pentagonWeight R P
+  ∑ P ∈ G.pentagons C x y, G.pentagonWeight R C P
 
 /-- The matrix coefficient of the pentagon map is the sum of the weights of its contributing
 pentagons. -/
-theorem pentagonCoefficient_def (a s : Fin n) (x y : GridState n) :
-    G.pentagonCoefficient R a s x y = ∑ P ∈ G.pentagons a s x y, G.pentagonWeight R P := by
+theorem pentagonCoefficient_def (C : ColumnCommutationData G) (x y : GridState n) :
+    G.pentagonCoefficient R C x y =
+      ∑ P ∈ G.pentagons C x y, G.pentagonWeight R C P := by
   rw [pentagonCoefficient]
 
 /-- The value of the pentagon map on a single grid-state generator. -/
-noncomputable def pentagonMapOnGenerator (a s : Fin n) (x : GridState n) : GridChainMinus R n :=
-  Finset.univ.sum fun y : GridState n => Finsupp.single y (G.pentagonCoefficient R a s x y)
+noncomputable def pentagonMapOnGenerator (C : ColumnCommutationData G) (x : GridState n) :
+    GridChainMinus R n :=
+  Finset.univ.sum fun y : GridState n => Finsupp.single y (G.pentagonCoefficient R C x y)
 
 /-- The `y`-coefficient of the pentagon map on the generator `x`. -/
 @[simp]
-theorem pentagonMapOnGenerator_apply (a s : Fin n) (x y : GridState n) :
-    G.pentagonMapOnGenerator R a s x y = G.pentagonCoefficient R a s x y := by
+theorem pentagonMapOnGenerator_apply (C : ColumnCommutationData G) (x y : GridState n) :
+    G.pentagonMapOnGenerator R C x y = G.pentagonCoefficient R C x y := by
   rw [pentagonMapOnGenerator, Finsupp.finsetSum_apply, Finset.sum_eq_single y]
   · simp
   · intro z _ hz
@@ -366,46 +422,53 @@ theorem pentagonMapOnGenerator_apply (a s : Fin n) (x y : GridState n) :
 
 /-- The pentagon map moves a generator only by swapping its point on the replaced line against
 one other point. -/
-theorem pentagonMapOnGenerator_support_subset (a s : Fin n) (x : GridState n) :
-    (G.pentagonMapOnGenerator R a s x).support ⊆
-      Finset.univ.image fun j => x.swapColumns j (finRotate n a) := by
+theorem pentagonMapOnGenerator_support_subset (C : ColumnCommutationData G) (x : GridState n) :
+    (G.pentagonMapOnGenerator R C x).support ⊆
+      Finset.univ.image fun j => x.swapColumns j (finRotate n C.column) := by
   intro y hy
   rw [Finsupp.mem_support_iff, pentagonMapOnGenerator_apply, pentagonCoefficient] at hy
   obtain ⟨P, -, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero hy
   exact Finset.mem_image.mpr ⟨P.left, Finset.mem_univ _, P.target_eq_swapColumns.symm⟩
 
-/-- The pentagon map `Φ : GC⁻(G) → GC⁻(G.swapColumns a (finRotate n a))` of the commutation of
-columns `a` and `finRotate n a` with turn row `s`.
+/-- The pentagon map `Φ : GC⁻(G) → GC⁻(G.swapColumns C.column (finRotate n C.column))`
+of the validated column commutation `C`.
 
 A generator `x` goes to the sum over the counted pentagons from `x` of their weights times their
-targets. The map is semilinear over the renaming of the variables by `Equiv.swap a (finRotate n a)`,
-which carries the variable of each `O`-marking in `G` to its variable in the commuted diagram. -/
-noncomputable def pentagonMap (a s : Fin n) :
-    GridChainMinus R n →ₛₗ[((renameEquiv R (Equiv.swap a (finRotate n a))).toRingEquiv :
+targets. The map is semilinear over the renaming of the variables by
+`Equiv.swap C.column (finRotate n C.column)`, which carries the variable of each `O`-marking in
+`G` to its variable in the commuted diagram. -/
+noncomputable def pentagonMap (C : ColumnCommutationData G) :
+    GridChainMinus R n →ₛₗ[((renameEquiv R
+      (Equiv.swap C.column (finRotate n C.column))).toRingEquiv :
       MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)] GridChainMinus R n :=
   (Finsupp.lsum (MvPolynomial (Fin n) R) fun x : GridState n =>
       (LinearMap.id :
           MvPolynomial (Fin n) R →ₗ[MvPolynomial (Fin n) R] MvPolynomial (Fin n) R).smulRight
-        (G.pentagonMapOnGenerator R a s x)).comp
+        (G.pentagonMapOnGenerator R C x)).comp
     (Finsupp.mapRange.linearEquiv
-      (renameEquiv R (Equiv.swap a (finRotate n a))).toRingEquiv.toSemilinearEquiv).toLinearMap
+      (renameEquiv R
+        (Equiv.swap C.column (finRotate n C.column))).toRingEquiv.toSemilinearEquiv).toLinearMap
 
 /-- The pentagon map sends a generator with coefficient `p` to the renamed coefficient times the
 row of pentagon weights of the generator. -/
 @[simp]
-theorem pentagonMap_single (a s : Fin n) (x : GridState n) (p : MvPolynomial (Fin n) R) :
-    G.pentagonMap R a s (Finsupp.single x p) =
-      rename (Equiv.swap a (finRotate n a)) p • G.pentagonMapOnGenerator R a s x := by
+theorem pentagonMap_single (C : ColumnCommutationData G) (x : GridState n)
+    (p : MvPolynomial (Fin n) R) :
+    G.pentagonMap R C (Finsupp.single x p) =
+      rename (Equiv.swap C.column (finRotate n C.column)) p •
+        G.pentagonMapOnGenerator R C x := by
   rw [pentagonMap, LinearMap.comp_apply, LinearEquiv.coe_coe, Finsupp.mapRange.linearEquiv_apply,
     Finsupp.mapRange_single, RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_ringEquiv,
     renameEquiv_apply, Finsupp.lsum_single, LinearMap.smulRight_apply, LinearMap.id_apply]
 
 /-- The coefficient formula for the pentagon map on an arbitrary chain. -/
 @[simp]
-theorem pentagonMap_apply_apply (a s : Fin n) (c : GridChainMinus R n) (y : GridState n) :
-    G.pentagonMap R a s c y =
+theorem pentagonMap_apply_apply (C : ColumnCommutationData G) (c : GridChainMinus R n)
+    (y : GridState n) :
+    G.pentagonMap R C c y =
       c.sum fun x p =>
-        rename (Equiv.swap a (finRotate n a)) p * G.pentagonCoefficient R a s x y := by
+        rename (Equiv.swap C.column (finRotate n C.column)) p *
+          G.pentagonCoefficient R C x y := by
   induction c using Finsupp.induction_linear with
   | zero => rw [map_zero, Finsupp.zero_apply, Finsupp.sum_zero_index]
   | add c d hc hd =>
@@ -416,8 +479,8 @@ theorem pentagonMap_apply_apply (a s : Fin n) (c : GridChainMinus R n) (y : Grid
 
 /-- The matrix coefficient of the pentagon map on a single generator is the sum of the weights of
 the contributing pentagons. -/
-theorem pentagonMap_single_one_apply (a s : Fin n) (x y : GridState n) :
-    G.pentagonMap R a s (Finsupp.single x 1) y = G.pentagonCoefficient R a s x y := by
+theorem pentagonMap_single_one_apply (C : ColumnCommutationData G) (x y : GridState n) :
+    G.pentagonMap R C (Finsupp.single x 1) y = G.pentagonCoefficient R C x y := by
   rw [pentagonMap_single, map_one, one_smul, pentagonMapOnGenerator_apply]
 
 end GridDiagram
