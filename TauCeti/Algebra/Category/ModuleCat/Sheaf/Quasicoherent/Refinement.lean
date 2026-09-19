@@ -111,6 +111,12 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C} {R : S
   [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
   {M N : SheafOfModules.{u} R}
 
+/-- Transporting generating sections along an isomorphism preserves their index type. -/
+@[simp]
+theorem _root_.SheafOfModules.GeneratingSections.equivOfIso_apply_I (e : M ≅ N)
+    (σ : M.GeneratingSections) : (GeneratingSections.equivOfIso e σ).I = σ.I :=
+  rfl
+
 /-- Transporting generating sections along an isomorphism `e` composes the generating morphism
 with `e`. -/
 @[simp]
@@ -129,7 +135,9 @@ instance _root_.SheafOfModules.GeneratingSections.isIso_equivOfIso_π (e : M ≅
 instance _root_.SheafOfModules.GeneratingSections.isFiniteType_equivOfIso (e : M ≅ N)
     (σ : M.GeneratingSections) [hσ : σ.IsFiniteType] :
     (GeneratingSections.equivOfIso e σ).IsFiniteType where
-  finite := hσ.finite
+  finite := by
+    rw [GeneratingSections.equivOfIso_apply_I]
+    exact hσ.finite
 
 end GeneratingSections
 
@@ -176,9 +184,8 @@ theorem _root_.SheafOfModules.GeneratingSections.restrict_π {M : SheafOfModules
     (G.restrict f).π =
       ((mapFreeIso (overMap R f) G.I (overMapUnitIso f).symm).hom ≫
         (overMap R f).map G.π) ≫ ((overFunctorMap R f).app M).hom := by
-  change (GeneratingSections.equivOfIso ((overFunctorMap R f).app M)
-    (G.map (overMap R f) (overMapUnitIso f).symm)).π = _
-  rw [GeneratingSections.equivOfIso_apply_π, GeneratingSections.map_π_eq]
+  simp only [GeneratingSections.restrict, GeneratingSections.equivOfIso_apply_π,
+    GeneratingSections.map_π_eq]
   rfl
 
 /-- Restricting generating sections preserves an invertible generating morphism. -/
