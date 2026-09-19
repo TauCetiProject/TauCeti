@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Poisson
-public import Mathlib.MeasureTheory.Group.Circle
+public import TauCeti.MeasureTheory.Group.Circle
 import Mathlib.Analysis.Complex.OpenMapping
 import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.MeasureTheory.Measure.Prokhorov
@@ -25,28 +25,17 @@ part (Carathéodory functions). Through a Cayley transform it gives the Nevanlin
 of Pick functions, which in turn underlies the analytic characterizations of Stieltjes and
 complete Bernstein functions.
 
-The proof has two steps.
-* **Finite radius.** For `f` holomorphic on a disc and continuous up to its boundary, the
-  Herglotz–Riesz integral of the boundary values of `re f` is holomorphic, and by Mathlib's
-  Poisson formula (`DiffContOnCl.circleAverage_re_herglotzRieszKernel_smul`) it has the same real
-  part as `f`. By the open mapping theorem the two differ by an imaginary constant, which
-  evaluation at the centre identifies.
-* **Weak limit.** Applied to the dilations `w ↦ F (r * w)`, `r < 1`, this represents each dilation
-  by the measure with density `re F (r z)` against normalized arc length. These measures all have
-  mass `re F(0)`; since the circle is compact, Prokhorov's theorem gives a weak cluster point `μ`
-  as `r → 1`, and the kernel `z ↦ (z + w) / (z - w)` is continuous on the circle, so the
-  representation passes to the limit.
-
 ## Main results
 
 * `DiffContOnCl.circleAverage_herglotzRieszKernel_smul_re_add`: the Herglotz formula on a disc,
   recovering a holomorphic function from the boundary values of its real part.
-* `MeasureTheory.Measure.differentiableOn_integral_add_div_sub` and
-  `MeasureTheory.Measure.re_integral_add_div_sub_nonneg`: the Herglotz transform of a finite
-  measure on the circle is holomorphic on the disc with nonnegative real part.
-* `TauCeti.exists_isFiniteMeasure_eq_integral_add_div_sub`: **the Herglotz representation
+* `MeasureTheory.Measure.herglotzTransform`: the Herglotz transform of a measure on the circle.
+* `MeasureTheory.Measure.differentiableOn_herglotzTransform` and
+  `MeasureTheory.Measure.re_herglotzTransform_nonneg`: the transform of a finite measure is
+  holomorphic on the disc with nonnegative real part.
+* `TauCeti.exists_isFiniteMeasure_eq_herglotzTransform_add`: **the Herglotz representation
   theorem**.
-* `TauCeti.differentiableOn_and_re_nonneg_iff_exists_eq_integral_add_div_sub`: the resulting
+* `TauCeti.differentiableOn_and_re_nonneg_iff_exists_eq_herglotzTransform_add`: the resulting
   characterization of holomorphic functions on the disc with nonnegative real part.
 
 ## References
@@ -143,46 +132,23 @@ theorem _root_.DiffContOnCl.circleAverage_herglotzRieszKernel_smul_re_add
   rw [← circleAverage_map_add_const]
   simpa [herglotzRieszKernel_add_const] using h
 
-/-! ### Boundary measures with a continuous density -/
-
-/-- The measure on `Circle` with density `φ` with respect to normalized arc length. -/
-private def circleDensityMeasure (φ : ℂ → ℝ) : Measure Circle :=
-  ((volume.restrict (Ioc 0 (2 * π))).withDensity
-    fun θ ↦ ENNReal.ofReal ((2 * π)⁻¹ * φ (circleMap 0 1 θ))).map Circle.exp
-
-private lemma continuous_comp_circleMap {φ : ℂ → ℝ} (hφ : ContinuousOn φ (sphere 0 1)) :
-    Continuous fun θ ↦ φ (circleMap 0 1 θ) :=
-  hφ.comp_continuous (continuous_circleMap 0 1) fun θ ↦ circleMap_mem_sphere 0 zero_le_one θ
-
-private lemma isFiniteMeasure_circleDensityMeasure {φ : ℂ → ℝ}
-    (hφ : ContinuousOn φ (sphere 0 1)) : IsFiniteMeasure (circleDensityMeasure φ) := by
-  have hint : IntegrableOn (fun θ ↦ (2 * π)⁻¹ * φ (circleMap 0 1 θ)) (Ioc 0 (2 * π)) :=
-    ((continuous_const.mul (continuous_comp_circleMap hφ)).integrableOn_Icc).mono_set
-      Ioc_subset_Icc_self
-  have := isFiniteMeasure_withDensity_ofReal hint.hasFiniteIntegral
-  unfold circleDensityMeasure
-  infer_instance
-
-private lemma integral_circleDensityMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {φ : ℂ → ℝ} (hφ : ContinuousOn φ (sphere 0 1))
-    (hφ₀ : ∀ z ∈ sphere (0 : ℂ) 1, 0 ≤ φ z) {g : ℂ → E} (hg : ContinuousOn g (sphere 0 1)) :
-    ∫ z : Circle, g z ∂circleDensityMeasure φ = circleAverage (fun ζ ↦ φ ζ • g ζ) 0 1 := by
-  have hgc : Continuous fun z : Circle ↦ g z :=
-    hg.comp_continuous continuous_subtype_val fun z ↦ by simp
-  have hexp : ∀ θ : ℝ, (Circle.exp θ : ℂ) = circleMap 0 1 θ := fun θ ↦ by
-    simp [Circle.coe_exp, circleMap]
-  have hmeas : Measurable fun θ ↦ ENNReal.ofReal ((2 * π)⁻¹ * φ (circleMap 0 1 θ)) :=
-    (continuous_const.mul (continuous_comp_circleMap hφ)).measurable.ennreal_ofReal
-  rw [circleDensityMeasure, integral_map Circle.exp.continuous.aemeasurable
-    hgc.aestronglyMeasurable, integral_withDensity_eq_integral_toReal_smul hmeas
-    (Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top), circleAverage_def,
-    intervalIntegral.integral_of_le (by positivity), ← integral_smul]
-  refine integral_congr_ae (Eventually.of_forall fun θ ↦ ?_)
-  have h₀ : 0 ≤ (2 * π)⁻¹ * φ (circleMap 0 1 θ) :=
-    mul_nonneg (by positivity) (hφ₀ _ (circleMap_mem_sphere 0 zero_le_one θ))
-  simp only [hexp, ENNReal.toReal_ofReal h₀, smul_smul]
-
 /-! ### The Herglotz transform of a measure on the circle -/
+
+/-- The Herglotz transform of a measure on the unit circle. -/
+noncomputable def _root_.MeasureTheory.Measure.herglotzTransform (μ : Measure Circle) (w : ℂ) : ℂ :=
+  ∫ z : Circle, ((z : ℂ) + w) / ((z : ℂ) - w) ∂μ
+
+/-- The Herglotz transform written as its defining integral. -/
+theorem _root_.MeasureTheory.Measure.herglotzTransform_def (μ : Measure Circle) (w : ℂ) :
+    μ.herglotzTransform w = ∫ z : Circle, ((z : ℂ) + w) / ((z : ℂ) - w) ∂μ := by
+  rw [Measure.herglotzTransform]
+
+/-- The value at zero of the Herglotz transform of a finite measure is its total mass. -/
+@[simp]
+theorem _root_.MeasureTheory.Measure.herglotzTransform_zero (μ : Measure Circle)
+    [IsFiniteMeasure μ] : μ.herglotzTransform 0 = ((μ.real univ : ℝ) : ℂ) := by
+  rw [Measure.herglotzTransform_def]
+  simp
 
 private lemma coe_sub_ne_zero (hw : w ∈ ball (0 : ℂ) 1) (z : Circle) : (z : ℂ) - w ≠ 0 := by
   rw [sub_ne_zero]
@@ -196,9 +162,11 @@ private lemma continuous_add_div_sub (hw : w ∈ ball (0 : ℂ) 1) :
 
 /-- The Herglotz transform `w ↦ ∫ (z + w) / (z - w) dμ(z)` of a finite measure on the unit
 circle is holomorphic on the unit disc. -/
-theorem _root_.MeasureTheory.Measure.differentiableOn_integral_add_div_sub
+theorem _root_.MeasureTheory.Measure.differentiableOn_herglotzTransform
     (μ : Measure Circle) [IsFiniteMeasure μ] :
-    DifferentiableOn ℂ (fun w ↦ ∫ z : Circle, ((z : ℂ) + w) / ((z : ℂ) - w) ∂μ) (ball 0 1) := by
+    DifferentiableOn ℂ μ.herglotzTransform (ball 0 1) := by
+  change DifferentiableOn ℂ (fun w ↦ μ.herglotzTransform w) (ball 0 1)
+  simp_rw [Measure.herglotzTransform_def]
   intro w₀ hw₀
   have hw₀' : ‖w₀‖ < 1 := mem_ball_zero_iff.1 hw₀
   set ε : ℝ := (1 - ‖w₀‖) / 2 with hε_def
@@ -238,9 +206,10 @@ theorem _root_.MeasureTheory.Measure.differentiableOn_integral_add_div_sub
 
 /-- The Herglotz transform of a measure on the unit circle has nonnegative real part on the unit
 disc. -/
-theorem _root_.MeasureTheory.Measure.re_integral_add_div_sub_nonneg
+theorem _root_.MeasureTheory.Measure.re_herglotzTransform_nonneg
     (μ : Measure Circle) (hw : w ∈ ball (0 : ℂ) 1) :
-    0 ≤ (∫ z : Circle, ((z : ℂ) + w) / ((z : ℂ) - w) ∂μ).re := by
+    0 ≤ (μ.herglotzTransform w).re := by
+  rw [Measure.herglotzTransform_def]
   by_cases hint : Integrable (fun z : Circle ↦ ((z : ℂ) + w) / ((z : ℂ) - w)) μ
   swap
   · simp [integral_undef hint]
@@ -260,7 +229,7 @@ private lemma exists_isFiniteMeasure_comp_mul_eq_integral_add_div_sub
     {F : ℂ → ℂ} (hF : DifferentiableOn ℂ F (ball 0 1))
     (hre : ∀ w ∈ ball (0 : ℂ) 1, 0 ≤ (F w).re) {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
     ∃ ν : Measure Circle, IsFiniteMeasure ν ∧ ∀ w ∈ ball (0 : ℂ) 1,
-      F (r * w) = ∫ z : Circle, ((z : ℂ) + w) / ((z : ℂ) - w) ∂ν + (F 0).im * I := by
+      F (r * w) = ν.herglotzTransform w + (F 0).im * I := by
   have hmaps : MapsTo (fun z : ℂ ↦ (r : ℂ) * z) (closedBall 0 1) (ball 0 1) := fun z hz ↦ by
     rw [mem_closedBall_zero_iff] at hz
     rw [mem_ball_zero_iff, norm_mul, norm_real, Real.norm_of_nonneg hr₀]
@@ -282,7 +251,7 @@ private lemma exists_isFiniteMeasure_comp_mul_eq_integral_add_div_sub
     DifferentiableOn.diffContOnCl (by rwa [closure_ball 0 one_ne_zero])
   have h := hcl.circleAverage_herglotzRieszKernel_smul_re_add hw
   rw [mul_zero] at h
-  rw [← h, integral_circleDensityMeasure hφc hφ₀ hK]
+  rw [Measure.herglotzTransform_def, ← h, integral_circleDensityMeasure hφc hφ₀ hK]
   congr 2
   ext ζ
   simp [herglotzRieszKernel_def, Complex.real_smul, mul_comm]
@@ -290,18 +259,18 @@ private lemma exists_isFiniteMeasure_comp_mul_eq_integral_add_div_sub
 /-- **The Herglotz representation theorem.** A function holomorphic on the unit disc with
 nonnegative real part is the Herglotz transform `∫ (z + w) / (z - w) dμ(z)` of a finite positive
 measure `μ` on the unit circle, plus the imaginary constant `(F 0).im * I`. -/
-theorem exists_isFiniteMeasure_eq_integral_add_div_sub
+theorem exists_isFiniteMeasure_eq_herglotzTransform_add
     {F : ℂ → ℂ} (hF : DifferentiableOn ℂ F (ball 0 1))
     (hre : ∀ w ∈ ball (0 : ℂ) 1, 0 ≤ (F w).re) :
     ∃ μ : Measure Circle, IsFiniteMeasure μ ∧ ∀ w ∈ ball (0 : ℂ) 1,
-      F w = ∫ z : Circle, ((z : ℂ) + w) / ((z : ℂ) - w) ∂μ + (F 0).im * I := by
+      F w = μ.herglotzTransform w + (F 0).im * I := by
   -- Represent the dilations `w ↦ F (r n * w)` along radii `r n = 1 - 1 / (n + 1) ↑ 1`.
   set r : ℕ → ℝ := fun n ↦ 1 - 1 / ((n : ℝ) + 1) with hr_def
   have hr_lim : Tendsto r atTop (𝓝 1) := by
     simpa [hr_def] using (tendsto_const_nhds (x := (1 : ℝ))).sub
       tendsto_one_div_add_atTop_nhds_zero_nat
   have hdil : ∀ n, ∃ ν : Measure Circle, IsFiniteMeasure ν ∧ ∀ w ∈ ball (0 : ℂ) 1,
-      F (r n * w) = ∫ z : Circle, ((z : ℂ) + w) / ((z : ℂ) - w) ∂ν + (F 0).im * I := fun n ↦
+      F (r n * w) = ν.herglotzTransform w + (F 0).im * I := fun n ↦
     exists_isFiniteMeasure_comp_mul_eq_integral_add_div_sub hF hre
       (by simp only [hr_def, sub_nonneg]
           exact div_le_one_of_le₀ (by linarith [n.cast_nonneg (α := ℝ)]) (by positivity))
@@ -312,9 +281,9 @@ theorem exists_isFiniteMeasure_eq_integral_add_div_sub
   let C : ℝ≥0 := ⟨(F 0).re, hre₀⟩
   have hmass : ∀ n, μs n univ ≤ C := fun n ↦ by
     have h := congrArg re (hrep n 0 (mem_ball_self one_pos))
-    simp only [mul_zero, add_zero, sub_zero, ne_eq, Circle.coe_ne_zero, not_false_eq_true,
-      div_self, integral_const, real_smul, mul_one, add_re, ofReal_re, mul_re, I_re, ofReal_im,
-      I_im, sub_self] at h
+    simp only [mul_zero, Measure.herglotzTransform_def, add_zero, sub_zero, ne_eq,
+      Circle.coe_ne_zero, not_false_eq_true, div_self, integral_const, real_smul, mul_one, add_re,
+      ofReal_re, mul_re, I_re, ofReal_im, I_im, sub_self] at h
     rw [← ofReal_measureReal (measure_ne_top _ _), ← h, ENNReal.ofReal_eq_coe_nnreal hre₀]
     exact le_rfl
   -- By Prokhorov compactness, the `μs n` converge weakly along an ultrafilter `U ≤ atTop`.
@@ -331,20 +300,24 @@ theorem exists_isFiniteMeasure_eq_integral_add_div_sub
     have h : Tendsto (fun n ↦ (r n : ℂ) * w) atTop (𝓝 w) := by
       simpa using ((continuous_ofReal.tendsto 1).comp hr_lim).mul_const w
     exact ((hF.continuousOn.continuousAt (isOpen_ball.mem_nhds hw)).tendsto.comp h).mono_left hU
-  exact tendsto_nhds_unique hFlim ((hconv.add_const _).congr fun n ↦ (hrep n w hw).symm)
+  exact tendsto_nhds_unique hFlim ((hconv.add_const _).congr fun n ↦ by
+    change (∫ z : Circle, ((z : ℂ) + w) / ((z : ℂ) - w) ∂μs n) + (F 0).im * I =
+      F (r n * w)
+    rw [← Measure.herglotzTransform_def]
+    exact (hrep n w hw).symm)
 
 /-- **The Herglotz representation theorem**, as a characterization: a function on the unit disc
 is holomorphic with nonnegative real part if and only if it is the Herglotz transform of a finite
 positive measure on the unit circle plus an imaginary constant. -/
-theorem differentiableOn_and_re_nonneg_iff_exists_eq_integral_add_div_sub {F : ℂ → ℂ} :
+theorem differentiableOn_and_re_nonneg_iff_exists_eq_herglotzTransform_add {F : ℂ → ℂ} :
     (DifferentiableOn ℂ F (ball 0 1) ∧ ∀ w ∈ ball (0 : ℂ) 1, 0 ≤ (F w).re) ↔
       ∃ (μ : Measure Circle) (b : ℝ), IsFiniteMeasure μ ∧ ∀ w ∈ ball (0 : ℂ) 1,
-        F w = ∫ z : Circle, ((z : ℂ) + w) / ((z : ℂ) - w) ∂μ + b * I := by
+        F w = μ.herglotzTransform w + b * I := by
   refine ⟨fun ⟨hF, hre⟩ ↦ ?_, fun ⟨μ, b, hμ, hrep⟩ ↦ ⟨?_, fun w hw ↦ ?_⟩⟩
-  · obtain ⟨μ, hμ, hrep⟩ := exists_isFiniteMeasure_eq_integral_add_div_sub hF hre
+  · obtain ⟨μ, hμ, hrep⟩ := exists_isFiniteMeasure_eq_herglotzTransform_add hF hre
     exact ⟨μ, (F 0).im, hμ, hrep⟩
-  · exact ((Measure.differentiableOn_integral_add_div_sub μ).add_const _).congr hrep
+  · exact ((Measure.differentiableOn_herglotzTransform μ).add_const _).congr hrep
   · rw [hrep w hw, add_re, mul_re, ofReal_re, ofReal_im, I_re, I_im]
-    simpa using Measure.re_integral_add_div_sub_nonneg μ hw
+    simpa using Measure.re_herglotzTransform_nonneg μ hw
 
 end TauCeti
