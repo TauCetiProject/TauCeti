@@ -71,6 +71,15 @@ theorem dotProduct_one_eq_hammingNorm (x : ι → ZMod 2) :
     x ⬝ᵥ (1 : ι → ZMod 2) = (hammingNorm x : ZMod 2) := by
   simp [dotProduct_eq_card_support_inter, hammingNorm]
 
+/-- The sum of two binary words of weights divisible by four again has weight divisible by
+four exactly when the two words are orthogonal. -/
+theorem four_dvd_hammingNorm_add_iff {x y : ι → ZMod 2}
+    (hx : 4 ∣ hammingNorm x) (hy : 4 ∣ hammingNorm y) :
+    4 ∣ hammingNorm (x + y) ↔ x ⬝ᵥ y = 0 := by
+  rw [dotProduct_eq_card_support_inter, ZMod.natCast_eq_zero_iff]
+  have h := hammingNorm_add_add_two_mul_card_support_inter x y
+  omega
+
 namespace BinaryCode
 
 /-- A binary code is even if all its words have even Hamming weight. -/
