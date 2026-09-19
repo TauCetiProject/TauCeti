@@ -35,6 +35,8 @@ monodromies agree.
   monodromy.
 * `TauCeti.SkewZigzagParameter.monodromy_reverse`: reversing orientation inverts monodromy.
 * `TauCeti.SkewZigzagParameter.monodromy_gauge`: the monodromy is a gauge invariant.
+* `TauCeti.SkewZigzagParameter.prod_transition_eq_inv_monodromy`: the product of transition
+  factors around a closed edge cycle is the inverse of its monodromy.
 * `TauCeti.SkewZigzagParameter.monodromy_eq_one_of_isGaugeEquivalent_one`: a gauge-trivial
   parameter has trivial monodromy.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_one_iff_monodromy_eq_one`: a skew parameter is
@@ -155,7 +157,7 @@ private theorem transition_congr (c : SkewZigzagParameter k G) {v w v' w' : V} (
 /-! ### Trivial monodromy -/
 
 /-- Around a closed edge cycle, the transition factors multiply to the inverse of the monodromy. -/
-private theorem prod_transition_eq_inv_monodromy (c : SkewZigzagParameter k G) {n : ℕ}
+theorem prod_transition_eq_inv_monodromy (c : SkewZigzagParameter k G) {n : ℕ}
     [NeZero n] {y : Fin n → V} (hy : ∀ i : Fin n, G.Adj (y i) (y (i + 1))) :
     ∏ i, transition c (hy i) = (monodromy c hy)⁻¹ := by
   have hshift : ∏ i : Fin n, localCoordinate c (hy (i + 1)) = ∏ i, localCoordinate c (hy i) :=
