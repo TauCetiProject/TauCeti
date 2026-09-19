@@ -37,7 +37,8 @@ monodromy of a three-point cover along these elements is the permutation triple 
   circle `|z − 1| = 1/2`.
 * `γ0_mem_leftOpen`, `γ1_mem_rightOpen`: `γ0` stays in `A` and `γ1` stays in `B`.
 * `range_γ0_inter_range_γ1`: the two loops meet only at the basepoint.
-* `mob01_γ0`, `mob01_γ1`: `z ↦ 1 − z` exchanges the two loops.
+* `mob01_basePt`, `mob01_γ0`, `mob01_γ1`: `z ↦ 1 − z` fixes the basepoint and exchanges the two
+  loops.
 * `periph0`, `periph1`, `periphInf`, `periphInf_mul_periph1_mul_periph0`: the peripheral elements
   of the fundamental group and their product relation.
 
@@ -133,6 +134,11 @@ theorem range_γ0_inter_range_γ1 : range γ0 ∩ range γ1 = {basePt} := by
       (him.trans (by norm_num [coe_basePt])))
   · rintro _ rfl
     exact ⟨⟨0, γ0.source⟩, ⟨0, γ1.source⟩⟩
+
+/-- The involution `z ↦ 1 − z` fixes the basepoint `1/2`. -/
+@[simp]
+theorem mob01_basePt : mob01 basePt = basePt :=
+  Subtype.ext (by norm_num)
 
 /-- The involution `z ↦ 1 − z` carries the loop around `0` to the loop around `1`, pointwise on the
 unit interval. -/

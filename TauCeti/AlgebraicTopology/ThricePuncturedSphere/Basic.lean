@@ -26,11 +26,8 @@ computation of its fundamental group and the classification of its finite covers
   because the complement of a countable set in `ℂ` is. The inclusion into the Riemann sphere
   `OnePoint ℂ` is an open embedding whose range is the complement of `{0, 1, ∞}`, which is what
   makes the name honest.
-* **The basepoint and anharmonic maps.** The basepoint is `b = 1/2`, on the real segment between
-  the punctures `0` and `1`. The six anharmonic maps permuting `{0, 1, ∞}` restrict to
-  self-homeomorphisms; the involution `z ↦ 1 − z` is the unique nonidentity one fixing `b`.
-* **The standard punctured-disc neighbourhoods** at `0`, `1`, and `∞`, including openness,
-  pairwise disjointness, and their descriptions in the respective local coordinates.
+* **The basepoint and its symmetry.** The basepoint is `b = 1/2`, on the real segment between
+  the punctures `0` and `1`; the involution `z ↦ 1 − z` fixes it.
 * **The standard two-set cover** by `A = {z | re z < 1}` and `B = {z | 0 < re z}`. The set `A`
   is the convex half-plane `re z < 1` with the puncture `0` removed, `B` is the half-plane
   `0 < re z` with the puncture `1` removed, and `A ∩ B` is the open vertical strip
@@ -48,10 +45,7 @@ computation of its fundamental group and the classification of its finite covers
 * `TauCeti.ThricePuncturedSphere.toOnePoint`, `isOpenEmbedding_toOnePoint`,
   `range_toOnePoint`: the open embedding into the Riemann sphere, with range `{0, 1, ∞}ᶜ`.
 * `TauCeti.ThricePuncturedSphere.basePt`: the basepoint `1/2`.
-* `TauCeti.ThricePuncturedSphere.mob01`, `mob1Inf`, `mob0Inf`, `mobRot`, `mobRotInv`: the six
-  anharmonic self-homeomorphisms (including `mobId`) that permute the three punctures.
-* `TauCeti.ThricePuncturedSphere.puncturedDiscZero`, `puncturedDiscOne`, `puncturedDiscInf`: the
-  three pairwise-disjoint standard punctured-disc neighbourhoods.
+* `TauCeti.ThricePuncturedSphere.mob01`: the self-homeomorphism `z ↦ 1 − z`.
 * `TauCeti.ThricePuncturedSphere.leftOpen`, `TauCeti.ThricePuncturedSphere.rightOpen`: the open
   sets `A` and `B` of the standard cover, with `leftOpen_union_rightOpen`, `image_coe_leftOpen`,
   `image_coe_rightOpen`, `image_coe_leftOpen_inter_rightOpen`,
@@ -253,113 +247,6 @@ theorem basePt_mem_rightOpen : basePt ∈ rightOpen := by
 theorem basePt_mem_leftOpen_inter_rightOpen : basePt ∈ leftOpen ∩ rightOpen :=
   ⟨basePt_mem_leftOpen, basePt_mem_rightOpen⟩
 
-/-! ### Standard punctured-disc neighbourhoods -/
-
-/-- The standard punctured-disc neighbourhood `0 < |z| < 1/2` of the puncture `0`. -/
-def puncturedDiscZero : Set ThricePuncturedSphere :=
-  {z | 0 < ‖(z : ℂ)‖ ∧ ‖(z : ℂ)‖ < 1 / 2}
-
-/-- The standard punctured-disc neighbourhood `0 < |z - 1| < 1/2` of the puncture `1`. -/
-def puncturedDiscOne : Set ThricePuncturedSphere :=
-  {z | 0 < ‖(z : ℂ) - 1‖ ∧ ‖(z : ℂ) - 1‖ < 1 / 2}
-
-/-- The standard punctured-disc neighbourhood `2 < |z|` of the puncture `∞`. Under the chart
-`w = 1 / z` at infinity this is the punctured disc `0 < |w| < 1/2`. -/
-def puncturedDiscInf : Set ThricePuncturedSphere :=
-  {z | 2 < ‖(z : ℂ)‖}
-
-/-- Membership in the standard punctured-disc neighbourhood of `0`. -/
-@[simp]
-theorem mem_puncturedDiscZero {z : ThricePuncturedSphere} :
-    z ∈ puncturedDiscZero ↔ 0 < ‖(z : ℂ)‖ ∧ ‖(z : ℂ)‖ < 1 / 2 :=
-  Iff.rfl
-
-/-- Membership in the standard punctured-disc neighbourhood of `1`, in the chart `w = z - 1`. -/
-@[simp]
-theorem mem_puncturedDiscOne {z : ThricePuncturedSphere} :
-    z ∈ puncturedDiscOne ↔ 0 < ‖(z : ℂ) - 1‖ ∧ ‖(z : ℂ) - 1‖ < 1 / 2 :=
-  Iff.rfl
-
-/-- Membership in the standard punctured-disc neighbourhood of `∞`. -/
-@[simp]
-theorem mem_puncturedDiscInf {z : ThricePuncturedSphere} :
-    z ∈ puncturedDiscInf ↔ 2 < ‖(z : ℂ)‖ :=
-  Iff.rfl
-
-/-- In the chart `w = 1 / z` at infinity, `puncturedDiscInf` is the punctured disc of radius
-`1/2` about `0`. -/
-theorem mem_puncturedDiscInf_iff_inv {z : ThricePuncturedSphere} :
-    z ∈ puncturedDiscInf ↔ 0 < ‖(z : ℂ)⁻¹‖ ∧ ‖(z : ℂ)⁻¹‖ < 1 / 2 := by
-  rw [norm_inv]
-  have hz : 0 < ‖(z : ℂ)‖ := norm_pos_iff.mpr z.ne_zero
-  constructor
-  · intro h
-    rw [mem_puncturedDiscInf] at h
-    constructor
-    · positivity
-    · simpa only [one_div] using (inv_lt_inv₀ hz (by norm_num)).mpr h
-  · rintro ⟨_, h⟩
-    rw [mem_puncturedDiscInf]
-    exact (inv_lt_inv₀ hz (by norm_num)).mp (by simpa only [one_div] using h)
-
-/-- The standard punctured-disc neighbourhood of `0` is open. -/
-theorem isOpen_puncturedDiscZero : IsOpen puncturedDiscZero := by
-  apply IsOpen.inter
-  · exact isOpen_lt continuous_const (continuous_norm.comp continuous_subtype_val)
-  · exact isOpen_lt (continuous_norm.comp continuous_subtype_val) continuous_const
-
-/-- The standard punctured-disc neighbourhood of `1` is open. -/
-theorem isOpen_puncturedDiscOne : IsOpen puncturedDiscOne := by
-  apply IsOpen.inter
-  · exact isOpen_lt continuous_const (continuous_norm.comp
-      (continuous_subtype_val.sub continuous_const))
-  · exact isOpen_lt (continuous_norm.comp
-      (continuous_subtype_val.sub continuous_const)) continuous_const
-
-/-- The standard punctured-disc neighbourhood of `∞` is open. -/
-theorem isOpen_puncturedDiscInf : IsOpen puncturedDiscInf :=
-  isOpen_lt continuous_const (continuous_norm.comp continuous_subtype_val)
-
-/-- The standard neighbourhoods at `0` and `1` are disjoint; their boundary circles are tangent
-at the basepoint, but the neighbourhoods use strict inequalities. -/
-theorem disjoint_puncturedDiscZero_puncturedDiscOne :
-    Disjoint puncturedDiscZero puncturedDiscOne := by
-  rw [Set.disjoint_left]
-  intro z hz0 hz1
-  have htri : ‖(1 : ℂ)‖ ≤ ‖(z : ℂ)‖ + ‖(z : ℂ) - 1‖ := by
-    calc
-      ‖(1 : ℂ)‖ = ‖(z : ℂ) - ((z : ℂ) - 1)‖ := by ring_nf
-      _ ≤ _ := norm_sub_le _ _
-  norm_num [puncturedDiscZero, puncturedDiscOne] at hz0 hz1 htri
-  linarith
-
-/-- The standard neighbourhoods at `0` and `∞` are disjoint. -/
-theorem disjoint_puncturedDiscZero_puncturedDiscInf :
-    Disjoint puncturedDiscZero puncturedDiscInf := by
-  rw [Set.disjoint_left]
-  intro z hz0 hzInf
-  rw [mem_puncturedDiscZero] at hz0
-  rw [mem_puncturedDiscInf] at hzInf
-  linarith
-
-/-- The standard neighbourhoods at `1` and `∞` are disjoint. -/
-theorem disjoint_puncturedDiscOne_puncturedDiscInf :
-    Disjoint puncturedDiscOne puncturedDiscInf := by
-  rw [Set.disjoint_left]
-  intro z hz1 hzInf
-  have htri : ‖(z : ℂ)‖ ≤ ‖(z : ℂ) - 1‖ + ‖(1 : ℂ)‖ := by
-    calc
-      ‖(z : ℂ)‖ = ‖((z : ℂ) - 1 + 1)‖ := by ring_nf
-      _ ≤ _ := norm_add_le _ _
-  norm_num [puncturedDiscOne, puncturedDiscInf] at hz1 hzInf htri
-  linarith
-
-/-! ### The anharmonic self-homeomorphisms -/
-
-/-- The identity anharmonic self-homeomorphism. -/
-noncomputable def mobId : ThricePuncturedSphere ≃ₜ ThricePuncturedSphere :=
-  Homeomorph.refl _
-
 /-- The self-homeomorphism `z ↦ 1 − z` of the thrice-punctured sphere. It is the anharmonic
 transformation exchanging the punctures `0` and `1` and fixing `∞`, and among the six anharmonic
 transformations it is the only nonidentity one fixing the basepoint `1/2`. -/
@@ -375,109 +262,10 @@ theorem coe_mob01 (z : ThricePuncturedSphere) : (mob01 z : ℂ) = 1 - z := by
   rw [Homeomorph.subtype_apply_coe, IsometryEquiv.coe_toHomeomorph,
     IsometryEquiv.subLeft_apply]
 
-/-- The involution `z ↦ 1 − z` carries `leftOpen` to `rightOpen`. -/
-@[simp]
-theorem preimage_mob01_leftOpen : mob01 ⁻¹' leftOpen = rightOpen := by
-  ext z
-  simp only [mem_preimage, mem_leftOpen, coe_mob01, Complex.sub_re, Complex.one_re,
-    mem_rightOpen]
-  constructor <;> intro h <;> linarith
-
-/-- The involution `z ↦ 1 − z` carries `rightOpen` to `leftOpen`. -/
-@[simp]
-theorem preimage_mob01_rightOpen : mob01 ⁻¹' rightOpen = leftOpen := by
-  ext z
-  simp only [mem_preimage, mem_rightOpen, coe_mob01, Complex.sub_re, Complex.one_re,
-    mem_leftOpen]
-  constructor <;> intro h <;> linarith
-
 /-- `z ↦ 1 − z` is an involution. -/
 @[simp]
 theorem mob01_mob01 (z : ThricePuncturedSphere) : mob01 (mob01 z) = z :=
   Subtype.ext (by simp)
-
-@[simp]
-theorem mob01_symm : mob01.symm = mob01 :=
-  Homeomorph.ext fun z ↦ by rw [Homeomorph.symm_apply_eq, mob01_mob01]
-
-/-- `z ↦ 1 − z` fixes the basepoint `1/2`. -/
-@[simp]
-theorem mob01_basePt : mob01 basePt = basePt :=
-  Subtype.ext (by norm_num)
-
-/-- The anharmonic involution `z ↦ z / (z - 1)`, which exchanges `1` and `∞` and fixes `0`. -/
-noncomputable def mob1Inf : ThricePuncturedSphere ≃ₜ ThricePuncturedSphere where
-  toFun z := ⟨z.1 / (z.1 - 1), div_ne_zero z.2.1 (sub_ne_zero.mpr z.2.2), by
-    intro h
-    exact one_ne_zero (sub_eq_self.mp ((div_eq_one_iff_eq (sub_ne_zero.mpr z.2.2)).mp h).symm)⟩
-  invFun z := ⟨z.1 / (z.1 - 1), div_ne_zero z.2.1 (sub_ne_zero.mpr z.2.2), by
-    intro h
-    exact one_ne_zero (sub_eq_self.mp ((div_eq_one_iff_eq (sub_ne_zero.mpr z.2.2)).mp h).symm)⟩
-  left_inv z := Subtype.ext (by
-    field_simp [z.ne_zero, sub_ne_zero.mpr z.ne_one]
-    ring)
-  right_inv z := Subtype.ext (by
-    field_simp [z.ne_zero, sub_ne_zero.mpr z.ne_one]
-    ring)
-  continuous_toFun := by
-    apply Continuous.subtype_mk
-    exact continuous_subtype_val.div (continuous_subtype_val.sub continuous_const)
-      fun z ↦ sub_ne_zero.mpr z.2.2
-  continuous_invFun := by
-    apply Continuous.subtype_mk
-    exact continuous_subtype_val.div (continuous_subtype_val.sub continuous_const)
-      fun z ↦ sub_ne_zero.mpr z.2.2
-
-@[simp]
-theorem coe_mob1Inf (z : ThricePuncturedSphere) : (mob1Inf z : ℂ) = z / (z - 1) :=
-  by unfold mob1Inf; rfl
-
-/-- The order-three anharmonic map `z ↦ 1 / (1 - z)`. -/
-noncomputable def mobRot : ThricePuncturedSphere ≃ₜ ThricePuncturedSphere :=
-  mob1Inf.trans mob01
-
-/-- The inverse order-three anharmonic map `z ↦ (z - 1) / z`. -/
-noncomputable def mobRotInv : ThricePuncturedSphere ≃ₜ ThricePuncturedSphere :=
-  mob01.trans mob1Inf
-
-/-- The anharmonic involution `z ↦ 1 / z`, which exchanges `0` and `∞` and fixes `1`. -/
-noncomputable def mob0Inf : ThricePuncturedSphere ≃ₜ ThricePuncturedSphere :=
-  (mob01.trans mob1Inf).trans mob01
-
-@[simp]
-theorem coe_mobRot (z : ThricePuncturedSphere) : (mobRot z : ℂ) = 1 / (1 - z) := by
-  simp only [mobRot, Homeomorph.trans_apply, coe_mob01, coe_mob1Inf]
-  field_simp [sub_ne_zero.mpr z.ne_one, sub_ne_zero.mpr z.ne_one.symm]
-  ring
-
-@[simp]
-theorem coe_mobRotInv (z : ThricePuncturedSphere) :
-    (mobRotInv z : ℂ) = (z - 1) / z := by
-  simp only [mobRotInv, Homeomorph.trans_apply, coe_mob01, coe_mob1Inf]
-  field_simp [z.ne_zero]
-  ring
-
-@[simp]
-theorem coe_mob0Inf (z : ThricePuncturedSphere) : (mob0Inf z : ℂ) = 1 / z := by
-  simp only [mob0Inf, Homeomorph.trans_apply, coe_mob01, coe_mob1Inf]
-  field_simp [z.ne_zero]
-  ring
-
-/-- The generator exchanging `1` and `∞` sends the basepoint to `-1`. -/
-theorem coe_mob1Inf_basePt : (mob1Inf basePt : ℂ) = -1 := by
-  norm_num
-
-/-- The anharmonic involution exchanging `0` and `∞` sends the basepoint to `2`. -/
-theorem coe_mob0Inf_basePt : (mob0Inf basePt : ℂ) = 2 := by
-  norm_num
-
-/-- The order-three anharmonic map sends the basepoint to `2`. -/
-theorem coe_mobRot_basePt : (mobRot basePt : ℂ) = 2 := by
-  norm_num
-
-/-- The inverse order-three anharmonic map sends the basepoint to `-1`. -/
-theorem coe_mobRotInv_basePt : (mobRotInv basePt : ℂ) = -1 := by
-  norm_num
 
 end ThricePuncturedSphere
 
