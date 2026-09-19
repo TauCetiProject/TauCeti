@@ -5,15 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.RingTheory.RootsOfUnity.Complex
+public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Character
 public import TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic
 
 /-!
 # Characters of the rotation subgroup of a quaternion group
 
-The rotation subgroup of `QuaternionGroup n` is cyclic of order `2 * n`.  A `(2 * n)`-th root
-of unity therefore defines a linear character by sending `a i` to the corresponding power.
+The rotation subgroup of `QuaternionGroup n` is cyclic of order `2 * n`, its coordinate
+`TauCeti.quaternionRotationsMulEquiv` identifying it with `Multiplicative (ZMod (2 * n))`.  A
+`(2 * n)`-th root of unity therefore defines a linear character by sending `a i` to the
+corresponding power: this file specializes `TauCeti.zmodCoordChar` to that coordinate.
 
 ## Main definitions
 
@@ -33,16 +35,16 @@ namespace TauCeti
 variable {n : ℕ} {M : Type*} [CommMonoid M] {ζ : M} [NeZero n]
 
 /-- The character of the quaternion rotation subgroup attached to a `(2 * n)`-th root of unity
-`ζ`, sending `a i` to `ζ ^ i`. -/
+`ζ`, sending `a i` to `ζ ^ i`.  It is `TauCeti.zmodCoordChar` for the cyclic coordinate
+`TauCeti.quaternionRotationsMulEquiv`. -/
 def quaternionRotationChar (hζ : ζ ^ (2 * n) = 1) : quaternionRotations n →* M :=
-  (AddChar.toMonoidHomEquiv (AddChar.zmodChar (2 * n) hζ)).comp
-    (quaternionRotationsMulEquiv n).toMonoidHom
+  zmodCoordChar (quaternionRotationsMulEquiv n) hζ
 
 @[simp]
 theorem quaternionRotationChar_apply (hζ : ζ ^ (2 * n) = 1) (x : quaternionRotations n) :
     quaternionRotationChar hζ x =
-      ζ ^ (Multiplicative.toAdd (quaternionRotationsMulEquiv n x)).val := by
-  simp [quaternionRotationChar, AddChar.zmodChar_apply]
+      ζ ^ (Multiplicative.toAdd (quaternionRotationsMulEquiv n x)).val :=
+  zmodCoordChar_apply _ hζ x
 
 /-- The character sends `a i` to `ζ ^ i`. -/
 theorem quaternionRotationChar_a (hζ : ζ ^ (2 * n) = 1) (i : ZMod (2 * n)) :
@@ -50,15 +52,10 @@ theorem quaternionRotationChar_a (hζ : ζ ^ (2 * n) = 1) (i : ZMod (2 * n)) :
   rw [quaternionRotationChar_apply, quaternionRotationsMulEquiv_a, toAdd_ofAdd]
 
 /-- A primitive `(2 * n)`-th root of unity defines a faithful character of the quaternion
-rotation subgroup. -/
+rotation subgroup: this is `TauCeti.zmodCoordChar_injective` for the rotation coordinate. -/
 theorem quaternionRotationChar_injective (h : IsPrimitiveRoot ζ (2 * n)) :
-    Function.Injective (quaternionRotationChar h.pow_eq_one) := by
-  refine (injective_iff_map_eq_one _).mpr fun x hx => ?_
-  rw [quaternionRotationChar_apply] at hx
-  have hzero := ((AddChar.zmodChar_primitive_of_primitive_root (2 * n) h).zmod_char_eq_one_iff
-    (2 * n) (Multiplicative.toAdd (quaternionRotationsMulEquiv n x))).mp
-      (by rwa [AddChar.zmodChar_apply])
-  exact (quaternionRotationsMulEquiv n).map_eq_one_iff.mp (toAdd_eq_zero.mp hzero)
+    Function.Injective (quaternionRotationChar h.pow_eq_one) :=
+  zmodCoordChar_injective _ h
 
 section QuaternionTwo
 

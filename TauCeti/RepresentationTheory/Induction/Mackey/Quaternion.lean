@@ -14,9 +14,10 @@ public import TauCeti.RepresentationTheory.Induction.Mackey.LinearCharacter
 # Inducing a linear character from a quaternion rotation subgroup
 
 The cyclic subgroup formed by the elements `a i` has index two in `QuaternionGroup n`, and every
-element outside it acts by inversion.  The Mackey criterion therefore says that a linear character
-induces irreducibly exactly when it is not its own inverse.  The induced representation is always
-two-dimensional.
+element outside it acts by inversion.  The Mackey criterion for an inverted subgroup of index two,
+`TauCeti.simple_indFDRep_ofLinearCharacter_iff_of_conj_eq_inv`, therefore says that a linear
+character induces irreducibly exactly when it is not its own inverse.  The induced representation
+is always two-dimensional.
 
 For `QuaternionGroup 2`, the character sending `a 1` to `i` meets this condition and gives its
 two-dimensional irreducible complex representation.
@@ -61,19 +62,16 @@ section Criterion
 variable {k : Type} [Field k] {n : ℕ} [NeZero n] [IsAlgClosed k] [CharZero k]
 
 /-- Induction from the quaternion rotation subgroup is irreducible exactly when some value of the
-linear character is not a square root of one. -/
+linear character is not a square root of one.  The rotation subgroup has index two and is inverted
+by every `xa i`, so this is
+`TauCeti.simple_indFDRep_ofLinearCharacter_iff_of_conj_eq_inv`. -/
 theorem simple_indFDRep_ofLinearCharacter_quaternionRotations_iff
     (ψ : quaternionRotations n →* kˣ) :
-    Simple (indFDRep (FDRep.ofLinearCharacter ψ)) ↔ ∃ x, ψ x ^ 2 ≠ 1 := by
-  rw [simple_indFDRep_ofLinearCharacter_iff]
-  have key : ∀ {s : QuaternionGroup n}, s ∉ quaternionRotations n →
-      ∀ x : quaternionRotations n, (ψ (MulAut.conjNormal s x) ≠ ψ x ↔ ψ x ^ 2 ≠ 1) := by
-    intro s hs x
-    rw [conjNormal_eq_inv_of_notMem_quaternionRotations hs, map_inv, ne_eq, ne_eq,
-      inv_eq_iff_mul_eq_one, ← sq]
-  refine ⟨fun h => ?_, fun ⟨x, hx⟩ s hs => ⟨x, (key hs x).mpr hx⟩⟩
-  obtain ⟨x, hx⟩ := h (QuaternionGroup.xa 0) (xa_notMem_quaternionRotations 0)
-  exact ⟨x, (key (xa_notMem_quaternionRotations 0) x).mp hx⟩
+    Simple (indFDRep (FDRep.ofLinearCharacter ψ)) ↔ ∃ x, ψ x ^ 2 ≠ 1 :=
+  simple_indFDRep_ofLinearCharacter_iff_of_conj_eq_inv (index_quaternionRotations n)
+    (xa_notMem_quaternionRotations 0)
+    (fun _ hx => conj_eq_inv_of_notMem_quaternionRotations
+      (xa_notMem_quaternionRotations 0) hx) ψ
 
 end Criterion
 
