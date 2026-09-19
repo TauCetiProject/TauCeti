@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Hodge.Mixed.Bigrading
 public import TauCeti.Geometry.Hodge.Mixed.Morphism
-import TauCeti.LinearAlgebra.Submodule.Prod
 
 /-!
 # Products of mixed Hodge structures
@@ -21,7 +20,6 @@ the abelian category of mixed Hodge structures.
 ## References
 
 Deligne, *Théorie de Hodge II*, §2.3; Peters–Steenbrink, *Mixed Hodge Structures*, Ch. 3.
-The purity proof uses `MixedHodgeStructure.ofIsHodgeBigrading`.
 -/
 
 public section
@@ -40,26 +38,6 @@ variable {ιℚ : Vℤ →ₗ[ℤ] Vℚ} {ιℂ : Vℤ →ₗ[ℤ] Vℂ}
 variable {ι'ℚ : V'ℤ →ₗ[ℤ] V'ℚ} {ι'ℂ : V'ℤ →ₗ[ℤ] V'ℂ}
 variable {hℚ : IsBaseChange ℚ ιℚ} {hℂ : IsBaseChange ℂ ιℂ}
 variable {h'ℚ : IsBaseChange ℚ ι'ℚ} {h'ℂ : IsBaseChange ℂ ι'ℂ}
-
-/-- Products of Hodge bigradings are Hodge bigradings for the product filtrations. -/
-theorem IsHodgeBigrading.prod
-    {W : ℤ → Submodule ℚ Vℚ} {F : ℤ → Submodule ℂ Vℂ}
-    {W' : ℤ → Submodule ℚ V'ℚ} {F' : ℤ → Submodule ℂ V'ℂ}
-    {I : ℤ × ℤ → Submodule ℂ Vℂ} {I' : ℤ × ℤ → Submodule ℂ V'ℂ}
-    (h : IsHodgeBigrading hℚ hℂ W F I) (h' : IsHodgeBigrading h'ℚ h'ℂ W' F' I') :
-    IsHodgeBigrading (IsBaseChange.prodMap ιℚ ι'ℚ hℚ h'ℚ)
-      (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ) (fun k ↦ (W k).prod (W' k))
-      (fun p ↦ (F p).prod (F' p)) (fun pq ↦ (I pq).prod (I' pq)) where
-  iSupIndep := TauCeti.iSupIndep.prod h.iSupIndep h'.iSupIndep
-  rationalToComplexSubmodule_eq_iSup k := by
-    simp only [rationalToComplexSubmodule_prod hℚ hℂ h'ℚ h'ℂ, TauCeti.iSup_prod_submodule,
-      h.rationalToComplexSubmodule_eq_iSup, h'.rationalToComplexSubmodule_eq_iSup]
-  F_eq_iSup p := by
-    simp only [TauCeti.iSup_prod_submodule, h.F_eq_iSup, h'.F_eq_iSup]
-  map_latticeConj_le pq := by
-    rw [map_latticeConj_prod hℂ h'ℂ, rationalToComplexSubmodule_prod hℚ hℂ h'ℚ h'ℂ,
-      Submodule.prod_sup_prod]
-    exact Submodule.prod_mono (h.map_latticeConj_le pq) (h'.map_latticeConj_le pq)
 
 namespace MixedHodgeStructure
 
