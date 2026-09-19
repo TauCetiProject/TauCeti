@@ -216,7 +216,7 @@ theorem integralLattice_dualCarrier (C : AddSubgroup (ι → ZMod m))
     dualSubmodule_lattice]
 
 /-- A self-orthogonal code gives a nondegenerate integral lattice. -/
-instance integralLattice_isNondegenerate (C : AddSubgroup (ι → ZMod m))
+instance isNondegenerate_integralLattice (C : AddSubgroup (ι → ZMod m))
     (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
     (integralLattice m C hC).IsNondegenerate where
   nondegenerate := by rw [integralLattice_form]; exact form_nondegenerate m
