@@ -26,17 +26,15 @@ and the resulting integral lattice is unimodular exactly when the code is self-d
 Additive codes over `ZMod m` are canonically submodules through `AddSubgroup.toZModSubmodule`;
 their dual here is the existing `Submodule.euclideanDual`, transported back to an additive
 subgroup. The modulus is a positive natural number; no primality hypothesis is needed.
-Only nonvanishing of the modulus is used here, as permitted by the AlgebraicCodingTheory
-roadmap's standing convention. The type `ℕ+` supplies `NeZero (m : ℕ)` and excludes zero
-even in the carrier and form definitions. At `m = 1`, the construction is the integer
+Only nonvanishing of the modulus is used here. The type `ℕ+` supplies `NeZero (m : ℕ)` and
+excludes zero even in the carrier and form definitions. At `m = 1`, the construction is the integer
 coordinate lattice with the ordinary dot product, and the same results apply.
 
 ## References
 
 * W. Ebeling, *Lattices and Codes*, §1.3, for binary Construction A.
 * A. Munemasa and H. Tamura, *The codes and the lattices of Hadamard matrices*, §4, for the
-  integrality criterion over `ZMod m`. The dual-carrier identity is proved directly by testing
-  the pairing on the coordinate vectors `m eᵢ` and on integer lifts of codewords.
+  integrality criterion over `ZMod m`.
 -/
 
 public section
@@ -56,8 +54,10 @@ def lattice (m : ℕ+) (C : AddSubgroup (ι → ZMod m)) : Submodule ℤ (ι →
 /-- Membership in the Construction A carrier is given by an integer lift of a codeword. -/
 theorem mem_lattice {C : AddSubgroup (ι → ZMod m)} {x : ι → ℚ} :
     x ∈ lattice m C ↔
-      ∃ z : ι → ℤ, (fun i ↦ (z i : ZMod m)) ∈ C ∧ (fun i ↦ (z i : ℚ)) = x :=
-  Iff.rfl
+      ∃ z : ι → ℤ, (fun i ↦ (z i : ZMod m)) ∈ C ∧ (fun i ↦ (z i : ℚ)) = x := by
+  simp only [lattice, Submodule.mem_map, Submodule.mem_comap]
+  simp only [← Submodule.mem_toAddSubgroup, AddSubgroup.toIntSubmodule_toAddSubgroup]
+  simp [LinearMap.compLeft, Function.comp_def]
 
 /-- An integer vector belongs to Construction A exactly when its reduction is a codeword. -/
 @[simp]
@@ -189,7 +189,7 @@ theorem lattice_le_dualSubmodule_iff (C : AddSubgroup (ι → ZMod m)) :
     lattice m C ≤ (form m).dualSubmodule (lattice m C) ↔
       AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual := by
   rw [dualSubmodule_lattice, lattice_le_lattice_iff]
-  rfl
+  simp only [SetLike.le_def, Submodule.mem_toAddSubgroup, AddSubgroup.mem_toZModSubmodule]
 
 /-- Construction A as an integral lattice, under the exact self-orthogonality hypothesis. -/
 def integralLattice (C : AddSubgroup (ι → ZMod m))
@@ -212,6 +212,15 @@ theorem integralLattice_form (C : AddSubgroup (ι → ZMod m))
     (integralLattice m C hC).form = form m := by
   simp [integralLattice]
 
+/-- The dual carrier of the bundled Construction A lattice is the carrier of the dual code. -/
+@[simp]
+theorem integralLattice_dualCarrier (C : AddSubgroup (ι → ZMod m))
+    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
+    (integralLattice m C hC).dualCarrier =
+      lattice m (AddSubgroup.toZModSubmodule m C).euclideanDual.toAddSubgroup := by
+  rw [IntegralLattice.dualCarrier, integralLattice_form, integralLattice_carrier,
+    dualSubmodule_lattice]
+
 /-- A self-orthogonal code gives a nondegenerate integral lattice. -/
 instance integralLattice_isNondegenerate (C : AddSubgroup (ι → ZMod m))
     (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
@@ -223,8 +232,8 @@ theorem integralLattice_isUnimodular_iff (C : AddSubgroup (ι → ZMod m))
     (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
     (integralLattice m C hC).IsUnimodular ↔
       AddSubgroup.toZModSubmodule m C = (AddSubgroup.toZModSubmodule m C).euclideanDual := by
-  rw [IntegralLattice.isUnimodular_iff_dualCarrier_le, IntegralLattice.dualCarrier,
-    integralLattice_form, integralLattice_carrier, dualSubmodule_lattice, lattice_le_lattice_iff]
+  rw [IntegralLattice.isUnimodular_iff_dualCarrier_le, integralLattice_dualCarrier,
+    integralLattice_carrier, lattice_le_lattice_iff]
   exact ⟨fun h ↦ le_antisymm hC h, fun h ↦ h.ge⟩
 
 end TauCeti.ConstructionA
