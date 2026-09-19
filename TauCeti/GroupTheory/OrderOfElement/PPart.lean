@@ -11,12 +11,12 @@ public import Mathlib.GroupTheory.OrderOfElement
 /-!
 # The `p`-part and the `p`-free part of an element of finite order
 
-An element `x` of finite order in a group factors, in exactly one way, as a product `x = s * u` of
-two commuting elements with the order of `s` prime to `p` and the order of `u` a power of `p`.
-This file constructs that factorisation: `TauCeti.pFreePart p x` is the factor `s`, whose order is
-the complementary part `ordCompl[p] (orderOf x)` of the order of `x`, and `TauCeti.pPart p x` is
-the factor `u`, whose order is `ordProj[p] (orderOf x)`. In the group-theoretic literature the two
-are the `p'`-part and the `p`-part of `x`.
+This file defines two power-based constructions, `TauCeti.pFreePart p x` and
+`TauCeti.pPart p x`. When `p` is prime and `x` has finite order, they give the unique
+factorisation of `x` as a product `x = s * u` of two commuting elements with the order of `s`
+prime to `p` and the order of `u` a power of `p`. Their orders are respectively the complementary
+part `ordCompl[p] (orderOf x)` and the projected part `ordProj[p] (orderOf x)`. In the
+group-theoretic literature the two are the `p'`-part and the `p`-part of `x`.
 
 Both factors are powers of `x`, so anything commuting with `x` commutes with both; this is how the
 factorisation gets used, since it lets a `p`-subgroup be attached to `x` inside the centraliser of
@@ -24,15 +24,15 @@ its `p`-free factor.
 
 ## Main definitions
 
-* `TauCeti.pFreePart p x`: the factor of `x` whose order is prime to `p`.
-* `TauCeti.pPart p x`: the factor of `x` whose order is a power of `p`.
+* `TauCeti.pFreePart p x`: the power-based construction underlying the `p`-free factor.
+* `TauCeti.pPart p x`: the complementary construction underlying the `p`-power factor.
 
 ## Main results
 
 * `TauCeti.pFreePart_mul_pPart`: the two factors multiply back to `x`.
 * `TauCeti.commute_pFreePart_pPart`: the two factors commute.
-* `TauCeti.orderOf_pFreePart`, `TauCeti.orderOf_pPart`: their orders are `ordCompl[p] (orderOf x)`
-  and `ordProj[p] (orderOf x)`.
+* `TauCeti.orderOf_pFreePart`, `TauCeti.orderOf_pPart`: when `p` is prime and `x` has finite
+  order, their orders are `ordCompl[p] (orderOf x)` and `ordProj[p] (orderOf x)`.
 * `TauCeti.eq_pFreePart`, `TauCeti.eq_pPart`: the factorisation is the only one of its kind.
 
 ## References
@@ -51,19 +51,13 @@ variable {G : Type*} [Group G] {p : ℕ} {x : G}
 private noncomputable def pFreeExponent (p : ℕ) (x : G) : ℕ :=
   (ordProj[p] (orderOf x)) ^ (ordCompl[p] (orderOf x)).totient
 
-/-- The **`p`-free part** of an element `x`: the factor of `x` whose order is the `p`-free part of
-the order of `x`. It is a power of `x`, and together with `TauCeti.pPart p x` it factors `x` as a
-product of two commuting elements, one of order prime to `p` and one of order a power of `p`. -/
+/-- The power of `x` that gives its **`p`-free part** when `p` is prime and `x` has finite order.
+Together with `TauCeti.pPart p x`, it factors `x` into two commuting elements. -/
 noncomputable def pFreePart (p : ℕ) (x : G) : G := x ^ pFreeExponent p x
 
-/-- The **`p`-part** of an element `x`: the factor of `x` whose order is the `p`-part of the order
-of `x`. See `TauCeti.pFreePart_mul_pPart` and `TauCeti.orderOf_pPart`. -/
+/-- The element complementary to `TauCeti.pFreePart p x` in `x`; when `p` is prime and `x` has
+finite order, it is the **`p`-part** of `x`. -/
 noncomputable def pPart (p : ℕ) (x : G) : G := (pFreePart p x)⁻¹ * x
-
-private theorem pFreeExponent_def (p : ℕ) (x : G) :
-    pFreeExponent p x = (ordProj[p] (orderOf x)) ^ (ordCompl[p] (orderOf x)).totient := rfl
-
-private theorem pFreePart_eq_pow (p : ℕ) (x : G) : pFreePart p x = x ^ pFreeExponent p x := rfl
 
 /-- The `p`-free and `p`-parts of `x` multiply back to `x`. -/
 @[simp]
@@ -72,7 +66,7 @@ theorem pFreePart_mul_pPart (p : ℕ) (x : G) : pFreePart p x * pPart p x = x :=
 
 /-- The `p`-free part of `x` is a power of `x`. -/
 theorem pFreePart_mem_zpowers (p : ℕ) (x : G) : pFreePart p x ∈ Subgroup.zpowers x := by
-  rw [pFreePart_eq_pow]
+  rw [pFreePart]
   exact pow_mem (Subgroup.mem_zpowers x) _
 
 /-- The `p`-part of `x` is a power of `x`. -/
@@ -112,7 +106,7 @@ private theorem ordProj_dvd_pFreeExponent : ordProj[p] (orderOf x) ∣ pFreeExpo
 
 private theorem coprime_pFreeExponent :
     Nat.Coprime (pFreeExponent p x) (ordCompl[p] (orderOf x)) := by
-  rw [pFreeExponent_def]
+  rw [pFreeExponent]
   exact ((Nat.coprime_ordCompl hp hx).pow_left _).pow_left _
 
 private theorem ordCompl_dvd_pFreeExponent_sub_one :
@@ -134,7 +128,7 @@ private theorem gcd_orderOf_pFreeExponent :
 
 /-- The order of the `p`-free part of `x` is the `p`-free part of the order of `x`. -/
 theorem orderOf_pFreePart : orderOf (pFreePart p x) = ordCompl[p] (orderOf x) := by
-  rw [pFreePart_eq_pow, orderOf_pow' _ (pFreeExponent_ne_zero),
+  rw [pFreePart, orderOf_pow' _ (pFreeExponent_ne_zero),
     gcd_orderOf_pFreeExponent hp hx]
 
 /-- The order of the `p`-free part of `x` is prime to `p`. -/
@@ -158,7 +152,7 @@ private theorem pPart_pow_ordProj : pPart p x ^ ordProj[p] (orderOf x) = 1 := by
     rw [hsplit, pow_add, hkill, mul_one]
   have hc : Commute ((pFreePart p x)⁻¹) x :=
     ((Commute.refl x).pow_left (pFreeExponent p x)).inv_left
-  rw [pPart, hc.mul_pow, inv_pow, pFreePart_eq_pow, ← pow_mul, hxeq, inv_mul_cancel]
+  rw [pPart, hc.mul_pow, inv_pow, pFreePart, ← pow_mul, hxeq, inv_mul_cancel]
 
 /-- The order of the `p`-part of `x` is the `p`-part of the order of `x`. In particular it is a
 power of `p`. -/
@@ -207,7 +201,7 @@ theorem eq_pFreePart {s u : G} (hsu : Commute s u) (hmul : s * u = x)
     rw [hd, pow_succ, hsd, one_mul]
   have key : ∀ e : ℕ, u ^ e = 1 → s ^ e = s → x ^ e = s := fun e h1 h2 => by
     rw [← hmul, hsu.mul_pow, h1, mul_one, h2]
-  rw [pFreePart_eq_pow, key _ hu1 hs1]
+  rw [pFreePart, key _ hu1 hs1]
 
 omit hx in
 /-- The companion to `TauCeti.eq_pFreePart`: the `p`-power factor of a commuting factorisation is

@@ -9,10 +9,10 @@ public import TauCeti.Algebra.Group.Coprime
 public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.Algebra.Group.Subgroup.Normalizer
 public import TauCeti.GroupTheory.OrderOfElement.PPart
+public import TauCeti.GroupTheory.PGroup
 public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.GroupTheory.Complement
 public import Mathlib.GroupTheory.Nilpotent
-public import Mathlib.GroupTheory.PGroup
 public import Mathlib.GroupTheory.Sylow
 
 /-!
@@ -453,19 +453,6 @@ theorem isPElementary_sup_of_commute {C Q : Subgroup G} (hC : IsCyclic C)
       obtain ⟨c, hc, y, hy, hcy⟩ := hz
       exact ⟨⟨c, hCle hc⟩, mem_subgroupOf.2 hc, ⟨y, hQle hy⟩, mem_subgroupOf.2 hy,
         Subtype.ext hcy⟩
-
-/-- A `p`-group meets a subgroup of order prime to `p` trivially. -/
-theorem disjoint_of_not_dvd_natCard_of_isPGroup [Fact p.Prime] {C Q : Subgroup G}
-    (hC : ¬ p ∣ Nat.card C) (hQ : IsPGroup p Q) : Disjoint C Q := by
-  rw [disjoint_def]
-  intro g hg hgQ
-  obtain ⟨k, hk⟩ := hQ ⟨g, hgQ⟩
-  have hk' : g ^ p ^ k = 1 := by simpa using congrArg (Subtype.val (p := (· ∈ Q))) hk
-  obtain ⟨j, -, hj⟩ := (Nat.dvd_prime_pow (Fact.out : p.Prime)).1 (orderOf_dvd_of_pow_eq_one hk')
-  rcases Nat.eq_zero_or_pos j with rfl | hj0
-  · exact orderOf_eq_one_iff.1 (by simpa using hj)
-  · refine absurd (((hj ▸ dvd_pow_self p hj0.ne') : p ∣ orderOf g).trans ?_) hC
-    simpa [orderOf_mk] using orderOf_dvd_natCard (⟨g, hg⟩ : C)
 
 variable (s : G) (P : Sylow p (centralizer ({s} : Set G)))
 
