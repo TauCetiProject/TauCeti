@@ -165,8 +165,8 @@ private theorem fderiv_extChartAt_lieExpMul_zero_apply
     leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply]
   exact hderiv
 
-/-- At the zero pair, the derivative of the exponential-product map sends `(X, Y)` to the model
-coordinate of `X + Y`. -/
+/-- In canonical model coordinates, the derivative of the exponential-product map at the zero
+pair sends `(X, Y)` to the coordinate of `X + Y`. -/
 @[simp]
 theorem mfderiv_lieExpMul_apply_zero
     (p q : Submodule ℝ (LeftInvariantDerivation I G)) (z : p × q) :
@@ -175,8 +175,10 @@ theorem mfderiv_lieExpMul_apply_zero
     let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
     let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
       finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
-    mfderiv (modelWithCornersSelf ℝ (p × q)) I
-        (lieExpMul (I := I) (G := G) p q) 0 z =
+    groupLieAlgebraEquivModelVectorSpace (I := I) (G := G)
+        (mfderiv (modelWithCornersSelf ℝ (p × q)) I
+          (lieExpMul (I := I) (G := G) p q) 0
+          ((NormedSpace.fromTangentSpace (0 : p × q)).symm z)) =
       leftInvariantDerivationLinearIsometryEquivModelVectorSpace
         (I := I) (G := G) ((z.1 : LeftInvariantDerivation I G) + z.2) := by
   let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
@@ -187,7 +189,6 @@ theorem mfderiv_lieExpMul_apply_zero
   dsimp only
   have hzero : lieExpMul (I := I) (G := G) p q 0 = 1 := by simp
   rw [hzero]
-  apply (groupLieAlgebraEquivModelVectorSpace (I := I) (G := G)).injective
   have hdiff := (contMDiff_lieExpMul (I := I) (G := G) p q).mdifferentiableAt
     (x := 0) (by simp)
   have hsource : lieExpMul (I := I) (G := G) p q 0 ∈
@@ -202,7 +203,8 @@ theorem mfderiv_lieExpMul_apply_zero
   -- representative.
   simp only [Function.comp_apply] at hmf
   rw [mfderiv_eq_fderiv] at hmf
-  have happly := DFunLike.congr_fun hmf z
+  have happly := DFunLike.congr_fun hmf
+    ((NormedSpace.fromTangentSpace (0 : p × q)).symm z)
   have hfderiv := fderiv_extChartAt_lieExpMul_zero_apply (I := I) (G := G) p q z
   have hresult := happly.symm.trans hfderiv
   rw [hzero, mfderiv_extChartAt_self] at hresult
@@ -251,8 +253,16 @@ theorem isLocalDiffeomorphAt_lieExpMul_zero_of_isCompl
   intro z
   have hm := mfderiv_lieExpMul_apply_zero (I := I) (G := G) p q
     (NormedSpace.fromTangentSpace (0 : p × q) z)
+  dsimp only at hm
+  rw [ContinuousLinearEquiv.symm_apply_apply] at hm
+  have hm' := congrArg
+    (groupLieAlgebraEquivModelVectorSpace (I := I) (G := G)).symm hm
+  have hm'' := ((groupLieAlgebraEquivModelVectorSpace
+    (I := I) (G := G)).symm_apply_apply
+      (mfderiv (modelWithCornersSelf ℝ (p × q)) I
+        (lieExpMul (I := I) (G := G) p q) 0 z)).symm.trans hm'
   rw [hzero]
   simp only [e, eTarget, e₀]
-  exact hm.symm
+  exact hm''.symm
 
 end Submodule
