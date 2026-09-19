@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.Semilinear
+public import TauCeti.InformationTheory.Coding.Semilinear.Basic
 public import TauCeti.InformationTheory.Coding.WeightEnumerator
 
 /-!
