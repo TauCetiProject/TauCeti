@@ -105,22 +105,16 @@ theorem denseRange_algebraMap_pi_liesOver :
     Equiv.subtypeEquivRight fun w ↦ hS (w := w)
   -- Weak approximation is stated for the places of a `Finset`, together with a (here empty)
   -- family of infinite places; reindex its product along `S ↔ {w ∣ v}`.
-  let Φ : ((w : {w // w ∈ S}) → w.1.adicCompletion L) ×
-      ((u : {u : InfinitePlace L // u ∈ (∅ : Finset (InfinitePlace L))}) → u.1.Completion) →
-      (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
-        w.1.adicCompletion L :=
-    fun p w ↦ p.1 (e.symm w)
-  have hΦc : Continuous Φ :=
-    continuous_pi fun w ↦ (continuous_apply _).comp continuous_fst
-  have hΦs : Function.Surjective Φ := fun y ↦
-    ⟨(fun w ↦ y (e w), fun u ↦ (Finset.notMem_empty _ u.2).elim), by
-      funext w
-      -- The codomain `w.1.adicCompletion L` depends on the index, so expose the reindexed
-      -- application before eliminating the equality `e (e.symm w) = w`.
-      change y (e (e.symm w)) = y w
-      cases e.apply_symm_apply w
-      rfl⟩
-  exact hΦs.denseRange.comp (TauCeti.GlobalNumberFields.weakApproximation_denseRange S ∅) hΦc
+  let Φ : (((w : {w // w ∈ S}) → w.1.adicCompletion L) ×
+      ((u : {u : InfinitePlace L // u ∈ (∅ : Finset (InfinitePlace L))}) → u.1.Completion)) ≃ₜ
+      ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
+        w.1.adicCompletion L) :=
+    (Homeomorph.prodUnique _ _).trans
+      (Homeomorph.piCongrLeft
+        (Y := fun w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦
+          w.1.adicCompletion L) e)
+  exact Φ.surjective.denseRange.comp
+    (TauCeti.GlobalNumberFields.weakApproximation_denseRange S ∅) Φ.continuous
 
 /-- **The semi-local map is surjective**: every family `(y_w)_{w ∣ v}` of elements of the
 completions `L_w` is the image of an element of `K_v ⊗[K] L`. -/
@@ -140,8 +134,8 @@ attribute [local instance] Fintype.ofFinite in
 theorem sum_finrank_adicCompletion_le_finrank :
     ∑ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
         finrank (v.adicCompletion K) (w.1.adicCompletion L) ≤ finrank K L := by
-  have h := (semilocalHom L v).toLinearMap.finrank_range_le
-  rwa [LinearMap.range_eq_top (f := (semilocalHom L v).toLinearMap).mpr
-    (semilocalHom_surjective L v), finrank_top, finrank_pi_fintype, finrank_baseChange] at h
+  have h := (semilocalHom L v).toLinearMap.finrank_le_finrank_of_surjective
+    (semilocalHom_surjective L v)
+  rwa [finrank_pi_fintype, finrank_baseChange] at h
 
 end TauCeti
