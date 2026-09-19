@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.BigOperators.Finset.Range
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Filtration
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Primitives
 
@@ -14,10 +13,9 @@ public import TauCeti.LinearAlgebra.TensorCoalgebra.Primitives
 
 For `R`-modules `M` and `N`, a linear map `F : Tᶜ(M) ⟶ Tᶜ(N)` between the reduced tensor
 coalgebras `⨁_{n ≥ 1} M^{⊗n}` and `⨁_{n ≥ 1} N^{⊗n}` is a *coalgebra morphism* when it commutes
-with reduced deconcatenation: `Δ ∘ F = (F ⊗ F) ∘ Δ`.  This file proves that the reduced tensor
-coalgebra is cofree among conilpotent coalgebras in the following concrete form: a coalgebra
-morphism is exactly its family of Taylor components, the composite `Tᶜ(M) ⟶ N` with the projection
-onto single letters.
+with reduced deconcatenation: `Δ ∘ F = (F ⊗ F) ∘ Δ`.  This file proves the concrete correspondence
+between coalgebra morphisms `Tᶜ(M) ⟶ Tᶜ(N)` and their families of Taylor components, obtained by
+composing with the projection `Tᶜ(N) ⟶ N` onto single letters.
 
 That a coalgebra morphism is *determined* by its Taylor components is an induction along the
 conilpotence filtration, exactly as for coderivations.  That *every* family `f` of components
@@ -34,7 +32,6 @@ correspondence is the one describing `A∞` morphisms through their components `
 
 ## Main definitions
 
-* `TauCeti.ReducedTensorWords.prepend`: prepend a letter to a reduced tensor word.
 * `TauCeti.ReducedTensorWords.IsCoalgHom`: a linear map commuting with reduced deconcatenation.
 * `TauCeti.ReducedTensorWords.coalgHom`: the coalgebra morphism with prescribed Taylor components.
 * `TauCeti.ReducedTensorWords.coalgHomEquivTaylor`: coalgebra morphisms are in bijection with
@@ -42,7 +39,6 @@ correspondence is the one describing `A∞` morphisms through their components `
 
 ## Main results
 
-* `TauCeti.ReducedTensorWords.deconcatenation_prepend`: the cuts of a prepended word.
 * `TauCeti.ReducedTensorWords.coalgHom_subword`: the recursive evaluation rule of `coalgHom f`.
 * `TauCeti.ReducedTensorWords.isCoalgHom_coalgHom` and
   `TauCeti.ReducedTensorWords.letter_comp_coalgHom`: `coalgHom f` is a coalgebra morphism with
@@ -67,94 +63,6 @@ universe uR uM uN uP
 namespace TauCeti
 
 namespace ReducedTensorWords
-
-section Prepend
-
-variable (R : Type uR) (N : Type uN) [CommSemiring R] [AddCommMonoid N] [Module R N]
-
-/-- Prepend a letter to a reduced tensor word: `a` and `y₁ ⋯ y_k` give `a y₁ ⋯ y_k`. -/
-noncomputable def prepend : N →ₗ[R] ReducedTensorWords R N →ₗ[R] ReducedTensorWords R N :=
-  (DirectSum.toModule R {n : ℕ // 0 < n} (N →ₗ[R] ReducedTensorWords R N) fun k ↦
-    ((TensorProduct.mk R (TensorPower R 1 N) (TensorPower R k.1 N)).compr₂
-        (of R N ⟨1 + k.1, by omega⟩ ∘ₗ (TensorPower.mulEquiv (R := R) (M := N)).toLinearMap) ∘ₗ
-      (TauCeti.TensorPower.oneEquiv R N).symm.toLinearMap).flip).flip
-
-variable {R N}
-
-/-- Prepending a letter to a pure tensor word conses it onto the letters. -/
-theorem prepend_of_tprod (a : N) (k : {n : ℕ // 0 < n}) (y : Fin k.1 → N) :
-    prepend R N a (of R N k (PiTensorProduct.tprod R y)) =
-      of R N ⟨k.1 + 1, by omega⟩ (PiTensorProduct.tprod R (Fin.cons a y)) := by
-  simp only [prepend, LinearMap.flip_apply, toModule_of, LinearMap.coe_comp, Function.comp_apply,
-    LinearMap.compr₂_apply, TensorProduct.mk_apply, LinearEquiv.coe_coe,
-    TauCeti.TensorPower.oneEquiv_symm_apply, ← TensorPower.gMul_def, TensorPower.tprod_mul_tprod,
-    Fin.append_left_eq_cons]
-  exact of_tprod_congr R N _ (Nat.add_comm 1 k.1) fun _ ↦ rfl
-
-/-- Prepending the letter at position `a` to the block that starts right after it extends the
-block by that letter. -/
-theorem prepend_subword {n : ℕ} (z : Fin n → N) {a b : ℕ} (ha : a < n) (hb : 0 < b) :
-    prepend R N (z ⟨a, ha⟩) (subword R z (a + 1) b) = subword R z a (b + 1) := by
-  by_cases hab : a + 1 + b ≤ n
-  · rw [subword_eq_of_tprod R z hb hab, prepend_of_tprod,
-      subword_eq_of_tprod R z (Nat.succ_pos b) (by omega)]
-    refine of_tprod_congr R N _ rfl fun i ↦ ?_
-    induction i using Fin.cases with
-    | zero => rfl
-    | succ j =>
-        simp only [Fin.cons_succ, Fin.cast_eq_self, Fin.val_succ]
-        exact congrArg z (Fin.ext (by simp only; omega))
-  · rw [subword_eq_zero_of_lt_add R z (by omega), map_zero,
-      subword_eq_zero_of_lt_add R z (by omega)]
-
-/-- A prepended word has length at least two, so it has no letter component. -/
-@[simp]
-theorem letter_prepend (a : N) (w : ReducedTensorWords R N) : letter R N (prepend R N a w) = 0 := by
-  have h : letter R N ∘ₗ prepend R N a = 0 := by
-    refine linearMap_ext R N fun k y ↦ ?_
-    rw [LinearMap.comp_apply, prepend_of_tprod, letter_apply,
-      component_of_of_ne R N (by simp only [ne_eq, Subtype.ext_iff, Positive.val_one]; omega),
-      map_zero, LinearMap.zero_apply]
-  exact LinearMap.congr_fun h w
-
-/-- Cutting a prepended word `a · w` either separates the new letter from `w`, or cuts `w` and
-prepends `a` to the left half. -/
-theorem deconcatenation_prepend (a : N) (w : ReducedTensorWords R N) :
-    deconcatenation R N (prepend R N a w) =
-      ofLetter R N a ⊗ₜ[R] w +
-        LinearMap.rTensor (ReducedTensorWords R N) (prepend R N a) (deconcatenation R N w) := by
-  have h : deconcatenation R N ∘ₗ prepend R N a =
-      (TensorProduct.mk R _ _ (ofLetter R N a)) +
-        LinearMap.rTensor (ReducedTensorWords R N) (prepend R N a) ∘ₗ deconcatenation R N := by
-    refine linearMap_ext R N fun k y ↦ ?_
-    obtain ⟨k, hk⟩ := k
-    -- Read `a · y` as the whole of the tuple `z = a y`, and `y` as its block after position `0`.
-    set z : Fin (k + 1) → N := Fin.cons a y with hz
-    have hw : of R N ⟨k, hk⟩ (PiTensorProduct.tprod R y) = subword R z 1 k := by
-      rw [subword_eq_of_tprod R z hk (by omega)]
-      exact of_tprod_congr R N _ rfl fun i ↦ by
-        simp only [hz, Fin.cast_eq_self]
-        exact (Fin.cons_succ (α := fun _ ↦ N) a y i).symm.trans
-          (congrArg (Fin.cons a y) (Fin.ext ((Fin.val_succ i).trans (Nat.add_comm _ _))))
-    have ha : z ⟨0, Nat.succ_pos k⟩ = a := Fin.cons_zero _ _
-    obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
-    simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.add_apply,
-      TensorProduct.mk_apply]
-    rw [hw, ← ha, prepend_subword z (Nat.succ_pos _) hk, deconcatenation_subword,
-      deconcatenation_subword, map_sum,
-      sum_Ioo_eq_sum_range _ _ (by rw [subword_length_zero, TensorProduct.zero_tmul]),
-      sum_Ioo_eq_sum_range _ _ (by rw [subword_length_zero, TensorProduct.zero_tmul, map_zero]),
-      Finset.sum_range_succ', Finset.sum_range_succ', Finset.sum_range_succ']
-    simp only [subword_length_zero, TensorProduct.zero_tmul, map_zero, add_zero]
-    rw [subword_one R N z (Nat.succ_pos _), add_comm]
-    congr 1
-    · refine Finset.sum_congr rfl fun c _ ↦ ?_
-      rw [LinearMap.rTensor_tmul, prepend_subword z (Nat.succ_pos _) (Nat.succ_pos c)]
-      exact congrArg _ (congrArg₂ (subword R z) (by omega) (by omega))
-  simpa only [LinearMap.coe_comp, Function.comp_apply, LinearMap.add_apply,
-    TensorProduct.mk_apply] using LinearMap.congr_fun h w
-
-end Prepend
 
 section CoalgHom
 
@@ -228,7 +136,8 @@ theorem coalgHom_subword (f : ReducedTensorWords R M →ₗ[R] N) {n : ℕ} (x :
     rw [hy 0 d (by omega), hy d (b - d) (by omega), Nat.add_zero]
   · have hzero : subword R x a b = 0 := by
       rcases not_and_or.1 h with hb | hab
-      · rw [show b = 0 by omega, subword_length_zero]
+      · have hb0 : b = 0 := by omega
+        rw [hb0, subword_length_zero]
       · exact subword_eq_zero_of_lt_add R x (by omega)
     rw [hzero, map_zero, map_zero, map_zero, zero_add]
     refine (Finset.sum_eq_zero fun d hd ↦ ?_).symm
@@ -275,16 +184,6 @@ theorem IsCoalgHom.deconcatenation_apply
     deconcatenation R N (F z) = TensorProduct.map F F (deconcatenation R M z) :=
   LinearMap.congr_fun hF z
 
-/-- Mapping both halves of the cuts of a block, written as one sum over the cut position. -/
-private theorem map_deconcatenation_subword {P Q : Type*} [AddCommMonoid P] [Module R P]
-    [AddCommMonoid Q] [Module R Q] (F : ReducedTensorWords R M →ₗ[R] P)
-    (G : ReducedTensorWords R M →ₗ[R] Q) {n : ℕ} (x : Fin n → M) (a b : ℕ) :
-    TensorProduct.map F G (deconcatenation R M (subword R x a b)) =
-      ∑ c ∈ Finset.range b, F (subword R x a c) ⊗ₜ[R] G (subword R x (a + c) (b - c)) := by
-  rw [deconcatenation_subword, map_sum,
-    sum_Ioo_eq_sum_range _ _ (by rw [subword_length_zero, TensorProduct.zero_tmul, map_zero])]
-  simp only [TensorProduct.map_tmul]
-
 /-- The Taylor expansion `coalgHom f` is a coalgebra morphism. -/
 theorem isCoalgHom_coalgHom (f : ReducedTensorWords R M →ₗ[R] N) :
     IsCoalgHom R (coalgHom R f) := by
@@ -326,7 +225,9 @@ theorem isCoalgHom_coalgHom (f : ReducedTensorWords R M →ₗ[R] N) :
         TensorProduct.zero_tmul, add_zero]
       refine Finset.sum_congr rfl fun d hd ↦ ?_
       rw [Finset.mem_range] at hd
-      rw [show a + d + (e - d) = a + e by omega, show b - d - (e - d) = b - e by omega]
+      have had : a + d + (e - d) = a + e := by omega
+      have hbd : b - d - (e - d) = b - e := by omega
+      rw [had, hbd]
   refine linearMap_ext R M fun n x ↦ ?_
   rw [LinearMap.comp_apply, LinearMap.comp_apply, of_tprod_eq_subword R n.2]
   exact key x n.1 0
@@ -412,6 +313,7 @@ theorem isCoalgHom_map (g : M →ₗ[R] N) : IsCoalgHom R (ReducedTensorWords.ma
 
 /-- The letterwise map of `g` is the coalgebra morphism whose Taylor components are `g` in arity one
 and zero in every higher arity. -/
+@[simp]
 theorem coalgHom_comp_letter (g : M →ₗ[R] N) :
     coalgHom R (g ∘ₗ letter R M) = ReducedTensorWords.map (R := R) g := by
   rw [(isCoalgHom_map g).eq_coalgHom, letter_comp_map]
