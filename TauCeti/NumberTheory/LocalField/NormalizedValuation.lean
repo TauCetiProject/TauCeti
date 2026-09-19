@@ -50,7 +50,7 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
 * `TauCeti.normalizedValuationWithZero_eq_ordFrac`: the zero-preserving normalized valuation is
   Mathlib's order-of-vanishing map `Ring.ordFrac 𝒪[K]`, which is where the discrete-valuation-ring
   API for it comes from.
-* `TauCeti.normalizedValuationWithZero_eq_inv_of_surjective`: the zero-preserving normalized
+* `Valuation.normalizedValuationWithZero_eq_inv_of_surjective`: the zero-preserving normalized
   valuation is the inverse of any surjective `ℤᵐ⁰`-valued valuation compatible with `K`.
 * `TauCeti.normalizedValuation_eq_one_of_isOfFinOrder`: the normalized valuation vanishes on the
   roots of unity of `K`.
@@ -180,20 +180,25 @@ theorem normalizedValuationWithZero_eq_ordFrac :
 /-- A surjective `ℤᵐ⁰`-valued valuation compatible with the valuative relation of `K` is
 `ValuativeRel.valuation K` transported along `valueGroupWithZeroIsoInt`: two equivalent
 valuations onto `ℤᵐ⁰` are equal. -/
-theorem valueGroupWithZeroIsoInt_valuation_eq_of_surjective (v : Valuation K ℤᵐ⁰) [v.Compatible]
+theorem _root_.Valuation.valueGroupWithZeroIsoInt_eq_of_surjective
+    (v : Valuation K ℤᵐ⁰) [v.Compatible]
     (hv : Function.Surjective v) (x : K) :
-    valueGroupWithZeroIsoInt K (valuation K x) = v x :=
-  DFunLike.congr_fun (Valuation.eq_of_isEquiv_of_surjective intValuation_surjective hv
-    ((Valuation.isEquiv_map_self_of_strictMono _ (valueGroupWithZeroIsoInt K).strictMono).trans
-      (ValuativeRel.isEquiv _ _))) x
+    valueGroupWithZeroIsoInt K (valuation K x) = v x := by
+  have h : intValuation (K := K) x = v x :=
+    DFunLike.congr_fun (Valuation.eq_of_isEquiv_of_surjective intValuation_surjective hv
+      ((Valuation.isEquiv_map_self_of_strictMono _ (valueGroupWithZeroIsoInt K).strictMono).trans
+        (ValuativeRel.isEquiv _ _))) x
+  change valueGroupWithZeroIsoInt K (valuation K x) = v x at h
+  exact h
 
 /-- The zero-preserving normalized valuation is the inverse of any surjective `ℤᵐ⁰`-valued
 valuation compatible with the valuative relation of `K`. This is how a concrete discrete
 valuation, such as the adic valuation of a completion, is read as the normalized one. -/
-theorem normalizedValuationWithZero_eq_inv_of_surjective (v : Valuation K ℤᵐ⁰) [v.Compatible]
+theorem _root_.Valuation.normalizedValuationWithZero_eq_inv_of_surjective
+    (v : Valuation K ℤᵐ⁰) [v.Compatible]
     (hv : Function.Surjective v) (x : K) :
     normalizedValuationWithZero K x = (v x)⁻¹ := by
-  rw [← valueGroupWithZeroIsoInt_valuation_eq_of_surjective v hv]
+  rw [← v.valueGroupWithZeroIsoInt_eq_of_surjective hv]
   simp [normalizedValuationWithZero, invMonoidWithZeroHom]
 
 /-- The translation between Mathlib's multiplicative valuation and the additive normalization:

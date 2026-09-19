@@ -40,7 +40,7 @@ namespace TauCeti
 
 private theorem valueGroupWithZeroIsoInt_padic (x : ℚ_[p]) :
     valueGroupWithZeroIsoInt ℚ_[p] (valuation ℚ_[p] x) = Padic.mulValuation x := by
-  refine valueGroupWithZeroIsoInt_valuation_eq_of_surjective _ (fun z ↦ ?_) x
+  refine (Padic.mulValuation (p := p)).valueGroupWithZeroIsoInt_eq_of_surjective (fun z ↦ ?_) x
   obtain ⟨q, hq⟩ := Rat.surjective_padicValuation p z
   exact ⟨q, by simpa [← Padic.comap_mulValuation_eq_padicValuation] using hq⟩
 

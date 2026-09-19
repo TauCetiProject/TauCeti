@@ -18,17 +18,18 @@ completions `K_v` and `L_w` are nonarchimedean local fields, and the canonical c
 This file proves that the ramification index of that extension of local fields is the
 ramification index of `w` over `R`:
 
-`TauCeti.ramificationIndex K_v L_w = w.asIdeal.ramificationIdx R`.
+`IsDedekindDomain.HeightOneSpectrum.ramificationIndex_adicCompletion v w` identifies
+`TauCeti.ramificationIndex K_v L_w` with `w.asIdeal.ramificationIdx R`.
 
 So the local invariant, defined through the normalized valuations of `K_v` and `L_w` alone, is the
 global one, defined as a length of a localization of `B`.
 
 ## Main results
 
-* `TauCeti.normalizedValuationWithZero_adicCompletion`: the zero-preserving normalized valuation
-  of `K_v` is the inverse of its adic valuation `Valued.v`.
-* `TauCeti.ramificationIndex_adicCompletion`: the ramification index of `L_w / K_v` is
-  `w.asIdeal.ramificationIdx R`.
+* `IsDedekindDomain.HeightOneSpectrum.normalizedValuationWithZero_adicCompletion`: the
+  zero-preserving normalized valuation of `K_v` is the inverse of its adic valuation `Valued.v`.
+* `IsDedekindDomain.HeightOneSpectrum.ramificationIndex_adicCompletion`: the ramification index
+  of `L_w / K_v` is `w.asIdeal.ramificationIdx R`.
 
 ## References
 
@@ -41,7 +42,7 @@ noncomputable section
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
 open scoped AdicCompletionExtension
 
-namespace TauCeti
+namespace IsDedekindDomain.HeightOneSpectrum
 
 section Completion
 
@@ -53,8 +54,9 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 valuation `Valued.v`. -/
 @[simp]
 theorem normalizedValuationWithZero_adicCompletion (x : v.adicCompletion K) :
-    normalizedValuationWithZero (v.adicCompletion K) x = (Valued.v x)⁻¹ :=
-  normalizedValuationWithZero_eq_inv_of_surjective _ (v.valuedAdicCompletion_surjective K) x
+    TauCeti.normalizedValuationWithZero (v.adicCompletion K) x = (Valued.v x)⁻¹ :=
+  Valuation.normalizedValuationWithZero_eq_inv_of_surjective _
+    (v.valuedAdicCompletion_surjective K) x
 
 end Completion
 
@@ -72,17 +74,19 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 height-one prime `v` of `R`, with finite residue fields, the ramification index of the extension
 of local fields `L_w / K_v`, for the canonical algebra structure of `adicCompletionExtension`, is
 the ramification index of `w` over `R`. -/
+@[simp]
 theorem ramificationIndex_adicCompletion :
-    ramificationIndex (v.adicCompletion K) (w.adicCompletion L) =
+    TauCeti.ramificationIndex (v.adicCompletion K) (w.adicCompletion L) =
       w.asIdeal.ramificationIdx R := by
   have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
   rw [← Ideal.ramificationIdx'_eq_ramificationIdx v.asIdeal w.asIdeal v.ne_bot]
-  refine ramificationIndex_eq_iff.2 fun x ↦ WithZero.coe_injective ?_
-  rw [WithZero.coe_pow, ← normalizedValuationWithZero_coe, ← normalizedValuationWithZero_coe,
+  refine TauCeti.ramificationIndex_eq_iff.2 fun x ↦ WithZero.coe_injective ?_
+  rw [WithZero.coe_pow, ← TauCeti.normalizedValuationWithZero_coe,
+    ← TauCeti.normalizedValuationWithZero_coe,
     Units.coe_map, MonoidHom.coe_coe, normalizedValuationWithZero_adicCompletion,
     normalizedValuationWithZero_adicCompletion, algebraMap_adicCompletionExtensionAlgebra,
     valued_adicCompletionExtension, inv_pow]
 
 end Extension
 
-end TauCeti
+end IsDedekindDomain.HeightOneSpectrum
