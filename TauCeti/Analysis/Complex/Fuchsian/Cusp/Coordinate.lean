@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Datum
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 public import Mathlib.Analysis.Complex.Periodic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.CuspCoordinate
+-- Supplies the continuous PSL action required by `Homeomorph.smul`.
 public import TauCeti.Analysis.Complex.UpperHalfPlane.ProperAction
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Manifold
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
