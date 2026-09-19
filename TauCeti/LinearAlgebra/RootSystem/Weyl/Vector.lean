@@ -154,12 +154,9 @@ theorem reflection_twoWeylVector {i : ι} (hi : i ∈ b.support) :
   rw [RootPairing.reflection_apply, coroot'_twoWeylVector P b hi]
 
 /-- **The sum of the positive roots pairs with an arbitrary coroot to twice the height of that
-coroot.** Writing `α^∨` as an integral combination of the simple coroots and pairing termwise with
-`2ρ` replaces each coefficient by twice itself, since `2ρ` pairs to `2` with every simple coroot;
-summing the coefficients is by definition the height of `α^∨` relative to the flipped base.
-
-This is the general form of `TauCeti.coroot'_twoWeylVector`, which is the input to its proof and
-so is not deduced from it: the simple coroots are the ones of height one. -/
+coroot**, `⟨2ρ, α^∨⟩ = 2 ht(α^∨)`, the height being taken relative to the flipped base. In
+particular the pairing is an even integer; a simple coroot has height `1`, so there it is the
+value `2` of `TauCeti.coroot'_twoWeylVector`. -/
 theorem coroot'_twoWeylVector_eq_height_flip (i : ι) :
     P.coroot' i (twoWeylVector P b) = 2 * (b.flip.height i : R) := by
   obtain ⟨f, -, -, hf⟩ := b.flip.exists_root_eq_sum_int i
@@ -291,8 +288,16 @@ omit [P.IsReduced] in
 is the half-sum of the positive coroots; it identifies the height function of a base with a pairing,
 on the roots. -/
 theorem root'_weylVector_flip_eq_height [P.flip.IsReduced] (i : ι) :
-    P.root' i (weylVector P.flip b.flip) = (b.height i : R) :=
-  coroot'_weylVector_eq_height_flip P.flip b.flip i
+    P.root' i (weylVector P.flip b.flip) = (b.height i : R) := by
+  -- The two identifications that carry the flipped statement to this one, made explicit: the
+  -- coroot functionals of `P.flip` are the root functionals of `P`, and `RootPairing.Base.flip`
+  -- is involutive, so the doubly flipped base has the height function of `b`.
+  have hroot' : P.flip.coroot' i = P.root' i := by
+    simp only [RootPairing.coroot', RootPairing.root', RootPairing.flip_toLinearMap,
+      RootPairing.flip_coroot, LinearMap.flip_flip]
+  have hheight : b.flip.flip.height i = b.height i := rfl
+  rw [← hroot', ← hheight]
+  exact coroot'_weylVector_eq_height_flip P.flip b.flip i
 
 end Weyl
 
@@ -327,14 +332,14 @@ of the Weyl dimension formula. -/
 theorem one_le_coroot'_weylVector_of_mem_posRoots [P.flip.IsReduced] {i : ι}
     (hi : i ∈ posRoots P b) : 1 ≤ P.coroot' i (weylVector P b) := by
   rw [coroot'_weylVector_eq_height_flip]
-  exact_mod_cast one_le_height_flip_of_mem_posRoots P b hi
+  exact_mod_cast one_le_height_of_mem_posRoots P.flip b.flip (by rwa [posRoots_flip])
 
 /-- **The Weyl vector pairs to at most `-1` with the coroot of every negative root.** -/
 theorem coroot'_weylVector_le_neg_one_of_mem_negRoots [P.flip.IsReduced] {i : ι}
     (hi : i ∈ negRoots P b) : P.coroot' i (weylVector P b) ≤ -1 := by
   rw [coroot'_weylVector_eq_height_flip]
   have h : b.flip.height i ≤ -1 := by
-    have := height_flip_neg_of_mem_negRoots P b hi
+    have := height_neg_of_mem_negRoots P.flip b.flip (by rwa [negRoots_flip])
     omega
   exact_mod_cast h
 
