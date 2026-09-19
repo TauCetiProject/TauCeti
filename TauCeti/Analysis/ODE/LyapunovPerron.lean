@@ -45,9 +45,15 @@ of bounded continuous functions on `[0, ∞)`. Its unique fixed point
 solution that stays bounded on `[0, ∞)` is the fixed point whose input parameter is its initial
 value. The initial values of the bounded forward solutions are therefore exactly the points `x`
 with `lyapunovPerronSolution x 0 = x`; their `P`-component is free and determines the rest
-Lipschitz-continuously. This is the analytic core of the Lyapunov--Perron proof of the
-stable-manifold theorem at a hyperbolic equilibrium, where the local stable manifold is read off
-from the initial values of these fixed points after the nonlinearity has been cut off.
+Lipschitz-continuously.
+
+The fixed points also decay: for every rate `β ≥ 0` with `2 K ε < α - β`, two Lyapunov--Perron
+solutions approach each other at rate `β`. When `N 0 = 0` every Lyapunov--Perron solution
+therefore decays exponentially to the equilibrium `0`, and the bounded forward solutions are
+exactly the forward solutions tending to `0`: the initial values above form the stable set of
+the equilibrium. This is the analytic core of the Lyapunov--Perron proof of the stable-manifold
+theorem at a hyperbolic equilibrium, where the local stable manifold is read off from the initial
+values of these fixed points after the nonlinearity has been cut off.
 
 ## Main declarations
 
@@ -55,9 +61,10 @@ from the initial values of these fixed points after the nonlinearity has been cu
   arbitrary forcing term `g`.
 * `ContinuousLinearMap.hasDerivAt_lyapunovPerronIntegral`: the integral terms solve the forced
   linear equation `y' = A y + g`.
-* `ContinuousLinearMap.norm_lyapunovPerronIntegral_le`: under the forward and backward
-  exponential estimates, a forcing term bounded by `M` produces integral terms bounded by
-  `2 K M / α` in forward time.
+* `ContinuousLinearMap.norm_lyapunovPerronIntegral_le_mul_exp`: under the forward and backward
+  exponential estimates, a forcing term bounded by `M exp (-β s)`, for `0 ≤ β < α`, produces
+  integral terms bounded by `2 K M exp (-β t) / (α - β)` in forward time;
+  `ContinuousLinearMap.norm_lyapunovPerronIntegral_le` is the case `β = 0`.
 * `ContinuousLinearMap.lyapunovPerronMap`: the Lyapunov--Perron operator on bounded continuous
   functions on `[0, ∞)`.
 * `ContinuousLinearMap.contractingWith_lyapunovPerronMap`: it is a contraction when `2 K ε < α`.
@@ -73,6 +80,15 @@ from the initial values of these fixed points after the nonlinearity has been cu
   is `P ξ`.
 * `ContinuousLinearMap.lyapunovPerronSolution_lyapunovPerronSolution_zero`: restarting a
   Lyapunov--Perron solution from its initial value reproduces it.
+* `ContinuousLinearMap.norm_lyapunovPerronSolution_sub_le`: Lyapunov--Perron solutions approach
+  each other exponentially, at every rate `β ≥ 0` with `2 K ε < α - β`.
+* `ContinuousLinearMap.norm_lyapunovPerronSolution_le`,
+  `ContinuousLinearMap.tendsto_lyapunovPerronSolution`: when `N 0 = 0`, Lyapunov--Perron
+  solutions decay exponentially to `0`.
+* `ContinuousLinearMap.norm_le_of_isIntegralCurveOn_of_bounded`: bounded forward solutions decay
+  exponentially to `0`.
+* `ContinuousLinearMap.exists_isIntegralCurveOn_tendsto_iff`: the initial values of forward
+  solutions tending to `0` are the fixed points of `ξ ↦ lyapunovPerronSolution ξ 0`.
 
 ## References
 
@@ -139,23 +155,88 @@ theorem integrableOn_lyapunovPerron_unstable (hα : 0 < α) (t : ℝ) (hg : Cont
 
 omit [CompleteSpace X] in
 /-- Under the backward exponential estimate, the unstable integral of a forcing term bounded by
+`M exp (-β s)` on `(t, ∞)` is bounded by `K M exp (-β t) / (α + β)`, provided `α + β > 0`. -/
+theorem norm_setIntegral_lyapunovPerron_unstable_le_mul_exp {β : ℝ} (hαβ : 0 < α + β) (t : ℝ)
+    (hgM : ∀ s ∈ Ioi t, ‖g s‖ ≤ M * Real.exp (-β * s)) :
+    ‖∫ s in Ioi t, exp ((t - s) • A) (g s - P (g s))‖ ≤
+      K * M / (α + β) * Real.exp (-β * t) := by
+  have hbound : IntegrableOn
+      (fun s ↦ K * M * Real.exp (α * t) * Real.exp (-(α + β) * s)) (Ioi t) :=
+    (integrableOn_exp_mul_Ioi (neg_neg_of_pos hαβ) t).const_mul _
+  calc ‖∫ s in Ioi t, exp ((t - s) • A) (g s - P (g s))‖
+      ≤ ∫ s in Ioi t, K * M * Real.exp (α * t) * Real.exp (-(α + β) * s) := by
+        refine norm_integral_le_of_norm_le hbound <| (ae_restrict_mem measurableSet_Ioi).mono
+          fun s hs ↦ ?_
+        calc ‖exp ((t - s) • A) (g s - P (g s))‖
+            ≤ K * Real.exp (α * (t - s)) * ‖g s‖ := hu _ (sub_nonpos.2 (le_of_lt hs)) _
+          _ ≤ K * Real.exp (α * (t - s)) * (M * Real.exp (-β * s)) := by gcongr; exact hgM s hs
+          _ = K * M * Real.exp (α * t) * Real.exp (-(α + β) * s) := by
+            have hsplit : Real.exp (α * (t - s)) * Real.exp (-β * s) =
+                Real.exp (α * t) * Real.exp (-(α + β) * s) := by
+              rw [← Real.exp_add, ← Real.exp_add]
+              ring_nf
+            linear_combination (K * M : ℝ) * hsplit
+    _ = K * M / (α + β) * Real.exp (-β * t) := by
+      have hsplit : Real.exp (α * t) * Real.exp (-(α + β) * t) = Real.exp (-β * t) := by
+        rw [← Real.exp_add]
+        ring_nf
+      rw [integral_const_mul, integral_exp_mul_Ioi (neg_neg_of_pos hαβ), neg_div_neg_eq,
+        ← hsplit]
+      ring
+
+omit [CompleteSpace X] in
+/-- Under the backward exponential estimate, the unstable integral of a forcing term bounded by
 `M` on `(t, ∞)` is bounded by `K M / α`. -/
 theorem norm_setIntegral_lyapunovPerron_unstable_le (hα : 0 < α) (t : ℝ)
     (hgM : ∀ s ∈ Ioi t, ‖g s‖ ≤ M) :
     ‖∫ s in Ioi t, exp ((t - s) • A) (g s - P (g s))‖ ≤ K * M / α := by
-  have hα' : (0 : ℝ) < α := NNReal.coe_pos.2 hα
-  have hbound : IntegrableOn (fun s ↦ K * M * Real.exp (α * t) * Real.exp (-α * s)) (Ioi t) :=
-    (integrableOn_exp_mul_Ioi (neg_neg_of_pos hα') t).const_mul _
-  calc ‖∫ s in Ioi t, exp ((t - s) • A) (g s - P (g s))‖
-      ≤ ∫ s in Ioi t, K * M * Real.exp (α * t) * Real.exp (-α * s) :=
-        norm_integral_le_of_norm_le hbound <| (ae_restrict_mem measurableSet_Ioi).mono
-          fun s hs ↦ norm_unstable_integrand_le hu hs (hgM s hs)
-    _ = K * M / α := by
-      rw [integral_const_mul, integral_exp_mul_Ioi (neg_neg_of_pos hα'), neg_div_neg_eq,
-        mul_div_assoc', mul_assoc, ← Real.exp_add]
-      simp
+  simpa using norm_setIntegral_lyapunovPerron_unstable_le_mul_exp hu (β := 0)
+    (by simpa using hα) t (by simpa using hgM)
 
 end Estimates
+
+omit [CompleteSpace X] in
+/-- Under the forward exponential estimate, the stable integral of a forcing term bounded by
+`M exp (-β s)` on `[0, t]` is bounded by `K M exp (-β t) / (α - β)` in forward time, provided
+`β < α`. -/
+theorem norm_intervalIntegral_lyapunovPerron_stable_le_mul_exp
+    (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
+    {β : ℝ} (hβα : β < α) (ht : 0 ≤ t)
+    (hgM : ∀ s ∈ Icc (0 : ℝ) t, ‖g s‖ ≤ M * Real.exp (-β * s)) :
+    ‖∫ s in (0 : ℝ)..t, exp ((t - s) • A) (P (g s))‖ ≤
+      K * M / (α - β) * Real.exp (-β * t) := by
+  have hαβ : (0 : ℝ) < α - β := sub_pos.2 hβα
+  have hM : 0 ≤ M := by
+    simpa using (norm_nonneg _).trans (hgM 0 ⟨le_rfl, ht⟩)
+  -- Splitting the kernel into a factor depending on `t` and one depending on the integration
+  -- variable `s` turns the estimate into an ordinary exponential integral.
+  have hsplit (s : ℝ) : Real.exp (-α * (t - s)) * Real.exp (-β * s) =
+      Real.exp (-α * t) * Real.exp ((α - β) * s) := by
+    rw [← Real.exp_add, ← Real.exp_add]
+    ring_nf
+  have hexp : Real.exp (-α * t) * (Real.exp ((α - β) * t) - 1) ≤ Real.exp (-β * t) := by
+    rw [mul_sub, ← Real.exp_add, mul_one]
+    ring_nf
+    linarith [Real.exp_pos (-(α * t))]
+  calc ‖∫ s in (0 : ℝ)..t, exp ((t - s) • A) (P (g s))‖
+      ≤ ∫ s in (0 : ℝ)..t, K * M * Real.exp (-α * t) * Real.exp ((α - β) * s) := by
+        have hcont : Continuous fun s : ℝ ↦
+            K * M * Real.exp (-α * t) * Real.exp ((α - β) * s) := by
+          fun_prop
+        refine intervalIntegral.norm_integral_le_of_norm_le ht (ae_of_all _ fun s hs' ↦ ?_)
+          (hcont.intervalIntegrable 0 t)
+        calc ‖exp ((t - s) • A) (P (g s))‖
+            ≤ K * Real.exp (-α * (t - s)) * ‖g s‖ := hs _ (sub_nonneg.2 hs'.2) _
+          _ ≤ K * Real.exp (-α * (t - s)) * (M * Real.exp (-β * s)) := by
+            gcongr; exact hgM s ⟨hs'.1.le, hs'.2⟩
+          _ = K * M * Real.exp (-α * t) * Real.exp ((α - β) * s) := by
+            linear_combination (K * M : ℝ) * hsplit s
+    _ = K * M / (α - β) * (Real.exp (-α * t) * (Real.exp ((α - β) * t) - 1)) := by
+      rw [intervalIntegral.integral_const_mul,
+        intervalIntegral.integral_comp_mul_left (fun s ↦ Real.exp s) hαβ.ne', integral_exp,
+        mul_zero, Real.exp_zero, smul_eq_mul]
+      field_simp
+    _ ≤ K * M / (α - β) * Real.exp (-β * t) := by gcongr
 
 omit [CompleteSpace X] in
 /-- Under the forward exponential estimate, the stable integral of a forcing term bounded by `M`
@@ -164,34 +245,34 @@ theorem norm_intervalIntegral_lyapunovPerron_stable_le
     (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
     (hα : 0 < α) (ht : 0 ≤ t) (hgM : ∀ s ∈ Icc (0 : ℝ) t, ‖g s‖ ≤ M) :
     ‖∫ s in (0 : ℝ)..t, exp ((t - s) • A) (P (g s))‖ ≤ K * M / α := by
-  have hα' : (0 : ℝ) < α := NNReal.coe_pos.2 hα
-  have hM : 0 ≤ M := (norm_nonneg _).trans (hgM 0 ⟨le_rfl, ht⟩)
-  -- Splitting the kernel into a factor depending on `t` and one depending on the integration
-  -- variable `s` turns the estimate into an ordinary exponential integral.
-  have hsplit (s : ℝ) : Real.exp (-α * (t - s)) = Real.exp (-α * t) * Real.exp (α * s) := by
-    rw [← Real.exp_add]
-    congr 1
-    ring
-  have hexp : Real.exp (-α * t) * (Real.exp (α * t) - 1) ≤ 1 := by
-    rw [mul_sub, ← Real.exp_add, neg_mul, neg_add_cancel, Real.exp_zero, mul_one]
-    linarith [Real.exp_pos (-(α * t))]
-  calc ‖∫ s in (0 : ℝ)..t, exp ((t - s) • A) (P (g s))‖
-      ≤ ∫ s in (0 : ℝ)..t, K * M * Real.exp (-α * t) * Real.exp (α * s) := by
-        have hcont : Continuous fun s : ℝ ↦ K * M * Real.exp (-α * t) * Real.exp (α * s) := by
-          fun_prop
-        refine intervalIntegral.norm_integral_le_of_norm_le ht (ae_of_all _ fun s hs' ↦ ?_)
-          (hcont.intervalIntegrable 0 t)
-        calc ‖exp ((t - s) • A) (P (g s))‖
-            ≤ K * Real.exp (-α * (t - s)) * ‖g s‖ := hs _ (sub_nonneg.2 hs'.2) _
-          _ ≤ K * Real.exp (-α * (t - s)) * M := by gcongr; exact hgM s ⟨hs'.1.le, hs'.2⟩
-          _ = K * M * Real.exp (-α * t) * Real.exp (α * s) := by rw [hsplit]; ring
-    _ = K * M / α * (Real.exp (-α * t) * (Real.exp (α * t) - 1)) := by
-      rw [intervalIntegral.integral_const_mul,
-        intervalIntegral.integral_comp_mul_left (fun s ↦ Real.exp s) hα'.ne', integral_exp,
-        mul_zero, Real.exp_zero, smul_eq_mul]
-      field_simp
-    _ ≤ K * M / α * 1 := by gcongr
-    _ = K * M / α := mul_one _
+  simpa using norm_intervalIntegral_lyapunovPerron_stable_le_mul_exp hs (β := 0)
+    (by simpa using hα) ht (by simpa using hgM)
+
+omit [CompleteSpace X] in
+/-- Under the forward and backward exponential estimates, the integral terms of the
+Lyapunov--Perron equation with a forcing term bounded by `M exp (-β s)` in forward time are
+bounded by `2 K M exp (-β t) / (α - β)` in forward time, for a rate `0 ≤ β < α`. -/
+theorem norm_lyapunovPerronIntegral_le_mul_exp
+    (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
+    (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
+    {β : ℝ} (hβ : 0 ≤ β) (hβα : β < α) (hgM : ∀ s, 0 ≤ s → ‖g s‖ ≤ M * Real.exp (-β * s))
+    (ht : 0 ≤ t) :
+    ‖lyapunovPerronIntegral A P g t‖ ≤ 2 * K * M / (α - β) * Real.exp (-β * t) := by
+  have hαβ : (0 : ℝ) < α - β := sub_pos.2 hβα
+  have hM : 0 ≤ M := by simpa using (norm_nonneg _).trans (hgM 0 le_rfl)
+  rw [lyapunovPerronIntegral]
+  refine (norm_sub_le _ _).trans ?_
+  have h₁ := norm_intervalIntegral_lyapunovPerron_stable_le_mul_exp hs hβα ht
+    fun s hs ↦ hgM s hs.1
+  have h₂ := norm_setIntegral_lyapunovPerron_unstable_le_mul_exp hu (by linarith) t
+    fun s hs ↦ hgM s (ht.trans (le_of_lt hs))
+  -- The unstable integral decays with the better constant `1 / (α + β) ≤ 1 / (α - β)`.
+  have h₃ : K * M / (α + β) * Real.exp (-β * t) ≤ K * M / (α - β) * Real.exp (-β * t) := by
+    gcongr
+    linarith
+  calc _ ≤ K * M / (α - β) * Real.exp (-β * t) + K * M / (α - β) * Real.exp (-β * t) :=
+        add_le_add h₁ (h₂.trans h₃)
+    _ = 2 * K * M / (α - β) * Real.exp (-β * t) := by ring
 
 omit [CompleteSpace X] in
 /-- Under the forward and backward exponential estimates, the integral terms of the
@@ -202,12 +283,8 @@ theorem norm_lyapunovPerronIntegral_le
     (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
     (hα : 0 < α) (hgM : ∀ s, ‖g s‖ ≤ M) (ht : 0 ≤ t) :
     ‖lyapunovPerronIntegral A P g t‖ ≤ 2 * K * M / α := by
-  rw [lyapunovPerronIntegral]
-  refine (norm_sub_le _ _).trans ?_
-  have h₁ := norm_intervalIntegral_lyapunovPerron_stable_le hs hα ht fun s _ ↦ hgM s
-  have h₂ := norm_setIntegral_lyapunovPerron_unstable_le hu hα t fun s _ ↦ hgM s
-  calc _ ≤ K * M / α + K * M / α := add_le_add h₁ h₂
-    _ = 2 * K * M / α := by ring
+  simpa using norm_lyapunovPerronIntegral_le_mul_exp hs hu le_rfl (β := 0)
+    (by simpa using hα) (by simpa using fun s _ ↦ hgM s) ht
 
 section Derivative
 
@@ -653,6 +730,162 @@ theorem exists_isIntegralCurveOn_bounded_iff (hP : IsIdempotentElem P) (hAP : Co
       by simpa using hx, ‖γ‖, fun t _ ↦ γ.norm_coe_le_norm _⟩
 
 end BoundedSolutions
+
+section Decay
+
+/-! ### Exponential decay of Lyapunov--Perron solutions
+
+For every rate `β ≥ 0` in the spectral gap left by the nonlinearity, `2 K ε < α - β`, the
+Lyapunov--Perron solutions approach each other at rate `β`. When `N 0 = 0` the solution with
+input parameter `0` is the zero solution, so all Lyapunov--Perron solutions decay exponentially,
+and the bounded forward solutions are exactly the forward solutions tending to the equilibrium
+`0`. -/
+
+/-- The weighted form of `dist_lyapunovPerronMap_le`: if two curves stay within
+`R exp (-β t)` of each other in forward time, for a rate `0 ≤ β < α`, then their images under
+the Lyapunov--Perron operators with input parameters `ξ` and `ζ` stay within
+`(K ‖ξ - ζ‖ + 2 K ε R / (α - β)) exp (-β t)` of each other. -/
+theorem norm_lyapunovPerronMap_sub_le_mul_exp {β : ℝ} (hβ : 0 ≤ β) (hβα : β < α) (ξ ζ : X)
+    {γ η : ℝ≥0 →ᵇ X} {R : ℝ} (hγη : ∀ t : ℝ≥0, ‖γ t - η t‖ ≤ R * Real.exp (-β * t))
+    (t : ℝ≥0) :
+    ‖lyapunovPerronMap A P N hs hu hα hN ξ γ t - lyapunovPerronMap A P N hs hu hα hN ζ η t‖ ≤
+      (K * ‖ξ - ζ‖ + 2 * K * ε * R / (α - β)) * Real.exp (-β * t) := by
+  have hcont (θ : ℝ≥0 →ᵇ X) : Continuous fun s : ℝ ↦ N (θ s.toNNReal) :=
+    ((θ.comp N hN).compContinuous ⟨Real.toNNReal, continuous_real_toNNReal⟩).continuous
+  have hbound (θ : ℝ≥0 →ᵇ X) (s : ℝ) : ‖N (θ s.toNNReal)‖ ≤ ‖N 0‖ + ε * ‖θ‖ :=
+    ((θ.comp N hN).norm_coe_le_norm s.toNNReal).trans
+      (TauCeti.norm_boundedContinuousFunction_comp_le hN θ)
+  have hdiff (s : ℝ) (hs0 : 0 ≤ s) :
+      ‖((fun s : ℝ ↦ N (γ s.toNNReal)) - fun s : ℝ ↦ N (η s.toNNReal)) s‖ ≤
+        ε * R * Real.exp (-β * s) := by
+    rw [Pi.sub_apply, ← dist_eq_norm, mul_assoc]
+    refine hN.dist_le_mul_of_le ?_
+    rw [dist_eq_norm]
+    simpa [Real.coe_toNNReal s hs0] using hγη s.toNNReal
+  have hlin : ‖exp ((t : ℝ) • A) (P (ξ - ζ))‖ ≤ K * ‖ξ - ζ‖ * Real.exp (-β * t) := by
+    calc _ ≤ K * Real.exp (-α * t) * ‖ξ - ζ‖ := hs t t.2 _
+      _ ≤ K * Real.exp (-β * t) * ‖ξ - ζ‖ := by gcongr
+      _ = K * ‖ξ - ζ‖ * Real.exp (-β * t) := by ring
+  rw [lyapunovPerronMap_apply, lyapunovPerronMap_apply, add_sub_add_comm, ← map_sub, ← map_sub,
+    lyapunovPerronIntegral_sub hu hα (hcont γ) (hbound γ) (hcont η) (hbound η)]
+  calc _ ≤ K * ‖ξ - ζ‖ * Real.exp (-β * t) + 2 * K * (ε * R) / (α - β) * Real.exp (-β * t) :=
+        (norm_add_le _ _).trans
+          (add_le_add hlin (norm_lyapunovPerronIntegral_le_mul_exp hs hu hβ hβα hdiff t.2))
+    _ = _ := by ring
+
+/-- **Exponential decay of the difference of Lyapunov--Perron solutions.** For a rate `β ≥ 0`
+with `2 K ε < α - β`, two Lyapunov--Perron solutions approach each other at rate `β`, with a
+constant proportional to the distance between their input parameters. -/
+theorem norm_lyapunovPerronSolution_sub_le {β : ℝ} (hβ : 0 ≤ β) (hβα : 2 * K * ε < α - β)
+    (ξ ζ : X) (t : ℝ≥0) :
+    ‖lyapunovPerronSolution A P N hs hu hα hN hsmall ξ t -
+        lyapunovPerronSolution A P N hs hu hα hN hsmall ζ t‖ ≤
+      K / (1 - 2 * K * ε / (α - β)) * Real.exp (-β * t) * ‖ξ - ζ‖ := by
+  have hKε : (0 : ℝ) ≤ 2 * K * ε := by positivity
+  have hαβ : (0 : ℝ) < α - β := hKε.trans_lt hβα
+  have hq : 0 < 1 - 2 * K * ε / (α - β) := sub_pos.2 ((div_lt_one hαβ).2 hβα)
+  set R : ℝ := K / (1 - 2 * K * ε / (α - β)) * ‖ξ - ζ‖
+  have hR : K * ‖ξ - ζ‖ + 2 * K * ε * R / (α - β) = R := by
+    have h : R * (1 - 2 * K * ε / (α - β)) = K * ‖ξ - ζ‖ := by
+      rw [mul_right_comm, div_mul_cancel₀ _ hq.ne']
+    linear_combination -h
+  set y := lyapunovPerronSolution A P N hs hu hα hN hsmall ζ
+  -- The curves within `R exp (-β t)` of `y` form a closed set, which the Lyapunov--Perron
+  -- operator with input parameter `ξ` maps to itself because `y` is a fixed point for `ζ`.
+  set S : Set (ℝ≥0 →ᵇ X) := {γ | ∀ t : ℝ≥0, ‖γ t - y t‖ ≤ R * Real.exp (-β * t)}
+  have hS : IsClosed S := by
+    simp only [S, ofPred_forall]
+    exact isClosed_iInter fun t ↦ isClosed_le
+      ((continuous_eval_const t).sub continuous_const).norm continuous_const
+  have hyS : y ∈ S := fun t ↦ by
+    rw [sub_self, norm_zero]
+    positivity
+  have hmaps : MapsTo (lyapunovPerronMap A P N hs hu hα hN ξ) S S := fun γ hγ t ↦ by
+    have h := norm_lyapunovPerronMap_sub_le_mul_exp hs hu hα hN hβ (by linarith) ξ ζ hγ t
+    rwa [hR, isFixedPt_lyapunovPerronSolution hs hu hα hN hsmall ζ] at h
+  -- Hence the fixed point for `ξ`, the limit of the iterates of `y`, lies in the set.
+  have hfix : lyapunovPerronSolution A P N hs hu hα hN hsmall ξ ∈ S := by
+    have hf := contractingWith_lyapunovPerronMap hs hu hα hN hsmall ξ
+    rw [ContractingWith.fixedPoint_unique hf (isFixedPt_lyapunovPerronSolution hs hu hα hN
+      hsmall ξ)]
+    exact hS.mem_of_tendsto (hf.tendsto_iterate_fixedPoint y)
+      (Eventually.of_forall fun n ↦ hmaps.iterate n hyS)
+  calc _ ≤ R * Real.exp (-β * t) := hfix t
+    _ = _ := by ring
+
+/-- **Exponential decay of Lyapunov--Perron solutions.** If the nonlinearity vanishes at the
+origin, then for a rate `β ≥ 0` with `2 K ε < α - β` every Lyapunov--Perron solution decays to
+`0` at rate `β`. -/
+theorem norm_lyapunovPerronSolution_le (hN0 : N 0 = 0) {β : ℝ} (hβ : 0 ≤ β)
+    (hβα : 2 * K * ε < α - β) (ξ : X) (t : ℝ≥0) :
+    ‖lyapunovPerronSolution A P N hs hu hα hN hsmall ξ t‖ ≤
+      K / (1 - 2 * K * ε / (α - β)) * Real.exp (-β * t) * ‖ξ‖ := by
+  simpa [hN0] using norm_lyapunovPerronSolution_sub_le hs hu hα hN hsmall hβ hβα ξ 0 t
+
+/-- If the nonlinearity vanishes at the origin, every Lyapunov--Perron solution tends to `0`
+in forward time. -/
+theorem tendsto_lyapunovPerronSolution (hN0 : N 0 = 0) (ξ : X) :
+    Tendsto (fun t : ℝ ↦ lyapunovPerronSolution A P N hs hu hα hN hsmall ξ t.toNNReal) atTop
+      (𝓝 0) := by
+  -- Any rate strictly inside the gap `α - 2 K ε` works; take half of it.
+  set β : ℝ := (α - 2 * K * ε) / 2
+  have hgap : (2 * K * ε : ℝ) < α := by exact_mod_cast hsmall
+  have hβ : 0 ≤ β := by simp only [β]; linarith
+  have hβα : 2 * K * ε < (α : ℝ) - β := by simp only [β]; linarith
+  have hβpos : 0 < β := by simp only [β]; linarith
+  set C : ℝ := K / (1 - 2 * K * ε / (α - β)) * ‖ξ‖
+  have hlim : Tendsto (fun t : ℝ ↦ C * Real.exp (-β * t)) atTop (𝓝 0) := by
+    simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
+      (tendsto_id.const_mul_atTop hβpos)).const_mul C
+  refine squeeze_zero_norm' ((eventually_ge_atTop 0).mono fun t ht ↦ ?_) hlim
+  have h := norm_lyapunovPerronSolution_le hs hu hα hN hsmall hN0 hβ hβα ξ t.toNNReal
+  rw [Real.coe_toNNReal t ht] at h
+  simpa only [C, mul_right_comm _ (Real.exp _)] using h
+
+include hs hu hα hN hsmall in
+/-- **Bounded forward solutions decay exponentially.** When the nonlinearity vanishes at the
+origin and `P` is idempotent and commutes with `A`, every solution of `y' = A y + N y` that stays
+bounded on `[0, ∞)` decays to `0` there at every rate `β ≥ 0` with `2 K ε < α - β`. -/
+theorem norm_le_of_isIntegralCurveOn_of_bounded (hN0 : N 0 = 0) (hP : IsIdempotentElem P)
+    (hAP : Commute A P) {β : ℝ} (hβ : 0 ≤ β) (hβα : 2 * K * ε < α - β) {y : ℝ → X}
+    (hy : IsIntegralCurveOn y (fun _ y ↦ A y + N y) (Ici 0)) {B : ℝ}
+    (hB : ∀ t ∈ Ici (0 : ℝ), ‖y t‖ ≤ B) {t : ℝ} (ht : 0 ≤ t) :
+    ‖y t‖ ≤ K / (1 - 2 * K * ε / (α - β)) * Real.exp (-β * t) * ‖y 0‖ := by
+  have h := norm_lyapunovPerronSolution_le hs hu hα hN hsmall hN0 hβ hβα (y 0) t.toNNReal
+  have hyt : y t = lyapunovPerronSolution A P N hs hu hα hN hsmall (y 0) t.toNNReal :=
+    eqOn_lyapunovPerronSolution_of_isIntegralCurveOn hs hu hα hN hsmall hP hAP hy hB (mem_Ici.2 ht)
+  rwa [Real.coe_toNNReal t ht, ← hyt] at h
+
+/-- **The Lyapunov--Perron description of the stable set.** When the nonlinearity vanishes at
+the origin and `P` is idempotent and commutes with `A`, a point is the initial value of a
+solution of `y' = A y + N y` on `[0, ∞)` tending to the equilibrium `0` exactly when it is the
+initial value of the Lyapunov--Perron solution with itself as input parameter. -/
+theorem exists_isIntegralCurveOn_tendsto_iff (hN0 : N 0 = 0) (hP : IsIdempotentElem P)
+    (hAP : Commute A P) (x : X) :
+    (∃ y : ℝ → X, IsIntegralCurveOn y (fun _ y ↦ A y + N y) (Ici 0) ∧ y 0 = x ∧
+      Tendsto y atTop (𝓝 0)) ↔
+      lyapunovPerronSolution A P N hs hu hα hN hsmall x 0 = x := by
+  constructor
+  · rintro ⟨y, hy, hy0, hlim⟩
+    refine (exists_isIntegralCurveOn_bounded_iff hs hu hα hN hsmall hP hAP x).1
+      ⟨y, hy, hy0, ?_⟩
+    -- A curve tending to `0` is eventually within `1` of it, and it is bounded on the compact
+    -- interval before that.
+    have hone : ∀ᶠ t in atTop, ‖y t‖ ≤ 1 :=
+      hlim.norm.eventually (ge_mem_nhds (by rw [norm_zero]; exact zero_lt_one))
+    obtain ⟨T, hT⟩ := eventually_atTop.1 hone
+    obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
+      (hy.continuousOn.mono (Icc_subset_Ici_self : Icc (0 : ℝ) (max T 0) ⊆ Ici 0))
+    refine ⟨max C 1, fun t ht ↦ ?_⟩
+    rcases le_total t (max T 0) with htT | htT
+    · exact (hC t ⟨ht, htT⟩).trans (le_max_left _ _)
+    · exact (hT t ((le_max_left _ _).trans htT)).trans (le_max_right _ _)
+  · intro hx
+    exact ⟨fun t ↦ lyapunovPerronSolution A P N hs hu hα hN hsmall x t.toNNReal,
+      isIntegralCurveOn_lyapunovPerronSolution hs hu hα hN hsmall x, by simpa using hx,
+      tendsto_lyapunovPerronSolution hs hu hα hN hsmall hN0 x⟩
+
+end Decay
 
 end Contraction
 
