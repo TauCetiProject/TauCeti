@@ -37,7 +37,7 @@ variable {X Y X' Y' : SSet.{w}} {f g : X ⟶ Y} {f' g' : X' ⟶ Y'} {u : X ⟶ X
 
 /-- The combinatorial homotopy extracted from a simplicial homotopy sends an `n`-simplex `x` to
 the value of the homotopy at the `i`-th nondegenerate `(n + 1)`-simplex of `Δ[n] ⊗ Δ[1]`. -/
-lemma toSimplicialObjectHomotopy_h_apply (H : SSet.Homotopy f g) {n : ℕ} (i : Fin (n + 1))
+private lemma toSimplicialObjectHomotopy_h_apply (H : SSet.Homotopy f g) {n : ℕ} (i : Fin (n + 1))
     (x : X _⦋n⦌) :
     H.toSimplicialObjectHomotopy.h i x =
       (yonedaEquiv.symm x ▷ Δ[1] ≫ H.h).app (op ⦋n + 1⦌)
