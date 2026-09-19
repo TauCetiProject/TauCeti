@@ -105,14 +105,6 @@ theorem generatorMatrix_eq_of_row_mem_of_submatrix_eq_one {G : Matrix s ι F}
   have hx := congrArg (fun x : C ↦ (x : ι → F) i) (h.equiv.symm_apply_eq.mpr he.symm)
   exact hx
 
-/-- The rows of the systematic generator are linearly independent. -/
-theorem linearIndependent_generatorMatrix : LinearIndependent F h.generatorMatrix.row := by
-  classical
-  exact .of_comp (LinearMap.funLeft F F (Subtype.val : s → ι)) <| by
-    convert Pi.linearIndependent_single_one s F using 1
-    ext r i
-    simp
-
 /-- Relabelling coordinates relabels the information rows and the columns of the systematic
 generator by the corresponding equivalences. -/
 theorem generatorMatrix_reindex {κ : Type*} (e : κ ≃ ι) :
@@ -148,6 +140,15 @@ theorem generatorMatrix_submatrix_sumCompl :
   · simpa using congrFun (congrFun h.generatorMatrix_submatrix r) i
   · rfl
 
+/-- The rows of the systematic generator are linearly independent. -/
+theorem linearIndependent_generatorMatrix : LinearIndependent F h.generatorMatrix.row := by
+  classical
+  apply LinearIndependent.of_comp (LinearMap.funLeft F F (Equiv.Set.sumCompl s))
+  convert Matrix.linearIndependent_row_one_fromCols
+    (h.generatorMatrix.submatrix id (Subtype.val : ↥(sᶜ) → ι)) using 1
+  ext r i
+  exact congrFun (congrFun h.generatorMatrix_submatrix_sumCompl r) i
+
 open Classical in
 /-- The systematic parity-check matrix `[-Aᵀ | I]`, in the original coordinate order. -/
 def parityCheckMatrix : Matrix ↥(sᶜ) ι F :=
@@ -171,10 +172,12 @@ theorem parityCheckMatrix_apply_of_notMem (r i : ↥(sᶜ)) :
 /-- The systematic check matrix has linearly independent rows. -/
 theorem linearIndependent_parityCheckMatrix : LinearIndependent F h.parityCheckMatrix.row := by
   classical
-  exact .of_comp (LinearMap.funLeft F F (Subtype.val : ↥(sᶜ) → ι)) <| by
-    convert Pi.linearIndependent_single_one ↥(sᶜ) F using 1
-    ext r i
-    simp [Pi.single_apply, Matrix.one_apply, eq_comm]
+  convert (Matrix.linearIndependent_row_fromCols_one
+      (-(h.generatorMatrix.submatrix id (Subtype.val : ↥(sᶜ) → ι))ᵀ)).map_injOn
+      (LinearEquiv.funCongrLeft F F (Equiv.Set.sumCompl s).symm).toLinearMap
+      (LinearEquiv.funCongrLeft F F (Equiv.Set.sumCompl s).symm).injective.injOn using 1
+  ext r i
+  rfl
 
 /-- Relabelling coordinates also relabels the complementary rows and columns of the
 systematic check matrix. -/
