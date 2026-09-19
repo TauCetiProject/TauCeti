@@ -56,26 +56,20 @@ private theorem exists_root_step (k : Fin 4 ⊕ Fin 4) :
           (TauCeti.serreRootGenerator weightTable.cartanMatrix k))
         ((latticeBasis s : lattice) : Fin 24 → ℚ) =
       (1 : ℤ) • ((latticeBasis r : lattice) : Fin 24 → ℚ) := by
+  simp only [coe_latticeBasis, one_smul, rep_def, MinusculeWeightTable.rep_ι_apply]
   cases k with
   | inl i =>
       obtain ⟨a, ha⟩ := exists_d4TripledWeight_apply_eq_neg_one i
       refine ⟨weightTable.reflection i a, a, ?_⟩
-      rw [coe_latticeBasis, coe_latticeBasis, one_smul, rep_def,
-        TauCeti.serreRootGenerator_inl, MinusculeWeightTable.rep_ι_apply,
-        MinusculeWeightTable.rationalSerreRepresentation_serreE, Matrix.mulVec_single_one]
       ext b
-      simp [MinusculeWeightTable.raisingMatrixQ_apply, Pi.single_apply, ha]
+      simp [Pi.single_apply, ha]
   | inr i =>
-      obtain ⟨a, ha⟩ := exists_d4TripledWeight_apply_eq_neg_one i
+      obtain ⟨a, ha⟩ : ∃ a, weightTable.weight a i = -1 :=
+        by simpa only [weightTable_weight] using exists_d4TripledWeight_apply_eq_neg_one i
       refine ⟨a, weightTable.reflection i a, ?_⟩
-      rw [coe_latticeBasis, coe_latticeBasis, one_smul, rep_def,
-        TauCeti.serreRootGenerator_inr, MinusculeWeightTable.rep_ι_apply,
-        MinusculeWeightTable.rationalSerreRepresentation_serreF, Matrix.mulVec_single_one]
       ext b
-      rw [Matrix.col_apply, MinusculeWeightTable.loweringMatrixQ_apply,
-        MinusculeWeightTable.weight_reflection_self,
-        MinusculeWeightTable.reflection_apply_apply, weightTable_weight, ha]
-      simp [Pi.single_apply]
+      -- Keep the table abstract so its reflection simp lemmas apply.
+      simp [Pi.single_apply, ha, -weightTable_reflection, -weightTable_weight]
 
 private theorem represented_rootSubgroupCoordinateMap_surjective (k : Fin 4 ⊕ Fin 4) :
     Function.Surjective
