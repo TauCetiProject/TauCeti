@@ -7,8 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Flasque
 public import TauCeti.AlgebraicGeometry.ResidueDegree
-public import Mathlib.AlgebraicGeometry.ResidueField
-public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 
 /-!
 # The skyscraper sheaf of a residue field
@@ -40,10 +38,6 @@ divisor sheaves on a curve, which is how the Euler characteristic of a divisor s
   the cohomology is finite-dimensional when that degree is nonzero
   (`Scheme.finiteDimensional_cohomology_skyscraperResidueField`).
 
-No formalization is vendored. The construction mirrors the sheaf of rational functions in
-`TauCeti/AlgebraicGeometry/Modules/RationalFunctions.lean`, with Mathlib's
-`Scheme.fromSpecResidueField` in place of `Scheme.fromSpecStalk`.
-
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, II, Exercise 1.17 (skyscraper sheaves) and IV,
@@ -62,22 +56,6 @@ universe u
 
 noncomputable section
 
-/-- The morphism `Spec κ(x) ⟶ X` pulls back an open subset containing `x` to everything. -/
-@[simp]
-lemma _root_.AlgebraicGeometry.Scheme.fromSpecResidueField_preimage_of_mem {X : Scheme.{u}}
-    {x : X} {U : X.Opens} (hx : x ∈ U) : X.fromSpecResidueField x ⁻¹ᵁ U = ⊤ := by
-  refine top_unique fun p _ ↦ ?_
-  change X.fromSpecResidueField x p ∈ U
-  rwa [Scheme.fromSpecResidueField_apply]
-
-/-- The morphism `Spec κ(x) ⟶ X` pulls back an open subset not containing `x` to the empty set. -/
-@[simp]
-lemma _root_.AlgebraicGeometry.Scheme.fromSpecResidueField_preimage_of_notMem {X : Scheme.{u}}
-    {x : X} {U : X.Opens} (hx : x ∉ U) : X.fromSpecResidueField x ⁻¹ᵁ U = ⊥ := by
-  refine eq_bot_iff.mpr fun p hp ↦ hx ?_
-  change X.fromSpecResidueField x p ∈ U at hp
-  rwa [Scheme.fromSpecResidueField_apply] at hp
-
 namespace Scheme
 
 variable {X : Scheme.{u}}
@@ -92,7 +70,11 @@ def skyscraperResidueField (x : X) : X.Modules :=
 private def residueFieldSectionsIso (x : X) {U : X.Opens} (hx : x ∈ U) :
     Γ(Spec (X.residueField x), X.fromSpecResidueField x ⁻¹ᵁ U) ≅ X.residueField x :=
   ((Spec (X.residueField x)).presheaf.mapIso
-    (eqToIso (Scheme.fromSpecResidueField_preimage_of_mem hx)).op).symm ≪≫
+    (eqToIso (Scheme.preimage_eq_top_of_closedPoint_mem (X.fromSpecResidueField x)
+      (by
+        convert hx using 1
+        exact Scheme.fromSpecResidueField_apply x
+          (IsLocalRing.closedPoint (X.residueField x))))).op).symm ≪≫
     Scheme.ΓSpecIso (X.residueField x)
 
 /-- On an open subset containing `x`, the morphism `Spec κ(x) ⟶ X` acts on sections by
@@ -112,7 +94,11 @@ private lemma app_comp_residueFieldSectionsIso (x : X) {U : X.Opens} (hx : x ∈
   have hf : X.fromSpecResidueField x = Spec.map (X.residue x) ≫ X.fromSpecStalk x := by
     simp only [Scheme.fromSpecResidueField]
   have e' : ⊤ ≤ (Spec.map (X.residue x) ≫ X.fromSpecStalk x) ⁻¹ᵁ U := by
-    rw [← hf, Scheme.fromSpecResidueField_preimage_of_mem hx]
+    rw [← hf, Scheme.preimage_eq_top_of_closedPoint_mem (X.fromSpecResidueField x)
+      (by
+        convert hx using 1
+        exact Scheme.fromSpecResidueField_apply x
+          (IsLocalRing.closedPoint (X.residueField x)))]
   rw [key hf _ e', Scheme.Hom.comp_appLE, Scheme.fromSpecStalk_app hx]
   have htop : ∀ e'' : (⊤ : (Spec (X.residueField x)).Opens) ≤
       Spec.map (X.residue x) ⁻¹ᵁ X.fromSpecStalk x ⁻¹ᵁ U,
@@ -132,6 +118,7 @@ def skyscraperResidueFieldEquiv (x : X) {U : X.Opens} (hx : x ∈ U) :
   (residueFieldSectionsIso x hx).commRingCatIsoToRingEquiv.toAddEquiv
 
 /-- A regular function acts on the sections of `κ(x)ₓ` by multiplication with its value at `x`. -/
+@[simp]
 lemma skyscraperResidueFieldEquiv_smul (x : X) {U : X.Opens} (hx : x ∈ U) (r : Γ(X, U))
     (s : Γ(skyscraperResidueField x, U)) :
     skyscraperResidueFieldEquiv x hx (r • s) =
@@ -152,7 +139,12 @@ lemma skyscraperResidueFieldEquiv_map (x : X) {U V : X.Opens} (i : U ⟶ V) (hx 
     (s : Γ(skyscraperResidueField x, V)) :
     skyscraperResidueFieldEquiv x hx ((skyscraperResidueField x).presheaf.map i.op s) =
       skyscraperResidueFieldEquiv x (i.le hx) s := by
-  -- The restriction maps of the pushforward are those of `Spec κ(x)` between the preimages.
+  rw [show (skyscraperResidueField x).presheaf.map i.op = _ from
+    Scheme.Modules.pushforward_obj_presheaf_map (X.fromSpecResidueField x) i]
+  -- `pushforward_obj_presheaf_map` identifies the restriction map, but its source remains the
+  -- module-sheaf section carrier, while `residueFieldSectionsIso` uses the definitionally equal
+  -- ring-sheaf section carrier. There is no bundled equivalence between those carriers, so this
+  -- conversion is needed before composing the named restriction map with the section isomorphism.
   change (residueFieldSectionsIso x hx).hom
     ((Spec (X.residueField x)).presheaf.map
       ((Opens.map (X.fromSpecResidueField x).base).map i).op
@@ -165,8 +157,14 @@ lemma skyscraperResidueFieldEquiv_map (x : X) {U V : X.Opens} (i : U ⟶ V) (hx 
 `x`. -/
 lemma subsingleton_skyscraperResidueField (x : X) {U : X.Opens} (hx : x ∉ U) :
     Subsingleton Γ(skyscraperResidueField x, U) := by
+  have hpreimage : X.fromSpecResidueField x ⁻¹ᵁ U = ⊥ := by
+    apply SetLike.coe_injective
+    change (X.fromSpecResidueField x) ⁻¹' (U : Set X) = ∅
+    rw [Set.preimage_eq_empty_iff, Scheme.range_fromSpecResidueField,
+      Set.disjoint_singleton_right]
+    exact hx
   have : Subsingleton Γ(Spec (X.residueField x), X.fromSpecResidueField x ⁻¹ᵁ U) := by
-    rw [Scheme.fromSpecResidueField_preimage_of_notMem hx]
+    rw [hpreimage]
     infer_instance
   exact this
 
@@ -211,7 +209,7 @@ theorem finrank_cohomology_zero_skyscraperResidueField (x : X) :
   congr 1
   have hx : x ∈ (⊤ : X.Opens) := trivial
   refine rank_eq_of_equiv_equiv _ (skyscraperResidueFieldEquiv x hx)
-    (bijective_Γevaluation_comp_ΓSpecIso_inv k (f x)) fun c s ↦ ?_
+    (Γevaluation_comp_ΓSpecIso_inv_bijective k (f x)) fun c s ↦ ?_
   rw [Scheme.Modules.base_smul_globalSections, skyscraperResidueFieldEquiv_smul,
     Algebra.smul_def, RingHom.algebraMap_toAlgebra, Function.comp_apply,
     Scheme.Γevaluation_naturality_apply, Scheme.Modules.baseRingToGlobalSections_apply]

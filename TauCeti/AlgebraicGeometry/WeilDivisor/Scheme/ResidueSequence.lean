@@ -45,11 +45,6 @@ Over a base field `k`, the long exact cohomology sequence of the residue sequenc
 * `SchemeWeilDivisor.eulerCharBelow_sheaf_add_ofPoint`: `χ(𝒪_X(D + y)) = χ(𝒪_X(D)) + [κ(y) : k]`,
   the induction step of the Riemann–Roch formula `χ(𝒪_X(D)) = deg D + χ(𝒪_X)`.
 
-No formalization is vendored. The local analysis at `y` uses Mathlib's
-`Ring.isUnit_iff_ordFrac_one_of_isDiscreteValuationRing` and Tau Ceti's
-`Scheme.exists_algebraMap_stalk_eq_of_ord_nonneg`, and local surjectivity uses the germ criterion
-`SchemeWeilDivisor.exists_map_mem_sections_iff_codimensionOne` for the sheaf of a divisor.
-
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, IV, proof of Theorem 1.3.
@@ -289,11 +284,36 @@ variable (g) in
 /-- The sequence `𝒪_X(D) ⟶ 𝒪_X(D + y) ⟶ κ(y)_y` of `𝒪_X`-modules. It is exact in the middle
 (`residueShortComplex_exact`), and short exact when `y` is a closed point
 (`residueShortComplex_shortExact`). -/
-@[expose]
 def residueShortComplex (hg : X.ord (g : X.functionField) y = WeilDivisor.coeff D y + 1) :
     ShortComplex X.Modules :=
   ShortComplex.mk (sheafHomOfLE (WeilDivisor.le_add_ofPoint D y)) (toSkyscraperResidueField g hg)
     (sheafHomOfLE_toSkyscraperResidueField hg)
+
+@[simp]
+lemma residueShortComplex_X₁
+    (hg : X.ord (g : X.functionField) y = WeilDivisor.coeff D y + 1) :
+    (residueShortComplex g hg).X₁ = sheaf D := (rfl)
+
+@[simp]
+lemma residueShortComplex_X₂
+    (hg : X.ord (g : X.functionField) y = WeilDivisor.coeff D y + 1) :
+    (residueShortComplex g hg).X₂ = sheaf (D + WeilDivisor.ofPoint y) := (rfl)
+
+@[simp]
+lemma residueShortComplex_X₃
+    (hg : X.ord (g : X.functionField) y = WeilDivisor.coeff D y + 1) :
+    (residueShortComplex g hg).X₃ = Scheme.skyscraperResidueField (y : X) := (rfl)
+
+@[simp]
+lemma residueShortComplex_f
+    (hg : X.ord (g : X.functionField) y = WeilDivisor.coeff D y + 1) :
+    HEq (residueShortComplex g hg).f
+      (sheafHomOfLE (WeilDivisor.le_add_ofPoint D y)) := (HEq.rfl)
+
+@[simp]
+lemma residueShortComplex_g
+    (hg : X.ord (g : X.functionField) y = WeilDivisor.coeff D y + 1) :
+    HEq (residueShortComplex g hg).g (toSkyscraperResidueField g hg) := (HEq.rfl)
 
 /-- `𝒪_X(D)` is the kernel of `𝒪_X(D + y) ⟶ κ(y)_y`. -/
 def isLimitKernelForkSheafHomOfLE
@@ -384,8 +404,13 @@ valuation rings. -/
 theorem residueShortComplex_shortExact (hclosed : IsClosed ({(y : X)} : Set X))
     (hg : X.ord (g : X.functionField) y = WeilDivisor.coeff D y + 1) :
     (residueShortComplex g hg).ShortExact :=
-  have : Epi (residueShortComplex g hg).g := epi_toSkyscraperResidueField hclosed hg
+  have : Epi (residueShortComplex g hg).g := by
+    have h := residueShortComplex_g hg
+    cases h
+    exact epi_toSkyscraperResidueField hclosed hg
   have : Mono (residueShortComplex g hg).f := by
+    have h := residueShortComplex_f hg
+    cases h
     have : Mono (sheafHomOfLE (WeilDivisor.le_add_ofPoint D y) ≫ sheafι _) := by
       rw [sheafHomOfLE_ι]
       infer_instance
@@ -407,12 +432,17 @@ theorem finiteDimensional_cohomology_sheaf_add_ofPoint (hclosed : IsClosed ({(y 
       (Scheme.Modules.Cohomology (sheaf (D + WeilDivisor.ofPoint y)) i) := by
   obtain ⟨g, hg⟩ := exists_orderAt_eq y (WeilDivisor.coeff D y + 1)
   rw [orderAt_apply] at hg
-  -- The terms of `residueShortComplex` are `𝒪_X(D)`, `𝒪_X(D + y)` and `κ(y)_y` by definition.
   let S := residueShortComplex (Additive.toMul g) hg
-  have : FiniteDimensional k (Scheme.Modules.Cohomology S.X₁ i) := hD
-  have : FiniteDimensional k (Scheme.Modules.Cohomology S.X₃ i) :=
-    Scheme.finiteDimensional_cohomology_skyscraperResidueField k hy i
-  exact Scheme.Modules.finiteDimensional_cohomology_X₂ k
+  have : FiniteDimensional k (Scheme.Modules.Cohomology S.X₁ i) := by
+    dsimp only [S]
+    rw [residueShortComplex_X₁]
+    exact hD
+  have : FiniteDimensional k (Scheme.Modules.Cohomology S.X₃ i) := by
+    dsimp only [S]
+    rw [residueShortComplex_X₃]
+    exact Scheme.finiteDimensional_cohomology_skyscraperResidueField k hy i
+  rw [← residueShortComplex_X₂ (g := Additive.toMul g) hg]
+  exact Scheme.Modules.finiteDimensional_cohomology_X₂ k X
     (residueShortComplex_shortExact (g := Additive.toMul g) hclosed hg) i
 
 /-- **The Euler characteristic of `𝒪_X(D + y)`.** If `y` is a closed codimension-one point with
@@ -432,12 +462,12 @@ theorem eulerCharBelow_sheaf_add_ofPoint (hclosed : IsClosed ({(y : X)} : Set X)
       Scheme.Modules.eulerCharBelow k X (sheaf D) 2 + (X ↘ Spec (.of k)).residueDegree y := by
   obtain ⟨g, hg⟩ := exists_orderAt_eq y (WeilDivisor.coeff D y + 1)
   rw [orderAt_apply] at hg
-  -- The terms of `residueShortComplex` are `𝒪_X(D)`, `𝒪_X(D + y)` and `κ(y)_y` by definition.
   let S := residueShortComplex (Additive.toMul g) hg
   have hS : S.ShortExact := residueShortComplex_shortExact hclosed hg
-  have hS₃ : Subsingleton (Scheme.Modules.Cohomology S.X₃ 1) :=
-    inferInstanceAs (Subsingleton (Scheme.Modules.Cohomology
-      (Scheme.skyscraperResidueField (y : X)) (0 + 1)))
+  have hS₃ : Subsingleton (Scheme.Modules.Cohomology S.X₃ 1) := by
+    dsimp only [S]
+    rw [residueShortComplex_X₃]
+    infer_instance
   have h : Scheme.Modules.eulerCharBelow k X S.X₂ 2 =
       Scheme.Modules.eulerCharBelow k X S.X₁ 2 + Scheme.Modules.eulerCharBelow k X S.X₃ 2 :=
     Scheme.Modules.eulerCharBelow_eq_add_of_cohomologyδ_eq_zero k hS 1
@@ -450,10 +480,13 @@ theorem eulerCharBelow_sheaf_add_ofPoint (hclosed : IsClosed ({(y : X)} : Set X)
   refine h.trans ?_
   rw [Scheme.Modules.eulerCharBelow_two k S.X₃]
   have h₀ : Module.finrank k (Scheme.Modules.Cohomology S.X₃ 0) =
-      (X ↘ Spec (.of k)).residueDegree y :=
-    Scheme.finrank_cohomology_zero_skyscraperResidueField k (y : X)
+      (X ↘ Spec (.of k)).residueDegree y := by
+    dsimp only [S]
+    rw [residueShortComplex_X₃]
+    exact Scheme.finrank_cohomology_zero_skyscraperResidueField k (y : X)
   rw [h₀, Module.finrank_zero_of_subsingleton, Nat.cast_zero, sub_zero]
-  rfl
+  dsimp only [S]
+  rw [residueShortComplex_X₁]
 
 end Cohomology
 
