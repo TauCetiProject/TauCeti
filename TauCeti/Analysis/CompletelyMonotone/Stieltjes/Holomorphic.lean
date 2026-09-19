@@ -10,6 +10,7 @@ public import TauCeti.Analysis.CompletelyMonotone.Stieltjes.CompleteBernstein
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Convex.PathConnected
+import TauCeti.Analysis.Complex.SlitPlane
 
 /-!
 # The holomorphic extension of a Stieltjes function
@@ -66,42 +67,6 @@ open MeasureTheory Set Complex Filter Topology
 open scoped ENNReal NNReal ComplexConjugate
 
 namespace TauCeti
-
-/-- On a small ball around a point of the slit plane, the distance from `w` to the point `-x`
-of the closed negative half-axis is bounded below by a fixed multiple of `1 + x`.  This is the
-locally uniform comparison of the complex Stieltjes kernel with the Stieltjes weight. -/
-theorem exists_pos_forall_mem_ball_mul_one_add_le_norm_add {z : ℂ} (hz : z ∈ slitPlane) :
-    ∃ c > 0, ∀ w ∈ Metric.ball z c, ∀ x : ℝ≥0, c * (1 + (x : ℝ)) ≤ ‖w + ((x : ℝ) : ℂ)‖ := by
-  -- First a bound at `z` itself, then halve the constant to absorb the displacement `w - z`.
-  obtain ⟨c, hc, hzc⟩ : ∃ c > 0, ∀ x : ℝ, 0 ≤ x → c * (1 + x) ≤ ‖z + (x : ℂ)‖ := by
-    have hre (x : ℝ) : z.re + x ≤ ‖z + (x : ℂ)‖ := by
-      simpa using Complex.re_le_norm (z + (x : ℂ))
-    rcases mem_slitPlane_iff.mp hz with hpos | him
-    · refine ⟨min z.re 1, lt_min hpos one_pos, fun x hx => (hre x).trans' ?_⟩
-      nlinarith [min_le_left z.re 1, min_le_right z.re 1,
-        mul_nonneg (sub_nonneg.2 (min_le_right z.re 1)) hx]
-    · have hy : 0 < |z.im| := abs_pos.mpr him
-      have hu : 0 ≤ |z.re| := abs_nonneg _
-      refine ⟨min (|z.im| / (2 * |z.re| + 2)) (1 / 4), lt_min (by positivity) (by norm_num),
-        fun x hx => ?_⟩
-      rcases le_or_gt x (2 * |z.re| + 1) with hxu | hxu
-      · have him_le : |z.im| ≤ ‖z + (x : ℂ)‖ := by
-          simpa using Complex.abs_im_le_norm (z + (x : ℂ))
-        calc min (|z.im| / (2 * |z.re| + 2)) (1 / 4) * (1 + x)
-            ≤ |z.im| / (2 * |z.re| + 2) * (2 * |z.re| + 2) :=
-              mul_le_mul (min_le_left _ _) (by linarith) (by linarith) (by positivity)
-          _ = |z.im| := div_mul_cancel₀ _ (by positivity)
-          _ ≤ ‖z + (x : ℂ)‖ := him_le
-      · refine (hre x).trans' ?_
-        nlinarith [min_le_right (|z.im| / (2 * |z.re| + 2)) (1 / 4), neg_abs_le z.re,
-          lt_min_iff.mp (lt_min (by positivity : (0 : ℝ) < |z.im| / (2 * |z.re| + 2))
-            (by norm_num : (0 : ℝ) < 1 / 4))]
-  refine ⟨c / 2, half_pos hc, fun w hw x => ?_⟩
-  have hwz : ‖z - w‖ < c / 2 := by rw [← dist_eq_norm, dist_comm]; exact hw
-  have htri : ‖z + ((x : ℝ) : ℂ)‖ ≤ ‖w + ((x : ℝ) : ℂ)‖ + ‖z - w‖ := by
-    rw [show z + ((x : ℝ) : ℂ) = (w + ((x : ℝ) : ℂ)) + (z - w) by ring]
-    exact norm_add_le _ _
-  nlinarith [hzc x x.coe_nonneg, x.coe_nonneg]
 
 variable {μ : Measure ℝ≥0} {a b : ℝ≥0} {f : ℝ → ℝ} {z : ℂ}
 
@@ -162,9 +127,10 @@ theorem hasDerivAt_stieltjesExtension (hμ : Integrable stieltjesWeight μ) (hz 
   have hdiv : HasDerivAt (fun w : ℂ => ((a : ℝ) : ℂ) / w) (-((a : ℝ) : ℂ) / z ^ 2) z := by
     simpa [div_eq_mul_inv, neg_mul] using
       (hasDerivAt_inv (slitPlane_ne_zero hz)).const_mul ((a : ℝ) : ℂ)
-  rw [show stieltjesExtension μ a b = _ from funext (stieltjesExtension_apply μ a b),
-    sub_eq_add_neg]
-  exact (hdiv.add_const ((b : ℝ) : ℂ)).add (hasDerivAt_integral_inv_add hμ hz)
+  have hsum := (hdiv.add_const ((b : ℝ) : ℂ)).add (hasDerivAt_integral_inv_add hμ hz)
+  rw [sub_eq_add_neg]
+  refine hsum.congr_of_eventuallyEq (Eventually.of_forall fun w => ?_)
+  rw [stieltjesExtension_apply, Pi.add_apply]
 
 /-- The complex Stieltjes transform is complex differentiable on the slit plane. -/
 theorem differentiableOn_stieltjesExtension (hμ : Integrable stieltjesWeight μ) :
