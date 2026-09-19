@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.DiamondCosets
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.CoprimeCosets
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Adjugate
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.CuspRing
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Ring

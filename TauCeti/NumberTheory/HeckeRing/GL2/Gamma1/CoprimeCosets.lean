@@ -133,38 +133,25 @@ lemma exists_adjugateGL_natDiagGL_eq {n : ℕ} [NeZero n] (hn : n.Coprime N) :
     rw [mapGL_coe_matrix, SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply]
     ext i j
     fin_cases i <;> fin_cases j <;> simp [B]
-  refine ⟨A, hA, ?_, B, ?_, ?_, ?_⟩
+  have hfactor :
+      TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+          mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) ∧
+        TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+          φ (mapGL ℚ B * natDiagGL 2 ![1, n]) * mapGL ℝ A := by
+    constructor <;>
+      refine Units.ext ?_ <;>
+      rw [map_mul, map_mapGL, TauCeti.adjugateGL_val, Units.val_mul, Units.val_mul,
+        coe_map_natDiagGL_one, hAcoe, hBcoe, Matrix.adjugate_fin_two] <;>
+      ext i j <;>
+      fin_cases i <;> fin_cases j <;>
+      simp [Matrix.mul_apply, Fin.sum_univ_two]
+    all_goals nlinarith [hR]
+  refine ⟨A, hA, ?_, B, ?_, hfactor.1, hfactor.2⟩
   · rw [eq_inv_iff_mul_eq_one]
     refine Units.ext ?_
     simpa [A, Gamma0Map] using hZ
   · rw [Gamma1_mem]
     simpa [B] using hZ
-  · refine Units.ext ?_
-    rw [map_mul, map_mapGL, TauCeti.adjugateGL_val, Units.val_mul, Units.val_mul,
-      coe_map_natDiagGL_one, hAcoe, hBcoe, Matrix.adjugate_fin_two]
-    ext i j
-    fin_cases i <;> fin_cases j
-    · simp [Matrix.mul_apply, Fin.sum_univ_two]
-      linear_combination -(n : ℝ) * hR
-    · simp [Matrix.mul_apply, Fin.sum_univ_two]
-      ring
-    · simp [Matrix.mul_apply, Fin.sum_univ_two]
-      ring
-    · simp [Matrix.mul_apply, Fin.sum_univ_two]
-      linear_combination -hR
-  · refine Units.ext ?_
-    rw [map_mul, map_mapGL, TauCeti.adjugateGL_val, Units.val_mul, Units.val_mul,
-      coe_map_natDiagGL_one, hAcoe, hBcoe, Matrix.adjugate_fin_two]
-    ext i j
-    fin_cases i <;> fin_cases j
-    · simp [Matrix.mul_apply, Fin.sum_univ_two]
-      linear_combination -(n : ℝ) * hR
-    · simp [Matrix.mul_apply, Fin.sum_univ_two]
-      ring
-    · simp [Matrix.mul_apply, Fin.sum_univ_two]
-      ring
-    · simp [Matrix.mul_apply, Fin.sum_univ_two]
-      linear_combination -hR
 
 /-- **The family of `p + 1` matrices out of which the good-prime `Tₚ` is built.** The `p`
 upper-triangular matrices `!![1, b; 0, p]`, indexed by `some b`, together with the twisted
