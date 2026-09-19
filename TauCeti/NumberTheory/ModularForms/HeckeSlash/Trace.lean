@@ -71,35 +71,31 @@ theorem coe_trace_translate_mul_of_mem_normalizer {k : ℤ} {𝒢 ℋ : Subgroup
     [(ConjAct.toConjAct (x * a)⁻¹ • 𝒢).IsFiniteRelIndex ℋ] :
     ⇑(_root_.SlashInvariantForm.trace ℋ (_root_.SlashInvariantForm.translate f (x * a))) =
       ⇑(_root_.SlashInvariantForm.trace ℋ (_root_.SlashInvariantForm.translate f x)) ∣[k] a := by
-  rw [Subgroup.mem_normalizer_iff] at ha
-  have ha' : ∀ h, h ∈ ℋ ↔ a⁻¹ * h * a⁻¹⁻¹ ∈ ℋ := by
-    intro h
-    rw [ha (a⁻¹ * h * a⁻¹⁻¹)]
-    simp [mul_assoc]
-  let e₀ : ℋ ≃ ℋ :=
-    { toFun r := ⟨a * r * a⁻¹, (ha r).mp r.2⟩
-      invFun r := ⟨a⁻¹ * r * a⁻¹⁻¹, (ha' r).mp r.2⟩
-      left_inv r := by ext; simp [mul_assoc]
-      right_inv r := by ext; simp [mul_assoc] }
+  have hsub : (ConjAct.toConjAct (x * a)⁻¹ • 𝒢).subgroupOf ℋ =
+      (ConjAct.toConjAct (a⁻¹ * x⁻¹) • 𝒢).subgroupOf ℋ := by
+    rw [_root_.mul_inv_rev]
   let e : ℋ ⧸ (ConjAct.toConjAct (x * a)⁻¹ • 𝒢).subgroupOf ℋ ≃
       ℋ ⧸ (ConjAct.toConjAct x⁻¹ • 𝒢).subgroupOf ℋ :=
-    Quotient.congr e₀ fun r s ↦ by
-      rw [QuotientGroup.leftRel_apply, QuotientGroup.leftRel_apply, Subgroup.mem_subgroupOf,
-        Subgroup.mem_subgroupOf, Subgroup.mem_pointwise_smul_iff_inv_smul_mem,
-        Subgroup.mem_pointwise_smul_iff_inv_smul_mem]
-      simp [e₀, ConjAct.smul_def, mul_assoc]
+    (Subgroup.quotientEquivOfEq hsub).trans
+      (decompQuotientEquivMulLeft ℋ 𝒢 x⁻¹ ⟨a⁻¹, Subgroup.inv_mem _ ha⟩)
   rw [SlashInvariantForm.coe_trace, SlashInvariantForm.coe_trace, SlashAction.sum_slash]
   let := Fintype.ofFinite (ℋ ⧸ (ConjAct.toConjAct (x * a)⁻¹ • 𝒢).subgroupOf ℋ)
   let := Fintype.ofFinite (ℋ ⧸ (ConjAct.toConjAct x⁻¹ • 𝒢).subgroupOf ℋ)
   refine Fintype.sum_equiv e _ _ fun q ↦ ?_
   induction q using Quotient.inductionOn with
   | h r =>
-    change _ = SlashInvariantForm.quotientFunc _ ⟦e₀ r⟧ ∣[k] a
+    have he : e ⟦r⟧ =
+        ⟦⟨a * r * a⁻¹, (Subgroup.mem_normalizer_iff.mp ha r).mp r.2⟩⟧ := by
+      dsimp only [e]
+      rw [Equiv.trans_apply, Subgroup.quotientEquivOfEq_mk,
+        decompQuotientEquivMulLeft_mk]
+      rfl
+    rw [he]
     rw [SlashInvariantForm.quotientFunc_mk, SlashInvariantForm.quotientFunc_mk,
       SlashInvariantForm.coe_translate, SlashInvariantForm.coe_translate, ← SlashAction.slash_mul,
       ← SlashAction.slash_mul, ← SlashAction.slash_mul]
     congr 1
-    simp [e₀, mul_assoc]
+    simp [mul_assoc]
 
 end SlashInvariantForm
 

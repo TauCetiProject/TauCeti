@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.DiamondCosets
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Adjugate
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.CuspRing
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Ring
+public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Trace
 
 /-!
 # The diamond operators are the Hecke operators of the `Γ₀(N)`-cosets
@@ -41,6 +43,14 @@ Nothing here needs the choice-freeness of `⟨d⟩` to be reproved: both sides a
 same representative `γ`, and their independence of it is `DiamondOperators.lean`'s
 `coe_diamondOp` on one side and `HeckeRing.GL2.diamondCosetGamma1_eq_iff` on the other.
 
+## The adjugate double coset
+
+For `n` prime to `N`, a Bézout identity supplies matrices `A ∈ Γ₀(N)` and `B ∈ Γ₁(N)` that
+factor `diag(n, 1)` as both `A diag(1, n) B` and `B diag(1, n) A`. Reading the two
+factorizations through the trace description of a Hecke operator proves that `Tₙ` commutes
+with the inverse diamond `⟨n⟩⁻¹`. This algebraic result is kept here, independently of the
+Petersson pairing that later uses it to identify the adjoint of `Tₙ`.
+
 ## Main results
 
 * `HeckeRing.GL2.heckeSlashSum_diamondCosetGamma1`: the slash sum of a diamond coset is the
@@ -51,6 +61,8 @@ same representative `γ`, and their independence of it is `DiamondOperators.lean
 * `HeckeRing.GL2.heckeSlashGamma1RingModularFormLinearMap_diamondHeckeElem` and
   `HeckeRing.GL2.heckeSlashGamma1CuspRingLinearMap_diamondHeckeElem`: the same statement read on
   the Hecke ring, at the unit-indexed element `⟨d⟩`.
+* `HeckeRing.GL2.commute_heckeTCuspNat_diamondOpCusp_inv`: at every index prime to the level,
+  `Tₙ` commutes with the inverse diamond operator `⟨n⟩⁻¹`.
 * `HeckeRing.GL2.heckeSlashGamma1ModularFormEnd_diamondCosetGamma1_apply_of_mem_modFormCharSpace`
   and its cusp-form counterpart: on a nebentypus space the diamond coset acts by the scalar
   `χ(d)`.
@@ -141,6 +153,174 @@ through the `ℤ`-linear action `heckeSlashGamma1CuspRingLinearMap` on `S_k(Γ�
   obtain ⟨γ, hγ⟩ := Gamma0Map_toHomUnits_surjective (N := N) d
   rw [diamondHeckeElem_eq_single γ hγ, heckeSlashGamma1CuspRingLinearMap_single,
     heckeSlashGamma1CuspFormEnd_diamondCosetGamma1, hγ, one_smul]
+
+section Adjugate
+
+open Matrix DoubleCoset HeckeRing.GLn
+open TauCeti (adjugateGL adjugateGL_val finite_decompQuotient_inv_of_mem_doubleCoset)
+open scoped Pointwise
+
+local notation "φ" => Matrix.GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ ℝ)
+
+variable {n : ℕ} [NeZero n]
+
+/-- The real matrix of `diag(1, n)`. -/
+lemma coe_map_natDiagGL_one :
+    ((φ (natDiagGL 2 ![1, n]) : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
+      !![1, 0; 0, (n : ℝ)] := by
+  ext i j
+  rw [Matrix.GeneralLinearGroup.map_apply, coe_natDiagGL_one (Nat.pos_of_neZero n)]
+  fin_cases i <;> fin_cases j <;> simp
+
+omit [NeZero N] in
+/-- **The main involution of `diag(1, n)` is a diamond translate of a representative of
+`Γ₁(N) diag(1, n) Γ₁(N)`, on either side.** -/
+private lemma exists_adjugateGL_natDiagGL_eq (hn : n.Coprime N) :
+    ∃ A : SL(2, ℤ), ∃ hA : A ∈ Gamma0 N,
+      (Gamma0Map N).toHomUnits ⟨A, hA⟩ = (ZMod.unitOfCoprime n hn)⁻¹ ∧
+      ∃ B ∈ Gamma1 N, adjugateGL (φ (natDiagGL 2 ![1, n])) =
+        mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) ∧
+        adjugateGL (φ (natDiagGL 2 ![1, n])) =
+          φ (mapGL ℚ B * natDiagGL 2 ![1, n]) * mapGL ℝ A := by
+  obtain ⟨u, v, huv⟩ := Nat.isCoprime_iff_coprime.mpr hn
+  let A : SL(2, ℤ) :=
+    ⟨!![(n : ℤ), -v; (N : ℤ), u], by rw [Matrix.det_fin_two_of]; linear_combination huv⟩
+  let B : SL(2, ℤ) :=
+    ⟨!![u * n, v; -(N : ℤ), 1], by rw [Matrix.det_fin_two_of]; linear_combination huv⟩
+  have hZ := congrArg (Int.cast : ℤ → ZMod N) huv
+  push_cast at hZ
+  rw [ZMod.natCast_self, mul_zero, add_zero] at hZ
+  have hA : A ∈ Gamma0 N := by rw [Gamma0_mem]; simp [A]
+  have hR := congrArg (Int.cast : ℤ → ℝ) huv
+  push_cast at hR
+  have hAcoe : ((mapGL ℝ A : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
+      !![(n : ℝ), -v; (N : ℝ), u] := by
+    rw [mapGL_coe_matrix, SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [A]
+  have hBcoe : ((mapGL ℝ B : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
+      !![(u : ℝ) * n, v; -(N : ℝ), 1] := by
+    rw [mapGL_coe_matrix, SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [B]
+  refine ⟨A, hA, ?_, B, ?_, ?_, ?_⟩
+  · rw [eq_inv_iff_mul_eq_one]
+    refine Units.ext ?_
+    simpa [A, Gamma0Map] using hZ
+  · rw [Gamma1_mem]
+    simpa [B] using hZ
+  all_goals
+    refine Units.ext ?_
+    rw [map_mul, map_mapGL]
+    try rw [← mul_assoc]
+    rw [adjugateGL_val, Units.val_mul, Units.val_mul,
+      coe_map_natDiagGL_one, hAcoe, hBcoe, Matrix.adjugate_fin_two]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+    all_goals nlinarith [hR]
+
+omit [NeZero N] [NeZero n] in
+/-- Translating by `A x` with `A ∈ Γ₀(N)` gives the same level, since `Γ₀(N)` normalizes
+`Γ₁(N)`. -/
+private lemma conjAct_mapGL_mul_smul_Gamma1 {A : SL(2, ℤ)} (hA : A ∈ Gamma0 N)
+    (x : GL (Fin 2) ℝ) :
+    ConjAct.toConjAct (mapGL ℝ A * x)⁻¹ • (Gamma1 N).map (mapGL ℝ) =
+      ConjAct.toConjAct x⁻¹ • (Gamma1 N).map (mapGL ℝ) := by
+  rw [_root_.mul_inv_rev, map_mul, mul_smul, Gamma1_map_inv_conjAct_eq ⟨A, hA⟩]
+
+/-- The finite relative index required to trace the main involution of `diag(1, n)`. -/
+lemma isFiniteRelIndex_adjugateGL_natDiagGL (hn : n.Coprime N) :
+    (ConjAct.toConjAct (adjugateGL (φ (natDiagGL 2 ![1, n])))⁻¹ •
+      (Gamma1 N).map (mapGL ℝ)).IsFiniteRelIndex ((Gamma1 N).map (mapGL ℝ)) := by
+  obtain ⟨A, hA, -, B, hB, hadj, -⟩ := exists_adjugateGL_natDiagGL_eq hn
+  have := finite_decompQuotient_inv_of_mem_doubleCoset
+    (g := natDiagGL 2 ![1, n]) (H := (Gamma1 N).map (mapGL ℚ))
+    (K := (Gamma1 N).map (mapGL ℚ))
+    (mem_doubleCoset.mpr
+      ⟨1, one_mem _, mapGL ℚ B, Subgroup.mem_map_of_mem _ hB, by rw [one_mul]⟩)
+  rw [hadj, conjAct_mapGL_mul_smul_Gamma1 hA]
+  infer_instance
+
+/-- **The double coset operator of `diag(n, 1)` is `Tₙ ⟨n⟩⁻¹`.** -/
+private theorem trace_translate_adjugateGL_natDiagGL_eq_heckeT_diamond (hn : n.Coprime N)
+    [(ConjAct.toConjAct (adjugateGL (φ (natDiagGL 2 ![1, n])))⁻¹ •
+      (Gamma1 N).map (mapGL ℝ)).IsFiniteRelIndex ((Gamma1 N).map (mapGL ℝ))]
+    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    CuspForm.trace ((Gamma1 N).map (mapGL ℝ))
+        (CuspForm.translate f (adjugateGL (φ (natDiagGL 2 ![1, n])))) =
+      heckeTCuspNat k n (diamondOpCusp k (ZMod.unitOfCoprime n hn)⁻¹ f) := by
+  obtain ⟨A, hA, hAd, B, hB, hadj, -⟩ := exists_adjugateGL_natDiagGL_eq hn
+  have hδ : natDiagGL 2 ![1, n] * mapGL ℚ B ∈
+      doubleCoset ((diagCosetGamma1 N n).out : GL (Fin 2) ℚ)
+        ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) := by
+    rw [doubleCoset_out_diagCosetGamma1_eq_doubleCoset_natDiagGL]
+    exact mem_doubleCoset.mpr
+      ⟨1, one_mem _, mapGL ℚ B, Subgroup.mem_map_of_mem _ hB, by rw [one_mul]⟩
+  have := finite_decompQuotient_inv_of_mem_doubleCoset hδ
+  have hG : ((Gamma1 N).map (mapGL ℚ)).map φ = (Gamma1 N).map (mapGL ℝ) := by
+    rw [Subgroup.map_map]
+    exact congrArg (Subgroup.map · (Gamma1 N)) (MonoidHom.ext fun g ↦ map_mapGL g)
+  apply DFunLike.coe_injective
+  rw [coe_heckeTCuspNat,
+    TauCeti.heckeSlashSum_eq_coe_trace_translate k (diagCosetGamma1 N n) hδ hG hG]
+  refine congrArg DFunLike.coe (TauCeti.SlashInvariantForm.trace_eq_of_coe_eq
+    (by rw [hadj, conjAct_mapGL_mul_smul_Gamma1 hA]) ?_)
+  rw [CuspForm.coe_translate_gl, SlashInvariantForm.coe_translate,
+    coe_diamondOpCusp k _ ⟨A, hA⟩ hAd, ← SlashAction.slash_mul, hadj]
+
+/-- **The double coset operator of `diag(n, 1)` is `⟨n⟩⁻¹ Tₙ`.** For `n` coprime to `N`, the
+trace of the translate by the main involution of `diag(1, n)` is `⟨n⁻¹⟩ (Tₙ f)`. -/
+theorem trace_translate_adjugateGL_natDiagGL_eq_diamond_heckeT (hn : n.Coprime N)
+    [(ConjAct.toConjAct (adjugateGL (φ (natDiagGL 2 ![1, n])))⁻¹ •
+      (Gamma1 N).map (mapGL ℝ)).IsFiniteRelIndex ((Gamma1 N).map (mapGL ℝ))]
+    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    CuspForm.trace ((Gamma1 N).map (mapGL ℝ))
+        (CuspForm.translate f (adjugateGL (φ (natDiagGL 2 ![1, n])))) =
+      diamondOpCusp k (ZMod.unitOfCoprime n hn)⁻¹ (heckeTCuspNat k n f) := by
+  obtain ⟨A, hA, hAd, B, hB, -, hadj⟩ := exists_adjugateGL_natDiagGL_eq hn
+  have hδ : mapGL ℚ B * natDiagGL 2 ![1, n] ∈
+      doubleCoset ((diagCosetGamma1 N n).out : GL (Fin 2) ℚ)
+        ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) := by
+    rw [doubleCoset_out_diagCosetGamma1_eq_doubleCoset_natDiagGL]
+    exact mem_doubleCoset.mpr
+      ⟨mapGL ℚ B, Subgroup.mem_map_of_mem _ hB, 1, one_mem _, by rw [mul_one]⟩
+  have := finite_decompQuotient_inv_of_mem_doubleCoset hδ
+  have hG : ((Gamma1 N).map (mapGL ℚ)).map φ = (Gamma1 N).map (mapGL ℝ) := by
+    rw [Subgroup.map_map]
+    exact congrArg (Subgroup.map · (Gamma1 N)) (MonoidHom.ext fun g ↦ map_mapGL g)
+  have : (ConjAct.toConjAct (φ (mapGL ℚ B * natDiagGL 2 ![1, n]) * mapGL ℝ A)⁻¹ •
+      (Gamma1 N).map (mapGL ℝ)).IsFiniteRelIndex ((Gamma1 N).map (mapGL ℝ)) := hadj ▸ ‹_›
+  apply DFunLike.coe_injective
+  rw [coe_diamondOpCusp k _ ⟨A, hA⟩ hAd, coe_heckeTCuspNat,
+    TauCeti.heckeSlashSum_eq_coe_trace_translate k (diagCosetGamma1 N n) hδ hG hG,
+    ← TauCeti.SlashInvariantForm.coe_trace_translate_mul_of_mem_normalizer _ _
+      (mapGL_mem_normalizer_Gamma1_map ℝ ⟨A, hA⟩)]
+  refine congrArg DFunLike.coe (TauCeti.SlashInvariantForm.trace_eq_of_coe_eq
+    (by rw [hadj]) ?_)
+  rw [CuspForm.coe_translate_gl, SlashInvariantForm.coe_translate, hadj]
+
+/-- **`⟨n⟩⁻¹` commutes with `Tₙ`.** For `n` coprime to `N`, the inverse diamond operator
+commutes with `Tₙ` on `S_k(Γ₁(N))`. -/
+theorem commute_heckeTCuspNat_diamondOpCusp_inv (hn : n.Coprime N) :
+    Commute (heckeTCuspNat k n) (diamondOpCusp k (ZMod.unitOfCoprime n hn)⁻¹) := by
+  rw [commute_iff_eq]
+  apply LinearMap.ext
+  intro f
+  have := isFiniteRelIndex_adjugateGL_natDiagGL hn
+  change heckeTCuspNat k n (diamondOpCusp k (ZMod.unitOfCoprime n hn)⁻¹ f) =
+    diamondOpCusp k (ZMod.unitOfCoprime n hn)⁻¹ (heckeTCuspNat k n f)
+  rw [← trace_translate_adjugateGL_natDiagGL_eq_heckeT_diamond k hn,
+    trace_translate_adjugateGL_natDiagGL_eq_diamond_heckeT k hn]
+
+/-- Pointwise form of the commutation between `Tₙ` and the inverse diamond operator. -/
+theorem heckeTCuspNat_diamondOpCusp_inv (hn : n.Coprime N)
+    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    heckeTCuspNat k n (diamondOpCusp k (ZMod.unitOfCoprime n hn)⁻¹ f) =
+      diamondOpCusp k (ZMod.unitOfCoprime n hn)⁻¹ (heckeTCuspNat k n f) := by
+  have h := (commute_heckeTCuspNat_diamondOpCusp_inv k hn).eq
+  exact DFunLike.congr_fun h f
+
+end Adjugate
 
 end HeckeRing.GL2
 
