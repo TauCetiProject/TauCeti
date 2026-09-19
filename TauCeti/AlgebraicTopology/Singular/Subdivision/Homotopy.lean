@@ -108,6 +108,7 @@ lemma map_prism (f : ConvexSpace.AffineMap ℝ E F) {k : ℕ} (c : (Fin (k + 1) 
       ← StdSimplex.comp_affineMapMk]
     rfl
 
+@[simp]
 lemma prism_zero : prism E 0 = 0 := by
   refine lhom_ext' fun v ↦ LinearMap.ext_ring ?_
   simp [prismModel]
