@@ -28,6 +28,7 @@ def theme : Theme := { Theme.default with
               <nav class="nav-links">
                 <a href=".">"Home"</a>
                 <a href="statistics">"Statistics"</a>
+                <a href="progress">"Progress"</a>
                 <a href="about">"About"</a>
                 <a href="https://github.com/TauCetiProject/TauCeti">"GitHub"</a>
               </nav>
