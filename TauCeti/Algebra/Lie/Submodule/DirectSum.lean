@@ -221,7 +221,7 @@ theorem IsInternal.lieModuleProjection_apply_of_mem {N : ι → LieSubmodule R L
 
 /-- The canonical projection vanishes on every other summand. -/
 @[simp]
-theorem IsInternal.lieModuleProjection_apply_coe_ne {N : ι → LieSubmodule R L M}
+theorem IsInternal.lieModuleProjection_apply_of_ne {N : ι → LieSubmodule R L M}
     (h : IsInternal fun i ↦ (N i).toSubmodule) {i j : ι} (hji : j ≠ i)
     (m : N j) : h.lieModuleProjection i (m : M) = 0 := by
   have he := congrArg (fun f : M →ₗ[R] M ↦ f (m : M))
