@@ -43,7 +43,9 @@ When `W` is elliptic, Mathlib's `Affine.equation_iff_nonsingular` identifies the
 ## Main results
 
 * `WeierstrassCurve.Affine.CoordinateRing.pointPlace_asIdeal`: a `@[simp]` lemma
-  identifying the ideal underlying `pointPlace` as `XYIdeal W x (C y)`.
+  identifying the ideal underlying `pointPlace` as `XYIdeal W x (C y)`. Membership is then read
+  off `CoordinateRing.mk_mem_XYIdeal_iff`: a class lies in it exactly when its representative
+  vanishes at the point.
 * `WeierstrassCurve.Affine.CoordinateRing.pointPlace_eq_iff`: `pointPlace` is injective —
   two points have the same place exactly when they have the same coordinates.
 * `WeierstrassCurve.Affine.CoordinateRing.pointPlace.finrank_residueField_eq_one`: the
@@ -101,6 +103,8 @@ subtype and the codomain is the degree-one places over an arbitrary field. The p
 public section
 
 open Polynomial WeierstrassCurve WeierstrassCurve.Affine IsDedekindDomain
+
+open scoped Polynomial.Bivariate
 
 namespace TauCeti
 
