@@ -166,7 +166,7 @@ private theorem W1p.morreyEmbedding_apply (hp : (finrank ℝ E : ℝ≥0) < p)
   rfl
 
 /-- Evaluating the Morrey embedding gives the canonical continuous representative. -/
-@[simp]
+@[simp↓]
 theorem W1p.morreyEmbedding_apply_apply (hp : (finrank ℝ E : ℝ≥0) < p)
     (u : W1p mu ⊤ (p : ℝ≥0∞)) (x : E) :
     W1p.morreyEmbedding hp u x = W1p.morreyRepresentative u hp x := by
