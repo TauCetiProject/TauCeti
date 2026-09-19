@@ -94,6 +94,8 @@ theorem ramifiedPrimes_subset_ramifiedPrimes_union_natCast_mem :
 /-- **Away from the level, a cyclotomic compositum ramifies exactly where its base does.** For
 `M = L(μ_m)` over a tower `K ⊆ L ⊆ M` of number fields and a prime `𝔭` of `K` not dividing `m`,
 `𝔭` ramifies in `M` if and only if it ramifies in `L`. -/
+-- This is not a simp lemma: `mem_ramifiedPrimes_iff` already normalizes its left-hand side, and
+-- neither the intermediate field `L` nor the level `m` can be inferred from that side alone.
 theorem mem_ramifiedPrimes_iff_of_natCast_notMem {𝔭 : HeightOneSpectrum (𝓞 K)}
     (hm : (m : 𝓞 K) ∉ 𝔭.asIdeal) : 𝔭 ∈ ramifiedPrimes K M ↔ 𝔭 ∈ ramifiedPrimes K L :=
   ⟨fun h ↦ mem_ramifiedPrimes_of_mem_ramifiedPrimes_of_natCast_notMem m h hm,
