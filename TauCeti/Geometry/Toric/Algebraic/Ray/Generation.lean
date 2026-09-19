@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Convex.Cone.Face.Generation
-public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup
+public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Regular
 public import Mathlib.Geometry.Convex.Cone.Simplicial
 
