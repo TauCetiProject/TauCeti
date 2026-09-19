@@ -35,7 +35,9 @@ Joël Riou.
 
 * `TauCeti.SheafOfModules.freeTensorFreeIso`: `free I ⊗ free I' ≅ free (I × I')`;
 * `SheafOfModules.Presentation.tensor`: the presentation of `M ⊗ N` built from presentations of
-  `M` and `N`; it is finite when both presentations are finite.
+  `M` and `N`; it is finite when both presentations are finite, and its generating morphism is
+  an isomorphism when both generating morphisms are
+  (`SheafOfModules.Presentation.isIso_tensor_generators_π`).
 -/
 
 public section
@@ -120,8 +122,17 @@ theorem _root_.SheafOfModules.Presentation.tensor_generators_π (P : M.Presentat
   -- `presentationOfIsCokernelFree_generators` fails because the index type is dependent.
   (M ⊗ N).freeHomEquiv.symm_apply_apply _
 
+/-- If the generating morphisms of `P` and `Q` are isomorphisms, that is, `P` and `Q` exhibit
+`M` and `N` as free, then so is the generating morphism of `P.tensor Q`. -/
+theorem _root_.SheafOfModules.Presentation.isIso_tensor_generators_π (P : M.Presentation)
+    (Q : N.Presentation) (hP : IsIso P.generators.π) (hQ : IsIso Q.generators.π) :
+    IsIso (P.tensor Q).generators.π := by
+  rw [Presentation.tensor_generators_π]
+  exact IsIso.comp_isIso' (Iso.isIso_inv _) inferInstance
+
 /-- The tensor product of two finite presentations is finite. -/
-instance (P : M.Presentation) (Q : N.Presentation) [P.IsFinite] [Q.IsFinite] :
+instance _root_.SheafOfModules.Presentation.isFinite_tensor (P : M.Presentation)
+    (Q : N.Presentation) [P.IsFinite] [Q.IsFinite] :
     (P.tensor Q).IsFinite where
   isFiniteType_generators := ⟨by simp only [Presentation.tensor_generators_I]; infer_instance⟩
   isFiniteType_relations := ⟨by simp only [Presentation.tensor_relations_I]; infer_instance⟩

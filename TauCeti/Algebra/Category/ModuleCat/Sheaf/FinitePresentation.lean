@@ -15,7 +15,9 @@ finitely presented. Locally free data gives presentations with the chosen bases 
 and no relations, so finiteness of the local bases is enough.
 
 The main result is
-`SheafOfModules.LocalGeneratorsData.IsLocallyFreeData.isFinitePresentation`.
+`SheafOfModules.LocalGeneratorsData.IsLocallyFreeData.isFinitePresentation`. In particular the
+free sheaf of modules on a finite type is finitely presented
+(`TauCeti.SheafOfModules.isFinitePresentation_free`).
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer B, item "Coherent sheaves and
 cohomology `Hⁱ(X, ℱ)`". No formalization is vendored. The proof reuses Mathlib's
@@ -62,6 +64,17 @@ theorem _root_.SheafOfModules.LocalGeneratorsData.IsLocallyFreeData.isFinitePres
     -- `quasiCoherentData`, and there is no rewriting lemma exposing it as `ULift Empty`.
     change Finite (ULift Empty)
     infer_instance
+
+/-- The free sheaf of modules on a finite type is finitely presented. -/
+instance isFinitePresentation_free [HasSheafify J AddCommGrpCat.{u}]
+    [J.WEqualsLocallyBijective AddCommGrpCat.{u}] [Limits.HasBinaryProducts C] (I : Type u)
+    [Finite I] : (_root_.SheafOfModules.free (R := R) I).IsFinitePresentation :=
+  -- Each local generating family is the image of the `I`-indexed basis of `free I`, so its index
+  -- type is `I` by definition; no rewriting lemma exposes this through `localGeneratorsData`,
+  -- whose generators live over a dependent covering object.
+  _root_.SheafOfModules.LocalGeneratorsData.IsLocallyFreeData.isFinitePresentation
+    (q := (_root_.SheafOfModules.free.generatingSections I).localGeneratorsData)
+    inferInstance ⟨fun _ ↦ ⟨inferInstanceAs (Finite I)⟩⟩
 
 end SheafOfModules
 
