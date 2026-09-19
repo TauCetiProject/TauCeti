@@ -695,6 +695,7 @@ theorem noninterleaving_rev (a₀ a₁ b₀ b₁ : Fin n) :
 
 /-- Inserting a new point into the cycle `Fin n` preserves the clockwise open arcs between old
 points. -/
+@[simp]
 theorem succAbove_mem_cIoo_succAbove_succAbove (p : Fin (n + 1)) (a b x : Fin n) :
     p.succAbove x ∈ cIoo (p.succAbove a) (p.succAbove b) ↔ x ∈ cIoo a b := by
   simp only [mem_cIoo, ne_eq, Fin.succAbove, Fin.lt_def, ← Fin.val_inj]
@@ -702,6 +703,7 @@ theorem succAbove_mem_cIoo_succAbove_succAbove (p : Fin (n + 1)) (a b x : Fin n)
 
 /-- Inserting a new point into the cycle `Fin n` preserves the clockwise half-open arcs between
 old points. -/
+@[simp]
 theorem succAbove_mem_cIco_succAbove_succAbove (p : Fin (n + 1)) (a b x : Fin n) :
     p.succAbove x ∈ cIco (p.succAbove a) (p.succAbove b) ↔ x ∈ cIco a b := by
   simp only [mem_cIco, ne_eq, Fin.succAbove, Fin.lt_def, ← Fin.val_inj]
@@ -710,6 +712,7 @@ theorem succAbove_mem_cIco_succAbove_succAbove (p : Fin (n + 1)) (a b x : Fin n)
 /-- A point inserted immediately after `i` lies strictly inside the arc between two old points
 exactly when the arc passes from `i` to its successor, that is, when `i` lies in the half-open
 arc. -/
+@[simp]
 theorem succ_mem_cIoo_succAbove_succAbove_iff (i a b : Fin n) :
     i.succ ∈ cIoo (i.succ.succAbove a) (i.succ.succAbove b) ↔ i ∈ cIco a b := by
   simp only [mem_cIoo, mem_cIco, ne_eq, Fin.succAbove, Fin.lt_def, ← Fin.val_inj]
@@ -717,6 +720,7 @@ theorem succ_mem_cIoo_succAbove_succAbove_iff (i a b : Fin n) :
 
 /-- Collapsing the point inserted immediately after `i` back onto `i` with `Fin.predAbove`
 identifies the half-open arcs between old points before and after the insertion. -/
+@[simp]
 theorem mem_cIco_succ_succAbove_succ_succAbove_iff (i a b : Fin n) (x : Fin (n + 1)) :
     x ∈ cIco (i.succ.succAbove a) (i.succ.succAbove b) ↔ i.predAbove x ∈ cIco a b := by
   induction x using Fin.succAboveCases i.succ with
