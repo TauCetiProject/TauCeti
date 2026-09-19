@@ -343,16 +343,6 @@ theorem presentation_transcribed_append :
     presentation.transcribed = coxeterRelators coxeterMatrix ++ adjoinedRelators := by
   rw [presentation_transcribed, relatorList_def]
 
-/-- **The compiled words of the row are those of the `Y₄₃₃` Coxeter relators followed by the three
-adjoined relators.** This is the hypothesis that
-`TauCeti.Sporadic.BabyMonster.mulEquivPresentedGroupCoxeterAppend` below consumes; it is weaker
-than the list equation above, comparing compiled-word membership. -/
-theorem presentation_map_toWord_mem_iff (w) :
-    w ∈ presentation.transcribed.map Relator.toWord ↔
-      w ∈ (coxeterRelators coxeterMatrix ++ adjoinedRelators).map Relator.toWord := by
-  rw [presentation_transcribed_append]
-  rfl
-
 /-- **The transcribed presentation has sixty-nine relators**, the `(11 + 1).choose 2 = 66` Coxeter
 relators of a diagram on eleven nodes together with the three adjoined relators. -/
 theorem length_relatorList : relatorList.length = 69 := by
@@ -454,15 +444,15 @@ side. -/
 def mulEquivPresentedGroupCoxeterAppend :
     presentation.Group ≃*
       PresentedGroup (coxeterMatrix.relationsSet ∪ Relator.relatorSet adjoinedRelators) :=
-  presentation.mulEquivPresentedGroupCoxeterAppend coxeterMatrix adjoinedRelators
-    presentation_map_toWord_mem_iff
+  presentation.mulEquivPresentedGroupCoxeterAppendOfMapToWordMemIff coxeterMatrix
+    adjoinedRelators fun _ => by rw [presentation_transcribed_append]; rfl
 
 /-- The Coxeter equivalence sends each canonical generator to the corresponding canonical
 generator. -/
 @[simp]
 theorem mulEquivPresentedGroupCoxeterAppend_apply_of (i : Fin presentation.generatorCount) :
     mulEquivPresentedGroupCoxeterAppend (PresentedGroup.of i) = PresentedGroup.of i :=
-  GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of _ _ _
-    presentation_map_toWord_mem_iff i
+  GroupPresentation.mulEquivPresentedGroupCoxeterAppendOfMapToWordMemIff_apply_of _ _ _
+    (fun _ => by rw [presentation_transcribed_append]; rfl) i
 
 end TauCeti.Sporadic.BabyMonster

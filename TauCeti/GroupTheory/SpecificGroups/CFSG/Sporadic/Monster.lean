@@ -196,11 +196,7 @@ theorem relatorList_def : relatorList = coxeterRelators coxeterMatrix ++ adjoine
 
 Ivanov proves that `Y₄₄₃` is `M × 2` and that quotienting by the central element `f₃₁₂` gives `M`.
 No structural property of the resulting `PresentedGroup` is asserted here; this definition records
-only the cited generators and complete relator data.
-
-The record's body is exposed, so that the Coxeter identification at the end of the file can be
-stated about the row itself. -/
-@[expose]
+only the cited generators and complete relator data. -/
 def presentation : GroupPresentation where
   generatorNames := ["a", "b1", "c1", "d1", "e1", "b2", "c2", "d2", "e2", "b3", "c3", "d3"]
   source := "J. N. Bray, Sporadic (Fischer-Griess) Monster group M = F1; A. A. Ivanov, Y-groups \
@@ -271,7 +267,8 @@ theorem presentation_expectedRelatorCount : presentation.expectedRelatorCount = 
 /-- The relator expressions carried by the Monster presentation are exactly the transcribed
 relator list, whose decomposition is `relatorList_def`. -/
 @[simp]
-theorem presentation_transcribed : presentation.transcribed = relatorList := rfl
+theorem presentation_transcribed : presentation.transcribed = cast (by simp) relatorList := by
+  rfl
 
 /-- The compiled relators carried by the Monster presentation, with generator bounds forgotten. -/
 theorem presentation_relatorLetters : presentation.relatorLetters =
@@ -359,18 +356,9 @@ theorem presentation_relatorsCyclicallyReduced :
 /-- **The relators of the row are the `Y₄₄₃` Coxeter relators followed by the two adjoined
 relators.** -/
 theorem presentation_transcribed_append :
-    presentation.transcribed = coxeterRelators coxeterMatrix ++ adjoinedRelators :=
-  presentation_transcribed.trans relatorList_def
-
-/-- **The compiled words of the row are those of the `Y₄₄₃` Coxeter relators followed by the two
-adjoined relators.** This is the hypothesis that
-`TauCeti.Sporadic.Monster.mulEquivPresentedGroupCoxeterAppend` below consumes; it is weaker than
-the list equation above, comparing compiled-word membership. -/
-theorem presentation_map_toWord_mem_iff (w) :
-    w ∈ presentation.transcribed.map Relator.toWord ↔
-      w ∈ (coxeterRelators coxeterMatrix ++ adjoinedRelators).map Relator.toWord := by
-  rw [presentation_transcribed_append]
-  rfl
+    presentation.transcribed = cast (by simp)
+      (coxeterRelators coxeterMatrix ++ adjoinedRelators) := by
+  rw [presentation_transcribed, relatorList_def]
 
 /-- **The row presents the Coxeter group of the `Y₄₄₃` diagram cut down by the spider and central
 relations**, which is the shape in which Bray and Ivanov state the presentation.
@@ -380,16 +368,23 @@ This is an identification of the presented group with a quotient built from Math
 side. -/
 def mulEquivPresentedGroupCoxeterAppend :
     presentation.Group ≃*
-      PresentedGroup (coxeterMatrix.relationsSet ∪ Relator.relatorSet adjoinedRelators) :=
-  presentation.mulEquivPresentedGroupCoxeterAppend coxeterMatrix adjoinedRelators
-    presentation_map_toWord_mem_iff
+      PresentedGroup (coxeterMatrix.relationsSet ∪ Relator.relatorSet adjoinedRelators) := by
+  have h := presentation_transcribed_append
+  unfold presentation at h ⊢
+  apply GroupPresentation.mulEquivPresentedGroupCoxeterAppendOfMapToWordMemIff
+  intro w
+  rw [h]
+  rfl
 
 /-- The Coxeter equivalence sends each canonical generator to the corresponding canonical
 generator. -/
 @[simp]
-theorem mulEquivPresentedGroupCoxeterAppend_apply_of (i : Fin presentation.generatorCount) :
-    mulEquivPresentedGroupCoxeterAppend (PresentedGroup.of i) = PresentedGroup.of i :=
-  GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of _ _ _
-    presentation_map_toWord_mem_iff i
+theorem mulEquivPresentedGroupCoxeterAppend_apply_of (i : Fin 12) :
+    mulEquivPresentedGroupCoxeterAppend
+        (PresentedGroup.of
+          (Fin.cast (by simp [GroupPresentation.generatorCount, presentation]) i)) =
+      PresentedGroup.of i := by
+  unfold mulEquivPresentedGroupCoxeterAppend presentation
+  apply GroupPresentation.mulEquivPresentedGroupCoxeterAppendOfMapToWordMemIff_apply_of
 
 end TauCeti.Sporadic.Monster

@@ -56,8 +56,7 @@ hand-built matrix.
   `TauCeti.GroupPresentation.mulEquivPresentedGroupCoxeterAppend`: a transcription that appends
   further relators to the Coxeter relators of `M` presents the group defined by Mathlib's Coxeter
   relations together with those extra relations. The two `GroupPresentation` forms compare
-  compiled-word membership, so a row that writes its involution relations as `sᵢ ^ 2`, groups its
-  relations by kind, or repeats a relation still qualifies.
+  relator sets; variants ending in `OfMapToWordMemIff` derive this from compiled-word membership.
 
 ## References
 
@@ -313,30 +312,26 @@ theorem mulEquivPresentedGroupCoxeterAppend_apply_of {n : ℕ} (M : CoxeterMatri
     mulEquivPresentedGroupCoxeterAppend M extra (PresentedGroup.of i) = PresentedGroup.of i :=
   QuotientGroup.quotientMulEquivOfEq_mk _ _
 
-/-- **A transcription whose relators compile to the Coxeter relators of `M` presents `M.Group`.**
+/-- **A transcription with the same relation set as the Coxeter relators of `M` presents
+`M.Group`.**
 A presentation row that adds relators to the diagram — every published Y-diagram row does, its
 spider relator being the addition — is served by
 `TauCeti.GroupPresentation.mulEquivPresentedGroupCoxeterAppend` instead.
 
-The hypothesis compares compiled-word membership rather than relator expressions, because a
-source is free to write an involution relation as `sᵢ ^ 2` where the generated list writes
-`(sᵢ sᵢ) ^ 1`, to list its relations in any order, or to repeat one; none of these differences
-changes the relations. -/
+The hypothesis is stated at the relation-set level, so it also applies when distinct compiled words
+represent the same free-group element. -/
 def GroupPresentation.mulEquivCoxeterGroup (P : GroupPresentation)
     (M : CoxeterMatrix (Fin P.generatorCount))
-    (h : ∀ w, w ∈ P.transcribed.map Relator.toWord ↔
-      w ∈ (coxeterRelators M).map Relator.toWord) :
+    (h : Relator.relatorSet P.transcribed = Relator.relatorSet (coxeterRelators M)) :
     P.Group ≃* M.Group :=
   (QuotientGroup.quotientMulEquivOfEq (by
-    rw [P.relatorSet_eq_relatorSet_transcribed,
-      Relator.relatorSet_eq_of_map_toWord_mem_iff h])).trans
+    rw [P.relatorSet_eq_relatorSet_transcribed, h])).trans
       (_root_.TauCeti.mulEquivCoxeterGroup M)
 
 @[simp]
 theorem GroupPresentation.mulEquivCoxeterGroup_apply_of (P : GroupPresentation)
     (M : CoxeterMatrix (Fin P.generatorCount))
-    (h : ∀ w, w ∈ P.transcribed.map Relator.toWord ↔
-      w ∈ (coxeterRelators M).map Relator.toWord)
+    (h : Relator.relatorSet P.transcribed = Relator.relatorSet (coxeterRelators M))
     (i : Fin P.generatorCount) :
     P.mulEquivCoxeterGroup M h (PresentedGroup.of i) = M.simple i :=
   by
@@ -350,26 +345,43 @@ theorem GroupPresentation.mulEquivCoxeterGroup_apply_of (P : GroupPresentation)
           (QuotientGroup.quotientMulEquivOfEq_mk _ (FreeGroup.of i))
       _ = _ := _root_.TauCeti.mulEquivCoxeterGroup_apply_of M i
 
-/-- **A transcription that appends further relators to the Coxeter relators of `M` presents the
-Coxeter relations together with those extra relations.** This is the form an audited Y-diagram
-presentation row uses: the record supplies the generator names, the source, and the count checks,
-the diagram supplies the Coxeter relators, and the row's own relators — the spider relator, and for
-the Monster the relator `Z` as well — are the extras. -/
+/-- The compiled-word-membership form of
+`TauCeti.GroupPresentation.mulEquivCoxeterGroup`. -/
+def GroupPresentation.mulEquivCoxeterGroupOfMapToWordMemIff (P : GroupPresentation)
+    (M : CoxeterMatrix (Fin P.generatorCount))
+    (h : ∀ w, w ∈ P.transcribed.map Relator.toWord ↔
+      w ∈ (coxeterRelators M).map Relator.toWord) :
+    P.Group ≃* M.Group :=
+  P.mulEquivCoxeterGroup M (Relator.relatorSet_eq_of_map_toWord_mem_iff h)
+
+@[simp]
+theorem GroupPresentation.mulEquivCoxeterGroupOfMapToWordMemIff_apply_of
+    (P : GroupPresentation) (M : CoxeterMatrix (Fin P.generatorCount))
+    (h : ∀ w, w ∈ P.transcribed.map Relator.toWord ↔
+      w ∈ (coxeterRelators M).map Relator.toWord) (i : Fin P.generatorCount) :
+    P.mulEquivCoxeterGroupOfMapToWordMemIff M h (PresentedGroup.of i) = M.simple i := by
+  rw [GroupPresentation.mulEquivCoxeterGroupOfMapToWordMemIff,
+    GroupPresentation.mulEquivCoxeterGroup_apply_of]
+
+/-- **A transcription with the same relation set as the Coxeter relators of `M` followed by further
+relators presents the Coxeter relations together with those extra relations.** This is the form an
+audited Y-diagram presentation row uses: the record supplies the generator names, the source, and
+the count checks, the diagram supplies the Coxeter relators, and the row's own relators — the spider
+relator, and for the Monster the relator `Z` as well — are the extras. -/
 def GroupPresentation.mulEquivPresentedGroupCoxeterAppend (P : GroupPresentation)
     (M : CoxeterMatrix (Fin P.generatorCount)) (extra : List (Relator (Fin P.generatorCount)))
-    (h : ∀ w, w ∈ P.transcribed.map Relator.toWord ↔
-      w ∈ (coxeterRelators M ++ extra).map Relator.toWord) :
+    (h : Relator.relatorSet P.transcribed =
+      Relator.relatorSet (coxeterRelators M ++ extra)) :
     P.Group ≃* PresentedGroup (M.relationsSet ∪ Relator.relatorSet extra) :=
   (QuotientGroup.quotientMulEquivOfEq (by
-    rw [P.relatorSet_eq_relatorSet_transcribed,
-      Relator.relatorSet_eq_of_map_toWord_mem_iff h])).trans
+    rw [P.relatorSet_eq_relatorSet_transcribed, h])).trans
       (_root_.TauCeti.mulEquivPresentedGroupCoxeterAppend M extra)
 
 @[simp]
 theorem GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of (P : GroupPresentation)
     (M : CoxeterMatrix (Fin P.generatorCount)) (extra : List (Relator (Fin P.generatorCount)))
-    (h : ∀ w, w ∈ P.transcribed.map Relator.toWord ↔
-      w ∈ (coxeterRelators M ++ extra).map Relator.toWord) (i : Fin P.generatorCount) :
+    (h : Relator.relatorSet P.transcribed =
+      Relator.relatorSet (coxeterRelators M ++ extra)) (i : Fin P.generatorCount) :
     P.mulEquivPresentedGroupCoxeterAppend M extra h (PresentedGroup.of i) = PresentedGroup.of i :=
   by
     rw [GroupPresentation.mulEquivPresentedGroupCoxeterAppend]
@@ -382,6 +394,28 @@ theorem GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of (P : Grou
         congrArg (_root_.TauCeti.mulEquivPresentedGroupCoxeterAppend M extra)
           (QuotientGroup.quotientMulEquivOfEq_mk _ (FreeGroup.of i))
       _ = _ := _root_.TauCeti.mulEquivPresentedGroupCoxeterAppend_apply_of M extra i
+
+/-- The compiled-word-membership form of
+`TauCeti.GroupPresentation.mulEquivPresentedGroupCoxeterAppend`. -/
+def GroupPresentation.mulEquivPresentedGroupCoxeterAppendOfMapToWordMemIff
+    (P : GroupPresentation) (M : CoxeterMatrix (Fin P.generatorCount))
+    (extra : List (Relator (Fin P.generatorCount)))
+    (h : ∀ w, w ∈ P.transcribed.map Relator.toWord ↔
+      w ∈ (coxeterRelators M ++ extra).map Relator.toWord) :
+    P.Group ≃* PresentedGroup (M.relationsSet ∪ Relator.relatorSet extra) :=
+  P.mulEquivPresentedGroupCoxeterAppend M extra
+    (Relator.relatorSet_eq_of_map_toWord_mem_iff h)
+
+@[simp]
+theorem GroupPresentation.mulEquivPresentedGroupCoxeterAppendOfMapToWordMemIff_apply_of
+    (P : GroupPresentation) (M : CoxeterMatrix (Fin P.generatorCount))
+    (extra : List (Relator (Fin P.generatorCount)))
+    (h : ∀ w, w ∈ P.transcribed.map Relator.toWord ↔
+      w ∈ (coxeterRelators M ++ extra).map Relator.toWord) (i : Fin P.generatorCount) :
+    P.mulEquivPresentedGroupCoxeterAppendOfMapToWordMemIff M extra h
+        (PresentedGroup.of i) = PresentedGroup.of i := by
+  rw [GroupPresentation.mulEquivPresentedGroupCoxeterAppendOfMapToWordMemIff,
+    GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of]
 
 end Coxeter
 
