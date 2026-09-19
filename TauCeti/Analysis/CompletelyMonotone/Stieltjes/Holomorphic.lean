@@ -113,12 +113,6 @@ is the holomorphic extension of the Stieltjes function represented by `μ, a, b`
 def stieltjesExtension (μ : Measure ℝ≥0) (a b : ℝ≥0) (z : ℂ) : ℂ :=
   ((a : ℝ) : ℂ) / z + ((b : ℝ) : ℂ) + ∫ x, (z + ((x : ℝ) : ℂ))⁻¹ ∂μ
 
-/-- The defining formula of the complex Stieltjes transform. -/
-theorem stieltjesExtension_apply (μ : Measure ℝ≥0) (a b : ℝ≥0) (z : ℂ) :
-    stieltjesExtension μ a b z =
-      ((a : ℝ) : ℂ) / z + ((b : ℝ) : ℂ) + ∫ x, (z + ((x : ℝ) : ℂ))⁻¹ ∂μ :=
-  (rfl)
-
 /-- The complex Stieltjes transform is complex differentiable at every point of the slit plane,
 with derivative `-a / z² - ∫ x, (z + x)⁻² ∂μ`. -/
 theorem hasDerivAt_stieltjesExtension (hμ : Integrable stieltjesWeight μ) (hz : z ∈ slitPlane) :
@@ -130,7 +124,7 @@ theorem hasDerivAt_stieltjesExtension (hμ : Integrable stieltjesWeight μ) (hz 
   have hsum := (hdiv.add_const ((b : ℝ) : ℂ)).add (hasDerivAt_integral_inv_add hμ hz)
   rw [sub_eq_add_neg]
   refine hsum.congr_of_eventuallyEq (Eventually.of_forall fun w => ?_)
-  rw [stieltjesExtension_apply, Pi.add_apply]
+  rw [stieltjesExtension, Pi.add_apply]
 
 /-- The complex Stieltjes transform is complex differentiable on the slit plane. -/
 theorem differentiableOn_stieltjesExtension (hμ : Integrable stieltjesWeight μ) :
@@ -146,7 +140,7 @@ theorem analyticOnNhd_stieltjesExtension (hμ : Integrable stieltjesWeight μ) :
 @[simp]
 theorem stieltjesExtension_conj (μ : Measure ℝ≥0) (a b : ℝ≥0) (z : ℂ) :
     stieltjesExtension μ a b (conj z) = conj (stieltjesExtension μ a b z) := by
-  simp only [stieltjesExtension_apply, map_add, map_div₀, conj_ofReal, ← integral_conj,
+  simp only [stieltjesExtension, map_add, map_div₀, conj_ofReal, ← integral_conj,
     map_inv₀]
 
 /-- **The imaginary part of the complex Stieltjes transform**:
@@ -160,7 +154,7 @@ theorem im_stieltjesExtension (hμ : Integrable stieltjesWeight μ) (hz : z ∈ 
       ← integral_im (integrable_inv_add_of_mem_slitPlane hμ hz)]
     refine integral_congr_ae (ae_of_all _ fun x => ?_)
     simp [div_eq_mul_inv, neg_mul]
-  rw [stieltjesExtension_apply, add_im, add_im, hint, div_eq_mul_inv, im_ofReal_mul, inv_im,
+  rw [stieltjesExtension, add_im, add_im, hint, div_eq_mul_inv, im_ofReal_mul, inv_im,
     ofReal_im]
   ring
 
@@ -195,7 +189,7 @@ theorem im_mul_stieltjesExtension (hμ : Integrable stieltjesWeight μ) (hz : z 
     simp only [RCLike.im_to_complex, hsplit, sub_im, one_im, im_ofReal_mul, inv_im, add_im,
       ofReal_im, add_zero]
     ring
-  rw [stieltjesExtension_apply, mul_add, mul_add, mul_div_cancel₀ _ hz0, add_im, add_im, hint,
+  rw [stieltjesExtension, mul_add, mul_add, mul_div_cancel₀ _ hz0, add_im, add_im, hint,
     ofReal_im, mul_comm z, im_ofReal_mul]
   ring
 
@@ -215,7 +209,7 @@ namespace RepresentsStieltjes
 with `f` on `(0, ∞)`. -/
 theorem stieltjesExtension_ofReal (h : RepresentsStieltjes μ a b f) {t : ℝ} (ht : 0 < t) :
     stieltjesExtension μ a b t = f t := by
-  rw [h.eq_div_add_add_integral_inv_add ht, stieltjesExtension_apply]
+  rw [h.eq_div_add_add_integral_inv_add ht, stieltjesExtension]
   push_cast [← integral_complex_ofReal]
   congr 1
 
