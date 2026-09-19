@@ -89,11 +89,14 @@ theorem weightDistribution_code (w : ℕ) :
   · have hbound : ∀ a b c, messageWeight a b c ≤ 6 := by decide
     have hempty : IsEmpty {a : Fin 3 → Fin 4 // messageWeight (a 0) (a 1) (a 2) = w} :=
       ⟨fun a ↦ by have := hbound (a.val 0) (a.val 1) (a.val 2); omega⟩
-    simp [show w ≠ 0 by omega, show w ≠ 4 by omega,
-      show w ≠ 6 by omega]
+    have hw0 : w ≠ 0 := by omega
+    have hw4 : w ≠ 4 := by omega
+    have hw6 : w ≠ 6 := by omega
+    simp [hw0, hw4, hw6]
 
 /-- Only weights zero, four and six occur in the hexacode. -/
-theorem hammingNorm_mem_zero_four_six {x : Fin 6 → F} (hx : x ∈ code ω) :
+theorem hammingNorm_eq_zero_or_eq_four_or_eq_six_of_mem_code
+    {x : Fin 6 → F} (hx : x ∈ code ω) :
     hammingNorm x = 0 ∨ hammingNorm x = 4 ∨ hammingNorm x = 6 := by
   have h := (Set.weightDistribution_ne_zero_iff (Set.toFinite (code ω : Set (Fin 6 → F)))).mpr
     ⟨x, hx, rfl⟩
@@ -101,13 +104,23 @@ theorem hammingNorm_mem_zero_four_six {x : Fin 6 → F} (hx : x ∈ code ω) :
   split_ifs at h <;> simp_all
 
 /-- The homogeneous hexacode enumerator, obtained by counting all messages. -/
+@[simp]
 theorem weightEnumerator_code :
     (code ω : Set (Fin 6 → F)).weightEnumerator =
       MvPolynomial.X 0 ^ 6 + 45 * MvPolynomial.X 0 ^ 2 * MvPolynomial.X 1 ^ 4 +
         18 * MvPolynomial.X 1 ^ 6 := by
   simp [Set.weightEnumerator_def, weightDistribution_code hF hω, Finset.sum_range_succ]
 
+/-- The one-variable hexacode enumerator, obtained by setting the first variable to one. -/
+@[simp]
+theorem weightPolynomial_code :
+    (code ω : Set (Fin 6 → F)).weightPolynomial =
+      1 + 45 * Polynomial.X ^ 4 + 18 * Polynomial.X ^ 6 := by
+  rw [← Set.aeval_weightEnumerator, weightEnumerator_code hF hω]
+  simp
+
 /-- The hexacode has minimum Hamming distance four. -/
+@[simp]
 theorem hammingMinDist_code : (code ω : Set (Fin 6 → F)).hammingMinDist = 4 := by
   have hmin := Set.hammingMinDist_eq_sInf_weightDistribution
     (E := (code ω).toAddSubgroup) (Set.toFinite _)
