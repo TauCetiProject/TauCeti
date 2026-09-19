@@ -132,6 +132,7 @@ theorem generatorMatrix_reindex {κ : Type*} (e : κ ≃ ι) :
 
 open Classical in
 /-- Splitting off the information coordinates displays the generator as `[I | A]`. -/
+@[simp]
 theorem generatorMatrix_submatrix_sumCompl :
     h.generatorMatrix.submatrix id (Equiv.Set.sumCompl s) =
       fromCols (1 : Matrix s s F)
@@ -253,7 +254,8 @@ theorem checkedBy_parityCheckMatrix : h.parityCheckMatrix.checkedBy = C := by
   rw [parityCheckMatrix,
     ← Matrix.generatedBy_one_fromCols_eq_checkedBy_fromCols_neg_transpose_one_submatrix,
     ← h.generatorMatrix_submatrix_sumCompl]
-  simp [Matrix.submatrix_submatrix]
+  simp only [Matrix.submatrix_submatrix]
+  simp
 
 end IsInformationSet
 end TauCeti
