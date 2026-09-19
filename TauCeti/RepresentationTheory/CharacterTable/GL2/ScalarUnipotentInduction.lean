@@ -114,8 +114,6 @@ at a normal form, and neither side is a normal form for `simp`.
 * I. Piatetski-Shapiro, *Complex Representations of `GL(2, K)` for Finite Fields `K`*,
   Contemporary Mathematics 16, AMS (1983), §5.
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2.
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9, "The cuspidal (discrete series) representations".
 -/
 
 public section
@@ -334,20 +332,28 @@ end Finite
 
 /-! ### The non-semisimple value -/
 
+/-- **Conjugation inside `Z U` is trivial**, because the subgroup is abelian.  It is what makes a
+summand of the induced class function depend only on the coset of its representative, by
+`TauCeti.indTerm_eq_of_mk_eq_of_conj`. -/
+private theorem conj_eq_self (s y : GL2ScalarUnipotent F) : s * y * s⁻¹ = y := by
+  rw [mul_comm' s y, mul_assoc, mul_inv_cancel, mul_one]
+
 section Semiring
 
 variable {k : Type*} [Semiring k]
 
 /-- Every function on the abelian subgroup `Z U` is a class function, so the summands of the
-induced class function depend only on the coset of their representative. -/
+induced class function depend only on the coset of their representative.  It is the hypothesis of
+`TauCeti.ClassFunction.ind` and of `TauCeti.indClassFun_mem_classFunction` for `Z U`. -/
 theorem mem_classFunction (f : GL2ScalarUnipotent F → k) :
-    f ∈ ClassFunction k (GL2ScalarUnipotent F) := by
-  refine ClassFunction.mem_iff.mpr fun g h => ?_
-  rw [mul_comm' h g, mul_assoc, mul_inv_cancel, mul_one]
+    f ∈ ClassFunction k (GL2ScalarUnipotent F) :=
+  ClassFunction.mem_iff.mpr fun g h => congrArg f (conj_eq_self h g)
+
+end Semiring
 
 section Fintype
 
-variable [Fintype F] [DecidableEq F]
+variable {k : Type*} [AddCommMonoid k] [Fintype F] [DecidableEq F]
 
 /-- **The induced class function at a non-semisimple element.**  A Jordan block `!![a, b; 0, a]`
 with `b ≠ 0` is conjugated into `Z U` exactly by the upper triangular matrices, which form the
@@ -374,7 +380,8 @@ theorem indClassFun_jordanGL (f : GL2ScalarUnipotent F → k) (a : Fˣ) {b : F} 
           (QuotientGroup.mk (diagGL ![c, 1]) : GL (Fin 2) F ⧸ GL2ScalarUnipotent F)) =
         f ⟨jordanGL a (((c⁻¹ : Fˣ) : F) * b),
           jordanGL_mem_gl2ScalarUnipotent a (((c⁻¹ : Fˣ) : F) * b)⟩ := fun c => by
-    rw [indTerm_eq_of_mk_eq (mem_classFunction f) _ _ (diagGL ![c, 1]) (QuotientGroup.out_eq' _),
+    rw [indTerm_eq_of_mk_eq_of_conj (fun y s => congrArg f (conj_eq_self s y)) _ _
+        (diagGL ![c, 1]) (QuotientGroup.out_eq' _),
       indTerm_apply, dite_eq_left ((inv_diagGL_mul_jordanGL_mul_diagGL a b c) ▸
         jordanGL_mem_gl2ScalarUnipotent a (((c⁻¹ : Fˣ) : F) * b))]
     exact congrArg f (Subtype.ext (inv_diagGL_mul_jordanGL_mul_diagGL a b c))
@@ -385,8 +392,6 @@ theorem indClassFun_jordanGL (f : GL2ScalarUnipotent F → k) (a : Fˣ) {b : F} 
     fun c => congrArg f (Subtype.ext (by simp))
 
 end Fintype
-
-end Semiring
 
 /-! ### The scalar--unipotent linear character -/
 
