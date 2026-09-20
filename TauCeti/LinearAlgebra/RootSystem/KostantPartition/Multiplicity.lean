@@ -26,13 +26,13 @@ The inverse of `Δ` is the formal series `∑_ν P(ν) e^{-ν}`, whose coefficie
 partition function `TauCeti.kostantPartition`. The series is not an element of `ℤ[M]`, so instead
 of a product we pair an element of `ℤ[M]` against it and read off the coefficient at `μ`: the
 pairing `g ↦ ∑_ν g_ν P(ν - μ)` is a finite sum, and
-`TauCeti.sum_coeff_mul_weylDenominator_mul_kostantPartition` says that applying it to `f · Δ`
+`RootPairing.sum_coeff_mul_weylDenominator_mul_kostantPartition` says that applying it to `f · Δ`
 returns `f_μ`. That is division by `Δ`, coefficient by coefficient.
 
 Applying the pairing to `N(λ)` instead gives the **Kostant multiplicity**
-`TauCeti.kostantMultiplicity`, the alternating sum `∑_{w ∈ W} sgn(w) P(w ⬝ λ - μ)`. So the two
+`RootPairing.kostantMultiplicity`, the alternating sum `∑_{w ∈ W} sgn(w) P(w ⬝ λ - μ)`. So the two
 computations together turn the character formula into a closed formula for a single multiplicity:
-`TauCeti.coeff_eq_kostantMultiplicity_of_mul_weylDenominator_eq_weylNumerator`.
+`RootPairing.coeff_eq_kostantMultiplicity_of_mul_weylDenominator_eq_weylNumerator`.
 
 Everything here is combinatorics of the root pairing; no Lie algebra appears, and the Lie-theoretic
 reading of these statements — that the multiplicity of the weight `μ` in a finite-dimensional
@@ -41,18 +41,18 @@ by feeding in the character formula.
 
 ## Main definitions
 
-* `TauCeti.kostantMultiplicity`: the alternating sum `∑_{w ∈ W} sgn(w) P(w ⬝ λ - μ)`.
+* `RootPairing.kostantMultiplicity`: the alternating sum `∑_{w ∈ W} sgn(w) P(w ⬝ λ - μ)`.
 
 ## Main results
 
-* `TauCeti.sum_coeff_mul_weylDenominator_mul_kostantPartition`: **division by `Δ`**, the pairing of
-  `f · Δ` against the partition series at `μ` is the coefficient `f_μ`. It rests on the inversion
-  identity `TauCeti.sum_powerset_neg_one_pow_mul_kostantPartition`, transcribed into the group
-  algebra as the statement that pairing `Δ` itself against the series gives `1` at `0` and `0`
-  elsewhere.
-* `TauCeti.sum_coeff_weylNumerator_mul_kostantPartition`: the pairing of `N(λ)` against the
-  partition series at `μ` is `TauCeti.kostantMultiplicity`.
-* `TauCeti.coeff_eq_kostantMultiplicity_of_mul_weylDenominator_eq_weylNumerator`: **Kostant's
+* `RootPairing.sum_coeff_mul_weylDenominator_mul_kostantPartition`: **division by `Δ`**, the
+  pairing of `f · Δ` against the partition series at `μ` is the coefficient `f_μ`. It rests on the
+  inversion identity `TauCeti.sum_powerset_neg_one_pow_mul_kostantPartition`, transcribed into the
+  group algebra as the statement that pairing `Δ` itself against the series gives `1` at `0` and
+  `0` elsewhere.
+* `RootPairing.sum_coeff_weylNumerator_mul_kostantPartition`: the pairing of `N(λ)` against the
+  partition series at `μ` is `RootPairing.kostantMultiplicity`.
+* `RootPairing.coeff_eq_kostantMultiplicity_of_mul_weylDenominator_eq_weylNumerator`: **Kostant's
   multiplicity formula**, in the form it takes before a module is named: an element of `ℤ[M]`
   whose product with `Δ` is `N(λ)` has `μ`-th coefficient `∑_{w ∈ W} sgn(w) P(w ⬝ λ - μ)`.
 
@@ -65,7 +65,9 @@ by feeding in the character formula.
 
 public section
 
-namespace TauCeti
+open TauCeti
+
+namespace RootPairing
 
 universe u v w x
 
@@ -98,8 +100,8 @@ open Classical in
 `TauCeti.sum_powerset_neg_one_pow_mul_kostantPartition` read through the expansion of `Δ` over the
 subsets of the positive roots.
 
-It is the `f = 1` case of `TauCeti.sum_coeff_mul_weylDenominator_mul_kostantPartition`, and the
-step from which that theorem is derived. -/
+It is the `f = 1` case of `RootPairing.sum_coeff_mul_weylDenominator_mul_kostantPartition`, and
+the step from which that theorem is derived. -/
 private theorem sum_coeff_weylDenominator_mul_kostantPartition (mu : M) :
     ((weylDenominator P b).coeff.sum fun x c ↦ c * (kostantPartition P b (x - mu) : ℤ))
       = if mu = 0 then 1 else 0 := by
@@ -194,4 +196,4 @@ theorem coeff_eq_kostantMultiplicity_of_mul_weylDenominator_eq_weylNumerator
 
 end Numerator
 
-end TauCeti
+end RootPairing
