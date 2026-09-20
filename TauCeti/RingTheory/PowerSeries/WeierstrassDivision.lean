@@ -61,17 +61,6 @@ namespace TauCeti.PowerSeries
 
 variable {R : Type*} [NormedRing R] {c : ℝ} {s : ℕ} {f q r : PowerSeries R}
 
-/-- A power series whose coefficients vanish in every degree `≥ n` is restricted at every radius:
-its weighted coefficient norms are eventually zero. Such a series is a polynomial of degree less
-than `n`, and this is the shape the remainder of a Weierstrass division has. -/
-theorem isRestricted_of_forall_coeff_eq_zero {n : ℕ} (hr : ∀ m, n ≤ m → r.coeff m = 0) :
-    r.IsRestricted c := by
-  rw [PowerSeries.isRestricted_iff']
-  have h : ∀ᶠ m in Filter.atTop, (0 : ℝ) = ‖r.coeff m‖ * c ^ m := by
-    filter_upwards [Filter.eventually_ge_atTop n] with m hm
-    simp [hr m hm]
-  exact Filter.Tendsto.congr' h tendsto_const_nhds
-
 variable [IsUltrametricDist R] [NormMulClass R]
 
 /-- **The Weierstrass lower bound for the quotient.** In a decomposition `q * f + r` by a
@@ -180,7 +169,7 @@ theorem IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add (hf : IsDistinguished c 
     have hmul := le_antisymm hle (mul_nonneg
       (PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg)
       (PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg))
-    exact (mul_eq_zero.mp hmul).resolve_right (hf.gaussNorm_pos hc.le).ne'
+    exact (mul_eq_zero.mp hmul).resolve_right hf.gaussNorm_pos.ne'
   have hgr : (r - r').gaussNorm norm c = 0 :=
     le_antisymm (by rw [← hmax]; exact le_max_right _ _)
       (PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg)

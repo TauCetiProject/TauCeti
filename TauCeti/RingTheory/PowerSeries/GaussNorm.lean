@@ -30,8 +30,8 @@ any positive real number, including the unit radius of the usual Tate algebra.
 
 ## Main results
 
-* `TauCeti.PowerSeries.exists_isDistinguished`: every nonzero restricted series is distinguished
-  of some degree.
+* `TauCeti.PowerSeries.exists_isDistinguished`: at a positive radius, every nonzero restricted
+  series is distinguished of some degree.
 * `TauCeti.PowerSeries.IsDistinguished.unique`: of no more than one degree.
 * `TauCeti.PowerSeries.IsDistinguished.norm_coeff_mul_mul_pow_eq_gaussNorm_mul`: the dominant
   coefficient of a product of distinguished series.
@@ -60,6 +60,17 @@ theorem hasGaussNorm_of_isRestricted (hf : f.IsRestricted c) :
     f.HasGaussNorm norm c :=
   ((PowerSeries.isRestricted_iff c f).mp hf).bddAbove_range_of_cofinite
 
+/-- A power series whose coefficients vanish in every degree `≥ n` is restricted at every radius:
+its weighted coefficient norms are eventually zero. Such a series is a polynomial of degree less
+than `n`. -/
+theorem isRestricted_of_forall_coeff_eq_zero {n : ℕ}
+    (hf : ∀ m, n ≤ m → f.coeff m = 0) : f.IsRestricted c := by
+  rw [PowerSeries.isRestricted_iff']
+  have h : ∀ᶠ m in Filter.atTop, (0 : ℝ) = ‖f.coeff m‖ * c ^ m := by
+    filter_upwards [Filter.eventually_ge_atTop n] with m hm
+    simp [hf m hm]
+  exact Filter.Tendsto.congr' h tendsto_const_nhds
+
 section
 
 variable (c) (s) (f)
@@ -68,8 +79,8 @@ variable (c) (s) (f)
 in degree `s` and every later coefficient is strictly smaller.
 
 At the unit radius this is the classical condition that the leading coefficient of `f` dominates,
-in the sense of Bosch–Güntzer–Remmert §5.2. A nonzero restricted series is distinguished of exactly
-one degree (`TauCeti.PowerSeries.exists_isDistinguished` and
+in the sense of Bosch–Güntzer–Remmert §5.2. At a positive radius, a nonzero restricted series is
+distinguished of exactly one degree (`TauCeti.PowerSeries.exists_isDistinguished` and
 `TauCeti.PowerSeries.IsDistinguished.unique`), so this is a genuine invariant of `f` and `c` rather
 than extra data.
 
@@ -87,24 +98,27 @@ structure IsDistinguished : Prop where
 end
 
 /-- A distinguished series has positive Gauss norm: the degree just past the distinguished one
-witnesses a value strictly below it, and weighted norms are nonnegative. -/
-theorem IsDistinguished.gaussNorm_pos (hf : IsDistinguished c s f) (hc : 0 ≤ c) :
-    0 < f.gaussNorm norm c :=
-  lt_of_le_of_lt (mul_nonneg (norm_nonneg _) (pow_nonneg hc _))
-    (hf.norm_coeff_mul_pow_lt (s + 1) (Nat.lt_succ_self s))
+witnesses a value strictly below it. Taking an even degree makes the weighted norm nonnegative
+without any sign assumption on the radius. -/
+theorem IsDistinguished.gaussNorm_pos (hf : IsDistinguished c s f) :
+    0 < f.gaussNorm norm c := by
+  have hpow : 0 ≤ c ^ (2 * (s + 1)) := by
+    rw [pow_mul]
+    exact pow_nonneg (sq_nonneg c) _
+  exact lt_of_le_of_lt (mul_nonneg (norm_nonneg _) hpow)
+    (hf.norm_coeff_mul_pow_lt (2 * (s + 1)) (by omega))
 
 /-- A distinguished series is nonzero. -/
-theorem IsDistinguished.ne_zero (hf : IsDistinguished c s f) (hc : 0 ≤ c) : f ≠ 0 := by
+theorem IsDistinguished.ne_zero (hf : IsDistinguished c s f) : f ≠ 0 := by
   rintro rfl
-  have h := hf.gaussNorm_pos hc
+  have h := hf.gaussNorm_pos
   rw [PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)] at h
   exact absurd h (lt_irrefl 0)
 
 /-- The coefficient of a distinguished series in its distinguished degree is nonzero. -/
-theorem IsDistinguished.coeff_ne_zero (hf : IsDistinguished c s f) (hc : 0 < c) :
-    f.coeff s ≠ 0 := by
+theorem IsDistinguished.coeff_ne_zero (hf : IsDistinguished c s f) : f.coeff s ≠ 0 := by
   intro h
-  have hpos := hf.gaussNorm_pos hc.le
+  have hpos := hf.gaussNorm_pos
   rw [← hf.norm_coeff_mul_pow_eq, h] at hpos
   simp at hpos
 
@@ -166,8 +180,8 @@ theorem IsDistinguished.norm_coeff_mul_mul_pow_eq_gaussNorm_mul (hf : IsDistingu
     (hg : IsDistinguished c j g) (hc : 0 < c) (hbf : f.HasGaussNorm norm c)
     (hbg : g.HasGaussNorm norm c) :
     ‖(f * g).coeff (i + j)‖ * c ^ (i + j) = f.gaussNorm norm c * g.gaussNorm norm c := by
-  have hfp := hf.gaussNorm_pos hc.le
-  have hgp := hg.gaussNorm_pos hc.le
+  have hfp := hf.gaussNorm_pos
+  have hgp := hg.gaussNorm_pos
   have hdom (p : ℕ × ℕ) (hp : p ∈ Finset.antidiagonal (i + j)) (hne : p ≠ (i, j)) :
       ‖f.coeff p.1 * g.coeff p.2‖ < ‖f.coeff i * g.coeff j‖ := by
     have hsum : p.1 + p.2 = i + j := Finset.mem_antidiagonal.mp hp
@@ -216,5 +230,46 @@ theorem gaussNorm_mul_of_isRestricted (hc : 0 < c) (hf : f.IsRestricted c)
         (hasGaussNorm_of_isRestricted hg)).symm
     _ ≤ (f * g).gaussNorm norm c := PowerSeries.le_gaussNorm norm c (f * g)
       (hasGaussNorm_of_isRestricted (PowerSeries.isRestricted.mul c hf hg)) _
+
+/-- The product of series distinguished in degrees `i` and `j` is distinguished in degree
+`i + j`, provided both series are restricted at the positive radius. -/
+theorem IsDistinguished.mul (hf : IsDistinguished c i f) (hg : IsDistinguished c j g)
+    (hc : 0 < c) (hfr : f.IsRestricted c) (hgr : g.IsRestricted c) :
+    IsDistinguished c (i + j) (f * g) := by
+  have hfp := hf.gaussNorm_pos
+  have hgp := hg.gaussNorm_pos
+  have hbf := hasGaussNorm_of_isRestricted hfr
+  have hbg := hasGaussNorm_of_isRestricted hgr
+  have hmul := gaussNorm_mul_of_isRestricted hc hfr hgr
+  refine ⟨(hf.norm_coeff_mul_mul_pow_eq_gaussNorm_mul hg hc hbf hbg).trans hmul.symm,
+    fun m hm ↦ ?_⟩
+  rw [PowerSeries.coeff_mul]
+  have hne := Finset.HasAntidiagonal.nonempty_antidiagonal m
+  calc
+    ‖∑ p ∈ Finset.antidiagonal m, f.coeff p.1 * g.coeff p.2‖ * c ^ m
+        ≤ (Finset.antidiagonal m).sup' hne
+            (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖) * c ^ m :=
+      mul_le_mul_of_nonneg_right (hne.norm_sum_le_sup'_norm
+        (fun p : ℕ × ℕ ↦ f.coeff p.1 * g.coeff p.2)) (pow_nonneg hc.le m)
+    _ = (Finset.antidiagonal m).sup' hne
+        (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m) :=
+      Finset.sup'_mul₀ (pow_nonneg hc.le m) _ _ _
+    _ < f.gaussNorm norm c * g.gaussNorm norm c :=
+      (Finset.sup'_lt_iff hne).2 fun p hp ↦ by
+      have hsum : p.1 + p.2 = m := Finset.mem_antidiagonal.mp hp
+      rw [← hsum, norm_mul, pow_add]
+      have hweight :
+          ‖f.coeff p.1‖ * ‖g.coeff p.2‖ * (c ^ p.1 * c ^ p.2) =
+            (‖f.coeff p.1‖ * c ^ p.1) * (‖g.coeff p.2‖ * c ^ p.2) := by ring
+      rw [hweight]
+      by_cases hpi : i < p.1
+      · exact (mul_le_mul_of_nonneg_left (PowerSeries.le_gaussNorm norm c g hbg p.2)
+            (mul_nonneg (norm_nonneg _) (pow_nonneg hc.le _))).trans_lt
+          (mul_lt_mul_of_pos_right (hf.norm_coeff_mul_pow_lt _ hpi) hgp)
+      · have hpj : j < p.2 := by omega
+        exact (mul_le_mul_of_nonneg_right (PowerSeries.le_gaussNorm norm c f hbf p.1)
+              (mul_nonneg (norm_nonneg _) (pow_nonneg hc.le _))).trans_lt
+          (mul_lt_mul_of_pos_left (hg.norm_coeff_mul_pow_lt _ hpj) hfp)
+    _ = (f * g).gaussNorm norm c := hmul.symm
 
 end TauCeti.PowerSeries
