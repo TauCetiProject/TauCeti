@@ -30,8 +30,8 @@ The implementation specializes the existing mixed-Hodge category: a pure object 
 * `TauCeti.Hodge.PolarizableHodgeStructureCat`: polarizable rational Hodge structures of a fixed
   weight.
 * `TauCeti.Hodge.PolarizableHodgeStructureCat.Hom`: ordinary rational Hodge morphisms.
-* `TauCeti.Hodge.PolarizableHodgeStructureCat.mixed`: the faithful realization as mixed Hodge
-  structures.
+* `TauCeti.Hodge.PolarizableHodgeStructureCat.mixed`: the fully faithful realization as mixed
+  Hodge structures.
 * `TauCeti.Hodge.PolarizableHodgeStructureCat.rational`: the faithful rational realization.
 * `TauCeti.Hodge.PolarizableHodgeStructureCat.complex`: the complex realization.
 
@@ -127,144 +127,157 @@ noncomputable abbrev asMixed (X : PolarizableHodgeStructureCat.{u} n) :
   MixedHodgeStructureCat.of X.isBaseChangeRat X.isBaseChangeComplex
     (MixedHodgeStructure.ofPure X.isBaseChangeRat X.isBaseChangeComplex X.hs)
 
+noncomputable instance : Category.{u} (PolarizableHodgeStructureCat.{u} n) :=
+  inferInstanceAs <| Category (InducedCategory MixedHodgeStructureCat.{u} (asMixed (n := n)))
+
 /-- An ordinary morphism of polarizable rational Hodge structures, implemented as a morphism of
 the corresponding pure mixed Hodge structures. The concentrated weight condition is automatic. -/
 abbrev Hom (X Y : PolarizableHodgeStructureCat.{u} n) : Type u :=
-  MixedHodgeStructure.Hom X.asMixed.hs Y.asMixed.hs
-
-namespace Hom
+  X ⟶ Y
 
 variable {X Y : PolarizableHodgeStructureCat.{u} n}
+
+/-- A morphism of polarizable Hodge structures acts through its complexification. -/
+noncomputable instance : CoeFun (Hom X Y) fun _ ↦ X.complexCarrier → Y.complexCarrier :=
+  ⟨fun f ↦ f.hom.toLinearMap⟩
+
+namespace Hom
 
 /-- Construct a morphism from a rational linear map whose complexification preserves the Hodge
 filtration. Preservation of the concentrated weight filtration is automatic. -/
 noncomputable def mk (f : X.ratCarrier →ₗ[ℚ] Y.ratCarrier)
     (hf : ∀ p x, x ∈ X.hs.F p →
       rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
-        Y.isBaseChangeRat Y.isBaseChangeComplex f x ∈ Y.hs.F p) : Hom X Y where
-  toRatLinearMap := f
-  map_mem_WQ := by
-    intro k x hx
-    by_cases hk : n ≤ k
-    · rw [MixedHodgeStructure.ofPure_WQ, concentratedWeightFiltration_of_le hk]
-      exact Submodule.mem_top
-    · rw [MixedHodgeStructure.ofPure_WQ,
-        concentratedWeightFiltration_of_lt (lt_of_not_ge hk)] at hx
-      subst x
-      simpa only [map_zero, MixedHodgeStructure.ofPure_WQ] using
-        (concentratedWeightFiltration Y.ratCarrier n k).zero_mem
-  map_mem_F := by
-    simpa only [MixedHodgeStructure.ofPure_F] using hf
+        Y.isBaseChangeRat Y.isBaseChangeComplex f x ∈ Y.hs.F p) : Hom X Y :=
+  InducedCategory.homMk {
+    toRatLinearMap := f
+    map_mem_WQ := by
+      intro k x hx
+      by_cases hk : n ≤ k
+      · rw [MixedHodgeStructure.ofPure_WQ, concentratedWeightFiltration_of_le hk]
+        exact Submodule.mem_top
+      · rw [MixedHodgeStructure.ofPure_WQ,
+          concentratedWeightFiltration_of_lt (lt_of_not_ge hk)] at hx
+        subst x
+        simpa only [map_zero, MixedHodgeStructure.ofPure_WQ] using
+          (concentratedWeightFiltration Y.ratCarrier n k).zero_mem
+    map_mem_F := by
+      simpa only [MixedHodgeStructure.ofPure_F] using hf }
 
 /-- The constructor retains the supplied rational linear map. -/
 @[simp]
 theorem mk_toRatLinearMap (f : X.ratCarrier →ₗ[ℚ] Y.ratCarrier) (hf) :
-    (mk f hf).toRatLinearMap = f :=
-  by rw [mk]
+    (mk f hf).hom.toRatLinearMap = f :=
+  by simp [mk]
+
+/-- Construct a morphism from a rational linear map whose complexification is a morphism of
+the underlying pure Hodge structures. -/
+noncomputable def ofIsMorphism (f : X.ratCarrier →ₗ[ℚ] Y.ratCarrier)
+    (hf : HodgeStructureOn.IsMorphism X.hs Y.hs
+      (rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
+        Y.isBaseChangeRat Y.isBaseChangeComplex f)) : Hom X Y :=
+  mk f fun p x hx ↦ hf.map_F_le p ⟨x, hx, rfl⟩
+
+/-- The constructor from an unbundled Hodge morphism retains the supplied rational linear map. -/
+@[simp]
+theorem ofIsMorphism_toRatLinearMap (f : X.ratCarrier →ₗ[ℚ] Y.ratCarrier) (hf) :
+    (ofIsMorphism f hf).hom.toRatLinearMap = f :=
+  by simp [ofIsMorphism]
 
 /-- A rational Hodge morphism is a morphism of the underlying pure Hodge structures on the
 complexifications. -/
-theorem isMorphism (f : Hom X Y) : HodgeStructureOn.IsMorphism X.hs Y.hs f.toLinearMap where
+theorem isMorphism (f : Hom X Y) : HodgeStructureOn.IsMorphism X.hs Y.hs f.hom.toLinearMap where
   commutes_conj x := by
-    simpa only [latticeConjugation_toEquiv_apply] using f.commutes_conj x
+    simpa only [latticeConjugation_toEquiv_apply] using f.hom.commutes_conj x
   map_F_le := by
-    simpa only [MixedHodgeStructure.ofPure_F] using f.map_F_le
+    simpa only [MixedHodgeStructure.ofPure_F] using f.hom.map_F_le
 
 end Hom
-
-noncomputable instance : Category.{u} (PolarizableHodgeStructureCat.{u} n) where
-  Hom := Hom
-  id X := MixedHodgeStructure.Hom.id X.asMixed.hs
-  comp f g := g.comp f
 
 /-- Two categorical morphisms agree if their rational maps agree. -/
 @[ext]
 theorem hom_ext {X Y : PolarizableHodgeStructureCat.{u} n} {f g : X ⟶ Y}
-    (h : f.toRatLinearMap = g.toRatLinearMap) : f = g :=
-  MixedHodgeStructure.Hom.ext (LinearMap.congr_fun h)
+    (h : f.hom.toRatLinearMap = g.hom.toRatLinearMap) : f = g :=
+  InducedCategory.hom_ext (MixedHodgeStructure.Hom.ext (LinearMap.congr_fun h))
 
 /-- The categorical identity has the identity rational linear map. -/
 @[simp]
 theorem id_toRatLinearMap (X : PolarizableHodgeStructureCat.{u} n) :
-    (MixedHodgeStructure.Hom.toRatLinearMap (𝟙 X)) = LinearMap.id :=
-  MixedHodgeStructure.Hom.id_toRatLinearMap
+    (𝟙 X : X ⟶ X).hom.toRatLinearMap = LinearMap.id :=
+  MixedHodgeStructureCat.id_toRatLinearMap X.asMixed
 
 /-- Categorical composition is composition of the underlying rational linear maps. -/
 @[simp]
 theorem comp_toRatLinearMap {X Y Z : PolarizableHodgeStructureCat.{u} n}
     (f : X ⟶ Y) (g : Y ⟶ Z) :
-    (f ≫ g).toRatLinearMap = g.toRatLinearMap ∘ₗ f.toRatLinearMap :=
-  MixedHodgeStructure.Hom.comp_toRatLinearMap g f
+    (f ≫ g).hom.toRatLinearMap = g.hom.toRatLinearMap ∘ₗ f.hom.toRatLinearMap :=
+  MixedHodgeStructureCat.comp_toRatLinearMap f.hom g.hom
 
 /-- The identity morphism has the identity complex linear map. -/
 @[simp]
 theorem id_toLinearMap (X : PolarizableHodgeStructureCat.{u} n) :
-    MixedHodgeStructure.Hom.toLinearMap (𝟙 X) = LinearMap.id :=
+    (𝟙 X : X ⟶ X).hom.toLinearMap = LinearMap.id :=
   MixedHodgeStructureCat.id_toLinearMap X.asMixed
 
 /-- Composition of categorical morphisms is composition of their complex linear maps. -/
 @[simp]
 theorem comp_toLinearMap {X Y Z : PolarizableHodgeStructureCat.{u} n}
     (f : X ⟶ Y) (g : Y ⟶ Z) :
-    MixedHodgeStructure.Hom.toLinearMap (f ≫ g) = g.toLinearMap ∘ₗ f.toLinearMap :=
-  MixedHodgeStructureCat.comp_toLinearMap f g
+    (f ≫ g).hom.toLinearMap = g.hom.toLinearMap ∘ₗ f.hom.toLinearMap :=
+  MixedHodgeStructureCat.comp_toLinearMap f.hom g.hom
 
-noncomputable instance : Preadditive (PolarizableHodgeStructureCat.{u} n) where
-  homGroup X Y := inferInstanceAs (AddCommGroup (Hom X Y))
-  add_comp _ _ _ f g h := MixedHodgeStructure.Hom.comp_add h f g
-  comp_add _ _ _ f g h := MixedHodgeStructure.Hom.add_comp g h f
+noncomputable instance : Preadditive (PolarizableHodgeStructureCat.{u} n) :=
+  inferInstanceAs <| Preadditive (InducedCategory MixedHodgeStructureCat.{u} (asMixed (n := n)))
 
-noncomputable instance : Linear ℚ (PolarizableHodgeStructureCat.{u} n) where
-  homModule X Y := inferInstanceAs (Module ℚ (Hom X Y))
-  smul_comp _ _ _ q f g := MixedHodgeStructure.Hom.comp_smul g q f
-  comp_smul _ _ _ f q g := MixedHodgeStructure.Hom.smul_comp q g f
+noncomputable instance : Linear ℚ (PolarizableHodgeStructureCat.{u} n) :=
+  inferInstanceAs <| Linear ℚ (InducedCategory MixedHodgeStructureCat.{u} (asMixed (n := n)))
 
 /-- Regard a polarizable pure Hodge structure as a mixed Hodge structure concentrated in its
 weight. -/
+@[expose]
 noncomputable def mixed :
-    PolarizableHodgeStructureCat.{u} n ⥤ MixedHodgeStructureCat.{u} where
-  obj X := X.asMixed
-  map f := f
-  map_id _ := rfl
-  map_comp _ _ := rfl
+    PolarizableHodgeStructureCat.{u} n ⥤ MixedHodgeStructureCat.{u} :=
+  inducedFunctor (asMixed (n := n))
 
 /-- The mixed realization sends an object to its concentrated mixed Hodge structure. -/
 @[simp]
-theorem mixed_obj (X : PolarizableHodgeStructureCat.{u} n) : mixed.obj X = X.asMixed := by
-  rw [mixed]
+theorem mixed_obj (X : PolarizableHodgeStructureCat.{u} n) : mixed.obj X = X.asMixed :=
+  rfl
 
-noncomputable instance : (mixed (n := n)).Faithful where
-  map_injective {_ _} _ _ h := h
+/-- The mixed realization sends a morphism to its underlying mixed-Hodge morphism. -/
+@[simp]
+theorem mixed_map {X Y : PolarizableHodgeStructureCat.{u} n} (f : X ⟶ Y) :
+    mixed.map f = f.hom :=
+  rfl
 
-noncomputable instance : (mixed (n := n)).Additive where
-  map_add := by intros; rfl
+noncomputable instance : (mixed (n := n)).Full :=
+  inferInstanceAs (inducedFunctor (asMixed (n := n))).Full
 
-noncomputable instance : (mixed (n := n)).Linear ℚ where
-  map_smul := by intros; rfl
+noncomputable instance : (mixed (n := n)).Faithful :=
+  inferInstanceAs (inducedFunctor (asMixed (n := n))).Faithful
+
+noncomputable instance : (mixed (n := n)).Additive :=
+  inferInstanceAs (inducedFunctor (asMixed (n := n))).Additive
+
+noncomputable instance : (mixed (n := n)).Linear ℚ := by
+  change (inducedFunctor (asMixed (n := n))).Linear ℚ
+  infer_instance
 
 /-- The rational realization, induced from the rational realization of mixed Hodge structures. -/
+@[expose]
 noncomputable def rational : PolarizableHodgeStructureCat.{u} n ⥤ ModuleCat.{u} ℚ :=
   mixed ⋙ MixedHodgeStructureCat.rational
 
 /-- The rational realization sends an object to its rational vector space. -/
 @[simp]
 theorem rational_obj (X : PolarizableHodgeStructureCat.{u} n) : rational.obj X = X.rat :=
-  by rw [rational, Functor.comp_obj, mixed_obj, MixedHodgeStructureCat.rational_obj]
+  rfl
 
-/-- The rational realization sends a morphism to its underlying rational linear map, up to the
-object equalities in `rational_obj`. -/
-theorem rational_map_hom {X Y : PolarizableHodgeStructureCat.{u} n} (f : X ⟶ Y) :
-    HEq (rational.map f).hom f.toRatLinearMap := by
-  rw [rational, Functor.comp_map]
-  exact HEq.rfl
-
-/-- The morphism formula for the rational realization, with its source and target transported
-along `rational_obj`. -/
+/-- The rational realization sends a morphism to its underlying rational linear map. -/
 @[simp]
-theorem rational_map {X Y : PolarizableHodgeStructureCat.{u} n} (f : X ⟶ Y) :
-    rational.map f = eqToHom (rational_obj X) ≫ ModuleCat.ofHom f.toRatLinearMap ≫
-      eqToHom (rational_obj Y).symm :=
-  (conj_eqToHom_iff_heq _ _ (rational_obj X) (rational_obj Y)).2 HEq.rfl
+theorem rational_map_hom {X Y : PolarizableHodgeStructureCat.{u} n} (f : X ⟶ Y) :
+    (rational.map f).hom = f.hom.toRatLinearMap :=
+  rfl
 
 noncomputable instance : (rational (n := n)).Faithful := by
   change (mixed ⋙ MixedHodgeStructureCat.rational).Faithful
@@ -279,6 +292,7 @@ noncomputable instance : (rational (n := n)).Linear ℚ := by
   infer_instance
 
 /-- The complex realization, induced from the complex realization of mixed Hodge structures. -/
+@[expose]
 noncomputable def complex : PolarizableHodgeStructureCat.{u} n ⥤ ModuleCat.{u} ℂ :=
   mixed ⋙ MixedHodgeStructureCat.complex
 
@@ -286,22 +300,13 @@ noncomputable def complex : PolarizableHodgeStructureCat.{u} n ⥤ ModuleCat.{u}
 @[simp]
 theorem complex_obj (X : PolarizableHodgeStructureCat.{u} n) :
     complex.obj X = X.complexSpace :=
-  by rw [complex, Functor.comp_obj, mixed_obj, MixedHodgeStructureCat.complex_obj]
+  rfl
 
-/-- The complex realization sends a morphism to its derived complex linear map, up to the object
-equalities in `complex_obj`. -/
-theorem complex_map_hom {X Y : PolarizableHodgeStructureCat.{u} n} (f : X ⟶ Y) :
-    HEq (complex.map f).hom f.toLinearMap := by
-  rw [complex, Functor.comp_map]
-  exact HEq.rfl
-
-/-- The morphism formula for the complex realization, with its source and target transported
-along `complex_obj`. -/
+/-- The complex realization sends a morphism to its derived complex linear map. -/
 @[simp]
-theorem complex_map {X Y : PolarizableHodgeStructureCat.{u} n} (f : X ⟶ Y) :
-    complex.map f = eqToHom (complex_obj X) ≫ ModuleCat.ofHom f.toLinearMap ≫
-      eqToHom (complex_obj Y).symm :=
-  (conj_eqToHom_iff_heq _ _ (complex_obj X) (complex_obj Y)).2 HEq.rfl
+theorem complex_map_hom {X Y : PolarizableHodgeStructureCat.{u} n} (f : X ⟶ Y) :
+    (complex.map f).hom = f.hom.toLinearMap :=
+  rfl
 
 noncomputable instance : (complex (n := n)).Additive := by
   change (mixed ⋙ MixedHodgeStructureCat.complex).Additive
