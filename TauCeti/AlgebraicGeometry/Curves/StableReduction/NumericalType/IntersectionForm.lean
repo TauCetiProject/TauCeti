@@ -486,15 +486,7 @@ theorem intersection_five_neg (hcard : 5 < Fintype.card T.Component)
     · exact ⟨c₄, by simp, by rw [e₄]; exact h⟩
     · exact ⟨c₅, by simp, by rw [e₅]; exact h⟩
   have hsu : ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component) ≠ univ := by
-    intro h
-    have k₁ := card_insert_le c₁ ({c₂, c₃, c₄, c₅} : Finset T.Component)
-    have k₂ := card_insert_le c₂ ({c₃, c₄, c₅} : Finset T.Component)
-    have k₃ := card_insert_le c₃ ({c₄, c₅} : Finset T.Component)
-    have k₄ := card_insert_le c₄ ({c₅} : Finset T.Component)
-    have k₅ : ({c₅} : Finset T.Component).card = 1 := card_singleton _
-    have k₆ : ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component).card = Fintype.card T.Component := by
-      rw [h, card_univ]
-    omega
+    exact (card_lt_iff_ne_univ _).mp (card_le_five.trans_lt hcard)
   have hval : ∑ i ∈ ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component),
       ∑ j ∈ ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component), T.intersection i j * y i * y j =
       T.intersection c₁ c₁ * y₁ ^ 2 + T.intersection c₂ c₂ * y₂ ^ 2 +
