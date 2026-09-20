@@ -14,9 +14,8 @@ This file records measure formulas for finite families of disjoint additive tran
 
 ## Main results
 
-* `TauCeti.measure_sub_mem`: a right-invariant measure is unchanged by translation.
-* `TauCeti.measure_biUnion_sub_mem`: a finite disjoint union of translates has measure equal to
-  the number of translates times the measure of the original set.
+* `TauCeti.Measure.measure_biUnion_sub_mem`: a finite disjoint union of translates has measure
+  equal to the number of translates times the measure of the original set.
 -/
 
 public section
@@ -25,15 +24,9 @@ open MeasureTheory Set
 
 namespace TauCeti
 
-variable {E : Type*} [AddGroup E] [MeasurableSpace E] [MeasurableAdd E]
+namespace Measure
 
-/-- A translate of a set has the same measure under a right-invariant measure. -/
-theorem measure_sub_mem (mu : Measure E) [mu.IsAddRightInvariant] (w : E) (F : Set E) :
-    mu {y : E | y - w ∈ F} = mu F := by
-  have h : {y : E | y - w ∈ F} = (fun y : E ↦ y + -w) ⁻¹' F := by
-    ext y
-    simp only [Set.mem_ofPred_eq, Set.mem_preimage, sub_eq_add_neg]
-  rw [h, measure_preimage_add_right]
+variable {E : Type*} [AddGroup E] [MeasurableSpace E] [MeasurableAdd E]
 
 /-- The union of finitely many pairwise disjoint translates of a measurable set has measure equal
 to the number of translates times the measure of the set. -/
@@ -50,6 +43,14 @@ theorem measure_biUnion_sub_mem (mu : Measure E) [mu.IsAddRightInvariant]
         simp only [Set.mem_ofPred_eq, Set.mem_preimage, sub_eq_add_neg]
       rw [h]
       exact measurableSet_preimage (measurable_id.add_const (-w)) hFm]
-  simp [measure_sub_mem]
+  have htranslate (w : E) : mu {y : E | y - w ∈ F} = mu F := by
+    have h : {y : E | y - w ∈ F} = (fun y : E ↦ y + -w) ⁻¹' F := by
+      ext y
+      simp only [Set.mem_ofPred_eq, Set.mem_preimage, sub_eq_add_neg]
+    rw [h, measure_preimage_add_right]
+  simp_rw [htranslate]
+  simp
+
+end Measure
 
 end TauCeti

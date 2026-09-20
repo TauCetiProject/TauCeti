@@ -116,10 +116,10 @@ theorem abs_ncard_inter_mul_sub_measureReal_le
   have hAfin : A.Finite := hBfin.subset hAB
   -- the cells of `A` lie in `X`, and the cells of `B` cover `X`
   have hAmeas : μ (⋃ w ∈ hAfin.toFinset, {y : E | y - w ∈ F}) = A.ncard * μ F := by
-    rw [measure_biUnion_sub_mem μ hFm hdisj
+    rw [Measure.measure_biUnion_sub_mem μ hFm hdisj
         (fun w hw ↦ (hAfin.mem_toFinset.mp hw).1), Set.ncard_eq_toFinset_card _ hAfin]
   have hBmeas : μ (⋃ w ∈ hBfin.toFinset, {y : E | y - w ∈ F}) = B.ncard * μ F := by
-    rw [measure_biUnion_sub_mem μ hFm hdisj
+    rw [Measure.measure_biUnion_sub_mem μ hFm hdisj
         (fun w hw ↦ (hBfin.mem_toFinset.mp hw).1), Set.ncard_eq_toFinset_card _ hBfin]
   have hlow : (A.ncard : ℝ≥0∞) * μ F ≤ μ X := by
     rw [← hAmeas]
