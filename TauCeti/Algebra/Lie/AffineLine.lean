@@ -230,14 +230,14 @@ theorem le_translationIdeal_of_isNilpotent {N : LieIdeal K (AffineLine K)}
 
 /-- **The nilradical of the two-dimensional nonabelian Lie algebra is its ideal of translations**,
 the span of `y` (`translationIdeal_toSubmodule`). -/
-theorem nilradical_eq_translationIdeal :
+@[simp] theorem nilradical_eq_translationIdeal :
     nilradical K (AffineLine K) = translationIdeal K :=
   le_antisymm (le_translationIdeal_of_isNilpotent K inferInstance)
     (LieIdeal.le_nilradical K (AffineLine K) (translationIdeal K) inferInstance)
 
 /-- **Mathlib's `LieAlgebra.maxNilpotentIdeal` of the two-dimensional nonabelian Lie algebra is
 `⊥`**: the algebra acts on every nonzero ideal through an invertible operator. -/
-theorem maxNilpotentIdeal_eq_bot : LieAlgebra.maxNilpotentIdeal K (AffineLine K) = ⊥ := by
+@[simp] theorem maxNilpotentIdeal_eq_bot : LieAlgebra.maxNilpotentIdeal K (AffineLine K) = ⊥ := by
   by_contra h
   exact not_isNilpotent_of_ne_bot K h inferInstance
 
