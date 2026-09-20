@@ -85,7 +85,8 @@ theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image
   let hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥ :=
     LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective
   let P := h.contDiffAt.stableProjection hker
-  obtain ⟨K, alpha, hK, halpha, hs, hu⟩ := h.exists_stableProjection_exponential_bounds
+  obtain ⟨K, alpha, hK, halpha, hs, hu⟩ :=
+    h.contDiffAt.exists_stableProjection_exponential_bounds hker
   let epsilon : ℝ≥0 := alpha * C / (8 * K * (K + C))
   have hepsilon : 0 < epsilon := by
     dsimp only [epsilon]
@@ -149,6 +150,10 @@ theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image
     dsimp only [N]
     simpa only [add_sub_cancel_left, neg_apply] using
       (neg_gradient_eq_neg_hessianOperator_add_negativeGradientRemainder f x (x + z)).symm
+  have hfield' : (fun (_ : ℝ) z ↦ (-hessianOperator f x) z + N z) =
+      fun (_ : ℝ) z ↦ (-∇ f) (x + z) := by
+    funext _
+    exact hfield
   refine ⟨r, hr, rho, hrho, g, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · have hg : LipschitzWith C₀ g :=
       ContinuousLinearMap.lipschitzWith_localStableGraphMap hs hu hr.le hN hsmall
@@ -171,10 +176,7 @@ theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image
     apply ContinuousLinearMap.tendsto_of_isIntegralCurveOn_mapsTo_closedBall
       hs hu hr.le hN hsmall hN0 (h.contDiffAt.isIdempotentElem_stableProjection hker)
       (h.contDiffAt.commute_neg_hessianOperator_stableProjection hker)
-    · rw [show (fun (_ : ℝ) z ↦ (-hessianOperator f x) z + N z) =
-          (fun _ z ↦ (-∇ f) (x + z)) by
-          funext _ z
-          exact congrFun hfield z]
+    · rw [hfield']
       exact hy
     · exact hmaps
 

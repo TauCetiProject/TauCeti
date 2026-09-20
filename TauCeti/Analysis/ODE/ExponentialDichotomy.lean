@@ -204,9 +204,7 @@ theorem exists_projection_exponential_bounds (hP : IsIdempotentElem P) (halpha :
   · intro t ht v
     have hvP : v - P v ∈ P.ker := by
       have hPP : P (P v) = P v := by rw [← mul_apply_eq_comp, hP.eq]
-      rw [LinearMap.mem_ker, map_sub]
-      change P v - P (P v) = 0
-      rw [hPP, sub_self]
+      simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, hPP, sub_self]
     have hop : ‖v - P v‖ ≤ ‖ContinuousLinearMap.id ℝ X - P‖ * ‖v‖ := by
       simpa using (ContinuousLinearMap.id ℝ X - P).le_opNorm v
     exact norm_exp_le_mul_norm_of_le (hu t ht (v - P v) hvP) hop

@@ -26,8 +26,8 @@ turns convergence into contraction.
 
 * `ContDiffAt.exists_linearized_flow_exponential_bounds`: the stable and unstable linearized
   flows contract exponentially with a common positive rate.
-* `TauCeti.IsNondegenerateCriticalPoint.exists_stableProjection_exponential_bounds`: the same
-  estimates in the projection form consumed by the Lyapunov--Perron construction.
+* `ContDiffAt.exists_stableProjection_exponential_bounds`: the same estimates in the projection
+  form consumed by the Lyapunov--Perron construction.
 
 ## References
 
@@ -73,53 +73,38 @@ theorem exists_linearized_flow_exponential_bounds (hf : ContDiffAt ℝ 2 f x) :
       hunstable t ht v ((hT.mem_negativeSpectralSubspace_iff rfl).2
         (hf.mem_unstableLinearSubspace_iff.mp hv))
 
-end ContDiffAt
-
-namespace TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] {f : E → ℝ} {x : E}
-
-/-- The stable projection at a nondegenerate critical point gives an exponential dichotomy for
-the negative Hessian operator. The common constant `K` absorbs the operator norms of the
-projection and its complementary projection. -/
-theorem IsNondegenerateCriticalPoint.exists_stableProjection_exponential_bounds
-    (h : IsNondegenerateCriticalPoint f x) :
+/-- When the Hessian is injective, the stable projection gives an exponential dichotomy for the
+negative Hessian operator. The common constant `K` absorbs the operator norms of the projection
+and its complementary projection. -/
+theorem exists_stableProjection_exponential_bounds (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
     ∃ (K alpha : ℝ≥0), 0 < K ∧ 0 < alpha ∧
       (∀ t : ℝ, 0 ≤ t → ∀ v : E,
-        ‖NormedSpace.exp (t • (-hessianOperator f x))
-          (h.contDiffAt.stableProjection
-            (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective) v)‖ ≤
+        ‖NormedSpace.exp (t • (-hessianOperator f x)) (hf.stableProjection hker v)‖ ≤
           K * Real.exp (-alpha * t) * ‖v‖) ∧
       (∀ t : ℝ, t ≤ 0 → ∀ v : E,
-        ‖NormedSpace.exp (t • (-hessianOperator f x))
-          (v - h.contDiffAt.stableProjection
-            (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective) v)‖ ≤
+        ‖NormedSpace.exp (t • (-hessianOperator f x)) (v - hf.stableProjection hker v)‖ ≤
           K * Real.exp (alpha * t) * ‖v‖) := by
-  let hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥ :=
-    LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective
-  let P := h.contDiffAt.stableProjection hker
-  obtain ⟨alpha, halpha, hs, hu⟩ := h.contDiffAt.exists_linearized_flow_exponential_bounds
-  have hs' : ∀ (t : ℝ), 0 ≤ t → ∀ w ∈ P.range,
+  obtain ⟨alpha, halpha, hs, hu⟩ := hf.exists_linearized_flow_exponential_bounds
+  have hs' : ∀ (t : ℝ), 0 ≤ t → ∀ w ∈ (hf.stableProjection hker).range,
       ‖NormedSpace.exp (t • (-hessianOperator f x)) w‖ ≤
         Real.exp (-alpha * t) * ‖w‖ := by
     intro t ht w hw
-    have hw' : w ∈ h.contDiffAt.stableLinearSubspace := by
-      simpa only [P, h.contDiffAt.range_stableProjection hker] using hw
+    have hw' : w ∈ hf.stableLinearSubspace := by
+      simpa only [hf.range_stableProjection hker] using hw
     rw [smul_neg, ← neg_smul]
     simpa only [linearizedNegativeGradientFlow_apply] using hs t ht w hw'
-  have hu' : ∀ (t : ℝ), t ≤ 0 → ∀ w ∈ P.ker,
+  have hu' : ∀ (t : ℝ), t ≤ 0 → ∀ w ∈ (hf.stableProjection hker).ker,
       ‖NormedSpace.exp (t • (-hessianOperator f x)) w‖ ≤
         Real.exp (alpha * t) * ‖w‖ := by
     intro t ht w hw
-    have hw' : w ∈ h.contDiffAt.unstableLinearSubspace := by
-      simpa only [P, h.contDiffAt.ker_stableProjection hker] using hw
+    have hw' : w ∈ hf.unstableLinearSubspace := by
+      simpa only [hf.ker_stableProjection hker] using hw
     rw [smul_neg, ← neg_smul]
     simpa only [linearizedNegativeGradientFlow_apply] using hu t ht w hw'
-  simpa only [P, hker] using
-    ContinuousLinearMap.exists_projection_exponential_bounds
-      (h.contDiffAt.isIdempotentElem_stableProjection hker) halpha hs' hu'
+  exact ContinuousLinearMap.exists_projection_exponential_bounds
+    (hf.isIdempotentElem_stableProjection hker) halpha hs' hu'
 
-end TauCeti
+end ContDiffAt
 
 end
