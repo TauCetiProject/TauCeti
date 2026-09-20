@@ -52,17 +52,14 @@ namespace RationalHodgeSubstructure
 
 variable (W : RationalHodgeSubstructure hℚ hs)
 
-private theorem isSubstructure_rationalToComplexSubmodule :
-    hs.IsSubstructure (rationalToComplexSubmodule hℚ hℂ W.WQ) := by
-  rw [← W.WC_def]
-  exact W.isSubstructure
-
 /-- The pure Hodge structure induced on a rational Hodge substructure. Its integral carrier is
 the lattice of integral vectors lying in `W.WQ`, its rational carrier is `W.WQ`, and its complex
 carrier is `W.WC`. -/
 noncomputable def hodgeStructure :
     HodgeStructure (isBaseChange_integralSubmoduleToComplex hℚ hℂ W.WQ) n := by
-  let h := W.isSubstructure_rationalToComplexSubmodule
+  have h : hs.IsSubstructure (rationalToComplexSubmodule hℚ hℂ W.WQ) := by
+    rw [← W.WC_def]
+    exact W.isSubstructure
   refine {
     F := fun p ↦ (hs.F p).comap (rationalToComplexSubmodule hℚ hℂ W.WQ).subtype
     F_antitone := fun _ _ hpq ↦ Submodule.comap_mono (hs.F_antitone hpq)
@@ -115,6 +112,12 @@ variable (P : Polarization hℂ hs)
 substructure. -/
 def inducedForm : LinearMap.BilinForm ℤ (integralSubmodule ιℚ W.WQ) :=
   P.Qint.restrict (integralSubmodule ιℚ W.WQ)
+
+/-- The restricted integral form evaluates as the ambient integral form on underlying vectors. -/
+@[simp]
+theorem inducedForm_apply (x y : integralSubmodule ιℚ W.WQ) :
+    W.inducedForm P x y = P.Qint (x : Vℤ) (y : Vℤ) := by
+  simp [inducedForm]
 
 /-- The complexification of the restricted integral form is the restriction of the ambient
 complex polarizing form. -/
