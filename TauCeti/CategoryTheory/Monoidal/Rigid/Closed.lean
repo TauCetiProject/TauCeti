@@ -46,7 +46,9 @@ is their uniqueness isomorphism `CategoryTheory.Adjunction.rightAdjointUniq`.
 * `TauCeti.ihomUnitIso`: the isomorphism `(Y ⟶[C] 𝟙_ C) ≅ D` between the internal hom into the
   unit and the dual, whose inverse transposes the pairing
   (`TauCeti.ihomUnitIso_inv`);
-* `TauCeti.exactPairingIhomUnit`: the internal hom into the unit is itself a left dual of `Y`.
+* `TauCeti.exactPairingIhomUnit`: the internal hom into the unit is itself a left dual of `Y`,
+  with evaluation and coevaluation exposed by `TauCeti.exactPairingIhomUnit_evaluation` and
+  `TauCeti.exactPairingIhomUnit_coevaluation`.
 -/
 
 public section
@@ -169,8 +171,28 @@ theorem tensorHom_ihomUnitIso_inv_comp_ev {M N : C} (f : M ⟶ Y) (g : N ⟶ D) 
 
 /-- Transporting the pairing along `TauCeti.ihomUnitIso` exhibits the internal hom of `Y` into
 the unit as a left dual of `Y`: the categorical dual of `Y` is `Hom(Y, 𝟙_ C)`. -/
-@[instance_reducible]
+@[reducible]
 def exactPairingIhomUnit : ExactPairing (Y ⟶[C] 𝟙_ C) Y :=
   exactPairingCongrLeft (ihomUnitIso D Y)
+
+/-- The evaluation of the pairing transported to the internal hom is the internal-hom
+evaluation. -/
+@[simp]
+theorem exactPairingIhomUnit_evaluation :
+    @ExactPairing.evaluation C _ _ (Y ⟶[C] 𝟙_ C) Y (exactPairingIhomUnit D Y) =
+      (ihom.ev Y).app (𝟙_ C) := by
+  change Y ◁ (ihomUnitIso D Y).hom ≫ ε_ D Y = _
+  rw [← whiskerLeft_ihomUnitIso_inv_comp_ev (D := D) (Y := Y),
+    ← MonoidalCategory.whiskerLeft_comp_assoc, Iso.hom_inv_id]
+  simp
+
+/-- The coevaluation of the pairing transported to the internal hom is obtained by composing
+the original coevaluation with the inverse comparison. -/
+@[simp]
+theorem exactPairingIhomUnit_coevaluation :
+    @ExactPairing.coevaluation C _ _ (Y ⟶[C] 𝟙_ C) Y (exactPairingIhomUnit D Y) =
+      η_ D Y ≫ (ihomUnitIso D Y).inv ▷ Y := by
+  unfold ExactPairing.coevaluation exactPairingIhomUnit exactPairingCongrLeft
+  rfl
 
 end TauCeti
