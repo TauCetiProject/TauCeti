@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-public import TauCeti.LinearAlgebra.Matrix.Congruence
 import Mathlib.Tactic.LinearCombination
+-- Only `Matrix.submatrix_one_mul_mul_submatrix_one`, inside the proof of a private theorem, so
+-- this stays a private import rather than re-exporting Congruence to every downstream module.
+import TauCeti.LinearAlgebra.Matrix.Congruence
 
 /-!
 # The corner minor of a doubly singular matrix
