@@ -345,28 +345,11 @@ piece. -/
 @[simp]
 theorem mapAssociatedGraded_of (f : LieHom R L M) (k : ℕ) (x : PBWGradedPiece R L k) :
     mapAssociatedGraded R f (DirectSum.of (PBWGradedPiece R L) k x) =
-      DirectSum.of (PBWGradedPiece R M) k (mapGradedPiece R f k x) := by
-  change DirectSum.toSemiring
-      (fun k => ((DirectSum.lof R ℕ (PBWGradedPiece R M) k).comp
-        (mapGradedPiece R f k)).toAddMonoidHom)
-      (by
-        change ((DirectSum.lof R ℕ (PBWGradedPiece R M) 0).comp
-          (mapGradedPiece R f 0)) GradedMonoid.GOne.one = 1
-        simp only [LinearMap.comp_apply, DirectSum.lof_eq_of, gradedGOne_one,
-          mapGradedPiece_gradedOne, associatedGraded_of_gradedOne])
-      (by
-        intro i j x y
-        change ((DirectSum.lof R ℕ (PBWGradedPiece R M) (i + j)).comp
-            (mapGradedPiece R f (i + j))) (GradedMonoid.GMul.mul x y) =
-          ((DirectSum.lof R ℕ (PBWGradedPiece R M) i).comp
-            (mapGradedPiece R f i)) x *
-          ((DirectSum.lof R ℕ (PBWGradedPiece R M) j).comp
-            (mapGradedPiece R f j)) y
-        simp only [LinearMap.comp_apply, DirectSum.lof_eq_of, gradedGMul_mul,
-          mapGradedPiece_gradedMul, associatedGraded_of_mul_of])
-      (DirectSum.of (PBWGradedPiece R L) k x) = _
-  rw [DirectSum.toSemiring_of]
-  rfl
+      DirectSum.of (PBWGradedPiece R M) k (mapGradedPiece R f k x) :=
+  -- Mathlib has no `DirectSum.toAlgebra_of`. The underlying function of `DirectSum.toAlgebra` is
+  -- definitionally `DirectSum.toModule` (Mathlib's own `commutes'` proof of `toAlgebra` uses
+  -- this), so the linear computation rule applies directly, with no proof terms exposed.
+  DirectSum.toModule_lof R k x
 
 /-- The identity Lie homomorphism induces the identity on the PBW associated graded. -/
 @[simp]
