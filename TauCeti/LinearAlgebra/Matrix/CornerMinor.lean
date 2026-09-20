@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import TauCeti.LinearAlgebra.Matrix.Congruence
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -75,21 +76,15 @@ theorem submatrix_mul_of_mulVec_single (X Y : Matrix (Fin (n + 1)) (Fin (n + 1))
     Pi.single_eq_of_ne (Fin.castSucc_lt_last u).ne, zero_mul, add_zero]
   rfl
 
-end NonAssocSemiring
-
-section Semiring
-
-variable [Semiring R]
-
 /-! ### The two rectangular matrices that delete and restore the last coordinate -/
 
 /-- The `n × (n + 1)` matrix that deletes the last coordinate. -/
-private def projCastSucc (n : ℕ) (R : Type*) [Semiring R] :
+private def projCastSucc (n : ℕ) (R : Type*) [NonAssocSemiring R] :
     Matrix (Fin n) (Fin (n + 1)) R :=
   (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R).submatrix Fin.castSucc id
 
 /-- The `(n + 1) × n` matrix that includes the first `n` coordinates. -/
-private def inclCastSucc (n : ℕ) (R : Type*) [Semiring R] :
+private def inclCastSucc (n : ℕ) (R : Type*) [NonAssocSemiring R] :
     Matrix (Fin (n + 1)) (Fin n) R :=
   (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R).submatrix id Fin.castSucc
 
@@ -104,19 +99,20 @@ private theorem inclCastSucc_apply (a : Fin (n + 1)) (b : Fin n) :
   rfl
 
 private theorem projCastSucc_mul {m : Type*} (A : Matrix (Fin (n + 1)) m R) :
-    projCastSucc n R * A = A.submatrix Fin.castSucc id :=
-  (Matrix.one_submatrix_mul Fin.castSucc (Equiv.refl _) A).trans (by rw [Equiv.refl_symm]; rfl)
+    projCastSucc n R * A = A.submatrix Fin.castSucc id := by
+  have h := Matrix.one_submatrix_mul Fin.castSucc (Equiv.refl (Fin (n + 1))) A
+  simpa [projCastSucc] using h
 
 private theorem mul_inclCastSucc {m : Type*} (A : Matrix m (Fin (n + 1)) R) :
-    A * inclCastSucc n R = A.submatrix id Fin.castSucc :=
-  (Matrix.mul_submatrix_one (Equiv.refl _) Fin.castSucc A).trans (by rw [Equiv.refl_symm]; rfl)
+    A * inclCastSucc n R = A.submatrix id Fin.castSucc := by
+  have h := Matrix.mul_submatrix_one (Equiv.refl (Fin (n + 1))) Fin.castSucc A
+  simpa [inclCastSucc] using h
 
 private theorem projCastSucc_mul_mul_inclCastSucc (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
-    projCastSucc n R * A * inclCastSucc n R = A.submatrix Fin.castSucc Fin.castSucc := by
-  rw [Matrix.mul_assoc, mul_inclCastSucc, projCastSucc_mul, Matrix.submatrix_submatrix]
-  rfl
+    projCastSucc n R * A * inclCastSucc n R = A.submatrix Fin.castSucc Fin.castSucc :=
+  Matrix.submatrix_one_mul_mul_submatrix_one Fin.castSucc A
 
-end Semiring
+end NonAssocSemiring
 
 variable [CommRing R]
 
