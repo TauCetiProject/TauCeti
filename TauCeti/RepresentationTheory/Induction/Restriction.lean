@@ -210,7 +210,7 @@ abbrev resFDRep (S : Subgroup G) (B : FDRep k G) : FDRep k S :=
   (Action.res (FGModuleCat k) S.subtype).obj B
 
 /-- Restriction of an intertwiner commutes with forgetting finite-dimensionality. -/
-theorem MonoidHom.forget₂_map_actionRes {H : Type v} {K : Type w} [Monoid H] [Monoid K]
+theorem _root_.MonoidHom.forget₂_map_actionRes {H : Type v} {K : Type w} [Monoid H] [Monoid K]
     (f : H →* K) {A B : FDRep k K} (g : A ⟶ B) :
     (forget₂ (FDRep k H) (Rep k H)).map ((Action.res (FGModuleCat k) f).map g) =
       (Rep.resFunctor f).map ((forget₂ (FDRep k K) (Rep k K)).map g) :=
