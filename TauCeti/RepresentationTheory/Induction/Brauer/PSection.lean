@@ -109,8 +109,11 @@ theorem orderOf_nsmul_pSectionIndicator_mem_span_virtualCharacters (A : Subring 
       split_ifs <;> simp
     · exact irreducibleCharacter_apply_mem_of_forall_pow_eq_one_mem k
         (by rwa [Nat.card_zpowers]) i g
-  have h2 := comp_mem_span_virtualCharacters A (pFreePartHom s P hs)
-    (Submodule.span_mono irreducibleCharacters_subset_virtualCharacters h1)
+  have hiv : irreducibleCharacters k ↥(zpowers s) ⊆ virtualCharacters k ↥(zpowers s) :=
+    fun f hf => by
+      obtain ⟨V, rfl⟩ := irreducibleCharacters_subset_range hf
+      exact character_mem_virtualCharacters V
+  have h2 := comp_mem_span_virtualCharacters A (pFreePartHom s P hs) (Submodule.span_mono hiv h1)
   rwa [Nat.card_zpowers, Pi.smul_comp, ← pSectionIndicator_eq_comp_pFreePartHom hs] at h2
 
 /-- **The induced `p`-section indicator, scaled by the order of `s`, is an `A`-combination of

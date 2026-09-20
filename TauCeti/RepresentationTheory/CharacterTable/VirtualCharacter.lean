@@ -240,12 +240,6 @@ theorem irreducibleCharacters_subset_range :
   obtain ⟨n, ρ, -, rfl⟩ := mem_irreducibleCharacters_iff.mp hf
   exact ⟨FDRep.of ρ, rfl⟩
 
-/-- **An irreducible character is a virtual character.** -/
-theorem irreducibleCharacters_subset_virtualCharacters :
-    irreducibleCharacters k G ⊆ virtualCharacters k G := fun f hf => by
-  obtain ⟨V, rfl⟩ := irreducibleCharacters_subset_range hf
-  exact character_mem_virtualCharacters V
-
 end Irreducible
 
 section Lattice
