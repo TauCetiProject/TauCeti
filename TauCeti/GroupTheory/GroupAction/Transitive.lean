@@ -65,7 +65,7 @@ theorem isPretransitive_prod_left [IsPretransitive G X] [Subsingleton Y] :
     IsPretransitive G (X × Y) :=
   ⟨fun p q => by
     obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G p.1 q.1
-    exact ⟨g, Prod.ext hg (Subsingleton.elim _ _)⟩⟩
+    exact ⟨g, Prod.fst_injective hg⟩⟩
 
 end SMul
 
