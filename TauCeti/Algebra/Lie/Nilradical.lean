@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Nilpotent
+public import TauCeti.Algebra.Lie.Basic
 
 /-!
 # The nilradical of a Lie algebra
@@ -57,35 +58,11 @@ namespace, where dot notation on that Mathlib type elaborates.
 
 * [N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 1-3*][bourbaki1975], Chapter I, §4.
 * N. Jacobson, *Lie Algebras*, Interscience (1962), Chapter II.
+* The construction of `nilradical`, `nilradicalIsNilpotent`, and the largest-ideal API adapts
+  Mathlib's `LieAlgebra.radical` development in `Mathlib.Algebra.Lie.Solvable`.
 -/
 
 public section
-
-namespace TauCeti
-
-section IdealOperations
-
-variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-  [AddCommGroup M] [Module R M] [LieRingModule L M]
-
-namespace LieSubmodule
-
-/-- Bracketing with a Lie ideal distributes over suprema of Lie submodules. -/
-theorem lie_iSup {ι : Type*} (I : LieIdeal R L) (N : ι → LieSubmodule R L M) :
-    ⁅I, ⨆ i, N i⁆ = ⨆ i, ⁅I, N i⁆ := by
-  refine le_antisymm ?_ (iSup_le fun i ↦ _root_.LieSubmodule.mono_lie_right _ (le_iSup N i))
-  rw [_root_.LieSubmodule.lie_le_iff]
-  intro x hx m hm
-  refine _root_.LieSubmodule.iSup_induction N (motive := fun y ↦ ⁅x, y⁆ ∈ ⨆ i, ⁅I, N i⁆) hm
-    (fun i y hy ↦ ?_) (by simp) (fun y z hy hz ↦ ?_)
-  · exact _root_.LieSubmodule.mem_iSup_of_mem i (_root_.LieSubmodule.lie_mem_lie hx hy)
-  · rw [lie_add]; exact add_mem hy hz
-
-end LieSubmodule
-
-end IdealOperations
-
-end TauCeti
 
 namespace LieIdeal
 
@@ -165,6 +142,35 @@ theorem isNilpotent_of_le {I J : LieIdeal R L} (h : I ≤ J) (hJ : LieRing.IsNil
   obtain ⟨k, hk⟩ := (isNilpotent_iff_exists_lcs_eq_bot J).1 hJ
   exact (isNilpotent_iff_exists_lcs_eq_bot I).2 ⟨k, le_bot_iff.1 (hk ▸ lcs_mono L h k)⟩
 
+/-- A Lie algebra equivalence maps a nilpotent ideal to a nilpotent ideal. -/
+theorem isNilpotent_map_equiv {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (I : LieIdeal R L) (e : L ≃ₗ⁅R⁆ L') (hI : LieRing.IsNilpotent I) :
+    LieRing.IsNilpotent (I.map e.toLieHom) := by
+  let _ : LieRing.IsNilpotent I := hI
+  let f : I →ₗ⁅R⁆ I.map e.toLieHom :=
+    { toFun := fun x ↦ ⟨e x, LieIdeal.mem_map x.property⟩
+      map_add' := fun _ _ ↦ by ext; exact map_add e _ _
+      map_smul' := fun _ _ ↦ by ext; exact map_smul e _ _
+      map_lie' := fun {_ _} ↦ by ext; exact e.map_lie _ _ }
+  apply Function.Surjective.lieAlgebra_isNilpotent (f := f)
+  intro y
+  obtain ⟨x, hx⟩ := LieIdeal.mem_map_of_surjective e.surjective y.property
+  refine ⟨x, ?_⟩
+  apply Subtype.ext
+  exact hx
+
+/-- Every element of a nilpotent ideal acts nilpotently in the adjoint representation. -/
+theorem isNilpotent_ad_of_mem (I : LieIdeal R L) [LieRing.IsNilpotent I] {x : L} (hx : x ∈ I) :
+    IsNilpotent (LieAlgebra.ad R L x) := by
+  let xI : I := ⟨x, hx⟩
+  let _ : LieModule.IsNilpotent (↥I) L :=
+    (isNilpotent_iff_isNilpotent_ambient I).mp inferInstance
+  have haction : LieModule.toEnd R (↥I) L xI = LieAlgebra.ad R L x := by
+    ext y
+    rfl
+  rw [← haction]
+  exact LieModule.isNilpotent_toEnd_of_isNilpotent R (↥I) L xI
+
 instance isNilpotentBot : LieRing.IsNilpotent (⊥ : LieIdeal R L) :=
   (isNilpotent_iff_exists_lcs_eq_bot _).2 ⟨1, by simp⟩
 
@@ -178,7 +184,7 @@ theorem lcs_sup_le_iSup_inf (I J : LieIdeal R L) (n : ℕ) :
   | succ n ih =>
     rw [lcs_succ]
     refine (LieSubmodule.mono_lie_right _ ih).trans ?_
-    rw [TauCeti.LieSubmodule.lie_iSup]
+    rw [LieSubmodule.lie_iSup]
     refine iSup_le fun i ↦ ?_
     rw [LieSubmodule.sup_lie]
     refine sup_le ?_ ?_
@@ -240,8 +246,24 @@ theorem _root_.LieIdeal.isNilpotent_iff_le_nilradical [IsNoetherian R L]
     (I : LieIdeal R L) : LieRing.IsNilpotent I ↔ I ≤ nilradical R L :=
   ⟨fun h ↦ le_sSup h, fun h ↦ LieIdeal.isNilpotent_of_le h inferInstance⟩
 
+/-- The centre is contained in the nilradical. -/
 theorem center_le_nilradical : LieAlgebra.center R L ≤ nilradical R L :=
-  le_sSup (show LieRing.IsNilpotent (LieAlgebra.center R L) from inferInstance)
+  le_sSup (by simp only [Set.mem_ofPred_eq]; infer_instance)
+
+/-- A Lie algebra equivalence carries the nilradical onto the nilradical. In particular, every
+Lie algebra automorphism preserves the nilradical. -/
+theorem nilradical_map_equiv {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (e : L ≃ₗ⁅R⁆ L') : (nilradical R L).map e.toLieHom = nilradical R L' := by
+  apply le_antisymm
+  · rw [LieIdeal.map_le_iff_le_comap]
+    refine sSup_le fun I hI ↦ ?_
+    rw [← LieIdeal.map_le_iff_le_comap]
+    exact le_sSup (LieIdeal.isNilpotent_map_equiv I e hI)
+  · refine sSup_le fun I hI y hy ↦ ?_
+    have hpre : I.map e.symm ≤ nilradical R L :=
+      le_sSup (LieIdeal.isNilpotent_map_equiv I e.symm hI)
+    have hx : e.symm y ∈ nilradical R L := hpre (LieIdeal.mem_map hy)
+    simpa using (LieIdeal.mem_map (f := e.toLieHom) hx)
 
 /-- Mathlib's `LieAlgebra.maxNilpotentIdeal` is contained in the nilradical: an ideal on which the
 ambient algebra acts nilpotently is in particular nilpotent as a Lie algebra.  The containment is
@@ -252,16 +274,20 @@ theorem maxNilpotentIdeal_le_nilradical :
     have : LieModule.IsNilpotent L I := hI
     exact (inferInstance : LieRing.IsNilpotent I)
 
+/-- The nilradical is contained in the solvable radical. -/
 theorem nilradical_le_radical : nilradical R L ≤ LieAlgebra.radical R L :=
   sSup_le_sSup fun I (_ : LieRing.IsNilpotent I) ↦ LieAlgebra.isSolvable_of_isNilpotent I
 
+/-- The nilradical of a nilpotent Lie algebra is the whole Lie algebra. -/
 @[simp]
 theorem nilradical_eq_top_of_isNilpotent [LieRing.IsNilpotent L] : nilradical R L = ⊤ := by
   rw [eq_top_iff]
-  refine le_sSup (show LieRing.IsNilpotent (⊤ : LieIdeal R L) from ?_)
+  refine le_sSup ?_
   obtain ⟨k, hk⟩ := LieModule.IsNilpotent.nilpotent R L L
   exact (LieIdeal.isNilpotent_iff_exists_lcs_eq_bot _).2 ⟨k, by rwa [LieIdeal.lcs_top]⟩
 
+/-- Over a Noetherian Lie algebra, the nilradical is the whole algebra exactly when the algebra is
+nilpotent. -/
 theorem nilradical_eq_top_iff [IsNoetherian R L] :
     nilradical R L = ⊤ ↔ LieRing.IsNilpotent L := by
   refine ⟨fun h ↦ ?_, fun _ ↦ nilradical_eq_top_of_isNilpotent R L⟩
@@ -274,22 +300,8 @@ variable {R L}
 
 /-- **Every element of the nilradical is `ad`-nilpotent.** -/
 theorem isNilpotent_ad_of_mem_nilradical [IsNoetherian R L] {x : L}
-    (hx : x ∈ nilradical R L) : IsNilpotent (LieAlgebra.ad R L x) := by
-  obtain ⟨k, hk⟩ :=
-    (LieIdeal.isNilpotent_iff_exists_lcs_eq_bot (nilradical R L)).1 inferInstance
-  have key : ∀ (j : ℕ) (y : L), (LieAlgebra.ad R L x ^ j) y ∈ (nilradical R L).lcs L j := by
-    intro j
-    induction j with
-    | zero => intro y; simp
-    | succ j ih =>
-      intro y
-      rw [pow_succ', Module.End.mul_apply, LieIdeal.lcs_succ]
-      exact LieSubmodule.lie_mem_lie hx (ih y)
-  refine ⟨k, ?_⟩
-  ext y
-  have := key k y
-  rw [hk] at this
-  simpa using this
+    (hx : x ∈ nilradical R L) : IsNilpotent (LieAlgebra.ad R L x) :=
+  LieIdeal.isNilpotent_ad_of_mem (nilradical R L) hx
 
 end LieAlgebra
 
