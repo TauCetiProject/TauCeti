@@ -53,6 +53,9 @@ already maps onto `B` (`TauCeti.exists_algHom_surjective_of_prod`).
 * `TauCeti.card_centralIdempotents_pi`: the count is multiplicative over a finite product, whence
   `TauCeti.card_centralIdempotents_pi_of_isSimpleRing`: a finite product of simple rings has
   `2 ^ (number of factors)` central idempotents.
+* `TauCeti.prodFirstAlgHom`: the first-coordinate algebra map out of a product `A × C`, for an
+  algebra map sending `(1, 0)` to `1`, with `TauCeti.prodFirstAlgHom_surjective` recording that it
+  inherits surjectivity.
 * `TauCeti.exists_algHom_surjective_of_prod`: a surjection of algebras `A × A ↠ B` onto a simple
   ring restricts to a surjection along one of the two coordinates.
 
@@ -203,36 +206,53 @@ end IsSimpleRing
 
 section ProdSurjection
 
-variable {F A B : Type*} [CommSemiring F] [Ring A] [Algebra F A] [Ring B] [Algebra F B]
+section Coordinate
 
-/-- The images of the two coordinate units of `A × A` add up to the unit of `B`. -/
-private theorem map_one_zero_add_map_zero_one (φ : (A × A) →ₐ[F] B) :
+variable {F A C B : Type*} [CommSemiring F] [Semiring A] [Algebra F A] [Semiring C] [Algebra F C]
+  [Semiring B] [Algebra F B]
+
+/-- The images of the two coordinate units of `A × C` add up to the unit of `B`. -/
+theorem map_one_zero_add_map_zero_one (φ : (A × C) →ₐ[F] B) :
     φ (1, 0) + φ (0, 1) = 1 := by
-  have hone : ((1, 0) + (0, 1) : A × A) = 1 := by simp [Prod.ext_iff]
+  have hone : ((1, 0) + (0, 1) : A × C) = 1 := by simp [Prod.ext_iff]
   rw [← map_add, hone, map_one]
 
-/-- The coordinate map `a ↦ φ (a, 0)` attached to an algebra map out of `A × A`, packaged as an
+/-- The coordinate map `a ↦ φ (a, 0)` attached to an algebra map out of a product, packaged as an
 algebra map once the image of `(1, 0)` is known to be the unit. It is multiplicative and linear for
-every `φ`; unitality is exactly the hypothesis. -/
-private def prodFirstAlgHom (φ : (A × A) →ₐ[F] B) (hu : φ (1, 0) = 1) : A →ₐ[F] B where
+every `φ`; unitality is exactly the hypothesis.
+
+Note that `a ↦ (a, 0)` is not itself an algebra map -- it does not preserve `1` -- so this cannot
+be obtained by composing `φ` with an inclusion. -/
+def prodFirstAlgHom (φ : (A × C) →ₐ[F] B) (hu : φ (1, 0) = 1) : A →ₐ[F] B where
   toFun a := φ (a, 0)
   map_one' := hu
   map_mul' a a' := by rw [← map_mul]; congr 1; simp
   map_zero' := map_zero φ
   map_add' a a' := by rw [← map_add]; congr 1; simp
   commutes' r := by
-    have hr : ((algebraMap F A r : A), (0 : A)) = algebraMap F (A × A) r * (1, 0) := by
+    have hr : ((algebraMap F A r : A), (0 : C)) = algebraMap F (A × C) r * (1, 0) := by
       simp [Prod.algebraMap_apply]
     rw [hr, map_mul, AlgHom.commutes, hu, mul_one]
 
 /-- The first coordinate map is what its name says: `a ↦ φ (a, 0)`. -/
-private theorem prodFirstAlgHom_apply (φ : (A × A) →ₐ[F] B) (hu : φ (1, 0) = 1) (a : A) :
+@[simp]
+theorem prodFirstAlgHom_apply (φ : (A × C) →ₐ[F] B) (hu : φ (1, 0) = 1) (a : A) :
     prodFirstAlgHom φ hu a = φ (a, 0) := (rfl)
+
+end Coordinate
+
+section CoordinateSurjective
+
+variable {F A C B : Type*} [CommSemiring F] [Semiring A] [Algebra F A] [Semiring C] [Algebra F C]
+  [Ring B] [Algebra F B]
 
 /-- If the image of `(1, 0)` is the unit then the first coordinate map is surjective as soon as `φ`
 is: the image of `(0, 1)` is then complementary to `1`, so it vanishes, and with it the whole
-second coordinate. -/
-private theorem prodFirstAlgHom_surjective (φ : (A × A) →ₐ[F] B) (hu : φ (1, 0) = 1)
+second coordinate.
+
+Unlike the construction itself this needs `B` additively cancellative, to pass from
+`1 + φ (0, 1) = 1` to `φ (0, 1) = 0`. -/
+theorem prodFirstAlgHom_surjective (φ : (A × C) →ₐ[F] B) (hu : φ (1, 0) = 1)
     (hφ : Function.Surjective φ) : Function.Surjective (prodFirstAlgHom φ hu) := by
   have hw : φ (0, 1) = 0 := by
     have hsum := map_one_zero_add_map_zero_one φ
@@ -241,8 +261,12 @@ private theorem prodFirstAlgHom_surjective (φ : (A × A) →ₐ[F] B) (hu : φ 
   intro b
   obtain ⟨⟨a₁, a₂⟩, rfl⟩ := hφ b
   refine ⟨a₁, ?_⟩
-  have hsplit : ((a₁, a₂) : A × A) = (a₁, 0) + (0, a₂) * (0, 1) := by simp
+  have hsplit : ((a₁, a₂) : A × C) = (a₁, 0) + (0, a₂) * (0, 1) := by simp
   rw [prodFirstAlgHom_apply, hsplit, map_add, map_mul, hw, mul_zero, add_zero]
+
+end CoordinateSurjective
+
+variable {F A B : Type*} [CommSemiring F] [Ring A] [Algebra F A] [Ring B] [Algebra F B]
 
 /-- **A surjection onto a simple ring from a product of two copies of an algebra factors through a
 coordinate.** The image of `(1, 0)` is a central idempotent of `B`, hence `0` or `1`
