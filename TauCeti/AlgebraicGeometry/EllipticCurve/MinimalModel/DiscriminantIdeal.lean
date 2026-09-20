@@ -138,8 +138,9 @@ variable (O)
 
 /-- **The minimal discriminant ideal** `𝔇_{E/K} = ∏ᵥ 𝔭ᵥ ^ v (Δ_min,ᵥ)`: the product over the
 height-one primes of `O` of the local minimal discriminants of `W`. The product is finite
-(`hasFiniteMulSupport_pow_localMinimalDiscriminantValuation`), since all but finitely many primes
-divide no discriminant. -/
+(`hasFiniteMulSupport_pow_localMinimalDiscriminantValuation`): after choosing an integral model,
+only finitely many primes divide its nonzero discriminant ideal, and every local minimal exponent
+is bounded by that ideal's multiplicity. -/
 noncomputable def minimalDiscriminantIdeal (W : WeierstrassCurve K) [W.IsElliptic] : Ideal O :=
   ∏ᶠ v : HeightOneSpectrum O,
     v.asIdeal ^ W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal)
