@@ -88,7 +88,9 @@ variable {A}
 
 section Absorption
 
-variable {M : Type*} [Zero M] [TopologicalSpace M] [MulActionWithZero A M]
+section SMulWithZero
+
+variable {M : Type*} [Zero M] [TopologicalSpace M] [SMulWithZero A M]
   {u : ℕ → Aˣ} (hu : Tendsto (fun n ↦ ((u n : A))) atTop (𝓝 0))
 include hu
 
@@ -112,6 +114,12 @@ theorem exists_smul_mem_of_tendsto_zero (x : M) (hc : ContinuousAt (fun a : A �
   rw [zero_smul] at hsmul
   exact (hsmul.eventually_mem hU).exists
 
+end SMulWithZero
+
+variable {M : Type*} [Zero M] [TopologicalSpace M] [MulActionWithZero A M]
+  {u : ℕ → Aˣ} (hu : Tendsto (fun n ↦ ((u n : A))) atTop (𝓝 0))
+include hu
+
 /-- **The countable covering Henkel's Baire argument runs on**: the dilates `uₙ⁻¹ • U` of a
 neighbourhood of zero exhaust `M`. The index is `ℕ`, which is what makes the cover usable in a
 Baire argument — a cover by all of `Aˣ` would exhaust `M` too but could not start that argument.
@@ -127,7 +135,7 @@ end Absorption
 
 namespace HasZeroSequenceOfUnits
 
-variable {M : Type*} [Zero M] [TopologicalSpace M] [MulActionWithZero A M]
+variable {M : Type*} [Zero M] [TopologicalSpace M] [SMulWithZero A M]
   [HasZeroSequenceOfUnits A]
 
 /-- Some unit of `A` carries a given element of `M` into a given neighbourhood of zero.
