@@ -93,7 +93,47 @@ theorem mem_range_generatorEmbedding_iff (m : ℕ)
           (congrArg (fun h : GL (Fin 4) (GaloisField 2 (2 * m + 1)) ↦ h i j)
             ((Suzuki.coordinateEquiv _).apply_symm_apply g₀))
     _ ↔ ∀ i j, g i j ∈ RingHom.range (generatorFieldEmbedding m hvalid) :=
-      Matrix.GeneralLinearGroup.mem_range_map_iff _ _
+      by
+        let f := generatorFieldEmbedding m hvalid
+        change g ∈ MonoidHom.range (Matrix.GeneralLinearGroup.map f) ↔
+          ∀ i j, g i j ∈ RingHom.range f
+        constructor
+        · rintro ⟨g₀, rfl⟩ i j
+          exact ⟨g₀ i j, Matrix.GeneralLinearGroup.map_apply f i j g₀⟩
+        · intro hg
+          obtain ⟨A, hA⟩ : ∃ A : Matrix (Fin 4) (Fin 4)
+              (GaloisField 2 (2 * m + 1)), A.map f = (g : Matrix (Fin 4) (Fin 4) _) := by
+            change (g : Matrix (Fin 4) (Fin 4) _) ∈
+              Set.range (Pi.map fun _ ↦ Pi.map fun _ ↦ f)
+            rw [Set.range_piMap]
+            intro i _
+            rw [Set.range_piMap]
+            exact fun j _ ↦ hg i j
+          have hAmap : f.mapMatrix A = (g : Matrix (Fin 4) (Fin 4) _) :=
+            (RingHom.mapMatrix_apply f A).trans hA
+          have hdet : A.det ≠ 0 := by
+            intro hzero
+            have hmapdet : f A.det = (g : Matrix (Fin 4) (Fin 4) _).det := by
+              calc
+                f A.det = (f.mapMatrix A).det := f.map_det A
+                _ = (g : Matrix (Fin 4) (Fin 4) _).det := congrArg Matrix.det hAmap
+            have hdetzero :
+                (g : Matrix (Fin 4) (Fin 4) (of m hvalid).1.Closure).det = 0 := by
+              rw [← hmapdet, hzero, map_zero]
+            exact (Matrix.isUnits_det_units g).ne_zero hdetzero
+          obtain ⟨g₀, hg₀⟩ : ∃ g₀ : GL (Fin 4) (GaloisField 2 (2 * m + 1)),
+              (g₀ : Matrix (Fin 4) (Fin 4) _) = A := by
+            exact (Matrix.isUnit_iff_isUnit_det A).2 (isUnit_iff_ne_zero.mpr hdet)
+          refine ⟨g₀, Units.ext ?_⟩
+          apply Matrix.ext
+          intro i j
+          calc
+            Matrix.GeneralLinearGroup.map f g₀ i j = f (g₀ i j) :=
+              Matrix.GeneralLinearGroup.map_apply f i j g₀
+            _ = f (A i j) := congrArg f (congrFun (congrFun hg₀ i) j)
+            _ = f.mapMatrix A i j :=
+              (congrFun (congrFun (RingHom.mapMatrix_apply f A) i) j).symm
+            _ = g i j := congrFun (congrFun hAmap i) j
     _ ↔ ∀ i j, (g i j) ^ (of m hvalid).1.fieldOrder = g i j :=
       forall_congr' fun _ ↦ forall_congr' fun _ ↦
         mem_range_generatorFieldEmbedding_iff m hvalid

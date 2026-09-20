@@ -24,13 +24,11 @@ field Frobenius.
 
 The Suzuki comparison is the immediate consumer: its fixed-point carrier is defined over the
 closure, while the explicit four-dimensional matrix group is defined over
-`GaloisField 2 (2 * m + 1)`. The underlying field-embedding results are stated generally, then
-specialized to the chosen finite-field embedding.
+`GaloisField 2 (2 * m + 1)`. No group comparison is made here; these results identify only the
+coefficient fields and their matrix coordinates.
 
 ## Main result
 
-* `Matrix.GeneralLinearGroup.mem_range_map_iff`: scalar extension along a field embedding has
-  precisely the invertible matrices whose entries lie in the embedding's range.
 * `Matrix.GeneralLinearGroup.mem_range_map_galoisFieldEmbedding_iff`: an
   invertible matrix over the closure comes from the finite field exactly when its entries are
   Frobenius-fixed.
@@ -52,22 +50,6 @@ namespace Matrix
 
 variable {d : ValidLieTypeIndex}
 
-/-- A matrix is obtained by applying a field embedding entrywise exactly when all of its entries
-lie in the range of that embedding. -/
-theorem exists_map_iff_mem_range
-    {K L m n : Type*} [Field K] [Field L] (f : K →+* L) (A : Matrix m n L) :
-    (∃ B : Matrix m n K, B.map f = A) ↔ ∀ i j, A i j ∈ RingHom.range f := by
-  change A ∈ Set.range (Pi.map fun _ ↦ Pi.map fun _ ↦ f) ↔ _
-  rw [Set.range_piMap]
-  constructor
-  · intro hA i j
-    have hi := hA i (Set.mem_univ i)
-    rw [Set.range_piMap] at hi
-    exact hi j (Set.mem_univ j)
-  · intro hA i _
-    rw [Set.range_piMap]
-    exact fun j _ ↦ hA i j
-
 /-- A matrix over the closure has finite-field coordinates exactly when every entry is fixed by
 the `q`-power Frobenius. -/
 theorem exists_map_galoisFieldEmbedding_iff_frobenius
@@ -75,57 +57,26 @@ theorem exists_map_galoisFieldEmbedding_iff_frobenius
     (∃ B : Matrix m n (GaloisField d.characteristic d.fieldExponent),
         B.map d.galoisFieldEmbedding = A) ↔
       ∀ i j, (A i j) ^ d.fieldOrder = A i j := by
-  rw [exists_map_iff_mem_range]
-  exact forall_congr' fun _ ↦ forall_congr' fun _ ↦
-    d.mem_range_galoisFieldEmbedding_iff
+  -- `Set.range_piMap` applies to pointwise maps of functions, while `Matrix.map` is definitionally
+  -- the corresponding pair of nested pointwise maps, so expose that representation first.
+  change A ∈ Set.range (Pi.map fun _ ↦ Pi.map fun _ ↦
+    d.galoisFieldEmbedding) ↔ _
+  rw [Set.range_piMap]
+  constructor
+  · intro hA i j
+    apply ValidLieTypeIndex.mem_range_galoisFieldEmbedding_iff.mp
+    have hi := hA i (Set.mem_univ i)
+    rw [Set.range_piMap] at hi
+    exact hi j (Set.mem_univ j)
+  · intro hA i _
+    rw [Set.range_piMap]
+    exact fun j _ ↦ ValidLieTypeIndex.mem_range_galoisFieldEmbedding_iff.mpr (hA i j)
 
 end Matrix
 
 namespace Matrix.GeneralLinearGroup
 
 variable {d : ValidLieTypeIndex}
-
-/-- Scalar extension along a field embedding has precisely the invertible matrices whose entries
-lie in the embedding's range.
-
-Unlike `mem_range_map_val_iff`, no condition on the inverse matrix is needed: over a field, a
-matrix whose entries descend and whose determinant is nonzero remains invertible before scalar
-extension. -/
-theorem mem_range_map_iff
-    {K L n : Type*} [Field K] [Field L] [Fintype n] [DecidableEq n]
-    (f : K →+* L) (g : Matrix.GeneralLinearGroup n L) :
-    g ∈ MonoidHom.range (Matrix.GeneralLinearGroup.map (n := n) f) ↔
-      ∀ i j, g i j ∈ RingHom.range f := by
-  constructor
-  · rintro ⟨g₀, rfl⟩ i j
-    exact ⟨g₀ i j, Matrix.GeneralLinearGroup.map_apply f i j g₀⟩
-  · intro hg
-    obtain ⟨A, hA⟩ := (Matrix.exists_map_iff_mem_range f
-      (g : Matrix n n L)).mpr hg
-    have hAmap : f.mapMatrix A = (g : Matrix n n L) :=
-      (RingHom.mapMatrix_apply f A).trans hA
-    have hdet : A.det ≠ 0 := by
-      intro hzero
-      have hmapdet : f A.det = (g : Matrix n n L).det := by
-        calc
-          f A.det = (f.mapMatrix A).det := f.map_det A
-          _ = (g : Matrix n n L).det := congrArg Matrix.det hAmap
-      have hdetzero : (g : Matrix n n L).det = 0 := by
-        rw [← hmapdet, hzero, map_zero]
-      exact (Matrix.isUnits_det_units g).ne_zero hdetzero
-    obtain ⟨g₀, hg₀⟩ : ∃ g₀ : Matrix.GeneralLinearGroup n K,
-        (g₀ : Matrix n n K) = A := by
-      exact (Matrix.isUnit_iff_isUnit_det A).2 (isUnit_iff_ne_zero.mpr hdet)
-    refine ⟨g₀, Units.ext ?_⟩
-    apply Matrix.ext
-    intro i j
-    calc
-      Matrix.GeneralLinearGroup.map f g₀ i j = f (g₀ i j) :=
-        Matrix.GeneralLinearGroup.map_apply f i j g₀
-      _ = f (A i j) := congrArg f (congrFun (congrFun hg₀ i) j)
-      _ = f.mapMatrix A i j :=
-        (congrFun (congrFun (RingHom.mapMatrix_apply f A) i) j).symm
-      _ = g i j := congrFun (congrFun hAmap i) j
 
 /-- An invertible matrix over the closure comes by scalar extension from Mathlib's finite field
 exactly when every matrix entry is fixed by the `q`-power Frobenius.
@@ -137,9 +88,41 @@ theorem mem_range_map_galoisFieldEmbedding_iff
     (g : Matrix.GeneralLinearGroup n d.Closure) :
     g ∈ MonoidHom.range (Matrix.GeneralLinearGroup.map (n := n) d.galoisFieldEmbedding) ↔
       ∀ i j, (g i j) ^ d.fieldOrder = g i j := by
-  rw [mem_range_map_iff]
-  exact forall_congr' fun _ ↦ forall_congr' fun _ ↦
-    d.mem_range_galoisFieldEmbedding_iff
+  constructor
+  · rintro ⟨g₀, rfl⟩ i j
+    exact d.mem_range_galoisFieldEmbedding_iff.mp
+      ⟨g₀ i j, Matrix.GeneralLinearGroup.map_apply d.galoisFieldEmbedding i j g₀⟩
+  · intro hg
+    obtain ⟨A, hA⟩ :=
+      (Matrix.exists_map_galoisFieldEmbedding_iff_frobenius
+        (d := d) (g : Matrix n n d.Closure)).mpr hg
+    have hAmap : d.galoisFieldEmbedding.mapMatrix A = (g : Matrix n n d.Closure) :=
+      (RingHom.mapMatrix_apply d.galoisFieldEmbedding A).trans hA
+    have hdet : A.det ≠ 0 := by
+      intro hzero
+      have hmapdet : d.galoisFieldEmbedding A.det = (g : Matrix n n d.Closure).det := by
+        calc
+          d.galoisFieldEmbedding A.det = (d.galoisFieldEmbedding.mapMatrix A).det :=
+            d.galoisFieldEmbedding.map_det A
+          _ = (g : Matrix n n d.Closure).det := congrArg Matrix.det hAmap
+      have hdetzero : (g : Matrix n n d.Closure).det = 0 := by
+        rw [← hmapdet, hzero, map_zero]
+      exact (Matrix.isUnits_det_units g).ne_zero hdetzero
+    obtain ⟨g₀, hg₀⟩ : ∃ g₀ : Matrix.GeneralLinearGroup n
+        (GaloisField d.characteristic d.fieldExponent), (g₀ : Matrix n n _) = A := by
+      exact (Matrix.isUnit_iff_isUnit_det A).2 (isUnit_iff_ne_zero.mpr hdet)
+    refine ⟨g₀, Units.ext ?_⟩
+    apply Matrix.ext
+    intro i j
+    calc
+      Matrix.GeneralLinearGroup.map d.galoisFieldEmbedding g₀ i j =
+          d.galoisFieldEmbedding (g₀ i j) :=
+        Matrix.GeneralLinearGroup.map_apply d.galoisFieldEmbedding i j g₀
+      _ = d.galoisFieldEmbedding (A i j) :=
+        congrArg d.galoisFieldEmbedding (congrFun (congrFun hg₀ i) j)
+      _ = d.galoisFieldEmbedding.mapMatrix A i j :=
+        (congrFun (congrFun (RingHom.mapMatrix_apply d.galoisFieldEmbedding A) i) j).symm
+      _ = g i j := congrFun (congrFun hAmap i) j
 
 end Matrix.GeneralLinearGroup
 
