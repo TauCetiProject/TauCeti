@@ -20,6 +20,9 @@ zero-weight coordinates as the simple coroots at zero-based Lean indices `2` and
 * `TauCeti.DynkinType.f4ShortRootBasisCoordinate`: the corresponding full Chevalley-basis label
   of each of the twenty-six short-root coordinates.
 * `TauCeti.DynkinType.f4ShortRootBasis`: the resulting basis of `f4ShortRootSubspace`.
+* `TauCeti.DynkinType.f4ShortRootLieIdealBasis`: the same basis, carried by the Lie ideal
+  `f4ShortRootLieIdeal`; `f4ShortRootLieIdealBasis_repr` identifies its coordinates with the
+  ambient Chevalley coordinates.
 -/
 
 public section
@@ -196,6 +199,51 @@ theorem coe_f4ShortRootBasis (a : Fin 26) :
       f4ModularSimpleCoroot (Fin.cast rank_F4.symm (3 : Fin 4)) := by
   simpa only [f4ShortRootWeightIndexEquiv_symm_apply_inr_one,
     f4ShortSimpleIndex_one] using coe_f4ShortRootBasis_symm_inr 1
+
+/-- The coordinate basis of the modular short-root Lie ideal. -/
+noncomputable def f4ShortRootLieIdealBasis :
+    Basis (Fin 26) (ZMod 2) f4ShortRootLieIdeal :=
+  f4ShortRootBasis.map (LinearEquiv.ofEq _ _ f4ShortRootLieIdeal_toSubmodule.symm)
+
+/-- The ideal basis has the same ambient Chevalley coordinates as the short-root subspace basis. -/
+@[simp] theorem coe_f4ShortRootLieIdealBasis (a : Fin 26) :
+    (f4ShortRootLieIdealBasis a : f4ModularChevalleyLieAlgebra) =
+      f4ModularChevalleyBasis (f4ShortRootBasisCoordinate a) := by
+  exact (LinearEquiv.coe_ofEq_apply f4ShortRootLieIdeal_toSubmodule.symm
+    (f4ShortRootBasis a)).trans (coe_f4ShortRootBasis a)
+
+/-- A nonzero-weight ideal basis vector is the corresponding modular short-root vector. -/
+theorem coe_f4ShortRootLieIdealBasis_symm_inl (i : F4ShortRootIndex) :
+    (f4ShortRootLieIdealBasis (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) :
+      f4ModularChevalleyLieAlgebra) = f4ModularRootVector i := by
+  rw [coe_f4ShortRootLieIdealBasis, ← coe_f4ShortRootBasis]
+  exact coe_f4ShortRootBasis_symm_inl i
+
+/-- The two zero-weight ideal basis vectors are the corresponding short simple coroots. -/
+theorem coe_f4ShortRootLieIdealBasis_symm_inr (k : Fin 2) :
+    (f4ShortRootLieIdealBasis (f4ShortRootWeightIndexEquiv.symm (Sum.inr k)) :
+      f4ModularChevalleyLieAlgebra) = f4ModularSimpleCoroot (f4ShortSimpleIndex k) := by
+  rw [coe_f4ShortRootLieIdealBasis, ← coe_f4ShortRootBasis]
+  exact coe_f4ShortRootBasis_symm_inr k
+
+/-- Coordinates in the ideal basis agree with the corresponding ambient Chevalley coordinates. -/
+theorem f4ShortRootLieIdealBasis_repr (y : f4ShortRootLieIdeal) (i : Fin 26) :
+    f4ShortRootLieIdealBasis.repr y i =
+      f4ModularChevalleyBasis.repr (y : f4ModularChevalleyLieAlgebra)
+        (f4ShortRootBasisCoordinate i) := by
+  -- The ambient coordinate map is linear and sends the ideal basis to the standard coordinates.
+  refine f4ShortRootLieIdealBasis.repr_apply_eq
+    (fun y a => f4ModularChevalleyBasis.repr (y : f4ModularChevalleyLieAlgebra)
+      (f4ShortRootBasisCoordinate a)) ?_ ?_ ?_ y i
+  · intro y z
+    ext a
+    simp [LieSubmodule.coe_add]
+  · intro c y
+    ext a
+    simp
+  · intro j
+    ext a
+    simp [Finsupp.single_apply_left f4ShortRootBasisCoordinate_injective]
 
 end
 
