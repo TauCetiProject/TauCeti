@@ -97,8 +97,10 @@ private theorem lintegral_mul_setLIntegral_lt [SFinite μ] (hf : Measurable f) (
   have hs1 : (0 : ℝ) ≤ s + 1 := by linarith
   have hR : MeasurableSet {z : ℝ × α | ENNReal.ofReal (c * z.1) < f z.2} :=
     measurableSet_lt ((measurable_fst.const_mul c).ennreal_ofReal) (hf.comp measurable_snd)
-  rw [lintegral_mul_setLIntegral_eq (R := fun t x => ENNReal.ofReal (c * t) < f x) hR
-      (hf.pow_const q) s,
+  rw [lintegral_mul_setLIntegral_eq (κ := volume.restrict (Ioi (0 : ℝ)))
+      (w := fun t : ℝ => ENNReal.ofReal (t ^ s))
+      (R := fun t x => ENNReal.ofReal (c * t) < f x) hR (hf.pow_const q)
+      ((measurable_id.pow measurable_const).ennreal_ofReal),
     ← lintegral_const_mul _ (hf.pow_const _)]
   refine lintegral_congr fun x => ?_
   rw [lintegral_indicator_ofReal_rpow_Ioi hs hc (f x), ENNReal.rpow_add_of_nonneg q (s + 1) hq hs1]
@@ -132,8 +134,10 @@ private theorem lintegral_mul_setLIntegral_le_le [SFinite μ] (hf : Measurable f
       exact le_of_eq (mul_comm _ _)
   have hR : MeasurableSet {z : ℝ × α | f z.2 ≤ ENNReal.ofReal (c * z.1)} :=
     measurableSet_le (hf.comp measurable_snd) ((measurable_fst.const_mul c).ennreal_ofReal)
-  rw [lintegral_mul_setLIntegral_eq (R := fun t x => f x ≤ ENNReal.ofReal (c * t)) hR
-      (hf.pow_const q) s,
+  rw [lintegral_mul_setLIntegral_eq (κ := volume.restrict (Ioi (0 : ℝ)))
+      (w := fun t : ℝ => ENNReal.ofReal (t ^ s))
+      (R := fun t x => f x ≤ ENNReal.ofReal (c * t)) hR (hf.pow_const q)
+      ((measurable_id.pow measurable_const).ennreal_ofReal),
     ← lintegral_const_mul _ (hf.pow_const _)]
   refine lintegral_mono fun x => ?_
   rw [lintegral_indicator_le_ofReal_rpow_Ioi hs hc (f x), mul_assoc]
@@ -180,8 +184,9 @@ private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_of_measurable_of_sFinite 
     have hpow : ∀ r : ℝ, ENNReal.ofReal (t ^ (-r)) * ENNReal.ofReal (t ^ (p - 1)) =
         ENNReal.ofReal (t ^ (p - r - 1)) := by
       intro r
-      rw [← ENNReal.ofReal_mul (Real.rpow_nonneg ht'.le _), ← Real.rpow_add ht',
-        show -r + (p - 1) = p - r - 1 from by ring]
+      rw [← ENNReal.ofReal_mul (Real.rpow_nonneg ht'.le _), ← Real.rpow_add ht']
+      congr 2
+      ring
     calc ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1))
         ≤ (A₀ * ENNReal.ofReal (t ^ (-p₀)) *
               ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀ ∂μ +
@@ -199,15 +204,18 @@ private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_of_measurable_of_sFinite 
       ENNReal.ofReal (c ^ (p₀ - p) / (p - p₀)) * ∫⁻ x, f x ^ p ∂μ := by
     have hmain := (lintegral_mul_setLIntegral_lt (μ := μ) (f := f) (q := p₀)
       (s := p - p₀ - 1) (c := c) hf hp₀.le (by linarith) hc).le
-    rwa [show -(p - p₀ - 1 + 1) = p₀ - p from by ring,
-      show p - p₀ - 1 + 1 = p - p₀ from by ring, show p₀ + (p - p₀) = p from by ring] at hmain
+    have hneg : -(p - p₀) = p₀ - p := by ring
+    have hden : p - p₀ - 1 + 1 = p - p₀ := by ring
+    have hexp : p₀ + (p - p₀) = p := by ring
+    simpa only [hden, hneg, hexp] using hmain
   have hhigh : ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ (p - p₁ - 1)) *
       ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁ ∂μ ≤
       ENNReal.ofReal (c ^ (p₁ - p) / (p₁ - p)) * ∫⁻ x, f x ^ p ∂μ := by
     have hmain := lintegral_mul_setLIntegral_le_le (μ := μ) (f := f) (q := p₁)
       (s := p - p₁ - 1) (c := c) hf hp₁.le (by linarith) hc
-    rwa [show -(p - p₁ - 1 + 1) = p₁ - p from by ring,
-      show p - p₁ - 1 + 1 = p - p₁ from by ring, show p₁ + (p - p₁) = p from by ring] at hmain
+    have hnorm : -(p - p₁ - 1 + 1) = p₁ - p := by ring
+    have hexp : p₁ + (p - p₁ - 1 + 1) = p := by ring
+    simpa only [hnorm, hexp] using hmain
   have hg₀ : Measurable fun t : ℝ => ENNReal.ofReal (t ^ (p - p₀ - 1)) *
       ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀ ∂μ := hw₀.mul hI₀
   have hg₁ : Measurable fun t : ℝ => ENNReal.ofReal (t ^ (p - p₁ - 1)) *
@@ -236,9 +244,12 @@ private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_of_measurable_of_sFinite 
         mul_le_mul_right
           (add_le_add (mul_le_mul_right hlow _) (mul_le_mul_right hhigh _)) _
     _ = _ := by
-        rw [show p * c ^ (p₀ - p) / (p - p₀) = p * (c ^ (p₀ - p) / (p - p₀)) from by ring,
-          show p * c ^ (p₁ - p) / (p₁ - p) = p * (c ^ (p₁ - p) / (p₁ - p)) from by ring,
-          ENNReal.ofReal_mul hp.le, ENNReal.ofReal_mul hp.le]
+        have hcoef₀ : p * c ^ (p₀ - p) / (p - p₀) =
+            p * (c ^ (p₀ - p) / (p - p₀)) := by ring
+        have hcoef₁ : p * c ^ (p₁ - p) / (p₁ - p) =
+            p * (c ^ (p₁ - p) / (p₁ - p)) := by ring
+        rw [hcoef₀, hcoef₁]
+        rw [ENNReal.ofReal_mul hp.le, ENNReal.ofReal_mul hp.le]
         ring
 
 /-- The interpolation estimate for a measurable `f` and an arbitrary measure `μ`.

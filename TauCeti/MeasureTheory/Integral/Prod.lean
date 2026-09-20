@@ -18,8 +18,9 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   product measure, along `Measure.quasiMeasurePreserving_fst` / `_snd`.
 * `TauCeti.measurable_setLIntegral_of_measurableSet` proves measurability of a set integral whose
   truncating relation is jointly measurable.
-* `TauCeti.lintegral_mul_setLIntegral_eq` exchanges a weighted integral of set integrals with the
-  corresponding integral over the sections of the truncating relation.
+* `TauCeti.lintegral_mul_setLIntegral_eq` exchanges a weighted integral of set integrals over an
+  arbitrary parameter measure with the corresponding integral over the sections of the truncating
+  relation.
 * `TauCeti.lintegral_cond_prod_le` bounds a lower Lebesgue integral over a product of two
   conditional laws by any bound the integrand satisfies on the rectangle conditioned on. Use it to
   estimate an integral against two independently conditioned coordinates when the integrand is
@@ -39,18 +40,18 @@ namespace TauCeti
 open MeasureTheory Set
 open scoped ENNReal ProbabilityTheory
 
-variable {α β E : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace β}
-  {μ : Measure α} {ν : Measure β}
+variable {α β γ E : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace β}
+  {mγ : MeasurableSpace γ} {μ : Measure α} {ν : Measure β} {κ : Measure γ}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The truncated integral `t ↦ ∫⁻ x in {x | R t x}, g x ∂μ` is measurable when the truncating
 relation is jointly measurable. -/
 theorem measurable_setLIntegral_of_measurableSet [SFinite μ] {g : α → ℝ≥0∞}
-    {R : ℝ → α → Prop} (hR : MeasurableSet {z : ℝ × α | R z.1 z.2}) (hg : Measurable g) :
+    {R : γ → α → Prop} (hR : MeasurableSet {z : γ × α | R z.1 z.2}) (hg : Measurable g) :
     Measurable fun t => ∫⁻ x in {x | R t x}, g x ∂μ := by
-  have hRx : ∀ t : ℝ, MeasurableSet {x | R t x} := fun t => measurable_prodMk_left hR
-  have hind : ∀ t : ℝ, ∫⁻ x in {x | R t x}, g x ∂μ =
-      ∫⁻ x, {z : ℝ × α | R z.1 z.2}.indicator (fun z => g z.2) (t, x) ∂μ := by
+  have hRx : ∀ t : γ, MeasurableSet {x | R t x} := fun t => measurable_prodMk_left hR
+  have hind : ∀ t : γ, ∫⁻ x in {x | R t x}, g x ∂μ =
+      ∫⁻ x, {z : γ × α | R z.1 z.2}.indicator (fun z => g z.2) (t, x) ∂μ := by
     intro t
     rw [← lintegral_indicator (hRx t)]
     rfl
@@ -58,54 +59,48 @@ theorem measurable_setLIntegral_of_measurableSet [SFinite μ] {g : α → ℝ≥
   exact ((hg.comp measurable_snd).indicator hR).lintegral_prod_right'
 
 /-- **Tonelli for a weighted integral of truncated integrals.** For a jointly measurable
-truncating relation `R`, the weight `t ^ s` pairs with the truncated integrals of `g` in either
-order: integrating first in `x` and then in `t` gives the same value as integrating the weight
-over the `t`-section of `R` and then in `x`. -/
-theorem lintegral_mul_setLIntegral_eq [SFinite μ] {g : α → ℝ≥0∞} {R : ℝ → α → Prop}
-    (hR : MeasurableSet {z : ℝ × α | R z.1 z.2}) (hg : Measurable g) (s : ℝ) :
-    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) * ∫⁻ x in {x | R t x}, g x ∂μ =
-      ∫⁻ x, (∫⁻ t in Ioi (0 : ℝ),
-        {t : ℝ | R t x}.indicator (fun t => ENNReal.ofReal (t ^ s)) t) * g x ∂μ := by
-  have hRx : ∀ t : ℝ, MeasurableSet {x | R t x} := fun t => measurable_prodMk_left hR
-  have hRt : ∀ x : α, MeasurableSet {t : ℝ | R t x} := fun x => measurable_prodMk_right hR
-  have hw : Measurable fun t : ℝ => ENNReal.ofReal (t ^ s) :=
-    (measurable_id.pow measurable_const).ennreal_ofReal
-  set G : ℝ × α → ℝ≥0∞ :=
-    {z : ℝ × α | R z.1 z.2}.indicator (fun z => ENNReal.ofReal (z.1 ^ s) * g z.2) with hG
+truncating relation `R` and measurable weight `w`, integrating first in `x` and then against the
+parameter measure gives the same value as integrating the weight over each parameter section and
+then in `x`. -/
+theorem lintegral_mul_setLIntegral_eq [SFinite μ] [SFinite κ] {g : α → ℝ≥0∞} {w : γ → ℝ≥0∞}
+    {R : γ → α → Prop} (hR : MeasurableSet {z : γ × α | R z.1 z.2}) (hg : Measurable g)
+    (hw : Measurable w) :
+    ∫⁻ t, w t * ∫⁻ x in {x | R t x}, g x ∂μ ∂κ =
+      ∫⁻ x, (∫⁻ t, {t : γ | R t x}.indicator w t ∂κ) * g x ∂μ := by
+  have hRx : ∀ t : γ, MeasurableSet {x | R t x} := fun t => measurable_prodMk_left hR
+  have hRt : ∀ x : α, MeasurableSet {t : γ | R t x} := fun x => measurable_prodMk_right hR
+  set G : γ × α → ℝ≥0∞ :=
+    {z : γ × α | R z.1 z.2}.indicator (fun z => w z.1 * g z.2) with hG
   have hGmeas : Measurable G :=
-    (((measurable_fst.pow measurable_const).ennreal_ofReal).mul
-      (hg.comp measurable_snd)).indicator hR
+    ((hw.comp measurable_fst).mul (hg.comp measurable_snd)).indicator hR
   -- The same cut-off reads as a condition on `x` for a fixed `t`, or as one on `t` for a fixed `x`;
   -- each `show` names the set whose indicator is being unfolded, which a bare `hx` leaves open.
-  have hGx : ∀ (t : ℝ) (x : α), G (t, x) =
-      ENNReal.ofReal (t ^ s) * {x | R t x}.indicator g x := by
+  have hGx : ∀ (t : γ) (x : α), G (t, x) = w t * {x | R t x}.indicator g x := by
     intro t x
     by_cases hx : R t x
-    · rw [hG, Set.indicator_of_mem (show (t, x) ∈ {z : ℝ × α | R z.1 z.2} from hx),
+    · rw [hG, Set.indicator_of_mem (show (t, x) ∈ {z : γ × α | R z.1 z.2} from hx),
         Set.indicator_of_mem (show x ∈ {x | R t x} from hx)]
-    · rw [hG, Set.indicator_of_notMem (show (t, x) ∉ {z : ℝ × α | R z.1 z.2} from hx),
+    · rw [hG, Set.indicator_of_notMem (show (t, x) ∉ {z : γ × α | R z.1 z.2} from hx),
         Set.indicator_of_notMem (show x ∉ {x | R t x} from hx), mul_zero]
-  have hGt : ∀ (t : ℝ) (x : α), G (t, x) =
-      {t : ℝ | R t x}.indicator (fun t => ENNReal.ofReal (t ^ s)) t * g x := by
+  have hGt : ∀ (t : γ) (x : α), G (t, x) = {t : γ | R t x}.indicator w t * g x := by
     intro t x
     by_cases hx : R t x
-    · rw [hG, Set.indicator_of_mem (show (t, x) ∈ {z : ℝ × α | R z.1 z.2} from hx),
-        Set.indicator_of_mem (show t ∈ {t : ℝ | R t x} from hx)]
-    · rw [hG, Set.indicator_of_notMem (show (t, x) ∉ {z : ℝ × α | R z.1 z.2} from hx),
-        Set.indicator_of_notMem (show t ∉ {t : ℝ | R t x} from hx), zero_mul]
-  have hslice : ∀ t : ℝ, ∫⁻ x, G (t, x) ∂μ =
-      ENNReal.ofReal (t ^ s) * ∫⁻ x in {x | R t x}, g x ∂μ := by
+    · rw [hG, Set.indicator_of_mem (show (t, x) ∈ {z : γ × α | R z.1 z.2} from hx),
+        Set.indicator_of_mem (show t ∈ {t : γ | R t x} from hx)]
+    · rw [hG, Set.indicator_of_notMem (show (t, x) ∉ {z : γ × α | R z.1 z.2} from hx),
+        Set.indicator_of_notMem (show t ∉ {t : γ | R t x} from hx), zero_mul]
+  have hslice : ∀ t : γ, ∫⁻ x, G (t, x) ∂μ = w t * ∫⁻ x in {x | R t x}, g x ∂μ := by
     intro t
     rw [← lintegral_indicator (hRx t), ← lintegral_const_mul _ (hg.indicator (hRx t))]
     exact lintegral_congr fun x => hGx t x
-  have hinner : ∀ x : α, (∫⁻ t in Ioi (0 : ℝ), G (t, x)) =
-      (∫⁻ t in Ioi (0 : ℝ),
-        {t : ℝ | R t x}.indicator (fun t => ENNReal.ofReal (t ^ s)) t) * g x := by
+  have hinner : ∀ x : α, (∫⁻ t, G (t, x) ∂κ) =
+      (∫⁻ t, {t : γ | R t x}.indicator w t ∂κ) * g x := by
     intro x
     rw [← lintegral_mul_const _ (hw.indicator (hRt x))]
     exact lintegral_congr fun t => hGt t x
   refine (lintegral_congr fun t => (hslice t).symm).trans ?_
-  rw [lintegral_lintegral_swap (f := fun t x => G (t, x)) hGmeas.aemeasurable]
+  rw [lintegral_lintegral_swap (μ := κ) (ν := μ) (f := fun t x => G (t, x))
+    hGmeas.aemeasurable]
   exact lintegral_congr hinner
 
 /-- An a.e. statement on the first factor transfers to the product measure. -/
