@@ -88,7 +88,6 @@ def abelianSquareZeroRepresentation [IsLieAbelian L] :
       simp [trivial_lie_zero, LieRing.of_associative_ring_bracket,
         abelianSquareZeroOperator_mul_eq_zero] }
 
-@[simp]
 private theorem abelianSquareZeroRepresentation_apply [IsLieAbelian L] (x : L) :
     abelianSquareZeroRepresentation R L x = abelianSquareZeroOperator R L x :=
   (rfl)
