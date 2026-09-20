@@ -24,11 +24,7 @@ residue-degree-weighted degree of a Weil divisor, and
 
 The two inputs are already available: `χ(𝒪_X(D)) = deg D + χ(𝒪_X)`, from the residue sequence of
 a divisor sheaf, and `χ(𝒪_X) = 1 - g`, from the fact that a `k`-rational point on a proper
-integral scheme forces the global functions to be the constants. This file also records the
-normalization identity `χ(L) = eulerDegree(L) + 1 - g`. It is not itself a Riemann–Roch theorem:
-`eulerDegree(L)` is defined as `χ(L) - χ(𝒪_X)`. The substantive divisor theorem uses the
-independently defined residue-degree sum; the earlier theorem
-`InvertibleSheaf.eulerDegree_eq_relativeDegree` identifies the two degrees when `L ≅ 𝒪_X(D)`.
+integral scheme forces the global functions to be the constants.
 
 Dropping the nonnegative `dim_k H¹` gives **Riemann's inequality** `ℓ(D) ≥ deg D + 1 - g` for the
 Riemann–Roch space `ℓ(D) = dim_k Γ(X, 𝒪_X(D))`. Together with the dictionary between nonzero
@@ -47,9 +43,6 @@ cohomological genus used here is available yet.
 
 ## Main declarations
 
-* `InvertibleSheaf.eulerCharBelow_eq_eulerDegree_add_one_sub_genus` and
-  `InvertibleSheaf.finrank_cohomology_zero_sub_one_eq_eulerDegree_add_one_sub_genus`:
-  normalization identities for Euler-characteristic degree;
 * `SchemeWeilDivisor.eulerCharBelow_sheaf_eq_relativeDegree_add_one_sub_genus` and
   `SchemeWeilDivisor.finrank_cohomology_zero_sub_one_sheaf_eq_relativeDegree_add_one_sub_genus`:
   Riemann–Roch for the sheaf of a Weil divisor on a proper curve;
@@ -78,45 +71,27 @@ namespace AlgebraicGeometry
 
 universe u
 
-namespace InvertibleSheaf
-
-variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))] [IsIntegral X]
-  [UniversallyClosed (X ↘ Spec (.of k))]
-  [FiniteDimensional k (Scheme.Modules.Cohomology (trivial X).obj 1)]
-  {s : Spec (.of k) ⟶ X} (hs : s ≫ X ↘ Spec (.of k) = 𝟙 (Spec (.of k)))
-
-include hs
-
-/-- **The Euler-degree normalization identity.** On an integral scheme universally closed over a
-field `k` with a `k`-rational point and with `H¹(X, 𝒪_X)` finite-dimensional,
-
-`χ(L) = deg L + 1 - g`
-
-for every line bundle `L`, where `deg L = χ(L) - χ(𝒪_X)` is the Euler-characteristic degree and
-`g = dim_k H¹(X, 𝒪_X)` is the genus. This is a normalization identity, not by itself a
-Riemann–Roch theorem. On a proper curve `InvertibleSheaf.eulerDegree_eq_relativeDegree` identifies
-the degree on the right with the independently defined degree of any Weil divisor of `L`. -/
-theorem eulerCharBelow_eq_eulerDegree_add_one_sub_genus (L : InvertibleSheaf X) :
-    Scheme.Modules.eulerCharBelow k X L.obj 2 = L.eulerDegree k + 1 - X.genus k := by
-  rw [eulerDegree_def, eulerCharBelow_trivial_eq_one_sub_genus k hs]
-  ring
-
-/-- The Euler-degree normalization identity as an equality of dimensions:
-`dim H⁰(X, L) - dim H¹(X, L) = deg L + 1 - g`. -/
-theorem finrank_cohomology_zero_sub_one_eq_eulerDegree_add_one_sub_genus (L : InvertibleSheaf X) :
-    (finrank k (Scheme.Modules.Cohomology L.obj 0) : ℤ) -
-        (finrank k (Scheme.Modules.Cohomology L.obj 1) : ℤ) =
-      L.eulerDegree k + 1 - X.genus k := by
-  rw [← Scheme.Modules.eulerCharBelow_two, eulerCharBelow_eq_eulerDegree_add_one_sub_genus k hs]
-
-end InvertibleSheaf
-
 namespace SchemeWeilDivisor
 
 section LinearSystem
 
 variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
-  [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+
+private lemma isEffective_add_principalDivisor_iff
+    (D : SchemeWeilDivisor X) (g : Additive X.functionFieldˣ) :
+    WeilDivisor.IsEffective
+        (D + (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) ↔
+      ∀ x : CodimensionOnePoint X,
+        -WeilDivisor.coeff D x ≤
+          X.ord ((Additive.toMul g : X.functionFieldˣ) : X.functionField) x := by
+  rw [WeilDivisor.isEffective_iff]
+  apply forall_congr'
+  intro x
+  rw [WeilDivisor.coeff_add, WeilDivisor.OrderSystem.coeff_principalDivisor,
+    WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply]
+  omega
+
+variable [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
 
 /-- **The complete linear system of `D` is nonempty exactly when `𝒪_X(D)` has a nonzero global
 section.** On a Noetherian integral scheme whose codimension-one local rings are discrete
@@ -135,10 +110,7 @@ theorem nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf
         -WeilDivisor.coeff D x ≤
           X.ord ((Additive.toMul γ : X.functionFieldˣ) : X.functionField) x := by
       intro x _
-      have h := (WeilDivisor.isEffective_iff _).mp hEeff x
-      rw [WeilDivisor.coeff_add, WeilDivisor.OrderSystem.coeff_principalDivisor,
-        WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply] at h
-      omega
+      exact (isEffective_add_principalDivisor_iff D γ).mp hEeff x
     refine nontrivial_of_ne
       (sectionMk _ (rationalFunctionsEquiv_symm_mem_sections hbound)) 0 fun h ↦ ?_
     have h' := congrArg (Scheme.Modules.Hom.app (sheafι D) ⊤) h
@@ -156,18 +128,16 @@ theorem nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf
     refine ⟨D + (WeilDivisor.OrderSystem.ofScheme X).principalDivisor
       (Additive.ofMul (Units.mk0 c hc)), ?_⟩
     refine (WeilDivisor.OrderSystem.mem_completeLinearSystem_iff_exists_principalDivisor _).mpr
-      ⟨(WeilDivisor.isEffective_iff _).mpr fun x ↦ ?_, _, rfl⟩
+      ⟨(isEffective_add_principalDivisor_iff D _).mpr fun x ↦ ?_, _, rfl⟩
     have h := hbound x trivial
     rw [← hc'] at h
-    rw [WeilDivisor.coeff_add, WeilDivisor.OrderSystem.coeff_principalDivisor,
-      WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply, toMul_ofMul, Units.val_mk0]
-    omega
+    simpa only [toMul_ofMul, Units.val_mk0] using h
 
 end LinearSystem
 
 section Curve
 
-variable {X : Scheme.{u}} [IsIntegral X] [IsLocallyNoetherian X]
+variable {X : Scheme.{u}} [IsIntegral X]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
   (k : Type u) [Field k] [X.Over (Spec (.of k))] [IsProper (X ↘ Spec (.of k))]
   (hX : ∀ y : X, coheight y ≤ 1)
@@ -185,8 +155,12 @@ codimension-one local rings are discrete valuation rings, with a `k`-rational po
 for every Weil divisor `D`, where `g = dim_k H¹(X, 𝒪_X)` is the genus and
 `χ(M) = dim_k H⁰(X, M) - dim_k H¹(X, M)`. -/
 theorem eulerCharBelow_sheaf_eq_relativeDegree_add_one_sub_genus (D : SchemeWeilDivisor X) :
+    letI : IsLocallyNoetherian X :=
+      LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
     Scheme.Modules.eulerCharBelow k X (sheaf D) 2 =
       relativeDegree (X ↘ Spec (.of k)) D + 1 - X.genus k := by
+  let _ : IsLocallyNoetherian X :=
+    LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   rw [eulerCharBelow_sheaf_eq_relativeDegree_add k hX D,
     eulerCharBelow_trivial_eq_one_sub_genus k hs]
   ring
@@ -196,9 +170,13 @@ theorem eulerCharBelow_sheaf_eq_relativeDegree_add_one_sub_genus (D : SchemeWeil
 of the Riemann–Roch space. -/
 theorem finrank_cohomology_zero_sub_one_sheaf_eq_relativeDegree_add_one_sub_genus
     (D : SchemeWeilDivisor X) :
+    letI : IsLocallyNoetherian X :=
+      LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
     (finrank k Γ(sheaf D, ⊤) : ℤ) -
         (finrank k (Scheme.Modules.Cohomology (sheaf D) 1) : ℤ) =
       relativeDegree (X ↘ Spec (.of k)) D + 1 - X.genus k := by
+  let _ : IsLocallyNoetherian X :=
+    LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   rw [← Scheme.Modules.finrank_cohomology_zero_eq_finrank_globalSections,
     ← Scheme.Modules.eulerCharBelow_two,
     eulerCharBelow_sheaf_eq_relativeDegree_add_one_sub_genus k hX hs D]
@@ -208,7 +186,11 @@ dimension at least `deg D + 1 - g`: Riemann–Roch with the nonnegative term `di
 dropped. -/
 theorem relativeDegree_add_one_sub_genus_le_finrank_globalSections_sheaf
     (D : SchemeWeilDivisor X) :
+    letI : IsLocallyNoetherian X :=
+      LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
     relativeDegree (X ↘ Spec (.of k)) D + 1 - X.genus k ≤ (finrank k Γ(sheaf D, ⊤) : ℤ) := by
+  let _ : IsLocallyNoetherian X :=
+    LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   have h := finrank_cohomology_zero_sub_one_sheaf_eq_relativeDegree_add_one_sub_genus k hX hs D
   have h₁ : (0 : ℤ) ≤ (finrank k (Scheme.Modules.Cohomology (sheaf D) 1) : ℤ) :=
     Int.natCast_nonneg _
@@ -218,7 +200,7 @@ end Curve
 
 section CompleteLinearSystem
 
-variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
+variable {X : Scheme.{u}} [IsIntegral X]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
   (k : Type u) [Field k] [X.Over (Spec (.of k))] [IsProper (X ↘ Spec (.of k))]
   (hX : ∀ y : X, coheight y ≤ 1)
@@ -229,12 +211,19 @@ include hX hs
 
 /-- **A divisor of degree at least the genus is linearly equivalent to an effective divisor.**
 Riemann's inequality makes the Riemann–Roch space of such a divisor nonzero, and a nonzero global
-section of `𝒪_X(D)` names an effective divisor in the class of `D`. The scheme is asked to be
-Noetherian, rather than only locally so, because that is what carries the orders of vanishing of
-rational functions into an order system, hence what makes the complete linear system available. -/
+section of `𝒪_X(D)` names an effective divisor in the class of `D`. Properness over the field
+makes `X` Noetherian, which supplies the order system used by the complete linear system. -/
 theorem nonempty_completeLinearSystem_of_genus_le_relativeDegree {D : SchemeWeilDivisor X}
     (hD : (X.genus k : ℤ) ≤ relativeDegree (X ↘ Spec (.of k)) D) :
+    letI : IsNoetherian X :=
+      { toIsLocallyNoetherian :=
+          LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+        toCompactSpace := compactSpace_of_universallyClosed (X ↘ Spec (.of k)) }
     ((WeilDivisor.OrderSystem.ofScheme X).completeLinearSystem D).Nonempty := by
+  let _ : IsNoetherian X :=
+    { toIsLocallyNoetherian :=
+        LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+      toCompactSpace := compactSpace_of_universallyClosed (X ↘ Spec (.of k)) }
   have := finiteDimensional_globalSections_sheaf k hX D
   rw [nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf,
     ← Module.finrank_pos_iff_of_free (R := k)]
