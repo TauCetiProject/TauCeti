@@ -613,53 +613,12 @@ private lemma chain_five_form_neg (hcard : 5 < Fintype.card T.Component)
       2 * (T.intersection h i * y₁ * y₂ + T.intersection i j * y₂ * y₃ +
         T.intersection j k * y₃ * y₄ + T.intersection k l * y₄ * y₅ +
         T.intersection h l * y₁ * y₅) < 0 := by
-  classical
-  obtain ⟨m, hm⟩ :
-      (((((Finset.univ.erase h).erase i).erase j).erase k).erase l).Nonempty := by
-    rw [← Finset.card_pos,
-      Finset.card_erase_of_mem (by simp [hhl.symm, hil.symm, hjl.symm, hkl.symm]),
-      Finset.card_erase_of_mem (by simp [hhk.symm, hik.symm, hjk.symm]),
-      Finset.card_erase_of_mem (by simp [hhj.symm, hij.symm]),
-      Finset.card_erase_of_mem (by simp [hhi.symm]),
-      Finset.card_erase_of_mem (Finset.mem_univ h), Finset.card_univ]
-    omega
-  simp only [Finset.mem_erase, Finset.mem_univ, and_true] at hm
-  obtain ⟨hml, hmk, hmj, hmi, hmh⟩ := hm
-  -- Spread the five entries over the five components and zero elsewhere.
-  let x : T.Component → ℤ := fun c ↦
-    if c = h then y₁ else if c = i then y₂ else if c = j then y₃ else
-      if c = k then y₄ else if c = l then y₅ else 0
-  have hxh : x h = y₁ := by simp [x]
-  have hxi : x i = y₂ := by simp [x, hhi.symm]
-  have hxj : x j = y₃ := by simp [x, hhj.symm, hij.symm]
-  have hxk : x k = y₄ := by simp [x, hhk.symm, hik.symm, hjk.symm]
-  have hxl : x l = y₅ := by simp [x, hhl.symm, hil.symm, hjl.symm, hkl.symm]
-  have hsupp : ∀ c ∉ ({h, i, j, k, l} : Finset T.Component), x c = 0 := by
-    intro c hc
-    simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hc
-    simp [x, hc.1, hc.2.1, hc.2.2.1, hc.2.2.2.1, hc.2.2.2.2]
-  have hne : x ≠ 0 := fun hc ↦ hy₁ (by simpa [hxh] using congrFun hc h)
-  have hxm : x m = 0 := by simp [x, hmh, hmi, hmj, hmk, hml]
-  -- Only the five diagonal entries and the five retained off-diagonal pairs survive.
-  have hform : T.intersection h h * y₁ ^ 2 + T.intersection i i * y₂ ^ 2 +
-        T.intersection j j * y₃ ^ 2 + T.intersection k k * y₄ ^ 2 +
-        T.intersection l l * y₅ ^ 2 +
-      2 * (T.intersection h i * y₁ * y₂ + T.intersection i j * y₂ * y₃ +
-        T.intersection j k * y₃ * y₄ + T.intersection k l * y₄ * y₅ +
-        T.intersection h l * y₁ * y₅) = x ⬝ᵥ T.intersection.mulVec x := by
-    rw [T.dotProduct_intersection_mulVec_of_support_subset hsupp]
-    simp only [Finset.sum_insert (by simp [hhi, hhj, hhk, hhl] :
-        h ∉ ({i, j, k, l} : Finset T.Component)),
-      Finset.sum_insert (by simp [hij, hik, hil] : i ∉ ({j, k, l} : Finset T.Component)),
-      Finset.sum_insert (by simp [hjk, hjl] : j ∉ ({k, l} : Finset T.Component)),
-      Finset.sum_pair hkl, hxh, hxi, hxj, hxk, hxl, T.intersection_comm i h,
-      T.intersection_comm j h, T.intersection_comm k h, T.intersection_comm l h,
-      T.intersection_comm j i, T.intersection_comm k i, T.intersection_comm l i,
-      T.intersection_comm k j, T.intersection_comm l j, T.intersection_comm l k,
-      hhj0, hhk0, hik0, hil0, hjl0]
-    ring
-  rw [hform]
-  exact T.dotProduct_intersection_mulVec_neg hne hxm
+  have hneg := T.intersection_five_neg hcard hhi hhj hhk hhl hij hik hil hjk hjl hkl
+    (y₁ := y₁) (y₂ := y₂) (y₃ := y₃) (y₄ := y₄) (y₅ := y₅)
+    (fun hy ↦ hy₁ hy.1)
+  rw [hhj0, hhk0, hik0, hil0, hjl0] at hneg
+  ring_nf at hneg ⊢
+  exact hneg
 
 /-- The factor data used to classify a chain of five components. The four-component analysis of
 the two overlapping windows of the chain shows that every intersection number of two
