@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Basic
+public import TauCeti.LinearAlgebra.IntegralLattice.Scaling
 public import Mathlib.Algebra.Field.ZMod
 
 import TauCeti.LinearAlgebra.IntegralLattice.Index
-import TauCeti.LinearAlgebra.IntegralLattice.Scaling
 import TauCeti.LinearAlgebra.IntegralLattice.StandardCoordinates
 
 /-!
@@ -43,133 +43,97 @@ open Matrix
 
 variable (m : ℕ+) {ι : Type*}
 
-private def reduction : (ι → ℤ) →+ (ι → ZMod m) :=
-  ((Int.castAddHom (ZMod m)).toIntLinearMap.compLeft ι).toAddMonoidHom
-
-private def rationalCast : (ι → ℤ) →+ (ι → ℚ) :=
-  ((Int.castAddHom ℚ).toIntLinearMap.compLeft ι).toAddMonoidHom
-
-private theorem rationalCast_injective : Function.Injective (rationalCast (ι := ι)) :=
-  Function.Injective.piMap fun _ ↦ Int.cast_injective
-
 private theorem lattice_toAddSubgroup (C : AddSubgroup (ι → ZMod m)) :
     (lattice m C).toAddSubgroup =
-      (C.comap (reduction m)).map (rationalCast (ι := ι)) := by
+      (C.comap ((Int.castAddHom (ZMod m)).compLeft ι)).map ((Int.castAddHom ℚ).compLeft ι) := by
   ext x
   rw [Submodule.mem_toAddSubgroup, mem_lattice]
   simp only [AddSubgroup.mem_map, AddSubgroup.mem_comap]
-  have hreduction (z : ι → ℤ) : reduction m z = fun i ↦ (z i : ZMod m) := by
-    funext i
-    simp [reduction, LinearMap.compLeft]
-  have hrationalCast (z : ι → ℤ) : rationalCast z = fun i ↦ (z i : ℚ) := by
-    funext i
-    simp [rationalCast, LinearMap.compLeft]
-  constructor <;> rintro ⟨z, hz, hzx⟩ <;>
-    exact ⟨z, by simpa only [hreduction] using hz,
-      by simpa only [hrationalCast] using hzx⟩
+  constructor <;> rintro ⟨z, hz, hzx⟩ <;> exact ⟨z, hz, hzx⟩
+
+/-- Construction A preserves relative indices: the relative index of the carrier of `C` in the
+carrier of `D` is the relative index of `C` in `D`. -/
+theorem relIndex_lattice (C D : AddSubgroup (ι → ZMod m)) :
+    (lattice m C).toAddSubgroup.relIndex (lattice m D).toAddSubgroup = C.relIndex D := by
+  have hinj : Function.Injective ((Int.castAddHom ℚ).compLeft ι) :=
+    Function.Injective.piMap fun _ ↦ Int.cast_injective
+  have hsurj : Function.Surjective ((Int.castAddHom (ZMod m)).compLeft ι) :=
+    Function.Surjective.piMap fun _ ↦ ZMod.intCast_surjective
+  rw [lattice_toAddSubgroup, lattice_toAddSubgroup,
+    AddSubgroup.relIndex_map_map_of_injective _ _ hinj, AddSubgroup.relIndex_comap,
+    AddSubgroup.map_comap_eq_self_of_surjective hsurj]
 
 /-- The relative index of the zero-code Construction A carrier in the carrier attached to `C` is
 the number of codewords of `C`. -/
 theorem relIndex_lattice_bot (C : AddSubgroup (ι → ZMod m)) :
     (lattice m (⊥ : AddSubgroup (ι → ZMod m))).toAddSubgroup.relIndex
       (lattice m C).toAddSubgroup = Nat.card C := by
-  rw [lattice_toAddSubgroup, lattice_toAddSubgroup,
-    AddSubgroup.relIndex_map_map_of_injective _ _ rationalCast_injective]
-  have hker : (⊥ : AddSubgroup (ι → ZMod m)).comap (reduction m) = (reduction m).ker := by
-    ext
-    simp
-  rw [hker, AddSubgroup.relIndex_ker]
-  have hmap : (C.comap (reduction m)).map (reduction m) = C := by
-    ext x
-    simp only [AddSubgroup.mem_map, AddSubgroup.mem_comap]
-    constructor
-    · rintro ⟨z, hz, rfl⟩
-      exact hz
-    · intro hx
-      obtain ⟨z, rfl⟩ := (Function.Surjective.piMap fun _ ↦ ZMod.intCast_surjective) x
-      exact ⟨z, hx, rfl⟩
-  rw [hmap]
+  rw [relIndex_lattice, AddSubgroup.relIndex_bot_left]
 
 variable [Fintype ι]
 
-private noncomputable def scaleEquiv : (ι → ℚ) ≃ₗ[ℚ] (ι → ℚ) :=
-  LinearEquiv.piCongrRight fun _ ↦
-    LinearEquiv.smulOfUnit (M := ℚ) (Units.mk0 (m : ℚ) (NeZero.ne _))
+section Standard
 
-omit [Fintype ι] in
-@[simp]
-private theorem scaleEquiv_apply (x : ι → ℚ) (i : ι) : scaleEquiv m x i = m * x i :=
-  rfl
+variable [DecidableEq ι]
 
 private theorem map_standardLattice_carrier :
-    let _ := Classical.decEq ι
     (IntegralLattice.ofGramMatrix (Pi.basisFun ℚ ι) (1 : Matrix ι ι ℤ)
-        Matrix.isSymm_one).carrier.map
-        ((scaleEquiv m).restrictScalars ℤ).toLinearMap =
+          Matrix.isSymm_one).carrier.map
+        ((LinearEquiv.smulOfNeZero ℚ (ι → ℚ) (m : ℚ)
+          (NeZero.ne _)).restrictScalars ℤ).toLinearMap =
       lattice m (⊥ : AddSubgroup (ι → ZMod m)) := by
-  classical
+  have hm : ((m : ℕ) : ℚ) ≠ 0 := NeZero.ne _
   ext x
-  rw [Submodule.mem_map_equiv,
+  rw [Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply,
     IntegralLattice.mem_ofGramMatrix_basisFun_carrier_iff, mem_lattice]
+  simp only [LinearEquiv.smulOfNeZero_symm_apply, Units.smul_def, Units.val_inv_eq_inv_val,
+    Units.val_mk0, Pi.smul_apply, smul_eq_mul]
   constructor
   · intro hx
     choose z hz using hx
-    refine ⟨fun i ↦ m * z i, ?_, ?_⟩
-    · ext i
-      simp
-    · have hzx : (fun i ↦ (z i : ℚ)) = (scaleEquiv m).symm x := funext hz
-      calc
-        (fun i ↦ ((m * z i : ℤ) : ℚ)) = scaleEquiv m (fun i ↦ (z i : ℚ)) := by
-          funext i
-          simp
-        _ = x := by rw [hzx, LinearEquiv.apply_symm_apply]
-  · rintro ⟨z, hz, rfl⟩
-    have hzero : (fun i ↦ (z i : ZMod m)) = 0 := by simpa using hz
-    have hdiv (i : ι) : (m : ℤ) ∣ z i := by
+    refine ⟨fun i ↦ (m : ℤ) * z i, by simp [funext_iff], ?_⟩
+    funext i
+    push_cast
+    rw [hz i]
+    field_simp
+  · rintro ⟨w, hw, rfl⟩
+    have hzero : (fun i ↦ (w i : ZMod m)) = 0 := by simpa using hw
+    intro i
+    obtain ⟨v, hv⟩ : (m : ℤ) ∣ w i := by
       rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
       exact congrFun hzero i
-    choose w hw using hdiv
-    have hcast : (fun i ↦ (z i : ℚ)) = scaleEquiv m (fun i ↦ (w i : ℚ)) := by
-      funext i
-      have hwi : z i = m * w i := by simpa [mul_comm] using hw i
-      rw [hwi]
-      simp
-    have hsymm : ((scaleEquiv m).restrictScalars ℤ).symm (fun i ↦ (z i : ℚ)) =
-        (scaleEquiv m).symm (fun i ↦ (z i : ℚ)) := by
-      apply (scaleEquiv m).injective
-      rw [LinearEquiv.apply_symm_apply]
-      change ((scaleEquiv m).restrictScalars ℤ)
-          (((scaleEquiv m).restrictScalars ℤ).symm (fun i ↦ (z i : ℚ))) = _
-      rw [LinearEquiv.apply_symm_apply]
-    rw [hsymm, hcast, LinearEquiv.symm_apply_apply]
-    exact fun i ↦ ⟨w i, rfl⟩
+    refine ⟨v, ?_⟩
+    simp only [hv]
+    push_cast
+    field_simp
 
-private noncomputable def scaledStandardIsometry :
-    let _ := Classical.decEq ι
+/-- Multiplying every coordinate by `m` is an isometry from the standard coordinate lattice `ℤ^ι`,
+with its dot product scaled by `m`, onto the Construction A lattice of the zero code.  It exhibits
+the zero-code lattice as `m ℤ^ι` carrying the normalized form. -/
+noncomputable def scaledStandardIsometry :
     IntegralLattice.Isometry
       ((m : ℤ) • IntegralLattice.ofGramMatrix (Pi.basisFun ℚ ι)
         (1 : Matrix ι ι ℤ) Matrix.isSymm_one)
       (integralLattice m (⊥ : AddSubgroup (ι → ZMod m)) (by simp)) where
   toIsometryEquiv :=
-    { toLinearEquiv := scaleEquiv m
-      map_app' := by
-        intro x y
-        have hx : (scaleEquiv m).toFun x = fun i ↦ m * x i :=
-          funext (scaleEquiv_apply m x)
-        have hy : (scaleEquiv m).toFun y = fun i ↦ m * y i :=
-          funext (scaleEquiv_apply m y)
-        rw [hx, hy]
-        rw [integralLattice_form, form_apply, IntegralLattice.smul_form]
-        simp only [LinearMap.smul_apply, Int.cast_natCast]
-        simp [Matrix.one_apply, dotProduct]
-        field_simp
-        rw [Finset.mul_sum]
-        apply Finset.sum_congr rfl
-        intro i _
-        ring }
+    { toLinearEquiv := LinearEquiv.smulOfNeZero ℚ (ι → ℚ) (m : ℚ) (NeZero.ne _)
+      map_app' x y := by
+        have hm : ((m : ℕ) : ℚ) ≠ 0 := NeZero.ne _
+        have hrow (i : ι) : ∑ j, (((1 : Matrix ι ι ℤ) i j : ℤ) : ℚ) * y j = y i := by
+          simp [Matrix.one_apply]
+        rw [integralLattice_form, form_apply, IntegralLattice.smul_form,
+          LinearMap.smul_apply, LinearMap.smul_apply,
+          IntegralLattice.form_ofGramMatrix_basisFun_apply]
+        simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
+          LinearEquiv.smulOfNeZero_apply, hrow, dotProduct, Pi.smul_apply, smul_eq_mul,
+          Int.cast_natCast]
+        rw [div_eq_iff hm, Finset.mul_sum, Finset.sum_mul]
+        exact Finset.sum_congr rfl fun i _ ↦ by ring }
   map_carrier := by
     rw [IntegralLattice.smul_carrier, integralLattice_carrier]
     exact map_standardLattice_carrier m
+
+end Standard
 
 /-- The zero-code Construction A lattice has diagonal Gram matrix `m I`, hence discriminant
 `m ^ #ι`. -/
