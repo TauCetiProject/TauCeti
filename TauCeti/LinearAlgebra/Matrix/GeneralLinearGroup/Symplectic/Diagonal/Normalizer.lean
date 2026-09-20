@@ -117,8 +117,9 @@ theorem diagonalNormalizerPerm_eq_of_eq_diagGL_mul_permutationGL
       diagGL d * permutationGL (k := k) σ) :
     diagonalNormalizerPerm u hu g = σ := by
   let : Nontrivial kˣ := nontrivial_of_ne u u⁻¹ hu
-  exact TauCeti.diagonalNormalizerPerm_eq_of_eq_diagGL_mul_permutationGL
-    (diagonalNormalizerToGL u hu g) d σ h
+  apply TauCeti.diagonalNormalizerPerm_eq_of_eq_diagGL_mul_permutationGL
+    (diagonalNormalizerToGL u hu g) d σ
+  simpa only [coe_diagonalNormalizerToGL] using h
 
 /-- The coordinate permutation is independent of the unit used to separate coordinates. -/
 theorem diagonalNormalizerPerm_eq (v : kˣ) (hv : v ≠ v⁻¹) :
@@ -165,8 +166,9 @@ def diagonalNormalizerQuotientPerm :
 theorem diagonalNormalizerQuotientPerm_mk
     (g : Subgroup.normalizer (diagonalTorus k m : Set (GLSymplecticFin m k))) :
     diagonalNormalizerQuotientPerm u hu
-        (g : Subgroup.normalizerQuotient (diagonalTorus k m)) = diagonalNormalizerPerm u hu g :=
-  (rfl)
+        (g : Subgroup.normalizerQuotient (diagonalTorus k m)) = diagonalNormalizerPerm u hu g := by
+  unfold diagonalNormalizerQuotientPerm
+  exact Subgroup.normalizerQuotientLift_mk _ _ _ g
 
 /-- The symplectic diagonal normalizer quotient acts faithfully on the coordinate lines. -/
 theorem diagonalNormalizerQuotientPerm_injective :
