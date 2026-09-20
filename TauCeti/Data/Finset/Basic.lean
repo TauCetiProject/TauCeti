@@ -74,13 +74,15 @@ private theorem even_card_parityFlip {ι : Type*} [DecidableEq ι] (i : ι) (s :
     simp [parityFlip, h, Finset.card_erase_of_mem h, Nat.even_sub h1]
   · simp [parityFlip, h, Finset.card_insert_of_notMem h, Nat.even_add_one]
 
-/-- **Half the subsets of a finite type have even cardinality**, `2 ^ (n - 1)` of the `2 ^ n`.
-Deleting a fixed point from the subsets that contain it, and adjoining it to those that do not, is
-an involution of the subsets of `ι` reversing the parity of the cardinality; the two parities are
-therefore equinumerous, and together they exhaust the `2 ^ n` subsets. The empty type has no fixed
-point to flip, but there the lone subset `∅` is even and `2 ^ (0 - 1) = 1` counts it, so no
-nonemptiness hypothesis is needed. (Its odd counterpart `TauCeti.card_odd_card_finset` does need
-one: the empty type has no subset of odd cardinality.) -/
+/-- **The subsets of even cardinality of a finite type number `2 ^ (n - 1)`.** On a nonempty type
+that is half of all `2 ^ n` subsets: deleting a fixed point from the subsets that contain it, and
+adjoining it to those that do not, is an involution of the subsets of `ι` reversing the parity of
+the cardinality, so the two parities are equinumerous and together exhaust the `2 ^ n` subsets. The
+empty type is the exception to that halving, and is covered separately: it has no fixed point to
+flip, and its lone subset `∅` is even with no odd subset to pair it with, so the two parities are
+not equinumerous there — but `2 ^ (0 - 1) = 1` counts that one even subset all the same, which is
+why the statement needs no nonemptiness hypothesis. (Its odd counterpart
+`TauCeti.card_odd_card_finset` does need one: the empty type has no subset of odd cardinality.) -/
 theorem card_even_card_finset {ι : Type*} [Finite ι] :
     Nat.card {S : Finset ι // Even S.card} = 2 ^ (Nat.card ι - 1) := by
   classical

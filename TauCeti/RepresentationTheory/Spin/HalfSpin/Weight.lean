@@ -56,11 +56,14 @@ eigenvalues for the family `H`, no Cartan subalgebra being exhibited; and no wei
 highest, since no ordering of the coordinates is used to single out a Borel. What the parity
 statements do supply for the type-`Dₗ` fork is the parity flip between the two candidate
 highest-weight vectors of `TauCeti/RepresentationTheory/Spin/Polarization/TypeD/ForkWeights.lean`:
-by `TauCeti.basis_mem_spinPlus_iff_basis_erase_mem_spinMinus`, at `s = Finset.univ`, the basis
-vector with every coordinate occupied lies in `S⁺` exactly when the one obtained from it by erasing
-a coordinate lies in `S⁻`. That equivalence between two memberships is all it says; which summand
-each of the two vectors actually lies in is read off `TauCeti.basis_mem_spinPlus_iff` and
-`TauCeti.basis_mem_spinMinus_iff`, from the parity of the number of coordinates.
+by `TauCeti.basis_mem_spinPlus_iff_basis_erase_mem_spinMinus`, specialized to `ι = Fin n` at
+`s = Finset.univ` and `i` the final coordinate `⟨n - 1, _⟩` — the coordinate that `ForkWeights.lean`
+erases — the basis vector with every coordinate occupied lies in `S⁺` exactly when the one obtained
+from it by erasing that final coordinate lies in `S⁻`. For an arbitrary index type the theorem
+erases an arbitrary occupied coordinate, that generality having no fork reading. That equivalence
+between two memberships is all it says; which summand each of the two vectors actually lies in is
+read off `TauCeti.basis_mem_spinPlus_iff` and `TauCeti.basis_mem_spinMinus_iff`, from the parity
+of the number of coordinates.
 
 ## Main results
 
@@ -80,8 +83,8 @@ each of the two vectors actually lies in is read off `TauCeti.basis_mem_spinPlus
   the `S⁻` count on a nonempty set of coordinates.
 * `TauCeti.basis_mem_spinPlus_iff_basis_erase_mem_spinMinus`: **erasing an occupied coordinate
   flips the summand**, a basis vector lying in `S⁺` exactly when the one obtained from it by
-  erasing one of its coordinates lies in `S⁻`. At `s = Finset.univ` these are the two type-`Dₗ`
-  fork vectors.
+  erasing one of its coordinates lies in `S⁻`. Specialized to `ι = Fin n` at `s = Finset.univ`
+  and `i` the final coordinate `⟨n - 1, _⟩`, these are the two type-`Dₗ` fork vectors.
 
 ## References
 
@@ -106,13 +109,19 @@ variable {K : Type u} [CommRing K] [Nontrivial K] {V : Type v} [AddCommGroup V] 
   {ι : Type w} [LinearOrder ι] (b : Module.Basis ι K P.W)
 
 /-- **An exterior basis vector lies in `S⁺` exactly when it has an even number of coordinates.**
-Its weight is then a sign vector with an even number of `+` signs. -/
+The statement itself does not need `2` to be invertible. Where it is — the hypothesis under which
+the sign vector `TauCeti.spinWeight` is defined at all — the `+` signs of the weight of this vector
+are by definition its coordinates, so the condition also says that its weight has an even number of
+`+` signs; read on the weight line that is `TauCeti.spinWeightSpace_le_spinPlus_iff`. -/
 theorem basis_mem_spinPlus_iff (s : Finset ι) :
     b.ExteriorAlgebra s ∈ spinPlus Q P ↔ Even s.card := by
   rw [mem_spinPlus, b.exteriorAlgebra_mem_evenOdd_iff s 0, ZMod.natCast_eq_zero_iff_even]
 
 /-- **An exterior basis vector lies in `S⁻` exactly when it has an odd number of coordinates.**
-Its weight is then a sign vector with an odd number of `+` signs. -/
+The statement itself does not need `2` to be invertible. Where it is — the hypothesis under which
+the sign vector `TauCeti.spinWeight` is defined at all — the `+` signs of the weight of this vector
+are by definition its coordinates, so the condition also says that its weight has an odd number of
+`+` signs; read on the weight line that is `TauCeti.spinWeightSpace_le_spinMinus_iff`. -/
 theorem basis_mem_spinMinus_iff (s : Finset ι) :
     b.ExteriorAlgebra s ∈ spinMinus Q P ↔ Odd s.card := by
   rw [mem_spinMinus, b.exteriorAlgebra_mem_evenOdd_iff s 1, ZMod.natCast_eq_one_iff_odd]
@@ -123,9 +132,11 @@ the vector obtained from it by erasing one of its coordinates lies in `S⁻`, er
 changing the parity of the number of coordinates. This is the equivalence of the two memberships
 only: which of the two summands each vector actually lies in depends on the parity of the number of
 coordinates, and is `TauCeti.basis_mem_spinPlus_iff` together with
-`TauCeti.basis_mem_spinMinus_iff`. At `s = Finset.univ` these are the two type-`Dₗ` fork vectors
-that `TauCeti/RepresentationTheory/Spin/Polarization/TypeD/ForkWeights.lean` shows to be
-annihilated by every positive simple generator, with the fork fundamental weights. -/
+`TauCeti.basis_mem_spinMinus_iff`. Specialized to `ι = Fin n` at `s = Finset.univ` and `i` the
+final coordinate `⟨n - 1, _⟩`, the two vectors are the ones that
+`TauCeti/RepresentationTheory/Spin/Polarization/TypeD/ForkWeights.lean` shows to be annihilated by
+every positive simple generator, with the type-`Dₗ` fork fundamental weights; at any other `i`, or
+over any other index type, the statement is not about that fork. -/
 theorem basis_mem_spinPlus_iff_basis_erase_mem_spinMinus {s : Finset ι} {i : ι} (hi : i ∈ s) :
     b.ExteriorAlgebra s ∈ spinPlus Q P ↔ b.ExteriorAlgebra (s.erase i) ∈ spinMinus Q P := by
   rcases subsingleton_or_nontrivial K with _ | _
