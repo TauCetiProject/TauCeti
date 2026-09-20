@@ -238,14 +238,15 @@ section Summation
 variable [CompleteSpace R] {ι : Type*} {a : ι → PowerSeries R}
 
 omit [IsUltrametricDist R] in
-/-- Over a complete ring, a family of restricted power series with summable Gauss norms has
-summable coefficients in every degree. -/
-theorem summable_coeff_of_summable_gaussNorm (hc : 0 < c) (ha : ∀ k, (a k).IsRestricted c)
+/-- Over a complete ring, a family of power series with summable Gauss norms has summable
+coefficients in every degree. -/
+theorem summable_coeff_of_summable_gaussNorm (hc : 0 < c)
+    (ha : ∀ k, (a k).HasGaussNorm norm c)
     (hs : Summable fun k ↦ (a k).gaussNorm norm c) (i : ℕ) :
     Summable fun k ↦ (a k).coeff i := by
   refine Summable.of_norm_bounded (hs.mul_right (c ^ i)⁻¹) fun k ↦ ?_
   rw [← div_eq_mul_inv, le_div_iff₀ (pow_pos hc i)]
-  exact PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted (ha k)) i
+  exact PowerSeries.le_gaussNorm norm c _ (ha k) i
 
 /-- **Coefficientwise summation of restricted power series.** Over a complete nonarchimedean
 ring, the degreewise sums of a family of restricted power series with summable Gauss norms
@@ -257,7 +258,8 @@ theorem isRestricted_mk_tsum_coeff (hc : 0 < c) (ha : ∀ k, (a k).IsRestricted 
     (hs : Summable fun k ↦ (a k).gaussNorm norm c) :
     (PowerSeries.mk fun i ↦ ∑' k, (a k).coeff i).IsRestricted c := by
   classical
-  have hsum := summable_coeff_of_summable_gaussNorm hc ha hs
+  have hsum := summable_coeff_of_summable_gaussNorm hc
+    (fun k ↦ hasGaussNorm_of_isRestricted (ha k)) hs
   rw [PowerSeries.isRestricted_iff']
   refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun i ↦
     hb.trans_le (by positivity), fun ε hε ↦ ?_⟩

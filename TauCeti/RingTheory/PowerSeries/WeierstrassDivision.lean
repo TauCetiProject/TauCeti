@@ -79,7 +79,7 @@ section Truncation
 
 /-- Truncating a series just past a degree in which its Gauss norm is attained leaves that norm
 unchanged. -/
-theorem IsDistinguished.gaussNorm_trunc (hf : IsDistinguished c s f) :
+@[simp] theorem IsDistinguished.gaussNorm_trunc (hf : IsDistinguished c s f) :
     ((f.trunc (s + 1) : Polynomial R) : PowerSeries R).gaussNorm norm c
       = f.gaussNorm norm c := by
   have hcoeff (m : ℕ) : ((f.trunc (s + 1) : Polynomial R) : PowerSeries R).coeff m =
@@ -475,11 +475,12 @@ theorem IsDistinguished.exists_mul_add_eq [CompleteSpace K] (hf : IsDistinguishe
   have hsumQ : ∀ i, HasSum (fun k ↦ ((F (G k)).1).coeff i) (q.coeff i) := fun i ↦ by
     rw [hqdef, PowerSeries.coeff_mk]
     exact (summable_coeff_of_summable_gaussNorm hc
-      (fun k ↦ (hF (G k) (hGr k)).1) hsQ i).hasSum
+      (fun k ↦ hasGaussNorm_of_isRestricted (hF (G k) (hGr k)).1) hsQ i).hasSum
   have hsumr : ∀ i, HasSum (fun k ↦ ((F (G k)).2).coeff i) (rr.coeff i) := fun i ↦ by
     rw [hrdef, PowerSeries.coeff_mk]
     exact (summable_coeff_of_summable_gaussNorm hc
-      (fun k ↦ isRestricted_of_forall_coeff_eq_zero (hF (G k) (hGr k)).2.1) hsr i).hasSum
+      (fun k ↦ hasGaussNorm_of_isRestricted
+        (isRestricted_of_forall_coeff_eq_zero (hF (G k) (hGr k)).2.1)) hsr i).hasSum
   refine ⟨q, rr, isRestricted_mk_tsum_coeff hc (fun k ↦ (hF (G k) (hGr k)).1) hsQ,
     fun m hm ↦ ?_, ?_⟩
   · have hz : (fun k ↦ ((F (G k)).2).coeff m) = fun _ : ℕ ↦ (0 : K) :=
