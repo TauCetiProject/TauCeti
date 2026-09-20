@@ -45,6 +45,21 @@ namespace TauCeti
 
 variable {G : Type*} (X Y : Type*)
 
+section SMul
+
+variable [SMul G X] [SMul G Y]
+
+/-- **Pairing a pretransitive action with a one-point one leaves it pretransitive**, so that
+`TauCeti.MulAction.card_orbitRelQuotient_eq_one` applies to the product `G`-set on which Burnside's
+lemma below is evaluated. -/
+theorem isPretransitive_prod_left [IsPretransitive G X] [Subsingleton Y] :
+    IsPretransitive G (X × Y) :=
+  ⟨fun p q => by
+    obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G p.1 q.1
+    exact ⟨g, Prod.ext hg (Subsingleton.elim _ _)⟩⟩
+
+end SMul
+
 section Monoid
 
 variable [Monoid G] [MulAction G X] [MulAction G Y]
@@ -79,14 +94,5 @@ theorem sum_card_fixedBy_mul_card_fixedBy_eq_card_orbits_mul_card_group
   have hburnside := sum_card_fixedBy_eq_card_orbits_mul_card_group G (X × Y)
   simp only [← Nat.card_eq_fintype_card] at hburnside
   simpa only [card_fixedBy_prod] using hburnside
-
-/-- **Pairing a pretransitive action with a one-point one leaves it pretransitive**, so that
-`TauCeti.MulAction.card_orbitRelQuotient_eq_one` applies to the product `G`-set on which Burnside's
-lemma above is evaluated. -/
-theorem isPretransitive_prod_left [IsPretransitive G X] [Subsingleton Y] :
-    IsPretransitive G (X × Y) :=
-  ⟨fun p q => by
-    obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G p.1 q.1
-    exact ⟨g, Prod.ext hg (Subsingleton.elim _ _)⟩⟩
 
 end TauCeti
