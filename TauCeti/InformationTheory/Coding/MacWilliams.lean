@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.Coding.CharacterSum
-public import TauCeti.InformationTheory.Coding.WeightEnumerator
+public import TauCeti.InformationTheory.Coding.Weight.Enumerator
 public import TauCeti.InformationTheory.Hamming
 
 /-!

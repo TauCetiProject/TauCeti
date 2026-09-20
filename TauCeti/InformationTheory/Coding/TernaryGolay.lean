@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.Coding.GeneratorParityCheck
-public import TauCeti.InformationTheory.Coding.WeightDivisibility
-public import TauCeti.InformationTheory.Coding.WeightEnumerator
+public import TauCeti.InformationTheory.Coding.Weight.Divisibility
+public import TauCeti.InformationTheory.Coding.Weight.Enumerator
 public import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
