@@ -45,6 +45,8 @@ the statement.
   `e(P' ∣ P) = d(P' ∣ P) + 1`, holding exactly at the tame places.
 * `TauCeti.Place.ramificationIdx_le_differentExponent_iff`: `e(P' ∣ P) ≤ d(P' ∣ P)` exactly at the
   wild places (Stichtenoth, Corollary 3.5.5).
+* `TauCeti.Place.relativeDegree_eq_one_of_isSepClosed_of_differentExponent_eq_zero`: a place with
+  zero different exponent over a separably closed residue field has relative degree one.
 * `TauCeti.Divisor.coeff_different_add_one_eq_ramificationIdx_iff` and
   `TauCeti.Divisor.ramificationIdx_le_coeff_different_iff`: the same statements read on the
   different divisor.
@@ -157,6 +159,61 @@ theorem ramificationIdx_eq_differentExponent_add_one_iff :
   have hiff : ramificationIdx F P' = differentExponent k F P' + 1 ↔
       ¬ ramificationIdx F P' ≤ differentExponent k F P' := ⟨fun _ ↦ by omega, fun _ ↦ by omega⟩
   rw [hiff, ramificationIdx_le_differentExponent_iff, IsWild, not_not]
+
+/-- If the residue field of the place below `P'` is separably closed and the different exponent
+of `P'` vanishes, then the relative residue degree of `P'` is one. -/
+theorem relativeDegree_eq_one_of_isSepClosed_of_differentExponent_eq_zero
+    (P' : Place k F') [IsSepClosed (P'.restrict k F).ResidueField]
+    (hd : differentExponent k F P' = 0) :
+    relativeDegree k F P' = 1 := by
+  -- The zero different exponent forces the place to be tame.
+  have htame : P'.IsTame k F :=
+    (P'.ramificationIdx_eq_differentExponent_add_one_iff k F).mp <| by
+      have := P'.ramificationIdx_le_differentExponent_add_one k F
+      have := P'.ramificationIdx_pos F
+      omega
+  -- Tameness supplies separability of the residue extension on the local model.
+  have hsep := (P'.isTame_iff k F).mp htame |>.1
+  let _ : IsScalarTower k (P'.restrict k F).integers F' := .of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F',
+      ← IsScalarTower.algebraMap_apply k (P'.restrict k F).integers F,
+      ← IsScalarTower.algebraMap_apply k F F']
+  have hconstants : ∀ c : k, algebraMap k F' c ∈
+      integralClosure (P'.restrict k F).integers F' := fun c ↦
+    (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
+  let _ : Algebra k (integralClosure (P'.restrict k F).integers F') :=
+    ((algebraMap k F').codRestrict _ hconstants).toAlgebra
+  let _ : IsScalarTower k (integralClosure (P'.restrict k F).integers F') F' :=
+    .of_algebraMap_eq fun _ ↦ rfl
+  let _ : Algebra (P'.restrict k F).ResidueField
+      (integralClosure (P'.restrict k F).integers F' ⧸
+        (P'.centerIntegralClosure k F).asIdeal) :=
+    Ideal.Quotient.algebraOfLiesOver (P'.centerIntegralClosure k F).asIdeal
+      (IsLocalRing.maximalIdeal (P'.restrict k F).integers)
+  let _ : Algebra.IsSeparable (P'.restrict k F).ResidueField
+      (integralClosure (P'.restrict k F).integers F' ⧸
+        (P'.centerIntegralClosure k F).asIdeal) := hsep
+  have hsepClosed : IsSepClosed (P'.restrict k F).ResidueField := inferInstance
+  let _ : (P'.centerIntegralClosure k F).asIdeal.IsMaximal :=
+    (P'.centerIntegralClosure k F).isPrime.isMaximal
+      (P'.centerIntegralClosure k F).ne_bot
+  let _ : Field ((P'.restrict k F).integers ⧸
+      IsLocalRing.maximalIdeal (P'.restrict k F).integers) :=
+    Ideal.Quotient.field (IsLocalRing.maximalIdeal (P'.restrict k F).integers)
+  let _ : Field (integralClosure (P'.restrict k F).integers F' ⧸
+      (P'.centerIntegralClosure k F).asIdeal) :=
+    Ideal.Quotient.field (P'.centerIntegralClosure k F).asIdeal
+  let _ : IsSepClosed ((P'.restrict k F).integers ⧸
+      IsLocalRing.maximalIdeal (P'.restrict k F).integers) :=
+    ⟨hsepClosed.splits_of_separable⟩
+  -- Identify relative degree with the local-model inertia degree, which must be one.
+  rw [P'.relativeDegree_eq_inertiaDeg_center (R := (P'.restrict k F).integers) k F
+    (P'.algebraMap_mem_integers_of_mem_integralClosure k F)]
+  rw [← P'.centerIntegralClosure_def k F]
+  rw [Ideal.inertiaDeg_eq_of_isMaximal (IsLocalRing.maximalIdeal (P'.restrict k F).integers)
+      (P'.centerIntegralClosure k F).asIdeal,
+    Algebra.finrank_eq_one_iff_bijective_algebraMap]
+  exact IsSepClosed.algebraMap_bijective _ _
 
 end Place
 
