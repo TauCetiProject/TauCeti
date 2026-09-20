@@ -7,12 +7,13 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Scheme.ClosedPoint
+public import TauCeti.AlgebraicGeometry.WeilDivisor.LinearSystem.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Picard
 public import TauCeti.Topology.KrullDimension
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 
 /-!
-# Finite-dimensionality of Riemann–Roch spaces on a proper curve
+# Riemann–Roch spaces on a proper curve
 
 For a Weil divisor `D` on an integral scheme whose codimension-one local rings are discrete
 valuation rings, the global sections of the sheaf `𝒪_X(D)` form the Riemann–Roch space
@@ -23,6 +24,11 @@ This file proves that `L(D)` is finite-dimensional over `k` when `X` is a proper
 field `k`, and deduces that `H⁰(X, L)` is finite-dimensional for every line bundle `L` on such a
 curve. This is the degree-zero half of the finiteness needed to read `dim H⁰ - dim H¹` as the
 Euler characteristic of a line bundle on a proper curve.
+
+It also records what makes `L(D)` worth measuring: `L(D)` is nonzero exactly when the complete
+linear system `|D|` of `TauCeti.AlgebraicGeometry.WeilDivisor.LinearSystem.Basic` is nonempty,
+since a nonzero `f ∈ L(D)` is the same thing as an effective divisor `D + div f` in the class of
+`D`. This part needs no properness and no curve hypothesis.
 
 The argument is the classical one. Adding a codimension-one point `y` to `D` enlarges `L(D)` by at
 most a copy of the residue field `κ(y)`: if `g` has order `D(y) + 1` at `y`, then `f ↦ g f`
@@ -45,7 +51,9 @@ map `L(D + y) ⟶ κ(y)` whose kernel is exactly `L(D)`. Starting from `L(0) = �
   `SchemeWeilDivisor.finiteDimensional_cohomology_zero_sheaf`: on a proper curve over a field `k`,
   `Γ(X, 𝒪_X(D)) = H⁰(X, 𝒪_X(D))` is finite-dimensional over `k`;
 * `InvertibleSheaf.finiteDimensional_cohomology_zero`: on a proper curve over `k`, `H⁰(X, L)` is
-  finite-dimensional for every line bundle `L`.
+  finite-dimensional for every line bundle `L`;
+* `SchemeWeilDivisor.nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf`: the
+  complete linear system of `D` is nonempty exactly when `Γ(X, 𝒪_X(D))` is nonzero.
 
 ## References
 
@@ -287,6 +295,54 @@ theorem finiteDimensional_cohomology_zero_sheaf (hX : ∀ y : X, coheight y ≤ 
 end Field
 
 end
+
+section LinearSystem
+
+variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
+  [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+
+/-- **The complete linear system of `D` is nonempty exactly when `𝒪_X(D)` has a nonzero global
+section.** On a Noetherian integral scheme whose codimension-one local rings are discrete
+valuation rings, a global section of `𝒪_X(D)` is a rational function `f` with `D + div f ≥ 0`, so
+a nonzero one names an effective divisor linearly equivalent to `D`, and conversely. -/
+@[simp]
+theorem nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf
+    (D : SchemeWeilDivisor X) :
+    ((WeilDivisor.OrderSystem.ofScheme X).completeLinearSystem D).Nonempty ↔
+      Nontrivial Γ(sheaf D, ⊤) := by
+  have : Nonempty (⊤ : X.Opens) := ⟨⟨Nonempty.some inferInstance, trivial⟩⟩
+  constructor
+  · rintro ⟨E, hE⟩
+    obtain ⟨hEeff, γ, rfl⟩ :=
+      (WeilDivisor.OrderSystem.mem_completeLinearSystem_iff_exists_principalDivisor _).mp hE
+    have hbound : ∀ x : CodimensionOnePoint X, (x : X) ∈ (⊤ : X.Opens) →
+        -WeilDivisor.coeff D x ≤
+          X.ord ((Additive.toMul γ : X.functionFieldˣ) : X.functionField) x := by
+      intro x _
+      exact (isEffective_add_principalDivisor_iff D γ).mp hEeff x
+    refine nontrivial_of_ne
+      (sectionMk _ (rationalFunctionsEquiv_symm_mem_sections hbound)) 0 fun h ↦ ?_
+    have h' := congrArg (Scheme.Modules.Hom.app (sheafι D) ⊤) h
+    rw [sheafι_app_sectionMk, map_zero] at h'
+    exact Units.ne_zero _
+      ((Scheme.rationalFunctionsEquiv (⊤ : X.Opens)).symm.map_eq_zero_iff.mp h')
+  · intro _
+    obtain ⟨t, ht⟩ := exists_ne (0 : Γ(sheaf D, ⊤))
+    set c := Scheme.rationalFunctionsEquiv (⊤ : X.Opens)
+      (Scheme.Modules.Hom.app (sheafι D) ⊤ t) with hc'
+    have hc : c ≠ 0 := fun h0 ↦ ht <| sheafι_app_injective D ⊤ <| by
+      rw [map_zero]
+      exact (Scheme.rationalFunctionsEquiv (⊤ : X.Opens)).map_eq_zero_iff.mp h0
+    have hbound := (mem_sections_iff.mp (sheafι_app_mem D ⊤ t)).resolve_left hc
+    refine ⟨D + (WeilDivisor.OrderSystem.ofScheme X).principalDivisor
+      (Additive.ofMul (Units.mk0 c hc)), ?_⟩
+    refine (WeilDivisor.OrderSystem.mem_completeLinearSystem_iff_exists_principalDivisor _).mpr
+      ⟨(isEffective_add_principalDivisor_iff D _).mpr fun x ↦ ?_, _, rfl⟩
+    have h := hbound x trivial
+    rw [← hc'] at h
+    simpa only [toMul_ofMul, Units.val_mk0] using h
+
+end LinearSystem
 
 end SchemeWeilDivisor
 

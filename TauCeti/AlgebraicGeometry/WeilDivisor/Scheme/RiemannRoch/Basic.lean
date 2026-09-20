@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Genus
-public import TauCeti.AlgebraicGeometry.WeilDivisor.LinearSystem.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic
 
 /-!
@@ -29,9 +28,10 @@ sections, so that its `H¹` has dimension exactly `g - 1 - deg D`: a nonzero glo
 `𝒪_X(D)` is a rational function `f` with `div f + D ≥ 0`, and the degree of that effective divisor
 is `deg D`, because degree is a linear-equivalence invariant.
 
-A nonzero global section of `𝒪_X(D)` exists exactly when the complete linear system of `D` is
-nonempty. Consequently, a divisor of degree at least the genus is linearly equivalent to an
-effective divisor.
+Riemann's inequality also makes the Riemann–Roch space of a divisor of degree at least the genus
+nonzero, so such a divisor is linearly equivalent to an effective divisor: nonemptiness of a
+complete linear system is the existence of a nonzero global section, by
+`SchemeWeilDivisor.nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf`.
 
 ## Main declarations
 
@@ -42,9 +42,8 @@ effective divisor.
   bundle presented as `𝒪_X(D)`;
 * `SchemeWeilDivisor.relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf`:
   Riemann's inequality;
-* `SchemeWeilDivisor.nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf` and
-  `SchemeWeilDivisor.nonempty_completeLinearSystem_of_genus_le_relativeDegree`: the link with
-  complete linear systems and its positive-degree consequence;
+* `SchemeWeilDivisor.nonempty_completeLinearSystem_of_genus_le_relativeDegree`: a divisor of
+  degree at least the genus is linearly equivalent to an effective divisor;
 * `SchemeWeilDivisor.sections_top_eq_bot_of_relativeDegree_neg`,
   `SchemeWeilDivisor.finrank_cohomology_zero_sheaf_eq_zero_of_relativeDegree_neg` and
   `SchemeWeilDivisor.finrank_cohomology_one_sheaf_eq_of_relativeDegree_neg`: a divisor of
@@ -68,55 +67,6 @@ namespace AlgebraicGeometry
 universe u
 
 namespace SchemeWeilDivisor
-
-section LinearSystem
-
-variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
-
-variable [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
-
-/-- **The complete linear system of `D` is nonempty exactly when `𝒪_X(D)` has a nonzero global
-section.** On a Noetherian integral scheme whose codimension-one local rings are discrete
-valuation rings, a global section of `𝒪_X(D)` is a rational function `f` with `D + div f ≥ 0`, so
-a nonzero one names an effective divisor linearly equivalent to `D`, and conversely. -/
-@[simp]
-theorem nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf
-    (D : SchemeWeilDivisor X) :
-    ((WeilDivisor.OrderSystem.ofScheme X).completeLinearSystem D).Nonempty ↔
-      Nontrivial Γ(sheaf D, ⊤) := by
-  have : Nonempty (⊤ : X.Opens) := ⟨⟨Nonempty.some inferInstance, trivial⟩⟩
-  constructor
-  · rintro ⟨E, hE⟩
-    obtain ⟨hEeff, γ, rfl⟩ :=
-      (WeilDivisor.OrderSystem.mem_completeLinearSystem_iff_exists_principalDivisor _).mp hE
-    have hbound : ∀ x : CodimensionOnePoint X, (x : X) ∈ (⊤ : X.Opens) →
-        -WeilDivisor.coeff D x ≤
-          X.ord ((Additive.toMul γ : X.functionFieldˣ) : X.functionField) x := by
-      intro x _
-      exact (isEffective_add_principalDivisor_iff D γ).mp hEeff x
-    refine nontrivial_of_ne
-      (sectionMk _ (rationalFunctionsEquiv_symm_mem_sections hbound)) 0 fun h ↦ ?_
-    have h' := congrArg (Scheme.Modules.Hom.app (sheafι D) ⊤) h
-    rw [sheafι_app_sectionMk, map_zero] at h'
-    exact Units.ne_zero _
-      ((Scheme.rationalFunctionsEquiv (⊤ : X.Opens)).symm.map_eq_zero_iff.mp h')
-  · intro _
-    obtain ⟨t, ht⟩ := exists_ne (0 : Γ(sheaf D, ⊤))
-    set c := Scheme.rationalFunctionsEquiv (⊤ : X.Opens)
-      (Scheme.Modules.Hom.app (sheafι D) ⊤ t) with hc'
-    have hc : c ≠ 0 := fun h0 ↦ ht <| sheafι_app_injective D ⊤ <| by
-      rw [map_zero]
-      exact (Scheme.rationalFunctionsEquiv (⊤ : X.Opens)).map_eq_zero_iff.mp h0
-    have hbound := (mem_sections_iff.mp (sheafι_app_mem D ⊤ t)).resolve_left hc
-    refine ⟨D + (WeilDivisor.OrderSystem.ofScheme X).principalDivisor
-      (Additive.ofMul (Units.mk0 c hc)), ?_⟩
-    refine (WeilDivisor.OrderSystem.mem_completeLinearSystem_iff_exists_principalDivisor _).mpr
-      ⟨(isEffective_add_principalDivisor_iff D _).mpr fun x ↦ ?_, _, rfl⟩
-    have h := hbound x trivial
-    rw [← hc'] at h
-    simpa only [toMul_ofMul, Units.val_mk0] using h
-
-end LinearSystem
 
 section Curve
 
