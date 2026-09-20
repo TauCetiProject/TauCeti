@@ -80,6 +80,7 @@ instance instIsPerfectFixedPoints : Group.IsPerfect d.FixedPoints := by
     (suzukiGroupEquivFixedPoints m hvalid).surjective
 
 /-- The centre of the Steinberg fixed points of a Suzuki index is trivial. -/
+@[simp]
 theorem center_fixedPoints_eq_bot : center d.FixedPoints = ⊥ := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
   rw [← map_center_eq (suzukiGroupEquivFixedPoints m hvalid), Suzuki.center_suzukiGroup_eq_bot,
@@ -93,6 +94,8 @@ quotient changes nothing. -/
 def groupEquivFixedPoints : d.Group ≃* d.FixedPoints :=
   DerivedCentralQuotient.mulEquivOfCenterEqBot d.center_fixedPoints_eq_bot
 
+/-- The identification sends the class of an element of the derived subgroup of the fixed points
+to that element itself. -/
 @[simp]
 theorem groupEquivFixedPoints_mk (x : ↥(commutator d.FixedPoints)) :
     d.groupEquivFixedPoints (x : d.Group) = (x : d.FixedPoints) :=
@@ -117,12 +120,17 @@ which is to say every `m ≥ 1`, the derived central quotient of the Steinberg f
 def groupEquivSuzukiGroup : (of m hvalid).Group ≃* suzukiGroup m :=
   (of m hvalid).groupEquivFixedPoints.trans (suzukiGroupEquivFixedPoints m hvalid).symm
 
+/-- The identification with the generated Suzuki group sends the class of an element of the
+derived subgroup of the fixed points to the element of `suzukiGroup m` that the generation
+theorem names it by. -/
 @[simp]
 theorem groupEquivSuzukiGroup_mk (x : ↥(commutator (of m hvalid).FixedPoints)) :
     groupEquivSuzukiGroup m hvalid (x : (of m hvalid).Group) =
       (suzukiGroupEquivFixedPoints m hvalid).symm (x : (of m hvalid).FixedPoints) := by
   simp only [groupEquivSuzukiGroup, MulEquiv.trans_apply, groupEquivFixedPoints_mk]
 
+/-- The inverse identification carries an element of the generated Suzuki group to the fixed
+point the generation theorem names by it, and then to its class in the candidate group. -/
 @[simp]
 theorem groupEquivSuzukiGroup_symm_apply (g : suzukiGroup m) :
     (groupEquivSuzukiGroup m hvalid).symm g =
@@ -132,6 +140,7 @@ theorem groupEquivSuzukiGroup_symm_apply (g : suzukiGroup m) :
 /-- On underlying matrices the identification is the scalar extension of the generator model: the
 image in the generated Suzuki group of the class of a fixed point is the matrix whose scalar
 extension along the generator embedding is that fixed point. -/
+@[simp]
 theorem generatorEmbedding_groupEquivSuzukiGroup_mk
     (x : ↥(commutator (of m hvalid).FixedPoints)) :
     generatorEmbedding m hvalid (groupEquivSuzukiGroup m hvalid (x : (of m hvalid).Group)) =
