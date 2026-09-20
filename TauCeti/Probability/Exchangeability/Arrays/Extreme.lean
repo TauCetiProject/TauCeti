@@ -29,7 +29,9 @@ action, `ErgodicSMul.iff_mem_extremePoints`, composed with `jointlyDissociated_i
 ## Main results
 
 * `TauCeti.Probability.jointlyExchangeable_of_smulInvariantMeasure` — invariance under the
-  finitary diagonal action gives joint exchangeability;
+  finitary diagonal action gives joint exchangeability, and
+  `TauCeti.Probability.separatelyExchangeable_iff_finitary` — separate exchangeability is
+  invariance under pairs of finitely supported axis relabellings;
 * `TauCeti.Probability.jointlyExchangeableProbabilityMeasures` — the convex set, and its
   identification with the invariant measures of total mass one of the diagonal action;
 * `TauCeti.Probability.jointlyDissociated_iff_mem_extremePoints` — **joint dissociation is
@@ -97,6 +99,58 @@ theorem jointlyExchangeable_of_smulInvariantMeasure {ρ : Measure (ℕ × ℕ �
     have h2 : τ q.2 = σ q.2 := hτ _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hq))
     simp only [Finset.restrict_def, h1, h2]
   rwa [heq] at hτmap
+
+/-- **Finitely supported permutations already test separate exchangeability.** A finite law on
+array path space invariant under every pair of finitely supported axis relabellings is invariant
+under every pair of axis relabellings: the law is determined by its finite-dimensional marginals,
+and on finitely many indices any permutation agrees with a finitely supported one.
+
+This is the separate counterpart of `jointlyExchangeable_of_smulInvariantMeasure`; it is stated
+through the two permutations rather than through a group action because the two axes are
+relabelled independently. -/
+theorem separatelyExchangeable_of_finitary {ρ : Measure (ℕ × ℕ → α)} [IsFiniteMeasure ρ]
+    (h : ∀ σ τ : Equiv.Perm ℕ, (MulAction.fixedBy ℕ σ)ᶜ.Finite → (MulAction.fixedBy ℕ τ)ᶜ.Finite →
+      ρ.map (pairReindex σ τ) = ρ) :
+    SeparatelyExchangeable ρ fun p x => x p := by
+  rw [separatelyExchangeable_iff]
+  intro σ τ
+  have hmeas : ∀ π π' : Equiv.Perm ℕ,
+      AEMeasurable (fun x : ℕ × ℕ → α => fun p : ℕ × ℕ => x (π p.1, π' p.2)) ρ :=
+    fun π π' => (Measurable.of_eval fun p => measurable_pi_apply (π p.1, π' p.2)).aemeasurable
+  rw [ProbabilityTheory.map_eq_iff_forall_finset_map_restrict_eq (hmeas σ τ)
+    (Measurable.of_eval fun p => measurable_pi_apply p).aemeasurable]
+  intro F
+  -- finitely supported relabellings agreeing with `σ` and `τ` on the indices that `F` reads
+  obtain ⟨σ', hσ'fin, hσ'⟩ :=
+    Equiv.Perm.exists_finite_compl_fixedBy_apply_eq_on_finset σ (F.image Prod.fst)
+  obtain ⟨τ', hτ'fin, hτ'⟩ :=
+    Equiv.Perm.exists_finite_compl_fixedBy_apply_eq_on_finset τ (F.image Prod.snd)
+  have hfun : (fun (x : ℕ × ℕ → α) (p : ℕ × ℕ) => x (σ' p.1, τ' p.2)) = pairReindex σ' τ' :=
+    funext fun x => funext fun p => (pairReindex_apply σ' τ' x p).symm
+  have hmap : (ρ.map fun x : ℕ × ℕ → α => fun p : ℕ × ℕ => x (σ' p.1, τ' p.2))
+      = ρ.map fun x : ℕ × ℕ → α => fun p : ℕ × ℕ => x p := by
+    -- the identity reindexing is `id` by unfolding, which no propositional lemma states
+    rw [hfun, show (fun (x : ℕ × ℕ → α) (p : ℕ × ℕ) => x p) = id from rfl, Measure.map_id]
+    exact h σ' τ' hσ'fin hτ'fin
+  have hres := (ProbabilityTheory.map_eq_iff_forall_finset_map_restrict_eq (hmeas σ' τ')
+    (Measurable.of_eval fun p => measurable_pi_apply p).aemeasurable).mp hmap F
+  have heq : (fun x : ℕ × ℕ → α => F.restrict fun p : ℕ × ℕ => x (σ' p.1, τ' p.2))
+      = fun x : ℕ × ℕ → α => F.restrict fun p : ℕ × ℕ => x (σ p.1, τ p.2) := by
+    funext x p
+    obtain ⟨q, hq⟩ := p
+    have h1 : σ' q.1 = σ q.1 := hσ' _ (Finset.mem_image_of_mem _ hq)
+    have h2 : τ' q.2 = τ q.2 := hτ' _ (Finset.mem_image_of_mem _ hq)
+    simp only [Finset.restrict_def, h1, h2]
+  rwa [heq] at hres
+
+/-- A finite law on array path space is separately exchangeable if and only if it is invariant
+under every pair of finitely supported axis relabellings. -/
+theorem separatelyExchangeable_iff_finitary {ρ : Measure (ℕ × ℕ → α)} [IsFiniteMeasure ρ] :
+    SeparatelyExchangeable ρ (fun p x => x p) ↔
+      ∀ σ τ : Equiv.Perm ℕ, (MulAction.fixedBy ℕ σ)ᶜ.Finite → (MulAction.fixedBy ℕ τ)ᶜ.Finite →
+        ρ.map (pairReindex σ τ) = ρ :=
+  ⟨fun h σ τ _ _ => (h.measurePreserving_pairReindex σ τ).map_eq,
+    separatelyExchangeable_of_finitary⟩
 
 /-- A finite law is jointly exchangeable if and only if it is invariant under the finitary
 diagonal action. -/

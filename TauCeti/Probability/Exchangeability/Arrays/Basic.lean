@@ -50,7 +50,9 @@ this subtree meets the representation theory; the value space of the sequence is
 * `TauCeti.Probability.SeparatelyExchangeable.jointlyExchangeable` — the implication between the
   two symmetries.
 * `TauCeti.Probability.separatelyExchangeable_iff_map_pairReindex` — the bridge to the array law:
-  separate exchangeability is invariance of the law on `ℕ × ℕ → α` under every pair reindexing.
+  separate exchangeability is invariance of the law on `ℕ × ℕ → α` under every pair reindexing,
+  with `TauCeti.Probability.SeparatelyExchangeable.measurePreserving_pairReindex` its
+  measure-preserving form.
 * `TauCeti.Probability.map_uncurry_pathLaw_arrayRow` — the array law is the uncurried path law of
   the row process.
 * `TauCeti.Probability.separatelyExchangeable_iff_axes` — separate exchangeability splits into
@@ -271,6 +273,19 @@ theorem separatelyExchangeable_iff_map_pairReindex {μ : Measure Ω} {X : ℕ ×
       funext ω p
       rw [pairReindex_apply]
     rw [map_map_array hX (measurable_pairReindex σ τ), hread]
+
+/-- **A separately exchangeable array law is preserved by every pair reindexing** of array path
+space. This is the measure-preserving form of `separatelyExchangeable_iff_map_pairReindex` for the
+coordinate array. -/
+theorem SeparatelyExchangeable.measurePreserving_pairReindex
+    {ρ : Measure (ℕ × ℕ → α)} (hρ : SeparatelyExchangeable ρ fun p x => x p)
+    (σ τ : Equiv.Perm ℕ) : MeasurePreserving (pairReindex σ τ) ρ ρ := by
+  refine ⟨measurable_pairReindex σ τ, ?_⟩
+  have hfun : (fun (x : ℕ × ℕ → α) (p : ℕ × ℕ) => x (σ p.1, τ p.2)) = pairReindex σ τ :=
+    funext fun x => funext fun p => (pairReindex_apply σ τ x p).symm
+  have h := hρ σ τ
+  -- the identity reindexing is `id` by unfolding, which no propositional lemma states
+  rwa [hfun, show (fun (x : ℕ × ℕ → α) (p : ℕ × ℕ) => x p) = id from rfl, Measure.map_id] at h
 
 /-- **Joint exchangeability is a property of the array law**: an array is jointly exchangeable
 exactly when the coordinate array under its law on `ℕ × ℕ → α` is. -/
