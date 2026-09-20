@@ -31,6 +31,8 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 
 * `TauCeti.Manifold.IsNormalDomain`: the predicate defining normal domains.
 * `TauCeti.Manifold.riemannianLog`: the Riemannian logarithm relative to a normal domain.
+* `TauCeti.Manifold.IsNormalDomain.toPartialDiffeomorph`: the exponential map and logarithm as a
+  partial diffeomorphism between a normal domain and its normal neighbourhood.
 * `TauCeti.Manifold.exists_isNormalDomain_ball`: balls of small enough radius are normal domains.
 * `TauCeti.Manifold.IsNormalDomain.isOpen_image`: a normal neighbourhood is open.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_riemannianExp` and
@@ -140,8 +142,8 @@ end IsNormalDomain
 
 /-! ### Existence of normal balls -/
 
-/-- **Normal balls exist.**  Every ball of small enough radius around the origin of `T_p M` is a
-normal domain at `p`; its image is a normal neighbourhood of `p`. -/
+/-- **Normal balls exist.**  There is a positive radius such that the ball of that radius around
+the origin of `T_p M` is a normal domain at `p`; its image is a normal neighbourhood of `p`. -/
 theorem exists_isNormalDomain_ball [T2Space (TangentBundle I M)] (p : M) :
     ∃ r : ℝ, 0 < r ∧ IsNormalDomain I M p (Metric.ball 0 r) := by
   have hd := isLocalDiffeomorphAt_riemannianExp_zero (I := I) p
@@ -236,6 +238,46 @@ omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
 theorem continuousOn_riemannianLog (h : IsNormalDomain I M p U) :
     ContinuousOn (riemannianLog I M p U) (riemannianExp I M p '' U) :=
   h.contMDiffOn_riemannianLog.continuousOn
+
+omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
+/-- The exponential map and Riemannian logarithm as a partial diffeomorphism from a normal domain
+to its normal neighbourhood. -/
+@[expose] def toPartialDiffeomorph (h : IsNormalDomain I M p U) :
+    PartialDiffeomorph (modelWithCornersSelf ℝ (TangentSpace I p)) I
+      (TangentSpace I p) M ∞ where
+  toPartialEquiv :=
+    { toFun := riemannianExp I M p
+      invFun := riemannianLog I M p U
+      source := U
+      target := riemannianExp I M p '' U
+      map_source' := fun _ hv => ⟨_, hv, rfl⟩
+      map_target' := fun _ hq => h.riemannianLog_mem hq
+      left_inv' := fun _ hv => h.riemannianLog_riemannianExp hv
+      right_inv' := fun _ hq => h.riemannianExp_riemannianLog hq }
+  open_source := h.isOpen
+  open_target := h.isOpen_image
+  contMDiffOn_toFun := h.isLocalDiffeomorphOn.contMDiffOn
+  contMDiffOn_invFun := h.contMDiffOn_riemannianLog
+
+omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
+/-- The source of the normal-domain partial diffeomorphism is the normal domain. -/
+@[simp] theorem toPartialDiffeomorph_source (h : IsNormalDomain I M p U) :
+    h.toPartialDiffeomorph.source = U := rfl
+
+omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
+/-- The target of the normal-domain partial diffeomorphism is the normal neighbourhood. -/
+@[simp] theorem toPartialDiffeomorph_target (h : IsNormalDomain I M p U) :
+    h.toPartialDiffeomorph.target = riemannianExp I M p '' U := rfl
+
+omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
+/-- The forward map of the normal-domain partial diffeomorphism is the exponential map. -/
+@[simp] theorem coe_toPartialDiffeomorph (h : IsNormalDomain I M p U) :
+    ⇑h.toPartialDiffeomorph = riemannianExp I M p := rfl
+
+omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
+/-- The inverse map of the normal-domain partial diffeomorphism is the Riemannian logarithm. -/
+@[simp] theorem toPartialDiffeomorph_symm_apply (h : IsNormalDomain I M p U) (q : M) :
+    h.toPartialDiffeomorph.toPartialEquiv.symm q = riemannianLog I M p U q := rfl
 
 end IsNormalDomain
 
