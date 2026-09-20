@@ -25,10 +25,14 @@ ideals over every field:
 ```
 
 The resulting quotient isomorphism identifies the base-changed explicit carrier with the coordinate
-Hopf algebra of `Sp_(2n+2)`.
+Hopf algebra of `Sp_(2n+2)`. Only the equality needs a field: the containment of the symplectic
+ideal in the transported carrier ideal, equivalently the statement that every carrier point
+preserves the standard alternating form, holds over every commutative ring.
 
 ## Main declarations
 
+* `TauCeti.SpStd.symplecticDefiningHopfIdeal_le_baseChangeDefiningIdeal`: over every commutative
+  ring, the symplectic defining ideal is contained in the transported carrier ideal.
 * `TauCeti.SpStd.baseChangeDefiningIdeal_eq_symplecticDefiningHopfIdeal`: over every field, the
   transported carrier and symplectic defining ideals agree.
 * `TauCeti.SpStd.baseChangeCoordinateSymplecticIso`: the induced coordinate Hopf-algebra

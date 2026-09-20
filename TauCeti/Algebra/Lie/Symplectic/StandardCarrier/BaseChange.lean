@@ -22,6 +22,10 @@ Hopf algebra. The transported numbered root-subgroup maps and weight-torus map f
 that quotient. Thus the explicit integral carrier and its pinned generators base-change together;
 none of the data is chosen anew over `A`.
 
+On points the transported equations cut out exactly the integral carrier's matrices: for a
+commutative `A`-algebra `B`, a point of `GL_(2n+2)` over `B` satisfies them precisely when its
+matrix lies in the integral carrier's matrix points over `B`.
+
 The defining ideal transported from `ℤ` is contained in the common kernel of the transported
 generators. Equality is not asserted over an arbitrary, possibly non-flat, base: additional
 equations can appear after specialization. Nor does this file assert that the carrier is
@@ -33,6 +37,8 @@ constructed symplectic group scheme.
 * `TauCeti.SpStd.baseChangeDefiningIdeal`: the transported defining ideal in `O(GL_(2n+2)/A)`.
 * `TauCeti.SpStd.baseChangeCoordinateIso`: its quotient is the scalar extension of the integral
   carrier coordinate Hopf algebra.
+* `TauCeti.SpStd.baseChangePointsMulEquiv`: the points of that quotient over a commutative
+  `A`-algebra are the integral carrier's matrix points over the same algebra.
 * `TauCeti.SpStd.rootSubgroupToBaseChangeCoordinateMap`: the transported numbered root subgroup
   factored through the specialized carrier.
 * `TauCeti.SpStd.weightTorusToBaseChangeCoordinateMap`: the transported weight torus factored
@@ -42,6 +48,9 @@ constructed symplectic group scheme.
 
 * `TauCeti.SpStd.mkQuotient_comp_baseChangeCoordinateIso_hom`: the coordinate isomorphism is
   compatible with the two quotient presentations.
+* `TauCeti.SpStd.mem_baseChangeDefiningPointsSubgroup_iff_mem_points`: a point of `GL_(2n+2)`
+  satisfies the transported defining equations exactly when its matrix is an integral carrier
+  point.
 * `TauCeti.SpStd.baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap` and
   `TauCeti.SpStd.baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap`: each factored
   generator is the scalar extension of its integral coordinate map.
