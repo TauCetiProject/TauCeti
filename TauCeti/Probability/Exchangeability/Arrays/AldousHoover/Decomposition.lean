@@ -57,8 +57,8 @@ variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α]
 /-- **The corner-tail conditional laws of an array law, sampled by a uniform variable.** Drawing
 the conditioning variable through the canonical uniform coding presents those conditional laws as a
 Markov kernel from the unit interval whose composition with the uniform law is the original law.
-Any property holding for almost every conditional law holds for almost every component, so the
-kernel carries the symmetry and dissociation of the conditional laws with it. -/
+The supplied property `P`, when it holds for almost every conditional law, holds for almost every
+component of the kernel. -/
 theorem exists_kernel_of_ae_condExpKernel_arrayTail
     (hP : ∀ᵐ x ∂ρ, P (condExpKernel ρ (arrayTail fun p (y : ℕ × ℕ → α) => y p) x)) :
     ∃ κ : ProbabilityTheory.Kernel unitInterval (ℕ × ℕ → α), IsMarkovKernel κ ∧
