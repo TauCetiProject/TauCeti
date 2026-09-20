@@ -172,22 +172,10 @@ theorem prodRepresentation_apply (rho : L →ₗ⁅R⁆ Module.End R M)
 theorem ker_prodRepresentation (rho : L →ₗ⁅R⁆ Module.End R M)
     (sigma : L →ₗ⁅R⁆ Module.End R N) :
     (rho.prodRepresentation sigma).ker = rho.ker ⊓ sigma.ker := by
-  have hprodMap : LinearMap.ker (LinearMap.prodMapAlgHom R M N).toLinearMap = ⊥ := by
-    rw [LinearMap.ker_eq_bot]
-    rintro ⟨f₁, g₁⟩ ⟨f₂, g₂⟩ h
-    congr
-    · ext m
-      exact congrArg Prod.fst (LinearMap.congr_fun h (m, 0))
-    · ext n
-      exact congrArg Prod.snd (LinearMap.congr_fun h (0, n))
   ext x
-  change x ∈ LinearMap.ker
-      ((LinearMap.prodMapAlgHom R M N).toLinearMap.comp
-        (LinearMap.prod (rho : L →ₗ[R] Module.End R M)
-          (sigma : L →ₗ[R] Module.End R N))) ↔
-    x ∈ LinearMap.ker (rho : L →ₗ[R] Module.End R M) ⊓
-      LinearMap.ker (sigma : L →ₗ[R] Module.End R N)
-  rw [LinearMap.ker_comp_of_ker_eq_bot _ hprodMap, LinearMap.ker_prod]
+  simp only [LieHom.mem_ker, LieSubmodule.mem_inf, LinearMap.ext_iff, prodRepresentation_apply,
+    LinearMap.zero_apply, Prod.forall, Prod.mk_eq_zero]
+  exact ⟨fun h ↦ ⟨fun m ↦ (h m 0).1, fun n ↦ (h 0 n).2⟩, fun h m n ↦ ⟨h.1 m, h.2 n⟩⟩
 
 /-- A product representation is faithful exactly when the kernels of its factors are disjoint. -/
 theorem prodRepresentation_injective_iff (rho : L →ₗ⁅R⁆ Module.End R M)
