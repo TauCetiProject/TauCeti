@@ -227,7 +227,7 @@ theorem coe_f4ShortRootLieIdealBasis_symm_inr (k : Fin 2) :
   exact coe_f4ShortRootBasis_symm_inr k
 
 /-- Coordinates in the ideal basis agree with the corresponding ambient Chevalley coordinates. -/
-theorem f4ShortRootLieIdealBasis_repr_apply (y : f4ShortRootLieIdeal) (i : Fin 26) :
+@[simp] theorem f4ShortRootLieIdealBasis_repr_apply (y : f4ShortRootLieIdeal) (i : Fin 26) :
     f4ShortRootLieIdealBasis.repr y i =
       f4ModularChevalleyBasis.repr (y : f4ModularChevalleyLieAlgebra)
         (f4ShortRootBasisCoordinate i) := by

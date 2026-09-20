@@ -428,7 +428,7 @@ noncomputable def f4ModularSignedSimpleRootVector (k : Fin 4 ⊕ Fin 4) :
   f4ModularRootVector (f4SignedSimpleRootIndex k)
 
 /-- A signed simple root vector is the modular root vector at its pinned root index. -/
-theorem f4ModularSignedSimpleRootVector_eq (k : Fin 4 ⊕ Fin 4) :
+@[simp] theorem f4ModularSignedSimpleRootVector_eq (k : Fin 4 ⊕ Fin 4) :
     f4ModularSignedSimpleRootVector k = f4ModularRootVector (f4SignedSimpleRootIndex k) := by
   rw [f4ModularSignedSimpleRootVector]
 
