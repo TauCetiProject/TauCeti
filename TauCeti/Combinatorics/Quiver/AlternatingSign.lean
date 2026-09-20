@@ -40,6 +40,6 @@ theorem eq_neg_one_pow_mul_of_path {c : V → k} (hc : ∀ ⦃i j : V⦄, (i ⟶
   induction p with
   | nil => simp
   | cons p e ih =>
-    rw [Quiver.Path.length_cons, hc e, ih, pow_succ, mul_assoc, neg_one_mul, mul_neg]
+    simp [hc e, ih, pow_succ]
 
 end TauCeti
