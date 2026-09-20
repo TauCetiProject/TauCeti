@@ -250,38 +250,12 @@ theorem stableProjection_apply_eq_self_iff (hf : ContDiffAt ℝ 2 f x)
     hf.stableProjection hker v = v ↔ v ∈ hf.stableLinearSubspace := by
   rw [stableProjection, Submodule.projectionL_eq_self_iff]
 
-/-- The stable projection fixes every vector in the stable linear subspace. -/
-theorem stableProjection_eq_self_of_mem_stable (hf : ContDiffAt ℝ 2 f x)
-    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) {v : E}
-    (hv : v ∈ hf.stableLinearSubspace) : hf.stableProjection hker v = v :=
-  (hf.stableProjection_apply_eq_self_iff hker).2 hv
-
-/-- The stable projection kills every vector in the unstable linear subspace. -/
-theorem stableProjection_apply_eq_zero_of_mem_unstable (hf : ContDiffAt ℝ 2 f x)
-    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) {v : E}
-    (hv : v ∈ hf.unstableLinearSubspace) : hf.stableProjection hker v = 0 :=
-  (hf.stableProjection_apply_eq_zero_iff hker).2 hv
-
 /-- The stable projection takes every vector into the stable linear subspace. -/
 theorem stableProjection_apply_mem (hf : ContDiffAt ℝ 2 f x)
     (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) (v : E) :
     hf.stableProjection hker v ∈ hf.stableLinearSubspace := by
   rw [stableProjection]
   exact Submodule.projectionL_apply_mem _ _
-
-/-- Applying the stable projection twice has the same result as applying it once. -/
-@[simp]
-theorem stableProjection_stableProjection (hf : ContDiffAt ℝ 2 f x)
-    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) (v : E) :
-    hf.stableProjection hker (hf.stableProjection hker v) = hf.stableProjection hker v :=
-  hf.stableProjection_eq_self_of_mem_stable hker (hf.stableProjection_apply_mem hker v)
-
-/-- Subtracting the stable projection leaves a vector in the unstable linear subspace. -/
-theorem sub_stableProjection_mem_unstableLinearSubspace (hf : ContDiffAt ℝ 2 f x)
-    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) (v : E) :
-    v - hf.stableProjection hker v ∈ hf.unstableLinearSubspace := by
-  rw [← hf.stableProjection_apply_eq_zero_iff hker, map_sub,
-    hf.stableProjection_stableProjection hker, sub_self]
 
 /-- As a set, the range of the stable projection is the stable linear subspace. -/
 theorem coe_range_stableProjection (hf : ContDiffAt ℝ 2 f x)
@@ -292,7 +266,7 @@ theorem coe_range_stableProjection (hf : ContDiffAt ℝ 2 f x)
   · rintro ⟨w, rfl⟩
     exact hf.stableProjection_apply_mem hker w
   · intro hv
-    exact ⟨v, hf.stableProjection_eq_self_of_mem_stable hker hv⟩
+    exact ⟨v, (hf.stableProjection_apply_eq_self_iff hker).2 hv⟩
 
 /-- The negative Hessian operator commutes with the projection onto its stable linear subspace. -/
 theorem commute_neg_hessianOperator_stableProjection (hf : ContDiffAt ℝ 2 f x)
