@@ -126,6 +126,7 @@ theorem eq_smul_one_of_commute {M : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * n
 
 /-- **The centre of a Suzuki group is trivial.** This holds at every parameter, including `n = 0`,
 where the group is the solvable group `Sz(2)`. -/
+@[simp]
 theorem center_suzukiGroup_eq_bot : Subgroup.center ↥(suzukiGroup n) = ⊥ := by
   rw [Subgroup.eq_bot_iff_forall]
   rintro ⟨g, hg⟩ hcentral
