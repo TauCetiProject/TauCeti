@@ -118,21 +118,6 @@ theorem envelopingAdjointRepresentation_ι_apply (x : L) (p : S) :
   rw [envelopingAdjointRepresentation, UniversalEnvelopingAlgebra.lift_ι_apply']
   rfl
 
-/-- The adjoint action obeys the Leibniz rule on the symmetric algebra. -/
-theorem adjointDerivation_mul (x : L) (p q : S) :
-    adjointDerivation R L x (p * q) =
-      adjointDerivation R L x p * q + p * adjointDerivation R L x q :=
-  by
-    rw [Derivation.leibniz]
-    simp only [smul_eq_mul]
-    ac_rfl
-
-/-- The adjoint action on a power is the sum of its actions on the identical factors. -/
-theorem adjointDerivation_pow (x : L) (p : S) (n : ℕ) :
-    adjointDerivation R L x (p ^ n) =
-      n • p ^ (n - 1) • adjointDerivation R L x p :=
-  (adjointDerivation R L x).leibniz_pow p n
-
 section Naturality
 
 variable {M : Type*} [LieRing M] [LieAlgebra R M]
@@ -144,7 +129,8 @@ theorem map_adjointDerivation (f : L →ₗ⁅R⁆ M) (x : L) (p : S) :
   induction p using SymmetricAlgebra.induction with
   | algebraMap r => simp
   | ι y => simp [adjointDerivation_ι]
-  | mul p q hp hq => simp only [adjointDerivation_mul, map_add, map_mul, hp, hq]
+  | mul p q hp hq =>
+      simp only [Derivation.leibniz, smul_eq_mul, map_add, map_mul, hp, hq]
   | add p q hp hq => simp only [map_add, hp, hq]
 
 /-- Naturality of the adjoint action, as an equality of linear maps. -/
@@ -165,18 +151,17 @@ theorem adjointDerivation_prod_map_ι_mem_homogeneousSubmodule (x : L) (l : List
   induction l with
   | nil => simp
   | cons y l ih =>
-      rw [List.map_cons, List.prod_cons, adjointDerivation_mul, adjointDerivation_ι]
+      rw [List.map_cons, List.prod_cons, Derivation.leibniz, adjointDerivation_ι]
+      simp only [smul_eq_mul]
       apply Submodule.add_mem
-      · have hhead :=
-          TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule R L [⁅x, y⁆]
-        have htail :=
-          TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule R L l
-        simpa [Nat.add_comm] using
-          SetLike.GradedMonoid.toGradedMul.mul_mem hhead htail
-      · have hhead :=
-          TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule R L [y]
+      · have hhead := TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule R L [y]
         simpa [Nat.add_comm] using
           SetLike.GradedMonoid.toGradedMul.mul_mem hhead ih
+      · have htail := TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule R L l
+        have hhead :=
+          TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule R L [⁅x, y⁆]
+        simpa [Nat.add_comm] using
+          SetLike.GradedMonoid.toGradedMul.mul_mem htail hhead
 
 /-- Every adjoint derivation preserves each homogeneous submodule of the symmetric algebra. -/
 theorem adjointDerivation_mem_homogeneousSubmodule (x : L) {n : ℕ} {p : S}
