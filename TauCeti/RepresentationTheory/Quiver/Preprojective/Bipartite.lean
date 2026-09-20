@@ -23,11 +23,11 @@ algebra — carries none. Rescaling the arrows of `Q` by scalars `ε` replaces `
 relator `ρ_ε`, and for a *bipartite* `Q` the colour signs make the corner of `ρ_ε` at every vertex
 a multiple of `s_v`, by `TauCeti.gaugedPreprojectiveRelator_bipartite_vertexCorner_eq_smul`.
 
-This file shows that only a bipartite quiver admits such a rescaling. The backtracks at a fixed
-vertex are distinct basis paths, so the corner equation `e_v ρ_ε e_v = c_v • s_v` reads off the
-gauge: `ε_a` is the scalar `c` at the head of `a`, and `-c` at its tail. Hence `c` changes sign
-along every arrow, is a unit as soon as `ε` is, and a closed walk of odd length in the doubled
-quiver forces `2 = 0` in the coefficient ring. A loop is the smallest such walk.
+This file proves the obstruction supplied by an odd closed walk. The backtracks at a fixed vertex
+are distinct basis paths, so the corner equation `e_v ρ_ε e_v = c_v • s_v` reads off the gauge:
+`ε_a` is the scalar `c` at the head of `a`, and `-c` at its tail. Hence `c` changes sign along
+every arrow, is a unit as soon as `ε` is, and a closed walk of odd length in the doubled quiver
+forces `2 = 0` in the coefficient ring. A loop is the smallest such walk.
 
 Over a coefficient ring in which `2 = 0` the sign is invisible: the signless and the preprojective
 local relators are then the same element, the two relation ideals coincide, and the signless
@@ -183,10 +183,10 @@ variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- **A closed walk of odd length obstructs the signless comparison.** If the doubled quiver has a
-closed walk of odd length at some vertex — that is, if `Q` is not bipartite — then over a
-coefficient ring in which `2 ≠ 0` no unit gauge `ε` makes the corner of `ρ_ε` at every vertex a
-multiple of the signless relator there. The bipartite comparison
-`TauCeti.gaugedPreprojectiveRelator_bipartite_vertexCorner_eq_smul` is therefore sharp. -/
+closed walk of odd length at some vertex, then over a coefficient ring in which `2 ≠ 0` no unit
+gauge `ε` makes the corner of `ρ_ε` at every vertex a multiple of the signless relator there.
+This complements the positive bipartite comparison
+`TauCeti.gaugedPreprojectiveRelator_bipartite_vertexCorner_eq_smul`. -/
 theorem not_exists_forall_vertexCorner_eq_smul_of_odd_length {ε : ∀ ⦃i j : Q⦄, (i ⟶ j) → k}
     (hε : ∀ ⦃i j : Q⦄ (a : i ⟶ j), IsUnit (ε a)) (h2 : (2 : k) ≠ 0) {v : Q}
     (p : Quiver.Path (Symmetrify.of.obj v) (Symmetrify.of.obj v)) (hp : Odd p.length) :
