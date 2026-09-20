@@ -43,6 +43,8 @@ integral toral closure is used; no flatness is asserted.
 * `TauCeti.G2ShortRoot.PrimeField.schemePointsMulEquiv_comp_rootSubgroup` and
   `TauCeti.G2ShortRoot.PrimeField.schemePointsMulEquiv_comp_weightTorus`: the point maps induced
   by the scheme-level generators are the named pinned point homomorphisms.
+* `TauCeti.G2ShortRoot.PrimeField.schemePointsMulEquiv_comp_carrierι`: the underlying matrix of
+  a scheme-valued carrier point is obtained by composing with the ambient inclusion into `GL₇`.
 * `TauCeti.G2ShortRoot.PrimeField.points_le_baseChangePresentationPoints`: every point of the
   carrier is a point of the base change of the integral short-root toral closure.
 
@@ -99,21 +101,6 @@ theorem points_eq_hopfIdealPointsSubgroup (A : Type v) [CommRing A] [Algebra (ZM
     points A = TauCeti.GeneralLinear.hopfIdealPointsSubgroup 7 definingIdeal A := by
   rw [points, TauCeti.GeneralLinear.generatedPointsSubgroup_def, definingIdeal_def]
 
-/-- The carrier is the quotient spectrum by the common kernel of its generating family. -/
-private theorem groupScheme_eq_commonKernelSpec :
-    groupScheme = CommHopfAlgCat.quotientSpec
-      (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
-      (CommHopfAlgCat.commonKernelHopfIdeal generator) := by
-  rw [groupScheme_eq_generatedGroupScheme,
-    TauCeti.GeneralLinear.generatedGroupScheme_def]
-
-/-- The named carrier points are the matrix subgroup cut out by the common-kernel ideal. -/
-private theorem points_eq_commonKernelPointsSubgroup (A : Type v) [CommRing A]
-    [Algebra (ZMod 3) A] :
-    points A = TauCeti.GeneralLinear.hopfIdealPointsSubgroup 7
-      (CommHopfAlgCat.commonKernelHopfIdeal generator) A := by
-  rw [points_def, TauCeti.GeneralLinear.generatedPointsSubgroup_def]
-
 /-- The points of the quotient coordinate Hopf algebra are the named matrix-valued carrier
 points. -/
 private noncomputable def pointsMulEquiv (A : CommAlgCat.{v} (ZMod 3)) :
@@ -124,7 +111,8 @@ private noncomputable def pointsMulEquiv (A : CommAlgCat.{v} (ZMod 3)) :
       points A :=
   (TauCeti.GeneralLinear.hopfIdealPointsSubgroupMulEquiv 7
       (CommHopfAlgCat.commonKernelHopfIdeal generator) A).trans
-    (MulEquiv.subgroupCongr (points_eq_commonKernelPointsSubgroup A)).symm
+    (MulEquiv.subgroupCongr (by
+      simpa only [definingIdeal_def] using points_eq_hopfIdealPointsSubgroup A)).symm
 
 /-- A common-kernel quotient point is its underlying general-linear point read as a matrix. -/
 private theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
@@ -148,14 +136,18 @@ private noncomputable def groupSchemePointMulEquiv (A : Type) [CommRing A]
       (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
       (CommHopfAlgCat.commonKernelHopfIdeal generator)) →ₐ[ZMod 3] A) ≃*
       ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶ groupScheme.X) :=
-  CommHopfAlgCat.mapMulEquivOfPresentation _ A groupScheme_eq_commonKernelSpec
+  CommHopfAlgCat.mapMulEquivOfPresentation _ A (by
+    simpa only [definingIdeal_def] using groupScheme_def)
 
 /-- The carrier's underlying scheme is the spectrum of its quotient coordinate Hopf algebra. -/
 private lemma groupScheme_X_left :
     groupScheme.X.left = Spec (CommRingCat.of (CommHopfAlgCat.quotient
       (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
       (CommHopfAlgCat.commonKernelHopfIdeal generator))) := by
-  rw [groupScheme_eq_commonKernelSpec]
+  rw [show groupScheme = CommHopfAlgCat.quotientSpec
+    (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
+    (CommHopfAlgCat.commonKernelHopfIdeal generator) by
+      simpa only [definingIdeal_def] using groupScheme_def]
   exact hopfSpec_obj_X_left (ZMod 3) _
 
 /-- The underlying spectrum map of the carrier point associated to a quotient-coordinate
@@ -168,8 +160,8 @@ private lemma groupSchemePointMulEquiv_apply_left (A : Type) [CommRing A]
     (groupSchemePointMulEquiv A q).left =
       Spec.map (CommRingCat.ofHom q.ofConv) ≫ eqToHom groupScheme_X_left.symm := by
   simpa only [groupSchemePointMulEquiv] using
-    CommHopfAlgCat.mapMulEquivOfPresentation_apply_left _ A groupScheme_eq_commonKernelSpec
-      groupScheme_X_left q
+    CommHopfAlgCat.mapMulEquivOfPresentation_apply_left _ A (by
+      simpa only [definingIdeal_def] using groupScheme_def) groupScheme_X_left q
 
 /-- Scheme-valued points of the carrier are its named matrix-valued points. -/
 noncomputable def schemePointsMulEquiv (A : Type) [CommRing A] [Algebra (ZMod 3) A] :
@@ -190,6 +182,61 @@ private theorem schemePointsMulEquiv_groupSchemePointMulEquiv (A : Type) [CommRi
       pointsMulEquiv (CommAlgCat.of (ZMod 3) A) q := by
   simp [schemePointsMulEquiv]
 
+private lemma groupSchemePointMulEquiv_comp_carrierι (A : Type) [CommRing A]
+    [Algebra (ZMod 3) A]
+    (q : HopfAlgebra.points
+      (R := ZMod 3) (H := CommHopfAlgCat.quotient
+        (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
+        (CommHopfAlgCat.commonKernelHopfIdeal generator))
+        (CommAlgCat.of (ZMod 3) A)) :
+    groupSchemePointMulEquiv A q ≫ carrierι.hom.hom =
+      TauCeti.GeneralLinear.groupSchemePointMulEquiv 7 A
+        (CommHopfAlgCat.quotientPointsHom
+          (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
+          (CommHopfAlgCat.commonKernelHopfIdeal generator)
+          (CommAlgCat.of (ZMod 3) A) q) := by
+  let hcarrier : groupScheme = CommHopfAlgCat.quotientSpec
+      (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
+      (CommHopfAlgCat.commonKernelHopfIdeal generator) := by
+    simpa only [definingIdeal_def] using groupScheme_def
+  have hpoint := CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
+      (R := ZMod 3) A (TauCeti.GeneralLinear.groupScheme_def (ZMod 3) 7) hcarrier
+      (TauCeti.GeneralLinear.groupSchemePointMulEquiv 7 A) (groupSchemePointMulEquiv A)
+      (TauCeti.GeneralLinear.groupSchemePointMulEquiv_apply_left 7 A)
+      (groupSchemePointMulEquiv_apply_left A)
+      (CommHopfAlgCat.mkQuotient
+        (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
+        (CommHopfAlgCat.commonKernelHopfIdeal generator)) q
+  have hpresentation :
+      groupScheme_eq_generatedGroupScheme.trans
+        (TauCeti.GeneralLinear.generatedGroupScheme_def 7 generator) = hcarrier :=
+    Subsingleton.elim _ _
+  have hι : carrierι =
+      eqToHom hcarrier ≫
+        (hopfSpec (CommRingCat.of (ZMod 3))).map
+          (CommHopfAlgCat.mkQuotient
+            (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
+            (CommHopfAlgCat.commonKernelHopfIdeal generator)).op ≫
+        eqToHom (TauCeti.GeneralLinear.groupScheme_def (ZMod 3) 7).symm := by
+    rw [carrierι_def, TauCeti.GeneralLinear.generatedGroupSchemeι_def,
+      CommHopfAlgCat.quotientSpecι_def]
+    rw [← Category.assoc, eqToHom_trans, hpresentation]
+  rw [CommHopfAlgCat.quotientPointsHom]
+  rw [hι]
+  exact hpoint
+
+/-- Composing a scheme-valued carrier point with its ambient inclusion into `GL₇` gives the
+underlying invertible matrix of the named carrier point. -/
+@[simp]
+theorem schemePointsMulEquiv_comp_carrierι (A : Type) [CommRing A] [Algebra (ZMod 3) A]
+    (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶ groupScheme.X) :
+    TauCeti.GeneralLinear.schemePointsMulEquiv 7 A (p ≫ carrierι.hom.hom) =
+      (schemePointsMulEquiv A p : _root_.Matrix.GeneralLinearGroup (Fin 7) A) := by
+  obtain ⟨q, rfl⟩ := (groupSchemePointMulEquiv A).surjective p
+  rw [groupSchemePointMulEquiv_comp_carrierι,
+    TauCeti.GeneralLinear.schemePointsMulEquiv_groupSchemePointMulEquiv,
+    schemePointsMulEquiv_groupSchemePointMulEquiv, coe_pointsMulEquiv_apply]
+
 private lemma groupSchemePointMulEquiv_comp_rootSubgroup (k : Fin 2 ⊕ Fin 2)
     (A : Type) [CommRing A] [Algebra (ZMod 3) A]
     (q : HopfAlgebra.points (R := ZMod 3)
@@ -202,7 +249,8 @@ private lemma groupSchemePointMulEquiv_comp_rootSubgroup (k : Fin 2 ⊕ Fin 2)
   rw [rootSubgroup_def, TauCeti.GeneralLinear.generatorToGeneratedGroupScheme_def]
   simpa only [Category.assoc, eqToHom_trans] using
     CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
-    (R := ZMod 3) A groupScheme_eq_commonKernelSpec (AdditiveGroup.groupScheme_def (ZMod 3))
+    (R := ZMod 3) A (by simpa only [definingIdeal_def] using groupScheme_def)
+      (AdditiveGroup.groupScheme_def (ZMod 3))
       (groupSchemePointMulEquiv A) (AdditiveGroup.groupSchemePointMulEquiv A)
       (groupSchemePointMulEquiv_apply_left A)
       (AdditiveGroup.groupSchemePointMulEquiv_apply_left A)
@@ -223,7 +271,7 @@ private lemma groupSchemePointMulEquiv_comp_weightTorus
   rw [weightTorus_def, TauCeti.GeneralLinear.generatorToGeneratedGroupScheme_def]
   simpa only [Category.assoc, eqToHom_trans] using
     CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
-      (R := ZMod 3) A groupScheme_eq_commonKernelSpec
+      (R := ZMod 3) A (by simpa only [definingIdeal_def] using groupScheme_def)
       (DiagonalizableGroup.groupScheme_def (ZMod 3)
         (SplitTorus.characterGroup (Fin 2)))
       (groupSchemePointMulEquiv A)
