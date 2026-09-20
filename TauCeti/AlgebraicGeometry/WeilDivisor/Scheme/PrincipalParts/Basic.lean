@@ -561,6 +561,14 @@ lemma sheafι_toPrincipalParts (D : SchemeWeilDivisor X) :
 def principalPartsShortComplex (D : SchemeWeilDivisor X) : ShortComplex X.Modules :=
   ShortComplex.mk (sheafι D) (toPrincipalParts D) (sheafι_toPrincipalParts D)
 
+/-- The principal-parts short complex has terms `𝒪_X(D)`, `𝒦_X` and
+`𝒦_X / 𝒪_X(D)`, with its defining inclusion and principal-parts maps. -/
+@[simp]
+lemma principalPartsShortComplex_eq (D : SchemeWeilDivisor X) :
+    principalPartsShortComplex D =
+      ShortComplex.mk (sheafι D) (toPrincipalParts D) (sheafι_toPrincipalParts D) :=
+  (rfl)
+
 /-- The first object of the principal-parts short complex is `𝒪_X(D)`. -/
 @[simp]
 lemma principalPartsShortComplex_X₁ (D : SchemeWeilDivisor X) :
